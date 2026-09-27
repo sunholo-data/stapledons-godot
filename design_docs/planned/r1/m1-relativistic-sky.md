@@ -81,14 +81,19 @@ A new `photometry` module:
 - **`teffFromBpRp(bpRp)`:** effective temperature by monotone interpolation of
   the Pecaut & Mamajek *Modern Mean Dwarf Stellar Color and Effective
   Temperature Sequence* (the version with the Gaia BP−RP column).
-  - It covers O to L dwarfs.
+  - It covers B9V to M8.5V in BP−RP. *(Amended 2026-09-27, mission
+    iteration 0: the table's BP−RP column has no O, B0–B8 or L rows, and
+    M9V/M9.5V are dropped because their BP−RP reverses.)*
   - It's a table, not a polynomial, so it doesn't diverge outside its range.
     Outside the table, values clamp and a flag says so.
 - **`gMinusV(bpRp)`:** from the **same Mamajek table**, which has a `G-V`
   column (G2V: Teff 5770, Bp−Rp 0.823, G−V −0.165; checked 2026-09-27). One
   source for both relations keeps them consistent. The Gaia DR3 cubic
   (Riello et al. 2021) is a *test-only* cross-check: the two must agree within
-  0.05 mag over 0.4 ≤ BP−RP ≤ 3.0.
+  0.05 mag over 0.4 ≤ BP−RP ≤ 3.0. *(Amended 2026-09-27, mission
+  iteration 0: measured on the source data the two differ by 0.1015 mag at
+  BP−RP 3.0, so the check is 0.11 mag over 0.4–3.0 and 0.05 mag over
+  0.4–1.3. It guards transcription; it is not a physics bound.)*
 - **`illuminanceFromV(v)`:** E = 10^(−0.4 (V + 13.98)) lux, so V = 0 gives
   about 2.5 µlx.
 - **White dwarfs** (GCNS `WDprob > 0.5`): the dwarf sequence doesn't apply.
