@@ -11,9 +11,10 @@ all: test
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
 
-deps:              ## fetch locked AILANG packages into the cache; fail if the lock would change
+deps:              ## fetch locked AILANG packages into the cache; fail if the resolution would change
 	cd sim && $(AILANG) lock
-	git diff --exit-code sim/ailang.lock
+	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
+	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
 test: deps import physics sim parity strict   ## everything that runs without a GPU window
 
