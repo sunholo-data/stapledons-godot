@@ -4,3 +4,5 @@ renders/
 sim/.ailang/
 .ailang/cache/
 data/raw/
+runtime/
+build/

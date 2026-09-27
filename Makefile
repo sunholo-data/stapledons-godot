@@ -3,8 +3,11 @@ AILANG ?= ailang
 SIM := sim/ship.ail
 SIMFLAGS := --quiet --package-dir sim --caps IO --entry main
 SCRATCH := .godot/tmp
+AILANG_RELEASE ?= v0.45.0
+RUNTIME := runtime
+APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim parity strict golden capture run import
+.PHONY: all test deps physics sim parity strict golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -47,3 +50,24 @@ capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs
 
 run:               ## interactive: W/S thrust, arrows look, 1-4 views, +/- warp
 	$(GODOT) --path .
+
+runtime:           ## stage the bundled sim runtime: pinned ailang release + fetched package cache (no dotfiles)
+	@rm -rf $(RUNTIME) && mkdir -p $(RUNTIME)/bin $(RUNTIME)/home
+	gh release download $(AILANG_RELEASE) --repo sunholo-data/ailang -p 'darwin.arm64.ailang.tar.gz' -D $(SCRATCH)/ailang-rel --clobber
+	tar xzf $(SCRATCH)/ailang-rel/darwin.arm64.ailang.tar.gz -C $(RUNTIME)/bin && chmod +x $(RUNTIME)/bin/ailang
+	cd sim && HOME=$(CURDIR)/$(RUNTIME)/home $(CURDIR)/$(RUNTIME)/bin/ailang lock
+	git checkout -q sim/ailang.lock
+	mkdir -p $(RUNTIME)/cache && mv $(RUNTIME)/home/.ailang/cache/registry $(RUNTIME)/cache/registry && rm -rf $(RUNTIME)/home
+	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
+	@find $(RUNTIME) -type f | sed 's/^/  staged /'
+
+export-macos: runtime import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime bundled
+	@mkdir -p build/macos
+	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
+	@du -sh "$(APP)"
+
+export-smoke:      ## run the exported .app's capture with NO ailang on PATH; must produce the contact sheet
+	@rm -rf $(SCRATCH)/export-smoke && mkdir -p $(SCRATCH)/export-smoke
+	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
+	env -i PATH=/usr/bin:/bin HOME="$$HOME" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
+	@test -s $(SCRATCH)/export-smoke/contact_sheet.png && echo "export-smoke: OK ($$(ls $(SCRATCH)/export-smoke | wc -l | tr -d ' ') files)"

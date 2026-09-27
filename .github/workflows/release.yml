@@ -1,0 +1,62 @@
+name: macOS build
+
+# Tag v* (e.g. v0.1.0-m0) -> build the macOS .app with the AILANG sim runtime
+# bundled, zip it, attach it to a GitHub (pre-)release for review on a laptop.
+# The GPU smoke run (`make export-smoke`) is a local gate before tagging:
+# hosted macOS runners are VMs without a reliable Metal device.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: macOS .app (universal Godot, arm64 sim runtime)
+    runs-on: macos-latest
+    env:
+      GODOT_VERSION: 4.7.2-stable
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot and export template
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/Library/Application Support/Godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-macos-template
+
+      - name: Install Godot and macOS export template
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot "$HOME/Library/Application Support/Godot/export_templates/4.7.2.stable"
+          gh release download "$GODOT_VERSION" --repo godotengine/godot -p "Godot_v${GODOT_VERSION}_macos.universal.zip" -D /tmp/g
+          unzip -q "/tmp/g/Godot_v${GODOT_VERSION}_macos.universal.zip" -d ~/godot
+          gh release download "$GODOT_VERSION" --repo godotengine/godot -p "Godot_v${GODOT_VERSION}_export_templates.tpz" -D /tmp/g
+          unzip -o -j -q "/tmp/g/Godot_v${GODOT_VERSION}_export_templates.tpz" templates/macos.zip templates/version.txt \
+            -d "$HOME/Library/Application Support/Godot/export_templates/4.7.2.stable"
+          rm -rf /tmp/g
+
+      - name: Build .app
+        run: |
+          GODOT="$HOME/godot/Godot.app/Contents/MacOS/Godot"
+          "$GODOT" --headless --version
+          make export-macos GODOT="$GODOT"
+
+      - name: Zip and publish
+        run: |
+          name="StapledonsVoyage-${GITHUB_REF_NAME}-macos.zip"
+          ditto -c -k --keepParent "build/macos/Stapledons Voyage.app" "$name"
+          ls -la "$name"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+              gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" \
+                --notes "Review build. Apple Silicon Macs. First launch: right-click the app → Open (unsigned)."
+            gh release upload "$GITHUB_REF_NAME" "$name" --clobber
+          fi

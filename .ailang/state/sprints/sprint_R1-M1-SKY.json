@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-M1-SKY",
-  "status": "approved",
+  "status": "in_progress",
   "created": "2026-09-27T19:34:58Z",
   "design_doc": "design_docs/planned/r1/m1-relativistic-sky.md",
   "sprint_plan": "design_docs/planned/r1/m1-relativistic-sky-sprint.md",
@@ -24,7 +24,7 @@
         "User launches it on their laptop and confirms"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-09-27T19:40:49+00:00",
       "completed": null,
       "notes": null
     },

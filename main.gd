@@ -127,7 +127,10 @@ func _grab() -> Image:
 
 ## Accelerate at 1 g through the AILANG sim and photograph the sky at set speeds.
 func _run_capture(dir: String) -> void:
-	var out := ProjectSettings.globalize_path("res://").path_join(dir if dir != "" else "renders")
+	# Absolute paths are used as-is; relative ones go under the project (editor)
+	# or the user data dir (exported builds, where res:// is read-only).
+	var base := ProjectSettings.globalize_path("user://" if OS.has_feature("template") else "res://")
+	var out := dir if dir.is_absolute_path() else base.path_join(dir if dir != "" else "renders")
 	DirAccess.make_dir_recursive_absolute(out)
 	var targets := [0.0, 0.5, 0.9, 0.99]
 	var views := {"forward": Vector3(0, 0, 0), "starboard": Vector3(0, -PI / 2, 0), "astern": Vector3(0, PI, 0)}
