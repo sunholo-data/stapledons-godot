@@ -28,7 +28,7 @@ func _ready() -> void:
 	if args.has("golden"):
 		await _run_golden()
 		return
-	starfield.load_catalogue("res://data/stars.json")
+	starfield.load_catalogue("res://data/starmap/stars.json")
 	starfield.build()
 	starfield.set_exposure(EXPOSURE)
 	if not sim.start():

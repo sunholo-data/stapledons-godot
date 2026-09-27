@@ -1,4 +1,6 @@
 .godot/
 renders/
 *.import
-.ailang/
+sim/.ailang/
+.ailang/cache/
+data/raw/
