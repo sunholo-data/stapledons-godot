@@ -26,7 +26,8 @@
       "passes": null,
       "started": "2026-09-27T19:40:49+00:00",
       "completed": null,
-      "notes": null
+      "notes": "AC1 PASS: make export-macos -> 262 MB .app; export-smoke with PATH=/usr/bin:/bin (no ailang) renders 12/12 PNGs bit-identical to dev build. AC2 PASS: tag v0.1.0-m0 -> release.yml on macos-latest -> pre-release asset StapledonsVoyage-v0.1.0-m0-macos.zip (106 MB); the CI zip re-verified locally: adhoc-signed, 12/12 bit-identical. AC3 PENDING: user launch on laptop. Runtime: pinned ailang v0.45.0 release + package cache bundled in pck, unpacked to user://runtime-<ver>, run via env HOME=<runtime> (cache path fixed to HOME; reported upstream). Godot export templates 4.7.2 installed on Studio (macOS template only). ~190 LOC incl. workflow/config.",
+      "actual_loc": 190
     },
     {
       "id": "M1.1_PHOTOMETRY_PACKAGE",
