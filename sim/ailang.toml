@@ -1,0 +1,14 @@
+[package]
+name = "stapledons/sim"
+version = "0.1.0"
+edition = "1"
+description = "Stapledon's Voyage simulation (runs as a Godot sidecar over NDJSON stdio)."
+
+[exports]
+modules = ["stapledons/sim/ship"]
+
+[effects]
+max = ["IO"]
+
+[stability]
+level = "experimental"

@@ -1,0 +1,70 @@
+module stapledons/sim/ship
+
+-- Stapledon's Voyage: ship kinematics sidecar (spike).
+-- Protocol: one JSON object per line on stdin, one per line on stdout.
+--   in : {"cmd":"step","thrust":<-1..1>,"dtau":<ship years>} | {"cmd":"quit"}
+--   out: {"tick","beta","gamma","tau","t","x"}
+-- Units: light-years, years, c = 1. Motion is 1-D along the ship heading.
+-- Constant proper acceleration within a step is integrated exactly via rapidity.
+
+import std/io (readLine, println, flush)
+import std/json (decode, encode, getNumber, getString, jo, kv, jnum, jint)
+import std/math (exp)
+import std/option (Some, None)
+import std/result (Ok, Err)
+
+type Ship = { tick: int, phi: float, tau: float, t: float, x: float }
+
+-- 1 g expressed in c per year (9.80665 m/s^2 * 31557600 s / 299792458 m/s)
+export pure func gAccel() -> float = 1.032295
+
+export pure func sinh(u: float) -> float = (exp(u) - exp(0.0 - u)) / 2.0
+export pure func cosh(u: float) -> float = (exp(u) + exp(0.0 - u)) / 2.0
+
+export pure func initShip() -> Ship = { tick: 0, phi: 0.0, tau: 0.0, t: 0.0, x: 0.0 }
+
+-- Advance by dtau of ship proper time under proper acceleration thrust * 1g.
+export pure func step(s: Ship, thrust: float, dtau: float) -> Ship =
+  let a = thrust * gAccel() in
+  let phi1 = s.phi + a * dtau in
+  let absA = if a < 0.0 then 0.0 - a else a in
+  let dt = if absA < 0.000000001 then cosh(s.phi) * dtau else (sinh(phi1) - sinh(s.phi)) / a in
+  let dx = if absA < 0.000000001 then sinh(s.phi) * dtau else (cosh(phi1) - cosh(s.phi)) / a in
+  { tick: s.tick + 1, phi: phi1, tau: s.tau + dtau, t: s.t + dt, x: s.x + dx }
+
+export pure func beta(s: Ship) -> float = sinh(s.phi) / cosh(s.phi)
+export pure func gamma(s: Ship) -> float = cosh(s.phi)
+
+pure func report(s: Ship) -> string =
+  encode(jo([
+    kv("tick", jint(s.tick)),
+    kv("beta", jnum(beta(s))),
+    kv("gamma", jnum(gamma(s))),
+    kv("tau", jnum(s.tau)),
+    kv("t", jnum(s.t)),
+    kv("x", jnum(s.x))
+  ]))
+
+func loop(s: Ship) -> () ! {IO} {
+  let line = readLine(());
+  match decode(line) {
+    Ok(j) => {
+      let cmd = match getString(j, "cmd") { Some(c) => c, None => "quit" };
+      if cmd == "step" then {
+        let thrust = match getNumber(j, "thrust") { Some(v) => v, None => 0.0 };
+        let dtau = match getNumber(j, "dtau") { Some(v) => v, None => 0.0 };
+        let s2 = step(s, thrust, dtau);
+        println(report(s2));
+        flush(());
+        loop(s2)
+      } else ()
+    },
+    Err(_) => ()
+  }
+}
+
+export func main() -> () ! {IO} {
+  println(report(initShip()));
+  flush(());
+  loop(initShip())
+}
