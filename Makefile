@@ -4,14 +4,18 @@ SIM := sim/ship.ail
 SIMFLAGS := --quiet --package-dir sim --caps IO --entry main
 SCRATCH := .godot/tmp
 
-.PHONY: all test physics sim parity strict golden capture run import
+.PHONY: all test deps physics sim parity strict golden capture run import
 
 all: test
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
 
-test: import physics sim parity strict   ## everything that runs without a GPU window
+deps:              ## fetch locked AILANG packages into the cache; fail if the lock would change
+	cd sim && $(AILANG) lock
+	git diff --exit-code sim/ailang.lock
+
+test: deps import physics sim parity strict   ## everything that runs without a GPU window
 
 physics:           ## CPU physics reference vs known values
 	$(GODOT) --headless --path . --script tests/test_physics.gd
