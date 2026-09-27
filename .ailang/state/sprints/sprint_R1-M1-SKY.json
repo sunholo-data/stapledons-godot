@@ -1,0 +1,164 @@
+{
+  "sprint_id": "R1-M1-SKY",
+  "status": "approved",
+  "created": "2026-09-27T19:34:58Z",
+  "design_doc": "design_docs/planned/r1/m1-relativistic-sky.md",
+  "sprint_plan": "design_docs/planned/r1/m1-relativistic-sky-sprint.md",
+  "github_issues": [],
+  "velocity": {
+    "target_loc_per_day": 700,
+    "estimated_total_loc": 3000,
+    "estimated_days": 5,
+    "basis": "measured ~1,650 LOC in one attended session (M0 + package), planned at ~half for data pipelines, perf work and review gates"
+  },
+  "features": [
+    {
+      "id": "M1.0_REVIEW_BUILDS",
+      "description": "User reviews on their Mac laptop: macOS export preset bundling ailang + sim + package cache, make export-macos, CI macos-build on tags -> GitHub Release; per-milestone review page (claude.ai artifact) + PR",
+      "estimated_loc": 150,
+      "dependencies": [],
+      "session": 1,
+      "acceptance_criteria": [
+        "make export-macos produces an .app whose --capture run works on the Studio with no ailang on PATH",
+        "GitHub pre-release v0.1.0-m0 carries the zipped .app",
+        "User launches it on their laptop and confirms"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.1_PHOTOMETRY_PACKAGE",
+      "description": "sunholo/relativity@0.2.0 photometry module: Mamajek-table Teff(BP-RP) and G-V, V->lux; generated table; published and pinned in sim",
+      "estimated_loc": 500,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Known-star Teff within 5%: Sun 5770K, Sirius A ~9900K, Proxima ~3000K, alpha Cen B ~5200K, Barnard ~3200K (ailang test --package .)",
+        "G-V from table agrees with Riello 2021 cubic within 0.05 mag over 0.4<=BP-RP<=3.0",
+        "illuminanceFromV(0) = 2.56e-6 lux",
+        "ailang pkg quality: no gates; CHANGELOG ## 0.2.0; [release] kind feature",
+        "sunholo/relativity@0.2.0 visible in `ailang pkg info`; sim/ailang.lock pins 0.2.0; make test green"
+      ],
+      "session": 1,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "gate": "Publishing is outward-facing: attended only"
+    },
+    {
+      "id": "M1.6_FREE_MOTION",
+      "description": "Ship heading + 3D position in pure sim core, protocol v1.1 (hello/version, heading, pos) with codec tests, free-look camera, off-axis CPU checks and GPU goldens",
+      "estimated_loc": 450,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make strict green with heading-aware scripted run; make parity identical",
+        "sim/protocol_test.ail: >=12 codec round-trip checks pass",
+        "test_physics.gd: spec \u00a72 values pass for velocity along +-X, +-Y, (1,1,-1)/sqrt3 and a rolled camera",
+        "make golden: 12 directions x 4 speeds x 3 camera orientations within 0.75 px (AC5 stars)"
+      ],
+      "session": "1-2",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.2_CATALOGUE_PIPELINE",
+      "description": "CNS5+GCNS from VizieR -> tools/extract.py (parse only) -> sim/tools/catalogue.ail (physics via package) -> binary tiers; VM parity + timing",
+      "estimated_loc": 500,
+      "dependencies": [
+        "M1.1_PHOTOMETRY_PACKAGE"
+      ],
+      "acceptance_criteria": [
+        "make catalogue TIER=quick|medium|large produce stars_<tier>.bin + JSON header with checksums",
+        "extract.py: alpha Cen lands at 4.37 +- 0.02 ly in galactic XYZ",
+        "make catalogue-parity: VM and interpreter outputs byte-identical on medium; timings and bridged calls recorded in notes (AC2)",
+        "catalogue_stats.py: M dwarfs >= 60% of medium tier (AC3)",
+        "starmap-manager scripts fetch from VizieR (old Gaia Sky URL removed)",
+        "If fallback path used: 1000-row package cross-check passes and the shipped path is recorded"
+      ],
+      "session": 2,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.3_STAR_RENDERING_V2",
+      "description": "Binary tier loader, 331k-instance MultiMesh with Teff/E_v, rebasing (CPU or vertex-shader plan B), make bench",
+      "estimated_loc": 400,
+      "dependencies": [
+        "M1.2_CATALOGUE_PIPELINE"
+      ],
+      "acceptance_criteria": [
+        "Loader rejects bad version/checksum (test)",
+        "Rebase cost measured; <= 4 ms or vertex-shader path in use",
+        "make bench: large tier stars-only p99 frame < 16.7 ms at 2560x1440"
+      ],
+      "session": 3,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.4a_BACKGROUND_SPIKE",
+      "description": "Timeboxed: star-removed NOIRLab panorama (A) vs synthetic diffuse map (B); comparison renders; USER DECISION",
+      "estimated_loc": 150,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "m1-4a-background-options.md with renders at 0/0.9/0.99c and residual crops for A and B",
+        "User decision A or B recorded in design doc"
+      ],
+      "session": 3,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "gate": "STOP for user decision before M1.4b"
+    },
+    {
+      "id": "M1.4bc_SKY_MODEL_SHADER",
+      "description": "Per-texel colour-temperature sky model (log Tc, log Lv) + sky shader with per-pixel deaberration, dopplerApparent, surfaceBrightnessRatio",
+      "estimated_loc": 600,
+      "dependencies": [
+        "M1.4a_BACKGROUND_SPIKE",
+        "M1.1_PHOTOMETRY_PACKAGE"
+      ],
+      "acceptance_criteria": [
+        "sky_model.py reports median fit residual; <= 0.02 dxy or escalation flagged",
+        "Background marker texel lands within 1 px of deaberrate prediction at 4 speeds x 3 views (AC5 background)",
+        "Linear-tonemap colour golden: chromaticity within 0.01 of rgb(D*T) at D in {0.3,1,3} (AC6)"
+      ],
+      "session": 4,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.5_EXPOSURE_BENCH_REPORT",
+      "description": "Photometric exposure (lux / cd/m2, EV auto-exposure with clamp), bench, reference renders, M1 report",
+      "estimated_loc": 250,
+      "dependencies": [
+        "M1.3_STAR_RENDERING_V2",
+        "M1.4bc_SKY_MODEL_SHADER"
+      ],
+      "acceptance_criteria": [
+        "Naked-eye limiting magnitude at default exposure in [6.0, 6.8] (AC8)",
+        "make bench large tier + background: p99 < 16.7 ms at 2560x1440 (AC7)",
+        "Reference renders 5 speeds x 3 views committed and human-reviewed (AC9)",
+        "CI green; strict and parity green (AC10)",
+        "design_docs/implemented/r1/m1-report.md written; design doc moved to implemented/"
+      ],
+      "session": 5,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "approved": "2026-09-27"
+}

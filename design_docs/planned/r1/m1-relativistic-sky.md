@@ -84,10 +84,11 @@ A new `photometry` module:
   - It covers O to L dwarfs.
   - It's a table, not a polynomial, so it doesn't diverge outside its range.
     Outside the table, values clamp and a flag says so.
-- **`gMinusV(bpRp)`:** the Gaia DR3 photometric relation G−V as a cubic in
-  BP−RP (Riello et al. 2021, Gaia EDR3 documentation §5.5.1). **The exact
-  coefficients get checked against the published table during the sprint**
-  and recorded with their source in the code.
+- **`gMinusV(bpRp)`:** from the **same Mamajek table**, which has a `G-V`
+  column (G2V: Teff 5770, Bp−Rp 0.823, G−V −0.165; checked 2026-09-27). One
+  source for both relations keeps them consistent. The Gaia DR3 cubic
+  (Riello et al. 2021) is a *test-only* cross-check: the two must agree within
+  0.05 mag over 0.4 ≤ BP−RP ≤ 3.0.
 - **`illuminanceFromV(v)`:** E = 10^(−0.4 (V + 13.98)) lux, so V = 0 gives
   about 2.5 µlx.
 - **White dwarfs** (GCNS `WDprob > 0.5`): the dwarf sequence doesn't apply.
@@ -111,8 +112,10 @@ Then `ailang pkg quality` with no gates, and publish 0.2.0.
 ### M1.2 Catalogue pipeline v2 (an AILANG stress test, with a Python fallback)
 
 ```
-data/raw/ (gitignored)                    data/starmap/ (committed or LFS)
-  cns5 VOTable / GCNS table1c   ──►  tools/extract.py  ──►  compact CSV
+data/raw/ (gitignored)                    data/starmap/ (quick + medium committed; large built locally)
+  CNS5  VizieR J/A+A/670/A19 cns5.dat (5,909 stars, G/BP/RP)
+  GCNS  VizieR J/A+A/649/A6 table1c (331,312 stars, 75 MB)
+                                ──►  tools/extract.py  ──►  compact CSV
                                         (parse only)          id,x,y,z,G,BP-RP,wd
                                                                   │
                                      sim/tools/catalogue.ail  ◄───┘
@@ -142,6 +145,9 @@ data/raw/ (gitignored)                    data/starmap/ (committed or LFS)
 - **Binary format:** 331k × 24 B ≈ 8 MB, loaded with
   `FileAccess.get_buffer` → `PackedFloat32Array`. JSON stays for CNS5 only
   (human-readable, used by tests).
+- **Sources** (checked 2026-09-27): CNS5 from VizieR `J/A+A/670/A19`. The Gaia
+  Sky URL in the old skill returns 404; the `starmap-manager` scripts get fixed
+  in this milestone.
 - **Tiers** come from the `starmap-manager` skill:
   - quick = CNS5 (≈5.9k)
   - medium = GCNS filtered to about 50k (M1 default)
