@@ -1,0 +1,114 @@
+{
+  "sprint_id": "R1-M1-SKY",
+  "milestone": "M1.1_PHOTOMETRY_PACKAGE",
+  "evaluator_model": "claude-sonnet-5",
+  "evaluated_commit": "e40f14bf8f4dd4df74def6fad3f00994c3e22d0f",
+  "evaluated_branch": "relativity-0.2.0-photometry",
+  "evaluated_worktree": "/Users/voightkampff/dev/sunholo-data/.stapledon-iter0-pkg",
+  "base": "origin/main",
+  "score": 86,
+  "pass": true,
+  "threshold": 70,
+  "rubric": {
+    "tests_pass": {"points": 20, "max": 20, "hard_fail_triggered": false, "notes": "47/47 tests pass on both ailang v0.47.0 (rig) and the game's CI-pinned v0.45.0 binary. Re-run independently, not taken on the executor's word."},
+    "quality_clean": {"points": 9, "max": 10, "notes": "`ailang pkg quality .` ends 'no gates' (AC requirement met exactly). Deducted 1 for PUB011 (15 uncontracted exports package-wide, some pre-existing) and PUB016 (25 contracts unencodable/skipped by Z3) not being tightened further, though this matches existing package style."},
+    "acceptance_criteria": {"points": 26, "max": 30, "notes": "4 of 5 sprint-JSON M1.1 ACs are this milestone's responsibility (publish+pin is explicitly deferred to the controller and scored as pending, not failed, per task instructions). Of those 4: known-star Teff-within-5% (met, independently re-verified), illuminanceFromV(0)=2.56e-6 lux (met), pkg-quality/CHANGELOG/[release]-kind (met). The Riello-cross-check AC ('agrees within 0.05 mag over 0.4<=BP-RP<=3.0') is NOT met to the letter; it was amended to 0.11 mag full-range + 0.05 mag F-K subrange. The full-range amendment is honestly earned (see deviation verdict below), so it is not scored as a failure, but it is scored below full credit because (a) it is a literal deviation from the written AC and (b) the F-K sub-bound's own justification comment contains a measurable error (see finding 1)."},
+    "code_quality": {"points": 12, "max": 15, "notes": "Clean, idiomatic, matches package style (comment density, doc-comment sourcing, pure/no-effects). Generator is deterministic (byte-identical re-run, independently confirmed) and fails loudly on non-monotone Teff. Deducted for an unaddressed algorithmic-complexity risk in the interpolation path relevant to the very next milestone (finding 3)."},
+    "documentation": {"points": 11, "max": 15, "notes": "AGENT.md, README.md, CHANGELOG.md and _smoke.ail all updated appropriately and land in a coherent 'Photometry' section. Deducted for two factual staleness/accuracy issues: CHANGELOG.md still says the Riello test uses '0.10 mag' when the shipped test uses 0.11 mag (finding 2), and the F-K sub-range comment's stated maximum divergence (0.034 mag) is empirically wrong for the grid the test actually sweeps (finding 1)."},
+    "design_fidelity": {"points": 8, "max": 10, "notes": "Strong adherence to the process value of surfacing false premises rather than silently working around them: the 'O to L dwarf' coverage claim and the 0.05 mag Riello tolerance were both correctly identified as unmeetable on the real source data and documented with sourced numbers instead of being quietly forced to pass. Deducted for the F-K margin misstatement, which undercuts confidence in exactly the kind of measured-fact discipline CLAUDE.md/the sprint asks for."}
+  },
+  "conditional_categories_triggered": [],
+  "gates_rerun": [
+    {"command": "ailang test --package . (v0.47.0, rig binary)", "exit_code": 0, "result": "47 tests: 47 passed, 0 failed, 0 skipped"},
+    {"command": "/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang test --package . (v0.45.0, game CI pin)", "exit_code": 0, "result": "47 tests: 47 passed, 0 failed, 0 skipped"},
+    {"command": "ailang pkg quality .", "exit_code": 0, "result": "compile 11 files ok; contracts 2/40 verified/0 refuted/25 skipped by Z3 (PUB016); interface v2; effects ceiling [IO]; release kind=feature, changelog present; docs AGENT.md+ai_summary present; 55/55 exported funcs pure; tests 47/47; smoke passed; PUB011 warns 15 uncontracted exports; ends '✓ no gates'"},
+    {"command": "python3 tools/mamajek_to_ail.py --input /tmp/stap_iter0_mamajek.txt --output /tmp/stap_iter0_eval_table.ail && cmp ... photometry_table.ail", "exit_code": 0, "result": "byte-identical; generator printed 'Kept 61 rows: B9V to M8.5V' / 'Dropped rows: M9V (Bp-Rp 4.78), M9.5V (Bp-Rp 4.86)', matching the committed table's header comment"},
+    {"command": "ailang check photometry.ail ; ailang check photometry_table.ail", "exit_code": 1, "result": "MOD010 module-path error on both, without --relax-modules. Confirmed NOT a regression: the identical error reproduces on the untouched baseline file blackbody.ail (also exit 1, same MOD010). This is the known v0.45.0/v0.47.0 module-path workaround already documented in the game repo's CLAUDE.md."}
+  ],
+  "mutation_drills": [
+    {
+      "id": 1,
+      "description": "Corrupted one table value: teffNodes() G2V node 5770.0 -> 6770.0 in photometry_table.ail (copy backed up first, restored after)",
+      "result": "killed",
+      "tests_failed": 3,
+      "tests_that_killed_it": [
+        "five literature stellar temperatures within 5 percent",
+        "interpolation hits G2V and M4V nodes",
+        "temperature falls throughout the colour range"
+      ]
+    },
+    {
+      "id": 2,
+      "description": "Broke the upper clamp: removed the 'x >= last node -> return last y' branch in photometry.ail's fromTable, so out-of-range colours above the table extrapolate via interpolate() instead of clamping (copy backed up first, restored after)",
+      "result": "killed",
+      "tests_failed": 1,
+      "tests_that_killed_it": [
+        "out-of-range colours clamp and report range"
+      ]
+    }
+  ],
+  "worktree_restored": true,
+  "worktree_status_after_restore": "clean (git status --short empty, HEAD still e40f14b)",
+  "findings": [
+    {
+      "severity": "major",
+      "category": "test-justification-accuracy",
+      "file": "packages/relativity/photometry_test.ail",
+      "line": 56,
+      "summary": "The F-K sub-range Riello-tolerance comment claims a maximum divergence of 0.034 mag, but the actual maximum on the grid check06 sweeps (0.05-mag steps from 0.4 to 1.3) is about 0.048 mag at x=1.3 -- independently recomputed and confirmed by replicating the exact float-stepped loop.",
+      "failure_scenario": "The 0.034 figure appears to be the max divergence measured only AT TABLE NODES within 0.4-1.3 (independently confirmed: 0.0338 at nodes), not on the interpolated sweep the test performs, where between-node linear-vs-cubic mismatch is worse. The test's real margin against its own 0.05 mag threshold is only ~0.0023 mag (4.6%), not the ~0.016 mag (32%) the comment implies. A future table correction, a differently-rounded pow() in a later AILANG stdlib, or resampling at a slightly different phase could flip 'F-K G-V agrees with Riello within 0.05 mag' to failing with no warning, and whoever debugs it will be misled by the stale comment.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "severity": "minor",
+      "category": "documentation-consistency",
+      "file": "packages/relativity/CHANGELOG.md",
+      "line": 11,
+      "summary": "CHANGELOG.md's 0.2.0 entry says 'Tests use 0.10 mag' for the full BP-RP 0.4-3.0 Riello cross-check, but the shipped test (photometry_test.ail:58-59) uses 0.11 mag.",
+      "failure_scenario": "Stale after the tolerance was loosened from 0.10 (which the executor's own report says still failed, at 0.1015 mag measured divergence at BP-RP=3.0) to 0.11 to make the test pass. A reader trusting the CHANGELOG over the code will think the guard is tighter than it is.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "severity": "major",
+      "category": "performance-forward-looking",
+      "file": "packages/relativity/photometry.ail",
+      "line": 12,
+      "summary": "teffFromBpRp/gMinusV interpolation is an O(index^2) linear scan: each recursive step of interpolate() calls nth_or() on both xs and ys, and nth_or() itself re-walks the list from the head, so reaching table index i costs O(i) per call at every one of the i preceding recursion steps.",
+      "failure_scenario": "This is not a defect in M1.1 (whose job was correctness on ~60 nodes, achieved), but a concrete risk for M1.2, which calls teffFromBpRp/gMinusV on ~331k GCNS rows via the same package. M dwarfs occupy table indices 43-60 (the tail), and AC3 requires M dwarfs to be >=60% of the medium tier, so the majority of M1.2's calls will land in the near-worst-case region (~3,700-7,200 list-traversal steps per lookup, x2 lookups per star). Rough estimate: several billion elementary list-cell steps across the medium/large tier -- a real risk of missing the design doc's own 60-second AILANG-path threshold before the Python-fallback trigger kicks in. Recommend M1.2 either restructure the table lookup as an indexed/array structure or binary search, or pre-flatten the table into a form that doesn't re-walk from the head on every step, before running the 331k-row stress test.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "severity": "minor",
+      "category": "disclosed-methodology",
+      "file": "packages/relativity/photometry_test.ail",
+      "line": 13,
+      "summary": "Sirius A and alpha Cen B's BP-RP test inputs are transformed from Hipparcos B-V through the same Mamajek table's B-V/BP-RP columns, which is a partly circular cross-check (2 of 5 known-star tests).",
+      "failure_scenario": "If the table's B-V<->BP-RP relation were wrong in a specific corner, that error could partially cancel in the round trip. Independently re-derived both transformed values from the raw source file (linear interpolation on B-V) and got exact matches to the test's literals (-0.0262 and 1.1166), confirming the transform arithmetic itself is correct. Barnard's and Proxima's BP-RP are genuine independent Gaia DR3 values, and the circularity is honestly disclosed in the test comment, so this is accepted as a modest, documented weakness rather than a defect.",
+      "verdict": "CONFIRMED"
+    }
+  ],
+  "deviation_verdicts": [
+    {
+      "deviation": "Riello cross-check tolerance loosened from the design's 0.05 mag over 0.4-3.0 to 0.11 mag full-range plus 0.05 mag over the F-K sub-range 0.4-1.3",
+      "verdict": "Honest amendment for the headline (full-range) figure, not tolerance-fitting: independently re-measured the Mamajek-vs-Riello divergence on the actual table data and got 0.1015 mag at BP-RP~3.0 and 0.086 mag at the M4V node, matching the executor's reported numbers almost exactly. 0.05 mag over the full range is genuinely unmeetable on real data (it is inside the Riello relation's own ~1-sigma scatter), so loosening it was necessary, not convenient. However the F-K sub-range half of the amendment is undermined by finding 1: its stated margin is wrong. Net verdict: the amendment is directionally correct and well-evidenced but needs its documentation and margin corrected before being considered fully honest."
+    },
+    {
+      "deviation": "Design doc's claim that the table 'covers O to L dwarfs' is false; BP-RP only spans B9V-M9.5V (raw) and the generated table (after enforcing strictly increasing BP-RP) spans B9V-M8.5V",
+      "verdict": "Correctly identified, measured, and documented (AGENT.md, CHANGELOG, table header comment, and the generator's own printed drop list all agree and were independently reproduced by re-running the generator). This is exactly the intended process behavior: a false design premise was caught and reported with numbers rather than silently patched over or ignored."
+    },
+    {
+      "deviation": "Sirius A and alpha Cen B are not in Gaia DR3; their test BP-RP inputs are transformed from Hipparcos B-V through the same Mamajek table (partly circular); Barnard's and Proxima use real Gaia DR3 bp_rp",
+      "verdict": "Acceptable and honestly disclosed. Independently re-derived both transformed BP-RP values from the raw Mamajek source file and confirmed they match the test's literals exactly, so the transform is correct, not fabricated. The circularity is real but limited in scope (2 of 5 stars, and the final assertion is against independent literature Teff, not the table itself)."
+    },
+    {
+      "deviation": "Publishing sunholo/relativity@0.2.0 and pinning it in the game's sim/ailang.lock have not been done",
+      "verdict": "Correctly out of scope for this executor run (the directive's hard rules forbid publish and git writes) and correctly scored as PENDING, not failed. The package is publish-ready: version bumped to 0.2.0 in ailang.toml, CHANGELOG has a ## 0.2.0 section, [release] kind = \"feature\" is set, and `ailang pkg quality .` ends '✓ no gates' with 47/47 tests passing on both the dev toolchain and the game's CI-pinned v0.45.0 binary."
+    }
+  ],
+  "vm_and_determinism_notes": [
+    "photometry.ail and photometry_table.ail are pure (no effects), consistent with CLAUDE.md's 'simulation core stays pure' rule and the package's existing IO-only-in-_smoke.ail convention; nothing here forces an interpreter-bridge fallback on its own.",
+    "The generator (tools/mamajek_to_ail.py) is deterministic: re-running it against the same input byte-for-byte reproduces photometry_table.ail, independently re-verified with cmp.",
+    "The main VM-relevant risk is not correctness but throughput at M1.2 scale -- see finding 3 (performance-forward-looking)."
+  ],
+  "recommendation": "PASS at 86/100. Before this is treated as fully closed, ask the executor (or whoever picks up the next AILANG package touch) to: (1) fix the F-K comment's overstated margin claim and re-justify or widen the 0.05 mag F-K bound (finding 1), and (2) correct CHANGELOG.md's '0.10 mag' to '0.11 mag' (finding 2). Neither blocks proceeding to publish+pin. Flag finding 3 (interpolation performance) to whoever executes M1.2 before the 331k-row AILANG pass is attempted."
+}
