@@ -68,6 +68,23 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-09-27 (night): iteration 0, M1.1 LANDED
+
+- **M1.1 ✅** `sunholo/relativity@0.2.0` published (photometry: BP−RP → T_eff,
+  G−V, V → lux); package PR sunholo-data/ailang-packages#81; game pin PR #2,
+  merge `b258222`, CI green. Executor codex gpt-6-sol; evaluator Sonnet 86/100.
+- **Amended AC1** (measured on the source table, D-2): the Riello G−V check is
+  0.11 mag over 0.4–3.0 (the data differ by 0.1015 at 3.0), 0.05 over 0.4–1.3;
+  BP−RP coverage is B9V–M8.5V, not O–L.
+- **Clause map:** 1 UNMET (M1.2 ∥ M1.6 routable) · 2 UNMET (M2 needs a design
+  doc) · 3 UNMET (M3 needs a design doc) · 4 UNMET (blocked: ship-interior
+  decision) · 5 ongoing (strict VM green at this landing).
+- **M1.2 risk:** the photometry interpolation is an `nth_or` list scan
+  (O(n²) per lookup); plan M1.2 on AILANG v0.47 `Array[float]` + binary search.
+  The rig's PATH binary is now v0.47.0; CI and the bundled runtime pin v0.45.0.
+- Harness ticket `mission-base:hardcoded-origin-dev` filed (this repo has no
+  `dev` branch).
+
 ## STATUS 2026-09-27 (late): ARMED, iteration 0 next
 
 - Registration: `sunholo-data/ailang#1340` (registry, env, boot offset,
@@ -87,6 +104,20 @@ The newest 3 STATUS stamps live here; older ones move to
   next step is a sprint plan, attended.
 - Not armed. No bookkeeping issue. The `godot-game` verify profile has not been
   added to the shared skill.
+
+## Decision ledger
+
+<!-- decision-ledger:start -->
+| ID | Status | Decision / recorded answer | Evidence |
+|---|---|---|---|
+| D-1 | OPEN | Ratify the drafted bar (clauses 1–5), queue and guardrails. Recommendation: ratify as drafted. Default if unanswered: the loop keeps working the queue on the drafted bar. | Charter iteration-0 definition; loop armed by Mark 2026-09-27; iteration 0 ran M1.1 under the standing publish grant. |
+| D-2 | OPEN | Accept the M1.1 AC1 amendments: Riello G−V cross-check 0.11 mag over BP−RP 0.4–3.0 plus 0.05 over 0.4–1.3; table coverage B9V–M8.5V. Recommendation: accept. Default: accepted (0.2.0 is published). | Measured on Mamajek v2022.04.16: 0.1015 mag at BP−RP 3.0; M9V/M9.5V BP−RP reverses. Evaluator verdict: honest amendment. |
+| D-3 | OPEN | Tier data in git for M1.2. Recommendation: commit quick and medium tiers, not large. Default: that, when M1.2 starts. | Handover comment on #1, 2026-09-27. |
+| D-4 | OPEN | White dwarfs in M1: approximate blackbody fit, flagged approximate (design open question 3). Recommendation: yes. Default: yes, when M1.2 starts. | Handover comment on #1; `photometry` 0.2.0 deliberately has no WD model. |
+<!-- decision-ledger:end -->
+
+The M1.4a background choice and the default exposure are asked when those
+milestones are reached (design doc open questions 1 and 4).
 
 ## CURRENT GOAL
 
@@ -143,7 +174,7 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · [NEXT] M1.1 → (M1.2 ∥ M1.6) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · ~3,000 LOC
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · [NEXT] M1.2 ∥ M1.6 → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · ~3,000 LOC
 2. **M2** journey core · clause 2 · design doc needed · ~2,000 LOC (estimate)
 3. **M3** black holes · clause 3 · design doc needed; `sunholo/relativity` 0.3 (Binet integrator) · ~1,800 LOC (estimate)
 4. **M4** first journey · clause 4 · design doc needed; blocked on the ship-interior decision (design repo open question) · ~2,500 LOC (estimate)
