@@ -18,4 +18,4 @@
 - **Tooling:** `make test` (physics, sim, parity, strict) and CI.
 - **Process:** the design-doc → sprint → execute → evaluate cycle, the
   `game-vision-designer` and `starmap-manager` skills, and the M1 design doc.
-- **Upstream reports:** 9 AILANG bug and DX reports.
+- **Upstream reports:** 11 AILANG bug and DX reports.

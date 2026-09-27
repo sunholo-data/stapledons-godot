@@ -83,7 +83,9 @@ ratifying it and arming the launchd loop are the user's decisions.
 - **Known v0.45.0 workarounds:**
   - Pass `--quiet`: the progress banner goes to stdout otherwise.
   - Pass `--package-dir`: otherwise the MOD010 module-path check fails.
-  - Run `ailang lock` after `ailang install`.
+  - Run `ailang lock` after `ailang install`. On a clean machine, `ailang lock`
+    is also what fills the package cache (`make deps`). The lockfile's
+    `generated_at` line churns on every run, so ignore it when diffing.
   - In `test` blocks, call named `check…()` functions: whole-number float
     literals are misread as ints inside test blocks.
 - The game is meant to stress-test the AILANG bytecode VM. When the VM and the

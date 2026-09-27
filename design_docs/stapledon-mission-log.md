@@ -8,6 +8,8 @@ Append-only. One entry per iteration, newest at the bottom.
   starfield), published `sunholo/relativity@0.1.0`, and added CI.
 - **Process:** set up the design-doc → sprint → execute → evaluate cycle. Wrote
   the M1 design doc and this charter draft.
-- **Upstream:** 9 AILANG reports sent through `ailang messages` (gcp store).
+- **Upstream:** 11 AILANG reports sent through `ailang messages` (gcp store).
 - **Next:** Mark ratifies the charter (or chooses to stay attended), then the
   M1 sprint plan.
+- **CI:** green on ubuntu (Godot 4.7.2, AILANG v0.45.0). The strict-VM result
+  on Linux x64 is bit-identical to darwin arm64 (21.392852753780428).
