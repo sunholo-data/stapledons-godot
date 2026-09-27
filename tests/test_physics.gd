@@ -86,9 +86,9 @@ func _init() -> void:
 	check("Sun-like star astern at 0.9c fades by > 100x", 1.0 if Relativity.point_flux_ratio(5700.0, sqrt(1.0 / 19.0)) < 0.01 else 0.0, 1.0, 0.0)
 
 	print("Constant proper acceleration (sim cross-check reference)")
-	var a := 1.032295 # 1 g in c/yr
-	check("beta after 1 ship-year at 1 g = tanh(a)", tanh(a), 0.7748271525, 1e-9)
-	check("Earth years after 1 ship-year = sinh(a)/a", sinh(a) / a, 1.1873122964, 1e-9)
+	var a := 1.032295275553596 # 1 g in c/yr (sunholo/relativity standardGravity)
+	check("beta after 1 ship-year at 1 g = tanh(a)", tanh(a), 0.774827262642545, 1e-12)
+	check("Earth years after 1 ship-year = sinh(a)/a", sinh(a) / a, 1.187312401712, 1e-11)
 
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)

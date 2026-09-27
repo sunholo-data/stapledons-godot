@@ -24,7 +24,7 @@ the visible band and disappear.
 Requires Godot 4.7+ and AILANG 0.45+ on `PATH`, or set `AILANG_BIN`.
 
 ```sh
-make test      # physics reference, AILANG sim vs closed form, VM/interpreter parity (headless)
+make test      # physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (headless)
 make golden    # GPU shader vs CPU reference star positions (opens a window)
 make capture   # 1 g voyage driven by the AILANG sim, PNGs to renders/
 make run       # interactive: W/S thrust, arrows look, 1-4 fwd/stbd/astern/up, +/- time warp
@@ -34,7 +34,8 @@ make run       # interactive: W/S thrust, arrows look, 1-4 fwd/stbd/astern/up, +
 
 | Path | What |
 |---|---|
-| `sim/ship.ail` | Ship kinematics in AILANG: exact constant proper acceleration via rapidity; NDJSON loop |
+| `sim/core.ail` | Pure simulation core. Runs entirely on the bytecode VM (`make strict`). Physics from [`sunholo/relativity`](https://github.com/sunholo-data/ailang-packages/tree/main/packages/relativity) |
+| `sim/ship.ail` | I/O shell: the NDJSON loop around the core (I/O is bridged to the interpreter until AILANG Phase 2E) |
 | `bridge/sim_bridge.gd` | Spawns the sim and exchanges one JSON line per tick |
 | `physics/relativity.gd` | Reference SR maths (float64): aberration, Doppler, point-source beaming |
 | `physics/blackbody.gd` | Planck spectrum × CIE 1931 → linear sRGB; temperature LUT for the shader |

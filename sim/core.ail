@@ -1,0 +1,33 @@
+module stapledons/sim/core
+
+-- Pure simulation core. No effects: everything here must run on the bytecode
+-- VM under --strict-bytecode (checked by `make strict`). I/O lives in ship.ail.
+-- Physics comes from the published sunholo/relativity package.
+
+import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf)
+
+export type Ship = { tick: int, motion: Motion }
+
+export pure func initShip() -> Ship = { tick: 0, motion: rest() }
+
+-- Advance one tick: dtau ship-years under thrust x 1 g (thrust in [-1, 1]).
+export pure func step(s: Ship, thrust: float, dtau: float) -> Ship
+  requires { dtau >= 0.0 }
+  ensures { result.tick == s.tick + 1 }
+{
+  { tick: s.tick + 1, motion: accelerate(s.motion, thrust * standardGravity(), dtau) }
+}
+
+export pure func beta(s: Ship) -> float = betaOf(s.motion.phi)
+export pure func gamma(s: Ship) -> float = gammaOf(s.motion.phi)
+
+pure func burn(s: Ship, thrust: float, dtau: float, n: int) -> Ship =
+  if n <= 0 then s else burn(step(s, thrust, dtau), thrust, dtau, n - 1)
+
+-- Scripted voyage for the strict-bytecode check: accelerate for `ticks`
+-- ticks, decelerate for as many, return total galaxy years. Must equal
+-- 2 sinh(g T)/g for T = ticks * 0.01 ship-years.
+export pure func scripted(ticks: int) -> float {
+  let out = burn(burn(initShip(), 1.0, 0.01, ticks), -1.0, 0.01, ticks);
+  out.motion.t
+}

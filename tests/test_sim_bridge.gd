@@ -3,7 +3,7 @@ extends SceneTree
 ## against closed-form constant-acceleration kinematics.
 ## Run:  godot --headless --path . --script tests/test_sim_bridge.gd
 
-const A := 1.032295 # 1 g in c/yr, must match sim/ship.ail gAccel()
+const A := 1.032295275553596 # 1 g in c/yr, sunholo/relativity standardGravity()
 
 var failures := 0
 

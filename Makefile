@@ -4,14 +4,14 @@ SIM := sim/ship.ail
 SIMFLAGS := --quiet --package-dir sim --caps IO --entry main
 SCRATCH := .godot/tmp
 
-.PHONY: all test physics sim parity golden capture run import
+.PHONY: all test physics sim parity strict golden capture run import
 
 all: test
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
 
-test: import physics sim parity   ## everything that runs without a GPU window
+test: import physics sim parity strict   ## everything that runs without a GPU window
 
 physics:           ## CPU physics reference vs known values
 	$(GODOT) --headless --path . --script tests/test_physics.gd
@@ -26,6 +26,13 @@ parity:            ## bytecode VM and tree-walking interpreter must agree bit fo
 	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < $(SCRATCH)/parity_in.txt > $(SCRATCH)/vm.txt
 	$(AILANG) run $(SIMFLAGS) $(SIM) < $(SCRATCH)/parity_in.txt > $(SCRATCH)/interp.txt
 	cmp $(SCRATCH)/vm.txt $(SCRATCH)/interp.txt && echo "parity: identical ($$(wc -l < $(SCRATCH)/vm.txt) lines)"
+
+strict:            ## pure sim core must run entirely on the bytecode VM (no evaluator fallback)
+	@want=$$(python3 -c "import math; g=1.032295275553596; print(repr(2*math.sinh(g*3.0)/g))"); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry scripted --args-json 300 sim/core.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry scripted --args-json 300 sim/core.ail); \
+	echo "strict VM $$got | interpreter $$interp | closed form $$want"; \
+	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)"
 
 golden:            ## GPU shader vs CPU reference star positions (needs a GPU window)
 	$(GODOT) --path . -- --golden
