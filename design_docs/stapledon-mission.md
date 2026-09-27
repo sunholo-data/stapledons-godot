@@ -2,10 +2,10 @@
 
 <!--
   Charter drafted from ailang/design_docs/mission-charter-TEMPLATE.md on 2026-09-27.
-  DRAFT: NOT RATIFIED, NOT ARMED. No launchd job, no bookkeeping issue and no
-  off-switch file exist yet. Iteration 0 (ratification with Mark) must happen
-  before any autonomous iteration, and arming is Mark's decision. Until then,
-  the inner loop (design doc → sprint → execute → evaluate) runs attended.
+  ARMED 2026-09-27 at Mark's request ("you have permission to get it up and
+  running"), with registration in sunholo-data/ailang#1340. Iteration 0 =
+  ratification of the bar, the queue and the guardrails, reported on issue #1.
+  Live missions after arming: fleet, world, stapledon.
 -->
 
 **Type:** Long-running mission, a peer of the AILANG-repo missions. When armed,
@@ -29,14 +29,15 @@ They are never worked around silently.
 symlink. This repo carries only game-specific skills (`game-vision-designer`,
 `starmap-manager`).
 
-**Scheduling:** NOT ARMED. When armed: launchd `dev.ailang.mission-stapledon`,
-staggered against the other live missions, with the off switch at
-`~/.ailang/state/mission-stapledon.disabled`.
+**Scheduling:** launchd `dev.ailang.mission-stapledon`, every 6 h
+(`missions/stapledon.toml` in `sunholo-data/ailang`, boot offset 2100 s). The
+off switch is `~/.ailang/state/mission-stapledon.disabled`.
 
 **Log:** [stapledon-mission-log.md](stapledon-mission-log.md)
 
-**Human-facing reporting:** a GitHub issue in `sunholo-data/stapledons-godot`,
-created at ratification.
+**Human-facing reporting:** GitHub issue
+[#1](https://github.com/sunholo-data/stapledons-godot/issues/1), rotating
+weekly. Every iteration posts its report there.
 
 ## Repo Profile (M-MISSION-PORTABILITY M2)
 
@@ -44,13 +45,12 @@ created at ratification.
 - **Mission doc:** `design_docs/stapledon-mission.md` (driver: `MISSION_DOC`)
 - **Mission name / state namespace:** `stapledon`, giving
   `~/.ailang/state/mission-stapledon-*`
-- **Bookkeeping issue:** TBD at ratification. The live number will be in
+- **Bookkeeping issue:** `#1`, rotating weekly. The live number is in
   `~/.ailang/state/mission-stapledon-gh-issue`.
 - **CI workflows Gate 3b / Gate 1 poll:** `CI` (job: "headless tests (physics,
   sim, parity, strict VM)")
-- **Verify profile:** `godot-game`. **This profile is PROPOSED and does not
-  exist in the shared skill's table yet.** Adding the row to `mission-control`
-  is a fleet-wide edit, so it's a prerequisite for arming, reviewed on its own:
+- **Verify profile:** `godot-game`, added to the shared skill's table in
+  `sunholo-data/ailang#1340`:
   - **Rebuild before check:** none. The Godot and AILANG binaries are pinned
     releases, and `ailang lock` resolves `sunholo/relativity`.
   - **Full test suite:** `make test` (Godot headless physics tests, simulation
@@ -67,6 +67,17 @@ created at ratification.
 
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
+
+## STATUS 2026-09-27 (late): ARMED, iteration 0 next
+
+- Registration: `sunholo-data/ailang#1340` (registry, env, boot offset,
+  `godot-game` profile). Dry run OK. Bookkeeping issue #1.
+- Sprint R1-M1-SKY is in progress. **M1.0 review builds ✅**: `v0.1.0-m0`
+  runs on Mark's laptop. Next is M1.1 (`sunholo/relativity@0.2.0`
+  photometry).
+- AILANG `origin/dev` is now v0.47.0, with unboxed `Array[float]` and VM-native
+  binary/JSON ingest. Re-plan M1.2's pipeline on it (the rig binary is still
+  v0.45.0; pin the upgrade deliberately).
 
 ## STATUS 2026-09-27: PRE-ITERATION-0, charter drafted, awaiting ratification
 
@@ -111,9 +122,12 @@ The newest 3 STATUS stamps live here; older ones move to
 - **Physics gates are not negotiable.** No SR/GR visual merges without spec
   check values, a GPU golden case and a human-reviewed render (CLAUDE.md,
   definition of done).
-- **Physics maths goes into `sunholo/relativity` first.** Publishing a package
-  version is outward-facing: attended only, never from an unattended
-  iteration.
+- **Physics maths goes into `sunholo/relativity` first.** Mark granted
+  standing permission (2026-09-27) to publish new versions of this package and
+  to cut review-build tags and releases, including from the loop. The full
+  gate still applies before every publish: tests, `pkg quality` with no gates,
+  `CHANGELOG`, `[release] kind`, and a dry run. Other packages or registries
+  need Mark.
 - **Stop for the user** at a design doc's "Open questions", at the data-source
   choice in M1.4a, and at any pillar score of 0 or below.
 - **Never edit the shared `mission-control` skill from this mission.** Propose
@@ -129,11 +143,11 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [NEXT] **M1** sky · clause 1 · design doc exists → sprint plan (M1.1 → M1.2 ∥ M1.6 → M1.3 → M1.4 → M1.5) · ~2,600 LOC
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · [NEXT] M1.1 → (M1.2 ∥ M1.6) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · ~3,000 LOC
 2. **M2** journey core · clause 2 · design doc needed · ~2,000 LOC (estimate)
 3. **M3** black holes · clause 3 · design doc needed; `sunholo/relativity` 0.3 (Binet integrator) · ~1,800 LOC (estimate)
 4. **M4** first journey · clause 4 · design doc needed; blocked on the ship-interior decision (design repo open question) · ~2,500 LOC (estimate)
-5. **Arming prerequisites** · add the `godot-game` verify profile to the shared skill (a fleet-wide review) · create the bookkeeping issue · launchd plist
+5. [LANDED] **Arming prerequisites** · `godot-game` profile, registry, env, bookkeeping issue #1 (`sunholo-data/ailang#1340`)
 
 ---
 **Document created:** 2026-09-27. It is a draft. Iteration 0 ratifies it with
