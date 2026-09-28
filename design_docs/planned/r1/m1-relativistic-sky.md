@@ -210,8 +210,8 @@ data/raw/ (gitignored)                    data/starmap/ (quick + medium committe
   the fixed URLs. `status.sh` reads the binary headers. This work is budgeted
   in the M1.2 row (+80 LOC).
 
-**M1.2d, bright tier (PROPOSED, gated on open question 5; not committed
-scope).**
+**M1.2d, bright tier (ACCEPTED 2026-09-28, decision D-5: “Yes I accept those
+stars”; committed scope).**
 - **Source:** Hipparcos, new reduction (HIP2, van Leeuwen 2007, VizieR
   `I/311`), with `V < 7`, parallax > 0, and **not** matched to a GCNS or CNS5
   source. The match is by position within 1″ after propagating proper motion
@@ -452,7 +452,7 @@ velocity. The camera orientation is client state and never goes to the sim.
 | AC8 | Naked-eye limiting magnitude at the default dark-adapted exposure is between 6.0 and 6.8 | `make bench` report |
 | AC9 | Reference renders at 0, 0.5, 0.9, 0.99 and 0.999c × forward, starboard and astern are committed, and reviewed by a human in the M1 report | `make capture` |
 | AC10 | `make test` is green in CI; the pure simulation core still passes `--strict-bytecode`; the parity check still passes | GitHub Actions `CI` |
-| AC11 | *PROPOSED, only if open question 5 is accepted.* At β = 0, at least 95% of HIP2 stars with V < 2.5 are rendered within 1 px of their predicted position; the number of rendered stars brighter than V = 6.5 is between 5,000 and 9,100 (Bright Star Catalogue range) | `make capture && tools/bright_star_audit.py renders/` |
+| AC11 | *Accepted 2026-09-28 per decision D-5.* At β = 0, at least 95% of HIP2 stars with V < 2.5 are rendered within 1 px of their predicted position; the number of rendered stars brighter than V = 6.5 is between 5,000 and 9,100 (Bright Star Catalogue range) | `make capture && tools/bright_star_audit.py renders/` |
 | AC12 | Protocol v1.1: `hello` answers `proto` 1.1; the unmodified v1.0 bridge test passes; each reason code (`bad_json`, `bad_cmd`, `bad_step`, `bad_heading`, `moving`) leaves the state unchanged; a silent, a truncated-line and a shutdown-ignoring child each fail with `startup_timeout`/`step_timeout` within the stated bounds and leave no child process; the off-axis NDJSON script is bit-identical on the VM and the interpreter; `scriptedOffAxis` matches √2·D within 1e-9 under `--strict-bytecode` | `make sim parity parity-offaxis strict` |
 
 ## Sub-milestones and estimates
@@ -461,7 +461,7 @@ velocity. The camera orientation is client state and never goes to the sim.
 |---|---|---|---|
 | M1.1 | Package `photometry` 0.2.0 | 250 + 250 | — |
 | M1.2 | Catalogue pipeline v2 plus AILANG transform, parity and benchmark; `process_stars.sh` removed and `starmap-manager` scripts and skill fixed (+80) | 430 + 150 | M1.1 |
-| M1.2d | *PROPOSED (open question 5):* HIP2 bright tier, GCNS cross-match, `teffFromBV` in the package (0.3.0), AC11 audit | 150 + 100 | M1.2 |
+| M1.2d | ACCEPTED (D-5, 2026-09-28): HIP2 bright tier, GCNS cross-match, `teffFromBV` in the package (0.3.0), AC11 audit | 150 + 100 | M1.2 |
 | M1.3 | Star rendering v2 (binary loader, 331k instances, rebasing) | 250 + 150 | M1.2 |
 | M1.4 | Background: data spike, spectral model, sky shader | 400 + 200 | M1.1; **user decision after M1.4a** |
 | M1.5 | Photometric exposure and bench mode | 150 + 100 | M1.3, M1.4 |
@@ -495,7 +495,9 @@ Suggested order: M1.1 → (M1.2 ∥ M1.6) → [M1.2d] → M1.3 → M1.4 → M1.5
    package item?
 4. **Default exposure:** dark-adapted naked eye (physically faithful), or a
    camera-like setting? Either way it's a labelled setting.
-5. **Bright-star tier (new, 2026-09-28):** accept the proposed M1.2d, a
+5. **Bright-star tier (new, 2026-09-28). ANSWERED 2026-09-28, D-5: ACCEPTED
+   (Mark Edmondson, attended: “Yes I accept those stars”).** Original
+   question text kept for the record: accept the proposed M1.2d, a
    Hipparcos (HIP2, `I/311`) tier for stars with V < 7 that aren't in GCNS or
    CNS5, together with AC11 and `teffFromBV` in `sunholo/relativity` 0.3.0
    (about +250 LOC)? Without it, stars like Rigel and Deneb exist only as
