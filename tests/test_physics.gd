@@ -18,11 +18,23 @@ func check(name: String, got: float, want: float, tol: float) -> void:
 func angle_deg(a: Vector3, b: Vector3) -> float:
 	return rad_to_deg(acos(clampf(a.dot(b), -1.0, 1.0)))
 
+func test_off_axis_cpu_spec_values() -> void:
+	var headings := [Vector3.RIGHT, Vector3.LEFT, Vector3.UP, Vector3.DOWN,
+		Vector3(1, 1, -1).normalized()]
+	for heading: Vector3 in headings:
+		var side: Vector3 = heading.cross(Vector3.FORWARD).normalized()
+		if side.length() < 0.5:
+			side = heading.cross(Vector3.UP).normalized()
+		check("off-axis transverse aberration %s" % heading, angle_deg(Relativity.aberrate(side, heading, 0.9), heading), rad_to_deg(acos(0.9)), 1e-4)
+		check("off-axis forward Doppler %s" % heading, Relativity.doppler(heading, heading, 0.9), sqrt(19.0), 1e-6)
+		check("off-axis transverse Doppler %s" % heading, Relativity.doppler(side, heading, 0.9), 1.0 / sqrt(0.19), 1e-6)
+
 
 func _init() -> void:
 	var fwd := Vector3(0, 0, -1)
 	var side := Vector3(1, 0, 0)
 	var back := -fwd
+	test_off_axis_cpu_spec_values()
 
 	print("Aberration (sources crowd toward the direction of motion)")
 	check("90 deg source at 0.9c appears at acos(0.9) = 25.842 deg", angle_deg(Relativity.aberrate(side, fwd, 0.9), fwd), rad_to_deg(acos(0.9)), 1e-4)

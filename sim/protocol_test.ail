@@ -1,0 +1,59 @@
+module stapledons/sim/protocol_test
+
+import ./ship (handle, report)
+import ./core (initShip, step)
+import std/json (decode, getString, getNumber)
+import std/result (Ok, Err)
+import std/option (Some, None)
+
+pure func status(line: string) -> string =
+  match decode(line) { Ok(j) => match getString(j, "status") { Some(x) => x, None => "missing" }, Err(_) => "decode_error" }
+
+pure func checkHelloProto11() -> bool {
+  let r = handle(initShip(), "{\"cmd\":\"hello\"}");
+  match decode(r.reply) { Ok(j) => match getString(j, "proto") { Some(x) => x == "1.1" && status(r.reply) == "ok", None => false }, Err(_) => false }
+}
+pure func checkV10StepUnchanged() -> bool {
+  let r = handle(initShip(), "{\"cmd\":\"step\"}");
+  r.ship.tick == 1 && r.ship.motion.x == 0.0 && status(r.reply) == "ok"
+}
+pure func checkBadJson() -> bool {
+  let s = initShip(); let r = handle(s, "{broken");
+  let nan = handle(s, "{\"cmd\":\"step\",\"thrust\":NaN}");
+  status(r.reply) == "bad_json" && r.reply == report(s, "bad_json") && nan.reply == report(s, "bad_json")
+}
+pure func checkBadCmd() -> bool {
+  let s = initShip(); let r = handle(s, "{\"cmd\":\"warp\"}");
+  status(r.reply) == "bad_cmd" && r.reply == report(s, "bad_cmd")
+}
+pure func checkBadStep() -> bool {
+  let s = initShip(); let r = handle(s, "{\"cmd\":\"step\",\"dtau\":-1,\"heading\":{\"x\":1}}");
+  let high = handle(s, "{\"cmd\":\"step\",\"thrust\":2}");
+  let wrong = handle(s, "{\"cmd\":\"step\",\"thrust\":\"1\"}");
+  status(r.reply) == "bad_step" && r.reply == report(s, "bad_step") && high.reply == report(s, "bad_step") && wrong.reply == report(s, "bad_step")
+}
+pure func checkBadHeading() -> bool {
+  let s = initShip(); let r = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1,\"y\":0}}");
+  let norm = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1.00000001,\"y\":0,\"z\":0}}");
+  let huge = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1e400,\"y\":0,\"z\":0}}");
+  status(r.reply) == "bad_heading" && r.reply == report(s, "bad_heading") && norm.reply == report(s, "bad_heading") && huge.reply == report(s, "bad_heading")
+}
+pure func checkMoving() -> bool {
+  let s = step(initShip(), 1.0, 1.0);
+  let r = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}");
+  status(r.reply) == "moving" && r.reply == report(s, "moving")
+}
+pure func checkRejectedStateUnchanged() -> bool {
+  let s = step(initShip(), 1.0, 1.0);
+  let r = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}");
+  r.ship.tick == s.tick && r.ship.motion.phi == s.motion.phi && r.ship.motion.tau == s.motion.tau && r.ship.motion.t == s.motion.t && r.ship.motion.x == s.motion.x && r.ship.heading.x == s.heading.x && r.ship.heading.y == s.heading.y && r.ship.heading.z == s.heading.z && r.ship.origin.x == s.origin.x && r.ship.origin.y == s.origin.y && r.ship.origin.z == s.origin.z && r.ship.x0 == s.x0
+}
+
+test "hello proto 1.1" { checkHelloProto11() }
+test "v1.0 step unchanged" { checkV10StepUnchanged() }
+test "bad json" { checkBadJson() }
+test "bad command" { checkBadCmd() }
+test "bad step precedes heading" { checkBadStep() }
+test "bad heading" { checkBadHeading() }
+test "moving" { checkMoving() }
+test "rejection preserves state" { checkRejectedStateUnchanged() }
