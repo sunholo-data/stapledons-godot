@@ -68,6 +68,25 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-09-28 (afternoon): iteration 2, M1.2a LANDED
+
+- **M1.2a ✅** (catalogue acquire and parse): CNS5 and GCNS fetched from
+  VizieR/CDS with sha256s; `tools/extract.py` parses them into galactic CSV
+  (5,908 + 331,312 rows); 15 parser tests on real-byte fixtures now run in
+  `make test` and CI. PR #5, merge `77d3f04`, CI green. Executor pi
+  deepseek-v4.1-flash; evaluator Sonnet **92/100 PASS**, 0 blocking.
+- **AC amended (controller-adjudicated, judge concurred by a second
+  method):** α Cen is 4.321 ly, the HIP2 parallax on CNS5's single GJ 559 AB
+  row; 4.37 is the literature figure.
+- **Plan refreshed** (planner pi kimi-k3, `ca3db91`): M1.2 split into
+  M1.2a/b/c under the ~250 LOC cap; M1.2d added (Mark accepted D-5, attended);
+  D-6 (isometric interior) unblocks M4's design doc.
+- **Clause map:** 1 UNMET (M1.2b routable next; M1.6a parked upstream,
+  ailang#1354 and #1355 both OPEN at 13:0xZ today; M1.2c, M1.2d, M1.3
+  behind) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3 needs a design
+  doc) · 4 UNMET (M4 design doc now routable, D-6) · 5 ongoing (strict VM and
+  parity green at this landing).
+
 ## STATUS 2026-09-28: iteration 1, M1.6a PARKED on two AILANG VM bugs
 
 - **Mark's attended rulings (08:01) acknowledged:** D-1 bar ratified, D-2
@@ -107,17 +126,6 @@ The newest 3 STATUS stamps live here; older ones move to
   The rig's PATH binary is now v0.47.0; CI and the bundled runtime pin v0.45.0.
 - Harness ticket `mission-base:hardcoded-origin-dev` filed (this repo has no
   `dev` branch).
-
-## STATUS 2026-09-27 (late): ARMED, iteration 0 next
-
-- Registration: `sunholo-data/ailang#1340` (registry, env, boot offset,
-  `godot-game` profile). Dry run OK. Bookkeeping issue #1.
-- Sprint R1-M1-SKY is in progress. **M1.0 review builds ✅**: `v0.1.0-m0`
-  runs on Mark's laptop. Next is M1.1 (`sunholo/relativity@0.2.0`
-  photometry).
-- AILANG `origin/dev` is now v0.47.0, with unboxed `Array[float]` and VM-native
-  binary/JSON ingest. Re-plan M1.2's pipeline on it (the rig binary is still
-  v0.45.0; pin the upgrade deliberately).
 
 ## Decision ledger
 
@@ -190,10 +198,10 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ⏸ PARKED upstream (draft PR #3; ailang#1354, ailang#1355; resume when a pinned AILANG passes `make strict` and 30× `make parity-offaxis` identical) · [NEXT] M1.2 (D-3, D-4 resolved) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b after M1.6a · M1.2d proposed (D-5) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ⏸ PARKED upstream (draft PR #3; ailang#1354, ailang#1355; resume when a pinned AILANG passes `make strict` and 30× `make parity-offaxis` identical) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · [NEXT] M1.2b AILANG transform + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b after M1.6a · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
 2. **M2** journey core · clause 2 · design doc needed · ~2,000 LOC (estimate)
 3. **M3** black holes · clause 3 · design doc needed; `sunholo/relativity` 0.3 (Binet integrator) · ~1,800 LOC (estimate)
-4. **M4** first journey · clause 4 · design doc needed, **unblocked by D-6** (interior design: `stapledons-design/art/ship-interior-blender-brief.md`; reference spike: branch `spike/iso-bridge`, `spike/interior3.gd`) · ~2,500 LOC (estimate)
+4. **M4** first journey · clause 4 · design doc needed (routable: designer), **unblocked by D-6** (interior design: `stapledons-design/art/ship-interior-blender-brief.md`; reference spike: branch `spike/iso-bridge`, `spike/interior3.gd`) · ~2,500 LOC (estimate)
 6. [NEW] **Toolchain gate hygiene** · clause 5 · `make deps` fails whenever the PATH `ailang` differs from the v0.45.0 pin (it rewrites the lockfile version line), so every local gate needs `AILANG=runtime/bin/ailang`: default the Makefile to the pinned runtime when present, or make `deps` ignore the version lines · ~20 LOC
 7. [HARNESS] ticket:mission-base:hardcoded-origin-dev (repeat, non-blocking) · ticket:skill:gate0-ledger-provenance-S (new, non-blocking)
 5. [LANDED] **Arming prerequisites** · `godot-game` profile, registry, env, bookkeeping issue #1 (`sunholo-data/ailang#1340`)

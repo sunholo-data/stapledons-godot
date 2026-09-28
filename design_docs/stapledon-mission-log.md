@@ -133,3 +133,74 @@ Append-only. One entry per iteration, newest at the bottom.
   (evaluator).
 - **Next:** M1.2 catalogue pipeline (D-3/D-4 resolved) · M1.6a resumes on an
   AILANG fix · D-5 bright-star tier for Mark.
+
+## 2026-09-28 (afternoon): iteration 2, M1.2a catalogue acquire and parse LANDED [PRODUCT]
+
+- **Pick:** M1.2 catalogue pipeline, queue head (clause 1, UNMET). D-3 and D-4
+  were resolved at iteration 1; D-5 and D-6 were resolved by Mark in attended
+  sessions before this fire (`1b6a8d5`, `8e2b7dc`, attended identity). M1.6a
+  stays parked: ailang#1354 and ailang#1355 are both OPEN (re-read at pick).
+- **Outcome:** LANDED M1.2a. PR #5, merge `77d3f04`, CI green on the PR head
+  (`5309971`) and on the merge. Also on `main`: the M1.2 re-plan `ca3db91`.
+- **Progress:** R1 clauses 1–4 UNMET, 5 ongoing. M1: 3 of 12 milestones done
+  (M1.2 is now M1.2a/b/c plus M1.2d). Clause 1 moved: the real CNS5 and GCNS
+  bytes are acquired and parsed; the AILANG transform (M1.2b) is next.
+- **Plan refresh:** the planner split the 500 LOC M1.2 row into M1.2a (~250),
+  M1.2b (~250) and M1.2c (~180), and added M1.2d (~300, split 120 + 180 at
+  the publish gate). It also recorded D-5 in the M1 design doc (M1.2d, AC11,
+  open question 5; mechanical edit only). Planner findings, measured on the
+  v0.45.0 pin: std/fs has no streaming API (`readFile` only), std/bytes has
+  no float32 pack, `sim/ailang.toml` needs `FS` in `[effects].max`, and the
+  package photometry interpolates by a recursive `nth_or` scan.
+- **Executor result:** 15 unittest tests; 16 of 16 planned mutations killed.
+  The executor found that the plan's WDprob off-by-one mutation SURVIVED the
+  planned fixture (an F5.3 field masks the shift) and added two real-byte
+  fixtures that kill both directions. It also found that `godot --import`
+  turns `data/raw/gcns.csv` into about 70 MB of `.translation` sidecars, and
+  added `data/raw/.gdignore` (the evaluator reproduced this by deleting it).
+- **AC amendment (rule 3h adjudication):** α Cen distance 4.37 → 4.321 ly.
+  CNS5 has one GJ 559 row (`Comp=AB`, line 5103) carrying the HIP2 2007
+  parallax 754.8099975585938 mas; the fixture is byte-identical to that line
+  (`cmp`). A parse-only tool must reproduce the catalogue, and 4.37 ly is the
+  literature figure. The evaluator re-derived 4.3210 ly, l 315.742°,
+  b −0.684° by the galactic-pole formulae (a second method).
+- **Evaluator:** Sonnet via Agent tool, own worktree, **92/100 PASS**, 0
+  blocking. It re-downloaded both tiers (sha256s match), re-ran every gate,
+  compared 1,000 GCNS rows with the catalogue's own x50/y50/z50 (median
+  relative error 0.012%) and ran 4 new plus 3 plan mutations. Findings: F1 the
+  Python suite ran nowhere in CI (FIXED by the controller: `tools-test` in
+  `make test`; CI log shows `Ran 15 tests … OK`); F2 a typo in the `SOURCES`
+  filename map survives all tests (M1.2c row); F3 the adjudication label had
+  no artifact in the repo (this entry is it); F4 the single-row 5% x50
+  cross-check can pick an unlucky row (~0.5% of rows exceed 5%); F5
+  `actual_loc` 666 counts the whole rewritten script.
+- **Routing evidence:** base=8e2b7dcaa083150a57bd7ca50739f1ff7dea42d6@2026-09-28T13:06:21Z (by hand;
+  `mission-base.sh` still cannot resolve origin/dev, ticket re-filed).
+  Controller `claude-opus-5-5` (tok: not reported) · designer: not needed
+  (doc exists, quorum passed iteration 1) · planner: resolver said `agent-tool
+  opus fail-closed:planner-lane-field-missing`, role pinned
+  `pi:ollama/kimi-k3:cloud` (driver: codex gpt-6-sol over daily ration, rc
+  75) → followed the pin (role-spawn-routing §2a), probe rc=0, run verdict ok
+  in 844 s (4,467,928 tok: 119,625 in, 59,947 out, 4,288,356 cache-read) ·
+  executor `pi:ollama/deepseek-v4.1-flash:cloud` (codex over ration, driver
+  fallback), probe rc=0, verdict ok in 468 s (7,296,392 tok: 82,410 in,
+  83,486 out, 7,130,496 cache-read) · evaluator `sonnet` via Agent tool
+  (140,909 tok), Anthropic ≠ DeepSeek, generator ≠ judge holds. The pi
+  runner loads no sandbox or fence extension (ticket
+  `pi-runner:sandbox-extensions-not-wired`, stapledon occurrence filed);
+  compensated by diffing the main checkout's `git status` before and after
+  each run (unchanged both times).
+- **Ruled out:** (a) the α Cen mismatch is not a parser bug: the parallax
+  field on the one row reproduces 4.321 ly by two methods. (b) The Python
+  tests do not need `data/raw`: `make tools-test` passes with it moved
+  away. (c) Planner facts re-checked first-party: `table1c.dat` 760 B ×
+  331,312 records in the A6 ReadMe; the legacy Gaia Sky URL returns 404.
+- **Baseline gate note:** `make test AILANG=$PWD/runtime/bin/ailang` rc=0 on
+  pristine `main` before routing. No SR/GR visual changed, so `make golden`
+  and `make capture` were not required for this milestone.
+- **Cost:** metered $0.00 (ollama-cloud flat rate; no quorum this
+  iteration) · quota buckets: opus (controller), sonnet (evaluator),
+  ollama-cloud (planner, executor).
+- **Next:** M1.2b (`sim/tools/catalogue.ail`, 5k-row VM probe first, 5-run
+  VM parity, Python fallback on the 60 s trigger) · M1.2c · M1.2d · M4
+  design doc now routable (D-6).
