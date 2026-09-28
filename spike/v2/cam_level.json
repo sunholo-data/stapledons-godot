@@ -1,0 +1,25 @@
+{
+  "shot": "level",
+  "frame": "ship: +Z = direction of travel (up), origin = bubble centre, metres",
+  "position_m": [
+    44.9724235534668,
+    -25.96560287475586,
+    13.0
+  ],
+  "forward": [
+    -0.860295832157135,
+    0.49670663475990295,
+    0.11477634310722351
+  ],
+  "up": [
+    0.09939851611852646,
+    -0.057389408349990845,
+    0.9933913350105286
+  ],
+  "fov_vertical_deg": 70.0,
+  "resolution": [
+    1920,
+    1080
+  ],
+  "panorama": "stapledon_pano_level.png"
+}

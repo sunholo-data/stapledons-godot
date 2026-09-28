@@ -1,0 +1,25 @@
+{
+  "shot": "bridge",
+  "frame": "ship: +Z = direction of travel (up), origin = bubble centre, metres",
+  "position_m": [
+    16.0,
+    -8.0,
+    83.69999694824219
+  ],
+  "forward": [
+    -0.5302520394325256,
+    0.26512596011161804,
+    0.8053204417228699
+  ],
+  "up": [
+    0.7203004956245422,
+    -0.3601502478122711,
+    0.592839777469635
+  ],
+  "fov_vertical_deg": 78.0,
+  "resolution": [
+    1920,
+    1080
+  ],
+  "panorama": "stapledon_pano_bridge.png"
+}
