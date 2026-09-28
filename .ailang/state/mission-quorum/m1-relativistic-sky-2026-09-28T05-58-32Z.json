@@ -1,0 +1,64 @@
+{
+  "doc": "design_docs/planned/r1/m1-relativistic-sky.md",
+  "iso_ts": "2026-09-28T05:58:32Z",
+  "reviewers": [
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0.053819000000000006,
+      "tokens_in": 5175,
+      "tokens_out": 10585,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The sky this design produces is missing most of its brightest stars, and no acceptance criterion can catch it. Point sources are rendered only from GCNS (331k stars within 100 pc) and CNS5, yet M1.4a Option A masks and inpaints point sources out of the panorama 'brighter than about 1.5 mag below the catalogue limit'. Every naked-eye star beyond the 100 pc horizon — Rigel, Betelgeuse, Deneb, Antares, Spica, Acrux, Achernar, roughly half of the top-20 brightest stars in the sky — therefore exists in neither layer and vanishes entirely. This silently invalidates the load-bearing premises of AC8 ('the naked-eye limiting magnitude falls out of the physics' — the naked-eye sky it claims to reproduce doesn't exist in the render), AC9's β=0 reference renders, and the Grounded Strangeness pillar, and the doc never surfaces this coverage boundary as a conflict or open question.",
+        "catch": "Two additional flags: (1) the masking threshold 'about 1.5 mag below the catalogue limit' is ambiguous — which catalogue, and which limit (GCNS's G≈20 completeness limit?) — and no bright-star catalogue appears anywhere in the source list, so the rule cannot be implemented as written; (2) the medium tier is 'GCNS filtered to about 50k' with the filter delegated to the external starmap-manager skill and never stated in-doc, yet AC3 (≥60% M dwarfs) passes or fails purely on that unspecified filter — a distance-based filter passes trivially, a brightness-based filter fails — so the AC is undetermined as written. Also verify that sunholo/relativity@0.1.0's optics are already fully vectorial before asserting G4 needs 'unchanged' maths.",
+        "proposed_fix": "1) Add sub-milestone M1.2d: a `bright` tier built from HIPPARCOS (HIP2) — entries with usable parallaxes and V \u003c 9 (~15–20k rows) — in the same binary record format (position from parallax, Teff from B−V via the same Mamajek table, V magnitude), rendered by the existing splat path; aberration and Doppler are direction-only so no new maths is required. 2) Redefine M1.4a Option A masking as an explicit cross-match rule: mask and inpaint only sources matched in (GCNS ∪ HIP2 V\u003c9); unmatched sources remain in the panorama. If the user picks the star-free Option B, the bright tier becomes mandatory rather than optional. 3) Add AC11: at β=0, ≥95% of HIP2 stars with V\u003c2.5 appear in the render within 1 px of predicted position (`make capture` + `tools/bright_star_audit.py`), and the count of rendered stars brighter than V=6.5 lies in the 5,000–9,100 Bright Star Catalogue sanity range. 4) State the medium-tier filter in-doc (e.g., 'medium = the 50k nearest GCNS members') so AC3 is determined by the doc, not by an external skill. 5) Add a verification-log row for the process_stars.sh defect premise (command run + observed 2,294/717 counts + date), and one row confirming sunholo/relativity@0.1.0 optics accept arbitrary β vectors."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.077955,
+      "tokens_in": 5215,
+      "tokens_out": 4154,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Premise verification is one-sided: external data facts carry 'checked 2026-09-27' annotations (Mamajek table values, VizieR sources, the 0.1015 mag cross-check), but every claim about the internal codebase — the load-bearing premise of the entire milestone — is asserted with no evidence. G1 rests on 'the threshold table in process_stars.sh is miscalibrated', 'the pipeline computed BP−RP and then threw it away', and 'brightness uses Gaia G as if it were V'; the Problem section further asserts '2,294 K stars against 717 M stars', '3,802 stars within ~40 ly', 'EXPOSURE := 5.0', and 'golden tests cover velocity along −Z only', and the header asserts 'M0 spike (done)'. None of these has a file:line reference, a command+output, or a link to an M0 report. If the process_stars.sh miscalibration claim turns out to be wrong (or already fixed), the core motivation for M1.1/M1.2 changes. Under this rubric, asserted-not-verified premises are grounds to reject regardless of how plausible the specific numbers look.",
+        "catch": "Two conflict-surface gaps: (1) 'celestial-lod-system' is listed under Implements, but the design contains no LOD mechanism and no argument for why none is needed — 331k stars are drawn as instanced splats with no culling or detail tiers, and runtime LOD is never mentioned, so either the claim is false or the design omits a subsystem; (2) the old pipeline's disposition is unspecified — process_stars.sh is neither deleted nor declared superseded, and 'the starmap-manager scripts get fixed in this milestone' appears with no LOC line item in the sub-milestone table, which is unbudgeted scope creep.",
+        "proposed_fix": "Add a 'Premise verification' table to the doc, one row per codebase claim, each with path:line (or command + observed output) and date, e.g.: 'process_stars.sh BP−RP thresholds — `rg -n \"BP_RP|bp_rp\" tools/**/process_stars.sh` → lines N–M, Sun (0.82) bins to K — verified \u003cdate\u003e'; 'catalogue demographics — `tools/catalogue_stats.py --tier quick` → K: 2294, M: 717 — verified \u003cdate\u003e'; 'exposure constant — \u003cpath\u003e:\u003cline\u003e EXPOSURE := 5.0 — verified \u003cdate\u003e'; 'golden velocity coverage — `rg -n \"velocity\" test/golden/**` → only (0,0,−1) cases — verified \u003cdate\u003e'; 'M0 status — link to design_docs/implemented/r1/m0-report.md'. Then add an 'Existing machinery / conflict surface' section that (a) either removes celestial-lod-system from Implements or states explicitly that instanced splats make runtime LOD unnecessary at 331k, gated on the AC7 bench result, and (b) declares process_stars.sh superseded-and-removed in M1.2, and either gives the starmap-manager fix its own estimate row or moves it out of scope with a pointer to where it lands."
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-astra",
+      "cost_usd": 0.06974,
+      "tokens_in": 5169,
+      "tokens_out": 361,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "M1.6 commits to changing sim/core.ail and adding hand-written protocol codecs without verifying the current ship state, step/state schema, or existing serialization machinery. There is no conflict-surface analysis establishing whether these changes reuse or duplicate existing facilities, or whether current consumers remain compatible. These are blocking, unverified architectural premises—not implementation details.",
+        "catch": "“step gains heading (optional)” leaves omission, invalid/non-unit vectors, and heading changes while moving undefined. The document also assumes existing strict-bytecode and parity guarantees without identifying their implementations or baseline results. Round-trip tests alone cannot establish protocol compatibility or deterministic failure behavior.",
+        "proposed_fix": "Add a repository-verification and conflict-surface section before approving M1.6. Pin the inspected repository revision and provide file/symbol references plus reproducible inspection or test results for: current ship state and motion integration; step/state schemas and every consumer; existing codecs or schema-generation facilities; strict-bytecode and parity targets. For each, state reuse, modification, or replacement and justify any new machinery. Replace the codec commitment with: “Reuse existing protocol serialization where available; introduce hand-written codecs only after documenting why existing facilities cannot support the extension. Omitted heading preserves the current heading; supplied headings must be finite unit vectors within a specified tolerance. Invalid headings and prohibited heading changes return explicit errors without changing state. Define version negotiation or an explicit compatibility policy, and test old messages, invalid inputs, rejected updates, and deterministic state/parity behavior.” Explicitly confirm that no AILANG frozen-core change is required; otherwise route the requirement to an extension or justify the exception."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Pick-time quorum (iter 1) on the attended-approved M1 doc, mid-sprint (M1.0, M1.1 landed). Routing M1.6; its section plus sprint-plan M1.6 tasks specify heading-at-rest, protocol v1.1, off-axis AC4/AC5."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-glm-5-3: The sky this design produces is missing most of its brightest stars, and no acceptance criterion can catch it. Point sources are rendered only from GCNS (331k stars within 100 pc) and CNS5, yet M1.4a Option A masks and inpaints point sources out of the panorama 'brighter than about 1.5 mag below the catalogue limit'. Every naked-eye star beyond the 100 pc horizon — Rigel, Betelgeuse, Deneb, Antares, Spica, Acrux, Achernar, roughly half of the top-20 brightest stars in the sky — therefore exists in neither layer and vanishes entirely. This silently invalidates the load-bearing premises of AC8 ('the naked-eye limiting magnitude falls out of the physics' — the naked-eye sky it claims to reproduce doesn't exist in the render), AC9's β=0 reference renders, and the Grounded Strangeness pillar, and the doc never surfaces this coverage boundary as a conflict or open question.",
+      "oc-kimi-k3: Premise verification is one-sided: external data facts carry 'checked 2026-09-27' annotations (Mamajek table values, VizieR sources, the 0.1015 mag cross-check), but every claim about the internal codebase — the load-bearing premise of the entire milestone — is asserted with no evidence. G1 rests on 'the threshold table in process_stars.sh is miscalibrated', 'the pipeline computed BP−RP and then threw it away', and 'brightness uses Gaia G as if it were V'; the Problem section further asserts '2,294 K stars against 717 M stars', '3,802 stars within ~40 ly', 'EXPOSURE := 5.0', and 'golden tests cover velocity along −Z only', and the header asserts 'M0 spike (done)'. None of these has a file:line reference, a command+output, or a link to an M0 report. If the process_stars.sh miscalibration claim turns out to be wrong (or already fixed), the core motivation for M1.1/M1.2 changes. Under this rubric, asserted-not-verified premises are grounds to reject regardless of how plausible the specific numbers look.",
+      "gpt6-astra: M1.6 commits to changing sim/core.ail and adding hand-written protocol codecs without verifying the current ship state, step/state schema, or existing serialization machinery. There is no conflict-surface analysis establishing whether these changes reuse or duplicate existing facilities, or whether current consumers remain compatible. These are blocking, unverified architectural premises—not implementation details."
+    ],
+    "absent_reviewers": [],
+    "total_cost_usd": 0.201514,
+    "total_tokens_in": 15559,
+    "total_tokens_out": 15100
+  }
+}
