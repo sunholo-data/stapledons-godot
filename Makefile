@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.45.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim parity strict golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim parity strict tools-test golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,7 +19,10 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim parity strict   ## everything that runs without a GPU window
+test: deps import physics sim parity strict tools-test   ## everything that runs without a GPU window
+
+tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
+	python3 tools/test_extract.py
 
 physics:           ## CPU physics reference vs known values
 	$(GODOT) --headless --path . --script tests/test_physics.gd
