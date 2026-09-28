@@ -50,17 +50,38 @@
       "actual_loc": 323
     },
     {
-      "id": "M1.6_FREE_MOTION",
-      "description": "Ship heading + 3D position in pure sim core, protocol v1.1 (hello/version, heading, pos) with codec tests, free-look camera, off-axis CPU checks and GPU goldens",
+      "id": "M1.6a_SIM_PROTOCOL",
+      "description": "Pure ship turns at rest with phi snap and origin + heading*(x-x0), std/json protocol v1.1 with reason codes, bounded bridge waits, off-axis parity and strict scriptedOffAxis; default-heading render unchanged",
       "estimated_loc": 450,
       "dependencies": [],
       "acceptance_criteria": [
-        "make strict green with heading-aware scripted run; make parity identical",
-        "sim/protocol_test.ail: >=12 codec round-trip checks pass",
-        "test_physics.gd: spec §2 values pass for velocity along +-X, +-Y, (1,1,-1)/sqrt3 and a rolled camera",
-        "make golden: 12 directions x 4 speeds x 3 camera orientations within 0.75 px (AC5 stars)"
+        "V17 nested std/json.get probe rerun on pinned AILANG v0.45.0 VM and interpreter before implementation",
+        "make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: hello returns proto 1.1, v1.0 bridge checks remain unmodified, codec precision and every rejection reason preserve state",
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec §2 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
+        "make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: byte-identical VM/interpreter output",
+        "make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: existing scripted and scriptedOffAxis strict VM, interpreter and sqrt(2)*D closed form agree within 1e-9",
+        "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: AC10 and AC12, including 5 s hello, 2 s step and 1 s graceful-exit bounds, no surviving child"
       ],
-      "session": "1-2",
+      "session": 1,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.6b_CAMERA_GOLDEN",
+      "description": "Yaw/pitch/roll free-look, HUD view-velocity angle, sim-driven starfield direction, rolled-camera CPU checks, 12x4x3 off-axis star golden and human-reviewed renders",
+      "estimated_loc": 150,
+      "dependencies": [
+        "M1.6a_SIM_PROTOCOL"
+      ],
+      "acceptance_criteria": [
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: rolled-camera CPU spec values complete AC4",
+        "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: sim-driven view/velocity angle and non-regression checks",
+        "make golden AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: 12 directions x 4 speeds x 3 camera orientations within 0.75 px (AC5 star part)",
+        "make capture AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: reference renders opened and human-reviewed before SR visual merge"
+      ],
+      "session": 2,
       "passes": null,
       "started": null,
       "completed": null,

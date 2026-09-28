@@ -111,36 +111,117 @@ no Tailscale (Tailscale is in use for Daneel's video avatars).
 generated from the source file by a script; known-star tests; the URL is
 recorded.
 
-### M1.6: Free motion and orientation (runs in parallel with M1.2)
-**Goal:** any heading and any view direction, with golden tests off-axis.
-**Estimated:** 200 + 250 = 450 LOC · **Sessions:** 1–2 · **Depends on:** —
+### M1.6a: Simulation, protocol v1.1 and bridge (runs in parallel with M1.2)
+**Goal:** support deterministic turns at rest, off-axis position and a bounded
+v1.1 bridge while preserving the default-heading image and v1.0 messages.
+**Estimated:** 250 implementation + 200 tests = 450 LOC · **Session:** 1 ·
+**Depends on:** —
 
-**Tasks**
-- `sim/core.ail`:
-  - the ship gets a `heading: Vec3` and a 3D position; thrust acts along the
-    heading;
-  - `setHeading` works only at rest (β < 1e-9) and is rejected otherwise, with
-    a reason code in the state output;
-  - `scripted` gains a heading argument.
+**Tasks (test-first)**
+- **First, rerun design-doc probe V17** with the pinned v0.45.0 binary:
+  `std/json.get` on a nested `heading` object, then `getNumber` on `x`, on both
+  VM and interpreter. CI and the exported build pin v0.45.0; rig `PATH`
+  resolves `ailang` v0.47, which rejects the lockfile version line in
+  `make deps`. Every gate below therefore passes
+  `AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`.
+  If V17 fails, resolve the pinned-runtime compatibility before implementation.
+- `sim/core.ail`: first add named `checkTurnAtRest`, `checkMovingTurnRejected`,
+  `checkPositionAfterTurn` and `checkScriptedOffAxis` tests. They kill,
+  respectively, a missing φ snap, a turn accepted at β ≥ 1e-9, use of
+  `heading * motion.x` without `origin`/`x0`, and a one-leg or non-strict
+  implementation. Keep `Motion`, `step(s, thrust, dtau)` and `scripted(n)`
+  unchanged; extend `Ship` with `heading`, `origin`, `x0`; add pure
+  `turn(s, h) -> TurnResult`. On accepted turn, set `origin := pos`,
+  `x0 := motion.x`, and `motion.phi := 0` before applying the step's thrust.
+  Compute `pos = origin + heading * (motion.x - x0)` in float64. Add the
+  `scriptedOffAxis(n)` strict entry: +X burn/decelerate, turn to +Y at rest,
+  repeat, and return `‖pos‖ = sqrt(2) * 2 * (cosh(g*n*0.01)-1)/g` within 1e-9.
+- `sim/ship.ail`: first add named `checkHelloProto11`,
+  `checkV10StepUnchanged`, `checkBadJson`, `checkBadCmd`, `checkBadStep`,
+  `checkBadHeading`, `checkMoving` and `checkRejectedStateUnchanged` tests
+  (in `sim/protocol_test.ail` or the existing sim test harness). They kill a
+  missing handshake, broken old fields/defaults, loop termination on malformed
+  input, wrong reject reason or validation order, and state mutation on reject.
+  In AILANG `test` blocks, call named `check…()` functions: whole-number
+  float literals are misread as ints there. Reuse `std/json` `decode`, `get`,
+  `getNumber`, `getString` and encoding helpers; add no hand-written codec.
+  `hello` returns `proto: "1.1"` plus state. Keep v1.0 state fields and
+  `step` without `heading`; add `heading`, `pos`, `status`. Reject
+  `bad_json`, `bad_cmd`, `bad_step`, `bad_heading`, `moving` in design-doc
+  order, with unchanged tick, motion, heading and position; EOF and `quit`
+  still stop the loop. Check finite inputs, unit heading within 1e-9, and
+  accept an unchanged heading while moving.
+- `bridge/sim_bridge.gd`: first add `test_v11_hello_and_round_trip`,
+  `test_startup_timeout`, `test_step_timeout`,
+  `test_truncated_line_timeout` and `test_forced_child_cleanup` as new
+  functions in `tests/test_sim_bridge.gd`. They kill acceptance of old proto,
+  loss of float64 heading/position precision, an unbounded silent or partial
+  response, and an orphaned shutdown-ignoring child. Leave the existing v1.0
+  closed-form checks unmodified. Send `hello` on start and optional heading on
+  step; require proto ≥ 1.1. Use monotonic deadlines: 5 s from launch for
+  hello, 2 s from send for step. On timeout stop advancement, expose
+  `startup_timeout` or `step_timeout`, terminate the child, allow at most 1 s
+  for graceful exit, then force termination. Never retry or substitute state.
+- `main.gd`: use state `heading` and `pos` for velocity and ship position;
+  preserve the default-heading view and all current camera/HUD behavior.
+  `tests/test_physics.gd`: add `test_off_axis_cpu_spec_values` for spec §2
+  velocity directions ±X, ±Y, (1,1,−1)/√3; this kills a hard-coded −Z axis.
+  Defer rolled-camera checks to M1.6b, when the camera exists.
+- `Makefile`: add `parity-offaxis` to `make test`, with a fixed NDJSON script
+  covering hello, turns, burns and every rejection; compare VM and
+  interpreter output byte for byte with `cmp`. Preserve the existing v1.0
+  `parity` input. Extend `strict` to compare `scriptedOffAxis` on strict VM,
+  interpreter and the closed form. These kill VM/interpreter drift and a
+  strict-bytecode fallback.
 
-  It stays pure, and `make strict` stays green.
-- `sim/ship.ail`: protocol v1.1 with `hello`/`version`, optional `heading` on
-  `step`, and `heading` and `pos` in the state output. Round-trip codec tests
-  go in `sim/protocol_test.ail`, using named `check…()` functions because of
-  the test-block float bug.
-- Godot:
-  - a free-look camera (yaw, pitch, roll);
-  - the HUD shows the angle between view and velocity;
-  - the starfield takes the velocity direction from the simulation.
-- `tests/test_physics.gd`: the §2 check values repeated for off-axis
-  velocities (±X, ±Y, (1,1,−1)/√3) and a rolled camera.
-- `make golden`: 12 directions × 4 speeds × 3 camera orientations.
+**Acceptance criteria:** AC4 CPU off-axis part, AC10, AC12. Exact gates:
+`make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+`make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+`make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+`make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+`make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+`make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+and CI `make test` with pinned v0.45.0.
+No default-heading pixels change, so this milestone can merge without human
+render review.
+**Risks:** v0.45.0 nested `std/json.get` may differ from V17's v0.47 probe;
+blocking pipe reads may defeat a deadline; float32 heading normalization may
+fail the 1e-9 norm tolerance. *Mitigation:* probe first, use a pollable
+non-blocking read and process cleanup, and normalize heading in float64
+scalars.
 
-**Acceptance criteria:** AC4 and AC5 (star part), plus AC10 (strict and
-parity stay green).
-**Risks:** combining a Godot camera roll with float32 transforms.
-*Mitigation:* the golden tests compare against CPU projection through the same
-camera object.
+### M1.6b: Free-look camera, HUD and off-axis golden
+**Goal:** let the player look independently of ship velocity and verify the
+off-axis visual physics before merging it.
+**Estimated:** 100 implementation + 50 tests = 150 LOC · **Session:** 2 ·
+**Depends on:** M1.6a
+
+**Tasks (test-first)**
+- `tests/test_physics.gd`: add `test_rolled_camera_cpu_spec_values` using the
+  actual camera object; it kills treating camera roll as a velocity rotation
+  or projecting against an unrolled basis. Complete AC4.
+- `main.gd`: add yaw, pitch and roll free-look control independent of heading;
+  show the view-to-velocity angle in the HUD; feed the starfield velocity
+  direction from the sim state at every update. Add a focused HUD/view-angle
+  assertion in the Godot test harness (`test_view_velocity_angle`) to kill
+  use of a fixed heading or a stale camera forward vector.
+- `main.gd` golden path and `Makefile` `golden`: generate 12 star directions
+  × 4 speeds × 3 camera orientations, including roll. Compare GPU positions
+  against CPU projection through the same camera within 0.75 px
+  (`test_off_axis_star_golden`); this kills missing aberration and camera
+  transform errors. Produce reference renders, open and inspect them, and
+  obtain human render review before any SR visual merge.
+
+**Acceptance criteria:** AC4 complete and AC5 star part. Exact gates:
+`make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+`make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+`make golden AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
+`make capture AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`;
+CI `make test` with pinned v0.45.0, plus human-reviewed reference renders
+before merge.
+**Risks:** Godot float32 camera transforms and roll may shift subpixel
+positions. *Mitigation:* CPU and GPU project through the same camera object;
+inspect reference renders before merging.
 
 ### M1.2: Catalogue pipeline v2 (the AILANG VM stress test)
 **Goal:** quick/medium/large tiers with physics done in AILANG, with measured
@@ -257,8 +338,8 @@ M1.4
 
 | Session | Work |
 |---|---|
-| 1 | **M1.0 review builds** (macOS export and release) · M1.1 package 0.2.0, published · M1.6 simulation and protocol |
-| 2 | M1.2 pipeline and VM parity · M1.6 camera and golden tests |
+| 1 | **M1.0 review builds** (macOS export and release) · M1.1 package 0.2.0, published · M1.6a simulation, protocol v1.1 and bridge |
+| 2 | M1.2 pipeline and VM parity · M1.6b free-look camera, HUD and off-axis golden (human render review before visual merge) |
 | 3 | M1.3 rendering v2 and bench · M1.4a spike → **⏸ decision** |
 | 4 | M1.4b/c sky model and shader and golden tests |
 | 5 | M1.5 exposure, bench, renders, report → **sprint-evaluator** (a different model from the executor) |
