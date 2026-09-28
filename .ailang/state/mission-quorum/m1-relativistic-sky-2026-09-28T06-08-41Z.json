@@ -1,0 +1,64 @@
+{
+  "doc": "design_docs/planned/r1/m1-relativistic-sky.md",
+  "iso_ts": "2026-09-28T06:08:41Z",
+  "reviewers": [
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0.11658660000000001,
+      "tokens_in": 12103,
+      "tokens_out": 22646,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Gate 1 fails on the document's own stated terms. The preamble promises that 'every codebase and data claim below has a row in the Verification log', but the load-bearing premises of M1.2 and G2 are asserted with no row: that VizieR J/A+A/670/A19 cns5.dat is 5,909 rows in a fixed-width G/BP/RP layout; that J/A+A/649/A6 table1c is 331,312 rows / 75 MB with BP-RP and WDprob present on the rows the pipeline consumes; that 'the Gaia Sky URL in the old skill returns 404' (the claim motivating re-scripting the downloads); that 'the design docs ask for about 100k visible stars' (the claim motivating Problem 2); and the Problem 1 opener that sky/starfield.gd:25 takes its temperature from a single spectral letter (V5 covers only the vmag load at :26). The doc's own log proves this project already shipped wrong data from exactly this class of unverified file-shape premise (3,802 rows parsed where a 5,909-row CNS5 was assumed; a blank-column default of 'K'), and the unverified 'BP-RP is present' premise hides an unspecified behavior: M1.2 defines clamping for out-of-range BP-RP but says nothing about null/missing photometry, which at 331k survey rows is certain to occur and would be silently defaulted — recreating the very bug Problem 1 condemns.",
+        "catch": "Before sprint-planning, add the missing rows: a checksummed download of cns5.dat with the observed row count and the byte offsets of G/BP/RP (and the fraction of the 5,909 lacking them); the same for table1c plus the fraction of rows with null BP-RP or missing G, overall and among the 50,000 smallest distances; the 404 with a returning-200 control URL; the quoted 100k-visible-stars line from the starmap design doc; sed of sky/starfield.gd:25. Then specify the null-photometry disposition in M1.2 (it is currently undefined), and note two secondary items: the V17-style bounded-wait gap in the M1.6 hello handshake (SimBridge.start specifies EOF handling but no timeout if the sim is alive and silent), and the circularity in V3, which cites the contents of sunholo/relativity 0.2.0 from the package cache while the plan schedules 0.2.0's creation and 'pkg quality' gate inside M1.1 — state whether the cache holds a pre-publish dev build.",
+        "proposed_fix": "1) Amend the log preamble to read: 'every codebase and data claim has a row; external source-shape claims are covered by rows V19-V23 (checked 2026-09-28, checksums recorded)'. Add the rows: V19 — curl -fsSL the J/A+A/670/A19 cns5.dat URL; wc -l (claim: 5,909); shasum -a 256; paste the first record with the byte offsets of G, BP, RP; count rows with blank BP or RP. V20 — curl the J/A+A/649/A6 table1c file; wc -l (claim: 331,312); size in bytes (claim: ~75 MB); count of rows with blank BP-RP and blank G, overall and among the 50,000 smallest distances; presence of WDprob. V21 — curl -sI the old Gaia Sky URL (claim: 404) with the GCNS VizieR URL as a 200 control. V22 — grep -n the '100k visible stars' sentence in features/phase1-data-models/starmap-data-model.md and quote it. V23 — sed -n '25p' sky/starfield.gd, showing the spectral-letter temperature lookup. 2) Add a 'Missing photometry' rule to M1.2: 'A row with null BP-RP or G is never defaulted. It carries flags bit MISSING_PHOT with teff = 0 and v = +99; the medium-tier 50,000-nearest rule extends past such rows to the next star with complete photometry; tools/catalogue_stats.py reports the per-tier excluded count; AC2 gains: and stats reports zero rows with defaulted photometry inside the tier.' 3) In M1.6 protocol v1.1 add: 'SimBridge.start() bounds the hello round-trip: if a proto \u003e= 1.1 state line has not arrived within 2 s, the bridge terminates the sim process and fails with ERR_HANDSHAKE (bounded waits).' 4) One-line note in the log preamble that the 0.2.0 cache entry used by V3 is a pre-M1.1 dev build, with V3 re-run against the published artifact once 'ailang pkg quality' passes."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.156855,
+      "tokens_in": 12005,
+      "tokens_out": 8056,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The Evidence line asserts 'every codebase and data claim below has a row in the Verification log,' but the load-bearing external catalogue claims have no row: GCNS = 331,312 stars / 75 MB / VizieR J/A+A/649/A6 table1c (drives G2, AC7 sizing, the 8 MB binary format, and the AC3 medium-tier premise), CNS5 = 5,909 stars with G/BP/RP columns in VizieR J/A+A/670/A19 (the quick-tier rebuild premise), the Gaia Sky URL 404 claim, HIP2 I/311 yielding 'roughly the few thousand' unmatched V\u003c7 stars (M1.2d/AC11 sizing), and noirlab2430b as a usable star-removed panorama source. All are marked only 'checked 2026-09-27' with no command and no observed output, and at least one (the CNS5 object count) is suspect against the published catalogue — so these are asserted, not verified, and the doc's own evidence standard is falsified.",
+        "catch": "Rows V1–V18 verify only repo-internal claims. No row fetches or inspects the actual VizieR sources: there is no header/ReadMe fetch, no row count, no column-layout check for either CNS5 (J/A+A/670/A19) or GCNS (J/A+A/649/A6), no logged 404 from the old Gaia Sky URL, and no HIP2 query backing the 'few thousand' unmatched-bright-star estimate. Fix the verification log (or downgrade the Evidence line) before M1.2 depends on these numbers.",
+        "proposed_fix": "Append rows such as: V19 — 'GCNS table identity and size': `curl -s https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=J/A+A/649/A6 -o /tmp/gcns_readme.html` plus a 5-row sample of table1c and `wc -l` on a full download to /tmp (gitignored), observed: row count, byte size, columns incl. BP/RP/WDprob; V20 — same for CNS5 J/A+A/670/A19 (observed object count vs the claimed 5,909, confirm G/BP/RP columns, reconcile with the published CNS5 object count if it differs); V21 — `curl -sI` the legacy Gaia Sky URL logging the actual status code; V22 (conditional) — HIP2 I/311 `V\u003c7` count and the subset unmatched to GCNS 100 pc after epoch propagation, backing the M1.2d sizing. Then either (a) keep the Evidence line only after these rows exist, or (b) amend it to: 'every codebase claim has a row in the Verification log; external catalogue counts and URLs are verified in rows V19–V22 / are re-verified at M1.2 download time by `download_stars.sh` checksums recorded in the binary JSON header.'"
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-astra",
+      "cost_usd": 0.13570000000000002,
+      "tokens_in": 12055,
+      "tokens_out": 303,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "M1.6 introduces a mandatory hello handshake without a bounded wait. EOF handles a terminated v1.0 simulator, but not a live simulator that stalls or never emits a complete response. No startup or step-response deadline, bounded shutdown procedure, or timeout acceptance test is specified. This violates the bounded-waits axiom.",
+        "catch": "Verify whether SimBridge already implements response deadlines and process cleanup, and reuse that machinery if it exists. V12 identifies consumers but does not establish these behaviors; export-smoke and protocol parity do not test a non-responsive child.",
+        "proposed_fix": "Add to M1.6: 'Reuse existing bridge deadline and cleanup machinery where verified; otherwise implement it in SimBridge, without AILANG core changes. The hello response must arrive within 5 seconds of process launch, and each step response within 2 seconds of sending the command, measured with a monotonic clock. On timeout, stop simulation advancement, report an explicit startup_timeout or step_timeout, and terminate the child; allow at most 1 second for graceful exit before forced termination. Never silently retry, downgrade the protocol, or substitute state.' Add a verification-log row inspecting existing bridge wait/cleanup behavior and AC12 tests using children that remain alive without responding, emit an incomplete line, and ignore graceful shutdown. Assert bounded failure and cleanup."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Round 2 after designer revision: verification log V1-V18 (3 premises corrected), M1.6 conflict surface + std/json reuse + reason codes + hello/v1.1 + AC12, bright-star tier proposed as M1.2d gated on open question 5, medium tier defined, LOD scope, process_stars disposition."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-glm-5-3: Gate 1 fails on the document's own stated terms. The preamble promises that 'every codebase and data claim below has a row in the Verification log', but the load-bearing premises of M1.2 and G2 are asserted with no row: that VizieR J/A+A/670/A19 cns5.dat is 5,909 rows in a fixed-width G/BP/RP layout; that J/A+A/649/A6 table1c is 331,312 rows / 75 MB with BP-RP and WDprob present on the rows the pipeline consumes; that 'the Gaia Sky URL in the old skill returns 404' (the claim motivating re-scripting the downloads); that 'the design docs ask for about 100k visible stars' (the claim motivating Problem 2); and the Problem 1 opener that sky/starfield.gd:25 takes its temperature from a single spectral letter (V5 covers only the vmag load at :26). The doc's own log proves this project already shipped wrong data from exactly this class of unverified file-shape premise (3,802 rows parsed where a 5,909-row CNS5 was assumed; a blank-column default of 'K'), and the unverified 'BP-RP is present' premise hides an unspecified behavior: M1.2 defines clamping for out-of-range BP-RP but says nothing about null/missing photometry, which at 331k survey rows is certain to occur and would be silently defaulted — recreating the very bug Problem 1 condemns.",
+      "oc-kimi-k3: The Evidence line asserts 'every codebase and data claim below has a row in the Verification log,' but the load-bearing external catalogue claims have no row: GCNS = 331,312 stars / 75 MB / VizieR J/A+A/649/A6 table1c (drives G2, AC7 sizing, the 8 MB binary format, and the AC3 medium-tier premise), CNS5 = 5,909 stars with G/BP/RP columns in VizieR J/A+A/670/A19 (the quick-tier rebuild premise), the Gaia Sky URL 404 claim, HIP2 I/311 yielding 'roughly the few thousand' unmatched V\u003c7 stars (M1.2d/AC11 sizing), and noirlab2430b as a usable star-removed panorama source. All are marked only 'checked 2026-09-27' with no command and no observed output, and at least one (the CNS5 object count) is suspect against the published catalogue — so these are asserted, not verified, and the doc's own evidence standard is falsified.",
+      "gpt6-astra: M1.6 introduces a mandatory hello handshake without a bounded wait. EOF handles a terminated v1.0 simulator, but not a live simulator that stalls or never emits a complete response. No startup or step-response deadline, bounded shutdown procedure, or timeout acceptance test is specified. This violates the bounded-waits axiom."
+    ],
+    "absent_reviewers": [],
+    "total_cost_usd": 0.4091416,
+    "total_tokens_in": 36163,
+    "total_tokens_out": 31005
+  }
+}
