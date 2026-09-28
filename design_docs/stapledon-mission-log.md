@@ -60,3 +60,76 @@ Append-only. One entry per iteration, newest at the bottom.
   output byte-identical to the interpreter instead.
 - **Cost:** metered $0 · quota buckets: codex (executor), sonnet (evaluator), opus (controller).
 - **Next:** M1.2 catalogue pipeline (needs D-3/D-4 defaults; plan on v0.47) ∥ M1.6 free motion.
+
+## 2026-09-28: iteration 1, M1.6a built, PARKED on two AILANG VM bugs [PRODUCT]
+
+- **Pick:** M1.6 free motion (clause 1, UNMET). M1.2 was also routable in the
+  clause map, but it needed D-3/D-4 (design Open questions 2/3), where the
+  guardrail says stop for the user. Mark ruled on both at 08:01, mid-iteration.
+- **Outcome:** PARKED. M1.6a (turn at rest, 3D position, protocol v1.1,
+  bounded SimBridge) is built on draft PR #3 (`966ba3a`, `f3d6975`), but
+  `make test` is red on two AILANG VM defects, reported as ailang#1354 and
+  ailang#1355. Landed on `main`: the quorum-revised M1 design doc, the M1.6
+  re-plan (M1.6a/M1.6b), the evaluation record, the quorum artifacts and this
+  record.
+- **Progress:** R1 clauses 1–4 UNMET, 5 ongoing. M1: 2 of 9 milestones done
+  (M1.6 is now two milestones); M1.6a is built and blocked upstream. Clause 1
+  unmoved in landed code; clause 5 moved (two VM divergences found, shrunk and
+  reported).
+- **Quorum:** the M1 doc had no quorum artifact, so the pick-time quorum ran.
+  Round 1 (oc-glm-5-3, oc-kimi-k3, gpt6-astra) rejected 3/3 on three surfaces.
+  The designer (claude-opus-5-5, rotation) revised it; the verification log
+  found V2, V5 and V6 false and corrected them. Round 2 rejected 3/3 on
+  concrete, non-directional fixes (external catalogue rows, bounded
+  hello/step waits, a missing-photometry rule), which the controller applied
+  verbatim under the narrow-refinement carve-out (first use in this mission).
+  One round-2 premise was refuted by measurement: `sunholo/relativity` 0.2.0
+  in the cache is the published artifact, not a dev build.
+- **VM defect 1 (ailang#1354):** under `--strict-bytecode`, `GET_FIELD`
+  compiles `.x` on one record type with another type's slot index when both
+  have a field `x` at different positions. It fails 10 of 10 on a 9-line
+  repro; the interpreter and plain `--bytecode` both return 13.0; renaming
+  the field fixes it. In the game: `Motion.x` (slot 3) is used for `Vec3.x`.
+- **VM defect 2 (ailang#1355):** `--bytecode` is nondeterministic. The
+  17-line off-axis script diverged from the interpreter in 9 of 30 runs; a
+  one-line `step` carrying an unchanged heading diverged in 5 of 25. The
+  interpreter was 0 of 40, and the v1.0 600-line input was 0 of 30 on both the
+  old and new sim. In a bad run the step's result is lost but the reply says
+  `ok`. The bridge's own tick check catches it in play, per the evaluator.
+- **Evaluator:** Sonnet (Agent tool, own worktree) **59/100 FAIL**, a hard fail
+  on `make test`. It attributed both reds to the toolchain on its own
+  measurements: a separate strict repro through the package's `dot`, and two
+  stable VM output hashes over 20 runs. It re-ran m1, m3, m5, m6 and m8, all
+  killed. Its own mutant (missing `cmd` → `bad_json`) SURVIVED; the
+  controller reproduced it (12/12 green with the mutant), added the arm, and
+  it now kills (11/12, restore byte-identical).
+- **Executor deviation adjudicated:** the executor dropped `git checkout
+  sim/ailang.lock` from `deps`/`runtime` (git writes are blocked in its
+  sandbox). Measured: without it, every `make test` leaves a churned
+  lockfile. The controller restored it.
+- **Attended rulings:** D-1..D-4 were RESOLVED by Mark at 08:01 (commits
+  `c179be4`..`23c27d7`, attended). Acknowledged; not re-asked.
+- **Routing evidence:** base=228452fc9e350a989bfbf1cdf2dc86cad8247209@2026-09-28T06:59:46Z (by hand; `mission-base.sh` cannot
+  resolve origin/dev). Controller `claude-opus-5-5` (tok: not reported) ·
+  designer `claude:claude-opus-5-5` via `claude-sub` recipe, probe rc=0, run
+  rc=0 (31,710 out, 2.28M cache-read; subscription) · planner: resolver said
+  `agent-tool opus fail-closed:planner-lane-field-missing`, role pinned
+  `codex:gpt-6-sol` → followed the pin (role-spawn-routing §2a), probe rc=0,
+  run rc=0 (45,502 tok) · executor `codex:gpt-6-sol` recipe, run rc=0
+  (213,661 tok) · evaluator `sonnet` via Agent tool (146,665 tok), provider ≠
+  executor · quorum reviewers oc-glm-5-3, oc-kimi-k3, gpt6-astra (2 rounds).
+- **Ruled out:** (a) the nondeterminism is not the field-slot bug: renaming the
+  colliding `ship` fields still diverged 6/30. (b) It is not `std/json`
+  nested `get` alone (standalone probe 25/25 stable), nor turn→step with an
+  `ensures` contract alone (30/30). (c) `git log -S'| D-n |'` (the Gate-0
+  provenance command) returns the row's creation commit, not the flip; `-G`
+  finds the attended commits. Filed as a harness ticket.
+- **Baseline gate note:** `make test` with the PATH `ailang` (v0.47) fails
+  at `deps` on pristine `main`; with `AILANG=runtime/bin/ailang` (v0.45.0)
+  it is green. Queued as row 6. `make golden` baseline: 9 cases, 0 failures
+  (the Metal GUI session was available this fire).
+- **Cost:** metered $0.61 (quorum: round 1 $0.20, round 2 $0.41) · quota
+  buckets: opus (controller, designer), codex (planner, executor), sonnet
+  (evaluator).
+- **Next:** M1.2 catalogue pipeline (D-3/D-4 resolved) · M1.6a resumes on an
+  AILANG fix · D-5 bright-star tier for Mark.

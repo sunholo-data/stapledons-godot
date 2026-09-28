@@ -1,0 +1,81 @@
+{
+  "sprint_id": "R1-M1-SKY",
+  "milestone": "M1.6a_SIM_PROTOCOL",
+  "evaluator_model": "claude-sonnet-5",
+  "evaluated_commit": "966ba3a6daec28d0eb8ecc4f86f591d4f0d331b0",
+  "evaluated_range": "dca4d90..966ba3a (production diff; commits before dca4d90 are design-doc/plan edits)",
+  "evaluated_worktree": "/Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter1-eval",
+  "generator": "codex gpt-6-sol (executor)",
+  "score": 59,
+  "pass": false,
+  "threshold": 70,
+  "hard_fail": true,
+  "hard_fail_reason": "make test is red at 966ba3a (rc=2 on `strict`; `parity-offaxis` is intermittently red across repeated runs). Per CLAUDE.md gate 1 ('make test is green locally and in CI') and the sprint-evaluator rubric's Tests Pass hard-fail rule, this blocks PASS regardless of the root cause. Root-cause attribution below shows both reds are AILANG v0.45.0 toolchain defects, not defects in this milestone's own code or tests, but the gate itself does not pass at this commit.",
+  "rubric": {
+    "tests_pass": {"points": 0, "max": 20, "hard_fail_triggered": true, "notes": "`make test AILANG=<pinned v0.45.0> AILANG_BIN=<pinned v0.45.0>` run twice, both rc=2 at `strict`. `parity-offaxis` alone re-run 6x standalone: 3 pass, 3 fail (non-deterministic). See attribution section for independent root-cause evidence."},
+    "lint_clean": {"points": 10, "max": 10, "notes": "No `make lint` target exists in this repo (checked Makefile); not a regression introduced by this milestone."},
+    "acceptance_criteria": {"points": 21, "max": 30, "notes": "AC4 (CPU off-axis part): fully met, deterministic — `tests/test_physics.gd`'s new `test_off_axis_cpu_spec_values` (±X, ±Y, (1,1,-1)/sqrt3) passed on every run, matches spec §2 check values exactly (10/10). AC10 (make test green in CI; strict-bytecode; parity): the v1.0 portions (physics, sim, sim-bridge, parity, strict `scripted`) are solid and reproducibly green, but the new strict-bytecode `scriptedOffAxis` check crashes the VM (5/10). AC12 (protocol v1.1): hello/proto 1.1, unmodified v1.0 bridge test, all 5 reason codes with byte-identical state-apart-from-status, and all 4 bounded-wait/cleanup behaviors (startup_timeout, step_timeout, truncated-line, forced-kill-after-grace) were independently re-verified and passed on every run — genuinely strong coverage. But AC12's own explicit closing clauses ('the off-axis NDJSON script is bit-identical on the VM and the interpreter'; 'scriptedOffAxis matches sqrt(2)*D within 1e-9 under --strict-bytecode') are not reliably met (6/10)."},
+    "code_quality": {"points": 12, "max": 15, "notes": "Clean, idiomatic, exact field-for-field match to the design doc's conflict-surface table (Ship gains heading/origin/x0 only; step/scripted signatures unchanged; pure turn() returns TurnResult; no hand-written JSON codec). Pure core stays free of effects (verified: sim/core.ail has no IO import; only ship.ail touches std/io). Notable strength: bridge/sim_bridge.gd's step() independently cross-checks `state.tick == before.tick + 1` on every 'ok' response and treats a mismatch as bad_response -> bounded failure + cleanup, which happens to catch the VM-nondeterminism nasty case (see attribution) before it could reach gameplay as silently-corrupted state. Deducted: sprint JSON's M1.6a_SIM_PROTOCOL feature entry is left with passes:null, started:null, completed:null, notes:null (Phase 3.5 incomplete-artifact deduction)."},
+    "documentation": {"points": 7, "max": 15, "notes": "CHANGELOG.md not touched (matches this repo's existing sparse precedent -- M1.1 also added no entry -- so only a modest deduction). No retroactive design-doc amendment documenting the two measured toolchain reds and their evidence, unlike M1.1's design-doc amendments for its own honest deviations. CLAUDE.md explicitly requires 'Report every AILANG bug or DX problem with `ailang messages`... export AILANG_STORAGE_MESSAGING=gcp... without them the message only reaches a local store nobody reads' for exactly this class of bug; found no local evidence either report was filed (could not check the GCP-hosted store from this sandbox, so this is a should-verify flag, not a confirmed omission)."},
+    "design_fidelity": {"points": 9, "max": 10, "notes": "Very high fidelity: reason-code order (bad_step before bad_heading before moving), the 1e-9 heading-norm tolerance with float64 client-side normalization, phi snapped to exactly 0.0, pos = origin + heading*(x-x0) in float64, omitted-heading defaults to current heading, re-sending the current heading while moving accepted as no-op, v1.0 message compatibility preserved byte-for-byte in the untouched test -- all independently verified against the design doc's own prose, not just against the executor's tests."}
+  },
+  "conditional_categories_triggered": [],
+  "attribution_of_the_two_reds": [
+    {
+      "red": "make strict (off-axis part)",
+      "verdict": "AILANG toolchain defect (--strict-bytecode compiler/VM bug), not a milestone code or test defect",
+      "evidence": [
+        "`make test` run: `strict VM ... | interpreter ... | closed form ...` for the original `scripted()` matches (21.392852753780428 == interpreter, within 1e-9 of closed form) -- the pre-existing strict check is unaffected.",
+        "The new off-axis strict check crashes: `Error: bytecode execution failed: vm: vm: GET_FIELD: index 3 exceeds field count 3 (in sim/core.turn at sim/core.ail:21, ip 0, op GET_FIELD)`.",
+        "Negative control 1 (interpreter): `ailang run --quiet --package-dir sim --entry scriptedOffAxis --args-json 300 sim/core.ail` succeeds, returns 27.637939595105987, matching the closed form (27.637939595106303) within 1e-9.",
+        "Negative control 2 (plain --bytecode, non-strict): also succeeds with the same value.",
+        "Minimal isolated repro (self-contained ~20-line file, no dependency on this milestone's own code): a local 5-field record type embedding the package's `Vec3` and calling the published `pkg/sunholo/relativity/optics.normalize` inside a nested record-construction expression. Under `--strict-bytecode` it crashes: `GET_FIELD: index 3 exceeds field count 3 (in pkg/sunholo/relativity/optics.dot ...)`. Under the interpreter and plain --bytecode it correctly returns 1.0. Reproduced 3 separate ways while bisecting (with/without the if/else chain, with/without normalize()) -- the crash site moves between `core.turn` and the package's `optics.dot`, but the defect class (record field-count/index mismatch at ip 0 of the entered function under --strict-bytecode only) is constant.",
+        "Conclusion: this is a compiler/codegen defect in AILANG v0.45.0's --strict-bytecode path for record field layout across a package boundary; the milestone's own code and tests are written exactly as the spec and sprint plan direct."
+      ]
+    },
+    {
+      "red": "make parity-offaxis (intermittent)",
+      "verdict": "AILANG toolchain defect (nondeterministic plain --bytecode VM execution), not a milestone code or test defect, not a flaw in the test",
+      "evidence": [
+        "6 standalone re-runs of `make parity-offaxis`: 3 pass ('identical (17 lines)'), 3 fail ('.godot/tmp/offaxis_vm.txt .godot/tmp/offaxis_interp.txt differ: char 265, line 3') -- same diff location every failure.",
+        "Isolated the fault to the VM alone (not a VM-vs-interpreter drift): ran `ailang run --bytecode ... < tests/fixtures/offaxis.ndjson` 20 times with NO interpreter comparison at all. Got 2 distinct stable output hashes: 15/20 one hash, 5/20 another -- the VM is not even self-consistent across repeated invocations of the identical static input file.",
+        "Interpreter alone, same 10 repeats: 10/10 identical (self-consistent).",
+        "Negative control: the pre-existing 601-line v1.0 parity script (hello + 600 step commands, never touches `heading`) run 15x through the VM alone: 15/15 identical -- no nondeterminism when `turn()` is never invoked.",
+        "Shrunk to a minimal 3-line NDJSON (hello; one step with a heading turn; quit), 30 VM-only runs: 25/30 correct (tick 1, heading turned), 5/30 silently wrong -- returns the untouched initial state (tick 0, default heading) with status:'ok' (not a rejection code), i.e. the VM sometimes evaluates `turn()`'s `changed` guard as false when it is actually true and silently no-ops an accepted command.",
+        "This is the non-crashing sibling of the --strict-bytecode GET_FIELD bug above: same code path (turn() constructing a record that embeds the package Vec3 type), but under non-strict bytecode the out-of-bounds/misrouted field access doesn't trip a bounds check -- it silently reads a stale/wrong value instead of crashing.",
+        "Practical mitigation already present in this milestone: bridge/sim_bridge.gd's step() independently checks `tick == before.tick + 1` on every 'ok' reply and fails bounded+cleanly (bad_response) on mismatch, so this VM bug would not silently corrupt live gameplay through the bridge -- only the raw NDJSON VM-vs-interpreter parity harness (which bypasses that guard by design, to catch exactly this class of drift) exposes it. The test is doing its job correctly."
+      ]
+    }
+  ],
+  "mutation_table": [
+    {"mutation": "m1: remove the phi snap (turn's accepted branch sets motion.phi = m.phi instead of 0.0)", "target_test": "checkTurnAtRest (sim/core_test.ail)", "result": "killed", "detail": "ailang test --package .: 11 passed, 1 failed -- 'turn at rest snaps rapidity' failed; all others (including checkScriptedOffAxis) still passed."},
+    {"mutation": "m3: pos as heading*x without origin/x0 (position() drops s.origin and s.x0)", "target_test": "checkPositionAfterTurn (sim/core_test.ail)", "result": "killed", "detail": "11 -> 10 passed; 'position after turn retains origin' failed, and 'strict off axis voyage' (checkScriptedOffAxis) also failed as a side effect -- both correctly sensitive."},
+    {"mutation": "m5: reorder bad_heading before bad_step in ship.ail's handle()", "target_test": "checkBadStep (sim/protocol_test.ail)", "result": "killed", "detail": "'bad step precedes heading' failed (the dtau:-1 + malformed-heading case now returns bad_heading instead of bad_step); all other tests unaffected."},
+    {"mutation": "m6: mutate state on a rejected command (reject() increments ship.tick instead of returning the ship unchanged)", "target_test": "checkRejectedStateUnchanged (sim/protocol_test.ail)", "result": "killed", "detail": "'rejection preserves state' failed; 'moving' still passed because it only checks the reply string, not r.ship directly -- confirms checkRejectedStateUnchanged is the one actually guarding ship-state immutability on reject."},
+    {"mutation": "m8: skip forced termination after the grace period (removed the `if OS.is_process_running(_pid): OS.kill(_pid)` block in bridge/sim_bridge.gd's _cleanup())", "target_test": "test_forced_child_cleanup (tests/test_sim_bridge.gd, ignore_quit fake child)", "result": "killed", "detail": "'child cleaned ignore_quit' failed as expected. Collateral failures also appeared ('turn and echo heading', 'heading float64 round trip', etc.) in the same run -- consistent with the VM-nondeterminism defect above surfacing independently mid-suite, not with the mutation itself (those tests don't touch child cleanup)."},
+    {"mutation": "own choice, not in the executor's list: the 'cmd key entirely missing' branch (valid JSON, e.g. {}) changed from reject(s,\"bad_cmd\") to reject(s,\"bad_json\")", "target_test": "none -- SURVIVED", "result": "survived", "detail": "ailang test --package .: 12/12 still passed. No fixture (AILANG tests, offaxis.ndjson, or tests/test_sim_bridge.gd) sends a decodable JSON object with no 'cmd' key at all -- every bad_cmd case in the suite uses an unrecognized cmd value ('warp'), never an absent one. This is a real, if minor, test-coverage gap: a future regression that reclassifies 'no cmd field' would go undetected."}
+  ],
+  "worktree_restored": true,
+  "worktree_status_after_restore": "clean (git status --porcelain empty); sha256 of sim/core.ail, sim/ship.ail, bridge/sim_bridge.gd, sim/core_test.ail, sim/protocol_test.ail verified byte-identical to pre-mutation baseline after every mutation round",
+  "additional_findings": [
+    {
+      "severity": "minor",
+      "category": "test-coverage-gap",
+      "file": "sim/ship.ail",
+      "line": 85,
+      "summary": "A valid-JSON message with no 'cmd' key at all (e.g. '{}') is untested; it happens to fall into the same reject(s, \"bad_cmd\") branch as an unrecognized cmd value, but no test distinguishes the two, so a future regression that misclassifies it (e.g. to bad_json) would pass the entire suite.",
+      "failure_scenario": "See mutation table: a mutant changing this exact branch to reject(s,\"bad_json\") survives ailang test --package ., the offaxis parity fixture, and tests/test_sim_bridge.gd untouched.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "severity": "process",
+      "category": "sprint-artifact-completeness",
+      "file": ".ailang/state/sprints/sprint_R1-M1-SKY.json",
+      "line": 0,
+      "summary": "The M1.6a_SIM_PROTOCOL feature entry has passes: null, started: null, completed: null, notes: null -- never closed out, even as false-with-explanation, despite the code and tests being fully written and committed.",
+      "failure_scenario": "Anyone reading the sprint JSON alone (without re-deriving the git range and re-running the gates, as this evaluation did) would not know the milestone was attempted, let alone that it is blocked upstream by two independently-verified AILANG defects.",
+      "verdict": "CONFIRMED"
+    }
+  ],
+  "recommendation": "FAIL (hard fail on Tests Pass; score 59/100 would also be below threshold on its own). The implementation itself is high quality and matches the design doc and sprint plan closely -- do NOT send this back to the executor for rework; the two reds are independently confirmed AILANG v0.45.0 toolchain defects (a --strict-bytecode record-field-index compiler bug and a related non-strict-bytecode nondeterministic silent-corruption bug, both triggered by constructing a record that embeds the published package's Vec3 type inside a call into a package pure function), not defects in sim/core.ail, sim/ship.ail, or their tests. Recommended next steps: (1) file both with `ailang messages` (AILANG_STORAGE_MESSAGING=gcp, --from stapledons_godot) with the minimal repros captured in this report -- could not confirm from this sandbox whether that has already been done; (2) close out the M1.6a_SIM_PROTOCOL sprint-JSON entry as passes:false with the upstream-blocked explanation rather than leaving it null; (3) once AILANG publishes a fix (or a documented workaround such as avoiding package-typed fields inside locally-constructed records under --strict-bytecode), re-run `make test` unmodified -- no code changes to this milestone's diff should be needed; (4) separately, add one negative test for a cmd-less-but-valid-JSON message before this closes, to remove the one confirmed test-coverage gap (mutation table, last row)."
+}

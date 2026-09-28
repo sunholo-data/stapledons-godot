@@ -68,6 +68,29 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-09-28: iteration 1, M1.6a PARKED on two AILANG VM bugs
+
+- **Mark's attended rulings (08:01) acknowledged:** D-1 bar ratified, D-2
+  amendment accepted, D-3 quick+medium tiers in git, D-4 approximate WD fit.
+  M1.2 is now unblocked.
+- **M1 design doc passed pick-time quorum after revision:** round 1 rejected
+  3/3; the designer (Opus 5.5) added a verification log (3 premises false,
+  corrected) and rewrote M1.6; round 2 rejected 3/3 on concrete
+  non-directional fixes, applied verbatim (narrow-refinement carve-out). New
+  open question 5 (Hipparcos bright tier) → D-5.
+- **M1.6 re-planned** as M1.6a (sim, protocol v1.1, bridge) and M1.6b (camera,
+  golden). **M1.6a built but PARKED upstream** (draft PR #3): `--strict-bytecode`
+  GET_FIELD reads the wrong slot for a field name shared across record types
+  (ailang#1354); `--bytecode` is nondeterministic on `parity-offaxis`, 6–9/30
+  runs (ailang#1355). Both reproduce on v0.45.0 and v0.47. Evaluator Sonnet
+  59/100 FAIL, both reds attributed to the toolchain.
+- **Resume predicate (M1.6a):** a pinned AILANG on which `make strict` passes
+  and 30 runs of `make parity-offaxis` are identical.
+- **Clause map:** 1 UNMET (M1.2 routable now; M1.6a parked upstream; M1.6b
+  behind it) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3 needs a design
+  doc) · 4 UNMET (blocked: ship-interior decision) · 5 ongoing (two VM
+  divergences found and reported this iteration).
+
 ## STATUS 2026-09-27 (night): iteration 0, M1.1 LANDED
 
 - **M1.1 ✅** `sunholo/relativity@0.2.0` published (photometry: BP−RP → T_eff,
@@ -96,15 +119,6 @@ The newest 3 STATUS stamps live here; older ones move to
   binary/JSON ingest. Re-plan M1.2's pipeline on it (the rig binary is still
   v0.45.0; pin the upgrade deliberately).
 
-## STATUS 2026-09-27: PRE-ITERATION-0, charter drafted, awaiting ratification
-
-- M0 spike landed: `stapledons-godot` `e6315cf`, `sunholo/relativity@0.1.0`
-  published.
-- M1 design doc written: `design_docs/planned/r1/m1-relativistic-sky.md`. The
-  next step is a sprint plan, attended.
-- Not armed. No bookkeeping issue. The `godot-game` verify profile has not been
-  added to the shared skill.
-
 ## Decision ledger
 
 <!-- decision-ledger:start -->
@@ -114,6 +128,7 @@ The newest 3 STATUS stamps live here; older ones move to
 | D-2 | RESOLVED | Accept the M1.1 AC1 amendments: Riello G−V cross-check 0.11 mag over BP−RP 0.4–3.0 plus 0.05 over 0.4–1.3; table coverage B9V–M8.5V. Recommendation: accept. Default: accepted (0.2.0 is published).  **ANSWERED — ACCEPTED as published in 0.2.0: Riello G-V cross-check 0.11 mag over BP-RP 0.4-3.0 plus 0.05 over 0.4-1.3; table coverage B9V-M8.5V (Mark, attended 2026-09-28: "record decisions as ratified").** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Measured on Mamajek v2022.04.16: 0.1015 mag at BP−RP 3.0; M9V/M9.5V BP−RP reverses. Evaluator verdict: honest amendment.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
 | D-3 | RESOLVED | Tier data in git for M1.2. Recommendation: commit quick and medium tiers, not large. Default: that, when M1.2 starts.  **ANSWERED — YES: commit the quick and medium tiers to git; build large locally and for bench, never committed (Mark, attended 2026-09-28: "record decisions as ratified").** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Handover comment on #1, 2026-09-27.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
 | D-4 | RESOLVED | White dwarfs in M1: approximate blackbody fit, flagged approximate (design open question 3). Recommendation: yes. Default: yes, when M1.2 starts.  **ANSWERED — YES: approximate blackbody fit for white dwarfs in M1, flagged approximate in data and UI (Mark, attended 2026-09-28: "record decisions as ratified").** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Handover comment on #1; `photometry` 0.2.0 deliberately has no WD model.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
+| D-5 | OPEN | Bright-star tier (M1 design open question 5): accept the proposed M1.2d, a Hipparcos (HIP2, VizieR I/311) tier for V < 7 stars not in GCNS or CNS5, with AC11 and `teffFromBV` in `sunholo/relativity` 0.3.0 (about +250 LOC)? Without it Rigel, Deneb and most naked-eye stars beyond 100 pc exist only as panorama pixels (option A) or not at all (option B). Recommendation: accept. Default if unanswered: M1.2 ships without M1.2d, and the ask is repeated at the M1.4a pause, where option B makes it required. | Quorum round 1 (oc-glm-5-3), 2026-09-28; design doc Problem 5, rows V14 and M1.2d. |
 <!-- decision-ledger:end -->
 
 The M1.4a background choice and the default exposure are asked when those
@@ -127,7 +142,7 @@ milestones are reached (design doc open questions 1 and 4).
 2. **Then:** work the queue, one sprint-sized item per iteration, through
    design doc → sprint plan → execute → evaluate.
 
-## The bar: R1 is done when… (RATIFY with Mark)
+## The bar: R1 is done when… (ratified by Mark 2026-09-28, D-1)
 
 - **Clause 1 (sky):** M1's acceptance criteria AC1–AC10 are met. The
   relativistic sky is correct for any velocity or view direction, with a
@@ -174,10 +189,12 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · [NEXT] M1.2 ∥ M1.6 → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · ~3,000 LOC
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ⏸ PARKED upstream (draft PR #3; ailang#1354, ailang#1355; resume when a pinned AILANG passes `make strict` and 30× `make parity-offaxis` identical) · [NEXT] M1.2 (D-3, D-4 resolved) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b after M1.6a · M1.2d proposed (D-5) · ~3,000 LOC
 2. **M2** journey core · clause 2 · design doc needed · ~2,000 LOC (estimate)
 3. **M3** black holes · clause 3 · design doc needed; `sunholo/relativity` 0.3 (Binet integrator) · ~1,800 LOC (estimate)
 4. **M4** first journey · clause 4 · design doc needed; blocked on the ship-interior decision (design repo open question) · ~2,500 LOC (estimate)
+6. [NEW] **Toolchain gate hygiene** · clause 5 · `make deps` fails whenever the PATH `ailang` differs from the v0.45.0 pin (it rewrites the lockfile version line), so every local gate needs `AILANG=runtime/bin/ailang`: default the Makefile to the pinned runtime when present, or make `deps` ignore the version lines · ~20 LOC
+7. [HARNESS] ticket:mission-base:hardcoded-origin-dev (repeat, non-blocking) · ticket:skill:gate0-ledger-provenance-S (new, non-blocking)
 5. [LANDED] **Arming prerequisites** · `godot-game` profile, registry, env, bookkeeping issue #1 (`sunholo-data/ailang#1340`)
 
 ---
