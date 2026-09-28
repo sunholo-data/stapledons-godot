@@ -57,16 +57,16 @@
       "acceptance_criteria": [
         "V17 nested std/json.get probe rerun on pinned AILANG v0.45.0 VM and interpreter before implementation",
         "make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: hello returns proto 1.1, v1.0 bridge checks remain unmodified, codec precision and every rejection reason preserve state",
-        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec §2 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec \u00a72 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
         "make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: byte-identical VM/interpreter output",
         "make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: existing scripted and scriptedOffAxis strict VM, interpreter and sqrt(2)*D closed form agree within 1e-9",
         "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: AC10 and AC12, including 5 s hello, 2 s step and 1 s graceful-exit bounds, no surviving child"
       ],
       "session": 1,
-      "passes": null,
-      "started": null,
+      "passes": false,
+      "started": "2026-09-28",
       "completed": null,
-      "notes": null
+      "notes": "Iteration 1: implemented (966ba3a + missing-cmd test arm), 12 AILANG tests, physics 42, bridge 0 failures, parity 601 identical. BLOCKED UPSTREAM, two AILANG VM defects on the CI pin v0.45.0 and on v0.47: (1) --strict-bytecode GET_FIELD reads the wrong slot when two record types share a field name at different positions (make strict off-axis fails; 3-line repro); (2) --bytecode is nondeterministic on parity-offaxis (6-9/30 runs diverge from the interpreter, interpreter 0/40; one step carrying a heading suffices). Evaluator Sonnet 59/100 FAIL (hard fail: make test red), both reds attributed to the toolchain independently. Resume predicate: a pinned AILANG release on which `make strict` passes and 30 runs of `make parity-offaxis` are identical."
     },
     {
       "id": "M1.6b_CAMERA_GOLDEN",

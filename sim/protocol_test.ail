@@ -24,7 +24,8 @@ pure func checkBadJson() -> bool {
 }
 pure func checkBadCmd() -> bool {
   let s = initShip(); let r = handle(s, "{\"cmd\":\"warp\"}");
-  status(r.reply) == "bad_cmd" && r.reply == report(s, "bad_cmd")
+  let nocmd = handle(s, "{\"thrust\":1}");
+  status(r.reply) == "bad_cmd" && r.reply == report(s, "bad_cmd") && nocmd.reply == report(s, "bad_cmd")
 }
 pure func checkBadStep() -> bool {
   let s = initShip(); let r = handle(s, "{\"cmd\":\"step\",\"dtau\":-1,\"heading\":{\"x\":1}}");
