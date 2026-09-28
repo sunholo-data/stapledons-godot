@@ -57,7 +57,7 @@
       "acceptance_criteria": [
         "V17 nested std/json.get probe rerun on pinned AILANG v0.45.0 VM and interpreter before implementation",
         "make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: hello returns proto 1.1, v1.0 bridge checks remain unmodified, codec precision and every rejection reason preserve state",
-        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec \u00a72 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec §2 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
         "make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: byte-identical VM/interpreter output",
         "make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: existing scripted and scriptedOffAxis strict VM, interpreter and sqrt(2)*D closed form agree within 1e-9",
         "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: AC10 and AC12, including 5 s hello, 2 s step and 1 s graceful-exit bounds, no surviving child"
@@ -88,21 +88,80 @@
       "notes": null
     },
     {
-      "id": "M1.2_CATALOGUE_PIPELINE",
-      "description": "CNS5+GCNS from VizieR -> tools/extract.py (parse only) -> sim/tools/catalogue.ail (physics via package) -> binary tiers; VM parity + timing",
-      "estimated_loc": 500,
+      "id": "M1.2a_ACQUIRE_PARSE",
+      "description": "kimi evidence rows first (A19/A6 ReadMe status+size+columns, legacy Gaia Sky curl -sI); download_stars.sh fixed to fetch CNS5 (J/A+A/670/A19 cns5.dat) and GCNS (J/A+A/649/A6 table1c.dat) from VizieR/CDS into gitignored data/raw with byte size + sha256 logged (data/raw/SHA256SUMS); legacy gaia.ari URL and V/70A fallback removed; tools/extract.py (Python, stdlib, parse only, no physics) -> CSV id,x,y,z,G,BPRP,wd in galactic ly via the IAU ICRS->galactic matrix, no PM propagation; unittest fixtures are real bytes cut from data/raw (alpha Cen at 4.37 +- 0.02 ly); CSV-level missing-photometry rule (null BP-RP or G -> empty field, never defaulted; wd=1 iff GCNS WDprob > 0.5)",
+      "estimated_loc": 250,
       "dependencies": [
         "M1.1_PHOTOMETRY_PACKAGE"
       ],
       "acceptance_criteria": [
-        "make catalogue TIER=quick|medium|large produce stars_<tier>.bin + JSON header with checksums",
-        "extract.py: alpha Cen lands at 4.37 +- 0.02 ly in galactic XYZ",
-        "make catalogue-parity: VM and interpreter outputs byte-identical on medium; timings and bridged calls recorded in notes (AC2)",
-        "catalogue_stats.py: M dwarfs >= 60% of medium tier (AC3)",
-        "starmap-manager scripts fetch from VizieR (old Gaia Sky URL removed)",
-        "If fallback path used: 1000-row package cross-check passes and the shipped path is recorded"
+        "python3 tools/extract.py cns5 && python3 tools/extract.py gcns exits 0 and reports 5,909 and 331,312 parsed rows (minus printed skip counts)",
+        "python3 tools/test_extract.py passes (alpha Cen distance 4.321 +- 0.02 ly [AMENDED iter 2, controller-adjudicated: the CNS5 GJ 559 AB row carries the HIP2 2007 parallax 754.81 mas = 4.321 ly; 4.37 is the literature figure, not the catalogue value a parse-only tool must reproduce] and galactic direction, GCNS x50/y50/z50 cross-check within 5%, WDprob 0.5 boundary, null-photometry -> empty fields, plx<=0 skip counter, exact CSV schema id,x,y,z,G,BPRP,wd)",
+        "data/raw/SHA256SUMS carries one sha256 per downloaded artifact; grep for gaia.ari.uni-heidelberg in the skill scripts is empty (positive control: cdsarc present)",
+        "kimi evidence rows recorded in this feature's notes BEFORE parser code was written (A19 200/10530B/5909 records, A6 200/39878B/table1c 331312 of 760 bytes, legacy URL 404; stop and re-plan if any differ at execution time)"
       ],
       "session": 2,
+      "passes": true,
+      "started": "2026-09-28T13:20:00Z",
+      "completed": "2026-09-28T13:29:06Z",
+      "notes": "M1.2a DONE 2026-09-28. All five gates green; actual_loc 666 (tools/extract.py 221 + tools/test_extract.py 325 + download_stars.sh 120; fixtures excluded). \nTASK-1 EVIDENCE (reproduced the planner's 2026-09-28 values byte-for-byte, so no stop was needed): A19 ReadMe GET 200 / 10530 B sha256 425176a492a28c2da2d72cf9c56c002c7afb69c98dcc29761ee053cab1fa45bb; A6 ReadMe 200 / 39878 B sha256 a6ed8e561bd6903f9f29b3fe1a9b375b69202d6d55adfcdf2ad74a93c3fbb3ee; A19 file summary 'cns5.dat Lrecl 761 Records 5909' and cns5.dat 4502658 B = 5909 x 762 sha256 7e8c1a2ce4a2afcd70cdf40340c9685b1ec90e8e5085a81812dfa98c5c8adbbf; A6 file summary 'table1c.dat Lrecl 760 Records 331312' and table1c.dat.gz 75193892 B sha256 299f7c15025780df96d5f73fc299e89c81b76fe3de2231981d92ffde11f20ab1, gunzipped table1c.dat 252128432 B = 331312 x 761; legacy Gaia Sky URL curl -sI -> HTTP/1.1 404 Not Found (host deleted from the script); both .dat files LF-only (0 CR bytes) with every line exactly Lrecl bytes (761 / 760).\nCOLUMN SLICES: verified byte-by-byte against both ReadMes; all 11 slices the plan gives are correct (cns5 id 28-46, ra 55-74, dec 76-98, epoch 100-108, plx 130-148, G 362-371, BP 395-404, RP 428-437; gcns id 3-21, ra 23-36, dec 46-59, plx 69-77, G 123-130, BP 142-149, RP 161-168, WDprob 246-250, x50/y50/z50 304-315 / 343-354 / 382-393). No slice needed fixing.\nGATE 1: 'python3 tools/extract.py cns5' -> 'parsed 5908 rows, skipped 1 rows (input 5909)'; 'gcns' -> 'parsed 331312 rows, skipped 0 rows (input 331312)'; exit 0. The single CNS5 skip is the placeholder row 5909 (CNS5=0, blank RA/Dec/plx). GATE 2: python3 tools/test_extract.py -> 15 tests OK (no pytest). GATE 3: SHA256SUMS carries 4 artifacts. GATE 4: grep for the legacy host prints NONE; cdsarc count 3. GATE 5: make test AILANG=$PWD/runtime/bin/ailang exit 0 (27 physics passed / 0 failed, 2 sim files checked, sim bridge 0 failures, parity identical 601 lines, strict VM == interpreter == closed form).\nMUTATIONS: 16 applied to tools/extract.py, all killed, file restored byte-identically (sha256 99a1ff765c5d4d2726b9f5796e61834be0a2713a87fa07dc63b1d9e72b95b9a2 before and after). row1 pc->ly factor dropped -> test_alpha_cen_distance (+ test_gcns_xyz_crosscheck, plx guard); row1 sign flip in a rotation-matrix row -> test_alpha_cen_direction (+ crosscheck) [TABLE CORRECTION: a distance is rotation-invariant, so the sign flip is NOT killed by the distance test as the table implies; the direction test kills it]; row2 x<->y axis permutation -> test_alpha_cen_direction; row2 degrees-vs-radians -> test_alpha_cen_direction; row3 use -A -> test_gcns_xyz_crosscheck; row3 x1000 mas->arcsec slip -> test_gcns_xyz_crosscheck; row4 '>' read as '>=' -> test_gcns_wd_flag; row4 WDprob slice +1 byte -> test_gcns_wd_flag; row4 WDprob slice -1 byte -> test_gcns_wd_flag; row5 missing BPRP defaulted 0.0 -> test_missing_phot_cns5; row6 only one side of the BP/RP pair checked -> test_bprp_needs_both; row7 plx<=0 allowed -> test_distance_ly_from_parallax_guard; row7 plx guard removed (ZeroDivisionError) -> the same; row8 body column order reordered -> test_csv_schema; row8 id through float64 (unguarded) and (numeric ids only) -> test_csv_schema + test_gcns_csv_schema.\nFINDING (surviving mutation, fixed): the plan's WDprob 'slice off by one byte' SURVIVED the original test. A 5-byte F5.3 field masks the shift: a +1 shift drops the leading digit so '1.000' reads 0.0 (only 1.000 rows expose it) and a -1 shift keeps two decimals so '0.506' reads 0.50 (only 0.501..0.509 rows expose it). The plan's 0.924 fixture kills neither direction. Fixed by adding two awk-cut fixtures (gcns_wd_1p000.dat WDprob 1.000, gcns_wdprob_0506.dat WDprob 0.506) plus the 0.500 boundary row; both directions are now killed. test_csv_schema/test_gcns_csv_schema were also strengthened to compare every id verbatim (19 of the 39 fixture ids do not survive a float64 round-trip; the first row's id happens to be exact) and to check the body column order, since the header check alone did not catch a body reorder.\nDEVIATIONS (all measured): (1) alpha Cen: CNS5 has exactly one GJ 559 row (line 5103) and it is the AB system (Comp=AB) - there is no separate 'component suffix A' row. Its plx 754.81 mas gives 4.3210 ly, not the plan's 4.370 +- 0.02 ly (4.370 is the popular literature figure; the plan's own direction expectation l=315.7, b=-0.68 is satisfied by exactly this row, so the row choice is right). test_alpha_cen_distance asserts 4.3210 +- 0.02. (2) Fixtures added beyond the plan's list, all real bytes cut with sed/awk from data/raw: cns5_bp_blank_rp_set.dat (the one-sided-pair mutation), cns5_null_plx.dat (blank plx, the only such row in CNS5), gcns_wd_1p000.dat and gcns_wdprob_0506.dat (see FINDING); 10 fixtures, 37 KB, LF-only, exact commands recorded in the test_extract.py docstring. (3) CNS5 id fallback: the ReadMe's '-' missing marker is treated as missing as well as blank (672 rows have no GaiaDR3 id, and the fallback id is 'CNS5:<designation>'). The plan only said 'if blank'. (4) download_stars.sh writes data/raw/.gdignore: without it `make import` (part of `make test`) makes Godot import the 24 MB gcns.csv as a CSV *translation* source and emit ~70 MB of *.translation + *.csv.import sidecars into data/raw (measured). (5) .gitignore gains __pycache__/ and *.pyc - Python is now part of the toolchain. (6) A row with missing RA or Dec is counted as skipped as well as blank/<=0 plx; only the single placeholder row hits any of these, so the counts above are unaffected. (7) download_stars.sh is idempotent for SHA256SUMS (re-running a tier replaces its lines rather than appending).",
+      "actual_loc": 666
+    },
+    {
+      "id": "M1.2b_AILANG_CATALOGUE",
+      "description": "sim/tools/catalogue.ail pure transform + thin IO/FS shell on pinned v0.45.0: 5000-row VM perf probe first (photometry is a recursive nth_or scan, no unboxed Array[float]); tier selection (medium = 50,000 nearest complete-photometry GCNS rows by sortOn x2+y2+z2, skipped missing rows counted as count_excluded; quick = CNS5, large = all); package photometry teffFromBpRp/vFromG; D-4 WD teff = least-squares blackbody fit via package blackbody.planck over approximate rectangular passbands (BP 505-680nm, RP 640-1050nm), flags bit APPROX_TEFF; quorum MISSING_PHOT encoding teff=0 v=+99; NO custom record types (bug ailang#1354); hand-rolled float32 LE encoder -> 24 B records (x,y,z,teff,v,flags) + sidecar JSON header (tier,count,count_excluded,source,format_version,record_bytes,fields,ailang,package,producer,sha256{raw,csv,bin}) + human-readable stars.json for quick; make catalogue TIER=quick|medium|large and make catalogue-parity (interpreter once vs 5 VM runs, cmp; bug ailang#1355), all with AILANG=$PWD/runtime/bin/ailang; sim/ailang.toml [effects].max gains FS (IMP010-verified); documented tools/catalogue_fallback.py only if trigger fires (medium > 60 s VM or blocking VM bug): table from photometry_table.ail literals, 1000-row package cross-check, producer recorded",
+      "estimated_loc": 250,
+      "dependencies": [
+        "M1.2a_ACQUIRE_PARSE"
+      ],
+      "acceptance_criteria": [
+        "perf probe recorded in notes: VM wall time for 5,000 rows plus x10/x66 extrapolations for medium/large",
+        "make catalogue TIER=quick AILANG=$PWD/runtime/bin/ailang: stars_quick.bin is exactly 141,816 B (5,909 x 24) plus sidecars; TIER=medium gives exactly 1,200,000 B (50,000 records) with header count_excluded printed; TIER=large succeeds or the fallback trigger fired and the shipped path + times are recorded in notes",
+        "make catalogue-parity AILANG=$PWD/runtime/bin/ailang: all 5 VM runs byte-identical to the interpreter on medium, six wall times printed; any divergence filed upstream before continuing",
+        "runtime/bin/ailang test --package sim passes sim/tools/catalogue_test.ail: f32LE vectors (1.0 -> [0,0,128,63], -2.5 -> [0,0,32,192], 99.0 -> [0,0,198,66], 0.0 -> zeros, mantissa-carry case), medium complete-photometry selection, MISSING_PHOT sentinel (kills the teff=2420 clamp default), WD flag+range (kills teffFromBpRp on WD rows)",
+        "if the fallback fired: tools/catalogue_fallback.py exists, its 1,000-row package cross-check passes within 1e-6, and header producer + notes name the shipped path"
+      ],
+      "session": 2,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.2c_STATS_AND_COMMIT",
+      "description": "tools/catalogue_stats.py test-first (AC3: M dwarfs teff < 3900 K >= 60% of medium; per-tier excluded count; zero defaulted rows: (teff==0 and v==99) <=> MISSING_PHOT else exit nonzero); process_stars.sh removed (superseded by extract.py + catalogue.ail); SKILL.md tier table rewritten to CNS5/50k-nearest/full and status.sh reads the sidecar headers; .gitignore gains stars_large.bin sidecars; commit quick+medium binaries + sidecars + rebuilt stars.json per D-3 (large local only, never committed); make catalogue-verify rebuilds quick+medium to scratch and cmp-matches the committed binaries (CLAUDE.md determinism gate)",
+      "estimated_loc": 180,
+      "dependencies": [
+        "M1.2b_AILANG_CATALOGUE"
+      ],
+      "acceptance_criteria": [
+        "tools/catalogue_stats.py --tier medium prints the M-dwarf share >= 60% and exits 0 (AC3); python3 tools/test_catalogue_stats.py passes",
+        "tools/catalogue_stats.py prints every tier's excluded count and finds zero defaulted rows (AC2 no-default clause)",
+        "make catalogue-verify AILANG=$PWD/runtime/bin/ailang prints quick identical / medium identical against the committed binaries",
+        "test ! -f .claude/skills/starmap-manager/scripts/process_stars.sh and grep shows no process_stars references left in SKILL.md or status.sh (control: grep -c catalogue SKILL.md > 0)",
+        "git ls-files data/starmap lists stars.json, stars_quick.bin, stars_medium.bin plus sidecars and NOT stars_large.bin"
+      ],
+      "session": 3,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.2d_BRIGHT_TIER",
+      "description": "ACCEPTED D-5 2026-09-28 ('Yes I accept those stars'). Two halves under the ~250 cap, seam at the publish gate. (1) sunholo/relativity 0.3.0 teffFromBV package-first: extend the package's mamajek generator for a bvNodes column from the same Mamajek table, tests first (G2V 0.65->5770 +- 5% plus one K and one M dwarf table row, clamps; dwarfs Sun/alpha Cen B/Barnard/Proxima within 5%), CHANGELOG ## 0.3.0, [release] kind feature, ailang pkg quality no gates, attended publish (M1.1 standing permission), pin 0.3.0 in sim/ailang.toml + relock with the pinned binary. Package repo note: packages/relativity exists on origin/main of sunholo-data/ailang-packages (GitHub API-verified today); the local clone is a stale 2026-09-19 build branch without it - use an updated main checkout. (2) bright tier: HIP2 I/311 hip2.dat astrometry (radians, Ep 1991.25) + I/239 hip_main.dat Johnson V (bytes 42-46, planner-verified: I/311 has no V), joined on HIP; select V < 7 and plx > 0; PM-propagate to 2016.0 for the GCNS match and to each CNS5 row's own epoch; match = 1 arcsec and |G - V| < 2.0 guard; survivors -> bright.csv (id,x,y,z,V,BV,wd); catalogue.ail bright path (teffFromBV, v = catalogue V verbatim, flags bit 8 BRIGHT) -> stars_bright.bin, same 24 B record; quorum encoding for BV-null rows; tools/bright_star_audit.py landed with synthetic unit tests, full AC11 render gate runs in M1.5 (needs the M1.3 loader). stars_bright.bin committed (~0.25 MB expected; D-3 named only quick+medium - planner extension, flag at next attended sync if disputed)",
+      "estimated_loc": 300,
+      "dependencies": [
+        "M1.2c_STATS_AND_COMMIT"
+      ],
+      "acceptance_criteria": [
+        "ailang pkg info sunholo/relativity shows v0.3.0; sim/ailang.toml and sim/ailang.lock pin 0.3.0; make test AILANG=$PWD/runtime/bin/ailang AILANG_BIN=$PWD/runtime/bin/ailang green",
+        "python3 tools/test_extract_bright.py passes on real-byte fixtures: Vega (HIP 91262) matched out, Arcturus (HIP 69673) matched out ONLY with PM propagation, Rigel (HIP 24436) included with v = catalogue V, a high-pm CNS5 row matched at its own epoch",
+        "python3 tools/extract_bright.py exits 0 with bright.csv row count in [1000, 20000] recorded in notes",
+        "make catalogue TIER=bright AILANG=$PWD/runtime/bin/ailang: stars_bright.bin size divisible by 24; runtime/bin/ailang test --package sim passes the bright rows; make catalogue-parity still 5/5 identical",
+        "python3 tools/test_bright_star_audit.py passes; AC11 render gate (make capture && tools/bright_star_audit.py renders/) listed in M1.5's checks"
+      ],
+      "session": 3,
       "passes": null,
       "started": null,
       "completed": null,
@@ -113,7 +172,8 @@
       "description": "Binary tier loader, 331k-instance MultiMesh with Teff/E_v, rebasing (CPU or vertex-shader plan B), make bench",
       "estimated_loc": 400,
       "dependencies": [
-        "M1.2_CATALOGUE_PIPELINE"
+        "M1.2c_STATS_AND_COMMIT",
+        "M1.2d_BRIGHT_TIER"
       ],
       "acceptance_criteria": [
         "Loader rejects bad version/checksum (test)",

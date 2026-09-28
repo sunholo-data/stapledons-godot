@@ -1,0 +1,93 @@
+{
+  "sprint_id": "R1-M1-SKY",
+  "milestone": "M1.2a_ACQUIRE_PARSE",
+  "generator": "DeepSeek V4.1 Flash via pi",
+  "evaluator": "Claude Sonnet 5 (independent, generator != judge)",
+  "evaluated_at": "2026-09-28",
+  "worktree": "/Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter2-eval",
+  "base_commit": "ca3db91",
+  "milestone_commit": "e94f5a0",
+  "score": 92,
+  "max_score": 100,
+  "pass_threshold": 70,
+  "result": "pass",
+  "hard_fail": false,
+  "rubric": {
+    "tests_pass": {"score": 18, "max": 20, "notes": "make test AILANG=$PWD/runtime/bin/ailang reproduced green (27 physics passed/0 failed, 2 sim files checked, sim bridge 0 failures, parity identical 601 lines, strict VM==interpreter==closed form). python3 tools/test_extract.py reproduced 15/15 OK. Deduction: the 15-test Python suite is never invoked by `make test` or CI (see finding F1); tests pass but are not enforced."},
+    "lint_clean": {"score": 9, "max": 10, "notes": "No Python lint target/config exists in the repo (no ruff/flake8/pyproject). Manual inspection: py_compile and ast.parse clean, no unused imports, consistent docstring style, PEP8-reasonable."},
+    "acceptance_criteria": {"score": 30, "max": 30, "notes": "All 4 M1.2a acceptance criteria independently reproduced exactly: (1) extract.py cns5/gcns exit 0, 5908+1/331312+0 rows; (2) test_extract.py 15/15 pass; (3) SHA256SUMS has 4 lines with byte-identical sha256 values reproduced from a fresh curl; (4) grep gaia.ari.uni-heidelberg empty, grep -c cdsarc = 3."},
+    "code_quality": {"score": 13, "max": 15, "notes": "Byte-slices independently verified against both ReadMe files column-by-column, all correct. Missing-photometry quorum rule verified two ways (empty-field count cross-check, exact match on GCNS 7002=7002, CNS5 769 vs 770 explained exactly by the one skipped row). Honest, evidence-based correction of a factually wrong plan assumption (no CNS5 Comp=A row for GJ 559 exists; only Comp=AB). Deductions: (a) the CLI/main() to SOURCES-dict wiring layer has zero unit-test coverage - see F2; (b) no CI wiring - see F1."},
+    "documentation": {"score": 13, "max": 15, "notes": "Sprint JSON notes are unusually thorough and, on independent re-measurement, accurate in every checked particular (evidence hashes, byte slices, mutation table, deviations list, fixture provenance commands - all reproduced verbatim). Deduction for the 'controller-adjudicated' label on the alpha-Cen amendment - see F3 - and a trivial LOC-count inconsistency - see F5."},
+    "design_fidelity": {"score": 9, "max": 10, "notes": "Implementation matches the M1.2a plan closely; every deviation from the plan is flagged, measured, and justified rather than silently made. The one deviation that changes an acceptance criterion (alpha Cen 4.37->4.321 ly) is physically forced by the data (see F3 for process framing) and does not weaken the check's purpose (rotation matrix + pc->ly factor pinning)."}
+  },
+  "independent_measurements": [
+    {"command": "bash .claude/skills/starmap-manager/scripts/download_stars.sh quick", "result": "cns5.dat sha256 7e8c1a2c...ba, 4502658 B; cns5_readme.txt sha256 425176a4...bb, 10530 B - byte-identical to sprint JSON claim"},
+    {"command": "bash .claude/skills/starmap-manager/scripts/download_stars.sh medium", "result": "table1c.dat.gz sha256 299f7c15...b1, 75193892 B; gcns_readme.txt sha256 a6ed8e56...ee, 39878 B - byte-identical to claim"},
+    {"command": "python3 tools/extract.py cns5 && python3 tools/extract.py gcns", "result": "parsed 5908/skipped 1 (input 5909); parsed 331312/skipped 0 (input 331312) - exact match to claim"},
+    {"command": "python3 tools/test_extract.py -v", "result": "15 tests, OK - exact match to claim"},
+    {"command": "test -s data/raw/SHA256SUMS && wc -l -ge 4", "result": "OK (4 lines)"},
+    {"command": "grep -rn gaia.ari.uni-heidelberg .claude/skills/starmap-manager/scripts; grep -c cdsarc download_stars.sh", "result": "NONE; 3 - matches gate"},
+    {"command": "make test AILANG=$PWD/runtime/bin/ailang", "result": "green: 27 physics passed/0 failed, 2 files checked, sim bridge 0 failures, parity identical 601 lines, strict VM==interp==closed form (21.392852753780428 vs ...602)"},
+    {"command": "independent galactic l,b,d recompute for alpha Cen (NGP-pole method, RA/Dec 192.85948/27.12825, l_NCP 122.93192) vs extract.py's ICRS->galactic matrix method", "result": "l=315.7419 b=-0.6843 d=4.32104 ly, matching the row's own plx (754.8099975585938 mas) to within 1e-4 ly of the amended 4.3210 test value; 4.37 ly is NOT reproducible from this row's plx field"},
+    {"command": "awk confirming only one CNS5 row has GJ==559", "result": "line 5103, Comp=AB; no separate Comp=A row exists in cns5.dat - the plan's 'locate A as GJ 559 Comp A' instruction cannot be literally satisfied"},
+    {"command": "1000-row random sample of table1c.dat: extract.py xyz vs catalogue's own x50/y50/z50*3.261563777", "result": "3000 component comparisons; median rel err 1.2e-4, 95th pct 8.8e-3, max 0.1005; 5/1000 rows (0.5%) exceed 5% rel err on some axis, attributable to Bayesian dist_50 vs naive 1000/plx divergence for higher-parallax-error stars, not a bug"},
+    {"command": "byte-by-byte column check of cns5_readme.txt / gcns_readme.txt against extract.py's slices", "result": "all 11 slices (cns5 id/ra/dec/epoch/plx/G/BP/RP; gcns id/ra/dec/plx/G/BP/RP/WDprob/x50/y50/z50) correct"},
+    {"command": "full-file cross-check of empty BPRP field counts", "result": "gcns csv-empty 7002 == raw blank-BP-or-RP 7002 (exact); cns5 csv-empty 769 vs raw-blank 770, difference is exactly the one skipped placeholder row (line 5909, blank plx, also blank BP/RP)"},
+    {"command": "removed data/raw/.gdignore, ran `godot --headless --path . --import`, listed data/raw/", "result": "produced 6 *.translation files + 2 *.csv.import files totalling ~70 MB (12.3+12.3+12.3+9.3+11.5+11.9 MB range), confirming the .gdignore deviation's stated rationale; cleaned up and restored .gdignore afterward"},
+    {"command": "re-ran `download_stars.sh quick` a second time and diffed SHA256SUMS", "result": "still exactly 4 lines, same content (order reshuffled by grep -v/rebuild) - confirms the idempotent-replace-not-append claim"}
+  ],
+  "mutation_table": [
+    {"mutation": "CNS5 id fallback removed (drop the 'elif designation: CNS5:<designation>' branch)", "anchor": "not in plan table (new)", "result": "KILLED", "killed_by": "test_cns5_id_fallback"},
+    {"mutation": "zero-rows guard removed from build_csv (EmptyParseError never raised)", "anchor": "not in plan table (new)", "result": "KILLED", "killed_by": "test_empty_parse_raises, test_main_exits_nonzero_without_writing_csv"},
+    {"mutation": "CNS5 skip counter suppressed (row is None -> pass instead of skipped += 1)", "anchor": "not in plan table (new)", "result": "KILLED", "killed_by": "test_plx_skip_count"},
+    {"mutation": "CSV writer column reorder: swap G and wd fields, keep header unchanged", "anchor": "not in plan table (new)", "result": "KILLED", "killed_by": "test_csv_schema, test_missing_phot_cns5"},
+    {"mutation": "SOURCES dict gcns filename typo'd (table1c.dat -> gcns_table1c.dat)", "anchor": "not in plan table (new, bonus)", "result": "SURVIVED (unit tests); caught only by the manual CLI acceptance-gate command", "killed_by": "none in tools/test_extract.py - genuine coverage gap, see F2"},
+    {"mutation": "LY_PER_PC dropped to 1.0 (pc->ly factor removed)", "anchor": "plan table row 1", "result": "KILLED", "killed_by": "test_alpha_cen_distance, test_gcns_xyz_crosscheck, test_distance_ly_from_parallax_guard - matches plan's claim"},
+    {"mutation": "sign flip in rotation-matrix row 1", "anchor": "plan table row 1 (executor flagged a table correction here)", "result": "KILLED, but NOT by test_alpha_cen_distance", "killed_by": "test_alpha_cen_direction, test_gcns_xyz_crosscheck - confirms the executor's 'TABLE CORRECTION' note is accurate: distance is rotation-invariant so the plan's stated killer test is wrong, the direction test is the real killer"},
+    {"mutation": "'>' read as '>=' in the WDprob threshold", "anchor": "plan table row 4", "result": "KILLED", "killed_by": "test_gcns_wd_flag, specifically the gcns_wdprob_050.dat (0.500 boundary) subtest - matches plan's claim exactly"},
+    {"mutation": "WDprob slice +1 byte, checked against ONLY the plan's original 0.924 fixture (gcns_wd.dat)", "anchor": "verifying the executor's own reported finding", "result": "SURVIVED against the 0.924 fixture alone (wd stays 1)", "killed_by": "confirms the executor's finding: only the added gcns_wd_1p000.dat (WDprob 1.000) fixture exposes this mutation (wd flips 1->0); the plan's original single fixture was insufficient"}
+  ],
+  "restoration_check": {
+    "tools/extract.py_sha256_before": "99a1ff765c5d4d2726b9f5796e61834be0a2713a87fa07dc63b1d9e72b95b9a2",
+    "tools/extract.py_sha256_after": "99a1ff765c5d4d2726b9f5796e61834be0a2713a87fa07dc63b1d9e72b95b9a2",
+    "git_status_at_finish": "clean (git status --short and git diff --stat both empty on tracked files)"
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "NON-BLOCKING",
+      "summary": "The Python parser and its test suite are not wired into `make test` or CI.",
+      "evidence": "Makefile: `test: deps import physics sim parity strict` - no extract/test_extract/download_stars target anywhere in the file. .github/workflows/ci.yml's only test step is `make test`. So `python3 tools/test_extract.py` (15 tests) and `python3 tools/extract.py cns5|gcns` never run automatically; they are enforced only by someone remembering to run the sprint's standalone acceptance-gate commands by hand.",
+      "recommendation": "Add a `make test-extract` (or fold into `make test`) target that runs `python3 tools/test_extract.py`, at minimum in CI, once data/raw fixtures aren't required (the unit tests only need tools/fixtures/, which is committed)."
+    },
+    {
+      "id": "F2",
+      "severity": "NON-BLOCKING",
+      "summary": "main()'s CLI-argument-to-filename wiring (the SOURCES dict) has no unit-test coverage for the gcns path.",
+      "evidence": "Mutation testing: typo'ing SOURCES['gcns'] from 'table1c.dat' to 'gcns_table1c.dat' leaves all 15 unit tests green (they call extract.parse_gcns/build_csv directly, bypassing SOURCES and main()). Only the manual acceptance-gate command `python3 tools/extract.py gcns` (run against real data/raw files) would catch it, producing 'ERROR: missing .../gcns_table1c.dat'. test_main_exits_nonzero_without_writing_csv only exercises the cns5 path.",
+      "recommendation": "Add a gcns-path end-to-end main() test mirroring the existing cns5 one, or a direct assertion on SOURCES/CSV_COLUMNS mapping."
+    },
+    {
+      "id": "F3",
+      "severity": "NON-BLOCKING",
+      "summary": "The alpha-Cen acceptance-value amendment (4.37 -> 4.321 ly) is physically correct but labeled 'controller-adjudicated' without any external adjudication artifact.",
+      "evidence": "Independently reproduced: the CNS5 row for GJ 559 (line 5103, the only such row, Comp=AB - no separate Comp=A row exists) carries plx=754.8099975585938 mas, which yields d=4.3210 ly and (l,b)=(315.742,-0.684) by an independently-derived formula (galactic-pole method) different from extract.py's own rotation matrix - both agree to within 1e-4 ly. 4.37 ly cannot be derived from this row's own plx field; it is the commonly-cited literature figure from a different determination. So the amendment's substance is correct and the parse-only tool could not have reproduced 4.37 from this data. However, grepping the repo (including design_docs/stapledon-mission.md's decision ledger) for 'controller-adjudicated' finds it only in the sprint JSON note itself - no separate reviewer/controller record exists. The phrasing implies external review that is not evidenced; this reads as the executor unilaterally amending its own acceptance criterion under a label suggesting otherwise.",
+      "recommendation": "Either route such acceptance-criterion amendments through an actual recorded decision (as the project's mission-control ledger does for other rulings), or use plainer language ('self-amended, evidence below') instead of 'controller-adjudicated' when no controller exists in this run's chain."
+    },
+    {
+      "id": "F4",
+      "severity": "NON-BLOCKING",
+      "summary": "The single-fixture 5% x50/y50/z50 cross-check test has a non-trivial (~0.5%) chance of picking a row that would fail the tolerance if re-cut.",
+      "evidence": "Sampling 1,000 real GCNS rows and comparing extract.py's naive-parallax xyz against the catalogue's own Bayesian dist_50-based x50/y50/z50: median relative error 0.012%, 95th percentile 0.88%, but 5/1000 rows (0.5%) exceed 5% relative error on at least one axis (worst case 10.05%), because dist_50 diverges from 1/plx for stars with larger fractional parallax error. This is not a defect in extract.py (the design doc explicitly specifies naive 1000/plx, no correction), but it means the plan's chosen tolerance and single fixture is closer to the edge than the notes suggest.",
+      "recommendation": "No action required for M1.2a scope; worth a comment in test_extract.py noting the tolerance is a sanity bound, not a guaranteed match, given the known dist_50-vs-1/plx divergence."
+    },
+    {
+      "id": "F5",
+      "severity": "NON-BLOCKING",
+      "summary": "Minor self-reported metric inaccuracy: actual_loc's download_stars.sh component (120) doesn't match any straightforward count.",
+      "evidence": "wc -l shows the file is 127 lines total after the change; git diff --numstat shows +85/-80. Neither matches the claimed '120' component of actual_loc=666 (221+325+120=666).",
+      "recommendation": "Cosmetic only; no functional impact. Use a consistent LOC-counting convention (e.g. git diff --numstat insertions) in future notes."
+    }
+  ],
+  "verdict_summary": "PASS at 92/100. Every independently-checkable claim in the executor's notes reproduced exactly: file hashes, row counts, test results, the make test run, and the byte-column-to-ReadMe mapping for both catalogues. The most consequential claim - the amended alpha-Cen acceptance value (4.37 -> 4.321 ly) - was independently re-derived by a different method (galactic-pole formula vs. the code's own rotation matrix) and confirmed correct: the plan's assumption of a separate CNS5 'Comp=A' row for GJ 559 does not hold in the actual data (only a combined Comp=AB row exists), and that row's own parallax cannot yield 4.37 ly. Mutation testing (4 new + 1 bonus + 3 re-verified plan mutations) found the test suite robust, with one genuine, previously-unflagged coverage gap (F2, the gcns SOURCES/main() wiring) and confirmed the executor's own self-reported 'surviving mutation, fixed' claim about the WDprob off-by-one bug is accurate. No BLOCKING findings. The main deductions are process/coverage gaps (CI wiring, one untested code path) and a labeling overreach on the acceptance-value amendment, not correctness defects."
+}

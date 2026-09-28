@@ -1,122 +1,127 @@
 #!/bin/bash
-# Download star catalog data for Stapledon's Voyage
+# Download raw star catalogue data for Stapledon's Voyage.
+#
 # Usage: download_stars.sh <tier>
-#   tier: quick (CNS5, ~1MB), medium (filtered GCNS, ~15MB), large (full GCNS, ~72MB)
+#   quick  - CNS5 (VizieR J/A+A/670/A19, cns5.dat), 5,909 records, fixed width 761 B
+#   medium - GCNS selected objects (VizieR J/A+A/649/A6, table1c.dat.gz),
+#            331,312 records, 760 B uncompressed
+#   large  - the same GCNS bytes as medium; the tier difference is made by
+#            tools/extract.py + sim/tools/catalogue.ail, not by the download
+#
+# Everything lands in data/raw/ (gitignored). For every artifact this script
+# prints its byte size and sha256, and appends "<sha256>  <name>" to
+# data/raw/SHA256SUMS (one line per artifact, re-running replaces the line).
+#
+# Sources are the CDS/VizieR FTP mirrors only. Two former sources are gone
+# entirely: the Gaia Sky CNS5 host (its catalog URL now answers 404, recorded
+# as evidence in the sprint JSON) and the V/70A votable fallback, which
+# resolved to an unrelated catalogue.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 RAW_DIR="$PROJECT_ROOT/data/raw"
-OUTPUT_DIR="$PROJECT_ROOT/data/starmap"
+SUMS="$RAW_DIR/SHA256SUMS"
+CURL_MAX_TIME="${CURL_MAX_TIME:-900}"
 
 TIER="${1:-quick}"
 
-# Create directories
 mkdir -p "$RAW_DIR"
-mkdir -p "$OUTPUT_DIR"
+
+# Godot treats every .csv under the project as a translations source: without
+# this, `godot --import` (i.e. `make test` -> `make import`) turns the 24 MB
+# data/raw/gcns.csv into ~70 MB of *.translation sidecars in data/raw.  The
+# catalogues are read as plain files by Python and AILANG, never as Godot
+# resources, so the directory must not be scanned.
+touch "$RAW_DIR/.gdignore"
+
+# record <name-in-raw>: log size + sha256, and keep exactly one SUMS line for it
+record() {
+    local name="$1"
+    local file="$RAW_DIR/$name"
+    local size sum
+
+    size="$(wc -c < "$file" | tr -d ' ')"
+    sum="$(cd "$RAW_DIR" && shasum -a 256 "$name" | awk '{print $1}')"
+
+    echo "  size:   $size bytes"
+    echo "  sha256: $sum"
+
+    if [ -f "$SUMS" ]; then
+        grep -v "  $name\$" "$SUMS" > "$SUMS.tmp" || true
+        mv "$SUMS.tmp" "$SUMS"
+    fi
+    echo "$sum  $name" >> "$SUMS"
+}
+
+# fetch <url> <name-in-raw>: download with --fail, then record it
+fetch() {
+    local url="$1"
+    local name="$2"
+
+    echo "  GET $url"
+    if ! curl -L --fail --silent --show-error --max-time "$CURL_MAX_TIME" \
+            -o "$RAW_DIR/$name" "$url"; then
+        echo "  ERROR: download failed: $url" >&2
+        echo "  (manual fallback: https://cdsarc.cds.unistra.fr/viz-bin/cat/...)" >&2
+        exit 1
+    fi
+    record "$name"
+}
+
+A19_BASE="https://cdsarc.cds.unistra.fr/ftp/J/A+A/670/A19"
+A6_BASE="https://cdsarc.cds.unistra.fr/ftp/J/A+A/649/A6"
 
 echo "=== Starmap Data Downloader ==="
-echo "Tier: $TIER"
+echo "Tier:   $TIER"
 echo "Output: $RAW_DIR"
 echo ""
 
 case "$TIER" in
     quick)
-        echo "Downloading CNS5 (Catalogue of Nearby Stars)..."
-        echo "  Source: Gaia Sky / German Virtual Observatory"
-        echo "  Stars: ~5,930 nearest stars"
-        echo "  Size: ~1.2 MB"
+        echo "CNS5 (Catalogue of Nearby Stars, 5th edition)"
+        echo "  Records: 5,909   Lrecl: 761"
         echo ""
-
-        # CNS5 from Gaia Sky - using their hosted version
-        # Note: This is a pre-processed nearby star catalog
-        CNS5_URL="https://gaia.ari.uni-heidelberg.de/gaiasky/files/catalogs/dr3/cns5-dr3.vot.gz"
-
-        if curl -L --fail -o "$RAW_DIR/cns5.vot.gz" "$CNS5_URL" 2>/dev/null; then
-            echo "  Downloaded: cns5.vot.gz"
-            gunzip -f "$RAW_DIR/cns5.vot.gz" 2>/dev/null || true
-        else
-            echo "  Primary URL failed, trying alternative..."
-            # Alternative: Query VizieR for CNS5
-            # This gets the 5th Catalogue of Nearby Stars
-            ALT_URL="https://vizier.cds.unistra.fr/viz-bin/votable?-source=V/70A&-out.max=10000"
-            curl -L -o "$RAW_DIR/cns5.vot" "$ALT_URL" 2>/dev/null || {
-                echo "  ERROR: Could not download CNS5 data"
-                echo "  Try manually from: https://gaiasky.space/resources/datasets/"
-                exit 1
-            }
-        fi
-
+        fetch "$A19_BASE/cns5.dat"  "cns5.dat"
+        fetch "$A19_BASE/ReadMe"    "cns5_readme.txt"
         echo ""
         echo "Quick tier complete!"
         ;;
 
     medium)
-        echo "Downloading filtered GCNS (Gaia Catalogue of Nearby Stars)..."
-        echo "  Source: VizieR / CDS Strasbourg"
-        echo "  Stars: ~50,000 G/K/M dwarfs within 100pc"
-        echo "  Size: ~10-15 MB"
+        echo "GCNS (Gaia Catalogue of Nearby Stars) - selected objects"
+        echo "  Records: 331,312   Lrecl: 760"
+        echo "  Selection to ~50,000 nearest complete-photometry rows happens in"
+        echo "  sim/tools/catalogue.ail (tier=medium), not here."
         echo ""
-
-        # GCNS from CDS - using TAP query for filtered subset
-        # Filter: G/K/M stars (BP-RP > 0.5), good parallax, not white dwarfs
-        GCNS_URL="https://cdsarc.cds.unistra.fr/ftp/J/A+A/649/A6/table1c.dat.gz"
-
-        echo "  Downloading full GCNS (will filter locally)..."
-        if curl -L --fail -o "$RAW_DIR/gcns_full.dat.gz" "$GCNS_URL"; then
-            echo "  Downloaded: gcns_full.dat.gz ($(du -h "$RAW_DIR/gcns_full.dat.gz" | cut -f1))"
-            gunzip -kf "$RAW_DIR/gcns_full.dat.gz"
-            echo "  Extracted: gcns_full.dat"
-        else
-            echo "  ERROR: Could not download GCNS data"
-            echo "  Try manually from: https://cdsarc.cds.unistra.fr/viz-bin/cat/J/A+A/649/A6"
-            exit 1
-        fi
-
+        fetch "$A6_BASE/table1c.dat.gz" "table1c.dat.gz"
+        echo "  gunzip -> table1c.dat"
+        gunzip -kf "$RAW_DIR/table1c.dat.gz"
+        fetch "$A6_BASE/ReadMe" "gcns_readme.txt"
         echo ""
         echo "Medium tier complete!"
-        echo "Run process_stars.sh to filter to ~50k G/K/M dwarfs"
         ;;
 
     large)
-        echo "Downloading full GCNS (Gaia Catalogue of Nearby Stars)..."
-        echo "  Source: VizieR / CDS Strasbourg"
-        echo "  Stars: 331,312 within 100 parsecs"
-        echo "  Size: ~72 MB compressed, ~164 MB uncompressed"
+        echo "GCNS (Gaia Catalogue of Nearby Stars) - full table1c"
+        echo "  Records: 331,312 (same bytes as medium)"
         echo ""
-
-        GCNS_URL="https://cdsarc.cds.unistra.fr/ftp/J/A+A/649/A6/table1c.dat.gz"
-
-        if curl -L --fail -o "$RAW_DIR/gcns_full.dat.gz" "$GCNS_URL"; then
-            echo "  Downloaded: gcns_full.dat.gz ($(du -h "$RAW_DIR/gcns_full.dat.gz" | cut -f1))"
-            gunzip -kf "$RAW_DIR/gcns_full.dat.gz"
-            echo "  Extracted: gcns_full.dat ($(du -h "$RAW_DIR/gcns_full.dat" | cut -f1))"
-        else
-            echo "  ERROR: Could not download GCNS data"
-            exit 1
-        fi
-
-        # Also download the ReadMe for column definitions
-        curl -L -o "$RAW_DIR/gcns_readme.txt" \
-            "https://cdsarc.cds.unistra.fr/ftp/J/A+A/649/A6/ReadMe" 2>/dev/null || true
-
+        fetch "$A6_BASE/table1c.dat.gz" "table1c.dat.gz"
+        echo "  gunzip -> table1c.dat"
+        gunzip -kf "$RAW_DIR/table1c.dat.gz"
+        fetch "$A6_BASE/ReadMe" "gcns_readme.txt"
         echo ""
         echo "Large tier complete!"
         ;;
 
     *)
-        echo "ERROR: Unknown tier '$TIER'"
-        echo "Usage: $0 <quick|medium|large>"
-        echo ""
-        echo "Tiers:"
-        echo "  quick  - CNS5, ~5,930 stars, ~1 MB"
-        echo "  medium - Filtered GCNS, ~50,000 stars, ~15 MB"
-        echo "  large  - Full GCNS, 331,312 stars, ~72 MB"
+        echo "ERROR: Unknown tier '$TIER'" >&2
+        echo "Usage: $0 <quick|medium|large>" >&2
         exit 1
         ;;
 esac
 
 echo ""
-echo "Files in $RAW_DIR:"
-ls -lh "$RAW_DIR"/ 2>/dev/null || echo "  (empty)"
+echo "SHA256SUMS ($(wc -l < "$SUMS" | tr -d ' ') artifacts):"
+cat "$SUMS"

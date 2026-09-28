@@ -68,6 +68,48 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-09-28 (afternoon): iteration 2, M1.2a LANDED
+
+- **M1.2a ✅** (catalogue acquire and parse): CNS5 and GCNS fetched from
+  VizieR/CDS with sha256s; `tools/extract.py` parses them into galactic CSV
+  (5,908 + 331,312 rows); 15 parser tests on real-byte fixtures now run in
+  `make test` and CI. PR #5, merge `77d3f04`, CI green. Executor pi
+  deepseek-v4.1-flash; evaluator Sonnet **92/100 PASS**, 0 blocking.
+- **AC amended (controller-adjudicated, judge concurred by a second
+  method):** α Cen is 4.321 ly, the HIP2 parallax on CNS5's single GJ 559 AB
+  row; 4.37 is the literature figure.
+- **Plan refreshed** (planner pi kimi-k3, `ca3db91`): M1.2 split into
+  M1.2a/b/c under the ~250 LOC cap; M1.2d added (Mark accepted D-5, attended);
+  D-6 (isometric interior) unblocks M4's design doc.
+- **Clause map:** 1 UNMET (M1.2b routable next; M1.6a parked upstream,
+  ailang#1354 and #1355 both OPEN at 13:0xZ today; M1.2c, M1.2d, M1.3
+  behind) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3 needs a design
+  doc) · 4 UNMET (M4 design doc now routable, D-6) · 5 ongoing (strict VM and
+  parity green at this landing).
+
+## STATUS 2026-09-28: iteration 1, M1.6a PARKED on two AILANG VM bugs
+
+- **Mark's attended rulings (08:01) acknowledged:** D-1 bar ratified, D-2
+  amendment accepted, D-3 quick+medium tiers in git, D-4 approximate WD fit.
+  M1.2 is now unblocked.
+- **M1 design doc passed pick-time quorum after revision:** round 1 rejected
+  3/3; the designer (Opus 5.5) added a verification log (3 premises false,
+  corrected) and rewrote M1.6; round 2 rejected 3/3 on concrete
+  non-directional fixes, applied verbatim (narrow-refinement carve-out). New
+  open question 5 (Hipparcos bright tier) → D-5.
+- **M1.6 re-planned** as M1.6a (sim, protocol v1.1, bridge) and M1.6b (camera,
+  golden). **M1.6a built but PARKED upstream** (draft PR #3): `--strict-bytecode`
+  GET_FIELD reads the wrong slot for a field name shared across record types
+  (ailang#1354); `--bytecode` is nondeterministic on `parity-offaxis`, 6–9/30
+  runs (ailang#1355). Both reproduce on v0.45.0 and v0.47. Evaluator Sonnet
+  59/100 FAIL, both reds attributed to the toolchain.
+- **Resume predicate (M1.6a):** a pinned AILANG on which `make strict` passes
+  and 30 runs of `make parity-offaxis` are identical.
+- **Clause map:** 1 UNMET (M1.2 routable now; M1.6a parked upstream; M1.6b
+  behind it) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3 needs a design
+  doc) · 4 UNMET (blocked: ship-interior decision) · 5 ongoing (two VM
+  divergences found and reported this iteration).
+
 ## STATUS 2026-09-27 (night): iteration 0, M1.1 LANDED
 
 - **M1.1 ✅** `sunholo/relativity@0.2.0` published (photometry: BP−RP → T_eff,
@@ -85,35 +127,19 @@ The newest 3 STATUS stamps live here; older ones move to
 - Harness ticket `mission-base:hardcoded-origin-dev` filed (this repo has no
   `dev` branch).
 
-## STATUS 2026-09-27 (late): ARMED, iteration 0 next
-
-- Registration: `sunholo-data/ailang#1340` (registry, env, boot offset,
-  `godot-game` profile). Dry run OK. Bookkeeping issue #1.
-- Sprint R1-M1-SKY is in progress. **M1.0 review builds ✅**: `v0.1.0-m0`
-  runs on Mark's laptop. Next is M1.1 (`sunholo/relativity@0.2.0`
-  photometry).
-- AILANG `origin/dev` is now v0.47.0, with unboxed `Array[float]` and VM-native
-  binary/JSON ingest. Re-plan M1.2's pipeline on it (the rig binary is still
-  v0.45.0; pin the upgrade deliberately).
-
-## STATUS 2026-09-27: PRE-ITERATION-0, charter drafted, awaiting ratification
-
-- M0 spike landed: `stapledons-godot` `e6315cf`, `sunholo/relativity@0.1.0`
-  published.
-- M1 design doc written: `design_docs/planned/r1/m1-relativistic-sky.md`. The
-  next step is a sprint plan, attended.
-- Not armed. No bookkeeping issue. The `godot-game` verify profile has not been
-  added to the shared skill.
-
 ## Decision ledger
 
 <!-- decision-ledger:start -->
 | ID | Status | Decision / recorded answer | Evidence |
 |---|---|---|---|
-| D-1 | OPEN | Ratify the drafted bar (clauses 1–5), queue and guardrails. Recommendation: ratify as drafted. Default if unanswered: the loop keeps working the queue on the drafted bar. | Charter iteration-0 definition; loop armed by Mark 2026-09-27; iteration 0 ran M1.1 under the standing publish grant. |
-| D-2 | OPEN | Accept the M1.1 AC1 amendments: Riello G−V cross-check 0.11 mag over BP−RP 0.4–3.0 plus 0.05 over 0.4–1.3; table coverage B9V–M8.5V. Recommendation: accept. Default: accepted (0.2.0 is published). | Measured on Mamajek v2022.04.16: 0.1015 mag at BP−RP 3.0; M9V/M9.5V BP−RP reverses. Evaluator verdict: honest amendment. |
-| D-3 | OPEN | Tier data in git for M1.2. Recommendation: commit quick and medium tiers, not large. Default: that, when M1.2 starts. | Handover comment on #1, 2026-09-27. |
-| D-4 | OPEN | White dwarfs in M1: approximate blackbody fit, flagged approximate (design open question 3). Recommendation: yes. Default: yes, when M1.2 starts. | Handover comment on #1; `photometry` 0.2.0 deliberately has no WD model. |
+| D-1 | RESOLVED | Ratify the drafted bar (clauses 1–5), queue and guardrails. Recommendation: ratify as drafted. Default if unanswered: the loop keeps working the queue on the drafted bar.  **ANSWERED — RATIFIED as drafted: bar clauses 1-5, the queue and the guardrails (Mark, attended 2026-09-28: "record decisions as ratified").** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Charter iteration-0 definition; loop armed by Mark 2026-09-27; iteration 0 ran M1.1 under the standing publish grant.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
+| D-2 | RESOLVED | Accept the M1.1 AC1 amendments: Riello G−V cross-check 0.11 mag over BP−RP 0.4–3.0 plus 0.05 over 0.4–1.3; table coverage B9V–M8.5V. Recommendation: accept. Default: accepted (0.2.0 is published).  **ANSWERED — ACCEPTED as published in 0.2.0: Riello G-V cross-check 0.11 mag over BP-RP 0.4-3.0 plus 0.05 over 0.4-1.3; table coverage B9V-M8.5V (Mark, attended 2026-09-28: "record decisions as ratified").** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Measured on Mamajek v2022.04.16: 0.1015 mag at BP−RP 3.0; M9V/M9.5V BP−RP reverses. Evaluator verdict: honest amendment.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
+| D-3 | RESOLVED | Tier data in git for M1.2. Recommendation: commit quick and medium tiers, not large. Default: that, when M1.2 starts.  **ANSWERED — YES: commit the quick and medium tiers to git; build large locally and for bench, never committed (Mark, attended 2026-09-28: "record decisions as ratified").** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Handover comment on #1, 2026-09-27.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
+| D-4 | RESOLVED | White dwarfs in M1: approximate blackbody fit, flagged approximate (design open question 3). Recommendation: yes. Default: yes, when M1.2 starts.  **ANSWERED — YES: approximate blackbody fit for white dwarfs in M1, flagged approximate in data and UI (Mark, attended 2026-09-28: "record decisions as ratified").** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Handover comment on #1; `photometry` 0.2.0 deliberately has no WD model.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
+| D-5 | RESOLVED | Bright-star tier (M1 design open question 5): accept the proposed M1.2d, a Hipparcos (HIP2, VizieR I/311) tier for V < 7 stars not in GCNS or CNS5, with AC11 and `teffFromBV` in `sunholo/relativity` 0.3.0 (about +250 LOC)? Without it Rigel, Deneb and most naked-eye stars beyond 100 pc exist only as panorama pixels (option A) or not at all (option B). Recommendation: accept. Default if unanswered: M1.2 ships without M1.2d, and the ask is repeated at the M1.4a pause, where option B makes it required.  **ANSWERED — ACCEPTED (Mark, attended 2026-09-28: 'Yes I accept those stars'): add M1.2d, a Hipparcos (HIP2, VizieR I/311) tier for V < 7 stars not in GCNS or CNS5, with AC11 and teffFromBV in sunholo/relativity 0.3.0 (about +250 LOC), so Rigel, Deneb and the naked-eye sky beyond 100 pc are real catalogue stars.** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Quorum round 1 (oc-glm-5-3), 2026-09-28; design doc Problem 5, rows V14 and M1.2d.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
+| D-6 | RESOLVED | Ship-interior presentation for M4 (resolves the isometric / first-person / fixed-scene contradiction in the design docs: design-decisions 2025-12-18 vs features/scene-based-interior-navigation 2025-12-20).  **ANSWERED — ISOMETRIC THREE-LAYER INTERIOR (Mark, attended 2026-09-28, 'yes this is more like it - lets go with these', after spikes v1-v3). The player is INSIDE the bubble; up = forward (direction of travel). Isometric play areas built as Blender 3D models (GLB), rendered in Godot with an orthographic camera tilted back (~-14 deg) at room scale (~16 m), toon + ink shading, the player walks around. Behind them: Blender interior panoramas of the ship's own structure (spire, levels, far decks), rendered from inside with space left transparent and each camera exported. Behind those: the live relativistic sky through EXACTLY that camera (catalogue stars + full-sky galaxy, per-pixel inverse aberration and Doppler). Parallax on every layer when panning: sky and galaxy fixed (at infinity), panorama slow, play area 1:1, foreground silhouettes fast. The bridge sits at the top of the spire and its dome IS the bubble's forward pole, where the starbow gathers overhead; lower decks see the sky past the level rims, which goes dark sideways at speed. Character interactions use large portraits. Art direction: Moebius / Metal Hurlant (2025-12-08). Supersedes design-decisions 2025-12-18 (first-person 3D) and the no-avatar fixed-scene model of scene-based-interior-navigation (2025-12-20); keeps the 2025-12-08 ship canon.** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Attended session 2026-09-28; feasibility spikes v1–v3 on branch `spike/iso-bridge`.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
+| D-7 | RESOLVED | Characters and AI presentation: how crew, the Archive and generated content are made and shown (supersedes the Blender-character part of the art plan).  **ANSWERED — AI-GENERATED CHARACTERS AND A GAME THAT GROWS ITS OWN ASSETS (Mark, attended 2026-09-28). (1) Characters are AI-generated PORTRAITS, not Blender models: one portrait set per character (the dialogue design's 8 emotions: neutral, happy, sad, angry, fearful, curious, loving, grieving; with age stages over the voyage). Generated dialogue text carries EMOTION MARKERS that swap the portrait live. (2) Every line is SPOKEN via generated audio with per-character voices, and the emotion markers drive delivery too. (3) Generate on first use, then CACHE: the named crew are pre-generated at build time; new people (births), aged variants, aliens and places are generated during play. The game builds up its own asset library as it is played, an AI harness in itself. (4) In-world figures are light, portrait-derived representations: the crew are seen living their lives, and the player selects someone to talk to. The figure pipeline is open for ideas; there is no Blender character modelling. (5) The AI is in the ship: the Archive's core is fused into the spire's base (terminals and the core shrine there), while the spire's own mystery stays beyond the Archive (canon from 2025-12-06 to 12-08 kept). (6) The game is an AI showcase: semantic memory, generated dialogue, voice and imagery, the Archive as a real model-driven NPC, and more; a design doc to follow. (7) Constraints: every AI output (text, audio and image selection) is RECORDED as a simulation input, so replays stay byte-identical (bar clauses 2 and 4); AI calls run outside the sim tick in their own process (ADR 0001).** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Attended session 2026-09-28.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
+| D-8 | RESOLVED | Runtime AI operating model (ai-showcase open questions 1–3): keys and cost, providers, live voice.  **ANSWERED — DECIDED (Mark, attended 2026-09-28). (1) KEYS AND COST: the PLAYER'S OWN KEY. The game ships PRE-GENERATED CORE CONTENT (the accepted founding cast, their portraits, avatars and voices, the Archive, and templated fallback lines), and live generation is OPT-IN with the player's key. Without a key the game is fully playable on the pre-generated core. (2) PROVIDERS: stay MODEL-NEUTRAL and swap models as needed through AILANG's provider routing; GEMINI is the default (text, image and TTS). (3) VOICE: NO LIVE real-time voice for now (no streaming conversation with the Archive; gemini_live deferred). Speech is PRE-RECORDED or generated per line and cached, and TEXT-ONLY mode is always available.** (Mark Edmondson, attended 2026-09-28, recorded directly in this ledger.)| Attended session 2026-09-28; features/ai-showcase.md §7.  **Attended ruling 2026-09-28** — recorded in-session under the ATTENDED LEDGER EDITS contract, not via the bookkeeping issue. Provenance is the ATTENDED SESSION, not the commit author: this script stamps a fixed attended identity for EVERY caller (ATT_NAME/ATT_EMAIL are defaults, not derived from the invoker), and nothing in scripts/mission_decisions.sh or the mission-control skill reads the commit author of a ledger resolution (verified 2026-09-04, positive-controlled). The control is the charter rule that the UNATTENDED loop may not resolve a row on its own behalf.|
 <!-- decision-ledger:end -->
 
 The M1.4a background choice and the default exposure are asked when those
@@ -127,7 +153,7 @@ milestones are reached (design doc open questions 1 and 4).
 2. **Then:** work the queue, one sprint-sized item per iteration, through
    design doc → sprint plan → execute → evaluate.
 
-## The bar: R1 is done when… (RATIFY with Mark)
+## The bar: R1 is done when… (ratified by Mark 2026-09-28, D-1)
 
 - **Clause 1 (sky):** M1's acceptance criteria AC1–AC10 are met. The
   relativistic sky is correct for any velocity or view direction, with a
@@ -174,10 +200,12 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · [NEXT] M1.2 ∥ M1.6 → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · ~3,000 LOC
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ⏸ PARKED upstream (draft PR #3; ailang#1354, ailang#1355; resume when a pinned AILANG passes `make strict` and 30× `make parity-offaxis` identical) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · [NEXT] M1.2b AILANG transform + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b after M1.6a · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
 2. **M2** journey core · clause 2 · design doc needed · ~2,000 LOC (estimate)
 3. **M3** black holes · clause 3 · design doc needed; `sunholo/relativity` 0.3 (Binet integrator) · ~1,800 LOC (estimate)
-4. **M4** first journey · clause 4 · design doc needed; blocked on the ship-interior decision (design repo open question) · ~2,500 LOC (estimate)
+4. **M4** first journey · clause 4 · design doc needed (routable: designer), **unblocked by D-6** (interior design: `stapledons-design/art/ship-interior-blender-brief.md`; reference spike: branch `spike/iso-bridge`, `spike/interior3.gd`); D-7 (attended 2026-09-28: AI-generated portraits with emotion markers, generated voice, generate-on-first-use and cache, the Archive in the spire base) is an input to the M4 design doc · ~2,500 LOC (estimate)
+6. [NEW] **Toolchain gate hygiene** · clause 5 · `make deps` fails whenever the PATH `ailang` differs from the v0.45.0 pin (it rewrites the lockfile version line), so every local gate needs `AILANG=runtime/bin/ailang`: default the Makefile to the pinned runtime when present, or make `deps` ignore the version lines · ~20 LOC
+7. [HARNESS] ticket:mission-base:hardcoded-origin-dev (repeat, non-blocking) · ticket:skill:gate0-ledger-provenance-S (new, non-blocking)
 5. [LANDED] **Arming prerequisites** · `godot-game` profile, registry, env, bookkeeping issue #1 (`sunholo-data/ailang#1340`)
 
 ---

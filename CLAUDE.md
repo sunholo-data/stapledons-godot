@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG must be v0.45+ on `PATH`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.47.2** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 ## Development cycle: design doc → sprint plan → execute → evaluate
@@ -47,6 +47,30 @@ AILANG must be v0.45+ on `PATH`. Use `--package-dir sim` for `run`, `--package s
 The R1 roadmap is also drafted as a `mission-control` charter
 (`design_docs/stapledon-mission.md`). It is **not ratified and not armed**:
 ratifying it and arming the launchd loop are the user's decisions.
+
+## Recording Mark's decisions
+
+The loop asks questions as OPEN rows in the charter's decision ledger
+(`design_docs/stapledon-mission.md`, `## Decision ledger`) and lists them on
+issue #1. Mark answers through either of two channels, **equal in rank**:
+
+- **Remotely:** comment on issue #1 from his GitHub account.
+- **In an attended session:** when Mark states a ruling, record it straight
+  into the ledger. Don't send him back to the issue:
+
+  ```sh
+  A=~/dev/sunholo-data/ailang/scripts
+  $A/mission_answer.sh --id D-n --answer "one line, no leading ANSWERED" \
+      --file design_docs/stapledon-mission.md --commit
+  $A/mission_decisions.sh --check --file design_docs/stapledon-mission.md && git push
+  ```
+
+  If the loop is mid-iteration (`~/.ailang/state/mission-stapledon.pid` is
+  alive), do this from a separate worktree on `origin/main` and push. The loop
+  rebases onto it.
+
+Only the **unattended** loop is barred from resolving rows itself. This is
+`mission-control` gate 0, "ATTENDED LEDGER EDITS".
 
 ## Definition of done (gates, in this order)
 
@@ -80,7 +104,7 @@ ratifying it and arming the launchd loop are the user's decisions.
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Known v0.45.0 workarounds:**
+- **Known workarounds (found on v0.45.0; re-check each on v0.47.2 before relying on it):**
   - Pass `--quiet`: the progress banner goes to stdout otherwise.
   - Pass `--package-dir`: otherwise the MOD010 module-path check fails.
   - Run `ailang lock` after `ailang install`. On a clean machine, `ailang lock`
