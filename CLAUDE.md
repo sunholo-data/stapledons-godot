@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG must be v0.45+ on `PATH`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.47.2** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 ## Development cycle: design doc → sprint plan → execute → evaluate
@@ -104,7 +104,7 @@ Only the **unattended** loop is barred from resolving rows itself. This is
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Known v0.45.0 workarounds:**
+- **Known workarounds (found on v0.45.0; re-check each on v0.47.2 before relying on it):**
   - Pass `--quiet`: the progress banner goes to stdout otherwise.
   - Pass `--package-dir`: otherwise the MOD010 module-path check fails.
   - Run `ailang lock` after `ailang install`. On a clean machine, `ailang lock`
