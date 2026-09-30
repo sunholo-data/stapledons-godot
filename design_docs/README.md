@@ -43,6 +43,7 @@ design_docs/
 | Doc | Status |
 |---|---|
 | [r1/m1-relativistic-sky.md](planned/r1/m1-relativistic-sky.md) | Planned: awaiting sprint plan |
+| [r1/m1.2b-wd-photometry.md](planned/r1/m1.2b-wd-photometry.md) | Planned: awaiting sprint plan (M1.2b package-first WD, `sunholo/relativity` 0.3.0) |
 | M2 journey core | Not yet written |
 | M3 black holes | Not yet written |
 | M4 first journey | Not yet written |
