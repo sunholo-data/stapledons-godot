@@ -278,3 +278,85 @@ Append-only. One entry per iteration, newest at the bottom.
   the 5-run parity cap — which are now unnecessary on v0.47.2 but harmless;
   the planner may relax them when M1.2b is next planned) · M1.6b (camera +
   golden, now unblocked).
+
+## 2026-09-30: iteration 4, M1.2b-preflight LANDED [PRODUCT]
+
+- **Pick:** queue-head M1.2b, clause 1 UNMET; scope-preserving <=250 code/test LOC
+  preflight after designer freshness and planner dependency audit. Existing approved
+  M1 design/quorum retained; no new design direction or quorum spend.
+- **Outcome:** LANDED. PR #9, merge `01fe9ef1a1110638de5b84b54398c1f943b9089b`; remote CI run
+  36726580750, push event, complete expected check set 1/1 success on the merge.
+  Implementation `c24b5ad`, banked independent review `f649e09`.
+  Full M1.2b and AC2 remain incomplete; JSON `passes` stays null.
+- **Progress:** R1 clauses 1–4 UNMET, 5 ongoing; M1 4/12 milestones complete. Clause 1 moved through a measured catalogue preflight; full M1.2b remains incomplete.
+- **Executor result:** 218 changed code/test LOC (187 production, caps 250/200).
+  Existing locked-package normal photometry only; preserves CSV IDs/order, counts
+  missing and WD independently, no WD fit/default, tier sort, encoder or fallback.
+  Real 5k: 5000 input, 4580 normal, 324 WD, 96 missing. Executor VM mean
+  0.719015 s; controller 0.644656 s; independent judge 0.6427 s. Interpreter
+  11.48–12.50 s. All six complete outputs SHA256
+  `7afd4c0920614a5916d9031ca9c725f2dd24938349cd50d6f79aa3f17a33287b`.
+  Timings include launch/args load/render/output, exclude FS shell read, WD,
+  sort and binary. Medium/large extrapolations are estimates, not acceptance gates.
+  Artifacts: `.ailang/state/{designer,planner,executor}_M1.2b_iter4.md` and
+  `.ailang/state/probe_M1.2b_iter4.json` (tracked, not only build outputs).
+- **Evaluator:** independent Anthropic Sonnet 5.5, **85/100 PASS**, no blockers,
+  reviewed `c24b5ad2de9dc2a2827f0bb01ef5eb4322f15498` in a separate detached worktree.
+  Canonical make test/probe and hash recount repeated independently. Confirmed
+  mutants landed and typechecked, restored files byte-for-byte. Header/WD/package
+  calls/order/flags/nonfinite mutants killed; partial missing and duplicates killed
+  only by runner; WD+missing overlap, blank ID and y validation mutants survive.
+  Runtime-pin/data/timeout/parity refusals exercised. F1–F3/F5 carried explicitly
+  into production planning; F4 dangling test-table reference restored in record
+  commit with corrected carry rule. F6 strict coverage explicitly pure render;
+  fixture FS shell separately interpreted/bridged, never called whole-shell strict.
+  F7 generated caches left untracked, not banked. Review JSON/MD under
+  `.ailang/state/evaluations/eval_R1-M1-SKY_M1.2b-preflight_iter4.*`.
+- **Routing evidence:** base=01fe9ef1a1110638de5b84b54398c1f943b9089b@2026-09-30T14:08:08Z (same origin/main read at Gate 4;
+  `mission-base.sh record gate4` refused origin/dev, unchanged helper defect).
+  Gate-1 base `06311aa35979af86b100a5f6ecb1e3d47435ee2e`; drift is our reviewed merge.
+  Controller `codex:gpt-6.1-sol` (tok: not reported); designer `codex:gpt-6.1-sol`
+  (tok: not reported, rotation after claude; pointer advanced); planner
+  `codex:gpt-6.1-sol` (tok: not reported, resolver `declared:planner-lane-default-pin`);
+  executor `codex:gpt-6.1-sol` (tok: not reported). All three were spawned with
+  the Agent tool, as the operator explicitly requested. Evaluator Agent attempt
+  failed: `Unknown model 'sonnet' for spawn_agent` (allowed models were OpenAI only).
+  Fallback: independent `claude-sub -p --model sonnet` subscription recipe,
+  actual provider-reported model `claude-sonnet-5-5`, probe rc=0, judge rc=0.
+  Judge usage 1,100,563 tok incl. cache (38 input, 63,414 cache creation,
+  1,018,627 cache reads, 18,484 output); probe 22,692 tok. Generator != judge holds.
+  No role was silently skipped; no controller-only verdict. Codex quota burn is
+  unknown, not zero; subscription CLI list-price $0.642297 is not a metered bill.
+- **Ruled out:** (a) Full catalogue pipeline in ~250 LOC: designer and planner
+  demonstrated WD package/calibration, float32 and integration dependencies.
+  (b) Old f32 formula: independently reproduces 1.0 as 0.5; fractional carry
+  corrected for future writer, signed zero/subnormal cases required.
+  (c) Old v0.45 VM-defect premises: fixed in pinned v0.47.2, baseline green.
+  (d) A 5k probe certifying medium performance or fallback trigger: unmeasured
+  remaining stages prohibit that claim. (e) WD physics local to catalogue: package-first
+  contribution required. D-4 approximation and publish grant already stand; technical
+  calibration does not reopen a resolved human decision. D-9 attended provenance honored.
+- **Baseline gate note:** pristine fresh worktree at `06311aa`, runtime staged
+  with make runtime: canonical make test rc0. Controller changed-tree canonical
+  make test/probe rc0; judge independently rc0. Godot 4.7.2, AILANG v0.47.2
+  e939cba, relativity 0.2.0; darwin/arm64 local, Ubuntu remote CI. Physics 42,
+  sim 19, parser 15, parity 601, offaxis 17; strict core/offaxis green.
+  No .gd/.gdshader/.tscn change: GPU/human render gate N/A for this milestone.
+- **Deviations / retro:** base helper failure re-filed to mission-fleet,
+  ticket message `inbox_1790775809841_a898f371`, no shared-skill edit or harness repair.
+  Manual paired-SHA record fallback disclosed (same pre-existing fallback as iteration 3).
+  Gate-2 heartbeat omitted initially, later stamped explicitly delayed; actual
+  pick checks preceded Gate 3. Executor's deps override replaced by canonical
+  controller/judge gates. Controller moved new changelog fragment into project's
+  CHANGELOG.md. Fleet log rotator targets shared main and its parser excludes this
+  repo's date-first headings; index regenerated from all local full log headings,
+  no rotation needed (7 entries). Shared dirty main left untouched, including brain.db.
+  Strict reverse gap reproduced interpreter/VM vs strict and reported via GCP
+  `inbox_1790776183299_a05dc865`; not asserted a regression. No human gate reached.
+- **Cost:** metered $0.00; quota buckets codex and sonnet. No new quorum/API spend.
+  Harness share 0/5 numeric iterations; last three landings M1.2a, M1.6a,
+  M1.2b-preflight all move UNMET clause 1, no drift alarm. No routing-policy change.
+- **Next:** package-first WD specification/calibration/publication prerequisite,
+  then bounded transform/writer/full integration; carry evaluator survivors and
+  interpreter medium-scale timeout design explicitly. M1.6b camera + golden ready;
+  AI service foundation (D-9) routable when M1 pauses. DECISIONS FOR MARK: none.

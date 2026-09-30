@@ -68,6 +68,20 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-09-30: iteration 4, M1.2b-preflight LANDED
+
+- **Preflight ✅**: PR #9, merge `01fe9ef`, complete merge CI green.
+  Independent Sonnet 5.5 **85/100 PASS**, zero blockers; reviewed generator
+  Codex GPT-6.1 Sol separately. Real 5k interpreter + five strict pure-VM
+  outputs byte-identical. Existing package normal photometry only; WD and
+  missing rows counted/deferred. Full M1.2b / AC2 remain incomplete.
+- **Next**: package-first D-4 WD specification/calibration/publication, then
+  bounded transform, corrected float32 writer and full integration; M1.6b
+  camera + golden remains ready. AI service foundation (D-9) routable when
+  M1 pauses. No human question reached; D-1..D-9 remain RESOLVED.
+- **Clause map**: 1–4 UNMET, 5 ongoing; M1 4/12 complete. Clause 1 moved
+  via measured preflight. Harness share 0/5; last three landings move clause 1.
+
 ## STATUS 2026-09-30: iteration 3, M1.6a LANDED
 
 - **M1.6a ✅** (turn at rest, protocol v1.1, bounded bridge): PR #3, merge
@@ -108,29 +122,6 @@ The newest 3 STATUS stamps live here; older ones move to
   behind) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3 needs a design
   doc) · 4 UNMET (M4 design doc now routable, D-6) · 5 ongoing (strict VM and
   parity green at this landing).
-
-## STATUS 2026-09-28: iteration 1, M1.6a PARKED on two AILANG VM bugs
-
-- **Mark's attended rulings (08:01) acknowledged:** D-1 bar ratified, D-2
-  amendment accepted, D-3 quick+medium tiers in git, D-4 approximate WD fit.
-  M1.2 is now unblocked.
-- **M1 design doc passed pick-time quorum after revision:** round 1 rejected
-  3/3; the designer (Opus 5.5) added a verification log (3 premises false,
-  corrected) and rewrote M1.6; round 2 rejected 3/3 on concrete
-  non-directional fixes, applied verbatim (narrow-refinement carve-out). New
-  open question 5 (Hipparcos bright tier) → D-5.
-- **M1.6 re-planned** as M1.6a (sim, protocol v1.1, bridge) and M1.6b (camera,
-  golden). **M1.6a built but PARKED upstream** (draft PR #3): `--strict-bytecode`
-  GET_FIELD reads the wrong slot for a field name shared across record types
-  (ailang#1354); `--bytecode` is nondeterministic on `parity-offaxis`, 6–9/30
-  runs (ailang#1355). Both reproduce on v0.45.0 and v0.47. Evaluator Sonnet
-  59/100 FAIL, both reds attributed to the toolchain.
-- **Resume predicate (M1.6a):** a pinned AILANG on which `make strict` passes
-  and 30 runs of `make parity-offaxis` are identical.
-- **Clause map:** 1 UNMET (M1.2 routable now; M1.6a parked upstream; M1.6b
-  behind it) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3 needs a design
-  doc) · 4 UNMET (blocked: ship-interior decision) · 5 ongoing (two VM
-  divergences found and reported this iteration).
 
 ## Decision ledger
 
@@ -206,7 +197,7 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ✅ (PR #3, merge `5218160`, iter 3, eval 87; parked upstream on ailang#1354/#1355, fixed in v0.47.2, resume predicate verified first-party) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · [NEXT] M1.2b AILANG transform + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b camera + golden (unblocked; carries the M1.6a follow-up: pin the 1e-9 at-rest tolerance) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ✅ (PR #3, merge `5218160`, iter 3, eval 87; parked upstream on ailang#1354/#1355, fixed in v0.47.2, resume predicate verified first-party) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · M1.2b-preflight ✅ (PR #9 `01fe9ef`, iter 4, eval 85; full M1.2b remains open) · [NEXT] M1.2b package-first WD calibration/publication → bounded transform/writer/integration + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b camera + golden (unblocked; carries the M1.6a follow-up: pin the 1e-9 at-rest tolerance) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
 2. [QUEUED] **AI service foundation** (D-9) · feeds clause 4 · design doc needed (routable: designer), written in `design_docs/planned/r1/` from `stapledons-design/features/ai-showcase.md` §5 and §8 plus `art/characters-blender-brief.md` §6 · runs after M1, or earlier in any iteration where M1 is parked or waiting on Mark (e.g. the M1.4a pause) · three milestones: (a) AI service skeleton: a separate AILANG process, an NDJSON request/result protocol relayed by Godot, every result recorded so replays stay byte-identical, a cache index keyed (kind, entity_id, emotion, age_stage, variant), tested headless with a stubbed provider (no key, no spend); (b) emotion-marker grammar for the 8 emotions, shared by text, TTS and the portrait switcher, with a parser and tests; (c) ⏸ Medic style frame: a TTS voice for the accepted Medic, one generated line whose markers swap the existing portraits in a conversation UI; stop for Mark (voice and swap timing) · constraints: D-8 (player's own key, opt-in live generation, model-neutral with Gemini default, no live voice, text-only always available); the sim never calls AI · ~1,200 LOC (estimate)
 3. **M2** journey core · clause 2 · design doc needed · ~2,000 LOC (estimate)
 4. **M3** black holes · clause 3 · design doc needed; `sunholo/relativity` 0.3 (Binet integrator) · ~1,800 LOC (estimate)

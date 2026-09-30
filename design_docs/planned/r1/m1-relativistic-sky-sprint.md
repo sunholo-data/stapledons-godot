@@ -484,6 +484,18 @@ must follow the package-first release gates and standing mission grant;
 visual changes still require human render review. No git writes/push by
 planner; executor remains separate from evaluator.
 
+**Production tests retained (F4 documentation repair, not implemented by preflight):**
+
+| Test | Required case and mutation killed |
+|---|---|
+| `checkF32LEVectors` | 1.0 -> [0,0,128,63]; -2.5 -> [0,0,32,192]; 99.0 -> [0,0,198,66]; zero -> all zeros. Wrong endianness, bias or sign fails. |
+| `checkF32LECarry` | Fractional mantissa rounds to 2^23: reset to zero and carry exponent (corrected old 2^24 premise). Require signed-zero, subnormal and half-ULP oracle cases too. |
+| `checkMediumSelection` | Five-row input with missing photometry interleaved; take two nearest complete rows, excluded=2. File-order or selection-before-sort fails. |
+| `checkMissingPhotEncoding` | Missing G or BP-RP -> Teff 0.0, V +99, flag bit 2. Silent package clamp/default fails. |
+| `checkWDRow` | WD with BP-RP 0.30 -> package-approved approximate Teff in [4000,60000], flags bits 1 and 4. Main-sequence transform or flag loss fails. |
+
+**Evaluator follow-up for later bounded production tasks (F1–F3/F5):** pin WD+missing overlap independent counts, partial blanks, blank ID, y/z and wrong field count, exact row membership/order and multiple independently derived numerical diagnostics. The first 5k rows contain no WD+missing overlap, so real-data parity cannot pin it. Medium interpreter parity is estimated >60s; design a bounded integration measurement rather than silently raising the preflight timeout. These are pending obligations, not completed tests.
+
 **Original production acceptance retained unchanged below; these are later full M1.2b gates, not preflight gates.**
 
 **Acceptance criteria (one command each):**
