@@ -68,6 +68,23 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-09-30: iteration 5, M1.2b-WD1/WD2 LANDED (relativity 0.3.0 published)
+
+- **WD package ✅**: `sunholo/relativity@0.3.0` published (blackbody WD Teff
+  and V from Gaia BP−RP, VEGAMAG zero point Z=0.5906467146); package PR
+  sunholo-data/ailang-packages#83 open for Mark to merge (as 0.2.0 was).
+  Independent MiniMax-M3 **98/100 PASS**, zero blockers; generator Sonnet 5.5.
+  New design doc `m1.2b-wd-photometry.md` (quorum: 2 rounds blocked at N−1 on
+  unmeasured premises, all measured; narrow-refinement carve-out).
+- **Upstream**: ailang#1419 (interpreter NaN > x true, VM false) and ailang#1420
+  (nested cons pattern not compiled for strict VM) filed, both reproduced on
+  v0.47.2 and v0.49.
+- **Next**: M1.2b-WD3 (game pins 0.3.0, `checkWDPackage`, a VM-run NaN
+  assertion), then the bounded catalogue transform. M1.6b stays ready.
+- **Clause map**: 1–4 UNMET, 5 ongoing; M1 4/12 milestones (+WD-1/WD-2 of
+  the M1.2b prerequisite). Clause 1 moved via the package-first WD physics.
+  Harness share 0/6; last three landings all move clause 1.
+
 ## STATUS 2026-09-30: iteration 4, M1.2b-preflight LANDED
 
 - **Preflight ✅**: PR #9, merge `01fe9ef`, complete merge CI green.
@@ -103,25 +120,6 @@ The newest 3 STATUS stamps live here; older ones move to
   needs a design doc) · 4 UNMET (M4 design doc routable, D-6; AI service
   foundation (row 2, D-9) routable when M1 pauses on Mark) · 5 ongoing
   (strict VM and parity green at this landing).
-
-## STATUS 2026-09-28 (afternoon): iteration 2, M1.2a LANDED
-
-- **M1.2a ✅** (catalogue acquire and parse): CNS5 and GCNS fetched from
-  VizieR/CDS with sha256s; `tools/extract.py` parses them into galactic CSV
-  (5,908 + 331,312 rows); 15 parser tests on real-byte fixtures now run in
-  `make test` and CI. PR #5, merge `77d3f04`, CI green. Executor pi
-  deepseek-v4.1-flash; evaluator Sonnet **92/100 PASS**, 0 blocking.
-- **AC amended (controller-adjudicated, judge concurred by a second
-  method):** α Cen is 4.321 ly, the HIP2 parallax on CNS5's single GJ 559 AB
-  row; 4.37 is the literature figure.
-- **Plan refreshed** (planner pi kimi-k3, `ca3db91`): M1.2 split into
-  M1.2a/b/c under the ~250 LOC cap; M1.2d added (Mark accepted D-5, attended);
-  D-6 (isometric interior) unblocks M4's design doc.
-- **Clause map:** 1 UNMET (M1.2b routable next; M1.6a parked upstream,
-  ailang#1354 and #1355 both OPEN at 13:0xZ today; M1.2c, M1.2d, M1.3
-  behind) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3 needs a design
-  doc) · 4 UNMET (M4 design doc now routable, D-6) · 5 ongoing (strict VM and
-  parity green at this landing).
 
 ## Decision ledger
 
@@ -197,13 +195,13 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ✅ (PR #3, merge `5218160`, iter 3, eval 87; parked upstream on ailang#1354/#1355, fixed in v0.47.2, resume predicate verified first-party) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · M1.2b-preflight ✅ (PR #9 `01fe9ef`, iter 4, eval 85; full M1.2b remains open) · [NEXT] M1.2b package-first WD calibration/publication → bounded transform/writer/integration + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b camera + golden (unblocked; carries the M1.6a follow-up: pin the 1e-9 at-rest tolerance) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ✅ (PR #3, merge `5218160`, iter 3, eval 87; parked upstream on ailang#1354/#1355, fixed in v0.47.2, resume predicate verified first-party) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · M1.2b-preflight ✅ (PR #9 `01fe9ef`, iter 4, eval 85; full M1.2b remains open) · M1.2b-WD1/WD2 ✅ (`sunholo/relativity@0.3.0` published, pkg PR #83, iter 5, eval 98; design `m1.2b-wd-photometry.md`) · [NEXT] M1.2b-WD3 game pin 0.3.0 + `checkWDPackage` + VM-run NaN assertion → bounded transform/writer/integration + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted; `teffFromBV` now ships in relativity 0.4.0, since 0.3.0 is the WD release) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b camera + golden (unblocked; carries the M1.6a follow-up: pin the 1e-9 at-rest tolerance) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
 2. [QUEUED] **AI service foundation** (D-9) · feeds clause 4 · design doc needed (routable: designer), written in `design_docs/planned/r1/` from `stapledons-design/features/ai-showcase.md` §5 and §8 plus `art/characters-blender-brief.md` §6 · runs after M1, or earlier in any iteration where M1 is parked or waiting on Mark (e.g. the M1.4a pause) · three milestones: (a) AI service skeleton: a separate AILANG process, an NDJSON request/result protocol relayed by Godot, every result recorded so replays stay byte-identical, a cache index keyed (kind, entity_id, emotion, age_stage, variant), tested headless with a stubbed provider (no key, no spend); (b) emotion-marker grammar for the 8 emotions, shared by text, TTS and the portrait switcher, with a parser and tests; (c) ⏸ Medic style frame: a TTS voice for the accepted Medic, one generated line whose markers swap the existing portraits in a conversation UI; stop for Mark (voice and swap timing) · constraints: D-8 (player's own key, opt-in live generation, model-neutral with Gemini default, no live voice, text-only always available); the sim never calls AI · ~1,200 LOC (estimate)
 3. **M2** journey core · clause 2 · design doc needed · ~2,000 LOC (estimate)
 4. **M3** black holes · clause 3 · design doc needed; `sunholo/relativity` 0.3 (Binet integrator) · ~1,800 LOC (estimate)
 5. **M4** first journey · clause 4 · design doc needed (routable: designer), **unblocked by D-6** (interior design: `stapledons-design/art/ship-interior-blender-brief.md`; reference spike: branch `spike/iso-bridge`, `spike/interior3.gd`); D-7 (attended 2026-09-28: AI-generated portraits with emotion markers, generated voice, generate-on-first-use and cache, the Archive in the spire base) is an input to the M4 design doc; builds on the AI service foundation (row 2, D-9) · ~2,500 LOC (estimate)
 6. [NEW] **Toolchain gate hygiene** · clause 5 · `make deps` fails whenever the PATH `ailang` differs from the v0.45.0 pin (it rewrites the lockfile version line), so every local gate needs `AILANG=runtime/bin/ailang`: default the Makefile to the pinned runtime when present, or make `deps` ignore the version lines · ~20 LOC
-7. [HARNESS] ticket:mission-base:hardcoded-origin-dev (repeat, non-blocking) · ticket:skill:gate0-ledger-provenance-S (new, non-blocking)
+7. [HARNESS] ticket:mission-base:hardcoded-origin-dev (repeat, non-blocking; refiled iter 5) · ticket:skill:gate0-ledger-provenance-S (new, non-blocking)
 5. [LANDED] **Arming prerequisites** · `godot-game` profile, registry, env, bookkeeping issue #1 (`sunholo-data/ailang#1340`)
 
 ---

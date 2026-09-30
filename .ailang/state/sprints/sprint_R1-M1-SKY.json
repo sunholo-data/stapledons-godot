@@ -57,7 +57,7 @@
       "acceptance_criteria": [
         "V17 nested std/json.get probe rerun on pinned AILANG v0.45.0 VM and interpreter before implementation",
         "make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: hello returns proto 1.1, v1.0 bridge checks remain unmodified, codec precision and every rejection reason preserve state",
-        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec \u00a72 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec §2 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
         "make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: byte-identical VM/interpreter output",
         "make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: existing scripted and scriptedOffAxis strict VM, interpreter and sqrt(2)*D closed form agree within 1e-9",
         "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: AC10 and AC12, including 5 s hello, 2 s step and 1 s graceful-exit bounds, no surviving child"
@@ -125,7 +125,61 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": "Iteration 4 at 06311aa: routable M1.2b-preflight ONLY, estimated 200 changed code/test LOC (hard cap 250). CSV + published 0.2.0 main-sequence photometry, fixture assertions, real 5k timing and interpreter/5 VM exact diagnostic parity. Count missing/WD without fitting. No new physics, binary production, fallback, tier commits or completion claim. Runtime v0.47.2 supersedes old v0.45 premises. Production tiers blocked on package-first D-4 WD transform with calibrated BP/RP zero-point convention; then bounded pure-tier, float32-writer and complete integration tasks. Preserve all original acceptance criteria and passes=null. See M1.2b sprint section and planner artifact.\nExecutor iteration4: preflight implemented only; 19/19 AILANG, 15/15 parser, simulation gates green. Real5000 rows (4580 normal,324 WD,96 missing), 5 strict pure VM outputs equal interpreter; mean0.719015s, peakRSS143458304B. FS shell normal VM/interpreter parity green; strict boundary excludes FS. Evidence .ailang/state/probe_M1.2b_iter4.json; execution notes in sprint. Code218LOC/production187. Independent evaluation pending; full passes remains null. Iteration 4 preflight LANDED PR #9 merge 01fe9ef, independent Sonnet5.5 PASS85 no blockers; full M1.2b stays null. F1-F3/F5 production test/integration obligations banked; F4 production test-table reference restored in record commit. Next package-first WD calibration/publication under D-4, then bounded transform/writer/integration."
+      "notes": "Iteration 4 at 06311aa: routable M1.2b-preflight ONLY, estimated 200 changed code/test LOC (hard cap 250). CSV + published 0.2.0 main-sequence photometry, fixture assertions, real 5k timing and interpreter/5 VM exact diagnostic parity. Count missing/WD without fitting. No new physics, binary production, fallback, tier commits or completion claim. Runtime v0.47.2 supersedes old v0.45 premises. Production tiers blocked on package-first D-4 WD transform with calibrated BP/RP zero-point convention; then bounded pure-tier, float32-writer and complete integration tasks. Preserve all original acceptance criteria and passes=null. See M1.2b sprint section and planner artifact.\nExecutor iteration4: preflight implemented only; 19/19 AILANG, 15/15 parser, simulation gates green. Real5000 rows (4580 normal,324 WD,96 missing), 5 strict pure VM outputs equal interpreter; mean0.719015s, peakRSS143458304B. FS shell normal VM/interpreter parity green; strict boundary excludes FS. Evidence .ailang/state/probe_M1.2b_iter4.json; execution notes in sprint. Code218LOC/production187. Independent evaluation pending; full passes remains null. Iteration 4 preflight LANDED PR #9 merge 01fe9ef, independent Sonnet5.5 PASS85 no blockers; full M1.2b stays null. F1-F3/F5 production test/integration obligations banked; F4 production test-table reference restored in record commit. Next package-first WD calibration/publication under D-4, then bounded transform/writer/integration.\nIteration 5 (planner): production of this feature is BLOCKED on the package-first WD chain M1.2b-WD1_GENERATOR -> M1.2b-WD2_MODULE_PUBLISH -> M1.2b-WD3_GAME_PIN (design_docs/planned/r1/m1.2b-wd-photometry.md + m1.2b-wd-photometry-sprint.md). The transform/writer/integration tasks follow WD-3."
+    },
+    {
+      "id": "M1.2b-WD1_GENERATOR",
+      "description": "Package-first WD (1/3): reference/generator tools/gaia_bb_to_ail.py (stdlib only, after tools/mamajek_to_ail.py; design Appendix A maths unchanged, plus sha256 gating of passband.dat/zeropt.dat/alpha_lyr_mod_002.fits and the .ail emitter) and the generated blackbody_photometry_table.ail (~75 data lines: gaiaGResponse/gaiaBpResponse/gaiaRpResponse/johnsonVResponse samples, zBpRp 0.5906467146, zGMinusV, 61 bbColourNodes strictly increasing at 17 sig digits, bbLnTeffNodes, bbGMinusVNodes, provenance header). In a FRESH CLONE of sunholo-data/ailang-packages at origin/main, controller-chosen path, NEVER ~/dev/sunholo-data/ailang-packages. No publish in this milestone. Command legend: $PKG = the clone's packages/relativity; $A = v0.47.2 ailang binary; $D = downloaded inputs dir (design row P1; validate-only CALSPEC/GF21 inputs not committed, TSV tolerance not hash-pinned). Design: design_docs/planned/r1/m1.2b-wd-photometry.md; sprint: m1.2b-wd-photometry-sprint.md. One executor run covers WD1+WD2 as an uncommitted package diff.",
+      "estimated_loc": 180,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC-W1 The generator verifies the input sha256s and regenerates the table byte-identically; check prints Z_BPRP = 0.590646714600, the Vega Gaia mags within 0.023 +- 0.001 in G, BP and RP, and Z_BPRP_VEGA within 1e-4 of Z_BPRP: cd $PKG && python3 tools/gaia_bb_to_ail.py --input-dir $D check && python3 tools/gaia_bb_to_ail.py --input-dir $D emit && git diff --exit-code blackbody_photometry_table.ail",
+        "AC-W2 validate: CALSPEC synthetic - observed BP-RP median in [-0.03, 0.0]; synthetic V against Landolt for GD 71, GD 153 and GD 50 within 0.02 mag; GF21 50-pc sample has >= 95% within 10% and a median ratio in [1.00, 1.06]: python3 tools/gaia_bb_to_ail.py --input-dir $D validate"
+      ],
+      "session": 3,
+      "passes": true,
+      "started": "2026-09-30",
+      "completed": "2026-09-30",
+      "notes": "Iteration 5: LANDED in sunholo-data/ailang-packages PR #83 (branch relativity-0.3.0-wd, commit 2f1cef8), published sunholo/relativity@0.3.0 (tarball sha256 8c596f4f…, same as dry run and evaluated tree). Executor Claude Sonnet 5.5 (Agent tool): generator 208 hand-written LOC + 137 generated. AC-W1 byte-identical regen, AC-W2 validate (CALSPEC median -0.018, Landolt max 0.0156, GF21 n=1780 median 1.038, 99.2% within 10%). Independent evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking."
+    },
+    {
+      "id": "M1.2b-WD2_MODULE_PUBLISH",
+      "description": "Package-first WD (2/3): blackbody_photometry.ail exported module (bbTeffMin/Max; bbBpRp/bbGMinusV forward quadrature requires kelvin > 0; bbBpRpInvertible; bbClampTeff with the only ensures, Z3-verified per row Z2; bbTeffFromBpRp 61-node table wrapping bbClampTeff with NO ensures per row Z1; bbTeffFromBpRpExact 48-step ln-T bisection, tests/tools only; bbGMinusVFromBpRp tests bpRp == bpRp FIRST, NaN -> 3000 K end node; bbVFromG), blackbody_photometry_test.ail check01-check12 written FIRST with the design's Appendix A values, _smoke.ail gains photometryWdOk plus pure entry wdDigest (Python reference 4610481.806072105; row-V1 prototype measured 4.610481806072101e+06 on interpreter and strict VM), ailang.toml version 0.3.0 + [release] kind feature + both modules in [exports] + ai_summary, CHANGELOG ## 0.3.0 with convention/sources/accuracy table (Teff +-10%, typically ~4% hot, up to +17% above 25 kK, V +-0.1 mag), AGENT.md (WD/blackbody use vs main-sequence photometry), README. Binding rules: NaN tested first with c == c (row A4 interpreter/VM divergence); NO nested cons patterns (row V2, evaluator-only, fails --strict-bytecode); no nth_or inside loops; test blocks call named checkNN(). Executor stops at publish --dry-run; the CONTROLLER (not the executor) runs ailang publish of sunholo/relativity 0.3.0 under Mark's standing publish grant, only after the independent evaluator PASSes WD1+WD2 and pkg quality exits 0 and the dry run passes. Same fresh clone as WD1.",
+      "estimated_loc": 230,
+      "dependencies": [
+        "M1.2b-WD1_GENERATOR"
+      ],
+      "acceptance_criteria": [
+        "AC-W3 check01-check12 and the existing 0.2.0 tests pass: cd $PKG && $A test --package .",
+        "AC-W4 quality is clean: exit 0, no PUB gates; PUB016 contract-skip infos are expected (25 shipped in 0.2.0 per row Z3; bbClampTeff itself must appear as verified per row Z2): cd $PKG && $A pkg quality .",
+        "AC-W5 strict VM equals the interpreter bit for bit on wdDigest 400 and both are within 1e-4 of 4610481.806072105: $A run --quiet --bytecode --strict-bytecode --entry wdDigest --args-json 400 _smoke.ail vs the same without --bytecode --strict-bytecode, compared with cmp plus a python3 -c tolerance. Recovery if they differ: the AC fails and WD-2 does not publish; the executor shrinks the divergence to a minimal repro, reports it upstream, and records it as a blocking finding; the AC is not relaxed to a tolerance without a new quorum",
+        "AC-W6 the smoke test prints OK:, including the WD check: cd $PKG && $A run --quiet --caps IO --entry main _smoke.ail",
+        "AC-W7 the dry run passes, then 0.3.0 is published and visible (publish executed by the controller, not the executor): $A publish --dry-run && $A publish && $A pkg info sunholo/relativity | grep v0.3.0"
+      ],
+      "session": 3,
+      "passes": true,
+      "started": "2026-09-30",
+      "completed": "2026-09-30",
+      "notes": "Iteration 5: LANDED, published sunholo/relativity@0.3.0 from commit 2f1cef8 (ailang-packages PR #83, left for Mark to merge as 0.2.0 was). Controller re-ran first-party: test 59/59, pkg quality rc0 no gates (contracts 3/43, bbClampTeff verified), wdDigest 400 interpreter == strict VM byte-identical 4.6104818060721e+06 (4.7e-9 from the Python reference), smoke OK, dry run OK. Evaluator MiniMax-M3 98/100 PASS; its mutants M2/M8 (NaN guards) survive: M8 is masked under ailang test by ailang#1419 (interpreter NaN >= x true) and killed only on the strict VM (3000.0000000000136 != 3000.0); carried to WD-3 as a VM-run NaN assertion. NB-3 refuted (check11 line 124 covers interior bpRp 0.30). Executor design deviation: none."
+    },
+    {
+      "id": "M1.2b-WD3_GAME_PIN",
+      "description": "Package-first WD (3/3, THIS game repo, only after 0.3.0 is published and visible in ailang pkg info): sim/ailang.toml pins sunholo/relativity 0.3.0 and sim/ailang.lock relocks with the pinned v0.47.2 binary (make runtime first, or use $A; main checkout runtime/bin/ailang is v0.45.0, row A1; make deps must pass ignoring generated_at). sim/tools/catalogue_probe_test.ail gains checkWDPackage importing pkg/sunholo/relativity/blackbody_photometry against the committed fixture WD row (line 10: G 20.654, BP-RP 1.0401, wd 1): teff = 5202.556030832587 (rel 1e-9), v = 20.899202194346880 (+-1e-9), bbBpRpInvertible true - makes the pin load-bearing in make test. M1 doc edits: consumer contract for the later transform task (teff = bbTeffFromBpRp(bprp), v = bbVFromG(g, bprp), flags = 1 WD | 4 APPROX_TEFF | (if bbBpRpInvertible then 0 else 16 TEFF_CLAMPED; bit 16 also set on dwarf rows where bpRpInTable is false; checkWDRow becomes 0.30 -> teff 8941.61808557, v = G + 0.064716662329, flags = 5 and 2.5 -> teff 3000.0, flags = 21; any Python fallback must reuse the package's generated table); obligation O-1 copied into the M1.3 section (LUT_T_MAX >= 4.5e6 K proposed 1e7 with LUT_SIZE 1024 -> 1320, extend the finite-LUT test, add a 60 kK / D = 44.7 golden case; the 0.999c AC9 renders are not accepted before O-1 lands; M1.2d bright tier re-runs the C3 saturation analysis, row C4); UI acceptance line labelling bit-4 rows approximate (white dwarf, blackbody); teffFromBV renumbering 0.3.0 -> 0.4.0 (M1 doc lines 224, 464, 502; sprint M1.2d lines 589-701; RESOLVED D-5 ledger text NOT edited); mission-log note appended.",
+      "estimated_loc": 40,
+      "dependencies": [
+        "M1.2b-WD2_MODULE_PUBLISH"
+      ],
+      "acceptance_criteria": [
+        "AC-W8 the game pins 0.3.0 and the lock is consistent: grep '\"0.3.0\"' sim/ailang.toml && make deps AILANG=$A",
+        "AC-W9 checkWDPackage passes; the whole headless suite, strict and parity are green: make test AILANG=$A (includes sim, strict, parity, parity-offaxis)",
+        "AC-W10 no WD physics exists outside the package: ! grep -rn \"planck\\|14387769\" sim/ tools/",
+        "AC-W11 obligations O-1 (LUT ceiling) and the UI label are recorded in the M1 doc: grep -n \"O-1\" design_docs/planned/r1/m1-relativistic-sky.md && grep -n \"approximate (white dwarf\" design_docs/planned/r1/m1-relativistic-sky.md"
+      ],
+      "session": 3,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
       "id": "M1.2c_STATS_AND_COMMIT",
@@ -149,7 +203,7 @@
     },
     {
       "id": "M1.2d_BRIGHT_TIER",
-      "description": "ACCEPTED D-5 2026-09-28 ('Yes I accept those stars'). Two halves under the ~250 cap, seam at the publish gate. (1) sunholo/relativity 0.3.0 teffFromBV package-first: extend the package's mamajek generator for a bvNodes column from the same Mamajek table, tests first (G2V 0.65->5770 +- 5% plus one K and one M dwarf table row, clamps; dwarfs Sun/alpha Cen B/Barnard/Proxima within 5%), CHANGELOG ## 0.3.0, [release] kind feature, ailang pkg quality no gates, attended publish (M1.1 standing permission), pin 0.3.0 in sim/ailang.toml + relock with the pinned binary. Package repo note: packages/relativity exists on origin/main of sunholo-data/ailang-packages (GitHub API-verified today); the local clone is a stale 2026-09-19 build branch without it - use an updated main checkout. (2) bright tier: HIP2 I/311 hip2.dat astrometry (radians, Ep 1991.25) + I/239 hip_main.dat Johnson V (bytes 42-46, planner-verified: I/311 has no V), joined on HIP; select V < 7 and plx > 0; PM-propagate to 2016.0 for the GCNS match and to each CNS5 row's own epoch; match = 1 arcsec and |G - V| < 2.0 guard; survivors -> bright.csv (id,x,y,z,V,BV,wd); catalogue.ail bright path (teffFromBV, v = catalogue V verbatim, flags bit 8 BRIGHT) -> stars_bright.bin, same 24 B record; quorum encoding for BV-null rows; tools/bright_star_audit.py landed with synthetic unit tests, full AC11 render gate runs in M1.5 (needs the M1.3 loader). stars_bright.bin committed (~0.25 MB expected; D-3 named only quick+medium - planner extension, flag at next attended sync if disputed)",
+      "description": "ACCEPTED D-5 2026-09-28 ('Yes I accept those stars'). Two halves under the ~250 cap, seam at the publish gate. (1) sunholo/relativity 0.4.0 teffFromBV package-first: extend the package's mamajek generator for a bvNodes column from the same Mamajek table, tests first (G2V 0.65->5770 +- 5% plus one K and one M dwarf table row, clamps; dwarfs Sun/alpha Cen B/Barnard/Proxima within 5%), CHANGELOG ## 0.4.0, [release] kind feature, ailang pkg quality no gates, attended publish (M1.1 standing permission), pin 0.4.0 in sim/ailang.toml + relock with the pinned binary. Package repo note: packages/relativity exists on origin/main of sunholo-data/ailang-packages (GitHub API-verified today); the local clone is a stale 2026-09-19 build branch without it - use an updated main checkout. (2) bright tier: HIP2 I/311 hip2.dat astrometry (radians, Ep 1991.25) + I/239 hip_main.dat Johnson V (bytes 42-46, planner-verified: I/311 has no V), joined on HIP; select V < 7 and plx > 0; PM-propagate to 2016.0 for the GCNS match and to each CNS5 row's own epoch; match = 1 arcsec and |G - V| < 2.0 guard; survivors -> bright.csv (id,x,y,z,V,BV,wd); catalogue.ail bright path (teffFromBV, v = catalogue V verbatim, flags bit 8 BRIGHT) -> stars_bright.bin, same 24 B record; quorum encoding for BV-null rows; tools/bright_star_audit.py landed with synthetic unit tests, full AC11 render gate runs in M1.5 (needs the M1.3 loader). stars_bright.bin committed (~0.25 MB expected; D-3 named only quick+medium - planner extension, flag at next attended sync if disputed)",
       "estimated_loc": 300,
       "dependencies": [
         "M1.2c_STATS_AND_COMMIT"
@@ -165,7 +219,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Version renumbering per the approved WD design (m1.2b-wd-photometry.md, iteration 5): teffFromBV ships in sunholo/relativity 0.4.0, NOT 0.3.0 - 0.3.0 is now the WD blackbody photometry release (M1.2b-WD1_GENERATOR/M1.2b-WD2_MODULE_PUBLISH/M1.2b-WD3_GAME_PIN). Description updated; this feature's acceptance_criteria still say v0.3.0 and must be renumbered to v0.4.0 when the feature executes (WD-3 renumbers the M1 doc lines 224/464/502 and sprint M1.2d lines 589-701; the RESOLVED D-5 ledger text is not edited)."
     },
     {
       "id": "M1.3_STAR_RENDERING_V2",

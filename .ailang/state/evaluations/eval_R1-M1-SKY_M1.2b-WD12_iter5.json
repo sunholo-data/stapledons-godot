@@ -1,0 +1,158 @@
+{
+  "score": 98,
+  "pass": true,
+  "threshold": 70,
+  "reviewed_sha": "2f1cef8d1499d1f735a097acfad7e412cc448cd5",
+  "branch": "relativity-0.3.0-wd",
+  "package": "sunholo/relativity@0.3.0 (unpublished)",
+  "worktree": "/Users/voightkampff/dev/sunholo-data/.relativity-eval-iter5",
+  "ailang_version": "v0.47.2 (commit e939cba)",
+  "generator": "Claude Sonnet 5.5",
+  "judge": "MiniMax-M3",
+  "scope": "M1.2b-WD1 (reference + generator) + M1.2b-WD2 (module, tests, dry-run); WD-3 and the actual `ailang publish` are out of scope",
+  "acceptance": {
+    "AC-W1": {"status": "PASS", "evidence": "sha256 verified for passband.dat/zeropt.dat/alpha_lyr_mod_002.fits; Z_BPRP=0.590646714600 (matches check01 within 1e-12); Vega mags G/BP/RP = 0.02268/0.02291/0.02286 (within 0.023 ± 0.001); Z_BPRP_VEGA Δ=5.2e-5 (within 1e-4); generator byte-identical after `emit` (git diff --exit-code rc=0)"},
+    "AC-W2": {"status": "PASS", "evidence": "CALSPEC median synth-obs BP-RP = -0.0180 in [-0.03, 0]; Landolt V within 0.02 mag for 3/3 stars (max 0.0156); GF21 50-pc n=1780, 99.2% within 10%, median 1.038 in [1.00, 1.06]"},
+    "AC-W3": {"status": "PASS", "evidence": "$A test --package . → 59 tests: 59 passed, 0 failed, 0 skipped (47 pre-existing 0.2.0 + 12 new check01-check12)"},
+    "AC-W4": {"status": "PASS", "evidence": "$A pkg quality . → exit 0, ✓ no gates; 3/43 contracts verified (bbClampTeff verified per design Z1/Z2); 27 PUB016 skips (25 baseline 0.2.0 per Z3 + 2 new requires preconditions); PUB011 is a warn, not a gate; 13 pre-existing Z3 errors in 0.1.0 blackbody module are unchanged from baseline"},
+    "AC-W5": {"status": "PASS", "evidence": "wdDigest(400) = 4.6104818060721e+06 on both interpreter and --bytecode --strict-bytecode; `cmp` returns 0 (byte-identical); both 4.657e-9 from reference 4610481.806072105 (well within 1e-4)"},
+    "AC-W6": {"status": "PASS", "evidence": "$A run --quiet --package-dir . --caps IO --entry main _smoke.ail → 'OK: relativity alpha-Cen trip 3.5824 ship-yr / 6.0025 yr, 90deg star seen at 25.842deg at 0.9c, shadow at 3 r_s = pi/4, G2V = 5770 K, WD BP-RP 0.30 = 8941.6 K'"},
+    "AC-W7-dry-run": {"status": "PASS", "evidence": "$A publish --dry-run → ✓ no gates; tarball 25557 bytes (sha256:8c596f4fe78c8382b...); both new modules in exports list; Effects [IO]; release kind feature. The actual `ailang publish` is the controller's standing-grant step and is NOT run by this evaluator"}
+  },
+  "test_quality": {
+    "checks_total": 12,
+    "checks_coverage": "zero points, forward quadrature (BP-RP, G-V), two-copies guard, monotonicity, table round trip, exact inversion, pinned CALSPEC/GF21 outputs, literature bands, clamps (NaN/+inf/-inf, in/out), V-from-G, range guarantee, every-node forward consistency",
+    "kills": 5,
+    "survivals_explained": 3,
+    "score": 18,
+    "max": 20,
+    "deduction_reason": "bbTeffFromBpRpExact NaN path is not directly unit-tested (relies on bisection self-defence); 2-point deduction for test coverage gap"
+  },
+  "design_fidelity": {
+    "convention_correct": true,
+    "api_names_match": true,
+    "no_nested_cons": true,
+    "nan_first_applied": true,
+    "no_wd_physics_outside_package": true,
+    "single_ensures_on_bbClampTeff": true,
+    "score": 20,
+    "max": 20
+  },
+  "code_quality_determinism": {
+    "pure_ratio": "74/74 (100%)",
+    "effects": ["IO"],
+    "vm_interpreter_bit_identical": true,
+    "deterministic": true,
+    "score": 10,
+    "max": 10
+  },
+  "docs_release_hygiene": {
+    "changelog_0_3_0_section_present": true,
+    "changelog_accuracy_band_honest": true,
+    "changelog_mentions_uncorrected_systematic": true,
+    "agent_md_updated": true,
+    "ailang_toml_release_kind_set": "feature",
+    "ailang_toml_repository_set": true,
+    "score": 10,
+    "max": 10
+  },
+  "mutations": [
+    {
+      "mutation": "M1: zBpRp() returns -0.5906467146000018 (wrong sign on BP-RP zero point)",
+      "killed_by": ["check01", "check02", "check04", "check06", "check07"],
+      "killed_count": 5,
+      "survived": false
+    },
+    {
+      "mutation": "M2: remove c==c guard from lookup (let cc = c, not 1.0e300 on NaN)",
+      "killed_by": [],
+      "killed_count": 0,
+      "survived": true,
+      "note": "SURVIVED on both engines: NaN<=x is false on both interpreter and strict VM, so the table walk recurses through all 60 remaining nodes and returns the last (3000 K end) node. The mutation is latent — it would only show up if a future test added a `ailang run --bytecode` gate. AC-W5 covers the spirit (VM/interpreter agreement) but not the specific failure mode."
+    },
+    {
+      "mutation": "M3: bbBpRp colour sign: +2.5*log10(BP/RP) instead of -2.5*log10(BP/RP)",
+      "killed_by": ["check02", "check04", "check05", "check06", "check07"],
+      "killed_count": 5,
+      "survived": false
+    },
+    {
+      "mutation": "M4: trapezoid end weight 0.5 → 1.0 in walk() (last element)",
+      "killed_by": ["check02", "check03", "check04"],
+      "killed_count": 3,
+      "survived": false
+    },
+    {
+      "mutation": "M5: bbClampTeff limits swapped (<3000 → 100000, >100000 → 3000)",
+      "killed_by": ["check10", "check12"],
+      "killed_count": 2,
+      "survived": false
+    },
+    {
+      "mutation": "M6-weak: generator emits 16 sig figs in zBpRp (0.5906467146000018 → 0.590646714600001)",
+      "killed_by": [],
+      "killed_count": 0,
+      "survived": true,
+      "note": "SURVIVED by tolerance: the 1.5e-15 absolute change is well below the 1e-9 check tolerance. Honest behaviour — the package is robust to this loss of precision."
+    },
+    {
+      "mutation": "M6-strong: generator truncates first colour node to 12 sig figs (-0.5698160690073688 → -0.569816069007)",
+      "killed_by": ["check04", "check06"],
+      "killed_count": 2,
+      "survived": false
+    },
+    {
+      "mutation": "M7: bbBpRpInvertible upper bound: firstOf(col) instead of lastOf(col)",
+      "killed_by": ["check10"],
+      "killed_count": 1,
+      "survived": false
+    },
+    {
+      "mutation": "M8: remove bpRp==bpRp guard from bbTeffFromBpRpExact (NaN treated as finite)",
+      "killed_by": [],
+      "killed_count": 0,
+      "survived": true,
+      "note": "SURVIVED: bbBpRp(NaN) is NaN, so the bisection's bbBpRp(exp(m))>c comparison is false (NaN comparisons false on both engines), the recursion takes the 'else' arm every iteration, halves toward the LOW end, and after 48 steps returns ~3000 K. The bisection is self-defending. No test directly asserts bbTeffFromBpRpExact(nan)==3000.0 (test-coverage gap, not behaviour gap)."
+    }
+  ],
+  "blocking": [],
+  "non_blocking": [
+    {
+      "id": "NB-1",
+      "category": "code_documentation",
+      "finding": "M2's NaN guard in `lookup` is structurally fragile. Removing it has no observable effect today (both engines treat `NaN <= x` as false), but a future engine change could make it live. Recommend a comment in `lookup` noting 'this branch is the only reason NaN inputs deterministically return the 3000 K end node'."
+    },
+    {
+      "id": "NB-2",
+      "category": "test_coverage",
+      "finding": "bbTeffFromBpRpExact is not unit-tested for NaN. check07 covers exact-inversion accuracy at 4 finite points, but no test asserts bbTeffFromBpRpExact(nan()) == 3000.0. A 1-line addition would make M8 diagnostic instead of merely survive-by-accident."
+    },
+    {
+      "id": "NB-3",
+      "category": "test_coverage",
+      "finding": "V-from-G path is not exercised at interior colours. check11 calls it at bpRp=9.0 (clamped) and bpRp=NaN (clamped). A 0.5 < bpRp < 2.0 interior test would catch a silent sign-flip in bbGMinusVNodes(). The two-copies guard (check04) already ties the table to the forward model, so this is defence-in-depth advice, not a live bug."
+    }
+  ],
+  "score_breakdown": {
+    "acceptance_criteria": {"score": 40, "max": 40},
+    "test_quality": {"score": 18, "max": 20},
+    "design_fidelity": {"score": 20, "max": 20},
+    "code_quality_determinism": {"score": 10, "max": 10},
+    "docs_release_hygiene": {"score": 10, "max": 10},
+    "total": {"score": 98, "max": 100}
+  },
+  "fidelity_evidence": {
+    "no_nested_cons": "grep -n '::.*::' *.ail in packages/relativity returns no matches",
+    "nan_first": "c==c or bpRp==bpRp at lines 66, 81, 103 of blackbody_photometry.ail",
+    "wd_physics_outside_package": "grep -rn 'planck\\|14387769' from worktree root returns only tools/gaia_bb_to_ail.py (the generator, which is allowed)",
+    "api_match": "all 10 exports match the design list (bbTeffMin, bbTeffMax, bbBpRp, bbGMinusV, bbClampTeff, bbBpRpInvertible, bbTeffFromBpRp, bbTeffFromBpRpExact, bbGMinusVFromBpRp, bbVFromG)"
+  },
+  "tree_byte_identical": true,
+  "no_git_writes": true,
+  "session_protocol": {
+    "claude_md_read": true,
+    "task_classified": "independent evaluation under supplied approved design and sprint plan (unattended mission stage)",
+    "messages_skipped": true,
+    "session_protocol_ack_acked": true
+  }
+}

@@ -2,6 +2,25 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-09-28 (afternoon): iteration 2, M1.2a LANDED
+
+- **M1.2a ✅** (catalogue acquire and parse): CNS5 and GCNS fetched from
+  VizieR/CDS with sha256s; `tools/extract.py` parses them into galactic CSV
+  (5,908 + 331,312 rows); 15 parser tests on real-byte fixtures now run in
+  `make test` and CI. PR #5, merge `77d3f04`, CI green. Executor pi
+  deepseek-v4.1-flash; evaluator Sonnet **92/100 PASS**, 0 blocking.
+- **AC amended (controller-adjudicated, judge concurred by a second
+  method):** α Cen is 4.321 ly, the HIP2 parallax on CNS5's single GJ 559 AB
+  row; 4.37 is the literature figure.
+- **Plan refreshed** (planner pi kimi-k3, `ca3db91`): M1.2 split into
+  M1.2a/b/c under the ~250 LOC cap; M1.2d added (Mark accepted D-5, attended);
+  D-6 (isometric interior) unblocks M4's design doc.
+- **Clause map:** 1 UNMET (M1.2b routable next; M1.6a parked upstream,
+  ailang#1354 and #1355 both OPEN at 13:0xZ today; M1.2c, M1.2d, M1.3
+  behind) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3 needs a design
+  doc) · 4 UNMET (M4 design doc now routable, D-6) · 5 ongoing (strict VM and
+  parity green at this landing).
+
 ## STATUS 2026-09-28: iteration 1, M1.6a PARKED on two AILANG VM bugs
 
 - **Mark's attended rulings (08:01) acknowledged:** D-1 bar ratified, D-2
