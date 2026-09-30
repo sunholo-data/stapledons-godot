@@ -1,0 +1,31 @@
+module stapledons/sim/tools/catalogue_probe_test
+
+import ./catalogue_probe (probe, render)
+import pkg/sunholo/relativity/photometry (teffFromBpRp, vFromG)
+import std/result (Ok, Err)
+import std/string (contains, replace)
+
+-- Literal is tools/extract.py output of committed real-byte fixtures:
+-- gcns_head.dat first row, gcns_wd.dat, gcns_missing_phot.dat.
+pure func fixture() -> string = "id,x,y,z,G,BPRP,wd\n2334666126716440064,36.764544,24.625324,-217.464055,15.777900,2.889200,0\n4991488434519904512,100.615174,-59.613639,-310.394645,20.654000,1.040100,1\n2854728117267850112,-80.899716,230.536259,-165.096771,,,0\n";
+pure func checkAccounting() -> bool = match probe(fixture()) {
+  Ok(s) => s.rows == 3 && s.normal == 1 && s.wd == 1 && s.missing == 1 &&
+    contains(s.output, "2334666126716440064") && contains(s.output, "wd_deferred") && contains(s.output, "missing"),
+  Err(_) => false
+}
+pure func checkHeader() -> bool = match probe(replace(fixture(), "id,x,y,z,G,BPRP,wd", "bad")) {Err(_) => true, Ok(_) => false}
+pure func checkFields() -> bool = match probe(replace(fixture(), "36.764544", "oops")) {Err(_) => true, Ok(_) => false}
+pure func checkPhotometry() -> bool = match probe(replace(fixture(), "15.777900", "NaN")) {Err(_) => true, Ok(_) => false}
+pure func checkFlag() -> bool = match probe(replace(fixture(), ",1\n", ",2\n")) {Err(_) => true, Ok(_) => false}
+test "real rows preserve IDs and defer WD and missing" { checkAccounting() }
+test "exact header required" { checkHeader() }
+test "invalid coordinates rejected" { checkFields() }
+test "nonfinite photometry rejected" { checkPhotometry() }
+test "invalid WD flag rejected" { checkFlag() }
+
+pure func checkAnchor() -> bool {
+  teffFromBpRp(0.823) == 5770.0 && vFromG(0.0, 0.823) > 0.164999999 && vFromG(0.0, 0.823) < 0.165000001
+}
+pure func checkDiagnostic() -> bool = contains(render(fixture()), ",3229.0499999999997,17.1398\n4991488434519904512,")
+test "published solar package anchor" { checkAnchor() }
+test "real normal row expected photometry" { checkDiagnostic() }

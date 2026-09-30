@@ -86,3 +86,7 @@ export-smoke:      ## run the exported .app's capture with NO ailang on PATH; mu
 	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
 	env -i PATH=/usr/bin:/bin HOME="$$HOME" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
 	@test -s $(SCRATCH)/export-smoke/contact_sheet.png && echo "export-smoke: OK ($$(ls $(SCRATCH)/export-smoke | wc -l | tr -d ' ') files)"
+
+.PHONY: catalogue-probe
+catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM parity runs
+	AILANG=$(AILANG) python3 tools/catalogue_probe.py

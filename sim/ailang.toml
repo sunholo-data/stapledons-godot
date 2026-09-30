@@ -5,10 +5,10 @@ edition = "1"
 description = "Stapledon's Voyage simulation (runs as a Godot sidecar over NDJSON stdio)."
 
 [exports]
-modules = ["stapledons/sim/core", "stapledons/sim/ship"]
+modules = ["stapledons/sim/core", "stapledons/sim/ship", "stapledons/sim/tools/catalogue_probe"]
 
 [effects]
-max = ["IO"]
+max = ["IO", "FS"]
 
 [stability]
 level = "experimental"

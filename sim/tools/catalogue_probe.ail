@@ -1,0 +1,53 @@
+module stapledons/sim/tools/catalogue_probe
+
+-- Preflight only: no WD model, tier selection or binary output.
+import std/string (split, trim, stringToFloat, floatToStr, intToStr, join, concat)
+import std/list (foldl)
+import std/option (Some, None)
+import std/result (Result, Ok, Err)
+import std/fs (readFile)
+import std/io (println)
+import pkg/sunholo/relativity/photometry (teffFromBpRp, vFromG)
+
+export type Summary = {rows: int, normal: int, wd: int, missing: int, output: string}
+type Acc = {rows: int, normal: int, wd: int, missing: int, lines: [string]}
+pure func finite(s: string) -> bool = match stringToFloat(s) {
+  Some(v) => v == v && v >= -1.0e308 && v <= 1.0e308, None => false
+}
+pure func optional(s: string) -> bool = s == "" || finite(s)
+pure func number(s: string) -> float = match stringToFloat(s) {Some(v) => v, None => 0.0}
+pure func row(acc: Result[Acc, string], line: string) -> Result[Acc, string] = match acc {
+  Err(e) => Err(e),
+  Ok(a) => if line == "" then Ok(a) else match split(line, ",") {
+    [id, x, y, z, g, c, wd] =>
+      if trim(id) == "" || !finite(x) || !finite(y) || !finite(z) ||
+        !optional(g) || !optional(c) || (wd != "0" && wd != "1")
+      then Err(concat(["invalid fields at row ", intToStr(a.rows + 1)]))
+      else {
+        let missing = g == "" || c == "";
+        let white = wd == "1";
+        let normal = !missing && !white;
+        let status = if missing then "missing" else if white then "wd_deferred"
+          else join(",", [floatToStr(teffFromBpRp(number(c))), floatToStr(vFromG(number(g), number(c)))]);
+        Ok({rows: a.rows + 1, normal: a.normal + (if normal then 1 else 0),
+          wd: a.wd + (if white then 1 else 0), missing: a.missing + (if missing then 1 else 0),
+          lines: join(",", [line, status]) :: a.lines})
+      },
+    _ => Err(concat(["expected seven fields at row ", intToStr(a.rows + 1)]))
+  }
+}
+@allow_empty_ok("zero row fold seed; populated result is constructed after traversal")
+export pure func probe(csv: string) -> Result[Summary, string] = match split(csv, "\n") {
+  header :: lines => if header != "id,x,y,z,G,BPRP,wd" then Err("invalid CSV header")
+    else match foldl(row, Ok({rows: 0, normal: 0, wd: 0, missing: 0, lines: []}), lines) {
+      Err(e) => Err(e),
+      Ok(a) => Ok({rows: a.rows, normal: a.normal, wd: a.wd, missing: a.missing,
+        output: join("\n", foldl(\xs line. line :: xs, [], a.lines))})
+    },
+  [] => Err("empty input")
+}
+export pure func render(csv: string) -> string = match probe(csv) {
+  Err(e) => concat(["ERROR: ", e]),
+  Ok(a) => concat([join(",", ["counts", intToStr(a.rows), intToStr(a.normal), intToStr(a.wd), intToStr(a.missing)]), "\n", a.output])
+}
+export func main(path: string) -> () ! {FS, IO} = println(render(readFile(path)))
