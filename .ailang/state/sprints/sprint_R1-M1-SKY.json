@@ -57,7 +57,7 @@
       "acceptance_criteria": [
         "V17 nested std/json.get probe rerun on pinned AILANG v0.45.0 VM and interpreter before implementation",
         "make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: hello returns proto 1.1, v1.0 bridge checks remain unmodified, codec precision and every rejection reason preserve state",
-        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec \u00a72 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec §2 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
         "make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: byte-identical VM/interpreter output",
         "make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: existing scripted and scriptedOffAxis strict VM, interpreter and sqrt(2)*D closed form agree within 1e-9",
         "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: AC10 and AC12, including 5 s hello, 2 s step and 1 s graceful-exit bounds, no surviving child"
@@ -137,10 +137,10 @@
         "AC-W2 validate: CALSPEC synthetic - observed BP-RP median in [-0.03, 0.0]; synthetic V against Landolt for GD 71, GD 153 and GD 50 within 0.02 mag; GF21 50-pc sample has >= 95% within 10% and a median ratio in [1.00, 1.06]: python3 tools/gaia_bb_to_ail.py --input-dir $D validate"
       ],
       "session": 3,
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-09-30",
+      "completed": "2026-09-30",
+      "notes": "Iteration 5: LANDED in sunholo-data/ailang-packages PR #83 (branch relativity-0.3.0-wd, commit 2f1cef8), published sunholo/relativity@0.3.0 (tarball sha256 8c596f4f…, same as dry run and evaluated tree). Executor Claude Sonnet 5.5 (Agent tool): generator 208 hand-written LOC + 137 generated. AC-W1 byte-identical regen, AC-W2 validate (CALSPEC median -0.018, Landolt max 0.0156, GF21 n=1780 median 1.038, 99.2% within 10%). Independent evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking."
     },
     {
       "id": "M1.2b-WD2_MODULE_PUBLISH",
@@ -157,10 +157,10 @@
         "AC-W7 the dry run passes, then 0.3.0 is published and visible (publish executed by the controller, not the executor): $A publish --dry-run && $A publish && $A pkg info sunholo/relativity | grep v0.3.0"
       ],
       "session": 3,
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-09-30",
+      "completed": "2026-09-30",
+      "notes": "Iteration 5: LANDED, published sunholo/relativity@0.3.0 from commit 2f1cef8 (ailang-packages PR #83, left for Mark to merge as 0.2.0 was). Controller re-ran first-party: test 59/59, pkg quality rc0 no gates (contracts 3/43, bbClampTeff verified), wdDigest 400 interpreter == strict VM byte-identical 4.6104818060721e+06 (4.7e-9 from the Python reference), smoke OK, dry run OK. Evaluator MiniMax-M3 98/100 PASS; its mutants M2/M8 (NaN guards) survive: M8 is masked under ailang test by ailang#1419 (interpreter NaN >= x true) and killed only on the strict VM (3000.0000000000136 != 3000.0); carried to WD-3 as a VM-run NaN assertion. NB-3 refuted (check11 line 124 covers interior bpRp 0.30). Executor design deviation: none."
     },
     {
       "id": "M1.2b-WD3_GAME_PIN",

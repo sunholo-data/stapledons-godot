@@ -360,3 +360,114 @@ Append-only. One entry per iteration, newest at the bottom.
   then bounded transform/writer/full integration; carry evaluator survivors and
   interpreter medium-scale timeout design explicitly. M1.6b camera + golden ready;
   AI service foundation (D-9) routable when M1 pauses. DECISIONS FOR MARK: none.
+
+## 2026-09-30 (night): iteration 5, M1.2b-WD1/WD2 LANDED, sunholo/relativity 0.3.0 published [PRODUCT]
+
+- **Pick:** queue-head M1.2b next step, package-first WD (clause 1 UNMET). M1.6b
+  was routable but cannot land unattended (a human-reviewed render gates its
+  merge), so it was not the pick. Not already landed: no WD symbol in
+  ailang-packages origin/main `0f5167b`, no matching commit or PR, index clean.
+- **Outcome:** LANDED. `sunholo/relativity@0.3.0` published from
+  ailang-packages commit `2f1cef8` (branch `relativity-0.3.0-wd`, PR #83 left
+  for Mark to merge, following 0.2.0's precedent). Tarball sha256 `8c596f4f…`
+  is identical in the dry run, the evaluated tree and the upload. Game-side
+  design doc, sprint plan, sprint JSON (WD1/WD2 `passes: true`), evaluation
+  and quorum artifacts land in stapledons-godot PR (this record).
+- **Progress:** R1 clauses 1–4 UNMET, 5 ongoing; M1 4/12 milestones, plus the
+  M1.2b WD prerequisite now 2/3 (WD-3 game pin next). Clause 1 moved: WDs
+  (21,848 GCNS rows, 6.6 %) now have package physics for Teff and V.
+- **Design:** `design_docs/planned/r1/m1.2b-wd-photometry.md` (787 lines).
+  Gaia EDR3 photon-weighted passbands, Z_BPRP = ZP_BP − ZP_RP = 0.5906467146
+  from the published VEGAMAG zero points, and a 61-node ln-T table. Accuracy
+  measured on 1,780 GF21 WDs: median 1.038, 99.2 % within 10 %. Controller
+  re-ran the Appendix A reference first-party: every check value reproduced.
+  Quorum rounds:
+  - R1 blocked at N−1 (3 rejects on unmeasured premises: Z3 ensures,
+    temperature consumers, VM bit-parity). The designer measured all three
+    (Z3 skips the table ensures, so the contract moved to a proved
+    `bbClampTeff`; the renderer LUT ceiling of 10⁶ K becomes obligation O-1 on
+    M1.3; a prototype digest was bit-identical).
+  - R2 blocked at N−1 (2 rejects: missing rows for the dwarf 10.7 kK ceiling,
+    the flag bits and the fixture). The controller measured all three and
+    applied the reviewers' fixes verbatim (narrow-refinement carve-out).
+  - Absent seats re-run alone: `gpt6-1-sol` still ABSENT (OpenAI 429, no
+    credits). `oc-glm-5-3` rejected on the package-`planck` premise, which
+    the controller measured (drift ≤ 4.4e-16 mag, rows K5/K6), adding a
+    NaN-first rule for `bbGMinusVFromBpRp`. Quote the verdict as "PROCEED by
+    carve-out at N−1, gpt6-1-sol absent (no credits)", not "quorum passed".
+- **Executor result:** WD-1 208 hand-written LOC + 137 generated; WD-2 ~195
+  (caps 250). AC-W1–W6 plus the dry run green; 4-mutant drill all killed and
+  restored byte-identical.
+- **Controller re-run (outside the executor):** test 59/59; `pkg quality`
+  rc 0, no gates, contracts 3/43; `wdDigest 400` interpreter == strict VM
+  byte-identical `4.6104818060721e+06` (4.7e-9 from Python); smoke OK.
+- **Evaluator:** MiniMax-M3 (pi, openrouter) **98/100 PASS**, 0 blocking,
+  reviewed `2f1cef8d1499d1f735a097acfad7e412cc448cd5` in a detached worktree.
+  Session-protocol handshake acked. Its 8 own mutants: 6 killed; M2/M8 (NaN
+  guards) survived. The controller reproduced before acting:
+  - NB-3 **refuted**: check11:124 covers interior BP−RP 0.30.
+  - NB-2 real. A candidate check13 (`bbTeffFromBpRpExact(NaN) == 3000.0`) was
+    written and **did not kill M8 under `ailang test`**: the interpreter's
+    ailang#1419 makes `NaN >= x` true, so the mutant still returns 3000.0.
+    On the strict VM the mutant gives 3000.0000000000136, so only a VM-run
+    assertion kills it. The judge's premise ("NaN comparisons false on both
+    engines") is false for the interpreter. check13 was reverted, not landed;
+    carried to WD-3 as a VM-run NaN assertion.
+  - Reports: `.ailang/state/evaluations/eval_R1-M1-SKY_M1.2b-WD12_iter5.{json,md}`.
+- **Routing evidence:** Gate-1 base `origin/main b2a630806643a4bbb884ea7d21db33540a92ca98`
+  (recorded by hand; `mission-base.sh` still refuses origin/dev, ticket
+  refiled `inbox_1790804583680_48de71e0`). Main checkout was 15 behind and
+  was fast-forwarded (clean tree apart from the untracked `brain.db`).
+  - Controller `claude-opus-5-5` (tok: not reported).
+  - Designer `claude:claude-opus-5-5`, spawned with the Agent tool
+    (`model=opus`, same model as the pin). Rotation: last-used
+    `codex:gpt-6.1-sol` → glm/kimi skipped (ollama over ration) → claude;
+    pointer advanced. Tokens 227,407 + 273,468 (revision).
+  - Planner `pi:openrouter/moonshotai/kimi-k3`, the provider pin via
+    `mission_pi_run.sh`, verdict ok (1,138,456 tok, $0.944). Resolver said
+    `agent-tool opus fail-closed:no-doc` before the doc existed and
+    `recipe … declared:planner-lane-default-pin` after; the pin was followed.
+  - Executor `claude:claude-sonnet-5-5`, spawned with the Agent tool
+    (`model=sonnet`, 120,114 tok).
+  - Evaluator `pi:openrouter/minimax/minimax-m3`: the resolver's
+    `reroute … generator-equals-judge` (the pinned sonnet evaluator equals the
+    executor), via `mission_pi_run.sh`, verdict ok (3,447,190 tok, $0.280).
+    The Agent tool could not carry this role: it is a pi lane.
+  - generator≠judge holds at provider level (Anthropic vs MiniMax). No role
+    was skipped and nothing ran on the controller's own verdict.
+- **Ruled out:**
+  - (a) M1.6b as the pick: it can't merge without a human-reviewed render.
+  - (b) The old sprint's rectangular BP 505–680 / RP 640–1050 bands: they
+    have the wrong slope (1.38 vs 2.00 mag span).
+  - (c) Energy weighting: it shifts BP−RP by 0.39–0.50 mag.
+  - (d) Per-row bisection in production: it would take about 12 minutes on
+    the interpreter for the medium tier.
+  - (e) An empirical correction of the +3.8 % bias: that goes beyond D-4.
+  - (f) check13 as an NB-2 fix: it kills nothing on the interpreter test
+    runner.
+  - (g) The executor's reporting duty for #1419/#1420: the controller filed
+    both.
+- **Baseline gate note:** pristine clone `0f5167b` on v0.47.2: test rc 0,
+  quality rc 0 (2/40, 25 PUB016), smoke needs `--package-dir .` (MOD010;
+  AC-W5/W6 amended in the directives). ailang-packages has no CI (0 checks
+  on main), so the Gate-3b remote-CI half is N/A for the package. Evidence
+  is the controller re-run plus the independent judge. The game-side PR is
+  docs/state only; its CI is polled at landing. No .gd/.gdshader/.tscn
+  change, so the GPU/human render gate is N/A.
+- **Deviations / retro:**
+  - The main checkout's `runtime/bin/ailang` is v0.45.0 (stale vs the
+    v0.47.2 pin; `make runtime` not re-run in the shared tree). All gates
+    used the v0.47.2 binary at `.stapledon-wt-iter4/runtime`.
+  - The evaluator worktree got the game's CLAUDE.md copied in for the
+    handshake, because the package repo has none.
+  - One shared-skill friction to note, not edit (charter guardrail):
+    `ailang test` runs on the interpreter only, so any NaN-guard mutant is
+    masked by #1419. A mutation drill on a guard needs a strict-VM arm.
+- **Cost:** metered $1.95 (quorum $0.73 incl. the glm re-run, planner $0.94,
+  evaluator $0.28). Quota buckets: anthropic (controller, designer, executor).
+  Harness share 0/6.
+- **Next:** M1.2b-WD3 (pin 0.3.0 + relock, `checkWDPackage` fixture values
+  5202.556030832587 / 20.89920219434688, VM-run NaN assertion, M1 doc/sprint
+  version references and obligations O-1/UI label). Then the bounded
+  catalogue transform/writer/integration. M1.6b ready. D-9 routable when M1
+  pauses. DECISIONS FOR MARK: none (package PR #83 awaits a merge, as #81 did).

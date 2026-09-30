@@ -11,3 +11,4 @@ Regenerated from full mission log headings; one line per iteration. No log archi
 | 2 | 2026-09-28 | PRODUCT | iteration 2, M1.2a catalogue acquire and parse LANDED [PRODUCT] |
 | 3 | 2026-09-30 | PRODUCT | iteration 3, M1.6a LANDED after predicate flip [PRODUCT] |
 | 4 | 2026-09-30 | PRODUCT | iteration 4, M1.2b-preflight LANDED [PRODUCT] |
+| 5 | 2026-09-30 | PRODUCT | iteration 5, M1.2b-WD1/WD2 LANDED, sunholo/relativity 0.3.0 published [PRODUCT] |
