@@ -204,3 +204,77 @@ Append-only. One entry per iteration, newest at the bottom.
 - **Next:** M1.2b (`sim/tools/catalogue.ail`, 5k-row VM probe first, 5-run
   VM parity, Python fallback on the 60 s trigger) · M1.2c · M1.2d · M4
   design doc now routable (D-6).
+
+## 2026-09-30: iteration 3, M1.6a LANDED after predicate flip [PRODUCT]
+
+- **Pick:** M1.6a verify-and-land, over the tagged [NEXT] M1.2b. M1.6a's
+  resume predicate ("a pinned AILANG on which `make strict` passes and 30
+  runs of `make parity-offaxis` are identical") flipped: ailang#1354 and
+  ailang#1355 closed 2026-09-28 (upstream PR #1371, released v0.47.2, the
+  repo's pin since `07d44e6`). Verified FIRST-PARTY this fire before
+  unparking: `make strict` green incl. strict off-axis; 30/30
+  `parity-offaxis` byte-identical (single sha256); full `make test` rc=0 on
+  the branch. A row whose ordering was computed under a now-false fact
+  returns to its position (Gate 2 predicate rule); M1.2b stays [NEXT].
+- **Outcome:** LANDED. PR #3 marked ready, merged `5218160`; CI green on the
+  merge (`5218160a4`, workflow "CI", checks=1/1 green, run started
+  01:21:36Z). Landing bookkeeping committed on the branch (`6998f9d`):
+  CHANGELOG entries for M1.1/M1.2a/M1.6a, a design-doc toolchain amendment
+  (the two reds, their evidence, the V17 supersession), sprint-JSON
+  close-out, and the round-2 eval JSON.
+- **Progress:** R1 clauses 1–4 UNMET, 5 ongoing. M1: 4 of 12 milestones
+  done. Clause 1 moved: the sim now takes turns at rest under protocol v1.1
+  with bounded bridge waits, on a strict-VM-green pinned toolchain.
+- **Executor result:** none spawned — verify-and-land of iteration 1's
+  inherited work (generator pi/deepseek; its round-1 evaluation explicitly
+  said do NOT rework). Load-bearing counts re-derived first-party before
+  routing (physics 42, 12 AILANG tests, bridge 0 failures, parity 601
+  identical — all matched the iteration-1 notes).
+- **Evaluator:** sonnet round 2, **87/100 PASS**, 0 blocking (own worktree
+  at `91879a2`, v0.47.2 runtime staged, all gates re-run, 6 mutations — 5
+  killed, 1 minor survivor: no test pins the 1e-9 at-rest tolerance, carried
+  to M1.6b). Round-1 findings re-adjudicated by name: tests_pass closed
+  (20/20), AC closed (27/30), reporting duty closed (verified #1354/#1355
+  upstream), bad_cmd test found already fixed at `f3d6975`, CHANGELOG +
+  design-doc amendment closed by the landing commit, sprint JSON closed.
+  GPU gates judged out of scope (no visual change in the diff; v1.0 parity
+  byte-identical; M1.6b owns camera + golden).
+- **Routing evidence:** base=a5e43943fa5e8f1ae61539e43613f70655b591b0@2026-09-30T01:03:10Z
+  (by hand; `mission-base.sh` still cannot resolve this repo's `origin/main`,
+  ticket `mission-base:hardcoded-origin-dev` re-filed, non-blocking).
+  Controller `pi:openrouter/z-ai/glm-5.3` (Anthropic+codex over ration; pi
+  fallback rung; tok: not reported) · designer: not spawned (approved M1
+  design doc exists, quorum passed iteration 1) · planner: not spawned
+  (approved sprint plan exists; M1.6a planned and AC-complete in the sprint
+  JSON) · executor: not spawned (verify-and-land; no rework owed) ·
+  evaluator `claude:sonnet` via the `claude-sub` recipe (driver lane
+  `sonnet`, agent-tool path — the Agent tool does not exist in this pi
+  harness; fallback per the operator's standing instruction, recorded here).
+  Probed rc=0, run rc=0 in ~135 s (tok: not reported by the CLI).
+  generator≠judge holds: deepseek work, sonnet judge. Harness tickets
+  `pi-runner:sandbox-extensions-not-wired` and
+  `rig:aqua-session-lost:windowserver-watchdog` acknowledged to mission-fleet
+  (both resolved at `eec86ca4`; no stapledon queue rows to unpark).
+- **Ruled out:** (a) M1.2b as this iteration's pick — its [NEXT] position was
+  computed while M1.6a was parked on a defect now fixed; M1.6a's work was
+  complete, reviewed (modulo toolchain), and mergeable. (b) The toolchain
+  reds persisting on v0.47.2 — refuted first-party (strict green,
+  30/30 deterministic parity, full `make test` rc=0), consistent with
+  upstream's verification on this game's own branch. (c) A redundant
+  re-execution of M1.6a — the round-1 evaluator's explicit recommendation
+  against rework was followed.
+- **Baseline gate note:** `make test` rc=0 on a pristine worktree at the
+  base `a5e4394` (v0.47.2 runtime staged fresh via `make runtime`) before
+  routing; `make strict` and `make parity-offaxis` also green at base. No
+  SR/GR visual changed (evaluator: diff reduces to the old formula along
+  the default heading); `make golden`/`make capture` not required for this
+  milestone, M1.6b carries them.
+- **Cost:** metered $0.00 · quota buckets: openrouter/z-ai (controller),
+  anthropic (evaluator sonnet; ollama/codex blocked this fire, lanes
+  degraded per the controlplane notice).
+- **Next:** M1.2b (`sim/tools/catalogue.ail`, 5k-row VM probe first, 5-run
+  VM parity, Python fallback on the 60 s trigger; note its plan still
+  carries the ailang#1354/#1355 workarounds — NO custom record types and
+  the 5-run parity cap — which are now unnecessary on v0.47.2 but harmless;
+  the planner may relax them when M1.2b is next planned) · M1.6b (camera +
+  golden, now unblocked).
