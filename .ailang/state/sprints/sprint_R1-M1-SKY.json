@@ -125,7 +125,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Iteration 4 at 06311aa: routable M1.2b-preflight ONLY, estimated 200 changed code/test LOC (hard cap 250). CSV + published 0.2.0 main-sequence photometry, fixture assertions, real 5k timing and interpreter/5 VM exact diagnostic parity. Count missing/WD without fitting. No new physics, binary production, fallback, tier commits or completion claim. Runtime v0.47.2 supersedes old v0.45 premises. Production tiers blocked on package-first D-4 WD transform with calibrated BP/RP zero-point convention; then bounded pure-tier, float32-writer and complete integration tasks. Preserve all original acceptance criteria and passes=null. See M1.2b sprint section and planner artifact.\nExecutor iteration4: preflight implemented only; 19/19 AILANG, 15/15 parser, simulation gates green. Real5000 rows (4580 normal,324 WD,96 missing), 5 strict pure VM outputs equal interpreter; mean0.719015s, peakRSS143458304B. FS shell normal VM/interpreter parity green; strict boundary excludes FS. Evidence .ailang/state/probe_M1.2b_iter4.json; execution notes in sprint. Code218LOC/production187. Independent evaluation pending; full passes remains null."
     },
     {
       "id": "M1.2c_STATS_AND_COMMIT",

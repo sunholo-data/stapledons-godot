@@ -391,105 +391,100 @@ Python into a compact CSV, unit tests on real-byte fixtures.
   || true` prints nothing (control: `grep -c cdsarc
   .claude/skills/starmap-manager/scripts/download_stars.sh` > 0).
 
-#### M1.2b: sim/tools/catalogue.ail (AILANG transform, VM stress test)
-**Goal:** tier selection, photometry and binary writing in AILANG on the
-pinned VM, with parity measured 5×; documented Python fallback.
-**Estimated:** ~250 LOC · **Session:** 2 · **Depends on:** M1.2a
+#### M1.2b: AILANG catalogue preflight, then bounded production tasks
+**Iteration-4 scope correction (2026-09-30, baseline `06311aa`):** the
+approved catalogue outcome is unchanged. Execute the prerequisite preflight
+below first; do not attempt the old ~250 LOC full pipeline in one task.
+The repo pins AILANG **v0.47.2**. Historical v0.45.0 warnings in M1.2 above
+are historical evidence, not current constraints: #1354/#1355 are fixed
+and independently checked in iteration 3. Do not forbid record types or
+assume lack of arrays from those old reports. Reproduce any new failure.
 
-**Files:**
-- `sim/tools/catalogue.ail` (new, ~180 LOC)
-- `sim/tools/catalogue_test.ail` (new, ~70 LOC)
-- `sim/ailang.toml` (one line: `[effects].max` gains `"FS"`; verified
-  required, IMP010)
-- `Makefile` (new targets `catalogue`, `catalogue-parity`; M1.2c adds
-  `catalogue-verify`)
-- `tools/catalogue_fallback.py` (new only if the trigger fires, ~120 LOC)
+**M1.2b-preflight (routable):** CSV parsing and existing package main-sequence
+photometry workload; no production tier or new physics. ~200 LOC total
+(~100 AILANG, ~60 tests, ~40 runner/Makefile/config), hard cap **250 changed
+code/test LOC**. Depends on completed M1.2a and M1.1. One executor task,
+then evaluation by a different agent. `passes` for M1.2b remains null.
 
-**Tasks (in order)**
-1. **Perf probe before the design hardens.** `head -5001 data/raw/gcns.csv >
-   data/raw/probe5k.csv`; run the CSV parse + photometry path (task 2) over
-   it on the VM, time it, extrapolate ×10 (medium) and ×66 (large) and
-   record all three numbers in the sprint JSON notes. Rationale: package
-   photometry interpolates by a recursive `nth_or` scan over a ~50-node
-   table (seen in the 0.2.0 cache), so per-row cost is hundreds of builtin
-   calls, and there is no unboxed `Array[float]` on v0.45.0.
-2. **Pure transform** in `catalogue.ail` (no custom record types — bug
-   1354):
-   - `parseCsv(text) -> [[string]]` via `split(text, "\n")`, skip header,
-     `split(line, ",")`; floats via `stringToFloat`, empty string → `None`.
-     Build rows by list prepend and one `reverse` at the end. Never index
-     with `nth_or` in a loop (the O(n²) trap measured in the M1.1 notes).
-   - Tier selection on parsed GCNS rows: sort by `x²+y²+z²` with the
-     prelude's stable iterative `sortBy(cmp, rows)`. quick = CNS5 rows
-     unsorted; large = all rows; medium = walk sorted rows, take rows with
-     both G and BPRP present until 50,000 are taken, counting skipped
-     (missing-photometry) rows as `count_excluded`.
-   - Photometry per row, using `pkg/sunholo/relativity/photometry`
-     (`teffFromBpRp`, `vFromG`): normal row → `teff = teffFromBpRp(bprp)`,
-     `v = vFromG(g, bprp)`; clamping stays inside the package (the tool
-     never clamps). WD row (`wd = 1`) with complete photometry → D-4 path
-     below, flags = 1 ∥ 4. Row with null G or null BPRP → `teff = 0.0`,
-     `v = 99.0`, flags get bit 2 (the verbatim quorum encoding; 99.0 is
-     the +99 sentinel, exact in float32).
-   - **Where the WD teff comes from (D-4, accepted; package 0.2.0 has no WD
-     model):** catalogue.ail computes it as a least-squares fit of the
-     package's `blackbody.planck(lNm, kelvin)` integrated over two
-     approximate rectangular Gaia passbands (BP 505–680 nm, RP 640–1050 nm,
-     stated as approximations of the EDR3 response curves in a comment),
-     scanning T over a fixed grid and refining by bisection on the BP−RP
-     residual. It sets flags bit 4 (`APPROX_TEFF`) so the approximation is
-     visible in data. A proper Gaia-passband WD model remains a package
-     item, deferred by D-4.
-3. **float32 LE encoder** (`f32LE`): for x = 0 → `[0,0,0,0]`; otherwise
-   e = `floor(log(|x|) / log(2))` refined by comparing `|x|` against
-   `pow(2, e)` and `pow(2, e+1)`; m = `round((|x| / pow(2, e) − 1) * 2^23)`;
-   if `m = 2^24` then `e += 1, m = 2^23` (the mantissa carry); bits =
-   sign·2³¹ + (e+127)·2²³ + (m − 2²³); bytes little-endian via
-   `bitwiseAnd`/`shiftRight`; record = 6 floats → `fromInts([24 bytes])`;
-   file = one `concatList` over the per-record bytes; one `writeFileBytes`.
-   All inputs are in normal float32 range (positions ≥ ~0.1 ly, teff ≤
-   100000, v ≤ 99), so no subnormal path; assert finite via the M1.6 rule
-   (self-equal, magnitude ≤ 1e308).
-4. **Shell:** `export func main(tier, csvPath, binPath, hdrPath,
-   jsonPath: string) -> () ! {IO, FS} { ... }` (block body — see the probe
-   note above). Header JSON via std/json `jo`/`kv`/`jnum`/`jint`/`encode`;
-   `producer = "ailang-vm"`; quick also writes `stars.json` (rows as
-   id,x,y,z,teff,v,flags objects). sha256s come from the Makefile (see
-   task 5) via two extra string args; `catalogue.ail` does not shell out.
-5. **Makefile.** All catalogue recipes pass `AILANG` as given from the
-   command line — plans call `make catalogue … AILANG=$PWD/runtime/bin/ailang`.
-   - `catalogue`: requires `TIER=quick|medium|large`; errors pointing to
-     step 2 of M1.2a if `data/raw/cns5.csv` / `gcns.csv` is missing; runs
-     `$(AILANG) run --quiet --bytecode --package-dir sim --caps IO,FS
-     --entry main --args-json '["<tier>","<csv>","<bin>","<hdr>",
-     "<stars.json or null>","<sha:raw>","<sha:csv>"]' sim/tools/catalogue.ail`;
-     computes the bin's `shasum -a 256` and merges it into the sidecar
-     header; prints wall time.
-   - `catalogue-parity`: medium tier. Run the interpreter once, then the
-     bytecode VM **5 times** (bug 1355), `cmp` each VM output bin against
-     the interpreter's, print all wall times. Any `cmp` failure prints
-     exactly: "UPSTREAM BUG: file sunholo-data/ailang report; fallback
-     trigger fired" and exits 1. Expected duration: up to ~6 min.
-6. **Documented Python fallback (write only if the trigger fires).** Trigger:
-   medium tier takes more than 60 s on the VM, or a blocking VM bug.
-   `tools/catalogue_fallback.py` then does the same transform in Python,
-   reading the node arrays out of the published
-   `~/.ailang/cache/registry/sunholo/relativity/0.2.0/photometry_table.ail`
-   (plain generated float literals; parse with a regex against the locked
-   content hash `sha256:1af50b9d…` recorded in `sim/ailang.lock`). Cross-check:
-   run `catalogue.ail` on a 1,000-row CSV slice and require teff and v within
-   1e-6 on every row. The header records `producer = "python-fallback"` and
-   the sprint notes record which path shipped.
+**Files:** `sim/tools/catalogue_probe.ail`,
+`sim/tools/catalogue_probe_test.ail`, `tools/catalogue_probe.py`,
+`sim/ailang.toml` (FS capability), `Makefile` (catalogue-probe target).
+Probe output lives under `.godot/tmp/catalogue-probe/`, never
+`data/starmap/`. Reuse committed real-byte parser fixtures through
+`tools/extract.py`; use available real `data/raw/gcns.csv` for 5,000 rows,
+or acquire it via M1.2a's approved download/parser path. Missing real data
+is an explicit unmet performance gate, never synthetic timing evidence.
 
-**Tests (`sim/tools/catalogue_test.ail`, named `check…` functions) and the
-mutation each kills**
-| Test | Mutation it kills |
-|---|---|
-| `checkF32LEVectors`: 1.0 → `[0,0,128,63]`; −2.5 → `[0,0,32,192]`; 99.0 → `[0,0,198,66]`; 0.0 → all zeros | wrong endianness; exponent bias off by one; sign bit lost |
-| `checkF32LECarry`: largest x with m rounding to 2²⁴ carries into e | missing mantissa carry (produces wrong last byte) |
-| `checkMediumSelection`: synthetic 5-row CSV string, missing-phot rows interleaved; take-2 rule picks the two nearest **complete** rows and reports excluded = 2 | first-N-in-file-order selection (the old skill's behaviour); selection before sorting |
-| `checkMissingPhotEncoding`: null-G row → teff 0.0, v 99.0, flags bit 2 set | the sneaky default: package clamp would give teff 2420 with no flag |
-| `checkWDRow`: wd=1, bprp = 0.30 → teff in [4000, 60000], flags bits 1 and 4 set | `teffFromBpRp` applied to WD rows (main-sequence table on a WD); flag drop |
+**Tasks:**
+1. Verify runtime version and package lock (0.2.0). Parse exact
+   `id,x,y,z,G,BPRP,wd` CSV schema. Fail malformed fields; preserve IDs as
+   strings. Traverse rows once, avoiding repeated linked-list indexing.
+2. Run `teffFromBpRp` and `vFromG` only for complete non-WD rows.
+   Count WD and missing-photometry rows separately, do not fit or default
+   them. Emit deterministic per-row diagnostic results plus row counters
+   so output depends on both package calls and every eligible row.
+3. Runner prepares fixture and real 5k input, runs interpreter once and VM
+   five times, compares complete outputs with `cmp` semantics, records
+   sha256, counts, wall times, peak RSS if available, input provenance,
+   runtime and lock versions. Use bounded subprocess timeouts (60 s per
+   run), retain stderr and label timeouts. Record medium x10 and large
+   x66.2624 extrapolations as estimates; these exclude WD, sort and binary
+   writing, and cannot certify final medium performance.
+4. Preserve simulation gates. Write evidence and recommend the next bounded
+   task; no fallback implementation and no package-cache regex extraction.
+
+**Acceptance commands (new commands are implemented by executor):**
+- `python3 tools/test_extract.py` remains 15 tests green (planner baseline).
+- `runtime/bin/ailang check --package sim` and
+  `runtime/bin/ailang test --package sim` pass including probe tests.
+- `make catalogue-probe AILANG=$PWD/runtime/bin/ailang` exits zero only on
+  fixture success, real 5k measurement and 5/5 exact parity; writes a report
+  in `.godot/tmp/catalogue-probe/report.json`. Timeout/parity failure exits
+  nonzero with preserved evidence, then parks the performance gate.
+- `make test AILANG=$PWD/runtime/bin/ailang AILANG_BIN=$PWD/runtime/bin/ailang`
+  remains green. Executor/evaluator measure actual diff against 250 cap.
+
+**Test / mutation mapping:** schema check rejects a reordered header;
+package anchor G2V BP-RP 0.823 / G 0 -> Teff 5770 and V 0.165 within
+1e-6 rejects bypassed package calls; blank G and BP-RP cases reject defaults;
+WD-complete case rejects main-sequence application to WD; interleaved rows
+and exact diagnostic count reject dropped/duplicated rows; a changed VM
+output rejects permissive parity. Fixture counters are asserted explicitly,
+not merely VM/interpreter agreement.
+
+**Registry reuse (verified 2026-09-30):** `pkg search photometry` and
+`pkg search blackbody`, then `pkg info` / `pkg docs sunholo/relativity`,
+return latest 0.2.0 with main-sequence photometry and Planck, no WD fit.
+Preflight: **depend** on locked 0.2.0. WD production prerequisite:
+**contribute** to sunholo/relativity. No new local physics package.
+
+**Remaining dependency split (separate <=250 LOC tasks, replanned after
+preflight evidence):** (1) package-first D-4 approximate WD colour/temperature
+transform with source-defined band/zero-point convention, independent
+reference tests, CHANGELOG, release kind, no-gate quality, publish then pin;
+(2) pure CSV/tier transform plus selection/missing/WD tests;
+(3) float32 binary writer plus IEEE-754 boundary tests and runner/sidecars;
+(4) complete-tier parity/performance integration before M1.2c. None is
+silently marked complete by a successful preflight.
+
+**Encoder correction for later writer:** use fractional mantissa
+`m = roundTiesToEven((abs(x)/2^e - 1)*2^23)`; carry at `m == 2^23`
+sets `m=0,e=e+1`; bits are sign*2^31+(e+127)*2^23+m. The old formula
+mixed fractional and full significands. Handle signed zero, subnormals,
+finite/range rejection and exponent boundaries explicitly: coordinate
+components can be arbitrarily close to zero even when distance is normal.
+Use Python `struct.pack('<f', x)` as an independent byte oracle including
+half-ULP ties. No custom f32 implementation is authorized in preflight.
+
+**Human gates:** standing authorization covers this scope-preserving probe
+and the existing D-4 approximation. No new human decision is needed for
+preflight. Any proposed replacement WD passband model, threshold change,
+Python production fallback or scope growth is parked for review. Publishing
+must follow the package-first release gates and standing mission grant;
+visual changes still require human render review. No git writes/push by
+planner; executor remains separate from evaluator.
+
+**Original production acceptance retained unchanged below; these are later full M1.2b gates, not preflight gates.**
 
 **Acceptance criteria (one command each):**
 - `make catalogue TIER=quick AILANG=$PWD/runtime/bin/ailang` exits 0;
@@ -504,6 +499,8 @@ mutation each kills**
   identical to the interpreter plus the six wall times.
 - `runtime/bin/ailang test --package sim` passes, including the five rows
   above.
+
+Full-medium >60s fallback threshold is retained for the complete pipeline. A fallback is a subsequent bounded task and must reuse package physics for WD too. The WD package designer resolves normalization, weighting, quadrature and tolerances under existing D-4 approximation and publish grant; technical calibration alone does not create a human question.
 
 #### M1.2c: Stats, cleanup and tier commits
 **Goal:** AC3's machine check, the old pipeline removed and docs updated, and
@@ -822,3 +819,18 @@ M1.4
 - The sprint executor updates only the `passes`, `started`, `completed` and
   `notes` fields in the JSON. The evaluator writes to
   `.ailang/state/evaluations/`.
+
+### Iteration-4 executor evidence: preflight only
+
+- Executed only CSV + published normal photometry; full M1.2b `passes` remains null. Production WD fit/tier/sort/float32 writer are untouched. No physics cache/package edits or Python physics fallback.
+- Test first: added real-byte fixture tests before module; `ailang test --package sim` failed (12 passed / 4 failed missing module), then green 19/19. Literal fixture is re-derived and byte-checked against existing parser by runner. Added published solar anchor and real normal-row numerical diagnostic.
+- Commands: `CURL_MAX_TIME=120 bash .claude/skills/starmap-manager/scripts/download_stars.sh quick`, `CURL_MAX_TIME=240 bash .claude/skills/starmap-manager/scripts/download_stars.sh medium`, `python3 tools/extract.py gcns`: exit 0; GCNS parsed 331312, skipped 0. Download/input hashes in `.ailang/state/probe_M1.2b_iter4.json`.
+- `runtime/bin/ailang check --package sim`: exit 0, 6 files pass. `runtime/bin/ailang test --package sim`: exit 0, 19/19 pass. `git diff --check`: exit 0.
+- `make catalogue-probe AILANG=$PWD/runtime/bin/ailang`: exit 0; committed real-byte fixture plus real GCNS first 5000 rows, interpreter once / pure strict VM five times each. Complete bytes, source row order, missing/WD status and counts checked; fixture FS shell interpreter and ordinary bridged VM also equal pure output.
+- Real 5k counts (input, eligible-normal, WD, missing): 5000,4580,324,96. WD and missing counters are independent and may overlap. VM mean 0.719015 s (0.700720–0.741791); interpreter 12.497095 s; VM RSS max 143458304 bytes. All real outputs SHA256 `7afd4c0920614a5916d9031ca9c725f2dd24938349cd50d6f79aa3f17a33287b`.
+- Timing includes process start, args-file load and output; excludes FS shell read, WD fit, sort and binary writing. Medium x10 = 7.190150 s and large x66.2624 = 47.643657 s are estimates, not production gate measurements. No fallback trigger inferred.
+- Strict entire FS shell cannot run: `std/fs.readFile` is evaluator-only with no strict interop bridge. Pure `std/list.reverse` also lacks strict support; replaced with linear foldl prepend. Strict proof invokes exported pure render via args-file; normal FS shell is exercised separately. Controller owns upstream reporting (reverse message `inbox_1790776183299_a05dc865`).
+- Runner deletes stale report before launch and bounds each workload at 60s with process-group termination and partial stdout/stderr preservation. Version/lock package checks are exact. Every measured run retains stdout/stderr, their SHA256, provenance, wall time and RSS where available.
+- Simulation verification: `make -f Makefile -f .godot/tmp/no-deps.mk test AILANG=$PWD/runtime/bin/ailang AILANG_BIN=$PWD/runtime/bin/ailang`: exit 0. This executor override reused controller-verified locked cache to avoid prohibited git checkout in existing deps recipe; all import/physics/sim/parity/offaxis/strict/tools-test targets ran. Controller runs canonical make test. Parser 15/15, sim 19/19, parity601 lines/offaxis17 lines.
+- Actual changed code/tests: 218 physical added/modified lines (210 new file lines +4 Makefile +4 manifest); production187 <=200 and total218 <=250. Documentation/artifacts excluded from code cap. No commits/staging performed.
+- Next bounded task is package WD specification/calibration/publication prerequisite, then production transform/writer/integration per approved plan. Independent evaluator must assess preflight. Full AC2 and M1.2b remain incomplete.

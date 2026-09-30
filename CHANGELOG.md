@@ -17,6 +17,11 @@
   (fixes the two VM bugs that parked this milestone; see the design doc's
   toolchain amendment).
 
+- **M1.2b preflight (iteration 4):** bounded AILANG CSV and published normal
+  photometry probe, real-byte fixture checks, strict VM/interpreter parity
+  and real 5,000-row timing. WD fitting, production tiers and binary
+  writing remain incomplete and depend on the package prerequisite.
+
 ### M0 spike, 2026-09-27 (~1,900 LOC including tests)
 
 - **Simulation:** AILANG sidecar over NDJSON stdio, about 50 µs per tick
