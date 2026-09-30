@@ -5,17 +5,36 @@ module stapledons/sim/core
 -- Physics comes from the published sunholo/relativity package.
 
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf)
+import pkg/sunholo/relativity/optics (Vec3, norm, normalize)
+import pkg/sunholo/relativity/hyper (absf)
 
-export type Ship = { tick: int, motion: Motion }
+export type Ship = { tick: int, motion: Motion, heading: Vec3, origin: Vec3, x0: float }
+export type TurnResult = { accepted: bool, ship: Ship }
 
-export pure func initShip() -> Ship = { tick: 0, motion: rest() }
+export pure func initShip() -> Ship = { tick: 0, motion: rest(), heading: {x: 0.0, y: 0.0, z: -1.0}, origin: {x: 0.0, y: 0.0, z: 0.0}, x0: 0.0 }
+
+export pure func position(s: Ship) -> Vec3 {
+  let d = s.motion.x - s.x0;
+  { x: s.origin.x + s.heading.x * d, y: s.origin.y + s.heading.y * d, z: s.origin.z + s.heading.z * d }
+}
+
+export pure func turn(s: Ship, h: Vec3) -> TurnResult {
+  let changed = absf(h.x - s.heading.x) > 0.000000001 || absf(h.y - s.heading.y) > 0.000000001 || absf(h.z - s.heading.z) > 0.000000001;
+  if !changed then {accepted: true, ship: s}
+  else if absf(betaOf(s.motion.phi)) >= 0.000000001 then {accepted: false, ship: s}
+  else {
+    let p = position(s);
+    let m = s.motion;
+    { accepted: true, ship: { tick: s.tick, motion: { phi: 0.0, tau: m.tau, t: m.t, x: m.x }, heading: normalize(h), origin: p, x0: m.x } }
+  }
+}
 
 -- Advance one tick: dtau ship-years under thrust x 1 g (thrust in [-1, 1]).
 export pure func step(s: Ship, thrust: float, dtau: float) -> Ship
   requires { dtau >= 0.0 }
   ensures { result.tick == s.tick + 1 }
 {
-  { tick: s.tick + 1, motion: accelerate(s.motion, thrust * standardGravity(), dtau) }
+  { tick: s.tick + 1, motion: accelerate(s.motion, thrust * standardGravity(), dtau), heading: s.heading, origin: s.origin, x0: s.x0 }
 }
 
 export pure func beta(s: Ship) -> float = betaOf(s.motion.phi)
@@ -30,4 +49,10 @@ pure func burn(s: Ship, thrust: float, dtau: float, n: int) -> Ship =
 export pure func scripted(ticks: int) -> float {
   let out = burn(burn(initShip(), 1.0, 0.01, ticks), -1.0, 0.01, ticks);
   out.motion.t
+}
+
+export pure func scriptedOffAxis(ticks: int) -> float {
+  let first = burn(burn(turn(initShip(), {x: 1.0, y: 0.0, z: 0.0}).ship, 1.0, 0.01, ticks), -1.0, 0.01, ticks);
+  let second = burn(burn(turn(first, {x: 0.0, y: 1.0, z: 0.0}).ship, 1.0, 0.01, ticks), -1.0, 0.01, ticks);
+  norm(position(second))
 }

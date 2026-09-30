@@ -602,3 +602,28 @@ carve-out; no third round) and routed M1.6.
   `startup_timeout`/`step_timeout`), and it supersedes glm's 2 s variant. V19
   shows there is no existing machinery to reuse. AC12 gains the three
   non-responsive-child cases.
+
+## M1.6a toolchain amendment (2026-09-30, iteration 3)
+
+M1.6a was built on the v0.45.0 pin (iteration 1, `966ba3a`) and parked on two
+AILANG VM defects, both reproduced first-party and reported upstream:
+
+- **ailang#1354** — `--strict-bytecode` `GET_FIELD` reads the wrong slot when
+  two record types share a field name at different positions (`make strict`
+  off-axis red).
+- **ailang#1355** — `--bytecode` nondeterministic on `parity-offaxis`
+  (3 of 6 runs diverged from the interpreter on v0.45.0).
+
+Both were closed as completed 2026-09-28, fixed by upstream PR #1371 and
+released in **AILANG v0.47.2**, which this repo pins (CI, bundled runtime,
+lockfile; commit `07d44e6`). First-party verification on the v0.47.2 runtime
+(iteration 3): `make strict` green including strict off-axis; 30 consecutive
+`make parity-offaxis` runs byte-identical (single sha256); full `make test`
+rc=0. The V17 recheck ("to be rechecked on pinned v0.45.0") is superseded by
+this note: the pin is now v0.47.2, on which the V17 probe's `=`-bodied
+effectful `func` form is no longer used by M1.6a's shipped code path.
+
+Evaluator (iteration 1, at `966ba3a` on v0.45.0): 59/100 FAIL, hard-fail only
+on the two toolchain reds, both independently attributed to the toolchain.
+Evaluator (iteration 3, at `91879a2` on v0.47.2): **87/100 PASS**
+(`eval_R1-M1-SKY_M1.6a_iter3.json`).

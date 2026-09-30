@@ -1,0 +1,37 @@
+module stapledons/sim/core_test
+
+import ./core (initShip, step, turn, position, scriptedOffAxis, beta)
+import pkg/sunholo/relativity/optics (Vec3)
+import std/math (sqrt)
+import pkg/sunholo/relativity/hyper (cosh)
+
+pure func checkTurnAtRest() -> bool {
+  let s = step(initShip(), 0.0000000005, 1.0);
+  let r = turn(s, {x: 1.0, y: 0.0, z: 0.0});
+  r.accepted && r.ship.motion.phi == 0.0
+}
+pure func checkMovingTurnRejected() -> bool {
+  let s = step(initShip(), 1.0, 1.0);
+  let r = turn(s, {x: 1.0, y: 0.0, z: 0.0});
+  !r.accepted && r.ship.tick == s.tick && r.ship.motion.phi == s.motion.phi && r.ship.motion.x == s.motion.x && r.ship.heading.z == s.heading.z
+}
+pure func checkPositionAfterTurn() -> bool {
+  let s = step(initShip(), 1.0, 1.0);
+  let rest = step(s, -1.0, 1.0);
+  let p = position(rest);
+  let t = turn(rest, {x: 1.0, y: 0.0, z: 0.0}).ship;
+  let out = step(t, 1.0, 1.0);
+  let q = position(out);
+  q.x > 0.0 && q.z == p.z && q.y == 0.0
+}
+pure func checkScriptedOffAxis() -> bool {
+  let g = 1.032295275553596;
+  let d = 2.0 * (cosh(g * 1.0) - 1.0) / g;
+  let got = scriptedOffAxis(100);
+  got > sqrt(2.0) * d - 0.000000001 && got < sqrt(2.0) * d + 0.000000001
+}
+
+test "turn at rest snaps rapidity" { checkTurnAtRest() }
+test "moving turn rejected" { checkMovingTurnRejected() }
+test "position after turn retains origin" { checkPositionAfterTurn() }
+test "strict off axis voyage" { checkScriptedOffAxis() }

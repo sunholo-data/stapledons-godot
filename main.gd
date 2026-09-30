@@ -19,7 +19,7 @@ var yaw := 0.0
 var pitch := 0.0
 var warp := 0.2 # ship-years per real second
 var _accum := 0.0
-var _last_pos_update := 0.0
+var _last_pos_update := Vector3.ZERO
 
 
 func _ready() -> void:
@@ -73,11 +73,15 @@ func _build_scene() -> void:
 func _apply_state() -> void:
 	var s := sim.state
 	var beta: float = s["beta"]
-	starfield.set_velocity(HEADING, beta, s["gamma"])
+	var h: Dictionary = s["heading"]
+	var heading := Vector3(h["x"], h["y"], h["z"])
+	starfield.set_velocity(heading, beta, s["gamma"])
 	var x: float = s["x"]
-	if absf(x - _last_pos_update) > 0.01:
-		starfield.set_ship_position(HEADING * x)
-		_last_pos_update = x
+	var p: Dictionary = s["pos"]
+	var pos := Vector3(p["x"], p["y"], p["z"])
+	if pos.distance_to(_last_pos_update) > 0.01:
+		starfield.set_ship_position(pos)
+		_last_pos_update = pos
 	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s" % [
 		beta, s["gamma"], s["tau"], s["t"], x, warp]
 

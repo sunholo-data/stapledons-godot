@@ -1,47 +1,107 @@
 module stapledons/sim/ship
 
--- Stapledon's Voyage: simulation sidecar (I/O shell around sim/core).
--- Protocol: one JSON object per line on stdin, one per line on stdout.
---   in : {"cmd":"step","thrust":<-1..1>,"dtau":<ship years>} | {"cmd":"quit"}
---   out: {"tick","beta","gamma","tau","t","x"}
--- Units: light-years, years, c = 1. Motion is 1-D along the ship heading.
-
+-- NDJSON I/O shell. All validation happens before the pure state transition.
 import std/io (readLine, println, flush)
-import std/json (decode, encode, getNumber, getString, jo, kv, jnum, jint)
+import std/json (Json, decode, encode, get, getNumber, getString, has, jo, kv, jnum, jint, js)
 import std/option (Some, None)
 import std/result (Ok, Err)
-import ./core (Ship, initShip, step, beta, gamma)
+import pkg/sunholo/relativity/optics (Vec3, norm)
+import pkg/sunholo/relativity/hyper (absf)
+import ./core (Ship, initShip, step, turn, position, beta, gamma)
 
-pure func report(s: Ship) -> string =
+export type Response = { ship: Ship, reply: string }
+
+pure func vectorJson(v: Vec3) -> Json = jo([kv("x", jnum(v.x)), kv("y", jnum(v.y)), kv("z", jnum(v.z))])
+
+export pure func report(s: Ship, status: string) -> string {
+  let p = position(s);
   encode(jo([
-    kv("tick", jint(s.tick)),
-    kv("beta", jnum(beta(s))),
-    kv("gamma", jnum(gamma(s))),
-    kv("tau", jnum(s.motion.tau)),
-    kv("t", jnum(s.motion.t)),
-    kv("x", jnum(s.motion.x))
+    kv("tick", jint(s.tick)), kv("beta", jnum(beta(s))), kv("gamma", jnum(gamma(s))),
+    kv("tau", jnum(s.motion.tau)), kv("t", jnum(s.motion.t)), kv("x", jnum(s.motion.x)),
+    kv("heading", vectorJson(s.heading)), kv("pos", vectorJson(p)), kv("status", js(status))
   ]))
+}
+
+pure func helloReport(s: Ship) -> string {
+  let p = position(s);
+  encode(jo([
+    kv("proto", js("1.1")), kv("tick", jint(s.tick)), kv("beta", jnum(beta(s))),
+    kv("gamma", jnum(gamma(s))), kv("tau", jnum(s.motion.tau)), kv("t", jnum(s.motion.t)),
+    kv("x", jnum(s.motion.x)), kv("heading", vectorJson(s.heading)),
+    kv("pos", vectorJson(p)), kv("status", js("ok"))
+  ]))
+}
+
+pure func finite(v: float) -> bool = v == v && absf(v) <= 1.0e308
+pure func validNumber(j: Json, key: string) -> bool =
+  if !has(j, key) then true
+  else match getNumber(j, key) { Some(v) => finite(v), None => false }
+
+pure func validHeading(j: Json) -> bool =
+  match get(j, "heading") {
+    Some(h) => match getNumber(h, "x") {
+      Some(x) => match getNumber(h, "y") {
+        Some(y) => match getNumber(h, "z") {
+          Some(z) => finite(x) && finite(y) && finite(z) && absf(norm({x: x, y: y, z: z}) - 1.0) <= 0.000000001,
+          None => false
+        }, None => false
+      }, None => false
+    },
+    None => true
+  }
+
+pure func headingOf(j: Json) -> Vec3 =
+  match get(j, "heading") {
+    Some(h) => {x: match getNumber(h, "x") {Some(x) => x, None => 0.0},
+                y: match getNumber(h, "y") {Some(y) => y, None => 0.0},
+                z: match getNumber(h, "z") {Some(z) => z, None => 0.0}},
+    None => {x: 0.0, y: 0.0, z: -1.0}
+  }
+
+pure func numberOrZero(j: Json, key: string) -> float =
+  match getNumber(j, key) {Some(x) => x, None => 0.0}
+
+pure func reject(s: Ship, code: string) -> Response = {ship: s, reply: report(s, code)}
+
+export pure func handle(s: Ship, line: string) -> Response =
+  match decode(line) {
+    Err(_) => reject(s, "bad_json"),
+    Ok(j) => match getString(j, "cmd") {
+      Some(cmd) => if cmd == "hello" then {ship: s, reply: helloReport(s)}
+        else if cmd == "step" then {
+          let thrust = numberOrZero(j, "thrust");
+          let dtau = numberOrZero(j, "dtau");
+          if !validNumber(j, "thrust") || !validNumber(j, "dtau") || absf(thrust) > 1.0 || dtau < 0.0 then reject(s, "bad_step")
+          else if !validHeading(j) then reject(s, "bad_heading")
+          else {
+            let turned = if has(j, "heading") then turn(s, headingOf(j)) else {accepted: true, ship: s};
+            if !turned.accepted then reject(s, "moving")
+            else {
+              let next = step(turned.ship, thrust, dtau);
+              {ship: next, reply: report(next, "ok")}
+            }
+          }
+        } else reject(s, "bad_cmd"),
+      None => reject(s, "bad_cmd")
+    }
+  }
+
+pure func isQuit(line: string) -> bool =
+  match decode(line) { Ok(j) => match getString(j, "cmd") { Some(c) => c == "quit", None => false }, Err(_) => false }
 
 func loop(s: Ship) -> () ! {IO} {
   let line = readLine(());
-  match decode(line) {
-    Ok(j) => {
-      let cmd = match getString(j, "cmd") { Some(c) => c, None => "quit" };
-      if cmd == "step" then {
-        let thrust = match getNumber(j, "thrust") { Some(v) => v, None => 0.0 };
-        let dtau = match getNumber(j, "dtau") { Some(v) => v, None => 0.0 };
-        let s2 = step(s, thrust, dtau);
-        println(report(s2));
-        flush(());
-        loop(s2)
-      } else ()
-    },
-    Err(_) => ()
+  if line == "" || isQuit(line) then ()
+  else {
+    let r = handle(s, line);
+    println(r.reply);
+    flush(());
+    loop(r.ship)
   }
 }
 
 export func main() -> () ! {IO} {
-  println(report(initShip()));
+  println(report(initShip(), "ok"));
   flush(());
   loop(initShip())
 }
