@@ -44,6 +44,6 @@ design_docs/
 |---|---|
 | [r1/m1-relativistic-sky.md](planned/r1/m1-relativistic-sky.md) | Planned: awaiting sprint plan |
 | [r1/m1.2b-wd-photometry.md](implemented/r1/m1.2b-wd-photometry.md) | Implemented 2026-10-01: `sunholo/relativity` 0.3.0 published (WD-1/2, iteration 5); game pin, `checkWDPackage` and strict-VM `make wd-vm` (WD-3, PR #12, iteration 6) |
-| [r1/m2-journey-core.md](planned/r1/m2-journey-core.md) | Planned 2026-10-01: awaiting Mark's open questions, then sprint plan |
-| [r1/m3-black-holes.md](planned/r1/m3-black-holes.md) | Planned 2026-10-01: awaiting Mark's open questions (weak-field check value), then sprint plan |
-| [r1/m4-first-journey.md](planned/r1/m4-first-journey.md) | Planned 2026-10-01: awaiting Mark's open questions, then sprint plan; depends on M2 |
+| [r1/m2-journey-core.md](planned/r1/m2-journey-core.md) | Planned 2026-10-01: OQ1–5 resolved (D-11, D-12); new OQ6 (m_eff, boost_g, ε defaults) has a default; ready for sprint plan |
+| [r1/m3-black-holes.md](planned/r1/m3-black-holes.md) | Planned 2026-10-01: OQ1–4 resolved (D-13; demo hole Sgr A*); new OQ5 (Galactic-Centre sky) has a default; ready for sprint plan |
+| [r1/m4-first-journey.md](planned/r1/m4-first-journey.md) | Planned 2026-10-01: OQ1–7 resolved (D-12, D-14); new NQ1/NQ3 have defaults; Track B waits on art stop S2; depends on M2 |

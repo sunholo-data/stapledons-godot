@@ -167,12 +167,15 @@ milestones are reached (design doc open questions 1 and 4).
   irreversible and enforced by the simulation; a 10k-tick replay is
   byte-identical on the VM and the interpreter.
 - **Clause 3 (black holes):** M3 is met. The shadow is within 0.5 px of Synge's
-  formula at 10, 5 and 3 r_s; the weak-field limit is within 1%; the Einstein
-  ring is at the predicted angle. The geodesic integrator ships in
+  formula at 10, 5 and 3 r_s; the weak field is within 1% of 2r_s/b at
+  b = 1000 r_s and within 3×10⁻⁴ of the second-order series at b = 100 r_s
+  (amended by D-13, 2026-10-01: the literal 1% at 100 r_s fails for exact
+  physics); the Einstein ring is at the predicted angle. The geodesic integrator ships in
   `sunholo/relativity`.
 - **Clause 4 (first journey):** M4 is met. Plan → commit → transit → arrive →
-  news from home; a new player finishes it in under 10 minutes; the replay is
-  byte-identical.
+  news from home; the scripted minimum-path proxy finishes it in under 10
+  minutes (amended by D-14, 2026-10-01: the three-new-player playtest moves to
+  R2); the replay is byte-identical.
 - **Clause 5 (AILANG):** the pure simulation core passes `--strict-bytecode` at
   every landing. Every VM/interpreter divergence and every DX papercut hit is
   reported upstream with a repro. When AILANG Phase 2E lands, the whole
@@ -209,6 +212,7 @@ provider. Physics code gets the strongest available evaluator.
 3. **M2** journey core · clause 2 · design doc drafted (attended 2026-10-01, `design_docs/planned/r1/m2-journey-core.md`; 5 open questions for Mark) · PRNG blocked on strict-VM bitwise ops (ailang#1450; LCG fallback in the doc) · ~3,100 LOC (estimate)
 4. **M3** black holes · clause 3 · design doc drafted (attended 2026-10-01, `design_docs/planned/r1/m3-black-holes.md`; 4 open questions for Mark, incl. the clause-3 weak-field value: exact deflection at b = 100 r_s is 1.5% above 2r_s/b) · `sunholo/relativity` next free minor (0.5.0 or 0.6.0, shared with M2.0) for the geodesic integrator · M3.1–M3.4 need nothing from M1 · ~2,600 LOC (estimate)
 5. **M4** first journey · clause 4 · design doc drafted (attended 2026-10-01, `design_docs/planned/r1/m4-first-journey.md`; 7 open questions for Mark; protocol interface aligned with M2), **unblocked by D-6** (interior design: `stapledons-design/art/ship-interior-blender-brief.md`; reference spike: branch `spike/iso-bridge`, `spike/interior3.gd`); D-7 (attended 2026-09-28: AI-generated portraits with emotion markers, generated voice, generate-on-first-use and cache, the Archive in the spire base) is an input to the M4 design doc; builds on the AI service foundation (row 2, D-9) · ~2,500 LOC (estimate)
+6a. [NEW] **Forward CMB disc** (D-11) · clause 1 follow-up · at γ ≳ 275 the CMB blueshifted by γ(1+β) is a visible disc at the forward pole (≈3,850 K at γ 707); M1's sky does not render it. Package function, spec check value, GPU golden, render review · routable after M2.0 · ~250 LOC (estimate)
 6. [NEW] **Toolchain gate hygiene** · clause 5 · `make deps` fails whenever the PATH `ailang` differs from the pin (now v0.50.0, bumped attended 2026-10-01; `runtime/` restaged) (it rewrites the lockfile version line), so every local gate needs `AILANG=runtime/bin/ailang`: default the Makefile to the pinned runtime when present, or make `deps` ignore the version lines · ~20 LOC
 7. [HARNESS] ticket:mission-base:hardcoded-origin-dev RESOLVED (ailang `cb7c51c8e`, harness-resolved reply acked iter 6; verified from the driver pin) · ticket:skill:gate0-ledger-provenance-S (open, non-blocking)
 5. [LANDED] **Arming prerequisites** · `godot-game` profile, registry, env, bookkeeping issue #1 (`sunholo-data/ailang#1340`)
