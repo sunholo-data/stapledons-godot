@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.47.2
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim parity parity-offaxis strict tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim parity parity-offaxis strict wd-vm tools-test golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim parity parity-offaxis strict tools-test   ## everything that runs without a GPU window
+test: deps import physics sim parity parity-offaxis strict wd-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
@@ -56,6 +56,10 @@ strict:            ## pure sim core must run entirely on the bytecode VM (no eva
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry scriptedOffAxis --args-json 300 sim/core.ail); \
 	echo "strict off-axis VM $$got | interpreter $$interp | closed form $$want"; \
 	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)"
+
+wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ailang test` interpreter cannot see NaN-guard mutants)
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
+	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
 golden:            ## GPU shader vs CPU reference star positions (needs a GPU window)
 	$(GODOT) --path . -- --golden
