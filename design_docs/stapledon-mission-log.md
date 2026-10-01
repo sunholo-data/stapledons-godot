@@ -581,3 +581,95 @@ Append-only. One entry per iteration, newest at the bottom.
   stapledon` failed from this repo ("failed to read mission registry
   missions"), so the index row was added by hand. That is a registry-path
   gap, not a controller lapse.
+
+## 2026-10-01: iteration 7, M1.2b-T1 LANDED (pure catalogue transform) [PRODUCT]
+
+- **Progress:** R1 clauses 1–4 UNMET,5 ongoing. M1 5/12 plus T1 subtask;
+  full M1.2b/AC2 remains open. This iteration moved clause 1 by adding the
+  package-backed pure catalogue transform and deterministic tier selection.
+- **Gate0:** armed, gh sunholo-voight-kampff, billing CLEAN. Issue#4 (live
+  namespaced key):0 allowlisted directives of 24 comments since
+  2026-09-30T14:19:22Z. Ledger valid, 9 RESOLVED rows, none OPEN. Read duplicate
+  harness-resolved reply for mission-base; prior iteration had already
+  verified/update-recorded the fix, so acknowledged it without redoing work.
+- **Gate1:** HEAD==origin/main `d26cacfca50c69ca0c2c46faf3c91afa954b28f5`.
+  CI expected1/present1 completed success. All 13 running skill files MATCH
+  ailang origin/dev; followed the authoritative absolute path. No open PRs.
+  Stale iter4 trees hold cache/evaluation residue, no T1 implementation.
+  Fleet quota: Codex54.0% used vs70.5% allowed; Ollama over ration (unused).
+  Sonnet subscription probe rc0. AILANG v0.47.2 and Godot4.7.2 verified.
+- **Gate2 pick:** M1.2b remaining pure transform, queue head moving UNMET
+  clause 1. No transform/production selection on origin. WD3 prerequisite
+  landed; existing approved sprint explicitly required the post-preflight
+  dependency split. Planner refined only T1, estimate240/cap250. Designer
+  and new quorum not needed: design direction and ACs unchanged, no new doc.
+  Independent judge confirmed Sept27 approval covers the refinement.
+- **Executor:** Agent-tool GPT 6.1 Sol, isolated .stapledon-wt-iter7.
+  New pure catalogue/test modules, export and make catalogue-vm wired into
+  make test; ~138 changed production/test/config LOC,192 including evidence
+  executables. Normal/WD maths from locked relativity0.3.0 only. Missing
+  sentinel/flags, exact rows/counters and stable nearest-complete selection.
+  Nine new tests red before implementation (20 existing green); final10 new
+  tests green. Initial mutation survivors for error propagation and z-distance
+  led to corrected tests, then33 compiling mutants killed, source restored.
+  Child T1 passes true after judge; parent M1.2b remains null.
+- **Controller verification:** pristine baseline make test rc0, fresh
+  implementation make test rc0: AILANG30/30, physics42/42, extraction15/15;
+  strict core/WD and601-line/17-line parity; transform/selection VM==interpreter.
+  Reproduced missing-V and z-distance mutants: compiling correct arms print
+  OK, mutants BAD, restored byte-identically. Independently reproduced the
+  reverse gap: interpreter rc0 [3,2,1], strict VM rc1 evaluator-only builtin.
+  GCP user report by executor: inbox_1790851451419_f085641f, from stapledons_godot.
+- **Independent evaluator:** Anthropic Sonnet 5.5, isolated .stapledon-eval-iter7,
+  reviewed `e5908ce7fa7041db407f1e36af44316fc8806936`.
+  **88/100 PASS**,zero blockers. Independently ran68 unique compiling mutants:
+  60 killed by named tests and both runtimes;8 survivors =2 real test gaps,
+  1 boundary residual,5 equivalent/redundant/unreachable branches. Makefile
+  strict-VM guard and equality assertion both measured load-bearing.
+  Reports: .ailang/state/evaluations/eval_R1-M1-SKY_M1.2b-T1_iter7_round1.*.
+- **Follow-ups, measured first-party:** N1 wrong WD invertibility predicate
+  on dwarf BP-RP2.5 changes flags0→16 while transformVm stays OK. N2 stripping
+  two trailing blanks accepts malformed input while transformVm stays OK.
+  Controller reproduced both; assigned to next writer milestone. N3 exact
+  50,000 boundary belongs to full integration. Unknown tier strings pass
+  through; enormous finite coordinates can overflow squared distance.
+  Writer owns validation/range policy; current catalogue-range fixture is safe.
+  Dead branches, refusal localisation and long lines recorded as nonblocking.
+- **Gate3b:** PR#14 head b1db22fe21298e4140621e5dc0e27ffffa3e68fe CI success,
+  merged f4dd9bc883d2837b4fd86ebb53c017ac1691796d; expected1/present1 check
+  completed success at that merge. No renderer/.gd/.gdshader/.tscn change,
+  GPU/human render gate N/A. Full M1 and its roadmap status remain open.
+- **Routing evidence:** Gate1 base=d26cacfca50c69ca0c2c46faf3c91afa954b28f5@2026-10-01T10:35:56Z;
+  worktree snap same SHA@2026-10-01T10:36:24Z. Gate4
+  base=f4dd9bc883d2837b4fd86ebb53c017ac1691796d@2026-10-01T11:09:22Z.
+  Controller Codex GPT 6.1 Sol (tok:not reported).
+  Designer not spawned, existing design (Gate3 conditional routing).
+  Planner resolver recipe codex:gpt-6.1-sol declared:planner-lane-default-pin;
+  Agent-tool role planner, explicit requested pin (tok:not reported).
+  Executor resolver recipe codex:gpt-6.1-sol declared:provider-pin;
+  Agent-tool role executor as operator requested (tok:not reported).
+  Evaluator resolver agent-tool sonnet declared:alias-pin. Agent-tool attempt
+  FAILED: Unknown model `sonnet`; available models OpenAI only. Fallback
+  claude-sub --model claude-sonnet-5-5 completed rc0,704s,modelUsage confirms
+  exact model;3,696,888 tok plus22,767 probe tok,subscription (list-price
+  estimate not a metered bill). Generator OpenAI≠judge Anthropic.
+  Nothing landed on controller verdict; no judge was silently omitted.
+- **Ruled out:** redoing WD3; new design/quorum for scope-preserving split;
+  M1.6b pick (needs human render); accepting executor greens without judge;
+  treating small-fixture parity as full-medium parity; claiming full M1.2b done.
+- **Deviations/retro:** pure std/list.reverse strict-VM gap reported, foldl/cons
+  workaround independently reviewed. Controller accidentally staged nested
+  compiler caches with evidence, removed before review/push (no caches tracked).
+  Gate1/2 first heartbeat stamps omitted by controller; their checks/bases
+  were recorded, Gate0/3/3b/4 stamped. Evaluator supplied future13:10Z timestamp;
+  metadata corrected from observed terminal artifact11:04:13Z, raw reported
+  value preserved; score/findings unchanged. Shared skill untouched (charter).
+  rotate-log CLI cannot read registry from game worktree, same prior-known
+  gap; index regenerated locally, no rotation needed for 8 iteration entries.
+  Initial index regex missed parenthesized dates; assertion caught it before
+  commit, then all 8 historical iteration rows were regenerated and checked.
+- **Cost:** metered$0.00; quota buckets Codex/Anthropic. Harness share 0/8.
+  Last3 landings (5,6,7) each move clause 1; no drift alarm.
+- **Next:** float32 writer/sidecars + N1/N2/tier validation, then full-tier
+  bounded integration/5-run VM parity, then M1.2c. M1.6b ready when attended.
+  DECISIONS FOR MARK:none (ledger generated); no new human input needed.

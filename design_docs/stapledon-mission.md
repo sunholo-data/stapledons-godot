@@ -68,6 +68,25 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-10-01: iteration 7, M1.2b-T1 LANDED (pure catalogue transform)
+
+- **T1 ✅**: PR #14, merge `f4dd9bc`, complete merge CI green. Package-only
+  normal/WD transform, missing/clamped flags and independent counters;
+  stable nearest-complete medium selection, quick/large input order.
+  Independent Sonnet 5.5 **88/100 PASS**, zero blockers; generator GPT 6.1 Sol.
+- **Next**: bounded float32 writer/sidecars, then full-tier integration and
+  5-run VM parity. Carry evaluator N1 (dwarf clamp predicate discriminator),
+  N2 (double trailing-newline refusal), 50,000 boundary and tier validation.
+  M1.6b waits on human render review; AI foundation is routable when M1 pauses.
+- **Clause map**: 1 UNMET → M1 writer/integration routable now; 2 UNMET → M2
+  design/implementation; 3 UNMET → M3 package/integrator; 4 UNMET → AI
+  foundation/M4; 5 ongoing → strict core/parity green, pure-list reverse
+  VM gap reported. M1 5/12 plus T1 subtask; full M1.2b remains open.
+  This landing moved clause 1. Harness share 0/8; last 3 landings move clause 1.
+- **Routing**: planner/executor Agent-tool GPT 6.1 Sol; evaluator Agent pin
+  `sonnet` rejected (Unknown model), exact Sonnet 5.5 subscription CLI fallback
+  completed the independent review. Designer not needed (existing design).
+
 ## STATUS 2026-10-01: iteration 6, M1.2b-WD3 LANDED (game pins relativity 0.3.0)
 
 - **WD-3 ✅**: PR #12, merge `68575d9`, merge-commit CI green. The game pins
@@ -105,20 +124,6 @@ The newest 3 STATUS stamps live here; older ones move to
 - **Clause map**: 1–4 UNMET, 5 ongoing; M1 4/12 milestones (+WD-1/WD-2 of
   the M1.2b prerequisite). Clause 1 moved via the package-first WD physics.
   Harness share 0/6; last three landings all move clause 1.
-
-## STATUS 2026-09-30: iteration 4, M1.2b-preflight LANDED
-
-- **Preflight ✅**: PR #9, merge `01fe9ef`, complete merge CI green.
-  Independent Sonnet 5.5 **85/100 PASS**, zero blockers; reviewed generator
-  Codex GPT-6.1 Sol separately. Real 5k interpreter + five strict pure-VM
-  outputs byte-identical. Existing package normal photometry only; WD and
-  missing rows counted/deferred. Full M1.2b / AC2 remain incomplete.
-- **Next**: package-first D-4 WD specification/calibration/publication, then
-  bounded transform, corrected float32 writer and full integration; M1.6b
-  camera + golden remains ready. AI service foundation (D-9) routable when
-  M1 pauses. No human question reached; D-1..D-9 remain RESOLVED.
-- **Clause map**: 1–4 UNMET, 5 ongoing; M1 4/12 complete. Clause 1 moved
-  via measured preflight. Harness share 0/5; last three landings move clause 1.
 
 ## Decision ledger
 
@@ -194,7 +199,7 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ✅ (PR #3, merge `5218160`, iter 3, eval 87; parked upstream on ailang#1354/#1355, fixed in v0.47.2, resume predicate verified first-party) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · M1.2b-preflight ✅ (PR #9 `01fe9ef`, iter 4, eval 85; full M1.2b remains open) · M1.2b-WD1/WD2 ✅ (`sunholo/relativity@0.3.0` published, pkg PR #83, iter 5, eval 98; design `m1.2b-wd-photometry.md`) · M1.2b-WD3 ✅ (PR #12 `68575d9`, iter 6, eval 98; pin 0.3.0, `checkWDPackage`, strict-VM `make wd-vm`) · [NEXT] bounded transform/writer/integration + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted; `teffFromBV` now ships in relativity 0.4.0, since 0.3.0 is the WD release) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b camera + golden (unblocked; carries the M1.6a follow-up: pin the 1e-9 at-rest tolerance) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ✅ (PR #3, merge `5218160`, iter 3, eval 87; parked upstream on ailang#1354/#1355, fixed in v0.47.2, resume predicate verified first-party) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · M1.2b-preflight ✅ (PR #9 `01fe9ef`, iter 4, eval 85; full M1.2b remains open) · M1.2b-WD1/WD2 ✅ (`sunholo/relativity@0.3.0` published, pkg PR #83, iter 5, eval 98; design `m1.2b-wd-photometry.md`) · M1.2b-WD3 ✅ (PR #12 `68575d9`, iter 6, eval 98; pin 0.3.0, `checkWDPackage`, strict-VM `make wd-vm`) · M1.2b-T1 ✅ (PR #14 `f4dd9bc`, iter7, eval88; pure transform/selection only) · [NEXT] bounded float32 writer/sidecars (N1/N2 test gaps, tier validation) → full-tier integration + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted; `teffFromBV` now ships in relativity 0.4.0, since 0.3.0 is the WD release) → M1.3 → M1.4a ⏸ Mark picks the background → M1.4b/c → M1.5 · M1.6b camera + golden (unblocked; carries the M1.6a follow-up: pin the 1e-9 at-rest tolerance) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
 2. [QUEUED] **AI service foundation** (D-9) · feeds clause 4 · design doc needed (routable: designer), written in `design_docs/planned/r1/` from `stapledons-design/features/ai-showcase.md` §5 and §8 plus `art/characters-blender-brief.md` §6 · runs after M1, or earlier in any iteration where M1 is parked or waiting on Mark (e.g. the M1.4a pause) · three milestones: (a) AI service skeleton: a separate AILANG process, an NDJSON request/result protocol relayed by Godot, every result recorded so replays stay byte-identical, a cache index keyed (kind, entity_id, emotion, age_stage, variant), tested headless with a stubbed provider (no key, no spend); (b) emotion-marker grammar for the 8 emotions, shared by text, TTS and the portrait switcher, with a parser and tests; (c) ⏸ Medic style frame: a TTS voice for the accepted Medic, one generated line whose markers swap the existing portraits in a conversation UI; stop for Mark (voice and swap timing) · constraints: D-8 (player's own key, opt-in live generation, model-neutral with Gemini default, no live voice, text-only always available); the sim never calls AI · ~1,200 LOC (estimate)
 3. **M2** journey core · clause 2 · design doc needed · ~2,000 LOC (estimate)
 4. **M3** black holes · clause 3 · design doc needed; `sunholo/relativity` 0.3 (Binet integrator) · ~1,800 LOC (estimate)
