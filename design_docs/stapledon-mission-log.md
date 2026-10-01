@@ -471,3 +471,113 @@ Append-only. One entry per iteration, newest at the bottom.
   version references and obligations O-1/UI label). Then the bounded
   catalogue transform/writer/integration. M1.6b ready. D-9 routable when M1
   pauses. DECISIONS FOR MARK: none (package PR #83 awaits a merge, as #81 did).
+
+## 2026-10-01: iteration 6, M1.2b-WD3 LANDED (game pins relativity 0.3.0) [PRODUCT]
+
+- **Progress:** R1: clauses 1–4 UNMET, 5 ongoing. M1 5/12 milestones,
+  counting the M1.2b WD prerequisite (WD-1/2/3) as done; full M1.2b (AC2)
+  is still open. This iteration moved clause 1: the game now consumes the
+  package's WD photometry under a strict-VM-checked contract.
+- **Gate 0:** kill switch armed; gh `sunholo-voight-kampff`; billing CLEAN;
+  0 directives on #4 since 2026-09-30T14:19:22Z (23 comments, none from the
+  allowlist). One inbox message: `[harness-resolved]
+  mission-base:hardcoded-origin-dev` (ailang `cb7c51c8e`). Verified: the
+  driver pin's `mission-base.sh record gate1` gives rc 0 and records
+  `origin/main` `dd760b2`. The `AILANG_DRIVER_SRC` clone (`64e10b72c`) does
+  not carry the fix yet and still fails rc 1, so call the pin's copy. Queue
+  row 7 updated and the reply acked.
+- **Gate 1:** local main == origin/main `dd760b2`; the skill directory has
+  no drift vs ailang `origin/dev` (13 files compared; no DRIFT lines); CI on
+  `dd760b2`: 1 check, success. No open PRs.
+- **Gate 2 pick:** M1.2b-WD3, the queue head, on the critical path for
+  clause 1. Reality check: `ailang pkg info` shows 0.3.0 published;
+  `sim/ailang.toml:17` still pinned 0.2.0; no WD3 commit on origin. The plan
+  existed (iteration 5, `m1.2b-wd-photometry-sprint.md` WD-3), so no
+  designer or planner was needed and no quorum ran. The two stale iter-4
+  worktrees hold only untracked caches and an eval report that was already
+  banked.
+- **Executor result:** Sonnet 5.5 (Agent tool, foreground) in
+  `.stapledon-wt-iter6`. Pin + relock; `checkWDPackage`; `wdVmNaN` +
+  `make wd-vm` (strict VM, wired into `make test`); M1 doc consumer contract,
+  O-1, UI-label line, `teffFromBV` → 0.4.0. Plus one off-plan line:
+  `tools/catalogue_probe.py` pin assertion 0.2.0 → 0.3.0 (otherwise
+  `make catalogue-probe` breaks). About 22 code LOC and 38 doc lines
+  (cap 250). Its drill: 0.2.0 pin fails the import, a wrong teff fails the
+  test, and a wrong wd-vm expectation gives rc 2.
+- **Controller re-run (outside the executor):** baseline `make test` rc 0
+  at `dd760b2`, then rc 0 at `c1041ea` (20/20 sim, parity 601 lines
+  identical, off-axis 17 identical, strict == interpreter, `wd-vm:
+  wd-nan-ok`). AC-W10 grep rc 1 (clean, excluding the untracked
+  `sim/tools/.ailang` cache). AC-W11 both greps hit (line 262).
+- **Evaluator:** MiniMax-M3 (pi, openrouter) via `mission_pi_run.sh`,
+  verdict ok, 1,056 s, 147 tool calls, fenced, session-protocol acked.
+  **98/100 PASS**, 0 blocking, reviewed `c1041ea` in the detached
+  `.stapledon-eval-iter6`. Mutants:
+  - M1 (pin 0.2.0) and M2a/M2b (fixture values) killed.
+  - M3 (Exact NaN guard dropped) killed on the strict VM only. The
+    controller reproduced it first-party with its own scratch module: VM
+    `mutant=3000.0000000000136 mutantEq3000=false`, interpreter
+    `3000.0 … true`.
+  - M4 (`ailang run` error) killed.
+  - M4b (test body sabotaged to always print ok) survived. That is NB-6,
+    tampering with the test itself, which is visible in any diff; no action.
+  - Non-blocking findings:
+    - NB-4: the mission-log note for the renumbering. This entry is it:
+      `teffFromBV` moves to relativity 0.4.0, since 0.3.0 is the WD release.
+    - NB-5: add a strict-VM clamp case for out-of-table colours. Carried
+      to the transform milestone.
+    - NB-7: the probe needs raw data, so it is env-only.
+  - Reports: `.ailang/state/evaluations/eval_R1-M1-SKY_M1.2b-WD3_iter6.{json,md}`,
+    committed on the PR.
+- **Gate 3b:** PR #12, head `853ae3c` CI pass, merged as `68575d9`;
+  `commits/68575d9…/check-runs` gives 1 check, completed:success.
+  No .gd/.gdshader/.tscn change, so the GPU golden and render gate is N/A.
+- **Routing evidence:** Gate-1 base `origin/main dd760b292c68d5d5e11d18f30e7cd3fbd0f5e045`
+  (driver-pin `mission-base.sh`; no drift at Gate 3).
+  - Controller `claude-opus-5-5` (tok: not reported).
+  - Designer and planner not spawned: the design and plan already existed.
+  - Executor `claude:claude-sonnet-5-5`. Resolver: `recipe
+    claude:claude-sonnet-5-5 declared:provider-pin`. Spawned with the Agent
+    tool (`model=sonnet`, per the operator's standing request, as in
+    iteration 5). 63,326 tok, 23 tool calls, 284 s.
+  - Evaluator `pi:openrouter/minimax/minimax-m3`. Resolver: `reroute …
+    generator-equals-judge` (the sonnet evaluator pin equals the executor).
+    The Agent tool can't carry a pi lane. 7,988,199 tok (mostly cache
+    reads), $0.548.
+  - generator≠judge holds at provider level (Anthropic vs MiniMax). No role
+    was skipped, and nothing landed on the controller's own verdict.
+  - The first pi probe hung more than 4 minutes because the controller left
+    stdin open (no `< /dev/null`). It was killed, and the re-probe gave
+    rc 0 in 1 s. Controller error; the lane is fine.
+- **Ruled out:**
+  - (a) The executor's DX claim that a zero-argument or non-exported
+    `--entry` "silently prints nothing". A minimal repro on v0.47.2 and
+    v0.49 errors loudly ("entrypoint not found", "ARG_DECODE_MISMATCH"),
+    and a zero-argument entry prints fine, so nothing was filed upstream.
+  - (b) Editing the shared package cache for the mutation drill. A scratch
+    copy of the lookup/bisect was used instead.
+  - (c) M1.6b as the pick: it needs a human-reviewed render, and WD3 was
+    the queue head on the same clause.
+- **Deviations / retro:**
+  - `make deps` diffs the lock against HEAD, so an uncommitted relock fails
+    it by design. The executor used a temporary index; the controller
+    committed first and then re-ran.
+  - The main checkout's `runtime/bin/ailang` is still v0.45.0, so all
+    gates used the iter-4 worktree's v0.47.2 binary. Queue row 6 (toolchain
+    hygiene) covers this.
+  - The harness `mission-base` fix is on origin and in the pin but not in
+    `AILANG_DRIVER_SRC`. That is the fleet's concern; noted, not worked.
+- **Cost:** metered $0.55 (evaluator). Quota buckets: anthropic
+  (controller, executor). Harness share 0/7.
+- **Next:** the M1.2b bounded catalogue transform, corrected float32 writer
+  and integration (consumer contract now in the M1 doc; add NB-5's
+  strict-VM clamp case there). Then M1.2c stats + tier commits. M1.6b ready.
+  D-9 routable when M1 pauses. DECISIONS FOR MARK: none (package PR
+  sunholo-data/ailang-packages#83 still awaits a merge).
+- **Landing housekeeping:** the WD design doc and its sprint plan moved to
+  `design_docs/implemented/r1/`; README, sprint JSON paths and CHANGELOG
+  updated. The design repo's R1 roadmap tracks M1 as a whole, and M1 is
+  not done, so no roadmap status change. `ailang mission rotate-log
+  stapledon` failed from this repo ("failed to read mission registry
+  missions"), so the index row was added by hand. That is a registry-path
+  gap, not a controller lapse.
