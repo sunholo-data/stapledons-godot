@@ -2,6 +2,23 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-09-30: iteration 5, M1.2b-WD1/WD2 LANDED (relativity 0.3.0 published)
+
+- **WD package ✅**: `sunholo/relativity@0.3.0` published (blackbody WD Teff
+  and V from Gaia BP−RP, VEGAMAG zero point Z=0.5906467146); package PR
+  sunholo-data/ailang-packages#83 open for Mark to merge (as 0.2.0 was).
+  Independent MiniMax-M3 **98/100 PASS**, zero blockers; generator Sonnet 5.5.
+  New design doc `m1.2b-wd-photometry.md` (quorum: 2 rounds blocked at N−1 on
+  unmeasured premises, all measured; narrow-refinement carve-out).
+- **Upstream**: ailang#1419 (interpreter NaN > x true, VM false) and ailang#1420
+  (nested cons pattern not compiled for strict VM) filed, both reproduced on
+  v0.47.2 and v0.49.
+- **Next**: M1.2b-WD3 (game pins 0.3.0, `checkWDPackage`, a VM-run NaN
+  assertion), then the bounded catalogue transform. M1.6b stays ready.
+- **Clause map**: 1–4 UNMET, 5 ongoing; M1 4/12 milestones (+WD-1/WD-2 of
+  the M1.2b prerequisite). Clause 1 moved via the package-first WD physics.
+  Harness share 0/6; last three landings all move clause 1.
+
 ## STATUS 2026-09-30: iteration 4, M1.2b-preflight LANDED
 
 - **Preflight ✅**: PR #9, merge `01fe9ef`, complete merge CI green.
