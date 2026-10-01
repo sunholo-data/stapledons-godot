@@ -6,11 +6,17 @@ extends Node3D
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
 ##   godot --path . -- --golden            shader vs CPU reference positions
+## Any run:  -- --record=path.ndjson  tees the sim's input log (replays headless).
+##
+## The sim runs a protocol v2 diag session (seed 0, scenario "sol"): the ship
+## is flown with `heading` and `thrust` intents and drawn from the bridge's
+## mirrored world.
 
 const TICK_HZ := 20.0
 const HEADING := Vector3(0, 0, -1) # galactic centre
 const EXPOSURE := 5.0
 const BG_EXPOSURE := 0.075 # hand-set ratio to the stars until M1.5 calibrates both
+const SEED := 0
 
 var sim := SimBridge.new()
 var starfield := Starfield.new()
@@ -35,7 +41,10 @@ func _ready() -> void:
 	starfield.load_catalogue("res://data/starmap/stars.json")
 	starfield.build()
 	starfield.set_exposure(EXPOSURE)
-	if not sim.start():
+	sim.record_path = args.get("record", "")
+	var course := {"k": "heading", "heading": {"x": HEADING.x, "y": HEADING.y, "z": HEADING.z}}
+	if not sim.start() or not sim.new_game(SEED, "sol", true) or not sim.send([course], 0.0):
+		push_error("sim session failed: %s" % sim.last_error)
 		get_tree().quit(2)
 		return
 	_apply_state()
@@ -77,7 +86,8 @@ func _build_scene() -> void:
 
 
 func _apply_state() -> void:
-	var s := sim.state
+	var s: Dictionary = sim.world["ship"]
+	var c: Dictionary = sim.world["clock"]
 	var beta: float = s["beta"]
 	var h: Dictionary = s["heading"]
 	var heading := Vector3(h["x"], h["y"], h["z"])
@@ -91,7 +101,7 @@ func _apply_state() -> void:
 		starfield.set_ship_position(pos)
 		_last_pos_update = pos
 	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s" % [
-		beta, s["gamma"], s["tau"], s["t"], x, warp]
+		beta, s["gamma"], c["tau"], c["t"], x, warp]
 
 
 func _process(delta: float) -> void:
@@ -109,7 +119,7 @@ func _process(delta: float) -> void:
 		var thrust := 0.0
 		if Input.is_key_pressed(KEY_W): thrust += 1.0
 		if Input.is_key_pressed(KEY_S): thrust -= 1.0
-		if sim.step(thrust, warp * dt):
+		if sim.send([{"k": "thrust", "thrust": thrust}], warp * dt):
 			_apply_state()
 
 
@@ -148,8 +158,11 @@ func _run_capture(dir: String) -> void:
 	var views := {"forward": Vector3(0, 0, 0), "starboard": Vector3(0, -PI / 2, 0), "astern": Vector3(0, PI, 0)}
 	var tiles := []
 	for target in targets:
-		while sim.state["beta"] < target:
-			sim.step(1.0, 0.005)
+		while sim.world["ship"]["beta"] < target:
+			if not sim.send([{"k": "thrust", "thrust": 1.0}], 0.005):
+				push_error("capture: sim stopped (%s)" % sim.last_error)
+				get_tree().quit(2)
+				return
 		_apply_state()
 		for view in views:
 			camera.rotation = views[view]
@@ -157,7 +170,8 @@ func _run_capture(dir: String) -> void:
 			var name := "sky_b%s_%s.png" % [str(target).replace(".", ""), view]
 			img.save_png(out.path_join(name))
 			tiles.append(img)
-			print("captured %s  beta=%.6f gamma=%.4f tau=%.4f t=%.4f" % [name, sim.state["beta"], sim.state["gamma"], sim.state["tau"], sim.state["t"]])
+			var ship: Dictionary = sim.world["ship"]
+			print("captured %s  beta=%.6f gamma=%.4f tau=%.4f t=%.4f" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"]])
 	_save_sheet(tiles, views.size(), out.path_join("contact_sheet.png"))
 	sim.stop()
 	get_tree().quit(0)

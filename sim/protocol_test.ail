@@ -1,11 +1,11 @@
 module stapledons/sim/protocol_test
 
--- v1.1 reason-code tests (kept until M2.1b removes v1.1) and protocol v2
--- codec round trips, reason codes, rejection model and handshake (AC8).
--- `protocolVm` runs the v2 checks on the strict VM (`make strict`, AC10).
-import ./ship (handle, report, route, initServer)
+-- Protocol v2 codec round trips, reason codes (every v1.1 reason case has a
+-- v2 counterpart here since M2.1b removed v1.1), scenario-parameter bounds,
+-- rejection model, handshake and the diag echo hook (AC8, AC9 sim side).
+-- `protocolVm` runs the checks on the strict VM (`make strict`, AC10).
 import ./core (initShip, step, turn, position)
-import ./protocol (Input, GHello, GNewGame, GInput, GQuit, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, StateMsg, Clock, ShipView, Params, Refusal, Event, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, defaultParams, newSession, serve, num)
+import ./protocol (Input, GHello, GNewGame, GInput, GQuit, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, StateMsg, Clock, ShipView, Params, Refusal, Event, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, defaultParams, newSession, serve, num)
 import pkg/sunholo/relativity/optics (Vec3)
 import std/json (decode, getString, getNumber)
 import std/result (Ok, Err)
@@ -16,48 +16,6 @@ import std/list (map, foldl)
 pure func status(line: string) -> string =
   match decode(line) { Ok(j) => match getString(j, "status") { Some(x) => x, None => "missing" }, Err(_) => "decode_error" }
 
--- ---------------------------------------------------------------- v1.1
-pure func checkHelloProto11() -> bool {
-  let r = handle(initShip(), "{\"cmd\":\"hello\"}");
-  match decode(r.reply) { Ok(j) => match getString(j, "proto") { Some(x) => x == "1.1" && status(r.reply) == "ok", None => false }, Err(_) => false }
-}
-pure func checkV10StepUnchanged() -> bool {
-  let r = handle(initShip(), "{\"cmd\":\"step\"}");
-  r.ship.tick == 1 && r.ship.motion.x == 0.0 && status(r.reply) == "ok"
-}
-pure func checkBadJson() -> bool {
-  let s = initShip(); let r = handle(s, "{broken");
-  let nan = handle(s, "{\"cmd\":\"step\",\"thrust\":NaN}");
-  status(r.reply) == "bad_json" && r.reply == report(s, "bad_json") && nan.reply == report(s, "bad_json")
-}
-pure func checkBadCmd() -> bool {
-  let s = initShip(); let r = handle(s, "{\"cmd\":\"warp\"}");
-  let nocmd = handle(s, "{\"thrust\":1}");
-  status(r.reply) == "bad_cmd" && r.reply == report(s, "bad_cmd") && nocmd.reply == report(s, "bad_cmd")
-}
-pure func checkBadStep() -> bool {
-  let s = initShip(); let r = handle(s, "{\"cmd\":\"step\",\"dtau\":-1,\"heading\":{\"x\":1}}");
-  let high = handle(s, "{\"cmd\":\"step\",\"thrust\":2}");
-  let wrong = handle(s, "{\"cmd\":\"step\",\"thrust\":\"1\"}");
-  status(r.reply) == "bad_step" && r.reply == report(s, "bad_step") && high.reply == report(s, "bad_step") && wrong.reply == report(s, "bad_step")
-}
-pure func checkBadHeading() -> bool {
-  let s = initShip(); let r = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1,\"y\":0}}");
-  let norm = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1.00000001,\"y\":0,\"z\":0}}");
-  let huge = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1e400,\"y\":0,\"z\":0}}");
-  status(r.reply) == "bad_heading" && r.reply == report(s, "bad_heading") && norm.reply == report(s, "bad_heading") && huge.reply == report(s, "bad_heading")
-}
-pure func checkMoving() -> bool {
-  let s = step(initShip(), 1.0, 1.0);
-  let r = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}");
-  status(r.reply) == "moving" && r.reply == report(s, "moving")
-}
-pure func checkRejectedStateUnchanged() -> bool {
-  let s = step(initShip(), 1.0, 1.0);
-  let r = handle(s, "{\"cmd\":\"step\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}");
-  r.ship.tick == s.tick && r.ship.motion.phi == s.motion.phi && r.ship.motion.tau == s.motion.tau && r.ship.motion.t == s.motion.t && r.ship.motion.x == s.motion.x && r.ship.heading.x == s.heading.x && r.ship.heading.y == s.heading.y && r.ship.heading.z == s.heading.z && r.ship.origin.x == s.origin.x && r.ship.origin.y == s.origin.y && r.ship.origin.z == s.origin.z && r.ship.x0 == s.x0
-}
-
 -- ------------------------------------------------- bit-exact equality
 -- `==` treats -0.0 and 0.0 as equal; the sign is compared through 1/x.
 pure func feq(a: float, b: float) -> bool = a == b && (a != 0.0 || (1.0 / a < 0.0) == (1.0 / b < 0.0))
@@ -67,15 +25,18 @@ pure func oeq(a: Option[float], b: Option[float]) -> bool =
 pure func allEq(f: (a, a) -> bool, xs: [a], ys: [a]) -> bool =
   match xs { [] => (match ys { [] => true, _ => false }), x :: xr => match ys { [] => false, y :: yr => f(x, y) && allEq(f, xr, yr) } }
 
+pure func planEq(p: PlanReq, q: PlanReq) -> bool =
+  p.target.index == q.target.index && p.target.id == q.target.id && veq(p.target.pos, q.target.pos) && feq(p.cruisePhi, q.cruisePhi) && oeq(p.flipG, q.flipG)
 pure func intentEq(a: Intent, b: Intent) -> bool =
   match a {
-    IPlan(p) => match b { IPlan(q) => p.target.index == q.target.index && p.target.id == q.target.id && veq(p.target.pos, q.target.pos) && feq(p.cruisePhi, q.cruisePhi) && oeq(p.flipG, q.flipG), _ => false },
+    IPlan(p) => match b { IPlan(q) => planEq(p, q), _ => false },
     ICommit(n) => match b { ICommit(m) => n == m, _ => false },
     ICancel => match b { ICancel => true, _ => false },
     IThrust(x) => match b { IThrust(y) => feq(x, y), _ => false },
     IHeading(h) => match b { IHeading(g) => veq(h, g), _ => false },
     IRecord(r) => match b { IRecord(q) => r.source == q.source && r.req == q.req && r.kind == q.kind && r.sha256 == q.sha256 && r.body == q.body, _ => false },
-    IDraw(s) => match b { IDraw(t) => s == t, _ => false }
+    IDraw(s) => match b { IDraw(t) => s == t, _ => false },
+    IEcho(p) => match b { IEcho(q) => planEq(p, q), _ => false }
   }
 pure func overrideEq(a: {name: string, value: float}, b: {name: string, value: float}) -> bool = a.name == b.name && feq(a.value, b.value)
 pure func inputEq(a: Input, b: Input) -> bool =
@@ -93,7 +54,7 @@ pure func none(o: Option[a]) -> bool = match o { None => true, Some(_) => false 
 pure func someEq(f: (a, a) -> bool, x: Option[a], y: Option[a]) -> bool =
   match x { Some(p) => match y { Some(q) => f(p, q), None => false }, None => match y { None => true, Some(_) => false } }
 pure func refusalEq(a: Refusal, b: Refusal) -> bool = a.i == b.i && a.reason == b.reason
-pure func eventEq(a: Event, b: Event) -> bool = a.kind == b.kind
+pure func eventEq(a: Event, b: Event) -> bool = a.kind == b.kind && someEq(planEq, a.echo, b.echo)
 pure func stateEq(a: StateMsg, b: StateMsg) -> bool =
   a.tick == b.tick && a.status == b.status && someEq(clockEq, a.clock, b.clock) && someEq(shipEq, a.ship, b.ship) && someEq(paramsEq, a.params, b.params) && allEq(eventEq, a.events, b.events) && allEq(refusalEq, a.refused, b.refused) && a.full == b.full
 
@@ -105,13 +66,15 @@ pure func negZero() -> float = -1.0 * 0.0
 pure func phiCap() -> float = 7.254328619262047
 
 pure func edgeVec() -> Vec3 = {x: 1.0e308, y: negZero(), z: almostOne()}
+pure func edgePlan() -> PlanReq = {target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: None}
 pure func allIntents() -> [Intent] = [
   IPlan({target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: Some(1.0)}),
   IPlan({target: {index: 0, id: "Sol \"quoted\" \\ star", pos: {x: 0.1, y: tiny(), z: -4.09}}, cruisePhi: 0.1, flipG: None}),
   ICommit(maxInt()), ICancel, IThrust(negZero()), IThrust(-1.0),
   IHeading({x: 0.6, y: 0.8, z: negZero()}),
   IRecord({source: "ai", req: "r-1", kind: "line", sha256: "e3b0c442", body: "{\"text\":\"hi\"}"}),
-  IDraw("news")
+  IDraw("news"),
+  IEcho({target: {index: 3, id: "echo", pos: edgeVec()}, cruisePhi: negZero(), flipG: Some(tiny())})
 ]
 pure func inputFixtures() -> [Input] = [
   GHello({major: 2, minor: 0}),
@@ -126,7 +89,7 @@ pure func inputFixtures() -> [Input] = [
 pure func stateFixtures() -> [StateMsg] = [
   { tick: 0, status: "ok", clock: Some({tau: 0.1, t: almostOne(), year: tiny(), age: negZero()}),
     ship: Some({phase: "rest", beta: negZero(), oneMinusBeta: 1.0, gamma: 1.0e308, heading: {x: 0.0, y: 0.0, z: -1.0}, pos: {x: phiCap(), y: 0.1, z: tiny()}, x: 1.0e308}),
-    params: Some(defaultParams()), events: [{kind: "phase"}], refused: [{i: 0, reason: "unsupported"}, {i: maxInt(), reason: "diag_only"}], full: true },
+    params: Some(defaultParams()), events: [{kind: "phase", echo: None}, {kind: "echo", echo: Some(edgePlan())}], refused: [{i: 0, reason: "unsupported"}, {i: maxInt(), reason: "diag_only"}], full: true },
   { tick: maxInt(), status: "bad_tick", clock: None, ship: None, params: None, events: [], refused: [], full: false },
   { tick: 7, status: "ok", clock: Some({tau: 1.0e308, t: -1.0e308, year: 0.0, age: 30.0}), ship: None, params: None, events: [], refused: [], full: false }
 ]
@@ -164,6 +127,7 @@ pure func checkDecodeCodes() -> bool =
   code(intent("{\"k\":\"plan\",\"target\":{\"index\":0,\"id\":\"x\",\"pos\":{\"x\":1e400,\"y\":0,\"z\":0}},\"cruise_phi\":1}")) == "bad_intent" &&
   code(intent("{\"k\":\"thrust\",\"thrust\":2}")) == "bad_step" && code(intent("{\"k\":\"thrust\"}")) == "bad_step" &&
   code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0}}")) == "bad_heading" && code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1.00000001,\"y\":0,\"z\":0}}")) == "bad_heading" &&
+  code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1e400,\"y\":0,\"z\":0}}")) == "bad_heading" && code(intent("{\"k\":\"echo\",\"cruise_phi\":1}")) == "bad_intent" &&
   code(newGame("\"seed\":-1,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":9007199254740992,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" &&
   code(newGame("\"seed\":1.5,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":1,\"scenario\":\"andromeda\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":\"yes\"")) == "bad_game" &&
   code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"warp\":1}")) == "bad_params" && code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"glow_eps\":2}")) == "bad_params" &&
@@ -234,29 +198,41 @@ pure func checkChangeSets() -> bool {
   idle.tick == 1 && none(idle.clock) && none(idle.ship) && none(idle.params) && !idle.full &&
   !none(tick.clock) && none(tick.ship)
 }
--- v1.1 is still served until a v2 hello; after it, unversioned lines are bad_v.
-pure func checkRouting() -> bool {
-  let v1 = route(initServer(), "{\"cmd\":\"hello\"}");
-  let v2 = route(initServer(), hello());
-  let after = route(v2.server, "{\"cmd\":\"hello\"}");
-  let broken = route(v2.server, "{broken");
-  status(v1.reply) == "ok" && v1.reply == handle(initShip(), "{\"cmd\":\"hello\"}").reply &&
-  (match decodeHello(v2.reply) { Ok(_) => true, Err(_) => false }) && status(after.reply) == "bad_v" && status(broken.reply) == "bad_json"
+-- Every scenario-parameter bound (inRange): accepted exactly at the bound,
+-- refused just past it. Executor-chosen ranges, pending Mark's ratification.
+pure func param(name: string, v: string) -> string = code(newGame(join("", ["\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"", name, "\":", v, "}"])))
+pure func accepts(name: string, vs: [string]) -> bool = allTrue(map(\v. param(name, v) == "ok", vs))
+pure func refuses(name: string, vs: [string]) -> bool = allTrue(map(\v. param(name, v) == "bad_params", vs))
+pure func checkParamBounds() -> bool =
+  accepts("epoch", ["1000000", "-1000000", "-0.0"]) && refuses("epoch", ["1000000.0000001", "-1000000.0000001"]) &&
+  accepts("start_age", ["0", "1000"]) && refuses("start_age", ["-1e-9", "1000.0000000001"]) &&
+  accepts("boost_g", ["5e-324", "1000000000"]) && refuses("boost_g", ["0", "-1", "1000000000.0000001"]) &&
+  accepts("m_eff_kg", ["5e-324", "1e30"]) && refuses("m_eff_kg", ["0", "1.0000000000000001e30", "2e30"]) &&
+  accepts("ism_n_cm3", ["0", "1000000"]) && refuses("ism_n_cm3", ["-1e-9", "1000000.0000001"]) &&
+  accepts("bubble_radius_m", ["5e-324", "1000000"]) && refuses("bubble_radius_m", ["0", "1000000.0000001"]) &&
+  accepts("glow_eps", ["0", "1"]) && refuses("glow_eps", ["-1e-9", "1.0000000000000002"]) &&
+  accepts("glow_f_in", ["0", "1"]) && refuses("glow_f_in", ["-1e-9", "1.0000000000000002"]) &&
+  accepts("cruise_min_beta", ["5e-324", "0.9999999999999999"]) && refuses("cruise_min_beta", ["0", "1"]) &&
+  accepts("cap_one_minus_beta", ["5e-324", "0.9999999999999999"]) && refuses("cap_one_minus_beta", ["0", "1"]) &&
+  refuses("warp", ["0"]) && refuses("epoch", ["\"1\"", "true", "null"])
+-- The diag echo hook returns the decoded plan payload bit for bit, in order;
+-- outside diag it is refused diag_only and the tick proceeds.
+pure func echoLine(t: int, pos: string, phi: string) -> string =
+  tickLine(t, "0", join("", ["{\"k\":\"echo\",\"target\":{\"index\":9007199254740991,\"id\":\"Gl 559\",\"pos\":", pos, "},\"cruise_phi\":", phi, "}"]))
+pure func checkEcho() -> bool {
+  let d = feed(newSession(), [hello(), diagGame(), echoLine(1, "{\"x\":1e308,\"y\":-0.0,\"z\":0.9999999999999998}", "7.254328619262047")]);
+  let m = stateOf(d.reply);
+  let p = feed(newSession(), [hello(), playGame(), echoLine(1, "{\"x\":0.1,\"y\":5e-324,\"z\":-4.09}", "0.1")]);
+  let pm = stateOf(p.reply);
+  m.status == "ok" && m.tick == 1 && allEq(eventEq, m.events, [{kind: "echo", echo: Some(edgePlan())}]) && allEq(refusalEq, m.refused, []) &&
+  pm.status == "ok" && pm.tick == 1 && allEq(eventEq, pm.events, []) && allEq(refusalEq, pm.refused, [{i: 0, reason: "diag_only"}])
 }
 
 pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures()) ++ map(encodeState, stateFixtures()) ++ [encodeHello(helloMsg())]
 export pure func protocolVm(n: int) -> string =
-  if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets()
+  if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho()
   then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
 
-test "hello proto 1.1" { checkHelloProto11() }
-test "v1.0 step unchanged" { checkV10StepUnchanged() }
-test "bad json" { checkBadJson() }
-test "bad command" { checkBadCmd() }
-test "bad step precedes heading" { checkBadStep() }
-test "bad heading" { checkBadHeading() }
-test "moving" { checkMoving() }
-test "rejection preserves state" { checkRejectedStateUnchanged() }
 test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }
 test "v2 decodeInput(encodeInput(x)) == x" { checkInputRoundTrip() }
 test "v2 decodeState(encodeState(s)) == s" { checkStateRoundTrip() }
@@ -268,4 +244,5 @@ test "v2 malformed line keeps tick" { checkMalformedKeepsTick() }
 test "v2 refused intent proceeds" { checkRefusedProceeds() }
 test "v2 diag adapter equals core" { checkDiagKinematics() }
 test "v2 change-sets" { checkChangeSets() }
-test "v1.1 until v2 hello" { checkRouting() }
+test "v2 every scenario-parameter bound" { checkParamBounds() }
+test "v2 diag echo hook round trip" { checkEcho() }

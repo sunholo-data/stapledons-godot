@@ -1,127 +1,25 @@
 module stapledons/sim/ship
 
--- NDJSON I/O shell. All validation happens before the pure state transition.
--- Protocol v2 lives in protocol.ail; until M2.1b, unversioned v1.1 lines are
--- still answered here for the v1.1 bridge, parity and parity-offaxis fixtures.
+-- NDJSON I/O shell for protocol v2 (sim/protocol.ail). The only effectful
+-- code: read a line, hand it to the pure session server, print its reply.
+-- Nothing is printed before the first line arrives, so a session's first
+-- output is the answer to its first input (the hello).
 import std/io (readLine, println, flush)
-import std/json (Json, decode, encode, get, getNumber, getString, has, jo, kv, jnum, jint, js)
-import std/option (Some, None)
 import std/result (Ok, Err)
-import pkg/sunholo/relativity/optics (Vec3, norm)
-import pkg/sunholo/relativity/hyper (absf)
-import ./core (Ship, initShip, step, turn, position, beta, gamma)
-import ./protocol (Session, newSession, serve)
-
-export type Response = { ship: Ship, reply: string }
-
-pure func vectorJson(v: Vec3) -> Json = jo([kv("x", jnum(v.x)), kv("y", jnum(v.y)), kv("z", jnum(v.z))])
-
-export pure func report(s: Ship, status: string) -> string {
-  let p = position(s);
-  encode(jo([
-    kv("tick", jint(s.tick)), kv("beta", jnum(beta(s))), kv("gamma", jnum(gamma(s))),
-    kv("tau", jnum(s.motion.tau)), kv("t", jnum(s.motion.t)), kv("x", jnum(s.motion.x)),
-    kv("heading", vectorJson(s.heading)), kv("pos", vectorJson(p)), kv("status", js(status))
-  ]))
-}
-
-pure func helloReport(s: Ship) -> string {
-  let p = position(s);
-  encode(jo([
-    kv("proto", js("1.1")), kv("tick", jint(s.tick)), kv("beta", jnum(beta(s))),
-    kv("gamma", jnum(gamma(s))), kv("tau", jnum(s.motion.tau)), kv("t", jnum(s.motion.t)),
-    kv("x", jnum(s.motion.x)), kv("heading", vectorJson(s.heading)),
-    kv("pos", vectorJson(p)), kv("status", js("ok"))
-  ]))
-}
-
-pure func finite(v: float) -> bool = v == v && absf(v) <= 1.0e308
-pure func validNumber(j: Json, key: string) -> bool =
-  if !has(j, key) then true
-  else match getNumber(j, key) { Some(v) => finite(v), None => false }
-
-pure func validHeading(j: Json) -> bool =
-  match get(j, "heading") {
-    Some(h) => match getNumber(h, "x") {
-      Some(x) => match getNumber(h, "y") {
-        Some(y) => match getNumber(h, "z") {
-          Some(z) => finite(x) && finite(y) && finite(z) && absf(norm({x: x, y: y, z: z}) - 1.0) <= 0.000000001,
-          None => false
-        }, None => false
-      }, None => false
-    },
-    None => true
-  }
-
-pure func headingOf(j: Json) -> Vec3 =
-  match get(j, "heading") {
-    Some(h) => {x: match getNumber(h, "x") {Some(x) => x, None => 0.0},
-                y: match getNumber(h, "y") {Some(y) => y, None => 0.0},
-                z: match getNumber(h, "z") {Some(z) => z, None => 0.0}},
-    None => {x: 0.0, y: 0.0, z: -1.0}
-  }
-
-pure func numberOrZero(j: Json, key: string) -> float =
-  match getNumber(j, key) {Some(x) => x, None => 0.0}
-
-pure func reject(s: Ship, code: string) -> Response = {ship: s, reply: report(s, code)}
-
-export pure func handle(s: Ship, line: string) -> Response =
-  match decode(line) {
-    Err(_) => reject(s, "bad_json"),
-    Ok(j) => match getString(j, "cmd") {
-      Some(cmd) => if cmd == "hello" then {ship: s, reply: helloReport(s)}
-        else if cmd == "step" then {
-          let thrust = numberOrZero(j, "thrust");
-          let dtau = numberOrZero(j, "dtau");
-          if !validNumber(j, "thrust") || !validNumber(j, "dtau") || absf(thrust) > 1.0 || dtau < 0.0 then reject(s, "bad_step")
-          else if !validHeading(j) then reject(s, "bad_heading")
-          else {
-            let turned = if has(j, "heading") then turn(s, headingOf(j)) else {accepted: true, ship: s};
-            if !turned.accepted then reject(s, "moving")
-            else {
-              let next = step(turned.ship, thrust, dtau);
-              {ship: next, reply: report(next, "ok")}
-            }
-          }
-        } else reject(s, "bad_cmd"),
-      None => reject(s, "bad_cmd")
-    }
-  }
+import ./protocol (Session, GQuit, newSession, serve, decodeInput)
 
 pure func isQuit(line: string) -> bool =
-  match decode(line) { Ok(j) => getString(j, "cmd") == Some("quit") || (has(j, "v") && getString(j, "type") == Some("quit")), Err(_) => false }
+  match decodeInput(line) { Ok(m) => (match m { GQuit => true, _ => false }), Err(_) => false }
 
--- A line carrying "v" goes to protocol v2; once a v2 hello is answered, every
--- line does (an unversioned line is then bad_v). Otherwise v1.1 answers.
-export type Server = { v1: Ship, v2: Session }
-export type Routed = { server: Server, reply: string }
-export pure func initServer() -> Server = { v1: initShip(), v2: newSession() }
-pure func versioned(line: string) -> bool = match decode(line) { Ok(j) => has(j, "v"), Err(_) => false }
-export pure func route(s: Server, line: string) -> Routed =
-  if s.v2.hello || versioned(line) then {
-    let r = serve(s.v2, line);
-    {server: {s | v2: r.session}, reply: r.reply}
-  } else {
-    let r = handle(s.v1, line);
-    {server: {s | v1: r.ship}, reply: r.reply}
-  }
-
-func loop(s: Server) -> () ! {IO} {
+func loop(s: Session) -> () ! {IO} {
   let line = readLine(());
   if line == "" || isQuit(line) then ()
   else {
-    let r = route(s, line);
+    let r = serve(s, line);
     println(r.reply);
     flush(());
-    loop(r.server)
+    loop(r.session)
   }
 }
 
--- The unsolicited v1.1 state line stays until M2.1b: the v1.1 bridge waits
--- for it before sending hello. A v2 session gets nothing until its hello.
-export func main() -> () ! {IO} {
-  println(report(initShip(), "ok"));
-  flush(());
-  loop(initServer())
-}
+export func main() -> () ! {IO} = loop(newSession())

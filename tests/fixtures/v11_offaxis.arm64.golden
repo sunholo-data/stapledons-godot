@@ -1,0 +1,26 @@
+# v1.1 sim output (arm64) for the v1.1 off-axis log: the reference for `make offaxis-v11-equiv` (AC13).
+# Generated once at M2.1b with ailang v0.50.0 on darwin arm64 (6abe1a5); identical on linux arm64 (CI ubuntu-24.04-arm);
+# VM and interpreter output identical:
+#   T=$(mktemp -d); git archive e9d35c5 sim | tar -x -C $T; (cd $T/sim && ailang lock)
+#   git show e9d35c5:tests/fixtures/offaxis.ndjson | ailang run --bytecode --quiet --package-dir $T/sim --caps IO --entry main $T/sim/ship.ail
+# The sim's float output is architecture-dependent: std/math exp/log differ by 1 ulp between arm64 and
+# x86_64 (Go math package on arm64; flagged for an AILANG report at M2.1b), so v1.1 and v2 agree bit for bit per architecture and
+# `make offaxis-v11-equiv` picks the golden for `uname -m` (aarch64 = arm64).
+# Line 1 is the unsolicited v1.1 startup state, line 2 answers hello, then one line per v1.1 request.
+{"tick":0,"beta":0,"gamma":1,"tau":0,"t":0,"x":0,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":0,"y":0,"z":0},"status":"ok"}
+{"proto":"1.1","tick":0,"beta":0,"gamma":1,"tau":0,"t":0,"x":0,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":0,"y":0,"z":0},"status":"ok"}
+{"tick":1,"beta":0,"gamma":1,"tau":0,"t":0,"x":0,"heading":{"x":1,"y":0,"z":0},"pos":{"x":0,"y":0,"z":0},"status":"ok"}
+{"tick":2,"beta":0.774827262642545,"gamma":1.5818454538021691,"tau":1,"t":1.1873124017116108,"x":0.5636424650787429,"heading":{"x":1,"y":0,"z":0},"pos":{"x":0.5636424650787429,"y":0,"z":0},"status":"ok"}
+{"tick":2,"beta":0.774827262642545,"gamma":1.5818454538021691,"tau":1,"t":1.1873124017116108,"x":0.5636424650787429,"heading":{"x":1,"y":0,"z":0},"pos":{"x":0.5636424650787429,"y":0,"z":0},"status":"moving"}
+{"tick":3,"beta":0,"gamma":1,"tau":2,"t":2.3746248034232216,"x":1.1272849301574859,"heading":{"x":1,"y":0,"z":0},"pos":{"x":1.1272849301574859,"y":0,"z":0},"status":"ok"}
+{"tick":4,"beta":0,"gamma":1,"tau":2,"t":2.3746248034232216,"x":1.1272849301574859,"heading":{"x":0,"y":1,"z":0},"pos":{"x":1.1272849301574859,"y":0,"z":0},"status":"ok"}
+{"tick":5,"beta":0.1028644010192098,"gamma":1.0053329009224785,"tau":2.1,"t":2.4748025036677928,"x":1.1324509916989558,"heading":{"x":0,"y":1,"z":0},"pos":{"x":1.1272849301574859,"y":0.005166061541469924,"z":0},"status":"ok"}
+{"tick":6,"beta":0,"gamma":1,"tau":2.2,"t":2.574980203912364,"x":1.1376170532404257,"heading":{"x":0,"y":1,"z":0},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"ok"}
+{"tick":7,"beta":0,"gamma":1,"tau":2.2,"t":2.574980203912364,"x":1.1376170532404257,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"ok"}
+{"tick":7,"beta":0,"gamma":1,"tau":2.2,"t":2.574980203912364,"x":1.1376170532404257,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"bad_json"}
+{"tick":7,"beta":0,"gamma":1,"tau":2.2,"t":2.574980203912364,"x":1.1376170532404257,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"bad_cmd"}
+{"tick":7,"beta":0,"gamma":1,"tau":2.2,"t":2.574980203912364,"x":1.1376170532404257,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"bad_step"}
+{"tick":7,"beta":0,"gamma":1,"tau":2.2,"t":2.574980203912364,"x":1.1376170532404257,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"bad_heading"}
+{"tick":7,"beta":0,"gamma":1,"tau":2.2,"t":2.574980203912364,"x":1.1376170532404257,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"bad_heading"}
+{"tick":7,"beta":0,"gamma":1,"tau":2.2,"t":2.574980203912364,"x":1.1376170532404257,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"bad_step"}
+{"tick":8,"beta":0,"gamma":1,"tau":2.21,"t":2.5849802039123637,"x":1.1376170532404257,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":1.1272849301574859,"y":0.010332123082939848,"z":0},"status":"ok"}
