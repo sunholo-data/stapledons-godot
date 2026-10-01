@@ -1,0 +1,336 @@
+{
+  "original_sha256": "147e2454f91c12d8807419e367a08e4daba3a84c6aea8f61ab9a6e195ad818bf",
+  "restored_sha256": "147e2454f91c12d8807419e367a08e4daba3a84c6aea8f61ab9a6e195ad818bf",
+  "results": [
+    {
+      "name": "finite",
+      "entry": "transformVm",
+      "landed_sha256": "93b12ff452f023fec6a26dbc091e4dc61efa2ded82cc3a90982988a9f8cfa423",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "optional",
+      "entry": "transformVm",
+      "landed_sha256": "d5b3d833552ee061733177faa94f3d8aa98aecb32f49b41be5f37b1fe25c26e4",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "blank-id",
+      "entry": "transformVm",
+      "landed_sha256": "33b73eb8a54a948b80ad244f483ced48886ce82c05d36bed14ab77ba83f8412c",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "wd-validation",
+      "entry": "transformVm",
+      "landed_sha256": "94907c0a34116977b90346ae2a449b26fe6f2dec0b838eb4980f976ab4389074",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "x-validation",
+      "entry": "transformVm",
+      "landed_sha256": "90db51a746fd8214a44395f7bff75815187b445437fd095780a22e2b6bcac63d",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "y-validation",
+      "entry": "transformVm",
+      "landed_sha256": "de00d3b0d64ffb7a2b6d3316dffc125f3c0161107e4075850839918bc946071e",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "z-validation",
+      "entry": "transformVm",
+      "landed_sha256": "90054ff7316bf6a7ca88f423b674366b882e920d71eea4617180f9e57a48eb45",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "ties",
+      "entry": "selectionVm",
+      "landed_sha256": "d97d74e56403a60532ab1b163ee63f874615fecff7bb00007ea789052d87bdc0",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "field-count",
+      "entry": "transformVm",
+      "landed_sha256": "769cdbff437a6b33416c439786ea2769de8abb11c8ad12f4294bba180e2a90c5",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "blank-row",
+      "entry": "transformVm",
+      "landed_sha256": "dd021172b9f857f6f2ec6fae7a459d5cc2c25c5f8207e6351bf3fd308198c2a1",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "header",
+      "entry": "transformVm",
+      "landed_sha256": "a88b6e8be18268b5310fec94d03218d64fee16f8471661b3acc817f9f6a66a71",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "trailing-line",
+      "entry": "transformVm",
+      "landed_sha256": "57c23c0729f096078cfc297aee535ba85ab922120b995ed9863450507aab4b72",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "error-propagation",
+      "entry": "transformVm",
+      "landed_sha256": "ed418f499f7d13f40f4a75bfed3f0ab5be0d582d279b6a3db165e6e53888e31e",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "number",
+      "entry": "transformVm",
+      "landed_sha256": "ad0c4d7789701815900722cd894950d65ba1d33fb8a35de3714be2c27eb32d6f",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "temperature",
+      "entry": "transformVm",
+      "landed_sha256": "acb0643075593b0f89f62a9af02bac945824105a4e1929c8298f55f8e19c95d8",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "magnitude",
+      "entry": "transformVm",
+      "landed_sha256": "cb7259dd19cf7589e5d7a1ae2b8a4255c66600b7f0bc03fed1c81c6b8da84a68",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "missing-temperature",
+      "entry": "transformVm",
+      "landed_sha256": "b9301579b71fe290e571fdee75410a3ca7a1274af723a90b3f765d9a75bc6891",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "missing-magnitude",
+      "entry": "transformVm",
+      "landed_sha256": "c87aba387764dc60897e2e7b9ab0e52059155effbbcee1ca8fef476c82a4e009",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "wd-bit",
+      "entry": "transformVm",
+      "landed_sha256": "0fc3faf682872463dfbe676b239c09c236da052c6ddbf3623cd60dbd8caa8c11",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "approx-bit",
+      "entry": "transformVm",
+      "landed_sha256": "dbdfe769e8b7781d6be3ff9e94f53be2cc99e319a4750ecc6de24f5684b4dee2",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "clamp-bit",
+      "entry": "transformVm",
+      "landed_sha256": "204aeda579494b12801ff5e799453bb56eb77dee9f7a6d256bc0860ba8807afa",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "transform-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "input-counter",
+      "entry": "selectionVm",
+      "landed_sha256": "ad588e85845a028a2ba229411951cbcc5e57e1525ed9913e1fa6d31588bc1ec3",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "wd-counter",
+      "entry": "selectionVm",
+      "landed_sha256": "56af37fb30bc27345e352ed11464fa709db9e38008fa0b3855bb709b46562609",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "missing-counter",
+      "entry": "selectionVm",
+      "landed_sha256": "d1f05f8123854c99425f07e80c80cee57847551013d01e588d04670c3c6f7649",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "source-order",
+      "entry": "selectionVm",
+      "landed_sha256": "f4db080b6fa7305b70a4bfc789b71ef884c032e37a05c03d5ec2b774ca8e784b",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "distance-y",
+      "entry": "selectionVm",
+      "landed_sha256": "ab1af57600f4068d7911e61c986e32ea39a855fa216f05c8e96dab76108111e3",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "distance-z",
+      "entry": "selectionVm",
+      "landed_sha256": "b7e8c8befb801d53fcb9932b5f34234aa078eacaee2aecd884b69e45ccbe17f6",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "sort",
+      "entry": "selectionVm",
+      "landed_sha256": "a9261ad8bc5411b9839a3d074cd78cd6c431c95c1b6e35271af4103885d996c4",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "quota",
+      "entry": "selectionVm",
+      "landed_sha256": "492797ec3c014e151e6f589b021df1aa9a96a9719ad2bb8b9e2890ac581bc25d",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "skip",
+      "entry": "selectionVm",
+      "landed_sha256": "6978ade3662da5265827a8b43ada0163f6729972e40cd5a5db269344cf74778f",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "excluded",
+      "entry": "selectionVm",
+      "landed_sha256": "05893077a8ab240695ec8e00f71264edc48e8bce755a1e7812ebb9af2dbdc1f3",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "medium-order",
+      "entry": "selectionVm",
+      "landed_sha256": "e8824882eebc69a2e2c445824e02934d4d8ba4c155de9cffc16589d07cc3b9b5",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    },
+    {
+      "name": "tier-limit",
+      "entry": "selectionVm",
+      "landed_sha256": "84a173dc3ad340dc387d3f344732eb2a9e28fecafa6841515ec89b1873560ac9",
+      "build_rc": 0,
+      "run_rc": 0,
+      "output": "selection-BAD",
+      "killed": true,
+      "stderr": ""
+    }
+  ]
+}

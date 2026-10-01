@@ -1,0 +1,62 @@
+module stapledons/sim/tools/catalogue_test
+import ./catalogue (transform, selectTier, selectMedium)
+import std/result (Ok, Err)
+import std/string (concat)
+import std/list (map, length)
+
+pure func csv(rows: string) -> string = concat(["id,x,y,z,G,BPRP,wd\n", rows])
+pure func near(a: float, b: float) -> bool = a-b < 0.000001 && b-a < 0.000001
+pure func checkNormal() -> bool = match transform(csv("solar,1,2,3,0,0.823,0\nreal,36.764544,24.625324,-217.464055,15.777900,2.889200,0\n")) {
+  Ok(s) => match s.rows { [a,b] => a.id == "solar" && a.x == 1.0 && a.y == 2.0 && a.z == 3.0 && a.teff == 5770.0 && near(a.v,0.165) && a.flags == 0 && near(b.teff,3229.05) && near(b.v,17.1398), _ => false }, Err(_) => false
+}
+pure func checkWD() -> bool = match transform(csv("real,100.615174,-59.613639,-310.394645,20.654,1.0401,1\ninterior,0,0,0,0,0.30,1\n")) {
+  Ok(s) => match s.rows { [a,b] => near(a.teff,5202.556030832587) && near(a.v,20.89920219434688) && a.flags == 5 && a.id == "real" && a.x == 100.615174 && a.y == -59.613639 && a.z == -310.394645 && near(b.teff,8941.61808557) && near(b.v,0.064716662329) && b.flags == 5, _ => false }, Err(_) => false
+}
+pure func checkClamp() -> bool = match transform(csv("wd,0,0,0,0,2.5,1\ndwarf,0,0,0,0,-9,0\n")) {
+  Ok(s) => match s.rows { [a,b] => a.teff == 3000.0 && a.flags == 21 && b.flags == 16, _ => false }, Err(_) => false
+}
+pure func fixture() -> string = csv("far,5,0,0,0,0.823,0\nmisswd,0,0,0,,0.30,1\nnearwd,1,0,0,0,0.30,1\nmiss,2,0,0,1,,0\nsecond,3,0,0,0,0.823,0\n")
+pure func checkSelection() -> bool = match transform(fixture()) {
+  Ok(s) => {
+    let m = selectMedium(s.rows,2);
+    let q = selectTier(s.rows,"quick");
+    let l = selectTier(s.rows,"large");
+    s.input == 5 && s.wd == 2 && s.missing == 2 && m.excluded == 2 && selectMedium(s.rows,1).excluded == 1 &&
+    map(\r. r.id,m.rows) == ["nearwd","second"] &&
+    map(\r. r.id,q.rows) == ["far","misswd","nearwd","miss","second"] && map(\r. r.id,l.rows) == map(\r. r.id,q.rows) &&
+    q.excluded == 0 && l.excluded == 0 &&
+    map(\r. r.id,selectTier(s.rows,"medium").rows) == ["nearwd","second","far"] &&
+    selectTier(s.rows,"medium").excluded == 2 && length(selectMedium(s.rows,0).rows) == 0 && selectMedium(s.rows,0).excluded == 0
+  }, Err(_) => false
+}
+pure func checkMissing() -> bool = match transform(fixture()) {
+  Ok(s) => match s.rows { [_,a,_,b,_] => a.teff == 0.0 && a.v == 99.0 && a.flags == 3 && b.teff == 0.0 && b.v == 99.0 && b.flags == 2, _ => false }, Err(_) => false
+}
+pure func checkTies() -> bool = match transform(csv("a,1,0,0,0,0.823,0\nb,-1,0,0,0,0.823,0\nc,0,1,0,0,0.823,0\n")) {
+  Ok(s) => map(\r. r.id,selectMedium(s.rows,2).rows) == ["a","b"], Err(_) => false
+}
+pure func checkAxes() -> bool = match transform(csv("far,0,0,3,0,0.823,0\nnear,1,0,0,0,0.823,0\n")) {
+  Ok(s) => map(\r. r.id,selectMedium(s.rows,1).rows) == ["near"], Err(_) => false
+}
+pure func checkEmpty() -> bool = match transform(csv("")) { Ok(s) => length(s.rows) == 0 && s.input == 0 && s.wd == 0 && s.missing == 0, Err(_) => false }
+pure func rejects(row: string) -> bool = match transform(csv(row)) { Err(_) => true, Ok(_) => false }
+pure func checkReject() -> bool {
+  rejects("a,1,2,3,0,0.823,0\n\nb,1,2,3,0,0.823,0") && rejects(",1,2,3,0,0.823,0") && rejects("  ,1,2,3,0,0.823,0") &&
+  rejects("a,bad,2,3,0,0.823,0\nb,1,2,3,0,0.823,0") && rejects("a,bad,2,3,0,0.823,0") && rejects("a,1,bad,3,0,0.823,0") && rejects("a,1,2,bad,0,0.823,0") &&
+  rejects("a,1e309,2,3,0,0.823,0") && rejects("a,NaN,2,3,0,0.823,0") && rejects("a,1,Inf,3,0,0.823,0") && rejects("a,1,2,-Inf,0,0.823,0") &&
+  rejects("a,1,2,3,NaN,,0") && rejects("a,1,2,3,,NaN,0") && rejects("a,1,2,3,bad,,0") && rejects("a,1,2,3,,bad,0") &&
+  rejects("a,1,2,3,0,0.823,2") && rejects("a,1,2,3,0,0.823") && rejects("a,1,2,3,0,0.823,0,extra")
+}
+pure func checkHeader() -> bool = match transform("bad\na,1,2,3,0,0.823,0") { Err(_) => true, Ok(_) => false }
+test "T1 normal independent anchors and coordinates" { checkNormal() }
+test "T1 WD real and interior anchors" { checkWD() }
+test "T1 dwarf and WD clamps" { checkClamp() }
+test "T1 exact medium selection and independent counters" { checkSelection() }
+test "T1 missing wins and preserves WD bit" { checkMissing() }
+test "T1 stable equal distance order" { checkTies() }
+test "T1 distance uses all coordinates" { checkAxes() }
+test "T1 header only empty input" { checkEmpty() }
+test "T1 field rejection before missing shortcut" { checkReject() }
+test "T1 exact header" { checkHeader() }
+export pure func transformVm(n: int) -> string = if checkNormal() && checkWD() && checkClamp() && checkMissing() && checkReject() && checkHeader() && checkEmpty() then "transform-ok" else "transform-BAD"
+export pure func selectionVm(n: int) -> string = if checkSelection() && checkTies() && checkAxes() then "selection-ok" else "selection-BAD"

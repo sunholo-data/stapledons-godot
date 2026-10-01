@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim parity parity-offaxis strict wd-vm tools-test   ## everything that runs without a GPU window
+test: deps import physics sim parity parity-offaxis strict wd-vm catalogue-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
@@ -94,3 +94,14 @@ export-smoke:      ## run the exported .app's capture with NO ailang on PATH; mu
 .PHONY: catalogue-probe
 catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM parity runs
 	AILANG=$(AILANG) python3 tools/catalogue_probe.py
+
+.PHONY: catalogue-vm
+catalogue-vm:     ## T1 pure transform and selection: strict VM, interpreter and exact anchors
+	@mkdir -p $(SCRATCH)
+	@set -e; for entry in transformVm selectionVm; do \
+	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 sim/tools/catalogue_test.ail > $(SCRATCH)/$$entry-vm.txt; \
+	  $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 sim/tools/catalogue_test.ail > $(SCRATCH)/$$entry-interp.txt; \
+	  cmp $(SCRATCH)/$$entry-vm.txt $(SCRATCH)/$$entry-interp.txt; \
+	  case $$entry in transformVm) want=transform-ok;; selectionVm) want=selection-ok;; esac; \
+	  test "$$(cat $(SCRATCH)/$$entry-vm.txt)" = "$$want"; cat $(SCRATCH)/$$entry-vm.txt; \
+	done

@@ -1,0 +1,63 @@
+module stapledons/sim/tools/catalogue
+import std/string (split, trim, stringToFloat)
+import std/list (foldl, sortBy)
+import std/option (Some, None)
+import std/result (Result, Ok, Err)
+import pkg/sunholo/relativity/photometry (teffFromBpRp, vFromG, bpRpInTable)
+import pkg/sunholo/relativity/blackbody_photometry (bbTeffFromBpRp, bbVFromG, bbBpRpInvertible)
+
+export type Row = {id: string, x: float, y: float, z: float, teff: float, v: float, flags: int}
+export type Summary = {rows: [Row], input: int, wd: int, missing: int}
+export type Selection = {rows: [Row], excluded: int}
+type Choice = {rows: [Row], excluded: int, count: int}
+-- Bounds cover all finite IEEE binary64 values, rather than excluding large finite coordinates.
+pure func finite(s: string) -> bool = match stringToFloat(s) {
+  Some(v) => v == v && v >= -1.7976931348623157e308 && v <= 1.7976931348623157e308, None => false
+}
+pure func optional(s: string) -> bool = s == "" || finite(s)
+pure func reverseRows[a](rows: [a]) -> [a] = foldl(\acc row. row :: acc,[],rows)
+pure func number(s: string) -> float = match stringToFloat(s) { Some(v) => v, None => 0.0 }
+pure func convert(id: string, x: string, y: string, z: string, g: string, c: string, wd: string) -> Row {
+  let white = wd == "1";
+  let missing = g == "" || c == "";
+  let colour = number(c);
+  {id: id, x: number(x), y: number(y), z: number(z),
+    teff: if missing then 0.0 else if white then bbTeffFromBpRp(colour) else teffFromBpRp(colour),
+    v: if missing then 99.0 else if white then bbVFromG(number(g),colour) else vFromG(number(g),colour),
+    flags: (if white then 1 else 0) + (if missing then 2 else
+      (if white then 4 else 0) + (if (if white then bbBpRpInvertible(colour) else bpRpInTable(colour)) then 0 else 16))}
+}
+pure func append(acc: Result[Summary,string], line: string) -> Result[Summary,string] = match acc {
+  Err(e) => Err(e),
+  Ok(a) => if line == "" then Err("blank CSV row") else match split(line,",") {
+    [id,x,y,z,g,c,wd] => if trim(id) == "" || !finite(x) || !finite(y) || !finite(z) ||
+      !optional(g) || !optional(c) || (wd != "0" && wd != "1") then Err("invalid CSV fields")
+      else Ok({rows: convert(id,x,y,z,g,c,wd) :: a.rows, input: a.input+1,
+        wd: a.wd+(if wd == "1" then 1 else 0), missing: a.missing+(if g == "" || c == "" then 1 else 0)}),
+    _ => Err("expected seven fields")
+  }
+}
+-- Remove exactly one final empty CSV line; blanks inside the catalogue are malformed.
+pure func withoutTrailingBlank(lines: [string]) -> [string] = match reverseRows(lines) {
+  last :: rest => if last == "" then reverseRows(rest) else lines, [] => []
+}
+@allow_empty_ok("header-only catalogue is valid; rows are accumulated by the pure fold")
+export pure func transform(csv: string) -> Result[Summary,string] = match split(csv,"\n") {
+  header :: lines => if header != "id,x,y,z,G,BPRP,wd" then Err("invalid CSV header") else
+    match foldl(append,Ok({rows: [],input: 0,wd: 0,missing: 0}),withoutTrailingBlank(lines)) {
+      Err(e) => Err(e), Ok(a) => Ok({rows: reverseRows(a.rows),input: a.input,wd: a.wd,missing: a.missing})
+    },
+  [] => Err("empty input")
+}
+pure func distance(r: Row) -> float = r.x*r.x+r.y*r.y+r.z*r.z
+pure func nearer(a: Row,b: Row) -> int = if distance(a) < distance(b) then -1 else if distance(a) > distance(b) then 1 else 0
+pure func choose(a: Choice,r: Row,limit: int) -> Choice = if a.count >= limit then a
+  else if r.flags == 2 || r.flags == 3 then {rows: a.rows,excluded: a.excluded+1,count: a.count}
+  else {rows: r :: a.rows,excluded: a.excluded,count: a.count+1}
+-- sortBy is stable; count only missing rows encountered before the complete-row quota fills.
+export pure func selectMedium(rows: [Row],limit: int) -> Selection {
+  let a = foldl(\a r. choose(a,r,limit),{rows: [],excluded: 0,count: 0},sortBy(nearer,rows));
+  {rows: reverseRows(a.rows),excluded: a.excluded}
+}
+export pure func selectTier(rows: [Row],tier: string) -> Selection =
+  if tier == "medium" then selectMedium(rows,50000) else {rows: rows,excluded: 0}

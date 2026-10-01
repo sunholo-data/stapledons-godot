@@ -467,6 +467,83 @@ reference tests, CHANGELOG, release kind, no-gate quality, publish then pin;
 (4) complete-tier parity/performance integration before M1.2c. None is
 silently marked complete by a successful preflight.
 
+### Iteration 7 refinement: M1.2b-T1_TRANSFORM (2026-10-01)
+
+**Authorization:** scope-preserving decomposition of the approved 2026-09-27
+sprint, explicitly required by the post-preflight dependency split above.
+The package-first WD chain has landed (WD3 PR #12); this task consumes locked
+`sunholo/relativity@0.3.0` and does not change acceptance contracts, source
+catalogues, photometry conventions, thresholds or output format. No new
+approval is needed for this refinement. Full M1.2b remains `passes: null`.
+Writer/sidecars and full-catalogue timing/parity remain subsequent tasks.
+
+**Bound:** one executor session, estimated 140 implementation + 100 test/config
+LOC = 240; hard cap 250 changed code/test/config LOC. If the implementation
+cannot fit, stop with partial evidence and split again; do not remove tests.
+
+**Files:** new `sim/tools/catalogue.ail`, `sim/tools/catalogue_test.ail`, and
+`sim/ailang.toml` export declaration if required. Existing probe remains a
+preflight benchmark. This task has no FS/IO entry, binary writer, runner,
+sidecars, committed catalogue output or production Python physics.
+
+**Interface and tasks (test-first):**
+1. Provide a pure typed CSV transform returning Result with rows containing
+   string ID, float64 x/y/z/teff/v and integer flags, plus separate input,
+   WD and missing counters. Accept exactly the existing seven-column header;
+   reject blank ID, wrong field count, invalid/nonfinite x/y/z or nonblank
+   G/BPRP, and WD other than 0/1. Empty G and empty BPRP are independently
+   missing; trailing empty line is allowed as in the preflight parser.
+2. Complete normal rows call package `teffFromBpRp` and `vFromG`; set bit 16
+   iff `bpRpInTable` is false. Complete WD rows call `bbTeffFromBpRp` and
+   `bbVFromG`; flags = 1 + 4 + (if invertible then 0 else 16).
+   Missing wins before package calls: teff 0, V 99, flags 2 plus 1 when WD;
+   no approximate/clamped flag for an uncomputed temperature. Preserve
+   coordinates and IDs exactly as typed data. Count WD/missing independently
+   so their overlap increments both counters.
+3. Pure selection consumes transformed rows: quick/large preserve input
+   order including flagged missing rows; medium stably orders by float64
+   squared distance, traverses nearest-first skipping missing, and selects
+   50,000 complete rows (or all complete rows on smaller fixtures). Factor
+   the medium limit into a helper for the retained two-row fixture; the
+   production tier always uses 50,000. Equal distances retain source order
+   (deterministic implementation choice, no physical threshold change).
+   Count medium exclusions among missing rows encountered before filling
+   the quota (or exhausting input), as the existing skipped-row contract.
+4. Exact tests, not only agreement: unordered/interleaved five-row fixture
+   with two missing rows before the second eligible nearest row, including
+   a missing WD, selects the two named complete rows in distance order;
+   asserts excluded=2 and independent WD/missing counters. Verify quick and
+   large exact membership/order, empty input after valid header, stable
+   distance ties, partial blanks, blank ID, malformed y/z and field counts.
+   Assertions compare row values and IDs rather than substring membership.
+5. Numerical checks use independent committed anchors: normal solar
+   BP-RP 0.823/G 0 gives 5770 K/V 0.165; existing real normal row gives
+   3229.05 K/V 17.1398; real WD row G 20.654/BP-RP 1.0401 gives
+   5202.556030832587 K/V 20.89920219434688; WD BP-RP 0.30 gives
+   8941.61808557 K/V=G+0.064716662329/flags 5; BP-RP 2.5 gives
+   exactly 3000 K/flags 21. Add dwarf out-of-table flag assertion.
+   Named check functions in test blocks avoid the documented literal pitfall.
+   These discharge transform obligations F1-F3/F5; full-medium bounded
+   timing, five-run parity and independently measured diagnostics remain
+   the integration milestone's obligations.
+
+**Acceptance commands:** use the controller-verified v0.47.2 binary (or
+`make runtime` to prepare the absent ignored runtime in a fresh worktree); then `make deps AILANG=$PWD/runtime/bin/ailang`,
+`runtime/bin/ailang check --package sim`,
+`runtime/bin/ailang test --package sim`, and
+`make test AILANG=$PWD/runtime/bin/ailang AILANG_BIN=$PWD/runtime/bin/ailang`.
+Independent evaluator reviews numerical anchors, exact selection/counters,
+mutation sensitivity and the <=250 LOC diff. No visual pixels change.
+
+**Registry reuse (2026-10-01):** PATH CLI v0.49.0-dev was used only for
+registry inspection because this fresh worktree has no ignored runtime yet.
+`ailang pkg search photometry` returns sunholo/relativity@0.3.0;
+`pkg info` and `pkg docs` confirm both dwarf and WD exported surfaces.
+`pkg search csv` returns no packages. **depend** on locked relativity@0.3.0
+for every physical conversion; **none** for narrow application-specific
+CSV schema/tier selection, using std/string/list/result. Execution gates
+must use pinned v0.47.2, never the PATH development CLI.
+
 **Encoder correction for later writer:** use fractional mantissa
 `m = roundTiesToEven((abs(x)/2^e - 1)*2^23)`; carry at `m == 2^23`
 sets `m=0,e=e+1`; bits are sign*2^31+(e+127)*2^23+m. The old formula
@@ -846,3 +923,33 @@ M1.4
 - Simulation verification: `make -f Makefile -f .godot/tmp/no-deps.mk test AILANG=$PWD/runtime/bin/ailang AILANG_BIN=$PWD/runtime/bin/ailang`: exit 0. This executor override reused controller-verified locked cache to avoid prohibited git checkout in existing deps recipe; all import/physics/sim/parity/offaxis/strict/tools-test targets ran. Controller runs canonical make test. Parser 15/15, sim 19/19, parity601 lines/offaxis17 lines.
 - Actual changed code/tests: 218 physical added/modified lines (210 new file lines +4 Makefile +4 manifest); production187 <=200 and total218 <=250. Documentation/artifacts excluded from code cap. No commits/staging performed.
 - Next bounded task is package WD specification/calibration/publication prerequisite, then production transform/writer/integration per approved plan. Independent evaluator must assess preflight. Full AC2 and M1.2b remain incomplete.
+
+### Iteration 7 T1 execution checkpoint (2026-10-01)
+
+- [x] Pure normal/WD transform, independent counters and missing/clamped flags.
+- [x] Exact quick/large order and nearest complete medium selection, stable ties.
+- [x] Independent dwarf/WD anchors, partial blanks and malformed-field refusals.
+- [x] Strict VM entries for transform/selection (including clamps), interpreter parity.
+- [x] Final make test rc0: physics 42/42, AILANG 30/30, extraction 15/15.
+- [x] 33 landed/building production mutants produce BAD; byte-identical restoration.
+- [x] Independent Sonnet5.5: 88/100 PASS, zero blockers; child T1 passes true, full M1.2b remains null.
+
+Execution evidence: `.ailang/state/evidence/iter7/execution.md` and logs there.
+The parent M1.2b is incomplete; binary writing/full-catalogue integration remain.
+The std/list.reverse strict-VM gap was reported upstream and replaced with pure
+foldl reversal. Unknown-tier policy and huge-coordinate distance overflow are
+explicit review residuals in the evidence, not silently claimed as acceptance.
+
+**T1 independent review follow-ups (iteration7, writer/integration owns these):**
+- N1: add dwarf BP-RP 2.5 expecting flags0 and -0.5 expecting16, so replacing
+  bpRpInTable with WD invertibility fails. Controller reproduced flags0->16
+  while existing transformVm remains green.
+- N2: explicitly reject a data row followed by two trailing newlines.
+  Controller reproduced a two-strip mutant accepted it while transformVm stayed green.
+- N3: full integration pins exactly50,000 at the boundary (49999 mutant
+  survives the small fixture). Writer validates quick/medium/large tier names;
+  unknown strings currently pass through. Restrict or safely compare squared
+  distances before binary64 overflow for input ranges beyond the catalogues.
+- N4/N5/N9: declare dead/redundant branches and improve refusal localisation
+  and long-line readability when touching these paths. No new scope in T1.
+- Reports: `.ailang/state/evaluations/eval_R1-M1-SKY_M1.2b-T1_iter7_round1.{json,md}`.

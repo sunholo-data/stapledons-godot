@@ -28,6 +28,13 @@
   package's NaN contract on the strict VM (ailang#1419 hides NaN-guard
   mutants from the interpreter-only `ailang test`). PR #12, merge `68575d9`.
 
+- **M1.2b pure transform (iteration7):** package-backed normal/white-dwarf
+  photometry, explicit missing/clamped flags and independent counters; stable
+  nearest-complete medium selection with quick/large source order preserved.
+  Ten new tests and strict-VM/interpreter anchors run in `make test`.
+  Independent Sonnet5.5 review: 88/100 PASS. Binary writer and full-tier
+  parity/performance remain pending; full M1.2b is incomplete.
+
 ### M0 spike, 2026-09-27 (~1,900 LOC including tests)
 
 - **Simulation:** AILANG sidecar over NDJSON stdio, about 50 µs per tick

@@ -1,0 +1,1256 @@
+{
+ "orig": "147e2454f91c12d8807419e367a08e4daba3a84c6aea8f61ab9a6e195ad818bf",
+ "restored": "147e2454f91c12d8807419e367a08e4daba3a84c6aea8f61ab9a6e195ad818bf",
+ "results": [
+  {
+   "name": "finite-nan",
+   "landed": true,
+   "sha": "1bc566ac74ad",
+   "build_rc": 0,
+   "test_rc": 0,
+   "failed_tests": [],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "finite-upper",
+   "landed": true,
+   "sha": "6651d64d25fc",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "finite-lower",
+   "landed": true,
+   "sha": "a6cc51ec9c66",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "finite-none",
+   "landed": true,
+   "sha": "b39d9dded795",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "optional-blank",
+   "landed": true,
+   "sha": "8618231b2bd3",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "optional-finite",
+   "landed": true,
+   "sha": "d5b3d833552e",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "reverse-identity",
+   "landed": true,
+   "sha": "a9c18b04c0c2",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 normal independent anchors and coordinates",
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps",
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit",
+    "T1 stable equal distance order",
+    "T1 distance uses all coordinates"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "number-none",
+   "landed": true,
+   "sha": "afc69a0915f4",
+   "build_rc": 0,
+   "test_rc": 0,
+   "failed_tests": [],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "missing-and",
+   "landed": true,
+   "sha": "80b7fe5475c9",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "missing-g-only",
+   "landed": true,
+   "sha": "06fe99d4ed39",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "missing-c-only",
+   "landed": true,
+   "sha": "8c4070e04535",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "wd-flag",
+   "landed": true,
+   "sha": "e7f562a39161",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps",
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "teff-missing",
+   "landed": true,
+   "sha": "b9301579b71f",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "v-missing",
+   "landed": true,
+   "sha": "e2bcc758ab65",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "teff-wd-uses-dwarf",
+   "landed": true,
+   "sha": "c56683c98acd",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "teff-dwarf-uses-wd",
+   "landed": true,
+   "sha": "8d0643e5e6f3",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 normal independent anchors and coordinates"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "v-wd-uses-dwarf",
+   "landed": true,
+   "sha": "7b18d82a571a",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 WD real and interior anchors"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "v-dwarf-uses-wd",
+   "landed": true,
+   "sha": "b75f3f04fba2",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 normal independent anchors and coordinates"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "flag-wd-bit",
+   "landed": true,
+   "sha": "b6e094682d46",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps",
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "flag-missing-bit",
+   "landed": true,
+   "sha": "e1fac5aee241",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "flag-approx-bit",
+   "landed": true,
+   "sha": "61cc8e8a9576",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "flag-clamp-bit",
+   "landed": true,
+   "sha": "204aeda57949",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 dwarf and WD clamps"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "flag-clamp-inverted",
+   "landed": true,
+   "sha": "e422fff8085f",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 normal independent anchors and coordinates",
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "flag-wd-uses-dwarf-table",
+   "landed": true,
+   "sha": "9d7ca67a2b47",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 dwarf and WD clamps"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "flag-dwarf-uses-wd-table",
+   "landed": true,
+   "sha": "79d7f9a686ec",
+   "build_rc": 0,
+   "test_rc": 0,
+   "failed_tests": [],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "blank-row-branch",
+   "landed": true,
+   "sha": "2ae3c13ef0b6",
+   "build_rc": 0,
+   "test_rc": 0,
+   "failed_tests": [],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "blank-id",
+   "landed": true,
+   "sha": "33b73eb8a54a",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "blank-id-notrim",
+   "landed": true,
+   "sha": "8fff58b34409",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "x-check",
+   "landed": true,
+   "sha": "90db51a746fd",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "y-check",
+   "landed": true,
+   "sha": "de00d3b0d64f",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "z-check",
+   "landed": true,
+   "sha": "90054ff7316b",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "g-check",
+   "landed": true,
+   "sha": "411d8c10329e",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "c-check",
+   "landed": true,
+   "sha": "280f7e0e629f",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "wd-check",
+   "landed": true,
+   "sha": "94907c0a3411",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "wd-check-one-side",
+   "landed": true,
+   "sha": "c8ff624c1a9a",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps",
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "field-count-ok",
+   "landed": true,
+   "sha": "769cdbff437a",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "counter-input",
+   "landed": true,
+   "sha": "ad588e85845a",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "counter-wd",
+   "landed": true,
+   "sha": "56af37fb30bc",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "counter-missing",
+   "landed": true,
+   "sha": "d1f05f812385",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "counter-missing-g-only",
+   "landed": true,
+   "sha": "2d837b6e773d",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "row-order",
+   "landed": true,
+   "sha": "f4db080b6fa7",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 normal independent anchors and coordinates",
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps",
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit",
+    "T1 stable equal distance order"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "trailing-blank-no-strip",
+   "landed": true,
+   "sha": "57c23c0729f0",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 normal independent anchors and coordinates",
+    "T1 WD real and interior anchors",
+    "T1 dwarf and WD clamps",
+    "T1 exact medium selection and independent counters",
+    "T1 missing wins and preserves WD bit",
+    "T1 stable equal distance order",
+    "T1 distance uses all coordinates",
+    "T1 header only empty input"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "trailing-blank-always-strip",
+   "landed": true,
+   "sha": "2016b05f2e0e",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "trailing-blank-strip-two",
+   "landed": true,
+   "sha": "35c33e486c79",
+   "build_rc": 0,
+   "test_rc": 0,
+   "failed_tests": [],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "header-check",
+   "landed": true,
+   "sha": "a88b6e8be182",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact header"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "error-propagation",
+   "landed": true,
+   "sha": "1733c6598d8d",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 field rejection before missing shortcut"
+   ],
+   "vm": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-BAD",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "empty-input-branch",
+   "landed": true,
+   "sha": "9937466521ab",
+   "build_rc": 0,
+   "test_rc": 0,
+   "failed_tests": [],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "dist-x",
+   "landed": true,
+   "sha": "32073c558401",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "dist-y",
+   "landed": true,
+   "sha": "ab1af57600f4",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 stable equal distance order"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "dist-z",
+   "landed": true,
+   "sha": "b7e8c8befb80",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 distance uses all coordinates"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "dist-abs-sum",
+   "landed": true,
+   "sha": "96a15563e812",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 stable equal distance order"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "nearer-reverse",
+   "landed": true,
+   "sha": "8d655b549cc8",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 distance uses all coordinates"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "nearer-tie-nonstable",
+   "landed": true,
+   "sha": "35b8d90337a0",
+   "build_rc": 0,
+   "test_rc": 0,
+   "failed_tests": [],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "nearer-tie-neg",
+   "landed": true,
+   "sha": "d97d74e56403",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 stable equal distance order"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "quota-gt",
+   "landed": true,
+   "sha": "492797ec3c01",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 stable equal distance order",
+    "T1 distance uses all coordinates"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "quota-never",
+   "landed": true,
+   "sha": "1a514744d058",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 stable equal distance order",
+    "T1 distance uses all coordinates"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "skip-flag2",
+   "landed": true,
+   "sha": "e04a90800cbd",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "skip-flag3",
+   "landed": true,
+   "sha": "7b88dc945b53",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "skip-none",
+   "landed": true,
+   "sha": "6978ade3662d",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "excluded-noinc",
+   "landed": true,
+   "sha": "05893077a8ab",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "count-skip-inc",
+   "landed": true,
+   "sha": "904e857869b1",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "count-double",
+   "landed": true,
+   "sha": "0fe7f1841872",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 stable equal distance order"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "select-nosort",
+   "landed": true,
+   "sha": "a9261ad8bc54",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 distance uses all coordinates"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "select-order",
+   "landed": true,
+   "sha": "e8824882eebc",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters",
+    "T1 stable equal distance order"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "tier-medium-off",
+   "landed": true,
+   "sha": "c05c26deb4ae",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "tier-limit",
+   "landed": true,
+   "sha": "3b30ce600f57",
+   "build_rc": 0,
+   "test_rc": 0,
+   "failed_tests": [],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-ok"
+   }
+  },
+  {
+   "name": "tier-passthrough-excluded",
+   "landed": true,
+   "sha": "3f3fc3c25a8f",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  },
+  {
+   "name": "tier-passthrough-drop-missing",
+   "landed": true,
+   "sha": "f41eee02ad07",
+   "build_rc": 0,
+   "test_rc": 1,
+   "failed_tests": [
+    "T1 exact medium selection and independent counters"
+   ],
+   "vm": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   },
+   "interp": {
+    "transformVm": "transform-ok",
+    "selectionVm": "selection-BAD"
+   }
+  }
+ ]
+}
