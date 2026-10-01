@@ -4,14 +4,21 @@ module stapledons/sim/core
 -- VM under --strict-bytecode (checked by `make strict`). I/O lives in ship.ail.
 -- Physics comes from the published sunholo/relativity package.
 
-import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf)
+import std/option (Option, Some, None)
+import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize)
 import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/relativity/medium (accelSI, julianYearS, photonDriveEnergy, mirrorDragPower, brakeHoldsAgainstDrag)
 
-export type Ship = { tick: int, motion: Motion, heading: Vec3, origin: Vec3, x0: float }
+-- ShipPhase is TripPhase in canon words (design §M2.2).
+export type ShipPhase = AtRest | Boosting | Cruising | Braking deriving (Eq)
+export type Ship = { motion: Motion, heading: Vec3, origin: Vec3, x0: float, phase: ShipPhase }
 export type TurnResult = { accepted: bool, ship: Ship }
 
-export pure func initShip() -> Ship = { tick: 0, motion: rest(), heading: {x: 0.0, y: 0.0, z: -1.0}, origin: {x: 0.0, y: 0.0, z: 0.0}, x0: 0.0 }
+export pure func initShip() -> Ship = { motion: rest(), heading: {x: 0.0, y: 0.0, z: -1.0}, origin: {x: 0.0, y: 0.0, z: 0.0}, x0: 0.0, phase: AtRest }
+
+-- |phi| (or |beta|) below this is at rest: turns snap, the phase is AtRest.
+export pure func restTolerance() -> float = 0.000000001
 
 export pure func position(s: Ship) -> Vec3 {
   let d = s.motion.x - s.x0;
@@ -21,20 +28,19 @@ export pure func position(s: Ship) -> Vec3 {
 export pure func turn(s: Ship, h: Vec3) -> TurnResult {
   let changed = absf(h.x - s.heading.x) > 0.000000001 || absf(h.y - s.heading.y) > 0.000000001 || absf(h.z - s.heading.z) > 0.000000001;
   if !changed then {accepted: true, ship: s}
-  else if absf(betaOf(s.motion.phi)) >= 0.000000001 then {accepted: false, ship: s}
+  else if absf(betaOf(s.motion.phi)) >= restTolerance() then {accepted: false, ship: s}
   else {
     let p = position(s);
     let m = s.motion;
-    { accepted: true, ship: { tick: s.tick, motion: { phi: 0.0, tau: m.tau, t: m.t, x: m.x }, heading: normalize(h), origin: p, x0: m.x } }
+    { accepted: true, ship: { motion: { phi: 0.0, tau: m.tau, t: m.t, x: m.x }, heading: normalize(h), origin: p, x0: m.x, phase: AtRest } }
   }
 }
 
 -- Advance one tick: dtau ship-years under thrust x 1 g (thrust in [-1, 1]).
 export pure func step(s: Ship, thrust: float, dtau: float) -> Ship
   requires { dtau >= 0.0 }
-  ensures { result.tick == s.tick + 1 }
 {
-  { tick: s.tick + 1, motion: accelerate(s.motion, thrust * standardGravity(), dtau), heading: s.heading, origin: s.origin, x0: s.x0 }
+  { motion: accelerate(s.motion, thrust * standardGravity(), dtau), heading: s.heading, origin: s.origin, x0: s.x0, phase: s.phase }
 }
 
 export pure func beta(s: Ship) -> float = betaOf(s.motion.phi)
@@ -44,8 +50,9 @@ pure func burn(s: Ship, thrust: float, dtau: float, n: int) -> Ship =
   if n <= 0 then s else burn(step(s, thrust, dtau), thrust, dtau, n - 1)
 
 -- Scripted voyage for the strict-bytecode check: accelerate for `ticks`
--- ticks, decelerate for as many, return total galaxy years. Must equal
--- 2 sinh(g T)/g for T = ticks * 0.01 ship-years.
+-- ticks, decelerate for as many, return total galaxy years. `make strict`
+-- compares it with the closed-form flip-and-burn galaxy time (python
+-- reference) for T = ticks * 0.01 ship-years per half.
 export pure func scripted(ticks: int) -> float {
   let out = burn(burn(initShip(), 1.0, 0.01, ticks), -1.0, 0.01, ticks);
   out.motion.t
@@ -55,4 +62,102 @@ export pure func scriptedOffAxis(ticks: int) -> float {
   let first = burn(burn(turn(initShip(), {x: 1.0, y: 0.0, z: 0.0}).ship, 1.0, 0.01, ticks), -1.0, 0.01, ticks);
   let second = burn(burn(turn(first, {x: 0.0, y: 1.0, z: 0.0}).ship, 1.0, 0.01, ticks), -1.0, 0.01, ticks);
   norm(position(second))
+}
+
+-- ------------------------------------------------------------ world (M2.2)
+-- Intents are domain commands; protocol.ail owns their wire codec.
+export type Target = { index: int, id: string, pos: Vec3 }
+export type PlanReq = { target: Target, cruisePhi: float, flipG: Option[float] }
+-- IEcho: diag-only test hook (M2.1b, AC9). It carries a plan payload and the
+-- sim echoes it back in an `echo` event, so the Godot bridge can check the
+-- float64 round trip of `target.pos` and `cruise_phi` before M2.3a's planner.
+export type Intent =
+  IPlan(PlanReq)
+  | ICommit(int) | ICancel | IThrust(float) | IHeading(Vec3)
+  | IRecord({source: string, req: string, kind: string, sha256: string, body: string})
+  | IDraw(string) | IEcho(PlanReq)
+export type Refusal = { i: int, reason: string }
+export type Event = { kind: string, echo: Option[PlanReq] }
+
+export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float }
+-- Scenario "sol" (design §M2.1, D-12, D-15).
+export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001 }
+
+-- Radiated energy = boostJ + dragJ. The mass budget is closed (higgs-bubble
+-- §8): availableKg is carried unchanged; nothing is deducted or enforced.
+export type Ledger = { mEffKg: float, availableKg: float, boostJ: float, dragJ: float }
+export pure func availableKgStart() -> float = 20000.0
+-- Named PRNG stream counters; the algorithm lands in M2.4.
+export type Rng = { journey: int, crew: int, events: int, galaxy: int, ai: int, news: int }
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, ledger: Ledger, rng: Rng, diag: bool }
+export type TickInput = { dtau: float, intents: [Intent] }
+export type Ticked = { world: World, refused: [Refusal], events: [Event] }
+-- Planned/Committed/Arrived land in M2.3a/M2.3b.
+-- ailang#1466: a bare `= Idle` is read as an alias, and `= | Idle` without
+-- `deriving` drops the next declaration's export.
+export type Journey = | Idle deriving (Eq)
+
+export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
+  { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle,
+    ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
+    rng: { journey: 0, crew: 0, events: 0, galaxy: 0, ai: 0, news: 0 }, diag: diag }
+
+-- ISM density: scenario cm^-3 to the package's m^-3.
+pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
+
+-- Scenario validation beyond the per-field ranges: the brake's photon thrust
+-- at boost_g must hold against the drag at the cap.
+export pure func scenarioError(p: Params) -> Option[string] =
+  if brakeHoldsAgainstDrag(p.mEffKg, accelSI(p.boostG * standardGravity()), ismPerM3(p), rapidityOfOneMinusBeta(p.capOneMinusBeta), p.bubbleRadiusM)
+  then None else Some("m_eff_too_small")
+
+-- Phase for manual (diag) flight, from the rapidity after the tick and the
+-- thrust applied: thrust along the motion boosts, against it brakes.
+export pure func derivePhase(phi: float, thrust: float) -> ShipPhase =
+  if absf(phi) < restTolerance() then AtRest
+  else if thrust == 0.0 then Cruising
+  else if (thrust > 0.0) == (phi > 0.0) then Boosting
+  else Braking
+
+export pure func phaseName(p: ShipPhase) -> string =
+  match p { AtRest => "at_rest", Boosting => "boosting", Cruising => "cruising", Braking => "braking" }
+
+-- Per tick piece: thrust (boost or brake, including the piece that ends at
+-- rest) adds m_eff c^2 |dphi|; cruise adds the
+-- drag-holding power over dtau (seconds). Boost/brake drag terms cancel over
+-- the pair (package tripEnergy), so they are omitted.
+pure func ledgerAfter(l: Ledger, p: Params, before: Motion, after: Motion, thrust: float, dtau: float) -> Ledger =
+  if thrust != 0.0 then {l | boostJ: l.boostJ + photonDriveEnergy(l.mEffKg, absf(after.phi - before.phi))}
+  else if absf(after.phi) < restTolerance() then l
+  else {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), absf(after.phi), p.bubbleRadiusM) * dtau * julianYearS()}
+
+type Pending = { ship: Ship, thrust: float, refused: [Refusal], events: [Event], i: int }
+pure func refuseIntent(a: Pending, why: string) -> Pending = {a | refused: {i: a.i, reason: why} :: a.refused}
+pure func applyIntent(diag: bool, a: Pending, it: Intent) -> Pending {
+  let r = match it {
+    IThrust(t) => if diag then {a | thrust: t} else refuseIntent(a, "diag_only"),
+    IHeading(h) => if !diag then refuseIntent(a, "diag_only") else {
+      let turned = turn(a.ship, h);
+      if turned.accepted then {a | ship: turned.ship} else refuseIntent(a, "moving")
+    },
+    IEcho(p) => if diag then {a | events: {kind: "echo", echo: Some(p)} :: a.events} else refuseIntent(a, "diag_only"),
+    _ => refuseIntent(a, "unsupported")
+  };
+  {r | i: a.i + 1}
+}
+pure func applyIntents(diag: bool, a: Pending, xs: [Intent]) -> Pending = match xs { [] => a, x :: more => applyIntents(diag, applyIntent(diag, a, x), more) }
+pure func reversed(xs: [a], acc: [a]) -> [a] = match xs { [] => acc, x :: more => reversed(more, x :: acc) }
+
+-- One tick: apply the intents in order (refusals listed, the tick proceeds),
+-- then advance the ship by dtau, derive its phase and update the ledger.
+export pure func tick(w: World, input: TickInput) -> Ticked
+  requires { input.dtau >= 0.0 }
+  ensures { result.world.tick == w.tick + 1 }
+{
+  let a = applyIntents(w.diag, {ship: w.ship, thrust: 0.0, refused: [], events: [], i: 0}, input.intents);
+  let moved = step(a.ship, a.thrust, input.dtau);
+  let ph = derivePhase(moved.motion.phi, a.thrust);
+  let next = {moved | phase: ph};
+  { world: {w | tick: w.tick + 1, ship: next, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau)},
+    refused: reversed(a.refused, []), events: reversed(a.events, []) }
 }

@@ -1,11 +1,11 @@
 {
   "ailang_version": "v0.50.0",
-  "generated_at": "2026-10-01T15:54:35.961739Z",
+  "generated_at": "2026-10-01T19:53:16.866745Z",
   "generator": "ailang lock v0.50.0",
   "packages": [
     {
       "ailang": ">=0.45.0",
-      "content_hash": "sha256:510a7133286d6918848b80d1f29523fb53d52570ce1be81417a971dd4df17f97",
+      "content_hash": "sha256:f0dd70d536577e745d0678252a7eca8a3ecc5b59a2f04561a30d85124935861b",
       "effects": [
         "IO"
       ],
@@ -16,15 +16,16 @@
         "sunholo/relativity/hyper",
         "sunholo/relativity/journey",
         "sunholo/relativity/kinematics",
+        "sunholo/relativity/medium",
         "sunholo/relativity/optics",
         "sunholo/relativity/photometry",
         "sunholo/relativity/photometry_table",
         "sunholo/relativity/schwarzschild"
       ],
-      "interface_hash": "sha256:0b4f1707991ed11676dd4d231fb28a07648ce5797c638c62dfc23e5bb2806ade",
+      "interface_hash": "sha256:c747d1b1e1ebd1480f06fb1609393ebf801cf5d6455ee7e51bab1fd7521acced",
       "name": "sunholo/relativity",
       "source": "registry",
-      "version": "0.3.0"
+      "version": "0.4.0"
     }
   ],
   "schema": "ailang.lock/v1",

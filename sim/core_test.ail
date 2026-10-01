@@ -1,9 +1,16 @@
 module stapledons/sim/core_test
 
-import ./core (initShip, step, turn, position, scriptedOffAxis, beta)
+import ./core (Ship, initShip, step, turn, position, scriptedOffAxis, beta,
+  World, Params, Ledger, Journey, Idle, ShipPhase, AtRest, Boosting, Cruising, Braking,
+  Intent, IThrust, IHeading, ICancel, IDraw, Refusal, TickInput, Ticked,
+  defaultParams, newWorld, tick, derivePhase, phaseName, scenarioError, restTolerance, availableKgStart)
 import pkg/sunholo/relativity/optics (Vec3)
+import pkg/sunholo/relativity/medium (photonDriveEnergy, mirrorDragPower, julianYearS, cSI)
+import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
 import std/math (sqrt)
-import pkg/sunholo/relativity/hyper (cosh)
+import std/option (Option, Some, None)
+import std/string (join, intToStr)
+import pkg/sunholo/relativity/hyper (cosh, absf)
 
 pure func checkTurnAtRest() -> bool {
   let s = step(initShip(), 0.0000000005, 1.0);
@@ -13,7 +20,7 @@ pure func checkTurnAtRest() -> bool {
 pure func checkMovingTurnRejected() -> bool {
   let s = step(initShip(), 1.0, 1.0);
   let r = turn(s, {x: 1.0, y: 0.0, z: 0.0});
-  !r.accepted && r.ship.tick == s.tick && r.ship.motion.phi == s.motion.phi && r.ship.motion.x == s.motion.x && r.ship.heading.z == s.heading.z
+  !r.accepted && r.ship.motion.phi == s.motion.phi && r.ship.motion.x == s.motion.x && r.ship.heading.z == s.heading.z
 }
 pure func checkPositionAfterTurn() -> bool {
   let s = step(initShip(), 1.0, 1.0);
@@ -31,7 +38,105 @@ pure func checkScriptedOffAxis() -> bool {
   got > sqrt(2.0) * d - 0.000000001 && got < sqrt(2.0) * d + 0.000000001
 }
 
+-- ------------------------------------------------------------ M2.2 world
+pure func diagWorld() -> World = newWorld(7, true, defaultParams())
+pure func go(w: World, thrust: float, dtau: float) -> World = tick(w, {dtau: dtau, intents: [IThrust(thrust)]}).world
+pure func goN(w: World, thrust: float, dtau: float, n: int) -> World = if n <= 0 then w else goN(go(w, thrust, dtau), thrust, dtau, n - 1)
+pure func rel(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol * absf(b)
+
+-- Closed mass budget (higgs-bubble §8): no tick sequence changes available_kg.
+pure func checkMassClosed() -> bool {
+  let w0 = diagWorld();
+  let boosted = goN(w0, 1.0, 0.01, 50);
+  let cruised = goN(boosted, 0.0, 0.5, 4);
+  let braked = goN(cruised, -1.0, 0.01, 50);
+  let turned = tick(braked, {dtau: 0.0, intents: [IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel, IDraw("news")]}).world;
+  let play = goN(newWorld(1, false, defaultParams()), 1.0, 0.1, 3);
+  availableKgStart() == 20000.0 && w0.ledger.availableKg == 20000.0 && boosted.ledger.availableKg == 20000.0 &&
+  cruised.ledger.availableKg == 20000.0 && braked.ledger.availableKg == 20000.0 && turned.ledger.availableKg == 20000.0 &&
+  play.ledger.availableKg == 20000.0 && braked.ledger.boostJ > 0.0 && cruised.ledger.dragJ > 0.0
+}
+
+-- |phi| < 1e-9 is AtRest (the turn threshold). A tolerance mutated to 0.5
+-- would call phi = 1e-8 and 0.4 at rest; both must be moving.
+pure func checkPhaseDerivedDiag() -> bool {
+  restTolerance() == 0.000000001 &&
+  derivePhase(0.0, 0.0) == AtRest && derivePhase(0.0000000005, 1.0) == AtRest && derivePhase(-0.0000000005, -1.0) == AtRest &&
+  derivePhase(0.00000001, 0.0) == Cruising && derivePhase(0.4, 0.0) == Cruising && derivePhase(-0.4, 0.0) == Cruising &&
+  derivePhase(0.4, 1.0) == Boosting && derivePhase(-0.4, -1.0) == Boosting &&
+  derivePhase(0.4, -1.0) == Braking && derivePhase(-0.4, 1.0) == Braking &&
+  phaseName(AtRest) == "at_rest" && phaseName(Boosting) == "boosting" && phaseName(Cruising) == "cruising" && phaseName(Braking) == "braking"
+}
+
+-- The world's phase follows the diag thrust; tick and ship tick move together.
+pure func checkWorldPhases() -> bool {
+  let w0 = diagWorld();
+  let b = go(w0, 1.0, 0.1);
+  let c = go(b, 0.0, 0.1);
+  let r = go(c, -1.0, 0.1);
+  let idle = go(newWorld(7, false, defaultParams()), 1.0, 0.1);
+  w0.tick == 0 && w0.ship.phase == AtRest && w0.journey == Idle && w0.seed == 7 && w0.diag &&
+  b.ship.phase == Boosting && c.ship.phase == Cruising && r.ship.phase == AtRest &&
+  r.tick == 3 && idle.ship.phase == AtRest && idle.tick == 1 && idle.ship.motion.phi == 0.0
+}
+
+-- Ledger accumulation: boost/brake add m_eff c^2 |dphi|; cruise adds the
+-- drag-holding power times dtau in seconds. Values from the package only.
+pure func checkLedgerDiag() -> bool {
+  let p = defaultParams();
+  let b = go(diagWorld(), 1.0, 0.25);
+  let phi = b.ship.motion.phi;
+  let c = go(b, 0.0, 0.5);
+  let r = go(c, -1.0, 0.25);
+  let drag = mirrorDragPower(p.ismNCm3 * 1000000.0, phi, p.bubbleRadiusM) * 0.5 * julianYearS();
+  rel(b.ledger.boostJ, photonDriveEnergy(1.0, phi), 0.000000000001) && b.ledger.dragJ == 0.0 &&
+  c.ledger.boostJ == b.ledger.boostJ && rel(c.ledger.dragJ, drag, 0.000000000001) &&
+  rel(r.ledger.boostJ, 2.0 * photonDriveEnergy(1.0, phi), 0.000000001) && r.ledger.dragJ == c.ledger.dragJ &&
+  b.ledger.mEffKg == 1.0 && checkLedgerMEff()
+}
+-- The ledger uses the scenario's m_eff, not a constant 1 kg.
+pure func checkLedgerMEff() -> bool {
+  let d = defaultParams();
+  let b = go(newWorld(7, true, {d | mEffKg: 0.5}), 1.0, 0.25);
+  b.ledger.mEffKg == 0.5 && rel(b.ledger.boostJ, photonDriveEnergy(0.5, b.ship.motion.phi), 0.000000000001)
+}
+
+-- Scenario rule: the brake must hold against the drag at the cap
+-- (V12: threshold 0.0321 kg at the sol defaults).
+pure func checkScenarioMEff() -> bool {
+  let d = defaultParams();
+  scenarioError(d) == None && scenarioError({d | mEffKg: 0.033}) == None &&
+  scenarioError({d | mEffKg: 0.03}) == Some("m_eff_too_small") && scenarioError({d | mEffKg: 0.032}) == Some("m_eff_too_small")
+}
+
+-- Rng counters start at zero (algorithm lands in M2.4).
+pure func checkRngZero() -> bool {
+  let r = diagWorld().rng;
+  r.journey == 0 && r.crew == 0 && r.events == 0 && r.galaxy == 0 && r.ai == 0 && r.news == 0
+}
+
+-- Refusals in a non-diag world: thrust/heading are diag_only, the rest
+-- unsupported until their milestones; the tick proceeds.
+pure func checkTickRefusals() -> bool {
+  let t = tick(newWorld(1, false, defaultParams()), {dtau: 0.5, intents: [IThrust(1.0), IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel]});
+  t.world.tick == 1 && refusalsAre(t.refused, ["0:diag_only", "1:diag_only", "2:unsupported"]) && t.world.ship.motion.tau == 0.5
+}
+pure func refusalsAre(rs: [Refusal], want: [string]) -> bool =
+  join(",", refusalText(rs)) == join(",", want)
+pure func refusalText(rs: [Refusal]) -> [string] = match rs { [] => [], r :: rest => join(":", [intToStr(r.i), r.reason]) :: refusalText(rest) }
+
+export pure func worldVm(n: int) -> string =
+  if checkMassClosed() && checkPhaseDerivedDiag() && checkWorldPhases() && checkLedgerDiag() && checkScenarioMEff() && checkRngZero() && checkTickRefusals()
+  then "world-ok" else "world-BAD"
+
 test "turn at rest snaps rapidity" { checkTurnAtRest() }
 test "moving turn rejected" { checkMovingTurnRejected() }
 test "position after turn retains origin" { checkPositionAfterTurn() }
 test "strict off axis voyage" { checkScriptedOffAxis() }
+test "mass budget closed: available_kg 20000 after any ticks" { checkMassClosed() }
+test "phase derived for diag flight, rest tolerance 1e-9" { checkPhaseDerivedDiag() }
+test "world phases follow diag thrust" { checkWorldPhases() }
+test "ledger accumulates boost and cruise drag from the package" { checkLedgerDiag() }
+test "scenario refuses m_eff below the brake threshold" { checkScenarioMEff() }
+test "rng counters start at zero" { checkRngZero() }
+test "tick refusals proceed" { checkTickRefusals() }
