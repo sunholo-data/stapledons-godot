@@ -270,10 +270,10 @@
         "User decision A or B recorded in design doc"
       ],
       "session": 3,
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-01",
+      "completed": "2026-10-01",
+      "notes": "Attended (Mark). Option A on NOIRLab chosen, D-10 (ledger e9d35c5); B not built by ruling. Report design_docs/planned/r1/m1-4a-background-options.md; spike tools/m14a_*.py, spike/panorama.*; renders docs/m1.4a/preview. Binding findings for M1.4b/c in design §M1.4 'M1.4a outcome'.",
       "gate": "STOP for user decision before M1.4b"
     },
     {

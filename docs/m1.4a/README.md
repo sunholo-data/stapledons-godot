@@ -74,7 +74,7 @@ AILANG_BIN=$PWD/runtime/bin/ailang godot --path . --resolution 1920x1080 res://s
 
 Preview simplifications, each owned by a later milestone:
 - **One colour temperature (4600 K) for every texel.** M1.4b fits T_c per texel.
-- **Emission nebulae are not blackbodies.** H-α (656 nm) at D = 1.5 lands at 437 nm, and by D ≈ 1.8 it is ultraviolet,
+- **Emission nebulae are not blackbodies.** H-α (656 nm) at D = 1.5 lands at 437 nm, and by D ≈ 1.7 it is ultraviolet,
   so the red nebulae should vanish from the forward view instead of brightening with the continuum. M1.4b needs a line component,
   or should at least flag line-dominated texels.
 - **Exposure is hand-set:** background 0.6, stars 40, PSF σ 1.2 px. M1.5 calibrates both against a dark-sky reference.
