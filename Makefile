@@ -3,7 +3,7 @@ AILANG ?= ailang
 SIM := sim/ship.ail
 SIMFLAGS := --quiet --package-dir sim --caps IO --entry main
 SCRATCH := .godot/tmp
-AILANG_RELEASE ?= v0.50.0
+AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 

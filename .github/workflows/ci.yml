@@ -10,7 +10,7 @@ jobs:
     name: headless tests (physics, sim, parity, strict VM)
     runs-on: ubuntu-latest
     env:
-      AILANG_VERSION: v0.50.0
+      AILANG_VERSION: v0.51.0
       GODOT_VERSION: 4.7.2-stable
     steps:
       - uses: actions/checkout@v4
