@@ -599,6 +599,37 @@ irreversible by construction.
 **Estimated:** 170 code + 190 tests = **360** · **Cap:** 650 · **Iteration:** 5 ·
 **Depends on:** M2.2 · **Registry:** depend `sunholo/relativity@0.4.0`
 
+**Status (executed 2026-10-01, branch `sprint/m2.3a-planner`; independent evaluation pending):**
+- [x] Tests first (red on missing `Planned`/`LedgerView`), then green:
+  `checkPlanCruise09/099/Cap`, `checkPlanAlphaCen`, `checkPlanGl559`,
+  `checkPlanCoast100`, `checkPlanFallback` (rows 1–4, 6–9, 1e-9),
+  `checkPlanReadouts` (readout table 1e-9; derived fields after a 1.5 yr rest
+  with epoch 2100/start_age 41; m_eff 0.5; 1−β readout at cap 1e-17;
+  committed view frozen), `checkCruiseRange`, `checkDiagOnly`,
+  `checkCommittedRefusesAll`, `checkCommitTurns`, `checkCommitMoving`,
+  `checkStalePlan`, `checkPlanIds`, `checkPlanIsPackage` (core_test; all in
+  the new strict entry `planVm`); `checkJourneyOnWire`, `checkAlphaCenPanel`,
+  `checkLedgerOnWire` (m_eff 0.5 on the wire) in protocol_test/`protocolVm`
+- [x] α Cen 0.99c panel as the sim emits it: ship 0.6226958707592057 yr,
+  Earth 4.414143655383168 yr, boost 1.7979782022600483 min, total
+  6.1276428633128384e17 J = 6.817922175341585 kg, T_fwd 38.44085554458952 K
+- [x] 27/27 applied mutations killed (Committed→Idle via cancel, committed
+  arm bypassed, plan_id / position staleness ignored, readout 1−β, `>`→`>=`
+  at the cap, `<`→`<=` at the floor, years_left without elapsed age, …)
+- [x] AC2 · AC3 · AC4 · AC7 (+ grep) · AC18 · `make test` (strict: protocolVm,
+  worldVm, planVm; parity, parity-offaxis, parity-v2, offaxis-v11-equiv)
+- Deviations: `World` gains `lastPlanId`; `Plan {id, target, from, heading,
+  flip, trip: TripPlan}`, `Committed`/`Arrived` carry `{plan, tau0, t0}`.
+  `stale_plan` also covers a plan made from another position. A target at
+  the ship's position and a non-positive `flip_g` are `out_of_range`.
+  `cancel` with no plan is a no-op. A committed world refuses *every*
+  intent kind (also `echo`/`draw`/`record`) `committed`. The planned panel is
+  live ("if you commit now"), the committed one frozen at (τ0, t0).
+  AILANG does not check match exhaustiveness at compile time (reported), so
+  the one-arm-per-constructor rule is enforced by `checkCommittedRefusesAll`.
+  New upstream: ailang#1473 (variable pattern evaluator-only on strict VM;
+  `_ => j` workaround); #1467 also hits `let` bindings (`later` rename)
+
 **Files:** `sim/core.ail` (`Journey = Idle | Planned | Committed | Arrived`,
 plan/commit/cancel rules, plan readouts), `sim/protocol.ail` (`journey`
 section with `plan {…}` exactly as design §M2.1 Change-sets), `sim/core_test.ail`.

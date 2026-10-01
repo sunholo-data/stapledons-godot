@@ -1,12 +1,14 @@
 module stapledons/sim/core_test
 
 import ./core (Ship, initShip, step, turn, position, scriptedOffAxis, beta,
-  World, Params, Ledger, Journey, Idle, ShipPhase, AtRest, Boosting, Cruising, Braking,
-  Intent, IThrust, IHeading, ICancel, IDraw, Refusal, TickInput, Ticked,
+  World, Params, Ledger, Journey, Idle, Planned, Committed, Arrived, Plan, Commitment, ShipPhase, AtRest, Boosting, Cruising, Braking,
+  Intent, IPlan, ICommit, IThrust, IHeading, ICancel, IRecord, IDraw, IEcho, Target, PlanReq, Refusal, Event, TickInput, Ticked,
+  PlanView, JourneyView, journeyView, minutesPerYear,
   defaultParams, newWorld, tick, derivePhase, phaseName, scenarioError, restTolerance, availableKgStart)
 import pkg/sunholo/relativity/optics (Vec3)
 import pkg/sunholo/relativity/medium (photonDriveEnergy, mirrorDragPower, julianYearS, cSI)
-import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta, rapidityOfBeta, oneMinusBeta, standardGravity)
+import pkg/sunholo/relativity/journey (planBurnCoastBurn, planFlipAndBurn)
 import std/math (sqrt)
 import std/option (Option, Some, None)
 import std/string (join, intToStr)
@@ -75,7 +77,7 @@ pure func checkWorldPhases() -> bool {
   let c = go(b, 0.0, 0.1);
   let r = go(c, -1.0, 0.1);
   let idle = go(newWorld(7, false, defaultParams()), 1.0, 0.1);
-  w0.tick == 0 && w0.ship.phase == AtRest && w0.journey == Idle && w0.seed == 7 && w0.diag &&
+  w0.tick == 0 && w0.ship.phase == AtRest && isIdle(w0.journey) && w0.seed == 7 && w0.diag &&
   b.ship.phase == Boosting && c.ship.phase == Cruising && r.ship.phase == AtRest &&
   r.tick == 3 && idle.ship.phase == AtRest && idle.tick == 1 && idle.ship.motion.phi == 0.0
 }
@@ -115,15 +117,272 @@ pure func checkRngZero() -> bool {
   r.journey == 0 && r.crew == 0 && r.events == 0 && r.galaxy == 0 && r.ai == 0 && r.news == 0
 }
 
--- Refusals in a non-diag world: thrust/heading are diag_only, the rest
--- unsupported until their milestones; the tick proceeds.
+-- Refusals in a non-diag world: thrust/heading are diag_only, draw and
+-- record unsupported until their milestones (cancel with no plan is a
+-- no-op since M2.3a); the tick proceeds.
 pure func checkTickRefusals() -> bool {
-  let t = tick(newWorld(1, false, defaultParams()), {dtau: 0.5, intents: [IThrust(1.0), IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel]});
-  t.world.tick == 1 && refusalsAre(t.refused, ["0:diag_only", "1:diag_only", "2:unsupported"]) && t.world.ship.motion.tau == 0.5
+  let t = tick(newWorld(1, false, defaultParams()), {dtau: 0.5, intents: [IThrust(1.0), IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel, IDraw("news")]});
+  t.world.tick == 1 && refusalsAre(t.refused, ["0:diag_only", "1:diag_only", "3:unsupported"]) && t.world.ship.motion.tau == 0.5 && isIdle(t.world.journey)
 }
 pure func refusalsAre(rs: [Refusal], want: [string]) -> bool =
   join(",", refusalText(rs)) == join(",", want)
 pure func refusalText(rs: [Refusal]) -> [string] = match rs { [] => [], r :: rest => join(":", [intToStr(r.i), r.reason]) :: refusalText(rest) }
+
+-- ------------------------------------------------------------ M2.3a planner, readouts, commit rule
+-- Check rows: design m2-journey-core §M2.0 (trip rows 1-9, readout table),
+-- canon higgs-bubble HB-16...29, HB-35...63 (pre-planning finding 1).
+pure func isIdle(j: Journey) -> bool = match j { Idle => true, _ => false }
+pure func plCommitted(j: Journey) -> bool = match j { Committed(_) => true, _ => false }
+pure func plOf(w: World) -> Option[Plan] = match w.journey { Planned(p) => Some(p), _ => None }
+pure func plId(w: World) -> int = match w.journey { Planned(p) => p.id, Committed(c) => c.plan.id, Arrived(c) => c.plan.id, Idle => 0 }
+pure func plAcen() -> Target = {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z: -4.37}}
+pure func plAt(d: float) -> Target = {index: 9, id: "probe", pos: {x: d, y: 0.0, z: 0.0}}
+pure func plGl559() -> Target = {index: 1, id: "Gl 559", pos: {x: 1.5, y: -4.09, z: -0.05}}
+pure func plCruise(t: Target, phi: float) -> Intent = IPlan({target: t, cruisePhi: phi, flipG: None})
+pure func plFlip(t: Target, g: float) -> Intent = IPlan({target: t, cruisePhi: 2.0, flipG: Some(g)})
+pure func plDo(w: World, xs: [Intent]) -> Ticked = tick(w, {dtau: 0.0, intents: xs})
+pure func plWorld(diag: bool, p: Params) -> World = newWorld(3, diag, p)
+pure func phi09() -> float = 1.4722194895832204
+pure func phi099() -> float = 2.6466524123622457
+pure func plPhiCap() -> float = rapidityOfOneMinusBeta(0.000001)
+pure func tol9() -> float = 0.000000001
+
+-- A plan's trip equals (ship-yr, Earth-yr) to 1e-9 relative.
+pure func plTrip(w: World, ship: float, earth: float) -> bool =
+  match plOf(w) { Some(p) => rel(p.trip.trip.shipTime, ship, tol9()) && rel(p.trip.trip.galaxyTime, earth, tol9()), None => false }
+pure func plField(w: World, g: Plan -> bool) -> bool = match plOf(w) { Some(p) => g(p), None => false }
+
+-- Rows 1-3: alpha Cen (4.37 ly) burn-coast-burn at the scenario's boost_g (7.5e5 g).
+pure func checkPlanCruise09() -> bool {
+  let w = plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), phi09())]).world;
+  phi09() == rapidityOfBeta(0.9) && plTrip(w, 2.116489782091437, 4.8555571747021204) &&
+  plField(w, \p. p.trip.phiPeak == phi09() && !p.trip.fellBack && p.trip.trip.distance == 4.37 && !p.flip && p.id == 1 &&
+    rel(p.trip.a, 750000.0 * standardGravity(), 0.000000000000001))
+}
+pure func checkPlanCruise099() -> bool {
+  let w = plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), phi099())]).world;
+  plTrip(w, 0.6226958707592057, 4.414143655383168) && plField(w, \p. p.trip.phiPeak == phi099() && !p.trip.fellBack)
+}
+pure func checkPlanCruiseCap() -> bool {
+  let w = plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), plPhiCap())]).world;
+  plPhiCap() == 7.254328619262047 && plTrip(w, 0.006196277986522204, 4.370006949593909) &&
+  plField(w, \p. rel(p.trip.trip.peakGamma, 707.106957963309, tol9()) && !p.trip.fellBack)
+}
+-- Rows 6-7 (diag flip_g, the 1 g flip-and-burn check profile, HB-27...29).
+pure func checkPlanAlphaCen() -> bool {
+  let w = plDo(plWorld(true, defaultParams()), [plFlip(plAcen(), 1.0)]).world;
+  plTrip(w, 3.5823937227478337, 6.00250277725247) &&
+  plField(w, \p. p.flip && rel(p.trip.trip.peakBeta, 0.9516558449006334, tol9()) && rel(p.trip.trip.peakGamma, 3.2555651770846072, tol9()) && p.trip.tauCoast == 0.0)
+}
+-- Catalogue doubles (stars.json Gl 559): d is a float64 scalar, bit for bit.
+-- float32-rounded positions would be 3.3e-8 off in d, 1.3e-8 in ship time.
+pure func checkPlanGl559() -> bool {
+  let w = plDo(plWorld(true, defaultParams()), [plFlip(plGl559(), 1.0)]).world;
+  plTrip(w, 3.5780871495240905, 5.988497264963769) &&
+  plField(w, \p. p.trip.trip.distance == 4.35667304258651 && rel(p.trip.trip.peakBeta, 0.9514456743125428, tol9()) && p.target.id == "Gl 559")
+}
+-- Row 8: 100 ly, boost_g 1 g, cruise 0.99c.
+pure func checkPlanCoast100() -> bool {
+  let w = plDo(plWorld(false, {defaultParams() | boostG: 1.0}), [plCruise(plAt(100.0), phi099())]).world;
+  plTrip(w, 17.696001151818983, 102.69103232505418) && plField(w, \p. rel(p.trip.trip.peakGamma, 7.088812050083355, tol9()) && !p.trip.fellBack)
+}
+-- Rows 9 and 4: the cruise is unreachable, the plan falls back to flip-and-burn.
+pure func checkPlanFallback() -> bool {
+  let far = plDo(plWorld(false, {defaultParams() | boostG: 1.0}), [plCruise(plAt(1000.0), plPhiCap())]).world;
+  let close = plDo(plWorld(false, defaultParams()), [plCruise(plAt(0.001), plPhiCap())]).world;
+  plTrip(far, 13.448622327743177, 1001.9355569687548) && plField(far, \p. p.trip.fellBack && rel(p.trip.trip.peakGamma, 517.147637776798, tol9())) &&
+  plTrip(close, 0.000017190007186656455, 0.001002579912238613) && plField(close, \p. p.trip.fellBack && rel(p.trip.phiPeak, 6.654436202069182, tol9()))
+}
+
+-- Readouts (design readout table; n = 1e5 m^-3, R = 100 m, m_eff 1 kg, eps 1e-9, f_in 1/2).
+pure func plView(w: World) -> Option[PlanView] = (journeyView(w)).plan
+pure func plViewOk(w: World, g: PlanView -> bool) -> bool = match plView(w) { Some(v) => g(v), None => false }
+pure func plNear(a: float, b: float, absTol: float) -> bool = absf(a - b) <= absTol
+pure func plRow(v: PlanView, boost: float, drag: float, total: float, kg: float, load: float, glow: float, force: float, hold: float, tf: float) -> bool =
+  rel(v.energy.boostJ, boost, tol9()) && rel(v.energy.brakeJ, boost, tol9()) && rel(v.energy.dragJ, drag, tol9()) && rel(v.energy.totalJ, total, tol9()) &&
+  plNear(v.energy.totalKg, kg, 0.0005 * kg) && rel(v.ism.loadWM2, load, tol9()) && rel(v.ism.glowWM2, glow, tol9()) &&
+  rel(v.ism.dragN, force, tol9()) && rel(v.ism.holdW, hold, tol9()) && rel(v.cmbForwardK, tf, tol9())
+pure func plPanel(phi: float) -> World = plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), phi)]).world
+pure func checkPlanReadouts() -> bool {
+  let r09 = plViewOk(plPanel(phi09()), \v. plRow(v, 132316489050019360.0, 40314432176987310.0, 304947410277026050.0, 3.393, 19212.82874513549, 0.0000015052987296077217, 2.0133555741551197, 603588816.4039646, 11.877999621148337) &&
+    plNear(v.boostMinutes, 1.00, 0.005) && rel(v.cruiseBeta, 0.9, tol9()));
+  let r099 = plViewOk(plPanel(phi099()), \v. plRow(v, 237869256192685950.0, 137025773945911980.0, 612764286331283800.0, 6.818, 221961.27278927868, 0.000024071942179266308, 23.25982143207345, 6973119039.76238, 38.44085554458952) &&
+    plNear(v.boostMinutes, 1.80, 0.005) && rel(v.shipYears, 0.6226958707592057, tol9()) && rel(v.earthYears, 4.414143655383168, tol9()) &&
+    rel(v.cruiseBeta, 0.99, tol9()) && rel(v.cruiseOneMinusBeta, 0.01, tol9()) && v.profile == "burn_coast_burn" && !v.fellBack && v.distance == 4.37);
+  let rcap = plViewOk(plPanel(plPhiCap()), \v. plRow(v, 651986541482047200.0, 13800617973906030000.0, 15104591056870126000.0, 168.06, 2253353077.7286806, 0.2812710757763286, 236133.9415328578, 70791174749363.73, 3853.730994033574) &&
+    plNear(v.boostMinutes, 4.93, 0.005) && rel(v.cruiseOneMinusBeta, 0.000001, tol9()) && rel(v.cruiseGamma, 707.106957963309, tol9()));
+  r09 && r099 && rcap && checkPlanDerived() && checkPlanMEff() && checkOneMinusBetaReadout() && checkCommittedView()
+}
+-- Derived fields after a non-zero rest period (1.5 yr at rest; the clock
+-- never pauses, D-12): arrive_year = year + Earth-yr, age_on_arrival = age +
+-- ship-yr, years_left = 100 - (age - start_age) - ship-yr, boost_minutes = tauBurn * 525960.
+pure func checkPlanDerived() -> bool {
+  let p = {defaultParams() | epoch: 2100.0, startAge: 41.0};
+  let rested = tick(plWorld(false, p), {dtau: 1.5, intents: []}).world;
+  let w = plDo(rested, [plCruise(plAcen(), phi099())]).world;
+  let t = rested.ship.motion.t;
+  rested.ship.motion.tau == 1.5 && t == 1.5 &&
+  plViewOk(w, \v. rel(v.arriveYear, 2100.0 + t + 4.414143655383168, tol9()) && rel(v.ageOnArrival, 41.0 + 1.5 + 0.6226958707592057, tol9()) &&
+    rel(v.yearsLeft, 100.0 - 1.5 - 0.6226958707592057, tol9()) && minutesPerYear() == 525960.0 &&
+    plField(w, \pl. v.boostMinutes == pl.trip.tauBurn * 525960.0 && v.earthYears == pl.trip.trip.galaxyTime))
+}
+-- The energy readouts use the scenario's m_eff (M2.2 follow-up): 0.5 kg
+-- halves boost and brake; drag and the ISM readouts do not change.
+pure func checkPlanMEff() -> bool {
+  let half = plDo(plWorld(false, {defaultParams() | mEffKg: 0.5}), [plCruise(plAcen(), phi099())]).world;
+  plViewOk(half, \v. rel(v.energy.boostJ, 0.5 * 237869256192685950.0, tol9()) && rel(v.energy.dragJ, 137025773945911980.0, tol9()) &&
+    rel(v.energy.totalJ, 237869256192685950.0 + 137025773945911980.0, tol9()) && rel(v.ism.dragN, 23.25982143207345, tol9()))
+}
+-- cruise_one_minus_beta comes from the rapidity (oneMinusBeta), never 1 - beta:
+-- with the cap moved to 1e-17, 1 - beta rounds to 0, the readout does not.
+pure func checkOneMinusBetaReadout() -> bool {
+  let p = {defaultParams() | capOneMinusBeta: 0.00000000000000001};
+  let phi = rapidityOfOneMinusBeta(0.00000000000000001);
+  let w = plDo(plWorld(false, p), [plCruise(plAt(10000.0), phi)]).world;
+  plViewOk(w, \v. v.cruiseOneMinusBeta > 0.0 && rel(v.cruiseOneMinusBeta, 0.00000000000000001, tol9()) && v.cruiseOneMinusBeta == oneMinusBeta(phi) && v.cruiseBeta == 1.0)
+}
+-- A committed journey's readout is frozen at the commit (tau0, t0): waiting
+-- does not move the arrival year.
+pure func checkCommittedView() -> bool {
+  let w = plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), phi099())]).world;
+  let c = plDo(w, [ICommit(1)]).world;
+  let later = tick(c, {dtau: 2.0, intents: []}).world;
+  let a = journeyView(c);
+  let b = journeyView(later);
+  a.state == "committed" && b.state == "committed" && a.planId == 1 &&
+  match a.plan { Some(x) => match b.plan { Some(y) => x.arriveYear == y.arriveYear && x.yearsLeft == y.yearsLeft && rel(x.arriveYear, 4.414143655383168, tol9()), None => false }, None => false }
+}
+
+-- Cruise range [rapidityOfBeta(cruise_min_beta), rapidityOfOneMinusBeta(cap)], both ends inclusive.
+pure func plRefused(t: Ticked, why: string) -> bool = refusalsAre(t.refused, [join(":", ["0", why])])
+pure func plAccepted(t: Ticked) -> bool = refusalsAre(t.refused, []) && plId(t.world) > 0
+pure func checkCruiseRange() -> bool {
+  let w = plWorld(false, defaultParams());
+  let lo = rapidityOfBeta(0.9);
+  let cap = plPhiCap();
+  let above = cap + cap * 0.0000000000000002220446049250313;
+  let below = lo - lo * 0.0000000000000002220446049250313;
+  let custom = plWorld(false, {defaultParams() | cruiseMinBeta: 0.5, capOneMinusBeta: 0.01});
+  let refusedFirst = plDo(w, [plCruise(plAcen(), above)]).world;
+  plAccepted(plDo(w, [plCruise(plAcen(), lo)])) && plRefused(plDo(w, [plCruise(plAcen(), below)]), "out_of_range") &&
+  plAccepted(plDo(w, [plCruise(plAcen(), cap)])) && plRefused(plDo(w, [plCruise(plAcen(), above)]), "out_of_range") &&
+  above > cap && below < lo &&
+  plRefused(plDo(w, [plCruise(plAcen(), 0.5)]), "out_of_range") && plRefused(plDo(w, [plCruise(plAcen(), 50.0)]), "out_of_range") &&
+  plAccepted(plDo(custom, [plCruise(plAcen(), rapidityOfBeta(0.5))])) && plAccepted(plDo(custom, [plCruise(plAcen(), phi099())])) &&
+  plRefused(plDo(custom, [plCruise(plAcen(), rapidityOfBeta(0.4))]), "out_of_range") && plRefused(plDo(custom, [plCruise(plAcen(), 3.0)]), "out_of_range") &&
+  isIdle(refusedFirst.journey) && plId(plDo(refusedFirst, [plCruise(plAcen(), cap)]).world) == 1 &&
+  plRefused(plDo(w, [plCruise(plAt(0.0), phi099())]), "out_of_range") && plRefused(plDo(plWorld(true, defaultParams()), [plFlip(plAt(0.0), 1.0)]), "out_of_range") &&
+  plRefused(plDo(plWorld(true, defaultParams()), [plFlip(plAcen(), 0.0)]), "out_of_range")
+}
+-- flip_g, thrust and heading are diag-only (D-12); in diag they are accepted.
+pure func checkDiagOnly() -> bool {
+  let play = plWorld(false, defaultParams());
+  let diag = plWorld(true, defaultParams());
+  let t = plDo(play, [plFlip(plAcen(), 1.0), IThrust(1.0), IHeading({x: 1.0, y: 0.0, z: 0.0}), plCruise(plAcen(), phi099())]);
+  let d = plDo(diag, [plFlip(plAcen(), 1.0), IHeading({x: 1.0, y: 0.0, z: 0.0}), IThrust(0.5)]);
+  refusalsAre(t.refused, ["0:diag_only", "1:diag_only", "2:diag_only"]) && plId(t.world) == 1 && plField(t.world, \p. !p.flip) &&
+  refusalsAre(d.refused, []) && plField(d.world, \p. p.flip)
+}
+-- A committed world: 4.37 ly along +x at 0.99c, committed at rest in a diag
+-- session (so every diag intent would otherwise be accepted).
+pure func plCommittedWorld() -> World = plDo(plDo(plWorld(true, defaultParams()), [plCruise(plAt(4.37), phi099())]).world, [ICommit(1)]).world
+-- One of every Intent constructor (IPlan twice: cruise and diag flip).
+pure func plEveryIntent() -> [Intent] = [plCruise(plAcen(), phi09()), plFlip(plAcen(), 1.0), ICommit(1), ICommit(2), ICancel, IThrust(1.0),
+  IHeading({x: 0.0, y: 1.0, z: 0.0}), IRecord({source: "ai", req: "r", kind: "line", sha256: "00", body: "x"}), IDraw("news"),
+  IEcho({target: plAcen(), cruisePhi: 1.0, flipG: None})]
+pure func plSameCommit(a: World, b: World) -> bool =
+  match a.journey { Committed(x) => (match b.journey { Committed(y) => x.plan.id == y.plan.id && x.tau0 == y.tau0 && x.t0 == y.t0 && x.plan.trip.tauTotal == y.plan.trip.tauTotal, _ => false }), _ => false }
+pure func plAllRefused(c: World, xs: [Intent]) -> bool = match xs {
+  [] => true,
+  x :: more => {
+    let t = tick(c, {dtau: 0.25, intents: [x]});
+    plRefused(t, "committed") && plSameCommit(c, t.world) && t.world.ship.motion.phi == 0.0 && t.world.lastPlanId == c.lastPlanId && plAllRefused(c, more)
+  }
+}
+pure func checkCommittedRefusesAll() -> bool {
+  let c = plCommittedWorld();
+  let all = tick(c, {dtau: 1.0, intents: plEveryIntent()});
+  let p0 = position(c.ship);
+  let p1 = position(all.world.ship);
+  plCommitted(c.journey) && plAllRefused(c, plEveryIntent()) &&
+  refusalsAre(all.refused, ["0:committed", "1:committed", "2:committed", "3:committed", "4:committed", "5:committed", "6:committed", "7:committed", "8:committed", "9:committed"]) &&
+  plSameCommit(c, all.world) && all.world.ship.phase == AtRest && p1.x == p0.x && p1.y == p0.y && p1.z == p0.z && all.world.tick == c.tick + 1
+}
+-- Commit: the at-rest turn to the plan heading, a committed event, tau0/t0
+-- at the commit; the ship holds position until the autopilot (M2.3b).
+pure func checkCommitTurns() -> bool {
+  let w = plDo(plWorld(false, defaultParams()), [plCruise(plAt(4.37), phi099())]).world;
+  let t = tick(w, {dtau: 0.5, intents: [ICommit(1)]});
+  let c = t.world;
+  let h = c.ship.heading;
+  plCommitted(c.journey) && refusalsAre(t.refused, []) && h.x == 1.0 && h.y == 0.0 && h.z == 0.0 &&
+  (match t.events { [e] => e.kind == "committed", _ => false }) &&
+  (match c.journey { Committed(x) => x.tau0 == 0.0 && x.t0 == 0.0 && x.plan.id == 1, _ => false }) &&
+  c.ship.motion.phi == 0.0 && c.ship.motion.tau == 0.5 && position(c.ship).x == 0.0 && checkCommitDropsThrust()
+}
+-- A diag thrust earlier in the commit's tick does not reach the drive: from
+-- the commit on the autopilot owns it.
+pure func checkCommitDropsThrust() -> bool {
+  let w = plDo(plWorld(true, defaultParams()), [plCruise(plAt(4.37), phi099())]).world;
+  let t = tick(w, {dtau: 0.5, intents: [IThrust(1.0), ICommit(1)]});
+  refusalsAre(t.refused, []) && plCommitted(t.world.journey) && t.world.ship.motion.phi == 0.0 && t.world.ship.phase == AtRest && t.world.ledger.boostJ == 0.0
+}
+-- Commit while moving is refused `moving`, also when already heading at the
+-- target; the plan stays.
+pure func checkCommitMoving() -> bool {
+  let moving = go(plWorld(true, defaultParams()), 1.0, 0.1);
+  let t = plDo(moving, [plCruise(plAcen(), phi099()), ICommit(1)]);
+  let along = plDo(moving, [plCruise({index: 2, id: "ahead", pos: {x: 0.0, y: 0.0, z: -9.0}}, phi099()), ICommit(1)]);
+  refusalsAre(t.refused, ["1:moving"]) && plId(t.world) == 1 && !plCommitted(t.world.journey) &&
+  refusalsAre(along.refused, ["1:moving"]) && !plCommitted(along.world.journey)
+}
+-- A plan_id that is not the current plan is refused `stale_plan`: no plan,
+-- a replaced plan, a cancelled plan, or a plan made from another position.
+pure func checkStalePlan() -> bool {
+  let w = plWorld(true, defaultParams());
+  let nothing = plDo(w, [ICommit(1)]);
+  let replanned = plDo(w, [plCruise(plAcen(), phi099()), plCruise(plAcen(), phi09()), ICommit(1)]);
+  let cancelled = plDo(w, [plCruise(plAcen(), phi099()), ICancel, ICommit(1)]);
+  let wrong = plDo(w, [plCruise(plAcen(), phi099()), ICommit(7)]);
+  let planned = plDo(w, [plCruise(plAcen(), phi099())]).world;
+  let moved = go(go(planned, 1.0, 0.1), -1.0, 0.1);
+  let elsewhere = plDo(moved, [ICommit(1)]);
+  let ok = plDo(planned, [ICommit(1)]);
+  refusalsAre(nothing.refused, ["0:stale_plan"]) && isIdle(nothing.world.journey) &&
+  refusalsAre(replanned.refused, ["2:stale_plan"]) && plId(replanned.world) == 2 && !plCommitted(replanned.world.journey) &&
+  refusalsAre(cancelled.refused, ["2:stale_plan"]) && isIdle(cancelled.world.journey) &&
+  refusalsAre(wrong.refused, ["1:stale_plan"]) && !plCommitted(wrong.world.journey) &&
+  absf(moved.ship.motion.phi) < restTolerance() && position(moved.ship).z < 0.0 && refusalsAre(elsewhere.refused, ["0:stale_plan"]) && !plCommitted(elsewhere.world.journey) &&
+  refusalsAre(ok.refused, []) && plCommitted(ok.world.journey)
+}
+-- Plan ids increase monotonically from 1; a replan replaces the plan; cancel
+-- clears it (a no-op with no plan); refused plans take no id.
+pure func checkPlanIds() -> bool {
+  let w = plWorld(false, defaultParams());
+  let a = plDo(w, [plCruise(plAcen(), phi099())]).world;
+  let b = plDo(a, [plCruise(plAt(10.0), phi09())]).world;
+  let c = plDo(b, [ICancel]).world;
+  let c2 = plDo(c, [ICancel]);
+  let d = plDo(c, [plCruise(plAcen(), 0.1), plCruise(plAcen(), phi099())]).world;
+  w.lastPlanId == 0 && isIdle(w.journey) && plId(a) == 1 && plId(b) == 2 && plField(b, \p. p.trip.trip.distance == 10.0 && p.trip.phiPeak == phi09()) &&
+  isIdle(c.journey) && c.lastPlanId == 2 && refusalsAre(c2.refused, []) && isIdle(c2.world.journey) && plId(d) == 3 && d.lastPlanId == 3
+}
+-- The stored plan is the package's: equal to a direct planBurnCoastBurn /
+-- planFlipAndBurn call bit for bit.
+pure func checkPlanIsPackage() -> bool {
+  let a = 750000.0 * standardGravity();
+  let w = plDo(plWorld(true, defaultParams()), [plCruise(plAcen(), phi099())]).world;
+  let f = plDo(plWorld(true, defaultParams()), [plFlip(plGl559(), 1.0)]).world;
+  let want = planBurnCoastBurn(4.37, a, phi099());
+  let wantF = planFlipAndBurn(4.35667304258651, standardGravity());
+  plField(w, \p. p.trip.tauTotal == want.tauTotal && p.trip.trip.galaxyTime == want.trip.galaxyTime && p.trip.dCoast == want.dCoast) &&
+  plField(f, \p. p.trip.tauTotal == wantF.tauTotal && p.trip.trip.galaxyTime == wantF.trip.galaxyTime)
+}
+
+export pure func planVm(n: int) -> string =
+  if checkPlanCruise09() && checkPlanCruise099() && checkPlanCruiseCap() && checkPlanAlphaCen() && checkPlanGl559() && checkPlanCoast100() && checkPlanFallback() &&
+    checkPlanReadouts() && checkCruiseRange() && checkDiagOnly() && checkCommittedRefusesAll() && checkCommitTurns() && checkCommitMoving() && checkStalePlan() && checkPlanIds() && checkPlanIsPackage()
+  then "plan-ok" else "plan-BAD"
 
 export pure func worldVm(n: int) -> string =
   if checkMassClosed() && checkPhaseDerivedDiag() && checkWorldPhases() && checkLedgerDiag() && checkScenarioMEff() && checkRngZero() && checkTickRefusals()
@@ -140,3 +399,19 @@ test "ledger accumulates boost and cruise drag from the package" { checkLedgerDi
 test "scenario refuses m_eff below the brake threshold" { checkScenarioMEff() }
 test "rng counters start at zero" { checkRngZero() }
 test "tick refusals proceed" { checkTickRefusals() }
+test "AC2 plan alpha Cen cruise 0.9c (row 1)" { checkPlanCruise09() }
+test "AC2 plan alpha Cen cruise 0.99c (row 2: 0.6227 ship-yr, 4.414 Earth-yr)" { checkPlanCruise099() }
+test "AC2 plan alpha Cen cruise at the cap (row 3)" { checkPlanCruiseCap() }
+test "AC2 plan alpha Cen 1 g flip, diag (row 6)" { checkPlanAlphaCen() }
+test "AC2 plan Gl 559 catalogue doubles, 1 g flip (row 7)" { checkPlanGl559() }
+test "AC2 plan 100 ly cruise 0.99c at 1 g (row 8)" { checkPlanCoast100() }
+test "AC2 plan falls back to flip-and-burn (rows 9, 4)" { checkPlanFallback() }
+test "AC3 plan readouts equal the readout table and derived fields" { checkPlanReadouts() }
+test "AC4 cruise range refused out_of_range, both ends inclusive" { checkCruiseRange() }
+test "AC4 flip_g, thrust, heading are diag only" { checkDiagOnly() }
+test "AC7 committed world refuses every intent kind" { checkCommittedRefusesAll() }
+test "commit turns to the plan heading and holds position" { checkCommitTurns() }
+test "commit while moving refused moving" { checkCommitMoving() }
+test "stale plan id refused stale_plan" { checkStalePlan() }
+test "plan ids monotonic from 1, replan replaces, cancel clears" { checkPlanIds() }
+test "stored plan is the package's TripPlan bit for bit" { checkPlanIsPackage() }

@@ -16,8 +16,9 @@ import std/math (floor, floatToInt)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
-import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError,
-  Target, PlanReq, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, Refusal, Event, Params, defaultParams)
+import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
+  Target, PlanReq, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, Refusal, Event, Params, defaultParams,
+  PlanView, JourneyView, Energy, Ism, journeyView)
 
 export type Override = { name: string, value: float }
 export type Input =
@@ -27,7 +28,9 @@ export type Input =
   | GQuit
 export type Clock = { tau: float, t: float, year: float, age: float }
 export type ShipView = { phase: string, beta: float, oneMinusBeta: float, gamma: float, heading: Vec3, pos: Vec3, x: float }
-export type StateMsg = { tick: int, status: string, clock: Option[Clock], ship: Option[ShipView], params: Option[Params], events: [Event], refused: [Refusal], full: bool }
+-- Ledger readout (design §M2.1 change-sets): radiated = boost + drag.
+export type LedgerView = { mEffKg: float, availableKg: float, radiatedJ: float, boostJ: float, dragJ: float }
+export type StateMsg = { tick: int, status: string, clock: Option[Clock], ship: Option[ShipView], journey: Option[JourneyView], ledger: Option[LedgerView], params: Option[Params], events: [Event], refused: [Refusal], full: bool }
 export type HelloMsg = { major: int, minor: int, sim: string, relativity: string, rng: string }
 
 export pure func helloMsg() -> HelloMsg = { major: 2, minor: 0, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: "none-0" }
@@ -66,8 +69,9 @@ pure func paramPairs(p: Params) -> [Override] = [
   {name: "cap_one_minus_beta", value: p.capOneMinusBeta}]
 pure func overrides(os: [Override]) -> string = obj(each(\o. f(o.name, num(o.value)), os))
 
+pure func targetObj(t: Target) -> string = obj([f("index", intToStr(t.index)), f("id", q(t.id)), f("pos", vec(t.pos))])
 pure func planFields(p: PlanReq) -> [string] =
-  [f("target", obj([f("index", intToStr(p.target.index)), f("id", q(p.target.id)), f("pos", vec(p.target.pos))])), f("cruise_phi", num(p.cruisePhi))] ++ opt("flip_g", num, p.flipG)
+  [f("target", targetObj(p.target)), f("cruise_phi", num(p.cruisePhi))] ++ opt("flip_g", num, p.flipG)
 pure func encodeIntent(i: Intent) -> string =
   match i {
     IPlan(p) => obj([f("k", q("plan"))] ++ planFields(p)),
@@ -89,9 +93,20 @@ export pure func encodeInput(m: Input) -> string =
 pure func encodeClock(c: Clock) -> string = obj([f("tau", num(c.tau)), f("t", num(c.t)), f("year", num(c.year)), f("age", num(c.age))])
 pure func encodeShip(s: ShipView) -> string =
   obj([f("phase", q(s.phase)), f("beta", num(s.beta)), f("one_minus_beta", num(s.oneMinusBeta)), f("gamma", num(s.gamma)), f("heading", vec(s.heading)), f("pos", vec(s.pos)), f("x", num(s.x))])
+pure func encodePlanView(v: PlanView) -> string =
+  obj([f("target", targetObj(v.target)), f("distance", num(v.distance)), f("profile", q(v.profile)), f("fell_back", bool(v.fellBack)),
+    f("cruise_phi", num(v.cruisePhi)), f("cruise_beta", num(v.cruiseBeta)), f("cruise_one_minus_beta", num(v.cruiseOneMinusBeta)), f("cruise_gamma", num(v.cruiseGamma)),
+    f("boost_minutes", num(v.boostMinutes)), f("ship_years", num(v.shipYears)), f("earth_years", num(v.earthYears)),
+    f("arrive_year", num(v.arriveYear)), f("age_on_arrival", num(v.ageOnArrival)), f("years_left", num(v.yearsLeft)),
+    f("energy", obj([f("boost_j", num(v.energy.boostJ)), f("brake_j", num(v.energy.brakeJ)), f("drag_j", num(v.energy.dragJ)), f("total_j", num(v.energy.totalJ)), f("total_kg", num(v.energy.totalKg))])),
+    f("ism", obj([f("drag_n", num(v.ism.dragN)), f("hold_w", num(v.ism.holdW)), f("load_w_m2", num(v.ism.loadWM2)), f("glow_w_m2", num(v.ism.glowWM2))])),
+    f("cmb_forward_k", num(v.cmbForwardK))])
+pure func encodeJourney(j: JourneyView) -> string = obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", encodePlanView, j.plan))
+pure func encodeLedger(l: LedgerView) -> string =
+  obj([f("m_eff_kg", num(l.mEffKg)), f("available_kg", num(l.availableKg)), f("radiated_j", num(l.radiatedJ)), f("boost_j", num(l.boostJ)), f("drag_j", num(l.dragJ))])
 export pure func encodeState(m: StateMsg) -> string =
   envelope("state", [f("tick", intToStr(m.tick)), f("status", q(m.status)),
-    f("changes", obj(opt("clock", encodeClock, m.clock) ++ opt("ship", encodeShip, m.ship) ++ opt("params", \p. overrides(paramPairs(p)), m.params))),
+    f("changes", obj(opt("clock", encodeClock, m.clock) ++ opt("ship", encodeShip, m.ship) ++ opt("journey", encodeJourney, m.journey) ++ opt("ledger", encodeLedger, m.ledger) ++ opt("params", \p. overrides(paramPairs(p)), m.params))),
     f("events", arr(each(\e. obj([f("k", q(e.kind))] ++ (match e.echo { Some(p) => planFields(p), None => [] })), m.events))),
     f("refused", arr(each(\r. obj([f("i", intToStr(r.i)), f("reason", q(r.reason))]), m.refused))),
     f("full", bool(m.full))])
@@ -115,12 +130,15 @@ pure func str(j: Json, k: string) -> Result[string, string] = req(getString(j, k
 
 pure func decodeIntent(j: Json) -> Result[Intent, string] =
   match getString(j, "k") { Some(k) => intentOf(k, j), None => Err("bad_intent") }
-pure func planOf(j: Json, c: string) -> Result[PlanReq, string] =
+pure func targetOf(j: Json, c: string) -> Result[Target, string] =
   bind(req(get(j, "target"), c), \t.
   bind(req(natF(t, "index"), c), \index. bind(req(getString(t, "id"), c), \id. bind(req(vecF(t, "pos"), c), \pos.
+  Ok({index: index, id: id, pos: pos})))))
+pure func planOf(j: Json, c: string) -> Result[PlanReq, string] =
+  bind(targetOf(j, c), \tg.
   bind(req(numF(j, "cruise_phi"), c), \phi.
   bind(if has(j, "flip_g") then bind(req(numF(j, "flip_g"), c), \g. Ok(Some(g))) else Ok(None), \flip.
-  Ok({target: {index: index, id: id, pos: pos}, cruisePhi: phi, flipG: flip})))))))
+  Ok({target: tg, cruisePhi: phi, flipG: flip}))))
 pure func intentOf(k: string, j: Json) -> Result[Intent, string] =
     if k == "plan" then bind(planOf(j, "bad_intent"), \p. Ok(IPlan(p)))
     else if k == "echo" then bind(planOf(j, "bad_intent"), \p. Ok(IEcho(p)))
@@ -185,6 +203,27 @@ pure func decodeShip(j: Json) -> Result[ShipView, string] =
   bind(req(getString(j, "phase"), bad()), \ph. bind(n(j, "beta"), \b. bind(n(j, "one_minus_beta"), \omb. bind(n(j, "gamma"), \g.
   bind(req(vecF(j, "heading"), bad()), \h. bind(req(vecF(j, "pos"), bad()), \p. bind(n(j, "x"), \x.
   Ok({phase: ph, beta: b, oneMinusBeta: omb, gamma: g, heading: h, pos: p, x: x}))))))))
+pure func sub(j: Json, k: string, g: Json -> Result[a, string]) -> Result[a, string] = bind(req(get(j, k), bad()), g)
+pure func decodeEnergy(j: Json) -> Result[Energy, string] =
+  bind(n(j, "boost_j"), \b. bind(n(j, "brake_j"), \k. bind(n(j, "drag_j"), \d. bind(n(j, "total_j"), \t. bind(n(j, "total_kg"), \kg.
+  Ok({boostJ: b, brakeJ: k, dragJ: d, totalJ: t, totalKg: kg}))))))
+pure func decodeIsm(j: Json) -> Result[Ism, string] =
+  bind(n(j, "drag_n"), \d. bind(n(j, "hold_w"), \h. bind(n(j, "load_w_m2"), \l. bind(n(j, "glow_w_m2"), \g.
+  Ok({dragN: d, holdW: h, loadWM2: l, glowWM2: g})))))
+pure func decodePlanView(j: Json) -> Result[PlanView, string] =
+  bind(targetOf(j, bad()), \tg. bind(n(j, "distance"), \dist. bind(req(getString(j, "profile"), bad()), \prof. bind(req(getBool(j, "fell_back"), bad()), \fb.
+  bind(n(j, "cruise_phi"), \phi. bind(n(j, "cruise_beta"), \cb. bind(n(j, "cruise_one_minus_beta"), \comb. bind(n(j, "cruise_gamma"), \cg.
+  bind(n(j, "boost_minutes"), \bm. bind(n(j, "ship_years"), \sy. bind(n(j, "earth_years"), \ey.
+  bind(n(j, "arrive_year"), \ay. bind(n(j, "age_on_arrival"), \aa. bind(n(j, "years_left"), \yl.
+  bind(sub(j, "energy", decodeEnergy), \en. bind(sub(j, "ism", decodeIsm), \ism. bind(n(j, "cmb_forward_k"), \tk.
+  Ok({target: tg, distance: dist, profile: prof, fellBack: fb, cruisePhi: phi, cruiseBeta: cb, cruiseOneMinusBeta: comb, cruiseGamma: cg,
+      boostMinutes: bm, shipYears: sy, earthYears: ey, arriveYear: ay, ageOnArrival: aa, yearsLeft: yl, energy: en, ism: ism, cmbForwardK: tk}))))))))))))))))))
+pure func decodeJourney(j: Json) -> Result[JourneyView, string] =
+  bind(req(getString(j, "state"), bad()), \st. bind(req(natF(j, "plan_id"), bad()), \id. bind(optF(j, "plan", decodePlanView), \pl.
+  Ok({state: st, planId: id, plan: pl}))))
+pure func decodeLedger(j: Json) -> Result[LedgerView, string] =
+  bind(n(j, "m_eff_kg"), \m. bind(n(j, "available_kg"), \a. bind(n(j, "radiated_j"), \r. bind(n(j, "boost_j"), \b. bind(n(j, "drag_j"), \d.
+  Ok({mEffKg: m, availableKg: a, radiatedJ: r, boostJ: b, dragJ: d}))))))
 pure func decodeFullParams(j: Json) -> Result[Params, string] =
   bind(n(j, "epoch"), \e. bind(n(j, "start_age"), \sa. bind(n(j, "boost_g"), \bg. bind(n(j, "m_eff_kg"), \m. bind(n(j, "ism_n_cm3"), \ism.
   bind(n(j, "bubble_radius_m"), \r. bind(n(j, "glow_eps"), \ge. bind(n(j, "glow_f_in"), \gf. bind(n(j, "cruise_min_beta"), \cb. bind(n(j, "cap_one_minus_beta"), \cap.
@@ -193,11 +232,11 @@ pure func decodeFullParams(j: Json) -> Result[Params, string] =
 export pure func decodeState(line: string) -> Result[StateMsg, string] =
   bind(envelopeOf(line, "state"), \j. bind(check(getString(j, "type") == Some("state"), j, bad()), \_j.
   bind(req(natF(j, "tick"), bad()), \tk. bind(req(getString(j, "status"), bad()), \st. bind(req(get(j, "changes"), bad()), \ch.
-  bind(optF(ch, "clock", decodeClock), \c. bind(optF(ch, "ship", decodeShip), \s. bind(optF(ch, "params", decodeFullParams), \p.
+  bind(optF(ch, "clock", decodeClock), \c. bind(optF(ch, "ship", decodeShip), \s. bind(optF(ch, "journey", decodeJourney), \jy. bind(optF(ch, "ledger", decodeLedger), \lg. bind(optF(ch, "params", decodeFullParams), \p.
   bind(bind(req(getArray(j, "events"), bad()), \es. all(\e. bind(req(getString(e, "k"), bad()), \k. bind(if has(e, "target") then bind(planOf(e, bad()), \p. Ok(Some(p))) else Ok(None), \echo. Ok({kind: k, echo: echo}))), es)), \evs.
   bind(bind(req(getArray(j, "refused"), bad()), \rs. all(\r. bind(req(natF(r, "i"), bad()), \i. bind(req(getString(r, "reason"), bad()), \why. Ok({i: i, reason: why}))), rs)), \refs.
   bind(req(getBool(j, "full"), bad()), \full.
-  Ok({tick: tk, status: st, clock: c, ship: s, params: p, events: evs, refused: refs, full: full}))))))))))))
+  Ok({tick: tk, status: st, clock: c, ship: s, journey: jy, ledger: lg, params: p, events: evs, refused: refs, full: full}))))))))))))))
 export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
   bind(envelopeOf(line, "hello"), \j. bind(check(getString(j, "type") == Some("hello"), j, bad()), \_j. bind(req(get(j, "proto"), bad()), \pr.
   bind(req(natF(pr, "major"), bad()), \ma. bind(req(natF(pr, "minor"), bad()), \mi.
@@ -207,7 +246,7 @@ export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
 -- ------------------------------------------------------------ session
 -- The world and its tick live in core.ail; this is the wire adapter. Diag
 -- `thrust`/`heading` drive core.tick, diag `echo` (test hook) comes back as
--- an event; plan/commit/cancel (M2.3a), draw
+-- an event; plan/commit/cancel follow core's journey rules (M2.3a); draw
 -- (M2.4) and record (2.1) are refused `unsupported` there. Malformed lines
 -- (including a new_game that fails scenario validation) change nothing;
 -- refused intents are listed and the tick proceeds.
@@ -220,9 +259,10 @@ pure func shipOf(s: Ship) -> ShipView {
   let phi = s.motion.phi;
   { phase: phaseName(s.phase), beta: betaOf(phi), oneMinusBeta: oneMinusBeta(phi), gamma: gammaOf(phi), heading: s.heading, pos: position(s), x: s.motion.x }
 }
+pure func ledgerOf(l: Ledger) -> LedgerView = { mEffKg: l.mEffKg, availableKg: l.availableKg, radiatedJ: l.boostJ + l.dragJ, boostJ: l.boostJ, dragJ: l.dragJ }
 pure func tickOf(s: Session) -> int = match s.game { Some(w) => w.tick, None => 0 }
 pure func malformed(s: Session, c: string) -> Served =
-  { session: s, reply: encodeState({tick: tickOf(s), status: c, clock: None, ship: None, params: None, events: [], refused: [], full: false}) }
+  { session: s, reply: encodeState({tick: tickOf(s), status: c, clock: None, ship: None, journey: None, ledger: None, params: None, events: [], refused: [], full: false}) }
 pure func changed(enc: a -> string, before: a, after: a) -> Option[a] = if enc(before) == enc(after) then None else Some(after)
 
 export pure func serve(s: Session, line: string) -> Served =
@@ -237,7 +277,8 @@ export pure func serve(s: Session, line: string) -> Served =
           Some(c) => malformed(s, c),
           None => {
             let w = newWorld(g.seed, g.diag, p);
-            { session: {s | game: Some(w)}, reply: encodeState({tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)), params: Some(w.params), events: [], refused: [], full: true}) }
+            { session: {s | game: Some(w)}, reply: encodeState({tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
+                journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), params: Some(w.params), events: [], refused: [], full: true}) }
           }
         }
       },
@@ -247,7 +288,8 @@ export pure func serve(s: Session, line: string) -> Served =
           let t = tick(w, {dtau: i.dtau, intents: i.intents});
           let next = t.world;
           let state = { tick: next.tick, status: "ok", clock: changed(encodeClock, clockOf(w.params, w.ship), clockOf(next.params, next.ship)),
-            ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), params: None, events: t.events, refused: t.refused, full: false };
+            ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
+            ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), params: None, events: t.events, refused: t.refused, full: false };
           { session: {s | game: Some(next)}, reply: encodeState(state) }
         }
       }
