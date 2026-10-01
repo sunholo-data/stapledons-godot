@@ -1,0 +1,44 @@
+{
+  "sprint_id": "R1-M2-JOURNEY", "milestone": "M2.6a", "round": 1, "pr": 28,
+  "branch": "sprint/m2.6a-map", "evaluator": "independent (not the executor)",
+  "toolchain": "ailang v0.50.0 (runtime/bin), Godot 4.7.2, GPU window",
+  "score": 89, "result": "pass", "hard_fails": [],
+  "breakdown": {"tests_pass": 20, "lint_clean": 10, "acceptance_criteria": 28, "code_quality": 12, "documentation": 10, "design_fidelity": 9},
+  "checks": {
+    "make test": "green (rc 0, includes new ui target)",
+    "test_galaxy_map.gd": "0 failures",
+    "make map-capture": "3 PNGs + panel JSON byte-identical to the committed docs/m2.6a copies (deterministic)",
+    "make capture": "13 PNGs incl. contact sheet byte-identical with main.gd from origin/main vs the branch",
+    "make golden": "0 failures",
+    "AC18 grep": "clean incl. ui/",
+    "panel numbers": "every row's text re-derived from raw in galaxy_map_panel.json; matches the displayed PNG; check_row_4_37ly gives 0.6227 / 4.414 / 1.80 / 6.818",
+    "mutations": {"killed": ["default beta 0.98", "boost format .1f", "kg row bound to total_j", "slider max *0.999", "float32 pos", "zero-rate clock", "preselect emits target_selected"], "survived": ["set_cruise_phi clamp removed (slider already bounds it; sim refuses out-of-range)", "forward-CMB format %.2f -> %.0f (digits only asserted for the check-row rows; label test reuses format_row)"]}
+  },
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      {"file": "ui/galaxy_map.gd:171-175,182-184", "issue": "Godot evaluates rapidity maths (log) for slider ends/default. Package copy exists and ulp probes prove bit-equality on this platform, but the formula lives in GDScript with no sim-provided phi bounds; the AC18 grep cannot see log(). Spirit of 'Godot does no physics' is bent.", "suggestion": "Have the params echo carry cruise_phi_min/max/default (sim-computed) in a later sprint; drop Godot's log()."},
+      {"file": "tests/test_galaxy_map.gd:112-125", "issue": "'every label equals sim value' compares text against GalaxyMap.format_row (circular); only the check-row digits and a few rows pin real formatting.", "suggestion": "Pin literal expected strings for a full panel (the committed panel JSON is a ready golden)."},
+      {"file": "ui/galaxy_map.gd:217-222", "issue": "set_cruise_phi clamp path untested (mutation survived).", "suggestion": "Assert clamping."},
+      {"file": "CHANGELOG.md", "issue": "No changelog entry for M2.6a (landing step).", "suggestion": "Add at landing."},
+      {"file": "ui/galaxy_map.gd", "issue": "LOC: 445 + 27 + 6 + 76 main + 213 test = 776 physical, ~625 non-blank non-comment vs 650 cap; within cap by the stated metric.", "suggestion": "none"},
+      {"file": "docs/m2.6a/galaxy_map.png", "issue": "Slider track is low-contrast against the panel; star labels only for selected star and Sol; field is sparse (nearby-star catalogue).", "suggestion": "M2.6b polish"}
+    ]
+  },
+  "deviations": {
+    "params echo carries betas; Godot derives slider ends/default": "ACCEPTED with note. Package copy exists, so not 'only copy', and ulp probes (accepted at each end, refused out_of_range one ulp past, default echoed bit-for-bit as phi099) prove equality here; but proof is per-platform libm and the cleaner fix is sim-provided phi bounds.",
+    "preselect does not emit target_selected": "ACCEPTED. Matches M4's ask (preselect = open on a known star); tested.",
+    "extras --map=INDEX, make ui / map-capture": "ACCEPTED, small and useful.",
+    "LOC 776 physical vs 650": "ACCEPTED; ~625 by the non-blank non-comment metric."
+  },
+  "key_finding_alpha_cen": "CONFIRMED. Catalogue alpha Cen A = 4.35667304258651 ly (stars.json rounded to 0.01 ly) gives 0.6208 / 4.401 / 6.813 kg; 4.37 ly check row gives 0.6227 / 4.414 / 6.818. PR reports both honestly (panel dump, test, PR body, sprint doc). Not a code defect.",
+  "other_verifications": [
+    "Map never sends new_game: grep shows only main.gd startup (and SimBridge.new_game definition); ui/ has none, so no escape from a commit.",
+    "Clock never pauses (D-12): fixed HOST_DTAU every tick; zero-rate mutation killed.",
+    "Slider linear in rapidity, default 0.99c, ends 0.9c to cap (D-14); capture handle positions consistent.",
+    "pos sent from parsed JSON doubles, not Vector3 (float32 mutation killed); id duplicated for A/B so selection by index.",
+    "No sim/ files touched."
+  ],
+  "captures_view": "Legible 1600x900 map: sparse but sensible coloured star field, Sol and selected Gl 559 ringed with dashed line, 5/10 ly rings, panel text crisp with clocks first, placeholders labelled; numbers on screen equal the panel JSON.",
+  "verdict": "PASS 89/100"
+}

@@ -684,6 +684,35 @@ number on screen is a sim field. The capture is what Mark reviews.
 **Estimated:** 330 code + 100 tests = **430** · **Cap:** 650 · **Iteration:** 6 ·
 **Depends on:** M2.3a, M2.1b · **Registry:** none
 
+**Status (executed 2026-10-01, branch `sprint/m2.6a-map` on `sprint/m2.3a-planner`; independent evaluation pending):**
+- [x] Tests first (`tests/test_galaxy_map.gd` red on missing `GalaxyMap`), then
+  green: 57 checks against the real sim in a fake 800×600 `SubViewport`
+- [x] α Cen A by catalogue **index 1** (Gl 559; B is index 2, same id); the
+  `plan` carries the parsed-JSON doubles (pos.y −4.09 ≠ its float32), the sim
+  echoes them bit for bit, distance = 4.35667304258651 (`checkPlanGl559`)
+- [x] Slider default = `phi099` bits, echoed bit for bit, `cruise_beta` 0.99;
+  min/max = `phi09`/`plPhiCap` bits, accepted at each end, refused
+  `out_of_range` one ulp past (panel shows the refusal)
+- [x] Every row: raw = sim field (bits), text = its formatting; clocks first,
+  then arrival ("Earth +x yr"), age/years left (placeholder), energy, ISM,
+  glow, drag, hold, forward CMB; the clock ticks at 1 ship-day per real second
+  with the panel open (D-12); `target_selected(star_id)`; `preselect(index)`
+- [x] AC15 (part) · AC17 map part (captures opened; copies in `docs/m2.6a/`)
+  · AC18 incl. `ui/` · `make test` (new `ui` target) · `make capture`,
+  `make golden` unchanged
+- **Finding for ⏸ R1:** the catalogue's α Cen A is **4.35667 ly** from Sol
+  (`stars.json` x, y, z are rounded to 0.01 ly), not the check row's 4.37 ly.
+  So the real map at 0.99c reads **0.6208 ship-yr / 4.401 Earth-yr / 1.80
+  min / 6.813 kg**. The 0.6227 / 4.414 / 1.80 / 6.818 digits are check row 2
+  (4.37 ly on an axis). The test formats that row through the same panel and
+  gets exactly those digits, and `--map-capture` dumps it next to the
+  catalogue panels (`check_row_4_37ly`).
+- Deviations: the `params` echo carries betas, not rapidities, so Godot
+  computes the slider's two ends and its 0.99c default from it with the
+  package's own expressions. The ulp probes prove they equal the sim's bounds.
+  `preselect` does not emit `target_selected`. Extras: `--map=INDEX`, and
+  the `make ui` and `make map-capture` targets
+
 **Files:**
 - create `ui/galaxy_map.tscn`, `ui/galaxy_map.gd`:
   - a MultiMesh point cloud from `data/starmap/stars.json` (float32 for
