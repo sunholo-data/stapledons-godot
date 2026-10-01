@@ -27,9 +27,9 @@ Scored against the six pillars (`stapledons-design/vision/core-pillars.md`), as 
 |---|---|---|---|
 | Choices Are Final | ++ | +2 | The commit rule lives in the simulation, has no code path back, and is tested by enumerating every intent against a committed journey. The planner shows costs, not outcomes, so it is not a "branching preview" (excluded by the pillar). Manual thrust exists only in `diag` sessions (D-12) |
 | The Game Doesn't Judge | 0 | 0 | Numbers only; no labels such as "safe" or "reckless" (the old presets' "Dangerous speed" text is dropped). The energy and ISM readouts are joules, watts and kelvin, not verdicts |
-| Time Has Emotional Weight | ++ | +2 | Ship-years against Earth-years, the arrival year and the years of your 100 left lead the panel. Speed now has a real cost: ISM drag energy grows ~γ·d (HB-12) while boost energy grows only as ln γ (HB-8), so trading crew years for home years is a visible, physical trade, and the clock never pauses (D-12) |
+| Time Has Emotional Weight | ++ | +2 | Ship-years against Earth-years, the arrival year and the years of your 100 left lead the panel. Speed now has a real cost: ISM drag energy grows ~γ·d (HB-51…56) while boost energy grows only as ln γ (HB-35…37), so trading crew years for home years is a visible, physical trade, and the clock never pauses (D-12) |
 | The Ship Is Home | 0 | 0 | No interior yet (M4). The felt 1 g is held by the generator, so cruising is never zero-g (D-11 property 3) |
-| Grounded Strangeness | ++ | +2 | Exactly one declared hand-wave (the bubble, three properties); everything else is exact: photon-drive momentum, elastic-mirror ISM drag, the blueshifted forward CMB as a readout (HB-16) |
+| Grounded Strangeness | ++ | +2 | Exactly one declared hand-wave (the bubble, three properties); everything else is exact: photon-drive momentum, elastic-mirror ISM drag, the blueshifted forward CMB as a readout (HB-62) |
 | We Are Not Built For This | 0 | 0 | Crew ages are placeholders; frailty arrives with crew simulation (R2) |
 | Hard-science spec (constraint, not a pillar) | ++ | +2 | Planner = package closed forms to 1e-9; the stepped voyage is checked against them at every phase boundary; readouts equal HB-n check values |
 | **Net** | | **+8** | **Go.** No pillar is at risk. The pausing tension (old OQ4) is resolved by D-12 |
@@ -65,8 +65,8 @@ The spike has one ship, one command and no rules beyond "don't turn while moving
    speed (0.9c–0.999999c, bounded by the γ cap) → brake (minutes)**, no flip,
    with a felt 1 g held by the generator. Felt acceleration is independent of
    mass, so without property 3 reaching 0.999999c at 1 g would take 7.03
-   ship-years (HB-4). The 1 g flip-and-burn α Cen numbers (3.582 ship-yr,
-   6.003 yr, 0.9517c; HB-6) stay as package check values, not the gameplay
+   ship-years (HB-23/24). The 1 g flip-and-burn α Cen numbers (3.582 ship-yr,
+   6.003 yr, 0.9517c; HB-27…29) stay as package check values, not the gameplay
    profile.
 5. **The package's trip functions are not enough to fly a trip.** They return
    totals (`Trip`, `journey.ail:10-16`) but not the phase boundaries or the
@@ -145,7 +145,7 @@ Names are AILANG camelCase; the snake_case names in higgs-bubble §12 map one to
 | `kinematics.rapidityOfOneMinusBeta(e)` | ½(log(2−e) − log e) | the γ cap is stated as 1−β = 1e-6; never form 1−e |
 | `type TripPlan = { trip: Trip, a: float, phiPeak: float, tauBurn: float, tauCoast: float, tauTotal: float, dBurn: float, dCoast: float, fellBack: bool }` | phase boundaries in proper time and distance | the sim switches phase at exact τ |
 | `planBurnCoastBurn(d, a, phiCruise) -> TripPlan` | **gameplay profile.** dBurn = 2 sinh²(φc/2)/a, τburn = φc/a, τcoast = dCoast/sinh φc, t = 2 sinh φc/a + dCoast/tanh φc; falls back to flip-and-burn (`fellBack`) when 2·dBurn ≥ d | φc given as rapidity; `a` is the boost proper acceleration |
-| `planFlipAndBurn(d, a) -> TripPlan` | φp = acosh1p(a·d/2), τburn = φp/a, τcoast = 0 | package check profile (HB-6) and the fallback |
+| `planFlipAndBurn(d, a) -> TripPlan` | φp = acosh1p(a·d/2), τburn = φp/a, τcoast = 0 | package check profile (HB-27…29) and the fallback |
 | `type TripPhase = Accelerating \| Coasting \| Decelerating \| Arrived` | | |
 | `phaseAt(p, tau) -> TripPhase` | boundaries τburn, τburn+τcoast, τtotal; left-closed | one definition for sim and tests |
 | `motionAt(p, tau) -> Motion` | closed form per phase, using 2 sinh²(φ/2)/a for (cosh φ − 1)/a; clamped to [0, τtotal] | reference for the stepped voyage |
@@ -154,22 +154,22 @@ Names are AILANG camelCase; the snake_case names in higgs-bubble §12 map one to
 
 | Function | Formula | HB |
 |---|---|---|
-| `photonDriveEnergy(mEff, phi)` | m_eff c² φ, one boost or one brake (ship frame) | HB-8 |
-| `mirrorDragForce(n, phi, r)` | n sinh²φ m_p c² πR² (specular sphere; a flat mirror would be 2×) | HB-11 |
+| `photonDriveEnergy(mEff, phi)` | m_eff c² φ, one boost or one brake (ship frame) | HB-35…37 |
+| `mirrorDragForce(n, phi, r)` | n sinh²φ m_p c² πR² (specular sphere; a flat mirror would be 2×) | HB-47…50 |
 | `mirrorDragPower(n, phi, r)` | F·c: drive power that holds cruise | — |
-| `cruiseDragEnergy(n, phi, r, dCoast)` | n sinh φ m_p c² πR² dCoast (= F c τcoast) | HB-12 (with dCoast = d) |
-| `loadScale(n, phi)` | n sinh²φ m_p c³ (W/m²) | HB-9 |
-| `kineticFlux(n, phi)` | n sinh φ · 2 sinh²(φ/2) m_p c³ (W/m²) | HB-10 |
-| `glowInwardFlux(n, phi, eps, fIn)` | ε f_in K / 4 (mean over the inner wall) | HB-15 |
+| `cruiseDragEnergy(n, phi, r, dCoast)` | n sinh φ m_p c² πR² dCoast (= F c τcoast) | HB-51…56 (with dCoast = d) |
+| `loadScale(n, phi)` | n sinh²φ m_p c³ (W/m²) | HB-38…43 |
+| `kineticFlux(n, phi)` | n sinh φ · 2 sinh²(φ/2) m_p c³ (W/m²) | HB-44…46 |
+| `glowInwardFlux(n, phi, eps, fIn)` | ε f_in K / 4 (mean over the inner wall) | HB-61 |
 | `tripEnergy(p, mEff, n, r) -> {boost, brake, drag, total}` | boost = brake = m_eff c² φc; drag = `cruiseDragEnergy(.., p.dCoast)`; total = 2 m_eff c² φc + drag | ledger |
 | `brakeHoldsAgainstDrag(mEff, a, n, phi, r)` | m_eff·a ≥ F(φ) | precondition of `tripEnergy` |
-| `optics.forwardDoppler(phi)`, `optics.cmbForwardTemperature(phi)` | e^φ; T_CMB e^φ | HB-16, HB-17 |
+| `optics.forwardDoppler(phi)`, `optics.cmbForwardTemperature(phi)` | e^φ; T_CMB e^φ | HB-62, HB-63 |
 
 Why the boost/brake drag terms drop out of `tripEnergy`: during the boost the
 drive supplies m_eff·a + F, during the brake m_eff·a − F, at the same φ(τ), so
 the drag work cancels over the pair (exact when `brakeHoldsAgainstDrag`; V10
-confirms by numeric integration). Proton energy and plume (HB-13, HB-14) and
-the tidal and hover functions (HB-19…25) are higgs-bubble §12 items for M3/M4;
+confirms by numeric integration). Proton energy and plume (HB-57…60, HB-57…60) and
+the tidal and hover functions (HB-71…90) are higgs-bubble §12 items for M3/M4;
 M2 does not need them.
 
 Existing `flipAndBurn`/`burnCoastBurn` are reimplemented as `planX(...).trip`
@@ -188,7 +188,7 @@ g, unfelt by property 3), default **7.5 × 10⁵ g** (a = 774,221.4566651969 c/y
 = 7.355e6 m/s²): 1.00 ship-minute to 0.9c, 1.80 to 0.99c, 4.93 to 0.999999c.
 The numerics stay finite in rapidity form: at φ = 7.2543, τburn = 9.37e-6 yr,
 dBurn = 2 sinh²(φ/2)/a = 9.12e-4 ly (57.7 AU), galaxy time 8.0 h; no term
-divides by 1−β. HB-7's duration-defined example (10 ship-minutes to 0.99c) is
+divides by 1−β. HB-30…34's duration-defined example (10 ship-minutes to 0.99c) is
 the same function with a = φ/τ (row 5).
 
 Check values, trip (d = 4.37 ly unless stated; a_B = 7.5e5 g):
@@ -196,11 +196,11 @@ Check values, trip (d = 4.37 ly unless stated; a_B = 7.5e5 g):
 | # | Trip | φ | Ship-yr | Earth-yr | HB |
 |---|---|---|---|---|---|
 | 1 | α Cen, cruise 0.9c | 1.4722194895832204 | 2.116489782091437 | 4.8555571747021204 | |
-| 2 | α Cen, cruise 0.99c (slice default, D-14) | 2.6466524123622457 | 0.6226958707592057 | 4.414143655383168 | HB-1, HB-3 |
-| 3 | α Cen, cruise at cap 1−β = 1e-6 (γ = 707.106957963309) | 7.254328619262047 | 0.006196277986522204 | 4.370006949593909 | HB-2, HB-5 |
+| 2 | α Cen, cruise 0.99c (slice default, D-14) | 2.6466524123622457 | 0.6226958707592057 | 4.414143655383168 | HB-16/17, HB-20…22 |
+| 3 | α Cen, cruise at cap 1−β = 1e-6 (γ = 707.106957963309) | 7.254328619262047 | 0.006196277986522204 | 4.370006949593909 | HB-18/19, HB-25/26 |
 | 4 | 0.001 ly at cap: falls back, φ reached 6.654436202069182 | — | 1.7190007186656455e-05 | 0.001002579912238613 | |
-| 5 | α Cen 0.99c, a = φ/(600 s) = 1.3224e6 m/s² | 2.6466524123622457 | 0.6227168354229866 | 4.414153879485825 | HB-7 |
-| 6 | α Cen, flip at 1 g (a = 1.032295275553596 c/yr; peak β 0.9516558449006334, γ 3.2555651770846072) | — | 3.5823937227478337 | 6.00250277725247 | HB-6 |
+| 5 | α Cen 0.99c, a = φ/(600 s) = 1.3224e6 m/s² | 2.6466524123622457 | 0.6227168354229866 | 4.414153879485825 | HB-30…34 |
+| 6 | α Cen, flip at 1 g (a = 1.032295275553596 c/yr; peak β 0.9516558449006334, γ 3.2555651770846072) | — | 3.5823937227478337 | 6.00250277725247 | HB-27…29 |
 | 7 | `Gl 559` catalogue position, 4.35667304258651 ly, flip at 1 g (peak β 0.9514456743125428) | — | 3.5780871495240905 | 5.988497264963769 | |
 | 8 | 100 ly, 1 g, cruise β = 0.99 (peak γ 7.088812050083355) | 2.6466524123622457 | 17.696001151818983 | 102.69103232505418 | |
 | 9 | 1,000 ly, 1 g, cruise γ = 707.1 (unreachable, falls back; peak γ 517.147637776798) | — | 13.448622327743177 | 1001.9355569687548 | |
@@ -213,8 +213,8 @@ Check values, readouts (α Cen; n = 10⁵ m⁻³, R = 100 m, m_eff = 1 kg, ε = 
 | 0.99c | 2.3786925619268595e17 | 1.3702577394591198e17 | 6.127642863312838e17; 6.818 | 221961.27278927868 | 2.4071942179266308e-05 | 23.25982143207345 | 6973119039.76238 | 38.44085554458952 |
 | cap | 6.519865414820472e17 | 1.380061797390603e19 | 1.5104591056870126e19; 168.06 | 2253353077.7286806 | 0.2812710757763286 | 236133.9415328578 | 70791174749363.73 | 3853.730994033574 |
 
-These agree with HB-8, HB-9, HB-11, HB-12 and HB-16 to their printed digits
-(V11). HB-12 uses the full d; the package uses dCoast, which is smaller by
+These agree with HB-35…37, HB-38…43, HB-47…50, HB-51…56 and HB-62 to their printed digits
+(V11). HB-51…56 uses the full d; the package uses dCoast, which is smaller by
 2·dBurn (relative 3.6e-6 at 0.99c, 4.2e-4 at the cap), so the ledger closes
 exactly at arrival. The brief's worked drag numbers (2.7e17 J at 0.99c, 2.8e19
 J at the cap) are a flat face-on mirror, 2× the canon sphere (V11).
@@ -516,7 +516,7 @@ its goldens include every intent.
    brake; no flip; the pocket's acceleration is not felt and the generator
    holds 1 g toward aft, so there is no zero-g coast. Supersedes
    ship-structure "1 g from constant thrust". The 1 g flip-and-burn stays a
-   package check value (HB-6), not the gameplay profile.
+   package check value (HB-27…29), not the gameplay profile.
 2. **Acceleration.** **RESOLVED (D-11).** There is no player-chosen felt
    acceleration: felt gravity is a fixed 1 g comfort setting. The boost
    proper acceleration is an unfelt scenario parameter (`boost_g`, default in
@@ -537,7 +537,7 @@ its goldens include every intent.
    player sees both costs and the γ·d one wins at high speed (the Tau Zero
    theme). Above ~100 kg the boost term would hide the speed cost. Also:
    `boost_g = 7.5e5` (about 5 ship-minutes to the cap) and `glow_eps = 1e-9`
-   with f_in = ½ (inward glow 0.28 W/m² at the cap, inside HB-15's guide).
+   with f_in = ½ (inward glow 0.28 W/m² at the cap, inside HB-61's guide).
    **Default if unanswered:** those three values, as scenario parameters;
    changing them later is a golden regeneration, not code.
 
@@ -567,7 +567,7 @@ its goldens include every intent.
 
 | # | Claim | How checked (2026-10-01) | Result |
 |---|---|---|---|
-| V1 | α Cen 1 g flip check values (HB-6) | `python3` closed form, a = 1.032295275553596 | 3.5823937227478337 / 6.00250277725247 / 0.9516558449006334 |
+| V1 | α Cen 1 g flip check values (HB-27…29) | `python3` closed form, a = 1.032295275553596 | 3.5823937227478337 / 6.00250277725247 / 0.9516558449006334 |
 | V2 | Package has totals but no phase boundaries or φ | read `relativity/0.3.0/journey.ail` | `Trip` = {distance, shipTime, galaxyTime, peakBeta, peakGamma} |
 | V3 | Bitwise ops fail the strict VM; `* / %` pass | v0.47.2 release binary: `n ^ 3`, `n & 3`, `n << 3` under `--bytecode --strict-bytecode` | "effectful builtin `_bitwiseXor_Int` not yet wired (Phase 2E)"; same for And, ShiftLeft, ShiftRight; `*`, `/`, `%` ok. Same on v0.50.0 |
 | V4 | SplitMix64 on the interpreter matches the reference | `ailang run` vs `python3`, seed 0 | both −2152535657050944081 (= `0xe220a8397b1dcdaf`) |
@@ -575,7 +575,7 @@ its goldens include every intent.
 | V6 | Catalogue ids not unique | `python3` over `data/starmap/stars.json` | 3,802 rows, 3,363 ids; `Gl 559` twice at (1.5, −4.09, −0.05), 4.35667 ly |
 | V7 | Staged runtime stale (historical) | `runtime/bin/ailang --version`, `runtime/VERSION` | was v0.45.0; superseded by V8 |
 | V8 | Current pin | `runtime/VERSION`, `.github/workflows/ci.yml`, `sim/ailang.lock` | v0.50.0 in all three; `sunholo/relativity` pinned 0.3.0 in `sim/ailang.toml` |
-| V9 | Cruise-profile trip rows 1–5 | `python3` closed form (burn-coast-burn in rapidity, a_B = 7.5e5·1.032295275553596 c/yr) | as tabled; 0.99c α Cen 227.44 ship-days, 4.414 yr (matches D-14, HB-3); cap 2.263 ship-days (HB-5); boost 1.80 / 4.93 ship-minutes; HB-7 example 26.5 Earth-minutes, 2.77 AU |
+| V9 | Cruise-profile trip rows 1–5 | `python3` closed form (burn-coast-burn in rapidity, a_B = 7.5e5·1.032295275553596 c/yr) | as tabled; 0.99c α Cen 227.44 ship-days, 4.414 yr (matches D-14, HB-20…22); cap 2.263 ship-days (HB-25/26); boost 1.80 / 4.93 ship-minutes; HB-30…34 example 26.5 Earth-minutes, 2.77 AU |
 | V10 | Boost/brake drag work cancels in the ledger | `python3` midpoint integration (2×10⁵ steps) of (m_eff a ± F)c over boost and brake plus F c τcoast, α Cen, m_eff = 1 kg | relative difference from the closed-form total: −2.8e-15 (0.9c), −9.4e-15 (0.99c), 0.0 (cap) |
-| V11 | Readouts vs higgs-bubble and the brief | `python3`, n = 10⁵ m⁻³, R = 100 m, T_CMB = 2.725 K | HB-8/9/11/12/16 reproduced to printed digits; the brief's drag force and energy are 2× (flat mirror; canon is the sphere); brief's "1.7 million suns" = HB-9's 1.66 million rounded; brief's 3,850 K used T = 2.7255 (3,854.4 K) vs HB-16's 3,853.7 K; dCoast vs d differs by 4.2e-4 relative at the cap |
+| V11 | Readouts vs higgs-bubble and the brief | `python3`, n = 10⁵ m⁻³, R = 100 m, T_CMB = 2.725 K | HB-35…37, HB-38…43, HB-47…50, HB-51…56, HB-62 reproduced to printed digits; the brief's drag force and energy are 2× (flat mirror; canon is the sphere); brief's "1.7 million suns" = HB-38…43's 1.66 million rounded; brief's 3,850 K used T = 2.7255 (3,854.4 K) vs HB-62's 3,853.7 K; dCoast vs d differs by 4.2e-4 relative at the cap |
 | V12 | Minimum m_eff for the brake to hold against drag | `python3`: F(φcap)/(7.5e5 g) | 0.0321 kg at the defaults (0.064 kg for a flat mirror) |
