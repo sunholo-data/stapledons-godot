@@ -132,8 +132,9 @@ Godot does no arithmetic on physics or clock values.
   −14`, `iso_yaw_deg 45`, `iso_size_m 16`, focus `[−8, 1, 9]`, a flat walk
   disc, two `INTERACT_` stand-ins, `placeholder: true`). Loader, validator,
   walking and the playthrough bot are developed against it. `assets/areas/bridge/`
-  holds only the approved Blender bundle (S2); the loader refuses
-  `placeholder: true` outside `tests/` in release builds.
+  holds the current bundle (blockout until the bridge v1 bundle arrives); a
+  `placeholder: true` bundle shows a small "placeholder art" tag in the HUD so
+  review builds say what they are.
 - **`make validate-areas`** (`tools/validate_area.py`): alpha exactly 0
   where space shows; camera JSON schema; camera round trip within 1 px; GLB
   Y-up in metres. Runs on the fixture and any delivered bundle.
@@ -207,11 +208,15 @@ A pure module `sim/consequence.ail` beside M2's journey state; I/O stays in
 - **Protocol.** Additive change sets and intents on M2's protocol (a minor
   bump); M2's old-message tests stay green unmodified.
 
-### M4.2 The iso interior with the live sky (art-gated, S2)
+### M4.2 The iso interior with the live sky (art is swappable data)
 
-**Starts only after Mark approves the Blender bridge style frame (S2) and
-the bundle is delivered** (D-14). The code paths are prototyped against the
-fixture during M4.0, but nothing here merges on it.
+**Art is data, iterated in review** (D-16, and Mark 2026-10-01: "get something
+up so I can review it, and then we can tweak as we go"). Bridge style frame v1
+is approved for build-out (D-16). M4.2 is built and merged against whatever area
+bundle is current: the spike blockout first, then the bridge v1 bundle, then
+later revisions. Swapping a bundle is a data drop validated by
+`make validate-areas`, never a code change. Each swap produces a review build
+and captures for Mark.
 
 | # | Layer | Node | Pan factor |
 |---|---|---|---|
@@ -434,7 +439,7 @@ AI process and AC6's `digits` case uses an injected fixture.
 | AC11 | Reference renders in `renders/m4/` on the approved bundle, reviewed by Mark | `make capture-m4`; `grep -n "S1 sign-off" design_docs/implemented/r1/m4-report.md` |
 | AC12 | Bench p99 < 16.7 ms at 2560×1440 | `make bench SCENE=bridge` |
 | AC13 | Bundles valid (fixture and delivered): alpha, camera round trip ≤ 1 px, GLB metres/Y-up | `make validate-areas` |
-| AC14 | The shipped bridge is the approved Blender bundle, not the blockout | `test "$(jq .placeholder assets/areas/bridge/manifest.json)" = false && grep -n "S2 approval" design_docs/implemented/r1/m4-report.md` |
+| AC14 | Art is swappable data: replacing the area bundle (blockout ↔ bridge v1 fixture) needs no code change; `validate-areas` passes for both and the slice runs on each | `make validate-areas BUNDLE=tests/fixtures/areas/bridge_blockout && make validate-areas BUNDLE=assets/areas/bridge && make m4-smoke BUNDLE=tests/fixtures/areas/bridge_blockout` |
 | AC15 | Lore numbers cannot drift: every entry binds every number to its listed checks; HB rows with package functions agree with the package; the drifted fixture fails | `make lore-values lore-check` and `! tools/lore_check.py tests/fixtures/lore/drifted.md` |
 | AC16 | Codex unlocks: the minimum playthrough unlocks the expected entries at the expected events, in order, and the codex shows only unlocked entries | `make playthrough && tools/codex_unlocks.py $(SCRATCH)/session.ndjson tests/expected_unlocks.json` |
 | AC17 | The vendored lore matches the manifest's design-repo sha | `make lore-import CHECK=1` |
@@ -452,27 +457,28 @@ The first draft's AC8 (3-new-player playtest) is removed from R1 (D-14).
 | M4.4 | News panel, templates, AI relay, return trip, legacy screen ⏸ S4 | 250 + 100 | M4.1, M4.3a | no |
 | M4.7 | Lore import, codex UI, unlocks, registry, `lore-check` | 180 + 140 | M4.1; design repo `lore/archive/`, `higgs-bubble.md` | no |
 | M4.5 | Playthrough bot, display audit, replay/parity, time proxy | 120 + 230 | M4.3a, M4.4, M4.7, M2 replay | no (final run on the approved bundle) |
-| M4.2 | Interior scene, composite, glow overlay, walking, interactables | 380 + 100 | ⏸ **S2 approval + bundle**, M4.0, M1.3/M1.5 | **yes** |
+| M4.2 | Interior scene, composite, glow overlay, walking, interactables | 380 + 100 | M4.0, M1.3/M1.5 (any valid bundle) | **yes** |
 | M4.3b | HUD and transit moved into the interior | 40 + 30 | M4.2, M4.3a | **yes** |
 | M4.6 | CPU tests and `lint-precision` (not gated); golden G-M4-1..4, `capture-m4`, bench (gated) ⏸ S1 | 100 + 170 | M4.2, M1.6b | partly |
 | | **Total** | **1,900 + 1,320 ≈ 3,200** | | |
 
-**Order.** Track A (no art) starts when M2's protocol lands: M4.0 ∥ M4.1 →
-M4.3a → M4.4 ∥ M4.7 → M4.5, plus M4.6's CPU tests and lint. Track B (art):
-⏸ S2 approval → bundle delivery and `validate-areas` → M4.2 → M4.3b → M4.6
-goldens, renders, bench → ⏸ S1 → the final playthrough and audit on the
-approved bundle (AC4, AC14).
+**Order (review early, tweak as we go).** Track A (sim and UI) starts when M2's
+protocol lands: M4.0 ∥ M4.1 → M4.3a → M4.4 ∥ M4.7 → M4.5, plus M4.6's CPU tests
+and lint. Track B (interior) runs in parallel from the start on the blockout
+bundle: M4.2 → M4.3b → M4.6 goldens, renders, bench → ⏸ S1. A Blender agent
+builds the bridge v1 bundle (ship-interior brief §7 step 2) at the same time,
+and it drops in when delivered. **First review build:** as soon as M4.0 + M4.2
+run end to end on the blockout (galaxy map → commit → transit view), the loop
+publishes captures and a build for Mark, then keeps doing so at every
+sub-milestone. Tweaks arrive as data (bundles, lore, news templates, scenario
+parameters) wherever possible.
 
-**Critical-path effect.** In the first draft S2 could not block: the slice
-would ship on the blockout. Now M4 lands at max(Track A, S2 approval +
-Blender delivery + ~750 LOC of Track B + S1). About three quarters of the
-LOC is in Track A and none of it waits for art, so the loop works it while art is
-pending. If S2 has not come by the time Track A is done, M4 and bar clause 4
-wait on Mark; the loop records that as the blocker and moves to other queue
-rows. S1 can no longer overlap with S2.
+**Critical-path effect.** Nothing waits on art. M4 lands when both tracks and
+S1 are done; if the bridge v1 bundle hasn't arrived by then, M4 lands on the
+latest delivered bundle and the swap follows as a data change.
 
 **Mark stop points:** **S1** composited reference renders (gate 2); **S2**
-approval of the Blender bridge style frame, blocking Track B (D-14); **S4**
+recurring art review of each delivered bundle (non-blocking since D-16); **S4**
 news template copy. (S3, the human playtest, moved to R2.)
 
 ## Risks and mitigations
@@ -498,8 +504,9 @@ The first draft's seven questions are resolved by the attended rulings of
 2. **RESOLVED (D-14): stand-off** 1,000 AU. Slice default cruise 0.99c, player can change it.
 3. **RESOLVED (D-12, D-14): calendar** relative; epoch and start_age (30) are scenario parameters.
 4. **RESOLVED (D-14): news beat** is an Archive-terminal text panel only.
-5. **RESOLVED (D-14): art (S2).** Wait for Mark's approval of the Blender
-   bridge style frame; nothing ships on the blockout. Bridge only.
+5. **RESOLVED (D-14, superseded by D-16): art (S2).** Bridge style frame v1 is
+   approved for build-out; art is swappable data reviewed as it arrives, and the
+   slice runs on the current bundle. Bridge only.
 6. **RESOLVED (D-14): playtest.** R1 uses the scripted proxy (≤ 360 s, legs
    45–120 s); the 3-new-player playtest moves to R2; bar clause 4 amended.
 7. **RESOLVED (D-12, D-14): time while docked.** No pause; the clock runs at rest at a fixed host rate.

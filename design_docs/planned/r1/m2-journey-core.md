@@ -528,7 +528,7 @@ its goldens include every intent.
    fixed host rate; no pause while planning (Pillar 3).
 5. **Commit ritual.** **RESOLVED (D-12).** One dialog showing both clocks and
    the years left at home, with a 1.5 s hold.
-6. **NEW: m_eff canonical value (and the two other bubble defaults).** m_eff
+6. **RESOLVED (D-15): m_eff canonical value (and the two other bubble defaults)** — m_eff 1 kg, boost 7.5e5 g, ε 1e-9, as recommended. m_eff
    sets the boost energy (m_eff c² φ per boost) and the minimum that lets the
    brake hold against drag; canon says only "tiny but never zero".
    **Recommendation:** `m_eff_kg = 1`. Then at the slice default (0.99c, α Cen)
