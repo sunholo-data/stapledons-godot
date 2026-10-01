@@ -1,22 +1,21 @@
 # Stapledon mission dashboard (snapshot)
 
-- Updated2026-10-01,iteration 7. Live bookkeeping issue#4.
-- Release review build v0.1.0-m0; game pins relativity0.3.0.
-- T1 pure catalogue transform LANDED PR#14,f4dd9bc,merge CI green.
-- Independent Sonnet 5.5 PASS88/100,zero blockers; generator GPT 6.1 Sol.
-- M1 5/12 plus T1 child; full M1.2b/AC2 remains open.
-- Next: bounded float32 writer/sidecars,N1 dwarf clamp test,N2 double trailing
-  blank refusal,tier validation; then full-tier timing/5-run parity,M1.2c.
-- Boundary50,000 and squared-distance range belong to integration/writer.
-- M1.6b camera+golden needs human-reviewed renders; AI foundation routable
-  when M1 pauses. No open decisions,D1–D9 resolved.
-- Bar: clauses 1–4 UNMET,5 ongoing. This landing moves clause 1.
-- Harness share 0/8;last 3 landings each move clause 1.
-- Routing: controller/planner/executor Codex GPT 6.1 Sol; designer not needed;
-  evaluator Agent sonnet unavailable,exact Sonnet 5.5 subscription CLI fallback.
-- Quota: Codex in ration,Ollama over ration unused;metered$0 this iteration.
-- Upstream pure list.reverse strict-VM gap reported GCP user
-  inbox_1790851451419_f085641f;foldl/cons workaround reviewed.
-- Runtime pins: AILANGv0.47.2,Godot4.7.2. Main runtime copy remains stale
-  v0.45.0;queue6 covers hygiene,use the verified iter4 v0.47.2 binary.
-- Full records/evidence in mission log and .ailang/state/evaluations/.
+- Updated2026-10-01, iteration8; bookkeeping issue#4.
+- Release review build v0.1.0-m0; relativity0.3.0 / AILANGv0.50.0 / Godot4.7.2.
+- T2 validated24-byte float32 records LANDED PR#19, merge6efcf53, merge CI green.
+- Independent Anthropic Sonnet5.5 PASS92/100, zero blockers; generator GPT6.1.
+- M1 7/12 including attended background milestones; T1/T2 subchildren done.
+- Full M1.2b/AC2 remains incomplete: writer/sidecars then full-tier integration.
+- NextT3: writer/sidecars, tier validation + pre-sort squared-distance range.
+- NextT4: 50,000 boundary, five full VM/interpreter runs, performance evidence.
+- Then M1.2c stats/tier commits, M1.2d HIP2 bright tier.
+- M1.6b camera/golden needs attended renders; AI foundation routable when M1 pauses.
+- Clauses1–4 UNMET,5 ongoing; T2 advances clause1. Harness share0/9.
+- Last3 landings6/7/8 each move clause1. No drift alarm; no open decisions (D1–D10 resolved).
+- All four roles spawned by Agent tool as requested. Cross-provider native pins rejected;
+  GPT transport ran exact GLM5.3 designer and Sonnet5.5 judge subscription CLIs.
+- Controller/planner/executor GPT6.1; metered$0; native Agent tokens not reported.
+- Quota FLAG: designer started before quota read; Ollama over ration, no further cloud calls.
+- Native F32 strict codec Phase2E gap and imported Row CLI decode reported upstream.
+- Core/WD/transform/sky strict and parity retained; byte oracle ordinary VM + interpreter.
+- Full record and routing evidence: stapledon-mission-log.md; .ailang/state/evaluations/iteration8*.

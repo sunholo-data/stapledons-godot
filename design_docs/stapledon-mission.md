@@ -68,6 +68,8 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-10-01: iteration 8, T2 F32 records LANDED PR#19 `6efcf53`; Sonnet5.5 PASS92/100, zero blockers; M1 7/12 +T1/T2, full M1.2b open; clauses1–4 UNMET,5 ongoing; nextT3 writer/sidecars thenT4 integration; no decisions, harness0/9.
+
 ## STATUS 2026-10-01: iteration 7, M1.2b-T1 LANDED (pure catalogue transform)
 
 - **T1 ✅**: PR #14, merge `f4dd9bc`, complete merge CI green. Package-only
@@ -107,23 +109,6 @@ The newest 3 STATUS stamps live here; older ones move to
   landing). M1 5/12 milestones counting the M1.2b WD prerequisite as done;
   full M1.2b still open. Clause 1 moved. Harness share 0/7; last three
   landings all move clause 1.
-
-## STATUS 2026-09-30: iteration 5, M1.2b-WD1/WD2 LANDED (relativity 0.3.0 published)
-
-- **WD package ✅**: `sunholo/relativity@0.3.0` published (blackbody WD Teff
-  and V from Gaia BP−RP, VEGAMAG zero point Z=0.5906467146); package PR
-  sunholo-data/ailang-packages#83 open for Mark to merge (as 0.2.0 was).
-  Independent MiniMax-M3 **98/100 PASS**, zero blockers; generator Sonnet 5.5.
-  New design doc `m1.2b-wd-photometry.md` (quorum: 2 rounds blocked at N−1 on
-  unmeasured premises, all measured; narrow-refinement carve-out).
-- **Upstream**: ailang#1419 (interpreter NaN > x true, VM false) and ailang#1420
-  (nested cons pattern not compiled for strict VM) filed, both reproduced on
-  v0.47.2 and v0.49.
-- **Next**: M1.2b-WD3 (game pins 0.3.0, `checkWDPackage`, a VM-run NaN
-  assertion), then the bounded catalogue transform. M1.6b stays ready.
-- **Clause map**: 1–4 UNMET, 5 ongoing; M1 4/12 milestones (+WD-1/WD-2 of
-  the M1.2b prerequisite). Clause 1 moved via the package-first WD physics.
-  Harness share 0/6; last three landings all move clause 1.
 
 ## Decision ledger
 
@@ -200,7 +185,7 @@ provider. Physics code gets the strongest available evaluator.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
-1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ✅ (PR #3, merge `5218160`, iter 3, eval 87; parked upstream on ailang#1354/#1355, fixed in v0.47.2, resume predicate verified first-party) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · M1.2b-preflight ✅ (PR #9 `01fe9ef`, iter 4, eval 85; full M1.2b remains open) · M1.2b-WD1/WD2 ✅ (`sunholo/relativity@0.3.0` published, pkg PR #83, iter 5, eval 98; design `m1.2b-wd-photometry.md`) · M1.2b-WD3 ✅ (PR #12 `68575d9`, iter 6, eval 98; pin 0.3.0, `checkWDPackage`, strict-VM `make wd-vm`) · M1.2b-T1 ✅ (PR #14 `f4dd9bc`, iter7, eval88; pure transform/selection only) · [NEXT] bounded float32 writer/sidecars (N1/N2 test gaps, tier validation) → full-tier integration + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted; `teffFromBV` now ships in relativity 0.4.0, since 0.3.0 is the WD release) → M1.3 → M1.5 (M1.4a ✅ D-10 NOIRLab, attended 2026-10-01 · M1.4b/c ✅ PR #16 `8e46c17`, attended, eval 91 Sonnet; AILANG fitter `sim/tools/sky_model.ail`, `make sky-vm`; follow-ups: emission-line model needs package maths, AILANG port of star removal `tools/m14a_destar.py`, input hash for `data/sky/sky_model_report.json`) · M1.6b camera + golden (unblocked; carries the M1.6a follow-up: pin the 1e-9 at-rest tolerance) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
+1. [IN-SPRINT] **M1** sky · clause 1 · sprint `R1-M1-SKY` (`.ailang/state/sprints/sprint_R1-M1-SKY.json`) · M1.0 ✅ · M1.1 ✅ (0.2.0, iter 0) · M1.6a ✅ (PR #3, merge `5218160`, iter 3, eval 87; parked upstream on ailang#1354/#1355, fixed in v0.47.2, resume predicate verified first-party) · M1.2a ✅ (PR #5 `77d3f04`, iter 2, eval 92) · M1.2b-preflight ✅ (PR #9 `01fe9ef`, iter 4, eval 85; full M1.2b remains open) · M1.2b-WD1/WD2 ✅ (`sunholo/relativity@0.3.0` published, pkg PR #83, iter 5, eval 98; design `m1.2b-wd-photometry.md`) · M1.2b-WD3 ✅ (PR #12 `68575d9`, iter 6, eval 98; pin 0.3.0, `checkWDPackage`, strict-VM `make wd-vm`) · M1.2b-T1 ✅ (PR #14 `f4dd9bc`, iter7, eval88; pure transform/selection only) · M1.2b-T2 ✅ (PR #19 `6efcf53`, iter8, eval92; pure F32 records, N1/N2 closed) · [NEXT] T3 writer/sidecars (tier validation, safe squared-distance range, conservative F32 bound on real rows) → T4 full-tier integration + 5-run VM parity → M1.2c stats + tier commits → M1.2d HIP2 bright tier (D-5 accepted; `teffFromBV` now ships in relativity 0.4.0, since 0.3.0 is the WD release) → M1.3 → M1.5 (M1.4a ✅ D-10 NOIRLab, attended 2026-10-01 · M1.4b/c ✅ PR #16 `8e46c17`, attended, eval 91 Sonnet; AILANG fitter `sim/tools/sky_model.ail`, `make sky-vm`; follow-ups: emission-line model needs package maths, AILANG port of star removal `tools/m14a_destar.py`, input hash for `data/sky/sky_model_report.json`) · M1.6b camera + golden (unblocked; carries the M1.6a follow-up: pin the 1e-9 at-rest tolerance) · ~3,000 LOC · note (D-6): M1.4's per-pixel background can start from the spike's `spike/galaxy_sky.gdshader` (inverse aberration + Doppler surface brightness, already built)
 2. [QUEUED] **AI service foundation** (D-9) · feeds clause 4 · design doc needed (routable: designer), written in `design_docs/planned/r1/` from `stapledons-design/features/ai-showcase.md` §5 and §8 plus `art/characters-blender-brief.md` §6 · runs after M1, or earlier in any iteration where M1 is parked or waiting on Mark (e.g. the M1.4a pause) · three milestones: (a) AI service skeleton: a separate AILANG process, an NDJSON request/result protocol relayed by Godot, every result recorded so replays stay byte-identical, a cache index keyed (kind, entity_id, emotion, age_stage, variant), tested headless with a stubbed provider (no key, no spend); (b) emotion-marker grammar for the 8 emotions, shared by text, TTS and the portrait switcher, with a parser and tests; (c) ⏸ Medic style frame: a TTS voice for the accepted Medic, one generated line whose markers swap the existing portraits in a conversation UI; stop for Mark (voice and swap timing) · constraints: D-8 (player's own key, opt-in live generation, model-neutral with Gemini default, no live voice, text-only always available); the sim never calls AI · ~1,200 LOC (estimate)
 3. **M2** journey core · clause 2 · design doc drafted (attended 2026-10-01, `design_docs/planned/r1/m2-journey-core.md`; 5 open questions for Mark) · PRNG blocked on strict-VM bitwise ops (ailang#1450; LCG fallback in the doc) · ~3,100 LOC (estimate)
 4. **M3** black holes · clause 3 · design doc drafted (attended 2026-10-01, `design_docs/planned/r1/m3-black-holes.md`; 4 open questions for Mark, incl. the clause-3 weak-field value: exact deflection at b = 100 r_s is 1.5% above 2r_s/b) · `sunholo/relativity` next free minor (0.5.0 or 0.6.0, shared with M2.0) for the geodesic integrator · M3.1–M3.4 need nothing from M1 · ~2,600 LOC (estimate)
