@@ -2,6 +2,28 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-09-30: iteration 3, M1.6a LANDED
+
+- **M1.6a ✅** (turn at rest, protocol v1.1, bounded bridge): PR #3, merge
+  `5218160`, CI green on the merge. The two AILANG VM bugs that parked it
+  (ailang#1354, ailang#1355) were fixed in v0.47.2 (upstream PR #1371); the
+  resume predicate was re-verified first-party this iteration (`make strict`
+  green incl. strict off-axis, 30/30 `parity-offaxis` byte-identical, full
+  `make test` rc=0). Evaluator round 2 (sonnet; generator pi/deepseek)
+  **87/100 PASS**; minor follow-up carried to M1.6b: no test pins the 1e-9
+  at-rest tolerance.
+- **Three burned slots since iteration 2** (2026-09-28 18:45 KILLED by the
+  stall watchdog, 2026-09-29 00:52 CRASHED at gate-2, 2026-09-29 13:01
+  DIED-PRE-GATE-0 on the session-protocol deadlock): none recorded log
+  entries; the 13:01 slot's discovery (both VM bugs closed upstream) is
+  credited to it and was re-verified first-party this fire.
+- **Clause map:** 1 UNMET (M1.2b routable next; M1.6a landed; M1.6b now
+  unblocked behind it; M1.2c/d, M1.3, M1.4a ⏸ Mark picks the background,
+  M1.4b/c, M1.5 behind) · 2 UNMET (M2 needs a design doc) · 3 UNMET (M3
+  needs a design doc) · 4 UNMET (M4 design doc routable, D-6; AI service
+  foundation (row 2, D-9) routable when M1 pauses on Mark) · 5 ongoing
+  (strict VM and parity green at this landing).
+
 ## STATUS 2026-09-28 (afternoon): iteration 2, M1.2a LANDED
 
 - **M1.2a ✅** (catalogue acquire and parse): CNS5 and GCNS fetched from

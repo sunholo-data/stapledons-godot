@@ -22,6 +22,12 @@
   and real 5,000-row timing. WD fitting, production tiers and binary
   writing remain incomplete and depend on the package prerequisite.
 
+- **M1.2b white-dwarf photometry (iterations 5–6):** `sunholo/relativity@0.3.0`
+  published (blackbody WD Teff and V from Gaia BP−RP); the game pins it,
+  `checkWDPackage` pins the fixture WD row, and `make wd-vm` checks the
+  package's NaN contract on the strict VM (ailang#1419 hides NaN-guard
+  mutants from the interpreter-only `ailang test`). PR #12, merge `68575d9`.
+
 ### M0 spike, 2026-09-27 (~1,900 LOC including tests)
 
 - **Simulation:** AILANG sidecar over NDJSON stdio, about 50 µs per tick
