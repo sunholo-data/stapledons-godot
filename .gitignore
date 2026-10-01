@@ -3,6 +3,7 @@ renders/
 *.import
 sim/.ailang/
 .ailang/cache/
+sim/tools/.ailang/
 data/raw/
 runtime/
 build/

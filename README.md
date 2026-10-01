@@ -21,7 +21,7 @@ the visible band and disappear.
 
 ## Run it
 
-Requires Godot 4.7+ and AILANG 0.45+ on `PATH`, or set `AILANG_BIN`.
+Requires Godot 4.7+ and AILANG 0.50+ on `PATH`, or set `AILANG_BIN`.
 
 ```sh
 make test      # physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (headless)
