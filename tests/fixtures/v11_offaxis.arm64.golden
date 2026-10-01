@@ -1,7 +1,11 @@
-# v1.1 sim output for the v1.1 off-axis log: the reference for `make offaxis-v11-equiv` (AC13).
-# Generated once at M2.1b with the pinned ailang v0.50.0 (6abe1a5); VM and interpreter output identical:
-#   T=$(mktemp -d); git archive e9d35c5 sim | tar -x -C $T
+# v1.1 sim output (arm64) for the v1.1 off-axis log: the reference for `make offaxis-v11-equiv` (AC13).
+# Generated once at M2.1b with ailang v0.50.0 on darwin arm64 (6abe1a5); identical on linux arm64 (CI ubuntu-24.04-arm);
+# VM and interpreter output identical:
+#   T=$(mktemp -d); git archive e9d35c5 sim | tar -x -C $T; (cd $T/sim && ailang lock)
 #   git show e9d35c5:tests/fixtures/offaxis.ndjson | ailang run --bytecode --quiet --package-dir $T/sim --caps IO --entry main $T/sim/ship.ail
+# The sim's float output is architecture-dependent: std/math exp/log differ by 1 ulp between arm64 and
+# x86_64 (Go math package on arm64; flagged for an AILANG report at M2.1b), so v1.1 and v2 agree bit for bit per architecture and
+# `make offaxis-v11-equiv` picks the golden for `uname -m` (aarch64 = arm64).
 # Line 1 is the unsolicited v1.1 startup state, line 2 answers hello, then one line per v1.1 request.
 {"tick":0,"beta":0,"gamma":1,"tau":0,"t":0,"x":0,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":0,"y":0,"z":0},"status":"ok"}
 {"proto":"1.1","tick":0,"beta":0,"gamma":1,"tau":0,"t":0,"x":0,"heading":{"x":0,"y":0,"z":-1},"pos":{"x":0,"y":0,"z":0},"status":"ok"}

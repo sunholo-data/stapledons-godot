@@ -331,6 +331,16 @@ plan, a diag session accepts `{"k": "echo", target, cruise_phi, flip_g?}`
   +0.0 and `9007199254740991.0` is …990. Tests build edge floats from their bit
   patterns.
 
+**Cross-architecture floats (M2.1b finding).** The sim is bit-deterministic
+per architecture (VM = interpreter on each), but not across them: `std/math`
+`exp`/`log` differ by 1 ulp between arm64 (darwin and linux) and x86_64 on
+v0.50.0. For example, `exp(0.2064590551107192)` is `1.229317398921793` on
+arm64 and `1.2293173989217931` on x86_64 (glibc agrees with x86_64). So the
+v1.1 off-axis golden exists once per architecture, and the off-axis v1.1 log
+differs in one `beta`. **M2.5 must plan for this:** CI runs linux x86_64 and
+development runs darwin arm64, so committed replay digests need either one
+golden per architecture or an upstream fix (flagged for an AILANG report).
+
 **Startup.** Since v1.1 was removed (M2.1b), `ship.ail` prints nothing until
 its first input; its first output is the reply to that input, normally the
 `hello` (`make parity-v2` checks both runtimes).
@@ -367,7 +377,8 @@ line byte for byte into an NDJSON log; timeouts and cleanup stay as tested
 move to the new API in the same sub-milestone (diag session, `thrust`
 intents). v1.1 is removed: the `parity`/`parity-offaxis` fixtures become v2
 logs, and a one-time test asserts the v2 off-axis log reproduces v1.1's
-`beta, gamma, tau, t, x, pos` at `e9d35c5` (`tests/fixtures/v11_offaxis.golden`).
+`beta, gamma, tau, t, x, pos` at `e9d35c5` (`tests/fixtures/v11_offaxis.{arm64,x86_64}.golden`;
+one per architecture, see *Cross-architecture floats* below).
 
 **Round-trip tests.** `sim/protocol_test.ail`: for a fixture set of inputs and
 states (including 0.1, 1−2⁻⁵², 5e-324, 1e308, −0.0 and the cap's φ),

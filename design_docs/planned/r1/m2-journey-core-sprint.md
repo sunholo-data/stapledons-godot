@@ -427,7 +427,7 @@ equivalence fixture.
 - [x] v1.1 deleted from `ship.ail`: no startup line, nothing before the first
   input (ship-level check in `make parity-v2`)
 - [x] `parity` generator and `offaxis.ndjson` are v2 logs;
-  `tests/fixtures/v11_offaxis.golden` + `make offaxis-v11-equiv`
+  `tests/fixtures/v11_offaxis.{arm64,x86_64}.golden` + `make offaxis-v11-equiv`
 - [x] AC9 · [x] AC13 (interim) · [x] AC16 · [x] AC17 capture part: 13/13 PNGs
   byte-identical to main; `make golden` 0 failures
 - [x] M2.1a follow-ups: every `inRange` bound pinned (23/23 mutants killed);
@@ -437,6 +437,9 @@ equivalence fixture.
   `echo` intent (plan payload in, `echo` event out), so AC9 stays in M2.1b
 - Known divergence: Godot's JSON reader returns 0.0 for \|x\| ≤ DBL_MIN
   (5e-324, DBL_MIN); asserted as known-divergent, no bit-string fallback
+- Finding (affects M2.5): sim floats differ by 1 ulp between arm64 and x86_64
+  (`std/math` exp/log). The v1.1 golden is kept per architecture (x86_64 one
+  generated on CI), and the equivalence holds bit for bit on each
 
 **Files:**
 - modify `bridge/sim_bridge.gd`:

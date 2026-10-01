@@ -60,7 +60,7 @@ parity-v2:          ## protocol v2 session through ship.ail (hello first, malfor
 offaxis-v11-equiv:  ## AC13 interim: v2 off-axis log reproduces v1.1 (e9d35c5) beta, gamma, tau, t, x, pos bit for bit (folds into make replay at M2.5)
 	@mkdir -p $(SCRATCH)
 	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/offaxis.ndjson > $(SCRATCH)/offaxis_v2.txt
-	python3 tests/offaxis_v11_equiv.py tests/fixtures/v11_offaxis.golden $(SCRATCH)/offaxis_v2.txt
+	python3 tests/offaxis_v11_equiv.py tests/fixtures/v11_offaxis.$$(uname -m | sed s/aarch64/arm64/).golden $(SCRATCH)/offaxis_v2.txt
 
 strict:            ## pure sim core and protocol v2 codecs must run entirely on the bytecode VM (no evaluator fallback)
 	@want=$$(python3 -c "import math; g=1.032295275553596; print(repr(2*math.sinh(g*3.0)/g))"); \
