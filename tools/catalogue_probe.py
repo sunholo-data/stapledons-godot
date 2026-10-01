@@ -37,7 +37,7 @@ def main():
         version = subprocess.check_output([ailang, '--version'], timeout=10).decode()
         lock = json.loads((ROOT / 'sim/ailang.lock').read_text())
         report.update(runtime=version, lock=lock, lock_sha256=sha((ROOT / 'sim/ailang.lock').read_bytes()))
-        assert 'AILANG v0.47.2\n' in version and lock['ailang_version'] == 'v0.47.2' and any(p['name'] == 'sunholo/relativity' and p['version'] == '0.3.0' for p in lock['packages']), 'wrong pinned runtime/package'
+        assert 'AILANG v0.50.0\n' in version and lock['ailang_version'] == 'v0.50.0' and any(p['name'] == 'sunholo/relativity' and p['version'] == '0.3.0' for p in lock['packages']), 'wrong pinned runtime/package'
         rows = []
         sources = []
         for name in ['gcns_head.dat', 'gcns_wd.dat', 'gcns_missing_phot.dat']:
