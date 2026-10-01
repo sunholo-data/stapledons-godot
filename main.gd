@@ -223,6 +223,7 @@ func _run_golden() -> void:
 	starfield.set_ship_position(Vector3.ZERO)
 	failures += await _golden_background_marker()
 	failures += await _golden_background_colour()
+	failures += await _golden_background_tint()
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -304,6 +305,45 @@ func _golden_background_colour() -> int:
 		if not ok: failures += 1
 		print("%s  background colour D %.1f (T %.0f K -> %.0f K)  xy rendered (%.4f, %.4f) want (%.4f, %.4f)  dxy %.4f" % [
 			"ok  " if ok else "FAIL", d, t, t * d, _xy(c).x, _xy(c).y, _xy(want).x, _xy(want).y, err])
+	return failures
+
+
+## Tint carry: an off-locus (emission-pink) texel must render with the
+## chromaticity SkyModel.radiance predicts, at D = 1 (= the photo) and D = 3.
+func _golden_background_tint() -> int:
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	env.glow_enabled = false
+	var b := 0.9
+	var g := Relativity.gamma_of(b)
+	var t_code := SkyModel.encode_t(4000.0)
+	var t := SkyModel.decode_t(t_code)
+	var pink := Color8(200, 60, 110) # off the Planck locus, like an H II region
+	var lin := Vector3(pink.srgb_to_linear().r, pink.srgb_to_linear().g, pink.srgb_to_linear().b)
+	var photo := Image.create(64, 32, false, Image.FORMAT_RGB8)
+	photo.fill(pink)
+	var model := Image.create(64, 32, false, Image.FORMAT_RGBA8)
+	model.fill(Color8(t_code, 0, 0, 255))
+	var sb := SkyBackground.new()
+	sb.attach(env, get_viewport().get_visible_rect().size.y, camera.fov, photo, model)
+	sb.set_velocity(HEADING, b, g)
+	var failures := 0
+	for d: float in [1.0, 3.0]:
+		camera.rotation = Vector3(0, -acos((1.0 - 1.0 / (d * g)) / b), 0)
+		var want := SkyModel.radiance(lin, t, d)
+		sb.set_exposure(0.6 / maxf(want.x, maxf(want.y, want.z)))
+		var img := await _grab()
+		var c := Vector3.ZERO
+		var cx := img.get_width() / 2
+		var cy := img.get_height() / 2
+		for yy in range(cy - 4, cy + 5):
+			for xx in range(cx - 4, cx + 5):
+				var p := img.get_pixel(xx, yy).srgb_to_linear()
+				c += Vector3(p.r, p.g, p.b) / 81.0
+		var err := _xy(c).distance_to(_xy(want))
+		var ok := err < 0.01
+		if not ok: failures += 1
+		print("%s  background tint (off-locus texel) D %.1f  xy rendered (%.4f, %.4f) want (%.4f, %.4f)  dxy %.4f" % [
+			"ok  " if ok else "FAIL", d, _xy(c).x, _xy(c).y, _xy(want).x, _xy(want).y, err])
 	return failures
 
 

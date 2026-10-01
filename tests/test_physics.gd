@@ -117,8 +117,8 @@ func _init() -> void:
 	check("T code 255 decodes to T_HI = 30000 K", SkyModel.decode_t(255), 30000.0, 1e-6)
 	check("T code round trip within 0.6% (4600 K)", SkyModel.decode_t(SkyModel.encode_t(4600.0)) / 4600.0, 1.0, 0.006)
 	var report: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sky/sky_model_report.json"))
-	check("T code range matches tools/sky_model.py (report), low end", report["t_code_range_k"][0], SkyModel.T_LO, 0.0)
-	check("T code range matches tools/sky_model.py (report), high end", report["t_code_range_k"][1], SkyModel.T_HI, 0.0)
+	check("T code range matches sim/tools/sky_model.ail (report), low end", report["t_code_range_k"][0], SkyModel.T_LO, 0.0)
+	check("T code range matches sim/tools/sky_model.ail (report), high end", report["t_code_range_k"][1], SkyModel.T_HI, 0.0)
 	check("committed model fit: luminance-weighted median dxy <= 0.02 (else escalate)", 1.0 if report["luminance_weighted_median_dxy"] <= 0.02 else 0.0, 1.0, 0.0)
 	var tint_t := 4600.0
 	var lin := Blackbody.rgb_unit_luminance(tint_t) * 0.2
