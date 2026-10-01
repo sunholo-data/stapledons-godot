@@ -1,0 +1,17 @@
+{
+  "source_sha256": "147e2454f91c12d8807419e367a08e4daba3a84c6aea8f61ab9a6e195ad818bf",
+  "results": [
+    {
+      "finding": "N1",
+      "correct": "0",
+      "mutant": "16",
+      "existing_predicate": "transform-ok"
+    },
+    {
+      "finding": "N2",
+      "correct": "refused",
+      "mutant": "accepted",
+      "existing_predicate": "transform-ok"
+    }
+  ]
+}

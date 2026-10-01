@@ -932,10 +932,24 @@ M1.4
 - [x] Strict VM entries for transform/selection (including clamps), interpreter parity.
 - [x] Final make test rc0: physics 42/42, AILANG 30/30, extraction 15/15.
 - [x] 33 landed/building production mutants produce BAD; byte-identical restoration.
-- [ ] Independent evaluator verdict (child passes remains null until reviewed).
+- [x] Independent Sonnet5.5: 88/100 PASS, zero blockers; child T1 passes true, full M1.2b remains null.
 
 Execution evidence: `.ailang/state/evidence/iter7/execution.md` and logs there.
 The parent M1.2b is incomplete; binary writing/full-catalogue integration remain.
 The std/list.reverse strict-VM gap was reported upstream and replaced with pure
 foldl reversal. Unknown-tier policy and huge-coordinate distance overflow are
 explicit review residuals in the evidence, not silently claimed as acceptance.
+
+**T1 independent review follow-ups (iteration7, writer/integration owns these):**
+- N1: add dwarf BP-RP 2.5 expecting flags0 and -0.5 expecting16, so replacing
+  bpRpInTable with WD invertibility fails. Controller reproduced flags0->16
+  while existing transformVm remains green.
+- N2: explicitly reject a data row followed by two trailing newlines.
+  Controller reproduced a two-strip mutant accepted it while transformVm stayed green.
+- N3: full integration pins exactly50,000 at the boundary (49999 mutant
+  survives the small fixture). Writer validates quick/medium/large tier names;
+  unknown strings currently pass through. Restrict or safely compare squared
+  distances before binary64 overflow for input ranges beyond the catalogues.
+- N4/N5/N9: declare dead/redundant branches and improve refusal localisation
+  and long-line readability when touching these paths. No new scope in T1.
+- Reports: `.ailang/state/evaluations/eval_R1-M1-SKY_M1.2b-T1_iter7_round1.{json,md}`.
