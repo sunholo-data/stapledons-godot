@@ -133,7 +133,7 @@ The spike has one ship, one command and no rules beyond "don't turn while moving
 
 ### M2.0 Trip phases and bubble energetics in `sunholo/relativity` (package first)
 
-New in the **next free minor** after 0.4.0 (0.4.0 is earmarked for `teffFromBV`; M3.1's geodesics target the same slot, so whichever publishes first takes 0.5.0 and the other 0.6.0; check numbers follow the same rule, M3 doc §M3.1).
+New in **0.4.0** (Mark, attended 2026-10-01: M2.0 takes 0.4.0; `teffFromBV` (M1.2d) and M3.1's geodesics take the next free minors (0.5.0/0.6.0, first to publish takes the lower); check numbers follow publish order, M3 doc §M3.1).
 Additive only, so `Trip` and the three existing functions keep their signatures.
 Names are AILANG camelCase; the snake_case names in higgs-bubble §12 map one to one.
 

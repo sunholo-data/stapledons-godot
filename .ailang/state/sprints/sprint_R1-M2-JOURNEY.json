@@ -1,0 +1,361 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "status": "planned",
+  "created": "2026-10-01T18:40:46Z",
+  "design_doc": "design_docs/planned/r1/m2-journey-core.md",
+  "sprint_plan": "design_docs/planned/r1/m2-journey-core-sprint.md",
+  "github_issues": [],
+  "ailang": {
+    "pin": "v0.50.0",
+    "binary": "/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang",
+    "legend": "$A = pinned binary on every make line (AILANG=$A); $PKG = fresh ailang-packages clone packages/relativity"
+  },
+  "velocity": {
+    "target_loc_per_day": 700,
+    "estimated_total_loc": 3420,
+    "estimated_days": 5,
+    "estimated_iterations": "10 planned + 2-3 contingency (~12-13)",
+    "loc_cap_per_milestone": 650,
+    "basis": "Mission log iterations 0-8 (2026-09-27..10-01): 7/8 unattended items landed first iteration (M1.6a parked on upstream VM bugs); actual counted LOC 130-670 per landing, estimate ratio 0.6x-2.7x (median ~1.0); evals 85-98; ~2.5 iterations/day (3 unattended + 1 attended landing on 2026-10-01). 3,420 LOC / ~12.5 iterations at 2.5/day = ~5 days, ~700 LOC/day (same planning figure as M1)."
+  },
+  "order": [
+    "M2.0_PKG_TRIP_ENERGETICS",
+    "M2.1a_PROTOCOL_CODECS",
+    "M2.1b_BRIDGE_V2",
+    "M2.2_WORLD_LEDGER",
+    "M2.3a_PLANNER_COMMIT",
+    "M2.6a_MAP_PLAN_PANEL",
+    "M2.3b_AUTOPILOT",
+    "M2.6b_COMMIT_RITUAL",
+    "M2.4_PRNG_STREAMS",
+    "M2.5_REPLAY_10K"
+  ],
+  "review_checkpoint": {
+    "after": "M2.6a_MAP_PLAN_PANEL",
+    "iteration": 6,
+    "id": "R1",
+    "what": "first reviewable capture of the galaxy map + sim plan numbers for Mark; loop continues with M2.3b"
+  },
+  "pause_points": [
+    {
+      "id": "P0",
+      "after": null,
+      "what": "plan approval by Mark (now)"
+    },
+    {
+      "id": "P1",
+      "after": "M2.0_PKG_TRIP_ENERGETICS",
+      "what": "controller publish of sunholo/relativity 0.4.0 under the standing grant after independent physics evaluation + full gate"
+    },
+    {
+      "id": "R1",
+      "after": "M2.6a_MAP_PLAN_PANEL",
+      "what": "Mark review checkpoint (map + plan numbers)"
+    },
+    {
+      "id": "R2",
+      "after": "M2.6b_COMMIT_RITUAL",
+      "what": "notify: M4 first review build unblocked"
+    },
+    {
+      "id": "P4",
+      "after": null,
+      "before": "M2.4_PRNG_STREAMS",
+      "what": "bitwise strict-VM re-probe; LCG unless the pin carries the ailang#1450 fix"
+    },
+    {
+      "id": "P5",
+      "after": "M2.5_REPLAY_10K",
+      "what": "golden review, then landing"
+    }
+  ],
+  "findings": [
+    "Design doc HB-n citations do not match canon higgs-bubble.md (e1b565e) IDs; numbers agree; tests cite canon IDs; doc corrected in M2.0 task 0",
+    "ailang#1450 closed upstream 2026-10-01 but bitwise ops still fail --strict-bytecode on v0.50.0 and on the v0.50.0-6 dev build: LCG fallback is the default",
+    "AC18 verbatim fails on the sim/core.ail:48 comment and its markdown-escaped \\| alternation passes vacuously on BSD grep; plan uses the unescaped command and rewords the comment in M2.2",
+    "Registry latest sunholo/relativity is 0.3.0; publish enforces immutability only, so M2.0 takes 0.4.0 (Mark 2026-10-01) (Q1)"
+  ],
+  "questions_for_mark": [
+    "Q1 ANSWERED: M2.0 publishes 0.4.0; teffFromBV and M3.1 take next free minors",
+    "Q2 R1 format: capture + panel dump + review page + tagged macOS build (default) or images only",
+    "Q3 per-milestone cap 650 counted LOC (default) instead of M1.2b's 250"
+  ],
+  "approved": null,
+  "registry_reuse": [
+    {
+      "milestone": "M2.0_PKG_TRIP_ENERGETICS",
+      "package": "sunholo/relativity@0.3.0",
+      "action": "contribute",
+      "reason": "2026-10-01 pkg search relativity/journey/energy: the single physics package (CLAUDE.md gate 3); add plan*/phaseAt/motionAt/acosh1p/rapidityOfOneMinusBeta, module medium, cmbForwardTemperature; publish next free minor 0.4.0"
+    },
+    {
+      "milestone": "M2.1a_PROTOCOL_CODECS",
+      "package": "std/json (bundled v0.50.0)",
+      "action": "depend",
+      "reason": "Shortest round-trip float printing, strict-clean (V5, re-run at start); pkg search json/ndjson/protocol/codec found only unrelated packages; ADR 0001 requires hand-written codecs"
+    },
+    {
+      "milestone": "M2.1b_BRIDGE_V2",
+      "package": "none",
+      "action": "none",
+      "reason": "GDScript bridge; no AILANG package applies"
+    },
+    {
+      "milestone": "M2.2_WORLD_LEDGER",
+      "package": "sunholo/relativity@0.4.0",
+      "action": "depend",
+      "reason": "Ledger, param validation and one_minus_beta use package functions only (AC18)"
+    },
+    {
+      "milestone": "M2.3a_PLANNER_COMMIT",
+      "package": "sunholo/relativity@0.4.0",
+      "action": "depend",
+      "reason": "Planner and readouts are package outputs (planBurnCoastBurn, tripEnergy, medium, optics)"
+    },
+    {
+      "milestone": "M2.3b_AUTOPILOT",
+      "package": "sunholo/relativity@0.4.0",
+      "action": "depend",
+      "reason": "Autopilot uses kinematics.accelerate, journey.phaseAt/motionAt, medium ledger functions"
+    },
+    {
+      "milestone": "M2.4_PRNG_STREAMS",
+      "package": "none",
+      "action": "none",
+      "reason": "pkg search random/prng/rng: no packages; hash: only sunholo/auth (SHA-256 compare) and registry_validator; ADR 0001 rules out std/rand"
+    },
+    {
+      "milestone": "M2.5_REPLAY_10K",
+      "package": "none",
+      "action": "none",
+      "reason": "pkg search replay: no packages; Makefile + cmp + Python stdlib"
+    },
+    {
+      "milestone": "M2.6a_MAP_PLAN_PANEL",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI with no physics"
+    },
+    {
+      "milestone": "M2.6b_COMMIT_RITUAL",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI with no physics"
+    }
+  ],
+  "features": [
+    {
+      "id": "M2.0_PKG_TRIP_ENERGETICS",
+      "description": "sunholo/relativity 0.4.0 (next free minor, package first): hyper.acosh1p, kinematics.rapidityOfOneMinusBeta, journey TripPlan/planBurnCoastBurn (gameplay boost-cruise-brake, fellBack)/planFlipAndBurn/TripPhase/phaseAt/motionAt (flipAndBurn/burnCoastBurn reimplemented as planX(...).trip, signatures unchanged), new module medium (photonDriveEnergy, mirrorDragForce, mirrorDragPower, cruiseDragEnergy, loadScale, kineticFlux, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag; CODATA m_p, T_CMB 2.725), optics.forwardDoppler/cmbForwardTemperature; tools/journey_ref.py python reference; journeyDigest strict entry in _smoke.ail; CHANGELOG/AGENT.md/README/[release] kind feature. Task 0: correct the design doc's HB-n citations to canon IDs (higgs-bubble.md e1b565e; mapping in the sprint plan). Fresh ailang-packages clone only. Executor stops at publish --dry-run; controller publishes (P1).",
+      "estimated_loc": 450,
+      "loc_cap": 650,
+      "dependencies": [],
+      "iteration": 1,
+      "acceptance_criteria": [
+        "Trip check rows 1-9 (design §M2.0) to 1e-12 relative against tools/journey_ref.py output; fellBack on rows 4 and 9; motionAt(p, tauTotal) phi=0, x=d to 1e-12; t and x continuous across boundaries; phaseAt left-closed at each boundary",
+        "Readout table (0.9c, 0.99c, cap; n=1e5 m^-3, R=100 m, m_eff=1 kg, eps=1e-9, f_in=0.5) to 1e-12 relative; canon HB values to printed digits: HB-16..29, HB-35..37, HB-38..43, HB-44..46, HB-47..50, HB-51..56, HB-61, HB-62..63",
+        "Every medium function finite (no NaN/Inf) over a 1e4-point phi sweep of [0, phiCap]; existing 0.3.0 tests unchanged and green",
+        "AC1 (package): cd $PKG && $A test --package . && $A pkg quality . (no PUB gates) && $A pkg info sunholo/relativity (v0.4.0 after controller publish)",
+        "Strict VM equals interpreter bit for bit: $A run --quiet --bytecode --strict-bytecode --entry journeyDigest --args-json 400 _smoke.ail vs the same without the bytecode flags, cmp",
+        "publish --dry-run passes; design doc HB citations corrected to canon IDs"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pause_after": "P1: controller runs ailang publish only after independent PASS (strongest available evaluator, physics) + pkg quality no gates + CHANGELOG + dry run; standing publish grant (2026-09-27, D-1)",
+      "gate": "Irreversible publish under the standing grant; full gate before publish"
+    },
+    {
+      "id": "M2.1a_PROTOCOL_CODECS",
+      "description": "sim/protocol.ail (pure): Input/Intent(plan, commit, cancel, thrust, heading, record, draw)/StateMsg/Params; decodeInput/encodeInput/encodeState/decodeState/encodeHello inverse pairs; envelope v:2 + type; hello first with proto {major 2, minor 0}, sim, relativity, rng 'none-0'; rejection model (malformed: tick unchanged; refused intents listed, tick proceeds); diag thrust/heading step adapter onto today's core; plan/commit/cancel/draw/record refused 'unsupported' until their milestones; ship.ail still serves v1.1 (no 'v' field) so make test stays green; protocolVm strict entry. Task 0: re-run design V5 (std/json shortest round-trip on strict VM) on v0.50.0.",
+      "estimated_loc": 480,
+      "loc_cap": 650,
+      "dependencies": [],
+      "iteration": 2,
+      "acceptance_criteria": [
+        "V5 re-run on v0.50.0 recorded in notes before codec code (encode 0.1+0.2 -> {\"x\":0.30000000000000004} on VM and interpreter)",
+        "AC8: cd sim && $A test --package . (protocol_test.ail): decodeInput(encodeInput(x)) == x and decodeState(encodeState(s)) == s for fixtures incl. 0.1, 1-2^-52, 5e-324, 1e308, -0.0, phiCap 7.254328619262047, ints to 2^53-1; reason codes stable incl. bad_tick, bad_v, bad_intent",
+        "AC10 (part): make strict AILANG=$A (protocolVm strict VM == interpreter)",
+        "make test AILANG=$A green with the v1.1 bridge, parity and parity-offaxis unchanged"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M2.1b_BRIDGE_V2",
+      "description": "bridge/sim_bridge.gd v2: hello(), new_game(seed, scenario, diag, params), send(intents, dtau) -> bool, integer-major check (refuse != 2), mirrored world applying change-sets, record_path byte-for-byte tee, JSON.stringify full_precision; timeouts/cleanup unchanged. main.gd + capture/golden on a diag session with thrust/heading intents. v1.1 removed from ship.ail; parity and offaxis fixtures converted to v2 logs; tests/fixtures/v11_offaxis.golden from e9d35c5 and make offaxis-v11-equiv (folds into make replay at M2.5). Schedule only when no M1 item has bridge/ or main.gd open.",
+      "estimated_loc": 370,
+      "loc_cap": 650,
+      "dependencies": [
+        "M2.1a_PROTOCOL_CODECS"
+      ],
+      "iteration": 3,
+      "acceptance_criteria": [
+        "AC9: godot --headless --path . --script tests/test_sim_bridge.gd (float64 round trip bit-exact for the M2.1a edge fixtures; major 1 and 3 refused; existing timeout/cleanup tests unchanged). If the pos/cruise_phi echo needs the planner, the plan.target.pos part of AC9 moves to M2.3a (record in notes)",
+        "AC13 (interim): make offaxis-v11-equiv AILANG=$A: v2 off-axis log reproduces v1.1 beta, gamma, tau, t, x, pos from e9d35c5 bit for bit",
+        "AC17 (capture part): make capture AILANG=$A && test -s renders/contact_sheet.png; make golden AILANG=$A green (GPU window); renders opened, unchanged from main",
+        "AC16: make test AILANG=$A (parity, parity-offaxis on v2 logs, VM == interpreter)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M2.2_WORLD_LEDGER",
+      "description": "Game pins sunholo/relativity 0.4.0 (toml, lock relocked with $A, make runtime). sim/core.ail: World {tick, seed, params, ship, journey, ledger, rng, diag}; Ship + ShipPhase (AtRest|Boosting|Cruising|Braking); Params with sol defaults (epoch 0, start_age 30, boost_g 7.5e5, m_eff_kg 1, ism_n_cm3 0.1, bubble_radius_m 100, glow_eps 1e-9, glow_f_in 0.5, cruise_min_beta 0.9, cap_one_minus_beta 1e-6); Ledger {mEffKg, availableKg 20000, boostJ, dragJ}; Rng counters {journey, crew, events, galaxy, ai, news}=0; Journey=Idle; tick(world, input). new_game construction + param validation + m_eff_too_small via brakeHoldsAgainstDrag; full state echoes params; clock {tau, t, year, age}; ship one_minus_beta from oneMinusBeta(phi). Reword core.ail:48 'sinh' comment (AC18). Task 0: probe ADT-with-record payloads inside World on strict VM vs interpreter (ailang#1354 fixed v0.47.2; re-check v0.50.0).",
+      "estimated_loc": 330,
+      "loc_cap": 650,
+      "dependencies": [
+        "M2.1a_PROTOCOL_CODECS",
+        "M2.0_PKG_TRIP_ENERGETICS"
+      ],
+      "iteration": 4,
+      "acceptance_criteria": [
+        "ADT-with-record strict-VM probe recorded in notes before World code; divergence -> upstream report + tagged-int fallback",
+        "AC1 (game): grep relativity sim/ailang.toml (0.4.0) && make deps AILANG=$A; a test imports pkg/sunholo/relativity/medium (pin load-bearing)",
+        "AC6 (part): cd sim && $A test --package . (checkMassClosed: available_kg 20000 unchanged); checkParamsEcho, checkParamRange, checkMEffTooSmall (0.03 refused, 0.033 accepted), checkClockFields, checkPhaseDerivedDiag (|phi| < 1e-9 -> AtRest; mutation 0.5 killed)",
+        "AC10 (part): make strict AILANG=$A (scripted*, protocolVm unchanged)",
+        "AC18: ! grep -rnE \"acosh|sinh|cosh|exp\\(|tanh|2\\.0 \\* phi\" sim/core.ail sim/protocol.ail ui/ bridge/ (ui/ only once it exists; unescaped alternation, design finding 3)",
+        "make test AILANG=$A"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M2.3a_PLANNER_COMMIT",
+      "description": "Planner and commit rule in sim/core.ail: Journey = Idle | Planned | Committed | Arrived; plan computes d in float64 scalars and calls planBurnCoastBurn(d, boost_g*standardGravity(), cruise_phi) or (diag flip_g) planFlipAndBurn; plan ids monotonic from 1; journey.plan readouts all package outputs (ship_years, earth_years, arrive_year, age_on_arrival, years_left, boost_minutes, energy via tripEnergy, ism via mirrorDragForce/mirrorDragPower/loadScale/glowInwardFlux, cmb_forward_k); commit does the at-rest turn to plan heading; no Committed -> Planned/Idle arm. Committed holds position until M2.3b.",
+      "estimated_loc": 360,
+      "loc_cap": 650,
+      "dependencies": [
+        "M2.2_WORLD_LEDGER"
+      ],
+      "iteration": 5,
+      "acceptance_criteria": [
+        "AC2: cd sim && $A test --package . (checkPlanCruise09, checkPlanCruise099, checkPlanCruiseCap, checkPlanAlphaCen, checkPlanGl559, checkPlanCoast100, checkPlanFallback) to 1e-9: alpha Cen 0.99c 0.6227 ship-yr / 4.414 Earth-yr; 1 g flip 3.582 / 6.003 / 0.9517c",
+        "AC3: cd sim && $A test --package . (checkPlanReadouts): boost/brake/drag/total energy, drag force, hold power, load, glow, forward CMB, arrival, age, years left, boost minutes equal the readout table and package outputs to 1e-9 relative",
+        "AC4: cd sim && $A test --package . (checkCruiseRange, checkDiagOnly): phi outside [atanh 0.9, phiCap] refused out_of_range; flip_g/thrust/heading outside diag refused diag_only",
+        "AC7: cd sim && $A test --package . (checkCommittedRefusesAll, exhaustive over Intent constructors) and ! grep -nE \"Committed.*=> *(Idle|Planned)\" sim/core.ail; checkCommitMoving (moving), checkStalePlan (stale_plan)",
+        "AC18: ! grep -rnE \"acosh|sinh|cosh|exp\\(|tanh|2\\.0 \\* phi\" sim/core.ail sim/protocol.ail ui/ bridge/ (ui/ only once it exists; unescaped alternation, design finding 3)",
+        "make test AILANG=$A"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M2.6a_MAP_PLAN_PANEL",
+      "description": "ui/galaxy_map.{tscn,gd}: catalogue MultiMesh point cloud (float32 for drawing only), orbit camera, screen-space nearest-star picking, target_selected(star_id) signal, preselect(index) (M4 asks), cruise slider uniform in phi from atanh 0.9 to the cap (endpoints from the sim's params echo), default atanh 0.99 (D-14); side panel showing only sim journey.plan fields (both clocks first, arrival 'Earth +x yr', age on arrival, years left, energy J/kg, ISM load, glow, drag, hold power, forward CMB; crew-age lines 'placeholder'); fixed host clock rate at rest, no pause (D-12). main.gd --map and --map-capture=DIR (galaxy_map.png + galaxy_map_panel.json label->sim field->raw value). tests/test_galaxy_map.gd headless. Triggers review checkpoint R1.",
+      "estimated_loc": 430,
+      "loc_cap": 650,
+      "dependencies": [
+        "M2.3a_PLANNER_COMMIT",
+        "M2.1b_BRIDGE_V2"
+      ],
+      "iteration": 6,
+      "acceptance_criteria": [
+        "AC15 (part): godot --headless --path . --script tests/test_galaxy_map.gd: select alpha Cen by index; plan carries index, id, float64 x,y,z from the parsed JSON dictionary (never a Vector3) and cruise_phi; default slider sends phi = atanh 0.99 echoed bit-exact; every label equals the formatted sim value; tick advances while the panel is open; target_selected fires; preselect works",
+        "AC17 (map part): godot --path . -- --map-capture=renders && test -s renders/galaxy_map.png; image opened and looked at before R1 is posted",
+        "AC18: ! grep -rnE \"acosh|sinh|cosh|exp\\(|tanh|2\\.0 \\* phi\" sim/core.ail sim/protocol.ail ui/ bridge/ (ui/ only once it exists; unescaped alternation, design finding 3) (now including ui/)",
+        "make test AILANG=$A (map test inside make test)",
+        "R1 artefacts: alpha Cen 0.99c panel reads 0.6227 ship-yr, 4.414 Earth-yr, 1.80 boost-min, 6.818 kg total; panel dumps at 0.9c, 0.99c, cap"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pause_after": "R1 REVIEW CHECKPOINT FOR MARK: controller publishes renders/galaxy_map.png, three panel dumps, a private review page artifact and review build tag v0.2.0-m2-map (standing grant); loop continues with M2.3b; M2.6b waits for feedback, default if unanswered when M2.3b lands: build as designed, tweaks as follow-ups"
+    },
+    {
+      "id": "M2.3b_AUTOPILOT",
+      "description": "Autopilot: split dtau at tauBurn, tauBurn+tauCoast, tauTotal inside a tick and apply accelerate with +a_B, 0, -a_B per piece; phase event per crossing with exact tau; at tauTotal snap phi=0 and pos=target.pos, arrived event with residuals |x-d| and |t-(t0+galaxyTime)|; leftover dtau at rest; ledger boostJ += photonDriveEnergy(mEff,|dphi|) in boost/brake, dragJ += mirrorDragPower*dtau_s in cruise; journeyVm strict entry; tests/replays/alpha_cen.ndjson.",
+      "estimated_loc": 250,
+      "loc_cap": 650,
+      "dependencies": [
+        "M2.3a_PLANNER_COMMIT"
+      ],
+      "iteration": 7,
+      "acceptance_criteria": [
+        "AC5: cd sim && $A test --package . (checkVoyageBoundaries: 0.01-yr stepped alpha Cen at 0.99c and at the cap equals motionAt at every boundary to 1e-9; checkArrivalResidual < 1e-9*max(1,d)); a tick holding the whole boost emits two phase events with exact tau",
+        "AC6: cd sim && $A test --package . (checkLedgerAtArrival: equals tripEnergy(...).total to 1e-9 relative; checkMassClosed)",
+        "AC10 (part): make strict AILANG=$A (journeyVm strict VM == interpreter)",
+        "AC14: $A run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/replays/alpha_cen.ndjson | tail -1 | grep '\"arrived\"'",
+        "make test AILANG=$A"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M2.6b_COMMIT_RITUAL",
+      "description": "Commit dialog (D-12): both clocks and years left at home, 1.5 s hold before commit {plan_id} is sent; post-commit Cancel stays enabled and shows the sim's refused: committed with no journey change; transit readout (phase, both clocks, progress); --map-capture mid-transit; Mark's R1 tweaks if any. Completes map -> commit -> transit for M4's first review build (R2).",
+      "estimated_loc": 210,
+      "loc_cap": 650,
+      "dependencies": [
+        "M2.6a_MAP_PLAN_PANEL",
+        "M2.3b_AUTOPILOT"
+      ],
+      "iteration": 8,
+      "acceptance_criteria": [
+        "AC15: godot --headless --path . --script tests/test_galaxy_map.gd (adds: no commit sent before 1.5 s of hold on a fake clock; post-commit Cancel -> refused committed, journey unchanged)",
+        "AC17: make capture AILANG=$A && test -s renders/contact_sheet.png && godot --path . -- --map-capture=renders && test -s renders/galaxy_map.png (both opened and looked at)",
+        "make test AILANG=$A"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pause_after": "R2 notify (not a stop): map -> plan -> commit -> transit runs end to end; M4 first review build unblocked on the M2 side"
+    },
+    {
+      "id": "M2.4_PRNG_STREAMS",
+      "description": "Counter-based pure PRNG mix(seed, streamId, counter) with fixed-record streams journey, crew, events, galaxy, ai, news; draw {stream} intent (diag only, value in events); rng algorithm id in hello and rng change-set; tools/rng_ref.py; rngVm strict entry. P4: re-probe bitwise ops on the pinned binary first. Default LCG fallback (64-bit LCG state*6364136223846793005+inc wrapping, high 32 bits by division; rng 'lcg64hi-1'); SplitMix64 ('splitmix64-1', seed 0 -> 0xe220a8397b1dcdaf) only if the pin has moved to a release with the ailang#1450 fix (closed upstream 2026-10-01 but still failing on v0.50.0).",
+      "estimated_loc": 260,
+      "loc_cap": 650,
+      "dependencies": [
+        "M2.2_WORLD_LEDGER"
+      ],
+      "iteration": 9,
+      "acceptance_criteria": [
+        "Bitwise strict-VM re-probe result and chosen algorithm recorded in notes",
+        "AC11: python3 tools/rng_ref.py --check (first 1,000 values of every stream bit for bit; chi-square on 1e5 draws per stream p > 0.001) and cd sim && $A test --package . (checkRngVectors, checkStreamsIndependent; seed and stream id fully determine output; wrap-around tested on both runtimes)",
+        "AC10 (part): make strict AILANG=$A (rngVm strict VM == interpreter)",
+        "make test AILANG=$A"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M2.5_REPLAY_10K",
+      "description": "tests/replays/*.ndjson + *.state.ndjson goldens (alpha_cen, offaxis_v11_equiv, a Godot record_path log); tools/gen_session.py deterministic session10k.ndjson (plan, replan, commit, alpha Cen 0.99c voyage with cancel/thrust/replan attempts in transit, arrival, cap voyage, 100-ly voyage, diag 1 g flip voyage, out-of-range phi, draw on every stream, each malformed kind once; only session10k.state.sha256 committed); make replay (VM vs interpreter cmp, then golden cmp/shasum -c, prints ailang version, SESSION= for M4), make replay-record LOG= (never in make test); make test gains replay; parity targets point at the harness; CI step (10k timing measured first; >60 s -> 10k on main, 2k on PRs); design_docs/implemented/r1/m2-report.md. Then landing.",
+      "estimated_loc": 280,
+      "loc_cap": 650,
+      "dependencies": [
+        "M2.3b_AUTOPILOT",
+        "M2.4_PRNG_STREAMS",
+        "M2.1b_BRIDGE_V2"
+      ],
+      "iteration": 10,
+      "acceptance_criteria": [
+        "AC12: make replay AILANG=$A (10k-tick session VM output cmp-identical to interpreter output and to the committed golden digest)",
+        "AC13: make replay AILANG=$A (case offaxis_v11_equiv)",
+        "AC16: make test AILANG=$A locally and in CI (includes replay, strict, wd-vm, catalogue-vm)",
+        "Every golden is a reviewed replay-record diff; m2-report.md records 10k timings, residuals, PRNG algorithm, upstream reports"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pause_after": "P5 golden review, then landing: design doc + plan to design_docs/implemented/r1/, design repo roadmap M2 status + journey-system.md superseded note, changelog"
+    }
+  ]
+}

@@ -221,7 +221,7 @@ stars”; committed scope).**
   (`stars_bright.bin`), always loaded on top of whichever tier is active.
   - Hipparcos gives B−V, not BP−RP, so T_eff and V need a B−V relation. The
     rule is package first: `teffFromBV` goes into `sunholo/relativity`, using
-    the B−V column of the same Mamajek table (0.4.0).
+    the B−V column of the same Mamajek table (next free minor: 0.4.0 went to M2.0, Mark 2026-10-01).
   - Distances beyond ~500 pc have large parallax errors. The direction is
     exact, and only the parallax (1/r²) rescale during travel is affected.
     The flux at Sol is V itself, not 1/r².
@@ -529,7 +529,7 @@ velocity. The camera orientation is client state and never goes to the sim.
 |---|---|---|---|
 | M1.1 | Package `photometry` 0.2.0 | 250 + 250 | — |
 | M1.2 | Catalogue pipeline v2 plus AILANG transform, parity and benchmark; `process_stars.sh` removed and `starmap-manager` scripts and skill fixed (+80) | 430 + 150 | M1.1 |
-| M1.2d | ACCEPTED (D-5, 2026-09-28): HIP2 bright tier, GCNS cross-match, `teffFromBV` in the package (0.4.0), AC11 audit | 150 + 100 | M1.2 |
+| M1.2d | ACCEPTED (D-5, 2026-09-28): HIP2 bright tier, GCNS cross-match, `teffFromBV` in the package (next free minor; 0.4.0 went to M2.0 on 2026-10-01), AC11 audit | 150 + 100 | M1.2 |
 | M1.3 | Star rendering v2 (binary loader, 331k instances, rebasing) | 250 + 150 | M1.2 |
 | M1.4 | Background: data spike, spectral model, sky shader | 400 + 200 | M1.1; **user decision after M1.4a** |
 | M1.5 | Photometric exposure and bench mode | 150 + 100 | M1.3, M1.4 |
@@ -570,7 +570,7 @@ Suggested order: M1.1 → (M1.2 ∥ M1.6) → [M1.2d] → M1.3 → M1.4 → M1.5
    (Mark Edmondson, attended: “Yes I accept those stars”).** Original
    question text kept for the record: accept the proposed M1.2d, a
    Hipparcos (HIP2, `I/311`) tier for stars with V < 7 that aren't in GCNS or
-   CNS5, together with AC11 and `teffFromBV` in `sunholo/relativity` 0.4.0
+   CNS5, together with AC11 and `teffFromBV` in `sunholo/relativity` (next free minor; 0.4.0 went to M2.0 on 2026-10-01)
    (about +250 LOC)? Without it, stars like Rigel and Deneb exist only as
    panorama pixels (Option A) or not at all (Option B). **Recommendation:
    accept.** And if you pick Option B in question 1, treat M1.2d as required.
