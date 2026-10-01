@@ -6,7 +6,7 @@ module stapledons/sim/protocol_test
 -- M2.2 world over the wire (params, m_eff_too_small, clock, phase) and the
 -- M2.3a journey and ledger sections.
 -- `protocolVm` runs the checks on the strict VM (`make strict`, AC10).
-import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, Params, Refusal, Event, defaultParams,
+import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, Params, Refusal, Event, Crossing, Residuals, event, defaultParams,
   Target, PlanView, JourneyView, Energy, Ism, World, newWorld, tick, journeyView)
 import ./protocol (Input, GHello, GNewGame, GInput, GQuit, StateMsg, Clock, ShipView, LedgerView, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, newSession, serve, num)
 import pkg/sunholo/relativity/medium (photonDriveEnergy)
@@ -58,7 +58,9 @@ pure func none(o: Option[a]) -> bool = match o { None => true, Some(_) => false 
 pure func someEq(f: (a, a) -> bool, x: Option[a], y: Option[a]) -> bool =
   match x { Some(p) => match y { Some(q) => f(p, q), None => false }, None => match y { None => true, Some(_) => false } }
 pure func refusalEq(a: Refusal, b: Refusal) -> bool = a.i == b.i && a.reason == b.reason
-pure func eventEq(a: Event, b: Event) -> bool = a.kind == b.kind && someEq(planEq, a.echo, b.echo)
+pure func crossingEq(a: Crossing, b: Crossing) -> bool = a.from == b.from && a.to == b.to && feq(a.tau, b.tau)
+pure func residualsEq(a: Residuals, b: Residuals) -> bool = feq(a.x, b.x) && feq(a.t, b.t) && feq(a.phi, b.phi)
+pure func eventEq(a: Event, b: Event) -> bool = a.kind == b.kind && someEq(planEq, a.echo, b.echo) && someEq(crossingEq, a.phase, b.phase) && someEq(residualsEq, a.arrived, b.arrived)
 pure func targetEq(a: Target, b: Target) -> bool = a.index == b.index && a.id == b.id && veq(a.pos, b.pos)
 pure func planViewEq(a: PlanView, b: PlanView) -> bool =
   targetEq(a.target, b.target) && feq(a.distance, b.distance) && a.profile == b.profile && a.fellBack == b.fellBack &&
@@ -113,7 +115,8 @@ pure func stateFixtures() -> [StateMsg] = [
     ship: Some({phase: "rest", beta: negZero(), oneMinusBeta: 1.0, gamma: 1.0e308, heading: {x: 0.0, y: 0.0, z: -1.0}, pos: {x: phiCap(), y: 0.1, z: tiny()}, x: 1.0e308}),
     journey: Some({state: "planned", planId: maxInt(), plan: Some(edgeView())}),
     ledger: Some({mEffKg: 0.5, availableKg: 20000.0, radiatedJ: 1.0e308, boostJ: tiny(), dragJ: negZero()}),
-    params: Some(defaultParams()), events: [{kind: "phase", echo: None}, {kind: "echo", echo: Some(edgePlan())}, {kind: "committed", echo: None}], refused: [{i: 0, reason: "unsupported"}, {i: maxInt(), reason: "diag_only"}], full: true },
+    params: Some(defaultParams()), events: [{event("phase") | phase: Some({from: "boosting", to: "cruising", tau: 0.0000034232612397})}, {event("echo") | echo: Some(edgePlan())}, event("committed"),
+      {event("phase") | phase: Some({from: "braking", to: "at_rest", tau: negZero()})}, {event("arrived") | arrived: Some({x: tiny(), t: 1.0e308, phi: negZero()})}], refused: [{i: 0, reason: "unsupported"}, {i: maxInt(), reason: "diag_only"}], full: true },
   { tick: maxInt(), status: "bad_tick", clock: None, ship: None, journey: None, ledger: None, params: None, events: [], refused: [], full: false },
   { tick: 7, status: "ok", clock: Some({tau: 1.0e308, t: -1.0e308, year: 0.0, age: 30.0}), ship: None, journey: Some({state: "idle", planId: 0, plan: None}), ledger: None, params: None, events: [], refused: [], full: false }
 ]
@@ -253,7 +256,7 @@ pure func checkEcho() -> bool {
   let m = stateOf(d.reply);
   let p = feed(newSession(), [hello(), playGame(), echoLine(1, "{\"x\":0.1,\"y\":5e-324,\"z\":-4.09}", "0.1")]);
   let pm = stateOf(p.reply);
-  m.status == "ok" && m.tick == 1 && allEq(eventEq, m.events, [{kind: "echo", echo: Some(edgePlan())}]) && allEq(refusalEq, m.refused, []) &&
+  m.status == "ok" && m.tick == 1 && allEq(eventEq, m.events, [{event("echo") | echo: Some(edgePlan())}]) && allEq(refusalEq, m.refused, []) &&
   pm.status == "ok" && pm.tick == 1 && allEq(eventEq, pm.events, []) && allEq(refusalEq, pm.refused, [{i: 0, reason: "diag_only"}])
 }
 
@@ -323,7 +326,7 @@ pure func checkJourneyOnWire() -> bool {
   jstate(pm) == "planned:1" && someEq(planViewEq, viewOf(pm), (journeyView(w)).plan) &&
   jstate(stateOf(wait.reply)) == "planned:1" &&
   (match viewOf(stateOf(wait.reply)) { Some(v) => match viewOf(pm) { Some(u) => v.arriveYear == u.arriveYear + 0.5 && v.yearsLeft == 100.0 - 0.5 - v.shipYears, None => false }, None => false }) &&
-  jstate(cm) == "committed:1" && allEq(eventEq, cm.events, [{kind: "committed", echo: None}]) && allEq(refusalEq, cm.refused, []) &&
+  jstate(cm) == "committed:1" && allEq(eventEq, cm.events, [event("committed")]) && allEq(refusalEq, cm.refused, []) &&
   none(am.journey) && allEq(refusalEq, am.refused, [{i: 0, reason: "committed"}]) && am.tick == 4
 }
 -- The alpha Cen 0.99c panel as the wire carries it (design AC2/AC3 headline:
@@ -358,10 +361,28 @@ pure func checkLedgerOnWire() -> bool {
   match viewOf(stateOf(pe.reply)) { Some(v) => v.energy.boostJ == photonDriveEnergy(0.5, 2.6466524123622457) && v.energy.totalJ == 2.0 * v.energy.boostJ + v.energy.dragJ, None => false }
 }
 
+-- ------------------------------------------------- M2.3b autopilot over the wire
+-- A committed alpha Cen journey flown in one 1-yr tick: four `phase` events
+-- (from, to, tau) and one `arrived` event (residuals), bit for bit core's;
+-- the journey section turns `arrived`, the ship rests at the target.
+pure func eventKinds(es: [Event]) -> string = join(",", map(\e. e.kind, es))
+pure func checkArrivalOnWire() -> bool {
+  let g = feed(newSession(), [hello(), playGame(), tickLine(1, "0", acenPlan("2.6466524123622457")), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}")]);
+  let a = feed(g.session, [tickLine(3, "1", "")]);
+  let m = stateOf(a.reply);
+  let rq = {target: {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None};
+  let w = tick(tick(newWorld(7, false, defaultParams()), {dtau: 0.0, intents: [IPlan(rq)]}).world, {dtau: 0.0, intents: [ICommit(1)]}).world;
+  let t = tick(w, {dtau: 1.0, intents: []});
+  m.status == "ok" && jstate(m) == "arrived:1" && allEq(eventEq, m.events, t.events) &&
+  eventKinds(m.events) == "phase,phase,phase,phase,arrived" &&
+  (match m.ship { Some(s) => s.phase == "at_rest" && veq(s.pos, {x: 0.0, y: 0.0, z: -4.37}) && feq(s.beta, 0.0), None => false }) &&
+  (match m.ledger { Some(l) => feq(l.boostJ, t.world.ledger.boostJ) && feq(l.dragJ, t.world.ledger.dragJ) && l.dragJ > 0.0, None => false })
+}
+
 pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures()) ++ map(encodeState, stateFixtures()) ++ [encodeHello(helloMsg())]
 export pure func protocolVm(n: int) -> string =
   if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho() &&
-    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire()
+    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire() && checkArrivalOnWire()
   then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
 
 test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }

@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.50.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim parity parity-offaxis parity-v2 offaxis-v11-equiv strict wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim parity parity-offaxis parity-v2 offaxis-v11-equiv strict journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim parity parity-offaxis parity-v2 offaxis-v11-equiv strict wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: deps import physics sim parity parity-offaxis parity-v2 offaxis-v11-equiv strict journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
@@ -84,6 +84,22 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry planVm --args-json 0 sim/core_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry planVm --args-json 0 sim/core_test.ail); \
 	echo "strict planVm: VM $$got | interpreter $$interp"; [ "$$got" = "plan-ok" ] && [ "$$interp" = "plan-ok" ]
+	@# journeyVm: alpha Cen 0.99c, commit, 70 ticks of 0.01 yr; arrived, then at rest. Closed form: galaxyTime + (0.7 - tauTotal)
+	@want=$$(python3 -c "import math; a=750000*1.032295275553596; p=2.6466524123622457; d=4.37; db=2*math.sinh(p/2)**2/a; dc=d-2*db; print(repr(2*math.sinh(p)/a + dc/math.tanh(p) + 0.7 - (2*p/a + dc/math.sinh(p))))"); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry journeyVm --args-json 70 sim/core.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry journeyVm --args-json 70 sim/core.ail); \
+	echo "strict journeyVm VM $$got | interpreter $$interp | closed form $$want"; \
+	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)"
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry voyageVm --args-json 0 sim/core_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry voyageVm --args-json 0 sim/core_test.ail); \
+	echo "strict voyageVm: VM $$got | interpreter $$interp"; [ "$$got" = "voyage-ok" ] && [ "$$interp" = "voyage-ok" ]
+
+journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM and interpreter identical
+	@mkdir -p $(SCRATCH)
+	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/replays/alpha_cen.ndjson > $(SCRATCH)/alpha_cen_vm.txt
+	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/replays/alpha_cen.ndjson > $(SCRATCH)/alpha_cen_interp.txt
+	cmp $(SCRATCH)/alpha_cen_vm.txt $(SCRATCH)/alpha_cen_interp.txt && tail -1 $(SCRATCH)/alpha_cen_vm.txt | grep -q '"arrived"' && \
+	  echo "journey-replay: identical ($$(wc -l < $(SCRATCH)/alpha_cen_vm.txt | tr -d ' ') lines), last line arrived"
 
 wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ailang test` interpreter cannot see NaN-guard mutants)
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \

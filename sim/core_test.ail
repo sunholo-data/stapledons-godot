@@ -2,14 +2,14 @@ module stapledons/sim/core_test
 
 import ./core (Ship, initShip, step, turn, position, scriptedOffAxis, beta,
   World, Params, Ledger, Journey, Idle, Planned, Committed, Arrived, Plan, Commitment, ShipPhase, AtRest, Boosting, Cruising, Braking,
-  Intent, IPlan, ICommit, IThrust, IHeading, ICancel, IRecord, IDraw, IEcho, Target, PlanReq, Refusal, Event, TickInput, Ticked,
-  PlanView, JourneyView, journeyView, minutesPerYear,
+  Intent, IPlan, ICommit, IThrust, IHeading, ICancel, IRecord, IDraw, IEcho, Target, PlanReq, Refusal, Event, Crossing, Residuals, TickInput, Ticked,
+  PlanView, JourneyView, journeyView, minutesPerYear, arrivalResiduals,
   defaultParams, newWorld, tick, derivePhase, phaseName, scenarioError, restTolerance, availableKgStart)
 import pkg/sunholo/relativity/optics (Vec3)
-import pkg/sunholo/relativity/medium (photonDriveEnergy, mirrorDragPower, julianYearS, cSI)
+import pkg/sunholo/relativity/medium (photonDriveEnergy, mirrorDragPower, julianYearS, cSI, tripEnergy)
 import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta, rapidityOfBeta, oneMinusBeta, standardGravity)
-import pkg/sunholo/relativity/journey (planBurnCoastBurn, planFlipAndBurn)
-import std/math (sqrt)
+import pkg/sunholo/relativity/journey (planBurnCoastBurn, planFlipAndBurn, motionAt)
+import std/math (sqrt, floatToInt, intToFloat)
 import std/option (Option, Some, None)
 import std/string (join, intToStr)
 import pkg/sunholo/relativity/hyper (cosh, absf)
@@ -241,16 +241,19 @@ pure func checkOneMinusBetaReadout() -> bool {
   let w = plDo(plWorld(false, p), [plCruise(plAt(10000.0), phi)]).world;
   plViewOk(w, \v. v.cruiseOneMinusBeta > 0.0 && rel(v.cruiseOneMinusBeta, 0.00000000000000001, tol9()) && v.cruiseOneMinusBeta == oneMinusBeta(phi) && v.cruiseBeta == 1.0)
 }
--- A committed journey's readout is frozen at the commit (tau0, t0): waiting
--- does not move the arrival year.
+-- A committed journey's readout is frozen at the commit (tau0, t0): flying
+-- does not move the arrival year, nor does arriving.
 pure func checkCommittedView() -> bool {
   let w = plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), phi099())]).world;
   let c = plDo(w, [ICommit(1)]).world;
-  let later = tick(c, {dtau: 2.0, intents: []}).world;
+  let later = tick(c, {dtau: 0.3, intents: []}).world;
+  let landed = tick(later, {dtau: 2.0, intents: []}).world;
   let a = journeyView(c);
   let b = journeyView(later);
-  a.state == "committed" && b.state == "committed" && a.planId == 1 &&
-  match a.plan { Some(x) => match b.plan { Some(y) => x.arriveYear == y.arriveYear && x.yearsLeft == y.yearsLeft && rel(x.arriveYear, 4.414143655383168, tol9()), None => false }, None => false }
+  let d = journeyView(landed);
+  a.state == "committed" && b.state == "committed" && d.state == "arrived" && a.planId == 1 && d.planId == 1 &&
+  match a.plan { Some(x) => match b.plan { Some(y) => match d.plan { Some(z) => x.arriveYear == y.arriveYear && x.yearsLeft == y.yearsLeft && z.arriveYear == x.arriveYear &&
+    rel(x.arriveYear, 4.414143655383168, tol9()), None => false }, None => false }, None => false }
 }
 
 -- Cruise range [rapidityOfBeta(cruise_min_beta), rapidityOfOneMinusBeta(cap)], both ends inclusive.
@@ -292,40 +295,49 @@ pure func plEveryIntent() -> [Intent] = [plCruise(plAcen(), phi09()), plFlip(plA
   IEcho({target: plAcen(), cruisePhi: 1.0, flipG: None})]
 pure func plSameCommit(a: World, b: World) -> bool =
   match a.journey { Committed(x) => (match b.journey { Committed(y) => x.plan.id == y.plan.id && x.tau0 == y.tau0 && x.t0 == y.t0 && x.plan.trip.tauTotal == y.plan.trip.tauTotal, _ => false }), _ => false }
+-- Since M2.3b the committed ship flies: a refused intent leaves the world
+-- exactly as the autopilot alone leaves it (same ship, el, ledger).
+pure func plSameFlight(a: World, b: World) -> bool {
+  let m = a.ship.motion;
+  let n = b.ship.motion;
+  plSameCommit(a, b) && m.phi == n.phi && m.tau == n.tau && m.t == n.t && m.x == n.x && a.ship.phase == b.ship.phase &&
+  a.ledger.boostJ == b.ledger.boostJ && a.ledger.dragJ == b.ledger.dragJ && a.lastPlanId == b.lastPlanId &&
+  (match a.journey { Committed(x) => (match b.journey { Committed(y) => x.el == y.el, _ => false }), _ => false })
+}
 pure func plAllRefused(c: World, xs: [Intent]) -> bool = match xs {
   [] => true,
   x :: more => {
     let t = tick(c, {dtau: 0.25, intents: [x]});
-    plRefused(t, "committed") && plSameCommit(c, t.world) && t.world.ship.motion.phi == 0.0 && t.world.lastPlanId == c.lastPlanId && plAllRefused(c, more)
+    plRefused(t, "committed") && plSameCommit(c, t.world) && plSameFlight(t.world, tick(c, {dtau: 0.25, intents: []}).world) && plAllRefused(c, more)
   }
 }
 pure func checkCommittedRefusesAll() -> bool {
   let c = plCommittedWorld();
-  let all = tick(c, {dtau: 1.0, intents: plEveryIntent()});
-  let p0 = position(c.ship);
-  let p1 = position(all.world.ship);
+  let all = tick(c, {dtau: 0.25, intents: plEveryIntent()});
+  let alone = tick(c, {dtau: 0.25, intents: []}).world;
   plCommitted(c.journey) && plAllRefused(c, plEveryIntent()) &&
   refusalsAre(all.refused, ["0:committed", "1:committed", "2:committed", "3:committed", "4:committed", "5:committed", "6:committed", "7:committed", "8:committed", "9:committed"]) &&
-  plSameCommit(c, all.world) && all.world.ship.phase == AtRest && p1.x == p0.x && p1.y == p0.y && p1.z == p0.z && all.world.tick == c.tick + 1
+  plSameCommit(c, all.world) && plSameFlight(all.world, alone) && all.world.ship.phase == Cruising && all.world.tick == c.tick + 1
 }
 -- Commit: the at-rest turn to the plan heading, a committed event, tau0/t0
--- at the commit; the ship holds position until the autopilot (M2.3b).
+-- at the commit (a dtau 0 tick: the autopilot has not flown yet).
 pure func checkCommitTurns() -> bool {
   let w = plDo(plWorld(false, defaultParams()), [plCruise(plAt(4.37), phi099())]).world;
-  let t = tick(w, {dtau: 0.5, intents: [ICommit(1)]});
+  let t = tick(w, {dtau: 0.0, intents: [ICommit(1)]});
   let c = t.world;
   let h = c.ship.heading;
   plCommitted(c.journey) && refusalsAre(t.refused, []) && h.x == 1.0 && h.y == 0.0 && h.z == 0.0 &&
   (match t.events { [e] => e.kind == "committed", _ => false }) &&
-  (match c.journey { Committed(x) => x.tau0 == 0.0 && x.t0 == 0.0 && x.plan.id == 1, _ => false }) &&
-  c.ship.motion.phi == 0.0 && c.ship.motion.tau == 0.5 && position(c.ship).x == 0.0 && checkCommitDropsThrust()
+  (match c.journey { Committed(x) => x.tau0 == 0.0 && x.t0 == 0.0 && x.plan.id == 1 && x.el == 0.0, _ => false }) &&
+  c.ship.motion.phi == 0.0 && c.ship.phase == AtRest && position(c.ship).x == 0.0 && c.ship.x0 == c.ship.motion.x && checkCommitDropsThrust()
 }
 -- A diag thrust earlier in the commit's tick does not reach the drive: from
--- the commit on the autopilot owns it.
+-- the commit on the autopilot owns it (the tick equals a commit-only tick).
 pure func checkCommitDropsThrust() -> bool {
   let w = plDo(plWorld(true, defaultParams()), [plCruise(plAt(4.37), phi099())]).world;
   let t = tick(w, {dtau: 0.5, intents: [IThrust(1.0), ICommit(1)]});
-  refusalsAre(t.refused, []) && plCommitted(t.world.journey) && t.world.ship.motion.phi == 0.0 && t.world.ship.phase == AtRest && t.world.ledger.boostJ == 0.0
+  let plain = tick(w, {dtau: 0.5, intents: [ICommit(1)]}).world;
+  refusalsAre(t.refused, []) && plCommitted(t.world.journey) && plSameFlight(t.world, plain) && t.world.ship.phase == Cruising
 }
 -- Commit while moving is refused `moving`, also when already heading at the
 -- target; the plan stays.
@@ -379,6 +391,220 @@ pure func checkPlanIsPackage() -> bool {
   plField(f, \p. p.trip.tauTotal == wantF.tauTotal && p.trip.trip.galaxyTime == wantF.trip.galaxyTime)
 }
 
+
+-- ------------------------------------------------------------ M2.3b autopilot, boundaries, arrival, ledger
+-- A committed play world: plan to `t` at cruise phi with params p, commit.
+pure func apCommitted(p: Params, t: Target, phi: float) -> World = plDo(plDo(plWorld(false, p), [plCruise(t, phi)]).world, [ICommit(1)]).world
+pure func apCommit(w: World) -> Commitment = match w.journey { Committed(c) => c, Arrived(c) => c, _ => {plan: {id: 0, target: plAt(1.0), from: {x: 0.0, y: 0.0, z: 0.0}, heading: {x: 1.0, y: 0.0, z: 0.0}, flip: false, trip: planFlipAndBurn(1.0, 1.0)}, tau0: -1.0, t0: -1.0, el: -1.0} }
+pure func isArrived(j: Journey) -> bool = match j { Arrived(_) => true, _ => false }
+pure func wait(w: World, dtau: float) -> Ticked = tick(w, {dtau: dtau, intents: []})
+-- |a - b| <= 1e-9 max(1, |b|)
+pure func near9(a: float, b: float) -> bool = absf(a - b) <= tol9() * (if absf(b) > 1.0 then absf(b) else 1.0)
+-- The stepped ship equals the package's motionAt at el: phi, and t and x
+-- measured from the commit (x along the line from the rebase at the commit).
+pure func apMatches(w: World) -> bool {
+  let c = apCommit(w);
+  let m = motionAt(c.plan.trip, c.el);
+  let s = w.ship.motion;
+  -- after arrival the leftover of the tick is spent at rest (t and tau advance together)
+  if isArrived(w.journey) then s.phi == 0.0 && c.el == c.plan.trip.tauTotal && near9((s.t - c.t0) - ((s.tau - c.tau0) - c.el), m.t)
+  else near9(s.phi, m.phi) && near9(s.t - c.t0, m.t) && near9(s.x - w.ship.x0, m.x) && near9(s.tau - c.tau0, c.el)
+}
+-- Fly 0.01-yr ticks to arrival, checking every tick end against motionAt;
+-- returns the arrival tick (or -1 on a mismatch or no arrival in n ticks).
+type Voyage = { w: World, ok: bool, events: [Event], ticks: int }
+pure func voyage(v: Voyage, dtau: float, n: int) -> Voyage =
+  if n <= 0 || isArrived(v.w.journey) || !v.ok then v
+  else {
+    let t = wait(v.w, dtau);
+    voyage({w: t.world, ok: v.ok && apMatches(t.world), events: v.events ++ t.events, ticks: v.ticks + 1}, dtau, n - 1)
+  }
+pure func phaseEvents(es: [Event]) -> [Crossing] = match es { [] => [], e :: r => match e.phase { Some(c) => c :: phaseEvents(r), None => phaseEvents(r) } }
+pure func arrivedEvents(es: [Event]) -> [Residuals] = match es { [] => [], e :: r => match e.arrived { Some(x) => x :: arrivedEvents(r), None => arrivedEvents(r) } }
+pure func crossingNames(cs: [Crossing]) -> string = join(",", mapNames(cs))
+pure func mapNames(cs: [Crossing]) -> [string] = match cs { [] => [], c :: r => join(">", [c.from, c.to]) :: mapNames(r) }
+-- Each crossing's tau is the boundary's, tau0 + (0, tauBurn, tauBurn + tauCoast, tauTotal), to an ulp of the tick sum.
+pure func crossingTaus(cs: [Crossing], want: [float]) -> bool =
+  match cs { [] => (match want { [] => true, _ => false }), c :: r => match want { [] => false, x :: wr => absf(c.tau - x) <= 0.000000000001 && crossingTaus(r, wr) } }
+
+pure func bcbNames() -> string = "at_rest>boosting,boosting>cruising,cruising>braking,braking>at_rest"
+pure func checkVoyageAt(phi: float) -> bool {
+  let c0 = apCommitted(defaultParams(), plAcen(), phi);
+  let c = apCommit(c0);
+  let tp = c.plan.trip;
+  let v = voyage({w: c0, ok: true, events: [], ticks: 0}, 0.01, 1000);
+  let cs = phaseEvents(v.events);
+  v.ok && isArrived(v.w.journey) && crossingNames(cs) == bcbNames() &&
+  crossingTaus(cs, [c.tau0, c.tau0 + tp.tauBurn, c.tau0 + tp.tauBurn + tp.tauCoast, c.tau0 + tp.tauTotal]) &&
+  v.ticks == floatToInt(tp.tauTotal / 0.01) + 1 && checkBoundaryTicks(c0)
+}
+-- Ticks that end exactly on each boundary: the state there is motionAt's
+-- boundary state (dBurn, phiPeak; d - dBurn; arrival) to 1e-9.
+pure func checkBoundaryTicks(c0: World) -> bool {
+  let tp = (apCommit(c0)).plan.trip;
+  let b1 = wait(c0, tp.tauBurn).world;
+  let b2 = wait(b1, tp.tauCoast).world;
+  let b3 = wait(b2, tp.tauBurn).world;
+  let done = if isArrived(b3.journey) then b3 else wait(b3, 0.000000000001).world;
+  near9(b1.ship.motion.x - b1.ship.x0, tp.dBurn) && near9(b1.ship.motion.phi, tp.phiPeak) && b1.ship.phase == Cruising && (apCommit(b1)).el == tp.tauBurn &&
+  near9(b2.ship.motion.x - b2.ship.x0, tp.trip.distance - tp.dBurn) && near9(b2.ship.motion.phi, tp.phiPeak) && b2.ship.phase == Braking && (apCommit(b2)).el == tp.tauBurn + tp.tauCoast &&
+  apMatches(b1) && apMatches(b2) && isArrived(done.journey) && (apCommit(done)).el == tp.tauTotal && near9(done.ship.motion.t - (apCommit(done)).t0, tp.trip.galaxyTime)
+}
+pure func checkVoyageBoundaries() -> bool = checkVoyageAt(phi099()) && checkVoyageAt(plPhiCap()) && checkFlipVoyage()
+-- The diag 1 g flip-and-burn check profile: boost straight into brake (tauCoast = 0).
+pure func checkFlipVoyage() -> bool {
+  let c0 = plDo(plDo(plWorld(true, defaultParams()), [plFlip(plGl559(), 1.0)]).world, [ICommit(1)]).world;
+  let c = apCommit(c0);
+  let tp = c.plan.trip;
+  let v = voyage({w: c0, ok: true, events: [], ticks: 0}, 0.01, 1000);
+  let cs = phaseEvents(v.events);
+  v.ok && isArrived(v.w.journey) && crossingNames(cs) == "at_rest>boosting,boosting>braking,braking>at_rest" &&
+  crossingTaus(cs, [c.tau0, c.tau0 + tp.tauBurn, c.tau0 + tp.tauTotal]) && checkResidualsOf(v, tp.trip.distance) &&
+  veqExact(position(v.w.ship), plGl559().pos)
+}
+
+pure func veqExact(a: Vec3, b: Vec3) -> bool = a.x == b.x && a.y == b.y && a.z == b.z
+pure func checkResidualsOf(v: Voyage, d: float) -> bool =
+  match arrivedEvents(v.events) {
+    [r] => {
+      let tol = tol9() * (if d > 1.0 then d else 1.0);
+      r.x < tol && r.t < tol && r.phi < tol && r.x == r.x && r.t == r.t && r.phi == r.phi
+    },
+    _ => false
+  }
+-- Arrival: one `arrived` event with residuals < 1e-9 max(1, d), phi snapped
+-- to 0 and the position to target.pos bit for bit; leftover dtau at rest.
+pure func checkArrivalResidual() -> bool {
+  let c0 = apCommitted(defaultParams(), plAcen(), phi099());
+  let c = apCommit(c0);
+  let v = voyage({w: c0, ok: true, events: [], ticks: 0}, 0.01, 1000);
+  let s = v.w.ship;
+  let after = wait(v.w, 0.5).world;
+  let cap = voyage({w: apCommitted(defaultParams(), plGl559(), plPhiCap()), ok: true, events: [], ticks: 0}, 0.01, 1000);
+  checkResidualsOf(v, 4.37) && checkResidualsOf(cap, 4.35667304258651) && veqExact(position(cap.w.ship), plGl559().pos) &&
+  s.motion.phi == 0.0 && s.phase == AtRest && veqExact(position(s), plAcen().pos) &&
+  absf(s.motion.tau - (c.tau0 + 0.01 * intToFloat(v.ticks))) <= 0.000000000001 &&
+  near9(s.motion.t, c.t0 + c.plan.trip.trip.galaxyTime + (0.01 * intToFloat(v.ticks) - c.plan.trip.tauTotal)) &&
+  isArrived(after.journey) && veqExact(position(after.ship), plAcen().pos) && after.ship.phase == AtRest && after.ship.motion.t == s.motion.t + 0.5 &&
+  checkResidualsReported()
+}
+-- The residuals are measured, not assumed: a state 1e-6 off reports 1e-6.
+pure func checkResidualsReported() -> bool {
+  let c = apCommit(apCommitted(defaultParams(), plAcen(), phi099()));
+  let tp = c.plan.trip;
+  let r = arrivalResiduals({phi: 0.000001, tau: tp.tauTotal, t: c.t0 + tp.trip.galaxyTime + 0.000002, x: 10.0 + 4.37 - 0.000003}, 10.0, c);
+  rel(r.phi, 0.000001, 0.000001) && rel(r.t, 0.000002, 0.000001) && rel(r.x, 0.000003, 0.000001) && checkResidualsMeasured()
+}
+-- The `arrived` event carries the stepped state's residuals from before the
+-- snap: a flight whose start is offset (x0 by 1e-6 ly, t0 by 2e-6 yr, or a
+-- drift of phi = 1e-7 at the commit) reports that offset, not zero.
+pure func flyEvents(w: World, n: int, acc: [Event]) -> [Event] =
+  if n <= 0 || isArrived(w.journey) then acc else { let t = wait(w, 0.01); flyEvents(t.world, n - 1, acc ++ t.events) }
+pure func apArrivedResiduals(w: World) -> [Residuals] = arrivedEvents(flyEvents(w, 1000, []))
+pure func checkResidualsMeasured() -> bool {
+  let c0 = apCommitted(defaultParams(), plAcen(), phi099());
+  let c = apCommit(c0);
+  let s = c0.ship;
+  let offset = {c0 | ship: {s | x0: s.x0 - 0.000001}, journey: Committed({c | t0: c.t0 - 0.000002})};
+  let drift = {c0 | ship: {s | motion: {s.motion | phi: 0.0000001}}};
+  (match apArrivedResiduals(offset) { [r] => rel(r.x, 0.000001, 0.00001) && rel(r.t, 0.000002, 0.00001) && r.phi < tol9(), _ => false }) &&
+  (match apArrivedResiduals(drift) { [r] => rel(r.phi, 0.0000001, 0.001), _ => false })
+}
+-- One tick that holds the whole boost: two phase events, at tau0 and at tau0 + tauBurn exactly.
+pure func checkWholeBoostTick() -> bool {
+  let w = plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), phi099())]).world;
+  let rested = wait(w, 0.25).world;
+  let t = tick(plDo(rested, []).world, {dtau: 0.01, intents: [ICommit(1)]});
+  let c = apCommit(t.world);
+  let cs = phaseEvents(t.events);
+  (match t.events { e :: _ => e.kind == "committed", [] => false }) &&
+  crossingNames(cs) == "at_rest>boosting,boosting>cruising" && c.tau0 == rested.ship.motion.tau &&
+  (match cs { [a, b] => a.tau == c.tau0 && b.tau == c.tau0 + c.plan.trip.tauBurn, _ => false }) &&
+  t.world.ship.phase == Cruising && plCommitted(t.world.journey)
+}
+-- A commit in a dtau 0 tick flies nothing and emits no phase event; the
+-- first piece of the next tick emits at_rest > boosting once.
+pure func checkStartEventOnce() -> bool {
+  let c0 = apCommitted(defaultParams(), plAcen(), phi099());
+  let z = wait(c0, 0.0);
+  let one = wait(z.world, 0.000001);
+  let two = wait(one.world, 0.000001);
+  crossingNames(phaseEvents(z.events)) == "" && z.world.ship.phase == AtRest && crossingNames(phaseEvents(one.events)) == "at_rest>boosting" &&
+  one.world.ship.phase == Boosting && crossingNames(phaseEvents(two.events)) == ""
+}
+-- Committed -> Arrived only through the sim (the autopilot reaching
+-- tauTotal); then the journey is free: a plan from the arrival point
+-- measures d from there (the M2.3a follow-up), and a second journey flies home.
+pure func checkArrivedThenReplan() -> bool {
+  let c0 = apCommitted(defaultParams(), plAcen(), phi099());
+  let early = wait(c0, 0.6).world;
+  let landed = wait(early, 0.1);
+  let home = {index: 0, id: "Sol", pos: {x: 0.0, y: 0.0, z: 0.0}};
+  let re = plDo(landed.world, [plCruise(home, phi09())]);
+  let back = plDo(re.world, [ICommit(2)]).world;
+  let v = voyage({w: back, ok: true, events: [], ticks: 0}, 0.01, 1000);
+  plCommitted(early.journey) && isArrived(landed.world.journey) && plRefused(plDo(early, [ICancel]), "committed") &&
+  refusalsAre(re.refused, []) && plId(re.world) == 2 &&
+  plField(re.world, \p. p.trip.trip.distance == 4.37 && p.heading.z == 1.0 && p.from.z == -4.37) &&
+  v.ok && isArrived(v.w.journey) && veqExact(position(v.w.ship), home.pos) && checkResidualsOf(v, 4.37)
+}
+-- The ledger at arrival equals tripEnergy(plan, m_eff, n, R).total to 1e-9
+-- relative, at a non-default m_eff (3 kg), at 0.99c and at the cap; boost
+-- and drag close separately (drag accumulated during a boost would not).
+pure func checkLedgerAt(p: Params, t: Target, phi: float) -> bool {
+  let v = voyage({w: apCommitted(p, t, phi), ok: true, events: [], ticks: 0}, 0.01, 1000);
+  let tp = (apCommit(v.w)).plan.trip;
+  let e = tripEnergy(tp, p.mEffKg, p.ismNCm3 * 1000000.0, p.bubbleRadiusM);
+  let l = v.w.ledger;
+  isArrived(v.w.journey) && l.mEffKg == p.mEffKg && rel(l.boostJ + l.dragJ, e.total, tol9()) && rel(l.boostJ, e.boost + e.brake, tol9()) && rel(l.dragJ, e.drag, tol9()) &&
+  l.availableKg == 20000.0
+}
+pure func checkLedgerAtArrival() -> bool {
+  let p = {defaultParams() | mEffKg: 3.0};
+  let tp = planBurnCoastBurn(4.37, 750000.0 * standardGravity(), phi099());
+  let landed = voyage({w: apCommitted(p, plAcen(), phi099()), ok: true, events: [], ticks: 0}, 0.01, 1000).w;
+  let rested = wait(landed, 1.0).world;
+  checkLedgerAt(p, plAcen(), phi099()) && checkLedgerAt(p, plGl559(), plPhiCap()) && checkLedgerAt({defaultParams() | mEffKg: 0.5, ismNCm3: 1.0}, plAt(10.0), phi09()) &&
+  rel(landed.ledger.boostJ, photonDriveEnergy(3.0, 2.0 * tp.phiPeak), tol9()) &&
+  rested.ledger.boostJ == landed.ledger.boostJ && rested.ledger.dragJ == landed.ledger.dragJ
+}
+-- Commit's `moving` guard is |phi| >= 1e-9: 1e-9 is refused, just below is accepted.
+pure func checkCommitMovingBoundary() -> bool {
+  let w = plWorld(true, defaultParams());
+  let s = w.ship;
+  let at = {w | ship: {s | motion: {phi: 0.000000001, tau: 0.0, t: 0.0, x: 0.0}}};
+  let below = {w | ship: {s | motion: {phi: 0.0000000009999999, tau: 0.0, t: 0.0, x: 0.0}}};
+  let neg = {w | ship: {s | motion: {phi: -0.000000001, tau: 0.0, t: 0.0, x: 0.0}}};
+  refusalsAre(plDo(at, [plCruise(plAcen(), phi099()), ICommit(1)]).refused, ["1:moving"]) &&
+  refusalsAre(plDo(neg, [plCruise(plAcen(), phi099()), ICommit(1)]).refused, ["1:moving"]) &&
+  plCommitted(plDo(below, [plCruise(plAcen(), phi099()), ICommit(1)]).world.journey)
+}
+-- A plan from a moved ship measures d from the ship (M2.3a follow-up):
+-- after a diag boost and brake along -z the ship rests at z < 0.
+pure func checkPlanFromMovedShip() -> bool {
+  let moved = go(go(plWorld(true, defaultParams()), 1.0, 0.1), -1.0, 0.1);
+  let z = position(moved.ship).z;
+  let w = plDo(moved, [plCruise(plAcen(), phi099())]).world;
+  let side = plDo(moved, [plCruise(plAt(3.0), phi099())]).world;
+  let v = voyage({w: plDo(w, [ICommit(1)]).world, ok: true, events: [], ticks: 0}, 0.01, 1000);
+  z < -0.01 && plField(w, \p. p.trip.trip.distance == 4.37 + z && p.heading.z == -1.0 && p.from.z == z) &&
+  plField(side, \p. p.trip.trip.distance == sqrt(9.0 + z * z)) &&
+  -- committed along the heading it already had (no turn): the commit still
+  -- rebases, so the flight measures from here and lands on the target
+  v.ok && isArrived(v.w.journey) && checkResidualsOf(v, 4.37 + z) && veqExact(position(v.w.ship), plAcen().pos)
+}
+-- A NaN cruise_phi is refused out_of_range by the core itself.
+pure func nan() -> float = 1.0e308 * 10.0 - 1.0e308 * 10.0
+pure func checkNaNCruise() -> bool {
+  let x = nan();
+  !(x == x) && plRefused(plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), x)]), "out_of_range")
+}
+
+export pure func voyageVm(n: int) -> string =
+  if checkVoyageBoundaries() && checkArrivalResidual() && checkWholeBoostTick() && checkStartEventOnce() && checkArrivedThenReplan() && checkLedgerAtArrival() &&
+    checkCommitMovingBoundary() && checkPlanFromMovedShip() && checkNaNCruise()
+  then "voyage-ok" else "voyage-BAD"
+
 export pure func planVm(n: int) -> string =
   if checkPlanCruise09() && checkPlanCruise099() && checkPlanCruiseCap() && checkPlanAlphaCen() && checkPlanGl559() && checkPlanCoast100() && checkPlanFallback() &&
     checkPlanReadouts() && checkCruiseRange() && checkDiagOnly() && checkCommittedRefusesAll() && checkCommitTurns() && checkCommitMoving() && checkStalePlan() && checkPlanIds() && checkPlanIsPackage()
@@ -415,3 +641,12 @@ test "commit while moving refused moving" { checkCommitMoving() }
 test "stale plan id refused stale_plan" { checkStalePlan() }
 test "plan ids monotonic from 1, replan replaces, cancel clears" { checkPlanIds() }
 test "stored plan is the package's TripPlan bit for bit" { checkPlanIsPackage() }
+test "AC5 stepped voyage matches motionAt at every boundary (0.99c, cap, 1 g flip)" { checkVoyageBoundaries() }
+test "AC5 arrival residuals < 1e-9 max(1, d), snap to target, leftover at rest" { checkArrivalResidual() }
+test "AC6 ledger at arrival equals tripEnergy total (m_eff 3 kg, 0.99c and cap)" { checkLedgerAtArrival() }
+test "a tick holding the whole boost emits two phase events at exact tau" { checkWholeBoostTick() }
+test "at_rest > boosting emitted once, on the first piece flown" { checkStartEventOnce() }
+test "Committed -> Arrived only via the sim; replan from the arrival point" { checkArrivedThenReplan() }
+test "commit moving guard boundary |phi| = 1e-9" { checkCommitMovingBoundary() }
+test "plan from a moved ship measures d from the ship" { checkPlanFromMovedShip() }
+test "NaN cruise_phi refused out_of_range" { checkNaNCruise() }
