@@ -97,6 +97,37 @@ func _init() -> void:
 	check("red dwarf (3300 K) ahead at 0.9c brightens in V by > D^2", 1.0 if Relativity.point_flux_ratio(3300.0, sqrt(19.0)) > 19.0 else 0.0, 1.0, 0.0)
 	check("Sun-like star astern at 0.9c fades by > 100x", 1.0 if Relativity.point_flux_ratio(5700.0, sqrt(1.0 / 19.0)) < 0.01 else 0.0, 1.0, 0.0)
 
+	print("Relativistic surface brightness of an extended source (sky background, M1.4)")
+	check("D = 1 leaves surface brightness unchanged", Relativity.surface_brightness_ratio(5700.0, 1.0), 1.0, 1e-12)
+	# Spec §2: radiance I' = D^4 I bolometrically; in a band it is the blackbody at D T.
+	check("bolometric surface brightness scales as D^4 (D = 3)", bol.call(5700.0 * 3.0) / bol.call(5700.0), 81.0, 0.2)
+	check("surface brightness = point flux ratio x D^2 (no solid-angle shrink)", Relativity.surface_brightness_ratio(4600.0, 2.5), Relativity.point_flux_ratio(4600.0, 2.5) * 6.25, 1e-9)
+	check("diffuse 4600 K light astern at 0.9c fades below 1% in V", 1.0 if Relativity.surface_brightness_ratio(4600.0, sqrt(1.0 / 19.0)) < 0.01 else 0.0, 1.0, 0.0)
+
+	print("Sky model (M1.4b texture contract, mirrored by sky/background.gdshader)")
+	check("galactic centre (world -Z) samples the panorama centre u", SkyModel.equirect_uv(Vector3(0, 0, -1)).x, 0.5, 1e-9)
+	check("galactic centre samples the panorama centre v", SkyModel.equirect_uv(Vector3(0, 0, -1)).y, 0.5, 1e-9)
+	check("l = 90 deg (world +X) sits a quarter in from the left (l grows leftward)", SkyModel.equirect_uv(Vector3(1, 0, 0)).x, 0.25, 1e-9)
+	check("l = 270 deg (world -X) sits at u = 0.75", SkyModel.equirect_uv(Vector3(-1, 0, 0)).x, 0.75, 1e-9)
+	check("north galactic pole (world +Y) is the top row", SkyModel.equirect_uv(Vector3(0, 1, 0)).y, 0.0, 1e-9)
+	check("b = -30 deg sits at v = 2/3", SkyModel.equirect_uv(Vector3(0, -0.5, -sqrt(0.75))).y, 2.0 / 3.0, 1e-6)
+	var probe := Vector3(0.3, -0.4, 0.5).normalized()
+	check("equirect_dir inverts equirect_uv", SkyModel.equirect_dir(SkyModel.equirect_uv(probe)).distance_to(probe), 0.0, 1e-6)
+	check("T code 0 decodes to T_LO = 1500 K", SkyModel.decode_t(0), 1500.0, 1e-6)
+	check("T code 255 decodes to T_HI = 30000 K", SkyModel.decode_t(255), 30000.0, 1e-6)
+	check("T code round trip within 0.6% (4600 K)", SkyModel.decode_t(SkyModel.encode_t(4600.0)) / 4600.0, 1.0, 0.006)
+	var report: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sky/sky_model_report.json"))
+	check("T code range matches tools/sky_model.py (report), low end", report["t_code_range_k"][0], SkyModel.T_LO, 0.0)
+	check("T code range matches tools/sky_model.py (report), high end", report["t_code_range_k"][1], SkyModel.T_HI, 0.0)
+	check("committed model fit: luminance-weighted median dxy <= 0.02 (else escalate)", 1.0 if report["luminance_weighted_median_dxy"] <= 0.02 else 0.0, 1.0, 0.0)
+	var tint_t := 4600.0
+	var lin := Blackbody.rgb_unit_luminance(tint_t) * 0.2
+	check("a Planck-coloured texel has unit tint (rest frame reproduces the photo)", SkyModel.tint(lin, tint_t).distance_to(Vector3.ONE), 0.0, 1e-6)
+	check("at D = 1 the sky colour equals the photo's linear colour", SkyModel.radiance(lin, tint_t, 1.0).distance_to(lin), 0.0, 1e-6)
+	var seen := SkyModel.radiance(lin, tint_t, 3.0)
+	var want := Blackbody.rgb_unit_luminance(tint_t * 3.0) * 0.2 * Relativity.surface_brightness_ratio(tint_t, 3.0)
+	check("at D = 3 a Planck texel renders as rgb(D T) x Y x surface ratio", seen.distance_to(want) / want.length(), 0.0, 1e-6)
+
 	print("Constant proper acceleration (sim cross-check reference)")
 	var a := 1.032295275553596 # 1 g in c/yr (sunholo/relativity standardGravity)
 	check("beta after 1 ship-year at 1 g = tanh(a)", tanh(a), 0.774827262642545, 1e-12)

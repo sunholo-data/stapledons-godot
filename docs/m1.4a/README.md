@@ -55,35 +55,35 @@ Every crop uses the same galactic window: 40° × 20°, with l increasing to the
   (or a linear source) before the per-texel T_c fit means anything.
 - Spike code, not gated: no tests, and the outputs live in gitignored `data/raw/background/`.
 
-## In-game preview (relativistic)
+## In-game (production shader, M1.4b/c)
 
-`spike/panorama.tscn` extends `main.gd` (the 1 g AILANG voyage, heading toward the galactic centre):
-- Sky: the destarred panorama, sampled per pixel through inverse aberration, with blackbody Doppler
-  (`spike/panorama_sky.gdshader`, same LUT as the stars). The mip level follows D, so the compressed forward cone doesn't sparkle.
-- Points: CNS5 plus Hipparcos V<7.5 beyond 25 pc, i.e. the stars that were removed from the panorama, put back as relativistic splats.
+The renders now come from the production `sky/background.gdshader`. It uses a per-texel T_c from the AILANG
+fitter (`make sky-model`), not the spike's single 4600 K. `spike/panorama.tscn` is `main.gd` plus the removed
+HIP stars as points, and stays until M1.2d ships the bright tier.
 
 ```sh
+make sky-model    # once: destarred photo -> data/raw/background/noirlab_10k_skymodel.png (~12 min)
 AILANG_BIN=$PWD/runtime/bin/ailang godot --path . --resolution 1920x1080 res://spike/panorama.tscn -- --capture=/abs/out
 ```
 
 | | |
 |---|---|
 | **Forward at β = 0 / 0.5 / 0.9 / 0.99** | [forward_0_05_09_099.jpg](preview/forward_0_05_09_099.jpg) |
-| Contact sheet (rows β = 0, 0.5, 0.9, 0.99; columns forward / starboard / astern) | [contact_sheet.jpg](preview/contact_sheet.jpg) |
-| Every frame at 1920×1080 | [preview/](preview/) |
+| **Astern at β = 0 / 0.5 / 0.9 / 0.99** | [astern_0_05_09_099.jpg](preview/astern_0_05_09_099.jpg) |
+| Contact sheet (rows β; columns forward / starboard / astern) | [contact_sheet.jpg](preview/contact_sheet.jpg) |
+| T_c map (red = cool, blue = hot) and emission-line flags (red overlay) | [skymodel_tc_and_lineflags.jpg](skymodel_tc_and_lineflags.jpg) |
 
-Preview simplifications, each owned by a later milestone:
-- **One colour temperature (4600 K) for every texel.** M1.4b fits T_c per texel.
-- **Emission nebulae are not blackbodies.** H-α (656 nm) at D = 1.5 lands at 437 nm, and by D ≈ 1.7 it is ultraviolet,
-  so the red nebulae should vanish from the forward view instead of brightening with the continuum. M1.4b needs a line component,
-  or should at least flag line-dominated texels.
-- **Exposure is hand-set:** background 0.6, stars 40, PSF σ 1.2 px. M1.5 calibrates both against a dark-sky reference.
-- **The photo is tone-mapped 8-bit, not linear radiance** (see the residuals above).
+Still open, each owned by a later milestone:
+- **Emission nebulae.** H-α leaves the visible band at D ≳ 1.7. Flagged texels (4.7% of the light) still Doppler as if they
+  were thermal; modelling the line needs new package maths first.
+- **Exposure is hand-set:** background 0.6 against stars 40 in the review scene; 0.075 against 5 in `main.gd`. M1.5 calibrates both.
+- **The bright stars removed from the photo** show in `make capture` only once M1.2d (HIP2 tier) lands.
 
-## Next (M1.4b/c, routable to the loop)
+## Next
 
-1. Productionise `m14a_destar.py` into `tools/sky_model.py` with tests: registration, match completeness and a residual budget.
-2. Fit (log T_c, log L_v) per texel; sky shader; renders at β = 0, 0.5 and 0.99.
+1. Star removal is still the Python spike (`tools/m14a_destar.py`). An AILANG port of the detection, matching and
+   inpainting is a natural VM stress test, at 50M pixels.
+2. M1.5: photometric exposure calibration of the background against the stars.
 
 ## Does travel change the background? (parallax)
 

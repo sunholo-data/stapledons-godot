@@ -319,6 +319,33 @@ the spike established, which bind M1.4b/c:
   and it's the same model the stars use.
 - The fit residual is recorded per texel and summarised in the M1 report.
 
+**M1.4b/c as built (attended, 2026-10-01). Amends the two blocks below:**
+- **The fitter is AILANG, not Python** (Mark: "this is an ailang showcase").
+  `sim/tools/sky_model.ail` fits each distinct panorama colour (739,609) to the
+  locus straight from `sunholo/relativity` `blackbody.chromaticity`, so no
+  Planck/CMF copy exists outside the package. Its pure core is strict-VM gated,
+  with interpreter parity (`make sky-vm`, in `make test`). Godot headless does the
+  image I/O (`tools/sky_colours.gd`). `make sky-model` runs the whole chain in
+  about 12 minutes. The core is list-only, because `std/array` and
+  `std/list.range` are evaluator-only on the strict VM (reported upstream).
+- **Storage.** A 10k float (log T_c, log L_v) texture would be about 400 MB. The
+  model is instead an RGBA8 texture beside the 8-bit photo:
+  - R is the T_c code, log-spaced over 1500–30000 K (≤0.6% per step);
+  - G is the residual;
+  - B is the line flag.
+
+  The shader takes L_v from the decoded photo, and nothing is lost relative to
+  the 8-bit source.
+- **Tint carry.** The shader computes radiance = Y × surfaceBrightnessRatio(T_c, D)
+  × rgb(D·T_c) × tint, where tint = photo / (Y·rgb(T_c)). At D = 1 this
+  reproduces the photo exactly, off-locus colours included. For a Planck texel
+  it is exactly the design's formula (AC6 tests that path).
+- **Result** (`data/sky/sky_model_report.json`):
+  - luminance-weighted median Δxy 0.0050, so no escalation;
+  - 4.7% of the light is line-flagged;
+  - light-weighted T_c median 6180 K. That is the photographer's white
+    balance, not a measurement of integrated starlight.
+
 **M1.4c, sky shader (Godot `shader_type sky`):**
 - Per pixel, take the view direction n' (EYEDIR), then:
   1. n = deaberrate(n', β) gives the galaxy-frame direction;

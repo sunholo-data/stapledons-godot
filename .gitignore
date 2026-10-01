@@ -8,3 +8,4 @@ runtime/
 build/
 __pycache__/
 *.pyc
+sim/tools/.ailang/

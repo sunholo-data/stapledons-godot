@@ -795,7 +795,7 @@ the design); HIP2/hip_main join key drift (caught by the Vega row); the
 **Acceptance criteria:** AC7 (stars only, at this point).
 **Risk:** the CPU rebasing cost. *Mitigation:* plan B is already designed.
 
-### M1.4a: Background data spike (timeboxed) → ⏸ USER DECISION
+### M1.4a: Background data spike (timeboxed) → ⏸ USER DECISION ✅ (D-10: A on NOIRLab, attended 2026-10-01)
 **Goal:** choose the diffuse Milky Way source.
 **Estimated:** about 150 LOC of throwaway tooling · **Session:** 3 (second half)
 
@@ -808,7 +808,7 @@ the design); HIP2/hip_main join key drift (caught by the Vega row); the
   `design_docs/planned/r1/m1-4a-background-options.md`.
 - **STOP:** the user picks A or B, recorded in the design doc.
 
-### M1.4b/c: Spectral sky model and sky shader
+### M1.4b/c: Spectral sky model and sky shader ✅ (attended 2026-10-01, awaiting independent evaluation)
 **Goal:** a background with correct aberration and Doppler colour and
 brightness.
 **Estimated:** 400 + 200 = 600 LOC · **Session:** 4 · **Depends on:** M1.4a
@@ -831,6 +831,12 @@ decision, M1.1
   - a colour golden with the linear tonemapper (AC6).
 
 **Acceptance criteria:** AC5, AC6.
+- [x] Fit residual reported: luminance-weighted median Δxy 0.0050 ≤ 0.02, no escalation (`data/sky/sky_model_report.json`)
+- [x] AC5 background marker: 12/12 cases within 1 px (worst 0.72 px at 0.99c), `make golden`
+- [x] AC6 colour: Δxy ≤ 0.0006 at D = 0.3, 1, 3, `make golden`
+- As built (design §M1.4 amendment): the fitter is AILANG (`sim/tools/sky_model.ail`, strict-VM gated by
+  `make sky-vm`), not `tools/sky_model.py`, and the model is an RGBA8 T_c-code texture beside the photo, not a float EXR.
+
 **Risk:** the median fit residual exceeds 0.02 Δxy. *Mitigation:* the design
 doc's two-component escalation, flagged to the user.
 
