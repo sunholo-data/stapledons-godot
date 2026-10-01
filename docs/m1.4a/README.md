@@ -55,6 +55,31 @@ Every crop uses the same galactic window: 40° × 20°, with l increasing to the
   (or a linear source) before the per-texel T_c fit means anything.
 - Spike code, not gated: no tests, and the outputs live in gitignored `data/raw/background/`.
 
+## In-game preview (relativistic)
+
+`spike/panorama.tscn` extends `main.gd` (the 1 g AILANG voyage, heading toward the galactic centre):
+- Sky: the destarred panorama, sampled per pixel through inverse aberration, with blackbody Doppler
+  (`spike/panorama_sky.gdshader`, same LUT as the stars). The mip level follows D, so the compressed forward cone doesn't sparkle.
+- Points: CNS5 plus Hipparcos V<7.5 beyond 25 pc, i.e. the stars that were removed from the panorama, put back as relativistic splats.
+
+```sh
+AILANG_BIN=$PWD/runtime/bin/ailang godot --path . --resolution 1920x1080 res://spike/panorama.tscn -- --capture=/abs/out
+```
+
+| | |
+|---|---|
+| **Forward at β = 0 / 0.5 / 0.9 / 0.99** | [forward_0_05_09_099.jpg](renders/forward_0_05_09_099.jpg) |
+| Contact sheet (rows β = 0, 0.5, 0.9, 0.99; columns forward / starboard / astern) | [contact_sheet.jpg](renders/contact_sheet.jpg) |
+| Every frame at 1920×1080 | [renders/](renders/) |
+
+Preview simplifications, each owned by a later milestone:
+- **One colour temperature (4600 K) for every texel.** M1.4b fits T_c per texel.
+- **Emission nebulae are not blackbodies.** H-α (656 nm) at D = 1.5 lands at 437 nm, and by D ≈ 1.8 it is ultraviolet,
+  so the red nebulae should vanish from the forward view instead of brightening with the continuum. M1.4b needs a line component,
+  or should at least flag line-dominated texels.
+- **Exposure is hand-set:** background 0.6, stars 40, PSF σ 1.2 px. M1.5 calibrates both against a dark-sky reference.
+- **The photo is tone-mapped 8-bit, not linear radiance** (see the residuals above).
+
 ## Next (M1.4b/c, routable to the loop)
 
 1. Productionise `m14a_destar.py` into `tools/sky_model.py` with tests: registration, match completeness and a residual budget.
