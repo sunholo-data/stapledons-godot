@@ -1,0 +1,150 @@
+→ Package stapledons/sim
+  6 source modules, 6 test files
+
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path 'sim/_namedtest_body_4282054232'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path 'sim/_namedtest_body_2547178598'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path 'sim/_namedtest_body_579567652'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path 'sim/_namedtest_body_3509332775'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_3577244188'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_2554633368'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_2055088651'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_3385156919'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_2952888402'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_1306304265'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_1559553372'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_113389971'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_1595158528'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_1559536121'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_1549578860'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_4290834542'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_1727897155'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_802244336'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_2692442516'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_4152649779'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_1027766223'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_2327102706'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_3409277386'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_3454102145'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_995689400'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_4282172527'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_1710873050'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_1634854356'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_1924680603'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_3888501505'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_1665002771'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'sim/tools/_namedtest_body_3512381345'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+
+[1mTest Results[0m
+Module: stapledons/sim
+
+[1mTests:[0m
+  [32m✓[0m turn at rest snaps rapidity (6.235079083s)
+      at [2msim/core_test.ail:34:1[0m
+  [32m✓[0m moving turn rejected (43.407584ms)
+      at [2msim/core_test.ail:35:1[0m
+  [32m✓[0m position after turn retains origin (26.725ms)
+      at [2msim/core_test.ail:36:1[0m
+  [32m✓[0m strict off axis voyage (77.532292ms)
+      at [2msim/core_test.ail:37:1[0m
+  [32m✓[0m hello proto 1.1 (65.089917ms)
+      at [2msim/protocol_test.ail:53:1[0m
+  [32m✓[0m v1.0 step unchanged (300.756792ms)
+      at [2msim/protocol_test.ail:54:1[0m
+  [32m✓[0m bad json (11.297611166s)
+      at [2msim/protocol_test.ail:55:1[0m
+  [32m✓[0m bad command (764.140041ms)
+      at [2msim/protocol_test.ail:56:1[0m
+  [32m✓[0m bad step precedes heading (1.804427416s)
+      at [2msim/protocol_test.ail:57:1[0m
+  [32m✓[0m bad heading (6.034289292s)
+      at [2msim/protocol_test.ail:58:1[0m
+  [32m✓[0m moving (135.30275ms)
+      at [2msim/protocol_test.ail:59:1[0m
+  [32m✓[0m rejection preserves state (105.03ms)
+      at [2msim/protocol_test.ail:60:1[0m
+  [32m✓[0m real rows preserve IDs and defer WD and missing (523.582916ms)
+      at [2msim/tools/catalogue_probe_test.ail:21:1[0m
+  [32m✓[0m exact header required (478.378375ms)
+      at [2msim/tools/catalogue_probe_test.ail:22:1[0m
+  [32m✓[0m invalid coordinates rejected (342.217291ms)
+      at [2msim/tools/catalogue_probe_test.ail:23:1[0m
+  [32m✓[0m nonfinite photometry rejected (162.096584ms)
+      at [2msim/tools/catalogue_probe_test.ail:24:1[0m
+  [32m✓[0m invalid WD flag rejected (261.936916ms)
+      at [2msim/tools/catalogue_probe_test.ail:25:1[0m
+  [32m✓[0m published solar package anchor (1.978308s)
+      at [2msim/tools/catalogue_probe_test.ail:31:1[0m
+  [32m✓[0m real normal row expected photometry (25.49762175s)
+      at [2msim/tools/catalogue_probe_test.ail:32:1[0m
+  [32m✓[0m WD row through the published blackbody package (20.447142458s)
+      at [2msim/tools/catalogue_probe_test.ail:41:1[0m
+  [32m✓[0m T1 N1 distinct dwarf clamp predicate (1.510799792s)
+      at [2msim/tools/catalogue_test.ail:22:1[0m
+  [32m✓[0m T1 N2 exactly one trailing newline (1.847648125s)
+      at [2msim/tools/catalogue_test.ail:23:1[0m
+  [32m✓[0m T1 normal independent anchors and coordinates (2.982674041s)
+      at [2msim/tools/catalogue_test.ail:57:1[0m
+  [32m✓[0m T1 WD real and interior anchors (8.923390458s)
+      at [2msim/tools/catalogue_test.ail:58:1[0m
+  [32m✓[0m T1 dwarf and WD clamps (2.1999555s)
+      at [2msim/tools/catalogue_test.ail:59:1[0m
+  [32m✓[0m T1 exact medium selection and independent counters (4.052229459s)
+      at [2msim/tools/catalogue_test.ail:60:1[0m
+  [32m✓[0m T1 missing wins and preserves WD bit (1.351355166s)
+      at [2msim/tools/catalogue_test.ail:61:1[0m
+  [32m✓[0m T1 stable equal distance order (1.230708708s)
+      at [2msim/tools/catalogue_test.ail:62:1[0m
+  [32m✓[0m T1 distance uses all coordinates (143.936959ms)
+      at [2msim/tools/catalogue_test.ail:63:1[0m
+  [32m✓[0m T1 header only empty input (384.437041ms)
+      at [2msim/tools/catalogue_test.ail:64:1[0m
+  [32m✓[0m T1 field rejection before missing shortcut (94.413041ms)
+      at [2msim/tools/catalogue_test.ail:65:1[0m
+  [32m✓[0m T1 exact header (4.684646917s)
+      at [2msim/tools/catalogue_test.ail:66:1[0m
+
+──────────────────────────────────────────────────
+[32m✓[0m [1mAll tests passed![0m
+
+32 tests: 32 passed, 0 failed, 0 skipped (1m45.98687083s)
+  [32m✓ Passed:[0m 32
+  [31m✗ Failed:[0m 0
+
+[1mSeed:[0m
+  mode: derived
+  master seed: 0
+  derivation: ailang-property-seed-v1
+  replay: ailang test --seed 0 --package sim
+

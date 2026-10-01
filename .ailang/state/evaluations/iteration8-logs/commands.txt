@@ -1,0 +1,5 @@
+check rc=0 t=86s
+test rc=0 t=106s
+oracle rc=0 t=1s
+catvm rc=0 t=24s
+make test rc=0 t=147s

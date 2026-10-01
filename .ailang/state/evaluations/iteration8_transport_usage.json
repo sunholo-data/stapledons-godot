@@ -1,0 +1,64 @@
+{
+  "transport_role": "GPT transport only, actual judge Anthropic",
+  "billing_tripwire": "CLEAN",
+  "command": "claude-sub -p --model claude-sonnet-5-5 --output-format json --permission-mode bypassPermissions <prompt> < /dev/null",
+  "metadata": {
+    "rc": 0,
+    "elapsed_s": 547.85,
+    "stdout": "/tmp/stapledon-iter8-evaluator.json",
+    "stderr": "/tmp/stapledon-iter8-evaluator.stderr"
+  },
+  "session_id": "53e833e2-182d-4ae6-8357-4290a61adcd8",
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 32,
+      "outputTokens": 14793,
+      "cacheReadInputTokens": 911274,
+      "cacheCreationInputTokens": 70968,
+      "webSearchRequests": 0,
+      "costUSD": 0.6141208,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2087,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "usage": {
+    "input_tokens": 32,
+    "cache_creation_input_tokens": 70968,
+    "cache_read_input_tokens": 911274,
+    "output_tokens": 14793,
+    "output_tokens_details": {
+      "thinking_tokens": 2087
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 70968,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1590,
+        "cache_read_input_tokens": 79130,
+        "cache_creation_input_tokens": 3861,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 3861
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "is_error": false,
+  "terminal_reason": "completed"
+}

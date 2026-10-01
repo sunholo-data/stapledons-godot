@@ -1,0 +1,29 @@
+flag_lo_removed: KILLED killer=['no_prefix_flag_-1', 'reject_flag_-1'] restored_sha_ok=True t=7s
+flag_hi_32: KILLED killer=['no_prefix_flag_32', 'reject_flag_32'] restored_sha_ok=True t=1s
+flag_hi_removed: KILLED killer=['no_prefix_flag_32', 'reject_flag_32'] restored_sha_ok=True t=1s
+upper_strict: KILLED killer=['boundary_13_3.4028234663852886e+38'] restored_sha_ok=True t=1s
+lower_strict: KILLED killer=['boundary_14_-3.4028234663852886e+38'] restored_sha_ok=True t=1s
+upper_loose_1e39: KILLED killer=['no_prefix_teff_1e+39', 'no_prefix_v_1e+39', 'no_prefix_x_1e+39'] restored_sha_ok=True t=1s
+lower_removed: KILLED killer=['no_prefix_teff_-1e+39', 'no_prefix_v_-1e+39', 'no_prefix_x_-1e+39'] restored_sha_ok=True t=1s
+upper_removed: KILLED killer=['no_prefix_teff_1e+39', 'no_prefix_v_1e+39', 'no_prefix_x_1e+39'] restored_sha_ok=True t=1s
+bypass_x: KILLED killer=['no_prefix_x_-1e+39', 'no_prefix_x_1e+39', 'reject_x_-1e+39'] restored_sha_ok=True t=1s
+bypass_y: KILLED killer=['no_prefix_y_-1e+39', 'no_prefix_y_1e+39', 'reject_y_-1e+39'] restored_sha_ok=True t=1s
+bypass_z: KILLED killer=['no_prefix_z_-1e+39', 'no_prefix_z_1e+39', 'reject_z_-1e+39'] restored_sha_ok=True t=1s
+bypass_teff: KILLED killer=['no_prefix_teff_-1e+39', 'no_prefix_teff_1e+39', 'reject_teff_-1e+39'] restored_sha_ok=True t=1s
+bypass_v: KILLED killer=['no_prefix_v_-1e+39', 'no_prefix_v_1e+39', 'reject_v_-1e+39'] restored_sha_ok=True t=1s
+nan_guard_only: SURVIVED killer=[] restored_sha_ok=True t=1s
+valid_true: KILLED killer=['no_prefix_teff_-1e+39', 'no_prefix_teff_1e+39', 'no_prefix_v_-1e+39'] restored_sha_ok=True t=1s
+order_swap_zt: KILLED killer=['boundary_0_0.0', 'boundary_10_1.0000000596046448', 'boundary_11_1.0000001788139343'] restored_sha_ok=True t=1s
+flags_first: KILLED killer=['boundary_0_0.0', 'boundary_10_1.0000000596046448', 'boundary_11_1.0000001788139343'] restored_sha_ok=True t=1s
+drop_flags: KILLED killer=['boundary_0_0.0', 'boundary_10_1.0000000596046448', 'boundary_11_1.0000001788139343'] restored_sha_ok=True t=1s
+sticky_err_dropped: COMPILE_FAIL(invalid) killer= restored_sha_ok=True t=0s
+row_err_to_skip: SURVIVED killer=[] restored_sha_ok=True t=1s
+row_err_skips_row: KILLED killer=['no_prefix_flag_-1', 'no_prefix_flag_32', 'no_prefix_teff_-1e+39'] restored_sha_ok=True t=1s
+final_err_to_empty: KILLED killer=['no_prefix_flag_-1', 'no_prefix_flag_32', 'no_prefix_teff_-1e+39'] restored_sha_ok=True t=1s
+no_final_reverse: KILLED killer=['two_records_source_order'] restored_sha_ok=True t=1s
+dup_row_chunk: KILLED killer=['boundary_0_0.0', 'boundary_10_1.0000000596046448', 'boundary_11_1.0000001788139343'] restored_sha_ok=True t=1s
+N1_dwarf_uses_wd_pred: KILLED killer=[] restored_sha_ok=True t=1s
+N1_dwarf_never_clamped: KILLED killer=[] restored_sha_ok=True t=1s
+N2_strip_all_blanks: KILLED killer=[] restored_sha_ok=True t=0s
+N2_never_strip: KILLED killer=[] restored_sha_ok=True t=2s
+python3 /tmp/ev8mut.py  16.04s user 3.72s system 69% cpu 28.625 total
