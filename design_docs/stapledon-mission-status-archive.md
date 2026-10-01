@@ -2,6 +2,20 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-09-30: iteration 4, M1.2b-preflight LANDED
+
+- **Preflight ✅**: PR #9, merge `01fe9ef`, complete merge CI green.
+  Independent Sonnet 5.5 **85/100 PASS**, zero blockers; reviewed generator
+  Codex GPT-6.1 Sol separately. Real 5k interpreter + five strict pure-VM
+  outputs byte-identical. Existing package normal photometry only; WD and
+  missing rows counted/deferred. Full M1.2b / AC2 remain incomplete.
+- **Next**: package-first D-4 WD specification/calibration/publication, then
+  bounded transform, corrected float32 writer and full integration; M1.6b
+  camera + golden remains ready. AI service foundation (D-9) routable when
+  M1 pauses. No human question reached; D-1..D-9 remain RESOLVED.
+- **Clause map**: 1–4 UNMET, 5 ongoing; M1 4/12 complete. Clause 1 moved
+  via measured preflight. Harness share 0/5; last three landings move clause 1.
+
 ## STATUS 2026-09-30: iteration 3, M1.6a LANDED
 
 - **M1.6a ✅** (turn at rest, protocol v1.1, bounded bridge): PR #3, merge
