@@ -1,6 +1,6 @@
 # M1.4a background spike: which all-sky panorama?
 
-Attended spike, 2026-10-01. The decision is Mark's; it will be recorded as a decision-ledger row.
+Attended spike, 2026-10-01. **Decided: NOIRLab, Option A** (D-10, ledger commit `e9d35c5`).
 Raw sources live in `data/raw/background/` (gitignored). The crops come from `tools/m14a_crops.py`.
 Every crop uses the same galactic window: 40° × 20°, with l increasing to the left.
 
@@ -19,11 +19,46 @@ Every crop uses the same galactic window: 40° × 20°, with l increasing to the
 | Crux / Carina / Coalsack | [noirlab](noirlab_crux_carina.jpg) | [eso](eso_crux_carina.jpg) | [gaia](gaia_crux_carina.jpg) |
 | Orion | [noirlab](noirlab_orion.jpg) | [eso](eso_orion.jpg) | [gaia](gaia_orion.jpg) |
 
-## Next, once a source is picked (Option A)
+## Star removal (Option A), spike result
 
-1. Detect point sources and cross-match them to the shipped point layers (CNS5, GCNS, HIP2 V<7).
-   Mask and inpaint **only** the matches; unmatched faint stars stay as pixels.
-2. Produce before/after crops plus a residual map, then sky-shader renders at β = 0, 0.5 and 0.99.
+`tools/m14a_destar.py` (`uv run --with pillow --with numpy --with scipy --with opencv-python-headless python tools/m14a_destar.py`)
+
+- **Registration:** the panorama is plain galactic equirectangular (l=0 at centre, l increasing to the left).
+  The 25 brightest Hipparcos stars land within a median of 0.3/0.5 px (MAD 1.5/1.1 px) of their catalogue
+  positions, so no fit is needed (`tools/m14a_register.py`).
+- **Detection:** 904,494 point sources above 5σ, measured against a 30th-percentile background.
+- **Match:** catalogue = HIP V<7.5 + GCNS (G→V, Riello) + CNS5 (`data/starmap/stars.json`), matched by position
+  (3 px, wider for bright stars) and magnitude (±1.5 mag against a fitted zero point). 31,982 catalogue stars
+  matched 25,895 panorama sources. Completeness: V<2 100%, V 2–6 ~95%, V 6–7 94%, V 7–8 74%. Below V 8
+  the panorama stops resolving them, so they are already part of the diffuse light.
+- **Mask:** radius from a per-V halo table (isolated-star medians), not a per-star profile, because the profile
+  test swallowed the Carina nebula and M42. For V<2 the radius is the larger of the table and the measured halo.
+  7.8% of pixels are masked.
+- **Fill:** normalized-convolution background from unmasked pixels only, plus faint-star grain borrowed from
+  the nearest ≥80%-clean donor patch (clipped to ±18 DN so a donor can't carry in a star), with a feathered edge.
+- **Kept as pixels:** 878,599 unmatched sources, i.e. the distant stars beyond the point layers.
+
+| View | File |
+|---|---|
+| Destarred full sky | [noirlab_destarred_full.jpg](noirlab_destarred_full.jpg) |
+| Galactic centre: original / mask (green) / destarred | [destar_galactic_centre.jpg](destar_galactic_centre.jpg) |
+| Crux–Carina | [destar_crux_carina.jpg](destar_crux_carina.jpg) |
+| Orion | [destar_orion.jpg](destar_orion.jpg) |
+| 1:1 pixels, α Cen / Hadar (top original, bottom destarred) | [destar_1to1_alpha_cen.jpg](destar_1to1_alpha_cen.jpg) |
+| 1:1 Sirius | [destar_1to1_sirius.jpg](destar_1to1_sirius.jpg) |
+| 1:1 Canopus | [destar_1to1_canopus.jpg](destar_1to1_canopus.jpg) |
+
+**Known residuals (for M1.4b to fix or accept):**
+- The Sirius hole is still faintly visible at 1:1 as a flatter patch. In-game, 1 panorama px is about 1 screen px at a 90° FOV.
+- M42's core is softened, because the Trapezium stars are catalogue stars and must go.
+- The panorama's 8-bit, tone-mapped pixels are not linear radiance. M1.4b's blackbody fit needs an inverse tone curve
+  (or a linear source) before the per-texel T_c fit means anything.
+- Spike code, not gated: no tests, and the outputs live in gitignored `data/raw/background/`.
+
+## Next (M1.4b/c, routable to the loop)
+
+1. Productionise `m14a_destar.py` into `tools/sky_model.py` with tests: registration, match completeness and a residual budget.
+2. Fit (log T_c, log L_v) per texel; sky shader; renders at β = 0, 0.5 and 0.99.
 
 ## Does travel change the background? (parallax)
 
