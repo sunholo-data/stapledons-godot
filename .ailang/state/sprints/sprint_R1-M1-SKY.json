@@ -57,7 +57,7 @@
       "acceptance_criteria": [
         "V17 nested std/json.get probe rerun on pinned AILANG v0.45.0 VM and interpreter before implementation",
         "make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: hello returns proto 1.1, v1.0 bridge checks remain unmodified, codec precision and every rejection reason preserve state",
-        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec §2 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec \u00a72 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
         "make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: byte-identical VM/interpreter output",
         "make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: existing scripted and scriptedOffAxis strict VM, interpreter and sqrt(2)*D closed form agree within 1e-9",
         "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: AC10 and AC12, including 5 s hello, 2 s step and 1 s graceful-exit bounds, no surviving child"
@@ -140,7 +140,7 @@
       "passes": true,
       "started": "2026-09-30",
       "completed": "2026-09-30",
-      "notes": "Iteration 5: LANDED in sunholo-data/ailang-packages PR #83 (branch relativity-0.3.0-wd, commit 2f1cef8), published sunholo/relativity@0.3.0 (tarball sha256 8c596f4f…, same as dry run and evaluated tree). Executor Claude Sonnet 5.5 (Agent tool): generator 208 hand-written LOC + 137 generated. AC-W1 byte-identical regen, AC-W2 validate (CALSPEC median -0.018, Landolt max 0.0156, GF21 n=1780 median 1.038, 99.2% within 10%). Independent evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking."
+      "notes": "Iteration 5: LANDED in sunholo-data/ailang-packages PR #83 (branch relativity-0.3.0-wd, commit 2f1cef8), published sunholo/relativity@0.3.0 (tarball sha256 8c596f4f\u2026, same as dry run and evaluated tree). Executor Claude Sonnet 5.5 (Agent tool): generator 208 hand-written LOC + 137 generated. AC-W1 byte-identical regen, AC-W2 validate (CALSPEC median -0.018, Landolt max 0.0156, GF21 n=1780 median 1.038, 99.2% within 10%). Independent evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking."
     },
     {
       "id": "M1.2b-WD2_MODULE_PUBLISH",
@@ -180,6 +180,26 @@
       "started": "2026-10-01",
       "completed": "2026-10-01",
       "notes": "Iteration 6: LANDED, PR #12, merge 68575d9 (merge-commit CI green). Pin sunholo/relativity 0.3.0 + relock (v0.47.2); checkWDPackage (fixture WD row: teff 5202.556030832587 rel 1e-9, V 20.89920219434688, invertible); new `make wd-vm` (in `make test`) asserts the package NaN contract on the strict VM (bbTeffFromBpRp(NaN) = bbTeffFromBpRpExact(NaN) = 3000.0, not invertible). Controller reproduced: an Exact NaN-guard mutant gives 3000.0000000000136 on the strict VM (caught) and 3000.0 on the interpreter (masked, ailang#1419). M1 doc: consumer contract (flag bit 16 TEFF_CLAMPED), O-1, WD UI-label line; teffFromBV renumbered to 0.4.0. tools/catalogue_probe.py pin assertion 0.2.0->0.3.0. ~22 hand-written code LOC + ~38 doc lines. Executor Claude Sonnet 5.5 (Agent tool); evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking (.ailang/state/evaluations/eval_R1-M1-SKY_M1.2b-WD3_iter6.{json,md})."
+    },
+    {
+      "id": "M1.2b-T1_TRANSFORM",
+      "description": "Iteration 7 bounded pure CSV normal/WD transform, missing/clamped flags and deterministic quick/medium/large selection; see iteration 7 refinement in approved sprint. No writer/FS/IO or full-catalogue integration.",
+      "estimated_loc": 240,
+      "dependencies": [
+        "M1.2b-WD3_GAME_PIN"
+      ],
+      "acceptance_criteria": [
+        "Pinned v0.47.2 check/test --package sim passes with package-only dwarf/WD transforms, independent numerical anchors, missing WD flags=3 and independent overlap counters, dwarf and WD clamp flags",
+        "Exact fixture membership/order: quick/large retain input; medium chooses nearest complete rows including WD, extends past two missing rows with excluded=2; stable distance ties and small-input exhaustion checked",
+        "F1-F3/F5 parser tests reject partial invalid/nonfinite fields, blank ID, malformed y/z, wrong field count and invalid WD; partial blank G/BPRP become sentinel rows",
+        "make test AILANG=$PWD/runtime/bin/ailang AILANG_BIN=$PWD/runtime/bin/ailang green; independent evaluation passes; changed code/test/config LOC <=250; parent M1.2b remains null"
+      ],
+      "session": 3,
+      "passes": null,
+      "started": "2026-10-01T10:41:37.423878+00:00",
+      "completed": "2026-10-01T10:50:27.550206+00:00",
+      "notes": "Implemented in iteration 7; awaits independent evaluation (passes remains null). Package check/headless make test rc0: AILANG30/30, physics42/42, extraction15/15, parity and strict core+WD+transform+selection. 33 landed/building mutants killed by grouped strict predicates; SHA256 restored. Evidence .ailang/state/evidence/iter7/execution.md. Pure foldl reversal avoids std/list.reverse strictVM gap, GCP user report inbox_1790851451419_f085641f. Writer/full-medium integration remain pending.",
+      "actual_loc": 192
     },
     {
       "id": "M1.2c_STATS_AND_COMMIT",
@@ -297,5 +317,19 @@
       "notes": null
     }
   ],
-  "approved": "2026-09-27"
+  "approved": "2026-09-27",
+  "registry_reuse": [
+    {
+      "milestone": "M1.2b-T1_TRANSFORM",
+      "package": "sunholo/relativity@0.3.0",
+      "action": "depend",
+      "reason": "2026-10-01 search photometry + info/docs confirm existing dwarf and WD functions; sim already locks 0.3.0. No local physics."
+    },
+    {
+      "milestone": "M1.2b-T1_TRANSFORM",
+      "package": "none",
+      "action": "none",
+      "reason": "2026-10-01 pkg search csv returned no packages; exact app schema/tier selection uses std/string/list/result."
+    }
+  ]
 }

@@ -1,0 +1,3 @@
+WARNING MOD010 (relaxed): module 'reverse_vm_repro' does not match canonical path '.ailang/state/evidence/iter7/reverse_vm_repro'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+Error: bytecode execution failed: vm: vm: TAIL_CALL: std/list.reverse is evaluator-only (compiler: effectful builtin "__list_reverse" not yet wired (Phase 2E)) but no interop bridge is wired (in .ailang/state/evidence/iter7/reverse_vm_repro.main at .ailang/state/evidence/iter7/reverse_vm_repro.ail:3, ip 9, op TAIL_CALL)
