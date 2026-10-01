@@ -1,0 +1,623 @@
+{
+  "sim": {
+    "v": 2.0,
+    "type": "hello",
+    "proto": {
+      "major": 2.0,
+      "minor": 0.0
+    },
+    "sim": "stapledons/sim 0.1.0",
+    "relativity": "0.4.0",
+    "rng": "none-0"
+  },
+  "params": {
+    "epoch": 0.0,
+    "start_age": 30.0,
+    "boost_g": 750000.0,
+    "m_eff_kg": 1.0,
+    "ism_n_cm3": 0.1,
+    "bubble_radius_m": 100.0,
+    "glow_eps": 1e-09,
+    "glow_f_in": 0.5,
+    "cruise_min_beta": 0.9,
+    "cap_one_minus_beta": 1e-06
+  },
+  "check_row_4_37ly": {
+    "speed": "0.99c",
+    "tick": 1,
+    "clock": {
+      "tau": 0.0001368925393566,
+      "t": 0.0001368925393566,
+      "year": 0.0001368925393566,
+      "age": 30.000136892539356
+    },
+    "target": {
+      "index": 1.0,
+      "id": "Gl 559",
+      "pos": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -4.37
+      }
+    },
+    "cruise_phi": 2.6466524123622457,
+    "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+    "rows": [
+      {
+        "label": "Ship time",
+        "field": "journey.plan.ship_years",
+        "raw": 0.6226958707592057,
+        "text": "0.6227 ship-yr"
+      },
+      {
+        "label": "Earth time",
+        "field": "journey.plan.earth_years",
+        "raw": 4.414143655383168,
+        "text": "4.414 Earth-yr"
+      },
+      {
+        "label": "Arrival, if committed now",
+        "field": "journey.plan.arrive_year",
+        "raw": 4.414280547922525,
+        "text": "Earth +4.414 yr"
+      },
+      {
+        "label": "Age on arrival (placeholder)",
+        "field": "journey.plan.age_on_arrival",
+        "raw": 30.62283276329856,
+        "text": "30.62 yr"
+      },
+      {
+        "label": "Years left (placeholder)",
+        "field": "journey.plan.years_left",
+        "raw": 99.37716723670144,
+        "text": "99.38 yr"
+      },
+      {
+        "label": "Distance",
+        "field": "journey.plan.distance",
+        "raw": 4.37,
+        "text": "4.370 ly"
+      },
+      {
+        "label": "Cruise speed",
+        "field": "journey.plan.cruise_beta",
+        "raw": 0.99,
+        "text": "0.990000c"
+      },
+      {
+        "label": "Cruise 1 - beta",
+        "field": "journey.plan.cruise_one_minus_beta",
+        "raw": 0.01000000000000001,
+        "text": "0.01000"
+      },
+      {
+        "label": "Cruise gamma",
+        "field": "journey.plan.cruise_gamma",
+        "raw": 7.088812050083356,
+        "text": "7.0888"
+      },
+      {
+        "label": "Boost, each end",
+        "field": "journey.plan.boost_minutes",
+        "raw": 1.7979782022600483,
+        "text": "1.80 min"
+      },
+      {
+        "label": "Boost energy",
+        "field": "journey.plan.energy.boost_j",
+        "raw": 2.3786925619268595e+17,
+        "text": "2.379e17 J"
+      },
+      {
+        "label": "Brake energy",
+        "field": "journey.plan.energy.brake_j",
+        "raw": 2.3786925619268595e+17,
+        "text": "2.379e17 J"
+      },
+      {
+        "label": "Drag energy",
+        "field": "journey.plan.energy.drag_j",
+        "raw": 1.3702577394591198e+17,
+        "text": "1.370e17 J"
+      },
+      {
+        "label": "Total radiated",
+        "field": "journey.plan.energy.total_j",
+        "raw": 6.127642863312838e+17,
+        "text": "6.128e17 J"
+      },
+      {
+        "label": "Total as mass",
+        "field": "journey.plan.energy.total_kg",
+        "raw": 6.817922175341585,
+        "text": "6.818 kg"
+      },
+      {
+        "label": "ISM load",
+        "field": "journey.plan.ism.load_w_m2",
+        "raw": 221961.2727892787,
+        "text": "2.220e5 W/m2"
+      },
+      {
+        "label": "Glow, inward",
+        "field": "journey.plan.ism.glow_w_m2",
+        "raw": 2.407194217926e-05,
+        "text": "2.407e-5 W/m2"
+      },
+      {
+        "label": "Drag force",
+        "field": "journey.plan.ism.drag_n",
+        "raw": 23.25982143207345,
+        "text": "23.26 N"
+      },
+      {
+        "label": "Hold power",
+        "field": "journey.plan.ism.hold_w",
+        "raw": 6973119039.76238,
+        "text": "6.973e9 W"
+      },
+      {
+        "label": "Forward CMB",
+        "field": "journey.plan.cmb_forward_k",
+        "raw": 38.44085554458952,
+        "text": "38.44 K"
+      },
+      {
+        "label": "Profile",
+        "field": "journey.plan.profile",
+        "raw": "burn_coast_burn",
+        "text": "burn_coast_burn"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "speed": "0.9c",
+      "tick": 2,
+      "clock": {
+        "tau": 0.00027378507871321,
+        "t": 0.00027378507871321,
+        "year": 0.00027378507871321,
+        "age": 30.000273785078715
+      },
+      "target": {
+        "index": 1.0,
+        "id": "Gl 559",
+        "pos": {
+          "x": 1.5,
+          "y": -4.09,
+          "z": -0.05
+        }
+      },
+      "cruise_phi": 1.4722194895832204,
+      "speed_label": "Cruise 0.900000c  ·  gamma 2.2942",
+      "rows": [
+        {
+          "label": "Ship time",
+          "field": "journey.plan.ship_years",
+          "raw": 2.110035242025851,
+          "text": "2.110 ship-yr"
+        },
+        {
+          "label": "Earth time",
+          "field": "journey.plan.earth_years",
+          "raw": 4.840749444242688,
+          "text": "4.841 Earth-yr"
+        },
+        {
+          "label": "Arrival, if committed now",
+          "field": "journey.plan.arrive_year",
+          "raw": 4.841023229321401,
+          "text": "Earth +4.841 yr"
+        },
+        {
+          "label": "Age on arrival (placeholder)",
+          "field": "journey.plan.age_on_arrival",
+          "raw": 32.11030902710456,
+          "text": "32.11 yr"
+        },
+        {
+          "label": "Years left (placeholder)",
+          "field": "journey.plan.years_left",
+          "raw": 97.88969097289544,
+          "text": "97.89 yr"
+        },
+        {
+          "label": "Distance",
+          "field": "journey.plan.distance",
+          "raw": 4.35667304258651,
+          "text": "4.357 ly"
+        },
+        {
+          "label": "Cruise speed",
+          "field": "journey.plan.cruise_beta",
+          "raw": 0.9,
+          "text": "0.900000c"
+        },
+        {
+          "label": "Cruise 1 - beta",
+          "field": "journey.plan.cruise_one_minus_beta",
+          "raw": 0.09999999999999998,
+          "text": "0.1000"
+        },
+        {
+          "label": "Cruise gamma",
+          "field": "journey.plan.cruise_gamma",
+          "raw": 2.294157338705618,
+          "text": "2.2942"
+        },
+        {
+          "label": "Boost, each end",
+          "field": "journey.plan.boost_minutes",
+          "raw": 1.0001383403612385,
+          "text": "1.00 min"
+        },
+        {
+          "label": "Boost energy",
+          "field": "journey.plan.energy.boost_j",
+          "raw": 1.3231648905001936e+17,
+          "text": "1.323e17 J"
+        },
+        {
+          "label": "Brake energy",
+          "field": "journey.plan.energy.brake_j",
+          "raw": 1.3231648905001936e+17,
+          "text": "1.323e17 J"
+        },
+        {
+          "label": "Drag energy",
+          "field": "journey.plan.energy.drag_j",
+          "raw": 4.019148729557057e+16,
+          "text": "4.019e16 J"
+        },
+        {
+          "label": "Total radiated",
+          "field": "journey.plan.energy.total_j",
+          "raw": 3.048244653956093e+17,
+          "text": "3.048e17 J"
+        },
+        {
+          "label": "Total as mass",
+          "field": "journey.plan.energy.total_kg",
+          "raw": 3.3916295850893894,
+          "text": "3.392 kg"
+        },
+        {
+          "label": "ISM load",
+          "field": "journey.plan.ism.load_w_m2",
+          "raw": 19212.828745135495,
+          "text": "1.921e4 W/m2"
+        },
+        {
+          "label": "Glow, inward",
+          "field": "journey.plan.ism.glow_w_m2",
+          "raw": 1.5052987296e-06,
+          "text": "1.505e-6 W/m2"
+        },
+        {
+          "label": "Drag force",
+          "field": "journey.plan.ism.drag_n",
+          "raw": 2.01335557415512,
+          "text": "2.013 N"
+        },
+        {
+          "label": "Hold power",
+          "field": "journey.plan.ism.hold_w",
+          "raw": 603588816.4039648,
+          "text": "6.036e8 W"
+        },
+        {
+          "label": "Forward CMB",
+          "field": "journey.plan.cmb_forward_k",
+          "raw": 11.877999621148335,
+          "text": "11.88 K"
+        },
+        {
+          "label": "Profile",
+          "field": "journey.plan.profile",
+          "raw": "burn_coast_burn",
+          "text": "burn_coast_burn"
+        }
+      ]
+    },
+    {
+      "speed": "cap",
+      "tick": 3,
+      "clock": {
+        "tau": 0.00041067761806981,
+        "t": 0.00041067761806981,
+        "year": 0.00041067761806981,
+        "age": 30.00041067761807
+      },
+      "target": {
+        "index": 1.0,
+        "id": "Gl 559",
+        "pos": {
+          "x": 1.5,
+          "y": -4.09,
+          "z": -0.05
+        }
+      },
+      "cruise_phi": 7.254328619262047,
+      "speed_label": "Cruise 0.999999c  ·  gamma 707.1070",
+      "rows": [
+        {
+          "label": "Ship time",
+          "field": "journey.plan.ship_years",
+          "raw": 0.00617743080846749,
+          "text": "0.006177 ship-yr"
+        },
+        {
+          "label": "Earth time",
+          "field": "journey.plan.earth_years",
+          "raw": 4.356679978853449,
+          "text": "4.357 Earth-yr"
+        },
+        {
+          "label": "Arrival, if committed now",
+          "field": "journey.plan.arrive_year",
+          "raw": 4.357090656471518,
+          "text": "Earth +4.357 yr"
+        },
+        {
+          "label": "Age on arrival (placeholder)",
+          "field": "journey.plan.age_on_arrival",
+          "raw": 30.006588108426534,
+          "text": "30.01 yr"
+        },
+        {
+          "label": "Years left (placeholder)",
+          "field": "journey.plan.years_left",
+          "raw": 99.99341189157349,
+          "text": "99.99 yr"
+        },
+        {
+          "label": "Distance",
+          "field": "journey.plan.distance",
+          "raw": 4.35667304258651,
+          "text": "4.357 ly"
+        },
+        {
+          "label": "Cruise speed",
+          "field": "journey.plan.cruise_beta",
+          "raw": 0.999999,
+          "text": "0.999999c"
+        },
+        {
+          "label": "Cruise 1 - beta",
+          "field": "journey.plan.cruise_one_minus_beta",
+          "raw": 1e-06,
+          "text": "1.000e-6"
+        },
+        {
+          "label": "Cruise gamma",
+          "field": "journey.plan.cruise_gamma",
+          "raw": 707.1069579633089,
+          "text": "707.1070"
+        },
+        {
+          "label": "Boost, each end",
+          "field": "journey.plan.boost_minutes",
+          "raw": 4.928159311189213,
+          "text": "4.93 min"
+        },
+        {
+          "label": "Boost energy",
+          "field": "journey.plan.energy.boost_j",
+          "raw": 6.519865414820472e+17,
+          "text": "6.520e17 J"
+        },
+        {
+          "label": "Brake energy",
+          "field": "journey.plan.energy.brake_j",
+          "raw": 6.519865414820472e+17,
+          "text": "6.520e17 J"
+        },
+        {
+          "label": "Drag energy",
+          "field": "journey.plan.energy.drag_j",
+          "raw": 1.3758513386117908e+19,
+          "text": "1.376e19 J"
+        },
+        {
+          "label": "Total radiated",
+          "field": "journey.plan.energy.total_j",
+          "raw": 1.5062486469082003e+19,
+          "text": "1.506e19 J"
+        },
+        {
+          "label": "Total as mass",
+          "field": "journey.plan.energy.total_kg",
+          "raw": 167.5927641413096,
+          "text": "167.593 kg"
+        },
+        {
+          "label": "ISM load",
+          "field": "journey.plan.ism.load_w_m2",
+          "raw": 2253353077.72868,
+          "text": "2.253e9 W/m2"
+        },
+        {
+          "label": "Glow, inward",
+          "field": "journey.plan.ism.glow_w_m2",
+          "raw": 0.28127107577632854,
+          "text": "0.2813 W/m2"
+        },
+        {
+          "label": "Drag force",
+          "field": "journey.plan.ism.drag_n",
+          "raw": 236133.94153285777,
+          "text": "2.361e5 N"
+        },
+        {
+          "label": "Hold power",
+          "field": "journey.plan.ism.hold_w",
+          "raw": 70791174749363.72,
+          "text": "7.079e13 W"
+        },
+        {
+          "label": "Forward CMB",
+          "field": "journey.plan.cmb_forward_k",
+          "raw": 3853.7309940335736,
+          "text": "3853.73 K"
+        },
+        {
+          "label": "Profile",
+          "field": "journey.plan.profile",
+          "raw": "burn_coast_burn",
+          "text": "burn_coast_burn"
+        }
+      ]
+    },
+    {
+      "speed": "0.99c",
+      "tick": 4,
+      "clock": {
+        "tau": 0.00054757015742642,
+        "t": 0.00054757015742642,
+        "year": 0.00054757015742642,
+        "age": 30.000547570157423
+      },
+      "target": {
+        "index": 1.0,
+        "id": "Gl 559",
+        "pos": {
+          "x": 1.5,
+          "y": -4.09,
+          "z": -0.05
+        }
+      },
+      "cruise_phi": 2.6466524123622457,
+      "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+      "rows": [
+        {
+          "label": "Ship time",
+          "field": "journey.plan.ship_years",
+          "raw": 0.6207968821769395,
+          "text": "0.6208 ship-yr"
+        },
+        {
+          "label": "Earth time",
+          "field": "journey.plan.earth_years",
+          "raw": 4.400682082238228,
+          "text": "4.401 Earth-yr"
+        },
+        {
+          "label": "Arrival, if committed now",
+          "field": "journey.plan.arrive_year",
+          "raw": 4.401229652395655,
+          "text": "Earth +4.401 yr"
+        },
+        {
+          "label": "Age on arrival (placeholder)",
+          "field": "journey.plan.age_on_arrival",
+          "raw": 30.62134445233437,
+          "text": "30.62 yr"
+        },
+        {
+          "label": "Years left (placeholder)",
+          "field": "journey.plan.years_left",
+          "raw": 99.37865554766564,
+          "text": "99.38 yr"
+        },
+        {
+          "label": "Distance",
+          "field": "journey.plan.distance",
+          "raw": 4.35667304258651,
+          "text": "4.357 ly"
+        },
+        {
+          "label": "Cruise speed",
+          "field": "journey.plan.cruise_beta",
+          "raw": 0.99,
+          "text": "0.990000c"
+        },
+        {
+          "label": "Cruise 1 - beta",
+          "field": "journey.plan.cruise_one_minus_beta",
+          "raw": 0.01000000000000001,
+          "text": "0.01000"
+        },
+        {
+          "label": "Cruise gamma",
+          "field": "journey.plan.cruise_gamma",
+          "raw": 7.088812050083356,
+          "text": "7.0888"
+        },
+        {
+          "label": "Boost, each end",
+          "field": "journey.plan.boost_minutes",
+          "raw": 1.7979782022600483,
+          "text": "1.80 min"
+        },
+        {
+          "label": "Boost energy",
+          "field": "journey.plan.energy.boost_j",
+          "raw": 2.3786925619268595e+17,
+          "text": "2.379e17 J"
+        },
+        {
+          "label": "Brake energy",
+          "field": "journey.plan.energy.brake_j",
+          "raw": 2.3786925619268595e+17,
+          "text": "2.379e17 J"
+        },
+        {
+          "label": "Drag energy",
+          "field": "journey.plan.energy.drag_j",
+          "raw": 1.3660789220066421e+17,
+          "text": "1.366e17 J"
+        },
+        {
+          "label": "Total radiated",
+          "field": "journey.plan.energy.total_j",
+          "raw": 6.123464045860361e+17,
+          "text": "6.123e17 J"
+        },
+        {
+          "label": "Total as mass",
+          "field": "journey.plan.energy.total_kg",
+          "raw": 6.813272613868848,
+          "text": "6.813 kg"
+        },
+        {
+          "label": "ISM load",
+          "field": "journey.plan.ism.load_w_m2",
+          "raw": 221961.2727892787,
+          "text": "2.220e5 W/m2"
+        },
+        {
+          "label": "Glow, inward",
+          "field": "journey.plan.ism.glow_w_m2",
+          "raw": 2.407194217926e-05,
+          "text": "2.407e-5 W/m2"
+        },
+        {
+          "label": "Drag force",
+          "field": "journey.plan.ism.drag_n",
+          "raw": 23.25982143207345,
+          "text": "23.26 N"
+        },
+        {
+          "label": "Hold power",
+          "field": "journey.plan.ism.hold_w",
+          "raw": 6973119039.76238,
+          "text": "6.973e9 W"
+        },
+        {
+          "label": "Forward CMB",
+          "field": "journey.plan.cmb_forward_k",
+          "raw": 38.44085554458952,
+          "text": "38.44 K"
+        },
+        {
+          "label": "Profile",
+          "field": "journey.plan.profile",
+          "raw": "burn_coast_burn",
+          "text": "burn_coast_burn"
+        }
+      ]
+    }
+  ]
+}
