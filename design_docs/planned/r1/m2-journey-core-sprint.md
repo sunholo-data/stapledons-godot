@@ -418,6 +418,26 @@ equivalence fixture.
 **Estimated:** 220 code + 150 tests = **370** (+ fixtures) · **Cap:** 650 ·
 **Iteration:** 3 · **Depends on:** M2.1a · **Registry:** none (GDScript)
 
+**Status (executed 2026-10-01, branch `sprint/m2.1b-bridge`; independent evaluation pending):**
+- [x] Bridge tests first (red against the v1.1 bridge), then `sim_bridge.gd` v2:
+  `hello()`, `new_game()`, `send()`, integer-major check, mirrored `world`,
+  `record_path` tee, `full_precision` writer with a `-0.0` repair
+- [x] `main.gd` and capture on a diag session (`heading` + `thrust` intents,
+  `--record=`); golden never used the sim, so nothing to migrate there
+- [x] v1.1 deleted from `ship.ail`: no startup line, nothing before the first
+  input (ship-level check in `make parity-v2`)
+- [x] `parity` generator and `offaxis.ndjson` are v2 logs;
+  `tests/fixtures/v11_offaxis.golden` + `make offaxis-v11-equiv`
+- [x] AC9 · [x] AC13 (interim) · [x] AC16 · [x] AC17 capture part: 13/13 PNGs
+  byte-identical to main; `make golden` 0 failures
+- [x] M2.1a follow-ups: every `inRange` bound pinned (23/23 mutants killed);
+  reason-code and parameter-range tables in the design doc (ranges pending
+  Mark's ratification); -0.0 and 1e308 in the echo
+- Decision (executor): AC9's pos/cruise_phi echo goes through a diag-only
+  `echo` intent (plan payload in, `echo` event out), so AC9 stays in M2.1b
+- Known divergence: Godot's JSON reader returns 0.0 for \|x\| ≤ DBL_MIN
+  (5e-324, DBL_MIN); asserted as known-divergent, no bit-string fallback
+
 **Files:**
 - modify `bridge/sim_bridge.gd`:
   - `hello()`, `new_game(seed, scenario, diag, params)`,

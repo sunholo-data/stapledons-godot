@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.50.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim parity parity-offaxis parity-v2 strict wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim parity parity-offaxis parity-v2 offaxis-v11-equiv strict wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim parity parity-offaxis parity-v2 strict wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: deps import physics sim parity parity-offaxis parity-v2 offaxis-v11-equiv strict wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
@@ -32,24 +32,35 @@ sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematic
 	cd sim && $(AILANG) test --package .
 	$(GODOT) --headless --path . --script tests/test_sim_bridge.gd
 
-parity:            ## bytecode VM and tree-walking interpreter must agree bit for bit
+parity:            ## v2 diag session, 600 thrust ticks: bytecode VM and tree-walking interpreter must agree bit for bit
 	@mkdir -p $(SCRATCH)
-	@python3 -c "import sys; [print('{\"cmd\":\"step\",\"thrust\":%s,\"dtau\":0.01}' % (1 if i < 300 else -0.5)) for i in range(600)]; print('{\"cmd\":\"quit\"}')" > $(SCRATCH)/parity_in.txt
+	@python3 -c "print('{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":0}}'); print('{\"v\":2,\"type\":\"new_game\",\"seed\":0,\"scenario\":\"sol\",\"diag\":true}'); [print('{\"v\":2,\"type\":\"input\",\"tick\":%d,\"dtau\":0.01,\"intents\":[{\"k\":\"thrust\",\"thrust\":%s}]}' % (i + 1, 1 if i < 300 else -0.5)) for i in range(600)]; print('{\"v\":2,\"type\":\"quit\"}')" > $(SCRATCH)/parity_in.txt
 	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < $(SCRATCH)/parity_in.txt > $(SCRATCH)/vm.txt
 	$(AILANG) run $(SIMFLAGS) $(SIM) < $(SCRATCH)/parity_in.txt > $(SCRATCH)/interp.txt
-	cmp $(SCRATCH)/vm.txt $(SCRATCH)/interp.txt && echo "parity: identical ($$(wc -l < $(SCRATCH)/vm.txt) lines)"
+	cmp $(SCRATCH)/vm.txt $(SCRATCH)/interp.txt && test "$$(grep -c '"status":"ok"' $(SCRATCH)/vm.txt)" = 601 && echo "parity: identical ($$(wc -l < $(SCRATCH)/vm.txt) lines)"
 
-parity-offaxis:     ## v1.1 turns, burns and rejects must be VM/interpreter identical
+parity-offaxis:     ## v2 off-axis log (turns, burns, refusals, malformed lines) must be VM/interpreter identical
 	@mkdir -p $(SCRATCH)
 	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/offaxis.ndjson > $(SCRATCH)/offaxis_vm.txt
 	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/offaxis.ndjson > $(SCRATCH)/offaxis_interp.txt
 	cmp $(SCRATCH)/offaxis_vm.txt $(SCRATCH)/offaxis_interp.txt && echo "parity-offaxis: identical ($$(wc -l < $(SCRATCH)/offaxis_vm.txt) lines)"
 
-parity-v2:          ## protocol v2 session through ship.ail (hello first, malformed, refused): VM/interpreter identical
+parity-v2:          ## protocol v2 session through ship.ail (hello first, malformed, refused): VM/interpreter identical; nothing printed before the first input
 	@mkdir -p $(SCRATCH)
+	@for vm in --bytecode ""; do \
+	  out=$$(printf '' | $(AILANG) run $$vm $(SIMFLAGS) $(SIM)); test -z "$$out" || { echo "ship printed before any input: $$out"; exit 1; }; \
+	  out=$$(printf '{"v":2,"type":"quit"}\n' | $(AILANG) run $$vm $(SIMFLAGS) $(SIM)); test -z "$$out" || { echo "ship printed before hello: $$out"; exit 1; }; \
+	  out=$$(printf '{"v":2,"type":"hello","want":{"major":2,"minor":0}}\n' | $(AILANG) run $$vm $(SIMFLAGS) $(SIM)); \
+	  test "$$(printf '%s\n' "$$out" | wc -l | tr -d ' ')" = 1 && case "$$out" in '{"v":2,"type":"hello","proto":{"major":2,'*) ;; *) echo "first line is not the hello reply: $$out"; exit 1;; esac; \
+	done; echo "parity-v2: silent until the first input; first output is the hello reply (VM and interpreter)"
 	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_vm.txt
 	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_interp.txt
 	cmp $(SCRATCH)/v2_vm.txt $(SCRATCH)/v2_interp.txt && echo "parity-v2: identical ($$(wc -l < $(SCRATCH)/v2_vm.txt) lines)"
+
+offaxis-v11-equiv:  ## AC13 interim: v2 off-axis log reproduces v1.1 (e9d35c5) beta, gamma, tau, t, x, pos bit for bit (folds into make replay at M2.5)
+	@mkdir -p $(SCRATCH)
+	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/offaxis.ndjson > $(SCRATCH)/offaxis_v2.txt
+	python3 tests/offaxis_v11_equiv.py tests/fixtures/v11_offaxis.golden $(SCRATCH)/offaxis_v2.txt
 
 strict:            ## pure sim core and protocol v2 codecs must run entirely on the bytecode VM (no evaluator fallback)
 	@want=$$(python3 -c "import math; g=1.032295275553596; print(repr(2*math.sinh(g*3.0)/g))"); \

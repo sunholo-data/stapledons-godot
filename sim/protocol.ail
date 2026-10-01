@@ -19,11 +19,15 @@ import pkg/sunholo/relativity/hyper (absf)
 import ./core (Ship, initShip, step, turn, position)
 
 export type Target = { index: int, id: string, pos: Vec3 }
+export type PlanReq = { target: Target, cruisePhi: float, flipG: Option[float] }
+-- IEcho: diag-only test hook (M2.1b, AC9). It carries a plan payload and the
+-- sim echoes it back in an `echo` event, so the Godot bridge can check the
+-- float64 round trip of `target.pos` and `cruise_phi` before M2.3a's planner.
 export type Intent =
-  IPlan({target: Target, cruisePhi: float, flipG: Option[float]})
+  IPlan(PlanReq)
   | ICommit(int) | ICancel | IThrust(float) | IHeading(Vec3)
   | IRecord({source: string, req: string, kind: string, sha256: string, body: string})
-  | IDraw(string)
+  | IDraw(string) | IEcho(PlanReq)
 export type Override = { name: string, value: float }
 export type Input =
   GHello({major: int, minor: int})
@@ -34,7 +38,7 @@ export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: flo
 export type Clock = { tau: float, t: float, year: float, age: float }
 export type ShipView = { phase: string, beta: float, oneMinusBeta: float, gamma: float, heading: Vec3, pos: Vec3, x: float }
 export type Refusal = { i: int, reason: string }
-export type Event = { kind: string }
+export type Event = { kind: string, echo: Option[PlanReq] }
 export type StateMsg = { tick: int, status: string, clock: Option[Clock], ship: Option[ShipView], params: Option[Params], events: [Event], refused: [Refusal], full: bool }
 export type HelloMsg = { major: int, minor: int, sim: string, relativity: string, rng: string }
 
@@ -76,9 +80,12 @@ pure func paramPairs(p: Params) -> [Override] = [
   {name: "cap_one_minus_beta", value: p.capOneMinusBeta}]
 pure func overrides(os: [Override]) -> string = obj(each(\o. f(o.name, num(o.value)), os))
 
+pure func planFields(p: PlanReq) -> [string] =
+  [f("target", obj([f("index", intToStr(p.target.index)), f("id", q(p.target.id)), f("pos", vec(p.target.pos))])), f("cruise_phi", num(p.cruisePhi))] ++ opt("flip_g", num, p.flipG)
 pure func encodeIntent(i: Intent) -> string =
   match i {
-    IPlan(p) => obj([f("k", q("plan")), f("target", obj([f("index", intToStr(p.target.index)), f("id", q(p.target.id)), f("pos", vec(p.target.pos))])), f("cruise_phi", num(p.cruisePhi))] ++ opt("flip_g", num, p.flipG)),
+    IPlan(p) => obj([f("k", q("plan"))] ++ planFields(p)),
+    IEcho(p) => obj([f("k", q("echo"))] ++ planFields(p)),
     ICommit(n) => obj([f("k", q("commit")), f("plan_id", intToStr(n))]),
     ICancel => obj([f("k", q("cancel"))]),
     IThrust(t) => obj([f("k", q("thrust")), f("thrust", num(t))]),
@@ -99,7 +106,7 @@ pure func encodeShip(s: ShipView) -> string =
 export pure func encodeState(m: StateMsg) -> string =
   envelope("state", [f("tick", intToStr(m.tick)), f("status", q(m.status)),
     f("changes", obj(opt("clock", encodeClock, m.clock) ++ opt("ship", encodeShip, m.ship) ++ opt("params", \p. overrides(paramPairs(p)), m.params))),
-    f("events", arr(each(\e. obj([f("k", q(e.kind))]), m.events))),
+    f("events", arr(each(\e. obj([f("k", q(e.kind))] ++ (match e.echo { Some(p) => planFields(p), None => [] })), m.events))),
     f("refused", arr(each(\r. obj([f("i", intToStr(r.i)), f("reason", q(r.reason))]), m.refused))),
     f("full", bool(m.full))])
 export pure func encodeHello(h: HelloMsg) -> string =
@@ -122,12 +129,15 @@ pure func str(j: Json, k: string) -> Result[string, string] = req(getString(j, k
 
 pure func decodeIntent(j: Json) -> Result[Intent, string] =
   match getString(j, "k") { Some(k) => intentOf(k, j), None => Err("bad_intent") }
+pure func planOf(j: Json, c: string) -> Result[PlanReq, string] =
+  bind(req(get(j, "target"), c), \t.
+  bind(req(natF(t, "index"), c), \index. bind(req(getString(t, "id"), c), \id. bind(req(vecF(t, "pos"), c), \pos.
+  bind(req(numF(j, "cruise_phi"), c), \phi.
+  bind(if has(j, "flip_g") then bind(req(numF(j, "flip_g"), c), \g. Ok(Some(g))) else Ok(None), \flip.
+  Ok({target: {index: index, id: id, pos: pos}, cruisePhi: phi, flipG: flip})))))))
 pure func intentOf(k: string, j: Json) -> Result[Intent, string] =
-    if k == "plan" then bind(req(get(j, "target"), "bad_intent"), \t.
-      bind(req(natF(t, "index"), "bad_intent"), \index. bind(str(t, "id"), \id. bind(req(vecF(t, "pos"), "bad_intent"), \pos.
-      bind(req(numF(j, "cruise_phi"), "bad_intent"), \phi.
-      bind(if has(j, "flip_g") then bind(req(numF(j, "flip_g"), "bad_intent"), \g. Ok(Some(g))) else Ok(None), \flip.
-      Ok(IPlan({target: {index: index, id: id, pos: pos}, cruisePhi: phi, flipG: flip}))))))))
+    if k == "plan" then bind(planOf(j, "bad_intent"), \p. Ok(IPlan(p)))
+    else if k == "echo" then bind(planOf(j, "bad_intent"), \p. Ok(IEcho(p)))
     else if k == "commit" then bind(req(natF(j, "plan_id"), "bad_intent"), \n. Ok(ICommit(n)))
     else if k == "cancel" then Ok(ICancel)
     else if k == "thrust" then bind(req(numF(j, "thrust"), "bad_step"), \t. check(absf(t) <= 1.0, IThrust(t), "bad_step"))
@@ -196,7 +206,7 @@ export pure func decodeState(line: string) -> Result[StateMsg, string] =
   bind(envelopeOf(line, "state"), \j. bind(check(getString(j, "type") == Some("state"), j, bad()), \_j.
   bind(req(natF(j, "tick"), bad()), \tick. bind(req(getString(j, "status"), bad()), \st. bind(req(get(j, "changes"), bad()), \ch.
   bind(optF(ch, "clock", decodeClock), \c. bind(optF(ch, "ship", decodeShip), \s. bind(optF(ch, "params", decodeFullParams), \p.
-  bind(bind(req(getArray(j, "events"), bad()), \es. all(\e. bind(req(getString(e, "k"), bad()), \k. Ok({kind: k})), es)), \evs.
+  bind(bind(req(getArray(j, "events"), bad()), \es. all(\e. bind(req(getString(e, "k"), bad()), \k. bind(if has(e, "target") then bind(planOf(e, bad()), \p. Ok(Some(p))) else Ok(None), \echo. Ok({kind: k, echo: echo}))), es)), \evs.
   bind(bind(req(getArray(j, "refused"), bad()), \rs. all(\r. bind(req(natF(r, "i"), bad()), \i. bind(req(getString(r, "reason"), bad()), \why. Ok({i: i, reason: why}))), rs)), \refs.
   bind(req(getBool(j, "full"), bad()), \full.
   Ok({tick: tick, status: st, clock: c, ship: s, params: p, events: evs, refused: refs, full: full}))))))))))))
@@ -208,13 +218,14 @@ export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
 
 -- ------------------------------------------- session (interim adapter)
 -- Until M2.2's core.tick: diag `thrust`/`heading` map onto core.step/turn;
+-- diag `echo` (test hook) is reported back as an event;
 -- plan/commit/cancel (M2.2/M2.3a), draw (M2.4) and record (2.1) are refused
 -- `unsupported`. Malformed lines change nothing; refused intents are listed
 -- and the tick proceeds.
 export type Game = { ship: Ship, diag: bool, params: Params }
 export type Session = { hello: bool, game: Option[Game] }
 export type Served = { session: Session, reply: string }
-type Acc = { ship: Ship, thrust: float, refused: [Refusal], i: int }
+type Acc = { ship: Ship, thrust: float, refused: [Refusal], events: [Event], i: int }
 
 export pure func newSession() -> Session = { hello: false, game: None }
 pure func clockOf(p: Params, s: Ship) -> Clock = { tau: s.motion.tau, t: s.motion.t, year: p.epoch + s.motion.t, age: p.startAge + s.motion.tau }
@@ -233,6 +244,7 @@ pure func apply(diag: bool, a: Acc, it: Intent) -> Acc {
       let turned = turn(a.ship, h);
       if turned.accepted then {a | ship: turned.ship} else refuse(a, "moving")
     },
+    IEcho(p) => if diag then {a | events: {kind: "echo", echo: Some(p)} :: a.events} else refuse(a, "diag_only"),
     _ => refuse(a, "unsupported")
   };
   {r | i: a.i + 1}
@@ -254,10 +266,10 @@ export pure func serve(s: Session, line: string) -> Served =
       GInput(i) => if !s.hello then malformed(s, "no_hello") else match s.game {
         None => malformed(s, "no_game"),
         Some(w) => if i.tick != w.ship.tick + 1 then malformed(s, "bad_tick") else {
-          let a = applyIntents(w.diag, {ship: w.ship, thrust: 0.0, refused: [], i: 0}, i.intents);
+          let a = applyIntents(w.diag, {ship: w.ship, thrust: 0.0, refused: [], events: [], i: 0}, i.intents);
           let next = step(a.ship, a.thrust, i.dtau);
           let state = { tick: next.tick, status: "ok", clock: changed(encodeClock, clockOf(w.params, w.ship), clockOf(w.params, next)),
-            ship: changed(encodeShip, shipOf(w.ship), shipOf(next)), params: None, events: [], refused: rev(a.refused, []), full: false };
+            ship: changed(encodeShip, shipOf(w.ship), shipOf(next)), params: None, events: rev(a.events, []), refused: rev(a.refused, []), full: false };
           { session: {s | game: Some({w | ship: next})}, reply: encodeState(state) }
         }
       }

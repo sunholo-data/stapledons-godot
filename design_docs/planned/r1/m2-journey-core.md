@@ -253,6 +253,7 @@ first full `state` echoes the effective set, so golden logs record them):
 | `thrust`, `heading` | as v1.1 | `diag` sessions only (refused `diag_only`, D-12), not committed |
 | `record` | `source` (`"ai"`), `req`, `kind`, `sha256`, `body` | reserved in 2.0 (refused `unsupported`); the AI service adds it as 2.1 |
 | `draw` | `stream` | `diag` only: draws one value, reported in `events` (exercises the PRNG in replays) |
+| `echo` | as `plan` | `diag` only, test hook (M2.1b): the payload comes back as an `echo` event (see below) |
 
 The old `profile.accel_g` is gone: the boost acceleration is a scenario
 parameter, not a player choice, and the only player-facing speed control is
@@ -265,6 +266,74 @@ bad `dtau`, schema error) changes nothing and the tick does not advance
 (`protocol_test.ail:47-51`). A *well-formed intent the rules refuse* is listed
 in `refused` and the tick proceeds, so Cancel during transit never stalls the
 clock.
+
+**Reason codes** (as implemented in M2.1a/M2.1b; `sim/protocol_test.ail`
+`checkDecodeCodes`, `checkHandshake`, `checkRefusedProceeds`, `checkEcho`).
+Malformed codes go in `status` and leave the tick unchanged; refusal codes go
+in `refused[i].reason` with `status: "ok"`.
+
+| Code | Kind | When |
+|---|---|---|
+| `bad_json` | malformed | the line is not JSON (includes `NaN`) |
+| `bad_v` | malformed | `v` missing or not the number 2 |
+| `bad_cmd` | malformed | `type` missing or unknown; `hello` without integer `want.major/minor` |
+| `bad_tick` | malformed | `tick` missing, not an integer in [0, 2^53), or ≠ world tick + 1 |
+| `bad_step` | malformed | `dtau` missing, non-finite or outside [0, 1]; `thrust` missing or \|thrust\| > 1 |
+| `bad_heading` | malformed | `heading` not three finite numbers with \|norm − 1\| ≤ 1e-9 |
+| `bad_intent` | malformed | `intents` not an array; unknown or missing `k`; a field of `plan`/`echo`/`commit`/`record`/`draw` missing or mistyped |
+| `bad_game` | malformed | `new_game`: `seed` not an integer in [0, 2^53), `scenario` ≠ `"sol"`, `diag` not a bool (**added by M2.1a**) |
+| `bad_params` | malformed | `new_game.params` not an object, an unknown name, a non-number, or a value outside the range table below (**added by M2.1a**) |
+| `no_hello` | malformed | `new_game` or `input` before the `hello` handshake (**added by M2.1a**) |
+| `no_game` | malformed | `input` before `new_game` (**added by M2.1a**). The bridge never sends this: `send()` before `new_game` returns false without writing (`test_no_input_before_new_game`) |
+| `moving` | refused | `heading` while the ship is not at rest |
+| `diag_only` | refused | `thrust`, `heading` or `echo` in a non-diag session (`flip_g` from M2.3a) |
+| `unsupported` | refused | `plan`, `commit`, `cancel` (until M2.2/M2.3a), `draw` (until M2.4), `record` (reserved for 2.1) |
+
+A malformed line's reply carries the current world tick (0 before
+`new_game`); it never carries sections.
+
+**Scenario-parameter ranges** (`protocol.ail` `inRange`; every bound pinned by
+`checkParamBounds`, accepted at the bound and refused just past it). **These
+ranges are executor-chosen (M2.1a), pending Mark's ratification.**
+
+| Parameter | Default (`sol`) | Accepted range | Units |
+|---|---|---|---|
+| `epoch` | 0 | \|v\| ≤ 1e6 | years (relative calendar, D-12) |
+| `start_age` | 30 | 0 ≤ v ≤ 1000 | years |
+| `boost_g` | 7.5e5 | 0 < v ≤ 1e9 | g |
+| `m_eff_kg` | 1.0 | 0 < v ≤ 1e30 | kg |
+| `ism_n_cm3` | 0.1 | 0 ≤ v ≤ 1e6 | cm⁻³ |
+| `bubble_radius_m` | 100 | 0 < v ≤ 1e6 | m |
+| `glow_eps` | 1e-9 | 0 ≤ v ≤ 1 | — |
+| `glow_f_in` | 0.5 | 0 ≤ v ≤ 1 | — |
+| `cruise_min_beta` | 0.9 | 0 < v < 1 | c |
+| `cap_one_minus_beta` | 1e-6 | 0 < v < 1 | — |
+
+**Diag `echo` test hook (M2.1b, AC9).** Until M2.3a's planner can echo a real
+plan, a diag session accepts `{"k": "echo", target, cruise_phi, flip_g?}`
+(the `plan` payload) and reports it back unchanged as the event
+`{"k": "echo", target, cruise_phi, flip_g?}`; outside diag it is refused
+`diag_only`. The Godot bridge test sends the float fixtures through it.
+
+**Float text in Godot (M2.1b findings, Godot 4.7.2).**
+- *Writing.* `JSON.stringify(x, "", true, true)` gives shortest round-trip
+  digits but prints −0.0 as `0.0`. std/json also reads `-0` as +0
+  (ailang#1460). So `SimBridge.number` writes `-0.0` itself and uses
+  `full_precision` for everything else (`1e+308`, `9.007199254740991e+15`,
+  `0.9999999999999998`, which std/json reads exactly).
+- *Reading.* `JSON.parse_string` reads `-0.0` and `1e308` exactly, but
+  returns 0.0 for every \|x\| ≤ DBL_MIN, so 5e-324 and 2.2250738585072014e-308
+  cannot reach Godot. The sim still receives them exactly (its reply prints
+  their digits). The bridge test marks this **known-divergent** and asserts it
+  either way. No game value is that small, so the `"0x…"` bit-string fallback
+  is not adopted.
+- *Literals.* The GDScript tokenizer misreads some float literals: `-0.0` is
+  +0.0 and `9007199254740991.0` is …990. Tests build edge floats from their bit
+  patterns.
+
+**Startup.** Since v1.1 was removed (M2.1b), `ship.ail` prints nothing until
+its first input; its first output is the reply to that input, normally the
+`hello` (`make parity-v2` checks both runtimes).
 
 **Change-sets.** The first `state` after `new_game` is `full: true`. After that
 a section appears only if a field in it changed, and carries the whole section.
