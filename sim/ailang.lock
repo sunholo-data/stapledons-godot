@@ -1,7 +1,7 @@
 {
-  "ailang_version": "v0.47.2",
-  "generated_at": "2026-10-01T03:57:31.972442Z",
-  "generator": "ailang lock v0.47.2",
+  "ailang_version": "v0.50.0",
+  "generated_at": "2026-10-01T15:54:35.961739Z",
+  "generator": "ailang lock v0.50.0",
   "packages": [
     {
       "ailang": ">=0.45.0",

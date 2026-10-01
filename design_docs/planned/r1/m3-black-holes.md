@@ -10,7 +10,7 @@
 - [black-holes](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/black-holes.md) §"Time Dilation Formula" and [black-hole-mechanics](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/black-hole-mechanics.md) §"Near-BH Time Skip": the sim computes the clock rate. Crew psychology, the time-skip choice and New Game+ are not in M3.
 - [open-questions](https://github.com/sunholo-data/stapledons-design/blob/main/vision/open-questions.md) "How should GR lensing near black holes interact with SR effects?" M3 answers it with physics rather than a style choice: SR is applied in the local static frame, then the GR lens map (Option 2, "unified", in one shader pass).
 
-**Depends on:** `sunholo/relativity@0.3.0` (published). M1.6b (free camera and the off-axis golden harness) and M1.4c (the Milky Way sky shader) are needed only for parts of M3.5 and M3.6. See [What can start now](#what-can-start-now).
+**Depends on:** `sunholo/relativity@0.3.0` (published). M1.6b (free camera and the off-axis golden harness) and M1.4c (the Milky Way sky shader, `sky/background.gdshader`, landed 2026-10-01 in PR #16) are needed only for parts of M3.5 and M3.6. See [What can start now](#what-can-start-now).
 **Estimated:** ~2,600 LOC (≈1,450 code + 1,150 tests and tools), 6 sub-milestones. The mission queue's ~1,800 was a guess made before the finite-observer lens map, the ring-star path and the sim GR mode were scoped.
 **Evidence:** every codebase claim has a row in the [Verification log](#verification-log), pinned to `e9d35c5`. Every number quoted below comes from the prototype run in row V9, which uses two independent methods that agree to 3 × 10⁻¹³.
 

@@ -26,8 +26,8 @@
   M4 extends it and does not redesign it. The assumed interface is in
   [§Interfaces assumed](#interfaces-assumed).
 - **M1**: M1.2 tiers (α Cen A and B need real astrometry; see Problem 5),
-  M1.3 rebasing, M1.5 exposure, M1.6b camera golden. M1.4 background is
-  optional (without it the slice shows catalogue stars only).
+  M1.3 rebasing, M1.5 exposure, M1.6b camera golden. M1.4 background
+  landed 2026-10-01 (PR #16, `sky/background.gd(shader)`); the slice composites it.
 - **AI service foundation** (queue row 2, D-9; no design doc yet). Soft
   dependency: M4 is fully playable on templated text if it slips.
 - **Blender bridge style frame** (brief §7 step 1). Soft dependency: M4 ships
@@ -219,8 +219,8 @@ bundle and the sim:
 - **Velocity from the sim only.** Every frame takes `heading`, `beta`,
   `gamma` and `one_minus_beta` from state into the starfield and background
   uniforms. The spike's `_set_speed` and the synthetic `galaxy_sky.gdshader`
-  band are **not** ported: the band is painted content. Until M1.4 lands, the
-  sky is catalogue stars only.
+  band are **not** ported: the band is painted content. The sky is M1.4's
+  `sky/background.gdshader` (landed, PR #16) plus the catalogue stars.
 - **Walking.** Click to move on the walk disc (later the `WALK_` navmesh). The
   captain is a static placeholder avatar (a capsule with a facing marker),
   following ai-showcase §4 (static mini avatars, no animation). The camera

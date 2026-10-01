@@ -3,8 +3,10 @@ renders/
 *.import
 sim/.ailang/
 .ailang/cache/
+sim/tools/.ailang/
 data/raw/
 runtime/
 build/
 __pycache__/
 *.pyc
+sim/tools/.ailang/

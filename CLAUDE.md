@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.47.2** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.50.0** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 ## Development cycle: design doc → sprint plan → execute → evaluate
@@ -104,14 +104,17 @@ Only the **unattended** loop is barred from resolving rows itself. This is
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Known workarounds (found on v0.45.0; re-check each on v0.47.2 before relying on it):**
-  - Pass `--quiet`: the progress banner goes to stdout otherwise.
-  - Pass `--package-dir`: otherwise the MOD010 module-path check fails.
-  - Run `ailang lock` after `ailang install`. On a clean machine, `ailang lock`
-    is also what fills the package cache (`make deps`). The lockfile's
-    `generated_at` line churns on every run, so ignore it when diffing.
-  - In `test` blocks, call named `check…()` functions: whole-number float
-    literals are misread as ints inside test blocks.
+- **Workarounds, re-checked on v0.50.0 (re-check again at each bump):**
+  - Carried over (not re-tested on v0.50.0): run `ailang lock` after `ailang install`. On a clean machine,
+    `ailang lock` is also what fills the package cache (`make deps`). The
+    lockfile's `generated_at` line churns on every run, so ignore it when diffing.
+  - Still needed: in `test` blocks, call named `check…()` functions. A
+    whole-number float literal passed to a float function inside a test block
+    resolves as Int (`Fractional::Int::add`; ailang#1456).
+  - Still needed: the strict VM rejects bitwise Int operators (`^ & << >>`) as
+    "not yet wired (Phase 2E)" (ailang#1450), so the pure core avoids them.
+  - Fixed upstream, kept harmlessly in the Makefile: `--quiet` (the banner no
+    longer reaches stdout) and `--package-dir` (MOD010 now finds ailang.toml).
 - The game is meant to stress-test the AILANG bytecode VM. When the VM and the
   interpreter disagree, that's an upstream bug: shrink it to a minimal repro
   and report it.

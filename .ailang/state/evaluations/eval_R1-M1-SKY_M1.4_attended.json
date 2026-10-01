@@ -1,0 +1,51 @@
+{
+  "sprint_id": "R1-M1-SKY",
+  "milestones": ["M1.4a_BACKGROUND_SPIKE", "M1.4bc_SKY_MODEL_SHADER"],
+  "evaluation_round": 1,
+  "timestamp": "2026-10-01T00:00:00Z",
+  "evaluator_model": "Claude Sonnet",
+  "generator_model": "Claude Opus 5.5",
+  "branch": "m1.4a-background-spike",
+  "pr": "https://github.com/sunholo-data/stapledons-godot/pull/16",
+  "total_score": 91,
+  "pass_threshold": 70,
+  "result": "pass",
+  "score_breakdown": {"tests_pass": 20, "lint_clean": 10, "acceptance_criteria": 28, "code_quality": 12, "documentation": 13, "design_fidelity": 8},
+  "hard_fails": [],
+  "automated_checks": {
+    "make_test": "green (physics 62/62, sim bridge 0 failures, parity identical, strict VM, sky-vm sky-ok strict VM = interpreter)",
+    "make_golden": "0 failures; background marker 12/12 within 1 px (worst 0.722 px at 0.99c, -90 deg); background colour dxy 0.0001/0.0006/0.0006 at D=0.3/1/3",
+    "make_sky_vm": "sky-ok",
+    "mutation": "removed the brightness factor pow(10, seen.a - rest.a) from sky/background.gdshader: make golden FAILED (marker 0.99c -90deg 1.88 px; colour D=0.3 dxy 0.18). Reverted."
+  },
+  "acceptance_criteria": [
+    {"feature_id": "M1.4a", "criterion": "options report with renders at 0/0.9/0.99c and residual crops for A and B", "met": true, "evidence": "m1-4a-background-options.md; docs/m1.4a/preview (0, 0.5, 0.9, 0.99c) and destar_* crops. B crops are Gaia stand-in only (B not built, by ruling), recorded."},
+    {"feature_id": "M1.4a", "criterion": "user decision recorded in design doc", "met": true, "evidence": "design section M1.4 'M1.4a outcome', open question 1 ANSWERED, D-10"},
+    {"feature_id": "M1.4bc", "criterion": "median fit residual reported <= 0.02 dxy or escalation", "met": true, "evidence": "data/sky/sky_model_report.json luminance-weighted median 0.0050; asserted <= 0.02 in tests/test_physics.gd. Literal 'sky_model.py' replaced by AILANG fitter, recorded as deviation. Report is committed output of a 12-minute run that CI cannot reproduce; only its contents are checked."},
+    {"feature_id": "M1.4bc", "criterion": "AC5 background marker within 1 px, 4 speeds x 3 views", "met": true, "evidence": "make golden, 12/12"},
+    {"feature_id": "M1.4bc", "criterion": "AC6 chromaticity within 0.01 of rgb(D*T) at D 0.3,1,3", "met": true, "evidence": "make golden, max dxy 0.0006 (uniform Planck texel: exercises tint=1 path only)"}
+  ],
+  "deviations_recorded": {
+    "ailang_fitter_not_python": "recorded: design 'M1.4b/c as built', sprint doc",
+    "rgba8_tc_code_texture_not_float_exr": "recorded: design 'M1.4b/c as built' Storage",
+    "tint_carry": "recorded: design 'M1.4b/c as built'",
+    "option_b_not_built": "recorded: design 'M1.4a outcome', options doc"
+  },
+  "physics_in_package": {
+    "verdict": "ok",
+    "notes": "surfaceBrightnessRatio, chromaticity, rgbUnitLuminance (blackbody.ail), deaberrate, dopplerApparent (optics.ail) all exist in sunholo/relativity 0.3.0, which sim/ailang.toml pins; the new GDScript Relativity.surface_brightness_ratio mirrors the package fn. The fitter calls the package chromaticity directly. sRGB<->XYZ matrix constants (IEC 61966-2-1) in sky_model.ail, main.gd _xy and the Y weights in SkyModel/shader are a colour-space standard rather than relativity physics; acceptable, though the fitter's duplicate in AILANG and the golden's duplicate in GDScript could be taken from one package export (RGB<->XYZ helper) later. Tint carry is photographic colour bookkeeping, not new physics."
+  },
+  "documentation_check": {"changelog_updated": true, "examples_created": true, "design_doc_status": "doc still in planned/ with amendments, consistent with sprint still open; sprint JSON status and notes populated"},
+  "design_fidelity": {"score": 8, "notes": "Intent met (deaberrate, dopplerApparent, surfaceBrightnessRatio per pixel; real panorama; per-texel T_c). Deviations are principled and written down. Lost 2: only the T_c code channel is consumed by the shader (G residual, B line flag are written but unused in rendering); line-flagged texels are still blackbody-shifted (documented as not modelled)."},
+  "feedback": [
+    "tests/test_physics.gd lines 120-121 still say 'matches tools/sky_model.py' although the fitter is AILANG; relabel.",
+    "No golden exercises the tint-carry path with an off-locus texel (AC6 uses a Planck texel where tint=1); the CPU SkyModel.tint check is only a CPU test, so a shader-side tint bug would pass golden.",
+    "Reviewed renders: sky_b09_forward (dense blue-shifted starfield, galactic plane and H II regions read correctly, pink nebulae preserved) and sky_b099_astern (fully black plus HUD; plausible fade but shows nothing to verify). T_c map shows expected structure; H II complexes flagged red; some blue ring artefacts at destarring residuals.",
+    "Exposure is hand-set (BG_EXPOSURE, golden hand-normalised); calibration deferred to M1.5.",
+    "SkyBackground silently leaves the sky black without data/raw textures; fine for CI, but note a missing-asset warning would help.",
+    "Fit report is a committed artefact that CI cannot regenerate; consider recording the input hash."
+  ],
+  "spike_code": "tools/m14a_destar.py (docstring: 'Spike quality: not the M1.4b pipeline'), tools/m14a_register.py ('M1.4a spike' docstring), tools/m14a_crops.py, spike/panorama_main.gd ('Spike only') are clearly named/marked; spike/panorama.tscn is a 6-line scene without a marker comment (cannot hold one in tscn, but README covers it). Not run by make test, so CI unaffected.",
+  "ci_ubuntu_risk": "None found. make test needs only the committed data/sky/sky_model_report.json (tracked, not under gitignored data/raw/), runtime ailang and Godot headless; the python step runs committed fixtures with unittest only (no numpy). Spike scripts needing numpy/cv2 and data/raw are not in make test. sky-vm is added to make test and passes here with strict VM = interpreter. make golden and sky-model are not CI gates.",
+  "notes": "Strong, verified change set. Tests demonstrably able to fail (shader mutation caught by golden). Non-blocking issues only."
+}
