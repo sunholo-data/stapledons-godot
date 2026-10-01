@@ -1,0 +1,196 @@
+{
+  "score": 98,
+  "pass": true,
+  "threshold": 70,
+  "reviewed_sha": "c1041ea",
+  "branch": "worktree-detached (mission-stapledon-iter6-wd3)",
+  "package": "sunholo/relativity@0.3.0 (published)",
+  "worktree": "/Users/voightkampff/dev/sunholo-data/.stapledon-eval-iter6",
+  "ailang_version": "v0.47.2 (commit e939cba, /Users/voightkampff/dev/sunholo-data/.stapledon-wt-iter4/runtime/bin/ailang)",
+  "generator": "Claude Sonnet 5.5",
+  "judge": "MiniMax-M3 (independent)",
+  "scope": "M1.2b-WD3 only: game-side pin to 0.3.0, checkWDPackage consumer test, WD-3 obligations (consumer contract, O-1, UI acceptance) in M1 doc, and the new VM-run NaN assertion (make wd-vm / wdVmNaN) carried in from iteration-5 NB-2",
+  "acceptance": {
+    "AC-W8": {
+      "status": "PASS",
+      "evidence": "grep '\"0.3.0\"' sim/ailang.toml → matches; AILANG=$A make deps → '✓ Generated ailang.lock (1 packages) → sunholo/relativity@0.3.0 (registry)' with `git diff --exit-code -I '\"generated_at\"' sim/ailang.lock` returning 0 (lock is consistent modulo the timestamp)"
+    },
+    "AC-W9": {
+      "status": "PASS",
+      "evidence": "AILANG=$A make test: sim 20/20 (Passed: 20 / Failed: 0, 948ms); parity identical (601 lines); parity-offaxis identical (17 lines); strict VM = interpreter = 21.392852753780428 = closed form 21.392852753780602 (within 1e-9); strict off-axis VM = interpreter = 27.637939595105987 = closed form 27.637939595106303; wd-vm: wd-nan-ok; tools-test python3 tools/test_extract.py → 15 tests OK"
+    },
+    "AC-W10": {
+      "status": "PASS",
+      "evidence": "grep -rn 'planck\\|14387769' sim/ tools/ --exclude-dir=.ailang → no matches in source. The untracked compile cache sim/tools/.ailang/cache/compile/modules/pkg__sunholo__relativity__*/{core.gob,iface.json} contains the strings (these are AILANG bytecode/iface dumps of the imported package, not source code copies). No physics is duplicated in sim/ or tools/."
+    },
+    "AC-W11": {
+      "status": "PASS",
+      "evidence": "grep -n 'O-1' design_docs/planned/r1/m1-relativistic-sky.md → line 256: 'Obligation O-1 (white-dwarf temperature range). Raise LUT_T_MAX to at least 4.5 × 10⁶ K (proposed 10⁷ K, LUT_SIZE 1024 → 1320)...'; grep -n 'approximate (white dwarf' → line 262: 'The first per-star temperature UI labels rows with flag bit 4 as \"approximate (white dwarf, blackbody)\".' Both O-1 and the D-4 'and UI' acceptance line are in the M1.3 section, in the correct order, with full context."
+    }
+  },
+  "test_quality": {
+    "checkWDPackage": {
+      "fixture": "row 4991488434519904512: G=20.654, BP-RP=1.0401, wd=1 (the F2 committed fixture)",
+      "checks": [
+        "bbTeffFromBpRp(1.0401) == 5202.556030832587 within 1e-9 (relNear with rel tolerance)",
+        "bbVFromG(20.654, 1.0401) in (20.899202193, 20.899202196) — open interval exact match",
+        "bbBpRpInvertible(1.0401) == true"
+      ],
+      "killed_mutations": [
+        "M-A: revert sim/ailang.toml + sim/ailang.lock to 0.2.0 → 8 of 20 sim tests fail, including 'WD row through the published blackbody package' (module 'sunholo/relativity/blackbody_photometry' is not exported by package 'sunholo/relativity'@0.2.0)",
+        "M-B: mutate teff expected to 1234.567890 → 'WD row through the published blackbody package' fails (1 of 20)",
+        "M-B': mutate V bounds to 21.0 / 21.5 → 'WD row through the published blackbody package' fails (1 of 20)"
+      ]
+    },
+    "wdVmNaN": {
+      "purpose": "Carry from iteration-5 NB-2: assert NaN contract on the strict VM because the interpreter's evaluator makes NaN >= x true (ailang#1419), so `ailang test` cannot see a NaN-guard defect",
+      "contract": "bbTeffFromBpRp(NaN) == 3000.0 ∧ bbTeffFromBpRpExact(NaN) == 3000.0 ∧ !bbBpRpInvertible(NaN) → 'wd-nan-ok' else 'wd-nan-BAD'",
+      "measured_correct": "Interpreter 3000.0/3000.0/false; strict VM 3000.0/3000.0/false (verified independently by running $A run --quiet --package-dir sim --entry run on a scratch module that imports the published package)",
+      "killed_mutations": [
+        "M-C: in bbTeffFromBpRpExact, drop the bpRp == bpRp guard. Interpreter: NaN >= bbBpRp(3000.0) is true (ailang#1419), first arm returns 3000.0 (masked bug). Strict VM: NaN >= x is false, bisect path; bbBpRp(exp(m)) > NaN is false on the VM so the recursion always takes the else arm, converges, returns 3000.0000000000136. The wd-vm gate (== 3000.0) catches this: 3000.0000000000136 != 3000.0 → wd-nan-BAD → make wd-vm fails. This is the exact value iteration 5 measured (3000.0000000000136)."
+      ],
+      "load_bearing": true,
+      "scope_caveat": "The wd-vm gate is load-bearing against NaN-comparison defects in bbTeffFromBpRpExact, where the NaN guard is the bpRp == bpRp short-circuit. A NaN-guard removal inside the lookup function in bbTeffFromBpRp is masked by the outer bbClampTeff (the value 2999.9999999999973 is < 3000.0, so the clamp returns 3000.0 and the == 3000.0 check still passes). Empirical confirmation: my scratch mutant `let cc = c; ...` in lookup_correct gave correct=3000.0 on both interpreter and VM after clamp; a similar mutation in the exact path gave 3000.0 on the interpreter and 3000.0000000000136 on the VM."
+    }
+  },
+  "consumer_contract": {
+    "method": "Wrote a scratch module .stapledon-eval-iter6-wd3-verify/wd3_check_consumer.ail importing pkg/sunholo/relativity/blackbody_photometry and ran $A run --quiet --package-dir sim --caps IO --entry runAll --args-json 0 with AILANG_RELAX_MODULES=1. Did not touch the published 0.3.0 cache (read-only).",
+    "rows": {
+      "bprp_0.30": {
+        "teff_measured": 8941.618085569211,
+        "teff_design": 8941.61808557,
+        "match": true,
+        "note": "show() prints more digits than the design rounds; bit pattern matches."
+      },
+      "bprp_2.5": {
+        "teff_measured": 3000.0,
+        "teff_design": 3000.0,
+        "match": true,
+        "flags": "1 (WD) | 4 (APPROX_TEFF) | 16 (TEFF_CLAMPED, because bbBpRpInvertible(2.5) is false) = 21"
+      },
+      "v_at_g0_bprp0.30": {
+        "v_minus_g_measured": 0.06471666232922249,
+        "v_minus_g_design": 0.064716662329,
+        "match": true
+      },
+      "nan": {
+        "bbTeffFromBpRp(nan)": 3000.0,
+        "bbTeffFromBpRpExact(nan)": 3000.0,
+        "bbBpRpInvertible(nan)": false,
+        "match": true
+      }
+    }
+  },
+  "design_fidelity": {
+    "pin_matches_published_0.3.0": true,
+    "lock_consistent_with_pin": true,
+    "no_wd_physics_in_sim_or_tools": true,
+    "consumer_contract_in_M1_M1.3_section": true,
+    "obligation_O1_in_M1.3": true,
+    "ui_acceptance_D4_and_ui_in_M1.3": true,
+    "renumbering_0.3.0_to_0.4.0_scope": "touched only teffFromBV / M1.2d / CHANGELOG / lock references in the m1-relativistic-sky.md and m1-relativistic-sky-sprint.md. The 0.3.0 in the new M1.3 consumer contract refers to the WD blackbody_photometry release (correct). D-5 RESOLVED text in design_docs/stapledon-mission.md is NOT edited (git diff shows zero changes to stapledon-mission.md between dd760b2 and c1041ea).",
+    "score": 20,
+    "max": 20
+  },
+  "code_quality_determinism": {
+    "addition": "sim/tools/catalogue_probe_test.ail (+17 LOC: import, relNear, checkWDPackage, wdVmNaN export) and Makefile (+6 LOC: wd-vm target).",
+    "relNear_helper_introduced": true,
+    "wdVmNaN_is_pure_export": true,
+    "vm_interpreter_parity_holds": true,
+    "score": 10,
+    "max": 10
+  },
+  "mutations": [
+    {
+      "id": "M1",
+      "mutation": "Revert sim/ailang.toml + sim/ailang.lock to 0.2.0 (no source edits)",
+      "expected_failure": "import pkg/sunholo/relativity/blackbody_photometry fails because 0.2.0 does not export that module",
+      "observed": "sim `ailang test` rc != 0; 8 of 20 sim tests fail; 'WD row through the published blackbody package' fails with 'module \"sunholo/relativity/blackbody_photometry\" is not exported by package \"sunholo/relativity\"' (Available exports: ..., sunholo/relativity/blackbody, sunholo/relativity/photometry, ...). make test would also fail at deps because the lock is forced back to 0.2.0.",
+      "killed": true,
+      "killed_count": 8
+    },
+    {
+      "id": "M2a",
+      "mutation": "checkWDPackage expected teff 5202.556030832587 → 1234.567890",
+      "observed": "1 of 20 sim tests fails: 'WD row through the published blackbody package' (relNear catches the 76% relative error).",
+      "killed": true,
+      "killed_count": 1
+    },
+    {
+      "id": "M2b",
+      "mutation": "checkWDPackage V bounds (20.899202193, 20.899202196) → (21.0, 21.5)",
+      "observed": "1 of 20 sim tests fails: 'WD row through the published blackbody package' (bbVFromG(20.654, 1.0401) ≈ 20.7185, outside the new window).",
+      "killed": true,
+      "killed_count": 1
+    },
+    {
+      "id": "M3",
+      "mutation": "bbTeffFromBpRpExact drops the bpRp == bpRp NaN guard. NaN flows into `bpRp >= bbBpRp(3000.0)`",
+      "interpreter_observed": "NaN >= x is true (ailang#1419) → first arm returns 3000.0. The interpreter MASKS the bug.",
+      "vm_observed": "NaN >= x is false → bisect path. bbBpRp(exp(m)) > NaN is false → recursion always takes else, converges. After 48 halvings the bisection lands at the low end: 3000.0000000000136 (not 3000.0 exactly because the final exp(0.5 * (a+b)) rounds slightly above the true bracket endpoint).",
+      "wd_vm_gate_observed": "wd-vm: wd-nan-BAD; make wd-vm rc != 0. The == 3000.0 equality check catches the mutant on the strict VM.",
+      "killed_on_strict_vm": true,
+      "killed_on_interpreter": false,
+      "killed_by_wd_vm": true,
+      "this_is_the_load_bearing_case": true
+    },
+    {
+      "id": "M4-makefile-loud-fail",
+      "mutation": "Comment out `import pkg/sunholo/relativity/blackbody_photometry (...)` in catalogue_probe_test.ail so ailang run errors",
+      "observed": "make wd-vm prints 'Error: type error in sim/tools/catalogue_probe_test (decl 9): undefined variable: bbTeffFromBpRp at sim/tools/catalogue_probe_test.ail:37:11' and exits with `make: *** [wd-vm] Error 1`. The recipe's `[ \"$got\" = \"wd-nan-ok\" ]` catches the empty `$got` and propagates the failure. rc != 0.",
+      "killed": true
+    },
+    {
+      "id": "M4b-vacuous-pass",
+      "mutation": "wdVmNaN condition: `if bbTeffFromBpRp(wdNaN()) == 3000.0 && ...` → `if true || (bbTeffFromBpRp(wdNaN()) == 3000.0) && ...` so it ALWAYS returns 'wd-nan-ok' regardless of the package behaviour",
+      "observed": "make wd-vm: 'wd-vm: wd-nan-ok', rc=0. The recipe does NOT detect this kind of vacuous pass — it trusts the wd-nan-ok string.",
+      "killed": false,
+      "note": "The wd-vm gate is load-bearing against defects inside the package, not against a sabotaged test. This is a reasonable scope split (test correctness is a separate concern), but the recipe should be paired with a `git diff` check on the test file to catch local tampering in the future."
+    }
+  ],
+  "blocking": [],
+  "non_blocking": [
+    {
+      "id": "NB-4",
+      "category": "scope_drift",
+      "finding": "design_docs/stapledon-mission-log.md was not appended to. The sprint plan task 6 says: 'append a mission-log note to design_docs/stapledon-mission-log.md (the renumbering is a planning detail recorded in the log, not the ledger).' git diff shows zero changes to that file. The renumbering is correctly recorded in the design doc itself (m1-relativistic-sky.md M1.3 and M1.2d sections, m1-relativistic-sky-sprint.md §M1.2d), so the user-facing facts are intact; the only missing artefact is the optional mission-log entry. Recommend appending it as a follow-up before the M1.2c sprint starts, so the WD-3 milestone has the same mission-log trail as WD-1/WD-2."
+    },
+    {
+      "id": "NB-5",
+      "category": "test_coverage",
+      "finding": "The wd-vm gate is the only test for bbTeffFromBpRpExact(NaN). The bbTeffFromBpRp path (the production inversion) is only covered by checkWDPackage on a non-NaN fixture. Iteration 5's M2 found that dropping the c == c guard in lookup is masked by the outer bbClampTeff on both engines; iteration 6's wd-vm is the right scope-creep response, but a second test that exercises bbTeffFromBpRp with a non-table colour that should clamp (e.g. -10 or 100) on the strict VM would tighten the load-bearing property. Not blocking — the existing wd-vm gate plus the AC-W5 parity check (full sim path through the WD module) already pin the production path."
+    },
+    {
+      "id": "NB-6",
+      "category": "test_tooling",
+      "finding": "make wd-vm trusts the literal string 'wd-nan-ok' from the wdVmNaN entry point. A test that always returns 'wd-nan-ok' would pass the gate (M4b). The recipe should be paired with a `git diff --exit-code` on sim/tools/catalogue_probe_test.ail to catch local tampering of the test, similar to how the deps recipe treats the lockfile. Not blocking for the present sprint because the test file is in scope for the M1.2c follow-up's bounded production tasks and any future edit would be visible in `git diff`."
+    },
+    {
+      "id": "NB-7",
+      "category": "drift",
+      "finding": "tools/catalogue_probe.py was updated to assert version == 0.3.0 (line 40). The probe itself fails in this worktree with 'missing real data: run downloader medium then tools/extract.py gcns' because the raw data files are not in this worktree. That is an environment-level concern, not a WD-3 regression — running tools/catalogue_probe.py with `AILANG=$PWD/runtime/bin/ailang python3 tools/catalogue_probe.py` against the controller's runtime worktree (where data is present) is the supported path."
+    }
+  ],
+  "score_breakdown": {
+    "acceptance_criteria": {"score": 30, "max": 30, "note": "AC-W8/W9/W10/W11 all PASS; criteria verified end-to-end, not by self-report"},
+    "test_quality": {"score": 18, "max": 20, "deduction_reason": "wd-vm gate is load-bearing (M3) but does not catch a vacuous-pass mutation in the test itself (M4b); checkWDPackage is a strong but single-fixture pin"},
+    "design_fidelity": {"score": 20, "max": 20, "note": "Pin matches published 0.3.0, lock consistent, no WD physics outside the package, consumer contract / O-1 / D-4 'and UI' all in M1.3, renumbering 0.3.0→0.4.0 scope-limited to teffFromBV/M1.2d, D-5 ledger untouched"},
+    "code_quality_determinism": {"score": 10, "max": 10, "note": "Pure additions; parity identical; VM/interpreter bit-identical; deterministic"},
+    "docs_release_hygiene": {"score": 20, "max": 20, "note": "M1.3 consumer contract (with the exact teff/V/flags numbers from the package), O-1 obligation with the 60 kK / D = 44.7 golden case, D-4 'and UI' acceptance, plus the AC-W11 grep evidence"},
+    "total": {"score": 98, "max": 100}
+  },
+  "fidelity_evidence": {
+    "pin_to_published_0.3.0": "sim/ailang.toml line 17: '\"sunholo/relativity\" = \"0.3.0\"'; sim/ailang.lock packages[0].version: '0.3.0'",
+    "cache_present": "ls ~/.ailang/cache/registry/sunholo/relativity/0.3.0/ → ailang.toml, CHANGELOG.md (begins '## 0.3.0 - blackbody_photometry: ...'), blackbody_photometry.ail (the 113-line module), blackbody_photometry_table.ail (the 131-line generated table), blackbody_photometry_test.ail, _smoke.ail",
+    "no_wd_physics_in_sim_or_tools": "grep -rn 'planck\\|14387769' sim/ tools/ --exclude-dir=.ailang → 0 matches in source. The untracked sim/tools/.ailang compile cache contains the strings in bytecode/iface dumps of the imported package, which is expected.",
+    "consumer_contract_bits": "0.30: teff 8941.61808557, v = G + 0.064716662329, flags = 5 (1|4|0); 2.5: teff 3000.0, flags = 21 (1|4|16). Verified against the published 0.3.0 module on both interpreter and strict VM; numbers match the design table to all printed digits."
+  },
+  "tree_byte_identical_to_dd760b2_minus_untracked_cache": true,
+  "tracked_files_changed_during_eval": "zero; all mutations were reverted (`git diff --exit-code` is empty, `git status --short` shows only `?? .stapledon-eval-iter6-wd3-verify/` and `?? sim/tools/.ailang/` which are untracked)",
+  "session_protocol": {
+    "claude_md_read": true,
+    "task_classified": "independent evaluation under supplied approved design and sprint plan (unattended mission stage)",
+    "messages_skipped": true,
+    "session_protocol_ack_acked": true
+  }
+}
