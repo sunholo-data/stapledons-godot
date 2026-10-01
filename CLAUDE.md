@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.50.0** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.51.0** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 ## Development cycle: design doc → sprint plan → execute → evaluate
@@ -104,17 +104,21 @@ Only the **unattended** loop is barred from resolving rows itself. This is
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.50.0 (re-check again at each bump):**
-  - Carried over (not re-tested on v0.50.0): run `ailang lock` after `ailang install`. On a clean machine,
-    `ailang lock` is also what fills the package cache (`make deps`). The
-    lockfile's `generated_at` line churns on every run, so ignore it when diffing.
-  - Still needed: in `test` blocks, call named `check…()` functions. A
-    whole-number float literal passed to a float function inside a test block
-    resolves as Int (`Fractional::Int::add`; ailang#1456).
-  - Still needed: the strict VM rejects bitwise Int operators (`^ & << >>`) as
-    "not yet wired (Phase 2E)" (ailang#1450), so the pure core avoids them.
-  - Fixed upstream, kept harmlessly in the Makefile: `--quiet` (the banner no
-    longer reaches stdout) and `--package-dir` (MOD010 now finds ailang.toml).
+- **Workarounds, re-checked on v0.51.0 (re-check again at each bump):**
+  - Still needed: run `ailang lock` after `ailang install`; on a clean machine
+    `ailang lock` also fills the package cache (`make deps`). The lockfile's
+    `generated_at` line churns on every run, so ignore it when diffing.
+  - Still open (workarounds in-tree, cite the issue at the site): std/json drops
+    the sign of -0.0 and saturates long integer text (ailang#1460); the test
+    runner mixes up same-named private functions across modules (#1461); exp/log
+    differ by 1 ulp on arm64 vs x86_64, so cross-arch goldens are per-arch
+    (#1465); a lone `| Idle` constructor hides the next export (#1466); an
+    imported name shadows a lambda/let binding (#1467); bare variable match arms
+    are evaluator-only (#1473); aliased or unknown pattern constructors silently
+    never match (#1478); interpreter and VM disagree on NaN comparisons (#1419).
+  - Fixed in v0.51.0: whole-number float literals in `test` blocks (#1456),
+    `string.repeat` and bitwise Int ops under `--strict-bytecode` (#1462, #1450).
+  - Fixed upstream, kept harmlessly in the Makefile: `--quiet` and `--package-dir`.
 - The game is meant to stress-test the AILANG bytecode VM. When the VM and the
   interpreter disagree, that's an upstream bug: shrink it to a minimal repro
   and report it.
