@@ -152,17 +152,17 @@
       "dependencies": [],
       "iteration": 1,
       "acceptance_criteria": [
-        "Trip check rows 1-9 (design §M2.0) to 1e-12 relative against tools/journey_ref.py output; fellBack on rows 4 and 9; motionAt(p, tauTotal) phi=0, x=d to 1e-12; t and x continuous across boundaries; phaseAt left-closed at each boundary",
+        "Trip check rows 1-9 (design \u00a7M2.0) to 1e-12 relative against tools/journey_ref.py output; fellBack on rows 4 and 9; motionAt(p, tauTotal) phi=0, x=d to 1e-12; t and x continuous across boundaries; phaseAt left-closed at each boundary",
         "Readout table (0.9c, 0.99c, cap; n=1e5 m^-3, R=100 m, m_eff=1 kg, eps=1e-9, f_in=0.5) to 1e-12 relative; canon HB values to printed digits: HB-16..29, HB-35..37, HB-38..43, HB-44..46, HB-47..50, HB-51..56, HB-61, HB-62..63",
         "Every medium function finite (no NaN/Inf) over a 1e4-point phi sweep of [0, phiCap]; existing 0.3.0 tests unchanged and green",
         "AC1 (package): cd $PKG && $A test --package . && $A pkg quality . (no PUB gates) && $A pkg info sunholo/relativity (v0.4.0 after controller publish)",
         "Strict VM equals interpreter bit for bit: $A run --quiet --bytecode --strict-bytecode --entry journeyDigest --args-json 400 _smoke.ail vs the same without the bytecode flags, cmp",
         "publish --dry-run passes; design doc HB citations corrected to canon IDs"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-01T18:00:00Z",
+      "completed": "2026-10-01T21:30:00Z",
+      "notes": "sunholo/relativity 0.4.0 (ailang-packages PR #84, 1abde63): journey TripPlan/planBurnCoastBurn/planFlipAndBurn/phaseAt/motionAt, acosh1p, rapidityOfOneMinusBeta, forwardDoppler/cmbForwardTemperature, new medium module. 101/101 tests, pkg quality no gates, strict VM = interpreter (journeyDigest), dry run OK. Independent physics eval (Fable) 96/100 PASS, GO; executor corrected two planned mutation claims (low-speed + short-flip rows); CODATA 2018 m_p and IAU light-year pinned. Published under the standing grant. Design-doc HB citations fixed in PR #22.",
       "pause_after": "P1: controller runs ailang publish only after independent PASS (strongest available evaluator, physics) + pkg quality no gates + CHANGELOG + dry run; standing publish grant (2026-09-27, D-1)",
       "gate": "Irreversible publish under the standing grant; full gate before publish"
     },
