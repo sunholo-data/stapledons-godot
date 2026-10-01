@@ -3,6 +3,7 @@ extends Node3D
 ##
 ## Interactive:  W / S thrust forward / reverse at 1 g, arrows look around,
 ##               1-4 look forward / starboard / astern / up, +/- time warp.
+## Galaxy map:  godot --path . -- --map[=INDEX]   (M2.6a; --map-capture=renders)
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
 ##   godot --path . -- --golden            shader vs CPU reference positions
@@ -17,6 +18,7 @@ const HEADING := Vector3(0, 0, -1) # galactic centre
 const EXPOSURE := 5.0
 const BG_EXPOSURE := 0.075 # hand-set ratio to the stars until M1.5 calibrates both
 const SEED := 0
+const ALPHA_CEN_A := 1 # stars.json index 1 (Gl 559, vmag 0.01); B is index 2 with the same id
 
 var sim := SimBridge.new()
 var starfield := Starfield.new()
@@ -30,11 +32,16 @@ var pitch := 0.0
 var warp := 0.2 # ship-years per real second
 var _accum := 0.0
 var _last_pos_update := Vector3.ZERO
+var _map_mode := false
 
 
 func _ready() -> void:
-	_build_scene()
 	var args := _user_args()
+	if args.has("map") or args.has("map-capture"):
+		_map_mode = true # the map owns the clock; no voyage ticks
+		await _run_map(args)
+		return
+	_build_scene()
 	if args.has("golden"):
 		await _run_golden()
 		return
@@ -50,6 +57,72 @@ func _ready() -> void:
 	_apply_state()
 	if args.has("capture"):
 		await _run_capture(args["capture"])
+
+
+## Galaxy map (M2.6a) on a play session (not diag): `--map` interactive,
+## `--map=INDEX` with a preselected star, `--map-capture=DIR` writes
+## galaxy_map.png (alpha Cen A at the 0.99c default), one PNG per speed and
+## galaxy_map_panel.json (every label with its sim field and raw value).
+func _run_map(args: Dictionary) -> void:
+	var capture: bool = args.has("map-capture")
+	if capture:
+		get_window().size = Vector2i(1600, 900)
+	sim.record_path = args.get("record", "")
+	if not sim.start() or not sim.new_game(SEED, "sol", false):
+		push_error("sim session failed: %s" % sim.last_error)
+		get_tree().quit(2)
+		return
+	var map: GalaxyMap = load("res://ui/galaxy_map.tscn").instantiate()
+	map.auto_tick = not capture
+	add_child(map)
+	map.load_catalogue("res://data/starmap/stars.json")
+	map.attach(sim)
+	if not capture:
+		if args.get("map", "").is_valid_int():
+			map.preselect(int(args["map"]))
+			map.frame_star(map.selected_index)
+		return
+	var out := _out_dir(args["map-capture"])
+	var dump := {"sim": sim.hello_reply, "params": sim.world["params"], "check_row_4_37ly": {}, "panels": []}
+	# design check row 2 (alpha Cen at 4.37 ly on an axis), for comparison with the catalogue star
+	map.plan_target({"index": ALPHA_CEN_A, "id": "Gl 559", "pos": {"x": 0.0, "y": 0.0, "z": -4.37}})
+	map.tick()
+	dump["check_row_4_37ly"] = _panel_dump(map, "0.99c")
+	map.preselect(ALPHA_CEN_A)
+	map.frame_star(ALPHA_CEN_A)
+	for speed in [["0.9c", map.phi_min, "galaxy_map_b09.png"], ["cap", map.phi_max, "galaxy_map_cap.png"], ["0.99c", map.phi_default, "galaxy_map.png"]]:
+		map.set_cruise_phi(speed[1])
+		map.tick()
+		if not sim.last_refused.is_empty() or sim.world["status"] != "ok":
+			push_error("map capture: plan at %s not accepted (%s %s)" % [speed[0], sim.last_refused, sim.last_error])
+			get_tree().quit(2)
+			return
+		dump["panels"].append(_panel_dump(map, speed[0]))
+		var img := await _grab()
+		img.save_png(out.path_join(speed[2]))
+		print("captured %s  %s" % [speed[2], map.speed_text()])
+	var f := FileAccess.open(out.path_join("galaxy_map_panel.json"), FileAccess.WRITE)
+	f.store_string(JSON.stringify(dump, "  ", false, true) + "\n")
+	f.close()
+	sim.stop()
+	get_tree().quit(0)
+
+
+func _panel_dump(map: GalaxyMap, speed: String) -> Dictionary:
+	var rows := map.panel_rows()
+	for r in rows:
+		print("  %-6s %-30s %-22s %s = %s" % [speed, r["label"], r["text"], r["field"], SimBridge.encode(r["raw"])])
+	return {"speed": speed, "tick": sim.world["tick"], "clock": sim.world["clock"], "target": sim.world["journey"]["plan"]["target"],
+		"cruise_phi": sim.world["journey"]["plan"]["cruise_phi"], "speed_label": map.speed_text(), "rows": rows}
+
+
+func _out_dir(dir: String) -> String:
+	# Absolute paths are used as-is; relative ones go under the project (editor)
+	# or the user data dir (exported builds, where res:// is read-only).
+	var base := ProjectSettings.globalize_path("user://" if OS.has_feature("template") else "res://")
+	var out := dir if dir.is_absolute_path() else base.path_join(dir if dir != "" else "renders")
+	DirAccess.make_dir_recursive_absolute(out)
+	return out
 
 
 func _user_args() -> Dictionary:
@@ -105,7 +178,7 @@ func _apply_state() -> void:
 
 
 func _process(delta: float) -> void:
-	if _user_args().has("capture") or _user_args().has("golden"):
+	if _map_mode or _user_args().has("capture") or _user_args().has("golden"):
 		return
 	var look := Input.get_axis("ui_right", "ui_left")
 	var tilt := Input.get_axis("ui_down", "ui_up")
@@ -149,11 +222,7 @@ func _grab() -> Image:
 
 ## Accelerate at 1 g through the AILANG sim and photograph the sky at set speeds.
 func _run_capture(dir: String) -> void:
-	# Absolute paths are used as-is; relative ones go under the project (editor)
-	# or the user data dir (exported builds, where res:// is read-only).
-	var base := ProjectSettings.globalize_path("user://" if OS.has_feature("template") else "res://")
-	var out := dir if dir.is_absolute_path() else base.path_join(dir if dir != "" else "renders")
-	DirAccess.make_dir_recursive_absolute(out)
+	var out := _out_dir(dir)
 	var targets := [0.0, 0.5, 0.9, 0.99]
 	var views := {"forward": Vector3(0, 0, 0), "starboard": Vector3(0, -PI / 2, 0), "astern": Vector3(0, PI, 0)}
 	var tiles := []

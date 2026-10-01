@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.50.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim parity parity-offaxis parity-v2 offaxis-v11-equiv strict journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture parity parity-offaxis parity-v2 offaxis-v11-equiv strict journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim parity parity-offaxis parity-v2 offaxis-v11-equiv strict journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
@@ -31,6 +31,13 @@ sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematic
 	$(AILANG) check --package sim
 	cd sim && $(AILANG) test --package .
 	$(GODOT) --headless --path . --script tests/test_sim_bridge.gd
+
+ui:                ## galaxy map + plan panel against the real sim (headless, fake 800x600 viewport; AC15 part)
+	$(GODOT) --headless --path . --script tests/test_galaxy_map.gd
+
+map-capture:       ## galaxy map PNGs + panel dump (alpha Cen A at 0.9c / cap / 0.99c) to renders/ (needs a GPU window; AC17 map part)
+	$(GODOT) --path . -- --map-capture=renders
+	test -s renders/galaxy_map.png && test -s renders/galaxy_map_panel.json
 
 parity:            ## v2 diag session, 600 thrust ticks: bytecode VM and tree-walking interpreter must agree bit for bit
 	@mkdir -p $(SCRATCH)
