@@ -285,9 +285,12 @@ in `refused[i].reason` with `status: "ok"`.
 | `bad_params` | malformed | `new_game.params` not an object, an unknown name, a non-number, or a value outside the range table below (**added by M2.1a**) |
 | `no_hello` | malformed | `new_game` or `input` before the `hello` handshake (**added by M2.1a**) |
 | `no_game` | malformed | `input` before `new_game` (**added by M2.1a**). The bridge never sends this: `send()` before `new_game` returns false without writing (`test_no_input_before_new_game`) |
-| `moving` | refused | `heading` while the ship is not at rest |
-| `diag_only` | refused | `thrust`, `heading` or `echo` in a non-diag session (`flip_g` from M2.3a) |
-| `unsupported` | refused | `plan`, `commit`, `cancel` (until M2.2/M2.3a), `draw` (until M2.4), `record` (reserved for 2.1) |
+| `moving` | refused | `heading` while the ship is not at rest; `commit` while the ship is not at rest (\|φ\| ≥ 1e-9) (**M2.3a**) |
+| `diag_only` | refused | `thrust`, `heading` or `echo` in a non-diag session; `plan` with `flip_g` (**M2.3a**) |
+| `committed` | refused | every intent kind while the journey is committed (**M2.3a**, AC7) |
+| `out_of_range` | refused | `plan`: `cruise_phi` outside [rapidityOfBeta(cruise_min_beta), rapidityOfOneMinusBeta(cap)] (both ends accepted); a target at the ship's own position; diag `flip_g` not a positive finite number (**M2.3a**) |
+| `stale_plan` | refused | `commit` whose `plan_id` is not the current plan (none, replaced, cancelled) or whose plan was made from another position (**M2.3a**) |
+| `unsupported` | refused | `draw` (until M2.4), `record` (reserved for 2.1). Since M2.3a `cancel` with no plan is a no-op, not a refusal |
 
 A malformed line's reply carries the current world tick (0 before
 `new_game`); it never carries sections.
@@ -357,6 +360,15 @@ a section appears only if a field in it changed, and carries the whole section.
   years_left, energy: {boost_j, brake_j, drag_j, total_j, total_kg},
   ism: {drag_n, hold_w, load_w_m2, glow_w_m2}, cmb_forward_k}`
 - `ledger: {m_eff_kg, available_kg, radiated_j, boost_j, drag_j}` (readout)
+- *As implemented in M2.3a:* `journey.state` is `idle|planned|committed|arrived`;
+  `plan_id` is 0 and `plan` absent while idle. `profile` is `burn_coast_burn`
+  or (diag `flip_g`) `flip_and_burn`; `fell_back` reports the package's
+  fallback. While planned, `arrive_year`, `age_on_arrival` and `years_left`
+  are "if you commit now" (the clock runs, D-12), so the section is resent
+  each tick time passes; once committed they are frozen at the commit
+  instant (τ0, t0) and the section stops changing. ISM, glow and
+  `cmb_forward_k` are at the plan's peak rapidity. Full states carry
+  `journey` and `ledger`.
 - `rng: {streams}`; `params: {...}` (full state only)
 
 `events` include `phase` (from, to, tau), `committed`, `arrived` (with

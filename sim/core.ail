@@ -5,10 +5,11 @@ module stapledons/sim/core
 -- Physics comes from the published sunholo/relativity package.
 
 import std/option (Option, Some, None)
-import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, rapidityOfOneMinusBeta)
-import pkg/sunholo/relativity/optics (Vec3, norm, normalize)
+import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
 import pkg/sunholo/relativity/hyper (absf)
-import pkg/sunholo/relativity/medium (accelSI, julianYearS, photonDriveEnergy, mirrorDragPower, brakeHoldsAgainstDrag)
+import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn)
+import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
 export type ShipPhase = AtRest | Boosting | Cruising | Braking deriving (Eq)
@@ -89,16 +90,26 @@ export type Ledger = { mEffKg: float, availableKg: float, boostJ: float, dragJ: 
 export pure func availableKgStart() -> float = 20000.0
 -- Named PRNG stream counters; the algorithm lands in M2.4.
 export type Rng = { journey: int, crew: int, events: int, galaxy: int, ai: int, news: int }
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, ledger: Ledger, rng: Rng, diag: bool }
+-- lastPlanId: the id of the most recent accepted plan (0 before any); plan
+-- ids increase monotonically from 1 and are never reused.
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
--- Planned/Committed/Arrived land in M2.3a/M2.3b.
--- ailang#1466: a bare `= Idle` is read as an alias, and `= | Idle` without
--- `deriving` drops the next declaration's export.
-export type Journey = | Idle deriving (Eq)
+-- Journey state machine (design §M2.3; the commit rule is Pillar 1):
+--   Idle/Arrived --plan--> Planned --plan--> Planned (replan, new id)
+--   Planned --cancel--> Idle
+--   Planned --commit(id, at rest, same position)--> Committed
+--   Committed --(sim only, tau = tau0 + tauTotal; M2.3b)--> Arrived
+--   Committed --every intent kind--> Committed, refused "committed"
+-- Nothing maps a Committed journey back to Planned or Idle (AC7).
+-- A plan keeps the package's TripPlan as is; `from` is the ship's position
+-- when it was made (a commit from anywhere else is stale).
+export type Plan = { id: int, target: Target, from: Vec3, heading: Vec3, flip: bool, trip: TripPlan }
+export type Commitment = { plan: Plan, tau0: float, t0: float }
+export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Commitment)
 
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
-  { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle,
+  { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
     rng: { journey: 0, crew: 0, events: 0, galaxy: 0, ai: 0, news: 0 }, diag: diag }
 
@@ -131,33 +142,157 @@ pure func ledgerAfter(l: Ledger, p: Params, before: Motion, after: Motion, thrus
   else if absf(after.phi) < restTolerance() then l
   else {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), absf(after.phi), p.bubbleRadiusM) * dtau * julianYearS()}
 
-type Pending = { ship: Ship, thrust: float, refused: [Refusal], events: [Event], i: int }
+type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, refused: [Refusal], events: [Event], i: int }
 pure func refuseIntent(a: Pending, why: string) -> Pending = {a | refused: {i: a.i, reason: why} :: a.refused}
-pure func applyIntent(diag: bool, a: Pending, it: Intent) -> Pending {
-  let r = match it {
+pure func noteEvent(a: Pending, k: string) -> Pending = {a | events: {kind: k, echo: None} :: a.events}
+
+-- The commit rule (Pillar 1, AC7): a committed journey refuses every intent
+-- kind and nothing else changes. One arm per Intent constructor and no
+-- wildcard, so a new intent kind needs its own line here.
+pure func refuseWhileCommitted(a: Pending, it: Intent) -> Pending =
+  match it {
+    IPlan(_) => refuseIntent(a, "committed"),
+    ICommit(_) => refuseIntent(a, "committed"),
+    ICancel => refuseIntent(a, "committed"),
+    IThrust(_) => refuseIntent(a, "committed"),
+    IHeading(_) => refuseIntent(a, "committed"),
+    IRecord(_) => refuseIntent(a, "committed"),
+    IDraw(_) => refuseIntent(a, "committed"),
+    IEcho(_) => refuseIntent(a, "committed")
+  }
+
+-- Plan (design §M2.3): d = |target.pos - position(ship)| in float64 scalars;
+-- the trip is the package's planBurnCoastBurn at boost_g, or in diag with
+-- flip_g its planFlipAndBurn check profile. The cruise rapidity must lie in
+-- [rapidityOfBeta(cruise_min_beta), rapidityOfOneMinusBeta(cap)], both ends
+-- included; a target at the ship's own position (no heading) or a flip_g
+-- that is not a positive finite number is out of range too.
+pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending {
+  let here = position(a.ship);
+  let dv = { x: rq.target.pos.x - here.x, y: rq.target.pos.y - here.y, z: rq.target.pos.z - here.z };
+  let d = norm(dv);
+  let reachable = d > 0.0 && d - d == 0.0;
+  match rq.flipG {
+    Some(g) =>
+      if !diag then refuseIntent(a, "diag_only")
+      else if !reachable || !(g > 0.0 && g - g == 0.0) then refuseIntent(a, "out_of_range")
+      else storePlan(a, rq.target, here, normalize(dv), true, planFlipAndBurn(d, g * standardGravity())),
+    None =>
+      if !reachable || rq.cruisePhi < rapidityOfBeta(p.cruiseMinBeta) || rq.cruisePhi > rapidityOfOneMinusBeta(p.capOneMinusBeta) then refuseIntent(a, "out_of_range")
+      else storePlan(a, rq.target, here, normalize(dv), false, planBurnCoastBurn(d, p.boostG * standardGravity(), rq.cruisePhi))
+  }
+}
+-- A new plan replaces any uncommitted one and takes the next id.
+pure func storePlan(a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan) -> Pending {
+  let id = a.lastPlanId + 1;
+  {a | journey: Planned({ id: id, target: t, from: here, heading: h, flip: flip, trip: tp }), lastPlanId: id}
+}
+
+-- Commit: the ship must be at rest (else `moving`) and the id must name the
+-- current plan, made from where the ship is now (else `stale_plan`). It
+-- performs the at-rest turn to the plan heading ("up" is the direction of
+-- travel, D-14) and records tau0/t0. The autopilot owns the drive from here.
+pure func commitIntent(a: Pending, id: int) -> Pending =
+  if absf(a.ship.motion.phi) >= restTolerance() then refuseIntent(a, "moving")
+  else match a.journey {
+    Planned(pl) => {
+      let here = position(a.ship);
+      if pl.id != id || here.x != pl.from.x || here.y != pl.from.y || here.z != pl.from.z then refuseIntent(a, "stale_plan")
+      else {
+        let turned = turn(a.ship, pl.heading).ship;
+        noteEvent({a | ship: turned, thrust: 0.0, journey: Committed({ plan: pl, tau0: turned.motion.tau, t0: turned.motion.t })}, "committed")
+      }
+    },
+    _ => refuseIntent(a, "stale_plan")
+  }
+
+-- Cancel clears an uncommitted plan; with no plan it is a no-op. Only
+-- reached when the journey is not committed (applyIntent).
+-- (`_ => j`, not `other => other`: a variable pattern is evaluator-only on
+-- the strict VM, ailang#1473.)
+pure func cancelPlan(j: Journey) -> Journey = match j { Planned(_) => Idle, _ => j }
+
+pure func applyFree(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
+  match it {
+    IPlan(rq) => planIntent(diag, p, a, rq),
+    ICommit(id) => commitIntent(a, id),
+    ICancel => {a | journey: cancelPlan(a.journey)},
     IThrust(t) => if diag then {a | thrust: t} else refuseIntent(a, "diag_only"),
     IHeading(h) => if !diag then refuseIntent(a, "diag_only") else {
       let turned = turn(a.ship, h);
       if turned.accepted then {a | ship: turned.ship} else refuseIntent(a, "moving")
     },
-    IEcho(p) => if diag then {a | events: {kind: "echo", echo: Some(p)} :: a.events} else refuseIntent(a, "diag_only"),
-    _ => refuseIntent(a, "unsupported")
+    IEcho(q) => if diag then {a | events: {kind: "echo", echo: Some(q)} :: a.events} else refuseIntent(a, "diag_only"),
+    IRecord(_) => refuseIntent(a, "unsupported"),
+    IDraw(_) => refuseIntent(a, "unsupported")
+  }
+pure func applyIntent(diag: bool, p: Params, a: Pending, it: Intent) -> Pending {
+  let r = match a.journey {
+    Committed(_) => refuseWhileCommitted(a, it),
+    _ => applyFree(diag, p, a, it)
   };
   {r | i: a.i + 1}
 }
-pure func applyIntents(diag: bool, a: Pending, xs: [Intent]) -> Pending = match xs { [] => a, x :: more => applyIntents(diag, applyIntent(diag, a, x), more) }
+pure func applyIntents(diag: bool, p: Params, a: Pending, xs: [Intent]) -> Pending = match xs { [] => a, x :: more => applyIntents(diag, p, applyIntent(diag, p, a, x), more) }
 pure func reversed(xs: [a], acc: [a]) -> [a] = match xs { [] => acc, x :: more => reversed(more, x :: acc) }
 
 -- One tick: apply the intents in order (refusals listed, the tick proceeds),
 -- then advance the ship by dtau, derive its phase and update the ledger.
+-- Until the autopilot (M2.3b) a committed ship holds position: no intent can
+-- set thrust once committed, so it rests while the clock runs.
 export pure func tick(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
-  let a = applyIntents(w.diag, {ship: w.ship, thrust: 0.0, refused: [], events: [], i: 0}, input.intents);
+  let a = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, refused: [], events: [], i: 0}, input.intents);
   let moved = step(a.ship, a.thrust, input.dtau);
   let ph = derivePhase(moved.motion.phi, a.thrust);
   let next = {moved | phase: ph};
-  { world: {w | tick: w.tick + 1, ship: next, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau)},
+  { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau)},
     refused: reversed(a.refused, []), events: reversed(a.events, []) }
 }
+
+-- ------------------------------------------------------------ readouts (M2.3a)
+-- Every number on the plan panel is a package output or arithmetic on one
+-- (design §M2.3); Godot only formats them.
+export type Energy = { boostJ: float, brakeJ: float, dragJ: float, totalJ: float, totalKg: float }
+export type Ism = { dragN: float, holdW: float, loadWM2: float, glowWM2: float }
+export type PlanView = { target: Target, distance: float, profile: string, fellBack: bool,
+  cruisePhi: float, cruiseBeta: float, cruiseOneMinusBeta: float, cruiseGamma: float,
+  boostMinutes: float, shipYears: float, earthYears: float, arriveYear: float, ageOnArrival: float, yearsLeft: float,
+  energy: Energy, ism: Ism, cmbForwardK: float }
+export type JourneyView = { state: string, planId: int, plan: Option[PlanView] }
+
+-- Minutes per Julian year (525,960, exact).
+export pure func minutesPerYear() -> float = julianYearS() / 60.0
+-- The crew's span for "years left" (design §M2.3; placeholder for the crew model).
+export pure func crewSpanYears() -> float = 100.0
+
+-- The panel for a plan seen from ship time tau and galaxy time t: "now"
+-- while planned, the commit instant (tau0, t0) once committed. Cruise
+-- beta, 1 - beta and gamma come from the peak rapidity (oneMinusBeta, never
+-- 1 - beta); energy is tripEnergy at the scenario m_eff; ISM and the forward
+-- CMB are evaluated at the peak rapidity.
+export pure func planView(p: Params, pl: Plan, tau: float, t: float) -> PlanView {
+  let tp = pl.trip;
+  let phi = tp.phiPeak;
+  let n = ismPerM3(p);
+  let e = tripEnergy(tp, p.mEffKg, n, p.bubbleRadiusM);
+  { target: pl.target, distance: tp.trip.distance, profile: if pl.flip then "flip_and_burn" else "burn_coast_burn", fellBack: tp.fellBack,
+    cruisePhi: phi, cruiseBeta: betaOf(phi), cruiseOneMinusBeta: oneMinusBeta(phi), cruiseGamma: gammaOf(phi),
+    boostMinutes: tp.tauBurn * minutesPerYear(), shipYears: tp.trip.shipTime, earthYears: tp.trip.galaxyTime,
+    arriveYear: p.epoch + t + tp.trip.galaxyTime, ageOnArrival: p.startAge + tau + tp.trip.shipTime,
+    yearsLeft: crewSpanYears() - tau - tp.trip.shipTime,
+    energy: { boostJ: e.boost, brakeJ: e.brake, dragJ: e.drag, totalJ: e.total, totalKg: e.total / (cSI() * cSI()) },
+    ism: { dragN: mirrorDragForce(n, phi, p.bubbleRadiusM), holdW: mirrorDragPower(n, phi, p.bubbleRadiusM),
+           loadWM2: loadScale(n, phi), glowWM2: glowInwardFlux(n, phi, p.glowEps, p.glowFIn) },
+    cmbForwardK: cmbForwardTemperature(phi) }
+}
+
+export pure func journeyView(w: World) -> JourneyView =
+  match w.journey {
+    Idle => { state: "idle", planId: 0, plan: None },
+    Planned(pl) => { state: "planned", planId: pl.id, plan: Some(planView(w.params, pl, w.ship.motion.tau, w.ship.motion.t)) },
+    Committed(c) => { state: "committed", planId: c.plan.id, plan: Some(planView(w.params, c.plan, c.tau0, c.t0)) },
+    Arrived(c) => { state: "arrived", planId: c.plan.id, plan: Some(planView(w.params, c.plan, c.tau0, c.t0)) }
+  }

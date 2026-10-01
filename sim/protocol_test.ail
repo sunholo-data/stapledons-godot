@@ -3,10 +3,13 @@ module stapledons/sim/protocol_test
 -- Protocol v2 codec round trips, reason codes (every v1.1 reason case has a
 -- v2 counterpart here since M2.1b removed v1.1), scenario-parameter bounds,
 -- rejection model, handshake, the diag echo hook (AC8, AC9 sim side) and the
--- M2.2 world over the wire (params, m_eff_too_small, clock, phase).
+-- M2.2 world over the wire (params, m_eff_too_small, clock, phase) and the
+-- M2.3a journey and ledger sections.
 -- `protocolVm` runs the checks on the strict VM (`make strict`, AC10).
-import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, Params, Refusal, Event, defaultParams)
-import ./protocol (Input, GHello, GNewGame, GInput, GQuit, StateMsg, Clock, ShipView, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, newSession, serve, num)
+import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, Params, Refusal, Event, defaultParams,
+  Target, PlanView, JourneyView, Energy, Ism, World, newWorld, tick, journeyView)
+import ./protocol (Input, GHello, GNewGame, GInput, GQuit, StateMsg, Clock, ShipView, LedgerView, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, newSession, serve, num)
+import pkg/sunholo/relativity/medium (photonDriveEnergy)
 import pkg/sunholo/relativity/optics (Vec3)
 import std/json (decode, getString, getNumber)
 import std/result (Ok, Err)
@@ -56,8 +59,21 @@ pure func someEq(f: (a, a) -> bool, x: Option[a], y: Option[a]) -> bool =
   match x { Some(p) => match y { Some(q) => f(p, q), None => false }, None => match y { None => true, Some(_) => false } }
 pure func refusalEq(a: Refusal, b: Refusal) -> bool = a.i == b.i && a.reason == b.reason
 pure func eventEq(a: Event, b: Event) -> bool = a.kind == b.kind && someEq(planEq, a.echo, b.echo)
+pure func targetEq(a: Target, b: Target) -> bool = a.index == b.index && a.id == b.id && veq(a.pos, b.pos)
+pure func planViewEq(a: PlanView, b: PlanView) -> bool =
+  targetEq(a.target, b.target) && feq(a.distance, b.distance) && a.profile == b.profile && a.fellBack == b.fellBack &&
+  feq(a.cruisePhi, b.cruisePhi) && feq(a.cruiseBeta, b.cruiseBeta) && feq(a.cruiseOneMinusBeta, b.cruiseOneMinusBeta) && feq(a.cruiseGamma, b.cruiseGamma) &&
+  feq(a.boostMinutes, b.boostMinutes) && feq(a.shipYears, b.shipYears) && feq(a.earthYears, b.earthYears) && feq(a.arriveYear, b.arriveYear) &&
+  feq(a.ageOnArrival, b.ageOnArrival) && feq(a.yearsLeft, b.yearsLeft) &&
+  feq(a.energy.boostJ, b.energy.boostJ) && feq(a.energy.brakeJ, b.energy.brakeJ) && feq(a.energy.dragJ, b.energy.dragJ) && feq(a.energy.totalJ, b.energy.totalJ) && feq(a.energy.totalKg, b.energy.totalKg) &&
+  feq(a.ism.dragN, b.ism.dragN) && feq(a.ism.holdW, b.ism.holdW) && feq(a.ism.loadWM2, b.ism.loadWM2) && feq(a.ism.glowWM2, b.ism.glowWM2) && feq(a.cmbForwardK, b.cmbForwardK)
+pure func journeyEq(a: JourneyView, b: JourneyView) -> bool = a.state == b.state && a.planId == b.planId && someEq(planViewEq, a.plan, b.plan)
+pure func ledgerEq(a: LedgerView, b: LedgerView) -> bool =
+  feq(a.mEffKg, b.mEffKg) && feq(a.availableKg, b.availableKg) && feq(a.radiatedJ, b.radiatedJ) && feq(a.boostJ, b.boostJ) && feq(a.dragJ, b.dragJ)
 pure func stateEq(a: StateMsg, b: StateMsg) -> bool =
-  a.tick == b.tick && a.status == b.status && someEq(clockEq, a.clock, b.clock) && someEq(shipEq, a.ship, b.ship) && someEq(paramsEq, a.params, b.params) && allEq(eventEq, a.events, b.events) && allEq(refusalEq, a.refused, b.refused) && a.full == b.full
+  a.tick == b.tick && a.status == b.status && someEq(clockEq, a.clock, b.clock) && someEq(shipEq, a.ship, b.ship) &&
+  someEq(journeyEq, a.journey, b.journey) && someEq(ledgerEq, a.ledger, b.ledger) && someEq(paramsEq, a.params, b.params) &&
+  allEq(eventEq, a.events, b.events) && allEq(refusalEq, a.refused, b.refused) && a.full == b.full
 
 -- ------------------------------------------------------------ fixtures
 pure func maxInt() -> int = 9007199254740991
@@ -87,12 +103,19 @@ pure func inputFixtures() -> [Input] = [
   GInput({tick: 3, dtau: negZero(), intents: []}),
   GQuit
 ]
+pure func edgeView() -> PlanView = { target: {index: maxInt(), id: "Gl \"559\"", pos: edgeVec()}, distance: 4.35667304258651, profile: "burn_coast_burn", fellBack: true,
+  cruisePhi: phiCap(), cruiseBeta: almostOne(), cruiseOneMinusBeta: tiny(), cruiseGamma: 1.0e308, boostMinutes: 1.7976931348623157e308, shipYears: 0.1,
+  earthYears: negZero(), arriveYear: -1.0e308, ageOnArrival: 0.30000000000000004, yearsLeft: -0.00000000015,
+  energy: {boostJ: 1.0e21, brakeJ: 237869256192685950.0, dragJ: 0.0, totalJ: 15104591056870126000.0, totalKg: 6.818},
+  ism: {dragN: tiny(), holdW: 70791174749363.73, loadWM2: 2253353077.7286806, glowWM2: 0.000024071942179266308}, cmbForwardK: 3853.730994033574 }
 pure func stateFixtures() -> [StateMsg] = [
   { tick: 0, status: "ok", clock: Some({tau: 0.1, t: almostOne(), year: tiny(), age: negZero()}),
     ship: Some({phase: "rest", beta: negZero(), oneMinusBeta: 1.0, gamma: 1.0e308, heading: {x: 0.0, y: 0.0, z: -1.0}, pos: {x: phiCap(), y: 0.1, z: tiny()}, x: 1.0e308}),
-    params: Some(defaultParams()), events: [{kind: "phase", echo: None}, {kind: "echo", echo: Some(edgePlan())}], refused: [{i: 0, reason: "unsupported"}, {i: maxInt(), reason: "diag_only"}], full: true },
-  { tick: maxInt(), status: "bad_tick", clock: None, ship: None, params: None, events: [], refused: [], full: false },
-  { tick: 7, status: "ok", clock: Some({tau: 1.0e308, t: -1.0e308, year: 0.0, age: 30.0}), ship: None, params: None, events: [], refused: [], full: false }
+    journey: Some({state: "planned", planId: maxInt(), plan: Some(edgeView())}),
+    ledger: Some({mEffKg: 0.5, availableKg: 20000.0, radiatedJ: 1.0e308, boostJ: tiny(), dragJ: negZero()}),
+    params: Some(defaultParams()), events: [{kind: "phase", echo: None}, {kind: "echo", echo: Some(edgePlan())}, {kind: "committed", echo: None}], refused: [{i: 0, reason: "unsupported"}, {i: maxInt(), reason: "diag_only"}], full: true },
+  { tick: maxInt(), status: "bad_tick", clock: None, ship: None, journey: None, ledger: None, params: None, events: [], refused: [], full: false },
+  { tick: 7, status: "ok", clock: Some({tau: 1.0e308, t: -1.0e308, year: 0.0, age: 30.0}), ship: None, journey: Some({state: "idle", planId: 0, plan: None}), ledger: None, params: None, events: [], refused: [], full: false }
 ]
 
 pure func roundTripInput(x: Input) -> bool = match decodeInput(encodeInput(x)) { Ok(y) => inputEq(x, y), Err(_) => false }
@@ -139,7 +162,7 @@ pure func checkDecodeCodes() -> bool =
 pure func feed(s: Session, lines: [string]) -> Served =
   foldl(\acc line. serve(acc.session, line), {session: s, reply: ""}, lines)
 pure func stateOf(reply: string) -> StateMsg =
-  match decodeState(reply) { Ok(m) => m, Err(e) => {tick: -1, status: e, clock: None, ship: None, params: None, events: [], refused: [], full: false} }
+  match decodeState(reply) { Ok(m) => m, Err(e) => {tick: -1, status: e, clock: None, ship: None, journey: None, ledger: None, params: None, events: [], refused: [], full: false} }
 pure func hello() -> string = "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":0}}"
 pure func diagGame() -> string = newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":true")
 pure func playGame() -> string = newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":false")
@@ -155,7 +178,8 @@ pure func checkHandshake() -> bool {
   let full = stateOf(serve(h.session, diagGame()).reply);
   stateOf(pre.reply).status == "no_hello" && none(stateOf(pre.reply).ship) && stateOf(pre2.reply).status == "no_hello" &&
   first && stateOf(noGame.reply).status == "no_game" && full.full && full.tick == 0 && full.status == "ok" &&
-  someEq(paramsEq, full.params, Some(defaultParams())) && !none(full.clock) && !none(full.ship)
+  someEq(paramsEq, full.params, Some(defaultParams())) && !none(full.clock) && !none(full.ship) &&
+  someEq(journeyEq, full.journey, Some({state: "idle", planId: 0, plan: None})) && !none(full.ledger)
 }
 pure func checkParamsEcho() -> bool {
   let s = feed(newSession(), [hello(), newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"m_eff_kg\":0.5,\"epoch\":-0.0}")]);
@@ -173,6 +197,8 @@ pure func checkMalformedKeepsTick() -> bool {
   allTrue(map(\m. m.tick == 1 && none(m.clock) && none(m.ship), codes)) && same && next.status == "ok" && next.tick == 2
 }
 -- A well-formed intent the rules refuse is listed and the tick proceeds.
+-- (Diag game, ship moving: the plan is accepted, commit refused `moving`,
+-- cancel clears the plan, so the journey section nets to no change.)
 pure func checkRefusedProceeds() -> bool {
   let play = feed(newSession(), [hello(), playGame(), tickLine(1, "0.5", "{\"k\":\"thrust\",\"thrust\":1},{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}")]);
   let p = stateOf(play.reply);
@@ -180,7 +206,8 @@ pure func checkRefusedProceeds() -> bool {
   let diag = feed(newSession(), [hello(), diagGame(), tickLine(1, "0.5", "{\"k\":\"thrust\",\"thrust\":1}"), tickLine(2, "0.5", join("", [all, ",{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}"]))]);
   let d = stateOf(diag.reply);
   p.status == "ok" && p.tick == 1 && allEq(refusalEq, p.refused, [{i: 0, reason: "diag_only"}, {i: 1, reason: "diag_only"}]) && shipX(p) == -1.0 &&
-  d.status == "ok" && d.tick == 2 && allEq(refusalEq, d.refused, [{i: 0, reason: "unsupported"}, {i: 1, reason: "unsupported"}, {i: 2, reason: "unsupported"}, {i: 3, reason: "unsupported"}, {i: 4, reason: "unsupported"}, {i: 5, reason: "moving"}])
+  d.status == "ok" && d.tick == 2 && allEq(refusalEq, d.refused, [{i: 1, reason: "moving"}, {i: 3, reason: "unsupported"}, {i: 4, reason: "unsupported"}, {i: 5, reason: "moving"}]) &&
+  none(d.journey)
 }
 -- The diag adapter reproduces core.turn/step exactly (what v1.1 served).
 pure func checkDiagKinematics() -> bool {
@@ -195,9 +222,10 @@ pure func checkDiagKinematics() -> bool {
 pure func checkChangeSets() -> bool {
   let s = feed(newSession(), [hello(), diagGame()]);
   let idle = stateOf(serve(s.session, tickLine(1, "0", "")).reply);
-  let tick = stateOf(serve(s.session, tickLine(1, "0.5", "")).reply);
-  idle.tick == 1 && none(idle.clock) && none(idle.ship) && none(idle.params) && !idle.full &&
-  !none(tick.clock) && none(tick.ship)
+  -- ailang#1467: a `let tick` would be shadowed by the imported core.tick, hence `later`.
+  let later = stateOf(serve(s.session, tickLine(1, "0.5", "")).reply);
+  idle.tick == 1 && none(idle.clock) && none(idle.ship) && none(idle.journey) && none(idle.ledger) && none(idle.params) && !idle.full &&
+  !none(later.clock) && none(later.ship) && none(later.journey) && none(later.ledger)
 }
 -- Every scenario-parameter bound (inRange): accepted exactly at the bound,
 -- refused just past it. Executor-chosen ranges, pending Mark's ratification.
@@ -271,10 +299,69 @@ pure func checkPhaseOnWire() -> bool {
   helloMsg().relativity == "0.4.0"
 }
 
+-- ------------------------------------------------- M2.3a journey and ledger over the wire
+pure func viewOf(m: StateMsg) -> Option[PlanView] = match m.journey { Some(j) => j.plan, None => None }
+pure func jstate(m: StateMsg) -> string = match m.journey { Some(j) => join(":", [j.state, show(j.planId)]), None => "none" }
+pure func gl559Plan(phi: string) -> string = join("", ["{\"k\":\"plan\",\"target\":{\"index\":1,\"id\":\"Gl 559\",\"pos\":{\"x\":1.5,\"y\":-4.09,\"z\":-0.05}},\"cruise_phi\":", phi, "}"])
+pure func acenPlan(phi: string) -> string = join("", ["{\"k\":\"plan\",\"target\":{\"index\":1,\"id\":\"Gl 559\",\"pos\":{\"x\":0,\"y\":0,\"z\":-4.37}},\"cruise_phi\":", phi, "}"])
+pure func relW(a: float, b: float, tol: float) -> bool = (if a > b then a - b else b - a) <= tol * (if b < 0.0 then 0.0 - b else b)
+-- The journey section: idle in the full state; planned with the panel
+-- (bit for bit core.journeyView, through the codec); live while planned
+-- (the clock runs); committed with a `committed` event, then frozen and
+-- absent from the change-sets; cancel refused `committed`.
+pure func checkJourneyOnWire() -> bool {
+  let g = feed(newSession(), [hello(), playGame()]);
+  let p = feed(g.session, [tickLine(1, "0", gl559Plan("2.6466524123622457"))]);
+  let w = tick(newWorld(7, false, defaultParams()), {dtau: 0.0, intents: [IPlan({target: {index: 1, id: "Gl 559", pos: {x: 1.5, y: -4.09, z: -0.05}}, cruisePhi: 2.6466524123622457, flipG: None})]}).world;
+  let wait = feed(p.session, [tickLine(2, "0.5", "")]);
+  let c = feed(wait.session, [tickLine(3, "0", "{\"k\":\"commit\",\"plan_id\":1}")]);
+  let after = feed(c.session, [tickLine(4, "0.5", "{\"k\":\"cancel\"}")]);
+  let pm = stateOf(p.reply);
+  let cm = stateOf(c.reply);
+  let am = stateOf(after.reply);
+  jstate(stateOf(g.reply)) == "idle:0" && none(viewOf(stateOf(g.reply))) &&
+  jstate(pm) == "planned:1" && someEq(planViewEq, viewOf(pm), (journeyView(w)).plan) &&
+  jstate(stateOf(wait.reply)) == "planned:1" &&
+  (match viewOf(stateOf(wait.reply)) { Some(v) => match viewOf(pm) { Some(u) => v.arriveYear == u.arriveYear + 0.5 && v.yearsLeft == 100.0 - 0.5 - v.shipYears, None => false }, None => false }) &&
+  jstate(cm) == "committed:1" && allEq(eventEq, cm.events, [{kind: "committed", echo: None}]) && allEq(refusalEq, cm.refused, []) &&
+  none(am.journey) && allEq(refusalEq, am.refused, [{i: 0, reason: "committed"}]) && am.tick == 4
+}
+-- The alpha Cen 0.99c panel as the wire carries it (design AC2/AC3 headline:
+-- 0.6227 ship-yr, 4.414 Earth-yr, 1.80 boost-min, 6.818 kg total).
+pure func checkAlphaCenPanel() -> bool {
+  let m = stateOf(feed(newSession(), [hello(), playGame(), tickLine(1, "0", acenPlan("2.6466524123622457"))]).reply);
+  match viewOf(m) {
+    Some(v) => relW(v.shipYears, 0.6226958707592057, 0.000000001) && relW(v.earthYears, 4.414143655383168, 0.000000001) &&
+      num(v.boostMinutes) == num(v.boostMinutes) && relW(v.boostMinutes, 1.80, 0.003) && relW(v.energy.totalKg, 6.818, 0.0001) &&
+      relW(v.energy.totalJ, 612764286331283800.0, 0.000000001) && relW(v.cmbForwardK, 38.44085554458952, 0.000000001) && v.profile == "burn_coast_burn",
+    None => false
+  }
+}
+-- The ledger section with a non-default m_eff (M2.2 follow-up): echoed in
+-- the full state, then sent whenever it changes; radiated = boost + drag;
+-- equal to core's ledger bit for bit. The plan energy uses the same m_eff.
+pure func ledgerOfMsg(m: StateMsg) -> Option[LedgerView] = m.ledger
+pure func checkLedgerOnWire() -> bool {
+  let g = feed(newSession(), [hello(), newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"m_eff_kg\":0.5}")]);
+  let b = feed(g.session, [tickLine(1, "0.25", "{\"k\":\"thrust\",\"thrust\":1}")]);
+  let c = feed(b.session, [tickLine(2, "0.5", "")]);
+  let r = feed(c.session, [tickLine(3, "0.25", "{\"k\":\"thrust\",\"thrust\":-1}")]);
+  let still = feed(r.session, [tickLine(4, "0.5", "")]);
+  let wb = tick(newWorld(7, true, {defaultParams() | mEffKg: 0.5}), {dtau: 0.25, intents: [IThrust(1.0)]}).world;
+  let wc = tick(wb, {dtau: 0.5, intents: []}).world;
+  let pe = feed(newSession(), [hello(), newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":false,\"params\":{\"m_eff_kg\":0.5}"), tickLine(1, "0", acenPlan("2.6466524123622457"))]);
+  someEq(ledgerEq, ledgerOfMsg(stateOf(g.reply)), Some({mEffKg: 0.5, availableKg: 20000.0, radiatedJ: 0.0, boostJ: 0.0, dragJ: 0.0})) &&
+  someEq(ledgerEq, ledgerOfMsg(stateOf(b.reply)), Some({mEffKg: 0.5, availableKg: 20000.0, radiatedJ: wb.ledger.boostJ, boostJ: wb.ledger.boostJ, dragJ: 0.0})) &&
+  wb.ledger.boostJ == photonDriveEnergy(0.5, wb.ship.motion.phi) &&
+  someEq(ledgerEq, ledgerOfMsg(stateOf(c.reply)), Some({mEffKg: 0.5, availableKg: 20000.0, radiatedJ: wc.ledger.boostJ + wc.ledger.dragJ, boostJ: wc.ledger.boostJ, dragJ: wc.ledger.dragJ})) &&
+  wc.ledger.dragJ > 0.0 && !none(ledgerOfMsg(stateOf(r.reply))) && none(ledgerOfMsg(stateOf(still.reply))) &&
+  match viewOf(stateOf(pe.reply)) { Some(v) => v.energy.boostJ == photonDriveEnergy(0.5, 2.6466524123622457) && v.energy.totalJ == 2.0 * v.energy.boostJ + v.energy.dragJ, None => false }
+}
+
 pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures()) ++ map(encodeState, stateFixtures()) ++ [encodeHello(helloMsg())]
 export pure func protocolVm(n: int) -> string =
   if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho() &&
-    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire()
+    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire()
   then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
 
 test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }
@@ -294,3 +381,6 @@ test "M2.2 each param out of range is bad_params, game unchanged" { checkParamRa
 test "M2.2 m_eff 0.03 refused m_eff_too_small, 0.033 accepted" { checkMEffTooSmall() }
 test "M2.2 clock year = epoch + t, age = start_age + tau" { checkClockFields() }
 test "M2.2 ship phase on the wire" { checkPhaseOnWire() }
+test "M2.3a journey section: idle, planned panel, committed, frozen" { checkJourneyOnWire() }
+test "M2.3a alpha Cen 0.99c panel on the wire" { checkAlphaCenPanel() }
+test "M2.3a ledger section with m_eff 0.5" { checkLedgerOnWire() }
