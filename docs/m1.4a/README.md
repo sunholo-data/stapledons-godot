@@ -68,9 +68,9 @@ AILANG_BIN=$PWD/runtime/bin/ailang godot --path . --resolution 1920x1080 res://s
 
 | | |
 |---|---|
-| **Forward at β = 0 / 0.5 / 0.9 / 0.99** | [forward_0_05_09_099.jpg](renders/forward_0_05_09_099.jpg) |
-| Contact sheet (rows β = 0, 0.5, 0.9, 0.99; columns forward / starboard / astern) | [contact_sheet.jpg](renders/contact_sheet.jpg) |
-| Every frame at 1920×1080 | [renders/](renders/) |
+| **Forward at β = 0 / 0.5 / 0.9 / 0.99** | [forward_0_05_09_099.jpg](preview/forward_0_05_09_099.jpg) |
+| Contact sheet (rows β = 0, 0.5, 0.9, 0.99; columns forward / starboard / astern) | [contact_sheet.jpg](preview/contact_sheet.jpg) |
+| Every frame at 1920×1080 | [preview/](preview/) |
 
 Preview simplifications, each owned by a later milestone:
 - **One colour temperature (4600 K) for every texel.** M1.4b fits T_c per texel.
