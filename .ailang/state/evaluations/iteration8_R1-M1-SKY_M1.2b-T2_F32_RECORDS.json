@@ -1,0 +1,29 @@
+{
+ "sprint_id":"R1-M1-SKY","child":"M1.2b-T2_F32_RECORDS","iteration":8,"round":1,
+ "evaluator":"Claude Sonnet 5.5 (claude-sonnet-5-5), independent of generator OpenAI GPT6.1 Sol",
+ "commit":"c9cd7202b438e470bf34b76da018fcbcdc24cdf1","base":"19f55bf9795106f666b538d171aa0cf6169b4ee9","plan":"d4e9498",
+ "runtime":"ailang v0.50.0 6abe1a5 (runtime/bin/ailang)",
+ "result":"pass","score":92,"threshold":70,"blockers":0,
+ "child_passes":"may be set true by controller; parent M1.2b_AILANG_CATALOGUE, T3, T4 remain null/incomplete (NOT passed)",
+ "scores":{"tests":20,"lint":10,"acceptance":30,"code_quality":14,"documentation":13,"design_fidelity":9,"conditional":"not triggered (no internal/* edits; not a perf sprint)"},
+ "loc":{"added":130,"deleted":3,"sum":133,"cap":250,"scope":"Makefile, sim/, tools/ (docs/evidence/state excluded)"},
+ "commands":[
+  {"cmd":"ailang check --package sim","rc":0,"secs":86},
+  {"cmd":"ailang test --package sim","rc":0,"secs":106,"note":"32/32 passed"},
+  {"cmd":"python3 tools/test_catalogue_bytes.py","rc":0,"secs":1,"note":"2 tests: interpreter + 5 ordinary VM runs"},
+  {"cmd":"make catalogue-vm catalogue-bytes","rc":0,"secs":24},
+  {"cmd":"make test AILANG=$PWD/runtime/bin/ailang AILANG_BIN=same","rc":0,"secs":147}],
+ "mutation_drills":{"run":"own mutant set (28 incl. invalid/no-op), logs in iteration8-logs/mutations_run*.log, n1n2_drill.log",
+  "killed":["flag_lo_removed","flag_hi_32","flag_hi_removed","upper_strict","lower_strict","upper_loose_1e39","lower_removed","upper_removed","bypass_x","bypass_y","bypass_z","bypass_teff","bypass_v","valid_true","order_swap_zt","flags_first","drop_flags","sticky_err_dropped","row_err_skips_row","final_err_to_empty","no_final_reverse","dup_row_chunk","N1_dwarf_uses_wd_pred","N1_dwarf_never_clamped","N2_strip_all_blanks","N2_never_strip"],
+  "survived":["nan_guard_only (v==v removed; redundant, bounds reject NaN)","row_err_to_skip (my no-op identity edit; discard)"],
+  "invalid":["sticky_err_dropped first form Ok([]) failed to compile; recompiled form killed"],
+  "n1n2_vs_base_tests":"N1 mutant: transform-BAD with new tests, transform-ok with base tests; N2 strip-all: BAD vs ok likewise -> new tests are the killers",
+  "restore":"SHA256 verified after every mutation: catalogue.ail 147e2454..., catalogue_bytes.ail 3c3723bc..., catalogue_test.ail a6609dbc...; git status clean of source changes"},
+ "oracle_independent":"hand-picked rows incl. 1e-46 underflow, -0.0, max finite, 1.0000001, flags 31/32/-1, 3.4028235e38 (refused), empty, invalid 2nd row: AILANG interpreter == bytecode == Python struct.pack('<6f') / [-1] refusal",
+ "findings":[
+  {"priority":"P3","scope":"tools/test_catalogue_bytes.py + catalogue_bytes_test.ail","title":"Refusal sentinel [-1] and float-transported flags in oracle","repro":"oracle takes flags as float then floatToInt (31.5 -> 31); refusal is encoded as [-1]; neither is production API","impact":"test-only; production Row.flags stays int. CLI Row alias gap reported upstream"},
+  {"priority":"P3","scope":"sim/tools/catalogue_bytes.ail:9","title":"v == v NaN guard redundant","repro":"remove 'v == v &&': all tests pass (NaN fails >= and <=)","impact":"equivalent mutant; harmless defence"},
+  {"priority":"P3","scope":"strict gate","title":"Native codec not under --strict-bytecode (Phase2E, ailang upstream report inbox_1790875803550_a044780b)","repro":"N/A by instruction; core + T1 strict retained and green","impact":"none for this verdict"},
+  {"priority":"P3","scope":"bound 3.4028234663852886e38","title":"Conservative range refusal rejects 3.4028235e38 that would round to F32 max","repro":"oracle row x=3.4028235e38 -> [-1]","impact":"documented design choice; T3/T4 to confirm no real source row hits it"}],
+ "downstream_not_passed":["T3_WRITE_SIDECARS","T4_FULL_INTEGRATION","parent M1.2b_AILANG_CATALOGUE","M1.2c"]
+}

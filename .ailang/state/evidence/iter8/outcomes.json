@@ -1,0 +1,1 @@
+{"child":"M1.2b-T2_F32_RECORDS","runtime":"v0.50.0","check":0,"ailang_test":0,"oracle":0,"catalogue_vm_and_bytes":0,"make_test_restored":0,"changed_code_test_config_loc":133,"compiling_mutants":27,"killed":26,"redundant_survivors":["nan_guard"],"passes":null,"parent_passes":null,"native_agent_tokens":"unknown","bulk_raw_mutant_logs":"local only; tracked summaries suffice"}

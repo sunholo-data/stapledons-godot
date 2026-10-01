@@ -1,0 +1,22 @@
+module stapledons/sim/tools/catalogue_bytes
+import ./catalogue (Row)
+import std/result (Result, Ok, Err)
+import std/list (foldl)
+import std/math (intToFloat)
+import std/embedding (encodeF32LE)
+import std/bytes (concatList)
+
+-- Conservative finite F32 boundary; subnormals and signed underflow remain valid.
+pure func valid(v: float) -> bool = v == v && v >= -3.4028234663852886e38 && v <= 3.4028234663852886e38
+export pure func encodeRow(r: Row) -> Result[bytes,string] =
+  if !valid(r.x) || !valid(r.y) || !valid(r.z) || !valid(r.teff) || !valid(r.v)
+  then Err("nonfinite or out-of-range F32 field")
+  else if r.flags < 0 || r.flags > 31 then Err("invalid catalogue flags")
+  else Ok(encodeF32LE([r.x,r.y,r.z,r.teff,r.v,intToFloat(r.flags)]))
+pure func append(acc: Result[[bytes],string],r: Row) -> Result[[bytes],string] = match acc {
+  Err(e) => Err(e), Ok(b) => match encodeRow(r) { Err(e) => Err(e), Ok(next) => Ok(next :: b) }
+}
+@allow_empty_ok("empty catalogue has zero bytes; any invalid row refuses the whole result")
+export pure func encodeRows(rows: [Row]) -> Result[bytes,string] = match foldl(append,Ok([]),rows) {
+  Err(e) => Err(e), Ok(parts) => Ok(concatList(foldl(\a b. b :: a,[],parts)))
+}

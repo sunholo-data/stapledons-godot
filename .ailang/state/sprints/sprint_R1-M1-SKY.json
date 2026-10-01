@@ -57,7 +57,7 @@
       "acceptance_criteria": [
         "V17 nested std/json.get probe rerun on pinned AILANG v0.45.0 VM and interpreter before implementation",
         "make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: hello returns proto 1.1, v1.0 bridge checks remain unmodified, codec precision and every rejection reason preserve state",
-        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec §2 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec \u00a72 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
         "make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: byte-identical VM/interpreter output",
         "make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: existing scripted and scriptedOffAxis strict VM, interpreter and sqrt(2)*D closed form agree within 1e-9",
         "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: AC10 and AC12, including 5 s hello, 2 s step and 1 s graceful-exit bounds, no surviving child"
@@ -125,7 +125,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": "Iteration 4 at 06311aa: routable M1.2b-preflight ONLY, estimated 200 changed code/test LOC (hard cap 250). CSV + published 0.2.0 main-sequence photometry, fixture assertions, real 5k timing and interpreter/5 VM exact diagnostic parity. Count missing/WD without fitting. No new physics, binary production, fallback, tier commits or completion claim. Runtime v0.47.2 supersedes old v0.45 premises. Production tiers blocked on package-first D-4 WD transform with calibrated BP/RP zero-point convention; then bounded pure-tier, float32-writer and complete integration tasks. Preserve all original acceptance criteria and passes=null. See M1.2b sprint section and planner artifact.\nExecutor iteration4: preflight implemented only; 19/19 AILANG, 15/15 parser, simulation gates green. Real5000 rows (4580 normal,324 WD,96 missing), 5 strict pure VM outputs equal interpreter; mean0.719015s, peakRSS143458304B. FS shell normal VM/interpreter parity green; strict boundary excludes FS. Evidence .ailang/state/probe_M1.2b_iter4.json; execution notes in sprint. Code218LOC/production187. Independent evaluation pending; full passes remains null. Iteration 4 preflight LANDED PR #9 merge 01fe9ef, independent Sonnet5.5 PASS85 no blockers; full M1.2b stays null. F1-F3/F5 production test/integration obligations banked; F4 production test-table reference restored in record commit. Next package-first WD calibration/publication under D-4, then bounded transform/writer/integration.\nIteration 5 (planner): production of this feature is BLOCKED on the package-first WD chain M1.2b-WD1_GENERATOR -> M1.2b-WD2_MODULE_PUBLISH -> M1.2b-WD3_GAME_PIN (design_docs/implemented/r1/m1.2b-wd-photometry.md + m1.2b-wd-photometry-sprint.md). The transform/writer/integration tasks follow WD-3."
+      "notes": "Iteration 4 at 06311aa: routable M1.2b-preflight ONLY, estimated 200 changed code/test LOC (hard cap 250). CSV + published 0.2.0 main-sequence photometry, fixture assertions, real 5k timing and interpreter/5 VM exact diagnostic parity. Count missing/WD without fitting. No new physics, binary production, fallback, tier commits or completion claim. Runtime v0.47.2 supersedes old v0.45 premises. Production tiers blocked on package-first D-4 WD transform with calibrated BP/RP zero-point convention; then bounded pure-tier, float32-writer and complete integration tasks. Preserve all original acceptance criteria and passes=null. See M1.2b sprint section and planner artifact.\nExecutor iteration4: preflight implemented only; 19/19 AILANG, 15/15 parser, simulation gates green. Real5000 rows (4580 normal,324 WD,96 missing), 5 strict pure VM outputs equal interpreter; mean0.719015s, peakRSS143458304B. FS shell normal VM/interpreter parity green; strict boundary excludes FS. Evidence .ailang/state/probe_M1.2b_iter4.json; execution notes in sprint. Code218LOC/production187. Independent evaluation pending; full passes remains null. Iteration 4 preflight LANDED PR #9 merge 01fe9ef, independent Sonnet5.5 PASS85 no blockers; full M1.2b stays null. F1-F3/F5 production test/integration obligations banked; F4 production test-table reference restored in record commit. Next package-first WD calibration/publication under D-4, then bounded transform/writer/integration.\nIteration 5 (planner): production of this feature is BLOCKED on the package-first WD chain M1.2b-WD1_GENERATOR -> M1.2b-WD2_MODULE_PUBLISH -> M1.2b-WD3_GAME_PIN (design_docs/implemented/r1/m1.2b-wd-photometry.md + m1.2b-wd-photometry-sprint.md). The transform/writer/integration tasks follow WD-3.\nIteration8: historical hand-rolled codec/runtime assumptions superseded by v0.50.0 std/embedding.encodeF32LE reuse. T2_F32_RECORDS pure child only, then bounded T3 writer/sidecars and T4 full integration; original parent acceptance unchanged and passes=null."
     },
     {
       "id": "M1.2b-WD1_GENERATOR",
@@ -140,7 +140,7 @@
       "passes": true,
       "started": "2026-09-30",
       "completed": "2026-09-30",
-      "notes": "Iteration 5: LANDED in sunholo-data/ailang-packages PR #83 (branch relativity-0.3.0-wd, commit 2f1cef8), published sunholo/relativity@0.3.0 (tarball sha256 8c596f4f…, same as dry run and evaluated tree). Executor Claude Sonnet 5.5 (Agent tool): generator 208 hand-written LOC + 137 generated. AC-W1 byte-identical regen, AC-W2 validate (CALSPEC median -0.018, Landolt max 0.0156, GF21 n=1780 median 1.038, 99.2% within 10%). Independent evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking."
+      "notes": "Iteration 5: LANDED in sunholo-data/ailang-packages PR #83 (branch relativity-0.3.0-wd, commit 2f1cef8), published sunholo/relativity@0.3.0 (tarball sha256 8c596f4f\u2026, same as dry run and evaluated tree). Executor Claude Sonnet 5.5 (Agent tool): generator 208 hand-written LOC + 137 generated. AC-W1 byte-identical regen, AC-W2 validate (CALSPEC median -0.018, Landolt max 0.0156, GF21 n=1780 median 1.038, 99.2% within 10%). Independent evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking."
     },
     {
       "id": "M1.2b-WD2_MODULE_PUBLISH",
@@ -200,6 +200,27 @@
       "completed": "2026-10-01T11:04:13.804634+00:00",
       "notes": "Implemented in iteration 7; awaits independent evaluation (passes remains null). Package check/headless make test rc0: AILANG30/30, physics42/42, extraction15/15, parity and strict core+WD+transform+selection. 33 landed/building mutants killed by grouped strict predicates; SHA256 restored. Evidence .ailang/state/evidence/iter7/execution.md. Pure foldl reversal avoids std/list.reverse strictVM gap, GCP user report inbox_1790851451419_f085641f. Writer/full-medium integration remain pending. Independent Sonnet5.5 PASS88/100 no blockers on e5908ce; 68 mutants,60 killed,8 named residuals/gaps. Controller reproduced N1/N2: dwarf BP-RP2.5 wrong WD clamp predicate changes flags0->16 with tests green; stripping two trailing blanks changes refusal->acceptance with tests green. Carry both to writer along with 50,000 boundary, tier validation and coordinate-range guard. Full parent remains null. Reports eval_R1-M1-SKY_M1.2b-T1_iter7_round1.*.",
       "actual_loc": 192
+    },
+    {
+      "id": "M1.2b-T2_F32_RECORDS",
+      "description": "Iteration8 bounded pure validated Row/list -> exact 24-byte LE F32 output; reuse bundled std/embedding.encodeF32LE on pinned v0.50.0, independent Python struct.pack oracle, ordinary bytecode parity (strict codec N/A Phase2E gap), N1/N2 closure. No FS writer/sidecars/full tiers. See iteration8 refinement.",
+      "estimated_loc": 210,
+      "dependencies": [
+        "M1.2b-T1_TRANSFORM"
+      ],
+      "acceptance_criteria": [
+        "v0.50.0 pinned runtime: check/test --package sim and make test with AILANG and AILANG_BIN=$PWD/runtime/bin/ailang green; new catalogue-bytes gate included in make test",
+        "python3 tools/test_catalogue_bytes.py compares interpreter and five ordinary bytecode VM complete byte outputs independently to Python struct.pack('<f') corpus: signed zero, subnormal/normal boundary, half-ULP ties, carry, max finite, field order, flags as float32, exact 48-byte two-record and empty outputs",
+        "Pure Result refusal checks reject NaN, infinities, values beyond max finite F32 in every field, illegal flags outside0..31 and invalid second record without prefix success; preserve subnormals/underflow signed zero",
+        "N1 dwarf BP-RP2.5 flags0/-0.5 flags16 and N2 exactly one trailing newline accepted/two rejected checked on interpreter and strict VM; controller-reproduced mutants killed",
+        "Independent evaluator PASS and changed code/test/config LOC<=250; parent M1.2b passes remains null; no shipped outputs/sidecars/full-tier completion claimed"
+      ],
+      "session": 3,
+      "passes": true,
+      "started": "2026-10-01",
+      "completed": "2026-10-01",
+      "notes": "Authorization: scope-preserving Sept27 approved post-preflight split; estimate180+30 reserve=210 LOC, one session. Controller measured __embedding_encode evaluator-only Phase2E; strict codec gate N/A known gap, GCP report inbox_1790875803550_a044780b. Charter allows side-tool interop until Phase2E; native codec ordinary bytecode/interpreter exact parity required. Existing strict sim/core and N1/N2 predicates remain mandatory. Independent designer scope result pending controller. Residuals: T3 validates tier and coordinate range before medium sort and writes sidecars/quick JSON with provenance SHA256s; T4 owns exact50000 boundary/full-medium parity-performance and real tier sizes; M1.2c stats/commits. N4/N5/N9 touched-path residuals declared by evaluator. Human changes parked, no altered acceptance/output contract. Executor iteration8: pure native F32 encodeRow/encodeRows implemented (133 changed code/test/config LOC), all command gates including restored full make test exit0. Independent Python exact bytes interpreter+5 ordinary VM runs; every field NaN/Inf/overflow and illegal flags refuse entire output, sticky error/no prefix checked. N1/N2 strict mutants killed. 27 compiling mutants:26 killed,1 redundant NaN self-equality survivor (remaining bounds reject NaN); originals SHA-restored. CLI Row alias gap reported GCP inbox_1790876207432_e897bb14; transport nested numeric lists constructs Row, production typed API unchanged. Designer COVERED. Generator tokens unknown. Evidence .ailang/state/evidence/iter8/execution.md; child passes null pending independent judge, parent null. No writer/sidecars/tier output.  Independent Anthropic Sonnet5.5 PASS92/100, zero blockers, candidate c9cd720, .ailang/state/evaluations/iteration8_R1-M1-SKY_M1.2b-T2_F32_RECORDS.json. Controller reproduced all P3 observations. Conservative F32-bound check on actual source rows carried to T3/T4. Only T2 passed; parent/T3/T4 incomplete.",
+      "actual_loc": 133
     },
     {
       "id": "M1.2c_STATS_AND_COMMIT",
@@ -273,7 +294,7 @@
       "passes": true,
       "started": "2026-10-01",
       "completed": "2026-10-01",
-      "notes": "Attended (Mark). Option A on NOIRLab chosen, D-10 (ledger e9d35c5); B not built by ruling. Report design_docs/planned/r1/m1-4a-background-options.md; spike tools/m14a_*.py, spike/panorama.*; renders docs/m1.4a/preview. Binding findings for M1.4b/c in design §M1.4 'M1.4a outcome'.",
+      "notes": "Attended (Mark). Option A on NOIRLab chosen, D-10 (ledger e9d35c5); B not built by ruling. Report design_docs/planned/r1/m1-4a-background-options.md; spike tools/m14a_*.py, spike/panorama.*; renders docs/m1.4a/preview. Binding findings for M1.4b/c in design \u00a7M1.4 'M1.4a outcome'.",
       "gate": "STOP for user decision before M1.4b"
     },
     {
@@ -330,6 +351,28 @@
       "package": "none",
       "action": "none",
       "reason": "2026-10-01 pkg search csv returned no packages; exact app schema/tier selection uses std/string/list/result."
+    },
+    {
+      "milestone": "M1.2b-T2_F32_RECORDS",
+      "package": "std/embedding (bundled v0.50.0)",
+      "action": "depend",
+      "reason": "2026-10-01 pinned docs std/embedding + std/array expose encodeF32LE; source confirms list-based native LE codec. Reuse embedding plus std/bytes; ordinary bytecode oracle gate; strict codec N/A reported Phase2E interop gap. No handwritten IEEE serializer."
+    },
+    {
+      "milestone": "M1.2b-T2_F32_RECORDS",
+      "package": "none",
+      "action": "none",
+      "reason": "Pinned pkg search bytes/float: none; binary: only sunholo/duckdb@0.2.1, unrelated Process/FS DB client. Application Row validation/schema and independent Python oracle need no registry package."
     }
-  ]
+  ],
+  "iteration8_plan": {
+    "baseline": "19f55bf",
+    "runtime": "v0.50.0",
+    "child": "M1.2b-T2_F32_RECORDS",
+    "estimated_loc": 210,
+    "estimated_sessions": 1,
+    "cap_changed_code_test_config_loc": 250,
+    "parent_passes": null,
+    "velocity_note": "T1 actual192LOC, PASS88/100. Parent velocity/history retained; overlapping parent/child rows must not be summed as disjoint scope."
+  }
 }

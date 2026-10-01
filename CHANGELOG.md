@@ -35,6 +35,14 @@
   Independent Sonnet5.5 review: 88/100 PASS. Binary writer and full-tier
   parity/performance remain pending; full M1.2b is incomplete.
 
+### Catalogue F32 records (M1.2b-T2, iteration 8)
+
+- Pure AILANG Row/list encoding uses the bundled native little-endian F32 codec;
+  invalid fields or flags refuse the whole output before any writer is involved.
+- Independent Python byte oracle runs interpreter and five ordinary VM passes in
+  `make test`; strict T1 tests now pin dwarf clamps and exactly one final newline.
+- Filesystem writing, sidecars and production catalogue tiers remain downstream.
+
 ### M0 spike, 2026-09-27 (~1,900 LOC including tests)
 
 - **Simulation:** AILANG sidecar over NDJSON stdio, about 50 µs per tick

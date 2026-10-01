@@ -467,6 +467,124 @@ reference tests, CHANGELOG, release kind, no-gate quality, publish then pin;
 (4) complete-tier parity/performance integration before M1.2c. None is
 silently marked complete by a successful preflight.
 
+
+### Iteration 8 refinement: M1.2b-T2_F32_RECORDS (2026-10-01)
+
+**Authorization:** scope-preserving child of the Sept 27 approved parent and its
+mandatory post-preflight <=250 LOC split. T1 landed in iteration 7. No new human
+choice is needed to serialize its rows in the existing 24-byte format. Parent
+`M1.2b_AILANG_CATALOGUE` remains `passes: null`; no full AC2 completion is claimed.
+This section supersedes historical runtime/hand-written encoder assumptions:
+execution uses **runtime/bin/ailang v0.50.0**, locked relativity@0.3.0, baseline
+`19f55bf`. Controller confirmed pristine `make test` exit0 on darwin/arm64 at `19f55bf`
+and same-SHA CI success; older v0.47.2 evidence is historical.
+
+**Reuse gate, measured using the pinned runtime:** `pkg search bytes` and
+`pkg search float` returned none; `pkg search binary` returned only duckdb@0.2.1
+(Process/FS database client, not a float codec). `ailang docs std/embedding` and
+`ailang docs std/array` both expose pure `encodeF32LE`. Source inspection confirms
+std/embedding accepts `[float]` and uses the existing native little-endian F32
+codec. **depend on bundled std/embedding**, matching T1's lists; no new dependency
+or arithmetic float serializer. std/bytes supplies byte inspection/concatenation.
+The earlier fractional-mantissa suggestion is historical, superseded by reuse.
+Controller probe: std/array.fromList is evaluator-only in strict VM (Phase2E),
+so array codec construction is not the selected path. List-based codec was also measured evaluator-only (`__embedding_encode`, Phase2E);
+ordinary bytecode/interpreter agree. GCP report `inbox_1790875803550_a044780b`.
+Controller confirmed charter permits side-tool interop until Phase2E: strict
+codec gate is **N/A known upstream gap**, explicitly reported, not a passing
+strict claim. Existing sim/core strict gates and T1 strict predicates remain
+mandatory. #1450 bitwise operators are unnecessary; use native codec. Any
+ordinary-bytecode divergence blocks exact parity and is reported upstream.
+
+**Bound and schedule:** one session, 180 changed code/test/config LOC estimated
+(55 implementation, 45 AILANG assertions, 65 Python oracle, 15 Makefile/config),
+plus 30 LOC uncertainty reserve: plan <=210, absolute cap 250. No standalone
+example is needed: the committed oracle fixture and pure entry are the runnable
+example. Writer + FS runner + metadata/hashes/quick JSON + integration would
+exceed this bound, so this iteration implements **pure validated record/output
+encoding only**. Sidecars and writing retain their original contracts downstream.
+Recent T1 used 192 LOC and passed 88/100 with residuals; the old 700/session
+velocity is not a license to exceed the task cap. Stop/split if actual diff
+cannot fit while preserving these tests.
+
+**Files (test-first):** new `sim/tools/catalogue_bytes.ail`,
+`sim/tools/catalogue_bytes_test.ail`, `tools/test_catalogue_bytes.py`; edit
+`sim/tools/catalogue_test.ail` (N1/N2), `Makefile` (catalogue-bytes gate included
+in make test), and package export only if required. All temporary oracle inputs
+and logs under `.godot/tmp/catalogue-bytes/`; no FS in pure module, no production
+output under data/starmap, no catalogue edits/commits, no new physics formulas.
+
+**Concrete tasks / acceptance:**
+1. Demonstrate the std codec on v0.50.0 interpreter and ordinary `--bytecode` via a pure entry returning byte integer lists (std/bytes
+   toInts). Extend the entry to emit deterministic encoder results for the
+   committed boundary corpus; the Python test runs both with bounded 60s
+   subprocess timeouts. Its expected bytes come from independent Python
+   `struct.pack('<f', x)`, never from an AILANG decoder or copied codec logic.
+2. Provide Result-returning pure row/list encoding using existing Row, field
+   order **x,y,z,teff,v,float(flags)**, exactly six floats/24 bytes, preserving
+   source order and empty output. Before serialization reject NaN/infinity and
+   abs(value)>3.4028234663852886e38 in every float field. This is a conservative
+   refusal beyond the maximum finite F32, not a physical catalogue threshold;
+   accept finite subnormals and round underflow to signed zero. Reject illegal
+   catalogue flag integers outside 0..31; encode valid flags as float32 (not
+   uint32). Fail the entire pure output on any invalid row, no prefix success.
+   This also bounds coordinates before subsequent production medium sorting,
+   whose validation-order enforcement belongs to T3.
+3. Oracle corpus covers +0/-0 (assert sign bit), +/-minimum subnormal 2^-149,
+   +/-2^-150 ties to zero, 3*2^-150 ties to even subnormal, subnormal/normal
+   boundary, ties around 1 (1+2^-24 and 1+3*2^-24), mantissa carry
+   2-2^-24, +/-maximum finite F32, +/-99 and all supported flag combinations.
+   Refusal corpus includes NaN, both infinities, +/-1e39 and each invalid field
+   position; construct nonfinite values in named pure checks if CLI JSON refuses
+   them. Compare an exact two-record 48-byte sequence (one signed-zero/missing
+   row and one WD/approximate row), empty bytes, and refusal with an invalid
+   second row. Validate raw output bytes, not just numeric round trips.
+4. Close T1 N1/N2 with strict predicates and interpreter checks: dwarf BP-RP
+   2.5 => flags0 and -0.5 => flags16; one trailing newline accepted, two rejected.
+   Do not redesign the parser. Distinct dwarf and WD clamp checks must fail the
+   controller-reproduced wrong-WD-predicate mutant; duplicate stripping must fail.
+
+**Command gates (executor implements new gate):**
+`runtime/bin/ailang --version` must report v0.50.0;
+`runtime/bin/ailang check --package sim`;
+`runtime/bin/ailang test --package sim`;
+`python3 tools/test_catalogue_bytes.py`;
+`make catalogue-bytes AILANG=$PWD/runtime/bin/ailang`;
+`make test AILANG=$PWD/runtime/bin/ailang AILANG_BIN=$PWD/runtime/bin/ailang`.
+Python oracle must execute ordinary bytecode VM and interpreter and compare each to its
+independent expected bytes; five repeated bytecode runs compare complete outputs. Strict codec gate is N/A
+known Phase2E interop gap; make test still runs strict sim/core and T1 checks.
+Independent evaluator measures <=250 changed code/test/config LOC, reviews
+refusal localisation and verifies the restored tree after mutation experiments.
+
+**Independent scope review:** designer result is pending with the controller;
+this plan derives authorization solely from the approved parent and preserves
+its output/acceptance contracts. Controller resolves any review finding before
+execution handoff. No new human choice was resolved by the planner.
+
+**Mutation mapping:** swap x/y or teff/v, emit flags as integer bytes, encode
+F64/big-endian, drop/duplicate a row => exact record/output oracle fails;
+lose signed zero, flush subnormals, change ties/carry => boundary oracle fails;
+bypass finite/range guard, permit illegal flags, return valid prefix => named
+refusal checks fail; wrong dwarf clamp predicate => N1; strip two blanks => N2.
+Mutating std implementation is not required; independently test the consumed
+codec. Record equivalent/dead branch residuals explicitly (N4/N5/N9) when touched.
+
+**Remaining ownership, not deferred acceptance:** T3_WRITE_SIDECARS (next bounded
+plan) owns tier name validation before selectTier, coordinate/F32 validation
+before distance sorting, FS shell, all original sidecar fields and input/csv/bin
+SHA256s, quick stars.json, atomic refusal without partial shipped files. Validate
+quick/medium/large; do not invent a fourth tier. T4_FULL_INTEGRATION owns N3 exact
+50,000 quota boundary (50,001 eligible plus intervening missing), independent
+excluded counts, real quick/medium/large output sizes and five-run full-medium
+parity/time/performance, and upstream/fallback trigger evidence. M1.2c continues
+to own stats, deterministic rebuild and authorized catalogue commits. Neither
+T2 nor fixture parity satisfies those gates. If the conservative range refusal
+would exclude any real source row, park that source finding for controller/human
+review rather than changing the record contract. Changes to physics/passbands,
+thresholds, source/tier definitions, fallback policy or shipping format remain
+human decisions; no new such choice is assumed by this plan.
+
 ### Iteration 7 refinement: M1.2b-T1_TRANSFORM (2026-10-01)
 
 **Authorization:** scope-preserving decomposition of the approved 2026-09-27

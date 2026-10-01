@@ -1,0 +1,2 @@
+rc=1
+Error: failed to decode arguments: unsupported type constructor: Row

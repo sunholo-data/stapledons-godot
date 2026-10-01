@@ -15,6 +15,12 @@ pure func checkWD() -> bool = match transform(csv("real,100.615174,-59.613639,-3
 pure func checkClamp() -> bool = match transform(csv("wd,0,0,0,0,2.5,1\ndwarf,0,0,0,0,-9,0\n")) {
   Ok(s) => match s.rows { [a,b] => a.teff == 3000.0 && a.flags == 21 && b.flags == 16, _ => false }, Err(_) => false
 }
+pure func checkN1() -> bool = match transform(csv("inside,0,0,0,0,2.5,0\noutside,0,0,0,0,-0.5,0\n")) {
+  Ok(s) => match s.rows { [a,b] => a.flags == 0 && b.flags == 16, _ => false }, Err(_) => false
+}
+pure func checkN2() -> bool = !rejects("a,1,2,3,0,0.823,0\n") && rejects("a,1,2,3,0,0.823,0\n\n")
+test "T1 N1 distinct dwarf clamp predicate" { checkN1() }
+test "T1 N2 exactly one trailing newline" { checkN2() }
 pure func fixture() -> string = csv("far,5,0,0,0,0.823,0\nmisswd,0,0,0,,0.30,1\nnearwd,1,0,0,0,0.30,1\nmiss,2,0,0,1,,0\nsecond,3,0,0,0,0.823,0\n")
 pure func checkSelection() -> bool = match transform(fixture()) {
   Ok(s) => {
@@ -58,5 +64,5 @@ test "T1 distance uses all coordinates" { checkAxes() }
 test "T1 header only empty input" { checkEmpty() }
 test "T1 field rejection before missing shortcut" { checkReject() }
 test "T1 exact header" { checkHeader() }
-export pure func transformVm(n: int) -> string = if checkNormal() && checkWD() && checkClamp() && checkMissing() && checkReject() && checkHeader() && checkEmpty() then "transform-ok" else "transform-BAD"
+export pure func transformVm(n: int) -> string = if checkN1() && checkN2() && checkNormal() && checkWD() && checkClamp() && checkMissing() && checkReject() && checkHeader() && checkEmpty() then "transform-ok" else "transform-BAD"
 export pure func selectionVm(n: int) -> string = if checkSelection() && checkTies() && checkAxes() then "selection-ok" else "selection-BAD"
