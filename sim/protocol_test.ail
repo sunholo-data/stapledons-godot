@@ -2,10 +2,11 @@ module stapledons/sim/protocol_test
 
 -- Protocol v2 codec round trips, reason codes (every v1.1 reason case has a
 -- v2 counterpart here since M2.1b removed v1.1), scenario-parameter bounds,
--- rejection model, handshake and the diag echo hook (AC8, AC9 sim side).
+-- rejection model, handshake, the diag echo hook (AC8, AC9 sim side) and the
+-- M2.2 world over the wire (params, m_eff_too_small, clock, phase).
 -- `protocolVm` runs the checks on the strict VM (`make strict`, AC10).
-import ./core (initShip, step, turn, position)
-import ./protocol (Input, GHello, GNewGame, GInput, GQuit, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, StateMsg, Clock, ShipView, Params, Refusal, Event, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, defaultParams, newSession, serve, num)
+import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, Params, Refusal, Event, defaultParams)
+import ./protocol (Input, GHello, GNewGame, GInput, GQuit, StateMsg, Clock, ShipView, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, newSession, serve, num)
 import pkg/sunholo/relativity/optics (Vec3)
 import std/json (decode, getString, getNumber)
 import std/result (Ok, Err)
@@ -228,9 +229,52 @@ pure func checkEcho() -> bool {
   pm.status == "ok" && pm.tick == 1 && allEq(eventEq, pm.events, []) && allEq(refusalEq, pm.refused, [{i: 0, reason: "diag_only"}])
 }
 
+-- ------------------------------------------------- M2.2 world over the wire
+pure func gameWith(params: string) -> string = newGame(join("", ["\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"params\":{", params, "}"]))
+-- Each parameter just outside its range is a schema error that changes
+-- nothing: a running game keeps its tick and params.
+pure func badParams() -> [string] = ["\"epoch\":1000001", "\"start_age\":-1", "\"boost_g\":0", "\"m_eff_kg\":-1", "\"ism_n_cm3\":-0.1",
+  "\"bubble_radius_m\":0", "\"glow_eps\":1.5", "\"glow_f_in\":-0.5", "\"cruise_min_beta\":0", "\"cap_one_minus_beta\":1"]
+pure func checkParamRange() -> bool {
+  let s = feed(newSession(), [hello(), diagGame(), tickLine(1, "0.1", "{\"k\":\"thrust\",\"thrust\":1}")]);
+  let next = stateOf(serve(s.session, tickLine(2, "0.1", "")).reply);
+  let codes = map(\b. stateOf(serve(s.session, gameWith(b)).reply), badParams());
+  let same = allTrue(map(\b. stateEq(stateOf(serve(serve(s.session, gameWith(b)).session, tickLine(2, "0.1", "")).reply), next), badParams()));
+  allTrue(map(\m. m.status == "bad_params" && m.tick == 1 && none(m.params) && !m.full, codes)) && same && next.tick == 2
+}
+-- V12: the brake holds against the drag at the cap only above 0.0321 kg.
+pure func checkMEffTooSmall() -> bool {
+  let refused = stateOf(feed(newSession(), [hello(), gameWith("\"m_eff_kg\":0.03")]).reply);
+  let accepted = stateOf(feed(newSession(), [hello(), gameWith("\"m_eff_kg\":0.033")]).reply);
+  let after = feed(newSession(), [hello(), gameWith("\"m_eff_kg\":0.03"), tickLine(1, "0", "")]);
+  let d = defaultParams();
+  refused.status == "m_eff_too_small" && none(refused.params) && !refused.full &&
+  accepted.status == "ok" && accepted.full && someEq(paramsEq, accepted.params, Some({d | mEffKg: 0.033})) &&
+  stateOf(after.reply).status == "no_game"
+}
+-- year = epoch + t, age = start_age + tau, from the effective params.
+pure func checkClockFields() -> bool {
+  let s = feed(newSession(), [hello(), gameWith("\"epoch\":2100.5,\"start_age\":41"), tickLine(1, "0.5", "{\"k\":\"thrust\",\"thrust\":1}")]);
+  let first = stateOf(feed(newSession(), [hello(), gameWith("\"epoch\":2100.5,\"start_age\":41")]).reply);
+  let m = stateOf(s.reply);
+  match m.clock { Some(c) => c.tau == 0.5 && c.t > 0.5 && feq(c.year, 2100.5 + c.t) && feq(c.age, 41.0 + c.tau), None => false } &&
+  match first.clock { Some(c) => c.tau == 0.0 && c.t == 0.0 && c.year == 2100.5 && c.age == 41.0, None => false }
+}
+-- The ship section carries the phase core derives (diag flight).
+pure func phaseOf(m: StateMsg) -> string = match m.ship { Some(v) => v.phase, None => "none" }
+pure func checkPhaseOnWire() -> bool {
+  let g = feed(newSession(), [hello(), diagGame()]);
+  let b = feed(g.session, [tickLine(1, "0.1", "{\"k\":\"thrust\",\"thrust\":1}")]);
+  let c = feed(b.session, [tickLine(2, "0.1", "")]);
+  let r = feed(c.session, [tickLine(3, "0.1", "{\"k\":\"thrust\",\"thrust\":-1}")]);
+  phaseOf(stateOf(g.reply)) == "at_rest" && phaseOf(stateOf(b.reply)) == "boosting" && phaseOf(stateOf(c.reply)) == "cruising" && phaseOf(stateOf(r.reply)) == "at_rest" &&
+  helloMsg().relativity == "0.4.0"
+}
+
 pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures()) ++ map(encodeState, stateFixtures()) ++ [encodeHello(helloMsg())]
 export pure func protocolVm(n: int) -> string =
-  if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho()
+  if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho() &&
+    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire()
   then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
 
 test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }
@@ -246,3 +290,7 @@ test "v2 diag adapter equals core" { checkDiagKinematics() }
 test "v2 change-sets" { checkChangeSets() }
 test "v2 every scenario-parameter bound" { checkParamBounds() }
 test "v2 diag echo hook round trip" { checkEcho() }
+test "M2.2 each param out of range is bad_params, game unchanged" { checkParamRange() }
+test "M2.2 m_eff 0.03 refused m_eff_too_small, 0.033 accepted" { checkMEffTooSmall() }
+test "M2.2 clock year = epoch + t, age = start_age + tau" { checkClockFields() }
+test "M2.2 ship phase on the wire" { checkPhaseOnWire() }

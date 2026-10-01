@@ -503,6 +503,39 @@ extends, with the closed mass budget pinned.
 **Depends on:** M2.1a, M2.0 **published and visible** · **Registry:** depend
 `sunholo/relativity@0.4.0`
 
+**Status (executed 2026-10-01, branch `sprint/m2.2-world`; independent evaluation 94/100 PASS, follow-ups applied after rebasing on M2.1b):**
+- [x] Task 0: probe (`ShipPhase` + `Journey = Idle | Planned({…TripPlan…}) |
+  Committed({…})` + `Rng` inside a `World` record, 4 transitions) gives
+  identical output on `--strict-bytecode` and the interpreter on v0.50.0;
+  no tagged-int fallback needed
+- [x] Pin: `sunholo/relativity` 0.4.0 in `sim/ailang.toml`, relocked with
+  `runtime/bin/ailang`; `make deps` clean. Bundled `runtime/cache` gained
+  0.4.0 additively (full `make runtime` left to the controller: it `rm -rf`s
+  the runtime M2.1b is using)
+- [x] Tests first (red on missing `World`/`tick`), then green: `checkMassClosed`,
+  `checkPhaseDerivedDiag`, `checkWorldPhases`, `checkLedgerDiag`,
+  `checkScenarioMEff`, `checkRngZero`, `checkTickRefusals` (core_test, also
+  strict `worldVm`); `checkParamRange`, `checkMEffTooSmall`,
+  `checkClockFields`, `checkPhaseOnWire` (protocol_test, in `protocolVm`);
+  `checkParamsEcho` kept. core_test imports `relativity/medium` (fails on 0.3.0)
+- [x] 11/11 mutations killed (tolerance 0.5 ×2, no m_eff check, mass deducted
+  ×2, boost/brake sign, phase not stored, year/age swapped ×2, range
+  dropped, phase string)
+- [x] AC1 (game) · [x] AC6 (part) · [x] AC10 (part, + `worldVm`) · [x] AC18 · [x] `make test`
+- Deviations: `tick(world, {dtau, intents}) -> {world, refused, events}`;
+  `protocol.serve` builds the `StateMsg` (change-sets need the codec).
+  Domain types (`Intent`, `Target`, `Params`, `Refusal`, `Event`) moved
+  from protocol.ail to core.ail. Ledger and phase are in the world; the
+  `ledger` wire section waits for M2.3a/b. The ship `phase` wire string is
+  now `at_rest|boosting|cruising|braking`. ship.ail unchanged (v2 already
+  routes through `serve` → `core.tick`)
+- [x] Rebased on M2.1b (#25): `PlanReq`, the diag `IEcho` hook and
+  `Event.echo` moved into core.ail with the other domain types (`core.tick`
+  emits the echo event); v2-only session kept. Evaluator follow-ups:
+  `checkLedgerMEff` (m_eff 0.5; both surviving m_eff mutations now killed),
+  `ailang#1466`/`#1467` annotated at the workarounds, duplicated `Ship.tick`
+  dropped (`World.tick` is the only tick)
+
 **Files:**
 - modify `sim/ailang.toml` (`"sunholo/relativity" = "0.4.0"`) and
   `sim/ailang.lock`. Relock with `$A`; `make deps AILANG=$A` passes, ignoring
