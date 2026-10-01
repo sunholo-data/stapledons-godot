@@ -57,7 +57,7 @@
       "acceptance_criteria": [
         "V17 nested std/json.get probe rerun on pinned AILANG v0.45.0 VM and interpreter before implementation",
         "make sim AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: hello returns proto 1.1, v1.0 bridge checks remain unmodified, codec precision and every rejection reason preserve state",
-        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec §2 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
+        "make physics AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: spec \u00a72 CPU off-axis values for +-X, +-Y and (1,1,-1)/sqrt3 (AC4 part)",
         "make parity AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and make parity-offaxis AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: byte-identical VM/interpreter output",
         "make strict AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: existing scripted and scriptedOffAxis strict VM, interpreter and sqrt(2)*D closed form agree within 1e-9",
         "make test AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang and CI: AC10 and AC12, including 5 s hello, 2 s step and 1 s graceful-exit bounds, no surviving child"
@@ -140,7 +140,7 @@
       "passes": true,
       "started": "2026-09-30",
       "completed": "2026-09-30",
-      "notes": "Iteration 5: LANDED in sunholo-data/ailang-packages PR #83 (branch relativity-0.3.0-wd, commit 2f1cef8), published sunholo/relativity@0.3.0 (tarball sha256 8c596f4f…, same as dry run and evaluated tree). Executor Claude Sonnet 5.5 (Agent tool): generator 208 hand-written LOC + 137 generated. AC-W1 byte-identical regen, AC-W2 validate (CALSPEC median -0.018, Landolt max 0.0156, GF21 n=1780 median 1.038, 99.2% within 10%). Independent evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking."
+      "notes": "Iteration 5: LANDED in sunholo-data/ailang-packages PR #83 (branch relativity-0.3.0-wd, commit 2f1cef8), published sunholo/relativity@0.3.0 (tarball sha256 8c596f4f\u2026, same as dry run and evaluated tree). Executor Claude Sonnet 5.5 (Agent tool): generator 208 hand-written LOC + 137 generated. AC-W1 byte-identical regen, AC-W2 validate (CALSPEC median -0.018, Landolt max 0.0156, GF21 n=1780 median 1.038, 99.2% within 10%). Independent evaluator MiniMax-M3 (pi) 98/100 PASS, 0 blocking."
     },
     {
       "id": "M1.2b-WD2_MODULE_PUBLISH",
@@ -217,9 +217,10 @@
       ],
       "session": 3,
       "passes": null,
-      "started": null,
+      "started": "2026-10-01T19:28:00Z",
       "completed": null,
-      "notes": "Authorization: scope-preserving Sept27 approved post-preflight split; estimate180+30 reserve=210 LOC, one session. Controller measured __embedding_encode evaluator-only Phase2E; strict codec gate N/A known gap, GCP report inbox_1790875803550_a044780b. Charter allows side-tool interop until Phase2E; native codec ordinary bytecode/interpreter exact parity required. Existing strict sim/core and N1/N2 predicates remain mandatory. Independent designer scope result pending controller. Residuals: T3 validates tier and coordinate range before medium sort and writes sidecars/quick JSON with provenance SHA256s; T4 owns exact50000 boundary/full-medium parity-performance and real tier sizes; M1.2c stats/commits. N4/N5/N9 touched-path residuals declared by evaluator. Human changes parked, no altered acceptance/output contract."
+      "notes": "Authorization: scope-preserving Sept27 approved post-preflight split; estimate180+30 reserve=210 LOC, one session. Controller measured __embedding_encode evaluator-only Phase2E; strict codec gate N/A known gap, GCP report inbox_1790875803550_a044780b. Charter allows side-tool interop until Phase2E; native codec ordinary bytecode/interpreter exact parity required. Existing strict sim/core and N1/N2 predicates remain mandatory. Independent designer scope result pending controller. Residuals: T3 validates tier and coordinate range before medium sort and writes sidecars/quick JSON with provenance SHA256s; T4 owns exact50000 boundary/full-medium parity-performance and real tier sizes; M1.2c stats/commits. N4/N5/N9 touched-path residuals declared by evaluator. Human changes parked, no altered acceptance/output contract. Executor iteration8: pure native F32 encodeRow/encodeRows implemented (133 changed code/test/config LOC), all command gates including restored full make test exit0. Independent Python exact bytes interpreter+5 ordinary VM runs; every field NaN/Inf/overflow and illegal flags refuse entire output, sticky error/no prefix checked. N1/N2 strict mutants killed. 27 compiling mutants:26 killed,1 redundant NaN self-equality survivor (remaining bounds reject NaN); originals SHA-restored. CLI Row alias gap reported GCP inbox_1790876207432_e897bb14; transport nested numeric lists constructs Row, production typed API unchanged. Designer COVERED. Generator tokens unknown. Evidence .ailang/state/evidence/iter8/execution.md; child passes null pending independent judge, parent null. No writer/sidecars/tier output. ",
+      "actual_loc": 133
     },
     {
       "id": "M1.2c_STATS_AND_COMMIT",
@@ -293,7 +294,7 @@
       "passes": true,
       "started": "2026-10-01",
       "completed": "2026-10-01",
-      "notes": "Attended (Mark). Option A on NOIRLab chosen, D-10 (ledger e9d35c5); B not built by ruling. Report design_docs/planned/r1/m1-4a-background-options.md; spike tools/m14a_*.py, spike/panorama.*; renders docs/m1.4a/preview. Binding findings for M1.4b/c in design §M1.4 'M1.4a outcome'.",
+      "notes": "Attended (Mark). Option A on NOIRLab chosen, D-10 (ledger e9d35c5); B not built by ruling. Report design_docs/planned/r1/m1-4a-background-options.md; spike tools/m14a_*.py, spike/panorama.*; renders docs/m1.4a/preview. Binding findings for M1.4b/c in design \u00a7M1.4 'M1.4a outcome'.",
       "gate": "STOP for user decision before M1.4b"
     },
     {
