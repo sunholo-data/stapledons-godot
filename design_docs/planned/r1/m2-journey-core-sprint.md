@@ -768,6 +768,24 @@ cap), a review page artifact, and review build `v0.2.0-m2-map`
 
 **Goal:** a committed journey flies itself through boost, cruise and brake,
 lands within 1e-9 of the closed form, and closes the energy ledger.
+
+**Status (executed 2026-10-01, branch `sprint/m2.3b-autopilot`; independent evaluation pending):**
+- [x] Tests first, then green: `checkVoyageBoundaries` (0.99c, cap and diag
+  1 g flip: every 0.01-yr tick end equals `motionAt(el)` to 1e-9, crossing τ
+  = τ0 + boundary, ticks ending on each boundary), `checkArrivalResidual`
+  (incl. `checkResidualsMeasured`), `checkLedgerAtArrival` (m_eff 3 kg),
+  `checkWholeBoostTick`, `checkStartEventOnce`, `checkArrivedThenReplan`,
+  `checkArrivalOnWire`; strict `journeyVm` and `voyageVm`
+- [x] α Cen 0.99c replay residuals: x 1.8e-15 ly, t 8.0e-15 yr, φ 4.8e-11;
+  ledger radiated 6.12764286331283712e17 J vs `tripEnergy` 6.1276428633128384e17
+- [x] M2.3a follow-ups: plan from a moved ship (`checkPlanFromMovedShip`),
+  `moving` at |φ| = 1e-9, NaN guard (`checkNaNCruise`), design §M2.3 wording
+- [x] 17/18 mutations killed (1 equivalent on tested values)
+- [x] AC5 · AC6 · AC10 (journeyVm) · AC14 (`make journey-replay`) · `make test`
+- Deviations: `Event` gains `phase`/`arrived` options (wire adds
+  `residual_phi`); `Commitment` gains `el`; `phaseAt` via `sim/tripphase.ail`
+  (ailang#1478); commit always rebases the line of motion; the replay arrives
+  on its 64th input (66 output lines). New upstream: ailang#1478
 **Estimated:** 120 code + 130 tests = **250** (+ `tests/replays/alpha_cen.ndjson`) ·
 **Cap:** 650 · **Iteration:** 7 · **Depends on:** M2.3a · **Registry:** depend
 `sunholo/relativity@0.4.0`

@@ -10,6 +10,7 @@ import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperatu
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn)
 import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag)
+import ./tripphase (tripPhaseIndex)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
 export type ShipPhase = AtRest | Boosting | Cruising | Braking deriving (Eq)
@@ -78,7 +79,14 @@ export type Intent =
   | IRecord({source: string, req: string, kind: string, sha256: string, body: string})
   | IDraw(string) | IEcho(PlanReq)
 export type Refusal = { i: int, reason: string }
-export type Event = { kind: string, echo: Option[PlanReq] }
+-- A `phase` event carries the crossing (from/to are phaseName strings, tau
+-- the ship's proper time at the boundary); an `arrived` event carries the
+-- residuals of the stepped flight against the closed form, taken before the
+-- snap (design §M2.3).
+export type Crossing = { from: string, to: string, tau: float }
+export type Residuals = { x: float, t: float, phi: float }
+export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals] }
+export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None }
 
 export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
@@ -99,13 +107,16 @@ export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 --   Idle/Arrived --plan--> Planned --plan--> Planned (replan, new id)
 --   Planned --cancel--> Idle
 --   Planned --commit(id, at rest, same position)--> Committed
---   Committed --(sim only, tau = tau0 + tauTotal; M2.3b)--> Arrived
+--   Committed --(sim only: the autopilot reaches el = tauTotal)--> Arrived
 --   Committed --every intent kind--> Committed, refused "committed"
 -- Nothing maps a Committed journey back to Planned or Idle (AC7).
 -- A plan keeps the package's TripPlan as is; `from` is the ship's position
--- when it was made (a commit from anywhere else is stale).
+-- when it was made (a commit from anywhere else is stale). `el` is the
+-- proper time flown since the commit, kept exactly so that a boundary is
+-- reached at el = tauBurn, tauBurn + tauCoast, tauTotal bit for bit (the
+-- ship's own tau is tau0 + the pieces, which can be an ulp off).
 export type Plan = { id: int, target: Target, from: Vec3, heading: Vec3, flip: bool, trip: TripPlan }
-export type Commitment = { plan: Plan, tau0: float, t0: float }
+export type Commitment = { plan: Plan, tau0: float, t0: float, el: float }
 export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Commitment)
 
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
@@ -144,7 +155,7 @@ pure func ledgerAfter(l: Ledger, p: Params, before: Motion, after: Motion, thrus
 
 type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, refused: [Refusal], events: [Event], i: int }
 pure func refuseIntent(a: Pending, why: string) -> Pending = {a | refused: {i: a.i, reason: why} :: a.refused}
-pure func noteEvent(a: Pending, k: string) -> Pending = {a | events: {kind: k, echo: None} :: a.events}
+pure func noteEvent(a: Pending, k: string) -> Pending = {a | events: event(k) :: a.events}
 
 -- The commit rule (Pillar 1, AC7): a committed journey refuses every intent
 -- kind and nothing else changes. One arm per Intent constructor and no
@@ -178,7 +189,9 @@ pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending 
       else if !reachable || !(g > 0.0 && g - g == 0.0) then refuseIntent(a, "out_of_range")
       else storePlan(a, rq.target, here, normalize(dv), true, planFlipAndBurn(d, g * standardGravity())),
     None =>
-      if !reachable || rq.cruisePhi < rapidityOfBeta(p.cruiseMinBeta) || rq.cruisePhi > rapidityOfOneMinusBeta(p.capOneMinusBeta) then refuseIntent(a, "out_of_range")
+      -- `phi == phi` first: a NaN fails every comparison, so it is refused here
+      -- on both runtimes (ailang#1419) rather than reaching the package's `requires`.
+      if !reachable || !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < rapidityOfBeta(p.cruiseMinBeta) || rq.cruisePhi > rapidityOfOneMinusBeta(p.capOneMinusBeta) then refuseIntent(a, "out_of_range")
       else storePlan(a, rq.target, here, normalize(dv), false, planBurnCoastBurn(d, p.boostG * standardGravity(), rq.cruisePhi))
   }
 }
@@ -191,7 +204,9 @@ pure func storePlan(a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: 
 -- Commit: the ship must be at rest (else `moving`) and the id must name the
 -- current plan, made from where the ship is now (else `stale_plan`). It
 -- performs the at-rest turn to the plan heading ("up" is the direction of
--- travel, D-14) and records tau0/t0. The autopilot owns the drive from here.
+-- travel, D-14), rebases the line of motion at the ship (origin = here,
+-- x0 = x, so x - x0 is the distance flown) and records tau0/t0. The
+-- autopilot owns the drive from here.
 pure func commitIntent(a: Pending, id: int) -> Pending =
   if absf(a.ship.motion.phi) >= restTolerance() then refuseIntent(a, "moving")
   else match a.journey {
@@ -199,8 +214,9 @@ pure func commitIntent(a: Pending, id: int) -> Pending =
       let here = position(a.ship);
       if pl.id != id || here.x != pl.from.x || here.y != pl.from.y || here.z != pl.from.z then refuseIntent(a, "stale_plan")
       else {
-        let turned = turn(a.ship, pl.heading).ship;
-        noteEvent({a | ship: turned, thrust: 0.0, journey: Committed({ plan: pl, tau0: turned.motion.tau, t0: turned.motion.t })}, "committed")
+        let t = turn(a.ship, pl.heading).ship;
+        let turned = {t | origin: position(t), x0: t.motion.x};
+        noteEvent({a | ship: turned, thrust: 0.0, journey: Committed({ plan: pl, tau0: turned.motion.tau, t0: turned.motion.t, el: 0.0 })}, "committed")
       }
     },
     _ => refuseIntent(a, "stale_plan")
@@ -222,7 +238,7 @@ pure func applyFree(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
       let turned = turn(a.ship, h);
       if turned.accepted then {a | ship: turned.ship} else refuseIntent(a, "moving")
     },
-    IEcho(q) => if diag then {a | events: {kind: "echo", echo: Some(q)} :: a.events} else refuseIntent(a, "diag_only"),
+    IEcho(q) => if diag then {a | events: {event("echo") | echo: Some(q)} :: a.events} else refuseIntent(a, "diag_only"),
     IRecord(_) => refuseIntent(a, "unsupported"),
     IDraw(_) => refuseIntent(a, "unsupported")
   }
@@ -236,20 +252,104 @@ pure func applyIntent(diag: bool, p: Params, a: Pending, it: Intent) -> Pending 
 pure func applyIntents(diag: bool, p: Params, a: Pending, xs: [Intent]) -> Pending = match xs { [] => a, x :: more => applyIntents(diag, p, applyIntent(diag, p, a, x), more) }
 pure func reversed(xs: [a], acc: [a]) -> [a] = match xs { [] => acc, x :: more => reversed(more, x :: acc) }
 
+-- ------------------------------------------------------------ autopilot (M2.3b)
+-- With el the proper time since the commit, a tick's dtau is cut at every
+-- phase boundary it holds (tauBurn, tauBurn + tauCoast, tauTotal; the phase
+-- is the package's phaseAt) and each piece is flown with the package's exact
+-- `accelerate` at +a, 0 or -a. Each crossing is a `phase` event at the
+-- boundary's tau (the first piece flown also emits at_rest -> boosting). The
+-- piece that ends at tauTotal reports the residuals, then snaps phi to 0 and
+-- the position to the target; leftover dtau is spent at rest. Drag does not
+-- alter the kinematics (the drive cancels it); it appears only in the
+-- ledger: boost and brake add m_eff c^2 |dphi| (the brake's last |dphi| is
+-- to the snapped 0, so the pair sums to 2 phiPeak), cruise adds the holding
+-- power at the cruise rapidity times the piece in seconds. At arrival the
+-- ledger is tripEnergy(...).total.
+type Flight = { ship: Ship, c: Commitment, ledger: Ledger, events: [Event], arrived: bool }
+
+pure func phaseOfIndex(i: int) -> ShipPhase = if i == 0 then Boosting else if i == 1 then Cruising else if i == 2 then Braking else AtRest
+pure func phaseEnd(tp: TripPlan, i: int) -> float = if i == 0 then tp.tauBurn else if i == 1 then tp.tauBurn + tp.tauCoast else tp.tauTotal
+pure func phaseAccel(tp: TripPlan, i: int) -> float = if i == 0 then tp.a else if i == 1 then 0.0 else 0.0 - tp.a
+pure func crossing(from: ShipPhase, to: ShipPhase, tau: float) -> Event = {event("phase") | phase: Some({ from: phaseName(from), to: phaseName(to), tau: tau })}
+
+-- Residuals at arrival, before the snap: |x_stepped - d|, |t_stepped -
+-- (t0 + galaxyTime)| and |phi_stepped| (x_stepped = x - x0, the distance
+-- flown since the commit's rebase).
+export pure func arrivalResiduals(m: Motion, x0: float, c: Commitment) -> Residuals =
+  { x: absf((m.x - x0) - c.plan.trip.trip.distance), t: absf(m.t - (c.t0 + c.plan.trip.trip.galaxyTime)), phi: absf(m.phi) }
+
+pure func pieceLedger(l: Ledger, p: Params, tp: TripPlan, i: int, before: Motion, after: Motion, piece: float) -> Ledger =
+  if i == 1 then {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), tp.phiPeak, p.bubbleRadiusM) * piece * julianYearS()}
+  else {l | boostJ: l.boostJ + photonDriveEnergy(l.mEffKg, absf(after.phi - before.phi))}
+
+pure func atRest(s: Ship, dtau: float) -> Ship = {step(s, 0.0, dtau) | phase: AtRest}
+
+pure func fly(p: Params, f: Flight, rem: float) -> Flight {
+  let tp = f.c.plan.trip;
+  let el = f.c.el;
+  let i = tripPhaseIndex(tp, el);
+  if i == 3 then {f | ship: atRest(f.ship, rem)}
+  else if rem <= 0.0 then f
+  else {
+    let started = if el == 0.0 then crossing(AtRest, Boosting, f.ship.motion.tau) :: f.events else f.events;
+    let b = phaseEnd(tp, i);
+    let whole = el + rem < b;
+    let piece = if whole then rem else b - el;
+    let before = f.ship.motion;
+    let after = accelerate(before, phaseAccel(tp, i), piece);
+    if whole then
+      {f | ship: {f.ship | motion: after, phase: phaseOfIndex(i)}, c: {f.c | el: el + rem}, ledger: pieceLedger(f.ledger, p, tp, i, before, after, piece), events: started}
+    else {
+      let j = tripPhaseIndex(tp, b);
+      let crossed = crossing(phaseOfIndex(i), phaseOfIndex(j), after.tau) :: started;
+      let left = if rem - piece > 0.0 then rem - piece else 0.0;
+      if j == 3 then {
+        let snapped = {after | phi: 0.0};
+        let res = arrivalResiduals(after, f.ship.x0, f.c);
+        let landed = { motion: snapped, heading: f.ship.heading, origin: f.c.plan.target.pos, x0: snapped.x, phase: AtRest };
+        fly(p, {ship: landed, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, tp, i, before, snapped, piece),
+          events: {event("arrived") | arrived: Some(res)} :: crossed, arrived: true}, left)
+      } else
+        fly(p, {f | ship: {f.ship | motion: after, phase: phaseOfIndex(j)}, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, tp, i, before, after, piece), events: crossed}, left)
+    }
+  }
+}
+
 -- One tick: apply the intents in order (refusals listed, the tick proceeds),
--- then advance the ship by dtau, derive its phase and update the ledger.
--- Until the autopilot (M2.3b) a committed ship holds position: no intent can
--- set thrust once committed, so it rests while the clock runs.
+-- then advance the ship by dtau: under the autopilot while committed,
+-- otherwise by the diag thrust with the phase derived from it; the ledger
+-- follows either way.
 export pure func tick(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
   let a = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, refused: [], events: [], i: 0}, input.intents);
-  let moved = step(a.ship, a.thrust, input.dtau);
-  let ph = derivePhase(moved.motion.phi, a.thrust);
-  let next = {moved | phase: ph};
-  { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau)},
-    refused: reversed(a.refused, []), events: reversed(a.events, []) }
+  match a.journey {
+    Committed(c) => {
+      let f = fly(w.params, {ship: a.ship, c: c, ledger: w.ledger, events: a.events, arrived: false}, input.dtau);
+      { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger},
+        refused: reversed(a.refused, []), events: reversed(f.events, []) }
+    },
+    _ => {
+      let moved = step(a.ship, a.thrust, input.dtau);
+      let next = {moved | phase: derivePhase(moved.motion.phi, a.thrust)};
+      { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau)},
+        refused: reversed(a.refused, []), events: reversed(a.events, []) }
+    }
+  }
+}
+
+-- Scripted alpha Cen journey for `make strict` (AC10): plan 4.37 ly at
+-- 0.99c in a play world, commit, fly `ticks` ticks of 0.01 yr; returns the
+-- galaxy time, or -1 if the journey has not arrived. Past arrival the ship
+-- rests, so the closed form is galaxyTime + (ticks * 0.01 - tauTotal).
+pure func flyTicks(w: World, n: int) -> World = if n <= 0 then w else flyTicks(tick(w, {dtau: 0.01, intents: []}).world, n - 1)
+export pure func journeyVm(ticks: int) -> float {
+  let rq = { target: { index: 1, id: "alpha Cen", pos: { x: 0.0, y: 0.0, z: -4.37 } }, cruisePhi: 2.6466524123622457, flipG: None };
+  let planned = tick(newWorld(0, false, defaultParams()), {dtau: 0.0, intents: [IPlan(rq)]}).world;
+  let committed = tick(planned, {dtau: 0.0, intents: [ICommit(1)]}).world;
+  let out = flyTicks(committed, ticks);
+  match out.journey { Arrived(_) => out.ship.motion.t, _ => 0.0 - 1.0 }
 }
 
 -- ------------------------------------------------------------ readouts (M2.3a)

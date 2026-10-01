@@ -17,7 +17,7 @@ import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
-  Target, PlanReq, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, Refusal, Event, Params, defaultParams,
+  Target, PlanReq, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   PlanView, JourneyView, Energy, Ism, journeyView)
 
 export type Override = { name: string, value: float }
@@ -101,13 +101,19 @@ pure func encodePlanView(v: PlanView) -> string =
     f("energy", obj([f("boost_j", num(v.energy.boostJ)), f("brake_j", num(v.energy.brakeJ)), f("drag_j", num(v.energy.dragJ)), f("total_j", num(v.energy.totalJ)), f("total_kg", num(v.energy.totalKg))])),
     f("ism", obj([f("drag_n", num(v.ism.dragN)), f("hold_w", num(v.ism.holdW)), f("load_w_m2", num(v.ism.loadWM2)), f("glow_w_m2", num(v.ism.glowWM2))])),
     f("cmb_forward_k", num(v.cmbForwardK))])
+-- Events: {k} plus the echo's plan fields, a phase crossing {from, to, tau}
+-- or the arrival residuals {residual_x, residual_t, residual_phi}.
+pure func encodeEvent(e: Event) -> string =
+  obj([f("k", q(e.kind))] ++ (match e.echo { Some(p) => planFields(p), None => [] }) ++
+    opt("from", \c. q(c.from), e.phase) ++ opt("to", \c. q(c.to), e.phase) ++ opt("tau", \c. num(c.tau), e.phase) ++
+    opt("residual_x", \r. num(r.x), e.arrived) ++ opt("residual_t", \r. num(r.t), e.arrived) ++ opt("residual_phi", \r. num(r.phi), e.arrived))
 pure func encodeJourney(j: JourneyView) -> string = obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", encodePlanView, j.plan))
 pure func encodeLedger(l: LedgerView) -> string =
   obj([f("m_eff_kg", num(l.mEffKg)), f("available_kg", num(l.availableKg)), f("radiated_j", num(l.radiatedJ)), f("boost_j", num(l.boostJ)), f("drag_j", num(l.dragJ))])
 export pure func encodeState(m: StateMsg) -> string =
   envelope("state", [f("tick", intToStr(m.tick)), f("status", q(m.status)),
     f("changes", obj(opt("clock", encodeClock, m.clock) ++ opt("ship", encodeShip, m.ship) ++ opt("journey", encodeJourney, m.journey) ++ opt("ledger", encodeLedger, m.ledger) ++ opt("params", \p. overrides(paramPairs(p)), m.params))),
-    f("events", arr(each(\e. obj([f("k", q(e.kind))] ++ (match e.echo { Some(p) => planFields(p), None => [] })), m.events))),
+    f("events", arr(each(encodeEvent, m.events))),
     f("refused", arr(each(\r. obj([f("i", intToStr(r.i)), f("reason", q(r.reason))]), m.refused))),
     f("full", bool(m.full))])
 export pure func encodeHello(h: HelloMsg) -> string =
@@ -228,12 +234,22 @@ pure func decodeFullParams(j: Json) -> Result[Params, string] =
   bind(n(j, "epoch"), \e. bind(n(j, "start_age"), \sa. bind(n(j, "boost_g"), \bg. bind(n(j, "m_eff_kg"), \m. bind(n(j, "ism_n_cm3"), \ism.
   bind(n(j, "bubble_radius_m"), \r. bind(n(j, "glow_eps"), \ge. bind(n(j, "glow_f_in"), \gf. bind(n(j, "cruise_min_beta"), \cb. bind(n(j, "cap_one_minus_beta"), \cap.
   Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap})))))))))))
+pure func decodeCrossing(e: Json) -> Result[Crossing, string] =
+  bind(req(getString(e, "from"), bad()), \fr. bind(req(getString(e, "to"), bad()), \to. bind(n(e, "tau"), \tau. Ok({from: fr, to: to, tau: tau}))))
+pure func decodeResiduals(e: Json) -> Result[Residuals, string] =
+  bind(n(e, "residual_x"), \x. bind(n(e, "residual_t"), \t. bind(n(e, "residual_phi"), \ph. Ok({x: x, t: t, phi: ph}))))
+pure func optIf(e: Json, k: string, g: Json -> Result[a, string]) -> Result[Option[a], string] =
+  if has(e, k) then bind(g(e), \x. Ok(Some(x))) else Ok(None)
+pure func decodeEvent(e: Json) -> Result[Event, string] =
+  bind(req(getString(e, "k"), bad()), \k. bind(optIf(e, "target", \x. planOf(x, bad())), \echo.
+  bind(optIf(e, "from", decodeCrossing), \ph. bind(optIf(e, "residual_x", decodeResiduals), \ar.
+  Ok({kind: k, echo: echo, phase: ph, arrived: ar})))))
 -- ailang#1467: lambda parameter `\tk.`, not `\tick.` (shadowed by core.tick).
 export pure func decodeState(line: string) -> Result[StateMsg, string] =
   bind(envelopeOf(line, "state"), \j. bind(check(getString(j, "type") == Some("state"), j, bad()), \_j.
   bind(req(natF(j, "tick"), bad()), \tk. bind(req(getString(j, "status"), bad()), \st. bind(req(get(j, "changes"), bad()), \ch.
   bind(optF(ch, "clock", decodeClock), \c. bind(optF(ch, "ship", decodeShip), \s. bind(optF(ch, "journey", decodeJourney), \jy. bind(optF(ch, "ledger", decodeLedger), \lg. bind(optF(ch, "params", decodeFullParams), \p.
-  bind(bind(req(getArray(j, "events"), bad()), \es. all(\e. bind(req(getString(e, "k"), bad()), \k. bind(if has(e, "target") then bind(planOf(e, bad()), \p. Ok(Some(p))) else Ok(None), \echo. Ok({kind: k, echo: echo}))), es)), \evs.
+  bind(bind(req(getArray(j, "events"), bad()), \es. all(decodeEvent, es)), \evs.
   bind(bind(req(getArray(j, "refused"), bad()), \rs. all(\r. bind(req(natF(r, "i"), bad()), \i. bind(req(getString(r, "reason"), bad()), \why. Ok({i: i, reason: why}))), rs)), \refs.
   bind(req(getBool(j, "full"), bad()), \full.
   Ok({tick: tk, status: st, clock: c, ship: s, journey: jy, ledger: lg, params: p, events: evs, refused: refs, full: full}))))))))))))))

@@ -373,6 +373,13 @@ a section appears only if a field in it changed, and carries the whole section.
 
 `events` include `phase` (from, to, tau), `committed`, `arrived` (with
 residuals, below) and `draw`.
+- *As implemented in M2.3b:* `{"k":"phase","from":"boosting","to":"cruising","tau":…}`
+  (from/to are the ship phase names `at_rest|boosting|cruising|braking`; tau
+  is the ship's proper time at the boundary) and
+  `{"k":"arrived","residual_x":…,"residual_t":…,"residual_phi":…}` (the
+  residuals before the snap; `residual_phi` = |φ_stepped| is an addition).
+  The first piece flown after a commit emits `at_rest → boosting` at τ0, so
+  the commit tick at dtau 0.01 carries `committed` and two `phase` events.
 
 **Modules.** `sim/protocol.ail` (new, pure): `Input`, `Intent`, `StateMsg`,
 `decodeInput : string -> Result[Input, string]`, `encodeState`, and the
@@ -432,8 +439,10 @@ at the cap (m_eff < 0.032 kg at the defaults; reason `m_eff_too_small`).
 **Plan.** `plan` computes `d = |target.pos − position(ship)|` in float64
 scalars and calls `planBurnCoastBurn(d, boost_g·standardGravity(),
 cruise_phi)` (or, in diag with `flip_g`, `planFlipAndBurn`). It stores
-`Planned {id, target, heading, tripPlan}`; plan ids increase monotonically
-from 1. Every number in `journey.plan` is a package output or arithmetic on
+`Planned {id, target, from, heading, flip, trip}` (`trip` is the package's
+`TripPlan` whole; `from` is the ship's position when planned, so a commit
+from elsewhere is `stale_plan`); plan ids increase monotonically from 1 and
+are counted in `World.lastPlanId`, so they are never reused. Every number in `journey.plan` is a package output or arithmetic on
 one: `arrive_year = year + trip.galaxyTime`, `age_on_arrival = age +
 trip.shipTime`, `years_left = 100 − (age − startAge) − trip.shipTime`,
 `boost_minutes = tauBurn·525,960`, `energy = tripEnergy(p, mEff, n, R)`,
@@ -446,7 +455,7 @@ trip.shipTime`, `years_left = 100 − (age − startAge) − trip.shipTime`,
 Idle/Arrived --plan--> Planned --plan--> Planned (replan)
 Planned --cancel--> Idle
 Planned --commit(id, at rest)--> Committed {plan, tau0, t0}
-Committed --(sim only, tau = tau0 + tauTotal)--> Arrived
+Committed --(sim only, tau = tau0 + tauTotal)--> Arrived {plan, tau0, t0, el}
 Committed --plan|cancel|commit|thrust|heading--> Committed, refused "committed"
 ```
 
@@ -466,14 +475,29 @@ event reports the residuals `|x_stepped − d|` and
 `|t_stepped − (t0 + galaxyTime)|`, which tests require below 1e-9·max(1, d).
 Leftover `dtau` after arrival is spent at rest.
 
+*As implemented in M2.3b:* the commitment carries `el`, the proper time flown
+since the commit, set to the boundary value exactly when a boundary is
+crossed (the ship's own `tau` is τ0 plus the pieces, which can be an ulp
+off); the phase is the package's `phaseAt(trip, el)` and each piece runs to
+the next boundary of that phase. `commit` rebases the line of motion at the
+ship (origin = position, x0 = x) even when no turn is needed, so x − x0 is the
+distance flown. The brake's last |Δφ| is taken to the snapped 0, so the
+ledger's boost + brake is m_eff c² · 2φ_peak to rounding and closes on
+`tripEnergy(...).total`. `phaseAt` reaches core through `sim/tripphase.ail`
+(an index 0–3) because the package's `TripPhase.Arrived` constructor clashes
+with `Journey.Arrived`, and an aliased constructor import is accepted but
+never matches (ailang#1478).
+
 **Tests** (`sim/core_test.ail`, named `check…()`): plans equal check rows
 1–3 and (diag) 6–9 to 1e-9; plan readouts equal the readout table to 1e-9
 relative; a 0.01-yr stepped α Cen voyage at 0.99c and at the cap hits each
 phase boundary and `motionAt` to 1e-9; the residuals; the ledger at arrival;
 `cruise_phi` below 0.9c or above the cap refused `out_of_range`; every intent
 kind against a `Committed` world leaves `journey` unchanged and is refused
-`committed` (exhaustive over the `Intent` constructors, so adding an intent
-without a rule fails to compile the match); `thrust`/`heading`/`flip_g`
+`committed` (one arm per `Intent` constructor and no wildcard; AILANG does
+not check match exhaustiveness, so the coverage is test-enforced:
+`checkCommittedRefusesAll` sends every constructor, and a constructor added
+without an arm is a runtime match failure, never an accepted intent); `thrust`/`heading`/`flip_g`
 outside diag refused `diag_only`; commit while moving refused `moving`; a stale
 `plan_id` refused `stale_plan`. A scripted α Cen journey entry (`journeyVm`)
 joins `make strict`.
