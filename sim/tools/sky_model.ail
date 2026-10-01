@@ -1,0 +1,226 @@
+module stapledons/sim/tools/sky_model
+
+-- M1.4b offline sky model (D-10). For every distinct colour of the destarred
+-- NOIRLab panorama, fit a colour temperature T_c on the Planckian locus that
+-- sunholo/relativity computes (blackbody.chromaticity), the residual distance
+-- in CIE xy, and whether the colour sits on the red/purple side of the locus
+-- (emission-line light, design §M1.4 "M1.4a outcome").
+--
+-- Image I/O is Godot's (tools/sky_colours.gd): it writes "r,g,b,count" per
+-- distinct colour, and paints the model texture from the "r,g,b,code,dxy,flag"
+-- rows this prints. Everything between is pure and runs on the strict VM.
+--
+--   ailang run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
+--     sim/tools/sky_model.ail --args-json '{"colours":"c.csv","fits":"f.csv","report":"r.json","size":"[10000, 5000]"}'
+import std/string (split, stringToInt, floatToStr, intToStr, join, concat)
+import std/list (map, foldl, filter, sortBy)
+import std/option (Some, None)
+import std/math (pow, log, exp, sqrt, round, floatToInt, intToFloat)
+import std/fs (readFile, writeFile)
+import std/io (println)
+import pkg/sunholo/relativity/blackbody (chromaticity)
+
+-- Lists only: std/array and std/list.range are evaluator-only on the strict VM
+-- (v0.47.2, still on v0.50 dev), and this tool runs --strict-bytecode.
+export type Vertex = { kelvin: float, x: float, y: float }
+export type Segment = { a: Vertex, c: Vertex }
+export type Chunk = { idx: int, head: Vertex, segs: [Segment] }
+export type Fit = { kelvin: float, dxy: float, below: bool }
+type Seg = { d: float, kelvin: float, below: bool }
+
+-- Texture contract, mirrored by sky/sky_model.gd (checked in tests/test_physics.gd).
+export pure func tLo() -> float = 1500.0
+export pure func tHi() -> float = 30000.0
+export pure func lineDxy() -> float = 0.02
+export pure func yFloor() -> float = 0.005
+pure func locusLo() -> float = 1000.0
+pure func locusHi() -> float = 100000.0
+pure func chunkSize() -> int = 16
+
+-- [lo, hi) as a list
+export pure func upTo(lo: int, hi: int) -> [int] = build(hi - 1, lo, [])
+pure func build(i: int, lo: int, acc: [int]) -> [int] = if i < lo then acc else build(i - 1, lo, i :: acc)
+
+-- n segments between n + 1 log-spaced vertices of the package's Planckian
+-- locus, grouped in chunks of chunkSize() for a coarse-to-fine search
+export pure func buildLocus(n: int) -> [Chunk] =
+  chunks(segments(map(\i. vertexAt(intToFloat(i) / intToFloat(n)), upTo(0, n + 1)), []), 0, [], [])
+
+pure func segments(vs: [Vertex], acc: [Segment]) -> [Segment] = match vs {
+  [a, c, ...rest] => segments(c :: rest, { a: a, c: c } :: acc),
+  _ => revSegs(acc, [])
+}
+pure func revSegs(xs: [Segment], acc: [Segment]) -> [Segment] = match xs { [] => acc, [h, ...t] => revSegs(t, h :: acc) }
+
+pure func chunks(ss: [Segment], k: int, cur: [Segment], acc: [Chunk]) -> [Chunk] = match ss {
+  [] => revChunks(close(k, cur, acc), []),
+  [s, ...rest] => if lengthS(cur) == chunkSize() then chunks(rest, k + 1, [s], close(k, cur, acc)) else chunks(rest, k, s :: cur, acc)
+}
+pure func close(k: int, cur: [Segment], acc: [Chunk]) -> [Chunk] = match revSegs(cur, []) {
+  [] => acc,
+  [first, ...rest] => { idx: k, head: first.a, segs: first :: rest } :: acc
+}
+pure func revChunks(xs: [Chunk], acc: [Chunk]) -> [Chunk] = match xs { [] => acc, [h, ...t] => revChunks(t, h :: acc) }
+pure func lengthS(xs: [Segment]) -> int = foldl(\n _. n + 1, 0, xs)
+
+pure func vertexAt(f: float) -> Vertex {
+  let t = exp(log(locusLo()) + (log(locusHi()) - log(locusLo())) * f);
+  let c = chromaticity(t);
+  { kelvin: t, x: c.x, y: c.y }
+}
+
+export pure func srgbDecode(v: float) -> float =
+  if v <= 0.04045 then v / 12.92 else pow((v + 0.055) / 1.055, 2.4)
+
+-- IEC 61966-2-1 linear sRGB (D65) -> XYZ: the inverse of the matrix in the
+-- package's rgbUnitLuminance.
+export pure func luminanceOf(r: float, g: float, b: float) -> float =
+  0.2126729 * r + 0.7151522 * g + 0.0721750 * b
+
+export pure func xyOf(r: float, g: float, b: float) -> (float, float) {
+  let bx = 0.4124564 * r + 0.3575761 * g + 0.1804375 * b;
+  let by = luminanceOf(r, g, b);
+  let bz = 0.0193339 * r + 0.1191920 * g + 0.9503041 * b;
+  let s = bx + by + bz;
+  if s > 0.0 then (bx / s, by / s) else (0.3127, 0.3290)
+}
+
+-- distance from (px, py) to one locus segment
+pure func segment(sg: Segment, px: float, py: float) -> Seg {
+  let a = sg.a;
+  let c = sg.c;
+  let dx = c.x - a.x;
+  let dy = c.y - a.y;
+  let f0 = ((px - a.x) * dx + (py - a.y) * dy) / (dx * dx + dy * dy);
+  let f = if f0 < 0.0 then 0.0 else if f0 > 1.0 then 1.0 else f0;
+  let qx = a.x + f * dx;
+  let qy = a.y + f * dy;
+  { d: sqrt((px - qx) * (px - qx) + (py - qy) * (py - qy)),
+    kelvin: exp(log(a.kelvin) + f * (log(c.kelvin) - log(a.kelvin))),
+    below: dx * (py - qy) - dy * (px - qx) > 0.0 }
+}
+
+pure func better(a: Seg, b: Seg) -> Seg = if b.d < a.d then b else a
+
+pure func clampI(v: int, lo: int, hi: int) -> int = if v < lo then lo else if v > hi then hi else v
+
+pure func headDist2(ch: Chunk, px: float, py: float) -> float =
+  (ch.head.x - px) * (ch.head.x - px) + (ch.head.y - py) * (ch.head.y - py)
+
+pure func bestOf(segs: [Segment], px: float, py: float) -> Seg = match segs {
+  [] => { d: 1.0e9, kelvin: 1.0, below: false },
+  [s, ...rest] => foldl(\acc sg. better(acc, segment(sg, px, py)), segment(s, px, py), rest)
+}
+
+pure func toFit(s: Seg) -> Fit = { kelvin: s.kelvin, dxy: s.d, below: s.below }
+
+-- coarse-to-fine: the chunk whose first vertex is nearest, then every segment
+-- of it and its two neighbours. tests check it against fitBrute.
+export pure func fitXy(locus: [Chunk], px: float, py: float) -> Fit {
+  let c = match locus {
+    [] => 0,
+    [h, ...rest] => (foldl(\best ch. if headDist2(ch, px, py) < headDist2(best, px, py) then ch else best, h, rest)).idx
+  };
+  let near = foldl(\acc ch. if ch.idx >= c - 1 && ch.idx <= c + 1 then acc ++ ch.segs else acc, [], locus);
+  toFit(bestOf(near, px, py))
+}
+
+export pure func fitBrute(locus: [Chunk], px: float, py: float) -> Fit =
+  toFit(bestOf(foldl(\acc ch. acc ++ ch.segs, [], locus), px, py))
+
+export pure func fitLinear(locus: [Chunk], r: float, g: float, b: float) -> Fit =
+  match xyOf(r, g, b) { (px, py) => fitXy(locus, px, py) }
+
+export pure func isLine(f: Fit) -> bool = f.dxy > lineDxy() && f.below
+
+export pure func encodeT(t: float) -> int {
+  let u = (log(if t > 1.0e-9 then t else 1.0e-9) - log(tLo())) / (log(tHi()) - log(tLo()));
+  clampI(floatToInt(round(u * 255.0)), 0, 255)
+}
+
+export pure func decodeT(code: int) -> float =
+  exp(log(tLo()) + (log(tHi()) - log(tLo())) * intToFloat(code) / 255.0)
+
+export pure func encodeDxy(d: float) -> int = clampI(floatToInt(round(d / 0.1 * 255.0)), 0, 255)
+
+pure func byteLin(v: int) -> float = srgbDecode(intToFloat(v) / 255.0)
+
+-- one "r,g,b,count" row -> one "r,g,b,code,dxy,flag" row plus its statistics weight
+export type Row = { line: string, y: float, count: int, fit: Fit }
+
+export pure func fitRow(locus: [Chunk], r: int, g: int, b: int, count: int) -> Row {
+  let lr = byteLin(r); let lg = byteLin(g); let lb = byteLin(b);
+  let f = fitLinear(locus, lr, lg, lb);
+  { line: join(",", [intToStr(r), intToStr(g), intToStr(b), intToStr(encodeT(f.kelvin)),
+      intToStr(encodeDxy(f.dxy)), if isLine(f) then "255" else "0"]),
+    y: luminanceOf(lr, lg, lb), count: count, fit: f }
+}
+
+-- ---- statistics over the colour histogram (weights = texel count, or count x Y) ----
+
+export type Stats = { texels: int, light: float, lineTexels: int, lineLight: float, rows: [Row] }
+
+export pure func stats(rows: [Row]) -> Stats {
+  let lit = filter(\r. r.y > yFloor(), rows);
+  let lines = filter(\r. isLine(r.fit), lit);
+  { texels: foldl(\n r. n + r.count, 0, lit), light: foldl(\w r. w + intToFloat(r.count) * r.y, 0.0, lit),
+    lineTexels: foldl(\n r. n + r.count, 0, lines), lineLight: foldl(\w r. w + intToFloat(r.count) * r.y, 0.0, lines),
+    rows: lit }
+}
+
+pure func cmpF(a: float, b: float) -> int = if a < b then 0 - 1 else if a > b then 1 else 0
+
+-- the key at which the cumulative weight first reaches q of the total
+pure func quantile(rows: [Row], key: Row -> float, weight: Row -> float, q: float) -> float {
+  let sorted = sortBy(\a b. cmpF(key(a), key(b)), rows);
+  let total = foldl(\w r. w + weight(r), 0.0, sorted);
+  let r = foldl(\acc row. match acc { (c, found, v) =>
+      if found then acc else if c + weight(row) >= q * total then (c + weight(row), true, key(row)) else (c + weight(row), false, v) },
+    (0.0, false, 0.0), sorted);
+  match r { (_, _, v) => v }
+}
+
+pure func byCount(r: Row) -> float = intToFloat(r.count)
+pure func byLight(r: Row) -> float = intToFloat(r.count) * r.y
+pure func dxyKey(r: Row) -> float = r.fit.dxy
+pure func tKey(r: Row) -> float = r.fit.kelvin
+
+export pure func reportJson(s: Stats, source: string, size: string) -> string {
+  let wmed = quantile(s.rows, dxyKey, byLight, 0.5);
+  let pct = \q. floatToStr(quantile(s.rows, tKey, byLight, q));
+  concat(["{\n",
+    "  \"source\": \"", source, "\",\n",
+    "  \"size\": ", size, ",\n",
+    "  \"fitter\": \"sim/tools/sky_model.ail (pure core strict-VM gated by make sky-vm) on sunholo/relativity blackbody.chromaticity\",\n",
+    "  \"t_code_range_k\": [", floatToStr(tLo()), ", ", floatToStr(tHi()), "],\n",
+    "  \"y_floor\": ", floatToStr(yFloor()), ",\n",
+    "  \"line_dxy\": ", floatToStr(lineDxy()), ",\n",
+    "  \"texels_above_floor\": ", intToStr(s.texels), ",\n",
+    "  \"median_dxy_above_floor\": ", floatToStr(quantile(s.rows, dxyKey, byCount, 0.5)), ",\n",
+    "  \"luminance_weighted_median_dxy\": ", floatToStr(wmed), ",\n",
+    "  \"p90_dxy_above_floor\": ", floatToStr(quantile(s.rows, dxyKey, byCount, 0.9)), ",\n",
+    "  \"line_flagged_texels_above_floor\": ", intToStr(s.lineTexels), ",\n",
+    "  \"line_flagged_fraction_of_light\": ", floatToStr(if s.light > 0.0 then s.lineLight / s.light else 0.0), ",\n",
+    "  \"t_c_percentiles_k_light_weighted\": {\"5\": ", pct(0.05), ", \"25\": ", pct(0.25), ", \"50\": ", pct(0.5),
+      ", \"75\": ", pct(0.75), ", \"95\": ", pct(0.95), "},\n",
+    "  \"escalate_two_component\": ", if wmed > lineDxy() then "true" else "false", "\n}\n"])
+}
+
+-- ---- driver -----------------------------------------------------------------
+
+pure func toInt(s: string) -> int = match stringToInt(s) { Some(v) => v, None => 0 - 1 }
+
+export pure func fitAll(locus: [Chunk], text: string) -> [Row] =
+  foldl(\acc line. match split(line, ",") {
+      [r, g, b, n] => fitRow(locus, toInt(r), toInt(g), toInt(b), toInt(n)) :: acc,
+      _ => acc
+    }, [], split(text, "\n"))
+
+-- inline record: the --args-json decoder rejects a named record type (v0.47.2)
+export func main(a: { colours: string, fits: string, report: string, size: string }) -> () ! {FS, IO} {
+  let rows = fitAll(buildLocus(460), readFile(a.colours));
+  let st = stats(rows);
+  writeFile(a.fits, join("\n", map(\r. r.line, rows)));
+  writeFile(a.report, reportJson(st, "noirlab_10k_destarred.png", a.size));
+  println(concat(["fitted ", intToStr(st.texels), " texels above the floor"]))
+}

@@ -59,6 +59,13 @@ static func point_flux_ratio(t_kelvin: float, d: float) -> float:
 	return Blackbody.luminance(t_kelvin * d) / Blackbody.luminance(t_kelvin) / (d * d)
 
 
+## Seen/rest radiance ratio of a thermal EXTENDED source (sky background,
+## nebulae) in the visual band: the blackbody at D*T, Y(D T) / Y(T), with no
+## solid-angle factor. Bolometrically D^4. Mirrors the package's surfaceBrightnessRatio.
+static func surface_brightness_ratio(t_kelvin: float, d: float) -> float:
+	return Blackbody.luminance(t_kelvin * d) / Blackbody.luminance(t_kelvin)
+
+
 ## Relative flux from an apparent magnitude.
 static func flux_from_mag(mag: float) -> float:
 	return pow(10.0, -0.4 * mag)

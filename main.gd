@@ -10,9 +10,13 @@ extends Node3D
 const TICK_HZ := 20.0
 const HEADING := Vector3(0, 0, -1) # galactic centre
 const EXPOSURE := 5.0
+const BG_EXPOSURE := 0.075 # hand-set ratio to the stars until M1.5 calibrates both
 
 var sim := SimBridge.new()
 var starfield := Starfield.new()
+var background := SkyBackground.new()
+var has_background := false
+var env := Environment.new()
 var camera := Camera3D.new()
 var hud := Label.new()
 var yaw := 0.0
@@ -48,7 +52,6 @@ func _user_args() -> Dictionary:
 
 
 func _build_scene() -> void:
-	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color.BLACK
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
@@ -63,6 +66,9 @@ func _build_scene() -> void:
 	camera.far = 1000.0
 	add_child(camera)
 	add_child(starfield)
+	if not _user_args().has("golden"):
+		has_background = background.attach(env, get_viewport().get_visible_rect().size.y, camera.fov)
+		background.set_exposure(BG_EXPOSURE)
 	var layer := CanvasLayer.new()
 	hud.position = Vector2(16, 12)
 	hud.add_theme_font_size_override("font_size", 16)
@@ -76,6 +82,8 @@ func _apply_state() -> void:
 	var h: Dictionary = s["heading"]
 	var heading := Vector3(h["x"], h["y"], h["z"])
 	starfield.set_velocity(heading, beta, s["gamma"])
+	if has_background:
+		background.set_velocity(heading, beta, s["gamma"])
 	var x: float = s["x"]
 	var p: Dictionary = s["pos"]
 	var pos := Vector3(p["x"], p["y"], p["z"])
@@ -211,8 +219,140 @@ func _run_golden() -> void:
 		print("%s  %-40s expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px  apparent angle %.3f deg" % [
 			"ok  " if ok else "FAIL", c["label"], expected.x, expected.y, got.x, got.y, err,
 			rad_to_deg(acos(expected_dir.dot(HEADING)))])
+	starfield.set_custom_stars([])
+	starfield.set_ship_position(Vector3.ZERO)
+	failures += await _golden_background_marker()
+	failures += await _golden_background_colour()
+	failures += await _golden_background_tint()
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
+
+
+## AC5 (background): one bright texel of a synthetic panorama must land within
+## 1 px of aberrate(texel-centre direction), at 4 speeds x 3 views.
+func _golden_background_marker() -> int:
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	env.glow_enabled = false
+	var w := 2048
+	var h := 1024
+	var t_code := SkyModel.encode_t(6000.0)
+	var failures := 0
+	for b: float in [0.0, 0.5, 0.9, 0.99]:
+		for view: float in [0.0, -PI / 2, PI]:
+			camera.rotation = Vector3(0, view, 0)
+			# aim 10 deg right and 6 deg up of the view centre, in the ship frame
+			var aim := Basis.from_euler(Vector3(deg_to_rad(6.0), view - deg_to_rad(10.0), 0)) * Vector3(0, 0, -1)
+			var uv := SkyModel.equirect_uv(Relativity.deaberrate(aim, HEADING, b))
+			var tx := clampi(int(uv.x * w), 0, w - 1)
+			var ty := clampi(int(uv.y * h), 0, h - 1)
+			var n := SkyModel.equirect_dir(Vector2((tx + 0.5) / w, (ty + 0.5) / h))
+			var photo := Image.create(w, h, false, Image.FORMAT_RGB8)
+			photo.set_pixel(tx, ty, Color.WHITE)
+			var model := Image.create(w, h, false, Image.FORMAT_RGBA8)
+			model.fill(Color8(t_code, 0, 0, 255))
+			var sb := SkyBackground.new()
+			sb.attach(env, get_viewport().get_visible_rect().size.y, camera.fov, photo, model)
+			var g := Relativity.gamma_of(b)
+			sb.set_velocity(HEADING, b, g)
+			var d := Relativity.doppler(n, HEADING, b)
+			# a mip-averaged texel is dimmer by about (2^lod)^2; normalise so the peak lands near 1
+			sb.set_exposure(4.0 * pow(maxf(d, 1.0), 2.0) / Relativity.surface_brightness_ratio(SkyModel.decode_t(t_code), d))
+			var img := await _grab()
+			var expected := camera.unproject_position(Relativity.aberrate(n, HEADING, b) * 100.0)
+			var got := _centroid(img)
+			var err := got.distance_to(expected)
+			var ok := err < 1.0
+			if not ok: failures += 1
+			print("%s  background marker beta %.2f view %4.0f deg  expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px" % [
+				"ok  " if ok else "FAIL", b, rad_to_deg(view), expected.x, expected.y, got.x, got.y, err])
+	return failures
+
+
+## AC6: a uniform Planck-coloured sky at T renders with the chromaticity of
+## rgb(D T) (linear tonemapper) within 0.01, at D = 0.3, 1 and 3 (beta 0.9).
+func _golden_background_colour() -> int:
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	env.glow_enabled = false
+	var b := 0.9
+	var g := Relativity.gamma_of(b)
+	var t_code := SkyModel.encode_t(5000.0)
+	var t := SkyModel.decode_t(t_code)
+	var rgb := Blackbody.rgb_unit_luminance(t) * 0.2
+	var photo := Image.create(64, 32, false, Image.FORMAT_RGB8)
+	photo.fill(Color(rgb.x, rgb.y, rgb.z).linear_to_srgb())
+	var model := Image.create(64, 32, false, Image.FORMAT_RGBA8)
+	model.fill(Color8(t_code, 0, 0, 255))
+	var sb := SkyBackground.new()
+	sb.attach(env, get_viewport().get_visible_rect().size.y, camera.fov, photo, model)
+	sb.set_velocity(HEADING, b, g)
+	var failures := 0
+	for d: float in [0.3, 1.0, 3.0]:
+		var theta := acos((1.0 - 1.0 / (d * g)) / b) # apparent angle where dopplerApparent = d
+		camera.rotation = Vector3(0, -theta, 0)
+		var want := Blackbody.rgb_unit_luminance(t * d)
+		var y_seen := 0.2 * Relativity.surface_brightness_ratio(t, d)
+		sb.set_exposure(0.6 / (y_seen * maxf(want.x, maxf(want.y, want.z))))
+		var img := await _grab()
+		var c := Vector3.ZERO
+		var cx := img.get_width() / 2
+		var cy := img.get_height() / 2
+		for yy in range(cy - 4, cy + 5):
+			for xx in range(cx - 4, cx + 5):
+				var p := img.get_pixel(xx, yy).srgb_to_linear()
+				c += Vector3(p.r, p.g, p.b) / 81.0
+		var err := _xy(c).distance_to(_xy(want))
+		var ok := err < 0.01
+		if not ok: failures += 1
+		print("%s  background colour D %.1f (T %.0f K -> %.0f K)  xy rendered (%.4f, %.4f) want (%.4f, %.4f)  dxy %.4f" % [
+			"ok  " if ok else "FAIL", d, t, t * d, _xy(c).x, _xy(c).y, _xy(want).x, _xy(want).y, err])
+	return failures
+
+
+## Tint carry: an off-locus (emission-pink) texel must render with the
+## chromaticity SkyModel.radiance predicts, at D = 1 (= the photo) and D = 3.
+func _golden_background_tint() -> int:
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	env.glow_enabled = false
+	var b := 0.9
+	var g := Relativity.gamma_of(b)
+	var t_code := SkyModel.encode_t(4000.0)
+	var t := SkyModel.decode_t(t_code)
+	var pink := Color8(200, 60, 110) # off the Planck locus, like an H II region
+	var lin := Vector3(pink.srgb_to_linear().r, pink.srgb_to_linear().g, pink.srgb_to_linear().b)
+	var photo := Image.create(64, 32, false, Image.FORMAT_RGB8)
+	photo.fill(pink)
+	var model := Image.create(64, 32, false, Image.FORMAT_RGBA8)
+	model.fill(Color8(t_code, 0, 0, 255))
+	var sb := SkyBackground.new()
+	sb.attach(env, get_viewport().get_visible_rect().size.y, camera.fov, photo, model)
+	sb.set_velocity(HEADING, b, g)
+	var failures := 0
+	for d: float in [1.0, 3.0]:
+		camera.rotation = Vector3(0, -acos((1.0 - 1.0 / (d * g)) / b), 0)
+		var want := SkyModel.radiance(lin, t, d)
+		sb.set_exposure(0.6 / maxf(want.x, maxf(want.y, want.z)))
+		var img := await _grab()
+		var c := Vector3.ZERO
+		var cx := img.get_width() / 2
+		var cy := img.get_height() / 2
+		for yy in range(cy - 4, cy + 5):
+			for xx in range(cx - 4, cx + 5):
+				var p := img.get_pixel(xx, yy).srgb_to_linear()
+				c += Vector3(p.r, p.g, p.b) / 81.0
+		var err := _xy(c).distance_to(_xy(want))
+		var ok := err < 0.01
+		if not ok: failures += 1
+		print("%s  background tint (off-locus texel) D %.1f  xy rendered (%.4f, %.4f) want (%.4f, %.4f)  dxy %.4f" % [
+			"ok  " if ok else "FAIL", d, _xy(c).x, _xy(c).y, _xy(want).x, _xy(want).y, err])
+	return failures
+
+
+## CIE xy of a linear sRGB colour (IEC 61966-2-1).
+func _xy(c: Vector3) -> Vector2:
+	var x := 0.4124564 * c.x + 0.3575761 * c.y + 0.1804375 * c.z
+	var y := 0.2126729 * c.x + 0.7151522 * c.y + 0.0721750 * c.z
+	var z := 0.0193339 * c.x + 0.1191920 * c.y + 0.9503041 * c.z
+	return Vector2(x, y) / (x + y + z)
 
 
 func _peak(img: Image) -> float:

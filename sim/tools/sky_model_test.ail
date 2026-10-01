@@ -1,0 +1,74 @@
+module stapledons/sim/tools/sky_model_test
+
+-- M1.4b fitter checks. `make sky-vm` runs skyVm on the strict VM and on the
+-- interpreter and requires identical "sky-ok" output. A coarse 92-segment locus
+-- keeps the interpreter run short; the production run uses 460.
+import ./sky_model (buildLocus, upTo, srgbDecode, fitLinear, fitXy, fitBrute, isLine,
+  encodeT, decodeT, fitRow, stats, reportJson, Chunk)
+import std/string (concat, join, contains)
+import std/list (filter, map, flatMap, foldl)
+import std/math (intToFloat)
+import pkg/sunholo/relativity/blackbody (rgbUnitLuminance)
+
+pure func near(a: float, b: float, tol: float) -> bool = a - b <= tol && b - a <= tol
+
+pure func checkSrgb() -> bool =
+  srgbDecode(0.0) == 0.0 && near(srgbDecode(1.0), 1.0, 1.0e-12) &&
+  near(srgbDecode(0.5), 0.214041140, 1.0e-8) && near(srgbDecode(0.04045), 0.04045 / 12.92, 1.0e-12)
+
+-- a linear colour exactly on the package's locus at t is fitted back to t
+pure func recovers(locus: [Chunk], t: float) -> bool {
+  let c = rgbUnitLuminance(t);
+  let f = fitLinear(locus, 0.2 * c.r, 0.2 * c.g, 0.2 * c.b);
+  near(f.kelvin / t, 1.0, 0.005) && f.dxy < 0.0005 && !isLine(f)
+}
+
+pure func checkPlanck(locus: [Chunk]) -> bool =
+  foldl(\ok t. ok && recovers(locus, t), true, [2500.0, 4000.0, 4600.0, 5800.0, 10000.0, 25000.0])
+
+-- sRGB red primary (0.64, 0.33) is emission-line light; green excess is off-locus but not a line
+pure func checkLines(locus: [Chunk]) -> bool {
+  let red = fitLinear(locus, 1.0, 0.0, 0.0);
+  let green = fitLinear(locus, 0.2, 1.0, 0.2);
+  let black = fitLinear(locus, 0.0, 0.0, 0.0);
+  isLine(red) && red.dxy > 0.02 && green.dxy > 0.02 && !green.below && !isLine(green) &&
+  black.kelvin == black.kelvin && black.dxy == black.dxy
+}
+
+-- coarse-to-fine search agrees with brute force over a 15 x 15 grid of chromaticities
+pure func agrees(locus: [Chunk], px: float, py: float) -> bool {
+  let a = fitXy(locus, px, py);
+  let b = fitBrute(locus, px, py);
+  near(a.dxy, b.dxy, 1.0e-12) && near(a.kelvin, b.kelvin, 1.0e-6 * b.kelvin) && a.below == b.below
+}
+
+pure func checkSearch(locus: [Chunk]) -> bool =
+  foldl(\ok p. ok && p, true, flatMap(\i. map(\j. agrees(locus, 0.18 + 0.035 * intToFloat(i), 0.15 + 0.025 * intToFloat(j)),
+    upTo(0, 15)), upTo(0, 15)))
+
+pure func checkCode() -> bool =
+  near(decodeT(0), 1500.0, 1.0e-6) && near(decodeT(255), 30000.0, 1.0e-6) &&
+  foldl(\ok t. ok && near(decodeT(encodeT(t)) / t, 1.0, 0.006), true, [1600.0, 3000.0, 4600.0, 9000.0, 29000.0]) &&
+  encodeT(10.0) == 0 && encodeT(10000000.0) == 255
+
+-- rows and the report: a dark row is excluded, the red row is a line, the output row is stable
+pure func checkRows(locus: [Chunk]) -> bool {
+  let red = fitRow(locus, 255, 0, 0, 3);
+  let grey = fitRow(locus, 200, 200, 200, 5);
+  let dark = fitRow(locus, 2, 2, 2, 100);
+  let st = stats([red, grey, dark]);
+  let rep = reportJson(st, "t", "[3, 1]");
+  contains(red.line, "255,0,0,") && contains(red.line, ",255") && contains(grey.line, ",0") &&
+  st.texels == 8 && st.lineTexels == 3 && contains(rep, "\"texels_above_floor\": 8") &&
+  contains(rep, "\"escalate_two_component\":")
+}
+
+pure func failures(locus: [Chunk]) -> [string] =
+  map(\p. match p { (name, _) => name }, filter(\p. match p { (_, ok) => !ok }, [
+    ("srgb", checkSrgb()), ("planck", checkPlanck(locus)), ("lines", checkLines(locus)),
+    ("search", checkSearch(locus)), ("code", checkCode()), ("rows", checkRows(locus))]))
+
+export pure func skyVm(n: int) -> string = match failures(buildLocus(92)) {
+  [] => "sky-ok",
+  bad => concat(["sky-BAD: ", join(",", bad)])
+}

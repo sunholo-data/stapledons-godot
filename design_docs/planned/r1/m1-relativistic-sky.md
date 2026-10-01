@@ -286,6 +286,29 @@ before it can be made strange.
 The deliverable is a comparison render and a recommendation. **This is a
 decision point for the user.**
 
+**M1.4a outcome (attended, 2026-10-01): Option A on NOIRLab (D-10).** The
+evidence is in [m1-4a-background-options.md](m1-4a-background-options.md).
+Option B wasn't built: Mark ruled for the real photograph, and the Gaia flux
+map, the nearest stand-in for B, has no nebulae and is made of stars. Facts
+the spike established, which bind M1.4b/c:
+- **Registration.** The panorama is plain galactic equirect: l = 0 at the
+  centre, l increasing to the left. The 25 brightest HIP stars sit within
+  about 1 px of their catalogue positions, so no fit is needed.
+- **Tone curve.** The source is tone-mapped 8-bit sRGB, not linear radiance.
+  M1.4b decodes sRGB and states that assumption. Fitting T_c to the
+  photographer's curve is the dominant error in L_v, more than the blackbody
+  approximation.
+- **Emission nebulae.** H II regions (H-α at 656 nm) aren't thermal. A line
+  leaves the visible band at D ≳ 1.7 (656/D < 380 nm) or D ≲ 0.84 (656/D > 780 nm), so a
+  blackbody T_c brightens it ahead of the ship, where it should vanish. M1.4b
+  flags line-dominated texels, defined as red excess over the best-fit Planck
+  colour, and reports their count. Modelling the line is an escalation, not
+  M1 scope.
+- **Parallax validity.** A single panorama holds to about 50 ly from Sol.
+  Beyond that, the nearest dust clouds (about 450 ly) shift by more than 6°.
+  R1 (α Cen) is well inside. Longer voyages need a fade or guard, or a 3D
+  diffuse model, which is post-R1.
+
 **M1.4b, spectral model (offline, `tools/sky_model.py`):**
 - For each texel of the chosen equirect (HEALPix is an option), fit a blackbody
   colour temperature T_c to its linear RGB, and store (log T_c, log L_v) in a
@@ -295,6 +318,33 @@ decision point for the user.**
   temperature plus luminance reproduces the Doppler colour shift to first order,
   and it's the same model the stars use.
 - The fit residual is recorded per texel and summarised in the M1 report.
+
+**M1.4b/c as built (attended, 2026-10-01). Amends the two blocks below:**
+- **The fitter is AILANG, not Python** (Mark: "this is an ailang showcase").
+  `sim/tools/sky_model.ail` fits each distinct panorama colour (739,609) to the
+  locus straight from `sunholo/relativity` `blackbody.chromaticity`, so no
+  Planck/CMF copy exists outside the package. Its pure core is strict-VM gated,
+  with interpreter parity (`make sky-vm`, in `make test`). Godot headless does the
+  image I/O (`tools/sky_colours.gd`). `make sky-model` runs the whole chain in
+  about 12 minutes. The core is list-only, because `std/array` and
+  `std/list.range` are evaluator-only on the strict VM (reported upstream).
+- **Storage.** A 10k float (log T_c, log L_v) texture would be about 400 MB. The
+  model is instead an RGBA8 texture beside the 8-bit photo:
+  - R is the T_c code, log-spaced over 1500–30000 K (≤0.6% per step);
+  - G is the residual;
+  - B is the line flag.
+
+  The shader takes L_v from the decoded photo, and nothing is lost relative to
+  the 8-bit source.
+- **Tint carry.** The shader computes radiance = Y × surfaceBrightnessRatio(T_c, D)
+  × rgb(D·T_c) × tint, where tint = photo / (Y·rgb(T_c)). At D = 1 this
+  reproduces the photo exactly, off-locus colours included. For a Planck texel
+  it is exactly the design's formula (AC6 tests that path).
+- **Result** (`data/sky/sky_model_report.json`):
+  - luminance-weighted median Δxy 0.0050, so no escalation;
+  - 4.7% of the light is line-flagged;
+  - light-weighted T_c median 6180 K. That is the photographer's white
+    balance, not a measurement of integrated starlight.
 
 **M1.4c, sky shader (Godot `shader_type sky`):**
 - Per pixel, take the view direction n' (EYEDIR), then:
@@ -493,7 +543,8 @@ Suggested order: M1.1 → (M1.2 ∥ M1.6) → [M1.2d] → M1.3 → M1.4 → M1.5
 | Risk | Mitigation |
 |---|---|
 | The AILANG pipeline is slow, or hits VM bugs on 331k rows | That's valuable too: report it upstream with repros. Python fallback with a cross-check, and the path that shipped is recorded |
-| Point-source removal leaves artefacts | M1.4a compares options A and B before anything is committed; the residual map is reviewed |
+| Point-source removal leaves artefacts | M1.4a compares options A and B before anything is committed; the residual map is reviewed. Spike result: clean except a faint flat patch at Sirius at 1:1 and a softened M42 core |
+| The panorama is only valid near Sol (parallax) | Stated limit: about 50 ly. R1 stays inside it; post-R1 needs a guard or a 3D diffuse model |
 | A single colour temperature can't represent the diffuse sky | Record the per-texel fit residual; if the median residual exceeds 0.02 Δxy, escalate to a two-component model in M1.4b |
 | Rebasing 331k instances on the CPU is too slow | Plan B is computing directions in the vertex shader; AC7 decides |
 | G−V or T_eff tables are mis-transcribed | Known-star tests; cite sources with table versions in the code |
@@ -504,7 +555,9 @@ Suggested order: M1.1 → (M1.2 ∥ M1.6) → [M1.2d] → M1.3 → M1.4 → M1.5
 ## Open questions (for the user)
 
 1. **Background source (after M1.4a):** a star-removed panorama (A), or a
-   synthetic diffuse model (B)?
+   synthetic diffuse model (B)? **ANSWERED 2026-10-01, D-10: A, on the NOIRLab
+   `noirlab2430b` panorama** (Mark Edmondson, attended: "ok lets go with
+   NOIRlab").
 2. **Interstellar reddening:** apply E(BP−RP) from a 3D dust map to nearby
    stars? It's negligible within 100 pc (under 0.05 mag for most stars).
    Proposal: skip it in M1 and revisit for the distant background.
