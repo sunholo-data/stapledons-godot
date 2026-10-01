@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.50.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim parity parity-offaxis strict wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim parity parity-offaxis parity-v2 strict wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim parity parity-offaxis strict wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: deps import physics sim parity parity-offaxis parity-v2 strict wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
@@ -45,7 +45,13 @@ parity-offaxis:     ## v1.1 turns, burns and rejects must be VM/interpreter iden
 	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/offaxis.ndjson > $(SCRATCH)/offaxis_interp.txt
 	cmp $(SCRATCH)/offaxis_vm.txt $(SCRATCH)/offaxis_interp.txt && echo "parity-offaxis: identical ($$(wc -l < $(SCRATCH)/offaxis_vm.txt) lines)"
 
-strict:            ## pure sim core must run entirely on the bytecode VM (no evaluator fallback)
+parity-v2:          ## protocol v2 session through ship.ail (hello first, malformed, refused): VM/interpreter identical
+	@mkdir -p $(SCRATCH)
+	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_vm.txt
+	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_interp.txt
+	cmp $(SCRATCH)/v2_vm.txt $(SCRATCH)/v2_interp.txt && echo "parity-v2: identical ($$(wc -l < $(SCRATCH)/v2_vm.txt) lines)"
+
+strict:            ## pure sim core and protocol v2 codecs must run entirely on the bytecode VM (no evaluator fallback)
 	@want=$$(python3 -c "import math; g=1.032295275553596; print(repr(2*math.sinh(g*3.0)/g))"); \
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry scripted --args-json 300 sim/core.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry scripted --args-json 300 sim/core.ail); \
@@ -56,6 +62,11 @@ strict:            ## pure sim core must run entirely on the bytecode VM (no eva
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry scriptedOffAxis --args-json 300 sim/core.ail); \
 	echo "strict off-axis VM $$got | interpreter $$interp | closed form $$want"; \
 	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)"
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry protocolVm --args-json 0 sim/protocol_test.ail > $(SCRATCH)/protocol-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry protocolVm --args-json 0 sim/protocol_test.ail > $(SCRATCH)/protocol-interp.txt
+	@cmp $(SCRATCH)/protocol-vm.txt $(SCRATCH)/protocol-interp.txt && test "$$(tail -1 $(SCRATCH)/protocol-vm.txt)" = "protocol-ok" && \
+	  echo "strict protocolVm: $$(tail -1 $(SCRATCH)/protocol-vm.txt), $$(wc -l < $(SCRATCH)/protocol-vm.txt | tr -d ' ') lines, digest $$(shasum -a 256 $(SCRATCH)/protocol-vm.txt | cut -c1-16) (strict VM = interpreter)"
 
 wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ailang test` interpreter cannot see NaN-guard mutants)
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \

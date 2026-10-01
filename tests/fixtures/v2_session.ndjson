@@ -1,0 +1,14 @@
+{"v":2,"type":"input","tick":1,"dtau":0,"intents":[]}
+{"v":2,"type":"hello","want":{"major":2,"minor":0}}
+{"v":2,"type":"input","tick":1,"dtau":0,"intents":[]}
+{"v":2,"type":"new_game","seed":9007199254740991,"scenario":"sol","diag":true,"params":{"epoch":-0.0,"glow_eps":5e-324}}
+{"v":2,"type":"input","tick":1,"dtau":0,"intents":[{"k":"heading","heading":{"x":1,"y":0,"z":0}}]}
+{"v":2,"type":"input","tick":2,"dtau":1,"intents":[{"k":"thrust","thrust":1}]}
+{"v":2,"type":"input","tick":3,"dtau":0.1,"intents":[{"k":"heading","heading":{"x":0,"y":1,"z":0}},{"k":"plan","target":{"index":0,"id":"Gl 559","pos":{"x":1.5,"y":-4.09,"z":-0.05}},"cruise_phi":7.254328619262047},{"k":"draw","stream":"news"}]}
+{"v":2,"type":"input","tick":3,"dtau":0.1,"intents":[]}
+{broken
+{"cmd":"step"}
+{"v":2,"type":"input","tick":4,"dtau":1.5,"intents":[]}
+{"v":2,"type":"input","tick":4,"dtau":1,"intents":[{"k":"thrust","thrust":-1}]}
+{"v":2,"type":"input","tick":5,"dtau":0,"intents":[]}
+{"v":2,"type":"quit"}

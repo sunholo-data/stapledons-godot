@@ -1,14 +1,22 @@
 module stapledons/sim/protocol_test
 
-import ./ship (handle, report)
-import ./core (initShip, step)
+-- v1.1 reason-code tests (kept until M2.1b removes v1.1) and protocol v2
+-- codec round trips, reason codes, rejection model and handshake (AC8).
+-- `protocolVm` runs the v2 checks on the strict VM (`make strict`, AC10).
+import ./ship (handle, report, route, initServer)
+import ./core (initShip, step, turn, position)
+import ./protocol (Input, GHello, GNewGame, GInput, GQuit, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, StateMsg, Clock, ShipView, Params, Refusal, Event, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, defaultParams, newSession, serve, num)
+import pkg/sunholo/relativity/optics (Vec3)
 import std/json (decode, getString, getNumber)
 import std/result (Ok, Err)
-import std/option (Some, None)
+import std/option (Option, Some, None)
+import std/string (join)
+import std/list (map, foldl)
 
 pure func status(line: string) -> string =
   match decode(line) { Ok(j) => match getString(j, "status") { Some(x) => x, None => "missing" }, Err(_) => "decode_error" }
 
+-- ---------------------------------------------------------------- v1.1
 pure func checkHelloProto11() -> bool {
   let r = handle(initShip(), "{\"cmd\":\"hello\"}");
   match decode(r.reply) { Ok(j) => match getString(j, "proto") { Some(x) => x == "1.1" && status(r.reply) == "ok", None => false }, Err(_) => false }
@@ -50,6 +58,197 @@ pure func checkRejectedStateUnchanged() -> bool {
   r.ship.tick == s.tick && r.ship.motion.phi == s.motion.phi && r.ship.motion.tau == s.motion.tau && r.ship.motion.t == s.motion.t && r.ship.motion.x == s.motion.x && r.ship.heading.x == s.heading.x && r.ship.heading.y == s.heading.y && r.ship.heading.z == s.heading.z && r.ship.origin.x == s.origin.x && r.ship.origin.y == s.origin.y && r.ship.origin.z == s.origin.z && r.ship.x0 == s.x0
 }
 
+-- ------------------------------------------------- bit-exact equality
+-- `==` treats -0.0 and 0.0 as equal; the sign is compared through 1/x.
+pure func feq(a: float, b: float) -> bool = a == b && (a != 0.0 || (1.0 / a < 0.0) == (1.0 / b < 0.0))
+pure func veq(a: Vec3, b: Vec3) -> bool = feq(a.x, b.x) && feq(a.y, b.y) && feq(a.z, b.z)
+pure func oeq(a: Option[float], b: Option[float]) -> bool =
+  match a { Some(x) => match b { Some(y) => feq(x, y), None => false }, None => b == None }
+pure func allEq(f: (a, a) -> bool, xs: [a], ys: [a]) -> bool =
+  match xs { [] => (match ys { [] => true, _ => false }), x :: xr => match ys { [] => false, y :: yr => f(x, y) && allEq(f, xr, yr) } }
+
+pure func intentEq(a: Intent, b: Intent) -> bool =
+  match a {
+    IPlan(p) => match b { IPlan(q) => p.target.index == q.target.index && p.target.id == q.target.id && veq(p.target.pos, q.target.pos) && feq(p.cruisePhi, q.cruisePhi) && oeq(p.flipG, q.flipG), _ => false },
+    ICommit(n) => match b { ICommit(m) => n == m, _ => false },
+    ICancel => match b { ICancel => true, _ => false },
+    IThrust(x) => match b { IThrust(y) => feq(x, y), _ => false },
+    IHeading(h) => match b { IHeading(g) => veq(h, g), _ => false },
+    IRecord(r) => match b { IRecord(q) => r.source == q.source && r.req == q.req && r.kind == q.kind && r.sha256 == q.sha256 && r.body == q.body, _ => false },
+    IDraw(s) => match b { IDraw(t) => s == t, _ => false }
+  }
+pure func overrideEq(a: {name: string, value: float}, b: {name: string, value: float}) -> bool = a.name == b.name && feq(a.value, b.value)
+pure func inputEq(a: Input, b: Input) -> bool =
+  match a {
+    GHello(h) => match b { GHello(g) => h.major == g.major && h.minor == g.minor, _ => false },
+    GNewGame(n) => match b { GNewGame(m) => n.seed == m.seed && n.scenario == m.scenario && n.diag == m.diag && allEq(overrideEq, n.params, m.params), _ => false },
+    GInput(i) => match b { GInput(j) => i.tick == j.tick && feq(i.dtau, j.dtau) && allEq(intentEq, i.intents, j.intents), _ => false },
+    GQuit => match b { GQuit => true, _ => false }
+  }
+pure func paramsEq(a: Params, b: Params) -> bool =
+  feq(a.epoch, b.epoch) && feq(a.startAge, b.startAge) && feq(a.boostG, b.boostG) && feq(a.mEffKg, b.mEffKg) && feq(a.ismNCm3, b.ismNCm3) && feq(a.bubbleRadiusM, b.bubbleRadiusM) && feq(a.glowEps, b.glowEps) && feq(a.glowFIn, b.glowFIn) && feq(a.cruiseMinBeta, b.cruiseMinBeta) && feq(a.capOneMinusBeta, b.capOneMinusBeta)
+pure func clockEq(a: Clock, b: Clock) -> bool = feq(a.tau, b.tau) && feq(a.t, b.t) && feq(a.year, b.year) && feq(a.age, b.age)
+pure func shipEq(a: ShipView, b: ShipView) -> bool = a.phase == b.phase && feq(a.beta, b.beta) && feq(a.oneMinusBeta, b.oneMinusBeta) && feq(a.gamma, b.gamma) && veq(a.heading, b.heading) && veq(a.pos, b.pos) && feq(a.x, b.x)
+pure func none(o: Option[a]) -> bool = match o { None => true, Some(_) => false }
+pure func someEq(f: (a, a) -> bool, x: Option[a], y: Option[a]) -> bool =
+  match x { Some(p) => match y { Some(q) => f(p, q), None => false }, None => match y { None => true, Some(_) => false } }
+pure func refusalEq(a: Refusal, b: Refusal) -> bool = a.i == b.i && a.reason == b.reason
+pure func eventEq(a: Event, b: Event) -> bool = a.kind == b.kind
+pure func stateEq(a: StateMsg, b: StateMsg) -> bool =
+  a.tick == b.tick && a.status == b.status && someEq(clockEq, a.clock, b.clock) && someEq(shipEq, a.ship, b.ship) && someEq(paramsEq, a.params, b.params) && allEq(eventEq, a.events, b.events) && allEq(refusalEq, a.refused, b.refused) && a.full == b.full
+
+-- ------------------------------------------------------------ fixtures
+pure func maxInt() -> int = 9007199254740991
+pure func almostOne() -> float = 1.0 - 0.0000000000000002220446049250313
+pure func tiny() -> float = 4.9406564584124654e-324
+pure func negZero() -> float = -1.0 * 0.0
+pure func phiCap() -> float = 7.254328619262047
+
+pure func edgeVec() -> Vec3 = {x: 1.0e308, y: negZero(), z: almostOne()}
+pure func allIntents() -> [Intent] = [
+  IPlan({target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: Some(1.0)}),
+  IPlan({target: {index: 0, id: "Sol \"quoted\" \\ star", pos: {x: 0.1, y: tiny(), z: -4.09}}, cruisePhi: 0.1, flipG: None}),
+  ICommit(maxInt()), ICancel, IThrust(negZero()), IThrust(-1.0),
+  IHeading({x: 0.6, y: 0.8, z: negZero()}),
+  IRecord({source: "ai", req: "r-1", kind: "line", sha256: "e3b0c442", body: "{\"text\":\"hi\"}"}),
+  IDraw("news")
+]
+pure func inputFixtures() -> [Input] = [
+  GHello({major: 2, minor: 0}),
+  GNewGame({seed: maxInt(), scenario: "sol", diag: true, params: [{name: "glow_eps", value: tiny()}, {name: "epoch", value: negZero()}, {name: "glow_f_in", value: almostOne()}, {name: "start_age", value: 0.1}]}),
+  GNewGame({seed: 0, scenario: "sol", diag: false, params: []}),
+  GInput({tick: maxInt(), dtau: 0.1, intents: allIntents()}),
+  GInput({tick: 1, dtau: tiny(), intents: []}),
+  GInput({tick: 2, dtau: almostOne(), intents: [IThrust(1.0)]}),
+  GInput({tick: 3, dtau: negZero(), intents: []}),
+  GQuit
+]
+pure func stateFixtures() -> [StateMsg] = [
+  { tick: 0, status: "ok", clock: Some({tau: 0.1, t: almostOne(), year: tiny(), age: negZero()}),
+    ship: Some({phase: "rest", beta: negZero(), oneMinusBeta: 1.0, gamma: 1.0e308, heading: {x: 0.0, y: 0.0, z: -1.0}, pos: {x: phiCap(), y: 0.1, z: tiny()}, x: 1.0e308}),
+    params: Some(defaultParams()), events: [{kind: "phase"}], refused: [{i: 0, reason: "unsupported"}, {i: maxInt(), reason: "diag_only"}], full: true },
+  { tick: maxInt(), status: "bad_tick", clock: None, ship: None, params: None, events: [], refused: [], full: false },
+  { tick: 7, status: "ok", clock: Some({tau: 1.0e308, t: -1.0e308, year: 0.0, age: 30.0}), ship: None, params: None, events: [], refused: [], full: false }
+]
+
+pure func roundTripInput(x: Input) -> bool = match decodeInput(encodeInput(x)) { Ok(y) => inputEq(x, y), Err(_) => false }
+pure func roundTripState(x: StateMsg) -> bool = match decodeState(encodeState(x)) { Ok(y) => stateEq(x, y), Err(_) => false }
+pure func allTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+
+pure func checkFloatText() -> bool =
+  num(0.1) == "0.1" && num(almostOne()) == "0.9999999999999998" && num(tiny()) == "5e-324" && num(1.0e308) == "1e308" &&
+  num(negZero()) == "-0.0" && num(0.0) == "0" && num(phiCap()) == "7.254328619262047" && num(-1.0e308) == "-1e308" &&
+  num(1.7976931348623157e308) == "1.7976931348623157e308" && num(1.0e21) == "1e21" && num(0.000001) == "0.000001" &&
+  num(0.0000001) == "1e-7" && num(-0.00000000015) == "-1.5e-10" && num(0.1 + 0.2) == "0.30000000000000004" && num(9007199254740991.0) == "9007199254740991"
+pure func checkInputRoundTrip() -> bool = allTrue(map(roundTripInput, inputFixtures()))
+pure func checkStateRoundTrip() -> bool = allTrue(map(roundTripState, stateFixtures()))
+pure func checkHelloRoundTrip() -> bool {
+  let h = helloMsg();
+  match decodeHello(encodeHello(h)) { Ok(g) => g.major == 2 && g.minor == 0 && g.sim == h.sim && g.relativity == h.relativity && g.rng == "none-0", Err(_) => false }
+}
+
+-- ------------------------------------------------- reason codes (decode)
+pure func code(line: string) -> string = match decodeInput(line) { Ok(_) => "ok", Err(c) => c }
+pure func inp(body: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":1,", body, "}"])
+pure func newGame(body: string) -> string = join("", ["{\"v\":2,\"type\":\"new_game\",", body, "}"])
+pure func intent(body: string) -> string = inp(join("", ["\"dtau\":0.1,\"intents\":[", body, "]"]))
+pure func checkDecodeCodes() -> bool =
+  code("{broken") == "bad_json" && code(inp("\"dtau\":NaN,\"intents\":[]")) == "bad_json" &&
+  code("{\"type\":\"hello\"}") == "bad_v" && code("{\"v\":3,\"type\":\"hello\"}") == "bad_v" && code("{\"v\":\"2\",\"type\":\"hello\"}") == "bad_v" && code("{\"v\":2.5,\"type\":\"hello\"}") == "bad_v" &&
+  code("{\"v\":2,\"type\":\"warp\"}") == "bad_cmd" && code("{\"v\":2}") == "bad_cmd" &&
+  code("{\"v\":2,\"type\":\"input\",\"tick\":1.5,\"dtau\":0,\"intents\":[]}") == "bad_tick" && code("{\"v\":2,\"type\":\"input\",\"tick\":-1,\"dtau\":0,\"intents\":[]}") == "bad_tick" &&
+  code("{\"v\":2,\"type\":\"input\",\"tick\":9007199254740992,\"dtau\":0,\"intents\":[]}") == "bad_tick" && code("{\"v\":2,\"type\":\"input\",\"dtau\":0,\"intents\":[]}") == "bad_tick" &&
+  code(inp("\"dtau\":-1,\"intents\":[]")) == "bad_step" && code(inp("\"dtau\":1.0000000000000002,\"intents\":[]")) == "bad_step" && code(inp("\"dtau\":1e400,\"intents\":[]")) == "bad_step" && code(inp("\"intents\":[]")) == "bad_step" &&
+  code(inp("\"dtau\":0")) == "bad_intent" && code(inp("\"dtau\":0,\"intents\":{}")) == "bad_intent" && code(intent("{\"k\":\"warp\"}")) == "bad_intent" && code(intent("{}")) == "bad_intent" &&
+  code(intent("{\"k\":\"plan\",\"cruise_phi\":1}")) == "bad_intent" && code(intent("{\"k\":\"commit\",\"plan_id\":1.5}")) == "bad_intent" && code(intent("{\"k\":\"draw\"}")) == "bad_intent" &&
+  code(intent("{\"k\":\"plan\",\"target\":{\"index\":0,\"id\":\"x\",\"pos\":{\"x\":1e400,\"y\":0,\"z\":0}},\"cruise_phi\":1}")) == "bad_intent" &&
+  code(intent("{\"k\":\"thrust\",\"thrust\":2}")) == "bad_step" && code(intent("{\"k\":\"thrust\"}")) == "bad_step" &&
+  code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0}}")) == "bad_heading" && code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1.00000001,\"y\":0,\"z\":0}}")) == "bad_heading" &&
+  code(newGame("\"seed\":-1,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":9007199254740992,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" &&
+  code(newGame("\"seed\":1.5,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":1,\"scenario\":\"andromeda\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":\"yes\"")) == "bad_game" &&
+  code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"warp\":1}")) == "bad_params" && code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"glow_eps\":2}")) == "bad_params" &&
+  code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"cruise_min_beta\":1}")) == "bad_params" && code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"m_eff_kg\":0}")) == "bad_params" &&
+  code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":[]")) == "bad_params" && code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"cap_one_minus_beta\":-1e-6}")) == "bad_params"
+
+-- -------------------------------------------------- session (serve)
+pure func feed(s: Session, lines: [string]) -> Served =
+  foldl(\acc line. serve(acc.session, line), {session: s, reply: ""}, lines)
+pure func stateOf(reply: string) -> StateMsg =
+  match decodeState(reply) { Ok(m) => m, Err(e) => {tick: -1, status: e, clock: None, ship: None, params: None, events: [], refused: [], full: false} }
+pure func hello() -> string = "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":0}}"
+pure func diagGame() -> string = newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":true")
+pure func playGame() -> string = newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":false")
+pure func tickLine(t: int, dtau: string, intents: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", show(t), ",\"dtau\":", dtau, ",\"intents\":[", intents, "]}"])
+pure func shipX(m: StateMsg) -> float = match m.ship { Some(v) => v.x, None => -1.0 }
+
+pure func checkHandshake() -> bool {
+  let pre = serve(newSession(), diagGame());
+  let pre2 = serve(newSession(), tickLine(1, "0", ""));
+  let h = serve(newSession(), hello());
+  let noGame = serve(h.session, tickLine(1, "0", ""));
+  let first = match decodeHello(h.reply) { Ok(g) => g.major == 2 && g.minor == 0 && g.rng == "none-0", Err(_) => false };
+  let full = stateOf(serve(h.session, diagGame()).reply);
+  stateOf(pre.reply).status == "no_hello" && none(stateOf(pre.reply).ship) && stateOf(pre2.reply).status == "no_hello" &&
+  first && stateOf(noGame.reply).status == "no_game" && full.full && full.tick == 0 && full.status == "ok" &&
+  someEq(paramsEq, full.params, Some(defaultParams())) && !none(full.clock) && !none(full.ship)
+}
+pure func checkParamsEcho() -> bool {
+  let s = feed(newSession(), [hello(), newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"m_eff_kg\":0.5,\"epoch\":-0.0}")]);
+  let d = defaultParams();
+  someEq(paramsEq, stateOf(s.reply).params, Some({d | mEffKg: 0.5, epoch: negZero()}))
+}
+-- A malformed line changes nothing; the next good tick is still world + 1.
+pure func checkMalformedKeepsTick() -> bool {
+  let s = feed(newSession(), [hello(), diagGame(), tickLine(1, "0.1", "{\"k\":\"thrust\",\"thrust\":1}")]);
+  let bad = [tickLine(1, "0.1", ""), tickLine(3, "0.1", ""), tickLine(0, "0.1", ""), tickLine(2, "-1", ""), tickLine(2, "0.1", "{\"k\":\"warp\"}"), "{broken", "{\"cmd\":\"step\"}", tickLine(2, "0.1", "{\"k\":\"thrust\",\"thrust\":2}")];
+  let codes = map(\l. stateOf(serve(s.session, l).reply), bad);
+  let next = stateOf(serve(s.session, tickLine(2, "0.1", "")).reply);
+  let same = allTrue(map(\l. stateEq(stateOf(serve(serve(s.session, l).session, tickLine(2, "0.1", "")).reply), next), bad));
+  allEq(\a b. a == b, map(\m. m.status, codes), ["bad_tick", "bad_tick", "bad_tick", "bad_step", "bad_intent", "bad_json", "bad_v", "bad_step"]) &&
+  allTrue(map(\m. m.tick == 1 && none(m.clock) && none(m.ship), codes)) && same && next.status == "ok" && next.tick == 2
+}
+-- A well-formed intent the rules refuse is listed and the tick proceeds.
+pure func checkRefusedProceeds() -> bool {
+  let play = feed(newSession(), [hello(), playGame(), tickLine(1, "0.5", "{\"k\":\"thrust\",\"thrust\":1},{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}")]);
+  let p = stateOf(play.reply);
+  let all = "{\"k\":\"plan\",\"target\":{\"index\":0,\"id\":\"Gl 559\",\"pos\":{\"x\":1.5,\"y\":-4.09,\"z\":-0.05}},\"cruise_phi\":2.6},{\"k\":\"commit\",\"plan_id\":1},{\"k\":\"cancel\"},{\"k\":\"record\",\"source\":\"ai\",\"req\":\"r\",\"kind\":\"line\",\"sha256\":\"00\",\"body\":\"x\"},{\"k\":\"draw\",\"stream\":\"news\"}";
+  let diag = feed(newSession(), [hello(), diagGame(), tickLine(1, "0.5", "{\"k\":\"thrust\",\"thrust\":1}"), tickLine(2, "0.5", join("", [all, ",{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}"]))]);
+  let d = stateOf(diag.reply);
+  p.status == "ok" && p.tick == 1 && allEq(refusalEq, p.refused, [{i: 0, reason: "diag_only"}, {i: 1, reason: "diag_only"}]) && shipX(p) == -1.0 &&
+  d.status == "ok" && d.tick == 2 && allEq(refusalEq, d.refused, [{i: 0, reason: "unsupported"}, {i: 1, reason: "unsupported"}, {i: 2, reason: "unsupported"}, {i: 3, reason: "unsupported"}, {i: 4, reason: "unsupported"}, {i: 5, reason: "moving"}])
+}
+-- The diag adapter reproduces core.turn/step exactly (what v1.1 served).
+pure func checkDiagKinematics() -> bool {
+  let s = feed(newSession(), [hello(), diagGame(), tickLine(1, "0", "{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}"), tickLine(2, "1", "{\"k\":\"thrust\",\"thrust\":1}"), tickLine(3, "1", "{\"k\":\"thrust\",\"thrust\":-1}")]);
+  let want = step(step(step(turn(initShip(), {x: 1.0, y: 0.0, z: 0.0}).ship, 0.0, 0.0), 1.0, 1.0), -1.0, 1.0);
+  let m = stateOf(s.reply);
+  let p = position(want);
+  m.tick == 3 && match m.ship { Some(v) => feq(v.x, want.motion.x) && veq(v.pos, p) && veq(v.heading, {x: 1.0, y: 0.0, z: 0.0}), None => false } &&
+  match m.clock { Some(c) => feq(c.tau, want.motion.tau) && feq(c.t, want.motion.t) && feq(c.age, 30.0 + want.motion.tau) && feq(c.year, want.motion.t), None => false }
+}
+-- Change-sets: a section appears only when a field in it changed.
+pure func checkChangeSets() -> bool {
+  let s = feed(newSession(), [hello(), diagGame()]);
+  let idle = stateOf(serve(s.session, tickLine(1, "0", "")).reply);
+  let tick = stateOf(serve(s.session, tickLine(1, "0.5", "")).reply);
+  idle.tick == 1 && none(idle.clock) && none(idle.ship) && none(idle.params) && !idle.full &&
+  !none(tick.clock) && none(tick.ship)
+}
+-- v1.1 is still served until a v2 hello; after it, unversioned lines are bad_v.
+pure func checkRouting() -> bool {
+  let v1 = route(initServer(), "{\"cmd\":\"hello\"}");
+  let v2 = route(initServer(), hello());
+  let after = route(v2.server, "{\"cmd\":\"hello\"}");
+  let broken = route(v2.server, "{broken");
+  status(v1.reply) == "ok" && v1.reply == handle(initShip(), "{\"cmd\":\"hello\"}").reply &&
+  (match decodeHello(v2.reply) { Ok(_) => true, Err(_) => false }) && status(after.reply) == "bad_v" && status(broken.reply) == "bad_json"
+}
+
+pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures()) ++ map(encodeState, stateFixtures()) ++ [encodeHello(helloMsg())]
+export pure func protocolVm(n: int) -> string =
+  if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets()
+  then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
+
 test "hello proto 1.1" { checkHelloProto11() }
 test "v1.0 step unchanged" { checkV10StepUnchanged() }
 test "bad json" { checkBadJson() }
@@ -58,3 +257,15 @@ test "bad step precedes heading" { checkBadStep() }
 test "bad heading" { checkBadHeading() }
 test "moving" { checkMoving() }
 test "rejection preserves state" { checkRejectedStateUnchanged() }
+test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }
+test "v2 decodeInput(encodeInput(x)) == x" { checkInputRoundTrip() }
+test "v2 decodeState(encodeState(s)) == s" { checkStateRoundTrip() }
+test "v2 hello round trip" { checkHelloRoundTrip() }
+test "v2 reason codes stable" { checkDecodeCodes() }
+test "v2 hello first, no state before hello" { checkHandshake() }
+test "v2 params echoed in full state" { checkParamsEcho() }
+test "v2 malformed line keeps tick" { checkMalformedKeepsTick() }
+test "v2 refused intent proceeds" { checkRefusedProceeds() }
+test "v2 diag adapter equals core" { checkDiagKinematics() }
+test "v2 change-sets" { checkChangeSets() }
+test "v1.1 until v2 hello" { checkRouting() }

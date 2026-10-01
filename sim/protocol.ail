@@ -1,0 +1,265 @@
+module stapledons/sim/protocol
+
+-- Protocol v2 (design m2-journey-core §M2.1): typed messages, hand-written
+-- inverse codec pairs and the session server. Pure: runs on the strict VM
+-- (`make strict`, protocolVm). I/O stays in ship.ail.
+--
+-- Floats are written by `num`: std/json's shortest round-trip digits, with two
+-- repairs for std/json v0.50.0 (whole floats >= 1e17 are printed as integer
+-- digits, which decode saturates at 2^63-1; -0.0 is printed as "0"): those are
+-- written in exponent form and as "-0.0". Exact integers stay in [0, 2^53).
+import std/json (Json, encode, decode, js, jnum, get, has, getNumber, getString, getBool, getArray, asObject)
+import std/result (Result, Ok, Err)
+import std/option (Option, Some, None)
+import std/string (concat, join, length, substring, startsWith, endsWith, contains, intToStr)
+import std/math (floor, floatToInt)
+import pkg/sunholo/relativity/optics (Vec3, norm)
+import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
+import pkg/sunholo/relativity/hyper (absf)
+import ./core (Ship, initShip, step, turn, position)
+
+export type Target = { index: int, id: string, pos: Vec3 }
+export type Intent =
+  IPlan({target: Target, cruisePhi: float, flipG: Option[float]})
+  | ICommit(int) | ICancel | IThrust(float) | IHeading(Vec3)
+  | IRecord({source: string, req: string, kind: string, sha256: string, body: string})
+  | IDraw(string)
+export type Override = { name: string, value: float }
+export type Input =
+  GHello({major: int, minor: int})
+  | GNewGame({seed: int, scenario: string, diag: bool, params: [Override]})
+  | GInput({tick: int, dtau: float, intents: [Intent]})
+  | GQuit
+export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float }
+export type Clock = { tau: float, t: float, year: float, age: float }
+export type ShipView = { phase: string, beta: float, oneMinusBeta: float, gamma: float, heading: Vec3, pos: Vec3, x: float }
+export type Refusal = { i: int, reason: string }
+export type Event = { kind: string }
+export type StateMsg = { tick: int, status: string, clock: Option[Clock], ship: Option[ShipView], params: Option[Params], events: [Event], refused: [Refusal], full: bool }
+export type HelloMsg = { major: int, minor: int, sim: string, relativity: string, rng: string }
+
+export pure func helloMsg() -> HelloMsg = { major: 2, minor: 0, sim: "stapledons/sim 0.1.0", relativity: "0.3.0", rng: "none-0" }
+-- Scenario "sol" (design §M2.1, D-12, D-15).
+export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001 }
+
+-- ------------------------------------------------------------ writing
+pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
+pure func mantissa(d: string) -> string = if length(d) == 1 then d else concat([substring(d, 0, 1), ".", substring(d, 1, length(d))])
+pure func zeros(z: int) -> string = if z <= 0 then "" else concat(["0", zeros(z - 1)])
+pure func small(frac: string, z: int) -> string =
+  if startsWith(frac, "0") then small(substring(frac, 1, length(frac)), z + 1)
+  else if z < 6 then concat(["0.", zeros(z), frac])
+  else concat([mantissa(frac), "e-", intToStr(z + 1)])
+pure func mag(s: string) -> string =
+  if startsWith(s, "0.") then small(substring(s, 2, length(s)), 0)
+  else if contains(s, ".") || contains(s, "e") || length(s) <= 17 then s
+  else concat([mantissa(trimZeros(s)), "e", intToStr(length(s) - 1)])
+export pure func num(x: float) -> string =
+  if x == 0.0 then (if 1.0 / x < 0.0 then "-0.0" else "0")
+  else if x < 0.0 then concat(["-", mag(encode(jnum(0.0 - x)))])
+  else mag(encode(jnum(x)))
+
+pure func q(s: string) -> string = encode(js(s))
+pure func f(k: string, v: string) -> string = concat([q(k), ":", v])
+pure func obj(fs: [string]) -> string = concat(["{", join(",", fs), "}"])
+pure func arr(xs: [string]) -> string = concat(["[", join(",", xs), "]"])
+pure func each(g: a -> string, xs: [a]) -> [string] = match xs { [] => [], x :: r => g(x) :: each(g, r) }
+pure func bool(b: bool) -> string = if b then "true" else "false"
+pure func vec(v: Vec3) -> string = obj([f("x", num(v.x)), f("y", num(v.y)), f("z", num(v.z))])
+pure func envelope(t: string, fs: [string]) -> string = obj([f("v", "2"), f("type", q(t))] ++ fs)
+pure func opt(k: string, g: a -> string, o: Option[a]) -> [string] = match o { Some(x) => [f(k, g(x))], None => [] }
+
+pure func paramPairs(p: Params) -> [Override] = [
+  {name: "epoch", value: p.epoch}, {name: "start_age", value: p.startAge}, {name: "boost_g", value: p.boostG},
+  {name: "m_eff_kg", value: p.mEffKg}, {name: "ism_n_cm3", value: p.ismNCm3}, {name: "bubble_radius_m", value: p.bubbleRadiusM},
+  {name: "glow_eps", value: p.glowEps}, {name: "glow_f_in", value: p.glowFIn}, {name: "cruise_min_beta", value: p.cruiseMinBeta},
+  {name: "cap_one_minus_beta", value: p.capOneMinusBeta}]
+pure func overrides(os: [Override]) -> string = obj(each(\o. f(o.name, num(o.value)), os))
+
+pure func encodeIntent(i: Intent) -> string =
+  match i {
+    IPlan(p) => obj([f("k", q("plan")), f("target", obj([f("index", intToStr(p.target.index)), f("id", q(p.target.id)), f("pos", vec(p.target.pos))])), f("cruise_phi", num(p.cruisePhi))] ++ opt("flip_g", num, p.flipG)),
+    ICommit(n) => obj([f("k", q("commit")), f("plan_id", intToStr(n))]),
+    ICancel => obj([f("k", q("cancel"))]),
+    IThrust(t) => obj([f("k", q("thrust")), f("thrust", num(t))]),
+    IHeading(h) => obj([f("k", q("heading")), f("heading", vec(h))]),
+    IRecord(r) => obj([f("k", q("record")), f("source", q(r.source)), f("req", q(r.req)), f("kind", q(r.kind)), f("sha256", q(r.sha256)), f("body", q(r.body))]),
+    IDraw(s) => obj([f("k", q("draw")), f("stream", q(s))])
+  }
+export pure func encodeInput(m: Input) -> string =
+  match m {
+    GHello(h) => envelope("hello", [f("want", obj([f("major", intToStr(h.major)), f("minor", intToStr(h.minor))]))]),
+    GNewGame(g) => envelope("new_game", [f("seed", intToStr(g.seed)), f("scenario", q(g.scenario)), f("diag", bool(g.diag))] ++ (match g.params { [] => [], _ => [f("params", overrides(g.params))] })),
+    GInput(i) => envelope("input", [f("tick", intToStr(i.tick)), f("dtau", num(i.dtau)), f("intents", arr(each(encodeIntent, i.intents)))]),
+    GQuit => envelope("quit", [])
+  }
+pure func encodeClock(c: Clock) -> string = obj([f("tau", num(c.tau)), f("t", num(c.t)), f("year", num(c.year)), f("age", num(c.age))])
+pure func encodeShip(s: ShipView) -> string =
+  obj([f("phase", q(s.phase)), f("beta", num(s.beta)), f("one_minus_beta", num(s.oneMinusBeta)), f("gamma", num(s.gamma)), f("heading", vec(s.heading)), f("pos", vec(s.pos)), f("x", num(s.x))])
+export pure func encodeState(m: StateMsg) -> string =
+  envelope("state", [f("tick", intToStr(m.tick)), f("status", q(m.status)),
+    f("changes", obj(opt("clock", encodeClock, m.clock) ++ opt("ship", encodeShip, m.ship) ++ opt("params", \p. overrides(paramPairs(p)), m.params))),
+    f("events", arr(each(\e. obj([f("k", q(e.kind))]), m.events))),
+    f("refused", arr(each(\r. obj([f("i", intToStr(r.i)), f("reason", q(r.reason))]), m.refused))),
+    f("full", bool(m.full))])
+export pure func encodeHello(h: HelloMsg) -> string =
+  envelope("hello", [f("proto", obj([f("major", intToStr(h.major)), f("minor", intToStr(h.minor))])), f("sim", q(h.sim)), f("relativity", q(h.relativity)), f("rng", q(h.rng))])
+
+-- ------------------------------------------------------------ reading
+pure func bind(r: Result[a, string], g: a -> Result[b, string]) -> Result[b, string] = match r { Ok(x) => g(x), Err(c) => Err(c) }
+pure func req(o: Option[a], c: string) -> Result[a, string] = match o { Some(x) => Ok(x), None => Err(c) }
+pure func check(ok: bool, x: a, c: string) -> Result[a, string] = if ok then Ok(x) else Err(c)
+pure func finite(x: float) -> bool = x - x == 0.0
+pure func numF(j: Json, k: string) -> Option[float] = match getNumber(j, k) { Some(x) => if finite(x) then Some(x) else None, None => None }
+pure func natF(j: Json, k: string) -> Option[int] =
+  match getNumber(j, k) { Some(x) => if x >= 0.0 && x <= 9007199254740991.0 && floor(x) == x then Some(floatToInt(x)) else None, None => None }
+pure func vecF(j: Json, k: string) -> Option[Vec3] =
+  match get(j, k) { Some(v) => match numF(v, "x") { Some(x) => match numF(v, "y") { Some(y) => match numF(v, "z") { Some(z) => Some({x: x, y: y, z: z}), None => None }, None => None }, None => None }, None => None }
+@allow_empty_ok("an empty list decodes to an empty list: no intents, events or refusals")
+pure func all(g: a -> Result[b, string], xs: [a]) -> Result[[b], string] =
+  match xs { [] => Ok([]), x :: r => bind(g(x), \y. bind(all(g, r), \ys. Ok(y :: ys))) }
+pure func str(j: Json, k: string) -> Result[string, string] = req(getString(j, k), "bad_intent")
+
+pure func decodeIntent(j: Json) -> Result[Intent, string] =
+  match getString(j, "k") { Some(k) => intentOf(k, j), None => Err("bad_intent") }
+pure func intentOf(k: string, j: Json) -> Result[Intent, string] =
+    if k == "plan" then bind(req(get(j, "target"), "bad_intent"), \t.
+      bind(req(natF(t, "index"), "bad_intent"), \index. bind(str(t, "id"), \id. bind(req(vecF(t, "pos"), "bad_intent"), \pos.
+      bind(req(numF(j, "cruise_phi"), "bad_intent"), \phi.
+      bind(if has(j, "flip_g") then bind(req(numF(j, "flip_g"), "bad_intent"), \g. Ok(Some(g))) else Ok(None), \flip.
+      Ok(IPlan({target: {index: index, id: id, pos: pos}, cruisePhi: phi, flipG: flip}))))))))
+    else if k == "commit" then bind(req(natF(j, "plan_id"), "bad_intent"), \n. Ok(ICommit(n)))
+    else if k == "cancel" then Ok(ICancel)
+    else if k == "thrust" then bind(req(numF(j, "thrust"), "bad_step"), \t. check(absf(t) <= 1.0, IThrust(t), "bad_step"))
+    else if k == "heading" then bind(req(vecF(j, "heading"), "bad_heading"), \h. check(absf(norm(h) - 1.0) <= 0.000000001, IHeading(h), "bad_heading"))
+    else if k == "record" then bind(str(j, "source"), \s. bind(str(j, "req"), \r. bind(str(j, "kind"), \kd. bind(str(j, "sha256"), \h. bind(str(j, "body"), \b.
+      Ok(IRecord({source: s, req: r, kind: kd, sha256: h, body: b})))))))
+    else if k == "draw" then bind(str(j, "stream"), \s. Ok(IDraw(s)))
+    else Err("bad_intent")
+
+-- Scenario-parameter ranges; anything outside is a schema error (bad_params).
+pure func inRange(n: string, v: float) -> bool =
+  if n == "epoch" then absf(v) <= 1000000.0
+  else if n == "start_age" then v >= 0.0 && v <= 1000.0
+  else if n == "boost_g" then v > 0.0 && v <= 1000000000.0
+  else if n == "m_eff_kg" then v > 0.0 && v <= 1.0e30
+  else if n == "ism_n_cm3" then v >= 0.0 && v <= 1000000.0
+  else if n == "bubble_radius_m" then v > 0.0 && v <= 1000000.0
+  else if n == "glow_eps" || n == "glow_f_in" then v >= 0.0 && v <= 1.0
+  else if n == "cruise_min_beta" || n == "cap_one_minus_beta" then v > 0.0 && v < 1.0
+  else false
+pure func decodeOverride(e: {key: string, value: Json}) -> Result[Override, string] =
+  match e.value { JNumber(v) => check(finite(v) && inRange(e.key, v), {name: e.key, value: v}, "bad_params"), _ => Err("bad_params") }
+@allow_empty_ok("absent params means no overrides; the scenario defaults apply")
+pure func decodeParams(j: Json) -> Result[[Override], string] =
+  if !has(j, "params") then Ok([])
+  else match get(j, "params") { Some(p) => bind(req(asObject(p), "bad_params"), \kvs. all(decodeOverride, kvs)), None => Err("bad_params") }
+pure func applyOverride(p: Params, o: Override) -> Params =
+  if o.name == "epoch" then {p | epoch: o.value} else if o.name == "start_age" then {p | startAge: o.value}
+  else if o.name == "boost_g" then {p | boostG: o.value} else if o.name == "m_eff_kg" then {p | mEffKg: o.value}
+  else if o.name == "ism_n_cm3" then {p | ismNCm3: o.value} else if o.name == "bubble_radius_m" then {p | bubbleRadiusM: o.value}
+  else if o.name == "glow_eps" then {p | glowEps: o.value} else if o.name == "glow_f_in" then {p | glowFIn: o.value}
+  else if o.name == "cruise_min_beta" then {p | cruiseMinBeta: o.value} else {p | capOneMinusBeta: o.value}
+pure func applyAll(p: Params, os: [Override]) -> Params = match os { [] => p, o :: r => applyAll(applyOverride(p, o), r) }
+
+pure func envelopeOf(line: string, t: string) -> Result[Json, string] =
+  match decode(line) { Ok(j) => check(getNumber(j, "v") == Some(2.0), j, "bad_v"), Err(_) => Err("bad_json") }
+export pure func decodeInput(line: string) -> Result[Input, string] =
+  bind(envelopeOf(line, ""), \j. match getString(j, "type") { Some(t) => inputOf(t, j), None => Err("bad_cmd") })
+pure func inputOf(t: string, j: Json) -> Result[Input, string] =
+    if t == "hello" then bind(req(get(j, "want"), "bad_cmd"), \w. bind(req(natF(w, "major"), "bad_cmd"), \ma. bind(req(natF(w, "minor"), "bad_cmd"), \mi. Ok(GHello({major: ma, minor: mi})))))
+    else if t == "new_game" then bind(req(natF(j, "seed"), "bad_game"), \seed. bind(req(getString(j, "scenario"), "bad_game"), \sc.
+      bind(check(sc == "sol", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
+      Ok(GNewGame({seed: seed, scenario: sc, diag: diag, params: ps})))))))
+    else if t == "input" then bind(req(natF(j, "tick"), "bad_tick"), \tick.
+      bind(req(numF(j, "dtau"), "bad_step"), \dtau. bind(check(dtau >= 0.0 && dtau <= 1.0, dtau, "bad_step"), \_d.
+      bind(req(getArray(j, "intents"), "bad_intent"), \xs. bind(all(decodeIntent, xs), \is.
+      Ok(GInput({tick: tick, dtau: dtau, intents: is})))))))
+    else if t == "quit" then Ok(GQuit)
+    else Err("bad_cmd")
+
+pure func bad() -> string = "bad_state"
+pure func optF(j: Json, k: string, g: Json -> Result[a, string]) -> Result[Option[a], string] =
+  match get(j, k) { Some(v) => bind(g(v), \x. Ok(Some(x))), None => Ok(None) }
+pure func n(j: Json, k: string) -> Result[float, string] = req(numF(j, k), bad())
+pure func decodeClock(j: Json) -> Result[Clock, string] =
+  bind(n(j, "tau"), \tau. bind(n(j, "t"), \t. bind(n(j, "year"), \y. bind(n(j, "age"), \a. Ok({tau: tau, t: t, year: y, age: a})))))
+pure func decodeShip(j: Json) -> Result[ShipView, string] =
+  bind(req(getString(j, "phase"), bad()), \ph. bind(n(j, "beta"), \b. bind(n(j, "one_minus_beta"), \omb. bind(n(j, "gamma"), \g.
+  bind(req(vecF(j, "heading"), bad()), \h. bind(req(vecF(j, "pos"), bad()), \p. bind(n(j, "x"), \x.
+  Ok({phase: ph, beta: b, oneMinusBeta: omb, gamma: g, heading: h, pos: p, x: x}))))))))
+pure func decodeFullParams(j: Json) -> Result[Params, string] =
+  bind(n(j, "epoch"), \e. bind(n(j, "start_age"), \sa. bind(n(j, "boost_g"), \bg. bind(n(j, "m_eff_kg"), \m. bind(n(j, "ism_n_cm3"), \ism.
+  bind(n(j, "bubble_radius_m"), \r. bind(n(j, "glow_eps"), \ge. bind(n(j, "glow_f_in"), \gf. bind(n(j, "cruise_min_beta"), \cb. bind(n(j, "cap_one_minus_beta"), \cap.
+  Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap})))))))))))
+export pure func decodeState(line: string) -> Result[StateMsg, string] =
+  bind(envelopeOf(line, "state"), \j. bind(check(getString(j, "type") == Some("state"), j, bad()), \_j.
+  bind(req(natF(j, "tick"), bad()), \tick. bind(req(getString(j, "status"), bad()), \st. bind(req(get(j, "changes"), bad()), \ch.
+  bind(optF(ch, "clock", decodeClock), \c. bind(optF(ch, "ship", decodeShip), \s. bind(optF(ch, "params", decodeFullParams), \p.
+  bind(bind(req(getArray(j, "events"), bad()), \es. all(\e. bind(req(getString(e, "k"), bad()), \k. Ok({kind: k})), es)), \evs.
+  bind(bind(req(getArray(j, "refused"), bad()), \rs. all(\r. bind(req(natF(r, "i"), bad()), \i. bind(req(getString(r, "reason"), bad()), \why. Ok({i: i, reason: why}))), rs)), \refs.
+  bind(req(getBool(j, "full"), bad()), \full.
+  Ok({tick: tick, status: st, clock: c, ship: s, params: p, events: evs, refused: refs, full: full}))))))))))))
+export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
+  bind(envelopeOf(line, "hello"), \j. bind(check(getString(j, "type") == Some("hello"), j, bad()), \_j. bind(req(get(j, "proto"), bad()), \pr.
+  bind(req(natF(pr, "major"), bad()), \ma. bind(req(natF(pr, "minor"), bad()), \mi.
+  bind(req(getString(j, "sim"), bad()), \sim. bind(req(getString(j, "relativity"), bad()), \rel. bind(req(getString(j, "rng"), bad()), \rng.
+  Ok({major: ma, minor: mi, sim: sim, relativity: rel, rng: rng})))))))))
+
+-- ------------------------------------------- session (interim adapter)
+-- Until M2.2's core.tick: diag `thrust`/`heading` map onto core.step/turn;
+-- plan/commit/cancel (M2.2/M2.3a), draw (M2.4) and record (2.1) are refused
+-- `unsupported`. Malformed lines change nothing; refused intents are listed
+-- and the tick proceeds.
+export type Game = { ship: Ship, diag: bool, params: Params }
+export type Session = { hello: bool, game: Option[Game] }
+export type Served = { session: Session, reply: string }
+type Acc = { ship: Ship, thrust: float, refused: [Refusal], i: int }
+
+export pure func newSession() -> Session = { hello: false, game: None }
+pure func clockOf(p: Params, s: Ship) -> Clock = { tau: s.motion.tau, t: s.motion.t, year: p.epoch + s.motion.t, age: p.startAge + s.motion.tau }
+pure func shipOf(s: Ship) -> ShipView {
+  let phi = s.motion.phi;
+  { phase: if phi == 0.0 then "rest" else "diag", beta: betaOf(phi), oneMinusBeta: oneMinusBeta(phi), gamma: gammaOf(phi), heading: s.heading, pos: position(s), x: s.motion.x }
+}
+pure func tickOf(s: Session) -> int = match s.game { Some(g) => g.ship.tick, None => 0 }
+pure func malformed(s: Session, c: string) -> Served =
+  { session: s, reply: encodeState({tick: tickOf(s), status: c, clock: None, ship: None, params: None, events: [], refused: [], full: false}) }
+pure func refuse(a: Acc, why: string) -> Acc = {a | refused: {i: a.i, reason: why} :: a.refused}
+pure func apply(diag: bool, a: Acc, it: Intent) -> Acc {
+  let r = match it {
+    IThrust(t) => if diag then {a | thrust: t} else refuse(a, "diag_only"),
+    IHeading(h) => if !diag then refuse(a, "diag_only") else {
+      let turned = turn(a.ship, h);
+      if turned.accepted then {a | ship: turned.ship} else refuse(a, "moving")
+    },
+    _ => refuse(a, "unsupported")
+  };
+  {r | i: a.i + 1}
+}
+pure func applyIntents(diag: bool, a: Acc, xs: [Intent]) -> Acc = match xs { [] => a, x :: rest => applyIntents(diag, apply(diag, a, x), rest) }
+pure func rev(xs: [a], acc: [a]) -> [a] = match xs { [] => acc, x :: r => rev(r, x :: acc) }
+pure func changed(enc: a -> string, before: a, after: a) -> Option[a] = if enc(before) == enc(after) then None else Some(after)
+
+export pure func serve(s: Session, line: string) -> Served =
+  match decodeInput(line) {
+    Err(c) => malformed(s, c),
+    Ok(m) => match m {
+      GHello(_) => { session: {s | hello: true}, reply: encodeHello(helloMsg()) },
+      GQuit => { session: s, reply: "" },
+      GNewGame(g) => if !s.hello then malformed(s, "no_hello") else {
+        let w = { ship: initShip(), diag: g.diag, params: applyAll(defaultParams(), g.params) };
+        { session: {s | game: Some(w)}, reply: encodeState({tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)), params: Some(w.params), events: [], refused: [], full: true}) }
+      },
+      GInput(i) => if !s.hello then malformed(s, "no_hello") else match s.game {
+        None => malformed(s, "no_game"),
+        Some(w) => if i.tick != w.ship.tick + 1 then malformed(s, "bad_tick") else {
+          let a = applyIntents(w.diag, {ship: w.ship, thrust: 0.0, refused: [], i: 0}, i.intents);
+          let next = step(a.ship, a.thrust, i.dtau);
+          let state = { tick: next.tick, status: "ok", clock: changed(encodeClock, clockOf(w.params, w.ship), clockOf(w.params, next)),
+            ship: changed(encodeShip, shipOf(w.ship), shipOf(next)), params: None, events: [], refused: rev(a.refused, []), full: false };
+          { session: {s | game: Some({w | ship: next})}, reply: encodeState(state) }
+        }
+      }
+    }
+  }
