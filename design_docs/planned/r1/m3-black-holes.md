@@ -225,7 +225,7 @@ GR1–GR3, GR6 and GR7 are the [Acceptance](#acceptance-criteria) shadow and rin
 
 ## Acceptance criteria
 
-`$A` is a v0.47.2 `ailang`. `$PKG` is a fresh clone of `ailang-packages` at `packages/relativity`.
+`$A` is the pinned v0.50.0 `ailang` (`runtime/bin/ailang` after `make runtime`; PR #18 bumped the pin). `$PKG` is a fresh clone of `ailang-packages` at `packages/relativity`.
 
 | # | Criterion | Command |
 |---|---|---|
@@ -262,7 +262,7 @@ Every sub-milestone stays under the 250-LOC-per-PR cap by splitting along the co
 
 | Risk | Mitigation |
 |---|---|
-| Full table generation on the VM is slower than the 7 min estimate (measured on dev v0.50, not the pin; row V11) | Re-measure on v0.47.2 as the first M3.2 task. Over 60 min, use the open-question-2 fallback (the exact form generates; the integrator checks). `make test` only regenerates a sample |
+| Full table generation on the VM is slower than the 7 min estimate (measured on a v0.50.0 dev build; row V11) | Re-measure on the v0.50.0 release pin as the first M3.2 task. Over 60 min, use the open-question-2 fallback (the exact form generates; the integrator checks). `make test` only regenerates a sample |
 | VM/interpreter divergence in long float loops (the M1.6a history: ailang#1354/#1355) | AC-3 and AC-6 compare with `cmp`. Shrink and report upstream (CLAUDE.md, GCP store). Do not relax to a tolerance |
 | Bilinear table error is at the 1.2e-4 rad budget (row V10) | Catmull-Rom in y; AC-5 measures; 4096-column fallback (+4 MB) |
 | float32 Δψ near the edge loses order ≥ 2 images | Accepted and stated: they are within 0.1 px of the edge at 10 r_s and appear through the per-pixel photon ring (non-goal) |
@@ -272,7 +272,7 @@ Every sub-milestone stays under the 250-LOC-per-PR cap by splitting along the co
 | Godot glow and AgX tonemapping blur the shadow edge | GR cases use a linear tonemapper with glow off (as M1 AC6) |
 | The bar's weak-field clause cannot be met literally | Open question 1; AC-8 builds to the corrected pair; landing waits for the ruling |
 | Hover is physically absurd for stellar holes (~10¹⁰ g) | Shown on the HUD (Pillar 6); orbit mode is the drive-free alternative |
-| `runtime/bin/ailang` in the main checkout is v0.45.0, PATH is v0.50 dev (row V8) | `make runtime` first; the ACs name `$A` (v0.47.2) explicitly |
+| The local runtime drifts from the pin (row V8: it was v0.45.0 when this doc was drafted) | `make runtime` first; the ACs name `$A` (v0.50.0) explicitly |
 
 ## Open questions for the user
 
