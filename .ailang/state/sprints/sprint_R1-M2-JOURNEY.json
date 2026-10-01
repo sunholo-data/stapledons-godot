@@ -329,10 +329,10 @@
         "AC10 (part): make strict AILANG=$A (rngVm strict VM == interpreter)",
         "make test AILANG=$A"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-02T09:00:00Z",
+      "completed": "2026-10-02T11:30:00Z",
+      "notes": "Executed on branch sprint/m2.4-prng with runtime/bin/ailang v0.51.0 (b99dd25), relativity 0.4.0. P4 re-probe: ^ & << >> give 5/2/48/0 for n=6 on interpreter and --strict-bytecode (ailang#1450 fixed in the pin); Int 64-bit two's complement, + * wrap mod 2^64 identically; >> is arithmetic (-96>>2=-24), so the logical shift is emulated shr(x,k)=(x>>k)&((1<<(64-k))-1); hex literals > 2^63-1 do not parse (ailang#1481), constants written as signed decimals. Algorithm chosen: SplitMix64, rng 'splitmix64-1'. sim/rng.ail (pure): stream key mix64(mix64(seed)^id), value n = mix64(key+(n+1)*gamma); fixed ids journey 1 .. news 6; Rng record moved from core; draw(seed,rng,stream). Diag draw intent -> draw event {stream,n,value=top 53 bits}; rng change-set (full state + when changed); diag_only outside diag; unknown stream bad_intent (IDraw carries typed Stream); committed refuses. AC11 PASS: tools/rng_ref.py --check (make rng-ref, in make test): SplitMix64 published vectors seed 0 and 1234567; chi-square 1e5 draws/stream top+low byte all p>0.02; first 1000 values x 6 streams x seeds 0,7,2^53-1 from strict VM and interpreter identical to the reference (36,000 values). sim test: checkRngVectors, checkStreamsIndependent, checkStreamNames, checkShr, checkSplitMixKnown, checkDrawIntent, checkDrawOnWire (83/83). AC10 PASS: rngVm in make strict, digest over 10,000 draws/stream for seeds 7 and 2^53-1, strict VM == interpreter == rng_ref.py (seed 7: -9169153163131597079); integers only. Mutations 12/13 killed (wrong mulA, wrong gamma, arithmetic shift, counters shared read/advance, counter not advanced, stream id ignored, seed ignored, signed high bits, n off by one, core counter not persisted, draw outside diag); survivor (committed branch drops rng: a.rng) is equivalent. LOC added ~486 (code ~120, tests+tools ~340; cap 650). Upstream: ailang#1481 (hex literal / logical shift), DX message on compile-cache ARTIFACT_TOO_LARGE for protocol_test. m2-report.md not yet created; P4 choice recorded here and in the plan."
     },
     {
       "id": "M2.5_REPLAY_10K",

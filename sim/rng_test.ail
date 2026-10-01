@@ -1,0 +1,109 @@
+module stapledons/sim/rng_test
+
+-- PRNG tests (design m2-journey-core §M2.4, AC10 rng part, AC11). Every
+-- expected value comes from tools/rng_ref.py (Python, exact mod-2^64
+-- integers); values are two's-complement Int as AILANG prints them.
+import ./rng (Rng, Stream, SJourney, SCrew, SEvents, SGalaxy, SAi, SNews, Drew, rngId, mix64, shr, splitmix64, streamKey, value, top53,
+  allStreams, streamId, streamName, streamOf, zeroRng, counter, draw)
+import std/option (Option, Some, None)
+import std/string (join, intToStr)
+
+pure func allTrue(xs: [bool]) -> bool = match xs { [] => true, x :: r => x && allTrue(r) }
+pure func map(g: a -> b, xs: [a]) -> [b] = match xs { [] => [], x :: r => g(x) :: map(g, r) }
+
+-- Logical shift on negative and extreme inputs (AILANG's >> is arithmetic).
+pure func checkShr() -> bool =
+  shr(0 - 1, 30) == 17179869183 && shr(0 - 1, 1) == 9223372036854775807 && shr(0 - 1, 63) == 1 &&
+  shr(0 - 96, 2) == 4611686018427387880 && shr(96, 2) == 24 && shr(0 - 9223372036854775807 - 1, 63) == 1
+
+-- SplitMix64 published outputs: seed 0 (design V4: 0xe220a8397b1dcdaf, ...)
+-- and seed 1234567.
+pure func checkSplitMixKnown() -> bool =
+  splitmix64(0, 0) == 0 - 2152535657050944081 && splitmix64(0, 1) == 7960286522194355700 && splitmix64(0, 2) == 487617019471545679 &&
+  splitmix64(1234567, 0) == 6457827717110365317 && splitmix64(1234567, 1) == 3203168211198807973 &&
+  splitmix64(1234567, 2) == 0 - 8629252141511181193 && splitmix64(1234567, 3) == 4593380528125082431 &&
+  splitmix64(1234567, 4) == 0 - 2037821214251327795 &&
+  mix64(0) == 0 && mix64(1) == 6238072747940578789
+
+-- Per-stream vectors at seed 7 (n = 0, 1, 999) and seed 2^53 - 1 (n = 0).
+pure func vec7(s: Stream) -> [int] =
+  match s {
+    SJourney => [7259636615321709098, 0 - 60945343406277635, 0 - 2038180328405224648, 4653607922432718600],
+    SCrew => [0 - 9185870860377920328, 0 - 2832273947770395059, 56697583378443953, 0 - 6185454846573037969],
+    SEvents => [5123015643707495125, 0 - 336857797210153727, 2167414628842565525, 7146428711074837217],
+    SGalaxy => [4043249286010790286, 0 - 3092845858571392388, 8528551789247494902, 0 - 387272249270838458],
+    SAi => [0 - 1599203126230962348, 0 - 6870427661519021915, 0 - 8927976462790350682, 2718511823219721551],
+    SNews => [0 - 7779555678638755990, 3181740520761318489, 4668980234801160802, 0 - 6766928345189011178]
+  }
+pure func vecOk(s: Stream) -> bool =
+  match vec7(s) {
+    [a, b, c, d] => value(7, s, 0) == a && value(7, s, 1) == b && value(7, s, 999) == c && value(9007199254740991, s, 0) == d,
+    _ => false
+  }
+-- `draw` advances the stream's counter: two draws give values 0 and 1, and
+-- the reported integer is the top 53 bits (non-negative past 2^31).
+pure func checkDrawSequence() -> bool {
+  let d0 = draw(7, zeroRng(), SNews);
+  let d1 = draw(7, d0.rng, SNews);
+  d0.n == 0 && d0.value == 0 - 7779555678638755990 && d1.n == 1 && d1.value == 3181740520761318489 &&
+  counter(d1.rng, SNews) == 2 && top53(d0.value) == 5208588083530661 && top53(d1.value) == 1553584238652987 &&
+  top53(value(7, SJourney, 1)) == 8977440786280895
+}
+pure func checkRngVectors() -> bool = checkShr() && checkSplitMixKnown() && allTrue(map(vecOk, allStreams())) && checkDrawSequence() && streamKey(7, SNews) == 0 - 1538995878591638239
+
+-- Streams are independent: drawing one leaves every other counter and next
+-- value untouched; stream ids and seeds both change the values.
+pure func drawN(seed: int, r: Rng, s: Stream, n: int) -> Rng = if n <= 0 then r else drawN(seed, draw(seed, r, s).rng, s, n - 1)
+pure func others(r: Rng, s: Stream) -> bool = allTrue(map(\t. streamId(t) == streamId(s) || counter(r, t) == 0, allStreams()))
+pure func nextIsFirst(r: Rng, s: Stream) -> bool = allTrue(map(\t. streamId(t) == streamId(s) || draw(7, r, t).value == value(7, t, 0), allStreams()))
+pure func oneStream(s: Stream) -> bool {
+  let r = drawN(7, zeroRng(), s, 5);
+  counter(r, s) == 5 && others(r, s) && nextIsFirst(r, s) && draw(7, r, s).value == value(7, s, 5)
+}
+pure func distinctFrom(x: int, xs: [int]) -> bool = match xs { [] => true, y :: r => x != y && distinctFrom(x, r) }
+pure func allDistinct(xs: [int]) -> bool = match xs { [] => true, x :: r => distinctFrom(x, r) && allDistinct(r) }
+pure func checkStreamsIndependent() -> bool =
+  allTrue(map(oneStream, allStreams())) &&
+  allDistinct(map(\s. value(7, s, 0), allStreams())) && allDistinct(map(\s. streamKey(7, s), allStreams())) &&
+  allTrue(map(\s. value(7, s, 0) != value(8, s, 0) && value(0, s, 0) != value(1, s, 0), allStreams()))
+
+-- Fixed ids 1..6 (adding a stream never renumbers one) and the wire names.
+pure func checkStreamNames() -> bool =
+  map(streamId, allStreams()) == [1, 2, 3, 4, 5, 6] &&
+  join(",", map(streamName, allStreams())) == "journey,crew,events,galaxy,ai,news" &&
+  allTrue(map(\s. match streamOf(streamName(s)) { Some(t) => streamId(t) == streamId(s), None => false }, allStreams())) &&
+  streamOf("bogus") == None && streamOf("News") == None && rngId() == "splitmix64-1" &&
+  allTrue(map(\s. counter(zeroRng(), s) == 0, allStreams()))
+
+-- Digest of `count` draws of every stream, streams in id order:
+-- h = mix64(h ^ v) (tools/rng_ref.py --digest). Integers only.
+-- In blocks of 100 so the interpreter's recursion depth stays ~200 (it has
+-- no tail calls; its default ceiling is 10,000 frames).
+pure func foldRun(seed: int, s: Stream, n: int, end: int, h: int) -> int =
+  if n >= end then h else foldRun(seed, s, n + 1, end, mix64(h ^ value(seed, s, n)))
+pure func foldStream(seed: int, s: Stream, n: int, count: int, h: int) -> int =
+  if n >= count then h else {
+    let end = if n + 100 < count then n + 100 else count;
+    foldStream(seed, s, end, count, foldRun(seed, s, n, end, h))
+  }
+pure func foldAll(seed: int, ss: [Stream], count: int, h: int) -> int =
+  match ss { [] => h, s :: r => foldAll(seed, r, count, foldStream(seed, s, 0, count, h)) }
+export pure func digest(seed: int, count: int) -> int = foldAll(seed, allStreams(), count, 0)
+
+-- `make strict`: all checks, then the digest of 10,000 draws per stream at
+-- the given seed (compared with the interpreter and tools/rng_ref.py).
+export pure func rngVm(seed: int) -> string =
+  if checkRngVectors() && checkStreamsIndependent() && checkStreamNames()
+  then join(" ", ["rng-ok", intToStr(digest(seed, 10000))]) else "rng-BAD"
+
+-- tools/rng_ref.py --check: the first 1,000 values of each stream, one per line.
+pure func dumpStream(seed: int, s: Stream, n: int, acc: [string]) -> [string] =
+  if n < 0 then acc else dumpStream(seed, s, n - 1, intToStr(value(seed, s, n)) :: acc)
+pure func dumpAll(seed: int, ss: [Stream]) -> [string] = match ss { [] => [], s :: r => dumpStream(seed, s, 999, []) ++ dumpAll(seed, r) }
+export pure func rngDump(seed: int) -> string = join("\n", dumpAll(seed, allStreams()))
+
+test "M2.4 logical shift right emulated exactly" { checkShr() }
+test "M2.4 SplitMix64 published vectors (seed 0, 1234567)" { checkSplitMixKnown() }
+test "AC11 checkRngVectors: per-stream reference vectors bit for bit" { checkRngVectors() }
+test "AC11 checkStreamsIndependent" { checkStreamsIndependent() }
+test "M2.4 stream ids fixed, names round trip" { checkStreamNames() }

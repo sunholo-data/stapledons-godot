@@ -11,6 +11,7 @@ import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn)
 import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag)
 import ./tripphase (tripPhaseIndex)
+import ./rng (Rng, Stream, zeroRng, draw, streamName, top53)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
 export type ShipPhase = AtRest | Boosting | Cruising | Braking deriving (Eq)
@@ -77,16 +78,18 @@ export type Intent =
   IPlan(PlanReq)
   | ICommit(int) | ICancel | IThrust(float) | IHeading(Vec3)
   | IRecord({source: string, req: string, kind: string, sha256: string, body: string})
-  | IDraw(string) | IEcho(PlanReq)
+  | IDraw(Stream) | IEcho(PlanReq)
 export type Refusal = { i: int, reason: string }
 -- A `phase` event carries the crossing (from/to are phaseName strings, tau
 -- the ship's proper time at the boundary); an `arrived` event carries the
 -- residuals of the stepped flight against the closed form, taken before the
--- snap (design §M2.3).
+-- snap (design §M2.3). A `draw` event (diag, M2.4) carries the stream's
+-- wire name, the counter drawn at and the value's top 53 bits.
 export type Crossing = { from: string, to: string, tau: float }
 export type Residuals = { x: float, t: float, phi: float }
-export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals] }
-export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None }
+export type Drawn = { stream: string, n: int, value: int }
+export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn] }
+export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None }
 
 export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
@@ -96,8 +99,7 @@ export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boost
 -- §8): availableKg is carried unchanged; nothing is deducted or enforced.
 export type Ledger = { mEffKg: float, availableKg: float, boostJ: float, dragJ: float }
 export pure func availableKgStart() -> float = 20000.0
--- Named PRNG stream counters; the algorithm lands in M2.4.
-export type Rng = { journey: int, crew: int, events: int, galaxy: int, ai: int, news: int }
+-- rng: one counter per named PRNG stream (sim/rng.ail, M2.4).
 -- lastPlanId: the id of the most recent accepted plan (0 before any); plan
 -- ids increase monotonically from 1 and are never reused.
 export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool }
@@ -122,7 +124,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: { journey: 0, crew: 0, events: 0, galaxy: 0, ai: 0, news: 0 }, diag: diag }
+    rng: zeroRng(), diag: diag }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -153,7 +155,7 @@ pure func ledgerAfter(l: Ledger, p: Params, before: Motion, after: Motion, thrus
   else if absf(after.phi) < restTolerance() then l
   else {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), absf(after.phi), p.bubbleRadiusM) * dtau * julianYearS()}
 
-type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, refused: [Refusal], events: [Event], i: int }
+type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, seed: int, rng: Rng, refused: [Refusal], events: [Event], i: int }
 pure func refuseIntent(a: Pending, why: string) -> Pending = {a | refused: {i: a.i, reason: why} :: a.refused}
 pure func noteEvent(a: Pending, k: string) -> Pending = {a | events: event(k) :: a.events}
 
@@ -240,8 +242,14 @@ pure func applyFree(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
     },
     IEcho(q) => if diag then {a | events: {event("echo") | echo: Some(q)} :: a.events} else refuseIntent(a, "diag_only"),
     IRecord(_) => refuseIntent(a, "unsupported"),
-    IDraw(_) => refuseIntent(a, "unsupported")
+    IDraw(st) => if diag then drawIntent(a, st) else refuseIntent(a, "diag_only")
   }
+-- Draw (diag, M2.4): the stream's next value; its counter advances and
+-- the value is reported in a `draw` event.
+pure func drawIntent(a: Pending, st: Stream) -> Pending {
+  let d = draw(a.seed, a.rng, st);
+  {a | rng: d.rng, events: {event("draw") | drew: Some({ stream: streamName(st), n: d.n, value: top53(d.value) })} :: a.events}
+}
 pure func applyIntent(diag: bool, p: Params, a: Pending, it: Intent) -> Pending {
   let r = match a.journey {
     Committed(_) => refuseWhileCommitted(a, it),
@@ -323,17 +331,17 @@ export pure func tick(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
-  let a = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, refused: [], events: [], i: 0}, input.intents);
+  let a = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, seed: w.seed, rng: w.rng, refused: [], events: [], i: 0}, input.intents);
   match a.journey {
     Committed(c) => {
       let f = fly(w.params, {ship: a.ship, c: c, ledger: w.ledger, events: a.events, arrived: false}, input.dtau);
-      { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger},
+      { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger, rng: a.rng},
         refused: reversed(a.refused, []), events: reversed(f.events, []) }
     },
     _ => {
       let moved = step(a.ship, a.thrust, input.dtau);
       let next = {moved | phase: derivePhase(moved.motion.phi, a.thrust)};
-      { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau)},
+      { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau), rng: a.rng},
         refused: reversed(a.refused, []), events: reversed(a.events, []) }
     }
   }

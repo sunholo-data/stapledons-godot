@@ -174,7 +174,7 @@ M2.1a protocol ── M2.1b bridge v2 ─┐
 | 6 | 6 | M2.6a galaxy map + plan panel + `--map-capture` | 430 | M2.3a, M2.1b | **⏸ R1 review checkpoint for Mark** |
 | 7 | 7 | M2.3b autopilot, phase splitting, residuals, ledger at arrival | 250 | M2.3a | — |
 | 8 | 8 | M2.6b commit ritual, 1.5 s hold, post-commit refusal, transit readout | 210 | M2.6a, M2.3b | **◆ R2** notify: M4 first review build unblocked |
-| 9 | 9 | M2.4 PRNG named streams (LCG fallback) + `draw` | 260 | M2.2 | — |
+| 9 | 9 | M2.4 PRNG named streams (SplitMix64; P4 re-probe passed on v0.51.0) + `draw` | 260 | M2.2 | — |
 | 10 | 10 | M2.5 replay harness, goldens, 10k-tick parity | 280 | M2.3b, M2.4, M2.1b | **P5** golden review → landing |
 | | +2–3 | contingency (evaluator FAIL / upstream park) | | | |
 | | | **Total** | **3,420** | | |
@@ -861,6 +861,46 @@ track that M4.0/M4.3a can bind to M2's names (`m4-first-journey.md`
 
 **Goal:** counter-based, strict-VM-clean randomness with independent named
 streams, reproducible from Python.
+
+**Status (executed 2026-10-02, branch `sprint/m2.4-prng`; independent evaluation pending):**
+- [x] P4 re-probe on `runtime/bin/ailang` v0.51.0 (b99dd25): `^ & << >>`
+  give 5/2/48/0 for n=6 on the interpreter *and* `--strict-bytecode`
+  (ailang#1450 fixed in the pin). Int is 64-bit two's complement; `+ *`
+  wrap mod 2^64 and `n << 62`, `n << 64` (= 0) agree on both runtimes;
+  `>>` is **arithmetic** (−96 >> 2 = −24), so the logical shift is
+  emulated: `shr(x, k) = (x >> k) & ((1 << (64 − k)) − 1)`. Division
+  truncates. **Algorithm: SplitMix64, `rng: "splitmix64-1"`.**
+- [x] `sim/rng.ail` (pure): stream s of seed `seed` is SplitMix64 seeded
+  with `mix64(mix64(seed) ^ id(s))`; value n = `mix64(key + (n+1)·γ)`.
+  Fixed ids journey 1 … news 6; `Rng` fixed record (moved from core);
+  `draw(seed, rng, stream)` returns the value and the advanced record.
+- [x] Diag `draw {stream}`: `draw` event `{stream, n, value}` (value = top 53
+  bits, exact JSON integer), `rng` change-set (counters; in every full
+  state, else only when changed); outside diag `diag_only`; unknown stream
+  `bad_intent`; committed refuses `committed` (counters unchanged)
+- [x] `tools/rng_ref.py --check` (`make rng-ref`, in `make test`): SplitMix64
+  published vectors (seed 0 → 0xe220a8397b1dcdaf…, seed 1234567), chi-square
+  on 10⁵ draws per stream (top and low byte, 255 dof, all p > 0.02), and the
+  first 1,000 values of all 6 streams for seeds 0, 7, 2⁵³−1 from the strict
+  VM *and* the interpreter, bit for bit (36,000 values)
+- [x] `rngVm` in `make strict`: vectors + independence, then a digest
+  (h = mix64(h ^ v)) over 10,000 draws per stream for seeds 7 and 2⁵³−1;
+  strict VM = interpreter = `rng_ref.py --digest` (seed 7:
+  −9169153163131597079). Integers only: no float enters any value or digest
+- [x] Mutations 12/13 killed: wrong constant (mulA, γ), arithmetic shift,
+  counters shared (read, advance), counter not advanced, stream id
+  ignored, seed ignored, signed high bits, n off by one, counter not
+  persisted in core, draw outside diag. Survivor `rng: a.rng` dropped in
+  the committed branch is equivalent (draws are refused while committed)
+- [x] AC10 (rngVm) · AC11 · `make test`
+- Deviations: `IDraw` carries a typed `Stream` (unknown names are
+  malformed at decode, not refused); `Event` gains `drew`; `StateMsg` gains
+  `rng`; hello `rng` is `splitmix64-1` (tests/test_sim_bridge.gd updated);
+  the 10k digest folds in blocks of 100 (the interpreter has no tail calls,
+  default depth 10,000). `m2-report.md` does not exist yet; the P4 choice is
+  recorded here and in the sprint JSON for it. New upstream: ailang#1481
+  (hex literals > 2⁶³−1, no logical shift), DX message on the compile-cache
+  `ARTIFACT_TOO_LARGE` for `protocol_test`
 **Estimated:** 110 code + 150 tests = **260** · **Cap:** 650 · **Iteration:** 9 ·
 **Depends on:** M2.2 · **Registry:** none
 
