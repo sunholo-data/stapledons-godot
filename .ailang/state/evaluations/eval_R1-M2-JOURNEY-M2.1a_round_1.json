@@ -1,0 +1,50 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "milestone": "M2.1a_PROTOCOL_CODECS",
+  "evaluation_round": 1,
+  "evaluator_model": "claude-sonnet-5-5",
+  "generator": "executor (PR #23, branch sprint/m2.1a-protocol)",
+  "evaluated_commit": "9d9639a",
+  "toolchain": "AILANG v0.50.0 (6abe1a5) via runtime/bin/ailang",
+  "score": 92,
+  "pass": true,
+  "threshold": 70,
+  "hard_fail": false,
+  "rubric": {
+    "tests_pass": {"points": 20, "max": 20, "notes": "make test AILANG=$A rc=0: bridge 0 failures, parity 601 identical, parity-offaxis 17 identical, parity-v2 14 identical, strict VM==interp (core, off-axis, protocolVm 13 lines protocol-ok), wd-vm, sky-vm, tools 15/15. cd sim && ailang test --package . = 44/44."},
+    "lint_clean": {"points": 10, "max": 10, "notes": "No lint target in repo."},
+    "acceptance_criteria": {"points": 28, "max": 30, "notes": "Task 0 V5, AC8, AC10(part), make-test-green all re-run and green. AC18 protocol part clean on protocol.ail; the full AC18 grep also hits a pre-existing comment at sim/core.ail:48 ('2 sinh(g T)/g'), outside this diff, not in M2.1a's scope. Deduction 2: plan mutation 'state line before hello' cannot be killed at ship level because the v1.1 startup line is still printed (justified deviation); and the params-range test pins most but not all bounds (see findings)."},
+    "code_quality": {"points": 13, "max": 15, "notes": "protocol.ail is pure, 265 lines, no effects, I/O only in ship.ail routing. Sprint JSON milestone passes/completed/notes present. Deduction 2: boost_g upper bound untested; inRange is a long if-chain with a silent 'else false' for unknown names (acceptable, tested via {warp:1})."},
+    "documentation": {"points": 12, "max": 15, "notes": "Sprint plan status checklist and sprint JSON notes thorough, upstream findings recorded. No CHANGELOG entry (landing-time per CLAUDE.md, M2.1b); -3."},
+    "design_fidelity": {"points": 9, "max": 10, "notes": "Matches design M2.1: v:2 envelope, hello proto 2.0 with rng none-0, rejection model, diag adapter, unsupported refusals. Startup-line deviation means design Problem 1 is only fixed for v2 sessions until M2.1b."}
+  },
+  "automated_checks": {
+    "make_test": "pass",
+    "make_strict": "pass: strict protocolVm: protocol-ok, 13 lines, digest 81156110b1e55bb8",
+    "parity_v2": "pass: identical (14 lines)",
+    "ac18_grep": "protocol.ail clean; core.ail:48 comment match is pre-existing"
+  },
+  "mutations": {
+    "method": "16 evaluator mutations of sim/protocol.ail, each run through cd sim && ailang test --package .",
+    "killed": ["-0.0 normalised (4 fail)", "tick check < (1)", "dtau upper bound dropped (1)", "dtau lower bound dropped (2)", "refusals out of order (1)", "no_game code (1)", "natF integer bound widened beyond 2^53 (1)", "heading norm tolerance 1e-3 (1)", "thrust bound 2.0 (2)", "new_game before hello (1)", "flip_g dropped from encode (1)", "decodeState drops events (1)", "diag gate on thrust removed (1)", "change-sets always emitted (2)", "small-float exponent threshold (1)"],
+    "survived": ["boost_g upper bound (v <= 1e9) replaced with true: no test"]
+  },
+  "deviations": {
+    "1_startup_line_kept": "Justified. v1.1 bridge waits for it; removing breaks make test until M2.1b. v2 gets nothing before hello (verified in parity-v2 output: first v2 reply is no_hello). Cost: plan mutation 'state line before hello' not testable at ship level.",
+    "2_new_reason_codes": "Justified. design list lacks new_game schema/params/ordering codes. Should be added to the design doc reason-code table at M2.1b/landing.",
+    "3_ship_x": "Justified (AC13 compares x); round-trip and change-set tested.",
+    "4_parity_v2_target": "Justified, additive, in make test; process-level v2 session VM==interp, covers ship.ail routing which protocolVm does not.",
+    "5_status_checklist": "Justified; no checkboxes existed.",
+    "6_param_ranges": "Acceptable as executor choice but unratified: design gives no ranges. Recommend recording the table in the design doc or a ledger row; boost_g/ism/epoch/bubble bounds mostly unpinned by tests."
+  },
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      "sim/protocol.ail inRange (boost_g upper bound, others): add boundary tests; mutation 'v <= 1e9 -> true' survives (sim/protocol_test.ail:169-171 covers only glow_eps, cruise_min_beta, m_eff_kg, cap_one_minus_beta, unknown name, non-object).",
+      "sim/core.ail:48 comment matches the design AC18 grep; reword when AC18 is run in full (M2.x), otherwise the AC fails on a comment.",
+      "design doc reason-code table needs bad_game, bad_params, no_hello, no_game and the param range table.",
+      "Reply to an input in a v2 session with no hello reports tick 0 (tickOf of no game); harmless but note for bridge."
+    ]
+  },
+  "verdict": "PASS 92/100. Do not merge on the evaluator's authority; merge is the controller's decision."
+}

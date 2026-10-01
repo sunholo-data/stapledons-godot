@@ -341,6 +341,18 @@ M2.1b.
 **Estimated:** 230 code + 250 tests = **480** · **Cap:** 650 · **Iteration:** 2 ·
 **Depends on:** — · **Registry:** depend std/json
 
+**Status (executed 2026-10-01, branch `sprint/m2.1a-protocol`; independent evaluation pending):**
+- [x] Task 0: V5 re-run on v0.50.0 passes on the strict VM and the interpreter.
+  std/json drops the sign of −0.0 and prints 1e308 as integer digits that
+  decode saturates at 2^63−1, so `protocol.num` writes `-0.0` and exponent
+  form (reported upstream via the controller)
+- [x] Tasks 1–2: fixtures and tests first (red), then green
+- [x] Task 3: codecs, `v: 2` envelope, `hello` with `rng: "none-0"`
+- [x] Task 4: diag adapter onto `core.step`/`turn`; plan/commit/cancel/record/draw refused `unsupported`
+- [x] AC8 · [x] AC10 (part, `protocolVm`) · [x] `make test` green with v1.1 unchanged (+ `parity-v2`)
+- Deviation: the unsolicited v1.1 startup line stays until M2.1b deletes v1.1
+  (the v1.1 bridge waits for it); a v2 session gets nothing before its `hello`
+
 **Files:**
 - create `sim/protocol.ail` (pure):
   - types `Input`, `Intent` (`plan`, `commit`, `cancel`, `thrust`,

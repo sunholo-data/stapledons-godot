@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-M2-JOURNEY",
-  "status": "planned",
+  "status": "in_progress",
   "created": "2026-10-01T18:40:46Z",
   "design_doc": "design_docs/planned/r1/m2-journey-core.md",
   "sprint_plan": "design_docs/planned/r1/m2-journey-core-sprint.md",
@@ -179,10 +179,10 @@
         "AC10 (part): make strict AILANG=$A (protocolVm strict VM == interpreter)",
         "make test AILANG=$A green with the v1.1 bridge, parity and parity-offaxis unchanged"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-01T18:55:00Z",
+      "completed": "2026-10-01T19:15:00Z",
+      "notes": "Task 0 V5 re-run on v0.50.0 (runtime/bin/ailang 6abe1a5): encode 0.1+0.2 -> {\"x\":0.30000000000000004} on --strict-bytecode VM and interpreter (identical); 0.1, 1-2^-52, 5e-324, phiCap and 2^53-1 round-trip through std/json on both. Edge floats: std/json v0.50.0 prints -0.0 as \"0\" and whole floats as integer digits (1e308 -> 309-digit integer) and decode saturates integer literals >= 2^63 at 9223372036854775807, so -0.0 and 1e308 do NOT round-trip through std/json (same on VM and interpreter, no divergence). Codec choice kept (std/json shortest digits); protocol.num repairs both: '-0.0' and exponent form for integer text > 17 digits or < 1e-6 (JS-style). Reported to controller for upstream. AC8 PASS: cd sim && $A test --package . -> 44/44 (20 protocol_test: 8 v1.1 kept unchanged + 12 v2: float text, input/state/hello round trips incl. 0.1, 1-2^-52, 5e-324, 1e308, -0.0, phiCap, 2^53-1, every intent kind; reason codes bad_json/bad_v/bad_cmd/bad_tick/bad_step/bad_intent/bad_heading/bad_game/bad_params; handshake no_hello/no_game; malformed keeps tick; refused (diag_only/moving/unsupported) proceeds; diag adapter == core.turn/step bit-exact; change-sets; v1.1 routing until v2 hello). AC10 part PASS: make strict -> strict protocolVm: protocol-ok, 13 lines, strict VM = interpreter. make test green (v1.1 bridge 0 failures, parity 601 lines, parity-offaxis 17 lines unchanged) + new parity-v2 (14-line v2 session through ship.ail, VM == interpreter). Mutations killed (9/9 via protocolVm): -0.0 normalised, tick < instead of ==, refused stalls tick, new_game before hello, big floats as integer digits, tiny floats as long decimals, dtau upper bound dropped, params range unchecked, refusals unordered. Deviations: unsolicited v1.1 startup line kept until M2.1b (v1.1 bridge waits for it before hello); v2 replies nothing before hello and refuses new_game/input with no_hello. Added codes bad_game/bad_params/no_hello/no_game (new_game schema/params not covered by the design's list). Ship view carries x (for M2.1b AC13 equivalence); ISM/CMB readouts, journey/ledger/rng sections deferred to M2.2+. AILANG bug found: `ailang test` conflates same-named private functions across modules (protocol.reject vs ship.reject -> 'record has no field: motion'); `ailang run` on VM and interpreter is correct; worked around by renaming to malformed; minimal repro in PR. std/string.repeat is not wired on the strict VM (replaced by recursion). ~305 counted code LOC (protocol.ail 265, ship.ail +25, Makefile +14, toml +1) + 214 test LOC = ~519 (cap 650)."
     },
     {
       "id": "M2.1b_BRIDGE_V2",
