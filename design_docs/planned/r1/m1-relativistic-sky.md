@@ -221,7 +221,7 @@ stars”; committed scope).**
   (`stars_bright.bin`), always loaded on top of whichever tier is active.
   - Hipparcos gives B−V, not BP−RP, so T_eff and V need a B−V relation. The
     rule is package first: `teffFromBV` goes into `sunholo/relativity`, using
-    the B−V column of the same Mamajek table (0.3.0).
+    the B−V column of the same Mamajek table (0.4.0).
   - Distances beyond ~500 pc have large parallax errors. The direction is
     exact, and only the parallax (1/r²) rescale during travel is affected.
     The flux at Sol is V itself, not 1/r².
@@ -243,6 +243,24 @@ before it can be made strange.
 - **Brightness:** the splat energy is proportional to E_v (lux) ×
   `pointFluxRatio(T, D)`. The PSF sigma stays at 0.9 px, a stand-in for the
   eye's or camera's point-spread.
+- **White-dwarf consumer contract (M1.2b-WD, package `sunholo/relativity`
+  0.3.0 `blackbody_photometry`).** For a row with `wd = 1` and G and BP−RP
+  both present: `teff = bbTeffFromBpRp(bprp)` (never computed in
+  `catalogue.ail`), `v = bbVFromG(g, bprp)`, `flags = 1 (WD) | 4 (APPROX_TEFF)
+  | (if bbBpRpInvertible(bprp) then 0 else 16)`. Bit 16 is `TEFF_CLAMPED`; it
+  is also set on dwarf rows where `bpRpInTable` is false. `checkWDRow`: 0.30
+  gives teff 8941.61808557, v = G + 0.064716662329, flags = 5; 2.5 gives teff
+  3000.0, flags = 21. NaN BP−RP clamps to 3000 K and is not invertible. The
+  Python fallback must reproduce these through the package's generated table,
+  never a second physics copy.
+- **Obligation O-1 (white-dwarf temperature range).** Raise `LUT_T_MAX` to at
+  least 4.5 × 10⁶ K (proposed 10⁷ K, `LUT_SIZE` 1024 → 1320), extend the
+  finite-LUT test, and add a 60 kK / D = 44.7 golden case. The 0.999c
+  reference renders (AC9) must not be accepted before O-1 lands. M1.2d's
+  bright tier must re-run the C3 saturation analysis when it lands (row C4).
+- **UI acceptance (D-4 "and UI").** The first per-star temperature UI labels
+  rows with flag bit 4 as "approximate (white dwarf, blackbody)". No UI
+  exists yet.
 - **Unchanged from M0:** the aberration and Doppler maths. The shader stays a
   mirror of the package's `optics`, and the golden tests enforce that.
 
@@ -461,7 +479,7 @@ velocity. The camera orientation is client state and never goes to the sim.
 |---|---|---|---|
 | M1.1 | Package `photometry` 0.2.0 | 250 + 250 | — |
 | M1.2 | Catalogue pipeline v2 plus AILANG transform, parity and benchmark; `process_stars.sh` removed and `starmap-manager` scripts and skill fixed (+80) | 430 + 150 | M1.1 |
-| M1.2d | ACCEPTED (D-5, 2026-09-28): HIP2 bright tier, GCNS cross-match, `teffFromBV` in the package (0.3.0), AC11 audit | 150 + 100 | M1.2 |
+| M1.2d | ACCEPTED (D-5, 2026-09-28): HIP2 bright tier, GCNS cross-match, `teffFromBV` in the package (0.4.0), AC11 audit | 150 + 100 | M1.2 |
 | M1.3 | Star rendering v2 (binary loader, 331k instances, rebasing) | 250 + 150 | M1.2 |
 | M1.4 | Background: data spike, spectral model, sky shader | 400 + 200 | M1.1; **user decision after M1.4a** |
 | M1.5 | Photometric exposure and bench mode | 150 + 100 | M1.3, M1.4 |
@@ -499,7 +517,7 @@ Suggested order: M1.1 → (M1.2 ∥ M1.6) → [M1.2d] → M1.3 → M1.4 → M1.5
    (Mark Edmondson, attended: “Yes I accept those stars”).** Original
    question text kept for the record: accept the proposed M1.2d, a
    Hipparcos (HIP2, `I/311`) tier for stars with V < 7 that aren't in GCNS or
-   CNS5, together with AC11 and `teffFromBV` in `sunholo/relativity` 0.3.0
+   CNS5, together with AC11 and `teffFromBV` in `sunholo/relativity` 0.4.0
    (about +250 LOC)? Without it, stars like Rigel and Deneb exist only as
    panorama pixels (Option A) or not at all (Option B). **Recommendation:
    accept.** And if you pick Option B in question 1, treat M1.2d as required.

@@ -492,7 +492,7 @@ planner; executor remains separate from evaluator.
 | `checkF32LECarry` | Fractional mantissa rounds to 2^23: reset to zero and carry exponent (corrected old 2^24 premise). Require signed-zero, subnormal and half-ULP oracle cases too. |
 | `checkMediumSelection` | Five-row input with missing photometry interleaved; take two nearest complete rows, excluded=2. File-order or selection-before-sort fails. |
 | `checkMissingPhotEncoding` | Missing G or BP-RP -> Teff 0.0, V +99, flag bit 2. Silent package clamp/default fails. |
-| `checkWDRow` | WD with BP-RP 0.30 -> package-approved approximate Teff in [4000,60000], flags bits 1 and 4. Main-sequence transform or flag loss fails. |
+| `checkWDRow` | Consumer contract (m1-relativistic-sky.md, M1.2b-WD): WD row, BP-RP 0.30 -> teff 8941.61808557, v = G + 0.064716662329, flags = 5; BP-RP 2.5 -> teff 3000.0, flags = 21. Main-sequence transform, flag loss or a second physics copy fails. |
 
 **Evaluator follow-up for later bounded production tasks (F1–F3/F5):** pin WD+missing overlap independent counts, partial blanks, blank ID, y/z and wrong field count, exact row membership/order and multiple independently derived numerical diagnostics. The first 5k rows contain no WD+missing overlap, so real-data parity cannot pin it. Medium interpreter parity is estimated >60s; design a bounded integration measurement rather than silently raising the preflight timeout. These are pending obligations, not completed tests.
 
@@ -586,7 +586,7 @@ quick+medium in git (D-3).
 ### M1.2d: Bright-star tier (ACCEPTED, D-5: "Yes I accept those stars", 2026-09-28)
 **Goal:** the naked-eye sky beyond 100 pc (Rigel, Deneb, Betelgeuse) as real
 catalogue stars: HIP2 V < 7, parallax > 0, not already in GCNS or CNS5.
-**Estimated:** ~300 LOC, split in two halves — 0.3.0 package work (~120)
+**Estimated:** ~300 LOC, split in two halves — 0.4.0 package work (~120)
 then the tier (~180) — because each half stays under the ~250 cap and the
 package publish gate is a natural seam. **Session:** 3, after M1.2c ·
 **Depends on:** M1.2c (and M1.1's published 0.2.0)
@@ -607,7 +607,7 @@ D-3 ruling named only quick+medium for git; this plan commits
 `stars_bright.bin` too (tiny, and M1.5's AC11 and CI need a stable input) —
 flag at the next attended sync if disputed.
 
-**M1.2d first half: `sunholo/relativity` 0.3.0 `teffFromBV` (package-first
+**M1.2d first half: `sunholo/relativity` 0.4.0 `teffFromBV` (package-first
 rule).**
 - **Package repo note (planner-measured):** `packages/relativity` exists on
   `origin/main` of sunholo-data/ailang-packages (files listed via the GitHub
@@ -623,10 +623,10 @@ rule).**
   plus known-star dwarfs: Sun, α Cen B, Barnard, Proxima within 5%. Note the
   limit in a comment: the dwarf B−V relation is approximate for the giants in
   this tier (design doc accepts this for M1).
-- Gate (CLAUDE.md rule 3): tests, `CHANGELOG ## 0.3.0`, `[release] kind =
+- Gate (CLAUDE.md rule 3): tests, `CHANGELOG ## 0.4.0`, `[release] kind =
   "feature"`, `ailang pkg quality` with no gates, then publish (attended,
   standing permission per M1.1's gate note). Pin in the sim: bump
-  `sim/ailang.toml` to `"0.3.0"` and relock with the pinned binary
+  `sim/ailang.toml` to `"0.4.0"` and relock with the pinned binary
   (`make deps AILANG=$PWD/runtime/bin/ailang`).
 
 **M1.2d second half: bright extract, cross-match, tier binary.**
@@ -678,7 +678,7 @@ package-repo: `tools/mamajek_to_ail.py`, `photometry_table.ail`,
 | `checkBrightRow` (AILANG): teff = teffFromBV(bv), v unchanged, flags bit 8; BV-null row → MISSING_PHOT sentinels | `vFromG` applied to bright rows (double colour correction); sentinel swap |
 
 **Acceptance criteria (one command each):**
-- `ailang pkg info sunholo/relativity` shows v0.3.0; `grep '"0.3.0"'
+- `ailang pkg info sunholo/relativity` shows v0.4.0; `grep '"0.4.0"'
   sim/ailang.toml sim/ailang.lock` matches; `make test AILANG=$PWD/runtime/
   bin/ailang AILANG_BIN=$PWD/runtime/bin/ailang` green.
 - `python3 tools/extract_bright.py` exits 0; bright.csv row count in
@@ -698,7 +698,7 @@ package-repo: `tools/mamajek_to_ail.py`, `photometry_table.ail`,
 M1.5).
 **Risks:** the B−V dwarf relation misfits bright giants (accepted for M1 by
 the design); HIP2/hip_main join key drift (caught by the Vega row); the
-0.3.0 publish is outward-facing — attended, standing permission.
+0.4.0 publish is outward-facing — attended, standing permission.
 
 ### M1.3: Star rendering v2
 **Goal:** 331k stars at 60 fps, with physical brightness.

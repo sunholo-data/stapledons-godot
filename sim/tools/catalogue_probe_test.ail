@@ -2,6 +2,7 @@ module stapledons/sim/tools/catalogue_probe_test
 
 import ./catalogue_probe (probe, render)
 import pkg/sunholo/relativity/photometry (teffFromBpRp, vFromG)
+import pkg/sunholo/relativity/blackbody_photometry (bbTeffFromBpRp, bbTeffFromBpRpExact, bbVFromG, bbBpRpInvertible)
 import std/result (Ok, Err)
 import std/string (contains, replace)
 
@@ -29,3 +30,19 @@ pure func checkAnchor() -> bool {
 pure func checkDiagnostic() -> bool = contains(render(fixture()), ",3229.0499999999997,17.1398\n4991488434519904512,")
 test "published solar package anchor" { checkAnchor() }
 test "real normal row expected photometry" { checkDiagnostic() }
+
+-- WD path (sunholo/relativity 0.3.0), fixture WD row 4991488434519904512: G 20.654, BP-RP 1.0401.
+pure func relNear(a: float, b: float, tol: float) -> bool = a - b < tol * b && b - a < tol * b
+pure func checkWDPackage() -> bool {
+  relNear(bbTeffFromBpRp(1.0401), 5202.556030832587, 0.000000001) &&
+  bbVFromG(20.654, 1.0401) > 20.899202193 && bbVFromG(20.654, 1.0401) < 20.899202196 &&
+  bbBpRpInvertible(1.0401)
+}
+test "WD row through the published blackbody package" { checkWDPackage() }
+
+-- Run on the strict VM by `make wd-vm` (the interpreter evaluates NaN >= x true, ailang#1419, so
+-- `ailang test` cannot see a NaN-guard mutant). Contract: NaN clamps to the 3000 K end node, and is not invertible.
+pure func wdNaN() -> float = 0.0 / 0.0
+export pure func wdVmNaN(n: int) -> string =
+  if bbTeffFromBpRp(wdNaN()) == 3000.0 && bbTeffFromBpRpExact(wdNaN()) == 3000.0 && !bbBpRpInvertible(wdNaN())
+  then "wd-nan-ok" else "wd-nan-BAD"
