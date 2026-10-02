@@ -11,3 +11,9 @@ __pycache__/
 *.pyc
 sim/tools/.ailang/
 sky_bundle/
+# Generated catalogue tiers (make catalogue). All ignored until reviewed: M1.2c force-adds the
+# quick and medium tiers deliberately (git add -f, D-3); large is never committed.
+data/starmap/stars_*.bin
+data/starmap/stars_*.json
+data/starmap/stars_*.tmp
+data/starmap/stars_*.bak

@@ -1,0 +1,187 @@
+module stapledons/sim/tools/catalogue_main
+-- M1.2b-T3 tier writer: compact CSV -> stars_<tier>.bin (24-byte little-endian F32 records:
+-- x,y,z ly galactic, teff K, V mag, flags) + stars_<tier>.json sidecar. Everything is decided by
+-- the pure `plan`; the shell only reads inputs and, on Ok, writes temp files and renames them.
+--   ailang run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json \
+--     '{"tier":"quick","csv":"data/raw/cns5.csv","raw":"data/raw/cns5.dat","lock":"sim/ailang.lock","out":"data/starmap","ailang":"v0.51.0"}' \
+--     sim/tools/catalogue_main.ail
+--   ... --entry scan --args-json '"data/raw/gcns.csv"' ...   (real-row F32 bound scan)
+import ./catalogue (Row, transform, selectTier)
+import ./catalogue_bytes (encodeRow, encodeRows)
+import std/result (Result, Ok, Err)
+import std/option (Some, None)
+import std/string (concat, join, length, chars, endsWith, substring, intToStr)
+import std/list (foldl, filter, map)
+import std/crypto (sha256Hex, sha256Bytes)
+import std/bytes (fromBase64, toBase64)
+import std/json (Json, encode, decode, jo, kv, js, jint, ja, get, asString, asArray)
+import std/fs (readFileResult, readFileBytes, writeFileBytes, writeFileResult, renameFileResult, removeFileResult, mkdirAllResult, fileExists)
+import std/io (println, eprintln, exit)
+
+export type Pkg = {name: string, version: string, hash: string}
+export type Plan = {bin: bytes, sidecar: string, count: int, excluded: int}
+
+pure func source(tier: string) -> string =
+  if tier == "quick" then "CNS5, VizieR J/A+A/670/A19 cns5.dat (all rows with a parallax)"
+  else if tier == "medium" then "GCNS, VizieR J/A+A/649/A6 table1c.dat.gz (50,000 nearest with complete photometry)"
+  else "GCNS, VizieR J/A+A/649/A6 table1c.dat.gz (all rows)"
+pure func hexDigit(c: string) -> bool = c == "0" || c == "1" || c == "2" || c == "3" || c == "4" || c == "5" ||
+  c == "6" || c == "7" || c == "8" || c == "9" || c == "a" || c == "b" || c == "c" || c == "d" || c == "e" || c == "f"
+pure func sha256Text(s: string) -> bool = length(s) == 64 && foldl(\ok c. ok && hexDigit(c),true,chars(s))
+pure func sidecar(tier: string, count: int, excluded: int, rawSha: string, csvSha: string, binSha: string, ailang: string, p: Pkg) -> string =
+  concat([encode(jo([
+    kv("tier",js(tier)), kv("count",jint(count)), kv("count_excluded",jint(excluded)), kv("source",js(source(tier))),
+    kv("format_version",jint(1)), kv("record_bytes",jint(24)),
+    kv("fields",ja(map(js,["x","y","z","teff","v","flags"]))), kv("ailang",js(ailang)),
+    kv("package",jo([kv("name",js(p.name)), kv("version",js(p.version)), kv("content_hash",js(p.hash))])),
+    kv("producer",js("stapledons/sim/tools/catalogue_main")),
+    kv("sha256",jo([kv("raw",js(rawSha)), kv("csv",js(csvSha)), kv("bin",js(binSha))]))])), "\n"])
+pure func count[a](xs: [a]) -> int = foldl(\n x. n+1,0,xs)
+-- Any refusal (header, field, tier name, coordinate range, F32 bound, raw digest) is an Err: nothing to write.
+export pure func plan(i: {tier: string, csv: string, rawSha: string, ailang: string, pkg: Pkg}) -> Result[Plan,string] =
+  if !sha256Text(i.rawSha) then Err("raw sha256 must be 64 lowercase hex digits") else
+  match transform(i.csv) {
+    Err(e) => Err(e),
+    Ok(s) => match selectTier(s.rows,i.tier) {
+      Err(e) => Err(e),
+      Ok(sel) => match encodeRows(sel.rows) {
+        Err(e) => Err(e),
+        Ok(b) => Ok({bin: b, count: count(sel.rows), excluded: sel.excluded,
+          sidecar: sidecar(i.tier,count(sel.rows),sel.excluded,i.rawSha,sha256Hex(i.csv),sha256Bytes(b),i.ailang,i.pkg)})
+      }
+    }
+  }
+pure func text(j: Json, k: string) -> string = match get(j,k) { Some(v) => match asString(v) { Some(s) => s, None => "" }, None => "" }
+pure func named(name: string, j: Json) -> bool = text(j,"name") == name
+export pure func lockPackage(lock: string, name: string) -> Result[Pkg,string] = match decode(lock) {
+  Err(e) => Err(concat(["ailang.lock is not JSON: ",e])),
+  Ok(j) => match get(j,"packages") {
+    None => Err("ailang.lock has no packages"),
+    Some(ps) => match asArray(ps) {
+      None => Err("ailang.lock packages is not an array"),
+      Some(xs) => match filter(\p. named(name,p),xs) {
+        [p] => Ok({name: name, version: text(p,"version"), hash: text(p,"content_hash")}),
+        _ => Err(concat(["ailang.lock does not pin exactly one ",name]))
+      }
+    }
+  }
+}
+-- Ids of rows outside the conservative F32 bound (catalogue_bytes.encodeRow), parked for review.
+export pure func f32Refusals(rows: [Row]) -> [string] =
+  map(\r. r.id,filter(\r. match encodeRow(r) { Err(_) => true, Ok(_) => false },rows))
+export pure func outputName(dir: string, tier: string, ext: string) -> string =
+  concat([if endsWith(dir,"/") then substring(dir,0,length(dir)-1) else dir, "/stars_", tier, ".", ext])
+
+func fail(msg: string) -> () ! {IO} { eprintln(concat(["catalogue: refused, nothing written: ",msg])); exit(1) }
+func rawDigest(path: string) -> Result[string,string] ! {FS} = match readFileBytes(path) {
+  Err(e) => Err(concat(["cannot read raw ",path,": ",e])),
+  Ok(b64) => match fromBase64(b64) { Some(b) => Ok(sha256Bytes(b)), None => Err("raw bytes did not decode") }
+}
+func writeFail(msg: string) -> () ! {IO} { eprintln(concat(["catalogue: write failed: ",msg])); exit(1) }
+-- writeFileBytes has no Result form (v0.51.0): probe the path with writeFileResult first, so an
+-- unwritable path is an Err rather than a panic, then read the bytes back and compare.
+func writeBytesChecked(path: string, b: bytes) -> Result[(),string] ! {FS} = match writeFileResult(path,"") {
+  Err(e) => Err(e),
+  Ok(_) => {
+    writeFileBytes(path,b);
+    match readFileBytes(path) {
+      Err(e) => Err(e),
+      Ok(b64) => if b64 == toBase64(b) then Ok(()) else Err("bytes read back differ from bytes written")
+    }
+  }
+}
+func tidy(binTmp: string, jsonTmp: string) -> () ! {FS} {
+  if fileExists(binTmp) then { let _ = removeFileResult(binTmp); () } else ();
+  if fileExists(jsonTmp) then { let _ = removeFileResult(jsonTmp); () } else ()
+}
+-- Undo a half-commit after the new bin landed: put the set-aside bin back, or remove the new bin
+-- when there was none. Says exactly what state is left.
+func rollback(hadBin: bool, bin: string, binBak: string) -> string ! {FS} =
+  if hadBin then match renameFileResult(binBak,bin) {
+    Ok(_) => "previous bin restored, nothing changed",
+    Err(e) => concat(["ROLLBACK FAILED: the previous bin is at ",binBak," and ",bin," is the new one without its sidecar: ",e])
+  } else match removeFileResult(bin) {
+    Ok(_) => "new bin removed, nothing changed",
+    Err(e) => concat(["ROLLBACK FAILED: ",bin," is the new bin without its sidecar: ",e])
+  }
+-- All-or-nothing commit. Both temp files are written and checked beside the targets (same
+-- filesystem, so each rename is atomic). Then the old bin is set aside as .bak, the new bin and
+-- the new sidecar are renamed in, and the .bak is removed. If the sidecar rename fails after the
+-- bin landed, the .bak is renamed back (or the new bin removed), so the old pair is intact.
+-- Readers: two files cannot be swapped in one rename, so a reader racing a commit can see no bin
+-- or a new bin beside the old sidecar for an instant; the sidecar carries sha256.bin, so readers
+-- (M1.2c loader) check it and treat a mismatch as "retry", never as data.
+-- Ok carries the success suffix, with a warning when the commit succeeded but the .bak could not be removed.
+func commit(p: Plan, out: string, tier: string) -> Result[string,string] ! {FS} {
+  let bin = outputName(out,tier,"bin");
+  let json = outputName(out,tier,"json");
+  let binTmp = concat([bin,".tmp"]);
+  let jsonTmp = concat([json,".tmp"]);
+  let binBak = concat([bin,".bak"]);
+  match mkdirAllResult(out) {
+    Err(e) => Err(concat(["cannot create ",out,": ",e,"; nothing written"])),
+    Ok(_) => match writeBytesChecked(binTmp,p.bin) {
+      Err(e) => { tidy(binTmp,jsonTmp); Err(concat(["cannot write ",binTmp,": ",e,"; temp files removed, nothing changed"])) },
+      Ok(_) => match writeFileResult(jsonTmp,p.sidecar) {
+        Err(e) => { tidy(binTmp,jsonTmp); Err(concat(["cannot write ",jsonTmp,": ",e,"; temp files removed, nothing changed"])) },
+        Ok(_) => {
+          let hadBin = fileExists(bin);
+          match (if hadBin then renameFileResult(bin,binBak) else Ok(())) {
+            Err(e) => { tidy(binTmp,jsonTmp); Err(concat(["cannot set aside ",bin,": ",e,"; temp files removed, nothing changed"])) },
+            Ok(_) => match renameFileResult(binTmp,bin) {
+              Err(e) => {
+                tidy(binTmp,jsonTmp);
+                let left = if hadBin then (match renameFileResult(binBak,bin) {
+                  Ok(_) => "previous bin restored, nothing changed",
+                  Err(e2) => concat(["ROLLBACK FAILED: the previous bin is at ",binBak,": ",e2])
+                }) else "nothing changed";
+                Err(concat(["cannot install ",bin,": ",e,"; temp files removed, ",left]))
+              },
+              Ok(_) => match renameFileResult(jsonTmp,json) {
+                Err(e) => { tidy(binTmp,jsonTmp); Err(concat(["cannot install ",json,": ",e,"; temp files removed, ",rollback(hadBin,bin,binBak)])) },
+                Ok(_) => if hadBin then (match removeFileResult(binBak) {
+                  Ok(_) => Ok(" + sidecar"),
+                  Err(e) => Ok(concat([" + sidecar; warning: committed, but could not remove ",binBak,": ",e]))
+                }) else Ok(" + sidecar")
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+-- inline record: the --args-json decoder rejects a named record type (v0.47.2)
+export func main(a: {tier: string, csv: string, raw: string, lock: string, out: string, ailang: string}) -> () ! {FS, IO} =
+  match readFileResult(a.csv) {
+    Err(e) => fail(concat(["cannot read ",a.csv,": ",e])),
+    Ok(csv) => match rawDigest(a.raw) {
+      Err(e) => fail(e),
+      Ok(rawSha) => match readFileResult(a.lock) {
+        Err(e) => fail(concat(["cannot read ",a.lock,": ",e])),
+        Ok(lock) => match lockPackage(lock,"sunholo/relativity") {
+          Err(e) => fail(e),
+          Ok(pkg) => match plan({tier: a.tier, csv: csv, rawSha: rawSha, ailang: a.ailang, pkg: pkg}) {
+            Err(e) => fail(e),
+            Ok(p) => match commit(p,a.out,a.tier) {
+              Err(e) => writeFail(e),
+              Ok(warn) => println(concat(["catalogue ",a.tier,": ",intToStr(p.count)," rows, ",intToStr(p.excluded),
+                " excluded -> ",outputName(a.out,a.tier,"bin")," (",intToStr(p.count*24)," B)",warn]))
+            }
+          }
+        }
+      }
+    }
+  }
+-- Real-row F32 bound scan: every transformed row of a catalogue must encode; refusals are listed.
+export func scan(path: string) -> () ! {FS, IO} = match readFileResult(path) {
+  Err(e) => fail(e),
+  Ok(csv) => match transform(csv) {
+    Err(e) => fail(concat([path,": ",e])),
+    Ok(s) => {
+      let bad = f32Refusals(s.rows);
+      println(concat(["f32-scan ",path,": ",intToStr(count(s.rows))," rows, ",intToStr(count(bad))," refusals"]));
+      if count(bad) == 0 then () else { println(concat(["  park for review: ",join(" ",bad)])); exit(1) }
+    }
+  }
+}

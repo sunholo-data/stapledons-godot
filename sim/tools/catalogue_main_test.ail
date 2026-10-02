@@ -1,0 +1,97 @@
+module stapledons/sim/tools/catalogue_main_test
+import ./catalogue (Row)
+import ./catalogue_main (Pkg, plan, lockPackage, f32Refusals, outputName)
+import std/result (Ok, Err)
+import std/option (Some, None)
+import std/string (concat)
+import std/list (map, length)
+import std/bytes (length as byteLength)
+import std/crypto (sha256Bytes, sha256Hex)
+import std/json (Json, decode, get, keys, asString, asNumber, asArray)
+
+pure func pkg() -> Pkg = {name: "sunholo/relativity", version: "0.4.0", hash: "sha256:f0dd"}
+pure func raw() -> string = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+pure func csv(rows: string) -> string = concat(["id,x,y,z,G,BPRP,wd\n", rows])
+pure func three() -> string = csv("a,1,2,3,0,0.823,0\nm,4,0,0,,,0\nw,0,5,0,20.6,1.04,1\n")
+pure func inputs(tier: string, body: string, rawSha: string) -> {tier: string, csv: string, rawSha: string, ailang: string, pkg: Pkg} =
+  {tier: tier, csv: body, rawSha: rawSha, ailang: "v0.51.0", pkg: pkg()}
+pure func ok(tier: string, body: string, rawSha: string) -> bool = match plan(inputs(tier,body,rawSha)) { Ok(_) => true, Err(_) => false }
+pure func field(j: Json, k: string) -> string = match get(j,k) { Some(v) => match asString(v) { Some(s) => s, None => "<not a string>" }, None => "<missing>" }
+-- jnum, not number: catalogue.ail has a private number (ailang#1461)
+pure func jnum(j: Json, k: string) -> float = match get(j,k) { Some(v) => match asNumber(v) { Some(n) => n, None => -1.0 }, None => -1.0 }
+pure func object(j: Json, k: string) -> Json = match get(j,k) { Some(v) => v, None => j }
+pure func strings(j: Json, k: string) -> [string] = match get(j,k) {
+  Some(v) => match asArray(v) { Some(xs) => map(\x. match asString(x) { Some(s) => s, None => "?" },xs), None => [] }, None => []
+}
+-- T3: exact sidecar key set and order, including all three digests (the bin digest over the bytes written).
+pure func checkSidecarFields() -> bool = match plan(inputs("quick",three(),raw())) {
+  Ok(p) => match decode(p.sidecar) {
+    Ok(j) => {
+      let sha = object(j,"sha256");
+      let pk = object(j,"package");
+      keys(j) == ["tier","count","count_excluded","source","format_version","record_bytes","fields","ailang","package","producer","sha256"] &&
+      keys(sha) == ["raw","csv","bin"] && keys(pk) == ["name","version","content_hash"] &&
+      field(sha,"bin") == sha256Bytes(p.bin) && field(sha,"csv") == sha256Hex(three()) && field(sha,"raw") == raw() &&
+      field(j,"tier") == "quick" && jnum(j,"count") == 3.0 && jnum(j,"count_excluded") == 0.0 &&
+      jnum(j,"format_version") == 1.0 && jnum(j,"record_bytes") == 24.0 && byteLength(p.bin) == 72 &&
+      p.count == 3 && p.excluded == 0 && strings(j,"fields") == ["x","y","z","teff","v","flags"] &&
+      field(j,"ailang") == "v0.51.0" && field(pk,"name") == "sunholo/relativity" && field(pk,"version") == "0.4.0" &&
+      field(pk,"content_hash") == "sha256:f0dd" && field(j,"producer") == "stapledons/sim/tools/catalogue_main" &&
+      field(j,"source") != "<missing>"
+    },
+    Err(_) => false
+  },
+  Err(_) => false
+}
+-- Medium: count and count_excluded come from the selection (the missing-photometry row is excluded).
+pure func checkSidecarMedium() -> bool = match plan(inputs("medium",three(),raw())) {
+  Ok(p) => match decode(p.sidecar) {
+    Ok(j) => jnum(j,"count") == 2.0 && jnum(j,"count_excluded") == 1.0 && field(j,"tier") == "medium" &&
+      byteLength(p.bin) == 48 && field(object(j,"sha256"),"bin") == sha256Bytes(p.bin) && field(j,"source") != field(okQuick(),"source"),
+    Err(_) => false
+  },
+  Err(_) => false
+}
+pure func okQuick() -> Json = match plan(inputs("quick",three(),raw())) {
+  Ok(p) => match decode(p.sidecar) { Ok(j) => j, Err(_) => decodeNull() }, Err(_) => decodeNull()
+}
+pure func decodeNull() -> Json = match decode("null") { Ok(j) => j, Err(_) => decodeNull() }
+-- T3: any refusal yields no plan at all, so the shell has nothing to write (the FS half is
+-- `make catalogue-main`: a pre-existing file survives and no temp or sidecar remains).
+pure func checkAtomicRefusal() -> bool =
+  ok("quick",three(),raw()) && ok("large",three(),raw()) &&
+  !ok("quick",csv("a,1,2,3,0,0.823,0\nb,bad,2,3,0,0.823,0\n"),raw()) &&
+  !ok("medium",csv("a,1,2,3,0,0.823,0\nb,1,2,3,0,0.823,7\n"),raw()) &&
+  !ok("Quick",three(),raw()) && !ok("",three(),raw()) &&
+  !ok("large",csv("a,1,2,3,0,0.823,0\nhuge,2e6,0,0,0,0.823,0\n"),raw()) &&
+  !ok("quick",three(),"") && !ok("quick",three(),"abc") && !ok("quick",three(),concat([raw(),"0"])) &&
+  !ok("quick",three(),"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") &&
+  !ok("quick","bad header\n",raw())
+pure func lock(body: string) -> string = concat(["{\"ailang_version\":\"v0.51.0\",\"packages\":[", body, "]}"])
+pure func checkLockPackage() -> bool {
+  let rel = "{\"content_hash\":\"sha256:f0dd\",\"name\":\"sunholo/relativity\",\"version\":\"0.4.0\"}";
+  let other = "{\"content_hash\":\"sha256:1111\",\"name\":\"sunholo/other\",\"version\":\"9.9.9\"}";
+  match lockPackage(lock(concat([other,",",rel])),"sunholo/relativity") {
+    Ok(p) => p.name == "sunholo/relativity" && p.version == "0.4.0" && p.hash == "sha256:f0dd" &&
+      (match lockPackage(lock(other),"sunholo/relativity") { Err(_) => true, Ok(_) => false }) &&
+      (match lockPackage("not json","sunholo/relativity") { Err(_) => true, Ok(_) => false }),
+    Err(_) => false
+  }
+}
+pure func row(id: string, x: float, teff: float) -> Row = {id: id, x: x, y: 0.0, z: 0.0, teff: teff, v: 5.0, flags: 0}
+-- The conservative F32 bound from T2, reported per row (the real-row scan parks these ids).
+pure func checkF32Refusals() -> bool =
+  f32Refusals([row("ok",1.0,5000.0),row("hot",1.0,3.5e38),row("far",-3.5e38,5000.0),row("edge",3.4028234663852886e38,0.0)]) == ["hot","far"] &&
+  f32Refusals([]) == [] && length(f32Refusals([row("ok",1.0,1.0)])) == 0
+pure func checkOutputName() -> bool =
+  outputName("data/starmap","quick","bin") == "data/starmap/stars_quick.bin" &&
+  outputName(".godot/tmp/x/","medium","json") == ".godot/tmp/x/stars_medium.json"
+test "T3 sidecar exact fields and digests" { checkSidecarFields() }
+test "T3 medium sidecar counts" { checkSidecarMedium() }
+test "T3 refusal leaves nothing to write" { checkAtomicRefusal() }
+test "T3 package from lockfile" { checkLockPackage() }
+test "T3 per-row F32 refusals" { checkF32Refusals() }
+test "T3 output names" { checkOutputName() }
+export pure func mainVm(n: int) -> string =
+  if checkSidecarFields() && checkSidecarMedium() && checkAtomicRefusal() && checkLockPackage() && checkF32Refusals() && checkOutputName()
+  then "main-ok" else "main-BAD"
