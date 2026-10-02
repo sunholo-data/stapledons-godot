@@ -18,7 +18,7 @@ import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, Refusal, Event, Crossing, Residuals, Params, defaultParams,
-  Drawn, PlanView, JourneyView, Energy, Ism, journeyView)
+  Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault)
 import ./rng (Rng, streamName, streamOf, rngId)
 
 export type Override = { name: string, value: float }
@@ -28,7 +28,10 @@ export type Input =
   | GInput({tick: int, dtau: float, intents: [Intent]})
   | GQuit
 export type Clock = { tau: float, t: float, year: float, age: float }
-export type ShipView = { phase: string, beta: float, oneMinusBeta: float, gamma: float, heading: Vec3, pos: Vec3, x: float }
+-- flown: x - x0, the distance along the current line of motion since its
+-- origin (since the commit while committed; 0 again once arrived, when the
+-- line is rebased at the target). The UI reads progress from it (M2.6b).
+export type ShipView = { phase: string, beta: float, oneMinusBeta: float, gamma: float, heading: Vec3, pos: Vec3, x: float, flown: float }
 -- Ledger readout (design §M2.1 change-sets): radiated = boost + drag.
 export type LedgerView = { mEffKg: float, availableKg: float, radiatedJ: float, boostJ: float, dragJ: float }
 -- rng: the stream counters (design §M2.1 change-sets, M2.4).
@@ -69,6 +72,10 @@ pure func paramPairs(p: Params) -> [Override] = [
   {name: "m_eff_kg", value: p.mEffKg}, {name: "ism_n_cm3", value: p.ismNCm3}, {name: "bubble_radius_m", value: p.bubbleRadiusM},
   {name: "glow_eps", value: p.glowEps}, {name: "glow_f_in", value: p.glowFIn}, {name: "cruise_min_beta", value: p.cruiseMinBeta},
   {name: "cap_one_minus_beta", value: p.capOneMinusBeta}]
+-- The params echo: the scenario params, then the cruise-rapidity bounds and
+-- default the planner uses (derived, read-only; the decoder ignores them).
+pure func paramsEcho(p: Params) -> string =
+  overrides(paramPairs(p) ++ [{name: "cruise_phi_min", value: cruisePhiMin(p)}, {name: "cruise_phi_max", value: cruisePhiMax(p)}, {name: "cruise_phi_default", value: cruisePhiDefault(p)}])
 pure func overrides(os: [Override]) -> string = obj(each(\o. f(o.name, num(o.value)), os))
 
 pure func targetObj(t: Target) -> string = obj([f("index", intToStr(t.index)), f("id", q(t.id)), f("pos", vec(t.pos))])
@@ -94,7 +101,7 @@ export pure func encodeInput(m: Input) -> string =
   }
 pure func encodeClock(c: Clock) -> string = obj([f("tau", num(c.tau)), f("t", num(c.t)), f("year", num(c.year)), f("age", num(c.age))])
 pure func encodeShip(s: ShipView) -> string =
-  obj([f("phase", q(s.phase)), f("beta", num(s.beta)), f("one_minus_beta", num(s.oneMinusBeta)), f("gamma", num(s.gamma)), f("heading", vec(s.heading)), f("pos", vec(s.pos)), f("x", num(s.x))])
+  obj([f("phase", q(s.phase)), f("beta", num(s.beta)), f("one_minus_beta", num(s.oneMinusBeta)), f("gamma", num(s.gamma)), f("heading", vec(s.heading)), f("pos", vec(s.pos)), f("x", num(s.x)), f("flown", num(s.flown))])
 pure func encodePlanView(v: PlanView) -> string =
   obj([f("target", targetObj(v.target)), f("distance", num(v.distance)), f("profile", q(v.profile)), f("fell_back", bool(v.fellBack)),
     f("cruise_phi", num(v.cruisePhi)), f("cruise_beta", num(v.cruiseBeta)), f("cruise_one_minus_beta", num(v.cruiseOneMinusBeta)), f("cruise_gamma", num(v.cruiseGamma)),
@@ -118,7 +125,7 @@ pure func encodeLedger(l: LedgerView) -> string =
   obj([f("m_eff_kg", num(l.mEffKg)), f("available_kg", num(l.availableKg)), f("radiated_j", num(l.radiatedJ)), f("boost_j", num(l.boostJ)), f("drag_j", num(l.dragJ))])
 export pure func encodeState(m: StateMsg) -> string =
   envelope("state", [f("tick", intToStr(m.tick)), f("status", q(m.status)),
-    f("changes", obj(opt("clock", encodeClock, m.clock) ++ opt("ship", encodeShip, m.ship) ++ opt("journey", encodeJourney, m.journey) ++ opt("ledger", encodeLedger, m.ledger) ++ opt("rng", encodeRng, m.rng) ++ opt("params", \p. overrides(paramPairs(p)), m.params))),
+    f("changes", obj(opt("clock", encodeClock, m.clock) ++ opt("ship", encodeShip, m.ship) ++ opt("journey", encodeJourney, m.journey) ++ opt("ledger", encodeLedger, m.ledger) ++ opt("rng", encodeRng, m.rng) ++ opt("params", paramsEcho, m.params))),
     f("events", arr(each(encodeEvent, m.events))),
     f("refused", arr(each(\r. obj([f("i", intToStr(r.i)), f("reason", q(r.reason))]), m.refused))),
     f("full", bool(m.full))])
@@ -213,8 +220,8 @@ pure func decodeClock(j: Json) -> Result[Clock, string] =
   bind(n(j, "tau"), \tau. bind(n(j, "t"), \t. bind(n(j, "year"), \y. bind(n(j, "age"), \a. Ok({tau: tau, t: t, year: y, age: a})))))
 pure func decodeShip(j: Json) -> Result[ShipView, string] =
   bind(req(getString(j, "phase"), bad()), \ph. bind(n(j, "beta"), \b. bind(n(j, "one_minus_beta"), \omb. bind(n(j, "gamma"), \g.
-  bind(req(vecF(j, "heading"), bad()), \h. bind(req(vecF(j, "pos"), bad()), \p. bind(n(j, "x"), \x.
-  Ok({phase: ph, beta: b, oneMinusBeta: omb, gamma: g, heading: h, pos: p, x: x}))))))))
+  bind(req(vecF(j, "heading"), bad()), \h. bind(req(vecF(j, "pos"), bad()), \p. bind(n(j, "x"), \x. bind(n(j, "flown"), \fl.
+  Ok({phase: ph, beta: b, oneMinusBeta: omb, gamma: g, heading: h, pos: p, x: x, flown: fl})))))))))
 pure func sub(j: Json, k: string, g: Json -> Result[a, string]) -> Result[a, string] = bind(req(get(j, k), bad()), g)
 pure func decodeEnergy(j: Json) -> Result[Energy, string] =
   bind(n(j, "boost_j"), \b. bind(n(j, "brake_j"), \k. bind(n(j, "drag_j"), \d. bind(n(j, "total_j"), \t. bind(n(j, "total_kg"), \kg.
@@ -286,7 +293,7 @@ export pure func newSession() -> Session = { hello: false, game: None }
 pure func clockOf(p: Params, s: Ship) -> Clock = { tau: s.motion.tau, t: s.motion.t, year: p.epoch + s.motion.t, age: p.startAge + s.motion.tau }
 pure func shipOf(s: Ship) -> ShipView {
   let phi = s.motion.phi;
-  { phase: phaseName(s.phase), beta: betaOf(phi), oneMinusBeta: oneMinusBeta(phi), gamma: gammaOf(phi), heading: s.heading, pos: position(s), x: s.motion.x }
+  { phase: phaseName(s.phase), beta: betaOf(phi), oneMinusBeta: oneMinusBeta(phi), gamma: gammaOf(phi), heading: s.heading, pos: position(s), x: s.motion.x, flown: s.motion.x - s.x0 }
 }
 pure func ledgerOf(l: Ledger) -> LedgerView = { mEffKg: l.mEffKg, availableKg: l.availableKg, radiatedJ: l.boostJ + l.dragJ, boostJ: l.boostJ, dragJ: l.dragJ }
 pure func tickOf(s: Session) -> int = match s.game { Some(w) => w.tick, None => 0 }

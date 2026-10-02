@@ -7,7 +7,7 @@ module stapledons/sim/protocol_test
 -- M2.3a journey and ledger sections, and the M2.4 draw intent and rng section.
 -- `protocolVm` runs the checks on the strict VM (`make strict`, AC10).
 import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, Params, Refusal, Event, Crossing, Residuals, Drawn, event, defaultParams,
-  Target, PlanView, JourneyView, Energy, Ism, World, newWorld, tick, journeyView)
+  Target, PlanView, JourneyView, Energy, Ism, World, newWorld, tick, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault)
 import ./protocol (Input, GHello, GNewGame, GInput, GQuit, StateMsg, Clock, ShipView, LedgerView, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, newSession, serve, num)
 import ./rng (Rng, Stream, SJourney, SNews, value, top53)
 import pkg/sunholo/relativity/medium (photonDriveEnergy)
@@ -54,7 +54,7 @@ pure func inputEq(a: Input, b: Input) -> bool =
 pure func paramsEq(a: Params, b: Params) -> bool =
   feq(a.epoch, b.epoch) && feq(a.startAge, b.startAge) && feq(a.boostG, b.boostG) && feq(a.mEffKg, b.mEffKg) && feq(a.ismNCm3, b.ismNCm3) && feq(a.bubbleRadiusM, b.bubbleRadiusM) && feq(a.glowEps, b.glowEps) && feq(a.glowFIn, b.glowFIn) && feq(a.cruiseMinBeta, b.cruiseMinBeta) && feq(a.capOneMinusBeta, b.capOneMinusBeta)
 pure func clockEq(a: Clock, b: Clock) -> bool = feq(a.tau, b.tau) && feq(a.t, b.t) && feq(a.year, b.year) && feq(a.age, b.age)
-pure func shipEq(a: ShipView, b: ShipView) -> bool = a.phase == b.phase && feq(a.beta, b.beta) && feq(a.oneMinusBeta, b.oneMinusBeta) && feq(a.gamma, b.gamma) && veq(a.heading, b.heading) && veq(a.pos, b.pos) && feq(a.x, b.x)
+pure func shipEq(a: ShipView, b: ShipView) -> bool = a.phase == b.phase && feq(a.beta, b.beta) && feq(a.oneMinusBeta, b.oneMinusBeta) && feq(a.gamma, b.gamma) && veq(a.heading, b.heading) && veq(a.pos, b.pos) && feq(a.x, b.x) && feq(a.flown, b.flown)
 pure func none(o: Option[a]) -> bool = match o { None => true, Some(_) => false }
 pure func someEq(f: (a, a) -> bool, x: Option[a], y: Option[a]) -> bool =
   match x { Some(p) => match y { Some(q) => f(p, q), None => false }, None => match y { None => true, Some(_) => false } }
@@ -115,7 +115,7 @@ pure func edgeView() -> PlanView = { target: {index: maxInt(), id: "Gl \"559\"",
   ism: {dragN: tiny(), holdW: 70791174749363.73, loadWM2: 2253353077.7286806, glowWM2: 0.000024071942179266308}, cmbForwardK: 3853.730994033574 }
 pure func stateFixtures() -> [StateMsg] = [
   { tick: 0, status: "ok", clock: Some({tau: 0.1, t: almostOne(), year: tiny(), age: negZero()}),
-    ship: Some({phase: "rest", beta: negZero(), oneMinusBeta: 1.0, gamma: 1.0e308, heading: {x: 0.0, y: 0.0, z: -1.0}, pos: {x: phiCap(), y: 0.1, z: tiny()}, x: 1.0e308}),
+    ship: Some({phase: "rest", beta: negZero(), oneMinusBeta: 1.0, gamma: 1.0e308, heading: {x: 0.0, y: 0.0, z: -1.0}, pos: {x: phiCap(), y: 0.1, z: tiny()}, x: 1.0e308, flown: negZero()}),
     journey: Some({state: "planned", planId: maxInt(), plan: Some(edgeView())}),
     ledger: Some({mEffKg: 0.5, availableKg: 20000.0, radiatedJ: 1.0e308, boostJ: tiny(), dragJ: negZero()}),
     rng: Some({journey: 0, crew: 1, events: 2, galaxy: 3, ai: maxInt(), news: 9007199254740991}),
@@ -412,11 +412,40 @@ pure func checkDrawOnWire() -> bool {
   code(intent("{\"k\":\"draw\",\"stream\":\"bogus\"}")) == "bad_intent" && code(intent("{\"k\":\"draw\",\"stream\":1}")) == "bad_intent" &&
   code(intent("{\"k\":\"draw\",\"stream\":\"ai\"}")) == "ok"
 }
+-- ------------------------------------------------- M2.6b UI inputs
+-- The params echo carries the planner's cruise-rapidity bounds and the D-14
+-- default bit for bit (phi09 = rapidityOfBeta 0.9, the cap, phi099), so the
+-- slider does no rapidity maths; they also follow a cruise_min_beta override.
+pure func echoes(reply: string, k: string, v: float) -> bool = contains(reply, join("", ["\"", k, "\":", num(v), ","])) || contains(reply, join("", ["\"", k, "\":", num(v), "}"]))
+pure func checkPhiBoundsEcho() -> bool {
+  let r = feed(newSession(), [hello(), playGame()]).reply;
+  let d = defaultParams();
+  let o = feed(newSession(), [hello(), newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":false,\"params\":{\"cruise_min_beta\":0.995}")]).reply;
+  let od = {d | cruiseMinBeta: 0.995};
+  cruisePhiMin(d) == 1.4722194895832204 && cruisePhiDefault(d) == 2.6466524123622457 && cruisePhiMax(d) == 7.254328619262047 &&
+  echoes(r, "cruise_phi_min", 1.4722194895832204) && echoes(r, "cruise_phi_max", 7.254328619262047) && echoes(r, "cruise_phi_default", 2.6466524123622457) &&
+  cruisePhiDefault(od) == cruisePhiMin(od) && cruisePhiMin(od) > 2.6466524123622457 && echoes(o, "cruise_phi_default", cruisePhiMin(od)) && echoes(o, "cruise_phi_min", cruisePhiMin(od))
+}
+-- ship.flown is x - x0: 0 at the commit, the distance flown since it
+-- mid-cruise (bit for bit core's), 0 again after arrival (the line is
+-- rebased at the target, so the UI must not read progress from ship.x there).
+pure func shipFlown(m: StateMsg) -> float = match m.ship { Some(v) => v.flown, None => 0.0 - 1.0 }
+pure func checkFlownOnWire() -> bool {
+  let g = feed(newSession(), [hello(), playGame(), tickLine(1, "0", acenPlan("2.6466524123622457")), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}")]);
+  let mid = feed(g.session, [tickLine(3, "0.3", "")]);
+  let end = feed(mid.session, [tickLine(4, "1", "")]);
+  let rq = {target: {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None};
+  let w = tick(tick(newWorld(7, false, defaultParams()), {dtau: 0.0, intents: [IPlan(rq)]}).world, {dtau: 0.0, intents: [ICommit(1)]}).world;
+  let wm = tick(w, {dtau: 0.3, intents: []}).world;
+  let fm = shipFlown(stateOf(mid.reply));
+  none(stateOf(mid.reply).journey) && feq(fm, wm.ship.motion.x - wm.ship.x0) && fm > 2.0 && fm < 4.37 &&
+  jstate(stateOf(end.reply)) == "arrived:1" && feq(shipFlown(stateOf(end.reply)), 0.0)
+}
 
 pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures()) ++ map(encodeState, stateFixtures()) ++ [encodeHello(helloMsg())]
 export pure func protocolVm(n: int) -> string =
   if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho() &&
-    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire() && checkArrivalOnWire() && checkDrawOnWire()
+    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire() && checkArrivalOnWire() && checkDrawOnWire() && checkPhiBoundsEcho() && checkFlownOnWire()
   then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
 
 test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }
@@ -440,3 +469,5 @@ test "M2.3a journey section: idle, planned panel, committed, frozen" { checkJour
 test "M2.3a alpha Cen 0.99c panel on the wire" { checkAlphaCenPanel() }
 test "M2.3a ledger section with m_eff 0.5" { checkLedgerOnWire() }
 test "M2.4 draw events, rng change-set, diag only, unknown stream malformed" { checkDrawOnWire() }
+test "M2.6b params echo carries the cruise-rapidity bounds and default" { checkPhiBoundsEcho() }
+test "M2.6b ship.flown: distance since the commit, 0 after arrival" { checkFlownOnWire() }
