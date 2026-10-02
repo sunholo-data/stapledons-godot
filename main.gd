@@ -78,7 +78,8 @@ func _ready() -> void:
 		await _run_capture(args["capture"])
 	elif args.has("bench"):
 		var secs: float = float(args["bench"]) if args["bench"].is_valid_float() else 30.0
-		get_tree().quit(await StarBench.new().run(self, secs))
+		# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
+		get_tree().quit(await load("res://tools/bench.gd").new().run(self, secs))
 
 
 ## Galaxy map (M2.6a) on a play session (not diag): `--map` interactive,

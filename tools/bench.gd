@@ -1,4 +1,3 @@
-class_name StarBench
 extends RefCounted
 ## make bench (M1.3, AC7 stars-only part): a scripted flight at 2560x1440 with
 ## vsync off. main.gd builds the scene (starfield tier, background) and calls
