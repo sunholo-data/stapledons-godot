@@ -287,7 +287,7 @@ in `refused[i].reason` with `status: "ok"`.
 | `no_game` | malformed | `input` before `new_game` (**added by M2.1a**). The bridge never sends this: `send()` before `new_game` returns false without writing (`test_no_input_before_new_game`) |
 | `moving` | refused | `heading` while the ship is not at rest; `commit` while the ship is not at rest (\|φ\| ≥ 1e-9) (**M2.3a**) |
 | `diag_only` | refused | `thrust`, `heading` or `echo` in a non-diag session; `plan` with `flip_g` (**M2.3a**) |
-| `committed` | refused | every intent kind while the journey is committed (**M2.3a**, AC7) |
+| `committed` | refused | every journey intent while the journey is committed (**M2.3a**, AC7; narrowed to every **journey** intent by D-20, 2026-10-02: the AI intents `ai_open`, `ai_cancel` and `record` are accepted while committed and never touch ship, journey or ledger) |
 | `out_of_range` | refused | `plan`: `cruise_phi` outside [rapidityOfBeta(cruise_min_beta), rapidityOfOneMinusBeta(cap)] (both ends accepted); a target at the ship's own position; diag `flip_g` not a positive finite number (**M2.3a**) |
 | `stale_plan` | refused | `commit` whose `plan_id` is not the current plan (none, replaced, cancelled) or whose plan was made from another position (**M2.3a**) |
 | `unsupported` | refused | `record` (reserved for 2.1; `draw` until M2.4, now diag only). Since M2.3a `cancel` with no plan is a no-op, not a refusal |
@@ -598,7 +598,7 @@ is the package clone's `packages/relativity`.
 | AC4 | Cruise speed bounds: φ outside [atanh 0.9, φcap] refused `out_of_range`; `flip_g`, `thrust`, `heading` outside diag refused `diag_only` | `cd sim && $A test --package .` (`checkCruiseRange`, `checkDiagOnly`) |
 | AC5 | Stepped voyage matches `motionAt` at every phase boundary (0.99c and cap) and arrival residuals < 1e-9·max(1, d) | `cd sim && $A test --package .` (`checkVoyageBoundaries`, `checkArrivalResidual`) |
 | AC6 | Ledger at arrival equals `tripEnergy` total to 1e-9 relative; `available_kg` unchanged by any journey | `cd sim && $A test --package .` (`checkLedgerAtArrival`, `checkMassClosed`) |
-| AC7 | Commit is irreversible: every intent kind against a committed world is refused `committed` and leaves `journey` unchanged; no `Committed → Planned/Idle` transition exists | `cd sim && $A test --package .` (`checkCommittedRefusesAll`) and `! grep -nE "Committed.*=> *(Idle\|Planned)" sim/core.ail` |
+| AC7 | Commit is irreversible: every journey intent against a committed world is refused `committed` and leaves `journey` unchanged (amended: narrowed from "every intent kind" to every **journey** intent by D-20, 2026-10-02; AI intents are accepted, `checkAiNeverTouchesJourney`); no `Committed → Planned/Idle` transition exists | `cd sim && $A test --package .` (`checkCommittedRefusesAll`) and `! grep -nE "Committed.*=> *(Idle\|Planned)" sim/core.ail` |
 | AC8 | Codecs round-trip every fixture, including the float edge cases; all reason codes are stable | `cd sim && $A test --package .` (`protocol_test.ail`) |
 | AC9 | Godot↔sim float64 round trip is bit-exact and the bridge refuses a major ≠ 2 | `godot --headless --path . --script tests/test_sim_bridge.gd` |
 | AC10 | Pure core, protocol and PRNG run fully on the strict VM and equal the interpreter (`journeyVm`, `rngVm`, `protocolVm`, existing `scripted*`) | `make strict AILANG=$A` |

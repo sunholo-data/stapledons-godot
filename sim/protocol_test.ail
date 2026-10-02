@@ -4,12 +4,16 @@ module stapledons/sim/protocol_test
 -- v2 counterpart here since M2.1b removed v1.1), scenario-parameter bounds,
 -- rejection model, handshake, the diag echo hook (AC8, AC9 sim side) and the
 -- M2.2 world over the wire (params, m_eff_too_small, clock, phase) and the
--- M2.3a journey and ledger sections, and the M2.4 draw intent and rng section.
+-- M2.3a journey and ledger sections, and the M2.4 draw intent and rng section,
+-- and the 2.1 AI codecs (AI.2: ai_open, ai_cancel, the AI events, the `ai`
+-- change-set section) with no wire change for a 2.0 session.
 -- `protocolVm` runs the checks on the strict VM (`make strict`, AC10).
-import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, PlanReq, Params, Refusal, Event, Crossing, Residuals, Drawn, event, defaultParams,
+import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, PlanReq, Params, Refusal, Event, Crossing, Residuals, Drawn, event, defaultParams,
   Target, PlanView, JourneyView, Energy, Ism, World, newWorld, tick, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault)
 import ./protocol (Input, GHello, GNewGame, GInput, GQuit, StateMsg, Clock, ShipView, LedgerView, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, newSession, serve, num)
 import ./rng (Rng, Stream, SJourney, SNews, value, top53)
+import ./ai (AiOpen, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField, AiView, OpenView, cancelReasons)
+import std/json (Json, JObject, JNumber, JString, JArray, JBool, JNull, kv)
 import pkg/sunholo/relativity/medium (photonDriveEnergy)
 import pkg/sunholo/relativity/optics (Vec3)
 import std/json (decode, getString, getNumber)
@@ -41,18 +45,42 @@ pure func intentEq(a: Intent, b: Intent) -> bool =
     IHeading(h) => match b { IHeading(g) => veq(h, g), _ => false },
     IRecord(r) => match b { IRecord(q) => r.source == q.source && r.req == q.req && r.kind == q.kind && r.sha256 == q.sha256 && r.body == q.body, _ => false },
     IDraw(s) => match b { IDraw(t) => s == t, _ => false },
-    IEcho(p) => match b { IEcho(q) => planEq(p, q), _ => false }
+    IEcho(p) => match b { IEcho(q) => planEq(p, q), _ => false },
+    IAiOpen(o) => match b { IAiOpen(q) => aiOpenEq(o, q), _ => false },
+    IAiCancel(c) => match b { IAiCancel(d) => c.req == d.req && c.reason == d.reason, _ => false }
   }
+pure func strsEq(a: [string], b: [string]) -> bool = allEq(\x y. x == y, a, b)
+pure func ctxEq(a: CtxField, b: CtxField) -> bool =
+  a.name == b.name && (match a.value { CStr(x) => (match b.value { CStr(y) => x == y, _ => false }), CList(xs) => (match b.value { CList(ys) => strsEq(xs, ys), _ => false }) })
+pure func aiOpenEq(o: AiOpen, q: AiOpen) -> bool =
+  o.kind == q.kind && o.purpose == q.purpose && o.entityId == q.entityId && o.emotion == q.emotion && oeq(o.ageStage, q.ageStage) && o.lineReq == q.lineReq &&
+  someEq(strsEq, o.emotions, q.emotions) && allEq(ctxEq, o.context, q.context)
+pure func keyEq(a: CacheKey, b: CacheKey) -> bool = a.kind == b.kind && a.entityId == b.entityId && a.emotion == b.emotion && a.ageStage == b.ageStage && a.variant == b.variant
+pure func segEq(a: AiSeg, b: AiSeg) -> bool = a.emotion == b.emotion && a.text == b.text
+pure func aiRequestEq(a: AiRequest, b: AiRequest) -> bool =
+  a.req == b.req && a.kind == b.kind && a.purpose == b.purpose && a.lineReq == b.lineReq && keyEq(a.key, b.key) && a.seed == b.seed &&
+  a.constraints.maxChars == b.constraints.maxChars && a.constraints.noNumerals == b.constraints.noNumerals && strsEq(a.constraints.emotions, b.constraints.emotions) &&
+  allEq(ctxEq, a.context, b.context) && a.expiresTick == b.expiresTick
+pure func aiEventEq(a: AiEvent, b: AiEvent) -> bool =
+  match a {
+    ERequest(x) => (match b { ERequest(y) => aiRequestEq(x, y), _ => false }),
+    EAcceptedText(x) => (match b { EAcceptedText(y) => x.req == y.req && x.kind == y.kind && x.sha256 == y.sha256 && x.text == y.text && allEq(segEq, x.segments, y.segments), _ => false }),
+    EAcceptedMedia(x) => (match b { EAcceptedMedia(y) => x.req == y.req && x.kind == y.kind && x.sha256 == y.sha256 && x.descriptor == y.descriptor, _ => false }),
+    EFallback(x) => (match b { EFallback(y) => x.req == y.req && x.reason == y.reason, _ => false })
+  }
+pure func openViewEq(a: OpenView, b: OpenView) -> bool = a.req == b.req && a.kind == b.kind && a.expiresTick == b.expiresTick
+pure func aiViewEq(a: AiView, b: AiView) -> bool = a.lastReq == b.lastReq && allEq(openViewEq, a.open, b.open) && a.core == b.core
 pure func overrideEq(a: {name: string, value: float}, b: {name: string, value: float}) -> bool = a.name == b.name && feq(a.value, b.value)
 pure func inputEq(a: Input, b: Input) -> bool =
   match a {
     GHello(h) => match b { GHello(g) => h.major == g.major && h.minor == g.minor, _ => false },
-    GNewGame(n) => match b { GNewGame(m) => n.seed == m.seed && n.scenario == m.scenario && n.diag == m.diag && allEq(overrideEq, n.params, m.params), _ => false },
+    GNewGame(n) => match b { GNewGame(m) => n.seed == m.seed && n.scenario == m.scenario && n.diag == m.diag && allEq(overrideEq, n.params, m.params) && n.aiCore == m.aiCore, _ => false },
     GInput(i) => match b { GInput(j) => i.tick == j.tick && feq(i.dtau, j.dtau) && allEq(intentEq, i.intents, j.intents), _ => false },
     GQuit => match b { GQuit => true, _ => false }
   }
 pure func paramsEq(a: Params, b: Params) -> bool =
-  feq(a.epoch, b.epoch) && feq(a.startAge, b.startAge) && feq(a.boostG, b.boostG) && feq(a.mEffKg, b.mEffKg) && feq(a.ismNCm3, b.ismNCm3) && feq(a.bubbleRadiusM, b.bubbleRadiusM) && feq(a.glowEps, b.glowEps) && feq(a.glowFIn, b.glowFIn) && feq(a.cruiseMinBeta, b.cruiseMinBeta) && feq(a.capOneMinusBeta, b.capOneMinusBeta)
+  feq(a.epoch, b.epoch) && feq(a.startAge, b.startAge) && feq(a.boostG, b.boostG) && feq(a.mEffKg, b.mEffKg) && feq(a.ismNCm3, b.ismNCm3) && feq(a.bubbleRadiusM, b.bubbleRadiusM) && feq(a.glowEps, b.glowEps) && feq(a.glowFIn, b.glowFIn) && feq(a.cruiseMinBeta, b.cruiseMinBeta) && feq(a.capOneMinusBeta, b.capOneMinusBeta) &&
+  a.aiMaxOpen == b.aiMaxOpen && a.aiTtlTicks == b.aiTtlTicks
 pure func clockEq(a: Clock, b: Clock) -> bool = feq(a.tau, b.tau) && feq(a.t, b.t) && feq(a.year, b.year) && feq(a.age, b.age)
 pure func shipEq(a: ShipView, b: ShipView) -> bool = a.phase == b.phase && feq(a.beta, b.beta) && feq(a.oneMinusBeta, b.oneMinusBeta) && feq(a.gamma, b.gamma) && veq(a.heading, b.heading) && veq(a.pos, b.pos) && feq(a.x, b.x) && feq(a.flown, b.flown)
 pure func none(o: Option[a]) -> bool = match o { None => true, Some(_) => false }
@@ -62,7 +90,7 @@ pure func refusalEq(a: Refusal, b: Refusal) -> bool = a.i == b.i && a.reason == 
 pure func crossingEq(a: Crossing, b: Crossing) -> bool = a.from == b.from && a.to == b.to && feq(a.tau, b.tau)
 pure func residualsEq(a: Residuals, b: Residuals) -> bool = feq(a.x, b.x) && feq(a.t, b.t) && feq(a.phi, b.phi)
 pure func drawnEq(a: Drawn, b: Drawn) -> bool = a.stream == b.stream && a.n == b.n && a.value == b.value
-pure func eventEq(a: Event, b: Event) -> bool = a.kind == b.kind && someEq(planEq, a.echo, b.echo) && someEq(crossingEq, a.phase, b.phase) && someEq(residualsEq, a.arrived, b.arrived) && someEq(drawnEq, a.drew, b.drew)
+pure func eventEq(a: Event, b: Event) -> bool = a.kind == b.kind && someEq(planEq, a.echo, b.echo) && someEq(crossingEq, a.phase, b.phase) && someEq(residualsEq, a.arrived, b.arrived) && someEq(drawnEq, a.drew, b.drew) && someEq(aiEventEq, a.ai, b.ai)
 pure func rngEq(a: Rng, b: Rng) -> bool = a.journey == b.journey && a.crew == b.crew && a.events == b.events && a.galaxy == b.galaxy && a.ai == b.ai && a.news == b.news
 pure func targetEq(a: Target, b: Target) -> bool = a.index == b.index && a.id == b.id && veq(a.pos, b.pos)
 pure func planViewEq(a: PlanView, b: PlanView) -> bool =
@@ -77,7 +105,7 @@ pure func ledgerEq(a: LedgerView, b: LedgerView) -> bool =
   feq(a.mEffKg, b.mEffKg) && feq(a.availableKg, b.availableKg) && feq(a.radiatedJ, b.radiatedJ) && feq(a.boostJ, b.boostJ) && feq(a.dragJ, b.dragJ)
 pure func stateEq(a: StateMsg, b: StateMsg) -> bool =
   a.tick == b.tick && a.status == b.status && someEq(clockEq, a.clock, b.clock) && someEq(shipEq, a.ship, b.ship) &&
-  someEq(journeyEq, a.journey, b.journey) && someEq(ledgerEq, a.ledger, b.ledger) && someEq(rngEq, a.rng, b.rng) && someEq(paramsEq, a.params, b.params) &&
+  someEq(journeyEq, a.journey, b.journey) && someEq(ledgerEq, a.ledger, b.ledger) && someEq(rngEq, a.rng, b.rng) && someEq(paramsEq, a.params, b.params) && someEq(aiViewEq, a.ai, b.ai) &&
   allEq(eventEq, a.events, b.events) && allEq(refusalEq, a.refused, b.refused) && a.full == b.full
 
 -- ------------------------------------------------------------ fixtures
@@ -100,8 +128,8 @@ pure func allIntents() -> [Intent] = [
 ]
 pure func inputFixtures() -> [Input] = [
   GHello({major: 2, minor: 0}),
-  GNewGame({seed: maxInt(), scenario: "sol", diag: true, params: [{name: "glow_eps", value: tiny()}, {name: "epoch", value: negZero()}, {name: "glow_f_in", value: almostOne()}, {name: "start_age", value: 0.1}]}),
-  GNewGame({seed: 0, scenario: "sol", diag: false, params: []}),
+  GNewGame({seed: maxInt(), scenario: "sol", diag: true, params: [{name: "glow_eps", value: tiny()}, {name: "epoch", value: negZero()}, {name: "glow_f_in", value: almostOne()}, {name: "start_age", value: 0.1}], aiCore: None}),
+  GNewGame({seed: 0, scenario: "sol", diag: false, params: [], aiCore: None}),
   GInput({tick: maxInt(), dtau: 0.1, intents: allIntents()}),
   GInput({tick: 1, dtau: tiny(), intents: []}),
   GInput({tick: 2, dtau: almostOne(), intents: [IThrust(1.0)]}),
@@ -119,11 +147,11 @@ pure func stateFixtures() -> [StateMsg] = [
     journey: Some({state: "planned", planId: maxInt(), plan: Some(edgeView())}),
     ledger: Some({mEffKg: 0.5, availableKg: 20000.0, radiatedJ: 1.0e308, boostJ: tiny(), dragJ: negZero()}),
     rng: Some({journey: 0, crew: 1, events: 2, galaxy: 3, ai: maxInt(), news: 9007199254740991}),
-    params: Some(defaultParams()), events: [{event("phase") | phase: Some({from: "boosting", to: "cruising", tau: 0.0000034232612397})}, {event("echo") | echo: Some(edgePlan())}, event("committed"),
+    params: Some(defaultParams()), ai: None, events: [{event("phase") | phase: Some({from: "boosting", to: "cruising", tau: 0.0000034232612397})}, {event("echo") | echo: Some(edgePlan())}, event("committed"),
       {event("phase") | phase: Some({from: "braking", to: "at_rest", tau: negZero()})}, {event("arrived") | arrived: Some({x: tiny(), t: 1.0e308, phi: negZero()})},
       {event("draw") | drew: Some({stream: "news", n: 0, value: 9007199254740991})}, {event("draw") | drew: Some({stream: "journey", n: maxInt(), value: 0})}], refused: [{i: 0, reason: "unsupported"}, {i: maxInt(), reason: "diag_only"}], full: true },
-  { tick: maxInt(), status: "bad_tick", clock: None, ship: None, journey: None, ledger: None, rng: None, params: None, events: [], refused: [], full: false },
-  { tick: 7, status: "ok", clock: Some({tau: 1.0e308, t: -1.0e308, year: 0.0, age: 30.0}), ship: None, journey: Some({state: "idle", planId: 0, plan: None}), ledger: None, rng: None, params: None, events: [], refused: [], full: false }
+  { tick: maxInt(), status: "bad_tick", clock: None, ship: None, journey: None, ledger: None, rng: None, params: None, ai: None, events: [], refused: [], full: false },
+  { tick: 7, status: "ok", clock: Some({tau: 1.0e308, t: -1.0e308, year: 0.0, age: 30.0}), ship: None, journey: Some({state: "idle", planId: 0, plan: None}), ledger: None, rng: None, params: None, ai: None, events: [], refused: [], full: false }
 ]
 
 pure func roundTripInput(x: Input) -> bool = match decodeInput(encodeInput(x)) { Ok(y) => inputEq(x, y), Err(_) => false }
@@ -170,7 +198,7 @@ pure func checkDecodeCodes() -> bool =
 pure func feed(s: Session, lines: [string]) -> Served =
   foldl(\acc line. serve(acc.session, line), {session: s, reply: ""}, lines)
 pure func stateOf(reply: string) -> StateMsg =
-  match decodeState(reply) { Ok(m) => m, Err(e) => {tick: -1, status: e, clock: None, ship: None, journey: None, ledger: None, rng: None, params: None, events: [], refused: [], full: false} }
+  match decodeState(reply) { Ok(m) => m, Err(e) => {tick: -1, status: e, clock: None, ship: None, journey: None, ledger: None, rng: None, params: None, ai: None, events: [], refused: [], full: false} }
 pure func hello() -> string = "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":0}}"
 pure func diagGame() -> string = newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":true")
 pure func playGame() -> string = newGame("\"seed\":7,\"scenario\":\"sol\",\"diag\":false")
@@ -442,10 +470,83 @@ pure func checkFlownOnWire() -> bool {
   jstate(stateOf(end.reply)) == "arrived:1" && feq(shipFlown(stateOf(end.reply)), 0.0)
 }
 
-pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures()) ++ map(encodeState, stateFixtures()) ++ [encodeHello(helloMsg())]
+-- ------------------------------------------------- 2.1 AI codecs (AI.2)
+pure func hexA() -> string = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+pure func fullOpen() -> AiOpen = { kind: "portrait", purpose: "archive", entityId: "medic_2", emotion: Some("grieving"), ageStage: Some(50.0),
+  lineReq: Some("9007199254740991"), emotions: Some(["neutral", "loving", "grieving"]),
+  context: [{name: "topic", value: CStr("first night aboard \"Ä\" \\ ✓")}, {name: "canon", value: CList(["archive.two-clocks", "archive.ψ"])}, {name: "empty", value: CList([])}] }
+pure func aiIntents() -> [Intent] =
+  [IAiOpen(fullOpen()), IAiOpen({ kind: "x", purpose: "", entityId: "Not An Id", emotion: None, ageStage: Some(negZero()), lineReq: None, emotions: Some([]), context: [] }),
+   IAiOpen({ kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: [] })] ++
+  map(\r. IAiCancel({req: "7", reason: r}), cancelReasons()) ++ [IAiCancel({req: "never-opened", reason: "budget"})]
+pure func aiInputs() -> [Input] =
+  [GInput({tick: 5, dtau: 0.0, intents: aiIntents()}), GNewGame({seed: 1, scenario: "sol", diag: false, params: [{name: "ai_max_open", value: 64.0}, {name: "ai_ttl_ticks", value: 1.0}], aiCore: Some(hexA())})]
+-- The design's ai_request example, byte for byte.
+pure func exampleRequest() -> AiRequest = { req: "7", kind: "text", purpose: "line", lineReq: None,
+  key: { kind: "text", entityId: "medic", emotion: "-", ageStage: 0, variant: "-" }, seed: 123456789012345,
+  constraints: { maxChars: 280, noNumerals: true, emotions: ["neutral", "loving", "grieving"] },
+  context: [{name: "topic", value: CStr("first_night_aboard")}, {name: "canon", value: CList(["archive.two-clocks"])}], expiresTick: 3607 }
+pure func exampleWire() -> string =
+  "{\"k\":\"ai_request\",\"req\":\"7\",\"kind\":\"text\",\"purpose\":\"line\",\"key\":{\"kind\":\"text\",\"entity_id\":\"medic\",\"emotion\":\"-\",\"age_stage\":0,\"variant\":\"-\"},\"seed\":123456789012345,\"constraints\":{\"max_chars\":280,\"no_numerals\":true,\"emotions\":[\"neutral\",\"loving\",\"grieving\"]},\"context\":{\"topic\":\"first_night_aboard\",\"canon\":[\"archive.two-clocks\"]},\"expires_tick\":3607}"
+pure func aiEv(e: AiEvent, k: string) -> Event = {event(k) | ai: Some(e)}
+pure func descriptor() -> Json = JObject([kv("key", JObject([kv("kind", JString("voice"))])), kv("duration_ms", JNumber(5300.0)), kv("segments_ms", JArray([JNumber(0.0), JNumber(2100.0)])), kv("ok", JBool(true)), kv("none", JNull)])
+pure func aiStates() -> [StateMsg] = [
+  { tick: 9, status: "ok", clock: None, ship: None, journey: None, ledger: None, rng: Some({journey: 0, crew: 0, events: 0, galaxy: 0, ai: 3, news: 0}), params: None,
+    ai: Some({lastReq: maxInt(), open: [{req: "1", kind: "text", expiresTick: 3601}, {req: "9007199254740991", kind: "portrait", expiresTick: maxInt()}], core: hexA()}),
+    events: [aiEv(ERequest(exampleRequest()), "ai_request"),
+      aiEv(ERequest({exampleRequest() | req: "8", kind: "voice", purpose: "line", lineReq: Some("7"), seed: maxInt(), context: [], constraints: {maxChars: 0, noNumerals: false, emotions: []}}), "ai_request"),
+      aiEv(EAcceptedText({req: "7", kind: "text", sha256: hexA(), text: "Hello. I am the Medic, Ä ✓", segments: [{emotion: "neutral", text: "Hello."}, {emotion: "loving", text: "I am the Medic, Ä ✓"}]}), "ai_accepted"),
+      aiEv(EAcceptedText({req: "10", kind: "text", sha256: hexA(), text: "", segments: []}), "ai_accepted"),
+      aiEv(EAcceptedMedia({req: "8", kind: "voice", sha256: hexA(), descriptor: descriptor()}), "ai_accepted"),
+      aiEv(EFallback({req: "7", reason: "expired"}), "ai_fallback"), aiEv(EFallback({req: "9", reason: "ai_hash"}), "ai_fallback")],
+    refused: [{i: 0, reason: "ai_too_many"}], full: false },
+  { tick: 1, status: "ok", clock: None, ship: None, journey: None, ledger: None, rng: None, params: None, ai: Some({lastReq: 0, open: [], core: ""}), events: [], refused: [], full: false }
+]
+pure func aiOpenLine(body: string) -> string = intent(join("", ["{\"k\":\"ai_open\",", body, "}"]))
+pure func okOpen() -> string = "\"kind\":\"text\",\"purpose\":\"line\",\"entity_id\":\"medic\""
+pure func checkAiCodecs() -> bool =
+  allTrue(map(roundTripInput, aiInputs())) && allTrue(map(roundTripState, aiStates())) &&
+  contains(encodeState({tick: 1, status: "ok", clock: None, ship: None, journey: None, ledger: None, rng: None, params: None, ai: None, events: [aiEv(ERequest(exampleRequest()), "ai_request")], refused: [], full: false}),
+    join("", ["\"events\":[", exampleWire(), "]"])) &&
+  -- well-formed, whatever the values: value checks are refusals (sim/ai.ail), not decode errors
+  code(aiOpenLine(okOpen())) == "ok" && code(aiOpenLine("\"kind\":\"warp\",\"purpose\":\"x\",\"entity_id\":\"BAD id\",\"age_stage\":1.5,\"emotions\":[]")) == "ok" &&
+  code(aiOpenLine(join("", [okOpen(), ",\"context\":{\"a\":\"1\",\"b\":[],\"c\":\"3\",\"d\":\"4\",\"e\":\"5\",\"f\":\"6\",\"g\":\"7\",\"h\":[\"8\"]}"]))) == "ok" &&
+  -- malformed fields stay bad_intent
+  code(aiOpenLine("\"purpose\":\"line\",\"entity_id\":\"medic\"")) == "bad_intent" && code(aiOpenLine("\"kind\":\"text\",\"entity_id\":\"medic\"")) == "bad_intent" &&
+  code(aiOpenLine("\"kind\":\"text\",\"purpose\":\"line\"")) == "bad_intent" && code(aiOpenLine("\"kind\":1,\"purpose\":\"line\",\"entity_id\":\"medic\"")) == "bad_intent" &&
+  code(aiOpenLine(join("", [okOpen(), ",\"emotion\":null"]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"age_stage\":\"0\""]))) == "bad_intent" &&
+  code(aiOpenLine(join("", [okOpen(), ",\"age_stage\":1e400"]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"line_req\":7"]))) == "bad_intent" &&
+  code(aiOpenLine(join("", [okOpen(), ",\"emotions\":\"neutral\""]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"emotions\":[\"neutral\",1]"]))) == "bad_intent" &&
+  code(aiOpenLine(join("", [okOpen(), ",\"context\":[]"]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"context\":{\"a\":1}"]))) == "bad_intent" &&
+  code(aiOpenLine(join("", [okOpen(), ",\"context\":{\"a\":{\"b\":\"c\"}}"]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"context\":{\"a\":[\"x\",null]}"]))) == "bad_intent" &&
+  code(aiOpenLine(join("", [okOpen(), ",\"context\":{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\",\"d\":\"4\",\"e\":\"5\",\"f\":\"6\",\"g\":\"7\",\"h\":\"8\",\"i\":\"9\"}"]))) == "bad_intent" &&
+  allTrue(map(\r. code(intent(join("", ["{\"k\":\"ai_cancel\",\"req\":\"1\",\"reason\":\"", r, "\"}"]))) == "ok", cancelReasons())) &&
+  code(intent("{\"k\":\"ai_cancel\",\"req\":\"1\",\"reason\":\"expired\"}")) == "bad_intent" && code(intent("{\"k\":\"ai_cancel\",\"req\":\"1\",\"reason\":\"OFFLINE\"}")) == "bad_intent" &&
+  code(intent("{\"k\":\"ai_cancel\",\"reason\":\"offline\"}")) == "bad_intent" && code(intent("{\"k\":\"ai_cancel\",\"req\":1,\"reason\":\"offline\"}")) == "bad_intent" &&
+  code(intent("{\"k\":\"record\",\"source\":\"ai\",\"req\":1,\"kind\":\"text\",\"sha256\":\"00\",\"body\":\"x\"}")) == "bad_intent" &&
+  -- new_game: ai_core is a sha256 (64 lowercase hex), else bad_game; the AI params are validated like M2's
+  code(newGame(join("", ["\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"ai_core\":\"", hexA(), "\""]))) == "ok" &&
+  code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"ai_core\":\"E3B0\"")) == "bad_game" &&
+  code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"ai_core\":\"E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\"")) == "bad_game" &&
+  code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"ai_core\":7")) == "bad_game" &&
+  accepts("ai_max_open", ["1", "64"]) && refuses("ai_max_open", ["0", "65", "1.5", "-1"]) &&
+  accepts("ai_ttl_ticks", ["1", "1000000"]) && refuses("ai_ttl_ticks", ["0", "1000001", "2.5"])
+-- AI.2 changes nothing a 2.0 session sees: hello minor 0, no AI params in
+-- the echo, no `ai` section in a full state (AI.3 flips all three with the
+-- goldens); new_game's ai_core only lands in the world.
+pure func checkNoWireChange20() -> bool {
+  let r = feed(newSession(), [hello(), diagGame()]).reply;
+  let c = feed(newSession(), [hello(), newGame(join("", ["\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"ai_core\":\"", hexA(), "\""]))]);
+  let quiet = feed(c.session, [tickLine(1, "0.5", "{\"k\":\"thrust\",\"thrust\":1}")]).reply;
+  helloMsg().minor == 0 && !contains(r, "ai_max_open") && !contains(r, "ai_ttl_ticks") && !contains(r, "\"ai\":{") &&
+  c.reply == r && !contains(quiet, "\"ai\":{") && !contains(quiet, "ai_")
+}
+
+pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures() ++ aiInputs()) ++ map(encodeState, stateFixtures() ++ aiStates()) ++ [encodeHello(helloMsg())]
 export pure func protocolVm(n: int) -> string =
   if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho() &&
-    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire() && checkArrivalOnWire() && checkDrawOnWire() && checkPhiBoundsEcho() && checkFlownOnWire()
+    checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire() && checkArrivalOnWire() && checkDrawOnWire() && checkPhiBoundsEcho() && checkFlownOnWire() &&
+    checkAiCodecs() && checkNoWireChange20()
   then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
 
 test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }
@@ -471,3 +572,5 @@ test "M2.3a ledger section with m_eff 0.5" { checkLedgerOnWire() }
 test "M2.4 draw events, rng change-set, diag only, unknown stream malformed" { checkDrawOnWire() }
 test "M2.6b params echo carries the cruise-rapidity bounds and default" { checkPhiBoundsEcho() }
 test "M2.6b ship.flown: distance since the commit, 0 after arrival" { checkFlownOnWire() }
+test "AC2 2.1 AI codecs round-trip; malformed fields stay bad_intent" { checkAiCodecs() }
+test "AI.2 no wire change for a 2.0 session (hello minor 0, no ai params or section)" { checkNoWireChange20() }
