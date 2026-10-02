@@ -1,0 +1,60 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "milestone": "M2.6b",
+  "pr": 33,
+  "branch": "sprint/m2.6b-commit",
+  "commit_evaluated": "cb70a91",
+  "round": 1,
+  "evaluator": "claude-sonnet-5-5 (independent of executor)",
+  "toolchain": "runtime/bin/ailang v0.51.0 first on PATH; Godot 4.7.2 with GPU window",
+  "score": 93,
+  "result": "pass",
+  "breakdown": {"tests_pass": 20, "lint_clean": 9, "acceptance_criteria": 29, "code_quality": 13, "documentation": 12, "design_fidelity": 10},
+  "hard_fails": [],
+  "automated": {
+    "make_test": "EXIT 0; sim tests 85/85, strict protocolVm, bridge 0 failures, galaxy map 0 failures, star names 54 rows 0 failures with the A/B-swap negative control failing as required. First cold run in the fresh worktree hit 'sim session starts (startup_timeout)' in make ui; the rerun and a third full run were green (cold AILANG compile cache, about 5 min; flake noted, not scored)",
+    "make_golden": "0 failures",
+    "make_map_capture": "exit 0; renders byte-identical to docs/m2.6b commit/transit/arrived PNGs",
+    "make_capture_vs_main": "all 13 PNGs (contact sheet + 12 sky frames) byte-identical to main's make capture in a second worktree"
+  },
+  "captures_opened": {
+    "commit": "dialog 0.9 s into hold: Ship time 0.6208 ship-yr, Earth 4.401 Earth-yr, Arrival Earth +4.401 yr, Years left (placeholder) 99.38 yr, hold bar about 60%, 'cannot be undone' warning; clock still running behind (Now: Earth +0.0005 yr, tick 4) so no pause",
+    "transit": "En route, journey committed, 'refused: committed' shown, Cancel enabled, Commit greyed; cruising, ship +0.3207 / Earth +2.2699, flown 2.2467 of 4.357 ly, progress about 52%, ship marker on the line",
+    "arrived": "Arrived, progress full, ship marker on the target ring, Flown (arrived) = plan distance 4.357 ly, phase at_rest"
+  },
+  "verified": {
+    "hold_cannot_commit_before_1_5s": "hold_commit() only queues commit when hold_s >= HOLD_S (1.5); release_commit resets. Mutations HOLD_S=1.0 (6 fails) and threshold -0.2 (5 fails) killed",
+    "cancel_after_commit": "Cancel never disabled; refusal text from sim.last_refused shown. Mutation 'Cancel disabled when committed' killed (1 fail)",
+    "no_new_game_escape": "grep of ui/galaxy_map.gd finds no new_game; main.gd new_game calls are only in the diag/capture setup",
+    "arrived_uses_pos_and_plan_distance": "progress_values uses plan.distance when arrived, ARRIVED_ROWS use journey.plan.distance. Mutation 'arrived reads ship.flown' killed",
+    "numbers_trace_to_sim": "COMMIT_ROWS/TRANSIT_ROWS/ARRIVED_ROWS are dotted sim field paths through field_value(); labels marked placeholder for age/years_left",
+    "slider_bounds": "params echo carries cruise_phi_min/max/default; Godot reads them at start; the only log() in ui/ is the display formatter sci() (ui/galaxy_map.gd:521), not a slider bound",
+    "commit_stale_plan": "commit carries dialog_plan_id; mutation plan_id+1 killed (14 fails)"
+  },
+  "my_mutations": {
+    "killed": ["HOLD_S 1.5->1.0", "hold threshold -0.2", "Cancel disabled after commit", "arrived progress from ship.flown", "commit plan_id+1"],
+    "survived": ["TRANSIT_RATE 0.1->0.2 (value unpinned by any test)", "TRANSIT_ROWS 'Flown since commit' format %.4f->%.2f (unpinned)"],
+    "note": "executor claimed 18/18 killed; two further trivial mutants of transit constants/format survive"
+  },
+  "name_table_spot_checks": "All 8 checked rows match literature RA/Dec/distance/V and Gliese ids: Proxima (217.43, -62.68, 4.246 ly, V 11.13, Gl 551); Sirius A/B (101.287, -16.716, 8.60, V -1.46/8.44, Gl 244); Tau Ceti (26.017, -15.94, 11.91, V 3.50, Gl 71); Barnard's (269.452, +4.693, 5.96, V 9.51, Gl 699); Vega (279.235, +38.784, 25.04, V 0.03, Gl 721); Altair (297.696, +8.868, 16.73, V 0.77, Gl 768); Fomalhaut (344.41, -29.62, 25.13, V 1.16, Gl 881); Arcturus (213.915, +19.18, 36.66, V -0.05, Gl 541). The catalogue itself is 3-15 percent off on some distances (Fomalhaut 21.2 vs 25.1), which the checker tolerates at 20 percent.",
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      "tools/check_star_names.py:72,82-83 compares catalogue l with the mirrored longitude 2*122.93192 - l. When process_stars.sh/stars.json is fixed every one of the 54 rows will fail the l check; change l_mirror to l (delete the mirror) in the same PR as the catalogue fix, and add the catalogue fix to the D-17/M1.2 follow-ups. The fix is one line; the failure is loud, not silent.",
+      "ui/galaxy_map.gd:~32 TRANSIT_RATE and TRANSIT_ROWS format strings are not pinned by tests (two surviving mutants). Pin the 'Flown since commit' format and the transit dtau on the wire.",
+      "ui/galaxy_map.gd _process: hold_commit(delta) takes unclamped frame delta, so a single stall of 1.5 s or more while the button is held commits in one frame. Arguably still a 1.5 s hold, but clamp delta (for example 0.1 s) to keep the ritual physical. Also release on focus loss.",
+      "AC18 grep does not cover log(); the display-only sci() uses log/pow at ui/galaxy_map.gd:521, which is acceptable but should be noted so a future grep tightening does not flag it.",
+      "make ui cold-start can time out (startup_timeout) when the AILANG compile cache is empty; consider a warm-up step or a longer first-start bound in CI.",
+      "docs/contact_sheet.png committed on main differs from a fresh make capture (pre-existing on main; this PR leaves capture output byte-identical to main)."
+    ]
+  },
+  "deviations": {
+    "transit_0.1_ship_yr_per_s": "ACCEPT. D-12 fixes only the at-rest rate; value is a named constant; add a test pinning it.",
+    "dialog_in_galaxy_map_gd": "ACCEPT. Less isolated than a scene but keeps one source for field tables; revisit if the file grows past the size limit.",
+    "ship_flown_and_phi_bounds_protocol_additions": "ACCEPT. Additive, with echo tests (checkPhiBoundsEcho, checkFlownOnWire) and the design doc updated; removes Godot log maths per CLAUDE.md gate 3/5.",
+    "not_test_first": "ACCEPT WITH NOTE. Mutation evidence is strong (my 5 of 7 killed, 2 trivial survivors) but this is a process deviation.",
+    "loc_810_vs_650": "ACCEPT. About 170 lines are the D-17 name table and verifier.",
+    "no_changelog": "ACCEPT; due at landing."
+  },
+  "catalogue_longitude_bug": "Documented workaround, not a defect of this PR. Positions are unchanged per D-17; checker flags its dependency in its docstring."
+}

@@ -1,5 +1,7 @@
 GODOT ?= godot
 AILANG ?= ailang
+# Godot runs that start the sim use the same ailang as the make line, never a stale one on PATH
+GODOT_SIM = AILANG_BIN="$$(command -v $(AILANG))" $(GODOT)
 SIM := sim/ship.ail
 SIMFLAGS := --quiet --package-dir sim --caps IO --entry main
 SCRATCH := .godot/tmp
@@ -23,6 +25,7 @@ test: python-guard deps import physics sim ui parity parity-offaxis parity-v2 of
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
+	python3 tools/check_star_names.py
 
 physics:           ## CPU physics reference vs known values
 	$(GODOT) --headless --path . --script tests/test_physics.gd
@@ -30,14 +33,14 @@ physics:           ## CPU physics reference vs known values
 sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics
 	$(AILANG) check --package sim
 	cd sim && $(AILANG) test --package .
-	$(GODOT) --headless --path . --script tests/test_sim_bridge.gd
+	$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
 
 ui:                ## galaxy map + plan panel against the real sim (headless, fake 800x600 viewport; AC15 part)
-	$(GODOT) --headless --path . --script tests/test_galaxy_map.gd
+	$(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
 
 map-capture:       ## galaxy map PNGs + panel dump (alpha Cen A at 0.9c / cap / 0.99c) to renders/ (needs a GPU window; AC17 map part)
-	$(GODOT) --path . -- --map-capture=renders
-	test -s renders/galaxy_map.png && test -s renders/galaxy_map_panel.json
+	$(GODOT_SIM) --path . -- --map-capture=renders --map-commit
+	test -s renders/galaxy_map.png && test -s renders/galaxy_map_panel.json && test -s renders/galaxy_map_commit.png && test -s renders/galaxy_map_transit.png && test -s renders/galaxy_map_arrived.png
 
 parity:            ## v2 diag session, 600 thrust ticks: bytecode VM and tree-walking interpreter must agree bit for bit
 	@mkdir -p $(SCRATCH)
@@ -127,10 +130,10 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 	$(GODOT) --path . -- --golden
 
 capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window)
-	$(GODOT) --path . -- --capture=renders
+	$(GODOT_SIM) --path . -- --capture=renders
 
 run:               ## interactive: W/S thrust, arrows look, 1-4 views, +/- warp
-	$(GODOT) --path .
+	$(GODOT_SIM) --path .
 
 runtime:           ## stage the bundled sim runtime: pinned ailang release + fetched package cache (no dotfiles)
 	@rm -rf $(RUNTIME) && mkdir -p $(RUNTIME)/bin $(RUNTIME)/home

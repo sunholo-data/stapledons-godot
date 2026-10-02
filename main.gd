@@ -3,7 +3,7 @@ extends Node3D
 ##
 ## Interactive:  W / S thrust forward / reverse at 1 g, arrows look around,
 ##               1-4 look forward / starboard / astern / up, +/- time warp.
-## Galaxy map:  godot --path . -- --map[=INDEX]   (M2.6a; --map-capture=renders)
+## Galaxy map:  godot --path . -- --map[=INDEX]   (M2.6a/b; --map-capture=renders [--map-commit])
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
 ##   godot --path . -- --golden            shader vs CPU reference positions
@@ -63,6 +63,10 @@ func _ready() -> void:
 ## `--map=INDEX` with a preselected star, `--map-capture=DIR` writes
 ## galaxy_map.png (alpha Cen A at the 0.99c default), one PNG per speed and
 ## galaxy_map_panel.json (every label with its sim field and raw value).
+## `--map-commit` (M2.6b, R2) then commits alpha Cen A at 0.99c through the
+## 1.5 s hold and captures galaxy_map_commit.png (dialog mid-hold),
+## galaxy_map_transit.png (mid-cruise, after a refused Cancel) and
+## galaxy_map_arrived.png, adding their readouts to the panel dump.
 func _run_map(args: Dictionary) -> void:
 	var capture: bool = args.has("map-capture")
 	if capture:
@@ -76,6 +80,7 @@ func _run_map(args: Dictionary) -> void:
 	map.auto_tick = not capture
 	add_child(map)
 	map.load_catalogue("res://data/starmap/stars.json")
+	map.load_names("res://data/starmap/names.json")
 	map.attach(sim)
 	if not capture:
 		if args.get("map", "").is_valid_int():
@@ -101,6 +106,9 @@ func _run_map(args: Dictionary) -> void:
 		var img := await _grab()
 		img.save_png(out.path_join(speed[2]))
 		print("captured %s  %s" % [speed[2], map.speed_text()])
+	if args.has("map-commit") and not await _capture_commit(map, out, dump):
+		get_tree().quit(2)
+		return
 	var f := FileAccess.open(out.path_join("galaxy_map_panel.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(dump, "  ", false, true) + "\n")
 	f.close()
@@ -108,11 +116,44 @@ func _run_map(args: Dictionary) -> void:
 	get_tree().quit(0)
 
 
+## Commit ritual and transit for R2: dialog mid-hold, commit at 1.5 s (fake
+## clock), a mid-cruise frame after a refused Cancel, the arrival.
+func _capture_commit(map: GalaxyMap, out: String, dump: Dictionary) -> bool:
+	if not map.open_commit_dialog():
+		push_error("map capture: no plan to commit")
+		return false
+	map.hold_commit(0.9) # the hold bar part-filled in the frame
+	dump["commit_dialog"] = {"plan_id": map.dialog_plan_id, "title": map.dialog_title.text, "rows": map.dialog_rows()}
+	(await _grab()).save_png(out.path_join("galaxy_map_commit.png"))
+	print("captured galaxy_map_commit.png  %s" % map.dialog_title.text)
+	map.hold_commit(GalaxyMap.HOLD_S - 0.9)
+	map.tick()
+	if map.journey_state() != "committed":
+		push_error("map capture: commit not accepted (%s)" % sim.last_refused)
+		return false
+	var distance: float = sim.world["journey"]["plan"]["distance"]
+	while map.journey_state() == "committed" and not (sim.world["ship"]["phase"] == "cruising" and sim.world["ship"]["flown"] > 0.5 * distance):
+		map.tick()
+	map.press_cancel() # the sim refuses it; the frame shows "refused: committed"
+	map.tick()
+	dump["transit"] = _panel_dump(map, "transit")
+	dump["transit"]["status"] = map.status_text()
+	(await _grab()).save_png(out.path_join("galaxy_map_transit.png"))
+	print("captured galaxy_map_transit.png  %s" % map.status_text())
+	while map.journey_state() == "committed":
+		map.tick()
+	dump["arrived"] = _panel_dump(map, "arrived")
+	dump["arrived"]["events"] = sim.last_events
+	(await _grab()).save_png(out.path_join("galaxy_map_arrived.png"))
+	print("captured galaxy_map_arrived.png  %s" % map.title_text())
+	return map.journey_state() == "arrived"
+
+
 func _panel_dump(map: GalaxyMap, speed: String) -> Dictionary:
 	var rows := map.panel_rows()
 	for r in rows:
 		print("  %-6s %-30s %-22s %s = %s" % [speed, r["label"], r["text"], r["field"], SimBridge.encode(r["raw"])])
-	return {"speed": speed, "tick": sim.world["tick"], "clock": sim.world["clock"], "target": sim.world["journey"]["plan"]["target"],
+	return {"speed": speed, "tick": sim.world["tick"], "clock": sim.world["clock"], "title": map.title_text(), "subtitle": map.subtitle_text(), "target": sim.world["journey"]["plan"]["target"],
 		"cruise_phi": sim.world["journey"]["plan"]["cruise_phi"], "speed_label": map.speed_text(), "rows": rows}
 
 
