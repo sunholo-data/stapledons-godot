@@ -1,0 +1,19 @@
+{"v":1,"type":"hello","proto":{"major":1,"minor":0},"service":"stapledons/ai 0.1.0","provider":"stub","live":false,"cache_dir":".godot/tmp/ai/cache/none","routes":{"text":{"route":"none","reason":"no_key"},"voice":{"route":"none","reason":"no_key"},"portrait":{"route":"none","reason":"no_key"},"avatar":{"route":"none","reason":"no_key"}}}
+{"v":1,"type":"result","req":"1","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"2","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"3","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"4","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"5","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"6","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"7","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"8","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"9","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"10","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"11","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"12","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"13","status":"error","code":"bad_request","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"14","status":"error","code":"bad_request","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"","status":"error","code":"bad_request","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"15","status":"error","code":"bad_request","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"16","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"20","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}

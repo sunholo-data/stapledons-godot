@@ -1,0 +1,14 @@
+[package]
+name = "stapledons/ai"
+version = "0.1.0"
+edition = "1"
+description = "Stapledon's Voyage AI service: a separate process Godot launches; answers ai/1 requests over NDJSON stdio. Imports nothing from sim/ (ailang#1498)."
+
+[exports]
+modules = ["stapledons/ai/key", "stapledons/ai/route", "stapledons/ai/wire", "stapledons/ai/provider", "stapledons/ai/cache", "stapledons/ai/service", "stapledons/ai/key_test", "stapledons/ai/route_test", "stapledons/ai/wire_test", "stapledons/ai/stub_test"]
+
+[effects]
+max = ["IO", "FS", "Env", "Net", "AI"]
+
+[stability]
+level = "experimental"

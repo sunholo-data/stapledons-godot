@@ -341,10 +341,11 @@
         "make test AILANG=$A"
       ],
       "registry": "depend std/json, std/fs, std/crypto",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-02",
+      "completed": "2026-10-02",
+      "actual_loc": {"code": 469, "tests": 278, "config": 103, "counted_total": 850, "basis": "non-blank, non-comment lines; fixtures, goldens, data and docs uncounted"},
+      "notes": "Executed on branch sprint/ai4-service; awaiting independent evaluation. make test green (AILANG v0.51.0, arm64): ai-pkg-test 12/12 (key, route, wire, stub) plus no-sim-import and no-key-text guards, strict aiWireVm ai-wire-ok (34 lines, strict VM = interpreter), ai-stub over four key sets (both, gemini, none, both+text_only) == goldens, VM = interpreter, cache 34 files == tests/ai/cache.SHA256SUMS, 27 text blobs == shasum -a 256 (AC6), deps-ai lock unchanged; make ai-mutants: 6 mutants killed. Deviations: service config via --args-json/--args-file (argv needs Env; the stub runs IO,FS only); hello carries routes (replaces models); error results carry meta {provider, route}; text_only added to error codes; one fatal line on bad config; stub spells the request number in words while no_numerals holds; text results also written as .txt blobs; a routed voice request answers provider_error until AI.5's stub voice; a fourth ai-stub key set (text-only). Over the 650 cap (as AI.2 was); route.ail kept in AI.4. Upstream: test runner resolves a private helper to a non-imported stdlib export of the same name (isErr, words), ailang#1516; nested cons pattern `_ :: x :: _` is not compiled for the strict VM, ailang#1517; readFileBytes returns base64 text, undocumented (dx message)."
     },
     {
       "id": "AI.5_ADAPTERS_SPEND",

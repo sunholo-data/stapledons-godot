@@ -555,6 +555,36 @@ lines), and a strict-VM entry `markersVm` in `make strict`.
    early), and the crossfade length. Nothing past (c) proceeds before his
    answer.
 
+### Amendment 2026-10-02: both providers
+
+Mark, attended 2026-10-02: "so have both options - the ailang demos use them
+all". This narrows D-8 (2) "model-neutral, Gemini as default" for text. The
+sprint plan's "Plan change: both providers" section carries the full table;
+this section makes the design agree with it. Where it conflicts with the text
+above, this section wins.
+
+| Topic | Before | Now |
+|---|---|---|
+| Providers | `Stub \| Gemini(Models)` | `Stub \| Gemini(Models) \| OpenRouter(Models)` (`ai/provider.ail`). OpenRouter is built into `std/ai` on the v0.51.0 pin for **text** (chat completions) with `openrouter:vendor/model` ids; it refuses image output and has no TTS |
+| Routing | one provider per session | `data/ai/routing.json`: per request kind an ordered list of `{provider, model}`, resolved by the pure `ai/route.ail` against the set of keys present. Defaults: `text` → OpenRouter, then Gemini; `portrait`, `avatar` → Gemini only; `voice` → Gemini only. The first entry whose key is present wins; with none the result is `no_key` and the game stays on templates. A config that lists OpenRouter for a media kind, names an unknown provider, gives a model without a provider, or leaves a kind unrouted is refused at start |
+| Keys | `GOOGLE_API_KEY` only | Both optional: `GOOGLE_API_KEY` and `OPENROUTER_API_KEY` (env, or one 0600 file each, AI.9). With neither, text-only. Stub mode simulates the key set (`keys_present`); live mode reads it from the env (AI.5) |
+| Text-only mode | relay never opens voice/portrait | also enforced by the service: media kinds answer `text_only` |
+| Wire `ai/1` | hello carries `models: {text, image, tts}`; result `meta: {provider, model, …}` | hello carries `routes: {<kind>: {route, model} \| {route: "none", reason}}` (it replaces `models`); results carry `meta.route`, the provider the table chose. The stub answers as `provider: "stub"` with `meta.route` set, so the stub goldens show the routing. Error results carry `meta: {provider, route}`; `text_only` joins the error codes; a bad configuration prints one `fatal {code: "config", detail}` line |
+| Service configuration | argv flags (`-- --provider stub --cache-dir …`) | the entry argument (`--args-json` / `--args-file`): `{provider, keys_present, text_only, cache_dir, routing, fixtures}`. argv needs the `Env` capability, and the stub runs with `--caps IO,FS` only, so it cannot read a key at all |
+| Cost | one price table | `prices.json` keyed by provider and model; per-provider totals in the spend ledger and `usage.ndjson`; the one player-set ceiling (default US$0.50) applies to the sum (AI.5, AI.9) |
+| Build keys | `gemini-api-key` | plus `openrouter-api-key` in Secret Manager (project `stapledons-voyage`); either may be missing (AI.8, AI.10b) |
+| Network allowlist (live) | `generativelanguage.googleapis.com` | plus `openrouter.ai` |
+
+AI.4 as built (stub only, `--caps IO,FS`): stub text is
+`"{e} Stub <purpose> <req> for <entity_id>."` with `e` the first allowed
+emotion and the request number **spelled in words** while `no_numerals`
+holds, so the stub line itself passes `ai_numeral`; the fixture cases are
+chosen by the context field `stub_case`. The library writes text results as
+`.txt` blobs too (index line with `origin: "library"`, no clock, no request
+id), which is what lets `make ai-stub` check every text hash against
+`shasum -a 256`. Stub voice arrives with AI.5; until then a routed voice
+request answers `provider_error`.
+
 ## Acceptance criteria
 
 `$A` is the pinned v0.51.0 `ailang` (`AILANG=$A` on every make line).

@@ -1,0 +1,43 @@
+module stapledons/ai/vm_test
+
+-- aiWireVm (AC7 part, `make strict-ai`): the service's pure modules (key,
+-- route, wire, the stub handler) on the strict bytecode VM. It prints every
+-- wire fixture re-encoded, the resolved route of every kind under each key
+-- set, and the stub's answer to one request per kind, then ai-wire-ok when
+-- every check of the four test modules holds. VM == interpreter byte for byte.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (join, concat)
+import ./key_test (keyChecks)
+import ./route_test (routeChecks)
+import ./wire_test (wireChecks, inLines, outLines, secondIn)
+import ./stub_test (stubChecks)
+import ./route (Routing, parseRouting, resolve, routeName, Via, NoRoute)
+import ./wire (decodeIn, encodeIn, decodeOut, encodeOut, Request, WRequest)
+import ./provider (Ctx, handle)
+
+pure func vmTable() -> Routing = match parseRouting(join("", [
+  "{\"v\":1,\"routes\":{\"text\":[{\"provider\":\"openrouter\",\"model\":\"openrouter:v/m\"},{\"provider\":\"gemini\",\"model\":\"gtext\"}],",
+  "\"portrait\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"avatar\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"voice\":[{\"provider\":\"gemini\",\"model\":\"gtts\"}]}}"])) {
+  Ok(r) => r, Err(_) => { routes: [] } }
+pure func vmKeySets() -> [{name: string, keys: [string], textOnly: bool}] = [
+  { name: "both", keys: ["gemini", "openrouter"], textOnly: false }, { name: "gemini", keys: ["gemini"], textOnly: false },
+  { name: "openrouter", keys: ["openrouter"], textOnly: false }, { name: "none", keys: [], textOnly: false },
+  { name: "both+text_only", keys: ["gemini", "openrouter"], textOnly: true }]
+pure func vmRouteLine(rt: Routing, ks: {name: string, keys: [string], textOnly: bool}, kind: string) -> string =
+  join(" ", ["route", ks.name, kind, match resolve(rt, kind, ks.keys, ks.textOnly) { Via(h) => concat([h.provider, ":", h.model]), NoRoute(w) => concat(["none:", w]) }])
+pure func vmRoutes(rt: Routing, sets: [{name: string, keys: [string], textOnly: bool}]) -> [string] =
+  match sets { [] => [], s :: more => [vmRouteLine(rt, s, "text"), vmRouteLine(rt, s, "portrait"), vmRouteLine(rt, s, "avatar"), vmRouteLine(rt, s, "voice")] ++ vmRoutes(rt, more) }
+pure func vmIn(l: string) -> string = match decodeIn(l) { Ok(m) => encodeIn(m), Err(e) => concat(["in-error ", e]) }
+pure func vmOut(l: string) -> string = match decodeOut(l) { Ok(m) => encodeOut(m), Err(e) => concat(["out-error ", e]) }
+pure func vmEach(g: string -> string, xs: [string]) -> [string] = match xs { [] => [], x :: r => g(x) :: vmEach(g, r) }
+-- The stub on the text request of the wire fixtures, under each key set.
+pure func vmCtx(keys: [string]) -> Ctx = { routing: vmTable(), keys: keys, textOnly: false, cases: [], portraits: [] }
+pure func vmStub(keys: [string]) -> string =
+  match decodeIn(secondIn(inLines())) { Ok(m) => (match m { WRequest(r) => encodeOut(handle(vmCtx(keys), r).out), _ => "no request" }), Err(e) => e }
+
+export pure func aiWireVm(n: int) -> string =
+  if keyChecks() && routeChecks() && wireChecks() && stubChecks()
+  then join("\n", vmEach(vmIn, inLines()) ++ vmEach(vmOut, outLines()) ++ vmRoutes(vmTable(), vmKeySets()) ++
+    [vmStub(["gemini", "openrouter"]), vmStub(["gemini"]), vmStub([]), "ai-wire-ok"])
+  else "ai-wire-BAD"

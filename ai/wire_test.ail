@@ -1,0 +1,72 @@
+module stapledons/ai/wire_test
+
+-- Protocol ai/1 codecs (design (a2)): hand-written inverse pairs round-trip
+-- every fixture, byte for byte, both ways; malformed lines are bad_request.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (join, concat)
+import std/list (map)
+import ./wire (In, Out, WHello, WRequest, WQuit, OHello, OOk, OErr, OFatal, Request, encodeIn, decodeIn, encodeOut, decodeOut, reqOfLine)
+
+pure func key() -> string = "{\"kind\":\"text\",\"entity_id\":\"medic\",\"emotion\":\"-\",\"age_stage\":0,\"variant\":\"-\"}"
+pure func cons() -> string = "{\"max_chars\":280,\"no_numerals\":true,\"emotions\":[\"neutral\",\"loving\",\"grieving\"]}"
+-- Canonical lines: decode then encode gives the same bytes.
+export pure func inLines() -> [string] = [
+  "{\"v\":1,\"type\":\"hello\",\"want\":{\"major\":1}}",
+  join("", ["{\"v\":1,\"type\":\"request\",\"req\":\"7\",\"kind\":\"text\",\"purpose\":\"line\",\"key\":", key(), ",\"seed\":9007199254740991,\"constraints\":", cons(),
+    ",\"context\":{\"topic\":\"first_night_aboard\",\"canon\":[\"archive.two-clocks\"],\"empty\":[]},\"expires_tick\":3607}"]),
+  join("", ["{\"v\":1,\"type\":\"request\",\"req\":\"12\",\"kind\":\"voice\",\"purpose\":\"line\",\"line_req\":\"7\",\"key\":",
+    "{\"kind\":\"voice\",\"entity_id\":\"medic\",\"emotion\":\"-\",\"age_stage\":0,\"variant\":\"-\"}",
+    ",\"seed\":0,\"constraints\":", cons(), ",\"context\":{},\"expires_tick\":1,\"cast\":{\"name\":\"The Medic\",\"voice\":\"Aoede\",\"n\":1.5},",
+    "\"segments\":[{\"emotion\":\"neutral\",\"text\":\"Héllo — 星.\"},{\"emotion\":\"grieving\",\"text\":\"I know.\"}]}"]),
+  "{\"v\":1,\"type\":\"quit\"}"]
+pure func sha() -> string = "3c48591d8d098a4538f5e013dfcf406e948eac4d3277b10bf614e295d6068179"
+export pure func outLines() -> [string] = [
+  join("", ["{\"v\":1,\"type\":\"hello\",\"proto\":{\"major\":1,\"minor\":0},\"service\":\"stapledons/ai 0.1.0\",\"provider\":\"stub\",\"live\":false,\"cache_dir\":\"/tmp/a b/c\",",
+    "\"routes\":{\"text\":{\"route\":\"openrouter\",\"model\":\"openrouter:x/y\"},\"voice\":{\"route\":\"none\",\"reason\":\"no_key\"}}}"]),
+  join("", ["{\"v\":1,\"type\":\"result\",\"req\":\"7\",\"status\":\"ok\",\"kind\":\"text\",\"sha256\":\"", sha(), "\",\"body\":\"{neutral} Héllo \\\"q\\\"\\n.\",",
+    "\"meta\":{\"provider\":\"stub\",\"route\":\"gemini\",\"model\":\"gemini-2.5-flash\",\"input_sha256\":\"", sha(), "\",\"ms\":0,\"usd\":0}}"]),
+  join("", ["{\"v\":1,\"type\":\"result\",\"req\":\"9\",\"status\":\"ok\",\"kind\":\"portrait\",\"sha256\":\"", sha(), "\",\"body\":\"{}\",",
+    "\"asset\":{\"path\":\"blobs/3c/", sha(), ".png\",\"mime\":\"image/png\",\"bytes\":219},",
+    "\"meta\":{\"provider\":\"stub\",\"route\":\"gemini\",\"model\":\"m\",\"input_sha256\":\"", sha(), "\",\"ms\":12,\"usd\":0.000125}}"]),
+  "{\"v\":1,\"type\":\"result\",\"req\":\"3\",\"status\":\"error\",\"code\":\"no_key\",\"meta\":{\"provider\":\"stub\",\"route\":\"none\"}}",
+  "{\"v\":1,\"type\":\"result\",\"req\":\"\",\"status\":\"error\",\"code\":\"bad_request\",\"meta\":{\"provider\":\"stub\",\"route\":\"none\"}}",
+  "{\"v\":1,\"type\":\"fatal\",\"code\":\"config\",\"detail\":\"config: unknown key openai\"}"]
+
+pure func inRt(l: string) -> bool = match decodeIn(l) { Ok(m) => encodeIn(m) == l && (match decodeIn(encodeIn(m)) { Ok(m2) => encodeIn(m2) == l, Err(_) => false }), Err(_) => false }
+pure func outRt(l: string) -> bool = match decodeOut(l) { Ok(m) => encodeOut(m) == l && (match decodeOut(encodeOut(m)) { Ok(m2) => encodeOut(m2) == l, Err(_) => false }), Err(_) => false }
+pure func allOf(g: string -> bool, xs: [string]) -> bool = match xs { [] => true, x :: r => g(x) && allOf(g, r) }
+pure func checkWireRoundTrip() -> bool = allOf(inRt, inLines()) && allOf(outRt, outLines())
+
+-- The second line. A nested cons pattern (`_ :: x :: _`) does not compile
+-- for the strict VM (unbound variable x; ailang#1517), hence two plain matches.
+export pure func secondIn(xs: [string]) -> string = match xs { [] => "", _ :: r => (match r { [] => "", x :: _ => x }) }
+-- Field decoding: the request's typed fields arrive as written.
+pure func checkWireFields() -> bool =
+  match decodeIn(secondIn(inLines())) {
+    Ok(m) => (match m {
+      WRequest(r) => r.req == "7" && r.seed == 9007199254740991 && r.key.entityId == "medic" && r.constraints.maxChars == 280 &&
+        r.constraints.noNumerals && r.expiresTick == 3607 && r.lineReq == None && (match r.cast { None => true, Some(_) => false }) && (match r.segments { None => true, Some(_) => false }),
+      _ => false }),
+    Err(_) => false
+  }
+
+pure func badIn(l: string) -> bool = match decodeIn(l) { Ok(_) => false, Err(c) => c == "bad_request" }
+pure func badOut(l: string) -> bool = match decodeOut(l) { Ok(_) => false, Err(c) => c == "bad_request" }
+pure func req(fields: string) -> string = join("", ["{\"v\":1,\"type\":\"request\",", fields, "}"])
+pure func full(seed: string, ctx: string) -> string =
+  req(join("", ["\"req\":\"1\",\"kind\":\"text\",\"purpose\":\"line\",\"key\":", key(), ",\"seed\":", seed, ",\"constraints\":", cons(), ",\"context\":", ctx, ",\"expires_tick\":1"]))
+pure func checkWireMalformed() -> bool =
+  badIn("not json") && badIn("{\"v\":2,\"type\":\"quit\"}") && badIn("{\"type\":\"quit\"}") && badIn("{\"v\":1,\"type\":\"dance\"}") &&
+  badIn("{\"v\":1,\"type\":\"hello\"}") && badIn(req("\"req\":\"1\"")) &&
+  badIn(full("-1", "{}")) && badIn(full("1.5", "{}")) && badIn(full("9007199254740992", "{}")) && badIn(full("1", "{\"a\":1}")) &&
+  badIn(full("1", "[]")) && badIn(full("1", "{\"a\":[1]}")) && inRt(full("1", "{}")) &&
+  badOut("{\"v\":1,\"type\":\"result\",\"req\":\"3\",\"status\":\"error\",\"code\":\"oops\",\"meta\":{\"provider\":\"stub\",\"route\":\"none\"}}") &&
+  badOut("{\"v\":1,\"type\":\"result\",\"req\":\"3\",\"status\":\"maybe\"}") &&
+  reqOfLine("{\"v\":1,\"type\":\"request\",\"req\":\"42\"}") == "42" && reqOfLine("garbage") == ""
+
+export pure func wireChecks() -> bool = checkWireRoundTrip() && checkWireFields() && checkWireMalformed()
+
+test "AI.4 ai/1 codecs round-trip every fixture both ways" { checkWireRoundTrip() }
+test "AI.4 ai/1 request fields decode as written" { checkWireFields() }
+test "AI.4 ai/1 malformed lines are bad_request" { checkWireMalformed() }

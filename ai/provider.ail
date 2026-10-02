@@ -1,0 +1,155 @@
+module stapledons/ai/provider
+
+-- Providers and the request handler (design (a2); plan change 2026-10-02).
+-- `Provider = Stub | Gemini | OpenRouter`. AI.4 wires only the stub: the
+-- two live providers refuse to start until AI.5 brings their adapters. The
+-- stub answers every route the routing table resolves and stamps
+-- `meta.route` with the provider the table chose (`meta.provider` stays
+-- `stub`), so the stub goldens show the routing. Pure: the service loads the
+-- fixtures and writes the blob this returns.
+--
+-- Stub text: "{e} Stub <purpose> <req> for <entity_id>.", e = the first
+-- allowed emotion, the request number spelled in words while no_numerals
+-- holds (else digits), trimmed to max_chars code points. The context field
+-- `stub_case` picks a body from ai/fixtures/stub_text.json (keyed by
+-- purpose): the negative cases the sim must refuse (digits, over_length,
+-- bad_marker, unlisted_emotion) and a non-ASCII line. Stub images: the
+-- committed 64x64 PNG for the emotion (avatars use neutral), described by
+-- the descriptor body {key, mime, bytes, width, height}. Stub voice arrives
+-- with AI.5: a routed voice request is answered provider_error.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, asObject)
+import std/string (concat, join, length, substring, trim, intToStr, chars)
+import std/crypto (sha256Hex, sha256Bytes)
+import std/bytes (fromString, fromBase64, byteAt)
+import std/bytes as B
+import ./key (CacheKey, member, aiKinds, isDecimal, keyError, size)
+import ./route (Routing, Route, Via, NoRoute, Hop, resolve)
+import ./wire (Request, In, WRequest, Out, OOk, OErr, CtxField, CStr, CList, Meta, encodeIn, keyObj)
+import ./cache (Blob, Origin, indexLine, blobPath)
+
+export type Models = { text: string, image: string, tts: string }
+export type Provider = Stub | Gemini(Models) | OpenRouter(Models)
+-- AI.4: only the stub can start. Each live provider names why it refuses.
+export pure func providerOf(name: string) -> Result[Provider, string] =
+  if name == "stub" then Ok(Stub)
+  else if name == "gemini" || name == "openrouter" then Err(concat(["config: live provider ", name, " is not wired until AI.5"]))
+  else Err(concat(["config: unknown provider ", name]))
+export pure func providerName(p: Provider) -> string = match p { Stub => "stub", Gemini(_) => "gemini", OpenRouter(_) => "openrouter" }
+
+export type Case = { purpose: string, name: string, body: string }
+export type Png = { emotion: string, b64: string }
+export type Ctx = { routing: Routing, keys: [string], textOnly: bool, cases: [Case], portraits: [Png] }
+export type Handled = { out: Out, blob: Option[Blob] }
+
+export pure func purposes() -> [string] = ["line", "news", "archive", "probe"]
+
+-- ai/fixtures/stub_text.json: {<purpose>: {<case>: <body>}}.
+@allow_empty_ok("a purpose with no cases is legal")
+pure func casesOf(purpose: string, kvs: [{key: string, value: Json}]) -> Result[[Case], string] =
+  match kvs {
+    [] => Ok([]),
+    e :: r => match e.value {
+      JString(b) => match casesOf(purpose, r) { Ok(cs) => Ok({ purpose: purpose, name: e.key, body: b } :: cs), Err(x) => Err(x) },
+      _ => Err(concat(["config: stub_text ", purpose, ".", e.key, " is not a string"]))
+    }
+  }
+@allow_empty_ok("an empty table has no negative cases; the stub line still answers")
+pure func purposesOf(kvs: [{key: string, value: Json}]) -> Result[[Case], string] =
+  match kvs {
+    [] => Ok([]),
+    e :: r => if !member(e.key, purposes()) then Err(concat(["config: stub_text: unknown purpose ", e.key])) else match asObject(e.value) {
+      Some(inner) => (match casesOf(e.key, inner) { Ok(a) => (match purposesOf(r) { Ok(b) => Ok(a ++ b), Err(x) => Err(x) }), Err(x) => Err(x) }),
+      None => Err(concat(["config: stub_text ", e.key, " is not an object"]))
+    }
+  }
+export pure func parseStubText(text: string) -> Result[[Case], string] =
+  match decode(text) { Ok(j) => (match asObject(j) { Some(kvs) => purposesOf(kvs), None => Err("config: stub_text is not an object") }), Err(_) => Err("config: stub_text is not JSON") }
+
+-- PNG width and height from the IHDR chunk (bytes 16-23, big-endian), or
+-- None when the bytes are not a PNG.
+pure func at(b: bytes, i: int) -> int = match byteAt(b, i) { Some(v) => v, None => 0 - 1 }
+pure func be32(b: bytes, i: int) -> int = ((at(b, i) * 256 + at(b, i + 1)) * 256 + at(b, i + 2)) * 256 + at(b, i + 3)
+export pure func pngSize(b: bytes) -> Option[{w: int, h: int}] =
+  if B.length(b) >= 24 && at(b, 0) == 137 && at(b, 1) == 80 && at(b, 2) == 78 && at(b, 3) == 71 && at(b, 12) == 73 && at(b, 13) == 72 && at(b, 14) == 68 && at(b, 15) == 82
+  then Some({ w: be32(b, 16), h: be32(b, 20) }) else None
+
+-- ------------------------------------------------------------ stub text
+pure func digitWord(c: string) -> string =
+  match c { "0" => "zero", "1" => "one", "2" => "two", "3" => "three", "4" => "four", "5" => "five", "6" => "six", "7" => "seven", "8" => "eight", _ => "nine" }
+-- Not `words` (std/string.words replaces it under `ailang test`, ailang#1516).
+pure func digitWords(cs: [string]) -> [string] = match cs { [] => [], c :: r => digitWord(c) :: digitWords(r) }
+export pure func spelled(req: string) -> string = join("-", digitWords(chars(req)))
+pure func phrase(purpose: string) -> string =
+  if purpose == "news" then "Stub news" else if purpose == "archive" then "Stub archive entry" else if purpose == "probe" then "Stub probe" else "Stub line"
+pure func firstOr(xs: [string], d: string) -> string = match xs { [] => d, x :: _ => x }
+export pure func stubText(r: Request) -> string {
+  let n = if r.constraints.noNumerals then spelled(r.req) else r.req;
+  let display = concat([phrase(r.purpose), " ", n, " for ", r.key.entityId, "."]);
+  let cut = if length(display) > r.constraints.maxChars then trim(substring(display, 0, r.constraints.maxChars)) else display;
+  concat(["{", firstOr(r.constraints.emotions, "neutral"), "} ", cut])
+}
+pure func ctxStr(cs: [CtxField], name: string) -> Option[string] =
+  match cs { [] => None, c :: r => if c.name == name then (match c.value { CStr(v) => Some(v), CList(_) => None }) else ctxStr(r, name) }
+pure func caseBody(cs: [Case], purpose: string, name: string) -> Option[string] =
+  match cs { [] => None, c :: r => if c.purpose == purpose && c.name == name then Some(c.body) else caseBody(r, purpose, name) }
+-- The text body: a fixture case when the request names one (None when it
+-- names a case the table lacks), else the stub line.
+export pure func textBody(cases: [Case], r: Request) -> Option[string] =
+  match ctxStr(r.context, "stub_case") { Some(name) => caseBody(cases, r.purpose, name), None => Some(stubText(r)) }
+
+-- ------------------------------------------------------------ handling
+-- A request the service must refuse before routing: a non-decimal id, an
+-- unknown kind or purpose, a bad key, or a key of another kind.
+export pure func requestError(r: Request) -> bool =
+  !isDecimal(r.req) || !member(r.kind, aiKinds()) || !member(r.purpose, purposes()) || keyError(r.key) != None || r.key.kind != r.kind
+pure func err(r: Request, code: string, route: string) -> Handled = { out: OErr({ req: r.req, code: code, provider: "stub", route: route }), blob: None }
+pure func pngFor(ps: [Png], e: string) -> Option[string] = match ps { [] => None, p :: r => if p.emotion == e then Some(p.b64) else pngFor(r, e) }
+pure func meta(h: Hop, input: string) -> Meta = { provider: "stub", route: h.provider, model: h.model, inputSha256: input, ms: 0, usd: 0.0 }
+pure func origin(h: Hop, input: string, r: Request, sz: Option[{w: int, h: int}]) -> Origin =
+  { provider: "stub", route: h.provider, model: h.model, inputSha256: input, seed: r.seed, size: sz }
+
+pure func answerText(c: Ctx, r: Request, h: Hop, input: string) -> Handled =
+  match textBody(c.cases, r) {
+    None => err(r, "bad_request", h.provider),
+    Some(body) => {
+      let sha = sha256Hex(body);
+      let data = fromString(body);
+      let n = B.length(data);
+      { out: OOk({ req: r.req, kind: r.kind, sha256: sha, body: body, asset: Some({ path: blobPath(sha, "txt"), mime: "text/plain", bytes: n }), meta: meta(h, input) }),
+        blob: Some({ sha256: sha, ext: "txt", mime: "text/plain", data: data, index: indexLine(r.key, sha, "text/plain", n, "txt", origin(h, input, r, None)) }) }
+    }
+  }
+pure func descriptor(k: CacheKey, n: int, w: int, ht: int) -> string =
+  concat(["{\"key\":", keyObj(k), ",\"mime\":\"image/png\",\"bytes\":", intToStr(n), ",\"width\":", intToStr(w), ",\"height\":", intToStr(ht), "}"])
+pure func answerImage(c: Ctx, r: Request, h: Hop, input: string) -> Handled =
+  match pngFor(c.portraits, if r.kind == "avatar" then "neutral" else r.key.emotion) {
+    None => err(r, "provider_error", h.provider),
+    Some(b64) => match fromBase64(b64) {
+      None => err(r, "provider_error", h.provider),
+      Some(data) => match pngSize(data) {
+        None => err(r, "provider_error", h.provider),
+        Some(sz) => {
+          let sha = sha256Bytes(data);
+          let n = B.length(data);
+          { out: OOk({ req: r.req, kind: r.kind, sha256: sha, body: descriptor(r.key, n, sz.w, sz.h), asset: Some({ path: blobPath(sha, "png"), mime: "image/png", bytes: n }), meta: meta(h, input) }),
+            blob: Some({ sha256: sha, ext: "png", mime: "image/png", data: data, index: indexLine(r.key, sha, "image/png", n, "png", origin(h, input, r, Some(sz))) }) }
+        }
+      }
+    }
+  }
+
+-- One request -> one result (and the blob to write first, if any).
+-- input_sha256 is the sha256 of the request's canonical encoding.
+export pure func handle(c: Ctx, r: Request) -> Handled =
+  if requestError(r) then err(r, "bad_request", "none")
+  else match resolve(c.routing, r.kind, c.keys, c.textOnly) {
+    NoRoute(why) => err(r, why, "none"),
+    Via(h) => {
+      let input = sha256Hex(encodeIn(WRequest(r)));
+      if r.kind == "text" then answerText(c, r, h, input)
+      else if r.kind == "voice" then err(r, "provider_error", h.provider)
+      else answerImage(c, r, h, input)
+    }
+  }
