@@ -45,3 +45,28 @@ gcloud storage buckets create "gs://$DEV_BUCKET" --project="$PROJECT_ID" \
   --public-access-prevention || true          # boolean flag: enforced
 gcloud storage buckets update "gs://$DEV_BUCKET" --update-labels=app=stapledons-voyage,purpose=dev-builds
 gcloud storage buckets update "gs://$DEV_BUCKET" --lifecycle-file="$(dirname "$0")/dev-builds-lifecycle.json"
+
+# 8. Build-time AI generation (D-20, Mark 2026-10-02): a Gemini API key owned by
+#    the project, restricted to the Generative Language API, stored only in
+#    Secret Manager (never printed, never in git). Read it with:
+#      gcloud secrets versions access latest --secret=gemini-api-key --project=stapledons-voyage
+#    The unattended loop never spends; only attended runs read this secret.
+gcloud services enable generativelanguage.googleapis.com apikeys.googleapis.com \
+  secretmanager.googleapis.com billingbudgets.googleapis.com --project="$PROJECT_ID"
+KEY_UID=$(gcloud services api-keys create --project="$PROJECT_ID" \
+  --display-name="stapledons-voyage build-time generation (Gemini)" \
+  --api-target=service=generativelanguage.googleapis.com --format="value(response.uid)")
+gcloud secrets create gemini-api-key --project="$PROJECT_ID" --replication-policy=automatic \
+  --labels=app=stapledons-voyage,purpose=build-time-ai || true
+gcloud services api-keys get-key-string "$KEY_UID" --project="$PROJECT_ID" --format="value(keyString)" \
+  | tr -d '\n' | gcloud secrets versions add gemini-api-key --project="$PROJECT_ID" --data-file=-
+
+# 9. Monthly budget alert, about US$20. The billing account is in DKK, so the
+#    amount is in DKK. --billing-project routes the API quota to this project
+#    (the caller's default project may not have the Budget API enabled), and
+#    --filter-projects needs the project NUMBER, not the ID.
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+gcloud billing budgets create --billing-project="$PROJECT_ID" --billing-account="$BILLING_ACCOUNT" \
+  --display-name="stapledons-voyage monthly" --budget-amount=140DKK \
+  --filter-projects="projects/$PROJECT_NUMBER" \
+  --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0

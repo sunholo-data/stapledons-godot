@@ -17,6 +17,9 @@ m@sunholo.com.
 | API | `storage.googleapis.com` | `google_project_service` |
 | Bucket | `gs://stapledons-voyage-assets`, location `EU`, uniform bucket-level access, public access prevention `inherited`, labels `app=stapledons-voyage,purpose=assets` | `google_storage_bucket` (`uniform_bucket_level_access = true`, `public_access_prevention = "inherited"`) |
 | Public read | `allUsers` → `roles/storage.objectViewer` on the bucket | `google_storage_bucket_iam_member` |
+| AI key | Gemini API key (uid `d89b4007-b72c-4044-8d99-7b42da1babfd`), restricted to `generativelanguage.googleapis.com`; value only in Secret Manager secret `gemini-api-key` | `google_apikeys_key` + `google_secret_manager_secret` / `_version` (the value stays out of state, e.g. `ignore_changes`) |
+| Budget | `stapledons-voyage monthly`, 140 DKK (about US$20) per month, alerts at 50/90/100 %, id `b42c642f-2bac-4ce0-a2cb-5f225ec786e9` | `google_billing_budget` |
+| APIs (D-20) | `generativelanguage`, `apikeys`, `secretmanager`, `billingbudgets` | `google_project_service` |
 | Dev-builds bucket | `gs://stapledons-voyage-dev-builds`, `EU`, uniform access, public access prevention **enforced**, labels `purpose=dev-builds`, lifecycle: delete `macos/builds/*` after 30 days (`dev-builds-lifecycle.json`) | `google_storage_bucket` with `lifecycle_rule` |
 
 ## Layout
@@ -42,3 +45,11 @@ hit this and was corrected with `buckets update --no-public-access-prevention`.
 - `tools/install_review_build.sh --dev` reads `latest.json`, downloads and
   verifies the zip, unzips it to `~/Applications`, clears the quarantine flag
   and opens the app. Without `--dev` it installs the latest GitHub release.
+
+## Gotchas (budgets)
+
+- Holosun Billing is in **DKK**. A `20USD` budget fails with a bare
+  `INVALID_ARGUMENT`, and a plain `20` means 20 DKK.
+- Pass `--billing-project=stapledons-voyage`, or the call uses your default
+  gcloud project, which may not have the Budget API enabled.
+- `--filter-projects` needs `projects/<number>` (216522869983), not the ID.
