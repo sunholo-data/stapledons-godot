@@ -9,7 +9,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden capture run voyage import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -156,7 +156,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime bundled
+export-macos: runtime sky-bundle import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime and the pinned sky textures bundled
 	@mkdir -p build/macos
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
@@ -166,6 +166,18 @@ export-smoke:      ## run the exported .app's capture with NO ailang on PATH; mu
 	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
 	env -i PATH=/usr/bin:/bin HOME="$$HOME" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
 	@test -s $(SCRATCH)/export-smoke/contact_sheet.png && echo "export-smoke: OK ($$(ls $(SCRATCH)/export-smoke | wc -l | tr -d ' ') files)"
+
+DEV_BUCKET ?= stapledons-voyage-dev-builds
+
+publish-dev: export-macos export-smoke   ## upload this build to the private dev bucket (needs gcloud auth); install with tools/install_review_build.sh --dev
+	@ver=$$(git describe --tags --always --dirty); zip="$(SCRATCH)/StapledonsVoyage-$$ver-macos.zip"; \
+	rm -f "$$zip"; (cd build/macos && ditto -c -k --keepParent "Stapledons Voyage.app" "$(CURDIR)/$$zip"); \
+	sum=$$(shasum -a 256 "$$zip" | cut -d' ' -f1); name=$$(basename "$$zip"); \
+	gcloud storage cp "$$zip" "gs://$(DEV_BUCKET)/macos/builds/$$name" && \
+	printf '%s  %s\n' "$$sum" "$$name" | gcloud storage cp - "gs://$(DEV_BUCKET)/macos/builds/$$name.sha256" && \
+	printf '{"version":"%s","zip":"macos/builds/%s","sha256":"%s","commit":"%s","built":"%s"}\n' "$$ver" "$$name" "$$sum" "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+	  | gcloud storage cp --cache-control="no-cache" - "gs://$(DEV_BUCKET)/macos/latest.json" && \
+	echo "publish-dev: $$name ($$sum) -> gs://$(DEV_BUCKET)/macos/latest.json"
 
 .PHONY: catalogue-probe
 catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM parity runs
@@ -198,6 +210,52 @@ sky-model:        ## M1.4b offline: destarred panorama -> per-texel T_c model (G
 	  sim/tools/sky_model.ail
 	$(GODOT) --headless --path . --script tools/sky_colours.gd -- paint $(SKY)/noirlab_10k_destarred.png $(SKY)/fits.csv $(SKY)/noirlab_10k_skymodel.png
 
+# M1.4d: the sky textures are generated, not committed (two ~80 MB PNGs). `make sky-assets`
+# rebuilds them byte for byte from pinned downloads; data/sky/SHA256SUMS pins inputs AND outputs.
+STARMAP_SCRIPTS := .claude/skills/starmap-manager/scripts
+.PHONY: sky-inputs destar sky-assets sky-verify sky-bundle
+sky-inputs:       ## M1.4d: sky pipeline inputs into data/raw: the public bucket first (D-18), then the original sources; check pins
+	@sh tools/sky_assets.sh fetch inputs || echo "sky-inputs: bucket incomplete; falling back to the original sources"
+	@test -f $(SKY)/noirlab_10k.tif || bash $(STARMAP_SCRIPTS)/download_background.sh raw
+	@test -f data/raw/hip_v7.tsv || bash $(STARMAP_SCRIPTS)/download_stars.sh hip
+	@test -f data/raw/table1c.dat.gz || bash $(STARMAP_SCRIPTS)/download_stars.sh medium
+	@test -f data/raw/cns5.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh quick
+	@test -f data/raw/cns5.csv || $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
+	@test -f data/raw/gcns.csv || { gunzip -kf data/raw/table1c.dat.gz && $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail; }
+	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=inputs
+
+sky-assets:       ## M1.4d/D-18: pinned sky textures: from the public bucket in seconds, else regenerate (inputs -> destar -> sky model, ~15 min)
+	@if sh tools/sky_assets.sh fetch textures; then $(MAKE) --no-print-directory sky-verify SKY_VERIFY=textures; \
+	else echo "sky-assets: textures not in the bucket; regenerating"; $(MAKE) --no-print-directory sky-regen; fi
+
+sky-regen: sky-inputs destar sky-model   ## M1.4d: full regeneration; outputs must match data/sky/SHA256SUMS
+	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=all
+
+sky-publish:      ## D-18 maintainers (gcloud auth): upload pinned sky inputs + textures to gs://stapledons-voyage-assets/sky/<sha256>.<ext> (never overwrites)
+	sh tools/sky_assets.sh publish
+
+# Godot's export skips data/raw (it has a .gdignore), so the textures are staged as byte
+# copies in sky_bundle/ (gitignored). Pinned outputs only: a texture that does not match
+# data/sky/SHA256SUMS never ships. No textures -> a warning and a black-sky build.
+sky-bundle:       ## M1.4d: stage the pinned sky textures into sky_bundle/ for the export (.png.bin, not imported)
+	@rm -rf sky_bundle
+	@if [ -f $(SKY)/noirlab_10k_destarred.png ] && [ -f $(SKY)/noirlab_10k_skymodel.png ]; then \
+	  $(MAKE) --no-print-directory sky-verify SKY_VERIFY=textures && mkdir -p sky_bundle && \
+	  cp $(SKY)/noirlab_10k_destarred.png sky_bundle/noirlab_10k_destarred.png.bin && \
+	  cp $(SKY)/noirlab_10k_skymodel.png sky_bundle/noirlab_10k_skymodel.png.bin && \
+	  echo "sky-bundle: staged $$(du -sh sky_bundle | cut -f1) of pinned sky textures"; \
+	else echo "sky-bundle: WARNING no sky textures in $(SKY); this build renders a black sky (run make sky-assets)"; fi
+
+SKY_VERIFY ?= all
+sky-verify:       ## M1.4d: sha256-check the sky inputs and generated textures against data/sky/SHA256SUMS (SKY_VERIFY=inputs|textures|all)
+	@case "$(SKY_VERIFY)" in inputs) k='input';; textures) k='texture';; *) k='input|output|texture';; esac; \
+	grep -E "^[0-9a-f]{64} +($$k) " data/sky/SHA256SUMS \
+	  | while read -r sum kind path; do \
+	      if [ "$$path" = data/raw/hip_v7.tsv ]; then got=$$(grep -v '^#' "$$path" | shasum -a 256 | cut -d' ' -f1); \
+	      else got=$$(shasum -a 256 "$$path" 2>/dev/null | cut -d' ' -f1); fi; \
+	      if [ "$$got" = "$$sum" ]; then echo "  ok      $$path"; else echo "  MISMATCH $$path (got $${got:-missing})"; exit 1; fi; \
+	    done && echo "sky-verify: $(SKY_VERIFY) match data/sky/SHA256SUMS"
+
 .PHONY: catalogue-bytes
 catalogue-bytes:  ## native F32 bytes: independent Python oracle, interpreter and five ordinary VM runs
 	AILANG=$(AILANG) python3 tools/test_catalogue_bytes.py
@@ -214,7 +272,7 @@ destar-test:      ## star removal core (sim/tools/destar.ail) on a synthetic pan
 	@cmp $(SCRATCH)/destar-vm.txt $(SCRATCH)/destar-interp.txt && test "$$(cat $(SCRATCH)/destar-vm.txt)" = "destar-ok" && echo "destar-test: $$(cat $(SCRATCH)/destar-vm.txt) (strict VM = interpreter)"
 
 destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars removed (Godot I/O, AILANG core); needs data/raw/{hip_v7.tsv,gcns.csv,cns5.csv}
-	@test -f $(SKY)/noirlab_10k.png || sips -s format png $(SKY)/noirlab_10k.tif --out $(SKY)/noirlab_10k.png
+	@if [ ! -f $(SKY)/noirlab_10k.png ] || [ $(SKY)/noirlab_10k.tif -nt $(SKY)/noirlab_10k.png ]; then sips -s format png $(SKY)/noirlab_10k.tif --out $(SKY)/noirlab_10k.png; fi
 	$(GODOT) --headless --path . --script tools/destar_io.gd -- dump $(SKY)/noirlab_10k.png $(SKY)/noirlab_10k.rgb
 	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
 	  --args-json '{"rgb":"$(SKY)/noirlab_10k.rgb","w":10000,"h":5000,"hip":"data/raw/hip_v7.tsv","gcns":"data/raw/gcns.csv","cns5":"data/raw/cns5.csv","patches":"$(SKY)/destar_patches.bin","report":"data/sky/destar_report.json"}' \

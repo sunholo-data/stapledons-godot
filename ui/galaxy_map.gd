@@ -18,6 +18,11 @@ extends Node3D
 ## sim, not the UI, refuses it (`committed`) and the panel shows the refusal.
 ## Star names come from data/starmap/names.json (D-17), the catalogue id below.
 ## Mouse: drag to orbit, wheel to zoom, click a star to select it.
+## Trackpad: pinch (InputEventMagnifyGesture) or two-finger scroll
+## (InputEventPanGesture, one unit of delta.y = one wheel notch, same
+## direction) zooms; two-finger scroll never orbits. Keys + / = and - zoom by
+## one notch. Cmd/Ctrl with those keys is the window's UI zoom (UiScale), not
+## the camera.
 
 signal target_selected(star_id: String)
 
@@ -40,6 +45,10 @@ const PICK_RADIUS_PX := 12.0
 const NAME_SPACING_PX := 16.0
 const RINGS_LY := [5.0, 10.0, 20.0, 50.0]
 const PANEL_WIDTH := 430
+## Camera distance limits and one zoom notch (wheel, key, pan-gesture unit).
+const DIST_MIN := 2.0
+const DIST_MAX := 400.0
+const ZOOM_NOTCH := 0.9
 
 ## Panel rows in display order: [label, sim field, format]. Both clocks first,
 ## then arrival, the crew-age placeholders, then speed, energy, ISM and CMB.
@@ -131,6 +140,10 @@ var pivot := Vector3.ZERO
 var yaw := 0.6
 var pitch := -0.45
 var dist := 18.0
+## The footer's controls hint. Captures set this false before the map enters
+## the tree so the committed capture PNGs do not change.
+var show_hint := true
+var hint := Label.new()
 
 var _points := MultiMeshInstance3D.new()
 var _overlay := Control.new()
@@ -232,6 +245,11 @@ func _build() -> void:
 	help.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
 	help.add_theme_font_size_override("font_size", 13)
 	box.add_child(help)
+	hint.text = "Pinch or scroll to zoom · drag to orbit · %s+/− UI size" % ("⌘" if OS.get_name() == "macOS" else "Ctrl ")
+	hint.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
+	hint.add_theme_font_size_override("font_size", 13)
+	hint.visible = show_hint
+	box.add_child(hint)
 	_build_dialog(layer)
 	_update_camera()
 
@@ -707,13 +725,54 @@ static func nearest_index(pts: PackedVector2Array, click: Vector2, radius: float
 	return best
 
 
+## Scale the camera distance by `factor` (< 1 zooms in), clamped to
+## [DIST_MIN, DIST_MAX] like the wheel.
+func zoom_by(factor: float) -> void:
+	if factor > 0.0 and is_finite(factor):
+		dist = clampf(dist * factor, DIST_MIN, DIST_MAX)
+	_update_camera()
+
+
+## One wheel notch: in (dist * 0.9) or out (dist / 0.9), as the wheel does.
+func zoom_notch(zoom_in: bool) -> void:
+	dist = maxf(DIST_MIN, dist * ZOOM_NOTCH) if zoom_in else minf(DIST_MAX, dist / ZOOM_NOTCH)
+	_update_camera()
+
+
+## +1 / -1 for a plain + / = / - (or keypad) press, else 0. With Cmd/Ctrl the
+## keys belong to the UI zoom (UiScale) and the camera leaves them alone.
+static func zoom_key(event: InputEvent) -> int:
+	var k := event as InputEventKey
+	if k == null or not k.pressed or k.is_command_or_control_pressed() or k.ctrl_pressed or k.meta_pressed or k.alt_pressed:
+		return 0
+	match k.keycode:
+		KEY_EQUAL, KEY_PLUS, KEY_KP_ADD:
+			return 1
+		KEY_MINUS, KEY_KP_SUBTRACT:
+			return -1
+	return 0
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMagnifyGesture: # pinch: factor > 1 (fingers apart) zooms in
+		zoom_by(1.0 / (event as InputEventMagnifyGesture).factor)
+		_accept()
+		return
+	if event is InputEventPanGesture: # two-finger scroll: zoom only, never orbit
+		zoom_by(pow(1.0 / ZOOM_NOTCH, (event as InputEventPanGesture).delta.y))
+		_accept()
+		return
+	var zk := zoom_key(event)
+	if zk != 0:
+		zoom_notch(zk > 0)
+		_accept()
+		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
-			dist = maxf(2.0, dist * 0.9)
+			dist = maxf(DIST_MIN, dist * ZOOM_NOTCH)
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
-			dist = minf(400.0, dist / 0.9)
+			dist = minf(DIST_MAX, dist / ZOOM_NOTCH)
 		elif mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
 				_drag_from = mb.position
@@ -730,6 +789,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		yaw -= mm.relative.x * 0.006
 		pitch = clampf(pitch + mm.relative.y * 0.006, -1.5, 1.5)
 		_update_camera()
+
+
+func _accept() -> void:
+	if is_inside_tree():
+		get_viewport().set_input_as_handled()
 
 
 func _draw_overlay() -> void:

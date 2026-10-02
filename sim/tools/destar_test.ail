@@ -66,6 +66,25 @@ export pure func checkDetect(img: Img) -> bool {
   s.found && near(intToFloat(s.px), 390.0, 2.0) && near(intToFloat(s.py), 140.0, 2.0)
 }
 
+-- a bright star whose core rolls off at 250 (not clipped) on a noisy band (sigma ~45,
+-- so 5 sigma > its 170 DN peak), like eps Sco on the photo: a V < 4.5 catalogue star is
+-- found by its near-clipped core; a fainter one is not
+pure func noisy(x: int, y: int) -> int {
+  let dx = intToFloat(x) + 0.5 - 50.5; let dy = intToFloat(y) + 0.5 - 50.5;
+  let s = star(x, y, 50.5, 50.5, 170.0);
+  if dx * dx + dy * dy < 9.0 then floatToInt(floor(80.0 + s + 0.5))
+  else floatToInt(floor(80.0 + intToFloat((x * 37 + y * 91) % 121 - 60) + s + 0.5))
+}
+pure func noisyImage() -> Img =
+  { b: fromInts(flatMap(\y. flatMap(\x. { let v = noisy(x, y); [v, v, v] }, steps(0, 99)), steps(0, 99))), w: 100, h: 100 }
+
+export pure func checkNearClip() -> bool {
+  let img = noisyImage();
+  let p = detect(img, { v: 2.3, x: 50.5, y: 50.5, src: 0 });
+  let q = detect(img, { v: 6.0, x: 50.5, y: 50.5, src: 0 });
+  near(lum(img, 50, 50), 250.0, 1.0e-9) && p.found && p.px == 50 && p.py == 50 && p.peak < 5.0 * p.sigma && !q.found
+}
+
 export pure func checkHalo() -> bool =
   near(haloRadius(7.0), 2.5 * 1.15 + 1.5, 1.0e-12) && near(haloRadius(0.0 - 3.0), 27.0 * 1.15 + 1.5, 1.0e-12) &&
   near(haloRadius(5.0), 8.5 * 1.15 + 1.5, 1.0e-12)
@@ -120,7 +139,7 @@ export pure func destarVm(n: int) -> string {
   let img = image();
   let bad = map(\c. match c { (name, _) => name }, filter(\c. match c { (_, ok) => !ok }, [
     ("pixels", checkPixels(img)), ("projection", checkProjection(img)), ("parsers", checkParsers(img)),
-    ("detect", checkDetect(img)), ("halo", checkHalo()), ("fill", checkFill(img)), ("overlap", checkOverlap(img))]));
+    ("detect", checkDetect(img)), ("halo", checkHalo()), ("nearclip", checkNearClip()), ("fill", checkFill(img)), ("overlap", checkOverlap(img))]));
   match bad { [] => "destar-ok", _ => concat(["destar-BAD: ", join(",", bad)]) }
 }
 

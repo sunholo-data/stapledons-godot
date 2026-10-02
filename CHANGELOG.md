@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Review-build polish, 2026-10-02 (Mark's feedback on `v0.3.1-m2-journey`)
+
+- **Trackpad zoom on the galaxy map:** pinch (magnify gesture) and two-finger
+  scroll (pan gesture, one unit = one wheel notch) zoom, clamped like the
+  wheel; `+`/`=` and `-` zoom by a notch. Two-finger scroll never orbits.
+- **HiDPI and UI size:** `allow_hidpi`, canvas-items stretch (aspect expand)
+  so the panel scales while 3D renders at full resolution; on a HiDPI screen
+  the window opens at base × screen scale. Cmd/Ctrl `+`/`-`/`0` change the UI
+  size (0.75–3.0). Captures and goldens keep the 1:1 window: committed
+  `docs/m2.6a`, `docs/m2.6b` PNGs are byte-identical.
+- **Footer hint** "Pinch or scroll to zoom · drag to orbit · ⌘+/− UI size"
+  (hidden in `--map-capture`).
+- **Missing sky background is loud:** the sky flight warns on startup and
+  shows "sky background not bundled in this build" when the M1.4 panorama is
+  absent (HUD note hidden in `--capture`).
+
 ### M2 journey core, 2026-10-01 – 2026-10-02 (sprint R1-M2-JOURNEY, landed; bar clause 2 met)
 
 Ten milestones, PRs #22–#35, each independently evaluated (89–96/100).

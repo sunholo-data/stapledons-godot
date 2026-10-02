@@ -9,6 +9,7 @@ extends Node3D
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
 ##   godot --path . -- --golden            shader vs CPU reference positions
 ## Any run:  -- --record=path.ndjson  tees the sim's input log (replays headless).
+## Interactive runs: Cmd/Ctrl + / - / 0 change the UI size (UiScale; HiDPI aware).
 ##
 ## The sim runs a protocol v2 diag session (seed 0, scenario "sol"): the ship
 ## is flown with `heading` and `thrust` intents and drawn from the bridge's
@@ -34,10 +35,17 @@ var warp := 0.2 # ship-years per real second
 var _accum := 0.0
 var _last_pos_update := Vector3.ZERO
 var _map_mode := false
+var _fixed_scale := false # captures / goldens: no HiDPI stretch, no UI zoom, no sky note
+var sky_note := Label.new()
+const SKY_NOTE := "sky background not bundled in this build"
 
 
 func _ready() -> void:
 	var args := _user_args()
+	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
+	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden")
+	UiScale.configure(get_window(), _fixed_scale)
 	# Launching with no arguments (a double-clicked review build, `make run`)
 	# opens the galaxy map on alpha Cen A; `--voyage` runs the M0/M1 sky flight.
 	if args.is_empty():
@@ -83,6 +91,7 @@ func _run_map(args: Dictionary) -> void:
 		return
 	var map: GalaxyMap = load("res://ui/galaxy_map.tscn").instantiate()
 	map.auto_tick = not capture
+	map.show_hint = not capture # the committed capture PNGs predate the hint
 	add_child(map)
 	map.load_catalogue("res://data/starmap/stars.json")
 	map.load_names("res://data/starmap/names.json")
@@ -197,10 +206,22 @@ func _build_scene() -> void:
 	if not _user_args().has("golden"):
 		has_background = background.attach(env, get_viewport().get_visible_rect().size.y, camera.fov)
 		background.set_exposure(BG_EXPOSURE)
+		if not has_background:
+			# The M1.4 panorama is not in the repo (data/raw is ignored), so a
+			# build without it flies over black. Say so instead of failing silently.
+			push_warning("%s: %s and %s are missing; the sky flight renders stars over black" % [SKY_NOTE, SkyBackground.PHOTO, SkyBackground.MODEL])
 	var layer := CanvasLayer.new()
 	hud.position = Vector2(16, 12)
 	hud.add_theme_font_size_override("font_size", 16)
 	layer.add_child(hud)
+	# On screen only in interactive runs, so --capture PNGs are unchanged.
+	sky_note.text = SKY_NOTE
+	sky_note.visible = not has_background and not _fixed_scale
+	sky_note.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE, 16)
+	sky_note.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	sky_note.add_theme_font_size_override("font_size", 13)
+	sky_note.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 0.85))
+	layer.add_child(sky_note)
 	add_child(layer)
 
 
@@ -244,6 +265,13 @@ func _process(delta: float) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.pressed:
+		return
+	if UiScale.is_zoom_event(event): # Cmd/Ctrl + / - / 0: UI size, never warp
+		if not _fixed_scale:
+			UiScale.handle(get_window(), event)
+		get_viewport().set_input_as_handled()
+		return
+	if _map_mode:
 		return
 	match event.keycode:
 		KEY_1: yaw = 0.0; pitch = 0.0

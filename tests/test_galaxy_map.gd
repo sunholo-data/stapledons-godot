@@ -421,6 +421,106 @@ func test_transit(map: GalaxyMap) -> bool:
 	return true
 
 
+## Trackpad and keyboard zoom (review-build polish): pinch and two-finger
+## scroll zoom like the wheel, stay clamped, and never orbit; Cmd/Ctrl keys are
+## the UI zoom, not the camera. Events go through the viewport's input path.
+func key(code: Key, cmd := false) -> InputEventKey:
+	var k := InputEventKey.new()
+	k.keycode = code
+	k.pressed = true
+	k.ctrl_pressed = cmd
+	k.meta_pressed = cmd
+	return k
+
+func magnify(f: float) -> InputEventMagnifyGesture:
+	var g := InputEventMagnifyGesture.new()
+	g.factor = f
+	g.position = Vector2(100, 100) # over the map, left of the panel
+	return g
+
+func pan(dy: float, dx := 0.0) -> InputEventPanGesture:
+	var g := InputEventPanGesture.new()
+	g.delta = Vector2(dx, dy)
+	g.position = Vector2(100, 100)
+	return g
+
+func wheel(up: bool) -> InputEventMouseButton:
+	var m := InputEventMouseButton.new()
+	m.button_index = MOUSE_BUTTON_WHEEL_UP if up else MOUSE_BUTTON_WHEEL_DOWN
+	m.pressed = true
+	m.position = Vector2(100, 100)
+	return m
+
+func dist_after(map: GalaxyMap, vp: SubViewport, start: float, events: Array) -> float:
+	map.dist = start
+	for e in events:
+		vp.push_input(e)
+	return map.dist
+
+func test_trackpad_zoom(map: GalaxyMap, vp: SubViewport) -> bool:
+	var wheel_in := dist_after(map, vp, 18.0, [wheel(true)])
+	var wheel_out := dist_after(map, vp, 18.0, [wheel(false)])
+	ok("wheel still zooms (in %.4f, out %.4f from 18)" % [wheel_in, wheel_out], absf(wheel_in - 18.0 * 0.9) < 1e-12 and absf(wheel_out - 18.0 / 0.9) < 1e-12)
+	ok("pinch out (factor 1.5) zooms in to 12", absf(dist_after(map, vp, 18.0, [magnify(1.5)]) - 12.0) < 1e-9)
+	ok("pinch in (factor 0.5) zooms out to 36", absf(dist_after(map, vp, 18.0, [magnify(0.5)]) - 36.0) < 1e-9)
+	ok("two-finger scroll up (delta.y -1) = one wheel-up notch", absf(dist_after(map, vp, 18.0, [pan(-1.0)]) - wheel_in) < 1e-9)
+	ok("two-finger scroll down (delta.y +1) = one wheel-down notch", absf(dist_after(map, vp, 18.0, [pan(1.0)]) - wheel_out) < 1e-9)
+	ok("half a scroll unit is half a notch (geometric)", absf(dist_after(map, vp, 18.0, [pan(-0.5), pan(-0.5)]) - wheel_in) < 1e-9)
+	ok("pinch clamps at the near limit", dist_after(map, vp, 18.0, [magnify(10.0), magnify(10.0), magnify(10.0)]) == GalaxyMap.DIST_MIN)
+	ok("pinch clamps at the far limit", dist_after(map, vp, 18.0, [magnify(0.01), magnify(0.01)]) == GalaxyMap.DIST_MAX)
+	ok("scroll clamps at both limits", dist_after(map, vp, 18.0, [pan(-500.0)]) == GalaxyMap.DIST_MIN and dist_after(map, vp, 18.0, [pan(500.0)]) == GalaxyMap.DIST_MAX)
+	ok("a zero or bad pinch factor leaves the distance alone", dist_after(map, vp, 18.0, [magnify(0.0), magnify(-2.0)]) == 18.0)
+	var key_in := dist_after(map, vp, 18.0, [key(KEY_EQUAL)])
+	ok("= zooms in one notch", absf(key_in - wheel_in) < 1e-12)
+	ok("+ and keypad + zoom in one notch each", absf(dist_after(map, vp, 18.0, [key(KEY_PLUS), key(KEY_KP_ADD)]) - 18.0 * 0.81) < 1e-9)
+	ok("- and keypad - zoom out one notch each", absf(dist_after(map, vp, 18.0, [key(KEY_MINUS), key(KEY_KP_SUBTRACT)]) - 18.0 / 0.81) < 1e-9)
+	var many_in := []
+	var many_out := []
+	for i in 80:
+		many_in.append(key(KEY_EQUAL))
+		many_out.append(key(KEY_MINUS))
+	ok("keys clamp at both limits", dist_after(map, vp, 18.0, many_in) == GalaxyMap.DIST_MIN and dist_after(map, vp, 18.0, many_out) == GalaxyMap.DIST_MAX)
+	ok("Cmd/Ctrl + / - / 0 leave the camera alone (UI zoom)", dist_after(map, vp, 18.0, [key(KEY_EQUAL, true), key(KEY_MINUS, true), key(KEY_0, true)]) == 18.0)
+	map.dist = 18.0
+	map.pivot = Vector3.ZERO
+	map.zoom_by(0.5)
+	ok("the camera moves with the distance", absf(map.camera.global_position.distance_to(map.pivot) - 9.0) < 1e-3)
+	var yaw0 := map.yaw
+	var pitch0 := map.pitch
+	vp.push_input(pan(3.0, 7.0))
+	vp.push_input(pan(-3.0, -7.0))
+	ok("two-finger scroll never orbits", map.yaw == yaw0 and map.pitch == pitch0)
+	var drag := InputEventMouseMotion.new()
+	drag.button_mask = MOUSE_BUTTON_MASK_LEFT
+	drag.position = Vector2(140, 100)
+	drag.relative = Vector2(40, 0)
+	vp.push_input(drag)
+	ok("left drag still orbits", map.yaw != yaw0)
+	ok("the footer hint is shown by default", map.show_hint and map.hint.visible and map.hint.text.begins_with("Pinch or scroll to zoom"))
+	return true
+
+
+## UI zoom (Cmd/Ctrl + / - / 0) steps the window's content scale within
+## [UiScale.MIN, UiScale.MAX]; the HiDPI window fits the screen.
+func test_ui_scale() -> bool:
+	ok("Cmd + grows the UI by a step", UiScale.step(1.0, KEY_EQUAL) == 1.25 and UiScale.step(1.0, KEY_KP_ADD) == 1.25)
+	ok("Cmd - shrinks it by a step", UiScale.step(1.0, KEY_MINUS) == 0.75)
+	ok("Cmd 0 resets it", UiScale.step(2.5, KEY_0) == 1.0)
+	ok("UI zoom clamps at %.2f and %.2f" % [UiScale.MIN, UiScale.MAX], UiScale.step(UiScale.MAX, KEY_EQUAL) == UiScale.MAX and UiScale.step(UiScale.MIN, KEY_MINUS) == UiScale.MIN and UiScale.step(9.0, KEY_PLUS) == UiScale.MAX)
+	ok("only Cmd/Ctrl keys are UI zoom", UiScale.is_zoom_event(key(KEY_EQUAL, true)) and not UiScale.is_zoom_event(key(KEY_EQUAL)) and not UiScale.is_zoom_event(key(KEY_W, true)))
+	var w := Window.new()
+	w.content_scale_factor = 1.0
+	var steps := [KEY_EQUAL, KEY_EQUAL, KEY_EQUAL, KEY_EQUAL, KEY_EQUAL, KEY_EQUAL, KEY_EQUAL, KEY_EQUAL, KEY_EQUAL, KEY_EQUAL]
+	for code in steps:
+		UiScale.handle(w, key(code, true))
+	ok("ten Cmd + presses stop at the cap", w.content_scale_factor == UiScale.MAX)
+	ok("a plain key does not touch the UI scale", not UiScale.handle(w, key(KEY_EQUAL)) and w.content_scale_factor == UiScale.MAX)
+	w.free()
+	ok("HiDPI window is base x scale when it fits", UiScale.fitted_size(Vector2i(960, 540), 2.0, Vector2i(3024, 1890)) == Vector2i(1920, 1080))
+	ok("HiDPI window shrinks to 90% of a small screen, aspect kept", UiScale.fitted_size(Vector2i(960, 540), 2.0, Vector2i(1440, 900)) == Vector2i(1296, 729))
+	return true
+
+
 func _initialize() -> void:
 	var vp := SubViewport.new()
 	vp.size = Vector2i(800, 600)
@@ -442,6 +542,8 @@ func _initialize() -> void:
 		test_commit_hold.bind(map), # irreversible from here on
 		test_post_commit_cancel.bind(map),
 		test_transit.bind(map),
+		test_trackpad_zoom.bind(map, vp),
+		test_ui_scale,
 	]
 	for t in tests:
 		if t.call() != true:

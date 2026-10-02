@@ -5,12 +5,12 @@
   "t_code_range_k": [1500, 30000],
   "y_floor": 0.005,
   "line_dxy": 0.02,
-  "texels_above_floor": 16677347,
+  "texels_above_floor": 16677559,
   "median_dxy_above_floor": 0.005381125136078806,
-  "luminance_weighted_median_dxy": 0.005004979561799942,
-  "p90_dxy_above_floor": 0.014500666842068473,
-  "line_flagged_texels_above_floor": 738738,
-  "line_flagged_fraction_of_light": 0.0481521006183187,
-  "t_c_percentiles_k_light_weighted": {"5": 4254.0105293840115, "25": 5337.8102725789995, "50": 6190.431649189507, "75": 7129.229336011058, "95": 9306.655331691243},
+  "luminance_weighted_median_dxy": 0.005004387264099711,
+  "p90_dxy_above_floor": 0.014504591949303388,
+  "line_flagged_texels_above_floor": 739181,
+  "line_flagged_fraction_of_light": 0.04815606181473798,
+  "t_c_percentiles_k_light_weighted": {"5": 4253.4762643834865, "25": 5336.236115420454, "50": 6188.809748240848, "75": 7126.048722454368, "95": 9287.436920753153},
   "escalate_two_component": false
 }

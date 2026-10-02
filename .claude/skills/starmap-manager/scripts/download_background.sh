@@ -2,7 +2,10 @@
 # Download galactic background imagery from NOIRLab
 # Source: NOIRLab all-sky panorama by Eckhard Slawik (noirlab2430b)
 # Usage: download_background.sh [resolution]
-#   resolution: 4k (default), 10k
+#   resolution: 4k (default), 10k, raw
+#   raw: the untouched 10k TIF into data/raw/background/noirlab_10k.tif, the
+#        input of the sky pipeline (destar -> make sky-model; `make sky-assets`).
+#        No conversion; prints size + sha256 and records it in data/raw/SHA256SUMS.
 
 set -e
 
@@ -35,9 +38,32 @@ case "$RESOLUTION" in
         OUTPUT_TIF="$OUTPUT_DIR/galaxy_10k.tif"
         OUTPUT="$OUTPUT_DIR/galaxy_10k.jpg"
         ;;
+    raw)
+        URL="https://noirlab.edu/public/media/archives/images/publicationtiff10k/noirlab2430b.tif"
+        RAW_DIR="$PROJECT_ROOT/data/raw"
+        mkdir -p "$RAW_DIR/background"
+        touch "$RAW_DIR/.gdignore"
+        echo "Downloading the 10K TIF unconverted (10000x5000, ~96 MB) for the sky pipeline..."
+        echo "  GET $URL"
+        curl -L --fail --silent --show-error --max-time "${CURL_MAX_TIME:-900}" \
+            -o "$RAW_DIR/background/noirlab_10k.tif" "$URL"
+        name="background/noirlab_10k.tif"
+        sum="$(cd "$RAW_DIR" && shasum -a 256 "$name" | awk '{print $1}')"
+        echo "  size:   $(wc -c < "$RAW_DIR/$name" | tr -d ' ') bytes"
+        echo "  sha256: $sum"
+        if [ -f "$RAW_DIR/SHA256SUMS" ]; then
+            grep -v "  $name\$" "$RAW_DIR/SHA256SUMS" > "$RAW_DIR/SHA256SUMS.tmp" || true
+            mv "$RAW_DIR/SHA256SUMS.tmp" "$RAW_DIR/SHA256SUMS"
+        fi
+        echo "$sum  $name" >> "$RAW_DIR/SHA256SUMS"
+        echo ""
+        echo "IMPORTANT: Add credit to game:"
+        echo '  "All-sky panorama: NOIRLab/Eckhard Slawik (CC BY 4.0)"'
+        exit 0
+        ;;
     *)
         echo "ERROR: Unknown resolution '$RESOLUTION'"
-        echo "Usage: $0 [4k|10k]"
+        echo "Usage: $0 [4k|10k|raw]"
         echo ""
         echo "Resolutions:"
         echo "  4k  - 4000x2000, ~3.5 MB JPEG (default, recommended)"

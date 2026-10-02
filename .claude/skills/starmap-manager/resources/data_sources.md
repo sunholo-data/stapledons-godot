@@ -70,14 +70,36 @@ criteria = {
 }
 ```
 
-### 3. Hipparcos (Alternative)
+### 3. Hipparcos V < 7.5 (sky-background star removal, M1.4)
 
-**Source**: ESA / Gaia Sky
-**URL**: https://gaiasky.space/resources/datasets/
-**Size**: 7.7 MB
-**Stars**: 117,950 bright stars
+**Used by**: `sim/tools/destar.ail` (the D-10 destar step of `make sky-assets`),
+to decide which panorama stars are catalogue stars and get removed.
+**Source**: VizieR `I/239/hip_main` (Hipparcos 1997; V is Johnson `Vmag`).
+HIP2 (`I/311`) has no Johnson V, which is why the destar list reads hip_main;
+the M1.2d bright *tier* is a separate product that joins I/311 to I/239.
+**Script**: `scripts/download_stars.sh hip` -> `data/raw/hip_v7.tsv`
+**Exact request** (ASU-TSV; `_Glon`/`_Glat` are galactic l, b computed by VizieR at J2000):
 
-Good coverage of bright stars visible from Earth. Less accurate than Gaia but historically significant.
+```
+https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=I/239/hip_main&-out=HIP,Vmag,_Glon,_Glat,B-V,Plx&Vmag=%3C7.5&-out.max=unlimited
+```
+
+- 25,503 data rows, columns `HIP Vmag _Glon _Glat B-V Plx`; the file also echoes the request in its `#INFO request=` header.
+- VizieR writes the query date into the `#` header, so the whole-file sha256 changes on every download.
+  The pin is on the data rows: `grep -v '^#' data/raw/hip_v7.tsv | shasum -a 256` =
+  `de666e6eb73acd27d824104c62a1f11b01138e1501b3ac99d9b71a2e049d50e0` (identical on 2026-10-02 07:09 and 11:17 UTC).
+
+## Galactic background
+
+### NOIRLab noirlab2430b (D-10)
+
+**Source**: https://noirlab.edu/public/images/noirlab2430b/ (E. Slawik, CC BY 4.0)
+**Pipeline input**: `scripts/download_background.sh raw` keeps the untouched 10k TIF at
+`data/raw/background/noirlab_10k.tif` (95,723,018 B, sha256
+`c2e753702141ddbb913403c4d3f31b0e656453aa5d4343d1952cceac410fe3c9`), from
+`https://noirlab.edu/public/media/archives/images/publicationtiff10k/noirlab2430b.tif`.
+The `4k`/`10k` modes give JPEG previews under `data/starmap/background/` and are not pipeline inputs.
+All pins for the sky pipeline (inputs and generated textures) live in `data/sky/SHA256SUMS`; `make sky-verify` checks them.
 
 ## Exoplanet Data
 
