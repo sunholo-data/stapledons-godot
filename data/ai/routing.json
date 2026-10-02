@@ -1,9 +1,9 @@
 {
   "v": 1,
-  "_note": "Provider routing (Mark, attended 2026-10-02: both providers). Per request kind, an ordered list of {provider, model}; the service takes the first entry whose key is present, else answers no_key (text-only). OpenRouter serves text only. Model ids are configuration: the OpenRouter text model is a placeholder until AI.5 proposes the cheapest fixture-passing model and Mark confirms it at the style-frame stop.",
+  "_note": "Provider routing (Mark, attended 2026-10-02: both providers). Per request kind, an ordered list of {provider, model}; the service takes the first entry whose key is present, else answers no_key (text-only). OpenRouter serves text only. Model ids are configuration: the OpenRouter text model is AI.5's proposal (data/ai/models.json), for Mark to confirm or swap at the style-frame stop.",
   "routes": {
     "text": [
-      {"provider": "openrouter", "model": "openrouter:google/gemini-2.5-flash-lite"},
+      {"provider": "openrouter", "model": "openrouter:mistralai/mistral-nemo"},
       {"provider": "gemini", "model": "gemini-2.5-flash"}
     ],
     "portrait": [

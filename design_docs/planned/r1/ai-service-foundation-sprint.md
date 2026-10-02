@@ -8,7 +8,7 @@ rule) executed on `sprint/ai2-protocol` (`make test` green, goldens unchanged)
 and awaits independent evaluation. AI.4 (the `ai/` package: provider routing,
 wire, key, stub over both routes, cache writer, service loop, `ai-stub`)
 executed on `sprint/ai4-service` (`make test` and `make ai-stub` green, six
-mutants killed) and awaits independent evaluation. AI.6 (`AiBridge`: lazy
+mutants killed) and awaits independent evaluation. AI.5 (prompts, per-provider spend, OpenRouter and Gemini adapters on fixtures, stub voice) executed on `sprint/ai5-adapters` (`make test`, `make ai-stub`, `make ai-adapter` green, fourteen mutants killed) and awaits independent evaluation; its task-0 finding moves OpenRouter text to `std/net` (see AI.5). AI.6 (`AiBridge`: lazy
 launch, non-blocking relay, priority, per-kind timeouts, backoff,
 `service_down`; fake service in `ai/tools/`) executed on `sprint/ai6-bridge`
 (`make test` and `make ai-godot` green). Evaluation round 1 scored 82/100;
@@ -562,6 +562,27 @@ Gemini model (or what `--ai` must be for mixed routing), whether the
 provider reports token usage to AILANG code, and what `--ai-stub` returns for
 an OpenRouter model. Any surprise is reported upstream and recorded as a
 decision before task 3.
+
+**Task 0 results (2026-10-02, v0.51.0, no network call; design doc V13–V18):**
+G1 open (no speech in `std/ai`); G3 open (only `-ai-stub`), so no fixture
+adapter test through it. `x-goog-api-key` is accepted (loopback probe to a
+closed port, `Host` as the refused control; the non-allowlisted-domain probe
+cannot show it, because the host check runs first). `hasEnv` works.
+`gemini_live@0.5.0` locks from the cache, type-checks and runs on the strict
+VM. OpenRouter: key env `OPENROUTER_API_KEY`; token usage reaches
+`StepResult`; `--ai-stub` answers `{"kind":"Wait"}` for any model id.
+**Surprise:** `std/ai` binds one provider per process; a per-call
+`openrouter:` model beside a Gemini-bound handler is refused, and
+`callImageBase64` always uses the bound model (ailang#1536). **Decision
+taken by the executor, reversible, for Mark at ⏸ C:** OpenRouter text goes
+over `std/net` (chat completions), like TTS; `std/ai` stays bound to Gemini
+for images and Gemini text. This keeps text-to-OpenRouter-first with both
+keys in one process. The alternative is two service processes (AI.6/AI.7
+launch one per provider). **Proposed OpenRouter text model (Q7):**
+`openrouter:mistralai/mistral-nemo`, the cheapest candidate whose
+recorded-shape fixture passes the screen; price and availability were not
+verified offline (`data/ai/prices.json` says so); the safer, dearer
+alternative `openrouter:google/gemini-2.5-flash-lite` is priced beside it.
 
 **Tasks (test first):**
 1. `ai/prompt_test.ail`: prompt goldens for `line`, `news`, `archive`,

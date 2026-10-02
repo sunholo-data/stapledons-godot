@@ -1,0 +1,47 @@
+module stapledons/ai/voice_test
+
+-- Voice lines (AI.5 task 4): stub PCM per segment, one Ogg Opus clip per
+-- line, offsets per segment, the descriptor AI.3 validates, the voice key
+-- variant. The clip's bytes are goldens (tests/ai/cache.SHA256SUMS).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (startsWith, length, concat)
+import std/bytes (toString, slice)
+import std/bytes as B
+import ./voice (Clip, periodFor, toneSamples, stubPcm, assemble, markedLine, voiceVariant, voiceDescriptor)
+
+pure func clipOf(segs: [{emotion: string, text: string}]) -> Option[Clip] =
+  match assemble(pcms(segs)) { Ok(c) => Some(c), Err(_) => None }
+pure func pcms(segs: [{emotion: string, text: string}]) -> [bytes] = match segs { [] => [], s :: r => stubPcm(s) :: pcms(r) }
+-- std/bytes.slice(b, start, length).
+pure func oggHead(c: Clip) -> bool = match slice(c.ogg, 0, 4) { Some(h) => toString(h) == "OggS", None => false }
+
+-- Pitch by emotion, length by text: 50 ms a code point, 200 ms..8 s, whole periods.
+pure func checkVoicePcm() -> bool =
+  periodFor("neutral") == 100 && periodFor("grieving") == 44 && periodFor("happy") == 92 &&
+  toneSamples("Hi", 100) == 4800 && toneSamples("Stub line one for medic.", 100) == 28800 && toneSamples("Élise", 44) == 5984 &&
+  toneSamples("x", 92) == 4784 && B.length(stubPcm({ emotion: "neutral", text: "Stub line one for medic." })) == 57600 &&
+  (match slice(stubPcm({ emotion: "neutral", text: "Hi" }), 0, 4) { Some(h) => B.toInts(h) == [184, 11, 184, 11], None => false }) &&
+  (match slice(stubPcm({ emotion: "neutral", text: "Hi" }), 100, 4) { Some(h) => B.toInts(h) == [72, 244, 72, 244], None => false })
+
+-- One clip per line: offsets from 0, strictly increasing, below the duration.
+pure func checkVoiceClip() -> bool =
+  (match clipOf([{ emotion: "neutral", text: "Stub line one for medic." }]) { Some(c) => oggHead(c) && c.durationMs == 1200 && c.segmentsMs == [0], None => false }) &&
+  (match clipOf([{ emotion: "neutral", text: "Hi" }, { emotion: "grieving", text: "I know, I know." }, { emotion: "loving", text: "Sleep." }]) {
+    Some(c) => c.segmentsMs == [0, 200, 949] && c.durationMs == 1248, None => false })
+
+-- The descriptor AI.3 validates, and the key variant from what is said.
+pure func checkVoiceDescriptor() -> bool {
+  let segs = [{ emotion: "neutral", text: "Hi." }, { emotion: "loving", text: "Sleep." }];
+  let k = { kind: "voice", entityId: "medic", emotion: "-", ageStage: 0, variant: voiceVariant("Aoede", segs) };
+  markedLine(segs) == "{neutral}Hi. {loving}Sleep." && length(k.variant) == 16 && voiceVariant("Kore", segs) != k.variant &&
+  k.variant == "afd0d50311d1013c" &&
+  voiceDescriptor(k, 123, { ogg: B.fromString(""), durationMs: 400, segmentsMs: [0, 200] }) ==
+    "{\"key\":{\"kind\":\"voice\",\"entity_id\":\"medic\",\"emotion\":\"-\",\"age_stage\":0,\"variant\":\"afd0d50311d1013c\"},\"mime\":\"audio/ogg\",\"bytes\":123,\"duration_ms\":400,\"segments_ms\":[0,200]}"
+}
+
+export pure func voiceChecks() -> bool = checkVoicePcm() && checkVoiceClip() && checkVoiceDescriptor()
+
+test "AI.5 stub voice PCM: pitch by emotion, length by text" { checkVoicePcm() }
+test "AI.5 one Ogg Opus clip per line with segment offsets" { checkVoiceClip() }
+test "AI.5 voice descriptor and key variant" { checkVoiceDescriptor() }

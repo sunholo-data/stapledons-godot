@@ -1,47 +1,58 @@
 module stapledons/ai/provider
 
--- Providers and the request handler (design (a2); plan change 2026-10-02).
--- `Provider = Stub | Gemini | OpenRouter`. AI.4 wires only the stub: the
--- two live providers refuse to start until AI.5 brings their adapters. The
--- stub answers every route the routing table resolves and stamps
--- `meta.route` with the provider the table chose (`meta.provider` stays
--- `stub`), so the stub goldens show the routing. Pure: the service loads the
--- fixtures and writes the blob this returns.
+-- Providers and the request handler (design (a2); plan change 2026-10-02;
+-- AI.5). `Provider = Stub | Live(required)`: the stub answers every route
+-- the routing table resolves, as `meta.provider: "stub"` with `meta.route`
+-- the provider the table chose; Live calls the adapters (ai/adapters.ail).
+-- Both share this module's pure steps:
 --
--- Stub text: "{e} Stub <purpose> <req> for <entity_id>.", e = the first
--- allowed emotion, the request number spelled in words while no_numerals
--- holds (else digits), trimmed to max_chars code points. The context field
--- `stub_case` picks a body from ai/fixtures/stub_text.json (keyed by
--- purpose): the negative cases the sim must refuse (digits, over_length,
--- bad_marker, unlisted_emotion) and a non-ASCII line. Stub images: the
--- committed 64x64 PNG for the emotion (avatars use neutral), described by
--- the descriptor body {key, mime, bytes, width, height}. Stub voice arrives
--- with AI.5: a routed voice request is answered provider_error.
+--   prepare: refuse before routing (bad_request), route (no_key, text_only),
+--     build the prompt (bad_request for unknown canon), estimate the worst
+--     case and admit it against the ceiling (budget), or hand back a Job;
+--   okText / okImage / okVoice / failed: the result, the blob, the usage line
+--     and the new ledger, as an ordered list of acts (blob, usage, print).
+--
+-- Stub text: "{e} Stub <purpose> <req> for <entity_id>." (AI.4), or a
+-- fixture case named by context.stub_case. Stub images: the committed 64x64
+-- PNG per emotion. Stub voice: tones per segment (ai/voice.ail). The stub
+-- prices what it answers as the routed model would have (4 characters a
+-- token for text, one call per image, 25 audio tokens a second), so the
+-- ledger, usage lines and `budget` are exercised without a key; meta.provider
+-- "stub" says the price is simulated. Pure.
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
-import std/json (Json, decode, asObject)
+import std/json (Json, decode, asObject, getString, get)
 import std/string (concat, join, length, substring, trim, intToStr, chars)
 import std/crypto (sha256Hex, sha256Bytes)
-import std/bytes (fromString, fromBase64, byteAt)
+import std/bytes (fromString, fromBase64)
 import std/bytes as B
 import ./key (CacheKey, member, aiKinds, isDecimal, keyError, size)
 import ./route (Routing, Route, Via, NoRoute, Hop, resolve)
-import ./wire (Request, In, WRequest, Out, OOk, OErr, CtxField, CStr, CList, Meta, encodeIn, keyObj)
+import ./wire (Request, In, WRequest, Out, OOk, OErr, CtxField, CStr, CList, Meta, Seg, encodeIn, keyObj)
 import ./cache (Blob, Origin, indexLine, blobPath)
+import ./spend (Price, Units, Ledger, Usage, priceFor, cost, admit, charge, usageLine, usdOf)
+import ./prompt (Lore, Prompt, buildPrompt, imagePrompt)
+import ./reply (Image, pngSize)
+import ./voice (Clip, stubPcm, assemble, voiceVariant, voiceDescriptor, markedLine)
 
-export type Models = { text: string, image: string, tts: string }
-export type Provider = Stub | Gemini(Models) | OpenRouter(Models)
--- AI.4: only the stub can start. Each live provider names why it refuses.
+-- Live(required): the providers whose key must be present ([]: at least one).
+export type Provider = Stub | Live([string]) deriving (Eq)
+@allow_empty_ok("Stub is a provider, not an empty value")
 export pure func providerOf(name: string) -> Result[Provider, string] =
   if name == "stub" then Ok(Stub)
-  else if name == "gemini" || name == "openrouter" then Err(concat(["config: live provider ", name, " is not wired until AI.5"]))
+  else if name == "gemini" || name == "openrouter" then Ok(Live([name]))
+  else if name == "live" then Ok(Live([]))
   else Err(concat(["config: unknown provider ", name]))
-export pure func providerName(p: Provider) -> string = match p { Stub => "stub", Gemini(_) => "gemini", OpenRouter(_) => "openrouter" }
+export pure func providerName(p: Provider) -> string = match p { Stub => "stub", Live(rs) => match rs { [x] => x, _ => "live" } }
 
 export type Case = { purpose: string, name: string, body: string }
 export type Png = { emotion: string, b64: string }
-export type Ctx = { routing: Routing, keys: [string], textOnly: bool, cases: [Case], portraits: [Png] }
-export type Handled = { out: Out, blob: Option[Blob] }
+export type Style = { emotion: string, style: string }
+export type Ctx = { routing: Routing, keys: [string], textOnly: bool, cases: [Case], portraits: [Png], lore: [Lore], prices: [Price], styles: [Style] }
+export type Act = WriteBlob(Blob) | AppendUsage(string) | Say(Out)
+export type Step = { acts: [Act], ledger: Ledger }
+export type Job = { r: Request, hop: Hop, input: string, price: Price, prompt: Prompt, est: int }
+export type Prep = Done(Step) | Run(Job)
 
 export pure func purposes() -> [string] = ["line", "news", "archive", "probe"]
 
@@ -67,13 +78,33 @@ pure func purposesOf(kvs: [{key: string, value: Json}]) -> Result[[Case], string
 export pure func parseStubText(text: string) -> Result[[Case], string] =
   match decode(text) { Ok(j) => (match asObject(j) { Some(kvs) => purposesOf(kvs), None => Err("config: stub_text is not an object") }), Err(_) => Err("config: stub_text is not JSON") }
 
--- PNG width and height from the IHDR chunk (bytes 16-23, big-endian), or
--- None when the bytes are not a PNG.
-pure func at(b: bytes, i: int) -> int = match byteAt(b, i) { Some(v) => v, None => 0 - 1 }
-pure func be32(b: bytes, i: int) -> int = ((at(b, i) * 256 + at(b, i + 1)) * 256 + at(b, i + 2)) * 256 + at(b, i + 3)
-export pure func pngSize(b: bytes) -> Option[{w: int, h: int}] =
-  if B.length(b) >= 24 && at(b, 0) == 137 && at(b, 1) == 80 && at(b, 2) == 78 && at(b, 3) == 71 && at(b, 12) == 73 && at(b, 13) == 72 && at(b, 14) == 68 && at(b, 15) == 82
-  then Some({ w: be32(b, 16), h: be32(b, 20) }) else None
+-- data/ai/emotion_styles.json: {<emotion>: <style sentence>} (AI.1).
+@allow_empty_ok("the recursion base")
+pure func stylesOf(kvs: [{key: string, value: Json}]) -> Result[[Style], string] =
+  match kvs { [] => Ok([]), e :: r => match e.value { JString(s) => (match stylesOf(r) { Ok(ss) => Ok({ emotion: e.key, style: s } :: ss), Err(x) => Err(x) }), _ => Err(concat(["config: emotion_styles ", e.key, " is not a string"])) } }
+export pure func parseStyles(text: string) -> Result[[Style], string] =
+  match decode(text) { Ok(j) => (match asObject(j) { Some(kvs) => stylesOf(kvs), None => Err("config: emotion_styles is not an object") }), Err(_) => Err("config: emotion_styles is not JSON") }
+export pure func styleFor(ss: [Style], e: string) -> string = match ss { [] => "", s :: r => if s.emotion == e then s.style else styleFor(r, e) }
+
+-- data/ai/models.json names one model per provider and slot (text, image,
+-- tts); every routed model must be that model and have a price, or the
+-- service refuses to start.
+pure func slot(kind: string) -> string = if kind == "text" then "text" else if kind == "voice" then "tts" else "image"
+pure func hopOk(models: Json, ps: [Price], kind: string, h: Hop) -> Option[string] =
+  match get(models, h.provider) {
+    None => Some(concat(["config: models.json has no ", h.provider])),
+    Some(m) => if getString(m, slot(kind)) != Some(h.model) then Some(concat(["config: ", kind, ": ", h.model, " is not the ", h.provider, " ", slot(kind), " model in models.json"]))
+      else match priceFor(ps, h.provider, h.model) { None => Some(concat(["config: no price for ", h.provider, " ", h.model])), Some(_) => None }
+  }
+pure func hopsOk(models: Json, ps: [Price], kind: string, hs: [Hop]) -> Option[string] =
+  match hs { [] => None, h :: r => match hopOk(models, ps, kind, h) { Some(e) => Some(e), None => hopsOk(models, ps, kind, r) } }
+pure func routesOk(models: Json, ps: [Price], rs: [{kind: string, hops: [Hop]}]) -> Option[string] =
+  match rs { [] => None, x :: r => match hopsOk(models, ps, x.kind, x.hops) { Some(e) => Some(e), None => routesOk(models, ps, r) } }
+export pure func catalogueError(rt: Routing, modelsText: string, ps: [Price]) -> Option[string] =
+  match decode(modelsText) {
+    Err(_) => Some("config: models is not JSON"),
+    Ok(j) => match get(j, "models") { Some(m) => routesOk(m, ps, rt.routes), None => Some("config: models has no models") }
+  }
 
 -- ------------------------------------------------------------ stub text
 pure func digitWord(c: string) -> string =
@@ -99,57 +130,122 @@ pure func caseBody(cs: [Case], purpose: string, name: string) -> Option[string] 
 export pure func textBody(cases: [Case], r: Request) -> Option[string] =
   match ctxStr(r.context, "stub_case") { Some(name) => caseBody(cases, r.purpose, name), None => Some(stubText(r)) }
 
--- ------------------------------------------------------------ handling
--- A request the service must refuse before routing: a non-decimal id, an
--- unknown kind or purpose, a bad key, or a key of another kind.
+-- ------------------------------------------------------------ prepare
+-- Refused before routing: a non-decimal id, an unknown kind or purpose, a
+-- bad key, a key of another kind, or a voice request without segments.
 export pure func requestError(r: Request) -> bool =
-  !isDecimal(r.req) || !member(r.kind, aiKinds()) || !member(r.purpose, purposes()) || keyError(r.key) != None || r.key.kind != r.kind
-pure func err(r: Request, code: string, route: string) -> Handled = { out: OErr({ req: r.req, code: code, provider: "stub", route: route }), blob: None }
-pure func pngFor(ps: [Png], e: string) -> Option[string] = match ps { [] => None, p :: r => if p.emotion == e then Some(p.b64) else pngFor(r, e) }
-pure func meta(h: Hop, input: string) -> Meta = { provider: "stub", route: h.provider, model: h.model, inputSha256: input, ms: 0, usd: 0.0 }
-pure func origin(h: Hop, input: string, r: Request, sz: Option[{w: int, h: int}]) -> Origin =
-  { provider: "stub", route: h.provider, model: h.model, inputSha256: input, seed: r.seed, size: sz }
+  !isDecimal(r.req) || !member(r.kind, aiKinds()) || !member(r.purpose, purposes()) || keyError(r.key) != None || r.key.kind != r.kind ||
+  (r.kind == "voice" && (match r.segments { Some(ss) => size(ss) == 0 || size(ss) > 16, None => true }))
+pure func errOut(r: Request, code: string, prov: string, route: string) -> Out = OErr({ req: r.req, code: code, provider: prov, route: route })
+pure func refuse(l: Ledger, r: Request, code: string, prov: string, route: string) -> Step = { acts: [Say(errOut(r, code, prov, route))], ledger: l }
 
-pure func answerText(c: Ctx, r: Request, h: Hop, input: string) -> Handled =
-  match textBody(c.cases, r) {
-    None => err(r, "bad_request", h.provider),
-    Some(body) => {
-      let sha = sha256Hex(body);
-      let data = fromString(body);
-      let n = B.length(data);
-      { out: OOk({ req: r.req, kind: r.kind, sha256: sha, body: body, asset: Some({ path: blobPath(sha, "txt"), mime: "text/plain", bytes: n }), meta: meta(h, input) }),
-        blob: Some({ sha256: sha, ext: "txt", mime: "text/plain", data: data, index: indexLine(r.key, sha, "text/plain", n, "txt", origin(h, input, r, None)) }) }
-    }
-  }
-pure func descriptor(k: CacheKey, n: int, w: int, ht: int) -> string =
-  concat(["{\"key\":", keyObj(k), ",\"mime\":\"image/png\",\"bytes\":", intToStr(n), ",\"width\":", intToStr(w), ",\"height\":", intToStr(ht), "}"])
-pure func answerImage(c: Ctx, r: Request, h: Hop, input: string) -> Handled =
-  match pngFor(c.portraits, if r.kind == "avatar" then "neutral" else r.key.emotion) {
-    None => err(r, "provider_error", h.provider),
-    Some(b64) => match fromBase64(b64) {
-      None => err(r, "provider_error", h.provider),
-      Some(data) => match pngSize(data) {
-        None => err(r, "provider_error", h.provider),
-        Some(sz) => {
-          let sha = sha256Bytes(data);
-          let n = B.length(data);
-          { out: OOk({ req: r.req, kind: r.kind, sha256: sha, body: descriptor(r.key, n, sz.w, sz.h), asset: Some({ path: blobPath(sha, "png"), mime: "image/png", bytes: n }), meta: meta(h, input) }),
-            blob: Some({ sha256: sha, ext: "png", mime: "image/png", data: data, index: indexLine(r.key, sha, "image/png", n, "png", origin(h, input, r, Some(sz))) }) }
+pure func ceilDiv(a: int, b: int) -> int = (a + b - 1) / b
+-- Output token caps: text about half the character cap plus room for
+-- markers; speech 2 tokens a character plus 50 a segment (25 tokens a
+-- second of audio, gemini_live; completeOk wants 10 to spare).
+export pure func textCap(r: Request) -> int = r.constraints.maxChars / 2 + 32
+pure func voiceSegs(r: Request) -> [Seg] = match r.segments { Some(ss) => ss, None => [] }
+export pure func ttsCap(s: Seg) -> int = 2 * length(s.text) + 50
+pure func ttsCaps(ss: [Seg]) -> int = match ss { [] => 0, s :: rest => ttsCap(s) + ttsCaps(rest) }
+pure func chars4(s: string) -> int = ceilDiv(length(s), 4)
+-- Worst case of one request: text up to three attempts at the cap (two
+-- retries on bad_output), one image call, speech at the caps.
+export pure func estimate(r: Request, p: Price, pr: Prompt) -> int =
+  if r.kind == "text" then 3 * cost(p, { tokensIn: chars4(pr.system) + chars4(pr.user), tokensOut: textCap(r), calls: 1 })
+  else if r.kind == "voice" then cost(p, { tokensIn: chars4(pr.user), tokensOut: ttsCaps(voiceSegs(r)), calls: size(voiceSegs(r)) })
+  else cost(p, { tokensIn: chars4(pr.user), tokensOut: 0, calls: 1 })
+
+pure func promptFor(c: Ctx, r: Request) -> Result[Prompt, string] =
+  if r.kind == "text" then buildPrompt(r, c.lore)
+  else if r.kind == "voice" then Ok({ system: "", user: markedLine(voiceSegs(r)) })
+  else Ok({ system: "", user: imagePrompt(r) })
+
+-- prov: "stub" in stub mode; live mode stamps the real provider on refusals after routing.
+export pure func prepare(c: Ctx, l: Ledger, r: Request, prov: string) -> Prep =
+  if requestError(r) then Done(refuse(l, r, "bad_request", prov, "none"))
+  else match resolve(c.routing, r.kind, c.keys, c.textOnly) {
+    NoRoute(why) => Done(refuse(l, r, why, prov, "none")),
+    Via(h) => match priceFor(c.prices, h.provider, h.model) {
+      None => Done(refuse(l, r, "provider_error", prov, h.provider)),
+      Some(p) => match promptFor(c, r) {
+        Err(_) => Done(refuse(l, r, "bad_request", prov, h.provider)),
+        Ok(pr) => {
+          let est = estimate(r, p, pr);
+          if !admit(l, est) then Done(refuse(l, r, "budget", prov, h.provider))
+          else Run({ r: r, hop: h, input: sha256Hex(encodeIn(WRequest(r))), price: p, prompt: pr, est: est })
         }
       }
     }
   }
 
--- One request -> one result (and the blob to write first, if any).
--- input_sha256 is the sha256 of the request's canonical encoding.
-export pure func handle(c: Ctx, r: Request) -> Handled =
-  if requestError(r) then err(r, "bad_request", "none")
-  else match resolve(c.routing, r.kind, c.keys, c.textOnly) {
-    NoRoute(why) => err(r, why, "none"),
-    Via(h) => {
-      let input = sha256Hex(encodeIn(WRequest(r)));
-      if r.kind == "text" then answerText(c, r, h, input)
-      else if r.kind == "voice" then err(r, "provider_error", h.provider)
-      else answerImage(c, r, h, input)
-    }
+-- ------------------------------------------------------------ answers
+pure func resultMeta(j: Job, prov: string, n: int, ms: int) -> Meta = { provider: prov, route: j.hop.provider, model: j.hop.model, inputSha256: j.input, ms: ms, usd: usdOf(n) }
+pure func originOf(j: Job, prov: string, sz: Option[{w: int, h: int}]) -> Origin =
+  { provider: prov, route: j.hop.provider, model: j.hop.model, inputSha256: j.input, seed: j.r.seed, size: sz }
+-- The acts of an ok result, in order: the blob (and its index line), the
+-- usage line, then the result. A reader that sees the result sees both.
+pure func okStep(l: Ledger, j: Job, prov: string, u: Units, ms: int, out: Meta -> Out, b: Blob) -> Step {
+  let n = cost(j.price, u);
+  let after = charge(l, j.hop.provider, n);
+  let blob = WriteBlob(b);
+  let usage = AppendUsage(usageLine({ req: j.r.req, provider: prov, route: j.hop.provider, model: j.hop.model, kind: j.r.kind, units: u, nusd: n, ms: ms }, after));
+  let result = Say(out(resultMeta(j, prov, n, ms)));
+  { acts: [blob, usage, result], ledger: after }
+}
+export pure func okText(l: Ledger, j: Job, prov: string, u: Units, ms: int, body: string) -> Step {
+  let sha = sha256Hex(body);
+  let data = fromString(body);
+  let n = B.length(data);
+  okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: body, asset: Some({ path: blobPath(sha, "txt"), mime: "text/plain", bytes: n }), meta: m }),
+    { sha256: sha, ext: "txt", mime: "text/plain", data: data, index: indexLine(j.r.key, sha, "text/plain", n, "txt", originOf(j, prov, None)) })
+}
+pure func descriptor(k: CacheKey, n: int, w: int, ht: int) -> string =
+  concat(["{\"key\":", keyObj(k), ",\"mime\":\"image/png\",\"bytes\":", intToStr(n), ",\"width\":", intToStr(w), ",\"height\":", intToStr(ht), "}"])
+export pure func okImage(l: Ledger, j: Job, prov: string, u: Units, ms: int, img: Image) -> Step {
+  let sha = sha256Bytes(img.data);
+  let n = B.length(img.data);
+  okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: descriptor(j.r.key, n, img.w, img.h), asset: Some({ path: blobPath(sha, "png"), mime: "image/png", bytes: n }), meta: m }),
+    { sha256: sha, ext: "png", mime: "image/png", data: img.data, index: indexLine(j.r.key, sha, "image/png", n, "png", originOf(j, prov, Some({ w: img.w, h: img.h }))) })
+}
+-- The voice key's variant is what is said and by whom (design (a4)).
+export pure func castVoice(r: Request) -> string = match r.cast { Some(c) => (match getString(c, "voice") { Some(v) => v, None => "Aoede" }), None => "Aoede" }
+export pure func voiceKey(r: Request) -> CacheKey = {r.key | variant: voiceVariant(castVoice(r), voiceSegs(r))}
+export pure func okVoice(l: Ledger, j: Job, prov: string, u: Units, ms: int, c: Clip) -> Step {
+  let sha = sha256Bytes(c.ogg);
+  let n = B.length(c.ogg);
+  let k = voiceKey(j.r);
+  okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: voiceDescriptor(k, n, c), asset: Some({ path: blobPath(sha, "ogg"), mime: "audio/ogg", bytes: n }), meta: m }),
+    { sha256: sha, ext: "ogg", mime: "audio/ogg", data: c.ogg, index: indexLine(k, sha, "audio/ogg", n, "ogg", originOf(j, prov, None)) })
+}
+-- A failed call still costs what it used: charged, logged, then the error.
+export pure func failed(l: Ledger, j: Job, prov: string, u: Units, code: string) -> Step {
+  let n = cost(j.price, u);
+  let after = charge(l, j.hop.provider, n);
+  let used = if u.tokensIn + u.tokensOut + u.calls > 0 then [AppendUsage(usageLine({ req: j.r.req, provider: prov, route: j.hop.provider, model: j.hop.model, kind: j.r.kind, units: u, nusd: n, ms: 0 }, after))] else [];
+  { acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: after }
+}
+
+-- ------------------------------------------------------------ the stub
+pure func pngFor(ps: [Png], e: string) -> Option[string] = match ps { [] => None, p :: r => if p.emotion == e then Some(p.b64) else pngFor(r, e) }
+pure func stubPcms(ss: [Seg]) -> [bytes] = match ss { [] => [], s :: r => stubPcm(s) :: stubPcms(r) }
+pure func stubImage(ps: [Png], r: Request) -> Option[Image] =
+  match pngFor(ps, if r.kind == "avatar" then "neutral" else r.key.emotion) {
+    None => None,
+    Some(b64) => match fromBase64(b64) { None => None, Some(d) => match pngSize(d) { Some(s) => Some({ data: d, w: s.w, h: s.h }), None => None } }
   }
+export pure func stubRun(c: Ctx, l: Ledger, j: Job) -> Step =
+  if j.r.kind == "text" then (match textBody(c.cases, j.r) {
+    None => refuse(l, j.r, "bad_request", "stub", j.hop.provider),
+    Some(body) => okText(l, j, "stub", { tokensIn: chars4(j.prompt.system) + chars4(j.prompt.user), tokensOut: chars4(body), calls: 1 }, 0, body)
+  })
+  else if j.r.kind == "voice" then (match assemble(stubPcms(voiceSegs(j.r))) {
+    Err(_) => refuse(l, j.r, "provider_error", "stub", j.hop.provider),
+    Ok(clip) => okVoice(l, j, "stub", { tokensIn: chars4(j.prompt.user), tokensOut: ceilDiv(clip.durationMs * 25, 1000), calls: size(voiceSegs(j.r)) }, 0, clip)
+  })
+  else match stubImage(c.portraits, j.r) {
+    None => refuse(l, j.r, "provider_error", "stub", j.hop.provider),
+    Some(img) => okImage(l, j, "stub", { tokensIn: chars4(j.prompt.user), tokensOut: 0, calls: 1 }, 0, img)
+  }
+-- One request -> the acts to run, in order, and the new ledger.
+export pure func handle(c: Ctx, l: Ledger, r: Request) -> Step =
+  match prepare(c, l, r, "stub") { Done(s) => s, Run(j) => stubRun(c, l, j) }

@@ -1,0 +1,59 @@
+module stapledons/ai/spend_test
+
+-- Spend (AI.5; D-20; plan change: cost per provider): prices keyed by
+-- provider and model, per-provider ledger and total, refusal once the total
+-- would pass the player's ceiling, ceiling bounds, and the usage line.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (join, contains)
+import ./spend (Price, Units, Ledger, parsePrices, priceFor, cost, ledgerOf, admit, charge, total, spentBy, ceilingError, nanoOf, usdOf, usageLine, defaultCeilingUsd)
+
+pure func priceTable() -> string = join("", ["{\"v\":1,\"_note\":\"x\",\"prices\":{",
+  "\"gemini\":{\"gemini-2.5-flash\":{\"in_per_mtok\":0.3,\"out_per_mtok\":2.5},\"gemini-2.5-flash-image\":{\"per_call\":0.039}},",
+  "\"openrouter\":{\"openrouter:v/m\":{\"in_per_mtok\":0.02,\"out_per_mtok\":0.04}}}}"])
+pure func spendPrices() -> [Price] = match parsePrices(priceTable()) { Ok(ps) => ps, Err(_) => [] }
+pure func priced(p: string, m: string, u: Units) -> int = match priceFor(spendPrices(), p, m) { Some(x) => cost(x, u), None => 0 - 1 }
+pure func units(i: int, o: int, c: int) -> Units = { tokensIn: i, tokensOut: o, calls: c }
+pure func pricesRefused(t: string, want: string) -> bool = match parsePrices(t) { Ok(_) => false, Err(e) => e == want }
+
+-- $/Mtok -> n$/token; tokens x price; a flat per-call price; exact sums.
+pure func checkSpendPrices() -> bool =
+  priced("gemini", "gemini-2.5-flash", units(1000, 200, 1)) == 800000 &&
+  priced("gemini", "gemini-2.5-flash-image", units(0, 0, 1)) == 39000000 &&
+  priced("openrouter", "openrouter:v/m", units(1000000, 1000000, 1)) == 60000000 &&
+  priced("openrouter", "gemini-2.5-flash", units(1, 1, 1)) == 0 - 1 &&
+  nanoOf(0.5) == 500000000 && usdOf(39000000) == 0.039 && nanoOf(defaultCeilingUsd()) == 500000000 &&
+  pricesRefused("{\"v\":1,\"prices\":{\"openai\":{}}}", "config: prices: unknown provider openai") &&
+  pricesRefused("{\"v\":1,\"prices\":{\"gemini\":{\"m\":{\"in_per_mtok\":\"cheap\"}}}}", "config: prices gemini.m.in_per_mtok is not a number") &&
+  pricesRefused("{\"v\":1,\"prices\":{\"gemini\":{\"m\":{\"per_call\":-1}}}}", "config: prices gemini.m.per_call is out of range") &&
+  pricesRefused("{\"v\":2,\"prices\":{}}", "config: prices v must be 1") && pricesRefused("[", "config: prices is not JSON")
+
+-- One ledger per provider plus the total; the ceiling applies to the sum.
+pure func checkSpendLedger() -> bool {
+  let l0 = ledgerOf(0.1);
+  let l1 = charge(l0, "gemini", 39000000);
+  let l2 = charge(l1, "openrouter", 1000000);
+  let l3 = charge(l2, "gemini", 39000000);
+  total(l3) == 79000000 && spentBy(l3, "gemini") == 78000000 && spentBy(l3, "openrouter") == 1000000 && spentBy(l0, "gemini") == 0 &&
+  admit(l3, 21000000) && !admit(l3, 21000001) && admit(l0, 100000000) && !admit(l0, 100000001) &&
+  !admit(charge(l0, "openrouter", 99000000), 1000001)
+}
+
+-- The player's ceiling: 0.05..20.00 dollars (plan Q2 default).
+pure func checkSpendCeiling() -> bool =
+  ceilingError(0.05) == None && ceilingError(20.0) == None && ceilingError(defaultCeilingUsd()) == None &&
+  ceilingError(0.049) == Some("config: ceiling_usd 0.049 is outside 0.05..20") && ceilingError(20.01) != None && ceilingError(0.0) != None
+
+-- usage.ndjson: provider, route, model, units, the call's usd and running totals.
+pure func checkSpendUsage() -> bool {
+  let l = charge(charge(ledgerOf(0.5), "openrouter", 1000000), "gemini", 39000000);
+  usageLine({ req: "9", provider: "stub", route: "gemini", model: "gemini-2.5-flash-image", kind: "portrait", units: units(0, 0, 1), nusd: 39000000, ms: 0 }, l) ==
+    "{\"req\":\"9\",\"provider\":\"stub\",\"route\":\"gemini\",\"model\":\"gemini-2.5-flash-image\",\"kind\":\"portrait\",\"tokens_in\":0,\"tokens_out\":0,\"calls\":1,\"usd\":0.039,\"ms\":0,\"totals\":{\"gemini\":0.039,\"openrouter\":0.001,\"all\":0.04}}"
+}
+
+export pure func spendChecks() -> bool = checkSpendPrices() && checkSpendLedger() && checkSpendCeiling() && checkSpendUsage()
+
+test "AI.5 prices keyed by provider and model price tokens and calls exactly" { checkSpendPrices() }
+test "AI.5 ledger per provider plus total; refused once the total would pass the ceiling" { checkSpendLedger() }
+test "AI.5 the player's ceiling is bounded 0.05..20, default 0.50" { checkSpendCeiling() }
+test "AI.5 usage lines carry provider, route, model and running totals" { checkSpendUsage() }

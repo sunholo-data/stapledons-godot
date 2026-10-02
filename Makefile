@@ -192,7 +192,7 @@ catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM par
 	AILANG=$(AILANG) python3 tools/catalogue_probe.py
 
 .PHONY: catalogue-vm
-catalogue-vm:     ## T1 transform/selection + T3 validation, the exact 50,000 medium quota and writer plan: strict VM, interpreter and exact anchors
+catalogue-vm:     ## T1 transform/selection + T3 validation, T4 N3 (exact 50,000 quota with missing rows between), first-error order, writer plan: strict VM, interpreter and exact anchors
 	@mkdir -p $(SCRATCH)
 	@set -e; for entry in transformVm selectionVm quotaVm mainVm; do \
 	  case $$entry in mainVm) f=sim/tools/catalogue_main_test.ail;; *) f=sim/tools/catalogue_test.ail;; esac; \
@@ -218,6 +218,11 @@ catalogue:        ## M1.2b-T3: data/raw CSV -> $(CATALOGUE_OUT)/stars_$(TIER).bi
 
 catalogue-scan:   ## M1.2b-T3: the conservative F32 bound on every real CNS5 and GCNS row (0 refusals; refused ids are listed for review)
 	@for src in cns5 gcns; do $(CAT_RUN) --bytecode --entry scan --args-json "\"data/raw/$$src.csv\"" sim/tools/catalogue_main.ail || exit 1; done
+
+.PHONY: catalogue-parity
+PARITY_TIER ?= medium
+catalogue-parity: ## M1.2b-T4: real tier (PARITY_TIER=medium) on the interpreter once + ordinary VM 5x, cmp bin + sidecar, wall time and peak RSS per run
+	@sh tools/catalogue_parity.sh $(AILANG) $(PARITY_TIER) $(SCRATCH)/catalogue-parity 5
 
 CAT_FIX := tests/fixtures/catalogue
 catalogue-main:   ## M1.2b-T3 writer on committed fixtures: VM bytes == interpreter bytes, sizes, independent shasum of every digest, atomic refusal

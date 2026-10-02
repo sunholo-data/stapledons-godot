@@ -1,7 +1,8 @@
 module stapledons/sim/tools/catalogue_bytes
-import ./catalogue (Row)
+import ./catalogue (Row, firstError, okValues)
 import std/result (Result, Ok, Err)
-import std/list (foldl)
+import std/option (Some, None)
+import std/list (map)
 import std/math (intToFloat)
 import std/embedding (encodeF32LE)
 import std/bytes (concatList)
@@ -13,11 +14,10 @@ export pure func encodeRow(r: Row) -> Result[bytes,string] =
   then Err("nonfinite or out-of-range F32 field")
   else if r.flags < 0 || r.flags > 31 then Err("invalid catalogue flags")
   else Ok(encodeF32LE([r.x,r.y,r.z,r.teff,r.v,intToFloat(r.flags)]))
--- appendBytes, not append: catalogue.ail has a private append and the test runner mixes them up (ailang#1461)
-pure func appendBytes(acc: Result[[bytes],string],r: Row) -> Result[[bytes],string] = match acc {
-  Err(e) => Err(e), Ok(b) => match encodeRow(r) { Err(e) => Err(e), Ok(next) => Ok(next :: b) }
-}
+-- T4 (ailang#1501): one map and one concatList, linear in the row count (no consing fold).
+-- Any invalid row refuses the whole result, with the first bad row's reason.
 @allow_empty_ok("empty catalogue has zero bytes; any invalid row refuses the whole result")
-export pure func encodeRows(rows: [Row]) -> Result[bytes,string] = match foldl(appendBytes,Ok([]),rows) {
-  Err(e) => Err(e), Ok(parts) => Ok(concatList(foldl(\a b. b :: a,[],parts)))
+export pure func encodeRows(rows: [Row]) -> Result[bytes,string] {
+  let parts = map(encodeRow,rows);
+  match firstError(parts) { Some(e) => Err(e), None => Ok(concatList(okValues(parts))) }
 }

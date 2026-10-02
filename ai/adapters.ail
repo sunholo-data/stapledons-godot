@@ -1,0 +1,87 @@
+module stapledons/ai/adapters
+
+-- The live provider adapters (AI.5 task 3): each a thin effectful call
+-- around the pure bodies and parsers of ai/reply.ail. Only `live` in
+-- ai/service.ail calls them, and only with AI_LIVE=1 and a key (AI.9 adds
+-- the make-level guard). Automation never runs them against a provider:
+-- `make ai-adapter` runs the std/ai ones under `--ai-stub` with no Net
+-- capability, and the std/net ones' parsers on committed fixtures.
+--
+-- Transport (task-0 finding, 2026-10-02, v0.51.0): std/ai binds one
+-- provider per process (`--ai`); a per-call step() model of another provider
+-- is refused (cmd/ailang/ai_handlers.go makeModelResolver), and
+-- callImageBase64 always uses the bound model. So the live service binds
+-- std/ai to Gemini (`--ai gemini-2.5-flash-image`: images, and Gemini text
+-- per call), and reaches what std/ai cannot serve from that process over
+-- std/net: OpenRouter chat completions (Authorization: Bearer) and Gemini
+-- TTS (x-goog-api-key; no speech in std/ai, ailang#1495). Allowlist:
+-- generativelanguage.googleapis.com and openrouter.ai.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (concat)
+import std/ai (step, callImageBase64, Message)
+import std/net (httpRequest)
+import ./wire (Seg)
+import ./spend (Units)
+import ./provider (Job, Style, styleFor, textCap, ttsCap)
+import ./reply (Reply, Image, textOf, stepReply, openRouterBody, parseOpenRouter, parseImage, ttsBody, parseTts)
+import ./voice (Clip, assemble)
+
+export type Attempt = { outcome: Result[string, string], units: Units, tries: int }
+export type Spoken = { outcome: Result[Clip, string], units: Units }
+
+pure func msg(role: string, content: string) -> Message = { role: role, content: content, tool_calls: [], tool_call_id: "", images: [] }
+pure func noUnits() -> Units = { tokensIn: 0, tokensOut: 0, calls: 0 }
+pure func plus(u: Units, i: int, o: int) -> Units = { tokensIn: u.tokensIn + i, tokensOut: u.tokensOut + o, calls: u.calls + 1 }
+-- Up to three attempts: a reply that fails the screen is retried (bad_output).
+pure func next(j: Job, rp: Reply, u: Units, n: int) -> Result[Attempt, Units] {
+  let u2 = plus(u, rp.tokensIn, rp.tokensOut);
+  match textOf(rp, j.r.constraints) {
+    Ok(b) => Ok({ outcome: Ok(b), units: u2, tries: n }),
+    Err(code) => if n >= 3 then Ok({ outcome: Err(code), units: u2, tries: n }) else Err(u2)
+  }
+}
+
+-- Gemini text: std/ai.step with the per-call model (same provider as the bound handler).
+func geminiTry(j: Job, n: int, u: Units) -> Attempt ! {AI @limit=3} =
+  match step(j.hop.model, [msg("system", j.prompt.system), msg("user", j.prompt.user)], []) {
+    Err(_) => { outcome: Err("provider_error"), units: u, tries: n },
+    Ok(s) => match next(j, stepReply(s), u, n) { Ok(a) => a, Err(u2) => geminiTry(j, n + 1, u2) }
+  }
+export func geminiText(j: Job) -> Attempt ! {AI @limit=3} = geminiTry(j, 1, noUnits())
+
+-- OpenRouter text: chat completions over std/net.
+pure func orUrl() -> string = "https://openrouter.ai/api/v1/chat/completions"
+func orTry(j: Job, key: string, n: int, u: Units) -> Attempt ! {Net} =
+  match httpRequest("POST", orUrl(), [{ name: "Authorization", value: concat(["Bearer ", key]) }, { name: "Content-Type", value: "application/json" }],
+      openRouterBody(j.hop.model, j.prompt, textCap(j.r))) {
+    Err(_) => { outcome: Err("provider_error"), units: u, tries: n },
+    Ok(resp) => match parseOpenRouter(resp.body) {
+      Err(code) => { outcome: Err(code), units: u, tries: n },
+      Ok(rp) => match next(j, rp, u, n) { Ok(a) => a, Err(u2) => orTry(j, key, n + 1, u2) }
+    }
+  }
+export func openRouterText(j: Job, key: string) -> Attempt ! {Net} = orTry(j, key, 1, noUnits())
+
+-- Image: std/ai.callImageBase64 with the bound Gemini image model. It
+-- returns a string, not a Result: a provider failure stops the process
+-- (AI.6 supervision restarts it).
+export func geminiImage(j: Job) -> Result[Image, string] ! {AI @limit=1} = parseImage(callImageBase64(j.prompt.user, "{\"aspect_ratio\":\"1:1\"}"))
+
+-- TTS: one generateContent call per segment (D-20 OQ7), each with the
+-- emotion's style line and a token cap; complete speech only.
+pure func ttsUrl(model: string) -> string = concat(["https://generativelanguage.googleapis.com/v1beta/models/", model, ":generateContent"])
+func speak(j: Job, key: string, voice: string, styles: [Style], ss: [Seg], acc: [bytes], u: Units) -> Spoken ! {Net} =
+  match ss {
+    [] => (match assemble(acc) { Ok(c) => { outcome: Ok(c), units: u }, Err(_) => { outcome: Err("bad_output"), units: u } }),
+    s :: rest => match httpRequest("POST", ttsUrl(j.hop.model), [{ name: "x-goog-api-key", value: key }, { name: "Content-Type", value: "application/json" }],
+        ttsBody(s.text, voice, styleFor(styles, s.emotion), ttsCap(s))) {
+      Err(_) => { outcome: Err("provider_error"), units: u },
+      Ok(resp) => match parseTts(resp.body, ttsCap(s)) {
+        Err(code) => { outcome: Err(code), units: u },
+        Ok(sp) => speak(j, key, voice, styles, rest, acc ++ [sp.pcm], plus(u, sp.tokensIn, sp.tokensOut))
+      }
+    }
+  }
+export func geminiVoice(j: Job, key: string, voice: string, styles: [Style]) -> Spoken ! {Net} =
+  speak(j, key, voice, styles, match j.r.segments { Some(ss) => ss, None => [] }, [], noUnits())

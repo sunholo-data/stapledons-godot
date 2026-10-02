@@ -1,0 +1,106 @@
+module stapledons/ai/adapter_lane
+
+-- `make ai-adapter` (AC9; AI.5 task 6): the adapter wiring without a
+-- network or a key. Run with `--ai-stub --caps IO,FS,AI` (no Net, no Env):
+--   * the Gemini text adapter (std/ai.step) turns the stub's {"kind":"Wait"}
+--     into bad_output after exactly three attempts (@limit=3);
+--   * the image adapter (std/ai.callImageBase64) turns the stub's 1x1 PNG into
+--     a valid descriptor;
+--   * the OpenRouter and TTS parsers decode the committed response fixtures
+--     (the OpenRouter "Wait" fixture is bad_output too); the TTS PCM goes
+--     through the voice assembly;
+--   * the prompt goldens are written to <out>/prompts/<purpose>.txt.
+-- It prints one line per check, then adapter-ok when every check holds.
+import std/io (println)
+import std/fs (readFileResult, writeFile, mkdirAll)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (concat, join, split, intToStr, contains)
+import ./wire (Request, WRequest, decodeIn, encodeOut, Constraints)
+import ./spend (ledgerOf, usdOf)
+import ./prompt (buildPrompt, promptText)
+import ./provider (Ctx, Act, Say, WriteBlob, Job, Prep, Done, Run, prepare, okImage, okVoice)
+import ./reply (Reply, textOf, parseOpenRouter, parseTts, parseImage)
+import ./voice (assemble)
+import ./service (Session, start)
+import ./adapters (Attempt, geminiText, geminiImage)
+
+export type Lane = { routing: string, fixtures: string, requests: string, out: string }
+
+func text(path: string) -> string ! {FS} = match readFileResult(path) { Ok(t) => t, Err(_) => "" }
+pure func reqOf(line: string) -> Option[Request] = match decodeIn(line) { Ok(m) => (match m { WRequest(r) => Some(r), _ => None }), Err(_) => None }
+pure func find(lines: [string], id: string) -> Option[Request] =
+  match lines { [] => None, l :: rest => match reqOf(l) { Some(r) => if r.req == id then Some(r) else find(rest, id), None => find(rest, id) } }
+pure func said(acts: [Act]) -> string = match acts { [] => "", a :: r => match a { Say(o) => encodeOut(o), _ => said(r) } }
+pure func check(name: string, ok: bool, detail: string) -> {line: string, ok: bool} = { line: concat([if ok then "ok   " else "FAIL ", name, ": ", detail]), ok: ok }
+
+-- Prompt goldens: one file per purpose, from tests/ai/requests.ndjson.
+func prompts(c: Ctx, lines: [string], out: string, ids: [{purpose: string, req: string}]) -> [{line: string, ok: bool}] ! {FS} =
+  match ids {
+    [] => [],
+    x :: rest => match find(lines, x.req) {
+      None => check(concat(["prompt ", x.purpose]), false, "request missing") :: prompts(c, lines, out, rest),
+      Some(r) => match buildPrompt(r, c.lore) {
+        Err(e) => check(concat(["prompt ", x.purpose]), false, e) :: prompts(c, lines, out, rest),
+        Ok(p) => { writeFile(concat([out, "/prompts/", x.purpose, ".txt"]), promptText(p)); check(concat(["prompt ", x.purpose]), r.purpose == x.purpose, concat(["req ", r.req, " written"])) :: prompts(c, lines, out, rest) }
+      }
+    }
+  }
+
+func job(c: Ctx, lines: [string], id: string) -> Option[Job] =
+  match find(lines, id) { None => None, Some(r) => match prepare(c, ledgerOf(0.5), r, "gemini") { Run(j) => Some(j), Done(_) => None } }
+
+func geminiTextCheck(c: Ctx, lines: [string]) -> {line: string, ok: bool} ! {AI} =
+  match job(c, lines, "1") {
+    None => check("gemini text (std/ai.step)", false, "no job"),
+    Some(j) => {
+      let a = geminiText(j);
+      check("gemini text (std/ai.step)", a.outcome == Err("bad_output") && a.tries == 3 && j.hop.provider == "gemini",
+        concat([match a.outcome { Ok(b) => b, Err(e) => e }, " after ", intToStr(a.tries), " attempts, model ", j.hop.model]))
+    }
+  }
+func imageCheck(c: Ctx, lines: [string]) -> {line: string, ok: bool} ! {AI} =
+  match job(c, lines, "9") {
+    None => check("gemini image (std/ai.callImageBase64)", false, "no job"),
+    Some(j) => match geminiImage(j) {
+      Err(e) => check("gemini image (std/ai.callImageBase64)", false, e),
+      Ok(img) => {
+        let s = okImage(ledgerOf(0.5), j, "gemini", { tokensIn: 0, tokensOut: 0, calls: 1 }, 0, img);
+        check("gemini image (std/ai.callImageBase64)", img.w == 1 && img.h == 1 && contains(said(s.acts), "\\\"width\\\":1,\\\"height\\\":1"), said(s.acts))
+      }
+    }
+  }
+
+pure func cons() -> Constraints = { maxChars: 280, noNumerals: true, emotions: ["neutral", "loving", "grieving"] }
+pure func orOutcome(body: string) -> string =
+  match parseOpenRouter(body) { Err(e) => e, Ok(rp) => match textOf(rp, cons()) { Ok(b) => concat(["ok ", b, " (", intToStr(rp.tokensIn), " in, ", intToStr(rp.tokensOut), " out)"]), Err(e) => e } }
+pure func ttsOutcome(body: string) -> string =
+  match parseTts(body, 300) { Err(e) => e, Ok(s) => match assemble([s.pcm]) { Ok(c) => concat(["ok pcm ", intToStr(s.tokensOut), " tokens -> clip ", intToStr(c.durationMs), " ms"]), Err(e) => e } }
+pure func imgOutcome(body: string) -> string = match parseImage(body) { Err(e) => e, Ok(i) => concat(["ok ", intToStr(i.w), "x", intToStr(i.h)]) }
+func fixture(dir: string, name: string, parse: string -> string, want: string) -> {line: string, ok: bool} ! {FS} {
+  let got = parse(text(concat([dir, "/responses/", name])));
+  check(concat(["fixture ", name]), got == want || (want == "ok" && contains(got, "ok ")), got)
+}
+
+pure func allOk(xs: [{line: string, ok: bool}]) -> bool = match xs { [] => true, x :: r => x.ok && allOk(r) }
+func printAll(xs: [{line: string, ok: bool}]) -> () ! {IO} = match xs { [] => (), x :: r => { println(x.line); printAll(r) } }
+
+export func lane(cfg: Lane) -> () ! {IO, FS, AI} {
+  let s = { provider: "stub", keys_present: ["gemini"], text_only: false, cache_dir: concat([cfg.out, "/cache"]), routing: cfg.routing, fixtures: cfg.fixtures, ceiling_usd: 0.5 };
+  match start(s, ["gemini"]) {
+    Err(e) => println(concat(["FAIL start: ", e])),
+    Ok(c) => {
+      mkdirAll(concat([cfg.out, "/prompts"]));
+      let lines = split(text(cfg.requests), "\n");
+      let d = cfg.fixtures;
+      let results = prompts(c, lines, cfg.out, [{ purpose: "line", req: "1" }, { purpose: "news", req: "2" }, { purpose: "archive", req: "3" }, { purpose: "probe", req: "20" }]) ++
+        [geminiTextCheck(c, lines), imageCheck(c, lines),
+         fixture(d, "openrouter_ok.json", orOutcome, "ok"), fixture(d, "openrouter_wait.json", orOutcome, "bad_output"),
+         fixture(d, "openrouter_length.json", orOutcome, "bad_output"), fixture(d, "openrouter_error.json", orOutcome, "provider_error"),
+         fixture(d, "gemini_tts_ok.json", ttsOutcome, "ok"), fixture(d, "gemini_tts_capped.json", ttsOutcome, "bad_output"),
+         fixture(d, "gemini_tts_error.json", ttsOutcome, "provider_error"), fixture(d, "gemini_image.json", imgOutcome, "ok")];
+      printAll(results);
+      println(if allOk(results) then "adapter-ok" else "adapter-BAD")
+    }
+  }
+}

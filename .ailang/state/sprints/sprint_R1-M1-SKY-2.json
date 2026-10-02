@@ -358,8 +358,12 @@
       "wave": 2,
       "files": [
         "Makefile",
+        "sim/tools/catalogue.ail",
+        "sim/tools/catalogue_bytes.ail",
+        "sim/tools/catalogue_main.ail",
         "sim/tools/catalogue_test.ail",
-        "tools/catalogue_probe.py (allowlisted harness, optional)"
+        "tools/catalogue_parity.sh",
+        "changelogs/unreleased/2026-10-02-catalogue-tiers.md"
       ],
       "acceptance_criteria": [
         "make catalogue TIER=medium AILANG=$A: stars_medium.bin is 1,200,000 B; count_excluded > 0 printed and recorded",
@@ -368,9 +372,9 @@
         "$A test --package sim passes the N3 boundary check"
       ],
       "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "started": "2026-10-02T19:20:00Z",
+      "completed": "2026-10-02T21:05:00Z",
+      "notes": "Executed 2026-10-02 on sprint/m1.2b-t4 (AILANG v0.51.0, rebased on main after PR #43), awaiting independent evaluation; passes left null for the controller. ailang#1501 fix: transform (map parseLine + firstError/okValues via flatMap), withoutTrailingBlank (nth_or + take, was two consing reverses), selectMedium (take(limit, filter complete, sortBy) + scalar Tally fold for excluded), encodeRows (map encodeRow + concatList), count -> std/list length, checkRow -> head(filter(out of range)). foldl kept only for scalar accumulators. findIndex/any avoided: recursive, O(n^2) on the VM and RT_REC_003 on the interpreter at 20k (filed ailang#1518). Strict VM == interpreter on every catalogue-vm entry. Output bytes identical to the pre-T4 code on quick, medium and large (cmp of bin + sidecar). Timings (wall s, peak RSS MiB; before -> after): quick VM 1.30/206 -> 1.03/173, interp 16.5/198 -> 17.3/159; medium VM 382.9/3200 -> 60.9/1981, interp 1493.6/2627 -> 1375.2/2114; large VM 536.4/3300 -> 54.8/1992, interp 1549.9/3138 -> 1485.9/1837. GCNS scan is now linear (40k rows 7.0 s, 160k 27.8 s VM). The interpreter is dominated by per-row cost (~4.5 ms/row), not accumulation. ACs: make catalogue TIER=quick 141,792 B (2 s); TIER=medium 1,200,000 B, count_excluded 965 printed and in the sidecar (74 s); TIER=large 331,312 x 24 = 7,951,488 B, 0 skipped (64 s). make catalogue-parity (medium): interp 1407 s, VM 76/74/75/84/120 s, peak RSS 1.9-2.3 GiB, '5/5 identical'. N3 (quotaVm, and as a test block): 50,001 complete + 50,001 interleaved missing rows -> 50,000 kept, 49,999 excluded, equal to an independent count; supersedes T3 checkMediumQuota. Also first-error-wins tests (transform, range check, encodeRows) and a WD counter pin on a flags-21 row. Mutations 19/19 killed: quota 49,999 and 50,001, take limit-1, tally counts all missing, tally > for >=, missing flag 3 dropped, WD flags 3/5/21 dropped, firstError -> last, okValues reversed, no trailing-blank strip, strip any last line, range error names last row, z unchecked, encodeRows ignores errors, encodeRows reversed, medium unsorted, input counts complete only. make test green before and after the rebase (229 + 120 AILANG tests). make test does not run any real tier. Counted LOC +166/-57 code/test/config (Makefile, 4 .ail, parity script)."
     },
     {
       "id": "M1.2c_STATS_AND_COMMIT",

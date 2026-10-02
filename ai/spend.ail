@@ -1,0 +1,97 @@
+module stapledons/ai/spend
+
+-- Spend (design (a5); plan change 2026-10-02: cost per provider; D-20: the
+-- player sets the ceiling, default US$0.50). data/ai/prices.json, keyed by
+-- provider and model, prices what a call reports (tokens in and out) or a
+-- flat amount per call (images: the image call reports no usage). The
+-- session ledger keeps a total per provider; the one ceiling applies to the
+-- sum. A call is admitted only if the total plus its worst-case estimate
+-- stays within the ceiling; otherwise the request is answered `budget`.
+--
+-- Money is whole nano-dollars (int) so sums are exact on every runtime and
+-- architecture; `usdOf` turns a sum into dollars only for printing.
+-- prices.json: {"v": 1, "prices": {<provider>: {<model>: {"in_per_mtok": $,
+-- "out_per_mtok": $, "per_call": $}}}} (each field optional, default 0).
+-- Pure; runs on the strict VM (aiWireVm).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, get, getNumber, asObject, encode, js)
+import std/math (floor, floatToInt, intToFloat)
+import std/string (concat, join, intToStr)
+import ./key (member)
+import ./route (providers)
+import ./wire (usdStr)
+
+-- n$ per input token, n$ per output token, n$ per call.
+export type Price = { provider: string, model: string, inTok: int, outTok: int, perCall: int }
+-- What one call used (reported, or estimated by the stub).
+export type Units = { tokensIn: int, tokensOut: int, calls: int }
+export type Ledger = { spent: [{provider: string, nusd: int}], ceiling: int }
+
+-- The player's ceiling: US$0.05 to US$20.00, default US$0.50 (D-20, plan Q2).
+export pure func defaultCeilingUsd() -> float = 0.5
+export pure func nanoOf(usd: float) -> int = floatToInt(floor(usd * 1000000000.0 + 0.5))
+export pure func usdOf(n: int) -> float = intToFloat(n) / 1000000000.0
+export pure func ceilingError(usd: float) -> Option[string] =
+  if usd >= 0.05 && usd <= 20.0 then None else Some(concat(["config: ceiling_usd ", usdStr(usd), " is outside 0.05..20"]))
+export pure func ledgerOf(ceilingUsd: float) -> Ledger = { spent: [], ceiling: nanoOf(ceilingUsd) }
+
+pure func bindP(r: Result[a, string], g: a -> Result[b, string]) -> Result[b, string] = match r { Ok(x) => g(x), Err(e) => Err(e) }
+-- $ per million tokens -> n$ per token is x * 1000; $ per call -> n$ is x * 1e9.
+pure func field(j: Json, k: string, scale: float, where: string) -> Result[int, string] =
+  match get(j, k) {
+    None => Ok(0),
+    Some(_) => match getNumber(j, k) {
+      Some(x) => if x >= 0.0 && x <= 1000.0 then Ok(floatToInt(floor(x * scale + 0.5))) else Err(concat(["config: prices ", where, ".", k, " is out of range"])),
+      None => Err(concat(["config: prices ", where, ".", k, " is not a number"]))
+    }
+  }
+pure func priceOf(p: string, e: {key: string, value: Json}) -> Result[Price, string] {
+  let w = concat([p, ".", e.key]);
+  bindP(field(e.value, "in_per_mtok", 1000.0, w), \i. bindP(field(e.value, "out_per_mtok", 1000.0, w), \o. bindP(field(e.value, "per_call", 1000000000.0, w), \c.
+    Ok({ provider: p, model: e.key, inTok: i, outTok: o, perCall: c }))))
+}
+@allow_empty_ok("a provider may list no models")
+pure func modelsOf(p: string, kvs: [{key: string, value: Json}]) -> Result[[Price], string] =
+  match kvs { [] => Ok([]), e :: r => bindP(priceOf(p, e), \x. bindP(modelsOf(p, r), \xs. Ok(x :: xs))) }
+@allow_empty_ok("an empty table prices nothing; every routed model is then refused at start")
+pure func providersOf(kvs: [{key: string, value: Json}]) -> Result[[Price], string] =
+  match kvs {
+    [] => Ok([]),
+    e :: r => if !member(e.key, providers()) then Err(concat(["config: prices: unknown provider ", e.key])) else match asObject(e.value) {
+      Some(ms) => bindP(modelsOf(e.key, ms), \a. bindP(providersOf(r), \b. Ok(a ++ b))),
+      None => Err(concat(["config: prices ", e.key, " is not an object"]))
+    }
+  }
+export pure func parsePrices(text: string) -> Result[[Price], string] =
+  match decode(text) {
+    Err(_) => Err("config: prices is not JSON"),
+    Ok(j) => if getNumber(j, "v") != Some(1.0) then Err("config: prices v must be 1") else match get(j, "prices") {
+      Some(p) => (match asObject(p) { Some(kvs) => providersOf(kvs), None => Err("config: prices is not an object") }),
+      None => Err("config: prices has no prices")
+    }
+  }
+export pure func priceFor(ps: [Price], provider: string, model: string) -> Option[Price] =
+  match ps { [] => None, p :: r => if p.provider == provider && p.model == model then Some(p) else priceFor(r, provider, model) }
+
+export pure func cost(p: Price, u: Units) -> int = u.tokensIn * p.inTok + u.tokensOut * p.outTok + u.calls * p.perCall
+
+pure func sumOf(xs: [{provider: string, nusd: int}]) -> int = match xs { [] => 0, x :: r => x.nusd + sumOf(r) }
+export pure func total(l: Ledger) -> int = sumOf(l.spent)
+export pure func spentBy(l: Ledger, provider: string) -> int =
+  match l.spent { [] => 0, x :: r => (if x.provider == provider then x.nusd else 0) + spentBy({l | spent: r}, provider) }
+-- Admitted iff the total plus the call's worst case stays within the ceiling.
+export pure func admit(l: Ledger, estimate: int) -> bool = total(l) + estimate <= l.ceiling
+pure func addTo(xs: [{provider: string, nusd: int}], p: string, n: int) -> [{provider: string, nusd: int}] =
+  match xs { [] => [{ provider: p, nusd: n }], x :: r => if x.provider == p then { provider: p, nusd: x.nusd + n } :: r else x :: addTo(r, p, n) }
+export pure func charge(l: Ledger, provider: string, n: int) -> Ledger = {l | spent: addTo(l.spent, provider, n)}
+
+-- One usage.ndjson line: the call and the running totals, per provider and all.
+export type Usage = { req: string, provider: string, route: string, model: string, kind: string, units: Units, nusd: int, ms: int }
+pure func q(s: string) -> string = encode(js(s))
+pure func f(k: string, v: string) -> string = concat([q(k), ":", v])
+export pure func usageLine(u: Usage, after: Ledger) -> string =
+  concat(["{", join(",", [f("req", q(u.req)), f("provider", q(u.provider)), f("route", q(u.route)), f("model", q(u.model)), f("kind", q(u.kind)),
+    f("tokens_in", intToStr(u.units.tokensIn)), f("tokens_out", intToStr(u.units.tokensOut)), f("calls", intToStr(u.units.calls)),
+    f("usd", usdStr(usdOf(u.nusd))), f("ms", intToStr(u.ms)),
+    f("totals", concat(["{", f("gemini", usdStr(usdOf(spentBy(after, "gemini")))), ",", f("openrouter", usdStr(usdOf(spentBy(after, "openrouter")))), ",", f("all", usdStr(usdOf(total(after)))), "}"]))]), "}"])
