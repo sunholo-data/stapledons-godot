@@ -493,6 +493,34 @@ GDScript), `Makefile`, `.gitignore`, starmap-manager skill files,
 ### Wave 4 (parallel)
 
 #### M1.2d: Bright tier (D-5), HIP photometry fill and binary components
+**Status (2026-10-02):** executed on `sprint/m1.2d-bright`; awaiting independent evaluation.
+Results:
+- [x] Named checks pass under `ailang test` and `make bright-test` (strict VM = interpreter;
+  real-byte fixtures VM = interpreter). Checks: checkVegaExcluded, checkArcturusPmMatch,
+  checkRigelIncluded, checkCns5EpochMatch, checkSiriusFilled, checkAlphaCenComponents, plus
+  checkSharedHipGuard, checkCuts, checkOverrideRefused and checkFillQuickOnly. 17 mutants are
+  all killed.
+- [x] `make catalogue TIER=bright`: 10,713 rows, 257,112 B (a multiple of 24), 7 excluded (no
+  B−V). 463 matched CNS5 and 4,120 matched GCNS. About 7 s on the VM.
+- [x] `make catalogue-parity` is 5/5 for bright, quick and medium. `make catalogue-stats` finds
+  0 defaulted-photometry violations in every tier. The quick tier has 137 HIP-filled rows;
+  633 rows stay MISSING_PHOT because they have no HIP id, or share one, or have no B−V.
+- [x] `make test` includes `test-bright-audit` and `bright-test`.
+
+Deviations:
+- Sirius gets hip_main V **−1.44** (the I/239 value, verbatim), not the −1.46 written above.
+- The fill extends to CNS5 rows that share a HIP id with another row, under the |G − V| < 2
+  guard. Aldebaran A, ε Sco, ε Cyg and 84709 AB are filled; faint companions are not.
+- Bright-tier rows sit at J2016.0 (HIP2 propagated). α Cen B sits at the system row's epoch
+  (1991.25).
+- V < 7 stars without B−V (7) are excluded and counted in `count_excluded`. They are not kept
+  as MISSING_PHOT rows.
+- The fill and bright entries live in a new `sim/tools/bright_main.ail`, not in
+  `catalogue_main.ail`. Importing extract.ail into catalogue_main made the v0.51.0 VM run
+  extract's `main` for `--entry main` (reported upstream).
+- `catalogue.ail` changed only for the shared `Fill` type and a rename (ailang#1461). The fill
+  is applied by `catalogue_main.planFill`.
+
 **Scope:**
 - **Downloads.** `download_stars.sh bright` fetches HIP2 `I/311` `hip2.dat`
   and `I/239` `hip_main.dat`, with byte-size and sha256 logging. The

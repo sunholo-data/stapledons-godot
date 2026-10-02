@@ -6,12 +6,13 @@ module stapledons/sim/tools/catalogue_main
 --     '{"tier":"quick","csv":"data/raw/cns5.csv","raw":"data/raw/cns5.dat","lock":"sim/ailang.lock","out":"data/starmap","ailang":"v0.51.0"}' \
 --     sim/tools/catalogue_main.ail
 --   ... --entry scan --args-json '"data/raw/gcns.csv"' ...   (real-row F32 bound scan)
-import ./catalogue (Row, transform, selectTier)
+--   The M1.2d quick fill and bright tier entries are in bright_main.ail (they reuse the shell below).
+import ./catalogue (Row, Fill, transform, selectTier)
 import ./catalogue_bytes (encodeRow, encodeRows)
 import std/result (Result, Ok, Err)
 import std/option (Some, None)
 import std/string (concat, join, length, chars, endsWith, substring, intToStr)
-import std/list (foldl, filter, map, length as size)
+import std/list (foldl, filter, map, length as size, concat as append)
 import std/crypto (sha256Hex, sha256Bytes)
 import std/bytes (fromBase64, toBase64)
 import std/json (Json, encode, decode, jo, kv, js, jint, ja, get, asString, asArray)
@@ -21,32 +22,46 @@ import std/io (println, eprintln, exit)
 export type Pkg = {name: string, version: string, hash: string}
 export type Plan = {bin: bytes, sidecar: string, count: int, excluded: int}
 
-pure func source(tier: string) -> string =
+export pure func source(tier: string) -> string =
   if tier == "quick" then "CNS5, VizieR J/A+A/670/A19 cns5.dat (all rows with a parallax)"
   else if tier == "medium" then "GCNS, VizieR J/A+A/649/A6 table1c.dat.gz (50,000 nearest with complete photometry)"
   else "GCNS, VizieR J/A+A/649/A6 table1c.dat.gz (all rows)"
 pure func hexDigit(c: string) -> bool = c == "0" || c == "1" || c == "2" || c == "3" || c == "4" || c == "5" ||
   c == "6" || c == "7" || c == "8" || c == "9" || c == "a" || c == "b" || c == "c" || c == "d" || c == "e" || c == "f"
 pure func sha256Text(s: string) -> bool = length(s) == 64 && foldl(\ok c. ok && hexDigit(c),true,chars(s))
-pure func sidecar(tier: string, count: int, excluded: int, rawSha: string, csvSha: string, binSha: string, ailang: string, p: Pkg) -> string =
-  concat([encode(jo([
-    kv("tier",js(tier)), kv("count",jint(count)), kv("count_excluded",jint(excluded)), kv("source",js(source(tier))),
+-- extra: tier-specific keys after "fields"' neighbours (none for medium/large, so their sidecars are unchanged);
+-- shas: the input digests, then "bin".
+export pure func sidecarWith(tier: string, src: string, count: int, excluded: int, extra: [{key: string, value: Json}],
+    shas: [{key: string, value: Json}], binSha: string, ailang: string, p: Pkg) -> string =
+  concat([encode(jo(append([
+    kv("tier",js(tier)), kv("count",jint(count)), kv("count_excluded",jint(excluded)), kv("source",js(src))], append(extra, [
     kv("format_version",jint(1)), kv("record_bytes",jint(24)),
     kv("fields",ja(map(js,["x","y","z","teff","v","flags"]))), kv("ailang",js(ailang)),
     kv("package",jo([kv("name",js(p.name)), kv("version",js(p.version)), kv("content_hash",js(p.hash))])),
     kv("producer",js("stapledons/sim/tools/catalogue_main")),
-    kv("sha256",jo([kv("raw",js(rawSha)), kv("csv",js(csvSha)), kv("bin",js(binSha))]))])), "\n"])
+    kv("sha256",jo(append(shas, [kv("bin",js(binSha))])))])))), "\n"])
+pure func sidecar(tier: string, count: int, excluded: int, rawSha: string, csvSha: string, binSha: string, ailang: string, p: Pkg) -> string =
+  sidecarWith(tier,source(tier),count,excluded,[],[kv("raw",js(rawSha)), kv("csv",js(csvSha))],binSha,ailang,p)
 -- Any refusal (header, field, tier name, coordinate range, F32 bound, raw digest) is an Err: nothing to write.
 export pure func plan(i: {tier: string, csv: string, rawSha: string, ailang: string, pkg: Pkg}) -> Result[Plan,string] =
+  planFill(i,[],"")
+-- M1.2d rule (b): HIP photometry replaces a missing-photometry row's teff, v and flags, by id.
+export pure func applyFill(rows: [Row], fs: [Fill]) -> [Row] =
+  map(\r. match filter(\f. f.id == r.id, fs) { [f] => {id: r.id, x: r.x, y: r.y, z: r.z, teff: f.teff, v: f.v, flags: f.flags}, _ => r }, rows)
+-- hipSha "" = no fill (medium, large, and quick before M1.2d); a fill is refused off the quick tier.
+export pure func planFill(i: {tier: string, csv: string, rawSha: string, ailang: string, pkg: Pkg}, fs: [Fill], hipSha: string) -> Result[Plan,string] =
   if !sha256Text(i.rawSha) then Err("raw sha256 must be 64 lowercase hex digits") else
+  if hipSha != "" && (i.tier != "quick" || !sha256Text(hipSha)) then Err("the HIP photometry fill applies to the quick tier only, with a hip_main sha256") else
   match transform(i.csv) {
     Err(e) => Err(e),
-    Ok(s) => match selectTier(s.rows,i.tier) {
+    Ok(s) => match selectTier(applyFill(s.rows,fs),i.tier) {
       Err(e) => Err(e),
       Ok(sel) => match encodeRows(sel.rows) {
         Err(e) => Err(e),
         Ok(b) => Ok({bin: b, count: size(sel.rows), excluded: sel.excluded,
-          sidecar: sidecar(i.tier,size(sel.rows),sel.excluded,i.rawSha,sha256Hex(i.csv),sha256Bytes(b),i.ailang,i.pkg)})
+          sidecar: if hipSha == "" then sidecar(i.tier,size(sel.rows),sel.excluded,i.rawSha,sha256Hex(i.csv),sha256Bytes(b),i.ailang,i.pkg)
+            else sidecarWith(i.tier,source(i.tier),size(sel.rows),sel.excluded,[kv("hip_filled",jint(size(fs)))],
+              [kv("raw",js(i.rawSha)), kv("csv",js(sha256Hex(i.csv))), kv("hip_main",js(hipSha))],sha256Bytes(b),i.ailang,i.pkg)})
       }
     }
   }
@@ -71,12 +86,12 @@ export pure func f32Refusals(rows: [Row]) -> [string] =
 export pure func outputName(dir: string, tier: string, ext: string) -> string =
   concat([if endsWith(dir,"/") then substring(dir,0,length(dir)-1) else dir, "/stars_", tier, ".", ext])
 
-func fail(msg: string) -> () ! {IO} { eprintln(concat(["catalogue: refused, nothing written: ",msg])); exit(1) }
-func rawDigest(path: string) -> Result[string,string] ! {FS} = match readFileBytes(path) {
+export func fail(msg: string) -> () ! {IO} { eprintln(concat(["catalogue: refused, nothing written: ",msg])); exit(1) }
+export func rawDigest(path: string) -> Result[string,string] ! {FS} = match readFileBytes(path) {
   Err(e) => Err(concat(["cannot read raw ",path,": ",e])),
   Ok(b64) => match fromBase64(b64) { Some(b) => Ok(sha256Bytes(b)), None => Err("raw bytes did not decode") }
 }
-func writeFail(msg: string) -> () ! {IO} { eprintln(concat(["catalogue: write failed: ",msg])); exit(1) }
+export func writeFail(msg: string) -> () ! {IO} { eprintln(concat(["catalogue: write failed: ",msg])); exit(1) }
 -- writeFileBytes has no Result form (v0.51.0): probe the path with writeFileResult first, so an
 -- unwritable path is an Err rather than a panic, then read the bytes back and compare.
 func writeBytesChecked(path: string, b: bytes) -> Result[(),string] ! {FS} = match writeFileResult(path,"") {
@@ -111,7 +126,7 @@ func rollback(hadBin: bool, bin: string, binBak: string) -> string ! {FS} =
 -- or a new bin beside the old sidecar for an instant; the sidecar carries sha256.bin, so readers
 -- (M1.2c loader) check it and treat a mismatch as "retry", never as data.
 -- Ok carries the success suffix, with a warning when the commit succeeded but the .bak could not be removed.
-func commit(p: Plan, out: string, tier: string) -> Result[string,string] ! {FS} {
+export func commit(p: Plan, out: string, tier: string) -> Result[string,string] ! {FS} {
   let bin = outputName(out,tier,"bin");
   let json = outputName(out,tier,"json");
   let binTmp = concat([bin,".tmp"]);

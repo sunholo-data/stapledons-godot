@@ -1,0 +1,201 @@
+module stapledons/sim/tools/bright_test
+-- M1.2d bright tier and CNS5 fill (sim/tools/bright.ail) on real Hipparcos and CNS5 bytes.
+-- The fixtures are real lines cut from the downloads (tools/fixtures/README.md); they are inlined
+-- below so the named checks run under `ailang test` and on the strict VM, and `brightFixtures`
+-- (FS) checks the inline copies equal tools/fixtures/*_bright.dat byte for byte and reruns every
+-- check on the file text. `make bright-test`: strict VM = interpreter, then fixtures VM = interpreter.
+import ./bright (Astro, Cns, Phot, Bright, indexBy, parseHip2, parseHipMain, parseCnsHip, gcnsIndex, fill, bright, gcnsMatch, directionAt, chord2, flagHip)
+import ./catalogue (Row)
+import ./catalogue_main (applyFill, planFill)
+import ./extract (icrsToGalactic, distanceLy)
+import ./extract as X
+import std/string (concat, join, split, startsWith, replace, contains)
+import std/list (map, filter, head, length as size, concat as concat_)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/math (sqrt, PI)
+import std/fs (readFile)
+import pkg/sunholo/relativity/photometry (teffFromBV)
+
+pure func failedChecks(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func verdictOf(tag: string, bad: [string]) -> string =
+  match bad { [] => concat([tag, "-ok"]), _ => concat([tag, "-BAD: ", join(",", bad)]) }
+pure func within(a: float, b: float, tol: float) -> bool = a - b <= tol && b - a <= tol
+pure func len3(x: float, y: float, z: float) -> float = sqrt(x * x + y * y + z * z)
+
+-- Real fixture lines (tools/fixtures/*_bright.dat), verbatim. HIP: Aldebaran 21421, Rigel 24436,
+-- Sirius 32349, Groombridge 1830 57939, Arcturus 69673, alpha Cen B 71681 / A 71683, Vega 91262.
+-- CNS5: 1142/1143 Aldebaran A/B (both HIP 21421), 1675/1676 Sirius B/A, 2914 Groombridge 1830,
+-- 3517 Arcturus, 3627 alpha Cen AB, 4607 Vega.
+pure func hip2Lines() -> [string] = [
+  " 24436   5 0 1  1.3724302998 -0.1431456148    3.78     1.31     0.50   0.30   0.25   0.34   0.40   0.30  73 12.27  0    0.0    0  0.1930 0.0015 0.014 1 -0.030 0.600  0.030   1.06  -0.07   1.17  -0.54   0.61   1.00   0.19   1.79   0.08   1.00   2.42   3.61  -0.20  -0.46   1.00",
+  " 32349   0 4 1  1.7678185359 -0.2916993748  379.21  -546.01 -1223.07   1.21   1.04   1.58   1.33   1.24  47  0.00  0    0.0    0 -1.0876 0.0024 0.040 0  0.009 0.007 -0.020   0.83  -0.04   0.96  -0.21   0.32   0.68   0.46  -0.12   0.13   0.90  -0.20   0.62  -0.14  -0.16   1.00",
+  " 57939   5 0 1  3.1107451467  0.6585617448  109.99  4003.98 -5813.62   0.33   0.22   0.41   0.37   0.23 139  0.57  0    0.0    0  6.5641 0.0009 0.010 2  0.754 0.009  0.880   1.24   0.09   1.11   0.16  -0.34   1.03   1.97   0.04  -0.48   1.02   0.09   2.14  -0.60  -0.84   1.00",
+  " 69673  55 3 2  3.7335754203  0.3348810440   88.83 -1093.39 -2000.06   0.40   0.35   0.54   0.44   0.39  96 29.09  1    0.0    0  0.1114 0.0020 0.015 2  1.239 0.006  1.220   1.05   3.46   1.01   0.13   1.11   1.02  -0.28   0.08   0.14   1.12  -0.01   0.07   2.01   4.93   1.00",
+  " 71681  95 3 1  3.8382255459 -1.0618492493  796.92 -3614.39   802.98  19.15  14.24  25.90  20.48  19.52 132 99.00  4    0.0    0  1.2429 0.1154 0.000 0  0.900 0.020  0.880   1.25  -2.04   1.06   2.68   1.29   1.01  -0.95   0.18   0.26   1.07   0.46   0.84  -0.69  -2.28   1.00",
+  " 71683  95 3 1  3.8383352142 -1.0617735850  754.81 -3679.25   473.67   3.07   2.46   4.11   3.89   3.24 136 99.00  0    0.0    0  0.1373 0.0472 0.063 0  0.710 0.040  0.690   1.11  -3.26   1.01   2.46   0.91   1.01  -0.89  -0.09   1.05   1.12   0.16  -0.31  -1.46  -4.75   1.00",
+  " 91262   1 0 1  4.8735545728  0.6768909262  130.23   200.94   286.23   0.26   0.28   0.36   0.32   0.40  98 -0.14  0    1.8    0  0.0868 0.0021 0.014 2 -0.001 0.005 -0.010   1.01   0.00   1.00   0.24   0.08   1.11  -0.02  -0.09   1.14   1.00  -0.09  -0.18   0.76  -0.08   1.00",
+  " 21421   1 0 1  1.2039281519  0.2881496983   48.94    63.45  -188.94   0.64   0.43   0.77   0.84   0.65  61  0.18  0    2.3    0  1.0024 0.0026 0.010 0  1.538 0.008  1.670   1.14  -1.03   1.06  -0.55   0.35   1.07   0.05   0.14   0.06   1.21   0.17  -0.33   0.53  -1.05   1.00"]
+pure func hipMainLines() -> [string] = [
+  "H|       21421| |04 35 55.20|+16 30 35.1| 0.87|1|G|068.98000195|+16.50976164| |  50.09|   62.78| -189.36|  0.85|  0.53|  0.95|  0.85|  0.63| 0.31| 0.49| 0.08| 0.19| 0.14|-0.26| 0.03| 0.46|-0.24| 0.29|  0| 0.13| 21421| 2.937|0.006| 1.160|0.011| | 1.538|0.008|G|1.67|0.02|G| | 1.0024|0.0026|0.010| 43| | 0.99| 1.02|       |M| | |04359+1631|I| 1| 1| | | |  |   |       |     |     |    |S| | | 29139|B+16  629 |          |          |1.67|K5III       |X ",
+  "H|       24436| |05 14 32.27|-08 12 05.9| 0.18|1|G|078.63446353|-08.20163919| |   4.22|    1.87|   -0.56|  0.65|  0.48|  0.81|  0.74|  0.53|-0.18| 0.27| 0.18| 0.32|-0.23|-0.13|-0.24| 0.27|-0.14|-0.30|  0| 2.48| 24436| 0.312|0.012| 0.283|0.010| |-0.030|0.600|G|0.03|0.02|A| | 0.1930|0.0015|0.014| 64| | 0.17| 0.22|   2.07|P|1|A|05145-0812|I| 1| 1| | |S|  |   |       |     |     |    |S| | | 34085|B-08 1063 |          |          |0.03|B8Ia        |X ",
+  "H|       32349| |06 45 09.25|-16 42 47.3|-1.44|2|G|101.28854105|-16.71314306|+| 379.21| -546.01|-1223.08|  1.21|  1.04|  1.58|  1.33|  1.24| 0.05| 0.22|-0.30|-0.50| 0.13|-0.31| 0.12|-0.54| 0.32|-0.05|  0|     | 32349|      |     |      |     | | 0.009|0.007|G|-.02|0.00|A| |-1.0876|0.0024|0.040|159| |-1.17|-0.98|       |U| | |06451-1643|I| 1| 1|O| | |  |   |       |     |     |    |S| |X| 48915|B-16 1591 |          |          |-.02|A0m...      |4 ",
+  "H|       57939| |11 52 55.82|+37 43 58.1| 6.42|2|H|178.23256802|+37.73280827| | 109.21| 4003.69|-5813.00|  0.60|  0.44|  0.78|  0.66|  0.44| 0.01|-0.03|-0.11|-0.30| 0.00|-0.03|-0.02|-0.28| 0.24| 0.10|  0| 1.31| 57939| 7.361|0.005| 6.513|0.004| | 0.754|0.009|G|0.88|0.02|G| | 6.5641|0.0009|0.010|136| | 6.55| 6.69|       |U|2| |          | |  | 1| | | |  |   |       |     |     |    |S| | |103095|B+38 2285 |          |          |0.88|G8Vp        |X ",
+  "H|       69673|H|14 15 40.35|+19 11 14.2|-0.05|1|G|213.91811403|+19.18726997|*|  88.85|-1093.45|-1999.40|  0.92|  0.42|  0.74|  0.60|  0.52|-0.52| 0.16|-0.13|-0.07| 0.05|-0.01| 0.03|-0.12|-0.03|-0.31|  7| 2.01| 69673| 1.629|0.010| 0.286|0.009|*| 1.239|0.006|G|1.22|0.02|A|*| 0.1114|0.0020|0.015| 70|*| 0.09| 0.14|       |U|2| |14157+1911|H| 1| 2|C| |A|AB|198|  0.255|0.039| 3.33|0.31|S| | |124897|B+19 2777 |          |          |1.22|K2IIIp      |X ",
+  "H|       71681| |14 39 39.39|-60 50 22.1| 1.35| |G|219.91412833|-60.83947139|B| 742.12|-3600.35|  952.11| 46.20| 36.28|  1.40| 26.10| 19.75| 0.29|-0.07|-0.01|-0.03|-0.06|-0.04|-0.06|-0.01|-0.13| 0.47|  1|-3.09| 71681|      |     |      |     | | 0.900|0.020|G|0.88|0.02|A| | 1.2429|0.1154|     |   |B|     |     |       |D| | |14396-6050|I| 3| 1|C|L|D|  |   |       |     |     |    |S| |D|128621|          |          |          |0.88|K1V         |1 ",
+  "H|       71683| |14 39 40.90|-60 50 06.5|-0.01| |G|219.92041034|-60.83514707|A| 742.12|-3678.19|  481.84|  1.42|  1.08|  1.40|  1.51|  1.24| 0.29|-0.31|-0.16| 0.15| 0.05|-0.09| 0.00| 0.14| 0.09| 0.45|  1|-3.09| 71683|      |     |      |     | | 0.710|0.040|G|0.69|0.02|A| | 0.1373|0.0472|0.063|105|A| 0.06| 0.26|       |D| | |14396-6050|I| 3| 1|C|P|D|  |   |       |     |     |    |S| |D|128620|          |          |P-60  5483|0.69|G2V         |X ",
+  "H|       91262| |18 36 56.19|+38 46 58.8| 0.03|1|G|279.23410832|+38.78299311| | 128.93|  201.02|  287.46|  0.48|  0.47|  0.55|  0.57|  0.60|-0.02|-0.08|-0.12| 0.30| 0.02|-0.13| 0.01| 0.28|-0.05|-0.15|  2| 1.31| 91262|      |     |      |     | |-0.001|0.005|G|-.01|0.02|A| | 0.0868|0.0021|0.014| 90| | 0.07| 0.13|       |U|2|C|18369+3847|I| 1| 1| | |S|  |   |       |     |     |    |S| | |172167|B+38 3238 |          |          |-.01|A0Vvar      |X "]
+pure func cns5Lines() -> [string] = [
+  "1142 171.1  A    2 1                         -  21421  68.98000194085509    16.509761580557992     1991.25   2007A&A...474..653V  48.939998626708984  0.77         2007A&A...474..653V    63.45                 0.8399999737739563    -188.94                  0.6499999761581421   2007A&A...474..653V                                                                                                 -                                -                                -  0.24621585379772942 0.08195125311613083  0.966402558209539    0.1311812767235622    0.24621585   0.08195125311613083  0.966402558209539       0.1311812767235622 2                                                                                                                                          ",
+  "1143 171.1  B    2 0       3313069881590622848  21421  68.98880121373318    16.505044951323992     2016.0    2020yCat.1350....0G  47.27153969330315   0.11708607   2020yCat.1350....0G    58.91905177435392     0.10419348627328873   -198.84124447071397      0.0751938745379448   2020yCat.1350....0G                                                                  11.947625   5.498319596234914E-4 13.368375   0.008625913265107787 10.686517   0.003563553654888873                                                                                     11.947625    5.498319596234914E-4  1.1906575944557352    0.009423125506350551 0                                                                                                                                          ",
+  "1675 244    B    2 0       2947050466531873024      - 101.28662552099249   -16.720932526023173     2016.0    2020yCat.1350....0G 374.5105905289588    0.26141906   2020yCat.1350....0G  -461.570505530133       0.27794569730758667   -914.5196209016666       0.3315037190914154   2020yCat.1350....0G                                                                   8.524133   0.001747320256337465  8.120362   0.046782510166774566  8.398789   0.039065152344803976                                                                                      8.524133    0.001747320256337465  0.12534332275390625    0.03910421020556419 1                                                                                                                                          ",
+  "1676 244    A    2 1                         -  32349 101.2885410520664    -16.713143062644765     1991.25   2007A&A...474..653V 379.2099914550781    1.58         2007A&A...474..653V  -546.01                 1.3300000429153442   -1223.07                  1.2400000095367432   2007A&A...474..653V                                                                                                 -                                -                                - -1.063531480944323   0.08194515854120255  0.006585664343293107 0.1311736603695266   -1.0635315    0.08194515854120255  0.006585664343293107    0.1311736603695266 2                                                                                                                                          ",
+  "2914 451         - 0       4034171629042489088  57939 178.26735320817272    37.69282694689086      2016.0    2020yCat.1350....0G 109.06352397049996   0.022481183  2020yCat.1350....0G  4002.654640989075       0.015417755581438541 -5817.8001940492695       0.015943847596645355 2020yCat.1350....0G  -97.6893081665039       0.2456350475549698  2020yCat.1350....0G  6.1985016  2.535551024396172E-4  6.607422   8.045428334676891E-4  5.6057725  7.411504397933602E-4                                                                                      6.1985016   2.535551024396172E-4  0.5847117965083464   0.0016989976884298898 0   4.937 0.196   4.5   0.024   4.373 0.027 2003yCat.2246....0C   4.333 0.274   4.067 0.16    4.405 0.018   4.321 0.025 2014yCat.2328....0C",
+  "3517 541         - 0                         -  69673 213.91811407697244    19.187270460134823     1991.25   2007A&A...474..653V  88.83000183105469   0.54         2007A&A...474..653V -1093.39                 0.4399999976158142   -2000.06                  0.38999998569488525  2007A&A...474..653V                                                                                                 -                                -                                - -0.42657886088109204 0.08193441480398178  0.7768637575741346   0.13116023900558438  -0.42657885   0.08193441480398178  0.7768637575741346     0.13116023900558438 2                                                                                                                                          ",
+  "3627 559    AB   3 1                         -  71683 219.9204081301028    -60.83514521897498      1991.25   2007A&A...474..653V 754.8099975585938    4.11         2007A&A...474..653V -3679.25                 3.890000104904175      473.67                  3.240000009536743    2007A&A...474..653V                                                                                                 -                                -                                - -0.15340459131661227 0.0945361778140068   0.49216332456974893  0.1471417305381334   -0.1534046     0.0945361778140068  0.49216332456974893     0.1471417305381334 2                                                                                                                                          ",
+  "4607 721         - 0                         -  91262 279.2341082481229     38.78299326196128      1991.25   2007A&A...474..653V 130.22999572753906   0.36         2007A&A...474..653V   200.94                 0.3199999928474426     286.23                  0.4000000059604645   2007A&A...474..653V                                                                                                 -                                -                                -  0.10656612946543408 0.08193691819906235  0.014253166171117507 0.13116336497903572   0.10656613   0.08193691819906235  0.014253166171117507   0.13116336497903572 2                                                                                                                                          "]
+
+type Texts = {h2: string, hm: string, c5: string}
+pure func joinLines(ls: [string]) -> string = concat([join("\n", ls), "\n"])
+pure func inline() -> Texts = {h2: joinLines(hip2Lines()), hm: joinLines(hipMainLines()), c5: joinLines(cns5Lines())}
+-- the same world without one CNS5 row (by its designation, bytes 1-4)
+pure func withoutCns(t: Texts, desig: string) -> Texts =
+  {h2: t.h2, hm: t.hm, c5: joinLines(filter(\l. !startsWith(l, concat([desig, " "])), split(t.c5, "\n")))}
+-- Arcturus as a GCNS row at its J2016.0 position (x 1000 ly), from an independent Python
+-- propagation (spherical linear, not bright.ail's vector form); G = V - 0.45.
+pure func arcturusGcns() -> string = "id,x,y,z,G,BPRP,wd\narcturus,344.362932,92.411369,934.277427,-0.500000,1.500000,0\n"
+pure func worldWith(t: Texts, gcns: string, ovs: [{hip: int, system: int}]) -> Result[Bright, string] =
+  bright(parseHip2(t.h2), parseHipMain(t.hm), parseCnsHip(t.c5), gcnsIndex(gcns), ovs)
+pure func world(t: Texts, gcns: string) -> Result[Bright, string] = worldWith(t, gcns, [{hip: 71681, system: 71683}])
+-- the same world with one field of Rigel's lines rewritten (the cut tests)
+pure func rigel(t: Texts, hm: string, h2: string) -> Texts =
+  {h2: replace(t.h2, "    3.78 ", h2), hm: replace(t.hm, "| 0.18|", hm), c5: t.c5}
+pure func ids(t: Texts, gcns: string) -> [string] = match world(t, gcns) { Ok(b) => map(\r. r.id, b.rows), Err(e) => [e] }
+pure func rowOf(t: Texts, id: string) -> [Row] = match world(t, "") { Ok(b) => filter(\r. r.id == id, b.rows), Err(_) => [] }
+pure func astro(t: Texts, h: int) -> [Astro] = filter(\a. a.hip == h, parseHip2(t.h2))
+pure func cnsRow(t: Texts, id: string) -> [Cns] = filter(\c. c.id == id, parseCnsHip(t.c5))
+pure func filled(t: Texts, id: string) -> [{id: string, teff: float, v: float, flags: int}] =
+  filter(\f. f.id == id, fill(parseCnsHip(t.c5), parseHipMain(t.hm)).rows)
+pure func dist(r: Row) -> float = sqrt(r.x * r.x + r.y * r.y + r.z * r.z)
+
+-- Vega (CNS5 4607, HIP 91262) is matched by CNS5's HIP column and is not in the bright tier; without
+-- its CNS5 row it would be (the negative control). The tier is Rigel plus alpha Cen B, in HIP order.
+pure func checkVegaExcluded(t: Texts) -> bool =
+  ids(t, "") == ["HIP 24436", "HIP 71681"] && ids(withoutCns(t, "4607"), "") == ["HIP 24436", "HIP 71681", "HIP 91262"] &&
+  (match world(t, "") { Ok(b) => b.cns5 == 6 && b.gcns == 0 && b.overridden == 1 && b.noColour == [], Err(_) => false })
+-- Arcturus moves 2.3 arcsec/yr: its J1991.25 position is 56 arcsec from the J2016.0 GCNS row, so it
+-- matches only after propagation; |G - V| >= 2 refuses the match; without its CNS5 row the GCNS row
+-- alone keeps it out of the bright tier.
+pure func checkArcturusPmMatch(t: Texts) -> bool = match astro(t, 69673) {
+  [a] => { let idx = gcnsIndex(arcturusGcns());
+    gcnsMatch(idx, a, 0.0 - 0.05, 2016.0) && !gcnsMatch(idx, a, 0.0 - 0.05, 1991.25) && !gcnsMatch(idx, a, 1.6, 2016.0) &&
+    ids(withoutCns(t, "3517"), arcturusGcns()) == ["HIP 24436", "HIP 71681"] &&
+    ids(withoutCns(t, "3517"), "") == ["HIP 24436", "HIP 69673", "HIP 71681"] &&
+    (match world(withoutCns(t, "3517"), arcturusGcns()) { Ok(b) => b.gcns == 1 && b.cns5 == 5, Err(_) => false }) },
+  _ => false
+}
+-- Rigel (HIP 24436): in no CNS5 or GCNS row; v = hip_main V verbatim, flag 8, teff from B-V,
+-- at its HIP2 distance (3.78 mas, ~863 ly).
+pure func checkRigelIncluded(t: Texts) -> bool = match rowOf(t, "HIP 24436") {
+  [r] => r.v == 0.18 && r.flags == flagHip() && r.flags == 8 && r.teff == teffFromBV(0.0 - 0.03) &&
+    within(dist(r), 1000.0 / 3.78 * 3.261563777, 0.000001),
+  _ => false
+}
+-- Groombridge 1830 (HIP 57939, CNS5 2914, a Gaia J2016.0 position, 7 arcsec/yr): HIP2 propagated to
+-- the CNS5 row's own epoch lands within 1 arcsec of it; unpropagated it is 175 arcsec off.
+pure func arcsec2() -> float = (PI() / 648000.0) * (PI() / 648000.0)
+pure func checkCns5EpochMatch(t: Texts) -> bool = match astro(t, 57939) {
+  [a] => match cnsRow(t, "4034171629042489088") {
+    [c] => match icrsToGalactic(c.ra, c.dec) { (x, y, z) =>
+      c.epoch == 2016.0 && chord2(directionAt(a, c.epoch), x, y, z) < arcsec2() &&
+      chord2(directionAt(a, 1991.25), x, y, z) > 10000.0 * arcsec2() },
+    _ => false
+  },
+  _ => false
+}
+-- Sirius A (CNS5 1676, no Gaia photometry, HIP 32349) gets hip_main V -1.44 and teff from B-V 0.009
+-- in place, flag 8; Sirius B (1675, Gaia-measured, no HIP id) is untouched; HIP 32349 is not a
+-- bright row (no duplicate); Groombridge 1830 (Gaia-measured, HIP 57939) keeps its Gaia photometry.
+-- Five fixture rows are filled (Aldebaran A, Sirius A, Arcturus, alpha Cen AB, Vega). applyFill
+-- puts a fill into the tier row by id.
+pure func checkSiriusFilled(t: Texts) -> bool = match filled(t, "CNS5:1676") {
+  [f] => f.v == 0.0 - 1.44 && f.flags == 8 && f.teff == teffFromBV(0.009) && size(filled(t, "2947050466531873024")) == 0 &&
+    size(filled(t, "4034171629042489088")) == 0 && size(fill(parseCnsHip(t.c5), parseHipMain(t.hm)).rows) == 5 &&
+    !hasId(ids(t, ""), "HIP 32349") &&
+    (match applyFill([{id: "CNS5:1676", x: 1.0, y: 2.0, z: 3.0, teff: 0.0, v: 99.0, flags: 2}], fill(parseCnsHip(t.c5), parseHipMain(t.hm)).rows) {
+      [r] => r.v == 0.0 - 1.44 && r.flags == 8 && r.x == 1.0 && r.z == 3.0, _ => false }),
+  _ => false
+}
+pure func hasId(xs: [string], id: string) -> bool = size(filter(\x. x == id, xs)) > 0
+-- Shared HIP ids: Aldebaran A (1142, missing) shares HIP 21421 with B (1143, G 11.9 vs V 0.87), so
+-- A is the HIP star and is filled; were B's G within 2 mag of V, A would be left missing.
+pure func checkSharedHipGuard(t: Texts) -> bool {
+  let ph = indexBy(\p. p.hip, [{hip: 21421, v: 0.87, bv: Some(1.538)}]);
+  let a = {id: "a", hip: 21421, epoch: 1991.25, ra: 0.0, dec: 0.0, plx: 50.0, g: 99.0, missing: true};
+  let b = {id: "b", hip: 21421, epoch: 2016.0, ra: 0.0, dec: 0.0, plx: 50.0, g: 1.5, missing: false};
+  size(filled(t, "CNS5:1142")) == 1 && size(fill([a, b], ph).rows) == 0 && fill([a, b], ph).ambiguous == ["a"] &&
+    size(fill([a, {id: "b", hip: 21421, epoch: 2016.0, ra: 0.0, dec: 0.0, plx: 50.0, g: 3.0, missing: false}], ph).rows) == 1
+}
+-- alpha Cen: A is CNS5 3627 (filled, V -0.01); B (HIP 71681) is a bright row at the CNS5 system
+-- distance (754.81 mas, 4.321 ly), 19 arcsec from A on the sky (~4e-4 ly, ~25 AU), never at its own
+-- HIP2 4.09 ly.
+pure func checkAlphaCenComponents(t: Texts) -> bool = match rowOf(t, "HIP 71681") {
+  [b] => match filter(\r. r.id == "CNS5:3627", X.parseCns5(t.c5).rows) {
+    [a] => { let sys = match distanceLy(Some(754.8099975585938)) { Some(d) => d, None => 0.0 };
+      size(filled(t, "CNS5:3627")) == 1 && within(dist(b), sys, 0.0000001) && within(sys, 4.3211, 0.0001) &&
+      len3(b.x - a.x, b.y - a.y, b.z - a.z) > 0.0003 && len3(b.x - a.x, b.y - a.y, b.z - a.z) < 0.0005 &&
+      dist(b) - 4.09 > 0.2 && b.v == 1.35 && b.flags == 8 },
+    _ => false
+  },
+  _ => false
+}
+-- V < 7 and Plx > 0: Rigel at V 7.00 or with a negative parallax is cut; at V 6.99 it stays.
+pure func checkCuts(t: Texts) -> bool =
+  ids(rigel(t, "| 7.00|", "    3.78 "), "") == ["HIP 71681"] && ids(rigel(t, "| 6.99|", "    3.78 "), "") == ["HIP 24436", "HIP 71681"] &&
+  ids(rigel(t, "| 0.18|", "   -3.78 "), "") == ["HIP 71681"]
+-- An override is refused when its system HIP id is in no CNS5 row, when it names a CNS5 row
+-- itself (Arcturus), or when it names no HIP2 V < 7 star.
+pure func isRefused(r: Result[Bright, string]) -> bool = match r { Err(_) => true, Ok(_) => false }
+pure func checkOverrideRefused(t: Texts) -> bool =
+  isRefused(world(withoutCns(t, "3627"), "")) && isRefused(worldWith(t, "", [{hip: 69673, system: 71683}])) &&
+  isRefused(worldWith(t, "", [{hip: 1, system: 71683}])) && !isRefused(worldWith(t, "", []))
+
+-- The fill is a quick-tier step: planFill refuses it on medium, and the quick sidecar records the
+-- fill count and the hip_main digest; a plan without a fill keeps the M1.2c sidecar (no new keys).
+pure func shaB() -> string = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+pure func sidecarOf(tier: string, fs: [{id: string, teff: float, v: float, flags: int}], hipSha: string) -> string =
+  match planFill({tier: tier, csv: "id,x,y,z,G,BPRP,wd\nCNS5:1676,1,2,3,,,0\n", rawSha: shaB(), ailang: "v0.51.0",
+      pkg: {name: "sunholo/relativity", version: "0.5.1", hash: "sha256:00"}}, fs, hipSha) {
+    Ok(p) => p.sidecar, Err(e) => concat(["ERR ", e]) }
+pure func checkFillQuickOnly() -> bool {
+  let f = [{id: "CNS5:1676", teff: 9597.0, v: 0.0 - 1.44, flags: 8}];
+  startsWith(sidecarOf("medium", f, shaB()), "ERR") && startsWith(sidecarOf("quick", f, "short"), "ERR") &&
+  contains(sidecarOf("quick", f, shaB()), "\"hip_filled\":1,") && contains(sidecarOf("quick", f, shaB()), "\"hip_main\":\"bbbb") &&
+  !contains(sidecarOf("quick", [], ""), "hip_")
+}
+
+pure func checks(t: Texts) -> [(string, bool)] = [
+  ("VegaExcluded", checkVegaExcluded(t)), ("ArcturusPmMatch", checkArcturusPmMatch(t)),
+  ("RigelIncluded", checkRigelIncluded(t)), ("Cns5EpochMatch", checkCns5EpochMatch(t)),
+  ("SiriusFilled", checkSiriusFilled(t)), ("SharedHipGuard", checkSharedHipGuard(t)),
+  ("AlphaCenComponents", checkAlphaCenComponents(t)), ("OverrideRefused", checkOverrideRefused(t)), ("Cuts", checkCuts(t)), ("FillQuickOnly", checkFillQuickOnly())]
+
+test "M1.2d checkVegaExcluded" { checkVegaExcluded(inline()) }
+test "M1.2d checkArcturusPmMatch" { checkArcturusPmMatch(inline()) }
+test "M1.2d checkRigelIncluded" { checkRigelIncluded(inline()) }
+test "M1.2d checkCns5EpochMatch" { checkCns5EpochMatch(inline()) }
+test "M1.2d checkSiriusFilled" { checkSiriusFilled(inline()) }
+test "M1.2d checkSharedHipGuard" { checkSharedHipGuard(inline()) }
+test "M1.2d checkAlphaCenComponents" { checkAlphaCenComponents(inline()) }
+test "M1.2d checkOverrideRefused" { checkOverrideRefused(inline()) }
+test "M1.2d checkCuts" { checkCuts(inline()) }
+test "M1.2d checkFillQuickOnly" { checkFillQuickOnly() }
+
+export func brightVm(_: int) -> string = verdictOf("bright-vm", failedChecks(checks(inline())))
+export func brightFixtures(dir: string) -> string ! {FS} {
+  let t = {h2: readFile(concat([dir, "/hip2_bright.dat"])), hm: readFile(concat([dir, "/hip_main_bright.dat"])),
+    c5: readFile(concat([dir, "/cns5_bright.dat"]))};
+  let same = [("hip2 bytes", t.h2 == inline().h2), ("hip_main bytes", t.hm == inline().hm), ("cns5 bytes", t.c5 == inline().c5)];
+  verdictOf("bright-fixtures", failedChecks(concat_(same, checks(t))))
+}

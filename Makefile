@@ -21,7 +21,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test test-bright-audit sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -211,16 +211,33 @@ CATALOGUE_OUT ?= data/starmap
 CAT_RUN = $(AILANG) run --quiet --caps IO,FS --package-dir sim
 CAT_AILANG = $$($(AILANG) --version | head -1 | cut -d' ' -f2)
 cat_args = "{\"tier\":\"$(1)\",\"csv\":\"$(2)\",\"raw\":\"$(3)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(4)\",\"ailang\":\"$(CAT_AILANG)\"}"
-.PHONY: catalogue catalogue-scan catalogue-main
-catalogue:        ## M1.2b-T3: data/raw CSV -> $(CATALOGUE_OUT)/stars_$(TIER).bin + stars_$(TIER).json sidecar on the VM (TIER=quick|medium|large)
-	@case "$(TIER)" in quick) src=cns5 raw=cns5.dat;; medium|large) src=gcns raw=table1c.dat.gz;; \
-	  *) echo "catalogue: TIER must be quick, medium or large (got '$(TIER)')"; exit 2;; esac; \
-	$(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,$(TIER),data/raw/$$src.csv,data/raw/$$raw,$(CATALOGUE_OUT)) sim/tools/catalogue_main.ail
+bright_args = "{\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"overrides\":\"data/starmap/bright_overrides.json\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\"}"
+.PHONY: catalogue catalogue-scan catalogue-main bright-test test-bright-audit
+catalogue:        ## M1.2b-T3/M1.2d: data/raw -> $(CATALOGUE_OUT)/stars_$(TIER).bin + sidecar on the VM (TIER=quick|medium|large|bright; quick carries the HIP photometry fill)
+	@case "$(TIER)" in \
+	  quick) $(CAT_RUN) --bytecode --entry mainFill --args-json $(call fill_args,$(CATALOGUE_OUT)) sim/tools/bright_main.ail;; \
+	  bright) $(CAT_RUN) --bytecode --entry brightMain --args-json $(call bright_args,$(CATALOGUE_OUT)) sim/tools/bright_main.ail;; \
+	  medium|large) $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,$(TIER),data/raw/gcns.csv,data/raw/table1c.dat.gz,$(CATALOGUE_OUT)) sim/tools/catalogue_main.ail;; \
+	  *) echo "catalogue: TIER must be quick, medium, large or bright (got '$(TIER)')"; exit 2;; esac
+
+test-bright-audit: ## M1.2d AC11 auditor (tools/bright_star_audit.gd) on synthetic renders; the render gate itself is M1.5b
+	$(GODOT) --headless --path . --script tests/test_bright_audit.gd
+
+bright-test:      ## M1.2d bright tier + CNS5 fill (sim/tools/bright.ail): named checks strict VM = interpreter; real-byte fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry brightVm --args-json 0 sim/tools/bright_test.ail > $(SCRATCH)/bright-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry brightVm --args-json 0 sim/tools/bright_test.ail > $(SCRATCH)/bright-interp.txt
+	@cmp $(SCRATCH)/bright-vm.txt $(SCRATCH)/bright-interp.txt && test "$$(cat $(SCRATCH)/bright-vm.txt)" = "bright-vm-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry brightFixtures --args-json '"tools/fixtures"' sim/tools/bright_test.ail > $(SCRATCH)/bright-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry brightFixtures --args-json '"tools/fixtures"' sim/tools/bright_test.ail > $(SCRATCH)/bright-fx-interp.txt
+	@cmp $(SCRATCH)/bright-fx-vm.txt $(SCRATCH)/bright-fx-interp.txt && test "$$(cat $(SCRATCH)/bright-fx-vm.txt)" = "bright-fixtures-ok"
+	@echo "bright-test: $$(cat $(SCRATCH)/bright-vm.txt), $$(cat $(SCRATCH)/bright-fx-vm.txt) (VM = interpreter)"
 
 catalogue-scan:   ## M1.2b-T3: the conservative F32 bound on every real CNS5 and GCNS row (0 refusals; refused ids are listed for review)
 	@for src in cns5 gcns; do $(CAT_RUN) --bytecode --entry scan --args-json "\"data/raw/$$src.csv\"" sim/tools/catalogue_main.ail || exit 1; done
 
-# M1.2c: the committed quick + medium tiers (D-3; large stays ignored). The stats run in CI on the
+# M1.2c: the committed quick + medium tiers (D-3) and the M1.2d bright tier (Q4); large stays ignored. The stats run in CI on the
 # committed bins; verify rebuilds them from the pinned inputs and needs data/raw (make catalogue-inputs).
 .PHONY: catalogue-stats star-catalogue-test catalogue-verify catalogue-inputs
 catalogue-stats:  ## M1.2c AC2/AC3: count, excluded, M-dwarf share, defaulted-photometry check per committed tier (TIER=medium judges only medium)
@@ -230,8 +247,8 @@ star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, e
 	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
 
 VERIFY_OUT := $(SCRATCH)/verify
-catalogue-verify: catalogue-inputs ## M1.2c determinism: rebuild quick + medium into .godot/tmp/verify and cmp bin + sidecar with the committed files
-	@rm -rf $(VERIFY_OUT); for t in quick medium; do \
+catalogue-verify: catalogue-inputs ## M1.2c/M1.2d determinism: rebuild quick, medium and bright into .godot/tmp/verify and cmp bin + sidecar with the committed files
+	@rm -rf $(VERIFY_OUT); for t in quick medium bright; do \
 	  $(MAKE) --no-print-directory catalogue TIER=$$t CATALOGUE_OUT=$(VERIFY_OUT) AILANG=$(AILANG) >/dev/null || exit 1; \
 	  cmp data/starmap/stars_$$t.bin $(VERIFY_OUT)/stars_$$t.bin && cmp data/starmap/stars_$$t.json $(VERIFY_OUT)/stars_$$t.json \
 	    || { echo "catalogue-verify: $$t DIFFERS from the committed tier"; exit 1; }; \
@@ -307,13 +324,15 @@ sky-inputs: catalogue-inputs   ## M1.4d: sky pipeline inputs into data/raw: the 
 	@test -f data/raw/hip_v7.tsv || bash $(STARMAP_SCRIPTS)/download_stars.sh hip
 	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=inputs
 
-# M1.2c: the four catalogue inputs (CNS5 cns5.dat + cns5.csv, GCNS table1c.dat.gz + gcns.csv), pinned in
-# data/sky/SHA256SUMS: the bucket first, then VizieR (download_stars.sh) and extract.ail for whatever is absent.
-CAT_INPUTS := data/raw/(cns5\.dat|cns5\.csv|table1c\.dat\.gz|gcns\.csv)$$
+# M1.2c: the catalogue inputs (CNS5 cns5.dat + cns5.csv, GCNS table1c.dat.gz + gcns.csv; M1.2d: HIP2
+# hip2.dat.gz + hip_main.dat), pinned in data/sky/SHA256SUMS: the bucket first, then VizieR
+# (download_stars.sh) and extract.ail for whatever is absent.
+CAT_INPUTS := data/raw/(cns5\.dat|cns5\.csv|table1c\.dat\.gz|gcns\.csv|hip2\.dat\.gz|hip_main\.dat)$$
 catalogue-inputs: ## M1.2c: catalogue tier inputs into data/raw (bucket, else VizieR + extract.ail); check their pins
 	@sh tools/sky_assets.sh fetch inputs '$(CAT_INPUTS)' || echo "catalogue-inputs: bucket incomplete; falling back to VizieR"
 	@test -f data/raw/table1c.dat.gz || bash $(STARMAP_SCRIPTS)/download_stars.sh medium
 	@test -f data/raw/cns5.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh quick
+	@test -f data/raw/hip2.dat.gz -a -f data/raw/hip_main.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh bright
 	@test -f data/raw/cns5.csv || $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
 	@test -f data/raw/gcns.csv || { gunzip -kf data/raw/table1c.dat.gz && $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail; }
 	@sh tools/sky_assets.sh verify inputs '$(CAT_INPUTS)'

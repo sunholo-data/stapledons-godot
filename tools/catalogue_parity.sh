@@ -7,10 +7,12 @@
 # Timings are reported, never used as a gate (plan F3, Q3).
 set -eu
 A=$1; TIER=$2; OUT=$3; RUNS=${4:-5}
+entry=main hip= tool=sim/tools/catalogue_main.ail
 case $TIER in
-  quick) src=data/raw/cns5.csv raw=data/raw/cns5.dat ;;
+  quick) src=data/raw/cns5.csv raw=data/raw/cns5.dat tool=sim/tools/bright_main.ail entry=mainFill hip=',"hip":"data/raw/hip_main.dat"' ;;
   medium|large) src=data/raw/gcns.csv raw=data/raw/table1c.dat.gz ;;
-  *) echo "catalogue-parity: TIER must be quick, medium or large (got '$TIER')" >&2; exit 2 ;;
+  bright) src=data/raw/hip_main.dat raw=data/raw/hip2.dat.gz entry=brightMain tool=sim/tools/bright_main.ail ;;
+  *) echo "catalogue-parity: TIER must be quick, medium, large or bright (got '$TIER')" >&2; exit 2 ;;
 esac
 for f in "$src" "$raw"; do [ -f "$f" ] || { echo "catalogue-parity: missing $f (make sky-assets / starmap-manager)" >&2; exit 2; }; done
 ver=$("$A" --version | head -1 | cut -d' ' -f2)
@@ -20,11 +22,12 @@ rm -rf "$OUT"; mkdir -p "$OUT"
 # one <label> <engine flag or ""> : run the writer into $OUT/<label>, append "<label> <secs> <rss>"
 one() {
   d=$OUT/$1; mkdir -p "$d"
-  args="{\"tier\":\"$TIER\",\"csv\":\"$src\",\"raw\":\"$raw\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\"}"
+  args="{\"tier\":\"$TIER\",\"csv\":\"$src\",\"raw\":\"$raw\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\"$hip}"
+  [ "$TIER" != bright ] || args="{\"hip2\":\"$raw\",\"hipMain\":\"$src\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"overrides\":\"data/starmap/bright_overrides.json\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\"}"
   t0=$(date +%s)
   # shellcheck disable=SC2086
-  if ! /usr/bin/time $TIMEFLAG "$A" run --quiet --caps IO,FS --package-dir sim $2 --entry main --args-json "$args" \
-      sim/tools/catalogue_main.ail > "$d.log" 2> "$d.time"; then
+  if ! /usr/bin/time $TIMEFLAG "$A" run --quiet --caps IO,FS --package-dir sim $2 --entry $entry --args-json "$args" \
+      "$tool" > "$d.log" 2> "$d.time"; then
     cat "$d.log" "$d.time" >&2; echo "catalogue-parity: $1 run failed" >&2; exit 1
   fi
   secs=$(awk '/ real /{print $1} /^Elapsed|Elapsed \(wall/{print $NF}' "$d.time" | head -1)

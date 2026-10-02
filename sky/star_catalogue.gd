@@ -10,8 +10,9 @@ extends RefCounted
 ## never use the bytes.
 ##
 ## flags bits (sim/tools/catalogue.ail convert): 1 white dwarf, 2 missing Gaia photometry
-## (then teff = 0 and v = 99), 4 white dwarf with blackbody photometry, 16 colour outside the
-## model's invertible range. Only FLAG_SETS occur; catalogue_stats.gd fails on any other value,
+## (then teff = 0 and v = 99), 4 white dwarf with blackbody photometry, 8 photometry from Hipparcos
+## (M1.2d: V verbatim, teff from B-V; the bright tier and CNS5 rows Gaia could not measure), 16 colour
+## outside the model's invertible range. Only FLAG_SETS occur; catalogue_stats.gd fails on any other value,
 ## which guards catalogue.ail's whiteDwarf/missingRow (they test whole flag values).
 
 const FORMAT_VERSION := 1
@@ -21,10 +22,11 @@ const FIELDS := ["x", "y", "z", "teff", "v", "flags"]
 const FLAG_WD := 1
 const FLAG_MISSING_PHOT := 2
 const FLAG_WD_BLACKBODY := 4
+const FLAG_HIP := 8
 const FLAG_OUT_OF_RANGE := 16
 ## Every flags value convert() can produce: 0, 16 (main sequence), 2 (missing), 3 (missing WD),
-## 5, 21 (WD with photometry).
-const FLAG_SETS := [0, 2, 3, 5, 16, 21]
+## 5, 21 (WD with photometry); and sim/tools/bright.ail: 8, 24 (Hipparcos V and B-V).
+const FLAG_SETS := [0, 2, 3, 5, 8, 16, 21, 24]
 
 static var last_error := ""
 
@@ -114,3 +116,7 @@ func missing_photometry(i: int) -> bool:
 
 func white_dwarf(i: int) -> bool:
 	return flags(i) & FLAG_WD != 0
+
+
+func hip_photometry(i: int) -> bool:
+	return flags(i) & FLAG_HIP != 0
