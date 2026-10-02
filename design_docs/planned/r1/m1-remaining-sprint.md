@@ -218,6 +218,14 @@ or model from the executor (generator ≠ judge). Each lands as its own PR.
 ### Wave 1 (parallel: disjoint files)
 
 #### M1.2b-T3: Tier writer, validation and sidecars
+**Status (2026-10-02):** executed on `sprint/m1.2b-t3`, awaiting independent
+evaluation. SHA-256 comes from the bundled `std/crypto` (`sha256Bytes`), so
+there is no `shasum` glue in the writer; `make catalogue-main` (in `make test`)
+checks every digest against `shasum` on committed fixtures. `make
+catalogue-scan` scans every CNS5 and GCNS row: 0 refusals. The full GCNS scan
+takes 7 min 46 s on the VM because T1's cons accumulators are quadratic
+(ailang#1501). That is T4's performance work.
+
 **Scope:**
 - **Tier validation:**
   - Only the names `quick`, `medium`, `large` are accepted (T1 residual).
