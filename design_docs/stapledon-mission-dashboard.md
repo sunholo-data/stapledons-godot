@@ -1,21 +1,21 @@
 # Stapledon mission dashboard (snapshot)
 
-- Updated2026-10-01, iteration8; bookkeeping issue#4.
-- Release review build v0.1.0-m0; relativity0.3.0 / AILANGv0.50.0 / Godot4.7.2.
-- T2 validated24-byte float32 records LANDED PR#19, merge6efcf53, merge CI green.
-- Independent Anthropic Sonnet5.5 PASS92/100, zero blockers; generator GPT6.1.
-- M1 7/12 including attended background milestones; T1/T2 subchildren done.
-- Full M1.2b/AC2 remains incomplete: writer/sidecars then full-tier integration.
-- NextT3: writer/sidecars, tier validation + pre-sort squared-distance range.
-- NextT4: 50,000 boundary, five full VM/interpreter runs, performance evidence.
-- Then M1.2c stats/tier commits, M1.2d HIP2 bright tier.
-- M1.6b camera/golden needs attended renders; AI foundation routable when M1 pauses.
-- Clauses1–4 UNMET,5 ongoing; T2 advances clause1. Harness share0/9.
-- Last3 landings6/7/8 each move clause1. No drift alarm; no open decisions (D1–D10 resolved).
-- All four roles spawned by Agent tool as requested. Cross-provider native pins rejected;
-  GPT transport ran exact GLM5.3 designer and Sonnet5.5 judge subscription CLIs.
-- Controller/planner/executor GPT6.1; metered$0; native Agent tokens not reported.
-- Quota FLAG: designer started before quota read; Ollama over ration, no further cloud calls.
-- Native F32 strict codec Phase2E gap and imported Row CLI decode reported upstream.
-- Core/WD/transform/sky strict and parity retained; byte oracle ordinary VM + interpreter.
-- Full record and routing evidence: stapledon-mission-log.md; .ailang/state/evaluations/iteration8*.
+- Updated 2026-10-02, iteration9; bookkeeping issue4.
+- Review build v0.3.0-m2-journey; relativity0.4.0, AILANGv0.51.0, Godot4.7.2.
+- M2 attended landing PR40/25f3bf2; design roadmap PR3/1ef3bc9; 10 milestones done.
+- Clause2 MET; clauses1/3/4 UNMET,5 ongoing. This iteration goal unmoved.
+- Our duplicate docs candidate withdrawn after measured origin drift; no new behavior.
+- Independent Sonnet5.5 review 91/100; report .ailang/state/evaluations/eval_stapledon_iter9_m2_landing_round1.json.
+- Fresh local suite: UNMEASURED: full make test exceeded1800s; owned process terminated(rc143); physics78/type16 passed, remainder not measured; reviewed M2 landed SHA headless CI green; later PR41 tracked separately.
+- Next M4 design quorum/bounded plan, stop for concrete plan approval before code.
+- M1 T3 writer/sidecars then T4 full-tier integration remain routable.
+- M1.6b/M4 visual milestones retain human render gates.
+- Ledger17 resolved, zero OPEN; no decision/approval request manufactured.
+- Required roles: Opus designer, GPT6.1 planner/executor, Sonnet judge.
+- Native cross-provider pins unavailable; exact subscription CLI via Agent transports.
+- Kimi over ration, no inference; Opus154914tok; judge1752317tok.
+- Evaluator transport workspace-routing timeout recovered original judge.
+- Metered$0; quota Codex/Anthropic, native Agent tokens not reported.
+- Harness share0/10; last3 landings moved clauses2/1/1, no drift alarm.
+- Superseded draft .stapledon-wt-iter9 is not a resume target.
+- Full memory: stapledon-mission-log.md and iteration9 evaluation artifacts.

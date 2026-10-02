@@ -12,6 +12,10 @@ jobs:
     env:
       AILANG_VERSION: v0.51.0
       GODOT_VERSION: 4.7.2-stable
+      # M2.5 replay: the 10k-tick interpreter run takes ~75 s on this 2-core
+      # runner (> 60 s, design risk row), so PRs replay the 2k-tick session and
+      # main the 10k one; both are VM == interpreter == digest gated.
+      REPLAY_TICKS: ${{ github.event_name == 'pull_request' && '2000' || '10000' }}
     steps:
       - uses: actions/checkout@v4
 

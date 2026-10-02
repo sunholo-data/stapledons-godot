@@ -105,10 +105,15 @@ def icrs_to_galactic_xyz(ra_deg, dec_deg, dist_pc):
     if abs(cos_b) < 1e-10:
         l = 0
     else:
-        sin_l_minus = math.cos(dec) * math.sin(ra - alpha_gp) / cos_b
-        cos_l_minus = (math.cos(delta_gp) * math.sin(dec) -
-                       math.sin(delta_gp) * math.cos(dec) * math.cos(ra - alpha_gp)) / cos_b
-        l = math.atan2(sin_l_minus, cos_l_minus) + l_ncp
+        # IAU: sin(l_NCP - l) cos b = cos(dec) sin(ra - alpha_GP)
+        #      cos(l_NCP - l) cos b = cos(delta_GP) sin(dec) - sin(delta_GP) cos(dec) cos(ra - alpha_GP)
+        # so l = l_NCP - atan2(...).  (Adding the atan2 mirrored every longitude,
+        # l -> 2 l_NCP - l = 245.86 deg - l; fixed 2026-10-02, cross-checked
+        # against the rotation matrix in tools/extract.py.)
+        sin_lncp_minus_l = math.cos(dec) * math.sin(ra - alpha_gp) / cos_b
+        cos_lncp_minus_l = (math.cos(delta_gp) * math.sin(dec) -
+                            math.sin(delta_gp) * math.cos(dec) * math.cos(ra - alpha_gp)) / cos_b
+        l = l_ncp - math.atan2(sin_lncp_minus_l, cos_lncp_minus_l)
 
     # Convert to Cartesian (light-years)
     dist_ly = dist_pc * 3.26156

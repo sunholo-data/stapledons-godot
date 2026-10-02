@@ -689,3 +689,64 @@ Append-only. One entry per iteration, newest at the bottom.
 - **Deviations/retro:** quota FLAG designer cloud launched before quota read completed: Ollama over10.1pp vs10/day; no further cloud calls. OpenRouter over6.58pp unused; Codex57% vs76.2% allowed. Anthropic usage endpoint403 but exact subscription probe rc0. Native Agent pin failures recorded with exact CLI fallbacks. Imported Row oracle transport explicit. Shared mission skill untouched (charter prohibits edits). Executor used upstream changelog fragment convention; controller moved entry to project's root CHANGELOG.md before review. Historical STATUS blocks multi-line: bounded rotation moved exact iteration5 block, line arithmetic/queue/ledger/archive positive controls pass; newest stamp singleline. Known rotate-log registry-path gap, full index regenerated locally,11 entries, no rotation needed (<40). Stale5/12 snapshot corrected to7/12 from already-landed attended sprint rows.
 - **Cost:** metered$0.00; quota buckets Codex/Ollama/Anthropic; per-role unknowns explicit, no fake zero. Harness share0/9; last3 landings6/7/8 each move clause1, no drift alarm.
 - **Next:** T3 writer/sidecars +tier/squared-distance validation, then T4 full-tier50,000 boundary/5-run parity/performance, then M1.2c. M1.6b attended render gate; AI foundation routable when M1 pauses. DECISIONS FOR MARK:none (ledger generated); no new human input needed.
+
+## 2026-10-02: attended, M2 journey core LANDED (sprint R1-M2-JOURNEY) [PRODUCT]
+
+- **Progress:** clause 2 **MET**; clauses 1, 3, 4 UNMET, 5 ongoing. M2's ten
+  milestones ran 2026-10-01 18:40 UTC → 2026-10-02 08:07 UTC (last merge,
+  #35) under the sprint skills. No log entries were written per M2
+  milestone; this entry records the sprint as a whole at landing.
+- **Landed:** M2.0 relativity 0.4.0 published (#22/#24, ailang-packages #84,
+  eval 96, Fable 5.1, publish GO) · M2.1a protocol codecs (#23, 92) · M2.1b
+  bridge v2 (#25, 93) · M2.2 world/ledger, pin 0.4.0 (#26, 94) · M2.3a
+  planner + commit rule (#27, 95) · M2.6a galaxy map (#28, 89; ⏸ R1 review
+  build `v0.2.0-m2-map`, accepted by Mark, D-17) · M2.3b autopilot (#29, 96)
+  · M2.4 SplitMix64 PRNG (#31, 94) · M2.6b commit dialog, transit, star names
+  (#33, 93; R2 notify, M4 review build unblocked) · M2.5 replay harness +
+  10k parity (#35, 93; P5 goldens approved by Mark 2026-10-02). Every
+  evaluation by a judge other than the executor; files
+  `.ailang/state/evaluations/eval_R1-M2-JOURNEY*`.
+- **Also landed:** AILANG pins v0.50.0 (#18) and v0.51.0 (#30); D-17 record
+  (#32); Python policy + `make python-guard` (#34, parallel attended session);
+  catalogue galactic-longitude mirror fix (#37: sign error in
+  `process_stars.sh`, regenerated from V/70A, 16 literature check values,
+  renders approved by Mark, gate 2); no-broad-find hook (#38).
+- **Bar clause 2 evidence:** protocol v2 (M2.1a/b); planner = closed form to
+  1e-9 (M2.3a/b); commit rule in the sim, refused through the real UI
+  (M2.3a AC7, M2.6b AC15); `session10k` VM == interpreter == digest on arm64
+  and x86_64 (M2.5). Goldens per architecture (ailang#1465).
+- **Upstream:** ailang#1450, #1456, #1462 fixed in v0.51.0; #1460, #1461,
+  #1465, #1466, #1467, #1473, #1478, #1481, #1487 open; #1486 (interpreter
+  TCO) closed upstream, not yet in the pin; #1419 pre-existing, open. DX
+  messages: recursion limit, compile-cache `ARTIFACT_TOO_LARGE`,
+  non-exhaustive match.
+- **Landing (this entry):** design doc, sprint plan and report moved to
+  `design_docs/implemented/r1/`; sprint JSON completed; CHANGELOG; README
+  index; charter queue row → [LANDED], clause 2 → MET, STATUS rotated
+  (iteration 6 → archive); design repo roadmap M2 → landed (separate PR).
+  Decision ledger untouched (all rows RESOLVED).
+- **Follow-ups:** D-10 destar mask rerun after #37 (raw panorama inputs not
+  on this machine); `stars.json` is CNS3 with 3–15 % distance errors on 16 of
+  54 named stars → CNS5 via M1.2 `extract.py`; per-arch goldens until
+  ailang#1465; drop `--max-recursion-depth` after the #1486 fix ships;
+  transit/hold polish (clamp hold delta, release on focus loss, pin transit
+  formats).
+- **Next:** M4 first review build (map → commit → transit on the blockout
+  bundle); M1 T3/T4 stays routable. DECISIONS FOR MARK: none new.
+
+## 2026-10-02: iteration 9, concurrent attended M2 landing superseded duplicate draft; independent review 91/100 [REFUTATION]
+
+- **Progress:** Clause 2 MET by the attended M2 landing; clauses 1, 3, 4 UNMET, 5 ongoing. This iteration shipped no product; goal unmoved.
+- **Pick/reality:** M2 was complete in code (10/10 sprint features true), but its charter and planned doc placement were stale at Gate 1. Designer/planner confirmed a bounded landing-record pass. Pick-time quorum exempt: bookkeeping only, no new direction. P0 approval measured in ca511a9424ff67aae7e0b2c065cec055089c4300; P5 normative text specifies evaluator review. M4 was also inspected as NEXT: design exists, no sprint plan/approval, so implementation is not authorized yet.
+- **Gate 0/1:** armed, gh sunholo-voight-kampff, billing CLEAN; live bookkeeping issue 4 had 27 comments and zero allowlisted directives since the watermark. GCP mission/repo inboxes empty; ledger valid, 17 RESOLVED, none OPEN. AILANG v0.51.0/b99dd25 and Godot4.7.2 match CI pins. All 13 files in the authoritative absolute mission-control directory MATCH ailang origin/dev. Shared main untracked brain/worktrees preserved.
+- **Executor:** GPT6.1 Agent produced a docs/state candidate in .stapledon-wt-iter9 (seven changed paths, 85 additions/51 deletions) and sibling .stapledon-design-wt-iter9 (two paths, 7/1); JSON/ten passes, ledger/17, local links and diff --check passed. No production changes, commits or main writes. Candidate was explicitly conditional on final P5 review.
+- **Ref-drift intervention:** Gate1 base 6da03f82268dbaa3745a0ac0a84b65fed19be4f2@2026-10-02T08:17:28Z moved to 25f3bf2458646ff7be3bab5075e26eb3baef9cfb: concurrent attended PR40 landed the exact M2 record; sibling design PR3 landed 1ef3bc96ace4aa7645a277825f0c81c75b5022a9. Stopped duplicate executor writes immediately. Its isolated uncommitted draft remains superseded, not a resume target. Origin's attended log and P5 ruling preserved; nothing re-asked or resolved by this unattended run. Main acquired attended edits during the run, left untouched.
+- **Independent evaluator:** actual Anthropic Sonnet5.5, requested Agent sonnet pin rejected; subscription CLI fallback through a transport Agent. Reviewed existing-origin game25f3bf2458646ff7be3bab5075e26eb3baef9cfb and design1ef3bc96ace4aa7645a277825f0c81c75b5022a9 in its own worktrees. Report .ailang/state/evaluations/eval_stapledon_iter9_m2_landing_round1.json; result 91/100. Transport resumed the original judge after its workspace-routing discovery timeout and recovered the report; no judge restart or controller substitute. See report for final-golden/P5 evidence and named findings.
+- **Verification/Gate3b:** original main6da CI36982239622 completed success; attended landing25f3bf2 has expected1/present1 headless check completed success. The two bases have identical sim/bridge/ui/tests/tools/Makefile/CI production blobs (doc-only landing). Fresh local make test on6da: UNMEASURED: full make test exceeded1800s; owned process terminated(rc143); physics78/type16 passed, remainder not measured. Initial two attempts were instrument failures (relative AILANG path and ignored runtime absent from worktree), corrected to the pinned absolute main binary; not counted as product reds. No new visual/physics behavior in this iteration; prior attended renders/goldens remain evidence, no milestone closed on this controller's verdict.
+- **Later origin drift:** attended PR41/aede9d77eaff2904754ad1a8efdb01c1afee5246 added map-default launch behavior and queue row5b. Preserved it verbatim in the fresh record base. Sonnet verdict remains scoped to25f3bf2; no claim that it reviewed PR41. Current-head CI is reported separately, and this run ships no code.
+- **Judge follow-ups:** stale sprint JSON pin/approved:null and question annotations are metadata debt; bot-quoted human P5 ruling is not independent source evidence. Judge established technical P5 from both-architecture golden families and its local10k/2k replays. No blocking finding; raw report timestamp retained as provider metadata, terminal completion measured2026-10-02T09:19Z.
+- **Routing evidence:** base=aede9d77eaff2904754ad1a8efdb01c1afee5246@2026-10-02T09:24:04Z. Controller Codex GPT6.1 Sol(tok:not reported). Designer rotation Kimi native Agent FAILED Unknown model; quota command rc0 classified Ollama over16.9pp/10pp-day, zero inference calls; next rotation Opus native unsupported (OpenAI-only harness), GPT6.1 transport ran exact claude-sub claude-opus-5-5 probe/run rc0/0, 154914 total tok. Anthropic usage HTTP403, documented subscription-probe exception used, CLEAN. Planner resolver recipe codex:gpt-6.1-sol declared:planner-lane-default-pin; native requested GPT6.1 Agent(tok:not reported). Executor recipe codex:gpt-6.1-sol declared:provider-pin; native requested GPT6.1 Agent(tok:not reported). Evaluator resolver agent-tool sonnet declared:alias-pin FAILED Unknown model sonnet; GPT6.1 transport exact Sonnet5.5 subscription probe/run, 1752317 tok. Generator OpenAI != judge Anthropic. All four roles spawned; model substitutions and transport failure named. Metered=$0.00; list-price usage is not billing. Rotation pointer advanced actual Opus.
+- **Ruled out:** redundant M2 implementation; merging our duplicate record; inferring P0 refusal from approved:null; misreading draft P5-by-Mark as normative; same-model or controller judge; treating local instrument failures/timeouts as test failures; claiming our record moved clause2. M4 planning remains the next admissible bar-moving work.
+- **Log rotation:** fleet CLI from game worktree failed registry lookup; retried from registry-owning AILANG repo and got incompatible heading parser (expects V1 numeric headings). 13 entries below40 threshold, no full-log archive required; index regenerated from actual Stapledon headings, all13 entries verified. No toolchain or harness changes.
+- **Retro:** origin changed while attended work was live; the ref-drift guard caught it, but the claim-at-pick channel should have been used when the fresh attended commits were observed. A Gate4 heartbeat was stamped prospectively while the judge was still live; no mission record write occurred then. Controller corrected active heartbeat back to Gate3, then ran Gate3b/4 after review disposition. No harness or shared skill edits authorized/made. Route this as recorded controller process friction, not a human decision. Last three product landings: attended M2→clause2, iter8→clause1, iter7→clause1; no drift alarm. Harness share0/10 numbered iterations.
+- **Next:** M4 design quorum and bounded sprint plan, then park concrete plan approval; M1 T3 writer/sidecars and T4 full-tier integration remain ready behind attended ordering. DECISIONS FOR MARK: none (generated from OPEN ledger rows); no approval fabricated for a plan that does not exist.

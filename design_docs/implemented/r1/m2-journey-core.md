@@ -1,6 +1,6 @@
 # M2: Simulation protocol and the journey core
 
-**Status:** Planned (design, revised for Mark's attended rulings of 2026-10-01; awaiting sprint plan)
+**Status:** Implemented (2026-10-02). Sprint `R1-M2-JOURNEY`, 10 milestones, PRs #22–#35 and #37, independent evaluations 89–96/100; bar clause 2 met. Plan: [m2-journey-core-sprint.md](m2-journey-core-sprint.md). Report: [m2-report.md](m2-report.md). (Design revised for Mark's attended rulings of 2026-10-01; D-17 on 2026-10-02.)
 **Release:** r1 · **Milestone:** M2 of [R1 foundations](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md) · mission queue row 3, bar clause 2
 **Priority:** P0: M4 (first journey) and the AI service's replay recording both sit on this protocol
 **Implements:**
@@ -370,6 +370,14 @@ a section appears only if a field in it changed, and carries the whole section.
   `cmb_forward_k` are at the plan's peak rapidity. Full states carry
   `journey` and `ledger`.
 - `rng: {streams}`; `params: {...}` (full state only)
+- *As implemented in M2.6b:* `ship` also carries `flown` = x − x0, the
+  distance along the current line of motion since its origin: since the
+  commit while committed, 0 again after arrival (the line is rebased at the
+  target, so after arrival the UI uses `pos` and the plan distance, never
+  `x` or `flown`). The `params` echo also carries the derived, read-only
+  `cruise_phi_min`, `cruise_phi_max` (the planner's own accepted bounds) and
+  `cruise_phi_default` (0.99c clamped into them, D-14), so the slider does no
+  rapidity maths; the decoder ignores them.
 
 `events` include `phase` (from, to, tau), `committed`, `arrived` (with
 residuals, below) and `draw`.

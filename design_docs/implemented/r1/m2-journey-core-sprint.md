@@ -1,5 +1,10 @@
 # Sprint plan: R1-M2-JOURNEY, the simulation protocol and the journey core
 
+**Status:** Implemented (2026-10-02). All 10 milestones landed (PRs #22–#35,
+plus the catalogue fix #37) and passed independent evaluation (89–96/100);
+R1 accepted by Mark (D-17), P5 goldens approved by Mark 2026-10-02. Report:
+[m2-report.md](m2-report.md).
+
 ## Summary
 
 Turn the spike's one-ship command echo into the game's journey core: a
@@ -341,7 +346,7 @@ M2.1b.
 **Estimated:** 230 code + 250 tests = **480** · **Cap:** 650 · **Iteration:** 2 ·
 **Depends on:** — · **Registry:** depend std/json
 
-**Status (executed 2026-10-01, branch `sprint/m2.1a-protocol`; independent evaluation pending):**
+**Status (executed 2026-10-01, branch `sprint/m2.1a-protocol`; independent evaluation 92/100 PASS, PR #23):**
 - [x] Task 0: V5 re-run on v0.50.0 passes on the strict VM and the interpreter.
   std/json drops the sign of −0.0 and prints 1e308 as integer digits that
   decode saturates at 2^63−1, so `protocol.num` writes `-0.0` and exponent
@@ -418,7 +423,7 @@ equivalence fixture.
 **Estimated:** 220 code + 150 tests = **370** (+ fixtures) · **Cap:** 650 ·
 **Iteration:** 3 · **Depends on:** M2.1a · **Registry:** none (GDScript)
 
-**Status (executed 2026-10-01, branch `sprint/m2.1b-bridge`; independent evaluation pending):**
+**Status (executed 2026-10-01, branch `sprint/m2.1b-bridge`; independent evaluation 93/100 PASS, PR #25):**
 - [x] Bridge tests first (red against the v1.1 bridge), then `sim_bridge.gd` v2:
   `hello()`, `new_game()`, `send()`, integer-major check, mirrored `world`,
   `record_path` tee, `full_precision` writer with a `-0.0` repair
@@ -503,7 +508,7 @@ extends, with the closed mass budget pinned.
 **Depends on:** M2.1a, M2.0 **published and visible** · **Registry:** depend
 `sunholo/relativity@0.4.0`
 
-**Status (executed 2026-10-01, branch `sprint/m2.2-world`; independent evaluation 94/100 PASS, follow-ups applied after rebasing on M2.1b):**
+**Status (executed 2026-10-01, branch `sprint/m2.2-world`; independent evaluation 94/100 PASS, PR #26, follow-ups applied after rebasing on M2.1b):**
 - [x] Task 0: probe (`ShipPhase` + `Journey = Idle | Planned({…TripPlan…}) |
   Committed({…})` + `Rng` inside a `World` record, 4 transitions) gives
   identical output on `--strict-bytecode` and the interpreter on v0.50.0;
@@ -599,7 +604,7 @@ irreversible by construction.
 **Estimated:** 170 code + 190 tests = **360** · **Cap:** 650 · **Iteration:** 5 ·
 **Depends on:** M2.2 · **Registry:** depend `sunholo/relativity@0.4.0`
 
-**Status (executed 2026-10-01, branch `sprint/m2.3a-planner`; independent evaluation pending):**
+**Status (executed 2026-10-01, branch `sprint/m2.3a-planner`; independent evaluation 95/100 PASS, PR #27):**
 - [x] Tests first (red on missing `Planned`/`LedgerView`), then green:
   `checkPlanCruise09/099/Cap`, `checkPlanAlphaCen`, `checkPlanGl559`,
   `checkPlanCoast100`, `checkPlanFallback` (rows 1–4, 6–9, 1e-9),
@@ -684,7 +689,7 @@ number on screen is a sim field. The capture is what Mark reviews.
 **Estimated:** 330 code + 100 tests = **430** · **Cap:** 650 · **Iteration:** 6 ·
 **Depends on:** M2.3a, M2.1b · **Registry:** none
 
-**Status (executed 2026-10-01, branch `sprint/m2.6a-map` on `sprint/m2.3a-planner`; independent evaluation pending):**
+**Status (executed 2026-10-01, branch `sprint/m2.6a-map` on `sprint/m2.3a-planner`; independent evaluation 89/100 PASS, PR #28; R1 accepted by Mark, D-17):**
 - [x] Tests first (`tests/test_galaxy_map.gd` red on missing `GalaxyMap`), then
   green: 57 checks against the real sim in a fake 800×600 `SubViewport`
 - [x] α Cen A by catalogue **index 1** (Gl 559; B is index 2, same id); the
@@ -769,7 +774,7 @@ cap), a review page artifact, and review build `v0.2.0-m2-map`
 **Goal:** a committed journey flies itself through boost, cruise and brake,
 lands within 1e-9 of the closed form, and closes the energy ledger.
 
-**Status (executed 2026-10-01, branch `sprint/m2.3b-autopilot`; independent evaluation pending):**
+**Status (executed 2026-10-01, branch `sprint/m2.3b-autopilot`; independent evaluation 96/100 PASS, PR #29):**
 - [x] Tests first, then green: `checkVoyageBoundaries` (0.99c, cap and diag
   1 g flip: every 0.01-yr tick end equals `motionAt(el)` to 1e-9, crossing τ
   = τ0 + boundary, ticks ending on each boundary), `checkArrivalResidual`
@@ -832,6 +837,36 @@ map → commit → transit runs end to end (M4's first review build input).
 **Estimated:** 130 code + 80 tests = **210** · **Cap:** 650 · **Iteration:** 8 ·
 **Depends on:** M2.6a, M2.3b · **Registry:** none
 
+**Status (executed 2026-10-02, branch `sprint/m2.6b-commit` on main after M2.4; R1 accepted, D-17; independent evaluation 93/100 PASS, PR #33):**
+- [x] Commit dialog (D-12): ship time, Earth time, arrival, years left, each a
+  sim field (bits); nothing sent before 1.5 s of continuous hold (fake clock:
+  1.499 s and release-then-1.25 s send nothing; the input log has no commit);
+  `commit {plan_id}` at 1.5 s; Back sends nothing
+- [x] Post-commit: Cancel visible and enabled, the sim refuses `committed`,
+  the panel shows it, journey unchanged; star picks refused the same way; the
+  map never sends `new_game` (input log)
+- [x] Transit readout: phase, both clocks advancing every tick, progress bar
+  (sim `ship.flown` against `plan.distance`), speed, radiated; at arrival the
+  plan distance and `ship.pos` (not `ship.x`/`flown`)
+- [x] Star names (D-17): `data/starmap/names.json`, 54 entries keyed by
+  index and id; title = name, subtitle = catalogue id; verified by
+  `tools/check_star_names.py` (in `make tools-test`)
+- [x] M2.6a eval follow-ups: literal label pins against the committed golden;
+  clamp tested; slider contrast; slider bounds/default from the sim's
+  `params` echo (Godot no longer calls `log`)
+- [x] Sim, additive: `cruisePhiMin/Max/Default`, `params` echo of all three,
+  `ship.flown`; `checkPhiBoundsEcho`, `checkFlownOnWire`
+- [x] Makefile: Godot targets that start the sim get `AILANG_BIN` from
+  `$(AILANG)`; `make map-capture` adds `--map-commit`
+- [x] 18/18 mutations killed · AC15 · AC17 (captures opened; copies and an
+  unpublished review page in `docs/m2.6b/`) · `make test`
+- Findings: `stars.json` longitudes are mirrored (l = 245.86° − l, a sign
+  slip in starmap-manager `process_stars.sh`); 16 of 54 named stars are 3–15 %
+  off literature distance. Not changed (D-17; M1.2 tiers)
+- Deviations: transit runs at 0.1 ship-yr per real second (D-12 fixes the
+  rate at rest only); the dialog is built in `galaxy_map.gd`, no separate
+  scene; `ship.flown` and the `params` bounds are protocol additions
+
 **Files:** `ui/galaxy_map.gd`, `ui/commit_dialog.tscn` (or inside the map
 scene), `tests/test_galaxy_map.gd`, plus Mark's ⏸ R1 tweaks if any arrived.
 
@@ -862,7 +897,7 @@ track that M4.0/M4.3a can bind to M2's names (`m4-first-journey.md`
 **Goal:** counter-based, strict-VM-clean randomness with independent named
 streams, reproducible from Python.
 
-**Status (executed 2026-10-02, branch `sprint/m2.4-prng`; independent evaluation pending):**
+**Status (executed 2026-10-02, branch `sprint/m2.4-prng`; independent evaluation 94/100 PASS, PR #31):**
 - [x] P4 re-probe on `runtime/bin/ailang` v0.51.0 (b99dd25): `^ & << >>`
   give 5/2/48/0 for n=6 on the interpreter *and* `--strict-bytecode`
   (ailang#1450 fixed in the pin). Int is 64-bit two's complement; `+ *`
@@ -939,6 +974,70 @@ counter not advanced on `draw` (vectors); signed vs unsigned high bits
 **Goal:** recorded logs re-run on the VM and the interpreter and diff
 byte-for-byte against committed goldens, including a 10k-tick session that
 exercises every intent.
+
+**Status (executed 2026-10-02, branch `sprint/m2.5-replay`, AILANG v0.51.0; independent evaluation 93/100 PASS, PR #35; P5 goldens approved by Mark 2026-10-02):**
+- [x] 10k interpreter time measured first: 32.4 s on darwin arm64 and 74.7 s
+  on CI x86_64 (2 cores). That is over 60 s, so `ci.yml` sets
+  `REPLAY_TICKS` to 2000 on PRs and 10000 on `main` (risk row). Both are
+  VM == interpreter == digest gated; local `make test` runs 10k.
+- [x] Harness tests first: `tools/test_replay.py` (10 cases against a fake
+  ailang, in `make tools-test`). 6/6 harness mutations are killed:
+  - VM-only run;
+  - golden compared after `strip()`;
+  - golden compared as parsed JSON;
+  - reply count unchecked;
+  - harness drops an input line;
+  - digest unchecked.
+- [x] `tools/replay.py`. Per log it checks four things:
+  - `--bytecode` and the interpreter give `cmp`-identical output;
+  - there is one reply per input line before `quit`;
+  - the output equals this arch's golden, by `cmp`, or by sha256 for the
+    session or any output over 256 KB;
+  - case extras pass: `alpha_cen` arrives, `offaxis_v11_equiv` == v1.1
+    (AC13), `diag_thrust600` has 601 ok, and the session has N accepted
+    ticks.
+
+  It prints `ailang --version`, accepts `SESSION=` (M4) and `TICKS=`, and
+  supports `make replay-record LOG=path|case|session10k|all`, which refuses
+  if VM ≠ interpreter and is never in `make test`.
+- [x] `tools/gen_session.py` is deterministic: same sha256 on every run. It
+  writes 10,000 accepted ticks plus 17 other lines:
+  - every malformed and status kind once;
+  - plan, replan, stale commit, commit;
+  - α Cen at 0.99c with 15 in-transit `committed` refusals;
+  - out-of-range φ on both sides, with both bounds accepted;
+  - a cap voyage;
+  - a voyage to a target 100 ly from Sol in 0.1-yr ticks;
+  - a diag 1 g flip voyage;
+  - 1,308 draws, 218 on each stream.
+
+  Only `session10k`/`session2k` `.state.<arch>.sha256` are committed.
+- [x] Goldens are **per architecture** (ailang#1465): `tests/replays/*.state.{arm64,x86_64}.*`.
+  The x86_64 ones come from a throwaway CI branch (run 36974675400, since
+  deleted). `alpha_cen` and `godot_map_voyage` are identical across arches;
+  `offaxis_v11_equiv`, `diag_thrust600` and the sessions differ.
+- [x] Godot-recorded log: `tests/replays/godot_map_voyage.ndjson`, from
+  `tools/record_godot_session.gd`. The real galaxy map selects Gl 244,
+  moves the slider and replans to Gl 559 at the 0.99c default, then the
+  ship commits and arrives; recorded by the `record_path` tee.
+- [x] `parity`, `parity-offaxis`, `offaxis-v11-equiv` and `journey-replay`
+  are now `replay --case` aliases. `make test` runs `replay` instead of
+  them. `tests/fixtures/offaxis.ndjson` became
+  `tests/replays/offaxis_v11_equiv.ndjson`.
+- [x] Tee flake fixed: `test_record_tee` now compares while the child is
+  alive and has answered (no race with `stop()`'s 1 s kill), then checks
+  the quit line on the tee.
+- [x] AC12 · AC13 · AC16: `make test AILANG=$A` green locally (10k).
+- Deviations:
+  - the interpreter runs with `--max-recursion-depth 100000` because it
+    has no tail-call elimination (RT_REC_003 at 10,000 lines;
+    **ailang#1486**, filed);
+  - the session preamble puts `no_hello`/`no_game` lines before `hello`, so
+    `session10k` does not open with hello/new_game;
+  - `diag_thrust600` (324 KB) is digest-only;
+  - the "100-ly voyage" is 109 ly, because it is flown from Sirius;
+  - `m2-report.md` was drafted in `planned/r1/` and moved at landing
+    (after M2.6b): [m2-report.md](m2-report.md).
 **Estimated:** 80 code + 200 tools/tests = **280** (+ goldens) · **Cap:** 650 ·
 **Iteration:** 10 · **Depends on:** M2.3b, M2.4, M2.1b · **Registry:** none
 
