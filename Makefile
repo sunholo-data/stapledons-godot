@@ -21,11 +21,12 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
 
-tools-test:        ## replay harness unit tests and the star-name oracle (committed fixtures and a fake ailang only)
+tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
 	python3 tools/check_star_names.py
+	sh tools/test_sky_assets.sh
 
 extract-test:      ## VizieR parser (sim/tools/extract.ail): pure checks strict VM = interpreter; real-byte fixtures VM = interpreter
 	@mkdir -p $(SCRATCH)
@@ -219,6 +220,23 @@ catalogue:        ## M1.2b-T3: data/raw CSV -> $(CATALOGUE_OUT)/stars_$(TIER).bi
 catalogue-scan:   ## M1.2b-T3: the conservative F32 bound on every real CNS5 and GCNS row (0 refusals; refused ids are listed for review)
 	@for src in cns5 gcns; do $(CAT_RUN) --bytecode --entry scan --args-json "\"data/raw/$$src.csv\"" sim/tools/catalogue_main.ail || exit 1; done
 
+# M1.2c: the committed quick + medium tiers (D-3; large stays ignored). The stats run in CI on the
+# committed bins; verify rebuilds them from the pinned inputs and needs data/raw (make catalogue-inputs).
+.PHONY: catalogue-stats star-catalogue-test catalogue-verify catalogue-inputs
+catalogue-stats:  ## M1.2c AC2/AC3: count, excluded, M-dwarf share, defaulted-photometry check per committed tier (TIER=medium judges only medium)
+	@$(GODOT) --headless --path . --script tools/catalogue_stats.gd -- $(if $(filter command line environment,$(origin TIER)),--tier $(TIER))
+
+star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, endianness), every refusal, stats breaches, committed tiers
+	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
+
+VERIFY_OUT := $(SCRATCH)/verify
+catalogue-verify: catalogue-inputs ## M1.2c determinism: rebuild quick + medium into .godot/tmp/verify and cmp bin + sidecar with the committed files
+	@rm -rf $(VERIFY_OUT); for t in quick medium; do \
+	  $(MAKE) --no-print-directory catalogue TIER=$$t CATALOGUE_OUT=$(VERIFY_OUT) AILANG=$(AILANG) >/dev/null || exit 1; \
+	  cmp data/starmap/stars_$$t.bin $(VERIFY_OUT)/stars_$$t.bin && cmp data/starmap/stars_$$t.json $(VERIFY_OUT)/stars_$$t.json \
+	    || { echo "catalogue-verify: $$t DIFFERS from the committed tier"; exit 1; }; \
+	  echo "$$t identical"; done
+
 .PHONY: catalogue-parity
 PARITY_TIER ?= medium
 catalogue-parity: ## M1.2b-T4: real tier (PARITY_TIER=medium) on the interpreter once + ordinary VM 5x, cmp bin + sidecar, wall time and peak RSS per run
@@ -283,15 +301,22 @@ sky-model:        ## M1.4b offline: destarred panorama -> per-texel T_c model (G
 # rebuilds them byte for byte from pinned downloads; data/sky/SHA256SUMS pins inputs AND outputs.
 STARMAP_SCRIPTS := .claude/skills/starmap-manager/scripts
 .PHONY: sky-inputs destar sky-assets sky-verify sky-bundle
-sky-inputs:       ## M1.4d: sky pipeline inputs into data/raw: the public bucket first (D-18), then the original sources; check pins
+sky-inputs: catalogue-inputs   ## M1.4d: sky pipeline inputs into data/raw: the public bucket first (D-18), then the original sources; check pins
 	@sh tools/sky_assets.sh fetch inputs || echo "sky-inputs: bucket incomplete; falling back to the original sources"
 	@test -f $(SKY)/noirlab_10k.tif || bash $(STARMAP_SCRIPTS)/download_background.sh raw
 	@test -f data/raw/hip_v7.tsv || bash $(STARMAP_SCRIPTS)/download_stars.sh hip
+	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=inputs
+
+# M1.2c: the four catalogue inputs (CNS5 cns5.dat + cns5.csv, GCNS table1c.dat.gz + gcns.csv), pinned in
+# data/sky/SHA256SUMS: the bucket first, then VizieR (download_stars.sh) and extract.ail for whatever is absent.
+CAT_INPUTS := data/raw/(cns5\.dat|cns5\.csv|table1c\.dat\.gz|gcns\.csv)$$
+catalogue-inputs: ## M1.2c: catalogue tier inputs into data/raw (bucket, else VizieR + extract.ail); check their pins
+	@sh tools/sky_assets.sh fetch inputs '$(CAT_INPUTS)' || echo "catalogue-inputs: bucket incomplete; falling back to VizieR"
 	@test -f data/raw/table1c.dat.gz || bash $(STARMAP_SCRIPTS)/download_stars.sh medium
 	@test -f data/raw/cns5.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh quick
 	@test -f data/raw/cns5.csv || $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
 	@test -f data/raw/gcns.csv || { gunzip -kf data/raw/table1c.dat.gz && $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail; }
-	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=inputs
+	@sh tools/sky_assets.sh verify inputs '$(CAT_INPUTS)'
 
 sky-assets:       ## M1.4d/D-18: pinned sky textures: from the public bucket in seconds, else regenerate (inputs -> destar -> sky model, ~15 min)
 	@if sh tools/sky_assets.sh fetch textures; then $(MAKE) --no-print-directory sky-verify SKY_VERIFY=textures; \

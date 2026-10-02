@@ -1,10 +1,12 @@
 #!/bin/sh
 # Sky background assets (M1.4d, D-18): content-addressed cache in a public GCS bucket.
 #
-#   tools/sky_assets.sh verify  inputs|textures|all   check files against data/sky/SHA256SUMS
-#   tools/sky_assets.sh fetch   inputs|textures       download missing pinned files from the bucket
-#                                                     (anonymous HTTPS, no credentials); exit 1 if any
-#                                                     is absent there, so make can fall back
+#   tools/sky_assets.sh verify  inputs|textures|all [re]  check files against data/sky/SHA256SUMS
+#   tools/sky_assets.sh fetch   inputs|textures [re]  download missing pinned files from the bucket
+#                                                     (anonymous HTTPS, no credentials); only paths
+#                                                     matching the extended regex re, if given. Every
+#                                                     pin is tried; exit 1 if any is absent there, so
+#                                                     make falls back for just the missing files
 #   tools/sky_assets.sh publish                       maintainer only (gcloud auth): upload every pinned
 #                                                     data/raw file to the bucket; never overwrites
 #
@@ -41,7 +43,7 @@ digest() {
 object() { echo "sky/$1.${2##*.}"; }
 
 verify() {
-    pins "$(kinds "$1")" | while read -r sum kind path; do
+    pins "$(kinds "$1")" | awk -v re="${2:-.}" '$3 ~ re' | while read -r sum kind path; do
         if [ -f "$path" ] && [ "$(digest "$path" "$path")" = "$sum" ]; then echo "  ok       $path"
         else echo "  MISMATCH $path (want $sum)"; exit 1; fi
     done
@@ -49,19 +51,24 @@ verify() {
 }
 
 fetch() {
-    pins "$(kinds "$1")" | while read -r sum kind path; do
+    # A here-document, not a pipe, keeps the loop in this shell so the missing count survives it.
+    missing=0
+    while read -r sum kind path; do
         case "$path" in data/raw/*) ;; *) continue ;; esac   # committed files (stars.json) come from git
         if [ -f "$path" ] && [ "$(digest "$path" "$path")" = "$sum" ]; then echo "  have     $path"; continue; fi
         mkdir -p "$(dirname "$path")"
         url="$BASE/$(object "$sum" "$path")"
         if ! curl -fsSL --max-time "${CURL_MAX_TIME:-900}" -o "$path.part" "$url"; then
-            rm -f "$path.part"; echo "  absent   $url"; exit 1
+            rm -f "$path.part"; echo "  absent   $url ($path)"; missing=$((missing + 1)); continue
         fi
         if [ "$(digest "$path.part" "$path")" != "$sum" ]; then
-            rm -f "$path.part"; echo "  CORRUPT  $url (sha256 differs from the pin)"; exit 1
+            rm -f "$path.part"; echo "  CORRUPT  $url (sha256 differs from the pin)"; missing=$((missing + 1)); continue
         fi
         mv "$path.part" "$path"; echo "  fetched  $path  <- $url"
-    done
+    done <<PINS
+$(pins "$(kinds "$1")" | awk -v re="${2:-.}" '$3 ~ re')
+PINS
+    [ "$missing" -eq 0 ] || { echo "sky-assets: $missing pinned file(s) not fetched from the bucket"; return 1; }
 }
 
 publish() {
@@ -83,8 +90,8 @@ publish() {
 }
 
 case "${1:-}" in
-    verify) verify "${2:-all}" ;;
-    fetch) fetch "${2:-textures}" ;;
+    verify) verify "${2:-all}" "${3:-.}" ;;
+    fetch) fetch "${2:-textures}" "${3:-.}" ;;
     publish) publish ;;
     *) echo "usage: $0 verify|fetch inputs|textures|all | publish" >&2; exit 2 ;;
 esac
