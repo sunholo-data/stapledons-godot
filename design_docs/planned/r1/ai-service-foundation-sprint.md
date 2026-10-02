@@ -2,10 +2,13 @@
 
 > **APPROVED by Mark, attended 2026-10-02** ("Approve, start wave A1"), running in parallel with R1-M1-SKY-2. Defaults accepted: ceiling range $0.05–20 persisted; Medic set in the public assets bucket; cheapest fixture-passing OpenRouter text model proposed and confirmed at ⏸ C; $5 OpenRouter credit limit on the build key; AI.3 merges before M1.7. The `openrouter-api-key` secret already exists (empty, PR #49).
 
-**Status:** Approved 2026-10-02, executing wave A1. AI.1 (markers) merged
+**Status:** Approved 2026-10-02, executing wave A2. AI.1 (markers) merged
 (PR #54, eval 96/100). AI.2 (protocol 2.1 codecs, `sim/ai.ail`, D-20 commit
-rule) executed on `sprint/ai2-protocol` (`make test` green, goldens unchanged)
-and awaits independent evaluation. Planned 2026-10-02 on `origin/main` `a50bea2`.
+rule) merged (PR #56, eval 96/100). AI.3 (record validation, protocol 2.1 on
+the wire, D-21 limits, `replay-compat`, `ai_sim_session`, all goldens
+re-recorded on arm64 and x86_64) executed on `sprint/ai3-records`; **stopped
+at ⏸ G21** for Mark's golden review, then independent evaluation. Planned
+2026-10-02 on `origin/main` `a50bea2`.
 
 ## Summary
 
