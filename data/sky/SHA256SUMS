@@ -1,4 +1,5 @@
 # Sky background pins (M1.4d). `make sky-verify` checks them; `make sky-assets` rebuilds and must match.
+# Bucket (D-18): https://storage.googleapis.com/stapledons-voyage-assets/sky/<sha256>.<ext> (public read; make sky-assets / sky-publish).
 # Format: <sha256> <kind> <path>. kind input = a pipeline input, texture = a generated texture that ships.
 # hip_v7.tsv is pinned on its data rows (grep -v '^#'): VizieR stamps the query date into the header.
 # Generated 2026-10-02 on macOS arm64: destar = tools/m14a_destar.py with the Makefile's pinned uv deps

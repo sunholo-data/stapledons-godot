@@ -9,7 +9,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run voyage publish-dev import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify destar
 
 all: test
 
@@ -202,7 +202,8 @@ sky-model:        ## M1.4b offline: destarred panorama -> per-texel T_c model (G
 STARMAP_SCRIPTS := .claude/skills/starmap-manager/scripts
 DESTAR_PY := uv run --quiet --python 3.12 --with pillow==12.3.0 --with numpy==2.5.3 --with scipy==1.18.1 --with opencv-python-headless==5.0.0.93 python
 .PHONY: sky-inputs destar sky-assets sky-verify sky-bundle
-sky-inputs:       ## M1.4d: download the sky pipeline inputs into data/raw (skipped when present), then check their pins
+sky-inputs:       ## M1.4d: sky pipeline inputs into data/raw: the public bucket first (D-18), then the original sources; check pins
+	@sh tools/sky_assets.sh fetch inputs || echo "sky-inputs: bucket incomplete; falling back to the original sources"
 	@test -f $(SKY)/noirlab_10k.tif || bash $(STARMAP_SCRIPTS)/download_background.sh raw
 	@test -f data/raw/hip_v7.tsv || bash $(STARMAP_SCRIPTS)/download_stars.sh hip
 	@test -f data/raw/table1c.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh medium
@@ -212,8 +213,15 @@ sky-inputs:       ## M1.4d: download the sky pipeline inputs into data/raw (skip
 destar:           ## M1.4a/d offline: catalogue-matched stars out of the NOIRLab photo (HIP V<7.5 + GCNS + corrected stars.json); ~30 s
 	$(DESTAR_PY) tools/m14a_destar.py
 
-sky-assets: sky-inputs destar sky-model   ## M1.4d: inputs -> destar -> sky model; outputs must match data/sky/SHA256SUMS (~15 min)
+sky-assets:       ## M1.4d/D-18: pinned sky textures: from the public bucket in seconds, else regenerate (inputs -> destar -> sky model, ~15 min)
+	@if sh tools/sky_assets.sh fetch textures; then $(MAKE) --no-print-directory sky-verify SKY_VERIFY=textures; \
+	else echo "sky-assets: textures not in the bucket; regenerating"; $(MAKE) --no-print-directory sky-regen; fi
+
+sky-regen: sky-inputs destar sky-model   ## M1.4d: full regeneration; outputs must match data/sky/SHA256SUMS
 	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=all
+
+sky-publish:      ## D-18 maintainers (gcloud auth): upload pinned sky inputs + textures to gs://stapledons-voyage-assets/sky/<sha256>.<ext> (never overwrites)
+	sh tools/sky_assets.sh publish
 
 # Godot's export skips data/raw (it has a .gdignore), so the textures are staged as byte
 # copies in sky_bundle/ (gitignored). Pinned outputs only: a texture that does not match
