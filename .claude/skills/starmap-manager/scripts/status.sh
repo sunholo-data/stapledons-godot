@@ -1,132 +1,68 @@
 #!/bin/bash
-# Show current starmap asset status
+# Show current starmap asset status: raw catalogue inputs (against data/sky/SHA256SUMS), each
+# binary tier's sidecar, the legacy stars.json and the sky background textures.
 # Usage: status.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 RAW_DIR="$PROJECT_ROOT/data/raw"
 OUTPUT_DIR="$PROJECT_ROOT/data/starmap"
-BG_DIR="$OUTPUT_DIR/background"
+BG_DIR="$RAW_DIR/background"
+SUMS="$PROJECT_ROOT/data/sky/SHA256SUMS"
+
+# field <json file> <key>: a top-level scalar from a one-line sidecar (no jq/python needed)
+field() { grep -o "\"$2\":[^,}]*" "$1" | head -1 | cut -d: -f2- | tr -d '"'; }
 
 echo "=== Starmap Asset Status ==="
 echo "Project: $PROJECT_ROOT"
 echo ""
 
-# Check raw data
-echo "Raw Data ($RAW_DIR):"
-if [ -d "$RAW_DIR" ]; then
-    if ls "$RAW_DIR"/* &>/dev/null 2>&1; then
-        for file in "$RAW_DIR"/*; do
-            SIZE=$(du -h "$file" | cut -f1)
-            echo "  $(basename "$file"): $SIZE"
-        done
+echo "Catalogue inputs ($RAW_DIR, pins in data/sky/SHA256SUMS):"
+for name in cns5.dat cns5.csv table1c.dat.gz gcns.csv; do
+    pin="$(grep " data/raw/$name\$" "$SUMS" | cut -d' ' -f1)"
+    if [ ! -f "$RAW_DIR/$name" ]; then
+        echo "  $name: missing"
+    elif [ "$(shasum -a 256 "$RAW_DIR/$name" | cut -d' ' -f1)" = "$pin" ]; then
+        echo "  $name: $(du -hL "$RAW_DIR/$name" | cut -f1), matches pin"
     else
-        echo "  (empty)"
+        echo "  $name: $(du -hL "$RAW_DIR/$name" | cut -f1), DOES NOT match pin $pin"
     fi
-else
-    echo "  (directory not found)"
-fi
-
+done
 echo ""
 
-# Check processed data
-echo "Processed Data ($OUTPUT_DIR):"
-if [ -d "$OUTPUT_DIR" ]; then
-    # Check stars.json
-    if [ -f "$OUTPUT_DIR/stars.json" ]; then
-        SIZE=$(du -h "$OUTPUT_DIR/stars.json" | cut -f1)
-        COUNT=$(python3 -c "import json; print(json.load(open('$OUTPUT_DIR/stars.json'))['count'])" 2>/dev/null || echo "?")
-        SOURCE=$(python3 -c "import json; print(json.load(open('$OUTPUT_DIR/stars.json'))['source'])" 2>/dev/null || echo "?")
-        echo "  stars.json: $SIZE ($COUNT stars, source: $SOURCE)"
+echo "Binary tiers ($OUTPUT_DIR):"
+missing_tier=false
+for tier in quick medium large; do
+    json="$OUTPUT_DIR/stars_$tier.json"; bin="$OUTPUT_DIR/stars_$tier.bin"
+    if [ -f "$json" ] && [ -f "$bin" ]; then
+        tracked="$(git -C "$PROJECT_ROOT" ls-files --error-unmatch "data/starmap/stars_$tier.bin" >/dev/null 2>&1 && echo committed || echo local)"
+        echo "  $tier: $(field "$json" count) stars, $(field "$json" count_excluded) excluded, $(wc -c < "$bin" | tr -d ' ') B ($tracked; ailang $(field "$json" ailang))"
     else
-        echo "  stars.json: NOT FOUND"
+        echo "  $tier: not built"
+        [ "$tier" = large ] || missing_tier=true
     fi
-
-    # Check exoplanets.json
-    if [ -f "$OUTPUT_DIR/exoplanets.json" ]; then
-        SIZE=$(du -h "$OUTPUT_DIR/exoplanets.json" | cut -f1)
-        COUNT=$(python3 -c "import json; print(json.load(open('$OUTPUT_DIR/exoplanets.json'))['count'])" 2>/dev/null || echo "?")
-        echo "  exoplanets.json: $SIZE ($COUNT planets)"
-    else
-        echo "  exoplanets.json: NOT FOUND"
-    fi
-
-    # Check habitable.json
-    if [ -f "$OUTPUT_DIR/habitable.json" ]; then
-        SIZE=$(du -h "$OUTPUT_DIR/habitable.json" | cut -f1)
-        COUNT=$(python3 -c "import json; print(json.load(open('$OUTPUT_DIR/habitable.json'))['count'])" 2>/dev/null || echo "?")
-        echo "  habitable.json: $SIZE ($COUNT HZ candidates)"
-    else
-        echo "  habitable.json: NOT FOUND"
-    fi
-else
-    echo "  (directory not found)"
-fi
-
+done
 echo ""
 
-# Check background images
-echo "Background Images ($BG_DIR):"
-if [ -d "$BG_DIR" ]; then
-    HAS_IMAGES=false
-    for ext in png jpg jpeg; do
-        if ls "$BG_DIR"/*.$ext &>/dev/null 2>&1; then
-            HAS_IMAGES=true
-            for file in "$BG_DIR"/*.$ext; do
-                SIZE=$(du -h "$file" | cut -f1)
-                # Try to get dimensions if 'file' command available
-                DIMS=$(file "$file" 2>/dev/null | grep -oE '[0-9]+ ?x ?[0-9]+' | head -1 || echo "")
-                if [ -n "$DIMS" ]; then
-                    echo "  $(basename "$file"): $SIZE ($DIMS)"
-                else
-                    echo "  $(basename "$file"): $SIZE"
-                fi
-            done
-        fi
-    done
-    if [ "$HAS_IMAGES" = false ]; then
-        echo "  (no image files)"
-    fi
-else
-    echo "  (directory not found)"
+if [ -f "$OUTPUT_DIR/stars.json" ]; then
+    echo "Legacy stars.json: $(du -h "$OUTPUT_DIR/stars.json" | cut -f1) (the game loads it until the M1.7 catalogue switch)"
 fi
-
 echo ""
 
-# Calculate total size
-TOTAL_RAW=0
-TOTAL_PROCESSED=0
-
-if [ -d "$RAW_DIR" ]; then
-    TOTAL_RAW=$(du -sh "$RAW_DIR" 2>/dev/null | cut -f1 || echo "0")
-fi
-
-if [ -d "$OUTPUT_DIR" ]; then
-    TOTAL_PROCESSED=$(du -sh "$OUTPUT_DIR" 2>/dev/null | cut -f1 || echo "0")
-fi
-
-echo "Total Sizes:"
-echo "  Raw data: $TOTAL_RAW"
-echo "  Processed: $TOTAL_PROCESSED"
-
+echo "Sky background textures ($BG_DIR):"
+for t in noirlab_10k_destarred.png noirlab_10k_skymodel.png; do
+    if [ -f "$BG_DIR/$t" ]; then echo "  $t: $(du -hL "$BG_DIR/$t" | cut -f1)"; else echo "  $t: missing"; fi
+done
 echo ""
 
-# Recommendations
 echo "Recommendations:"
-if [ ! -f "$OUTPUT_DIR/stars.json" ]; then
-    echo "  Run: .claude/skills/starmap-manager/scripts/download_stars.sh quick"
-    echo "  Then: .claude/skills/starmap-manager/scripts/process_stars.sh"
-elif [ ! -f "$OUTPUT_DIR/exoplanets.json" ]; then
-    echo "  Run: .claude/skills/starmap-manager/scripts/download_exoplanets.sh"
-    echo "  Then: .claude/skills/starmap-manager/scripts/process_stars.sh"
-elif [ ! -d "$BG_DIR" ] || [ ! "$(ls -A "$BG_DIR" 2>/dev/null)" ]; then
-    echo "  Run: .claude/skills/starmap-manager/scripts/download_background.sh"
-else
-    echo "  All assets present!"
-
-    # Check tier
-    SOURCE=$(python3 -c "import json; print(json.load(open('$OUTPUT_DIR/stars.json'))['source'])" 2>/dev/null || echo "")
-    if [ "$SOURCE" = "cns5" ]; then
-        echo "  To upgrade to medium tier: .claude/skills/starmap-manager/scripts/download_stars.sh medium"
-    fi
+if [ "$missing_tier" = true ]; then
+    echo "  The quick and medium tiers are committed; restore them with git checkout data/starmap"
 fi
+if [ ! -f "$RAW_DIR/cns5.dat" ] || [ ! -f "$RAW_DIR/table1c.dat.gz" ]; then
+    echo "  Fetch the catalogue inputs: make catalogue-inputs AILANG=\$A"
+fi
+if [ ! -f "$BG_DIR/noirlab_10k_skymodel.png" ]; then
+    echo "  Fetch the sky textures: make sky-assets AILANG=\$A"
+fi
+echo "  Rebuild check: make catalogue-verify AILANG=\$A; stats: make catalogue-stats"

@@ -424,6 +424,22 @@ harness).
 ### Wave 3
 
 #### M1.2c: Stats, determinism, cleanup and tier commits (D-3)
+**Status (2026-10-02):** executed on `sprint/m1.2c-tiers`, awaiting
+independent evaluation. The loader, stats, verify, cleanup and tier commits are
+done. Stats on the committed tiers: quick has 5,908 stars, 0 excluded and a
+76.8 % M-dwarf share; medium has 50,000 stars, 965 excluded and a 74.4 %
+share. Both have 0 defaulted-photometry violations and no unknown flags. The
+large tier, built locally and not committed, has 331,312 stars and a 73.4 %
+share, also with 0 violations. `make catalogue-verify` prints `quick
+identical` and `medium identical`.
+The T4 evaluator's finding is fixed. `data/raw/cns5.dat` is pinned in
+`data/sky/SHA256SUMS`. A new `make catalogue-inputs` fetches the four
+catalogue inputs from the bucket and falls back to VizieR and `extract.ail`
+(`sky-inputs` depends on it). `tools/sky_assets.sh fetch` now tries every pin
+before it exits 1 (tested hermetically by `tools/test_sky_assets.sh` in
+`tools-test`).
+`whiteDwarf` is guarded. `catalogue_stats.gd` fails any tier that holds a flags
+value outside {0,2,3,5,16,21}, and a comment in `catalogue.ail` says why.
 **Scope:**
 - **`sky/star_catalogue.gd`:** the binary-tier loader, which M1.3 reuses.
   - `FileAccess.get_buffer` → `PackedFloat32Array`;
@@ -461,17 +477,18 @@ GDScript), `Makefile`, `.gitignore`, starmap-manager skill files,
 **Estimated:** 320 LOC · **Deps:** M1.2b-T4 · **Registry:** none.
 
 **Acceptance:**
-- `make catalogue-stats TIER=medium` prints an M-dwarf share ≥ 60% and
-  exits 0 (**AC3**, amended command).
-- `make catalogue-stats` prints every tier's excluded count and finds 0
-  defaulted rows (AC2's clause).
-- `make catalogue-verify AILANG=$A` prints `quick identical` and
+- ✅ `make catalogue-stats TIER=medium` prints an M-dwarf share ≥ 60% and
+  exits 0 (**AC3**, amended command). It prints 74.4 % and exits 0.
+- ✅ `make catalogue-stats` prints every tier's excluded count and finds 0
+  defaulted rows (AC2's clause). quick: 0 excluded; medium: 965 excluded.
+- ✅ `make catalogue-verify AILANG=$A` prints `quick identical` and
   `medium identical`.
-- `test ! -f .claude/skills/starmap-manager/scripts/process_stars.sh`.
-- `git ls-files data/starmap` shows the quick and medium bins and sidecars,
+- ✅ `test ! -f .claude/skills/starmap-manager/scripts/process_stars.sh`.
+- ✅ `git ls-files data/starmap` shows the quick and medium bins and sidecars,
   and not large.
-- `make test` (now including `catalogue-stats` and `test_star_catalogue`) is
-  green in CI. **AC2 is met.**
+- ✅ (locally) `make test` (now including `catalogue-stats` and
+  `test_star_catalogue`, as the `star-catalogue-test` target) is green; CI runs
+  on the PR. **AC2 is met.**
 
 ### Wave 4 (parallel)
 

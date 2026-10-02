@@ -47,6 +47,9 @@ export pure func okValues[a](xs: [Result[a,string]]) -> [a] =
 pure func withoutTrailingBlank(lines: [string]) -> [string] =
   if length(lines) > 0 && nth_or(lines,length(lines)-1,"x") == "" then take(length(lines)-1,lines) else lines
 -- WD rows carry flags 3 (missing), 5 or 21 (colour outside the invertible range); never 1 alone.
+-- whiteDwarf and missingRow list whole flag values, so they depend on convert's encoding above: a new
+-- bit must be added here too. tools/catalogue_stats.gd (make test) fails any tier holding a flags value
+-- outside {0,2,3,5,16,21}, so an encoding change cannot silently drop WDs from these counts.
 pure func whiteDwarf(r: Row) -> bool = r.flags == 3 || r.flags == 5 || r.flags == 21
 -- flags 2 (missing) and 3 (missing + WD) are the only flags a missing-photometry row can carry.
 pure func missingRow(r: Row) -> bool = r.flags == 2 || r.flags == 3

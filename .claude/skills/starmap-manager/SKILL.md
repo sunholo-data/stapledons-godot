@@ -11,14 +11,15 @@ Download, process, and manage astronomical data for the game's 3D starmap. Handl
 
 **Most common usage:**
 ```bash
-# Download quick dataset (~2MB total, fastest start)
-.claude/skills/starmap-manager/scripts/download_stars.sh quick
+# Catalogue inputs into data/raw (public bucket first, else VizieR + sim/tools/extract.ail; pin-checked)
+make catalogue-inputs AILANG=$A
 
-# Download medium dataset (~15MB, richer local bubble)
-.claude/skills/starmap-manager/scripts/download_stars.sh medium
+# Build a tier (VM; quick ~1 s, medium/large ~80 s)
+make catalogue TIER=quick|medium|large AILANG=$A
 
-# Download galactic background
-.claude/skills/starmap-manager/scripts/download_background.sh
+# Stats (AC2/AC3) on the committed tiers, and the byte-identical rebuild check
+make catalogue-stats            # every tier present; TIER=medium judges only medium
+make catalogue-verify AILANG=$A # prints "quick identical", "medium identical"
 
 # Check what's installed
 .claude/skills/starmap-manager/scripts/status.sh
@@ -35,26 +36,39 @@ Invoke this skill when:
 
 ## Data Tiers
 
-| Tier | Stars | Exoplanets | Size | Use Case |
-|------|-------|------------|------|----------|
-| **Quick** | 5,930 (CNS5) | ~6,000 | ~2 MB | Rapid prototyping |
-| **Medium** | ~50,000 (filtered GCNS) | ~6,000 | ~15 MB | Release candidate |
-| **Large** | 331,312 (full GCNS) | ~6,000 | ~75 MB | HD/DLC option |
+Tiers are binary: `data/starmap/stars_<tier>.bin`, 24-byte little-endian F32 records
+`x, y, z` (ly, galactic), `teff` (K), `v` (mag), `flags`, plus a `stars_<tier>.json` sidecar
+(`count`, `count_excluded`, `format_version` 1, `record_bytes` 24, `fields`, the AILANG version,
+the `sunholo/relativity` pin, and sha256 of the raw download, the CSV and the bin). Godot reads them
+through `sky/star_catalogue.gd` (`StarCatalogue.load_tier`), which refuses a pair whose sidecar or
+sha256 does not match.
+
+| Tier | Source (VizieR) | Rows | Bin | In git |
+|------|-----------------|------|-----|--------|
+| **quick** | CNS5, J/A+A/670/A19 `cns5.dat` (all rows with a parallax) | 5,908 | 141,792 B | yes (D-3) |
+| **medium** | GCNS, J/A+A/649/A6 `table1c.dat.gz` (50,000 nearest with complete photometry; 965 missing-photometry rows passed over) | 50,000 | 1,200,000 B | yes (D-3) |
+| **large** | GCNS, J/A+A/649/A6 `table1c.dat.gz` (all rows) | 331,312 | 7,951,488 B | no (gitignored; build on demand) |
+
+Pipeline (all AILANG, no Python): `download_stars.sh` → `data/raw/{cns5.dat,table1c.dat.gz}`;
+`sim/tools/extract.ail` → `data/raw/{cns5,gcns}.csv`; `sim/tools/catalogue.ail` (photometry from
+`sunholo/relativity`) + `sim/tools/catalogue_main.ail` (encode, sha256, atomic write) →
+`make catalogue TIER=…`. All four inputs are pinned in `data/sky/SHA256SUMS`.
+The quick and medium tiers are committed with `git add -f` (`.gitignore` ignores `stars_*`);
+after a rebuild, `make catalogue-verify` must still print `identical` for both.
+
+`data/starmap/stars.json` is the legacy JSON catalogue the game still loads; the M1.7 catalogue
+switch replaces it with the binary tiers. Its old shell generator was removed in M1.2c.
 
 ## Available Scripts
 
 ### `scripts/download_stars.sh <tier>`
-Download star catalog for specified tier (quick/medium/large).
+Download a raw catalogue into `data/raw/` (prints size + sha256). `quick` = CNS5 `cns5.dat`;
+`medium` and `large` = the same GCNS `table1c.dat.gz` (the tier is chosen by `make catalogue`);
+`hip` = Hipparcos V < 7.5 for the sky-background star removal.
 
 ```bash
-# Quick: CNS5 nearby stars (~1.2MB)
 .claude/skills/starmap-manager/scripts/download_stars.sh quick
-
-# Medium: Filtered GCNS G/K/M dwarfs (~10MB)
 .claude/skills/starmap-manager/scripts/download_stars.sh medium
-
-# Large: Full GCNS 100pc catalog (~72MB compressed)
-.claude/skills/starmap-manager/scripts/download_stars.sh large
 ```
 
 ### `scripts/download_exoplanets.sh`
@@ -93,16 +107,8 @@ The in-game Milky Way is two generated 10000×5000 PNGs in `data/raw/background/
 `make export-macos` packs both textures into the .pck (`include_filter` `data/*`). Without
 them the sky renders black.
 
-### `scripts/process_stars.sh`
-Convert downloaded star catalogs to game-ready format.
-
-```bash
-# Process all downloaded catalogs
-.claude/skills/starmap-manager/scripts/process_stars.sh
-```
-
 ### `scripts/status.sh`
-Show current starmap asset status.
+Show raw inputs, each tier's sidecar (count, excluded, bin sha256) and the background textures.
 
 ```bash
 .claude/skills/starmap-manager/scripts/status.sh
@@ -110,65 +116,21 @@ Show current starmap asset status.
 
 ## Workflow
 
-### 1. Initial Setup (Quick Start)
-
 ```bash
-# Download minimal dataset for development
-.claude/skills/starmap-manager/scripts/download_stars.sh quick
-.claude/skills/starmap-manager/scripts/download_exoplanets.sh
-.claude/skills/starmap-manager/scripts/download_background.sh
-.claude/skills/starmap-manager/scripts/process_stars.sh
-```
-
-### 2. Upgrade to Medium (Pre-Release)
-
-```bash
-# Get richer dataset for release
-.claude/skills/starmap-manager/scripts/download_stars.sh medium
-.claude/skills/starmap-manager/scripts/process_stars.sh
-```
-
-### 3. HD Assets (Optional DLC)
-
-```bash
-# Full catalog + high-res background
-.claude/skills/starmap-manager/scripts/download_stars.sh large
-.claude/skills/starmap-manager/scripts/download_background.sh 10k
-.claude/skills/starmap-manager/scripts/process_stars.sh
-```
-
-## Output Files
-
-All processed data goes to `data/starmap/`:
-
-```
-data/starmap/
-├── stars.json          # Combined star catalog (positions, types, etc.)
-├── exoplanets.json     # Confirmed exoplanets with orbital data
-├── habitable.json      # Pre-filtered habitable zone candidates
-└── background/
-    └── galaxy_4k.png   # All-sky galactic panorama
+make catalogue-inputs AILANG=$A          # or: download_stars.sh quick / medium, then make extract
+make catalogue TIER=medium AILANG=$A     # rebuild a tier
+make catalogue-stats TIER=medium         # AC3: M-dwarf share >= 60 %, 0 defaulted-photometry rows
+make catalogue-verify AILANG=$A          # rebuilt quick + medium == committed bytes
+make catalogue-parity AILANG=$A          # interpreter vs VM x5 on the medium tier
 ```
 
 ## Resources
 
-### Data Sources
-See [`resources/data_sources.md`](resources/data_sources.md) for:
-- Complete data source documentation
-- API endpoints and download URLs
-- Data schemas and column descriptions
-- Licensing information (all CC BY-SA 3.0 compatible)
-
-### Processing Pipeline
-See [`resources/processing.md`](resources/processing.md) for:
-- Coordinate conversion (RA/Dec to galactic XYZ)
-- Filtering criteria for each tier
-- JSON schema for game integration
-- Habitable zone calculations
+- [`resources/data_sources.md`](resources/data_sources.md): sources, URLs, schemas, licences.
+- [`resources/processing.md`](resources/processing.md): coordinate and photometry notes.
 
 ## Notes
 
-- **Licensing**: Star data CC BY-SA 3.0, background imagery CC BY 4.0 (NOIRLab)
-- **Updates**: Star positions don't change; exoplanets update quarterly
-- **Determinism**: Same processing produces identical output
-- **Dependencies**: Requires `curl`, `jq`, `python3` (for coordinate conversion)
+- **Licensing**: star data CC BY-SA 3.0, background imagery CC BY 4.0 (NOIRLab).
+- **Determinism**: same inputs, same AILANG version and package pin → byte-identical tiers.
+- **Dependencies**: `curl`, `shasum`, Godot and AILANG (pinned in the Makefile). No Python.
