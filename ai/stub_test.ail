@@ -1,0 +1,108 @@
+module stapledons/ai/stub_test
+
+-- The stub provider and the request handler (design (a2), plan change
+-- 2026-10-02): stub text and its fixture cases, stub images, routing stamped
+-- into meta.route on every route, refusals before routing, and the cache
+-- blob each result writes. Hashes are checked against shasum -a 256 vectors.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (concat, join, length, contains, startsWith)
+import std/bytes (fromBase64)
+import ./key (CacheKey)
+import ./route (Routing, parseRouting)
+import ./wire (Request, Out, OOk, OErr, CtxField, CStr, encodeOut)
+import ./provider (Ctx, Case, Png, Handled, handle, stubText, spelled, textBody, pngSize, parseStubText, providerOf, requestError)
+
+pure func routing() -> Routing = match parseRouting(join("", [
+  "{\"v\":1,\"routes\":{\"text\":[{\"provider\":\"openrouter\",\"model\":\"openrouter:v/m\"},{\"provider\":\"gemini\",\"model\":\"gtext\"}],",
+  "\"portrait\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"avatar\":[{\"provider\":\"gemini\",\"model\":\"gimage\"}],\"voice\":[{\"provider\":\"gemini\",\"model\":\"gtts\"}]}}"])) {
+  Ok(r) => r, Err(_) => { routes: [] } }
+-- The committed neutral placeholder (ai/fixtures/stub_portrait_neutral.png), 64x64.
+pure func neutralPng() -> string =
+  "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAU0lEQVR42u3YQQkAAAgEQaMZzeiWEORgtsF8tya8AgAAAAAAAAAAAAAAAAB4APRRAAAAAAAAAAAAAAAAAAAAAABZAGcOAAAAAAAAAAAAAAAAILgFvGdRS4UpY/4AAAAASUVORK5CYII="
+pure func pngSha() -> string = "8976b7f3272ddb0aefac9ed00c3012ac0a79c5c75d4fe3e11429e19bbb04c731"
+pure func cases() -> [Case] = [{ purpose: "news", name: "digits", body: "{neutral} We left 42 years ago." },
+  { purpose: "line", name: "non_ascii", body: "{loving} Élise — 星." }]
+pure func ctx(keys: [string], textOnly: bool) -> Ctx =
+  { routing: routing(), keys: keys, textOnly: textOnly, cases: cases(), portraits: [{ emotion: "neutral", b64: neutralPng() }] }
+pure func both() -> Ctx = ctx(["gemini", "openrouter"], false)
+
+pure func key(kind: string, em: string, va: string) -> CacheKey = { kind: kind, entityId: "medic", emotion: em, ageStage: 0, variant: va }
+pure func rq(req: string, kind: string, purpose: string, k: CacheKey) -> Request =
+  { req: req, kind: kind, purpose: purpose, lineReq: None, key: k, seed: 11, constraints: { maxChars: 280, noNumerals: true, emotions: ["neutral", "loving", "grieving"] },
+    context: [], expiresTick: 9, cast: None, segments: None }
+pure func textRq(req: string) -> Request = rq(req, "text", "line", key("text", "-", "-"))
+pure func withCase(r: Request, name: string) -> Request = {r | context: [{ name: "stub_case", value: CStr(name) }]}
+
+pure func okOf(h: Handled) -> Option[OOkView] = match h.out { OOk(o) => Some({ body: o.body, sha: o.sha256, route: o.meta.route, model: o.meta.model, provider: o.meta.provider }), _ => None }
+type OOkView = { body: string, sha: string, route: string, model: string, provider: string }
+-- Not `isErr`: under `ailang test` a private helper named like a stdlib
+-- export (std/result.isErr) is replaced by it (ailang#1516).
+pure func errIs(h: Handled, code: string, route: string) -> bool =
+  match h.out { OErr(e) => e.code == code && e.route == route && e.provider == "stub" && (match h.blob { None => true, Some(_) => false }), _ => false }
+
+-- Stub text: shape, words for the request number, first allowed emotion,
+-- trimming to max_chars (code points).
+pure func checkStubText() -> bool {
+  let r = textRq("7");
+  stubText(r) == "{neutral} Stub line seven for medic." &&
+  stubText({r | req: "120", purpose: "news"}) == "{neutral} Stub news one-two-zero for medic." &&
+  stubText({r | purpose: "archive", constraints: {r.constraints | noNumerals: false}}) == "{neutral} Stub archive entry 7 for medic." &&
+  stubText({r | constraints: {r.constraints | emotions: ["loving"]}}) == "{loving} Stub line seven for medic." &&
+  stubText({r | constraints: {r.constraints | maxChars: 10}}) == "{neutral} Stub line" &&
+  spelled("9081") == "nine-zero-eight-one" &&
+  textBody(cases(), withCase({r | purpose: "news"}, "digits")) == Some("{neutral} We left 42 years ago.") &&
+  textBody(cases(), withCase(r, "digits")) == None && textBody(cases(), r) == Some(stubText(r))
+}
+
+-- The handler stamps the route the table chose; the hash is the body's
+-- sha256 (shasum -a 256 vectors), and the blob holds exactly the body.
+export pure func checkStubRoutes() -> bool {
+  let a = handle(both(), textRq("7"));
+  let g = handle(ctx(["gemini"], false), textRq("7"));
+  (match okOf(a) { Some(o) => o.route == "openrouter" && o.model == "openrouter:v/m" && o.provider == "stub" && o.sha == "3d16852a198ef8d987536857b6e99cfab4fa5a7d7ff57742889f738eaeff5fde", None => false }) &&
+  (match okOf(g) { Some(o) => o.route == "gemini" && o.model == "gtext" && o.sha == "3d16852a198ef8d987536857b6e99cfab4fa5a7d7ff57742889f738eaeff5fde", None => false }) &&
+  errIs(handle(ctx([], false), textRq("7")), "no_key", "none") &&
+  errIs(handle(ctx(["openrouter"], false), rq("8", "portrait", "line", key("portrait", "neutral", "0"))), "no_key", "none") &&
+  errIs(handle(ctx(["gemini"], true), rq("8", "portrait", "line", key("portrait", "neutral", "0"))), "text_only", "none") &&
+  errIs(handle(both(), rq("9", "voice", "line", key("voice", "-", "-"))), "provider_error", "gemini") &&
+  (match a.blob { Some(b) => b.ext == "txt" && contains(b.index, "\"route\":\"openrouter\"") && contains(b.index, "\"seed\":11") && startsWith(b.index, "{\"key\":{\"kind\":\"text\""), None => false }) &&
+  (match okOf(handle(both(), withCase(textRq("4"), "non_ascii"))) { Some(o) => o.body == "{loving} Élise — 星." && o.sha == "909995c43af3eaaa3b7c3c889b853fb7a2a192bb941fa26f3af98bb0d0eeedc0", None => false })
+}
+
+-- Stub images: the committed PNG, its size from IHDR, the descriptor body.
+export pure func checkStubImage() -> bool {
+  let p = handle(both(), rq("9", "portrait", "line", key("portrait", "neutral", "0")));
+  let av = handle(both(), rq("10", "avatar", "line", key("avatar", "-", "0")));
+  (match fromBase64(neutralPng()) { Some(b) => (match pngSize(b) { Some(z) => z.w == 64 && z.h == 64, None => false }), None => false }) &&
+  (match okOf(p) { Some(o) => o.route == "gemini" && o.model == "gimage" && o.sha == pngSha() &&
+      o.body == "{\"key\":{\"kind\":\"portrait\",\"entity_id\":\"medic\",\"emotion\":\"neutral\",\"age_stage\":0,\"variant\":\"0\"},\"mime\":\"image/png\",\"bytes\":140,\"width\":64,\"height\":64}", None => false }) &&
+  (match p.blob { Some(b) => b.ext == "png" && contains(b.index, "\"width\":64,\"height\":64"), None => false }) &&
+  (match okOf(av) { Some(o) => o.sha == pngSha(), None => false }) &&
+  errIs(handle(both(), rq("11", "portrait", "line", key("portrait", "happy", "0"))), "provider_error", "gemini")
+}
+
+pure func refusedProvider(n: string, why: string) -> bool = match providerOf(n) { Ok(_) => false, Err(e) => e == why }
+-- Refused before routing: bad id, kind, purpose, key, or key of another kind;
+-- a stub_case the table lacks; live providers until AI.5; the fixture table.
+export pure func checkStubRefusals() -> bool =
+  errIs(handle(both(), textRq("x7")), "bad_request", "none") && errIs(handle(both(), textRq("07")), "bad_request", "none") &&
+  errIs(handle(both(), rq("1", "music", "line", key("text", "-", "-"))), "bad_request", "none") &&
+  errIs(handle(both(), rq("1", "text", "gossip", key("text", "-", "-"))), "bad_request", "none") &&
+  errIs(handle(both(), rq("1", "text", "line", {key("text", "-", "-") | entityId: "Medic"})), "bad_request", "none") &&
+  errIs(handle(both(), rq("1", "text", "line", key("portrait", "neutral", "0"))), "bad_request", "none") &&
+  errIs(handle(ctx([], false), rq("1", "text", "line", key("portrait", "neutral", "0"))), "bad_request", "none") &&
+  errIs(handle(both(), withCase(textRq("1"), "nope")), "bad_request", "openrouter") &&
+  (match providerOf("stub") { Ok(_) => true, Err(_) => false }) &&
+  refusedProvider("gemini", "config: live provider gemini is not wired until AI.5") &&
+  refusedProvider("openrouter", "config: live provider openrouter is not wired until AI.5") && refusedProvider("ollama", "config: unknown provider ollama") &&
+  (match parseStubText("{\"line\":{\"a\":\"{neutral} x\"},\"news\":{}}") { Ok(cs) => (match cs { [c] => c.purpose == "line" && c.name == "a", _ => false }), Err(_) => false }) &&
+  (match parseStubText("{\"gossip\":{}}") { Ok(_) => false, Err(e) => e == "config: stub_text: unknown purpose gossip" }) &&
+  (match parseStubText("{\"line\":{\"a\":1}}") { Ok(_) => false, Err(e) => e == "config: stub_text line.a is not a string" })
+
+export pure func stubChecks() -> bool = checkStubText() && checkStubRoutes() && checkStubImage() && checkStubRefusals()
+
+test "AI.4 stub text: words for numbers, first allowed emotion, trimmed, fixture cases" { checkStubText() }
+test "AI.4 stub answers every route and stamps meta.route" { checkStubRoutes() }
+test "AI.4 stub portrait and avatar: committed PNG and descriptor" { checkStubImage() }
+test "AI.4 requests refused before routing; live providers refuse until AI.5" { checkStubRefusals() }

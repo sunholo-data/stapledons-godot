@@ -5,7 +5,10 @@
 **Status:** Approved 2026-10-02, executing wave A1. AI.1 (markers) merged
 (PR #54, eval 96/100). AI.2 (protocol 2.1 codecs, `sim/ai.ail`, D-20 commit
 rule) executed on `sprint/ai2-protocol` (`make test` green, goldens unchanged)
-and awaits independent evaluation. Planned 2026-10-02 on `origin/main` `a50bea2`.
+and awaits independent evaluation. AI.4 (the `ai/` package: provider routing,
+wire, key, stub over both routes, cache writer, service loop, `ai-stub`)
+executed on `sprint/ai4-service` (`make test` and `make ai-stub` green, six
+mutants killed) and awaits independent evaluation. Planned 2026-10-02 on `origin/main` `a50bea2`.
 
 ## Summary
 

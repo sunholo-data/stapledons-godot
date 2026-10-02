@@ -1,0 +1,41 @@
+module stapledons/ai/cache
+
+-- The player library writer (design (a4)): content-addressed blobs at
+-- <dir>/blobs/ab/<sha256>.<ext> and an append-only <dir>/index.ndjson, one
+-- line per asset. The service is the only writer; Godot reads. A blob is
+-- written to a temporary name and renamed, and its index line is appended
+-- before the result is printed, so a reader that sees the result also sees
+-- the line and the whole blob. Index lines carry no clock and no request id:
+-- the same requests give the same bytes (`make ai-stub`, cache.SHA256SUMS).
+import std/fs (mkdirAll, writeFileBytes, renameFile, fileExists, appendFile)
+import std/json (encode, js)
+import std/string (concat, join, substring, intToStr)
+import std/option (Option, Some, None)
+import ./key (CacheKey)
+
+export type Blob = { sha256: string, ext: string, mime: string, data: bytes, index: string }
+-- What one index line records besides the key and the blob itself.
+export type Origin = { provider: string, route: string, model: string, inputSha256: string, seed: int, size: Option[{w: int, h: int}] }
+
+export pure func blobPath(sha: string, ext: string) -> string = concat(["blobs/", substring(sha, 0, 2), "/", sha, ".", ext])
+
+pure func q(s: string) -> string = encode(js(s))
+pure func f(k: string, v: string) -> string = concat([q(k), ":", v])
+pure func keyJson(k: CacheKey) -> string =
+  concat(["{", join(",", [f("kind", q(k.kind)), f("entity_id", q(k.entityId)), f("emotion", q(k.emotion)), f("age_stage", intToStr(k.ageStage)), f("variant", q(k.variant))]), "}"])
+export pure func indexLine(k: CacheKey, sha: string, mime: string, n: int, ext: string, o: Origin) -> string =
+  concat(["{", join(",", [f("key", keyJson(k)), f("sha256", q(sha)), f("mime", q(mime)), f("bytes", intToStr(n)), f("ext", q(ext)), f("origin", q("library")),
+    f("provider", q(o.provider)), f("route", q(o.route)), f("model", q(o.model)), f("input_sha256", q(o.inputSha256)), f("seed", intToStr(o.seed)), f("source", q("service"))] ++
+    (match o.size { Some(s) => [f("width", intToStr(s.w)), f("height", intToStr(s.h))], None => [] })), "}"])
+
+export func writeBlob(dir: string, b: Blob) -> () ! {FS} {
+  let rel = blobPath(b.sha256, b.ext);
+  let path = concat([dir, "/", rel]);
+  mkdirAll(concat([dir, "/blobs/", substring(b.sha256, 0, 2)]));
+  if fileExists(path) then () else {
+    let tmp = concat([path, ".tmp"]);
+    writeFileBytes(tmp, b.data);
+    renameFile(tmp, path)
+  };
+  appendFile(concat([dir, "/index.ndjson"]), concat([b.index, "\n"]))
+}

@@ -1,0 +1,161 @@
+module stapledons/ai/wire
+
+-- Protocol ai/1 between Godot and the AI service (design (a2), wire table):
+-- one JSON object per line, "v": 1, with hand-written inverse codec pairs
+-- (as protocol v2 in the sim). Pure; runs on the strict VM (aiWireVm).
+--
+--   G->A hello   {want: {major}}
+--   A->G hello   {proto: {major: 1, minor: 0}, service, provider, live,
+--                 cache_dir, routes: {<kind>: {route, model} | {route: "none", reason}}}
+--   G->A request the sim's ai_request fields, plus cast? and (voice) segments?
+--   A->G result  ok:    {req, status, kind, sha256, body, asset?, meta: {provider, route, model, input_sha256, ms, usd}}
+--                error: {req, status, code, meta: {provider, route}}
+--   A->G fatal   {code: "config", detail}: the service refuses to start
+--   G->A quit
+--
+-- `routes` in the hello and `meta.route` are the provider routing of the
+-- plan change (2026-10-02); `models` of the original design is folded into
+-- `routes`. `text_only` joins the error codes (it maps 1:1 to the sim's
+-- ai_cancel reason of the same name).
+import std/json (Json, encode, decode, js, jnum, get, has, getNumber, getString, getBool, getArray, asObject)
+import std/result (Result, Ok, Err)
+import std/option (Option, Some, None)
+import std/string (concat, join, intToStr)
+import std/math (floor, floatToInt)
+import ./key (CacheKey, member)
+
+export type Seg = { emotion: string, text: string }
+export type Constraints = { maxChars: int, noNumerals: bool, emotions: [string] }
+export type CtxVal = CStr(string) | CList([string])
+export type CtxField = { name: string, value: CtxVal }
+export type Request = { req: string, kind: string, purpose: string, lineReq: Option[string], key: CacheKey, seed: int,
+  constraints: Constraints, context: [CtxField], expiresTick: int, cast: Option[Json], segments: Option[[Seg]] }
+export type In = WHello(int) | WRequest(Request) | WQuit
+
+export type RouteView = { kind: string, route: string, detail: string }
+export type HelloOut = { major: int, minor: int, service: string, provider: string, live: bool, cacheDir: string, routes: [RouteView] }
+export type Asset = { path: string, mime: string, bytes: int }
+export type Meta = { provider: string, route: string, model: string, inputSha256: string, ms: int, usd: float }
+export type OkOut = { req: string, kind: string, sha256: string, body: string, asset: Option[Asset], meta: Meta }
+export type ErrOut = { req: string, code: string, provider: string, route: string }
+export type Out = OHello(HelloOut) | OOk(OkOut) | OErr(ErrOut) | OFatal({code: string, detail: string})
+
+export pure func errorCodes() -> [string] = ["bad_request", "no_key", "text_only", "budget", "provider_error", "bad_output", "timeout_internal"]
+
+-- ------------------------------------------------------------ writing
+pure func q(s: string) -> string = encode(js(s))
+pure func f(k: string, v: string) -> string = concat([q(k), ":", v])
+pure func obj(fs: [string]) -> string = concat(["{", join(",", fs), "}"])
+pure func arr(xs: [string]) -> string = concat(["[", join(",", xs), "]"])
+pure func each(g: a -> string, xs: [a]) -> [string] = match xs { [] => [], x :: r => g(x) :: each(g, r) }
+pure func boolS(b: bool) -> string = if b then "true" else "false"
+pure func opt(k: string, g: a -> string, o: Option[a]) -> [string] = match o { Some(x) => [f(k, g(x))], None => [] }
+pure func envelope(t: string, fs: [string]) -> string = obj([f("v", "1"), f("type", q(t))] ++ fs)
+pure func strArr(xs: [string]) -> string = arr(each(q, xs))
+
+export pure func keyObj(k: CacheKey) -> string =
+  obj([f("kind", q(k.kind)), f("entity_id", q(k.entityId)), f("emotion", q(k.emotion)), f("age_stage", intToStr(k.ageStage)), f("variant", q(k.variant))])
+pure func ctxVal(v: CtxVal) -> string = match v { CStr(x) => q(x), CList(xs) => strArr(xs) }
+pure func segObj(s: Seg) -> string = obj([f("emotion", q(s.emotion)), f("text", q(s.text))])
+pure func requestFields(r: Request) -> [string] =
+  [f("req", q(r.req)), f("kind", q(r.kind)), f("purpose", q(r.purpose))] ++ opt("line_req", q, r.lineReq) ++
+  [f("key", keyObj(r.key)), f("seed", intToStr(r.seed)),
+   f("constraints", obj([f("max_chars", intToStr(r.constraints.maxChars)), f("no_numerals", boolS(r.constraints.noNumerals)), f("emotions", strArr(r.constraints.emotions))])),
+   f("context", obj(each(\c. f(c.name, ctxVal(c.value)), r.context))), f("expires_tick", intToStr(r.expiresTick))] ++
+  opt("cast", encode, r.cast) ++ opt("segments", \ss. arr(each(segObj, ss)), r.segments)
+export pure func encodeIn(m: In) -> string =
+  match m {
+    WHello(major) => envelope("hello", [f("want", obj([f("major", intToStr(major))]))]),
+    WRequest(r) => envelope("request", requestFields(r)),
+    WQuit => envelope("quit", [])
+  }
+
+pure func routeObj(r: RouteView) -> string =
+  if r.route == "none" then obj([f("route", q("none")), f("reason", q(r.detail))]) else obj([f("route", q(r.route)), f("model", q(r.detail))])
+export pure func usdStr(x: float) -> string = encode(jnum(x))
+export pure func encodeOut(m: Out) -> string =
+  match m {
+    OHello(h) => envelope("hello", [f("proto", obj([f("major", intToStr(h.major)), f("minor", intToStr(h.minor))])), f("service", q(h.service)),
+      f("provider", q(h.provider)), f("live", boolS(h.live)), f("cache_dir", q(h.cacheDir)), f("routes", obj(each(\r. f(r.kind, routeObj(r)), h.routes)))]),
+    OOk(o) => envelope("result", [f("req", q(o.req)), f("status", q("ok")), f("kind", q(o.kind)), f("sha256", q(o.sha256)), f("body", q(o.body))] ++
+      opt("asset", \a. obj([f("path", q(a.path)), f("mime", q(a.mime)), f("bytes", intToStr(a.bytes))]), o.asset) ++
+      [f("meta", obj([f("provider", q(o.meta.provider)), f("route", q(o.meta.route)), f("model", q(o.meta.model)), f("input_sha256", q(o.meta.inputSha256)),
+        f("ms", intToStr(o.meta.ms)), f("usd", usdStr(o.meta.usd))]))]),
+    OErr(e) => envelope("result", [f("req", q(e.req)), f("status", q("error")), f("code", q(e.code)), f("meta", obj([f("provider", q(e.provider)), f("route", q(e.route))]))]),
+    OFatal(x) => envelope("fatal", [f("code", q(x.code)), f("detail", q(x.detail))])
+  }
+
+-- ------------------------------------------------------------ reading
+pure func bind(r: Result[a, string], g: a -> Result[b, string]) -> Result[b, string] = match r { Ok(x) => g(x), Err(c) => Err(c) }
+pure func need(o: Option[a]) -> Result[a, string] = match o { Some(x) => Ok(x), None => Err("bad_request") }
+pure func check(ok: bool, x: a) -> Result[a, string] = if ok then Ok(x) else Err("bad_request")
+pure func s(j: Json, k: string) -> Result[string, string] = need(getString(j, k))
+-- Exact integers in [0, 2^53).
+pure func nat(j: Json, k: string) -> Result[int, string] =
+  match getNumber(j, k) { Some(x) => check(x >= 0.0 && x <= 9007199254740991.0 && floor(x) == x, floatToInt(x)), None => Err("bad_request") }
+pure func sub(j: Json, k: string, g: Json -> Result[a, string]) -> Result[a, string] = bind(need(get(j, k)), g)
+pure func optOf(j: Json, k: string, g: Json -> Result[a, string]) -> Result[Option[a], string] =
+  if has(j, k) then bind(sub(j, k, g), \x. Ok(Some(x))) else Ok(None)
+@allow_empty_ok("an empty JSON list decodes to an empty list")
+pure func all(g: a -> Result[b, string], xs: [a]) -> Result[[b], string] =
+  match xs { [] => Ok([]), x :: r => bind(g(x), \y. bind(all(g, r), \ys. Ok(y :: ys))) }
+pure func strOf(x: Json) -> Result[string, string] = match x { JString(v) => Ok(v), _ => Err("bad_request") }
+pure func strs(j: Json, k: string) -> Result[[string], string] = bind(need(getArray(j, k)), \xs. all(strOf, xs))
+
+export pure func decodeKey(j: Json) -> Result[CacheKey, string] =
+  bind(s(j, "kind"), \kd. bind(s(j, "entity_id"), \eid. bind(s(j, "emotion"), \em. bind(nat(j, "age_stage"), \ag. bind(s(j, "variant"), \va.
+  Ok({ kind: kd, entityId: eid, emotion: em, ageStage: ag, variant: va }))))))
+pure func decodeConstraints(j: Json) -> Result[Constraints, string] =
+  bind(nat(j, "max_chars"), \mc. bind(need(getBool(j, "no_numerals")), \nn. bind(strs(j, "emotions"), \ems.
+  Ok({ maxChars: mc, noNumerals: nn, emotions: ems }))))
+pure func ctxValOf(x: Json) -> Result[CtxVal, string] =
+  match x { JString(v) => Ok(CStr(v)), JArray(xs) => bind(all(strOf, xs), \vs. Ok(CList(vs))), _ => Err("bad_request") }
+@allow_empty_ok("an empty context object has no fields")
+pure func ctxOf(j: Json) -> Result[[CtxField], string] =
+  bind(need(asObject(j)), \kvs. all(\e. bind(ctxValOf(e.value), \v. Ok({ name: e.key, value: v })), kvs))
+pure func segOf(j: Json) -> Result[Seg, string] = bind(s(j, "emotion"), \em. bind(s(j, "text"), \tx. Ok({ emotion: em, text: tx })))
+pure func segsOf(j: Json) -> Result[[Seg], string] = match j { JArray(xs) => all(segOf, xs), _ => Err("bad_request") }
+pure func castOf(j: Json) -> Result[Json, string] = match j { JObject(_) => Ok(j), _ => Err("bad_request") }
+pure func requestOf(j: Json) -> Result[Request, string] =
+  bind(s(j, "req"), \r. bind(s(j, "kind"), \kd. bind(s(j, "purpose"), \pu. bind(optOf(j, "line_req", strOf), \lr.
+  bind(sub(j, "key", decodeKey), \ky. bind(nat(j, "seed"), \sd. bind(sub(j, "constraints", decodeConstraints), \cs.
+  bind(sub(j, "context", ctxOf), \cx. bind(nat(j, "expires_tick"), \ex. bind(optOf(j, "cast", castOf), \ca. bind(optOf(j, "segments", segsOf), \sg.
+  Ok({ req: r, kind: kd, purpose: pu, lineReq: lr, key: ky, seed: sd, constraints: cs, context: cx, expiresTick: ex, cast: ca, segments: sg }))))))))))))
+
+pure func envelopeOf(line: string) -> Result[Json, string] =
+  match decode(line) { Ok(j) => check(getNumber(j, "v") == Some(1.0), j), Err(_) => Err("bad_request") }
+export pure func decodeIn(line: string) -> Result[In, string] =
+  bind(envelopeOf(line), \j. bind(s(j, "type"), \t.
+    if t == "hello" then bind(sub(j, "want", \w. nat(w, "major")), \ma. Ok(WHello(ma)))
+    else if t == "request" then bind(requestOf(j), \r. Ok(WRequest(r)))
+    else if t == "quit" then Ok(WQuit)
+    else Err("bad_request")))
+-- The request id of a line that fails to decode, when it has one ("" else),
+-- so the error result can still name it.
+export pure func reqOfLine(line: string) -> string =
+  match decode(line) { Ok(j) => (match getString(j, "req") { Some(r) => r, None => "" }), Err(_) => "" }
+
+pure func routeViewOf(e: {key: string, value: Json}) -> Result[RouteView, string] =
+  bind(s(e.value, "route"), \r. bind(if r == "none" then s(e.value, "reason") else s(e.value, "model"), \d. Ok({ kind: e.key, route: r, detail: d })))
+pure func helloOf(j: Json) -> Result[Out, string] =
+  bind(sub(j, "proto", \p. nat(p, "major")), \ma. bind(sub(j, "proto", \p. nat(p, "minor")), \mi. bind(s(j, "service"), \sv. bind(s(j, "provider"), \pv.
+  bind(need(getBool(j, "live")), \lv. bind(s(j, "cache_dir"), \cd. bind(sub(j, "routes", \ro. bind(need(asObject(ro)), \kvs. all(routeViewOf, kvs))), \rs.
+  Ok(OHello({ major: ma, minor: mi, service: sv, provider: pv, live: lv, cacheDir: cd, routes: rs })))))))))
+pure func assetOf(j: Json) -> Result[Asset, string] = bind(s(j, "path"), \p. bind(s(j, "mime"), \m. bind(nat(j, "bytes"), \b. Ok({ path: p, mime: m, bytes: b }))))
+pure func numOf(j: Json, k: string) -> Result[float, string] = need(getNumber(j, k))
+pure func metaOf(j: Json) -> Result[Meta, string] =
+  bind(s(j, "provider"), \pv. bind(s(j, "route"), \ro. bind(s(j, "model"), \mo. bind(s(j, "input_sha256"), \ih. bind(nat(j, "ms"), \ms. bind(numOf(j, "usd"), \us.
+  Ok({ provider: pv, route: ro, model: mo, inputSha256: ih, ms: ms, usd: us })))))))
+pure func resultOf(j: Json) -> Result[Out, string] =
+  bind(s(j, "req"), \r. bind(s(j, "status"), \st.
+    if st == "ok" then bind(s(j, "kind"), \kd. bind(s(j, "sha256"), \h. bind(s(j, "body"), \b. bind(optOf(j, "asset", assetOf), \a. bind(sub(j, "meta", metaOf), \m.
+      Ok(OOk({ req: r, kind: kd, sha256: h, body: b, asset: a, meta: m })))))))
+    else if st == "error" then bind(s(j, "code"), \c. bind(check(member(c, errorCodes()), c), \_c. bind(sub(j, "meta", \m. s(m, "provider")), \pv. bind(sub(j, "meta", \m. s(m, "route")), \ro.
+      Ok(OErr({ req: r, code: c, provider: pv, route: ro }))))))
+    else Err("bad_request")))
+export pure func decodeOut(line: string) -> Result[Out, string] =
+  bind(envelopeOf(line), \j. bind(s(j, "type"), \t.
+    if t == "hello" then helloOf(j)
+    else if t == "result" then resultOf(j)
+    else if t == "fatal" then bind(s(j, "code"), \c. bind(s(j, "detail"), \d. Ok(OFatal({ code: c, detail: d }))))
+    else Err("bad_request")))
