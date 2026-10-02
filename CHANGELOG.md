@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### M2 journey core, 2026-10-01 – 2026-10-02 (sprint R1-M2-JOURNEY, landed; bar clause 2 met)
+
+Ten milestones, PRs #22–#35, each independently evaluated (89–96/100).
+Report: `design_docs/implemented/r1/m2-report.md`.
+
+- **M2.0 package (96):** `sunholo/relativity@0.4.0` published (ailang-packages
+  #84): boost–cruise–brake and flip-and-burn trip plans, `phaseAt`,
+  `motionAt`, `acosh1p`, `rapidityOfOneMinusBeta`, ISM `medium`, forward CMB
+  temperature; 101/101 tests.
+- **M2.1a protocol codecs (92), M2.1b bridge v2 (93):** protocol v2 with
+  hand-written codecs and float-text repairs (−0.0, large/small floats);
+  `SimBridge` v2 with a `record_path` tee and bit-exact float64 echo; v1.1
+  removed.
+- **M2.2 world (94):** `World`, scenario params, clock, ship phases, closed
+  energy ledger; game pins relativity 0.4.0.
+- **M2.3a planner + commit (95), M2.3b autopilot (96):** planner equals the
+  closed form to 1e-9; the sim refuses every intent against a committed
+  journey; stepped voyages match `motionAt` at every phase boundary, arrival
+  residuals ≤ 4.8e-13 ly.
+- **M2.6a galaxy map (89), M2.6b commit ritual (93):** galaxy map with a
+  sim-bounded cruise slider and a panel of sim numbers only (review build
+  `v0.2.0-m2-map`, R1 accepted by Mark, D-17); commit dialog with both clocks,
+  years left and a 1.5 s hold, transit readout, refusal display, 54 common
+  star names. Map → plan → commit → transit now runs end to end.
+- **M2.4 PRNG (94):** SplitMix64 with six named streams (`splitmix64-1`),
+  checked against published vectors and a reference on both runtimes.
+- **M2.5 replay (93):** `make replay` / `make replay-record`; a 10,000-tick
+  session is byte-identical on the VM and the interpreter and matches its
+  golden. Goldens are per architecture (ailang#1465); P5 approved by Mark.
+- **Toolchain:** AILANG pinned to v0.50.0 (#18), then v0.51.0 (#30).
+  Thirteen AILANG issues filed or tracked during M2 (see the report).
+
 ### Fix: mirrored galactic longitudes in stars.json, 2026-10-02
 
 - Every longitude in `data/starmap/stars.json` was mirrored, l = 245.86° − l_true

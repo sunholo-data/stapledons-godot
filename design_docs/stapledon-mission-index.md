@@ -15,3 +15,4 @@ Regenerated from full mission log headings; one line per iteration. No log archi
 | 6 | 2026-10-01 | PRODUCT | iteration 6, M1.2b-WD3 LANDED (game pins relativity 0.3.0) [PRODUCT] |
 | 7 | 2026-10-01 | PRODUCT | iteration 7, M1.2b-T1 LANDED (pure catalogue transform) [PRODUCT] |
 | 8 | 2026-10-01 | PRODUCT | iteration 8, M1.2b-T2 LANDED (validated F32 records) [PRODUCT] |
+| att-M2 | 2026-10-02 | PRODUCT | attended, M2 journey core LANDED (sprint R1-M2-JOURNEY) [PRODUCT] |

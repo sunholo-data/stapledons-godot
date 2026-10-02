@@ -1,6 +1,6 @@
 # M2: Simulation protocol and the journey core
 
-**Status:** Planned (design, revised for Mark's attended rulings of 2026-10-01; awaiting sprint plan)
+**Status:** Implemented (2026-10-02). Sprint `R1-M2-JOURNEY`, 10 milestones, PRs #22–#35 and #37, independent evaluations 89–96/100; bar clause 2 met. Plan: [m2-journey-core-sprint.md](m2-journey-core-sprint.md). Report: [m2-report.md](m2-report.md). (Design revised for Mark's attended rulings of 2026-10-01; D-17 on 2026-10-02.)
 **Release:** r1 · **Milestone:** M2 of [R1 foundations](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md) · mission queue row 3, bar clause 2
 **Priority:** P0: M4 (first journey) and the AI service's replay recording both sit on this protocol
 **Implements:**

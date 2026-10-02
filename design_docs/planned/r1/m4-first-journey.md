@@ -27,7 +27,7 @@ teaches the physics in-game.
   renders), applied to the composited interior view.
 
 **Depends on:**
-- **M2** journey core ([m2-journey-core.md](m2-journey-core.md), revised in
+- **M2** journey core ([m2-journey-core.md](../../implemented/r1/m2-journey-core.md), revised in
   parallel for D-11): boost → cruise at the chosen speed → brake, the plan
   intent carrying the cruise speed, planner energy/ISM/CMB readouts, protocol
   v2, the sim-owned commit rule, replay harness, galaxy map. Hard dependency;
@@ -402,7 +402,7 @@ explains the bubble and everything it implies, and its numbers cannot drift.
 
 ## Interfaces assumed
 
-**From M2** ([m2-journey-core.md](m2-journey-core.md)). If M2's names differ,
+**From M2** ([m2-journey-core.md](../../implemented/r1/m2-journey-core.md)). If M2's names differ,
 M4 adopts M2's.
 
 | Capability | Assumed shape |

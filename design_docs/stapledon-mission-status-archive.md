@@ -2,6 +2,27 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-01: iteration 6, M1.2b-WD3 LANDED (game pins relativity 0.3.0)
+
+- **WD-3 ✅**: PR #12, merge `68575d9`, merge-commit CI green. The game pins
+  `sunholo/relativity@0.3.0`; `checkWDPackage` makes the pin load-bearing;
+  the new `make wd-vm` (part of `make test`) asserts the package's WD NaN
+  contract on the strict VM. That closes iteration 5's NB-2: an Exact
+  NaN-guard mutant gives 3000.0000000000136 on the VM (caught) and 3000.0
+  on the interpreter (masked by ailang#1419). The controller reproduced
+  this first-party. Independent MiniMax-M3 **98/100 PASS**, zero blockers;
+  generator Sonnet 5.5. The M1 doc carries the consumer contract, O-1 and
+  the WD UI-label line.
+- **Harness**: `mission-base:hardcoded-origin-dev` RESOLVED upstream
+  (ailang `cb7c51c8e`); verified this fire from the driver pin (rc 0,
+  records `origin/main`).
+- **Next**: the bounded catalogue transform, corrected float32 writer and
+  integration (full M1.2b, AC2), then M1.2c. M1.6b stays ready.
+- **Clause map**: 1–4 UNMET, 5 ongoing (strict VM and parity green at this
+  landing). M1 5/12 milestones counting the M1.2b WD prerequisite as done;
+  full M1.2b still open. Clause 1 moved. Harness share 0/7; last three
+  landings all move clause 1.
+
 ## STATUS 2026-09-30: iteration 5, M1.2b-WD1/WD2 LANDED (relativity 0.3.0 published)
 
 - **WD package ✅**: `sunholo/relativity@0.3.0` published (blackbody WD Teff
