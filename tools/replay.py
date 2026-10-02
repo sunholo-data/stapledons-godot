@@ -6,6 +6,7 @@ usage:
   replay.py --case NAME ...       only these cases (alpha_cen, offaxis_v11_equiv, session10k, ...)
   replay.py --session PATH        one input log anywhere (M4); its golden sits beside it
   replay.py --record LOG|NAME|all write this architecture's golden(s) (a reviewed diff; never in make test)
+  replay.py --compat [--case ...] `make replay-compat` (AI.3, design AC13): see below
   options: --ticks N (generated session size, default 10000 -> case session10k), --arch A
 
 Per case: the log runs on the bytecode VM and on the tree-walking interpreter;
@@ -20,6 +21,17 @@ AILANG comes from $AILANG (default `ailang`); its --version is printed. The
 interpreter runs with --max-recursion-depth: ship.ail's read loop is a tail
 call, which the VM eliminates and the interpreter does not (RT_REC_003 at
 10,000 lines on v0.51.0, reported upstream).
+
+--compat: protocol 2.1 changed only the first lines of every 2.0 golden. The
+2.0 goldens are frozen in tests/replays/compat-2.0/ with the sha256 of each
+input log (inputs.sha256). For each case whose input is unchanged since the
+freeze, the 2.1 output (VM == interpreter) has exactly the new fields
+stripped, as bytes: the hello's proto minor 1 -> 0, and in each full state
+the params keys ai_max_open and ai_ttl_ticks (the last two of params) and
+the ai section (the last of changes). Each must be present exactly once
+where expected. The result must equal the frozen golden byte for byte (or
+its sha256 for digest goldens). A case with a changed input, or without a
+frozen golden, prints `skipped` with the reason; no case compared fails.
 """
 import argparse
 import concurrent.futures
@@ -225,6 +237,104 @@ def verify(ctx, case):
     return text, fails
 
 
+HELLO21 = rb'^(\{"v":2,"type":"hello","proto":\{"major":2,"minor":)1(\})'
+AI_PARAMS = rb',"ai_max_open":[0-9]+,"ai_ttl_ticks":[0-9]+\}'
+AI_SECTION = rb',"ai":\{"last_req":[0-9]+,"open":\[[^\]]*\],"core":"[0-9a-f]*"\}\}(,"events":)'
+
+
+def strip21(out):
+    """The 2.1 stream as 2.0 printed it, or raises ValueError naming the line that lacks a 2.1 field."""
+    lines = out.split(b"\n")
+    for i, line in enumerate(lines):
+        if line.startswith(b'{"v":2,"type":"hello"'):
+            line, n = re.subn(HELLO21, rb"\g<1>0\g<2>", line)
+            if n != 1:
+                raise ValueError("line %d: hello without proto minor 1 (not a 2.1 stream)" % (i + 1))
+        if line.endswith(b'"full":true}'):
+            line, a = re.subn(AI_PARAMS, b"}", line)
+            line, b = re.subn(AI_SECTION, rb"}\g<1>", line)
+            if (a, b) != (1, 1):
+                raise ValueError("line %d: full state without the 2.1 params keys and ai section (%d, %d)" % (i + 1, a, b))
+        lines[i] = line
+    return b"\n".join(lines)
+
+
+def frozen_inputs(compat):
+    path = os.path.join(compat, "inputs.sha256")
+    if not os.path.exists(path):
+        return {}
+    with open(path) as f:
+        return {name: sha for sha, name in (l.split() for l in f if l.strip())}
+
+
+def compat_one(ctx, case):
+    """(text, fails, compared) for one case under --compat."""
+    compat = os.path.join(ctx.replays, "compat-2.0")
+    full = os.path.join(compat, "%s.state.%s.ndjson" % (case.name, ctx.arch))
+    digest = os.path.join(compat, "%s.state.%s.sha256" % (case.name, ctx.arch))
+    with open(case.log, "rb") as f:
+        sha_in = hashlib.sha256(f.read()).hexdigest()
+    want_in = frozen_inputs(compat).get(case.name + ".ndjson")
+    why = None
+    if not (os.path.exists(full) or os.path.exists(digest)) or want_in is None:
+        why = "no 2.0 freeze for this case (%s)" % ctx.arch
+    elif want_in != sha_in:
+        why = "input changed since the freeze"
+    if why:
+        return "  skipped  %-22s %s\n" % (case.name, why), [], False
+    out, out_i, tvm, tit = both(ctx, case)
+    fails = []
+    if out != out_i:
+        fails.append("VM != interpreter: " + first_diff(out, out_i))
+    try:
+        stripped = strip21(out)
+    except ValueError as e:
+        stripped = None
+        fails.append(str(e))
+    if stripped is not None:
+        if os.path.exists(full):
+            with open(full, "rb") as f:
+                gold = f.read()
+            if stripped != gold:
+                fails.append("frozen %s: %s" % (rel(full, ctx), first_diff(stripped, gold)))
+            how = "cmp %s" % rel(full, ctx)
+        else:
+            with open(digest) as f:
+                want_sha = f.read().split()[0]
+            got = hashlib.sha256(stripped).hexdigest()
+            if got != want_sha:
+                fails.append("frozen %s: sha256 of the stripped stream %s != %s" % (rel(digest, ctx), got, want_sha))
+            how = "sha256 %s" % rel(digest, ctx)
+    else:
+        how = "not stripped"
+    text = "  %s  %-22s %6d lines  VM %6.2f s  interpreter %6.2f s  2.1 minus the new fields == 2.0: %s\n" % (
+        "ok     " if not fails else "FAIL   ", case.name, out.count(b"\n"), tvm, tit, how)
+    return text + "".join("        %s\n" % f for f in fails), fails, True
+
+
+def compat_main(ctx, cases):
+    t = time.monotonic()
+    with concurrent.futures.ThreadPoolExecutor(max(1, min(len(cases), (os.cpu_count() or 2) // 2))) as ex:
+        results = list(ex.map(lambda c: _guard_compat(ctx, c), cases))
+    fails = sum(len(f) for _, f, _ in results)
+    compared = sum(1 for _, _, c in results if c)
+    for text, _, _ in results:
+        sys.stdout.write(text)
+    if compared == 0:
+        print("replay-compat: no case compared (nothing frozen matches)")
+        sys.exit(1)
+    print("replay-compat: %d compared, %d skipped, %s (%.1f s wall)" % (
+        compared, len(cases) - compared, "nothing else moved" if fails == 0 else "%d failures" % fails, time.monotonic() - t))
+    sys.exit(1 if fails else 0)
+
+
+def _guard_compat(ctx, case):
+    try:
+        return compat_one(ctx, case)
+    except RuntimeError as e:
+        return "  FAIL     %s\n" % e, [str(e)], True
+
+
 def record(ctx, case):
     out, out_i, tvm, tit = both(ctx, case)
     if out != out_i:
@@ -252,6 +362,7 @@ def main():
     p.add_argument("--case", nargs="+")
     p.add_argument("--session")
     p.add_argument("--record")
+    p.add_argument("--compat", action="store_true")
     p.add_argument("--ticks", type=int, default=int(os.environ.get("REPLAY_TICKS", "10000")))
     p.add_argument("--arch")
     p.add_argument("--root", default=ROOT)
@@ -272,6 +383,8 @@ def main():
         cases = [case_of(ctx, n) for n in a.case]
     else:
         cases = all_cases(ctx)
+    if a.compat:
+        compat_main(ctx, cases)
     t = time.monotonic()
     # cases run concurrently (each runs its VM and interpreter concurrently too); output order is the case order
     with concurrent.futures.ThreadPoolExecutor(max(1, min(len(cases), (os.cpu_count() or 2) // 2))) as ex:

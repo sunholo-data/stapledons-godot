@@ -139,8 +139,8 @@ pure func checkRngZero() -> bool {
   r.journey == 0 && r.crew == 0 && r.events == 0 && r.galaxy == 0 && r.ai == 0 && r.news == 0
 }
 
--- Refusals in a non-diag world: thrust/heading/draw are diag_only, record
--- unsupported until 2.1 (cancel with no plan is a no-op since M2.3a); the
+-- Refusals in a non-diag world: thrust/heading/draw are diag_only (cancel
+-- with no plan is a no-op since M2.3a); the
 -- tick proceeds and no stream counter moves.
 pure func checkTickRefusals() -> bool {
   let t = tick(newWorld(1, false, defaultParams()), {dtau: 0.5, intents: [IThrust(1.0), IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel, IDraw(SNews)]});
@@ -353,7 +353,7 @@ pure func plAllRefused(c: World, xs: [Intent]) -> bool = match xs {
 pure func checkCommittedRefusesAll() -> bool {
   -- D-20 (2026-10-02): every journey intent is refused `committed`; the AI
   -- intents are accepted and leave the flight exactly as the autopilot alone
-  -- does. Index 7 is the record: `unsupported` everywhere until AI.3.
+  -- does. Index 7 is a record for a request never opened: ai_unknown_req (AI.3).
   -- (head and rest matched separately: `a :: b :: _` is evaluator-only on the strict VM, ailang#1505)
   let c = plCommittedWorld();
   let aiOpen = IAiOpen({kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: []});
@@ -364,7 +364,7 @@ pure func checkCommittedRefusesAll() -> bool {
   let alone = tick(c, {dtau: 0.25, intents: []}).world;
   let opened = tick(c, {dtau: 0.25, intents: [aiOpen]});
   plCommitted(c.journey) && plAllRefused(c, journeyIntents) &&
-  refusalsAre(all.refused, ["0:committed", "1:committed", "2:committed", "3:committed", "4:committed", "5:committed", "6:committed", "7:unsupported", "8:committed", "9:committed"]) &&
+  refusalsAre(all.refused, ["0:committed", "1:committed", "2:committed", "3:committed", "4:committed", "5:committed", "6:committed", "7:ai_unknown_req", "8:committed", "9:committed"]) &&
   (match all.events { a :: rest => a.kind == "ai_request" && (match rest { b :: _ => b.kind == "ai_fallback", _ => false }), _ => false }) && all.world.ai.lastReq == 1 && all.world.rng.ai == 1 &&
   refusalsAre(opened.refused, []) && opened.world.ai.lastReq == 1 && plSameCommit(c, opened.world) && plSameFlight(opened.world, alone) &&
   plSameCommit(c, all.world) && plSameFlight(all.world, alone) && all.world.ship.phase == Cruising && all.world.tick == c.tick + 1 &&

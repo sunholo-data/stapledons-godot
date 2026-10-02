@@ -15,6 +15,7 @@ tests/offaxis_v11_equiv.py	oracle
 tools/catalogue_probe.py	harness
 tools/check_star_names.py	oracle
 tools/extract.py	port
+tools/gen_ai_session.py	harness
 tools/gen_session.py	harness
 tools/test_extract.py	port
 tools/m14a_crops.py	spike
