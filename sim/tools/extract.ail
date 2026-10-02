@@ -68,15 +68,17 @@ export pure func distanceLy(plx: Option[float]) -> Option[float] = match plx {
   None => None
 }
 
+-- One level of constructor pattern at a time: the strict VM (v0.51.0) cannot bind
+-- variables inside nested patterns like (Some(a), Some(d)) (reported upstream).
+pure func diff(bp: Option[float], rp: Option[float]) -> Option[float] =
+  match bp { Some(b) => match rp { Some(r) => Some(b - r), None => None }, None => None }
+
 pure func row(ident: string, ra: Option[float], dec: Option[float], plx: Option[float],
     g: Option[float], bp: Option[float], rp: Option[float], wd: int) -> Option[Row] =
-  match (ra, dec, distanceLy(plx)) {
-    (Some(a), Some(d), Some(dist)) => match icrsToGalactic(a, d) {
-      (ux, uy, uz) => Some({ id: ident, x: ux * dist, y: uy * dist, z: uz * dist, g: g,
-        bprp: match (bp, rp) { (Some(b), Some(r)) => Some(b - r), _ => None }, wd: wd })
-    },
-    _ => None
-  }
+  match ra { None => None, Some(a) => match dec { None => None, Some(d) => match distanceLy(plx) { None => None,
+    Some(dist) => match icrsToGalactic(a, d) {
+      (ux, uy, uz) => Some({ id: ident, x: ux * dist, y: uy * dist, z: uz * dist, g: g, bprp: diff(bp, rp), wd: wd })
+    } } } }
 
 pure func cns5Row(line: string) -> Option[Row] {
   let gaia = trim(bytes(line, 28, 46));
@@ -137,20 +139,22 @@ export pure func formatCsv(rows: [Row]) -> string =
       opt6(r.g), opt6(r.bprp), intToStr(r.wd)]) :: acc, [], reverse(rows))), "\n"])
 
 -- (csv, parsed, skipped), or Err when a non-empty input parses to zero rows
-export pure func buildCsv(kind: string, text: string) -> Result[(string, int, int), string] {
+export type Built = { csv: string, parsed: int, skipped: int }
+
+export pure func buildCsv(kind: string, text: string) -> Result[Built, string] {
   let p = if kind == "cns5" then parseCns5(text) else parseGcns(text);
   let n = foldl(\c _. c + 1, 0, p.rows);
   if n == 0 && trim(text) != "" then Err(concat([kind, ": 0 rows parsed; refusing to write an empty CSV"]))
-  else Ok((formatCsv(p.rows), n, p.skipped))
+  else Ok({ csv: formatCsv(p.rows), parsed: n, skipped: p.skipped })
 }
 
 export func main(a: { kind: string, input: string, output: string }) -> () ! {FS, IO} =
   if a.kind != "cns5" && a.kind != "gcns" then { println("usage: kind cns5|gcns"); exit(2) }
   else match buildCsv(a.kind, readFile(a.input)) {
-    Ok((csv, parsed, skipped)) => {
-      writeFile(a.output, csv);
-      println(concat([a.kind, ": parsed ", intToStr(parsed), " rows, skipped ", intToStr(skipped),
-        " rows (input ", intToStr(parsed + skipped), ")"]))
+    Ok(b) => {
+      writeFile(a.output, b.csv);
+      println(concat([a.kind, ": parsed ", intToStr(b.parsed), " rows, skipped ", intToStr(b.skipped),
+        " rows (input ", intToStr(b.parsed + b.skipped), ")"]))
     },
     Err(e) => { println(concat(["ERROR: ", e])); exit(3) }
   }

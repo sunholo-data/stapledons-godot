@@ -41,12 +41,39 @@ pure func checkParallax() -> bool =
   (match distanceLy(Some(754.8099975585938)) { Some(d) => near(d, 4.3210, 0.001), None => false })
 
 -- the galactic centre and north galactic pole land on +x and +z
+-- a synthetic fixed-width line: each (1-based byte column, text) written right-aligned to end at that column
+pure func place(line: string, end: int, text: string) -> string {
+  let start = end - length(text);
+  concat([substring(line, 0, start), text, substring(line, end, length(line))])
+}
+pure func blank(n: int) -> string = if n <= 0 then "" else concat([" ", blank(n - 1)])
+
+-- the row parser itself on the strict VM (the fixture checks run with FS, off the strict VM):
+-- alpha Cen's own CNS5 fields, a one-sided BP/RP pair, a missing parallax, a GCNS WD boundary
+pure func cnsLine(plx: string, bp: string) -> string =
+  place(place(place(place(place(place(blank(761), 46, "1234567890123456789"), 74, "219.9180967"), 98, "-60.8371750"),
+    148, plx), 371, "0.3000"), 404, bp)
+
+pure func checkRows() -> bool {
+  let ok = parseCns5(concat([place(cnsLine("754.81", "1.000"), 437, "0.400"), "\n"]));
+  let bpOnly = parseCns5(concat([cnsLine("754.81", "1.000"), "\n"]));
+  let rpOnly = parseCns5(concat([place(cnsLine("754.81", ""), 437, "0.400"), "\n"]));
+  let noPlx = parseCns5(concat([cnsLine("", "1.000"), "\n"]));
+  let wd = parseGcns(concat([place(place(place(place(blank(760), 21, "42"), 36, "100.0"), 59, "-30.0"), 77, "10.0"), "\n"]));
+  (match ok.rows { [r] => r.id == "1234567890123456789" && near(sqrt(r.x * r.x + r.y * r.y + r.z * r.z), 4.3210, 0.001) &&
+      (match r.bprp { Some(c) => near(c, 0.6, 1.0e-9), None => false }), _ => false }) &&
+  (match bpOnly.rows { [r] => (match r.bprp { None => true, Some(_) => false }), _ => false }) &&
+  (match rpOnly.rows { [r] => (match r.bprp { None => true, Some(_) => false }), _ => false }) &&
+  noPlx.skipped == 1 && (match wd.rows { [r] => r.wd == 0 && r.id == "42", _ => false })
+}
+
 pure func checkMatrix() -> bool =
   (match icrsToGalactic(266.40499, 0.0 - 28.93617) { (x, y, z) => near(x, 1.0, 1.0e-5) && near(y, 0.0, 1.0e-4) && near(z, 0.0, 1.0e-4) }) &&
   (match icrsToGalactic(192.85948, 27.12825) { (x, y, z) => near(z, 1.0, 1.0e-6) })
 
 export pure func extractVm(n: int) -> string = verdict("extract-vm", failed([
-  ("number", checkNumber()), ("fmt6", checkFmt6()), ("parallax", checkParallax()), ("matrix", checkMatrix())]))
+  ("number", checkNumber()), ("fmt6", checkFmt6()), ("parallax", checkParallax()), ("matrix", checkMatrix()),
+  ("rows", checkRows())]))
 
 -- ---- fixtures (FS) --------------------------------------------------------------
 
@@ -62,7 +89,7 @@ pure func rowAt(rows: [Row], i: int) -> Row =
 pure func field(f: string) -> float = match stringToFloat(trim(f)) { Some(v) => v, None => 0.0 - 999.0 }
 
 pure func csvLines(kind: string, text: string) -> [string] = match buildCsv(kind, text) {
-  Ok((csv, _, _)) => split(csv, "\n"), Err(_) => []
+  Ok(b) => split(b.csv, "\n"), Err(_) => []
 }
 
 -- every CSV id appears verbatim in its raw line (19-digit ids don't survive a float)
@@ -137,6 +164,6 @@ export func extractFixtures(dir: string) -> string ! {FS} {
     ("cns5-id-fallback", rowAt(parseCns5(cHead).rows, 2).id == "CNS5:5240"),
     -- loud failure: a non-empty input that parses to nothing is refused
     ("empty-refused", trim(nullPlx) != "" && match buildCsv("cns5", nullPlx) { Err(_) => true, Ok(_) => false }),
-    ("empty-input-ok", match buildCsv("gcns", "") { Ok((_, n, s)) => n == 0 && s == 0, Err(_) => false })
+    ("empty-input-ok", match buildCsv("gcns", "") { Ok(b) => b.parsed == 0 && b.skipped == 0, Err(_) => false })
   ]))
 }
