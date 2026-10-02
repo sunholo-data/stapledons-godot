@@ -1,0 +1,262 @@
+module stapledons/sim/ai_test
+
+-- AI requests in the pure sim (design ai-service-foundation (a1), AI.2):
+-- ai_open refusals (AC3 part), ids and expiry (AC4 part), cancel, seeds from
+-- the `ai` stream, and the D-20 commit rule: AI intents never touch the
+-- ship, the journey, the ledger or a non-ai stream, committed or not (AC5).
+-- `aiVm` runs them on the strict VM (`make strict-ai`, AC7 part).
+import ./core (World, Params, Intent, IPlan, ICommit, IThrust, IRecord, IAiOpen, IAiCancel, Event, Refusal, Ticked, Committed, Idle, Planned,
+  defaultParams, newWorld, tick)
+import ./ai (AiOpen, AiEvent, ERequest, EFallback, AiRequest, OpenReq, CStr, CList, emotions8, validEntityId, maxCharsFor)
+import ./rng (Rng, SAi, value, top53)
+import ./protocol (StateMsg, Session, newSession, serve, decodeState, encodeState)
+import std/option (Option, Some, None)
+import std/result (Ok, Err)
+import std/string (join, contains, intToStr, repeat)
+import std/list (map, foldl)
+
+-- ------------------------------------------------------------ helpers
+pure func allTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+pure func strsEq(a: [string], b: [string]) -> bool =
+  match a { [] => (match b { [] => true, _ => false }), x :: xr => match b { [] => false, y :: yr => x == y && strsEq(xr, yr) } }
+pure func open(kind: string, purpose: string, id: string) -> AiOpen =
+  { kind: kind, purpose: purpose, entityId: id, emotion: None, ageStage: None, lineReq: None, emotions: None, context: [] }
+pure func textOpen() -> AiOpen = open("text", "line", "medic")
+pure func portraitOpen() -> AiOpen = {open("portrait", "line", "medic") | emotion: Some("grieving"), ageStage: Some(50.0)}
+pure func play() -> World = newWorld(7, false, defaultParams())
+pure func diagW() -> World = newWorld(7, true, defaultParams())
+pure func withParams(p: Params) -> World = newWorld(7, false, p)
+pure func run(w: World, xs: [Intent]) -> Ticked = tick(w, {dtau: 0.0, intents: xs})
+pure func reasons(rs: [Refusal]) -> [string] = map(\r. join(":", [intToStr(r.i), r.reason]), rs)
+pure func requests(es: [Event]) -> [AiRequest] =
+  match es { [] => [], e :: more => match e.ai { Some(x) => (match x { ERequest(r) => r :: requests(more), _ => requests(more) }), None => requests(more) } }
+pure func fallbacks(es: [Event]) -> [string] =
+  match es { [] => [], e :: more => match e.ai { Some(x) => (match x { EFallback(f) => join(":", [f.req, f.reason]) :: fallbacks(more), _ => fallbacks(more) }), None => fallbacks(more) } }
+pure func openIds(w: World) -> [string] = map(\o. intToStr(o.req), w.ai.open)
+pure func reqIds(es: [Event]) -> [string] = map(\r. r.req, requests(es))
+
+-- A refused ai_open opens nothing, draws nothing, emits nothing; the tick
+-- proceeds (same tick + 1, the other intents still apply).
+pure func refusesWith(w: World, o: AiOpen, why: string) -> bool {
+  let t = run(w, [IAiOpen(o), IAiOpen(textOpen())]);
+  strsEq(reasons(t.refused), [join("", ["0:", why])]) && t.world.tick == w.tick + 1 &&
+  t.world.ai.lastReq == w.ai.lastReq + 1 && t.world.rng.ai == w.rng.ai + 1 && strsEq(reqIds(t.events), [intToStr(w.ai.lastReq + 1)])
+}
+pure func accepts(w: World, o: AiOpen) -> bool {
+  let t = run(w, [IAiOpen(o)]);
+  strsEq(reasons(t.refused), []) && t.world.ai.lastReq == w.ai.lastReq + 1 && strsEq(reqIds(t.events), [intToStr(w.ai.lastReq + 1)])
+}
+
+-- ------------------------------------------------------------ AC3 part: ai_open refusals
+pure func tooMany(w: World) -> bool {
+  let t = run(w, [IAiOpen(textOpen())]);
+  strsEq(reasons(t.refused), ["0:ai_too_many"]) && t.world.ai.lastReq == w.ai.lastReq && t.world.rng.ai == w.rng.ai && strsEq(reqIds(t.events), []) && strsEq(openIds(t.world), openIds(w))
+}
+pure func checkAiOpenRefusals() -> bool {
+  let w = play();
+  let two = withParams({defaultParams() | aiMaxOpen: 2});
+  let full = run(two, [IAiOpen(textOpen()), IAiOpen(portraitOpen())]).world;
+  let freed = run(full, [IAiCancel({req: "1", reason: "timeout"})]).world;
+  -- ai_kind (and diag_only for probe outside diag)
+  refusesWith(w, open("warp", "line", "medic"), "ai_kind") && refusesWith(w, open("text", "warp", "medic"), "ai_kind") &&
+  refusesWith(w, open("Text", "line", "medic"), "ai_kind") && refusesWith(w, open("text", "probe", "medic"), "diag_only") &&
+  accepts(diagW(), open("text", "probe", "medic")) && refusesWith(w, open("warp", "line", "BAD id"), "ai_kind") &&
+  -- ai_bad_key: the entity-id pattern ^[a-z][a-z0-9_]{0,31}$ by hand
+  refusesWith(w, open("text", "line", ""), "ai_bad_key") && refusesWith(w, open("text", "line", "Medic"), "ai_bad_key") &&
+  refusesWith(w, open("text", "line", "1medic"), "ai_bad_key") && refusesWith(w, open("text", "line", "_medic"), "ai_bad_key") &&
+  refusesWith(w, open("text", "line", "medic-2"), "ai_bad_key") && refusesWith(w, open("text", "line", "médic"), "ai_bad_key") &&
+  refusesWith(w, open("text", "line", "medic "), "ai_bad_key") && refusesWith(w, open("text", "line", repeat("a", 33)), "ai_bad_key") &&
+  accepts(w, open("text", "line", "a")) && accepts(w, open("text", "line", join("", ["z", repeat("_9", 15), "x"]))) &&
+  validEntityId("archive") && validEntityId("medic_v2") && !validEntityId("medic.v2") &&
+  -- emotions: one of the 8; required for portraits, absent for voice/avatar
+  refusesWith(w, {textOpen() | emotion: Some("joyful")}, "ai_bad_key") && refusesWith(w, open("portrait", "line", "medic"), "ai_bad_key") &&
+  refusesWith(w, {open("avatar", "line", "medic") | emotion: Some("happy")}, "ai_bad_key") &&
+  refusesWith(w, {open("voice", "line", "medic") | emotion: Some("happy"), lineReq: Some("1")}, "ai_bad_key") &&
+  accepts(w, {textOpen() | emotion: Some("curious")}) && accepts(w, open("avatar", "line", "medic")) && accepts(w, portraitOpen()) &&
+  -- age_stage a whole number in [0, 1000]
+  refusesWith(w, {portraitOpen() | ageStage: Some(1.5)}, "ai_bad_key") && refusesWith(w, {portraitOpen() | ageStage: Some(-1.0)}, "ai_bad_key") &&
+  refusesWith(w, {portraitOpen() | ageStage: Some(1001.0)}, "ai_bad_key") &&
+  accepts(w, {portraitOpen() | ageStage: Some(0.0)}) && accepts(w, {portraitOpen() | ageStage: Some(1000.0)}) &&
+  -- emotions list non-empty and known; line_req only for voice
+  refusesWith(w, {textOpen() | emotions: Some([])}, "ai_bad_key") && refusesWith(w, {textOpen() | emotions: Some(["neutral", "smug"])}, "ai_bad_key") &&
+  refusesWith(w, {textOpen() | lineReq: Some("1")}, "ai_bad_key") && accepts(w, {textOpen() | emotions: Some(["grieving"])}) &&
+  -- ai_stale: a voice line must name one of the last 64 accepted lines (none before AI.3)
+  refusesWith(w, {open("voice", "line", "medic") | lineReq: Some("1")}, "ai_stale") && refusesWith(w, open("voice", "line", "medic"), "ai_stale") &&
+  -- ai_too_many at ai_max_open; a close frees a slot
+  tooMany(full) && accepts(freed, textOpen()) &&
+  strsEq(reasons(run(full, [IAiOpen(textOpen()), IAiOpen(textOpen())]).refused), ["0:ai_too_many", "1:ai_too_many"]) &&
+  strsEq(reasons(run(two, [IAiOpen(textOpen()), IAiOpen(textOpen()), IAiOpen(textOpen())]).refused), ["2:ai_too_many"])
+}
+
+-- The opened request: the key (emotion "-" when absent, age_stage 0,
+-- variant "0" for images and "-" for text/voice), the constraints and the
+-- context, as the ai_request event carries them.
+pure func checkAiRequestFields() -> bool {
+  let t = run(play(), [IAiOpen({textOpen() | purpose: "news", context: [{name: "topic", value: CStr("arrival")}, {name: "canon", value: CList(["archive.two-clocks"])}]}), IAiOpen(portraitOpen())]);
+  match requests(t.events) {
+    [a, b] => a.req == "1" && a.kind == "text" && a.purpose == "news" && a.key.emotion == "-" && a.key.ageStage == 0 && a.key.variant == "-" && a.key.entityId == "medic" &&
+      a.constraints.maxChars == 200 && a.constraints.noNumerals && strsEq(a.constraints.emotions, emotions8()) && a.expiresTick == 1 + 3600 &&
+      (match a.context { [x, y] => x.name == "topic" && y.name == "canon", _ => false }) &&
+      b.req == "2" && b.key.kind == "portrait" && b.key.emotion == "grieving" && b.key.ageStage == 50 && b.key.variant == "0" && b.constraints.maxChars == 280 &&
+      maxCharsFor("archive") == 600 && maxCharsFor("line") == 280,
+    _ => false
+  }
+}
+
+-- ------------------------------------------------------------ AC4 part: ids, seeds, expiry
+-- Ids: lastReq + 1 on every open only, decimal strings, never reused after a
+-- cancel, an expiry or a refusal, across ticks.
+pure func checkAiIds() -> bool {
+  let a = run(play(), [IAiOpen(textOpen()), IAiOpen(textOpen()), IAiOpen(open("warp", "line", "medic")), IAiOpen(textOpen())]);
+  let b = run(a.world, [IAiCancel({req: "2", reason: "offline"}), IAiOpen(textOpen())]);
+  let c = run(withParams({defaultParams() | aiTtlTicks: 1}), [IAiOpen(textOpen())]);
+  let d = run(c.world, [IAiOpen(textOpen())]);
+  let e = run(d.world, []);
+  strsEq(reqIds(a.events), ["1", "2", "3"]) && strsEq(openIds(a.world), ["1", "2", "3"]) && a.world.ai.lastReq == 3 &&
+  strsEq(reqIds(b.events), ["4"]) && strsEq(openIds(b.world), ["1", "3", "4"]) && b.world.ai.lastReq == 4 &&
+  strsEq(fallbacks(d.events), ["1:expired"]) && strsEq(reqIds(d.events), ["2"]) && strsEq(openIds(e.world), []) && e.world.ai.lastReq == 2 &&
+  run(e.world, [IAiOpen(textOpen())]).world.ai.lastReq == 3
+}
+-- Seeds: the n-th opened request carries top53 of the n-th value of the
+-- world's `ai` stream (one draw per open; refusals and closes draw none);
+-- no other stream moves; another world seed gives other seeds.
+pure func seeds(es: [Event]) -> [string] = map(\r. intToStr(r.seed), requests(es))
+pure func checkAiSeeds() -> bool {
+  let a = run(play(), [IAiOpen(textOpen()), IAiOpen(open("warp", "line", "x")), IAiOpen(portraitOpen())]);
+  let b = run(a.world, [IAiCancel({req: "1", reason: "budget"}), IAiOpen(textOpen())]);
+  let other = run(newWorld(8, false, defaultParams()), [IAiOpen(textOpen())]);
+  let again = run(play(), [IAiOpen(textOpen()), IAiOpen(open("warp", "line", "x")), IAiOpen(portraitOpen())]);
+  strsEq(seeds(a.events), [intToStr(top53(value(7, SAi, 0))), intToStr(top53(value(7, SAi, 1)))]) && a.world.rng.ai == 2 &&
+  strsEq(seeds(b.events), [intToStr(top53(value(7, SAi, 2)))]) && b.world.rng.ai == 3 &&
+  a.world.rng.journey == 0 && a.world.rng.crew == 0 && a.world.rng.events == 0 && a.world.rng.galaxy == 0 && a.world.rng.news == 0 &&
+  strsEq(seeds(other.events), [intToStr(top53(value(8, SAi, 0)))]) && !strsEq(seeds(other.events), [intToStr(top53(value(7, SAi, 0)))]) &&
+  strsEq(seeds(again.events), seeds(a.events)) && top53(value(7, SAi, 0)) >= 0 && top53(value(7, SAi, 0)) < 9007199254740992
+}
+-- Expiry: expires_tick = opened tick + ai_ttl_ticks; the tick that reaches
+-- it emits ai_fallback{req, expired} and closes the request (opening
+-- order), not one tick earlier; afterwards cancel is ai_unknown_req.
+pure func checkAiExpiry() -> bool {
+  let w0 = withParams({defaultParams() | aiTtlTicks: 3});
+  let t1 = run(w0, [IAiOpen(textOpen()), IAiOpen(textOpen())]);
+  let t2 = run(t1.world, [IAiOpen(textOpen())]);
+  let t3 = run(t2.world, []);
+  let t4 = run(t3.world, []);
+  let t5 = run(t4.world, [IAiCancel({req: "1", reason: "timeout"})]);
+  let t6 = run(t5.world, [IAiCancel({req: "3", reason: "timeout"})]);
+  let late = run(t3.world, [IAiCancel({req: "2", reason: "timeout"})]);
+  (match requests(t1.events) { [a, b] => a.expiresTick == 4 && b.expiresTick == 4, _ => false }) && t1.world.tick == 1 &&
+  strsEq(fallbacks(t2.events), []) && strsEq(fallbacks(t3.events), []) && strsEq(openIds(t3.world), ["1", "2", "3"]) &&
+  strsEq(fallbacks(t4.events), ["1:expired", "2:expired"]) && t4.world.tick == 4 && strsEq(openIds(t4.world), ["3"]) &&
+  strsEq(reasons(t5.refused), ["0:ai_unknown_req"]) && strsEq(fallbacks(t5.events), ["3:expired"]) && strsEq(openIds(t5.world), []) &&
+  strsEq(reasons(t6.refused), ["0:ai_unknown_req"]) && strsEq(fallbacks(t6.events), []) &&
+  -- a cancel at the expiry tick closes first (intents before expiry): one outcome
+  strsEq(fallbacks(late.events), ["2:timeout", "1:expired"])
+}
+-- Cancel: closes an open request with ai_fallback{req, reason}; a request
+-- not open (never opened, closed, or not the canonical decimal) is refused
+-- ai_unknown_req and changes nothing; cancel draws nothing.
+pure func checkAiCancel() -> bool {
+  let a = run(play(), [IAiOpen(textOpen()), IAiOpen(textOpen())]);
+  let b = run(a.world, [IAiCancel({req: "2", reason: "service_down"}), IAiCancel({req: "2", reason: "offline"}), IAiCancel({req: "02", reason: "offline"}),
+    IAiCancel({req: "9", reason: "offline"}), IAiCancel({req: "1", reason: "provider_error"})]);
+  strsEq(fallbacks(b.events), ["2:service_down", "1:provider_error"]) && strsEq(reasons(b.refused), ["1:ai_unknown_req", "2:ai_unknown_req", "3:ai_unknown_req"]) &&
+  strsEq(openIds(b.world), []) && b.world.ai.lastReq == 2 && b.world.rng.ai == a.world.rng.ai
+}
+-- record: refused `unsupported`, committed or not, until AI.3; it closes nothing.
+pure func checkAiRecordUnsupported() -> bool {
+  let a = run(play(), [IAiOpen(textOpen())]);
+  let r = IRecord({source: "ai", req: "1", kind: "text", sha256: "00", body: "{neutral} hi"});
+  let idle = run(a.world, [r]);
+  let c = run(committed(), [IAiOpen(textOpen())]);
+  let cr = tick(c.world, {dtau: 0.25, intents: [r]});
+  strsEq(reasons(idle.refused), ["0:unsupported"]) && strsEq(openIds(idle.world), ["1"]) &&
+  strsEq(reasons(cr.refused), ["0:unsupported"]) && strsEq(openIds(cr.world), ["1"])
+}
+
+-- ------------------------------------------------------------ AC5: AI never touches the journey
+-- alpha Cen 0.99c, committed in a play world at tick 2.
+pure func acen() -> Intent = IPlan({target: {index: 1, id: "alpha Cen", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None})
+pure func committed() -> World = run(run(play(), [acen()]).world, [ICommit(1)]).world
+
+-- Over the wire: the same tick with and without an AI intent gives the same
+-- clock, ship, journey and ledger sections and the same non-AI events, byte
+-- for byte, and the same non-ai stream counters and plan ids in the world;
+-- a further plain tick still agrees (no hidden divergence: el, ledger).
+pure func feed(s: Session, lines: [string]) -> Session = foldl(\acc line. serve(acc, line).session, s, lines)
+pure func reply(s: Session, line: string) -> string = serve(s, line).reply
+pure func tickLine(t: int, dtau: string, intents: string) -> string =
+  join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":", dtau, ",\"intents\":[", intents, "]}"])
+pure func nonAi(es: [Event]) -> [Event] = match es { [] => [], e :: more => match e.ai { Some(_) => nonAi(more), None => e :: nonAi(more) } }
+pure func journeyPart(line: string) -> string =
+  match decodeState(line) {
+    Ok(m) => encodeState({m | rng: None, ai: None, events: nonAi(m.events), refused: []}),
+    Err(e) => e
+  }
+pure func sameStreams(a: Session, b: Session) -> bool =
+  match a.game {
+    Some(x) => (match b.game {
+      Some(y) => x.rng.journey == y.rng.journey && x.rng.crew == y.rng.crew && x.rng.events == y.rng.events && x.rng.galaxy == y.rng.galaxy &&
+        x.rng.news == y.rng.news && x.lastPlanId == y.lastPlanId && x.ship.motion.phi == y.ship.motion.phi && x.ship.motion.x == y.ship.motion.x &&
+        x.ledger.boostJ == y.ledger.boostJ && x.ledger.dragJ == y.ledger.dragJ,
+      None => false }),
+    None => false
+  }
+pure func untouched(s: Session, t: int, dtau: string, ai: string) -> bool {
+  let base = tickLine(t, dtau, "");
+  let withAi = tickLine(t, dtau, ai);
+  let sb = feed(s, [base]);
+  let sw = feed(s, [withAi]);
+  let changed = reply(s, withAi) != reply(s, base);
+  changed && journeyPart(reply(s, withAi)) == journeyPart(reply(s, base)) && sameStreams(sb, sw) &&
+  journeyPart(reply(sw, tickLine(t + 1, "0.5", ""))) == journeyPart(reply(sb, tickLine(t + 1, "0.5", "")))
+}
+pure func aiLines() -> [string] = [
+  "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"line\",\"entity_id\":\"medic\"}",
+  "{\"k\":\"ai_open\",\"kind\":\"portrait\",\"purpose\":\"line\",\"entity_id\":\"medic\",\"emotion\":\"loving\",\"age_stage\":50,\"context\":{\"topic\":\"x\"}}",
+  "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"line\",\"entity_id\":\"BAD\"}",
+  "{\"k\":\"ai_cancel\",\"req\":\"1\",\"reason\":\"offline\"}",
+  "{\"k\":\"ai_cancel\",\"req\":\"77\",\"reason\":\"offline\"}",
+  "{\"k\":\"record\",\"source\":\"ai\",\"req\":\"1\",\"kind\":\"text\",\"sha256\":\"00\",\"body\":\"x\"}",
+  "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"line\",\"entity_id\":\"medic\"},{\"k\":\"ai_open\",\"kind\":\"avatar\",\"purpose\":\"news\",\"entity_id\":\"archive\"},{\"k\":\"ai_cancel\",\"req\":\"1\",\"reason\":\"budget\"}"
+]
+pure func hello() -> string = "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":0}}"
+pure func game(diag: string) -> string = join("", ["{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":", diag, "}"])
+pure func acenLine() -> string = "{\"k\":\"plan\",\"target\":{\"index\":1,\"id\":\"alpha Cen\",\"pos\":{\"x\":0,\"y\":0,\"z\":-4.37}},\"cruise_phi\":2.6466524123622457}"
+-- One request already open (id 1) so cancels and the record have a target.
+pure func opened(s: Session, t: int) -> Session = feed(s, [tickLine(t, "0", "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"line\",\"entity_id\":\"medic\"}")])
+pure func checkAiNeverTouchesJourney() -> bool {
+  let idle = opened(feed(newSession(), [hello(), game("false")]), 1);
+  let diag = opened(feed(newSession(), [hello(), game("true"), tickLine(1, "0.1", "{\"k\":\"thrust\",\"thrust\":1}")]), 2);
+  let planned = opened(feed(newSession(), [hello(), game("false"), tickLine(1, "0", acenLine())]), 2);
+  let comm = opened(feed(newSession(), [hello(), game("false"), tickLine(1, "0", acenLine()), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}")]), 3);
+  -- mid-flight, across a phase boundary (boost ends within this tick)
+  let flying = feed(comm, [tickLine(4, "0.000001", "")]);
+  allTrue(map(\l. untouched(idle, 2, "0.25", l), aiLines())) && allTrue(map(\l. untouched(diag, 3, "0.1", l), aiLines())) &&
+  allTrue(map(\l. untouched(planned, 3, "0.25", l), aiLines())) && allTrue(map(\l. untouched(comm, 4, "0.25", l), aiLines())) &&
+  allTrue(map(\l. untouched(flying, 5, "0.001", l), aiLines())) &&
+  (match comm.game { Some(w) => (match w.journey { Committed(_) => true, _ => false }), None => false })
+}
+
+-- ------------------------------------------------------------ strict VM (aiVm)
+-- A scripted 2.1 session: opens of every kind, refusals, cancels, an
+-- expiry, opens while committed. Prints every reply (VM == interpreter,
+-- byte for byte), then ai-ok when every check above holds.
+pure func script() -> [string] = [hello(), "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"ai_ttl_ticks\":3,\"ai_max_open\":3}}",
+  tickLine(1, "0", join(",", aiLines())),
+  tickLine(2, "0", "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"probe\",\"entity_id\":\"medic\"},{\"k\":\"ai_open\",\"kind\":\"voice\",\"purpose\":\"line\",\"entity_id\":\"medic\",\"line_req\":\"1\"}"),
+  tickLine(3, "0", acenLine()), tickLine(4, "0", "{\"k\":\"commit\",\"plan_id\":1}"),
+  tickLine(5, "0.25", "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"archive\",\"entity_id\":\"archive\",\"emotions\":[\"neutral\"]},{\"k\":\"thrust\",\"thrust\":1},{\"k\":\"ai_cancel\",\"req\":\"5\",\"reason\":\"text_only\"}"),
+  tickLine(6, "0.25", ""), tickLine(7, "0.25", ""), tickLine(8, "0.25", "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"news\",\"entity_id\":\"medic\"}")]
+pure func replies(s: Session, lines: [string]) -> [string] = match lines { [] => [], l :: more => { let r = serve(s, l); r.reply :: replies(r.session, more) } }
+export pure func aiVm(n: int) -> string =
+  if checkAiOpenRefusals() && checkAiRequestFields() && checkAiIds() && checkAiSeeds() && checkAiExpiry() && checkAiCancel() && checkAiRecordUnsupported() && checkAiNeverTouchesJourney()
+  then join("\n", replies(newSession(), script()) ++ ["ai-ok"]) else "ai-BAD"
+
+test "AC3 ai_open refusals: ai_kind, diag_only, ai_bad_key, ai_stale, ai_too_many open nothing" { checkAiOpenRefusals() }
+test "ai_request carries key, constraints, context and expires_tick" { checkAiRequestFields() }
+test "AC4 request ids monotonic, decimal, never reused" { checkAiIds() }
+test "seed = top 53 bits of one ai-stream draw per open" { checkAiSeeds() }
+test "AC4 expiry emits ai_fallback expired exactly at expires_tick" { checkAiExpiry() }
+test "ai_cancel closes once; unknown requests refused ai_unknown_req" { checkAiCancel() }
+test "record stays unsupported until AI.3, committed or not" { checkAiRecordUnsupported() }
+test "AC5 AI intents never touch ship, journey, ledger or non-ai streams" { checkAiNeverTouchesJourney() }

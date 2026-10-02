@@ -11,7 +11,7 @@ ai-test: strict-ai   ## AI foundation checks that run without a GPU window or a 
 # AC7 (part): the pure marker grammar runs entirely on the bytecode VM and prints
 # byte for byte what the interpreter prints; its last line is markers-ok. The
 # emotion list it prints must equal the keys of data/ai/emotion_styles.json, in order.
-strict-ai:         ## AI pure modules on the strict VM == interpreter (markersVm)
+strict-ai:         ## AI pure modules on the strict VM == interpreter (markersVm, aiVm)
 	@mkdir -p $(SCRATCH)
 	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry markersVm --args-json 0 sim/markers_test.ail > $(SCRATCH)/markers-vm.txt
 	@$(AILANG) run --quiet --package-dir sim --entry markersVm --args-json 0 sim/markers_test.ail > $(SCRATCH)/markers-interp.txt
@@ -20,6 +20,11 @@ strict-ai:         ## AI pure modules on the strict VM == interpreter (markersVm
 	@want=$$(sed -n 's/^emotions //p' $(SCRATCH)/markers-vm.txt); \
 	got=$$(python3 -c "import json; d=json.load(open('data/ai/emotion_styles.json')); assert all(isinstance(v, str) and v.strip() for v in d.values()); print(','.join(d))"); \
 	echo "emotion_styles.json keys: $$got"; [ -n "$$want" ] && [ "$$got" = "$$want" ]
+	@# aiVm (AI.2): open, cancel, expiry, ids and seeds over a scripted 2.1 session; last line ai-ok
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry aiVm --args-json 0 sim/ai_test.ail > $(SCRATCH)/ai-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry aiVm --args-json 0 sim/ai_test.ail > $(SCRATCH)/ai-interp.txt
+	@cmp $(SCRATCH)/ai-vm.txt $(SCRATCH)/ai-interp.txt && test "$$(tail -1 $(SCRATCH)/ai-vm.txt)" = "ai-ok" && \
+	  echo "strict aiVm: $$(tail -1 $(SCRATCH)/ai-vm.txt), $$(wc -l < $(SCRATCH)/ai-vm.txt | tr -d ' ') lines, digest $$(shasum -a 256 $(SCRATCH)/ai-vm.txt | cut -c1-16) (strict VM = interpreter)"
 
 # AI.1 mutation check: each mutant of sim/markers.ail, applied to a scratch copy
 # of sim/, must fail its named test. A mutant whose anchor no longer matches fails

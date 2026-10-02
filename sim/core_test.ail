@@ -2,7 +2,7 @@ module stapledons/sim/core_test
 
 import ./core (Ship, initShip, step, turn, position, scriptedOffAxis, beta,
   World, Params, Ledger, Journey, Idle, Planned, Committed, Arrived, Plan, Commitment, ShipPhase, AtRest, Boosting, Cruising, Braking,
-  Intent, IPlan, ICommit, IThrust, IHeading, ICancel, IRecord, IDraw, IEcho, Target, PlanReq, Refusal, Event, Crossing, Residuals, TickInput, Ticked,
+  Intent, IPlan, ICommit, IThrust, IHeading, ICancel, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, Target, PlanReq, Refusal, Event, Crossing, Residuals, TickInput, Ticked,
   PlanView, JourneyView, journeyView, minutesPerYear, arrivalResiduals,
   defaultParams, newWorld, tick, derivePhase, phaseName, scenarioError, restTolerance, availableKgStart)
 import ./rng (Rng, Stream, SJourney, SCrew, SEvents, SGalaxy, SAi, SNews, value, top53, zeroRng)
@@ -351,13 +351,24 @@ pure func plAllRefused(c: World, xs: [Intent]) -> bool = match xs {
   }
 }
 pure func checkCommittedRefusesAll() -> bool {
+  -- D-20 (2026-10-02): every journey intent is refused `committed`; the AI
+  -- intents are accepted and leave the flight exactly as the autopilot alone
+  -- does. Index 7 is the record: `unsupported` everywhere until AI.3.
+  -- (head and rest matched separately: `a :: b :: _` is evaluator-only on the strict VM, ailang#1505)
   let c = plCommittedWorld();
-  let all = tick(c, {dtau: 0.25, intents: plEveryIntent()});
+  let aiOpen = IAiOpen({kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: []});
+  let aiIntents = [aiOpen, IAiCancel({req: "1", reason: "offline"})];
+  let journeyIntents = [plCruise(plAcen(), phi09()), plFlip(plAcen(), 1.0), ICommit(1), ICommit(2), ICancel, IThrust(1.0),
+    IHeading({x: 0.0, y: 1.0, z: 0.0}), IDraw(SNews), IEcho({target: plAcen(), cruisePhi: 1.0, flipG: None})];
+  let all = tick(c, {dtau: 0.25, intents: plEveryIntent() ++ aiIntents});
   let alone = tick(c, {dtau: 0.25, intents: []}).world;
-  plCommitted(c.journey) && plAllRefused(c, plEveryIntent()) &&
-  refusalsAre(all.refused, ["0:committed", "1:committed", "2:committed", "3:committed", "4:committed", "5:committed", "6:committed", "7:committed", "8:committed", "9:committed"]) &&
+  let opened = tick(c, {dtau: 0.25, intents: [aiOpen]});
+  plCommitted(c.journey) && plAllRefused(c, journeyIntents) &&
+  refusalsAre(all.refused, ["0:committed", "1:committed", "2:committed", "3:committed", "4:committed", "5:committed", "6:committed", "7:unsupported", "8:committed", "9:committed"]) &&
+  (match all.events { a :: rest => a.kind == "ai_request" && (match rest { b :: _ => b.kind == "ai_fallback", _ => false }), _ => false }) && all.world.ai.lastReq == 1 && all.world.rng.ai == 1 &&
+  refusalsAre(opened.refused, []) && opened.world.ai.lastReq == 1 && plSameCommit(c, opened.world) && plSameFlight(opened.world, alone) &&
   plSameCommit(c, all.world) && plSameFlight(all.world, alone) && all.world.ship.phase == Cruising && all.world.tick == c.tick + 1 &&
-  all.world.rng.news == 0
+  all.world.rng.news == 0 && all.world.rng.journey == 0
 }
 -- Commit: the at-rest turn to the plan heading, a committed event, tau0/t0
 -- at the commit (a dtau 0 tick: the autopilot has not flown yet).
@@ -677,7 +688,7 @@ test "AC2 plan falls back to flip-and-burn (rows 9, 4)" { checkPlanFallback() }
 test "AC3 plan readouts equal the readout table and derived fields" { checkPlanReadouts() }
 test "AC4 cruise range refused out_of_range, both ends inclusive" { checkCruiseRange() }
 test "AC4 flip_g, thrust, heading are diag only" { checkDiagOnly() }
-test "AC7 committed world refuses every intent kind" { checkCommittedRefusesAll() }
+test "AC7 committed world refuses every journey intent" { checkCommittedRefusesAll() }
 test "commit turns to the plan heading and holds position" { checkCommitTurns() }
 test "commit while moving refused moving" { checkCommitMoving() }
 test "stale plan id refused stale_plan" { checkStalePlan() }

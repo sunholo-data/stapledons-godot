@@ -1,0 +1,97 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.2",
+  "pr": 56,
+  "branch": "sprint/ai2-protocol",
+  "evaluated_commit": "68e8987",
+  "evaluation_round": 1,
+  "evaluator": "independent agent (not the executor); ailang v0.51.0 (runtime/bin/ailang), arm64; fresh worktree from origin/sprint/ai2-protocol",
+  "result": "pass",
+  "score": 96,
+  "max_score": 100,
+  "breakdown": {
+    "tests_pass": {
+      "score": 20,
+      "max": 20,
+      "notes": "make test AILANG=$A green in the fresh worktree (no make error, no failing test); cd sim && $A test --package . : 109 tests, 109 passed; make strict-ai: markersVm digest 96e6505d77f95e50 and aiVm ai-ok, 11 lines, digest 83e67fe295637702 (matches the PR), strict VM = interpreter; make replay: 5 cases identical (alpha_cen, diag_thrust600, godot_map_voyage, offaxis_v11_equiv, session10k); CI on the PR green (run 37030199174, 11m13s)."
+    },
+    "lint_clean": {
+      "score": 10,
+      "max": 10,
+      "notes": "ailang check --package sim runs inside make sim; no warnings besides the known CACHE_WRITE_FAILED/ARTIFACT_TOO_LARGE flood (already filed as DX by the executor). No Python added. sim/ai.ail is 178 lines; the largest touched file (core_test.ail) is 705 lines."
+    },
+    "acceptance_criteria": {
+      "score": 30,
+      "max": 30,
+      "notes": "All 9 criteria in the sprint JSON verified: AC2 checkAiCodecs + checkNoWireChange20; AC3 part checkAiOpenRefusals; AC4 part checkAiIds, checkAiExpiry (plus checkAiSeeds, checkAiCancel); AC5 checkAiNeverTouchesJourney + rewritten checkCommittedRefusesAll (test renamed 'AC7 committed world refuses every journey intent'); AC7 part make strict-ai aiVm; make replay green with git diff origin/main -- tests/replays/ empty (0 lines); ! grep -nE 'Committed.*=> *(Idle|Planned)' sim/core.ail clean; M2 doc AC7 row (:290) and reason table (:601) amended with 'narrowed to every journey intent by D-20, 2026-10-02'; make test green."
+    },
+    "code_quality": {
+      "score": 14,
+      "max": 15,
+      "notes": "sim/ai.ail is pure (imports std/option, std/json type, std/string, std/math, ./rng only), runs on the strict VM, and is reached only through core.tick. AiStep returns {ai, rng, refusal, events} and aiStep copies exactly those into Pending, so by construction no AI intent can reach ship, journey, thrust, lastPlanId or ledger (also tested over the wire in five world states, and by my mutation M2). refuseWhileCommitted: 11 arms, one per constructor, no wildcard (grep verified). ailang#1505 is OPEN (filed 2026-10-02) and cited at the workaround site (core_test.ail:357). -1: refusal precedence when the queue is full is not pinned by any test (my mutant M10 survived), and the `emotions` list is copied unchecked for duplicates (['neutral','neutral'] accepted, probe). Minor duplication: count() in ai.ail and len() in protocol.ail."
+    },
+    "documentation": {
+      "score": 12,
+      "max": 15,
+      "notes": "Sprint JSON milestone filled (passes, dates, actual_loc, detailed notes), sprint-plan status updated, PR body accurate and complete, core.ail state-machine comments and M2 doc AC7 row/reason table amended, M4 doc wording checked (fits, unchanged). -3: CHANGELOG.md untouched (landing step per CLAUDE.md, small deduction as for AI.1); design_docs/implemented/r1/m2-journey-core.md:503-505 still reads 'every intent kind against a Committed world ... refused committed' (not in the plan's two anchors, but now stale); sprint JSON notes say 'sim 95/95' while the suite is 109/109 (the PR body is right)."
+    },
+    "design_fidelity": {
+      "score": 10,
+      "max": 10,
+      "notes": "Matches design (a1) and the AI.2 plan: intents ai_open/ai_cancel with the 7 reasons; events ai_request/ai_accepted(text,media)/ai_fallback; the design's ai_request example reproduced byte for byte in a test; refusal table order ai_kind, ai_bad_key, ai_stale, ai_too_many with diag_only for probe; entity-id regex by hand-written scan; ids lastReq+1 as decimal strings, never reused; seed = top53 of one stream-5 draw per open (refusals and closes draw none); expiresTick = openedTick + ai_ttl_ticks, fired by the tick that reaches it, after intents (cancel at the expiry tick wins); params 8 (1-64) and 3600 (1-1e6) validated as M2's; new_game.ai_core a 64-hex sha256 landing in ai.core; commit rule per D-20. The three items the design places in AI.3 (record validation, full-state ai section, hello minor 1) are deferred exactly as the plan's tasks 5 and 7 require."
+    }
+  },
+  "hard_fails": [],
+  "automated_checks": {
+    "make_test": "green (fresh worktree, AILANG=runtime/bin/ailang v0.51.0 arm64); sim 109/109",
+    "make_strict_ai": "markersVm 36 lines digest 96e6505d77f95e50; aiVm ai-ok 11 lines digest 83e67fe295637702; strict VM = interpreter",
+    "make_replay": "5 cases identical; git diff origin/main -- tests/replays/ is empty",
+    "committed_grep": "! grep -nE 'Committed.*=> *(Idle|Planned)' sim/core.ail passes",
+    "ci": "success (run 37030199174)"
+  },
+  "evaluator_verifications": {
+    "ai_never_alters_journey_ship_clock_ledger": "By construction (aiStep copies only ai, rng, refusal, events into Pending) and by test (checkAiNeverTouchesJourney compares encoded clock/ship/journey/ledger sections, non-AI events, the five non-ai stream counters and lastPlanId across idle, diag-thrusting, planned, committed and mid-flight worlds, then a further plain tick). My mutant M2 (AI step sets thrust) was killed by that test. My probe session (ai_open while committed at tick 7, dtau 0.25) shows ai_request as the first event, the phase crossings unchanged and only cancel/record/probe refused.",
+    "every_journey_intent_refused_committed": "refuseWhileCommitted has 11 arms (IPlan, ICommit, ICancel, IThrust, IHeading, IDraw, IEcho refused 'committed'; IRecord, IAiOpen, IAiCancel delegate to sim/ai.ail), no '_ =>' arm (grep). checkCommittedRefusesAll sends all 12 constructors in one tick and asserts exactly 10 refusals (0-6, 8-9 committed; 7 unsupported for the record) plus two accepted AI intents with lastReq 1 and rng.ai 1. My mutant M16 (ICancel => a) was killed.",
+    "request_ids_and_seeds": "ids = lastReq + 1 only on an accepted open; refusals, cancels and expiries never reuse (checkAiIds across ticks; my M19 'count(open)+1' killed). Seeds: draw(seed, rng, SAi) with SAi = stream id 5 (rng.ail:46), top53, one per accepted open, counter persisted in World.rng.ai on both tick branches (checkAiSeeds asserts the n-th request equals top53(value(seed, SAi, n)) and the other five counters stay 0; my M3 'ai: w.ai' on the committed branch was killed by AC7 and by checkAiRecordUnsupported). Probe: seeds 8226338353261029, 5652498248139907, 142673071410728 (< 2^53), rng.ai 1,2,3.",
+    "expiry_exact_to_the_tick": "expire(w.tick + 1, ...) after the intents; a request opened at tick t with ttl n carries expires_tick t+n and is closed with ai_fallback{expired} by tick t+n, not t+n-1 (checkAiExpiry; my M1 '<= at + 1' and M18 'w.tick + 2' both killed). Probe with ttl 2: req 2 opened at tick 2, expired at tick 4; req 1 cancelled at its expiry tick 3 reports timeout, not expired.",
+    "no_wire_change_for_2_0": "helloMsg minor 0 (my M4 killed by three tests); AI params absent from the new_game echo; no 'ai' key in the full state or in ticks without AI intents (my M5 'always Some' killed by checkNoWireChange20); goldens byte-identical across all 5 replay cases including session10k.",
+    "codecs_round_trip": "roundTripInput over aiInputs (full ai_open with escaped/unicode context, all 7 cancel reasons, new_game with ai_core and both AI params) and roundTripState over aiStates (two ai_request shapes, text/media ai_accepted with a nested JSON descriptor, two ai_fallback, an ai section with maxInt ids); 17 malformed shapes stay bad_intent/bad_game. Context keys are escaped via q() = std/json encode; my probe with keys containing quotes and backslashes produced valid JSON on both runtimes (all lines parsed by python json)."
+  },
+  "adversarial_probes": {
+    "session": "13-line 2.1 session through sim/ship.ail on --bytecode and the interpreter: byte-identical output; every line valid JSON",
+    "findings": "duplicate entries in `emotions` are accepted and echoed (['neutral','neutral']); age_stage 1e400 makes the whole input line bad_intent (M2 rejection model, as designed); ai_core lands in ai.core and is first printed with the first ai section; a cancel of an id opened in the same tick closes it; an ai_open while committed is accepted and ordered before the flight's phase events",
+    "strict_vm_note": "ship.ail cannot run under --strict-bytecode (std/io.readLine is evaluator-only), so the strict proof is aiVm/protocolVm as the plan intends"
+  },
+  "own_mutations": {
+    "run": 19,
+    "killed": 18,
+    "survived": [
+      "M10 sim/ai.ail:133 — reorder firstError so ai_too_many is checked before ai_kind/ai_bad_key/ai_stale: no test sends an invalid open against a full queue, so the design's table order under ai_too_many is unpinned (coverage gap, code is in design order)"
+    ],
+    "killed": "expiry one tick early (M1); AI step sets thrust (M2); ai state not persisted on the committed branch (M3); hello minor 1 (M4); ai section always printed (M5); context limit 9 (M6); entity id 33 chars (M7); fractional age_stage (M8); image variant '-' (M9); cancel reason not carried (M11); portrait without emotion (M12); voice never stale (M13); probe outside diag (M14); news max_chars 280 (M15); committed cancel silently ignored (M16); ai_core unchecked (M17); expiry evaluated at tick+2 (M18); ids reused after close (M19)",
+    "method": "scratch copy of sim/ per mutant (as mk/ai.mk markers-mutants), perl anchor substitution (die on miss), ailang test --no-color on the relevant test file. Note: ailang test with two file arguments runs only the first (DX filed, see notes), so kill lists name tests from one file each; M3 was re-run on core_test.ail alone and also fails AC7 there."
+  },
+  "deviation_verdicts": {
+    "constraint_values_280_200_600_no_numerals_all8": "ACCEPT for AI.2, CONFIRM WITH MARK. The sim must emit constraints and the design gives only the 280 example; the values are centralised (maxCharsFor, openRequest) and tested, so changing them is a one-line edit plus a test. Points for Mark: (1) no_numerals is true for every purpose including archive and news, where dates and distances may be wanted; (2) 200 chars for an M4 arrival news item may be tight; (3) emotions defaults to all 8 when the relay omits the list, whereas design (b) says the request should list the emotions the person actually has in the layers, so the relay must send it explicitly for portrait fallback to mean anything.",
+    "cache_key_variant_0_images_dash_text_voice": "ACCEPT, with an AI.3 note. It matches the design's own ai_request example ('variant':'-' for text). Design (a4) defines the stored variant for voice/text as 16 hex of a sha256 that only exists after generation, so the request key cannot carry it; AI.3's ai_descriptor check ('its key != the request's key') must therefore compare all fields except variant for text/voice, or the first real record will be refused.",
+    "line_req_handling": "ACCEPT. Voice without line_req -> ai_stale (it is 'not among the last 64 accepted lines'); line_req on a non-voice kind -> ai_bad_key. Both tested; both are the stricter reading and keep the relay honest.",
+    "record_unsupported_until_AI3": "ACCEPT. Plan task 7 keeps IRecord unsupported; the honest consequence is that checkCommittedRefusesAll expects 7:unsupported rather than an acceptance. Note the M2 doc amendment already says record is 'accepted while committed'; true once AI.3 lands, so AI.3 must not slip without revisiting that sentence.",
+    "ai_section_only_on_change": "ACCEPT. Follows M2's change-set rule (whole section, present when changed) and is what keeps 2.0 logs byte-identical; full states gain it with the AI.3 minor bump. Transitional quirk: a client that sends AI intents before AI.3 gets an ai key in a minor-0 stream; no client does.",
+    "toml_export_addition": "ACCEPT. Required to import ./ai; one-line change, merges cleanly with AI.1's markers entry.",
+    "third_core_test_hunk": "ACCEPT. The import line for IAiOpen/IAiCancel; unavoidable and trivial.",
+    "ai1_findings_deferred_to_AI3": "ACCEPT. Invisible-only segments and bounding the body by ai_length before parseLine are record-validation concerns, which is AI.3 scope; they are recorded in the sprint JSON notes so they cannot be lost.",
+    "ailang_1505_workaround": "ACCEPT. Issue confirmed OPEN (sunholo-data/ailang#1505, filed 2026-10-02); the workaround (match head, then rest) is four tokens and cited at the site."
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "sim/ai.ail:133 refusal precedence under a full queue is untested (mutant M10 survived): add one case to checkAiOpenRefusals sending an invalid open (e.g. kind 'warp') against `full` and expecting ai_kind, so the design's table order stays pinned.",
+    "sim/ai.ail:139 `emotions` is copied unchecked for duplicates; ['neutral','neutral'] is accepted and echoed in constraints. Either dedupe or refuse ai_bad_key (AI.3 can fold it into record validation of constraints).",
+    "design_docs/implemented/r1/m2-journey-core.md:503-505 still says every intent kind against a Committed world is refused committed; amend like :290/:601 (the :28 pillar-table sentence 'enumerating every intent' remains true).",
+    ".ailang/state/sprints/sprint_R1-AI-FOUNDATION.json AI.2 notes say 'sim 95/95'; the suite is 109/109 (the PR body has it right).",
+    "AI.3 design point from the variant convention: the request key carries variant '-' for text/voice while the stored key (design (a4)) carries a sha-derived variant; the ai_descriptor key-equality check must exclude variant for those kinds.",
+    "Portrait requires `emotion` (ai_bad_key when absent): sensible and consistent with (a4), but not stated in the design's ai_bad_key row; a one-clause addition to the design table would make it explicit.",
+    "CHANGELOG.md has no AI.2 entry; add at landing with AI.1's.",
+    "DX (AILANG, filed as inbox_1790957761243_b8519f4e): `ailang test FILE1 FILE2` silently runs only FILE1 on v0.51.0; mk/ai.mk mutants pass one file so they are unaffected."
+  ],
+  "evaluator_notes": "Merge-ready from the evaluator's side; do not merge until Mark confirms the constraint values (or accepts them as AI.3 inputs). Probe files and mutant scratch copies were written to the session scratchpad only and are not part of the branch."
+}
