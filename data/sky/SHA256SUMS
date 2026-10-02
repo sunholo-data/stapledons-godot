@@ -2,12 +2,13 @@
 # Bucket (D-18): https://storage.googleapis.com/stapledons-voyage-assets/sky/<sha256>.<ext> (public read; make sky-assets / sky-publish).
 # Format: <sha256> <kind> <path>. kind input = a pipeline input, texture = a generated texture that ships.
 # hip_v7.tsv is pinned on its data rows (grep -v '^#'): VizieR stamps the query date into the header.
-# Generated 2026-10-02 on macOS arm64: destar = tools/m14a_destar.py with the Makefile's pinned uv deps
-# (two runs byte-identical); sky model = make sky-model on ailang v0.51.0 + Godot 4.7.2 (two runs byte-identical).
+# Generated 2026-10-02 on macOS arm64: destar = make destar (sim/tools/destar.ail + tools/destar_io.gd, #43) and
+# sky model = make sky-model, both on ailang v0.51.0 + Godot 4.7.2 (make sky-regen twice from clean: byte-identical).
+# cns5.csv is sim/tools/extract.ail on CNS5 cns5.dat (download_stars.sh quick); gcns.csv is extract.ail on table1c.dat.
 c2e753702141ddbb913403c4d3f31b0e656453aa5d4343d1952cceac410fe3c9 input data/raw/background/noirlab_10k.tif
 de666e6eb73acd27d824104c62a1f11b01138e1501b3ac99d9b71a2e049d50e0 input data/raw/hip_v7.tsv
 299f7c15025780df96d5f73fc299e89c81b76fe3de2231981d92ffde11f20ab1 input data/raw/table1c.dat.gz
 e3c489924313d9aa4bfbccffdaad27544a9f11c44adbc6dfdba5e183ecaec206 input data/raw/gcns.csv
-dee67187c8f6ba9bf95c0e0d32b297fb2c291f8c38986030d27c6728eec49483 input data/starmap/stars.json
-748b2b8bf2884b567cdd47d770ff1a7564ba36b897380b7196120c9d78449055 texture data/raw/background/noirlab_10k_destarred.png
-1d288dc26c2a48d8338fa31d1fa591d8170587390b93fb0f687a6220a4ca513c texture data/raw/background/noirlab_10k_skymodel.png
+0f9225da52e4b8a9a4828774d03aa3dcb54a0ff3b08e94e5e5befddfbb3acea5 input data/raw/cns5.csv
+54fdf47747123bc71af84e594a95bcd258f93c45950aeb922baa3b4b13a3d09b texture data/raw/background/noirlab_10k_destarred.png
+0821a9cf90f9f83378dca74f9c0b2a447696d24774cdfc59eaa7f8781685ddff texture data/raw/background/noirlab_10k_skymodel.png

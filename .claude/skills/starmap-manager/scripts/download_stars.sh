@@ -6,7 +6,7 @@
 #   medium - GCNS selected objects (VizieR J/A+A/649/A6, table1c.dat.gz),
 #            331,312 records, 760 B uncompressed
 #   large  - the same GCNS bytes as medium; the tier difference is made by
-#            tools/extract.py + sim/tools/catalogue.ail, not by the download
+#            sim/tools/extract.ail + sim/tools/catalogue.ail, not by the download
 #   hip    - Hipparcos V < 7.5 for the sky-background star removal (D-10,
 #            M1.4): data/raw/hip_v7.tsv, VizieR ASU-TSV of I/239/hip_main,
 #            columns HIP, Vmag, _Glon, _Glat (VizieR-computed galactic l, b,

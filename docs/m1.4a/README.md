@@ -1,7 +1,7 @@
 # M1.4a background spike: which all-sky panorama?
 
 Attended spike, 2026-10-01. **Decided: NOIRLab, Option A** (D-10, ledger commit `e9d35c5`).
-Raw sources live in `data/raw/background/` (gitignored). The crops come from `tools/m14a_crops.py`.
+Raw sources live in `data/raw/background/` (gitignored). The comparison crops were cut with a throwaway script, since deleted under the Python policy.
 Every crop uses the same galactic window: 40° × 20°, with l increasing to the left.
 
 | Candidate | Source | Native size | Licence | Read |
@@ -19,24 +19,38 @@ Every crop uses the same galactic window: 40° × 20°, with l increasing to the
 | Crux / Carina / Coalsack | [noirlab](noirlab_crux_carina.jpg) | [eso](eso_crux_carina.jpg) | [gaia](gaia_crux_carina.jpg) |
 | Orion | [noirlab](noirlab_orion.jpg) | [eso](eso_orion.jpg) | [gaia](gaia_orion.jpg) |
 
-## Star removal (Option A), spike result
+## Star removal (Option A)
 
-`tools/m14a_destar.py` (`uv run --with pillow --with numpy --with scipy --with opencv-python-headless python tools/m14a_destar.py`)
+**Now AILANG** (`sim/tools/destar.ail`, `make destar`, 2026-10-02), with Godot headless doing the image I/O
+(`tools/destar_io.gd`). It replaces the Python spike, whose numbers are kept below for comparison. The AILANG version is
+catalogue-driven and local, where the spike was whole-image:
+- detection, background and noise come from samples around each catalogue star (≥ 1.5 halo radii out);
+- a clipped core (any channel ≥ 254) counts as a detection;
+- masks use the same per-V halo table;
+- the fill is inverse-distance interpolation from the clean ring plus donor grain;
+- each pixel belongs to the largest disc that contains it.
 
+| | Spike (Python, whole-image) | `destar.ail` |
+|---|---|---|
+| Matched V < 2 | 100% | 49/49 |
+| Matched V 2–6 | about 95% | 97–99% |
+| Matched V 6–7 / 7–8 | 94% / 74% | 96% / 74% |
+| Masked | 7.8% of pixels | 8.3% (24,444 sources) |
+| Runtime | about 1 min | 13–16 min on the VM |
+
+The figures come from `data/sky/destar_report.json`. Before/after crops (top: original; bottom: `destar.ail`):
+[α Cen / Hadar](destar_ailang_alpha_cen.jpg) · [Sirius](destar_ailang_sirius.jpg) · [Orion](destar_ailang_orion.jpg). Known residual: fills in the dense band are smoother than the spike's,
+because fewer donor patches there are clean enough to lend grain.
+
+Spike method, for reference:
 - **Registration:** the panorama is plain galactic equirectangular (l=0 at centre, l increasing to the left).
   The 25 brightest Hipparcos stars land within a median of 0.3/0.5 px (MAD 1.5/1.1 px) of their catalogue
-  positions, so no fit is needed (`tools/m14a_register.py`).
+  positions, so no fit is needed.
 - **Detection:** 904,494 point sources above 5σ, measured against a 30th-percentile background.
-- **Match:** catalogue = HIP V<7.5 + GCNS (G→V, Riello) + CNS5 (`data/starmap/stars.json`), matched by position
-  (3 px, wider for bright stars) and magnitude (±1.5 mag against a fitted zero point). 31,982 catalogue stars
-  matched 25,895 panorama sources. Completeness: V<2 100%, V 2–6 ~95%, V 6–7 94%, V 7–8 74%. Below V 8
-  the panorama stops resolving them, so they are already part of the diffuse light.
-- **Mask:** radius from a per-V halo table (isolated-star medians), not a per-star profile, because the profile
-  test swallowed the Carina nebula and M42. For V<2 the radius is the larger of the table and the measured halo.
-  7.8% of pixels are masked.
-- **Fill:** normalized-convolution background from unmasked pixels only, plus faint-star grain borrowed from
-  the nearest ≥80%-clean donor patch (clipped to ±18 DN so a donor can't carry in a star), with a feathered edge.
-- **Kept as pixels:** 878,599 unmatched sources, i.e. the distant stars beyond the point layers.
+- **Match:** catalogue = HIP V<7.5 + GCNS (G→V, Riello) + CNS5, matched by position and magnitude.
+  31,982 catalogue stars matched 25,895 panorama sources.
+- **Mask:** radius from a per-V halo table (isolated-star medians); 7.8% of pixels masked.
+- **Fill:** normalized-convolution background plus clipped donor grain, with a feathered edge.
 
 | View | File |
 |---|---|
@@ -81,8 +95,7 @@ Still open, each owned by a later milestone:
 
 ## Next
 
-1. Star removal is still the Python spike (`tools/m14a_destar.py`). An AILANG port of the detection, matching and
-   inpainting is a natural VM stress test, at 50M pixels.
+1. Star removal is ported to AILANG (`make destar`, above). Open: grain in the dense-band fills.
 2. M1.5: photometric exposure calibration of the background against the stars.
 
 ## Does travel change the background? (parallax)

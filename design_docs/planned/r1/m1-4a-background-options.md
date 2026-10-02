@@ -23,7 +23,7 @@ before it was needed.
 | Residual crops | `docs/m1.4a/destar_*.jpg` (original / mask / result), `destar_1to1_*.jpg` |
 | Decision recorded in the design doc | Open question 1 and §M1.4 "M1.4a outcome"; ledger D-10 |
 
-## Star-removal numbers (`tools/m14a_destar.py`)
+## Star-removal numbers (the Python spike; the pipeline is now `sim/tools/destar.ail`, see `docs/m1.4a/README.md`)
 
 - Registration: median offset 0.3/0.5 px over the 25 brightest HIP stars, with no fit.
 - 904,494 sources detected; 31,982 catalogue stars (HIP V<7.5, GCNS, CNS5) matched to 25,895 sources.

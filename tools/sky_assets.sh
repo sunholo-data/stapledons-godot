@@ -11,7 +11,7 @@
 # Layout: gs://$SKY_BUCKET/sky/<sha256>.<ext>, the sha256 being the pin in data/sky/SHA256SUMS.
 # Objects are immutable (content-addressed, uploaded --no-clobber, Cache-Control immutable).
 # hip_v7.tsv is pinned on its data rows (VizieR stamps the query date into the "#" header), so the
-# cached object is the header-less rows file; tools/m14a_destar.py skips non-data lines either way.
+# cached object is the header-less rows file; sim/tools/destar.ail skips non-data lines either way.
 # Bucket setup: infra/gcp/setup.sh.
 set -eu
 

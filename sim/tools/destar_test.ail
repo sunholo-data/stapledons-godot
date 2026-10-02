@@ -1,0 +1,146 @@
+module stapledons/sim/tools/destar_test
+
+-- Tests for sim/tools/destar.ail on a synthetic 160 x 80 panorama built in pure
+-- code: a textured background, a catalogued star (must be removed), an
+-- uncatalogued star (must stay as pixels) and a catalogue entry over empty sky
+-- (must not match). `make destar-test`: strict VM = interpreter.
+import ./destar (Img, Cand, Disc, lum, chan, lbToPx, hipCands, csvCands, detect, plan, haloRadius,
+  buildIndex, masked, maskedOther, dropContained, fillDisc, tolFor)
+import std/string (concat, join)
+import std/list (map, filter, foldl, flatMap, reverse)
+import std/math (exp, sqrt, intToFloat, floatToInt, floor)
+import std/bytes (fromInts)
+import pkg/sunholo/relativity/photometry (vFromG)
+
+pure func near(a: float, b: float, tol: float) -> bool = a - b <= tol && b - a <= tol
+pure func steps(lo: int, hi: int) -> [int] = down(hi, lo, [])
+pure func down(i: int, lo: int, acc: [int]) -> [int] = if i < lo then acc else down(i - 1, lo, i :: acc)
+
+pure func w() -> int = 520
+pure func h() -> int = 280
+
+-- background 40 DN with a deterministic +-4 grain, plus Gaussian stars (sigma 1.3 px)
+pure func star(x: int, y: int, sx: float, sy: float, amp: float) -> float {
+  let dx = intToFloat(x) + 0.5 - sx; let dy = intToFloat(y) + 0.5 - sy;
+  amp * exp(0.0 - (dx * dx + dy * dy) / (2.0 * 1.3 * 1.3))
+}
+-- a saturated V = -1 star like Sirius in the photo: core clipped at 255, a wide
+-- halo (sigma 40 px, measured on the photo) that fills most of a 2.5-halo-radius background box
+pure func halo(x: int, y: int) -> float {
+  let dx = intToFloat(x) + 0.5 - 390.5; let dy = intToFloat(y) + 0.5 - 140.5;
+  600.0 * exp(0.0 - (dx * dx + dy * dy) / (2.0 * 40.0 * 40.0))
+}
+pure func value(x: int, y: int) -> int {
+  let v = 40.0 + intToFloat((x * 7 + y * 13) % 9 - 4) + star(x, y, 50.5, 40.5, 190.0) + star(x, y, 110.5, 30.5, 150.0) + halo(x, y);
+  if v > 255.0 then 255 else floatToInt(floor(v + 0.5))
+}
+export pure func image() -> Img =
+  { b: fromInts(flatMap(\y. flatMap(\x. { let v = value(x, y); [v, v, v] }, steps(0, w() - 1)), steps(0, h() - 1))), w: w(), h: h() }
+
+pure func catStar() -> Cand = { v: 3.0, x: 50.5, y: 40.5, src: 0 }
+pure func emptySky() -> Cand = { v: 5.0, x: 130.5, y: 180.5, src: 1 }
+pure func brightStar() -> Cand = { v: 0.0 - 1.0, x: 390.5, y: 140.5, src: 0 }
+
+export pure func checkPixels(img: Img) -> bool =
+  near(lum(img, 50, 40), 230.0, 6.0) && near(lum(img, 5, 5), 40.0, 4.5) && chan(img, 50, 0 - 1, 0) == 0.0 &&
+  chan(img, 0 - 1, 5, 0) == chan(img, 519, 5, 0) && near(lum(img, 390, 140), 255.0, 1.0e-9)
+
+export pure func checkProjection(img: Img) -> bool =
+  (match lbToPx(img, 0.0, 0.0) { (x, y) => near(x, 260.0, 1.0e-9) && near(y, 140.0, 1.0e-9) }) &&
+  (match lbToPx(img, 90.0, 0.0) { (x, _) => near(x, 130.0, 1.0e-9) }) &&
+  (match lbToPx(img, 270.0, 0.0 - 45.0) { (x, y) => near(x, 390.0, 1.0e-9) && near(y, 210.0, 1.0e-9) })
+
+-- TSV (HIP) and CSV (extract.ail) candidates: direction, V from the package, the V < 9.5 cut
+export pure func checkParsers(img: Img) -> bool {
+  let hip = hipCands(img, "HIP\tVmag\t_Glon\t_Glat\tB-V\tPlx\n \tmag\tdeg\tdeg\tmag\tmas\n71683\t-0.01\t315.74\t-0.68\t0.71\t742.12\n");
+  let csv = csvCands(img, 1, "id,x,y,z,G,BPRP,wd\na,10.0,0.0,0.0,5.0,0.8,0\nfaint,10.0,0.0,0.0,12.0,0.8,0\nnocol,0.0,10.0,0.0,6.0,,0\n");
+  (match hip { [c] => near(c.v, 0.0 - 0.01, 1.0e-9) && c.src == 0, _ => false }) &&
+  (match csv { [b, a] => near(a.x, 260.0, 1.0e-9) && near(a.v, vFromG(5.0, 0.8), 1.0e-12) && near(b.x, 130.0, 1.0e-9) && b.v == 6.0, _ => false })
+}
+
+export pure func checkDetect(img: Img) -> bool {
+  let p = detect(img, catStar());
+  let q = detect(img, emptySky());
+  let s = detect(img, brightStar());
+  p.found && p.px == 50 && p.py == 40 && near(p.bg, 40.0, 5.0) && !q.found && near(tolFor(3.0), 4.5, 1.0e-12) &&
+  s.found && near(intToFloat(s.px), 390.0, 2.0) && near(intToFloat(s.py), 140.0, 2.0)
+}
+
+-- a bright star whose core rolls off at 250 (not clipped) on a noisy band (sigma ~45,
+-- so 5 sigma > its 170 DN peak), like eps Sco on the photo: a V < 4.5 catalogue star is
+-- found by its near-clipped core; a fainter one is not
+pure func noisy(x: int, y: int) -> int {
+  let dx = intToFloat(x) + 0.5 - 50.5; let dy = intToFloat(y) + 0.5 - 50.5;
+  let s = star(x, y, 50.5, 50.5, 170.0);
+  if dx * dx + dy * dy < 9.0 then floatToInt(floor(80.0 + s + 0.5))
+  else floatToInt(floor(80.0 + intToFloat((x * 37 + y * 91) % 121 - 60) + s + 0.5))
+}
+pure func noisyImage() -> Img =
+  { b: fromInts(flatMap(\y. flatMap(\x. { let v = noisy(x, y); [v, v, v] }, steps(0, 99)), steps(0, 99))), w: 100, h: 100 }
+
+export pure func checkNearClip() -> bool {
+  let img = noisyImage();
+  let p = detect(img, { v: 2.3, x: 50.5, y: 50.5, src: 0 });
+  let q = detect(img, { v: 6.0, x: 50.5, y: 50.5, src: 0 });
+  near(lum(img, 50, 50), 250.0, 1.0e-9) && p.found && p.px == 50 && p.py == 50 && p.peak < 5.0 * p.sigma && !q.found
+}
+
+export pure func checkHalo() -> bool =
+  near(haloRadius(7.0), 2.5 * 1.15 + 1.5, 1.0e-12) && near(haloRadius(0.0 - 3.0), 27.0 * 1.15 + 1.5, 1.0e-12) &&
+  near(haloRadius(5.0), 8.5 * 1.15 + 1.5, 1.0e-12)
+
+-- plan + fill: one disc on the catalogued star; the patch restores background there
+-- and never touches the uncatalogued star
+export pure func checkFill(img: Img) -> bool {
+  let r = plan(img, [catStar(), emptySky(), brightStar()]);
+  match filter(\d. d.v > 0.0, r.discs) {
+    [d] => {
+      let ix = buildIndex(img, r.discs);
+      let recs = fillDisc(img, ix, d);
+      let pix = groups(recs);
+      let centre = filter(\p. match p { (x, y, _, _, _) => x == 50 && y == 40 }, pix);
+      masked(img, ix, 50, 40) && !masked(img, ix, 110, 30) && !masked(img, ix, 5, 5) &&
+      foldl(\ok p. ok && (match p { (x, y, _, _, _) => {
+          let dx = intToFloat(x) + 0.5 - d.x; let dy = intToFloat(y) + 0.5 - d.y;
+          sqrt(dx * dx + dy * dy) <= d.r + 1.0 && !(x == 110 && y == 30) } }), true, pix) &&
+      (match centre { [c] => match c { (_, _, rr, _, _) => near(intToFloat(rr), 40.0, 8.0) }, _ => false }) &&
+      r.matched == 2 && foldl(\n x. n + 1, 0, r.discs) == 2
+    },
+    _ => false
+  }
+}
+
+pure func groups(xs: [int]) -> [(int, int, int, int, int)] = reverse(groupsAcc(xs, []))
+pure func groupsAcc(xs: [int], acc: [(int, int, int, int, int)]) -> [(int, int, int, int, int)] = match xs {
+  [x0, x1, y0, y1, r, g, b, ...rest] => groupsAcc(rest, (x0 + 256 * x1, y0 + 256 * y1, r, g, b) :: acc),
+  _ => acc
+}
+
+-- overlaps: a disc inside a larger one is dropped; a contained disc with no clean ring
+-- emits nothing (never black); a soft edge never writes inside another disc
+pure func checkOverlap(img: Img) -> bool {
+  let big = { x: 390.5, y: 140.5, r: 40.0, v: 0.0 - 1.0 };
+  let inner = { x: 395.5, y: 140.5, r: 5.0, v: 6.0 };
+  let a = { x: 50.5, y: 40.5, r: 8.0, v: 3.0 };
+  let b = { x: 60.5, y: 40.5, r: 6.0, v: 5.0 };
+  let ix = buildIndex(img, [big, inner, a, b]);
+  let recsB = groups(fillDisc(img, ix, b));
+  (match dropContained(img, [big, inner, a, b]) { [d1, d2, d3] => d1.r == 40.0 && d2.r == 8.0 && d3.r == 6.0, _ => false }) &&
+  foldl(\n _. n + 1, 0, fillDisc(img, ix, inner)) == 0 &&
+  maskedOther(img, ix, b, 52, 40) && !maskedOther(img, ix, b, 64, 40) &&
+  foldl(\ok p. ok && (match p { (x, y, _, _, _) => {
+      let ax = intToFloat(x) + 0.5 - a.x; let ay = intToFloat(y) + 0.5 - a.y;
+      let bx = intToFloat(x) + 0.5 - b.x; let by = intToFloat(y) + 0.5 - b.y;
+      !(ax * ax + ay * ay <= a.r * a.r && bx * bx + by * by > b.r * b.r - 2.0 * b.r + 1.0) } }), true, recsB) &&
+  foldl(\n _. n + 1, 0, recsB) > 0
+}
+
+export pure func destarVm(n: int) -> string {
+  let img = image();
+  let bad = map(\c. match c { (name, _) => name }, filter(\c. match c { (_, ok) => !ok }, [
+    ("pixels", checkPixels(img)), ("projection", checkProjection(img)), ("parsers", checkParsers(img)),
+    ("detect", checkDetect(img)), ("halo", checkHalo()), ("nearclip", checkNearClip()), ("fill", checkFill(img)), ("overlap", checkOverlap(img))]));
+  match bad { [] => "destar-ok", _ => concat(["destar-BAD: ", join(",", bad)]) }
+}
+
+

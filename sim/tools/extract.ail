@@ -1,0 +1,160 @@
+module stapledons/sim/tools/extract
+
+-- Parse the raw VizieR star catalogues into the compact CSV that
+-- sim/tools/catalogue.ail consumes. No physics. AILANG port of the former
+-- tools/extract.py (CLAUDE.md "Python"); byte-identical output on both full
+-- catalogues was checked when it was ported (2026-10-02).
+--
+--   ailang run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
+--     --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' \
+--     sim/tools/extract.ail
+--
+-- Output columns: id,x,y,z,G,BPRP,wd
+--   id    Gaia source id verbatim as a string (CNS5 falls back to
+--         "CNS5:<designation>" when it has no Gaia id); never a float.
+--   x,y,z galactic Cartesian light years, Sun at the origin, +x towards the
+--         galactic centre (IAU ICRS -> galactic matrix). Distance =
+--         1000/plx pc x 3.261563777, plx in mas. Catalogue epoch, no proper motion.
+--   G     Gaia G, blank when absent.
+--   BPRP  BP - RP, blank unless BOTH bands are present (never defaulted).
+--   wd    1 for a GCNS white-dwarf candidate (WDprob > 0.5), else 0; CNS5 is always 0.
+-- Rows with a missing, non-finite or <= 0 parallax, or a missing RA/Dec, are
+-- skipped and counted. A non-empty input that yields zero rows writes nothing.
+--
+-- Byte columns (1-based, per the ReadMe files) are converted to 0-based
+-- half-open substrings below:
+--   J/A+A/670/A19 cns5.dat    Lrecl 761, 5909 records
+--   J/A+A/649/A6  table1c.dat Lrecl 760, 331312 records
+import std/string (substring, stringToFloat, trim, length, concat, join, split, intToStr, repeat)
+import std/list (foldl, reverse)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/math (sin, cos, floor, floatToInt, PI)
+import std/fs (readFile, writeFile)
+import std/io (println, exit)
+
+export type Row = { id: string, x: float, y: float, z: float, g: Option[float], bprp: Option[float], wd: int }
+export type Parsed = { rows: [Row], skipped: int }
+
+pure func lyPerPc() -> float = 3.261563777
+
+-- byte columns lo..hi, 1-based inclusive as the ReadMe writes them
+pure func bytes(line: string, lo: int, hi: int) -> string =
+  if length(line) < lo then "" else substring(line, lo - 1, if hi < length(line) then hi else length(line))
+
+-- a magnitude/angle/parallax field: None for blank, "-", unparseable or non-finite
+export pure func number(field: string) -> Option[float] {
+  let t = trim(field);
+  if t == "" || t == "-" then None else match stringToFloat(t) {
+    Some(v) => if v == v && v < 1.0e308 && v > 0.0 - 1.0e308 then Some(v) else None,
+    None => None
+  }
+}
+
+-- unit ICRS direction -> unit galactic direction (IAU rotation matrix rows)
+export pure func icrsToGalactic(raDeg: float, decDeg: float) -> (float, float, float) {
+  let ra = raDeg * PI() / 180.0;
+  let dec = decDeg * PI() / 180.0;
+  let vx = cos(dec) * cos(ra);
+  let vy = cos(dec) * sin(ra);
+  let vz = sin(dec);
+  ((0.0 - 0.0548755604) * vx + (0.0 - 0.8734370902) * vy + (0.0 - 0.4838350155) * vz,
+   0.4941094279 * vx + (0.0 - 0.4448296300) * vy + 0.7469822445 * vz,
+   (0.0 - 0.8676661490) * vx + (0.0 - 0.1980763734) * vy + 0.4559837762 * vz)
+}
+
+export pure func distanceLy(plx: Option[float]) -> Option[float] = match plx {
+  Some(p) => if p > 0.0 then Some(1000.0 / p * lyPerPc()) else None,
+  None => None
+}
+
+-- One level of constructor pattern at a time: the strict VM (v0.51.0) cannot bind
+-- variables inside nested patterns like (Some(a), Some(d)) (reported upstream).
+pure func diff(bp: Option[float], rp: Option[float]) -> Option[float] =
+  match bp { Some(b) => match rp { Some(r) => Some(b - r), None => None }, None => None }
+
+pure func row(ident: string, ra: Option[float], dec: Option[float], plx: Option[float],
+    g: Option[float], bp: Option[float], rp: Option[float], wd: int) -> Option[Row] =
+  match ra { None => None, Some(a) => match dec { None => None, Some(d) => match distanceLy(plx) { None => None,
+    Some(dist) => match icrsToGalactic(a, d) {
+      (ux, uy, uz) => Some({ id: ident, x: ux * dist, y: uy * dist, z: uz * dist, g: g, bprp: diff(bp, rp), wd: wd })
+    } } } }
+
+pure func cns5Row(line: string) -> Option[Row] {
+  let gaia = trim(bytes(line, 28, 46));
+  let desig = trim(bytes(line, 1, 4));
+  let ident = if gaia != "" && gaia != "-" then gaia else if desig != "" then concat(["CNS5:", desig]) else "";
+  row(ident, number(bytes(line, 55, 74)), number(bytes(line, 76, 98)), number(bytes(line, 130, 148)),
+    number(bytes(line, 362, 371)), number(bytes(line, 395, 404)), number(bytes(line, 428, 437)), 0)
+}
+
+pure func gcnsRow(line: string) -> Option[Row] {
+  let wd = match number(bytes(line, 246, 250)) { Some(p) => if p > 0.5 then 1 else 0, None => 0 };
+  row(trim(bytes(line, 3, 21)), number(bytes(line, 23, 36)), number(bytes(line, 46, 59)),
+    number(bytes(line, 69, 77)), number(bytes(line, 123, 130)), number(bytes(line, 142, 149)),
+    number(bytes(line, 161, 168)), wd)
+}
+
+pure func parseWith(f: string -> Option[Row], text: string) -> Parsed {
+  let acc = foldl(\a line. if trim(line) == "" then a else match f(line) {
+      Some(r) => { rows: r :: a.rows, skipped: a.skipped },
+      None => { rows: a.rows, skipped: a.skipped + 1 }
+    }, { rows: [], skipped: 0 }, split(text, "\n"));
+  { rows: reverse(acc.rows), skipped: acc.skipped }
+}
+
+export pure func parseCns5(text: string) -> Parsed = parseWith(cns5Row, text)
+export pure func parseGcns(text: string) -> Parsed = parseWith(gcnsRow, text)
+
+-- printf "%.6f" exactly: the correctly rounded decimal of the binary value
+-- (ties to even). a * 1e6 = p + e with no rounding error (Dekker two-product),
+-- so values like 15.6044655 (binary 15.60446549999...) round down as printf does.
+pure func splitHi(a: float) -> float { let c = 134217729.0 * a; c - (c - a) }
+
+export pure func twoProduct(a: float, b: float) -> (float, float) {
+  let p = a * b;
+  let ah = splitHi(a); let al = a - ah;
+  let bh = splitHi(b); let bl = b - bh;
+  (p, ((ah * bh - p) + ah * bl + al * bh) + al * bl)
+}
+
+export pure func fmt6(v: float) -> string {
+  let a = if v < 0.0 then 0.0 - v else v;
+  let k = match twoProduct(a, 1000000.0) {
+    (p, e) => {
+      let f = floor(p);
+      let frac = (p - f) + e;
+      let base = floatToInt(f);
+      if frac > 0.5 then base + 1 else if frac < 0.5 then base else if base % 2 == 0 then base else base + 1
+    }
+  };
+  let fracS = intToStr(k % 1000000);
+  concat([if v < 0.0 then "-" else "", intToStr(k / 1000000), ".", repeat("0", 6 - length(fracS)), fracS])
+}
+
+pure func opt6(v: Option[float]) -> string = match v { Some(x) => fmt6(x), None => "" }
+
+export pure func formatCsv(rows: [Row]) -> string =
+  concat([join("\n", "id,x,y,z,G,BPRP,wd" :: foldl(\acc r. join(",", [r.id, fmt6(r.x), fmt6(r.y), fmt6(r.z),
+      opt6(r.g), opt6(r.bprp), intToStr(r.wd)]) :: acc, [], reverse(rows))), "\n"])
+
+-- (csv, parsed, skipped), or Err when a non-empty input parses to zero rows
+export type Built = { csv: string, parsed: int, skipped: int }
+
+export pure func buildCsv(kind: string, text: string) -> Result[Built, string] {
+  let p = if kind == "cns5" then parseCns5(text) else parseGcns(text);
+  let n = foldl(\c _. c + 1, 0, p.rows);
+  if n == 0 && trim(text) != "" then Err(concat([kind, ": 0 rows parsed; refusing to write an empty CSV"]))
+  else Ok({ csv: formatCsv(p.rows), parsed: n, skipped: p.skipped })
+}
+
+export func main(a: { kind: string, input: string, output: string }) -> () ! {FS, IO} =
+  if a.kind != "cns5" && a.kind != "gcns" then { println("usage: kind cns5|gcns"); exit(2) }
+  else match buildCsv(a.kind, readFile(a.input)) {
+    Ok(b) => {
+      writeFile(a.output, b.csv);
+      println(concat([a.kind, ": parsed ", intToStr(b.parsed), " rows, skipped ", intToStr(b.skipped),
+        " rows (input ", intToStr(b.parsed + b.skipped), ")"]))
+    },
+    Err(e) => { println(concat(["ERROR: ", e])); exit(3) }
+  }

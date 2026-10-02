@@ -14,12 +14,7 @@ tests/fixtures/fake_sim.py	harness
 tests/offaxis_v11_equiv.py	oracle
 tools/catalogue_probe.py	harness
 tools/check_star_names.py	oracle
-tools/extract.py	port
 tools/gen_session.py	harness
-tools/test_extract.py	port
-tools/m14a_crops.py	spike
-tools/m14a_destar.py	port
-tools/m14a_register.py	spike
 tools/replay.py	harness
 tools/rng_ref.py	oracle
 tools/test_catalogue_bytes.py	oracle
