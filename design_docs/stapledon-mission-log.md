@@ -689,3 +689,47 @@ Append-only. One entry per iteration, newest at the bottom.
 - **Deviations/retro:** quota FLAG designer cloud launched before quota read completed: Ollama over10.1pp vs10/day; no further cloud calls. OpenRouter over6.58pp unused; Codex57% vs76.2% allowed. Anthropic usage endpoint403 but exact subscription probe rc0. Native Agent pin failures recorded with exact CLI fallbacks. Imported Row oracle transport explicit. Shared mission skill untouched (charter prohibits edits). Executor used upstream changelog fragment convention; controller moved entry to project's root CHANGELOG.md before review. Historical STATUS blocks multi-line: bounded rotation moved exact iteration5 block, line arithmetic/queue/ledger/archive positive controls pass; newest stamp singleline. Known rotate-log registry-path gap, full index regenerated locally,11 entries, no rotation needed (<40). Stale5/12 snapshot corrected to7/12 from already-landed attended sprint rows.
 - **Cost:** metered$0.00; quota buckets Codex/Ollama/Anthropic; per-role unknowns explicit, no fake zero. Harness share0/9; last3 landings6/7/8 each move clause1, no drift alarm.
 - **Next:** T3 writer/sidecars +tier/squared-distance validation, then T4 full-tier50,000 boundary/5-run parity/performance, then M1.2c. M1.6b attended render gate; AI foundation routable when M1 pauses. DECISIONS FOR MARK:none (ledger generated); no new human input needed.
+
+## 2026-10-02: attended, M2 journey core LANDED (sprint R1-M2-JOURNEY) [PRODUCT]
+
+- **Progress:** clause 2 **MET**; clauses 1, 3, 4 UNMET, 5 ongoing. M2's ten
+  milestones ran 2026-10-01 18:40 UTC → 2026-10-02 08:07 UTC (last merge,
+  #35) under the sprint skills. No log entries were written per M2
+  milestone; this entry records the sprint as a whole at landing.
+- **Landed:** M2.0 relativity 0.4.0 published (#22/#24, ailang-packages #84,
+  eval 96, Fable 5.1, publish GO) · M2.1a protocol codecs (#23, 92) · M2.1b
+  bridge v2 (#25, 93) · M2.2 world/ledger, pin 0.4.0 (#26, 94) · M2.3a
+  planner + commit rule (#27, 95) · M2.6a galaxy map (#28, 89; ⏸ R1 review
+  build `v0.2.0-m2-map`, accepted by Mark, D-17) · M2.3b autopilot (#29, 96)
+  · M2.4 SplitMix64 PRNG (#31, 94) · M2.6b commit dialog, transit, star names
+  (#33, 93; R2 notify, M4 review build unblocked) · M2.5 replay harness +
+  10k parity (#35, 93; P5 goldens approved by Mark 2026-10-02). Every
+  evaluation by a judge other than the executor; files
+  `.ailang/state/evaluations/eval_R1-M2-JOURNEY*`.
+- **Also landed:** AILANG pins v0.50.0 (#18) and v0.51.0 (#30); D-17 record
+  (#32); Python policy + `make python-guard` (#34, parallel attended session);
+  catalogue galactic-longitude mirror fix (#37: sign error in
+  `process_stars.sh`, regenerated from V/70A, 16 literature check values,
+  renders approved by Mark, gate 2); no-broad-find hook (#38).
+- **Bar clause 2 evidence:** protocol v2 (M2.1a/b); planner = closed form to
+  1e-9 (M2.3a/b); commit rule in the sim, refused through the real UI
+  (M2.3a AC7, M2.6b AC15); `session10k` VM == interpreter == digest on arm64
+  and x86_64 (M2.5). Goldens per architecture (ailang#1465).
+- **Upstream:** ailang#1450, #1456, #1462 fixed in v0.51.0; #1460, #1461,
+  #1465, #1466, #1467, #1473, #1478, #1481, #1487 open; #1486 (interpreter
+  TCO) closed upstream, not yet in the pin; #1419 pre-existing, open. DX
+  messages: recursion limit, compile-cache `ARTIFACT_TOO_LARGE`,
+  non-exhaustive match.
+- **Landing (this entry):** design doc, sprint plan and report moved to
+  `design_docs/implemented/r1/`; sprint JSON completed; CHANGELOG; README
+  index; charter queue row → [LANDED], clause 2 → MET, STATUS rotated
+  (iteration 6 → archive); design repo roadmap M2 → landed (separate PR).
+  Decision ledger untouched (all rows RESOLVED).
+- **Follow-ups:** D-10 destar mask rerun after #37 (raw panorama inputs not
+  on this machine); `stars.json` is CNS3 with 3–15 % distance errors on 16 of
+  54 named stars → CNS5 via M1.2 `extract.py`; per-arch goldens until
+  ailang#1465; drop `--max-recursion-depth` after the #1486 fix ships;
+  transit/hold polish (clamp hold delta, release on focus loss, pin transit
+  formats).
+- **Next:** M4 first review build (map → commit → transit on the blockout
+  bundle); M1 T3/T4 stays routable. DECISIONS FOR MARK: none new.
