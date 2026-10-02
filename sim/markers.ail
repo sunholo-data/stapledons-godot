@@ -1,0 +1,126 @@
+module stapledons/sim/markers
+
+-- The emotion-marker grammar (design ai-service-foundation (b), ledger D-20),
+-- implemented once, here, in the pure sim. The service and Godot consume the
+-- segments the sim emits; neither has a parser of its own.
+--
+--   line     = [marker] text { marker text }
+--   marker   = "{" emotion "}"
+--   emotion  = "neutral" | "happy" | "sad" | "angry" | "fearful" | "curious" | "loving" | "grieving"
+--   text     = 1*char-except("{", "}", "[", "]")
+--
+-- A missing leading marker means neutral. The line is trimmed, each segment's
+-- text is trimmed at both ends (inner whitespace kept), and adjacent equal
+-- markers merge (texts joined by one space). A refusal is
+-- `Err("ai_markup:<sub>")` with sub one of: bracket (any `[` or `]`, which
+-- keeps provider tags such as Gemini's [sigh] out of game text),
+-- nested_brace, unbalanced_brace, unknown_emotion, empty_segment (two markers
+-- in a row, a trailing marker, or an empty line), too_many_segments (more
+-- than 16 after merging). The first fault from the left wins, in that order
+-- of passes. Pure; runs on the strict VM (`markersVm`, `make strict-ai`).
+import std/result (Result, Ok, Err)
+import std/string (concat, contains, join, trim, foldChars)
+import std/list (map)
+
+export type Segment = { emotion: string, text: string }
+
+-- The 8 emotions, in the characters brief's order (§3.2).
+export pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
+pure func member(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || member(x, r) }
+export pure func isEmotion(e: string) -> bool = member(e, emotions8())
+
+export pure func maxSegments() -> int = 16
+
+pure func markup(sub: string) -> string = concat(["ai_markup:", sub])
+pure func count(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + count(r) }
+pure func revOnto(xs: [a], acc: [a]) -> [a] = match xs { [] => acc, x :: r => revOnto(r, x :: acc) }
+
+-- --------------------------------------------------------------- lexing
+-- Braces split the line into text runs and marker names; `err` holds the
+-- first brace fault ("" while none).
+type Tok = TText(string) | TMark(string)
+type Lex = { inMark: bool, buf: string, toks: [Tok], err: string }
+
+pure func flushText(st: Lex) -> [Tok] = if st.buf == "" then st.toks else TText(st.buf) :: st.toks
+pure func lexChar(st: Lex, c: string) -> Lex =
+  if st.err != "" then st
+  else if c == "{" then (if st.inMark then {st | err: "nested_brace"} else {inMark: true, buf: "", toks: flushText(st), err: ""})
+  else if c == "}" then (if st.inMark then {inMark: false, buf: "", toks: TMark(st.buf) :: st.toks, err: ""} else {st | err: "unbalanced_brace"})
+  else {st | buf: concat([st.buf, c])}
+pure func lex(line: string) -> Result[[Tok], string] {
+  let st = foldChars(lexChar, {inMark: false, buf: "", toks: [], err: ""}, line);
+  if st.err != "" then Err(st.err)
+  else if st.inMark then Err("unbalanced_brace")
+  else Ok(revOnto(flushText(st), []))
+}
+
+-- ------------------------------------------------------------ segments
+-- Tokens alternate text and marker (the lexer never emits two texts in a
+-- row). Segments accumulate reversed. The head token is matched on its own:
+-- a constructor pattern at the head of a cons pattern (`TText(t) :: r`)
+-- fails on the strict VM (_record_get on an ADT; ailang#1503).
+pure func afterMark(e: string, rest: [Tok], acc: [Segment]) -> Result[[Segment], string] =
+  if !isEmotion(e) then Err("unknown_emotion")
+  else match rest { x :: r => (match x { TText(t) => segText(e, t, r, acc), TMark(_) => Err("empty_segment") }), [] => Err("empty_segment") }
+pure func segText(e: string, t: string, rest: [Tok], acc: [Segment]) -> Result[[Segment], string] {
+  let tt = trim(t);
+  if tt == "" then Err("empty_segment")
+  else match rest {
+    [] => Ok(revOnto({emotion: e, text: tt} :: acc, [])),
+    x :: r => match x { TMark(m) => afterMark(m, r, {emotion: e, text: tt} :: acc), TText(_) => Err("unbalanced_brace") }
+  }
+}
+pure func segments(toks: [Tok]) -> Result[[Segment], string] =
+  match toks {
+    [] => Err("empty_segment"),
+    x :: r => match x { TText(t) => segText("neutral", t, r, []), TMark(m) => afterMark(m, r, []) }
+  }
+
+-- Adjacent equal emotions merge into one segment.
+pure func mergeOnto(xs: [Segment], acc: [Segment]) -> [Segment] =
+  match xs {
+    [] => revOnto(acc, []),
+    s :: r => match acc {
+      p :: ar => if p.emotion == s.emotion then mergeOnto(r, {emotion: p.emotion, text: join(" ", [p.text, s.text])} :: ar) else mergeOnto(r, s :: acc),
+      [] => mergeOnto(r, [s])
+    }
+  }
+
+pure func parseChecked(line: string) -> Result[[Segment], string] =
+  if contains(line, "[") || contains(line, "]") then Err("bracket")
+  else match lex(trim(line)) {
+    Err(e) => Err(e),
+    Ok(toks) => match segments(toks) {
+      Err(e) => Err(e),
+      Ok(raw) => {
+        let segs = mergeOnto(raw, []);
+        if count(segs) > maxSegments() then Err("too_many_segments") else Ok(segs)
+      }
+    }
+  }
+
+export pure func parseLine(line: string) -> Result[[Segment], string] =
+  match parseChecked(line) { Ok(s) => Ok(s), Err(sub) => Err(markup(sub)) }
+
+-- The normal form: every segment with its marker (the leading neutral too),
+-- segments separated by one space.
+export pure func printLine(segs: [Segment]) -> string = join(" ", map(\s. concat(["{", s.emotion, "}", s.text]), segs))
+
+-- What the player reads: segment texts joined with single spaces.
+export pure func displayText(segs: [Segment]) -> string = join(" ", map(\s. s.text, segs))
+
+-- ----------------------------------------------------- portrait fallback
+-- When a person lacks an emotion's portrait: the emotion itself, then its
+-- neighbour, then neutral. Unknown names fall to neutral.
+export pure func fallbackChain(e: string) -> [string] =
+  if e == "happy" then ["happy", "loving", "neutral"]
+  else if e == "loving" then ["loving", "happy", "neutral"]
+  else if e == "sad" then ["sad", "grieving", "neutral"]
+  else if e == "grieving" then ["grieving", "sad", "neutral"]
+  else if e == "neutral" || !isEmotion(e) then ["neutral"]
+  else [e, "neutral"]
+
+-- The first emotion on the chain the person has; neutral as the last resort.
+pure func firstIn(chain: [string], have: [string]) -> string =
+  match chain { [] => "neutral", c :: r => if member(c, have) then c else firstIn(r, have) }
+export pure func pickPortrait(e: string, have: [string]) -> string = firstIn(fallbackChain(e), have)

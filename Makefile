@@ -260,3 +260,4 @@ catalogue-bytes:  ## native F32 bytes: independent Python oracle, interpreter an
 .PHONY: python-guard
 python-guard:     ## Python policy: every *.py allowlisted with a role (CLAUDE.md "Python")
 	@sh tools/python_guard.sh
+include mk/ai.mk
