@@ -21,7 +21,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser + replay harness unit tests (committed fixtures and a fake ailang only)
 	python3 tools/test_extract.py
@@ -179,15 +179,52 @@ catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM par
 	AILANG=$(AILANG) python3 tools/catalogue_probe.py
 
 .PHONY: catalogue-vm
-catalogue-vm:     ## T1 pure transform and selection: strict VM, interpreter and exact anchors
+catalogue-vm:     ## T1 transform/selection + T3 validation and writer plan: strict VM, interpreter and exact anchors
 	@mkdir -p $(SCRATCH)
-	@set -e; for entry in transformVm selectionVm; do \
-	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 sim/tools/catalogue_test.ail > $(SCRATCH)/$$entry-vm.txt; \
-	  $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 sim/tools/catalogue_test.ail > $(SCRATCH)/$$entry-interp.txt; \
+	@set -e; for entry in transformVm selectionVm mainVm; do \
+	  case $$entry in mainVm) f=sim/tools/catalogue_main_test.ail;; *) f=sim/tools/catalogue_test.ail;; esac; \
+	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-vm.txt; \
+	  $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-interp.txt; \
 	  cmp $(SCRATCH)/$$entry-vm.txt $(SCRATCH)/$$entry-interp.txt; \
-	  case $$entry in transformVm) want=transform-ok;; selectionVm) want=selection-ok;; esac; \
+	  case $$entry in transformVm) want=transform-ok;; selectionVm) want=selection-ok;; mainVm) want=main-ok;; esac; \
 	  test "$$(cat $(SCRATCH)/$$entry-vm.txt)" = "$$want"; cat $(SCRATCH)/$$entry-vm.txt; \
 	done
+
+# M1.2b-T3 tier writer. TIER picks the source; the AILANG shell validates, encodes and hashes
+# (std/crypto sha256), then writes temp files and renames them, so a refusal ships nothing.
+TIER ?= quick
+CATALOGUE_OUT ?= data/starmap
+CAT_RUN = $(AILANG) run --quiet --caps IO,FS --package-dir sim
+CAT_AILANG = $$($(AILANG) --version | head -1 | cut -d' ' -f2)
+cat_args = "{\"tier\":\"$(1)\",\"csv\":\"$(2)\",\"raw\":\"$(3)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(4)\",\"ailang\":\"$(CAT_AILANG)\"}"
+.PHONY: catalogue catalogue-scan catalogue-main
+catalogue:        ## M1.2b-T3: data/raw CSV -> $(CATALOGUE_OUT)/stars_$(TIER).bin + stars_$(TIER).json sidecar on the VM (TIER=quick|medium|large)
+	@case "$(TIER)" in quick) src=cns5 raw=cns5.dat;; medium|large) src=gcns raw=table1c.dat.gz;; \
+	  *) echo "catalogue: TIER must be quick, medium or large (got '$(TIER)')"; exit 2;; esac; \
+	$(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,$(TIER),data/raw/$$src.csv,data/raw/$$raw,$(CATALOGUE_OUT)) sim/tools/catalogue_main.ail
+
+catalogue-scan:   ## M1.2b-T3: the conservative F32 bound on every real CNS5 and GCNS row (0 refusals; refused ids are listed for review)
+	@for src in cns5 gcns; do $(CAT_RUN) --bytecode --entry scan --args-json "\"data/raw/$$src.csv\"" sim/tools/catalogue_main.ail || exit 1; done
+
+CAT_FIX := tests/fixtures/catalogue
+catalogue-main:   ## M1.2b-T3 writer on committed fixtures: VM bytes == interpreter bytes, sizes, independent shasum of every digest, atomic refusal
+	@set -e; d=$(SCRATCH)/catalogue-main; rm -rf $$d; mkdir -p $$d/atomic; \
+	for t in quick medium; do \
+	  $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,$$t,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$d/vm) sim/tools/catalogue_main.ail >/dev/null; \
+	  $(CAT_RUN) --entry main --args-json $(call cat_args,$$t,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$d/interp/) sim/tools/catalogue_main.ail >/dev/null; \
+	  cmp $$d/vm/stars_$$t.bin $$d/interp/stars_$$t.bin; cmp $$d/vm/stars_$$t.json $$d/interp/stars_$$t.json; \
+	  j=$$d/vm/stars_$$t.json; b=$$d/vm/stars_$$t.bin; \
+	  case $$t in quick) n=5;; medium) n=3;; esac; \
+	  test "$$(wc -c < $$b | tr -d ' ')" = $$((n * 24)); grep -q "\"count\":$$n," $$j; \
+	  for k in "raw:$(CAT_FIX)/raw.dat" "csv:$(CAT_FIX)/rows.csv" "bin:$$b"; do \
+	    grep -q "\"$${k%%:*}\":\"$$(shasum -a 256 $${k#*:} | cut -d' ' -f1)\"" $$j || { echo "catalogue-main: $$t sha256.$${k%%:*} wrong"; exit 1; }; done; \
+	  echo "catalogue-main $$t: $$n rows, $$((n * 24)) B, VM = interpreter, digests match shasum"; \
+	done; \
+	printf keep > $$d/atomic/stars_quick.bin; \
+	if $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/bad_row.csv,$(CAT_FIX)/raw.dat,$$d/atomic) sim/tools/catalogue_main.ail 2>$$d/refusal.txt; \
+	then echo "catalogue-main: invalid row was accepted"; exit 1; fi; \
+	test "$$(cat $$d/atomic/stars_quick.bin)" = keep; test "$$(ls -A $$d/atomic)" = stars_quick.bin; \
+	echo "catalogue-main atomic: refused ($$(cat $$d/refusal.txt)); existing file untouched, no sidecar or temp left"
 
 .PHONY: sky-vm
 sky-vm:           ## M1.4b sky-model fitter (pure core): strict VM and interpreter must both print sky-ok
