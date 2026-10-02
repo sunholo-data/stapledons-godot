@@ -321,10 +321,12 @@ func test_timeouts() -> bool:
 		b.request(req("1", kind))
 		pump(b, 5000, func(): return b.in_flight().size() > 0)
 		var pid := b.child_pid
+		# The deadline starts when the request is written, inside the pump above, so t0
+		# can trail it by a frame; allow that slack below the limit.
 		var t0 := Time.get_ticks_msec()
 		pump(b, limit + 2000, func(): return b.outcomes.size() == 1)
 		var dt := Time.get_ticks_msec() - t0
-		assert_bool("%s cancelled timeout after %d ms (limit %d)" % [kind, dt, limit], reasons(b) == ["1:timeout"] and dt >= limit and dt < limit + 300)
+		assert_bool("%s cancelled timeout after %d ms (limit %d)" % [kind, dt, limit], reasons(b) == ["1:timeout"] and dt >= limit - 50 and dt < limit + 300)
 		pump(b, 500, func(): return child_gone(pid))
 		assert_bool("hung child (cannot exit by itself) killed within 500 ms of the timeout", pid > 0 and child_gone(pid))
 		pump(b, 300)
