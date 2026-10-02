@@ -23,6 +23,14 @@ make run       # interactive
 AILANG is pinned to **v0.51.0** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
+**Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
+fetches them by sha256 from the public bucket `gs://stapledons-voyage-assets/sky/`
+(pins in `data/sky/SHA256SUMS`) in seconds, or regenerates them if the bucket lacks
+them. `make sky-publish` (maintainers, gcloud) uploads new pins. Dev builds:
+`make publish-dev` uploads to the private `gs://stapledons-voyage-dev-builds`, and
+Mark installs with `tools/install_review_build.sh --dev`. Releases use GitHub. All
+infrastructure is recorded in `infra/gcp/setup.sh` (Terraform-portable).
+
 ## Development cycle: design doc → sprint plan → execute → evaluate
 
 1. **Design doc.** Write it in `design_docs/planned/<release>/<id>.md`, using the

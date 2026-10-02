@@ -75,6 +75,22 @@ Download NOIRLab all-sky panorama (noirlab2430b) for galactic background.
 .claude/skills/starmap-manager/scripts/download_background.sh 10k
 ```
 
+### Sky background textures (M1.4, D-10): `make sky-assets`
+
+The in-game Milky Way is two generated 10000×5000 PNGs in `data/raw/background/`
+(gitignored): `noirlab_10k_destarred.png` and `noirlab_10k_skymodel.png`.
+`make sky-assets` rebuilds them byte for byte:
+
+1. `make sky-inputs`: `download_background.sh raw` (NOIRLab TIF), `download_stars.sh hip`
+   (exact VizieR request in `resources/data_sources.md`), `download_stars.sh medium` +
+   `tools/extract.py gcns`; skipped when present, then pin-checked.
+2. `make destar`: catalogue-matched stars out of the photo (HIP V<7.5, GCNS, `data/starmap/stars.json`).
+3. `make sky-model`: AILANG per-texel colour-temperature fit.
+4. `make sky-verify`: every input and output against `data/sky/SHA256SUMS`.
+
+`make export-macos` packs both textures into the .pck (`include_filter` `data/*`). Without
+them the sky renders black.
+
 ### `scripts/process_stars.sh`
 Convert downloaded star catalogs to game-ready format.
 

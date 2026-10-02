@@ -1,27 +1,54 @@
 class_name SkyBackground
 extends RefCounted
 ## Builds the relativistic sky background (sky/background.gdshader) for an
-## Environment. The textures come from `make sky-model` (gitignored, data/raw/);
+## Environment. The textures come from `make sky-assets` (gitignored, data/raw/);
 ## without them the sky stays black and the starfield still renders.
+##
+## Exported builds: data/raw/ carries a .gdignore, and Godot's export skips
+## .gdignore'd directories, so `make export-macos` stages byte copies into
+## res://sky_bundle/ as *.png.bin. The .bin suffix keeps the editor from importing
+## (VRAM-compressing) them, so they reach the .pck untouched; they are decoded
+## here from the PNG bytes.
 
 const SHADER := preload("res://sky/background.gdshader")
 const PHOTO := "res://data/raw/background/noirlab_10k_destarred.png"
 const MODEL := "res://data/raw/background/noirlab_10k_skymodel.png"
+const BUNDLED_PHOTO := "res://sky_bundle/noirlab_10k_destarred.png.bin"
+const BUNDLED_MODEL := "res://sky_bundle/noirlab_10k_skymodel.png.bin"
 
 var material := ShaderMaterial.new()
 
 
 static func available() -> bool:
-	return FileAccess.file_exists(PHOTO) and FileAccess.file_exists(MODEL)
+	return not _paths().is_empty()
+
+
+## [photo, model] of the first complete pair: the source checkout's data/raw,
+## then the export bundle. Empty when neither is there.
+static func _paths() -> Array:
+	for pair in [[PHOTO, MODEL], [BUNDLED_PHOTO, BUNDLED_MODEL]]:
+		if FileAccess.file_exists(pair[0]) and FileAccess.file_exists(pair[1]):
+			return pair
+	return []
+
+
+static func _load_png(path: String) -> Image:
+	var img := Image.new()
+	return img if img.load_png_from_buffer(FileAccess.get_file_as_bytes(path)) == OK else null
 
 
 ## Attach to env using the given panorama pair (defaults: the NOIRLab model).
 func attach(env: Environment, viewport_height: float, fov_deg: float, photo: Image = null, model: Image = null) -> bool:
 	if photo == null:
-		if not available():
+		var paths := _paths()
+		if paths.is_empty():
 			return false
-		photo = Image.load_from_file(ProjectSettings.globalize_path(PHOTO))
-		model = Image.load_from_file(ProjectSettings.globalize_path(MODEL))
+		# res:// paths read through FileAccess, so the same code reads the .pck
+		photo = _load_png(paths[0])
+		model = _load_png(paths[1])
+		if photo == null or model == null:
+			push_error("sky background: failed to decode %s / %s" % paths)
+			return false
 	photo.generate_mipmaps()
 	model.generate_mipmaps()
 	material.shader = SHADER
