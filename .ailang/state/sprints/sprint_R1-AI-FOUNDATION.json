@@ -253,10 +253,11 @@
         "make test AILANG=$A"
       ],
       "registry": "depend std/json, std/crypto",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-02",
+      "completed": "2026-10-02",
+      "actual_loc": {"added_raw": 756, "added_excluding_comments_and_blank": 589, "deleted": 63, "code": 336, "tests": 397, "config": 23},
+      "notes": "Executed on branch sprint/ai2-protocol; awaiting independent evaluation. make test green (AILANG v0.51.0, arm64): sim 95/95, strict incl. planVm/protocolVm, strict-ai aiVm (strict VM = interpreter, 11 lines), replay 5 cases identical with tests/replays/ unchanged. Mutations killed 11/11: AI open refused committed; draw accepted committed; seed from news stream; seed counter not advanced; ids reused; expiry one tick late; cancel not closing; AI intent touching lastPlanId; any cancel reason accepted; entity-id tail unchecked; ai_too_many off by one. Decisions: constraints derived by the sim per purpose (max_chars line 280, news 200, archive 600, probe 280; no_numerals true; emotions default all 8); key variant '0' for images, '-' for text/voice; voice without line_req is ai_stale; line_req on non-voice is ai_bad_key; record refused 'unsupported' committed or not until AI.3 (checkCommittedRefusesAll expects index 7 'unsupported'); change-set ai section prints only when it changes (only after AI intents), full states omit it until AI.3; decodeFullParams defaults the AI params when absent. Deviations: sim/ailang.toml exports gains stapledons/sim/ai (required to import it; AI.1 adds markers on the same line); core_test.ail has a third hunk (the import line). Upstream: ailang#1505 (nested cons pattern a :: b :: _ evaluator-only on the strict VM), worked around. Carried to AI.3 from the AI.1 evaluation (record validation is AI.3 scope): reject invisible-only segments (U+200B etc. survive the markers trim) as ai_markup; bound the body by ai_length BEFORE parseLine (its recursion is unbounded per character); avoid ailang#1503 patterns."
     },
     {
       "id": "AI.3_RECORD_VALIDATION_GOLDENS",

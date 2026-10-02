@@ -1,0 +1,178 @@
+module stapledons/sim/ai
+
+-- AI requests in the pure sim (design ai-service-foundation (a1), AI.2).
+-- The sim opens, cancels and expires AI requests; every request has a
+-- sim-assigned id and a seed from the `ai` PRNG stream. Pure: runs on the
+-- strict VM (`make strict-ai`, aiVm). core.tick calls in here; nothing in
+-- this module can reach the ship, the journey, the ledger or any PRNG stream
+-- other than `ai` (commit rule, D-20: AI intents are accepted while a journey
+-- is committed).
+--
+-- AI.2 scope: `record` is refused `unsupported` everywhere (committed or
+-- not) until AI.3 adds validation; `ai.lines` stays empty, so every voice
+-- request is `ai_stale` until then.
+import std/option (Option, Some, None)
+import std/json (Json)
+import std/string (length, substring, contains, intToStr)
+import std/math (floor, floatToInt)
+import ./rng (Rng, SAi, draw, top53)
+
+-- ------------------------------------------------------------ types
+export type CacheKey = { kind: string, entityId: string, emotion: string, ageStage: int, variant: string }
+export type Constraints = { maxChars: int, noNumerals: bool, emotions: [string] }
+-- `context`: at most 8 string or string-list fields, copied unchanged into
+-- the ai_request event; the sim never interprets them.
+export type CtxVal = CStr(string) | CList([string])
+export type CtxField = { name: string, value: CtxVal }
+-- Decoded intents. Optional ai_open fields stay optional here: the codec
+-- checks types (else bad_intent), this module checks values (refusals).
+export type AiOpen = { kind: string, purpose: string, entityId: string, emotion: Option[string], ageStage: Option[float],
+  lineReq: Option[string], emotions: Option[[string]], context: [CtxField] }
+export type AiCancel = { req: string, reason: string }
+export type AiRecord = { source: string, req: string, kind: string, sha256: string, body: string }
+-- One parsed segment of an accepted line (the marker grammar, design (b)).
+export type AiSeg = { emotion: string, text: string }
+export type OpenReq = { req: int, kind: string, purpose: string, lineReq: Option[string], key: CacheKey, constraints: Constraints,
+  context: [CtxField], seed: int, openedTick: int, expiresTick: int }
+export type Line = { req: int, entityId: string, segments: [AiSeg] }
+-- lastReq: the most recent id (0 before any); ids are lastReq + 1, never
+-- reused. open: in opening order. lines: the last 64 accepted lines (AI.3).
+-- core: the sha256 of the bundled core index named by new_game (or "").
+export type AiState = { lastReq: int, open: [OpenReq], lines: [Line], core: string }
+export type AiParams = { maxOpen: int, ttlTicks: int }
+
+-- Events. `req` is the decimal string on the wire (the reserved record.req
+-- is a string).
+export type AiRequest = { req: string, kind: string, purpose: string, lineReq: Option[string], key: CacheKey, seed: int,
+  constraints: Constraints, context: [CtxField], expiresTick: int }
+export type AiEvent =
+  ERequest(AiRequest)
+  | EAcceptedText({req: string, kind: string, sha256: string, text: string, segments: [AiSeg]})
+  | EAcceptedMedia({req: string, kind: string, sha256: string, descriptor: Json})
+  | EFallback({req: string, reason: string})
+export pure func aiEventName(e: AiEvent) -> string =
+  match e { ERequest(_) => "ai_request", EAcceptedText(_) => "ai_accepted", EAcceptedMedia(_) => "ai_accepted", EFallback(_) => "ai_fallback" }
+
+-- The change-set section `ai` (whole section, present only when changed).
+export type OpenView = { req: string, kind: string, expiresTick: int }
+export type AiView = { lastReq: int, open: [OpenView], core: string }
+
+-- ------------------------------------------------------------ constants
+export pure func emptyAi() -> AiState = { lastReq: 0, open: [], lines: [], core: "" }
+export pure func defaultAiMaxOpen() -> int = 8
+export pure func defaultAiTtlTicks() -> int = 3600
+export pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
+export pure func aiKinds() -> [string] = ["text", "voice", "portrait", "avatar"]
+export pure func aiPurposes() -> [string] = ["line", "news", "archive", "probe"]
+export pure func cancelReasons() -> [string] = ["offline", "no_key", "text_only", "timeout", "service_down", "budget", "provider_error"]
+-- Display-text budget per purpose (code points). Executor-chosen, pending
+-- review: a dialogue line, an M4 news item, an Archive entry.
+export pure func maxCharsFor(purpose: string) -> int =
+  if purpose == "news" then 200 else if purpose == "archive" then 600 else 280
+
+export pure func isCancelReason(r: string) -> bool = member(r, cancelReasons())
+-- 64 lowercase hex characters (new_game.ai_core; AI.3: media record hashes).
+pure func hexTail(s: string, i: int) -> bool = if i >= 64 then true else contains("0123456789abcdef", substring(s, i, i + 1)) && hexTail(s, i + 1)
+export pure func isSha256Hex(s: string) -> bool = length(s) == 64 && hexTail(s, 0)
+
+pure func member(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || member(x, r) }
+pure func allIn(xs: [string], set: [string]) -> bool = match xs { [] => true, x :: r => member(x, set) && allIn(r, set) }
+pure func count(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + count(r) }
+
+-- `^[a-z][a-z0-9_]{0,31}$`, by hand (no regex on the strict VM).
+pure func lower() -> string = "abcdefghijklmnopqrstuvwxyz"
+pure func idChar(c: string) -> bool = contains(lower(), c) || contains("0123456789_", c)
+pure func idTail(s: string, i: int, n: int) -> bool = if i >= n then true else idChar(substring(s, i, i + 1)) && idTail(s, i + 1, n)
+export pure func validEntityId(s: string) -> bool {
+  let n = length(s);
+  n >= 1 && n <= 32 && contains(lower(), substring(s, 0, 1)) && idTail(s, 1, n)
+}
+pure func wholeIn(x: float, lo: float, hi: float) -> bool = x >= lo && x <= hi && floor(x) == x
+
+-- ------------------------------------------------------------ open
+export type AiStep = { ai: AiState, rng: Rng, refusal: Option[string], events: [AiEvent] }
+pure func refused(st: AiState, rng: Rng, why: string) -> AiStep = { ai: st, rng: rng, refusal: Some(why), events: [] }
+
+pure func kindError(diag: bool, o: AiOpen) -> Option[string] =
+  if !member(o.kind, aiKinds()) || !member(o.purpose, aiPurposes()) then Some("ai_kind")
+  else if o.purpose == "probe" && !diag then Some("diag_only")
+  else None
+-- emotion: required for portraits, absent for voice and avatars, optional
+-- for text ("-" when absent); age_stage a whole number in [0, 1000];
+-- emotions non-empty and all known; line_req only on voice.
+pure func emotionOk(o: AiOpen) -> bool =
+  match o.emotion {
+    Some(e) => member(e, emotions8()) && o.kind != "voice" && o.kind != "avatar",
+    None => o.kind != "portrait"
+  }
+pure func keyError(o: AiOpen) -> Option[string] =
+  if !validEntityId(o.entityId) || !emotionOk(o) then Some("ai_bad_key")
+  else if (match o.ageStage { Some(a) => !wholeIn(a, 0.0, 1000.0), None => false }) then Some("ai_bad_key")
+  else if (match o.emotions { Some(es) => count(es) == 0 || !allIn(es, emotions8()), None => false }) then Some("ai_bad_key")
+  else if o.kind != "voice" && o.lineReq != None then Some("ai_bad_key")
+  else None
+pure func hasLine(ls: [Line], r: string) -> bool = match ls { [] => false, l :: more => intToStr(l.req) == r || hasLine(more, r) }
+pure func staleError(st: AiState, o: AiOpen) -> Option[string] =
+  if o.kind != "voice" then None
+  else match o.lineReq { Some(r) => if hasLine(st.lines, r) then None else Some("ai_stale"), None => Some("ai_stale") }
+pure func firstError(xs: [Option[string]]) -> Option[string] = match xs { [] => None, x :: r => match x { Some(_) => x, None => firstError(r) } }
+
+pure func keyOf(o: AiOpen) -> CacheKey =
+  { kind: o.kind, entityId: o.entityId, emotion: match o.emotion { Some(e) => e, None => "-" },
+    ageStage: match o.ageStage { Some(a) => floatToInt(a), None => 0 },
+    variant: if o.kind == "portrait" || o.kind == "avatar" then "0" else "-" }
+export pure func requestOf(r: OpenReq) -> AiRequest =
+  { req: intToStr(r.req), kind: r.kind, purpose: r.purpose, lineReq: r.lineReq, key: r.key, seed: r.seed,
+    constraints: r.constraints, context: r.context, expiresTick: r.expiresTick }
+
+-- Open (refusals in the design's table order; a refusal opens nothing and
+-- draws nothing). An opened request takes id lastReq + 1 and one draw of
+-- the `ai` stream (top 53 bits) as its seed; it expires at `at + ttl`,
+-- where `at` is the tick being computed.
+export pure func openRequest(diag: bool, ps: AiParams, at: int, seed: int, rng: Rng, st: AiState, o: AiOpen) -> AiStep =
+  match firstError([kindError(diag, o), keyError(o), staleError(st, o), if count(st.open) >= ps.maxOpen then Some("ai_too_many") else None]) {
+    Some(why) => refused(st, rng, why),
+    None => {
+      let d = draw(seed, rng, SAi);
+      let id = st.lastReq + 1;
+      let r = { req: id, kind: o.kind, purpose: o.purpose, lineReq: o.lineReq, key: keyOf(o),
+        constraints: { maxChars: maxCharsFor(o.purpose), noNumerals: true, emotions: match o.emotions { Some(es) => es, None => emotions8() } },
+        context: o.context, seed: top53(d.value), openedTick: at, expiresTick: at + ps.ttlTicks };
+      { ai: {st | lastReq: id, open: st.open ++ [r]}, rng: d.rng, refusal: None, events: [ERequest(requestOf(r))] }
+    }
+  }
+
+-- ------------------------------------------------------------ close
+pure func isOpen(xs: [OpenReq], r: string) -> bool = match xs { [] => false, x :: more => intToStr(x.req) == r || isOpen(more, r) }
+pure func without(xs: [OpenReq], r: string) -> [OpenReq] =
+  match xs { [] => [], x :: more => if intToStr(x.req) == r then more else x :: without(more, r) }
+
+-- Cancel: the relay gives up on an open request (the reason is checked by
+-- the codec). It emits ai_fallback{req, reason} and closes the request; a
+-- request that is not open is refused ai_unknown_req.
+export pure func cancelRequest(rng: Rng, st: AiState, c: AiCancel) -> AiStep =
+  if !isOpen(st.open, c.req) then refused(st, rng, "ai_unknown_req")
+  else { ai: {st | open: without(st.open, c.req)}, rng: rng, refusal: None, events: [EFallback({req: c.req, reason: c.reason})] }
+
+-- Record: validation arrives with AI.3; until then it is refused
+-- `unsupported`, committed or not.
+export pure func recordResult(rng: Rng, st: AiState, r: AiRecord) -> AiStep = refused(st, rng, "unsupported")
+
+-- Expiry, after the tick's intents: every request with expiresTick <= at
+-- emits ai_fallback{req, expired} (opening order) and closes.
+export type Expired = { ai: AiState, events: [AiEvent] }
+type Split = { keep: [OpenReq], gone: [AiEvent] }
+pure func splitExpired(at: int, xs: [OpenReq], acc: Split) -> Split =
+  match xs {
+    [] => acc,
+    x :: more => if x.expiresTick <= at then splitExpired(at, more, {acc | gone: acc.gone ++ [EFallback({req: intToStr(x.req), reason: "expired"})]})
+                 else splitExpired(at, more, {acc | keep: acc.keep ++ [x]})
+  }
+export pure func expire(at: int, st: AiState) -> Expired {
+  let s = splitExpired(at, st.open, { keep: [], gone: [] });
+  { ai: {st | open: s.keep}, events: s.gone }
+}
+
+export pure func aiView(st: AiState) -> AiView =
+  { lastReq: st.lastReq, open: viewOpen(st.open), core: st.core }
+pure func viewOpen(xs: [OpenReq]) -> [OpenView] = match xs { [] => [], x :: more => { req: intToStr(x.req), kind: x.kind, expiresTick: x.expiresTick } :: viewOpen(more) }

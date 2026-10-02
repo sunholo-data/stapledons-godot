@@ -12,6 +12,7 @@ import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndB
 import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag)
 import ./tripphase (tripPhaseIndex)
 import ./rng (Rng, Stream, zeroRng, draw, streamName, top53)
+import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
 export type ShipPhase = AtRest | Boosting | Cruising | Braking deriving (Eq)
@@ -77,23 +78,28 @@ export type PlanReq = { target: Target, cruisePhi: float, flipG: Option[float] }
 export type Intent =
   IPlan(PlanReq)
   | ICommit(int) | ICancel | IThrust(float) | IHeading(Vec3)
-  | IRecord({source: string, req: string, kind: string, sha256: string, body: string})
+  | IRecord(AiRecord)
   | IDraw(Stream) | IEcho(PlanReq)
+  | IAiOpen(AiOpen) | IAiCancel(AiCancel)
 export type Refusal = { i: int, reason: string }
 -- A `phase` event carries the crossing (from/to are phaseName strings, tau
 -- the ship's proper time at the boundary); an `arrived` event carries the
 -- residuals of the stepped flight against the closed form, taken before the
 -- snap (design §M2.3). A `draw` event (diag, M2.4) carries the stream's
--- wire name, the counter drawn at and the value's top 53 bits.
+-- wire name, the counter drawn at and the value's top 53 bits. The AI
+-- events (ai_request, ai_accepted, ai_fallback; AI.2) carry `ai`.
 export type Crossing = { from: string, to: string, tau: float }
 export type Residuals = { x: float, t: float, phi: float }
 export type Drawn = { stream: string, n: int, value: int }
-export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn] }
-export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None }
+export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent] }
+export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None }
 
-export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float }
+-- aiMaxOpen, aiTtlTicks: AI request limits (design ai-service-foundation
+-- (a1)); not echoed on the wire until AI.3 (protocol 2.1 minor bump).
+export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
-export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001 }
+export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
+  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks() }
 
 -- Radiated energy = boostJ + dragJ. The mass budget is closed (higgs-bubble
 -- §8): availableKg is carried unchanged; nothing is deducted or enforced.
@@ -102,7 +108,8 @@ export pure func availableKgStart() -> float = 20000.0
 -- rng: one counter per named PRNG stream (sim/rng.ail, M2.4).
 -- lastPlanId: the id of the most recent accepted plan (0 before any); plan
 -- ids increase monotonically from 1 and are never reused.
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool }
+-- ai: open AI requests and their ids (sim/ai.ail, AI.2).
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -110,7 +117,9 @@ export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 --   Planned --cancel--> Idle
 --   Planned --commit(id, at rest, same position)--> Committed
 --   Committed --(sim only: the autopilot reaches el = tauTotal)--> Arrived
---   Committed --every intent kind--> Committed, refused "committed"
+--   Committed --every journey intent--> Committed, refused "committed"
+--   (AI intents ai_open, ai_cancel, record are accepted while committed and
+--   never touch ship, journey, ledger or a non-ai stream: D-20, 2026-10-02)
 -- Nothing maps a Committed journey back to Planned or Idle (AC7).
 -- A plan keeps the package's TripPlan as is; `from` is the ship's position
 -- when it was made (a commit from anywhere else is stale). `el` is the
@@ -124,7 +133,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag }
+    rng: zeroRng(), diag: diag, ai: emptyAi() }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -155,24 +164,40 @@ pure func ledgerAfter(l: Ledger, p: Params, before: Motion, after: Motion, thrus
   else if absf(after.phi) < restTolerance() then l
   else {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), absf(after.phi), p.bubbleRadiusM) * dtau * julianYearS()}
 
-type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, seed: int, rng: Rng, refused: [Refusal], events: [Event], i: int }
+-- at: the number of the tick being computed (AI request open/expiry ticks).
+type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, seed: int, rng: Rng, ai: AiState, at: int, refused: [Refusal], events: [Event], i: int }
 pure func refuseIntent(a: Pending, why: string) -> Pending = {a | refused: {i: a.i, reason: why} :: a.refused}
 pure func noteEvent(a: Pending, k: string) -> Pending = {a | events: event(k) :: a.events}
 
--- The commit rule (Pillar 1, AC7): a committed journey refuses every intent
--- kind and nothing else changes. One arm per Intent constructor and no
+-- The commit rule (Pillar 1, AC7, narrowed by D-20 on 2026-10-02): a
+-- committed journey refuses every journey intent and nothing else changes;
+-- the three AI intents delegate to sim/ai.ail, which cannot reach the ship,
+-- the journey or the ledger. One arm per Intent constructor and no
 -- wildcard, so a new intent kind needs its own line here.
-pure func refuseWhileCommitted(a: Pending, it: Intent) -> Pending =
+pure func refuseWhileCommitted(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
   match it {
     IPlan(_) => refuseIntent(a, "committed"),
     ICommit(_) => refuseIntent(a, "committed"),
     ICancel => refuseIntent(a, "committed"),
     IThrust(_) => refuseIntent(a, "committed"),
     IHeading(_) => refuseIntent(a, "committed"),
-    IRecord(_) => refuseIntent(a, "committed"),
     IDraw(_) => refuseIntent(a, "committed"),
-    IEcho(_) => refuseIntent(a, "committed")
+    IEcho(_) => refuseIntent(a, "committed"),
+    IRecord(r) => aiStep(a, recordResult(a.rng, a.ai, r)),
+    IAiOpen(o) => aiOpenIntent(diag, p, a, o),
+    IAiCancel(c) => aiStep(a, cancelRequest(a.rng, a.ai, c))
   }
+
+-- AI intents (sim/ai.ail): the step's ai state, its `ai` stream counter,
+-- its refusal and events; nothing else in Pending changes.
+pure func aiStep(a: Pending, s: AiStep) -> Pending {
+  let b = {a | ai: s.ai, rng: s.rng, events: aiEvents(s.events, a.events)};
+  match s.refusal { Some(why) => refuseIntent(b, why), None => b }
+}
+pure func aiEvents(xs: [AiEvent], acc: [Event]) -> [Event] = match xs { [] => acc, x :: more => aiEvents(more, aiEvent(x) :: acc) }
+pure func aiEvent(x: AiEvent) -> Event = {event(aiEventName(x)) | ai: Some(x)}
+pure func aiOpenIntent(diag: bool, p: Params, a: Pending, o: AiOpen) -> Pending =
+  aiStep(a, openRequest(diag, {maxOpen: p.aiMaxOpen, ttlTicks: p.aiTtlTicks}, a.at, a.seed, a.rng, a.ai, o))
 
 -- Plan (design §M2.3): d = |target.pos - position(ship)| in float64 scalars;
 -- the trip is the package's planBurnCoastBurn at boost_g, or in diag with
@@ -251,8 +276,10 @@ pure func applyFree(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
       if turned.accepted then {a | ship: turned.ship} else refuseIntent(a, "moving")
     },
     IEcho(q) => if diag then {a | events: {event("echo") | echo: Some(q)} :: a.events} else refuseIntent(a, "diag_only"),
-    IRecord(_) => refuseIntent(a, "unsupported"),
-    IDraw(st) => if diag then drawIntent(a, st) else refuseIntent(a, "diag_only")
+    IDraw(st) => if diag then drawIntent(a, st) else refuseIntent(a, "diag_only"),
+    IRecord(r) => aiStep(a, recordResult(a.rng, a.ai, r)),
+    IAiOpen(o) => aiOpenIntent(diag, p, a, o),
+    IAiCancel(c) => aiStep(a, cancelRequest(a.rng, a.ai, c))
   }
 -- Draw (diag, M2.4): the stream's next value; its counter advances and
 -- the value is reported in a `draw` event.
@@ -262,7 +289,7 @@ pure func drawIntent(a: Pending, st: Stream) -> Pending {
 }
 pure func applyIntent(diag: bool, p: Params, a: Pending, it: Intent) -> Pending {
   let r = match a.journey {
-    Committed(_) => refuseWhileCommitted(a, it),
+    Committed(_) => refuseWhileCommitted(diag, p, a, it),
     _ => applyFree(diag, p, a, it)
   };
   {r | i: a.i + 1}
@@ -334,24 +361,27 @@ pure func fly(p: Params, f: Flight, rem: float) -> Flight {
 }
 
 -- One tick: apply the intents in order (refusals listed, the tick proceeds),
--- then advance the ship by dtau: under the autopilot while committed,
+-- expire AI requests whose expires_tick is this tick or earlier, then
+-- advance the ship by dtau: under the autopilot while committed,
 -- otherwise by the diag thrust with the phase derived from it; the ledger
 -- follows either way.
 export pure func tick(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
-  let a = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, seed: w.seed, rng: w.rng, refused: [], events: [], i: 0}, input.intents);
+  let applied = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, seed: w.seed, rng: w.rng, ai: w.ai, at: w.tick + 1, refused: [], events: [], i: 0}, input.intents);
+  let ex = expire(w.tick + 1, applied.ai);
+  let a = {applied | ai: ex.ai, events: aiEvents(ex.events, applied.events)};
   match a.journey {
     Committed(c) => {
       let f = fly(w.params, {ship: a.ship, c: c, ledger: w.ledger, events: a.events, arrived: false}, input.dtau);
-      { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger, rng: a.rng},
+      { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger, rng: a.rng, ai: a.ai},
         refused: reversed(a.refused, []), events: reversed(f.events, []) }
     },
     _ => {
       let moved = step(a.ship, a.thrust, input.dtau);
       let next = {moved | phase: derivePhase(moved.motion.phi, a.thrust)};
-      { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau), rng: a.rng},
+      { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau), rng: a.rng, ai: a.ai},
         refused: reversed(a.refused, []), events: reversed(a.events, []) }
     }
   }
