@@ -137,7 +137,8 @@ func _report(main: Node, frames: Array, off: Array, rebase_ms: float, mode: Star
 	var r := {
 		"driver": driver, "device": RenderingServer.get_video_adapter_name(), "render_size": [size.x, size.y],
 		"tiers": sf.tiers, "stars": sf.count, "background": main.has_background, "seconds": seconds, "frames": frames.size(),
-		"frame_ms_p50": pct(ft, 0.5), "frame_ms_p99": pct(ft, 0.99), "gpu_ms_p50": pct(gpu, 0.5), "gpu_ms_p99": pct(gpu, 0.99),
+		"frame_ms_p50": pct(ft, 0.5), "frame_ms_p95": pct(ft, 0.95), "frame_ms_p99": pct(ft, 0.99),
+		"frames_over_budget": ft.filter(func(x: float) -> bool: return x > P99_TARGET_MS).size(), "gpu_ms_p50": pct(gpu, 0.5), "gpu_ms_p99": pct(gpu, 0.99),
 		"star_pass_gpu_ms_p50": pct(gpu_delta, 0.5) if has_gpu else null, "star_pass_gpu_ms_p90": pct(gpu_delta, 0.9) if has_gpu else null,
 		"star_pass_gpu_ms_p99": pct(gpu_delta, 0.99) if has_gpu else null,
 		"star_pass_wall_ms_p50": pct(wall_delta, 0.5), "cpu_rebase_ms": rebase_ms, "rebase_mode": Starfield.Rebase.keys()[mode],
@@ -156,7 +157,8 @@ func _report(main: Node, frames: Array, off: Array, rebase_ms: float, mode: Star
 		f.close()
 	print("bench: driver %s (%s), %dx%d, tiers %s, %d stars, background %s, %d frames in %.0f s, end beta %.4f" % [
 		driver, r["device"], size.x, size.y, sf.tiers, sf.count, main.has_background, frames.size(), seconds, r["beta_end"]])
-	print("bench: frame ms p50 %.3f  p99 %.3f (target < %.1f: %s)" % [r["frame_ms_p50"], r["frame_ms_p99"], P99_TARGET_MS, "ok" if r["frame_ms_p99"] < P99_TARGET_MS else "MISS"])
+	print("bench: frame ms p50 %.3f  p95 %.3f  p99 %.3f (target p99 < %.1f: %s); %d of %d frames over %.1f ms" % [r["frame_ms_p50"], r["frame_ms_p95"], r["frame_ms_p99"],
+		P99_TARGET_MS, "ok" if r["frame_ms_p99"] < P99_TARGET_MS else "MISS", r["frames_over_budget"], frames.size(), P99_TARGET_MS])
 	if has_gpu:
 		print("bench: viewport GPU ms p50 %.3f  p99 %.3f; star pass GPU ms (frame minus replayed frame without stars) p50 %.3f  p90 %.3f  p99 %.3f (target p50 < %.1f: %s)" % [r["gpu_ms_p50"], r["gpu_ms_p99"],
 			r["star_pass_gpu_ms_p50"], r["star_pass_gpu_ms_p90"], r["star_pass_gpu_ms_p99"], STAR_PASS_TARGET_MS, "ok" if r["star_pass_gpu_ms_p50"] < STAR_PASS_TARGET_MS else "MISS"])

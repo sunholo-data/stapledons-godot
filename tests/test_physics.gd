@@ -179,9 +179,11 @@ func test_catalogue_galactic_directions() -> void:
 		check("%s (%s): l %.2f b %+.2f, catalogue l %.2f -> sep deg" % [row[1], row[0], row[4], row[5], l_cat], sep, 0.0, tol)
 
 
-## M1.3 (O-1): the colour LUT reaches 1e7 K, finite in every texel, and its
-## top end agrees with the package (luminance ratio 1e7 K / 1e6 K computed by
-## sunholo/relativity 0.5.1 blackbody.luminance).
+## M1.3 (O-1): the colour LUT reaches 1e7 K at the old log-T step, its top
+## texel is finite and equals the CPU value, and its top end agrees with the
+## package (luminance ratio 1e7 K / 1e6 K from sunholo/relativity 0.5.1
+## blackbody.luminance). The every-texel finite and monotonic loop is the
+## "Blackbody lookup table" block in _init, which now spans the 1320 texels.
 func test_lut_range() -> void:
 	print("Blackbody LUT range (O-1, M1.3)")
 	check("LUT_T_MAX >= 1e7 K", 1.0 if Blackbody.LUT_T_MAX >= 1.0e7 else 0.0, 1.0, 0.0)

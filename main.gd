@@ -402,7 +402,8 @@ func _run_golden() -> void:
 			"ok  " if ok else "FAIL", c["label"], expected.x, expected.y, got.x, got.y, err,
 			rad_to_deg(acos(expected_dir.dot(HEADING)))])
 	failures += await _golden_offaxis()
-	failures += await _golden_standoff()
+	failures += await _golden_standoff(1000.0, 300.0)
+	failures += await _golden_standoff(0.3, 0.2)
 	failures += await _golden_cull()
 	starfield.set_custom_stars([])
 	starfield.set_ship_position(0.0, 0.0, 0.0)
@@ -461,7 +462,12 @@ func _golden_offaxis() -> int:
 ## at rest and 0.9c. The centroid must land within 0.75 px of the float64 CPU
 ## direction (Starfield.direction_to, aberrated) through the camera projection;
 ## the camera looks 8 deg to the side of the star so it is off the centre.
-func _golden_standoff() -> int:
+## At 1,000 AU this checks the projection, not the hi/lo pair (float32 from Sol
+## is only ~1e-3 px off there), so a second geometry at ~0.36 AU makes the shader's
+## lo terms matter: there float32 positions from Sol alone land >= 1.5 px off (2x the tolerance)
+## (computed here per case and required, so the case keeps its power), and the
+## GPU must still be within 0.75 px.
+func _golden_standoff(along_au: float, side_au: float) -> int:
 	var size := get_viewport().get_visible_rect().size
 	var l := deg_to_rad(315.734)
 	var b_gal := deg_to_rad(-0.680)
@@ -470,7 +476,7 @@ func _golden_standoff() -> int:
 	var au := 1.0 / 63241.07708426628
 	var u := [star[0] / 4.37, star[1] / 4.37, star[2] / 4.37]
 	var sn := sqrt(u[2] * u[2] + u[0] * u[0])
-	var ship := [star[0] - u[0] * 1000.0 * au + u[2] / sn * 300.0 * au, star[1] - u[1] * 1000.0 * au, star[2] - u[2] * 1000.0 * au - u[0] / sn * 300.0 * au]
+	var ship := [star[0] - u[0] * along_au * au + u[2] / sn * side_au * au, star[1] - u[1] * along_au * au, star[2] - u[2] * along_au * au - u[0] / sn * side_au * au]
 	var r2 := 0.0
 	for a in 3:
 		r2 += (star[a] - ship[a]) ** 2
@@ -485,7 +491,7 @@ func _golden_standoff() -> int:
 			var d := Relativity.doppler(n, HEADING, b)
 			# unit brightness at the ship: undo |p|^2 / r^2 and the beaming
 			var p2: float = star[0] * star[0] + star[1] * star[1] + star[2] * star[2]
-			starfield.set_custom_stars([{"pos": star, "t": 5790.0, "flux": r2 / p2 / Relativity.point_flux_ratio(5790.0, d)}])
+			starfield.set_custom_stars([{"pos": star, "t": 5790.0, "flux": maxf(r2, 1e-6) / p2 / Relativity.point_flux_ratio(5790.0, d)}])
 			starfield.set_ship_position(ship[0], ship[1], ship[2])
 			starfield.set_velocity(HEADING, b, Relativity.gamma_of(b))
 			var app := Relativity.aberrate(n, HEADING, b)
@@ -494,10 +500,13 @@ func _golden_standoff() -> int:
 			var expected := camera.project(app, size)
 			var got := _centroid(img)
 			var err := got.distance_to(expected)
-			var ok := err < 0.75
+			# the same frame with float32 positions from Sol and no lo terms (what a shader dropping lo computes)
+			var naive := Vector3(Starfield.f32(Starfield.f32(star[0]) - Starfield.f32(ship[0])), Starfield.f32(Starfield.f32(star[1]) - Starfield.f32(ship[1])), Starfield.f32(Starfield.f32(star[2]) - Starfield.f32(ship[2])))
+			var naive_err := camera.project(Relativity.aberrate(naive.normalized(), HEADING, b), size).distance_to(expected)
+			var ok := err < 0.75 and (along_au > 100.0 or naive_err >= 1.5)
 			if not ok: failures += 1
-			print("%s  stand-off alpha Cen A %s beta %.1f (%.0f AU, origin %.4f ly from ship)  expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px" % [
-				"ok  " if ok else "FAIL", Starfield.Rebase.keys()[mode], b, sqrt(r2) / au, Starfield._dist(starfield.origin, starfield.ship), expected.x, expected.y, got.x, got.y, err])
+			print("%s  stand-off alpha Cen A %s beta %.1f (%.1f AU, origin %.4f ly from ship)  expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px  (float32 from Sol, no lo: %.2f px off)" % [
+				"ok  " if ok else "FAIL", Starfield.Rebase.keys()[mode], b, sqrt(r2) / au, Starfield._dist(starfield.origin, starfield.ship), expected.x, expected.y, got.x, got.y, err, naive_err])
 	starfield.set_rebase_mode(Starfield.Rebase.GPU)
 	starfield.set_velocity(HEADING, 0.0, 1.0)
 	return failures

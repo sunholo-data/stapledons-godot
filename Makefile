@@ -143,9 +143,9 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
-	  test "$$(grep -c 'background marker' $(SCRATCH)/golden.log)" = 16 && test "$$(grep -c '^ok    stand-off alpha Cen A' $(SCRATCH)/golden.log)" = 4 && \
+	  test "$$(grep -c 'background marker' $(SCRATCH)/golden.log)" = 16 && test "$$(grep -c '^ok    stand-off alpha Cen A' $(SCRATCH)/golden.log)" = 8 && \
 	  grep -q '^ok    hot white dwarf 60 kK' $(SCRATCH)/golden.log && grep -q '^ok    faint-star cull' $(SCRATCH)/golden.log && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 4 stand-off + hot WD + cull)"; exit 1; }
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.

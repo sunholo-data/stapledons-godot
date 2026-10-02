@@ -71,6 +71,10 @@ void vertex() {
 	float peak = max(v_color.r, max(v_color.g, v_color.b));
 	// The splat reaches out to where the PSF falls to cull_peak (at most 4
 	// sigma): faint stars get small quads, so overdraw scales with brightness.
+	// Truncation cost: a 2-D Gaussian keeps 1 - exp(-k^2/2) of its energy inside
+	// radius k sigma, so a star of peak p loses at most cull_peak / p of its
+	// energy (less, as the square quad also keeps its corners): <= 1% once
+	// p >= 100 cull_peak, and the 4-sigma cap loses 3.4e-4 for bright stars.
 	v_extent = clamp(sqrt(2.0 * log(max(peak, cull_peak) / cull_peak)), 1.0, 4.0);
 	if (view_dir.z >= 0.0 || peak < cull_peak) {
 		// Behind the camera (which looks down -Z): with clip.w <= 0 the
