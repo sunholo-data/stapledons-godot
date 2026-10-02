@@ -1,8 +1,10 @@
 module stapledons/sim/tools/catalogue_test
 import ./catalogue (Row, Selection, transform, selectTier, selectMedium, validTier)
+import ./catalogue_bytes (encodeRow, encodeRows)
+import std/bytes (concatList, toInts, length as byteLength)
 import std/result (Ok, Err)
 import std/string (concat)
-import std/list (map, length, range, foldl)
+import std/list (map, length, range, foldl, filter, concat as append)
 
 pure func csv(rows: string) -> string = concat(["id,x,y,z,G,BPRP,wd\n", rows])
 pure func near(a: float, b: float) -> bool = a-b < 0.000001 && b-a < 0.000001
@@ -13,7 +15,7 @@ pure func checkWD() -> bool = match transform(csv("real,100.615174,-59.613639,-3
   Ok(s) => match s.rows { [a,b] => near(a.teff,5202.556030832587) && near(a.v,20.89920219434688) && a.flags == 5 && a.id == "real" && a.x == 100.615174 && a.y == -59.613639 && a.z == -310.394645 && near(b.teff,8941.61808557) && near(b.v,0.064716662329) && b.flags == 5, _ => false }, Err(_) => false
 }
 pure func checkClamp() -> bool = match transform(csv("wd,0,0,0,0,2.5,1\ndwarf,0,0,0,0,-9,0\n")) {
-  Ok(s) => match s.rows { [a,b] => a.teff == 3000.0 && a.flags == 21 && b.flags == 16, _ => false }, Err(_) => false
+  Ok(s) => match s.rows { [a,b] => a.teff == 3000.0 && a.flags == 21 && b.flags == 16 && s.wd == 1 && s.missing == 0 && s.input == 2, _ => false }, Err(_) => false
 }
 pure func checkN1() -> bool = match transform(csv("inside,0,0,0,0,2.5,0\noutside,0,0,0,0,-0.5,0\n")) {
   Ok(s) => match s.rows { [a,b] => a.flags == 0 && b.flags == 16, _ => false }, Err(_) => false
@@ -78,18 +80,58 @@ pure func checkHugeCoordRefused() -> bool {
   refused(rowsOf("z,0,0,-1000000.0001,0,0.823,0\n"),"large") && refused(rowsOf("a,1,0,0,0,0.823,0\nb,0,0,-2e6,,,1\n"),"medium") &&
   !refused(edge,"medium") && !refused(edge,"quick") && map(\r. r.id,tier(edge,"medium").rows) == ["ex","ey","ez"]
 }
--- T3 (eval round 1): the medium quota is exactly 50,000. 50,001 complete rows at x = 0..50000
--- (in order: the sort-order cases are above; a shuffled 50k makes the interpreter take 40 s): medium keeps the
--- 50,000 nearest and drops only x = 50000. Kills the 49,999 and 50,001 mutants (~6 s per engine).
+-- T3 (eval round 1) quota rows: 50,001 complete rows at x = 0..50000, in order (the sort-order
+-- cases are above; a shuffled 50k makes the interpreter take 40 s). T4's N3 below supersedes the
+-- T3 check: it keeps the same assertions and adds the missing rows in between.
 -- foldl, not std/list maximumFloat: that one recurses and overflows at 50k on v0.51.0.
 pure func quotaRows() -> [Row] =
   map(\i. {id: "q", x: intToFloat(i), y: 0.0, z: 0.0, teff: 5000.0, v: 5.0, flags: 0},range(0,50001))
-pure func checkMediumQuota() -> bool = match selectTier(quotaRows(),"medium") {
-  Ok(s) => length(s.rows) == 50000 && s.excluded == 0 &&
-    foldl(\m r. if r.x > m then r.x else m,-1.0,s.rows) == 49999.0 && foldl(\m r. if r.x < m then r.x else m,1e9,s.rows) == 0.0,
-  Err(_) => false
+-- T4 N3: the exact 50,000 boundary with missing rows in between. 50,001 complete rows at x = 0..50000
+-- and 50,001 missing ones (flags 2 and 3) at x = 0.5..50000.5, listed in reverse, so the sorted
+-- order alternates c0 m0 c1 m1 ... The quota fills at c49999, so exactly the 49,999 missing rows
+-- nearer than it are counted excluded. 49,999 gives 49,999 rows and 49,998 excluded; 50,001 gives
+-- 50,001 rows and 50,001 excluded; counting every missing row gives 50,001: all fail.
+pure func missingN3(r: Row) -> bool = r.flags == 2 || r.flags == 3
+pure func n3Rows() -> [Row] = append(quotaRows(),
+  map(\i. {id: "m", x: intToFloat(50000-i)+0.5, y: 0.0, z: 0.0, teff: 0.0, v: 99.0, flags: if i < 25000 then 2 else 3},range(0,50001)))
+pure func checkN3() -> bool {
+  let all = n3Rows();
+  match selectTier(all,"medium") {
+    Ok(s) => length(all) == 100002 && length(s.rows) == 50000 && s.excluded == 49999 &&
+      -- independent count: missing rows strictly nearer than the 50,000th complete row (x = 49999)
+      s.excluded == length(filter(\r. missingN3(r) && r.x < 49999.0,all)) &&
+      length(filter(missingN3,s.rows)) == 0 &&
+      foldl(\m r. if r.x > m then r.x else m,-1.0,s.rows) == 49999.0 &&
+      -- selected in order x = 0, 1, ..., 49999
+      foldl(\k r. if k >= 0.0 && r.x == k then k+1.0 else -1.0,0.0,s.rows) == 50000.0,
+    Err(_) => false
+  }
 }
-test "T3 medium quota is exactly 50000" { checkMediumQuota() }
+-- T4: the linear rewrite keeps "first error in row order wins" for transform and selectTier.
+pure func errorOf(body: string) -> string = match transform(csv(body)) { Err(e) => e, Ok(_) => "<accepted>" }
+pure func tierErr(body: string) -> string = match selectTier(rowsOf(body),"large") { Err(e) => e, Ok(_) => "<accepted>" }
+pure func checkFirstError() -> bool =
+  errorOf("a,bad,2,3,0,0.823,0\n\nb,1,2,3,0,0.823,0\n") == "invalid CSV fields" &&
+  errorOf("a,1,2,3,0,0.823,0\n\nb,bad,2,3,0,0.823,0\n") == "blank CSV row" &&
+  errorOf("a,1,2,3\nb,bad,2,3,0,0.823,0\n") == "expected seven fields" &&
+  tierErr("p,1,0,0,0,0.823,0\nfirst,2e6,0,0,0,0.823,0\nsecond,0,3e6,0,0,0.823,0\n") == "coordinate beyond 1e6 ly: first"
+-- T4: encodeRows is the concatenation of encodeRow in row order; the first bad row's reason wins.
+pure func good(x: float) -> Row = {id: "g", x: x, y: 2.0, z: 3.0, teff: 4.0, v: 5.0, flags: 1}
+pure func badFlags() -> Row = {id: "f", x: 1.0, y: 2.0, z: 3.0, teff: 4.0, v: 5.0, flags: 99}
+pure func badNaN() -> Row = {id: "n", x: 0.0/0.0, y: 2.0, z: 3.0, teff: 4.0, v: 5.0, flags: 0}
+pure func encErr(rows: [Row]) -> string = match encodeRows(rows) { Err(e) => e, Ok(_) => "<accepted>" }
+pure func one(r: Row) -> bytes = match encodeRow(r) { Ok(b) => b, Err(_) => concatList([]) }
+pure func checkEncodeOrder() -> bool =
+  encErr([good(1.0),badFlags(),badNaN()]) == "invalid catalogue flags" &&
+  encErr([good(1.0),badNaN(),badFlags()]) == "nonfinite or out-of-range F32 field" &&
+  (match encodeRows([good(1.0),good(7.0),good(-3.5)]) {
+    Ok(b) => byteLength(b) == 72 && toInts(b) == toInts(concatList([one(good(1.0)),one(good(7.0)),one(good(-3.5))])) &&
+      toInts(b) != toInts(concatList([one(good(7.0)),one(good(1.0)),one(good(-3.5))])),
+    Err(_) => false }) &&
+  (match encodeRows([]) { Ok(b) => byteLength(b) == 0, Err(_) => false })
+test "T4 encodeRows order and first error" { checkEncodeOrder() }
+test "T4 N3 exact 50000 boundary with intervening missing rows" { checkN3() }
+test "T4 first error in row order wins" { checkFirstError() }
 test "T3 tier names refused" { checkTierNameRefused() }
 test "T3 huge coordinates refused before the sort" { checkHugeCoordRefused() }
 test "T1 normal independent anchors and coordinates" { checkNormal() }
@@ -103,5 +145,5 @@ test "T1 header only empty input" { checkEmpty() }
 test "T1 field rejection before missing shortcut" { checkReject() }
 test "T1 exact header" { checkHeader() }
 export pure func transformVm(n: int) -> string = if checkN1() && checkN2() && checkNormal() && checkWD() && checkClamp() && checkMissing() && checkReject() && checkHeader() && checkEmpty() then "transform-ok" else "transform-BAD"
-export pure func quotaVm(n: int) -> string = if checkMediumQuota() then "quota-ok" else "quota-BAD"
+export pure func quotaVm(n: int) -> string = if checkN3() && checkFirstError() && checkEncodeOrder() then "quota-ok" else "quota-BAD"
 export pure func selectionVm(n: int) -> string = if checkSelection() && checkTies() && checkAxes() && checkTierNameRefused() && checkHugeCoordRefused() then "selection-ok" else "selection-BAD"
