@@ -553,6 +553,10 @@ cross-match (`pkg search hipparcos|crossmatch` returned nothing).
 - `make test` includes `test_bright_audit` and is green.
 
 #### M1.3: Star rendering v2 (331k instanced, physical brightness)
+**Status (2026-10-02): executed on `sprint/m1.3-starfield`, awaiting ⏸ R-b.**
+✅ `make physics` · ✅ `make golden` (60 kK + stand-off + cull + existing, 0 failures) ·
+✅ `make bench TIER=large` (numbers in the sprint JSON and `docs/m1.3/bench_*.json`) ·
+✅ `make capture` renders opened (`docs/m1.3/`) · ⏸ R-b.
 **Scope:**
 - **`sky/starfield.gd`:** loads binary tiers through `star_catalogue.gd`.
   The bright tier is always loaded on top. The JSON path is removed for the

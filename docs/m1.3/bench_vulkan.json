@@ -1,0 +1,27 @@
+{
+  "background": true,
+  "beta_end": 0.990019613184725,
+  "cpu_rebase_ms": 73.11,
+  "device": "Apple M4 Max",
+  "driver": "vulkan",
+  "frame_ms_p50": 8.365,
+  "frame_ms_p99": 24.337,
+  "frames": 3381,
+  "gpu_ms_p50": 2.03999996185303,
+  "gpu_ms_p99": 21.0179996490479,
+  "rebase_mode": "GPU",
+  "rebases_in_flight": 0,
+  "render_size": [
+    2560.0,
+    1440.0
+  ],
+  "seconds": 30.0,
+  "star_pass_gpu_ms_p50": 0.604000091552734,
+  "star_pass_gpu_ms_p90": 4.73900020122528,
+  "star_pass_gpu_ms_p99": 19.8040008544922,
+  "star_pass_wall_ms_p50": 0.199,
+  "stars": 324307,
+  "tiers": [
+    "large"
+  ]
+}

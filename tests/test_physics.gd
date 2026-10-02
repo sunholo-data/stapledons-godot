@@ -179,6 +179,142 @@ func test_catalogue_galactic_directions() -> void:
 		check("%s (%s): l %.2f b %+.2f, catalogue l %.2f -> sep deg" % [row[1], row[0], row[4], row[5], l_cat], sep, 0.0, tol)
 
 
+## M1.3 (O-1): the colour LUT reaches 1e7 K, finite in every texel, and its
+## top end agrees with the package (luminance ratio 1e7 K / 1e6 K computed by
+## sunholo/relativity 0.5.1 blackbody.luminance).
+func test_lut_range() -> void:
+	print("Blackbody LUT range (O-1, M1.3)")
+	check("LUT_T_MAX >= 1e7 K", 1.0 if Blackbody.LUT_T_MAX >= 1.0e7 else 0.0, 1.0, 0.0)
+	check("LUT_SIZE = 1320 (log-T step kept ~0.79%)", Blackbody.LUT_SIZE, 1320, 0.0)
+	var step := (log(Blackbody.LUT_T_MAX) - log(Blackbody.LUT_T_MIN)) / Blackbody.LUT_SIZE
+	check("log-T step per texel <= 0.0080", 1.0 if step <= 0.0080 else 0.0, 1.0, 0.0)
+	check("package: Y(1e7 K) / Y(1e6 K) = 10.11998569367005", Blackbody.luminance(1.0e7) / Blackbody.luminance(1.0e6), 10.11998569367005, 1e-9)
+	var img := Blackbody.build_lut().get_image()
+	var top := img.get_pixel(Blackbody.LUT_SIZE - 1, 0)
+	check("top texel log10 Y = CPU log10 Y at its temperature (finite)", top.a, log(Blackbody.luminance(exp(log(Blackbody.LUT_T_MIN) + (Blackbody.LUT_SIZE - 0.5) / Blackbody.LUT_SIZE * (log(Blackbody.LUT_T_MAX) - log(Blackbody.LUT_T_MIN))))) / log(10.0), 1e-4)
+	check("2.682 MK (60 kK x D 44.7) maps inside the LUT (u < 1)", 1.0 if Blackbody.lut_u(60000.0 * 44.7) < 1.0 else 0.0, 1.0, 0.0)
+
+
+## M1.3 brightness: splat energy = E_v x pointFluxRatio(T, D), with E_v from
+## the package's illuminanceFromV mirrored in GDScript. Package values from
+## sunholo/relativity 0.5.1 (photometry.illuminanceFromV, blackbody.pointFluxRatio).
+func test_star_brightness() -> void:
+	print("Star brightness proportional to E_v (M1.3)")
+	check("package: illuminanceFromV(0) = 2.558585886905643e-6 lux", Relativity.illuminance_from_v(0.0) / 2.558585886905643e-6, 1.0, 1e-12)
+	check("package: illuminanceFromV(-1.46) (Sirius) = 9.817479430199844e-6 lux", Relativity.illuminance_from_v(-1.46) / 9.817479430199844e-6, 1.0, 1e-12)
+	check("5 magnitudes = 100x in E_v", Relativity.illuminance_from_v(0.0) / Relativity.illuminance_from_v(5.0), 100.0, 1e-9)
+	check("package: pointFluxRatio(60 kK, 44.7) = 0.027970449496092183", Relativity.point_flux_ratio(60000.0, 44.7) / 0.027970449496092183, 1.0, 1e-9)
+	check("package: pointFluxRatio(60 kK, 1/44.7) = 7.522327389995562e-6", Relativity.point_flux_ratio(60000.0, 1.0 / 44.7) / 7.522327389995562e-6, 1.0, 1e-9)
+	check("package: pointFluxRatio(3300 K, sqrt 19) = 26.28143112310455", Relativity.point_flux_ratio(3300.0, sqrt(19.0)) / 26.28143112310455, 1.0, 1e-9)
+	for d: float in [1.0 / 44.7, 0.3, 1.0, 4.3589, 44.7]:
+		var e0 := Starfield.splat_energy(Relativity.illuminance_from_v(1.0), 5800.0, d)
+		var e1 := Starfield.splat_energy(Relativity.illuminance_from_v(3.5), 5800.0, d)
+		check("same T, D %.4f: splat energy ratio = E_v ratio (10^(2.5 x 0.4))" % d, e0 / e1, pow(10.0, 1.0), 1e-9)
+	check("splat energy at D = 1 equals E_v", Starfield.splat_energy(3.0e-7, 4200.0, 1.0), 3.0e-7, 1e-18)
+	# a real tier record through the loader: E_v in custom data, missing photometry skipped
+	var rows := [[3.0, 4.0, 0.0, 5800.0, 2.0, 0.0], [1.0, 0.0, 0.0, 0.0, 99.0, 2.0], [0.0, 0.0, -10.0, 9000.0, 7.5, 5.0]]
+	var cat := _tier_fixture(rows)
+	var sf := Starfield.new()
+	if cat == null:
+		check("fixture tier loads", 0.0, 1.0, 0.0)
+		return
+	sf.append_catalogue(cat)
+	check("missing-photometry row skipped (2 of 3 drawn)", sf.count, 2, 0.0)
+	check("skipped_missing counts it", sf.skipped_missing, 1, 0.0)
+	check("custom data: T_eff", sf.custom[0], 5800.0, 0.0)
+	check("custom data: E_v = illuminanceFromV(2.0) lux (float32)", sf.custom[1] / Relativity.illuminance_from_v(2.0), 1.0, 1e-6)
+	check("custom data: flags", sf.custom[6], 5.0, 0.0)
+	check("galactic (3, 4, 0) -> world (4, 0, -3)", Vector3(sf.pos[0], sf.pos[1], sf.pos[2]).distance_to(Vector3(4, 0, -3)), 0.0, 0.0)
+	check("custom data: |p|^2 = 25 ly^2", sf.custom[3], 25.0, 0.0)
+	sf.set_ship_position(4.0 * 0.5, 0.0, -3.0 * 0.5)
+	check("flux at the ship = E_v x |p|^2 / r^2 (halfway: 4x)", sf.flux_at_ship(0) / Relativity.illuminance_from_v(2.0), 4.0, 1e-6)
+	sf.free()
+
+
+func _tier_fixture(rows: Array) -> StarCatalogue:
+	var dir := "user://test_physics_tier"
+	DirAccess.make_dir_recursive_absolute(dir)
+	var b := PackedByteArray()
+	b.resize(24 * rows.size())
+	for r in rows.size():
+		for f in 6:
+			b.encode_float(24 * r + 4 * f, rows[r][f])
+	var ctx := HashingContext.new()
+	ctx.start(HashingContext.HASH_SHA256)
+	ctx.update(b)
+	var meta := {"tier": "fixture", "count": rows.size(), "count_excluded": 0, "format_version": 1, "record_bytes": 24,
+		"fields": ["x", "y", "z", "teff", "v", "flags"], "sha256": {"bin": ctx.finish().hex_encode()}}
+	var f := FileAccess.open(dir + "/stars_fixture.bin", FileAccess.WRITE)
+	f.store_buffer(b)
+	f.close()
+	f = FileAccess.open(dir + "/stars_fixture.json", FileAccess.WRITE)
+	f.store_string(JSON.stringify(meta))
+	f.close()
+	return StarCatalogue.load_tier("fixture", dir)
+
+
+## M1.3 rebasing (gate 5): alpha Cen A (SIMBAD l 315.734, b -0.680, 4.37 ly)
+## seen from the 1,000 AU stand-off, a little off the Sol line. The float64 CPU
+## direction through the rebased coordinates must match the direct one within
+## 1e-9 rad; the vertex shader's float32 hi/lo path (emulated op by op) within
+## 1e-6 rad (a pixel is ~8.5e-4 rad); a single float32 position from Sol would
+## be ~1e-5 rad off, so the hi/lo pair is what carries the precision.
+func test_rebasing_precision() -> void:
+	print("Rebasing precision at the 1,000 AU stand-off (M1.3, gate 5)")
+	var l := deg_to_rad(315.734)
+	var b := deg_to_rad(-0.680)
+	var d := 4.37
+	var g := [d * cos(b) * cos(l), d * cos(b) * sin(l), d * sin(b)]
+	var star := [g[1], g[2], -g[0]] # galactic -> world, float64 scalars
+	var au := 1.0 / 63241.07708426628 # ly
+	var stand := 1000.0 * au
+	# ship: 1,000 AU short of the star along the Sol line, then 300 AU sideways
+	var u := [star[0] / d, star[1] / d, star[2] / d]
+	var side := [u[2], 0.0, -u[0]]
+	var sn := sqrt(side[0] * side[0] + side[2] * side[2])
+	var ship := []
+	for a in 3:
+		ship.append(star[a] - u[a] * stand + side[a] / sn * 300.0 * au)
+	var want := [star[0] - ship[0], star[1] - ship[1], star[2] - ship[2]]
+	var wn := sqrt(want[0] ** 2 + want[1] ** 2 + want[2] ** 2)
+	check("stand-off distance is ~1,044 AU (float64)", wn / au, sqrt(1000.0 ** 2 + 300.0 ** 2), 1e-6)
+	for mode in [Starfield.Rebase.GPU, Starfield.Rebase.CPU]:
+		var sf := Starfield.new()
+		sf.rebase_mode = mode
+		sf.set_custom_stars([{"pos": [9.0, -2.0, 30.0], "t": 5000.0, "flux": 1.0}, {"pos": star, "t": 5790.0, "flux": 1.0}])
+		sf.multimesh = MultiMesh.new() # buffer only; no material in a headless test
+		sf.multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		sf.multimesh.use_custom_data = true
+		sf._fill()
+		# fly in from Sol in 0.4 ly steps so a CPU rebase lands near (not at) the ship
+		for step in 12:
+			var f := step / 11.0
+			sf.set_ship_position(ship[0] * f + 0.003, ship[1] * f, ship[2] * f)
+		sf.set_ship_position(ship[0], ship[1], ship[2])
+		var tag := "GPU (origin Sol)" if mode == Starfield.Rebase.GPU else "CPU (origin %.4f ly from the ship)" % Starfield._dist(sf.origin, sf.ship)
+		var cpu := sf.direction_to(1)
+		check("%s: float64 rebased direction to alpha Cen A (rad)" % tag, _ang(cpu, want), 0.0, 1e-9)
+		check("%s: vertex shader float32 hi/lo direction (rad)" % tag, _ang(sf.shader_rel(1), want), 0.0, 1e-6)
+		if mode == Starfield.Rebase.CPU:
+			check("CPU mode rebased at least once and the origin is within 0.01 ly", 1.0 if sf.rebases > 0 and Starfield._dist(sf.origin, sf.ship) <= Starfield.REBASE_LY else 0.0, 1.0, 0.0)
+		sf.free()
+	# what the hi/lo pair buys: float32 positions from Sol, no lo terms
+	var naive := []
+	for a in 3:
+		naive.append(Starfield.f32(Starfield.f32(star[a]) - Starfield.f32(ship[a])))
+	check("float32 positions from Sol alone miss by > 1e-6 rad (the test can tell)", 1.0 if _ang(naive, want) > 1e-6 else 0.0, 1.0, 0.0)
+
+
+func _ang(a: Array, b: Array) -> float:
+	var na := sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2])
+	var nb := sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2])
+	# atan2(|a x b|, a.b): exact near 0, unlike acos
+	var cx: float = a[1] * b[2] - a[2] * b[1]
+	var cy: float = a[2] * b[0] - a[0] * b[2]
+	var cz: float = a[0] * b[1] - a[1] * b[0]
+	return atan2(sqrt(cx * cx + cy * cy + cz * cz), (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])) if na > 0.0 and nb > 0.0 else INF
+
+
 ## The camera cases need a node in a viewport, so they run once the main loop
 ## has started; everything else runs in _init.
 func _initialize() -> void:
@@ -198,6 +334,9 @@ func _init() -> void:
 	var back := -fwd
 	test_off_axis_cpu_spec_values()
 	test_catalogue_galactic_directions()
+	test_lut_range()
+	test_star_brightness()
+	test_rebasing_precision()
 
 	print("Aberration (sources crowd toward the direction of motion)")
 	check("90 deg source at 0.9c appears at acos(0.9) = 25.842 deg", angle_deg(Relativity.aberrate(side, fwd, 0.9), fwd), rad_to_deg(acos(0.9)), 1e-4)

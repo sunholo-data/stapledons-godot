@@ -1,6 +1,10 @@
-// Relativistic starfield. Each MultiMesh instance is one catalogue star:
-//   instance origin  = galaxy-frame unit direction observer -> star (n)
-//   INSTANCE_CUSTOM  = (T_eff kelvin, relative flux, 0, 0)
+// Relativistic starfield. Each MultiMesh instance is one catalogue star
+// (sky/starfield.gd, M1.3):
+//   instance origin       = hi = f32(p - O), star position from the rebase origin O, world ly
+//   instance basis col x  = lo = f32(p - O - hi), the rounding error of hi
+//   INSTANCE_CUSTOM       = (T_eff kelvin, E_v at Sol (lux, illuminanceFromV), flags, |p|^2 ly^2)
+// The ship's offset from O arrives as the same hi/lo pair; rel = (hi - ship_hi)
+// + (lo - ship_lo) keeps a nearby star's direction to float32 precision of r.
 // Mirrors physics/relativity.gd and physics/blackbody.gd; keep them in sync.
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, depth_test_disabled, cull_disabled, fog_disabled;
@@ -15,8 +19,17 @@ uniform float lut_log_tmax;
 uniform float exposure = 5.0;             // linear radiance of a mag-0 star's splat peak
 uniform float psf_sigma_px = 0.9;         // point-spread sigma in pixels
 uniform float sky_radius = 100.0;
+uniform vec3 ship_hi = vec3(0.0);         // ship - O, float32 pair (see header)
+uniform vec3 ship_lo = vec3(0.0);
+uniform float min_r2 = 1e-6;              // ly^2 floor of the 1/r^2 rescale (63 AU)
+// Stars whose splat peak (linear, after beaming and exposure) is below this are
+// collapsed before rasterisation; 1e-4 is ~40x below one 8-bit step at the top
+// of the tonemapper, so nothing visible is lost and most of the 324k faint
+// GCNS stars cost only their vertices.
+uniform float cull_peak = 1e-4;
 
 varying vec3 v_color;
+varying flat float v_extent; // quad half-width in PSF sigmas
 
 vec4 lut(float t) {
 	float u = (log(t) - lut_log_tmin) / (lut_log_tmax - lut_log_tmin);
@@ -24,9 +37,11 @@ vec4 lut(float t) {
 }
 
 void vertex() {
-	vec3 n = normalize(MODEL_MATRIX[3].xyz);
+	vec3 rel = (MODEL_MATRIX[3].xyz - ship_hi) + (MODEL_MATRIX[0].xyz - ship_lo);
+	vec3 n = normalize(rel);
 	float t_eff = INSTANCE_CUSTOM.x;
-	float flux = INSTANCE_CUSTOM.y;
+	// E_v at Sol rescaled by inverse square to the ship
+	float flux = INSTANCE_CUSTOM.y * INSTANCE_CUSTOM.w / max(dot(rel, rel), min_r2);
 
 	float b = beta_mag;
 	vec3 n_app = n;
@@ -43,7 +58,8 @@ void vertex() {
 		d = g * one_plus_bc;
 	}
 
-	// Blackbody at T is seen as a blackbody at D*T with solid angle / D^2.
+	// Blackbody at T is seen as a blackbody at D*T with solid angle / D^2:
+	// splat energy = E_v x pointFluxRatio(T, D).
 	vec4 rest = lut(t_eff);
 	vec4 seen = lut(t_eff * d);
 	float band_ratio = pow(10.0, seen.a - rest.a) / (d * d);
@@ -52,15 +68,20 @@ void vertex() {
 	// Project the apparent direction (rotation only: stars are at infinity),
 	// then expand the quad to a fixed pixel footprint around it.
 	vec3 view_dir = mat3(VIEW_MATRIX) * n_app;
-	if (view_dir.z >= 0.0) {
+	float peak = max(v_color.r, max(v_color.g, v_color.b));
+	// The splat reaches out to where the PSF falls to cull_peak (at most 4
+	// sigma): faint stars get small quads, so overdraw scales with brightness.
+	v_extent = clamp(sqrt(2.0 * log(max(peak, cull_peak) / cull_peak)), 1.0, 4.0);
+	if (view_dir.z >= 0.0 || peak < cull_peak) {
 		// Behind the camera (which looks down -Z): with clip.w <= 0 the
-		// projection would mirror the star back into view. Discard it.
+		// projection would mirror the star back into view. Discard it, and
+		// any star too faint to reach the display (cull_peak).
 		POSITION = vec4(0.0, 0.0, 2.0, 1.0);
 		v_color = vec3(0.0);
 		UV = VERTEX.xy;
 	} else {
 	vec4 clip = PROJECTION_MATRIX * vec4(view_dir * sky_radius, 1.0);
-	vec2 px = VERTEX.xy * (psf_sigma_px * 4.0);
+	vec2 px = VERTEX.xy * (psf_sigma_px * v_extent);
 	clip.xy += px * 2.0 / VIEWPORT_SIZE * clip.w;
 	POSITION = clip;
 	UV = VERTEX.xy;
@@ -70,7 +91,7 @@ void vertex() {
 void fragment() {
 	// Gaussian point-spread function: integrated splat energy is
 	// proportional to the star's flux (2 pi sigma^2 x peak).
-	float r2 = dot(UV, UV) * 16.0; // UV in [-1,1] spans +-4 sigma
+	float r2 = dot(UV, UV) * v_extent * v_extent; // UV in [-1,1] spans +-v_extent sigma
 	float psf = exp(-0.5 * r2);
 	ALBEDO = v_color * psf;
 }
