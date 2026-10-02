@@ -16,18 +16,19 @@ pure func near(a: float, b: float, tol: float) -> bool = a - b <= tol && b - a <
 pure func steps(lo: int, hi: int) -> [int] = down(hi, lo, [])
 pure func down(i: int, lo: int, acc: [int]) -> [int] = if i < lo then acc else down(i - 1, lo, i :: acc)
 
-pure func w() -> int = 260
-pure func h() -> int = 130
+pure func w() -> int = 520
+pure func h() -> int = 280
 
 -- background 40 DN with a deterministic +-4 grain, plus Gaussian stars (sigma 1.3 px)
 pure func star(x: int, y: int, sx: float, sy: float, amp: float) -> float {
   let dx = intToFloat(x) + 0.5 - sx; let dy = intToFloat(y) + 0.5 - sy;
   amp * exp(0.0 - (dx * dx + dy * dy) / (2.0 * 1.3 * 1.3))
 }
--- a saturated V = -1 star: core clipped at 255 by the photo, halo sigma 12 px
+-- a saturated V = -1 star like Sirius in the photo: core clipped at 255, a wide
+-- halo (sigma 40 px, measured on the photo) that fills most of a 2.5-halo-radius background box
 pure func halo(x: int, y: int) -> float {
-  let dx = intToFloat(x) + 0.5 - 190.5; let dy = intToFloat(y) + 0.5 - 70.5;
-  400.0 * exp(0.0 - (dx * dx + dy * dy) / (2.0 * 12.0 * 12.0))
+  let dx = intToFloat(x) + 0.5 - 390.5; let dy = intToFloat(y) + 0.5 - 140.5;
+  600.0 * exp(0.0 - (dx * dx + dy * dy) / (2.0 * 40.0 * 40.0))
 }
 pure func value(x: int, y: int) -> int {
   let v = 40.0 + intToFloat((x * 7 + y * 13) % 9 - 4) + star(x, y, 50.5, 40.5, 190.0) + star(x, y, 110.5, 30.5, 150.0) + halo(x, y);
@@ -37,24 +38,24 @@ export pure func image() -> Img =
   { b: fromInts(flatMap(\y. flatMap(\x. { let v = value(x, y); [v, v, v] }, steps(0, w() - 1)), steps(0, h() - 1))), w: w(), h: h() }
 
 pure func catStar() -> Cand = { v: 3.0, x: 50.5, y: 40.5, src: 0 }
-pure func emptySky() -> Cand = { v: 5.0, x: 130.5, y: 100.5, src: 1 }
-pure func brightStar() -> Cand = { v: 0.0 - 1.0, x: 190.5, y: 70.5, src: 0 }
+pure func emptySky() -> Cand = { v: 5.0, x: 130.5, y: 180.5, src: 1 }
+pure func brightStar() -> Cand = { v: 0.0 - 1.0, x: 390.5, y: 140.5, src: 0 }
 
 export pure func checkPixels(img: Img) -> bool =
   near(lum(img, 50, 40), 230.0, 6.0) && near(lum(img, 5, 5), 40.0, 4.5) && chan(img, 50, 0 - 1, 0) == 0.0 &&
-  chan(img, 0 - 1, 5, 0) == chan(img, 259, 5, 0) && near(lum(img, 190, 70), 255.0, 1.0e-9)
+  chan(img, 0 - 1, 5, 0) == chan(img, 519, 5, 0) && near(lum(img, 390, 140), 255.0, 1.0e-9)
 
 export pure func checkProjection(img: Img) -> bool =
-  (match lbToPx(img, 0.0, 0.0) { (x, y) => near(x, 130.0, 1.0e-9) && near(y, 65.0, 1.0e-9) }) &&
-  (match lbToPx(img, 90.0, 0.0) { (x, _) => near(x, 65.0, 1.0e-9) }) &&
-  (match lbToPx(img, 270.0, 0.0 - 45.0) { (x, y) => near(x, 195.0, 1.0e-9) && near(y, 97.5, 1.0e-9) })
+  (match lbToPx(img, 0.0, 0.0) { (x, y) => near(x, 260.0, 1.0e-9) && near(y, 140.0, 1.0e-9) }) &&
+  (match lbToPx(img, 90.0, 0.0) { (x, _) => near(x, 130.0, 1.0e-9) }) &&
+  (match lbToPx(img, 270.0, 0.0 - 45.0) { (x, y) => near(x, 390.0, 1.0e-9) && near(y, 210.0, 1.0e-9) })
 
 -- TSV (HIP) and CSV (extract.ail) candidates: direction, V from the package, the V < 9.5 cut
 export pure func checkParsers(img: Img) -> bool {
   let hip = hipCands(img, "HIP\tVmag\t_Glon\t_Glat\tB-V\tPlx\n \tmag\tdeg\tdeg\tmag\tmas\n71683\t-0.01\t315.74\t-0.68\t0.71\t742.12\n");
   let csv = csvCands(img, 1, "id,x,y,z,G,BPRP,wd\na,10.0,0.0,0.0,5.0,0.8,0\nfaint,10.0,0.0,0.0,12.0,0.8,0\nnocol,0.0,10.0,0.0,6.0,,0\n");
   (match hip { [c] => near(c.v, 0.0 - 0.01, 1.0e-9) && c.src == 0, _ => false }) &&
-  (match csv { [b, a] => near(a.x, 130.0, 1.0e-9) && near(a.v, vFromG(5.0, 0.8), 1.0e-12) && near(b.x, 65.0, 1.0e-9) && b.v == 6.0, _ => false })
+  (match csv { [b, a] => near(a.x, 260.0, 1.0e-9) && near(a.v, vFromG(5.0, 0.8), 1.0e-12) && near(b.x, 130.0, 1.0e-9) && b.v == 6.0, _ => false })
 }
 
 export pure func checkDetect(img: Img) -> bool {
@@ -62,7 +63,7 @@ export pure func checkDetect(img: Img) -> bool {
   let q = detect(img, emptySky());
   let s = detect(img, brightStar());
   p.found && p.px == 50 && p.py == 40 && near(p.bg, 40.0, 5.0) && !q.found && near(tolFor(3.0), 4.5, 1.0e-12) &&
-  s.found && near(intToFloat(s.px), 190.0, 2.0) && near(intToFloat(s.py), 70.0, 2.0)
+  s.found && near(intToFloat(s.px), 390.0, 2.0) && near(intToFloat(s.py), 140.0, 2.0)
 }
 
 export pure func checkHalo() -> bool =

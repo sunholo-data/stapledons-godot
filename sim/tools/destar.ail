@@ -107,13 +107,16 @@ pure func absF(a: float) -> float = if a < 0.0 then 0.0 - a else a
 pure func steps(lo: int, hi: int, s: int) -> [int] = if lo > hi then [] else stepsDown(lo + ((hi - lo) / s) * s, lo, s, [])
 pure func stepsDown(i: int, lo: int, s: int, acc: [int]) -> [int] = if i < lo then acc else stepsDown(i - s, lo, s, i :: acc)
 
--- 30th percentile and 1.4826 x MAD of a box sampled on a 17 x 17 grid (289 samples).
--- The box half-size is 16 px or 2.5 halo radii, whichever is larger: a bright star's
--- halo must not become its own background (it did, and V < 2 matched nothing).
-export pure func background(img: Img, cx: int, cy: int, half: int) -> (float, float) {
+-- 30th percentile and 1.4826 x MAD of a box sampled on a 17 x 17 grid, skipping
+-- samples within `hole` px of the centre. The box half-size is 16 px or 2.5 halo
+-- radii, the hole 1.5 halo radii: a bright star's halo must be neither its own
+-- background nor its own noise (on the photo it was both, and Sirius, alpha Cen and
+-- Hadar failed the 5 sigma test with sigma 35-41).
+export pure func background(img: Img, cx: int, cy: int, half: int, hole: float) -> (float, float) {
   let st = if half / 8 > 2 then half / 8 else 2;
-  let vals = sortBy(cmpF, flatMap(\dy. map(\dx. lum(img, cx + dx, cy + dy), steps(0 - 8 * st, 8 * st, st)), steps(0 - 8 * st, 8 * st, st)));
-  let n = 289;
+  let grid = steps(0 - 8 * st, 8 * st, st);
+  let vals = sortBy(cmpF, flatMap(\dy. flatMap(\dx. if intToFloat(dx * dx + dy * dy) < hole * hole then [] else [lum(img, cx + dx, cy + dy)], grid), grid));
+  let n = foldl(\k _. k + 1, 0, vals);
   let bg = nthF(vals, n * 3 / 10);
   let med = nthF(vals, n / 2);
   let dev = sortBy(cmpF, map(\v. absF(v - med), vals));
@@ -128,7 +131,7 @@ pure func localMax(img: Img, x: int, y: int, l: float) -> bool =
 export pure func detect(img: Img, c: Cand) -> Peak {
   let cx = floatToInt(floor(c.x)); let cy = floatToInt(floor(c.y));
   let bh = floatToInt(ceil(2.5 * haloRadius(c.v)));
-  match background(img, cx, cy, if bh > 16 then bh else 16) {
+  match background(img, cx, cy, if bh > 16 then bh else 16, 1.5 * haloRadius(c.v)) {
     (bg, sigma) => {
       let t = tolFor(c.v);
       let ti = floatToInt(ceil(t));
@@ -151,7 +154,11 @@ export pure func detect(img: Img, c: Cand) -> Peak {
         (bx, by, bl) => {
           let peak = bl - bg;
           let flux = foldl(\s dy. foldl(\s2 dx. { let r = lum(img, bx + dx, by + dy) - bg; s2 + (if r > 0.0 then r else 0.0) }, s, steps(0 - 2, 2, 1)), 0.0, steps(0 - 2, 2, 1));
-          { found: peak > 5.0 * sigma && sigma >= 0.0 && localMax(img, bx, by, bl), px: bx, py: by, peak: peak, flux: flux, bg: bg, sigma: sigma }
+          -- the photo clips at 255, so a saturated core cannot clear 5 sigma on a bright
+          -- background (alpha Cen and Hadar in the band: 255 - 90 < 5 x 34); a clipped
+          -- core (any channel at 254+) at the predicted position is a detection in itself
+          let saturated = chan(img, bx, by, 0) >= 254.0 || chan(img, bx, by, 1) >= 254.0 || chan(img, bx, by, 2) >= 254.0;
+          { found: (peak > 5.0 * sigma || saturated) && sigma >= 0.0 && localMax(img, bx, by, bl), px: bx, py: by, peak: peak, flux: flux, bg: bg, sigma: sigma }
         }
       }
     }
