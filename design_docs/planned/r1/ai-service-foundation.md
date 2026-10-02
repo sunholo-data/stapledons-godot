@@ -220,6 +220,23 @@ the same id. A record with a missing or mistyped field stays `bad_intent`
 | `ai_emotion` | text: a marker names an emotion not in `constraints.emotions` |
 | `ai_descriptor` | media: `body` is not the descriptor JSON for the kind, or its `key` ≠ the request's key, or (voice) its segment count ≠ the line's segment count, or offsets are not strictly increasing from 0 and below `duration_ms` |
 
+*As implemented in AI.3 (2026-10-02):* the refusal code is the table's
+(`ai_markup` without the parser's sub-reason). A record with a bad `source`
+for a request that is not open is `ai_source` and closes nothing. The text
+body is bounded before the parser runs: longer than `max_chars` + 176 code
+points (16 markers of at most 11) is `ai_length` unparsed. `ai_numeral` is
+checked on the body, so an unparsable body with a digit is `ai_numeral`. A
+segment made only of invisible characters (U+200B and similar, which `trim`
+keeps) is `ai_markup` (`empty_segment`). Descriptor: a JSON object of at most
+4096 code points with `key` (compared field by field; `variant` only for
+portraits and avatars, since a voice key's variant is sha-derived after
+generation, (a4)), `mime` (`image/…` or `audio/…`), `bytes` > 0; images add
+`width`, `height` > 0; voice adds `duration_ms` > 0 and `segments_ms` (whole
+numbers). A voice request takes its line's segment count when it opens, so
+its record still validates after the line leaves `ai.lines`. Per ledger D-21,
+`no_numerals` holds for every purpose and `max_chars` is 280 (line, news,
+probe) or 600 (archive).
+
 **Accepted results.** Text: `ai_accepted{req, kind, sha256, text, segments:
 [{emotion, text}]}`, with segments from the parser (b). The sim keeps the
 last 64 accepted lines in `ai.lines` (`{req, entity_id, segments}`) so a voice
