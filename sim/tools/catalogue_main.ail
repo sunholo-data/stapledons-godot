@@ -11,7 +11,7 @@ import ./catalogue_bytes (encodeRow, encodeRows)
 import std/result (Result, Ok, Err)
 import std/option (Some, None)
 import std/string (concat, join, length, chars, endsWith, substring, intToStr)
-import std/list (foldl, filter, map)
+import std/list (foldl, filter, map, length as size)
 import std/crypto (sha256Hex, sha256Bytes)
 import std/bytes (fromBase64, toBase64)
 import std/json (Json, encode, decode, jo, kv, js, jint, ja, get, asString, asArray)
@@ -36,7 +36,6 @@ pure func sidecar(tier: string, count: int, excluded: int, rawSha: string, csvSh
     kv("package",jo([kv("name",js(p.name)), kv("version",js(p.version)), kv("content_hash",js(p.hash))])),
     kv("producer",js("stapledons/sim/tools/catalogue_main")),
     kv("sha256",jo([kv("raw",js(rawSha)), kv("csv",js(csvSha)), kv("bin",js(binSha))]))])), "\n"])
-pure func count[a](xs: [a]) -> int = foldl(\n x. n+1,0,xs)
 -- Any refusal (header, field, tier name, coordinate range, F32 bound, raw digest) is an Err: nothing to write.
 export pure func plan(i: {tier: string, csv: string, rawSha: string, ailang: string, pkg: Pkg}) -> Result[Plan,string] =
   if !sha256Text(i.rawSha) then Err("raw sha256 must be 64 lowercase hex digits") else
@@ -46,8 +45,8 @@ export pure func plan(i: {tier: string, csv: string, rawSha: string, ailang: str
       Err(e) => Err(e),
       Ok(sel) => match encodeRows(sel.rows) {
         Err(e) => Err(e),
-        Ok(b) => Ok({bin: b, count: count(sel.rows), excluded: sel.excluded,
-          sidecar: sidecar(i.tier,count(sel.rows),sel.excluded,i.rawSha,sha256Hex(i.csv),sha256Bytes(b),i.ailang,i.pkg)})
+        Ok(b) => Ok({bin: b, count: size(sel.rows), excluded: sel.excluded,
+          sidecar: sidecar(i.tier,size(sel.rows),sel.excluded,i.rawSha,sha256Hex(i.csv),sha256Bytes(b),i.ailang,i.pkg)})
       }
     }
   }
@@ -180,8 +179,8 @@ export func scan(path: string) -> () ! {FS, IO} = match readFileResult(path) {
     Err(e) => fail(concat([path,": ",e])),
     Ok(s) => {
       let bad = f32Refusals(s.rows);
-      println(concat(["f32-scan ",path,": ",intToStr(count(s.rows))," rows, ",intToStr(count(bad))," refusals"]));
-      if count(bad) == 0 then () else { println(concat(["  park for review: ",join(" ",bad)])); exit(1) }
+      println(concat(["f32-scan ",path,": ",intToStr(size(s.rows))," rows, ",intToStr(size(bad))," refusals"]));
+      if size(bad) == 0 then () else { println(concat(["  park for review: ",join(" ",bad)])); exit(1) }
     }
   }
 }

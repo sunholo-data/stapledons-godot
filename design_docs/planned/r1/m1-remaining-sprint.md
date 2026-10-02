@@ -2,7 +2,9 @@
 
 **Status:** Approved by Mark 2026-10-02 (ledger D-19). In execution:
 M1.6b executed (PR "M1.6b: camera with roll, HUD angle, off-axis golden (R-a)"),
-awaiting checkpoint R-a before merge.
+awaiting checkpoint R-a before merge. M1.2b-T4 executed (PR "M1.2b-T4: all
+tiers from real data, linear accumulators, 5-run parity") and awaiting
+evaluation. If it passes, the parent `M1.2b_AILANG_CATALOGUE` closes.
 
 ## Summary
 
@@ -378,6 +380,20 @@ code; package `optics` is mirrored, not changed.
 ### Wave 2
 
 #### M1.2b-T4: Full-tier integration, VM parity and performance
+**Status (2026-10-02):** executed on `sprint/m1.2b-t4`, awaiting independent
+evaluation. The T3 risk (ailang#1501) is fixed. The transform, `selectMedium`,
+`encodeRows`, `count` and `checkRow` now build every list with linear builtins
+(map, filter, flatMap, take, length, one stable sort), and foldl remains only
+for scalar tallies. `findIndex` and `any` are avoided: they recurse, are
+quadratic on the VM and overflow the interpreter's depth limit (ailang#1518,
+filed). The output bytes match the old code on all three tiers. On the VM,
+medium went from 383 s to 61 s and large from 536 s to 55 s; the interpreter
+is dominated by per-row cost (about 4 ms a row), so it barely moves. All three
+tiers build from the real CSVs: quick 141,792 B; medium 1,200,000 B with 965
+excluded; large 331,312 × 24 = 7,951,488 B, with 0 skipped. `make
+catalogue-parity` (medium) prints `5/5 identical`. N3 (`quotaVm`) replaces
+T3's `checkMediumQuota`. Mutations: 19 of 19 killed. The timing table is in
+the PR.
 **Scope:**
 - Build all three tiers from the real CSVs.
 - N3: an exact 50,000 boundary fixture (50,001 eligible plus intervening

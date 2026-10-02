@@ -1,6 +1,6 @@
 # AI service foundation: a recorded, replayable AI process
 
-**Status:** Planned (design, awaiting Mark's answers to the open questions, then a sprint plan). Written 2026-10-02 after Mark chose "Finish M1 + AI design".
+**Status:** Planned; open questions answered (D-20, D-21, 2026-10-02); sprint R1-AI-FOUNDATION approved and executing (AI.1, AI.2, AI.4 merged; AI.5 executed). Written 2026-10-02 after Mark chose "Finish M1 + AI design".
 **Release:** r1 · **Milestone:** mission queue row 4 "AI service foundation" (ledger **D-9**), feeds bar clause 4 (M4's news beat) and clause 5 (AILANG)
 **Priority:** P1: M4 is fully playable on templates without it (M4 §Depends on: "Soft"), but every later conversation, voice and portrait sits on this protocol, and recording must exist before the first live AI output, or replays break
 **Implements:**
@@ -599,8 +599,127 @@ holds, so the stub line itself passes `ai_numeral`; the fixture cases are
 chosen by the context field `stub_case`. The library writes text results as
 `.txt` blobs too (index line with `origin: "library"`, no clock, no request
 id), which is what lets `make ai-stub` check every text hash against
-`shasum -a 256`. Stub voice arrives with AI.5; until then a routed voice
-request answers `provider_error`.
+`shasum -a 256`. (Until AI.5 a routed voice request answered
+`provider_error`; AI.5 replaced that with the stub voice below.)
+
+AI.5 as built (2026-10-02, no network, no key):
+- **Transport, a task-0 finding.** On v0.51.0 `std/ai` binds one provider
+  per process (`--ai`): a per-call `step()` model of another provider is
+  refused (`makeModelResolver`), and `callImageBase64` always uses the bound
+  model. One process therefore cannot send text to OpenRouter through
+  `std/ai` and generate Gemini portraits. The live service binds `std/ai` to
+  Gemini (`--ai gemini-2.5-flash-image`: images, and Gemini text per call)
+  and reaches **OpenRouter chat completions over `std/net`**
+  (`Authorization: Bearer`), as it reaches Gemini TTS (`x-goog-api-key`).
+  This keeps Mark's "text to OpenRouter first" in a session with both keys.
+  Upstream: ailang#1536 (cross-provider per-call routing; a Result variant of
+  `callImageBase64`). The alternative, two service processes, is open for
+  Mark (sprint notes).
+- **Entries.** `main` (stub, the AI.4 fields, ceiling US$0.50), `session`
+  (stub plus `ceiling_usd`, 0.05–20), `live` (`--caps IO,FS,Env,Net,AI`):
+  refused before any call unless the provider's key env var is non-empty
+  (`provider: gemini` needs `GOOGLE_API_KEY`, `openrouter` needs
+  `OPENROUTER_API_KEY`, `live` needs one of them) and `AI_LIVE=1`. The stub
+  entries keep effects `{IO, FS}`. `prices.json`, `lore.json`, `models.json`
+  and `emotion_styles.json` are read from the routing file's directory.
+- **Acts.** A request becomes an ordered list (blob with its index line,
+  usage line, result), tested as data; blob writes are an ordered op list
+  (temp file, rename, index line).
+- **Spend.** Whole nano-dollars; per-provider ledger plus total; a request is
+  admitted only if the total plus its worst case (text: three attempts at the
+  token cap) fits the ceiling, else `budget`. The stub prices what it answers
+  as the routed model would (`meta.provider: "stub"` marks it simulated), so
+  `usage.ndjson` and `budget` show in `make ai-stub`.
+- **Stub voice.** A square-wave tone per segment (50 ms a code point,
+  200 ms–8 s), one Ogg Opus clip per line (`std/audio`), descriptor
+  `{key, mime: "audio/ogg", bytes, duration_ms, segments_ms}`, key variant
+  `sha256(voice + "\n" + marked line)[:16]`.
+- **Blank lines** are skipped; `readLine` returns `""` for a blank line and at
+  end of input alike (ailang#1535), so 16 empty reads in a row end the loop.
+
+### Follow-up: the AI model bake-off (after AI.10b)
+
+Mark, attended 2026-10-02: "we may actually run with models and compare their
+runs, like an elaborate eval test." This is queued as its own item (charter
+queue row 4b) and is **not** part of this sprint's scope; it is recorded here
+because the foundation already provides what it needs.
+
+**Idea.** Replay one recorded voyage several times, each time with the text
+route pinned to a different model, and compare what each model writes for the
+same moments in the game.
+
+**Why the foundation makes this cheap:**
+
+- **Same game for every model.** The sim is deterministic and the AI never
+  feeds back into physics, so every run sees byte-identical `ai_req` lines (same
+  purpose, entity, context, emotion budget). Only the generated text differs.
+- **Swapping models is a config change.** OpenRouter text goes over `std/net`
+  (AI.5, ailang#1536), so any `openrouter:vendor/model` id works by naming it in
+  `data/ai/models.json` / `routing.json`. Gemini models go through `std/ai`.
+- **Results are already labelled.** Every cache index and `usage.ndjson` line
+  carries provider, route, model, tokens and nano-dollar cost.
+- **Automatic scoring is already written.** The reply screen (`bad_output`) and
+  the sim's record validation (length caps 280/280/600, `ai_numeral`,
+  `ai_markup`, the marker grammar) give a per-model pass rate with no extra code.
+
+**Starting models (Mark, attended 2026-10-02):** "default models are like
+gemini 3.5 lite for speed and gemini 3.8 flash for smarts, openai sol 6.1 and
+glm flash".
+
+| Model | Role | Route |
+|---|---|---|
+| Gemini 3.5 Flash-Lite | speed: the default for short lines (crew line, news) | Gemini (`std/ai`), or via OpenRouter |
+| Gemini 3.8 Flash | smarts: archive entries, probe reports | Gemini (`std/ai`), or via OpenRouter |
+| OpenAI Sol 6.1 | contestant | OpenRouter |
+| GLM Flash | contestant (cheap) | OpenRouter |
+
+These four also replace AI.5's proposed text model (`mistralai/mistral-nemo`)
+as the defaults to put in `data/ai/models.json`, `routing.json` and
+`prices.json`.
+- **Not done yet:** the exact provider model ids and prices are unverified
+  offline. They get checked against the live model lists, and recorded, at the
+  attended AI.10b run, before any default changes.
+- **Routing split:** a speed model for short purposes and a smart model for long
+  ones is a new per-purpose split in `routing.json`. Today it routes per kind,
+  with all text treated alike.
+
+**Shape (to be designed properly when it is picked up):**
+
+- **Input.** A recorded request stream: the `ai_req` lines from a fixed voyage
+  replay, plus the context each one carried.
+- **Driver.** `make ai-bakeoff MODELS="…"`. For each model it starts the service
+  in `live` mode with a routing table that names only that model and writes to its
+  own cache directory (`bakeoff/<run>/<model>/`), so runs never mix and never touch
+  the game's cache.
+- **Scores per model:**
+  - pass rate through the screen and the sim's validation, with the reasons
+    for each refusal;
+  - latency (p50/p95);
+  - tokens and cost per voyage;
+  - marker-grammar use (are the emotions used, and used sensibly).
+- **Quality.** Done blind: a judge model rates tone, lore consistency (against
+  `data/ai/lore.json` and the Higgs-bubble canon) and in-character voice, and Mark
+  rates a blind sample. The judge model is never one of the contestants.
+- **Output.** A side-by-side report (an Artifact page: one row per request, one
+  column per model, scores in the header) plus a JSON summary under
+  `.ailang/state/evaluations/`.
+
+**Constraints:**
+
+- **Attended only:** `AI_LIVE=1` plus a TTY, as for AI.10b, with Mark present.
+  The unattended loop never runs it.
+- **Spending caps:** a per-model ceiling and a total ceiling for the whole run,
+  enforced by the spend ledger. One voyage across about 5 cheap text models
+  should cost cents.
+- **Kept out of the game:** bake-off outputs never enter the game's replay
+  goldens or the shipped cache.
+- **Choosing the default model:** changing the game's default text model is a
+  ledger decision for Mark, informed by the report.
+- **Text only at first.** Portraits and voice could follow later, at a higher
+  cost.
+
+**Estimate.** About 350 LOC: the driver, the scorer, the report generator and
+the judge prompt.
 
 ## Acceptance criteria
 
@@ -778,3 +897,9 @@ Gaps filed 2026-10-02 (`ailang messages`, gcp store, inbox `user`; GitHub issues
 | V10 | No conversation UI exists | `git ls-tree origin/spike/iso-bridge`; repo `ui/` | no dialogue scene; `fe16790` adds only preview PNGs |
 | V11 | Gemini TTS uses square-bracket tags | `stapledons-design/reference/ai-capabilities.md` §Emotion Markers | `[sigh] [laugh] [gasp] [whisper] [pause] [excited] [sad] [angry]` |
 | V12 | Path dependencies are absolute in the lockfile | `ailang` repo `docs/docs/guides/build-a-motoko-extension.md:104` | "Lockfile bakes in your absolute path; PR/CI clones break" |
+| V13 | G1 and G3 on the pin (AI.5 task 0) | `docs std/ai \| grep -i -E 'speech\|tts\|audio'`; `run --help \| grep -i stub` | no speech call (G1 open); only `-ai-stub`, no fixture option (G3 open) |
+| V14 | `std/net` accepts `x-goog-api-key` | loopback probe, `--net-allow-domains localhost --net-allow-localhost`, POST to closed port 9, control header `Host` | `x-goog-api-key` reaches the dial (`connection refused`); `Host` is refused `InvalidHeader`; no packet leaves the machine. Against a non-allowlisted domain the host check runs first (`DisallowedHost`), so that probe cannot show it |
+| V15 | `sunholo/gemini_live@0.5.0` on v0.51.0 | `ailang lock` with `AILANG_REGISTRY=file:///nonexistent` (cache only), `check --package ai`, strict-VM run of `buildTtsRequest` | locks, type-checks, runs on the strict VM |
+| V16 | OpenRouter in `std/ai` | v0.51.0 source: `internal/ai/config.go` `EnvVarForProvider`, `cmd/ailang/ai_handlers.go` `makeModelResolver`, `internal/ai/openrouter/chat.go` | key env `OPENROUTER_API_KEY`; per-call model stays within the bound provider; usage (prompt/completion tokens) reported in `StepResult` |
+| V17 | `--ai-stub` for an OpenRouter id | `step("openrouter:google/gemini-2.5-flash-lite", …)` under `--ai-stub --caps IO,AI`, keys unset | `{"kind":"Wait"}`, finish `stop`, 0 tokens (the stub ignores the model) |
+| V18 | `@limit` semantics | `! {AI @limit=3}` recursion probe under `--ai-stub` | the budget counts per outermost call of the annotated function; a fourth call aborts the program |

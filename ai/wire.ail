@@ -13,6 +13,9 @@ module stapledons/ai/wire
 --   A->G fatal   {code: "config", detail}: the service refuses to start
 --   G->A quit
 --
+-- An error after routing (an unknown stub_case or canon id, budget, a
+-- provider failure) stamps the route the table chose; a refusal before
+-- routing stamps "none" (AI.5: a deliberate rule, AI.4 evaluation note).
 -- `routes` in the hello and `meta.route` are the provider routing of the
 -- plan change (2026-10-02); `models` of the original design is folded into
 -- `routes`. `text_only` joins the error codes (it maps 1:1 to the sim's

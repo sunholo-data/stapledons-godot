@@ -6,11 +6,13 @@
 (PR #54, eval 96/100). AI.2 (protocol 2.1 codecs, `sim/ai.ail`, D-20 commit
 rule) merged (PR #56, eval 96/100). AI.4 (the `ai/` package: provider
 routing, wire, key, stub over both routes, cache writer, service loop,
-`ai-stub`) merged (PR #60, eval 90/100). AI.3 (record validation, protocol 2.1
-on the wire, D-21 limits, `replay-compat`, `ai_sim_session`, all goldens
-re-recorded on arm64 and x86_64) executed on `sprint/ai3-records`; **stopped
-at ⏸ G21** for Mark's golden review, then independent evaluation. Planned
-2026-10-02 on `origin/main` `a50bea2`.
+`ai-stub`) merged (PR #60, eval 90/100). AI.5 (prompts, per-provider spend,
+OpenRouter and Gemini adapters on fixtures, stub voice; OpenRouter text over
+`std/net`, see AI.5) merged (PR #64, eval 91/100). AI.3 (record validation,
+protocol 2.1 on the wire, D-21 limits, `replay-compat`, `ai_sim_session`, all
+goldens re-recorded on arm64 and x86_64) passed G21 (Mark, attended
+2026-10-02: "yes merge it") and evaluation (95/100); merged as PR #61.
+Planned 2026-10-02 on `origin/main` `a50bea2`.
 
 ## Summary
 
@@ -559,6 +561,27 @@ Gemini model (or what `--ai` must be for mixed routing), whether the
 provider reports token usage to AILANG code, and what `--ai-stub` returns for
 an OpenRouter model. Any surprise is reported upstream and recorded as a
 decision before task 3.
+
+**Task 0 results (2026-10-02, v0.51.0, no network call; design doc V13–V18):**
+G1 open (no speech in `std/ai`); G3 open (only `-ai-stub`), so no fixture
+adapter test through it. `x-goog-api-key` is accepted (loopback probe to a
+closed port, `Host` as the refused control; the non-allowlisted-domain probe
+cannot show it, because the host check runs first). `hasEnv` works.
+`gemini_live@0.5.0` locks from the cache, type-checks and runs on the strict
+VM. OpenRouter: key env `OPENROUTER_API_KEY`; token usage reaches
+`StepResult`; `--ai-stub` answers `{"kind":"Wait"}` for any model id.
+**Surprise:** `std/ai` binds one provider per process; a per-call
+`openrouter:` model beside a Gemini-bound handler is refused, and
+`callImageBase64` always uses the bound model (ailang#1536). **Decision
+taken by the executor, reversible, for Mark at ⏸ C:** OpenRouter text goes
+over `std/net` (chat completions), like TTS; `std/ai` stays bound to Gemini
+for images and Gemini text. This keeps text-to-OpenRouter-first with both
+keys in one process. The alternative is two service processes (AI.6/AI.7
+launch one per provider). **Proposed OpenRouter text model (Q7):**
+`openrouter:mistralai/mistral-nemo`, the cheapest candidate whose
+recorded-shape fixture passes the screen; price and availability were not
+verified offline (`data/ai/prices.json` says so); the safer, dearer
+alternative `openrouter:google/gemini-2.5-flash-lite` is priced beside it.
 
 **Tasks (test first):**
 1. `ai/prompt_test.ail`: prompt goldens for `line`, `news`, `archive`,

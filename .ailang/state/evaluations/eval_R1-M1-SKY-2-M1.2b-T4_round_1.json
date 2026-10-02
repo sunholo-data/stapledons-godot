@@ -1,0 +1,46 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.2b-T4",
+  "pr": 62,
+  "branch": "sprint/m1.2b-t4",
+  "evaluated_commit": "085cbfc",
+  "round": 1,
+  "evaluator": "independent (generator != judge), AILANG v0.51.0",
+  "score": 94,
+  "result": "pass",
+  "breakdown": {
+    "tests_pass": {"points": 20, "max": 20, "note": "make test green on a clean worktree (229 AILANG-module checks, 120 tests, strict VM = interpreter); make catalogue-vm (transform-ok, selection-ok, quota-ok, main-ok) and catalogue-bytes green."},
+    "lint_clean": {"points": 10, "max": 10, "note": "python-guard, ailang check and strict-bytecode gates inside make test are clean; no new Python."},
+    "acceptance_criteria": {"points": 30, "max": 30, "note": "medium 1,200,000 B with 965 excluded; large 331,312 x 24 = 7,951,488 B; parity 5/5 (quick run by evaluator); N3 passes."},
+    "code_quality": {"points": 14, "max": 15, "note": "No consing accumulator remains in a foldl (grep: only scalar folds in catalogue.ail:77 and catalogue_main.ail:30). -1: whiteDwarf (catalogue.ail) derives WD from the flags encoding (3/5/21), a coupling guarded only by tests."},
+    "documentation": {"points": 14, "max": 15, "note": "Changelog, plan status and sprint JSON updated (passes left null for the controller). -1: quick tier and quick parity need data/raw/cns5.dat, which is neither in the public bucket nor in data/sky/SHA256SUMS, and the plan does not say so."},
+    "design_fidelity": {"points": 6, "max": 6, "note": "Matches plan section M1.2b-T4 and design doc M1.2 (tier shapes, 50,000 quota, sidecar)."}
+  },
+  "hard_fails": [],
+  "verification": {
+    "byte_identity_vs_pre_T4": "PASS. Built quick, medium and large from d9805b4 (PR merge base) and from the PR head; cmp of every bin and sidecar identical (all 6 pairs).",
+    "timings_wall_s_vm": {
+      "pre_T4": {"quick": 1.26, "medium": 508.78, "large": 659.38},
+      "pr": {"quick": 1.11, "medium": 83.62, "large": 78.61}
+    },
+    "peak_rss_MiB": {"pre_medium": 4483, "pr_medium": 2030, "pre_large": 3694, "pr_large": 2010},
+    "parity": "make catalogue-parity PARITY_TIER=quick: interp 18.7 s, vm1-5 about 1.0-1.1 s, 5/5 identical. The medium interpreter run (about 23 min) was NOT run by the evaluator; the PR's own medium run (1407 s, 5/5) is unverified here, but the VM medium output is byte-identical to the independently built pre-T4 output.",
+    "mutations_run_by_evaluator": "11 of 11 killed: quota 49,999; quota 50,001; tally > for >=; take(limit-1); tally never stops counting; missing flag 3 dropped; WD flag 21 dropped; medium unsorted; no trailing-blank strip; strip any last line; y not range-checked. Each was killed by quotaVm, transformVm or selectionVm."
+  },
+  "n3_assessment": "Genuine. 50,001 complete rows at x=0..50000 plus 50,001 missing rows (flags 2 and 3) at x=i+0.5, so sorted order alternates. Asserts exactly 50,000 kept, 49,999 excluded, an independent count of missing rows with x<49999, no missing rows kept, and order 0..49999. Quota 49,999 or 50,001 and tally off-by-one each fail it.",
+  "deviations": {
+    "N3 replaces checkMediumQuota": "Accepted. N3 keeps every T3 assertion (50,000 kept, max 49999, order) and adds missing rows.",
+    "WD count derived from flags": "Accepted with a note. Values are correct (flags 3/5/21 are the only WD flags); pinned by checkClamp and checkWD; mutants killed.",
+    "parity script handles macOS and GNU time": "Accepted. The macOS branch was exercised; the GNU branch is untested here.",
+    "no tier binaries committed": "Accepted. Gitignored (.gitignore:16) until M1.2c force-adds them, as planned.",
+    "data input source": "Accepted with a note. gcns.csv, cns5.csv and table1c.dat.gz come from the bucket via sky_assets.sh fetch inputs. cns5.dat (quick raw) is not pinned and needed download_stars.sh quick from VizieR; its sha256 is recorded in the sidecar (7e8c1a2c...)."
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "design_docs/planned/r1/m1-remaining-sprint.md (T4 section) and Makefile:216: the quick tier and quick parity need data/raw/cns5.dat, which is unpinned and not fetched by sky_assets.sh. Pin it in data/sky/SHA256SUMS or document the download.",
+    "sim/tools/catalogue.ail whiteDwarf: derived from the flags encoding; a future flag change silently breaks Summary.wd unless the WD tests are run.",
+    "PR timings (medium 61 s, large 55 s) are faster than the evaluator's 84 s and 79 s on the same machine; the speedup (6x and 8x) holds either way.",
+    "Interpreter medium parity (23 min) not independently re-run."
+  ],
+  "ailang_1501_risk": "Resolved: all list-building folds replaced by map/filter/flatMap/take/length; no cons-in-foldl remains in catalogue*.ail; VM scaling is now linear."
+}

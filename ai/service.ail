@@ -2,54 +2,77 @@ module stapledons/ai/service
 
 -- The AI service's I/O loop (design (a2)): a separate process Godot
 -- launches; it never talks to the sim. hello -> read -> decode -> handle ->
--- write the blob -> print, one request at a time, until quit or end of input.
--- Nothing is printed before the first line arrives.
+-- run the acts (blob + index line, usage line, then the result), one request
+-- at a time, until quit or end of input. Nothing is printed before the first
+-- line arrives. Blank lines are skipped; readLine returns "" both for a
+-- blank line and at end of input, so 16 empty reads in a row end the loop
+-- (reported upstream).
 --
--- Configuration comes as the entry argument (`--args-json`), not argv or
--- env, so the stub runs with `--caps IO,FS` only and cannot read a key:
---   {"provider": "stub", "keys_present": ["gemini", "openrouter"], "text_only": false,
---    "cache_dir": "...", "routing": "data/ai/routing.json", "fixtures": "ai/fixtures"}
--- keys_present simulates which keys exist (stub mode); live mode derives it
--- from the env (AI.5). A bad configuration prints one `fatal` line and stops.
+-- Entries (configuration is the entry argument, never argv or env):
+--   main    (--caps IO,FS)  the stub. {provider: "stub", keys_present, text_only,
+--           cache_dir, routing, fixtures}; ceiling US$0.50 (D-20 default).
+--   session (--caps IO,FS)  the stub with the player's ceiling: main's fields
+--           plus ceiling_usd (0.05..20).
+--   live    (--caps IO,FS,Env,Net,AI, --ai <gemini image model>) the session
+--           fields with provider gemini, openrouter or live. Refused before
+--           any call unless the provider's key env var is non-empty
+--           (GOOGLE_API_KEY, OPENROUTER_API_KEY; `live` needs one of them) and
+--           AI_LIVE=1. keys_present is ignored: live reads the env.
+-- prices.json, lore.json, models.json and emotion_styles.json are read from
+-- the routing file's directory. A bad configuration prints one `fatal` line.
 import std/io (readLine, println, flush)
 import std/fs (readFileResult, readFileBytes, mkdirAll)
+import std/env (getEnvOr)
 import std/result (Result, Ok, Err)
 import std/option (Option, Some, None)
-import std/string (concat)
-import ./key (aiKinds, emotions8)
+import std/string (concat, split, join)
+import ./key (aiKinds, emotions8, member)
 import ./route (Routing, Route, Via, NoRoute, parseRouting, resolve, keysError)
-import ./wire (In, WHello, WRequest, WQuit, Out, OHello, OErr, OFatal, RouteView, decodeIn, encodeOut, reqOfLine)
-import ./provider (Ctx, Png, Case, Handled, providerOf, parseStubText, handle)
-import ./cache (writeBlob)
+import ./wire (Request, In, WHello, WRequest, WQuit, Out, OHello, OErr, OFatal, RouteView, decodeIn, encodeOut, reqOfLine)
+import ./provider (Provider, Stub, Live, Ctx, Png, Act, WriteBlob, AppendUsage, Say, Step, Job, Prep, Done, Run, providerOf, providerName,
+  parseStubText, parseStyles, catalogueError, handle, prepare, okText, okImage, okVoice, failed, castVoice)
+import ./spend (Ledger, ledgerOf, parsePrices, ceilingError)
+import ./prompt (parseLore)
+import ./cache (writeBlob, appendUsage)
+import ./adapters (geminiText, openRouterText, geminiImage, geminiVoice)
 
 export type Config = { provider: string, keys_present: [string], text_only: bool, cache_dir: string, routing: string, fixtures: string }
+export type Session = { provider: string, keys_present: [string], text_only: bool, cache_dir: string, routing: string, fixtures: string, ceiling_usd: float }
 
 pure func view(rt: Routing, keys: [string], textOnly: bool, kinds: [string]) -> [RouteView] =
   match kinds {
     [] => [],
     k :: more => (match resolve(rt, k, keys, textOnly) { Via(h) => { kind: k, route: h.provider, detail: h.model }, NoRoute(why) => { kind: k, route: "none", detail: why } }) :: view(rt, keys, textOnly, more)
   }
-pure func hello(cfg: Config, rt: Routing) -> Out =
-  OHello({ major: 1, minor: 0, service: "stapledons/ai 0.1.0", provider: "stub", live: false, cacheDir: cfg.cache_dir, routes: view(rt, cfg.keys_present, cfg.text_only, aiKinds()) })
+pure func hello(cfg: Session, c: Ctx, p: Provider) -> Out =
+  OHello({ major: 1, minor: 0, service: "stapledons/ai 0.2.0", provider: providerName(p), live: p != Stub, cacheDir: cfg.cache_dir, routes: view(c.routing, c.keys, c.textOnly, aiKinds()) })
 
 func say(o: Out) -> () ! {IO} { println(encodeOut(o)); flush(()) }
-
-func loop(cfg: Config, c: Ctx) -> () ! {IO, FS} {
-  let line = readLine(());
-  if line == "" then () else match decodeIn(line) {
-    Ok(m) => (match m {
-      WQuit => (),
-      WHello(_) => { say(hello(cfg, c.routing)); loop(cfg, c) },
-      WRequest(r) => {
-        let h = handle(c, r);
-        (match h.blob { Some(b) => writeBlob(cfg.cache_dir, b), None => () });
-        say(h.out);
-        loop(cfg, c)
-      }
-    }),
-    Err(code) => { say(OErr({ req: reqOfLine(line), code: code, provider: "stub", route: "none" })); loop(cfg, c) }
+func run(dir: string, acts: [Act]) -> () ! {IO, FS} =
+  match acts {
+    [] => (),
+    a :: r => { (match a { WriteBlob(b) => writeBlob(dir, b), AppendUsage(l) => appendUsage(dir, l), Say(o) => say(o) }); run(dir, r) }
   }
-}
+pure func maxBlanks() -> int = 16
+
+-- What one input line asks for. The stub loop and the live loop share it;
+-- they are two loops so the stub's effects stay {IO, FS}: it cannot reach a
+-- provider even in its types.
+type Line = Blank | Quit | Greet | Ask(Request) | Bad(Out)
+pure func lineOf(line: string, p: Provider) -> Line =
+  if line == "" then Blank
+  else match decodeIn(line) {
+    Ok(m) => (match m { WQuit => Quit, WHello(_) => Greet, WRequest(r) => Ask(r) }),
+    Err(code) => Bad(OErr({ req: reqOfLine(line), code: code, provider: providerName(p), route: "none" }))
+  }
+func stubLoop(cfg: Session, c: Ctx, p: Provider, l: Ledger, blanks: int) -> () ! {IO, FS} =
+  match lineOf(readLine(()), p) {
+    Blank => if blanks + 1 >= maxBlanks() then () else stubLoop(cfg, c, p, l, blanks + 1),
+    Quit => (),
+    Greet => { say(hello(cfg, c, p)); stubLoop(cfg, c, p, l, 0) },
+    Bad(o) => { say(o); stubLoop(cfg, c, p, l, 0) },
+    Ask(r) => { let s = handle(c, l, r); run(cfg.cache_dir, s.acts); stubLoop(cfg, c, p, s.ledger, 0) }
+  }
 
 -- readFileBytes returns the file as base64 text (undocumented; reported upstream);
 -- the stub decodes it with std/bytes.fromBase64.
@@ -64,38 +87,102 @@ func loadPngs(dir: string, es: [string]) -> Result[[Png], string] ! {FS} =
   }
 func readText(path: string) -> Result[string, string] ! {FS} =
   match readFileResult(path) { Ok(t) => Ok(t), Err(_) => Err(concat(["config: cannot read ", path])) }
+-- The directory of a path ("data/ai/routing.json" -> "data/ai"; "x.json" -> ".").
+-- No `_ :: []` arm: the bytecode VM matches it against longer lists (reported upstream).
+pure func dirOf(path: string) -> string =
+  match revList(split(path, "/"), []) { [] => ".", _ :: rest => (match rest { [] => ".", _ => join("/", revList(rest, [])) }) }
+pure func revList(xs: [string], acc: [string]) -> [string] = match xs { [] => acc, x :: r => revList(r, x :: acc) }
+func bindF(r: Result[a, string], g: a -> Result[b, string] ! {FS}) -> Result[b, string] ! {FS} = match r { Ok(x) => g(x), Err(e) => Err(e) }
+pure func bindP(r: Result[a, string], g: a -> Result[b, string]) -> Result[b, string] = match r { Ok(x) => g(x), Err(e) => Err(e) }
+pure func noErr(o: Option[string], x: a) -> Result[a, string] = match o { Some(e) => Err(e), None => Ok(x) }
 
 -- Everything the loop needs, or the first configuration error.
-func start(cfg: Config) -> Result[Ctx, string] ! {FS} =
+export func start(cfg: Session, keys: [string]) -> Result[Ctx, string] ! {FS} {
+  let d = dirOf(cfg.routing);
+  bindF(noErr(keysError(keys), ()), \_u.
+  bindF(noErr(ceilingError(cfg.ceiling_usd), ()), \_v.
+  bindF(bindP(readText(cfg.routing), parseRouting), \rt.
+  bindF(bindP(readText(concat([d, "/prices.json"])), parsePrices), \ps.
+  bindF(readText(concat([d, "/models.json"])), \mt.
+  bindF(noErr(catalogueError(rt, mt, ps), ()), \_w.
+  bindF(bindP(readText(concat([d, "/lore.json"])), parseLore), \lore.
+  bindF(bindP(readText(concat([d, "/emotion_styles.json"])), parseStyles), \styles.
+  bindF(bindP(readText(concat([cfg.fixtures, "/stub_text.json"])), parseStubText), \cases.
+  bindF(loadPngs(cfg.fixtures, emotions8()), \pngs. {
+    mkdirAll(cfg.cache_dir);
+    Ok({ routing: rt, keys: keys, textOnly: cfg.text_only, cases: cases, portraits: pngs, lore: lore, prices: ps, styles: styles })
+  }))))))))))
+}
+
+-- Wait for a first non-blank line so nothing is printed unasked, then refuse.
+func refuseStart(e: string, blanks: int) -> () ! {IO} =
+  if readLine(()) != "" then say(OFatal({ code: "config", detail: e }))
+  else if blanks + 1 >= maxBlanks() then () else refuseStart(e, blanks + 1)
+
+export func session(cfg: Session) -> () ! {IO, FS} =
   match providerOf(cfg.provider) {
-    Err(e) => Err(e),
-    Ok(_) => match keysError(cfg.keys_present) {
-      Some(e) => Err(e),
-      None => match readText(cfg.routing) {
-        Err(e) => Err(e),
-        Ok(rtext) => match parseRouting(rtext) {
-          Err(e) => Err(e),
-          Ok(rt) => match readText(concat([cfg.fixtures, "/stub_text.json"])) {
-            Err(e) => Err(e),
-            Ok(ctext) => match parseStubText(ctext) {
-              Err(e) => Err(e),
-              Ok(cases) => match loadPngs(cfg.fixtures, emotions8()) {
-                Err(e) => Err(e),
-                Ok(pngs) => { mkdirAll(cfg.cache_dir); Ok({ routing: rt, keys: cfg.keys_present, textOnly: cfg.text_only, cases: cases, portraits: pngs }) }
-              }
-            }
+    Err(e) => refuseStart(e, 0),
+    Ok(p) => if p != Stub then refuseStart(concat(["config: provider ", cfg.provider, " needs the live entry (--entry live)"]), 0)
+      else match start(cfg, cfg.keys_present) {
+        Ok(c) => stubLoop(cfg, c, p, ledgerOf(cfg.ceiling_usd), 0),
+        Err(e) => refuseStart(e, 0)
+      }
+  }
+export func main(cfg: Config) -> () ! {IO, FS} =
+  session({ provider: cfg.provider, keys_present: cfg.keys_present, text_only: cfg.text_only, cache_dir: cfg.cache_dir, routing: cfg.routing, fixtures: cfg.fixtures, ceiling_usd: 0.5 })
+
+-- ------------------------------------------------------------ live
+export type Keys = { gemini: string, openrouter: string }
+pure func present(k: Keys) -> [string] = (if k.gemini != "" then ["gemini"] else []) ++ (if k.openrouter != "" then ["openrouter"] else [])
+pure func envName(p: string) -> string = if p == "gemini" then "GOOGLE_API_KEY" else "OPENROUTER_API_KEY"
+pure func missing(req: [string], have: [string]) -> Option[string] =
+  match req { [] => None, p :: r => if member(p, have) then missing(r, have) else Some(p) }
+-- Before any call: the provider's key, then AI_LIVE=1 (attended sessions only).
+export pure func liveRefusal(req: [string], have: [string], aiLive: bool) -> Option[string] =
+  match missing(req, have) {
+    Some(p) => Some(concat(["config: provider ", p, " refused: ", envName(p), " is empty"])),
+    None => if have == [] then Some("config: live needs GOOGLE_API_KEY or OPENROUTER_API_KEY")
+      else if !aiLive then Some("config: live provider refused: AI_LIVE=1 is not set (attended sessions only)") else None
+  }
+func liveRun(c: Ctx, k: Keys, l: Ledger, j: Job) -> Step ! {Net, AI} {
+  let prov = j.hop.provider;
+  if j.r.kind == "text" then {
+    let a = if prov == "openrouter" then openRouterText(j, k.openrouter) else geminiText(j);
+    match a.outcome { Ok(b) => okText(l, j, prov, a.units, 0, b), Err(code) => failed(l, j, prov, a.units, code) }
+  } else if j.r.kind == "voice" then {
+    let s = geminiVoice(j, k.gemini, castVoice(j.r), c.styles);
+    match s.outcome { Ok(clip) => okVoice(l, j, prov, s.units, 0, clip), Err(code) => failed(l, j, prov, s.units, code) }
+  } else match geminiImage(j) {
+    Ok(img) => okImage(l, j, prov, { tokensIn: 0, tokensOut: 0, calls: 1 }, 0, img),
+    Err(code) => failed(l, j, prov, { tokensIn: 0, tokensOut: 0, calls: 1 }, code)
+  }
+}
+func liveLoop(cfg: Session, c: Ctx, k: Keys, p: Provider, l: Ledger, blanks: int) -> () ! {IO, FS, Net, AI} =
+  match lineOf(readLine(()), p) {
+    Blank => if blanks + 1 >= maxBlanks() then () else liveLoop(cfg, c, k, p, l, blanks + 1),
+    Quit => (),
+    Greet => { say(hello(cfg, c, p)); liveLoop(cfg, c, k, p, l, 0) },
+    Bad(o) => { say(o); liveLoop(cfg, c, k, p, l, 0) },
+    Ask(r) => {
+      let s = match prepare(c, l, r, providerName(p)) { Done(x) => x, Run(j) => liveRun(c, k, l, j) };
+      run(cfg.cache_dir, s.acts);
+      liveLoop(cfg, c, k, p, s.ledger, 0)
+    }
+  }
+export func live(cfg: Session) -> () ! {IO, FS, Env, Net, AI} =
+  match providerOf(cfg.provider) {
+    Err(e) => refuseStart(e, 0),
+    Ok(p) => match p {
+      Stub => refuseStart("config: the live entry does not run the stub (use --entry main)", 0),
+      Live(req) => {
+        let k = { gemini: getEnvOr("GOOGLE_API_KEY", ""), openrouter: getEnvOr("OPENROUTER_API_KEY", "") };
+        match liveRefusal(req, present(k), getEnvOr("AI_LIVE", "") == "1") {
+          Some(e) => refuseStart(e, 0),
+          None => match start(cfg, present(k)) {
+            Ok(c) => liveLoop(cfg, c, k, p, ledgerOf(cfg.ceiling_usd), 0),
+            Err(e) => refuseStart(e, 0)
           }
         }
       }
-    }
-  }
-
-export func main(cfg: Config) -> () ! {IO, FS} =
-  match start(cfg) {
-    Ok(c) => loop(cfg, c),
-    Err(e) => {
-      -- Wait for the first line so nothing is printed unasked, then refuse.
-      let _l = readLine(());
-      say(OFatal({ code: "config", detail: e }))
     }
   }
