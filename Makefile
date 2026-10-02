@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
@@ -187,3 +187,7 @@ sky-model:        ## M1.4b offline: destarred panorama -> per-texel T_c model (G
 .PHONY: catalogue-bytes
 catalogue-bytes:  ## native F32 bytes: independent Python oracle, interpreter and five ordinary VM runs
 	AILANG=$(AILANG) python3 tools/test_catalogue_bytes.py
+
+.PHONY: python-guard
+python-guard:     ## Python policy: every *.py allowlisted with a role (CLAUDE.md "Python")
+	@sh tools/python_guard.sh
