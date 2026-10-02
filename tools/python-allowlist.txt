@@ -9,13 +9,17 @@
 #   port      a pipeline step awaiting its AILANG port (tracked in the mission queue); remove on port
 # Adding a line here needs a reason in the PR description.
 .ailang/state/evidence/iter7/mutation_drill.py	evidence
+tests/fixtures/fake_ailang.py	harness
 tests/fixtures/fake_sim.py	harness
 tests/offaxis_v11_equiv.py	oracle
 tools/catalogue_probe.py	harness
 tools/extract.py	port
+tools/gen_session.py	harness
 tools/test_extract.py	port
 tools/m14a_crops.py	spike
 tools/m14a_destar.py	port
 tools/m14a_register.py	spike
+tools/replay.py	harness
 tools/rng_ref.py	oracle
 tools/test_catalogue_bytes.py	oracle
+tools/test_replay.py	harness
