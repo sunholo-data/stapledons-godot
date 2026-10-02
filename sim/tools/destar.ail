@@ -239,6 +239,36 @@ export pure func buildIndex(img: Img, discs: [Disc]) -> Index {
   { discs: arr, cells: updateMany(make(ncx * ncy, []), map(\g. (g.c, g.is), grouped)), ncx: ncx, ncy: ncy }
 }
 
+pure func sameDisc(a: Disc, b: Disc) -> bool = a.x == b.x && a.y == b.y && a.r == b.r
+
+-- inside some disc other than d (its own fill owns that pixel)
+export pure func maskedOther(img: Img, ix: Index, d: Disc, x: int, y: int) -> bool =
+  if !inY(img, y) then false else {
+    let xw = wrapX(img, x);
+    let fx = intToFloat(xw) + 0.5; let fy = intToFloat(y) + 0.5;
+    foldl(\hit i. hit || { let o = get(ix.discs, i); !sameDisc(o, d) && (fx - o.x) * (fx - o.x) + (fy - o.y) * (fy - o.y) <= o.r * o.r },
+      false, get(ix.cells, (y / cell()) * ix.ncx + xw / cell()))
+  }
+
+-- inside a larger disc (that disc's fill owns the pixel)
+export pure func ownedByLarger(img: Img, ix: Index, d: Disc, x: int, y: int) -> bool =
+  if !inY(img, y) then false else {
+    let xw = wrapX(img, x);
+    let fx = intToFloat(xw) + 0.5; let fy = intToFloat(y) + 0.5;
+    foldl(\hit i. hit || { let o = get(ix.discs, i); o.r > d.r && (fx - o.x) * (fx - o.x) + (fy - o.y) * (fy - o.y) <= o.r * o.r },
+      false, get(ix.cells, (y / cell()) * ix.ncx + xw / cell()))
+  }
+
+-- drop discs lying wholly inside a larger one (a faint star in Sirius's halo): their
+-- clean ring would be empty, and their patch would paint over the larger fill
+export pure func dropContained(img: Img, discs: [Disc]) -> [Disc] {
+  let ix = buildIndex(img, discs);
+  filter(\d. !foldl(\inside i. inside || {
+      let o = get(ix.discs, i);
+      o.r > d.r && sqrt((o.x - d.x) * (o.x - d.x) + (o.y - d.y) * (o.y - d.y)) + d.r <= o.r
+    }, false, get(ix.cells, (floatToInt(floor(d.y)) / cell()) * ix.ncx + wrapX(img, floatToInt(floor(d.x))) / cell())), discs)
+}
+
 export pure func masked(img: Img, ix: Index, x: int, y: int) -> bool =
   if !inY(img, y) then false else {
     let xw = wrapX(img, x);
@@ -259,7 +289,7 @@ pure func ringSamples(img: Img, ix: Index, d: Disc, w: int) -> [(int, int)] {
       let q = fx * fx + fy * fy;
       if q >= r0 * r0 && q <= r1 * r1 && inY(img, cy + dy) && !masked(img, ix, cx + dx, cy + dy) then [(cx + dx, cy + dy)] else []
     }, steps(0 - ri, ri, 1)), steps(0 - ri, ri, 1));
-  match pts { [] => if w < 24 then ringSamples(img, ix, d, w + 4) else [], _ => pts }
+  match pts { [] => if w < 64 then ringSamples(img, ix, d, w + 6) else [], _ => pts }
 }
 
 -- a clean ring pixel with its colour read once per disc
@@ -303,6 +333,8 @@ pure func meanSq(img: Img, x0: int, y0: int, n: int) -> (float, float, float) {
 -- patch records (x u16 LE, y u16 LE, r, g, b) for one disc and its 1 px feather
 export pure func fillDisc(img: Img, ix: Index, d: Disc) -> [int] {
   let ring = ringColours(img, ringSamples(img, ix, d, 4));
+  -- no clean ring even 64 px out: leave the pixels alone rather than paint black
+  if foldl(\n _. n + 1, 0, ring) == 0 then [] else {
   let half = floatToInt(ceil(d.r)) + 2;
   let cx = floatToInt(floor(d.x)); let cy = floatToInt(floor(d.y));
   let dn = donor(img, ix, cx, cy, half);
@@ -316,7 +348,10 @@ export pure func fillDisc(img: Img, ix: Index, d: Disc) -> [int] {
       let fx = intToFloat(x) + 0.5 - d.x; let fy = intToFloat(y) + 0.5 - d.y;
       let dist = sqrt(fx * fx + fy * fy);
       let a = clampF((d.r + 1.0 - dist) / 2.0, 0.0, 1.0);
-      if a <= 0.0 || !inY(img, y) then [] else {
+      -- each pixel belongs to the largest disc containing it, and a soft edge never
+      -- reaches into another disc (blending the original there re-introduced its star
+      -- as a ghost ring; a faint star inside Sirius painted over Sirius's fill)
+      if a <= 0.0 || !inY(img, y) || (a < 1.0 && maskedOther(img, ix, d, x, y)) || ownedByLarger(img, ix, d, x, y) then [] else {
         let g = \c m. if !hasDonor || masked(img, ix, x + ox, y + oy) then 0.0
           else clampF(chan(img, x + ox, y + oy, c) - m, 0.0 - grain(), grain());
         match idw(ring, x, y) {
@@ -330,6 +365,7 @@ export pure func fillDisc(img: Img, ix: Index, d: Disc) -> [int] {
         }
       }
     }, steps(0 - half, half, 1)), steps(0 - half, half, 1))
+  }
 }
 
 -- ---- pipeline -----------------------------------------------------------------------
@@ -342,11 +378,16 @@ export pure func plan(img: Img, cands: [Cand]) -> Result2 {
   let pairs = map(\c. (c, detect(img, c)), sortBy(\a b. cmpF(a.v, b.v), cands));
   let zp = zeroPoint(pairs);
   let hits = filter(\pr. match pr { (c, p) => isMatch(zp, c, p) }, pairs);
-  let unique = reverse(foldl(\acc pr. match pr { (c, p) =>
-      if foldl(\seen q. seen || (match q { (_, pq) => pq.px == p.px && pq.py == p.py }), false, acc) then acc else pr :: acc }, [], hits));
+  -- one disc per panorama source, kept for its brightest catalogue star (sort, then
+  -- keep the first of each pixel key; was an O(n^2) scan)
+  let key = \pr. match pr { (_, p) => p.py * img.w + p.px };
+  let vOf = \pr. match pr { (c, _) => c.v };
+  let byKey = sortBy(\a b. if key(a) != key(b) then key(a) - key(b) else cmpF(vOf(a), vOf(b)), hits);
+  let firsts = reverse(foldl(\acc pr. match acc { [] => [pr], [h, ..._] => if key(h) == key(pr) then acc else pr :: acc }, [], byKey));
+  let unique = sortBy(\a b. cmpF(vOf(a), vOf(b)), firsts);
   let byV = map(\lo. (lo, foldl(\n pr. match pr { (c, _) => if c.v >= intToFloat(lo) && c.v < intToFloat(lo + 1) then n + 1 else n }, 0, pairs),
       foldl(\n pr. match pr { (c, _) => if c.v >= intToFloat(lo) && c.v < intToFloat(lo + 1) then n + 1 else n }, 0, hits)), steps(0 - 2, 9, 1));
-  { discs: map(\pr. match pr { (c, p) => discFor(img, c, p) }, unique), zp: zp,
+  { discs: dropContained(img, map(\pr. match pr { (c, p) => discFor(img, c, p) }, unique)), zp: zp,
     cands: foldl(\n _. n + 1, 0, pairs), matched: foldl(\n _. n + 1, 0, hits), byV: byV }
 }
 

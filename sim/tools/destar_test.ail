@@ -5,7 +5,7 @@ module stapledons/sim/tools/destar_test
 -- uncatalogued star (must stay as pixels) and a catalogue entry over empty sky
 -- (must not match). `make destar-test`: strict VM = interpreter.
 import ./destar (Img, Cand, Disc, lum, chan, lbToPx, hipCands, csvCands, detect, plan, haloRadius,
-  buildIndex, masked, fillDisc, tolFor)
+  buildIndex, masked, maskedOther, dropContained, fillDisc, tolFor)
 import std/string (concat, join)
 import std/list (map, filter, foldl, flatMap, reverse)
 import std/math (exp, sqrt, intToFloat, floatToInt, floor)
@@ -97,11 +97,31 @@ pure func groupsAcc(xs: [int], acc: [(int, int, int, int, int)]) -> [(int, int, 
   _ => acc
 }
 
+-- overlaps: a disc inside a larger one is dropped; a contained disc with no clean ring
+-- emits nothing (never black); a soft edge never writes inside another disc
+pure func checkOverlap(img: Img) -> bool {
+  let big = { x: 390.5, y: 140.5, r: 40.0, v: 0.0 - 1.0 };
+  let inner = { x: 395.5, y: 140.5, r: 5.0, v: 6.0 };
+  let a = { x: 50.5, y: 40.5, r: 8.0, v: 3.0 };
+  let b = { x: 60.5, y: 40.5, r: 6.0, v: 5.0 };
+  let ix = buildIndex(img, [big, inner, a, b]);
+  let recsB = groups(fillDisc(img, ix, b));
+  (match dropContained(img, [big, inner, a, b]) { [d1, d2, d3] => d1.r == 40.0 && d2.r == 8.0 && d3.r == 6.0, _ => false }) &&
+  foldl(\n _. n + 1, 0, fillDisc(img, ix, inner)) == 0 &&
+  maskedOther(img, ix, b, 52, 40) && !maskedOther(img, ix, b, 64, 40) &&
+  foldl(\ok p. ok && (match p { (x, y, _, _, _) => {
+      let ax = intToFloat(x) + 0.5 - a.x; let ay = intToFloat(y) + 0.5 - a.y;
+      let bx = intToFloat(x) + 0.5 - b.x; let by = intToFloat(y) + 0.5 - b.y;
+      !(ax * ax + ay * ay <= a.r * a.r && bx * bx + by * by > b.r * b.r - 2.0 * b.r + 1.0) } }), true, recsB) &&
+  foldl(\n _. n + 1, 0, recsB) > 0
+}
+
 export pure func destarVm(n: int) -> string {
   let img = image();
   let bad = map(\c. match c { (name, _) => name }, filter(\c. match c { (_, ok) => !ok }, [
     ("pixels", checkPixels(img)), ("projection", checkProjection(img)), ("parsers", checkParsers(img)),
-    ("detect", checkDetect(img)), ("halo", checkHalo()), ("fill", checkFill(img))]));
+    ("detect", checkDetect(img)), ("halo", checkHalo()), ("fill", checkFill(img)), ("overlap", checkOverlap(img))]));
   match bad { [] => "destar-ok", _ => concat(["destar-BAD: ", join(",", bad)]) }
 }
+
 
