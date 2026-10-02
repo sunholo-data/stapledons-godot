@@ -11,8 +11,9 @@ executed on `sprint/ai4-service` (`make test` and `make ai-stub` green, six
 mutants killed) and awaits independent evaluation. AI.6 (`AiBridge`: lazy
 launch, non-blocking relay, priority, per-kind timeouts, backoff,
 `service_down`; fake service in `ai/tools/`) executed on `sprint/ai6-bridge`
-(`make test` and `make ai-godot` green, eleven mutants killed) and awaits
-independent evaluation. Planned 2026-10-02 on `origin/main` `a50bea2`.
+(`make test` and `make ai-godot` green). Evaluation round 1 scored 82/100;
+round 2 fixed F1 (dash-safe descriptor scrub under bash) and F2 (structural
+no-blocking guard plus a jitter-baseline frame rule); 17 mutants are killed. Planned 2026-10-02 on `origin/main` `a50bea2`.
 
 ## Summary
 

@@ -44,9 +44,12 @@ const MAX_CHUNKS_PER_POLL := 16
 ## OS.execute_with_pipe marks no descriptor close-on-exec, so a child inherits
 ## every pipe Godot holds: the sim's stdin among them, and the pipes of any
 ## process spawned at the same moment. The service is started through this
-## shell, which closes every inherited descriptor above 2 and execs it (same
+## script, which closes every inherited descriptor above 2 and execs it (same
 ## pid), so the AI process cannot reach the sim and keeps nobody's pipe open.
-const FD_SCRUB := 'for f in /dev/fd/*; do n=${f##*/}; [ "$n" -gt 2 ] 2>/dev/null && eval "exec $n>&-" 2>/dev/null; done; exec "$@"'
+## It runs under bash (`scrub_shell`). Under a POSIX sh such as dash, which
+## reads "12>&-" as a command named 12, it closes only 3-9 and still runs the
+## service.
+const FD_SCRUB := 'for f in /dev/fd/*; do n=${f##*/}; case $n in [3-9]) eval "exec $n>&-" 2>/dev/null;; [1-9][0-9]*) [ -n "$BASH_VERSION" ] && eval "exec $n>&-" 2>/dev/null;; esac; done; exec "$@"'
 
 enum Phase { IDLE, LAUNCHING, HANDSHAKE, READY, BUSY }
 
@@ -272,10 +275,16 @@ func _launch() -> void:
 	_phase = Phase.LAUNCHING
 	_spawned = {}
 	var argv := scrubbed(plan)
-	_spawn_task = WorkerThreadPool.add_task(func(): _spawned = OS.execute_with_pipe("/bin/sh", argv, false))
+	var shell := scrub_shell()
+	_spawn_task = WorkerThreadPool.add_task(func(): _spawned = OS.execute_with_pipe(shell, argv, false))
 
 
-## The arguments for /bin/sh that run `plan` with only stdin, stdout, stderr.
+## bash where it exists (macOS and Ubuntu both ship /bin/bash), else /bin/sh.
+static func scrub_shell() -> String:
+	return "/bin/bash" if FileAccess.file_exists("/bin/bash") else "/bin/sh"
+
+
+## The arguments for the scrub shell that run `plan` with only stdin, stdout, stderr.
 static func scrubbed(plan: Dictionary) -> PackedStringArray:
 	var argv := PackedStringArray(["-c", FD_SCRUB, "sh", plan["bin"]])
 	argv.append_array(plan["args"])
@@ -323,7 +332,9 @@ func _send_next() -> void:
 
 ## The service treats a blank line as end of input, so none is ever sent.
 func _write(line: String) -> void:
-	assert(line != "" and line.find("\n") < 0, "AiBridge must never send a blank or multi-line message")
+	if line.strip_edges() == "" or line.find("\n") >= 0:
+		push_error("AiBridge: refusing to send a blank or multi-line message")
+		return
 	if _pipe == null or not _pipe.is_open():
 		return
 	_pipe.store_string(line + "\n")

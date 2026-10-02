@@ -12,7 +12,11 @@ const FRAME_BUDGET_USEC := 2000
 var failures := 0
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/ai_bridge")
 var poll_usecs: Array = []
-var load_note := ""
+## The same timing around a control step that shares no code with AiBridge
+## (a stat and a dictionary write), in the same loop: the machine's own
+## jitter, the baseline for a busy machine.
+var ctrl_usecs: Array = []
+var ctrl_box := {}
 var bridges: Array = []
 
 
@@ -55,6 +59,9 @@ func pump(b: AiBridge, ms: int, cond: Callable = func(): return false) -> bool:
 		var t0 := Time.get_ticks_usec()
 		b.poll()
 		poll_usecs.append(Time.get_ticks_usec() - t0)
+		t0 = Time.get_ticks_usec()
+		ctrl_box["x"] = FileAccess.file_exists(scratch)
+		ctrl_usecs.append(Time.get_ticks_usec() - t0)
 		if cond.call():
 			return true
 		OS.delay_msec(1)
@@ -75,24 +82,47 @@ func load_per_core() -> float:
 ## A poll that waited on the child would sit for a whole timeout (300 ms or
 ## more here); the child's spawn and reaping run on the worker pool. On a
 ## busy machine (1-minute load above 0.25 per core) preemption alone breaks
-## 2 ms now and then (measured on the Studio at 3.6 per core: a bare
-## OS.is_process_running took 4.8 ms; at 0.9 per core a few polls in a
-## thousand still did), so there the check is that 95% of polls stay under
-## 2 ms and none reaches 50 ms, and the distribution is printed.
+## 2 ms now and then (on the Studio at 3.6 per core a bare
+## OS.is_process_running took 4.8 ms), so there the polls are compared with
+## control steps timed in the same loop: no more polls may reach
+## 5 ms than control samples did, plus max(2, n/200), and none may reach
+## 50 ms. Intermittent blocking (10 ms in 1 poll of 25, 30 ms in 1 of 40)
+## fails that; test_static also proves no blocking call is reachable.
+const SLOW_USEC := 5000
 func frame_check(label: String) -> void:
 	var xs := poll_usecs.duplicate()
+	var cs := ctrl_usecs.duplicate()
 	poll_usecs = []
+	ctrl_usecs = []
 	xs.sort()
 	var n := xs.size()
 	var worst: int = xs[n - 1] if n > 0 else 0
 	var p99: int = xs[int(0.99 * (n - 1))] if n > 0 else 0
 	var over := xs.filter(func(x): return x >= FRAME_BUDGET_USEC).size()
+	var slow := xs.filter(func(x): return x >= SLOW_USEC).size()
+	var ctrl_slow := cs.filter(func(x): return x >= SLOW_USEC).size()
+	var allowed := ctrl_slow + maxi(2, n / 200)
 	var lpc := load_per_core()
-	var detail := "%d polls, worst %d us, p99 %d us, %d over 2 ms, load %.1f/core" % [n, worst, p99, over, lpc]
+	var detail := "%d polls, worst %d us, p99 %d us, %d over 2 ms, %d over 5 ms vs control %d, load %.1f/core" % [n, worst, p99, over, slow, ctrl_slow, lpc]
 	if lpc <= 0.25:
 		assert_bool("%s: frame never blocked, every poll < 2 ms (%s)" % [label, detail], n > 0 and worst < FRAME_BUDGET_USEC)
 	else:
-		assert_bool("%s: frame never blocked, busy machine: 95%% under 2 ms, none >= 50 ms (%s)" % [label, detail], n > 0 and over * 20 <= n and worst < 50000)
+		assert_bool("%s: frame never blocked, busy machine: over 5 ms <= control + %d, none >= 50 ms (%s)" % [label, allowed - ctrl_slow, detail], n > 0 and slow <= allowed and worst < 50000)
+
+
+## Source lines of each function in bridge/ai_bridge.gd, by name.
+func functions_of(src: String) -> Dictionary:
+	var out := {}
+	var name := ""
+	for line in src.split("\n"):
+		if line.begins_with("func ") or line.begins_with("static func "):
+			name = line.get_slice("func ", 1).get_slice("(", 0)
+			out[name] = []
+		elif not line.begins_with("\t") and line.strip_edges() != "" and not line.begins_with("#"):
+			name = ""
+		elif name != "":
+			out[name].append(line)
+	return out
 
 
 func reasons(b: AiBridge) -> Array:
@@ -155,7 +185,56 @@ func test_static() -> bool:
 	assert_bool("design defaults: handshake 5 s, 3 failures in 10 min, 1 s grace", b.handshake_ms == 5000 and AiBridge.FAIL_LIMIT == 3 and AiBridge.FAIL_WINDOW_MS == 600000 and AiBridge.QUIT_GRACE_MS == 1000)
 	assert_bool("backoff 1 s, 4 s, 16 s, then 16 s", [b.backoff_delay(1), b.backoff_delay(2), b.backoff_delay(3), b.backoff_delay(4)] == [1000, 4000, 16000, 16000])
 	assert_bool("malformed requests refused", not b.request({"req": "", "kind": "text"}) and not b.request({"req": "1", "kind": "song"}) and not b.request({"kind": "text"}))
+	# Structural half of "frame never blocked": outside shutdown() (scene exit)
+	# no function may sleep or run a process synchronously; spawning and killing
+	# happen only inside a worker-pool task; a task is waited on only once
+	# is_task_completed said it is done.
+	var bad := []
+	var fns := functions_of(src)
+	for fname in fns:
+		if fname == "shutdown":
+			continue
+		var body: Array = fns[fname]
+		for i in body.size():
+			var l: String = body[i]
+			if l.strip_edges().begins_with("#"):
+				continue
+			for tok in ["delay_msec", "delay_usec", "OS.execute(", "OS.call(", "await "]:
+				if l.find(tok) >= 0:
+					bad.append("%s: %s" % [fname, l.strip_edges()])
+			if (l.find("OS.kill(") >= 0 or l.find("execute_with_pipe(") >= 0) and l.find("add_task(") < 0:
+				bad.append("%s: %s" % [fname, l.strip_edges()])
+			if l.find("wait_for_task_completion") >= 0 and not ((i > 0 and body[i - 1].find("is_task_completed") >= 0) or (i > 1 and body[i - 2].find("is_task_completed") >= 0)):
+				bad.append("%s: %s" % [fname, l.strip_edges()])
+	assert_bool("no blocking call reachable outside shutdown(): %s" % [bad], bad.is_empty() and fns.has("poll") and fns.has("_launch"))
+	test_scrub()
 	return true
+
+
+## FD_SCRUB under the shell AiBridge picks, and under dash (Ubuntu's /bin/sh)
+## when present: the target still runs with stdin/stdout/stderr, and the
+## inherited descriptors 5, 12 and 13 are closed (dash can close only 3-9; it
+## must still run the target, never misparse "12>&-").
+func test_scrub() -> void:
+	var shells := [AiBridge.scrub_shell()]
+	if FileAccess.file_exists("/bin/dash") and AiBridge.scrub_shell() != "/bin/dash":
+		shells.append("/bin/dash")
+	# OS.execute with output goes through a shell command line, so the scripts
+	# travel as files and only plain paths are arguments.
+	var script := scratch.path_join("fd_scrub.txt")
+	var driver := scratch.path_join("fd_scrub_driver.sh")
+	FileAccess.open(script, FileAccess.WRITE).store_string(AiBridge.FD_SCRUB)
+	FileAccess.open(driver, FileAccess.WRITE).store_string('exec 5</dev/null 12</dev/null 13</dev/null; exec "$1" -c "$(cat "$2")" sh /bin/ls /dev/fd\n')
+	for sh in shells:
+		var out := []
+		var rc := OS.execute("/bin/bash", PackedStringArray([driver, sh, script]), out, true)
+		var fds := []
+		for x in str(out[0]).split("\n", false):
+			if x.strip_edges().is_valid_int():
+				fds.append(int(x))
+		var closed: Array = [5, 12, 13] if sh == AiBridge.scrub_shell() else [5]
+		assert_bool("FD_SCRUB under %s: target ran (rc %d) with 0-2 open, %s closed: %s" % [sh, rc, closed, fds],
+			rc == 0 and fds.has(0) and fds.has(1) and fds.has(2) and closed.all(func(fd): return not fds.has(fd)))
 
 
 func test_assemble() -> bool:
@@ -224,10 +303,19 @@ func test_partial() -> bool:
 	return true
 
 
+## A hung service that cannot exit by itself: answers hello, then sleeps with
+## its stdin unread (end of input does not stop it). Only a kill ends it.
+func deaf_hang() -> AiBridge:
+	var b := fake("hang")
+	var hello := '{"v":1,"type":"hello","proto":{"major":1,"minor":0},"service":"deaf","provider":"stub","live":false,"cache_dir":"-","routes":{}}'
+	b.launch_override = {"bin": "/bin/sh", "args": PackedStringArray(["-c", 'read l; printf "%s\\n" "$1"; exec sleep 600', "sh", hello])}
+	return b
+
+
 func test_timeouts() -> bool:
 	for kind in ["text", "voice", "portrait"]:
-		print("fake hang: %s timeout" % kind)
-		var b := fake("hang")
+		print("hung service: %s timeout" % kind)
+		var b := deaf_hang()
 		var limit: int = b.timeout_ms[kind]
 		poll_usecs = []
 		b.request(req("1", kind))
@@ -237,8 +325,8 @@ func test_timeouts() -> bool:
 		pump(b, limit + 2000, func(): return b.outcomes.size() == 1)
 		var dt := Time.get_ticks_msec() - t0
 		assert_bool("%s cancelled timeout after %d ms (limit %d)" % [kind, dt, limit], reasons(b) == ["1:timeout"] and dt >= limit and dt < limit + 300)
-		pump(b, 1000, func(): return child_gone(pid))
-		assert_bool("hung child killed and reaped", child_gone(pid))
+		pump(b, 500, func(): return child_gone(pid))
+		assert_bool("hung child (cannot exit by itself) killed within 500 ms of the timeout", pid > 0 and child_gone(pid))
 		pump(b, 300)
 		assert_bool("restart is lazy: no relaunch while idle", b.launch_count == 1)
 		b.request(req("2", kind))
