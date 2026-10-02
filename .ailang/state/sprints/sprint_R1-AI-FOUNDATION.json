@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-AI-FOUNDATION",
-  "status": "planned",
+  "status": "in_progress",
   "created": "2026-10-02T18:00:00Z",
   "design_doc": "design_docs/planned/r1/ai-service-foundation.md",
   "sprint_plan": "design_docs/planned/r1/ai-service-foundation-sprint.md",
@@ -218,10 +218,10 @@
         "make test AILANG=$A green; Makefile diff is exactly one include line"
       ],
       "registry": "none",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-02T17:00:00Z",
+      "completed": "2026-10-02T17:45:00Z",
+      "notes": "Executed on sprint/ai1-markers (awaiting independent evaluation). AC16: cd sim && $A test --package . -> 98/98 incl. 13 AI.1 tests. AC7 part: make strict-ai -> markersVm markers-ok, 36 lines, strict VM = interpreter, emotion list == emotion_styles.json keys. Mutants: make markers-mutants kills all three (no [/] refusal, no merge, 17 segments), each failing its named test. make test green (EXIT 0). Counted LOC: 76 markers.ail + 27 mk/ai.mk + 1 Makefile = 104 code, 138 tests. Deviations: sim/ailang.toml exports gains stapledons/sim/markers (required for ./markers import); markers-mutants target added in mk/ai.mk (not in ai-test). Upstream: ailang#1503 (strict VM: constructor pattern at the head of a cons pattern -> _record_get on ADT); worked around in markers.ail."
     },
     {
       "id": "AI.2_PROTO21_AI_MODULE",
