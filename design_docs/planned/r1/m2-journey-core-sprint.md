@@ -969,6 +969,71 @@ counter not advanced on `draw` (vectors); signed vs unsigned high bits
 **Goal:** recorded logs re-run on the VM and the interpreter and diff
 byte-for-byte against committed goldens, including a 10k-tick session that
 exercises every intent.
+
+**Status (executed 2026-10-02, branch `sprint/m2.5-replay`, AILANG v0.51.0; independent evaluation pending; P5 golden review pending):**
+- [x] 10k interpreter time measured first: 32.4 s on darwin arm64 and 74.7 s
+  on CI x86_64 (2 cores). That is over 60 s, so `ci.yml` sets
+  `REPLAY_TICKS` to 2000 on PRs and 10000 on `main` (risk row). Both are
+  VM == interpreter == digest gated; local `make test` runs 10k.
+- [x] Harness tests first: `tools/test_replay.py` (10 cases against a fake
+  ailang, in `make tools-test`). 6/6 harness mutations are killed:
+  - VM-only run;
+  - golden compared after `strip()`;
+  - golden compared as parsed JSON;
+  - reply count unchecked;
+  - harness drops an input line;
+  - digest unchecked.
+- [x] `tools/replay.py`. Per log it checks four things:
+  - `--bytecode` and the interpreter give `cmp`-identical output;
+  - there is one reply per input line before `quit`;
+  - the output equals this arch's golden, by `cmp`, or by sha256 for the
+    session or any output over 256 KB;
+  - case extras pass: `alpha_cen` arrives, `offaxis_v11_equiv` == v1.1
+    (AC13), `diag_thrust600` has 601 ok, and the session has N accepted
+    ticks.
+
+  It prints `ailang --version`, accepts `SESSION=` (M4) and `TICKS=`, and
+  supports `make replay-record LOG=path|case|session10k|all`, which refuses
+  if VM ≠ interpreter and is never in `make test`.
+- [x] `tools/gen_session.py` is deterministic: same sha256 on every run. It
+  writes 10,000 accepted ticks plus 17 other lines:
+  - every malformed and status kind once;
+  - plan, replan, stale commit, commit;
+  - α Cen at 0.99c with 15 in-transit `committed` refusals;
+  - out-of-range φ on both sides, with both bounds accepted;
+  - a cap voyage;
+  - a voyage to a target 100 ly from Sol in 0.1-yr ticks;
+  - a diag 1 g flip voyage;
+  - 1,308 draws, 218 on each stream.
+
+  Only `session10k`/`session2k` `.state.<arch>.sha256` are committed.
+- [x] Goldens are **per architecture** (ailang#1465): `tests/replays/*.state.{arm64,x86_64}.*`.
+  The x86_64 ones come from a throwaway CI branch (run 36974675400, since
+  deleted). `alpha_cen` and `godot_map_voyage` are identical across arches;
+  `offaxis_v11_equiv`, `diag_thrust600` and the sessions differ.
+- [x] Godot-recorded log: `tests/replays/godot_map_voyage.ndjson`, from
+  `tools/record_godot_session.gd`. The real galaxy map selects Gl 244,
+  moves the slider and replans to Gl 559 at the 0.99c default, then the
+  ship commits and arrives; recorded by the `record_path` tee.
+- [x] `parity`, `parity-offaxis`, `offaxis-v11-equiv` and `journey-replay`
+  are now `replay --case` aliases. `make test` runs `replay` instead of
+  them. `tests/fixtures/offaxis.ndjson` became
+  `tests/replays/offaxis_v11_equiv.ndjson`.
+- [x] Tee flake fixed: `test_record_tee` now compares while the child is
+  alive and has answered (no race with `stop()`'s 1 s kill), then checks
+  the quit line on the tee.
+- [x] AC12 · AC13 · AC16: `make test AILANG=$A` green locally (10k).
+- Deviations:
+  - the interpreter runs with `--max-recursion-depth 100000` because it
+    has no tail-call elimination (RT_REC_003 at 10,000 lines;
+    **ailang#1486**, filed);
+  - the session preamble puts `no_hello`/`no_game` lines before `hello`, so
+    `session10k` does not open with hello/new_game;
+  - `diag_thrust600` (324 KB) is digest-only;
+  - the "100-ly voyage" is 109 ly, because it is flown from Sirius;
+  - `m2-report.md` is drafted as
+    [m2-report-draft.md](m2-report-draft.md) and moves at landing (after
+    M2.6b).
 **Estimated:** 80 code + 200 tools/tests = **280** (+ goldens) · **Cap:** 650 ·
 **Iteration:** 10 · **Depends on:** M2.3b, M2.4, M2.1b · **Registry:** none
 

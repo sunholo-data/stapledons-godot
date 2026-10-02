@@ -9,7 +9,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -21,10 +21,11 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
 
-tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
+tools-test:        ## catalogue parser + replay harness unit tests (committed fixtures and a fake ailang only)
 	python3 tools/test_extract.py
+	python3 tools/test_replay.py
 	python3 tools/check_star_names.py
 
 physics:           ## CPU physics reference vs known values
@@ -42,18 +43,18 @@ map-capture:       ## galaxy map PNGs + panel dump (alpha Cen A at 0.9c / cap / 
 	$(GODOT_SIM) --path . -- --map-capture=renders --map-commit
 	test -s renders/galaxy_map.png && test -s renders/galaxy_map_panel.json && test -s renders/galaxy_map_commit.png && test -s renders/galaxy_map_transit.png && test -s renders/galaxy_map_arrived.png
 
-parity:            ## v2 diag session, 600 thrust ticks: bytecode VM and tree-walking interpreter must agree bit for bit
-	@mkdir -p $(SCRATCH)
-	@python3 -c "print('{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":0}}'); print('{\"v\":2,\"type\":\"new_game\",\"seed\":0,\"scenario\":\"sol\",\"diag\":true}'); [print('{\"v\":2,\"type\":\"input\",\"tick\":%d,\"dtau\":0.01,\"intents\":[{\"k\":\"thrust\",\"thrust\":%s}]}' % (i + 1, 1 if i < 300 else -0.5)) for i in range(600)]; print('{\"v\":2,\"type\":\"quit\"}')" > $(SCRATCH)/parity_in.txt
-	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < $(SCRATCH)/parity_in.txt > $(SCRATCH)/vm.txt
-	$(AILANG) run $(SIMFLAGS) $(SIM) < $(SCRATCH)/parity_in.txt > $(SCRATCH)/interp.txt
-	cmp $(SCRATCH)/vm.txt $(SCRATCH)/interp.txt && test "$$(grep -c '"status":"ok"' $(SCRATCH)/vm.txt)" = 601 && echo "parity: identical ($$(wc -l < $(SCRATCH)/vm.txt) lines)"
+replay:            ## AC12/AC13: every tests/replays log + the generated 10k session: VM == interpreter, then == this arch's golden (SESSION=log for one log, TICKS=2000 for the PR-sized session)
+	AILANG="$(AILANG)" python3 tools/replay.py $(if $(SESSION),--session $(SESSION)) $(if $(TICKS),--ticks $(TICKS))
 
-parity-offaxis:     ## v2 off-axis log (turns, burns, refusals, malformed lines) must be VM/interpreter identical
-	@mkdir -p $(SCRATCH)
-	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/offaxis.ndjson > $(SCRATCH)/offaxis_vm.txt
-	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/offaxis.ndjson > $(SCRATCH)/offaxis_interp.txt
-	cmp $(SCRATCH)/offaxis_vm.txt $(SCRATCH)/offaxis_interp.txt && echo "parity-offaxis: identical ($$(wc -l < $(SCRATCH)/offaxis_vm.txt) lines)"
+replay-record:     ## P5: regenerate this arch's golden for LOG=path|case|session10k|all (a reviewed diff; never in make test)
+	@test -n "$(LOG)" || { echo "usage: make replay-record LOG=tests/replays/NAME.ndjson|NAME|session10k|all"; exit 2; }
+	AILANG="$(AILANG)" python3 tools/replay.py --record $(LOG)
+
+parity:            ## v2 diag session, 600 thrust ticks: VM == interpreter == golden (replay case diag_thrust600)
+	AILANG="$(AILANG)" python3 tools/replay.py --case diag_thrust600
+
+parity-offaxis:     ## v2 off-axis log (turns, burns, refusals, malformed lines): VM == interpreter == golden, and == v1.1 (replay case offaxis_v11_equiv)
+	AILANG="$(AILANG)" python3 tools/replay.py --case offaxis_v11_equiv
 
 parity-v2:          ## protocol v2 session through ship.ail (hello first, malformed, refused): VM/interpreter identical; nothing printed before the first input
 	@mkdir -p $(SCRATCH)
@@ -67,10 +68,8 @@ parity-v2:          ## protocol v2 session through ship.ail (hello first, malfor
 	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_interp.txt
 	cmp $(SCRATCH)/v2_vm.txt $(SCRATCH)/v2_interp.txt && echo "parity-v2: identical ($$(wc -l < $(SCRATCH)/v2_vm.txt) lines)"
 
-offaxis-v11-equiv:  ## AC13 interim: v2 off-axis log reproduces v1.1 (e9d35c5) beta, gamma, tau, t, x, pos bit for bit (folds into make replay at M2.5)
-	@mkdir -p $(SCRATCH)
-	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/offaxis.ndjson > $(SCRATCH)/offaxis_v2.txt
-	python3 tests/offaxis_v11_equiv.py tests/fixtures/v11_offaxis.$$(uname -m | sed s/aarch64/arm64/).golden $(SCRATCH)/offaxis_v2.txt
+offaxis-v11-equiv:  ## AC13: v2 off-axis log reproduces v1.1 (e9d35c5) beta, gamma, tau, t, x, pos bit for bit (replay case offaxis_v11_equiv)
+	AILANG="$(AILANG)" python3 tools/replay.py --case offaxis_v11_equiv
 
 strict:            ## pure sim core and protocol v2 codecs must run entirely on the bytecode VM (no evaluator fallback)
 	@want=$$(python3 -c "import math; g=1.032295275553596; print(repr(2*math.sinh(g*3.0)/g))"); \
@@ -115,12 +114,8 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stream, first 1,000 values per stream (3 seeds) from strict VM and interpreter vs tools/rng_ref.py
 	AILANG=$(AILANG) python3 tools/rng_ref.py --check
 
-journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM and interpreter identical
-	@mkdir -p $(SCRATCH)
-	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/replays/alpha_cen.ndjson > $(SCRATCH)/alpha_cen_vm.txt
-	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/replays/alpha_cen.ndjson > $(SCRATCH)/alpha_cen_interp.txt
-	cmp $(SCRATCH)/alpha_cen_vm.txt $(SCRATCH)/alpha_cen_interp.txt && tail -1 $(SCRATCH)/alpha_cen_vm.txt | grep -q '"arrived"' && \
-	  echo "journey-replay: identical ($$(wc -l < $(SCRATCH)/alpha_cen_vm.txt | tr -d ' ') lines), last line arrived"
+journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM == interpreter == golden (replay case alpha_cen)
+	AILANG="$(AILANG)" python3 tools/replay.py --case alpha_cen
 
 wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ailang test` interpreter cannot see NaN-guard mutants)
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \

@@ -218,6 +218,11 @@ func test_no_input_before_new_game() -> bool:
 
 
 ## record_path tees every stdin line byte for byte (cmp against what the child read).
+## The comparison happens while the child is alive and has answered every
+## line: the fake flushes its dump before it replies, so the dump is complete
+## with no race. (Comparing after stop() raced the child's read of `quit`
+## against the bridge's 1 s kill under load; M2.5.) The quit line is then
+## checked on the tee alone: whether the child read it is not a tee property.
 func test_record_tee() -> bool:
 	var rec := scratch.path_join("bridge_tee.ndjson")
 	var dump := scratch.path_join("bridge_tee_child.ndjson")
@@ -225,10 +230,13 @@ func test_record_tee() -> bool:
 	s.record_path = rec
 	var ok := s.start() and s.new_game(MAX_INT, "sol", true, {"epoch": f64(-9223372036854775808)})
 	ok = ok and s.send([{"k": "thrust", "thrust": 1.0}], 0.1) and s.send([{"k": "echo", "target": {"index": 1, "id": "Proxima \"Cen\" ☉", "pos": vec(0.1, -0.0, 1e300)}, "cruise_phi": 2.6}], 0.0)
-	s.stop()
 	var a := FileAccess.get_file_as_bytes(rec)
 	var b := FileAccess.get_file_as_bytes(dump)
-	assert_bool("tee == bytes the child read (%d bytes, 5 lines)" % a.size(), ok and a.size() > 0 and a == b and a.get_string_from_utf8().split("\n", false).size() == 5)
+	assert_bool("tee == bytes the child read (%d bytes, 4 answered lines)" % a.size(), ok and a.size() > 0 and a == b and a.get_string_from_utf8().split("\n", false).size() == 4)
+	s.stop()
+	var after := FileAccess.get_file_as_bytes(rec)
+	var quit_line := '{"v":2,"type":"quit"}\n'.to_utf8_buffer()
+	assert_bool("tee ends with the quit line after stop", after.size() == a.size() + quit_line.size() and after.slice(a.size()) == quit_line)
 	return true
 
 
