@@ -168,16 +168,22 @@ the brightest nearby stars.**
   by ~0, which would break the finite-LUT gate.
 - So the CMB needs a package function first (0.5.0, M1.P).
 
-**F5. The sideways sky at speed is brighter, not darker (Mark's exposure note,
-2026-10-02).**
-- At θ′ = 90° in the ship frame, D = γ(1 + β cos θ′) = γ > 1. Every source
-  there is blueshifted and brighter than at rest. The D = 1 boundary lies
-  behind the beam, at cos θ′ = (1/γ − 1)/β.
-- It looks dark only because auto-exposure meters on the forward blaze.
-- D-6's canon wording ("the sky … goes dark sideways at speed") describes
-  the exposure, not the physics.
-- M1.5a presents this honestly (acceptance criteria below), and Q5 asks
-  whether the design-repo canon text should be corrected.
+**F5 (CORRECTED 2026-10-02). The sideways sky at speed is darker. That is real physics, not an exposure effect.**
+- The original F5 was wrong: it came from the controller's brief, which put a
+  ship-frame angle into the rest-frame Doppler formula. M1.P's evaluator-grade
+  check caught it.
+- For an observer, with θ′ the apparent (ship-frame) angle from the
+  direction of travel, D = 1/(γ(1 − β cos θ′)). With θ the rest-frame angle,
+  D = γ(1 + β cos θ).
+- At θ′ = 90°, D = 1/γ: at 0.99c, 0.141 (redshifted, with stars per steradian
+  ×1/50). Sources are blueshifted only within cos θ′ > (1 − 1/γ)/β: 29.8° of
+  forward at 0.99c, 3.0° at the cap.
+- The rest-frame 90° direction appears at cos θ′ = β (8.1° at 0.99c), where
+  D = γ.
+- So D-6's canon wording ("the sky … goes dark sideways at speed") is
+  **correct physics**, and no canon edit is needed (Q5 withdrawn).
+- M1.5a still adds the fixed-EV toggle, so exposure isn't mistaken for the
+  physics. Its test now asserts that the sideways patch is darker.
 
 **F6. The catalogue switch touches more than the map.**
 - `stars.json` (CNS3) feeds:
@@ -611,11 +617,12 @@ tiers), #43 · **Registry:** none (UI and data).
   - the HUD shows the EV and the metering mode;
   - a "fixed EV" toggle locks exposure at the rest value;
   - `tests/test_physics.gd` asserts that the mean seen luminance of a
-    θ′ = 90° patch at β = 0.99 exceeds the same patch at rest (D = γ = 7.09),
-    and that the D = 1 boundary sits at cos θ′ = (1/γ − 1)/β;
+    θ′ = 90° patch at β = 0.99 is BELOW the same patch at rest (D = 1/γ =
+    0.141), that a θ′ = 8.1° patch (rest-frame 90°) is brighter (D = γ), and
+    that the D = 1 boundary sits at cos θ′ = (1 − 1/γ)/β (29.8° at 0.99c);
   - `make capture` adds a fixed-EV pair (rest and 0.99c starboard) beside
-    the auto-exposed pair, so the report can show that the sideways sky is
-    brighter and only looks dark under auto-exposure.
+    the auto-exposed pair, so the report shows the sideways darkening at a
+    fixed exposure, as physics and not as metering (corrected F5).
 
 **Files:** `main.gd` (exposure only), `sky/starfield.gdshader`,
 `sky/background.gd(shader)`, new `sky/exposure.gd`, `tests/test_physics.gd`,
@@ -626,7 +633,7 @@ tiers), #43 · **Registry:** none (UI and data).
 `pointThresholdIlluminance`, mirrored in GDScript per gate 3).
 
 **Acceptance:**
-- `make physics`: the scene-unit tests, the sideways-brighter test and the
+- `make physics`: the scene-unit tests, the sideways-darker test (corrected F5) and the
   D = 1 boundary test.
 - `make bench`: the report prints the limiting magnitude, 6.0 ≤ V_lim ≤ 6.8
   (**AC8**).
@@ -802,12 +809,7 @@ float codec). Star returns relativity and `gemini_agents` (unrelated).
    Python policy.
 4. **Q4: commit `stars_bright.bin` (~0.25 MB) too?** D-3 named only quick
    and medium. **Recommendation: yes** (CI and AC11 need it). Default: yes.
-5. **Q5: canon text.** D-6 says the sky "goes dark sideways at speed". At
-   0.99c the sideways sky is 7× blueshifted and brighter; it only looks dark
-   under auto-exposure (F5). Correct the design-repo wording and present it
-   in game as an exposure effect, with a fixed-EV toggle? **Recommendation:
-   yes.** Default: M1.5a ships the honest version; the canon edit waits for
-   you.
+5. **Q5: WITHDRAWN (2026-10-02).** D-6's "goes dark sideways at speed" is correct physics (corrected F5). No canon edit.
 6. **Q6: merge PR #43 (which lands #36) before wave 1?** M1.2d and M1.7
    depend on it. **Recommendation: yes,** after your look at its destar
    crops. Default: M1.2d/M1.7 wait for it; waves 1–3 proceed.
