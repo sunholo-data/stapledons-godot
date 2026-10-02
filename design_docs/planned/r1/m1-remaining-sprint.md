@@ -1,7 +1,8 @@
 # Sprint plan: R1-M1-SKY-2, the rest of the relativistic sky
 
-**Status:** Planned 2026-10-02, **awaiting Mark's approval**. Nothing has been
-executed or committed.
+**Status:** Approved by Mark 2026-10-02 (ledger D-19). In execution:
+M1.6b executed (PR "M1.6b: camera with roll, HUD angle, off-axis golden (R-a)"),
+awaiting checkpoint R-a before merge.
 
 ## Summary
 
@@ -74,6 +75,7 @@ here). The parent row `M1.2b_AILANG_CATALOGUE` closes when M1.2b-T4 passes.
 | M1.4a/b/c NOIRLab sky + AILANG colour model | ✅ eval 91 | PR #16 `8e46c17` |
 | Catalogue mirror fix | ✅ | PR #37 |
 | M1.4d sky rebuilt on the corrected catalogue, bundled via GCS | ✅ | PRs #45, #46 (D-18) |
+| M1.6b free-look camera with roll, HUD angle, off-axis golden, rest-tolerance pin | executed, ⏸ R-a | 144 off-axis golden cases, worst 0.102 px; renders in `docs/m1.6b/` |
 | AILANG pin | v0.51.0 | `Makefile:8`, PR #30 |
 | `sunholo/relativity` | 0.4.0 latest, pinned | `ailang pkg info`; `sim/ailang.toml:17`. `optics.cmbForwardTemperature` exists; `teffFromBV` does not |
 | Open PRs | **#43** (destar → AILANG, contains **#36** extract → AILANG), both CI green | `gh pr list` |
@@ -267,6 +269,13 @@ validation; dropping the bin sha from the sidecar; a partial file left on
 refusal.
 
 #### M1.6b: Free-look camera with roll, HUD angle and off-axis golden
+**Status (2026-10-02):** executed, awaiting ⏸ R-a. `make golden`: 144
+off-axis/rolled star cases, worst 0.102 px, plus a pitched-and-rolled
+background-marker view (16 markers); renders in `docs/m1.6b/`. The camera is
+its own class, `ui/free_look_camera.gd` (`FreeLookCamera`), so the physics
+test drives the same object `main.gd` flies; that file is the one addition to
+the file list.
+
 **Scope:**
 - **Camera:** yaw, pitch and **roll**, independent of the velocity; the
   camera never goes to the sim.

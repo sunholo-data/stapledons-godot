@@ -2,9 +2,10 @@ extends Node3D
 ## Spike: AILANG ship sim (sidecar) + relativistic starfield (Godot).
 ##
 ## Interactive:  W / S thrust forward / reverse at 1 g, arrows look around,
-##               1-4 look forward / starboard / astern / up, +/- time warp.
+##               Q / E roll, 1-4 look forward / starboard / astern / up (roll 0),
+##               +/- time warp. The HUD shows the view-to-velocity angle.
 ## Galaxy map:  godot --path . [-- --map[=INDEX]]   (default with no arguments; M2.6a/b; --map-capture=renders [--map-commit])
-## Sky flight:  godot --path . -- --voyage   (the M0/M1 relativistic voyage; WASD thrust, 1-4 views, +/- warp)
+## Sky flight:  godot --path . -- --voyage   (the M0/M1 relativistic voyage; W/S thrust, arrows + Q/E look and roll, 1-4 views, +/- warp)
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
 ##   godot --path . -- --golden            shader vs CPU reference positions
@@ -21,16 +22,20 @@ const EXPOSURE := 5.0
 const BG_EXPOSURE := 0.075 # hand-set ratio to the stars until M1.5 calibrates both
 const SEED := 0
 const ALPHA_CEN_A := 1 # stars.json index 1 (Gl 559, vmag 0.01); B is index 2 with the same id
+const LOOK_RATE := 1.2 # rad/s for the yaw, pitch and roll keys
+## Off-axis golden (M1.6b, AC5): a velocity off every axis, and three camera
+## orientations ([label, yaw, pitch, roll] in degrees; null yaw/pitch = along v).
+const OFF_AXIS := Vector3(0.5773502691896258, 0.5773502691896258, -0.5773502691896258) # (1,1,-1)/sqrt3
+const GOLDEN_VIEWS := [["along v, rolled +30", null, null, 30.0], ["off-axis yaw 70 pitch -25", 70.0, -25.0, 0.0], ["yaw -120 pitch 40 rolled -65", -120.0, 40.0, -65.0]]
 
 var sim := SimBridge.new()
 var starfield := Starfield.new()
 var background := SkyBackground.new()
 var has_background := false
 var env := Environment.new()
-var camera := Camera3D.new()
+var camera := FreeLookCamera.new() # yaw, pitch, roll; client state, never sent to the sim
 var hud := Label.new()
-var yaw := 0.0
-var pitch := 0.0
+var heading := HEADING # the sim's, for the HUD's view-to-velocity angle
 var warp := 0.2 # ship-years per real second
 var _accum := 0.0
 var _last_pos_update := Vector3.ZERO
@@ -230,7 +235,7 @@ func _apply_state() -> void:
 	var c: Dictionary = sim.world["clock"]
 	var beta: float = s["beta"]
 	var h: Dictionary = s["heading"]
-	var heading := Vector3(h["x"], h["y"], h["z"])
+	heading = Vector3(h["x"], h["y"], h["z"])
 	starfield.set_velocity(heading, beta, s["gamma"])
 	if has_background:
 		background.set_velocity(heading, beta, s["gamma"])
@@ -240,8 +245,8 @@ func _apply_state() -> void:
 	if pos.distance_to(_last_pos_update) > 0.01:
 		starfield.set_ship_position(pos)
 		_last_pos_update = pos
-	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s" % [
-		beta, s["gamma"], c["tau"], c["t"], x, warp]
+	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s\n%s" % [
+		beta, s["gamma"], c["tau"], c["t"], x, warp, camera.hud_line(heading)]
 
 
 func _process(delta: float) -> void:
@@ -249,9 +254,8 @@ func _process(delta: float) -> void:
 		return
 	var look := Input.get_axis("ui_right", "ui_left")
 	var tilt := Input.get_axis("ui_down", "ui_up")
-	yaw += look * delta * 1.2
-	pitch = clampf(pitch + tilt * delta * 1.2, -1.5, 1.5)
-	camera.rotation = Vector3(pitch, yaw, 0)
+	var spin := (1.0 if Input.is_key_pressed(KEY_Q) else 0.0) - (1.0 if Input.is_key_pressed(KEY_E) else 0.0)
+	camera.turn_by(look * delta * LOOK_RATE, tilt * delta * LOOK_RATE, spin * delta * LOOK_RATE)
 	_accum += delta
 	var dt := 1.0 / TICK_HZ
 	while _accum >= dt:
@@ -274,10 +278,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if _map_mode:
 		return
 	match event.keycode:
-		KEY_1: yaw = 0.0; pitch = 0.0
-		KEY_2: yaw = -PI / 2; pitch = 0.0
-		KEY_3: yaw = PI; pitch = 0.0
-		KEY_4: yaw = 0.0; pitch = PI / 2 - 0.01
+		KEY_1: camera.look(0.0, 0.0, 0.0)
+		KEY_2: camera.look(-PI / 2, 0.0, 0.0)
+		KEY_3: camera.look(PI, 0.0, 0.0)
+		KEY_4: camera.look(0.0, FreeLookCamera.PITCH_LIMIT, 0.0)
 		KEY_EQUAL: warp *= 2.0
 		KEY_MINUS: warp /= 2.0
 
@@ -298,7 +302,9 @@ func _grab() -> Image:
 func _run_capture(dir: String) -> void:
 	var out := _out_dir(dir)
 	var targets := [0.0, 0.5, 0.9, 0.99]
-	var views := {"forward": Vector3(0, 0, 0), "starboard": Vector3(0, -PI / 2, 0), "astern": Vector3(0, PI, 0)}
+	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a)
+	var views := {"forward": [0.0, 0.0, 0.0], "starboard": [-PI / 2, 0.0, 0.0], "astern": [PI, 0.0, 0.0],
+		"offaxis": [deg_to_rad(50.0), deg_to_rad(25.0), 0.0], "rolled": [deg_to_rad(-30.0), deg_to_rad(10.0), deg_to_rad(35.0)]}
 	var tiles := []
 	for target in targets:
 		while sim.world["ship"]["beta"] < target:
@@ -308,13 +314,14 @@ func _run_capture(dir: String) -> void:
 				return
 		_apply_state()
 		for view in views:
-			camera.rotation = views[view]
+			camera.look(views[view][0], views[view][1], views[view][2])
+			_apply_state() # the HUD's view/v line follows the view
 			var img := await _grab()
 			var name := "sky_b%s_%s.png" % [str(target).replace(".", ""), view]
 			img.save_png(out.path_join(name))
 			tiles.append(img)
 			var ship: Dictionary = sim.world["ship"]
-			print("captured %s  beta=%.6f gamma=%.4f tau=%.4f t=%.4f" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"]])
+			print("captured %s  beta=%.6f gamma=%.4f tau=%.4f t=%.4f  %s" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"], camera.hud_line(heading)])
 	_save_sheet(tiles, views.size(), out.path_join("contact_sheet.png"))
 	sim.stop()
 	get_tree().quit(0)
@@ -339,7 +346,7 @@ func _run_golden() -> void:
 	starfield.set_custom_stars([])
 	starfield.build()
 	starfield.set_exposure(EXPOSURE)
-	camera.rotation = Vector3.ZERO
+	camera.look(0.0, 0.0, 0.0)
 	var cases := [
 		{"label": "at rest, 20 deg starboard", "theta": 20.0, "beta": 0.0},
 		{"label": "90 deg starboard at 0.9c -> 25.84 deg", "theta": 90.0, "beta": 0.9},
@@ -355,7 +362,7 @@ func _run_golden() -> void:
 	for c in cases:
 		var th := deg_to_rad(c["theta"])
 		var n := Vector3(sin(th), 0.0, -cos(th)) # galaxy frame, starboard = +X
-		camera.rotation = Vector3(0, c.get("yaw", 0.0), 0)
+		camera.look(c.get("yaw", 0.0), 0.0, 0.0)
 		starfield.set_custom_stars([{"name": "test", "pos": n * 1000.0, "t": c.get("t", 5700.0), "flux": 1.0}])
 		starfield.set_ship_position(Vector3.ZERO)
 		var b: float = c["beta"]
@@ -376,6 +383,7 @@ func _run_golden() -> void:
 		print("%s  %-40s expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px  apparent angle %.3f deg" % [
 			"ok  " if ok else "FAIL", c["label"], expected.x, expected.y, got.x, got.y, err,
 			rad_to_deg(acos(expected_dir.dot(HEADING)))])
+	failures += await _golden_offaxis()
 	starfield.set_custom_stars([])
 	starfield.set_ship_position(Vector3.ZERO)
 	failures += await _golden_background_marker()
@@ -385,8 +393,51 @@ func _run_golden() -> void:
 	get_tree().quit(1 if failures > 0 else 0)
 
 
+## AC5 (stars, M1.6b): 12 star directions x 4 speeds x 3 camera orientations
+## (one rolled, two off-axis), velocity along (1,1,-1)/sqrt3. Each star is
+## placed so it APPEARS on a 4 x 3 grid of the view (deaberrated from the
+## grid point), rendered alone, and its GPU centroid must land within 0.75 px
+## of the CPU reference: Relativity.aberrate, then the camera's float64
+## pinhole projection (FreeLookCamera.project, from the same yaw/pitch/roll
+## the GPU view matrix comes from). The rest temperature is set so the star is
+## seen at 5700 K and its flux so it renders at unit brightness at every
+## speed (positions only; colour and beaming are AC6 and the physics tests).
+func _golden_offaxis() -> int:
+	var size := get_viewport().get_visible_rect().size
+	var failures := 0
+	var worst := 0.0
+	var count := 0
+	for view in GOLDEN_VIEWS:
+		var yaw: float = atan2(-OFF_AXIS.x, -OFF_AXIS.z) if view[1] == null else deg_to_rad(view[1])
+		var pitch: float = asin(OFF_AXIS.y) if view[2] == null else deg_to_rad(view[2])
+		camera.look(yaw, pitch, deg_to_rad(view[3]))
+		for b: float in [0.0, 0.5, 0.9, 0.99]:
+			for ay: float in [-20.0, 0.0, 20.0]:
+				for ax: float in [-36.0, -12.0, 12.0, 36.0]:
+					var aim := camera.to_world(Vector3(tan(deg_to_rad(ax)), tan(deg_to_rad(ay)), -1.0).normalized())
+					var n := Relativity.deaberrate(aim, OFF_AXIS, b)
+					var d := Relativity.doppler(n, OFF_AXIS, b)
+					var t := 5700.0 / d
+					starfield.set_custom_stars([{"name": "test", "pos": n * 1000.0, "t": t, "flux": 1.0 / Relativity.point_flux_ratio(t, d)}])
+					starfield.set_ship_position(Vector3.ZERO)
+					starfield.set_velocity(OFF_AXIS, b, Relativity.gamma_of(b))
+					var img := await _grab()
+					var expected := camera.project(Relativity.aberrate(n, OFF_AXIS, b), size)
+					var got := _centroid(img)
+					var err := got.distance_to(expected)
+					worst = maxf(worst, err)
+					count += 1
+					var ok := err < 0.75
+					if not ok: failures += 1
+					print("%s  off-axis %-28s beta %.2f aim (%+3.0f, %+3.0f) deg  D %7.4f  expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px" % [
+						"ok  " if ok else "FAIL", view[0], b, ax, ay, d, expected.x, expected.y, got.x, got.y, err])
+	print("off-axis golden: %d cases (12 directions x 4 speeds x %d orientations), worst error %.3f px (limit 0.75), %d failures" % [count, GOLDEN_VIEWS.size(), worst, failures])
+	return failures
+
+
 ## AC5 (background): one bright texel of a synthetic panorama must land within
-## 1 px of aberrate(texel-centre direction), at 4 speeds x 3 views.
+## 1 px of aberrate(texel-centre direction), at 4 speeds x 4 views (forward,
+## starboard, astern and, since M1.6b, a pitched and rolled view).
 func _golden_background_marker() -> int:
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.glow_enabled = false
@@ -395,10 +446,10 @@ func _golden_background_marker() -> int:
 	var t_code := SkyModel.encode_t(6000.0)
 	var failures := 0
 	for b: float in [0.0, 0.5, 0.9, 0.99]:
-		for view: float in [0.0, -PI / 2, PI]:
-			camera.rotation = Vector3(0, view, 0)
-			# aim 10 deg right and 6 deg up of the view centre, in the ship frame
-			var aim := Basis.from_euler(Vector3(deg_to_rad(6.0), view - deg_to_rad(10.0), 0)) * Vector3(0, 0, -1)
+		for view: Array in [[0.0, 0.0, 0.0], [-PI / 2, 0.0, 0.0], [PI, 0.0, 0.0], [deg_to_rad(-40.0), deg_to_rad(20.0), deg_to_rad(50.0)]]:
+			camera.look(view[0], view[1], view[2])
+			# aim 10 deg right and 6 deg up of the view centre, in the camera frame
+			var aim := camera.to_world(Basis.from_euler(Vector3(deg_to_rad(6.0), deg_to_rad(-10.0), 0)) * Vector3(0, 0, -1))
 			var uv := SkyModel.equirect_uv(Relativity.deaberrate(aim, HEADING, b))
 			var tx := clampi(int(uv.x * w), 0, w - 1)
 			var ty := clampi(int(uv.y * h), 0, h - 1)
@@ -415,13 +466,13 @@ func _golden_background_marker() -> int:
 			# a mip-averaged texel is dimmer by about (2^lod)^2; normalise so the peak lands near 1
 			sb.set_exposure(4.0 * pow(maxf(d, 1.0), 2.0) / Relativity.surface_brightness_ratio(SkyModel.decode_t(t_code), d))
 			var img := await _grab()
-			var expected := camera.unproject_position(Relativity.aberrate(n, HEADING, b) * 100.0)
+			var expected := camera.project(Relativity.aberrate(n, HEADING, b), get_viewport().get_visible_rect().size)
 			var got := _centroid(img)
 			var err := got.distance_to(expected)
 			var ok := err < 1.0
 			if not ok: failures += 1
-			print("%s  background marker beta %.2f view %4.0f deg  expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px" % [
-				"ok  " if ok else "FAIL", b, rad_to_deg(view), expected.x, expected.y, got.x, got.y, err])
+			print("%s  background marker beta %.2f view %4.0f deg pitch %3.0f roll %3.0f  expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px" % [
+				"ok  " if ok else "FAIL", b, rad_to_deg(view[0]), rad_to_deg(view[1]), rad_to_deg(view[2]), expected.x, expected.y, got.x, got.y, err])
 	return failures
 
 
@@ -445,7 +496,7 @@ func _golden_background_colour() -> int:
 	var failures := 0
 	for d: float in [0.3, 1.0, 3.0]:
 		var theta := acos((1.0 - 1.0 / (d * g)) / b) # apparent angle where dopplerApparent = d
-		camera.rotation = Vector3(0, -theta, 0)
+		camera.look(-theta, 0.0, 0.0)
 		var want := Blackbody.rgb_unit_luminance(t * d)
 		var y_seen := 0.2 * Relativity.surface_brightness_ratio(t, d)
 		sb.set_exposure(0.6 / (y_seen * maxf(want.x, maxf(want.y, want.z))))
@@ -485,7 +536,7 @@ func _golden_background_tint() -> int:
 	sb.set_velocity(HEADING, b, g)
 	var failures := 0
 	for d: float in [1.0, 3.0]:
-		camera.rotation = Vector3(0, -acos((1.0 - 1.0 / (d * g)) / b), 0)
+		camera.look(-acos((1.0 - 1.0 / (d * g)) / b), 0.0, 0.0)
 		var want := SkyModel.radiance(lin, t, d)
 		sb.set_exposure(0.6 / maxf(want.x, maxf(want.y, want.z)))
 		var img := await _grab()

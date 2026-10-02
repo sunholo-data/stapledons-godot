@@ -71,6 +71,27 @@ pure func checkPhaseDerivedDiag() -> bool {
   phaseName(AtRest) == "at_rest" && phaseName(Boosting) == "boosting" && phaseName(Cruising) == "cruising" && phaseName(Braking) == "braking"
 }
 
+-- M1.6a follow-up (M1.6b): the turn's rest tolerance is pinned at 1e-9 on
+-- both sides. A turn at phi = 0.9e-9 is accepted (and snaps phi to 0); at
+-- 1.1e-9 the turn is refused and, through a diag tick, reported `moving`
+-- with the ship unchanged. A tolerance raised to 0.5 (or lowered to 1e-10)
+-- fails one side.
+pure func checkRestToleranceEdge() -> bool {
+  let w = plWorld(true, defaultParams());
+  let s = w.ship;
+  let below = {s | motion: {phi: 0.0000000009, tau: 0.0, t: 0.0, x: 0.0}};
+  let above = {s | motion: {phi: 0.0000000011, tau: 0.0, t: 0.0, x: 0.0}};
+  let east = {x: 1.0, y: 0.0, z: 0.0};
+  let ok = turn(below, east);
+  let no = turn(above, east);
+  let tb = plDo({w | ship: below}, [IHeading(east)]);
+  let ta = plDo({w | ship: above}, [IHeading(east)]);
+  ok.accepted && ok.ship.motion.phi == 0.0 && ok.ship.heading.x == 1.0 &&
+  !no.accepted && no.ship.motion.phi == 0.0000000011 && no.ship.heading.z == -1.0 &&
+  refusalsAre(tb.refused, []) && tb.world.ship.heading.x == 1.0 && tb.world.ship.motion.phi == 0.0 &&
+  refusalsAre(ta.refused, ["0:moving"]) && ta.world.ship.heading.z == -1.0 && ta.world.ship.motion.phi == 0.0000000011
+}
+
 -- The world's phase follows the diag thrust; tick and ship tick move together.
 pure func checkWorldPhases() -> bool {
   let w0 = diagWorld();
@@ -630,7 +651,7 @@ export pure func planVm(n: int) -> string =
   then "plan-ok" else "plan-BAD"
 
 export pure func worldVm(n: int) -> string =
-  if checkMassClosed() && checkPhaseDerivedDiag() && checkWorldPhases() && checkLedgerDiag() && checkScenarioMEff() && checkRngZero() && checkTickRefusals() && checkDrawIntent()
+  if checkMassClosed() && checkPhaseDerivedDiag() && checkRestToleranceEdge() && checkWorldPhases() && checkLedgerDiag() && checkScenarioMEff() && checkRngZero() && checkTickRefusals() && checkDrawIntent()
   then "world-ok" else "world-BAD"
 
 test "turn at rest snaps rapidity" { checkTurnAtRest() }
@@ -639,6 +660,7 @@ test "position after turn retains origin" { checkPositionAfterTurn() }
 test "strict off axis voyage" { checkScriptedOffAxis() }
 test "mass budget closed: available_kg 20000 after any ticks" { checkMassClosed() }
 test "phase derived for diag flight, rest tolerance 1e-9" { checkPhaseDerivedDiag() }
+test "rest tolerance edge: turn at phi 0.9e-9 accepted, 1.1e-9 refused moving" { checkRestToleranceEdge() }
 test "world phases follow diag thrust" { checkWorldPhases() }
 test "ledger accumulates boost and cruise drag from the package" { checkLedgerDiag() }
 test "scenario refuses m_eff below the brake threshold" { checkScenarioMEff() }

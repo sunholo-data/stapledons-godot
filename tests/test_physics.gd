@@ -30,6 +30,102 @@ func test_off_axis_cpu_spec_values() -> void:
 		check("off-axis transverse Doppler %s" % heading, Relativity.doppler(side, heading, 0.9), 1.0 / sqrt(0.19), 1e-6)
 
 
+## AC4 (camera part, M1.6b): the spec §2 check values seen through the real
+## free-look camera (the one main.gd flies), rolled and off-axis. The camera
+## only rotates the view, so RS-1/RS-2 must come out as the same angle off the
+## screen centre, at the pinhole radius f tan(theta'), turned on screen by the
+## roll; RS-3/RS-4/RS-Q2 follow the camera's own view direction. Godot's
+## unproject_position (float32 basis) must agree with the camera's float64
+## CPU projection, which the golden uses as its reference.
+func test_rolled_camera_cpu_spec_values(vp: SubViewport) -> void:
+	print("Rolled and off-axis free-look camera (AC4 camera part)")
+	var cam := FreeLookCamera.new()
+	vp.add_child(cam)
+	var size := Vector2(vp.size)
+	var f := 0.5 * size.y / tan(deg_to_rad(cam.fov) * 0.5)
+	var centre := size * 0.5
+	for heading: Vector3 in [Vector3(0, 0, -1), Vector3(1, 1, -1).normalized(), Vector3.RIGHT]:
+		for roll_deg: float in [0.0, 30.0, -115.0]:
+			# look straight along the velocity, then roll about the view axis
+			var yaw := atan2(-heading.x, -heading.z)
+			var pitch := asin(clampf(heading.y, -1.0, 1.0))
+			var roll := deg_to_rad(roll_deg)
+			cam.look(yaw, pitch, roll)
+			var tag := "heading %s roll %+.0f" % [heading, roll_deg]
+			check("%s: camera looks along the velocity (angle deg)" % tag, cam.view_velocity_angle(heading), 0.0, 1e-4)
+			check("%s: RS-3 Doppler of the view centre at 0.9c" % tag, Relativity.doppler_apparent(cam.view_dir(), heading, 0.9), sqrt(19.0), 1e-5)
+			# a 90 deg source on the camera's own right-hand side at rest
+			var right := cam.screen_right()
+			var up := cam.screen_up()
+			for row in [[0.9, 25.842], [0.5, 60.0]]:
+				var app := Relativity.aberrate(right, heading, row[0])
+				var p := cam.project(app, size)
+				var r := p.distance_to(centre)
+				check("%s: RS at %.1fc, 90 deg appears %.3f deg off centre" % [tag, row[0], row[1]], rad_to_deg(atan(r / f)), row[1], 2e-3)
+				# rolled or not, it stays on the camera's horizontal (right of centre, same row)
+				check("%s: %.1fc source stays on the screen's horizontal (px)" % [tag, row[0]], p.y - centre.y, 0.0, 1e-3)
+				check("%s: %.1fc Godot unproject == CPU projection (px)" % [tag, row[0]], cam.unproject_position(app * 100.0).distance_to(p), 0.0, 2e-3)
+			# RS-Q1: dead ahead lands on the centre whatever the roll; dead astern is behind the camera
+			check("%s: RS-Q1 dead ahead projects to the centre (px)" % tag, cam.project(Relativity.aberrate(heading, heading, 0.9), size).distance_to(centre), 0.0, 1e-3)
+			check("%s: RS-Q1 dead astern is behind the camera" % tag, 1.0 if cam.is_behind(Relativity.aberrate(-heading, heading, 0.9)) else 0.0, 1.0, 0.0)
+			check("%s: screen up is a unit vector at 90 deg to the view" % tag, absf(up.dot(cam.view_dir())) + absf(up.length() - 1.0), 0.0, 1e-6)
+	# Roll sense: positive roll turns the camera counter-clockwise about its view
+	# axis, so the sky turns clockwise on screen. A star 20 deg to the right of
+	# the unrolled view sits f tan 20 sin(roll) BELOW centre (screen y down).
+	var star := Vector3(sin(deg_to_rad(20.0)), 0.0, -cos(deg_to_rad(20.0)))
+	for roll_deg: float in [30.0, -50.0, 90.0]:
+		cam.look(0.0, 0.0, deg_to_rad(roll_deg))
+		var p := cam.project(star, size) - centre
+		check("roll %+.0f: star at 20 deg right moves to x = f tan20 cos(roll) (px)" % roll_deg, p.x, f * tan(deg_to_rad(20.0)) * cos(deg_to_rad(roll_deg)), 1e-3)
+		check("roll %+.0f: and y = f tan20 sin(roll), below centre for roll > 0 (px)" % roll_deg, p.y, f * tan(deg_to_rad(20.0)) * sin(deg_to_rad(roll_deg)), 1e-3)
+		check("roll %+.0f: Godot unproject agrees (px)" % roll_deg, cam.unproject_position(star * 100.0).distance_to(p + centre), 0.0, 2e-3)
+	# Off-axis (yawed + pitched + rolled) camera against Godot's own transform
+	for o in [[70.0, -25.0, 0.0], [-120.0, 40.0, -65.0], [10.0, 80.0, 170.0]]:
+		cam.look(deg_to_rad(o[0]), deg_to_rad(o[1]), deg_to_rad(o[2]))
+		var fwd := -cam.global_transform.basis.z
+		check("look %s: view_dir == Godot camera -Z" % [o], cam.view_dir().distance_to(fwd), 0.0, 1e-6)
+		for k in 8:
+			var d := (cam.view_dir() + 0.3 * cos(k * 0.785) * cam.screen_right() + 0.2 * sin(k * 0.785) * cam.screen_up()).normalized()
+			check("look %s: probe %d Godot unproject == CPU projection (px)" % [o, k], cam.unproject_position(d * 100.0).distance_to(cam.project(d, size)), 0.0, 2e-3)
+	# Astern view and a transverse view: Doppler of the view centre (RS-4, RS-Q2)
+	cam.look(PI, 0.0, deg_to_rad(40.0))
+	check("looking astern, rolled 40: RS-4 Doppler of view centre at 0.9c", Relativity.doppler_apparent(cam.view_dir(), Vector3(0, 0, -1), 0.9), sqrt(1.0 / 19.0), 1e-5)
+	cam.look(-PI / 2, 0.0, deg_to_rad(-70.0))
+	check("looking starboard, rolled -70: RS-Q2 view centre D = 1/gamma at 0.9c", Relativity.doppler_apparent(cam.view_dir(), Vector3(0, 0, -1), 0.9), sqrt(0.19), 1e-5)
+	cam.queue_free()
+
+
+## The HUD's view-to-velocity angle (M1.6b): float64, independent of roll,
+## exact at 0 and 180 (atan2 form, no acos rounding near the poles).
+func test_view_velocity_angle(vp: SubViewport) -> void:
+	print("View-to-velocity angle (HUD)")
+	var cam := FreeLookCamera.new()
+	vp.add_child(cam)
+	var fwd := Vector3(0, 0, -1)
+	var rows := [
+		["forward", 0.0, 0.0, 0.0, fwd, 0.0],
+		["forward rolled 75", 0.0, 0.0, 75.0, fwd, 0.0],
+		["starboard", -90.0, 0.0, 0.0, fwd, 90.0],
+		["starboard rolled -30", -90.0, 0.0, -30.0, fwd, 90.0],
+		["astern", 180.0, 0.0, 0.0, fwd, 180.0],
+		["astern rolled 120", 180.0, 0.0, 120.0, fwd, 180.0],
+		["up", 0.0, 90.0, 0.0, fwd, 90.0],
+		["30 deg left, 40 up", 30.0, 40.0, 10.0, fwd, rad_to_deg(acos(cos(deg_to_rad(30.0)) * cos(deg_to_rad(40.0))))],
+		["forward vs (1,1,-1)/sqrt3", 0.0, 0.0, 0.0, Vector3(1, 1, -1).normalized(), rad_to_deg(acos(1.0 / sqrt(3.0)))],
+		["forward vs +X", 0.0, 0.0, 45.0, Vector3.RIGHT, 90.0],
+		["0.5 deg off forward", 0.5, 0.0, 0.0, fwd, 0.5],
+		["1e-4 deg off forward", 1e-4, 0.0, 0.0, fwd, 1e-4],
+	]
+	for r in rows:
+		cam.look(deg_to_rad(r[1]), deg_to_rad(r[2]), deg_to_rad(r[3]))
+		check("view-velocity angle, %s (deg)" % r[0], cam.view_velocity_angle(r[4]), r[5], 1e-5)
+	cam.look(0.0, 0.0, 0.0)
+	check("HUD line reads the angle", 1.0 if cam.hud_line(Vector3.RIGHT) == "view/v  90.0 deg  roll   +0.0 deg" else 0.0, 1.0, 0.0)
+	cam.look(deg_to_rad(-30.0), 0.0, deg_to_rad(-20.0))
+	check("HUD line reads the roll", 1.0 if cam.hud_line(fwd) == "view/v  30.0 deg  roll  -20.0 deg" else 0.0, 1.0, 0.0)
+	cam.queue_free()
+
+
 ## data/starmap/stars.json galactic directions against the literature.
 ## Each row: catalogue id, name, SIMBAD ICRS J2000 RA / Dec, and the IAU galactic
 ## (l, b) of that position computed with astropy 7
@@ -81,6 +177,19 @@ func test_catalogue_galactic_directions() -> void:
 		var tol := 0.1 + rad_to_deg(atan(0.005 * sqrt(3.0) / r))
 		var l_cat := fposmod(rad_to_deg(atan2(y, x)), 360.0)
 		check("%s (%s): l %.2f b %+.2f, catalogue l %.2f -> sep deg" % [row[1], row[0], row[4], row[5], l_cat], sep, 0.0, tol)
+
+
+## The camera cases need a node in a viewport, so they run once the main loop
+## has started; everything else runs in _init.
+func _initialize() -> void:
+	var vp := SubViewport.new()
+	vp.size = Vector2i(960, 540)
+	root.add_child(vp)
+	await process_frame
+	test_rolled_camera_cpu_spec_values(vp)
+	test_view_velocity_angle(vp)
+	print("\n%d passed, %d failed" % [passes, failures])
+	quit(1 if failures > 0 else 0)
 
 
 func _init() -> void:
@@ -187,5 +296,3 @@ func _init() -> void:
 	check("beta after 1 ship-year at 1 g = tanh(a)", tanh(a), 0.774827262642545, 1e-12)
 	check("Earth years after 1 ship-year = sinh(a)/a", sinh(a) / a, 1.187312401712, 1e-11)
 
-	print("\n%d passed, %d failed" % [passes, failures])
-	quit(1 if failures > 0 else 0)

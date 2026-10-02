@@ -11,4 +11,8 @@
 {"v":2,"type":"input","tick":4,"dtau":1.5,"intents":[]}
 {"v":2,"type":"input","tick":4,"dtau":1,"intents":[{"k":"thrust","thrust":-1}]}
 {"v":2,"type":"input","tick":5,"dtau":0,"intents":[]}
+{"v":2,"type":"input","tick":6,"dtau":8.718435716150604e-10,"intents":[{"k":"thrust","thrust":1}]}
+{"v":2,"type":"input","tick":7,"dtau":0,"intents":[{"k":"thrust","thrust":0},{"k":"heading","heading":{"x":0,"y":1,"z":0}}]}
+{"v":2,"type":"input","tick":8,"dtau":1.0655865875295181e-09,"intents":[{"k":"thrust","thrust":1}]}
+{"v":2,"type":"input","tick":9,"dtau":0,"intents":[{"k":"thrust","thrust":0},{"k":"heading","heading":{"x":1,"y":0,"z":0}}]}
 {"v":2,"type":"quit"}
