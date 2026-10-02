@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model extract-test extract golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model extract-test extract destar-test destar golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm extract-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm extract-test destar-test   ## everything that runs without a GPU window
 
 extract-test:      ## VizieR parser (sim/tools/extract.ail): pure checks strict VM = interpreter; real-byte fixtures VM = interpreter
 	@mkdir -p $(SCRATCH)
@@ -202,3 +202,18 @@ catalogue-bytes:  ## native F32 bytes: independent Python oracle, interpreter an
 .PHONY: python-guard
 python-guard:     ## Python policy: every *.py allowlisted with a role (CLAUDE.md "Python")
 	@sh tools/python_guard.sh
+
+.PHONY: destar-test destar
+destar-test:      ## star removal core (sim/tools/destar.ail) on a synthetic panorama: strict VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry destarVm --args-json 0 sim/tools/destar_test.ail > $(SCRATCH)/destar-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry destarVm --args-json 0 sim/tools/destar_test.ail > $(SCRATCH)/destar-interp.txt
+	@cmp $(SCRATCH)/destar-vm.txt $(SCRATCH)/destar-interp.txt && test "$$(cat $(SCRATCH)/destar-vm.txt)" = "destar-ok" && echo "destar-test: $$(cat $(SCRATCH)/destar-vm.txt) (strict VM = interpreter)"
+
+destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars removed (Godot I/O, AILANG core); needs data/raw/{hip_v7.tsv,gcns.csv,cns5.csv}
+	@test -f $(SKY)/noirlab_10k.png || sips -s format png $(SKY)/noirlab_10k.tif --out $(SKY)/noirlab_10k.png
+	$(GODOT) --headless --path . --script tools/destar_io.gd -- dump $(SKY)/noirlab_10k.png $(SKY)/noirlab_10k.rgb
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
+	  --args-json '{"rgb":"$(SKY)/noirlab_10k.rgb","w":10000,"h":5000,"hip":"data/raw/hip_v7.tsv","gcns":"data/raw/gcns.csv","cns5":"data/raw/cns5.csv","patches":"$(SKY)/destar_patches.bin","report":"data/sky/destar_report.json"}' \
+	  sim/tools/destar.ail
+	$(GODOT) --headless --path . --script tools/destar_io.gd -- apply $(SKY)/noirlab_10k.png $(SKY)/destar_patches.bin $(SKY)/noirlab_10k_destarred.png

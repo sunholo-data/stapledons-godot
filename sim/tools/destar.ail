@@ -1,0 +1,372 @@
+module stapledons/sim/tools/destar
+
+-- M1.4a Option A (D-10) star removal, AILANG port of the former spike
+-- tools/m14a_destar.py (CLAUDE.md "Python"). Remove from the NOIRLab panorama
+-- only the point sources cross-matched to a star in the shipped point layers
+-- (HIP V<7.5, GCNS, CNS5); unmatched sources stay as pixels, so no star is
+-- dropped from both layers and none is drawn twice.
+--
+-- The spike worked on the whole 50M-pixel image (percentile and maximum
+-- filters, four Gaussian blurs). This port is catalogue-driven and local:
+-- every operation looks only at pixels around a candidate star.
+--   detect   per candidate: local background (30th percentile) and sigma (MAD)
+--            of a sampled 33 px box, the residual peak within a V-dependent
+--            tolerance (a 5 sigma local maximum), 5x5 flux
+--   match    zero point from bright unambiguous matches, |dm| < 1.5 or V < 4.5;
+--            one panorama source keeps its brightest catalogue star
+--   mask     radius from the per-V halo table (isolated-star medians from the
+--            spike), the measured ring radius for V < 2
+--   fill     inverse-distance interpolation from the clean ring around the disc,
+--            plus high-pass grain from the nearest >= 80%-clean donor patch,
+--            clipped to +-18 DN so a donor cannot carry a star in; feathered edge
+--
+-- Image I/O is Godot's (tools/destar_io.gd): "dump" writes the panorama as raw
+-- RGB8; this module writes patch records (x u16, y u16, r, g, b), and "apply"
+-- paints them. `make destar` runs the chain.
+import std/string (split, trim, stringToFloat, floatToStr, intToStr, join, concat)
+import std/list (map, foldl, filter, sortBy, reverse, flatMap)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/math (sqrt, atan2, asin, sin, cos, floor, ceil, log10, floatToInt, intToFloat, PI)
+import std/array (fromList, get, make, updateMany, length as alen)
+import std/bytes (fromBase64, byteAt, fromInts, concatList, length as blen)
+import std/fs (readFile, readFileBytes, writeFile, writeFileBytes)
+import std/io (println, exit)
+import pkg/sunholo/relativity/photometry (vFromG)
+
+export type Img = { b: bytes, w: int, h: int }
+export type Cand = { v: float, x: float, y: float, src: int }   -- src 0 HIP, 1 GCNS, 2 CNS5
+export type Peak = { found: bool, px: int, py: int, peak: float, flux: float, bg: float, sigma: float }
+export type Disc = { x: float, y: float, r: float, v: float }
+
+pure func vLimit() -> float = 9.5
+pure func posTol() -> float = 3.0
+pure func magTol() -> float = 1.5
+pure func maxR() -> int = 80
+pure func grain() -> float = 18.0
+pure func cell() -> int = 64
+
+-- ---- pixels -------------------------------------------------------------------
+
+pure func wrapX(img: Img, x: int) -> int = ((x % img.w) + img.w) % img.w
+pure func inY(img: Img, y: int) -> bool = y >= 0 && y < img.h
+
+export pure func chan(img: Img, x: int, y: int, c: int) -> float =
+  if inY(img, y) then match byteAt(img.b, (y * img.w + wrapX(img, x)) * 3 + c) { Some(v) => intToFloat(v), None => 0.0 } else 0.0
+
+export pure func lum(img: Img, x: int, y: int) -> float =
+  0.2126 * chan(img, x, y, 0) + 0.7152 * chan(img, x, y, 1) + 0.0722 * chan(img, x, y, 2)
+
+-- ---- catalogues -> candidates -----------------------------------------------------
+
+-- galactic equirect, l = 0 at the centre, l increasing to the left (D-10 registration)
+export pure func lbToPx(img: Img, l: float, b: float) -> (float, float) {
+  let lw = l - 360.0 * floor((l + 180.0) / 360.0);
+  ((0.5 - lw / 360.0) * intToFloat(img.w), (0.5 - b / 180.0) * intToFloat(img.h))
+}
+
+-- Missing numbers are a sentinel, not Option: the strict VM (v0.51.0) cannot bind
+-- variables inside nested constructor patterns like (Some(x), Some(y)) (reported upstream).
+pure func missing() -> float = 0.0 - 1.0e300
+pure func num(s: string) -> float = match stringToFloat(trim(s)) { Some(v) => if v == v then v else missing(), None => missing() }
+pure func has(v: float) -> bool = v > 0.0 - 1.0e299
+
+-- VizieR TSV, columns HIP, Vmag, _Glon, _Glat, B-V, Plx
+export pure func hipCands(img: Img, text: string) -> [Cand] =
+  foldl(\acc line. match split(line, "\t") {
+      [h, v, l, b, _, _] => {
+        let vm = num(v); let gl = num(l); let gb = num(b);
+        if has(num(h)) && has(vm) && has(gl) && has(gb) then match lbToPx(img, gl, gb) { (x, y) => { v: vm, x: x, y: y, src: 0 } :: acc } else acc
+      },
+      _ => acc
+    }, [], split(text, "\n"))
+
+-- sim/tools/extract.ail CSV (id,x,y,z,G,BPRP,wd): direction from xyz, V from the package's G -> V
+export pure func csvCands(img: Img, src: int, text: string) -> [Cand] =
+  foldl(\acc line. match split(line, ",") {
+      [_, xs, ys, zs, gs, cs, _] => {
+        let x = num(xs); let y = num(ys); let z = num(zs); let g = num(gs); let c = num(cs);
+        if !(has(x) && has(y) && has(z) && has(g)) then acc else {
+          let v = if has(c) then vFromG(g, c) else g;
+          if v >= vLimit() then acc else {
+            let r = sqrt(x * x + y * y + z * z);
+            match lbToPx(img, atan2(y, x) * 180.0 / PI(), asin(z / r) * 180.0 / PI()) { (px, py) => { v: v, x: px, y: py, src: src } :: acc }
+          }
+        }
+      },
+      _ => acc
+    }, [], split(text, "\n"))
+
+-- ---- detection ------------------------------------------------------------------
+
+pure func cmpF(a: float, b: float) -> int = if a < b then 0 - 1 else if a > b then 1 else 0
+pure func nthF(xs: [float], i: int) -> float = match xs { [] => 0.0, [h, ...t] => if i <= 0 then h else nthF(t, i - 1) }
+pure func absF(a: float) -> float = if a < 0.0 then 0.0 - a else a
+
+-- [lo, hi] inclusive, step s; tail-recursive (the VM stack overflows on deep non-tail recursion)
+pure func steps(lo: int, hi: int, s: int) -> [int] = if lo > hi then [] else stepsDown(lo + ((hi - lo) / s) * s, lo, s, [])
+pure func stepsDown(i: int, lo: int, s: int, acc: [int]) -> [int] = if i < lo then acc else stepsDown(i - s, lo, s, i :: acc)
+
+-- 30th percentile and 1.4826 x MAD of a box sampled on a 17 x 17 grid (289 samples).
+-- The box half-size is 16 px or 2.5 halo radii, whichever is larger: a bright star's
+-- halo must not become its own background (it did, and V < 2 matched nothing).
+export pure func background(img: Img, cx: int, cy: int, half: int) -> (float, float) {
+  let st = if half / 8 > 2 then half / 8 else 2;
+  let vals = sortBy(cmpF, flatMap(\dy. map(\dx. lum(img, cx + dx, cy + dy), steps(0 - 8 * st, 8 * st, st)), steps(0 - 8 * st, 8 * st, st)));
+  let n = 289;
+  let bg = nthF(vals, n * 3 / 10);
+  let med = nthF(vals, n / 2);
+  let dev = sortBy(cmpF, map(\v. absF(v - med), vals));
+  (bg, 1.4826 * nthF(dev, n / 2))
+}
+
+export pure func tolFor(v: float) -> float = posTol() + (if v < 4.0 then (4.0 - v) * 1.5 else 0.0)
+
+pure func localMax(img: Img, x: int, y: int, l: float) -> bool =
+  foldl(\ok dy. ok && foldl(\ok2 dx. ok2 && lum(img, x + dx, y + dy) <= l, true, steps(0 - 2, 2, 1)), true, steps(0 - 2, 2, 1))
+
+export pure func detect(img: Img, c: Cand) -> Peak {
+  let cx = floatToInt(floor(c.x)); let cy = floatToInt(floor(c.y));
+  let bh = floatToInt(ceil(2.5 * haloRadius(c.v)));
+  match background(img, cx, cy, if bh > 16 then bh else 16) {
+    (bg, sigma) => {
+      let t = tolFor(c.v);
+      let ti = floatToInt(ceil(t));
+      let best = foldl(\acc dy. foldl(\a dx. {
+            let x = cx + dx; let y = cy + dy;
+            let ddx = intToFloat(x) + 0.5 - c.x; let ddy = intToFloat(y) + 0.5 - c.y;
+            if ddx * ddx + ddy * ddy > t * t || !inY(img, y) then a else {
+              let l = lum(img, x, y);
+              match a { (bx, by, bl) => if l > bl then (x, y, l) else a }
+            } }, acc, steps(0 - ti, ti, 1)), (cx, cy, 0.0 - 1.0), steps(0 - ti, ti, 1));
+      -- a saturated core is a plateau: take its centroid, not its first pixel
+      let top = match best { (_, _, bl0) => bl0 };
+      let plateau = foldl(\acc dy. foldl(\a dx. {
+            let x = cx + dx; let y = cy + dy;
+            let ddx = intToFloat(x) + 0.5 - c.x; let ddy = intToFloat(y) + 0.5 - c.y;
+            if ddx * ddx + ddy * ddy > t * t || !inY(img, y) || lum(img, x, y) < top - 0.5 then a
+            else match a { (sx, sy, n) => (sx + intToFloat(x), sy + intToFloat(y), n + 1.0) } }, acc, steps(0 - ti, ti, 1)), (0.0, 0.0, 0.0), steps(0 - ti, ti, 1));
+      let centre = match plateau { (sx, sy, n) => if n > 0.0 then (floatToInt(floor(sx / n + 0.5)), floatToInt(floor(sy / n + 0.5)), top) else best };
+      match centre {
+        (bx, by, bl) => {
+          let peak = bl - bg;
+          let flux = foldl(\s dy. foldl(\s2 dx. { let r = lum(img, bx + dx, by + dy) - bg; s2 + (if r > 0.0 then r else 0.0) }, s, steps(0 - 2, 2, 1)), 0.0, steps(0 - 2, 2, 1));
+          { found: peak > 5.0 * sigma && sigma >= 0.0 && localMax(img, bx, by, bl), px: bx, py: by, peak: peak, flux: flux, bg: bg, sigma: sigma }
+        }
+      }
+    }
+  }
+}
+
+export pure func mMeas(p: Peak) -> float = 0.0 - 2.5 * log10(if p.flux > 0.000001 then p.flux else 0.000001)
+
+pure func median(xs: [float]) -> float = match sortBy(cmpF, xs) { [] => 0.0, s => nthF(s, foldl(\n _. n + 1, 0, s) / 2) }
+
+-- zero point m = zp - 2.5 log10(flux), from found peaks of V < 6
+export pure func zeroPoint(pairs: [(Cand, Peak)]) -> float =
+  median(foldl(\acc pr. match pr { (c, p) => if p.found && c.v < 6.0 then (c.v - mMeas(p)) :: acc else acc }, [], pairs))
+
+export pure func isMatch(zp: float, c: Cand, p: Peak) -> bool =
+  p.found && (absF(mMeas(p) + zp - c.v) < magTol() || c.v < 4.5)
+
+-- ---- masks ------------------------------------------------------------------------
+
+-- median halo radius (px) of isolated matched stars per V bin, measured on this
+-- panorama by the spike's ring test (2026-10-01); masks use this table because the
+-- ring test swallows nebulosity
+type Knot = { v: float, r: float }
+pure func haloTable() -> [Knot] =
+  [{ v: 0.0 - 1.5, r: 27.0 }, { v: 0.0 - 0.5, r: 26.0 }, { v: 0.5, r: 26.0 }, { v: 1.5, r: 23.0 }, { v: 2.5, r: 20.0 },
+   { v: 3.5, r: 15.0 }, { v: 4.5, r: 11.0 }, { v: 5.5, r: 6.0 }, { v: 6.5, r: 3.0 }, { v: 7.5, r: 2.0 }, { v: 8.5, r: 2.0 }]
+
+pure func interp(v: float, t: [Knot]) -> float = match t {
+  [] => 2.0,
+  [a, ...rest] => if v <= a.v then a.r else match rest {
+    [] => a.r,
+    [b, ..._] => if v <= b.v then a.r + (b.r - a.r) * (v - a.v) / (b.v - a.v) else interp(v, rest)
+  }
+}
+
+export pure func haloRadius(v: float) -> float = interp(v, haloTable()) * 1.15 + 1.5
+
+-- the spike's ring test: the first radius whose ring median residual falls below max(2 sigma, 3% of peak)
+export pure func ringRadius(img: Img, p: Peak) -> float = ringFrom(img, p, 2)
+
+pure func ringFrom(img: Img, p: Peak, r: int) -> float =
+  if r >= maxR() then intToFloat(maxR()) else {
+    let rf = intToFloat(r);
+    let n = if 2.0 * PI() * rf > 8.0 then floatToInt(2.0 * PI() * rf) else 8;
+    let ring = map(\k. {
+        let a = 2.0 * PI() * intToFloat(k) / intToFloat(n);
+        lum(img, p.px + floatToInt(floor(rf * cos(a) + 0.5)), p.py + floatToInt(floor(rf * sin(a) + 0.5))) - p.bg
+      }, steps(0, n - 1, 1));
+    if median(ring) < (if 2.0 * p.sigma > 0.03 * p.peak then 2.0 * p.sigma else 0.03 * p.peak) then rf else ringFrom(img, p, r + 1)
+  }
+
+export pure func discFor(img: Img, c: Cand, p: Peak) -> Disc {
+  let table = haloRadius(c.v);
+  let r = if c.v < 2.0 then { let m = 1.25 * ringRadius(img, p) + 2.0; if m > table then m else table } else table;
+  { x: intToFloat(p.px) + 0.5, y: intToFloat(p.py) + 0.5, r: r, v: c.v }
+}
+
+-- spatial index: cell -> indices of discs touching it
+export type Index = { discs: Array[Disc], cells: Array[[int]], ncx: int, ncy: int }
+
+pure func cellsOf(img: Img, d: Disc) -> [int] {
+  let ncx = (img.w + cell() - 1) / cell();
+  let x0 = floatToInt(floor((d.x - d.r) / intToFloat(cell()))); let x1 = floatToInt(floor((d.x + d.r) / intToFloat(cell())));
+  let y0 = floatToInt(floor((d.y - d.r) / intToFloat(cell()))); let y1 = floatToInt(floor((d.y + d.r) / intToFloat(cell())));
+  flatMap(\cy. if cy < 0 || cy * cell() >= img.h then [] else map(\cx. cy * ncx + ((cx % ncx) + ncx) % ncx, steps(x0, x1, 1)), steps(y0, y1, 1))
+}
+
+export pure func buildIndex(img: Img, discs: [Disc]) -> Index {
+  let ncx = (img.w + cell() - 1) / cell();
+  let ncy = (img.h + cell() - 1) / cell();
+  let arr = fromList(discs);
+  let pairs = sortBy(\a b. a.c - b.c,
+    flatMap(\i. map(\c. { c: c, i: i }, cellsOf(img, get(arr, i))), steps(0, alen(arr) - 1, 1)));
+  let grouped = foldl(\acc pr. match acc {
+      [] => [{ c: pr.c, is: [pr.i] }],
+      [g, ...rest] => if g.c == pr.c then { c: g.c, is: pr.i :: g.is } :: rest else { c: pr.c, is: [pr.i] } :: acc
+    }, [], pairs);
+  { discs: arr, cells: updateMany(make(ncx * ncy, []), map(\g. (g.c, g.is), grouped)), ncx: ncx, ncy: ncy }
+}
+
+export pure func masked(img: Img, ix: Index, x: int, y: int) -> bool =
+  if !inY(img, y) then false else {
+    let xw = wrapX(img, x);
+    let fx = intToFloat(xw) + 0.5; let fy = intToFloat(y) + 0.5;
+    foldl(\hit i. hit || { let d = get(ix.discs, i); (fx - d.x) * (fx - d.x) + (fy - d.y) * (fy - d.y) <= d.r * d.r },
+      false, get(ix.cells, (y / cell()) * ix.ncx + xw / cell()))
+  }
+
+-- ---- fill ---------------------------------------------------------------------------
+
+-- clean pixels on the ring r+1 .. r+w around the disc, widening until some are found
+pure func ringSamples(img: Img, ix: Index, d: Disc, w: int) -> [(int, int)] {
+  let r0 = d.r + 1.0; let r1 = d.r + intToFloat(w);
+  let ri = floatToInt(ceil(r1));
+  let cx = floatToInt(floor(d.x)); let cy = floatToInt(floor(d.y));
+  let pts = flatMap(\dy. flatMap(\dx. {
+      let fx = intToFloat(cx + dx) + 0.5 - d.x; let fy = intToFloat(cy + dy) + 0.5 - d.y;
+      let q = fx * fx + fy * fy;
+      if q >= r0 * r0 && q <= r1 * r1 && inY(img, cy + dy) && !masked(img, ix, cx + dx, cy + dy) then [(cx + dx, cy + dy)] else []
+    }, steps(0 - ri, ri, 1)), steps(0 - ri, ri, 1));
+  match pts { [] => if w < 24 then ringSamples(img, ix, d, w + 4) else [], _ => pts }
+}
+
+-- inverse-distance-squared mean of the ring at (x, y), per channel
+pure func idw(img: Img, ring: [(int, int)], x: int, y: int) -> (float, float, float) {
+  let acc = foldl(\a q. match a { (sw, sr, sg, sb) => match q { (qx, qy) => {
+      let dx = intToFloat(qx - x); let dy = intToFloat(qy - y);
+      let w = 1.0 / (dx * dx + dy * dy + 0.25);
+      (sw + w, sr + w * chan(img, qx, qy, 0), sg + w * chan(img, qx, qy, 1), sb + w * chan(img, qx, qy, 2))
+    } } }, (0.0, 0.0, 0.0, 0.0), ring);
+  match acc { (sw, sr, sg, sb) => if sw > 0.0 then (sr / sw, sg / sw, sb / sw) else (0.0, 0.0, 0.0) }
+}
+
+-- nearest donor square (side n at offset ox, oy) whose 5x5 sample grid is >= 80% unmasked
+pure func donor(img: Img, ix: Index, cx: int, cy: int, half: int) -> Option[(int, int)] {
+  let n = 2 * half + 1;
+  let clean = \ox oy. foldl(\c gy. foldl(\c2 gx. c2 + (if masked(img, ix, cx + ox - half + gx * (n - 1) / 4, cy + oy - half + gy * (n - 1) / 4) then 0 else 1), c, steps(0, 4, 1)), 0, steps(0, 4, 1)) >= 20;
+  let tries = flatMap(\dist. map(\k. {
+      let a = 2.0 * PI() * intToFloat(k) / 16.0;
+      (floatToInt(floor(dist * cos(a) + 0.5)), floatToInt(floor(dist * sin(a) + 0.5)))
+    }, steps(0, 15, 1)), [2.5 * intToFloat(half) + 4.0, 4.0 * intToFloat(half) + 8.0, 6.0 * intToFloat(half) + 12.0]);
+  foldl(\found t. match found { Some(_) => found, None => match t { (ox, oy) =>
+      if inY(img, cy + oy - half) && inY(img, cy + oy + half) && clean(ox, oy) then Some((ox, oy)) else None } }, None, tries)
+}
+
+pure func clampF(v: float, lo: float, hi: float) -> float = if v < lo then lo else if v > hi then hi else v
+pure func byte(v: float) -> int = floatToInt(floor(clampF(v, 0.0, 255.0) + 0.5))
+
+-- mean of a square, per channel (the donor's low-pass, so grain = pixel - mean)
+pure func meanSq(img: Img, x0: int, y0: int, n: int) -> (float, float, float) {
+  let s = foldl(\a dy. foldl(\a2 dx. match a2 { (r, g, b) => (r + chan(img, x0 + dx, y0 + dy, 0), g + chan(img, x0 + dx, y0 + dy, 1), b + chan(img, x0 + dx, y0 + dy, 2)) }, a, steps(0, n - 1, 1)), (0.0, 0.0, 0.0), steps(0, n - 1, 1));
+  let k = intToFloat(n * n);
+  match s { (r, g, b) => (r / k, g / k, b / k) }
+}
+
+-- patch records (x u16 LE, y u16 LE, r, g, b) for one disc and its 1 px feather
+export pure func fillDisc(img: Img, ix: Index, d: Disc) -> [int] {
+  let ring = ringSamples(img, ix, d, 4);
+  let half = floatToInt(ceil(d.r)) + 2;
+  let cx = floatToInt(floor(d.x)); let cy = floatToInt(floor(d.y));
+  let dn = donor(img, ix, cx, cy, half);
+  let off = match dn { Some(o) => o, None => (0, 0) };
+  let hasDonor = match dn { Some(_) => true, None => false };
+  let ox = match off { (a, _) => a };
+  let oy = match off { (_, b) => b };
+  let dmean = if hasDonor then meanSq(img, cx + ox - half, cy + oy - half, 2 * half + 1) else (0.0, 0.0, 0.0);
+  flatMap(\dy. flatMap(\dx. {
+      let x = cx + dx; let y = cy + dy;
+      let fx = intToFloat(x) + 0.5 - d.x; let fy = intToFloat(y) + 0.5 - d.y;
+      let dist = sqrt(fx * fx + fy * fy);
+      let a = clampF((d.r + 1.0 - dist) / 2.0, 0.0, 1.0);
+      if a <= 0.0 || !inY(img, y) then [] else {
+        let g = \c m. if !hasDonor || masked(img, ix, x + ox, y + oy) then 0.0
+          else clampF(chan(img, x + ox, y + oy, c) - m, 0.0 - grain(), grain());
+        match idw(img, ring, x, y) {
+          (br, bg, bb) => match dmean { (mr, mg, mb) => {
+            let xw = wrapX(img, x);
+            [xw % 256, xw / 256, y % 256, y / 256,
+             byte(chan(img, x, y, 0) * (1.0 - a) + (br + g(0, mr)) * a),
+             byte(chan(img, x, y, 1) * (1.0 - a) + (bg + g(1, mg)) * a),
+             byte(chan(img, x, y, 2) * (1.0 - a) + (bb + g(2, mb)) * a)]
+          } }
+        }
+      }
+    }, steps(0 - half, half, 1)), steps(0 - half, half, 1))
+}
+
+-- ---- pipeline -----------------------------------------------------------------------
+
+export type Result2 = { discs: [Disc], zp: float, cands: int, matched: int, byV: [(int, int, int)] }
+
+-- detect every candidate, fit the zero point, match, and keep one disc per panorama
+-- source (its brightest catalogue star)
+export pure func plan(img: Img, cands: [Cand]) -> Result2 {
+  let pairs = map(\c. (c, detect(img, c)), sortBy(\a b. cmpF(a.v, b.v), cands));
+  let zp = zeroPoint(pairs);
+  let hits = filter(\pr. match pr { (c, p) => isMatch(zp, c, p) }, pairs);
+  let unique = reverse(foldl(\acc pr. match pr { (c, p) =>
+      if foldl(\seen q. seen || (match q { (_, pq) => pq.px == p.px && pq.py == p.py }), false, acc) then acc else pr :: acc }, [], hits));
+  let byV = map(\lo. (lo, foldl(\n pr. match pr { (c, _) => if c.v >= intToFloat(lo) && c.v < intToFloat(lo + 1) then n + 1 else n }, 0, pairs),
+      foldl(\n pr. match pr { (c, _) => if c.v >= intToFloat(lo) && c.v < intToFloat(lo + 1) then n + 1 else n }, 0, hits)), steps(0 - 2, 9, 1));
+  { discs: map(\pr. match pr { (c, p) => discFor(img, c, p) }, unique), zp: zp,
+    cands: foldl(\n _. n + 1, 0, pairs), matched: foldl(\n _. n + 1, 0, hits), byV: byV }
+}
+
+export pure func patches(img: Img, discs: [Disc]) -> bytes {
+  let ix = buildIndex(img, discs);
+  concatList(map(\d. fromInts(fillDisc(img, ix, d)), discs))
+}
+
+pure func reportJson(r: Result2, maskedPx: int, img: Img) -> string =
+  concat(["{\n  \"tool\": \"sim/tools/destar.ail\",\n  \"candidates_v_lt_9_5\": ", intToStr(r.cands),
+    ",\n  \"zero_point\": ", floatToStr(r.zp), ",\n  \"catalogue_matches\": ", intToStr(r.matched),
+    ",\n  \"masked_sources\": ", intToStr(foldl(\n _. n + 1, 0, r.discs)),
+    ",\n  \"patched_pixels\": ", intToStr(maskedPx),
+    ",\n  \"patched_fraction\": ", floatToStr(intToFloat(maskedPx) / intToFloat(img.w * img.h)),
+    ",\n  \"by_v\": [", join(", ", map(\t. match t { (lo, n, m) => concat(["[", intToStr(lo), ", ", intToStr(n), ", ", intToStr(m), "]"]) }, r.byV)),
+    "]\n}\n"])
+
+export func main(a: { rgb: string, w: int, h: int, hip: string, gcns: string, cns5: string, patches: string, report: string }) -> () ! {FS, IO} =
+  match readFileBytes(a.rgb) {
+    Err(e) => { println(concat(["ERROR: ", e])); exit(2) },
+    Ok(s) => match fromBase64(s) {
+      None => { println("ERROR: rgb dump is not valid base64"); exit(2) },
+      Some(b) => {
+        let img = { b: b, w: a.w, h: a.h };
+        if blen(b) != a.w * a.h * 3 then { println("ERROR: rgb dump size does not match w x h x 3"); exit(2) } else {
+          let cands = hipCands(img, readFile(a.hip)) ++ csvCands(img, 1, readFile(a.gcns)) ++ csvCands(img, 2, readFile(a.cns5));
+          let r = plan(img, cands);
+          let p = patches(img, r.discs);
+          writeFileBytes(a.patches, p);
+          writeFile(a.report, reportJson(r, blen(p) / 7, img));
+          println(concat(["destar: ", intToStr(r.matched), " catalogue matches -> ", intToStr(foldl(\n _. n + 1, 0, r.discs)),
+            " masked sources, ", intToStr(blen(p) / 7), " patched pixels"]))
+        }
+      }
+    }
+  }
