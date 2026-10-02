@@ -585,6 +585,90 @@ id), which is what lets `make ai-stub` check every text hash against
 `shasum -a 256`. Stub voice arrives with AI.5; until then a routed voice
 request answers `provider_error`.
 
+### Follow-up: the AI model bake-off (after AI.10b)
+
+Mark, attended 2026-10-02: "we may actually run with models and compare their
+runs, like an elaborate eval test." This is queued as its own item (charter
+queue row 4b) and is **not** part of this sprint's scope; it is recorded here
+because the foundation already provides what it needs.
+
+**Idea.** Replay one recorded voyage several times, each time with the text
+route pinned to a different model, and compare what each model writes for the
+same moments in the game.
+
+**Why the foundation makes this cheap:**
+
+- **Same game for every model.** The sim is deterministic and the AI never
+  feeds back into physics, so every run sees byte-identical `ai_req` lines (same
+  purpose, entity, context, emotion budget). Only the generated text differs.
+- **Swapping models is a config change.** OpenRouter text goes over `std/net`
+  (AI.5, ailang#1536), so any `openrouter:vendor/model` id works by naming it in
+  `data/ai/models.json` / `routing.json`. Gemini models go through `std/ai`.
+- **Results are already labelled.** Every cache index and `usage.ndjson` line
+  carries provider, route, model, tokens and nano-dollar cost.
+- **Automatic scoring is already written.** The reply screen (`bad_output`) and
+  the sim's record validation (length caps 280/280/600, `ai_numeral`,
+  `ai_markup`, the marker grammar) give a per-model pass rate with no extra code.
+
+**Starting models (Mark, attended 2026-10-02):** "default models are like
+gemini 3.5 lite for speed and gemini 3.8 flash for smarts, openai sol 6.1 and
+glm flash".
+
+| Model | Role | Route |
+|---|---|---|
+| Gemini 3.5 Flash-Lite | speed: the default for short lines (crew line, news) | Gemini (`std/ai`), or via OpenRouter |
+| Gemini 3.8 Flash | smarts: archive entries, probe reports | Gemini (`std/ai`), or via OpenRouter |
+| OpenAI Sol 6.1 | contestant | OpenRouter |
+| GLM Flash | contestant (cheap) | OpenRouter |
+
+These four also replace AI.5's proposed text model (`mistralai/mistral-nemo`)
+as the defaults to put in `data/ai/models.json`, `routing.json` and
+`prices.json`.
+- **Not done yet:** the exact provider model ids and prices are unverified
+  offline. They get checked against the live model lists, and recorded, at the
+  attended AI.10b run, before any default changes.
+- **Routing split:** a speed model for short purposes and a smart model for long
+  ones is a new per-purpose split in `routing.json`. Today it routes per kind,
+  with all text treated alike.
+
+**Shape (to be designed properly when it is picked up):**
+
+- **Input.** A recorded request stream: the `ai_req` lines from a fixed voyage
+  replay, plus the context each one carried.
+- **Driver.** `make ai-bakeoff MODELS="…"`. For each model it starts the service
+  in `live` mode with a routing table that names only that model and writes to its
+  own cache directory (`bakeoff/<run>/<model>/`), so runs never mix and never touch
+  the game's cache.
+- **Scores per model:**
+  - pass rate through the screen and the sim's validation, with the reasons
+    for each refusal;
+  - latency (p50/p95);
+  - tokens and cost per voyage;
+  - marker-grammar use (are the emotions used, and used sensibly).
+- **Quality.** Done blind: a judge model rates tone, lore consistency (against
+  `data/ai/lore.json` and the Higgs-bubble canon) and in-character voice, and Mark
+  rates a blind sample. The judge model is never one of the contestants.
+- **Output.** A side-by-side report (an Artifact page: one row per request, one
+  column per model, scores in the header) plus a JSON summary under
+  `.ailang/state/evaluations/`.
+
+**Constraints:**
+
+- **Attended only:** `AI_LIVE=1` plus a TTY, as for AI.10b, with Mark present.
+  The unattended loop never runs it.
+- **Spending caps:** a per-model ceiling and a total ceiling for the whole run,
+  enforced by the spend ledger. One voyage across about 5 cheap text models
+  should cost cents.
+- **Kept out of the game:** bake-off outputs never enter the game's replay
+  goldens or the shipped cache.
+- **Choosing the default model:** changing the game's default text model is a
+  ledger decision for Mark, informed by the report.
+- **Text only at first.** Portraits and voice could follow later, at a higher
+  cost.
+
+**Estimate.** About 350 LOC: the driver, the scorer, the report generator and
+the judge prompt.
+
 ## Acceptance criteria
 
 `$A` is the pinned v0.51.0 `ailang` (`AILANG=$A` on every make line).
