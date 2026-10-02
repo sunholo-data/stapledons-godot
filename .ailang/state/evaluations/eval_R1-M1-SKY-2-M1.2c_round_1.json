@@ -1,0 +1,66 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.2c",
+  "pr": 66,
+  "branch": "sprint/m1.2c-tiers",
+  "commit_evaluated": "c3caac9",
+  "round": 1,
+  "result": "pass",
+  "score": 94,
+  "evaluator": "independent agent, fresh clone, ailang v0.51.0 (runtime/bin), Godot 4.7.2",
+  "breakdown": {
+    "tests_pass": {"points": 20, "max": 20, "note": "make test exit 0 on the clean clone (includes catalogue-stats, star-catalogue-test 29/29, tools-test incl. test_sky_assets.sh)"},
+    "lint_clean": {"points": 10, "max": 10, "note": "python-guard (part of make test) green; no new .py; no repo lint target beyond that"},
+    "acceptance_criteria": {"points": 28, "max": 30, "note": "all M1.2c criteria reproduced. -2: the plan's determinism check was delivered without a negative control by the author (I ran one; it works), and two stats mutants survive the self-tests"},
+    "code_quality": {"points": 13, "max": 15, "note": "small clear files (116/75/154 lines); minor test gaps below; sprint JSON started == completed"},
+    "documentation": {"points": 14, "max": 15, "note": "changelog (changelogs/unreleased/2026-10-02-catalogue-commit.md), SKILL.md, status.sh, plan status updated; cns5.dat bucket publish still pending (documented)"},
+    "design_fidelity": {"points": 9, "max": 10, "note": "all scope items done; deviations are sound; plain catalogue-stats judging medium AC3 is stricter than planned"}
+  },
+  "hard_fails": [],
+  "evidence": {
+    "make_test": "exit 0",
+    "catalogue_stats": "quick 5908 / excluded 0 / complete 5138 / M-dwarf 76.8% / 0 violations; medium 50000 / excluded 965 / 74.4% / 2711 WD / 0 violations; PASS",
+    "star_catalogue_test": "29 passed, 0 failed",
+    "catalogue_verify": "clean clone, inputs fetched (table1c.dat.gz from the public bucket, cns5.dat from VizieR): 'quick identical', 'medium identical' (bin + sidecar cmp). ~66 s",
+    "negative_control_verify": "flipping byte 100 of stars_quick.bin: catalogue-verify exits 1 ('quick DIFFERS from the committed tier'); catalogue-stats reports REFUSED (sha256 mismatch). File restored.",
+    "cns5_dat_pin": "VizieR download is 4,502,658 B, sha256 7e8c1a2ce4a2afcd70cdf40340c9685b1ec90e8e5085a81812dfa98c5c8adbbf == the pin == stars_quick.json sha256.raw. extract.ail on it gives cns5.csv sha256 0f9225da... == the existing cns5.csv pin (5908 parsed, 1 skipped).",
+    "sky_assets": "test_sky_assets.sh passes. Real run: bucket has table1c.dat.gz, lacks cns5.dat; fetch reported 'absent', continued, exited 1, make fell back to VizieR. verify with a one byte tamper exits 1 (set -e through the pipe works); clean file exits 0.",
+    "process_stars_refs": "git grep: no live reference (only historical eval, evidence and sprint-state JSON). SKILL.md and status.sh rewritten; status.sh runs clean."
+  },
+  "mutations": [
+    {"target": "star_catalogue.gd sha check disabled", "killed": true},
+    {"target": "star_catalogue.gd count/size check disabled", "killed": true},
+    {"target": "star_catalogue.gd record_bytes check disabled", "killed": true},
+    {"target": "star_catalogue.gd teff accessor stride shifted", "killed": true},
+    {"target": "star_catalogue.gd size check loosened != to <", "killed": false, "note": "no test with a bin longer than count*24 AND a matching sha; the sha check would catch it in practice, so low impact"},
+    {"target": "star_catalogue.gd endianness check disabled", "killed": false, "note": "equivalent mutant on a little-endian host; untestable here"},
+    {"target": "catalogue_stats.gd M_DWARF_TEFF 3900 -> 3000", "killed": true},
+    {"target": "catalogue_stats.gd AC3_MIN_SHARE 0.60 -> 0.10", "killed": true},
+    {"target": "catalogue_stats.gd unknown-flags check disabled", "killed": true},
+    {"target": "catalogue_stats.gd defaulted rule one direction only", "killed": true},
+    {"target": "catalogue_stats.gd defaulted rule drops the v == 99 clause", "killed": false, "note": "no fixture has teff == 0 with v != 99 and MISSING_PHOT unset"}
+  ],
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    {"file": "tests/test_star_catalogue.gd", "issue": "Two surviving mutants: (a) tools/catalogue_stats.gd:~57 'teff == 0.0 and vmag == 99.0' still passes if the v == 99 clause is dropped; (b) sky/star_catalogue.gd size check '!=' still passes as '<'. Add a fixture record with teff 0, v 12, flags 0 (must be a violation) and a 3-record bin with a valid sha but count 2 in the sidecar."},
+    {"file": "data/sky/SHA256SUMS:12", "issue": "cns5.dat is pinned but not in the public bucket; every clean machine and CI job that needs catalogue-verify downloads 4.5 MB from VizieR. A maintainer should run make sky-publish. make test itself does not need it (it reads only committed bins)."},
+    {"file": "tools/catalogue_stats.gd:6-8", "issue": "M-dwarf share is over complete rows. For quick this excludes 770 missing-photometry rows (5138 of 5908). The plan says 'complete rows', so this is correct, but the printed line shows 'count 5908' beside 'complete 5138'; the sidecar's count_excluded is 0 for quick, which can read as a contradiction. A word of explanation in the output would help."},
+    {"file": ".ailang/state/sprints/sprint_R1-M1-SKY-2.json:407-409", "issue": "started and completed are the same timestamp (19:42:20Z), so velocity data for M1.2c is meaningless."},
+    {"file": "Makefile (sky-inputs)", "issue": "sky-inputs now depends on catalogue-inputs, so make sky-regen newly downloads cns5.dat and requires its pin. Intended, and covered by the verify step, but it is a behaviour change for the sky pipeline worth a changelog line."}
+  ],
+  "deviation_verdicts": {
+    "from_files instead of load": "Accepted. Clearer name for a (bin, json) pair, load_tier covers the by-name case, and M1.3 is the only consumer.",
+    "plain catalogue-stats enforces the medium share >= 60%": "Accepted. Stricter than planned (the plan scoped the share to --tier medium), it is what CI runs, and 74.4% leaves 14 points of margin. TIER=medium still works.",
+    "catalogue-inputs and the path filter beyond the plan": "Accepted. It is the only way to fix the T4 finding (a pin that the fallback chain can reproduce) without a second script. The filter is tested hermetically (test_sky_assets.sh) and the real run exercised continue-then-exit-1 and the VizieR fallback. No regression found for make sky-assets, which only calls fetch textures with no filter.",
+    "no negative control for catalogue-verify": "Accepted after the fact. I ran one (one flipped byte: verify exits 1 and stats refuse the pair), so the gate is live. The author should have recorded it; it is cheap.",
+    "process_stars.sh removed": "Accepted. No live reference remains; SKILL.md and status.sh are consistent with the new pipeline."
+  },
+  "criteria_checked": [
+    "loader refuses format_version, record_bytes, fields, count, size, sha256, non-object sidecar, missing pair, big-endian host",
+    "stats: count, excluded, M-dwarf share (teff < 3900 K, comment cites Pecaut and Mamajek 2013), defaulted-photometry both directions, unknown flags",
+    "committed quick and medium bins + sidecars equal a fresh rebuild; large not tracked (git ls-files)",
+    "cns5.dat pin reproduces cns5.csv pin through extract.ail",
+    "make test green on a clean clone"
+  ],
+  "next_actions": ["maintainer: make sky-publish for cns5.dat", "optional: close the two surviving mutants"]
+}

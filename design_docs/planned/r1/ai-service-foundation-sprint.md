@@ -2,18 +2,22 @@
 
 > **APPROVED by Mark, attended 2026-10-02** ("Approve, start wave A1"), running in parallel with R1-M1-SKY-2. Defaults accepted: ceiling range $0.05–20 persisted; Medic set in the public assets bucket; cheapest fixture-passing OpenRouter text model proposed and confirmed at ⏸ C; $5 OpenRouter credit limit on the build key; AI.3 merges before M1.7. The `openrouter-api-key` secret already exists (empty, PR #49).
 
-**Status:** Approved 2026-10-02, executing wave A1. AI.1 (markers) merged
+**Status:** Approved 2026-10-02, executing wave A2. AI.1 (markers) merged
 (PR #54, eval 96/100). AI.2 (protocol 2.1 codecs, `sim/ai.ail`, D-20 commit
-rule) executed on `sprint/ai2-protocol` (`make test` green, goldens unchanged)
-and awaits independent evaluation. AI.4 (the `ai/` package: provider routing,
-wire, key, stub over both routes, cache writer, service loop, `ai-stub`)
-executed on `sprint/ai4-service` (`make test` and `make ai-stub` green, six
-mutants killed) and awaits independent evaluation. AI.5 (prompts, per-provider spend, OpenRouter and Gemini adapters on fixtures, stub voice) executed on `sprint/ai5-adapters` (`make test`, `make ai-stub`, `make ai-adapter` green, fourteen mutants killed) and awaits independent evaluation; its task-0 finding moves OpenRouter text to `std/net` (see AI.5). AI.6 (`AiBridge`: lazy
+rule) merged (PR #56, eval 96/100). AI.4 (the `ai/` package: provider
+routing, wire, key, stub over both routes, cache writer, service loop,
+`ai-stub`) merged (PR #60, eval 90/100). AI.5 (prompts, per-provider spend,
+OpenRouter and Gemini adapters on fixtures, stub voice; OpenRouter text over
+`std/net`, see AI.5) merged (PR #64, eval 91/100). AI.3 (record validation,
+protocol 2.1 on the wire, D-21 limits, `replay-compat`, `ai_sim_session`, all
+goldens re-recorded on arm64 and x86_64) passed G21 (Mark, attended
+2026-10-02: "yes merge it") and evaluation (95/100); merged as PR #61. AI.6 (`AiBridge`: lazy
 launch, non-blocking relay, priority, per-kind timeouts, backoff,
-`service_down`; fake service in `ai/tools/`) executed on `sprint/ai6-bridge`
-(`make test` and `make ai-godot` green). Evaluation round 1 scored 82/100;
-round 2 fixed F1 (dash-safe descriptor scrub under bash) and F2 (structural
-no-blocking guard plus a jitter-baseline frame rule); 17 mutants are killed. Planned 2026-10-02 on `origin/main` `a50bea2`.
+`service_down`; fake service in `ai/tools/`) executed on `sprint/ai6-bridge`;
+evaluation round 1 scored 82/100, and round 2 fixed F1 (dash-safe descriptor
+scrub under bash) and F2 (structural no-blocking guard plus a jitter-baseline
+frame rule); 17 mutants are killed.
+Planned 2026-10-02 on `origin/main` `a50bea2`.
 
 ## Summary
 
