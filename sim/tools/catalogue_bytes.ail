@@ -13,10 +13,11 @@ export pure func encodeRow(r: Row) -> Result[bytes,string] =
   then Err("nonfinite or out-of-range F32 field")
   else if r.flags < 0 || r.flags > 31 then Err("invalid catalogue flags")
   else Ok(encodeF32LE([r.x,r.y,r.z,r.teff,r.v,intToFloat(r.flags)]))
-pure func append(acc: Result[[bytes],string],r: Row) -> Result[[bytes],string] = match acc {
+-- appendBytes, not append: catalogue.ail has a private append and the test runner mixes them up (ailang#1461)
+pure func appendBytes(acc: Result[[bytes],string],r: Row) -> Result[[bytes],string] = match acc {
   Err(e) => Err(e), Ok(b) => match encodeRow(r) { Err(e) => Err(e), Ok(next) => Ok(next :: b) }
 }
 @allow_empty_ok("empty catalogue has zero bytes; any invalid row refuses the whole result")
-export pure func encodeRows(rows: [Row]) -> Result[bytes,string] = match foldl(append,Ok([]),rows) {
+export pure func encodeRows(rows: [Row]) -> Result[bytes,string] = match foldl(appendBytes,Ok([]),rows) {
   Err(e) => Err(e), Ok(parts) => Ok(concatList(foldl(\a b. b :: a,[],parts)))
 }
