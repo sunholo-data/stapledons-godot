@@ -16,7 +16,10 @@ launch, non-blocking relay, priority, per-kind timeouts, backoff,
 `service_down`; fake service in `ai/tools/`) executed on `sprint/ai6-bridge`;
 evaluation round 1 scored 82/100, and round 2 fixed F1 (dash-safe descriptor
 scrub under bash) and F2 (structural no-blocking guard plus a jitter-baseline
-frame rule); 17 mutants are killed.
+frame rule); 17 mutants are killed. AI.7 (`AiRelay`, `AiCache`, the live
+launch with key files, `ai_stub_session`, `replay-noai`, `ai-loopback`, plus
+the carried AI.3/AI.5/AI.6 leftovers) executed on `sprint/ai7-relay`;
+awaiting evaluation.
 Planned 2026-10-02 on `origin/main` `a50bea2`.
 
 ## Summary
@@ -713,6 +716,8 @@ replay starts no AI process.
 `tests/replays/ai_stub_session.*`, `mk/ai.mk`.
 **Estimated:** 205 code + 185 tests = **390** · **Cap:** 650 · **Deps:** AI.3
 (merged after G21), AI.5, AI.6 · **Registry:** none
+**Status (2026-10-02):** ✅ executed on `sprint/ai7-relay`, all acceptance
+commands green on arm64 (details and deviations in the sprint JSON notes).
 **Acceptance:** AC10 `godot --headless --path . --script tests/test_ai_relay.gd`;
 AC14 `… -- --key-hygiene`; AC18 `… -- --news`; AC12 part
 `make replay AILANG=$A` (case `ai_stub_session`) and `make replay-noai`;

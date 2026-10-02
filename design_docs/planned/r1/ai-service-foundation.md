@@ -215,7 +215,7 @@ the same id. A record with a missing or mistyped field stays `bad_intent`
 | `ai_kind` | `kind` ≠ the open request's kind |
 | `ai_hash` | text kinds: `sha256` ≠ `sha256Hex(body)` (UTF-8, lowercase hex; V2, V5). Media kinds: `sha256` is not 64 lowercase hex characters |
 | `ai_length` | text: `std/string.length(display text) > max_chars` (code points; V5) |
-| `ai_numeral` | text with `no_numerals`: any ASCII digit `0-9` in the display text |
+| `ai_numeral` | text with `no_numerals`: any ASCII digit `0-9` in the body (markers hold none, so for a parsable body this is the display text's digits) |
 | `ai_markup` | text: the body fails the marker grammar (b) |
 | `ai_emotion` | text: a marker names an emotion not in `constraints.emotions` |
 | `ai_descriptor` | media: `body` is not the descriptor JSON for the kind, or its `key` ≠ the request's key, or (voice) its segment count ≠ the line's segment count, or offsets are not strictly increasing from 0 and below `duration_ms` |
@@ -320,19 +320,30 @@ the backstop against a runaway loop; the USD ceiling is `ai/spend.ail`.
 **Launch command** (built by `bridge/ai_bridge.gd`, mirroring the sim's
 `_run_args` and its bundled-runtime `HOME` trick):
 
+*As built (AI.6 stub, AI.7 live; this block replaces the original, which
+passed argv flags and bound `--ai` to the text model).* Both run through
+`AiBridge.FD_SCRUB` (bash, `/bin/sh` fallback), which closes inherited
+descriptors and execs, so the pid is the service's. Configuration is the
+entry argument, never argv flags:
+
 ```
 # stub (tests, CI, the loop, and any session without opt-in):
-ailang run --quiet --bytecode --package-dir ai --caps IO,FS --entry main ai/service.ail \
-    -- --provider stub --cache-dir <user://ai_cache>
-# live (player opted in, key present):
-/bin/sh -c 'GOOGLE_API_KEY="$(cat "$1")" GOOGLE_APPLICATION_CREDENTIALS=/nonexistent exec "$0" "$@"' \
-    <ailang> <keyfile> run --quiet --bytecode --package-dir ai --caps IO,FS,Env,Net,AI \
-    --ai <text model> --net-allow-domains generativelanguage.googleapis.com \
-    --entry main ai/service.ail -- --provider gemini --cache-dir <...> --ceiling-usd <x>
+ailang run --quiet --bytecode --package-dir ai --caps IO,FS --entry main \
+    --args-json '{"provider":"stub","keys_present":[...],"text_only":false,"cache_dir":"<user://ai_cache>","routing":"<root>/data/ai/routing.json","fixtures":"<root>/ai/fixtures"}' \
+    ai/service.ail
+# live (player opted in, a key file present; AiBridge.live_plan, LIVE_WRAP):
+/bin/sh -c '<clear GOOGLE_API_KEY, OPENROUTER_API_KEY and, unless allowed, AI_LIVE;
+            read each key file given into its env var; GOOGLE_APPLICATION_CREDENTIALS=/nonexistent exec "$0" "$@">' \
+    <ailang> <gemini key file | ""> <openrouter key file | ""> <0|1 AI_LIVE allowed> \
+    run --quiet --bytecode --package-dir ai --caps IO,FS,Env,Net,AI --ai gemini-2.5-flash-image \
+    --net-allow-domains generativelanguage.googleapis.com,openrouter.ai --entry live \
+    --args-json '{"provider":"live",...,"ceiling_usd":0.5}' ai/service.ail
 ```
 
-The key never appears in argv, only the key file's path (the wrapper's `$1`)
-does, so `ps` never shows it. The env override points ADC at a nonexistent
+The live entry refuses before any call unless a routed provider's key env var
+is non-empty and `AI_LIVE=1` (AI.5). The key never appears in argv, only the
+key file's path does, so `ps` never shows it (`tests/test_ai_relay.gd
+--key-hygiene` samples `ps -o args` for the child). The env override points ADC at a nonexistent
 file, and the service refuses `--provider gemini` unless `GOOGLE_API_KEY` is
 non-empty (`std/env.hasEnv`). Without that refusal, the silent ADC fallback
 (Problem 3) could spend on whatever gcloud identity the machine has. Gap G4
@@ -636,6 +647,33 @@ AI.5 as built (2026-10-02, no network, no key):
   `sha256(voice + "\n" + marked line)[:16]`.
 - **Blank lines** are skipped; `readLine` returns `""` for a blank line and at
   end of input alike (ailang#1535), so 16 empty reads in a row end the loop.
+
+AI.7 as built (2026-10-02, stub only, no key):
+- **Relay modes.** `AiRelay.mode` is `stub` (tests, CI), `live` (AI.9 wires
+  the opt-in), `off` (live AI off: `offline`) or `replay` (observes only; the
+  log holds every record and cancel, so nothing is queued and AiBridge never
+  starts). Order per `ai_request`: text-only and a media kind → `text_only`;
+  cache hit → `record`; `off` → `offline`; no key for the kind's route →
+  `no_key` (`route_for` mirrors `ai/route.ail` and is tested against the
+  service's hello `routes`); else forward. A voice request whose line this
+  relay never saw accepted is cancelled `provider_error` (nothing to voice).
+- **Hook.** `SimBridge.ai_relay` (optional): its queued intents follow the
+  caller's on every `send`, and it sees each accepted tick's events. Intents
+  of a line the sim does not accept are dropped; their requests expire.
+  `SimBridge` asks for protocol 2.1 (`PROTO_MINOR` 1) and starts the sim
+  through the same descriptor scrub as the AI service.
+- **Cache hits.** A media hit's record body is the descriptor keyed by the
+  request's key (so an older `age_stage` asset validates for the years asked;
+  a voice key keeps the line-derived variant). Text resolves from core only.
+  The service's library index lines carry no `duration_ms`/`segments_ms`, so
+  a library voice line is a miss until they do (follow-up; it changes
+  `tests/ai/cache.SHA256SUMS`).
+- **Recording.** `tools/record_ai_session.gd` waits for the service between
+  ticks, so `tests/replays/ai_stub_session.ndjson` does not depend on latency
+  and the AC10 test re-records it byte for byte.
+- **State and resume.** `ai.lines` and each open request's segment count are
+  sim state the `ai` section does not show; replay is from input logs, so
+  nothing is lost, but a save/restore milestone must carry them.
 
 ### Follow-up: the AI model bake-off (after AI.10b)
 

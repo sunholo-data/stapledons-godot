@@ -2,11 +2,11 @@
 # Included from the Makefile by its last line; every AI target lives here so the
 # sprint changes one Makefile line. Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: ai-loopback ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
+.PHONY: ai-loopback ai-relay replay-noai ai-session-record ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
 
 test: ai-test
 
-ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter ai-loopback replay-compat ai-godot   ## AI foundation checks that run without a GPU window or a key
+ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter ai-loopback replay-compat ai-godot ai-relay replay-noai   ## AI foundation checks that run without a GPU window or a key
 
 # AC7 (part): the pure marker grammar runs entirely on the bytecode VM and prints
 # byte for byte what the interpreter prints; its last line is markers-ok. The
@@ -256,3 +256,19 @@ ai-godot: import   ## AC11 bridge half: lazy launch, non-blocking relay, priorit
 
 ai-bridge-mutants: import   ## AI.6: AiBridge mutants (priority, timeout kill, backoff, window, assembly, ...); each fails a named check
 	AILANG_BIN="$$(command -v $(AILANG))" sh tests/ai_bridge_mutants.sh "$(GODOT)" "$(SCRATCH)/bridge-mutants"
+
+# ---------------------------------------------------------------- AI.7: AiRelay, AiCache, end to end
+# AC10, AC14, AC18 and the routes check: the sim, AiRelay and the stub service (--caps IO,FS) record
+# tests/replays/ai_stub_session.ndjson again through the tee and must reproduce it byte for byte; a
+# cache hit records with no launch; the live launch (key files, no AI_LIVE) refuses at hello and no
+# fixture key text reaches argv (ps), stdout, stderr, the session log or the library.
+ai-relay: import   ## AC10/AC14/AC18: relay + cache end to end on the stub, key hygiene, routes
+	$(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --news --key-hygiene --routes
+
+# AC12 part: the visual replay path. Godot replays ai_stub_session through SimBridge with the relay in
+# replay mode; every state line must equal this arch's golden and no AI process may start.
+replay-noai: import   ## AC12 part: ai_stub_session through Godot, relay in replay mode, AiBridge.launch_count == 0
+	$(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --replay-noai
+
+ai-session-record: import   ## re-record tests/replays/ai_stub_session.ndjson through Godot (then make replay-record LOG=ai_stub_session; a reviewed diff)
+	$(GODOT_SIM) --headless --path . --script tools/record_ai_session.gd -- "$(CURDIR)/tests/replays/ai_stub_session.ndjson"

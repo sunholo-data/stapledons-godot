@@ -51,6 +51,15 @@ const MAX_CHUNKS_PER_POLL := 16
 ## service.
 const FD_SCRUB := 'for f in /dev/fd/*; do n=${f##*/}; case $n in [3-9]) eval "exec $n>&-" 2>/dev/null;; [1-9][0-9]*) [ -n "$BASH_VERSION" ] && eval "exec $n>&-" 2>/dev/null;; esac; done; exec "$@"'
 
+## Live launch (design (a2) as amended by AI.5): the keys travel as key-file
+## paths, never as text. This wrapper (run as `/bin/sh -c LIVE_WRAP <ailang>
+## <gemini key file|""> <openrouter key file|""> <0|1> run ...`) clears any
+## inherited key and AI_LIVE, reads each key file into its env var, points
+## ADC at a nonexistent file and execs ailang (same pid), so `ps` shows only
+## paths. AI_LIVE=1 passes through only when `live_allowed` (attended runs).
+const LIVE_WRAP := 'g=$1; o=$2; a=$3; shift 3; unset GOOGLE_API_KEY OPENROUTER_API_KEY; [ "$a" = 1 ] || unset AI_LIVE; if [ -n "$g" ]; then GOOGLE_API_KEY=$(cat "$g"); export GOOGLE_API_KEY; fi; if [ -n "$o" ]; then OPENROUTER_API_KEY=$(cat "$o"); export OPENROUTER_API_KEY; fi; GOOGLE_APPLICATION_CREDENTIALS=/nonexistent exec "$0" "$@"'
+const LIVE_HOSTS := "generativelanguage.googleapis.com,openrouter.ai"
+
 enum Phase { IDLE, LAUNCHING, HANDSHAKE, READY, BUSY }
 
 ## Overridable (tests shorten them); the defaults are the design's.
@@ -60,10 +69,20 @@ var handshake_ms := HANDSHAKE_MS
 ## {"bin", "args"} replaces the stub launch (tests run the fake service).
 var launch_override: Dictionary = {}
 ## Stub-mode service configuration (design (a2)): the cache directory and the
-## key set the stub pretends to have. Live mode (opt-in, key file) is AI.7.
+## key set the stub pretends to have. Live mode is `live` below.
 var cache_dir := "user://ai_cache"
 var stub_keys: Array = ["gemini", "openrouter"]
 var text_only := false
+## Live mode: {"gemini": path, "openrouter": path} (either may be absent).
+## The service refuses unless a routed provider's key is non-empty and
+## AI_LIVE=1, which reaches it only when `live_allowed` (never in automation).
+var live := false
+var key_files: Dictionary = {}
+var live_allowed := false
+var ceiling_usd := 0.5
+## Tests: keep every stdout line the service printed (key hygiene).
+var keep_lines := false
+var lines_read: Array = []
 ## Added to the clock; tests move time forward to age the failure window.
 var clock_offset_ms := 0
 
@@ -224,6 +243,22 @@ static func _run_args(ailang: String, ai_dir: String, config: Dictionary) -> Pac
 		ai_dir.path_join(SERVICE_FILE.get_file())])
 
 
+## The live launch: the wrapper, then the service with IO,FS,Env,Net,AI, std/ai
+## bound to the Gemini image model (AI.5 transport finding) and the two hosts.
+func live_plan(ailang: String, root: String) -> Dictionary:
+	var ai_dir := root.path_join("ai")
+	var models = JSON.parse_string(FileAccess.get_file_as_string(root.path_join("data/ai/models.json")))
+	var image: String = models["models"]["gemini"]["image"] if models is Dictionary else "gemini-2.5-flash-image"
+	var cfg := stub_config(root)
+	cfg["provider"] = "live"
+	cfg["keys_present"] = []
+	cfg["ceiling_usd"] = ceiling_usd
+	var args := PackedStringArray(["-c", LIVE_WRAP, ailang, key_files.get("gemini", ""), key_files.get("openrouter", ""), "1" if live_allowed else "0",
+		"run", "--quiet", "--bytecode", "--package-dir", ai_dir, "--caps", "IO,FS,Env,Net,AI", "--ai", image,
+		"--net-allow-domains", LIVE_HOSTS, "--entry", "live", "--args-json", SimBridge.encode(cfg), ai_dir.path_join(SERVICE_FILE.get_file())])
+	return {"bin": "/bin/sh", "args": args}
+
+
 func stub_config(root: String) -> Dictionary:
 	return {"provider": "stub", "keys_present": stub_keys, "text_only": text_only,
 		"cache_dir": ProjectSettings.globalize_path(cache_dir),
@@ -240,8 +275,13 @@ func launch_plan() -> Dictionary:
 			push_error("ailang not found; set AILANG_BIN or add it to PATH")
 			return {}
 		var res := ProjectSettings.globalize_path("res://")
+		if live:
+			return live_plan(bin, res)
 		var dev := _run_args(bin, res.path_join("ai"), stub_config(res))
 		return {"bin": dev[0], "args": dev.slice(1)}
+	if live:
+		push_error("AiBridge: live AI in an exported build arrives with the settings UI (AI.9)")
+		return {}
 	var root := SimBridge._unpack_runtime()
 	if root == "" or not _unpack_ai(root):
 		return {}
@@ -353,6 +393,8 @@ func _read_stdout() -> bool:
 		for line in assemble(chunk):
 			if _pid < 0:
 				break
+			if keep_lines:
+				lines_read.append(line)
 			_on_line(line)
 	return got
 
