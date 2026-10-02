@@ -2,11 +2,11 @@
 # Included from the Makefile by its last line; every AI target lives here so the
 # sprint changes one Makefile line. Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants
+.PHONY: ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-godot ai-bridge-mutants
 
 test: ai-test
 
-ai-test: strict-ai deps-ai ai-pkg-test ai-stub   ## AI foundation checks that run without a GPU window or a key
+ai-test: strict-ai deps-ai ai-pkg-test ai-stub ai-godot   ## AI foundation checks that run without a GPU window or a key
 
 # AC7 (part): the pure marker grammar runs entirely on the bytecode VM and prints
 # byte for byte what the interpreter prints; its last line is markers-ok. The
@@ -131,3 +131,13 @@ markers-mutants:   ## AI.1: drop the [ ] refusal, drop the merge, allow 17 segme
 	  grep -F "✗ $$name" $(MUTANT_DIR)/out.txt > /dev/null || { echo "mutant '$$to' did not fail '$$name'"; cat $(MUTANT_DIR)/out.txt; exit 1; }; \
 	  echo "mutant killed: '$$to' fails test '$$name' ($$(grep -c '✗ AI.1' $(MUTANT_DIR)/out.txt) AI.1 tests fail)"; \
 	done
+
+# ---------------------------------------------------------------- AI.6: AiBridge in Godot
+# AC11 (bridge half): the real stub (--caps IO,FS) for the happy path, then the fake service
+# (ai/tools/fake_service.ail, --caps IO) hanging, crashing, printing garbage or half lines, answering
+# late or with the wrong major. Timeouts and backoffs are shortened in the test; defaults asserted.
+ai-godot: import   ## AC11 bridge half: lazy launch, non-blocking relay, priority, timeouts, backoff, service_down
+	$(GODOT_SIM) --headless --path . --script tests/test_ai_bridge.gd -- --faults
+
+ai-bridge-mutants: import   ## AI.6: AiBridge mutants (priority, timeout kill, backoff, window, assembly, ...); each fails a named check
+	AILANG_BIN="$$(command -v $(AILANG))" sh tests/ai_bridge_mutants.sh "$(GODOT)" "$(SCRATCH)/bridge-mutants"

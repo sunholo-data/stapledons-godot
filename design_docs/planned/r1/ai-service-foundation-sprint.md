@@ -8,7 +8,11 @@ rule) executed on `sprint/ai2-protocol` (`make test` green, goldens unchanged)
 and awaits independent evaluation. AI.4 (the `ai/` package: provider routing,
 wire, key, stub over both routes, cache writer, service loop, `ai-stub`)
 executed on `sprint/ai4-service` (`make test` and `make ai-stub` green, six
-mutants killed) and awaits independent evaluation. Planned 2026-10-02 on `origin/main` `a50bea2`.
+mutants killed) and awaits independent evaluation. AI.6 (`AiBridge`: lazy
+launch, non-blocking relay, priority, per-kind timeouts, backoff,
+`service_down`; fake service in `ai/tools/`) executed on `sprint/ai6-bridge`
+(`make test` and `make ai-godot` green, eleven mutants killed) and awaits
+independent evaluation. Planned 2026-10-02 on `origin/main` `a50bea2`.
 
 ## Summary
 
