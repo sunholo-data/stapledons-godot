@@ -281,7 +281,7 @@ export pure func masked(img: Img, ix: Index, x: int, y: int) -> bool =
 
 -- clean pixels on the ring r+1 .. r+w around the disc, widening until some are found
 pure func ringSamples(img: Img, ix: Index, d: Disc, w: int) -> [(int, int)] {
-  let r0 = d.r + 1.0; let r1 = d.r + intToFloat(w);
+  let r0 = d.r + 2.0; let r1 = d.r + intToFloat(w) + 1.0;   -- 2 px out: clear of the residual halo glow
   let ri = floatToInt(ceil(r1));
   let cx = floatToInt(floor(d.x)); let cy = floatToInt(floor(d.y));
   let pts = flatMap(\dy. flatMap(\dx. {
@@ -309,15 +309,27 @@ pure func idw(ring: [RingPx], x: int, y: int) -> (float, float, float) {
 }
 
 -- nearest donor square (side n at offset ox, oy) whose 5x5 sample grid is >= 80% unmasked
-pure func donor(img: Img, ix: Index, cx: int, cy: int, half: int) -> Option[(int, int)] {
+-- the nearest donor whose 5 x 5 sample grid is >= 80% unmasked; failing that (dense
+-- band), the cleanest one >= 50%. Returns the offset and its clean fraction.
+export type Donor = { ox: int, oy: int, frac: float }
+
+pure func donor(img: Img, ix: Index, cx: int, cy: int, half: int) -> Option[Donor] {
   let n = 2 * half + 1;
-  let clean = \ox oy. foldl(\c gy. foldl(\c2 gx. c2 + (if masked(img, ix, cx + ox - half + gx * (n - 1) / 4, cy + oy - half + gy * (n - 1) / 4) then 0 else 1), c, steps(0, 4, 1)), 0, steps(0, 4, 1)) >= 20;
+  let cleanCount = \ox oy. foldl(\c gy. foldl(\c2 gx. c2 + (if masked(img, ix, cx + ox - half + gx * (n - 1) / 4, cy + oy - half + gy * (n - 1) / 4) then 0 else 1), c, steps(0, 4, 1)), 0, steps(0, 4, 1));
   let tries = flatMap(\dist. map(\k. {
       let a = 2.0 * PI() * intToFloat(k) / 16.0;
       (floatToInt(floor(dist * cos(a) + 0.5)), floatToInt(floor(dist * sin(a) + 0.5)))
     }, steps(0, 15, 1)), [2.5 * intToFloat(half) + 4.0, 4.0 * intToFloat(half) + 8.0, 6.0 * intToFloat(half) + 12.0]);
-  foldl(\found t. match found { Some(_) => found, None => match t { (ox, oy) =>
-      if inY(img, cy + oy - half) && inY(img, cy + oy + half) && clean(ox, oy) then Some((ox, oy)) else None } }, None, tries)
+  let scored = foldl(\acc t. match t { (ox, oy) =>
+      if inY(img, cy + oy - half) && inY(img, cy + oy + half) then { ox: ox, oy: oy, frac: intToFloat(cleanCount(ox, oy)) / 25.0 } :: acc else acc }, [], tries);
+  let ordered = reverse(scored);
+  match filter(\dn. dn.frac >= 0.8, ordered) {
+    [first, ..._] => Some(first),
+    [] => match sortBy(\a b. cmpF(b.frac, a.frac), ordered) {
+      [best, ..._] => if best.frac >= 0.5 then Some(best) else None,
+      [] => None
+    }
+  }
 }
 
 pure func clampF(v: float, lo: float, hi: float) -> float = if v < lo then lo else if v > hi then hi else v
@@ -338,10 +350,10 @@ export pure func fillDisc(img: Img, ix: Index, d: Disc) -> [int] {
   let half = floatToInt(ceil(d.r)) + 2;
   let cx = floatToInt(floor(d.x)); let cy = floatToInt(floor(d.y));
   let dn = donor(img, ix, cx, cy, half);
-  let off = match dn { Some(o) => o, None => (0, 0) };
+  let dd = match dn { Some(o) => o, None => { ox: 0, oy: 0, frac: 1.0 } };
   let hasDonor = match dn { Some(_) => true, None => false };
-  let ox = match off { (a, _) => a };
-  let oy = match off { (_, b) => b };
+  let ox = dd.ox;
+  let oy = dd.oy;
   let dmean = if hasDonor then meanSq(img, cx + ox - half, cy + oy - half, 2 * half + 1) else (0.0, 0.0, 0.0);
   flatMap(\dy. flatMap(\dx. {
       let x = cx + dx; let y = cy + dy;
@@ -353,7 +365,7 @@ export pure func fillDisc(img: Img, ix: Index, d: Disc) -> [int] {
       -- as a ghost ring; a faint star inside Sirius painted over Sirius's fill)
       if a <= 0.0 || !inY(img, y) || (a < 1.0 && maskedOther(img, ix, d, x, y)) || ownedByLarger(img, ix, d, x, y) then [] else {
         let g = \c m. if !hasDonor || masked(img, ix, x + ox, y + oy) then 0.0
-          else clampF(chan(img, x + ox, y + oy, c) - m, 0.0 - grain(), grain());
+          else clampF((chan(img, x + ox, y + oy, c) - m) / dd.frac, 0.0 - grain(), grain());   -- rescale for the donor's own masked share
         match idw(ring, x, y) {
           (br, bg, bb) => match dmean { (mr, mg, mb) => {
             let xw = wrapX(img, x);
