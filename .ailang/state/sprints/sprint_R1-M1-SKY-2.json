@@ -128,10 +128,10 @@
         "R-a: Mark reviews renders and the dev build (make publish-dev; tools/install_review_build.sh --dev) before merge"
       ],
       "pause_after": "R-a (merge only)",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-02",
+      "completed": "2026-10-02",
+      "notes": "Executed on sprint/m1.6b-camera (AILANG v0.51.0, Godot 4.7.2). Camera: new ui/free_look_camera.gd (FreeLookCamera extends Camera3D; YXZ yaw/pitch/roll; float64 CPU view_dir/project/view_velocity_angle; Q/E roll in main.gd; HUD line 'view/v  N deg  roll  N deg'); one file beyond the plan's list so the physics test drives the real camera object. make physics: test_rolled_camera_cpu_spec_values + test_view_velocity_angle (RS-1/2/3/4, RS-Q1/Q2 through rolled and off-axis cameras; Godot unproject == CPU projection within 2e-3 px), 229 passed. make golden: off-axis golden 144 cases (12 dirs x 4 speeds x 3 orientations, velocity (1,1,-1)/sqrt3), worst 0.102 px, 0 failures; background marker gains a pitched+rolled view (16 markers, worst 0.722 px, limit 1); Makefile golden asserts both counts. Rest tolerance: checkRestToleranceEdge in sim/core_test.ail (test block + worldVm strict entry) and ticks 6-9 in tests/fixtures/v2_session.ndjson with a grep assert in make parity-v2. Mutations killed: 8 camera (roll dropped in node/CPU, roll sign, pitch ignored, angle scaled, HUD roll, horizontal fov, behind sign), 3 golden (node ignores/negates roll: 96 failures; GPU velocity along HEADING: 108; shader aberration k: 108), 3 sim (tolerance 0.5, 1e-10, no snap) via worldVm and parity-v2. Renders (opened): docs/m1.6b/ rolled + off-axis at 0 and 0.99c, forward references, contact sheet. make publish-dev NOT run (shared dev bucket latest.json; controller/Mark decision). Awaiting R-a."
     },
     {
       "id": "M1.P_PKG_PHOTOMETRY_050",
