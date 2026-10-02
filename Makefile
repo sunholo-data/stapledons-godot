@@ -9,7 +9,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run voyage import runtime export-macos export-smoke
 
 all: test
 
@@ -127,8 +127,11 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window)
 	$(GODOT_SIM) --path . -- --capture=renders
 
-run:               ## interactive: W/S thrust, arrows look, 1-4 views, +/- warp
+run:               ## interactive galaxy map (the default launch): click a star, set the speed, hold Commit 1.5 s
 	$(GODOT_SIM) --path .
+
+voyage:            ## the M0/M1 sky flight: W/S thrust, arrows look, 1-4 views, +/- warp
+	$(GODOT_SIM) --path . -- --voyage
 
 runtime:           ## stage the bundled sim runtime: pinned ailang release + fetched package cache (no dotfiles)
 	@rm -rf $(RUNTIME) && mkdir -p $(RUNTIME)/bin $(RUNTIME)/home
