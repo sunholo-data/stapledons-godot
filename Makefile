@@ -9,7 +9,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run voyage import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run voyage publish-dev import runtime export-macos export-smoke
 
 all: test
 
@@ -153,6 +153,18 @@ export-smoke:      ## run the exported .app's capture with NO ailang on PATH; mu
 	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
 	env -i PATH=/usr/bin:/bin HOME="$$HOME" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
 	@test -s $(SCRATCH)/export-smoke/contact_sheet.png && echo "export-smoke: OK ($$(ls $(SCRATCH)/export-smoke | wc -l | tr -d ' ') files)"
+
+DEV_BUCKET ?= stapledons-voyage-dev-builds
+
+publish-dev: export-macos export-smoke   ## upload this build to the private dev bucket (needs gcloud auth); install with tools/install_review_build.sh --dev
+	@ver=$$(git describe --tags --always --dirty); zip="$(SCRATCH)/StapledonsVoyage-$$ver-macos.zip"; \
+	rm -f "$$zip"; (cd build/macos && ditto -c -k --keepParent "Stapledons Voyage.app" "$(CURDIR)/$$zip"); \
+	sum=$$(shasum -a 256 "$$zip" | cut -d' ' -f1); name=$$(basename "$$zip"); \
+	gcloud storage cp "$$zip" "gs://$(DEV_BUCKET)/macos/builds/$$name" && \
+	printf '%s  %s\n' "$$sum" "$$name" | gcloud storage cp - "gs://$(DEV_BUCKET)/macos/builds/$$name.sha256" && \
+	printf '{"version":"%s","zip":"macos/builds/%s","sha256":"%s","commit":"%s","built":"%s"}\n' "$$ver" "$$name" "$$sum" "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+	  | gcloud storage cp --cache-control="no-cache" - "gs://$(DEV_BUCKET)/macos/latest.json" && \
+	echo "publish-dev: $$name ($$sum) -> gs://$(DEV_BUCKET)/macos/latest.json"
 
 .PHONY: catalogue-probe
 catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM parity runs
