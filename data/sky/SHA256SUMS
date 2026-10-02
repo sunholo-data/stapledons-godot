@@ -1,0 +1,12 @@
+# Sky background pins (M1.4d). `make sky-verify` checks them; `make sky-assets` rebuilds and must match.
+# Format: <sha256> <kind> <path>. kind input = a pipeline input, texture = a generated texture that ships.
+# hip_v7.tsv is pinned on its data rows (grep -v '^#'): VizieR stamps the query date into the header.
+# Generated 2026-10-02 on macOS arm64: destar = tools/m14a_destar.py with the Makefile's pinned uv deps
+# (two runs byte-identical); sky model = make sky-model on ailang v0.51.0 + Godot 4.7.2 (two runs byte-identical).
+c2e753702141ddbb913403c4d3f31b0e656453aa5d4343d1952cceac410fe3c9 input data/raw/background/noirlab_10k.tif
+de666e6eb73acd27d824104c62a1f11b01138e1501b3ac99d9b71a2e049d50e0 input data/raw/hip_v7.tsv
+299f7c15025780df96d5f73fc299e89c81b76fe3de2231981d92ffde11f20ab1 input data/raw/table1c.dat.gz
+e3c489924313d9aa4bfbccffdaad27544a9f11c44adbc6dfdba5e183ecaec206 input data/raw/gcns.csv
+dee67187c8f6ba9bf95c0e0d32b297fb2c291f8c38986030d27c6728eec49483 input data/starmap/stars.json
+748b2b8bf2884b567cdd47d770ff1a7564ba36b897380b7196120c9d78449055 texture data/raw/background/noirlab_10k_destarred.png
+1d288dc26c2a48d8338fa31d1fa591d8170587390b93fb0f687a6220a4ca513c texture data/raw/background/noirlab_10k_skymodel.png

@@ -7,6 +7,14 @@
 #            331,312 records, 760 B uncompressed
 #   large  - the same GCNS bytes as medium; the tier difference is made by
 #            tools/extract.py + sim/tools/catalogue.ail, not by the download
+#   hip    - Hipparcos V < 7.5 for the sky-background star removal (D-10,
+#            M1.4): data/raw/hip_v7.tsv, VizieR ASU-TSV of I/239/hip_main,
+#            columns HIP, Vmag, _Glon, _Glat (VizieR-computed galactic l, b,
+#            J2000), B-V, Plx.  The exact request is below and is also echoed
+#            in the file's own "#INFO request=" header.  VizieR stamps the
+#            query date into the "#" header lines, so the file's sha256 changes
+#            per download; the pin is on the data rows (grep -v '^#'), printed
+#            as "rows sha256" and recorded as hip_v7.rows in SHA256SUMS.
 #
 # Everything lands in data/raw/ (gitignored). For every artifact this script
 # prints its byte size and sha256, and appends "<sha256>  <name>" to
@@ -71,6 +79,7 @@ fetch() {
 }
 
 A19_BASE="https://cdsarc.cds.unistra.fr/ftp/J/A+A/670/A19"
+HIP_V7_URL="https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=I/239/hip_main&-out=HIP,Vmag,_Glon,_Glat,B-V,Plx&Vmag=%3C7.5&-out.max=unlimited"
 A6_BASE="https://cdsarc.cds.unistra.fr/ftp/J/A+A/649/A6"
 
 echo "=== Starmap Data Downloader ==="
@@ -115,9 +124,23 @@ case "$TIER" in
         echo "Large tier complete!"
         ;;
 
+    hip)
+        echo "Hipparcos (I/239/hip_main) V < 7.5, for the sky-background star removal"
+        echo ""
+        fetch "$HIP_V7_URL" "hip_v7.tsv"
+        rows="$(grep -v '^#' "$RAW_DIR/hip_v7.tsv" | shasum -a 256 | awk '{print $1}')"
+        echo "  rows:   $(grep -v '^#' "$RAW_DIR/hip_v7.tsv" | grep -c '^ *[0-9]') stars"
+        echo "  rows sha256: $rows"
+        grep -v "  hip_v7.rows\$" "$SUMS" > "$SUMS.tmp" || true
+        mv "$SUMS.tmp" "$SUMS"
+        echo "$rows  hip_v7.rows" >> "$SUMS"
+        echo ""
+        echo "Hipparcos tier complete!"
+        ;;
+
     *)
         echo "ERROR: Unknown tier '$TIER'" >&2
-        echo "Usage: $0 <quick|medium|large>" >&2
+        echo "Usage: $0 <quick|medium|large|hip>" >&2
         exit 1
         ;;
 esac

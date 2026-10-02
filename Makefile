@@ -143,7 +143,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime bundled
+export-macos: runtime sky-bundle import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime and the pinned sky textures bundled
 	@mkdir -p build/macos
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
@@ -196,6 +196,46 @@ sky-model:        ## M1.4b offline: destarred panorama -> per-texel T_c model (G
 	  --args-json '{"colours":"$(SKY)/colours.csv","fits":"$(SKY)/fits.csv","report":"data/sky/sky_model_report.json","size":"[10000, 5000]"}' \
 	  sim/tools/sky_model.ail
 	$(GODOT) --headless --path . --script tools/sky_colours.gd -- paint $(SKY)/noirlab_10k_destarred.png $(SKY)/fits.csv $(SKY)/noirlab_10k_skymodel.png
+
+# M1.4d: the sky textures are generated, not committed (two ~80 MB PNGs). `make sky-assets`
+# rebuilds them byte for byte from pinned downloads; data/sky/SHA256SUMS pins inputs AND outputs.
+STARMAP_SCRIPTS := .claude/skills/starmap-manager/scripts
+DESTAR_PY := uv run --quiet --python 3.12 --with pillow==12.3.0 --with numpy==2.5.3 --with scipy==1.18.1 --with opencv-python-headless==5.0.0.93 python
+.PHONY: sky-inputs destar sky-assets sky-verify sky-bundle
+sky-inputs:       ## M1.4d: download the sky pipeline inputs into data/raw (skipped when present), then check their pins
+	@test -f $(SKY)/noirlab_10k.tif || bash $(STARMAP_SCRIPTS)/download_background.sh raw
+	@test -f data/raw/hip_v7.tsv || bash $(STARMAP_SCRIPTS)/download_stars.sh hip
+	@test -f data/raw/table1c.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh medium
+	@test -f data/raw/gcns.csv || python3 tools/extract.py gcns
+	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=inputs
+
+destar:           ## M1.4a/d offline: catalogue-matched stars out of the NOIRLab photo (HIP V<7.5 + GCNS + corrected stars.json); ~30 s
+	$(DESTAR_PY) tools/m14a_destar.py
+
+sky-assets: sky-inputs destar sky-model   ## M1.4d: inputs -> destar -> sky model; outputs must match data/sky/SHA256SUMS (~15 min)
+	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=all
+
+# Godot's export skips data/raw (it has a .gdignore), so the textures are staged as byte
+# copies in sky_bundle/ (gitignored). Pinned outputs only: a texture that does not match
+# data/sky/SHA256SUMS never ships. No textures -> a warning and a black-sky build.
+sky-bundle:       ## M1.4d: stage the pinned sky textures into sky_bundle/ for the export (.png.bin, not imported)
+	@rm -rf sky_bundle
+	@if [ -f $(SKY)/noirlab_10k_destarred.png ] && [ -f $(SKY)/noirlab_10k_skymodel.png ]; then \
+	  $(MAKE) --no-print-directory sky-verify SKY_VERIFY=textures && mkdir -p sky_bundle && \
+	  cp $(SKY)/noirlab_10k_destarred.png sky_bundle/noirlab_10k_destarred.png.bin && \
+	  cp $(SKY)/noirlab_10k_skymodel.png sky_bundle/noirlab_10k_skymodel.png.bin && \
+	  echo "sky-bundle: staged $$(du -sh sky_bundle | cut -f1) of pinned sky textures"; \
+	else echo "sky-bundle: WARNING no sky textures in $(SKY); this build renders a black sky (run make sky-assets)"; fi
+
+SKY_VERIFY ?= all
+sky-verify:       ## M1.4d: sha256-check the sky inputs and generated textures against data/sky/SHA256SUMS (SKY_VERIFY=inputs|textures|all)
+	@case "$(SKY_VERIFY)" in inputs) k='input';; textures) k='texture';; *) k='input|output|texture';; esac; \
+	grep -E "^[0-9a-f]{64} +($$k) " data/sky/SHA256SUMS \
+	  | while read -r sum kind path; do \
+	      if [ "$$path" = data/raw/hip_v7.tsv ]; then got=$$(grep -v '^#' "$$path" | shasum -a 256 | cut -d' ' -f1); \
+	      else got=$$(shasum -a 256 "$$path" 2>/dev/null | cut -d' ' -f1); fi; \
+	      if [ "$$got" = "$$sum" ]; then echo "  ok      $$path"; else echo "  MISMATCH $$path (got $${got:-missing})"; exit 1; fi; \
+	    done && echo "sky-verify: $(SKY_VERIFY) match data/sky/SHA256SUMS"
 
 .PHONY: catalogue-bytes
 catalogue-bytes:  ## native F32 bytes: independent Python oracle, interpreter and five ordinary VM runs

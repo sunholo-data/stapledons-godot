@@ -10,3 +10,4 @@ build/
 __pycache__/
 *.pyc
 sim/tools/.ailang/
+sky_bundle/
