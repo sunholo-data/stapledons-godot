@@ -255,13 +255,19 @@ pure func ringSamples(img: Img, ix: Index, d: Disc, w: int) -> [(int, int)] {
   match pts { [] => if w < 24 then ringSamples(img, ix, d, w + 4) else [], _ => pts }
 }
 
+-- a clean ring pixel with its colour read once per disc
+type RingPx = { x: int, y: int, r: float, g: float, b: float }
+
+pure func ringColours(img: Img, ring: [(int, int)]) -> [RingPx] =
+  map(\q. match q { (qx, qy) => { x: qx, y: qy, r: chan(img, qx, qy, 0), g: chan(img, qx, qy, 1), b: chan(img, qx, qy, 2) } }, ring)
+
 -- inverse-distance-squared mean of the ring at (x, y), per channel
-pure func idw(img: Img, ring: [(int, int)], x: int, y: int) -> (float, float, float) {
-  let acc = foldl(\a q. match a { (sw, sr, sg, sb) => match q { (qx, qy) => {
-      let dx = intToFloat(qx - x); let dy = intToFloat(qy - y);
+pure func idw(ring: [RingPx], x: int, y: int) -> (float, float, float) {
+  let acc = foldl(\a q. match a { (sw, sr, sg, sb) => {
+      let dx = intToFloat(q.x - x); let dy = intToFloat(q.y - y);
       let w = 1.0 / (dx * dx + dy * dy + 0.25);
-      (sw + w, sr + w * chan(img, qx, qy, 0), sg + w * chan(img, qx, qy, 1), sb + w * chan(img, qx, qy, 2))
-    } } }, (0.0, 0.0, 0.0, 0.0), ring);
+      (sw + w, sr + w * q.r, sg + w * q.g, sb + w * q.b)
+    } }, (0.0, 0.0, 0.0, 0.0), ring);
   match acc { (sw, sr, sg, sb) => if sw > 0.0 then (sr / sw, sg / sw, sb / sw) else (0.0, 0.0, 0.0) }
 }
 
@@ -289,7 +295,7 @@ pure func meanSq(img: Img, x0: int, y0: int, n: int) -> (float, float, float) {
 
 -- patch records (x u16 LE, y u16 LE, r, g, b) for one disc and its 1 px feather
 export pure func fillDisc(img: Img, ix: Index, d: Disc) -> [int] {
-  let ring = ringSamples(img, ix, d, 4);
+  let ring = ringColours(img, ringSamples(img, ix, d, 4));
   let half = floatToInt(ceil(d.r)) + 2;
   let cx = floatToInt(floor(d.x)); let cy = floatToInt(floor(d.y));
   let dn = donor(img, ix, cx, cy, half);
@@ -306,7 +312,7 @@ export pure func fillDisc(img: Img, ix: Index, d: Disc) -> [int] {
       if a <= 0.0 || !inY(img, y) then [] else {
         let g = \c m. if !hasDonor || masked(img, ix, x + ox, y + oy) then 0.0
           else clampF(chan(img, x + ox, y + oy, c) - m, 0.0 - grain(), grain());
-        match idw(img, ring, x, y) {
+        match idw(ring, x, y) {
           (br, bg, bb) => match dmean { (mr, mg, mb) => {
             let xw = wrapX(img, x);
             [xw % 256, xw / 256, y % 256, y / 256,
