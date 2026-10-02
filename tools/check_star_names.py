@@ -16,13 +16,10 @@ A row passes only when the catalogue entry agrees with them:
   * galactic longitude within 1 degree, see LONGITUDE below;
   * V within 0.5 mag (0.35 when components share the id).
 
-LONGITUDE: the committed stars.json was built by the starmap-manager
-`process_stars.sh` script, which adds the arctangent to l_NCP where the
-IAU transformation subtracts it, so every catalogue longitude is mirrored:
-l_cat = 2 * 122.93192 - l (latitude and distance are right). This checker
-compares against the mirrored longitude and reports it; the positions are
-not changed here (D-17: the map shows the catalogue's own value; the M1.2
-tier pipeline, tools/extract.py, uses the IAU matrix).
+LONGITUDE: compared with the IAU longitude directly, no frame correction.
+Until 2026-10-02 stars.json was mirrored (l_cat = 2 * 122.93192 - l, a sign
+error in the starmap-manager `process_stars.sh`); since that fix the
+catalogue agrees with the IAU matrix used here and in tools/extract.py.
 
 stdlib only. Exit 0 when every row passes.
 """
@@ -32,7 +29,6 @@ import os
 import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-L_NCP = 122.93192
 # IAU ICRS -> galactic rotation (rows x_gal, y_gal, z_gal), as tools/extract.py.
 M = ((-0.0548755604162154, -0.8734370902348850, -0.4838350155487132),
      (0.4941094278755837, -0.4448296299600112, 0.7469822444972189),
@@ -69,7 +65,6 @@ def check(names, stars):
         l_cat = math.degrees(math.atan2(s["y"], s["x"])) % 360.0
         b_cat = math.degrees(math.asin(s["z"] / d))
         l, b = galactic(ref["ra_deg"], ref["dec_deg"])
-        l_mirror = (2.0 * L_NCP - l) % 360.0
         dv_tol = 0.5 if len(mates) == 1 else 0.35
         errs = []
         if nearest != i:
@@ -79,13 +74,13 @@ def check(names, stars):
         warn = abs(d - ref["dist_ly"]) > 0.03 * ref["dist_ly"]
         if abs(b_cat - b) > 1.0:
             errs.append("b %.2f vs %.2f deg" % (b_cat, b))
-        if dl(l_cat, l_mirror) > 1.0:
-            errs.append("l %.2f vs mirrored %.2f deg (IAU %.2f)" % (l_cat, l_mirror, l))
+        if dl(l_cat, l) > 1.0:
+            errs.append("l %.2f vs %.2f deg" % (l_cat, l))
         if abs(s["vmag"] - ref["vmag"]) > dv_tol:
             errs.append("V %.2f vs %.2f" % (s["vmag"], ref["vmag"]))
         status = "ok  " if not errs else "FAIL"
         print("  %s %-34s #%-4d %-8s d %6.3f/%6.2f  b %6.2f/%6.2f  l %6.2f/%6.2f  V %5.2f/%5.2f %s" % (
-            status, row["name"], i, row["id"], d, ref["dist_ly"], b_cat, b, l_cat, l_mirror,
+            status, row["name"], i, row["id"], d, ref["dist_ly"], b_cat, b, l_cat, l,
             s["vmag"], ref["vmag"], "; ".join(errs) + ("  (catalogue distance %+.1f %%)" % (100.0 * (d / ref["dist_ly"] - 1.0)) if warn else "")))
         if errs:
             bad.append("%s: %s" % (tag, "; ".join(errs)))
