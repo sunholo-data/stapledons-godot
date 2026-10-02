@@ -28,14 +28,25 @@ export pure func indexLine(k: CacheKey, sha: string, mime: string, n: int, ext: 
     f("provider", q(o.provider)), f("route", q(o.route)), f("model", q(o.model)), f("input_sha256", q(o.inputSha256)), f("seed", intToStr(o.seed)), f("source", q("service"))] ++
     (match o.size { Some(s) => [f("width", intToStr(s.w)), f("height", intToStr(s.h))], None => [] })), "}"])
 
-export func writeBlob(dir: string, b: Blob) -> () ! {FS} {
-  let rel = blobPath(b.sha256, b.ext);
-  let path = concat([dir, "/", rel]);
-  mkdirAll(concat([dir, "/blobs/", substring(b.sha256, 0, 2)]));
-  if fileExists(path) then () else {
-    let tmp = concat([path, ".tmp"]);
-    writeFileBytes(tmp, b.data);
-    renameFile(tmp, path)
-  };
-  appendFile(concat([dir, "/index.ndjson"]), concat([b.index, "\n"]))
+-- The writes for one blob, in order, as data (so the order is tested, not
+-- just trusted): the shard directory; unless the blob present, the bytes to
+-- <path>.tmp then a rename onto <path>; last, the index line.
+export type Op = Mkdir(string) | Write(string) | Rename(string, string) | Append(string, string)
+export pure func blobOps(dir: string, b: Blob, present: bool) -> [Op] {
+  let path = concat([dir, "/", blobPath(b.sha256, b.ext)]);
+  let tmp = concat([path, ".tmp"]);
+  [Mkdir(concat([dir, "/blobs/", substring(b.sha256, 0, 2)]))] ++ (if present then [] else [Write(tmp), Rename(tmp, path)]) ++
+  [Append(concat([dir, "/index.ndjson"]), concat([b.index, "\n"]))]
 }
+func runOps(ops: [Op], data: bytes) -> () ! {FS} =
+  match ops {
+    [] => (),
+    o :: r => {
+      (match o { Mkdir(d) => mkdirAll(d), Write(p) => writeFileBytes(p, data), Rename(a, z) => renameFile(a, z), Append(p, l) => appendFile(p, l) });
+      runOps(r, data)
+    }
+  }
+export func writeBlob(dir: string, b: Blob) -> () ! {FS} =
+  runOps(blobOps(dir, b, fileExists(concat([dir, "/", blobPath(b.sha256, b.ext)]))), b.data)
+-- usage.ndjson (design (a4)): one line per priced call, appended before the result is printed.
+export func appendUsage(dir: string, line: string) -> () ! {FS} = appendFile(concat([dir, "/usage.ndjson"]), concat([line, "\n"]))

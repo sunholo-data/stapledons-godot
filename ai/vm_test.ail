@@ -1,10 +1,11 @@
 module stapledons/ai/vm_test
 
 -- aiWireVm (AC7 part, `make strict-ai`): the service's pure modules (key,
--- route, wire, the stub handler) on the strict bytecode VM. It prints every
--- wire fixture re-encoded, the resolved route of every kind under each key
--- set, and the stub's answer to one request per kind, then ai-wire-ok when
--- every check of the four test modules holds. VM == interpreter byte for byte.
+-- route, wire, prompt, spend, reply, voice, the stub handler) on the strict
+-- bytecode VM. It prints every wire fixture re-encoded, the resolved route of
+-- every kind under each key set, and the stub's answer to one request under
+-- three key sets, then ai-wire-ok when every check of the eight test modules
+-- holds. VM == interpreter byte for byte.
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/string (join, concat)
@@ -12,9 +13,14 @@ import ./key_test (keyChecks)
 import ./route_test (routeChecks)
 import ./wire_test (wireChecks, inLines, outLines, secondIn)
 import ./stub_test (stubChecks)
+import ./spend_test (spendChecks)
+import ./prompt_test (promptChecks)
+import ./reply_test (replyChecks)
+import ./voice_test (voiceChecks)
+import ./spend (ledgerOf)
 import ./route (Routing, parseRouting, resolve, routeName, Via, NoRoute)
 import ./wire (decodeIn, encodeIn, decodeOut, encodeOut, Request, WRequest)
-import ./provider (Ctx, handle)
+import ./provider (Ctx, Act, Say, handle)
 
 pure func vmTable() -> Routing = match parseRouting(join("", [
   "{\"v\":1,\"routes\":{\"text\":[{\"provider\":\"openrouter\",\"model\":\"openrouter:v/m\"},{\"provider\":\"gemini\",\"model\":\"gtext\"}],",
@@ -32,12 +38,14 @@ pure func vmIn(l: string) -> string = match decodeIn(l) { Ok(m) => encodeIn(m), 
 pure func vmOut(l: string) -> string = match decodeOut(l) { Ok(m) => encodeOut(m), Err(e) => concat(["out-error ", e]) }
 pure func vmEach(g: string -> string, xs: [string]) -> [string] = match xs { [] => [], x :: r => g(x) :: vmEach(g, r) }
 -- The stub on the text request of the wire fixtures, under each key set.
-pure func vmCtx(keys: [string]) -> Ctx = { routing: vmTable(), keys: keys, textOnly: false, cases: [], portraits: [] }
+pure func vmCtx(keys: [string]) -> Ctx = { routing: vmTable(), keys: keys, textOnly: false, cases: [], portraits: [], lore: [{ id: "archive.two-clocks", text: "Two clocks." }],
+  prices: [{ provider: "openrouter", model: "openrouter:v/m", inTok: 20, outTok: 40, perCall: 0 }, { provider: "gemini", model: "gtext", inTok: 300, outTok: 2500, perCall: 0 }], styles: [] }
+pure func vmSaid(acts: [Act]) -> string = match acts { [] => "nothing said", a :: r => match a { Say(o) => encodeOut(o), _ => vmSaid(r) } }
 pure func vmStub(keys: [string]) -> string =
-  match decodeIn(secondIn(inLines())) { Ok(m) => (match m { WRequest(r) => encodeOut(handle(vmCtx(keys), r).out), _ => "no request" }), Err(e) => e }
+  match decodeIn(secondIn(inLines())) { Ok(m) => (match m { WRequest(r) => vmSaid(handle(vmCtx(keys), ledgerOf(0.5), r).acts), _ => "no request" }), Err(e) => e }
 
 export pure func aiWireVm(n: int) -> string =
-  if keyChecks() && routeChecks() && wireChecks() && stubChecks()
+  if keyChecks() && routeChecks() && wireChecks() && stubChecks() && spendChecks() && promptChecks() && replyChecks() && voiceChecks()
   then join("\n", vmEach(vmIn, inLines()) ++ vmEach(vmOut, outLines()) ++ vmRoutes(vmTable(), vmKeySets()) ++
     [vmStub(["gemini", "openrouter"]), vmStub(["gemini"]), vmStub([]), "ai-wire-ok"])
   else "ai-wire-BAD"

@@ -1,6 +1,6 @@
 # AI service foundation: a recorded, replayable AI process
 
-**Status:** Planned (design, awaiting Mark's answers to the open questions, then a sprint plan). Written 2026-10-02 after Mark chose "Finish M1 + AI design".
+**Status:** Planned; open questions answered (D-20, D-21, 2026-10-02); sprint R1-AI-FOUNDATION approved and executing (AI.1, AI.2, AI.4 merged; AI.5 executed). Written 2026-10-02 after Mark chose "Finish M1 + AI design".
 **Release:** r1 · **Milestone:** mission queue row 4 "AI service foundation" (ledger **D-9**), feeds bar clause 4 (M4's news beat) and clause 5 (AILANG)
 **Priority:** P1: M4 is fully playable on templates without it (M4 §Depends on: "Soft"), but every later conversation, voice and portrait sits on this protocol, and recording must exist before the first live AI output, or replays break
 **Implements:**
@@ -582,8 +582,43 @@ holds, so the stub line itself passes `ai_numeral`; the fixture cases are
 chosen by the context field `stub_case`. The library writes text results as
 `.txt` blobs too (index line with `origin: "library"`, no clock, no request
 id), which is what lets `make ai-stub` check every text hash against
-`shasum -a 256`. Stub voice arrives with AI.5; until then a routed voice
-request answers `provider_error`.
+`shasum -a 256`. (Until AI.5 a routed voice request answered
+`provider_error`; AI.5 replaced that with the stub voice below.)
+
+AI.5 as built (2026-10-02, no network, no key):
+- **Transport, a task-0 finding.** On v0.51.0 `std/ai` binds one provider
+  per process (`--ai`): a per-call `step()` model of another provider is
+  refused (`makeModelResolver`), and `callImageBase64` always uses the bound
+  model. One process therefore cannot send text to OpenRouter through
+  `std/ai` and generate Gemini portraits. The live service binds `std/ai` to
+  Gemini (`--ai gemini-2.5-flash-image`: images, and Gemini text per call)
+  and reaches **OpenRouter chat completions over `std/net`**
+  (`Authorization: Bearer`), as it reaches Gemini TTS (`x-goog-api-key`).
+  This keeps Mark's "text to OpenRouter first" in a session with both keys.
+  Upstream: ailang#1536 (cross-provider per-call routing; a Result variant of
+  `callImageBase64`). The alternative, two service processes, is open for
+  Mark (sprint notes).
+- **Entries.** `main` (stub, the AI.4 fields, ceiling US$0.50), `session`
+  (stub plus `ceiling_usd`, 0.05–20), `live` (`--caps IO,FS,Env,Net,AI`):
+  refused before any call unless the provider's key env var is non-empty
+  (`provider: gemini` needs `GOOGLE_API_KEY`, `openrouter` needs
+  `OPENROUTER_API_KEY`, `live` needs one of them) and `AI_LIVE=1`. The stub
+  entries keep effects `{IO, FS}`. `prices.json`, `lore.json`, `models.json`
+  and `emotion_styles.json` are read from the routing file's directory.
+- **Acts.** A request becomes an ordered list (blob with its index line,
+  usage line, result), tested as data; blob writes are an ordered op list
+  (temp file, rename, index line).
+- **Spend.** Whole nano-dollars; per-provider ledger plus total; a request is
+  admitted only if the total plus its worst case (text: three attempts at the
+  token cap) fits the ceiling, else `budget`. The stub prices what it answers
+  as the routed model would (`meta.provider: "stub"` marks it simulated), so
+  `usage.ndjson` and `budget` show in `make ai-stub`.
+- **Stub voice.** A square-wave tone per segment (50 ms a code point,
+  200 ms–8 s), one Ogg Opus clip per line (`std/audio`), descriptor
+  `{key, mime: "audio/ogg", bytes, duration_ms, segments_ms}`, key variant
+  `sha256(voice + "\n" + marked line)[:16]`.
+- **Blank lines** are skipped; `readLine` returns `""` for a blank line and at
+  end of input alike (ailang#1535), so 16 empty reads in a row end the loop.
 
 ## Acceptance criteria
 
@@ -761,3 +796,9 @@ Gaps filed 2026-10-02 (`ailang messages`, gcp store, inbox `user`; GitHub issues
 | V10 | No conversation UI exists | `git ls-tree origin/spike/iso-bridge`; repo `ui/` | no dialogue scene; `fe16790` adds only preview PNGs |
 | V11 | Gemini TTS uses square-bracket tags | `stapledons-design/reference/ai-capabilities.md` §Emotion Markers | `[sigh] [laugh] [gasp] [whisper] [pause] [excited] [sad] [angry]` |
 | V12 | Path dependencies are absolute in the lockfile | `ailang` repo `docs/docs/guides/build-a-motoko-extension.md:104` | "Lockfile bakes in your absolute path; PR/CI clones break" |
+| V13 | G1 and G3 on the pin (AI.5 task 0) | `docs std/ai \| grep -i -E 'speech\|tts\|audio'`; `run --help \| grep -i stub` | no speech call (G1 open); only `-ai-stub`, no fixture option (G3 open) |
+| V14 | `std/net` accepts `x-goog-api-key` | loopback probe, `--net-allow-domains localhost --net-allow-localhost`, POST to closed port 9, control header `Host` | `x-goog-api-key` reaches the dial (`connection refused`); `Host` is refused `InvalidHeader`; no packet leaves the machine. Against a non-allowlisted domain the host check runs first (`DisallowedHost`), so that probe cannot show it |
+| V15 | `sunholo/gemini_live@0.5.0` on v0.51.0 | `ailang lock` with `AILANG_REGISTRY=file:///nonexistent` (cache only), `check --package ai`, strict-VM run of `buildTtsRequest` | locks, type-checks, runs on the strict VM |
+| V16 | OpenRouter in `std/ai` | v0.51.0 source: `internal/ai/config.go` `EnvVarForProvider`, `cmd/ailang/ai_handlers.go` `makeModelResolver`, `internal/ai/openrouter/chat.go` | key env `OPENROUTER_API_KEY`; per-call model stays within the bound provider; usage (prompt/completion tokens) reported in `StepResult` |
+| V17 | `--ai-stub` for an OpenRouter id | `step("openrouter:google/gemini-2.5-flash-lite", …)` under `--ai-stub --caps IO,AI`, keys unset | `{"kind":"Wait"}`, finish `stop`, 0 tokens (the stub ignores the model) |
+| V18 | `@limit` semantics | `! {AI @limit=3}` recursion probe under `--ai-stub` | the budget counts per outermost call of the annotated function; a fourth call aborts the program |
