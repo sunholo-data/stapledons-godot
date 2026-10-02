@@ -832,6 +832,36 @@ map → commit → transit runs end to end (M4's first review build input).
 **Estimated:** 130 code + 80 tests = **210** · **Cap:** 650 · **Iteration:** 8 ·
 **Depends on:** M2.6a, M2.3b · **Registry:** none
 
+**Status (executed 2026-10-02, branch `sprint/m2.6b-commit` on main after M2.4; R1 accepted, D-17; independent evaluation pending):**
+- [x] Commit dialog (D-12): ship time, Earth time, arrival, years left, each a
+  sim field (bits); nothing sent before 1.5 s of continuous hold (fake clock:
+  1.499 s and release-then-1.25 s send nothing; the input log has no commit);
+  `commit {plan_id}` at 1.5 s; Back sends nothing
+- [x] Post-commit: Cancel visible and enabled, the sim refuses `committed`,
+  the panel shows it, journey unchanged; star picks refused the same way; the
+  map never sends `new_game` (input log)
+- [x] Transit readout: phase, both clocks advancing every tick, progress bar
+  (sim `ship.flown` against `plan.distance`), speed, radiated; at arrival the
+  plan distance and `ship.pos` (not `ship.x`/`flown`)
+- [x] Star names (D-17): `data/starmap/names.json`, 54 entries keyed by
+  index and id; title = name, subtitle = catalogue id; verified by
+  `tools/check_star_names.py` (in `make tools-test`)
+- [x] M2.6a eval follow-ups: literal label pins against the committed golden;
+  clamp tested; slider contrast; slider bounds/default from the sim's
+  `params` echo (Godot no longer calls `log`)
+- [x] Sim, additive: `cruisePhiMin/Max/Default`, `params` echo of all three,
+  `ship.flown`; `checkPhiBoundsEcho`, `checkFlownOnWire`
+- [x] Makefile: Godot targets that start the sim get `AILANG_BIN` from
+  `$(AILANG)`; `make map-capture` adds `--map-commit`
+- [x] 18/18 mutations killed · AC15 · AC17 (captures opened; copies and an
+  unpublished review page in `docs/m2.6b/`) · `make test`
+- Findings: `stars.json` longitudes are mirrored (l = 245.86° − l, a sign
+  slip in starmap-manager `process_stars.sh`); 16 of 54 named stars are 3–15 %
+  off literature distance. Not changed (D-17; M1.2 tiers)
+- Deviations: transit runs at 0.1 ship-yr per real second (D-12 fixes the
+  rate at rest only); the dialog is built in `galaxy_map.gd`, no separate
+  scene; `ship.flown` and the `params` bounds are protocol additions
+
 **Files:** `ui/galaxy_map.gd`, `ui/commit_dialog.tscn` (or inside the map
 scene), `tests/test_galaxy_map.gd`, plus Mark's ⏸ R1 tweaks if any arrived.
 

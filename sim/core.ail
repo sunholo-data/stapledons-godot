@@ -193,9 +193,19 @@ pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending 
     None =>
       -- `phi == phi` first: a NaN fails every comparison, so it is refused here
       -- on both runtimes (ailang#1419) rather than reaching the package's `requires`.
-      if !reachable || !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < rapidityOfBeta(p.cruiseMinBeta) || rq.cruisePhi > rapidityOfOneMinusBeta(p.capOneMinusBeta) then refuseIntent(a, "out_of_range")
+      if !reachable || !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < cruisePhiMin(p) || rq.cruisePhi > cruisePhiMax(p) then refuseIntent(a, "out_of_range")
       else storePlan(a, rq.target, here, normalize(dv), false, planBurnCoastBurn(d, p.boostG * standardGravity(), rq.cruisePhi))
   }
+}
+-- The cruise-rapidity range a plan accepts (both ends included) and the
+-- D-14 default, 0.99c clamped into it. The params echo carries all three so
+-- the UI slider does no rapidity maths (M2.6b).
+export pure func cruisePhiMin(p: Params) -> float = rapidityOfBeta(p.cruiseMinBeta)
+export pure func cruisePhiMax(p: Params) -> float = rapidityOfOneMinusBeta(p.capOneMinusBeta)
+export pure func cruiseDefaultBeta() -> float = 0.99
+export pure func cruisePhiDefault(p: Params) -> float {
+  let d = rapidityOfBeta(cruiseDefaultBeta());
+  if d < cruisePhiMin(p) then cruisePhiMin(p) else if d > cruisePhiMax(p) then cruisePhiMax(p) else d
 }
 -- A new plan replaces any uncommitted one and takes the next id.
 pure func storePlan(a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan) -> Pending {

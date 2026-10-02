@@ -114,6 +114,17 @@ pipeline step in Python is a defect: write it in AILANG, and when AILANG can't
 do it, that's an upstream gap to report, not a reason to fall back. Role `port`
 marks the remaining Python pipeline steps awaiting their AILANG port.
 
+## Searching the filesystem (agents and evaluators)
+
+Never walk home or root: no unbounded find, grep -r, rg, fd or du over /, ~,
+$HOME, /Users/..., /Volumes or ~/dev, and no -maxdepth above 3 on them. On
+2026-10-02 such a walk hung the rig. Search inside the repo or your worktree
+(git ls-files piped to grep, or find on a repo subdir with -maxdepth 4). Known
+paths: AILANG packages in runtime/cache/registry/OWNER/PKG/VER/ (or
+~/.ailang/cache/registry/...), star data under data/, the design repo at
+../stapledons-design, Blender work at ~/dev/blender. A PreToolUse hook
+(.claude/hooks/no-broad-find.sh) enforces this for every agent in a session.
+
 ## AILANG
 
 - **Report every AILANG bug or DX problem** with `ailang messages` to inbox
