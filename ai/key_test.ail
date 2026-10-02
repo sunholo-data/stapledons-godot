@@ -1,0 +1,52 @@
+module stapledons/ai/key_test
+
+-- CacheKey (design (a4)): canonical string round trips and validation, with
+-- the same entity-id regex and emotion set as the sim (duplicated by design,
+-- gap G5).
+import std/option (Option, Some, None)
+import std/result (Ok, Err)
+import std/string (repeat, concat)
+import ./key (CacheKey, keyError, canonical, parseCanonical, validEntityId, isLowerHex, isDecimal)
+
+pure func k(kind: string, eid: string, em: string, age: int, va: string) -> CacheKey =
+  { kind: kind, entityId: eid, emotion: em, ageStage: age, variant: va }
+pure func validKeys() -> [CacheKey] = [
+  k("text", "medic", "-", 0, "-"), k("text", "archive", "grieving", 0, "0123456789abcdef"),
+  k("portrait", "medic", "grieving", 50, "0"), k("portrait", "a", "happy", 1000, "12"),
+  k("avatar", "medic", "-", 0, "0"), k("voice", "medic", "-", 0, "fedcba9876543210"),
+  k("text", concat(["a", repeat("b_9", 10), "z"]), "neutral", 7, "-")]
+
+pure func roundTrips(x: CacheKey) -> bool =
+  match parseCanonical(canonical(x)) { Ok(y) => canonical(y) == canonical(x) && y.ageStage == x.ageStage, Err(_) => false }
+pure func allOk(xs: [CacheKey]) -> bool = match xs { [] => true, x :: r => keyError(x) == None && roundTrips(x) && allOk(r) }
+pure func checkKeyRoundTrip() -> bool =
+  allOk(validKeys()) && canonical(k("portrait", "medic", "grieving", 50, "0")) == "portrait/medic/grieving/50/0"
+
+pure func refusedAs(x: CacheKey, why: string) -> bool = keyError(x) == Some(why)
+pure func parseRefused(s: string, why: string) -> bool = match parseCanonical(s) { Ok(_) => false, Err(e) => e == why }
+pure func checkKeyValidation() -> bool =
+  refusedAs(k("music", "medic", "-", 0, "-"), "bad_key:kind") &&
+  refusedAs(k("text", "Medic", "-", 0, "-"), "bad_key:entity_id") &&
+  refusedAs(k("text", "9medic", "-", 0, "-"), "bad_key:entity_id") &&
+  refusedAs(k("text", "", "-", 0, "-"), "bad_key:entity_id") &&
+  refusedAs(k("text", concat(["a", repeat("b", 32)]), "-", 0, "-"), "bad_key:entity_id") &&
+  refusedAs(k("text", "med-ic", "-", 0, "-"), "bad_key:entity_id") &&
+  refusedAs(k("portrait", "medic", "-", 0, "0"), "bad_key:emotion") &&
+  refusedAs(k("avatar", "medic", "happy", 0, "0"), "bad_key:emotion") &&
+  refusedAs(k("voice", "medic", "sad", 0, "-"), "bad_key:emotion") &&
+  refusedAs(k("text", "medic", "wistful", 0, "-"), "bad_key:emotion") &&
+  refusedAs(k("text", "medic", "-", 1001, "-"), "bad_key:age_stage") &&
+  refusedAs(k("text", "medic", "-", -1, "-"), "bad_key:age_stage") &&
+  refusedAs(k("portrait", "medic", "sad", 0, "-"), "bad_key:variant") &&
+  refusedAs(k("portrait", "medic", "sad", 0, "01"), "bad_key:variant") &&
+  refusedAs(k("text", "medic", "-", 0, "0123456789ABCDEF"), "bad_key:variant") &&
+  refusedAs(k("voice", "medic", "-", 0, "0123"), "bad_key:variant") &&
+  validEntityId(concat(["a", repeat("b", 31)])) && isLowerHex("00ff", 4) && !isLowerHex("00f", 4) && isDecimal("0") && !isDecimal("007") &&
+  parseRefused("text/medic/-/0", "bad_key:shape") && parseRefused("text/medic/-/0/-/x", "bad_key:shape") &&
+  parseRefused("text/medic/-/x/-", "bad_key:age_stage") && parseRefused("text/medic/-/-1/-", "bad_key:age_stage") &&
+  parseRefused("text/Medic/-/0/-", "bad_key:entity_id")
+
+export pure func keyChecks() -> bool = checkKeyRoundTrip() && checkKeyValidation()
+
+test "AI.4 cache key canonical string round trips" { checkKeyRoundTrip() }
+test "AI.4 cache key validation refuses each bad field" { checkKeyValidation() }

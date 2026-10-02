@@ -4,8 +4,10 @@
 
 **Status:** Approved 2026-10-02, executing wave A2. AI.1 (markers) merged
 (PR #54, eval 96/100). AI.2 (protocol 2.1 codecs, `sim/ai.ail`, D-20 commit
-rule) merged (PR #56, eval 96/100). AI.3 (record validation, protocol 2.1 on
-the wire, D-21 limits, `replay-compat`, `ai_sim_session`, all goldens
+rule) merged (PR #56, eval 96/100). AI.4 (the `ai/` package: provider
+routing, wire, key, stub over both routes, cache writer, service loop,
+`ai-stub`) merged (PR #60, eval 90/100). AI.3 (record validation, protocol 2.1
+on the wire, D-21 limits, `replay-compat`, `ai_sim_session`, all goldens
 re-recorded on arm64 and x86_64) executed on `sprint/ai3-records`; **stopped
 at ⏸ G21** for Mark's golden review, then independent evaluation. Planned
 2026-10-02 on `origin/main` `a50bea2`.

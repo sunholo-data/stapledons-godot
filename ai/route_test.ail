@@ -1,0 +1,72 @@
+module stapledons/ai/route_test
+
+-- Provider routing (plan change 2026-10-02): text -> OpenRouter, else Gemini,
+-- else no_key; portrait/avatar/voice -> Gemini or no_key, never OpenRouter;
+-- text-only mode; config errors at start.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (concat, join, startsWith)
+import ./route (Routing, Route, Via, NoRoute, Hop, parseRouting, resolve, routeName, keysError)
+
+-- The shipped table's shape (data/ai/routing.json), inline: tests are pure.
+pure func shipped() -> string = join("", [
+  "{\"v\":1,\"_note\":\"x\",\"routes\":{",
+  "\"text\":[{\"provider\":\"openrouter\",\"model\":\"openrouter:google/gemini-2.5-flash-lite\"},{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash\"}],",
+  "\"portrait\":[{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash-image\"}],",
+  "\"avatar\":[{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash-image\"}],",
+  "\"voice\":[{\"provider\":\"gemini\",\"model\":\"gemini-2.5-flash-preview-tts\"}]}}"])
+-- A table that tries to put OpenRouter first everywhere it may (text) and
+-- names Gemini second: resolution must still never pick OpenRouter for media.
+pure func table() -> Routing = match parseRouting(shipped()) { Ok(r) => r, Err(_) => { routes: [] } }
+
+pure func is(r: Route, provider: string, model: string) -> bool = match r { Via(h) => h.provider == provider && h.model == model, NoRoute(_) => false }
+pure func none(r: Route, why: string) -> bool = match r { Via(_) => false, NoRoute(w) => w == why }
+pure func both() -> [string] = ["gemini", "openrouter"]
+
+pure func checkRouteText() -> bool {
+  let t = table();
+  is(resolve(t, "text", both(), false), "openrouter", "openrouter:google/gemini-2.5-flash-lite") &&
+  is(resolve(t, "text", ["openrouter", "gemini"], false), "openrouter", "openrouter:google/gemini-2.5-flash-lite") &&
+  is(resolve(t, "text", ["gemini"], false), "gemini", "gemini-2.5-flash") &&
+  is(resolve(t, "text", ["openrouter"], false), "openrouter", "openrouter:google/gemini-2.5-flash-lite") &&
+  none(resolve(t, "text", [], false), "no_key") &&
+  is(resolve(t, "text", both(), true), "openrouter", "openrouter:google/gemini-2.5-flash-lite")
+}
+pure func mediaOk(t: Routing, kind: string, model: string) -> bool =
+  is(resolve(t, kind, both(), false), "gemini", model) && is(resolve(t, kind, ["gemini"], false), "gemini", model) &&
+  none(resolve(t, kind, ["openrouter"], false), "no_key") && none(resolve(t, kind, [], false), "no_key") &&
+  none(resolve(t, kind, both(), true), "text_only") && none(resolve(t, kind, [], true), "text_only") &&
+  routeName(resolve(t, kind, ["openrouter"], false)) == "none"
+pure func checkRouteMedia() -> bool {
+  let t = table();
+  mediaOk(t, "portrait", "gemini-2.5-flash-image") && mediaOk(t, "avatar", "gemini-2.5-flash-image") &&
+  mediaOk(t, "voice", "gemini-2.5-flash-preview-tts") && none(resolve(t, "music", both(), false), "bad_request") &&
+  routeName(resolve(t, "text", ["gemini"], false)) == "gemini"
+}
+
+-- Config errors at start: each names its fault.
+pure func cfg(routes: string) -> string = join("", ["{\"v\":1,\"routes\":{", routes, "}}"])
+pure func gem(kind: string) -> string = join("", ["\"", kind, "\":[{\"provider\":\"gemini\",\"model\":\"m\"}]"])
+pure func three() -> string = join(",", [gem("portrait"), gem("avatar"), gem("voice")])
+pure func refused(text: string, prefix: string) -> bool = match parseRouting(text) { Ok(_) => false, Err(e) => startsWith(e, prefix) }
+pure func checkRouteConfig() -> bool =
+  refused("not json", "config: routing is not JSON") &&
+  refused("{\"v\":2,\"routes\":{}}", "config: routing v must be 1") &&
+  refused("{\"v\":1}", "config: routing has no routes") &&
+  refused(cfg(join(",", [three(), "\"text\":[{\"provider\":\"anthropicx\",\"model\":\"m\"}]"])), "config: text: unknown provider anthropicx") &&
+  refused(cfg(join(",", [three(), "\"text\":[{\"model\":\"gemini-2.5-flash\"}]"])), "config: text: model gemini-2.5-flash has no provider") &&
+  refused(cfg(join(",", [three(), "\"text\":[{\"provider\":\"gemini\"}]"])), "config: text: gemini has no model") &&
+  refused(cfg(join(",", [three(), "\"text\":[{\"provider\":\"openrouter\",\"model\":\"gpt\"}]"])), "config: text: openrouter model gpt is not vendor/model") &&
+  refused(cfg(join(",", [gem("text"), gem("avatar"), gem("voice"), "\"portrait\":[{\"provider\":\"openrouter\",\"model\":\"a/b\"},{\"provider\":\"gemini\",\"model\":\"m\"}]"])), "config: portrait: openrouter cannot serve portrait") &&
+  refused(cfg(three()), "config: kind text has no route") &&
+  refused(cfg(join(",", [three(), "\"text\":[]"])), "config: text: empty route") &&
+  refused(cfg(join(",", [three(), gem("text"), gem("music")])), "config: unknown kind music") &&
+  refused(cfg(join(",", [three(), gem("text"), gem("text")])), "config: a kind is listed twice") &&
+  (match parseRouting(cfg(join(",", [three(), "\"text\":[{\"provider\":\"openrouter\",\"model\":\"meta/llama\"}]"]))) { Ok(_) => true, Err(_) => false }) &&
+  keysError(both()) == None && keysError([]) == None && keysError(["gemini", "openai"]) == Some("config: unknown key openai")
+
+export pure func routeChecks() -> bool = checkRouteText() && checkRouteMedia() && checkRouteConfig()
+
+test "AI.4 text routes to OpenRouter, else Gemini, else no_key" { checkRouteText() }
+test "AI.4 portrait, avatar and voice route to Gemini or no_key, never OpenRouter; text_only" { checkRouteMedia() }
+test "AI.4 routing config errors refused at start" { checkRouteConfig() }

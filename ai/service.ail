@@ -1,0 +1,101 @@
+module stapledons/ai/service
+
+-- The AI service's I/O loop (design (a2)): a separate process Godot
+-- launches; it never talks to the sim. hello -> read -> decode -> handle ->
+-- write the blob -> print, one request at a time, until quit or end of input.
+-- Nothing is printed before the first line arrives.
+--
+-- Configuration comes as the entry argument (`--args-json`), not argv or
+-- env, so the stub runs with `--caps IO,FS` only and cannot read a key:
+--   {"provider": "stub", "keys_present": ["gemini", "openrouter"], "text_only": false,
+--    "cache_dir": "...", "routing": "data/ai/routing.json", "fixtures": "ai/fixtures"}
+-- keys_present simulates which keys exist (stub mode); live mode derives it
+-- from the env (AI.5). A bad configuration prints one `fatal` line and stops.
+import std/io (readLine, println, flush)
+import std/fs (readFileResult, readFileBytes, mkdirAll)
+import std/result (Result, Ok, Err)
+import std/option (Option, Some, None)
+import std/string (concat)
+import ./key (aiKinds, emotions8)
+import ./route (Routing, Route, Via, NoRoute, parseRouting, resolve, keysError)
+import ./wire (In, WHello, WRequest, WQuit, Out, OHello, OErr, OFatal, RouteView, decodeIn, encodeOut, reqOfLine)
+import ./provider (Ctx, Png, Case, Handled, providerOf, parseStubText, handle)
+import ./cache (writeBlob)
+
+export type Config = { provider: string, keys_present: [string], text_only: bool, cache_dir: string, routing: string, fixtures: string }
+
+pure func view(rt: Routing, keys: [string], textOnly: bool, kinds: [string]) -> [RouteView] =
+  match kinds {
+    [] => [],
+    k :: more => (match resolve(rt, k, keys, textOnly) { Via(h) => { kind: k, route: h.provider, detail: h.model }, NoRoute(why) => { kind: k, route: "none", detail: why } }) :: view(rt, keys, textOnly, more)
+  }
+pure func hello(cfg: Config, rt: Routing) -> Out =
+  OHello({ major: 1, minor: 0, service: "stapledons/ai 0.1.0", provider: "stub", live: false, cacheDir: cfg.cache_dir, routes: view(rt, cfg.keys_present, cfg.text_only, aiKinds()) })
+
+func say(o: Out) -> () ! {IO} { println(encodeOut(o)); flush(()) }
+
+func loop(cfg: Config, c: Ctx) -> () ! {IO, FS} {
+  let line = readLine(());
+  if line == "" then () else match decodeIn(line) {
+    Ok(m) => (match m {
+      WQuit => (),
+      WHello(_) => { say(hello(cfg, c.routing)); loop(cfg, c) },
+      WRequest(r) => {
+        let h = handle(c, r);
+        (match h.blob { Some(b) => writeBlob(cfg.cache_dir, b), None => () });
+        say(h.out);
+        loop(cfg, c)
+      }
+    }),
+    Err(code) => { say(OErr({ req: reqOfLine(line), code: code, provider: "stub", route: "none" })); loop(cfg, c) }
+  }
+}
+
+-- readFileBytes returns the file as base64 text (undocumented; reported upstream);
+-- the stub decodes it with std/bytes.fromBase64.
+@allow_empty_ok("the recursion base: every emotion has been loaded")
+func loadPngs(dir: string, es: [string]) -> Result[[Png], string] ! {FS} =
+  match es {
+    [] => Ok([]),
+    e :: more => match readFileBytes(concat([dir, "/stub_portrait_", e, ".png"])) {
+      Ok(b64) => (match loadPngs(dir, more) { Ok(ps) => Ok({ emotion: e, b64: b64 } :: ps), Err(x) => Err(x) }),
+      Err(_) => Err(concat(["config: missing ", dir, "/stub_portrait_", e, ".png"]))
+    }
+  }
+func readText(path: string) -> Result[string, string] ! {FS} =
+  match readFileResult(path) { Ok(t) => Ok(t), Err(_) => Err(concat(["config: cannot read ", path])) }
+
+-- Everything the loop needs, or the first configuration error.
+func start(cfg: Config) -> Result[Ctx, string] ! {FS} =
+  match providerOf(cfg.provider) {
+    Err(e) => Err(e),
+    Ok(_) => match keysError(cfg.keys_present) {
+      Some(e) => Err(e),
+      None => match readText(cfg.routing) {
+        Err(e) => Err(e),
+        Ok(rtext) => match parseRouting(rtext) {
+          Err(e) => Err(e),
+          Ok(rt) => match readText(concat([cfg.fixtures, "/stub_text.json"])) {
+            Err(e) => Err(e),
+            Ok(ctext) => match parseStubText(ctext) {
+              Err(e) => Err(e),
+              Ok(cases) => match loadPngs(cfg.fixtures, emotions8()) {
+                Err(e) => Err(e),
+                Ok(pngs) => { mkdirAll(cfg.cache_dir); Ok({ routing: rt, keys: cfg.keys_present, textOnly: cfg.text_only, cases: cases, portraits: pngs }) }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+export func main(cfg: Config) -> () ! {IO, FS} =
+  match start(cfg) {
+    Ok(c) => loop(cfg, c),
+    Err(e) => {
+      -- Wait for the first line so nothing is printed unasked, then refuse.
+      let _l = readLine(());
+      say(OFatal({ code: "config", detail: e }))
+    }
+  }

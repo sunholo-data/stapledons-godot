@@ -72,7 +72,7 @@ criteria = {
 
 ### 3. Hipparcos V < 7.5 (sky-background star removal, M1.4)
 
-**Used by**: `tools/m14a_destar.py` (the D-10 destar step of `make sky-assets`),
+**Used by**: `sim/tools/destar.ail` (the D-10 destar step of `make sky-assets`),
 to decide which panorama stars are catalogue stars and get removed.
 **Source**: VizieR `I/239/hip_main` (Hipparcos 1997; V is Johnson `Vmag`).
 HIP2 (`I/311`) has no Johnson V, which is why the destar list reads hip_main;

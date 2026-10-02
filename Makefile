@@ -9,7 +9,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify destar
+.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -21,12 +21,25 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
 
-tools-test:        ## catalogue parser + replay harness unit tests (committed fixtures and a fake ailang only)
-	python3 tools/test_extract.py
+tools-test:        ## replay harness unit tests and the star-name oracle (committed fixtures and a fake ailang only)
 	python3 tools/test_replay.py
 	python3 tools/check_star_names.py
+
+extract-test:      ## VizieR parser (sim/tools/extract.ail): pure checks strict VM = interpreter; real-byte fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry extractVm --args-json 0 sim/tools/extract_test.ail > $(SCRATCH)/extract-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry extractVm --args-json 0 sim/tools/extract_test.ail > $(SCRATCH)/extract-interp.txt
+	@cmp $(SCRATCH)/extract-vm.txt $(SCRATCH)/extract-interp.txt && test "$$(cat $(SCRATCH)/extract-vm.txt)" = "extract-vm-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry extractFixtures --args-json '"tools/fixtures"' sim/tools/extract_test.ail > $(SCRATCH)/extract-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry extractFixtures --args-json '"tools/fixtures"' sim/tools/extract_test.ail > $(SCRATCH)/extract-fx-interp.txt
+	@cmp $(SCRATCH)/extract-fx-vm.txt $(SCRATCH)/extract-fx-interp.txt && test "$$(cat $(SCRATCH)/extract-fx-vm.txt)" = "extract-fixtures-ok"
+	@echo "extract-test: $$(cat $(SCRATCH)/extract-vm.txt), $$(cat $(SCRATCH)/extract-fx-vm.txt) (VM = interpreter)"
+
+extract:           ## data/raw/{cns5,table1c}.dat -> data/raw/{cns5,gcns}.csv (AILANG; GCNS takes ~4.5 min on the VM)
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail
 
 physics:           ## CPU physics reference vs known values
 	$(GODOT) --headless --path . --script tests/test_physics.gd
@@ -264,18 +277,16 @@ sky-model:        ## M1.4b offline: destarred panorama -> per-texel T_c model (G
 # M1.4d: the sky textures are generated, not committed (two ~80 MB PNGs). `make sky-assets`
 # rebuilds them byte for byte from pinned downloads; data/sky/SHA256SUMS pins inputs AND outputs.
 STARMAP_SCRIPTS := .claude/skills/starmap-manager/scripts
-DESTAR_PY := uv run --quiet --python 3.12 --with pillow==12.3.0 --with numpy==2.5.3 --with scipy==1.18.1 --with opencv-python-headless==5.0.0.93 python
 .PHONY: sky-inputs destar sky-assets sky-verify sky-bundle
 sky-inputs:       ## M1.4d: sky pipeline inputs into data/raw: the public bucket first (D-18), then the original sources; check pins
 	@sh tools/sky_assets.sh fetch inputs || echo "sky-inputs: bucket incomplete; falling back to the original sources"
 	@test -f $(SKY)/noirlab_10k.tif || bash $(STARMAP_SCRIPTS)/download_background.sh raw
 	@test -f data/raw/hip_v7.tsv || bash $(STARMAP_SCRIPTS)/download_stars.sh hip
-	@test -f data/raw/table1c.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh medium
-	@test -f data/raw/gcns.csv || python3 tools/extract.py gcns
+	@test -f data/raw/table1c.dat.gz || bash $(STARMAP_SCRIPTS)/download_stars.sh medium
+	@test -f data/raw/cns5.dat || bash $(STARMAP_SCRIPTS)/download_stars.sh quick
+	@test -f data/raw/cns5.csv || $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
+	@test -f data/raw/gcns.csv || { gunzip -kf data/raw/table1c.dat.gz && $(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail; }
 	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=inputs
-
-destar:           ## M1.4a/d offline: catalogue-matched stars out of the NOIRLab photo (HIP V<7.5 + GCNS + corrected stars.json); ~30 s
-	$(DESTAR_PY) tools/m14a_destar.py
 
 sky-assets:       ## M1.4d/D-18: pinned sky textures: from the public bucket in seconds, else regenerate (inputs -> destar -> sky model, ~15 min)
 	@if sh tools/sky_assets.sh fetch textures; then $(MAKE) --no-print-directory sky-verify SKY_VERIFY=textures; \
@@ -316,4 +327,20 @@ catalogue-bytes:  ## native F32 bytes: independent Python oracle, interpreter an
 .PHONY: python-guard
 python-guard:     ## Python policy: every *.py allowlisted with a role (CLAUDE.md "Python")
 	@sh tools/python_guard.sh
+
+.PHONY: destar-test destar
+destar-test:      ## star removal core (sim/tools/destar.ail) on a synthetic panorama: strict VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry destarVm --args-json 0 sim/tools/destar_test.ail > $(SCRATCH)/destar-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry destarVm --args-json 0 sim/tools/destar_test.ail > $(SCRATCH)/destar-interp.txt
+	@cmp $(SCRATCH)/destar-vm.txt $(SCRATCH)/destar-interp.txt && test "$$(cat $(SCRATCH)/destar-vm.txt)" = "destar-ok" && echo "destar-test: $$(cat $(SCRATCH)/destar-vm.txt) (strict VM = interpreter)"
+
+destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars removed (Godot I/O, AILANG core); needs data/raw/{hip_v7.tsv,gcns.csv,cns5.csv}
+	@if [ ! -f $(SKY)/noirlab_10k.png ] || [ $(SKY)/noirlab_10k.tif -nt $(SKY)/noirlab_10k.png ]; then sips -s format png $(SKY)/noirlab_10k.tif --out $(SKY)/noirlab_10k.png; fi
+	$(GODOT) --headless --path . --script tools/destar_io.gd -- dump $(SKY)/noirlab_10k.png $(SKY)/noirlab_10k.rgb
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main \
+	  --args-json '{"rgb":"$(SKY)/noirlab_10k.rgb","w":10000,"h":5000,"hip":"data/raw/hip_v7.tsv","gcns":"data/raw/gcns.csv","cns5":"data/raw/cns5.csv","patches":"$(SKY)/destar_patches.bin","report":"data/sky/destar_report.json"}' \
+	  sim/tools/destar.ail
+	$(GODOT) --headless --path . --script tools/destar_io.gd -- apply $(SKY)/noirlab_10k.png $(SKY)/destar_patches.bin $(SKY)/noirlab_10k_destarred.png
+
 include mk/ai.mk
