@@ -2,11 +2,11 @@
 # Included from the Makefile by its last line; every AI target lives here so the
 # sprint changes one Makefile line. Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants
+.PHONY: ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
 
 test: ai-test
 
-ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter replay-compat   ## AI foundation checks that run without a GPU window or a key
+ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter replay-compat ai-godot   ## AI foundation checks that run without a GPU window or a key
 
 # AC7 (part): the pure marker grammar runs entirely on the bytecode VM and prints
 # byte for byte what the interpreter prints; its last line is markers-ok. The
@@ -220,3 +220,13 @@ record-mutants:    ## AI.3: voice variant compared, no numeral check, 65 lines, 
 	  grep -F "✗ $$name" $(MUTANT_DIR)/out.txt > /dev/null || { echo "mutant '$$to' did not fail '$$name'"; tail -20 $(MUTANT_DIR)/out.txt; exit 1; }; \
 	  echo "mutant killed: '$$to' fails test '$$name'"; \
 	done
+
+# ---------------------------------------------------------------- AI.6: AiBridge in Godot
+# AC11 (bridge half): the real stub (--caps IO,FS) for the happy path, then the fake service
+# (ai/tools/fake_service.ail, --caps IO) hanging, crashing, printing garbage or half lines, answering
+# late or with the wrong major. Timeouts and backoffs are shortened in the test; defaults asserted.
+ai-godot: import   ## AC11 bridge half: lazy launch, non-blocking relay, priority, timeouts, backoff, service_down
+	$(GODOT_SIM) --headless --path . --script tests/test_ai_bridge.gd -- --faults
+
+ai-bridge-mutants: import   ## AI.6: AiBridge mutants (priority, timeout kill, backoff, window, assembly, ...); each fails a named check
+	AILANG_BIN="$$(command -v $(AILANG))" sh tests/ai_bridge_mutants.sh "$(GODOT)" "$(SCRATCH)/bridge-mutants"

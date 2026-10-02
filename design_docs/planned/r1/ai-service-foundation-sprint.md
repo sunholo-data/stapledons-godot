@@ -11,7 +11,12 @@ OpenRouter and Gemini adapters on fixtures, stub voice; OpenRouter text over
 `std/net`, see AI.5) merged (PR #64, eval 91/100). AI.3 (record validation,
 protocol 2.1 on the wire, D-21 limits, `replay-compat`, `ai_sim_session`, all
 goldens re-recorded on arm64 and x86_64) passed G21 (Mark, attended
-2026-10-02: "yes merge it") and evaluation (95/100); merged as PR #61.
+2026-10-02: "yes merge it") and evaluation (95/100); merged as PR #61. AI.6 (`AiBridge`: lazy
+launch, non-blocking relay, priority, per-kind timeouts, backoff,
+`service_down`; fake service in `ai/tools/`) executed on `sprint/ai6-bridge`;
+evaluation round 1 scored 82/100, and round 2 fixed F1 (dash-safe descriptor
+scrub under bash) and F2 (structural no-blocking guard plus a jitter-baseline
+frame rule); 17 mutants are killed.
 Planned 2026-10-02 on `origin/main` `a50bea2`.
 
 ## Summary

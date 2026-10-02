@@ -1,0 +1,70 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.6",
+  "pr": 63,
+  "branch": "sprint/ai6-bridge",
+  "commit": "9da127e",
+  "round": 1,
+  "evaluator": "independent (generator != judge)",
+  "result": "pass",
+  "score": 82,
+  "breakdown": {
+    "tests_pass": {"max": 20, "score": 20, "note": "make test (exit 0), make ai-godot (rc 0), make ai-bridge-mutants (11/11 killed) all green on macOS. Load was 2.5-3.3/core, so only the relaxed frame check ran; the strict 2 ms branch was never exercised in my runs."},
+    "lint_clean": {"max": 10, "score": 10, "note": "no lint gate failures; python-guard clean"},
+    "acceptance_criteria": {"max": 30, "score": 25, "note": "AC11 bridge half met: handshake+major, per-kind timeouts, backoff, 3-in-10min, service_down+toast, priority, one in flight, quit-grace-kill, partial/garbage/slow_hello/wrong_major. Deductions: the 'every poll < 2 ms' requirement is only hard-asserted on an idle machine; the 'hung child killed' check is vacuous (see findings); FD_SCRUB unverified on Linux CI."},
+    "code_quality": {"max": 15, "score": 10, "note": "LOC 751 vs cap 650 (est 340): over by 16%. Correct thread discipline. Portability defect in FD_SCRUB under dash."},
+    "documentation": {"max": 15, "score": 11, "note": "Good header docs and test comments; deviations documented in sprint doc/JSON; no CHANGELOG entry seen for AI.6."},
+    "design_fidelity": {"max": 10, "score": 9, "note": "Matches design (a3) supervision: 5 s handshake, 30/60/120 s, backoff 1/4/16, 3 in 10 min, toast, resend of open request."},
+    "total": 82
+  },
+  "blocking_findings": [],
+  "must_fix_before_or_at_merge": [
+    {
+      "id": "F1",
+      "file": "bridge/ai_bridge.gd:49",
+      "issue": "FD_SCRUB breaks under dash (Ubuntu /bin/sh, i.e. the ubuntu-latest CI runner that runs `make test` -> ai-godot). dash cannot parse `exec N>&-` for N >= 10 ('exec: 12: not found', shell exits 127). Reproduced locally with /bin/dash and fds 5,12,13 open: rc=127 and the service never starts; bash/macOS sh: ok. Whether Godot on Linux holds an fd >= 10 at spawn is unverified but likely (epoll, pck, pipes), so test_stub_session and every fake-service test could fail only in CI.",
+      "suggestion": "Spawn via /bin/bash is not guaranteed either; instead close fds with a form dash accepts (eval \"exec $n>&-\" fails for 2-digit n in dash; use `/bin/sh -c` -> `python`-free alternatives: loop `exec {n}>&-` is bash-only), or avoid a shell: set FD_CLOEXEC on Godot's pipe ends is not exposed, so the portable fix is a tiny AILANG/ailang-side or `env`-free wrapper, or run the scrub under `bash` when present and assert/skip with an explicit message otherwise. Re-verify on the real CI run before relying on this milestone."
+    },
+    {
+      "id": "F2",
+      "file": "tests/test_ai_bridge.gd:77-97",
+      "issue": "Relaxed frame check hides intermittent blocking. Mutants I added: `if randi()%25==0: OS.delay_msec(10)` (4% of polls) and a 30 ms sleep on 1-in-40 BUSY polls both SURVIVED the full --faults suite under load (2.5/core). Only a per-poll block (5 ms every poll) was caught.",
+      "suggestion": "Under load keep a tighter tail rule (e.g. 99% < 2 ms is too noisy, so instead use p50 < 1 ms plus none >= 20 ms), and add a deterministic non-timing check: spy on the bridge (counter of OS.delay_msec-like waits is impossible), so assert structurally that poll() contains no delay/wait_for_task_completion outside shutdown; or run the strict check with `nice`/idle detection and fail CI if it could not run strict."
+    }
+  ],
+  "non_blocking_findings": [
+    {
+      "file": "tests/test_ai_bridge.gd (test_timeouts, 'hung child killed and reaped')",
+      "issue": "Vacuous: with the `_kill()` removed from `_timeout()` the check still passed (the hang child is gone by then, or the pid probe is satisfied), and only the later 'next request relaunches at once' cascade failed. A timeout that forgets to kill is not caught by its own check. Confirms deviation 7 and shows the executor's mutant row targets the cascade only.",
+      "suggestion": "Check the pid is dead immediately after the timeout outcome (poll until child_gone within ~500 ms) with a service that cannot exit on its own (e.g. /bin/sleep 30 as in test_shutdown_grace)."
+    },
+    {"file": "bridge/ai_bridge.gd:261-262", "issue": "Only guard against a blank line is an assert(), which is stripped in release/exported builds. My blank-line mutant (an extra store_string('\\n')) was killed by the test, so detection works for that path, but a blank via _write('') in a template build would be sent.", "suggestion": "Replace assert with `if line == '' ...: push_error; return`."},
+    {"file": "bridge/sim_bridge.gd:57", "issue": "SimBridge has the same inherited-fd exposure (execute_with_pipe without CLOEXEC); not fixed here.", "suggestion": "Track as a follow-up; do not copy FD_SCRUB until F1 is solved."},
+    {"issue": "LOC 751 vs cap 650 (est 340). Mostly the 380-line test plus 486-line bridge; the overshoot is justified by thread/fd work but was not pre-approved.", "suggestion": "Record the overrun in the sprint JSON velocity notes."},
+    {"file": "bridge/ai_bridge.gd:193-208", "issue": "Exported-build launch path (_unpack_ai, /usr/bin/env HOME=...) has no test.", "suggestion": "AI.7/AI.9 should add an export smoke before release."}
+  ],
+  "mutation_results": {
+    "executor_mutants": "11/11 killed",
+    "evaluator_mutants": {
+      "poll_blocks_every_call_5ms": "killed (frame_check hang/crash)",
+      "poll_blocks_10ms_1_in_25": "SURVIVED under load",
+      "poll_blocks_30ms_1_in_40_busy": "SURVIVED under load",
+      "no_backoff": "killed (backoff 1s/4s/16s, 150/600 gap, 11-min check)",
+      "window_not_ageing": "killed (third failure 11 min later, five-failure check)",
+      "blank_line_sent": "killed (service treats it as end of input; results fail)",
+      "quit_without_kill": "killed (deaf child gone, no child left running)",
+      "open_request_not_resent_after_crash": "killed (both answered after one restart; service_down list)",
+      "timeout_without_kill": "killed only by cascade ('next request relaunches at once'); the kill check itself passed"
+    }
+  },
+  "deviation_verdicts": {
+    "1_frame_bound_relaxed_under_load": "Acceptable in principle, weak in practice: it catches per-poll blocking but misses intermittent blocks up to 49 ms on <=5% of polls (two survivors). Observed worst polls under load were 8-12 ms, so the relaxation is real. Needs a structural or tighter-tail check (F2). No evidence the shipped code blocks: poll() has no waits, spawn/kill are on WorkerThreadPool, drains are capped at 16 chunks.",
+    "2_workerthreadpool_thread_safety": "Sound. The spawn task writes only `_spawned` and is read after is_task_completed/wait_for_task_completion; kill lambdas capture only an int pid; all signals, queues and phase state are touched on the main thread in poll()/request(); shutdown joins spawn and kill tasks. No race found.",
+    "3_fd_scrub_wrapper": "Correct on macOS (sh is bash-compatible; /dev/fd listing works; pid preserved via exec, test confirms the child's extra fds contain no PIPE). NOT portable: dash (Ubuntu CI) fails for fds >= 10 with rc 127 (F1). Confirm on a real ubuntu run. SimBridge has the same exposure and is unfixed.",
+    "4_timeouts_count_in_window_no_backoff": "Acceptable and consistent with design lines 357-360 (timeout restarts lazily; 3 failures in 10 min disables). Note _consecutive still increments so a later crash after timeouts gets a longer backoff; tested indirectly only.",
+    "5_stub_launch_only": "Acceptable for AI.6; exported path untested, must be covered by AI.7/AI.9 before release.",
+    "6_fake_service_not_in_exports": "Acceptable; it is a test tool, exports govern shipped modules.",
+    "7_kill_mutant_caught_by_cascade": "Not acceptable as stated: the dedicated kill assertion is vacuous (see non-blocking finding 1). Cheap fix."
+  },
+  "verified": ["make test AILANG=$A exit 0", "make ai-godot ok", "make ai-bridge-mutants 11/11", "frame budget: poll() has no blocking calls by inspection; measured worst 8-12 ms under 3.3/core load, none >= 50 ms"]
+}

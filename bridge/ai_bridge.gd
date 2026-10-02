@@ -1,0 +1,497 @@
+class_name AiBridge
+extends Node
+## Runs the AI service (`ai/service.ail`, protocol ai/1) as a child process
+## and relays requests to it without ever blocking the frame (design
+## ai-service-foundation (a3)). It never talks to the sim: AiRelay (AI.7)
+## turns the sim's `ai_request` events into `request()` calls and the
+## outcomes back into intents.
+##
+## - Lazy start: the child is launched only when a request is queued (the
+##   relay calls `request()` only on a cache miss), so a replay that needs no
+##   AI leaves `launch_count` at 0.
+## - Non-blocking: `poll()` (called from `_process`) reads whatever the pipe
+##   holds, assembles lines across partial reads and never waits on a deadline.
+## - One request in flight, picked by priority text > voice > portrait.
+## - Supervision: handshake within 5 s with `proto.major == 1`; per-kind
+##   timeouts (text 30 s, voice 60 s, portrait 120 s) kill the child, cancel
+##   the request with `timeout` and restart lazily; a crash, a bad handshake or
+##   a garbled reply restarts with backoff 1 s, 4 s, 16 s and resends the open
+##   request. Every one of those is a failure; 3 failures within 10 minutes
+##   disable the service for the session and cancel every queued and open
+##   request with `service_down`.
+##
+## Outcomes are emitted on `outcome` and kept in `outcomes` (see
+## `take_outcomes`): the service's `result` object as parsed (`status` "ok" or
+## "error"), or `{"type": "cancel", "req", "kind", "reason"}` where reason is
+## `timeout` or `service_down`.
+
+signal outcome(o: Dictionary)
+signal service_down_toast(text: String)
+
+const SERVICE_FILE := "ai/service.ail"
+const PROTO_MAJOR := 1
+const TOAST_TEXT := "Live voices unavailable: using the ship's archive"
+## Lower runs first; avatar is an image like portrait.
+const PRIORITY := {"text": 0, "voice": 1, "portrait": 2, "avatar": 2}
+const TIMEOUT_MS := {"text": 30000, "voice": 60000, "portrait": 120000, "avatar": 120000}
+const BACKOFF_MS := [1000, 4000, 16000]
+const HANDSHAKE_MS := 5000
+const FAIL_LIMIT := 3
+const FAIL_WINDOW_MS := 600000
+const QUIT_GRACE_MS := 1000
+const READ_CHUNK := 4096
+const MAX_CHUNKS_PER_POLL := 16
+## OS.execute_with_pipe marks no descriptor close-on-exec, so a child inherits
+## every pipe Godot holds: the sim's stdin among them, and the pipes of any
+## process spawned at the same moment. The service is started through this
+## script, which closes every inherited descriptor above 2 and execs it (same
+## pid), so the AI process cannot reach the sim and keeps nobody's pipe open.
+## It runs under bash (`scrub_shell`). Under a POSIX sh such as dash, which
+## reads "12>&-" as a command named 12, it closes only 3-9 and still runs the
+## service.
+const FD_SCRUB := 'for f in /dev/fd/*; do n=${f##*/}; case $n in [3-9]) eval "exec $n>&-" 2>/dev/null;; [1-9][0-9]*) [ -n "$BASH_VERSION" ] && eval "exec $n>&-" 2>/dev/null;; esac; done; exec "$@"'
+
+enum Phase { IDLE, LAUNCHING, HANDSHAKE, READY, BUSY }
+
+## Overridable (tests shorten them); the defaults are the design's.
+var timeout_ms: Dictionary = TIMEOUT_MS.duplicate()
+var backoff_ms: Array = BACKOFF_MS.duplicate()
+var handshake_ms := HANDSHAKE_MS
+## {"bin", "args"} replaces the stub launch (tests run the fake service).
+var launch_override: Dictionary = {}
+## Stub-mode service configuration (design (a2)): the cache directory and the
+## key set the stub pretends to have. Live mode (opt-in, key file) is AI.7.
+var cache_dir := "user://ai_cache"
+var stub_keys: Array = ["gemini", "openrouter"]
+var text_only := false
+## Added to the clock; tests move time forward to age the failure window.
+var clock_offset_ms := 0
+
+var launch_count := 0
+var service_down := false
+var hello_reply: Dictionary = {}
+var last_error := ""
+var outcomes: Array = []
+## Request lines written to the current child, and to all children.
+var sent_count := 0
+var sent_total := 0
+var child_pid := -1
+## Tick (msec, offset clock) of each launch and each failure.
+var launch_times: Array = []
+var failure_times: Array = []
+## Slowest poll() so far, in microseconds.
+var max_poll_usec := 0
+
+var _phase := Phase.IDLE
+var _pipe: FileAccess
+var _stderr: FileAccess
+var _pid := -1
+var _line_bytes := PackedByteArray()
+var _queues: Array = [[], [], []]
+var _in_flight: Dictionary = {}
+var _deadline := 0
+var _next_launch_at := 0
+var _consecutive := 0
+## Spawning and killing run on the worker pool: fork/exec and the reaping
+## waitpid inside OS.kill each cost a millisecond or more on the main thread.
+var _spawn_task := -1
+var _spawned: Dictionary = {}
+var _kill_tasks: Array = []
+var stderr_tail := ""
+
+
+func _process(_delta: float) -> void:
+	poll()
+
+
+func _exit_tree() -> void:
+	shutdown()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		shutdown()
+
+
+func now_msec() -> int:
+	return Time.get_ticks_msec() + clock_offset_ms
+
+
+## Queue one request: the sim's `ai_request` fields (`req`, `kind`, ...) plus
+## whatever the relay adds (cast, segments). False if it is malformed. When
+## the service is down the request is cancelled at once.
+func request(r: Dictionary) -> bool:
+	var req = r.get("req")
+	var kind = r.get("kind")
+	if typeof(req) != TYPE_STRING or req == "" or typeof(kind) != TYPE_STRING or not PRIORITY.has(kind):
+		push_error("AiBridge: malformed request %s" % [r])
+		return false
+	if service_down:
+		_cancel(r, "service_down")
+		return true
+	_queues[PRIORITY[kind]].append(r)
+	return true
+
+
+func pending() -> int:
+	return _queues[0].size() + _queues[1].size() + _queues[2].size() + (0 if _in_flight.is_empty() else 1)
+
+
+func in_flight() -> Dictionary:
+	return _in_flight
+
+
+func take_outcomes() -> Array:
+	var out := outcomes
+	outcomes = []
+	return out
+
+
+## One non-blocking step: read what the child has written, enforce deadlines,
+## launch if there is work and the backoff has passed, send the next request.
+func poll() -> void:
+	var t0 := Time.get_ticks_usec()
+	_reap()
+	if _phase == Phase.LAUNCHING and WorkerThreadPool.is_task_completed(_spawn_task):
+		WorkerThreadPool.wait_for_task_completion(_spawn_task)
+		_spawn_task = -1
+		_on_spawned(_spawned)
+	if _pid >= 0:
+		_drain_stderr()
+		var got := _read_stdout()
+		if _pid >= 0 and not got and not _alive(_pid):
+			_read_stdout() # whatever it wrote just before exiting
+			if _pid >= 0:
+				_fault("child_eof")
+		if _pid >= 0 and now_msec() >= _deadline:
+			if _phase == Phase.HANDSHAKE:
+				_fault("startup_timeout")
+			elif _phase == Phase.BUSY:
+				_timeout()
+	if not service_down and _pid < 0 and _phase == Phase.IDLE and _has_queued() and now_msec() >= _next_launch_at:
+		_launch()
+	if _phase == Phase.READY and _has_queued():
+		_send_next()
+	max_poll_usec = maxi(max_poll_usec, Time.get_ticks_usec() - t0)
+
+
+## `quit`, then up to 1 s grace, then kill (as SimBridge does). Blocks for at
+## most the grace period; only for scene exit.
+func shutdown() -> void:
+	if _spawn_task >= 0:
+		WorkerThreadPool.wait_for_task_completion(_spawn_task)
+		_spawn_task = -1
+		_on_spawned(_spawned)
+	if _pid >= 0:
+		if _pipe != null and _pipe.is_open():
+			_write(SimBridge.encode({"v": 1, "type": "quit"}))
+		var pid := _pid
+		_close_pipes()
+		var deadline := Time.get_ticks_msec() + QUIT_GRACE_MS
+		while _alive(pid) and Time.get_ticks_msec() < deadline:
+			OS.delay_msec(5)
+		if _alive(pid):
+			OS.kill(pid)
+	for t in _kill_tasks:
+		WorkerThreadPool.wait_for_task_completion(t)
+	_kill_tasks.clear()
+
+
+## Backoff before the launch that follows the n-th consecutive failure (n >= 1).
+func backoff_delay(n: int) -> int:
+	return backoff_ms[clampi(n - 1, 0, backoff_ms.size() - 1)]
+
+
+## Lines completed by `chunk`, in order; a partial tail waits for the next call.
+func assemble(chunk: PackedByteArray) -> PackedStringArray:
+	_line_bytes.append_array(chunk)
+	var lines := PackedStringArray()
+	var end := _line_bytes.find(10)
+	while end >= 0:
+		lines.append(_line_bytes.slice(0, end).get_string_from_utf8().strip_edges())
+		_line_bytes = _line_bytes.slice(end + 1)
+		end = _line_bytes.find(10)
+	return lines
+
+
+# ------------------------------------------------------------------ launch
+
+static func _run_args(ailang: String, ai_dir: String, config: Dictionary) -> PackedStringArray:
+	# The stub needs IO and FS only: it cannot read env, reach the network or
+	# call a model. Configuration is the entry argument, never argv flags.
+	return PackedStringArray([ailang, "run", "--quiet", "--bytecode", "--package-dir", ai_dir,
+		"--caps", "IO,FS", "--entry", "main", "--args-json", SimBridge.encode(config),
+		ai_dir.path_join(SERVICE_FILE.get_file())])
+
+
+func stub_config(root: String) -> Dictionary:
+	return {"provider": "stub", "keys_present": stub_keys, "text_only": text_only,
+		"cache_dir": ProjectSettings.globalize_path(cache_dir),
+		"routing": root.path_join("data/ai/routing.json"), "fixtures": root.path_join("ai/fixtures")}
+
+
+## Source checkout: ailang from AILANG_BIN or PATH, the service from the repo.
+## Exported build: the sim's bundled runtime with its own HOME, plus ai/ and
+## data/ai/ unpacked beside it (the export preset must include them; AI.7).
+func launch_plan() -> Dictionary:
+	if not OS.has_feature("template"):
+		var bin := SimBridge.find_ailang()
+		if bin == "":
+			push_error("ailang not found; set AILANG_BIN or add it to PATH")
+			return {}
+		var res := ProjectSettings.globalize_path("res://")
+		var dev := _run_args(bin, res.path_join("ai"), stub_config(res))
+		return {"bin": dev[0], "args": dev.slice(1)}
+	var root := SimBridge._unpack_runtime()
+	if root == "" or not _unpack_ai(root):
+		return {}
+	var args := PackedStringArray(["HOME=" + root.path_join("home")])
+	args.append_array(_run_args(root.path_join("runtime/bin/ailang"), root.path_join("ai"), stub_config(root)))
+	return {"bin": "/usr/bin/env", "args": args}
+
+
+static func _unpack_ai(root: String) -> bool:
+	if not FileAccess.file_exists("res://" + SERVICE_FILE):
+		push_error("exported build has no AI service (res://%s missing)" % SERVICE_FILE)
+		return false
+	var marker := root.path_join(".ai-unpacked")
+	if FileAccess.file_exists(marker):
+		return true
+	for pair in [["res://ai", root.path_join("ai")], ["res://data/ai", root.path_join("data/ai")]]:
+		if not SimBridge._copy_tree(pair[0], pair[1]):
+			push_error("failed to unpack %s" % pair[0])
+			return false
+	FileAccess.open(marker, FileAccess.WRITE).store_string("1")
+	return true
+
+
+func _launch() -> void:
+	var plan := launch_override if not launch_override.is_empty() else launch_plan()
+	launch_count += 1
+	launch_times.append(now_msec())
+	if plan.is_empty():
+		_failure("no_launch")
+		return
+	_phase = Phase.LAUNCHING
+	_spawned = {}
+	var argv := scrubbed(plan)
+	var shell := scrub_shell()
+	_spawn_task = WorkerThreadPool.add_task(func(): _spawned = OS.execute_with_pipe(shell, argv, false))
+
+
+## bash where it exists (macOS and Ubuntu both ship /bin/bash), else /bin/sh.
+static func scrub_shell() -> String:
+	return "/bin/bash" if FileAccess.file_exists("/bin/bash") else "/bin/sh"
+
+
+## The arguments for the scrub shell that run `plan` with only stdin, stdout, stderr.
+static func scrubbed(plan: Dictionary) -> PackedStringArray:
+	var argv := PackedStringArray(["-c", FD_SCRUB, "sh", plan["bin"]])
+	argv.append_array(plan["args"])
+	return argv
+
+
+func _on_spawned(proc: Dictionary) -> void:
+	_phase = Phase.IDLE
+	if proc.is_empty():
+		_failure("no_launch")
+		return
+	_pipe = proc["stdio"]
+	_stderr = proc["stderr"]
+	_pid = proc["pid"]
+	child_pid = _pid
+	_line_bytes = PackedByteArray()
+	sent_count = 0
+	hello_reply = {}
+	_phase = Phase.HANDSHAKE
+	_deadline = now_msec() + handshake_ms
+	_write(SimBridge.encode({"v": 1, "type": "hello", "want": {"major": PROTO_MAJOR}}))
+
+
+# ------------------------------------------------------------------ relay
+
+func _has_queued() -> bool:
+	return not (_queues[0].is_empty() and _queues[1].is_empty() and _queues[2].is_empty())
+
+
+func _send_next() -> void:
+	for q in _queues:
+		if not q.is_empty():
+			_in_flight = q.pop_front()
+			break
+	var msg := {"v": 1, "type": "request"}
+	for k in _in_flight:
+		if k != "v" and k != "type":
+			msg[k] = _in_flight[k]
+	_phase = Phase.BUSY
+	_deadline = now_msec() + int(timeout_ms[_in_flight["kind"]])
+	sent_count += 1
+	sent_total += 1
+	_write(SimBridge.encode(msg))
+
+
+## The service treats a blank line as end of input, so none is ever sent.
+func _write(line: String) -> void:
+	if line.strip_edges() == "" or line.find("\n") >= 0:
+		push_error("AiBridge: refusing to send a blank or multi-line message")
+		return
+	if _pipe == null or not _pipe.is_open():
+		return
+	_pipe.store_string(line + "\n")
+	_pipe.flush()
+
+
+func _read_stdout() -> bool:
+	var got := false
+	for i in MAX_CHUNKS_PER_POLL:
+		if _pid < 0:
+			break
+		var chunk := _pipe.get_buffer(READ_CHUNK)
+		if chunk.is_empty():
+			break
+		got = true
+		for line in assemble(chunk):
+			if _pid < 0:
+				break
+			_on_line(line)
+	return got
+
+
+func _drain_stderr() -> void:
+	for i in MAX_CHUNKS_PER_POLL:
+		var chunk := _stderr.get_buffer(READ_CHUNK)
+		if chunk.is_empty():
+			return
+		stderr_tail = (stderr_tail + chunk.get_string_from_utf8()).right(2048)
+
+
+func _on_line(line: String) -> void:
+	if not line.begins_with("{"):
+		return # stray output; the service's messages are JSON objects
+	var json := JSON.new()
+	var msg = json.data if json.parse(line) == OK else null
+	if typeof(msg) != TYPE_DICTIONARY:
+		_fault("bad_response")
+		return
+	match _phase:
+		Phase.HANDSHAKE:
+			var proto = msg.get("proto")
+			if msg.get("type") == "hello" and typeof(proto) == TYPE_DICTIONARY \
+					and SimBridge._is_count(proto.get("major")) and int(proto["major"]) == PROTO_MAJOR:
+				hello_reply = msg
+				_phase = Phase.READY
+			else:
+				_fault("fatal" if msg.get("type") == "fatal" else "bad_proto")
+		Phase.BUSY:
+			if msg.get("type") == "result" and msg.get("req") == _in_flight["req"] \
+					and (msg.get("status") == "ok" or msg.get("status") == "error"):
+				_in_flight = {}
+				_phase = Phase.READY
+				_consecutive = 0
+				_emit(msg)
+			else:
+				_fault("bad_response")
+		_:
+			_fault("bad_response") # nothing was asked
+
+
+# ------------------------------------------------------------------ supervision
+
+## Per-kind timeout: kill, cancel the request, restart when the next one comes.
+func _timeout() -> void:
+	var r := _in_flight
+	_in_flight = {}
+	_kill()
+	_cancel(r, "timeout")
+	_failure("timeout", false)
+
+
+## Crash, bad handshake or garbled reply: kill, keep the open request (it is
+## resent first after the restart), restart after the backoff.
+func _fault(code: String) -> void:
+	if not _in_flight.is_empty():
+		_queues[PRIORITY[_in_flight["kind"]]].push_front(_in_flight)
+		_in_flight = {}
+	_kill()
+	_failure(code)
+
+
+func _failure(code: String, backoff: bool = true) -> void:
+	last_error = code
+	var now := now_msec()
+	failure_times.append(now)
+	var recent := 0
+	for t in failure_times:
+		if now - t < FAIL_WINDOW_MS:
+			recent += 1
+	_consecutive += 1
+	if recent >= FAIL_LIMIT:
+		_go_down()
+	else:
+		_next_launch_at = now + (backoff_delay(_consecutive) if backoff else 0)
+
+
+func _go_down() -> void:
+	service_down = true
+	_kill()
+	if not _in_flight.is_empty():
+		_cancel(_in_flight, "service_down")
+		_in_flight = {}
+	for q in _queues:
+		for r in q:
+			_cancel(r, "service_down")
+		q.clear()
+	service_down_toast.emit(TOAST_TEXT)
+
+
+func _cancel(r: Dictionary, reason: String) -> void:
+	_emit({"type": "cancel", "req": r["req"], "kind": r["kind"], "reason": reason})
+
+
+func _emit(o: Dictionary) -> void:
+	outcomes.append(o)
+	outcome.emit(o)
+
+
+## Kill without waiting: OS.kill reaps (a blocking waitpid), so it runs on
+## the worker pool.
+func _kill() -> void:
+	if _pid < 0:
+		return
+	var pid := _pid
+	_close_pipes()
+	if _alive(pid):
+		_kill_tasks.append(WorkerThreadPool.add_task(func(): OS.kill(pid)))
+
+
+func _close_pipes() -> void:
+	if _pipe != null and _pipe.is_open():
+		_pipe.close()
+	if _stderr != null and _stderr.is_open():
+		_stderr.close()
+	_pipe = null
+	_stderr = null
+	_pid = -1
+	_phase = Phase.IDLE
+
+
+func _reap() -> void:
+	var busy: Array = []
+	for t in _kill_tasks:
+		if WorkerThreadPool.is_task_completed(t):
+			WorkerThreadPool.wait_for_task_completion(t)
+		else:
+			busy.append(t)
+	_kill_tasks = busy
+
+
+## OS.is_process_running reaps an exited child, and asking again about a
+## reaped pid is an error, so the answer "gone" is remembered.
+var _gone: Dictionary = {}
+func _alive(pid: int) -> bool:
+	if _gone.has(pid):
+		return false
+	if OS.is_process_running(pid):
+		return true
+	_gone[pid] = true
+	return false
