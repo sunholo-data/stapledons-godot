@@ -1,0 +1,142 @@
+module stapledons/sim/tools/extract_test
+
+-- Tests for sim/tools/extract.ail (ported from the former tools/test_extract.py;
+-- same assertions, same committed real-byte fixtures in tools/fixtures/).
+-- `make extract-test`:
+--   extractVm      pure checks on the strict VM, compared with the interpreter;
+--   extractFixtures the fixture checks (needs FS, so --bytecode), compared with the interpreter.
+import ./extract (number, fmt6, distanceLy, icrsToGalactic, parseCns5, parseGcns, buildCsv, Row)
+import std/string (concat, join, split, substring, trim, contains, startsWith, length, stringToFloat)
+import std/list (map, filter, foldl, length as len, nth_or)
+import std/option (Option, Some, None)
+import std/result (Ok, Err)
+import std/math (sqrt, atan2, asin, PI)
+import std/fs (readFile)
+
+pure func near(a: float, b: float, tol: float) -> bool = a - b <= tol && b - a <= tol
+pure func isNone(o: Option[float]) -> bool = match o { None => true, Some(_) => false }
+pure func failed(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func verdict(tag: string, bad: [string]) -> string =
+  match bad { [] => concat([tag, "-ok"]), _ => concat([tag, "-BAD: ", join(",", bad)]) }
+
+-- ---- pure, strict VM ----------------------------------------------------------
+
+pure func checkNumber() -> bool =
+  isNone(number("")) && isNone(number("   ")) && isNone(number(" - ")) && isNone(number("abc")) &&
+  isNone(number("nan")) && isNone(number("inf")) &&
+  (match number("  754.81 ") { Some(v) => v == 754.81, None => false })
+
+-- printf "%.6f" reference strings (Python 3, 2026-10-02), including the
+-- binary ties that a naive round(v * 1e6) gets wrong (15.6044655, 0.9007665)
+pure func checkFmt6() -> bool =
+  fmt6(15.6044655) == "15.604465" && fmt6(0.0000005) == "0.000000" && fmt6(0.0000015) == "0.000002" &&
+  fmt6(0.0000025) == "0.000003" && fmt6(0.0 - 0.0000005) == "-0.000000" &&
+  fmt6(123456.1234565) == "123456.123457" && fmt6(1.0) == "1.000000" &&
+  fmt6(0.0 - 17.098155) == "-17.098155" && fmt6(0.00000025) == "0.000000" &&
+  fmt6(4.321) == "4.321000" && fmt6(0.9007665) == "0.900767"
+
+pure func checkParallax() -> bool =
+  isNone(distanceLy(None)) && isNone(distanceLy(Some(0.0))) && isNone(distanceLy(Some(0.0 - 1.0))) &&
+  (match distanceLy(Some(754.8099975585938)) { Some(d) => near(d, 4.3210, 0.001), None => false })
+
+-- the galactic centre and north galactic pole land on +x and +z
+pure func checkMatrix() -> bool =
+  (match icrsToGalactic(266.40499, 0.0 - 28.93617) { (x, y, z) => near(x, 1.0, 1.0e-5) && near(y, 0.0, 1.0e-4) && near(z, 0.0, 1.0e-4) }) &&
+  (match icrsToGalactic(192.85948, 27.12825) { (x, y, z) => near(z, 1.0, 1.0e-6) })
+
+export pure func extractVm(n: int) -> string = verdict("extract-vm", failed([
+  ("number", checkNumber()), ("fmt6", checkFmt6()), ("parallax", checkParallax()), ("matrix", checkMatrix())]))
+
+-- ---- fixtures (FS) --------------------------------------------------------------
+
+pure func distLB(r: Row) -> (float, float, float) {
+  let d = sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
+  let l0 = atan2(r.y, r.x) * 180.0 / PI();
+  (d, if l0 < 0.0 then l0 + 360.0 else l0, asin(r.z / d) * 180.0 / PI())
+}
+
+pure func rowAt(rows: [Row], i: int) -> Row =
+  nth_or(rows, i, { id: "", x: 0.0, y: 0.0, z: 0.0, g: None, bprp: None, wd: 0 - 1 })
+
+pure func field(f: string) -> float = match stringToFloat(trim(f)) { Some(v) => v, None => 0.0 - 999.0 }
+
+pure func csvLines(kind: string, text: string) -> [string] = match buildCsv(kind, text) {
+  Ok((csv, _, _)) => split(csv, "\n"), Err(_) => []
+}
+
+-- every CSV id appears verbatim in its raw line (19-digit ids don't survive a float)
+pure func idsVerbatim(csv: [string], raw: string) -> bool {
+  let body = filter(\l. l != "", match csv { [_, ...rest] => rest, [] => [] });
+  let rawLines = filter(\l. trim(l) != "", split(raw, "\n"));
+  len(body) == len(rawLines) && foldl(\ok p. ok && p, true, map(\i. {
+      let id = nth_or(split(nth_or(body, i, ""), ","), 0, "?");
+      let bare = if startsWith(id, "CNS5:") then substring(id, 5, length(id)) else id;
+      contains(nth_or(rawLines, i, ""), bare)
+    }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]))
+}
+
+func fx(dir: string, name: string) -> string ! {FS} = readFile(concat([dir, "/", name]))
+
+export func extractFixtures(dir: string) -> string ! {FS} {
+  let alpha = fx(dir, "cns5_alpha_cen.dat");
+  let cHead = fx(dir, "cns5_head.dat");
+  let gHead = fx(dir, "gcns_head.dat");
+  let bpBlank = fx(dir, "cns5_bp_blank_rp_set.dat");
+  let nullPlx = fx(dir, "cns5_null_plx.dat");
+  let gMiss = fx(dir, "gcns_missing_phot.dat");
+  let a = parseCns5(alpha);
+  let ar = rowAt(a.rows, 0);
+  let gLine = nth_or(split(gHead, "\n"), 0, "");
+  let g1 = parseGcns(concat([gLine, "\n"]));
+  let gr = rowAt(g1.rows, 0);
+  let wd = \name. match parseGcns(fx(dir, name)) { p => (p.skipped, map(\r. r.wd, p.rows)) };
+  let both = parseCns5(concat([alpha, cHead]));
+  let bp = parseCns5(bpBlank);
+  let plx = parseCns5(concat([cHead, nullPlx]));
+  let cCsv = csvLines("cns5", cHead);
+  let gCsv = csvLines("gcns", gHead);
+  let first = nth_or(split(cHead, "\n"), 0, "");
+  let f1 = split(nth_or(cCsv, 1, ""), ",");
+  let gm = parseGcns(gMiss);
+  verdict("extract-fixtures", failed([
+    -- alpha Cen pins the pc->ly factor and the rotation matrix
+    ("alpha-rows", a.skipped == 0 && len(a.rows) == 1),
+    ("alpha-distance", match distLB(ar) { (d, _, _) => near(d, 4.3210, 0.02) }),
+    ("alpha-direction", match distLB(ar) { (_, l, b) => near(l, 315.74, 0.5) && near(b, 0.0 - 0.684, 0.5) }),
+    -- GCNS row against its own galactic x50/y50/z50 (pc, bytes 304-315 / 343-354 / 382-393)
+    ("gcns-xyz", g1.skipped == 0 && len(g1.rows) == 1 &&
+      near(gr.x / (field(substring(gLine, 303, 315)) * 3.261563777), 1.0, 0.05) &&
+      near(gr.y / (field(substring(gLine, 342, 354)) * 3.261563777), 1.0, 0.05) &&
+      near(gr.z / (field(substring(gLine, 381, 393)) * 3.261563777), 1.0, 0.05)),
+    -- WDprob > 0.5, with the one-byte-shift boundary rows
+    ("wd-0924", wd("gcns_wd.dat") == (0, [1])),
+    ("wd-1000", wd("gcns_wd_1p000.dat") == (0, [1])),
+    ("wd-0500", wd("gcns_wdprob_050.dat") == (0, [0])),
+    ("wd-0506", wd("gcns_wdprob_0506.dat") == (0, [1])),
+    ("cns5-never-wd", foldl(\ok r. ok && r.wd == 0, true, parseCns5(cHead).rows)),
+    -- missing photometry is never defaulted
+    ("missing-phot", isNone(rowAt(both.rows, 0).g) && isNone(rowAt(both.rows, 0).bprp) &&
+      isNone(rowAt(both.rows, 3).g) && isNone(rowAt(both.rows, 3).bprp)),
+    ("missing-phot-csv", match split(nth_or(csvLines("cns5", alpha), 1, ""), ",") { [_, _, _, _, g, c, _] => g == "" && c == "", _ => false }),
+    ("bprp-needs-both", bp.skipped == 0 && len(bp.rows) == 1 && !isNone(rowAt(bp.rows, 0).g) && isNone(rowAt(bp.rows, 0).bprp) &&
+      nth_or(split(nth_or(csvLines("cns5", bpBlank), 1, ""), ","), 5, "?") == ""),
+    ("gcns-partial-phot", gm.skipped == 0 && len(gm.rows) == 1 && isNone(rowAt(gm.rows, 0).g) && isNone(rowAt(gm.rows, 0).bprp)),
+    -- parallax skip count
+    ("plx-skip", len(plx.rows) == 20 && plx.skipped == 1 &&
+      foldl(\ok r. ok && (match distLB(r) { (d, _, _) => d > 0.0 && d < 10000.0 }), true, plx.rows)),
+    -- schema, ids verbatim, column order
+    ("cns5-schema", nth_or(cCsv, 0, "") == "id,x,y,z,G,BPRP,wd" && len(filter(\l. l != "", cCsv)) == 21 &&
+      foldl(\ok l. ok && (l == "" || len(split(l, ",")) == 7), true, cCsv)),
+    ("cns5-first-id", nth_or(f1, 0, "") == "1871118140493076224" && trim(substring(first, 27, 46)) == "1871118140493076224"),
+    ("cns5-ids-verbatim", idsVerbatim(cCsv, cHead)),
+    ("cns5-columns", near(field(nth_or(f1, 4, "")), field(substring(first, 361, 371)), 0.000001) &&
+      near(field(nth_or(f1, 5, "")), field(substring(first, 394, 404)) - field(substring(first, 427, 437)), 0.000001)),
+    ("gcns-schema", nth_or(gCsv, 0, "") == "id,x,y,z,G,BPRP,wd" && len(filter(\l. l != "", gCsv)) == 21 &&
+      nth_or(split(nth_or(gCsv, 1, ""), ","), 0, "") == "2334666126716440064" && idsVerbatim(gCsv, gHead)),
+    ("cns5-id-fallback", rowAt(parseCns5(cHead).rows, 2).id == "CNS5:5240"),
+    -- loud failure: a non-empty input that parses to nothing is refused
+    ("empty-refused", trim(nullPlx) != "" && match buildCsv("cns5", nullPlx) { Err(_) => true, Ok(_) => false }),
+    ("empty-input-ok", match buildCsv("gcns", "") { Ok((_, n, s)) => n == 0 && s == 0, Err(_) => false })
+  ]))
+}

@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model extract-test extract golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,10 +19,21 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm extract-test   ## everything that runs without a GPU window
 
-tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
-	python3 tools/test_extract.py
+extract-test:      ## VizieR parser (sim/tools/extract.ail): pure checks strict VM = interpreter; real-byte fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry extractVm --args-json 0 sim/tools/extract_test.ail > $(SCRATCH)/extract-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry extractVm --args-json 0 sim/tools/extract_test.ail > $(SCRATCH)/extract-interp.txt
+	@cmp $(SCRATCH)/extract-vm.txt $(SCRATCH)/extract-interp.txt && test "$$(cat $(SCRATCH)/extract-vm.txt)" = "extract-vm-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry extractFixtures --args-json '"tools/fixtures"' sim/tools/extract_test.ail > $(SCRATCH)/extract-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry extractFixtures --args-json '"tools/fixtures"' sim/tools/extract_test.ail > $(SCRATCH)/extract-fx-interp.txt
+	@cmp $(SCRATCH)/extract-fx-vm.txt $(SCRATCH)/extract-fx-interp.txt && test "$$(cat $(SCRATCH)/extract-fx-vm.txt)" = "extract-fixtures-ok"
+	@echo "extract-test: $$(cat $(SCRATCH)/extract-vm.txt), $$(cat $(SCRATCH)/extract-fx-vm.txt) (VM = interpreter)"
+
+extract:           ## data/raw/{cns5,table1c}.dat -> data/raw/{cns5,gcns}.csv (AILANG; GCNS takes ~4.5 min on the VM)
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
+	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail
 
 physics:           ## CPU physics reference vs known values
 	$(GODOT) --headless --path . --script tests/test_physics.gd
