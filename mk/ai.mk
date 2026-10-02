@@ -2,11 +2,11 @@
 # Included from the Makefile by its last line; every AI target lives here so the
 # sprint changes one Makefile line. Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
+.PHONY: ai-loopback ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
 
 test: ai-test
 
-ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter replay-compat ai-godot   ## AI foundation checks that run without a GPU window or a key
+ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter ai-loopback replay-compat ai-godot   ## AI foundation checks that run without a GPU window or a key
 
 # AC7 (part): the pure marker grammar runs entirely on the bytecode VM and prints
 # byte for byte what the interpreter prints; its last line is markers-ok. The
@@ -139,6 +139,25 @@ ai-adapter:        ## AC9: adapters under --ai-stub (no Net), parsers on fixture
 	@test ! -e $(AI_A)/live || { echo "a refused live start created its cache"; exit 1; }
 	@echo "ai-adapter: live refused before any call without GOOGLE_API_KEY, without OPENROUTER_API_KEY, without both, and without AI_LIVE=1 (caps IO,FS,Env; keys cleared)"
 
+# AI.7 (carried from the AI.5 evaluation): the std/net halves of the adapters, OpenRouter
+# chat completions and Gemini TTS, against tests/fixtures/ai_loopback.py on 127.0.0.1 with fake
+# keys in the env (cleared of anything real) and --caps IO,FS,Net,Env --net-allow-localhost
+# --net-allow-http: no AI capability, no provider host allowed. The harness checks the URL paths,
+# the Bearer and x-goog-api-key headers, the bodies, one retry after the "Wait" fixture, and
+# that neither key reached the lane's stdout, stderr or any cache file (blobs, index, usage).
+AI_L := $(SCRATCH)/ai-loopback
+AI_FAKE_G := loopback-fake-gemini-7f3a
+AI_FAKE_O := loopback-fake-openrouter-c41d
+ai-loopback:       ## AI.5 leftover: OpenRouter + TTS POST halves against a loopback fixture server, fake keys never logged
+	@rm -rf $(AI_L) && mkdir -p $(AI_L)
+	@python3 tests/fixtures/ai_loopback.py serve $(AI_L) & \
+	for i in $$(seq 100); do [ -f $(AI_L)/port ] && break; sleep 0.1; done; \
+	printf '{"routing":"data/ai/routing.json","fixtures":"ai/fixtures","requests":"tests/ai/requests.ndjson","out":"$(AI_L)","base":"http://127.0.0.1:%s"}' "$$(cat $(AI_L)/port)" > $(AI_L)/lane.json; \
+	env -u AI_LIVE GOOGLE_APPLICATION_CREDENTIALS=/nonexistent GOOGLE_API_KEY=$(AI_FAKE_G) OPENROUTER_API_KEY=$(AI_FAKE_O) \
+	  $(AILANG) run --quiet --package-dir ai --caps IO,FS,Net,Env --net-allow-localhost --net-allow-http --entry loopback --args-file $(AI_L)/lane.json ai/loopback_lane.ail > $(AI_L)/lane.out 2> $(AI_L)/lane.err; rc=$$?; \
+	touch $(AI_L)/stop; wait; cat $(AI_L)/lane.out | cut -c1-160; test $$rc = 0 && test "$$(tail -1 $(AI_L)/lane.out)" = "loopback-done"
+	@python3 tests/fixtures/ai_loopback.py check $(AI_L) $(AI_FAKE_G) $(AI_FAKE_O)
+
 ai-adapter-record: ## regenerate tests/ai/adapter.golden.txt and the prompt goldens (a reviewed diff; never in make test)
 	$(ai_adapter_run)
 	@cp $(AI_A)/lane.out tests/ai/adapter.golden.txt; mkdir -p tests/ai/prompts
@@ -163,7 +182,11 @@ ai-mutants:        ## AI.4, AI.5: route, key, stub, cache order, acts order, bud
 	  'wire.ail@"no_key", "text_only", "budget"@"no_key", "budget"@AI.4 ai/1 codecs round-trip every fixture both ways@wire_test.ail' \
 	  'reply.ail@else if c.noNumerals && anyDigit(body) then Some("numeral")@else if false then Some("numeral")@AI.5 screen: grammar, palette, brackets, digits, display length@reply_test.ail' \
 	  'prompt.ail@"Describe and feel; never judge the player'"'"'s choices or say whether a decision was right or wrong."@"Describe and feel."@AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and the cap@prompt_test.ail' \
-	  'service.ail@else if !aiLive then Some(@else if false then Some(@AI.5 live refused without its key, without any key, or without AI_LIVE=1@live_test.ail'; do \
+	  'service.ail@else if !aiLive then Some(@else if false then Some(@AI.5 live refused without its key, without any key, or without AI_LIVE=1@live_test.ail' \
+	  'provider.ail@{ acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: after }@{ acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: l }@AI.5 a failed live call is charged and logged before its error@stub_test.ail' \
+	  'spend.ail@usd * 1000000000.0 + 0.5@usd * 1000000000.0@AI.5 prices and ceilings round to the nearest nano-dollar@spend_test.ail' \
+	  'spend.ail@x * scale + 0.5@x * scale@AI.5 prices and ceilings round to the nearest nano-dollar@spend_test.ail' \
+	  'reply.ail@ || contains(s, "7")@@AI.5 screen: grammar, palette, brackets, digits, display length@reply_test.ail'; do \
 	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; rest=$${rest#*@}; name=$${rest%%@*}; tfile=$${rest#*@}; \
 	  rm -rf $(MUTANT_DIR) && mkdir -p $(MUTANT_DIR) && cp -R ai $(MUTANT_DIR)/ai; \
 	  FROM="$$from" TO="$$to" perl -0pi -e 's/\Q$$ENV{FROM}\E/$$ENV{TO}/ or die "anchor not found: $$ENV{FROM}\n"' $(MUTANT_DIR)/ai/$$file; \
@@ -207,8 +230,11 @@ AI3_REFUSALS := AC3 record refusals fire on their fixtures and close the request
 record-mutants:    ## AI.3: voice variant compared, no numeral check, 65 lines, no dedupe, offsets not strict; each fails a named test
 	@set -e; A=$$(command -v $(AILANG)); case "$$A" in /*) ;; *) A="$$PWD/$$A";; esac; \
 	for m in \
-	  'if want.kind == "voice" || want.kind == "text" then getString(k, "variant") != None else@if false then true else@$(AI3_REFUSALS)' \
+	  'if want.kind == "voice" then getString(k, "variant") != None else@if false then true else@$(AI3_REFUSALS)' \
 	  'c.noNumerals && hasDigit(r.body)@false@$(AI3_REFUSALS)' \
+	  'contains(s, "5") || @@$(AI3_REFUSALS)' \
+	  ' || contains(s, "9")@@$(AI3_REFUSALS)' \
+	  'segments: x.segments})}, _ => st }@segments: x.segments})}, _ => {st | lines: keepLine(st.lines, {req: o.req, entityId: o.key.entityId, segments: []})} }@ai.lines keeps the last 64 accepted lines; ai_stale past them' \
 	  'maxLines() -> int = 64@maxLines() -> int = 65@ai.lines keeps the last 64 accepted lines; ai_stale past them' \
 	  'Some(es) => dedupe(es, [])@Some(es) => es@ai_open refusal order holds with a full queue; emotions deduplicated' \
 	  'v > prev && v < dur@v >= prev && v < dur@$(AI3_REFUSALS)'; do \

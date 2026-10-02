@@ -250,12 +250,16 @@ pure func recLength() -> bool =
   acceptsIn(openW(open("text", "archive", "archive")), txt("1", repeat("b", 600)), "1", join(":", ["1", "text", repeat("b", 600), "1"])) &&
   closesIn(openW(open("text", "news", "medic")), txt("1", repeat("n", 281)), "1", "ai_length") &&
   acceptsIn(openW(open("text", "news", "medic")), txt("1", repeat("n", 280)), "1", join(":", ["1", "text", repeat("n", 280), "1"]))
+pure func everyDigitRefused(w: World, ds: [string]) -> bool =
+  match ds { [] => true, d :: r => closesIn(w, txt("1", join("", ["{loving}Deck ", d, " is quiet."])), "1", "ai_numeral") && everyDigitRefused(w, r) }
 pure func recText() -> bool {
   let w = medicText();
   -- ai_numeral: any ASCII digit, every purpose (D-21)
   closesIn(w, txt("1", "{loving}Year 2041."), "1", "ai_numeral") && closesIn(openW(open("text", "archive", "archive")), txt("1", "Founded in 1"), "1", "ai_numeral") &&
   closesIn(openW(open("text", "news", "medic")), txt("1", "0 days"), "1", "ai_numeral") &&
   acceptsIn(w, txt("1", "{loving}Year two thousand and forty-one."), "1", "1:text:Year two thousand and forty-one.:1") &&
+  -- one body per digit, so dropping any one of 0-9 from the check fails (AI.3 evaluation)
+  everyDigitRefused(w, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]) && closesIn(w, txt("1", "{loving}Five six 56789."), "1", "ai_numeral") &&
   -- ai_markup: the grammar (b), including a segment of invisible characters only
   closesIn(w, txt("1", "{joyful}Hi"), "1", "ai_markup") && closesIn(w, txt("1", "[sigh] Hi"), "1", "ai_markup") &&
   closesIn(w, txt("1", "Hi{loving}"), "1", "ai_markup") && closesIn(w, txt("1", "{loving}​"), "1", "ai_markup") && closesIn(w, txt("1", ""), "1", "ai_markup") &&
@@ -341,7 +345,7 @@ pure func checkAiHash() -> bool =
 -- ai.lines: the last 64 accepted text lines (oldest first). A voice open
 -- naming an evicted line is ai_stale; a voice request keeps the segment
 -- count it opened with, so its record still validates after the line has
--- left ai.lines. Refused text and media never join ai.lines.
+-- left ai.lines. Refused text and any media (an accepted portrait too) never join ai.lines.
 pure func pairs(i: int, n: int) -> [Intent] =
   if i > n then [] else IAiOpen(textOpen()) :: txt(intToStr(i), "{loving}Hello {grieving}there") :: pairs(i + 1, n)
 pure func checkAiLines() -> bool {
@@ -349,11 +353,11 @@ pure func checkAiLines() -> bool {
   let b = run(a, [IAiOpen(voiceOpen("1")), IAiOpen(voiceOpen("64"))]);
   let c = run(b.world, [IAiOpen(textOpen()), txt("67", "Fresh line.")]);
   let d = run(c.world, [IAiOpen(voiceOpen("1")), IAiOpen(voiceOpen("2")), media("65", "voice", voice(q("v"), "900", "[0,450]"))]);
-  let r = run(c.world, [IAiOpen(textOpen()), txt("68", "{joyful}no"), IAiOpen(portraitOpen())]);
+  let r = run(c.world, [IAiOpen(textOpen()), txt("68", "{joyful}no"), IAiOpen(portraitOpen()), media("69", "portrait", desc(pkey(), img()))]);
   len(a.ai.lines) == 64 && a.ai.lastReq == 64 && strsEq(reasons(b.refused), []) && strsEq(reqIds(b.events), ["65", "66"]) &&
   len(c.world.ai.lines) == 64 && (match c.world.ai.lines { x :: _ => x.req == 2, [] => false }) &&
   strsEq(reasons(d.refused), ["0:ai_stale"]) && strsEq(reqIds(d.events), ["68"]) && strsEq(acceptedOf(d.events), ["65:media:voice"]) &&
-  len(r.world.ai.lines) == 64 && strsEq(map(\l. intToStr(l.req), r.world.ai.lines), map(\l. intToStr(l.req), c.world.ai.lines)) &&
+  strsEq(acceptedOf(r.events), ["69:media:portrait"]) && len(r.world.ai.lines) == 64 && strsEq(map(\l. intToStr(l.req), r.world.ai.lines), map(\l. intToStr(l.req), c.world.ai.lines)) &&
   (match a.ai.lines { x :: _ => x.entityId == "medic" && len(x.segments) == 2, [] => false })
 }
 

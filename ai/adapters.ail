@@ -50,18 +50,22 @@ func geminiTry(j: Job, n: int, u: Units) -> Attempt ! {AI @limit=3} =
   }
 export func geminiText(j: Job) -> Attempt ! {AI @limit=3} = geminiTry(j, 1, noUnits())
 
--- OpenRouter text: chat completions over std/net.
-pure func orUrl() -> string = "https://openrouter.ai/api/v1/chat/completions"
-func orTry(j: Job, key: string, n: int, u: Units) -> Attempt ! {Net} =
-  match httpRequest("POST", orUrl(), [{ name: "Authorization", value: concat(["Bearer ", key]) }, { name: "Content-Type", value: "application/json" }],
+-- OpenRouter text: chat completions over std/net. The base is a parameter
+-- only so `make ai-loopback` can point the same code at a local fixture
+-- server; the live service always uses openRouterBase().
+export pure func openRouterBase() -> string = "https://openrouter.ai"
+pure func orUrl(base: string) -> string = concat([base, "/api/v1/chat/completions"])
+func orTry(base: string, j: Job, key: string, n: int, u: Units) -> Attempt ! {Net} =
+  match httpRequest("POST", orUrl(base), [{ name: "Authorization", value: concat(["Bearer ", key]) }, { name: "Content-Type", value: "application/json" }],
       openRouterBody(j.hop.model, j.prompt, textCap(j.r))) {
     Err(_) => { outcome: Err("provider_error"), units: u, tries: n },
     Ok(resp) => match parseOpenRouter(resp.body) {
       Err(code) => { outcome: Err(code), units: u, tries: n },
-      Ok(rp) => match next(j, rp, u, n) { Ok(a) => a, Err(u2) => orTry(j, key, n + 1, u2) }
+      Ok(rp) => match next(j, rp, u, n) { Ok(a) => a, Err(u2) => orTry(base, j, key, n + 1, u2) }
     }
   }
-export func openRouterText(j: Job, key: string) -> Attempt ! {Net} = orTry(j, key, 1, noUnits())
+export func openRouterTextAt(base: string, j: Job, key: string) -> Attempt ! {Net} = orTry(base, j, key, 1, noUnits())
+export func openRouterText(j: Job, key: string) -> Attempt ! {Net} = openRouterTextAt(openRouterBase(), j, key)
 
 -- Image: std/ai.callImageBase64 with the bound Gemini image model. It
 -- returns a string, not a Result: a provider failure stops the process
@@ -70,18 +74,20 @@ export func geminiImage(j: Job) -> Result[Image, string] ! {AI @limit=1} = parse
 
 -- TTS: one generateContent call per segment (D-20 OQ7), each with the
 -- emotion's style line and a token cap; complete speech only.
-pure func ttsUrl(model: string) -> string = concat(["https://generativelanguage.googleapis.com/v1beta/models/", model, ":generateContent"])
-func speak(j: Job, key: string, voice: string, styles: [Style], ss: [Seg], acc: [bytes], u: Units) -> Spoken ! {Net} =
+export pure func geminiBase() -> string = "https://generativelanguage.googleapis.com"
+pure func ttsUrl(base: string, model: string) -> string = concat([base, "/v1beta/models/", model, ":generateContent"])
+func speak(base: string, j: Job, key: string, voice: string, styles: [Style], ss: [Seg], acc: [bytes], u: Units) -> Spoken ! {Net} =
   match ss {
     [] => (match assemble(acc) { Ok(c) => { outcome: Ok(c), units: u }, Err(_) => { outcome: Err("bad_output"), units: u } }),
-    s :: rest => match httpRequest("POST", ttsUrl(j.hop.model), [{ name: "x-goog-api-key", value: key }, { name: "Content-Type", value: "application/json" }],
+    s :: rest => match httpRequest("POST", ttsUrl(base, j.hop.model), [{ name: "x-goog-api-key", value: key }, { name: "Content-Type", value: "application/json" }],
         ttsBody(s.text, voice, styleFor(styles, s.emotion), ttsCap(s))) {
       Err(_) => { outcome: Err("provider_error"), units: u },
       Ok(resp) => match parseTts(resp.body, ttsCap(s)) {
         Err(code) => { outcome: Err(code), units: u },
-        Ok(sp) => speak(j, key, voice, styles, rest, acc ++ [sp.pcm], plus(u, sp.tokensIn, sp.tokensOut))
+        Ok(sp) => speak(base, j, key, voice, styles, rest, acc ++ [sp.pcm], plus(u, sp.tokensIn, sp.tokensOut))
       }
     }
   }
-export func geminiVoice(j: Job, key: string, voice: string, styles: [Style]) -> Spoken ! {Net} =
-  speak(j, key, voice, styles, match j.r.segments { Some(ss) => ss, None => [] }, [], noUnits())
+export func geminiVoiceAt(base: string, j: Job, key: string, voice: string, styles: [Style]) -> Spoken ! {Net} =
+  speak(base, j, key, voice, styles, match j.r.segments { Some(ss) => ss, None => [] }, [], noUnits())
+export func geminiVoice(j: Job, key: string, voice: string, styles: [Style]) -> Spoken ! {Net} = geminiVoiceAt(geminiBase(), j, key, voice, styles)
