@@ -97,6 +97,23 @@ Only the **unattended** loop is barred from resolving rows itself. This is
 6. **Determinism.** The simulation has no hidden state. Given the same seed and
    inputs, it must produce byte-identical output.
 
+## Python
+
+**The game is AILANG + Godot.** Simulation, physics, data pipelines and offline
+tools are AILANG; image, file and GPU I/O is Godot (a headless `--script` is
+fine); shell is for downloads and glue. Python is allowed only as:
+
+- an **oracle**: an independent reference in a second language, which catches
+  bugs the VM and the interpreter would share;
+- a **harness**: glue that drives AILANG or Godot in a test and checks evidence;
+- a **spike**: throwaway exploration, never a pipeline step; port it or delete it.
+
+Every tracked `*.py` is listed with its role in `tools/python-allowlist.txt`,
+and `make python-guard` (part of `make test`) fails on anything unlisted. A new
+pipeline step in Python is a defect: write it in AILANG, and when AILANG can't
+do it, that's an upstream gap to report, not a reason to fall back. Role `port`
+marks the remaining Python pipeline steps awaiting their AILANG port.
+
 ## AILANG
 
 - **Report every AILANG bug or DX problem** with `ailang messages` to inbox
