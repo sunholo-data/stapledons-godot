@@ -68,6 +68,8 @@ weekly. Every iteration posts its report there.
 The newest 3 STATUS stamps live here; older ones move to
 `stapledon-mission-status-archive.md`.
 
+## STATUS 2026-10-02: iteration 9, duplicate M2 landing draft withdrawn after attended PR40; Sonnet review 91/100; clause2 MET by attended work,1/3/4 UNMET,5 ongoing; goal unmoved; next M4 plan then approval; no open decisions.
+
 ## STATUS 2026-10-02: attended, M2 journey core LANDED (sprint R1-M2-JOURNEY, PRs #22–#35 + #37); clause 2 MET
 
 - **M2 ✅**: 10 milestones, each independently evaluated: M2.0 96 (Fable;
@@ -87,25 +89,6 @@ The newest 3 STATUS stamps live here; older ones move to
   ailang#1486 fix ships in a pin, transit/hold polish.
 
 ## STATUS 2026-10-01: iteration 8, T2 F32 records LANDED PR#19 `6efcf53`; Sonnet5.5 PASS92/100, zero blockers; M1 7/12 +T1/T2, full M1.2b open; clauses1–4 UNMET,5 ongoing; nextT3 writer/sidecars thenT4 integration; no decisions, harness0/9.
-
-## STATUS 2026-10-01: iteration 7, M1.2b-T1 LANDED (pure catalogue transform)
-
-- **T1 ✅**: PR #14, merge `f4dd9bc`, complete merge CI green. Package-only
-  normal/WD transform, missing/clamped flags and independent counters;
-  stable nearest-complete medium selection, quick/large input order.
-  Independent Sonnet 5.5 **88/100 PASS**, zero blockers; generator GPT 6.1 Sol.
-- **Next**: bounded float32 writer/sidecars, then full-tier integration and
-  5-run VM parity. Carry evaluator N1 (dwarf clamp predicate discriminator),
-  N2 (double trailing-newline refusal), 50,000 boundary and tier validation.
-  M1.6b waits on human render review; AI foundation is routable when M1 pauses.
-- **Clause map**: 1 UNMET → M1 writer/integration routable now; 2 UNMET → M2
-  design/implementation; 3 UNMET → M3 package/integrator; 4 UNMET → AI
-  foundation/M4; 5 ongoing → strict core/parity green, pure-list reverse
-  VM gap reported. M1 5/12 plus T1 subtask; full M1.2b remains open.
-  This landing moved clause 1. Harness share 0/8; last 3 landings move clause 1.
-- **Routing**: planner/executor Agent-tool GPT 6.1 Sol; evaluator Agent pin
-  `sonnet` rejected (Unknown model), exact Sonnet 5.5 subscription CLI fallback
-  completed the independent review. Designer not needed (existing design).
 
 ## Decision ledger
 
@@ -209,6 +192,7 @@ provider. Physics code gets the strongest available evaluator.
 6a. [NEW] **Forward CMB disc** (D-11) · clause 1 follow-up · at γ ≳ 275 the CMB blueshifted by γ(1+β) is a visible disc at the forward pole (≈3,850 K at γ 707); M1's sky does not render it. Package function, spec check value, GPU golden, render review · routable after M2.0 · ~250 LOC (estimate)
 6b. [NEW] **AILANG ports of the Python pipeline** (attended 2026-10-01, CLAUDE.md "Python") · clause 5 · `tools/python-allowlist.txt` role `port`: (a) `tools/extract.py` → AILANG fixed-width VizieR parser on the committed real-byte fixtures; (b) star removal `tools/m14a_destar.py` → AILANG with Godot headless I/O. Purpose: surface strict-VM gaps (`std/array`, `std/list.range` evaluator-only) and report them upstream. In progress attended; `make python-guard` blocks any new Python pipeline step
 6. [NEW] **Toolchain gate hygiene** · clause 5 · `make deps` fails whenever the PATH `ailang` differs from the pin (now v0.50.0, bumped attended 2026-10-01; `runtime/` restaged) (it rewrites the lockfile version line), so every local gate needs `AILANG=runtime/bin/ailang`: default the Makefile to the pinned runtime when present, or make `deps` ignore the version lines · ~20 LOC
+7a. [HARNESS] ticket:agent-tool:workspace-routing-discovery-timeout · non-blocking, iter9 · transport Agent failed workspace routing discovery; original independent judge recovered, fleet ticket inbox_1790932698097_c8efbed6; no harness repair.
 7. [HARNESS] ticket:mission-base:hardcoded-origin-dev RESOLVED (ailang `cb7c51c8e`, harness-resolved reply acked iter 6; verified from the driver pin) · ticket:skill:gate0-ledger-provenance-S (open, non-blocking)
 5. [LANDED] **Arming prerequisites** · `godot-game` profile, registry, env, bookkeeping issue #1 (`sunholo-data/ailang#1340`)
 

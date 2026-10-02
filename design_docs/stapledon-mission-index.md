@@ -1,6 +1,6 @@
 # Stapledon mission index
 
-Regenerated from full mission log headings; one line per iteration. No log archive yet.
+Regenerated from full mission log headings; one line per entry. No log archive yet.
 
 | Iter | Date | Class | Headline |
 |---|---|---|---|
@@ -16,3 +16,4 @@ Regenerated from full mission log headings; one line per iteration. No log archi
 | 7 | 2026-10-01 | PRODUCT | iteration 7, M1.2b-T1 LANDED (pure catalogue transform) [PRODUCT] |
 | 8 | 2026-10-01 | PRODUCT | iteration 8, M1.2b-T2 LANDED (validated F32 records) [PRODUCT] |
 | att-M2 | 2026-10-02 | PRODUCT | attended, M2 journey core LANDED (sprint R1-M2-JOURNEY) [PRODUCT] |
+| 9 | 2026-10-02 | REFUTATION | iteration 9, concurrent attended M2 landing superseded duplicate draft; independent review 91/100 [REFUTATION] |

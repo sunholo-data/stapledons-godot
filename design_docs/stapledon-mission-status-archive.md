@@ -154,3 +154,22 @@ Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule
   The rig's PATH binary is now v0.47.0; CI and the bundled runtime pin v0.45.0.
 - Harness ticket `mission-base:hardcoded-origin-dev` filed (this repo has no
   `dev` branch).
+
+## STATUS 2026-10-01: iteration 7, M1.2b-T1 LANDED (pure catalogue transform)
+
+- **T1 ✅**: PR #14, merge `f4dd9bc`, complete merge CI green. Package-only
+  normal/WD transform, missing/clamped flags and independent counters;
+  stable nearest-complete medium selection, quick/large input order.
+  Independent Sonnet 5.5 **88/100 PASS**, zero blockers; generator GPT 6.1 Sol.
+- **Next**: bounded float32 writer/sidecars, then full-tier integration and
+  5-run VM parity. Carry evaluator N1 (dwarf clamp predicate discriminator),
+  N2 (double trailing-newline refusal), 50,000 boundary and tier validation.
+  M1.6b waits on human render review; AI foundation is routable when M1 pauses.
+- **Clause map**: 1 UNMET → M1 writer/integration routable now; 2 UNMET → M2
+  design/implementation; 3 UNMET → M3 package/integrator; 4 UNMET → AI
+  foundation/M4; 5 ongoing → strict core/parity green, pure-list reverse
+  VM gap reported. M1 5/12 plus T1 subtask; full M1.2b remains open.
+  This landing moved clause 1. Harness share 0/8; last 3 landings move clause 1.
+- **Routing**: planner/executor Agent-tool GPT 6.1 Sol; evaluator Agent pin
+  `sonnet` rejected (Unknown model), exact Sonnet 5.5 subscription CLI fallback
+  completed the independent review. Designer not needed (existing design).
