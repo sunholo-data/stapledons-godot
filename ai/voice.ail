@@ -1,0 +1,61 @@
+module stapledons/ai/voice
+
+-- Voice lines (design (a2) stub voice, (a4) voice keys, AI.3's voice
+-- descriptor). One clip per line: each segment's 16-bit mono PCM at 24 kHz
+-- is concatenated and encoded once by std/audio.encode(OggOpus(24000)),
+-- which is pure and gives the same bytes on every architecture, so the stub's
+-- blob hashes are goldens. The live TTS adapter fills the same assembly with
+-- Gemini's PCM, one response per segment (D-20 OQ7: per segment).
+--
+-- Stub PCM: a square wave per segment (integer samples, no float maths), its
+-- pitch from the emotion and its length from the segment's text: 50 ms per
+-- code point, at least 200 ms, at most 8 s, in whole periods.
+-- Descriptor: {key, mime: "audio/ogg", bytes, duration_ms, segments_ms}, the
+-- key's variant the first 16 hex of sha256(voice + "\n" + marked-up line).
+-- Pure; runs on the strict VM (aiWireVm).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (concat, join, length, substring, intToStr)
+import std/bytes (fromInts, concatList)
+import std/bytes as B
+import std/audio (encode, durationMs, OggOpus)
+import std/crypto (sha256Hex)
+import ./key (CacheKey, emotions8)
+import ./wire (Seg, keyObj)
+
+export pure func rate() -> int = 24000
+export type Clip = { ogg: bytes, durationMs: int, segmentsMs: [int] }
+
+-- Period in samples: neutral 240 Hz, then a step up per emotion.
+pure func indexOf(e: string, es: [string], i: int) -> int = match es { [] => 0, x :: r => if x == e then i else indexOf(e, r, i + 1) }
+export pure func periodFor(emotion: string) -> int = 100 - 8 * indexOf(emotion, emotions8(), 0)
+pure func rep(n: int, x: a) -> [a] = if n <= 0 then [] else x :: rep(n - 1, x)
+-- +3000 is b8 0b, -3000 is 48 f4 (little-endian two's complement).
+pure func period(p: int) -> bytes = fromInts(join1(rep(p / 2, [184, 11])) ++ join1(rep(p - p / 2, [72, 244])))
+pure func join1(xss: [[int]]) -> [int] = match xss { [] => [], xs :: r => xs ++ join1(r) }
+export pure func toneSamples(text: string, p: int) -> int {
+  let want = length(text) * 1200;
+  let n = if want < 4800 then 4800 else if want > 192000 then 192000 else want;
+  n / p * p
+}
+export pure func stubPcm(s: Seg) -> bytes {
+  let p = periodFor(s.emotion);
+  concatList(rep(toneSamples(s.text, p) / p, period(p)))
+}
+
+pure func msOf(n: int) -> int = durationMs(n, rate(), 1, 16)
+pure func offsets(pcms: [bytes], at: int) -> [int] = match pcms { [] => [], b :: r => msOf(at) :: offsets(r, at + B.length(b)) }
+export pure func assemble(pcms: [bytes]) -> Result[Clip, string] {
+  let all = concatList(pcms);
+  match encode(all, rate(), 1, OggOpus(24000)) {
+    Ok(ogg) => Ok({ ogg: ogg, durationMs: msOf(B.length(all)), segmentsMs: offsets(pcms, 0) }),
+    Err(e) => Err(e)
+  }
+}
+
+pure func each(g: a -> b, xs: [a]) -> [b] = match xs { [] => [], x :: r => g(x) :: each(g, r) }
+export pure func markedLine(segs: [Seg]) -> string = join(" ", each(\s. concat(["{", s.emotion, "}", s.text]), segs))
+export pure func voiceVariant(voiceId: string, segs: [Seg]) -> string = substring(sha256Hex(concat([voiceId, "\n", markedLine(segs)])), 0, 16)
+export pure func voiceDescriptor(k: CacheKey, n: int, c: Clip) -> string =
+  concat(["{\"key\":", keyObj(k), ",\"mime\":\"audio/ogg\",\"bytes\":", intToStr(n), ",\"duration_ms\":", intToStr(c.durationMs),
+    ",\"segments_ms\":[", join(",", each(intToStr, c.segmentsMs)), "]}"])

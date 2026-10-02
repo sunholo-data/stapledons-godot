@@ -1,0 +1,50 @@
+module stapledons/ai/prompt_test
+
+-- Prompts (AI.5 task 1): the no-verdict guardrail, the grammar and the
+-- allowed palette, no_numerals, the length cap, lore by id. The full texts
+-- are goldens (tests/ai/prompts/*.golden.txt, `make ai-adapter`).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (contains, join, startsWith)
+import std/json (decode)
+import ./key (CacheKey)
+import ./wire (Request, CStr, CList)
+import ./prompt (Lore, Prompt, buildPrompt, promptText, parseLore, imagePrompt, rules)
+
+pure func lore() -> [Lore] = [{ id: "archive.two-clocks", text: "Two clocks." }, { id: "archive.sol", text: "Sol is home." }]
+pure func promptRq(purpose: string, emotions: [string], noNum: bool) -> Request =
+  { req: "1", kind: "text", purpose: purpose, lineReq: None, key: { kind: "text", entityId: "medic", emotion: "-", ageStage: 0, variant: "-" }, seed: 1,
+    constraints: { maxChars: 280, noNumerals: noNum, emotions: emotions }, context: [{ name: "topic", value: CStr("first_night_aboard") }, { name: "canon", value: CList(["archive.sol"]) }, { name: "stub_case", value: CStr("x") }],
+    expiresTick: 1, cast: match decode("{\"name\":\"The Medic\"}") { Ok(j) => Some(j), Err(_) => None }, segments: None }
+pure func ptext(r: Request) -> string = match buildPrompt(r, lore()) { Ok(p) => promptText(p), Err(e) => e }
+-- Not `has` or `text`: std/json.has would replace it under `ailang test` (ailang#1516).
+pure func says(r: Request, s: string) -> bool = contains(ptext(r), s)
+
+pure func checkPromptGuardrails() -> bool {
+  let r = promptRq("line", ["neutral", "loving", "grieving"], true);
+  says(r, "never judge the player's choices") && says(promptRq("news", ["neutral"], true), "never judge the player's choices") &&
+  says(promptRq("archive", ["neutral"], true), "never judge the player's choices") && says(promptRq("probe", ["neutral"], true), "never judge the player's choices") &&
+  says(r, "Use only these markers: {neutral}, {loving}, {grieving}. Never use square brackets.") && says(r, "start with one, e.g. {neutral} ") &&
+  says(promptRq("line", ["grieving"], true), "e.g. {grieving} ") && !says(promptRq("line", ["grieving"], true), "{loving}") &&
+  says(r, "Write no digits at all.") && !says(promptRq("line", ["neutral"], false), "digits") &&
+  says(r, "under 280 characters") && says({r | constraints: {r.constraints | maxChars: 600}}, "under 600 characters")
+}
+pure func checkPromptContext() -> bool {
+  let r = promptRq("line", ["neutral"], true);
+  says(r, "Speaker: The Medic (medic)") && says(r, "topic: first_night_aboard") && says(r, "Canon:\n- archive.sol: Sol is home.") &&
+  !says(r, "stub_case") && !says(r, "Two clocks.") && says({r | cast: None}, "Speaker: medic\n") &&
+  ptext({r | context: [{ name: "canon", value: CList(["archive.nope"]) }]}) == "bad_request" &&
+  !says({r | context: []}, "Canon:") &&
+  says(promptRq("news", ["neutral"], true), "ship news item") && says(promptRq("archive", ["neutral"], true), "the Archive's answer") &&
+  contains(imagePrompt({r | kind: "portrait", key: { kind: "portrait", entityId: "medic", emotion: "grieving", ageStage: 50, variant: "0" }}), "expression: grieving, 50 years after departure")
+}
+pure func checkPromptLore() -> bool =
+  (match parseLore("{\"v\":1,\"lore\":{\"a.b\":\"x\"}}") { Ok(ls) => (match ls { [l] => l.id == "a.b" && l.text == "x", _ => false }), Err(_) => false }) &&
+  (match parseLore("{\"v\":1,\"lore\":{\"a\":1}}") { Ok(_) => false, Err(e) => e == "config: lore a is not a string" }) &&
+  (match parseLore("{") { Ok(_) => false, Err(e) => e == "config: lore is not JSON" })
+
+export pure func promptChecks() -> bool = checkPromptGuardrails() && checkPromptContext() && checkPromptLore()
+
+test "AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and the cap" { checkPromptGuardrails() }
+test "AI.5 prompts name the speaker, the context and lore snippets by id" { checkPromptContext() }
+test "AI.5 lore table parses and refuses bad entries" { checkPromptLore() }

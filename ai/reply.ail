@@ -1,0 +1,144 @@
+module stapledons/ai/reply
+
+-- The pure half of every provider adapter (AI.5 task 3): request bodies and
+-- response parsers, tested on committed fixtures (ai/fixtures/responses/)
+-- and, for the std/ai paths, under `--ai-stub` (`make ai-adapter`).
+--
+--   OpenRouter text: chat completions JSON (openrouter.ai/api/v1), sent by
+--     std/net (see ai/adapters.ail for why not std/ai.step).
+--   Gemini text: std/ai.step's StepResult.
+--   Image: std/ai.callImageBase64's {"base64", "mime_type"}.
+--   TTS: Gemini generateContent with AUDIO output; body and checks from
+--     sunholo/gemini_live/tts (completeOk before ttsAudioOf).
+--
+-- `screen` is a cheap check of the marker grammar, palette, digits and
+-- length, so a retry is spent only where it can help (bad_output). It is
+-- not the judge: the sim validates every record (sim/markers.ail, AI.3).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, encode, get, getString, getNumber, getArray, getObject, js, jo, ja, kv, jnum)
+import std/string (concat, join, length, substring, split, trim, contains, startsWith)
+import std/bytes (fromBase64, byteAt)
+import std/bytes as B
+import std/math (floor, floatToInt, intToFloat)
+import std/ai (StepResult)
+import pkg/sunholo/gemini_live/tts (buildTtsRequest, ttsAudioOf, ttsMimeOf, finishReasonOf, outputTokensOf, inputTokensOf, completeOk)
+import ./key (member, size)
+import ./wire (Constraints)
+import ./prompt (Prompt)
+
+export type Reply = { content: string, finish: string, tokensIn: int, tokensOut: int } deriving (Eq)
+
+-- ------------------------------------------------------------ screen
+pure func anyDigit(s: string) -> bool =
+  contains(s, "0") || contains(s, "1") || contains(s, "2") || contains(s, "3") || contains(s, "4") ||
+  contains(s, "5") || contains(s, "6") || contains(s, "7") || contains(s, "8") || contains(s, "9")
+-- After the first "{": each piece is "<emotion>}<text>" with one "}" and some text.
+pure func marked(pieces: [string], es: [string], acc: int, n: int) -> Option[{chars: int, segs: int}] =
+  match pieces {
+    [] => Some({ chars: acc, segs: n }),
+    p :: r => match split(p, "}") {
+      [name, t] => if member(name, es) && trim(t) != "" then marked(r, es, acc + length(trim(t)), n + 1) else None,
+      _ => None
+    }
+  }
+-- None when the text passes; Some(why) else.
+export pure func screen(body: string, c: Constraints) -> Option[string] =
+  if trim(body) == "" then Some("empty")
+  else if contains(body, "[") || contains(body, "]") then Some("bracket")
+  else if c.noNumerals && anyDigit(body) then Some("numeral")
+  else match split(trim(body), "{") {
+    [] => Some("empty"),
+    lead :: rest => if contains(lead, "}") then Some("markup")
+      else if lead != "" && !member("neutral", c.emotions) then Some("emotion")
+      else match marked(rest, c.emotions, if lead == "" then 0 else length(trim(lead)), if lead == "" then 0 else 1) {
+        None => Some("markup"),
+        Some(m) => if m.segs == 0 then Some("markup") else if m.chars + m.segs - 1 > c.maxChars then Some("length") else None
+      }
+  }
+-- A reply's text, or bad_output: cut off at the token cap, or failing the screen.
+export pure func textOf(rp: Reply, c: Constraints) -> Result[string, string] =
+  if rp.finish == "length" || rp.finish == "MAX_TOKENS" || rp.finish == "max_tokens" then Err("bad_output")
+  else match screen(rp.content, c) { None => Ok(trim(rp.content)), Some(_) => Err("bad_output") }
+
+-- ------------------------------------------------------------ text
+export pure func stepReply(s: StepResult) -> Reply = { content: s.message.content, finish: s.finish_reason, tokensIn: s.input_tokens, tokensOut: s.output_tokens }
+
+-- OpenRouter model ids are "openrouter:vendor/model" in routing.json; the API wants "vendor/model".
+export pure func openRouterModel(m: string) -> string = if startsWith(m, "openrouter:") then substring(m, 11, length(m)) else m
+export pure func openRouterBody(model: string, p: Prompt, maxTokens: int) -> string =
+  encode(jo([kv("model", js(openRouterModel(model))),
+    kv("messages", ja([jo([kv("role", js("system")), kv("content", js(p.system))]), jo([kv("role", js("user")), kv("content", js(p.user))])])),
+    kv("max_tokens", jnum(intToFloat(maxTokens))), kv("usage", jo([kv("include", JBool(true))]))]))
+pure func natOr(j: Json, k: string) -> int = match getNumber(j, k) { Some(x) => if x >= 0.0 && floor(x) == x then floatToInt(x) else 0, None => 0 }
+pure func firstOf(xs: [Json]) -> Option[Json] = match xs { [] => None, x :: _ => Some(x) }
+-- choices[0].message.content, finish_reason, usage.{prompt,completion}_tokens;
+-- an "error" object or a missing choice is provider_error.
+export pure func parseOpenRouter(body: string) -> Result[Reply, string] =
+  match decode(body) {
+    Err(_) => Err("provider_error"),
+    Ok(j) => match get(j, "error") {
+      Some(_) => Err("provider_error"),
+      None => match getArray(j, "choices") {
+        None => Err("provider_error"),
+        Some(cs) => match firstOf(cs) {
+          None => Err("provider_error"),
+          Some(c) => match getObject(c, "message") {
+            None => Err("provider_error"),
+            Some(m) => match getString(m, "content") {
+              None => Err("provider_error"),
+              Some(t) => {
+                let u = match getObject(j, "usage") { Some(x) => x, None => jo([]) };
+                Ok({ content: t, finish: match getString(c, "finish_reason") { Some(f) => f, None => "" }, tokensIn: natOr(u, "prompt_tokens"), tokensOut: natOr(u, "completion_tokens") })
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+-- ------------------------------------------------------------ images
+pure func at(b: bytes, i: int) -> int = match byteAt(b, i) { Some(v) => v, None => 0 - 1 }
+pure func be32(b: bytes, i: int) -> int = ((at(b, i) * 256 + at(b, i + 1)) * 256 + at(b, i + 2)) * 256 + at(b, i + 3)
+-- PNG width and height from the IHDR chunk (bytes 16-23, big-endian), or None.
+export pure func pngSize(b: bytes) -> Option[{w: int, h: int}] =
+  if B.length(b) >= 24 && at(b, 0) == 137 && at(b, 1) == 80 && at(b, 2) == 78 && at(b, 3) == 71 && at(b, 12) == 73 && at(b, 13) == 72 && at(b, 14) == 68 && at(b, 15) == 82
+  then Some({ w: be32(b, 16), h: be32(b, 20) }) else None
+export type Image = { data: bytes, w: int, h: int }
+-- {"base64": ..., "mime_type": "image/png"} -> the PNG and its size, or bad_output.
+export pure func parseImage(text: string) -> Result[Image, string] =
+  match decode(text) {
+    Err(_) => Err("bad_output"),
+    Ok(j) => if getString(j, "mime_type") != Some("image/png") then Err("bad_output") else match getString(j, "base64") {
+      None => Err("bad_output"),
+      Some(b64) => match fromBase64(b64) {
+        None => Err("bad_output"),
+        Some(d) => match pngSize(d) { Some(s) => if s.w > 0 && s.h > 0 then Ok({ data: d, w: s.w, h: s.h }) else Err("bad_output"), None => Err("bad_output") }
+      }
+    }
+  }
+
+-- ------------------------------------------------------------ TTS
+-- British English, the emotion's style line, a provider-enforced token cap.
+export pure func ttsBody(text: string, voice: string, style: string, cap: int) -> string = buildTtsRequest(text, voice, "en-GB", concat([style, " "]), cap)
+export type Speech = { pcm: bytes, tokensIn: int, tokensOut: int }
+-- Complete speech (completeOk first: a stop at the cap is cut-off speech),
+-- 16-bit PCM at 24 kHz, decodable base64; else bad_output. An error body is
+-- provider_error.
+export pure func parseTts(body: string, cap: int) -> Result[Speech, string] =
+  match decode(body) {
+    Err(_) => Err("provider_error"),
+    Ok(j) => match get(j, "error") {
+      Some(_) => Err("provider_error"),
+      None => if !completeOk(outputTokensOf(body), cap, finishReasonOf(body)) then Err("bad_output")
+        else if !contains(ttsMimeOf(body), "rate=24000") then Err("bad_output")
+        else match ttsAudioOf(body) {
+          None => Err("bad_output"),
+          Some(b64) => match fromBase64(b64) {
+            Some(pcm) => if B.length(pcm) > 0 && B.length(pcm) % 2 == 0 then Ok({ pcm: pcm, tokensIn: inputTokensOf(body), tokensOut: outputTokensOf(body) }) else Err("bad_output"),
+            None => Err("bad_output")
+          }
+        }
+    }
+  }

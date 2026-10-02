@@ -1,0 +1,91 @@
+module stapledons/ai/prompt
+
+-- Prompts (design (a2) ai/prompt.ail): request + cast entry + lore snippets
+-- + guardrails -> a system and a user message. Pure; the goldens are
+-- tests/ai/prompts/<purpose>.golden.txt (`make ai-adapter`), and the strict
+-- VM prints the same bytes as the interpreter (aiWireVm).
+--
+-- Guardrails in every text prompt: the marker grammar of sim/markers.ail
+-- with the request's allowed palette; no numerals (D-21: every generated
+-- text, so numbers on screen come only from sim fields); the length cap in
+-- characters of display text; no verdict on the player's choices. Lore
+-- comes from data/ai/lore.json by the ids in context.canon; an unknown id
+-- is a bad_request (a prompt never cites canon it does not have).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, get, getString, asObject)
+import std/string (concat, join, intToStr)
+import ./key (member)
+import ./wire (Request, CtxField, CStr, CList)
+
+export type Lore = { id: string, text: string }
+export type Prompt = { system: string, user: string }
+
+@allow_empty_ok("a lore table may be empty; a request citing canon is then refused")
+pure func loreOf(kvs: [{key: string, value: Json}]) -> Result[[Lore], string] =
+  match kvs {
+    [] => Ok([]),
+    e :: r => match e.value {
+      JString(t) => (match loreOf(r) { Ok(ls) => Ok({ id: e.key, text: t } :: ls), Err(x) => Err(x) }),
+      _ => Err(concat(["config: lore ", e.key, " is not a string"]))
+    }
+  }
+export pure func parseLore(text: string) -> Result[[Lore], string] =
+  match decode(text) {
+    Ok(j) => (match get(j, "lore") { Some(l) => (match asObject(l) { Some(kvs) => loreOf(kvs), None => Err("config: lore is not an object") }), None => Err("config: lore has no lore") }),
+    Err(_) => Err("config: lore is not JSON")
+  }
+pure func loreText(ls: [Lore], id: string) -> Option[string] = match ls { [] => None, l :: r => if l.id == id then Some(l.text) else loreText(r, id) }
+
+pure func role(purpose: string) -> string =
+  if purpose == "news" then "one short ship news item, read aloud to the crew"
+  else if purpose == "archive" then "the Archive's answer: the ship's library speaking, precise and unhurried"
+  else if purpose == "probe" then "one short line that tests the voice of the speaker"
+  else "one line of dialogue, spoken by the speaker to the player"
+
+pure func markerList(es: [string]) -> string = join(", ", map1(\e. concat(["{", e, "}"]), es))
+pure func map1(g: a -> b, xs: [a]) -> [b] = match xs { [] => [], x :: r => g(x) :: map1(g, r) }
+pure func firstOr(xs: [string], d: string) -> string = match xs { [] => d, x :: _ => x }
+
+-- The rules, in a fixed order; the numeral rule only while no_numerals holds.
+export pure func rules(r: Request) -> [string] =
+  [concat(["Write ", role(r.purpose), " for Stapledon's Voyage, a game aboard a ship travelling near the speed of light."]),
+   "Reply with the text only: no preface, no quotation marks, no lists, no stage directions.",
+   concat(["Mark the feeling of each part with an emotion marker in curly braces before it, and start with one, e.g. {", firstOr(r.constraints.emotions, "neutral"), "} The hull is quiet tonight."]),
+   concat(["Use only these markers: ", markerList(r.constraints.emotions), ". Never use square brackets."])] ++
+  (if r.constraints.noNumerals then ["Write no digits at all. Numbers on screen come from the ship's instruments; refer to them in words or not at all."] else []) ++
+  [concat(["Keep the text, not counting markers, under ", intToStr(r.constraints.maxChars), " characters."]),
+   "Describe and feel; never judge the player's choices or say whether a decision was right or wrong."]
+
+pure func ctxLine(c: CtxField) -> [string] =
+  if c.name == "canon" || c.name == "stub_case" then []
+  else match c.value { CStr(v) => [concat([c.name, ": ", v])], CList(vs) => [concat([c.name, ": ", join(", ", vs)])] }
+pure func ctxLines(cs: [CtxField]) -> [string] = match cs { [] => [], c :: r => ctxLine(c) ++ ctxLines(r) }
+pure func canonIds(cs: [CtxField]) -> [string] =
+  match cs { [] => [], c :: r => if c.name == "canon" then (match c.value { CList(vs) => vs, CStr(v) => [v] }) else canonIds(r) }
+@allow_empty_ok("a request without canon cites no lore")
+pure func snippets(ls: [Lore], ids: [string]) -> Result[[string], string] =
+  match ids {
+    [] => Ok([]),
+    i :: r => match loreText(ls, i) {
+      Some(t) => (match snippets(ls, r) { Ok(xs) => Ok(concat(["- ", i, ": ", t]) :: xs), Err(e) => Err(e) }),
+      None => Err("bad_request")
+    }
+  }
+pure func speaker(r: Request) -> string =
+  match r.cast { Some(c) => (match getString(c, "name") { Some(n) => concat([n, " (", r.key.entityId, ")"]), None => r.key.entityId }), None => r.key.entityId }
+
+export pure func buildPrompt(r: Request, lore: [Lore]) -> Result[Prompt, string] =
+  match snippets(lore, canonIds(r.context)) {
+    Err(e) => Err(e),
+    Ok(sn) => Ok({ system: join("\n", rules(r)),
+      user: join("\n", [concat(["Speaker: ", speaker(r)])] ++ ctxLines(r.context) ++ (if sn == [] then [] else ["Canon:"] ++ sn)) })
+  }
+export pure func promptText(p: Prompt) -> string = concat([p.system, "\n\n", p.user, "\n"])
+
+-- Portraits and avatars: one image prompt (no golden; the image model is
+-- bound to the handler, gap G2).
+export pure func imagePrompt(r: Request) -> string =
+  concat(["Head-and-shoulders portrait of ", speaker(r), ", aboard a generation ship, ",
+    if r.kind == "avatar" then "a calm neutral expression, as a small round avatar" else concat(["expression: ", r.key.emotion]),
+    ", ", intToStr(r.key.ageStage), " years after departure. Painterly, soft cabin light, no text, no frame."])

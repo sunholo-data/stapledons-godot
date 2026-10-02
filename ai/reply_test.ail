@@ -1,0 +1,80 @@
+module stapledons/ai/reply_test
+
+-- The pure half of the adapters (AI.5 task 3), on inline shapes; the
+-- committed fixtures in ai/fixtures/responses/ (shapes from the public
+-- OpenRouter chat-completions and Gemini generateContent documentation and
+-- gemini_live's measured TTS responses; content synthetic, scrubbed; to be
+-- refreshed from real responses in AI.10b) are decoded by `make ai-adapter`.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (contains, join)
+import std/bytes as B
+import ./wire (Constraints)
+import ./reply (Reply, screen, textOf, stepReply, openRouterBody, openRouterModel, parseOpenRouter, parseImage, pngSize, ttsBody, parseTts)
+
+pure func consOf(es: [string], n: int) -> Constraints = { maxChars: n, noNumerals: true, emotions: es }
+pure func pal() -> Constraints = consOf(["neutral", "loving", "grieving"], 280)
+pure func passes(t: string) -> bool = screen(t, pal()) == None
+pure func fails(t: string, why: string) -> bool = screen(t, pal()) == Some(why)
+
+-- The screen: grammar, palette, brackets, digits, length of display text.
+pure func checkReplyScreen() -> bool =
+  passes("{neutral} The hull hums. {loving} Sleep.") && passes("The hull hums.") && passes("  {grieving} Élise — 星.  ") &&
+  fails("{\"kind\":\"Wait\"}", "markup") && fails("{happy} Hello.", "markup") && fails("{neutral} a {neutral}", "markup") &&
+  fails("{neutral} [sigh] no.", "bracket") && fails("{neutral} We left 42 years ago.", "numeral") && fails("", "empty") &&
+  fails("{neutral a", "markup") && fails("a } b", "markup") && screen("Hello.", consOf(["loving"], 280)) == Some("emotion") &&
+  screen("{neutral} 42", { maxChars: 280, noNumerals: false, emotions: ["neutral"] }) == None &&
+  screen("{neutral} abcde {loving} fgh", consOf(["neutral", "loving"], 9)) == None &&
+  screen("{neutral} abcde {loving} fghi", consOf(["neutral", "loving"], 9)) == Some("length")
+
+pure func rp(t: string, f: string) -> Reply = { content: t, finish: f, tokensIn: 1, tokensOut: 1 }
+-- A reply's text, or bad_output when cut off or failing the screen.
+pure func checkReplyText() -> bool =
+  textOf(rp(" {neutral} Yes. ", "stop"), pal()) == Ok("{neutral} Yes.") && textOf(rp("{neutral} Yes.", "length"), pal()) == Err("bad_output") &&
+  textOf(rp("{neutral} Yes.", "MAX_TOKENS"), pal()) == Err("bad_output") && textOf(rp("{\"kind\":\"Wait\"}", "stop"), pal()) == Err("bad_output") &&
+  (stepReply({ message: { role: "assistant", content: "{neutral} Hi.", tool_calls: [], tool_call_id: "", images: [] }, tool_calls: [], finish_reason: "stop",
+     input_tokens: 7, output_tokens: 3, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }) == { content: "{neutral} Hi.", finish: "stop", tokensIn: 7, tokensOut: 3 })
+
+-- OpenRouter: the request body, and the chat-completions response shapes.
+pure func checkReplyOpenRouter() -> bool =
+  openRouterModel("openrouter:mistralai/mistral-nemo") == "mistralai/mistral-nemo" && openRouterModel("a/b") == "a/b" &&
+  openRouterBody("openrouter:v/m", { system: "S \"q\"", user: "U" }, 160) ==
+    "{\"model\":\"v/m\",\"messages\":[{\"role\":\"system\",\"content\":\"S \\\"q\\\"\"},{\"role\":\"user\",\"content\":\"U\"}],\"max_tokens\":160,\"usage\":{\"include\":true}}" &&
+  parseOpenRouter("{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\",\"content\":\"{neutral} Hi.\"}}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":4}}") ==
+    Ok({ content: "{neutral} Hi.", finish: "stop", tokensIn: 12, tokensOut: 4 }) &&
+  parseOpenRouter("{\"choices\":[{\"message\":{\"content\":\"x\"}}]}") == Ok({ content: "x", finish: "", tokensIn: 0, tokensOut: 0 }) &&
+  parseOpenRouter("{\"error\":{\"code\":402,\"message\":\"no credit\"}}") == Err("provider_error") &&
+  parseOpenRouter("{\"choices\":[]}") == Err("provider_error") && parseOpenRouter("<html>") == Err("provider_error")
+
+pure func imgErr(r: Result[a, string]) -> bool = match r { Ok(_) => false, Err(e) => e == "bad_output" }
+pure func ttsErr(r: Result[a, string], want: string) -> bool = match r { Ok(_) => false, Err(e) => e == want }
+pure func png64() -> string = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAU0lEQVR42u3YQQkAAAgEQaMZzeiWEORgtsF8tya8AgAAAAAAAAAAAAAAAAB4APRRAAAAAAAAAAAAAAAAAAAAAABZAGcOAAAAAAAAAAAAAAAAILgFvGdRS4UpY/4AAAAASUVORK5CYII="
+pure func png1() -> string = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+-- Images: the --ai-stub 1x1 PNG and the 64x64 placeholder decode; anything else is bad_output.
+pure func checkReplyImage() -> bool =
+  (match parseImage(join("", ["{\"base64\":\"", png1(), "\",\"mime_type\":\"image/png\"}"])) { Ok(i) => i.w == 1 && i.h == 1 && B.length(i.data) == 70, Err(_) => false }) &&
+  (match parseImage(join("", ["{\"base64\":\"", png64(), "\",\"mime_type\":\"image/png\"}"])) { Ok(i) => i.w == 64 && i.h == 64, Err(_) => false }) &&
+  imgErr(parseImage("{\"base64\":\"aGVsbG8=\",\"mime_type\":\"image/png\"}")) &&
+  imgErr(parseImage(join("", ["{\"base64\":\"", png1(), "\",\"mime_type\":\"image/jpeg\"}"]))) && imgErr(parseImage("{\"kind\":\"Wait\"}"))
+
+pure func tts(mime: string, data: string, finish: string, outTok: string) -> string =
+  join("", ["{\"candidates\":[{\"content\":{\"parts\":[{\"inlineData\":{\"mimeType\":\"", mime, "\",\"data\":\"", data, "\"}}]},\"finishReason\":\"", finish,
+    "\"}],\"usageMetadata\":{\"promptTokenCount\":9,\"candidatesTokenCount\":", outTok, "}}"])
+pure func l16() -> string = "audio/L16;codec=pcm;rate=24000"
+-- TTS: gemini_live's body with en-GB and the style line; completeOk before the audio.
+pure func checkReplyTts() -> bool =
+  ttsBody("Hello.", "Aoede", "Speak softly.", 300) ==
+    "{\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"Speak softly. Hello.\"}]}],\"generationConfig\":{\"responseModalities\":[\"AUDIO\"],\"speechConfig\":{\"voiceConfig\":{\"prebuiltVoiceConfig\":{\"voiceName\":\"Aoede\"}},\"languageCode\":\"en-GB\"},\"maxOutputTokens\":300}}" &&
+  (match parseTts(tts(l16(), "AAABAAIA", "STOP", "40"), 300) { Ok(s) => B.length(s.pcm) == 6 && s.tokensIn == 9 && s.tokensOut == 40, Err(_) => false }) &&
+  ttsErr(parseTts(tts(l16(), "AAABAAIA", "STOP", "292"), 300), "bad_output") && ttsErr(parseTts(tts(l16(), "AAABAAIA", "MAX_TOKENS", "40"), 300), "bad_output") &&
+  ttsErr(parseTts(tts("audio/L16;codec=pcm;rate=16000", "AAABAAIA", "STOP", "40"), 300), "bad_output") &&
+  ttsErr(parseTts(tts(l16(), "AAAB", "STOP", "40"), 300), "bad_output") &&
+  ttsErr(parseTts("{\"error\":{\"code\":429}}", 300), "provider_error") && ttsErr(parseTts("nope", 300), "provider_error")
+
+export pure func replyChecks() -> bool = checkReplyScreen() && checkReplyText() && checkReplyOpenRouter() && checkReplyImage() && checkReplyTts()
+
+test "AI.5 screen: grammar, palette, brackets, digits, display length" { checkReplyScreen() }
+test "AI.5 a reply is its text, or bad_output when cut off or screened out" { checkReplyText() }
+test "AI.5 OpenRouter body and chat-completions parser" { checkReplyOpenRouter() }
+test "AI.5 image parser: the 1x1 stub PNG and the placeholder; else bad_output" { checkReplyImage() }
+test "AI.5 TTS body from gemini_live; complete speech only" { checkReplyTts() }

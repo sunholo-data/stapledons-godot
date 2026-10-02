@@ -1,0 +1,12 @@
+Write one line of dialogue, spoken by the speaker to the player for Stapledon's Voyage, a game aboard a ship travelling near the speed of light.
+Reply with the text only: no preface, no quotation marks, no lists, no stage directions.
+Mark the feeling of each part with an emotion marker in curly braces before it, and start with one, e.g. {neutral} The hull is quiet tonight.
+Use only these markers: {neutral}, {loving}, {grieving}. Never use square brackets.
+Write no digits at all. Numbers on screen come from the ship's instruments; refer to them in words or not at all.
+Keep the text, not counting markers, under 280 characters.
+Describe and feel; never judge the player's choices or say whether a decision was right or wrong.
+
+Speaker: The Medic (medic)
+topic: first_night_aboard
+Canon:
+- archive.two-clocks: The ship keeps two clocks. Ship time is the one the crew lives by; home time runs faster, and the nearer the ship flies to the speed of light, the wider the gap grows.

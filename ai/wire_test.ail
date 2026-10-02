@@ -30,6 +30,7 @@ export pure func outLines() -> [string] = [
     "\"asset\":{\"path\":\"blobs/3c/", sha(), ".png\",\"mime\":\"image/png\",\"bytes\":219},",
     "\"meta\":{\"provider\":\"stub\",\"route\":\"gemini\",\"model\":\"m\",\"input_sha256\":\"", sha(), "\",\"ms\":12,\"usd\":0.000125}}"]),
   "{\"v\":1,\"type\":\"result\",\"req\":\"3\",\"status\":\"error\",\"code\":\"no_key\",\"meta\":{\"provider\":\"stub\",\"route\":\"none\"}}",
+  "{\"v\":1,\"type\":\"result\",\"req\":\"4\",\"status\":\"error\",\"code\":\"text_only\",\"meta\":{\"provider\":\"stub\",\"route\":\"none\"}}",
   "{\"v\":1,\"type\":\"result\",\"req\":\"\",\"status\":\"error\",\"code\":\"bad_request\",\"meta\":{\"provider\":\"stub\",\"route\":\"none\"}}",
   "{\"v\":1,\"type\":\"fatal\",\"code\":\"config\",\"detail\":\"config: unknown key openai\"}"]
 

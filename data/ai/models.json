@@ -1,0 +1,14 @@
+{
+  "v": 1,
+  "_note": "One model per provider and slot (text, image, tts); every model in routing.json must be the one named here and have a price in prices.json, or the service refuses to start. Configuration, not code: swapping a model is a data change plus regenerated prompt and adapter fixtures. Gemini ids are the AI Studio names at the time of writing (the TTS id is verified in AI.10b's attended run). The OpenRouter text model is AI.5's PROPOSAL for Mark at the style-frame stop (plan Q7): the cheapest model whose recorded-shape fixture passes the screen; availability and price were not verified offline.",
+  "models": {
+    "gemini": {
+      "text": "gemini-2.5-flash",
+      "image": "gemini-2.5-flash-image",
+      "tts": "gemini-2.5-flash-preview-tts"
+    },
+    "openrouter": {
+      "text": "openrouter:mistralai/mistral-nemo"
+    }
+  }
+}
