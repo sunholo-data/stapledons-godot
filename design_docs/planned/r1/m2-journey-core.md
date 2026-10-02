@@ -297,7 +297,7 @@ A malformed line's reply carries the current world tick (0 before
 
 **Scenario-parameter ranges** (`protocol.ail` `inRange`; every bound pinned by
 `checkParamBounds`, accepted at the bound and refused just past it). **These
-ranges are executor-chosen (M2.1a), pending Mark's ratification.**
+ranges were executor-chosen (M2.1a) and are ratified by Mark (D-17, 2026-10-02).**
 
 | Parameter | Default (`sol`) | Accepted range | Units |
 |---|---|---|---|
