@@ -290,7 +290,7 @@ in `refused[i].reason` with `status: "ok"`.
 | `committed` | refused | every intent kind while the journey is committed (**M2.3a**, AC7) |
 | `out_of_range` | refused | `plan`: `cruise_phi` outside [rapidityOfBeta(cruise_min_beta), rapidityOfOneMinusBeta(cap)] (both ends accepted); a target at the ship's own position; diag `flip_g` not a positive finite number (**M2.3a**) |
 | `stale_plan` | refused | `commit` whose `plan_id` is not the current plan (none, replaced, cancelled) or whose plan was made from another position (**M2.3a**) |
-| `unsupported` | refused | `draw` (until M2.4), `record` (reserved for 2.1). Since M2.3a `cancel` with no plan is a no-op, not a refusal |
+| `unsupported` | refused | `record` (reserved for 2.1; `draw` until M2.4, now diag only). Since M2.3a `cancel` with no plan is a no-op, not a refusal |
 
 A malformed line's reply carries the current world tick (0 before
 `new_game`); it never carries sections.
@@ -523,6 +523,16 @@ The mixer must run on the strict VM, which today rules out xor and shifts
   stream bit for bit; chi-square on 10⁵ draws per stream passes at p > 0.001;
   seed and stream id fully determine output. Switching algorithms is an `rng`
   id change plus regenerated goldens.
+- *As implemented in M2.4 (SplitMix64, `splitmix64-1`; the v0.51.0 pin runs
+  bitwise ops on the strict VM):* `sim/rng.ail`. Stream s is SplitMix64
+  seeded with `mix64(mix64(seed) ^ id(s))` (ids journey 1, crew 2, events 3,
+  galaxy 4, ai 5, news 6); value n is `mix64(key + (n+1)·0x9e3779b97f4a7c15)`.
+  AILANG's `>>` is arithmetic, so the logical shift is
+  `(x >> k) & ((1 << (64 − k)) − 1)`. `draw` (diag) emits
+  `{"k":"draw","stream":"news","n":0,"value":…}` with `value` the top 53
+  bits (an exact JSON integer); state `changes.rng` carries the six
+  counters (full states, and whenever a draw changed them). An unknown
+  stream name is `bad_intent`; outside diag `draw` is refused `diag_only`.
 
 ### M2.5 Replay harness and 10k-tick parity
 

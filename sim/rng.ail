@@ -1,0 +1,74 @@
+module stapledons/sim/rng
+
+-- Counter-based PRNG with named streams (design m2-journey-core §M2.4).
+-- Pure: runs on the strict VM (`make strict`, rngVm). Reference:
+-- tools/rng_ref.py, bit for bit.
+--
+-- Algorithm "splitmix64-1": stream s of a game with seed `seed` is the
+-- SplitMix64 sequence seeded with key = mix64(mix64(seed) ^ id(s)); its n-th
+-- value (0-based) is mix64(key + (n + 1) * golden). The world keeps one
+-- counter per stream in a fixed record, so a value depends only on (seed,
+-- stream, counter): no hidden state, and streams are independent by
+-- construction. Ids are fixed constants, not positions, so adding a stream
+-- never shifts another's values.
+--
+-- AILANG Int is 64-bit two's complement; `*` and `+` wrap mod 2^64 and the
+-- bitwise ops are strict-VM clean since v0.51.0 (ailang#1450), identical on
+-- the interpreter (probed at M2.4 start). `>>` is arithmetic, so the
+-- logical shift SplitMix64 needs is `shr` below.
+import std/option (Option, Some, None)
+
+export pure func rngId() -> string = "splitmix64-1"
+
+-- SplitMix64 constants as two's-complement Int (hex literals above 2^63 - 1
+-- do not parse on v0.51.0).
+pure func golden() -> int = 0 - 7046029254386353131 -- 0x9e3779b97f4a7c15
+pure func mulA() -> int = 0 - 4658895280553007687   -- 0xbf58476d1ce4e5b9
+pure func mulB() -> int = 0 - 7723592293110705685   -- 0x94d049bb133111eb
+
+-- Logical shift right for 1 <= k <= 63: the arithmetic shift with the
+-- sign-extended top k bits masked off.
+export pure func shr(x: int, k: int) -> int = (x >> k) & ((1 << (64 - k)) - 1)
+
+-- SplitMix64 finaliser (Vigna, splitmix64.c).
+export pure func mix64(z0: int) -> int {
+  let z1 = (z0 ^ shr(z0, 30)) * mulA();
+  let z2 = (z1 ^ shr(z1, 27)) * mulB();
+  z2 ^ shr(z2, 31)
+}
+-- The n-th output (0-based) of SplitMix64 seeded with `state`.
+export pure func splitmix64(state: int, n: int) -> int = mix64(state + (n + 1) * golden())
+
+-- Named streams; `news` is M4's. A new stream takes the next free id.
+export type Stream = SJourney | SCrew | SEvents | SGalaxy | SAi | SNews deriving (Eq)
+export pure func allStreams() -> [Stream] = [SJourney, SCrew, SEvents, SGalaxy, SAi, SNews]
+export pure func streamId(s: Stream) -> int =
+  match s { SJourney => 1, SCrew => 2, SEvents => 3, SGalaxy => 4, SAi => 5, SNews => 6 }
+export pure func streamName(s: Stream) -> string =
+  match s { SJourney => "journey", SCrew => "crew", SEvents => "events", SGalaxy => "galaxy", SAi => "ai", SNews => "news" }
+export pure func streamOf(name: string) -> Option[Stream] =
+  if name == "journey" then Some(SJourney) else if name == "crew" then Some(SCrew) else if name == "events" then Some(SEvents)
+  else if name == "galaxy" then Some(SGalaxy) else if name == "ai" then Some(SAi) else if name == "news" then Some(SNews) else None
+
+-- One counter per stream: the number of values drawn so far.
+export type Rng = { journey: int, crew: int, events: int, galaxy: int, ai: int, news: int }
+export pure func zeroRng() -> Rng = { journey: 0, crew: 0, events: 0, galaxy: 0, ai: 0, news: 0 }
+export pure func counter(r: Rng, s: Stream) -> int =
+  match s { SJourney => r.journey, SCrew => r.crew, SEvents => r.events, SGalaxy => r.galaxy, SAi => r.ai, SNews => r.news }
+pure func advance(r: Rng, s: Stream) -> Rng =
+  match s {
+    SJourney => {r | journey: r.journey + 1}, SCrew => {r | crew: r.crew + 1}, SEvents => {r | events: r.events + 1},
+    SGalaxy => {r | galaxy: r.galaxy + 1}, SAi => {r | ai: r.ai + 1}, SNews => {r | news: r.news + 1}
+  }
+
+export pure func streamKey(seed: int, s: Stream) -> int = mix64(mix64(seed) ^ streamId(s))
+export pure func value(seed: int, s: Stream, n: int) -> int = splitmix64(streamKey(seed, s), n)
+-- The top 53 bits, in [0, 2^53): exact as a JSON number (the `draw` event).
+export pure func top53(v: int) -> int = shr(v, 11)
+
+-- Draw the next value of stream s: the value at its counter, counter + 1.
+export type Drew = { rng: Rng, n: int, value: int }
+export pure func draw(seed: int, r: Rng, s: Stream) -> Drew {
+  let n = counter(r, s);
+  { rng: advance(r, s), n: n, value: value(seed, s, n) }
+}

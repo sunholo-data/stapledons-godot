@@ -1,0 +1,40 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "milestone": "M2.4",
+  "pr": 31,
+  "branch": "sprint/m2.4-prng",
+  "commit_evaluated": "2924390",
+  "round": 1,
+  "evaluator": "claude-sonnet-5-5 (independent of executor)",
+  "toolchain": "runtime/bin/ailang v0.51.0, pinned binary first on PATH",
+  "score": 94,
+  "result": "pass",
+  "breakdown": {"tests_pass": 20, "lint_clean": 9, "acceptance_criteria": 30, "code_quality": 14, "documentation": 11, "design_fidelity": 10},
+  "hard_fails": [],
+  "automated": {
+    "make_test": "EXIT 0 (incl. rng-ref, strict, parity*, journey-replay, bridge, ui); sim tests 83/83",
+    "strict_rngVm": "seed 7 and 2^53-1: VM == interpreter == rng_ref.py --digest (-9169153163131597079, -1099755262192378830)",
+    "rng_ref_check": "published vectors ok; 6 streams x 3 seeds x 1000 values identical on strict VM and interpreter"
+  },
+  "independent_checks": {
+    "own_python_splitmix64": "seed 0 -> 0xe220a8397b1dcdaf, 0x6e789e6aa1b965f4, 0x06c45d188009454f; seed 1234567 -> 6457827717110365317, 3203168211198807973, ... match",
+    "shr_emulation": "(x>>k)&((1<<(64-k))-1) on signed-64 arithmetic >> equals logical shift for every k in 1..63 over 2006 values incl. 0, -1, 2^63, 2^63-1; k used: 30, 27, 31, 11",
+    "wire_vs_model": "406 draw events over seeds 0,1,7,123456789012,2^53-1 with random stream interleaving and 1-3 draws/tick: n, value=top53(mix64(key+(n+1)*gamma)) with key=mix64(mix64(seed)^id) all match; changes.rng equals counters after every changed tick",
+    "counters": "persist across ticks with no draws (rng omitted when unchanged), advance across ticks; bytecode and interpreter wire output byte-identical",
+    "refusals": "non-diag draw -> diag_only (counter unchanged); unknown stream or missing stream -> bad_intent; negative seed -> bad_game (pre-existing)",
+    "float_free": "rng.ail, Drawn and digest are Int only; no float in any committed value or digest",
+    "mutations": "7/7 killed via strict rngVm (mask 63-k, key uses + not ^, wrong stream id, top53 shift 12, n not n+1, wrong shift 28, ai counter also bumps news)"
+  },
+  "findings": [
+    {"severity": "non-blocking", "file": "tools/rng_ref.py:~118", "issue": "chi-square gate is p>0.001 (matches design doc line 523) but PR body/sprint text claims p>0.02; observed minimum 0.021. Fix the prose."},
+    {"severity": "non-blocking", "file": "sim/rng.ail:23", "issue": "shr is only valid for 1<=k<=63 (documented); k=0 and k>=64 are wrong. Not reachable today (k in {11,27,30,31})."},
+    {"severity": "non-blocking", "file": "design_docs/planned/r1/m2-journey-core-sprint.md", "issue": "No CHANGELOG entry and no m2-report.md yet; P4 recorded in plan/sprint JSON only (accepted deviation)."}
+  ],
+  "deviations": {
+    "typed_Stream_bad_intent": "accept: stronger invariant, decode-time error",
+    "Event.drew_StateMsg.rng_bridge_expects_splitmix64-1": "accept: minimal and tested; bridge untouched",
+    "digest_blocks_of_100": "accept: digest is still the same mix64 fold, matches reference",
+    "P4_in_plan_json": "accept until m2-report.md exists (M2.5)",
+    "signed_decimal_constants": "accept: verified equal to the hex values; ailang#1481 filed"
+  }
+}

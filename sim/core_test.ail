@@ -5,6 +5,7 @@ import ./core (Ship, initShip, step, turn, position, scriptedOffAxis, beta,
   Intent, IPlan, ICommit, IThrust, IHeading, ICancel, IRecord, IDraw, IEcho, Target, PlanReq, Refusal, Event, Crossing, Residuals, TickInput, Ticked,
   PlanView, JourneyView, journeyView, minutesPerYear, arrivalResiduals,
   defaultParams, newWorld, tick, derivePhase, phaseName, scenarioError, restTolerance, availableKgStart)
+import ./rng (Rng, Stream, SJourney, SCrew, SEvents, SGalaxy, SAi, SNews, value, top53, zeroRng)
 import pkg/sunholo/relativity/optics (Vec3)
 import pkg/sunholo/relativity/medium (photonDriveEnergy, mirrorDragPower, julianYearS, cSI, tripEnergy)
 import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta, rapidityOfBeta, oneMinusBeta, standardGravity)
@@ -52,7 +53,7 @@ pure func checkMassClosed() -> bool {
   let boosted = goN(w0, 1.0, 0.01, 50);
   let cruised = goN(boosted, 0.0, 0.5, 4);
   let braked = goN(cruised, -1.0, 0.01, 50);
-  let turned = tick(braked, {dtau: 0.0, intents: [IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel, IDraw("news")]}).world;
+  let turned = tick(braked, {dtau: 0.0, intents: [IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel, IDraw(SNews)]}).world;
   let play = goN(newWorld(1, false, defaultParams()), 1.0, 0.1, 3);
   availableKgStart() == 20000.0 && w0.ledger.availableKg == 20000.0 && boosted.ledger.availableKg == 20000.0 &&
   cruised.ledger.availableKg == 20000.0 && braked.ledger.availableKg == 20000.0 && turned.ledger.availableKg == 20000.0 &&
@@ -111,18 +112,35 @@ pure func checkScenarioMEff() -> bool {
   scenarioError({d | mEffKg: 0.03}) == Some("m_eff_too_small") && scenarioError({d | mEffKg: 0.032}) == Some("m_eff_too_small")
 }
 
--- Rng counters start at zero (algorithm lands in M2.4).
+-- Rng counters start at zero.
 pure func checkRngZero() -> bool {
   let r = diagWorld().rng;
   r.journey == 0 && r.crew == 0 && r.events == 0 && r.galaxy == 0 && r.ai == 0 && r.news == 0
 }
 
--- Refusals in a non-diag world: thrust/heading are diag_only, draw and
--- record unsupported until their milestones (cancel with no plan is a
--- no-op since M2.3a); the tick proceeds.
+-- Refusals in a non-diag world: thrust/heading/draw are diag_only, record
+-- unsupported until 2.1 (cancel with no plan is a no-op since M2.3a); the
+-- tick proceeds and no stream counter moves.
 pure func checkTickRefusals() -> bool {
-  let t = tick(newWorld(1, false, defaultParams()), {dtau: 0.5, intents: [IThrust(1.0), IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel, IDraw("news")]});
-  t.world.tick == 1 && refusalsAre(t.refused, ["0:diag_only", "1:diag_only", "3:unsupported"]) && t.world.ship.motion.tau == 0.5 && isIdle(t.world.journey)
+  let t = tick(newWorld(1, false, defaultParams()), {dtau: 0.5, intents: [IThrust(1.0), IHeading({x: 1.0, y: 0.0, z: 0.0}), ICancel, IDraw(SNews)]});
+  t.world.tick == 1 && refusalsAre(t.refused, ["0:diag_only", "1:diag_only", "3:diag_only"]) && t.world.ship.motion.tau == 0.5 && isIdle(t.world.journey) &&
+  t.world.rng.news == 0 && drawnText(t.events) == []
+}
+-- Draw (diag, M2.4): each draw reports (stream, counter, top 53 bits of the
+-- value at that counter) in order and advances only its own stream; the
+-- counters persist across ticks, so the next draw continues the sequence.
+pure func drawnText(es: [Event]) -> [string] =
+  match es { [] => [], e :: rest => (match e.drew { Some(d) => join(":", [e.kind, d.stream, intToStr(d.n), intToStr(d.value)]), None => e.kind }) :: drawnText(rest) }
+pure func drawnWant(s: Stream, name: string, n: int) -> string = join(":", ["draw", name, intToStr(n), intToStr(top53(value(7, s, n)))])
+pure func checkDrawIntent() -> bool {
+  let t1 = tick(diagWorld(), {dtau: 0.0, intents: [IDraw(SNews), IDraw(SNews), IDraw(SJourney)]});
+  let t2 = tick(t1.world, {dtau: 0.0, intents: [IDraw(SNews), IDraw(SAi)]});
+  let r = t2.world.rng;
+  join(",", drawnText(t1.events)) == join(",", [drawnWant(SNews, "news", 0), drawnWant(SNews, "news", 1), drawnWant(SJourney, "journey", 0)]) &&
+  join(",", drawnText(t2.events)) == join(",", [drawnWant(SNews, "news", 2), drawnWant(SAi, "ai", 0)]) &&
+  drawnWant(SNews, "news", 0) == "draw:news:0:5208588083530661" &&
+  r.news == 3 && r.journey == 1 && r.ai == 1 && r.crew == 0 && r.events == 0 && r.galaxy == 0 &&
+  refusalsAre(t1.refused, []) && refusalsAre(t2.refused, []) && t2.world.tick == 2
 }
 pure func refusalsAre(rs: [Refusal], want: [string]) -> bool =
   join(",", refusalText(rs)) == join(",", want)
@@ -291,7 +309,7 @@ pure func checkDiagOnly() -> bool {
 pure func plCommittedWorld() -> World = plDo(plDo(plWorld(true, defaultParams()), [plCruise(plAt(4.37), phi099())]).world, [ICommit(1)]).world
 -- One of every Intent constructor (IPlan twice: cruise and diag flip).
 pure func plEveryIntent() -> [Intent] = [plCruise(plAcen(), phi09()), plFlip(plAcen(), 1.0), ICommit(1), ICommit(2), ICancel, IThrust(1.0),
-  IHeading({x: 0.0, y: 1.0, z: 0.0}), IRecord({source: "ai", req: "r", kind: "line", sha256: "00", body: "x"}), IDraw("news"),
+  IHeading({x: 0.0, y: 1.0, z: 0.0}), IRecord({source: "ai", req: "r", kind: "line", sha256: "00", body: "x"}), IDraw(SNews),
   IEcho({target: plAcen(), cruisePhi: 1.0, flipG: None})]
 pure func plSameCommit(a: World, b: World) -> bool =
   match a.journey { Committed(x) => (match b.journey { Committed(y) => x.plan.id == y.plan.id && x.tau0 == y.tau0 && x.t0 == y.t0 && x.plan.trip.tauTotal == y.plan.trip.tauTotal, _ => false }), _ => false }
@@ -317,7 +335,8 @@ pure func checkCommittedRefusesAll() -> bool {
   let alone = tick(c, {dtau: 0.25, intents: []}).world;
   plCommitted(c.journey) && plAllRefused(c, plEveryIntent()) &&
   refusalsAre(all.refused, ["0:committed", "1:committed", "2:committed", "3:committed", "4:committed", "5:committed", "6:committed", "7:committed", "8:committed", "9:committed"]) &&
-  plSameCommit(c, all.world) && plSameFlight(all.world, alone) && all.world.ship.phase == Cruising && all.world.tick == c.tick + 1
+  plSameCommit(c, all.world) && plSameFlight(all.world, alone) && all.world.ship.phase == Cruising && all.world.tick == c.tick + 1 &&
+  all.world.rng.news == 0
 }
 -- Commit: the at-rest turn to the plan heading, a committed event, tau0/t0
 -- at the commit (a dtau 0 tick: the autopilot has not flown yet).
@@ -611,7 +630,7 @@ export pure func planVm(n: int) -> string =
   then "plan-ok" else "plan-BAD"
 
 export pure func worldVm(n: int) -> string =
-  if checkMassClosed() && checkPhaseDerivedDiag() && checkWorldPhases() && checkLedgerDiag() && checkScenarioMEff() && checkRngZero() && checkTickRefusals()
+  if checkMassClosed() && checkPhaseDerivedDiag() && checkWorldPhases() && checkLedgerDiag() && checkScenarioMEff() && checkRngZero() && checkTickRefusals() && checkDrawIntent()
   then "world-ok" else "world-BAD"
 
 test "turn at rest snaps rapidity" { checkTurnAtRest() }
@@ -625,6 +644,7 @@ test "ledger accumulates boost and cruise drag from the package" { checkLedgerDi
 test "scenario refuses m_eff below the brake threshold" { checkScenarioMEff() }
 test "rng counters start at zero" { checkRngZero() }
 test "tick refusals proceed" { checkTickRefusals() }
+test "M2.4 draw intent: events, counters per stream, persists across ticks" { checkDrawIntent() }
 test "AC2 plan alpha Cen cruise 0.9c (row 1)" { checkPlanCruise09() }
 test "AC2 plan alpha Cen cruise 0.99c (row 2: 0.6227 ship-yr, 4.414 Earth-yr)" { checkPlanCruise099() }
 test "AC2 plan alpha Cen cruise at the cap (row 3)" { checkPlanCruiseCap() }

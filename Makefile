@@ -7,7 +7,7 @@ AILANG_RELEASE ?= v0.51.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture parity parity-offaxis parity-v2 offaxis-v11-equiv strict journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
+.PHONY: all test deps physics sim ui map-capture parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test golden capture run import runtime export-macos export-smoke
 
 all: test
 
@@ -19,7 +19,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
+test: deps import physics sim ui parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm catalogue-vm catalogue-bytes sky-vm tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## catalogue parser unit tests (committed real-byte fixtures only; no data/raw needed)
 	python3 tools/test_extract.py
@@ -100,6 +100,17 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry voyageVm --args-json 0 sim/core_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry voyageVm --args-json 0 sim/core_test.ail); \
 	echo "strict voyageVm: VM $$got | interpreter $$interp"; [ "$$got" = "voyage-ok" ] && [ "$$interp" = "voyage-ok" ]
+	@# rngVm (M2.4): vectors, independence, then a digest of 10,000 draws per stream (integers only); strict VM = interpreter = tools/rng_ref.py
+	@for seed in 7 9007199254740991; do \
+	  want="rng-ok $$(python3 tools/rng_ref.py --digest $$seed 10000)"; \
+	  got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry rngVm --args-json $$seed sim/rng_test.ail); \
+	  interp=$$($(AILANG) run --quiet --package-dir sim --entry rngVm --args-json $$seed sim/rng_test.ail); \
+	  echo "strict rngVm seed $$seed: VM $$got | interpreter $$interp | reference $$want"; \
+	  [ "$$got" = "$$want" ] && [ "$$interp" = "$$want" ] || exit 1; \
+	done
+
+rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stream, first 1,000 values per stream (3 seeds) from strict VM and interpreter vs tools/rng_ref.py
+	AILANG=$(AILANG) python3 tools/rng_ref.py --check
 
 journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM and interpreter identical
 	@mkdir -p $(SCRATCH)

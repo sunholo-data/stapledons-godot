@@ -91,7 +91,7 @@ func test_v2_hello() -> bool:
 	var s := SimBridge.new()
 	var ok := s.start()
 	var p: Dictionary = s.hello_reply.get("proto", {})
-	assert_bool("v2 hello: proto 2.0, rng none-0", ok and p.get("major") == 2 and p.get("minor") == 0 and s.hello_reply.get("rng") == "none-0")
+	assert_bool("v2 hello: proto 2.0, rng splitmix64-1", ok and p.get("major") == 2 and p.get("minor") == 0 and s.hello_reply.get("rng") == "splitmix64-1")
 	s.stop()
 	return true
 
