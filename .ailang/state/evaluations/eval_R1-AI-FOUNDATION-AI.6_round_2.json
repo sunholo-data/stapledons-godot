@@ -1,0 +1,32 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.6",
+  "pr": 63,
+  "branch": "sprint/ai6-bridge",
+  "commit": "336e8ae",
+  "round": 2,
+  "evaluator": "independent (generator != judge)",
+  "result": "pass",
+  "score": 90,
+  "breakdown": {
+    "tests_pass": {"max": 20, "score": 20, "note": "make test rc 0, make ai-godot rc 0 (twice), make ai-bridge-mutants 17/17 killed, all on macOS at load 0.4-0.5/core. GitHub CI (Ubuntu) on 336e8ae: headless tests PASS (21m37s)."},
+    "lint_clean": {"max": 10, "score": 10, "note": "python-guard clean; CACHE_WRITE_FAILED lines in the log are ailang cache warnings, not failures"},
+    "acceptance_criteria": {"max": 30, "score": 28, "note": "AC11 bridge half met. The strict 2 ms rule holds only on an idle machine; on a busy one it is a relative rule plus the structural guard (-2)."},
+    "code_quality": {"max": 15, "score": 12, "note": "Overrun is recorded; thread discipline correct; the timing rule is still load-sensitive (see flakiness)."},
+    "documentation": {"max": 15, "score": 14, "note": "CHANGELOG fragment present, header docs good"},
+    "design_fidelity": {"max": 10, "score": 9, "note": "unchanged from round 1"},
+    "total": 90
+  },
+  "round1_findings": {
+    "F1": "RESOLVED. FD_SCRUB runs under /bin/bash (falls back to /bin/sh, where it closes 3-9 only and skips two-digit fds instead of exiting 127). /bin/dash is present here; mutants 'FD_SCRUB under /bin/dash' and '[5, 12, 13] closed' are killed. Ubuntu CI is green.",
+    "F2": "RESOLVED. A structural scan in test_static (no delay_msec, delay_usec, OS.execute, OS.call or await in poll's reachable functions) plus the jitter-baseline rule. All four intermittent-blocking mutants (10 ms 1-in-25 and 30 ms 1-in-40 BUSY, as delay and as busy loop) are killed, 17/17.",
+    "vacuous_kill_check": "RESOLVED (mutant 'hung child killed' is killed by the _close_pipes substitution)",
+    "assert_to_push_error": "RESOLVED", "loc_overrun_recorded": "RESOLVED", "changelog": "RESOLVED"
+  },
+  "timeout_lower_bound_336e8ae": "SOUND. The deadline is stamped when the request is written inside the pump, which is before the test's t0, so the elapsed time measured from t0 can legitimately be a few ms short of the limit (599 vs 600). dt >= limit - 50 still rejects an early cancel (the mutant using the text timeout for voice gives a 300 ms cut against 600, i.e. 300 ms short, and is killed). Upper bound limit + 300 is unchanged.",
+  "flakiness_verdict": "The busy-machine frame rule is a flaky test under extreme load, not a blocking bug. Evidence: (1) the reported failure had worst 8.8 ms and none at or over 50 ms; a real block in this bridge costs a whole timeout (300 ms or more) or a fixed 10-30 ms in every Nth poll, and the structural scan shows no blocking call is reachable from poll; (2) at 0.4/core the same hang cases show 0-2 polls over 5 ms, so the margin max(2, n/200) is thin; (3) a poll makes several syscalls (pipe reads, process probe) and the control makes one stat, so preemption hits the poll more often; (4) Ubuntu CI is green. Proposed fix (not shipped): make the control equal the poll in syscall mix, and/or skip the timing rule above about 2 load/core, leaving only the structural guard (but then the busy-loop mutants 'frame never blocked' would survive at that load, so prefer a wider relative allowance such as ctrl_slow + max(4, n/100), which still catches 4% of 10 ms polls). I tried a control with an open/read/process-probe/stat mix; my runs of it failed wholesale at load 49-53 (the service never handshook within the test's window), which I could not attribute, so I reverted it and changed no code. A change needs a quiet machine to validate against the 17 mutants.",
+  "blocking_findings": [],
+  "non_blocking": [
+    "Timing rule is load-sensitive: expect an occasional red on a very loaded local machine; rerun on a quiet one before treating it as a regression."
+  ]
+}
