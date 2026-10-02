@@ -1,0 +1,117 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.3",
+  "pr": 61,
+  "branch": "sprint/ai3-records",
+  "evaluated_commit": "4d1638f",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-02",
+  "evaluator": "independent agent (not the executor); ailang v0.51.0 (runtime/bin/ailang), arm64; fresh worktree from origin/sprint/ai3-records; no network beyond gh metadata, no keys",
+  "design_doc": "design_docs/planned/r1/ai-service-foundation.md",
+  "sprint_plan": "design_docs/planned/r1/ai-service-foundation-sprint.md (#### AI.3)",
+  "result": "pass",
+  "score": 95,
+  "total_score": 95,
+  "max_score": 100,
+  "pass_threshold": 70,
+  "score_breakdown": {
+    "tests_pass": {
+      "score": 20,
+      "max": 20,
+      "notes": "make test AILANG=$A exit 0 in the fresh worktree: sim 124/124; strict markersVm (41 lines), aiVm (ai-ok, 15 lines, digest 8390731922e56720), aiWireVm, protocolVm, planVm all strict VM = interpreter; parity-v2 identical; replay 6 cases identical; replay-compat 5 compared / 1 skipped, nothing else moved; sim bridge 0 failures; harness tests Ran 19 OK; ai-stub 4 key sets == goldens, cache 34 files; python-guard ok (12 allowlisted). CI on the PR green (run 37049244212, 20m05s, x86_64)."
+    },
+    "lint_clean": {
+      "score": 10,
+      "max": 10,
+      "notes": "No separate lint target; ailang check runs inside make test with no new warnings beyond the known CACHE_WRITE_FAILED/MOD010 flood. One new Python file (tools/gen_ai_session.py), role harness, allowlisted; it contains no logic under test."
+    },
+    "acceptance_criteria": {
+      "score": 30,
+      "max": 30,
+      "notes": "7/7 criteria in the sprint JSON verified: AC1 checkHello21 passes (hello minor 1; params end ai_max_open, ai_ttl_ticks; ai section last; a tick without AI intents carries no ai key) and tests/test_sim_bridge.gd passes with test_minor_accepted (fake proto_21) and proto_v31 refused bad_proto; AC3 checkAiRefusals; AC4 checkAiOnce; AC6 part checkAiHash (4 shasum vectors incl. non-ASCII, plus an accepted non-ASCII record); AC12 part make replay 6 cases identical incl. ai_sim_session (182 lines, arm64 == x86_64 bytes); AC13 make replay-compat 5 compared (alpha_cen, godot_map_voyage, offaxis_v11_equiv by cmp; diag_thrust600, session10k by sha256 of the stripped stream), 1 skipped (ai_sim_session, no 2.0 freeze), and the three named harness mutants are tests in tools/test_replay.py (fourth field, parsed-JSON compare, changed input); make test green."
+    },
+    "code_quality": {
+      "score": 13,
+      "max": 15,
+      "notes": "sim/ai.ail stays pure (imports std/*, ./rng, ./markers only) and runs on the strict VM; every record goes through recordResult which closes the request exactly once by construction (closed = without(open, req) before validation; Err and Ok both return it). Refusal order is the table's. Sprint JSON and plan status complete and accurate; LOC count 697 reproduced exactly. -1: two of my mutants survive as coverage gaps (hasDigit without the 5-9 checks; accepted media joining ai.lines), see non-blocking 1-2. -1: 697 LOC against the 650 cap (7% over; mostly harness)."
+    },
+    "documentation": {
+      "score": 12,
+      "max": 15,
+      "notes": "Design doc gains an 'As implemented in AI.3' paragraph under the validation table recording every executor decision; sprint plan status, sprint JSON (passes, dates, actual_loc, status, long notes), m2-journey-core.md:503-505 amended, AI.2 notes' 95/95 corrected; PR body accurate and a good G21 brief for Mark. -3: CHANGELOG.md untouched (landing step per CLAUDE.md, same deduction as AI.1/AI.2)."
+    },
+    "design_fidelity": {
+      "score": 10,
+      "max": 10,
+      "notes": "Matches design (a1) part 2 and the AI.3 plan: nine refusals in table order (ai_source, ai_unknown_req, ai_kind, ai_hash, then text ai_length/ai_numeral/ai_markup/ai_emotion or media ai_descriptor), each closing with ai_fallback except ai_unknown_req; ai_accepted carries segments + display text or the descriptor; ai.lines last 64 with ai_stale; hello minor 1; params AI keys last, ai section last in full states; bridge major 2 only; freeze then re-record; replay-compat strips exactly three fields and compares bytes; ai_sim_session covers what task 6 lists; D-21 caps and no-digits for every purpose; AI.1 and AI.2 evaluation findings all folded in. Deviations are small, documented in the design doc, and accepted below."
+    }
+  },
+  "hard_fails": [],
+  "automated_checks": {
+    "make_test": "exit 0 (fresh worktree, AILANG=runtime/bin/ailang v0.51.0 arm64, 20 min); sim 124/124",
+    "make_replay": "6 cases, all identical (36 s): ai_sim_session, alpha_cen, diag_thrust600, godot_map_voyage, offaxis_v11_equiv, session10k",
+    "make_replay_compat": "5 compared, 1 skipped (ai_sim_session: no 2.0 freeze), nothing else moved (35 s)",
+    "make_markers_mutants": "4/4 killed incl. the new invisible-only check",
+    "make_record_mutants": "5/5 killed (voice variant compared, numeral check dropped, 65 lines, no dedupe, offsets not strict)",
+    "tools_test_replay": "Ran 19 tests OK (Replay 10, Compat 8, AiSession 1)",
+    "strict_ai": "markersVm 41 lines digest 73d759c320e631df; aiVm ai-ok 15 lines digest 8390731922e56720; aiWireVm 34 lines; all strict VM = interpreter",
+    "ci": "success (run 37049244212, PR #61); x86_64 goldens recorded on run 37041941937 (branch tmp/ai3-x86-goldens, PR #59 CLOSED, success)"
+  },
+  "golden_diff_verification_G21": {
+    "method": "git diff -U0 origin/main -- tests/replays/; JSON structural diff of each changed line; tools/replay.py strip21() applied offline to each new 2.1 golden and compared byte for byte to tests/replays/compat-2.0/; compat-2.0 files compared to origin/main's goldens; live make replay-compat on arm64; mutations of goldens and inputs through the real harness",
+    "full_goldens": "6/6 (alpha_cen, godot_map_voyage, offaxis_v11_equiv x arm64, x86_64): exactly one hunk @@ -1,2 +1,2 @@ each. Line 1: only /proto/minor 0 -> 1. Line 2: /changes/params gains ai_max_open:8 and ai_ttl_ticks:3600 as its last two keys (after cruise_phi_default) and /changes gains ai:{last_req:0,open:[],core:''} as its last section (after rng, params). No other key, value or key order changed in either line; no other line changed.",
+    "strip21_offline": "strip21(new golden) == frozen 2.0 golden byte for byte for all 6 full goldens, both arches; the frozen compat-2.0 files (6 ndjson + 6 sha256) are byte-identical to the goldens at origin/main, so the freeze in e8df708 is faithful.",
+    "digest_goldens": "6/6 moved (diag_thrust600, session10k, session2k x arm64, x86_64). arm64 diag_thrust600 and session10k re-verified live: sha256 of the stripped 2.1 stream == frozen 2.0 digest (make replay-compat). session2k and all x86_64 digests were verified by CI: the x86_64 record run 37041941937 and the PR run 37049244212 both ran make replay (6 identical) and make replay-compat on ubuntu x86_64. I could not run x86_64 locally.",
+    "arch_differences": "offaxis_v11_equiv arm64 vs x86_64 differ at line 8 both before and after (pre-existing ailang#1465 ulp difference, not touched). ai_sim_session.state arm64 == x86_64 byte for byte (sha256Hex and integer-only AI state are arch-independent).",
+    "ai_sim_session": "new input log 183 lines (committed; AiSession test proves tools/gen_ai_session.py reproduces it byte for byte), golden 182 lines. Game A: 100 requests, each with exactly one ai_request and exactly one outcome (75 ai_accepted: 71 text + 4 media incl. 2 voice; 25 ai_fallback); refusal reasons seen: ai_bad_key 4, ai_descriptor 3, ai_emotion 1, ai_hash 2, ai_kind 2, ai_length 1, ai_markup 2 (incl. invisible-only), ai_numeral 2, ai_source 1, ai_stale 2, ai_too_many 1, ai_unknown_req 4, diag_only 1; fallback reasons: all 7 cancel reasons, expired 4, every record refusal code. Game B: alpha Cen at 0.99c, 3 'committed' refusals beside accepted AI opens/records/cancel, phases at_rest -> cruising, arrived once; last_req reaches 96 in game A (ids past 64).",
+    "strip_exactness": "strip21 edits only: hello proto minor (regex anchored at ^, exactly one match required), the two params keys immediately before params' closing brace (exactly once per full line), and the ai section immediately before ,\"events\": (exactly once per full line). My mutations: hello minor 2 -> ValueError; a key after ai_ttl_ticks -> ValueError (0,1); ai not last -> ValueError (1,0); a non-AI field (line 5 tau) changed in a 2.1 golden -> make replay fails on line 5; the same change in the frozen golden -> replay-compat fails 'frozen ... line 5 differs'; ai_ttl_ticks 3600->3601 in the 2.1 golden -> make replay fails on line 2; a byte appended to alpha_cen.ndjson -> compat reports 'skipped ... input changed since the freeze' and exits 1 with 'no case compared'. tests/test_replay.py additionally pins: a fourth new key fails (FAKE_EXTRA), parsed-JSON equality is not enough (FAKE_FMT 0.250), a 2.0 stream is rejected, VM/interpreter divergence fails, digest goldens.",
+    "verdict_for_mark": "The diff is exactly what the PR body says: lines 1-2 of every full golden, the hello minor and the two additions at the end of params and of the full state; every digest moves consistently; nothing else moved on either architecture."
+  },
+  "evaluator_verifications": {
+    "refusal_order": "recordResult (sim/ai.ail:266-278): request not open -> ai_source if source != ai else ai_unknown_req (closes nothing); open -> ai_source, ai_kind, then textResult (ai_hash, ai_length, ai_numeral, ai_markup, ai_emotion) or mediaResult (ai_hash as 64 lowercase hex, size, ai_descriptor). recText's table-order block pins ai_source > ai_kind > ai_hash > ai_length > ai_numeral > ai_markup on records failing several checks; my mutants M2 (hash after length), M17 (kind before source), M1/M24 (ai_source on a non-open request) all killed.",
+    "one_outcome_per_request": "closed is computed before validation and returned on both Err and Ok (ai.ail:270-275); checkAiOnce covers accepted, refused, cancelled and expired ids plus record+cancel+record and cancel+record in one tick; my M8 (Err branch keeps the request open) killed by AC3 and AC4. Session golden: 100/100 requests exactly one outcome.",
+    "invisible_only_segments": "markers.ail invisibleOnly over 23 code points (U+200B-D, 2060-2064, FEFF, 00AD, 180E, 034F, 200E-F, 202A-E, 2066-9) plus whitespace; checkInvisibleOnly (6 cases) and the new markers-mutant; recText and the session cover it as ai_markup; live probe 'Hi {sad}  U+200B{happy}x' -> ai_markup; an invisible char inside visible text is kept.",
+    "body_bounded_before_parse": "textResult computes bounded = length(body) <= maxChars + 176 and parses only when bounded (ai.ail:199-200); recLength pins 455 spaces + Hi -> ai_length vs 454 -> accepted, and repeat('a{sad}', 5000) (30000 chars) -> ai_length, run on the strict VM via aiVm; my M4 (bound +192) and M19 (unbounded parse) killed.",
+    "d21_caps_and_digits": "maxCharsFor: archive 600 else 280 (line, news, probe); noNumerals true on every open (ai.ail:151); checkAiRequestFields asserts all four purposes; recLength pins 280/281 for line and news (ASCII and 'ø' code points) and 600/601 for archive; recText pins digits for line, archive and news. Live probe: digits 5-9 refused ai_numeral on both runtimes.",
+    "descriptor_key_variant": "keyMatches (ai.ail:227-233): variant compared with strIs for portrait/avatar, only required to be a string for voice (and text, unreachable); recVoice accepts variant '3f2a...' and '-' for a voice key of variant '-' while refusing a missing variant, a numeric variant and a wrong emotion; recImages refuses variant '1' for a portrait. record-mutant 1 and my probe (variant as number -> ai_descriptor) agree.",
+    "ai_sim_session_claims": "Docstring coverage list checked against the golden (see golden_diff_verification_G21.ai_sim_session): every ai_open kind and purpose, every ai_open refusal, every record refusal, a second record on a closed id, all 7 cancel reasons + an unknown cancel, 4 expiries at opened+40, 66 accepted lines (ids past 64), ai_stale on the evicted line 1 and an accepted voice for a kept line, AI intents while committed on the alpha Cen voyage through arrival. Generator reproduces the committed log byte for byte (AiSession test, re-run: OK).",
+    "ai4_fixtures_d21": "tests/ai/requests.ndjson: news max_chars 200 -> 280 on reqs 2 and 5 only; ai/fixtures/stub_text.json news over_length is now 309 code points (299 of display text after the marker) > 280; the three ai-stub goldens each change at lines 3 and 6 only (req 2's input sha, req 5's body and sha); cache sums follow; make ai-stub green. This closes AI.4 eval non-blocking finding 5."
+  },
+  "own_mutations": {
+    "run": 24,
+    "killed": 21,
+    "survived": [
+      "M9 sim/ai.ail:189 hasDigit without contains(s, \"9\"): every digit fixture uses 0-4 (2041, 1, 0, '[1]', 'In 2041'), so a missed 9 is undetected",
+      "M10 sim/ai.ail:190 hasDigit without the 5-9 checks: same gap",
+      "M16 sim/ai.ail:264 withLine also keeps accepted media in ai.lines (segments []): checkAiLines only asserts lines after a refused text and an open portrait, never after an accepted media result"
+    ],
+    "killed_list": "M1/M24 ai_source on non-open -> ai_unknown_req; M2 hash after length; M3 length >=; M4 bodyBound +192; M5 no 4096 descriptor cap; M7 keepLine drops the newest; M8 refusal leaves request open; M11 age_stage unchecked; M12 first offset not 0; M13 offset <= duration; M14 lineSegs not captured at open; M15 imageOk skipped; M17 kind before source; M18 ai_emotion skipped; M19 parse unbounded; M20 params AI keys swapped (protocol_test AC1); M21 full state ai: None (protocol_test AC1); M22 mime 'image/' accepted; M23 ai_numeral check dropped",
+    "method": "scratch copy of sim/ per mutant in the session scratchpad, perl anchor substitution (die on miss), ailang test --no-color on ai_test.ail or protocol_test.ail. Three runs in the first batch were voided by a vanished scratch dir and re-run cleanly."
+  },
+  "adversarial_probes": {
+    "wire_session": "6-line 2.1 session through sim/ship.ail on --bytecode and the interpreter: byte-identical. Digits 5-9 in separate bodies -> ai_numeral each; '{l0ving}Hi' -> ai_numeral (documented order); '{loving}Hi' + NBSP -> accepted 'Hi' (trimmed); invisible-only segment -> ai_markup; records for ids refused ai_too_many at open -> ai_unknown_req; portrait descriptor with numeric variant -> ai_descriptor; bytes as a string -> ai_descriptor.",
+    "harness": "see golden_diff_verification_G21.strip_exactness"
+  },
+  "deviation_verdicts": {
+    "loc_697_vs_cap_650": "ACCEPT. Reproduced exactly (697 added non-blank non-comment lines over sim/, mk/ai.mk, tools/*.py, tests/*.gd, tests/fixtures). 47 over (7%); sim code is 103 against an estimate of 130; the overrun is the plan-mandated harness (--compat 99 + its 8 tests, generator 151 + 1 test). No scope creep.",
+    "committed_ai_sim_session_log": "ACCEPT. A committed, reviewable log is preferable to per-run generation; determinism is proven by AiSession.test_generator_writes_the_committed_log (hashlib sha256, fixed strings, no randomness); matches how the other replay inputs are kept.",
+    "refusal_codes_without_sub_reasons": "ACCEPT. The design table names the codes; the 'As implemented' paragraph records it; the sub-reason stays available in markers for tests and the service; keeps the wire's reason vocabulary closed.",
+    "ai_source_on_non_open_closes_nothing": "ACCEPT. Table order puts ai_source first; there is nothing to close; tested in recSource and documented.",
+    "ai_numeral_before_ai_markup": "ACCEPT. Equivalent on parsable bodies (marker names hold no digit) and strictly more informative on unparsable ones; documented; tested ('[1]' -> ai_numeral). Nit: the table row still reads 'in the display text'; a two-word amendment ('in the body') would remove the double reading.",
+    "descriptor_schema": "ACCEPT. The design left the schema open; the chosen one (key, mime, bytes; width/height for images; duration_ms/segments_ms for voice; 4096 code points; extra fields echoed; variant excluded for voice) is documented in the design doc and pinned by 30+ fixtures and the record-mutants. The 4096 cap also bounds std/json decode on the strict VM.",
+    "ci_about_20_minutes": "ACCEPT. The PR run is 20m05s on x86_64; replay-compat adds about 40 s (session10k on VM + interpreter); the rest is pre-existing. TICKS=2000 is available if the PR-sized session should be used instead.",
+    "ai4_fixtures_adapted_to_d21": "ACCEPT. Required by D-21 (news 280) and the AI.4 evaluation's finding 5; minimal (2 request lines, 1 stub string); goldens re-recorded by make ai-stub-record with only lines 3 and 6 moving in each; the over_length stub stays over the cap (299 display chars)."
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "sim/ai.ail:188-190 hasDigit: no fixture contains a digit 5-9, so mutants dropping those checks survive (M9, M10). Add one body such as '{loving}Five six 56789.' to recText (and/or the session generator) so the whole digit set is pinned.",
+    "sim/ai.ail:263-264 withLine: an accepted media result joining ai.lines is not detected (M16 survived). In checkAiLines, accept a portrait after `c` and assert ai.lines is unchanged (the comment already claims media never joins ai.lines).",
+    "bridge/sim_bridge.gd:11 PROTO_MINOR := 0: the bridge still asks for 2.0 while the sim answers 2.1. Harmless now (the sim ignores want.minor; Godot does not read the ai section until AI.6/AI.7), but bump it in the milestone that starts consuming `ai`.",
+    "sim/ai.ail:231 keyMatches: the `want.kind == \"text\"` branch is unreachable (text records never reach mediaResult); drop it or leave a comment so a reader does not look for a text descriptor.",
+    "design_docs/planned/r1/ai-service-foundation.md:218 the ai_numeral table row says 'in the display text' while the implementation note below says 'on the body'; amend the row to match.",
+    "ai.lines and OpenReq.lineSegs are sim state not shown in the `ai` section (last_req, open, core), so a client that resumes from a full state cannot reproduce ai_stale decisions. By design (replay is from input logs), but worth a sentence in the design doc before any save/restore milestone.",
+    "CHANGELOG.md has no AI.1-AI.4 entry; add at landing."
+  ],
+  "feedback": [],
+  "evaluator_notes": "Merge-ready from the evaluator's side once Mark has reviewed the golden diff (G21); the diff is exactly as the PR body describes it. Probe files, mutant scratch copies and my golden mutations lived in the session scratchpad or were reverted with git checkout; the branch's tree is unchanged by this evaluation except for this report."
+}
