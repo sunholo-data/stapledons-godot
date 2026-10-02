@@ -16,8 +16,8 @@ const GOLDEN := "res://docs/m2.6a/galaxy_map_panel.json"
 ## against the golden too, so the label test does not reuse format_row.
 const ALPHA_CEN_099 := {
 	"journey.plan.ship_years": "0.6208 ship-yr",
-	"journey.plan.earth_years": "4.401 Earth-yr",
-	"journey.plan.distance": "4.357 ly",
+	"journey.plan.earth_years": "4.400 Earth-yr",
+	"journey.plan.distance": "4.356 ly",
 	"journey.plan.cruise_beta": "0.990000c",
 	"journey.plan.cruise_one_minus_beta": "0.01000",
 	"journey.plan.cruise_gamma": "7.0888",
@@ -301,8 +301,8 @@ func test_commit_hold(map: GalaxyMap) -> bool:
 	for r in drows:
 		raw_ok = raw_ok and same(r["raw"], GalaxyMap.field_value(map.sim.world, r["field"]))
 	ok("dialog numbers are the sim's fields (bits)", raw_ok)
-	ok("dialog reads 0.6208 ship-yr / 4.401 Earth-yr (pinned)", drows[0]["text"] == "0.6208 ship-yr" and drows[1]["text"] == "4.401 Earth-yr")
-	ok("dialog labels on screen show those texts", (map.dialog_grid.get_child(1) as Label).text == "0.6208 ship-yr" and (map.dialog_grid.get_child(3) as Label).text == "4.401 Earth-yr")
+	ok("dialog reads 0.6208 ship-yr / 4.400 Earth-yr (pinned)", drows[0]["text"] == "0.6208 ship-yr" and drows[1]["text"] == "4.400 Earth-yr")
+	ok("dialog labels on screen show those texts", (map.dialog_grid.get_child(1) as Label).text == "0.6208 ship-yr" and (map.dialog_grid.get_child(3) as Label).text == "4.400 Earth-yr")
 	ok("dialog years left = the sim's years_left at 2 decimals", drows[3]["text"] == "%.2f yr" % map.sim.world["journey"]["plan"]["years_left"])
 	# Back sends nothing
 	map.close_commit_dialog()
@@ -409,7 +409,7 @@ func test_transit(map: GalaxyMap) -> bool:
 	ok("the sim arrived", map.journey_state() == "arrived" and map.title_text() == "Arrived at Alpha Centauri A")
 	ok("arrival supersedes the earlier refusal note", not map._status.text.contains("refused") and map._status.text.contains("journey: arrived"))
 	var arows := map.panel_rows()
-	ok("arrived readout: flown is the plan distance, not the rebased ship.flown", arows[4]["field"] == "journey.plan.distance" and arows[4]["text"] == "4.357 ly"
+	ok("arrived readout: flown is the plan distance, not the rebased ship.flown", arows[4]["field"] == "journey.plan.distance" and arows[4]["text"] == "4.356 ly"
 		and map.sim.world["ship"]["flown"] == 0.0)
 	ok("arrived progress bar is full", same(map.progress_values()[0], plan["distance"]) and same(map.progress_bar.value, map.progress_bar.max_value))
 	var sp: Dictionary = map.sim.world["ship"]["pos"]
