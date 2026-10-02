@@ -610,6 +610,27 @@ same moments in the game.
   the sim's record validation (length caps 280/280/600, `ai_numeral`,
   `ai_markup`, the marker grammar) give a per-model pass rate with no extra code.
 
+**Starting models (Mark, attended 2026-10-02):** "default models are like
+gemini 3.5 lite for speed and gemini 3.8 flash for smarts, openai sol 6.1 and
+glm flash".
+
+| Model | Role | Route |
+|---|---|---|
+| Gemini 3.5 Flash-Lite | speed: the default for short lines (crew line, news) | Gemini (`std/ai`), or via OpenRouter |
+| Gemini 3.8 Flash | smarts: archive entries, probe reports | Gemini (`std/ai`), or via OpenRouter |
+| OpenAI Sol 6.1 | contestant | OpenRouter |
+| GLM Flash | contestant (cheap) | OpenRouter |
+
+These four also replace AI.5's proposed text model (`mistralai/mistral-nemo`)
+as the defaults to put in `data/ai/models.json`, `routing.json` and
+`prices.json`.
+- **Not done yet:** the exact provider model ids and prices are unverified
+  offline. They get checked against the live model lists, and recorded, at the
+  attended AI.10b run, before any default changes.
+- **Routing split:** a speed model for short purposes and a smart model for long
+  ones is a new per-purpose split in `routing.json`. Today it routes per kind,
+  with all text treated alike.
+
 **Shape (to be designed properly when it is picked up):**
 
 - **Input.** A recorded request stream: the `ai_req` lines from a fixed voyage
