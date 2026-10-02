@@ -218,8 +218,13 @@ or model from the executor (generator ≠ judge). Each lands as its own PR.
 ### Wave 1 (parallel: disjoint files)
 
 #### M1.2b-T3: Tier writer, validation and sidecars
-**Status (2026-10-02):** executed on `sprint/m1.2b-t3`, awaiting independent
-evaluation. SHA-256 comes from the bundled `std/crypto` (`sha256Bytes`), so
+**Status (2026-10-02):** executed on `sprint/m1.2b-t3`, eval round 1 88/100
+(pass). Round-1 findings fixed on the same PR: the commit is all-or-nothing
+(old bin set aside as `.bak` and restored if the sidecar rename fails; the bin
+temp write is checked; every `.tmp` is removed; `make catalogue-main` forces
+each failure), the 50,000 medium quota is pinned by `checkMediumQuota`
+(`quotaVm`; the 49,999 and 50,001 mutants die), and generated tiers are
+gitignored. SHA-256 comes from the bundled `std/crypto` (`sha256Bytes`), so
 there is no `shasum` glue in the writer; `make catalogue-main` (in `make test`)
 checks every digest against `shasum` on committed fixtures. `make
 catalogue-scan` scans every CNS5 and GCNS row: 0 refusals. The full GCNS scan
@@ -426,7 +431,9 @@ harness).
   - remove `process_stars.sh`;
   - `starmap-manager` SKILL.md and `status.sh` get the tier table, the
     sources (VizieR A19 + A6) and `make catalogue TIER=…`;
-  - `.gitignore` lists `stars_large.*`.
+  - `.gitignore` already ignores every `data/starmap/stars_*` tier (T3 round 2),
+    so the commit below force-adds quick and medium (`add -f`); large stays
+    ignored.
 - **Commits:** stage the quick and medium bins and sidecars (~1.4 MB, D-3).
   The controller commits.
 

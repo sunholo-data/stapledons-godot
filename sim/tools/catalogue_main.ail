@@ -13,7 +13,7 @@ import std/option (Some, None)
 import std/string (concat, join, length, chars, endsWith, substring, intToStr)
 import std/list (foldl, filter, map)
 import std/crypto (sha256Hex, sha256Bytes)
-import std/bytes (fromBase64)
+import std/bytes (fromBase64, toBase64)
 import std/json (Json, encode, decode, jo, kv, js, jint, ja, get, asString, asArray)
 import std/fs (readFileResult, readFileBytes, writeFileBytes, writeFileResult, renameFileResult, removeFileResult, mkdirAllResult, fileExists)
 import std/io (println, eprintln, exit)
@@ -77,22 +77,75 @@ func rawDigest(path: string) -> Result[string,string] ! {FS} = match readFileByt
   Err(e) => Err(concat(["cannot read raw ",path,": ",e])),
   Ok(b64) => match fromBase64(b64) { Some(b) => Ok(sha256Bytes(b)), None => Err("raw bytes did not decode") }
 }
--- Temp files sit beside the targets (same filesystem), so each rename is atomic; the sidecar is
--- renamed last, so a sidecar on disk always describes a complete bin.
-func commit(p: Plan, out: string, tier: string) -> Result[(),string] ! {FS} {
+func writeFail(msg: string) -> () ! {IO} { eprintln(concat(["catalogue: write failed: ",msg])); exit(1) }
+-- writeFileBytes has no Result form (v0.51.0): probe the path with writeFileResult first, so an
+-- unwritable path is an Err rather than a panic, then read the bytes back and compare.
+func writeBytesChecked(path: string, b: bytes) -> Result[(),string] ! {FS} = match writeFileResult(path,"") {
+  Err(e) => Err(e),
+  Ok(_) => {
+    writeFileBytes(path,b);
+    match readFileBytes(path) {
+      Err(e) => Err(e),
+      Ok(b64) => if b64 == toBase64(b) then Ok(()) else Err("bytes read back differ from bytes written")
+    }
+  }
+}
+func tidy(binTmp: string, jsonTmp: string) -> () ! {FS} {
+  if fileExists(binTmp) then { let _ = removeFileResult(binTmp); () } else ();
+  if fileExists(jsonTmp) then { let _ = removeFileResult(jsonTmp); () } else ()
+}
+-- Undo a half-commit after the new bin landed: put the set-aside bin back, or remove the new bin
+-- when there was none. Says exactly what state is left.
+func rollback(hadBin: bool, bin: string, binBak: string) -> string ! {FS} =
+  if hadBin then match renameFileResult(binBak,bin) {
+    Ok(_) => "previous bin restored, nothing changed",
+    Err(e) => concat(["ROLLBACK FAILED: the previous bin is at ",binBak," and ",bin," is the new one without its sidecar: ",e])
+  } else match removeFileResult(bin) {
+    Ok(_) => "new bin removed, nothing changed",
+    Err(e) => concat(["ROLLBACK FAILED: ",bin," is the new bin without its sidecar: ",e])
+  }
+-- All-or-nothing commit. Both temp files are written and checked beside the targets (same
+-- filesystem, so each rename is atomic). Then the old bin is set aside as .bak, the new bin and
+-- the new sidecar are renamed in, and the .bak is removed. If the sidecar rename fails after the
+-- bin landed, the .bak is renamed back (or the new bin removed), so the old pair is intact.
+-- Readers: two files cannot be swapped in one rename, so a reader racing a commit can see no bin
+-- or a new bin beside the old sidecar for an instant; the sidecar carries sha256.bin, so readers
+-- (M1.2c loader) check it and treat a mismatch as "retry", never as data.
+-- Ok carries the success suffix, with a warning when the commit succeeded but the .bak could not be removed.
+func commit(p: Plan, out: string, tier: string) -> Result[string,string] ! {FS} {
   let bin = outputName(out,tier,"bin");
   let json = outputName(out,tier,"json");
   let binTmp = concat([bin,".tmp"]);
   let jsonTmp = concat([json,".tmp"]);
+  let binBak = concat([bin,".bak"]);
   match mkdirAllResult(out) {
-    Err(e) => Err(e),
-    Ok(_) => {
-      writeFileBytes(binTmp,p.bin);
-      match writeFileResult(jsonTmp,p.sidecar) {
-        Err(e) => { let _ = removeFileResult(binTmp); Err(e) },
-        Ok(_) => match renameFileResult(binTmp,bin) {
-          Err(e) => { let _ = removeFileResult(binTmp); let _ = removeFileResult(jsonTmp); Err(e) },
-          Ok(_) => renameFileResult(jsonTmp,json)
+    Err(e) => Err(concat(["cannot create ",out,": ",e,"; nothing written"])),
+    Ok(_) => match writeBytesChecked(binTmp,p.bin) {
+      Err(e) => { tidy(binTmp,jsonTmp); Err(concat(["cannot write ",binTmp,": ",e,"; temp files removed, nothing changed"])) },
+      Ok(_) => match writeFileResult(jsonTmp,p.sidecar) {
+        Err(e) => { tidy(binTmp,jsonTmp); Err(concat(["cannot write ",jsonTmp,": ",e,"; temp files removed, nothing changed"])) },
+        Ok(_) => {
+          let hadBin = fileExists(bin);
+          match (if hadBin then renameFileResult(bin,binBak) else Ok(())) {
+            Err(e) => { tidy(binTmp,jsonTmp); Err(concat(["cannot set aside ",bin,": ",e,"; temp files removed, nothing changed"])) },
+            Ok(_) => match renameFileResult(binTmp,bin) {
+              Err(e) => {
+                tidy(binTmp,jsonTmp);
+                let left = if hadBin then (match renameFileResult(binBak,bin) {
+                  Ok(_) => "previous bin restored, nothing changed",
+                  Err(e2) => concat(["ROLLBACK FAILED: the previous bin is at ",binBak,": ",e2])
+                }) else "nothing changed";
+                Err(concat(["cannot install ",bin,": ",e,"; temp files removed, ",left]))
+              },
+              Ok(_) => match renameFileResult(jsonTmp,json) {
+                Err(e) => { tidy(binTmp,jsonTmp); Err(concat(["cannot install ",json,": ",e,"; temp files removed, ",rollback(hadBin,bin,binBak)])) },
+                Ok(_) => if hadBin then (match removeFileResult(binBak) {
+                  Ok(_) => Ok(" + sidecar"),
+                  Err(e) => Ok(concat([" + sidecar; warning: committed, but could not remove ",binBak,": ",e]))
+                }) else Ok(" + sidecar")
+              }
+            }
+          }
         }
       }
     }
@@ -111,9 +164,9 @@ export func main(a: {tier: string, csv: string, raw: string, lock: string, out: 
           Ok(pkg) => match plan({tier: a.tier, csv: csv, rawSha: rawSha, ailang: a.ailang, pkg: pkg}) {
             Err(e) => fail(e),
             Ok(p) => match commit(p,a.out,a.tier) {
-              Err(e) => fail(concat(["write failed: ",e])),
-              Ok(_) => println(concat(["catalogue ",a.tier,": ",intToStr(p.count)," rows, ",intToStr(p.excluded),
-                " excluded -> ",outputName(a.out,a.tier,"bin")," (",intToStr(p.count*24)," B) + sidecar"]))
+              Err(e) => writeFail(e),
+              Ok(warn) => println(concat(["catalogue ",a.tier,": ",intToStr(p.count)," rows, ",intToStr(p.excluded),
+                " excluded -> ",outputName(a.out,a.tier,"bin")," (",intToStr(p.count*24)," B)",warn]))
             }
           }
         }

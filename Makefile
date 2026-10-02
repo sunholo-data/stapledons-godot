@@ -179,14 +179,14 @@ catalogue-probe:   ## real-row pure CSV/normal-photometry probe; 5 strict VM par
 	AILANG=$(AILANG) python3 tools/catalogue_probe.py
 
 .PHONY: catalogue-vm
-catalogue-vm:     ## T1 transform/selection + T3 validation and writer plan: strict VM, interpreter and exact anchors
+catalogue-vm:     ## T1 transform/selection + T3 validation, the exact 50,000 medium quota and writer plan: strict VM, interpreter and exact anchors
 	@mkdir -p $(SCRATCH)
-	@set -e; for entry in transformVm selectionVm mainVm; do \
+	@set -e; for entry in transformVm selectionVm quotaVm mainVm; do \
 	  case $$entry in mainVm) f=sim/tools/catalogue_main_test.ail;; *) f=sim/tools/catalogue_test.ail;; esac; \
 	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-vm.txt; \
 	  $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-interp.txt; \
 	  cmp $(SCRATCH)/$$entry-vm.txt $(SCRATCH)/$$entry-interp.txt; \
-	  case $$entry in transformVm) want=transform-ok;; selectionVm) want=selection-ok;; mainVm) want=main-ok;; esac; \
+	  case $$entry in transformVm) want=transform-ok;; selectionVm) want=selection-ok;; quotaVm) want=quota-ok;; mainVm) want=main-ok;; esac; \
 	  test "$$(cat $(SCRATCH)/$$entry-vm.txt)" = "$$want"; cat $(SCRATCH)/$$entry-vm.txt; \
 	done
 
@@ -224,7 +224,26 @@ catalogue-main:   ## M1.2b-T3 writer on committed fixtures: VM bytes == interpre
 	if $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/bad_row.csv,$(CAT_FIX)/raw.dat,$$d/atomic) sim/tools/catalogue_main.ail 2>$$d/refusal.txt; \
 	then echo "catalogue-main: invalid row was accepted"; exit 1; fi; \
 	test "$$(cat $$d/atomic/stars_quick.bin)" = keep; test "$$(ls -A $$d/atomic)" = stars_quick.bin; \
-	echo "catalogue-main atomic: refused ($$(cat $$d/refusal.txt)); existing file untouched, no sidecar or temp left"
+	echo "catalogue-main atomic: refused ($$(cat $$d/refusal.txt)); existing file untouched, no sidecar or temp left"; \
+	$(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$d/vm) sim/tools/catalogue_main.ail >/dev/null; \
+	cmp $$d/vm/stars_quick.bin $$d/interp/stars_quick.bin; cmp $$d/vm/stars_quick.json $$d/interp/stars_quick.json; \
+	test "$$(ls -A $$d/vm | tr '\n' ' ')" = "stars_medium.bin stars_medium.json stars_quick.bin stars_quick.json "; \
+	echo "catalogue-main replace: rewrite over an existing tier is identical, no .tmp or .bak left"; \
+	for old in keep none; do m=$$d/mid-$$old; mkdir -p $$m/stars_quick.json; printf old > $$m/stars_quick.json/inside; \
+	  if [ $$old = keep ]; then printf keep > $$m/stars_quick.bin; want="stars_quick.bin stars_quick.json "; else want="stars_quick.json "; fi; \
+	  if $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$m) sim/tools/catalogue_main.ail 2>$$d/mid.txt; \
+	  then echo "catalogue-main: sidecar rename into a directory succeeded"; exit 1; fi; \
+	  test "$$(ls -A $$m | tr '\n' ' ')" = "$$want" || { echo "catalogue-main mid-$$old: left $$(ls -A $$m)"; exit 1; }; \
+	  if [ $$old = keep ]; then test "$$(cat $$m/stars_quick.bin)" = keep; fi; test "$$(cat $$m/stars_quick.json/inside)" = old; \
+	  grep -q "nothing changed" $$d/mid.txt; ! grep -q "nothing written" $$d/mid.txt; \
+	  echo "catalogue-main mid-commit ($$old bin): sidecar rename failed after the bin landed; rolled back, no temp left ($$(cat $$d/mid.txt))"; \
+	done; \
+	m=$$d/tmpfail; mkdir -p $$m/stars_quick.bin.tmp; printf x > $$m/stars_quick.bin.tmp/inside; printf keep > $$m/stars_quick.bin; \
+	if $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,quick,$(CAT_FIX)/rows.csv,$(CAT_FIX)/raw.dat,$$m) sim/tools/catalogue_main.ail 2>$$d/tmpfail.txt; \
+	then echo "catalogue-main: unwritable bin temp was accepted"; exit 1; fi; \
+	test "$$(ls -A $$m | tr '\n' ' ')" = "stars_quick.bin stars_quick.bin.tmp "; test "$$(cat $$m/stars_quick.bin)" = keep; \
+	grep -q "cannot write .*stars_quick.bin.tmp.*nothing changed" $$d/tmpfail.txt; \
+	echo "catalogue-main bin-temp write: checked Err, old bin untouched ($$(cat $$d/tmpfail.txt))"
 
 .PHONY: sky-vm
 sky-vm:           ## M1.4b sky-model fitter (pure core): strict VM and interpreter must both print sky-ok

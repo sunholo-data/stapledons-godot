@@ -2,7 +2,7 @@ module stapledons/sim/tools/catalogue_test
 import ./catalogue (Row, Selection, transform, selectTier, selectMedium, validTier)
 import std/result (Ok, Err)
 import std/string (concat)
-import std/list (map, length)
+import std/list (map, length, range, foldl)
 
 pure func csv(rows: string) -> string = concat(["id,x,y,z,G,BPRP,wd\n", rows])
 pure func near(a: float, b: float) -> bool = a-b < 0.000001 && b-a < 0.000001
@@ -78,6 +78,18 @@ pure func checkHugeCoordRefused() -> bool {
   refused(rowsOf("z,0,0,-1000000.0001,0,0.823,0\n"),"large") && refused(rowsOf("a,1,0,0,0,0.823,0\nb,0,0,-2e6,,,1\n"),"medium") &&
   !refused(edge,"medium") && !refused(edge,"quick") && map(\r. r.id,tier(edge,"medium").rows) == ["ex","ey","ez"]
 }
+-- T3 (eval round 1): the medium quota is exactly 50,000. 50,001 complete rows at x = 0..50000
+-- (in order: the sort-order cases are above; a shuffled 50k makes the interpreter take 40 s): medium keeps the
+-- 50,000 nearest and drops only x = 50000. Kills the 49,999 and 50,001 mutants (~6 s per engine).
+-- foldl, not std/list maximumFloat: that one recurses and overflows at 50k on v0.51.0.
+pure func quotaRows() -> [Row] =
+  map(\i. {id: "q", x: intToFloat(i), y: 0.0, z: 0.0, teff: 5000.0, v: 5.0, flags: 0},range(0,50001))
+pure func checkMediumQuota() -> bool = match selectTier(quotaRows(),"medium") {
+  Ok(s) => length(s.rows) == 50000 && s.excluded == 0 &&
+    foldl(\m r. if r.x > m then r.x else m,-1.0,s.rows) == 49999.0 && foldl(\m r. if r.x < m then r.x else m,1e9,s.rows) == 0.0,
+  Err(_) => false
+}
+test "T3 medium quota is exactly 50000" { checkMediumQuota() }
 test "T3 tier names refused" { checkTierNameRefused() }
 test "T3 huge coordinates refused before the sort" { checkHugeCoordRefused() }
 test "T1 normal independent anchors and coordinates" { checkNormal() }
@@ -91,4 +103,5 @@ test "T1 header only empty input" { checkEmpty() }
 test "T1 field rejection before missing shortcut" { checkReject() }
 test "T1 exact header" { checkHeader() }
 export pure func transformVm(n: int) -> string = if checkN1() && checkN2() && checkNormal() && checkWD() && checkClamp() && checkMissing() && checkReject() && checkHeader() && checkEmpty() then "transform-ok" else "transform-BAD"
+export pure func quotaVm(n: int) -> string = if checkMediumQuota() then "quota-ok" else "quota-BAD"
 export pure func selectionVm(n: int) -> string = if checkSelection() && checkTies() && checkAxes() && checkTierNameRefused() && checkHugeCoordRefused() then "selection-ok" else "selection-BAD"
