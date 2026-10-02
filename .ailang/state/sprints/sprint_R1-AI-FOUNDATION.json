@@ -257,7 +257,7 @@
       "started": "2026-10-02",
       "completed": "2026-10-02",
       "actual_loc": {"added_raw": 756, "added_excluding_comments_and_blank": 589, "deleted": 63, "code": 336, "tests": 397, "config": 23},
-      "notes": "Executed on branch sprint/ai2-protocol; awaiting independent evaluation. make test green (AILANG v0.51.0, arm64): sim 95/95, strict incl. planVm/protocolVm, strict-ai aiVm (strict VM = interpreter, 11 lines), replay 5 cases identical with tests/replays/ unchanged. Mutations killed 11/11: AI open refused committed; draw accepted committed; seed from news stream; seed counter not advanced; ids reused; expiry one tick late; cancel not closing; AI intent touching lastPlanId; any cancel reason accepted; entity-id tail unchecked; ai_too_many off by one. Decisions: constraints derived by the sim per purpose (max_chars line 280, news 200, archive 600, probe 280; no_numerals true; emotions default all 8); key variant '0' for images, '-' for text/voice; voice without line_req is ai_stale; line_req on non-voice is ai_bad_key; record refused 'unsupported' committed or not until AI.3 (checkCommittedRefusesAll expects index 7 'unsupported'); change-set ai section prints only when it changes (only after AI intents), full states omit it until AI.3; decodeFullParams defaults the AI params when absent. Deviations: sim/ailang.toml exports gains stapledons/sim/ai (required to import it; AI.1 adds markers on the same line); core_test.ail has a third hunk (the import line). Upstream: ailang#1505 (nested cons pattern a :: b :: _ evaluator-only on the strict VM), worked around. Carried to AI.3 from the AI.1 evaluation (record validation is AI.3 scope): reject invisible-only segments (U+200B etc. survive the markers trim) as ai_markup; bound the body by ai_length BEFORE parseLine (its recursion is unbounded per character); avoid ailang#1503 patterns."
+      "notes": "Executed on branch sprint/ai2-protocol; awaiting independent evaluation. make test green (AILANG v0.51.0, arm64): sim 109/109 (corrected from 95/95 in AI.3, per the AI.2 evaluation), strict incl. planVm/protocolVm, strict-ai aiVm (strict VM = interpreter, 11 lines), replay 5 cases identical with tests/replays/ unchanged. Mutations killed 11/11: AI open refused committed; draw accepted committed; seed from news stream; seed counter not advanced; ids reused; expiry one tick late; cancel not closing; AI intent touching lastPlanId; any cancel reason accepted; entity-id tail unchecked; ai_too_many off by one. Decisions: constraints derived by the sim per purpose (max_chars line 280, news 200, archive 600, probe 280; no_numerals true; emotions default all 8); key variant '0' for images, '-' for text/voice; voice without line_req is ai_stale; line_req on non-voice is ai_bad_key; record refused 'unsupported' committed or not until AI.3 (checkCommittedRefusesAll expects index 7 'unsupported'); change-set ai section prints only when it changes (only after AI intents), full states omit it until AI.3; decodeFullParams defaults the AI params when absent. Deviations: sim/ailang.toml exports gains stapledons/sim/ai (required to import it; AI.1 adds markers on the same line); core_test.ail has a third hunk (the import line). Upstream: ailang#1505 (nested cons pattern a :: b :: _ evaluator-only on the strict VM), worked around. Carried to AI.3 from the AI.1 evaluation (record validation is AI.3 scope): reject invisible-only segments (U+200B etc. survive the markers trim) as ai_markup; bound the body by ai_length BEFORE parseLine (its recursion is unbounded per character); avoid ailang#1503 patterns."
     },
     {
       "id": "AI.3_RECORD_VALIDATION_GOLDENS",
@@ -296,10 +296,19 @@
         "make test AILANG=$A"
       ],
       "registry": "depend std/crypto",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-02",
+      "completed": "2026-10-02",
+      "status": "stopped at G21 (Mark reviews the golden diff); not merged; independent evaluation pending",
+      "actual_loc": {
+        "added_raw_excluding_goldens_and_docs": 911,
+        "added_excluding_comments_and_blank": 697,
+        "code_sim": 103,
+        "tests": 316,
+        "harness_python": 250,
+        "config": 27
+      },
+      "notes": "Executed on branch sprint/ai3-records. make test green (AILANG v0.51.0, arm64): sim 124/124, strict incl. aiVm (15 lines, strict VM = interpreter), replay 6 cases identical (ai_sim_session new), replay-compat 5 compared / 1 skipped (ai_sim_session: no 2.0 freeze), nothing else moved; x86_64 replay-compat green on the throwaway CI run 37041941937 for the 10k and 2k sessions. Goldens: compat-2.0 frozen first (commit e8df708, both arches + inputs.sha256), then arm64 re-recorded locally and x86_64 on CI via tmp/ai3-x86-goldens (draft PR #59, closed, branch deleted); every full golden moves only lines 1-2 (hello minor 1; full state + params ai_max_open/ai_ttl_ticks last + ai section last); digests follow; ai_sim_session arm64 == x86_64. Mutations: make markers-mutants 4/4 (new: invisible-only check), make record-mutants 5/5 (voice variant compared, no numeral check, 65 lines, no dedupe, offsets not strict), harness mutants 3/3 caught by tools/test_replay.py (strip a fourth field, parsed-JSON compare, changed input passed). After merging AI.4: tests/ai/requests.ndjson news max_chars 280 and the news over_length stub lengthened to stay over it (ai-stub goldens re-recorded). Folded in: D-21 (no digits in every text kind; max_chars 280 line/news/probe, 600 archive); AI.1 eval (invisible-only segment = ai_markup empty_segment; text body bounded by max_chars+176 before parseLine, a 30000-char body refused on the strict VM); AI.2 eval (descriptor key check ignores variant for voice/text; ai_open precedence pinned under a full queue; emotions deduplicated; M2 doc :503-505 amended; this file's 95/95 corrected). Decisions (executor-chosen, documented in the design doc under the validation table): refusal reason is the table code without the parser sub-reason; ai_source for a request that is not open closes nothing; ai_numeral checked on the body (precedes ai_markup); descriptor schema key/mime/bytes + width/height (images) or duration_ms/segments_ms (voice), max 4096 code points, extra fields echoed; a voice request captures its line's segment count at open (OpenReq.lineSegs). No new AILANG bug found; ailang#1503/#1505 patterns avoided. Deviation: LOC over the 650 cap (697 counted), mostly the harness (gen_ai_session.py 151, replay --compat 99); ai_sim_session's input log is committed and checked against its generator by tools/test_replay.py rather than generated per run.",
       "pause_after": "G21: golden review (as M2 P5); Mark approves; blocks merge and AI.7",
       "merge_rule": "merge before M1.7 starts; else re-record on top of M1.7"
     },
@@ -344,7 +353,13 @@
       "passes": true,
       "started": "2026-10-02",
       "completed": "2026-10-02",
-      "actual_loc": {"code": 469, "tests": 278, "config": 103, "counted_total": 850, "basis": "non-blank, non-comment lines; fixtures, goldens, data and docs uncounted"},
+      "actual_loc": {
+        "code": 469,
+        "tests": 278,
+        "config": 103,
+        "counted_total": 850,
+        "basis": "non-blank, non-comment lines; fixtures, goldens, data and docs uncounted"
+      },
       "notes": "Executed on branch sprint/ai4-service; awaiting independent evaluation. make test green (AILANG v0.51.0, arm64): ai-pkg-test 12/12 (key, route, wire, stub) plus no-sim-import and no-key-text guards, strict aiWireVm ai-wire-ok (34 lines, strict VM = interpreter), ai-stub over four key sets (both, gemini, none, both+text_only) == goldens, VM = interpreter, cache 34 files == tests/ai/cache.SHA256SUMS, 27 text blobs == shasum -a 256 (AC6), deps-ai lock unchanged; make ai-mutants: 6 mutants killed. Deviations: service config via --args-json/--args-file (argv needs Env; the stub runs IO,FS only); hello carries routes (replaces models); error results carry meta {provider, route}; text_only added to error codes; one fatal line on bad config; stub spells the request number in words while no_numerals holds; text results also written as .txt blobs; a routed voice request answers provider_error until AI.5's stub voice; a fourth ai-stub key set (text-only). Over the 650 cap (as AI.2 was); route.ail kept in AI.4. Upstream: test runner resolves a private helper to a non-imported stdlib export of the same name (isErr, words), ailang#1516; nested cons pattern `_ :: x :: _` is not compiled for the strict VM, ailang#1517; readFileBytes returns base64 text, undocumented (dx message)."
     },
     {
@@ -395,12 +410,14 @@
         "AI.4_SERVICE_ROUTING_STUB"
       ],
       "wave": "A3",
-      "iteration": 1,
+      "iteration": 2,
       "files": [
         "bridge/ai_bridge.gd",
         "ai/tools/fake_service.ail",
         "tests/test_ai_bridge.gd",
-        "mk/ai.mk"
+        "tests/ai_bridge_mutants.sh",
+        "mk/ai.mk",
+        "changelogs/unreleased/2026-10-02-ai-bridge.md"
       ],
       "acceptance_criteria": [
         "AC11: godot --headless --path . --script tests/test_ai_bridge.gd -- --faults (also reachable as tests/test_ai_relay.gd -- --faults once AI.7 lands): hang/crash/garbage -> ai_cancel timeout, backoff restarts, service_down after 3 failures",
@@ -408,10 +425,24 @@
         "make test AILANG=$A"
       ],
       "registry": "none",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-02",
+      "completed": "2026-10-02",
+      "notes": "Executed on sprint/ai6-bridge; awaiting independent evaluation. AC11 bridge half: godot --headless --path . --script tests/test_ai_bridge.gd -- --faults -> all checks ok (stub happy path with a live SimBridge beside it: lazy launch, handshake ~100 ms, text>voice>portrait, one in flight, quit inside the grace; fake partial; hang per kind (text/voice/portrait timeouts within +300 ms, kill, lazy restart); crash loop (backoff 150/600 scaled, resend, service_down + toast, disabled for the session); crash-and-recover; 10-min window aging via clock offset; garbage; slow_hello; wrong_major; deaf child killed after the 1 s grace; no child left). make ai-godot joins ai-test; make test green. make ai-bridge-mutants: 11 mutants killed. Deviations: (1) frame bound: every poll < 2 ms asserted when the 1-min load is <= 0.25 per core (CI); on a busy machine (the Studio ran at 0.9-3.6 per core with parallel agents) preemption alone breaks 2 ms a few times per thousand polls, so there the check is 95% of polls < 2 ms and none >= 50 ms (a waiting poll would sit >= 300 ms), with the distribution printed (p99 typically 0.2-0.9 ms). (2) Spawn (fork/exec, 1-2 ms) and OS.kill (a blocking waitpid) run on WorkerThreadPool so poll never pays for them. (3) Godot's execute_with_pipe sets no close-on-exec, so a child inherits every pipe Godot holds, the sim's stdin included (a first draft leaked hung children and deadlocked an OS.execute this way); the service starts through /bin/sh FD_SCRUB, which closes fds > 2 and execs (same pid); a test asserts the stub holds no inherited pipe with a SimBridge running. SimBridge has the same exposure (unchanged; finding). (4) Timeouts count toward the 3-in-10-min window but restart without backoff; crash, bad handshake or garbled reply restart with backoff and resend the open request. (5) Live (key file) launch and an export preset including ai/ are left to AI.7/AI.9; stub launch only (exported path unpacks ai/ beside the bundled runtime, untested). (6) ai/tools/fake_service.ail not added to ai/ailang.toml exports (warning only; avoids conflicting with AI.5). (7) Over the 650 cap (751), as AI.2/AI.4 were. ROUND 2 (eval round 1: 82/100, F1/F2 fixed): F1 FD_SCRUB now runs under /bin/bash (scrub_shell(); /bin/sh fallback) and is dash-safe (closes only 3-9 there, never misparses 12>&-); test_scrub runs it under bash and /bin/dash with fds 5,12,13 open. F2 busy-machine frame rule now compares polls >= 5 ms with control steps timed in the same loop (allowed control + max(2, n/200), none >= 50 ms), and test_static proves structurally that no function but shutdown() sleeps, runs a process synchronously, kills or spawns outside a worker task, or waits on an unfinished task; the evaluator's two intermittent-sleep mutants and two busy-wait variants are all killed. The timeout test uses a hung child that cannot exit by itself and asserts it is dead within 500 ms. _write refuses blank or multi-line messages with push_error (not assert). CHANGELOG fragment added. make ai-bridge-mutants: 17/17 killed.",
+      "actual_loc": {
+        "code": 403,
+        "tests": 423,
+        "counted_total": 826,
+        "basis": "non-blank, non-comment lines (ai_bridge.gd 346, fake_service.ail 49, mk/ai.mk 8; test_ai_bridge.gd 371, ai_bridge_mutants.sh 52)"
+      },
+      "loc_overrun": {
+        "estimate": 340,
+        "cap": 650,
+        "actual": 826,
+        "over_cap_by": 176,
+        "over_cap_pct": 27,
+        "why": "the round-1 fixes (structural no-blocking guard, jitter-baseline frame rule, dash/bash scrub test, deaf hung child) and the 17-mutant runner are test code; the estimate of 340 did not include the fake service, fd isolation or the worker-pool spawn"
+      }
     },
     {
       "id": "AI.7_RELAY_CACHE_E2E",

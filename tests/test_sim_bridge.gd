@@ -91,13 +91,24 @@ func test_v2_hello() -> bool:
 	var s := SimBridge.new()
 	var ok := s.start()
 	var p: Dictionary = s.hello_reply.get("proto", {})
-	assert_bool("v2 hello: proto 2.0, rng splitmix64-1", ok and p.get("major") == 2 and p.get("minor") == 0 and s.hello_reply.get("rng") == "splitmix64-1")
+	assert_bool("v2 hello: proto 2.1 (AI.3), rng splitmix64-1", ok and p.get("major") == 2 and p.get("minor") == 1 and s.hello_reply.get("rng") == "splitmix64-1")
+	s.stop()
+	return true
+
+
+## AC1 (AI.3): the bridge accepts any minor of major 2 (a 2.1 sim) and still
+## refuses every other major, a 3.1 included.
+func test_minor_accepted() -> bool:
+	var s := fake("proto_21")
+	var ok := s.start()
+	var p: Dictionary = s.hello_reply.get("proto", {})
+	assert_bool("accept proto 2.1 from a fake sim", ok and p.get("major") == 2 and p.get("minor") == 1)
 	s.stop()
 	return true
 
 
 func test_major_refused() -> bool:
-	for mode in ["proto_v1", "proto_v3", "proto_frac", "proto_string", "v11"]:
+	for mode in ["proto_v1", "proto_v3", "proto_v31", "proto_frac", "proto_string", "v11"]:
 		var s := fake(mode)
 		assert_bool("refuse %s (bad_proto)" % mode, not s.start() and s.last_error == "bad_proto")
 		assert_bool("refused %s child cleaned" % mode, child_gone(s.child_pid))
@@ -313,6 +324,7 @@ func _init() -> void:
 	var tests: Array[Callable] = [
 		test_closed_form,
 		test_v2_hello,
+		test_minor_accepted,
 		test_major_refused,
 		test_encode,
 		test_float_echo,

@@ -15,7 +15,8 @@ module stapledons/sim/markers
 -- `Err("ai_markup:<sub>")` with sub one of: bracket (any `[` or `]`, which
 -- keeps provider tags such as Gemini's [sigh] out of game text),
 -- nested_brace, unbalanced_brace, unknown_emotion, empty_segment (two markers
--- in a row, a trailing marker, or an empty line), too_many_segments (more
+-- in a row, a trailing marker, an empty line, or a segment made only of
+-- invisible characters, which trim keeps; AI.3), too_many_segments (more
 -- than 16 after merging). The first fault from the left wins, in that order
 -- of passes. Pure; runs on the strict VM (`markersVm`, `make strict-ai`).
 import std/result (Result, Ok, Err)
@@ -54,6 +55,15 @@ pure func lex(line: string) -> Result[[Tok], string] {
   else Ok(revOnto(flushText(st), []))
 }
 
+-- Characters with no visible glyph that std/string.trim keeps: zero-width
+-- space, non-joiner and joiner, word joiner and the invisible operators,
+-- BOM, soft hyphen, Mongolian vowel separator, combining grapheme joiner,
+-- and the bidi marks, embeddings and isolates. A segment made only of these
+-- (and whitespace) shows nothing, so it is an empty segment (AI.1 evaluation).
+pure func invisibles() -> string =
+  "\u200B\u200C\u200D\u2060\u2061\u2062\u2063\u2064\uFEFF\u00AD\u180E\u034F\u200E\u200F\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069"
+pure func invisibleOnly(t: string) -> bool = foldChars(\ok c. ok && (contains(invisibles(), c) || trim(c) == ""), true, t)
+
 -- ------------------------------------------------------------ segments
 -- Tokens alternate text and marker (the lexer never emits two texts in a
 -- row). Segments accumulate reversed. The head token is matched on its own:
@@ -64,7 +74,7 @@ pure func afterMark(e: string, rest: [Tok], acc: [Segment]) -> Result[[Segment],
   else match rest { x :: r => (match x { TText(t) => segText(e, t, r, acc), TMark(_) => Err("empty_segment") }), [] => Err("empty_segment") }
 pure func segText(e: string, t: string, rest: [Tok], acc: [Segment]) -> Result[[Segment], string] {
   let tt = trim(t);
-  if tt == "" then Err("empty_segment")
+  if tt == "" || invisibleOnly(tt) then Err("empty_segment")
   else match rest {
     [] => Ok(revOnto({emotion: e, text: tt} :: acc, [])),
     x :: r => match x { TMark(m) => afterMark(m, r, {emotion: e, text: tt} :: acc), TText(_) => Err("unbalanced_brace") }

@@ -12,7 +12,7 @@ import std/json (Json, encode, decode, js, jnum, get, has, getNumber, getString,
 import std/result (Result, Ok, Err)
 import std/option (Option, Some, None)
 import std/string (concat, join, length, substring, startsWith, endsWith, contains, intToStr)
-import std/math (floor, floatToInt)
+import std/math (floor, floatToInt, intToFloat)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
@@ -38,11 +38,11 @@ export type ShipView = { phase: string, beta: float, oneMinusBeta: float, gamma:
 export type LedgerView = { mEffKg: float, availableKg: float, radiatedJ: float, boostJ: float, dragJ: float }
 -- rng: the stream counters (design §M2.1 change-sets, M2.4).
 -- ai: open AI requests (2.1, AI.2); the last section, sent only when it
--- changed (full states gain it with the AI.3 minor bump).
+-- changed, and always in full states (2.1, AI.3: the last section).
 export type StateMsg = { tick: int, status: string, clock: Option[Clock], ship: Option[ShipView], journey: Option[JourneyView], ledger: Option[LedgerView], rng: Option[Rng], params: Option[Params], ai: Option[AiView], events: [Event], refused: [Refusal], full: bool }
 export type HelloMsg = { major: int, minor: int, sim: string, relativity: string, rng: string }
 
-export pure func helloMsg() -> HelloMsg = { major: 2, minor: 0, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
+export pure func helloMsg() -> HelloMsg = { major: 2, minor: 1, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -77,9 +77,11 @@ pure func paramPairs(p: Params) -> [Override] = [
   {name: "glow_eps", value: p.glowEps}, {name: "glow_f_in", value: p.glowFIn}, {name: "cruise_min_beta", value: p.cruiseMinBeta},
   {name: "cap_one_minus_beta", value: p.capOneMinusBeta}]
 -- The params echo: the scenario params, then the cruise-rapidity bounds and
--- default the planner uses (derived, read-only; the decoder ignores them).
+-- default the planner uses (derived, read-only; the decoder ignores them),
+-- then (2.1, AI.3) the AI request limits as the last two keys.
 pure func paramsEcho(p: Params) -> string =
-  overrides(paramPairs(p) ++ [{name: "cruise_phi_min", value: cruisePhiMin(p)}, {name: "cruise_phi_max", value: cruisePhiMax(p)}, {name: "cruise_phi_default", value: cruisePhiDefault(p)}])
+  overrides(paramPairs(p) ++ [{name: "cruise_phi_min", value: cruisePhiMin(p)}, {name: "cruise_phi_max", value: cruisePhiMax(p)}, {name: "cruise_phi_default", value: cruisePhiDefault(p)},
+    {name: "ai_max_open", value: intToFloat(p.aiMaxOpen)}, {name: "ai_ttl_ticks", value: intToFloat(p.aiTtlTicks)}])
 pure func overrides(os: [Override]) -> string = obj(each(\o. f(o.name, num(o.value)), os))
 
 pure func targetObj(t: Target) -> string = obj([f("index", intToStr(t.index)), f("id", q(t.id)), f("pos", vec(t.pos))])
@@ -307,7 +309,7 @@ pure func decodeFullParams(j: Json) -> Result[Params, string] =
   bind(n(j, "bubble_radius_m"), \r. bind(n(j, "glow_eps"), \ge. bind(n(j, "glow_f_in"), \gf. bind(n(j, "cruise_min_beta"), \cb. bind(n(j, "cap_one_minus_beta"), \cap.
   bind(natOr(j, "ai_max_open", defaultAiMaxOpen()), \mo. bind(natOr(j, "ai_ttl_ticks", defaultAiTtlTicks()), \tt.
   Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap, aiMaxOpen: mo, aiTtlTicks: tt})))))))))))))
--- The AI params are echoed from AI.3 (2.1 minor bump); a 2.0 echo has the defaults.
+-- The AI params are echoed since 2.1 (AI.3); a 2.0 echo lacks them and reads as the defaults.
 pure func natOr(j: Json, k: string, d: int) -> Result[int, string] = if has(j, k) then req(natF(j, k), bad()) else Ok(d)
 pure func decodeCrossing(e: Json) -> Result[Crossing, string] =
   bind(req(getString(e, "from"), bad()), \fr. bind(req(getString(e, "to"), bad()), \to. bind(n(e, "tau"), \tau. Ok({from: fr, to: to, tau: tau}))))
@@ -367,7 +369,7 @@ export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
 -- `thrust`/`heading` drive core.tick, diag `echo` (test hook) comes back as
 -- an event; plan/commit/cancel follow core's journey rules (M2.3a); diag
 -- draw comes back as a `draw` event (M2.4); ai_open/ai_cancel open and close
--- AI requests (sim/ai.ail, 2.1); record is refused `unsupported` until AI.3.
+-- AI requests (sim/ai.ail, 2.1); record validates an AI result and closes its request (AI.3).
 -- Malformed lines
 -- (including a new_game that fails scenario validation) change nothing;
 -- refused intents are listed and the tick proceeds.
@@ -400,7 +402,7 @@ export pure func serve(s: Session, line: string) -> Served =
             let w0 = newWorld(g.seed, g.diag, p);
             let w = {w0 | ai: {w0.ai | core: match g.aiCore { Some(h) => h, None => "" }}};
             { session: {s | game: Some(w)}, reply: encodeState({tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
-                journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: None, events: [], refused: [], full: true}) }
+                journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)), events: [], refused: [], full: true}) }
           }
         }
       },

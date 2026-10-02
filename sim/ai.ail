@@ -8,14 +8,17 @@ module stapledons/sim/ai
 -- other than `ai` (commit rule, D-20: AI intents are accepted while a journey
 -- is committed).
 --
--- AI.2 scope: `record` is refused `unsupported` everywhere (committed or
--- not) until AI.3 adds validation; `ai.lines` stays empty, so every voice
--- request is `ai_stale` until then.
+-- AI.3: every `record` is validated here (design table order) and closes
+-- its request exactly once, with ai_accepted or ai_fallback; accepted text
+-- lines are kept (the last 64) so a voice request can name one.
 import std/option (Option, Some, None)
-import std/json (Json)
-import std/string (length, substring, contains, intToStr)
-import std/math (floor, floatToInt)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, get, getString, getArray, asNumber, asObject)
+import std/string (length, substring, contains, intToStr, startsWith)
+import std/math (floor, floatToInt, intToFloat)
+import std/crypto (sha256Hex)
 import ./rng (Rng, SAi, draw, top53)
+import ./markers (Segment, parseLine, displayText)
 
 -- ------------------------------------------------------------ types
 export type CacheKey = { kind: string, entityId: string, emotion: string, ageStage: int, variant: string }
@@ -32,7 +35,10 @@ export type AiCancel = { req: string, reason: string }
 export type AiRecord = { source: string, req: string, kind: string, sha256: string, body: string }
 -- One parsed segment of an accepted line (the marker grammar, design (b)).
 export type AiSeg = { emotion: string, text: string }
-export type OpenReq = { req: int, kind: string, purpose: string, lineReq: Option[string], key: CacheKey, constraints: Constraints,
+-- lineSegs: for voice, the segment count of the line named by line_req,
+-- taken when the request opens (the line may leave ai.lines before the
+-- record arrives); 0 for other kinds.
+export type OpenReq = { req: int, kind: string, purpose: string, lineReq: Option[string], lineSegs: int, key: CacheKey, constraints: Constraints,
   context: [CtxField], seed: int, openedTick: int, expiresTick: int }
 export type Line = { req: int, entityId: string, segments: [AiSeg] }
 -- lastReq: the most recent id (0 before any); ids are lastReq + 1, never
@@ -65,10 +71,12 @@ export pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", 
 export pure func aiKinds() -> [string] = ["text", "voice", "portrait", "avatar"]
 export pure func aiPurposes() -> [string] = ["line", "news", "archive", "probe"]
 export pure func cancelReasons() -> [string] = ["offline", "no_key", "text_only", "timeout", "service_down", "budget", "provider_error"]
--- Display-text budget per purpose (code points). Executor-chosen, pending
--- review: a dialogue line, an M4 news item, an Archive entry.
-export pure func maxCharsFor(purpose: string) -> int =
-  if purpose == "news" then 200 else if purpose == "archive" then 600 else 280
+-- Display-text budget per purpose (code points), ledger D-21 (Mark,
+-- 2026-10-02): 280 for crew lines, 280 for news items, 600 for Archive
+-- answers (probe: 280). No digits in any generated text (noNumerals for every
+-- purpose): numbers on screen come only from sim fields.
+export pure func maxCharsFor(purpose: string) -> int = if purpose == "archive" then 600 else 280
+export pure func maxLines() -> int = 64
 
 export pure func isCancelReason(r: string) -> bool = member(r, cancelReasons())
 -- 64 lowercase hex characters (new_game.ai_core; AI.3: media record hashes).
@@ -78,6 +86,9 @@ export pure func isSha256Hex(s: string) -> bool = length(s) == 64 && hexTail(s, 
 pure func member(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || member(x, r) }
 pure func allIn(xs: [string], set: [string]) -> bool = match xs { [] => true, x :: r => member(x, set) && allIn(r, set) }
 pure func count(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + count(r) }
+-- The emotions list without repeats, first occurrence kept (AI.2 evaluation).
+pure func dedupe(xs: [string], seen: [string]) -> [string] =
+  match xs { [] => [], x :: r => if member(x, seen) then dedupe(r, seen) else x :: dedupe(r, x :: seen) }
 
 -- `^[a-z][a-z0-9_]{0,31}$`, by hand (no regex on the strict VM).
 pure func lower() -> string = "abcdefghijklmnopqrstuvwxyz"
@@ -111,10 +122,11 @@ pure func keyError(o: AiOpen) -> Option[string] =
   else if (match o.emotions { Some(es) => count(es) == 0 || !allIn(es, emotions8()), None => false }) then Some("ai_bad_key")
   else if o.kind != "voice" && o.lineReq != None then Some("ai_bad_key")
   else None
-pure func hasLine(ls: [Line], r: string) -> bool = match ls { [] => false, l :: more => intToStr(l.req) == r || hasLine(more, r) }
+-- The segment count of accepted line `r` in ai.lines, or -1.
+pure func lineSegsOf(ls: [Line], r: string) -> int = match ls { [] => -1, l :: more => if intToStr(l.req) == r then count(l.segments) else lineSegsOf(more, r) }
+pure func lineSegsFor(st: AiState, o: AiOpen) -> int = match o.lineReq { Some(r) => lineSegsOf(st.lines, r), None => -1 }
 pure func staleError(st: AiState, o: AiOpen) -> Option[string] =
-  if o.kind != "voice" then None
-  else match o.lineReq { Some(r) => if hasLine(st.lines, r) then None else Some("ai_stale"), None => Some("ai_stale") }
+  if o.kind != "voice" then None else if lineSegsFor(st, o) < 0 then Some("ai_stale") else None
 pure func firstError(xs: [Option[string]]) -> Option[string] = match xs { [] => None, x :: r => match x { Some(_) => x, None => firstError(r) } }
 
 pure func keyOf(o: AiOpen) -> CacheKey =
@@ -135,8 +147,8 @@ export pure func openRequest(diag: bool, ps: AiParams, at: int, seed: int, rng: 
     None => {
       let d = draw(seed, rng, SAi);
       let id = st.lastReq + 1;
-      let r = { req: id, kind: o.kind, purpose: o.purpose, lineReq: o.lineReq, key: keyOf(o),
-        constraints: { maxChars: maxCharsFor(o.purpose), noNumerals: true, emotions: match o.emotions { Some(es) => es, None => emotions8() } },
+      let r = { req: id, kind: o.kind, purpose: o.purpose, lineReq: o.lineReq, lineSegs: if o.kind == "voice" then lineSegsFor(st, o) else 0, key: keyOf(o),
+        constraints: { maxChars: maxCharsFor(o.purpose), noNumerals: true, emotions: match o.emotions { Some(es) => dedupe(es, []), None => emotions8() } },
         context: o.context, seed: top53(d.value), openedTick: at, expiresTick: at + ps.ttlTicks };
       { ai: {st | lastReq: id, open: st.open ++ [r]}, rng: d.rng, refusal: None, events: [ERequest(requestOf(r))] }
     }
@@ -154,9 +166,116 @@ export pure func cancelRequest(rng: Rng, st: AiState, c: AiCancel) -> AiStep =
   if !isOpen(st.open, c.req) then refused(st, rng, "ai_unknown_req")
   else { ai: {st | open: without(st.open, c.req)}, rng: rng, refusal: None, events: [EFallback({req: c.req, reason: c.reason})] }
 
--- Record: validation arrives with AI.3; until then it is refused
--- `unsupported`, committed or not.
-export pure func recordResult(rng: Rng, st: AiState, r: AiRecord) -> AiStep = refused(st, rng, "unsupported")
+-- ------------------------------------------------------------ record (AI.3)
+-- Validation of a `record` (design (a1), refusals in the table's order):
+-- ai_source, ai_unknown_req, ai_kind, ai_hash, then for text ai_length,
+-- ai_numeral, ai_markup, ai_emotion, and for media ai_descriptor. A refusal
+-- for an open request also closes it with ai_fallback{req, reason}; a record
+-- for a request that is not open (never opened, closed, expired) closes
+-- nothing. The refusal codes are the table's, without the parser's
+-- sub-reason. Nothing is retried on the same id.
+pure func findOpen(xs: [OpenReq], r: string) -> Option[OpenReq] =
+  match xs { [] => None, x :: more => if intToStr(x.req) == r then Some(x) else findOpen(more, r) }
+
+-- The body is bounded before the parser runs (the parser recurses per
+-- character; AI.1 evaluation): a text body longer than max_chars plus 16
+-- markers of at most 11 code points ("{grieving} ") is ai_length unparsed.
+-- The display text is never longer than the body, so the bound refuses no
+-- valid line within max_chars except one padded with runs of merging
+-- markers or whitespace.
+export pure func bodyBound(maxChars: int) -> int = maxChars + 16 * 11
+export pure func maxDescriptor() -> int = 4096
+pure func hasDigit(s: string) -> bool =
+  contains(s, "0") || contains(s, "1") || contains(s, "2") || contains(s, "3") || contains(s, "4") ||
+  contains(s, "5") || contains(s, "6") || contains(s, "7") || contains(s, "8") || contains(s, "9")
+pure func allEmotionsIn(segs: [Segment], es: [string]) -> bool = match segs { [] => true, x :: r => member(x.emotion, es) && allEmotionsIn(r, es) }
+pure func toAiSegs(segs: [Segment]) -> [AiSeg] = match segs { [] => [], x :: r => {emotion: x.emotion, text: x.text} :: toAiSegs(r) }
+
+-- Text kinds. ai_numeral looks at the body: markers name emotions, which
+-- hold no digit, so a parsed body has a digit exactly when its display text
+-- does, and an unparsable body with a digit is ai_numeral before ai_markup.
+pure func textResult(o: OpenReq, r: AiRecord) -> Result[AiEvent, string] {
+  let c = o.constraints;
+  let bounded = length(r.body) <= bodyBound(c.maxChars);
+  let parsed = if bounded then parseLine(r.body) else Err("unparsed");
+  let long = !bounded || (match parsed { Ok(segs) => length(displayText(segs)) > c.maxChars, Err(_) => false });
+  if r.sha256 != sha256Hex(r.body) then Err("ai_hash")
+  else if long then Err("ai_length")
+  else if c.noNumerals && hasDigit(r.body) then Err("ai_numeral")
+  else match parsed {
+    Err(_) => Err("ai_markup"),
+    Ok(segs) => if !allEmotionsIn(segs, c.emotions) then Err("ai_emotion")
+      else Ok(EAcceptedText({req: r.req, kind: r.kind, sha256: r.sha256, text: displayText(segs), segments: toAiSegs(segs)}))
+  }
+}
+
+-- Media kinds: the body is the descriptor, a JSON object. Every descriptor
+-- has `key` (the request's key; `variant` is compared for portraits and
+-- avatars only, because a voice key's variant is derived from a sha after
+-- generation, design (a4), while the request carries "-"), `mime` (image/…
+-- or audio/…) and `bytes` (> 0). Images add `width` and `height` (> 0).
+-- Voice adds `duration_ms` (> 0) and `segments_ms`: one whole offset per
+-- segment of the line, the first 0, strictly increasing, each below
+-- duration_ms. Other fields are allowed and echoed.
+pure func natOf(j: Json, k: string) -> Option[int] =
+  match get(j, k) {
+    Some(v) => (match asNumber(v) { Some(x) => if x >= 0.0 && x <= 9007199254740991.0 && floor(x) == x then Some(floatToInt(x)) else None, None => None }),
+    None => None
+  }
+pure func posNat(j: Json, k: string) -> bool = match natOf(j, k) { Some(n) => n > 0, None => false }
+pure func strIs(j: Json, k: string, want: string) -> bool = getString(j, k) == Some(want)
+pure func keyMatches(want: CacheKey, j: Json) -> bool =
+  match get(j, "key") {
+    Some(k) => strIs(k, "kind", want.kind) && strIs(k, "entity_id", want.entityId) && strIs(k, "emotion", want.emotion) &&
+      natOf(k, "age_stage") == Some(want.ageStage) &&
+      (if want.kind == "voice" || want.kind == "text" then getString(k, "variant") != None else strIs(k, "variant", want.variant)),
+    None => false
+  }
+pure func mimeIs(j: Json, prefix: string) -> bool = match getString(j, "mime") { Some(m) => startsWith(m, prefix) && length(m) > length(prefix), None => false }
+-- Offsets after the first: whole, strictly increasing, below the duration.
+pure func offsetsOk(xs: [Json], prev: float, dur: float) -> bool =
+  match xs {
+    [] => true,
+    x :: r => match asNumber(x) { Some(v) => floor(v) == v && v > prev && v < dur && offsetsOk(r, v, dur), None => false }
+  }
+pure func segmentsOk(xs: [Json], n: int, dur: int) -> bool =
+  count(xs) == n && (match xs { [] => false, x :: r => asNumber(x) == Some(0.0) && offsetsOk(r, 0.0, intToFloat(dur)) })
+pure func voiceOk(o: OpenReq, j: Json) -> bool =
+  mimeIs(j, "audio/") && (match natOf(j, "duration_ms") {
+    Some(dur) => dur > 0 && (match getArray(j, "segments_ms") { Some(xs) => segmentsOk(xs, o.lineSegs, dur), None => false }),
+    None => false
+  })
+pure func imageOk(j: Json) -> bool = mimeIs(j, "image/") && posNat(j, "width") && posNat(j, "height")
+pure func descriptorOk(o: OpenReq, j: Json) -> bool =
+  (match asObject(j) { Some(_) => true, None => false }) && keyMatches(o.key, j) && posNat(j, "bytes") &&
+  (if o.kind == "voice" then voiceOk(o, j) else imageOk(j))
+pure func mediaResult(o: OpenReq, r: AiRecord) -> Result[AiEvent, string] =
+  if !isSha256Hex(r.sha256) then Err("ai_hash")
+  else if length(r.body) > maxDescriptor() then Err("ai_descriptor")
+  else match decode(r.body) {
+    Ok(j) => if descriptorOk(o, j) then Ok(EAcceptedMedia({req: r.req, kind: r.kind, sha256: r.sha256, descriptor: j})) else Err("ai_descriptor"),
+    Err(_) => Err("ai_descriptor")
+  }
+
+-- Accepted text joins ai.lines (oldest first, at most maxLines()).
+pure func dropFirst(xs: [Line]) -> [Line] = match xs { [] => [], _ :: r => r }
+pure func keepLine(ls: [Line], l: Line) -> [Line] { let all = ls ++ [l]; if count(all) > maxLines() then dropFirst(all) else all }
+pure func withLine(st: AiState, o: OpenReq, e: AiEvent) -> AiState =
+  match e { EAcceptedText(x) => {st | lines: keepLine(st.lines, {req: o.req, entityId: o.key.entityId, segments: x.segments})}, _ => st }
+
+export pure func recordResult(rng: Rng, st: AiState, r: AiRecord) -> AiStep =
+  match findOpen(st.open, r.req) {
+    None => refused(st, rng, if r.source != "ai" then "ai_source" else "ai_unknown_req"),
+    Some(o) => {
+      let closed = {st | open: without(st.open, r.req)};
+      let res = if r.source != "ai" then Err("ai_source") else if r.kind != o.kind then Err("ai_kind")
+        else if o.kind == "text" then textResult(o, r) else mediaResult(o, r);
+      match res {
+        Err(why) => { ai: closed, rng: rng, refusal: Some(why), events: [EFallback({req: r.req, reason: why})] },
+        Ok(e) => { ai: withLine(closed, o, e), rng: rng, refusal: None, events: [e] }
+      }
+    }
+  }
 
 -- Expiry, after the tick's intents: every request with expiresTick <= at
 -- emits ai_fallback{req, expired} (opening order) and closes.

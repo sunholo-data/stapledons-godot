@@ -11,7 +11,7 @@ dump = open(sys.argv[2], "wb") if len(sys.argv) > 2 else None
 tick = 0
 ship = {"phase": "rest", "beta": 0, "one_minus_beta": 1, "gamma": 1, "heading": {"x": 0, "y": 0, "z": -1}, "pos": {"x": 0, "y": 0, "z": 0}, "x": 0}
 clock = {"tau": 0, "t": 0, "year": 0, "age": 30}
-protos = {"proto_v1": {"major": 1, "minor": 1}, "proto_v3": {"major": 3, "minor": 0},
+protos = {"proto_v1": {"major": 1, "minor": 1}, "proto_v3": {"major": 3, "minor": 0}, "proto_v31": {"major": 3, "minor": 1}, "proto_21": {"major": 2, "minor": 1},
           "proto_frac": {"major": 2.5, "minor": 0}, "proto_string": "2.0"}
 
 
