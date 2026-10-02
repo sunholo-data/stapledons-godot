@@ -3,7 +3,8 @@ extends Node3D
 ##
 ## Interactive:  W / S thrust forward / reverse at 1 g, arrows look around,
 ##               1-4 look forward / starboard / astern / up, +/- time warp.
-## Galaxy map:  godot --path . -- --map[=INDEX]   (M2.6a/b; --map-capture=renders [--map-commit])
+## Galaxy map:  godot --path . [-- --map[=INDEX]]   (default with no arguments; M2.6a/b; --map-capture=renders [--map-commit])
+## Sky flight:  godot --path . -- --voyage   (the M0/M1 relativistic voyage; WASD thrust, 1-4 views, +/- warp)
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
 ##   godot --path . -- --golden            shader vs CPU reference positions
@@ -37,6 +38,10 @@ var _map_mode := false
 
 func _ready() -> void:
 	var args := _user_args()
+	# Launching with no arguments (a double-clicked review build, `make run`)
+	# opens the galaxy map on alpha Cen A; `--voyage` runs the M0/M1 sky flight.
+	if args.is_empty():
+		args["map"] = str(ALPHA_CEN_A)
 	if args.has("map") or args.has("map-capture"):
 		_map_mode = true # the map owns the clock; no voyage ticks
 		await _run_map(args)
