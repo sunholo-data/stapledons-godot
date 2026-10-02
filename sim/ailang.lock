@@ -1,11 +1,11 @@
 {
   "ailang_version": "v0.51.0",
-  "generated_at": "2026-10-01T22:43:48.107421Z",
+  "generated_at": "2026-10-02T15:55:10.03329Z",
   "generator": "ailang lock v0.51.0",
   "packages": [
     {
       "ailang": ">=0.45.0",
-      "content_hash": "sha256:f0dd70d536577e745d0678252a7eca8a3ecc5b59a2f04561a30d85124935861b",
+      "content_hash": "sha256:d9aa8bab1b3d1d4d33599adb99a948b811ba093520f017f44a99272a2abd4527",
       "effects": [
         "IO"
       ],
@@ -25,7 +25,7 @@
       "interface_hash": "sha256:c747d1b1e1ebd1480f06fb1609393ebf801cf5d6455ee7e51bab1fd7521acced",
       "name": "sunholo/relativity",
       "source": "registry",
-      "version": "0.4.0"
+      "version": "0.5.1"
     }
   ],
   "schema": "ailang.lock/v1",

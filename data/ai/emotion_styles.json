@@ -1,0 +1,10 @@
+{
+  "neutral": "Speak plainly and evenly, at a calm conversational pace.",
+  "happy": "Speak warmly and brightly, with a smile in the voice.",
+  "sad": "Speak quietly and slowly, with a low, heavy tone.",
+  "angry": "Speak firmly and tightly, clipped and controlled, never shouting.",
+  "fearful": "Speak hushed and quick, with a tremor of unease.",
+  "curious": "Speak lightly and attentively, rising a little as if asking.",
+  "loving": "Speak softly and tenderly, close and unhurried.",
+  "grieving": "Speak softly, with the weight of loss, pausing between phrases."
+}

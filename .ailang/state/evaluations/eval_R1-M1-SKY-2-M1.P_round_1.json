@@ -1,0 +1,139 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.P sunholo/relativity 0.5.0 photometry (package first)",
+  "pr": "sunholo-data/ailang-packages#85",
+  "branch": "relativity-0.5.0-m1",
+  "commit_evaluated": "e66de211bb647766e49954911d7e73121be686bc",
+  "round": 1,
+  "evaluator": "independent physics evaluator (Claude Fable 5.1), generator != judge; fresh `gh repo clone sunholo-data/ailang-packages` in the session scratchpad, PR branch checked out, git status clean",
+  "date": "2026-10-02",
+  "toolchain": {
+    "ailang": "v0.51.0 (stapledons-godot runtime/bin/ailang, commit b99dd25)",
+    "python": "python3 stdlib only (Decimal prec 60 for the CMB rows)",
+    "external_sources_fetched": [
+      "Pecaut & Mamajek EEM_dwarf_UBVIJHK_colors_Teff.txt (pas.rochester.edu, 724 lines)",
+      "CIE 1931 2-deg CMFs, CVRL ciexyz31.csv (5 nm) and ciexyz31_1.csv (1 nm, 471 rows)",
+      "Crumey 2014, arXiv:1405.4209 PDF, pages 1-18 read (Eqs. 26-28, 32-34, 47-53, 71, Section 3.1)"
+    ]
+  },
+  "score": 96,
+  "result": "pass",
+  "pass_threshold": 70,
+  "go_no_go_publish": "GO: publish sunholo/relativity 0.5.0 as-is under the standing grant; the findings below are non-blocking and can land in 0.5.1 or with M1.5a",
+  "breakdown": {
+    "tests_pass": {"points": 20, "max": 20, "note": "`ailang test --package .` on the fresh clone: 115 tests, 115 passed, 0 failed (1m16s). No `_namedtest_body_*.ail` left behind."},
+    "lint_clean": {"points": 10, "max": 10, "note": "`ailang pkg quality .` exit 0, 'no gates': compile 18 files, contracts 4/57 verified 0 refuted, release kind feature + changelog section, AGENT.md + ai_summary, 110/110 exports pure, tests and smoke attested. PUB016/PUB011 are info, as in 0.4.0."},
+    "acceptance_criteria": {"points": 29, "max": 30, "note": "Every executor-checkable criterion in '#### M1.P' verified by command (test+quality no gates; strict VM == interpreter on photometryDigest n=1,37,400 and on my own 16-row Doppler table; dry-run OK, 11 modules, tarball 47,372 bytes). `pkg info` 0.5.0 and the sim pin are post-publish by design (P1) and not scored. -1: the Crumey test cannot detect a mis-set branch split (my mutation 0.0708 -> 0.03 survives all 115 tests)."},
+    "code_quality": {"points": 13, "max": 15, "note": "-1 photopicRadiance returns +Inf for T above ~3.6e20 K (and for +Inf) because planck's exp(e)-1 underflows to 0; harmless for the game's 0-5000 K LUT but the comment at blackbody.ail:124 claims finite for every finite T. -1 pointThresholdIlluminance is non-monotone on 0.0218-0.0708 cd/m^2 (Crumey's published two-branch form, see findings), undocumented and untested."},
+    "documentation": {"points": 14, "max": 15, "note": "CHANGELOG 0.5.0, AGENT.md (new 'Sky photometry in absolute units' section states the rest/apparent distinction correctly), README, ai_summary, generator header fixed. -1: the HB-68 reference row is described as 50-digit Decimal but is float-cos limited (2e-11 off the true value; the package itself is 3e-12 off), and the blackbody.ail 'finite for every finite T' comment overclaims."},
+    "design_fidelity": {"points": 10, "max": 10, "note": "Matches M1.P scope item for item; the extra apparent-direction function is exactly what prevents the F5 mistake per pixel. The PR's physics finding against the original F5 is correct and the corrected F5 in the sprint plan agrees with my derivation."}
+  },
+  "hard_fails": [],
+  "automated": {
+    "ailang_test": "115 passed, 0 failed, 0 skipped (fresh clone)",
+    "pkg_quality": "exit 0, no gates",
+    "publish_dry_run": "OK; tarball 47,372 bytes sha256:fed1334946e38721d...; content sha256:0969f83091f2df550...; interface sha256:c747d1b1e1ebd1480...; exports 11 modules; effects [IO]",
+    "stray_files_ailang_1502": "none: `ls _namedtest_body_*` empty before and after the test; quality/dry-run compiled 18 files = the 18 tracked .ail files, so nothing stray in the tarball",
+    "vm_vs_interpreter": "photometryDigest: n=1 52157.528257397506, n=37 53214.31166782515, n=400 63976.95098813557, identical on both engines (matches the PR); wdDigest(400) 4.6104818060721e+06 and journeyDigest(50) 217970.5634064679 identical; my pure driver _eval_pure.ail: 16 cmbSeenTemperature/Apparent rows and 6 edge cases identical bit for bit",
+    "photopicFinite_9999_strict_vm": "true in 16.5 s",
+    "smoke_main": "interpreter prints 'OK: ... forward CMB at the cap 3853.7 K = 1.984e8 cd/m^2, Sun B-V 0.65 = 5770 K, naked-eye limit V 6.94 at 2e-4 cd/m^2' (println is evaluator-only, so main cannot run on the strict VM; the digest entries are the VM check)",
+    "generator_reproducible": "python3 tools/mamajek_to_ail.py on the freshly downloaded table reproduces photometry_table.ail byte for byte (BP-RP chain unchanged; B-V chain 86 rows O3V-M9V, dropped none)",
+    "reference_script_reproducible": "python3 tools/photometry_ref.py --mamajek <fresh table> --check reproduces tools/photometry_ref.out byte for byte and prints OK",
+    "ci": "no checks reported on the branch (the packages repo has no CI for this branch)"
+  },
+  "independent_verification": {
+    "doppler_conventions": {
+      "derivation": "Rest-frame source direction n (angle theta from the velocity): D = gamma (1 + beta cos theta). Apparent direction n' (theta'): D = 1/(gamma (1 - beta cos theta')). They agree at 0 and 180 deg; at 90 deg the first is gamma and the second 1/gamma. cmbSeenTemperature (optics.ail:104-109) uses doppler() = gammaOnePlusBetaCos(phi, n.bh): rest-frame formula, correct. cmbSeenTemperatureApparent (optics.ail:115-120) uses dopplerApparent() = 1/gammaOnePlusBetaCos(phi, -n'.bh): apparent formula, correct, and the cancellation-free branch is taken for the forward pole.",
+      "oracle": "Decimal (60 digits) with cos by series, in scratchpad/eval/doppler_check.py; T0 = 2.725 K",
+      "rows_K": {
+        "0.99c gamma 7.088812050083359": {
+          "rest 0": {"mine": "38.440855544590", "package": "38.44085554458952"},
+          "rest 90": {"mine": "19.317012836477", "package": "19.317012836477147"},
+          "rest 180": {"mine": "0.193170128365", "package": "0.19317012836477163"},
+          "rest 1/gamma rad": {"mine": "38.250888651775", "package": "38.25088865177537"},
+          "apparent 0": {"mine": "38.440855544590", "package": "38.44085554458952"},
+          "apparent 90": {"mine": "0.384408555446", "package": "0.38440855544589564"},
+          "apparent 180": {"mine": "0.193170128365", "package": "0.19317012836477163"},
+          "apparent 1/gamma rad": {"mine": "19.381121086005", "package": "19.381121086005365"}
+        },
+        "cap 1-beta=1e-6 gamma 707.106957963309": {
+          "rest 0 (HB-63)": {"mine": "3853.730994033574", "package": "3853.7309940335736", "canon": "3,853.7"},
+          "rest 90": {"mine": "1926.866460450017", "package": "1926.8664604500168", "sprint plan": "1,926.9 (gamma T0)"},
+          "rest 180": {"mine": "0.001926866460", "package": "0.0019268664604500177"},
+          "rest 1/gamma rad": {"mine": "3853.729067170325", "package": "3853.729067170324"},
+          "apparent 0": {"mine": "3853.730994033574", "package": "3853.7309940335736"},
+          "apparent 90": {"mine": "0.003853730994", "package": "0.003853730994033576"},
+          "apparent 180": {"mine": "0.001926866460", "package": "0.0019268664604500177"},
+          "apparent 1/gamma rad (HB-68)": {"mine": "1926.867102738559", "package": "1926.8671027324722", "pr_reference": "1926.867102770845 (float cos, 2e-11 high)"}
+        },
+        "0.99c ahead (HB-62)": {"mine": "38.440855544590", "canon": "38.44"}
+      },
+      "f5_check": "D = 1 at cos theta' = (1 - 1/gamma)/beta: 29.818 deg at 0.99c, 3.046 deg at the cap; the rest-frame 90 deg direction appears at acos(beta) = 8.110 deg (0.99c) and 0.0810 deg (cap, = 1/gamma = HB-68). The corrected F5 and the PR's note are right: the apparent sideways sky is redshifted (D = 1/gamma)."
+    },
+    "photopic_radiance": {
+      "oracle": "683 lm/W x Simpson over the CVRL CIE 1931 1 nm ybar (471 rows, anchors checked: 555 nm = 1.0, 500 nm = 0.323, 600 nm = 0.631, 700 nm = 0.004102) with exact SI Planck; also 5 nm trapezoid and the WSS fit at 0.01 nm; scratchpad/eval/photopic_check.py",
+      "rows_cd_m2": {
+        "2856 K": {"cie_1nm": "1.974973e7", "package": "1.978436e7", "pkg/cie-1": "+1.75e-3"},
+        "5772 K": {"cie_1nm": "1.843709e9", "package": "1.844561e9", "pkg/cie-1": "+4.6e-4"},
+        "3853.7 K": {"cie_1nm": "1.982020e8", "package": "1.984159e8", "pkg/cie-1": "+1.08e-3"},
+        "1926.9 K": {"cie_1nm": "2.898898e5", "package": "2.908189e5", "pkg/cie-1": "+3.2e-3"},
+        "2041.4 K platinum point": {"cie_1nm": "5.964544e5 (-0.59% vs 6.0e5)", "package": "5.9820e5 (-0.30% vs 6.0e5)", "anchor": "1/60 cd per cm^2 = 6.0e5 cd/m^2"}
+      },
+      "fit_vs_package": "my 0.01 nm Simpson of the same WSS fit equals the package's 1 nm sum to 1e-6 at every row, so the package's quadrature is fine; the 0.05-0.3% offsets above are the WSS ybar fit itself, as the PR states",
+      "constant": "683 x 2hc^2 in W m^-2 sr^-1 nm^-1 per um^-5 = 81348235.01472795; package 683 x 119104.29723971884 = 81348235.01472796",
+      "edge_cases": "photopicRadiance(2.725) = 0 exactly (true value ~1e-2763), (0) = 0, (-5) = 0, (NaN) = 0 on both engines; no division by zero anywhere on 1e-3..1e6 K (photopicFinite(9999) true). BUT photopicRadiance(+Inf) = +Inf and (1e25) = +Inf on both engines: for T > ~3.6e20 K, exp(e) - 1 at 360 nm is exactly 0 and planck divides by it (blackbody.ail:40)."
+    },
+    "surface_brightness": {
+      "zero_point": "V = -13.98 at 1 lux gives 2.5586e-6 lx at V = 0 (Crumey/Cox: 2.54e-6), arcsec^2 = (pi/648000)^2 sr",
+      "mu_22": {"mine": "1.725242969719464e-4 cd/m^2", "package": "1.725242969719464e-4", "design": "1.7e-4 / 1.726e-4"},
+      "mu_0": {"mine": "108855.47227573219", "package": "108855.47227573219"},
+      "inverse": "surfaceMagFromLuminance and vFromIlluminance round-trip within 1e-12 (package test check05)"
+    },
+    "crumey_2014": {
+      "constants_checked_against_the_paper": "Eq. 26 r1 = 6.505e-4, r2 = -8.461e-4; Eq. 27 r3 = 1.772e-4, r4 = 7.167e-5; split-point B = 7.08e-2 cd/m^2 (p. 10); Eqs. 32/33 dI = (r B^1/4 + r B^1/2)^2 (p. 10); Eq. 53 = Eq. 32 x F with Blackwell constants (p. 12); zeta = (10^-5/4 r1 + 10^-5/2 r2)^2 = 1.150e-9 lx (Eq. 71, p. 14); Z = 2.54e-6 lx (p. 3); zero-background cut-off 1e-5 cd/m^2 (p. 8, Eq. 52); m0 = 6.93 - 2.5 log F at B = 2e-4 cd/m^2, 6.18 at F = 2 (Section 3.1). All match photometry.ail:128-148.",
+      "values": {
+        "zeta dI(1e-5)": {"mine": "1.1495286872003704e-9", "package": "1.1495286872003704e-9"},
+        "dI(2e-4)": {"mine": "4.276147913741731e-9", "package": "4.276147913741731e-9"},
+        "m0 Crumey ZP": {"mine": "6.934452", "paper": "6.93"},
+        "m0 F=2": {"mine": "6.181878", "paper": "6.18"},
+        "limitingMagnitude(2e-4,1) package ZP": {"mine": "6.942368201939953", "package": "6.942368201939953", "note": "0.008 mag fainter than Crumey's ZP, as declared"},
+        "branches at 0.0708": {"scotopic": "1.21917e-8", "photopic": "1.22049e-8", "ratio-1": "+1.08e-3"}
+      },
+      "mesopic_dip": "The scotopic branch (r2 < 0) peaks at B = (-r1/2r2)^4 = 0.0218 cd/m^2 (dI = 1.563e-8) and falls to 1.219e-8 at the 0.0708 split; so pointThresholdIlluminance(0.05) < pointThresholdIlluminance(0.0218) and limitingMagnitude(0.05, 2) = 4.90 > limitingMagnitude(0.0218, 2) = 4.78: a brighter background gives a fainter limit over 0.022-0.071 cd/m^2. Crumey's smooth Eq. 34 (a_i of Eq. 28) has the same dip, so it is his fit to Blackwell's plateau, not a transcription error. Crumey says the scotopic model is valid to about 0.1 cd/m^2 for astronomy. Irrelevant for the game's dark-sky backgrounds (1e-4..1e-3) and for the cap's CMB glow (>> 1 cd/m^2), but it should be documented."
+    },
+    "teff_from_bv": {
+      "table": "My column-name parse of the freshly downloaded 2022.04.16 table: 86 rows with numeric Teff and B-V, O3V (-0.33, 44900) to M9V (2.17, 2380); B-V strictly increasing and Teff strictly decreasing with no drops; bvNodes/bvTeffNodes identical to my lists (86/86).",
+      "check_stars_mine_pct": {"Sun 0.65": "5770.00 (-0.03%)", "Sirius A 0.009": "9597.14 (-3.45%)", "alpha Cen B 0.900": "5059.25 (-3.82%)", "Barnard 1.729": "3096.07 (-3.97%)", "Proxima 1.82 (Jao 2014)": "3063.57 (+0.31%)", "Proxima 1.97 (Boyajian 2012)": "2878.57 (-5.74%)"},
+      "proxima_judgement": "Defensible: B 12.95 / V 11.13 (B-V 1.82) is the catalogue colour SIMBAD and the Jao et al. 2014 paper carry. But the M4.5V-M5V segment is nearly flat (B-V 1.69 -> 1.83 spans only 3110 -> 3060 K) and Mamajek's own M5.5V row for Proxima's type reads 2930 K, so the +0.31% agreement with Boyajian's 3054 K is partly luck and the 5% pass is weak evidence; the PR says as much in the test comment and the .out. Not a defect; see non-blocking suggestion."
+    },
+    "nan_fix_ailang_1419": "teffFromBpRp(NaN) = 2420.0 and gMinusV(NaN) = -3.09 on the strict VM and the interpreter (my _eval_pure.ail edge(2), edge(3)); teffFromBV(NaN) = 2380.0 on both. photometryDigest folds these in and is identical on both engines."
+  },
+  "my_mutations": [
+    {"target": "optics.ail cmbSeenTemperature routed through dopplerApparent (the reverse of the PR's mutation)", "result": "killed: 114 passed, 1 failed"},
+    {"target": "photometry.ail Crumey split 0.0708 -> 0.03", "result": "SURVIVED: 115 passed. The 'branches meet within 0.11%' check (check12) and the samples at 1e-5, 2e-4, 1, 100 cd/m^2 cannot see which branch serves 0.03-0.0708."},
+    {"target": "blackbody.ail c2 14387769 -> 14388000", "result": "killed: 4 failed (1e-6 oracle rows)"},
+    {"target": "optics.ail gammaOnePlusBetaCos c<0 rewrite disabled", "result": "killed: 2 failed (existing relativity_test astern checks)"},
+    {"target": "photometry.ail lookup low clamp to the wrong end", "result": "killed: 4 failed"},
+    {"target": "photometry.ail dark cut-off 1e-5 -> 1e-4", "result": "killed: 1 failed"},
+    {"target": "blackbody.ail photopicRadiance NaN guard removed", "result": "survived but equivalent: both engines still return 0 for NaN through planck's e > 700 path; keep the guard, it documents intent"},
+    {"target": "photometry.ail r2 sign flipped", "result": "killed: 2 failed"}
+  ],
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      {"file": "packages/relativity/photometry.ail:146 and photometry_sky_test.ail:157-164", "issue": "No test pins a value inside the mesopic transition, so the branch split point is unverified (mutation 0.0708 -> 0.03 survives).", "suggestion": "Assert two reference-script values across the split, e.g. dI(0.05) = 1.4020631307385367e-8 (scotopic) and dI(0.1) = 1.4960e-8 (photopic), to 1e-12."},
+      {"file": "packages/relativity/photometry.ail:128-148, AGENT.md 'Sky photometry' bullet", "issue": "pointThresholdIlluminance is non-monotone on 0.0218-0.0708 cd/m^2 (Crumey's model, see independent_verification.crumey_2014.mesopic_dip); limitingMagnitude inherits it. Undocumented.", "suggestion": "One comment line: 'Crumey's scotopic fit peaks at 0.022 cd/m^2 and dips 22% to the split; the model is intended for backgrounds below ~0.1 cd/m^2 (his Section 2.3)'. Optionally a test that the dip is bounded (dI(0.0708) > 0.75 dI(0.0218))."},
+      {"file": "packages/relativity/blackbody.ail:40 and :124", "issue": "planck's exp(e) - 1.0 is exactly 0 when e < 1.1e-16, i.e. T > ~3.6e20 K at 360 nm, so photopicRadiance(1e25) = photopicRadiance(+Inf) = +Inf on both engines; the comment says finite for every finite T.", "suggestion": "Either guard (return 0 or clamp T) or reword the comment to the tested range 0..1e6 K. Irrelevant for the game's 0-5000 K LUT."},
+      {"file": "packages/relativity/tools/photometry_ref.py:113-116, photometry_sky_test.ail:116", "issue": "The HB-68 reference row uses float cos(1/gamma) inside the Decimal arithmetic, so it is 2e-11 (relative) above the true 1926.867102738559 K; the package is 3e-12 off. The 1e-9 test tolerance absorbs it, but the 'Decimal' label overclaims.", "suggestion": "Compute cos by series in Decimal (or state the float-cos limit)."},
+      {"file": "packages/relativity/photometry_sky_test.ail:30-37", "issue": "Proxima at B-V 1.82 passes at +0.31% only because the M4.5V-M5V segment is flat; Boyajian's own colour fails the 5% band. The test is honest about this but still counts it as one of the five 5% dwarfs.", "suggestion": "Keep the Jao colour but widen Proxima to 10% (B-V saturates there), or move it to a documented informational print; Barnard's star already covers the late-M case."}
+    ]
+  },
+  "deviations_accepted": [
+    "Extra exports beyond the plan (cmbSeenTemperatureApparent, surfaceMagFromLuminance, vFromIlluminance, limitingMagnitude, bvInTable): accepted; the apparent-direction function is the per-pixel one the renderer needs and the one that makes the F5 mistake impossible to repeat.",
+    "NaN fix for teffFromBpRp/gMinusV (ailang#1419): accepted as a behaviour fix in a minor release; VM users now get the cool-end node instead of NaN; verified on both engines; recorded in CHANGELOG.",
+    "photopicRadiance sweep: 200 log-spaced points in the test file plus 10,000 on the strict VM via photopicFinite(9999): accepted; I re-ran the VM sweep (true, 16.5 s) and the interpreter cost (~75 ms per call) justifies it.",
+    "Crumey zero point 2.54e-6 lx vs the package's 2.5586e-6 lx (0.008 mag): accepted; the test checks Crumey's printed 6.93/6.18 on his own zero point and the package value on its own.",
+    "Interpreter-only smoke main (println is evaluator-only on the VM): accepted; the pure digests are the VM gate."
+  ],
+  "next": "PASS at 96/100. GO for the controller to publish 0.5.0 under the standing grant (pause P1), then pin 0.5.0 in sim/ailang.toml and relock. The five non-blocking items fit a 0.5.1 or the M1.5a package touch. For M1.5a: use cmbSeenTemperatureApparent and dopplerApparent per pixel; the 'sideways darker' test (D = 1/gamma at theta' = 90 deg, D = gamma at theta' = acos(beta), D = 1 at cos theta' = (1 - 1/gamma)/beta) agrees with my derivation."
+}

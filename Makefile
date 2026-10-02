@@ -80,6 +80,10 @@ parity-v2:          ## protocol v2 session through ship.ail (hello first, malfor
 	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_vm.txt
 	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/v2_session.ndjson > $(SCRATCH)/v2_interp.txt
 	cmp $(SCRATCH)/v2_vm.txt $(SCRATCH)/v2_interp.txt && echo "parity-v2: identical ($$(wc -l < $(SCRATCH)/v2_vm.txt) lines)"
+	@# M1.6b: rest-tolerance edge through the protocol (ticks 6-9): a turn at phi 0.9e-9 is accepted, at 1.1e-9 refused moving
+	@grep -q '"tick":7,"status":"ok".*"heading":{"x":0,"y":1,"z":0}.*"refused":\[\]' $(SCRATCH)/v2_vm.txt && \
+	  grep -q '"tick":9,"status":"ok".*"heading":{"x":0,"y":1,"z":0}.*"refused":\[{"i":1,"reason":"moving"}\]' $(SCRATCH)/v2_vm.txt && \
+	  echo "parity-v2: rest tolerance edge (turn at phi 0.9e-9 accepted, 1.1e-9 refused moving)" || { echo "parity-v2: rest tolerance edge FAILED"; exit 1; }
 
 offaxis-v11-equiv:  ## AC13: v2 off-axis log reproduces v1.1 (e9d35c5) beta, gamma, tau, t, x, pos bit for bit (replay case offaxis_v11_equiv)
 	AILANG="$(AILANG)" python3 tools/replay.py --case offaxis_v11_equiv
@@ -134,8 +138,12 @@ wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ai
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden:            ## GPU shader vs CPU reference star positions (needs a GPU window)
-	$(GODOT) --path . -- --golden
+golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
+	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c 'background marker' $(SCRATCH)/golden.log)" = 16 && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers)"; exit 1; }
 
 capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window)
 	$(GODOT_SIM) --path . -- --capture=renders
@@ -278,3 +286,5 @@ destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars remov
 	  --args-json '{"rgb":"$(SKY)/noirlab_10k.rgb","w":10000,"h":5000,"hip":"data/raw/hip_v7.tsv","gcns":"data/raw/gcns.csv","cns5":"data/raw/cns5.csv","patches":"$(SKY)/destar_patches.bin","report":"data/sky/destar_report.json"}' \
 	  sim/tools/destar.ail
 	$(GODOT) --headless --path . --script tools/destar_io.gd -- apply $(SKY)/noirlab_10k.png $(SKY)/destar_patches.bin $(SKY)/noirlab_10k_destarred.png
+
+include mk/ai.mk

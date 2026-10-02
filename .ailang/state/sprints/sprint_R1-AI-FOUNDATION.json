@@ -1,0 +1,656 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "status": "in_progress",
+  "created": "2026-10-02T18:00:00Z",
+  "design_doc": "design_docs/planned/r1/ai-service-foundation.md",
+  "sprint_plan": "design_docs/planned/r1/ai-service-foundation-sprint.md",
+  "github_issues": [],
+  "upstream_issues": [
+    "sunholo-data/ailang#1495 (G1 TTS in std/ai)",
+    "#1496 (G2 reference images)",
+    "#1497 (G3 fixture --ai-stub)",
+    "#1498 (G5 relative path deps)",
+    "#1499 (G4 ADC switch/key file)",
+    "OpenRouter image output feature request (filed 2026-10-02 by coordinator)"
+  ],
+  "ailang": {
+    "pin": "v0.51.0",
+    "binary": "/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang",
+    "legend": "$A = pinned binary on every make line (AILANG=$A, AILANG_BIN=$A when Godot starts a child); no command except AI.10b can spend"
+  },
+  "ledger": [
+    "D-7",
+    "D-8",
+    "D-9",
+    "D-20"
+  ],
+  "plan_changes": [
+    {
+      "date": "2026-10-02",
+      "by": "Mark (attended, relayed by coordinator)",
+      "change": "Support BOTH providers: per-kind routing config (data/ai/routing.json); text (line/news/archive) via OpenRouter by default, then Gemini; portraits/avatars/voice via Gemini only (OpenRouter refuses image output on v0.51.0; no TTS in std/ai); both keys optional with text-only fallback; build key Secret Manager openrouter-api-key in project stapledons-voyage (Mark supplies the value) beside gemini-api-key; player settings accept either or both keys; stub tests cover both routes; cost display per provider",
+      "lands_in": [
+        "AI.4",
+        "AI.5",
+        "AI.7",
+        "AI.8",
+        "AI.9",
+        "AI.10b"
+      ],
+      "loc_delta": 190
+    }
+  ],
+  "runs_alongside": "R1-M1-SKY-2",
+  "velocity": {
+    "target_loc_per_day": 1900,
+    "estimated_total_loc": 3760,
+    "estimated_days": 2,
+    "estimated_days_loop": "4-5",
+    "estimated_iterations": "11 planned + 2 contingency",
+    "loc_cap_per_milestone": 650,
+    "basis": "R1-M2-JOURNEY attended: 10 milestones in ~13.5 h, evals 89-96, ~1.5x actual/estimate; ~2 h per milestone incl. independent eval, waves of disjoint files. 7 waves x ~2 h = ~14-18 h attended (~2 days). Loop: ~4-5 days incl. G21 and C waits. Design estimate 3,150; +190 OpenRouter route; +420 replay-compat harness + frozen baselines, SimBridge hook + AI recorder, game wiring + export, live-session script."
+  },
+  "order": [
+    "AI.1_MARKERS",
+    "AI.2_PROTO21_AI_MODULE",
+    "AI.3_RECORD_VALIDATION_GOLDENS",
+    "AI.4_SERVICE_ROUTING_STUB",
+    "AI.5_ADAPTERS_SPEND",
+    "AI.6_AIBRIDGE_SUPERVISION",
+    "AI.7_RELAY_CACHE_E2E",
+    "AI.8_CORE_LAYER",
+    "AI.9_KEY_COST_UX_WIRING",
+    "AI.10a_STYLE_FRAME_STUB",
+    "AI.10b_LIVE_LINE_STOP"
+  ],
+  "waves": {
+    "A1": [
+      "AI.1_MARKERS",
+      "AI.2_PROTO21_AI_MODULE"
+    ],
+    "A2": [
+      "AI.3_RECORD_VALIDATION_GOLDENS",
+      "AI.4_SERVICE_ROUTING_STUB"
+    ],
+    "A3": [
+      "AI.5_ADAPTERS_SPEND",
+      "AI.6_AIBRIDGE_SUPERVISION"
+    ],
+    "A4": [
+      "AI.7_RELAY_CACHE_E2E",
+      "AI.8_CORE_LAYER"
+    ],
+    "A5": [
+      "AI.9_KEY_COST_UX_WIRING"
+    ],
+    "A6": [
+      "AI.10a_STYLE_FRAME_STUB"
+    ],
+    "A7": [
+      "AI.10b_LIVE_LINE_STOP"
+    ]
+  },
+  "m1_sequencing": {
+    "rules": [
+      "Makefile: AI.1 adds only `include mk/ai.mk`; all AI targets live in mk/ai.mk (`test: ai-test`, `export-macos: ai-runtime ai-core-bundle` as extra prerequisites)",
+      "sim/core_test.ail: AI.2 edits only checkCommittedRefusesAll body (:332) and its test name (:658); new tests in sim/ai_test.ail",
+      "tests/replays goldens: AI.3 merges before M1.7 starts (M1 wave 5); else AI.3 re-records on top of M1.7 and freezes compat-2.0 after it",
+      "main.gd: AI.9 only, one hunk <= 15 lines beside sim.record_path (:64, :87)",
+      "ui/galaxy_map.gd, tools/record_godot_session.gd, sim/ailang.toml/.lock: never touched by AI",
+      "GPU window: ai-style-frame runs serially with M1 GPU gates"
+    ],
+    "wave_alignment": {
+      "A1": "M1 wave 1",
+      "A2": "M1 waves 2-3 (AI.3 before M1.7)",
+      "A3": "M1 waves 3-4",
+      "A4": "M1 wave 4",
+      "A5": "M1 waves 4-5",
+      "A6": "M1 waves 5-6",
+      "A7": "any (attended)"
+    }
+  },
+  "pause_points": [
+    {
+      "id": "P0",
+      "after": null,
+      "what": "plan approval by Mark (now)"
+    },
+    {
+      "id": "G21",
+      "after": "AI.3_RECORD_VALIDATION_GOLDENS",
+      "what": "golden review as at M2 P5: one reviewed `make replay-record LOG=all` diff (arm64 local, x86_64 from throwaway CI branch), `make replay-compat` green first; evaluator reads compat output; Mark approves; blocks AI.3 merge and AI.7"
+    },
+    {
+      "id": "P-pub",
+      "after": "AI.8_CORE_LAYER",
+      "what": "controller (attended, gcloud): make ai-core-publish (--no-clobber) to gs://stapledons-voyage-assets/ai/ (Q3) and creates the empty Secret Manager secret openrouter-api-key in stapledons-voyage; Mark adds its value"
+    },
+    {
+      "id": "P-live",
+      "after": null,
+      "before": "AI.10b_LIVE_LINE_STOP",
+      "what": "spending is attended only: make ai-live requires AI_LIVE=1 and a terminal, reads Secret Manager gemini-api-key and (if it has a value) openrouter-api-key (project stapledons-voyage) into mktemp 0600 files removed by trap, --ceiling-usd 1.00 over both providers; the loop parks AI.10b and asks on issue #1"
+    },
+    {
+      "id": "C",
+      "after": "AI.10b_LIVE_LINE_STOP",
+      "what": "STOP for Mark: three auditions (Aoede, Kore, Leda), swap timing (segment start vs -150 ms), crossfade, per-segment prosody, OpenRouter text model (Q7); controller opens a ledger row and posts a review page; nothing past (c) and no landing before his answer"
+    }
+  ],
+  "decision_points": [
+    {
+      "gap": "G1 ailang#1495",
+      "when": "AI.5 start and AI.10a start",
+      "check": "$A docs std/ai | grep -i speech on the pinned binary",
+      "default": "TTS via sunholo/gemini_live/tts body + std/net.httpRequest; a pin bump is its own PR"
+    },
+    {
+      "gap": "G3 ailang#1497",
+      "when": "AI.5 start",
+      "check": "fixture-driven --ai-stub in pinned release",
+      "default": "own pure stub + narrow --ai-stub lane"
+    },
+    {
+      "gap": "G4 ailang#1499",
+      "when": "AI.9 start",
+      "check": "ADC-off switch / key-file option in pinned release",
+      "default": "/bin/sh wrapper + GOOGLE_APPLICATION_CREDENTIALS=/nonexistent + refusal without GOOGLE_API_KEY"
+    },
+    {
+      "gap": "OpenRouter image output (feature request)",
+      "when": "AI.9 start",
+      "check": "pinned release accepts OpenRouter image generation",
+      "default": "portrait/avatar routes Gemini only; if supported, add an OpenRouter entry as data + one stub-route golden"
+    },
+    {
+      "gap": "OpenRouter on the pin",
+      "when": "AI.5 task 0",
+      "check": "key env var name, per-call openrouter: ids beside a Gemini handler, usage reported, --ai-stub behaviour",
+      "default": "OPENROUTER_API_KEY; if usage not reported, cost estimated from prices.json and flagged estimated"
+    },
+    {
+      "gap": "G2 ailang#1496, G5 ailang#1498",
+      "when": "none",
+      "check": "n/a",
+      "default": "portrait kind stub-only; no code shared between sim/ and ai/"
+    }
+  ],
+  "findings": [
+    "sunholo/gemini_live@0.5.0 has a pure batch-TTS module (buildTtsRequest/ttsAudioOf/outputTokensOf/finishReasonOf/completeOk): TTS adapter depends on it, transport via std/net; its endpoints are Vertex/ADC or key-in-URL WebSocket, so the AI Studio REST URL (x-goog-api-key header) stays local",
+    "Full states change in three places, not two: ai_max_open/ai_ttl_ticks join params; plan appends them last and the ai section last; replay-compat strips exactly hello minor, the two params keys, the ai section (AC13 wording gains the keys)",
+    "replay-compat uses frozen tests/replays/compat-2.0/ baselines (CI depth-1 checkout; session goldens are sha256: compare sha256 of stripped stream); changed-input logs reported skipped",
+    "test: has no recipe, so mk/ai.mk adds `test: ai-test`; one Makefile line for the whole sprint",
+    "Ledger D-20 text mangled by shell expansion ($20 -> empty, $0 -> /bin/zsh); plan uses US$20 ~ 140 DKK and US$0.50 (Q1); the both-providers ruling is not in the ledger yet",
+    "140 DKK budget is an alert, not a cap; OpenRouter spend is prepaid credit outside GCP; hard stops are --ceiling-usd (sum of providers), AI @limit=3, TTS maxOutputTokens, attended-only AI.10b",
+    "No replay log contains a record intent, so 2.1 record handling cannot move an existing golden",
+    "Relay hook goes in bridge/sim_bridge.gd (no M1 milestone touches bridge/), not main.gd"
+  ],
+  "questions_for_mark": [
+    "Q1 Record D-20's mangled text fix and the both-providers ruling with attended ledger edits? Default: plan uses US$20/140 DKK and US$0.50 and treats both-providers as ruled",
+    "Q2 Player ceiling bounds/persistence. Default: US$0.05-20.00, default 0.50, one ceiling over both providers, persisted in user://ai_settings.cfg",
+    "Q3 Medic core set in the public bucket gs://stapledons-voyage-assets/ai/. Default: yes",
+    "Q4 Attended live run: --ceiling-usd 1.00, any attended Studio session with gcloud; Mark needed only at C. Default: as stated",
+    "Q5 Run AI waves in parallel with M1's attended waves, or only while M1 waits on reviews? Default: parallel, AI.3 before M1.7",
+    "Q6 Cap 650, 11 milestones, 3,760 LOC. Default: as planned",
+    "Q7 Default OpenRouter text model. Default: cheapest model passing grammar/no_numerals fixtures in AI.5, in models.json, confirmed or swapped at C",
+    "Q8 OpenRouter spend is outside the GCP budget. Default: credit limit on the build key set by Mark on openrouter.ai (suggest US$5); session ceiling covers both providers"
+  ],
+  "approved": null,
+  "features": [
+    {
+      "id": "AI.1_MARKERS",
+      "description": "Design (b): {emotion} marker grammar (D-20) in pure sim/markers.ail: parseLine/printLine/displayText, error codes (unknown emotion, unbalanced/nested brace, empty segment, any [ or ], >16 segments), leading neutral, merge of equal adjacent markers, trimming; portrait fallback chain; data/ai/emotion_styles.json; mk/ai.mk created (test: ai-test, strict-ai markersVm) and the single Makefile line `include mk/ai.mk`.",
+      "estimated_loc": 300,
+      "loc_cap": 650,
+      "dependencies": [],
+      "wave": "A1",
+      "iteration": 1,
+      "files": [
+        "sim/markers.ail",
+        "sim/markers_test.ail",
+        "data/ai/emotion_styles.json",
+        "mk/ai.mk",
+        "Makefile (one include line)"
+      ],
+      "acceptance_criteria": [
+        "AC16: cd sim && $A test --package . (markers_test.ail): every error code fires; printLine(parseLine(x)) == normalise(x) and parseLine(printLine(s)) == s over fixtures incl. non-ASCII and 16 segments; mutants (no [/] refusal, no merge, 17 segments) each fail a named test",
+        "AC7 part: make strict-ai AILANG=$A (markersVm: strict VM == interpreter, markers-ok)",
+        "make test AILANG=$A green; Makefile diff is exactly one include line"
+      ],
+      "registry": "none",
+      "passes": true,
+      "started": "2026-10-02T17:00:00Z",
+      "completed": "2026-10-02T17:45:00Z",
+      "notes": "Executed on sprint/ai1-markers (awaiting independent evaluation). AC16: cd sim && $A test --package . -> 98/98 incl. 13 AI.1 tests. AC7 part: make strict-ai -> markersVm markers-ok, 36 lines, strict VM = interpreter, emotion list == emotion_styles.json keys. Mutants: make markers-mutants kills all three (no [/] refusal, no merge, 17 segments), each failing its named test. make test green (EXIT 0). Counted LOC: 76 markers.ail + 27 mk/ai.mk + 1 Makefile = 104 code, 138 tests. Deviations: sim/ailang.toml exports gains stapledons/sim/markers (required for ./markers import); markers-mutants target added in mk/ai.mk (not in ai-test). Upstream: ailang#1503 (strict VM: constructor pattern at the head of a cons pattern -> _record_get on ADT); worked around in markers.ail."
+    },
+    {
+      "id": "AI.2_PROTO21_AI_MODULE",
+      "description": "Design (a1) part 1: protocol 2.1 codecs (ai_open, ai_cancel, events ai_request/ai_accepted/ai_fallback, change-set ai section) with inverse pairs; pure sim/ai.ail (AiState in World, monotonic decimal req ids, seed = top 53 bits of one stream-5 draw, ai_open refusals ai_kind/ai_bad_key/ai_stale/ai_too_many/diag_only, ai_cancel, expiry at expires_tick); params ai_max_open (8, 1-64), ai_ttl_ticks (3600, 1-1e6); new_game ai_core. D-20 commit rule as a milestone task: refuseWhileCommitted keeps one arm per constructor, AI arms delegate, journey intents refused committed; rewrite checkCommittedRefusesAll + rename its test to 'every journey intent'; new checkAiNeverTouchesJourney; amend M2 design doc AC7 row and reason table (implemented/r1/m2-journey-core.md :290, :601) and core.ail comments; check M4 doc wording. NO wire change for 2.0 logs (hello minor 0, params keys and full-state ai section not printed yet).",
+      "estimated_loc": 430,
+      "loc_cap": 650,
+      "dependencies": [],
+      "wave": "A1",
+      "iteration": 1,
+      "files": [
+        "sim/ai.ail",
+        "sim/ai_test.ail",
+        "sim/protocol.ail",
+        "sim/protocol_test.ail",
+        "sim/core.ail",
+        "sim/core_test.ail (two hunks: :332 body, :658 name)",
+        "mk/ai.mk (aiVm)",
+        "design_docs/implemented/r1/m2-journey-core.md (AC7 amendment)"
+      ],
+      "acceptance_criteria": [
+        "AC2: cd sim && $A test --package . (checkAiCodecs): round trips; malformed fields stay bad_intent",
+        "AC3 part: checkAiOpenRefusals (ai_kind, ai_bad_key, ai_stale, ai_too_many, diag_only) open nothing; tick proceeds",
+        "AC4 part: checkAiIds, checkAiExpiry",
+        "AC5: checkAiNeverTouchesJourney and rewritten checkCommittedRefusesAll (journey intents refused committed, AI intents accepted while committed)",
+        "AC7 part: make strict-ai AILANG=$A (aiVm)",
+        "make replay AILANG=$A green with git diff --exit-code tests/replays/ (no golden changed)",
+        "! grep -nE \"Committed.*=> *(Idle|Planned)\" sim/core.ail",
+        "M2 doc AC7 row amended: 'narrowed to every journey intent by D-20, 2026-10-02'",
+        "make test AILANG=$A"
+      ],
+      "registry": "depend std/json, std/crypto",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AI.3_RECORD_VALIDATION_GOLDENS",
+      "description": "Design (a1) part 2: pure record validation (ai_source, ai_unknown_req, ai_kind, ai_hash, ai_length, ai_numeral, ai_markup, ai_emotion, ai_descriptor) closing with ai_fallback except ai_unknown_req; ai_accepted with parsed segments; ai.lines (64) for ai_stale; hello minor 1; params ai keys last and full-state ai section last; bridge accepts major 2 only. Freeze 2.0 goldens to tests/replays/compat-2.0/, then make replay-record LOG=all (arm64 local, x86_64 via throwaway CI branch). make replay-compat (tools/replay.py --compat, harness, tests first in tools/test_replay.py): strip exactly hello minor, two params keys, ai section; cmp or sha256-of-stripped vs compat-2.0; changed-input logs reported skipped. New deterministic replay case ai_sim_session (tools/gen_ai_session.py, harness, allowlisted).",
+      "estimated_loc": 400,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.1_MARKERS",
+        "AI.2_PROTO21_AI_MODULE"
+      ],
+      "wave": "A2",
+      "iteration": 1,
+      "files": [
+        "sim/ai.ail",
+        "sim/ai_test.ail",
+        "sim/protocol.ail",
+        "sim/protocol_test.ail",
+        "sim/core.ail",
+        "tests/test_sim_bridge.gd",
+        "tools/replay.py",
+        "tools/test_replay.py",
+        "tools/gen_ai_session.py",
+        "tools/python-allowlist.txt",
+        "mk/ai.mk",
+        "tests/replays/* goldens",
+        "tests/replays/compat-2.0/*",
+        "tests/replays/ai_sim_session.*"
+      ],
+      "acceptance_criteria": [
+        "AC1: cd sim && $A test --package . (checkHello21) and godot --headless --path . --script tests/test_sim_bridge.gd (minor 1 accepted, major 3 refused)",
+        "AC3: checkAiRefusals: each record refusal fires on its fixture and closes with ai_fallback except ai_unknown_req; tick proceeds",
+        "AC4: checkAiOnce",
+        "AC6 part: checkAiHash vs committed shasum -a 256 vectors incl. non-ASCII",
+        "AC12 part: make replay AILANG=$A (case ai_sim_session, VM == interpreter == per-arch golden)",
+        "AC13: make replay-compat AILANG=$A; harness mutants (strip a fourth field, parsed-JSON compare, pass changed-input log) caught by tools/test_replay.py",
+        "make test AILANG=$A"
+      ],
+      "registry": "depend std/crypto",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pause_after": "G21: golden review (as M2 P5); Mark approves; blocks merge and AI.7",
+      "merge_rule": "merge before M1.7 starts; else re-record on top of M1.7"
+    },
+    {
+      "id": "AI.4_SERVICE_ROUTING_STUB",
+      "description": "Design (a2) part 1 + plan change: task 0 dated 'both providers' amendment in the design doc. ai/ package stapledons/ai ([effects] max IO,FS,Env,Net,AI; imports nothing from sim/), own lock; ai/route.ail pure route resolution from data/ai/routing.json + keys present (text: OpenRouter, else Gemini, else no_key; portrait/avatar/voice: Gemini or no_key, never OpenRouter; text_only mode; config errors at start; hello reports resolved routes); ai/wire.ail (ai/1 codecs, inverse pairs), ai/key.ail (CacheKey), ai/provider.ail (Stub | Gemini | OpenRouter placeholders), stub answers every route stamping meta.route; stub text/portrait (fixture negatives digits/over-length/bad marker/unlisted emotion; 64x64 PNG per emotion), ai/cache.ail (blobs/ab/<sha>.<ext>, index append, single writer), ai/service.ail loop (hello, request, quit; one at a time; --keys-present in stub mode). make ai-stub with --caps IO,FS over three key sets (both, gemini only, none): stdout cmp results.<keys>.golden, cache shasum -c, VM == interpreter, text sha256 vs shasum. strict-ai aiWireVm + route; deps-ai lock check.",
+      "estimated_loc": 550,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.2_PROTO21_AI_MODULE"
+      ],
+      "wave": "A2",
+      "iteration": 1,
+      "files": [
+        "ai/ailang.toml",
+        "ai/ailang.lock",
+        "ai/wire.ail",
+        "ai/key.ail",
+        "ai/route.ail",
+        "ai/provider.ail",
+        "ai/cache.ail",
+        "ai/service.ail",
+        "ai/*_test.ail",
+        "ai/fixtures/*",
+        "data/ai/routing.json",
+        "tests/ai/requests.ndjson",
+        "tests/ai/results.{both,gemini,none}.golden.ndjson",
+        "tests/ai/cache.SHA256SUMS",
+        "mk/ai.mk",
+        "design_docs/planned/r1/ai-service-foundation.md (amendment section)"
+      ],
+      "acceptance_criteria": [
+        "AC8: make ai-stub AILANG=$A: --caps IO,FS only; three key sets; each stdout == its tests/ai/results.<keys>.golden.ndjson (text routed to OpenRouter / Gemini / no_key; portraits and voice to Gemini / no_key); index and blob hashes == tests/ai/cache.SHA256SUMS; identical on VM and interpreter",
+        "AC8b: cd ai && $A test --package . (route_test.ail): text -> OpenRouter, else Gemini, else no_key; portrait/avatar/voice never OpenRouter; text_only; config errors",
+        "AC6 part: harness compares every text sha256 with shasum -a 256",
+        "AC7 part: make strict-ai AILANG=$A (aiWireVm, route resolution)",
+        "deps-ai: cd ai && $A lock leaves ai/ailang.lock unchanged except generated_at",
+        "design doc carries the dated both-providers amendment",
+        "make test AILANG=$A"
+      ],
+      "registry": "depend std/json, std/fs, std/crypto",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AI.5_ADAPTERS_SPEND",
+      "description": "Design (a2) part 2 + plan change. Task 0 probes: std/ai speech (G1), fixture --ai-stub (G3), std/net accepts x-goog-api-key header (probe without network), std/env.hasEnv, sunholo/gemini_live@0.5.0 locks/checks on v0.51.0; OpenRouter: key env var (expected OPENROUTER_API_KEY), per-call openrouter:vendor/model ids beside a Gemini handler, usage reported, --ai-stub behaviour. ai/prompt.ail with prompt goldens (guardrail, grammar+palette, no_numerals, lore ids); ai/spend.ail (prices.json keyed by provider+model x tokens/chars -> USD, per-provider session ledger + total, budget refusal when the total exceeds player-set --ceiling-usd, default 0.50; usage.ndjson carries provider/model/route); adapters as thin calls around pure parsers on committed scrubbed fixtures: OpenRouter text std/ai.step('openrouter:<vendor/model>') (AI @limit=3, refuses without OPENROUTER_API_KEY), Gemini text std/ai.step, image std/ai.callImageBase64, TTS gemini_live/tts.buildTtsRequest POSTed by std/net.httpRequest to generativelanguage.googleapis.com with x-goog-api-key, completeOk before ttsAudioOf; refusal of gemini routes without GOOGLE_API_KEY; stub voice (tone per segment -> std/audio OggOpus 24000, hash goldens); data/ai/models.json (OpenRouter text model per Q7); make ai-adapter (--ai-stub lane, AI cap, no Net) for both text adapters.",
+      "estimated_loc": 460,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.4_SERVICE_ROUTING_STUB"
+      ],
+      "wave": "A3",
+      "iteration": 1,
+      "files": [
+        "ai/prompt.ail",
+        "ai/spend.ail",
+        "ai/provider.ail",
+        "ai/*_test.ail",
+        "ai/fixtures/responses/*",
+        "tests/ai/prompts/*",
+        "data/ai/models.json",
+        "data/ai/prices.json",
+        "data/ai/routing.json",
+        "ai/ailang.toml",
+        "ai/ailang.lock",
+        "mk/ai.mk"
+      ],
+      "acceptance_criteria": [
+        "AC9: make ai-adapter AILANG=$A: under --ai-stub the OpenRouter and Gemini text adapters each return bad_output, the image adapter a valid descriptor; TTS and both text parsers decode committed fixtures; env-cleared refusals asserted separately for GOOGLE_API_KEY and OPENROUTER_API_KEY",
+        "AC7 part: make strict-ai AILANG=$A covers ai/prompt.ail, ai/spend.ail, ai/route.ail",
+        "AC8: make ai-stub AILANG=$A incl. stub voice blob hashes and per-provider usage lines",
+        "spend tests: per-provider ledger and total; budget refusal at the ceiling over the total; default 0.50; player-set bounds",
+        "task 0 probe results recorded in notes (G1/G3/OpenRouter decision points)",
+        "make test AILANG=$A"
+      ],
+      "registry": "depend sunholo/gemini_live@0.5.0 (tts module), std/ai (built-in OpenRouter + Google providers), std/net, std/audio",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AI.6_AIBRIDGE_SUPERVISION",
+      "description": "Design (a3) part 1: bridge/ai_bridge.gd (AiBridge Node): OS.execute_with_pipe(..., false), non-blocking get_buffer polling in _process with line assembly, launch builder mirroring SimBridge._run_args + bundled HOME, stub launch --caps IO,FS, launch_count; handshake 5 s and proto.major 1; priority text>voice>portrait, one in flight; per-kind timeouts (30/60/120 s, overridable in tests) -> kill + ai_cancel timeout + lazy restart; crash backoff 1/4/16 s; 3 failures in 10 min -> service_down for all queued/open + toast; quit -> 1 s -> kill. ai/tools/fake_service.ail (ok, hang, crash_after_n, garbage, slow_hello, wrong_major). tests/test_ai_bridge.gd; mk ai-godot.",
+      "estimated_loc": 340,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.4_SERVICE_ROUTING_STUB"
+      ],
+      "wave": "A3",
+      "iteration": 1,
+      "files": [
+        "bridge/ai_bridge.gd",
+        "ai/tools/fake_service.ail",
+        "tests/test_ai_bridge.gd",
+        "mk/ai.mk"
+      ],
+      "acceptance_criteria": [
+        "AC11: godot --headless --path . --script tests/test_ai_bridge.gd -- --faults (also reachable as tests/test_ai_relay.gd -- --faults once AI.7 lands): hang/crash/garbage -> ai_cancel timeout, backoff restarts, service_down after 3 failures",
+        "every _process poll returns within 2 ms during the hang case (frame never blocked)",
+        "make test AILANG=$A"
+      ],
+      "registry": "none",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AI.7_RELAY_CACHE_E2E",
+      "description": "Design (a3) part 2: bridge/ai_relay.gd (last_events -> cache hit record / ai_cancel text_only|no_key|offline when the kind's route has no key / forward; ok -> record, error -> mapped ai_cancel; queued intents on next send; enabled only at sim minor >= 1; text-only never opens voice/portrait); bridge/ai_cache.gd (core then library layers, newest per key, greatest age_stage <= years aboard, fallback chain mirrored from sim/markers.ail); optional ai_relay hook in bridge/sim_bridge.gd (~15 lines); tools/record_ai_session.gd records tests/replays/ai_stub_session.ndjson via the tee; make replay-noai asserts AiBridge.launch_count == 0. Key hygiene for both keys; --routes test (session log identical whichever route answered).",
+      "estimated_loc": 390,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.3_RECORD_VALIDATION_GOLDENS",
+        "AI.5_ADAPTERS_SPEND",
+        "AI.6_AIBRIDGE_SUPERVISION"
+      ],
+      "wave": "A4",
+      "iteration": 1,
+      "files": [
+        "bridge/ai_relay.gd",
+        "bridge/ai_cache.gd",
+        "bridge/sim_bridge.gd (hook)",
+        "tests/test_ai_relay.gd",
+        "tools/record_ai_session.gd",
+        "tests/replays/ai_stub_session.*",
+        "mk/ai.mk"
+      ],
+      "acceptance_criteria": [
+        "AC10: godot --headless --path . --script tests/test_ai_relay.gd: ai_open -> ai_request -> service -> record -> ai_accepted for text, voice, portrait; cache hit records with launch_count == 0; tee writes the session log",
+        "AC14: tests/test_ai_relay.gd -- --key-hygiene: Gemini and OpenRouter fixture keys absent from session log, service stdout, usage.ndjson and child argv; a route whose key env var is empty refuses",
+        "AC14b: tests/test_ai_relay.gd -- --routes: text follows the service's resolved route for the keys present; the sim session log is identical whichever provider answered",
+        "AC18: tests/test_ai_relay.gd -- --news: purpose news with no_numerals and max_chars via stub; digits fixture refused ai_numeral; template stands",
+        "AC12 part: make replay AILANG=$A (case ai_stub_session) and make replay-noai",
+        "tests/test_sim_bridge.gd green with the hook unset",
+        "make test AILANG=$A"
+      ],
+      "registry": "none",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AI.8_CORE_LAYER",
+      "description": "Design (a4): ai/tools/core_import.ail (FS, sha256Bytes) imports the Medic set (4 portraits age0 neutral/loving/grieving + age50 neutral, 1 avatar) from ~/dev/blender medic_v2 at a pinned commit into data/ai/core/index.ndjson + SHA256SUMS; mk targets ai-core-assets (public HTTPS fetch, sha-checked), ai-core-bundle, ai-core-publish (maintainers, gcloud, --no-clobber), ai-core-verify (offline in make test; AI_CORE_FETCH=1 fetches first); infra/gcp/README.md ai/ prefix and both build-key secrets; infra/gcp/setup.sh §8 gains the openrouter-api-key secret container (value added by Mark); ai_core = sha256(index.ndjson).",
+      "estimated_loc": 160,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.4_SERVICE_ROUTING_STUB"
+      ],
+      "wave": "A4",
+      "iteration": 1,
+      "files": [
+        "ai/tools/core_import.ail",
+        "ai/tools/core_import_test.ail",
+        "data/ai/core/index.ndjson",
+        "data/ai/core/SHA256SUMS",
+        "mk/ai.mk",
+        "infra/gcp/README.md",
+        "infra/gcp/setup.sh (§8 openrouter-api-key)"
+      ],
+      "acceptance_criteria": [
+        "AC17: make ai-core-verify: index and SHA256SUMS consistent with the pinned Blender files; keys valid",
+        "after P-pub: AI_CORE_FETCH=1 make ai-core-verify fetches and verifies; ai-core-bundle stages them",
+        "core_import unit test on a fixture directory",
+        "infra docs list gemini-api-key and openrouter-api-key (value supplied by Mark, never in git)",
+        "make test AILANG=$A"
+      ],
+      "registry": "depend std/crypto, std/fs",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pause_after": "P-pub: controller publishes the Medic set to gs://stapledons-voyage-assets/ai/ and creates the empty openrouter-api-key secret (attended, gcloud)"
+    },
+    {
+      "id": "AI.9_KEY_COST_UX_WIRING",
+      "description": "Design (a5) + plan change: make ai-live-guard (in make test; scans Makefile, mk/*.mk, tests/, tools/, .github/, launch builder; any non-stub provider (gemini, openrouter, or a routing file naming either) without AI_LIVE=1 fails; one mutation per provider); ui/settings/ai_settings (opt-in needs at least one key AND the tick; GOOGLE_API_KEY / OPENROUTER_API_KEY env, else user://ai_key_gemini / user://ai_key_openrouter mode 0600; panel lists which kinds each key enables; warning; one player-set ceiling over both providers, default 0.50, bounds per Q2, persisted in user://ai_settings.cfg; text-only toggle + --text-only); ui/ai_indicator (own CanvasLayer, running meta.usd per provider + total, opens Settings; no galaxy_map change); launch wrapper with up to two key files and --net-allow-domains generativelanguage.googleapis.com,openrouter.ai; main.gd wiring one hunk <= 15 lines beside sim.record_path; export: ai-runtime locks ai/ into bundled cache, export-macos extra prerequisites in mk/ai.mk, export preset includes ai/*.ail, export-smoke stub hello. G4 and OpenRouter-image decision points at start.",
+      "estimated_loc": 340,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.7_RELAY_CACHE_E2E",
+        "AI.8_CORE_LAYER"
+      ],
+      "wave": "A5",
+      "iteration": 1,
+      "files": [
+        "ui/settings/ai_settings.tscn",
+        "ui/settings/ai_settings.gd",
+        "ui/ai_indicator.tscn",
+        "ui/ai_indicator.gd",
+        "tests/test_ai_settings.gd",
+        "bridge/ai_bridge.gd (launch wrapper, two keys)",
+        "main.gd (one hunk)",
+        "export_presets.cfg",
+        "mk/ai.mk"
+      ],
+      "acceptance_criteria": [
+        "AC15: make ai-live-guard: no target or test can start a gemini or openrouter provider without AI_LIVE=1; one guard mutant per provider caught",
+        "AC14 re-run through the wired game path with both keys",
+        "godot --headless --path . --script tests/test_ai_settings.gd: opt-in rules, either or both keys, 0600 key files, kinds enabled per key, ceiling default 0.50 and bounds over the total, per-provider cost display, budget -> ai_cancel budget, text-only",
+        "make export-macos && make export-smoke (Studio): AI stub hello with no ailang on PATH",
+        "main.gd diff is one hunk <= 15 lines",
+        "make test AILANG=$A"
+      ],
+      "registry": "none",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AI.10a_STYLE_FRAME_STUB",
+      "description": "Design (c) part 1, unattended-safe: per-segment TTS composition (D-20 OQ7): synthesise each segment with cast voice + emotion style, concatenate 24 kHz s16le PCM, encode once OggOpus(24000), segments_ms from durationMs of PCM prefixes; data/ai/cast/medic.json (voice_id Aoede pending C); ui/conversation/conversation.{tscn,gd} (portrait crossfade param 120 ms, swap offset 0/-150 ms, segment subtitles, audio; reads only ai_accepted + cache; own scene, no main.gd change); tests/test_conversation.gd; make ai-style-frame (GPU) rehearsed on a stub-recorded tests/replays/medic_rehearsal.ndjson; renders opened. G1 decision point re-checked.",
+      "estimated_loc": 280,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.9_KEY_COST_UX_WIRING"
+      ],
+      "wave": "A6",
+      "iteration": 1,
+      "files": [
+        "ai/service.ail",
+        "ai/provider.ail",
+        "ai/*_test.ail",
+        "data/ai/cast/medic.json",
+        "ui/conversation/conversation.tscn",
+        "ui/conversation/conversation.gd",
+        "tests/test_conversation.gd",
+        "tests/replays/medic_rehearsal.*",
+        "mk/ai.mk"
+      ],
+      "acceptance_criteria": [
+        "godot --headless --path . --script tests/test_conversation.gd: swaps at each segments_ms offset within one frame; fallback chain; missing audio degrades to text with missing_blob",
+        "make ai-style-frame LOG=tests/replays/medic_rehearsal.ndjson && test -s renders/ai_medic/contact_sheet.png && test -s renders/ai_medic/line.ogg (renders opened and looked at)",
+        "descriptor test: segments_ms exact, strictly increasing from 0, below duration_ms",
+        "make replay AILANG=$A (case medic_rehearsal)",
+        "make test AILANG=$A"
+      ],
+      "registry": "depend std/audio, sunholo/gemini_live@0.5.0",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AI.10b_LIVE_LINE_STOP",
+      "description": "Design (c) part 2, ATTENDED ONLY (the loop parks it): make ai-live (AI_LIVE=1, terminal, Secret Manager gemini-api-key and openrouter-api-key if it has a value, project stapledons-voyage, into mktemp 0600 files removed by trap, --ceiling-usd 1.00 over both providers); one live Medic line through sim -> relay -> service with text via OpenRouter (default route; Gemini if the OpenRouter secret has no value, plus a later attended OpenRouter probe) and voice via Gemini, emotions [neutral, loving, grieving], recorded to tests/replays/medic_style_frame.ndjson + per-arch goldens; three auditions (Aoede, Kore, Leda) on the same line_req; refresh scrubbed adapter fixtures for both providers; ai-style-frame capture opened; ai-service-foundation-report.md with per-provider cost; STOP C for Mark; after his answer: chosen voice into core layer + medic.json, OpenRouter model confirmed (Q7), landing (docs to implemented/r1, design repo ai-showcase §8 + curly-brace + both-providers note, mission queue row 4, changelog).",
+      "estimated_loc": 110,
+      "loc_cap": 650,
+      "dependencies": [
+        "AI.10a_STYLE_FRAME_STUB"
+      ],
+      "wave": "A7",
+      "iteration": 1,
+      "files": [
+        "mk/ai.mk (ai-live)",
+        "tools/ai_live.sh",
+        "tests/replays/medic_style_frame.*",
+        "ai/fixtures/responses/*",
+        "data/ai/cast/medic.json",
+        "data/ai/models.json",
+        "data/ai/core/*",
+        "design_docs/planned/r1/ai-service-foundation-report.md"
+      ],
+      "acceptance_criteria": [
+        "AC12: make replay AILANG=$A (case medic_style_frame) and make replay-noai",
+        "AC19: make ai-style-frame && test -s renders/ai_medic/contact_sheet.png && test -s renders/ai_medic/line.ogg; PNG per swap, contact sheet, line.ogg, frame.avi all opened; Mark's answer recorded in the ledger",
+        "make ai-adapter AILANG=$A green on refreshed fixtures; no key text (AIza or sk-or- prefixes) anywhere in the diff",
+        "real cost per provider from usage.ndjson recorded in the report, total under the 1.00 session ceiling",
+        "AC20: make test AILANG=$A"
+      ],
+      "registry": "none",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "attended_only": true,
+      "pause_after": "C: STOP for Mark (voice, swap timing, crossfade, prosody, OpenRouter model)"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "AI.1_MARKERS",
+      "package": "none",
+      "action": "none",
+      "reason": "2026-10-02 pkg search markup/emotion/grammar: none; parser: only gemini_live (Gemini message parsers) and external_backend; game grammar must run in the pure strict-VM sim"
+    },
+    {
+      "milestone": "AI.2_PROTO21_AI_MODULE",
+      "package": "std/json, std/crypto (bundled v0.51.0)",
+      "action": "depend",
+      "reason": "Hand-written codecs on std/json as in M2 (ADR 0001); seeds from in-tree sim/rng.ail stream 5"
+    },
+    {
+      "milestone": "AI.3_RECORD_VALIDATION_GOLDENS",
+      "package": "std/crypto (bundled v0.51.0)",
+      "action": "depend",
+      "reason": "sha256Hex pure and strict-clean (design V2, V5); pkg search sha256/hash found only sunholo/auth (constant-time compare) and registry_validator"
+    },
+    {
+      "milestone": "AI.4_SERVICE_ROUTING_STUB",
+      "package": "std/json, std/fs, std/crypto (bundled)",
+      "action": "depend",
+      "reason": "pkg search cache/blob/ndjson/stub: nothing applicable (ollama_stream is an Ollama client); routing is game config over std/ai's built-in providers"
+    },
+    {
+      "milestone": "AI.5_ADAPTERS_SPEND",
+      "package": "sunholo/gemini_live@0.5.0; std/ai (built-in OpenRouter + Google)",
+      "action": "depend",
+      "reason": "pkg search tts/speech/audio/voice/gemini: gemini_live 0.5.0 tts module (buildTtsRequest, ttsAudioOf, outputTokensOf, finishReasonOf, completeOk) builds/checks batch TTS bodies with a maxOutputTokens ceiling; POST via std/net until ailang#1495. OpenRouter text through std/ai.step with openrouter: ids (built into v0.51.0), no package needed. Optional non-blocking contribute: googleAiGenerateContentUrl via pkg:gemini_live inbox. cost/pricing/spend searches found nothing"
+    },
+    {
+      "milestone": "AI.6_AIBRIDGE_SUPERVISION",
+      "package": "none",
+      "action": "none",
+      "reason": "GDScript supervision; pkg search supervisor/process found duckdb and external_backend (blocking std/process wrappers), not applicable"
+    },
+    {
+      "milestone": "AI.7_RELAY_CACHE_E2E",
+      "package": "none",
+      "action": "none",
+      "reason": "GDScript relay and cache reader; no AILANG package applies"
+    },
+    {
+      "milestone": "AI.8_CORE_LAYER",
+      "package": "std/crypto, std/fs (bundled)",
+      "action": "depend",
+      "reason": "core_import.ail hashes with sha256Bytes (Python policy); bucket pattern from make sky-* (D-18)"
+    },
+    {
+      "milestone": "AI.9_KEY_COST_UX_WIRING",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI; pkg search key/secret found sunholo/auth (server-side key compare), not key storage"
+    },
+    {
+      "milestone": "AI.10a_STYLE_FRAME_STUB",
+      "package": "sunholo/gemini_live@0.5.0, std/audio (bundled)",
+      "action": "depend",
+      "reason": "TTS bodies from gemini_live/tts; std/audio.encode(OggOpus(24000)) and durationMs for exact segment offsets; pkg search ogg/opus found nothing else"
+    },
+    {
+      "milestone": "AI.10b_LIVE_LINE_STOP",
+      "package": "none",
+      "action": "none",
+      "reason": "Attended live run, capture, report and landing; no new code needing a package"
+    }
+  ]
+}

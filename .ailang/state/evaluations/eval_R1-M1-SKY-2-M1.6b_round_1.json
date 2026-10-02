@@ -1,0 +1,91 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.6b_CAMERA_GOLDEN",
+  "pr": 50,
+  "branch": "sprint/m1.6b-camera",
+  "commit_evaluated": "ec45c0d",
+  "round": 1,
+  "evaluator": "independent physics evaluator (Claude Fable 5.1), generator != judge; fresh worktree eval-m16b from origin/sprint/m1.6b-camera",
+  "date": "2026-10-02",
+  "toolchain": {
+    "ailang": "v0.51.0 (runtime/bin/ailang, first on PATH)",
+    "godot": "4.7.2.stable.official, GPU window for golden and capture",
+    "sky_assets": "make sky-assets fetched the pinned textures from the public bucket"
+  },
+  "score": 97,
+  "result": "pass",
+  "breakdown": {
+    "tests_pass": {"points": 20, "max": 20, "note": "make test AILANG=$A AILANG_BIN=$A exit 0 in the fresh worktree: physics 229 passed / 0 failed; sim 86/86; replay 5 cases identical; parity-v2 identical (17 lines) + rest-tolerance edge; strict VM == interpreter (scripted, scriptedOffAxis, voyageVm); catalogue-vm, sky-vm, wd-vm, tools-test green"},
+    "lint_clean": {"points": 10, "max": 10, "note": "no lint target in this repo; the CLAUDE.md gates that stand in for it (make strict, parity, parity-v2, python-guard 16 allowlisted) are all green"},
+    "acceptance_criteria": {"points": 30, "max": 30, "note": "4 of 4 executor-checkable criteria in the sprint plan '#### M1.6b' verified by command (see automated); the fifth, R-a, is Mark's physics gate 2 and is not scored here"},
+    "code_quality": {"points": 13, "max": 15, "note": "-1: FreeLookCamera.project() has no behind-camera guard (a direction with camera z >= 0 returns a mirrored pixel silently; is_behind() exists but callers must remember it). -1: project()/view_dir()/view_velocity_angle() take and return float32 Vector3 (Relativity.aberrate also works in Vector3), so the 'float64 CPU reference' is float64 only inside the rotation; adequate for a 0.75 px golden (float32 directions cost ~1e-4 px at f = 386 px) but worth a comment against precision rule 5. Sprint artifacts complete: milestone passes/started/completed/notes filled, sprint plan status updated, no placeholders."},
+    "documentation": {"points": 14, "max": 15, "note": "PR body, sprint JSON notes and sprint plan status are thorough and match what I measured; renders committed under docs/m1.6b with a contact sheet; CHANGELOG is written at landing in this repo (M1.6a precedent, commit 6998f9d), so none expected yet. -1: the design doc m1-relativistic-sky.md section M1.6 still describes only 'a free-look camera' and does not point at ui/free_look_camera.gd or the Euler/roll-sign convention, which lives only in the class docstring."},
+    "design_fidelity": {"points": 10, "max": 10, "note": "Camera orientation is client state, never sent to the sim (main.gd only reads heading from the state); HUD shows the view-to-velocity angle; AC4 spec check values through a rolled and off-axis camera; AC5 star part 12 x 4 x 3 within 0.75 px through the same camera object main.gd flies; restTolerance pinned on both sides in core_test and the v2 protocol fixture. All declared deviations are reasonable and documented."},
+    "regression_surface": {"points": 0, "max": 0, "note": "not triggered: no AILANG core/parser/VM paths touched; sim/core.ail unchanged, only its test and the fixture"},
+    "performance": {"points": 0, "max": 0, "note": "not a perf sprint"}
+  },
+  "hard_fails": [],
+  "automated": {
+    "make_test": "exit 0 (full suite, fresh worktree; sim test block 3m39s)",
+    "make_physics": "229 passed, 0 failed (test_rolled_camera_cpu_spec_values, test_view_velocity_angle included)",
+    "make_golden": "exit 0; 'off-axis golden: 144 cases (12 directions x 4 speeds x 3 orientations), worst error 0.102 px (limit 0.75), 0 failures'; 16 background-marker lines, worst 0.722 px (limit 1); 'golden: 0 failures'",
+    "make_capture": "exit 0; 20 PNGs (5 views x 4 speeds) + contact sheet; every PNG the PR committed under docs/m1.6b is byte-identical (cmp) to my fresh capture: forward/offaxis/rolled at b00 and b099, and the contact sheet",
+    "sim_tests": "86 tests: 86 passed (checkRestToleranceEdge included); strict worldVm 'world-ok'",
+    "parity_v2": "identical (17 lines); 'rest tolerance edge (turn at phi 0.9e-9 accepted, 1.1e-9 refused moving)'",
+    "ci": "GitHub 'headless tests' job still pending at evaluation time (run 37023787784)"
+  },
+  "captures_opened": [
+    "docs/m1.6b/sky_b00_rolled.png", "docs/m1.6b/sky_b099_rolled.png",
+    "docs/m1.6b/sky_b00_offaxis.png", "docs/m1.6b/sky_b099_offaxis.png",
+    "docs/m1.6b/sky_b00_forward.png", "docs/m1.6b/contact_sheet.png"
+  ],
+  "render_assessment": "Rolled view (yaw -30, pitch 10, roll +35): at rest the Milky Way band runs upper-left to lower-right, i.e. the horizontal band of the forward view turned clockwise on screen, which is what a +35 camera roll (camera CCW about its view axis) must do; the stars and the band turn together, no seam. At 0.99c the headlight sits upper-left at about (230, 195) px; my oracle puts the velocity direction (0,0,-1) at (255.8, 196.0) px for that view, and the brightest concentration is there; the band converges on it and is blue-shifted. Off-axis view (yaw 50, pitch 25): at rest the band sits low across the frame; at 0.99c the whole sky has drained toward the bottom-right edge, where my oracle places the headlight at (987, 450) px, just off the right edge at the right height. Forward references unchanged from M1.4d. No artefacts, mirrored stars or NaN blobs at any speed on the contact sheet (5 views x 4 speeds).",
+  "independent_verification": {
+    "method": "float64 Python oracle (scratch oracle.py) written from spec section 2 and Godot's documented YXZ Euler order R = Ry(yaw) Rx(pitch) Rz(roll), right-handed; pinhole with vertical fov 70, 960x540 (f = 385.69 px). Compared against the PR camera driven by a scratch Godot probe (FreeLookCamera.project, is_behind, hud_line, view_velocity_angle, and Godot's own Camera3D.unproject_position). Not derived from the PR's code.",
+    "velocity": "(1,1,-1)/sqrt3 at 0.99c, 4 arbitrary galaxy-frame star directions, 5 orientations",
+    "cases": [
+      {"view": "yaw -120 pitch 40 roll -65", "star": "(0.3,-0.2,-1) normalised", "apparent": "(0.570331, 0.528638, -0.628701)", "oracle_px": "(-15.1872, 778.5287)", "pr_cpu_px": "(-15.1872, 778.5287)", "godot_unproject_px": "(-15.1873, 778.5287)"},
+      {"view": "yaw -120 pitch 40 roll -65", "star": "(-0.9,0.1,0.4) normalised", "oracle_px": "(-143.4127, 515.9425)", "pr_cpu_px": "(-143.4126, 515.9424)", "godot_unproject_px": "(-143.4127, 515.9425)"},
+      {"view": "yaw 0 pitch 0 roll +30", "star": "(0.2,0.95,-0.1) normalised", "oracle_px": "(1036.6683, 88.7222)", "pr_cpu_px": "(1036.6683, 88.7222)", "godot_unproject_px": "(1036.6683, 88.7222)"},
+      {"view": "yaw -30 pitch 10 roll +35 (capture 'rolled')", "star": "(-0.5,-0.6,-0.7) normalised", "oracle_px": "(585.0019, 178.4735)", "pr_cpu_px": "(585.0019, 178.4735)", "godot_unproject_px": "(585.0019, 178.4735)"},
+      {"view": "yaw 50 pitch 25 roll 0 (capture 'offaxis')", "star": "(0.3,-0.2,-1) normalised", "oracle_px": "(2168.4993, -711.3143)", "pr_cpu_px": "(2168.4993, -711.3142)", "godot_unproject_px": "(2168.4995, -711.3145)"},
+      {"view": "yaw 70 pitch -25 roll 0", "star": "all four", "oracle": "behind the camera", "pr_is_behind": "true for all four"}
+    ],
+    "agreement": "oracle vs PR CPU projection within 2e-4 px on all 16 visible cases (float32 Vector3 inputs account for the residual); Godot's float32 unproject within 3e-4 px",
+    "spec_check_values_through_rolled_camera": "90-degree source on the camera's right, camera along v, roll 0/+30/-115: 25.8419 deg off centre at 0.9c and 60.0000 at 0.5c, dy = 0 px (stays on the screen horizontal) in the oracle; the PR test asserts the same to 2e-3 deg",
+    "hud_angles": {"offaxis yaw 50 pitch 25": {"oracle": 54.369, "hud": "54.4"}, "rolled yaw -30 pitch 10 roll 35": {"oracle": 31.475, "hud": "31.5"}, "yaw 70 pitch -25 vs v": {"oracle": 123.8303076, "pr": 123.8303076}, "yaw -120 pitch 40 roll -65 vs v": {"oracle": 57.7917686, "pr": 57.7917686}, "starboard/astern": "90.0 / 180.0 exact"},
+    "roll_sign": "Oracle: a star 20 deg right of the unrolled view with roll +30 lands at dx = +121.544, dy = +70.174 px (below centre, y down), i.e. positive roll turns the camera CCW and the sky CW on screen. The PR's CPU gives the same numbers, Godot's own basis (unproject_position, which is what VIEW_MATRIX on the GPU inverts) agrees to 3e-4 px, the HUD prints roll +35.0 for the capture view whose render shows the band turned clockwise, and the golden's rolled orientations pass at 0.102 px. CPU, GPU and HUD share one sign convention.",
+    "cpu_reference_independence": "FreeLookCamera's CPU path is explicit float64 Euler trigonometry (R^T applied as Rz^T Rx^T Ry^T) plus a pinhole f = H/2 / tan(fov/2); the GPU path is Godot's VIEW_MATRIX (inverse of the node's float32 Basis.from_euler) times PROJECTION_MATRIX with the quad offset in the shader. They share only the three angles and fov, not code; the aberration on both sides mirrors spec section 2 by design (CLAUDE.md gate 3). One caveat: in _golden_offaxis the star is placed by deaberrating the aim, so the CPU 'expected' is the grid point by construction; the CPU projection of a non-trivial aberrated direction is exercised by test_physics (against Godot's unproject) and by my oracle, not by the golden itself."
+  },
+  "my_mutations": [
+    {"target": "ui/free_look_camera.gd _to_camera roll sign only", "result": "killed by make physics (screen-horizontal and unproject==CPU checks, 147-609 px off)"},
+    {"target": "ui/free_look_camera.gd project(): horizontal fov (size.x)", "result": "killed (RS-1 25.842 -> 40.729 deg; unproject mismatch 132 px)"},
+    {"target": "ui/free_look_camera.gd _rotate pitch sign only", "result": "killed (view along v 0 -> 70.53 deg; RS-3 Doppler wrong)"},
+    {"target": "ui/free_look_camera.gd hud_line roll sign", "result": "killed (227 passed, 2 failed: both HUD string checks)"},
+    {"target": "ui/free_look_camera.gd is_behind sign", "result": "killed (RS-Q1 dead astern no longer behind, all 9 orientations)"},
+    {"target": "ui/free_look_camera.gd yaw sign in both _rotate and _to_camera (self-consistent CPU, inconsistent with Godot)", "result": "killed (along-v angle 70.53 deg, 90-deg source 74.8 deg, 498 px off)"},
+    {"target": "sim/core.ail restTolerance 0.5", "result": "killed: strict worldVm 'world-BAD'"},
+    {"target": "sim/core.ail restTolerance 1e-10", "result": "killed: 'world-BAD'"},
+    {"target": "sim/core.ail turn keeps phi (no snap)", "result": "killed: 'world-BAD'"},
+    {"target": "main.gd GOLDEN_VIEWS reduced to 2 orientations (GPU run)", "result": "killed by the Makefile gate: 'off-axis golden: 96 cases ... 0 failures' then 'golden: FAILED (... want 144 off-axis + 16 background markers)', make exit 2"}
+  ],
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      {"file": "ui/free_look_camera.gd:95-99", "issue": "project() does not guard the behind-camera case; depth <= 0 yields a mirrored or infinite pixel with no signal. The golden and tests only pass directions in front, so this is latent.", "suggestion": "assert/early-return on c[2] >= 0 (or document that callers must check is_behind() first)"},
+      {"file": "ui/free_look_camera.gd:74-114", "issue": "the public API takes and returns float32 Vector3 (view_dir, screen_right/up, project's n, view_velocity_angle's heading); the docstring says 'float64 scalars' which is true only inside _rotate/_to_camera. Fine at 0.75 px / 0.1 deg, but precision rule 5 readers will expect the caveat.", "suggestion": "one line in the docstring: inputs/outputs are float32 Vector3, rotation and projection are float64; residual ~1e-7 rad"},
+      {"file": "main.gd:_golden_offaxis", "issue": "expected = project(aberrate(deaberrate(aim))) is the grid point by construction, so the golden checks the GPU aberration against the CPU inverse but never a non-trivial CPU projection of an aberrated direction.", "suggestion": "add 2-3 fixed galaxy-frame directions per orientation whose expected pixel comes from project(aberrate(n)) with n not derived from the grid (my oracle values above can seed them)"},
+      {"file": "design_docs/planned/r1/m1-relativistic-sky.md:505", "issue": "section M1.6 does not name ui/free_look_camera.gd or the YXZ/roll-sign convention", "suggestion": "add a sentence at landing"},
+      {"file": "AILANG v0.51.0 DX (not the PR)", "issue": "`ailang test --package .` in sim prints ~25 'CACHE_WRITE_FAILED ... ARTIFACT_TOO_LARGE ... using fresh compilation' lines and MOD010 relaxed warnings per run; harmless but noisy and the sim test block takes 3m39s", "suggestion": "executor/controller to report with ailang messages (inbox user, --from stapledons_godot) if not already filed"}
+    ]
+  },
+  "deviations_accepted": [
+    "new ui/free_look_camera.gd (one file beyond the plan's list) so the physics test drives the object main.gd flies: accepted, it is what makes AC4's camera part a real test",
+    "background-marker view count 12 -> 16 (pitched and rolled view added): accepted, strengthens AC5's background part; Makefile asserts the count",
+    "test_physics.gd finishes in _initialize() so camera cases run inside a SubViewport: accepted; 229 passed and the summary/quit still run once",
+    "golden stars given rest T = 5700/D and flux 1/pointFluxRatio so every case renders at 5700 K unit brightness: accepted for a position-only test; colour and beaming are AC6 and the CPU tests",
+    "5 capture views (offaxis, rolled added): accepted; renders opened and byte-identical to mine",
+    "make publish-dev not run: accepted; shared dev bucket latest.json is the controller's or Mark's call"
+  ],
+  "next": "PASS at 97/100. Merge still waits on checkpoint R-a (Mark, physics gate 2): the rolled and off-axis renders are in docs/m1.6b and `make publish-dev` + `tools/install_review_build.sh --dev` are for the controller or Mark to run. CI 'headless tests' was pending when this round was written."
+}

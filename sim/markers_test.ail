@@ -1,0 +1,196 @@
+module stapledons/sim/markers_test
+
+-- Emotion-marker grammar tests (design ai-service-foundation (b), AC16; sprint
+-- R1-AI-FOUNDATION AI.1). Every `ai_markup` sub-reason fires on its fixture,
+-- the leading-neutral default, merging, trimming and display text hold, and
+-- both round trips hold: printLine(parseLine(x)) == normalise(x) over the
+-- valid fixtures (normalise written out by hand below), and
+-- parseLine(printLine(s)) == s over canonical segment lists (non-ASCII and
+-- 16-segment lines included). `markersVm` runs everything on the strict VM
+-- (`make strict-ai`, AC7 part).
+--
+-- Helper names carry an `mk` prefix: the test runner mixes up same-named
+-- private functions across modules (ailang#1461).
+import ./markers (Segment, parseLine, printLine, displayText, emotions8, isEmotion, maxSegments, fallbackChain, pickPortrait)
+import std/result (Result, Ok, Err)
+import std/string (join, concat, length, intToStr)
+import std/list (map)
+
+pure func mkAll(xs: [bool]) -> bool = match xs { [] => true, x :: r => x && mkAll(r) }
+pure func mkSegEq(a: Segment, b: Segment) -> bool = a.emotion == b.emotion && a.text == b.text
+pure func mkSegsEq(xs: [Segment], ys: [Segment]) -> bool =
+  match xs { [] => (match ys { [] => true, _ => false }), x :: xr => match ys { [] => false, y :: yr => mkSegEq(x, y) && mkSegsEq(xr, yr) } }
+pure func mkSeg(e: string, t: string) -> Segment = {emotion: e, text: t}
+
+-- The error text of a parse, or "ok".
+pure func mkCode(x: string) -> string = match parseLine(x) { Ok(_) => "ok", Err(e) => e }
+pure func mkPrinted(x: string) -> string = match parseLine(x) { Ok(s) => printLine(s), Err(e) => concat(["ERR ", e]) }
+pure func mkParsesTo(x: string, want: [Segment]) -> bool = match parseLine(x) { Ok(s) => mkSegsEq(s, want), Err(_) => false }
+
+-- ------------------------------------------------------------ fixtures
+-- Valid lines and their normal form, written out by hand (not computed).
+pure func mkValid() -> [{raw: string, norm: string}] = [
+  {raw: "Hello there.", norm: "{neutral}Hello there."},
+  {raw: "{grieving}I lost her.", norm: "{grieving}I lost her."},
+  {raw: "  {loving}  We made it.  {grieving} She did not.  ", norm: "{loving}We made it. {grieving}She did not."},
+  {raw: "Hold on.{neutral} Breathe.", norm: "{neutral}Hold on. Breathe."},
+  {raw: "{sad}One{sad}two{happy}three", norm: "{sad}One two {happy}three"},
+  {raw: "{curious}What  is   that?", norm: "{curious}What  is   that?"},
+  {raw: "{happy}héllo", norm: "{happy}héllo"},
+  {raw: "{loving}Da vi kom hjem, var søen frosset. {fearful}Ça va? 星が見える", norm: "{loving}Da vi kom hjem, var søen frosset. {fearful}Ça va? 星が見える"},
+  {raw: "a{happy}b{sad}c{angry}d{fearful}e{curious}f{loving}g{grieving}h", norm: "{neutral}a {happy}b {sad}c {angry}d {fearful}e {curious}f {loving}g {grieving}h"},
+  {raw: "{neutral}x{neutral}y{neutral}z", norm: "{neutral}x y z"}
+]
+
+-- Invalid lines and the sub-reason each must fire.
+pure func mkInvalid() -> [{raw: string, code: string}] = [
+  {raw: "{joyful}Hi", code: "unknown_emotion"},
+  {raw: "{Happy}Hi", code: "unknown_emotion"},
+  {raw: "{ happy }Hi", code: "unknown_emotion"},
+  {raw: "{}Hi", code: "unknown_emotion"},
+  {raw: "Hi {sad} there {bliss} now", code: "unknown_emotion"},
+  {raw: "{happy Hi", code: "unbalanced_brace"},
+  {raw: "happy} Hi", code: "unbalanced_brace"},
+  {raw: "Hi {sad", code: "unbalanced_brace"},
+  {raw: "Hi {sad}there}", code: "unbalanced_brace"},
+  {raw: "{ha{ppy}}Hi", code: "nested_brace"},
+  {raw: "{{happy}}Hi", code: "nested_brace"},
+  {raw: "{happy}{sad}Hi", code: "empty_segment"},
+  {raw: "Hi{sad}", code: "empty_segment"},
+  {raw: "{happy}   {sad}Hi", code: "empty_segment"},
+  {raw: "{happy}", code: "empty_segment"},
+  {raw: "", code: "empty_segment"},
+  {raw: "   ", code: "empty_segment"},
+  {raw: "[sigh] Hi", code: "bracket"},
+  {raw: "{sad}Hi [pause] there", code: "bracket"},
+  {raw: "Hi ]", code: "bracket"},
+  {raw: "{sad}[", code: "bracket"},
+  {raw: "{sad}Hi [", code: "bracket"}
+]
+
+-- `n` segments cycling through the 8 emotions (so no two neighbours are
+-- equal), each with non-ASCII text; and the same with every segment's
+-- emotion repeated twice (2n markers that merge to n segments).
+pure func mkEmotionAt(i: int) -> string = mkNth(emotions8(), i % 8)
+pure func mkNth(xs: [string], i: int) -> string = match xs { [] => "neutral", x :: r => if i <= 0 then x else mkNth(r, i - 1) }
+pure func mkCycle(n: int, i: int) -> [Segment] = if i >= n then [] else mkSeg(mkEmotionAt(i), concat(["Søster nr ", intToStr(i), " 星"])) :: mkCycle(n, i + 1)
+pure func mkMarked(segs: [Segment]) -> string = join("", map(\s. concat(["{", s.emotion, "}", s.text]), segs))
+pure func mkDoubled(segs: [Segment]) -> string = join("", map(\s. concat(["{", s.emotion, "}", s.text, "{", s.emotion, "}more"]), segs))
+pure func mkMerged(segs: [Segment]) -> [Segment] = map(\s. mkSeg(s.emotion, concat([s.text, " more"])), segs)
+
+-- Canonical segment lists for parseLine(printLine(s)) == s.
+pure func mkLists() -> [[Segment]] = [
+  [mkSeg("neutral", "Hello there.")],
+  [mkSeg("grieving", "I lost her.")],
+  [mkSeg("loving", "We made it."), mkSeg("grieving", "She did not.")],
+  [mkSeg("neutral", "Hold  on,   inner spaces stay."), mkSeg("curious", "Why?")],
+  [mkSeg("happy", "héllo"), mkSeg("fearful", "Ça va? 星が見える"), mkSeg("happy", "Æblegrød")],
+  mkCycle(8, 0),
+  mkCycle(16, 0)
+]
+
+-- ------------------------------------------------------------- checks
+pure func checkEveryErrorCode() -> bool =
+  mkAll(map(\c. mkCode(c.raw) == concat(["ai_markup:", c.code]), mkInvalid()))
+
+-- `[` and `]` are refused anywhere, even when the rest of the line is valid
+-- (keeps provider tags such as Gemini's [sigh] out of game text).
+pure func checkBracketRefused() -> bool =
+  mkCode("[sigh] Hi") == "ai_markup:bracket" && mkCode("{sad}Hi [pause] there") == "ai_markup:bracket" &&
+  mkCode("Hi ]") == "ai_markup:bracket" && mkCode("{loving}ok [") == "ai_markup:bracket" &&
+  mkCode("{sad}fine") == "ok"
+
+pure func checkLeadingNeutral() -> bool =
+  mkParsesTo("Hello there.", [mkSeg("neutral", "Hello there.")]) &&
+  mkParsesTo("Calm. {sad}Not calm.", [mkSeg("neutral", "Calm."), mkSeg("sad", "Not calm.")])
+
+-- Adjacent equal markers merge (texts joined by one space), including an
+-- explicit {neutral} after the implicit leading neutral.
+pure func checkMergeAdjacent() -> bool =
+  mkParsesTo("{sad}One{sad}two{happy}three", [mkSeg("sad", "One two"), mkSeg("happy", "three")]) &&
+  mkParsesTo("Hold on.{neutral} Breathe.", [mkSeg("neutral", "Hold on. Breathe.")]) &&
+  mkParsesTo("{neutral}x{neutral}y{neutral}z", [mkSeg("neutral", "x y z")]) &&
+  mkParsesTo(mkDoubled(mkCycle(3, 0)), mkMerged(mkCycle(3, 0)))
+
+pure func checkTrimming() -> bool =
+  mkParsesTo("  {loving}  We made it.  {grieving} She did not.  ", [mkSeg("loving", "We made it."), mkSeg("grieving", "She did not.")]) &&
+  mkParsesTo("{curious}What  is   that?", [mkSeg("curious", "What  is   that?")])
+
+pure func checkDisplayText() -> bool =
+  (match parseLine("  {loving}  We made it.  {grieving} She did not.  ") { Ok(s) => displayText(s) == "We made it. She did not.", Err(_) => false }) &&
+  (match parseLine("{happy}héllo") { Ok(s) => displayText(s) == "héllo" && length(displayText(s)) == 5, Err(_) => false }) &&
+  (match parseLine("{sad}One{sad}two{happy}three") { Ok(s) => displayText(s) == "One two three", Err(_) => false }) &&
+  displayText([]) == ""
+
+-- At most 16 segments, counted after merging: 16 parse, 17 are refused, and
+-- 32 markers that merge to 16 segments parse.
+pure func checkSegmentLimit() -> bool =
+  maxSegments() == 16 &&
+  mkParsesTo(mkMarked(mkCycle(16, 0)), mkCycle(16, 0)) &&
+  mkCode(mkMarked(mkCycle(17, 0))) == "ai_markup:too_many_segments" &&
+  mkCode(mkMarked(mkCycle(40, 0))) == "ai_markup:too_many_segments" &&
+  mkParsesTo(mkDoubled(mkCycle(16, 0)), mkMerged(mkCycle(16, 0)))
+
+-- printLine(parseLine(x)) == normalise(x) over the valid fixtures, and the
+-- normal form is a fixed point.
+pure func checkPrintParse() -> bool =
+  mkAll(map(\v. mkPrinted(v.raw) == v.norm, mkValid())) &&
+  mkAll(map(\v. mkPrinted(v.norm) == v.norm, mkValid()))
+
+-- parseLine(printLine(s)) == s over canonical segment lists.
+pure func checkParsePrint() -> bool =
+  mkAll(map(\s. mkParsesTo(printLine(s), s), mkLists())) &&
+  printLine([mkSeg("loving", "We made it."), mkSeg("grieving", "She did not.")]) == "{loving}We made it. {grieving}She did not."
+
+-- `length` counts code points (design V5), so a non-ASCII display text has
+-- its character count, not its byte count.
+pure func checkNonAscii() -> bool =
+  (match parseLine("{fearful}Ça va? 星が見える") { Ok(s) => length(displayText(s)) == 12, Err(_) => false }) &&
+  mkParsesTo("{loving}Æ ø å", [mkSeg("loving", "Æ ø å")])
+
+pure func checkEmotions8() -> bool =
+  join(",", emotions8()) == "neutral,happy,sad,angry,fearful,curious,loving,grieving" &&
+  mkAll(map(isEmotion, emotions8())) && !isEmotion("joyful") && !isEmotion("Happy") && !isEmotion("") && !isEmotion("-")
+
+pure func checkFallbackTable() -> bool =
+  fallbackChain("happy") == ["happy", "loving", "neutral"] && fallbackChain("loving") == ["loving", "happy", "neutral"] &&
+  fallbackChain("sad") == ["sad", "grieving", "neutral"] && fallbackChain("grieving") == ["grieving", "sad", "neutral"] &&
+  fallbackChain("angry") == ["angry", "neutral"] && fallbackChain("fearful") == ["fearful", "neutral"] &&
+  fallbackChain("curious") == ["curious", "neutral"] && fallbackChain("neutral") == ["neutral"] &&
+  fallbackChain("bogus") == ["neutral"]
+
+-- The Medic has neutral, loving and grieving (design (c)).
+pure func checkPickPortrait() -> bool {
+  let medic = ["neutral", "loving", "grieving"];
+  pickPortrait("happy", medic) == "loving" && pickPortrait("sad", medic) == "grieving" &&
+  pickPortrait("grieving", medic) == "grieving" && pickPortrait("angry", medic) == "neutral" &&
+  pickPortrait("loving", ["neutral", "happy"]) == "happy" && pickPortrait("curious", []) == "neutral"
+}
+
+pure func mkAllChecks() -> bool =
+  checkEveryErrorCode() && checkBracketRefused() && checkLeadingNeutral() && checkMergeAdjacent() && checkTrimming() &&
+  checkDisplayText() && checkSegmentLimit() && checkPrintParse() && checkParsePrint() && checkNonAscii() &&
+  checkEmotions8() && checkFallbackTable() && checkPickPortrait()
+
+-- Strict-VM entry (`make strict-ai`): the normal form or error code of every
+-- fixture, the emotion list (checked against data/ai/emotion_styles.json),
+-- then `markers-ok`. The make target compares VM and interpreter byte for byte.
+export pure func markersVm(n: int) -> string =
+  if mkAllChecks() then
+    join("\n", map(\v. mkPrinted(v.raw), mkValid()) ++ map(\c. mkCode(c.raw), mkInvalid()) ++
+      [mkPrinted(mkMarked(mkCycle(16, 0))), mkCode(mkMarked(mkCycle(17, 0))), concat(["emotions ", join(",", emotions8())]), "markers-ok"])
+  else "markers-BAD"
+
+test "AI.1 every ai_markup sub-reason fires on its fixture" { checkEveryErrorCode() }
+test "AI.1 [ and ] refused anywhere" { checkBracketRefused() }
+test "AI.1 missing leading marker means neutral" { checkLeadingNeutral() }
+test "AI.1 adjacent equal markers merge" { checkMergeAdjacent() }
+test "AI.1 segment text trimmed, inner whitespace kept" { checkTrimming() }
+test "AI.1 display text joins segments with single spaces" { checkDisplayText() }
+test "AI.1 at most 16 segments, counted after merging" { checkSegmentLimit() }
+test "AI.1 printLine(parseLine(x)) == normalise(x)" { checkPrintParse() }
+test "AI.1 parseLine(printLine(s)) == s" { checkParsePrint() }
+test "AI.1 non-ASCII text, length in code points" { checkNonAscii() }
+test "AI.1 the 8 emotions" { checkEmotions8() }
+test "AI.1 portrait fallback chains" { checkFallbackTable() }
+test "AI.1 portrait pick from the emotions a person has" { checkPickPortrait() }
