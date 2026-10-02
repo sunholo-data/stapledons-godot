@@ -342,10 +342,10 @@
         "publish --dry-run passes; after P1: $A pkg info sunholo/relativity shows v0.5.0; grep '\"0.5.0\"' sim/ailang.toml sim/ailang.lock; make test AILANG=$A AILANG_BIN=$A green"
       ],
       "pause_after": "P1: controller publish under the standing grant after independent physics PASS (strongest available evaluator)",
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-02T17:30:00Z",
+      "notes": "sunholo/relativity 0.5.0 published (ailang-packages #85, e66de21): teffFromBV/bvInTable (Mamajek B-V), luminanceFromSurfaceMag/inverse, vFromIlluminance, Crumey 2014 pointThresholdIlluminance/limitingMagnitude, blackbody.photopicRadiance, optics.cmbSeenTemperature (rest) + cmbSeenTemperatureApparent (per pixel), NaN fix for teffFromBpRp/gMinusV (ailang#1419). 115/115 tests, quality no gates, strict VM == interpreter. Independent physics eval (Fable) 96/100 GO; both Doppler conventions verified to 12+ digits. Game pins 0.5.0. Follow-ups for 0.5.1: pin the Crumey mesopic split, document its non-monotone band, Proxima tolerance, +Inf at T>3.6e20 K."
     },
     {
       "id": "M1.2b-T4_FULL_INTEGRATION",
