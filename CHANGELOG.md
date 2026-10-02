@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Fix: mirrored galactic longitudes in stars.json, 2026-10-02
+
+- Every longitude in `data/starmap/stars.json` was mirrored, l = 245.86° − l_true
+  (`process_stars.sh` added the IAU atan2 term to l_NCP instead of subtracting
+  it). Fixed and regenerated from the same VizieR V/70A votable (the unfixed
+  script reproduces the old file byte for byte): same 3,802 rows and order,
+  only x, y change. 16 literature (l, b) check values in `tests/test_physics.gd`.
+  The M1.4a destar mask (D-10) was built from the mirrored positions and needs
+  a rerun.
+
 ### M1 sky, 2026-09-27 – 2026-09-30 (in progress; 3 of 12 milestones)
 
 - **M1.1 photometry (iteration 0):** `sunholo/relativity@0.2.0`

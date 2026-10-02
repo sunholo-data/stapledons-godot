@@ -16,8 +16,8 @@ const GOLDEN := "res://docs/m2.6a/galaxy_map_panel.json"
 ## against the golden too, so the label test does not reuse format_row.
 const ALPHA_CEN_099 := {
 	"journey.plan.ship_years": "0.6208 ship-yr",
-	"journey.plan.earth_years": "4.401 Earth-yr",
-	"journey.plan.distance": "4.357 ly",
+	"journey.plan.earth_years": "4.400 Earth-yr",
+	"journey.plan.distance": "4.356 ly",
 	"journey.plan.cruise_beta": "0.990000c",
 	"journey.plan.cruise_one_minus_beta": "0.01000",
 	"journey.plan.cruise_gamma": "7.0888",
@@ -97,7 +97,7 @@ func test_select_sends_catalogue_doubles(map: GalaxyMap) -> bool:
 	ok("plan carries index and id", intent["k"] == "plan" and t["index"] == ALPHA_CEN_A and typeof(t["index"]) == TYPE_INT and t["id"] == "Gl 559")
 	var p: Dictionary = t["pos"]
 	ok("pos x, y, z are the parsed JSON doubles, bit for bit", same(p["x"], star["x"]) and same(p["y"], star["y"]) and same(p["z"], star["z"]))
-	ok("pos y is not float32-rounded (-4.09 has no exact float32)", not same(p["y"], float(Vector3(0, star["y"], 0).y)))
+	ok("pos y is not float32-rounded (-3.04 has no exact float32)", not same(p["y"], float(Vector3(0, star["y"], 0).y)))
 	ok("plan carries the slider's cruise_phi", same(intent["cruise_phi"], map.cruise_phi))
 	map.select(ALPHA_CEN_A)
 	map.tick()
@@ -105,7 +105,10 @@ func test_select_sends_catalogue_doubles(map: GalaxyMap) -> bool:
 	ok("sim planned alpha Cen A", map.sim.world["journey"]["state"] == "planned" and plan["target"]["index"] == ALPHA_CEN_A)
 	var echo: Dictionary = plan["target"]["pos"]
 	ok("sim echoes pos bit for bit", same(echo["x"], star["x"]) and same(echo["y"], star["y"]) and same(echo["z"], star["z"]))
-	ok("distance is the catalogue-double distance (checkPlanGl559: 4.35667304258651)", same(plan["distance"], f64(0x40116d3bb2b51873)))
+	# (3.12, -3.04, -0.05) since the 2026-10-02 longitude fix; |r| moved by 0.00024 ly in the
+	# 0.01 ly re-rounding.  sim/core_test's checkPlanGl559 keeps the pre-fix doubles
+	# (1.5, -4.09, -0.05) -> 4.35667304258651 as a fixed maths fixture.
+	ok("distance is the catalogue-double distance (|(3.12, -3.04, -0.05)| = 4.356432026326131)", same(plan["distance"], f64(0x40116cfc8461455f)))
 	return true
 
 
@@ -298,8 +301,8 @@ func test_commit_hold(map: GalaxyMap) -> bool:
 	for r in drows:
 		raw_ok = raw_ok and same(r["raw"], GalaxyMap.field_value(map.sim.world, r["field"]))
 	ok("dialog numbers are the sim's fields (bits)", raw_ok)
-	ok("dialog reads 0.6208 ship-yr / 4.401 Earth-yr (pinned)", drows[0]["text"] == "0.6208 ship-yr" and drows[1]["text"] == "4.401 Earth-yr")
-	ok("dialog labels on screen show those texts", (map.dialog_grid.get_child(1) as Label).text == "0.6208 ship-yr" and (map.dialog_grid.get_child(3) as Label).text == "4.401 Earth-yr")
+	ok("dialog reads 0.6208 ship-yr / 4.400 Earth-yr (pinned)", drows[0]["text"] == "0.6208 ship-yr" and drows[1]["text"] == "4.400 Earth-yr")
+	ok("dialog labels on screen show those texts", (map.dialog_grid.get_child(1) as Label).text == "0.6208 ship-yr" and (map.dialog_grid.get_child(3) as Label).text == "4.400 Earth-yr")
 	ok("dialog years left = the sim's years_left at 2 decimals", drows[3]["text"] == "%.2f yr" % map.sim.world["journey"]["plan"]["years_left"])
 	# Back sends nothing
 	map.close_commit_dialog()
@@ -406,7 +409,7 @@ func test_transit(map: GalaxyMap) -> bool:
 	ok("the sim arrived", map.journey_state() == "arrived" and map.title_text() == "Arrived at Alpha Centauri A")
 	ok("arrival supersedes the earlier refusal note", not map._status.text.contains("refused") and map._status.text.contains("journey: arrived"))
 	var arows := map.panel_rows()
-	ok("arrived readout: flown is the plan distance, not the rebased ship.flown", arows[4]["field"] == "journey.plan.distance" and arows[4]["text"] == "4.357 ly"
+	ok("arrived readout: flown is the plan distance, not the rebased ship.flown", arows[4]["field"] == "journey.plan.distance" and arows[4]["text"] == "4.356 ly"
 		and map.sim.world["ship"]["flown"] == 0.0)
 	ok("arrived progress bar is full", same(map.progress_values()[0], plan["distance"]) and same(map.progress_bar.value, map.progress_bar.max_value))
 	var sp: Dictionary = map.sim.world["ship"]["pos"]
