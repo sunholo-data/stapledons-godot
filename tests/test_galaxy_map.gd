@@ -265,6 +265,15 @@ func test_names(map: GalaxyMap) -> bool:
 	return true
 
 
+## The last tick line the map sent ({"type":"input", "dtau", ...}), parsed.
+func last_input() -> Dictionary:
+	var last := {}
+	for line in FileAccess.get_file_as_string(RECORD).split("\n"):
+		if line.contains('"type":"input"'):
+			last = JSON.parse_string(line)
+	return last
+
+
 func sent_lines(kind: String) -> int:
 	var n := 0
 	for line in FileAccess.get_file_as_string(RECORD).split("\n"):
@@ -301,6 +310,20 @@ func test_commit_hold(map: GalaxyMap) -> bool:
 	ok("1.4990234375 s of hold does not commit", not map.hold_commit(1.0) and not map.hold_commit(0.4990234375))
 	map.release_commit()
 	ok("release resets the hold", map.hold_s == 0.0 and map.dialog.visible)
+	# A frame stall must not commit in one frame: _process clamps the hold delta.
+	ok("hold frame delta is clamped to 0.1 s", GalaxyMap.MAX_HOLD_DT == 0.1)
+	map.hold_button.button_down.emit()
+	map._process(2.0) # a 2 s frame stall while the button is down
+	ok("a 2 s frame stall adds only 0.1 s of hold and commits nothing", map.hold_s == 0.1 and map.dialog.visible and map.journey_state() == "planned")
+	map._process(2.0)
+	map._process(2.0)
+	ok("three stalled frames add 0.3 s, still short", absf(map.hold_s - 0.3) < 1e-12 and map.dialog.visible)
+	map.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	ok("window focus loss releases the hold", not map._holding and map.hold_s == 0.0 and map.dialog.visible)
+	map._process(2.0)
+	ok("after focus loss frames add no hold", map.hold_s == 0.0)
+	map.tick()
+	ok("nothing sent across the stall and focus loss", map.journey_state() == "planned" and sent_lines('"commit"') == 0)
 	ok("after release, 1.25 s more is still short", not map.hold_commit(1.25))
 	map.tick()
 	ok("no commit sent before 1.5 s", map.journey_state() == "planned" and sent_lines('"commit"') == 0)
@@ -345,6 +368,12 @@ func test_transit(map: GalaxyMap) -> bool:
 	var rows := map.panel_rows()
 	ok("transit readout replaces the plan panel", rows.size() == GalaxyMap.TRANSIT_ROWS.size() and rows[0]["field"] == "ship.phase")
 	ok("title reads En route to Alpha Centauri A", map.title_text() == "En route to Alpha Centauri A")
+	ok("transit rate is 0.1 ship-yr per real second", GalaxyMap.TRANSIT_RATE == 0.1)
+	var tau_c: float = map.sim.world["clock"]["tau"]
+	map.tick()
+	var wire := last_input()
+	ok("a committed tick sends dtau = 0.1 / 20 ship-yr on the wire (bits)", same(wire.get("dtau"), 0.1 / 20.0))
+	ok("the ship clock advanced by exactly that dtau", absf(map.sim.world["clock"]["tau"] - tau_c - 0.1 / 20.0) < 1e-15)
 	var mid := false
 	var phases := {}
 	var all_sim := true
@@ -367,6 +396,9 @@ func test_transit(map: GalaxyMap) -> bool:
 				and same(map.progress_bar.value, pv[0]) and map.progress_bar.visible)
 			ok("mid-cruise: phase row shows the sim's phase", map.panel_rows()[0]["text"] == "cruising")
 			ok("mid-cruise: speed row is the sim's beta (0.990000c)", map.panel_rows()[6]["text"] == "0.990000c" and same(map.panel_rows()[6]["raw"], map.sim.world["ship"]["beta"]))
+			var fr: Dictionary = map.panel_rows()[4]
+			ok("mid-cruise: 'Flown since commit' row is ship.flown at 4 decimals in ly", fr["label"] == "Flown since commit" and fr["field"] == "ship.flown"
+				and fr["text"] == "%.4f ly" % map.sim.world["ship"]["flown"] and RegEx.create_from_string("^\\d+\\.\\d{4} ly$").search(fr["text"]) != null)
 			ok("mid-cruise: ship clock text is clock.tau at 4 decimals", map.panel_rows()[1]["text"] == "ship +%.4f yr" % map.sim.world["clock"]["tau"])
 	ok("every transit row is a sim field (bits), every tick", all_sim)
 	ok("both clocks advance every transit tick", advancing and map.sim.world["clock"]["tau"] > tau0 and map.sim.world["clock"]["year"] > year0)

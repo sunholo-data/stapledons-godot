@@ -33,6 +33,9 @@ const TRANSIT_DTAU := TRANSIT_RATE / TICK_HZ
 ## Commit hold (D-12): the commit is sent only after the button has been held
 ## this long without release.
 const HOLD_S := 1.5
+## Largest frame delta one frame may add to the hold, so a frame stall
+## (>= HOLD_S) cannot commit in a single frame.
+const MAX_HOLD_DT := 0.1
 const PICK_RADIUS_PX := 12.0
 const NAME_SPACING_PX := 16.0
 const RINGS_LY := [5.0, 10.0, 20.0, 50.0]
@@ -477,7 +480,7 @@ func tick() -> bool:
 
 func _process(delta: float) -> void:
 	if _holding:
-		hold_commit(delta)
+		hold_commit(minf(delta, MAX_HOLD_DT))
 	if not auto_tick or sim == null:
 		return
 	_accum = minf(_accum + delta, 4.0 / TICK_HZ)
@@ -485,6 +488,12 @@ func _process(delta: float) -> void:
 		_accum -= 1.0 / TICK_HZ
 		tick()
 	_overlay.queue_redraw()
+
+
+## Losing window focus releases the hold (the button-up may never arrive).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		release_commit()
 
 
 ## Value of a dotted sim field ("journey.plan.energy.total_j") in a world.
