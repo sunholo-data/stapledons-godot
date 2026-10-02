@@ -70,3 +70,10 @@ gcloud billing budgets create --billing-project="$PROJECT_ID" --billing-account=
   --display-name="stapledons-voyage monthly" --budget-amount=140DKK \
   --filter-projects="projects/$PROJECT_NUMBER" \
   --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0
+
+# 10. OpenRouter key for text generation (Mark 2026-10-02: "have both options").
+#     The secret is created empty; Mark adds the value himself so it never
+#     passes through a chat or a log:
+#       read -s OR_KEY && printf '%s' "$OR_KEY" | gcloud secrets versions add openrouter-api-key --project=stapledons-voyage --data-file=- && unset OR_KEY
+gcloud secrets create openrouter-api-key --project="$PROJECT_ID" --replication-policy=automatic \
+  --labels=app=stapledons-voyage,purpose=build-time-ai || true
