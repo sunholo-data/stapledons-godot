@@ -1,0 +1,323 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "status": "planned",
+  "created": "2026-10-02T16:00:00Z",
+  "parent_sprint": "R1-M1-SKY",
+  "parent_note": "R1-M1-SKY keeps the landed record (M1.0, M1.1, M1.6a, M1.2a, M1.2b children, M1.4a/b/c). Its open rows (M1.2b parent, M1.2c, M1.2d, M1.3, M1.5, M1.6b) are re-planned here; at approval the controller marks them superseded_by R1-M1-SKY-2. The parent row M1.2b_AILANG_CATALOGUE closes when M1.2b-T4 passes.",
+  "design_doc": "design_docs/planned/r1/m1-relativistic-sky.md",
+  "sprint_plan": "design_docs/planned/r1/m1-remaining-sprint.md",
+  "github_issues": [],
+  "ailang": {
+    "pin": "v0.51.0",
+    "binary": "/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang",
+    "legend": "$A = pinned binary on every make line (AILANG=$A, AILANG_BIN=$A where Godot drives the sim); fresh worktree runs make runtime first. $PKG = fresh ailang-packages clone at origin/main, packages/relativity."
+  },
+  "velocity": {
+    "target_loc_per_day": 2300,
+    "estimated_total_loc": 4590,
+    "estimated_days": 2,
+    "estimated_days_unattended_loop": "4-6",
+    "estimated_iterations": "11 planned + ~2 contingency",
+    "loc_cap_per_milestone": 650,
+    "basis": "R1-M2-JOURNEY: 10 milestones in ~13.5 h wall clock attended with parallel executors, evals 89-96, ~5,000 changed lines vs ~3,400 estimate (~1.5x). M1 remaining has a 7-wave serial spine plus long compute (full-tier VM parity ~20 min, sky regen ~30 min) and GPU gates: ~2 h per wave incl. independent evaluation -> ~16-20 h attended (2 days at ~2,300 counted LOC/day); unattended loop at one item per 6 h iteration -> 13 iterations, ~4-6 days with review waits."
+  },
+  "order": [
+    "M1.2b-T3_WRITER_SIDECARS",
+    "M1.6b_CAMERA_GOLDEN",
+    "M1.P_PKG_PHOTOMETRY_050",
+    "M1.2b-T4_FULL_INTEGRATION",
+    "M1.2c_STATS_AND_COMMIT",
+    "M1.2d_BRIGHT_TIER",
+    "M1.3_STAR_RENDERING_V2",
+    "M1.7_CATALOGUE_SWITCH",
+    "M1.5a_PHOTOMETRIC_EXPOSURE",
+    "M1.8_FORWARD_CMB",
+    "M1.5b_RENDERS_REPORT_LANDING"
+  ],
+  "waves": {
+    "1": ["M1.2b-T3_WRITER_SIDECARS", "M1.6b_CAMERA_GOLDEN", "M1.P_PKG_PHOTOMETRY_050"],
+    "2": ["M1.2b-T4_FULL_INTEGRATION"],
+    "3": ["M1.2c_STATS_AND_COMMIT"],
+    "4": ["M1.2d_BRIGHT_TIER", "M1.3_STAR_RENDERING_V2"],
+    "5": ["M1.7_CATALOGUE_SWITCH", "M1.5a_PHOTOMETRIC_EXPOSURE"],
+    "6": ["M1.8_FORWARD_CMB"],
+    "7": ["M1.5b_RENDERS_REPORT_LANDING"]
+  },
+  "critical_path": ["M1.2b-T3_WRITER_SIDECARS", "M1.2b-T4_FULL_INTEGRATION", "M1.2c_STATS_AND_COMMIT", "M1.3_STAR_RENDERING_V2", "M1.5a_PHOTOMETRIC_EXPOSURE", "M1.8_FORWARD_CMB", "M1.5b_RENDERS_REPORT_LANDING"],
+  "external_dependencies": [
+    {"what": "PR #43 (destar -> AILANG; contains PR #36 extract -> AILANG)", "needed_by": ["M1.2d_BRIGHT_TIER", "M1.7_CATALOGUE_SWITCH"], "risk": "Makefile, sim/ailang.toml and data/sky/sky_model_report.json conflicts with T3/T4/M1.2c; recommendation Q6: merge before wave 1"},
+    {"what": "M3 may publish sunholo/relativity 0.5.0 first", "needed_by": ["M1.P_PKG_PHOTOMETRY_050"], "risk": "M1.P then takes 0.6.0; docs and pins follow"}
+  ],
+  "pause_points": [
+    {"id": "P0", "after": null, "what": "plan approval by Mark (now)"},
+    {"id": "P1", "after": "M1.P_PKG_PHOTOMETRY_050", "what": "controller publishes sunholo/relativity 0.5.0 under the standing grant after independent physics PASS + pkg quality no gates + CHANGELOG + dry run; then pin and relock"},
+    {"id": "R-a", "after": "M1.6b_CAMERA_GOLDEN", "what": "Mark reviews off-axis + rolled renders and the dev build (make publish-dev; tools/install_review_build.sh --dev); blocks M1.6b merge only"},
+    {"id": "R-b", "after": "M1.3_STAR_RENDERING_V2", "what": "Mark reviews 331k-star renders at 0/0.9/0.99c, bench numbers, dev build; blocks M1.3 merge (critical path)"},
+    {"id": "R-c", "after": "M1.7_CATALOGUE_SWITCH", "what": "Mark reviews the map on CNS5/HIP (alpha Cen A/B separate), approves replay golden diff, destar crops; unblocks M4 on tiers"},
+    {"id": "R-d", "after": "M1.5a_PHOTOMETRIC_EXPOSURE", "what": "Mark reviews exposure renders incl. fixed-EV sideways pair; Q8 (default exposure) must be answered; blocks M1.5a merge (critical path)"},
+    {"id": "R-e", "after": "M1.8_FORWARD_CMB", "what": "Mark reviews CMB renders at gamma 275 / 707"},
+    {"id": "R-f", "after": "M1.5b_RENDERS_REPORT_LANDING", "what": "Mark signs off the M1 report and AC9 renders; bar clause 1 met only after this"}
+  ],
+  "findings": [
+    "F1: 770 of 5,908 CNS5 rows have no Gaia G/BP-RP, including alpha Cen AB (CNS5:3627, 4.32 ly), Sirius (CNS5:1676), Procyon (CNS5:1895), Altair (CNS5:4912); under the quorum rule they render invisible. CNS5 carries a HIP column, so an exact id match is available.",
+    "F2: CNS5 has one 'Gl 559 AB' row (HIP 71683, 754.81 mas, 4.321 ly). HIP2 I/311 (fetched 2026-10-02): A 754.81+-4.11 mas, B (HIP 71681) 796.92+-25.90 mas = 4.09 ly. D-17's 4.365 ly (Kervella 2016, 747.17 mas) is in no shipped catalogue.",
+    "F3: the design doc's >60 s Python fallback and the planned Python stats/audit tools conflict with the Python policy (#34); stats and audit move to Godot headless, AC2/AC3/AC11 commands amended.",
+    "F4: forward CMB at the cap is a sky-filling glow (3,853.7 K ahead HB-63, 1,926.9 K at 90 deg); needs absolute photopic radiance in the package because surfaceBrightnessRatio(2.725 K, D) divides by ~0.",
+    "F5: sideways (theta'=90 deg) the sky is blueshifted by D = gamma > 1 and brighter than at rest; it looks dark only under auto-exposure. D-6 canon wording describes the exposure, not the physics.",
+    "F6: stars.json (CNS3) feeds starfield, galaxy map, names.json (index-keyed), test_physics, test_galaxy_map, sim/core_test doubles, record_godot_session, replay goldens alpha_cen/godot_map_voyage and the destar mask: the switch is its own milestone (M1.7).",
+    "F7: PR #43/#36 is a dependency for M1.2d (AILANG fixed-width parser) and M1.7 (AILANG destar); N1/N2 were already closed in T2 (PR #19), remaining T1/T2 residuals are N3, tier-name validation, safe squared-distance range and the real-row F32 bound."
+  ],
+  "questions_for_mark": [
+    {"id": "Q1", "question": "HIP photometry fill for CNS5 rows Gaia cannot measure (Sirius, alpha Cen, Procyon, Altair), flag 8, in place (no duplicates)?", "recommendation": "yes", "default": "yes"},
+    {"id": "Q2", "question": "alpha Cen A/B distance: (a) CNS5/HIP2 system parallax 754.81 mas = 4.32 ly for both, B at HIP2 relative offset; or (b) cited literature override (Kervella 2016, 4.365 ly)?", "recommendation": "(a) for R1, (b) later", "default": "(a)"},
+    {"id": "Q3", "question": "Retire the design doc's Python fallback; AILANG path ships however long it takes (budget <=10 min/tier, reported upstream); stats/audit in Godot with amended AC2/AC3/AC11 commands?", "recommendation": "yes", "default": "yes"},
+    {"id": "Q4", "question": "Commit stars_bright.bin (~0.25 MB) besides quick and medium (D-3)?", "recommendation": "yes", "default": "yes"},
+    {"id": "Q5", "question": "Correct D-6 canon 'goes dark sideways at speed' to an exposure effect, with a fixed-EV toggle in game?", "recommendation": "yes", "default": "M1.5a ships the honest version; canon edit waits for Mark"},
+    {"id": "Q6", "question": "Merge PR #43 (lands #36) before wave 1?", "recommendation": "yes, after Mark looks at its destar crops", "default": "M1.2d and M1.7 wait for it; waves 1-3 proceed"},
+    {"id": "Q7", "question": "Galaxy map content after the switch: CNS5 + bright within 25 pc, or also the 50k medium tier?", "recommendation": "25 pc for R1", "default": "25 pc"},
+    {"id": "Q8", "question": "Default exposure (design OQ4): dark-adapted naked eye or camera-like?", "recommendation": "dark-adapted naked eye default, camera-like as a labelled setting", "default": "asked at R-d; blocks M1.5a merge"},
+    {"id": "Q9", "question": "Forward CMB (queue 6a) in M1 or after?", "recommendation": "in M1 as M1.8 (wave 6); does not gate AC1-AC10", "default": "in M1"}
+  ],
+  "approved": false,
+  "registry_reuse": [
+    {"milestone": "M1.2b-T3_WRITER_SIDECARS", "package": "sunholo/relativity@0.4.0; std/fs, std/json, std/embedding (bundled v0.51.0)", "action": "depend", "reason": "2026-10-02 pkg search catalogue/binary/float: only duckdb (DB client); photometry already locked; native F32 codec reused from T2"},
+    {"milestone": "M1.6b_CAMERA_GOLDEN", "package": "none", "action": "none", "reason": "Godot camera/HUD/golden code; package optics mirrored, not changed"},
+    {"milestone": "M1.P_PKG_PHOTOMETRY_050", "package": "sunholo/relativity@0.4.0", "action": "contribute", "reason": "pkg search photometry/cmb/exposure returns only sunholo/relativity; single physics package (CLAUDE.md gate 3); add teffFromBV, luminanceFromSurfaceMag, photopicRadiance, cmbSeenTemperature, pointThresholdIlluminance; publish next free minor (0.5.0)"},
+    {"milestone": "M1.2b-T4_FULL_INTEGRATION", "package": "none", "action": "none", "reason": "Parity/timing harness in Makefile + shell; pkg search found no replay/benchmark package applicable"},
+    {"milestone": "M1.2c_STATS_AND_COMMIT", "package": "none", "action": "none", "reason": "Godot headless loader and stats; no AILANG package applies"},
+    {"milestone": "M1.2d_BRIGHT_TIER", "package": "sunholo/relativity@0.5.0", "action": "depend", "reason": "teffFromBV from M1.P; pkg search hipparcos/crossmatch empty, so the HIP parser (extract.ail helpers from #36) and cross-match are game-specific"},
+    {"milestone": "M1.3_STAR_RENDERING_V2", "package": "sunholo/relativity@0.4.0", "action": "depend", "reason": "GDScript/shader mirror pointFluxRatio and illuminanceFromV; no new maths"},
+    {"milestone": "M1.7_CATALOGUE_SWITCH", "package": "none", "action": "none", "reason": "UI, names data, goldens and sky regeneration; no package applies"},
+    {"milestone": "M1.5a_PHOTOMETRIC_EXPOSURE", "package": "sunholo/relativity@0.5.0", "action": "depend", "reason": "luminanceFromSurfaceMag and pointThresholdIlluminance mirrored in GDScript (gate 3)"},
+    {"milestone": "M1.8_FORWARD_CMB", "package": "sunholo/relativity@0.5.0", "action": "depend", "reason": "cmbSeenTemperature and photopicRadiance mirrored in the shader (gate 3)"},
+    {"milestone": "M1.5b_RENDERS_REPORT_LANDING", "package": "none", "action": "none", "reason": "Renders, Godot audit, report and landing docs"}
+  ],
+  "features": [
+    {
+      "id": "M1.2b-T3_WRITER_SIDECARS",
+      "description": "Tier writer: tier-name validation (quick/medium/large only), coordinate validation before the medium sort (|x|,|y|,|z| <= 1e6 ly, binary64-safe squared distance), conservative F32 bound asserted on every real CNS5/GCNS row; FS shell sim/tools/catalogue_main.ail writes stars_<tier>.bin + stars_<tier>.json sidecar (tier, count, count_excluded, source, format_version 1, record_bytes 24, fields, ailang, package, producer, sha256{raw,csv,bin}) atomically (temp + rename), parameterised output paths; make catalogue TIER=...; sha256 via std if present, else Makefile shasum glue + upstream report. Does NOT write data/starmap/stars.json (moved to M1.7).",
+      "estimated_loc": 380,
+      "loc_cap": 650,
+      "dependencies": [],
+      "wave": 1,
+      "files": ["sim/tools/catalogue.ail", "sim/tools/catalogue_main.ail", "sim/tools/catalogue_main_test.ail", "sim/tools/catalogue_test.ail", "Makefile"],
+      "acceptance_criteria": [
+        "$A check --package sim && $A test --package sim pass, incl. checkTierNameRefused, checkHugeCoordRefused, checkSidecarFields, checkAtomicRefusal",
+        "make catalogue TIER=quick AILANG=$A exits 0; data/starmap/stars_quick.bin is 5,908 x 24 = 141,792 B; sidecar count = 5908; real-row F32 bound scan over CNS5 and GCNS reports 0 refusals",
+        "make catalogue-vm catalogue-bytes AILANG=$A stay green",
+        "make test AILANG=$A AILANG_BIN=$A green; no pixels change (no render gate)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.6b_CAMERA_GOLDEN",
+      "description": "Free-look camera with yaw/pitch/roll independent of velocity; HUD view-to-velocity angle; test_rolled_camera_cpu_spec_values (completes AC4) and test_view_velocity_angle; off-axis GPU golden 12 directions x 4 speeds x 3 camera orientations incl. roll within 0.75 px (AC5 star part); M1.6a follow-up: checkRestToleranceEdge pins restTolerance() = 1e-9 (phi 0.9e-9 accepted, 1.1e-9 refused moving) plus a parity-v2 case.",
+      "estimated_loc": 300,
+      "loc_cap": 650,
+      "dependencies": [],
+      "wave": 1,
+      "files": ["main.gd", "tests/test_physics.gd", "sim/core_test.ail", "Makefile"],
+      "acceptance_criteria": [
+        "make physics AILANG=$A passes the rolled-camera and view-angle cases (AC4 complete)",
+        "make golden AILANG=$A: 144 off-axis cases + existing, worst error <= 0.75 px printed, 0 failures (AC5 star part)",
+        "$A test --package sim passes checkRestToleranceEdge; make strict and make test AILANG=$A AILANG_BIN=$A green",
+        "make capture AILANG=$A AILANG_BIN=$A off-axis/rolled renders opened by the executor",
+        "R-a: Mark reviews renders and the dev build (make publish-dev; tools/install_review_build.sh --dev) before merge"
+      ],
+      "pause_after": "R-a (merge only)",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.P_PKG_PHOTOMETRY_050",
+      "description": "sunholo/relativity next free minor (0.5.0 unless M3 publishes first): photometry.teffFromBV + bvNodes generated from the same Mamajek table B-V column (D-5); photometry.luminanceFromSurfaceMag (package zero point; mu 22 -> 1.726e-4 cd/m2); blackbody.photopicRadiance absolute cd/m2 (683 lm/W x integral B_lambda ybar), finite down to T->0; optics.cmbSeenTemperature(n,bh,phi) = T0 x doppler; photometry.pointThresholdIlluminance(Lb) from a cited model (Crumey 2014). Tests, Python oracle for photopicRadiance, CHANGELOG, [release] kind feature, AGENT.md, pkg quality no gates, publish --dry-run. Controller publishes (P1) after independent physics PASS, then pins and relocks.",
+      "estimated_loc": 450,
+      "loc_cap": 650,
+      "dependencies": [],
+      "wave": 1,
+      "files": ["$PKG/tools/mamajek_to_ail.py", "$PKG/photometry_table.ail", "$PKG/photometry.ail", "$PKG/blackbody.ail", "$PKG/optics.ail", "$PKG/*_test.ail", "$PKG/_smoke.ail", "$PKG/CHANGELOG.md", "$PKG/AGENT.md", "sim/ailang.toml", "sim/ailang.lock"],
+      "acceptance_criteria": [
+        "cd $PKG && $A test --package . && $A pkg quality . (no gates): teffFromBV Sun B-V 0.65 -> 5770 K, alpha Cen B, Barnard, Proxima within 5%; endpoint clamping; luminanceFromSurfaceMag(22) = 1.726e-4 cd/m2; cmbSeenTemperature 3853.7 K ahead at gamma 707 (HB-63), 1926.9 K at 90 deg, 38.44 K at 0.99c (HB-62); 1e4-point finite sweep of every new function",
+        "photopicRadiance at 2856 K, 5772 K, 3853.7 K matches an independent Python oracle within 1e-6 relative",
+        "Strict VM equals interpreter on _smoke.ail entry photometryDigest (cmp)",
+        "publish --dry-run passes; after P1: $A pkg info sunholo/relativity shows v0.5.0; grep '\"0.5.0\"' sim/ailang.toml sim/ailang.lock; make test AILANG=$A AILANG_BIN=$A green"
+      ],
+      "pause_after": "P1: controller publish under the standing grant after independent physics PASS (strongest available evaluator)",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.2b-T4_FULL_INTEGRATION",
+      "description": "Build quick/medium/large from the real CSVs; N3 exact 50,000 boundary fixture (50,001 eligible + intervening missing; 49,999 mutant fails); independent excluded counts; make catalogue-parity: medium on the interpreter once and ordinary VM 5 times, cmp of bins and sidecars, six wall times and peak RSS printed. Timing reported, never a Python trigger (F3/Q3); any divergence is an upstream report and blocks. Closes parent M1.2b_AILANG_CATALOGUE.",
+      "estimated_loc": 260,
+      "loc_cap": 650,
+      "dependencies": ["M1.2b-T3_WRITER_SIDECARS"],
+      "wave": 2,
+      "files": ["Makefile", "sim/tools/catalogue_test.ail", "tools/catalogue_probe.py (allowlisted harness, optional)"],
+      "acceptance_criteria": [
+        "make catalogue TIER=medium AILANG=$A: stars_medium.bin is 1,200,000 B; count_excluded > 0 printed and recorded",
+        "make catalogue TIER=large AILANG=$A: 331,312 x 24 B (minus skipped rows, recorded); wall time recorded",
+        "make catalogue-parity AILANG=$A prints 5/5 identical plus six wall times",
+        "$A test --package sim passes the N3 boundary check"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.2c_STATS_AND_COMMIT",
+      "description": "sky/star_catalogue.gd binary-tier loader (header/sha/stride checks; reused by M1.3); tools/catalogue_stats.gd Godot headless stats (count, M-dwarf share teff < 3900 K, excluded count, zero-defaulted-photometry invariant) replacing catalogue_stats.py (F3); make catalogue-stats on committed bins inside make test (CI); make catalogue-verify byte-identical rebuild; remove process_stars.sh, update starmap-manager SKILL.md/status.sh, .gitignore stars_large.*; stage quick + medium bins and sidecars (D-3), controller commits.",
+      "estimated_loc": 320,
+      "loc_cap": 650,
+      "dependencies": ["M1.2b-T4_FULL_INTEGRATION"],
+      "wave": 3,
+      "files": ["sky/star_catalogue.gd", "tools/catalogue_stats.gd", "tests/test_star_catalogue.gd", "Makefile", ".gitignore", ".claude/skills/starmap-manager/SKILL.md", ".claude/skills/starmap-manager/scripts/status.sh", ".claude/skills/starmap-manager/scripts/process_stars.sh (removed)", "data/starmap/stars_quick.{bin,json}", "data/starmap/stars_medium.{bin,json}"],
+      "acceptance_criteria": [
+        "make catalogue-stats TIER=medium prints M-dwarf share >= 60% and exits 0 (AC3, amended command)",
+        "make catalogue-stats prints every tier's excluded count and finds 0 defaulted-photometry rows (AC2 clause)",
+        "make catalogue-verify AILANG=$A prints 'quick identical' and 'medium identical'",
+        "test ! -f .claude/skills/starmap-manager/scripts/process_stars.sh && ! grep -q process_stars .claude/skills/starmap-manager/SKILL.md",
+        "git ls-files data/starmap lists stars_quick.bin, stars_medium.bin and sidecars, not stars_large.bin",
+        "make test (incl. catalogue-stats, test_star_catalogue) green locally and in CI: AC2 met"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.2d_BRIGHT_TIER",
+      "description": "download_stars.sh bright (HIP2 I/311 hip2.dat + I/239 hip_main.dat, size + sha256); sim/tools/bright.ail on the extract.ail fixed-width helpers (#36): join on HIP, V < 7, Plx > 0, proper-motion propagation (2016.0 for GCNS, per-row epoch for CNS5), GCNS match 1 arcsec + |G-V| < 2, CNS5 match by its HIP column. Rules (Q1/Q2 defaults): (a) unmatched HIP2 -> stars_bright.bin, teff = teffFromBV(bv), v = V verbatim, flag 8; (b) CNS5 rows with missing Gaia photometry and a HIP id get HIP V/B-V in place, flag 8, no duplicate; (c) components HIP lists separately (alpha Cen B) take the CNS5 system parallax at their HIP2 relative position, recorded in data/starmap/bright_overrides.json with citations. tools/bright_star_audit.gd (AC11 auditor, Godot) unit-tested on synthetic renders; commit stars_bright.bin + sidecar (Q4).",
+      "estimated_loc": 560,
+      "loc_cap": 650,
+      "dependencies": ["M1.2c_STATS_AND_COMMIT", "M1.P_PKG_PHOTOMETRY_050"],
+      "external_deps": ["PR #43 (with #36) merged"],
+      "wave": 4,
+      "files": ["sim/tools/bright.ail", "sim/tools/bright_test.ail", "sim/tools/catalogue.ail", ".claude/skills/starmap-manager/scripts/download_stars.sh", "tools/fixtures/hip2_*.dat", "tools/fixtures/hip_main_*.dat", "tools/bright_star_audit.gd", "tests/test_bright_audit.gd", "data/starmap/bright_overrides.json", "data/starmap/stars_bright.{bin,json}", "Makefile"],
+      "acceptance_criteria": [
+        "$A test --package sim passes checkVegaExcluded, checkArcturusPmMatch, checkRigelIncluded (v = catalogue V, flag 8), checkCns5EpochMatch, checkSiriusFilled (CNS5:1676 gets HIP V -1.46, flag 8, no bright duplicate), checkAlphaCenComponents (A and B present, B at CNS5 system distance +- separation, not 4.09 ly)",
+        "make catalogue TIER=bright AILANG=$A: size % 24 == 0; row count in [1,000, 20,000], recorded",
+        "make catalogue-parity AILANG=$A still 5/5 identical; make catalogue-stats finds 0 defaulted rows in quick after the fill",
+        "make test (incl. test_bright_audit) green; AC11 render gate deferred to M1.5b"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.3_STAR_RENDERING_V2",
+      "description": "Starfield v2: binary tiers via star_catalogue.gd (bright always on top; JSON path removed for the starfield); MultiMesh 331k instances, custom data (T_eff, E_v lux via mirrored illuminanceFromV, flags); float64 CPU rebasing on > 0.01 ly moves + sub-0.01 ly vertex-shader offset (precision gate 5), plan B full vertex-shader direction/1/r^2 if CPU rebase > 4 ms; splat energy proportional to E_v x pointFluxRatio(T, D); O-1: LUT_T_MAX 1e7, LUT_SIZE 1320, finite-LUT test, 60 kK D = 44.7 golden; make bench: scripted 30 s flight at 2560x1440, p50/p99 and star-pass GPU timestamp (targets star pass < 2 ms, CPU rebase < 4 ms, p99 < 16.7 ms).",
+      "estimated_loc": 600,
+      "loc_cap": 650,
+      "dependencies": ["M1.2c_STATS_AND_COMMIT", "M1.6b_CAMERA_GOLDEN"],
+      "wave": 4,
+      "files": ["sky/starfield.gd", "sky/starfield.gdshader", "physics/blackbody.gd", "tests/test_physics.gd", "main.gd (starfield load + bench entry)", "tools/bench.gd", "Makefile"],
+      "acceptance_criteria": [
+        "make physics: brightness proportional to E_v test; LUT finite to 1e7 K (gate 5); rebasing precision test (alpha Cen direction at a 1,000 AU stand-off within 1e-9 rad, float64)",
+        "make golden AILANG=$A: 60 kK / D 44.7 case + all existing cases, 0 failures",
+        "make bench TIER=large prints star-pass GPU ms and p99 frame time (AC7 stars-only part), recorded in notes",
+        "make capture AILANG=$A AILANG_BIN=$A: large-tier renders at 0/0.9/0.99c x forward/astern, opened",
+        "R-b: Mark reviews renders, bench numbers and the dev build before merge"
+      ],
+      "pause_after": "R-b (blocks merge; critical path)",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.7_CATALOGUE_SWITCH",
+      "description": "Switch the map off CNS3: AILANG run writes data/starmap/stars.json from quick + bright within 25 pc (Q7); names.json re-keyed by stable catalogue id (Gaia DR3 source_id / CNS5:n / HIP n) so alpha Cen A/B are separate; check_star_names.py oracle updated vs SIMBAD; ui/galaxy_map.gd, test_galaxy_map.gd, test_physics.gd catalogue directions, sim/core_test.ail catalogue doubles, record_godot_session.gd updated; replay goldens alpha_cen and godot_map_voyage re-recorded per arch via make replay-record (reviewed diff); destar rerun against CNS5 + GCNS + HIP2 with destar.ail (#43): make sky-regen, new data/sky/SHA256SUMS, make sky-publish (D-18), re-bundle.",
+      "estimated_loc": 520,
+      "loc_cap": 650,
+      "dependencies": ["M1.2d_BRIGHT_TIER", "M1.3_STAR_RENDERING_V2"],
+      "external_deps": ["PR #43 merged"],
+      "wave": 5,
+      "files": ["ui/galaxy_map.gd", "main.gd (map load line)", "data/starmap/stars.json", "data/starmap/names.json", "tools/check_star_names.py", "tests/test_galaxy_map.gd", "tests/test_physics.gd", "sim/core_test.ail", "tools/record_godot_session.gd", "tests/replays/* goldens", "data/sky/*", "sim/tools/catalogue_main.ail"],
+      "acceptance_criteria": [
+        "make ui AILANG=$A AILANG_BIN=$A: names load with 0 mismatches; alpha Cen A and B are two selectable stars; map shows the catalogue distance (4.32 ly under Q2 default)",
+        "python3 tools/check_star_names.py: every named id within tolerance of its SIMBAD reference",
+        "make replay AILANG=$A green against the re-recorded goldens",
+        "make sky-verify: textures match the new data/sky/SHA256SUMS",
+        "make test green in CI",
+        "R-c: Mark reviews the map dev build, approves the golden diff and destar crops"
+      ],
+      "pause_after": "R-c",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.5a_PHOTOMETRIC_EXPOSURE",
+      "description": "Scene units: stars in lux (E_v), background in cd/m2 calibrated to 22 mag/arcsec2 via luminanceFromSurfaceMag; remove EXPOSURE/BG_EXPOSURE from main.gd; EV exposure, log-average auto exposure, player clamp and bias; readability aids labelled and off by default; default exposure per Q8; limiting magnitude from pointThresholdIlluminance(L_bg) measured on a synthetic V 5.0-7.5 star ladder in the rendered frame (AC8). Exposure honesty (Mark 2026-10-02): HUD shows EV and metering mode; fixed-EV toggle; CPU test that a theta'=90 deg patch at beta 0.99 is brighter than at rest (D = gamma = 7.09) and that D = 1 sits at cos theta' = (1/gamma - 1)/beta; capture adds fixed-EV pair (rest vs 0.99c starboard) beside the auto pair.",
+      "estimated_loc": 550,
+      "loc_cap": 650,
+      "dependencies": ["M1.3_STAR_RENDERING_V2", "M1.P_PKG_PHOTOMETRY_050"],
+      "wave": 5,
+      "files": ["main.gd (exposure)", "sky/exposure.gd", "sky/starfield.gdshader", "sky/background.gd", "sky/background.gdshader", "tests/test_physics.gd", "Makefile"],
+      "acceptance_criteria": [
+        "make physics: scene-unit tests, sideways-brighter test, D = 1 boundary test",
+        "make bench report prints limiting magnitude with 6.0 <= V_lim <= 6.8 (AC8)",
+        "make golden AILANG=$A: exposure golden (known-lux star reaches expected linear pixel value within 1%)",
+        "make capture AILANG=$A AILANG_BIN=$A: fixed-EV and auto pairs rendered and opened",
+        "R-d: Mark reviews exposure renders and dev build; Q8 answered before merge"
+      ],
+      "pause_after": "R-d (blocks merge; critical path)",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.8_FORWARD_CMB",
+      "description": "Forward CMB glow (queue 6a, D-11): background shader adds photopicRadiance(T0 x D(n')) in cd/m2 under the stars, same exposure; GDScript mirror of cmbSeenTemperature/photopicRadiance with a finite lookup over T in [0, 5000 K] (gate 5); M4's 'forward CMB not yet rendered' text never needed.",
+      "estimated_loc": 300,
+      "loc_cap": 650,
+      "dependencies": ["M1.5a_PHOTOMETRIC_EXPOSURE", "M1.P_PKG_PHOTOMETRY_050"],
+      "wave": 6,
+      "files": ["sky/background.gdshader", "sky/background.gd", "physics/blackbody.gd", "tests/test_physics.gd", "main.gd (golden cases)"],
+      "acceptance_criteria": [
+        "make physics: T ahead at gamma 707 = 3853.7 K (HB-63); 1926.9 K at theta' = 90 deg; 38.44 K ahead at 0.99c (HB-62); radiance at beta 0 below 1e-30 of the dark-sky level; lookup finite",
+        "make golden AILANG=$A: CMB pixel at theta' 0/45/90 deg at gamma 707 within 1% of CPU radiance (linear tonemap); exactly 0 at beta 0",
+        "make capture: gamma 275 and 707, forward and starboard, auto and fixed EV, opened",
+        "R-e: Mark reviews the CMB renders"
+      ],
+      "pause_after": "R-e",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M1.5b_RENDERS_REPORT_LANDING",
+      "description": "AC9 reference renders (0, 0.5, 0.9, 0.99, 0.999c x forward/starboard/astern, large tier + background + CMB) and contact sheet committed; AC11 render gate with tools/bright_star_audit.gd; AC7 bench with background; design_docs/implemented/r1/m1-report.md (renders, bench, pipeline VM measurements, AILANG issues, deviations: AC2/AC3/AC11 commands, Python fallback retired, CMB added; limits: panorama ~50 ly, HIP giants B-V); move design doc and both sprint plans to implemented/r1; changelog fragment; design-repo roadmap M1 status; charter queue clause 1; review build tag.",
+      "estimated_loc": 350,
+      "loc_cap": 650,
+      "dependencies": ["M1.2b-T3_WRITER_SIDECARS", "M1.6b_CAMERA_GOLDEN", "M1.P_PKG_PHOTOMETRY_050", "M1.2b-T4_FULL_INTEGRATION", "M1.2c_STATS_AND_COMMIT", "M1.2d_BRIGHT_TIER", "M1.3_STAR_RENDERING_V2", "M1.7_CATALOGUE_SWITCH", "M1.5a_PHOTOMETRIC_EXPOSURE", "M1.8_FORWARD_CMB"],
+      "wave": 7,
+      "files": ["renders/*", "design_docs/implemented/r1/m1-report.md", "design_docs/implemented/r1/m1-relativistic-sky.md", "changelogs/unreleased/*", "design_docs/stapledon-mission.md"],
+      "acceptance_criteria": [
+        "make capture AILANG=$A AILANG_BIN=$A: 15 reference renders + contact sheet committed (AC9)",
+        "make capture && godot --headless --path . --script tools/bright_star_audit.gd renders/: >= 95% of HIP2 V < 2.5 stars within 1 px; rendered stars with V < 6.5 between 5,000 and 9,100 (AC11)",
+        "make bench TIER=large: p99 < 16.7 ms at 2560x1440 on M4 Max with background (AC7)",
+        "make test green in CI; make strict and parity targets green (AC10)",
+        "R-f: Mark signs off the M1 report and AC9 renders; bar clause 1 met only after this"
+      ],
+      "pause_after": "R-f",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ]
+}
