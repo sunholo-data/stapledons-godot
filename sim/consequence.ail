@@ -1,0 +1,100 @@
+module stapledons/sim/consequence
+
+-- The consequence stub (design m4-first-journey §M4.1, step 1). Pure: no
+-- effects, runs on the strict VM (`make strict`). I/O stays in ship.ail.
+-- This module holds the consequence state and the rules that need no ship
+-- or journey types; core.ail feeds it each tick (observe) and reads it for
+-- the readouts. Physics comes from sunholo/relativity; nothing here derives
+-- a formula (the glow pole waits for the package, M4.6a).
+import std/option (Option, Some, None)
+import pkg/sunholo/relativity/optics (Vec3, norm)
+import pkg/sunholo/relativity/medium (astronomicalUnitM, lightYearM, loadScale, mirrorDragForce, glowInwardFlux)
+import pkg/sunholo/relativity/hyper (absf)
+
+-- ------------------------------------------------------------ stand-off (D-14)
+-- Star index 0 is Sol: home, where the ship docks (no stand-off). Any other
+-- target is approached to `au` astronomical units short, on the approach line.
+export pure func homeIndex() -> int = 0
+export pure func standoffLy(au: float) -> float = au * astronomicalUnitM() / lightYearM()
+export pure func standoffFor(au: float, targetIndex: int) -> float = if targetIndex == homeIndex() || !(au > 0.0) then 0.0 else standoffLy(au)
+
+-- ------------------------------------------------------------ clocks and news epoch
+-- c = 1, Sol at the origin. The newest Earth news receivable at galaxy time t
+-- and position p is from t_e = t - |p|; its age is the light time |p|.
+export type Clocks = { gapYears: float, newsEpoch: float, newsAgeYears: float }
+export pure func clocks(t: float, tau: float, p: Vec3) -> Clocks {
+  let r = norm(p);
+  { gapYears: t - tau, newsEpoch: t - r, newsAgeYears: r }
+}
+
+-- ------------------------------------------------------------ news tier and template
+-- Tier by Earth-years since departure at the news epoch: <1, 1-5, 5-15, 15-50, >=50.
+export pure func newsTier(elapsed: float) -> int =
+  if elapsed < 1.0 then 0 else if elapsed < 5.0 then 1 else if elapsed < 15.0 then 2 else if elapsed < 50.0 then 3 else 4
+export pure func tierName(i: int) -> string =
+  if i == 0 then "<1" else if i == 1 then "1-5" else if i == 2 then "5-15" else if i == 3 then "15-50" else ">=50"
+export pure func templatesPerTier() -> int = 4
+-- A template id is tier * templatesPerTier + (a draw of the `news` stream mod templatesPerTier).
+export pure func templateId(tier: int, v: int) -> int = tier * templatesPerTier() + v % templatesPerTier()
+
+-- body_source: template (no AI request), ai (accepted text), fallback (a
+-- request closed without text; fallback_reason is the sim's reason code).
+export type News = { tier: int, templateId: int, starId: string, elapsedYears: float, newsEpoch: float, newsAgeYears: float,
+  aiRequestId: Option[string], bodySource: string, fallbackReason: Option[string] }
+
+-- ------------------------------------------------------------ legacy log and archive
+-- Append-only (Pillar 1); entries are stamped with the tick's end state.
+export type Entry = { tick: int, kind: string, starId: string, tau: float, t: float, gapYears: float }
+export type ArchiveRow = { id: string, unlock: string }
+-- on: tracking is a protocol 2.2 feature; a session below minor 2 runs with it off, so a 2.0/2.1
+-- stream (rng counters included) is exactly what M2 produced.
+-- depT: galaxy time of the first commit (news elapsed counts from it).
+-- dragJ0: the ledger's drag_j at the latest commit.
+export type Cq = { on: bool, depT: Option[float], dragJ0: float, news: Option[News], log: [Entry], archive: [ArchiveRow], unlocked: [string] }
+export pure func emptyCq() -> Cq = { on: true, depT: None, dragJ0: 0.0, news: None, log: [], archive: [], unlocked: [] }
+
+export pure func entry(tick: int, kind: string, star: string, tau: float, t: float) -> Entry = { tick: tick, kind: kind, starId: star, tau: tau, t: t, gapYears: t - tau }
+export pure func append(c: Cq, e: Entry) -> Cq = {c | log: c.log ++ [e]}
+export pure func hasKind(xs: [Entry], k: string) -> bool = match xs { [] => false, e :: r => e.kind == k || hasKind(r, k) }
+
+-- The README's hint vocabulary (design repo lore/README, V16). first_black_hole
+-- has no sim state before M3 and never holds.
+export pure func knownHints() -> [string] = ["always", "first_commit", "first_boost", "cruise_above_0.9c", "cruise_above_gamma_275", "first_black_hole"]
+export pure func isHint(h: string) -> bool = inHints(h, knownHints())
+pure func inHints(h: string, xs: [string]) -> bool = match xs { [] => false, x :: r => h == x || inHints(h, r) }
+export pure func hintHolds(h: string, log: [Entry], cruising: bool, beta: float, gamma: float) -> bool =
+  if h == "always" then true
+  else if h == "first_commit" then hasKind(log, "commit")
+  else if h == "first_boost" then hasKind(log, "boost")
+  else if h == "cruise_above_0.9c" then cruising && beta > 0.9
+  else if h == "cruise_above_gamma_275" then cruising && gamma > 275.0
+  else false
+
+pure func isIn(id: string, xs: [string]) -> bool = match xs { [] => false, x :: r => id == x || isIn(id, r) }
+-- Rows whose predicate holds and are not yet unlocked fire in table order, once.
+export pure func unlock(c: Cq, tick: int, tau: float, t: float, cruising: bool, beta: float, gamma: float) -> Cq = unlockRows(c, c.archive, tick, tau, t, cruising, beta, gamma)
+pure func unlockRows(c: Cq, rows: [ArchiveRow], tick: int, tau: float, t: float, cruising: bool, beta: float, gamma: float) -> Cq =
+  match rows {
+    [] => c,
+    r :: more =>
+      if !isIn(r.id, c.unlocked) && hintHolds(r.unlock, c.log, cruising, beta, gamma)
+      then unlockRows(append({c | unlocked: c.unlocked ++ [r.id]}, entry(tick, "archive_unlock", r.id, tau, t)), more, tick, tau, t, cruising, beta, gamma)
+      else unlockRows(c, more, tick, tau, t, cruising, beta, gamma)
+  }
+
+-- ------------------------------------------------------------ live ISM (D-11)
+-- Package calls at the ship's current rapidity; n in m^-3. All zero at rest.
+export type IsmNow = { loadWM2: float, dragN: float, glowWM2: float }
+export pure func ismAt(n: float, phi: float, r: float, eps: float, fIn: float) -> IsmNow {
+  let p = absf(phi);
+  { loadWM2: loadScale(n, p), dragN: mirrorDragForce(n, p, r), glowWM2: glowInwardFlux(n, p, eps, fIn) }
+}
+
+-- ------------------------------------------------------------ AI provenance
+-- Fold one AI event into the news item: a news request opened after the
+-- item links to it; accepted text makes it `ai`; a fallback (refusal, expiry,
+-- cancel) makes it `fallback` with the sim's reason. Never silent.
+export pure func newsRequested(n: News, req: string) -> News = match n.aiRequestId { None => {n | aiRequestId: Some(req)}, Some(_) => n }
+export pure func newsAccepted(n: News, req: string) -> News = if n.aiRequestId == Some(req) && n.bodySource == "template" then {n | bodySource: "ai"} else n
+export pure func newsFellBack(n: News, req: string, why: string) -> News =
+  if n.aiRequestId == Some(req) && n.bodySource == "template" then {n | bodySource: "fallback", fallbackReason: Some(why)} else n

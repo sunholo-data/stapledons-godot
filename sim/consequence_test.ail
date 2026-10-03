@@ -1,0 +1,387 @@
+module stapledons/sim/consequence_test
+
+-- M4.1 step 1: the consequence stub (design m4-first-journey §M4.1).
+-- AC1 (round trip, stand-off, news epoch, gap), AC2 (tiers, seeded template),
+-- AC8 sim half (live ship.ism, drag_energy_j), record refusals with
+-- body_source / fallback_reason, the append-only legacy log, archive hint
+-- predicates and the protocol 2.2 section.
+import ./core (World, Params, Intent, IPlan, ICommit, IRecord, IAiOpen, Target, Event, Ticked, TickInput, Journey, Idle, Planned, Committed, Arrived,
+  defaultParams, newWorld, tick, position, ismNow, dragEnergyJ, cqView, CqView, withArchive, scriptedLeg, scriptedRoundTrip)
+import ./consequence (IsmNow, Cq, News, Entry, ArchiveRow, newsTier, tierName, templatesPerTier, standoffLy, standoffFor, clocks, hintHolds, knownHints)
+import ./ai (AiOpen, AiEvent, ERequest, EFallback, EAcceptedText)
+import ./rng (Rng)
+import ./protocol (Session, newSession, serve)
+import pkg/sunholo/relativity/optics (Vec3, norm)
+import pkg/sunholo/relativity/kinematics (standardGravity, rapidityOfBeta, rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/relativity/journey (planBurnCoastBurn, coastAt)
+import pkg/sunholo/relativity/medium (loadScale, mirrorDragForce, glowInwardFlux, cruiseDragEnergy)
+import std/option (Option, Some, None)
+import std/string (join, contains, intToStr, repeat)
+import std/list (map, foldl)
+import std/crypto (sha256Hex)
+import std/json (encode, js)
+
+pure func allTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+pure func near(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
+pure func relNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol * absf(b)
+
+-- ------------------------------------------------------------ fixtures
+pure func phi099() -> float = rapidityOfBeta(0.99)
+pure func accel() -> float = 750000.0 * standardGravity()
+pure func withStandoff(au: float) -> Params = {defaultParams() | standoffAu: au}
+pure func acenAt(d: float) -> Target = {index: 1, id: "alpha Cen", pos: {x: 0.0, y: 0.0, z: 0.0 - d}}
+pure func solT() -> Target = {index: 0, id: "Sol", pos: {x: 0.0, y: 0.0, z: 0.0}}
+pure func planI(t: Target, phi: float) -> Intent = IPlan({target: t, cruisePhi: phi, flipG: None})
+pure func run(w: World, dtau: float, xs: [Intent]) -> Ticked = tick(w, {dtau: dtau, intents: xs})
+pure func tauTotalOf(w: World) -> float =
+  match w.journey { Planned(p) => p.trip.tauTotal, Committed(c) => c.plan.trip.tauTotal, Arrived(c) => c.plan.trip.tauTotal, Idle => 0.0 }
+-- Plan, commit, and fly exactly tauTotal in one tick: zero dwell.
+pure func committedTo(w: World, t: Target, phi: float) -> World {
+  let planned = (run(w, 0.0, [planI(t, phi)])).world;
+  (run(planned, 0.0, [ICommit(planned.lastPlanId)])).world
+}
+pure func legTo(w: World, t: Target, phi: float) -> World = scriptedLeg(w, t, phi)
+pure func roundTrip(p: Params, d: float) -> World = legTo(legTo(newWorld(5, false, p), acenAt(d), phi099()), solT(), phi099())
+pure func isArrived(j: Journey) -> bool = match j { Arrived(_) => true, _ => false }
+pure func kinds(xs: [Entry]) -> [string] = match xs { [] => [], e :: r => e.kind :: kinds(r) }
+pure func newsOf(w: World) -> News = match w.cq.news { Some(n) => n, None => {tier: -1, templateId: -1, starId: "", elapsedYears: 0.0, newsEpoch: 0.0, newsAgeYears: 0.0, aiRequestId: None, bodySource: "none", fallbackReason: None} }
+
+-- ------------------------------------------------------------ AC1: round trip
+-- Earth 2 x planBurnCoastBurn(d - s, a, phi).trip.galaxyTime, ship 2 x .shipTime
+-- (1e-9), within 1e-4 of 2 x coastAt (tau_b <= 19 min), news epoch t - (d - s),
+-- gap_years = t - tau exactly.
+pure func checkRoundTrip(d: float) -> bool {
+  let s = standoffLy(1000.0);
+  let leg = planBurnCoastBurn(d - s, accel(), phi099());
+  let coast = coastAt(d - s, 0.99);
+  let w = roundTrip(withStandoff(1000.0), d);
+  let m = w.ship.motion;
+  isArrived(w.journey) && near(m.t, 2.0 * leg.trip.galaxyTime, 0.000000001) && near(m.tau, 2.0 * leg.trip.shipTime, 0.000000001) &&
+  near(m.t, 2.0 * coast.galaxyTime, 0.0001) && near(m.tau, 2.0 * coast.shipTime, 0.0001) &&
+  (cqView(w)).gapYears == m.t - m.tau
+}
+pure func checkRoundTripCanon() -> bool {
+  let w = roundTrip(withStandoff(1000.0), 4.37);
+  near(w.ship.motion.t, 8.796343, 0.000001) && near(w.ship.motion.tau, 1.240885, 0.000001) && near(standoffLy(1000.0), 0.0158125, 0.0000001)
+}
+-- The catalogue distance after D-19 (4.32 ly): expectations from the package.
+pure func checkRoundTripCatalogue() -> bool = checkRoundTrip(4.32) && checkRoundTrip(4.37)
+
+pure func checkNewsEpoch() -> bool {
+  let s = standoffLy(1000.0);
+  let out = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  let leg = planBurnCoastBurn(4.37 - s, accel(), phi099());
+  let v = cqView(out);
+  near(v.newsEpoch, out.ship.motion.t - (4.37 - s), 0.000000001) && near(v.newsEpoch, 0.043984, 0.000001) &&
+  near(v.newsAgeYears, 4.37 - s, 0.000000001) && near(out.ship.motion.t, leg.trip.galaxyTime, 0.000000001) &&
+  near(clocks(10.0, 4.0, {x: 3.0, y: 4.0, z: 0.0}).newsEpoch, 5.0, 0.000000001) && clocks(10.0, 4.0, {x: 0.0, y: 0.0, z: 0.0}).gapYears == 6.0
+}
+-- D-12: at rest the clock runs at the host rate, tau and t together; the gap never changes.
+pure func restTicks(w: World, n: int) -> World = if n <= 0 then w else restTicks((run(w, 0.25, [])).world, n - 1)
+pure func checkClockAtRest() -> bool {
+  let w0 = newWorld(5, false, defaultParams());
+  let w = restTicks(w0, 8);
+  let docked = restTicks(legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099()), 8);
+  let g = (cqView(docked)).gapYears;
+  w.ship.motion.t == w.ship.motion.tau && w.ship.motion.t == 2.0 && (cqView(w)).gapYears == 0.0 &&
+  (cqView(restTicks(legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099()), 1))).gapYears == g
+}
+-- Dwell adds equally to tau and t.
+pure func checkDwell() -> bool {
+  let a = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  let b = restTicks(a, 4);
+  near(b.ship.motion.t - a.ship.motion.t, 1.0, 0.000000000001) && near(b.ship.motion.tau - a.ship.motion.tau, 1.0, 0.000000000001) && (cqView(b)).gapYears == b.ship.motion.t - b.ship.motion.tau
+}
+
+-- Tracking off (a session below minor 2): the M2 world, no news draw, no log.
+pure func checkTrackingOff() -> bool {
+  let w0 = newWorld(5, false, withStandoff(1000.0));
+  let off = {w0 | cq: {w0.cq | on: false}};
+  let out = legTo(off, acenAt(4.37), phi099());
+  let on = legTo(w0, acenAt(4.37), phi099());
+  out.rng.news == 0 && (match out.cq.news { None => true, Some(_) => false }) && kinds(out.cq.log) == [] && out.cq.unlocked == [] && on.rng.news == 1 && out.ship.motion.t == on.ship.motion.t
+}
+
+-- ------------------------------------------------------------ stand-off
+pure func planDistance(w: World) -> float = match w.journey { Planned(p) => p.trip.trip.distance, _ => -1.0 }
+pure func checkStandoff() -> bool {
+  let s = standoffLy(1000.0);
+  let on = (run(newWorld(5, false, withStandoff(1000.0)), 0.0, [planI(acenAt(4.37), phi099())])).world;
+  let off = (run(newWorld(5, false, defaultParams()), 0.0, [planI(acenAt(4.37), phi099())])).world;
+  let home = (run(legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099()), 0.0, [planI(solT(), phi099())])).world;
+  let hd = match home.journey { Planned(p) => p.heading.z, _ => 0.0 };
+  let od = match on.journey { Planned(p) => p.heading.z, _ => 0.0 };
+  let landed = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  near(planDistance(on), 4.37 - s, 0.000000000001) && planDistance(off) == 4.37 && od == -1.0 && hd == 1.0 &&
+  near(planDistance(home), 4.37 - s, 0.000000000001) &&
+  near((position(landed.ship)).z, 0.0 - (4.37 - s), 0.000000000001) && standoffFor(1000.0, 0) == 0.0 && standoffFor(1000.0, 3) == s && standoffFor(0.0, 3) == 0.0
+}
+-- A star nearer than the stand-off cannot be planned to.
+pure func checkStandoffTooNear() -> bool {
+  let t = run(newWorld(5, false, withStandoff(1000.0)), 0.0, [planI(acenAt(0.0158), phi099())]);
+  refusal(t) == "out_of_range" && planDistance(t.world) < 0.0
+}
+
+-- ------------------------------------------------------------ AC2: tiers and template
+pure func checkTiers() -> bool =
+  newsTier(0.043984) == 0 && newsTier(0.9999) == 0 && newsTier(1.0) == 1 && newsTier(4.99) == 1 && newsTier(5.0) == 2 && newsTier(8.796343) == 2 &&
+  newsTier(14.99) == 2 && newsTier(15.0) == 3 && newsTier(49.9) == 3 && newsTier(50.0) == 4 && newsTier(1000000.0) == 4 &&
+  tierName(0) == "<1" && tierName(1) == "1-5" && tierName(2) == "5-15" && tierName(3) == "15-50" && tierName(4) == ">=50"
+-- alpha Cen is tier 0, the return is tier 2; the news draw advances only the news stream.
+pure func checkNewsTiers() -> bool {
+  let out = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  let back = legTo(out, solT(), phi099());
+  let a = newsOf(out);
+  let r = newsOf(back);
+  a.tier == 0 && r.tier == 2 && a.starId == "alpha Cen" && r.starId == "Sol" && out.rng.news == 1 && back.rng.news == 2 &&
+  out.rng.journey == 0 && out.rng.ai == 0 && a.templateId >= 0 && a.templateId < templatesPerTier() * 5 && a.templateId / templatesPerTier() == 0 &&
+  r.templateId / templatesPerTier() == 2 && near(r.elapsedYears, back.ship.motion.t, 0.000000001)
+}
+-- The same seed and inputs give the same template; across seeds the choice varies.
+pure func templateFor(seed: int) -> int = (newsOf(legTo(newWorld(seed, false, withStandoff(1000.0)), acenAt(4.37), phi099()))).templateId
+pure func distinct(xs: [int]) -> int = match xs { [] => 0, x :: r => (if inList(x, r) then 0 else 1) + distinct(r) }
+pure func inList(x: int, xs: [int]) -> bool = match xs { [] => false, y :: r => x == y || inList(x, r) }
+pure func checkTemplateSeeded() -> bool =
+  templateFor(5) == templateFor(5) && templateFor(11) == templateFor(11) && distinct(map(\s. templateFor(s), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])) >= 3
+
+-- ------------------------------------------------------------ AC8 (sim half): live ship.ism
+pure func nM3() -> float = 100000.0
+pure func midCruise() -> World {
+  let c = committedTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  match c.journey { Committed(k) => (run(c, k.plan.trip.tauBurn + 0.1, [])).world, _ => c }
+}
+pure func checkIsmCruise() -> bool {
+  let w = midCruise();
+  let i = ismNow(w);
+  relNear(i.loadWM2, 221961.0, 0.001) && relNear(i.dragN, 23.2598, 0.001) && relNear(i.glowWM2, 0.0000240719, 0.001) &&
+  relNear(i.loadWM2, loadScale(nM3(), phi099()), 0.001) && relNear(i.dragN, mirrorDragForce(nM3(), phi099(), 100.0), 0.001) &&
+  relNear(i.glowWM2, glowInwardFlux(nM3(), phi099(), 0.000000001, 0.5), 0.001)
+}
+-- Boost ramps up, the brake relaxes it; zero at rest.
+pure func checkIsmRelaxes() -> bool {
+  let c = committedTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  match c.journey {
+    Committed(k) => {
+      let tp = k.plan.trip;
+      let boosting = (run(c, tp.tauBurn * 0.5, [])).world;
+      let cruising = (run(boosting, tp.tauBurn * 0.5 + 0.1, [])).world;
+      let braking = (run(cruising, tp.tauCoast - 0.1 + tp.tauBurn * 0.5, [])).world;
+      let landed = (run(braking, tp.tauBurn, [])).world;
+      let a = ismNow(boosting); let b = ismNow(cruising); let d = ismNow(braking); let z = ismNow(landed);
+      a.loadWM2 > 0.0 && a.loadWM2 < b.loadWM2 && d.loadWM2 > 0.0 && d.loadWM2 < b.loadWM2 && a.dragN < b.dragN && d.glowWM2 < b.glowWM2 &&
+      isArrived(landed.journey) && z.loadWM2 == 0.0 && z.dragN == 0.0 && z.glowWM2 == 0.0 && (ismNow(newWorld(5, false, defaultParams()))).loadWM2 == 0.0
+    },
+    _ => false
+  }
+}
+-- drag_energy_j: the ledger's drag_j since commit, = cruiseDragEnergy (1e-9), 1.36530e17 (1e-3).
+pure func checkDragEnergy() -> bool {
+  let c = committedTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  match c.journey {
+    Committed(k) => {
+      let tp = k.plan.trip;
+      let landed = (run(c, tp.tauTotal, [])).world;
+      let want = cruiseDragEnergy(nM3(), tp.phiPeak, 100.0, tp.dCoast);
+      dragEnergyJ(c) == 0.0 && relNear(dragEnergyJ(landed), want, 0.000000001) && relNear(dragEnergyJ(landed), 136530000000000000.0, 0.001)
+    },
+    _ => false
+  }
+}
+-- Since the commit of this leg only: the return leg restarts the window.
+pure func checkDragWindow() -> bool {
+  let out = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  let one = dragEnergyJ(out);
+  let c2 = committedTo(out, solT(), phi099());
+  let back = legTo(out, solT(), phi099());
+  one > 0.0 && dragEnergyJ(c2) == 0.0 && relNear(dragEnergyJ(back), one, 0.000000001)
+}
+
+-- ------------------------------------------------------------ record refusals and body_source
+pure func newsOpen() -> Intent = IAiOpen({kind: "text", purpose: "news", entityId: "newswire", emotion: None, ageStage: None, lineReq: None, emotions: None, context: []})
+pure func textRec(req: string, body: string) -> Intent = IRecord({source: "ai", req: req, kind: "text", sha256: sha256Hex(body), body: body})
+pure func arrivedWithRequest() -> World = (run(legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099()), 0.0, [newsOpen()])).world
+pure func fallbackReason(t: Ticked) -> string =
+  match t.events { [] => "", e :: r => match e.ai { Some(EFallback(x)) => x.reason, _ => fallbackReason({world: t.world, refused: t.refused, events: r}) } }
+pure func refusal(t: Ticked) -> string = match t.refused { [] => "", r :: _ => r.reason }
+pure func recordOutcome(body: string, reason: string) -> bool {
+  let w = arrivedWithRequest();
+  let n0 = newsOf(w);
+  let t = run(w, 0.0, [textRec("1", body)]);
+  let n = newsOf(t.world);
+  n0.bodySource == "template" && n0.aiRequestId == Some("1") && n0.fallbackReason == None &&
+  n.bodySource == "fallback" && n.fallbackReason == Some(reason) && refusal(t) == reason && fallbackReason(t) == reason
+}
+pure func checkRecordRefusals() -> bool =
+  recordOutcome("Year 2041 came and went.", "ai_numeral") && recordOutcome(repeat("a", 281), "ai_length")
+pure func checkRecordAccepted() -> bool {
+  let t = run(arrivedWithRequest(), 0.0, [textRec("1", "The world turned on without you.")]);
+  let n = newsOf(t.world);
+  n.bodySource == "ai" && n.fallbackReason == None && refusal(t) == "" && (newsOf(arrivedWithRequest())).bodySource == "template"
+}
+-- Another request's outcome never touches the news item (a crew line accepted, a crew line cancelled).
+pure func lineOpen() -> Intent = IAiOpen({kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: []})
+pure func checkRecordOtherRequest() -> bool {
+  let w = (run(legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099()), 0.0, [newsOpen(), lineOpen(), lineOpen()])).world;
+  let ok = run(w, 0.0, [textRec("2", "Hello there.")]);
+  let bad = run(ok.world, 0.0, [textRec("3", "Year 2041")]);
+  (newsOf(w)).aiRequestId == Some("1") && (newsOf(ok.world)).bodySource == "template" && (newsOf(bad.world)).bodySource == "template" && fallbackReason(bad) == "ai_numeral" &&
+  (newsOf(bad.world)).fallbackReason == None
+}
+-- No open request: refused, nothing closes, the item stays a template.
+pure func checkRecordNoRequest() -> bool {
+  let w = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  let t = run(w, 0.0, [textRec("9", "Hello")]);
+  let n = newsOf(t.world);
+  refusal(t) == "ai_unknown_req" && fallbackReason(t) == "" && n.bodySource == "template" && n.aiRequestId == None
+}
+-- A request that expires closes the item as a fallback, never silently.
+pure func checkRecordExpired() -> bool {
+  let p = {withStandoff(1000.0) | aiTtlTicks: 2};
+  let w = (run(legTo(newWorld(5, false, p), acenAt(4.37), phi099()), 0.0, [newsOpen()])).world;
+  let t1 = run(w, 0.0, []);
+  let t2 = run(t1.world, 0.0, []);
+  (newsOf(t1.world)).bodySource == "template" && fallbackReason(t2) == "expired" && (newsOf(t2.world)).bodySource == "fallback" && (newsOf(t2.world)).fallbackReason == Some("expired")
+}
+
+-- ------------------------------------------------------------ legacy log
+pure func isPrefix(a: [string], b: [string]) -> bool = match a { [] => true, x :: r => (match b { [] => false, y :: s => x == y && isPrefix(r, s) }) }
+-- Append-only across many small ticks, replans and cancels; entries carry gap_years = t - tau.
+pure func flyMany(w: World, n: int, acc: [[string]]) -> [[string]] =
+  if n <= 0 then acc else { let nx = (run(w, 0.05, [])).world; flyMany(nx, n - 1, acc ++ [kinds(nx.cq.log)]) }
+pure func prefixChain(xs: [[string]]) -> bool = match xs { [] => true, a :: r => (match r { [] => true, b :: _ => isPrefix(a, b) && prefixChain(r) }) }
+pure func checkLegacyAppendOnly() -> bool {
+  let c = committedTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  let chain = flyMany(c, 40, [kinds(c.cq.log)]);
+  let w = (run(c, 0.0, [planI(solT(), phi099())])).world;
+  prefixChain(chain) && isPrefix(kinds(c.cq.log), kinds(w.cq.log)) && kinds(c.cq.log) == ["commit"]
+}
+pure func checkLegacyKinds() -> bool {
+  let out = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  let back = legTo(out, solT(), phi099());
+  let leg = ["commit", "departure", "boost", "cruise", "brake", "arrival", "news"];
+  kinds(out.cq.log) == leg && kinds(back.cq.log) == leg ++ leg ++ ["return"] && allTrue(map(\e. e.gapYears == e.t - e.tau, back.cq.log))
+}
+
+-- ------------------------------------------------------------ archive hints
+pure func rows() -> [ArchiveRow] = [{id: "a1", unlock: "always"}, {id: "a2", unlock: "first_commit"}, {id: "a3", unlock: "first_boost"}, {id: "a4", unlock: "cruise_above_0.9c"},
+  {id: "a5", unlock: "cruise_above_gamma_275"}, {id: "a6", unlock: "first_black_hole"}, {id: "a7", unlock: "always"}]
+pure func archived() -> World = withArchive(newWorld(5, false, withStandoff(1000.0)), rows())
+pure func checkArchive() -> bool {
+  let t0 = run(archived(), 0.0, []);
+  let c = committedTo(t0.world, acenAt(4.37), phi099());
+  match c.journey {
+    Committed(k) => {
+      let tp = k.plan.trip;
+      let boosted = (run(c, tp.tauBurn * 0.5, [])).world;
+      let cruising = (run(boosted, tp.tauBurn * 0.5 + 0.1, [])).world;
+      let landed = (run(cruising, tp.tauTotal, [])).world;
+      let back = legTo(landed, solT(), phi099());
+      t0.world.cq.unlocked == ["a1", "a7"] && (run(committedTo(t0.world, acenAt(4.37), phi099()), 0.0, [])).world.cq.unlocked == ["a1", "a7", "a2"] &&
+      boosted.cq.unlocked == ["a1", "a7", "a2", "a3"] && cruising.cq.unlocked == ["a1", "a7", "a2", "a3", "a4"] && back.cq.unlocked == ["a1", "a7", "a2", "a3", "a4"] &&
+      countKind(back.cq.log, "archive_unlock") == 5
+    },
+    _ => false
+  }
+}
+pure func countKind(xs: [Entry], k: string) -> int = match xs { [] => 0, e :: r => (if e.kind == k then 1 else 0) + countKind(r, k) }
+-- gamma 275: a cruise at 1 - beta = 5e-6 (gamma 316) unlocks a5; a6 (no black holes before M3) never does.
+pure func checkArchiveGamma() -> bool {
+  let c = committedTo(archived(), acenAt(4.37), rapidityOfOneMinusBeta(0.000005));
+  match c.journey {
+    Committed(k) => {
+      let cruising = (run(c, k.plan.trip.tauBurn + 0.005, [])).world;
+      let landed = (run(cruising, k.plan.trip.tauTotal, [])).world;
+      inList2("a5", cruising.cq.unlocked) && !inList2("a6", landed.cq.unlocked)
+    },
+    _ => false
+  }
+}
+pure func inList2(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || inList2(x, r) }
+pure func checkHints() -> bool =
+  hintHolds("always", [], false, 0.0, 1.0) && !hintHolds("first_commit", [], false, 0.0, 1.0) && hintHolds("cruise_above_0.9c", [], true, 0.91, 2.4) &&
+  !hintHolds("cruise_above_0.9c", [], true, 0.9, 2.3) && !hintHolds("cruise_above_0.9c", [], false, 0.99, 7.0) && hintHolds("cruise_above_gamma_275", [], true, 0.99999, 300.0) &&
+  !hintHolds("first_black_hole", [], true, 0.99, 300.0) && !hintHolds("no_such_hint", [], true, 0.99, 300.0) && countHints(knownHints()) == 6
+pure func countHints(xs: [string]) -> int = match xs { [] => 0, _ :: r => 1 + countHints(r) }
+
+-- ------------------------------------------------------------ protocol 2.2
+pure func tickLine(t: int, dtau: string, intents: string) -> string =
+  join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":", dtau, ",\"intents\":[", intents, "]}"])
+pure func hello(minor: int) -> string = join("", ["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", intToStr(minor), "}}"])
+pure func newGame(extra: string) -> string = join("", ["{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":false", extra, "}"])
+pure func feed(s: Session, lines: [string]) -> Session = foldl(\acc line. serve(acc, line).session, s, lines)
+pure func reply(s: Session, line: string) -> string = serve(s, line).reply
+pure func acenLine() -> string = "{\"k\":\"plan\",\"target\":{\"index\":1,\"id\":\"alpha Cen\",\"pos\":{\"x\":0,\"y\":0,\"z\":-4.37}},\"cruise_phi\":2.6466524123622457}"
+pure func archiveField() -> string = ",\"archive\":[{\"id\":\"two-clocks\",\"unlock\":\"always\"},{\"id\":\"one-g\",\"unlock\":\"first_boost\"}]"
+pure func checkWire22() -> bool {
+  let s2 = feed(newSession(), [hello(2)]);
+  let g2 = reply(s2, newGame(join("", [",\"params\":{\"standoff_au\":1000}", archiveField()])));
+  let g1 = reply(feed(newSession(), [hello(1)]), newGame(""));
+  let g0 = reply(feed(newSession(), [hello(0)]), newGame(""));
+  let h2 = reply(newSession(), hello(2));
+  let h1 = reply(newSession(), hello(1));
+  let t2 = reply(feed(s2, [newGame(",\"params\":{\"standoff_au\":1000}")]), tickLine(1, "0", acenLine()));
+  -- a commit changes the consequence section (legacy log): minor 2 sends it, minor 1 never does
+  let commit = tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}");
+  let c1 = reply(feed(newSession(), [hello(1), newGame(",\"params\":{\"standoff_au\":1000}"), tickLine(1, "0", acenLine())]), commit);
+  let c2 = reply(feed(s2, [newGame(",\"params\":{\"standoff_au\":1000}"), tickLine(1, "0", acenLine())]), commit);
+  contains(h2, "\"minor\":2") && contains(h1, "\"minor\":1") && contains(reply(newSession(), hello(0)), "\"minor\":1") &&
+  contains(g2, "\"consequence\":{") && contains(g2, "\"gap_years\":0") && contains(g2, "\"unlocked\":[\"two-clocks\"]") && contains(g2, "\"standoff_ly\":0.0158125") &&
+  contains(g2, "\"ism\":{\"load_w_m2\":0,\"drag_n\":0,\"glow_w_m2\":0,\"drag_energy_j\":0}") &&
+  !contains(g1, "consequence") && !contains(g1, "\"ism\"") && !contains(g0, "consequence") && !contains(g0, "standoff") &&
+  !contains(t2, "drag_energy_j") && !contains(t2, "consequence") &&
+  !contains(c1, "consequence") && !contains(c1, "drag_energy_j") && contains(c2, "\"kind\":\"commit\"") && contains(c2, "\"consequence\":{") && contains(t2, "\"distance\":4.354187")
+}
+-- A bad archive row or out-of-range stand-off is a new_game error and changes nothing.
+pure func checkWireBad() -> bool {
+  let s = feed(newSession(), [hello(2)]);
+  contains(reply(s, newGame(",\"params\":{\"standoff_au\":-1}")), "bad_params") && contains(reply(s, newGame(",\"archive\":[{\"id\":\"x\"}]")), "bad_game") &&
+  contains(reply(s, newGame(",\"archive\":[{\"id\":\"x\",\"unlock\":\"nope\"}]")), "bad_game")
+}
+
+-- ------------------------------------------------------------ strict VM
+-- scriptedRoundTrip(which): 0 Earth years, 1 ship years, 2 news epoch at alpha Cen, 3 gap at the end,
+-- 4 tier at alpha Cen, 5 tier at the return, 6 stand-off in ly. Makefile `strict` compares with a python closed form.
+pure func checkScripted() -> bool {
+  let w = roundTrip(withStandoff(1000.0), 4.37);
+  scriptedRoundTrip(0) == w.ship.motion.t && scriptedRoundTrip(1) == w.ship.motion.tau && scriptedRoundTrip(4) == 0.0 && scriptedRoundTrip(5) == 2.0 &&
+  near(scriptedRoundTrip(2), 0.043984, 0.000001) && scriptedRoundTrip(6) == standoffLy(1000.0)
+}
+
+test "AC1 round trip: Earth/ship = 2 x planBurnCoastBurn(d - s), within 1e-4 of 2 x coastAt, gap = t - tau" { checkRoundTrip(4.37) }
+test "AC1 round trip at the verified 4.37 ly check values (8.796343 / 1.240885)" { checkRoundTripCanon() }
+test "AC1 round trip at the catalogue 4.32 ly, expected values from the package" { checkRoundTripCatalogue() }
+test "AC1 news epoch at alpha Cen = t - (d - s), 0.043984" { checkNewsEpoch() }
+test "AC1 D-12 the clock runs at rest at the host rate, the gap does not change" { checkClockAtRest() }
+test "AC1 dwell adds equally to tau and t" { checkDwell() }
+test "tracking off below minor 2: no news draw, no log, same flight" { checkTrackingOff() }
+test "stand-off: plan distance = d - 1000 AU on the same heading; Sol and 0 AU unchanged" { checkStandoff() }
+test "stand-off: a star inside it is out_of_range" { checkStandoffTooNear() }
+test "AC2 five news tiers at their boundaries" { checkTiers() }
+test "AC2 alpha Cen tier <1, return tier 5-15, news stream only" { checkNewsTiers() }
+test "AC2 template choice seeded and replayable" { checkTemplateSeeded() }
+test "AC8 live ship.ism at 0.99c equals the package and the check values" { checkIsmCruise() }
+test "AC8 ship.ism ramps in the boost, relaxes through the brake, zero at rest" { checkIsmRelaxes() }
+test "AC8 drag_energy_j = ledger drag_j since commit = cruiseDragEnergy, 1.36530e17" { checkDragEnergy() }
+test "AC8 drag_energy_j window restarts at each commit" { checkDragWindow() }
+test "record refusals: digits ai_numeral, over 280 ai_length; body_source fallback + reason" { checkRecordRefusals() }
+test "record accepted: body_source ai" { checkRecordAccepted() }
+test "another request's outcome never touches the news item" { checkRecordOtherRequest() }
+test "record with no open request is refused ai_unknown_req, item stays template" { checkRecordNoRequest() }
+test "expired news request closes the item as a fallback with reason expired" { checkRecordExpired() }
+test "legacy log is append-only across ticks, replans and cancels" { checkLegacyAppendOnly() }
+test "legacy log kinds in order for a round trip, gap_years = t - tau" { checkLegacyKinds() }
+test "archive hints fire once, in table order, as their predicates hold" { checkArchive() }
+test "cruise_above_gamma_275 fires at gamma 316; first_black_hole never" { checkArchiveGamma() }
+test "hint predicates and the six-hint vocabulary" { checkHints() }
+test "protocol 2.2: consequence section and ship.ism only for minor 2; 2.0/2.1 streams unchanged" { checkWire22() }
+test "protocol 2.2: bad stand-off and archive rows are bad_params / bad_game" { checkWireBad() }
+test "strict entry scriptedRoundTrip agrees with the world" { checkScripted() }
+
+export pure func consequenceVm(n: int) -> string =
+  if checkRoundTrip(4.37) && checkRoundTripCanon() && checkRoundTripCatalogue() && checkNewsEpoch() && checkClockAtRest() && checkDwell() && checkTrackingOff() && checkStandoff() && checkStandoffTooNear() &&
+    checkTiers() && checkNewsTiers() && checkTemplateSeeded() && checkIsmCruise() && checkIsmRelaxes() && checkDragEnergy() && checkDragWindow() &&
+    checkRecordRefusals() && checkRecordAccepted() && checkRecordOtherRequest() && checkRecordNoRequest() && checkRecordExpired() && checkLegacyAppendOnly() && checkLegacyKinds() &&
+    checkArchive() && checkArchiveGamma() && checkHints() && checkWire22() && checkWireBad() && checkScripted()
+  then "consequence-ok" else "consequence-BAD"
+

@@ -18,7 +18,9 @@ import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, Refusal, Event, Crossing, Residuals, Params, defaultParams,
-  Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault)
+  Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
+  CqView, cqView, ismNow, dragEnergyJ, withArchive)
+import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
   AiView, OpenView, aiView, isCancelReason, isSha256Hex, defaultAiMaxOpen, defaultAiTtlTicks)
@@ -43,6 +45,9 @@ export type StateMsg = { tick: int, status: string, clock: Option[Clock], ship: 
 export type HelloMsg = { major: int, minor: int, sim: string, relativity: string, rng: string }
 
 export pure func helloMsg() -> HelloMsg = { major: 2, minor: 1, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
+-- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
+-- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
+export pure func helloFor(want: int) -> HelloMsg = if want >= 2 then {helloMsg() | minor: 2} else helloMsg()
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -155,14 +160,37 @@ pure func encodeRng(r: Rng) -> string =
   obj([f("journey", intToStr(r.journey)), f("crew", intToStr(r.crew)), f("events", intToStr(r.events)), f("galaxy", intToStr(r.galaxy)), f("ai", intToStr(r.ai)), f("news", intToStr(r.news))])
 pure func encodeLedger(l: LedgerView) -> string =
   obj([f("m_eff_kg", num(l.mEffKg)), f("available_kg", num(l.availableKg)), f("radiated_j", num(l.radiatedJ)), f("boost_j", num(l.boostJ)), f("drag_j", num(l.dragJ))])
-export pure func encodeState(m: StateMsg) -> string =
+-- 2.2: `ship` already encoded with its `ism` (the override), and the members appended to `changes`.
+export type Extras = { ship: Option[string], tail: [string] }
+pure func noExtras() -> Extras = { ship: None, tail: [] }
+export pure func encodeState(m: StateMsg) -> string = encodeStateX(m, noExtras())
+export pure func encodeStateX(m: StateMsg, x: Extras) -> string =
   envelope("state", [f("tick", intToStr(m.tick)), f("status", q(m.status)),
-    f("changes", obj(opt("clock", encodeClock, m.clock) ++ opt("ship", encodeShip, m.ship) ++ opt("journey", encodeJourney, m.journey) ++ opt("ledger", encodeLedger, m.ledger) ++ opt("rng", encodeRng, m.rng) ++ opt("params", paramsEcho, m.params) ++ opt("ai", encodeAiView, m.ai))),
+    f("changes", obj(opt("clock", encodeClock, m.clock) ++ (match x.ship { Some(sh) => [f("ship", sh)], None => opt("ship", encodeShip, m.ship) }) ++ opt("journey", encodeJourney, m.journey) ++ opt("ledger", encodeLedger, m.ledger) ++ opt("rng", encodeRng, m.rng) ++ opt("params", paramsEcho, m.params) ++ opt("ai", encodeAiView, m.ai) ++ x.tail)),
     f("events", arr(each(encodeEvent, m.events))),
     f("refused", arr(each(\r. obj([f("i", intToStr(r.i)), f("reason", q(r.reason))]), m.refused))),
     f("full", bool(m.full))])
 export pure func encodeHello(h: HelloMsg) -> string =
   envelope("hello", [f("proto", obj([f("major", intToStr(h.major)), f("minor", intToStr(h.minor))])), f("sim", q(h.sim)), f("relativity", q(h.relativity)), f("rng", q(h.rng))])
+
+-- 2.2 consequence section: whole when anything in it changed; the legacy log carries
+-- only the entries appended since `from` (append-only, never rewritten), with the running count.
+pure func newsObj(n: News) -> string =
+  obj([f("tier", intToStr(n.tier)), f("tier_name", q(tierName(n.tier))), f("template_id", intToStr(n.templateId)), f("star_id", q(n.starId)),
+    f("slots", obj([f("elapsed_years", num(n.elapsedYears)), f("news_epoch", num(n.newsEpoch)), f("news_age_years", num(n.newsAgeYears))]))] ++
+    opt("ai_request_id", q, n.aiRequestId) ++ [f("body_source", q(n.bodySource))] ++ opt("fallback_reason", q, n.fallbackReason))
+pure func entryObj(e: Entry) -> string =
+  obj([f("tick", intToStr(e.tick)), f("kind", q(e.kind)), f("star_id", q(e.starId)), f("tau", num(e.tau)), f("t", num(e.t)), f("gap_years", num(e.gapYears))])
+pure func dropN(xs: [a], n: int) -> [a] = if n <= 0 then xs else match xs { [] => [], _ :: r => dropN(r, n - 1) }
+pure func countOf(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + countOf(r) }
+export pure func encodeCq(v: CqView, from: int) -> string =
+  obj([f("gap_years", num(v.gapYears)), f("news_epoch", num(v.newsEpoch)), f("news_age_years", num(v.newsAgeYears)), f("progress", num(v.progress)),
+    f("standoff_ly", num(v.standoffLy))] ++ opt("news", newsObj, v.cq.news) ++
+    [f("archive", obj([f("unlocked", strArr(v.cq.unlocked))])), f("legacy", obj([f("count", intToStr(countOf(v.cq.log))), f("appended", arr(each(entryObj, dropN(v.cq.log, from))))]))])
+pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string {
+  let base = encodeShip(s);
+  concat([substring(base, 0, length(base) - 1), ",", f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("drag_energy_j", num(dragEnergy))])), "}"])
+}
 
 -- ------------------------------------------------------------ reading
 pure func bind(r: Result[a, string], g: a -> Result[b, string]) -> Result[b, string] = match r { Ok(x) => g(x), Err(c) => Err(c) }
@@ -231,6 +259,7 @@ pure func inRange(n: string, v: float) -> bool =
   else if n == "ism_n_cm3" then v >= 0.0 && v <= 1000000.0
   else if n == "bubble_radius_m" then v > 0.0 && v <= 1000000.0
   else if n == "glow_eps" || n == "glow_f_in" then v >= 0.0 && v <= 1.0
+  else if n == "standoff_au" then v >= 0.0 && v <= 1000000.0
   else if n == "cruise_min_beta" || n == "cap_one_minus_beta" then v > 0.0 && v < 1.0
   else if n == "ai_max_open" then v >= 1.0 && v <= 64.0 && floor(v) == v
   else if n == "ai_ttl_ticks" then v >= 1.0 && v <= 1000000.0 && floor(v) == v
@@ -247,6 +276,7 @@ pure func applyOverride(p: Params, o: Override) -> Params =
   else if o.name == "ism_n_cm3" then {p | ismNCm3: o.value} else if o.name == "bubble_radius_m" then {p | bubbleRadiusM: o.value}
   else if o.name == "glow_eps" then {p | glowEps: o.value} else if o.name == "glow_f_in" then {p | glowFIn: o.value}
   else if o.name == "cruise_min_beta" then {p | cruiseMinBeta: o.value}
+  else if o.name == "standoff_au" then {p | standoffAu: o.value}
   else if o.name == "ai_max_open" then {p | aiMaxOpen: floatToInt(o.value)} else if o.name == "ai_ttl_ticks" then {p | aiTtlTicks: floatToInt(o.value)}
   else {p | capOneMinusBeta: o.value}
 pure func applyAll(p: Params, os: [Override]) -> Params = match os { [] => p, o :: r => applyAll(applyOverride(p, o), r) }
@@ -268,6 +298,16 @@ pure func inputOf(t: string, j: Json) -> Result[Input, string] =
       Ok(GInput({tick: tk, dtau: dtau, intents: is})))))))
     else if t == "quit" then Ok(GQuit)
     else Err("bad_cmd")
+
+-- 2.2: new_game may carry the codex table `archive: [{id, unlock}]`; an unknown hint is bad_game.
+@allow_empty_ok("absent archive means an empty codex table")
+pure func archiveRows(line: string) -> Result[[ArchiveRow], string] =
+  match decode(line) {
+    Ok(j) => if !has(j, "archive") then Ok([]) else bind(req(getArray(j, "archive"), "bad_game"), \xs. all(archiveRow, xs)),
+    Err(_) => Err("bad_game")
+  }
+pure func archiveRow(r: Json) -> Result[ArchiveRow, string] =
+  bind(req(getString(r, "id"), "bad_game"), \id. bind(req(getString(r, "unlock"), "bad_game"), \u. check(isHint(u) && length(id) >= 1 && length(id) <= 64, {id: id, unlock: u}, "bad_game")))
 
 pure func bad() -> string = "bad_state"
 pure func optF(j: Json, k: string, g: Json -> Result[a, string]) -> Result[Option[a], string] =
@@ -310,7 +350,7 @@ pure func decodeFullParams(j: Json) -> Result[Params, string] =
   bind(n(j, "epoch"), \e. bind(n(j, "start_age"), \sa. bind(n(j, "boost_g"), \bg. bind(n(j, "m_eff_kg"), \m. bind(n(j, "ism_n_cm3"), \ism.
   bind(n(j, "bubble_radius_m"), \r. bind(n(j, "glow_eps"), \ge. bind(n(j, "glow_f_in"), \gf. bind(n(j, "cruise_min_beta"), \cb. bind(n(j, "cap_one_minus_beta"), \cap.
   bind(natOr(j, "ai_max_open", defaultAiMaxOpen()), \mo. bind(natOr(j, "ai_ttl_ticks", defaultAiTtlTicks()), \tt.
-  Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap, aiMaxOpen: mo, aiTtlTicks: tt})))))))))))))
+  Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap, aiMaxOpen: mo, aiTtlTicks: tt, standoffAu: 0.0})))))))))))))
 -- The AI params are echoed since 2.1 (AI.3); a 2.0 echo lacks them and reads as the defaults.
 pure func natOr(j: Json, k: string, d: int) -> Result[int, string] = if has(j, k) then req(natF(j, k), bad()) else Ok(d)
 pure func decodeCrossing(e: Json) -> Result[Crossing, string] =
@@ -375,10 +415,11 @@ export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
 -- Malformed lines
 -- (including a new_game that fails scenario validation) change nothing;
 -- refused intents are listed and the tick proceeds.
-export type Session = { hello: bool, game: Option[World] }
+-- minor: the negotiated protocol minor (2 turns on the consequence section and ship.ism).
+export type Session = { hello: bool, minor: int, game: Option[World] }
 export type Served = { session: Session, reply: string }
 
-export pure func newSession() -> Session = { hello: false, game: None }
+export pure func newSession() -> Session = { hello: false, minor: 0, game: None }
 pure func clockOf(p: Params, s: Ship) -> Clock = { tau: s.motion.tau, t: s.motion.t, year: p.epoch + s.motion.t, age: p.startAge + s.motion.tau }
 pure func shipOf(s: Ship) -> ShipView {
   let phi = s.motion.phi;
@@ -390,21 +431,37 @@ pure func malformed(s: Session, c: string) -> Served =
   { session: s, reply: encodeState({tick: tickOf(s), status: c, clock: None, ship: None, journey: None, ledger: None, rng: None, params: None, ai: None, events: [], refused: [], full: false}) }
 pure func changed(enc: a -> string, before: a, after: a) -> Option[a] = if enc(before) == enc(after) then None else Some(after)
 
+pure func shipSection(w: World) -> string = shipWithIsm(shipOf(w.ship), ismNow(w), dragEnergyJ(w))
+-- 2.2 members for a tick: ship (with ism) and consequence, each only when changed.
+pure func cqExtras(before: World, after: World) -> Extras {
+  let n0 = countOf(before.cq.log);
+  let sb = shipSection(before);
+  let sa = shipSection(after);
+  { ship: if sb == sa then None else Some(sa),
+    tail: if encodeCq(cqView(before), n0) == encodeCq(cqView(after), n0) then [] else [f("consequence", encodeCq(cqView(after), n0))] }
+}
+
 export pure func serve(s: Session, line: string) -> Served =
   match decodeInput(line) {
     Err(c) => malformed(s, c),
     Ok(m) => match m {
-      GHello(_) => { session: {s | hello: true}, reply: encodeHello(helloMsg()) },
+      GHello(h) => { session: {s | hello: true, minor: if h.minor >= 2 then 2 else h.minor}, reply: encodeHello(helloFor(h.minor)) },
       GQuit => { session: s, reply: "" },
       GNewGame(g) => if !s.hello then malformed(s, "no_hello") else {
         let p = applyAll(defaultParams(), g.params);
         match scenarioError(p) {
           Some(c) => malformed(s, c),
-          None => {
-            let w0 = newWorld(g.seed, g.diag, p);
-            let w = {w0 | ai: {w0.ai | core: match g.aiCore { Some(h) => h, None => "" }}};
-            { session: {s | game: Some(w)}, reply: encodeState({tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
-                journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)), events: [], refused: [], full: true}) }
+          None => match (if s.minor >= 2 then archiveRows(line) else Ok([])) {
+            Err(c) => malformed(s, c),
+            Ok(rows) => {
+              let w0 = newWorld(g.seed, g.diag, p);
+              let w1 = {w0 | ai: {w0.ai | core: match g.aiCore { Some(h) => h, None => "" }}};
+              -- below minor 2 the consequence tracking is off: the stream is exactly M2's
+              let w = if s.minor >= 2 then withArchive(w1, rows) else {w1 | cq: {w1.cq | on: false}};
+              let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
+                journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)), events: [], refused: [], full: true};
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSection(w)), tail: [f("consequence", encodeCq(cqView(w), 0))] }) else encodeState(st) }
+            }
           }
         }
       },
@@ -417,7 +474,7 @@ export pure func serve(s: Session, line: string) -> Served =
             ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
             ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), rng: changed(encodeRng, w.rng, next.rng), params: None,
             ai: changed(encodeAiView, aiView(w.ai), aiView(next.ai)), events: t.events, refused: t.refused, full: false };
-          { session: {s | game: Some(next)}, reply: encodeState(state) }
+          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, cqExtras(w, next)) else encodeState(state) }
         }
       }
     }
