@@ -1,0 +1,127 @@
+{
+  "sprint_id": "R1-M5-PLANETS",
+  "milestone": "M5.1b_SYSTEM_AT_CHANGESET",
+  "repo": "sunholo-data/stapledons-godot PR #101, branch sprint/m5.1b-system-at: cf7edf0 (feat: celestial.ail, protocol 2.3, bridge, tests, fixtures), 0dc2998 (sprint JSON, plan status, changelog)",
+  "evaluation_round": 1,
+  "evaluated_at": "2026-10-03",
+  "evaluator": "independent physics evaluator (Claude Fable 5.1), generator != judge; fresh clone in the session scratchpad (m51b-eval, branch eval-m51b at 0dc2998, make runtime staged v0.52.0 bf2436a); a git-archive copy of origin/main's sim/ (main-sim) for the byte-identity check; a copy of sim/ (mut) per mutation. Oracle: my own Python Kepler solver from Standish & Williams Table 2a/2b, my own ecliptic->ICRS->galactic rotation built from the IAU/Hipparcos angles (alpha_G 192.85948, delta_G 27.12825, galactic centre RA 266.405 Dec -28.936), my own 4-step retarded-time iteration.",
+  "design_doc": "design_docs/planned/r1/m5-planets.md (section M5.1, AC4, AC5)",
+  "sprint_plan": "design_docs/planned/r1/m5-planets-sprint.md (section M5.1b)",
+  "result": "pass",
+  "score": 96,
+  "total_score": 96,
+  "max_score": 100,
+  "pass_threshold": 70,
+  "hard_fails": [],
+  "verdict_merge": "PASS, mergeable as is. The positions, light times, frames and the time base are right to the limit of my oracle; the 2.3 gate is exact (minors 0, 1 and 2 are byte-identical with origin/main; minor 3 minus the system member is byte-identical with minor 2); no replay golden or fixture line changed except the appended 2.3 tail. The Earth-Moon barycentre offset is correctly diagnosed and its deferral to celestial 0.1.1 is the right call provided it lands before any scene places the ship near Earth (M5.5b/M5.7).",
+  "scores": {
+    "tests_pass": {"points": 20, "max": 20},
+    "lint_clean": {"points": 10, "max": 10},
+    "acceptance_criteria": {"points": 30, "max": 30},
+    "code_quality": {"points": 13, "max": 15},
+    "documentation": {"points": 14, "max": 15},
+    "design_fidelity": {"points": 9, "max": 10}
+  },
+  "score_breakdown": {
+    "tests_pass": "20/20. `make test` in the fresh clone with runtime/bin/ailang (v0.52.0): exit 0, 14 min 17 s wall. ailang test 236/236 (8m27s), the 10 new celestial_test checks and 4 new protocol_test checks among them; sim bridge 0 failures (test_system_section and test_system_fixture included); galaxy map 0 failures; replay 8 cases identical to this arch's goldens (no golden changed); parity-v2 identical (23 lines); strict-m5 systemVm system-ok, strict VM = interpreter byte for byte; parity-v2-system 4 system lines after the 2.3 hello, none before. CI (gh pr checks 101): headless tests pass, 26m40s.",
+    "lint_clean": "10/10. The repo has no `make lint`; the gates inside `make test` stand in: python-guard (no new Python), deps lock drift (relock is a no-op), ailang check 39 files, strict, parity-v2, strict-m5. No file over 800 lines (protocol.ail 520, celestial_test.ail 470, sim_bridge.gd 361, celestial.ail 152). TODO/FIXME/HACK in the new code: 0.",
+    "acceptance_criteria": "30/30. AC5: celestial_test.ail:338-345 compares bodyAt to stateFromElements(elementsAt(...).orbit) rotated by eclipticToGalactic at 4 epochs (including 4500 AD, outside the window) for the 8 planets, and the 12 moons on their hosts, to 1e-12 AU; :360-368 Jupiter's lag from Earth at the 2023-11-03 opposition equals lightTimeDays to 1e-6 s (1,986.41 s); :384-392 the mean-orbit label agrees with elementsAt's meanOrbit flag on both window edges and beyond. AC4 (system half): mk/m5.mk:19-24 runs systemVm on --strict-bytecode and the interpreter and cmp's them (7 lines: two encoded system sections, a 4-line 2.3 session, system-ok); mk/m5.mk:29-36 checks the 2.3 tail of v2_session.ndjson after parity-v2 has compared the whole session VM = interpreter. Old-message tests unmodified: `git diff origin/main...HEAD -- sim/protocol_test.ail` has 0 deletions. make test green locally and in CI.",
+    "code_quality": "13/15. -1: one evaluator mutant survives: sun_dir, r_au and phase_deg taken from the body's heliocentric position at the observation time instead of the retarded time (celestial.ail:110 `helio(r.time)` -> `helio(jd)`) passes every test. The design says sun_dir is 'at the body's retarded time'; the physical effect is 2e-3 deg for Jupiter, so this is a test-power note, not a bug. -1: the four 2.3 protocol checks (protocol_test.ail:594-638) run only as `test` blocks; `protocolVm` (the `make strict` entry, protocol_test.ail:556) does not include them, so 'never below the minor' is not asserted on the strict VM (systemVm's session covers minor 3 only). Everything else is clean: the module composes package functions only (gate 3), has no I/O (gate 4), float64 throughout with the ship in ly converted once (gate 5), 4 fixed light-time iterations and no data-dependent branching that could split VM and interpreter (gate 6). core.ail changed by 7 lines against a 40-line budget; ship.ail untouched. Sprint artifacts complete: passes, started, completed, notes, actual_loc (535 = 1.98x the 270 estimate, inside the 650 cap; not penalised), open_items.",
+    "documentation": "14/15. Changelog fragment changelogs/unreleased/2026-10-03-m5-system-at.md is complete and accurate (5/5). Runnable example: tests/fixtures/system_sol.ndjson is byte-identical to the live sim's VM output on arm64 for the same 3-line session (checked), and systemVm is a runnable strict entry (5/5). Status (4/5): the sprint plan's M5.1b block and the sprint JSON are updated with the deviations; -1 because the celestial 0.1.1 barycentre split is an open item in the JSON only: the M5.5b and M5.7 rows of the sprint plan, which are the milestones it must precede, do not list it as a dependency, and the design doc's section M5.1 still reads `kind (... or ring host)`, `systemAt(sys, t, ship)` and `state.system`, which the implementation renders as ring_id, (sys, jd, shipLy) and SimBridge.system.",
+    "design_fidelity": "9/10. The implementation is what section M5.1 describes: positions = stateFromElements o eclipticToGalactic offset by the host star, rel_km at the retarded time in the galactic frame, one retardation only (the moving-observer note is honoured: the ship's velocity enters nowhere), pole and W at t_r, e_v_lux from discIlluminance with illuminanceFromV(-26.74), light_age_s = t - t_r, visitable = measured radius and albedo, a citation key as source, the additive system change set gated on the minor, mean-orbit outside the window. -1 for one unrecorded deviation: the design says sun_dir is a unit vector and the Sun's own sun_dir is emitted as the zero vector (celestial.ail:65 celUnit of zero); harmless, and the test at celestial_test.ail:416 allows it, but a renderer that normalises it will divide by zero, so it should be documented in the protocol notes or the field omitted for stars."
+  },
+  "automated_checks": {
+    "make_test": "exit 0 (14 min 17 s wall), fresh clone, runtime/bin/ailang v0.52.0",
+    "ailang_test": "236 passed, 0 failed (8m27s)",
+    "sim_bridge": "0 failures (14 tests incl. test_system_section, test_system_fixture)",
+    "replay": "8 cases identical to tests/replays/*.arm64 goldens; no golden file changed in the PR",
+    "parity_v2": "identical (23 lines); rest-tolerance edge ok",
+    "strict_m5_systemVm": "system-ok, strict VM = interpreter, 7 lines",
+    "parity_v2_system": "no system below 2.3; 4 system lines after the 2.3 hello (dtau-0 tick silent)",
+    "ci": "gh pr checks 101: headless tests pass (26m40s)",
+    "fixture_additivity": "v2_session.ndjson: +6 lines, 0 deletions, appended before quit; system_sol.ndjson new (3 lines) and byte-identical to the live sim's output",
+    "python_guard": "no new Python in the PR"
+  },
+  "independent_physics": {
+    "method": "Python oracle (role: oracle) from Standish Table 2a/2b with my own Kepler solver, obliquity 84381.406 arcsec, galactic axes from the IAU angles; compared with bodyAt/systemAt through a throwaway AILANG probe (not committed). The package's Hipparcos matrix (frames.ail) agrees with the axes I built from the angles to ~3e-8 in every element, which is the limit of these comparisons.",
+    "positions_bodyAt_vs_oracle_km": {
+      "2023-11-03 (JD 2460251.5)": {"earth (EMB)": "2.8 km", "mars": "4.7 km", "jupiter": "13.7 km", "saturn": "21.6 km"},
+      "2020-10-13 (JD 2459135.5)": {"earth (EMB)": "2.2 km", "mars": "3.0 km", "jupiter": "17.2 km", "saturn": "33.3 km"},
+      "note": "3e-8 relative on 1e9 km, i.e. my 8-digit frame angles, not the sim. The z components (frame-angle independent) agree to 30 m."
+    },
+    "against_observation": {
+      "jupiter_2023_11_03_opposition": "geocentric distance 3.98075 AU (observed 3.982 AU), light time 1986.41 s, phase 0.28 deg, V from e_v_lux -2.98 (observed -2.9); the sim's light_age_s 1986.4115699 s equals my retarded iteration 1986.411570 s",
+      "mars_2020_10_13_opposition": "geocentric distance 0.41810 AU (JPL ~0.4186 AU on Oct 13 0h; closest approach 0.4149 AU on Oct 6), light time 208.63 s, phase 2.33 deg, V -2.73 (observed -2.6); sim light_age_s 208.63176691 s = oracle 208.631767 s",
+      "saturn_2023_11_03": "lag 4677.783144 s both; phase 5.4758 deg both"
+    },
+    "retarded_time": "lighttime.retarded iterates s = |x_obs - x_src(t - s)| / c four times from s = 0 with the observer fixed at the observation time, in the galactic frame about the game origin (translation-invariant). This is the correct retarded-time equation for the rest-frame image at the ship's event; (v/c)^4 < 2e-15 of the lag remains, far below the 1e-6 s tolerance. rel_km uses r.pos (the source at t_r); the pole and W use r.time; light_age_s = lagDays x 86400. The ship's velocity is not used anywhere, as the design requires. The retarded offset for Jupiter at opposition is 26,000 km (v x lag), asserted in celestial_test.ail:372-382 and killed by the no-retardation mutant.",
+    "time_scale": "system.jd = epoch_jd + t x 365.25 (celestial.ail:54-55). t is M2's galaxy-frame clock in Julian years (core.ail uses medium.julianYearS = 365.25 x 86400 s for every energy integral, so the sim is self-consistent). The ephemeris argument is TDB; TDB - TT <= 1.7 ms, which moves the Moon 2 m. The only labelling question is TT vs UTC when a scenario epoch is written from a calendar date (69 s in 2023, i.e. 70 km for the Moon and 900 km for Jupiter, 0.2 arcsec from Earth): negligible for the game, worth one line in the scenario-parameter docs. The fixture confirms the arithmetic: t = 0.01 yr -> jd 2460255.1525 = 2460251.5 + 3.6525.",
+    "frames": "eclipticToGalactic = Hipparcos A_G^T o Rx(epsilon_J2000). The matrix's third row equals (cos dG cos aG, cos dG sin aG, sin dG) to 10 digits and the first row equals the galactic-centre direction; the north ecliptic pole maps to l = 96.384, b = 29.811 deg (textbook 96.38, 29.81). The Sun's pole (RA 286.13, Dec 63.87) maps to (-0.0715730, 0.9192895, 0.3870195), which is the fixture's value. poleAndSpin returns the pole already in ecliptic J2000 and W in [0, 2 pi); stateGal rotates the pole once more to galactic (celestial.ail:85) and viewOf does the same at t_r (celestial.ail:123). The pole unit length is 1 +/- 4e-11 (the 10-digit matrix), tested at 1e-9: appropriate.",
+    "mean_orbit_label": "ephemerisAt (celestial.ail:58-59) is inclusive on both window edges and agrees with elementsAt's meanOrbit flag at windowStart - 0.5, windowStart, J2000, windowEnd, windowEnd + 0.5 and J2000 + 1e6 yr (celestial_test.ail:389-390). The dropped-upper-bound mutant is killed."
+  },
+  "protocol_gating": {
+    "minor_0_1_2_byte_identical_with_main": "A 7-line session (hello, new_game, 5 ticks incl. dtau 0 and a thrust burn, quit) run through PR ship.ail and origin/main ship.ail at want minor 0, 1 and 2: cmp IDENTICAL for all three; 0 system members.",
+    "minor_3_and_9": "hello answers minor 3 for want 3 and want 9; 4 system members (full state, and the three ticks that moved the clock or the ship); the dtau-0 ticks carry none. Removing the system member from every minor-3 line reproduces the minor-2 lines exactly (json re-serialisation equal, key order preserved); the section is last, after consequence.",
+    "replay_goldens": "git diff origin/main...HEAD touches no file under tests/replays/ or any *.sha256/*.state.* golden; make replay 8/8 identical.",
+    "v2_session_fixture": "+6 lines inserted before quit, 0 deletions; parity-v2 23 lines identical; parity-v2-system counts exactly 4 system lines after the 2.3 hello and none before.",
+    "bridge": "want_minor defaults to PROTO_MINOR (1); the default client's world has no system (test_sim_bridge.gd:221); parse_system refuses a wrong frame or a missing body field (test_sim_bridge.gd:241-245)."
+  },
+  "earth_moon_barycentre": {
+    "finding": "Standish's Earth row is the Earth-Moon barycentre. moonHelio adds the geocentric Moon vector to it (celestial.ail:78-82), so the sim's Earth and Moon are both displaced from truth by +mu r_geo with mu = 1/82.3: 0.01215 x 384,400 km = 4,671 km, the PR's number. The Earth-Moon relative vector is exact.",
+    "severity_for_the_50000_km_start": "It depends entirely on how the ship is placed. If M5.5b/M5.7 place the ship via bodyAt('earth') (the only sensible way), the view from 50,000 km is self-consistent: the Earth is where the ship expects it, the Moon's direction is exact, and the residual errors are the Sun's direction (4,671 km / 1 AU = 6.4 arcsec) and the Earth's phase, both invisible. If anything ever places the ship in absolute coordinates (a saved game from a corrected build, an external ephemeris, the α Cen return leg computed against true Earth), the Earth disc (angular radius 6.5 deg at 56,378 km) would be displaced by up to atan(4671/56378) = 4.7 deg, a third of its diameter: glaring. There is also an honesty cost: anyone comparing the codex to Horizons sees Earth 0.73 Earth radii off.",
+    "deferral_judgement": "Right call. The fix is package maths (Earth = EMB - mu r_geo, Moon = EMB + (1 - mu) r_geo, with mu from the DE440 GMs already in the data) and gate 3 says it goes into sunholo/celestial first, with tests and a CHANGELOG, then the sim re-pins. Doing it inside sim/celestial.ail would have put a formula outside the package. Condition: the sprint plan's M5.5b and M5.7 rows should name celestial 0.1.1 as a dependency so it cannot slip past the start-at-Earth scene; today it is only an open_items entry in the sprint JSON.",
+    "also_consider_in_0_1_1": "The same split is not needed for the giant planets: Standish's Jupiter-Neptune rows are planet-system barycentres and the moons' mean elements are planetocentric, so the planets carry a barycentre offset too, but it is ~1,000 km for Jupiter (0.014 R_J, 0.3 arcsec at opposition) and less for the others; worth a one-line note in the package, not a change."
+  },
+  "deviations_judged": [
+    {"item": "ship.ail unchanged", "verdict": "Accepted, and better than the plan's wording. The pure server (protocol.serve) builds every reply and ship.ail prints it, so adding the section in protocol.ail is the only change that keeps gate 4 (I/O in ship.ail only, physics in the pure core). The plan's 'ship.ail emits it each tick' described the effect, not the file."},
+    {"item": "SimBridge.system instead of state.system", "verdict": "Accepted. `state` is the raw last message; `world` accumulates sections and does receive world['system'] at minor 3 (sim_bridge.gd:160-161). `system` adds a field-typed copy checked by parse_system, which is what M5.2a needs."},
+    {"item": "kind = star | planet | moon; ring hosts shown by ring_id", "verdict": "Accepted. A ring host is still a planet; a separate kind would force every consumer to handle 'ring host' as a planet anyway. The design's section M5.1 should be edited to match (documentation -1 covers this)."},
+    {"item": "Sol only (no α Cen system section)", "verdict": "Accepted. α Cen's bodies need the AB orbit (M5.7's registry row) and its planets have no measured radius or albedo (design Q3); emitting them now would be a modelled disc."},
+    {"item": "Earth-Moon barycentre offset deferred to celestial 0.1.1", "verdict": "Accepted with the condition above (dependency row on M5.5b/M5.7). See earth_moon_barycentre."},
+    {"item": "Sun at 1 AU = 1.2706e5 lux, design oracle row 1.261e5", "verdict": "Accepted; the difference is the V = 0 zero point (relativity 0.7.0 photometry.ail:59-66 uses 2.56e-6 lux, i.e. V = -13.98 at 1 lux; the design's row used 2.54e-6), 0.8 % = 0.008 mag. Gate 3 makes the package the single copy, so the design's oracle row should be updated to 1.2706e5, not the package."},
+    {"item": "pole unit length tested at 1e-9 (precision 4e-11)", "verdict": "Accepted. The Hipparcos matrix is published to 10 digits and is orthonormal to ~4e-11; 1e-9 is a sound bound for it and the test still catches an unrotated or unnormalised pole (mutant M3 killed)."},
+    {"item": "LOC 535 vs 270 estimate", "verdict": "Accepted. 1.98x, inside the 650 cap; 265 of the 535 are tests and fixtures, which is where the extra went."}
+  ],
+  "mutations": [
+    {"id": "M1", "mutation": "no retardation: view at jd, lag 0 (celestial.ail:109)", "killed_by": "retardedOffset, lightTime", "status": "killed"},
+    {"id": "M2", "mutation": "365-day year (celestial.ail:54)", "killed_by": "timeBase", "status": "killed"},
+    {"id": "M3", "mutation": "pole not rotated to galactic (celestial.ail:123)", "killed_by": "poleAtRetarded", "status": "killed"},
+    {"id": "M4", "mutation": "W at the observation time jd instead of t_r (celestial.ail:123)", "killed_by": "poleAtRetarded", "status": "killed"},
+    {"id": "M5", "mutation": "minor gate lowered to >= 2 (protocol.ail systemFull and withSystem)", "killed_by": "protocol_test checkSystemOnWire (r2 must have no system); also visible as 2 system lines on a minor-2 wire. systemVm alone does not catch it (its session is minor 3 only)", "status": "killed"},
+    {"id": "M6", "mutation": "no surface clamp (dEff = dKm) (celestial.ail:119)", "killed_by": "fields (ship inside the Sun)", "status": "killed"},
+    {"id": "M7", "mutation": "sun_dir, r_au, phase from helio(jd) instead of helio(r.time) (celestial.ail:110)", "killed_by": "none", "status": "survived (2e-3 deg effect for Jupiter; design says 'at the body's retarded time'; code is correct, test power gap)"},
+    {"id": "M8", "mutation": "window upper bound dropped (celestial.ail:59)", "killed_by": "ephemerisLabel", "status": "killed"}
+  ],
+  "findings": [
+    {"severity": "info", "file": "sim/celestial.ail:109-125", "note": "Light-time handling verified independently: lag, retarded position, pole and W at t_r all correct; no second retardation for the observer."},
+    {"severity": "info", "file": "sim/celestial.ail:54-59", "note": "Time base and the mean-orbit label verified; Julian years are the sim's unit everywhere."},
+    {"severity": "info", "file": "sim/protocol.ail:51-55,207-215,484-516", "note": "Gate exact: minors <= 2 byte-identical with origin/main; minor 3 minus system == minor 2; section last, after consequence."},
+    {"severity": "low", "file": "sim/celestial.ail:65,124", "note": "The Sun's sun_dir is the zero vector; the design says unit. Document it or omit the field for stars so a renderer does not normalise a zero."},
+    {"severity": "low", "file": "sim/celestial_test.ail:404-412", "note": "No test pins sun_dir/r_au/phase_deg to the retarded time (mutant M7 survives). A check that Jupiter's r_au at opposition equals norm(planetAt(t_r)) rather than norm(planetAt(jd)) to 1e-12 AU would close it."},
+    {"severity": "low", "file": "sim/protocol_test.ail:556", "note": "protocolVm does not include the four 2.3 checks; 'never below the minor' is not asserted on the strict VM. Add checkHello23/checkSystemOnWire/checkEpochJd/checkSystemRoundTrip to the list."},
+    {"severity": "low", "file": "design_docs/planned/r1/m5-planets-sprint.md (M5.5b, M5.7 rows)", "note": "celestial 0.1.1 (barycentre split) should be a named dependency of the start-at-Earth milestones, not only an open_items entry in the sprint JSON."},
+    {"severity": "low", "file": "design_docs/planned/r1/m5-planets.md section M5.1", "note": "Update kind/ring_id, the systemAt signature, SimBridge.system and the Sun oracle row (1.2706e5 lux with the package zero point) to match the landed implementation."}
+  ],
+  "acceptance_criteria": [
+    {"id": "AC5", "met": true, "evidence": "celestial_test.ail:338-392; make sim 236/236"},
+    {"id": "AC4 (system half)", "met": true, "evidence": "mk/m5.mk:19-36; strict-m5 systemVm system-ok VM = interpreter; parity-v2-system 4 lines"},
+    {"id": "old-message tests unmodified", "met": true, "evidence": "git diff origin/main...HEAD -- sim/protocol_test.ail: 0 deletions"},
+    {"id": "make test green (AC20)", "met": true, "evidence": "local exit 0; CI pass 26m40s"}
+  ],
+  "documentation_check": {
+    "changelog": "changelogs/unreleased/2026-10-03-m5-system-at.md: complete",
+    "example_or_fixture": "tests/fixtures/system_sol.ndjson byte-identical to the live sim (VM, arm64); systemVm strict entry",
+    "design_status": "sprint plan M5.1b block and sprint JSON updated; design doc stays in planned/ (multi-milestone sprint), section M5.1 wording now trails the implementation in four places (see findings)"
+  },
+  "design_fidelity": {
+    "matches": "section M5.1 field list, frames and precision, moving-observer rule, time base and window, additive protocol change set with the minor taken at merge time (2.3 after M4.1's 2.2), tests read systemMinor() not a literal",
+    "deviations": "see deviations_judged; one unrecorded (the star's zero sun_dir)"
+  },
+  "pre_existing_not_scored": [
+    "helloMsg still reports relativity \"0.4.0\" while sim/ailang.toml pins relativity 0.7.0 (protocol.ail:48; predates this PR).",
+    "ailang warns 'module stapledons/sim/celestial_test compiled but not listed in [exports].modules' during make sim; the same holds for every *_test module, by convention."
+  ],
+  "feedback": [],
+  "feedback_summary": "PASS 96/100. Recommended, not blocking: pin sun_dir/r_au to the retarded time in a test (mutant M7), add the 2.3 checks to protocolVm, document or drop the star's zero sun_dir, make celestial 0.1.1 a named dependency of M5.5b/M5.7, and bring design section M5.1's wording (kind/ring_id, SimBridge.system, systemAt signature, Sun lux oracle row) in line with the landed code.",
+  "notes": "Spot checks: Jupiter and Saturn on 2023-11-03 and Mars at the 2020-10-13 opposition agree with an independent Kepler solution from Standish Table 2a/2b to <= 33 km (3e-8 relative, the oracle's own frame-angle limit); light times agree to 1e-6 s; phase angles to 1e-4 deg; the Sun's galactic pole in the fixture is reproduced from the IAU angles. Jupiter's e_v_lux gives V -2.98 at an opposition observed at -2.9; Mars V -2.73 against -2.6. All five requested mutants are killed, plus the surface clamp and the window bound; the one survivor is a 2e-3 deg test-power gap."
+}
