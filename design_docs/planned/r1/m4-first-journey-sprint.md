@@ -418,6 +418,16 @@ merges to main with the stacked train after ⏸ S1 sign-off.
 - Placeholder bundle shows the "placeholder art" HUD tag.
 - Avatar constrained to `WALK_`; avatar position never enters the sim.
 
+**Carried from M4.0 (eval round 1):**
+- **Export staging for `assets/areas/`.** M4.0 loads bundles raw at runtime, and
+  `assets/areas/.gdignore` keeps Godot from importing them. So an exported build will not
+  contain `assets/areas/` unless it is staged, as `make sky-bundle` does for the sky. Either
+  stage it into the export or add an export-preset include filter for json/png/glb. Then
+  extend `make export-smoke` to load the bundle from inside the `.app`.
+- **`play_origin_ship_m` becomes an optional typed field** (3 numbers) in `AreaBundle`, with a
+  control, when the loader first places the GLB in the ship frame. Bridge v1 already declares
+  it (`[0, 0, 82]`); it is never required, so brief §9's field-for-field contract stands.
+
 ### Wave 3 (parallel)
 
 #### M4.4: News from home, the AI path, return trip and the legacy screen — Track A

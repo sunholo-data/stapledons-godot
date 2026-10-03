@@ -812,6 +812,30 @@ func test_ship_frame() -> void:
 	check("heading SGP: ship +Z = galactic -z (no flip, still up)", sp[8], -1.0, 1e-12)
 	var outside := ShipFrame.ship_basis(PackedFloat64Array([0.0, 1e-5, 1.0]))
 	check("heading 1e-5 rad from NGP: no fallback, ship +Y follows the pole projection (galactic -y)", outside[4], -1.0, 1e-9)
+	check("short heading array is refused (empty basis, no error)", float(ShipFrame.ship_basis(PackedFloat64Array([1.0, 0.0])).size()), 0.0, 0.0)
+	# Just outside the pole fallback (1.0-1.3e-6 rad) the NGP projection is ~1e-6 long, so plain
+	# Gram-Schmidt leaves |Y . Z| ~1e-10; ship_basis re-derives Y = Z x X and stays at 1e-12.
+	var naive_worst := 0.0
+	var near_worst := 0.0
+	for i in 200:
+		var ang := 1.0e-6 * (1.0 + i * 0.0015)
+		var phi := i * 0.37
+		for sgn in [1.0, -1.0]:
+			var nh := PackedFloat64Array([sin(ang) * cos(phi), sin(ang) * sin(phi), sgn * cos(ang)])
+			var nb := ShipFrame.ship_basis(nh)
+			var e := 0.0
+			for i2 in 3:
+				for j2 in 3:
+					var dd := nb[3 * i2] * nb[3 * j2] + nb[3 * i2 + 1] * nb[3 * j2 + 1] + nb[3 * i2 + 2] * nb[3 * j2 + 2]
+					e = maxf(e, absf(dd - (1.0 if i2 == j2 else 0.0)))
+			near_worst = maxf(near_worst, e)
+			# the naive reference: Y = unit(NGP - (NGP . Z) Z)
+			var zd := nh[2]
+			var gy := [-zd * nh[0], -zd * nh[1], 1.0 - zd * nh[2]]
+			var gn := sqrt(gy[0] * gy[0] + gy[1] * gy[1] + gy[2] * gy[2])
+			naive_worst = maxf(naive_worst, absf((gy[0] * nh[0] + gy[1] * nh[1] + gy[2] * nh[2]) / gn))
+	check("near-pole headings defeat plain Gram-Schmidt (|Y.Z| > 1e-12): the test has teeth", 1.0 if naive_worst > 1e-12 else 0.0, 1.0, 0.0)
+	check("near-pole headings (1.0-1.3e-6 rad): ship basis still orthonormal to 1e-12", near_worst, 0.0, 1e-12)
 	check("zero heading is refused (empty basis)", float(ShipFrame.ship_basis(PackedFloat64Array([0.0, 0.0, 0.0])).size()), 0.0, 0.0)
 	# the round trip ship -> galactic -> ship is exact to float64
 	var hb := ShipFrame.ship_basis(headings[20])

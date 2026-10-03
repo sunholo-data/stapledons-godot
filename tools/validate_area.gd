@@ -19,9 +19,10 @@ extends SceneTree
 ##   round trip   the anchor (manifest validation.needle_tip_ship_m, default the brief's spire
 ##                needle tip [0, 0, 98]) projected through the camera and unprojected back lands
 ##                within 1 px; a declared validation.needle_tip_pixel agrees within 1 px; and the
-##                needle is visible in the panorama at that pixel, its topmost solid row within
-##                NEEDLE_IMAGE_TOL_PX (1 px + the toon ink outline, which sits ~2 px outside
-##                the silhouette at 4K).
+##                needle is visible in the panorama at that pixel: its topmost solid row lies in
+##                [tip - NEEDLE_INK_ABOVE_PX, tip + NEEDLE_BELOW_PX]. One-sided, because the toon
+##                ink outline always puts the solid top ABOVE the geometric tip (measured 1.4 px
+##                on bridge v1 at 4K, 1.7 px on the blockout), never below it.
 ##   glb          loads; metres (overall extent and walk extent in range); Y up (walk surfaces
 ##                face +/-Y); WALK_ meshes, SPAWN_ points and INTERACT_ objects present; any
 ##                manifest `walk` / `spawns` / `interactables` lists (Blender extras) name real
@@ -29,7 +30,8 @@ extends SceneTree
 
 const NEEDLE_TIP_SHIP_M := [0.0, 0.0, 98.0]
 const ROUND_TRIP_PX := 1.0
-const NEEDLE_IMAGE_TOL_PX := 3.0
+const NEEDLE_INK_ABOVE_PX := 2.5 # solid top may sit this far above the projected tip (ink outline)
+const NEEDLE_BELOW_PX := 0.5 # ... and at most this far below it
 const NEEDLE_SEARCH_PX := 24
 const MIN_SPACE_FRACTION := 0.01
 const FG_MIN_CLEAR_FRACTION := 0.5
@@ -142,10 +144,11 @@ static func check_round_trip(b: AreaBundle, pano: Image) -> Array[Dictionary]:
 			"declared %s, camera gives (%.3f, %.3f): %.4f px" % [str(v["needle_tip_pixel"]), p[0], p[1], dp])
 	if pano != null and inside:
 		var t := needle_top(pano, p[0], p[1])
-		var ok := t.x >= 0 and absf(p[1] - t.x) <= NEEDLE_IMAGE_TOL_PX
-		_add(out, "round trip: needle visible in the panorama at the projected pixel (solid top within %.0f px)" % NEEDLE_IMAGE_TOL_PX, ok,
+		var off := float(t.x) - p[1] # < 0: solid top above the tip
+		var ok := t.x >= 0 and off >= -NEEDLE_INK_ABOVE_PX and off <= NEEDLE_BELOW_PX
+		_add(out, "round trip: needle visible in the panorama at the projected pixel (solid top in [tip - %.1f, tip + %.1f] px)" % [NEEDLE_INK_ABOVE_PX, NEEDLE_BELOW_PX], ok,
 			"no solid pixel within %d px" % NEEDLE_SEARCH_PX if t.x < 0 else
-			"projected y %.3f, topmost solid row %d (offset %.3f px), topmost alpha>0 row %d" % [p[1], t.x, p[1] - t.x, t.y])
+			"projected y %.3f, topmost solid row %d (%.3f px %s the tip), topmost alpha>0 row %d" % [p[1], t.x, absf(off), "above" if off < 0.0 else "below", t.y])
 	return out
 
 

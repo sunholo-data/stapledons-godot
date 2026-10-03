@@ -21,8 +21,10 @@ const POLE_EPS := 1e-6
 
 
 ## The ship basis for a heading (any length > 0; normalised here in float64). An empty array
-## for a zero or non-finite heading: the caller must not orient the ship on garbage.
+## for a zero, non-finite or not-3-long heading: the caller must not orient the ship on garbage.
 static func ship_basis(heading: PackedFloat64Array) -> PackedFloat64Array:
+	if heading.size() != 3:
+		return PackedFloat64Array()
 	var n := sqrt(heading[0] * heading[0] + heading[1] * heading[1] + heading[2] * heading[2])
 	if not (n > 0.0) or is_inf(n):
 		return PackedFloat64Array()
@@ -30,8 +32,9 @@ static func ship_basis(heading: PackedFloat64Array) -> PackedFloat64Array:
 	var y := _reject(NGP, z)
 	if _len(y) < POLE_EPS:
 		y = _reject(POLE_FALLBACK, z)
-	# Gram-Schmidt leaves |Y . Z| at the rounding of a short projection; re-derive X and Y by
-	# cross products so the basis is orthonormal to float64 rounding (tested to 1e-12).
+	# Just outside the fallback the projection is ~1e-6 long and plain Gram-Schmidt leaves
+	# |Y . Z| ~1e-10; re-deriving X and Y by cross products keeps the basis orthonormal to
+	# float64 rounding (tests/test_physics.gd checks both at 1.0-1.3e-6 rad from each pole).
 	var x := _unit(_cross(_unit(y), z))
 	y = _cross(z, x)
 	return PackedFloat64Array([x[0], x[1], x[2], y[0], y[1], y[2], z[0], z[1], z[2]])

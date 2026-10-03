@@ -93,6 +93,13 @@ func test_loader() -> void:
 	DirAccess.remove_absolute(d.path_join("cam_bridge.json"))
 	check("missing camera JSON is refused", not AreaBundle.load_dir(d).ok())
 
+	d = copy_fixture("panorama_mismatch")
+	var cm := read_json(d.path_join("cam_bridge.json"))
+	cm["panorama"] = "stapledon_pano_bridge.png"
+	write_json(d.path_join("cam_bridge.json"), cm)
+	b = AreaBundle.load_dir(d)
+	check("camera.panorama != layers.panorama.file is refused", not b.ok() and "; ".join(b.errors).contains("camera.panorama"), "; ".join(b.errors))
+
 	# every V17 field is required
 	for path in [["area"], ["camera"], ["focus_m"], ["sky_visible"], ["layers", "panorama", "parallax"],
 			["layers", "play", "iso_pitch_deg"], ["layers", "play", "iso_yaw_deg"], ["layers", "play", "iso_size_m"],
@@ -180,6 +187,12 @@ func test_validator() -> void:
 	fg.fill_rect(Rect2i(28, 28, 4, 4), Color(1, 1, 1, 1))
 	check("a foreground with art across the centre fails", not Validate.check_alpha(fg, "t", true, true)["ok"])
 
+	var fgwide := Image.create_empty(64, 64, false, Image.FORMAT_RGBA8)
+	fgwide.fill(Color(0.2, 0.1, 0.3, 1)) # silhouettes everywhere but the centre box
+	fgwide.fill_rect(Rect2i(16, 12, 32, 40), Color(0, 0, 0, 0))
+	var fw := Validate.check_alpha(fgwide, "t", true, true)
+	check("a foreground covering most of the frame (centre clear) fails", not fw["ok"] and fw["detail"].contains("foreground covers"), fw["detail"])
+
 	# whole-bundle positive controls: a broken alpha and broken camera JSON must fail
 	var d := copy_fixture("broken_alpha")
 	var pano := Image.load_from_file(d.path_join("pano_bridge.png"))
@@ -201,6 +214,17 @@ func test_validator() -> void:
 	write_json(d.path_join("cam_bridge.json"), cam)
 	checks = Validate.validate(d)
 	check("camera moved 3.7 m: needle image check fails", not result(checks, "round trip: needle visible").get("ok", true), str(result(checks, "round trip: needle visible")))
+
+	# the needle tolerance is one-sided: the solid top may sit up to 2.5 px ABOVE the projected tip
+	# (the ink outline) and at most 0.5 px below it. Shift the camera along its up vector so the
+	# projected tip moves by a chosen number of pixels (fixture: solid top 1.71 px above the tip).
+	for shift in [[-4.5, false], [4.5, false], [-2.5, false], [0.5, true]]:
+		d = copy_fixture("needle_shift_%s" % shift[0])
+		var moved := shifted_camera(read_json(FIXTURE.path_join("cam_bridge.json")), shift[0])
+		write_json(d.path_join("cam_bridge.json"), moved[0])
+		var nr := result(Validate.validate(d), "round trip: needle visible")
+		check("camera shift moves the tip %+.1f px (got %+.3f): needle check %s" % [shift[0], moved[1], "passes" if shift[1] else "fails"],
+			absf(moved[1] - shift[0]) < 0.05 and nr.get("ok", not shift[1]) == shift[1], str(nr))
 
 	d = copy_fixture("wrong_declared_pixel")
 	var m := read_json(d.path_join("manifest.json"))
@@ -225,6 +249,11 @@ func test_validator() -> void:
 	write_glb(d.path_join("play_bridge.glb"), Vector3.ZERO, 100.0, true)
 	checks = Validate.validate(d)
 	check("centimetre GLB fails metres", not result(checks, "glb: metres").get("ok", true) or not result(checks, "glb: walk area").get("ok", true))
+	d = copy_fixture("huge_glb")
+	write_glb(d.path_join("play_bridge.glb"), Vector3.ZERO, 1.0, true, 5000.0)
+	checks = Validate.validate(d)
+	check("a 5 km mesh outside the walk area fails metres on its own", not result(checks, "glb: metres").get("ok", true)
+		and result(checks, "glb: walk area").get("ok", false), str(result(checks, "glb: metres")))
 	d = copy_fixture("bare_glb")
 	write_glb(d.path_join("play_bridge.glb"), Vector3.ZERO, 1.0, false)
 	checks = Validate.validate(d)
@@ -239,8 +268,31 @@ func test_validator() -> void:
 	check("manifest interactable missing from the GLB fails", not result(checks, "glb: manifest").get("ok", true), str(result(checks, "glb: manifest")))
 
 
+## The fixture camera moved along its up vector so the needle tip [0, 0, 98] projects `dpx`
+## pixels lower (positive) or higher (negative): [camera, actual shift in px].
+func shifted_camera(cam: Dictionary, dpx: float) -> Array:
+	var tip := [0.0, 0.0, 98.0]
+	var y0 := AreaBundle.project(cam, tip)[1]
+	var moved := cam.duplicate(true)
+	var step := 0.0
+	for it in 3: # Newton on the camera offset (the map is nearly linear)
+		var probe := cam.duplicate(true)
+		var u: Array = cam["up"]
+		var o: Array = cam["position_m"]
+		var eps := 1e-3
+		probe["position_m"] = [o[0] + (step + eps) * u[0], o[1] + (step + eps) * u[1], o[2] + (step + eps) * u[2]]
+		moved["position_m"] = [o[0] + step * u[0], o[1] + step * u[1], o[2] + step * u[2]]
+		var ym := AreaBundle.project(moved, tip)[1]
+		var slope := (AreaBundle.project(probe, tip)[1] - ym) / eps
+		step += (y0 + dpx - ym) / slope
+	var o2: Array = cam["position_m"]
+	var u2: Array = cam["up"]
+	moved["position_m"] = [o2[0] + step * u2[0], o2[1] + step * u2[1], o2[2] + step * u2[2]]
+	return [moved, AreaBundle.project(moved, tip)[1] - y0]
+
+
 ## a minimal play GLB: a 20 m walk disc (rotated / scaled), optionally a spawn and an interactable
-func write_glb(path: String, rot: Vector3, scale: float, markers: bool) -> void:
+func write_glb(path: String, rot: Vector3, scale: float, markers: bool, extra_box := 0.0) -> void:
 	var root_node := Node3D.new()
 	root_node.name = "play_bridge"
 	var walk := Node3D.new()
@@ -264,6 +316,13 @@ func write_glb(path: String, rot: Vector3, scale: float, markers: bool) -> void:
 		i.name = "INTERACT_chair"
 		i.mesh = BoxMesh.new()
 		root_node.add_child(i)
+	if extra_box > 0.0:
+		var big := MeshInstance3D.new()
+		big.name = "hull"
+		var bm := BoxMesh.new()
+		bm.size = Vector3.ONE * extra_box
+		big.mesh = bm
+		root_node.add_child(big)
 	for c in root_node.get_children():
 		c.owner = root_node
 		for g in c.get_children():
