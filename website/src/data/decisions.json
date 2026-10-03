@@ -94,7 +94,7 @@
    "date": "2026-10-03",
    "title": "The captain: proposal A, the Longline Navigator",
    "question": "Which of the three captain silhouette proposals becomes the captain?",
-   "ruling": "Mark picked proposal A in the attended task on 2026-10-03. The eight final views preserve that identity, costume language and cream/ochre/violet palette. Final set status is proposed for visual review; the identity choice is picked. Art owned by Sunholo, contributed under Apache-2.0.",
+   "ruling": "Mark picked proposal A in the attended task on 2026-10-03. The eight final views preserve that identity, costume language and cream/ochre/violet palette. Final set status is proposed for visual review; the identity choice is picked. AI-generated (gpt-6.1-sol); no copyright claimed (D-33).",
    "words": [],
    "provenance": "Recorded in the captain set's generation notes (game PR #98); the eight final views are proposed for visual review, the identity choice is picked.",
    "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/assets/characters/captain/generation_notes.md#L3",
@@ -235,6 +235,82 @@
      }
     ]
    },
+   "superseded": false
+  },
+  {
+   "id": "D-30",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-03",
+   "title": "Forward glow spectrum: higgs-bubble.md does not define the colour of the wall gl",
+   "question": "Forward glow spectrum: higgs-bubble.md does not define the colour of the wall glow (placeholder equal-energy white, 182.6 lm/W). Options: hot-plasma blackbody from the impact energy / neutral white / hydrogen recombination lines.",
+   "ruling": "DECIDED (Mark, attended 2026-10-03): the glow spectrum is a hot-plasma blackbody whose temperature is derived from the impact energy, computed in sunholo/relativity first (package-first), replacing the equal-energy white placeholder.",
+   "words": [],
+   "provenance": "M4.2 PR #102; sky/forward_glow.gd.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L120",
+   "sourceLabel": "stapledon-mission.md, line 120",
+   "refs": [
+    {
+     "repo": "game",
+     "n": 102,
+     "url": "https://github.com/sunholo-data/stapledons-godot/issues/102",
+     "kind": "pr"
+    }
+   ],
+   "groups": [
+    "visual",
+    "physics"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
+  {
+   "id": "D-29",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-03",
+   "title": "Forward glow strength (M4.2 evaluation): at the canon ε = 1e-9 the bubble-wall g",
+   "question": "Forward glow strength (M4.2 evaluation): at the canon ε = 1e-9 the bubble-wall glow pole is 130× the 23.5 mag/arcsec² dark sky at 0.99c and drowns the starfield, contradicting \"faint by design\". Options: lower ε (~1e-11) / keep and fix the text / tie to the glazing follow-up.",
+   "ruling": "DECIDED (Mark, attended 2026-10-03): lower the canon wall conversion efficiency to about 1e-11 so the forward glow is faint and the starbow stays visible (design-repo canon change: higgs-bubble.md eps and dependent HB rows, the package check values and the sim).",
+   "words": [],
+   "provenance": "eval_R1-M4-JOURNEY-M4.2_round_1.json; test_physics.gd:885; m4-first-journey.md:362.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L119",
+   "sourceLabel": "stapledon-mission.md, line 119",
+   "refs": [],
+   "groups": [
+    "visual",
+    "text"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
+  {
+   "id": "D-28",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-03",
+   "title": "M1 sky mirror (M4.2 evaluation, confirmed four ways): Starfield.galactic_to_worl",
+   "question": "M1 sky mirror (M4.2 evaluation, confirmed four ways): Starfield.galactic_to_world is a reflection (det −1), so the whole M1 sky (stars, panorama, sky model, CMB) renders as a mirror image of the real sky; GPU-vs-CPU goldens could not see it because both sides share the map. M4.2 corrects it locally. Fix at the source now or later?",
+   "ruling": "DECIDED (Mark, attended 2026-10-03): fix the mirror at the source now in a dedicated PR: one right-handed rotation map used everywhere (the seven copies removed), the interior's local flip dropped, and every reference render regenerated and reviewed.",
+   "words": [],
+   "provenance": "eval_R1-M4-JOURNEY-M4.2_round_1.json; sky/starfield.gd:31.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L118",
+   "sourceLabel": "stapledon-mission.md, line 118",
+   "refs": [],
+   "groups": [
+    "visual",
+    "physics"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
    "superseded": false
   },
   {

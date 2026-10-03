@@ -1,0 +1,13 @@
+# Planet albedo texture means (M5.2a): tools/planet_textures.gd -- --write; checked by -- --check.
+# id file k mean: the texture's disc-integrated mean linear luminance (Rec. 709 Y of the sRGB-decoded
+# texels) for the body's Minnaert k, rotationally averaged at an equatorial view. planet.gdshader divides
+# the texel colour by mean, so the disc-integrated albedo is the sim's p_V. Textures: data/planets/SHA256SUMS.
+mercury 2k_mercury.jpg 1.0 0.231277126
+venus 2k_venus_atmosphere.jpg 1.0 0.548176129
+earth 2k_earth_daymap.jpg+2k_earth_clouds.jpg 1.0 0.159727756
+moon 2k_moon.jpg 1.0 0.316938005
+mars 2k_mars.jpg 1.0 0.176771090
+jupiter 2k_jupiter.jpg 1.0 0.451791437
+saturn 2k_saturn.jpg 0.825 0.661951167
+uranus 2k_uranus.jpg 1.0 0.574220568
+neptune 2k_neptune.jpg 1.0 0.144248042

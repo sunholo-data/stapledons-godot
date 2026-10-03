@@ -22,3 +22,5 @@ data/starmap/stars_*.bak
 ai_core/
 **/.ailang/cache/
 tools/glow_probe/.ailang/
+# M5.2a: planet textures are fetched by make planet-assets (pins in data/planets/SHA256SUMS), never committed
+assets/planets/

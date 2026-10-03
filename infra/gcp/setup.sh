@@ -34,6 +34,12 @@ gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" \
 # 6. Labels for cost tracking.
 gcloud storage buckets update "gs://$BUCKET" --update-labels=app=stapledons-voyage,purpose=assets
 
+# Object prefixes in $BUCKET (content-addressed <sha256>.<ext>, uploaded --no-clobber, immutable):
+#   sky/      sky inputs + generated textures (tools/sky_assets.sh, pins data/sky/SHA256SUMS)
+#   planets/  planet albedo textures, Solar System Scope 2k CC BY 4.0 (M5.2a; tools/planet_assets.sh,
+#             pins data/planets/SHA256SUMS, attribution data/planets/CREDITS). No extra IAM: the
+#             bucket-wide public read above covers every prefix.
+
 # 7. Private bucket for dev builds (D-18 follow-up, Mark 2026-10-02: "dev ones
 #    in the bucket and we release via github"). The repo is private, so dev
 #    builds must not be public: public access prevention is ENFORCED. Readers

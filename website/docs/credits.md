@@ -10,15 +10,18 @@ Stapledon's Voyage is made by [Sunholo](https://www.sunholo.com).
 
 ## Licence
 
-The game's code and this site are licensed under the
-[Apache License 2.0](https://github.com/sunholo-data/stapledons-godot/blob/main/LICENSE),
-Copyright 2026 Sunholo / Mark Edmondson.
-
-Third-party assets keep their own licences, and the Apache licence does not cover them:
+- **Code:** the game's code and this site's code are licensed under the
+  [Apache License 2.0](https://github.com/sunholo-data/stapledons-godot/blob/main/LICENSE),
+  Copyright 2026 Sunholo / Mark Edmondson.
+- **AI-generated art** (the captain, the crew portraits, the bridge, the concept art): labelled
+  AI-generated, **no copyright claimed**. See [Art](#art).
+- **Third-party assets** keep their own licences, listed below; the Apache licence does not cover
+  them:
 
 | Asset | Licence or terms |
 |---|---|
 | Milky Way panorama, NOIRLab `noirlab2430b` (E. Slawik / NOIRLab / NSF / AURA), and the sky textures derived from it | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Planet textures, [Solar System Scope](https://www.solarsystemscope.com/textures/) 2k (shown in game as "Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0") | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | Star catalogues: CNS5 (via CDS VizieR), Gaia GCNS (ESA/Gaia/DPAC), Hipparcos (ESA) | The providers' terms; cite the sources listed below |
 | Godot Engine | [MIT](https://godotengine.org/license/) |
 | Fonts on this site (Montserrat, Inter, JetBrains Mono, via Google Fonts) | [SIL Open Font License 1.1](https://openfontlicense.org) |
@@ -26,17 +29,18 @@ Third-party assets keep their own licences, and the Apache licence does not cove
 
 ## Art
 
-The concept and game art (the captain, the crew portraits, the bridge) is **AI-assisted**: made
-with image models and Blender under Sunholo's art direction, and owned by Sunholo. Art committed to
-the game repo is covered by its Apache-2.0 licence like the rest of the repo. Art that is only
-hosted in the project's asset bucket (the `refs/` reference sets shown on the
-[concept art](/concept-art) page) is shown here for information, not licensed for reuse.
+The concept and game art (the captain, the crew portraits, the bridge) is **AI-generated**, made
+with image models and Blender under Sunholo's art direction. **No copyright is claimed** in it.
 
 ## Data
 
 - **Milky Way panorama:** NOIRLab `noirlab2430b` (E. Slawik / NOIRLab / NSF / AURA), licensed
   [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The game uses it with the
   catalogue stars removed and a fitted colour-temperature model.
+- **Planet textures:** [Solar System Scope](https://www.solarsystemscope.com/textures/) 2k maps
+  (based on NASA imagery; unmapped regions filled in, colours slightly saturated), licensed
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The game keeps the files unchanged and
+  rescales their brightness to each body's measured albedo. In game, press **C** for the credits.
 - **CNS5**, the fifth Catalogue of Nearby Stars (Golovin et al. 2023), via VizieR.
 - **GCNS**, the Gaia Catalogue of Nearby Stars (Gaia Collaboration, Smart et al. 2021). This
   work uses data from the European Space Agency mission
