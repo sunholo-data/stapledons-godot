@@ -8,14 +8,17 @@ extends SceneTree
 ## Checks:
 ##   schema       manifest.json field for field (V17) + cam_<area>.json (brief §5.2), every layer
 ##                file present (AreaBundle.load_dir; a refused bundle stops here)
-##   resolution   pano and fg are exactly camera.resolution
+##   resolution   each plate = view + 2 x its layers.<layer>.overscan_px (default 0), where
+##                view = camera.resolution - 2 x panorama overscan (m4-2-requirements §4: the
+##                camera spans the whole panorama plate); without overscan, = camera.resolution
 ##   alpha        "never paint space" (brief §5.1): the plates carry alpha; with sky_visible the
 ##                panorama has exactly-0 alpha where space shows (>= MIN_SPACE_FRACTION of it);
 ##                no SPECK (an alpha > 0 blob of <= 3x3 px with nothing around it: a painted
 ##                star) and no HAZE (0 < alpha <= HAZE_MAX with no solid pixel within 2 px:
 ##                painted nebula/glow, as opposed to an anti-aliased edge). The validator has no
 ##                render mask, so these are the image-only signatures of painted space.
-##                fg: also mostly clear and clear across the centre (brief §5.4).
+##                fg: also mostly clear and clear across the centre (brief §5.4), both measured
+##                on the pan-0 view region of an overscanned plate.
 ##   round trip   the anchor (manifest validation.needle_tip_ship_m, default the brief's spire
 ##                needle tip [0, 0, 98]) projected through the camera and unprojected back lands
 ##                within 1 px; a declared validation.needle_tip_pixel agrees within 1 px; and the
@@ -49,18 +52,20 @@ static func validate(dir: String) -> Array[Dictionary]:
 		"area %s, placeholder %s" % [b.area(), b.placeholder] if b.ok() else "; ".join(b.errors))
 	if not b.ok():
 		return out
-	var cam := b.camera
-	var res := Vector2i(int(cam["resolution"][0]), int(cam["resolution"][1]))
 	var pano := b.load_image("panorama")
 	var fg := b.load_image("foreground")
+	var view := b.view_size()
 	for pair in [["panorama", pano], ["foreground", fg]]:
 		var img: Image = pair[1]
-		_add(out, "resolution: %s = camera %dx%d" % [pair[0], res.x, res.y], img != null and img.get_size() == res,
+		var want := b.plate_size(pair[0])
+		var os := b.overscan(pair[0])
+		_add(out, "resolution: %s = %dx%d (view %dx%d + 2 x overscan [%d, %d])" % [pair[0], want.x, want.y, view.x, view.y, os.x, os.y],
+			img != null and img.get_size() == want and view.x > 0 and view.y > 0,
 			"unreadable" if img == null else "got %dx%d" % [img.get_width(), img.get_height()])
 	if pano != null:
 		out.append(check_alpha(pano, "panorama", b.manifest["sky_visible"], false))
 	if fg != null:
-		out.append(check_alpha(fg, "foreground", true, true))
+		out.append(check_alpha(fg, "foreground", true, true, b.view_rect("foreground") if fg.get_size() == b.plate_size("foreground") else Rect2i()))
 	out.append_array(check_round_trip(b, pano))
 	out.append_array(check_glb(b.path("play"), b.manifest))
 	return out
@@ -68,7 +73,7 @@ static func validate(dir: String) -> Array[Dictionary]:
 
 ## The alpha rules on one plate. `space` = the plate must show space somewhere (exactly-0
 ## alpha); `fg` adds the foreground rules (mostly clear, clear across the centre).
-static func check_alpha(src: Image, label: String, space: bool, fg: bool) -> Dictionary:
+static func check_alpha(src: Image, label: String, space: bool, fg: bool, view := Rect2i()) -> Dictionary:
 	var name := "alpha: %s, exactly 0 where space shows (no painted space)" % label
 	if not _has_alpha_format(src.get_format()):
 		return _check(name, false, "no alpha channel (format %d)" % src.get_format())
@@ -105,13 +110,17 @@ static func check_alpha(src: Image, label: String, space: bool, fg: bool) -> Dic
 		ok = false
 		why.append("only %.4f of pixels have alpha exactly 0 (need >= %.2f: space is painted over)" % [frac, MIN_SPACE_FRACTION])
 	if fg:
-		if frac < FG_MIN_CLEAR_FRACTION:
+		# measured on the pan-0 view region; an overscan margin follows the edge-and-bottom rule
+		var v := view if view.has_area() else Rect2i(0, 0, w, h)
+		var vclear := 1.0 - float(_count_nonzero(d, w, v.position.x, v.position.y, v.end.x, v.end.y)) / float(v.get_area())
+		if vclear < FG_MIN_CLEAR_FRACTION:
 			ok = false
-			why.append("foreground covers %.3f of the frame (need <= %.2f)" % [1.0 - frac, 1.0 - FG_MIN_CLEAR_FRACTION])
-		var centre := _count_nonzero(d, w, int(w * 0.3), int(h * 0.25), int(w * 0.7), int(h * 0.75))
+			why.append("foreground covers %.3f of the view (need <= %.2f)" % [1.0 - vclear, 1.0 - FG_MIN_CLEAR_FRACTION])
+		var centre := _count_nonzero(d, w, v.position.x + int(v.size.x * 0.3), v.position.y + int(v.size.y * 0.25),
+			v.position.x + int(v.size.x * 0.7), v.position.y + int(v.size.y * 0.75))
 		if centre > 0:
 			ok = false
-			why.append("%d px with alpha > 0 in the centre box (x 30-70%%, y 25-75%%)" % centre)
+			why.append("%d px with alpha > 0 in the view's centre box (x 30-70%%, y 25-75%%)" % centre)
 	var detail := "alpha-0 fraction %.4f, specks %d, haze %d%s%s" % [frac, specks, haze,
 		"" if first.is_empty() else " (first: %s)" % first, "" if why.is_empty() else "; " + "; ".join(why)]
 	return _check(name, ok, detail)

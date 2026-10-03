@@ -13,8 +13,10 @@ extends RefCounted
 ##   area: String
 ##   layers.panorama {file, parallax}   layers.play {file, iso_pitch_deg, iso_yaw_deg, iso_size_m}
 ##   layers.foreground {file, parallax} camera: String   focus_m: [x, y, z]   sky_visible: bool
-## File names follow the brief: pano_/play_/fg_/cam_<area>. The one game-side extension is an
-## optional `placeholder` (bool, default false): a placeholder bundle shows a small
+## File names follow the brief: pano_/play_/fg_/cam_<area>. Optional, typed when present:
+## layers.panorama/foreground.overscan_px [x, y] (m4-2-requirements §4: margin per side for
+## the parallax pan; the camera then spans the whole panorama plate). The game-side extension is
+## an optional `placeholder` (bool, default false): a placeholder bundle shows a small
 ## "placeholder art" tag in the HUD. Unknown keys are KEPT (manifest holds the whole document)
 ## and ignored, so a richer brief revision or the Blender side's extras do not break the loader.
 ## preview_rest.png / preview_099c.png are review-only and not required.
@@ -74,6 +76,30 @@ func path(layer: String) -> String:
 	return dir.path_join(manifest["layers"][layer]["file"])
 
 
+## Pixels of margin on EACH side of a plate ("panorama" or "foreground"), from the optional
+## layers.<layer>.overscan_px (m4-2-requirements §4); (0, 0) when absent.
+func overscan(layer: String) -> Vector2i:
+	var os: Variant = manifest["layers"][layer].get("overscan_px")
+	return Vector2i(int(os[0]), int(os[1])) if os is Array else Vector2i.ZERO
+
+
+## The pan-0 view size: the camera spans the whole panorama plate (widened fov), so
+## view = camera resolution - 2 x panorama overscan.
+func view_size() -> Vector2i:
+	return Vector2i(int(camera["resolution"][0]), int(camera["resolution"][1])) - 2 * overscan("panorama")
+
+
+## Expected pixel size of a plate: view + 2 x its own overscan (the panorama's equals the
+## camera resolution by construction).
+func plate_size(layer: String) -> Vector2i:
+	return view_size() + 2 * overscan(layer)
+
+
+## The pan-0 view region inside a plate.
+func view_rect(layer: String) -> Rect2i:
+	return Rect2i(overscan(layer), view_size())
+
+
 func area() -> String:
 	return manifest["area"]
 
@@ -130,6 +156,10 @@ static func check_manifest(m: Dictionary) -> PackedStringArray:
 	if m["camera"] != "cam_%s.json" % a:
 		e.append("camera %s != brief name cam_%s.json" % [m["camera"], a])
 	for layer in ["panorama", "foreground"]:
+		var os: Variant = m["layers"][layer].get("overscan_px")
+		if os != null and not (os is Array and os.size() == 2 and _num(os[0]) and _num(os[1])
+				and os[0] >= 0 and os[1] >= 0 and float(os[0]) == floorf(os[0]) and float(os[1]) == floorf(os[1])):
+			e.append("layers.%s.overscan_px must be [x, y] non-negative integers" % layer)
 		if not (float(m["layers"][layer]["parallax"]) > 0.0):
 			e.append("layers.%s.parallax must be > 0" % layer)
 	if not (float(m["layers"]["play"]["iso_size_m"]) > 0.0):

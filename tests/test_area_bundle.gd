@@ -193,6 +193,24 @@ func test_validator() -> void:
 	var fw := Validate.check_alpha(fgwide, "t", true, true)
 	check("a foreground covering most of the frame (centre clear) fails", not fw["ok"] and fw["detail"].contains("foreground covers"), fw["detail"])
 
+	# overscan (m4-2-requirements §4): the foreground rules apply to the centre VIEW region
+	var os_plate := Image.create_empty(128, 64, false, Image.FORMAT_RGBA8)
+	os_plate.fill(Color(0, 0, 0, 0))
+	var view := Rect2i(40, 16, 48, 32) # its centre box: x 54-73, y 24-40
+	os_plate.fill_rect(Rect2i(40, 30, 10, 4), Color(1, 1, 1, 1)) # in the full-plate centre box, outside the view's
+	var ov := Validate.check_alpha(os_plate, "t", true, true, view)
+	check("overscanned fg: art in the margin-shifted full-plate centre passes (view centre clear)", ov["ok"], ov["detail"])
+	check("same plate measured as a whole fails (control for the view region)", not Validate.check_alpha(os_plate, "t", true, true)["ok"])
+	var os_bad := os_plate.duplicate() as Image
+	os_bad.fill_rect(Rect2i(60, 30, 4, 4), Color(1, 1, 1, 1))
+	check("overscanned fg: art in the view's centre box fails", not Validate.check_alpha(os_bad, "t", true, true, view)["ok"])
+	var os_margin := Image.create_empty(128, 64, false, Image.FORMAT_RGBA8)
+	os_margin.fill(Color(0.2, 0.1, 0.3, 1)) # opaque margin all round: 81% of the plate
+	os_margin.fill_rect(view, Color(0, 0, 0, 0))
+	os_margin.fill_rect(Rect2i(40, 44, 48, 4), Color(0.2, 0.1, 0.3, 1)) # a bottom band inside the view
+	var om := Validate.check_alpha(os_margin, "t", true, true, view)
+	check("overscanned fg: mostly-clear is measured on the view (opaque margins allowed)", om["ok"], om["detail"])
+
 	# whole-bundle positive controls: a broken alpha and broken camera JSON must fail
 	var d := copy_fixture("broken_alpha")
 	var pano := Image.load_from_file(d.path_join("pano_bridge.png"))
@@ -240,6 +258,21 @@ func test_validator() -> void:
 	checks = Validate.validate(d)
 	check("panorama size != camera resolution fails", not result(checks, "resolution: panorama").get("ok", true))
 
+	# overscan bundles: pano = camera resolution (the camera spans the whole plate, widened fov);
+	# each plate = view + 2 x its overscan_px, view = camera resolution - 2 x panorama overscan
+	d = overscanned_fixture("overscan_ok", Vector2i(16, 8), Vector2i(64, 32), true)
+	checks = Validate.validate(d)
+	check("overscanned bundle (pano [16, 8], fg [64, 32]) passes every check", all_pass(checks))
+	check("overscanned fg size is view + 2 x overscan (2048x1144)", result(checks, "resolution: foreground").get("ok", false), str(result(checks, "resolution: foreground")))
+	d = overscanned_fixture("overscan_fg_unpadded", Vector2i(16, 8), Vector2i(64, 32), false)
+	checks = Validate.validate(d)
+	check("fg declaring overscan_px but not padded fails resolution", not result(checks, "resolution: foreground").get("ok", true), str(result(checks, "resolution: foreground")))
+	d = copy_fixture("overscan_bad_type")
+	m = read_json(d.path_join("manifest.json"))
+	m["layers"]["foreground"]["overscan_px"] = [64, -2]
+	write_json(d.path_join("manifest.json"), m)
+	check("negative overscan_px is refused", not AreaBundle.load_dir(d).ok())
+
 	# GLB positive controls: a Z-up export, centimetres, no SPAWN_/INTERACT_
 	d = copy_fixture("z_up_glb")
 	write_glb(d.path_join("play_bridge.glb"), Vector3(PI / 2.0, 0, 0), 1.0, true)
@@ -266,6 +299,34 @@ func test_validator() -> void:
 	write_json(d.path_join("manifest.json"), m)
 	checks = Validate.validate(d)
 	check("manifest interactable missing from the GLB fails", not result(checks, "glb: manifest").get("ok", true), str(result(checks, "glb: manifest")))
+
+
+## A fixture copy with overscanned plates: the panorama padded by `pano_os` per side with the
+## camera's resolution and vertical fov widened to match (m4-2-requirements §4), and the
+## foreground padded by `fg_os` (or left unpadded when `pad_fg` is false). Padding is alpha 0.
+func overscanned_fixture(case: String, pano_os: Vector2i, fg_os: Vector2i, pad_fg: bool) -> String:
+	var d := copy_fixture(case)
+	var pano := Image.load_from_file(d.path_join("pano_bridge.png"))
+	pano.convert(Image.FORMAT_RGBA8)
+	var big := Image.create_empty(pano.get_width() + 2 * pano_os.x, pano.get_height() + 2 * pano_os.y, false, Image.FORMAT_RGBA8)
+	big.blit_rect(pano, Rect2i(Vector2i.ZERO, pano.get_size()), pano_os)
+	big.save_png(d.path_join("pano_bridge.png"))
+	if pad_fg:
+		var fg := Image.load_from_file(d.path_join("fg_bridge.png"))
+		fg.convert(Image.FORMAT_RGBA8)
+		var fbig := Image.create_empty(fg.get_width() + 2 * fg_os.x, fg.get_height() + 2 * fg_os.y, false, Image.FORMAT_RGBA8)
+		fbig.blit_rect(fg, Rect2i(Vector2i.ZERO, fg.get_size()), fg_os)
+		fbig.save_png(d.path_join("fg_bridge.png"))
+	var cam := read_json(d.path_join("cam_bridge.json"))
+	var h0 := float(cam["resolution"][1])
+	cam["resolution"] = [big.get_width(), big.get_height()]
+	cam["fov_vertical_deg"] = rad_to_deg(2.0 * atan(tan(deg_to_rad(float(cam["fov_vertical_deg"])) / 2.0) * big.get_height() / h0))
+	write_json(d.path_join("cam_bridge.json"), cam)
+	var m := read_json(d.path_join("manifest.json"))
+	m["layers"]["panorama"]["overscan_px"] = [pano_os.x, pano_os.y]
+	m["layers"]["foreground"]["overscan_px"] = [fg_os.x, fg_os.y]
+	write_json(d.path_join("manifest.json"), m)
+	return d
 
 
 ## The fixture camera moved along its up vector so the needle tip [0, 0, 98] projects `dpx`
