@@ -57,6 +57,6 @@ jobs:
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
             gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
               gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" \
-                --notes "Review build. Apple Silicon Macs. First launch: right-click the app → Open (unsigned)."
+                --notes "Review build. Apple Silicon Macs. First launch: right-click the app → Open (unsigned). Credits (press C in game): Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0; Milky Way panorama: NOIRLab noirlab2430b (E. Slawik / NOIRLab / NSF / AURA), CC BY 4.0."
             gh release upload "$GITHUB_REF_NAME" "$name" --clobber
           fi

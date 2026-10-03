@@ -283,11 +283,11 @@ branch merges to main as one merge after its ⏸ review. M5.4 is its own PR. M5.
 | 5 | **M5.5a** body targets, geometry, intercept, refusals | 190 + 160 = **350** | M5.1b | M2 (landed) | |
 | 6 | **M5.2b** rings, shadows, atmosphere | 170 + 100 = **270** | M5.2a | | ⏸ R-m5a |
 | 6 | **M5.4** highlight-protecting meter | 40 + 60 = **100** | M5.2a | M1.8 (landed) | |
-| 6 | **M5.5b** gravity hold, holding, confirm class, Sol tour | 210 + 170 = **380** | M5.5a, M5.0b | | |
+| 6 | **M5.5b** gravity hold, holding, confirm class, Sol tour | 210 + 170 = **380** | M5.5a, M5.0b | **celestial 0.1.1** (Earth-Moon barycentre split; the start holds 50,000 km above Earth) | |
 | 7 | **M5.3** rest-frame tiles + exact warp | 160 + 220 = **380** | M5.2b | | ⏸ R-m5b |
 | 7 | **M5.6a** system map, planning panel, confirm dialogs | 210 + 90 = **300** | M5.5b | M4.3a `DisplayBinding` (soft) | |
 | 8 | **M5.6b** transit: window view, HUD, in-system warp | 90 + 40 = **130** | M5.6a | M4.3a HUD (soft), M4.2 bridge (soft) | ⏸ R-m5c |
-| 9 | **M5.7** α Cen arrival, inset, codex; start at Earth | 100 + 80 = **180** | M5.3, M5.6a, M5.5b | M1.2d (landed), M4.1 stand-off (soft), **M4.7 lore-check (for AC12)**, design-repo PL-n PR (F8) | ⏸ R-m5d |
+| 9 | **M5.7** α Cen arrival, inset, codex; start at Earth | 100 + 80 = **180** | M5.3, M5.6a, M5.5b | **celestial 0.1.1** (Earth-Moon barycentre split, for the start-at-Earth view), M1.2d (landed), M4.1 stand-off (soft), **M4.7 lore-check (for AC12)**, design-repo PL-n PR (F8) | ⏸ R-m5d |
 | 10 | **M5.8** G-M5-9, `capture-m5`, bench, report | 60 + 80 = **140** | all | M4.6 `lint-precision` (soft) | ⏸ S-M5 |
 | | **Total** | **2,230 + 1,810 = 4,040** | | | |
 
@@ -531,13 +531,13 @@ old-message compatibility.
 ### Wave 5 to 7, RENDER track (stacked into `m5-render`)
 
 #### M5.2a: physically lit globes, point/disc handoff, textures
-**Status:** ✅ executed on `sprint/m5.2a-globes` (2026-10-03), **⏸ L-tex open**: `make planet-publish` has not run (Mark's licence check first); `make planet-assets` falls back to the source URL until then. Independent eval pending.
+**Status:** ✅ executed on `sprint/m5.2a-globes` (2026-10-03), ⏸ L-tex **approved by Mark** (2026-10-03; the credit is displayed in game, C) and `make planet-publish` done. Independent eval 90/100; round-1 follow-ups applied, larger items deferred to M5.2b.
 - [x] AC7 photometry half: `make physics` (`_m5_photometry`, 22 checks): `physics/planets.gd` = the package probe (`sim/tools/planets_probe.ail`) within 1e-12 relative for `starIlluminanceAt`, `lambertPhase`, `minnaertRadiance`, `minnaertPhase`, `rhoFromGeometricAlbedo`, `discIlluminance`; `make lint-precision` (= `lint-precision-m5` until M4.6) covers `planets/`.
 - [x] AC8 part: `make golden` / `make golden-m5`: G-M5-4 (uniform 1.0021, normalised texture over 4 rotations 1.0041, centroid 0.001 px, extent 200.00 px) and G-M5-6 (point 1.0010, disc 1.0013, 0.03 % apart); M1 golden counts unchanged.
 - [x] AC10: `make planet-assets && test -z "$(git ls-files assets/planets)" && grep -q 'CC BY 4.0' data/planets/CREDITS`.
 - [x] Texture normalisation: `tools/planet_textures.gd -- --check` (in `make test` as `planet-textures-check`): 9 textures within 0.04 % of p_V.
 - [x] Renders opened: `make capture-m5a` → `renders/m5/m5.2a/` (nine globes, Jupiter in EYE, the Sun, the crossover pair, a sheet).
-- [ ] ⏸ L-tex: Mark's licence check, then `make planet-publish` (maintainer).
+- [x] ⏸ L-tex: Mark approved (2026-10-03, credit displayed: `ui/credits.gd`, website credits, release notes); `make planet-publish` uploaded the 10 pins.
 **Scope:**
 - **`planets/system_view.gd`** is fed only by `state.system` and renders
   into M4's (today: M1's) sky SubViewport, pre-exposed. Placement: float64
@@ -698,6 +698,15 @@ before and after the change.
 ### Wave 5 to 8, NAVIGATION track
 
 #### M5.5a: body targets, stop and flyby geometry, intercept, refusals
+**Status:** ✅ executed on `sprint/m5.5a-body-targets` (2026-10-03); protocol **2.4** (main was at 2.3). Independent eval pending.
+- [x] AC14 in `make sim` (`navigation_test.ail`): the sim computes a body's target (a bogus client `index`/`pos` gives the same intent and byte-identical replies); stop and flyby trips = `planBurnCoastBurn` on the independently computed leg to 1e-9; the Moon at 0.99c falls back to flip-and-burn exactly as M2.
+- [x] AC15: `collision`, `ring_crossing`, `too_close`, `not_visitable` and `committed` each have a triggering fixture and a passing one (too_close and ring_crossing at ±1 km / ±10 km of the threshold), plus `out_of_range` and `no_converge`.
+- [x] AC17 residual half: < 1e-9 of the leg for the Saturn flyby at 0.5c, the Io stop at 0.001c and a Mercury chase (contraction about 0.17).
+- [x] AC4 planner half: `make strict-m5` runs `navigationVm` (18 checks plus a 2.4 session); strict VM = interpreter, byte for byte.
+- [x] Mutants: each dropped refusal, a client `pos` honoured, 11 iterations (two ways), no_converge off, stale commit allowed, the minor gate off, M4 stand-off applied to a body leg, no 0.1 AU clamp, the clock sign, the pass tilt, the run-out margin: all 18 killed.
+- [x] M5.1b evaluator findings folded in: the star's zero `sun_dir` documented; a retarded `sun_dir`/`r_au`/`phase_deg` test (kills mutant M7); the four 2.3 checks in `protocolVm`; design §M5.1 updated; the hello reports relativity 0.7.0 from minor 4 (`make hello-pin`); celestial 0.1.1 named as a dependency of M5.5b and M5.7.
+- [x] M4.2 finding: home is the target id `"Sol"`, not catalogue index 0 (Proxima), in `standoffFor`, the arrival point and the news `return` entry.
+- [x] `make test` green.
 **Scope:** in a new **`sim/navigation.ail`** (pure), with `core.ail`
 dispatching to it:
 - `Target` gains the body form `{kind: "body", id}`, and **for a body the
@@ -764,8 +773,11 @@ refusal, use the client `pos`, or run 11 iterations. Each must fail.
 **Conflicts:** `ship.ail` and `protocol.ail` with M4.1; the ledger with
 M4.1's `drag_energy_j` reader (F4).
 
-**Estimated:** 210 + 170 = 380 · **Deps:** M5.5a, M5.0b (`hoverPower`) ·
-**Registry:** depend.
+**Estimated:** 210 + 170 = 380 · **Deps:** M5.5a, M5.0b (`hoverPower`),
+**`sunholo/celestial` 0.1.1** (the Earth-Moon barycentre split: Standish's
+Earth row is the EMB, so Earth and the Moon are each 4,671 km off; the ship
+starts 50,000 km above Earth, where that is 4.7°. Package first, gate 3; added
+after M5.1b's evaluation) · **Registry:** depend.
 
 **Acceptance (commands):**
 - **AC16:** `make sim`: during cruise and holds the ship stays on the
@@ -882,8 +894,9 @@ M4.7's importer), `tools/m5_golden.gd`, `planets/system_view.gd` (α Cen
 case), `mk/m5.mk`. Outside this repo: a docs PR to `$D` adding
 `physics/planets-spec.md` PL-n rows and relativity-spec RS-24 to RS-29 (F8).
 
-**Estimated:** 100 + 80 = 180 · **Deps:** M5.3, M5.6a, M5.5b · **Registry:**
-depend.
+**Estimated:** 100 + 80 = 180 · **Deps:** M5.3, M5.6a, M5.5b, **`sunholo/celestial`
+0.1.1** (the Earth-Moon barycentre split, for the start-at-Earth view; added
+after M5.1b's evaluation) · **Registry:** depend.
 
 **Acceptance (commands):**
 - **AC11:** `make ui` (inset audit: every loaded α Cen body is listed with

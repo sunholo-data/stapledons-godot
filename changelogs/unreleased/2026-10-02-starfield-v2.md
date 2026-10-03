@@ -7,7 +7,7 @@
 - With M1.2d merged, the medium and large tiers also stack quick's 137 HIP-filled rows (flag 8:
   Sirius, α Cen A/B, Procyon, Altair, ...; GCNS has no photometry for them and the bright tier
   excludes them as CNS5 matches) and the bright tier: 335,157 stars on the large tier.
-  `make capture` gains a port view (galactic l = 270: Canopus, α Cen, Sirius, the LMC).
+  `make capture` gains a port view. (Corrected by D-28: port looks at l 90; starboard is l 270, with Canopus, α Cen and the LMC.)
 - Instance custom data is (T_eff, E_v at Sol in lux from `illuminanceFromV`, flags, |p|²); the
   shader rescales E_v by inverse square and multiplies by `pointFluxRatio(T, D)`.
 - Rebasing (gate 5): positions are float64 on the CPU and uploaded as float32 hi/lo pairs with

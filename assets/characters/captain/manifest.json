@@ -29,7 +29,14 @@
     ],
     "px_per_m": 720,
     "view_pitch_deg": -14,
-    "mirror_safe": true
+    "mirror_safe": true,
+    "view_yaw_deg": 45,
+    "facing_variants": {
+      "0": "front",
+      "1": "back",
+      "2": "se",
+      "3": "ne"
+    }
   },
   "files": [
     {
@@ -261,6 +268,238 @@
         [
           594.0,
           1438
+        ]
+      ]
+    },
+    {
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 0,
+      "biological_age": 30,
+      "height_m": 1.75,
+      "width": 1024,
+      "height": 1536,
+      "file": "avatar_captain_y0_se.png",
+      "variant": "2",
+      "facing": "se",
+      "figure_height_px": 1260.0,
+      "sha256": "2c096677d3cbe20995564280ff99d64cbf4ec53854b09c4f187e5617b7690124",
+      "source": "generated (see generation_notes.md#avatar_captain_y0_se)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          426.0,
+          1442
+        ],
+        [
+          598.5,
+          1438
+        ]
+      ]
+    },
+    {
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 0,
+      "biological_age": 30,
+      "height_m": 1.75,
+      "width": 1024,
+      "height": 1536,
+      "file": "avatar_captain_y0_ne.png",
+      "variant": "3",
+      "facing": "ne",
+      "figure_height_px": 1259.0,
+      "sha256": "b99958dbda122db5dda47c74ffe756bae52d3e1b501f42bd8840e8d174edaed7",
+      "source": "generated (see generation_notes.md#avatar_captain_y0_ne)",
+      "measured_foot_anchor_px": [
+        512.0,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          437.0,
+          1440
+        ],
+        [
+          587.0,
+          1440
+        ]
+      ]
+    },
+    {
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 20,
+      "biological_age": 50,
+      "height_m": 1.75,
+      "width": 1024,
+      "height": 1536,
+      "file": "avatar_captain_y20_se.png",
+      "variant": "2",
+      "facing": "se",
+      "figure_height_px": 1261.0,
+      "sha256": "390571919b9a11c6b68bfb1ae1bc4cab3e55b73049fa6bc49bf7e4ba1b171815",
+      "source": "generated (see generation_notes.md#avatar_captain_y20_se)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          421.5,
+          1441
+        ],
+        [
+          603.0,
+          1439
+        ]
+      ]
+    },
+    {
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 20,
+      "biological_age": 50,
+      "height_m": 1.75,
+      "width": 1024,
+      "height": 1536,
+      "file": "avatar_captain_y20_ne.png",
+      "variant": "3",
+      "facing": "ne",
+      "figure_height_px": 1260.0,
+      "sha256": "b27e332401a0961a9c4ee1d83b1ee09078cc516ef7f3c2220f96d0035ab5a6c9",
+      "source": "generated (see generation_notes.md#avatar_captain_y20_ne)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          420.5,
+          1439
+        ],
+        [
+          604.0,
+          1441
+        ]
+      ]
+    },
+    {
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 40,
+      "biological_age": 70,
+      "height_m": 1.73,
+      "width": 1024,
+      "height": 1536,
+      "file": "avatar_captain_y40_se.png",
+      "variant": "2",
+      "facing": "se",
+      "figure_height_px": 1246.0,
+      "sha256": "626f6b42fade199a88d7a97a4fd2f850d0c98f559ac53f233ff0b124de107d7a",
+      "source": "generated (see generation_notes.md#avatar_captain_y40_se)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          423.0,
+          1442
+        ],
+        [
+          601.5,
+          1438
+        ]
+      ]
+    },
+    {
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 40,
+      "biological_age": 70,
+      "height_m": 1.73,
+      "width": 1024,
+      "height": 1536,
+      "file": "avatar_captain_y40_ne.png",
+      "variant": "3",
+      "facing": "ne",
+      "figure_height_px": 1246.5,
+      "sha256": "d71e7868f138589318e77070bf2bbe8287ea7992f23500da15ec8db5c9b9af1d",
+      "source": "generated (see generation_notes.md#avatar_captain_y40_ne)",
+      "measured_foot_anchor_px": [
+        512.5,
+        1439.5
+      ],
+      "sole_contact_centres_px": [
+        [
+          435.5,
+          1439
+        ],
+        [
+          589.5,
+          1440
+        ]
+      ]
+    },
+    {
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 60,
+      "biological_age": 90,
+      "height_m": 1.7,
+      "width": 1024,
+      "height": 1536,
+      "file": "avatar_captain_y60_se.png",
+      "variant": "2",
+      "facing": "se",
+      "figure_height_px": 1224.5,
+      "sha256": "ee0f1ba34a11a5fee30d1eebcb35c7bebcc72bd0d2840d62004c351165a65ba7",
+      "source": "generated (see generation_notes.md#avatar_captain_y60_se)",
+      "measured_foot_anchor_px": [
+        512.0,
+        1439.5
+      ],
+      "sole_contact_centres_px": [
+        [
+          424.0,
+          1441
+        ],
+        [
+          600.0,
+          1438
+        ]
+      ]
+    },
+    {
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 60,
+      "biological_age": 90,
+      "height_m": 1.7,
+      "width": 1024,
+      "height": 1536,
+      "file": "avatar_captain_y60_ne.png",
+      "variant": "3",
+      "facing": "ne",
+      "figure_height_px": 1224.0,
+      "sha256": "7161360ec9817dd0629c1abecc62be676979bbf24ea83f83139a1cef090f33ec",
+      "source": "generated (see generation_notes.md#avatar_captain_y60_ne)",
+      "measured_foot_anchor_px": [
+        512.5,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          424.0,
+          1438
+        ],
+        [
+          601.0,
+          1442
         ]
       ]
     }

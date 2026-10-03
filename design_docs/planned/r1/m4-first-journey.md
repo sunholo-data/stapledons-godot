@@ -171,6 +171,10 @@ Godot does no arithmetic on physics or clock values.
   plane normal to the heading (fallback galactic +X within 1e-6 of a pole).
   The sky camera is `ship_basis(heading) × cam.forward/up`. CPU tests:
   orthonormal to 1e-12, heading → +Z, pole fallback.
+  The galactic vectors reach Godot through `SkyFrame` (D-28), a rotation, so the
+  sky texture is composited as rendered. M4.2 shipped with a local mirror
+  (`SKY_FLIP_H`) because the M1 map was a reflection; D-28 fixed the map and
+  removed the flip ([sky-frame-d28](../../implemented/r1/sky-frame-d28.md)).
 
 ### M4.1 Sim: consequence stub and session extensions (pure core)
 

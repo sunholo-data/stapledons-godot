@@ -17,14 +17,15 @@ import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
-  Target, PlanReq, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, Refusal, Event, Crossing, Residuals, Params, defaultParams,
+  Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
-  CqView, cqView, ismNow, dragEnergyJ, withArchive)
+  CqView, cqView, ismNow, dragEnergyJ, withArchive, navOf)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
   AiView, OpenView, aiView, isCancelReason, isSha256Hex, defaultAiMaxOpen, defaultAiTtlTicks)
-import ./celestial (SystemView, BodyView, solSystem, systemAt, jdAt, defaultEpochJd)
+import ./celestial (SystemView, BodyView, solSystem, systemAt, jdAt, defaultEpochJd, lyKm)
+import ./navigation (BodyReq, NavPlan, Pass)
 
 export type Override = { name: string, value: float }
 export type Input =
@@ -45,14 +46,24 @@ export type LedgerView = { mEffKg: float, availableKg: float, radiatedJ: float, 
 export type StateMsg = { tick: int, status: string, clock: Option[Clock], ship: Option[ShipView], journey: Option[JourneyView], ledger: Option[LedgerView], rng: Option[Rng], params: Option[Params], ai: Option[AiView], events: [Event], refused: [Refusal], full: bool }
 export type HelloMsg = { major: int, minor: int, sim: string, relativity: string, rng: string }
 
+-- relativity: below minor 4 the hello keeps the string every recorded stream and golden
+-- carries ("0.4.0", stale since the 0.5 pins); from 2.4 it is the pinned release,
+-- relativityPin(), which `make hello-pin` checks against sim/ailang.toml.
 export pure func helloMsg() -> HelloMsg = { major: 2, minor: 1, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
+export pure func relativityPin() -> string = "0.7.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
-export pure func helloFor(want: int) -> HelloMsg = if want >= systemMinor() then {helloMsg() | minor: systemMinor()} else if want >= 2 then {helloMsg() | minor: 2} else helloMsg()
+export pure func helloFor(want: int) -> HelloMsg =
+  if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPin()}
+  else if want >= systemMinor() then {helloMsg() | minor: systemMinor()} else if want >= 2 then {helloMsg() | minor: 2} else helloMsg()
 -- Protocol 2.3 (M5.1b): a client that asks for minor >= 3 also gets the `system` section
 -- (Sol's bodies as seen from the ship). Tests read the minor from here, never a literal (F4).
 export pure func systemMinor() -> int = 3
-pure func sessionMinor(want: int) -> int = if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- Protocol 2.4 (M5.5a): body targets. A client that asks for minor >= 4 may send the
+-- plan intent's body form, and a body plan's journey.plan carries target_kind,
+-- intercept, and pass (flyby) or hold (stop). Below 4 a body plan is bad_intent.
+export pure func navMinor() -> int = 4
+pure func sessionMinor(want: int) -> int = if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -102,6 +113,7 @@ pure func planFields(p: PlanReq) -> [string] =
 pure func encodeIntent(i: Intent) -> string =
   match i {
     IPlan(p) => obj([f("k", q("plan"))] ++ planFields(p)),
+    IPlanBody(b) => obj([f("k", q("plan")), f("target", obj([f("kind", q("body")), f("id", q(b.id))])), f("cruise_phi", num(b.cruisePhi)), f("approach", approachObj(b))]),
     IEcho(p) => obj([f("k", q("echo"))] ++ planFields(p)),
     ICommit(n) => obj([f("k", q("commit")), f("plan_id", intToStr(n))]),
     ICancel => obj([f("k", q("cancel"))]),
@@ -114,6 +126,10 @@ pure func encodeIntent(i: Intent) -> string =
       (match o.context { [] => [], _ => [f("context", ctxObj(o.context))] })),
     IAiCancel(c) => obj([f("k", q("ai_cancel")), f("req", q(c.req)), f("reason", q(c.reason))])
   }
+-- 2.4 body plan: approach {mode: "stop", standoff_km?} or {mode: "flyby", b_km, clock_deg, run_out_km?}.
+pure func approachObj(b: BodyReq) -> string =
+  if b.mode == "stop" then obj([f("mode", q("stop"))] ++ opt("standoff_km", num, b.standoffKm))
+  else obj([f("mode", q(b.mode)), f("b_km", num(b.bKm)), f("clock_deg", num(b.clockDeg))] ++ opt("run_out_km", num, b.runOutKm))
 -- AI payloads (2.1): context values are strings or string lists; the cache
 -- key and constraints are fixed-order objects.
 pure func strArr(xs: [string]) -> string = arr(each(q, xs))
@@ -144,14 +160,24 @@ pure func encodeClock(c: Clock) -> string = obj([f("tau", num(c.tau)), f("t", nu
 pure func encodeShip(s: ShipView) -> string = obj(shipFields(s))
 pure func shipFields(s: ShipView) -> [string] =
   [f("phase", q(s.phase)), f("beta", num(s.beta)), f("one_minus_beta", num(s.oneMinusBeta)), f("gamma", num(s.gamma)), f("heading", vec(s.heading)), f("pos", vec(s.pos)), f("x", num(s.x)), f("flown", num(s.flown))]
-pure func encodePlanView(v: PlanView) -> string =
-  obj([f("target", targetObj(v.target)), f("distance", num(v.distance)), f("profile", q(v.profile)), f("fell_back", bool(v.fellBack)),
+pure func encodePlanView(v: PlanView) -> string = obj(planViewFields(v))
+pure func planViewFields(v: PlanView) -> [string] =
+  [f("target", targetObj(v.target)), f("distance", num(v.distance)), f("profile", q(v.profile)), f("fell_back", bool(v.fellBack)),
     f("cruise_phi", num(v.cruisePhi)), f("cruise_beta", num(v.cruiseBeta)), f("cruise_one_minus_beta", num(v.cruiseOneMinusBeta)), f("cruise_gamma", num(v.cruiseGamma)),
     f("boost_minutes", num(v.boostMinutes)), f("ship_years", num(v.shipYears)), f("earth_years", num(v.earthYears)),
     f("arrive_year", num(v.arriveYear)), f("age_on_arrival", num(v.ageOnArrival)), f("years_left", num(v.yearsLeft)),
     f("energy", obj([f("boost_j", num(v.energy.boostJ)), f("brake_j", num(v.energy.brakeJ)), f("drag_j", num(v.energy.dragJ)), f("total_j", num(v.energy.totalJ)), f("total_kg", num(v.energy.totalKg))])),
     f("ism", obj([f("drag_n", num(v.ism.dragN)), f("hold_w", num(v.ism.holdW)), f("load_w_m2", num(v.ism.loadWM2)), f("glow_w_m2", num(v.ism.glowWM2))])),
-    f("cmb_forward_k", num(v.cmbForwardK))])
+    f("cmb_forward_k", num(v.cmbForwardK))]
+-- 2.4: a body plan's panel is the M2 panel plus target_kind, intercept{t, pos} (when and
+-- where the body is at arrival or at the pass; galaxy years, ly), and pass{t, b_km, beta,
+-- d_at_pass} for a flyby or hold{body, offset_km} for a stop. A star plan's bytes are M2's.
+pure func navFields(n: NavPlan) -> [string] =
+  [f("target_kind", q("body")), f("intercept", obj([f("t", num(n.interceptT)), f("pos", vec(n.interceptLy))]))] ++
+  (match n.pass { Some(p) => [f("pass", obj([f("t", num(p.t)), f("b_km", num(p.bKm)), f("beta", num(p.beta)), f("d_at_pass", num(p.dAtPass))]))],
+                  None => [f("hold", obj([f("body", q(n.bodyId)), f("offset_km", num(n.standoffKm))]))] })
+pure func encodeJourneyNav(j: JourneyView, nav: Option[NavPlan]) -> string =
+  match nav { None => encodeJourney(j), Some(n) => obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", \v. obj(planViewFields(v) ++ navFields(n)), j.plan)) }
 -- Events: {k} plus the echo's plan fields, a phase crossing {from, to, tau}
 -- the arrival residuals {residual_x, residual_t, residual_phi} or a draw
 -- {stream, n, value} (value: the top 53 bits, an exact JSON integer).
@@ -167,12 +193,13 @@ pure func encodeRng(r: Rng) -> string =
 pure func encodeLedger(l: LedgerView) -> string =
   obj([f("m_eff_kg", num(l.mEffKg)), f("available_kg", num(l.availableKg)), f("radiated_j", num(l.radiatedJ)), f("boost_j", num(l.boostJ)), f("drag_j", num(l.dragJ))])
 -- 2.2: `ship` already encoded with its `ism` (the override), and the members appended to `changes`.
-export type Extras = { ship: Option[string], tail: [string] }
-pure func noExtras() -> Extras = { ship: None, tail: [] }
+-- 2.4: `journey` already encoded with a body plan's fields (the override), when it changed.
+export type Extras = { ship: Option[string], tail: [string], journey: Option[string] }
+pure func noExtras() -> Extras = { ship: None, tail: [], journey: None }
 export pure func encodeState(m: StateMsg) -> string = encodeStateX(m, noExtras())
 export pure func encodeStateX(m: StateMsg, x: Extras) -> string =
   envelope("state", [f("tick", intToStr(m.tick)), f("status", q(m.status)),
-    f("changes", obj(opt("clock", encodeClock, m.clock) ++ (match x.ship { Some(sh) => [f("ship", sh)], None => opt("ship", encodeShip, m.ship) }) ++ opt("journey", encodeJourney, m.journey) ++ opt("ledger", encodeLedger, m.ledger) ++ opt("rng", encodeRng, m.rng) ++ opt("params", paramsEcho, m.params) ++ opt("ai", encodeAiView, m.ai) ++ x.tail)),
+    f("changes", obj(opt("clock", encodeClock, m.clock) ++ (match x.ship { Some(sh) => [f("ship", sh)], None => opt("ship", encodeShip, m.ship) }) ++ (match x.journey { Some(js) => [f("journey", js)], None => opt("journey", encodeJourney, m.journey) }) ++ opt("ledger", encodeLedger, m.ledger) ++ opt("rng", encodeRng, m.rng) ++ opt("params", paramsEcho, m.params) ++ opt("ai", encodeAiView, m.ai) ++ x.tail)),
     f("events", arr(each(encodeEvent, m.events))),
     f("refused", arr(each(\r. obj([f("i", intToStr(r.i)), f("reason", q(r.reason))]), m.refused))),
     f("full", bool(m.full))])
@@ -198,6 +225,7 @@ pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string =
 
 -- 2.3 system section (M5.1b, design m5-planets §M5.1): the bodies as seen from the
 -- ship, at the retarded time, galactic frame. Culling is Godot's (the sim stays presentation-free).
+-- sun_dir is a unit vector for planets and moons and {0, 0, 0} for the star (kind "star").
 pure func bodyObj(b: BodyView) -> string =
   obj([f("id", q(b.id)), f("name", q(b.name)), f("kind", q(b.kind)), f("host", q(b.host)), f("status", q(b.status)),
     f("rel_km", vec(b.relKm)), f("radius_km", num(b.radiusKm)), f("flattening", num(b.flattening)), f("pole", vec(b.pole)), f("w_deg", num(b.wDeg)),
@@ -240,8 +268,23 @@ pure func planOf(j: Json, c: string) -> Result[PlanReq, string] =
   bind(req(numF(j, "cruise_phi"), c), \phi.
   bind(if has(j, "flip_g") then bind(req(numF(j, "flip_g"), c), \g. Ok(Some(g))) else Ok(None), \flip.
   Ok({target: tg, cruisePhi: phi, flipG: flip}))))
+-- 2.4: a target {kind: "body", id} is the body form; any index or pos it carries is ignored.
+pure func isBodyTarget(j: Json) -> bool = match get(j, "target") { Some(t) => getString(t, "kind") == Some("body"), None => false }
+pure func bodyPlanOf(j: Json, c: string) -> Result[BodyReq, string] =
+  bind(req(get(j, "target"), c), \t. bind(req(getString(t, "id"), c), \id. bind(req(numF(j, "cruise_phi"), c), \phi.
+  bind(approachOf(j, c), \ap. Ok({ap | id: id, cruisePhi: phi})))))
+pure func stopReq(s: Option[float]) -> BodyReq = { id: "", cruisePhi: 0.0, mode: "stop", standoffKm: s, bKm: 0.0, clockDeg: 0.0, runOutKm: None }
+-- approach absent: a stop at the default stand-off; flyby clock_deg absent: 0 (north).
+pure func approachOf(j: Json, c: string) -> Result[BodyReq, string] =
+  if !has(j, "approach") then Ok(stopReq(None))
+  else bind(req(get(j, "approach"), c), \a. bind(req(getString(a, "mode"), c), \m.
+    if m == "stop" then bind(optIf(a, "standoff_km", \x. req(numF(x, "standoff_km"), c)), \s. Ok(stopReq(s)))
+    else if m == "flyby" then bind(req(numF(a, "b_km"), c), \b. bind(if has(a, "clock_deg") then req(numF(a, "clock_deg"), c) else Ok(0.0), \ck.
+      bind(optIf(a, "run_out_km", \x. req(numF(x, "run_out_km"), c)), \ro. Ok({stopReq(None) | mode: "flyby", bKm: b, clockDeg: ck, runOutKm: ro}))))
+    else Err(c)))
 pure func intentOf(k: string, j: Json) -> Result[Intent, string] =
-    if k == "plan" then bind(planOf(j, "bad_intent"), \p. Ok(IPlan(p)))
+    if k == "plan" && isBodyTarget(j) then bind(bodyPlanOf(j, "bad_intent"), \b. Ok(IPlanBody(b)))
+    else if k == "plan" then bind(planOf(j, "bad_intent"), \p. Ok(IPlan(p)))
     else if k == "echo" then bind(planOf(j, "bad_intent"), \p. Ok(IEcho(p)))
     else if k == "commit" then bind(req(natF(j, "plan_id"), "bad_intent"), \n. Ok(ICommit(n)))
     else if k == "cancel" then Ok(ICancel)
@@ -477,8 +520,16 @@ pure func cqExtras(before: World, after: World) -> Extras {
   let sb = shipSection(before);
   let sa = shipSection(after);
   { ship: if sb == sa then None else Some(sa),
-    tail: if encodeCq(cqView(before), n0) == encodeCq(cqView(after), n0) then [] else [f("consequence", encodeCq(cqView(after), n0))] }
+    tail: if encodeCq(cqView(before), n0) == encodeCq(cqView(after), n0) then [] else [f("consequence", encodeCq(cqView(after), n0))],
+    journey: navJourney(before, after) }
 }
+-- 2.4: a body plan's journey section (with its nav fields) when it changed; None otherwise.
+pure func navJourney(before: World, after: World) -> Option[string] =
+  match navOf(after) {
+    None => None,
+    Some(n) => { let ja = encodeJourneyNav(journeyView(after), Some(n)); if encodeJourneyNav(journeyView(before), navOf(before)) == ja then None else Some(ja) }
+  }
+pure func hasBodyPlan(xs: [Intent]) -> bool = match xs { [] => false, x :: r => (match x { IPlanBody(_) => true, _ => false }) || hasBodyPlan(r) }
 
 export pure func serve(s: Session, line: string) -> Served =
   match decodeInput(line) {
@@ -499,14 +550,14 @@ export pure func serve(s: Session, line: string) -> Served =
               let w = if s.minor >= 2 then withArchive(w1, rows) else {w1 | cq: {w1.cq | on: false}};
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
                 journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)), events: [], refused: [], full: true};
-              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSection(w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) }) else encodeState(st) }
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSection(w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w), journey: None }) else encodeState(st) }
             }
           }
         }
       },
       GInput(i) => if !s.hello then malformed(s, "no_hello") else match s.game {
         None => malformed(s, "no_game"),
-        Some(w) => if i.tick != w.tick + 1 then malformed(s, "bad_tick") else {
+        Some(w) => if i.tick != w.tick + 1 then malformed(s, "bad_tick") else if s.minor < navMinor() && hasBodyPlan(i.intents) then malformed(s, "bad_intent") else {
           let t = tick(w, {dtau: i.dtau, intents: i.intents});
           let next = t.world;
           let state = { tick: next.tick, status: "ok", clock: changed(encodeClock, clockOf(w.params, w.ship), clockOf(next.params, next.ship)),

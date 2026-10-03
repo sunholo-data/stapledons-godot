@@ -93,8 +93,9 @@ func _integrated(main: Node, img: Image, k: float) -> float:
 func _opposition(main: Node, sv: SystemView, textured: bool) -> int:
 	# A 1 deg view (Camera3D's minimum): 200 px across is then a 0.37 deg globe. The shader draws
 	# the exact finite-distance view (converging rays, sunlight parallel), whose disc integral
-	# exceeds discIlluminance's far-field (R/d)^2 form by about 1.5 R/d: +1.2% at 0.9 deg
-	# (measured at 5 deg), +19% for a 30 deg globe (the same 200 px at 70 deg).
+	# exceeds discIlluminance's far-field (R/d)^2 form, roughly 0.75 R/d at small R/d (the
+	# evaluator's fit; measured +1.2% for a 0.9 deg globe) and +19% for a 30 deg globe (the
+	# same 200 px at 70 deg), so the golden keeps R/d small.
 	var fov0: float = main.camera.fov
 	main.camera.fov = 1.0
 	main._configure_pixel()
@@ -187,8 +188,8 @@ func main(host: Node, args: Dictionary) -> int:
 ## tier): the sim's recorded Sol bodies (pole, W, sun direction, p_V, k at
 ## jd 2460251.5) seen from vantage points the sim cannot fly to until M5.5, each
 ## re-lit for that vantage with the package mirror (phase, discIlluminance).
-## Each globe is exposed so its brightest radiance sits at linear 0.8 (a
-## photographer's exposure, labelled per image); jupiter_eye.png is the same
+## Each globe is exposed so 3x its mean-albedo peak radiance sits at linear 0.8, glow off, so
+## bright clouds stay inside AgX and the terminator reads (a photographer's exposure, labelled); jupiter_eye.png is the same
 ## view in the default EYE mode, which does not meter planets until M5.4.
 const SHOTS := [["jupiter", 8.0, 12.0], ["saturn", 7.0, 40.0], ["earth", 4.0, 50.0], ["moon", 6.0, 90.0],
 	["mars", 6.0, 25.0], ["venus", 5.0, 60.0], ["mercury", 6.0, 70.0], ["uranus", 8.0, 20.0], ["neptune", 8.0, 15.0]]
@@ -204,10 +205,12 @@ func capture(main: Node, out: String) -> int:
 	var size: Vector2 = main.get_viewport().get_texture().get_size()
 	sv.set_view(e.pixel_rad, size.y)
 	var tiles := []
+	var env: Environment = main.env
+	env.glow_enabled = false # globes: no bloom over the terminator (the EYE and Sun shots restore it)
 	for shot: Array in SHOTS:
 		var b := vantage(bodies[shot[0]], shot[1], shot[2])
 		var lux := Planets.star_illuminance_at(E1, b["r_au"])
-		var peak := Planets.rho_from_geometric_albedo(b["p_v"], b["minnaert_k"]) * lux / PI * 2.0 # textures reach ~2x their mean
+		var peak := Planets.rho_from_geometric_albedo(b["p_v"], b["minnaert_k"]) * lux / PI * 3.0 # textures reach ~3x their mean (Earth's clouds)
 		_aim(main, b)
 		e.fixed = true
 		e.fixed_ev = log(peak / 0.8 / Exposure.SAT) / log(2.0)
@@ -220,6 +223,7 @@ func capture(main: Node, out: String) -> int:
 		tiles.append(img)
 		print("captured %s  %s from %.0f radii, phase %.1f deg, %.1f px across, EV %+.2f fixed for the globe (%s)" % [name, shot[0], shot[1], b["phase_deg"], Planets.diameter_px(b["radius_km"], shot[1] * b["radius_km"], e.pixel_rad), e.ev, "textured" if sv.albedo_table.has(shot[0]) and not sv._textures(shot[0]).is_empty() else "uniform albedo"])
 	# the same Jupiter view in the default EYE mode (dark-adapted, pinned at EV_dark: the disc clips, stars stay)
+	env.glow_enabled = true
 	var jb := vantage(bodies["jupiter"], 8.0, 12.0)
 	_aim(main, jb)
 	e.fixed = false
@@ -234,6 +238,15 @@ func capture(main: Node, out: String) -> int:
 	tiles.append(await _sun(main, sv, out))
 	tiles.append(await _crossover_shot(main, sv, out))
 	main._save_sheet(tiles, 4, out.path_join("m5_2a_sheet.png"))
+	# the in-game credits (L-tex: the CC BY credit is displayed): corner hint and the C panel open
+	var cr: Credits = main.credits
+	cr.visible = true
+	cr.panel.visible = true
+	var credit_img: Image = await main._grab()
+	credit_img.save_png(out.path_join("credits_panel.png"))
+	cr.panel.visible = false
+	cr.visible = false
+	print("captured credits_panel.png  the C credits panel over the last view")
 	print("captured m5_2a_sheet.png (%d tiles)" % tiles.size())
 	main.starfield.clear_point_sources()
 	return 0
@@ -271,7 +284,7 @@ func _aim(main: Node, b: Dictionary) -> void:
 	var d := Planets.length64(w)
 	var cam: FreeLookCamera = main.camera
 	cam.look(atan2(-w[0] / d, -w[2] / d), asin(w[1] / d), 0.0)
-	var p := Starfield.galactic_to_world(Vector3(b["pole"]["x"], b["pole"]["y"], b["pole"]["z"]))
+	var p := SkyFrame.to_world(Vector3(b["pole"]["x"], b["pole"]["y"], b["pole"]["z"]))
 	var pc: Array = cam._to_camera(p.x, p.y, p.z)
 	cam.look(cam.yaw, cam.pitch, atan2(pc[1], pc[0]) - PI / 2.0)
 

@@ -92,10 +92,10 @@ static func diameter_px(radius_km: float, d_km: float, px_rad: float) -> float:
 
 
 ## A sim vector {x, y, z} (galactic, float64) -> [world x, y, z] float64 scalars,
-## through Starfield.galactic_to_world's axis map (y, z, -x) written out so no
-## raw km value passes through a float32 Vector3.
+## through SkyFrame.to_world64 (D-28, the one right-handed map), so no raw km value
+## passes through a float32 Vector3.
 static func world_of(v: Dictionary) -> PackedFloat64Array:
-	return PackedFloat64Array([v["y"], v["z"], -v["x"]])
+	return SkyFrame.to_world64([v["x"], v["y"], v["z"]])
 
 
 static func length64(a: PackedFloat64Array) -> float:
@@ -123,7 +123,7 @@ static func body_basis(pole_gal: Dictionary, w_deg: float) -> Basis:
 	q = q.normalized()
 	var w := deg_to_rad(w_deg)
 	var x := q * cos(w) + p.cross(q) * sin(w)
-	var gw := func(g: Vector3) -> Vector3: return Starfield.galactic_to_world(g)
+	var gw := func(g: Vector3) -> Vector3: return SkyFrame.to_world(g)
 	return Basis(gw.call(x), gw.call(p.cross(x)), gw.call(p))
 
 

@@ -14,7 +14,7 @@ extends Node3D
 ##            star, albedo texture normalised to the data's p_V, pre-exposed by Exposure.k.
 ## Bodies too faint and too small to matter (below CULL_LUX_FRACTION of the
 ## naked-eye threshold and under CULL_PX across) are culled here, not in the sim.
-## Directions use Starfield.galactic_to_world, the same axis map as the stars,
+## Directions use SkyFrame (D-28), the same right-handed map as the stars,
 ## so a planet sits where the starfield would put a star in that direction.
 ## At rest only: the relativistic view of resolved bodies is M5.3.
 

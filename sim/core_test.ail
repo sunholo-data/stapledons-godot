@@ -448,7 +448,7 @@ pure func checkPlanIsPackage() -> bool {
 -- ------------------------------------------------------------ M2.3b autopilot, boundaries, arrival, ledger
 -- A committed play world: plan to `t` at cruise phi with params p, commit.
 pure func apCommitted(p: Params, t: Target, phi: float) -> World = plDo(plDo(plWorld(false, p), [plCruise(t, phi)]).world, [ICommit(1)]).world
-pure func apCommit(w: World) -> Commitment = match w.journey { Committed(c) => c, Arrived(c) => c, _ => {plan: {id: 0, target: plAt(1.0), from: {x: 0.0, y: 0.0, z: 0.0}, heading: {x: 1.0, y: 0.0, z: 0.0}, flip: false, trip: planFlipAndBurn(1.0, 1.0)}, tau0: -1.0, t0: -1.0, el: -1.0} }
+pure func apCommit(w: World) -> Commitment = match w.journey { Committed(c) => c, Arrived(c) => c, _ => {plan: {id: 0, target: plAt(1.0), from: {x: 0.0, y: 0.0, z: 0.0}, heading: {x: 1.0, y: 0.0, z: 0.0}, flip: false, trip: planFlipAndBurn(1.0, 1.0), nav: None}, tau0: -1.0, t0: -1.0, el: -1.0} }
 pure func isArrived(j: Journey) -> bool = match j { Arrived(_) => true, _ => false }
 pure func wait(w: World, dtau: float) -> Ticked = tick(w, {dtau: dtau, intents: []})
 -- |a - b| <= 1e-9 max(1, |b|)

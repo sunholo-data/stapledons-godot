@@ -346,6 +346,11 @@ the spike established, which bind M1.4b/c:
   - light-weighted T_c median 6180 K. That is the photographer's white
     balance, not a measurement of integrated starlight.
 
+**Frame (D-28, 2026-10-03).** Galactic → Godot world is the rotation
+`(x, y, z) → (−y, z, −x)`, defined once in `sky/sky_frame.gd` and
+`sky/sky_frame.gdshaderinc`. M1 shipped with `(y, z, −x)`, a mirror; see
+[sky-frame-d28](../../implemented/r1/sky-frame-d28.md).
+
 **M1.4c, sky shader (Godot `shader_type sky`):**
 - Per pixel, take the view direction n' (EYEDIR), then:
   1. n = deaberrate(n', β) gives the galaxy-frame direction;

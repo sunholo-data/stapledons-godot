@@ -228,9 +228,9 @@ func test_star_brightness() -> void:
 	check("custom data: T_eff", sf.custom[0], 5800.0, 0.0)
 	check("custom data: E_v = illuminanceFromV(2.0) lux (float32)", sf.custom[1] / Relativity.illuminance_from_v(2.0), 1.0, 1e-6)
 	check("custom data: flags", sf.custom[6], 5.0, 0.0)
-	check("galactic (3, 4, 0) -> world (4, 0, -3)", Vector3(sf.pos[0], sf.pos[1], sf.pos[2]).distance_to(Vector3(4, 0, -3)), 0.0, 0.0)
+	check("galactic (3, 4, 0) -> world (-4, 0, -3) (SkyFrame, D-28)", Vector3(sf.pos[0], sf.pos[1], sf.pos[2]).distance_to(Vector3(-4, 0, -3)), 0.0, 0.0)
 	check("custom data: |p|^2 = 25 ly^2", sf.custom[3], 25.0, 0.0)
-	sf.set_ship_position(4.0 * 0.5, 0.0, -3.0 * 0.5)
+	sf.set_ship_position(-4.0 * 0.5, 0.0, -3.0 * 0.5)
 	check("flux at the ship = E_v x |p|^2 / r^2 (halfway: 4x)", sf.flux_at_ship(0) / Relativity.illuminance_from_v(2.0), 4.0, 1e-6)
 	sf.free()
 	# only_flags: the HIP-filled rows of a tier (flag 8), nothing else
@@ -245,9 +245,7 @@ func test_star_brightness() -> void:
 	var sm := Starfield.new()
 	check("medium tier loads with bright + HIP fill", 1.0 if sm.load_tiers("medium") else 0.0, 1.0, 0.0)
 	check("stacked tiers are medium, quick:hip, bright", 1.0 if sm.tiers == ["medium", "quick:hip", "bright"] else 0.0, 1.0, 0.0)
-	var sl := deg_to_rad(227.230)
-	var sb := deg_to_rad(-8.890)
-	var sdir := [cos(sb) * sin(sl), sin(sb), -cos(sb) * cos(sl)] # galactic -> world
+	var sdir := SkyFrame.world_dir_lb(227.230, -8.890)
 	var best := -1.0
 	for k in sm.count:
 		var px := sm.pos[3 * k]
@@ -294,7 +292,7 @@ func test_rebasing_precision() -> void:
 	var b := deg_to_rad(-0.680)
 	var d := 4.37
 	var g := [d * cos(b) * cos(l), d * cos(b) * sin(l), d * sin(b)]
-	var star := [g[1], g[2], -g[0]] # galactic -> world, float64 scalars
+	var star := SkyFrame.to_world64(g) # galactic -> world, float64 scalars
 	var au := 1.0 / 63241.07708426628 # ly
 	var stand := 1000.0 * au
 	# ship: 1,000 AU short of the star along the Sol line, then 300 AU sideways
@@ -723,6 +721,20 @@ func test_sky_meter() -> void:
 	_test_main_eye_meter_wiring()
 
 
+## Every game script compiles. A parse error in one class (e.g. two PRs that each add the
+## same `var`, merged cleanly by git: #101 + #102 both added SimBridge.want_minor) otherwise
+## surfaces only as a distant "main.gd loads" failure, and Godot exits 0 on it.
+func test_scripts_compile() -> void:
+	print("Game scripts compile (load + can_instantiate)")
+	for dir in ["res://bridge", "res://interior", "res://sky", "res://ui", "res://ui/conversation", "res://ui/settings", "res://physics"]:
+		for f in DirAccess.get_files_at(dir):
+			if f.ends_with(".gd"):
+				var sc := load(dir.path_join(f)) as GDScript
+				check("%s compiles" % dir.path_join(f).trim_prefix("res://"), 1.0 if sc != null and sc.can_instantiate() else 0.0, 1.0, 0.0)
+	var m := load("res://main.gd") as GDScript
+	check("main.gd compiles", 1.0 if m != null and m.can_instantiate() else 0.0, 1.0, 0.0)
+
+
 ## main.gd's own wiring (not only the captures): the eye meter gets the
 ## background's CMB when moving and the panorama is attached, and no disc at
 ## rest. main.gd is instanced without entering the tree (no _ready, no sim).
@@ -755,6 +767,213 @@ func _test_main_eye_meter_wiring() -> void:
 	m.camera.free()
 	m.starfield.free()
 	m.free()
+
+
+## D-28 (Mark, 2026-10-03): ONE right-handed galactic -> world map (sky/sky_frame.gd and its shader
+## include), used everywhere. Before D-28 the map was (x, y, z) -> (y, z, -x), det -1, and the whole
+## M1 sky rendered as the real sky's mirror image; GPU-vs-CPU goldens could not see it because both
+## sides shared the map. The oracle here is independent of the map: SIMBAD galactic l, b of real
+## objects seen through the real free-look camera, whose screen right is forward x up.
+const SKY_ORACLE := {
+	"Antares": [351.947, 15.064], "alpha Cen A": [315.734, -0.680], "Vega": [67.448, 19.237],
+	"Scutum star cloud": [27.0, -2.5], "Mintaka": [203.856, -17.740], "Alnilam": [205.212, -17.243],
+	"Alnitak": [206.452, -16.585], "LMC": [280.465, -32.888], "SMC": [302.797, -44.299], "Acrux": [300.128, -0.359],
+}
+## Hand copies of the map (any order of components with a minus) that must not exist outside
+## sky/sky_frame.gd(shaderinc). Backreferences keep them to one variable's components.
+const MAP_COPY_PATTERNS := [
+	"(\\w+)\\.y,\\s*\\1\\.z,\\s*-\\1\\.x", "-(\\w+)\\.z,\\s*-?\\1\\.x,\\s*-?\\1\\.y",
+	"(\\w+)\\[1\\],\\s*\\1\\[2\\],\\s*-\\1\\[0\\]", "-(\\w+)\\[2\\],\\s*-?\\1\\[0\\],\\s*-?\\1\\[1\\]",
+	"(\\w+)\\[\"y\"\\],\\s*\\1\\[\"z\"\\],\\s*-\\1\\[\"x\"\\]",
+]
+
+
+func _sky_dir(name: String) -> Vector3:
+	var lb: Array = SKY_ORACLE[name]
+	var w := SkyFrame.world_dir_lb(lb[0], lb[1])
+	return Vector3(w[0], w[1], w[2])
+
+
+## A camera looking at world direction d with roll 0 (its up = the NGP projected).
+func _face(cam: FreeLookCamera, d: Vector3) -> void:
+	cam.look(atan2(-d.x, -d.z), asin(clampf(d.y, -1.0, 1.0)), 0.0)
+
+
+func test_sky_frame() -> void:
+	print("Sky frame (D-28): one right-handed galactic -> world map, real sky orientation")
+	var ex := SkyFrame.to_world(Vector3(1, 0, 0))
+	var ey := SkyFrame.to_world(Vector3(0, 1, 0))
+	var ez := SkyFrame.to_world(Vector3(0, 0, 1))
+	check("det [to_world(x) to_world(y) to_world(z)] = +1 (a rotation, not a mirror)", Basis(ex, ey, ez).determinant(), 1.0, 0.0)
+	var r: Array = SkyFrame.R
+	var det_r: float = r[0][0] * (r[1][1] * r[2][2] - r[1][2] * r[2][1]) - r[0][1] * (r[1][0] * r[2][2] - r[1][2] * r[2][0]) + r[0][2] * (r[1][0] * r[2][1] - r[1][1] * r[2][0])
+	check("det SkyFrame.R = +1 (float64)", det_r, 1.0, 0.0)
+	check("to_world(x) x to_world(y) = to_world(z) (handedness kept)", ex.cross(ey).distance_to(ez), 0.0, 0.0)
+	var probe := Vector3(0.3, -0.7, 0.2)
+	var worst := 0.0
+	for i in 3:
+		var row: Array = r[i]
+		worst = maxf(worst, absf(SkyFrame.to_world(probe)[i] - (row[0] * probe.x + row[1] * probe.y + row[2] * probe.z)))
+	check("to_world = R g (the const rows)", worst, 0.0, 0.0)
+	check("to_galactic(to_world(g)) = g", SkyFrame.to_galactic(SkyFrame.to_world(probe)).distance_to(probe), 0.0, 0.0)
+	check("to_world(to_galactic(w)) = w", SkyFrame.to_world(SkyFrame.to_galactic(probe)).distance_to(probe), 0.0, 0.0)
+	var g64 := PackedFloat64Array([0.123456789012345, -4.5678901234567, 8.9012345678901])
+	var w64 := SkyFrame.to_world64(g64)
+	var back := SkyFrame.to_galactic64(w64)
+	check("float64 round trip exact", absf(back[0] - g64[0]) + absf(back[1] - g64[1]) + absf(back[2] - g64[2]), 0.0, 0.0)
+	check("float64 and Vector3 forms agree", Vector3(w64[0], w64[1], w64[2]).distance_to(SkyFrame.to_world(Vector3(g64[0], g64[1], g64[2]))), 0.0, 1e-5)
+	check("Starfield.galactic_to_world is SkyFrame.to_world (public API kept)", Starfield.galactic_to_world(probe).distance_to(SkyFrame.to_world(probe)), 0.0, 0.0)
+	check("Starfield.world_to_galactic is SkyFrame.to_galactic", Starfield.world_to_galactic(probe).distance_to(SkyFrame.to_galactic(probe)), 0.0, 0.0)
+	check("galactic centre -> world -Z (Godot forward)", SkyFrame.to_world(Vector3(1, 0, 0)).distance_to(Vector3(0, 0, -1)), 0.0, 0.0)
+	check("north galactic pole -> world +Y", SkyFrame.to_world(Vector3(0, 0, 1)).distance_to(Vector3(0, 1, 0)), 0.0, 0.0)
+	check("l 270 -> world +X (starboard: right of a ship facing the centre, NGP up)", SkyFrame.to_world(Vector3(0, -1, 0)).distance_to(Vector3(1, 0, 0)), 0.0, 0.0)
+	check("l 90 -> world -X (port)", SkyFrame.to_world(Vector3(0, 1, 0)).distance_to(Vector3(-1, 0, 0)), 0.0, 0.0)
+
+	# the shader include carries the same map: evaluate its two return expressions here
+	var inc := FileAccess.get_file_as_string("res://sky/sky_frame.gdshaderinc")
+	var re := RegEx.create_from_string("vec3\\s+(sky_\\w+)\\(vec3\\s+(\\w)\\)\\s*\\{\\s*return\\s+vec3(\\([^;]*\\));")
+	var found := {}
+	for m in re.search_all(inc):
+		var e := Expression.new()
+		if e.parse("Vector3" + m.get_string(3), [m.get_string(2)]) == OK:
+			found[m.get_string(1)] = e.execute([probe])
+	check("shader include: sky_galactic_to_world(g) = SkyFrame.to_world(g)", (found["sky_galactic_to_world"] as Vector3).distance_to(SkyFrame.to_world(probe)) if found.has("sky_galactic_to_world") else 99.0, 0.0, 0.0)
+	check("shader include: sky_world_to_galactic(w) = SkyFrame.to_galactic(w)", (found["sky_world_to_galactic"] as Vector3).distance_to(SkyFrame.to_galactic(probe)) if found.has("sky_world_to_galactic") else 99.0, 0.0, 0.0)
+	var bg := FileAccess.get_file_as_string("res://sky/background.gdshader")
+	check("background.gdshader includes sky_frame.gdshaderinc and calls it", 1.0 if bg.contains("#include \"res://sky/sky_frame.gdshaderinc\"") and bg.contains("sky_world_to_galactic(") else 0.0, 1.0, 0.0)
+
+	# no hand copy left anywhere (GDScript and shaders)
+	var copies := []
+	var regs := []
+	for p: String in MAP_COPY_PATTERNS:
+		regs.append(RegEx.create_from_string(p))
+	for path: String in _source_files("res://"):
+		if path.begins_with("res://sky/sky_frame."):
+			continue
+		var text := FileAccess.get_file_as_string(path)
+		for rg: RegEx in regs:
+			var m := rg.search(text)
+			if m != null:
+				copies.append("%s: %s" % [path, m.get_string()])
+	for c in copies:
+		print("        hand copy: %s" % c)
+	check("no hand copy of the map outside sky/sky_frame.* (%d found)" % copies.size(), copies.size(), 0, 0.0)
+
+	# the oracle: facing the galactic centre with the NGP up (FreeLookCamera yaw 0 = KEY_1 forward)
+	var cam := FreeLookCamera.new()
+	cam.look(0.0, 0.0, 0.0)
+	var lb := SkyFrame.lb_of_world([cam.view_dir().x, cam.view_dir().y, cam.view_dir().z])
+	check("forward view (yaw 0) looks at l 0, b 0", absf(fposmod(lb[0] + 180.0, 360.0) - 180.0) + absf(lb[1]), 0.0, 1e-6)
+	check("forward view: screen up = NGP", cam.screen_up().dot(SkyFrame.to_world(Vector3(0, 0, 1))), 1.0, 1e-6)
+	for name: String in ["Antares", "alpha Cen A"]:
+		check("facing the centre, NGP up: %s (l %.0f) is RIGHT of centre" % [name, SKY_ORACLE[name][0]], 1.0 if _sky_dir(name).dot(cam.screen_right()) > 0.05 else 0.0, 1.0, 0.0)
+	for name: String in ["Vega", "Scutum star cloud"]:
+		check("facing the centre, NGP up: %s (l %.0f) is LEFT of centre" % [name, SKY_ORACLE[name][0]], 1.0 if _sky_dir(name).dot(cam.screen_right()) < -0.05 else 0.0, 1.0, 0.0)
+	check("facing the centre: Antares (b +15) is above the plane", 1.0 if _sky_dir("Antares").dot(cam.screen_up()) > 0.2 else 0.0, 1.0, 0.0)
+	# the same through the catalogue and the Starfield loader (stars.json x, y, z -> tier -> pos)
+	var stars: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json"))["stars"]
+	var rows := []
+	var want_right := []
+	for pair in [["CNS5:3627", true], ["CNS5:4607", false]]: # alpha Cen A right, Vega left
+		for s in stars:
+			if s["id"] == pair[0]:
+				rows.append([s["x"], s["y"], s["z"], 5800.0, 1.0, 0.0])
+				want_right.append(pair[1])
+	var cat := _tier_fixture(rows)
+	var sf := Starfield.new()
+	sf.append_catalogue(cat)
+	var sides_ok := sf.count == 2
+	for k in sf.count:
+		var right := Vector3(sf.pos[3 * k], sf.pos[3 * k + 1], sf.pos[3 * k + 2]).normalized().dot(cam.screen_right()) > 0.05
+		sides_ok = sides_ok and right == want_right[k]
+	check("catalogue through Starfield.append_catalogue: alpha Cen A right, Vega left", 1.0 if sides_ok else 0.0, 1.0, 0.0)
+	sf.free()
+
+	# the capture / KEY_1-4 views: starboard (yaw -90) looks at l 270, port (yaw +90) at l 90
+	var main_script: GDScript = load("res://main.gd")
+	var views: Dictionary = main_script.VIEW_YAW
+	for v in [["starboard", 270.0], ["port", 90.0], ["astern", 180.0]]:
+		cam.look(views[v[0]], 0.0, 0.0)
+		var d := cam.view_dir()
+		check("%s view (yaw %+.0f deg) looks at l %.0f" % [v[0], rad_to_deg(views[v[0]]), v[1]], SkyFrame.lb_of_world([d.x, d.y, d.z])[0], v[1], 1e-6)
+
+	# Orion's belt, facing Alnilam with the NGP up: Mintaka (west) right, Alnitak (east) left
+	_face(cam, _sky_dir("Alnilam"))
+	var xm := _sky_dir("Mintaka").dot(cam.screen_right())
+	var xa := _sky_dir("Alnilam").dot(cam.screen_right())
+	var xz := _sky_dir("Alnitak").dot(cam.screen_right())
+	check("Orion's belt left to right: Alnitak, Alnilam, Mintaka", 1.0 if xz < xa and xa < xm else 0.0, 1.0, 0.0)
+	# LMC vs Crux, facing l 290 b -16: the LMC lower right, Acrux upper left
+	var mid := SkyFrame.world_dir_lb(290.0, -16.0)
+	_face(cam, Vector3(mid[0], mid[1], mid[2]))
+	var lmc := _sky_dir("LMC")
+	var acrux := _sky_dir("Acrux")
+	check("facing l 290: the LMC (l 280) is right of Acrux (l 300)", 1.0 if lmc.dot(cam.screen_right()) > 0.05 and acrux.dot(cam.screen_right()) < -0.05 else 0.0, 1.0, 0.0)
+	check("facing l 290: Acrux is above the LMC", 1.0 if acrux.dot(cam.screen_up()) > lmc.dot(cam.screen_up()) + 0.3 else 0.0, 1.0, 0.0)
+	cam.free()
+
+	# stars and panorama share the frame: the world direction of (l, b) samples the panorama at
+	# u = 0.5 - l / 360 (l grows leftward, D-10), v = 0.5 - b / 180, for every oracle object
+	var worst_uv := 0.0
+	for name: String in SKY_ORACLE:
+		var o: Array = SKY_ORACLE[name]
+		var uv := SkyModel.equirect_uv(_sky_dir(name))
+		var du := absf(fposmod(uv.x - (0.5 - o[0] / 360.0) + 0.5, 1.0) - 0.5)
+		worst_uv = maxf(worst_uv, maxf(du, absf(uv.y - (0.5 - o[1] / 180.0))))
+	check("panorama (u, v) at each oracle object's world direction = its (l, b)", worst_uv, 0.0, 1e-6)
+	_panorama_alignment()
+
+
+## The NOIRLab panorama against the oracle (skipped when the sky textures are not fetched, as in
+## CI; make sky-assets): the Magellanic Clouds are bright where the frame puts them and the
+## mirror-image positions (l -> 360 - l) are dark sky.
+func _panorama_alignment() -> void:
+	if not FileAccess.file_exists(SkyBackground.PHOTO):
+		print("  skip  panorama alignment (no %s; make sky-assets)" % SkyBackground.PHOTO)
+		return
+	var img := Image.new()
+	if img.load_png_from_buffer(FileAccess.get_file_as_bytes(SkyBackground.PHOTO)) != OK:
+		check("panorama loads", 0.0, 1.0, 0.0)
+		return
+	img.resize(img.get_width() / 8, img.get_height() / 8, Image.INTERPOLATE_BILINEAR)
+	for name: String in ["LMC", "SMC"]:
+		var o: Array = SKY_ORACLE[name]
+		var here := _pano_mean(img, _sky_dir(name))
+		var w := SkyFrame.world_dir_lb(360.0 - o[0], o[1])
+		var mirror := _pano_mean(img, Vector3(w[0], w[1], w[2]))
+		check("panorama: %s where the frame puts it is > 2x its mirror position (ratio)" % name, 1.0 if here > 2.0 * mirror else 0.0, 1.0, 0.0)
+		print("        %s mean luminance %.4f, mirror %.4f, ratio %.2f" % [name, here, mirror, here / maxf(mirror, 1e-9)])
+
+
+func _pano_mean(img: Image, d: Vector3) -> float:
+	var uv := SkyModel.equirect_uv(d)
+	var cx := int(uv.x * img.get_width())
+	var cy := int(uv.y * img.get_height())
+	var r := int(1.5 / 360.0 * img.get_width()) # a 3 deg box
+	var s := 0.0
+	var n := 0
+	for y in range(cy - r, cy + r + 1):
+		for x in range(cx - r, cx + r + 1):
+			s += img.get_pixel(posmod(x, img.get_width()), clampi(y, 0, img.get_height() - 1)).get_luminance()
+			n += 1
+	return s / n
+
+
+## Every tracked-style source file (.gd, .gdshader, .gdshaderinc) under dir, skipping data,
+## caches, the runtime and hidden folders.
+func _source_files(dir: String) -> Array:
+	var out := []
+	var d := DirAccess.open(dir)
+	if d == null:
+		return out
+	for f in d.get_files():
+		if f.ends_with(".gd") or f.ends_with(".gdshader") or f.ends_with(".gdshaderinc"):
+			out.append(dir.path_join(f))
+	for sub in d.get_directories():
+		if sub.begins_with(".") or sub in ["data", "runtime", "renders", "website", "node_modules", "sky_bundle", "areas_bundle", "assets"]:
+			continue
+		out.append_array(_source_files(dir.path_join(sub)))
+	return out
 
 
 ## M4.0 frame contract (interior/ship_frame.gd, float64): ship +Z = direction of
@@ -850,6 +1069,45 @@ func test_ship_frame() -> void:
 	check("bridge cam up . NGP = cam up y when heading galactic centre", sc["up"][2], -0.3601502478122711, 1e-12)
 
 
+## M4.2 forward glow (design m4-first-journey.md "M4.2" / "M4.6"; higgs-bubble.md §6). Every
+## expected value is copied from the AILANG probe (tools/glow_probe, make glow-probe:
+## sunholo/relativity 0.7.0 glowInwardFlux / glowEmittanceAt at n 0.1 cm^-3, eps 1e-9, f_in 0.5,
+## VM = interpreter), never computed here; e-notation because Godot parses long plain decimals
+## inexactly. The design's interim check values: glow_w_m2 2.40719e-5 W/m^2 at 0.99c and
+## 0.281271 at 0.999999c (<= 1 W/m^2, HB-61); the pole 9.6288e-5 and 1.12508 (G-M4-4 b).
+func test_forward_glow() -> void:
+	print("Forward glow (M4.2): ForwardGlow mirrors glowEmittanceAt; Lambertian E/pi; the off-centre camera's wall point")
+	var mean_099 := 2.407194217926631e-05
+	var mean_cap := 0.28127107577632854
+	var pole_099 := 9.628776871706524e-05
+	var pole_cap := 1.1250843031053142
+	check("glow_w_m2 at 0.99c = design check 2.40719e-5 (5 s.f.)", mean_099, 2.40719e-05, 5e-11)
+	check("glow_w_m2 at 0.999999c = design check 0.281271 (6 s.f.), <= 1 W/m^2 (HB-61)", mean_cap, 0.281271, 5e-7)
+	check("pole = 4 x glow_w_m2 at 0.99c (package)", pole_099 / (4.0 * mean_099), 1.0, 1e-12)
+	check("pole at 0.99c = design 9.6288e-5 (G-M4-4 b)", pole_099, 9.6288e-05, 5e-10)
+	check("pole at 0.999999c = design 1.12508 (G-M4-4 b)", pole_cap, 1.12508, 5e-6)
+	# [theta, cos theta (probe), glowEmittanceAt (probe)] at 0.99c and the cap
+	var rows := [[0.0, 1.0, pole_099, pole_cap], [45.0, 0.7071067811865476, 6.808573420515876e-05, 0.7955547401323088],
+		[80.0, 0.17364817766693041, 1.672019556933325e-05, 0.19536883895590618],
+		[90.0, 6.123233995736757e-17, 5.895925387819721e-21, 6.889154452844258e-17], [120.0, -0.4999999999999998, 0.0, 0.0]]
+	for r: Array in rows:
+		for k in 2:
+			var pole: float = [pole_099, pole_cap][k]
+			var want: float = r[2 + k]
+			var got := ForwardGlow.profile(pole, r[1])
+			check("glow_profile %s theta %3.0f deg (rel. to the package, 1e-12)" % [["0.99c", "cap"][k], r[0]], got / want if want != 0.0 else got, 1.0 if want != 0.0 else 0.0, 1e-12)
+	check("glow is 0 at rest (pole 0, any angle)", ForwardGlow.profile(0.0, 0.7), 0.0, 0.0)
+	check("Lambertian radiance = E / pi at the 0.99c pole", ForwardGlow.radiance(pole_099), pole_099 / PI, 0.0)
+	# hand-derived (python3: 9.628776871706524e-05 / pi x 182.5654375783963); the package has no
+	# radiance/efficacy function yet (gate-3 follow-up)
+	check("luminance at the 0.99c pole = E / pi x 182.565 lm/W (cd/m^2)", ForwardGlow.luminance(pole_099), 0.005595511757131118, 1e-15)
+	check("pole luminance at 0.99c / the 23.5 mag/arcsec^2 dark sky (~130: NOT faint to the dark-adapted eye)", ForwardGlow.luminance(pole_099) / Exposure.dark_sky_luminance(), 130.0, 10.0)
+	var cam := PackedFloat64Array([16.0, -8.0, 83.7]) # cam_bridge.json position_m (ship frame)
+	check("bridge camera straight up: wall cos = sqrt(R^2 - 16^2 - 8^2) / R", ForwardGlow.wall_cos(cam, PackedFloat64Array([0, 0, 1]), 100.0), 0.9838699100999074, 1e-15)
+	check("bridge camera, ray straight down: the aft wall (cos < 0, glow 0)", ForwardGlow.profile(1.0, ForwardGlow.wall_cos(cam, PackedFloat64Array([0, 0, -1]), 100.0)), 0.0, 0.0)
+	check("finite flux at every stop: pole finite at rest and the cap", 1.0 if is_finite(ForwardGlow.profile(pole_cap, 1.0)) and is_finite(ForwardGlow.profile(0.0, 1.0)) else 0.0, 1.0, 0.0)
+
+
 ## The camera cases need a node in a viewport, so they run once the main loop
 ## has started; everything else runs in _init.
 
@@ -926,8 +1184,11 @@ func _init() -> void:
 	test_sideways_darker()
 	test_angular_psf()
 	test_cmb()
+	test_scripts_compile()
 	test_sky_meter()
+	test_forward_glow()
 	test_ship_frame()
+	test_sky_frame()
 	_m5_photometry()
 
 	print("Aberration (sources crowd toward the direction of motion)")
@@ -1001,8 +1262,8 @@ func _init() -> void:
 	print("Sky model (M1.4b texture contract, mirrored by sky/background.gdshader)")
 	check("galactic centre (world -Z) samples the panorama centre u", SkyModel.equirect_uv(Vector3(0, 0, -1)).x, 0.5, 1e-9)
 	check("galactic centre samples the panorama centre v", SkyModel.equirect_uv(Vector3(0, 0, -1)).y, 0.5, 1e-9)
-	check("l = 90 deg (world +X) sits a quarter in from the left (l grows leftward)", SkyModel.equirect_uv(Vector3(1, 0, 0)).x, 0.25, 1e-9)
-	check("l = 270 deg (world -X) sits at u = 0.75", SkyModel.equirect_uv(Vector3(-1, 0, 0)).x, 0.75, 1e-9)
+	check("l = 90 deg (world -X, port) sits a quarter in from the left (l grows leftward)", SkyModel.equirect_uv(Vector3(-1, 0, 0)).x, 0.25, 1e-9)
+	check("l = 270 deg (world +X, starboard) sits at u = 0.75", SkyModel.equirect_uv(Vector3(1, 0, 0)).x, 0.75, 1e-9)
 	check("north galactic pole (world +Y) is the top row", SkyModel.equirect_uv(Vector3(0, 1, 0)).y, 0.0, 1e-9)
 	check("b = -30 deg sits at v = 2/3", SkyModel.equirect_uv(Vector3(0, -0.5, -sqrt(0.75))).y, 2.0 / 3.0, 1e-6)
 	var probe := Vector3(0.3, -0.4, 0.5).normalized()

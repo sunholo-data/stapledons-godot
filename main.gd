@@ -6,7 +6,10 @@ extends Node3D
 ##               +/- time warp. The HUD shows the view-to-velocity angle.
 ##               Exposure (M1.5a): F fixed EV at the rest value, M eye / camera
 ##               metering, [ ] exposure bias (aid), G magnitude floor (aid).
-## Galaxy map:  godot --path . [-- --map[=INDEX|ID]]   (default with no arguments; M2.6a/b; --map-capture=renders [--map-commit])
+## Interior:    godot --path . [-- --interior [--bundle=DIR]]   (default with no arguments; M4.2: the bridge with
+##              the live sky; WASD walk, E use, M galaxy map, L log, K codex; --interior-capture=DIR the S1 review
+##              captures (tools/interior_capture.gd); --m4-smoke [--bundle=DIR] the scripted slice (make m4-smoke))
+## Galaxy map:  godot --path . -- --map[=INDEX|ID]   (M2.6a/b; --map-capture=renders [--map-commit])
 ## Sky flight:  godot --path . -- --voyage   (the M0/M1 relativistic voyage; W/S thrust, arrows + Q/E look and roll, 1-4 views, +/- warp)
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
@@ -31,6 +34,12 @@ const ALPHA_CEN_A := "CNS5:3627" # stars.json id (M1.7): the CNS5 system row, HI
 const MAP_TOUR := [["HIP 71681", "galaxy_map_acen_b.png"], ["CNS5:1676", "galaxy_map_sirius.png"],
 	["Gaia DR3 4472832130942575872", "galaxy_map_barnard.png"]]
 const LOOK_RATE := 1.2 # rad/s for the yaw, pitch and roll keys
+## Named views (FreeLookCamera yaw, positive = left), for KEY_1-3 and the captures. The ship
+## faces the galactic centre with the NGP up, so with SkyFrame (D-28, a rotation) starboard
+## (right, world +X) looks at l 270 (Vela, Canopus, alpha Cen, the LMC) and port (left, -X) at
+## l 90 (Cygnus); tests/test_physics.gd test_sky_frame checks the longitudes.
+const VIEW_YAW := {"forward": 0.0, "starboard": -PI / 2, "port": PI / 2, "astern": PI}
+const STANDOFF_AU := 1000.0 # M4.1: the M4 client plans to the 1,000 AU stand-off (the sim defaults to 0)
 ## Off-axis golden (M1.6b, AC5): a velocity off every axis, and three camera
 ## orientations ([label, yaw, pitch, roll] in degrees; null yaw/pitch = along v).
 const OFF_AXIS := Vector3(0.5773502691896258, 0.5773502691896258, -0.5773502691896258) # (1,1,-1)/sqrt3
@@ -41,6 +50,7 @@ var starfield := Starfield.new()
 var background := SkyBackground.new()
 var exposure := Exposure.new() # M1.5a: photometric EV, metering, fixed EV, aids
 var eye_meter := SkyMeter.new() # M1.8: centre-weighted, sees stars and the CMB
+var credits := Credits.new() # M5.2a (L-tex): third-party credits, C toggles
 var system_view := SystemView.new() # M5.2a: planets and the Sun from the sim's `system` section
 var has_background := false
 var env := Environment.new()
@@ -59,12 +69,15 @@ func _ready() -> void:
 	var args := _user_args()
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("golden-m5") or args.has("capture-m5")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5")
 	UiScale.configure(get_window(), _fixed_scale)
-	# Launching with no arguments (a double-clicked review build, `make run`)
-	# opens the galaxy map on alpha Cen A; `--voyage` runs the M0/M1 sky flight.
-	if args.is_empty():
-		args["map"] = ALPHA_CEN_A
+	# Launching with no arguments (a double-clicked review build, `make run`) opens
+	# the bridge interior (M4.2); `--map` the galaxy map alone, `--voyage` the M0/M1 sky flight.
+	if args.is_empty() or (args.size() == 1 and args.has("record")):
+		args["interior"] = ""
+	if args.has("interior") or args.has("interior-capture") or args.has("m4-smoke"):
+		await _run_interior(args)
+		return
 	if args.has("map") or args.has("map-capture"):
 		_map_mode = true # the map owns the clock; no voyage ticks
 		await _run_map(args)
@@ -74,7 +87,8 @@ func _ready() -> void:
 		await _run_golden()
 		return
 	if args.has("golden-m5") or args.has("capture-m5"): # M5 goldens / reference renders (tools/m5_golden.gd)
-		get_tree().quit(await load("res://tools/m5_golden.gd").new().main(self, args))
+		var m5: GDScript = load("res://tools/m5_golden.gd")
+		get_tree().quit(await m5.new().main(self, args) if m5 != null and m5.can_instantiate() else 2) # a broken script exits, not hangs
 		return
 	if not load_stars(args.get("tier", "")):
 		get_tree().quit(2)
@@ -176,6 +190,60 @@ func _run_map(args: Dictionary) -> void:
 	f.close()
 	sim.stop()
 	get_tree().quit(0)
+
+
+## The bridge interior (M4.2) on a play session at protocol 2.2 with the M4 stand-off. The
+## galaxy map is the navigation console's screen: built here, attached to the same sim, and
+## shown by the interior on demand. --interior-capture and --m4-smoke drive it by script.
+func _run_interior(args: Dictionary) -> void:
+	var capture := args.has("interior-capture")
+	var smoke := args.has("m4-smoke")
+	_map_mode = true # the interior and its map own the clock; no voyage ticks
+	if capture:
+		get_window().size = Vector2i(1600, 900)
+	var dir: String = args.get("bundle", "")
+	if dir == "":
+		dir = AreaBundle.resolve_dir("bridge")
+	elif not dir.begins_with("res://") and not dir.is_absolute_path():
+		dir = "res://" + dir
+	var bundle := AreaBundle.load_dir(dir)
+	if not bundle.ok():
+		push_error("interior: bundle %s refused: %s" % [dir, "; ".join(bundle.errors)])
+		get_tree().quit(2)
+		return
+	sim.record_path = args.get("record", "")
+	sim.want_minor = 2
+	var ai := AiSession.new(args)
+	add_child(ai)
+	if not sim.start() or not sim.new_game(SEED, "sol", false, {"standoff_au": STANDOFF_AU}, AiSession.ai_core()) or not ai.attach(sim):
+		push_error("sim session failed: %s" % sim.last_error)
+		get_tree().quit(2)
+		return
+	var map: GalaxyMap = load("res://ui/galaxy_map.tscn").instantiate()
+	map.auto_tick = not (capture or smoke)
+	add_child(map)
+	map.load_catalogue("res://data/starmap/stars.json")
+	map.load_names("res://data/starmap/names.json")
+	map.attach(sim)
+	var acen := map.index_of(ALPHA_CEN_A)
+	if map.preselect(acen):
+		map.frame_star(acen)
+	remove_child(map) # the console shows it
+	var it := Interior.new()
+	it.name = "Interior"
+	if not it.setup(bundle, {"size": get_window().size, "canvas": get_viewport().get_visible_rect().size, "background": not smoke, "tier": args.get("tier", "")}):
+		push_error("interior: %s" % it.last_error)
+		get_tree().quit(2)
+		return
+	add_child(it)
+	it.auto = not (capture or smoke)
+	it.attach(sim, map)
+	get_viewport().size_changed.connect(func() -> void: it.resize(get_window().size, get_viewport().get_visible_rect().size))
+	print("interior: bundle %s (%s), %d walk triangles, %d interactables, captain at %s" % [dir, bundle.manifest.get("version", "unversioned"), it.walk.triangle_count(), it.walk.interactables.size(), it.avatar_pos])
+	if capture: # loaded by path: tools/ is excluded from exports
+		get_tree().quit(await load("res://tools/interior_capture.gd").new().run(self, it, map, _out_dir(args["interior-capture"])))
+	elif smoke:
+		get_tree().quit(await InteriorSmoke.new().run(self, it, map, sim))
 
 
 ## Commit ritual and transit for R2: dialog mid-hold, commit at 1.5 s (fake
@@ -286,6 +354,8 @@ func _build_scene() -> void:
 	sky_note.add_theme_font_size_override("font_size", 13)
 	sky_note.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 0.85))
 	layer.add_child(sky_note)
+	credits.visible = not _fixed_scale # attribution (C); captures, goldens and the bench stay unchanged
+	layer.add_child(credits)
 	add_child(layer)
 	_configure_exposure(_user_args())
 	get_viewport().size_changed.connect(_configure_pixel)
@@ -402,9 +472,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if _map_mode:
 		return
 	match event.keycode:
-		KEY_1: camera.look(0.0, 0.0, 0.0)
-		KEY_2: camera.look(-PI / 2, 0.0, 0.0)
-		KEY_3: camera.look(PI, 0.0, 0.0)
+		KEY_1: camera.look(VIEW_YAW["forward"], 0.0, 0.0)
+		KEY_2: camera.look(VIEW_YAW["starboard"], 0.0, 0.0)
+		KEY_3: camera.look(VIEW_YAW["astern"], 0.0, 0.0)
 		KEY_4: camera.look(0.0, FreeLookCamera.PITCH_LIMIT, 0.0)
 		KEY_EQUAL: warp *= 2.0
 		KEY_MINUS: warp /= 2.0
@@ -434,9 +504,9 @@ func _grab() -> Image:
 func _run_capture(dir: String) -> void:
 	var out := _out_dir(dir)
 	var targets := [0.0, 0.5, 0.9, 0.99]
-	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a); M1.3 adds port
-	# (galactic l = 270: Canopus, alpha Cen, Sirius, the LMC once the bright tier is on)
-	var views := {"forward": [0.0, 0.0, 0.0], "starboard": [-PI / 2, 0.0, 0.0], "port": [PI / 2, 0.0, 0.0], "astern": [PI, 0.0, 0.0],
+	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a); M1.3 adds port.
+	# D-28: starboard looks at l 270 (Canopus, alpha Cen, Sirius's side, the LMC), port at l 90
+	var views := {"forward": [VIEW_YAW["forward"], 0.0, 0.0], "starboard": [VIEW_YAW["starboard"], 0.0, 0.0], "port": [VIEW_YAW["port"], 0.0, 0.0], "astern": [VIEW_YAW["astern"], 0.0, 0.0],
 		"offaxis": [deg_to_rad(50.0), deg_to_rad(25.0), 0.0], "rolled": [deg_to_rad(-30.0), deg_to_rad(10.0), deg_to_rad(35.0)]}
 	var tiles := []
 	var exposure_tiles := []
@@ -502,7 +572,7 @@ func _capture_cmb(out: String) -> bool:
 		if not _cruise_at(g, params):
 			return false
 		var tag := "sky_g%d" % int(g)
-		for view in [["forward", 0.0], ["starboard", -PI / 2]]:
+		for view in [["forward", VIEW_YAW["forward"]], ["starboard", VIEW_YAW["starboard"]]]:
 			camera.look(view[1], 0.0, 0.0)
 			_apply_state()
 			var img := await _capture_one(out, "%s_%s.png" % [tag, view[0]])
@@ -617,6 +687,7 @@ func _run_golden() -> void:
 	# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
 	failures += await load("res://tools/exposure_golden.gd").new().run(self)
 	failures += await load("res://tools/cmb_golden.gd").new().run(self)
+	failures += await load("res://tools/interior_golden.gd").new().run(self) # M4.2: G-M4-1..4
 	failures += await load("res://tools/m5_golden.gd").new().run(self)
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
@@ -679,11 +750,13 @@ func _golden_standoff(along_au: float, side_au: float) -> int:
 	var l := deg_to_rad(315.734)
 	var b_gal := deg_to_rad(-0.680)
 	var g := [4.37 * cos(b_gal) * cos(l), 4.37 * cos(b_gal) * sin(l), 4.37 * sin(b_gal)]
-	var star := [g[1], g[2], -g[0]]
+	var star := SkyFrame.to_world64(g)
 	var au := 1.0 / 63241.07708426628
 	var u := [star[0] / 4.37, star[1] / 4.37, star[2] / 4.37]
 	var sn := sqrt(u[2] * u[2] + u[0] * u[0])
-	var ship := [star[0] - u[0] * along_au * au + u[2] / sn * side_au * au, star[1] - u[1] * along_au * au, star[2] - u[2] * along_au * au - u[0] / sn * side_au * au]
+	# D-28: the side offset and the 8 deg look-aside are the exact mirror (world x -> -x) of the
+	# pre-D-28 geometry, so every float32 rounding (and the case's power) is unchanged
+	var ship := [star[0] - u[0] * along_au * au - u[2] / sn * side_au * au, star[1] - u[1] * along_au * au, star[2] - u[2] * along_au * au + u[0] / sn * side_au * au]
 	var r2 := 0.0
 	for a in 3:
 		r2 += (star[a] - ship[a]) ** 2
@@ -702,7 +775,7 @@ func _golden_standoff(along_au: float, side_au: float) -> int:
 			starfield.set_ship_position(ship[0], ship[1], ship[2])
 			starfield.set_velocity(HEADING, b, Relativity.gamma_of(b))
 			var app := Relativity.aberrate(n, HEADING, b)
-			camera.look(atan2(-app.x, -app.z) + deg_to_rad(8.0), asin(app.y), 0.0)
+			camera.look(atan2(-app.x, -app.z) - deg_to_rad(8.0), asin(app.y), 0.0)
 			var img := await _grab()
 			var expected := camera.project(app, size)
 			var got := _centroid(img)

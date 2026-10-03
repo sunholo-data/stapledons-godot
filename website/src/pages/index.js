@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import Clip from '@site/src/components/Clip';
 import GALLERY from '@site/src/data/gallery';
+import DOWNLOAD from '@site/src/data/download';
 import styles from './index.module.css';
 
 const GITHUB_URL = 'https://github.com/sunholo-data/stapledons-godot';
@@ -54,16 +55,19 @@ function Hero() {
           beaming, time dilation, and the cosmic background turned to fire ahead of you.
         </p>
         <div className={styles.heroActions}>
-          <a href="#flight" className={clsx(styles.btn, styles.btnPrimary)}>
+          <a href={DOWNLOAD.zip} className={clsx(styles.btn, styles.btnPrimary)}>
+            <Download size={18} /> Download (macOS)
+          </a>
+          <a href="#flight" className={clsx(styles.btn, styles.btnSecondary)}>
             <Play size={18} /> Watch the flight
           </a>
-          <Link to="/docs/physics" className={clsx(styles.btn, styles.btnSecondary)}>
+          <Link to="/docs/physics" className={clsx(styles.btn, styles.btnGhost)}>
             <Atom size={18} /> The physics
           </Link>
-          <a href={GITHUB_URL} className={clsx(styles.btn, styles.btnGhost)}>
-            <GitHubMark /> GitHub
-          </a>
         </div>
+        <p className={styles.downloadNote}>
+          {DOWNLOAD.label}, unsigned · <Link to="/docs/try-it">install notes and known issues</Link>
+        </p>
         <a href={AILANG_URL} className={styles.builtWith}>
           <img src={logo} alt="" width="22" height="22" /> Simulation built in <strong>AILANG</strong>
         </a>
@@ -447,8 +451,8 @@ const MILESTONES = [
   ['M1', 'The relativistic sky', 'progress', '335k stars, Milky Way, exposure, forward CMB, real-catalogue map; acceptance step open'],
   ['M2', 'The journey core', 'done', 'Planner, commit, two clocks, deterministic replay'],
   ['AI', 'Crew AI foundation', 'done', 'Opt-in, cost-capped, on a test stub; first live run pending'],
-  ['M4', 'First playable journey', 'progress', 'Interior loader, consequence sim and bridge v1 merged'],
-  ['M5', 'Planets and flybys', 'progress', 'Design approved, packages published, system data merged'],
+  ['M4', 'First playable journey', 'progress', 'Walkable bridge (M4.2) merged: download the dev build'],
+  ['M5', 'Planets and flybys', 'progress', 'Packages published, system data and positions merged'],
   ['M3', 'Black holes', 'planned', 'Shadow, lensing, Einstein rings, checked against GR'],
 ];
 const LABEL = {done: 'Done', progress: 'In progress', planned: 'Planned'};
@@ -504,9 +508,9 @@ function Closing() {
           <Link to="/news" className={clsx(styles.btn, styles.btnSecondary)}>
             <Newspaper size={18} /> Follow the news
           </Link>
-          <Link to="/docs/try-it" className={clsx(styles.btn, styles.btnGhost)}>
-            <Download size={18} /> Try the review build
-          </Link>
+          <a href={DOWNLOAD.zip} className={clsx(styles.btn, styles.btnGhost)}>
+            <Download size={18} /> Download the dev build (macOS)
+          </a>
           <a href={DESIGN_URL} className={clsx(styles.btn, styles.btnGhost)}>
             <GitHubMark /> Design docs
           </a>

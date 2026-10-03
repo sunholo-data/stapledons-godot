@@ -55,7 +55,7 @@ The game is **pre-alpha**. Release 1 builds the foundations, and is partly done:
   deterministic replay); and, on a test stub, the crew's optional AI layer with the Medic's
   conversation scene.
 - **In progress:** the first playable journey through the ship's interior (M4, its first steps
-  merged, including the first bridge art), and planets and flybys inside a star system (M5, a new
+  merged; you can walk the bridge in the [development build](try-it.mdx)), and planets and flybys inside a star system (M5, a new
   milestone whose physics packages are published).
 - **Planned for Release 1:** black holes rendered to general relativity (M3).
 - **After Release 1:** the wider game: a galaxy that changes while you travel, a finite crew,

@@ -259,6 +259,27 @@ func test_signal_and_preselect(map: GalaxyMap) -> bool:
 	return true
 
 
+## D-28: the map is the real Solar neighbourhood, not its mirror image. The default orbit camera
+## sits on the north galactic pole's side of the plane, so galactic longitude must turn
+## COUNTER-clockwise on screen (l 0 -> l 90), and alpha Cen (l 316) must sit clockwise of the
+## galactic-centre direction. Before D-28 the map (Starfield.galactic_to_world) was a reflection.
+func test_handedness(map: GalaxyMap) -> bool:
+	map.pivot = Vector3.ZERO
+	map.yaw = 0.6
+	map.pitch = -0.45
+	map.dist = 18.0
+	map._update_camera()
+	ok("default map camera is on the NGP side of the galactic plane", Starfield.world_to_galactic(map.camera.global_position).z > 0.0)
+	var sol := map.camera.unproject_position(Vector3.ZERO)
+	var a := map.camera.unproject_position(Starfield.galactic_to_world(Vector3(5, 0, 0))) - sol # l 0
+	var b := map.camera.unproject_position(Starfield.galactic_to_world(Vector3(0, 5, 0))) - sol # l 90
+	var c := map.camera.unproject_position(Starfield.galactic_to_world(Vector3(5 * cos(deg_to_rad(316.0)), 5 * sin(deg_to_rad(316.0)), 0))) - sol
+	# screen y grows downward: counter-clockwise as seen is a negative 2D cross product
+	ok("seen from the NGP, l 90 is counter-clockwise of l 0 on screen (right-handed map)", a.x * b.y - a.y * b.x < 0.0)
+	ok("seen from the NGP, alpha Cen's longitude (316) is clockwise of l 0", a.x * c.y - a.y * c.x > 0.0)
+	return true
+
+
 func test_picking(map: GalaxyMap) -> bool:
 	ok("nearest_index picks the closest within the radius", GalaxyMap.nearest_index(PackedVector2Array([Vector2(10, 10), Vector2(50, 50), Vector2(52, 49)]), Vector2(53, 49), 8.0) == 2)
 	ok("nothing within the radius gives -1", GalaxyMap.nearest_index(PackedVector2Array([Vector2(10, 10)]), Vector2(100, 100), 8.0) == -1)
@@ -579,6 +600,7 @@ func _initialize() -> void:
 		test_check_row_digits.bind(map),
 		test_clock_never_pauses.bind(map),
 		test_signal_and_preselect.bind(map),
+		test_handedness.bind(map),
 		test_picking.bind(map),
 		test_names.bind(map),
 		test_commit_hold.bind(map), # irreversible from here on

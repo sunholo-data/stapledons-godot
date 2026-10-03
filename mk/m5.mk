@@ -2,12 +2,12 @@
 # Included from the Makefile by one line (F4: M5 stays out of the Makefile hunks
 # M4 edits). Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: m5-test strict-m5 parity-v2-system system-fixture-check acen-snapshot acen-snapshot-verify \
+.PHONY: m5-test strict-m5 parity-v2-system hello-pin acen-snapshot acen-snapshot-verify \
   planets-test planet-textures-check lint-precision lint-precision-m5 planet-assets planet-verify planet-publish planet-textures golden-m5 capture-m5a
 
 test: m5-test
 
-m5-test: strict-m5 parity-v2-system acen-snapshot-verify planets-test planet-textures-check lint-precision-m5   ## M5 checks that run without a GPU window
+m5-test: strict-m5 parity-v2-system hello-pin acen-snapshot-verify planets-test planet-textures-check lint-precision-m5   ## M5 checks that run without a GPU window
 
 # M5.1a: the cited Sol and alpha Cen data modules load and pass every provenance
 # check on the strict VM, printing the same bytes as the interpreter (AC6 data half).
@@ -22,6 +22,18 @@ strict-m5:         ## sim/data/{sol,acen}.ail checks (celestial_test dataVm): st
 	@$(AILANG) run --quiet --package-dir sim --entry systemVm --args-json 0 sim/celestial_test.ail > $(SCRATCH)/m5-system-interp.txt
 	@cmp $(SCRATCH)/m5-system-vm.txt $(SCRATCH)/m5-system-interp.txt && test "$$(tail -1 $(SCRATCH)/m5-system-vm.txt)" = "system-ok" && \
 	  echo "strict-m5 systemVm: $$(tail -1 $(SCRATCH)/m5-system-vm.txt), $$(wc -l < $(SCRATCH)/m5-system-vm.txt | tr -d ' ') lines, digest $$(shasum -a 256 $(SCRATCH)/m5-system-vm.txt | cut -c1-16) (strict VM = interpreter)"
+	@# M5.5a (AC4 planner half): body targets, intercept, refusals and a protocol 2.4 session, strict VM = interpreter
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry navigationVm --args-json 0 sim/navigation_test.ail > $(SCRATCH)/m5-nav-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry navigationVm --args-json 0 sim/navigation_test.ail > $(SCRATCH)/m5-nav-interp.txt
+	@cmp $(SCRATCH)/m5-nav-vm.txt $(SCRATCH)/m5-nav-interp.txt && test "$$(tail -1 $(SCRATCH)/m5-nav-vm.txt)" = "navigation-ok" && \
+	  echo "strict-m5 navigationVm: $$(tail -1 $(SCRATCH)/m5-nav-vm.txt), $$(wc -l < $(SCRATCH)/m5-nav-vm.txt | tr -d ' ') lines, digest $$(shasum -a 256 $(SCRATCH)/m5-nav-vm.txt | cut -c1-16) (strict VM = interpreter)"
+
+# M5.5a: from protocol 2.4 the hello reports relativityPin(); it must be the pin in sim/ailang.toml.
+hello-pin:         ## protocol.ail relativityPin() == the sunholo/relativity pin in sim/ailang.toml
+	@pin=$$(sed -n 's/^"sunholo\/relativity" = "\(.*\)"/\1/p' sim/ailang.toml); \
+	said=$$(sed -n 's/^export pure func relativityPin() -> string = "\(.*\)"/\1/p' sim/protocol.ail); \
+	test -n "$$pin" && test "$$pin" = "$$said" && echo "hello-pin: 2.4 hello reports relativity $$said = sim/ailang.toml pin" || \
+	  { echo "hello-pin FAILED: sim/ailang.toml pins relativity '$$pin', protocol.ail relativityPin() says '$$said'"; exit 1; }
 
 # M5.1b (AC4 system half): the protocol 2.3 tail of tests/fixtures/v2_session.ndjson.
 # parity-v2 has already compared the whole session VM = interpreter byte for byte;
@@ -89,10 +101,10 @@ planet-textures-check: ## M5.2a: every texture's disc-integrated albedo with its
 
 golden-m5:         ## M5 GPU goldens alone (needs a GPU window): G-M5-4 Jupiter photometry, G-M5-6 point/disc handoff
 	@mkdir -p $(SCRATCH)
-	@$(GODOT) --path . -- --golden-m5 > $(SCRATCH)/golden-m5.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|skip|      G-M5|m5 golden)' $(SCRATCH)/golden-m5.log; \
+	@perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --golden-m5 > $(SCRATCH)/golden-m5.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|skip|      G-M5|m5 golden)' $(SCRATCH)/golden-m5.log; \
 	  test $$rc = 0 && grep -q '^ok    G-M5-4 Jupiter at opposition (uniform p_V' $(SCRATCH)/golden-m5.log && \
 	  grep -q '^ok    G-M5-6 point/disc handoff' $(SCRATCH)/golden-m5.log && grep -q '^m5 golden: 0 failures$$' $(SCRATCH)/golden-m5.log || \
 	  { echo "golden-m5: FAILED (exit $$rc, or a G-M5-4 / G-M5-6 line is missing)"; exit 1; }
 
 capture-m5a:       ## M5.2a reference renders (needs a GPU window) -> renders/m5/m5.2a/: nine globes, Jupiter in EYE, the Sun, the crossover pair, a sheet
-	$(GODOT) --path . -- --capture-m5=renders/m5/m5.2a
+	perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --capture-m5=renders/m5/m5.2a

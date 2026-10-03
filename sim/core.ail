@@ -5,6 +5,7 @@ module stapledons/sim/core
 -- Physics comes from the published sunholo/relativity package.
 
 import std/option (Option, Some, None)
+import std/result (Ok, Err)
 import std/math (intToFloat)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
@@ -12,9 +13,10 @@ import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn)
 import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag)
 import ./tripphase (tripPhaseIndex)
-import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeIndex, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
+import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeId, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
-import ./celestial (defaultEpochJd)
+import ./celestial (defaultEpochJd, solSystem)
+import ./navigation (BodyReq, NavPlan, Leg, planBody, staleAt)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
@@ -79,7 +81,7 @@ export type PlanReq = { target: Target, cruisePhi: float, flipG: Option[float] }
 -- sim echoes it back in an `echo` event, so the Godot bridge can check the
 -- float64 round trip of `target.pos` and `cruise_phi` before M2.3a's planner.
 export type Intent =
-  IPlan(PlanReq)
+  IPlan(PlanReq) | IPlanBody(BodyReq)
   | ICommit(int) | ICancel | IThrust(float) | IHeading(Vec3)
   | IRecord(AiRecord)
   | IDraw(Stream) | IEcho(PlanReq)
@@ -130,11 +132,12 @@ export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 --   never touch ship, journey, ledger or a non-ai stream: D-20, 2026-10-02)
 -- Nothing maps a Committed journey back to Planned or Idle (AC7).
 -- A plan keeps the package's TripPlan as is; `from` is the ship's position
--- when it was made (a commit from anywhere else is stale). `el` is the
+-- when it was made (a commit from anywhere else is stale). `nav` is the body
+-- planner's part (M5.5a, sim/navigation.ail); None for a star. `el` is the
 -- proper time flown since the commit, kept exactly so that a boundary is
 -- reached at el = tauBurn, tauBurn + tauCoast, tauTotal bit for bit (the
 -- ship's own tau is tau0 + the pieces, which can be an ulp off).
-export type Plan = { id: int, target: Target, from: Vec3, heading: Vec3, flip: bool, trip: TripPlan }
+export type Plan = { id: int, target: Target, from: Vec3, heading: Vec3, flip: bool, trip: TripPlan, nav: Option[NavPlan] }
 export type Commitment = { plan: Plan, tau0: float, t0: float, el: float }
 export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Commitment)
 
@@ -185,6 +188,7 @@ pure func noteEvent(a: Pending, k: string) -> Pending = {a | events: event(k) ::
 pure func refuseWhileCommitted(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
   match it {
     IPlan(_) => refuseIntent(a, "committed"),
+    IPlanBody(_) => refuseIntent(a, "committed"),
     ICommit(_) => refuseIntent(a, "committed"),
     ICancel => refuseIntent(a, "committed"),
     IThrust(_) => refuseIntent(a, "committed"),
@@ -218,18 +222,28 @@ pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending 
   let dv = { x: rq.target.pos.x - here.x, y: rq.target.pos.y - here.y, z: rq.target.pos.z - here.z };
   let d = norm(dv);
   -- M4.1: plan to the stand-off point, 1,000 AU short on the same heading (0 for Sol and by default).
-  let dist = d - standoffFor(p.standoffAu, rq.target.index);
+  let dist = d - standoffFor(p.standoffAu, rq.target.id);
   let reachable = d > 0.0 && d - d == 0.0 && dist > 0.0;
   match rq.flipG {
     Some(g) =>
       if !diag then refuseIntent(a, "diag_only")
       else if !reachable || !(g > 0.0 && g - g == 0.0) then refuseIntent(a, "out_of_range")
-      else storePlan(a, rq.target, here, normalize(dv), true, planFlipAndBurn(dist, g * standardGravity())),
+      else storePlan(a, rq.target, here, normalize(dv), true, planFlipAndBurn(dist, g * standardGravity()), None),
     None =>
       -- `phi == phi` first: a NaN fails every comparison, so it is refused here
       -- on both runtimes (ailang#1419) rather than reaching the package's `requires`.
       if !reachable || !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < cruisePhiMin(p) || rq.cruisePhi > cruisePhiMax(p) then refuseIntent(a, "out_of_range")
-      else storePlan(a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi))
+      else storePlan(a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi), None)
+  }
+}
+-- M5.5a: a body target. sim/navigation.ail computes the arrival point (the client
+-- sends only the id), the intercept and the refusals; the target's index is the
+-- body's place in system.bodies and its pos the arrival point.
+pure func planBodyIntent(p: Params, a: Pending, rq: BodyReq) -> Pending {
+  let here = position(a.ship);
+  match planBody({ sys: solSystem(), epochJd: p.epochJd, t0: a.ship.motion.t, hereLy: here, accel: p.boostG * standardGravity(), bubbleKm: p.bubbleRadiusM / 1000.0 }, rq) {
+    Ok(l) => storePlan(a, { index: l.nav.index, id: rq.id, pos: l.arrivalLy }, here, l.heading, false, l.trip, Some(l.nav)),
+    Err(why) => refuseIntent(a, why)
   }
 }
 -- The cruise-rapidity range a plan accepts (both ends included) and the
@@ -243,9 +257,9 @@ export pure func cruisePhiDefault(p: Params) -> float {
   if d < cruisePhiMin(p) then cruisePhiMin(p) else if d > cruisePhiMax(p) then cruisePhiMax(p) else d
 }
 -- A new plan replaces any uncommitted one and takes the next id.
-pure func storePlan(a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan) -> Pending {
+pure func storePlan(a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan, nav: Option[NavPlan]) -> Pending {
   let id = a.lastPlanId + 1;
-  {a | journey: Planned({ id: id, target: t, from: here, heading: h, flip: flip, trip: tp }), lastPlanId: id}
+  {a | journey: Planned({ id: id, target: t, from: here, heading: h, flip: flip, trip: tp, nav: nav }), lastPlanId: id}
 }
 
 -- Commit: the ship must be at rest (else `moving`) and the id must name the
@@ -259,7 +273,7 @@ pure func commitIntent(a: Pending, id: int) -> Pending =
   else match a.journey {
     Planned(pl) => {
       let here = position(a.ship);
-      if pl.id != id || here.x != pl.from.x || here.y != pl.from.y || here.z != pl.from.z then refuseIntent(a, "stale_plan")
+      if pl.id != id || here.x != pl.from.x || here.y != pl.from.y || here.z != pl.from.z || staleAt(pl.nav, a.ship.motion.t) then refuseIntent(a, "stale_plan")
       else {
         let t = turn(a.ship, pl.heading).ship;
         let turned = {t | origin: position(t), x0: t.motion.x};
@@ -278,6 +292,7 @@ pure func cancelPlan(j: Journey) -> Journey = match j { Planned(_) => Idle, _ =>
 pure func applyFree(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
   match it {
     IPlan(rq) => planIntent(diag, p, a, rq),
+    IPlanBody(rq) => planBodyIntent(p, a, rq),
     ICommit(id) => commitIntent(a, id),
     ICancel => {a | journey: cancelPlan(a.journey)},
     IThrust(t) => if diag then {a | thrust: t} else refuseIntent(a, "diag_only"),
@@ -337,9 +352,10 @@ pure func pieceLedger(l: Ledger, p: Params, tp: TripPlan, i: int, before: Motion
   if i == 1 then {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), tp.phiPeak, p.bubbleRadiusM) * piece * julianYearS()}
   else {l | boostJ: l.boostJ + photonDriveEnergy(l.mEffKg, absf(after.phi - before.phi))}
 
--- Where the autopilot lands: the target itself, or (stand-off) the planned distance along the heading.
+-- Where the autopilot lands: the target itself (a body plan's target is its arrival point),
+-- or (stand-off) the planned distance along the heading.
 pure func arrivalPoint(p: Params, pl: Plan) -> Vec3 =
-  if standoffFor(p.standoffAu, pl.target.index) == 0.0 then pl.target.pos
+  if (match pl.nav { Some(_) => true, None => false }) || standoffFor(p.standoffAu, pl.target.id) == 0.0 then pl.target.pos
   else { let d = pl.trip.trip.distance; { x: pl.from.x + pl.heading.x * d, y: pl.from.y + pl.heading.y * d, z: pl.from.z + pl.heading.z * d } }
 
 pure func atRest(s: Ship, dtau: float) -> Ship = {step(s, 0.0, dtau) | phase: AtRest}
@@ -439,7 +455,7 @@ pure func arrive(w: World, o: Obs) -> Obs =
       let n = { tier: tier, templateId: templateId(tier, top53(d.value)), starId: tgt.id, elapsedYears: elapsed, newsEpoch: cl.newsEpoch, newsAgeYears: cl.newsAgeYears,
         aiRequestId: None, bodySource: "template", fallbackReason: None };
       let c1 = logKinds({o.cq | news: Some(n)}, w, ["arrival", "news"], tgt.id);
-      { cq: if tgt.index == homeIndex() then logAt(c1, w, "return", tgt.id) else c1, rng: d.rng }
+      { cq: if tgt.id == homeId() then logAt(c1, w, "return", tgt.id) else c1, rng: d.rng }
     },
     _ => o
   }
@@ -541,6 +557,10 @@ export pure func planView(p: Params, pl: Plan, tau: float, t: float) -> PlanView
            loadWM2: loadScale(n, phi), glowWM2: glowInwardFlux(n, phi, p.glowEps, p.glowFIn) },
     cmbForwardK: cmbForwardTemperature(phi) }
 }
+
+-- The body planner's part of the current plan (M5.5a; None for a star plan or no plan).
+export pure func navOf(w: World) -> Option[NavPlan] =
+  match w.journey { Planned(p) => p.nav, Committed(c) => c.plan.nav, Arrived(c) => c.plan.nav, Idle => None }
 
 export pure func journeyView(w: World) -> JourneyView =
   match w.journey {

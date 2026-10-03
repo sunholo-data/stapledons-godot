@@ -81,7 +81,7 @@ func test_fixture_view() -> void:
 	var dz: float = sf._point_pos[p + 2] - sf.ship[2]
 	var r := sqrt(dx * dx + dy * dy + dz * dz)
 	var cosang := (dx * w[0] + dy * w[1] + dz * w[2]) / (r * dist)
-	check("point direction = rel_km through galactic_to_world (float64, < 1e-12 rad)", acos(minf(cosang, 1.0)) < 1e-12)
+	check("point direction = rel_km through SkyFrame.to_world64 (float64, < 1e-12 rad)", acos(minf(cosang, 1.0)) < 1e-12)
 	var at_ship: float = sf._point_custom[4 * k + 1] * sf._point_custom[4 * k + 3] / (r * r)
 	check("point flux at the ship = e_v_lux (float32 custom data, 1e-6)", absf(at_ship / j["e_v_lux"] - 1.0) < 1e-6, "%s lux" % String.num_scientific(at_ship))
 	check("point colour = the solar T 5772 K", sf._point_custom[4 * k] == Planets.T_SUN)
@@ -121,7 +121,7 @@ func test_point_disc_switch() -> void:
 	check("small disc supersampled 8 x 8 per pixel", m.get_shader_parameter("ss") == 8)
 	check("disc drawn after the stars (render_priority >= 1)", m.render_priority >= 1)
 	var sd: Vector3 = m.get_shader_parameter("sun_dir_w")
-	check("sun_dir galactic -x -> world +Z (galactic_to_world)", sd.distance_to(Vector3(0, 0, 1)) < 1e-6)
+	check("sun_dir galactic -x -> world +Z (SkyFrame)", sd.distance_to(Vector3(0, 0, 1)) < 1e-6)
 	sv.queue_free()
 	sf.queue_free()
 	return
@@ -138,7 +138,7 @@ func test_placement_precision() -> void:
 		check("R %.0f km at %s km: angular radius from the float32 placement / float64 (1e-6)" % [c[0], String.num_scientific(c[1])], absf(got / want - 1.0) < 1e-6, String.num_scientific(want) + " rad")
 		check("  centre is PLACE units out (no raw km in a Vector3)", absf(centre.length() - Planets.PLACE) < 1e-5)
 	var bas := Planets.body_basis({"x": 0.0, "y": 0.0, "z": 1.0}, 90.0)
-	check("body basis is orthonormal (pole -> world z column)", absf(bas.x.dot(bas.y)) < 1e-6 and absf(bas.z.distance_to(Starfield.galactic_to_world(Vector3(0, 0, 1)))) < 1e-6)
+	check("body basis is a right-handed orthonormal frame (pole -> world z column, det +1)", absf(bas.x.dot(bas.y)) < 1e-6 and absf(bas.z.distance_to(SkyFrame.to_world(Vector3(0, 0, 1)))) < 1e-6 and absf(bas.determinant() - 1.0) < 1e-6)
 
 
 func test_albedo_table() -> void:
@@ -158,11 +158,40 @@ func test_albedo_table() -> void:
 	check("CREDITS carries the CC BY 4.0 attribution and the licence URL", credits.contains("CC BY 4.0") and credits.contains("https://creativecommons.org/licenses/by/4.0/") and credits.contains("Solar System Scope"))
 
 
+## L-tex (Mark 2026-10-03): the CC BY credit is displayed in game, and says what CREDITS says.
+func test_credits_displayed() -> void:
+	print("In-game credits (CC BY 4.0 attribution is displayed)")
+	var credits := FileAccess.get_file_as_string("res://data/planets/CREDITS")
+	var i := credits.find("In-game credit line:")
+	var line := credits.substr(i).split("\n")[1].strip_edges() if i >= 0 else ""
+	check("CREDITS' in-game line = Credits.PLANET_LINE", line == Credits.PLANET_LINE and line.contains("CC BY 4.0"), line)
+	var c := Credits.new()
+	root.add_child(c)
+	check("panel lists the planet line and the CC BY 4.0 licence URL", c.body.text.contains(Credits.PLANET_LINE) and c.body.text.contains("https://creativecommons.org/licenses/by/4.0/"))
+	check("corner hint names the key; panel starts closed", c.hint.text.contains("C") and c.hint.text.contains("credits") and not c.panel.visible)
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_C
+	ev.pressed = true
+	c._unhandled_key_input(ev)
+	check("C opens the panel", c.panel.visible)
+	c._unhandled_key_input(ev)
+	check("C again closes it", not c.panel.visible)
+	var map := GalaxyMap.new()
+	check("the galaxy map (the default launch screen) carries the credits", map.credits is Credits)
+	var site := FileAccess.get_file_as_string("res://website/docs/credits.md")
+	check("website credits page carries the planet textures' CC BY 4.0 credit", site.contains("Solar System Scope") and site.contains("CC BY 4.0"))
+	var rel := FileAccess.get_file_as_string("res://.github/workflows/release.yml")
+	check("release notes template carries the credit", rel.contains(Credits.PLANET_LINE))
+	c.queue_free()
+	map.free()
+
+
 func _initialize() -> void:
 	test_fixture_view()
 	test_point_disc_switch()
 	test_placement_precision()
 	test_albedo_table()
+	test_credits_displayed()
 	await process_frame
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)
