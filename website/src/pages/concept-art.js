@@ -164,8 +164,8 @@ export default function ConceptArt() {
         <section className={clsx(styles.block, styles.credit)}>
           <h2>Credit</h2>
           <p>
-            AI-assisted art, made with image models and Blender under Sunholo's art direction, and owned by
-            Sunholo. See <Link to="/docs/credits">Credits and licences</Link> for how it is licensed.
+            AI-generated art, made with image models and Blender under Sunholo's art direction. No copyright
+            is claimed. See <Link to="/docs/credits">Credits and licences</Link>.
           </p>
         </section>
       </main>

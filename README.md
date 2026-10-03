@@ -64,8 +64,10 @@ Findings and the roadmap live in the design repo.
 
 ## License
 
-The code is licensed under the [Apache License 2.0](LICENSE) (Copyright 2026 Sunholo / Mark
-Edmondson). Third-party data and imagery keep their own licences, notably the Milky Way panorama
-(NOIRLab `noirlab2430b`, E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0) and the star catalogues
-(CNS5, Gaia GCNS, Hipparcos) under their providers' terms. See the
-[credits page](https://www.sunholo.com/stapledons-godot/docs/credits).
+The [Apache License 2.0](LICENSE) (Copyright 2026 Sunholo / Mark Edmondson) covers the **code**.
+The **AI-generated art** (the captain, the bridge, the concept art) carries **no copyright claim**
+(D-33). **Third-party assets** keep their own licences and are listed on the
+[credits page](https://www.sunholo.com/stapledons-godot/docs/credits): among them the Milky Way
+panorama (NOIRLab `noirlab2430b`, E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0), the planet
+textures ([Solar System Scope](https://www.solarsystemscope.com/textures/), CC BY 4.0) and the star
+catalogues (CNS5, Gaia GCNS, Hipparcos) under their providers' terms.
