@@ -14,10 +14,15 @@ const BG_PREVIEW := 0.6
 func _ready() -> void:
 	_build_scene()
 	background.set_exposure(BG_PREVIEW)
-	starfield.load_catalogue("res://data/starmap/stars.json")
-	starfield.stars.append_array(_hip_stars())
+	# M1.3: quick tier (CNS5) from the binary loader; HIP fluxes are V-relative, so
+	# the tier's lux E_v are rescaled to the same units by the exposure split.
+	starfield.load_tiers("quick")
+	var hip := _hip_stars()
+	for h in hip:
+		h["flux"] *= Relativity.illuminance_from_v(0.0)
+	starfield.append_stars(hip)
 	starfield.build()
-	starfield.set_exposure(STAR_EXPOSURE)
+	starfield.set_exposure(STAR_EXPOSURE / Relativity.illuminance_from_v(0.0))
 	starfield.material.set_shader_parameter("psf_sigma_px", 1.2)
 	if not sim.start():
 		get_tree().quit(2)

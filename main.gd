@@ -9,6 +9,8 @@ extends Node3D
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
 ##   godot --path . -- --golden            shader vs CPU reference positions
+##   godot --path . -- --bench[=SECONDS]   scripted flight, frame-time report (tools/bench.gd; make bench)
+## Sky runs:  -- --tier=quick|medium|large  star tier (default: large if built, else medium; M1.3)
 ## Any run:  -- --record=path.ndjson  tees the sim's input log (replays headless).
 ## Interactive runs: Cmd/Ctrl + / - / 0 change the UI size (UiScale; HiDPI aware).
 ##
@@ -18,7 +20,7 @@ extends Node3D
 
 const TICK_HZ := 20.0
 const HEADING := Vector3(0, 0, -1) # galactic centre
-const EXPOSURE := 5.0
+const EXPOSURE := 5.0 # linear splat peak of a V = 0 star (goldens use flux 1 = V 0)
 const BG_EXPOSURE := 0.075 # hand-set ratio to the stars until M1.5 calibrates both
 const SEED := 0
 const ALPHA_CEN_A := 1 # stars.json index 1 (Gl 559, vmag 0.01); B is index 2 with the same id
@@ -38,7 +40,6 @@ var hud := Label.new()
 var heading := HEADING # the sim's, for the HUD's view-to-velocity angle
 var warp := 0.2 # ship-years per real second
 var _accum := 0.0
-var _last_pos_update := Vector3.ZERO
 var _map_mode := false
 var _fixed_scale := false # captures / goldens: no HiDPI stretch, no UI zoom, no sky note
 var sky_note := Label.new()
@@ -49,7 +50,7 @@ func _ready() -> void:
 	var args := _user_args()
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench")
 	UiScale.configure(get_window(), _fixed_scale)
 	# Launching with no arguments (a double-clicked review build, `make run`)
 	# opens the galaxy map on alpha Cen A; `--voyage` runs the M0/M1 sky flight.
@@ -63,9 +64,9 @@ func _ready() -> void:
 	if args.has("golden"):
 		await _run_golden()
 		return
-	starfield.load_catalogue("res://data/starmap/stars.json")
-	starfield.build()
-	starfield.set_exposure(EXPOSURE)
+	if not load_stars(args.get("tier", "")):
+		get_tree().quit(2)
+		return
 	sim.record_path = args.get("record", "")
 	var course := {"k": "heading", "heading": {"x": HEADING.x, "y": HEADING.y, "z": HEADING.z}}
 	if not sim.start() or not sim.new_game(SEED, "sol", true) or not sim.send([course], 0.0):
@@ -75,6 +76,10 @@ func _ready() -> void:
 	_apply_state()
 	if args.has("capture"):
 		await _run_capture(args["capture"])
+	elif args.has("bench"):
+		var secs: float = float(args["bench"]) if args["bench"].is_valid_float() else 30.0
+		# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
+		get_tree().quit(await load("res://tools/bench.gd").new().run(self, secs))
 
 
 ## Galaxy map (M2.6a) on a play session (not diag): `--map` interactive,
@@ -176,6 +181,22 @@ func _panel_dump(map: GalaxyMap, speed: String) -> Dictionary:
 		"cruise_phi": sim.world["journey"]["plan"]["cruise_phi"], "speed_label": map.speed_text(), "rows": rows}
 
 
+## M1.3: binary tier (+ bright on top when built) -> starfield. Catalogue E_v
+## is in lux, so the exposure is per lux: a V = 0 star peaks at EXPOSURE as
+## before (M1.5a replaces this with photometric exposure).
+func load_stars(tier: String) -> bool:
+	if tier == "":
+		tier = "large" if FileAccess.file_exists("res://data/starmap/stars_large.bin") else "medium"
+	if not starfield.load_tiers(tier):
+		push_error("starfield: %s" % starfield.last_error)
+		return false
+	starfield.build()
+	starfield.set_exposure(EXPOSURE / Relativity.illuminance_from_v(0.0))
+	print("starfield: tiers %s, %d stars drawn, %d without photometry skipped, rebase %s" % [
+		starfield.tiers, starfield.count, starfield.skipped_missing, Starfield.Rebase.keys()[starfield.rebase_mode]])
+	return true
+
+
 func _out_dir(dir: String) -> String:
 	# Absolute paths are used as-is; relative ones go under the project (editor)
 	# or the user data dir (exported builds, where res:// is read-only).
@@ -241,16 +262,13 @@ func _apply_state() -> void:
 		background.set_velocity(heading, beta, s["gamma"])
 	var x: float = s["x"]
 	var p: Dictionary = s["pos"]
-	var pos := Vector3(p["x"], p["y"], p["z"])
-	if pos.distance_to(_last_pos_update) > 0.01:
-		starfield.set_ship_position(pos)
-		_last_pos_update = pos
+	starfield.set_ship_position(p["x"], p["y"], p["z"]) # float64; the starfield rebases (M1.3)
 	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s\n%s" % [
 		beta, s["gamma"], c["tau"], c["t"], x, warp, camera.hud_line(heading)]
 
 
 func _process(delta: float) -> void:
-	if _map_mode or _user_args().has("capture") or _user_args().has("golden"):
+	if _map_mode or _user_args().has("capture") or _user_args().has("golden") or _user_args().has("bench"):
 		return
 	var look := Input.get_axis("ui_right", "ui_left")
 	var tilt := Input.get_axis("ui_down", "ui_up")
@@ -302,8 +320,9 @@ func _grab() -> Image:
 func _run_capture(dir: String) -> void:
 	var out := _out_dir(dir)
 	var targets := [0.0, 0.5, 0.9, 0.99]
-	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a)
-	var views := {"forward": [0.0, 0.0, 0.0], "starboard": [-PI / 2, 0.0, 0.0], "astern": [PI, 0.0, 0.0],
+	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a); M1.3 adds port
+	# (galactic l = 270: Canopus, alpha Cen, Sirius, the LMC once the bright tier is on)
+	var views := {"forward": [0.0, 0.0, 0.0], "starboard": [-PI / 2, 0.0, 0.0], "port": [PI / 2, 0.0, 0.0], "astern": [PI, 0.0, 0.0],
 		"offaxis": [deg_to_rad(50.0), deg_to_rad(25.0), 0.0], "rolled": [deg_to_rad(-30.0), deg_to_rad(10.0), deg_to_rad(35.0)]}
 	var tiles := []
 	for target in targets:
@@ -364,7 +383,7 @@ func _run_golden() -> void:
 		var n := Vector3(sin(th), 0.0, -cos(th)) # galaxy frame, starboard = +X
 		camera.look(c.get("yaw", 0.0), 0.0, 0.0)
 		starfield.set_custom_stars([{"name": "test", "pos": n * 1000.0, "t": c.get("t", 5700.0), "flux": 1.0}])
-		starfield.set_ship_position(Vector3.ZERO)
+		starfield.set_ship_position(0.0, 0.0, 0.0)
 		var b: float = c["beta"]
 		starfield.set_velocity(HEADING, b, 1.0 / sqrt(1.0 - b * b))
 		var img := await _grab()
@@ -384,11 +403,15 @@ func _run_golden() -> void:
 			"ok  " if ok else "FAIL", c["label"], expected.x, expected.y, got.x, got.y, err,
 			rad_to_deg(acos(expected_dir.dot(HEADING)))])
 	failures += await _golden_offaxis()
+	failures += await _golden_standoff(1000.0, 300.0)
+	failures += await _golden_standoff(0.3, 0.2)
+	failures += await _golden_cull()
 	starfield.set_custom_stars([])
-	starfield.set_ship_position(Vector3.ZERO)
+	starfield.set_ship_position(0.0, 0.0, 0.0)
 	failures += await _golden_background_marker()
 	failures += await _golden_background_colour()
 	failures += await _golden_background_tint()
+	failures += await _golden_hot_white_dwarf()
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -419,7 +442,7 @@ func _golden_offaxis() -> int:
 					var d := Relativity.doppler(n, OFF_AXIS, b)
 					var t := 5700.0 / d
 					starfield.set_custom_stars([{"name": "test", "pos": n * 1000.0, "t": t, "flux": 1.0 / Relativity.point_flux_ratio(t, d)}])
-					starfield.set_ship_position(Vector3.ZERO)
+					starfield.set_ship_position(0.0, 0.0, 0.0)
 					starfield.set_velocity(OFF_AXIS, b, Relativity.gamma_of(b))
 					var img := await _grab()
 					var expected := camera.project(Relativity.aberrate(n, OFF_AXIS, b), size)
@@ -433,6 +456,135 @@ func _golden_offaxis() -> int:
 						"ok  " if ok else "FAIL", view[0], b, ax, ay, d, expected.x, expected.y, got.x, got.y, err])
 	print("off-axis golden: %d cases (12 directions x 4 speeds x %d orientations), worst error %.3f px (limit 0.75), %d failures" % [count, GOLDEN_VIEWS.size(), worst, failures])
 	return failures
+
+
+## M1.3 rebasing on the GPU: alpha Cen A (SIMBAD l 315.734, b -0.680, 4.37 ly)
+## from the 1,000 AU stand-off (300 AU off the Sol line), in both rebase modes,
+## at rest and 0.9c. The centroid must land within 0.75 px of the float64 CPU
+## direction (Starfield.direction_to, aberrated) through the camera projection;
+## the camera looks 8 deg to the side of the star so it is off the centre.
+## At 1,000 AU this checks the projection, not the hi/lo pair (float32 from Sol
+## is only ~1e-3 px off there), so a second geometry at ~0.36 AU makes the shader's
+## lo terms matter: there float32 positions from Sol alone land >= 1.5 px off (2x the tolerance)
+## (computed here per case and required, so the case keeps its power), and the
+## GPU must still be within 0.75 px.
+func _golden_standoff(along_au: float, side_au: float) -> int:
+	var size := get_viewport().get_visible_rect().size
+	var l := deg_to_rad(315.734)
+	var b_gal := deg_to_rad(-0.680)
+	var g := [4.37 * cos(b_gal) * cos(l), 4.37 * cos(b_gal) * sin(l), 4.37 * sin(b_gal)]
+	var star := [g[1], g[2], -g[0]]
+	var au := 1.0 / 63241.07708426628
+	var u := [star[0] / 4.37, star[1] / 4.37, star[2] / 4.37]
+	var sn := sqrt(u[2] * u[2] + u[0] * u[0])
+	var ship := [star[0] - u[0] * along_au * au + u[2] / sn * side_au * au, star[1] - u[1] * along_au * au, star[2] - u[2] * along_au * au - u[0] / sn * side_au * au]
+	var r2 := 0.0
+	for a in 3:
+		r2 += (star[a] - ship[a]) ** 2
+	var failures := 0
+	for mode in [Starfield.Rebase.GPU, Starfield.Rebase.CPU]:
+		for b: float in [0.0, 0.9]:
+			starfield.set_rebase_mode(mode)
+			starfield.set_custom_stars([{"pos": star, "t": 5790.0, "flux": 1.0}])
+			starfield.set_ship_position(ship[0], ship[1], ship[2])
+			var d64 := starfield.direction_to(0)
+			var n := Vector3(d64[0], d64[1], d64[2])
+			var d := Relativity.doppler(n, HEADING, b)
+			# unit brightness at the ship: undo |p|^2 / r^2 and the beaming
+			var p2: float = star[0] * star[0] + star[1] * star[1] + star[2] * star[2]
+			starfield.set_custom_stars([{"pos": star, "t": 5790.0, "flux": maxf(r2, 1e-6) / p2 / Relativity.point_flux_ratio(5790.0, d)}])
+			starfield.set_ship_position(ship[0], ship[1], ship[2])
+			starfield.set_velocity(HEADING, b, Relativity.gamma_of(b))
+			var app := Relativity.aberrate(n, HEADING, b)
+			camera.look(atan2(-app.x, -app.z) + deg_to_rad(8.0), asin(app.y), 0.0)
+			var img := await _grab()
+			var expected := camera.project(app, size)
+			var got := _centroid(img)
+			var err := got.distance_to(expected)
+			# the same frame with float32 positions from Sol and no lo terms (what a shader dropping lo computes)
+			var naive := Vector3(Starfield.f32(Starfield.f32(star[0]) - Starfield.f32(ship[0])), Starfield.f32(Starfield.f32(star[1]) - Starfield.f32(ship[1])), Starfield.f32(Starfield.f32(star[2]) - Starfield.f32(ship[2])))
+			var naive_err := camera.project(Relativity.aberrate(naive.normalized(), HEADING, b), size).distance_to(expected)
+			var ok := err < 0.75 and (along_au > 100.0 or naive_err >= 1.5)
+			if not ok: failures += 1
+			print("%s  stand-off alpha Cen A %s beta %.1f (%.1f AU, origin %.4f ly from ship)  expected (%.2f, %.2f)  rendered (%.2f, %.2f)  error %.3f px  (float32 from Sol, no lo: %.2f px off)" % [
+				"ok  " if ok else "FAIL", Starfield.Rebase.keys()[mode], b, sqrt(r2) / au, Starfield._dist(starfield.origin, starfield.ship), expected.x, expected.y, got.x, got.y, err, naive_err])
+	starfield.set_rebase_mode(Starfield.Rebase.GPU)
+	starfield.set_velocity(HEADING, 0.0, 1.0)
+	return failures
+
+
+## M1.3 faint-star cull: with the production tonemapper (AgX + glow) a star
+## whose linear splat peak is 2x the shader's cull_peak, drawn with the cull
+## off, must still render as pure black (every 8-bit channel 0), so culling
+## below cull_peak loses nothing on screen.
+func _golden_cull() -> int:
+	var cull: float = Starfield.CULL_PEAK
+	starfield.material.set_shader_parameter("cull_peak", 0.0)
+	camera.look(0.0, 0.0, 0.0)
+	starfield.set_velocity(HEADING, 0.0, 1.0)
+	starfield.set_custom_stars([{"pos": Vector3(0.1, 0.05, -1.0).normalized() * 1000.0, "t": 5700.0, "flux": 2.0 * cull / EXPOSURE}])
+	starfield.set_ship_position(0.0, 0.0, 0.0)
+	var img := await _grab()
+	var top := 0.0
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			top = maxf(top, maxf(c.r, maxf(c.g, c.b)))
+	# and a star 40x brighter (peak 8e-3) must show, so the frame is live
+	starfield.set_custom_stars([{"pos": Vector3(0.1, 0.05, -1.0).normalized() * 1000.0, "t": 5700.0, "flux": 80.0 * cull / EXPOSURE}])
+	var live := _peak(await _grab())
+	starfield.material.set_shader_parameter("cull_peak", cull)
+	var ok := top * 255.0 < 0.5 and live > 0.0
+	print("%s  faint-star cull: peak 2 x cull_peak (%s) renders max channel %.1f/255 (must be 0); 80 x renders %.4f (must be > 0)" % [
+		"ok  " if ok else "FAIL", str(cull), top * 255.0, live])
+	return 0 if ok else 1
+
+
+## M1.3 (O-1): a 60 kK white dwarf dead ahead at 0.999c (D = 44.71, seen at
+## 2.68 MK, beyond the old 1e6 K LUT end) with flux 1/pointFluxRatio(T, D) must
+## render with the same integrated luminance as a unit star at rest (6000 K),
+## within 2%, and with the CPU chromaticity of rgb(T D) within 0.01. Linear
+## tonemapper, no glow; both splats sit on the same pixel.
+func _golden_hot_white_dwarf() -> int:
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	env.glow_enabled = false
+	env.background_mode = Environment.BG_COLOR # drop the previous goldens' synthetic sky
+	env.background_color = Color.BLACK
+	camera.look(0.0, 0.0, 0.0)
+	var n := HEADING
+	var k := 0.04 # splat peak ~0.2: no channel clips
+	starfield.set_custom_stars([{"pos": n * 1000.0, "t": 6000.0, "flux": k}])
+	starfield.set_ship_position(0.0, 0.0, 0.0)
+	starfield.set_velocity(HEADING, 0.0, 1.0)
+	var ref := _window_sum(await _grab())
+	var b := 0.999
+	var d := Relativity.doppler(n, HEADING, b)
+	var t := 60000.0
+	starfield.set_custom_stars([{"pos": n * 1000.0, "t": t, "flux": k / Relativity.point_flux_ratio(t, d)}])
+	starfield.set_velocity(HEADING, b, Relativity.gamma_of(b))
+	var hot := _window_sum(await _grab())
+	starfield.set_velocity(HEADING, 0.0, 1.0)
+	var y_ref := 0.2126729 * ref.x + 0.7151522 * ref.y + 0.0721750 * ref.z
+	var y_hot := 0.2126729 * hot.x + 0.7151522 * hot.y + 0.0721750 * hot.z
+	var want := _xy(Blackbody.rgb_unit_luminance(t * d))
+	var dxy := _xy(hot).distance_to(want)
+	# the unit star integrates to ~peak 0.2 x 2 pi sigma^2 (5.1 px^2) = 1.0
+	var ok := y_ref > 0.5 and absf(y_hot / y_ref - 1.0) < 0.02 and dxy < 0.01
+	print("%s  hot white dwarf 60 kK at D %.2f (seen %.0f K): unit star sum %.3f, luminance / unit star %.4f (want 1 +- 0.02)  xy (%.4f, %.4f) want (%.4f, %.4f) dxy %.4f" % [
+		"ok  " if ok else "FAIL", d, t * d, y_ref, y_hot / y_ref, _xy(hot).x, _xy(hot).y, want.x, want.y, dxy])
+	return 0 if ok else 1
+
+
+## Linear RGB summed over a 21 x 21 window at the frame centre.
+func _window_sum(img: Image) -> Vector3:
+	var c := Vector3.ZERO
+	var cx := img.get_width() / 2
+	var cy := img.get_height() / 2
+	for yy in range(cy - 10, cy + 11):
+		for xx in range(cx - 10, cx + 11):
+			var p := img.get_pixel(xx, yy).srgb_to_linear()
+			c += Vector3(p.r, p.g, p.b)
+	return c
 
 
 ## AC5 (background): one bright texel of a synthetic panorama must land within

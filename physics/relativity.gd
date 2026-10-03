@@ -66,6 +66,13 @@ static func surface_brightness_ratio(t_kelvin: float, d: float) -> float:
 	return Blackbody.luminance(t_kelvin * d) / Blackbody.luminance(t_kelvin)
 
 
+## Visual illuminance in lux of a V magnitude. Mirrors the package's
+## photometry.illuminanceFromV (sunholo/relativity 0.4.0+): the standard
+## visual zero point, V = -13.98 at 1 lux, so V = 0 gives 2.5586e-6 lux.
+static func illuminance_from_v(v: float) -> float:
+	return pow(10.0, -0.4 * (v + 13.98))
+
+
 ## Relative flux from an apparent magnitude.
 static func flux_from_mag(mag: float) -> float:
 	return pow(10.0, -0.4 * mag)

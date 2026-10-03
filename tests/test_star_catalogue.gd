@@ -91,6 +91,14 @@ func stats_cases() -> void:
 	check("stats passes a clean tier", r[0] == 0 and r[1].contains("M-dwarf share 66.7%"), str(r))
 	r = stats([m, [1.0, 0.0, 0.0, 0.0, 99.0, 0.0]], "quick")
 	check("stats fails defaulted photometry without MISSING_PHOT", r[0] == 1 and r[1].contains("violations 1"), str(r))
+	r = stats([m, [1.0, 0.0, 0.0, 0.0, 12.0, 0.0]], "quick")
+	check("stats fails teff 0 with a real v and no MISSING_PHOT (half a default)", r[0] == 1 and r[1].contains("violations 1"), str(r))
+	r = stats([m, [1.0, 0.0, 0.0, 3000.0, 99.0, 0.0]], "quick")
+	check("stats fails v 99 with a real teff and no MISSING_PHOT", r[0] == 1 and r[1].contains("violations 1"), str(r))
+	r = stats([m, [1.0, 0.0, 0.0, 0.0, 12.0, 2.0]], "quick")
+	check("stats fails MISSING_PHOT with only teff defaulted", r[0] == 1 and r[1].contains("violations 1"), str(r))
+	r = stats([m, g, missing], "quick")
+	check("stats labels rows with and without photometry", r[0] == 0 and r[1].contains("in bin 3 (with photometry 2, without 1)  excluded before the bin 0"), str(r))
 	r = stats([m, [1.0, 0.0, 0.0, 3000.0, 12.0, 2.0]], "quick")
 	check("stats fails MISSING_PHOT without defaulted photometry", r[0] == 1 and r[1].contains("violations 1"), str(r))
 	r = stats([m, [1.0, 0.0, 0.0, 9000.0, 11.0, 1.0]], "quick")
@@ -133,6 +141,9 @@ func _init() -> void:
 	m = good.duplicate(true); m["count"] = 3
 	refuses("count", b, m, "sidecar count 3")
 	refuses("truncated", b.slice(0, 40), good, "is 40 B")
+	# a longer bin whose sha256 the sidecar pins correctly, but whose count is too low
+	var three := le_bytes(ROWS + [[0.5, 0.5, 0.5, 4000.0, 10.0, 0.0]])
+	refuses("count_too_low", three, sidecar(2, sha(three)), "is 72 B, sidecar count 2 needs 48 B")
 	var flipped := b.duplicate(); flipped[30] ^= 1
 	refuses("sha256", flipped, good, "sha256(bin)")
 	m = good.duplicate(true); m.erase("sha256")

@@ -581,6 +581,14 @@ cross-match (`pkg search hipparcos|crossmatch` returned nothing).
 - `make test` includes `test_bright_audit` and is green.
 
 #### M1.3: Star rendering v2 (331k instanced, physical brightness)
+**Status (2026-10-02): executed on `sprint/m1.3-starfield`, awaiting ⏸ R-b.**
+✅ `make physics` · ✅ `make golden` (60 kK + stand-off + cull + existing, 0 failures) ·
+✅ `make bench TIER=large` (numbers in the sprint JSON and `docs/m1.3/bench_*.json`) ·
+✅ `make capture` renders opened (`docs/m1.3/`) · ⏸ R-b.
+The star pass meets its target (GPU p50 ~0.6 ms < 2 ms). The AC7 frame-time p99
+is a marginal miss on a loaded host (17.0–17.5 ms in the evaluator's runs, more
+under heavier load); it is **deferred to M1.5b**, re-measured with
+`make bench TIER=large` on an idle host.
 **Scope:**
 - **`sky/starfield.gd`:** loads binary tiers through `star_catalogue.gd`.
   The bright tier is always loaded on top. The JSON path is removed for the
@@ -610,9 +618,9 @@ plus a bench entry; minimal, after M1.6b merges), `Makefile` (`bench`),
 `tools/bench.gd`.
 
 **Estimated:** 600 LOC · **Deps:** M1.2c (loader and committed tiers),
-M1.6b merged (`main.gd`) · **Registry:** depend `sunholo/relativity@0.4.0`
-(mirrored functions `pointFluxRatio` and `illuminanceFromV`); Godot
-otherwise.
+M1.6b merged (`main.gd`) · **Registry:** depend `sunholo/relativity@0.5.1`
+(the sim's pin; mirrored functions `pointFluxRatio` and `illuminanceFromV`);
+Godot otherwise.
 
 **Acceptance:**
 - `make physics`: the brightness ∝ E_v test, the LUT finite to 1e7 test
@@ -839,7 +847,7 @@ float codec). Star returns relativity and `gemini_agents` (unrelated).
 | M1.2b-T4 | none | none | Parity/timing harness (Makefile + shell) |
 | M1.2c | none | none | Godot loader and stats; no AILANG package applies |
 | M1.2d | sunholo/relativity@0.5.0 | depend | `teffFromBV`; HIP cross-match is game-specific (`pkg search hipparcos` empty) |
-| M1.3 | sunholo/relativity@0.4.0 | depend | GDScript/shader mirror `pointFluxRatio`, `illuminanceFromV` |
+| M1.3 | sunholo/relativity@0.5.1 | depend | GDScript/shader mirror `pointFluxRatio`, `illuminanceFromV` |
 | M1.7 | none | none | UI, names data, goldens |
 | M1.5a | sunholo/relativity@0.5.0 | depend | `luminanceFromSurfaceMag`, `pointThresholdIlluminance` |
 | M1.8 | sunholo/relativity@0.5.0 | depend | `cmbSeenTemperature`, `photopicRadiance` |

@@ -1,0 +1,107 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.3",
+  "title": "Star rendering v2 (331k instanced, physical brightness)",
+  "pr": 67,
+  "branch": "sprint/m1.3-starfield",
+  "commits_evaluated": ["bca47fc", "d4fd3b6"], "note_on_commits": "the brief named 1f9a510; the branch and PR #67 carry bca47fc + d4fd3b6",
+  "round": 1,
+  "result": "pass",
+  "score": 92,
+  "pass_threshold": 70,
+  "evaluator": "independent agent (generator != judge), fresh clone --no-hardlinks in the scratchpad, ailang v0.51.0 (runtime/bin), Godot 4.7.2 forward_plus, Apple M4 Max, 2026-10-02",
+  "judged_against": [
+    "design_docs/planned/r1/m1-remaining-sprint.md #### M1.3",
+    "stapledons-design/physics/relativity-spec.md (sections 1-2, check-value index)",
+    "CLAUDE.md definition of done gates 1-6"
+  ],
+  "breakdown": {
+    "tests_pass": {"points": 20, "max": 20, "note": "make test AILANG=$A AILANG_BIN=$A exit 0 on the clean clone: physics 262/262, sim 120 tests, parity, strict, catalogue-stats, star-catalogue-test 34/34, tools-test 32/32, python-guard"},
+    "lint_clean": {"points": 10, "max": 10, "note": "python-guard green (no new .py); no other lint target in this repo; GDScript parses clean under --headless and the GPU window"},
+    "acceptance_criteria": {"points": 27, "max": 30, "note": "make physics: LUT to 1e7 + package values, brightness proportional to E_v, rebasing precision at the 1,044 AU stand-off (all reproduced). make golden: 0 failures incl. 4 stand-off cases (0.127 px), hot WD 60 kK at D 44.71 (luminance ratio 1.0022, dxy 0.0007), cull 0/255. make bench TIER=large: numbers printed and recorded. make capture: 20 large-tier renders opened. -2: the shader's hi/lo precision path is not verified on the GPU (mutation shaderDropLo survives physics + golden; the claim rests on the GDScript emulation). -1: AC7 p99 missed marginally in my run (17.0-17.5 ms vs 16.7 at host load 0.54/core). R-b (Mark) still pending by design."},
+    "code_quality": {"points": 12, "max": 15, "note": "-1 LOC 777 added vs the 650 cap (139 test + 167 bench; core ~470). -1 docs/m1.3/*.png have no .gdignore (docs/m1.4a has one): Godot imports them (.import churn, and they ship in exports). -1 the adaptive quad extent truncates the PSF where it equals cull_peak, so a star of peak p loses cull/p of its integrated energy (10% at p = 1e-3, ~V 9.2 at rest); invisible under AgX but undocumented. Sprint JSON and plan status complete."},
+    "documentation": {"points": 14, "max": 15, "note": "changelog entry, plan status block, sprint JSON notes (very thorough), bench JSON + renders under docs/m1.3, shader header documents the buffer layout. -1: test_lut_range's docstring claims 'finite in every texel' but that loop lives in the older LUT test (tests/test_physics.gd:375), and the plan's registry line (0.4.0) lags ailang.toml (0.5.1)."},
+    "design_fidelity": {"points": 9, "max": 10, "note": "every scope item delivered; plan B is the plan's own fallback and was triggered by a measurement (74 ms CPU rebase); the cull + adaptive extent is an addition beyond the plan, justified by a golden. -1: no GPU-resolvable test of the precision mechanism the design centres on."}
+  },
+  "hard_fails": [],
+  "physics_gate_2": {
+    "check_values_in_tests": "tests/test_physics.gd asserts package values for illuminanceFromV(0), (-1.46), pointFluxRatio(60 kK, 44.7), (60 kK, 1/44.7), (3300 K, sqrt 19), Y(1e7)/Y(1e6); I recomputed every one with sunholo/relativity 0.5.1 through ailang (scratch package) and with an independent pure-Python oracle (Planck x Wyman CMF): all agree to <= 2e-16 relative. Spec RS-1..RS-4, RS-Q1, RS-Q2 remain asserted by the existing tests.",
+    "doppler_convention": "shader (sky/starfield.gdshader:48-57) and CPU (physics/relativity.gd doppler) both use D = gamma (1 + beta cos theta) with theta the galaxy-frame angle of the same n that is aberrated, which equals 1/(gamma (1 - beta cos theta')) of the spec; sideways (apparent 90 deg) gives 1/gamma, blueshift only inside cos theta' > (1 - 1/gamma)/beta (51.2 deg at 0.9c, 29.8 deg at 0.99c), matching the renders. 1 + beta cos theta is rewritten as (1 - beta) + beta (1 + cos theta) for cos theta < 0 with 1 - beta formed in float64 on the CPU.",
+    "brightness_law": "splat energy = E_v |p|^2 / r^2 x pointFluxRatio(T, D) = Y(D T)/Y(T)/D^2 (spec point-source law; bolometric D^2, not D^4). Golden hot WD: GPU integrated luminance / unit star = 1.0022 under a linear tonemapper.",
+    "gpu_golden": "make golden AILANG=$A: 0 failures (144 off-axis + 16 background markers + 4 stand-off + hot WD + cull + 9 original cases)",
+    "maths_mirrored_from_package": "Relativity.illuminance_from_v and point_flux_ratio mirror photometry.illuminanceFromV and blackbody.pointFluxRatio of sunholo/relativity 0.5.1 (sim/ailang.toml pins 0.5.1); the shader mirrors the GDScript.",
+    "float64_precision": "positions PackedFloat64Array; ship position passed as three float64 scalars (never through a Vector3); hi/lo float32 split on upload; gamma and 1 - beta from float64 on the CPU.",
+    "lut_finite": "existing test loops every texel for finiteness and monotonicity over the new 300 K..1e7 K range (1320 texels); the shader clamps u to [0, 1] so D T outside the range (e.g. 3000 K at D 0.071 -> 213 K) reads the end texel, finite."
+  },
+  "renders_opened": {
+    "my_capture": "make capture AILANG=$A AILANG_BIN=$A on the large tier: starfield: tiers [large], 324307 stars drawn, 7005 without photometry skipped, rebase GPU; 20 PNGs + contact sheet, all opened",
+    "b00_forward": "natural sky: Milky Way band, orange/white stars, few bright ones (GCNS lacks the naked-eye bright stars until the M1.2d bright tier). Physically right for GCNS at rest.",
+    "b05_forward": "mild crowding, the plane brightened (D ahead 1.73), stars slightly bluer. Right.",
+    "b09_forward": "stars crowd into the forward hemisphere and are blue-white; the field is dense out to ~50 deg (blueshift cone 51.2 deg) because beamed M dwarfs (pointFluxRatio(3300 K, sqrt 19) = 26.3) rise above the cull. The plane is compressed and bright. Right.",
+    "b09_starboard": "dim: only the left edge (apparent angles < ~52 deg from the heading) shows stars; the rest is dark with a faint reddish band; one orange star at apparent 52 deg has D 0.976 (slight redshift). Sideways D = 1/gamma = 0.43 (5700 K -> 2480 K). Right.",
+    "b09_astern": "black. D = 0.229: a V = 0 G star becomes V ~12.7 in the visual band (pointFluxRatio 7.9e-6), below the cull; the background likewise. Right per the band law.",
+    "b099_forward": "a tight cone of ~30 deg radius (blueshift cone 29.8 deg), blue-white stars, the galactic plane compressed into a thin bright line. Right.",
+    "b099_offaxis": "view 54.4 deg from v: stars only at the right edge, inside the cone. Right.",
+    "b099_rolled": "the cone in the upper left, the plane as a rolled streak. Right.",
+    "b099_starboard_and_astern": "black (sideways D = 0.14; astern D = 0.071). Right."
+  },
+  "spot_checks": {
+    "method": "pure-Python oracle (scratch, untracked): reads stars_large.bin, applies galactic->world, inverse-square, aberration, D, pointFluxRatio and the FreeLookCamera pinhole projection (fov 70, 960x540) from the ship positions the sim printed at capture, then measures the luminance centroid within +-4 px of each predicted pixel on my own renders",
+    "positions": "32 brightest predicted stars across b00_forward, b09_forward, b099_forward, b09_starboard: 30 within 0.1-0.8 px of the rendered centroid; 2 at 1.2 and 2.2 px where a neighbour or the frame edge biases the window. Example: GCNS row 250475 (3870 K, V 2.81, 131-137 ly) at theta 10.3 deg rest -> 2.38 deg apparent at 0.9c (D 4.34) -> 0.76 deg at 0.99c (D 14.0); rendered at (455.8, 335.6), (474.0, 284.7), (478.0, 274.7) vs predicted (456.0, 335.9), (474.5, 285.1), (478.2, 274.8).",
+    "brightness": "rendered local sums track the predicted post-beaming flux ordering: the same star rises from peak 0.377 (168,144,117: orange) at rest to 4.49 (239,243,249: blue-white) at 0.9c; predicted peaks 0.3-0.5 render at 140-177/255 under AgX, peaks 2.6-4.5 at 234-255. Quantitative brightness is covered by the hot-WD golden under a linear tonemapper (1.0022)."
+  },
+  "bench": {
+    "host": "Apple M4 Max, 16 cores, 1-min load 8.6 (0.54 per core, under the ~2 per core bar) with other agents' catalogue-parity jobs running",
+    "command": "make bench TIER=large AILANG=$A (30 s, 2560x1440, vsync off, large tier 324,307 stars + background)",
+    "metal": {"frame_ms_p50": 8.32, "frame_ms_p95": 9.78, "frame_ms_p99": 17.49, "frame_ms_max": 36.1, "frames_over_16_7_ms": "38 of 3516", "cpu_rebase_ms": 74.0, "star_pass_wall_ms_p50": 0.20},
+    "vulkan": {"frame_ms_p50": 8.38, "frame_ms_p95": 9.63, "frame_ms_p99": 17.02, "frame_ms_max": 24.9, "frames_over_16_7_ms": "39 of 3529", "viewport_gpu_ms_p50": 1.72, "viewport_gpu_ms_p99": 6.94, "star_pass_gpu_ms_p50": 0.37, "star_pass_gpu_ms_p90": 2.61, "star_pass_gpu_ms_p99": 5.60, "cpu_rebase_ms": 74.6},
+    "verdict": "star pass < 2 ms: MET (0.37 ms p50). CPU rebase < 4 ms: NOT MET (74 ms) -> plan B as the plan prescribes. AC7 p99 < 16.7 ms: NOT MET, marginally (17.0-17.5 ms; p95 9.6-9.8 ms; 1.1% of frames over budget; the 8.3 ms floor is the 120 Hz present). Judged, but on a shared host; the M1.5b final gate must repeat it on an idle machine."
+  },
+  "mutations": [
+    {"target": "shader Doppler sign: d = g (1 - b c)", "killed": true, "by": "golden: hot WD luminance 0 (NaN xy); astern 0.99c K star renders (peak 0.99)"},
+    {"target": "shader D exponent: band_ratio / d instead of / (d d)", "killed": true, "by": "golden: hot WD luminance ratio 15.58"},
+    {"target": "shader drops the lo terms of the hi/lo split (rel = hi - ship_hi)", "killed": false, "by": "SURVIVES physics (262/262) and golden (0 failures): the stand-off golden's 0.75 px tolerance cannot resolve the 1.8e-6 rad error of float32-from-Sol at 1,044 AU"},
+    {"target": "shader drops the inverse-square rescale", "killed": true, "by": "golden: 4 stand-off cases render nothing (flux compensation assumes the rescale)"},
+    {"target": "GDScript shader_rel drops the lo terms", "killed": true, "by": "physics: GPU-mode hi/lo direction 4.1e-6 rad > 1e-6"},
+    {"target": "GDScript _fill writes lo = 0", "killed": true, "by": "physics: GPU-mode hi/lo direction 1.5e-6 rad > 1e-6"},
+    {"target": "CULL_PEAK 1e-4 -> 1e-2", "killed": true, "by": "golden: 2 x cull renders 33/255"},
+    {"target": "LUT_T_MAX back to 1e6", "killed": true, "by": "physics: 2 fails; golden: hot WD luminance 0.364"},
+    {"target": "Relativity.point_flux_ratio / d", "killed": true, "by": "physics: 4 fails (package values); golden: hot WD 0.022"},
+    {"target": "shader aberration sign (- g b)", "killed": true, "by": "golden: 115 failures"}
+  ],
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      {"file": "sky/starfield.gdshader:41", "issue": "The hi/lo precision path is not verified on the GPU: dropping '+ (MODEL_MATRIX[0].xyz - ship_lo)' survives make physics and make golden. The 2.4e-8 rad claim rests on the GDScript emulation (shader_rel).", "suggestion": "Add a golden the GPU can resolve: a star at a ~1 AU stand-off from a ship ~4 ly from Sol (float32-from-Sol error ~2e-3 rad = ~2 px at fov 70), or a narrow-fov camera; it must fail when the lo terms are dropped."},
+      {"file": "tools/bench.gd, docs/m1.3/bench_*.json", "issue": "AC7 p99 < 16.7 ms not met in my run either (17.0-17.5 ms at load 0.54/core; p95 9.8 ms; 1.1% frames over).", "suggestion": "Repeat on an idle host at the M1.5b final gate as the sprint notes already say; consider reporting p95 and the count over budget alongside p99 so a few host hitches do not decide the gate."},
+      {"file": "docs/m1.3/", "issue": "No .gdignore (docs/m1.4a has one), so Godot imports the seven PNGs and the contact sheet (.import files appear after any run; they ship in exports).", "suggestion": "Add docs/m1.3/.gdignore."},
+      {"file": "sky/starfield.gdshader:76-77", "issue": "v_extent = sqrt(2 ln(peak / cull_peak)) cuts the quad where the PSF equals cull_peak, so a star of peak p loses cull_peak / p of its integrated energy (10% at p = 1e-3, about V 9.2 at rest; 1% at 1e-2). Invisible under AgX, but 'splat energy proportional to E_v' holds only well above the cull.", "suggestion": "Document the bound, or add +1 sigma to the extent (cost: a slightly larger quad for faint stars)."},
+      {"file": "sky/starfield.gd, tools/bench.gd, main.gd", "issue": "777 lines added vs the plan's 650 cap (139 are tests, 167 the bench tool).", "suggestion": "Accept; the core change is ~470 lines."},
+      {"file": "tests/test_physics.gd:182", "issue": "test_lut_range's comment says 'finite in every texel' but the loop that proves it is the older LUT test at :375.", "suggestion": "Point the comment at it, or move the loop."},
+      {"file": "design_docs/planned/r1/m1-remaining-sprint.md (M1.3 registry line)", "issue": "Says sunholo/relativity@0.4.0; the tests and sim/ailang.toml use 0.5.1.", "suggestion": "Update the line."}
+    ]
+  },
+  "deviations": [
+    {"deviation": "plan B default (shader direction from float32 hi/lo pairs; CPU rebase measured 74 ms)", "verdict": "accepted: the plan's own fallback, triggered by the measurement it asked for; the hi/lo split keeps the direction to float32 precision of r anywhere, so no rebase is needed (see the finding on GPU verification)"},
+    {"deviation": "324,307 drawn rather than 331k (7,005 rows without photometry)", "verdict": "accepted: a MISSING_PHOT row has no V or T_eff to draw; skipping is honest and counted (skipped_missing, tested)"},
+    {"deviation": "no bright tier yet (M1.2d)", "verdict": "accepted: load_tiers already stacks stars_bright.bin when it exists; the renders are visibly missing the naked-eye bright stars until then"},
+    {"deviation": "brightness cull at 1e-4 plus size scaling", "verdict": "accepted with a note: the cull is applied after exposure and a golden proves 2 x cull is 0/255 under the production tonemapper; the PSF truncation bound is documented in the findings"},
+    {"deviation": "exposure still hand-set", "verdict": "accepted: M1.5a; the exposure is now per lux so a V = 0 star peaks at 5.0 as before"},
+    {"deviation": "the bench loaded by path", "verdict": "accepted: tools/ is excluded from exports, so main.gd must not name the class"},
+    {"deviation": "the p99 not demonstrated under load", "verdict": "confirmed: on a quieter host (0.54/core) p99 is 17.0-17.5 ms, a marginal miss; defer to the M1.5b gate on an idle machine"},
+    {"deviation": "LOC 778, over the cap of 650", "verdict": "accepted: tests and the bench tool account for the overrun"}
+  ],
+  "evidence": {
+    "make_test": "exit 0 (fresh clone; large tier not yet built when catalogue-stats ran, so the committed quick + medium tiers were judged as in CI)",
+    "catalogue_large": "make catalogue TIER=large: 331312 rows, 0 excluded, stars_large.bin 7951488 B (53 s)",
+    "make_golden": "exit 0, 'golden: 0 failures'; stand-off GPU/CPU x beta 0/0.9 error 0.127-0.128 px; hot WD luminance/unit 1.0022, dxy 0.0007; cull 0.0/255 and 80x renders 0.0524",
+    "make_capture": "exit 0; 20 renders + contact sheet; 324307 drawn, 7005 skipped",
+    "make_bench": "exit 0 on both drivers; numbers above",
+    "package_values": "ailang run of a scratch package depending on sunholo/relativity 0.5.1: Y(1e7)/Y(1e6) = 10.11998569367005; pointFluxRatio(60000, 44.7) = 0.027970449496092183; (60000, 1/44.7) = 7.522327389995562e-6; (3300, sqrt 19) = 26.28143112310455; illuminanceFromV(0) = 2.558585886905643e-6; (-1.46) = 9.817479430199844e-6 -- identical to the constants in tests/test_physics.gd",
+    "oracle": "pure-Python second implementation agrees with the package to <= 2e-16 relative on all six values and reproduces D ahead/astern at 0.9c (4.358899, 0.229416) and 0.99c (14.106736, 0.070888)"
+  },
+  "next_steps": [
+    "R-b: Mark reviews the renders, bench numbers and a dev build (make publish-dev / tools/install_review_build.sh --dev) before merge",
+    "Optional before merge: docs/m1.3/.gdignore; a GPU-resolvable hi/lo golden can follow in M1.5b with the idle-host bench"
+  ]
+}

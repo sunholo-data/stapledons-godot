@@ -4,10 +4,13 @@ extends SceneTree
 ## Without --tier: every tier present in DIR (default res://data/starmap; quick, medium and bright
 ## are committed, large is built on demand). Each tier is read through sky/star_catalogue.gd, so the
 ## sidecar format, count and sha256 are checked first. Per tier it prints
-##   count; count_excluded (sidecar: missing-photometry rows the medium quota passed over; they
-##   are not in the bin); complete rows; the M-dwarf share of complete rows; white dwarfs;
-##   rows with Hipparcos photometry (flag 8, M1.2d); defaulted-photometry violations: rows where (teff == 0 and v == 99) does not equal the
-##   MISSING_PHOT flag (both directions, every record); flags outside StarCatalogue.FLAG_SETS.
+##   rows in the bin; rows excluded (sidecar count_excluded: missing-photometry rows the medium
+##   quota passed over; they are NOT in the bin); rows in the bin with photometry, and without
+##   (MISSING_PHOT, kept in the bin); the M-dwarf share of the rows with photometry; white dwarfs;
+##   rows with Hipparcos photometry (flag 8, M1.2d);
+##   defaulted-photometry violations: a MISSING_PHOT row must read teff == 0 and v == 99, and any
+##   other row must have neither (teff 0 or v 99 alone is a default without its flag), every
+##   record; flags outside StarCatalogue.FLAG_SETS.
 ## Exit 0 iff every tier loads with 0 violations and 0 unknown flags (AC2's clause), and the medium
 ## tier's M-dwarf share is >= 60% (AC3). With --tier medium, only the medium tier is judged.
 
@@ -56,8 +59,10 @@ func report(tier: String, dir: String) -> bool:
 		var f := c.flags(i)
 		if not f in StarCat.FLAG_SETS:
 			unknown[f] = int(unknown.get(f, 0)) + 1
-		var defaulted := c.teff(i) == 0.0 and c.vmag(i) == 99.0
-		if defaulted != c.missing_photometry(i):
+		var teff0 := c.teff(i) == 0.0
+		var v99 := c.vmag(i) == 99.0
+		var clean := (teff0 and v99) if c.missing_photometry(i) else not (teff0 or v99)
+		if not clean:
 			violations += 1
 		if c.white_dwarf(i):
 			wd += 1
@@ -68,8 +73,8 @@ func report(tier: String, dir: String) -> bool:
 			if c.teff(i) < M_DWARF_TEFF:
 				m_dwarfs += 1
 	var share := float(m_dwarfs) / complete if complete > 0 else 0.0
-	print("%-6s  count %d  excluded %d  complete %d  M-dwarf share %.1f%% (%d, teff < %d K)  white dwarfs %d  HIP photometry %d  defaulted-photometry violations %d  unknown flags %s" % [
-		tier, c.count, int(c.sidecar.get("count_excluded", -1)), complete, 100.0 * share, m_dwarfs,
+	print("%-6s  in bin %d (with photometry %d, without %d)  excluded before the bin %d  M-dwarf share %.1f%% of rows with photometry (%d, teff < %d K)  white dwarfs %d  HIP photometry %d  defaulted-photometry violations %d  unknown flags %s" % [
+		tier, c.count, complete, c.count - complete, int(c.sidecar.get("count_excluded", -1)), 100.0 * share, m_dwarfs,
 		int(M_DWARF_TEFF), wd, hip, violations, unknown if unknown.size() > 0 else "none"])
 	var ok := violations == 0 and unknown.is_empty()
 	if tier == "medium" and share < AC3_MIN_SHARE:
