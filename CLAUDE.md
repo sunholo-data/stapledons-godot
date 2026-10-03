@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.51.0** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.52.0** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 **Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
@@ -140,18 +140,25 @@ paths: AILANG packages in runtime/cache/registry/OWNER/PKG/VER/ (or
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.51.0 (re-check again at each bump):**
+- **Workarounds, re-checked on v0.52.0 (re-check again at each bump):**
   - Still needed: run `ailang lock` after `ailang install`; on a clean machine
     `ailang lock` also fills the package cache (`make deps`). The lockfile's
     `generated_at` line churns on every run, so ignore it when diffing.
-  - Still open (workarounds in-tree, cite the issue at the site): std/json drops
-    the sign of -0.0 and saturates long integer text (ailang#1460); the test
-    runner mixes up same-named private functions across modules (#1461); exp/log
-    differ by 1 ulp on arm64 vs x86_64, so cross-arch goldens are per-arch
-    (#1465); a lone `| Idle` constructor hides the next export (#1466); an
-    imported name shadows a lambda/let binding (#1467); bare variable match arms
-    are evaluator-only (#1473); aliased or unknown pattern constructors silently
-    never match (#1478); interpreter and VM disagree on NaN comparisons (#1419).
+    `std/map.fromList` is still evaluator-only on the strict VM.
+    `std/io.readLine` still returns "" for both a blank line and end of input.
+  - Breaking in v0.52.0: an explicitly imported name may not also be defined at
+    module level (MOD015). Alias the import (`import M (x as mX)`) or rename.
+  - Fixed in v0.52.0; the in-tree workarounds still cite the issue and are
+    removable in a follow-up: std/json -0.0 sign and long integers (#1460);
+    test-runner private-name mixups (#1461, #1516); exp/log 1 ulp arm64 vs
+    x86_64 (#1465); lone `| Idle` export (#1466); imports shadowing lambda/let
+    binders (#1467); strict-VM patterns: var arms, nested cons, constructor at a
+    cons head, nested constructor binds, `_ :: []` (#1473, #1505, #1503, #1517);
+    aliased/unknown pattern constructors (#1478, now TC_MATCH_001); NaN ordering
+    (#1419, now IEEE on both engines; NaN guards like `x == x` are still needed,
+    since every comparison with NaN is false); recursive std/list maximumFloat
+    (#1518); std/array and std/list.range on the strict VM; interpreter tail
+    calls (#1486); `writeFileBytesResult` exists.
   - Fixed in v0.51.0: whole-number float literals in `test` blocks (#1456),
     `string.repeat` and bitwise Int ops under `--strict-bytecode` (#1462, #1450).
   - Fixed upstream, kept harmlessly in the Makefile: `--quiet` and `--package-dir`.
