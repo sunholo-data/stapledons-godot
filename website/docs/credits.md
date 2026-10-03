@@ -10,11 +10,13 @@ Stapledon's Voyage is made by [Sunholo](https://www.sunholo.com).
 
 ## Licence
 
-The game's code and this site are licensed under the
-[Apache License 2.0](https://github.com/sunholo-data/stapledons-godot/blob/main/LICENSE),
-Copyright 2026 Sunholo / Mark Edmondson.
-
-Third-party assets keep their own licences, and the Apache licence does not cover them:
+- **Code:** the game's code and this site's code are licensed under the
+  [Apache License 2.0](https://github.com/sunholo-data/stapledons-godot/blob/main/LICENSE),
+  Copyright 2026 Sunholo / Mark Edmondson.
+- **AI-generated art** (the captain, the crew portraits, the bridge, the concept art): labelled
+  AI-generated, **no copyright claimed**. See [Art](#art).
+- **Third-party assets** keep their own licences, listed below; the Apache licence does not cover
+  them:
 
 | Asset | Licence or terms |
 |---|---|
@@ -27,11 +29,8 @@ Third-party assets keep their own licences, and the Apache licence does not cove
 
 ## Art
 
-The concept and game art (the captain, the crew portraits, the bridge) is **AI-assisted**: made
-with image models and Blender under Sunholo's art direction, and owned by Sunholo. Art committed to
-the game repo is covered by its Apache-2.0 licence like the rest of the repo. Art that is only
-hosted in the project's asset bucket (the `refs/` reference sets shown on the
-[concept art](/concept-art) page) is shown here for information, not licensed for reuse.
+The concept and game art (the captain, the crew portraits, the bridge) is **AI-generated**, made
+with image models and Blender under Sunholo's art direction. **No copyright is claimed** in it.
 
 ## Data
 

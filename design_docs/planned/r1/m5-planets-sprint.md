@@ -748,6 +748,14 @@ dispatching to it:
 refusal, use the client `pos`, or run 11 iterations. Each must fail.
 
 #### M5.5b: gravity hold, holding state, confirm class, the Sol tour
+
+**Carried in from the M5.5a evaluation** (`.ailang/state/evaluations/eval_R1-M5-PLANETS-M5.5a_round_1.json`, 95/100; do these in M5.5b, before the Sol tour golden freezes the news stream):
+- **`stale_plan` vs D-12** (`sim/navigation.ail:267`): the host clock runs on every planning tick and the commit is a 1.5 s hold, so every body plan would be refused. Keep the `BodyReq` in `NavPlan`, re-run `planBody` at commit time, commit the fresh plan, and refuse only if that is refused.
+- **In-plane ring legs** (`sim/navigation.ail:183-189`): a leg lying in the ring plane (for example after a Titan stop) is accepted through the rings. Also refuse when the host's nearest approach is inside `ringKm` and the height above the plane is below a ring half-thickness.
+- **Body arrivals fire M4 consequence news** (`sim/core.ail:446-460`): decide and gate this before the tour golden.
+- **Test gaps:** four mutants survived. Assert Io's index (10); add collision fixtures at R + bubble ± 1 km and a D ≈ 2b flyby fixture; check the Doppler sign with a short run-out pass.
+- Low, later: the hello relativity string differs by minor (`sim/protocol.ail:49-57`); unify it when the x86_64 goldens are next regenerated.
+
 **Scope:**
 - **Gravity hold:** during cruise and at holds the drive cancels
   `accelerationAt`; the ledger gains `hold_j` += `hoverPower`(m_eff, |g|) dτ

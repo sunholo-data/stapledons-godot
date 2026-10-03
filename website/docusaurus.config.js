@@ -166,7 +166,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Sunholo / Mark Edmondson. Code: Apache-2.0. Milky Way panorama: E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Sunholo / Mark Edmondson. Code: Apache-2.0. AI-generated art: no copyright claimed. Milky Way panorama: E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0. Planet textures: Solar System Scope, CC BY 4.0. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,

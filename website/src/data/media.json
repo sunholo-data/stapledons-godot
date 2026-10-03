@@ -1,52 +1,52 @@
 {
   "voyage": {
     "mp4": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/08a41ea16711e28a2feb28bf61d88ea0fa5145b1dc28fd2a7619944f4f507fbd.mp4",
-      "bytes": 3645225
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/4bea90c19ff59ffa7cda9817b317fa67b186026e7f6f82f625229026d48e6ceb.mp4",
+      "bytes": 3524603
     },
     "webm": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/add9f61a82730368e52293927707fdc136a587e07047b6aa1165ce83632755e2.webm",
-      "bytes": 1765976
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/1f10b6b108ce83f87effe2700069f5cb10e9345150c6b0966f299f3c7c5c5e61.webm",
+      "bytes": 1747332
     }
   },
   "lookaround": {
     "mp4": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/2e3034338fdf52c73f327ed46e753eda2a37007564b3bd5e848c7e9db5049350.mp4",
-      "bytes": 1015325
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/be2f1bb0fd88ba9aabb4888faac276ca47c43b6e504b9f02a734833398a4b738.mp4",
+      "bytes": 1046769
     },
     "webm": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/7c369427ce2e2151cb5ae5aa308c93072781ac34477b30764f9c716406b531c8.webm",
-      "bytes": 632923
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/a461f1cb6f1f620a45222dda1a88a2bd0c7838a15e7bf5f2f9eb8cbf1d16ae98.webm",
+      "bytes": 641724
     }
   },
   "map": {
     "mp4": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/62d77d17e76b5e83aa17d9eb17f4abae7e65ccf3f75f9beaf669e3dcaf9f274a.mp4",
-      "bytes": 8267288
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/7f4b1b7f68cfaf1b0af07110cd0285536b50ae26fa22277ff50b9fb015e58ee5.mp4",
+      "bytes": 8214263
     },
     "webm": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/6da3466987860825345e15aa58ace40bf89c82519008bdcff4f239cd3fdffbd5.webm",
-      "bytes": 8890845
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/574eb340fb1748c8f15e3b5f2dcf2ad31b1fa80af97da7c3a9a2b0d3b5500d56.webm",
+      "bytes": 8789097
     }
   },
   "cmb": {
     "mp4": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/4efe296814adbf0458d85b8b3474b23003f5464515bdfe0928d0d346dfb7d172.mp4",
-      "bytes": 1264852
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/32e2836dc80608b3c0898da8256b2579facb2289c221b352b473dc88ead33784.mp4",
+      "bytes": 1261130
     },
     "webm": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/cb0fab56578ff342548a704bdbd2b610fee165faa0f06cdf1716317fdab3c466.webm",
-      "bytes": 691354
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/d2308a4b5abb3aa872f5ac5579e96a08d8964ba1ed2c4bff561c109e4356bcfb.webm",
+      "bytes": 682480
     }
   },
   "hero": {
     "mp4": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/0a1ef8b217102ac6a59dae8195595983705c38d8dede47870b8ac25b17e86373.mp4",
-      "bytes": 3337874
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/08f3e402a0a43732b1ae43b3a97facbab1d9e3e87a6c3ae67002be2f130a7cb6.mp4",
+      "bytes": 3179419
     },
     "webm": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/f01c9d04c75f57d424a17de7e69eae7259e88b6ec22d33ee62addeb233bfa164.webm",
-      "bytes": 1275387
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/3ab4ec46e7bdf73496c6c38299010970eae8bf4739c2949e4fdab85e2af17e52.webm",
+      "bytes": 1240721
     }
   },
   "medic": {
