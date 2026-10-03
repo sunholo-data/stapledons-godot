@@ -147,31 +147,18 @@ def estimate_spectral_type(bp_rp):
 
 ### stars.json
 
+The galaxy map catalogue (M1.7): `make starmap`, from the quick + bright tier rows within 25 pc
+(sim/tools/starmap.ail). Header keys: version 2, source, radius_pc, radius_ly, count,
+count_quick, count_bright, tier_rows, units, ailang, package, producer, sha256 (inputs). Then
+one star per line, nearest first:
+
 ```json
-{
-  "version": "1.0",
-  "source": "gcns_filtered",
-  "count": 50000,
-  "units": {
-    "x": "light-years (toward galactic center)",
-    "y": "light-years (direction of rotation)",
-    "z": "light-years (north galactic pole)",
-    "dist_ly": "light-years from Sol",
-    "gmag": "Gaia G-band magnitude"
-  },
-  "stars": [
-    {
-      "id": "4472832130942575872",
-      "x": 4.37,
-      "y": 0.12,
-      "z": 1.23,
-      "dist_ly": 4.37,
-      "gmag": -0.01,
-      "spectral": "G"
-    }
-  ]
-}
+{"id":"CNS5:3627","x":3.094521,"y":-3.015404,"z":-0.051608,"dist_ly":4.32103979249451,"vmag":-0.01,"teff":5550,"flags":8}
 ```
+
+x, y, z are float64 light-years (galactic); vmag 99 and teff 0 mean no photometry (flags bit 2);
+flags are the tier flags (1 WD, 2 missing photometry, 4 approximate teff, 8 Hipparcos photometry,
+16 colour outside the table).
 
 ### exoplanets.json
 

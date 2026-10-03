@@ -1,9 +1,9 @@
-{"v":2,"type":"hello","want":{"major":2,"minor":0}}
+{"v":2,"type":"hello","want":{"major":2,"minor":1}}
 {"v":2,"type":"new_game","seed":0,"scenario":"sol","diag":false}
-{"v":2,"type":"input","tick":1,"dtau":0.00013689253935660506,"intents":[{"k":"plan","target":{"index":8,"id":"Gl 244","pos":{"x":8.03,"y":2.71,"z":-1.32}},"cruise_phi":3.6115998675643866}]}
+{"v":2,"type":"input","tick":1,"dtau":0.00013689253935660506,"intents":[{"k":"plan","target":{"index":8,"id":"CNS5:1676","pos":{"x":-5.770603,"y":-6.237832,"z":-1.328845}},"cruise_phi":3.6115998675643866}]}
 {"v":2,"type":"input","tick":2,"dtau":0.00013689253935660506,"intents":[]}
 {"v":2,"type":"input","tick":3,"dtau":0.00013689253935660506,"intents":[]}
-{"v":2,"type":"input","tick":4,"dtau":0.00013689253935660506,"intents":[{"k":"plan","target":{"index":1,"id":"Gl 559","pos":{"x":1.5,"y":-4.09,"z":-0.05}},"cruise_phi":2.6466524123622457}]}
+{"v":2,"type":"input","tick":4,"dtau":0.00013689253935660506,"intents":[{"k":"plan","target":{"index":2,"id":"CNS5:3627","pos":{"x":3.094521,"y":-3.015404,"z":-0.051608}},"cruise_phi":2.6466524123622457}]}
 {"v":2,"type":"input","tick":5,"dtau":0.0,"intents":[{"k":"commit","plan_id":2}]}
 {"v":2,"type":"input","tick":6,"dtau":0.01,"intents":[]}
 {"v":2,"type":"input","tick":7,"dtau":0.01,"intents":[]}
@@ -67,8 +67,7 @@
 {"v":2,"type":"input","tick":65,"dtau":0.01,"intents":[]}
 {"v":2,"type":"input","tick":66,"dtau":0.01,"intents":[]}
 {"v":2,"type":"input","tick":67,"dtau":0.01,"intents":[]}
-{"v":2,"type":"input","tick":68,"dtau":0.01,"intents":[]}
+{"v":2,"type":"input","tick":68,"dtau":0.00013689253935660506,"intents":[]}
 {"v":2,"type":"input","tick":69,"dtau":0.00013689253935660506,"intents":[]}
 {"v":2,"type":"input","tick":70,"dtau":0.00013689253935660506,"intents":[]}
-{"v":2,"type":"input","tick":71,"dtau":0.00013689253935660506,"intents":[]}
 {"v":2,"type":"quit"}

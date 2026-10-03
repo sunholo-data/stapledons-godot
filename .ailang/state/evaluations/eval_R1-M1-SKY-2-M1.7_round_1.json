@@ -1,0 +1,74 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.7",
+  "pr": 81,
+  "branch": "sprint/m1.7-catalogue-switch",
+  "commits": ["0a8f426", "a517502"],
+  "evaluator": "independent evaluator (Sonnet 5.5), fresh clone, AILANG v0.52.0",
+  "evaluation_round": 1,
+  "score": 91,
+  "result": "pass",
+  "hard_fails": [],
+  "breakdown": {
+    "tests_pass": {"max": 20, "score": 20, "evidence": "make test exit 0 locally (ailang test 150/150, galaxy map 0 failures, replay, starmap-test, destar-test, python-guard); make golden 0 failures; make starmap-test ok; make replay-compat 4 compared / 3 skipped (godot_map_voyage: input changed, expected); gh pr checks 81: headless tests pass (x86_64 CI, so the x86_64 golden copy of arm64 is confirmed)"},
+    "lint_clean": {"max": 10, "score": 10, "evidence": "python-guard ok (check_star_names.py listed as oracle at tools/python-allowlist.txt:17); ailang check clean inside make test"},
+    "acceptance_criteria": {"max": 30, "score": 28, "evidence": "all six criteria met or at the R-c pause; -2 because R-c (Mark's approval of map build, golden diff, destar crops) is still open, and the destar before/after PNG is unlabelled"},
+    "code_quality": {"max": 15, "score": 12, "evidence": "starmap.ail is pure and small; 9/9 starmap-writer mutations killed; deductions: check_star_names.py negative controls exercise only the V check (see findings 1), catalogue-verify cannot reach its new stars.json cmp (finding 3), stars.json provenance header says v0.52.0/0.5.2 while the tier sidecars still say v0.51.0/0.5.1"},
+    "documentation": {"max": 15, "score": 14, "evidence": "changelog entry, plan status, sprint JSON notes, code comments cite D-17/D-19/Q7; -1 for no note in the changelog about the stale tier sidecars"},
+    "design_fidelity": {"max": 10, "score": 7, "evidence": "scope delivered; alpha_cen golden left unchanged (justified); destar input rule changed beyond the plan text (justified); Sirius B has the same F2 defect as alpha Cen B and is left as-is (disclosed, -2); click at default zoom cannot separate alpha Cen A from B (19 arcsec = 1 px), B is reachable by id/zoom only (-1)"}
+  },
+  "total": 91,
+  "golden_diff_verification": {
+    "old_log_on_branch_equals_old_golden": true,
+    "old_log_with_2_1_hello_equals_old_golden_byte_for_byte": true,
+    "old_arm64_equals_old_x86_64_golden": true,
+    "new_arm64_equals_new_x86_64_golden": true,
+    "plan_alpha_cen": {"old_distance_ly": 4.35667304258651, "new_distance_ly": 4.32103979249451, "delta_ly": 0.035633250092000246},
+    "linear_delta_ship_years": {"observed": 0.005077463142881267, "predicted_d_over_sinh_phi": 0.005077463142881341, "residual": 7.4e-17},
+    "linear_delta_earth_years": {"observed": 0.03599318191111145, "predicted_d_over_beta": 0.03599318191111136, "residual": 9.0e-17},
+    "field_by_field": "Only these fields differ: target id/pos/index, plan distance, ship_years, earth_years, arrive_year, age_on_arrival, years_left, energy and drag totals (plan rows); ship heading and position (new target directions); and everything from the arrival tick on, which moves one 0.01-yr tick earlier (log has 71 vs 72 lines; tick 67 vs 68). Clock ticks 1-66 are identical. cruise_phi, boost minutes, the boost/brake phase taus (0.00054757 and 0.00055099) and the arrival residuals (~1e-15) are unchanged. No unexplained physics change.",
+    "sirius_plan": {"old": 8.577144046825843, "new": 8.600943906215063}
+  },
+  "starmap_verification": {
+    "rows": 5687,
+    "make_starmap_vm_cmp_committed": "identical",
+    "interpreter_cmp_committed": "identical (113 s)",
+    "bit_exact_tier_records": "independent python check: 5687/5687 rows round to a float32 (x, y, z, teff, V, flags) found in stars_quick.bin or stars_bright.bin; ids unique; sorted by distance",
+    "alpha_cen": {"A": "CNS5:3627 4.32103979 ly", "B": "HIP 71681 4.32103945 ly", "separation_arcsec": 19.12}
+  },
+  "names_verification": {
+    "rows": 52,
+    "check_star_names": "52 rows, 0 failures; both negative controls fire",
+    "mutations_on_checker": {
+      "killed": ["remove V check (swap control fails)", "unknown id (KeyError, crashes rather than reports)", "swap two names' ids in names.json", "re-point Sirius B at Sirius A id"],
+      "survived": ["remove direction check", "remove distance check", "loosen direction to 30 deg", "remove duplicate-name check"]
+    }
+  },
+  "mutations_starmap_writer": {
+    "total": 9,
+    "killed": 9,
+    "list": ["drop 1e-5 margin (Radius)", "reverse order (Order, Json)", "no Gaia DR3 label (MapId, Duplicates, Json)", "disable duplicate refusal (Duplicates)", "vmag +0.001 (Json)", "flags zeroed (Json)", "< instead of <= (Radius)", "distLy drops z (Radius, Order, AlphaCen)", "count_bright zero (Json)"]
+  },
+  "destar_judgement": "Sound. The rule now masks exactly what the point layers draw: HIP V<7 with Plx>0 and a B-V (the bright tier's cut), plus GCNS and CNS5, so no star is dropped from both layers (D-10). Masked 24,437 -> 17,690, HIP candidates 25,503 -> 15,270, V 7-8 bucket 15,190 -> 5,094. Unit test checkHipShipped added. Make destar output was reproduced by CI-independent make golden (0 failures). Caveats: destar reads I/239 Plx while the bright tier reads HIP2 I/311 (documented, tiny sign-only mismatch); the before/after PNG has no captions; crops show visible grey inpaint blobs in both columns (pre-existing).",
+  "deviation_verdicts": {
+    "alpha_cen_golden_not_rerecorded": "ACCEPT. tests/replays/alpha_cen.ndjson is the hand-written design check row (target alpha Cen at 0.0, 0.0, -4.37, an axis), independent of the catalogue; its golden replays unchanged and replay-compat still compares it to the 2.0 freeze.",
+    "margin_1e-5_ly_on_25pc_cut": "ACCEPT. CNS5's own edge is 40 mas (25 pc) and the CSV carries 1e-6 ly digits; mutation 'nomargin' is caught by checkRadius, margin written to header radius_ly, and test_star_catalogue brackets the count against float32 tier radius. Cosmetic: header radius_pc says 25 while radius_ly is 25 pc + 1e-5.",
+    "destar_rule_change": "ACCEPT (see judgement above); flag to Mark at R-c as a change to the pipeline rule, not just a rerun.",
+    "catalogue_verify_broken_on_main": "CONFIRMED on origin/main (fresh archive, v0.52.0): 'stars_quick.json differ: char 233', quick sidecar records ailang v0.51.0 / relativity 0.5.1. Not caused by M1.7, but the stars.json cmp this PR adds to catalogue-verify is unreachable until the sidecars are regenerated; I verified stars.json determinism by hand instead. Needs its own fix (re-run make catalogue for the three tiers and commit, or relax the sidecar compare).",
+    "loc": "ACCEPT. +623/-228 code lines (my count of .gd/.ail/.py/Makefile: +586/-200) against 520 estimate and 650 cap."
+  },
+  "findings": [
+    {"n": 1, "severity": "medium", "file": "tools/check_star_names.py", "issue": "Negative controls exercise only the V check. The A/B swap fails on V alone (directions differ 0.0090 vs 0.0081 deg, distances equal). Mutants removing the direction, distance or duplicate-name checks, or loosening direction to 30 deg, all pass. A unknown-id control crashes with KeyError in the mutant where the guard is removed instead of reporting.", "suggestion": "add controls: a ref RA/Dec 5 deg off, a ref dist 10% off, a name row repeated."},
+    {"n": 2, "severity": "medium", "file": "data/starmap/stars.json", "issue": "Sirius B (Gaia DR3 2947050466531873024) sits at its own Gaia parallax, 8.709 ly, 0.108 ly behind Sirius A (8.601 ly) at 28.8 arcsec; the pair is about 20 AU apart. Same defect as alpha Cen B (F2). Not a regression, disclosed in the sprint JSON.", "suggestion": "see Sirius B recommendation"},
+    {"n": 3, "severity": "low", "file": "Makefile (catalogue-verify)", "issue": "Broken on main since the v0.52.0 bump, so the new stars.json cmp added in this PR never runs. The map header says v0.52.0 / 0.5.2 while stars_*.json sidecars say v0.51.0 / 0.5.1."},
+    {"n": 4, "severity": "low", "file": "ui/galaxy_map.gd, tests/test_galaxy_map.gd:269", "issue": "A and B are 19 arcsec apart, one pixel at default framing: a click picks 'A or B'. B is selectable by id (--map=HIP 71681), by zoom, and in the tour capture, so the criterion holds, but a player cannot choose B from the default view."},
+    {"n": 5, "severity": "low", "file": "docs/m1.7/destar_before_after.png", "issue": "No before/after labels in the image; R-c reviewer must know left = before."},
+    {"n": 6, "severity": "low", "file": "docs/m1.7/galaxy_map_sirius.png", "issue": "Labels 'Luyten 726-8 A' and 'Gliese 1' overlap near the bottom; names.json has no Procyon B / Kruger 60 B (dropped, one row per system, disclosed)."}
+  ],
+  "sirius_b_recommendation": {
+    "flag_for_mark": true,
+    "recommendation": "Yes, give Sirius B the system-parallax override, as alpha Cen B got. Sirius is the map's second named destination (replay golden target) and a bright named pair a player will compare. Offset is 0.108 ly (6,800 AU) for a real ~20 AU pair. Caveat: Sirius B is a Gaia/GCNS row in the quick tier, not a HIP bright-tier row, so the existing bright_overrides.json rule (c) mechanism cannot carry it. Needs an override applied in the quick/medium path (set the component's distance to its primary's, keeping its own direction at the shared epoch).",
+    "wider_scope": "The defect is systemic. Within 25 ly there are also Luyten 726-8 A/B 0.092 ly apart at 2.3 arcsec, Wolf 424 A and its companion 0.481 ly at 1.1 arcsec, and pairs at 16.6 ly (0.18 ly). Across the whole 25 pc map, 422 row pairs are within 30 arcsec of each other and 269 of those differ by more than 0.05 ly. A one-star override fixes Sirius; a rule (companion within N arcsec of a brighter row takes that row's parallax, with a ruling like D-19) fixes the class. Suggest: override Sirius B now (cheap, visible), open a decision for the general rule, and cover Luyten 726-8 and Wolf 424 with it."
+  },
+  "notes": "Evaluator environment has no timeout(1); a shim with the same semantics was put first on PATH and every Godot call ran under it (900 s). make test took about 27 minutes locally. Map capture PNGs regenerate byte-identically to docs/m1.7/. Opened and judged: galaxy_map.png, galaxy_map_acen_b.png, galaxy_map_overview.png, galaxy_map_sirius.png, destar_before_after.png. R-c (Mark) remains open."
+}

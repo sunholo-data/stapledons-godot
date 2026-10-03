@@ -6,7 +6,7 @@ extends Node3D
 ##               +/- time warp. The HUD shows the view-to-velocity angle.
 ##               Exposure (M1.5a): F fixed EV at the rest value, M eye / camera
 ##               metering, [ ] exposure bias (aid), G magnitude floor (aid).
-## Galaxy map:  godot --path . [-- --map[=INDEX]]   (default with no arguments; M2.6a/b; --map-capture=renders [--map-commit])
+## Galaxy map:  godot --path . [-- --map[=INDEX|ID]]   (default with no arguments; M2.6a/b; --map-capture=renders [--map-commit])
 ## Sky flight:  godot --path . -- --voyage   (the M0/M1 relativistic voyage; W/S thrust, arrows + Q/E look and roll, 1-4 views, +/- warp)
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
@@ -25,7 +25,10 @@ const TICK_HZ := 20.0
 const HEADING := Vector3(0, 0, -1) # galactic centre
 const GOLDEN_PEAK := 5.0 # goldens only: linear splat peak of a unit-flux test star (the sky uses sky/exposure.gd)
 const SEED := 0
-const ALPHA_CEN_A := 1 # stars.json index 1 (Gl 559, vmag 0.01); B is index 2 with the same id
+const ALPHA_CEN_A := "CNS5:3627" # stars.json id (M1.7): the CNS5 system row, HIP V -0.01; B is "HIP 71681"
+## Extra map captures (M1.7 review): framed selections, catalogue id -> PNG.
+const MAP_TOUR := [["HIP 71681", "galaxy_map_acen_b.png"], ["CNS5:1676", "galaxy_map_sirius.png"],
+	["Gaia DR3 4472832130942575872", "galaxy_map_barnard.png"]]
 const LOOK_RATE := 1.2 # rad/s for the yaw, pitch and roll keys
 ## Off-axis golden (M1.6b, AC5): a velocity off every axis, and three camera
 ## orientations ([label, yaw, pitch, roll] in degrees; null yaw/pitch = along v).
@@ -58,7 +61,7 @@ func _ready() -> void:
 	# Launching with no arguments (a double-clicked review build, `make run`)
 	# opens the galaxy map on alpha Cen A; `--voyage` runs the M0/M1 sky flight.
 	if args.is_empty():
-		args["map"] = str(ALPHA_CEN_A)
+		args["map"] = ALPHA_CEN_A
 	if args.has("map") or args.has("map-capture"):
 		_map_mode = true # the map owns the clock; no voyage ticks
 		await _run_map(args)
@@ -112,18 +115,36 @@ func _run_map(args: Dictionary) -> void:
 	map.load_names("res://data/starmap/names.json")
 	map.attach(sim)
 	if not capture:
-		if args.get("map", "").is_valid_int():
-			map.preselect(int(args["map"]))
+		var want: String = args.get("map", "")
+		var i := int(want) if want.is_valid_int() else map.index_of(want)
+		if map.preselect(i):
 			map.frame_star(map.selected_index)
 		return
 	var out := _out_dir(args["map-capture"])
 	var dump := {"sim": sim.hello_reply, "params": sim.world["params"], "check_row_4_37ly": {}, "panels": []}
 	# design check row 2 (alpha Cen at 4.37 ly on an axis), for comparison with the catalogue star
-	map.plan_target({"index": ALPHA_CEN_A, "id": "Gl 559", "pos": {"x": 0.0, "y": 0.0, "z": -4.37}})
+	var acen := map.index_of(ALPHA_CEN_A)
+	map.plan_target({"index": acen, "id": ALPHA_CEN_A, "pos": {"x": 0.0, "y": 0.0, "z": -4.37}})
 	map.tick()
 	dump["check_row_4_37ly"] = _panel_dump(map, "0.99c")
-	map.preselect(ALPHA_CEN_A)
-	map.frame_star(ALPHA_CEN_A)
+	dump["tour"] = []
+	for t in MAP_TOUR: # alpha Cen B, Sirius A, Barnard's Star at 0.99c, each framed
+		var j := map.index_of(t[0])
+		map.preselect(j)
+		map.frame_star(j)
+		map.set_cruise_phi(map.phi_default)
+		map.tick()
+		dump["tour"].append({"id": t[0], "title": map.title_text(), "subtitle": map.subtitle_text(), "panel": _panel_dump(map, "0.99c")})
+		(await _grab()).save_png(out.path_join(t[1]))
+		print("captured %s  %s  %s" % [t[1], map.title_text(), map.subtitle_text()])
+	map.preselect(acen)
+	map.pivot = Vector3.ZERO # the whole 25 pc catalogue around Sol, alpha Cen A selected
+	map.dist = 220.0
+	map._update_camera()
+	map.tick()
+	(await _grab()).save_png(out.path_join("galaxy_map_overview.png"))
+	print("captured galaxy_map_overview.png  %d stars" % map.catalogue.size())
+	map.frame_star(acen)
 	for speed in [["0.9c", map.phi_min, "galaxy_map_b09.png"], ["cap", map.phi_max, "galaxy_map_cap.png"], ["0.99c", map.phi_default, "galaxy_map.png"]]:
 		map.set_cruise_phi(speed[1])
 		map.tick()

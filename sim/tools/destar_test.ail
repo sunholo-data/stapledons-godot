@@ -58,6 +58,14 @@ export pure func checkParsers(img: Img) -> bool {
   (match csv { [b, a] => near(a.x, 260.0, 1.0e-9) && near(a.v, vFromG(5.0, 0.8), 1.0e-12) && near(b.x, 130.0, 1.0e-9) && b.v == 6.0, _ => false })
 }
 
+-- M1.7 (D-10): HIP candidates are only the stars the bright point layer ships: V < 7, Plx > 0
+-- and a B-V (the bright tier drops rows it cannot give a teff). V 7.2, Plx <= 0 and no-B-V rows
+-- stay as pixels unless GCNS or CNS5 matches them.
+export pure func checkHipShipped(img: Img) -> bool {
+  let hip = hipCands(img, "HIP\tVmag\t_Glon\t_Glat\tB-V\tPlx\n1\t6.99\t10.0\t0.0\t0.5\t5.0\n2\t7.20\t20.0\t0.0\t0.5\t5.0\n3\t6.00\t30.0\t0.0\t0.5\t-1.0\n4\t6.00\t40.0\t0.0\t0.5\t0.0\n5\t5.00\t50.0\t0.0\t\t5.0\n6\t7.00\t60.0\t0.0\t0.5\t5.0\n");
+  match hip { [c] => near(c.v, 6.99, 1.0e-12), _ => false }
+}
+
 export pure func checkDetect(img: Img) -> bool {
   let p = detect(img, catStar());
   let q = detect(img, emptySky());
@@ -138,7 +146,7 @@ pure func checkOverlap(img: Img) -> bool {
 export pure func destarVm(n: int) -> string {
   let img = image();
   let bad = map(\c. match c { (name, _) => name }, filter(\c. match c { (_, ok) => !ok }, [
-    ("pixels", checkPixels(img)), ("projection", checkProjection(img)), ("parsers", checkParsers(img)),
+    ("pixels", checkPixels(img)), ("projection", checkProjection(img)), ("parsers", checkParsers(img)), ("hipShipped", checkHipShipped(img)),
     ("detect", checkDetect(img)), ("halo", checkHalo()), ("nearclip", checkNearClip()), ("fill", checkFill(img)), ("overlap", checkOverlap(img))]));
   match bad { [] => "destar-ok", _ => concat(["destar-BAD: ", join(",", bad)]) }
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Show current starmap asset status: raw catalogue inputs (against data/sky/SHA256SUMS), each
-# binary tier's sidecar, the legacy stars.json and the sky background textures.
+# binary tier's sidecar, the map stars.json and the sky background textures.
 # Usage: status.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -45,7 +45,7 @@ done
 echo ""
 
 if [ -f "$OUTPUT_DIR/stars.json" ]; then
-    echo "Legacy stars.json: $(du -h "$OUTPUT_DIR/stars.json" | cut -f1) (the game loads it until the M1.7 catalogue switch)"
+    echo "Map stars.json: $(du -h "$OUTPUT_DIR/stars.json" | cut -f1) ($(grep -o '"count":[0-9]*' "$OUTPUT_DIR/stars.json" | head -1 | cut -d: -f2) stars within 25 pc, M1.7)"
 fi
 echo ""
 

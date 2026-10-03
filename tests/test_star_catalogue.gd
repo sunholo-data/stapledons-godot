@@ -161,5 +161,52 @@ func _init() -> void:
 		if t != null:
 			check("committed %s count = sidecar = bytes / 24" % tier,
 				t.count == int(t.sidecar["count"]) and t.data.size() == 6 * t.count and t.count > 0)
+	map_matches_tiers()
 	print("test_star_catalogue: %d passed, %d failed" % [passes, failures])
 	quit(0 if failures == 0 else 1)
+
+
+## M1.7: data/starmap/stars.json (the galaxy map) is exactly the quick + bright tier rows within
+## 25 pc: every map row, rounded to float32, is one tier record (x, y, z, teff, v, flags bit for
+## bit), and the tier rows within the radius are as many as the map rows (float32 positions blur
+## the cut by ~1e-5 ly; 5 CNS5 rows at exactly 40 mas sit within 1e-6 ly of 25 pc).
+func f32(x: float) -> float:
+	var b := PackedByteArray()
+	b.resize(4)
+	b.encode_float(0, x)
+	return b.decode_float(0)
+
+
+func map_matches_tiers() -> void:
+	var map: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json"))
+	var rows: Array = map["stars"]
+	var radius: float = map["radius_ly"]
+	var tier_keys := {}
+	var inside_lo := 0 # tier rows surely inside (float32 |p| <= radius - 2e-5)
+	var inside_hi := 0 # tier rows possibly inside (<= radius + 2e-5)
+	for tier in ["quick", "bright"]:
+		var t := StarCat.load_tier(tier)
+		if t == null:
+			check("map check: %s tier loads" % tier, false, StarCat.last_error)
+			return
+		for i in t.count:
+			var p := t.position(i)
+			tier_keys["%s|%s|%s|%s|%s|%d" % [p.x, p.y, p.z, t.teff(i), t.vmag(i), t.flags(i)]] = true
+			var r := sqrt(float(p.x) * p.x + float(p.y) * p.y + float(p.z) * p.z)
+			inside_lo += 1 if r <= radius - 2.0e-5 else 0
+			inside_hi += 1 if r <= radius + 2.0e-5 else 0
+	var missing := []
+	var ids := {}
+	for s: Dictionary in rows:
+		ids[s["id"]] = true
+		var k := "%s|%s|%s|%s|%s|%d" % [f32(s["x"]), f32(s["y"]), f32(s["z"]), f32(s["teff"]), f32(s["vmag"]), int(s["flags"])]
+		if not tier_keys.has(k):
+			missing.append(s["id"])
+	check("stars.json: %d rows, count field agrees, ids unique" % rows.size(), rows.size() == int(map["count"]) and ids.size() == rows.size())
+	check("every stars.json row is a quick or bright tier record (float32, bit for bit)", missing.is_empty(), "not in a tier: %s" % [missing.slice(0, 5)])
+	check("tier rows within %.3f ly (%d..%d, float32 edge) bracket stars.json rows (%d)" % [radius, inside_lo, inside_hi, rows.size()],
+		inside_lo <= rows.size() and rows.size() <= inside_hi and inside_hi - inside_lo <= 8)
+	var a: Dictionary = rows.filter(func(s): return s["id"] == "CNS5:3627")[0] if rows.any(func(s): return s["id"] == "CNS5:3627") else {}
+	var b: Dictionary = rows.filter(func(s): return s["id"] == "HIP 71681")[0] if rows.any(func(s): return s["id"] == "HIP 71681") else {}
+	check("alpha Cen A (CNS5:3627) and B (HIP 71681) are separate rows at 4.321 ly (Q2 (a))", not a.is_empty() and not b.is_empty()
+		and absf(float(a["dist_ly"]) - 4.32104) < 1e-4 and absf(float(b["dist_ly"]) - 4.32104) < 1e-4)

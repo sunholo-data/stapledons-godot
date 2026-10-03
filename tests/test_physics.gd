@@ -127,30 +127,32 @@ func test_view_velocity_angle(vp: SubViewport) -> void:
 
 
 ## data/starmap/stars.json galactic directions against the literature.
-## Each row: catalogue id, name, SIMBAD ICRS J2000 RA / Dec, and the IAU galactic
-## (l, b) of that position computed with astropy 7
+## Each row: catalogue id (M1.7: the map is the quick + bright tier rows, ids
+## "Gaia DR3 n" / "CNS5:n" / "HIP n"), name, SIMBAD ICRS J2000 RA / Dec, and the
+## IAU galactic (l, b) of that position computed with astropy 7
 ## (SkyCoord(ra, dec, frame="icrs").galactic), an implementation independent of
-## this repo. Until 2026-10-02 every longitude was mirrored, l_cat = 245.86 - l
-## (process_stars.sh added atan2(...) to l_NCP instead of subtracting it), while
-## b and |r| were right. x, y, z are rounded to 0.01 ly, so the budget is 0.1 deg
-## plus atan(0.005 sqrt(3) / d) (0.12 deg at Proxima, < 0.03 deg past 20 ly).
+## this repo. The catalogue rows are float64 at their own epoch (mostly Gaia
+## J2016.0; CNS5 rows filled from Hipparcos keep the CNS5 position), so the
+## budget is 0.1 deg: the largest proper motion here, Barnard's Star, moves
+## 0.046 deg between J2000 and J2016. Until 2026-10-02 every longitude was
+## mirrored (l_cat = 245.86 - l); before M1.7 the rows were CNS3 at 0.01 ly.
 const GALACTIC_CHECK := [
-	["Gl 551", "Proxima Cen", "14 29 42.946", "-62 40 46.16", 313.940, -1.927],
-	["Gl 559", "alpha Cen A", "14 39 36.494", "-60 50 02.37", 315.734, -0.680],
-	["Gl 699", "Barnard's Star", "17 57 48.498", "+04 41 36.11", 31.009, 14.063],
-	["Gl 406", "Wolf 359", "10 56 28.86", "+07 00 52.8", 244.054, 56.120],
-	["Gl 411", "Lalande 21185", "11 03 20.19", "+35 58 11.6", 185.118, 65.432],
-	["Gl 244", "Sirius", "06 45 08.917", "-16 42 58.02", 227.230, -8.890],
-	["Gl 144", "epsilon Eri", "03 32 55.845", "-09 27 29.73", 195.845, -48.051],
-	["Gl 820", "61 Cyg A", "21 06 53.94", "+38 44 57.9", 82.320, -5.818],
-	["Gl 71", "tau Cet", "01 44 04.083", "-15 56 14.93", 173.101, -73.440],
-	["Gl 280", "Procyon", "07 39 18.119", "+05 13 29.96", 213.702, 13.019],
-	["Gl 768", "Altair", "19 50 47.00", "+08 52 06.0", 47.744, -8.909],
-	["Gl 881", "Fomalhaut", "22 57 39.05", "-29 37 20.1", 20.488, -64.910],
-	["Gl 721", "Vega", "18 36 56.336", "+38 47 01.28", 67.448, 19.237],
-	["Gl 286", "Pollux", "07 45 18.95", "+28 01 34.3", 192.229, 23.406],
-	["Gl 541", "Arcturus", "14 15 39.67", "+19 10 56.7", 15.050, 69.111],
-	["Gl 194", "Capella", "05 16 41.36", "+45 59 52.8", 162.588, 4.566],
+	["Gaia DR3 5853498713190525696", "Proxima Cen", "14 29 42.946", "-62 40 46.16", 313.940, -1.927],
+	["CNS5:3627", "alpha Cen A", "14 39 36.494", "-60 50 02.37", 315.734, -0.680],
+	["Gaia DR3 4472832130942575872", "Barnard's Star", "17 57 48.498", "+04 41 36.11", 31.009, 14.063],
+	["Gaia DR3 3864972938605115520", "Wolf 359", "10 56 28.86", "+07 00 52.8", 244.054, 56.120],
+	["Gaia DR3 762815470562110464", "Lalande 21185", "11 03 20.19", "+35 58 11.6", 185.118, 65.432],
+	["CNS5:1676", "Sirius", "06 45 08.917", "-16 42 58.02", 227.230, -8.890],
+	["Gaia DR3 5164707970261890560", "epsilon Eri", "03 32 55.845", "-09 27 29.73", 195.845, -48.051],
+	["Gaia DR3 1872046609345556480", "61 Cyg A", "21 06 53.94", "+38 44 57.9", 82.320, -5.818],
+	["Gaia DR3 2452378776434477184", "tau Cet", "01 44 04.083", "-15 56 14.93", 173.101, -73.440],
+	["CNS5:1895", "Procyon", "07 39 18.119", "+05 13 29.96", 213.702, 13.019],
+	["CNS5:4912", "Altair", "19 50 47.00", "+08 52 06.0", 47.744, -8.909],
+	["CNS5:5665", "Fomalhaut", "22 57 39.05", "-29 37 20.1", 20.488, -64.910],
+	["CNS5:4607", "Vega", "18 36 56.336", "+38 47 01.28", 67.448, 19.237],
+	["CNS5:1912", "Pollux", "07 45 18.95", "+28 01 34.3", 192.229, 23.406],
+	["CNS5:3517", "Arcturus", "14 15 39.67", "+19 10 56.7", 15.050, 69.111],
+	["CNS5:1318", "Capella", "05 16 41.36", "+45 59 52.8", 162.588, 4.566],
 ]
 
 func test_catalogue_galactic_directions() -> void:
@@ -160,7 +162,7 @@ func test_catalogue_galactic_directions() -> void:
 		var star: Dictionary = {}
 		for s in stars:
 			if s["id"] == row[0]:
-				star = s # components share the system's position
+				star = s
 				break
 		if star.is_empty():
 			check("%s (%s) is in stars.json" % [row[1], row[0]], 0.0, 1.0, 0.0)
@@ -174,9 +176,9 @@ func test_catalogue_galactic_directions() -> void:
 		var b := deg_to_rad(float(row[5]))
 		var cos_sep := (x * cos(b) * cos(l) + y * cos(b) * sin(l) + z * sin(b)) / r
 		var sep := rad_to_deg(acos(clampf(cos_sep, -1.0, 1.0)))
-		var tol := 0.1 + rad_to_deg(atan(0.005 * sqrt(3.0) / r))
 		var l_cat := fposmod(rad_to_deg(atan2(y, x)), 360.0)
-		check("%s (%s): l %.2f b %+.2f, catalogue l %.2f -> sep deg" % [row[1], row[0], row[4], row[5], l_cat], sep, 0.0, tol)
+		check("%s (%s): l %.2f b %+.2f, catalogue l %.2f -> sep deg" % [row[1], row[0], row[4], row[5], l_cat], sep, 0.0, 0.1)
+		check("%s: stars.json dist_ly = |(x, y, z)| (float64)" % row[1], float(star["dist_ly"]), r, 1.0e-12)
 
 
 ## M1.3 (O-1): the colour LUT reaches 1e7 K at the old log-T step, its top

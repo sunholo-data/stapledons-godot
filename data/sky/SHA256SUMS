@@ -2,8 +2,9 @@
 # Bucket (D-18): https://storage.googleapis.com/stapledons-voyage-assets/sky/<sha256>.<ext> (public read; make sky-assets / sky-publish).
 # Format: <sha256> <kind> <path>. kind input = a pipeline input, texture = a generated texture that ships.
 # hip_v7.tsv is pinned on its data rows (grep -v '^#'): VizieR stamps the query date into the header.
-# Generated 2026-10-02 on macOS arm64: destar = make destar (sim/tools/destar.ail + tools/destar_io.gd, #43) and
-# sky model = make sky-model, both on ailang v0.51.0 + Godot 4.7.2 (make sky-regen twice from clean: byte-identical).
+# Generated 2026-10-03 on macOS arm64 (M1.7): destar = make destar (sim/tools/destar.ail + tools/destar_io.gd, #43),
+# masking only stars in the shipped point layers (HIP V<7 with Plx>0 and B-V = the bright tier's cut, GCNS, CNS5; D-10),
+# and sky model = make sky-model, both on ailang v0.52.0 + Godot 4.7.2.
 # cns5.csv is sim/tools/extract.ail on CNS5 cns5.dat (download_stars.sh quick); gcns.csv is extract.ail on table1c.dat.
 # cns5.dat (M1.2c) is VizieR J/A+A/670/A19 cns5.dat verbatim (4,502,658 B): the quick catalogue tier reads it and
 # records its sha256 in stars_quick.json, so make catalogue-verify needs these exact bytes.
@@ -17,5 +18,5 @@ e3c489924313d9aa4bfbccffdaad27544a9f11c44adbc6dfdba5e183ecaec206 input data/raw/
 7e8c1a2ce4a2afcd70cdf40340c9685b1ec90e8e5085a81812dfa98c5c8adbbf input data/raw/cns5.dat
 8e624f843d4254a9b7c2e8dda8e3158dbe825bf98f6bf3dbbae7f0d0b73d6858 input data/raw/hip2.dat.gz
 58ceabb104d647160d9437ce6e513a02a036bb4ad9f8879a5a22fd52943616e0 input data/raw/hip_main.dat
-54fdf47747123bc71af84e594a95bcd258f93c45950aeb922baa3b4b13a3d09b texture data/raw/background/noirlab_10k_destarred.png
-0821a9cf90f9f83378dca74f9c0b2a447696d24774cdfc59eaa7f8781685ddff texture data/raw/background/noirlab_10k_skymodel.png
+4b952ce8b64068300bf27a98b30d2372c77c07c6a8df0d5d8630a8e49b2f3523 texture data/raw/background/noirlab_10k_destarred.png
+7f42f7b9b4be576fd1fe36f62efeb699bc312041df48306bd093934ba0327385 texture data/raw/background/noirlab_10k_skymodel.png
