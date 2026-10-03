@@ -1,0 +1,71 @@
+---
+title: Try it
+sidebar_position: 6
+description: Download the current development build of Stapledon's Voyage (macOS, Apple Silicon), or build it from source.
+---
+
+import DownloadCard from '@site/src/components/DownloadCard';
+
+# Try it
+
+Stapledon's Voyage is **pre-alpha**. The current download is a **development build** of the
+walkable bridge demo, for Macs with Apple Silicon only. There is no Windows or Linux build yet.
+
+<DownloadCard />
+
+## What's in it
+
+![The captain on the bridge at 0.99c, under the live relativistic sky](/img/news/bridge-demo-cruise.jpg)
+
+- **The walkable bridge** (M4.2): the captain walks the bridge disc at the top of the ship's
+  spire, under the live relativistic sky. The captain ages with ship time.
+- **Navigation:** a nav console opens the galaxy map, built from the real catalogues (5,685 stars
+  within 25 pc, companion stars at their system's distance). Commit a journey to α Centauri A and
+  watch the boost, the 0.99c cruise, the brake and the arrival through the bubble.
+- **The relativistic sky:** 335k real stars with aberration and Doppler colour, the naked-eye
+  photometric exposure, and the forward glow of the cosmic background at extreme speed.
+
+## Controls
+
+| Key | Action |
+|---|---|
+| **W A S D** | Walk |
+| **E** | Use (consoles) |
+| **M** | Galaxy map |
+| **L** | Log |
+| **K** | Codex |
+
+## Known issues
+
+- **The forward bubble-wall glow is off for now.** It returns with the next simulation step. (The
+  forward cosmic-background glow is unaffected.)
+- **The standalone sky flight (`-- --voyage`) shows a mirrored sky.** A fix is in progress; the
+  view from the bridge is correct.
+- **The bridge is demo art** (v1). The final art is in progress; see [concept art](/concept-art).
+- The build is unsigned. If macOS still refuses to open it, use System Settings → Privacy &
+  Security → Open Anyway.
+
+Older review builds are on the [releases page](https://github.com/sunholo-data/stapledons-godot/releases).
+
+## From source
+
+You need Godot 4.7 or later and AILANG on your `PATH` (the version the repo pins; see its
+`CLAUDE.md`).
+
+```bash
+git clone https://github.com/sunholo-data/stapledons-godot.git
+cd stapledons-godot
+make import                      # register the scripts once after cloning
+make sky-assets                  # the Milky Way textures (~164 MB, from the public bucket)
+make catalogue-inputs            # the star catalogues
+make catalogue TIER=large        # build the 331k-row tier on the AILANG VM (about a minute)
+godot --path .                   # the bridge (the default launch)
+make run                         # the galaxy map on its own
+make voyage                      # the sky flight
+```
+
+In the sky flight: **W**/**S** thrust at 1 g, arrows look around, **Q**/**E** roll, **1**–**4**
+look forward, starboard, astern and up, **+**/**−** time warp. **F** fixes the exposure and **M**
+switches eye and camera metering.
+
+`make test` runs the headless test suite; `make capture` renders the reference images.

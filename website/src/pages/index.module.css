@@ -115,11 +115,22 @@
   gap: 0.9rem;
 }
 
+.downloadNote {
+  margin: 0.9rem 0 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.downloadNote a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: underline;
+}
+
 .builtWith {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 2rem;
+  margin-top: 1.25rem;
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.7);
 }

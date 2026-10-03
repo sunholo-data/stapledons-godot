@@ -23,4 +23,4 @@ stay together.
 
 ## Not yet
 
-The next review build will carry these. Until then they are on `main`.
+Both are in the [walkable bridge demo, v0.4.0-dev.1](/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1).
