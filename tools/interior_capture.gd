@@ -4,16 +4,18 @@ extends RefCounted
 ## and commits; the interior is drawn from the sim's state. 1600 x 900.
 ##   01-04  docked at Sol: the captain at the spawn, walking (back, front), at a nav console
 ##   05     the navigation console opens the galaxy map (alpha Cen A selected)
-##   06-09  committed to alpha Cen A at 0.99c: the boost, the cruise with the captain walking,
+##   06-09  committed to alpha Cen A at 0.99c: the boost (beta 0.5), the cruise with the captain walking,
 ##          pans -5 / +5 m (sky fixed, plates at 0.15 / 1.6), a pan past the overscan (clamped)
 ##   10     glow preview at 0.99c: the pole value is the package probe's (tools/glow_probe),
 ##          because the sim does not emit ship.ism.glow_pole_w_m2 yet (M4.1 step 2)
+##   10b    the brake at beta 0.5 (no turnover)
 ##   11     arrived at alpha Cen A
 ##   12-13  home at the cap (cruise_phi_max): the cruise, and its glow preview
 ##   14     the four life stages side by side (years forced: a debug view, labelled)
 ## plus contact_sheet.png and capture_log.json (every frame's sim fields).
 
 const DT := 1.0 / 20.0
+const FINE_DTAU := 2e-7 # ship-yr (6 s) per step through the burns
 const ALPHA_CEN_A := "CNS5:3627"
 ## tools/glow_probe (sunholo/relativity 0.7.0): glowEmittanceAt(n, phi, 1e-9, 0.5, 1) at 0.99c and the cap.
 const PROBE_POLE := {"0.99c": 9.628776871706524e-05, "cap": 1.1250843031053142}
@@ -33,22 +35,11 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	out = dir
 	var sim: SimBridge = main.sim
 	await _shot("01_rest_spawn", "Docked at Sol. The captain at the spawn (y0, front).")
-	var far := it.walk.closest_walkable(it.avatar_pos + Vector3(-4.0, 0.0, -6.0))
-	for i in 40:
-		it.walk_toward(far, DT)
-		it.tick()
-	await _shot("02_rest_walk_back", "Docked. Walking up the screen: the back sprite; the plates pan (0.15 / 1.6).")
-	var near := it.walk.closest_walkable(it.avatar_pos + Vector3(5.0, 0.0, 5.0))
-	for i in 30:
-		it.walk_toward(near, DT)
-		it.tick()
-	await _shot("03_rest_walk_front", "Docked. Walking down the screen: the front sprite.")
-	var nav := it.walk.closest_walkable(it.walk.interactables["console_navigation_1"].get_center())
-	for i in 600:
-		if it.nearest_interactable().begins_with("console_navigation"):
-			break
-		it.walk_toward(nav, DT)
-		it.tick()
+	it.walk_path(it.walk.path(it.avatar_pos, it.avatar_pos + Vector3(-3.0, 0.0, -5.0)), DT, 50)
+	await _shot("02_rest_walk_back", "Docked. Walking up the screen: the back sprite.")
+	it.walk_path(it.walk.path(it.avatar_pos, it.avatar_pos + Vector3(-6.0, 0.0, 6.0)), DT, 60)
+	await _shot("03_rest_walk_front", "Docked. Walking down the screen: the front sprite; the camera follows within its pan range.")
+	it.walk_path(it.walk.path(it.avatar_pos, it.walk.interactables["console_navigation_1"].get_center()), DT, 2000)
 	await _shot("04_rest_nav_console", "At the navigation console: the prompt (E).")
 	if it.interact() != "map":
 		push_error("capture: the console did not open the map")
@@ -61,15 +52,15 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	if not _commit():
 		return 2
 	it.close_map()
-	while sim.world["ship"]["phase"] == "boosting" and sim.world["ship"]["beta"] < 0.9:
-		it.tick()
-	await _shot("06_b099_boost", "Committed to alpha Cen A: the boost (up = the direction of travel).")
+	# the boost lasts minutes of ship time, less than one transit tick: step it finely (M4.3a
+	# paces the burns over 3 s of real time the same way, by choosing dtau)
+	while sim.world["ship"]["beta"] < 0.5 and sim.send([], FINE_DTAU):
+		pass
+	await _shot("06_boost_b05", "Committed to alpha Cen A: the boost at beta 0.5 (up = the direction of travel).")
 	var distance: float = sim.world["journey"]["plan"]["distance"]
 	while map.journey_state() == "committed" and not (sim.world["ship"]["phase"] == "cruising" and sim.world["ship"]["flown"] > 0.4 * distance):
 		it.tick()
-	var stroll := it.walk.closest_walkable(it.avatar_pos + Vector3(3.0, 0.0, 4.0))
-	for i in 25:
-		it.walk_toward(stroll, DT)
+	it.walk_path(it.walk.path(it.avatar_pos, it.avatar_pos + Vector3(4.0, 0.0, 3.0)), DT, 25, false)
 	await _shot("07_b099_cruise_walk", "Cruise at 0.99c: the captain walks; the sky is the live relativistic sky.")
 	var base := it.pan
 	for p in [-5.0, 5.0]:
@@ -79,6 +70,11 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	await _shot("09_b099_pan_clamped", "0.99c, pan (+12, +5) m, beyond the [6, 3] m overscan: the plates clamp, no edge shows.")
 	it.set_pan(base)
 	await _glow_preview("10_b099_glow_preview", "0.99c")
+	while map.journey_state() == "committed" and sim.world["ship"]["flown"] < distance - 0.02:
+		it.tick()
+	while map.journey_state() == "committed" and not (sim.world["ship"]["phase"] == "braking" and sim.world["ship"]["beta"] < 0.5) and sim.send([], FINE_DTAU):
+		pass
+	await _shot("10b_brake_b05", "The brake at beta 0.5: a thrust reversal, no turnover; up is still the direction of travel.")
 	while map.journey_state() == "committed":
 		it.tick()
 	await _shot("11_arrived_acen", "Arrived at alpha Cen A (1,000 AU stand-off).")

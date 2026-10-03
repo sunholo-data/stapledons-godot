@@ -25,6 +25,8 @@ extends RefCounted
 ##                                  default the bubble centre. glb_to_ship() uses it.
 ##   layers.play.camera  String      the iso camera JSON (isocam_<area>.json); default: the
 ##                                  manifest's iso_pitch/yaw/size and the spike's framing
+##   pan_range_m [x, y]              the iso camera's pan range about the focus (metres); default
+##                                  what the plates' overscan covers (pan_range_m())
 ##   layers.play.plate {file}        bridge v2: a projected illustrated plate for the play layer
 ##                                  (the GLB then only carries walking and interaction)
 ##
@@ -140,6 +142,25 @@ func glb_to_ship(p: Vector3) -> PackedFloat64Array:
 	return PackedFloat64Array([o[0] + p.x, o[1] - p.z, o[2] + p.y])
 
 
+## The iso camera's pan range [x, y] metres about the focus: the optional typed pan_range_m,
+## else what the plates' overscan covers (overscan_px / (parallax x plate px per metre), the
+## tighter plate); Vector2.INF when the plates have no overscan (blockout): no limit.
+func pan_range_m() -> Vector2:
+	var r: Variant = manifest.get("pan_range_m")
+	if r is Array and r.size() == 2 and _num(r[0]) and _num(r[1]):
+		return Vector2(float(r[0]), float(r[1]))
+	var ppm := float(view_size().y) / float(manifest["layers"]["play"]["iso_size_m"])
+	var out := Vector2.INF
+	for layer in ["panorama", "foreground"]:
+		var os := Vector2(overscan(layer))
+		var k := float(manifest["layers"][layer]["parallax"]) * ppm
+		if os.x > 0.0:
+			out.x = minf(out.x, os.x / k)
+		if os.y > 0.0:
+			out.y = minf(out.y, os.y / k)
+	return out
+
+
 ## Bridge v2 hook: does the play layer carry a projected illustrated plate?
 func has_play_plate() -> bool:
 	return manifest["layers"]["play"].get("plate") is Dictionary
@@ -245,6 +266,9 @@ static func check_manifest(m: Dictionary) -> PackedStringArray:
 			e.append("layers.%s.parallax must be > 0" % layer)
 	if not (float(m["layers"]["play"]["iso_size_m"]) > 0.0):
 		e.append("layers.play.iso_size_m must be > 0")
+	if m.has("pan_range_m") and not (m["pan_range_m"] is Array and m["pan_range_m"].size() == 2 and _num(m["pan_range_m"][0]) and _num(m["pan_range_m"][1])
+			and m["pan_range_m"][0] >= 0 and m["pan_range_m"][1] >= 0):
+		e.append("pan_range_m must be [x, y] non-negative numbers")
 	if m.has("play_origin_ship_m") and not _vec3(m["play_origin_ship_m"]):
 		e.append("play_origin_ship_m must be an array of 3 numbers")
 	var play: Dictionary = m["layers"]["play"]

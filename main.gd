@@ -669,6 +669,7 @@ func _run_golden() -> void:
 	# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
 	failures += await load("res://tools/exposure_golden.gd").new().run(self)
 	failures += await load("res://tools/cmb_golden.gd").new().run(self)
+	failures += await load("res://tools/interior_golden.gd").new().run(self) # M4.2: G-M4-1..4
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 

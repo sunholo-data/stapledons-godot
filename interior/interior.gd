@@ -30,6 +30,14 @@ extends Node
 signal map_toggled(open: bool)
 
 const LAYERS := ["sky", "panorama", "play", "foreground", "hud"]
+## The M1 sky frame is a MIRROR of the galactic frame: Starfield.galactic_to_world (x, y, z)
+## -> (y, z, -x) has determinant -1, so a Godot camera (right = forward x up) whose forward and
+## up are the mirrored ship-frame vectors sees the sky left-right reversed against
+## cam_<area>.json. Showing the sky texture flipped horizontally gives exactly the view
+## through the panorama camera (aberration, Doppler and the glow are mirror-symmetric about
+## the velocity; the forward pole sits on the centre column). make golden's G-M4-1 checks
+## stars against the camera JSON. If M1's mapping is made a rotation, this becomes false.
+const SKY_FLIP_H := true
 const CANVAS := {"sky": -40, "panorama": -30, "play": -20, "foreground": -10, "hud": 10}
 const PLATE_SHADER := preload("res://interior/plate.gdshader")
 const TOON := preload("res://interior/toon.gdshader")
@@ -96,6 +104,7 @@ func setup(b: AreaBundle, opts := {}) -> bool:
 	sky.setup(b.camera, view_fov, px, opts)
 	add_child(sky)
 	sky_rect.texture = sky.get_texture()
+	sky_rect.flip_h = SKY_FLIP_H
 	_full(sky_rect)
 	_layer("sky").add_child(sky_rect)
 	_plate("panorama", b.load_image("panorama"))
@@ -373,7 +382,8 @@ func _build_play(b: AreaBundle, px: Vector2i) -> bool:
 	add_child(play_view)
 	play_env.background_mode = Environment.BG_CLEAR_COLOR
 	play_env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	play_env.glow_enabled = false
+	play_env.glow_enabled = true # the spire's halo (spike look); only on the set's own pixels,
+	play_env.glow_hdr_threshold = 1.2 # the transparent background stays alpha 0 over the sky
 	play_env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	play_env.ambient_light_color = Color(0.55, 0.5, 0.7)
 	play_env.ambient_light_energy = 0.6
@@ -427,12 +437,12 @@ func _build_play(b: AreaBundle, px: Vector2i) -> bool:
 	return true
 
 
-## Toon + ink on every mesh; WALK_ surfaces are navigation data, not drawn. With a v2 play
-## plate the set is drawn by the plate, so the GLB meshes only carry walking and interaction.
+## Toon + ink on every mesh (the WALK_ meshes are the visible deck too). With a v2 play plate
+## the set is drawn by the plate, so the GLB meshes only carry walking and interaction.
 func _toonify(node: Node, hide_all: bool) -> void:
 	if node is MeshInstance3D:
 		var mi := node as MeshInstance3D
-		if String(mi.name).begins_with("WALK_") or (mi.get_parent() != null and String(mi.get_parent().name).begins_with("WALK_")) or hide_all:
+		if hide_all:
 			mi.visible = false
 		elif mi.mesh != null:
 			for i in mi.mesh.get_surface_count():
@@ -525,10 +535,29 @@ func _update_prompt() -> void:
 	prompt_label.text = "E  %s%s" % [k[1], "" if k[2] != "" else "  (nothing here yet)"]
 
 
+## The camera pan that follows the captain, clamped to the bundle's pan range: inside it the
+## plates stay aligned with the set; the deck fits the screen plus the range, so the captain
+## stays in view while the camera holds at the edge.
 func _pan_for(p: Vector3) -> Vector2:
 	var b := iso_cam.transform.basis
 	var d := p - _focus
-	return Vector2(d.dot(b.x), d.dot(b.y))
+	var r := bundle.pan_range_m()
+	return Vector2(clampf(d.dot(b.x), -r.x, r.x), clampf(d.dot(b.y), -r.y, r.y))
+
+
+## Walk a route (WalkArea.path) for up to `steps` frames of dt, ticking the sim each frame
+## when `tick_sim`. True when the end was reached.
+func walk_path(route: PackedVector3Array, dt: float, steps: int, tick_sim := true) -> bool:
+	var i := 0
+	for n in steps:
+		while i < route.size() and Vector2(route[i].x - avatar_pos.x, route[i].z - avatar_pos.z).length() < 0.08:
+			i += 1
+		if i >= route.size():
+			return true
+		walk_toward(route[i], dt)
+		if tick_sim:
+			tick()
+	return i >= route.size()
 
 
 func _set_layers_visible(on: bool) -> void:

@@ -191,7 +191,7 @@ wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ai
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros)
+golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..4 (composite position, one tonemap, forward pole, glow)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
@@ -199,8 +199,11 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 	  grep -q '^ok    hot white dwarf 60 kK' $(SCRATCH)/golden.log && grep -q '^ok    faint-star cull' $(SCRATCH)/golden.log && \
 	  grep -q '^ok    display floor' $(SCRATCH)/golden.log && grep -q '^ok    exposure golden (star)' $(SCRATCH)/golden.log && \
 	  grep -q '^ok    exposure golden (sky)' $(SCRATCH)/golden.log && grep -q '^ok    limiting magnitude' $(SCRATCH)/golden.log && \
-	  test "$$(grep -c '^ok    CMB golden' $(SCRATCH)/golden.log)" = 10 && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases)"; exit 1; }
+	  test "$$(grep -c '^ok    CMB golden' $(SCRATCH)/golden.log)" = 10 && \
+	  grep -q '^ok    G-M4-1 composite position: 72 cases' $(SCRATCH)/golden.log && grep -q '^ok    G-M4-2 one tonemap' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    G-M4-3 forward pole' $(SCRATCH)/golden.log)" = 6 && test "$$(grep -c '^ok    G-M4-4 glow' $(SCRATCH)/golden.log)" = 7 && \
+	  grep -q '^interior golden: 0 failures$$' $(SCRATCH)/golden.log && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 7)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.

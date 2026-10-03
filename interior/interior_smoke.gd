@@ -36,10 +36,15 @@ func run(main: Node, it: Interior, map: GalaxyMap, sim: SimBridge) -> int:
 	# sends the map's preselected alpha Cen plan, which is not the avatar's)
 	it.tick()
 	var lines0 := _record_lines(sim)
-	var target := it.walk.closest_walkable(it.walk.interactables[nav].get_center())
+	var route := it.walk.path(it.avatar_pos, it.walk.interactables[nav].get_center())
+	need(route.size() > 1, "a walkable route to %s" % nav)
 	var steps := 0
-	while it.nearest_interactable() != nav and steps < 4000:
-		it.walk_toward(target, DT)
+	var i := 0
+	while it.nearest_interactable() != nav and steps < 4000 and i < route.size():
+		if Vector2(route[i].x - it.avatar_pos.x, route[i].z - it.avatar_pos.z).length() < 0.08:
+			i += 1
+			continue
+		it.walk_toward(route[i], DT)
 		it.tick()
 		steps += 1
 	var lines1 := _record_lines(sim)

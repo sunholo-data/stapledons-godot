@@ -15,6 +15,7 @@ extends RefCounted
 const CELL := 1.0
 const RING := 8
 const SPAWN_PREFERRED := "SPAWN_captain_0"
+const PATH_CELL := 0.25
 
 var radius := 0.35
 var spawns := {} # name -> Vector3
@@ -90,6 +91,51 @@ func closest_walkable(target: Vector3, max_r := 6.0) -> Vector3:
 				return Vector3(p.x, height_at(p.x, p.z), p.z)
 		r += 0.1
 	return target
+
+
+## A walkable route from -> to on a PATH_CELL grid (A*, 8 neighbours), as play-frame points
+## ending at `to`'s nearest walkable point; empty when there is none. For scripted walks
+## (captures, smoke); the player steers by hand.
+func path(from: Vector3, to: Vector3, max_nodes := 200000) -> PackedVector3Array:
+	var goal := closest_walkable(to)
+	var c := PATH_CELL
+	var s := Vector2i(roundi(from.x / c), roundi(from.z / c))
+	var g := Vector2i(roundi(goal.x / c), roundi(goal.z / c))
+	var astar := AStar2D.new()
+	var ids := {}
+	var queue: Array[Vector2i] = [s]
+	ids[s] = 0
+	astar.add_point(0, Vector2(s))
+	var found := false
+	var head := 0
+	while head < queue.size() and ids.size() < max_nodes:
+		var cur: Vector2i = queue[head]
+		head += 1
+		if cur.distance_squared_to(g) <= 2:
+			g = cur
+			found = true
+			break
+		for dx in [-1, 0, 1]:
+			for dz in [-1, 0, 1]:
+				var nb := cur + Vector2i(dx, dz)
+				if (dx == 0 and dz == 0):
+					continue
+				if not ids.has(nb):
+					if not is_walkable(Vector3(nb.x * c, 0.0, nb.y * c)):
+						ids[nb] = -1
+						continue
+					ids[nb] = astar.get_point_count()
+					astar.add_point(ids[nb], Vector2(nb))
+					queue.append(nb)
+				if ids[nb] >= 0:
+					astar.connect_points(ids[cur], ids[nb])
+	if not found:
+		return PackedVector3Array()
+	var out := PackedVector3Array()
+	for q in astar.get_point_path(0, ids[g]):
+		out.append(Vector3(q.x * c, height_at(q.x * c, q.y * c), q.y * c))
+	out.append(goal)
+	return out
 
 
 ## The interactable whose plan-view footprint is within reach of p ("" when none); the nearest wins.

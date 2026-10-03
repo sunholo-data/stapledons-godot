@@ -106,6 +106,17 @@ func test_bundle_fields() -> void:
 	m = b.manifest.duplicate(true)
 	m["layers"]["play"]["camera"] = 7
 	check("control: layers.play.camera must be a string", not AreaBundle.check_manifest(m).is_empty())
+	check("bridge pan_range_m read typed [6, 3]", b.pan_range_m() == Vector2(6.0, 3.0))
+	var m2: Dictionary = b.manifest.duplicate(true)
+	m2.erase("pan_range_m")
+	var b2 := AreaBundle.new()
+	b2.manifest = m2
+	b2.camera = b.camera
+	var derived := b2.pan_range_m()
+	check("without pan_range_m the overscan sets it: fg 1296 px / (1.6 x 135 px/m) = 6 m, 656 / 216 = 3.04 m", absf(derived.x - 6.0) < 1e-5 and absf(derived.y - 656.0 / 216.0) < 1e-5, str(derived))
+	check("no overscan (blockout): no pan limit", f.pan_range_m() == Vector2.INF)
+	m2["pan_range_m"] = [6, -1]
+	check("control: a negative pan_range_m is refused", not AreaBundle.check_manifest(m2).is_empty())
 	check("bridge iso camera JSON read (orthographic, size 16, v_offset 6.08)", b.iso_camera().get("projection") == "orthographic" and b.iso_camera().get("v_offset_m") == 6.08)
 	check("fixture iso camera falls back to the manifest angles", f.iso_camera().get("pitch_deg") == -14.0 and f.iso_camera().get("yaw_deg") == 45.0 and f.iso_camera().get("size_m") == 16.0)
 
@@ -163,7 +174,9 @@ func test_composite() -> void:
 		check("%s: no WorldEnvironment outside the sky/play SubViewports (the parent never tonemaps)" % dir.get_file(), it.environments_outside_subviewports().is_empty())
 		check("%s: sky SubViewport tonemaps once with AgX" % dir.get_file(), it.sky.env.tonemap_mode == Environment.TONE_MAPPER_AGX)
 		check("%s: sky texture shown raw (no material, white modulate)" % dir.get_file(), it.sky_rect.material == null and it.sky_rect.modulate == Color.WHITE and it.sky_rect.self_modulate == Color.WHITE)
-		check("%s: the play layer's environment does not glow (no bloom over the sky)" % dir.get_file(), not it.play_env.glow_enabled)
+		check("%s: sky mirrored back to the camera JSON's handedness (galactic_to_world has det -1)" % dir.get_file(), it.sky_rect.flip_h == Interior.SKY_FLIP_H
+			and is_equal_approx(Basis(Starfield.galactic_to_world(Vector3(1, 0, 0)), Starfield.galactic_to_world(Vector3(0, 1, 0)), Starfield.galactic_to_world(Vector3(0, 0, 1))).determinant(), -1.0 if Interior.SKY_FLIP_H else 1.0))
+		check("%s: the play layer renders over a transparent background (the sky shows through)" % dir.get_file(), it.play_view.transparent_bg and it.play_env.background_mode == Environment.BG_CLEAR_COLOR)
 		var tag := it.bundle.placeholder
 		check("%s: placeholder tag %s" % [dir.get_file(), "shown" if tag else "hidden"], it.tag_label.visible == tag and (it.tag_label.text == AreaBundle.HUD_TAG or not tag))
 		it.set_pan(Vector2(20.0, 0.0))
@@ -198,6 +211,11 @@ func test_walk() -> void:
 	var nav: AABB = wb.interactables.get("console_navigation_0", AABB())
 	check("bridge: the navigation console's footprint is not walkable (obstacle)", nav.size != Vector3.ZERO and not wb.is_walkable(nav.get_center()))
 	check("bridge: a point beside the nav console is in reach", wb.nearest_interactable(wb.closest_walkable(nav.get_center()), 1.5) != "")
+	var route := wb.path(wb.spawn_point(), nav.get_center())
+	var on := true
+	for q in route:
+		on = on and wb.is_walkable(q)
+	check("bridge: a walkable route from the spawn to the nav console (%d points)" % route.size(), route.size() > 1 and on and wb.nearest_interactable(route[route.size() - 1], 1.5).begins_with("console_navigation"))
 	bridge.free()
 	# the avatar's walk never talks to the sim: the walk/avatar scripts hold no sim reference
 	for f in ["res://interior/walk.gd", "res://interior/captain_avatar.gd"]:
