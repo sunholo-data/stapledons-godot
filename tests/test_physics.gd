@@ -599,6 +599,8 @@ func test_cmb() -> void:
 	for i in tab.size():
 		if is_nan(tab[i]) or is_inf(tab[i]): finite = 0.0
 		if i > 0 and tab[i] < tab[i - 1]: mono = 0.0
+	check("the lookup's range covers the cap pole (T_MAX >= 3,853.7 K: the table, not the exact fallback, serves the disc)", 1.0 if CmbGlow.T_MAX >= Relativity.cmb_temperature_apparent(0.0, cap) else 0.0, 1.0, 0.0)
+	check("CmbGlow.T_MAX = 5000 K (plan: lookup over [0, 5000 K])", CmbGlow.T_MAX, 5000.0, 0.0)
 	check("CMB lookup over [0, 5000 K]: %d entries, every one finite" % tab.size(), finite, 1.0, 0.0)
 	check("CMB lookup is non-decreasing in T", mono, 1.0, 0.0)
 	check("lookup at T = 0 is the floor (reads back exactly 0)", CmbGlow.radiance(0.0), 0.0, 0.0)
@@ -688,6 +690,41 @@ func test_sky_meter() -> void:
 	check("camera mode keeps its log-average meter (ignores the eye meter)", e.ev, Exposure.metered_ev(l_dark), 1e-12)
 	sf.free()
 	cam.free()
+	_test_main_eye_meter_wiring()
+
+
+## main.gd's own wiring (not only the captures): the eye meter gets the
+## background's CMB when moving and the panorama is attached, and no disc at
+## rest. main.gd is instanced without entering the tree (no _ready, no sim).
+func _test_main_eye_meter_wiring() -> void:
+	var script: GDScript = load("res://main.gd")
+	if script == null or not script.can_instantiate():
+		check("main.gd loads for the eye-meter wiring test", 0.0, 1.0, 0.0)
+		return
+	var m: Node3D = script.new()
+	var photo := Image.create(64, 32, false, Image.FORMAT_RGB8)
+	photo.fill(Color8(30, 30, 30))
+	var model := Image.create(64, 32, false, Image.FORMAT_RGBA8)
+	model.fill(Color8(SkyModel.encode_t(5000.0), 0, 0, 255))
+	m.has_background = m.background.attach(Environment.new(), 540.0, 70.0, photo, model)
+	m.heading = Vector3(0, 0, -1)
+	m.camera.fov = 70.0
+	m.camera.look(0.0, 0.0, 0.0)
+	m.background.set_psf(Exposure.psf_sigma_angle())
+	var omb := 1e-6
+	var g := Relativity.gamma_of_one_minus_beta(omb)
+	m.background.set_velocity(m.heading, 1.0 - omb, g)
+	var rest: float = m._meter_eye_now(0.0)
+	var moving: float = m._meter_eye_now(1.0 - omb)
+	check("main.gd eye meter at rest reads the sky (no CMB): L(dark) +-2%", rest / Exposure.dark_sky_luminance(), 1.0, 0.02)
+	check("main.gd eye meter at gamma 707 forward includes the disc (> 100 cd/m^2; got %s)" % String.num_scientific(moving), 1.0 if moving > 100.0 else 0.0, 1.0, 0.0)
+	var e := Exposure.new()
+	e.configure(70.0, 540.0)
+	e.update(rest, moving)
+	check("so the eye light-adapts above EV_dark through main.gd's wiring", 1.0 if e.ev > e.ev_dark() + 5.0 else 0.0, 1.0, 0.0)
+	m.camera.free()
+	m.starfield.free()
+	m.free()
 
 
 ## The camera cases need a node in a viewport, so they run once the main loop

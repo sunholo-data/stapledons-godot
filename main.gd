@@ -302,7 +302,7 @@ func _meter_eye_now(beta: float) -> float:
 	if starfield.count > 0 and eye_meter.needs_build(starfield):
 		eye_meter.build(starfield)
 	var sky := func(n: Vector3) -> float: return background.seen_luminance(n, heading, beta) if has_background else Exposure.dark_sky_luminance()
-	var size := get_viewport().get_visible_rect().size
+	var size := get_viewport().get_visible_rect().size if is_inside_tree() else Vector2(960, 540) # tests instance main.gd off-tree
 	return eye_meter.centre_weighted(camera, size, heading, beta, sky, starfield, background.cmb if beta > 0.0 and has_background else null)
 
 
