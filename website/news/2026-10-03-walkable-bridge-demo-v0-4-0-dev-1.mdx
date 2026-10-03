@@ -1,0 +1,42 @@
+---
+title: "Walkable bridge demo: v0.4.0-dev.1"
+date: 2026-10-03T20:15
+authors: [sunholo]
+tags: [release, journey, art]
+release_tag: "v0.4.0-dev.1"
+release_url: "https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.1"
+---
+
+import DownloadCard from '@site/src/components/DownloadCard';
+
+A development build you can download: walk the captain around the bridge under the live
+relativistic sky, open the galaxy map from the nav console, and fly a journey to α Centauri A
+through the bubble. macOS only, Apple Silicon.
+
+{/* truncate */}
+
+<DownloadCard compact />
+
+![The captain on the bridge at 0.99c, under the live relativistic sky](/img/news/bridge-demo-cruise.jpg)
+
+## What's new
+
+- **The walkable bridge** (M4.2, [#102](https://github.com/sunholo-data/stapledons-godot/pull/102)): the bridge disc at the top of the spire,
+  composited with the live sky through the same camera. The captain walks it (**WASD**, **E** to
+  use) and ages with ship time.
+- **Navigation from the bridge:** a nav console opens the galaxy map (**M**), built from the real
+  catalogues: 5,685 stars within 25 pc, companions at their system's distance. Commit to α
+  Centauri A and watch the boost, the 0.99c cruise, the brake and the arrival.
+- **The relativistic sky** behind it all: 335k real stars, aberration and Doppler colour, the
+  naked-eye exposure, and the forward glow of the cosmic background at extreme speed.
+- **L** opens the log and **K** the codex.
+
+## Not yet
+
+- The forward bubble-wall glow is off; it returns with the next simulation step.
+- The standalone sky flight (`-- --voyage`) shows a mirrored sky. A fix is in progress; the view
+  from the bridge is correct.
+- The bridge is v1 demo art; the final art is in progress ([concept art](/concept-art)).
+- Pre-alpha and unsigned; see [Try it](/docs/try-it) for install notes.
+
+**Release:** [v0.4.0-dev.1](https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.1) (macOS development build)

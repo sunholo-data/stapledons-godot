@@ -1,6 +1,6 @@
 release:
   label: Release
-  description: A versioned GitHub release, with its review build.
+  description: A versioned GitHub release, with its downloadable build.
 progress:
   label: Progress
   description: Merged work between releases.

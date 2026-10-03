@@ -27,8 +27,8 @@ when, see [News](/news).
 | M2 The journey core | <span className="sv-status sv-status--done">Done</span> |
 | AI foundation (AI.1–AI.10a) | <span className="sv-status sv-status--done">Done</span> on the stub; the first live run (AI.10b) is pending |
 | M3 Black holes | <span className="sv-status sv-status--planned">Planned</span> |
-| M4 First playable journey | <span className="sv-status sv-status--progress">In progress</span>: M4.0, M4.1 step 1 and bridge v1 merged |
-| M5 Planets and flybys | <span className="sv-status sv-status--progress">In progress</span>: design and sprint approved, packages published, the first step (M5.1a) merged |
+| M4 First playable journey | <span className="sv-status sv-status--progress">In progress</span>: M4.0, M4.1 step 1, bridge v1 and the walkable bridge (M4.2) merged |
+| M5 Planets and flybys | <span className="sv-status sv-status--progress">In progress</span>: design and sprint approved, packages published, M5.1a and M5.1b merged |
 
 ## M0: Spike <span className="sv-status sv-status--done">Done</span>
 
@@ -93,7 +93,7 @@ One complete journey with the ship's interior: the ship-years against Earth-year
 | M4.1 step 1 | Consequence in the simulation: the Earth clock running on while you travel, the years gap, the 1,000 AU arrival stand-off, light-delayed news from home, live interstellar-medium readouts (protocol 2.2, [#92](https://github.com/sunholo-data/stapledons-godot/pull/92)) | <span className="sv-status sv-status--done">Done</span> |
 | Bridge v1 interior art | Demo art, replacing the blockout ([#97](https://github.com/sunholo-data/stapledons-godot/pull/97)) | <span className="sv-status sv-status--done">Done</span> |
 | Bridge v2 final art | A quality study is done; the final art is being made ([concept art](/concept-art)) | <span className="sv-status sv-status--progress">In progress</span> |
-| M4.2 | The interior composite: deck, panorama and live sky in one image | <span className="sv-status sv-status--planned">Planned</span> |
+| M4.2 | The walkable interior: the bridge, the captain and the live sky in one image, the nav console to the galaxy map ([#102](https://github.com/sunholo-data/stapledons-godot/pull/102); in the [v0.4.0-dev.1 download](/docs/try-it)) | <span className="sv-status sv-status--done">Done</span> |
 | M4.3a, M4.3b | Transit, time warp and the HUD | <span className="sv-status sv-status--planned">Planned</span> |
 | M4.4 | The news-from-home and journey-record screens | <span className="sv-status sv-status--planned">Planned</span> |
 | M4.5–M4.7 | A full playthrough audit, the physics gates, the in-game Archive of physics explainers | <span className="sv-status sv-status--planned">Planned</span> |
@@ -113,7 +113,8 @@ known and candidate planets show as points only, with badges that say how sure t
 |---|---|
 | Package work: [`sunholo/celestial`](https://github.com/sunholo-data/ailang-packages/tree/main/packages/celestial) 0.1.0 (Kepler solver, JPL planetary ephemerides for 3000 BC–3000 AD and moons, IAU frames, light-time, gravity, reflectance, rings) and `sunholo/relativity` 0.6 and 0.7 (the bubble's forward glow, the aberrated outline of a nearby sphere) | <span className="sv-status sv-status--done">Published</span> |
 | M5.1a: Sol and α Cen data, and the game pinning the new packages ([#99](https://github.com/sunholo-data/stapledons-godot/pull/99)) | <span className="sv-status sv-status--done">Done</span> |
-| M5.1b–M5.8: the system map, lighting, rings, flyby flight and views | <span className="sv-status sv-status--planned">Planned</span> |
+| M5.1b: the simulation can place every body of a system at any time, in protocol 2.3 ([#101](https://github.com/sunholo-data/stapledons-godot/pull/101)) | <span className="sv-status sv-status--done">Done</span> |
+| M5.2–M5.8: the system map, lighting, rings, flyby flight and views | <span className="sv-status sv-status--planned">Planned</span> |
 
 ## After Release 1
 
