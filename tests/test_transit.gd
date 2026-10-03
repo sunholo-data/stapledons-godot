@@ -149,7 +149,14 @@ func test_standoff(h: TransitHarness, res: Dictionary, log: Array) -> void:
 	ok("the interior run (main.gd) uses the same constant", load("res://main.gd").get_script_constant_map()["STANDOFF_AU"] == 1000.0)
 
 
+## A script error inside _init leaves the tree running; the watchdog ends it with no summary line.
+const WATCHDOG_S := 90.0
+
+
 func _init() -> void:
+	create_timer(WATCHDOG_S).timeout.connect(func() -> void:
+		print("transit: watchdog expired (a script error above?)")
+		quit(2))
 	var h := harness(Transit.new_game_params(), ProjectSettings.globalize_path(LOG))
 	if h == null:
 		quit(1)
