@@ -23,7 +23,14 @@ extends RefCounted
 
 enum Mode { EYE, CAMERA }
 
-const DARK_SKY_MAG := 22.0 # V mag/arcsec^2 of the panorama's dark-sky reference patch
+## V mag/arcsec^2 of the panorama's dark-sky reference patch (D-25): the
+## deep-space sky at the galactic caps, i.e. integrated starlight + diffuse
+## galactic light + extragalactic background, with no airglow and no zodiacal
+## light (Leinert et al. 1998, A&AS 127, 1). Not the 22 of a ground dark site.
+const DARK_SKY_MAG := 23.5
+## AC8 naked-eye window for the measured V_lim: around Crumey's V_lim(F = 2)
+## = 6.897 at 23.5 mag/arcsec^2, moved with the dark sky (D-25).
+const AC8 := Vector2(6.6, 7.4)
 const FIELD_FACTOR := 2.0 # Crumey's typical field factor for real observing
 ## The display's lowest visible level: on a typical 1000:1 panel the black
 ## glows at ~0.1% of white, and code VIS_LEVELS (sRGB 7/255 = 0.21% of white,
@@ -35,7 +42,9 @@ const VIS_LEVELS := 7
 const METER_K := 12.5
 const SAT := 1.2 # 78 / (S q), S = 100, q = 0.65
 const PSF_SIGMA_PX := 0.9 # sky/starfield.gdshader psf_sigma_px
-const EV_CLAMP := Vector2(-20.0, 20.0) # player clamp default: wide open
+## Player clamp default: a physical camera's limits. The floor is about ISO
+## 102400, f/1.4, 30 s (EV100 = log2(1.4^2 / 30) - log2(1024) = -13.9).
+const EV_CLAMP := Vector2(-14.0, 20.0)
 const FLOOR_MAG := 8.0 # magnitude-floor aid: stars to V 8 shown at the display floor
 
 var mode := Mode.EYE
@@ -129,8 +138,17 @@ func mode_name() -> String:
 	return "eye (dark-adapted)" if mode == Mode.EYE else "camera (log-average)"
 
 
+## Metering state for the HUD: never "auto" when the eye is pinned at EV_dark.
+func state_name() -> String:
+	if fixed:
+		return "FIXED at rest"
+	if mode == Mode.EYE:
+		return "pinned at EV_dark" if ev_meter <= ev_dark() else "light-adapted"
+	return "auto"
+
+
 func hud_line() -> String:
-	var s := "EV %+.1f  %s  %s" % [ev, mode_name(), "FIXED at rest" if fixed else "auto"]
+	var s := "EV %+.1f  %s  %s" % [ev, mode_name(), state_name()]
 	var aids := PackedStringArray()
 	if bias != 0.0:
 		aids.append("bias %+.1f EV" % bias)

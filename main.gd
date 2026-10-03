@@ -390,7 +390,7 @@ func _capture_one(out: String, name: String) -> Image:
 	img.save_png(out.path_join(name))
 	var ship: Dictionary = sim.world["ship"]
 	print("captured %s  beta=%.6f gamma=%.4f tau=%.4f t=%.4f  %s  EV %+.2f %s %s (meter %s cd/m^2)" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"],
-		camera.hud_line(heading), exposure.ev, exposure.mode_name(), "fixed" if exposure.fixed else "auto", String.num_scientific(_meter(ship["beta"]))])
+		camera.hud_line(heading), exposure.ev, exposure.mode_name(), exposure.state_name(), String.num_scientific(_meter(ship["beta"]))])
 	return img
 
 

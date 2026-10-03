@@ -685,19 +685,25 @@ tiers), #43 · **Registry:** none (UI and data).
   satisfies M4's dependency "M1.2 tiers (α Cen A/B real astrometry)".
 
 #### M1.5a: Photometric exposure, and honesty about it (F5)
-**Status (2026-10-03):** executed to ⏸ R-d. `make physics`, `make golden` and `make bench` pass (AC8: V_lim 6.3 at 2560×1440, 6.5 at 960×540); captures opened. Q8 was answered in D-19. Deviation: the panorama un-stretch (see the sprint JSON notes).
+**Status (2026-10-03):** R-d look approved by Mark; evaluation round 1 passed 90/100. Mark ruled on the anchors (D-25): the dark sky is the deep-space value at the galactic caps, 23.5 mag/arcsec² (integrated starlight + diffuse galactic light + EBL; no airglow or zodiacal light; Leinert et al. 1998). The brightest Milky Way is 20.8 mag/arcsec² (Leinert 1998 Table 16; Duriscoe 2013). The panorama un-stretch recalibrates from these two anchors (exponent 0.43). AC8 moves with the dark sky: Crumey V_lim(F = 2) is 6.897, and the window is 6.6 ≤ V_lim ≤ 7.4. Measured: V_lim 6.9 at 960×540 (`make golden`) and 6.9 at 2560×1440 (`make bench`). Q8 was answered in D-19.
+
+**Follow-ups before M1.8 (evaluator notes, deferred by the coordinator):**
+- An angular PSF: EV_dark becomes constant, and the sky brightness stops depending on resolution.
+- A centre-weighted meter that includes stars.
+- Calibrate the background on Gaia/Tycho integrated flux: a later M1 item per D-25.
+- Move the capture helpers out of `main.gd` (806 lines).
 **Scope:**
 - **Scene units:**
   - stars integrate to their E_v in lux;
   - the background is in cd/m², calibrated so a dark-sky patch reads
-    22 mag/arcsec² through `luminanceFromSurfaceMag` (0.5.0).
+    23.5 mag/arcsec² (D-25; was 22) through `luminanceFromSurfaceMag` (0.5.0).
   - Remove `EXPOSURE` and `BG_EXPOSURE` from `main.gd`.
 - **Camera:** EV exposure, log-average auto-exposure, and a player clamp and
   bias. The readability aids (magnitude floor, exposure bias) are labelled
   and **off** by default. The default exposure follows Q8.
 - **Limiting magnitude** comes from `pointThresholdIlluminance(L_bg)` at the
   default dark-adapted EV. It's measured on a synthetic star ladder,
-  V 5.0–7.5, in the rendered frame (AC8).
+  V 5.0–8.5, in the rendered frame (AC8).
 - **Exposure honesty** (Mark's 2026-10-02 note):
   - the HUD shows the EV and the metering mode;
   - a "fixed EV" toggle locks exposure at the rest value;
@@ -720,8 +726,8 @@ tiers), #43 · **Registry:** none (UI and data).
 **Acceptance:**
 - `make physics`: the scene-unit tests, the sideways-darker test (corrected F5) and the
   D = 1 boundary test.
-- `make bench`: the report prints the limiting magnitude, 6.0 ≤ V_lim ≤ 6.8
-  (**AC8**).
+- `make bench`: the report prints the limiting magnitude, 6.6 ≤ V_lim ≤ 7.4
+  (**AC8**; D-25 moved it from 6.0–6.8 with the dark sky, 22 → 23.5 mag/arcsec²).
 - `make golden AILANG=$A`: an exposure golden (a known-lux star reaches its
   expected linear pixel value within 1%).
 - `make capture AILANG=$A AILANG_BIN=$A`: the fixed-EV and auto pairs,

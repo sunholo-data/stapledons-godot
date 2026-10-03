@@ -23,14 +23,19 @@ const BUNDLED_MODEL := "res://sky_bundle/noirlab_10k_skymodel.png.bin"
 ##
 ## The NOIRLab panorama is a tone-stretched photograph, not a radiometric map:
 ## its PEAK_QUANTILE luminance is ~290x its dark patch (6.2 mag), where the real
-## Milky Way's brightest integrated light is ~2 mag above a 22 mag/arcsec^2 dark
-## sky. So the photo's luminance is un-stretched with one power law that keeps
-## chromaticity, anchored at two points: the dark patch -> DARK_SKY_MAG and the
-## PEAK_QUANTILE -> MILKY_WAY_MAG:
-##   L = L(22) x (Y / Y_dark)^stretch,   stretch = min(1, 0.4 (22 - 20) ln 10 / ln(Y_peak / Y_dark))
+## Milky Way's brightest integrated light is ~2.7 mag above the 23.5 mag/arcsec^2
+## deep-space dark sky. So the photo's luminance is un-stretched with one power
+## law that keeps chromaticity, anchored at two points (D-25): the dark patch ->
+## Exposure.DARK_SKY_MAG and the PEAK_QUANTILE -> MILKY_WAY_MAG:
+##   L = L(dark) x (Y / Y_dark)^stretch,
+##   stretch = min(1, 0.4 (23.5 - 20.8) ln 10 / ln(Y_peak / Y_dark))   (0.43 on the NOIRLab photo)
 ## A photo with less contrast than that (synthetic goldens) keeps stretch = 1.
 const DARK_CAP_DEG := 70.0
-const MILKY_WAY_MAG := 20.0 # V mag/arcsec^2 of the brightest Milky Way (assumption, R-d)
+## V mag/arcsec^2 of the brightest Milky Way (D-25): integrated starlight from
+## stars fainter than 6.5 mag peaks at a few hundred S10(V) toward Sgr/Sct/Car
+## (Leinert et al. 1998, A&AS 127, 1, Table 16); Duriscoe 2013 (PASP 125, 1370)
+## models the same natural-sky Milky Way component.
+const MILKY_WAY_MAG := 20.8
 const PEAK_QUANTILE := 0.999
 const METER_GRID := Vector2i(16, 9)
 const METER_MIP := 4 # the CPU copy for calibration and metering: 1/16 of the panorama (at most)
