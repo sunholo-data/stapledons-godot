@@ -1,0 +1,1007 @@
+{
+  "sprint_id": "R1-M5-PLANETS",
+  "created": "2026-10-03",
+  "status": "planned",
+  "approved": null,
+  "design_doc": "design_docs/planned/r1/m5-planets.md",
+  "sprint_plan": "design_docs/planned/r1/m5-planets-sprint.md",
+  "github_issues": [],
+  "ailang": {
+    "pin": "v0.51.0",
+    "binary": "/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang",
+    "legend": "$A = pinned binary on every make line (AILANG=$A, AILANG_BIN=$A where Godot drives the sim); a fresh clone runs make runtime first. $PKG = fresh ailang-packages clone at origin/main (packages/celestial new, packages/relativity existing). $D = ../stapledons-design. GPU gates (make golden, make capture-m5, make bench SCENE=flyby) run on the Studio GPU window, not CI. All new M5 make targets live in mk/m5.mk (one include line in Makefile)."
+  },
+  "velocity": {
+    "target_loc_per_day": 1150,
+    "estimated_total_loc": 4040,
+    "estimated_code_loc": 2230,
+    "estimated_test_loc": 1810,
+    "estimated_days": 4,
+    "estimated_days_unattended_loop": "5-7",
+    "estimated_iterations": "15 planned + 3 contingency",
+    "loc_cap_per_milestone": 650,
+    "planning_cap_per_milestone": 400,
+    "calibration_ratio": 1.6,
+    "expected_actual_changed_loc": 6400,
+    "basis": "Actual/estimate on counted LOC: M1.2d 560->805 (1.44), M1.7 520->623 (1.20), AI.2 430->733 (1.70), AI.3 400->697 (1.74), AI.4 550->850 (1.55), AI.5 460->830 (1.80), AI.6 340->826 (2.43), AI.7 390->1001 (2.57), AI.8 160->317 (1.98), AI.9 340->924 (2.72); R1-M2-JOURNEY 3420->~5000 (1.46). Median 1.77; package/sim physics 1.2-1.5x, Godot UI/supervision 2.4-2.7x (tests ~1:1 with code, evaluator must-fix rounds). Planning: 1.4x package/sim, 1.8x Godot, blended ~1.6x; every milestone planned <=400 so 1.6x stays inside the 650 cap. ~2.5 h per milestone incl. independent eval; critical path 10 serial milestones (~25 h) -> ~3.5-4 attended days; loop 18 iterations -> 5-7 days plus Mark's review waits and the M4.6a publish wait."
+  },
+  "order": [
+    "M5.0a1_PKG_CELESTIAL_ORBITS",
+    "M5.0b_PKG_RELATIVITY_APPARENT_DISC",
+    "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
+    "M5.1a_SOL_ACEN_DATA_PINS",
+    "M5.1b_SYSTEM_AT_CHANGESET",
+    "M5.2a_PLANET_GLOBES_PHOTOMETRY",
+    "M5.5a_BODY_TARGETS_INTERCEPT",
+    "M5.2b_RINGS_SHADOWS_ATMOSPHERE",
+    "M5.4_HIGHLIGHT_METER",
+    "M5.5b_GRAVITY_HOLD_SOL_TOUR",
+    "M5.3_FLYBY_WARP",
+    "M5.6a_SYSTEM_MAP_PLAN_CONFIRM",
+    "M5.6b_TRANSIT_WINDOW_WARP",
+    "M5.7_ACEN_ARRIVAL_START",
+    "M5.8_GATES_CAPTURE_BENCH"
+  ],
+  "waves": {
+    "1": [
+      "M5.0a1_PKG_CELESTIAL_ORBITS",
+      "M5.0b_PKG_RELATIVITY_APPARENT_DISC"
+    ],
+    "2": [
+      "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH"
+    ],
+    "3": [
+      "M5.1a_SOL_ACEN_DATA_PINS"
+    ],
+    "4": [
+      "M5.1b_SYSTEM_AT_CHANGESET"
+    ],
+    "5": [
+      "M5.2a_PLANET_GLOBES_PHOTOMETRY",
+      "M5.5a_BODY_TARGETS_INTERCEPT"
+    ],
+    "6": [
+      "M5.2b_RINGS_SHADOWS_ATMOSPHERE",
+      "M5.4_HIGHLIGHT_METER",
+      "M5.5b_GRAVITY_HOLD_SOL_TOUR"
+    ],
+    "7": [
+      "M5.3_FLYBY_WARP",
+      "M5.6a_SYSTEM_MAP_PLAN_CONFIRM"
+    ],
+    "8": [
+      "M5.6b_TRANSIT_WINDOW_WARP"
+    ],
+    "9": [
+      "M5.7_ACEN_ARRIVAL_START"
+    ],
+    "10": [
+      "M5.8_GATES_CAPTURE_BENCH"
+    ]
+  },
+  "tracks": {
+    "packages": [
+      "M5.0a1_PKG_CELESTIAL_ORBITS",
+      "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
+      "M5.0b_PKG_RELATIVITY_APPARENT_DISC"
+    ],
+    "sim_spine": [
+      "M5.1a_SOL_ACEN_DATA_PINS",
+      "M5.1b_SYSTEM_AT_CHANGESET"
+    ],
+    "render (integration branch m5-render for M5.2a/M5.2b/M5.3; M5.4 own PR)": [
+      "M5.2a_PLANET_GLOBES_PHOTOMETRY",
+      "M5.2b_RINGS_SHADOWS_ATMOSPHERE",
+      "M5.4_HIGHLIGHT_METER",
+      "M5.3_FLYBY_WARP"
+    ],
+    "navigation (M5.5a/b own PRs to main; M5.6a/b stacked into m5-nav-ui)": [
+      "M5.5a_BODY_TARGETS_INTERCEPT",
+      "M5.5b_GRAVITY_HOLD_SOL_TOUR",
+      "M5.6a_SYSTEM_MAP_PLAN_CONFIRM",
+      "M5.6b_TRANSIT_WINDOW_WARP"
+    ],
+    "join": [
+      "M5.7_ACEN_ARRIVAL_START",
+      "M5.8_GATES_CAPTURE_BENCH"
+    ]
+  },
+  "critical_path": [
+    "M5.0a1_PKG_CELESTIAL_ORBITS",
+    "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
+    "M5.1a_SOL_ACEN_DATA_PINS",
+    "M5.1b_SYSTEM_AT_CHANGESET",
+    "M5.5a_BODY_TARGETS_INTERCEPT",
+    "M5.5b_GRAVITY_HOLD_SOL_TOUR",
+    "M5.6a_SYSTEM_MAP_PLAN_CONFIRM",
+    "M5.6b_TRANSIT_WINDOW_WARP",
+    "M5.7_ACEN_ARRIVAL_START",
+    "M5.8_GATES_CAPTURE_BENCH"
+  ],
+  "features": [
+    {
+      "id": "M5.0a1_PKG_CELESTIAL_ORBITS",
+      "description": "New package sunholo/celestial, part 1 (in $PKG/packages/celestial): ailang pkg init, manifest, [release] kind, README citing physics/planets-spec.md, AGENT.md; modules kepler (solveKepler fixed 8 Newton iterations from E0 = M + e sin M; stateFromElements perifocal -> ecliptic J2000 AU, AU/d), ephemeris (elementsAt: Standish Table 2a with b,c,s,f terms, secular rates frozen at the 3000 BC-3000 AD edge with a mean-orbit flag; satelliteAt: JPL SSD Laplace-plane mean elements with node/periapsis rates), frames (eclipticToGalactic: obliquity 84381.406 arcsec + Hipparcos 1997 matrix; poleAndSpin: IAU WGCCRE 2015). No dependency on relativity. Float64 AU/days TDB/km/radians.",
+      "dependencies": [],
+      "external_dependencies": [],
+      "estimated_loc": 400,
+      "estimated_code_loc": 210,
+      "estimated_test_loc": 190,
+      "loc_cap": 650,
+      "wave": 1,
+      "files": [
+        "$PKG/packages/celestial/ailang.toml",
+        "$PKG/packages/celestial/README.md",
+        "$PKG/packages/celestial/AGENT.md",
+        "$PKG/packages/celestial/kepler.ail",
+        "$PKG/packages/celestial/kepler_test.ail",
+        "$PKG/packages/celestial/ephemeris.ail",
+        "$PKG/packages/celestial/ephemeris_test.ail",
+        "$PKG/packages/celestial/frames.ail",
+        "$PKG/packages/celestial/frames_test.ail"
+      ],
+      "conflicts_with": [],
+      "acceptance_criteria": [
+        "cd $PKG && $A test --package celestial passes: Kepler residual < 1e-14 for e <= 0.97; e = 0 gives E = M exactly; circular orbit radius = a exactly; vis-viva to 1e-12",
+        "cd $PKG && $A test --package celestial: Jupiter opposition 2023-11-03 (elongation 180 deg within +-2 d); Mars opposition 2020-10-13 (+-2 d); Moon distance within published perigee-apogee range; Io period 1.769 d within 1e-4 d",
+        "cd $PKG && $A test --package celestial: north ecliptic pole -> galactic (96.38, 29.81) deg within 1e-4 deg; Saturn ring-plane crossings 2009-08-11 and 2025-05-06 within +-10 d; elementsAt beyond 3000 AD returns the mean-orbit flag",
+        "VM = interpreter: $A run --bytecode --strict-bytecode probes of solveKepler and stateFromElements cmp-identical to the interpreter",
+        "cd $PKG/packages/celestial && $A pkg quality reports no gates"
+      ],
+      "test_first": [
+        "Expected values are published dates/constants, never the design doc's oracle numbers",
+        "Kepler residual sweep e in [0, 0.97], M in [0, 2pi)",
+        "Opposition and equinox date checks",
+        "Ecliptic pole -> galactic"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.0b_PKG_RELATIVITY_APPARENT_DISC",
+      "description": "sunholo/relativity contribution: optics.apparentDisc(cosTheta, alpha, phi) -> apparent centre and apparent radius of a sphere of angular radius alpha at rest angle theta (aberrated theta +- alpha via cosSeen; near-c branch uses oneMinusBeta(phi), never 1 - beta) and medium.hoverPower(mEffKg, gMs2) = m_eff |g| c (HB-90; F7, since M3's hover_power is unreleased). CHANGELOG, [release] kind = minor. Code/tests start in wave 1; the branch rebases onto M4.6a's merged release (both touch medium.ail, CHANGELOG, version) and publishes after it under the standing relativity publish grant (pause P-pkg-b).",
+      "dependencies": [],
+      "external_dependencies": [
+        "M4.6a_PKG_GLOW_EMITTANCE release published (R1-M4-JOURNEY) - hard for the publish only"
+      ],
+      "estimated_loc": 140,
+      "estimated_code_loc": 60,
+      "estimated_test_loc": 80,
+      "loc_cap": 650,
+      "wave": 1,
+      "files": [
+        "$PKG/packages/relativity/optics.ail",
+        "$PKG/packages/relativity/optics_test.ail",
+        "$PKG/packages/relativity/medium.ail",
+        "$PKG/packages/relativity/medium_test.ail",
+        "$PKG/packages/relativity/CHANGELOG.md",
+        "$PKG/packages/relativity/ailang.toml"
+      ],
+      "conflicts_with": [
+        "M4.6a_PKG_GLOW_EMITTANCE (medium.ail, medium_test.ail, CHANGELOG, version line) - strictly sequenced after it"
+      ],
+      "acceptance_criteria": [
+        "cd $PKG && $A test --package relativity: apparentDisc at beta 0.9, theta 90, alpha 5 ~ (25.928, 2.184) deg with the aberrated centre (25.842) asserted different from the apparent centre; beta 0.99 ~ (8.140, 0.707); beta 0.9, theta 150 ~ (82.021, 9.940); package values recorded in notes where they refine the oracle",
+        "cd $PKG && $A test --package relativity: identity at beta 0 to 1e-15; finite radius over a phi sweep to the 0.999999c cap; hoverPower(1, 0.1254) = 0.1254 c to 1e-15 relative",
+        "cd $PKG/packages/relativity && $A pkg quality reports no gates; $A pkg publish --dry-run clean; CHANGELOG has [release] kind",
+        "Independent evaluation >= 70/100 before publish: ls .ailang/state/evaluations/eval_R1-M5-PLANETS-M5.0b_*",
+        "AC2: after publish, grep -n 'apparentDisc\\|hoverPower' ~/.ailang/cache/registry/sunholo/relativity/<new>/{optics,medium}.ail"
+      ],
+      "test_first": [
+        "Three geometries, identity at rest, finiteness at the cap, hoverPower linearity"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
+      "description": "sunholo/celestial part 2 and the 0.1.0 release: lighttime (retardedTime, fixed 4 iterations), gravity (accelerationAt with IAU 2015 nominal GM; returns inside within any body radius), reflect (starIlluminanceAt, lambertPhase, lambertRadiance, minnaertRadiance, rhoFromGeometricAlbedo, discIlluminance), rings (ringLitRadiance, ringUnlitRadiance with finite mu -> mu0 limit, ringTransmission). CHANGELOG, [release] kind, quality no gates, independent evaluation of the whole package (generator != judge), dry run, publish 0.1.0 (pause P-pkg-a: Mark's go for a first publish of a new package, Q1).",
+      "dependencies": [
+        "M5.0a1_PKG_CELESTIAL_ORBITS"
+      ],
+      "external_dependencies": [],
+      "estimated_loc": 360,
+      "estimated_code_loc": 190,
+      "estimated_test_loc": 170,
+      "loc_cap": 650,
+      "wave": 2,
+      "files": [
+        "$PKG/packages/celestial/lighttime.ail",
+        "$PKG/packages/celestial/lighttime_test.ail",
+        "$PKG/packages/celestial/gravity.ail",
+        "$PKG/packages/celestial/gravity_test.ail",
+        "$PKG/packages/celestial/reflect.ail",
+        "$PKG/packages/celestial/reflect_test.ail",
+        "$PKG/packages/celestial/rings.ail",
+        "$PKG/packages/celestial/rings_test.ail",
+        "$PKG/packages/celestial/CHANGELOG.md",
+        "$PKG/packages/celestial/ailang.toml"
+      ],
+      "conflicts_with": [],
+      "acceptance_criteria": [
+        "cd $PKG && $A test --package celestial: Jupiter light-time lag at opposition from Earth ~2,094 s and the ~27,400 km displacement (package values); g at 50,000 km altitude ~0.1254 m/s^2, at 1.5 R_J ~11.0 m/s^2; inside within R",
+        "cd $PKG && $A test --package celestial: E_sun(1 AU) = 1.261e5 lux for e1AU = illuminanceFromV(-26.74) passed as a literal; Phi(0)=1, Phi(pi/2)=1/pi, Phi(pi)=0; Minnaert k=1 == Lambert to 1e-15; rho <-> p round trip 1e-12; Jupiter opposition V ~ -2.77",
+        "cd $PKG && $A test --package celestial: ring lit face tau->inf == Lommel-Seeliger; tau->0 both faces -> 0; unlit face finite at mu->mu0; transmission(0,mu)=1, transmission(tau,1)=e^-tau",
+        "cd $PKG/packages/celestial && $A pkg quality reports no gates; CHANGELOG + [release] kind; $A pkg publish --dry-run clean",
+        "AC1: independent evaluation >= 70/100 saved before publish: ls .ailang/state/evaluations/eval_R1-M5-PLANETS-M5.0a_*",
+        "After publish: $A search celestial lists sunholo/celestial@0.1.0"
+      ],
+      "test_first": [
+        "Every M5.0a design-table row in lighttime/gravity/reflect/rings before its function"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.1a_SOL_ACEN_DATA_PINS",
+      "description": "Cited AILANG data and the package pins. sim/data/sol.ail: Standish Table 2a elements+rates (8 planets), IAU 2015 poles/W0/Wdot, radius, flattening, GM, Mallama 2017 p_V, Minnaert k (giants), 11 moons (JPL SSD mean elements), ring profiles for 4 giants [(r_in_km, r_out_km, tau, w0)] + tint; every row a citation key. sim/data/acen.ail: AB orbit, Proxima b/d/c, A b (one fit), status + per-field provenance (measured|inferred|assumed), no retracted rows; exoplanet snapshot pinned by sha256. sim/ailang.toml pins celestial 0.1.0 + the M5.0b relativity release; make deps relocks; bundled cache moves together (gate 3) - in its own commit after M4.6a's pin commit. mk/m5.mk created with one include line in Makefile.",
+      "dependencies": [
+        "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
+        "M5.0b_PKG_RELATIVITY_APPARENT_DISC"
+      ],
+      "external_dependencies": [
+        "M4.6a pin commit merged first (sim/ailang.toml, sim/ailang.lock)"
+      ],
+      "estimated_loc": 280,
+      "estimated_code_loc": 190,
+      "estimated_test_loc": 90,
+      "loc_cap": 650,
+      "wave": 3,
+      "files": [
+        "sim/data/sol.ail",
+        "sim/data/acen.ail",
+        "sim/celestial_test.ail",
+        "sim/ailang.toml",
+        "sim/ailang.lock",
+        "mk/m5.mk",
+        "Makefile (one include line)",
+        "data/planets/EXOPLANETS.SHA256"
+      ],
+      "conflicts_with": [
+        "M4.6a (sim/ailang.toml, sim/ailang.lock)",
+        "M4.1, M4.7 (sim/ailang.toml exports - union)",
+        "every M4 milestone (Makefile - one line only)"
+      ],
+      "acceptance_criteria": [
+        "AC3: make deps test AILANG=$A green; grep -n 'celestial\\|relativity' sim/ailang.toml shows 0.1.0 and the M5.0b version; lockfile and bundled cache agree (ignore generated_at)",
+        "AC6: make sim AILANG=$A (celestial_test.ail): every body row has a citation key; every alpha Cen body has status + per-field provenance; no retracted row loaded; ring radii within 1% of R of the design-repo table (Saturn 1.11-2.27, Jupiter 1.29-1.81, Uranus 1.49-1.95, Neptune 1.69-2.54)",
+        "make strict AILANG=$A: data modules load under --strict-bytecode",
+        "Mutants: dropping one citation key or adding a retracted row fails make sim"
+      ],
+      "test_first": [
+        "Provenance and ring-table checks before the data rows"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.1b_SYSTEM_AT_CHANGESET",
+      "description": "Pure sim/celestial.ail (no I/O, --strict-bytecode clean): bodyAt(sys, id, jd) galactic-frame km/km/s float64 + pole + W; systemAt(sys, t, ship) -> [BodyView] with rel_km at retarded time, radius, flattening, pole, w_deg, sun_dir, r_au, phase_deg, e_v_lux, p_v, minnaert_k, ring_id, light_age_s, visitable, source. Time base system.jd = scenario epoch + Earth time; ephemeris jpl-approx | mean-orbit. Additive protocol change set system{jd, ephemeris, frame:'galactic', bodies} (minor bump taken at merge time, F4); ship.ail emits per tick; sim_bridge.gd parses into state.system; strict entry systemVm; parity-v2 fixture extension; tests/fixtures/system_sol.ndjson for M5.2a's early start.",
+      "dependencies": [
+        "M5.1a_SOL_ACEN_DATA_PINS"
+      ],
+      "external_dependencies": [
+        "M4.1 protocol/ship changes (soft; rebase whichever merges second)"
+      ],
+      "estimated_loc": 270,
+      "estimated_code_loc": 140,
+      "estimated_test_loc": 130,
+      "loc_cap": 650,
+      "wave": 4,
+      "files": [
+        "sim/celestial.ail",
+        "sim/celestial_test.ail",
+        "sim/protocol.ail",
+        "sim/protocol_test.ail",
+        "sim/ship.ail",
+        "sim/core.ail (<= 40 lines: epoch + system handle in state)",
+        "bridge/sim_bridge.gd",
+        "tests/test_sim_bridge.gd",
+        "tests/fixtures/v2_session.ndjson",
+        "tests/fixtures/system_sol.ndjson",
+        "mk/m5.mk"
+      ],
+      "conflicts_with": [
+        "M4.1 (sim/protocol.ail, sim/ship.ail)",
+        "M4.3a, M4.4 (bridge/sim_bridge.gd)",
+        "M3 (sim/core.ail, no sprint yet)"
+      ],
+      "acceptance_criteria": [
+        "AC5: make sim AILANG=$A: sim positions == stateFromElements o eclipticToGalactic to 1e-12 AU; Jupiter retarded lag from Earth at opposition == package value within 1e-6 s; outside 3000 BC-3000 AD ephemeris == 'mean-orbit'",
+        "AC4 (system half): make strict parity-v2 AILANG=$A: systemVm runs on the strict VM; system lines of the v2 session byte-identical VM vs interpreter",
+        "M2 old-message tests unmodified: git diff origin/main -- sim/protocol_test.ail shows additions only",
+        "make test AILANG=$A AILANG_BIN=$A green (AC20)"
+      ],
+      "test_first": [
+        "AC5's three checks; system encoder round trip; old-message compatibility"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.2a_PLANET_GLOBES_PHOTOMETRY",
+      "description": "Godot planets/system_view.gd fed only by state.system, rendering into the sky SubViewport pre-exposed (one tonemap); float64 direction + asin(R/d) placement, group scaled by 1/d (no raw km in Vector3, gate 5); point (<2 px, handed to the starfield via add_point_sources with e_v_lux and T 5772 K) vs disc (>=2 px); planets/planet.gdshader Minnaert/Lambert mirroring the package, albedo textures normalised to p_V, shared system pole, Sun as a limb-darkened flux-normalised disc (clipped until row 6b); physics/planets.gd CPU mirror; make planet-assets / planet-publish (shell glue, D-18 pattern; pins + CREDITS in data/planets/, textures in gitignored assets/planets/); tools/planet_textures.gd normalisation (Godot headless); goldens G-M5-4 and G-M5-6 in tools/m5_golden.gd. Stacked into integration branch m5-render. Pause L-tex before any upload.",
+      "dependencies": [
+        "M5.1b_SYSTEM_AT_CHANGESET"
+      ],
+      "external_dependencies": [
+        "M1.5a, M1.8 (landed)",
+        "M4.6 lint-precision (soft; mk/m5.mk adds a planets/-only grep if absent)"
+      ],
+      "estimated_loc": 360,
+      "estimated_code_loc": 210,
+      "estimated_test_loc": 150,
+      "loc_cap": 650,
+      "wave": 5,
+      "files": [
+        "planets/system_view.gd",
+        "planets/planet.gdshader",
+        "physics/planets.gd",
+        "tools/m5_golden.gd",
+        "tools/planet_textures.gd",
+        "tools/planet_assets.sh",
+        "tests/test_planets.gd",
+        "tests/test_physics.gd (_m5_photometry block)",
+        "sky/starfield.gd (add_point_sources)",
+        "main.gd (<= 10 lines: instance SystemView)",
+        "data/planets/SHA256SUMS",
+        "data/planets/CREDITS",
+        ".gitignore",
+        "infra/gcp/setup.sh",
+        "mk/m5.mk"
+      ],
+      "conflicts_with": [
+        "M4.2 (main.gd wiring)",
+        "M4.6 (tests/test_physics.gd)"
+      ],
+      "acceptance_criteria": [
+        "AC7 (photometry half): make physics lint-precision AILANG=$A: physics/planets.gd matches package values for lambertPhase, minnaertRadiance, discIlluminance, starIlluminanceAt within 1e-12 relative; no hand-computed gamma or 1 - beta; lint covers planets/",
+        "AC8 (part): make golden: G-M5-4 Jupiter at opposition integrated disc illuminance == discIlluminance within 2%; G-M5-6 integrated flux at 1.9 vs 2.1 px diameter within 2%; existing M1 golden counts unchanged",
+        "AC10: make planet-assets && test -z \"$(git ls-files assets/planets)\" && grep -q 'CC BY 4.0' data/planets/CREDITS",
+        "Texture normalisation: godot --headless --script tools/planet_textures.gd -- --check reports disc-integrated albedo == p_V within 1% for every texture",
+        "Pause L-tex recorded in notes before make planet-publish uploads"
+      ],
+      "test_first": [
+        "CPU mirror vs package probe values",
+        "CPU point/disc flux continuity",
+        "Texture normalisation check"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.5a_BODY_TARGETS_INTERCEPT",
+      "description": "Pure sim/navigation.ail (core.ail only dispatches): Target body form {kind:'body', id} with client pos ignored; stop (default standoff max(10 R, 1.5 x outer ring), clamped safety minimum .. 0.1 AU) and flyby (b_km, clock_deg, run_out_km default braking distance + 1e6 km; one burn-coast-burn on the line through the pass point) geometry; intercept by 12 fixed iterations of t_a <- t0 + planBurnCoastBurn(|aim(t_a) - x0|).galaxyTime with residual asserted; refusals collision, ring_crossing, too_close, not_visitable, committed, no_converge; journey.plan gains target_kind, intercept{t,pos}, pass{t,b_km,beta,d_at_pass}; strict entry navigationVm.",
+      "dependencies": [
+        "M5.1b_SYSTEM_AT_CHANGESET"
+      ],
+      "external_dependencies": [
+        "M2 journey core (landed)"
+      ],
+      "estimated_loc": 350,
+      "estimated_code_loc": 190,
+      "estimated_test_loc": 160,
+      "loc_cap": 650,
+      "wave": 5,
+      "files": [
+        "sim/navigation.ail",
+        "sim/navigation_test.ail",
+        "sim/core.ail (<= 40 lines dispatch)",
+        "sim/protocol.ail",
+        "sim/protocol_test.ail",
+        "bridge/sim_bridge.gd",
+        "sim/ailang.toml (export)",
+        "mk/m5.mk"
+      ],
+      "conflicts_with": [
+        "M4.1 (sim/protocol.ail)",
+        "M4.3a, M4.4 (bridge/sim_bridge.gd)",
+        "M3 (sim/core.ail)"
+      ],
+      "acceptance_criteria": [
+        "AC14: make sim AILANG=$A (navigation_test.ail): sim computes the target for kind body (a bogus client pos gives the identical plan); stop and flyby plans == planBurnCoastBurn on the computed leg length to 1e-9; short legs fall back to flip-and-burn exactly as M2",
+        "AC15: make sim: collision, ring_crossing, too_close, not_visitable, committed each have a triggering fixture and a just-passing fixture",
+        "AC17 (residual half): make sim: intercept residual < 1e-9 of the leg for the Saturn flyby at 0.5c and an Io stop at 0.001c",
+        "AC4 (planner half): make strict AILANG=$A: navigationVm on the strict VM == interpreter",
+        "Mutants (drop a refusal; use client pos; 11 iterations) each fail make sim"
+      ],
+      "test_first": [
+        "AC14/AC15/AC17 fixtures before navigation.ail"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.2b_RINGS_SHADOWS_ATMOSPHERE",
+      "description": "planets/ring.gdshader (tau(r) lookup from system data, lit/unlit face by sun/view elevation signs, alpha = 1 - transmission, Neptune arcs as azimuthal factor) mirroring celestial.rings; analytic ring-on-globe and globe-on-ring shadows (ray-plane/ray-sphere toward the Sun, e^(-tau/mu0), penumbra from the solar angular radius) and up to 4 moon shadows in a shared include; planets/atmosphere.gdshader single-scattering Rayleigh + Mie, exponential density (Earth, Venus, Titan), labelled approximate; CPU ring mirror; golden G-M5-5; make capture-m5 SET=rest then pause R-m5a. Stacked into m5-render.",
+      "dependencies": [
+        "M5.2a_PLANET_GLOBES_PHOTOMETRY"
+      ],
+      "external_dependencies": [],
+      "estimated_loc": 270,
+      "estimated_code_loc": 170,
+      "estimated_test_loc": 100,
+      "loc_cap": 650,
+      "wave": 6,
+      "files": [
+        "planets/ring.gdshader",
+        "planets/atmosphere.gdshader",
+        "planets/shadows.gdshaderinc",
+        "planets/system_view.gd",
+        "physics/planets.gd",
+        "tools/m5_golden.gd",
+        "tests/test_planets.gd",
+        "mk/m5.mk"
+      ],
+      "conflicts_with": [],
+      "acceptance_criteria": [
+        "AC7 (rings half): make physics: CPU ring functions == ringLitRadiance/ringUnlitRadiance/ringTransmission within 1e-12 relative incl. tau->inf, tau->0, mu->mu0 limits",
+        "AC8 (part): make golden: G-M5-5 Saturn at a fixed epoch - globe shadow edge on the B ring and ring shadow on the globe within 0.75 px of the analytic CPU position; transmission through shadow == e^(-tau/mu0) within 2%",
+        "make capture-m5 SET=rest writes renders/m5/rest/ (Earth start EYE + fixed EV, Jupiter opposition with a Galilean shadow, Saturn with ring shadows, ring close-up, crossover pair)",
+        "Pause R-m5a: Mark's approval of renders/m5/rest/ recorded in this feature's review field before the m5-render merge"
+      ],
+      "test_first": [
+        "Ring limits; CPU shadow-edge geometry at the fixed epoch"
+      ],
+      "review": null,
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.4_HIGHLIGHT_METER",
+      "description": "Highlight-protecting term in the meter live after PR #79 (M1.8's centre-weighted eye meter in sky/sky_meter.gd; CAMERA log-average): EV_meter = max(current meter EV, EV(P99.5 luminance / AgX headroom)); EYE stays EV = max(EV_dark, EV_meter). Golden G-M5-7. Own PR (F3; #79 merged during planning).",
+      "dependencies": [
+        "M5.2a_PLANET_GLOBES_PHOTOMETRY"
+      ],
+      "external_dependencies": [
+        "PR #79 M1.8 (merged 28fd310) - satisfied"
+      ],
+      "estimated_loc": 100,
+      "estimated_code_loc": 40,
+      "estimated_test_loc": 60,
+      "loc_cap": 650,
+      "wave": 6,
+      "files": [
+        "sky/exposure.gd",
+        "sky/sky_meter.gd",
+        "tools/m5_golden.gd",
+        "tests/test_physics.gd (_m5_meter block)"
+      ],
+      "conflicts_with": [],
+      "acceptance_criteria": [
+        "make physics: with no bright object the P99.5 term is below the meter EV and the output is identical to the pre-M5.4 meter on M1.5a's and M1.8's test skies; Saturn covering 25% maps its centre below the AgX white point",
+        "AC8 (part): make golden: G-M5-7 passes (sky-only pixel next to a planet == SubViewport within 1/255; Saturn 25% below white) and M1.5a's and M1.8's exposure golden lines unchanged (diff of the golden log's exposure lines before vs after)"
+      ],
+      "test_first": [
+        "Dark-sky invariance case passes before and after the change"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.5b_GRAVITY_HOLD_SOL_TOUR",
+      "description": "Gravity held by the drive: during cruise and holds the drive cancels celestial accelerationAt; ledger hold_j += hoverPower(m_eff, |g|) dtau per tick; velocity match on arrival in one ledgered tick. Holding state replaces docked (ship.hold{body, offset_km, g_m_s2, hold_w}); the game starts holding 50,000 km above Earth. N1 confirm class (sim side): every plan carries confirm full|light (light = body target with Earth time <= light_confirm_max_earth_s = 86,400, scenario parameter); commit validity unchanged. Sol tour hand-written input log tests/replays/sol_tour.ndjson (Moon stop 0.01c, Saturn flyby 0.5c b=3 R_S north, Jupiter stop 0.1c, alpha Cen plan+commit, logged dtau incl. step-down); strict entry solTourRoundTrip; per-arch goldens until ailang#1465.",
+      "dependencies": [
+        "M5.5a_BODY_TARGETS_INTERCEPT",
+        "M5.0b_PKG_RELATIVITY_APPARENT_DISC"
+      ],
+      "external_dependencies": [
+        "M4.1 ledger reader drag_energy_j (soft; untouched)"
+      ],
+      "estimated_loc": 380,
+      "estimated_code_loc": 210,
+      "estimated_test_loc": 170,
+      "loc_cap": 650,
+      "wave": 6,
+      "files": [
+        "sim/navigation.ail",
+        "sim/navigation_test.ail",
+        "sim/core.ail (<= 40 lines: phase, ledger hold_j, start state)",
+        "sim/ship.ail (scenario params)",
+        "sim/protocol.ail",
+        "sim/protocol_test.ail",
+        "bridge/sim_bridge.gd",
+        "tests/replays/sol_tour.ndjson",
+        "tests/replays/ per-arch sol_tour goldens",
+        "mk/m5.mk"
+      ],
+      "conflicts_with": [
+        "M4.1 (sim/ship.ail, sim/protocol.ail, ledger)",
+        "M4.3a, M4.4 (bridge/sim_bridge.gd)",
+        "M3 (sim/core.ail)"
+      ],
+      "acceptance_criteria": [
+        "AC16: make sim AILANG=$A: during cruise and holds the ship stays on the planned line/offset to 1e-6 km; leg hold_j == tick sum of hoverPower(m_eff, |accelerationAt|) dtau to 1e-9 relative; |g| at the start position == package value (~0.1254 m/s^2)",
+        "AC19a (sim half): make sim: confirm boundary fixtures 86,399 s / 86,400 s / 86,401 s -> light / light / full; every star target full; commit accepted/refused only for M2's reasons regardless of class",
+        "AC17: make sim && make replay SESSION=tests/replays/sol_tour.ndjson: ship-Saturn distance at the pass tick == planned b_km within 1 km",
+        "AC18 (sim half): make replay SESSION=tests/replays/sol_tour.ndjson journey-replay: VM == interpreter == this arch's golden; ! grep -q '\"camera\"' tests/replays/sol_tour.ndjson",
+        "AC4: make strict parity-v2 AILANG=$A incl. solTourRoundTrip; make journey-replay (M2 alpha Cen) unchanged"
+      ],
+      "test_first": [
+        "hold-ledger sum; line-holding residual; confirm boundary fixtures; sol_tour golden recorded once via make replay-record LOG=tests/replays/sol_tour.ndjson as a reviewed diff"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.3_FLYBY_WARP",
+      "description": "Exact relativistic view: rest-frame tile per resolved body group (camera aimed at the group, resolution scaled by 1/D at centre, cap 4096^2); planets/flyby_warp.gdshader in the sky SubViewport before the single tonemap: per pixel n = deaberrate(n'), tile sample, D = 1/(gamma(1 - beta cos theta')) with 1 - beta cos theta' = (1 - beta) + beta(1 - cos theta'), gamma and 1-beta from the sim as float64 uniforms, luminance/chromaticity at D*T via M1's bb_lut; far-to-near compositing; identity at beta 0. CPU warp reference in physics/planets.gd. Goldens G-M5-1, -2, -3. make capture-m5 SET=flyby then pause R-m5b (gate 2). Stacked into m5-render.",
+      "dependencies": [
+        "M5.2b_RINGS_SHADOWS_ATMOSPHERE"
+      ],
+      "external_dependencies": [],
+      "estimated_loc": 380,
+      "estimated_code_loc": 160,
+      "estimated_test_loc": 220,
+      "loc_cap": 650,
+      "wave": 7,
+      "files": [
+        "planets/flyby_warp.gdshader",
+        "planets/tile_renderer.gd",
+        "planets/system_view.gd",
+        "physics/planets.gd",
+        "tools/m5_golden.gd",
+        "tests/test_physics.gd (_m5_apparent_disc block)",
+        "mk/m5.mk"
+      ],
+      "conflicts_with": [
+        "M4.6 (tests/test_physics.gd - function block only)"
+      ],
+      "acceptance_criteria": [
+        "AC7 (SR half): make physics lint-precision: apparentDisc at the three geometries and D at disc centre (2.2871, 7.0623, 0.4981 as package values) copied from the probe, not computed in GDScript; CPU warp reference within 1e-9 deg; lint finds no 1.0 - beta",
+        "AC8 (part): make golden: G-M5-1 uniform sphere at beta {0,0.5,0.9,0.99} x theta {30,90,150}: fitted limb centre and radius == apparentDisc within 0.75 px",
+        "AC8 (part): make golden: G-M5-2 at beta 0.9, theta 90 limb RMS from the fitted centre < 0.5 px; G-M5-3 linear radiance at leading edge, centre, trailing edge == CPU blackbody at D(theta')*5772 K within 1% in the debug linear target",
+        "make capture-m5 SET=flyby writes renders/m5/flyby/ (Saturn at beta 0/0.5/0.9/0.99, forward/sideways/astern); make bench SCENE=flyby run once and recorded",
+        "Pause R-m5b: Mark's approval recorded in this feature's review field before the m5-render merge to main"
+      ],
+      "test_first": [
+        "CPU warp reference vs apparentDisc and vs deaberrate on 1,000 random directions; beta 0 identity"
+      ],
+      "review": null,
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.6a_SYSTEM_MAP_PLAN_CONFIRM",
+      "description": "ui/system_map.tscn/.gd: a zoom level of M2's galaxy map (select Sol), orrery at current Earth time, 'log scale' toggle, name/distance/light age/status badge; never draws into the sky; view-only mode reused by M5.7. Planning panel: Stop (stand-off slider) or Fly by (b slider with greyed minimum from too_close/ring_crossing, clock dial with preview), log speed slider 0.001c-0.99c, plan readout via DisplayBinding, refusal phrase table. Commit: confirm light -> one-line strip (target, mode, beta, both times, 'No cancel once committed', one press, Esc back); full -> M4's D-12 dialog unchanged; both emit the same commit{plan_id}. Stacked into m5-nav-ui. DisplayBinding extended if M4.3a has landed, else created with M4.3a's planned API (Q4).",
+      "dependencies": [
+        "M5.5b_GRAVITY_HOLD_SOL_TOUR"
+      ],
+      "external_dependencies": [
+        "M4.3a ui/display_binding.gd (soft)",
+        "M4 D-12 full commit dialog (M2.6b landed)"
+      ],
+      "estimated_loc": 300,
+      "estimated_code_loc": 210,
+      "estimated_test_loc": 90,
+      "loc_cap": 650,
+      "wave": 7,
+      "files": [
+        "ui/system_map.tscn",
+        "ui/system_map.gd",
+        "ui/plan_panel_body.gd",
+        "ui/light_confirm.tscn",
+        "ui/galaxy_map.gd (Sol -> system zoom hook)",
+        "ui/display_binding.gd",
+        "tests/test_system_map.gd",
+        "mk/m5.mk"
+      ],
+      "conflicts_with": [
+        "M4.3a (ui/display_binding.gd)"
+      ],
+      "acceptance_criteria": [
+        "AC19 (map + panel): make ui AILANG_BIN=$A: every number on the system map and planning panel is a formatted sim field (DisplayBinding audit; a hand-typed number fixture fails)",
+        "AC19a (UI half): make ui: light plan opens the strip, full plan opens the D-12 dialog; both emit a byte-identical commit{plan_id} line",
+        "AC11 (refusal half): make ui: alpha Cen planets in view-only mode offer no Plan action; a forced plan shows the not_visitable phrase"
+      ],
+      "test_first": [
+        "Display audit fixture; both dialog paths; log/linear toggle positions"
+      ],
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.6b_TRANSIT_WINDOW_WARP",
+      "description": "Transit: window view (V) - sky camera full screen with ui/free_look_camera.gd; HUD additions (target distance, time to pass/arrival, beta, D at target, apparent size, hold_j); in-system warp levels 1, 10, 1e2, 1e3, 1e4, 1e5 ship-s per real s with automatic step-down to 1x from 30 s ship time before the pass and back up after (each step a logged dtau); at a stop warp runs the hold and the galaxy map is available. make capture-m5 SET=nav then pause R-m5c (+ review build). Stacked into m5-nav-ui.",
+      "dependencies": [
+        "M5.6a_SYSTEM_MAP_PLAN_CONFIRM"
+      ],
+      "external_dependencies": [
+        "M4.3a ui/journey_hud.tscn (soft)",
+        "M4.2 bridge interior (soft; sky-only harness otherwise)"
+      ],
+      "estimated_loc": 130,
+      "estimated_code_loc": 90,
+      "estimated_test_loc": 40,
+      "loc_cap": 650,
+      "wave": 8,
+      "files": [
+        "ui/window_view.gd",
+        "ui/insystem_warp.gd",
+        "ui/journey_hud.tscn (additions)",
+        "main.gd (<= 5 lines: V key dispatch)",
+        "tests/test_system_map.gd"
+      ],
+      "conflicts_with": [
+        "M4.3a (ui/journey_hud.tscn)",
+        "M4.2 (main.gd)"
+      ],
+      "acceptance_criteria": [
+        "AC19 (HUD): make ui: the in-system HUD passes the DisplayBinding audit",
+        "AC18 (UI half): make ui: a scripted pass emits a dtau sequence that includes the step-down and equals the sol_tour log's; make replay SESSION=tests/replays/sol_tour.ndjson stays green",
+        "make capture-m5 SET=nav writes renders/m5/nav/ (system map linear + log, planning panel stop + flyby, light strip next to full dialog, transit HUD, window view at the Saturn pass)",
+        "Pause R-m5c: Mark's approval recorded in this feature's review field before the m5-nav-ui merge"
+      ],
+      "test_first": [
+        "Step-down schedule as a pure function of time-to-pass; HUD fields bound to sim fields"
+      ],
+      "review": null,
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.7_ACEN_ARRIVAL_START",
+      "description": "Alpha Cen arrival: A and B from the AB orbit at the arrival epoch, Proxima from the starfield, planets only as points from systemAt (none drawn as a disc); navigation inset = M5.6a's widget view-only, labelled 'schematic, not to scale', badges + provenance + last_light; codex entry 'The worlds of alpha Centauri' with PL-n checks via M4.7's lore pipeline; start-at-Earth view (EYE light-adapted, stars out); golden G-M5-8; stand-off from M4.1 consequence.ail if landed, else scenario. Opens the design-repo docs PR with planets-spec PL-n and RS-24..29 (F8, Q3). make capture-m5 SET=acen then pause R-m5d.",
+      "dependencies": [
+        "M5.3_FLYBY_WARP",
+        "M5.6a_SYSTEM_MAP_PLAN_CONFIRM",
+        "M5.5b_GRAVITY_HOLD_SOL_TOUR"
+      ],
+      "external_dependencies": [
+        "M1.2d (landed)",
+        "M4.1 stand-off (soft)",
+        "M4.7 make lore-check (hard for AC12)",
+        "M4.3a ui/arrival_card.tscn (soft)",
+        "design-repo PL-n rows (F8)"
+      ],
+      "estimated_loc": 180,
+      "estimated_code_loc": 100,
+      "estimated_test_loc": 80,
+      "loc_cap": 650,
+      "wave": 9,
+      "files": [
+        "ui/arrival_inset.tscn",
+        "ui/arrival_card.tscn (additions)",
+        "planets/system_view.gd (alpha Cen case)",
+        "data/lore/ (entry via M4.7 importer)",
+        "tools/m5_golden.gd",
+        "mk/m5.mk",
+        "$D/physics/planets-spec.md + $D/physics/relativity-spec.md (separate docs PR)"
+      ],
+      "conflicts_with": [
+        "M4.3a (ui/arrival_card.tscn)",
+        "M4.7 (data/lore/)"
+      ],
+      "acceptance_criteria": [
+        "AC11: make ui (inset audit: every loaded alpha Cen body listed with badge and provenance) and make sim (not_visitable refusal fixture for every alpha Cen planet)",
+        "AC12: make lore-check AILANG=$A: codex entry numbers match their PL-n check values (needs M4.7 and the $D PL-n rows)",
+        "AC8 (part): make golden: G-M5-8 in EYE mode no candidate planet above the display floor; A-B separation == orbit value at the arrival epoch within 0.75 px",
+        "make capture-m5 SET=acen writes renders/m5/acen/ (EYE and CAMERA fixed long exposure, inset, codex page)",
+        "Pause R-m5d: Mark's approval (renders + codex copy, facts only) recorded in this feature's review field before merge"
+      ],
+      "test_first": [
+        "Inset audit fixture (a dropped badge fails); G-M5-8 CPU separation from the orbit"
+      ],
+      "review": null,
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M5.8_GATES_CAPTURE_BENCH",
+      "description": "G-M5-9 (rendered Saturn centre at the sim's pass tick within 0.75 px of the CPU projection of pass.b_km through the ship basis); make capture-m5 (all sets) -> renders/m5/ + contact sheet; make bench SCENE=flyby (Saturn + 6 moons at beta 0.9, medium tier, 2560x1440, host load logged, A/B vs origin/main under load); make physics finiteness sweep over every Sol tour tick; lint-precision covers planets/ and ui/system_map*; draft design_docs/implemented/r1/m5-report.md. Pause S-M5 then P-land.",
+      "dependencies": [
+        "M5.3_FLYBY_WARP",
+        "M5.4_HIGHLIGHT_METER",
+        "M5.6b_TRANSIT_WINDOW_WARP",
+        "M5.7_ACEN_ARRIVAL_START"
+      ],
+      "external_dependencies": [
+        "M4.6 lint-precision (soft)"
+      ],
+      "estimated_loc": 140,
+      "estimated_code_loc": 60,
+      "estimated_test_loc": 80,
+      "loc_cap": 650,
+      "wave": 10,
+      "files": [
+        "tools/m5_golden.gd",
+        "main.gd (<= 15 lines: --golden-m5, --capture-m5, bench scene flag)",
+        "mk/m5.mk (capture-m5, bench SCENE= passthrough, golden hook)",
+        "tests/test_physics.gd (Sol tour sweep)",
+        "design_docs/implemented/r1/m5-report.md (draft)"
+      ],
+      "conflicts_with": [
+        "M4.2, M4.6 (main.gd, tests/test_physics.gd)"
+      ],
+      "acceptance_criteria": [
+        "AC8: make golden: G-M5-1..G-M5-9 all pass (count of '^ok +G-M5-' lines == case count); existing M1/M4 golden cases unchanged",
+        "AC9: make capture-m5 writes renders/m5/ with a contact sheet; jq '.features[] | select(.id | startswith(\"M5.8\")) | .review' .ailang/state/sprints/sprint_R1-M5-PLANETS.json shows Mark's S-M5 approval",
+        "AC13: make bench SCENE=flyby p99 < 16.7 ms at 2560x1440 (host load logged; A/B vs origin/main if loaded)",
+        "AC7 (sweep): make physics lint-precision: finite values for every body at every Sol tour tick, no NaN near a body",
+        "AC20: make test AILANG=$A AILANG_BIN=$A green locally and in CI; make python-guard with no new *.py"
+      ],
+      "test_first": [
+        "G-M5-9 CPU projection; finiteness sweep"
+      ],
+      "review": null,
+      "art_gated": false,
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "M5.0a1_PKG_CELESTIAL_ORBITS",
+      "package": "sunholo/celestial (new)",
+      "action": "none",
+      "reason": "ailang search {orbit, orbits, ephemeris, kepler, celestial, astronomy, albedo, planet, gravity} and ailang pkg search {orbit, ephemeris, kepler, celestial} -> no packages (2026-10-03, v0.51.0); only sunholo/relativity matches 'physics' and has no Kepler/ephemeris. Mark ruled Q5: new separate package"
+    },
+    {
+      "milestone": "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
+      "package": "sunholo/celestial (new)",
+      "action": "none",
+      "reason": "No reflected-light, ring-scattering, light-time or Newtonian-gravity package in the registry (same searches); new package per Q5"
+    },
+    {
+      "milestone": "M5.0b_PKG_RELATIVITY_APPARENT_DISC",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "apparentDisc is pure aberration optics on cosSeen; hoverPower is bubble energetics (HB-90); gate 3"
+    },
+    {
+      "milestone": "M5.1a_SOL_ACEN_DATA_PINS",
+      "package": "sunholo/celestial@0.1.0 + sunholo/relativity@(M5.0b release)",
+      "action": "depend",
+      "reason": "Sim pins both; data uses celestial's element/pole record types"
+    },
+    {
+      "milestone": "M5.1b_SYSTEM_AT_CHANGESET",
+      "package": "sunholo/celestial@0.1.0 + sunholo/relativity",
+      "action": "depend",
+      "reason": "stateFromElements, eclipticToGalactic, retardedTime, discIlluminance, poleAndSpin; illuminanceFromV"
+    },
+    {
+      "milestone": "M5.2a_PLANET_GLOBES_PHOTOMETRY",
+      "package": "sunholo/celestial@0.1.0",
+      "action": "depend",
+      "reason": "GDScript/shader mirror minnaertRadiance, lambertPhase, discIlluminance; check values copied from probes"
+    },
+    {
+      "milestone": "M5.2b_RINGS_SHADOWS_ATMOSPHERE",
+      "package": "sunholo/celestial@0.1.0",
+      "action": "depend",
+      "reason": "ring.gdshader mirrors ringLitRadiance, ringUnlitRadiance, ringTransmission"
+    },
+    {
+      "milestone": "M5.3_FLYBY_WARP",
+      "package": "sunholo/relativity@(M5.0b release)",
+      "action": "depend",
+      "reason": "Mirror deaberrate, dopplerApparent, apparentDisc, gammaOf, oneMinusBeta; M1 bb_lut"
+    },
+    {
+      "milestone": "M5.4_HIGHLIGHT_METER",
+      "package": "none",
+      "action": "none",
+      "reason": "Exposure-meter percentile statistics are presentation, not physics maths; no package applies"
+    },
+    {
+      "milestone": "M5.5a_BODY_TARGETS_INTERCEPT",
+      "package": "sunholo/celestial@0.1.0 + sunholo/relativity",
+      "action": "depend",
+      "reason": "Intercept composes bodyAt and planBurnCoastBurn; composition is game logic in the sim (design M5.5)"
+    },
+    {
+      "milestone": "M5.5b_GRAVITY_HOLD_SOL_TOUR",
+      "package": "sunholo/celestial@0.1.0 + sunholo/relativity",
+      "action": "depend",
+      "reason": "accelerationAt, hoverPower, motionAt"
+    },
+    {
+      "milestone": "M5.6a_SYSTEM_MAP_PLAN_CONFIRM",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI bound to sim fields via DisplayBinding; no arithmetic"
+    },
+    {
+      "milestone": "M5.6b_TRANSIT_WINDOW_WARP",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI and logged dtau stepping; no arithmetic"
+    },
+    {
+      "milestone": "M5.7_ACEN_ARRIVAL_START",
+      "package": "sunholo/celestial@0.1.0 + sunholo/relativity",
+      "action": "depend",
+      "reason": "AB orbit via stateFromElements; codex values via lore-check package probes"
+    },
+    {
+      "milestone": "M5.8_GATES_CAPTURE_BENCH",
+      "package": "sunholo/celestial@0.1.0 + sunholo/relativity",
+      "action": "depend",
+      "reason": "Every golden reference value from a package probe"
+    }
+  ],
+  "external_dependencies": [
+    {
+      "what": "R1-M4-JOURNEY M4.6a relativity release (wave 1, mission loop executing now)",
+      "needed_by": [
+        "M5.0b_PKG_RELATIVITY_APPARENT_DISC",
+        "M5.1a_SOL_ACEN_DATA_PINS"
+      ],
+      "risk": "M5.0b publishes strictly after it (shared medium.ail, CHANGELOG, version); a slip holds the sim spine. Q2"
+    },
+    {
+      "what": "R1-M4-JOURNEY M4.1 consequence stub (protocol.ail, ship.ail; stand-off)",
+      "needed_by": [
+        "M5.1b_SYSTEM_AT_CHANGESET",
+        "M5.5b_GRAVITY_HOLD_SOL_TOUR",
+        "M5.7_ACEN_ARRIVAL_START"
+      ],
+      "risk": "Additive protocol conflicts; minor version taken at merge time; M5.7 uses a scenario stand-off until M4.1 lands"
+    },
+    {
+      "what": "R1-M4-JOURNEY M4.3a HUD, DisplayBinding, arrival card",
+      "needed_by": [
+        "M5.6a_SYSTEM_MAP_PLAN_CONFIRM",
+        "M5.6b_TRANSIT_WINDOW_WARP",
+        "M5.7_ACEN_ARRIVAL_START"
+      ],
+      "risk": "Soft: M5.6a creates DisplayBinding with M4.3a's planned API if absent (Q4)"
+    },
+    {
+      "what": "R1-M4-JOURNEY M4.7 lore-check",
+      "needed_by": [
+        "M5.7_ACEN_ARRIVAL_START"
+      ],
+      "risk": "Hard for AC12 only"
+    },
+    {
+      "what": "R1-M4-JOURNEY M4.6 lint-precision",
+      "needed_by": [
+        "M5.2a_PLANET_GLOBES_PHOTOMETRY",
+        "M5.3_FLYBY_WARP",
+        "M5.8_GATES_CAPTURE_BENCH"
+      ],
+      "risk": "Soft: mk/m5.mk adds a planets/-only precision grep until M4.6 lands"
+    },
+    {
+      "what": "PR #79 M1.8 forward CMB + centre-weighted eye meter",
+      "needed_by": [
+        "M5.4_HIGHLIGHT_METER"
+      ],
+      "risk": "SATISFIED: merged to main (28fd310) during planning; M5.4 applies the P99.5 term to sky/sky_meter.gd"
+    },
+    {
+      "what": "AILANG v0.52.0 bump (branch chore/ailang-0.52.0)",
+      "needed_by": [],
+      "risk": "If it lands mid-sprint, pins move together and sol_tour per-arch goldens are re-recorded as a reviewed diff"
+    },
+    {
+      "what": "Design repo PL-n and RS-24..29 rows (stapledons-design docs PR)",
+      "needed_by": [
+        "M5.7_ACEN_ARRIVAL_START"
+      ],
+      "risk": "AC12 lore-check cross-repo half needs PL-n ids (F8, Q3)"
+    }
+  ],
+  "pause_points": [
+    {
+      "id": "P0",
+      "after": null,
+      "what": "Mark approves this plan and answers Q1-Q6"
+    },
+    {
+      "id": "P-pkg-b",
+      "after": "M5.0b_PKG_RELATIVITY_APPARENT_DISC (and M4.6a's release published)",
+      "what": "Controller publishes sunholo/relativity under the standing relativity publish grant after independent eval >= 70, quality no gates, dry run. Blocks M5.1a"
+    },
+    {
+      "id": "P-pkg-a",
+      "after": "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
+      "what": "First publish of the NEW package sunholo/celestial 0.1.0: Mark's yes needed (standing grant is relativity-only; Q1), after independent eval >= 70 (AC1), quality no gates, dry run. Blocks M5.1a"
+    },
+    {
+      "id": "L-tex",
+      "after": "M5.2a_PLANET_GLOBES_PHOTOMETRY (before make planet-publish)",
+      "what": "Mark's texture licence check: Solar System Scope source URL and CC BY 4.0 terms at download date, attribution text in data/planets/CREDITS and in-game credits, file list with sha256s, no unlicensed Go-build textures (earth.jpg, alien/*). Upload is a maintainer (gcloud) action. Blocks the M5.2a merge"
+    },
+    {
+      "id": "R-m5a",
+      "after": "M5.2b_RINGS_SHADOWS_ATMOSPHERE (renders/m5/rest/)",
+      "what": "Gate-2 review of rest-frame planet renders. Blocks the m5-render merge"
+    },
+    {
+      "id": "R-m5b",
+      "after": "M5.3_FLYBY_WARP (renders/m5/flyby/ + G-M5-1..3 log)",
+      "what": "Gate-2 review of the flyby aberration warp (beta 0/0.5/0.9/0.99, forward/sideways/astern). Blocks the m5-render merge to main"
+    },
+    {
+      "id": "R-m5c",
+      "after": "M5.6b_TRANSIT_WINDOW_WARP (renders/m5/nav/ + review build)",
+      "what": "Navigation UX review (system map, planning panel, light strip vs full dialog, transit HUD, window view at the pass). Blocks the m5-nav-ui merge"
+    },
+    {
+      "id": "R-m5d",
+      "after": "M5.7_ACEN_ARRIVAL_START (renders/m5/acen/ + codex page)",
+      "what": "Alpha Cen arrival review and codex copy (facts only, Pillar 2). Blocks the M5.7 merge"
+    },
+    {
+      "id": "S-M5",
+      "after": "M5.8_GATES_CAPTURE_BENCH (make capture-m5 contact sheet)",
+      "what": "Final gate-2 sign-off recorded in M5.8's review field (AC9). Blocks landing"
+    },
+    {
+      "id": "P-land",
+      "after": "S-M5",
+      "what": "m5-report.md; design doc to implemented/; design-repo changes (roadmap M5 section, spec amendments if not already made under F8, planets-spec, higgs-bubble note, supersede notes, lore entries, D-26); changelog"
+    },
+    {
+      "id": "RB",
+      "after": "M5.3_FLYBY_WARP and M5.6b_TRANSIT_WINDOW_WARP",
+      "what": "Non-blocking review builds (make publish-dev; tools/install_review_build.sh --dev)"
+    }
+  ],
+  "findings": [
+    "F1: five design rows split (M5.0a 760 and M5.5 700 over the 650 cap outright; M5.1 550, M5.2 520, M5.6 450 exceed 650 at the calibrated 1.6x); every milestone planned <= 400",
+    "F2: gate 2 needs each visual's GPU golden before it merges; G-M5-1..8 move from M5.8 into the milestones they gate; realistic golden sizing + hoverPower = +290 LOC (4,040 vs 3,750)",
+    "F3: PR #79 (M1.8, merged 28fd310 during planning) replaced the eye meter with a centre-weighted meter (sky/sky_meter.gd); M5.4 applies the P99.5 term to that meter",
+    "F4: conflict map with M4/M1.8 - protocol.ail, ship.ail, sim_bridge.gd, core.ail, ailang.toml/lock, main.gd, Makefile, test_physics.gd, exposure/sky_meter, starfield.gd, journey_hud/display_binding; mitigations mk/m5.mk, tools/m5_golden.gd, sim/navigation.ail, function blocks, protocol minor taken at merge time",
+    "F5: AC9 jq path adjusted to features[] / id startswith M5.8",
+    "F6: AC10 reconciled - pins and CREDITS in data/planets/, textures in gitignored assets/planets/",
+    "F7: hover_power unreleased (M3 has design only); M5.0b adds medium.hoverPower(mEffKg, gMs2) = m_eff |g| c",
+    "F8: AC12 lore-check needs PL-n rows in the design repo before M5.7, not at landing",
+    "F9: no new Python - sol tour is a hand-written NDJSON log replayed by the existing tools/replay.py harness; texture tooling is shell glue + Godot headless"
+  ],
+  "questions_for_mark": [
+    "Q1: May the controller publish the NEW package sunholo/celestial 0.1.0 under the relativity rule (independent eval >= 70, quality no gates, dry run, AC1), or do you approve that first publish yourself?",
+    "Q2: If M4.6a's relativity release is not published when celestial 0.1.0 is, should M5.0b wait (default) or publish first and let M4.6a rebase?",
+    "Q3: May a docs-only stapledons-design PR (planets-spec PL-1.., relativity-spec RS-24..29) go up alongside M5.7 so AC12 can pass, or does M5.7 merge with AC12 pending until landing?",
+    "Q4: If M4.3a has not landed when M5.6a starts, M5.6a creates ui/display_binding.gd with M4.3a's planned API and M4 adopts it (default) - agreed?",
+    "Q5: hover_power as medium.hoverPower(mEffKg, gMs2) in relativity (M3's hoverPowerPerKg composes it later) - agreed?",
+    "Q6: Accept the 15-milestone split (F1), or keep the design's 10 rows with named overrun seams (the M4 approach)?"
+  ]
+}
