@@ -186,12 +186,41 @@ func test_credits_displayed() -> void:
 	map.free()
 
 
+## Exported builds: the textures travel as planet_bundle/<file>.bin (make planet-bundle) and
+## data/planets/* (ALBEDO, CREDITS); the export filter must carry both, and the loader must
+## decode a bundled copy exactly as it reads the source file.
+func test_export_bundle() -> void:
+	print("Planet textures in exported builds (planet_bundle)")
+	var cfg := FileAccess.get_file_as_string("res://export_presets.cfg")
+	var inc := ""
+	for line in cfg.split("\n"):
+		if line.begins_with("include_filter="):
+			inc = line
+			break
+	check("export include_filter carries planet_bundle/* and data/planets/*", inc.contains("planet_bundle/*") and inc.contains("data/planets/*"), inc.left(60))
+	var src := "res://assets/planets/2k_jupiter.jpg"
+	if not FileAccess.file_exists(src):
+		print("  skip  bundled-texture decode: textures not fetched (make planet-assets)")
+		return
+	DirAccess.make_dir_recursive_absolute("user://m52a_bundle_test")
+	var f := FileAccess.open("user://m52a_bundle_test/2k_jupiter.jpg.bin", FileAccess.WRITE)
+	f.store_buffer(FileAccess.get_file_as_bytes(src))
+	f.close()
+	var a := SystemView.load_texture_image("2k_jupiter.jpg")
+	var b := SystemView.load_texture_image("2k_jupiter.jpg", "user://no_such_dir", "user://m52a_bundle_test")
+	var none := SystemView.load_texture_image("2k_jupiter.jpg", "user://no_such_dir", "user://no_such_dir")
+	check("a bundled .bin decodes to the same image as the source (size and texels)", a != null and b != null and a.get_size() == b.get_size() and a.get_pixel(700, 300) == b.get_pixel(700, 300))
+	check("no source and no bundle: null (SystemView falls back to uniform albedo)", none == null)
+	DirAccess.remove_absolute("user://m52a_bundle_test/2k_jupiter.jpg.bin")
+
+
 func _initialize() -> void:
 	test_fixture_view()
 	test_point_disc_switch()
 	test_placement_precision()
 	test_albedo_table()
 	test_credits_displayed()
+	test_export_bundle()
 	await process_frame
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)

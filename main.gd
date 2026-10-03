@@ -69,7 +69,7 @@ func _ready() -> void:
 	var args := _user_args()
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5") or args.has("planet-smoke")
 	UiScale.configure(get_window(), _fixed_scale)
 	# Launching with no arguments (a double-clicked review build, `make run`) opens
 	# the bridge interior (M4.2); `--map` the galaxy map alone, `--voyage` the M0/M1 sky flight.
@@ -85,6 +85,9 @@ func _ready() -> void:
 	_build_scene()
 	if args.has("golden"):
 		await _run_golden()
+		return
+	if args.has("planet-smoke"): # exported builds: the bundled planet textures load and draw (planets/planet_smoke.gd)
+		get_tree().quit(await load("res://planets/planet_smoke.gd").new().run(self, args["planet-smoke"]))
 		return
 	if args.has("golden-m5") or args.has("capture-m5"): # M5 goldens / reference renders (tools/m5_golden.gd)
 		var m5: GDScript = load("res://tools/m5_golden.gd")
