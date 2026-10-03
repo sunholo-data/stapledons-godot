@@ -1,0 +1,74 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "milestone": "M4.6a_PKG_GLOW_EMITTANCE",
+  "subject": "sunholo/relativity 0.6.0 (ailang-packages PR #92, branch relativity-0.6.0-glow, commit d830d4b)",
+  "evaluation_round": 1,
+  "evaluator": "independent physics evaluator (Claude Fable 5.1), generator != judge",
+  "evaluated_at": "2026-10-03",
+  "toolchain": "ailang v0.52.0 (bf2436a), /Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang; fresh clone in scratchpad rel060-eval",
+  "result": "pass",
+  "score": 97,
+  "pass_threshold": 70,
+  "hard_fails": [],
+  "scores": {
+    "tests_pass": {"points": 20, "max": 20, "evidence": "ailang test --package relativity: 132/132 plain (1m29s) and 132/132 --strict-bytecode (20s); 0.5.2 at main: 123/123, so exactly 9 new tests as the CHANGELOG says"},
+    "lint_clean": {"points": 10, "max": 10, "evidence": "ailang pkg quality: no gates (compile 19 files, 4/57 contracts verified 0 refuted, interface v2 123 signatures, release kind feature + changelog_section true, AGENT.md + ai_summary true, 111/111 exports pure, tests attested 132 passed, smoke attested). publish --dry-run clean: tarball 55300 B, 11 export modules, effects [IO]. PUB011 (54 uncontracted exports) is pre-existing, not a gate."},
+    "acceptance_criteria": {"points": 30, "max": 30, "evidence": "Package-scope ACs of the sprint row M4.6a_PKG_GLOW_EMITTANCE all met: AC1 gate-3 sequence (tests incl. pole = 4x mean and sphere mean; quality no gates; dry-run clean; CHANGELOG + [release] kind=feature -> 0.6.0). AC3 (V23) package half: glowEmittanceAt(n, phi, 1e-9, 0.5, 1.0) == 4 x glowInwardFlux exactly at 0.5c/0.9c/0.99c/cap; sphere mean == glowInwardFlux to 1e-12; VM == interpreter; grep '^export' medium.ail shows the function. Test-first list 4/4 present (pole 4x at 0.99c and cap; sphere mean; zero at phi 0 and cos <= 0; finite and >= 0 sweep to the cap). AC2 (sim pin/lock/cache) and AC4 (feeds AC8) are post-publish game-side steps and are out of this package evaluation's scope, not failures."},
+    "code_quality": {"points": 14, "max": 15, "evidence": "medium.ail:100-106: NaN tested first, clamp to [0,1], one multiply chain mirroring glowInwardFlux so pole/mean is an exact power-of-two ratio (verified (x/4)*4 == x for 2e5 random floats). -1 for N2: _smoke.ail glowDigest's NaN arm records only whether NaN propagated, so a pole-vs-0 engine divergence on NaN input would not change the digest (the unit test checkGlowNaN covers both engines, so no practical gap)."},
+    "documentation": {"points": 14, "max": 15, "evidence": "CHANGELOG 0.6.0 entry complete and accurate (formula, 4x and 1/4 facts, clamp, NaN, check values with full digits, test inventory, smoke, oracle). AGENT.md table + usage note + oracle provenance; README and ai_summary updated. tools/glow_ref.out matches a fresh run byte for byte. -1: no standalone example beyond _smoke.ail main (the package has no examples/ directory; precedent-consistent)."},
+    "design_fidelity": {"points": 10, "max": 10, "evidence": "Matches m4-first-journey.md 'Forward glow' and the sprint's M4.6a scope word for word: eps f_in K max(0, cos theta), pole = 4 x glow_w_m2, sphere mean = glow_w_m2, zero at beta = 0, package-first. The AGENT.md note 'renderers take the pole from this function and never multiply glowInwardFlux by 4 themselves' enforces the design's 'the sim never computes 4 x glowInwardFlux itself'."}
+  },
+  "physics_verification": {
+    "model": "Correct. In the ship frame the ISM is a parallel proton beam along -travel with kinetic-energy flux K (per unit face-on area; the gamma n density is inside K). A convex sphere's element with outward normal at theta from the travel direction intercepts K max(0, cos theta) per unit wall area (aft hemisphere shadowed). With local inelastic conversion eps and inward fraction f_in, the inward emittance is eps f_in K max(0, cos theta). Sphere mean of max(0, cos) = (1/2) int_0^1 mu dmu = 1/4 (also checked by 2e6-sample Monte Carlo: 0.25005), equivalently intercepted power K pi R^2 spread over 4 pi R^2. So pole = 4 x glowInwardFlux and glowInwardFlux (= eps fIn K / 4, medium.ail:89-90) is exactly the sphere mean of the profile. Canon higgs-bubble.md section 6 ('brightest at the forward pole', mean eps f_in K / 4) is satisfied.",
+    "check_values_independent_float64": {
+      "K_0.99c_W_m2": 192575.53743413047, "HB-45_1.93e5": true,
+      "pole_0.99c_W_m2": 9.628776871706524e-05, "want_9.6288e-5": true,
+      "mean_0.99c_W_m2": 2.407194217926631e-05, "design_2.40719e-5": true,
+      "K_cap_W_m2": 2250168606.2106295, "HB-46_2.25e9": true,
+      "pole_cap_W_m2": 1.1250843031053148, "want_1.12508": true,
+      "HB-61_eps_for_1_W_m2_mean_at_cap": 3.555289136076033e-09, "want_3.6e-9": true
+    },
+    "package_values": "Package tests assert 9.628776871706523e-5 and 1.1250843031053144 (from the 60-digit oracle); my float64 recomputation differs in the last ulp only (gamma via 1/sqrt vs rapidity form), well inside the 1e-12 tolerance.",
+    "nan_handling": "medium.ail:100 tests cosTheta != cosTheta first and returns NaN; NaN phi propagates through kineticFlux. Probe on v0.52.0: NaN >= 1.0 is false on BOTH engines (interpreter and strict VM), so ailang#1419 does not bite this form at this version; the guard remains correct and harmless.",
+    "clamp": "cosTheta >= 1.0 -> 1.0 (so 1.0000000000000002 from a rounded dot product gives the pole, tested); cosTheta > 0.0 strict, so -0.0 and negatives give +0.0 (tested)."
+  },
+  "regression_check": {
+    "digests_400_interpreter_vs_strict_vm_0.6.0": {
+      "wdDigest": "4.6104818060721e+06 == 4.6104818060721e+06",
+      "journeyDigest": "1.640741442474489e+06 == 1.640741442474489e+06",
+      "photometryDigest": "63976.95098813557 == 63976.95098813557",
+      "photopicHotDigest": "15197.418594931223 == 15197.418594931223",
+      "glowDigest": "332.17428127471595 == 332.17428127471595"
+    },
+    "digests_vs_0.5.2_interpreter": "wdDigest, journeyDigest, photometryDigest, photopicHotDigest bit-identical to main (0.5.2); glowDigest is new. No existing output changes. Branch touches only packages/relativity (9 files); ailang.lock untouched.",
+    "smoke_main": "ailang run _smoke.ail (interpreter, --package-dir): prints OK line including 'glow pole at 0.99c 9.6288e-5 W/m^2 = 4 x mean'. The strict VM cannot run main (std/io.println evaluator-only), pre-existing and why the digests exist."
+  },
+  "oracle": "python3 tools/glow_ref.py --check: PASS; all 8 design/canon digit checks ok; output identical to the committed tools/glow_ref.out. Role: oracle (independent second-language reference), consistent with the repo's journey_ref.py / photometry_ref.py precedent.",
+  "mutation_testing": {
+    "method": "copy of the package in scratchpad, glowEmittanceAt body edited, full suite on --strict-bytecode (and the NaN mutant also on the interpreter)",
+    "mutants": [
+      {"name": "profile cos^2", "killed": true, "failing_tests": 5},
+      {"name": "profile 0.5+0.5cos (no aft zero)", "killed": true, "failing_tests": 6},
+      {"name": "factor x2 (pole = 8x mean)", "killed": true, "failing_tests": 6},
+      {"name": "factor /4 (pole = mean)", "killed": true, "failing_tests": 6},
+      {"name": "no clamp above 1", "killed": true, "failing_tests": 1, "by": "glowEmittanceAt: 0 at rest ... cos clamped to [0, 1] (medium_test.ail:282)"},
+      {"name": "no max(0, .) (negative cos passes)", "killed": true, "failing_tests": 7},
+      {"name": "NaN arm removed", "killed": true, "failing_tests": 1, "by": "checkGlowNaN on both engines (medium_test.ail:301); glowDigest did NOT change (331.174 on both engines) - see N2"},
+      {"name": "K -> loadScale (sinh^2)", "killed": true, "failing_tests": 6},
+      {"name": "K without (gamma-1)", "killed": true, "failing_tests": 6}
+    ],
+    "summary": "9/9 killed. The clamp and NaN behaviours each hang on one test; acceptable for a one-line guard."
+  },
+  "findings": [
+    {"id": "N1", "severity": "info", "file": "packages/relativity/medium.ail:100", "issue": "On ailang v0.52.0 a probe shows NaN >= 1.0 is false on both the interpreter and the strict VM, so the #1419 asymmetry the comment cites does not reproduce here.", "suggestion": "Keep the NaN-first guard (correct regardless); re-check the #1419 workaround note at the next toolchain bump, as CLAUDE.md already prescribes."},
+    {"id": "N2", "severity": "minor", "file": "packages/relativity/_smoke.ail:154-160", "issue": "glowDigest adds 1.0 only if NaN propagates; the NaN output's value is not folded in, so an engine divergence that yielded pole vs 0 for NaN cosTheta would leave the digest unchanged (confirmed with the no-NaN-arm mutant: 331.174... on both engines).", "suggestion": "Optional: fold a sentinel that distinguishes 0, pole and NaN (e.g. add nanOut's clamped substitute), or leave as is since checkGlowNaN runs under both engines in the suite."},
+    {"id": "N3", "severity": "note (game side, M4.2/M4.6, not the package)", "file": "stapledons-godot design_docs/planned/r1/m4-first-journey.md:340-363", "issue": "glowEmittanceAt is an emittance (W/m^2 of wall). The dome overlay needs scene radiance (W/m^2/sr); for a Lambertian wall that is M/pi. The design says 'converts W/m^2 to scene radiance with M1.5's photometric exposure' without naming the /pi (or chosen emission law).", "suggestion": "Make the emittance-to-radiance step explicit and tested when M4.2's glow_profile mirror lands; G-M4-4's absolute check compares in W/m^2 so it is unaffected."},
+    {"id": "N4", "severity": "info", "file": "packages/relativity/medium.ail:106", "issue": "Negative phi returns negative emittance (kineticFlux is odd in phi). Same convention as glowInwardFlux and kineticFlux since 0.4.0; rapidity is >= 0 by package convention.", "suggestion": "None; noted for completeness."}
+  ],
+  "publish_verdict": "SAFE TO PUBLISH 0.6.0. Additive feature release; every 0.5.2 digest bit-identical; interpreter == strict VM on all five digests; quality no gates; dry-run clean; physics model and all canon/design check values independently confirmed; 9/9 mutants killed. Nothing in the findings blocks publication.",
+  "next_steps_after_publish": [
+    "Bump sim/ailang.toml to sunholo/relativity 0.6.0, run ailang lock (make deps), refresh runtime/cache together (sprint M4.6a pin-bump note).",
+    "M4.1 step 2: ship.ism.glow_pole_w_m2 = glowEmittanceAt(..., 1.0); re-run the V12/V23 probe and close V23 in m4-first-journey.md.",
+    "Carry N3 into M4.2's glow overlay design."
+  ]
+}

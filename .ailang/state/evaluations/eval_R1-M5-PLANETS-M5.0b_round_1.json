@@ -1,0 +1,81 @@
+{
+  "sprint_id": "R1-M5-PLANETS",
+  "milestone": "M5.0b_PKG_RELATIVITY_APPARENT_DISC",
+  "package": "sunholo/relativity 0.7.0",
+  "repo": "sunholo-data/ailang-packages PR #90, branch relativity-m5-apparentdisc-hover, commit 50e02ff (rebased on 0.6.0 at a04be48)",
+  "evaluation_round": 1,
+  "evaluated_at": "2026-10-03",
+  "evaluator": "independent physics evaluator (Claude Fable 5.1), generator != judge; fresh clone in the session scratchpad (rel070-eval), main a04be48 in a sibling worktree (rel060-main); runtime/bin/ailang v0.52.0 (bf2436a)",
+  "result": "pass",
+  "score": 93,
+  "max_score": 100,
+  "pass_threshold": 70,
+  "hard_fails": [],
+  "verdict_publish": "SAFE TO PUBLISH 0.7.0. Additive, every 0.6.0 digest bit-identical to main, physics independently confirmed to 1e-15 relative, all six mutations killed. Four doc nits (non-blocking) may be fixed before or after publish.",
+  "scores": {
+    "tests_pass": {"points": 20, "max": 20, "hard_fail": false, "evidence": "cd packages && ailang test --package relativity: 147 passed, 0 failed (interpreter, 92 s); --strict-bytecode: 147 passed, 0 failed (18 s). pkg quality attests the same 147."},
+    "lint_clean": {"points": 10, "max": 10, "note": "adapted for a package: ailang pkg quality -> 'no gates' (compile 20 files, contracts 4/59 verified 0 refuted, interface v2 127 signatures, effects max [IO] declared, release kind feature + changelog section, AGENT.md + ai_summary present, 114/114 exports pure, tests and smoke attested). PUB011 (55 uncontracted exports) and PUB016 are pre-existing advisories. publish --dry-run clean: tarball 60,925 bytes, 11 export modules. No CI workflow exists in ailang-packages, so the PR has no checks (statusCheckRollup empty); local runs are the only signal."},
+    "acceptance_criteria": {"points": 29, "max": 30, "note": "-1: the sprint JSON's 'package values recorded in notes' clause has no notes yet (M5.0b passes/started/completed/notes all null in .ailang/state/sprints/sprint_R1-M5-PLANETS.json). AC5 (post-publish registry grep) is not scorable before publish and is not counted."},
+    "code_quality": {"points": 12, "max": 15, "note": "-2 sprint artifacts not updated for M5.0b (Phase 3.5). -1 hoverPower carries no requires/ensures (mEffKg >= 0.0; result >= 0.0 would let Z3 check the |g| fold); every other new export has contracts. hoverPower(1.0, -0.0) returns -0.0 (gMs2 < 0.0 is false for -0.0); harmless, and std/json drops the sign anyway (ailang#1460), but an absf would be cleaner."},
+    "documentation": {"points": 13, "max": 15, "note": "CHANGELOG 0.7.0 section complete with all check values (5/5). AGENT.md gained a 'Nearby spheres' section and the hoverPower row; README and ai_summary updated (4/5: README line 20 is missing a comma after '`glowEmittanceAt`)'; optics_test.ail:1 and tools/optics_ref.py:2 say '0.6.x' for a 0.7.0 feature; optics_ref.py:5 names a non-existent 'optics_disc_test.ail'). Design/spec status (4/5): RS-24 to RS-29 are drafted in the game design doc and deliberately not yet in relativity-spec.md (they land with the M5.7 docs PR per the sprint plan); the sprint plan's M5.0b row is not yet marked."},
+    "design_fidelity": {"points": 9, "max": 10, "note": "Matches the design (m5-planets.md 'Apparent disc' and 'Gravity hold' sections): conformal image, centre = mean of edge images not the aberrated centre, hoverPower = m_eff |g| c. One documented deviation from the sprint plan: the plan said 'aberrate theta +- alpha with cosSeen; near-c branch uses oneMinusBeta(phi)'; the implementation uses the half-angle law tan(theta'/2) = e^-phi tan(theta/2) via atan2 instead. This is strictly better (no 1 - beta anywhere, exact at both poles, continuous and odd so a pole crossing needs no branch) and is explained in optics.ail:124-133 and the CHANGELOG. -1: the designed cosTheta input re-introduces acos conditioning at the forward pole (acos(1 - 1e-16) = 1.49e-8 rad), so the half-angle law's precision is only fully available when the caller has theta; an angle-input overload (angleSeen is exported, so callers can compose it) would close that. Sub-pixel in the game, so a remark not a defect."}
+  },
+  "automated_checks": {
+    "test_interpreter": "147/147",
+    "test_strict_bytecode": "147/147",
+    "pkg_quality": "no gates",
+    "publish_dry_run": "clean, tarball 60925 bytes, content sha256:bea504df..., interface sha256:c747d1b1...",
+    "optics_ref_check": "python3 tools/optics_ref.py --check -> 'check: OK'; regenerated output identical to the committed tools/optics_ref.out",
+    "smoke_main": "interpreter prints the OK line on branch and on main; the strict VM cannot run main() on either (std/io.println is evaluator-only, pre-existing, not this PR)",
+    "digests_0_6_0_unchanged_vs_main_a04be48": {
+      "wdDigest(400)": "4.6104818060721e+06 (branch = main, interp = strict VM)",
+      "journeyDigest(50)": "217970.5634064679 (branch = main, interp = strict VM)",
+      "photometryDigest(37)": "53214.31166782515 (branch = main, interp = strict VM)",
+      "photopicHotDigest(40)": "1577.1737090188294 (branch = main, interp = strict VM)",
+      "glowDigest(60)": "55.92954003286848 (branch = main, interp = strict VM)"
+    },
+    "discDigest_strict_vm_vs_interpreter": {
+      "n=1": "6.408068774323493 SAME",
+      "n=37": "81.95472872876358 SAME",
+      "n=400": "858.5110828749009 SAME",
+      "n=1000": "2141.378105975417 SAME"
+    }
+  },
+  "independent_physics": {
+    "method": "Own oracle (scratchpad my_disc_oracle.py): 3,600 rim points of the rest-frame circle built in 3D, each Lorentz-transformed with the 4-vector law (transverse / gamma(1 + beta cos theta), longitudinal (cos theta + beta)/(1 + beta cos theta)) in float64, image fitted by min/max polar angle and checked circular; no half-angle law anywhere. Pole-crossing rows re-done in 60-digit Decimal (scratchpad polecross3d.py) because a min/max-polar-angle fit is wrong when the pole is inside the image.",
+    "conformal": "Image of the rim is a circle: max deviation 7.4e-15 rad (RS-24/25), 2.7e-14 (RS-26/27), 5.1e-15 (RS-28/29), 1.7e-15 (beta 0.5), 2.7e-12 at the cap (float64 Lorentz arithmetic at gamma 707); 60-digit: 1e-58 to 3e-55 rad for all rows including pole crossings. Aberration is a Mobius map of the sphere, so this is expected and the package relies on it correctly.",
+    "RS-24/25": "beta 0.9, theta 90, alpha 5: my centre 25.9277296298034, radius 2.1839405633943, aberrated centre 25.8419327631671 deg; vs package 1.1e-14 / 5.3e-15 deg (4e-16 / 2.4e-15 relative). The 0.0858 deg centre offset from the aberrated centre is real (rim at psi=0 appears at 28.1117, psi=180 at 23.7438 deg).",
+    "RS-26/27": "beta 0.99: 8.1401774717528 / 0.7070968520845 deg; vs package 6.5e-16 / 1.3e-15 relative.",
+    "RS-28/29": "beta 0.9, theta 150: 82.0207127068368 / 9.9404108106039 deg; vs package 0 / 3.6e-16 relative. Magnified astern (9.94 > 5), as the design says.",
+    "cap_row": "1 - beta = 1e-6, theta 90, alpha 5: 0.0813379904048 / 0.0070890706043 deg; vs package 2.0e-11 relative, which is my float64 method's conditioning at gamma 707, not the package's (the package's test tolerance 1e-11 against the 60-digit oracle holds).",
+    "D_at_apparent_centre": "1/(gamma(1 - beta cos c')) at my centres: 2.287075180161, 7.062324486291, 0.498122075824; vs package 0 / 1.8e-15 / 3.3e-16 relative. Confirms the convention D = 1/(gamma(1 - beta cos theta')) with theta' the apparent angle, as spec section 2 and dopplerApparent (optics.ail:53-58) use.",
+    "half_angle_law_vs_cosSeen": "cos(2 atan2(e^-phi sin(theta/2), cos(theta/2))) vs (cos theta + beta)/(1 + beta cos theta) over 1e4 random (theta, beta<0.999999): worst |dcos| 1.35e-14. Same convention (sources crowd forward), same sign of phi.",
+    "pole_crossing": "theta 2, alpha 5, 0.9c: package centre 0.45970446280509 radius 1.14810066536588 deg, 60-digit truth 0.459704462805109 / 1.148100665365885; pole 0.4597 deg from the image centre < radius, so the forward pole stays inside. theta 178, alpha 5: 171.58372056888393 / 21.439602329101284 vs truth 171.583720568883668 / 21.439602329101303; astern pole 8.42 deg from centre < 21.44 radius, inside. theta 0.5 alpha 1 and theta 179.5 alpha 1 at the cap also inside. The signed nearEdge = angleSeen(theta - alpha) with theta - alpha < 0 (angleSeen odd) is exactly right; clamping or mirroring it is wrong (mutations M4-M6).",
+    "precision_near_poles": "theta 1e-6 rad at the cap: half-angle law 2.9e-16 relative error, acos(cosSeen) returns 0.0 (100% error). theta 1e-4 at the cap: 3.7e-16 vs 1.1e-2. theta pi - 1e-6 at the cap: 1.1e-14 vs 2.0e-8. theta 1e-3 at 0.9c: 0 vs 5.9e-10. angleSeen(pi/2, cap) = 1.4142136802e-3 rad (= 2 atan(e^-phi), finite). The AGENT.md claim is correct.",
+    "angleSeen_symmetries": "angleSeen(-0.5) + angleSeen(0.5) = 0.0 exactly; angleSeen(2pi - 1) + angleSeen(1) = 6.283185307179586 (= 2pi); angleSeen(pi) = 3.1415926535897927 (1 ulp below pi, from h = pi/2 giving cos(h) = 6.1e-17). Oddness and the 2pi mirror hold as documented.",
+    "NaN": "apparentDisc(NaN, 0.1, phi) -> {NaN, NaN}; hoverPower(1, NaN) -> NaN. Propagates, no trap. Not folded into discDigest (suggest adding one NaN row, since the ensures clauses compare NaN and ailang#1419 makes NaN >= x engine-dependent if contracts are ever enforced at runtime).",
+    "hoverPower": "HB-90: P_hover = m_eff a_hover c with a_hover = GM/(r^2 sqrt(1 - r_s/r)) (higgs-bubble.md lines 351-367). Package test rebuilds HB-88 4.82e5 m/s^2 and HB-90 1.44e14 W/kg from HB-10 (4.297e6 M_sun, IAU GM_sun) at 3 r_s; optics_ref.py gives 4.81891152459916e5 and 1.44467333084411e14, matching the spec's printed digits. hoverPower(1, 0.1254) = 37593974.233200006 W = 0.1254 c. Meaning: the bubble's own acceleration is unfelt (property 3), so the drive must supply F = m_eff |g| as photon thrust; a collimated photon exhaust carries momentum E/c, so F = P/c and P = F c = m_eff |g| c. Consistent with medium.photonDriveEnergy's model and with the design's 'about 3.8e7 W per kg of m_eff' at 0.125 m/s^2. The |g| fold is right: hovering against g in either sign costs the same."
+  },
+  "mutations": [
+    {"id": "M1", "site": "optics.ail:136 exp(0.0 - phi) -> exp(phi)", "killed": true, "failing_tests": 9},
+    {"id": "M2", "site": "optics.ail:158 centre = angleSeen(theta, phi) (aberrated centre instead of the mean)", "killed": true, "failing_tests": 8, "note": "the RS-24/25 test's explicit 'aberrated centre is not the centre' assertion and the pole test both fire"},
+    {"id": "M3", "site": "medium.ail:140 drop the |g| fold", "killed": true, "failing_tests": 1, "note": "killed only by hoverPower(1, -0.1254) == hoverPower(1, 0.1254) in checkHoverPower; adequate but a single point of failure"},
+    {"id": "M4", "site": "optics.ail:156 clamp theta - alpha at 0 (no crossing)", "killed": true, "failing_tests": 3},
+    {"id": "M5", "site": "optics.ail:156 absf(theta - alpha) (mirror the near edge)", "killed": true, "failing_tests": 4},
+    {"id": "M6", "site": "optics.ail:157 clamp theta + alpha at pi (astern pole)", "killed": true, "failing_tests": 2}
+  ],
+  "findings": [
+    {"severity": "nit", "file": "packages/relativity/optics_test.ail:1", "issue": "header says '(0.6.x)' for a 0.7.0 feature", "suggestion": "say 0.7.0"},
+    {"severity": "nit", "file": "packages/relativity/tools/optics_ref.py:2-5", "issue": "docstring says '0.6.x' and names 'optics_disc_test.ail', which does not exist (the file is optics_test.ail)", "suggestion": "fix both names"},
+    {"severity": "nit", "file": "packages/relativity/README.md:20", "issue": "missing comma: 'glow (mean and angular profile, `glowEmittanceAt`) the trip energy ledger'", "suggestion": "add the comma"},
+    {"severity": "low", "file": "packages/relativity/medium.ail:139", "issue": "hoverPower has no requires/ensures; hoverPower(1, -0.0) = -0.0", "suggestion": "requires { mEffKg >= 0.0 } ensures { result >= 0.0 } and absf(gMs2); either is optional before publish"},
+    {"severity": "low", "file": "packages/relativity/_smoke.ail:173", "issue": "discDigest has no NaN row, unlike glowDigest", "suggestion": "fold apparentDisc(NaN, ...) and hoverPower(1, NaN) in as (if x != x then 1.0 else 0.0)"},
+    {"severity": "remark", "file": "packages/relativity/optics.ail:146-159", "issue": "the designed cosTheta input re-introduces acos conditioning at the forward pole (acos(1 - 1e-16) = 1.49e-8 rad), so near-pole callers lose the half-angle law's precision unless they use angleSeen with their own theta", "suggestion": "note in AGENT.md; consider an apparentDiscAt(theta, alpha, phi) in a later release. Not a defect: the signature is the design's and the error is far below a pixel"},
+    {"severity": "process", "file": "stapledons-godot/.ailang/state/sprints/sprint_R1-M5-PLANETS.json (M5.0b)", "issue": "passes/started/completed/notes are all null", "suggestion": "the executor should fill them (including the 'package values refine the oracle' note, which here is: none differ beyond 1e-12 relative) at the P-pkg-b pause"}
+  ],
+  "pre_existing_not_scored": [
+    "strict VM cannot run _smoke.ail main() (std/io.println evaluator-only); same on main a04be48",
+    "PUB011/PUB016 advisories on 55 uncontracted exports"
+  ],
+  "feedback_summary": "PASS 93/100. Physics of apparentDisc and hoverPower independently confirmed; 0.6.0 digests unchanged; safe to publish 0.7.0. Fix the four doc nits when convenient."
+}

@@ -1,0 +1,376 @@
+{
+  "area": "bridge",
+  "version": "buildout_v1_m4_2",
+  "pano_bridge.png": {
+    "resolution": [
+      4096,
+      2288
+    ],
+    "zero_alpha_fraction": 0.9880826723325503,
+    "top_third_exact_zero_alpha": true
+  },
+  "fg_bridge.png": {
+    "resolution": [
+      6432,
+      3472
+    ],
+    "zero_alpha_fraction": 0.9707731593329436,
+    "top_third_exact_zero_alpha": true,
+    "centre_40pct_view_columns_exact_zero_alpha": true
+  },
+  "needle_tip": {
+    "json_projected_pixel": [
+      2048.000071101644,
+      1501.4248806648002
+    ],
+    "render_top_pixel_y": 1501,
+    "ink_stroke_top_pixel_y": 1499,
+    "difference_px": 0.4248806648001846,
+    "analytical_roundtrip_error_px": 0.0003205394388915749,
+    "declared_pixel_agrees_px": 5.537329943614022e-06
+  },
+  "glb": {
+    "bytes": 1562544,
+    "meshes": 94,
+    "unique_mesh_data": 17,
+    "triangles": 68312,
+    "units": "metres, glTF Y up",
+    "walk_meshes": [
+      "WALK_bridge_deck",
+      "WALK_bridge_ramp_head"
+    ],
+    "needle_tip_z_m": 16.0,
+    "interactables": [
+      "archive_terminal",
+      "captain_chair",
+      "console_decision_0",
+      "console_decision_1",
+      "console_decision_2",
+      "console_decision_3",
+      "console_navigation_0",
+      "console_navigation_1",
+      "console_navigation_2",
+      "lift_arrival_pad",
+      "ramp_down"
+    ],
+    "spawns": [
+      "SPAWN_archive_0",
+      "SPAWN_arrival_0",
+      "SPAWN_captain_0",
+      "SPAWN_navigator_0",
+      "SPAWN_navigator_1",
+      "SPAWN_officer_0",
+      "SPAWN_officer_1",
+      "SPAWN_ramp_0",
+      "SPAWN_watch_0",
+      "SPAWN_watch_1"
+    ]
+  },
+  "walk": {
+    "area_m2_raster": 1307.91,
+    "agent_area_m2_raster": 1217.055,
+    "meshes": [
+      "WALK_bridge_deck",
+      "WALK_bridge_ramp_head"
+    ]
+  },
+  "checks": [
+    {
+      "name": "schema",
+      "ok": true,
+      "detail": {
+        "errors": []
+      }
+    },
+    {
+      "name": "isocam",
+      "ok": true,
+      "detail": {
+        "errors": [],
+        "isocam": {
+          "shot": "bridge",
+          "frame": "glTF: +Y up (= ship +Z), metres, origin = play_origin_ship_m [0.0, 0.0, 82.0]",
+          "projection": "orthographic",
+          "pitch_deg": -14,
+          "yaw_deg": 45,
+          "size_m": 16,
+          "size_axis": "vertical",
+          "rotation_order": "YXZ",
+          "focus_m": [
+            -8.0,
+            1.0,
+            9.0
+          ],
+          "v_offset_m": 6.08,
+          "forward": [
+            -0.686102688,
+            -0.241921902,
+            -0.686102688
+          ],
+          "up": [
+            -0.171064615,
+            0.970295727,
+            -0.171064615
+          ]
+        }
+      }
+    },
+    {
+      "name": "overscan",
+      "ok": true,
+      "detail": {
+        "errors": [],
+        "pan_range_m": [
+          6,
+          3
+        ],
+        "overscan_px": {
+          "panorama": [
+            128,
+            64
+          ],
+          "foreground": [
+            1296,
+            656
+          ]
+        },
+        "sizes": {
+          "panorama": [
+            4096,
+            2288
+          ],
+          "foreground": [
+            6432,
+            3472
+          ]
+        }
+      }
+    },
+    {
+      "name": "plates",
+      "ok": true,
+      "detail": {
+        "errors": [],
+        "pano_bridge.png": {
+          "resolution": [
+            4096,
+            2288
+          ],
+          "zero_alpha_fraction": 0.9880826723325503,
+          "top_third_exact_zero_alpha": true
+        },
+        "fg_bridge.png": {
+          "resolution": [
+            6432,
+            3472
+          ],
+          "zero_alpha_fraction": 0.9707731593329436,
+          "top_third_exact_zero_alpha": true,
+          "centre_40pct_view_columns_exact_zero_alpha": true
+        }
+      }
+    },
+    {
+      "name": "roundtrip",
+      "ok": true,
+      "detail": {
+        "json_projected_pixel": [
+          2048.000071101644,
+          1501.4248806648002
+        ],
+        "render_top_pixel_y": 1501,
+        "ink_stroke_top_pixel_y": 1499,
+        "difference_px": 0.4248806648001846,
+        "analytical_roundtrip_error_px": 0.0003205394388915749,
+        "declared_pixel_agrees_px": 5.537329943614022e-06
+      }
+    },
+    {
+      "name": "glb",
+      "ok": true,
+      "detail": {
+        "errors": [],
+        "bytes": 1562544,
+        "meshes": 94,
+        "unique_mesh_data": 17,
+        "triangles": 68312,
+        "units": "metres, glTF Y up",
+        "walk_meshes": [
+          "WALK_bridge_deck",
+          "WALK_bridge_ramp_head"
+        ],
+        "needle_tip_z_m": 16.0,
+        "interactables": [
+          "archive_terminal",
+          "captain_chair",
+          "console_decision_0",
+          "console_decision_1",
+          "console_decision_2",
+          "console_decision_3",
+          "console_navigation_0",
+          "console_navigation_1",
+          "console_navigation_2",
+          "lift_arrival_pad",
+          "ramp_down"
+        ],
+        "spawns": [
+          "SPAWN_archive_0",
+          "SPAWN_arrival_0",
+          "SPAWN_captain_0",
+          "SPAWN_navigator_0",
+          "SPAWN_navigator_1",
+          "SPAWN_officer_0",
+          "SPAWN_officer_1",
+          "SPAWN_ramp_0",
+          "SPAWN_watch_0",
+          "SPAWN_watch_1"
+        ]
+      }
+    },
+    {
+      "name": "review",
+      "ok": true,
+      "detail": {
+        "review_nodes_in_glb": []
+      }
+    },
+    {
+      "name": "walk_flat",
+      "ok": true,
+      "detail": {
+        "deck_walk_meshes": [
+          "WALK_bridge_deck"
+        ],
+        "max_abs_z_m": 0.0,
+        "tol_m": 0.03
+      }
+    },
+    {
+      "name": "walk_slope",
+      "ok": true,
+      "detail": {
+        "max_slope_deg": 8.446106545292452,
+        "limit_deg": 10.0,
+        "worst_mesh": "WALK_bridge_ramp_head"
+      }
+    },
+    {
+      "name": "walk_steps",
+      "ok": true,
+      "detail": {
+        "max_step_m": 0.0,
+        "limit_m": 0.05,
+        "junction_vertex_pairs": 4
+      }
+    },
+    {
+      "name": "walk_rim",
+      "ok": true,
+      "detail": {
+        "rail_inner_r_m": 21.2973790679581,
+        "rail_outer_r_m": 21.595874856748736,
+        "walk_limit_r_m": 20.7973790679581,
+        "deck_walk_max_r_m": 21.937375147102866,
+        "ramp_walk_max_r_m": 24.932877879479282,
+        "ramp_walk_continues_past_rail": true,
+        "violations": [],
+        "n_violations": 0
+      }
+    },
+    {
+      "name": "walk_obstacles",
+      "ok": true,
+      "detail": {
+        "walk_under_obstacles_m2": 0.0,
+        "overlap_by_object_m2": [],
+        "obstacles_checked": 17,
+        "lowest_walk_contact_fraction": [
+          [
+            "archive_terminal",
+            0.546
+          ],
+          [
+            "archive_shrine_ribs",
+            1.0
+          ],
+          [
+            "captain_chair",
+            1.0
+          ],
+          [
+            "console_decision_0",
+            1.0
+          ],
+          [
+            "console_decision_1",
+            1.0
+          ],
+          [
+            "console_decision_2",
+            1.0
+          ]
+        ],
+        "clearance_added_around": [],
+        "slab_m": [
+          0.05,
+          1.8
+        ],
+        "cell_m": 0.05
+      }
+    },
+    {
+      "name": "walk_connected",
+      "ok": true,
+      "detail": {
+        "regions_at_agent_radius": 1,
+        "region_areas_m2": [
+          1217.06
+        ],
+        "dropped_tiny_regions": 0,
+        "agent_radius_m": 0.35
+      }
+    },
+    {
+      "name": "spawns",
+      "ok": true,
+      "detail": {
+        "vertical_gap_m": {
+          "SPAWN_archive_0": 0.0,
+          "SPAWN_arrival_0": 0.0,
+          "SPAWN_captain_0": 0.0,
+          "SPAWN_navigator_0": 0.0,
+          "SPAWN_navigator_1": 0.0,
+          "SPAWN_officer_0": 0.0,
+          "SPAWN_officer_1": 0.0,
+          "SPAWN_ramp_0": 0.0,
+          "SPAWN_watch_0": 0.0,
+          "SPAWN_watch_1": 0.0
+        },
+        "off_walk": [],
+        "tol_m": 0.05
+      }
+    },
+    {
+      "name": "reach",
+      "ok": true,
+      "detail": {
+        "agent_floor_distance_m": {
+          "archive_terminal": 0.0,
+          "captain_chair": 0.0,
+          "console_decision_0": 0.045,
+          "console_decision_1": 0.088,
+          "console_decision_2": 0.045,
+          "console_decision_3": 0.088,
+          "console_navigation_0": 0.0,
+          "console_navigation_1": 0.0,
+          "console_navigation_2": 0.0,
+          "lift_arrival_pad": 0.0,
+          "ramp_down": 0.0
+        },
+        "unreachable": [],
+        "reach_m": 1.5
+      }
+    }
+  ],
+  "all_passed": true
+}

@@ -1,14 +1,126 @@
 {
   "area": "bridge",
-  "placeholder": true,
+  "version": "buildout_v1_m4_2",
+  "status": "buildout_v1_m4_2_for_review",
+  "placeholder": false,
   "layers": {
-    "panorama": {"file": "pano_bridge.png", "parallax": 0.15},
-    "play": {"file": "play_bridge.glb", "iso_pitch_deg": -14, "iso_yaw_deg": 45, "iso_size_m": 16},
-    "foreground": {"file": "fg_bridge.png", "parallax": 1.6}
+    "panorama": {
+      "file": "pano_bridge.png",
+      "parallax": 0.15,
+      "overscan_px": [
+        128,
+        64
+      ]
+    },
+    "play": {
+      "file": "play_bridge.glb",
+      "iso_pitch_deg": -14,
+      "iso_yaw_deg": 45,
+      "iso_size_m": 16,
+      "camera": "isocam_bridge.json"
+    },
+    "foreground": {
+      "file": "fg_bridge.png",
+      "parallax": 1.6,
+      "overscan_px": [
+        1296,
+        656
+      ]
+    }
   },
   "camera": "cam_bridge.json",
-  "focus_m": [-8.0, 1.0, 9.0],
+  "focus_m": [
+    -8.0,
+    1.0,
+    9.0
+  ],
   "sky_visible": true,
-  "source": "CURRENT BUNDLE = the blockout placeholder (same files as tests/fixtures/areas/bridge_blockout) until the bridge v1 bundle is approved; replacing this directory is a data drop (AC14). spike blockout from origin/spike/iso-bridge 4eda978 (spike/v2 bridge_slice.glb + walk disc, spawns, two INTERACT_ stand-ins via tools/build_blockout_fixture.gd; spike/v2 cam_bridge.json and stapledon_pano_bridge.png; spike/v3 stapledon_fg_bridge.png)",
-  "validation": {"needle_tip_ship_m": [0.0, 0.0, 98.0]}
+  "pan_range_m": [
+    6,
+    3
+  ],
+  "view_px": [
+    3840,
+    2160
+  ],
+  "palette_note": "Bridge v1 palette kept: cream deck, coral captain ring, teal helm floor and consoles, ochre for human touchpoints and inlays, violet ink and rails, mint screens, pale luminous spire. No authored sky or membrane.",
+  "play_origin_ship_m": [
+    0.0,
+    0.0,
+    82.0
+  ],
+  "interactables": [
+    "archive_terminal",
+    "captain_chair",
+    "console_decision_0",
+    "console_decision_1",
+    "console_decision_2",
+    "console_decision_3",
+    "console_navigation_0",
+    "console_navigation_1",
+    "console_navigation_2",
+    "lift_arrival_pad",
+    "ramp_down"
+  ],
+  "spawns": [
+    "SPAWN_captain_0",
+    "SPAWN_archive_0",
+    "SPAWN_navigator_0",
+    "SPAWN_navigator_1",
+    "SPAWN_officer_0",
+    "SPAWN_officer_1",
+    "SPAWN_watch_0",
+    "SPAWN_watch_1",
+    "SPAWN_arrival_0",
+    "SPAWN_ramp_0"
+  ],
+  "walk": "WALK_bridge",
+  "walk_rules": {
+    "walk_outer_r_m": 20.7,
+    "obstacle_slab_m": [
+      0.05,
+      1.8
+    ],
+    "flat_tol_m": 0.03,
+    "max_slope_deg": 10.0,
+    "max_step_m": 0.05,
+    "rim_clearance_m": 0.5,
+    "agent_radius_m": 0.35,
+    "agent_height_m": 1.8,
+    "reach_m": 1.5,
+    "spawn_tol_m": 0.05,
+    "ramp": "ramp_down",
+    "min_region_m2": 0.25,
+    "rail_gaps_deg": [
+      [
+        204,
+        212
+      ]
+    ],
+    "ramp_axis_deg": 208.125002803398,
+    "ramp_walk_half_width_m": 1.3,
+    "ramp_head_m": 3.0,
+    "ramp_start_r_m": 21.9
+  },
+  "source_scene": "stapledon_bridge_buildout_v1.blend",
+  "source_layout": "assets/stapledon/bridge_layout_v1.json",
+  "validation": {
+    "needle_tip_ship_m": [
+      0,
+      0,
+      98.0
+    ],
+    "needle_tip_pixel": [
+      2048.0000672898127,
+      1501.4248846812618
+    ],
+    "camera_roundtrip_error_px": 0.0003205394388915749
+  },
+  "panorama_excluded_near_camera": [
+    "rim_frond_9",
+    "rim_rail_28",
+    "rim_rail_29",
+    "rim_rail_30",
+    "rim_rail_31"
+  ]
 }

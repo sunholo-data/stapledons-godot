@@ -16,10 +16,17 @@
     -0.3601502478122711,
     0.592839777469635
   ],
-  "fov_vertical_deg": 78.0,
+  "fov_vertical_deg": 81.24408621578985,
   "resolution": [
-    1920,
-    1080
+    4096,
+    2288
   ],
-  "panorama": "pano_bridge.png"
+  "panorama": "pano_bridge.png",
+  "view_region_px": [
+    128,
+    64,
+    3840,
+    2160
+  ],
+  "view_fov_vertical_deg": 78.0
 }

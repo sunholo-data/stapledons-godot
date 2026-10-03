@@ -1,7 +1,7 @@
 {
   "sprint_id": "R1-M5-PLANETS",
   "created": "2026-10-03",
-  "status": "approved",
+  "status": "in_progress",
   "approved": {
     "by": "Mark",
     "date": "2026-10-03",
@@ -167,10 +167,17 @@
         "Ecliptic pole -> galactic"
       ],
       "art_gated": false,
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-03",
+      "notes": "Published as part of sunholo/celestial 0.1.0 (ailang-packages PR #91): kepler, ephemeris, frames. Independent eval 89/100 PASS (B1 ringUnlitIF fixed before publish). Pinned by the game in M5.1a.",
+      "published": "sunholo/celestial@0.1.0",
+      "eval": {
+        "file": ".ailang/state/evaluations/eval_R1-M5-PLANETS-M5.0a_round_1.json",
+        "score": 89,
+        "result": "pass",
+        "note": "one independent evaluation covers M5.0a1 + M5.0a2 (generator != judge)"
+      }
     },
     {
       "id": "M5.0b_PKG_RELATIVITY_APPARENT_DISC",
@@ -206,10 +213,16 @@
         "Three geometries, identity at rest, finiteness at the cap, hoverPower linearity"
       ],
       "art_gated": false,
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-03",
+      "notes": "optics.apparentDisc, angleSeen and medium.hoverPower (F7, Q5) released in relativity 0.7.0 after M4.6a's 0.6.0 (Q2). Independent physics eval 93/100, six mutants killed, every 0.6.0 digest bit-identical. Pinned by the game in M5.1a.",
+      "published": "sunholo/relativity@0.7.0",
+      "eval": {
+        "file": ".ailang/state/evaluations/eval_R1-M5-PLANETS-M5.0b_round_1.json",
+        "score": 93,
+        "result": "pass"
+      }
     },
     {
       "id": "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
@@ -248,10 +261,16 @@
         "Every M5.0a design-table row in lighttime/gravity/reflect/rings before its function"
       ],
       "art_gated": false,
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": null
+      "completed": "2026-10-03",
+      "notes": "lighttime, gravity, reflect, rings; quality no gates; dry run; published 0.1.0 after the independent eval (89/100; the B1 grazing-Sun overflow in ringUnlitIF fixed first). P-pkg-a needed no Mark action (Q1). Pinned by the game in M5.1a.",
+      "published": "sunholo/celestial@0.1.0",
+      "eval": {
+        "file": ".ailang/state/evaluations/eval_R1-M5-PLANETS-M5.0a_round_1.json",
+        "score": 89,
+        "result": "pass"
+      }
     },
     {
       "id": "M5.1a_SOL_ACEN_DATA_PINS",
@@ -293,10 +312,23 @@
         "Provenance and ring-table checks before the data rows"
       ],
       "art_gated": false,
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-03",
+      "completed": "2026-10-03",
+      "notes": "Pins: relativity 0.5.2 -> 0.7.0 (carries M4.6a glowEmittanceAt), + celestial 0.1.0; lock relocked; runtime/cache refreshed (make runtime equivalent; gh download hung, staged from the same v0.52.0 tarball). Data: sol.ail (Standish T2a/2b; IAU 2015 poles/W/radii from NAIF pck00011 incl. periodic terms; DE440 GM; Mallama 2017 p_V; Binder 1973 k for Jupiter 1.0 / Saturn 0.825; JPL SSD satellite elements; NSSDC moon albedos; PDS (Saturn) + NSSDC ring bands), acen.ail (Akeson 2021 AB; Proxima c P/a cited to Kervella 2020; Chen & Kipping with its 1.008 normalisation; Proxima b,d confirmed per archive ps snapshot 2026-10-03 sha256-pinned; Proxima c and A b candidates; per-field measured|inferred|assumed; no B b). Tests: 22 checks (round-1 eval 89/100 follow-ups added Kepler's third law, NSSDC e and masses, p_V in (0,1], the Encke gap boundary, node signs, tighter moon-period tolerance) in celestial_test.ail (make sim test blocks + make strict-m5 strict VM == interpreter). Mutants killed: dropped/unknown citation key, retracted row, upgraded candidate, assumed field without note, Io apse sign, Mimas P read as anomalistic, F-ring edge. Round 2 also kills: Saturn a, Mars e, Venus/Uranus GM, p_V > 1, Encke gap, Titan P read anomalistic, Triton and Rhea node signs, Callisto host, Moon e (Triton node now pinned by nodeRate cos i <= 0). Deviations: (1) design names 12 moons but says 11 - all 12 loaded; (2) design-repo ring table: only the Uranus row is wrong (rings 6..epsilon span 1.637-2.002 R, not 1.49-1.95); Saturn F (2.33) and Jupiter gossamer (3.10) are outside the table's scope, Neptune 1.69 is the Galle centre, Jupiter halo 1.25 is NSSDC vs Burns' ~1.29; checkRingPublishedEdges asserts the published edges positively and only the Uranus mismatch; (3) Uranus/Neptune Minnaert k: no citable visible value, Lambert assumed (cite key lambert-assumed); (4) GMs are DE440 for all bodies (agree with IAU 2015 nominal Sun/Earth/Jupiter to 1e-6); (5) Neptune Adams arcs not modelled (M5.2b). AILANG: strict VM refuses a long list literal of calls (register budget) - moons() split per system; reported to inbox user (inbox_1791037931866_b80f2b7c). Round-1 hygiene: 36 compile-cache files under sim/data/.ailang/cache untracked; .gitignore gains **/.ailang/cache/.",
+      "branch": "sprint/m5.1a-system-data",
+      "actual_loc": {
+        "code": 283,
+        "tests": 179,
+        "total": 462,
+        "note": "counted (non-blank, non-comment): sol.ail 191, acen.ail 70, mk/m5.mk 22, celestial_test.ail 179; 1.65x the 280 estimate, inside the 650 cap"
+      },
+      "pin_commit": "5057d92 (self-contained: sim/ailang.toml [dependencies] + sim/ailang.lock only)",
+      "eval": {
+        "file": ".ailang/state/evaluations/eval_R1-M5-PLANETS-M5.1a_round_1.json",
+        "score": 89,
+        "result": "pass"
+      }
     },
     {
       "id": "M5.1b_SYSTEM_AT_CHANGESET",
