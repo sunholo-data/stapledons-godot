@@ -166,7 +166,7 @@ ai-adapter-record: ## regenerate tests/ai/adapter.golden.txt and the prompt gold
 
 # AI.4 and AI.5 mutation check (as markers-mutants): each mutant of the service's pure modules, applied to a
 # scratch copy of ai/, must fail its named test.
-ai-mutants:        ## AI.4, AI.5, AI.8: route, key, stub, cache order, acts order, budget, wire, screen, prompt, live guard, core verify; each fails a named test
+ai-mutants:        ## AI.4, AI.5, AI.8, AI.9: route, key, stub, cache order, acts order, budget, wire, screen, prompt, live guard, core verify; each fails a named test
 	@set -e; A=$$(command -v $(AILANG)); case "$$A" in /*) ;; *) A="$$PWD/$$A";; esac; \
 	for m in \
 	  'route.ail@else if !serves(h.provider, kind) then@else if false then@AI.4 routing config errors refused at start@route_test.ail' \
@@ -187,6 +187,13 @@ ai-mutants:        ## AI.4, AI.5, AI.8: route, key, stub, cache order, acts orde
 	  'spend.ail@usd * 1000000000.0 + 0.5@usd * 1000000000.0@AI.5 prices and ceilings round to the nearest nano-dollar@spend_test.ail' \
 	  'spend.ail@x * scale + 0.5@x * scale@AI.5 prices and ceilings round to the nearest nano-dollar@spend_test.ail' \
 	  'reply.ail@ || contains(s, "7")@@AI.5 screen: grammar, palette, brackets, digits, display length@reply_test.ail' \
+	  'reply.ail@Ok(j) => match get(j, "error") { Some(_) => None, None => Some({ tokensIn: inputTokensOf(body)@Ok(j) => match get(j, "error") { Some(_) => Some({ tokensIn: 0, tokensOut: 0 }), None => Some({ tokensIn: inputTokensOf(body)@AI.9 an unparsable but billed reply reports its tokens; error bodies are not billed@reply_test.ail' \
+	  'tools/core_import.ail@cf("width", intToStr(a.w)), cf("height", intToStr(a.h))@cf("width", intToStr(a.h)), cf("height", intToStr(a.w))@AI.8 an index line from a fixture PNG: key, sha256, bytes, size, prompt hash, pinned source@tools/core_import_test.ail' \
+	  'tools/core_import.ail@w: s.w, h: s.h,@w: s.h, h: s.w,@AI.8 an index line from a fixture PNG: key, sha256, bytes, size, prompt hash, pinned source@tools/core_import_test.ail' \
+	  'tools/core_import.ail@else if e.n <= 0 then@else if e.n < 0 then@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
+	  'tools/core_import.ail@(coreNat(j, "width") <= 0 || coreNat(j, "height") <= 0)@(coreNat(j, "width") <= 0)@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
+	  'tools/core_import.ail@length(s) > 50 &&@length(s) > 49 &&@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
+	  'tools/core_import.ail@isLowerHex(substring(s, 8, 48), 40) &&@true &&@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
 	  'tools/core_import.ail@Some(x) => Err(x),@Some(_) => Ok(e),@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
 	  'tools/core_import.ail@if member(canonical(e.key), seen) then@if false then@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
 	  'tools/core_import.ail@else if coreStr(j, "origin") != "core" then@else if false then@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
@@ -344,6 +351,7 @@ ai-core-assets:    ## AI.8: fetch the pinned core blobs from the public bucket (
 	test $$missing -eq 0 || { echo "ai-core-assets: $$missing pinned blob(s) not fetched"; exit 1; }
 
 # Stages res://ai_core/ (gitignored) for the export: index.ndjson plus the pinned blobs, verified.
+# Each PNG gets a "keep" .import (AI.9), so the export ships its bytes, not a texture.
 # AI.9 makes export-macos depend on it. No blobs -> a warning and no core layer (the game falls
 # back to text and the library).
 ai-core-bundle:    ## AI.8: stage the verified core layer into ai_core/ for the export
@@ -352,6 +360,7 @@ ai-core-bundle:    ## AI.8: stage the verified core layer into ai_core/ for the 
 	  $(call ai_core_verify,$(AI_CORE_DIR),$(AI_CORE_BLOBS)) > /dev/null || exit 1; mkdir -p ai_core && cp $(AI_CORE_DIR)/index.ndjson ai_core/ && \
 	  $(call ai_core_blobs,$(AI_CORE_DIR)/SHA256SUMS) | while read -r sum path; do mkdir -p "ai_core/$$(dirname $$path)" && cp "$(AI_CORE_BLOBS)/$$path" "ai_core/$$path"; done && \
 	  (cd ai_core && grep -v '  index.ndjson$$' ../$(AI_CORE_DIR)/SHA256SUMS | shasum -a 256 -c --quiet && shasum -a 256 index.ndjson | grep -q '^$(AI_CORE) ') && \
+	  for f in $$(find ai_core -name '*.png'); do printf '[remap]\n\nimporter="keep"\n' > "$$f.import"; done && \
 	  echo "ai-core-bundle: staged $$(find ai_core -type f | wc -l | tr -d ' ') files ($$(du -sh ai_core | cut -f1)), ai_core $(AI_CORE)"; \
 	else echo "ai-core-bundle: WARNING no core blobs in $(AI_CORE_BLOBS); this build has no core layer (run make ai-core-assets)"; fi
 
@@ -363,3 +372,74 @@ ai-core-publish:   ## AI.8 maintainers (gcloud auth): upload the pinned core blo
 	  if gcloud storage objects describe "$$obj" > /dev/null 2>&1; then echo "  exists   $$obj"; continue; fi; \
 	  gcloud storage cp --no-clobber --cache-control="public, max-age=31536000, immutable" "$(AI_CORE_BLOBS)/$$path" "$$obj" && echo "  uploaded $$obj"; \
 	done
+
+# ---------------------------------------------------------------- AI.9: key and cost UX, live guard, export
+# Design (a5). AC15: no automation can start a live provider. tools/ai_live_guard.sh holds the
+# static rules (A-E, in its header); the target then proves each rule fires on a mutated scratch
+# copy (a test target passing --provider gemini, one passing --provider openrouter, AI_LIVE=1 in
+# CI, AI_LIVE set by a test other than tests/test_ai_relay.gd, live_allowed = true in a test,
+# live_allowed defaulting to true, no --ai-no-adc, live in automation runs), and runs the launch
+# builder with AI_LIVE and the keys unset (tests/test_ai_settings.gd --launch-default).
+.PHONY: ai-live-guard ai-settings ai-runtime ai-export-smoke ai-loopback-mutants
+ai-test: ai-live-guard ai-settings
+
+AI_G := $(SCRATCH)/ai-live-guard
+ai_guard_scan = Makefile mk .github tests tools bridge/ai_bridge.gd ui/settings/ai_settings.gd
+ai-live-guard: import   ## AC15: no target, test, CI job or launch path can start a live provider; each rule's mutant is caught
+	@sh tools/ai_live_guard.sh .
+	@set -e; for m in \
+	  'mk/ai.mk@\z@\nai-mutant:\n\t$$(AILANG) run --quiet --package-dir ai --provider gemini ai/service.ail\n@A mk/ai.mk' \
+	  'mk/ai.mk@\z@\nai-mutant:\n\t$$(AILANG) run --quiet --package-dir ai --provider openrouter ai/service.ail\n@A mk/ai.mk' \
+	  'mk/ai.mk@\z@\nai-mutant:\n\tprintf x | $$(AILANG) run --caps IO,FS,Env,Net,AI --entry live ai/service.ail\n@A mk/ai.mk' \
+	  '.github/workflows/ci.yml@\z@\n      - run: AI_LIVE=1 make ai-relay\n@C .github/workflows/ci.yml' \
+	  'tests/test_ai_bridge.gd@\z@\n\tOS.set_environment("AI_LIVE", "1")\n@B tests/test_ai_bridge.gd' \
+	  'tests/test_ai_settings.gd@\z@\n\tb.live_allowed = true\n@B tests/test_ai_settings.gd' \
+	  'bridge/ai_bridge.gd@^var live_allowed := false$$@var live_allowed := true@D bridge/ai_bridge.gd: live_allowed' \
+	  'bridge/ai_bridge.gd@, "--ai-no-adc"\]@]@D bridge/ai_bridge.gd: Gemini' \
+	  'bridge/ai_bridge.gd@\[ "\$$a" = 1 \] && l=AI_LIVE=1; @l=AI_LIVE=1; @D bridge/ai_bridge.gd: LIVE_WRAP' \
+	  'ui/settings/ai_settings.gd@return opt_in and not automation and@return opt_in and@E ui/settings/ai_settings.gd: live_on'; do \
+	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; want=$${rest#*@}; \
+	  rm -rf $(AI_G) && mkdir -p $(AI_G) && git ls-files $(ai_guard_scan) | grep -v '^tests/replays/\|^tests/ai/\|^tests/fixtures/\|\.uid$$' | tar -cf - -T - | tar -xf - -C $(AI_G); \
+	  FROM="$$from" TO="$$to" perl -0pi -e '$$t = $$ENV{TO}; $$t =~ s/\\n/\n/g; $$t =~ s/\\t/\t/g; s/$$ENV{FROM}/$$t/m or die "anchor not found: $$ENV{FROM}\n"' $(AI_G)/$$file; \
+	  if sh tools/ai_live_guard.sh $(AI_G) > $(AI_G)/out.txt; then echo "guard mutant SURVIVED: $$file $$to"; exit 1; fi; \
+	  grep -qF "ai-live-guard: $$want" $(AI_G)/out.txt || { echo "guard mutant in $$file did not fail '$$want':"; cat $(AI_G)/out.txt; exit 1; }; \
+	  echo "guard mutant caught: $$file ($$want)"; \
+	done
+	env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd -- --launch-default
+
+ai-settings: import   ## AI.9: settings (opt-in, keys 0600, kinds, ceiling, text-only), panel, indicator + budget, wired AC14 path
+	env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd
+
+# AI.9 must-fix 2: a billed but unparsable reply is charged. Each mutant of ai/adapters.ail drops
+# the charge on one parse failure and must fail make ai-loopback's billed check.
+ai-loopback-mutants:   ## AI.9: OpenRouter and TTS parse failures uncharged; each fails ai-loopback
+	@set -e; cp ai/adapters.ail $(SCRATCH)/adapters.ail.orig; trap 'cp $(SCRATCH)/adapters.ail.orig ai/adapters.ail' EXIT; \
+	for m in 'units: billed(u, billedOpenRouter(resp.body))@billed openrouter failure not charged' 'units: billed(u, billedTts(resp.body))@billed tts failure not charged'; do \
+	  from=$${m%%@*}; want=$${m#*@}; cp $(SCRATCH)/adapters.ail.orig ai/adapters.ail; \
+	  FROM="$$from" perl -0pi -e 's/\Q$$ENV{FROM}\E/units: u/ or die "anchor not found\n"' ai/adapters.ail; \
+	  if $(MAKE) --no-print-directory ai-loopback > $(SCRATCH)/loopback-mutant.txt 2>&1; then echo "mutant SURVIVED: $$from"; exit 1; fi; \
+	  grep -qF "FAIL $$want" $(SCRATCH)/loopback-mutant.txt || { tail -5 $(SCRATCH)/loopback-mutant.txt; exit 1; }; \
+	  echo "mutant killed: adapters.ail '$$from' -> 'units: u' fails '$$want'"; \
+	done
+ai-mutants: ai-loopback-mutants
+
+# Export: the AI service runs from the bundled runtime with ai/ and data/ai/ unpacked beside the
+# sim. ai-runtime locks ai/ (sunholo/gemini_live) into the bundled package cache, beside the sim's.
+AI_RT_HOME := $(SCRATCH)/ai-runtime-home
+ai-runtime: runtime   ## AI.9: add ai/'s locked packages to the bundled runtime's package cache
+	@rm -rf $(AI_RT_HOME) && mkdir -p $(AI_RT_HOME)
+	cd ai && HOME=$(CURDIR)/$(AI_RT_HOME) $(CURDIR)/$(RUNTIME)/bin/ailang lock
+	@git checkout -q ai/ailang.lock
+	cp -R $(AI_RT_HOME)/.ailang/cache/registry/. $(RUNTIME)/cache/registry/
+	@find $(RUNTIME)/cache/registry -mindepth 3 -maxdepth 3 -type d | sed 's/^/  cached /'
+export-macos: ai-runtime ai-core-bundle
+
+# export-smoke gains the stub AI hello (no ailang on PATH): the app starts the bundled stub
+# service, writes its hello and quits.
+ai-export-smoke:   ## AI.9: the exported .app's AI service says hello in stub mode with no ailang on PATH
+	@rm -rf $(SCRATCH)/ai-export-smoke && mkdir -p $(SCRATCH)/ai-export-smoke
+	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
+	env -i PATH=/usr/bin:/bin HOME="$$HOME" "$(APP)/Contents/MacOS/$$exe" -- --map --ai-hello="$(CURDIR)/$(SCRATCH)/ai-export-smoke/hello.json"
+	@h=$(SCRATCH)/ai-export-smoke/hello.json; cat $$h; grep -q '"type":"hello"' $$h && grep -q '"provider":"stub"' $$h && grep -q '"live":false' $$h && \
+	  echo "ai-export-smoke: OK (stub hello from the bundled runtime)"
+export-smoke: ai-export-smoke
