@@ -115,7 +115,14 @@ pure func checkStandoff() -> bool {
   let landed = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
   near(planDistance(on), 4.37 - s, 0.000000000001) && planDistance(off) == 4.37 && od == -1.0 && hd == 1.0 &&
   near(planDistance(home), 4.37 - s, 0.000000000001) &&
-  near((position(landed.ship)).z, 0.0 - (4.37 - s), 0.000000000001) && standoffFor(1000.0, 0) == 0.0 && standoffFor(1000.0, 3) == s && standoffFor(0.0, 3) == 0.0
+  near((position(landed.ship)).z, 0.0 - (4.37 - s), 0.000000000001) && standoffFor(1000.0, "Sol") == 0.0 && standoffFor(1000.0, "alpha Cen") == s && standoffFor(0.0, "alpha Cen") == 0.0
+}
+-- Home is the id "Sol", not catalogue index 0 (the map's index 0 is Proxima Centauri,
+-- which gets the stand-off like any other star; M5.5a fix of the M4.2 finding).
+pure func checkHomeById() -> bool {
+  let s = standoffLy(1000.0);
+  let prox = (run(newWorld(5, false, withStandoff(1000.0)), 0.0, [planI({index: 0, id: "Proxima Cen", pos: {x: 0.0, y: 0.0, z: 0.0 - 4.24}}, phi099())])).world;
+  near(planDistance(prox), 4.24 - s, 0.000000000001) && standoffFor(1000.0, "Proxima Cen") == s
 }
 -- A star nearer than the stand-off cannot be planned to.
 pure func checkStandoffTooNear() -> bool {
@@ -386,6 +393,7 @@ test "AC1 dwell adds equally to tau and t" { checkDwell() }
 test "tracking off below minor 2: no news draw, no log, same flight" { checkTrackingOff() }
 test "stand-off: plan distance = d - 1000 AU on the same heading; Sol and 0 AU unchanged" { checkStandoff() }
 test "stand-off: a star inside it is out_of_range" { checkStandoffTooNear() }
+test "home is the id Sol, not catalogue index 0 (Proxima at index 0 gets the stand-off)" { checkHomeById() }
 test "AC2 five news tiers at their boundaries" { checkTiers() }
 test "AC2 alpha Cen tier <1, return tier 5-15, news stream only" { checkNewsTiers() }
 test "AC2 template choice seeded and replayable" { checkTemplateSeeded() }
@@ -410,7 +418,7 @@ test "protocol 2.2: bad stand-off and archive rows are bad_params / bad_game" { 
 test "strict entry scriptedRoundTrip agrees with the world" { checkScripted() }
 
 export pure func consequenceVm(n: int) -> string =
-  if checkRoundTrip(4.37) && checkRoundTripCanon() && checkRoundTripCatalogue() && checkNewsEpoch() && checkClockAtRest() && checkDwell() && checkTrackingOff() && checkStandoff() && checkStandoffTooNear() &&
+  if checkRoundTrip(4.37) && checkRoundTripCanon() && checkRoundTripCatalogue() && checkNewsEpoch() && checkClockAtRest() && checkDwell() && checkTrackingOff() && checkStandoff() && checkStandoffTooNear() && checkHomeById() &&
     checkTiers() && checkNewsTiers() && checkTemplateSeeded() && checkIsmCruise() && checkIsmRelaxes() && checkDragEnergy() && checkDragWindow() &&
     checkRecordRefusals() && checkRecordAccepted() && checkRecordOtherRequest() && checkRecordNoRequest() && checkRecordExpired() && checkLegacyAppendOnly() && checkLegacyKinds() &&
     checkArchive() && checkArchiveGamma() && checkHints() && checkWire22() && checkWireLegacyDelta() && checkProgress() && checkWireBad() && checkScripted()

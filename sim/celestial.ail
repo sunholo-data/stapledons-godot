@@ -42,7 +42,10 @@ export pure func solSystem() -> System =
 
 -- What bodyAt returns: galactic, km and km/s, the pole a unit vector, W in degrees.
 export type BodyState = { pos: Vec3, vel: Vec3, pole: Vec3, wDeg: float }
--- One body as seen from the ship (design §M5.1 field list).
+-- One body as seen from the ship (design §M5.1 field list). sunDir is the unit
+-- vector body -> star at the body's retarded time; for the star itself it is
+-- the zero vector (there is no direction from a star to itself), with rAu 0 and
+-- phaseDeg 0. A renderer must not normalise a star's sunDir (kind == "star").
 export type BodyView = { id: string, name: string, kind: string, host: string, status: string,
   relKm: Vec3, radiusKm: float, flattening: float, pole: Vec3, wDeg: float,
   sunDir: Vec3, rAu: float, phaseDeg: float, eVLux: float, pV: float, minnaertK: float, ringId: string,

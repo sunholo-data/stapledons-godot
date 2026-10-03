@@ -484,10 +484,19 @@
         "AC14/AC15/AC17 fixtures before navigation.ail"
       ],
       "art_gated": false,
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-03T19:00:00Z",
+      "completed": "2026-10-03T21:30:00Z",
+      "notes": "M5.5a done on sprint/m5.5a-body-targets. sim/navigation.ail (pure, strict-clean) composes bodyAt with relativity planBurnCoastBurn/motionAt/doppler; core.ail +34/-14 (dispatch IPlanBody, Plan.nav, commit staleness, arrival on a body leg's own point, home by id). Protocol 2.4 (navMinor 4): body form target{kind:body,id} (client index/pos ignored), approach{mode stop[,standoff_km] | flyby,b_km,clock_deg[,run_out_km]}; journey.plan gains target_kind, intercept{t,pos}, pass{t,b_km,beta,d_at_pass} or hold{body,offset_km}; below minor 4 body plans are bad_intent; star plans and minor<=3 streams byte-identical (no replay golden changed). Decisions: safety minimum 1.1 R + bubble (too_close below, clamp above 0.1 AU); clock 0 = pole projected across the approach line, 90 = cross(u, north) (right, clockwise on the sky); pass point is the exact perpendicular foot (closest distance = b); pass time via bisection on package motionAt (no trip formula restated); collision/ring checks at each body's nearest-approach time; not_visitable for alpha Cen ids, the Sun and unknown ids; a body plan is stale once the Earth clock moves (plan+commit in one tick); cruise beta 0.001..0.99 via cruise_phi (the params echo does not carry the body bounds yet: M5.6a, to keep 2.x echo bytes). hold{} emitted for stops now (design lists it in journey.plan; M5.5b adds ship.hold). Finding: the JD grid (jd ~2.45e6 resolves ~4e-5 s) makes fast-converging intercepts hit an exact fixed point before step 12, so the 11-vs-12 mutant is killed with a Mercury chase (contraction ~0.17). M5.1b eval findings folded: star sun_dir zero documented (celestial.ail, protocol, bridge); retarded sun_dir/r_au/phase test kills M7; protocolVm includes the 4 2.3 checks; design M5.1 updated (systemAt(sys,jd,shipLy), kind/ring_id, SimBridge.system, 1.2706e5 lux); hello reports relativity 0.7.0 from minor 4 (minors 0-3 keep '0.4.0' so x86_64 sha256 goldens stay valid; make hello-pin ties it to sim/ailang.toml); celestial 0.1.1 named as a dependency of M5.5b and M5.7 in the plan. M4.2 finding fixed: home is id 'Sol' (standoffFor takes the id; Proxima at index 0 now gets the stand-off; consequence_test updated + checkHomeById). Mutation: 18/18 killed (each refusal dropped, client pos, 11 iterations x2, no_converge, stale commit, minor gate, arrival with M4 stand-off, clamp, clock sign, pass tilt, run-out margin, home by index). Tests were written alongside the module rather than strictly before it; RED was shown per mutant. Open for later: body arrivals still run M4's consequence arrival (news item at a planet), to be scoped in M5.5b; the start inside the Sun (M2 origin) makes every body plan collide until M5.5b's start above Earth.",
+      "branch": "sprint/m5.5a-body-targets",
+      "protocol_minor": 4,
+      "actual_loc": {
+        "code": 303,
+        "tests": 338,
+        "total": 641,
+        "ratio": 1.83,
+        "note": "counted LOC (non-blank, non-comment): navigation.ail 166 + additions to core/protocol/consequence/celestial/bridge/mk/toml 137; navigation_test.ail 264 + test additions 74. Fixture and docs not counted. Inside the 650 cap."
+      }
     },
     {
       "id": "M5.2b_RINGS_SHADOWS_ATMOSPHERE",

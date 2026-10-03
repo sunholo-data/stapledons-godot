@@ -556,7 +556,7 @@ pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures() ++ ai
 export pure func protocolVm(n: int) -> string =
   if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho() &&
     checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire() && checkArrivalOnWire() && checkDrawOnWire() && checkPhiBoundsEcho() && checkFlownOnWire() &&
-    checkAiCodecs() && checkHello21()
+    checkAiCodecs() && checkHello21() && checkHello23() && checkSystemOnWire() && checkEpochJd() && checkSystemRoundTrip()
   then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
 
 test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }
@@ -592,9 +592,9 @@ pure func helloWant(m: int) -> string = join("", ["{\"v\":2,\"type\":\"hello\",\
 pure func sysGame(params: string) -> string = newGame(join("", ["\"seed\":7,\"scenario\":\"sol\",\"diag\":true", params]))
 pure func helloMinor(want: int) -> int = match decodeHello(serve(newSession(), helloWant(want)).reply) { Ok(g) => g.minor, Err(_) => -1 }
 export pure func checkHello23() -> bool =
-  helloMinor(systemMinor()) == systemMinor() && helloMinor(systemMinor() + 7) == systemMinor() && helloMinor(2) == 2 && helloMinor(1) == 1 && helloMinor(0) == 1
+  helloMinor(systemMinor()) == systemMinor() && helloMinor(systemMinor() + 7) >= systemMinor() && helloMinor(systemMinor() + 7) <= systemMinor() + 7 && helloMinor(2) == 2 && helloMinor(1) == 1 && helloMinor(0) == 1
   && helloFor(systemMinor()).minor == systemMinor() && systemMinor() >= 3
-test "2.3 hello: want >= systemMinor() is answered systemMinor(); 2, 1 and 0 as before" { checkHello23() }
+test "2.3 hello: want >= systemMinor() is answered at least systemMinor() (2.4 takes the next); 2, 1 and 0 as before" { checkHello23() }
 
 -- Below the system minor the stream never carries `system`; at it, the full state
 -- and every tick that moved the clock or the ship do; a tick that moved nothing does not.

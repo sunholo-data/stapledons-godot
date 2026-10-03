@@ -12,11 +12,14 @@ import pkg/sunholo/relativity/medium (astronomicalUnitM, lightYearM, loadScale, 
 import pkg/sunholo/relativity/hyper (absf)
 
 -- ------------------------------------------------------------ stand-off (D-14)
--- Star index 0 is Sol: home, where the ship docks (no stand-off). Any other
--- target is approached to `au` astronomical units short, on the approach line.
-export pure func homeIndex() -> int = 0
+-- The target with id "Sol" is home, where the ship docks (no stand-off). Any
+-- other target is approached to `au` astronomical units short, on the
+-- approach line. Home is matched by id, not by catalogue index: Sol is not in
+-- the star catalogue, whose index 0 is Proxima Centauri (fixed in M5.5a; the
+-- index rule gave Proxima no stand-off).
+export pure func homeId() -> string = "Sol"
 export pure func standoffLy(au: float) -> float = au * astronomicalUnitM() / lightYearM()
-export pure func standoffFor(au: float, targetIndex: int) -> float = if targetIndex == homeIndex() || !(au > 0.0) then 0.0 else standoffLy(au)
+export pure func standoffFor(au: float, targetId: string) -> float = if targetId == homeId() || !(au > 0.0) then 0.0 else standoffLy(au)
 
 -- ------------------------------------------------------------ clocks and news epoch
 -- c = 1, Sol at the origin. The newest Earth news receivable at galaxy time t

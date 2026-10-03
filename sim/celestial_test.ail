@@ -411,6 +411,25 @@ export pure func checkSysPoleAtRetarded() -> bool =
   }
 test "pole and W are the IAU model's at the retarded time, in galactic (Saturn at Jupiter's opposition)" { checkSysPoleAtRetarded() }
 
+-- sun_dir, r_au and phase_deg are taken at the retarded time t_r too (evaluator M7,
+-- M5.1b round 1): Jupiter's heliocentric position at t_r, not at jd, to 1e-12; the two
+-- differ by v x lag / r (about 3.5e-5 rad), far above the tolerance.
+pure func sysUnitV(v: Vec3) -> Vec3 = scale(1.0 / norm(v), v)
+export pure func checkSysSunDirRetarded() -> bool =
+  match sysView(sysOpp(), "jupiter") {
+    j :: _ => {
+      let tr = sysJupOpp() - j.lightAgeS / 86400.0;
+      let atTr = sysJupFn(tr);
+      let atJd = sysJupFn(sysJupOpp());
+      let toStar = scale(0.0 - 1.0, atTr);
+      sysClose(j.sunDir, sysUnitV(toStar), 0.000000000001) && absf(j.rAu - norm(atTr)) <= 0.000000000001
+      && norm(sub(j.sunDir, sysUnitV(scale(0.0 - 1.0, atJd)))) > 0.000000001
+      && absf(j.phaseDeg - angleDeg(toStar, scale(0.0 - 1.0, j.relKm))) <= 0.000000001
+    },
+    [] => false
+  }
+test "sun_dir, r_au and phase_deg are at the retarded time (Jupiter at opposition: t_r, not jd)" { checkSysSunDirRetarded() }
+
 pure func sysFinite(x: float) -> bool = x - x == 0.0
 pure func sysFiniteV(v: Vec3) -> bool = sysFinite(v.x) && sysFinite(v.y) && sysFinite(v.z)
 pure func sysUnitOrZero(v: Vec3) -> bool = absf(norm(v) - 1.0) <= 0.000000000001 || norm(v) == 0.0
@@ -459,7 +478,7 @@ export pure func systemVmLines() -> [string] = sysRun(newSession(), sysSession()
 export pure func systemChecks() -> [(string, bool)] = [
   ("positions", checkSysPositions()), ("velocity", checkSysVelocity()), ("lightTime", checkSysLightTime()),
   ("retardedOffset", checkSysRetardedOffset()), ("ephemerisLabel", checkSysEphemerisLabel()), ("timeBase", checkSysTimeBase()),
-  ("jupiterV", checkSysJupiterV()), ("poleAtRetarded", checkSysPoleAtRetarded()), ("fields", checkSysFields()), ("sunLux", checkSysSunLux())
+  ("jupiterV", checkSysJupiterV()), ("poleAtRetarded", checkSysPoleAtRetarded()), ("fields", checkSysFields()), ("sunLux", checkSysSunLux()), ("sunDirRetarded", checkSysSunDirRetarded())
 ]
 -- The encoded system sections (opposition view; J2000 from the origin) and
 -- the protocol 2.3 session lines, then system-ok: compared byte for byte VM vs interpreter.
