@@ -1,0 +1,268 @@
+{
+  "entity_id": "captain",
+  "status": "proposed",
+  "role": "captain",
+  "departure_age": 30,
+  "departure_age_status": "scenario default",
+  "identity_status": "picked",
+  "identity_proposal": "A \u2014 Longline Navigator",
+  "identity_reference": {
+    "file": "proposals/avatar_captain_proposal_a.png",
+    "sha256": "f5bd39f99932fafd46c14c31faca2272fe43bbba780bed076eca924b5987a74e"
+  },
+  "identity_note": "Slender androgynous captain with warm medium skin and short swept hair, wearing a cream longline open coat with rounded panels, broad ochre shoulder yoke and stand collar, grown oval closures, violet trousers and practical soft boots. Dark hair becomes salt-and-pepper, silver and fine white; build and posture age honestly while the civilian costume wears and is repaired.",
+  "palette": [
+    "#D9A340",
+    "#F2E3C7",
+    "#3B2959",
+    "#423555"
+  ],
+  "rights": "Copyright Sunholo. Shipped with the Apache-2.0 stapledons-godot codebase.",
+  "avatar_spec": {
+    "canvas_px": [
+      1024,
+      1536
+    ],
+    "foot_anchor_px": [
+      512,
+      1440
+    ],
+    "px_per_m": 720,
+    "view_pitch_deg": -14,
+    "mirror_safe": true
+  },
+  "files": [
+    {
+      "file": "avatar_captain_y0_front.png",
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 0,
+      "variant": "0",
+      "facing": "front",
+      "biological_age": 30,
+      "height_m": 1.75,
+      "figure_height_px": 1259,
+      "width": 1024,
+      "height": 1536,
+      "sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd",
+      "source": "re-keyed: proposals/avatar_captain_proposal_a.png (sha256 f5bd39f99932fafd46c14c31faca2272fe43bbba780bed076eca924b5987a74e)",
+      "measured_foot_anchor_px": [
+        512.5,
+        1440.5
+      ],
+      "sole_contact_centres_px": [
+        [
+          423.0,
+          1440
+        ],
+        [
+          602.0,
+          1441
+        ]
+      ]
+    },
+    {
+      "file": "avatar_captain_y0_back.png",
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 0,
+      "variant": "1",
+      "facing": "back",
+      "biological_age": 30,
+      "height_m": 1.75,
+      "figure_height_px": 1260,
+      "width": 1024,
+      "height": 1536,
+      "sha256": "f30c7325a641a34cdddc61e8d5bd3b25c6fb71a9b9134328f8e9328a1efeb5d7",
+      "source": "generated (see generation_notes.md#avatar_captain_y0_back)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          406.0,
+          1440
+        ],
+        [
+          618.5,
+          1440
+        ]
+      ]
+    },
+    {
+      "file": "avatar_captain_y20_front.png",
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 20,
+      "variant": "0",
+      "facing": "front",
+      "biological_age": 50,
+      "height_m": 1.75,
+      "figure_height_px": 1260,
+      "width": 1024,
+      "height": 1536,
+      "sha256": "504a28f9949009710b1673fd0b368b85235a5a4e5a2f228f8571eaa38e908549",
+      "source": "generated (see generation_notes.md#avatar_captain_y20_front)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1439.5
+      ],
+      "sole_contact_centres_px": [
+        [
+          418.5,
+          1439
+        ],
+        [
+          606.0,
+          1440
+        ]
+      ]
+    },
+    {
+      "file": "avatar_captain_y20_back.png",
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 20,
+      "variant": "1",
+      "facing": "back",
+      "biological_age": 50,
+      "height_m": 1.75,
+      "figure_height_px": 1259,
+      "width": 1024,
+      "height": 1536,
+      "sha256": "b94eb896352a4aa184cc6e4fab68778c9092c72fe7adf9ba0ec596ff0217a405",
+      "source": "generated (see generation_notes.md#avatar_captain_y20_back)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          403.0,
+          1441
+        ],
+        [
+          621.5,
+          1439
+        ]
+      ]
+    },
+    {
+      "file": "avatar_captain_y40_front.png",
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 40,
+      "variant": "0",
+      "facing": "front",
+      "biological_age": 70,
+      "height_m": 1.73,
+      "figure_height_px": 1246,
+      "width": 1024,
+      "height": 1536,
+      "sha256": "eef651298ccac2790b37749de22c6f84dd7492ce1674d23a83cbb6a28e46702a",
+      "source": "generated (see generation_notes.md#avatar_captain_y40_front)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1439.5
+      ],
+      "sole_contact_centres_px": [
+        [
+          447.5,
+          1439
+        ],
+        [
+          577.0,
+          1440
+        ]
+      ]
+    },
+    {
+      "file": "avatar_captain_y40_back.png",
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 40,
+      "variant": "1",
+      "facing": "back",
+      "biological_age": 70,
+      "height_m": 1.73,
+      "figure_height_px": 1245,
+      "width": 1024,
+      "height": 1536,
+      "sha256": "63f8121ac4ffcd15efdeb50f0c600d820da89d3a20131c9df3c5e83c489b6415",
+      "source": "generated (see generation_notes.md#avatar_captain_y40_back)",
+      "measured_foot_anchor_px": [
+        512.25,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          416.5,
+          1440
+        ],
+        [
+          608.0,
+          1440
+        ]
+      ]
+    },
+    {
+      "file": "avatar_captain_y60_front.png",
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 60,
+      "variant": "0",
+      "facing": "front",
+      "biological_age": 90,
+      "height_m": 1.7,
+      "figure_height_px": 1224,
+      "width": 1024,
+      "height": 1536,
+      "sha256": "c359aa7fb78cb9da36e401bff853785db1d3c5fea48ef463ba0256fdd377cee0",
+      "source": "generated (see generation_notes.md#avatar_captain_y60_front)",
+      "measured_foot_anchor_px": [
+        512.5,
+        1440.0
+      ],
+      "sole_contact_centres_px": [
+        [
+          428.0,
+          1439
+        ],
+        [
+          597.0,
+          1441
+        ]
+      ]
+    },
+    {
+      "file": "avatar_captain_y60_back.png",
+      "kind": "avatar",
+      "emotion": "-",
+      "age_stage": 60,
+      "variant": "1",
+      "facing": "back",
+      "biological_age": 90,
+      "height_m": 1.7,
+      "figure_height_px": 1224,
+      "width": 1024,
+      "height": 1536,
+      "sha256": "1d5ca66ec8af66e635ce27961926e25b36cd4762ca3abc9c95501362ab42e210",
+      "source": "generated (see generation_notes.md#avatar_captain_y60_back)",
+      "measured_foot_anchor_px": [
+        512.0,
+        1439.5
+      ],
+      "sole_contact_centres_px": [
+        [
+          430.0,
+          1441
+        ],
+        [
+          594.0,
+          1438
+        ]
+      ]
+    }
+  ]
+}
