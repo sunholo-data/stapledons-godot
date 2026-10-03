@@ -237,7 +237,7 @@ are float64 SI-astronomical: AU, days (TDB), km, radians, lux, cd/m².
 | `frames` | `poleAndSpin(body, jdTDB)` | IAU WGCCRE 2015 (Archinal et al. 2018): α₀, δ₀, W | Saturn's Sun ring-plane crossings (equinoxes) 2009-08-11 and 2025-05-06, within ±10 d (pole + JPL elements together) |
 | `lighttime` | `retardedTime(srcFn, obs, t)` | Fixed-point t_r = t − ‖x_obs(t) − x_src(t_r)‖/c, 4 iterations (contraction v/c ≤ 2e-4) | Jupiter at opposition from Earth: lag 2,094 s; the planet is drawn 27,400 km (0.38 R♃) behind its instantaneous position |
 | `gravity` | `accelerationAt(bodies, x, jdTDB)` | Newtonian sum Σ GMᵢ (xᵢ − x)/‖xᵢ − x‖³ with IAU 2015 nominal GM values; refuses (returns `inside`) within any body's radius | At 50,000 km altitude above Earth: 0.1254 m/s²; at 1.5 R♃ from Jupiter: 11.0 m/s² |
-| `reflect` | `starIlluminanceAt(e1AU, rAU)` | E = e1AU / r² (inverse square from a point source) | E☉(1 AU) = 1.261 × 10⁵ lux when the sim passes relativity's `illuminanceFromV(−26.74)` |
+| `reflect` | `starIlluminanceAt(e1AU, rAU)` | E = e1AU / r² (inverse square from a point source) | E☉(1 AU) = 1.2706 × 10⁵ lux when the sim passes relativity's `illuminanceFromV(−26.74)` (relativity 0.7.0's V = 0 zero point, 2.56 × 10⁻⁶ lux; the draft's 1.261 × 10⁵ used 2.54 × 10⁻⁶. The package is the single copy, so this row follows it; updated after M5.1b's evaluation) |
 | `reflect` | `lambertPhase(α)`, `lambertRadiance(rho, E, cosI)` | Φ(α) = (sin α + (π − α) cos α)/π; L = ρ E cos i / π | Φ(0) = 1, Φ(π/2) = 1/π, Φ(π) = 0 |
 | `reflect` | `minnaertRadiance(rho, k, E, cosI, cosE)` | L = ρ E cosᵏi cosᵏ⁻¹e / π (giants' limb darkening); k = 1 is Lambert | k = 1 equals `lambertRadiance` to 1e-15 |
 | `reflect` | `rhoFromGeometricAlbedo(p, k)` | ρ such that the disc-integrated opposition flux of the Minnaert sphere equals p (Lambert: ρ = 3p/2) | Round trip to 1e-12 |
@@ -307,15 +307,19 @@ Saying so is the honest option.
 - `bodyAt(sys, id, jd)`: the body's position and velocity in the galactic
   frame (km, km/s, float64) and its pole and W. This is what the planner
   intercepts (M5.5).
-- `systemAt(sys, t, ship)` returns `[BodyView]` for every body:
-  - `id`, `name`, `kind` (star, planet, moon or ring host), `status` (see
+- `systemAt(sys, jd, shipLy)` (as landed in M5.1b: the caller passes
+  jd = epoch_jd + t × 365.25 and the ship's galactic position in ly) returns
+  `[BodyView]` for every body:
+  - `id`, `name`, `kind` (star, planet or moon; a ring host is a planet with
+    a non-empty `ring_id`), `host`, `status` (see
     [M5.7](#m57-scenes-the-α-cen-arrival-and-the-start-at-earth));
   - `rel_km` (float64[3]): the body at its retarded time minus the ship, in
     the galactic frame;
   - `radius_km`, `flattening`, the pole (unit vector) and `w_deg` at the
     retarded time;
-  - `sun_dir` (unit, body → star at the body's retarded time), `r_au`,
-    `phase_deg`;
+  - `sun_dir` (unit, body → star at the body's retarded time; the zero
+    vector for the star itself, so a renderer never normalises a star's
+    `sun_dir`), `r_au`, `phase_deg`;
   - `e_v_lux` (`discIlluminance`), `p_v`, `minnaert_k`, `ring_id`;
   - `light_age_s` (t − t_r, shown in the inspect panel and the codex);
   - `visitable` (bool: measured radius and albedo; M5.5 refuses others);
@@ -341,7 +345,8 @@ Everything renders into **M4's sky SubViewport** (layers 1–2, HDR float) and
 is **pre-exposed** the way the starfield already is (`sky/starfield.gdshader`
 multiplies by `exposure` = 1/L_white). So there is one tonemap (G-M4-2 holds)
 and the solar disc does not overflow half-float. Node: `planets/system_view.gd`,
-fed only by `state.system`.
+fed only by `SimBridge.system` (the bridge's field-checked copy of the
+`system` section, M5.1b; the raw section also lands in `SimBridge.world`).
 
 - **Placement (precision gate 5).** Each resolved body group is drawn in a
   local frame. Godot computes the direction `rel_km / |rel_km|` and the
@@ -522,6 +527,25 @@ plan{ target: {kind: "body", id: "saturn"},
   (b or stand-off below the safety minimum); `not_visitable` (the body lacks
   a measured radius or albedo: all α Cen planets in R1); `committed` (M2's
   rule).
+- **As landed in M5.5a** (`sim/navigation.ail`; the choices this section left open):
+  the **safety minimum** is 1.1 R + the bubble radius (a 10 % margin over every
+  atmosphere in Sol); a stand-off below it, or a b below it, is `too_close`,
+  and a stand-off above 0.1 AU is clamped to 0.1 AU. **clock_deg** 0 is the
+  body's pole projected across the approach line, 90 is to its right as seen
+  from the ship (clockwise on the sky), so at 90 the pass point lies in the ring
+  plane. The **pass point** is the foot of the perpendicular from the body's
+  centre at t_p, so the closest distance is exactly `b_km`; the pass time is
+  read from the package's `motionAt` by bisection on distance (no trip formula
+  restated). **collision** and **ring_crossing** take each body at the ship's
+  nearest approach to it (two refinements of that time). An id outside the
+  system (α Cen worlds, unknown ids) and the Sun are `not_visitable`.
+  `out_of_range` covers a cruise speed outside 0.001c–0.99c, an unknown mode,
+  a run-out ≤ 0, and a ship already inside the stand-off. A body plan is
+  **stale** (`stale_plan` at commit) once the Earth clock has moved, because
+  the body has moved on; plan and commit in one tick. Protocol **2.4** carries
+  it (`journey.plan` gains `target_kind`, `intercept{t, pos}` and
+  `pass{t, b_km, beta, d_at_pass}` or `hold{body, offset_km}`); below minor 4
+  a body plan is `bad_intent`.
 
 **Gravity is handled, not ignored.** The first draft neglected gravity
 because a fast flyby barely bends: the deflection 2GM/(b v²) past Saturn at
