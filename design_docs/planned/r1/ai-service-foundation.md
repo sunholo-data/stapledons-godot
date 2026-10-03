@@ -697,6 +697,24 @@ AI.7 as built (2026-10-02, stub only, no key):
   sim state the `ai` section does not show; replay is from input logs, so
   nothing is lost, but a save/restore milestone must carry them.
 
+AI.8 as built (2026-10-03, no upload yet):
+- **Pin.** The Medic set is imported from `blender@8f04dfc` through `git
+  archive`, not the working tree, so the bytes are the pinned commit's.
+  `make ai-core-verify` re-imports and compares whenever that checkout is at
+  hand (CI skips this, saying so).
+- **SHA256SUMS** lists each blob at its layer path (`blobs/ab/<sha256>.png`),
+  then `index.ndjson`. It pins the index bytes, and `shasum -a 256 -c` reads
+  it from the layer root. Local blobs live in `data/raw/ai_core/` (gitignored),
+  the bucket objects are flat `ai/<sha256>.<ext>`, and the bundle stages
+  `ai_core/` (gitignored).
+- **Index lines** carry `provider: imagegen`, `model: image_gen` (from the
+  Blender manifest) and `input_sha256`, the sha256 of the prompt file each
+  image was made from (`prompts.md` for the base neutral).
+- **ai_core** = `2c5d6caf…f628` = `$(AI_CORE)` in `mk/ai.mk`. AI.9 wires it
+  into `new_game` and makes `export-macos` depend on `ai-core-bundle`. It
+  also adds `ai_core/*` to the export preset's include filter, which AI.8
+  leaves untouched.
+
 ### Follow-up: the AI model bake-off (after AI.10b)
 
 Mark, attended 2026-10-02: "we may actually run with models and compare their
