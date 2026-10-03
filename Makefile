@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: all test deps area-test validate-areas m4-smoke physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -46,6 +46,18 @@ extract:           ## data/raw/{cns5,table1c}.dat -> data/raw/{cns5,gcns}.csv (A
 
 physics:           ## CPU physics reference vs known values
 	$(GODOT) --headless --path . --script tests/test_physics.gd
+
+# M4.0 area bundles (brief §9). BUNDLE=dir checks one bundle; the default checks the blockout
+# test fixture and the current shipping bundle (AC13, AC14 validation half).
+BUNDLE ?= tests/fixtures/areas/bridge_blockout assets/areas/bridge
+validate-areas:    ## M4.0 AC13/AC14: area bundle(s) valid: V17 schema, alpha 0 where space shows, camera round trip <= 1 px, GLB metres/Y-up with WALK_/SPAWN_/INTERACT_
+	$(GODOT) --headless --path . --script tools/validate_area.gd -- $(BUNDLE)
+
+area-test:         ## M4.0 bundle loader + validate-areas positive controls (each check must fail on a bundle broken its way)
+	$(GODOT) --headless --path . --script tests/test_area_bundle.gd
+
+m4-smoke:          ## M4.0 STUB: the slice smoke run on BUNDLE lands with M4.2 (AC14 smoke half); fails until then
+	@echo "m4-smoke: not implemented yet (lands with M4.2, AC14 smoke half)"; exit 1
 
 sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics
 	$(AILANG) check --package sim

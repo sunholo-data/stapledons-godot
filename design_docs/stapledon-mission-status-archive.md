@@ -2,6 +2,24 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-02: attended, M2 journey core LANDED (sprint R1-M2-JOURNEY, PRs #22–#35 + #37); clause 2 MET
+
+- **M2 ✅**: 10 milestones, each independently evaluated: M2.0 96 (Fable;
+  relativity 0.4.0 published), M2.1a 92, M2.1b 93, M2.2 94, M2.3a 95,
+  M2.3b 96, M2.6a 89 (R1 accepted, D-17; build `v0.2.0-m2-map`), M2.4 94,
+  M2.6b 93, M2.5 93 (P5 goldens approved by Mark 2026-10-02). Report
+  `design_docs/implemented/r1/m2-report.md`. Also landed: AILANG pins
+  v0.50.0 (#18) / v0.51.0 (#30), catalogue galactic-longitude fix (#37),
+  Python policy (#34), no-broad-find hook (#38).
+- **Clause map**: 1 UNMET → M1 T3/T4; **2 MET** (evidence in the bar below
+  and the report); 3 UNMET → M3; 4 UNMET → M4, now unblocked on the M2 side
+  (map → plan → commit → transit end to end); 5 ongoing → strict core and
+  VM/interpreter replay green; 13 AILANG issues filed or tracked in M2.
+- **Next**: M4 first review build. Follow-ups: D-10 destar rerun (raw inputs
+  not on this machine), CNS3 → CNS5 distances via M1.2, per-arch goldens
+  until ailang#1465, drop the interpreter recursion ceiling after the
+  ailang#1486 fix ships in a pin, transit/hold polish.
+
 ## STATUS 2026-10-01: iteration 8, T2 F32 records LANDED PR#19 `6efcf53`; Sonnet5.5 PASS92/100, zero blockers; M1 7/12 +T1/T2, full M1.2b open; clauses1–4 UNMET,5 ongoing; nextT3 writer/sidecars thenT4 integration; no decisions, harness0/9.
 
 ## STATUS 2026-10-01: iteration 6, M1.2b-WD3 LANDED (game pins relativity 0.3.0)

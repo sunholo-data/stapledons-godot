@@ -1,21 +1,19 @@
 # Stapledon mission dashboard (snapshot)
 
-- Updated 2026-10-03, iteration 11; bookkeeping issue #4.
-- Pins: AILANG v0.51.0, relativity 0.5.1, Godot 4.7.2.
+- Updated 2026-10-03, iteration 12; bookkeeping issue #4.
+- Pins: AILANG v0.52.0, relativity 0.5.2, Godot 4.7.2.
 - Bar: clause 2 MET; clauses 1, 3, 4 UNMET; 5 ongoing.
-- Clause 1: R1-M1-SKY-2, attended, in flight (open PRs #67 M1.3, #69 M1.2d).
-- AI foundation: AI.1–AI.6 landed; AI.7 PR #68 open (attended).
-- Clause 4: M4 design passed quorum round 2 (carve-out; gpt6-1-sol absent).
-  Sprint plan R1-M4-JOURNEY proposed: 10 milestones, 4 waves, ~3,220 LOC.
-  Independent Sonnet eval: r1 85 → r2 88 PASS; 2 small consistency fixes
-  owed at approval.
-- Clause 3: M3 design drafted; no quorum or plan yet; next routable work.
-- Parked on Mark: D-22 (approve M4 plan), D-23 (α Cen 4.37 vs 4.32 ly),
-  D-24 (CI deploy key for the design repo). All carry defaults.
-- Loop: every 6 h. Routing this fire: controller and designer Opus 5.5,
-  planner Kimi K3 (pi/openrouter), evaluator Sonnet; codex and ollama over
-  daily ration.
-- Metered this iteration: 3.41 USD of 5 (quorum 0.50, planner 2.91).
-- Fire health: 2 of the last 3 fires crashed (02:13Z gate 3, 21:56Z gate 2).
-- Harness share 0/11; last 3 landings moved none/2/1; no drift alarm.
+- Clause 1: R1-M1-SKY-2, attended; only M1.5b (renders report) still open
+  in the sprint JSON (M1.3, M1.2d, M1.5a, M1.7, M1.8 merged).
+- Clause 4: R1-M4-JOURNEY approved (D-22). M4.1 step 1 LANDED this
+  iteration (PR #92, merge 1e53d02): consequence module, protocol 2.2,
+  ship.ism, news epoch, legacy log. Opus eval 91/100 PASS. M4.0 is in
+  attended PR #95. Next: M4.3a (critical path) or M4.6a (package glow).
+- Clause 3: M3 design drafted; no quorum or plan yet.
+- Parked on Mark: nothing (D-1..D-27 all RESOLVED).
+- Loop: every 6 h. Routing this fire: controller Opus 5.5, executor Sonnet
+  5.5 (Agent tool), evaluator Opus 5.5 (Agent tool; resolver said
+  minimax-m3, see the log); codex, ollama and openrouter over daily ration.
+- Metered this iteration: 0 USD (no quorum, no pi lane).
+- Harness share 0/12; last 3 landings moved 4/none/2; no drift alarm.
 - Full memory: stapledon-mission-log.md, stapledon-mission.md.
