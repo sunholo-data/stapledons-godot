@@ -1,0 +1,58 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.10a",
+  "pr": 91,
+  "branch": "sprint/ai10a-style-frame",
+  "commits": ["2b54a08", "49490e4"],
+  "round": 1,
+  "evaluator": "independent agent (generator != judge); AILANG runtime/bin v0.52.0; no live AI, no keys",
+  "score": 91,
+  "result": "pass",
+  "breakdown": {"tests_pass": 20, "lint_clean": 10, "acceptance_criteria": 28, "code_quality": 12, "documentation": 14, "design_fidelity": 7, "regression_surface": "not triggered"},
+  "automated": {
+    "make test": "pass (exit 0, local, runtime/bin/ailang v0.52.0)",
+    "make ai-conversation": "pass (rehearsal, swaps, offset, fallback, no_audio, replay, session_off)",
+    "make ai-mutants": "pass, 0 survivors",
+    "make ai-bridge-mutants": "pass, 46 mutants, 0 not killed (8 conversation mutants)",
+    "make ai-style-frame": "pass (GPU window): 3 swap PNGs, contact_sheet.png, line.ogg, line.wav, frame.avi 15M; rehearsal re-record == committed log",
+    "CI (gh pr checks 91)": "pass at 49490e4, 19m10s; x86_64 'ok medic_rehearsal ... cmp tests/replays/medic_rehearsal.state.x86_64.ndjson' confirms the copied golden"
+  },
+  "verified": [
+    "library voice index lines carry duration_ms/segments_ms; AiCache.lookup hit tested (test_ai_relay.gd second session); cache.SHA256SUMS re-recorded (index.ndjson hashes changed, .wav lines added, .ogg hashes unchanged)",
+    "swap times from timeline.json: offsets [0,1850,4198]; swaps at 0/1858/4225 (frame-quantised at 33 ms, within one frame); faded events at 1992 and 4325 = offset + 120 within one frame",
+    "contact sheet and swap PNGs opened: neutral, loving, grieving Medic with segment-by-segment subtitle and time/segment overlay; 4th contact cell black (3 shots in a 2-col sheet)",
+    "fallback chain, missing_blob (text only), no_playback_copy, replay with launches == 0, AiSession with live off (ticks -1, no launch) all asserted in test_conversation.gd",
+    "line.ogg is Ogg Opus 24 kHz mono; line.wav is RIFF; WAV length vs duration_ms checked within 2 ms"
+  ],
+  "own_mutations": {
+    "killed": [
+      "crossfade default 120 -> 100 (conversation.gd)",
+      "subtitle shows all segments at once (conversation.gd)",
+      "voice.ail wavFromPcm at rate/2 (ai-stub)",
+      "voice.ail times() concatList([h,h]) -> [h,b] (ai-pkg-test)"
+    ],
+    "survived": [
+      "conversation.gd _enter: _fade_from ignores swap_offset_ms (crossfade end/capture timing with -150 ms is untested; only the swap time is)",
+      "conversation_session.gd replay: relay.mode 'replay' -> 'live' (replay-starts-no-process test still passes because the relay is not enabled; the test does not pin the mode)",
+      "conversation.gd portrait_for years+99 (likely equivalent: no age stages in medic set)"
+    ]
+  },
+  "findings": [
+    {"severity": "medium", "file": "ai/voice.ail:43-47", "issue": "VM bug workaround cites 'reported upstream, AI.10a' with no ailang issue number. CLAUDE.md requires workarounds to cite the issue at the site; the open-issues list in CLAUDE.md is also not updated.", "suggestion": "Add ailang#NNNN at the site and in CLAUDE.md."},
+    {"severity": "medium", "file": "ai/cache.ail:16-20, bridge/ai_cache.gd:78", "issue": "WAV playback copy is not linked to the Ogg by any recorded hash; the sim and index record only the Ogg sha256. The WAV is covered only by the stub's cache.SHA256SUMS and a length check (+/-2 ms), not content.", "suggestion": "Record wav_sha256 on the index line and verify on load, or at least in the core import/verify."},
+    {"severity": "medium", "file": "mk/ai.mk (ai-core-publish/bundle)", "issue": "Core layer does not carry WAV copies; an accepted core voice would be text-only in the game. Documented as an AI.10b follow-up only.", "suggestion": "Make it an explicit AI.10b task and acceptance check."},
+    {"severity": "low", "file": "tests/test_conversation.gd:~161", "issue": "No assertion that the crossfade completes crossfade_ms after the swap when swap_offset_ms = -150 (surviving mutant).", "suggestion": "Repeat the faded-event check in the offset group."},
+    {"severity": "low", "file": "tests/test_conversation.gd:249", "issue": "Replay-no-process check does not pin relay.mode == 'replay' (surviving mutant).", "suggestion": "Assert mode or that relay.open is a no-op in replay."},
+    {"severity": "low", "file": "ui/conversation/conversation.gd:208-210", "issue": "Audio runs on real time, visuals on the frame clock; in interactive play they can drift under frame hitches. Capture is unaffected.", "suggestion": "Note for AI.10b judging, or sync to audio.get_playback_position."},
+    {"severity": "info", "file": "design_docs/planned/r1/ai-service-foundation-sprint.md", "issue": "LOC: about 1065 counted lines against 280 estimated and the 650 cap (+64% over cap). Disclosed as a deviation, but the plan's Estimated line is not revised and no pre-approval was sought.", "suggestion": "Record the actual in the plan; split the conversation scene next time."}
+  ],
+  "deviations": {
+    "1_wav_copy": "Sound with conditions. .ogg stays canonical and hashed; WAV derived from the same PCM in the same service step (temp+rename before the index line), so a same-sha Ogg with a different WAV is not a plausible drift; the realistic failures are a missing WAV (handled: text only, no_playback_copy logged, tested) or corruption (not detected). WAV verified by length and stub sums only. Conditions: record wav sha256, carry WAV through the core layer in AI.10b. 15x size cost accepted for a 8 s line.",
+    "2_std_net_adapter": "Sound. callSpeech returns no usage, so AI.9 charging (billed and interrupted calls) would be lost; deferral to after AI.10b is reasonable and reported upstream.",
+    "3_vm_workaround": "Sound but under-cited. Output byte-identical: .ogg hashes unchanged in cache.SHA256SUMS, ai-stub VM == interpreter, and mutating times() is caught. No issue number at the site.",
+    "4_medic_style_frame_fixture": "Acceptable. A 3-segment stub fixture (neutral, loving, grieving, about 8.3 s) is the right rehearsal; it is also the case that exposed the VM bug. Text is prose-realistic; no key or live data.",
+    "5_loc": "Accepted with a deduction: the overrun is mostly tests plus the two mutant suites, real and useful, but it is 64% over the cap with the estimate never revised."
+  },
+  "hard_fails": [],
+  "feedback_summary": "Pass. Fix before AI.10b: cite the ailang issue at ai/voice.ail, hash or verify the WAV copy and carry it through the core layer, and close the two surviving mutants."
+}

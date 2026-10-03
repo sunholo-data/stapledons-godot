@@ -13,9 +13,18 @@ import std/string (concat, join, substring, intToStr)
 import std/option (Option, Some, None)
 import ./key (CacheKey)
 
-export type Blob = { sha256: string, ext: string, mime: string, data: bytes, index: string }
+-- side: a playback copy written beside the blob as blobs/ab/<sha256>.<side.ext>
+-- (AI.10a: voice lines get a WAV of the same PCM, because Godot 4 cannot
+-- decode Ogg Opus; the Ogg blob stays the canonical, hashed asset).
+export type Side = { ext: string, data: bytes }
+export type Blob = { sha256: string, ext: string, mime: string, data: bytes, index: string, side: Option[Side] }
+-- A voice line's timing (AI.10a): on its index line, so a library voice line
+-- is a cache hit (AiCache.lookup wants duration_ms and segments_ms); and the
+-- sha256 of its WAV playback copy, which readers verify before playing it
+-- (tools/playback_verify.ail proves the WAV re-encodes to the Ogg).
+export type Timing = { durationMs: int, segmentsMs: [int], wavSha256: string }
 -- What one index line records besides the key and the blob itself.
-export type Origin = { provider: string, route: string, model: string, inputSha256: string, seed: int, size: Option[{w: int, h: int}] }
+export type Origin = { provider: string, route: string, model: string, inputSha256: string, seed: int, size: Option[{w: int, h: int}], timing: Option[Timing] }
 
 export pure func blobPath(sha: string, ext: string) -> string = concat(["blobs/", substring(sha, 0, 2), "/", sha, ".", ext])
 
@@ -26,28 +35,33 @@ pure func keyJson(k: CacheKey) -> string =
 export pure func indexLine(k: CacheKey, sha: string, mime: string, n: int, ext: string, o: Origin) -> string =
   concat(["{", join(",", [f("key", keyJson(k)), f("sha256", q(sha)), f("mime", q(mime)), f("bytes", intToStr(n)), f("ext", q(ext)), f("origin", q("library")),
     f("provider", q(o.provider)), f("route", q(o.route)), f("model", q(o.model)), f("input_sha256", q(o.inputSha256)), f("seed", intToStr(o.seed)), f("source", q("service"))] ++
-    (match o.size { Some(s) => [f("width", intToStr(s.w)), f("height", intToStr(s.h))], None => [] })), "}"])
+    (match o.size { Some(s) => [f("width", intToStr(s.w)), f("height", intToStr(s.h))], None => [] }) ++
+    (match o.timing { Some(t) => [f("duration_ms", intToStr(t.durationMs)), f("segments_ms", concat(["[", join(",", ints(t.segmentsMs)), "]"])), f("wav_sha256", q(t.wavSha256))], None => [] })), "}"])
+pure func ints(xs: [int]) -> [string] = match xs { [] => [], x :: r => intToStr(x) :: ints(r) }
 
 -- The writes for one blob, in order, as data (so the order is tested, not
 -- just trusted): the shard directory; unless the blob present, the bytes to
--- <path>.tmp then a rename onto <path>; last, the index line.
-export type Op = Mkdir(string) | Write(string) | Rename(string, string) | Append(string, string)
+-- <path>.tmp then a rename onto <path>; the side copy, if any, the same way
+-- (always: an older library may have the blob without it); last, the index line.
+export type Op = Mkdir(string) | Write(string) | WriteSide(string) | Rename(string, string) | Append(string, string)
 export pure func blobOps(dir: string, b: Blob, present: bool) -> [Op] {
   let path = concat([dir, "/", blobPath(b.sha256, b.ext)]);
   let tmp = concat([path, ".tmp"]);
   [Mkdir(concat([dir, "/blobs/", substring(b.sha256, 0, 2)]))] ++ (if present then [] else [Write(tmp), Rename(tmp, path)]) ++
+  (match b.side { Some(sd) => sideOps(concat([dir, "/", blobPath(b.sha256, sd.ext)])), None => [] }) ++
   [Append(concat([dir, "/index.ndjson"]), concat([b.index, "\n"]))]
 }
-func runOps(ops: [Op], data: bytes) -> () ! {FS} =
+pure func sideOps(path: string) -> [Op] = [WriteSide(concat([path, ".tmp"])), Rename(concat([path, ".tmp"]), path)]
+func runOps(ops: [Op], data: bytes, side: bytes) -> () ! {FS} =
   match ops {
     [] => (),
     o :: r => {
-      (match o { Mkdir(d) => mkdirAll(d), Write(p) => writeFileBytes(p, data), Rename(a, z) => renameFile(a, z), Append(p, l) => appendFile(p, l) });
-      runOps(r, data)
+      (match o { Mkdir(d) => mkdirAll(d), Write(p) => writeFileBytes(p, data), WriteSide(p) => writeFileBytes(p, side), Rename(a, z) => renameFile(a, z), Append(p, l) => appendFile(p, l) });
+      runOps(r, data, side)
     }
   }
 export func writeBlob(dir: string, b: Blob) -> () ! {FS} =
-  runOps(blobOps(dir, b, fileExists(concat([dir, "/", blobPath(b.sha256, b.ext)]))), b.data)
+  runOps(blobOps(dir, b, fileExists(concat([dir, "/", blobPath(b.sha256, b.ext)]))), b.data, match b.side { Some(sd) => sd.data, None => b.data })
 -- usage.ndjson (design (a4)): one line per priced call, appended before the result is printed.
 export func appendUsage(dir: string, line: string) -> () ! {FS} = appendFile(concat([dir, "/usage.ndjson"]), concat([line, "\n"]))
 -- inflight.json (AI.9 hardening): the provisional usage line of the call in

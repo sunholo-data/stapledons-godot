@@ -875,6 +875,37 @@ stub, so the attended run only swaps the provider.
 **Acceptance:** `godot --headless --path . --script tests/test_conversation.gd`;
 `make ai-style-frame LOG=tests/replays/medic_rehearsal.ndjson && test -s renders/ai_medic/contact_sheet.png && test -s renders/ai_medic/line.ogg`;
 `make replay AILANG=$A` (case `medic_rehearsal`); `make test AILANG=$A`.
+**Status (2026-10-03):** executed on `sprint/ai10a-style-frame` (AILANG v0.52.0,
+stub only, no key, no live call), awaiting evaluation.
+- [x] Task 1: per-segment composition (in place since AI.5) with a three-segment
+  descriptor test (`stub_test` `checkVoiceIndex`); the library voice index lines
+  carry `duration_ms`/`segments_ms`, so a library voice is a hit
+  (`test_ai_relay.gd`, second session); `tests/ai/cache.SHA256SUMS` re-recorded
+  (55 files). G1 re-checked: v0.52.0 has `std/ai.callSpeech`, but it reports no
+  token usage, so the adapter stays on `std/net` (design, AI.10a as built).
+- [x] Task 2: `data/ai/cast/medic.json`; the relay reads its cast from `data/ai/cast/`.
+- [x] Task 3: `ui/conversation/conversation.{tscn,gd}` (+ `conversation_session.gd`):
+  crossfade 120 ms, swap offset -150 by default (0 optional), subtitles by segment, WAV playback copy.
+  `--ai-live` runs the same script through `AiSession` for AI.10b.
+- [x] Task 4: `tests/test_conversation.gd` (`make ai-conversation`, in `make test`),
+  with 8 conversation mutants in `make ai-bridge-mutants`.
+- [x] Task 5: `make ai-style-frame` on `tests/replays/medic_rehearsal.ndjson`
+  (goldens per arch); renders opened and looked at.
+- Mark's rulings (attended 2026-10-03): swap timing 150 ms early, so
+  `swap_offset_ms` defaults to -150 with the 120 ms crossfade (tests and
+  capture updated; the rehearsal log does not carry the offset and is
+  unchanged); keep the WAV playback copy, the Ogg canonical, with the WAV
+  verified to re-encode to the Ogg (`make ai-playback-verify`, in `make
+  test`), and AI.10b's core voice ships its WAV (task 7).
+- Evaluation round 1 (91/100, pass) folded in: a crossfade-timing test at the
+  -150 ms default and a replay-mode assertion (the two survivors, now mutants);
+  ailang#1576 cited at the workaround and in CLAUDE.md; `wav_sha256` on the
+  voice index line, verified before playing; the WAV carried through the core
+  layer (verify, bundle, publish); the audio-clock drift guard.
+- Deviations: a WAV playback copy beside each voice blob (Godot 4.7 cannot
+  decode Ogg Opus; kept by Mark); `stubPcm` builds tones by doubling (a
+  v0.52.0 VM bug dropped long segments silently; reported); over the 650 cap
+  (about 660 code + 370 test lines).
 
 ### Wave A7
 
@@ -905,7 +936,16 @@ capture Mark can judge. **Attended only; the loop never runs this.**
 6. **⏸ C:** open a ledger row for Mark (voice, swap timing, crossfade,
    prosody) and post the review page. **Stop.**
 7. After Mark's answer: the chosen voice blob joins the core layer (`make
-   ai-core-publish`, `data/ai/core/` updated), `medic.json` records the voice;
+   ai-core-publish`, `data/ai/core/` updated), `medic.json` records the voice.
+   **Its WAV playback copy ships with it** (Mark, 2026-10-03): the core index,
+   `SHA256SUMS`, the bucket, `ai-core-assets` and `ai-core-bundle` carry
+   `blobs/ab/<ogg sha256>.wav` beside the Ogg; the index line keeps its
+   `wav_sha256`, `duration_ms` and `segments_ms` (with `origin: core`,
+   `source: service`), and `make ai-core-verify` re-encodes the WAV to the Ogg
+   (AI.10a made core verify, bundle and publish carry it). **Acceptance:**
+   `make ai-core-verify` reports the voice's two blobs, and the game plays the
+   core voice with no library (no `no_playback_copy`). Without the WAV the core
+   voice plays as text;
    then landing: design doc and this plan to `design_docs/implemented/r1/`,
    design repo ai-showcase §8 status and the curly-brace note, the mission
    queue row 4 status, a changelog entry.

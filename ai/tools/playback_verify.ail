@@ -1,0 +1,85 @@
+module stapledons/ai/tools/playback_verify
+
+-- The WAV playback copy is derived from the Ogg blob (AI.10a; Mark,
+-- 2026-10-03: keep the WAV beside each Ogg Opus blob, the Ogg canonical).
+-- Godot cannot decode Opus, and neither can std/audio, but its encode is
+-- deterministic, so derivation is checked the other way round: the WAV's PCM,
+-- re-encoded with std/audio.encode(OggOpus(24000)), must give the Ogg blob
+-- byte for byte (the index line's sha256), its own sha256 must be the index
+-- line's wav_sha256, its header must be the canonical
+-- 24 kHz mono 16-bit header for that PCM, and its length must give the index
+-- line's duration_ms. A WAV that passes is exactly the PCM the Ogg was made
+-- from, so it is regenerable from the same PCM and nothing else.
+--   main  {dir}: every voice line of <dir>/index.ndjson; prints one summary
+--         line, or the first failure and exits 1. `make ai-playback-verify`.
+import std/fs (readFileBytes, readFileResult, fileExists)
+import std/bytes (fromBase64, slice)
+import std/bytes as B
+import std/audio (wavHeader, durationMs, encode, OggOpus)
+import std/crypto (sha256Bytes)
+import std/json (decode, get, getString, getNumber)
+import std/string (concat, split, intToStr, substring)
+import std/math (floatToInt)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/io (println, exit)
+import stapledons/ai/cache (blobPath)
+
+-- Private names carry a `pv` prefix: the test runner mixes up same-named
+-- private functions across modules (ailang#1461).
+-- None when `wav` is the playback copy the index line names (`wavSha`) of
+-- the Ogg blob `sha` (duration `ms`).
+export pure func playbackError(wav: bytes, wavSha: string, sha: string, ms: int) -> Option[string] {
+  let n = B.length(wav) - 44;
+  if sha256Bytes(wav) != wavSha then Some("not the WAV the index line names (wav_sha256)")
+  else if n < 0 then Some("shorter than a WAV header")
+  else match slice(wav, 0, 44) {
+    None => Some("shorter than a WAV header"),
+    Some(h) => if sha256Bytes(h) != sha256Bytes(wavHeader(n, 24000, 1, 16)) then Some("not the canonical 24 kHz mono 16-bit header")
+      else match slice(wav, 44, n) {
+        None => Some("no PCM"),
+        Some(pcm) => if durationMs(n, 24000, 1, 16) != ms then Some("length does not give duration_ms")
+          else match encode(pcm, 24000, 1, OggOpus(24000)) {
+            Err(e) => Some(concat(["PCM does not encode: ", e])),
+            Ok(ogg) => if sha256Bytes(ogg) != sha then Some("PCM does not re-encode to the Ogg blob") else None
+          }
+      }
+  }
+}
+
+func pvBytes(path: string) -> Option[bytes] ! {FS} =
+  if !fileExists(path) then None else match readFileBytes(path) { Ok(b64) => fromBase64(b64), Err(_) => None }
+
+pure func pvField(line: string, k: string) -> string =
+  match decode(line) { Ok(j) => (match getString(j, k) { Some(s) => s, None => "" }), Err(_) => "" }
+pure func pvKind(line: string) -> string =
+  match decode(line) { Ok(j) => (match get(j, "key") { Some(k) => (match getString(k, "kind") { Some(s) => s, None => "" }), None => "" }), Err(_) => "" }
+pure func pvMs(line: string) -> int =
+  match decode(line) { Ok(j) => (match getNumber(j, "duration_ms") { Some(x) => floatToInt(x), None => -1 }), Err(_) => -1 }
+
+-- Every voice line: Ok(count) or Err(first failure).
+func pvCheck(dir: string, lines: [string]) -> Result[int, string] ! {FS} =
+  match lines {
+    [] => Ok(0),
+    l :: r => if pvKind(l) != "voice" then pvCheck(dir, r) else {
+      let sha = pvField(l, "sha256");
+      let wavPath = concat([dir, "/", blobPath(sha, "wav")]);
+      match pvBytes(wavPath) {
+        None => Err(concat(["voice ", sha, ": no WAV playback copy at ", wavPath])),
+        Some(wav) => match playbackError(wav, pvField(l, "wav_sha256"), sha, pvMs(l)) {
+          Some(e) => Err(concat(["voice ", sha, ": ", e])),
+          None => match pvCheck(dir, r) { Ok(n) => Ok(n + 1), Err(e) => Err(e) }
+        }
+      }
+    }
+  }
+
+export type PlaybackConfig = { dir: string }
+export func main(c: PlaybackConfig) -> () ! {IO, FS} =
+  match readFileResult(concat([c.dir, "/index.ndjson"])) {
+    Err(_) => { println(concat(["playback-verify: no index in ", c.dir])); exit(1) },
+    Ok(t) => match pvCheck(c.dir, split(t, "\n")) {
+      Ok(n) => println(concat(["playback-verify: ", intToStr(n), " voice lines in ", c.dir, ": each WAV matches wav_sha256 and re-encodes to its Ogg blob, canonical header, duration_ms"])),
+      Err(e) => { println(concat(["playback-verify: ", e])); exit(1) }
+    }
+  }

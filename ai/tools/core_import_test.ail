@@ -81,3 +81,23 @@ pure func checkVerifyLines() -> bool =
 test "AI.8 verify: a consistent index passes and ai_core is its sha256; an empty index is refused" { checkVerifyOk() }
 test "AI.8 verify: SHA256SUMS must list exactly the index blobs and the index" { checkVerifySums() }
 test "AI.8 verify: each bad index line is refused with its line and reason" { checkVerifyLines() }
+
+-- AI.10a (Mark, 2026-10-03): an accepted voice in the core layer ships its WAV
+-- playback copy. The line names it (wav_sha256), SHA256SUMS lists it after the
+-- Ogg, and a voice line without it (or without duration_ms) is refused.
+pure func voiceIdx() -> string =
+  concat(["{\"key\":{\"kind\":\"voice\",\"entity_id\":\"medic\",\"emotion\":\"-\",\"age_stage\":0,\"variant\":\"afd0d50311d1013c\"},",
+    "\"sha256\":\"", ogg64(), "\",\"mime\":\"audio/ogg\",\"bytes\":4578,\"ext\":\"ogg\",\"origin\":\"core\",\"source\":\"service\",",
+    "\"duration_ms\":1200,\"segments_ms\":[0],\"wav_sha256\":\"", wav64(), "\"}\n"])
+pure func ogg64() -> string = "2bed5da18024da9aee5b8ad7f94e06427b53feaeb03df8e686b2a47c800c8702"
+pure func wav64() -> string = "cbe8dbea5926333b39fb6778d95809f95195981b4c4d838be454564472c90368"
+pure func voiceSums() -> string =
+  concat([ogg64(), "  blobs/2b/", ogg64(), ".ogg\n", wav64(), "  blobs/2b/", ogg64(), ".wav\n", sha256Hex(voiceIdx()), "  index.ndjson\n"])
+pure func checkCoreVoice() -> bool =
+  (match verifyCore(voiceIdx(), voiceSums()) { Ok(h) => h == sha256Hex(voiceIdx()), Err(_) => false }) &&
+  coreRefused(voiceIdx(), concat([ogg64(), "  blobs/2b/", ogg64(), ".ogg\n", sha256Hex(voiceIdx()), "  index.ndjson\n"]), "SHA256SUMS does not match index.ndjson") &&
+  coreRefused(swap(voiceIdx(), concat([",\"wav_sha256\":\"", wav64(), "\""]), ""), voiceSums(), "line 1: a voice needs wav_sha256 and duration_ms") &&
+  coreRefused(swap(voiceIdx(), "\"duration_ms\":1200", "\"duration_ms\":0"), voiceSums(), "line 1: a voice needs wav_sha256 and duration_ms") &&
+  coreRefused(swap(swap(voiceIdx(), "\"source\":\"service\"", "\"source\":\"x\""), "\"ext\":\"ogg\"", "\"ext\":\"ogg\""), voiceSums(), "line 1: source is not blender@<commit>:<path>")
+
+test "AI.10a a core voice ships its WAV playback copy: wav_sha256, SHA256SUMS, refusals" { checkCoreVoice() }

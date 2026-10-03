@@ -24,8 +24,10 @@ var text_only := false
 ## Providers whose key is present (stub: the set the stub pretends to have).
 var keys: Array = ["gemini", "openrouter"]
 var routing_path := "res://data/ai/routing.json"
-## Cast entries sent with a request (the voice id names a voice line's variant).
-var cast: Dictionary = {"medic": {"name": "The Medic", "voice": "Aoede"}}
+## Cast entries sent with a request (the voice id names a voice line's
+## variant), from data/ai/cast/<entity_id>.json (AI.10a).
+const CAST_DIR := "res://data/ai/cast"
+var cast: Dictionary = load_cast(CAST_DIR)
 
 var enabled := false
 var hits := 0
@@ -39,6 +41,16 @@ var _queue: Array = []
 var _routes: Dictionary = {}
 ## Accepted text lines by req: a voice request names one (`line_req`).
 var _lines: Dictionary = {}
+
+
+## {entity_id: {name, voice}} from every <entity_id>.json in `dir`.
+static func load_cast(dir: String) -> Dictionary:
+	var out := {}
+	for f in DirAccess.get_files_at(dir):
+		var c = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join(f))) if f.ends_with(".json") else null
+		if c is Dictionary and typeof(c.get("entity_id")) == TYPE_STRING and typeof(c.get("voice_id")) == TYPE_STRING:
+			out[c["entity_id"]] = {"name": c.get("name", c["entity_id"]), "voice": c["voice_id"]}
+	return out
 
 
 func _init(b: AiBridge = null, c: AiCache = null) -> void:

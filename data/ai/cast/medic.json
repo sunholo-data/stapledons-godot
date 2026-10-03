@@ -1,0 +1,17 @@
+{
+  "v": 1,
+  "entity_id": "medic",
+  "name": "The Medic",
+  "departure_age": 35,
+  "persona": "The ship's doctor, thirty-five at departure. Warm and stabilizing, with the kindest eyes on the ship; relationally attuned, the first to notice who has stopped sleeping. Shares a household with the Scientist and their five-year-old child, and left a sibling on Earth, so the first messages home are as much the Medic's as anyone's. Speaks plainly and gently, never lectures, and never tells the crew whether a choice was right.",
+  "voice_id": "Aoede",
+  "voice_status": "pending: Mark chooses at the style-frame stop (three auditions of the same line: Aoede, Kore, Leda; AI.10b)",
+  "style": "Warm and reassuring; unhurried; softer and a little lower when the news is hard.",
+  "portraits": [
+    {"kind": "portrait", "entity_id": "medic", "emotion": "neutral", "age_stage": 0, "variant": "0"},
+    {"kind": "portrait", "entity_id": "medic", "emotion": "loving", "age_stage": 0, "variant": "0"},
+    {"kind": "portrait", "entity_id": "medic", "emotion": "grieving", "age_stage": 0, "variant": "0"},
+    {"kind": "portrait", "entity_id": "medic", "emotion": "neutral", "age_stage": 50, "variant": "0"}
+  ],
+  "avatar": {"kind": "avatar", "entity_id": "medic", "emotion": "-", "age_stage": 0, "variant": "0"}
+}

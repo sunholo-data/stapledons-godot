@@ -1,0 +1,85 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "milestone": "M4.1_CONSEQUENCE_STUB (step 1 only; step 2 glow_pole_w_m2 deferred to after the M4.6a publish, not penalised)",
+  "title": "Consequence stub: stand-off, news epoch and tier, live ship.ism, drag_energy_j, news provenance, append-only legacy log, archive hints, protocol 2.2",
+  "pr": null,
+  "branch": "sprint/m4.1-consequence",
+  "commits_evaluated": ["44604f0", "72de49e", "dff8693"],
+  "diff_base": "origin/main 7d02b04 (git diff 7d02b04 dff8693)",
+  "round": 1,
+  "result": "pass",
+  "score": 91,
+  "pass_threshold": 70,
+  "evaluator": "independent sprint-evaluator (Claude Opus 5.5), unattended loop iteration 12; generator (Sonnet 5.5) != judge. Worktree /Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter12-eval detached at dff8693, runtime/bin/ailang v0.52.0 (CI pin), Godot 4.7.2-stable",
+  "judged_against": [
+    "design_docs/planned/r1/m4-first-journey.md §M4.1, §Interfaces assumed, AC1, AC2, AC8, V9/V10/V12/V18/V21/V24",
+    "design_docs/planned/r1/m4-first-journey-sprint.md and .ailang/state/sprints/sprint_R1-M4-JOURNEY.json M4.1 entry (ACs, test_first, executor notes)",
+    "design_docs/stapledon-mission.md D-12, D-14, D-21, D-22 (approval + two consistency fixes), D-23 (canon 4.32 ly)",
+    "CLAUDE.md gates 1, 3, 4, 5, 6 and the Python rule"
+  ],
+  "breakdown": {
+    "tests_pass": {"points": 20, "max": 20, "note": "make test AILANG=$A AILANG_BIN=$A exit 0 (12 min 40 s): python-guard ok (13 allowlisted, no .py added), sim 179/179 (150 existing + 29 new), replay 7 cases identical to arm64 goldens, parity-v2 identical, strict green, tools-test green. make parity exit 0 (diag_thrust600 identical). Branch not pushed: no GitHub CI signal yet."},
+    "lint_clean": {"points": 10, "max": 10, "note": "ailang check --package sim clean (part of make sim); no 1.0 - beta in the new code; no file-size issue (consequence.ail 100, consequence_test.ail 387)."},
+    "acceptance_criteria": {"points": 28, "max": 30, "note": "AC1 (sim half) met: make strict scriptedRoundTrip VM = interpreter = closed form: Earth 8.79634285135256, ship 1.2408854209687783, news epoch 0.043983933086099825, end gap 7.555457430383781, tiers 0 / 2. AC2 sim half met (tiers, alpha Cen <1, return 5-15, seeded template). AC8 sim half met (load/drag/glow at 0.99c, drag_energy_j = cruiseDragEnergy within 1e-9, 1.36530e17, zero at rest). -2: 'numerals only in slots' has no sim-side assertion beyond the slots being numeric fields (templates arrive with M4.4), and the 'displayed quantities' field `progress` is entirely untested (mutant MC survives)."},
+    "code_quality": {"points": 11, "max": 15, "note": "Clean, pure, small module; tests written first (red recorded). -4: three of my nine mutants survive the whole make sim (legacy delta encoding, AI purpose filter on news linking, progress), and shipWithIsm splices JSON by stripping the last character of encodeShip's output (fragile if encodeShip ever ends differently)."},
+    "documentation": {"points": 14, "max": 15, "note": "Changelog entry under changelogs/unreleased; sprint JSON notes exhaustive (commands, decisions, deferrals); doc-only first commit applies exactly the two D-22 consistency fixes (M4.5 builds on m4-track-b and merges after S1, in both the markdown and the JSON; Q3 aligned with the JSON). -1: the protocol 2.2 wire shapes are documented only in the sprint notes and changelog; nothing in the design repo or a protocol doc yet (stated as deferred)."},
+    "design_fidelity": {"points": 8, "max": 10, "note": "Matches §M4.1 closely; the sim never computes 4 x glowInwardFlux (grep: only glowInwardFlux(n, p, eps, fIn) in consequence.ail:90 and the pre-existing plan view core.ail:538). -2: standoff_au defaults to 0, so D-14's stand-off (which the design says 'M4.1 owns') only happens if the client sends 1000; and standoff_au is not in the params echo, so a 2.2 client cannot confirm from params which arrival rule the sim used (only consequence.standoff_ly). Defensible for M2 back-compat, but it moves the D-14 default into Godot."}
+  },
+  "hard_fails": [],
+  "independent_check_values": {
+    "method": "throwaway Python oracle from first principles (g0 9.80665, Julian year, c, AU 149597870700 m, ly 9460730472580800 m, phi = atanh(0.99)); not committed",
+    "a_per_year": "774221.4566651974 (Makefile uses 750000*1.032295275553596 = 774221.4566651969)",
+    "standoff_ly": 0.01581250740982066,
+    "d_4.37": {"round_trip_earth": 8.796342851352557, "round_trip_ship": 1.2408854209687783, "t_e_alpha_cen": 0.043983933086098936, "gap": 7.555457430383779, "coastAt_limit": [8.79633836886905, 1.240876229574406], "sim_vm": [8.79634285135256, 1.2408854209687783, 0.043983933086099825, 7.555457430383781], "agreement": "all within 1e-14 relative; t_e differs 8.9e-16"},
+    "d_4.32_catalogue_D-23": {"round_trip_earth": 8.695332750342457, "round_trip_ship": 1.2266361927064895, "t_e_alpha_cen": 0.043478882581048595, "gap": 7.468696557635967, "note": "the test computes 4.32 expectations from the package; these are the values it should reach. Tier at alpha Cen still <1, return still 5-15."}
+  },
+  "mutations": {
+    "run": "9 mutants of my own (none copied from the executor's list), applied with perl to the worktree, judged by consequenceVm on the bytecode VM then `ailang test consequence_test.ail` for the failing names; the three survivors were then applied together and run through the whole `make sim` (ailang check + 179 ailang tests + Godot bridge test): exit 0, 179/179 passed, so they survive the full sim suite. Every file restored (git diff clean).",
+    "killed": [
+      "MD sol_standoff: standoffFor drops the homeIndex check (Sol gets a stand-off too) -> 6 fail: AC1 round trip, AC1 4.37 canon, AC1 4.32 catalogue, stand-off, AC2 tiers, drag window",
+      "ME tier15: newsTier `elapsed < 15.0` -> `<= 15.0` -> AC2 five news tiers at their boundaries",
+      "MF minor_gate: session minor `h.minor >= 2` -> `>= 1` (a 2.1 client gets the 2.2 stream) -> protocol 2.2 wire test",
+      "MG light_delay: newsEpoch = t - r*0.9999 -> AC1 news epoch, strict scriptedRoundTrip agreement",
+      "MH dep_reset: departure time reset at every commit (return tier measured from the return leg) -> AC2 alpha Cen/return tiers, scriptedRoundTrip",
+      "MI seed_ignored: news draw uses seed 0 instead of w.seed -> AC2 template choice seeded"
+    ],
+    "survived": [
+      "MA resend_log (sim/protocol.ail:186): encodeCq sends the whole legacy log every time (`dropN(v.cq.log, from)` -> `v.cq.log`). The 'appended since from' delta contract is untested.",
+      "MB purpose_filter (sim/core.ail:419): linkNews links ANY ai_request to the news item (`if r.purpose == \"news\"` -> `if true`). checkRecordOtherRequest opens the news request first, so the first-request-wins rule hides the mutant; a crew-line request opened before the news request would become the news item's provenance and its accept/fallback would set body_source wrongly.",
+      "MC progress_zero (sim/core.ail:478): progressOf always 0.0 while committed. `progress` is a displayed field with no test at all."
+    ]
+  },
+  "loc": {
+    "raw_diff": "git diff --numstat 7d02b04: consequence.ail +100, core.ail +145/-11, protocol.ail +70/-13, Makefile +11, ailang.toml +1/-1, consequence_test.ail +387",
+    "counted": "~326 code + 387 tests = ~713, vs estimate 700 and cap 650 with the D-22-approved waiver; 2% over the waived estimate, no split at the ship.ism seam needed (the ship.ism half is delivered and tested). Accept."
+  },
+  "findings": [
+    {"id": 1, "severity": "non-blocking", "file": "sim/consequence_test.ail:224 (checkRecordOtherRequest); sim/core.ail:419", "title": "Surviving mutant MB: news provenance links any AI request when it is the first one opened", "command": "perl -0pi -e 's/if r\\.purpose == \"news\" then/if true then/' sim/core.ail && make sim  # exit 0, 179/179", "fix": "In checkRecordOtherRequest (or a new test) open the crew-line request BEFORE the news request ([lineOpen(), newsOpen()]) and assert the news item's aiRequestId is the news request's id, and that accepting/refusing the line leaves body_source template. Needed before M4.4/AC6 rely on body_source."},
+    {"id": 2, "severity": "non-blocking", "file": "sim/protocol.ail:186-189 (encodeCq legacy.appended); sim/consequence_test.ail:checkWire22", "title": "Surviving mutant MA: the legacy log delta ('appended since from') is untested", "command": "perl -0pi -e 's/arr\\(each\\(entryObj, dropN\\(v\\.cq\\.log, from\\)\\)\\)/arr(each(entryObj, v.cq.log))/' sim/protocol.ail && make sim  # exit 0", "fix": "Add a wire test over two ticks that each append entries (e.g. commit, then the boost crossing): the second reply's legacy.appended holds only the new entries and legacy.count is the running total; a tick that appends nothing omits the consequence section or has appended []."},
+    {"id": 3, "severity": "non-blocking", "file": "sim/core.ail:478-487 (progressOf); sim/consequence_test.ail", "title": "Surviving mutant MC: the displayed `progress` field has no test", "command": "perl -0pi -e 's/if f < 0\\.0 then 0\\.0 else if f > 1\\.0 then 1\\.0 else f/0.0/' sim/core.ail && make sim  # exit 0", "fix": "Assert progress = 0 docked/planned, strictly increasing through boost/cruise/brake, ~0.5 near mid-cruise (by distance), exactly 1 at arrival, and clamped to [0,1] (M4.3a's HUD binds it)."},
+    {"id": 4, "severity": "non-blocking", "file": "sim/core.ail:106 (defaultParams standoffAu: 0.0); sim/protocol.ail params echo", "title": "D-14 stand-off is opt-in from the client and not echoed in params", "command": "grep -n standoffAu sim/core.ail sim/protocol.ail; design m4-first-journey.md:308-312 ('M4.1 owns the stand-off')", "fix": "Either (a) default standoff_au to 1000 for sessions negotiated at minor >= 2 (keeping 0 below minor 2 so M2 streams stay byte-identical), or (b) add an explicit M4.3a acceptance criterion that the Godot client sends standoff_au: 1000 and that consequence.standoff_ly = 0.0158125 is asserted on the wire. Also consider echoing standoff_au in the params section for minor-2 sessions only."},
+    {"id": 5, "severity": "non-blocking", "file": "sim/protocol.ail:190-193 (shipWithIsm)", "title": "ship.ism is spliced into encodeShip's output by string surgery", "command": "sed -n 190,193p sim/protocol.ail", "fix": "Build the ship object from its field list (pass an extra field list into encodeShip) instead of dropping the last character of an already-encoded string."},
+    {"id": 6, "severity": "non-blocking", "file": "sim/ailang.toml:8", "title": "Step 1 was planned to touch none of sim/ailang.toml; it edits [exports].modules", "command": "git diff 7d02b04 dff8693 -- sim/ailang.toml", "fix": "None needed (the dependency pin 0.5.2 is untouched; the loader requires the new module to be exported). Record the clarification in the sprint plan so step 2's 'pin bump in its own commit' rule is not misread."},
+    {"id": 7, "severity": "non-blocking", "file": "(process)", "title": "No CI signal: branch sprint/m4.1-consequence is not pushed and has no PR", "command": "gh run list --branch sprint/m4.1-consequence  # empty", "fix": "Push and open the PR; CI must be green (gate 1) before merge."}
+  ],
+  "deviations": [
+    {"id": 1, "what": "Protocol minor < 2 runs with Cq.on = false (no news draw, no log, no archive)", "verdict": "ACCEPT. The design requires an additive minor bump with M2's old-message tests unmodified; a news draw would advance rng.news in the 2.1 rng section and change committed goldens. Verified: no pre-existing *_test.ail changed (git diff --stat 7d02b04 -- 'sim/*_test.ail' shows only the new file), replay goldens identical, protocolVm digest e701da00be0a7012 unchanged, and mutant MF (2.1 gets 2.2) is killed."},
+    {"id": 2, "what": "standoff_au defaults to 0", "verdict": "ACCEPT with finding 4. Back-compat is real (M2 tests plan to the star itself), but the D-14 default now depends on the client."},
+    {"id": 3, "what": "D-23 canon distance 4.32 ly not applied to the design repo; AC1 asserts both 4.37 (check values) and 4.32 (package-computed)", "verdict": "ACCEPT. The design-repo regeneration is attended/M4.7 work; my independent 4.32 values (Earth 8.695333, ship 1.226636, t_e 0.043479) are what the package-driven test reaches."},
+    {"id": 4, "what": "Inline python3 closed form in the Makefile strict target", "verdict": "ACCEPT. Oracle role, same pattern as the pre-existing journeyVm/off-axis lines; no tracked .py added; python-guard ok."}
+  ],
+  "evidence": {
+    "make_test": "exit 0, 12 min 40 s; '179 tests: 179 passed', 'replay: 7 cases, all identical', 'parity-v2: identical', 'python-guard: ok (13 allowlisted, 0 awaiting AILANG port)'",
+    "make_strict": "exit 0; scriptedRoundTrip(0..5) VM = interpreter, |VM - closed form| < 1e-9; consequenceVm VM consequence-ok = interpreter; protocolVm digest e701da00be0a7012",
+    "make_parity": "exit 0; diag_thrust600 602 lines identical, sha256 1a62096644eb0ee9",
+    "purity": "sim/core.ail and sim/consequence.ail have no effect annotations; sim/ship.ail and sim/ai.ail untouched; core.ail passes --strict-bytecode (make strict)",
+    "glow_pole": "absent as planned; no 4 x glowInwardFlux anywhere in sim/",
+    "commit_1": "44604f0 is docs/JSON only and applies exactly D-22's two fixes"
+  },
+  "next_steps": [
+    "Executor (small, before merge or as the first commit of M4.1 step 2): tests for findings 1-3 so mutants MA, MB, MC die.",
+    "M4.3a planning: settle finding 4 (sim default at minor 2, or a client AC that sends standoff_au 1000).",
+    "Push sprint/m4.1-consequence, open the PR, wait for CI green.",
+    "Step 2 after M4.6a's publish: pin bump in its own commit, then glow_pole_w_m2 = glowEmittanceAt(n, phi, eps, f_in, 1.0)."
+  ]
+}

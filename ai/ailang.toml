@@ -5,7 +5,7 @@ edition = "1"
 description = "Stapledon's Voyage AI service: a separate process Godot launches; answers ai/1 requests over NDJSON stdio. Imports nothing from sim/ (ailang#1498)."
 
 [exports]
-modules = ["stapledons/ai/key", "stapledons/ai/route", "stapledons/ai/wire", "stapledons/ai/provider", "stapledons/ai/cache", "stapledons/ai/service", "stapledons/ai/key_test", "stapledons/ai/route_test", "stapledons/ai/wire_test", "stapledons/ai/stub_test", "stapledons/ai/vm_test", "stapledons/ai/spend", "stapledons/ai/spend_test", "stapledons/ai/prompt", "stapledons/ai/prompt_test", "stapledons/ai/reply", "stapledons/ai/reply_test", "stapledons/ai/voice", "stapledons/ai/voice_test", "stapledons/ai/adapters", "stapledons/ai/adapter_lane", "stapledons/ai/loopback_lane", "stapledons/ai/live_test", "stapledons/ai/tools/core_import", "stapledons/ai/tools/core_import_test"]
+modules = ["stapledons/ai/key", "stapledons/ai/route", "stapledons/ai/wire", "stapledons/ai/provider", "stapledons/ai/cache", "stapledons/ai/service", "stapledons/ai/key_test", "stapledons/ai/route_test", "stapledons/ai/wire_test", "stapledons/ai/stub_test", "stapledons/ai/vm_test", "stapledons/ai/spend", "stapledons/ai/spend_test", "stapledons/ai/prompt", "stapledons/ai/prompt_test", "stapledons/ai/reply", "stapledons/ai/reply_test", "stapledons/ai/voice", "stapledons/ai/voice_test", "stapledons/ai/adapters", "stapledons/ai/adapter_lane", "stapledons/ai/loopback_lane", "stapledons/ai/live_test", "stapledons/ai/tools/core_import", "stapledons/ai/tools/core_import_test", "stapledons/ai/tools/playback_verify", "stapledons/ai/tools/playback_verify_test"]
 
 [effects]
 max = ["IO", "FS", "Env", "Net", "AI"]

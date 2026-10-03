@@ -10,6 +10,11 @@ module stapledons/ai/tools/core_import
 --           valid; if <blobs> exists, every blob's sha256 and size match too.
 --           Prints `ai_core <sha256 of index.ndjson>`, the new_game value.
 --           `make ai-core-verify` (offline, in `make test`).
+-- A voice line (AI.10a; Mark, 2026-10-03: the accepted voice ships its WAV)
+-- also names its WAV playback copy (wav_sha256, at blobs/ab/<ogg sha256>.wav):
+-- SHA256SUMS lists the WAV after its Ogg, and verify checks that the WAV
+-- re-encodes to the Ogg (tools/playback_verify.ail). Its source is either
+-- blender@<commit>:<path> or "service" (a line accepted from the library).
 -- SHA256SUMS lists each blob at its layer path, then index.ndjson, so it pins
 -- the index bytes as well and `shasum -a 256 -c` reads it.
 -- Private helpers carry a `core` prefix: the test runner mixes up same-named
@@ -28,6 +33,7 @@ import std/io (println, exit)
 import stapledons/ai/key (CacheKey, keyError, canonical, isLowerHex, member)
 import stapledons/ai/reply (pngSize)
 import stapledons/ai/cache (blobPath)
+import ./playback_verify (playbackError)
 
 export type Item = { file: string, prompt: string, key: CacheKey }
 pure func corePortrait(e: string, age: int) -> CacheKey = { kind: "portrait", entityId: "medic", emotion: e, ageStage: age, variant: "0" }
@@ -63,7 +69,8 @@ export pure func sumsOf(index: string, xs: [Asset]) -> string =
 pure func coreBlobSums(xs: [Asset]) -> string = match xs { [] => "", a :: r => concat([coreSumLine(a.sha, blobPath(a.sha, "png")), coreBlobSums(r)]) }
 
 -- ------------------------------------------------------------ verify (pure)
-export type Entry = { key: CacheKey, sha: string, ext: string, n: int }
+-- wav, ms: a voice line's WAV playback copy (sha256) and duration; "" and 0 otherwise.
+export type Entry = { key: CacheKey, sha: string, ext: string, n: int, wav: string, ms: int }
 pure func coreStr(j: Json, k: string) -> string = match getString(j, k) { Some(s) => s, None => "" }
 pure func coreNat(j: Json, k: string) -> int = match getNumber(j, k) { Some(x) => if x >= 0.0 && floor(x) == x && x < 1.0e15 then floatToInt(x) else -1, None => -1 }
 pure func coreMimeOk(mime: string, ext: string) -> bool =
@@ -77,14 +84,15 @@ pure func coreEntryOf(line: string) -> Result[Entry, string] =
       None => Err("no key"),
       Some(kj) => {
         let k = { kind: coreStr(kj, "kind"), entityId: coreStr(kj, "entity_id"), emotion: coreStr(kj, "emotion"), ageStage: coreNat(kj, "age_stage"), variant: coreStr(kj, "variant") };
-        let e = { key: k, sha: coreStr(j, "sha256"), ext: coreStr(j, "ext"), n: coreNat(j, "bytes") };
+        let e = { key: k, sha: coreStr(j, "sha256"), ext: coreStr(j, "ext"), n: coreNat(j, "bytes"), wav: coreStr(j, "wav_sha256"), ms: coreNat(j, "duration_ms") };
         match keyError(k) {
           Some(x) => Err(x),
           None => if !isLowerHex(e.sha, 64) then Err("sha256 is not 64 lowercase hex")
             else if e.n <= 0 then Err("bytes must be positive")
             else if !coreMimeOk(coreStr(j, "mime"), e.ext) then Err("mime and ext disagree")
             else if coreStr(j, "origin") != "core" then Err("origin is not core")
-            else if !coreSourceOk(coreStr(j, "source")) then Err("source is not blender@<commit>:<path>")
+            else if !(coreSourceOk(coreStr(j, "source")) || (e.ext == "ogg" && coreStr(j, "source") == "service")) then Err("source is not blender@<commit>:<path>")
+            else if e.ext == "ogg" && (!isLowerHex(e.wav, 64) || e.ms <= 0) then Err("a voice needs wav_sha256 and duration_ms")
             else if e.ext == "png" && (coreNat(j, "width") <= 0 || coreNat(j, "height") <= 0) then Err("an image needs width and height")
             else Ok(e)
         }
@@ -105,7 +113,8 @@ pure func coreWalk(ls: [string], i: int, seen: [string]) -> Result[[Entry], stri
         else match coreWalk(r, i + 1, canonical(e.key) :: seen) { Ok(es) => Ok(e :: es), Err(x) => Err(x) }
     }
   }
-pure func coreEntrySums(es: [Entry]) -> string = match es { [] => "", e :: r => concat([coreSumLine(e.sha, blobPath(e.sha, e.ext)), coreEntrySums(r)]) }
+pure func coreEntrySums(es: [Entry]) -> string =
+  match es { [] => "", e :: r => concat([coreSumLine(e.sha, blobPath(e.sha, e.ext)), (if e.wav == "" then "" else coreSumLine(e.wav, blobPath(e.sha, "wav"))), coreEntrySums(r)]) }
 
 -- ai_core (the sha256 of index.ndjson), or the first inconsistency.
 export pure func verifyCore(index: string, sums: string) -> Result[string, string] =
@@ -163,6 +172,13 @@ func coreCheckBlobs(root: string, es: [Entry]) -> Result[int, string] ! {FS} =
     e :: r => match coreReadBytes(concat([root, "/", blobPath(e.sha, e.ext)])) {
       Err(x) => Err(x),
       Ok(b) => if sha256Bytes(b) != e.sha || B.length(b) != e.n then Err(concat(["blob ", e.sha, " does not match its index line"]))
+        else if e.wav != "" then (match coreReadBytes(concat([root, "/", blobPath(e.sha, "wav")])) {
+          Err(x) => Err(x),
+          Ok(w) => match playbackError(w, e.wav, e.sha, e.ms) {
+            Some(why) => Err(concat(["voice ", e.sha, ": WAV ", why])),
+            None => match coreCheckBlobs(root, r) { Ok(n) => Ok(n + 2), Err(x) => Err(x) }
+          }
+        })
         else (match coreCheckBlobs(root, r) { Ok(n) => Ok(n + 1), Err(x) => Err(x) })
     }
   }

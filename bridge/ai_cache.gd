@@ -9,7 +9,7 @@ extends RefCounted
 ## wins; within the library the newest line wins. Text resolves from core
 ## only (a library line is never replayed as a new line), and a library voice
 ## line counts only when it carries `duration_ms` and `segments_ms` (the
-## service's index lines do not yet; such lines are a miss).
+## service writes both since AI.10a; an older line without them is a miss).
 ## `age_stage` resolves to the greatest stage <= the years asked for.
 
 const EMOTIONS := ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
@@ -59,12 +59,38 @@ func blob_path(e: Dictionary) -> String:
 
 
 func has_blob(sha: String) -> bool:
+	return not find_sha(sha).is_empty()
+
+
+## The index entry (core first) whose blob is `sha` and is on disk, or {}.
+func find_sha(sha: String) -> Dictionary:
 	for layer in [_core, _lib]:
 		for entries in layer.values():
 			for x in entries:
 				if x["entry"].get("sha256") == sha and FileAccess.file_exists(blob_path(x["entry"])):
-					return true
-	return false
+					return x["entry"]
+	return {}
+
+
+## The voice line's playback copy beside its Ogg blob (AI.10a: the service
+## writes a WAV of the same PCM, since Godot 4 cannot decode Ogg Opus), or ""
+## when there is none or it is not the WAV the index line names.
+func playback_path(e: Dictionary) -> String:
+	var pb := playback(e)
+	return pb["path"] if pb["error"] == "" else ""
+
+
+## {path, error}: error "" (verified: its sha256 is the line's wav_sha256),
+## "absent" (no copy) or "unverified" (no wav_sha256, or another file).
+func playback(e: Dictionary) -> Dictionary:
+	if e.is_empty():
+		return {"path": "", "error": "absent"}
+	var p := blob_path(e).get_basename() + ".wav"
+	if not FileAccess.file_exists(p):
+		return {"path": p, "error": "absent"}
+	if typeof(e.get("wav_sha256")) != TYPE_STRING or FileAccess.get_sha256(p) != e["wav_sha256"]:
+		return {"path": p, "error": "unverified"}
+	return {"path": p, "error": ""}
 
 
 ## The record body for a media hit: the descriptor the sim validates, keyed by
