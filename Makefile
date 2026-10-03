@@ -1,5 +1,7 @@
 GODOT ?= godot
 AILANG ?= ailang
+# A path with a slash (make test AILANG=runtime/bin/ailang) is made absolute, so recipes that cd still find it
+override AILANG := $(if $(findstring /,$(AILANG)),$(abspath $(AILANG)),$(AILANG))
 # Godot runs that start the sim use the same ailang as the make line, never a stale one on PATH
 GODOT_SIM = AILANG_BIN="$$(command -v $(AILANG))" $(GODOT)
 SIM := sim/ship.ail
@@ -17,8 +19,7 @@ import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
 
 deps:              ## fetch locked AILANG packages into the cache; fail if the resolution would change
-	@# resolve AILANG first: a relative path (make test AILANG=runtime/bin/ailang) must still work after the cd
-	a=$$(command -v $(AILANG)); case $$a in /*) ;; *) a=$$PWD/$$a;; esac; cd sim && $$a lock
+	cd sim && $(AILANG) lock
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
