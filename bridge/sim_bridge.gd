@@ -11,6 +11,11 @@ const PROTO_MAJOR := 2
 ## 2.1 (AI.3): the sim's `ai` section and AI events; AiRelay reads them (AI.7).
 const PROTO_MINOR := 1
 
+## The minor this session asks for (opt-in, set before start()). The interior (M4.2) asks
+## for 2 (M4.1: ship.ism and the consequence section); everything else keeps 2.1, so the
+## recorded sessions and their replay goldens are unchanged.
+var want_minor := PROTO_MINOR
+
 var _pipe: FileAccess
 var _stderr: FileAccess
 var _record: FileAccess
@@ -81,7 +86,7 @@ func start() -> bool:
 func hello(deadline: int = Time.get_ticks_msec() + 5000) -> bool:
 	if _pid < 0:
 		return false
-	_write(encode({"v": 2, "type": "hello", "want": {"major": PROTO_MAJOR, "minor": PROTO_MINOR}}))
+	_write(encode({"v": 2, "type": "hello", "want": {"major": PROTO_MAJOR, "minor": want_minor}}))
 	if not _read_state(deadline, "startup_timeout"):
 		return false
 	var proto = state.get("proto")

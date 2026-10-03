@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps area-test validate-areas m4-smoke physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: all test deps area-test validate-areas m4-smoke interior-test glow-probe capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -56,8 +56,35 @@ validate-areas:    ## M4.0 AC13/AC14: area bundle(s) valid: V17 schema, alpha 0 
 area-test:         ## M4.0 bundle loader + validate-areas positive controls (each check must fail on a bundle broken its way)
 	$(GODOT) --headless --path . --script tests/test_area_bundle.gd
 
-m4-smoke:          ## M4.0 STUB: the slice smoke run on BUNDLE lands with M4.2 (AC14 smoke half); fails until then
-	@echo "m4-smoke: not implemented yet (lands with M4.2, AC14 smoke half)"; exit 1
+m4-smoke:          ## M4.2 AC14 smoke half (headless, real sim): on each BUNDLE the captain walks to the nav console, it opens the map, alpha Cen A is committed, the sky follows the cruise to the arrival; walking sends no intents
+	@mkdir -p $(SCRATCH)
+	@for b in $(BUNDLE); do n=$$(echo $$b | tr '/' '_'); \
+	  $(GODOT_SIM) --headless --path . -- --m4-smoke --bundle=$$b --record=$(CURDIR)/$(SCRATCH)/m4-smoke-$$n.ndjson > $(SCRATCH)/m4-smoke-$$n.log 2>&1; rc=$$?; \
+	  grep -E '^(m4-smoke|interior):' $(SCRATCH)/m4-smoke-$$n.log; \
+	  test $$rc = 0 && grep -q '^m4-smoke: OK$$' $(SCRATCH)/m4-smoke-$$n.log || { echo "m4-smoke: FAILED on $$b (exit $$rc; log $(SCRATCH)/m4-smoke-$$n.log)"; exit 1; }; done
+
+interior-test:     ## M4.2 composite order and pan factors, one tonemap, glow CPU mirror vs the package probe, WALK_, the captain, bundle fields, parallax clamp, export staging
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_interior.gd > $(SCRATCH)/interior-test.log 2>&1; rc=$$?; cat $(SCRATCH)/interior-test.log | grep -v '^  ok'; \
+	  test $$rc = 0 && grep -q '^interior: [0-9]* passed, 0 failures$$' $(SCRATCH)/interior-test.log || { echo "interior-test: FAILED (a parse error exits 0, so the summary line is required)"; exit 1; }
+
+glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy from sunholo/relativity 0.7.0 (tools/glow_probe), VM = interpreter
+	@mkdir -p $(SCRATCH)
+	cd tools/glow_probe && $(AILANG) lock >/dev/null && git checkout -q ailang.lock 2>/dev/null || true
+	$(AILANG) run --quiet --package-dir tools/glow_probe --caps IO --entry main tools/glow_probe/probe.ail > $(SCRATCH)/glow-probe.txt
+	$(AILANG) run --quiet --bytecode --package-dir tools/glow_probe --caps IO --entry main tools/glow_probe/probe.ail > $(SCRATCH)/glow-probe-vm.txt
+	diff $(SCRATCH)/glow-probe.txt $(SCRATCH)/glow-probe-vm.txt && cat $(SCRATCH)/glow-probe.txt
+
+capture-m4:        ## M4.2 S1 review captures to renders/m4/ (needs a GPU window): the captain walking on the bridge at rest, 0.99c and the cap, the nav console opening the map, pans, glow preview, contact sheet
+	$(GODOT_SIM) --path . -- --interior-capture=renders/m4
+	test -s renders/m4/contact_sheet.png
+
+areas-stage:       ## M4.2: stage assets/areas/<area>/ into areas_bundle/<area>/<file>.bin for the export (assets/areas is .gdignore'd; previews and review/ stay out)
+	@rm -rf areas_bundle
+	@for d in assets/areas/*/; do a=$$(basename $$d); mkdir -p areas_bundle/$$a; \
+	  for f in $$d*; do [ -f "$$f" ] || continue; case "$$(basename $$f)" in preview_*|SHA256SUMS|validation.json) continue;; esac; \
+	  cp "$$f" "areas_bundle/$$a/$$(basename $$f).bin"; done; done
+	@echo "areas-stage: staged $$(ls areas_bundle | tr '\n' ' ')($$(du -sh areas_bundle | cut -f1))"
 
 sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics
 	$(AILANG) check --package sim
@@ -204,7 +231,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime sky-bundle import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime and the pinned sky textures bundled
+export-macos: runtime sky-bundle areas-stage import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
@@ -214,6 +241,10 @@ export-smoke:      ## run the exported .app's capture with NO ailang on PATH; mu
 	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
 	env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
 	@test -s $(SCRATCH)/export-smoke/contact_sheet.png && echo "export-smoke: OK ($$(ls $(SCRATCH)/export-smoke | wc -l | tr -d ' ') files)"
+	@# M4.2: the interior slice from inside the .app (the bridge bundle staged as areas_bundle/*.bin in the .pck)
+	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
+	env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" "$(APP)/Contents/MacOS/$$exe" --headless -- --m4-smoke > $(SCRATCH)/export-smoke/m4-smoke.log 2>&1; \
+	grep -E '^(m4-smoke|interior):' $(SCRATCH)/export-smoke/m4-smoke.log; grep -q 'interior: bundle res://areas_bundle/bridge' $(SCRATCH)/export-smoke/m4-smoke.log && grep -q '^m4-smoke: OK$$' $(SCRATCH)/export-smoke/m4-smoke.log && echo "export-smoke: interior OK from the staged bundle"
 
 DEV_BUCKET ?= stapledons-voyage-dev-builds
 
