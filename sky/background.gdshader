@@ -5,6 +5,8 @@
 //   1. n = deaberrate(n', beta)              galaxy-frame direction, sampled from the panorama
 //   2. D = 1 / (gamma (1 - beta n'.bh))      dopplerApparent
 //   3. radiance = Y x surfaceBrightnessRatio(T_c, D) x rgb(D T_c) x tint  (Y un-stretched, M1.5a)
+//   4. + the forward CMB (M1.8): photopicRadiance(T0 D) in cd/m^2 through the angular PSF,
+//      a radial profile by theta' built on the CPU (sky/cmb.gd), times cmb_k (pixel per cd/m^2)
 //      where tint = photo / (Y rgb(T_c)) carries the photo's off-locus colour (1 on the locus),
 //      so D = 1 reproduces the photo exactly.
 // World frame as sky/starfield.gd: galactic (x, y, z) -> world (y, z, -x).
@@ -27,6 +29,14 @@ uniform float exposure = 1.0;
 // Y -> y_dark (Y / y_dark)^stretch, chromaticity kept; stretch = 1 is the identity.
 uniform float y_dark = 1.0;
 uniform float stretch = 1.0;
+// M1.8 forward CMB: rgb = unit-luminance colour, a = log10 cd/m^2 (<= -59: none),
+// sample i at theta' = i / (cmb_size - 1) x cmb_theta_max; nothing at or past cmb_theta_max.
+uniform sampler2D cmb_profile : filter_linear, repeat_disable;
+uniform float cmb_theta_max = 0.0;
+uniform float cmb_size = 256.0;
+uniform float cmb_k = 0.0;
+// The HDR buffer is half float (max 65504): clamp so a blinding source stays finite.
+const float MAX_RADIANCE = 60000.0;
 
 vec4 lut(float t) {
 	float u = (log(t) - lut_log_tmin) / (lut_log_tmax - lut_log_tmin);
@@ -61,4 +71,16 @@ void sky() {
 	vec4 seen = lut(t_c * d);
 	// lin x rgb(D T)/rgb(T) x Y(DT)/Y(T)  ==  Y x ratio x rgb(D T) x tint
 	COLOR = lin * (seen.rgb / max(rest.rgb, vec3(1e-4))) * pow(10.0, seen.a - rest.a) * exposure;
+	if (cmb_theta_max > 0.0) {
+		// theta' from atan2(|n' x v|, n'.v): exact near the pole, where acos loses digits
+		float th = atan(length(cross(np, beta_dir)), dot(np, beta_dir));
+		if (th < cmb_theta_max) {
+			float x = th / cmb_theta_max * (cmb_size - 1.0);
+			vec4 p = textureLod(cmb_profile, vec2((x + 0.5) / cmb_size, 0.5), 0.0);
+			if (p.a > -59.0) {
+				COLOR += p.rgb * pow(10.0, p.a) * cmb_k;
+			}
+		}
+	}
+	COLOR = min(COLOR, vec3(MAX_RADIANCE));
 }

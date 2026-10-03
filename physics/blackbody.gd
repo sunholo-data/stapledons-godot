@@ -18,7 +18,13 @@ const LUT_T_MIN := 300.0
 const LUT_T_MAX := 1.0e7
 const LUT_SIZE := 1320
 
+## Absolute photopic scale: Km x 2 h c^2 with lambda in um in `planck`
+## (683 lm/W x 1.1910429723971884e5 W m^-2 sr^-1 nm^-1 per unit of `luminance`).
+const PHOTOPIC_K := 683.0 * 119104.29723971884
+
 static var _cache := {}
+static var _lut_img: Image = null
+static var _lut_logy := PackedFloat64Array()
 
 
 static func _g(x: float, mu: float, s1: float, s2: float) -> float:
@@ -70,6 +76,15 @@ static func luminance(t_kelvin: float) -> float:
 	return xyz(t_kelvin)[1]
 
 
+## Absolute photopic luminance of a blackbody, cd/m^2 (mirrors the package's
+## blackbody.photopicRadiance, 0.5.0+): Km x integral B_lambda(T) ybar dlambda.
+## T <= 0 and NaN give 0; the CMB's 2.725 K underflows to exactly 0.
+static func photopic_radiance(t_kelvin: float) -> float:
+	if not (t_kelvin > 0.0):
+		return 0.0
+	return PHOTOPIC_K * luminance(t_kelvin)
+
+
 static func chromaticity(t_kelvin: float) -> Vector2:
 	var v := xyz(t_kelvin)
 	var s := v[0] + v[1] + v[2]
@@ -103,11 +118,39 @@ static func lut_u(t_kelvin: float) -> float:
 
 ## 1-D float texture: rgb = unit-luminance colour, a = log10(Y) absolute.
 ## Sampled by the starfield shader with u = lut_u(T).
+## The image is built once per process and shared (starfield, sky, CPU mirrors).
 static func build_lut() -> ImageTexture:
+	return ImageTexture.create_from_image(lut_image())
+
+
+static func lut_image() -> Image:
+	if _lut_img != null:
+		return _lut_img
 	var img := Image.create(LUT_SIZE, 1, false, Image.FORMAT_RGBAF)
+	_lut_logy.resize(LUT_SIZE)
 	for i in LUT_SIZE:
 		var u := (float(i) + 0.5) / LUT_SIZE
 		var t := exp(log(LUT_T_MIN) + u * (log(LUT_T_MAX) - log(LUT_T_MIN)))
 		var rgb := rgb_unit_luminance(t)
-		img.set_pixel(i, 0, Color(rgb.x, rgb.y, rgb.z, log(luminance(t)) / log(10.0)))
-	return ImageTexture.create_from_image(img)
+		_lut_logy[i] = log(luminance(t)) / log(10.0)
+		img.set_pixel(i, 0, Color(rgb.x, rgb.y, rgb.z, _lut_logy[i]))
+	_lut_img = img
+	return img
+
+
+## log10 Y(T) and the unit-luminance colour as the shaders sample them (linear
+## between texel centres, clamped at the ends): the fast CPU path for meters.
+static func lut_log10_y(t_kelvin: float) -> float:
+	lut_image()
+	var x := clampf(lut_u(t_kelvin) * LUT_SIZE - 0.5, 0.0, LUT_SIZE - 1.0)
+	var i := mini(int(x), LUT_SIZE - 2)
+	return lerpf(_lut_logy[i], _lut_logy[i + 1], x - i)
+
+
+static func lut_rgb(t_kelvin: float) -> Vector3:
+	var x := clampf(lut_u(t_kelvin) * LUT_SIZE - 0.5, 0.0, LUT_SIZE - 1.0)
+	var i := mini(int(x), LUT_SIZE - 2)
+	var a := lut_image().get_pixel(i, 0)
+	var b := _lut_img.get_pixel(i + 1, 0)
+	var c := a.lerp(b, x - i)
+	return Vector3(c.r, c.g, c.b)

@@ -383,9 +383,10 @@ func test_exposure_units() -> void:
 	e.configure(70.0, 540.0)
 	check("eye mode at the dark sky sits at EV_dark", e.ev, e.ev_dark(), 1e-12)
 	var peak := Exposure.threshold_lux() * e.star_scale()
-	check("the threshold star (F = 2) peaks at the display floor at EV_dark", peak, Exposure.DISPLAY_FLOOR, 1e-12)
-	check("star scale: splat sum (peak x 2 pi sigma^2) x Omega_px = E k", peak * TAU * 0.81 * sr / Exposure.threshold_lux() / e.k(), 1.0, 1e-12)
-	check("EV_dark rises 2 EV when the pixel shrinks 4x in solid angle (same V_lim)", Exposure.dark_adapted_ev(sr / 4.0) - Exposure.dark_adapted_ev(sr), 2.0, 1e-9)
+	var hi := Exposure.new()
+	hi.configure(70.0, 1440.0)
+	check("the threshold star (F = 2) peaks at the display floor at EV_dark (unclamped PSF, 1440 rows)", Exposure.threshold_lux() * hi.star_scale(), Exposure.DISPLAY_FLOOR, 1e-12)
+	check("star scale: splat sum (peak x 2 pi sigma_px^2) x Omega_px = E k", peak * TAU * pow(e.psf_sigma_px(), 2.0) * sr / Exposure.threshold_lux() / e.k(), 1.0, 1e-12)
 	e.update(1.0)
 	check("eye light-adapts once the meter wants less sensitivity (L_avg 1 cd/m^2)", e.ev, Exposure.metered_ev(1.0), 1e-12)
 	e.mode = Exposure.Mode.CAMERA
@@ -528,6 +529,167 @@ func test_sideways_darker() -> void:
 	check("auto (camera) meter re-brightens it > 1000x, up to the EV clamp (metering, not physics)", 1.0 if auto_px > 1000.0 * fixed_px else 0.0, 1.0, 0.0)
 
 
+## M1.8 follow-up 1: the PSF is fixed in angle, so EV_dark is one number and
+## the extended sky shows the same linear value at every render size (the
+## M1.5a evaluation measured L(dark) 7.1x brighter at 540 rows than at 1440).
+func test_angular_psf() -> void:
+	print("Angular PSF: EV_dark and the sky's displayed value do not depend on the render size (M1.8)")
+	var lo := Exposure.new()
+	lo.configure(70.0, 540.0)
+	var hi := Exposure.new()
+	hi.configure(70.0, 1440.0)
+	check("PSF sigma = 6 arcmin", Exposure.psf_sigma_angle(), deg_to_rad(0.1), 1e-15)
+	check("EV_dark is the same at 960x540 and 2560x1440", lo.ev_dark() - hi.ev_dark(), 0.0, 0.0)
+	check("EV_dark = log2(E_thr / (2 pi sigma^2) / floor / 1.2)", lo.ev_dark(), log(Exposure.threshold_lux() / (TAU * pow(deg_to_rad(0.1), 2.0)) / Exposure.DISPLAY_FLOOR / Exposure.SAT) / log(2.0), 1e-12)
+	var l := Exposure.dark_sky_luminance()
+	check("the dark sky's displayed linear value is the same at both sizes (was 7.1x apart)", l * lo.k() / (l * hi.k()), 1.0, 1e-12)
+	check("and it is L(23.5) / L_white(EV_dark)", l * hi.k(), l / Exposure.l_white(Exposure.dark_adapted_ev()), 1e-15)
+	check("1440 rows: sigma = 6' / pixel angle = 1.81 px (unclamped)", hi.psf_sigma_px(), deg_to_rad(0.1) / (2.0 * tan(deg_to_rad(35.0)) / 1440.0), 1e-9)
+	check("540 rows: 6' is 0.67 px, clamped to PSF_MIN_PX = 0.7", lo.psf_sigma_px(), 0.7, 1e-12)
+	check("a clamped PSF keeps the splat energy (peak x 2 pi sigma_px^2 x Omega_px = E k)", lo.star_scale() * TAU * 0.49 * lo.pixel_sr / lo.k(), 1.0, 1e-12)
+	var drop := -2.5 * log(pow(Exposure.psf_sigma_angle() / lo.psf_sigma_rad(), 2.0)) / log(10.0)
+	check("the clamp at 540 rows costs V_lim %.3f mag (< 0.25, AC8 margin)" % drop, 1.0 if drop < 0.25 and drop > 0.0 else 0.0, 1.0, 0.0)
+	check("a sampled Gaussian of sigma 0.7 px sums to 2 pi sigma^2 within 0.1%", _gauss_sum(0.7) / (TAU * 0.49), 1.0, 1e-3)
+
+
+func _gauss_sum(sigma: float) -> float:
+	var s := 0.0
+	for y in range(-8, 9):
+		for x in range(-8, 9):
+			s += exp(-(x * x + y * y) / (2.0 * sigma * sigma))
+	return s
+
+
+## M1.8: the forward CMB (queue row 6a, D-11). Check values from the design
+## repo's physics/higgs-bubble.md (HB-62, HB-63) and sunholo/relativity 0.5.2
+## (optics.cmbSeenTemperature / cmbSeenTemperatureApparent,
+## blackbody.photopicRadiance), printed by `ailang run` on the package.
+func test_cmb() -> void:
+	print("Forward CMB disc (M1.8, D-11)")
+	var cap := 1e-6 # 1 - beta at the cruise cap (D-15)
+	var g := Relativity.gamma_of_one_minus_beta(cap)
+	check("package: gamma at 1 - beta = 1e-6 = 707.1069579633089", g, 707.1069579633089, 1e-9)
+	var fwd := Vector3(0, 0, -1)
+	check("HB-63: T ahead at the cap = 3,853.7 K", Relativity.cmb_temperature_apparent(0.0, cap), 3853.7, 0.05)
+	check("package: T ahead at the cap = 3853.7309940335736 K", Relativity.cmb_temperature_apparent(0.0, cap) / 3853.7309940335736, 1.0, 1e-12)
+	check("rest-frame 90 deg at the cap: gamma T0 = 1,926.9 K", Relativity.cmb_seen_temperature(Vector3(1, 0, 0), fwd, cap), 1926.866460450017, 1e-6)
+	check("it APPEARS at theta' = asin(1/gamma) = 0.081 deg", rad_to_deg(Relativity.angle_between(Relativity.aberrate(Vector3(1, 0, 0), fwd, 1.0 - cap), fwd)), rad_to_deg(asin(1.0 / g)), 1e-5)
+	check("package: apparent theta' = 1/gamma: 1926.867102770845 K (half the pole, HB-68)", Relativity.cmb_temperature_apparent(1.0 / g, cap) / 1926.867102770845, 1.0, 1e-9)
+	check("package: apparent theta' = 2/gamma: 770.7475347575637 K", Relativity.cmb_temperature_apparent(2.0 / g, cap) / 770.7475347575637, 1.0, 1e-9)
+	check("package: apparent 45 deg: 0.013157428860723783 K", Relativity.cmb_temperature_apparent(PI / 4.0, cap) / 0.013157428860723783, 1.0, 1e-9)
+	check("package: apparent 90 deg: T0 / gamma = 0.003853730994033576 K (redshifted)", Relativity.cmb_temperature_apparent(PI / 2.0, cap) / 0.003853730994033576, 1.0, 1e-9)
+	check("HB-62: T ahead at 0.99c = 38.44 K", Relativity.cmb_temperature_apparent(0.0, 0.01), 38.44, 0.005)
+	check("package: T ahead at 0.99c = 38.44085554458952 K", Relativity.cmb_temperature_apparent(0.0, 0.01) / 38.44085554458952, 1.0, 1e-12)
+	check("vector form agrees with the angle form (theta' = 1/gamma)", Relativity.cmb_temperature_apparent(Relativity.angle_between(Vector3(sin(1.0 / g), 0, -cos(1.0 / g)), fwd), cap) / 1926.867102770845, 1.0, 1e-6)
+	check("at rest the CMB is T0 = 2.725 K everywhere", Relativity.cmb_temperature_apparent(1.0, 1.0), 2.725, 1e-12)
+	# absolute photopic radiance (cd/m^2)
+	check("package: photopicRadiance(3853.7309940335736 K) = 1.9842652619286108e8 cd/m^2", Blackbody.photopic_radiance(3853.7309940335736) / 198426526.19286108, 1.0, 1e-6)
+	check("package: photopicRadiance(1926.867 K) = 290755.1033757559 cd/m^2", Blackbody.photopic_radiance(1926.8671027324722) / 290755.1033757559, 1.0, 1e-6)
+	check("package: photopicRadiance(770.75 K) = 0.0027554421731427795 cd/m^2", Blackbody.photopic_radiance(770.7475347575637) / 0.0027554421731427795, 1.0, 1e-6)
+	check("package doc: photopicRadiance(2856 K, illuminant A) = 1.978e7 cd/m^2", Blackbody.photopic_radiance(2856.0) / 1.978e7, 1.0, 2e-3)
+	check("package doc: photopicRadiance(5772 K) = 1.845e9 cd/m^2", Blackbody.photopic_radiance(5772.0) / 1.845e9, 1.0, 2e-3)
+	check("photopicRadiance(2.725 K) underflows to exactly 0", Blackbody.photopic_radiance(2.725), 0.0, 0.0)
+	check("photopicRadiance(0) = 0 and of NaN = 0", Blackbody.photopic_radiance(0.0) + Blackbody.photopic_radiance(NAN), 0.0, 0.0)
+	var l_dark := Exposure.dark_sky_luminance()
+	check("CMB radiance at beta = 0 is below 1e-30 of the dark sky (it is 0)", 1.0 if CmbGlow.sharp(0.0, 1.0) <= 1e-30 * l_dark and CmbGlow.sharp(PI, 1.0) <= 1e-30 * l_dark else 0.0, 1.0, 0.0)
+	# the finite lookup over T in [0, 5000 K] (gate 5)
+	var tab := CmbGlow.lut()
+	var finite := 1.0
+	var mono := 1.0
+	for i in tab.size():
+		if is_nan(tab[i]) or is_inf(tab[i]): finite = 0.0
+		if i > 0 and tab[i] < tab[i - 1]: mono = 0.0
+	check("CMB lookup over [0, 5000 K]: %d entries, every one finite" % tab.size(), finite, 1.0, 0.0)
+	check("CMB lookup is non-decreasing in T", mono, 1.0, 0.0)
+	check("lookup at T = 0 is the floor (reads back exactly 0)", CmbGlow.radiance(0.0), 0.0, 0.0)
+	for t: float in [700.0, 1000.0, 1499.0, 2000.0, 3000.0, 3853.7309940335736, 4999.0]:
+		check("lookup = photopicRadiance at %.1f K (0.2%%)" % t, CmbGlow.radiance(t) / Blackbody.photopic_radiance(t), 1.0, 2e-3)
+	check("above T_MAX the lookup is exact", CmbGlow.radiance(6000.0) / Blackbody.photopic_radiance(6000.0), 1.0, 1e-12)
+	# radial profiles: sharp mirrors the package; the PSF keeps the illuminance
+	var sharp := CmbGlow.new()
+	sharp.build(cap, 0.0)
+	check("sharp profile at the pole = photopicRadiance(3853.7 K) (0.2%)", sharp.profile(0.0) / 198426526.19286108, 1.0, 2e-3)
+	check("sharp profile at 1/gamma = photopicRadiance(1926.9 K) (1%)", sharp.profile(1.0 / g) / 290755.1033757559, 1.0, 0.01)
+	check("sharp profile is 0 at 45 and 90 deg", sharp.profile(PI / 4.0) + sharp.profile(PI / 2.0), 0.0, 0.0)
+	var blur := CmbGlow.new()
+	blur.build(cap, Exposure.psf_sigma_angle())
+	check("PSF keeps the disc's illuminance (%s lux)" % String.num_scientific(sharp.illuminance), blur.illuminance / sharp.illuminance, 1.0, 1e-12)
+	check("blurred profile integrates to the same illuminance (1%)", _profile_flux(blur) / sharp.illuminance, 1.0, 0.01)
+	check("sharp profile integrates to its illuminance (1%)", _profile_flux(sharp) / sharp.illuminance, 1.0, 0.01)
+	check("a 6' PSF lowers the 4.9' core's peak", 1.0 if blur.profile(0.0) < sharp.profile(0.0) else 0.0, 1.0, 0.0)
+	check("disc illuminance at the cap is daylight-bright (> 10 lux)", 1.0 if sharp.illuminance > 10.0 else 0.0, 1.0, 0.0)
+	var g275 := CmbGlow.new()
+	var omb275 := 1.0 - sqrt(1.0 - 1.0 / (275.0 * 275.0))
+	g275.build(omb275, Exposure.psf_sigma_angle())
+	check("gamma 275: pole at gamma (1 + beta) T0 = 1,498.7 K", g275.pole_temperature, 2.725 * 275.0 * (2.0 - omb275), 1e-6)
+	check("gamma 275: the disc is visible to the dark-adapted eye (centre > 100 x L_dark)", 1.0 if g275.profile(0.0) > 100.0 * l_dark else 0.0, 1.0, 0.0)
+	var slow := CmbGlow.new()
+	slow.build(0.01, Exposure.psf_sigma_angle())
+	check("0.99c: no visible CMB (profile empty, illuminance 0)", slow.theta_max + slow.illuminance, 0.0, 0.0)
+
+
+func _profile_flux(c: CmbGlow) -> float:
+	var s := 0.0
+	var n := 4000
+	var h := c.theta_max / n
+	for i in n:
+		var r := (i + 0.5) * h
+		s += TAU * r * c.profile(r) * h
+	return s
+
+
+## M1.8 follow-up 2: the eye's meter is centre-weighted and sees the stars and
+## the CMB, so the eye light-adapts to a blinding disc ahead and stays pinned
+## at EV_dark otherwise.
+func test_sky_meter() -> void:
+	print("Centre-weighted eye meter with stars and CMB (M1.8)")
+	var cam := FreeLookCamera.new()
+	cam.fov = 70.0
+	cam.look(0.0, 0.0, 0.0)
+	var size := Vector2(960, 540)
+	var fwd := Vector3(0, 0, -1)
+	var l_dark := Exposure.dark_sky_luminance()
+	var flat := func(_n: Vector3) -> float: return l_dark
+	var m := SkyMeter.new()
+	check("a uniform sky meters as itself", m.centre_weighted(cam, size, fwd, 0.0, flat, null, null) / l_dark, 1.0, 1e-12)
+	var sf := Starfield.new()
+	sf.set_custom_stars([{"pos": Vector3(0, 0, -100.0), "t": 5800.0, "flux": 1e-3}])
+	m.build(sf)
+	var centre := m.centre_weighted(cam, size, fwd, 0.0, flat, sf, null)
+	sf.set_custom_stars([{"pos": Vector3(60.0, 0, -100.0), "t": 5800.0, "flux": 1e-3}]) # 31 deg off centre
+	m.build(sf)
+	var edge := m.centre_weighted(cam, size, fwd, 0.0, flat, sf, null)
+	sf.set_custom_stars([{"pos": Vector3(0, 0, 100.0), "t": 5800.0, "flux": 1e-3}]) # behind the camera
+	m.build(sf)
+	var behind := m.centre_weighted(cam, size, fwd, 0.0, flat, sf, null)
+	check("a 1e-3 lux star at the centre raises the meter", 1.0 if centre > 2.0 * l_dark else 0.0, 1.0, 0.0)
+	check("the same star 31 deg off centre counts less (centre weight)", 1.0 if edge - l_dark < 0.2 * (centre - l_dark) else 0.0, 1.0, 0.0)
+	check("a star behind the camera does not count", behind / l_dark, 1.0, 1e-12)
+	check("near stars (< 20 ly) are metered one by one, far ones in bins", 1.0 if m.near.size() == 0 and m.bin_e.size() == 1 else 0.0, 1.0, 0.0)
+	sf.set_custom_stars([{"pos": Vector3(0, 0, -5.0), "t": 5800.0, "flux": 1e-3}])
+	m.build(sf)
+	check("a star at 5 ly is a near star and meters like a far one", m.centre_weighted(cam, size, fwd, 0.0, flat, sf, null) / centre, 1.0, 1e-9)
+	# the eye at the cap: forward the CMB disc light-adapts it; astern it stays pinned
+	var cmb := CmbGlow.new()
+	cmb.build(1e-6, Exposure.psf_sigma_angle())
+	var e := Exposure.new()
+	e.configure(70.0, 540.0)
+	var l_fwd := m.centre_weighted(cam, size, fwd, 1.0 - 1e-6, flat, null, cmb)
+	e.update(l_dark, l_fwd)
+	check("gamma 707 forward: the eye light-adapts to the CMB disc (EV %+.1f > EV_dark %+.1f)" % [e.ev, e.ev_dark()], 1.0 if e.ev > e.ev_dark() + 5.0 else 0.0, 1.0, 0.0)
+	check("and the HUD says light-adapted", 1.0 if e.state_name() == "light-adapted" else 0.0, 1.0, 0.0)
+	cam.look(PI, 0.0, 0.0)
+	e.update(l_dark, m.centre_weighted(cam, size, fwd, 1.0 - 1e-6, flat, null, cmb))
+	check("gamma 707 astern: no disc in view, the eye stays at EV_dark", e.ev, e.ev_dark(), 1e-12)
+	e.update(l_dark, l_dark)
+	check("at rest on the dark sky the eye is pinned at EV_dark", e.ev, e.ev_dark(), 1e-12)
+	e.mode = Exposure.Mode.CAMERA
+	e.update(l_dark, l_fwd)
+	check("camera mode keeps its log-average meter (ignores the eye meter)", e.ev, Exposure.metered_ev(l_dark), 1e-12)
+	sf.free()
+	cam.free()
+
+
 ## The camera cases need a node in a viewport, so they run once the main loop
 ## has started; everything else runs in _init.
 func _initialize() -> void:
@@ -553,6 +715,9 @@ func _init() -> void:
 	test_exposure_units()
 	test_sky_calibration()
 	test_sideways_darker()
+	test_angular_psf()
+	test_cmb()
+	test_sky_meter()
 
 	print("Aberration (sources crowd toward the direction of motion)")
 	check("90 deg source at 0.9c appears at acos(0.9) = 25.842 deg", angle_deg(Relativity.aberrate(side, fwd, 0.9), fwd), rad_to_deg(acos(0.9)), 1e-4)

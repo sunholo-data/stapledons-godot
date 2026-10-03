@@ -36,6 +36,7 @@ var sim := SimBridge.new()
 var starfield := Starfield.new()
 var background := SkyBackground.new()
 var exposure := Exposure.new() # M1.5a: photometric EV, metering, fixed EV, aids
+var eye_meter := SkyMeter.new() # M1.8: centre-weighted, sees stars and the CMB
 var has_background := false
 var env := Environment.new()
 var camera := FreeLookCamera.new() # yaw, pitch, roll; client state, never sent to the sim
@@ -251,12 +252,18 @@ func _build_scene() -> void:
 	layer.add_child(sky_note)
 	add_child(layer)
 	_configure_exposure(_user_args())
-	get_viewport().size_changed.connect(func() -> void: exposure.configure(camera.fov, get_viewport().get_texture().get_size().y))
+	get_viewport().size_changed.connect(_configure_pixel)
 
 
-## M1.5a: the exposure model's pixel solid angle follows the 3D render size.
-func _configure_exposure(args: Dictionary) -> void:
+## M1.5a: the exposure model's pixel solid angle follows the 3D render size;
+## M1.8: the angular PSF goes to the CMB profile (rebuilt on the next velocity).
+func _configure_pixel() -> void:
 	exposure.configure(camera.fov, get_viewport().get_texture().get_size().y)
+	background.set_psf(exposure.psf_sigma_rad())
+
+
+func _configure_exposure(args: Dictionary) -> void:
+	_configure_pixel()
 	exposure.mode = Exposure.Mode.CAMERA if args.get("exposure", "") == "camera" else Exposure.Mode.EYE
 	exposure.bias = float(args.get("ev-bias", "0"))
 	exposure.floor_on = args.has("mag-floor")
@@ -264,17 +271,47 @@ func _configure_exposure(args: Dictionary) -> void:
 		var lh: PackedStringArray = args["ev-clamp"].split(",")
 		exposure.clamp_ev = Vector2(float(lh[0]), float(lh[1]))
 	if args.has("fixed-ev"):
-		exposure.set_fixed(true, _meter(0.0))
+		_fix_exposure(true)
 
 
 ## Log-average seen luminance of the current view (cd/m^2); the dark sky when
-## the panorama is not bundled.
+## the panorama is not bundled. The camera mode's meter.
 func _meter(beta: float) -> float:
 	return background.meter(camera, heading, beta) if has_background else Exposure.dark_sky_luminance()
 
 
+## The eye's meter (M1.8): centre-weighted, with the stars and, when moving,
+## the forward CMB disc (beta = 0 meters the rest frame, no disc). It costs a
+## few ms of GDScript, so interactive and bench frames reuse a reading for
+## EYE_METER_MS (the eye adapts over seconds); captures meter every time.
+const EYE_METER_MS := 100
+var _eye_cache := [-100000, 0.0] # [msec, reading]
+
+
+func _meter_eye(beta: float) -> float:
+	var now := Time.get_ticks_msec()
+	if not _user_args().has("capture") and now - int(_eye_cache[0]) < EYE_METER_MS:
+		return _eye_cache[1]
+	_eye_cache = [now, _meter_eye_now(beta)]
+	return _eye_cache[1]
+
+
+func _meter_eye_now(beta: float) -> float:
+	if starfield.count > 0 and eye_meter.needs_build(starfield):
+		eye_meter.build(starfield)
+	var sky := func(n: Vector3) -> float: return background.seen_luminance(n, heading, beta) if has_background else Exposure.dark_sky_luminance()
+	var size := get_viewport().get_visible_rect().size
+	return eye_meter.centre_weighted(camera, size, heading, beta, sky, starfield, background.cmb if beta > 0.0 and has_background else null)
+
+
+## Fixed EV: lock at what the active mode's meter reads for this view at rest.
+func _fix_exposure(on: bool) -> void:
+	exposure.set_fixed(on, _meter(0.0) if on else 0.0, _meter_eye_now(0.0) if on else -1.0)
+
+
 func _push_exposure() -> void:
 	starfield.set_exposure(exposure.star_scale())
+	starfield.set_psf(exposure.psf_sigma_px())
 	starfield.set_floor(exposure.floor_params())
 	if has_background:
 		background.set_scene_exposure(exposure.k())
@@ -292,7 +329,7 @@ func _apply_state() -> void:
 	var x: float = s["x"]
 	var p: Dictionary = s["pos"]
 	starfield.set_ship_position(p["x"], p["y"], p["z"]) # float64; the starfield rebases (M1.3)
-	exposure.update(_meter(beta))
+	exposure.update(_meter(beta), _meter_eye(beta))
 	_push_exposure()
 	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s\n%s\n%s" % [
 		beta, s["gamma"], c["tau"], c["t"], x, warp, camera.hud_line(heading), exposure.hud_line()]
@@ -333,7 +370,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_4: camera.look(0.0, FreeLookCamera.PITCH_LIMIT, 0.0)
 		KEY_EQUAL: warp *= 2.0
 		KEY_MINUS: warp /= 2.0
-		KEY_F: exposure.set_fixed(not exposure.fixed, _meter(0.0))
+		KEY_F: _fix_exposure(not exposure.fixed)
 		KEY_M: exposure.mode = Exposure.Mode.CAMERA if exposure.mode == Exposure.Mode.EYE else Exposure.Mode.EYE
 		KEY_BRACKETLEFT: exposure.bias -= 0.5
 		KEY_BRACKETRIGHT: exposure.bias += 0.5
@@ -381,6 +418,9 @@ func _run_capture(dir: String) -> void:
 				exposure_tiles.append_array(await _capture_exposure_pair(out, target))
 	_save_sheet(tiles, views.size(), out.path_join("contact_sheet.png"))
 	_save_sheet(exposure_tiles, 3, out.path_join("exposure_sheet.png"))
+	if not await _capture_cmb(out):
+		get_tree().quit(2)
+		return
 	sim.stop()
 	get_tree().quit(0)
 
@@ -389,8 +429,8 @@ func _capture_one(out: String, name: String) -> Image:
 	var img := await _grab()
 	img.save_png(out.path_join(name))
 	var ship: Dictionary = sim.world["ship"]
-	print("captured %s  beta=%.6f gamma=%.4f tau=%.4f t=%.4f  %s  EV %+.2f %s %s (meter %s cd/m^2)" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"],
-		camera.hud_line(heading), exposure.ev, exposure.mode_name(), exposure.state_name(), String.num_scientific(_meter(ship["beta"]))])
+	print("captured %s  beta=%.9f gamma=%.4f tau=%.4f t=%.4f  %s  EV %+.2f %s %s (meter %s, eye meter %s cd/m^2)" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"],
+		camera.hud_line(heading), exposure.ev, exposure.mode_name(), exposure.state_name(), String.num_scientific(_meter(ship["beta"])), String.num_scientific(_meter_eye(ship["beta"]))])
 	return img
 
 
@@ -398,19 +438,55 @@ func _capture_one(out: String, name: String) -> Image:
 ## view, the camera-metered view auto-exposed and at the EV fixed at the rest
 ## value. At 0.99c the auto meter brightens the exposure for the redshifted
 ## sideways sky; the fixed pair shows the darkening as physics.
-func _capture_exposure_pair(out: String, target: float) -> Array:
-	var tag := "sky_b%s_starboard" % str(target).replace(".", "")
+func _capture_exposure_pair(out: String, target: float, tag := "") -> Array:
+	tag = tag if tag != "" else "sky_b%s_starboard" % str(target).replace(".", "")
 	var eye := (await _grab())
 	exposure.mode = Exposure.Mode.CAMERA
 	_apply_state()
 	var auto := await _capture_one(out, tag + "_camera_auto.png")
-	exposure.set_fixed(true, _meter(0.0))
+	_fix_exposure(true)
 	_apply_state()
 	var fixed := await _capture_one(out, tag + "_camera_fixed.png")
-	exposure.set_fixed(false, 0.0)
+	_fix_exposure(false)
 	exposure.mode = Exposure.Mode.EYE
 	_apply_state()
 	return [eye, auto, fixed]
+
+
+## M1.8 (R-e): the forward CMB disc at gamma 275 and at the cap (707), on a
+## real journey (D-11: boost in minutes, then cruise), so the ship stays near
+## Sol. Forward and starboard, each as eye / camera auto / camera fixed at the
+## rest EV; plus a 4 deg zoom on the disc (eye) and cmb_sheet.png.
+func _capture_cmb(out: String) -> bool:
+	var tiles := []
+	var params: Dictionary = sim.world["params"]
+	for g: float in [275.0, 707.0]:
+		var phi := minf(log(g + sqrt(g * g - 1.0)), params["cruise_phi_max"])
+		var target := {"index": 0, "id": "cmb-capture", "pos": {"x": HEADING.x * 1000.0, "y": HEADING.y * 1000.0, "z": HEADING.z * 1000.0}}
+		if not sim.new_game(SEED, "sol", true) or not sim.send([{"k": "plan", "target": target, "cruise_phi": phi}], 0.0) \
+				or not sim.send([{"k": "commit", "plan_id": int(sim.world["journey"]["plan_id"])}], 0.0):
+			push_error("capture: CMB journey refused (%s %s)" % [sim.last_refused, sim.last_error])
+			return false
+		while sim.world["ship"]["phase"] != "cruising":
+			if not sim.send([], 1e-6):
+				return false
+		var tag := "sky_g%d" % int(g)
+		for view in [["forward", 0.0], ["starboard", -PI / 2]]:
+			camera.look(view[1], 0.0, 0.0)
+			_apply_state()
+			var img := await _capture_one(out, "%s_%s.png" % [tag, view[0]])
+			var trio := await _capture_exposure_pair(out, 0.0, "%s_%s" % [tag, view[0]])
+			trio[0] = img
+			tiles.append_array(trio)
+		camera.look(0.0, 0.0, 0.0)
+		camera.fov = 4.0
+		_configure_pixel()
+		_apply_state()
+		await _capture_one(out, tag + "_forward_zoom.png")
+		camera.fov = 70.0
+		_configure_pixel()
+	_save_sheet(tiles, 3, out.path_join("cmb_sheet.png"))
+	return true
 
 
 func _save_sheet(tiles: Array, cols: int, path: String) -> void:
@@ -481,6 +557,7 @@ func _run_golden() -> void:
 	failures += await _golden_hot_white_dwarf()
 	# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
 	failures += await load("res://tools/exposure_golden.gd").new().run(self)
+	failures += await load("res://tools/cmb_golden.gd").new().run(self)
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 

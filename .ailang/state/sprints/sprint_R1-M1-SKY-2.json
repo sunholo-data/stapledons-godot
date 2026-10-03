@@ -577,10 +577,11 @@
         "R-e: Mark reviews the CMB renders"
       ],
       "pause_after": "R-e",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-03T09:30:00Z",
+      "completed": "2026-10-03T11:45:00Z",
+      "notes": "Executed to the R-e pause; the merge waits for Mark (gate 2). Pre-M1.8 follow-ups from the M1.5a evaluation are done. (1) Angular PSF: sigma 6 arcmin, the dark-adapted eye's blur (Shlaer 1937 scotopic MAR ~10-20'), clamped to at least 0.7 px. EV_dark is the constant -4.40, and the dark sky's displayed linear value is 7.6e-4 at both sizes (test_angular_psf; bench and golden both print sky 1/255). V_lim is 6.8 at 960x540 (golden) and 6.9 at 2560x1440 (bench). (2) Eye meter: sky/sky_meter.gd, a centre-weighted (sigma 12 deg) arithmetic mean over the panorama grid, the stars (16x8x3 direction/T bins plus stars within 20 ly one by one) and the CMB disc's illuminance. The eye light-adapts forward at 0.99c (EV -3.8) and at gamma 707 (EV +12.4), and stays pinned sideways. Camera mode keeps the log-average meter. Interactive and bench frames reuse an eye reading for 100 ms. CMB: sky/cmb.gd. Finite lookup of log10 photopicRadiance over [0, 5000 K] (1025 entries). A radial profile per speed (rebuilt when gamma moves 0.5%) is blurred by the same angular PSF (Hankel/I0e), so the 4.9' core at gamma 707 neither aliases nor loses illuminance (189 lux). The sky shader samples it by theta' = atan2(|n x v|, n.v) and clamps the output at 6e4 for the half-float buffer. Golden: sharp disc ratios 0.998/0.994/0.995 at theta' ~0, 1/gamma, 2/gamma; PSF disc 0.998; 45/90 deg and beta 0 exactly 0. Captures: a real journey (plan + commit, boost, cruise) at gamma 275 and 707, forward and starboard, eye / camera auto / camera fixed, plus 4 deg zooms. Deviations: AC '1926.9 K at theta' 90' is the rest-frame 90 deg (appears at asin(1/gamma)); at apparent 90 deg it is T0/gamma, and both are asserted. LOC 823 (over the 650 cap) because the two follow-ups and about 200 lines of tests were not in the 300 estimate. make bench p99 misses under the host's current load (load 8-17 from parallel work), but origin/main misses the same way in an A/B run (p99 57 ms), so it is environmental. No package change needed (0.5.2 has cmbSeenTemperature(Apparent) and photopicRadiance).",
+      "actual_loc": 823
     },
     {
       "id": "M1.5b_RENDERS_REPORT_LANDING",

@@ -41,6 +41,8 @@ const METER_GRID := Vector2i(16, 9)
 const METER_MIP := 4 # the CPU copy for calibration and metering: 1/16 of the panorama (at most)
 
 var material := ShaderMaterial.new()
+var cmb := CmbGlow.new() # M1.8: the forward CMB disc, drawn in the same exposure
+var psf_sigma := 0.0 # rad, the angular PSF the CMB profile is blurred with (Exposure.psf_sigma_rad)
 var cdm2_per_unit := 1.0
 var dark_patch_y := 1.0 # linear luminance of the photo's dark-sky patch
 var peak_y := 1.0 # linear luminance at PEAK_QUANTILE (equal-area)
@@ -97,6 +99,7 @@ func attach(env: Environment, viewport_height: float, fov_deg: float, photo: Ima
 	material.set_shader_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
 	material.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
 	material.set_shader_parameter("pano_px_per_screen_px", photo.get_height() / 180.0 * fov_deg / viewport_height)
+	material.set_shader_parameter("cmb_size", CmbGlow.PROFILE_SIZE)
 	var sky := Sky.new()
 	sky.sky_material = material
 	sky.radiance_size = Sky.RADIANCE_SIZE_32
@@ -108,11 +111,22 @@ func attach(env: Environment, viewport_height: float, fov_deg: float, photo: Ima
 
 
 ## Same contract as Starfield.set_velocity: beta, gamma in float64 from the sim.
+## The CMB profile is rebuilt when gamma has moved by more than 0.5%.
 func set_velocity(direction: Vector3, beta: float, gamma: float) -> void:
+	var omb := 1.0 / (gamma * gamma * (1.0 + beta))
 	material.set_shader_parameter("beta_dir", direction.normalized())
 	material.set_shader_parameter("beta_mag", beta)
 	material.set_shader_parameter("gamma_f", gamma)
-	material.set_shader_parameter("one_minus_beta", 1.0 / (gamma * gamma * (1.0 + beta)))
+	material.set_shader_parameter("one_minus_beta", omb)
+	if cmb.needs_build(omb, psf_sigma):
+		cmb.build(omb, psf_sigma)
+		material.set_shader_parameter("cmb_profile", cmb.texture)
+		material.set_shader_parameter("cmb_theta_max", cmb.theta_max)
+
+
+## The angular PSF (rad) the CMB disc is drawn through; 0 draws it sharp.
+func set_psf(sigma_rad: float) -> void:
+	psf_sigma = sigma_rad
 
 
 ## Raw multiplier on the photo's linear values (goldens).
@@ -123,6 +137,7 @@ func set_exposure(e: float) -> void:
 ## Photometric exposure: k is linear pixel per cd/m^2 (Exposure.k()).
 func set_scene_exposure(k: float) -> void:
 	set_exposure(k * cdm2_per_unit)
+	material.set_shader_parameter("cmb_k", k)
 
 
 static func _mip(img: Image, level: int) -> Image:
@@ -192,7 +207,8 @@ func unstretched(y: float) -> float:
 
 
 ## Log-average seen luminance over a METER_GRID of the camera's view (the
-## exposure meter): exp(mean ln(L + 1e-9 cd/m^2)).
+## camera mode's meter): exp(mean ln(L + 1e-9 cd/m^2)). The eye meters with
+## sky/sky_meter.gd, which also sees the stars and the CMB.
 func meter(cam: FreeLookCamera, dir: Vector3, beta: float) -> float:
 	var half_v := tan(deg_to_rad(cam.fov) * 0.5)
 	var vp := cam.get_viewport().get_visible_rect().size if cam.is_inside_tree() else Vector2(16, 9)

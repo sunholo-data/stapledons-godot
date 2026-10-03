@@ -17,7 +17,7 @@ uniform sampler2D bb_lut : filter_linear, repeat_disable;
 uniform float lut_log_tmin;
 uniform float lut_log_tmax;
 // Linear splat peak per lux (sky/exposure.gd star_scale):
-// 1 / (L_white 2 pi sigma^2 Omega_px), Omega_px the CENTRE pixel's solid angle.
+// 1 / (L_white 2 pi sigma_rad^2), sigma_rad = psf_sigma_px x the CENTRE pixel's angle.
 // Deliberately the same across the frame: a star's on-screen brightness never
 // depends on where it sits (the pinhole's off-axis pixels span up to cos^3 less
 // solid angle, 0.38 at Sirius in the port view; not applied, so brightness
@@ -27,7 +27,7 @@ uniform float exposure = 5.0;
 // illuminance is at least floor_flux lux is lifted to a splat peak of floor_peak.
 uniform float floor_flux = 0.0;
 uniform float floor_peak = 0.0;
-uniform float psf_sigma_px = 0.9;         // point-spread sigma in pixels
+uniform float psf_sigma_px = 0.9;         // point-spread sigma in pixels (fixed in angle, sky/exposure.gd)
 uniform float sky_radius = 100.0;
 uniform vec3 ship_hi = vec3(0.0);         // ship - O, float32 pair (see header)
 uniform vec3 ship_lo = vec3(0.0);
