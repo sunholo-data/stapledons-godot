@@ -19,8 +19,10 @@ import ./key (CacheKey)
 export type Side = { ext: string, data: bytes }
 export type Blob = { sha256: string, ext: string, mime: string, data: bytes, index: string, side: Option[Side] }
 -- A voice line's timing (AI.10a): on its index line, so a library voice line
--- is a cache hit (AiCache.lookup wants duration_ms and segments_ms).
-export type Timing = { durationMs: int, segmentsMs: [int] }
+-- is a cache hit (AiCache.lookup wants duration_ms and segments_ms); and the
+-- sha256 of its WAV playback copy, which readers verify before playing it
+-- (tools/playback_verify.ail proves the WAV re-encodes to the Ogg).
+export type Timing = { durationMs: int, segmentsMs: [int], wavSha256: string }
 -- What one index line records besides the key and the blob itself.
 export type Origin = { provider: string, route: string, model: string, inputSha256: string, seed: int, size: Option[{w: int, h: int}], timing: Option[Timing] }
 
@@ -34,7 +36,7 @@ export pure func indexLine(k: CacheKey, sha: string, mime: string, n: int, ext: 
   concat(["{", join(",", [f("key", keyJson(k)), f("sha256", q(sha)), f("mime", q(mime)), f("bytes", intToStr(n)), f("ext", q(ext)), f("origin", q("library")),
     f("provider", q(o.provider)), f("route", q(o.route)), f("model", q(o.model)), f("input_sha256", q(o.inputSha256)), f("seed", intToStr(o.seed)), f("source", q("service"))] ++
     (match o.size { Some(s) => [f("width", intToStr(s.w)), f("height", intToStr(s.h))], None => [] }) ++
-    (match o.timing { Some(t) => [f("duration_ms", intToStr(t.durationMs)), f("segments_ms", concat(["[", join(",", ints(t.segmentsMs)), "]"]))], None => [] })), "}"])
+    (match o.timing { Some(t) => [f("duration_ms", intToStr(t.durationMs)), f("segments_ms", concat(["[", join(",", ints(t.segmentsMs)), "]"])), f("wav_sha256", q(t.wavSha256))], None => [] })), "}"])
 pure func ints(xs: [int]) -> [string] = match xs { [] => [], x :: r => intToStr(x) :: ints(r) }
 
 -- The writes for one blob, in order, as data (so the order is tested, not

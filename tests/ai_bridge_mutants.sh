@@ -15,7 +15,7 @@
 set -u
 GODOT=$1
 SCRATCH=$2
-FILES="bridge/ai_bridge.gd bridge/ai_session.gd ui/settings/ai_settings.gd bridge/ai_cache.gd bridge/ai_relay.gd ui/conversation/conversation.gd"
+FILES="bridge/ai_bridge.gd bridge/ai_session.gd ui/settings/ai_settings.gd bridge/ai_cache.gd bridge/ai_relay.gd ui/conversation/conversation.gd ui/conversation/conversation_session.gd"
 mkdir -p "$SCRATCH/orig"
 for f in $FILES; do mkdir -p "$SCRATCH/orig/$(dirname $f)"; cp "$f" "$SCRATCH/orig/$f"; done
 restore() { for f in $FILES; do cp "$SCRATCH/orig/$f" "$f"; done; }
@@ -99,13 +99,18 @@ while IFS="$TAB" read -r src from to only want; do
 	[ -z "$src" ] && continue
 	mutate "$src" "$from" "$to" tests/test_conversation.gd "$only" "$want"
 done <<'EOF'
-ui/conversation/conversation.gd	t_ms >= float(offsets[_seg + 1]) + swap_offset_ms	t_ms >= float(offsets[_seg + 1])	offset	swaps at
-ui/conversation/conversation.gd	offsets = segs_ms.map(func(x): return int(x))	offsets = reading_offsets(segments)	swaps	each swap within one frame after its offset
+ui/conversation/conversation.gd	t_ms >= float(offsets[_seg + 1]) + swap_offset_ms	t_ms >= float(offsets[_seg + 1])	swaps	each swap within one frame after its offset minus 150 ms
+ui/conversation/conversation.gd	@export var swap_offset_ms := -150.0	@export var swap_offset_ms := 0.0	swaps	swap offset -150 ms by default
+ui/conversation/conversation.gd	offsets = segs_ms.map(func(x): return int(x))	offsets = reading_offsets(segments)	swaps	each swap within one frame after its offset minus 150 ms
 ui/conversation/conversation.gd	clampf((t_ms - _fade_from) / crossfade_ms, 0.0, 1.0)	1.0	swaps	each crossfade completes crossfade_ms after its swap
 ui/conversation/conversation.gd	segments.slice(0, i + 1)	segments	swaps	subtitle reveals two segments
 ui/conversation/conversation.gd	var e := cache.portrait_for(entity, emotion, years)	var e := cache.lookup({"kind": "portrait", "entity_id": entity, "emotion": emotion, "variant": "0"}, years)	fallback	happy -> loving, angry -> neutral, sad -> grieving
 ui/conversation/conversation.gd	if e.is_empty():\n\t\t\t_log("missing_blob"	if false:\n\t\t\t_log("missing_blob"	no_audio	missing_blob logged, no stream
 bridge/ai_cache.gd	get_basename() + ".wav"	get_basename() + ".ogg"	swaps	the WAV stream is loaded
+bridge/ai_cache.gd	or FileAccess.get_sha256(p) != e["wav_sha256"]:	or false:	no_audio	playback_unverified logged, no stream
+ui/conversation/conversation.gd	_fade_from = float(offsets[i]) + swap_offset_ms	_fade_from = float(offsets[i])	swaps	each crossfade completes crossfade_ms after its swap
+ui/conversation/conversation.gd	if audio_clock_ms < 0.0:	if true:	swaps	drift guard
+ui/conversation/conversation_session.gd	relay.mode = "replay"	relay.mode = "live"	replay	the relay was in replay mode
 bridge/ai_relay.gd	"voice": c["voice_id"]	"voice": "Kore"	swaps	the relay's cast comes from medic.json
 EOF
 echo "ai-bridge-mutants: $n mutants, $fails not killed"

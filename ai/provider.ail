@@ -220,7 +220,7 @@ export pure func okVoice(l: Ledger, j: Job, prov: string, u: Units, ms: int, c: 
   let n = B.length(c.ogg);
   let k = voiceKey(j.r);
   okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: voiceDescriptor(k, n, c), asset: Some({ path: blobPath(sha, "ogg"), mime: "audio/ogg", bytes: n }), meta: m }),
-    { sha256: sha, ext: "ogg", mime: "audio/ogg", data: c.ogg, index: indexLine(k, sha, "audio/ogg", n, "ogg", originOf(j, prov, None, Some({ durationMs: c.durationMs, segmentsMs: c.segmentsMs }))),
+    { sha256: sha, ext: "ogg", mime: "audio/ogg", data: c.ogg, index: indexLine(k, sha, "audio/ogg", n, "ogg", originOf(j, prov, None, Some({ durationMs: c.durationMs, segmentsMs: c.segmentsMs, wavSha256: sha256Bytes(c.wav) }))),
       side: Some({ ext: "wav", data: c.wav }) })
 }
 -- A failed call still costs what it used: charged, logged, then the error.

@@ -10,6 +10,7 @@ import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/string (concat, join, length, contains, startsWith, endsWith)
 import std/bytes (fromBase64, fromString, toString, slice)
+import std/crypto (sha256Bytes)
 import ./key (CacheKey)
 import ./route (Routing, parseRouting)
 import ./wire (Request, Out, OOk, OErr, CtxField, CStr, encodeOut, usdStr)
@@ -207,7 +208,9 @@ export pure func checkStubRefusals() -> bool =
 -- WAV playback copy of the same PCM (Godot cannot decode Ogg Opus).
 pure func increasing(xs: [int], prev: int, dur: int) -> bool = match xs { [] => true, x :: r => x > prev && x < dur && increasing(r, x, dur) }
 pure func noSide(b: Blob) -> bool = match b.side { Some(_) => false, None => true }
-pure func wavHead(b: Blob) -> bool = match b.side { Some(s) => s.ext == "wav" && (match slice(s.data, 0, 4) { Some(h) => toString(h) == "RIFF", None => false }), None => false }
+pure func wavHead(b: Blob) -> bool = match b.side {
+  Some(s) => s.ext == "wav" && (match slice(s.data, 0, 4) { Some(h) => toString(h) == "RIFF", None => false }) && contains(b.index, concat(["\"wav_sha256\":\"", sha256Bytes(s.data), "\""])),
+  None => false }
 export pure func checkVoiceIndex() -> bool {
   let three = {voiceRq("13") | segments: Some([{ emotion: "neutral", text: "Hi" }, { emotion: "grieving", text: "I know, I know." }, { emotion: "loving", text: "Sleep." }])};
   let v = answer(bothCtx(), three);

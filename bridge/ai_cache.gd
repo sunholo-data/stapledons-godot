@@ -74,12 +74,23 @@ func find_sha(sha: String) -> Dictionary:
 
 ## The voice line's playback copy beside its Ogg blob (AI.10a: the service
 ## writes a WAV of the same PCM, since Godot 4 cannot decode Ogg Opus), or ""
-## when there is none.
+## when there is none or it is not the WAV the index line names.
 func playback_path(e: Dictionary) -> String:
+	var pb := playback(e)
+	return pb["path"] if pb["error"] == "" else ""
+
+
+## {path, error}: error "" (verified: its sha256 is the line's wav_sha256),
+## "absent" (no copy) or "unverified" (no wav_sha256, or another file).
+func playback(e: Dictionary) -> Dictionary:
 	if e.is_empty():
-		return ""
+		return {"path": "", "error": "absent"}
 	var p := blob_path(e).get_basename() + ".wav"
-	return p if FileAccess.file_exists(p) else ""
+	if not FileAccess.file_exists(p):
+		return {"path": p, "error": "absent"}
+	if typeof(e.get("wav_sha256")) != TYPE_STRING or FileAccess.get_sha256(p) != e["wav_sha256"]:
+		return {"path": p, "error": "unverified"}
+	return {"path": p, "error": ""}
 
 
 ## The record body for a media hit: the descriptor the sim validates, keyed by

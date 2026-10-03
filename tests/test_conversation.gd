@@ -7,10 +7,11 @@ extends SceneTree
 ##              descriptor's offsets are exact (strictly increasing, below
 ##              duration_ms) and its library line carries them; the cast entry
 ##              names the voice
-##   swaps      the portrait swaps at each segments_ms offset (± one frame),
+##   swaps      the portrait swaps 150 ms before each segments_ms offset (the
+##              default lead, Mark 2026-10-03; ± one frame),
 ##              crossfades over crossfade_ms, the subtitle reveals segment by
 ##              segment, the WAV playback copy plays
-##   offset     swap_offset_ms -150 leads every swap by 150 ms (± one frame)
+##   offset     swap_offset_ms 0 swaps at each segment start (± one frame)
 ##   fallback   a missing emotion walks the fallback chain; a person with no
 ##              portraits logs missing_portrait; no voice: reading-pace offsets
 ##   no_audio   a voice whose blob is in no layer logs missing_blob and the
@@ -26,6 +27,8 @@ extends SceneTree
 const LOG := "res://tests/replays/medic_rehearsal.ndjson"
 const SCENE := "res://ui/conversation/conversation.tscn"
 const FRAME_MS := 1000.0 / 60.0
+## The default swap lead (Mark, attended 2026-10-03: "150 ms early").
+const LEAD := -150.0
 const TESTS := ["rehearsal", "swaps", "offset", "fallback", "no_audio", "replay", "session_off"]
 
 var failures := 0
@@ -127,6 +130,7 @@ func test_rehearsal() -> bool:
 	c.load_layers()
 	var e := c.find_sha(p["voice"].get("sha256", ""))
 	assert_bool("the library's voice line carries the same duration_ms and segments_ms", e.get("duration_ms") == d.get("duration_ms") and e.get("segments_ms") == offs)
+	assert_bool("and the wav_sha256 of its playback copy", typeof(e.get("wav_sha256")) == TYPE_STRING and FileAccess.get_sha256(c.blob_path(e).get_basename() + ".wav") == e["wav_sha256"])
 	var wav := c.playback_path(e)
 	var st := AudioStreamWAV.load_from_buffer(FileAccess.get_file_as_bytes(wav)) if wav != "" else null
 	assert_bool("a WAV playback copy beside the Ogg blob, %s s long" % [st.get_length() if st else -1.0],
@@ -143,30 +147,33 @@ func test_rehearsal() -> bool:
 
 
 func test_swaps() -> bool:
-	print("swaps at each segments_ms offset (± one frame), crossfade, subtitle, audio")
+	print("swaps 150 ms before each segments_ms offset (± one frame), crossfade, subtitle, audio")
 	if reh.is_empty():
 		return true
 	var c := conversation(reh["library"])
 	c.setup(reh["line"], reh["voice"])
 	var offs: Array = reh["voice"]["descriptor"]["segments_ms"]
-	assert_bool("crossfade 120 ms and swap offset 0 by default; the WAV stream is loaded", c.crossfade_ms == 120.0 and c.swap_offset_ms == 0.0 and c.audio.stream is AudioStreamWAV)
+	assert_bool("crossfade 120 ms and swap offset -150 ms by default; the WAV stream is loaded", c.crossfade_ms == 120.0 and c.swap_offset_ms == LEAD and c.audio.stream is AudioStreamWAV)
 	run(c)
 	var sw := c.events_named("swap")
 	assert_bool("three portraits shown: %s" % [sw.map(func(x): return x["shown"])], sw.map(func(x): return x["shown"]) == ["neutral", "loving", "grieving"])
 	var ok := sw.size() == 3
 	for i in sw.size():
-		ok = ok and sw[i]["segment"] == i and within_frame(sw[i]["t_ms"], offs[i])
-	assert_bool("each swap within one frame after its offset: %s vs %s" % [sw.map(func(x): return x["t_ms"]), offs], ok)
+		ok = ok and sw[i]["segment"] == i and within_frame(sw[i]["t_ms"], maxf(0.0, offs[i] + LEAD))
+	assert_bool("each swap within one frame after its offset minus 150 ms: %s vs %s" % [sw.map(func(x): return x["t_ms"]), offs], ok)
 	var fd := c.events_named("faded")
 	assert_bool("each crossfade completes crossfade_ms after its swap (± one frame): %s" % [fd.map(func(x): return x["t_ms"])],
-		fd.size() == 2 and within_frame(fd[0]["t_ms"], offs[1] + 120.0) and within_frame(fd[1]["t_ms"], offs[2] + 120.0))
+		fd.size() == 2 and within_frame(fd[0]["t_ms"], offs[1] + LEAD + 120.0) and within_frame(fd[1]["t_ms"], offs[2] + LEAD + 120.0))
 	assert_bool("the subtitle ends as the accepted text", c.subtitle.text == reh["line"]["text"])
+	c.t_ms = 1000.0
+	assert_bool("drift guard: with audio the clock follows the audio position (40, never back), without it the frame (16.7)",
+		is_equal_approx(c.clock_step(FRAME_MS, 1040.0), 40.0) and c.clock_step(FRAME_MS, 990.0) == 0.0 and is_equal_approx(c.clock_step(FRAME_MS, -1.0), FRAME_MS))
 	assert_bool("the line ends after duration_ms plus the tail", c.events_named("end").size() == 1 and c.events_named("end")[0]["t_ms"] >= reh["voice"]["descriptor"]["duration_ms"] + Conversation.TAIL_MS)
 	# Mid-fade: halfway through the crossfade the incoming portrait is half opaque; the subtitle shows two segments.
 	c.play()
-	while c.t_ms < offs[1]:
+	while c.t_ms < offs[1] + LEAD:
 		c.advance(FRAME_MS)
-	var into: float = c.t_ms - offs[1]
+	var into: float = c.t_ms - (offs[1] + LEAD)
 	c.advance(60.0 - into)
 	var segs: Array = reh["line"]["segments"]
 	assert_bool("halfway through the fade B is %.2f opaque; subtitle reveals two segments" % c.portrait_b.modulate.a,
@@ -176,17 +183,17 @@ func test_swaps() -> bool:
 
 
 func test_offset() -> bool:
-	print("swap offset -150 ms leads each swap (± one frame)")
+	print("swap offset 0: each swap at its segment start (± one frame)")
 	if reh.is_empty():
 		return true
 	var c := conversation(reh["library"])
-	c.swap_offset_ms = -150.0
+	c.swap_offset_ms = 0.0
 	c.setup(reh["line"], reh["voice"])
 	run(c)
 	var offs: Array = reh["voice"]["descriptor"]["segments_ms"]
 	var sw := c.events_named("swap")
 	assert_bool("swaps at %s for offsets %s" % [sw.map(func(x): return x["t_ms"]), offs],
-		sw.size() == 3 and sw[0]["t_ms"] == 0 and within_frame(sw[1]["t_ms"], offs[1] - 150.0) and within_frame(sw[2]["t_ms"], offs[2] - 150.0))
+		sw.size() == 3 and sw[0]["t_ms"] == 0 and within_frame(sw[1]["t_ms"], offs[1]) and within_frame(sw[2]["t_ms"], offs[2]))
 	c.queue_free()
 	return true
 
@@ -221,7 +228,7 @@ func test_no_audio() -> bool:
 	var offs: Array = reh["voice"]["descriptor"]["segments_ms"]
 	var sw := c.events_named("swap")
 	assert_bool("the line still plays as text at the voice offsets: %s" % [sw.map(func(x): return x["t_ms"])],
-		sw.size() == 3 and within_frame(sw[2]["t_ms"], offs[2]) and c.subtitle.text == reh["line"]["text"])
+		sw.size() == 3 and within_frame(sw[2]["t_ms"], offs[2] + LEAD) and c.subtitle.text == reh["line"]["text"])
 	# The Ogg blob without its playback copy (an older library): logged, text only.
 	var lib := fresh("no_wav")
 	OS.execute("/bin/cp", PackedStringArray(["-R", reh["library"] + "/.", lib]))
@@ -231,6 +238,18 @@ func test_no_audio() -> bool:
 	var c2 := conversation(lib)
 	c2.setup(reh["line"], reh["voice"])
 	assert_bool("an Ogg blob without its WAV copy: no_playback_copy logged, no stream", c2.events_named("no_playback_copy").size() == 1 and c2.audio.stream == null)
+	# A WAV that is not the one the index line names (wav_sha256): not played.
+	var lib3 := fresh("bad_wav")
+	OS.execute("/bin/cp", PackedStringArray(["-R", reh["library"] + "/.", lib3]))
+	var sh: String = reh["voice"]["sha256"]
+	var wf := FileAccess.open(lib3.path_join("blobs/%s/%s.wav" % [sh.substr(0, 2), sh]), FileAccess.READ_WRITE)
+	wf.seek(2000)
+	wf.store_8(1)
+	wf.close()
+	var c3 := conversation(lib3)
+	c3.setup(reh["line"], reh["voice"])
+	assert_bool("a WAV whose sha256 is not the line's wav_sha256: playback_unverified logged, no stream", c3.events_named("playback_unverified").size() == 1 and c3.audio.stream == null)
+	c3.queue_free()
 	c.queue_free()
 	c2.queue_free()
 	return true
@@ -247,6 +266,7 @@ func test_replay() -> bool:
 	var r := ConversationSession.replay(ProjectSettings.globalize_path(LOG), c)
 	var p := ConversationSession.pick(r["events"], "medic")
 	assert_bool("replayed with no AI process; the same line and voice", r["ok"] and r["launches"] == 0 and p["line"] == reh["line"] and p["voice"] == reh["voice"])
+	assert_bool("the relay was in replay mode: it opens nothing", r["relay"].mode == "replay" and r["relay"].enabled and not r["relay"].open("text", "line", "medic") and r["relay"].queued() == 0)
 	assert_bool("with the library: nothing missing", r["relay"].missing_blobs == 0)
 	var empty := AiCache.new()
 	empty.core_dir = core

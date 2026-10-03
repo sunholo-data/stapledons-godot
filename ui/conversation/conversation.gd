@@ -7,10 +7,12 @@ extends Control
 ##
 ## Timing: segment i starts at the voice descriptor's segments_ms[i] (exact
 ## PCM offsets, from the service); the portrait swaps there plus
-## `swap_offset_ms` (0, or -150 to lead the voice), crossfading over
+## `swap_offset_ms` (default -150: the portrait leads the voice by 150 ms,
+## Mark's choice at the style frame, 2026-10-03; 0 swaps at the segment start), crossfading over
 ## `crossfade_ms` (default 120). Without a voice record the offsets come from
-## the text at a reading pace. The clock is the frame clock (`advance`), so a
-## movie-mode capture and a headless test see the same swaps.
+## the text at a reading pace. The clock is the audio playback position while
+## the voice plays (no drift under frame hitches), else the frame clock
+## (`advance`); a headless test drives `advance` directly.
 ## Fallbacks: a missing emotion walks AiCache.fallback_chain; a voice whose
 ## blob is in no layer logs `missing_blob` and the line plays as text.
 ##
@@ -35,7 +37,7 @@ const READ_MIN_MS := 1500
 const TAIL_MS := 700
 
 @export var crossfade_ms := 120.0
-@export var swap_offset_ms := 0.0
+@export var swap_offset_ms := -150.0
 @export var entity := "medic"
 ## Years aboard (age_stage lookup).
 @export var years := 0
@@ -60,6 +62,7 @@ var _captures: Array = []
 var _out := ""
 var _voice_sha := ""
 var _grab := ""
+var _frame0 := 0
 
 ## The scene's nodes (bound on first use, so a test can drive an instance
 ## before it has had a frame).
@@ -166,11 +169,14 @@ func setup(line: Dictionary, voice: Dictionary) -> void:
 	_voice_sha = str(voice.get("sha256", ""))
 	if not voice.is_empty():
 		var e := cache.find_sha(str(voice.get("sha256")))
-		audio_path = cache.playback_path(e)
+		var pb := cache.playback(e)
+		audio_path = pb["path"] if pb["error"] == "" else ""
 		if e.is_empty():
 			_log("missing_blob", {"kind": "voice", "sha256": voice.get("sha256")})
-		elif audio_path == "":
+		elif pb["error"] == "absent":
 			_log("no_playback_copy", {"sha256": voice.get("sha256")})
+		elif pb["error"] != "":
+			_log("playback_unverified", {"sha256": voice.get("sha256"), "path": pb["path"]})
 		else:
 			audio.stream = AudioStreamWAV.load_from_buffer(FileAccess.get_file_as_bytes(audio_path))
 			if audio.stream == null:
@@ -204,6 +210,7 @@ func play() -> void:
 	portrait_b.texture = null
 	portrait_b.modulate.a = 0.0
 	playing = true
+	_frame0 = Engine.get_process_frames()
 	_log("start", {"duration_ms": duration_ms, "offsets": offsets, "audio": audio.stream != null})
 	if audio.stream != null and audio.is_inside_tree():
 		audio.play()
@@ -218,7 +225,28 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if playing and auto_clock:
-		advance(delta * 1000.0)
+		advance(clock_step(delta * 1000.0, audio_ms()))
+
+
+## The audio clock in ms while the voice plays (Godot's sync recipe: the
+## playback position, plus the time since the last mix, minus the output
+## latency), or -1 when no audio is playing or it has not been mixed yet (on
+## the first frames the time since the last mix is stale: it made the clock
+## jump by about 0.6 s in a movie capture).
+func audio_ms() -> float:
+	if audio == null or not audio.playing or audio.get_playback_position() <= 0.0:
+		return -1.0
+	var since := clampf(AudioServer.get_time_since_last_mix(), 0.0, 0.05)
+	return maxf(0.0, (audio.get_playback_position() + since - AudioServer.get_output_latency()) * 1000.0)
+
+
+## How far to move the clock this frame. While the voice plays the visuals
+## follow the audio clock (never backwards), so a frame hitch cannot make the
+## swaps drift from the voice; otherwise the frame clock.
+func clock_step(frame_ms: float, audio_clock_ms: float) -> float:
+	if audio_clock_ms < 0.0:
+		return frame_ms
+	return maxf(0.0, audio_clock_ms - t_ms)
 
 
 ## Move the clock by `ms`: enter every segment whose (offset + swap offset)
@@ -273,7 +301,8 @@ func _enter(i: int) -> void:
 		_fade_from = float(offsets[i]) + swap_offset_ms
 	_log("swap", {"segment": i, "shown": shown, "sha256": e["sha256"]})
 	if _out != "":
-		_captures.append({"due": float(offsets[i]) + swap_offset_ms + crossfade_ms, "name": "swap_%d_%s.png" % [i, shown]})
+		# not before crossfade_ms: with the lead, the opening segment is due before the first frame is drawn
+		_captures.append({"due": maxf(float(offsets[i]) + swap_offset_ms, 0.0) + crossfade_ms, "name": "swap_%d_%s.png" % [i, shown]})
 
 
 func _texture(e: Dictionary) -> Texture2D:
@@ -291,6 +320,8 @@ func _texture(e: Dictionary) -> Texture2D:
 func _log(event: String, fields: Dictionary) -> void:
 	var x := {"t_ms": int(round(t_ms)), "event": event}
 	x.merge(fields)
+	x["frame"] = Engine.get_process_frames() - _frame0
+	x["audio_ms"] = int(round(audio_ms()))
 	timeline.append(x)
 
 

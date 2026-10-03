@@ -206,8 +206,14 @@ ai-mutants:        ## AI.4, AI.5, AI.8, AI.9: route, key, stub, cache order, act
   'spend.ail@nusd: capped(capped(x.nusd) + capped(n)) }@nusd: x.nusd + n }@AI.9 an absurd carried spend fails closed; admit never wraps@spend_test.ail' \
   'provider.ail@units: { tokensIn: 0, tokensOut: 0, calls: 0 }, nusd: j.est, ms: 0 }, charge(l, j.hop.provider, j.est))@units: { tokensIn: 0, tokensOut: 0, calls: 0 }, nusd: 0, ms: 0 }, charge(l, j.hop.provider, 0))@AI.9 a sent but unanswered call is charged at its cap; the reservation is the worst case@stub_test.ail' \
   'provider.ail@tokensOut: textCap(j.r), calls: 1 }@tokensOut: 0, calls: 1 }@AI.9 a sent but unanswered call is charged at its cap; the reservation is the worst case@stub_test.ail' \
-  'provider.ail@originOf(j, prov, None, Some({ durationMs: c.durationMs, segmentsMs: c.segmentsMs }))@originOf(j, prov, None, None)@AI.10a a voice index line carries duration_ms and segments_ms; a WAV playback copy@stub_test.ail' \
+  'provider.ail@originOf(j, prov, None, Some({ durationMs: c.durationMs, segmentsMs: c.segmentsMs, wavSha256: sha256Bytes(c.wav) }))@originOf(j, prov, None, None)@AI.10a a voice index line carries duration_ms and segments_ms; a WAV playback copy@stub_test.ail' \
   'provider.ail@side: Some({ ext: "wav", data: c.wav })@side: None@AI.10a a voice index line carries duration_ms and segments_ms; a WAV playback copy@stub_test.ail' \
+  'tools/core_import.ail@(if e.wav == "" then "" else coreSumLine(e.wav, blobPath(e.sha, "wav")))@""@AI.10a a core voice ships its WAV playback copy: wav_sha256, SHA256SUMS, refusals@tools/core_import_test.ail' \
+  'tools/core_import.ail@else if e.ext == "ogg" && (!isLowerHex(e.wav, 64) || e.ms <= 0) then@else if false then@AI.10a a core voice ships its WAV playback copy: wav_sha256, SHA256SUMS, refusals@tools/core_import_test.ail' \
+  'tools/playback_verify.ail@if sha256Bytes(wav) != wavSha then@if false then@AI.10a the WAV playback copy re-encodes to its Ogg blob@tools/playback_verify_test.ail' \
+  'tools/playback_verify.ail@Ok(ogg) => if sha256Bytes(ogg) != sha then@Ok(ogg) => if false then@AI.10a the WAV playback copy re-encodes to its Ogg blob@tools/playback_verify_test.ail' \
+  'tools/playback_verify.ail@if durationMs(n, 24000, 1, 16) != ms then@if false then@AI.10a the WAV playback copy re-encodes to its Ogg blob@tools/playback_verify_test.ail' \
+  'provider.ail@wavSha256: sha256Bytes(c.wav) }@wavSha256: sha256Bytes(c.ogg) }@AI.10a a voice index line carries duration_ms and segments_ms; a WAV playback copy@stub_test.ail' \
   'cache.ail@(match b.side { Some(sd) => sideOps(concat([dir, "/", blobPath(b.sha256, sd.ext)])), None => [] }) ++@@AI.5 blob writes: temp file, rename, then the index line@stub_test.ail'; do \
 	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; rest=$${rest#*@}; name=$${rest%%@*}; tfile=$${rest#*@}; \
 	  rm -rf $(MUTANT_DIR) && mkdir -p $(MUTANT_DIR) && cp -R ai $(MUTANT_DIR)/ai; \
@@ -361,7 +367,7 @@ ai-core-assets:    ## AI.8: fetch the pinned core blobs from the public bucket (
 	test $$missing -eq 0 || { echo "ai-core-assets: $$missing pinned blob(s) not fetched"; exit 1; }
 
 # Stages res://ai_core/ (gitignored) for the export: index.ndjson plus the pinned blobs, verified.
-# Each PNG gets a "keep" .import (AI.9), so the export ships its bytes, not a texture.
+# Each blob (PNG, and a voice's Ogg and WAV copy, AI.10a) gets a "keep" .import (AI.9), so the export ships its bytes, not a resource.
 # AI.9 makes export-macos depend on it. No blobs -> a warning and no core layer (the game falls
 # back to text and the library).
 ai-core-bundle:    ## AI.8: stage the verified core layer into ai_core/ for the export
@@ -370,13 +376,13 @@ ai-core-bundle:    ## AI.8: stage the verified core layer into ai_core/ for the 
 	  $(call ai_core_verify,$(AI_CORE_DIR),$(AI_CORE_BLOBS)) > /dev/null || exit 1; mkdir -p ai_core && cp $(AI_CORE_DIR)/index.ndjson ai_core/ && \
 	  $(call ai_core_blobs,$(AI_CORE_DIR)/SHA256SUMS) | while read -r sum path; do mkdir -p "ai_core/$$(dirname $$path)" && cp "$(AI_CORE_BLOBS)/$$path" "ai_core/$$path"; done && \
 	  (cd ai_core && grep -v '  index.ndjson$$' ../$(AI_CORE_DIR)/SHA256SUMS | shasum -a 256 -c --quiet && shasum -a 256 index.ndjson | grep -q '^$(AI_CORE) ') && \
-	  for f in $$(find ai_core -name '*.png'); do printf '[remap]\n\nimporter="keep"\n' > "$$f.import"; done && \
+	  for f in $$(find ai_core/blobs -type f ! -name '*.import'); do printf '[remap]\n\nimporter="keep"\n' > "$$f.import"; done && \
 	  echo "ai-core-bundle: staged $$(find ai_core -type f | wc -l | tr -d ' ') files ($$(du -sh ai_core | cut -f1)), ai_core $(AI_CORE)"; \
 	else echo "ai-core-bundle: WARNING no core blobs in $(AI_CORE_BLOBS); this build has no core layer (run make ai-core-assets)"; fi
 
 ai-core-publish:   ## AI.8 maintainers (gcloud auth): upload the pinned core blobs to gs://stapledons-voyage-assets/ai/<sha256>.<ext> (never overwrites)
 	@command -v gcloud > /dev/null || { echo "ai-core-publish: needs gcloud (maintainers only)"; exit 1; }
-	@$(call ai_core_verify,$(AI_CORE_DIR),$(AI_CORE_BLOBS)) | grep -q '^core-verify: 5 blobs in' || { echo "ai-core-publish: blobs missing or not matching; run make ai-core-import first"; exit 1; }
+	@$(call ai_core_verify,$(AI_CORE_DIR),$(AI_CORE_BLOBS)) | grep -q '^core-verify: [0-9]* blobs in' || { echo "ai-core-publish: blobs missing or not matching; run make ai-core-import first"; exit 1; }
 	@$(call ai_core_blobs,$(AI_CORE_DIR)/SHA256SUMS) | while read -r sum path; do \
 	  obj="$(AI_CORE_GS)/$$sum.$${path##*.}"; \
 	  if gcloud storage objects describe "$$obj" > /dev/null 2>&1; then echo "  exists   $$obj"; continue; fi; \
@@ -498,8 +504,30 @@ export-smoke: ai-export-smoke
 # frame.avi (Godot's movie writer, audio included). For the rehearsal log it first re-records the
 # rehearsal over a scratch library (which must reproduce the committed log) and uses that library;
 # for another log pass FRAME_LIB=<library dir> (AI.10b: the attended run's user://ai_cache).
-.PHONY: ai-conversation ai-rehearsal-record ai-style-frame
-ai-test: ai-conversation
+.PHONY: ai-conversation ai-rehearsal-record ai-style-frame ai-playback-verify
+ai-test: ai-conversation ai-playback-verify
+ai_playback_verify = $(AI_CORE_RUN) --entry main --args-json '{"dir":"$(1)"}' ai/tools/playback_verify.ail
+
+# Mark, 2026-10-03: keep the WAV beside each Ogg Opus voice blob, the Ogg canonical. The WAV must be
+# verifiably derived: its PCM, re-encoded by std/audio (deterministic), must equal the Ogg blob
+# byte for byte, with the canonical header and the index line's duration_ms. Runs over the stub's
+# library (every voice line, also against its wav_sha256), then over a doctored copy where one WAV
+# sample changed, which must fail.
+ai-playback-verify: ai-stub   ## AI.10a: every voice line's WAV playback copy re-encodes to its Ogg blob (stub library); a doctored WAV is refused
+	@$(call ai_playback_verify,$(AI_S)/cache/both)
+	@rm -rf $(AI_S)/pv && cp -R $(AI_S)/cache/both $(AI_S)/pv && w=$$(find $(AI_S)/pv -name '*.wav' | head -1) && \
+	  printf '\001' | dd of="$$w" bs=1 seek=2000 conv=notrunc 2>/dev/null && \
+	  if $(call ai_playback_verify,$(AI_S)/pv) > $(AI_S)/pv.out; then echo "ai-playback-verify: a doctored WAV passed"; exit 1; fi; \
+	  grep -q 'not the WAV the index line names' $(AI_S)/pv.out && echo "ai-playback-verify: a WAV with one changed sample is refused (wav_sha256)"
+	@rm -rf $(AI_S)/pvcore && mkdir -p $(AI_S)/pvcore/layer && grep '"kind":"voice"' $(AI_S)/cache/both/index.ndjson | sed 's/"origin":"library"/"origin":"core"/' > $(AI_S)/pvcore/index.ndjson && \
+	  sha=$$(sed 's/.*"sha256":"\([0-9a-f]*\)".*/\1/' $(AI_S)/pvcore/index.ndjson) && sh=$$(echo $$sha | cut -c1-2) && \
+	  mkdir -p $(AI_S)/pvcore/layer/blobs/$$sh && cp $(AI_S)/cache/both/blobs/$$sh/$$sha.ogg $(AI_S)/cache/both/blobs/$$sh/$$sha.wav $(AI_S)/pvcore/layer/blobs/$$sh/ && \
+	  (cd $(AI_S)/pvcore/layer && shasum -a 256 blobs/$$sh/$$sha.ogg blobs/$$sh/$$sha.wav) > $(AI_S)/pvcore/SHA256SUMS && \
+	  (cd $(AI_S)/pvcore && shasum -a 256 index.ndjson) >> $(AI_S)/pvcore/SHA256SUMS && \
+	  $(call ai_core_verify,$(AI_S)/pvcore,$(AI_S)/pvcore/layer) | grep -q '^core-verify: 2 blobs in' && \
+	  printf '\001' | dd of=$(AI_S)/pvcore/layer/blobs/$$sh/$$sha.wav bs=1 seek=3000 conv=notrunc 2>/dev/null && \
+	  if $(call ai_core_verify,$(AI_S)/pvcore,$(AI_S)/pvcore/layer) > $(AI_S)/pvcore/bad.out; then echo "ai-playback-verify: a core voice with a doctored WAV passed"; exit 1; fi; \
+	  grep -q 'WAV not the WAV the index line names' $(AI_S)/pvcore/bad.out && echo "ai-playback-verify: a core layer carries a voice with its WAV (SHA256SUMS, core verify re-encodes it); a doctored core WAV is refused"
 
 AI_SF := $(CURDIR)/$(SCRATCH)/ai-style-frame
 SF_OUT := renders/ai_medic
@@ -521,8 +549,9 @@ ai-style-frame: import ai-core-assets ai-core-bundle   ## AI.10a/b (GPU window):
 	  cmp $(AI_SF)/rehearsal.ndjson $(REHEARSAL) || { echo "ai-style-frame: the stub rehearsal no longer reproduces $(REHEARSAL)"; exit 1; }; \
 	  echo "ai-style-frame: stub rehearsal re-recorded == $(REHEARSAL); library $$lib"; \
 	fi; \
-	test -n "$$lib" || { echo "ai-style-frame: FRAME_LIB=<library dir> is needed for $(LOG)"; exit 2; }; \
+	test -n "$$lib" || { echo "ai-style-frame: FRAME_LIB=<library dir> is needed for $(LOG)"; exit 2; }; echo "lib=$$lib" > $(AI_SF)/lib.txt; \
 	$(GODOT_SIM) --path . --resolution 1280x720 --fixed-fps 30 --write-movie "$(CURDIR)/$(SF_OUT)/frame.avi" res://ui/conversation/conversation.tscn -- \
 	  --conversation=medic --log="$(abspath $(LOG))" --library="$$lib" --core=res://ai_core --out="$(CURDIR)/$(SF_OUT)" > $(AI_SF)/frame.out 2>&1 || { tail -20 $(AI_SF)/frame.out; exit 1; }
+	@lib=$$(sed -n 's/^lib=//p' $(AI_SF)/lib.txt); $(AI_CORE_RUN) --entry main --args-json "{\"dir\":\"$$lib\"}" ai/tools/playback_verify.ail
 	@test -s $(SF_OUT)/contact_sheet.png && test -s $(SF_OUT)/line.ogg && test -s $(SF_OUT)/frame.avi && test -s $(SF_OUT)/timeline.json
 	@echo "ai-style-frame: $$(ls $(SF_OUT)/swap_*.png | wc -l | tr -d ' ') swap PNGs, contact_sheet.png, line.ogg ($$(wc -c < $(SF_OUT)/line.ogg | tr -d ' ') bytes), frame.avi ($$(du -h $(SF_OUT)/frame.avi | cut -f1)) in $(SF_OUT)/; open and look at them"

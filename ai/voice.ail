@@ -44,7 +44,7 @@ export pure func toneSamples(text: string, p: int) -> int {
 -- periods: on the v0.52.0 bytecode VM, a segment of more than about a
 -- thousand periods (a grieving segment of 43 code points) made the service's
 -- handler silently drop the request (no result, no error, exit 0) while the
--- interpreter answered (reported upstream, AI.10a). Same bytes either way.
+-- interpreter answered (ailang#1576). Same bytes either way.
 pure func times(b: bytes, n: int) -> bytes =
   if n <= 0 then fromInts([]) else if n % 2 == 1 then concatList([b, times(b, n - 1)]) else { let h = times(b, n / 2); concatList([h, h]) }
 export pure func stubPcm(s: Seg) -> bytes {
