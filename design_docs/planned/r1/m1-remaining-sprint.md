@@ -639,6 +639,7 @@ Godot otherwise.
 ### Wave 5 (parallel)
 
 #### M1.7: Catalogue switch: map, names and goldens on the tiers (F6)
+**Status (2026-10-03):** executed to ⏸ R-c (AILANG v0.52.0, relativity 0.5.2). `stars.json` = quick + bright within 25 pc (5,687 stars, ids `Gaia DR3 n`/`CNS5:n`/`HIP n`); `names.json` by id (52); `make ui`, `check_star_names.py`, `make replay`, `make sky-verify` and `make test` pass locally; captures in `docs/m1.7/`. Deviations: the `alpha_cen` replay log is the design check row (4.37 ly on an axis), so its golden is unchanged; the 25 pc cut carries a 1e-5 ly margin for CNS5 rows at exactly 40 mas (see the sprint JSON notes).
 **Scope:**
 - **Map JSON.** The AILANG catalogue run writes the human-readable map
   catalogue `data/starmap/stars.json` from quick + bright within 25 pc. It
