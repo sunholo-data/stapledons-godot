@@ -723,6 +723,20 @@ func test_sky_meter() -> void:
 	_test_main_eye_meter_wiring()
 
 
+## Every game script compiles. A parse error in one class (e.g. two PRs that each add the
+## same `var`, merged cleanly by git: #101 + #102 both added SimBridge.want_minor) otherwise
+## surfaces only as a distant "main.gd loads" failure, and Godot exits 0 on it.
+func test_scripts_compile() -> void:
+	print("Game scripts compile (load + can_instantiate)")
+	for dir in ["res://bridge", "res://interior", "res://sky", "res://ui", "res://ui/conversation", "res://ui/settings", "res://physics"]:
+		for f in DirAccess.get_files_at(dir):
+			if f.ends_with(".gd"):
+				var sc := load(dir.path_join(f)) as GDScript
+				check("%s compiles" % dir.path_join(f).trim_prefix("res://"), 1.0 if sc != null and sc.can_instantiate() else 0.0, 1.0, 0.0)
+	var m := load("res://main.gd") as GDScript
+	check("main.gd compiles", 1.0 if m != null and m.can_instantiate() else 0.0, 1.0, 0.0)
+
+
 ## main.gd's own wiring (not only the captures): the eye meter gets the
 ## background's CMB when moving and the panorama is attached, and no disc at
 ## rest. main.gd is instanced without entering the tree (no _ready, no sim).
@@ -916,6 +930,7 @@ func _init() -> void:
 	test_sideways_darker()
 	test_angular_psf()
 	test_cmb()
+	test_scripts_compile()
 	test_sky_meter()
 	test_forward_glow()
 	test_ship_frame()
