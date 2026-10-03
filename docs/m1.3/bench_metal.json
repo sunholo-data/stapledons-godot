@@ -1,0 +1,27 @@
+{
+  "background": true,
+  "beta_end": 0.990006138686964,
+  "cpu_rebase_ms": 73.777,
+  "device": "Apple M4 Max (Apple9)",
+  "driver": "metal",
+  "frame_ms_p50": 11.249,
+  "frame_ms_p99": 77.713,
+  "frames": 2179,
+  "gpu_ms_p50": 0.0,
+  "gpu_ms_p99": 0.0,
+  "rebase_mode": "GPU",
+  "rebases_in_flight": 0,
+  "render_size": [
+    2560.0,
+    1440.0
+  ],
+  "seconds": 30.0,
+  "star_pass_gpu_ms_p50": null,
+  "star_pass_gpu_ms_p90": null,
+  "star_pass_gpu_ms_p99": null,
+  "star_pass_wall_ms_p50": 2.941,
+  "stars": 324307,
+  "tiers": [
+    "large"
+  ]
+}

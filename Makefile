@@ -9,7 +9,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: all test deps physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -139,12 +139,23 @@ wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ai
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers
+golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
-	  test "$$(grep -c 'background marker' $(SCRATCH)/golden.log)" = 16 && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers)"; exit 1; }
+	  test "$$(grep -c 'background marker' $(SCRATCH)/golden.log)" = 16 && test "$$(grep -c '^ok    stand-off alpha Cen A' $(SCRATCH)/golden.log)" = 8 && \
+	  grep -q '^ok    hot white dwarf 60 kK' $(SCRATCH)/golden.log && grep -q '^ok    faint-star cull' $(SCRATCH)/golden.log && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull)"; exit 1; }
+
+# M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
+# driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
+BENCH_SECONDS ?= 30
+BENCH_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),large)
+bench:             ## M1.3 AC7 (stars part): scripted flight at 2560x1440, vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default)
+	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
+	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
+	  grep -E '^(bench|starfield):' $(SCRATCH)/bench_$$drv.log; \
+	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
 
 capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window)
 	$(GODOT_SIM) --path . -- --capture=renders

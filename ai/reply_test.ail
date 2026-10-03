@@ -16,12 +16,14 @@ pure func consOf(es: [string], n: int) -> Constraints = { maxChars: n, noNumeral
 pure func pal() -> Constraints = consOf(["neutral", "loving", "grieving"], 280)
 pure func passes(t: string) -> bool = screen(t, pal()) == None
 pure func fails(t: string, why: string) -> bool = screen(t, pal()) == Some(why)
+-- One line per digit, so dropping any one of 0-9 from the screen fails (AI.5 evaluation).
+pure func everyDigit(ds: [string]) -> bool = match ds { [] => true, d :: r => fails(join("", ["{neutral} Deck ", d, " sleeps."]), "numeral") && everyDigit(r) }
 
 -- The screen: grammar, palette, brackets, digits, length of display text.
 pure func checkReplyScreen() -> bool =
   passes("{neutral} The hull hums. {loving} Sleep.") && passes("The hull hums.") && passes("  {grieving} Élise — 星.  ") &&
   fails("{\"kind\":\"Wait\"}", "markup") && fails("{happy} Hello.", "markup") && fails("{neutral} a {neutral}", "markup") &&
-  fails("{neutral} [sigh] no.", "bracket") && fails("{neutral} We left 42 years ago.", "numeral") && fails("", "empty") &&
+  fails("{neutral} [sigh] no.", "bracket") && fails("{neutral} We left 42 years ago.", "numeral") && everyDigit(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]) && fails("", "empty") &&
   fails("{neutral a", "markup") && fails("a } b", "markup") && screen("Hello.", consOf(["loving"], 280)) == Some("emotion") &&
   screen("{neutral} 42", { maxChars: 280, noNumerals: false, emotions: ["neutral"] }) == None &&
   screen("{neutral} abcde {loving} fgh", consOf(["neutral", "loving"], 9)) == None &&

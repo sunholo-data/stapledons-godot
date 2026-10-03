@@ -13,8 +13,10 @@ const LAMBDA_STEP := 1.0
 const C2 := 1.4387769e7 # second radiation constant hc/k in nm*K
 
 const LUT_T_MIN := 300.0
-const LUT_T_MAX := 1.0e6
-const LUT_SIZE := 1024
+## O-1 (M1.3): 1e7 K covers the hottest white dwarfs seen head-on near c
+## (60 kK x D 44.7 = 2.7 MK); 1320 texels keep the old log-T step (~0.79%).
+const LUT_T_MAX := 1.0e7
+const LUT_SIZE := 1320
 
 static var _cache := {}
 
