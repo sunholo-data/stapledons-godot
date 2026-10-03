@@ -215,9 +215,11 @@ A pure module `sim/consequence.ail` beside M2's journey state; I/O stays in
   gameplay profile.
 - **Light-delayed news epoch.** At an event at ship position `p` and galaxy
   time `t`, the newest receivable Earth news is from `t_e = t − |p − p_Sol|`
-  (c = 1). At α Cen arrival (zero dwell) `t = 4.398169`, so **`t_e` =
-  0.043982 Earth-yr (16.1 days) after departure** and the news is 4.354 years
-  old (old: `t_e` 1.632, age 4.354).
+  (c = 1). At α Cen arrival (zero dwell) the arrival time is the
+  `planBurnCoastBurn` value `t = 4.398171` (V12, V24), so **`t_e` = 0.043984
+  Earth-yr (16.1 days) after departure** and the news is 4.354 years old.
+  The `coastAt` limit would give 4.398169 and 0.043982; that is the τ_b → 0
+  reference only, not the arrival time (old: `t_e` 1.632, age 4.354).
 - **Displayed quantities as fields.** The sim emits every number the UI
   shows: `gap_years = t − tau`, `news_epoch`, `news_age_years`, progress,
   `one_minus_beta` (package), and the ISM readout (below). Godot never
@@ -242,12 +244,30 @@ A pure module `sim/consequence.ail` beside M2's journey state; I/O stays in
   states. The earlier draft's "ε × load" was wrong and is withdrawn. At the
   top of the range, 0.999999c, the default gives 0.2813 W/m², under HB-61's
   1 W/m² guide. M2's `journey.plan.ism` evaluates these at the plan's peak
-  rapidity, and M2's ledger accumulates `drag_j` from `mirrorDragPower` per
-  tick. **M4.1 adds a live `ship.ism{load_w_m2, drag_n, glow_w_m2}` at the
-  ship's current rapidity** (the same package calls), so the glow and the HUD
-  relax through the brake. With them comes `glow_pole_w_m2` (M4.2). It also
-  adds `drag_energy_j` = the ledger's
-  `drag_j` since commit. Boost energy per kg of m_eff, `photonDriveEnergy(1,
+  rapidity. M2's ledger (`sim/core.ail:106` `Ledger{…, dragJ}`, emitted as
+  `ledger.drag_j` by `sim/protocol.ail:155`; V24, V25) accumulates drag on
+  the autopilot path at `sim/core.ail:327`: only in cruise pieces, at the
+  plan's peak rapidity, `mirrorDragPower × piece × julianYearS()`. Burn
+  pieces add none, because the boost and brake drag terms cancel over the
+  pair (package `tripEnergy`). **Measured semantics (V24):**
+  `mirrorDragPower` = `mirrorDragForce × cSI()` = F·c (= `loadScale × πR²`),
+  not F·v. `cruiseDragEnergy(n, φ, R, dCoast) / (mirrorDragPower × tauCoast
+  × julianYearS())` = 0.9999999999999999. M2 already has the accumulator, so
+  M4 adds no ledger scope. **M4.1 adds a live `ship.ism{load_w_m2, drag_n,
+  glow_w_m2}` at the ship's current rapidity** (the same package calls), so
+  the glow and the HUD relax through the brake. **`ship.ism` ships in two
+  steps: load/drag/glow_w_m2 at pin 0.5.1; glow_pole_w_m2 is added only after
+  M4.6a lands — the sim never computes 4 × glowInwardFlux itself.** It also
+  adds `drag_energy_j`. **Window:** the ledger's `drag_j` minus its value at
+  the commit tick, so since commit, for this leg only. **Error budget inside
+  AC8's 1e-3:** the burn-phase contribution is 0 by construction, since M2
+  omits burn drag. The reviewer estimated about 1.2 × 10⁻⁶ relative for
+  that term; it is not measured here, and it is not part of `drag_j`. Tick
+  discretisation is exact up to float summation, because the
+  power is constant in cruise and M2 cuts pieces at the phase boundaries.
+  The bound is (cruise ticks) × 2.2 × 10⁻¹⁶, which stays ≤ 1e-9 up to 10⁶
+  ticks. M2's own test asserts the arrival ledger equals `tripEnergy(…).total`
+  within 1e-9 (`sim/core_test.ail:602–615`). Boost energy per kg of m_eff, `photonDriveEnergy(1,
   φ)` = 2.3787 × 10¹⁷ J at 0.99c (HB-35), is on M2's planner. All of these
   are readouts; no budget is enforced (non-goal). **Check values:** ε
   (`m4:glow_eps`, 1e-9, source D-15), f_in (`m4:glow_f_in`, 0.5, source the
@@ -326,10 +346,12 @@ and captures for Mark.
   `glow_w_m2`, since the mean of max(0, cos θ) over a sphere is ¼. So the
   pole value at 0.99c with the defaults is 9.6288 × 10⁻⁵ W/m². It is zero at
   β = 0. **Package first (gate 3):** the angular profile is a formula, and
-  0.5.1 has only the mean (`glowInwardFlux`). So M4.6 adds
+  0.5.1 has only the mean (`glowInwardFlux`). So **M4.6a** adds
   `medium.glowEmittanceAt(n, phi, eps, fIn, cosTheta)` = ε f_in K max(0,
-  cosθ) to `sunholo/relativity` (with tests, CHANGELOG and release, and
-  `ailang pkg quality` clean), and the sim pins that release. The test
+  cosθ) to `sunholo/relativity`, with tests, CHANGELOG and release, and
+  `ailang pkg quality` clean. The sim pin, the lockfile and the bundled cache
+  are bumped together. The release number is whatever the package's
+  `[release] kind` assigns after 0.5.1, and V23 pins it. The test
   asserts that the function's sphere mean equals `glowInwardFlux` and that its
   value at cosθ = 1 is 4 × `glowInwardFlux`. The sim emits
   `ship.ism.glow_pole_w_m2` = `glowEmittanceAt(…, 1.0)`. The shader and the
@@ -448,7 +470,7 @@ are verified by name (V12, V15): `journey.planBurnCoastBurn`,
 `rapidityOfBeta`, `medium.loadScale`, `kineticFlux`, `mirrorDragForce`,
 `mirrorDragPower`, `cruiseDragEnergy`, `glowInwardFlux` and
 `photonDriveEnergy`. The glow's angular profile `medium.glowEmittanceAt`
-(M4.2) is the one addition. It lands in the package with its tests before
+(M4.2) is the one addition. It lands in the package as **M4.6a** (not art-gated; it blocks M4.1's `glow_pole_w_m2`) with its tests, before
 M4.2's glow overlay merges (gate 3). The visuals compose SR rendering and
 the glow is driven by a relativistic flux, so CLAUDE.md gate 2 applies in
 full.
@@ -548,9 +570,13 @@ explains the bubble and everything it implies, and its numbers cannot drift.
   the minimum path, in that order (`tests/expected_unlocks.json`).
 - **Check-value registry** (`make lore-values` → `data/lore/check_values.json`,
   each value with id, unit and source). Sources: (a)
-  `sim/tools/lore_values.ail`, strict VM, which **evaluates the package
-  functions** for each package check id (e.g. `rel:check51`) and for the M4
-  values (`m4:glow_eps`, `m4:glow_f_in`, `m4:glow_099`; its seed is the V12
+  `sim/tools/lore_values.ail`, strict VM, which **evaluates the package's
+  exported functions** directly for each registered value. **No `rel:check`
+  registry exists** (V24): 0.5.1's `checkNN` functions are private
+  `pure func … -> bool` test predicates in `*_test.ail`, not exported, and
+  they carry no ids or values. Source (a) therefore registers ids of the form
+  `pkg:<function>(<args>)`, for example `pkg:loadScale(1e5,φ0.99)`, plus the
+  M4 values (`m4:glow_eps`, `m4:glow_f_in`, `m4:glow_099`; its seed is the V12
   probe); (b) the HB tables in the vendored `higgs-bubble.md`, ids `HB-n`;
   (b′) the RS table in the vendored `relativity-spec.md` §7, ids `RS-n`;
   (c) the `CHECKS` dictionary exported by `tests/test_physics.gd`, dumped
@@ -602,7 +628,7 @@ M4 adopts M2's.
 | Galaxy map | Emits `target_selected(star_id)`, shows plan fields, cruise-speed control (0.9c–0.999999c, default 0.99c), the D-12 commit dialog; accepts a preselected star |
 | Arrival point | At rest 1,000 AU short of the star (D-14). M2 as landed plans to the star itself, so M4.1 owns the stand-off (V18) |
 | Trip function | `planBurnCoastBurn(d − s, boost_g × standardGravity(), φ)` from relativity 0.5.1 (as `sim/core.ail:222`); boost_g default 7.5 × 10⁵ g (D-15) → τ_b = 1.80 min. **Contract:** AC1's 1e-4 limit clause against `coastAt` holds for τ_b ≤ 19 min per phase (2.56 × 10⁻⁶ ship-yr per minute of τ_b per leg; V12). Above that, only the 1e-9 equality with `planBurnCoastBurn` applies |
-| ISM and glow | `plan.ism` at peak φ (M2, landed); M4.1 adds live `ship.ism{load_w_m2, drag_n, glow_w_m2, glow_pole_w_m2}` and `drag_energy_j`. Params `ism_n_cm3`, `bubble_radius_m`, `glow_eps` (1e-9, D-15) and `glow_f_in` (0.5) are already echoed by M2's protocol |
+| ISM and glow | `plan.ism` at peak φ (M2, landed); M4.1 adds live `ship.ism{load_w_m2, drag_n, glow_w_m2}` at pin 0.5.1, then `glow_pole_w_m2` after M4.6a (never 4 × glowInwardFlux in the sim), and `drag_energy_j` = ledger `drag_j` since commit (M2 ledger, `sim/core.ail:327`, F·c; V24, V25). Params `ism_n_cm3`, `bubble_radius_m`, `glow_eps` (1e-9, D-15) and `glow_f_in` (0.5) are already echoed by M2's protocol |
 
 **From the AI service foundation** (text path only): a separate process
 relayed by Godot; request `{req: "text", id, kind: "news", context{tier,
@@ -621,7 +647,7 @@ AI process and AC6's `digits` case uses an injected fixture.
 | AC5 | Replay byte-identical incl. `record` intents and archive unlocks; VM = interpreter; AI process count during replay 0 | `make replay SESSION=$(SCRATCH)/session.ndjson && make parity-m4` |
 | AC6 | AI optionality: `AI=none`, `AI=stub` and `AI=digits` all complete with the audit passing. With `AI=digits`, the session log holds `ai_fallback{reason: "ai_numeral"}`, the news item's `body_source` is `fallback`, and the panel shows the fallback notice with the `ai_numeral` phrase. With `AI=none`, `body_source` is `template` and there is no notice. With `AI=stub`, `body_source` is `ai` with the "generated" tag | `make playthrough AI=none`, `AI=stub`, `AI=digits` (each followed by `make display-audit`) |
 | AC7 | Minimum-path proxy ≤ 360 s (the R1 bar per D-14); each leg 45–120 s at default warp (expected 62.0 s) | `make playthrough playthrough-time` (`sim/tools/session_audit.ail` `playthroughTime`, AILANG) |
-| AC8 | ISM readout, live and plan, at 0.99c on the 4.37 ly scripted target: `load_w_m2` 2.21961e5, `drag_n` 23.2598, `drag_energy_j` at arrival 1.36530e17 (over `dCoast` 4.354172 ly), `glow_w_m2` 2.40719e-5 with ε = 1e-9 and f_in = 0.5, `glow_pole_w_m2` 9.62878e-5, each within 1e-3 relative of the package value (V12). Each also equals its HB row (HB-40, HB-49, HB-53, HB-45 via K) at that row's printed significant figures (V14). At β = 0 all are 0 | `make sim` (ISM fixture) and `make lore-values` |
+| AC8 | ISM readout, live and plan, at 0.99c on the 4.37 ly scripted target: `load_w_m2` 2.21961e5, `drag_n` 23.2598, `glow_w_m2` 2.40719e-5 with ε = 1e-9 and f_in = 0.5, each within 1e-3 relative of the package value (V12). `drag_energy_j` at arrival (the ledger's `drag_j` since commit; M2 semantics F·c, V24) is 1.36530e17 within 1e-3, and the ledger integral equals `cruiseDragEnergy(n, φ, R, dCoast)` within 1e-9 (ratio 0.9999999999999999 in V24; burn contribution 0 by construction; tick bound ≤ 1e-9; M4.1). glow_pole_w_m2 = glowEmittanceAt(n, φ, ε, f_in, 1.0) from the package release carrying M4.6a; interim expectation 9.62878e-5 (= 4 × V12's glowInwardFlux, hand-derived, not a package value until M4.6a). Each value also equals its HB row (HB-40, HB-49, HB-53, HB-45 via K) at that row's printed significant figures (V14). At β = 0 all are 0 | `make sim` (ISM fixture) and `make lore-values` |
 | AC9 | CPU physics: `ship_basis`, projection reference, α Cen cruise mirror (`coastAt` and `planBurnCoastBurn` values from V12), ISM load, glow values and the profile against `glowEmittanceAt`, finite flux at stand-offs; no hand-computed γ or 1−β | `make test` (`physics`, `lint-precision`) |
 | AC10 | GPU golden G-M4-1 (≤ 0.75 px, pan-invariant), G-M4-2 (≤ 1/255), G-M4-3 (≤ 0.75 px, all three phases), G-M4-4 (profile and absolute pole value ≤ 1 %, 0 at rest) | `make golden` |
 | AC11 | Reference renders in `renders/m4/` on the approved bundle, reviewed by Mark | `make capture-m4`; `grep -n "S1 sign-off" design_docs/implemented/r1/m4-report.md` |
@@ -640,18 +666,19 @@ The first draft's AC8 (3-new-player playtest) is removed from R1 (D-14).
 | ID | Scope | LOC (code + tests) | Depends on | Art-gated |
 |---|---|---|---|---|
 | M4.0 | Bundle loader, blockout test fixture, `validate-areas`, `ship_frame` | 250 + 150 | — | no |
-| M4.1 | `consequence.ail`: Earth clock, news epoch and tier, display fields, live `ship.ism` (M2 has the plan-view ISM), news `body_source`, legacy log, archive hint predicates, `record`, stand-off; `scriptedRoundTrip` | 380 + 320 | M2 protocol and planner | no |
+| M4.1 | `consequence.ail`: Earth clock, news epoch and tier, display fields, live `ship.ism` (M2 has the plan-view ISM), news `body_source`, legacy log, archive hint predicates, `record`, stand-off; `scriptedRoundTrip` | 380 + 320 | M2 protocol and planner; M4.6a (for glow_pole_w_m2) | no |
 | M4.3a | Transit loop, warp, boost/brake pacing, HUD (incl. ISM), arrival card, on a sky-only harness scene | 200 + 80 | M4.1, M2 map | no |
 | M4.4 | News panel, templates, AI relay, return trip, legacy screen ⏸ S4 | 250 + 100 | M4.1, M4.3a | no |
 | M4.7 | Lore import, codex UI, unlocks, registry, `lore-check` (AILANG) | 180 + 140 | M4.1; design repo `lore/archive/`, `higgs-bubble.md`, `relativity-spec.md` §7 | no |
 | M4.5 | Playthrough bot, display audit, replay/parity, time proxy | 120 + 230 | M4.3a, M4.4, M4.7, M2 replay | no (final run on the approved bundle) |
 | M4.2 | Interior scene, composite, glow overlay, walking, interactables | 380 + 100 | M4.0, M1.3/M1.5 (any valid bundle) | **yes** |
 | M4.3b | HUD and transit moved into the interior | 40 + 30 | M4.2, M4.3a | **yes** |
-| M4.6 | `glowEmittanceAt` into `sunholo/relativity` and the pin bump (before the M4.2 glow merges), CPU tests and `lint-precision` (not gated); golden G-M4-1..4, `capture-m4`, bench (gated) ⏸ S1 | 100 + 170 | M4.2, M1.6b | partly |
+| M4.6a | `medium.glowEmittanceAt` in `sunholo/relativity`, with tests/CHANGELOG/release; sim pin + lockfile + bundled cache bumped together | 20 + 40 | — | no |
+| M4.6 | CPU tests and `lint-precision` (not gated); golden G-M4-1..4, `capture-m4`, bench (gated) ⏸ S1 | 80 + 130 | M4.2, M1.6b | partly |
 | | **Total** | **1,900 + 1,320 ≈ 3,200** | | |
 
 **Order (review early, tweak as we go).** Track A (sim and UI) starts when M2's
-protocol lands: M4.0 ∥ M4.1 → M4.3a → M4.4 ∥ M4.7 → M4.5, plus M4.6's CPU tests
+protocol lands: M4.6a ∥ M4.0 ∥ M4.1 (M4.1's `glow_pole_w_m2` waits for M4.6a) → M4.3a → M4.4 ∥ M4.7 → M4.5, plus M4.6's CPU tests
 and lint. Track B (interior) runs in parallel from the start on the blockout
 bundle: M4.2 → M4.3b → M4.6 goldens, renders, bench → ⏸ S1. A Blender agent
 builds the bridge v1 bundle (ship-interior brief §7 step 2) at the same time,
@@ -765,8 +792,8 @@ The first draft's seven questions are resolved by the attended rulings of
   codex_unlocks}.py` are withdrawn, since each held logic under test, which
   rules out the `harness` role. `tests/{playthrough_min, adversarial,
   expected_unlocks}.json`, `tests/fixtures/lore/drifted.md`.
-- **Package:** `medium.glowEmittanceAt` in `sunholo/relativity` (the next
-  release after 0.5.1), with tests, CHANGELOG and `[release] kind`; the sim's
+- **Package (M4.6a):** `medium.glowEmittanceAt` in `sunholo/relativity` (the next
+  release after 0.5.1, pinned in V23), with tests, CHANGELOG and `[release] kind`; the sim's
   pin, the lockfile and the bundled cache move together.
 - **Report:** `design_docs/implemented/r1/m4-report.md` (S1/S2 sign-offs,
   renders, bench, proxy time, lore-check output, upstream AILANG reports).
@@ -793,7 +820,7 @@ revision (scratchpad `m4.py`). **Superseded as provenance (quorum round 1):** V4
 | V10 | News and round trip (zero dwell) | `python3 m4.py` | t_e at α Cen 0.043982 yr (16.1 d), age 4.354187; round trip Earth 8.796338, ship 1.240876, gap 7.555462 (old 11.9718 / 7.1546 / 4.8172) | Tiers: α Cen `<1`, return `5–15` |
 | V11 | Warp, ISM, CMB at 0.99c | `python3 m4.py`, n = 1e5 m⁻³, A = π·100², m_p = 1.67262192369e-27 | leg 310.2 / 62.04 / 12.41 s at 0.002 / 0.01 / 0.05 ship-yr/s (old 71.5 s at 0.05); load 2.2196e5 W/m² (163.1 suns); drag 23.26 N; 1.3653e17 J (1.519 kg) per leg (sphere drag, coast distance; was flat-mirror 46.52 N / 2.73e17 J before the higgs-bubble.md reconciliation); forward CMB 38.4 K; c²φ = 2.379e17 J/kg | Matches D-11's worked estimates (2.2e5; 2.7e17 J, 3 kg; 2.4e17 J/kg) |
 
-### Quorum round 1 rows (V12–V22)
+### Quorum round 1 and 2 rows (V12–V25)
 
 Run on 2026-10-03, read-only. Game `15cde03`; spike `4eda978`; design repo
 `1ef3bc9` (`origin/main`, which contains `736db38`); `sunholo/relativity`
@@ -803,10 +830,10 @@ Run on 2026-10-03, read-only. Game `15cde03`; spike `4eda978`; design repo
 
 | # | Claim | Command | Observed | Verdict |
 |---|---|---|---|---|
-| V12 | The numeric backbone, from the pinned package by name | `ailang run --quiet --package-dir sim --caps IO --entry main probe.ail` (source below), with and without `--bytecode` | φ 2.6466524123622457, γ 7.088812050083356, s 0.01581250740982066 ly, d−s 4.35418749259018; `planBurnCoastBurn`: galaxyTime 4.398171425676279, shipTime 0.6204427104843891, τ_b 1.7979782 min, dCoast 4.354171763726048; `coastAt`: 4.398169184434525 / 0.620438114787203; `loadScale` 221961.2727892787; `kineticFlux` 192575.53743413047; `mirrorDragForce` 23.25982143207345; `cruiseDragEnergy` 1.365299549837781e17 J (dCoast), 1.3702626714214504e17 J (4.37 ly), 1.519100620656987 kg; `glowInwardFlux` 2.407194217926631e-5 (0.99c), 0.2812710757682347 (0.999999c); 1/`glowInwardFlux`(ε=1, f_in=½, 0.999999c) = 3.555289e-9; `photonDriveEnergy(1, φ)` 2.3786925619268595e17 | True. VM = interpreter (`cmp`). The glow at 0.99c equals M2's own fixture value `0.000024071942179266308` (`sim/protocol_test.ail:143`) |
+| V12 | The numeric backbone, from the pinned package by name | `ailang run --quiet --package-dir sim --caps IO --entry main probe.ail` (source below), with and without `--bytecode`; `sed -n 143p sim/protocol_test.ail` | φ 2.6466524123622457, γ 7.088812050083356, s 0.01581250740982066 ly, d−s 4.35418749259018; `planBurnCoastBurn`: galaxyTime 4.398171425676279, shipTime 0.6204427104843891, τ_b 1.7979782 min, dCoast 4.354171763726048; `coastAt`: 4.398169184434525 / 0.620438114787203; `loadScale` 221961.2727892787; `kineticFlux` 192575.53743413047; `mirrorDragForce` 23.25982143207345; `cruiseDragEnergy` 1.365299549837781e17 J (dCoast), 1.3702626714214504e17 J (4.37 ly), 1.519100620656987 kg; `glowInwardFlux` 2.407194217926631e-5 (0.99c), 0.2812710757682347 (0.999999c); 1/`glowInwardFlux`(ε=1, f_in=½, 0.999999c) = 3.555289e-9; `photonDriveEnergy(1, φ)` 2.3786925619268595e17 | True. VM = interpreter (`cmp`). The glow at 0.99c equals M2's own fixture value `0.000024071942179266308` (`sim/protocol_test.ail:143` reads `ism: {dragN: tiny(), holdW: 70791174749363.73, loadWM2: 2253353077.7286806, glowWM2: 0.000024071942179266308}, cmbForwardK: 3853.730994033574 }`) |
 | V13 | Independent oracle (Python, a second language; not a source) | `python3 -c` with the closed forms of higgs-bubble.md §3, §5 and §6 (c, m_p, ly and AU as in `medium.ail`) | t 4.398169184434525, τ 0.6204381147872031, load 221961.2727892786, drag 23.25982143207344, E 1.3653044818001112e17 (over d−s), K 192575.53743413038, glow 2.40719421792663e-5 | Agrees with V12 to ≤ 1e-15 relative |
 | V14 | higgs-bubble.md carries the sphere rows M4 depends on | `git -C $D show origin/main:physics/higgs-bubble.md \| grep -n 'HB-'` | `\| HB-40 \| Load scale at 0.99c \| 2.22 × 10⁵ \| W/m² \|`; `\| HB-41 \| … in suns \| 163 \| sun \|`; `\| HB-45 \| Kinetic-energy flux K if thermalised, at 0.99c \| 1.93 × 10⁵ \| W/m² \|`; `\| HB-49 \| Drag force on the sphere at 0.99c \| 23.3 \| N \|`; `\| HB-53 \| Ship-frame drag energy, α Cen at 0.99c \| 1.37 × 10¹⁷ \| J \|`; `\| HB-54 \| … E/c² \| 1.52 \| kg \|`; `\| HB-61 \| Design guide: largest ε for a mean inward glow ≤ 1 W/m² at 0.999999c with f_in = ½ \| 3.6 × 10⁻⁹ \| — \|`; also HB-1 100 m, HB-3 0.1 cm⁻³, HB-4 4.37 ly, HB-15 1,000 AU, HB-16 7.0888, HB-17 2.6467, HB-35 2.379 × 10¹⁷ J/kg | True. Each equals V12 at its printed s.f. (HB-53 and HB-54 are at d = 4.37 ly). The table holds the sphere values, not D-11's flat mirror |
-| V15 | The package exports the functions named in this doc | `grep -n '^export' $P/journey.ail $P/medium.ail $P/kinematics.ail`; `sed -n 165,180p $P/journey.ail` | journey: `Trip`, `TripPlan`, `TripPhase`, `planFlipAndBurn`, `planBurnCoastBurn`, `phaseAt`, `motionAt`, `flipAndBurn`, `burnCoastBurn`, `coastAt`; medium: `cSI` … `astronomicalUnitM`, `photonDriveEnergy`, `loadScale`, `kineticFlux`, `mirrorDragForce`, `mirrorDragPower`, `cruiseDragEnergy`, `glowInwardFlux(n, phi, eps, fIn)`, `TripEnergy`, `tripEnergy`, `brakeHoldsAgainstDrag`; kinematics: `gammaOf`, `oneMinusBeta`, `rapidityOfBeta`, `standardGravity` 1.032295275553596. `coastAt(distance, beta) -> Trip`: "Pure coast at constant beta (instant acceleration idealisation)", shipTime = d/sinh φ, galaxyTime = d/β | True. No angular glow function exists, hence `glowEmittanceAt` (M4.2, M4.6). `sim/ailang.toml` pins `"sunholo/relativity" = "0.5.1"`, as does the lock |
+| V15 | The package exports the functions named in this doc | `grep -n '^export' $P/journey.ail $P/medium.ail $P/kinematics.ail`; `sed -n 165,180p $P/journey.ail` | journey: `Trip`, `TripPlan`, `TripPhase`, `planFlipAndBurn`, `planBurnCoastBurn`, `phaseAt`, `motionAt`, `flipAndBurn`, `burnCoastBurn`, `coastAt`; medium: `cSI` … `astronomicalUnitM`, `photonDriveEnergy`, `loadScale`, `kineticFlux`, `mirrorDragForce`, `mirrorDragPower`, `cruiseDragEnergy`, `glowInwardFlux(n, phi, eps, fIn)`, `TripEnergy`, `tripEnergy`, `brakeHoldsAgainstDrag`; kinematics: `gammaOf`, `oneMinusBeta`, `rapidityOfBeta`, `standardGravity` 1.032295275553596. `coastAt(distance, beta) -> Trip`: "Pure coast at constant beta (instant acceleration idealisation)", shipTime = d/sinh φ, galaxyTime = d/β | True at 0.5.1. No angular glow function exists, hence `glowEmittanceAt` (M4.2, M4.6a). Once M4.6a lands, V23 supersedes this note with the new release and its export line. `sim/ailang.toml` pins `"sunholo/relativity" = "0.5.1"`, as does the lock |
 | V16 | Lore entries exist with the front matter the importer reads; hint vocabulary; ids resolve | `git -C $D ls-tree -r --name-only origin/main lore`; per file `git show … \| awk` front matter; README "Unlock hints" and "Unit aliases"; every `checks` id grepped as `^\| ID \|` in higgs-bubble.md + relativity-spec.md | 10 entries + README (bubble, cmb-forward, ism-glow, nothing-crosses, one-g, photon-drive, shadow-ring, starbow, tides, two-clocks), each with `id, title, unlock, checks`. Unlocks: `always` ×3, `first_commit`, `first_boost`, `cruise_above_0.9c` ×2, `cruise_above_gamma_275`, `first_black_hole` ×2. 60 distinct ids (48 HB, 12 RS); 0 missing | True, but the old M4.7 hint grammar (`start`/`event:<kind>`) and the numeric unit table were wrong. Both are replaced by the README's (M4.7) |
 | V17 | Brief §9 manifest fields vs the M4.0 loader | `git -C $D show origin/main:art/ship-interior-blender-brief.md \| awk '/^## 9/,/^## 10/'` | `area`; `layers.panorama{file, parallax 0.15}`; `layers.play{file, iso_pitch_deg −14, iso_yaw_deg 45, iso_size_m 16}`; `layers.foreground{file, parallax 1.6}`; `camera`; `focus_m [−8, 1, 9]`; `sky_visible`; files `play_/pano_/cam_/fg_<area>`, previews review-only; GLB collections `WALK_`, `SPAWN_`, `INTERACT_` | True. M4.0's schema now lists these field for field; `placeholder` is a declared game-side optional extension |
 | V18 | What M2 (landed) already provides | `sed -n 99,102p;203,223p;405,437p sim/core.ail`; `sed -n 74,78p sim/protocol.ail` | `defaultParams`: `boostG 750000.0, mEffKg 1.0, ismNCm3 0.1, bubbleRadiusM 100.0, glowEps 0.000000001, glowFIn 0.5`; `planIntent`: d = norm(target − here), `planBurnCoastBurn(d, p.boostG * standardGravity(), rq.cruisePhi)`, no stand-off; `planView.ism` at peak φ from `mirrorDragForce`, `mirrorDragPower`, `loadScale`, `glowInwardFlux`; params echo includes `glow_eps`, `glow_f_in` | True. ε = 1e-9 is already the sim default (D-15). M4.1 owns the stand-off and the live ISM |
@@ -814,6 +841,9 @@ Run on 2026-10-03, read-only. Game `15cde03`; spike `4eda978`; design repo
 | V20 | Catalogue, fixtures, PR and star-count claims | `grep -o '"Gl 559[^}]*}' data/starmap/stars.json`; `head -c 200 data/starmap/stars_medium.json`; `git ls-tree -r --name-only origin/spike/iso-bridge \| grep bridge`; `gh pr view 16` | α Cen A and B `dist_ly 4.37` (pre-M1.2; D-19 moves them to 4.32); medium tier `count 50000`; `spike/v2/{bridge_slice.glb, cam_bridge.json, stapledon_pano_bridge.png}`, `spike/v3/stapledon_fg_bridge.png` present at `4eda978` (descends from `fe16790`); PR #16 MERGED 2026-10-01 | True. The "331k stars" in the risks was stale and is corrected to the medium tier |
 | V21 | The AI fallback is already a recorded sim event; news cap | `grep -n -i fallback sim/ai.ail`; `grep -n maxCharsFor sim/ai.ail` | `EFallback({req, reason})` → event `ai_fallback` on every refused `record`, `ai_cancel` and expiry (`sim/ai.ail:58,163–167,274,287`); `maxCharsFor(purpose) = if purpose == "archive" then 600 else 280` | True. M4 adds the player-visible `body_source` and `fallback_reason` on top of it (M4.1, M4.4) |
 | V22 | Design-repo pin and visibility | `git -C $D rev-parse origin/main`; `git -C $D diff --stat 736db38 origin/main`; `git -C $D show origin/main:physics/higgs-bubble.md \| shasum -a 256`; `gh api repos/sunholo-data/stapledons-design --jq .visibility` | `1ef3bc96…`; only `journey-system.md` and `r1-foundations.md` changed since `736db38`; higgs-bubble.md sha256 `79505e263917810ff1142b786aadc4bab48a1eab63221893c7187a65789eb583`; `private` | True. CI cannot read the sibling without a credential (open question 5) |
+| V23 | **PENDING until M4.6a lands.** The package release carrying `glowEmittanceAt` (kimi round 2) | Pin the new version in `sim/ailang.toml`, `sim/ailang.lock` and `runtime/cache`, then re-run the V12 probe extended with `glowEmittanceAt(n, phi, 1e-9, 0.5, 1.0)`; `grep -n '^export' $P/medium.ail` at the new version | Expected: `glowEmittanceAt(n, phi, 1e-9, 0.5, 1.0)` = 4 × `glowInwardFlux(n, phi, 1e-9, 0.5)` (interim hand-derived 9.62878e-5 at 0.99c); the sphere mean of `glowEmittanceAt` = `glowInwardFlux`; VM = interpreter | PENDING. Until then `glow_pole_w_m2` is not a package value, and V15's note stands |
+| V24 | M2's drag ledger semantics vs the package closed form; the package check registry (glm round 2) | `grep -n drag sim/core.ail sim/protocol.ail`; `sed -n 77p $P/medium.ail`; `probe2.ail` = the V12 probe plus the lines below, run with and without `--bytecode`; `grep -n -E '^export' $P/*_test.ail \| wc -l`; `grep -n check51 $P/*.ail \| wc -l`; `grep -n -E 'pure func check[0-9]+' $P/*_test.ail \| wc -l` | `core.ail:106` `Ledger = { mEffKg, availableKg, boostJ, dragJ }`; `:165` (manual/diag tick path) and `:327` (autopilot: `if i == 1 then {l \| dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), tp.phiPeak, p.bubbleRadiusM) * piece * julianYearS()}`, burns add `boostJ` only); `protocol.ail:155` emits `drag_j`; `medium.ail:77` `mirrorDragPower(n, phi, r) = mirrorDragForce(n, phi, r) * cSI()`. Probe: `mirrorDragPower` 6973119039.76238, `mirrorDragForce × cSI()` 6973119039.76238, × 0.99 = 6903387849.364756, `loadScale × πR²` 6973119039.76238; tauCoast 0.6204358735454498 yr; `cruiseDragEnergy / (mirrorDragPower × tauCoast × julianYearS())` = 0.9999999999999999; ledger closed form 1.3652995498377811e17; pole hand-derived 9.628776871706524e-5; planBurnCoastBurn t_e 0.043983933086098936 (coastAt 0.04398169184434497); VM = interpreter. Registry: 0 exported test symbols, 0 `check51`, 74 private `checkNN` predicates | True. The power is F·c (not F·v), so the ledger integral equals `cruiseDragEnergy` and AC8 keeps 1.36530e17. There is no `rel:check` registry, so M4.7 source (a) uses `pkg:<function>(<args>)` ids |
+| V25 | M2 codebase claims cited in M4.1 (gemini round 2) | `grep -n drag_j sim/core.ail`; `grep -n dragJ sim/core.ail`; `grep -n 'planBurnCoastBurn(4.37' sim/core_test.ail`; `sed -n 600,603p sim/core_test.ail`; `sed -n 60p sim/core_test.ail`; `sed -n 143p sim/protocol_test.ail` | `drag_j` in `core.ail`: no hits (exit 1). The field is `dragJ` in the core (`:106, :135, :165, :327`) and is named `drag_j` only on the wire (`protocol.ail:155`). `core_test.ail:439` `let want = planBurnCoastBurn(4.37, a, phi099());` and `:615` `let tp = planBurnCoastBurn(4.37, 750000.0 * standardGravity(), phi099());`; `:600–602` "The ledger at arrival equals tripEnergy(plan, m_eff, n, R).total to 1e-9 relative"; `:60` `cruised.ledger.dragJ > 0.0`; `protocol_test.ail:143` `glowWM2: 0.000024071942179266308` | True. M2's ledger accumulates drag per tick, its tests pin a 4.37 ly target, and the glow fixture matches V12's 2.407194217926631e-5 |
 
 **V12 probe** (`probe.ail`, sha256 `8e56e48f…`; kept here so anyone can rerun
 it; the sprint lands it as the seed of `sim/tools/lore_values.ail`):
@@ -844,6 +874,18 @@ export func main() -> () ! {IO} {
 }
 ```
 
+**V24 probe extension** (`probe2.ail`, sha256 `2778d668…`). It is the V12
+probe with `mirrorDragPower` and `julianYearS` added to the `medium` import
+and these lines appended to `main`:
+
+```ailang
+  let pw = mirrorDragPower(n, phi, 100.0);
+  let fc = mirrorDragForce(n, phi, 100.0) * cSI();
+  println("mirrorDragPower=${pw} FxC=${fc} FxCx099=${fc * 0.99} loadxpiR2=${loadScale(n, phi) * 3.141592653589793 * 10000.0}");
+  println("tauCoast_yr=${p.tauCoast} ratio=${cruiseDragEnergy(n, phi, 100.0, p.dCoast) / (pw * p.tauCoast * julianYearS())} ledgerClosed=${pw * p.tauCoast * julianYearS()}");
+  println("pole_handderived=${4.0 * glowInwardFlux(n, phi, 0.000000001, 0.5)} t_e=${p.trip.galaxyTime - d} t_e_coast=${c0.galaxyTime - d}")
+```
+
 **Which instrument produces which value:** every trip, ISM, glow and
 energy number in M4.1, M4.6, AC1, AC8 and AC9 comes from V12 (the package
 through AILANG, VM = interpreter). V13 (Python) is only a second-language
@@ -870,3 +912,26 @@ revision introduced it or it was pre-existing, what changed, and the evidence.
 glow formula (above); the lore hint grammar and unit-conversion table
 (V16); M2 has no stand-off, so M4.1 owns it (V18); the α Cen catalogue
 distance will move under D-19 (V20, open question 4).
+
+## Quorum round 2 response (narrow-refinement carve-out)
+
+Artifact `.ailang/state/mission-quorum/m4-first-journey-2026-10-03T04-12-08Z.json`
+(round 2, BLOCKED; round-1 revision committed as `474d261`). This revision
+applies each reviewer's own `proposed_fix` text and invents no other
+resolution. The design direction is unchanged. Both kimi and glm asked for a
+row numbered "V23", so kimi's is V23, glm's is V24, and gemini's is V25.
+
+| Reviewer | Fix applied (from the reviewer's proposed_fix) | Where | V row |
+|---|---|---|---|
+| oc-kimi-k3 | "Split M4.6: add row 'M4.6a: `medium.glowEmittanceAt` in `sunholo/relativity`, with tests/CHANGELOG/release; sim pin + lockfile + bundled cache bumped together — Depends on: — ; Art-gated: no'" | Sub-milestones table (M4.6a row; M4.6's LOC reduced by M4.6a's 20 + 40, total unchanged); M4.2 "Package first"; M4.6 intro; Order; Deliverables | V23 (PENDING) |
+| oc-kimi-k3 | "Change M4.1's 'Depends on' to 'M2 protocol and planner; M4.6a (for glow_pole_w_m2)'" and "'ship.ism ships in two steps: load/drag/glow_w_m2 at pin 0.5.1; glow_pole_w_m2 is added only after M4.6a lands — the sim never computes 4 × glowInwardFlux itself.'" | M4.1 row; M4.1 ISM bullet (sentence verbatim); §Interfaces assumed "ISM and glow" | V23 |
+| oc-kimi-k3 | AC8 pole row rewritten: "glow_pole_w_m2 = glowEmittanceAt(n, φ, ε, f_in, 1.0) from the package release carrying M4.6a; interim expectation 9.62878e-5 (= 4 × V12's glowInwardFlux, hand-derived, not a package value until M4.6a)" | AC8 | V23, V24 (prints the hand-derived 9.628776871706524e-5) |
+| oc-kimi-k3 | "Add verification-log row V23 … re-running the V12 probe extended with `glowEmittanceAt(n, phi, 1e-9, 0.5, 1.0)`, asserting it equals 4 × `glowInwardFlux(n, phi, 1e-9, 0.5)` and that its sphere mean equals `glowInwardFlux`; update V15's note once the function exists" | V23 (PENDING); V15 note now says V23 supersedes it once M4.6a lands | V23 |
+| gemini-3-1-pro | "Add a verification log row with commands to explicitly verify these codebase claims (e.g., `grep -n drag_j sim/core.ail` and `grep -n 'planBurnCoastBurn(4.37' sim/core_test.ail`)" | V25; M4.1 ledger prose cites the lines | V25 |
+| gemini-3-1-pro | "add a command to V12 that legitimately extracts the value from `sim/protocol_test.ail:143`" | V12 command (`sed -n 143p sim/protocol_test.ail`) and its observed line | V12, V25 |
+| oc-glm-5-3 | "commands grep -n drag sim/core.ail sim/protocol.ail, plus a probe extension printing mirrorDragPower(1e5, phi, 100.0), mirrorDragForce(1e5, phi, 100.0) * cSI(), that value times 0.99, and cruiseDragEnergy(1e5, phi, 100.0, dCoast) / (mirrorDragPower(1e5, phi, 100.0) * cruiseShipTime)" | V24 and the probe extension | V24 |
+| oc-glm-5-3 | "if M2 has no drag_j ledger, add the accumulator to M4.1's scope" | **Not triggered.** The M2 ledger exists (`core.ail:106, :327`; `protocol.ail:155`), so no scope or LOC change | V24, V25 |
+| oc-glm-5-3 | "state drag_energy_j's window explicitly (since commit, with the burn-phase contribution … and a tick-discretization bound declared inside the 1e-3 budget)" | M4.1 ISM bullet. The measured burn contribution to `drag_j` is 0 by construction (M2 omits it; the reviewer's ~1.2e-6 is noted as their estimate). Tick bound ≤ 1e-9 | V24 |
+| oc-glm-5-3 | "Re-pin AC8 to the verified semantics: if mirrorDragPower = loadScale * pi * R^2, keep 1.36530e17 within 1e-3 and add the clause 'ledger integral equals cruiseDragEnergy within [stated bound]'" | AC8. Measured: F·c = `loadScale × πR²`, ratio 0.9999999999999999. Bound stated as 1e-9 | V24 |
+| oc-glm-5-3 | "M4.1's news-epoch prose must use the planBurnCoastBurn arrival t = 4.398171 (t_e = 0.043984), not the coastAt limit" | M4.1 "Light-delayed news epoch" | V24 (t_e 0.043983933) |
+| oc-glm-5-3 | "confirm the rel:check51-style package check registry actually exists" | **It does not.** M4.7 source (a) now registers `pkg:<function>(<args>)` ids evaluated from exported functions | V24 |
