@@ -86,7 +86,8 @@ func _sky_image() -> Image:
 
 
 static func _w(g: PackedFloat64Array) -> Vector3:
-	return Vector3(g[1], g[2], -g[0])
+	var w := SkyFrame.to_world64(g)
+	return Vector3(w[0], w[1], w[2])
 
 
 ## Ship-frame unit direction -> screen pixel (centres at +0.5) through cam x the view region.
@@ -111,7 +112,7 @@ func _place(app_ship: PackedFloat64Array, heading: PackedFloat64Array, b: float)
 	sf.set_exposure(PEAK)
 	# the CPU reference: aberrate the rest direction, back to the ship frame, through the camera
 	var app := Relativity.aberrate(n, vw, b)
-	var g := PackedFloat64Array([-app.z, app.x, app.y])
+	var g := SkyFrame.to_galactic64([app.x, app.y, app.z])
 	return _project_ship(ShipFrame.to_ship(basis, g))
 
 
@@ -207,8 +208,6 @@ func _g2() -> int:
 	sky.apply({"ship": {"phase": "cruising", "beta": 0.9, "gamma": Relativity.gamma_of(0.9), "heading": {"x": acen[0], "y": acen[1], "z": acen[2]}, "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}})
 	var frame := await _grab()
 	var sub := await _sky_image()
-	if Interior.SKY_FLIP_H:
-		sub.flip_x() # the interior shows the sky texture mirrored (Interior.SKY_FLIP_H)
 	var play := it.play_view.get_texture().get_image()
 	frame.convert(Image.FORMAT_RGBA8)
 	sub.convert(Image.FORMAT_RGBA8)
@@ -281,7 +280,7 @@ func _g4() -> int:
 	for q in [[0.5, 0.05], [0.2, 0.3], [0.8, 0.3], [0.5, 0.5], [0.1, 0.9], [0.9, 0.9]]:
 		var x := int(q[0] * size.x)
 		var y := int(q[1] * size.y)
-		var d := AreaBundle.unproject(cam_screen, (size.x - x - 1) + 0.5 if Interior.SKY_FLIP_H else x + 0.5, y + 0.5) # texture column x is screen column W-1-x
+		var d := AreaBundle.unproject(cam_screen, x + 0.5, y + 0.5) # texture column x is screen column x (D-28: no flip)
 		var want := ForwardGlow.profile(POLE["cap"], ForwardGlow.wall_cos(PackedFloat64Array([p[0], p[1], p[2]]), d, 100.0))
 		var got := img.get_pixel(x, y).r
 		var e := absf(got - want) / maxf(want, 1e-30)

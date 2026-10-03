@@ -6,7 +6,7 @@ extends RefCounted
 ##
 ## Panorama: galactic equirect, l = 0 at the centre, l increasing to the LEFT,
 ## north galactic pole on the top row (D-10, registration in m1-4a-background-options.md).
-## World frame as sky/starfield.gd: galactic (x, y, z) -> world (y, z, -x).
+## World frame: SkyFrame (sky/sky_frame.gd, D-28), galactic (x, y, z) -> world (-y, z, -x).
 
 const T_LO := 1500.0
 const T_HI := 30000.0
@@ -14,11 +14,9 @@ const T_HI := 30000.0
 
 ## Panorama (u, v) for a galaxy-frame world direction.
 static func equirect_uv(n: Vector3) -> Vector2:
-	var gx := -n.z
-	var gy := n.x
-	var gz := n.y
-	var l := atan2(gy, gx)
-	var b := asin(clampf(gz, -1.0, 1.0))
+	var g := SkyFrame.to_galactic(n)
+	var l := atan2(g.y, g.x)
+	var b := asin(clampf(g.z, -1.0, 1.0))
 	return Vector2(fposmod(0.5 - l / TAU, 1.0), 0.5 - b / PI)
 
 
@@ -26,8 +24,7 @@ static func equirect_uv(n: Vector3) -> Vector2:
 static func equirect_dir(uv: Vector2) -> Vector3:
 	var l := (0.5 - uv.x) * TAU
 	var b := (0.5 - uv.y) * PI
-	var g := Vector3(cos(b) * cos(l), cos(b) * sin(l), sin(b))
-	return Vector3(g.y, g.z, -g.x)
+	return SkyFrame.to_world(Vector3(cos(b) * cos(l), cos(b) * sin(l), sin(b)))
 
 
 static func decode_t(code: int) -> float:

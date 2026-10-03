@@ -34,6 +34,11 @@ const ALPHA_CEN_A := "CNS5:3627" # stars.json id (M1.7): the CNS5 system row, HI
 const MAP_TOUR := [["HIP 71681", "galaxy_map_acen_b.png"], ["CNS5:1676", "galaxy_map_sirius.png"],
 	["Gaia DR3 4472832130942575872", "galaxy_map_barnard.png"]]
 const LOOK_RATE := 1.2 # rad/s for the yaw, pitch and roll keys
+## Named views (FreeLookCamera yaw, positive = left), for KEY_1-3 and the captures. The ship
+## faces the galactic centre with the NGP up, so with SkyFrame (D-28, a rotation) starboard
+## (right, world +X) looks at l 270 (Vela, Canopus, alpha Cen, the LMC) and port (left, -X) at
+## l 90 (Cygnus); tests/test_physics.gd test_sky_frame checks the longitudes.
+const VIEW_YAW := {"forward": 0.0, "starboard": -PI / 2, "port": PI / 2, "astern": PI}
 const STANDOFF_AU := 1000.0 # M4.1: the M4 client plans to the 1,000 AU stand-off (the sim defaults to 0)
 ## Off-axis golden (M1.6b, AC5): a velocity off every axis, and three camera
 ## orientations ([label, yaw, pitch, roll] in degrees; null yaw/pitch = along v).
@@ -454,9 +459,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if _map_mode:
 		return
 	match event.keycode:
-		KEY_1: camera.look(0.0, 0.0, 0.0)
-		KEY_2: camera.look(-PI / 2, 0.0, 0.0)
-		KEY_3: camera.look(PI, 0.0, 0.0)
+		KEY_1: camera.look(VIEW_YAW["forward"], 0.0, 0.0)
+		KEY_2: camera.look(VIEW_YAW["starboard"], 0.0, 0.0)
+		KEY_3: camera.look(VIEW_YAW["astern"], 0.0, 0.0)
 		KEY_4: camera.look(0.0, FreeLookCamera.PITCH_LIMIT, 0.0)
 		KEY_EQUAL: warp *= 2.0
 		KEY_MINUS: warp /= 2.0
@@ -486,9 +491,9 @@ func _grab() -> Image:
 func _run_capture(dir: String) -> void:
 	var out := _out_dir(dir)
 	var targets := [0.0, 0.5, 0.9, 0.99]
-	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a); M1.3 adds port
-	# (galactic l = 270: Canopus, alpha Cen, Sirius, the LMC once the bright tier is on)
-	var views := {"forward": [0.0, 0.0, 0.0], "starboard": [-PI / 2, 0.0, 0.0], "port": [PI / 2, 0.0, 0.0], "astern": [PI, 0.0, 0.0],
+	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a); M1.3 adds port.
+	# D-28: starboard looks at l 270 (Canopus, alpha Cen, Sirius's side, the LMC), port at l 90
+	var views := {"forward": [VIEW_YAW["forward"], 0.0, 0.0], "starboard": [VIEW_YAW["starboard"], 0.0, 0.0], "port": [VIEW_YAW["port"], 0.0, 0.0], "astern": [VIEW_YAW["astern"], 0.0, 0.0],
 		"offaxis": [deg_to_rad(50.0), deg_to_rad(25.0), 0.0], "rolled": [deg_to_rad(-30.0), deg_to_rad(10.0), deg_to_rad(35.0)]}
 	var tiles := []
 	var exposure_tiles := []
@@ -554,7 +559,7 @@ func _capture_cmb(out: String) -> bool:
 		if not _cruise_at(g, params):
 			return false
 		var tag := "sky_g%d" % int(g)
-		for view in [["forward", 0.0], ["starboard", -PI / 2]]:
+		for view in [["forward", VIEW_YAW["forward"]], ["starboard", VIEW_YAW["starboard"]]]:
 			camera.look(view[1], 0.0, 0.0)
 			_apply_state()
 			var img := await _capture_one(out, "%s_%s.png" % [tag, view[0]])
@@ -731,11 +736,13 @@ func _golden_standoff(along_au: float, side_au: float) -> int:
 	var l := deg_to_rad(315.734)
 	var b_gal := deg_to_rad(-0.680)
 	var g := [4.37 * cos(b_gal) * cos(l), 4.37 * cos(b_gal) * sin(l), 4.37 * sin(b_gal)]
-	var star := [g[1], g[2], -g[0]]
+	var star := SkyFrame.to_world64(g)
 	var au := 1.0 / 63241.07708426628
 	var u := [star[0] / 4.37, star[1] / 4.37, star[2] / 4.37]
 	var sn := sqrt(u[2] * u[2] + u[0] * u[0])
-	var ship := [star[0] - u[0] * along_au * au + u[2] / sn * side_au * au, star[1] - u[1] * along_au * au, star[2] - u[2] * along_au * au - u[0] / sn * side_au * au]
+	# D-28: the side offset and the 8 deg look-aside are the exact mirror (world x -> -x) of the
+	# pre-D-28 geometry, so every float32 rounding (and the case's power) is unchanged
+	var ship := [star[0] - u[0] * along_au * au - u[2] / sn * side_au * au, star[1] - u[1] * along_au * au, star[2] - u[2] * along_au * au + u[0] / sn * side_au * au]
 	var r2 := 0.0
 	for a in 3:
 		r2 += (star[a] - ship[a]) ** 2
@@ -754,7 +761,7 @@ func _golden_standoff(along_au: float, side_au: float) -> int:
 			starfield.set_ship_position(ship[0], ship[1], ship[2])
 			starfield.set_velocity(HEADING, b, Relativity.gamma_of(b))
 			var app := Relativity.aberrate(n, HEADING, b)
-			camera.look(atan2(-app.x, -app.z) + deg_to_rad(8.0), asin(app.y), 0.0)
+			camera.look(atan2(-app.x, -app.z) - deg_to_rad(8.0), asin(app.y), 0.0)
 			var img := await _grab()
 			var expected := camera.project(app, size)
 			var got := _centroid(img)

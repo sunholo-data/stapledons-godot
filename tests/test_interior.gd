@@ -174,8 +174,9 @@ func test_composite() -> void:
 		check("%s: no WorldEnvironment outside the sky/play SubViewports (the parent never tonemaps)" % dir.get_file(), it.environments_outside_subviewports().is_empty())
 		check("%s: sky SubViewport tonemaps once with AgX" % dir.get_file(), it.sky.env.tonemap_mode == Environment.TONE_MAPPER_AGX)
 		check("%s: sky texture shown raw (no material, white modulate)" % dir.get_file(), it.sky_rect.material == null and it.sky_rect.modulate == Color.WHITE and it.sky_rect.self_modulate == Color.WHITE)
-		check("%s: sky mirrored back to the camera JSON's handedness (galactic_to_world has det -1)" % dir.get_file(), it.sky_rect.flip_h == Interior.SKY_FLIP_H
-			and is_equal_approx(Basis(Starfield.galactic_to_world(Vector3(1, 0, 0)), Starfield.galactic_to_world(Vector3(0, 1, 0)), Starfield.galactic_to_world(Vector3(0, 0, 1))).determinant(), -1.0 if Interior.SKY_FLIP_H else 1.0))
+		check("%s: sky shown unflipped: the sky frame is a rotation (D-28, SkyFrame det +1), no local SKY_FLIP_H" % dir.get_file(), not it.sky_rect.flip_h and not it.sky_rect.flip_v
+			and Basis(SkyFrame.to_world(Vector3(1, 0, 0)), SkyFrame.to_world(Vector3(0, 1, 0)), SkyFrame.to_world(Vector3(0, 0, 1))).determinant() == 1.0
+			and not (it.get_script() as GDScript).get_script_constant_map().has("SKY_FLIP_H"))
 		check("%s: the play layer renders over a transparent background (the sky shows through)" % dir.get_file(), it.play_view.transparent_bg and it.play_env.background_mode == Environment.BG_CLEAR_COLOR)
 		var tag := it.bundle.placeholder
 		check("%s: placeholder tag %s" % [dir.get_file(), "shown" if tag else "hidden"], it.tag_label.visible == tag and (it.tag_label.text == AreaBundle.HUD_TAG or not tag))

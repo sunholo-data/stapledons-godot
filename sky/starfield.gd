@@ -26,10 +26,16 @@ const CULL_PEAK := 1e-4
 const FLOATS := 16 # per instance: 12 transform (row-major 3x4) + 4 custom
 enum Rebase { GPU, CPU }
 
-## Galactic XYZ (x toward centre, z to north pole) -> Godot world (Y up).
-## Galactic centre lies along -Z, which is Godot's default forward.
+## Galactic XYZ (x toward centre, z to north pole) -> Godot world (Y up): SkyFrame.to_world,
+## the one right-handed map (D-28; galactic centre along -Z, Godot's forward; l 270 along +X).
+## Kept as the public name other code (galaxy map, planets) already calls.
 static func galactic_to_world(g: Vector3) -> Vector3:
-	return Vector3(g.y, g.z, -g.x)
+	return SkyFrame.to_world(g)
+
+
+## Inverse of galactic_to_world: SkyFrame.to_galactic.
+static func world_to_galactic(w: Vector3) -> Vector3:
+	return SkyFrame.to_galactic(w)
 
 
 var rebase_mode := Rebase.GPU
@@ -93,11 +99,9 @@ func append_catalogue(c: StarCatalogue, only_flags := 0) -> void:
 			skipped_missing += 1
 			continue
 		var j := 6 * i
-		# galactic (x, y, z) -> world (y, z, -x), widened to float64 before any arithmetic
-		var x: float = d[j + 1]
-		var y: float = d[j + 2]
-		var z: float = -d[j]
-		_put(k, x, y, z, d[j + 3], Relativity.illuminance_from_v(d[j + 4]), d[j + 5])
+		# galactic -> world (SkyFrame, D-28), widened to float64 before any arithmetic
+		var w := SkyFrame.to_world64([d[j], d[j + 1], d[j + 2]])
+		_put(k, w[0], w[1], w[2], d[j + 3], Relativity.illuminance_from_v(d[j + 4]), d[j + 5])
 		k += 1
 	count = k
 	pos.resize(3 * count)

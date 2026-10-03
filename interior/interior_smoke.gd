@@ -88,7 +88,8 @@ func _check_sky(it: Interior, sim: SimBridge) -> void:
 	var want := ShipFrame.sky_camera(h, it.bundle.camera)
 	var f: PackedFloat64Array = want["forward"]
 	var got := it.sky.camera.view_dir()
-	var err := Vector3(f[1], f[2], -f[0]).distance_to(got)
+	var fw := SkyFrame.to_world64(f)
+	var err := Vector3(fw[0], fw[1], fw[2]).distance_to(got)
 	need(err < 1e-6, "sky camera forward = cam x ship_basis (error %s)" % err)
 	print("m4-smoke: %s beta %.6f, sky camera forward error %s, glow pole %s" % [s["phase"], s["beta"], String.num_scientific(err), it.sky.glow_pole])
 
