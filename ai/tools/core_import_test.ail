@@ -6,13 +6,18 @@ module stapledons/ai/tools/core_import_test
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/bytes (fromBase64, fromString)
-import std/string (concat, join, split)
+import std/string (concat, join, split, contains)
 import std/crypto (sha256Hex)
 import stapledons/ai/key (keyError, canonical)
 import ./core_import (medicSet, assetOf, indexLine, sumsOf, verifyCore, Item)
 
 pure func fixturePng() -> bytes =
   match fromBase64("iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAU0lEQVR42u3YQQkAAAgEQaMZzeiWEORgtsF8tya8AgAAAAAAAAAAAAAAAAB4APRRAAAAAAAAAAAAAAAAAAAAAABZAGcOAAAAAAAAAAAAAAAAILgFvGdRS4UpY/4AAAAASUVORK5CYII=") {
+    Some(b) => b, None => fromString("")
+  }
+-- 48 x 16 (AI.8 evaluation): a non-square PNG, so a width/height swap shows.
+pure func widePng() -> bytes =
+  match fromBase64("iVBORw0KGgoAAAANSUhEUgAAADAAAAAQCAIAAADfzGvmAAAAAXNSR0IArs4c6QAAADFJREFUSIljNPZJYxhMgGmgHYAORh1ECIw6iBAYdRAhMOogQmDUQYTAqIMIgVEHEQIAs9sBBeDHI1QAAAAASUVORK5CYII=") {
     Some(b) => b, None => fromString("")
   }
 pure func commit() -> string = "8f04dfc86dd310e73c9052351ad37fbcedb542d5"
@@ -36,7 +41,8 @@ pure func fixtureLine() -> string =
 
 pure func checkLine() -> bool =
   (match assetOf(first(), fixturePng(), fromString("p")) { Ok(a) => indexLine(a, commit(), srcDir()) == fixtureLine(), Err(_) => false }) &&
-  (match assetOf(first(), fromString("not a png at all, just some text"), fromString("p")) { Ok(_) => false, Err(e) => e == "not a PNG: portrait_medic_age0_neutral_v2.png" })
+  (match assetOf(first(), fromString("not a png at all, just some text"), fromString("p")) { Ok(_) => false, Err(e) => e == "not a PNG: portrait_medic_age0_neutral_v2.png" }) &&
+  (match assetOf(first(), widePng(), fromString("p")) { Ok(a) => a.w == 48 && a.h == 16 && a.n == 119 && contains(indexLine(a, commit(), srcDir()), "\"width\":48,\"height\":16}"), Err(_) => false })
 
 test "AI.8 an index line from a fixture PNG: key, sha256, bytes, size, prompt hash, pinned source" { checkLine() }
 
@@ -65,7 +71,12 @@ pure func checkVerifyLines() -> bool =
   coreRefused(swap(idx(), "\"mime\":\"image/png\"", "\"mime\":\"audio/ogg\""), goodSums(), "line 1: mime and ext disagree") &&
   coreRefused(swap(idx(), "\"origin\":\"core\"", "\"origin\":\"library\""), goodSums(), "line 1: origin is not core") &&
   coreRefused(swap(idx(), "\"width\":64", "\"width\":0"), goodSums(), "line 1: an image needs width and height") &&
-  coreRefused(concat([idx(), idx()]), goodSums(), "line 2: duplicate key portrait/medic/neutral/0/0")
+  coreRefused(concat([idx(), idx()]), goodSums(), "line 2: duplicate key portrait/medic/neutral/0/0") &&
+  coreRefused(swap(idx(), "\"bytes\":140", "\"bytes\":0"), goodSums(), "line 1: bytes must be positive") &&
+  coreRefused(swap(idx(), "\"height\":64", "\"height\":0"), goodSums(), "line 1: an image needs width and height") &&
+  coreRefused(swap(idx(), concat([":", srcDir(), "/portrait_medic_age0_neutral_v2.png"]), ":x"), goodSums(), "line 1: source is not blender@<commit>:<path>") &&
+  coreRefused(swap(idx(), "blender@8f04dfc86d", "blender@8f04dfc86g"), goodSums(), "line 1: source is not blender@<commit>:<path>") &&
+  coreRefused(swap(idx(), "blender@8f04dfc86d", "blender@8F04DFC86D"), goodSums(), "line 1: source is not blender@<commit>:<path>")
 
 test "AI.8 verify: a consistent index passes and ai_core is its sha256; an empty index is refused" { checkVerifyOk() }
 test "AI.8 verify: SHA256SUMS must list exactly the index blobs and the index" { checkVerifySums() }

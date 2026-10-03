@@ -218,6 +218,87 @@ func test_scrub() -> void:
 			rc == 0 and fds.has(0) and fds.has(1) and fds.has(2) and closed.all(func(fd): return not fds.has(fd)))
 
 
+## AI.9 must-fix 1: on v0.51+ gcloud ADC in HOME wins over GOOGLE_API_KEY, so
+## a Gemini route is bound with --ai-key-file (the key file's path) and
+## --ai-no-adc whenever it is live, and every live launch passes --ai-no-adc.
+## An OpenRouter-only launch binds no std/ai at all. Never AI_LIVE by default.
+func test_live_plan() -> bool:
+	print("live launch: --ai-key-file and --ai-no-adc whenever Gemini is live")
+	var res := ProjectSettings.globalize_path("res://")
+	for keys in [{"gemini": "/k/g.key", "openrouter": "/k/o.key"}, {"gemini": "/k/g.key"}, {"openrouter": "/k/o.key"}]:
+		var b := stub_bridge()
+		b.live = true
+		b.key_files = keys
+		var a: PackedStringArray = b.live_plan("/x/ailang", res)["args"]
+		var run := a.slice(a.find("run"))
+		var gem: bool = keys.has("gemini")
+		var kf := run.find("--ai-key-file")
+		assert_bool("%s: --ai-no-adc in the ailang arguments" % [keys.keys()], run.has("--ai-no-adc"))
+		assert_bool("%s: %s" % [keys.keys(), "--ai gemini-2.5-flash-image --ai-key-file /k/g.key" if gem else "no --ai, no --ai-key-file (no std/ai binding)"],
+			(kf > 0 and run[kf + 1] == "/k/g.key" and run[run.find("--ai") + 1] == "gemini-2.5-flash-image") if gem else (kf < 0 and not run.has("--ai")))
+		assert_bool("%s: wrapper gets the key files as paths and AI_LIVE permission 0 (live_allowed defaults to false)" % [keys.keys()],
+			a[3] == keys.get("gemini", "") and a[4] == keys.get("openrouter", "") and a[5] == "0" and not b.live_allowed)
+	var stub := " ".join(AiBridge._run_args("/x/ailang", "/repo/ai", stub_bridge().stub_config("/repo")))
+	assert_bool("the stub launch binds no std/ai and reads no key file", stub.find("--ai") < 0)
+	return true
+
+
+## Run a launch plan with a real argv (OS.execute with output goes through a
+## shell command line) and return everything it printed.
+func plan_output(plan: Dictionary) -> String:
+	var p := OS.execute_with_pipe(plan["bin"], plan["args"], false)
+	var got := PackedByteArray()
+	var end := Time.get_ticks_msec() + 10000
+	while Time.get_ticks_msec() < end:
+		var chunk: PackedByteArray = p["stdio"].get_buffer(4096)
+		got.append_array(chunk)
+		if chunk.is_empty():
+			if not OS.is_process_running(p["pid"]):
+				got.append_array(p["stdio"].get_buffer(65536))
+				break
+			OS.delay_msec(2)
+	return got.get_string_from_utf8()
+
+
+## AI.9 must-fix 3: the live child runs under a minimal environment. The live
+## wrapper runs a stand-in for ailang that prints its environment: Godot's own
+## FOO_API_KEY and an inherited GOOGLE_API_KEY must not reach it, the key files
+## must, and AI_LIVE=1 appears only when the permission argument is 1.
+func test_live_env() -> bool:
+	print("live wrapper: env -i, only PATH, HOME, the key files and (when allowed) AI_LIVE")
+	var dump := scratch.path_join("envdump.sh")
+	FileAccess.open(dump, FileAccess.WRITE).store_string("#!/bin/sh\nenv\necho \"ARGS $*\"\n")
+	OS.execute("/bin/chmod", PackedStringArray(["755", dump]))
+	var files := {"gemini": scratch.path_join("g.key"), "openrouter": scratch.path_join("o.key")}
+	FileAccess.open(files["gemini"], FileAccess.WRITE).store_string("fake-gemini-from-file\n")
+	FileAccess.open(files["openrouter"], FileAccess.WRITE).store_string("fake-openrouter-from-file")
+	OS.set_environment("FOO_API_KEY", "leak-foo")
+	OS.set_environment("GOOGLE_API_KEY", "leak-inherited")
+	var allowed := ["PATH", "HOME", "GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_API_KEY", "OPENROUTER_API_KEY", "AI_LIVE", "PWD", "OLDPWD", "SHLVL", "_"]
+	for c in [[files, "0"], [{"openrouter": files["openrouter"]}, "0"], [files, "1"]]:
+		var b := stub_bridge()
+		b.live = true
+		b.key_files = c[0]
+		var plan := b.live_plan(dump, ProjectSettings.globalize_path("res://"), "/home/stand-in")
+		plan["args"][5] = c[1]
+		var out := plan_output(plan)
+		var env := {}
+		for l in out.split("\n", false):
+			if not l.begins_with("ARGS ") and l.find("=") > 0:
+				env[l.get_slice("=", 0)] = l.substr(l.find("=") + 1)
+		var label := "%s, permission %s" % [c[0].keys(), c[1]]
+		assert_bool("%s: no FOO_API_KEY, no inherited key; only %s (got %s)" % [label, allowed, env.keys()],
+			not env.has("FOO_API_KEY") and out.find("leak-") < 0 and env.keys().all(func(k): return k in allowed))
+		assert_bool("%s: keys from the files only, ADC pointed nowhere, HOME as given" % label,
+			env.get("GOOGLE_API_KEY") == ("fake-gemini-from-file" if c[0].has("gemini") else null) and env.get("OPENROUTER_API_KEY") == "fake-openrouter-from-file"
+			and env.get("GOOGLE_APPLICATION_CREDENTIALS") == "/nonexistent" and env.get("HOME") == "/home/stand-in" and env.has("PATH"))
+		assert_bool("%s: AI_LIVE %s; ailang got its arguments" % [label, "=1" if c[1] == "1" else "absent"],
+			env.get("AI_LIVE") == ("1" if c[1] == "1" else null) and out.find("ARGS run --quiet") >= 0)
+	OS.unset_environment("FOO_API_KEY")
+	OS.unset_environment("GOOGLE_API_KEY")
+	return true
+
+
 func test_assemble() -> bool:
 	print("line assembly across partial reads")
 	var b := stub_bridge()
@@ -435,7 +516,7 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):
 			only = a.substr(7).split(",")
-	var tests := ["static", "assemble", "stub_session"]
+	var tests := ["static", "live_plan", "live_env", "assemble", "stub_session"]
 	if faults:
 		tests.append_array(["partial", "timeouts", "crash_loop", "garbage", "handshake_faults", "shutdown_grace"])
 	for t in tests:

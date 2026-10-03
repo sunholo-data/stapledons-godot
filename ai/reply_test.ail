@@ -10,7 +10,7 @@ import std/result (Result, Ok, Err)
 import std/string (contains, join)
 import std/bytes as B
 import ./wire (Constraints)
-import ./reply (Reply, screen, textOf, stepReply, openRouterBody, openRouterModel, parseOpenRouter, parseImage, pngSize, ttsBody, parseTts)
+import ./reply (Reply, Billed, screen, textOf, stepReply, openRouterBody, openRouterModel, parseOpenRouter, parseImage, pngSize, ttsBody, parseTts, billedOpenRouter, billedTts)
 
 pure func consOf(es: [string], n: int) -> Constraints = { maxChars: n, noNumerals: true, emotions: es }
 pure func pal() -> Constraints = consOf(["neutral", "loving", "grieving"], 280)
@@ -73,10 +73,23 @@ pure func checkReplyTts() -> bool =
   ttsErr(parseTts(tts(l16(), "AAAB", "STOP", "40"), 300), "bad_output") &&
   ttsErr(parseTts("{\"error\":{\"code\":429}}", 300), "provider_error") && ttsErr(parseTts("nope", 300), "provider_error")
 
-export pure func replyChecks() -> bool = checkReplyScreen() && checkReplyText() && checkReplyOpenRouter() && checkReplyImage() && checkReplyTts()
+-- AI.9 (AI.7 finding): a reply that decodes and is not an error body was
+-- billed, even when it does not parse (no content, speech over its cap): its
+-- reported tokens are charged. An error body or a non-JSON reply is not.
+pure func checkReplyBilled() -> bool =
+  billedOpenRouter("{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\"}}],\"usage\":{\"prompt_tokens\":312,\"completion_tokens\":27}}") == Some({ tokensIn: 312, tokensOut: 27 }) &&
+  parseOpenRouter("{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\"}}],\"usage\":{\"prompt_tokens\":312,\"completion_tokens\":27}}") == Err("provider_error") &&
+  billedOpenRouter("{\"choices\":[]}") == Some({ tokensIn: 0, tokensOut: 0 }) &&
+  billedOpenRouter("{\"error\":{\"code\":402,\"message\":\"no credit\"}}") == None && billedOpenRouter("<html>") == None &&
+  billedTts(tts(l16(), "AAABAAIA", "STOP", "292")) == Some({ tokensIn: 9, tokensOut: 292 }) &&
+  billedTts(tts(l16(), "AAABAAIA", "MAX_TOKENS", "40")) == Some({ tokensIn: 9, tokensOut: 40 }) &&
+  billedTts("{\"error\":{\"code\":429}}") == None && billedTts("nope") == None
+
+export pure func replyChecks() -> bool = checkReplyScreen() && checkReplyText() && checkReplyOpenRouter() && checkReplyImage() && checkReplyTts() && checkReplyBilled()
 
 test "AI.5 screen: grammar, palette, brackets, digits, display length" { checkReplyScreen() }
 test "AI.5 a reply is its text, or bad_output when cut off or screened out" { checkReplyText() }
 test "AI.5 OpenRouter body and chat-completions parser" { checkReplyOpenRouter() }
 test "AI.5 image parser: the 1x1 stub PNG and the placeholder; else bad_output" { checkReplyImage() }
 test "AI.5 TTS body from gemini_live; complete speech only" { checkReplyTts() }
+test "AI.9 an unparsable but billed reply reports its tokens; error bodies are not billed" { checkReplyBilled() }

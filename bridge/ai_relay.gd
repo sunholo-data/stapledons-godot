@@ -85,11 +85,16 @@ func queued() -> int:
 ## "" (no_key). Mirrors ai/route.ail resolve; tests compare it with the
 ## service's hello `routes`.
 func route_for(kind: String) -> String:
-	if text_only and kind != "text":
+	return route_in(_routes, kind, keys, text_only)
+
+
+## The same over any routing table and key set (AiSettings uses it).
+static func route_in(routes: Dictionary, kind: String, have: Array, only_text: bool) -> String:
+	if only_text and kind != "text":
 		return ""
-	for hop in _routes.get(kind, []):
+	for hop in routes.get(kind, []):
 		var p: String = hop.get("provider", "")
-		if p in keys and (p == "gemini" or (p == "openrouter" and kind == "text")):
+		if p in have and (p == "gemini" or (p == "openrouter" and kind == "text")):
 			return p
 	return ""
 
