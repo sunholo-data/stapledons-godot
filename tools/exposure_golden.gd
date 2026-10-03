@@ -6,14 +6,14 @@ extends RefCounted
 ##                   linear Exposure.DISPLAY_FLOOR as VIS_LEVELS, and 0.85 x it below
 ##   star lux        a known-lux star's splat integrates to E k / Omega_px (linear
 ##                   tonemapper) within 1%
-##   sky cd/m^2      a calibrated panorama's dark patch renders at L(22 mag/arcsec^2) k within 1%
-##   AC8 ladder      V 5.0-7.5 stars on the 22 mag/arcsec^2 sky at the default
-##                   dark-adapted EV: the faintest run of visible stars, 6.0 <= V_lim <= 6.8
+##   sky cd/m^2      a calibrated panorama's dark patch renders at L(DARK_SKY_MAG) k within 1%
+##   AC8 ladder      V 5.0-8.5 stars on the 23.5 mag/arcsec^2 sky at the default
+##                   dark-adapted EV: the faintest run of visible stars, inside Exposure.AC8
 
 const LADDER_V0 := 5.0
-const LADDER_V1 := 7.5
+const LADDER_V1 := 8.5
 const LADDER_STEP := 0.1
-const AC8 := Vector2(6.0, 6.8)
+const AC8 := Exposure.AC8
 
 
 func run(main: Node) -> int:
@@ -101,23 +101,23 @@ func _star_lux(main: Node) -> int:
 
 
 ## The panorama calibration end to end: a uniform panorama is its own dark
-## patch, so it must read L(22 mag/arcsec^2); with k = 0.5 / L22 the pixel is 0.5.
+## patch, so it must read L(DARK_SKY_MAG); with k = 0.5 / L the pixel is 0.5.
 func _sky_luminance(main: Node) -> int:
 	_linear(main.env)
 	main.camera.look(0.0, 0.0, 0.0)
 	var sb := _uniform_sky(main, 0.37)
-	var l22 := Exposure.dark_sky_luminance()
-	sb.set_scene_exposure(0.5 / l22)
+	var l_dark := Exposure.dark_sky_luminance()
+	sb.set_scene_exposure(0.5 / l_dark)
 	var img: Image = await main._grab()
 	var c := img.get_pixel(img.get_width() / 2, img.get_height() / 2).srgb_to_linear()
-	var got := (0.2126729 * c.r + 0.7151522 * c.g + 0.0721750 * c.b) / 0.5 * l22
-	var ok := absf(got / l22 - 1.0) < 0.01
-	print("%s  exposure golden (sky): calibrated dark patch renders %s cd/m^2, want L(22 mag/arcsec^2) = %s (ratio %.4f, limit 1%%)" % [
-		"ok  " if ok else "FAIL", String.num_scientific(got), String.num_scientific(l22), got / l22])
+	var got := (0.2126729 * c.r + 0.7151522 * c.g + 0.0721750 * c.b) / 0.5 * l_dark
+	var ok := absf(got / l_dark - 1.0) < 0.01
+	print("%s  exposure golden (sky): calibrated dark patch renders %s cd/m^2, want L(%.1f mag/arcsec^2) = %s (ratio %.4f, limit 1%%)" % [
+		"ok  " if ok else "FAIL", String.num_scientific(got), Exposure.DARK_SKY_MAG, String.num_scientific(l_dark), got / l_dark])
 	return 0 if ok else 1
 
 
-## AC8: the ladder on a uniform 22 mag/arcsec^2 sky, production tonemapper, the
+## AC8: the ladder on a uniform DARK_SKY_MAG sky, production tonemapper, the
 ## default eye mode at the dark-adapted EV. Stars sit on pixel centres in a
 ## compact block at the view centre (cos^3 < 0.5%). A star is visible when its
 ## peak 8-bit luminance stands VIS_LEVELS above the frame's background level.

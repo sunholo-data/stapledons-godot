@@ -11,7 +11,7 @@ extends RefCounted
 ##   3. Replay: the recorded frames again with the starfield hidden. The star
 ##      pass is the per-frame difference (GPU time when the driver reports it;
 ##      Godot 4.7's Metal driver reports 0, so make bench also runs Vulkan).
-##   4. AC8 (M1.5a): the V 5.0-7.5 limiting-magnitude ladder (tools/exposure_golden.gd).
+##   4. AC8 (M1.5a): the V 5.0-8.5 limiting-magnitude ladder (tools/exposure_golden.gd).
 ## Prints one `bench:` summary line and writes the numbers to .godot/tmp/bench.json.
 
 const SIZE := Vector2i(2560, 1440)
@@ -50,9 +50,9 @@ func run(main: Node, seconds: float) -> int:
 	var off := await _replay(main, frames)
 	var rc := _report(main, frames, off, rebase_ms, mode, seconds)
 	# AC8 (M1.5a): the limiting-magnitude ladder at this render size, after the
-	# flight (it swaps in a uniform 22 mag/arcsec^2 sky)
+	# flight (it swaps in a uniform 23.5 mag/arcsec^2 sky)
 	var lim: Dictionary = await load("res://tools/exposure_golden.gd").new().limiting_magnitude(main)
-	var ok: bool = lim["v_lim"] >= 6.0 and lim["v_lim"] <= 6.8
+	var ok: bool = lim["v_lim"] >= Exposure.AC8.x and lim["v_lim"] <= Exposure.AC8.y
 	print("bench: limiting magnitude %s: %s" % [lim["line"], "ok" if ok else "MISS"])
 	return rc if ok else 1
 
