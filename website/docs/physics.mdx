@@ -1,0 +1,148 @@
+---
+title: The physics
+sidebar_position: 2
+description: What the relativistic sky in Stapledon's Voyage shows, the equations behind it, and how each effect is tested against check values.
+---
+
+import {ClipFigure} from '@site/src/components/Clip';
+
+# The physics
+
+Every visual effect that shows special or general relativity is held to a **normative spec**,
+[`physics/relativity-spec.md`](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md)
+in the design repo. Each effect has numbered check values (RS-n, and HB-n for the
+[Higgs bubble](higgs-bubble.md)). Before a visual merges it needs:
+
+1. the spec's check values asserted in the CPU physics tests;
+2. a GPU-against-CPU golden case (the shader must put each star where the float64 reference
+   says, to under 0.1 px);
+3. reference renders that a person has actually opened and looked at.
+
+The formulas live first in the AILANG package
+[`sunholo/relativity`](https://github.com/sunholo-data/ailang-packages/tree/main/packages/relativity),
+with tests. GDScript and the shaders mirror the package; they are never the only copy.
+
+<ClipFigure name="voyage" caption="From rest to 0.99c at 1 g, looking forward. The HUD shows the simulation's β, γ, ship clock and Earth clock." />
+
+## Aberration: the sky moves forward
+
+A moving observer sees every source shifted toward the direction of motion. A source at angle
+θ from the direction of motion, in the galaxy frame, appears at θ′:
+
+> cos θ′ = (cos θ + β) / (1 + β cos θ)
+
+| Check | Value |
+|---|---|
+| RS-1: a source at 90° seen from 0.9c appears at | 25.842° |
+| RS-2: a source at 90° seen from 0.5c appears at | 60° |
+
+Straight ahead and straight behind do not move. Everything else crowds toward the bow, so at
+0.99c almost the whole visible sky fits in a cone a few tens of degrees wide.
+
+## Doppler colour and beaming
+
+Light from ahead is blueshifted and light from behind is redshifted. For a source seen at
+apparent angle θ′ the Doppler factor is
+
+> D = 1 / (γ (1 − β cos θ′))
+
+(equivalently γ(1 + β cos θ) in galaxy-frame angles). Ahead, D = γ(1+β): √19 ≈ 4.359 at 0.9c
+(RS-3). Astern it is 0.229 (RS-4). Seen sideways, at θ′ = 90°, D = 1/γ: **a sideways star is
+redshifted and dimmer**, not brighter.
+
+- **Colour.** A blackbody at temperature T is seen as a blackbody at D·T. Each star is drawn
+  from its own colour temperature (from Gaia photometry, or Hipparcos B−V for bright stars)
+  through a Planck spectrum and the CIE 1931 colour-matching functions.
+- **Brightness.** I_ν/ν³ is invariant and a point source's solid angle scales by 1/D², so the
+  visual-band flux scales by (Y(D·T)/Y(T))/D², which is D² bolometrically. Extended sources
+  such as the Milky Way keep their solid angle per texel, so their radiance scales as D⁴.
+
+<ClipFigure name="lookaround" caption="One full turn at 0.99c (γ 7.09): the bright window ahead, a nearly empty sky to the side, black astern." />
+
+## Time dilation: two clocks
+
+The ship's clock runs slow by γ = 1/√(1 − β²). The journey planner runs in the simulation and
+matches the closed-form equations to 1e-9:
+
+| Journey, Sol → α Centauri (4.37 ly) | Earth time | Ship time |
+|---|---|---|
+| Cruise at 0.99c (HB-20, HB-21) | 4.414 yr | 0.6227 yr (227.4 days) |
+| Cruise at 0.999999c (HB-25, HB-26) | 4.370 yr | 2.26 days |
+
+Near c the game never computes 1 − β by subtraction, which would lose almost every digit. γ, 1 − β
+and the rapidity φ = atanh β come from the float64 simulation (γ = cosh φ, γβ = sinh φ).
+
+## The forward CMB
+
+The 2.725 K cosmic microwave background is a blackbody too. Straight ahead it is blueshifted by
+D = γ(1 + β) = e^φ:
+
+> T_fwd = T_CMB · γ(1 + β)
+
+| Check | Value |
+|---|---|
+| HB-62: forward CMB at 0.99c | 38.44 K |
+| HB-65: γ where it reaches the Draper point, 798 K (a dull red glow) | 146.4 |
+| HB-67: γ where it reaches 1,500 K (plainly orange) | 275.2 |
+| HB-63: forward CMB at 0.999999c (γ 707) | 3,853.7 K |
+| HB-68: half-temperature radius from the pole at γ 707, 1/γ | 0.0810° |
+
+So above γ ≈ 150 a glow appears dead ahead that no star explains, and at the cruise cap it
+outshines every star around it.
+
+<ClipFigure name="cmb" caption="γ 20 to 707 through a 20° lens: the stars crowd into a shrinking ball, then the forward CMB warms from deep red to near white while the eye light-adapts." />
+
+## A photometric, naked-eye sky
+
+Scene units are physical: stars carry illuminance in lux and the background luminance in cd/m².
+The default exposure is a **dark-adapted eye**, calibrated so that a star at the naked-eye
+threshold lands on the display's lowest visible level. The measured naked-eye limit is V 6.9,
+against 6.897 from Crumey's model. The deep-space sky is anchored at 23.5 mag/arcsec² and the
+Milky Way at 20.8.
+
+When the meter needs it, the eye light-adapts, and the HUD says so. Camera metering, a fixed EV,
+an exposure bias and a magnitude floor are available as labelled options, never silent fudges.
+
+## The real nearby stars
+
+The sky is drawn from real catalogues, built by AILANG tools from pinned downloads:
+
+| Source | What it gives |
+|---|---|
+| [CNS5](https://cdsarc.cds.unistra.fr/viz-bin/cat/J/A+A/670/A19), the fifth catalogue of nearby stars | The stars within about 25 pc, with Gaia photometry |
+| [GCNS](https://www.cosmos.esa.int/web/gaia/edr3-gcns), the Gaia catalogue of nearby stars | About 330,000 stars within 100 pc |
+| [Hipparcos](https://www.cosmos.esa.int/web/hipparcos) | The bright naked-eye stars (V < 7) such as Rigel, Canopus and Deneb that the others miss |
+
+Together that is **335,157 stars**, instanced on the GPU, with positions kept in float64 and
+rebased around the ship so the direction to a target at a 1,000 AU stand-off holds to 2.4e-8 rad.
+
+Behind them is the NOIRLab all-sky Milky Way panorama (E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0). An AILANG pass
+removes the photo stars that the catalogue draws itself (every one brighter than V 4.5, and 96–99%
+of those down to V 7), so stars are not counted twice, and fits a
+colour temperature to each texel so the renderer can Doppler shift the Milky Way as a blackbody.
+
+<figure className="sv-figure">
+  <img src={require('@site/static/img/gallery/milky-way-destarred.jpg').default} alt="The Milky Way all-sky panorama with the catalogue stars removed" />
+  <figcaption>The panorama after the destar pass. It is valid as seen from within about 50 ly of Sol.</figcaption>
+</figure>
+
+## General relativity: black holes (planned, M3)
+
+Black holes are where the game's hard-SF promise is most visible, and they are next on the
+roadmap. The spec already fixes what they must show, with check values:
+
+| Check | Value |
+|---|---|
+| RS-9: critical impact parameter b_c = (3√3/2) r_s | 2.598 r_s |
+| RS-10: shadow angular radius at 10 r_s | 14.27° |
+| RS-11, RS-12: at 5 r_s and 3 r_s | 27.69°, 45.00° |
+
+(The retired Go version drew the shadow at r_s, about 2.6 times too small, and gave aberration
+the wrong sign. The rebuild exists partly to get these right, and to prove them.)
+
+## Read further
+
+- [Relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md):
+  the normative accuracy spec, with the check-value index.
+- [Higgs bubble canon](https://github.com/sunholo-data/stapledons-design/blob/main/physics/higgs-bubble.md):
+  the one hand-wave and its exact consequences.

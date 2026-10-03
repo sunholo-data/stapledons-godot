@@ -118,19 +118,26 @@ func build(omb: float, sigma_rad: float) -> void:
 		for i in PROFILE_SIZE:
 			var r := theta_max * i / (PROFILE_SIZE - 1.0)
 			var l := 0.0
-			var rgb := Vector3.ZERO
+			var c := Blackbody.lut_rgb(maxf(Relativity.cmb_temperature_apparent(r, omb), Blackbody.LUT_T_MIN))
 			if sigma_rad > 0.0:
+				# colour sums in float64 scalars: a float32 Vector3 underflows where l
+				# is ~1e-40, and 0/0 gave NaN texels that drew a white ring at gamma 40-60
+				var cr := 0.0
+				var cg := 0.0
+				var cb := 0.0
 				var s2 := sigma_rad * sigma_rad
 				for j in n_in:
 					var w: float = l_in[j] * r_in[j] * h * (0.5 if j == 0 or j == n_in - 1 else 1.0) / s2 \
 						* exp(-(r - r_in[j]) * (r - r_in[j]) / (2.0 * s2)) * i0e(r * r_in[j] / s2)
 					l += w
-					rgb += c_in[j] * w
+					cr += c_in[j].x * w
+					cg += c_in[j].y * w
+					cb += c_in[j].z * w
+				if l > 0.0 and is_finite(cr / l) and is_finite(cg / l) and is_finite(cb / l):
+					c = Vector3(cr / l, cg / l, cb / l)
 			else:
 				l = sharp(r, omb)
-				rgb = Blackbody.lut_rgb(maxf(Relativity.cmb_temperature_apparent(r, omb), Blackbody.LUT_T_MIN)) * l
 			_logl[i] = maxf(log(l) / log(10.0), LOG_FLOOR) if l > 0.0 else LOG_FLOOR
-			var c := rgb / l if l > 0.0 else Vector3.ONE
 			image.set_pixel(i, 0, Color(c.x, c.y, c.z, _logl[i]))
 	if texture == null:
 		texture = ImageTexture.create_from_image(image)

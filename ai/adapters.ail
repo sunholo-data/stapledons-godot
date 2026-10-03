@@ -23,7 +23,7 @@ import std/ai (step, callImageBase64, Message)
 import std/net (httpRequest)
 import ./wire (Seg)
 import ./spend (Units)
-import ./provider (Job, Style, styleFor, textCap, ttsCap)
+import ./provider (Job, Style, styleFor, textCap, ttsCap, textCallCap, ttsCallCap)
 import ./reply (Reply, Image, Billed, textOf, stepReply, openRouterBody, parseOpenRouter, parseImage, ttsBody, parseTts, billedOpenRouter, billedTts)
 import ./voice (Clip, assemble)
 
@@ -34,6 +34,10 @@ pure func msg(role: string, content: string) -> Message = { role: role, content:
 pure func noUnits() -> Units = { tokensIn: 0, tokensOut: 0, calls: 0 }
 pure func plus(u: Units, i: int, o: int) -> Units = { tokensIn: u.tokensIn + i, tokensOut: u.tokensOut + o, calls: u.calls + 1 }
 -- A reply that did not parse is still one call and its tokens when it was billed (AI.9).
+-- A call that was sent but got no reply (transport error, dropped connection,
+-- timeout) may still have been billed: it is charged at its cap (AI.9 hardening).
+pure func sent(u: Units, c: Units) -> Units = { tokensIn: u.tokensIn + c.tokensIn, tokensOut: u.tokensOut + c.tokensOut, calls: u.calls + c.calls }
+pure func lost(j: Job, u: Units, n: int) -> Attempt = { outcome: Err("provider_error"), units: sent(u, textCallCap(j)), tries: n }
 pure func billed(u: Units, b: Option[Billed]) -> Units = match b { Some(t) => plus(u, t.tokensIn, t.tokensOut), None => u }
 -- Up to three attempts: a reply that fails the screen is retried (bad_output).
 pure func next(j: Job, rp: Reply, u: Units, n: int) -> Result[Attempt, Units] {
@@ -47,7 +51,7 @@ pure func next(j: Job, rp: Reply, u: Units, n: int) -> Result[Attempt, Units] {
 -- Gemini text: std/ai.step with the per-call model (same provider as the bound handler).
 func geminiTry(j: Job, n: int, u: Units) -> Attempt ! {AI @limit=3} =
   match step(j.hop.model, [msg("system", j.prompt.system), msg("user", j.prompt.user)], []) {
-    Err(_) => { outcome: Err("provider_error"), units: u, tries: n },
+    Err(_) => lost(j, u, n),
     Ok(s) => match next(j, stepReply(s), u, n) { Ok(a) => a, Err(u2) => geminiTry(j, n + 1, u2) }
   }
 export func geminiText(j: Job) -> Attempt ! {AI @limit=3} = geminiTry(j, 1, noUnits())
@@ -60,7 +64,7 @@ pure func orUrl(base: string) -> string = concat([base, "/api/v1/chat/completion
 func orTry(base: string, j: Job, key: string, n: int, u: Units) -> Attempt ! {Net} =
   match httpRequest("POST", orUrl(base), [{ name: "Authorization", value: concat(["Bearer ", key]) }, { name: "Content-Type", value: "application/json" }],
       openRouterBody(j.hop.model, j.prompt, textCap(j.r))) {
-    Err(_) => { outcome: Err("provider_error"), units: u, tries: n },
+    Err(_) => lost(j, u, n),
     Ok(resp) => match parseOpenRouter(resp.body) {
       Err(code) => { outcome: Err(code), units: billed(u, billedOpenRouter(resp.body)), tries: n },
       Ok(rp) => match next(j, rp, u, n) { Ok(a) => a, Err(u2) => orTry(base, j, key, n + 1, u2) }
@@ -83,7 +87,7 @@ func speak(base: string, j: Job, key: string, voice: string, styles: [Style], ss
     [] => (match assemble(acc) { Ok(c) => { outcome: Ok(c), units: u }, Err(_) => { outcome: Err("bad_output"), units: u } }),
     s :: rest => match httpRequest("POST", ttsUrl(base, j.hop.model), [{ name: "x-goog-api-key", value: key }, { name: "Content-Type", value: "application/json" }],
         ttsBody(s.text, voice, styleFor(styles, s.emotion), ttsCap(s))) {
-      Err(_) => { outcome: Err("provider_error"), units: u },
+      Err(_) => { outcome: Err("provider_error"), units: sent(u, ttsCallCap(s)) },
       Ok(resp) => match parseTts(resp.body, ttsCap(s)) {
         Err(code) => { outcome: Err(code), units: billed(u, billedTts(resp.body)) },
         Ok(sp) => speak(base, j, key, voice, styles, rest, acc ++ [sp.pcm], plus(u, sp.tokensIn, sp.tokensOut))

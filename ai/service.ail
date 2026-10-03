@@ -12,7 +12,10 @@ module stapledons/ai/service
 --   main    (--caps IO,FS)  the stub. {provider: "stub", keys_present, text_only,
 --           cache_dir, routing, fixtures}; ceiling US$0.50 (D-20 default).
 --   session (--caps IO,FS)  the stub with the player's ceiling: main's fields
---           plus ceiling_usd (0.05..20).
+--           plus ceiling_usd (0.05..20) and spent, what this game session
+--           already spent per provider in nano-USD ([{provider, nusd}], from
+--           usage.ndjson; AI.9 hardening): the ledger starts from it, so the
+--           ceiling bounds the session across service restarts.
 --   live    (--caps IO,FS,Env,Net,AI, --ai <gemini image model>) the session
 --           fields with provider gemini, openrouter or live. Refused before
 --           any call unless the provider's key env var is non-empty
@@ -30,14 +33,16 @@ import ./key (aiKinds, emotions8, member)
 import ./route (Routing, Route, Via, NoRoute, parseRouting, resolve, keysError)
 import ./wire (Request, In, WHello, WRequest, WQuit, Out, OHello, OErr, OFatal, RouteView, decodeIn, encodeOut, reqOfLine)
 import ./provider (Provider, Stub, Live, Ctx, Png, Act, WriteBlob, AppendUsage, Say, Step, Job, Prep, Done, Run, providerOf, providerName,
-  parseStubText, parseStyles, catalogueError, handle, prepare, okText, okImage, okVoice, failed, castVoice)
-import ./spend (Ledger, ledgerOf, parsePrices, ceilingError)
+  parseStubText, parseStyles, catalogueError, handle, prepare, okText, okImage, okVoice, failed, castVoice, reservation)
+import ./spend (Ledger, ledgerFrom, spentError, parsePrices, ceilingError)
 import ./prompt (parseLore)
-import ./cache (writeBlob, appendUsage)
+import ./cache (writeBlob, appendUsage, reserveUsage)
 import ./adapters (geminiText, openRouterText, geminiImage, geminiVoice)
 
 export type Config = { provider: string, keys_present: [string], text_only: bool, cache_dir: string, routing: string, fixtures: string }
-export type Session = { provider: string, keys_present: [string], text_only: bool, cache_dir: string, routing: string, fixtures: string, ceiling_usd: float }
+-- `spent` is spelled out, not [Spent]: an imported record alias inside a list
+-- does not decode from --args-json on v0.52.0 (reported upstream).
+export type Session = { provider: string, keys_present: [string], text_only: bool, cache_dir: string, routing: string, fixtures: string, ceiling_usd: float, spent: [{provider: string, nusd: int}] }
 
 pure func view(rt: Routing, keys: [string], textOnly: bool, kinds: [string]) -> [RouteView] =
   match kinds {
@@ -102,6 +107,7 @@ export func start(cfg: Session, keys: [string]) -> Result[Ctx, string] ! {FS} {
   let d = dirOf(cfg.routing);
   bindF(noErr(keysError(keys), ()), \_u.
   bindF(noErr(ceilingError(cfg.ceiling_usd), ()), \_v.
+  bindF(noErr(spentError(cfg.spent), ()), \_s.
   bindF(bindP(readText(cfg.routing), parseRouting), \rt.
   bindF(bindP(readText(concat([d, "/prices.json"])), parsePrices), \ps.
   bindF(readText(concat([d, "/models.json"])), \mt.
@@ -112,7 +118,7 @@ export func start(cfg: Session, keys: [string]) -> Result[Ctx, string] ! {FS} {
   bindF(loadPngs(cfg.fixtures, emotions8()), \pngs. {
     mkdirAll(cfg.cache_dir);
     Ok({ routing: rt, keys: keys, textOnly: cfg.text_only, cases: cases, portraits: pngs, lore: lore, prices: ps, styles: styles })
-  }))))))))))
+  })))))))))))
 }
 
 -- Wait for a first non-blank line so nothing is printed unasked, then refuse.
@@ -125,12 +131,12 @@ export func session(cfg: Session) -> () ! {IO, FS} =
     Err(e) => refuseStart(e, 0),
     Ok(p) => if p != Stub then refuseStart(concat(["config: provider ", cfg.provider, " needs the live entry (--entry live)"]), 0)
       else match start(cfg, cfg.keys_present) {
-        Ok(c) => stubLoop(cfg, c, p, ledgerOf(cfg.ceiling_usd), 0),
+        Ok(c) => stubLoop(cfg, c, p, ledgerFrom(cfg.ceiling_usd, cfg.spent), 0),
         Err(e) => refuseStart(e, 0)
       }
   }
 export func main(cfg: Config) -> () ! {IO, FS} =
-  session({ provider: cfg.provider, keys_present: cfg.keys_present, text_only: cfg.text_only, cache_dir: cfg.cache_dir, routing: cfg.routing, fixtures: cfg.fixtures, ceiling_usd: 0.5 })
+  session({ provider: cfg.provider, keys_present: cfg.keys_present, text_only: cfg.text_only, cache_dir: cfg.cache_dir, routing: cfg.routing, fixtures: cfg.fixtures, ceiling_usd: 0.5, spent: [] })
 
 -- ------------------------------------------------------------ live
 export type Keys = { gemini: string, openrouter: string }
@@ -158,6 +164,11 @@ func liveRun(c: Ctx, k: Keys, l: Ledger, j: Job) -> Step ! {Net, AI} {
     Err(code) => failed(l, j, prov, { tokensIn: 0, tokensOut: 0, calls: 1 }, code)
   }
 }
+-- One live request admitted: prepare it and, if it runs, write its
+-- reservation (inflight.json, the worst case) before the caller makes the
+-- call. The live loop and make ai-loopback share this step.
+export func admitLive(dir: string, c: Ctx, l: Ledger, r: Request, prov: string) -> Prep ! {FS} =
+  match prepare(c, l, r, prov) { Done(x) => Done(x), Run(j) => { reserveUsage(dir, reservation(l, j, prov)); Run(j) } }
 func liveLoop(cfg: Session, c: Ctx, k: Keys, p: Provider, l: Ledger, blanks: int) -> () ! {IO, FS, Net, AI} =
   match lineOf(readLine(()), p) {
     Blank => if blanks + 1 >= maxBlanks() then () else liveLoop(cfg, c, k, p, l, blanks + 1),
@@ -165,7 +176,7 @@ func liveLoop(cfg: Session, c: Ctx, k: Keys, p: Provider, l: Ledger, blanks: int
     Greet => { say(hello(cfg, c, p)); liveLoop(cfg, c, k, p, l, 0) },
     Bad(o) => { say(o); liveLoop(cfg, c, k, p, l, 0) },
     Ask(r) => {
-      let s = match prepare(c, l, r, providerName(p)) { Done(x) => x, Run(j) => liveRun(c, k, l, j) };
+      let s = match admitLive(cfg.cache_dir, c, l, r, providerName(p)) { Done(x) => x, Run(j) => liveRun(c, k, l, j) };
       run(cfg.cache_dir, s.acts);
       liveLoop(cfg, c, k, p, s.ledger, 0)
     }
@@ -180,7 +191,7 @@ export func live(cfg: Session) -> () ! {IO, FS, Env, Net, AI} =
         match liveRefusal(req, present(k), getEnvOr("AI_LIVE", "") == "1") {
           Some(e) => refuseStart(e, 0),
           None => match start(cfg, present(k)) {
-            Ok(c) => liveLoop(cfg, c, k, p, ledgerOf(cfg.ceiling_usd), 0),
+            Ok(c) => liveLoop(cfg, c, k, p, ledgerFrom(cfg.ceiling_usd, cfg.spent), 0),
             Err(e) => refuseStart(e, 0)
           }
         }

@@ -1,5 +1,7 @@
 GODOT ?= godot
 AILANG ?= ailang
+# A path with a slash (make test AILANG=runtime/bin/ailang) is made absolute, so recipes that cd still find it
+override AILANG := $(if $(findstring /,$(AILANG)),$(abspath $(AILANG)),$(AILANG))
 # Godot runs that start the sim use the same ailang as the make line, never a stale one on PATH
 GODOT_SIM = AILANG_BIN="$$(command -v $(AILANG))" $(GODOT)
 SIM := sim/ship.ail
@@ -21,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -158,8 +160,8 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 	  grep -q '^ok    hot white dwarf 60 kK' $(SCRATCH)/golden.log && grep -q '^ok    faint-star cull' $(SCRATCH)/golden.log && \
 	  grep -q '^ok    display floor' $(SCRATCH)/golden.log && grep -q '^ok    exposure golden (star)' $(SCRATCH)/golden.log && \
 	  grep -q '^ok    exposure golden (sky)' $(SCRATCH)/golden.log && grep -q '^ok    limiting magnitude' $(SCRATCH)/golden.log && \
-	  test "$$(grep -c '^ok    CMB golden' $(SCRATCH)/golden.log)" = 7 && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 7 CMB cases)"; exit 1; }
+	  test "$$(grep -c '^ok    CMB golden' $(SCRATCH)/golden.log)" = 10 && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
@@ -196,9 +198,9 @@ export-macos: runtime sky-bundle import   ## build the macOS .app (arm64, ad-hoc
 	@du -sh "$(APP)"
 
 export-smoke:      ## run the exported .app's capture with NO ailang on PATH; must produce the contact sheet
-	@rm -rf $(SCRATCH)/export-smoke && mkdir -p $(SCRATCH)/export-smoke
+	@rm -rf $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home && mkdir -p $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home
 	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
-	env -i PATH=/usr/bin:/bin HOME="$$HOME" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
+	env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
 	@test -s $(SCRATCH)/export-smoke/contact_sheet.png && echo "export-smoke: OK ($$(ls $(SCRATCH)/export-smoke | wc -l | tr -d ' ') files)"
 
 DEV_BUCKET ?= stapledons-voyage-dev-builds
@@ -222,8 +224,8 @@ catalogue-vm:     ## T1 transform/selection + T3 validation, T4 N3 (exact 50,000
 	@mkdir -p $(SCRATCH)
 	@set -e; for entry in transformVm selectionVm quotaVm mainVm; do \
 	  case $$entry in mainVm) f=sim/tools/catalogue_main_test.ail;; *) f=sim/tools/catalogue_test.ail;; esac; \
-	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-vm.txt; \
-	  $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-interp.txt; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-vm.txt; \
+	  env -u AI_LIVE $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-interp.txt; \
 	  cmp $(SCRATCH)/$$entry-vm.txt $(SCRATCH)/$$entry-interp.txt; \
 	  case $$entry in transformVm) want=transform-ok;; selectionVm) want=selection-ok;; quotaVm) want=quota-ok;; mainVm) want=main-ok;; esac; \
 	  test "$$(cat $(SCRATCH)/$$entry-vm.txt)" = "$$want"; cat $(SCRATCH)/$$entry-vm.txt; \
@@ -236,20 +238,24 @@ CATALOGUE_OUT ?= data/starmap
 CAT_RUN = $(AILANG) run --quiet --caps IO,FS --package-dir sim
 CAT_AILANG = $$($(AILANG) --version | head -1 | cut -d' ' -f2)
 cat_args = "{\"tier\":\"$(1)\",\"csv\":\"$(2)\",\"raw\":\"$(3)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(4)\",\"ailang\":\"$(CAT_AILANG)\"}"
-bright_args = "{\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"overrides\":\"data/starmap/bright_overrides.json\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
-fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\"}"
-.PHONY: catalogue catalogue-scan catalogue-main bright-test test-bright-audit
+bright_args = "{\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\"}"
+# The companion rule (design_docs/planned/r1/m1-companion-parallax.md): `make companions` writes the table, every
+# tier and the map apply it (COMPANIONS picks the file; catalogue-verify uses its own rebuilt copy).
+COMPANIONS ?= data/starmap/companions/companions.csv
+gcns_args = "{\"tier\":\"$(1)\",\"csv\":\"data/raw/gcns.csv\",\"raw\":\"data/raw/table1c.dat.gz\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(2)\",\"ailang\":\"$(CAT_AILANG)\",\"companions\":\"$(COMPANIONS)\"}"
+.PHONY: catalogue catalogue-scan catalogue-main bright-test test-bright-audit companions companions-test
 catalogue:        ## M1.2b-T3/M1.2d: data/raw -> $(CATALOGUE_OUT)/stars_$(TIER).bin + sidecar on the VM (TIER=quick|medium|large|bright; quick carries the HIP photometry fill)
 	@case "$(TIER)" in \
 	  quick) $(CAT_RUN) --bytecode --entry mainFill --args-json $(call fill_args,$(CATALOGUE_OUT)) sim/tools/bright_main.ail;; \
 	  bright) $(CAT_RUN) --bytecode --entry brightMain --args-json $(call bright_args,$(CATALOGUE_OUT)) sim/tools/bright_main.ail;; \
-	  medium|large) $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,$(TIER),data/raw/gcns.csv,data/raw/table1c.dat.gz,$(CATALOGUE_OUT)) sim/tools/catalogue_main.ail;; \
+	  medium|large) $(CAT_RUN) --bytecode --entry gcnsMain --args-json $(call gcns_args,$(TIER),$(CATALOGUE_OUT)) sim/tools/bright_main.ail;; \
 	  *) echo "catalogue: TIER must be quick, medium, large or bright (got '$(TIER)')"; exit 2;; esac
 
 # M1.7 (F6, Q7): the galaxy map catalogue, from the quick + bright tier rows within 25 pc (float64; ids
 # "Gaia DR3 n" / "CNS5:n" / "HIP n"). STARMAP_OUT picks the file (catalogue-verify writes a scratch copy).
 STARMAP_OUT ?= data/starmap/stars.json
-map_args = "{\"csv\":\"data/raw/cns5.csv\",\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"overrides\":\"data/starmap/bright_overrides.json\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+map_args = "{\"csv\":\"data/raw/cns5.csv\",\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
 .PHONY: starmap starmap-test
 starmap:          ## M1.7: data/raw -> $(STARMAP_OUT), the galaxy map catalogue (quick + bright within 25 pc) on the VM
 	$(CAT_RUN) --bytecode --entry mapMain --args-json $(call map_args,$(STARMAP_OUT)) sim/tools/bright_main.ail
@@ -260,6 +266,16 @@ starmap-test:     ## M1.7 map catalogue (sim/tools/starmap.ail): named checks, s
 	@$(AILANG) run --quiet --package-dir sim --entry starmapVm --args-json 0 sim/tools/starmap_test.ail > $(SCRATCH)/starmap-interp.txt
 	@cmp $(SCRATCH)/starmap-vm.txt $(SCRATCH)/starmap-interp.txt && test "$$(cat $(SCRATCH)/starmap-vm.txt)" = "starmap-ok"
 	@echo "starmap-test: $$(cat $(SCRATCH)/starmap-vm.txt) (strict VM = interpreter)"
+
+companions-test:  ## the companion rule (sim/tools/companions.ail): thresholds, Sirius B, alpha Cen B, Luyten 726-8 B, Wolf 424 B, false pairs; strict VM = interpreter, real-line fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry companionsVm --args-json 0 sim/tools/companions_test.ail > $(SCRATCH)/companions-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry companionsVm --args-json 0 sim/tools/companions_test.ail > $(SCRATCH)/companions-interp.txt
+	@cmp $(SCRATCH)/companions-vm.txt $(SCRATCH)/companions-interp.txt && test "$$(cat $(SCRATCH)/companions-vm.txt)" = "companions-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry companionsFixtures --args-json '"tools/fixtures"' sim/tools/companions_test.ail > $(SCRATCH)/companions-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry companionsFixtures --args-json '"tools/fixtures"' sim/tools/companions_test.ail > $(SCRATCH)/companions-fx-interp.txt
+	@cmp $(SCRATCH)/companions-fx-vm.txt $(SCRATCH)/companions-fx-interp.txt && test "$$(cat $(SCRATCH)/companions-fx-vm.txt)" = "companions-fixtures-ok"
+	@echo "companions-test: $$(cat $(SCRATCH)/companions-vm.txt), $$(cat $(SCRATCH)/companions-fx-vm.txt) (VM = interpreter)"
 
 test-bright-audit: ## M1.2d AC11 auditor (tools/bright_star_audit.gd) on synthetic renders; the render gate itself is M1.5b
 	$(GODOT) --headless --path . --script tests/test_bright_audit.gd
@@ -274,6 +290,12 @@ bright-test:      ## M1.2d bright tier + CNS5 fill (sim/tools/bright.ail): named
 	@cmp $(SCRATCH)/bright-fx-vm.txt $(SCRATCH)/bright-fx-interp.txt && test "$$(cat $(SCRATCH)/bright-fx-vm.txt)" = "bright-fixtures-ok"
 	@echo "bright-test: $$(cat $(SCRATCH)/bright-vm.txt), $$(cat $(SCRATCH)/bright-fx-vm.txt) (VM = interpreter)"
 
+companions:       ## the companion rule over CNS5 + GCNS + bright rows -> $(COMPANIONS) (std/gzip stops at 100 MB, so table1c is gunzipped into the scratch dir first)
+	@mkdir -p $(SCRATCH)
+	gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
+	$(CAT_RUN) --bytecode --entry companionsMain --args-json "{\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"gcnsRaw\":\"data/raw/table1c.dat.gz\",\"gcnsDat\":\"$(SCRATCH)/table1c.dat\",\"out\":\"$(COMPANIONS)\"}" sim/tools/bright_main.ail
+	@rm -f $(SCRATCH)/table1c.dat
+
 catalogue-scan:   ## M1.2b-T3: the conservative F32 bound on every real CNS5 and GCNS row (0 refusals; refused ids are listed for review)
 	@for src in cns5 gcns; do $(CAT_RUN) --bytecode --entry scan --args-json "\"data/raw/$$src.csv\"" sim/tools/catalogue_main.ail || exit 1; done
 
@@ -287,15 +309,20 @@ star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, e
 	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
 
 VERIFY_OUT := $(SCRATCH)/verify
-catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files
-	@rm -rf $(VERIFY_OUT); for t in quick medium bright; do \
+catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild companions.csv, quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files; then the Python companion oracle
+	@rm -rf $(VERIFY_OUT); mkdir -p $(VERIFY_OUT); \
+	$(MAKE) --no-print-directory companions COMPANIONS=$(VERIFY_OUT)/companions.csv AILANG=$(AILANG) >/dev/null || exit 1; \
+	cmp data/starmap/companions/companions.csv $(VERIFY_OUT)/companions.csv || { echo "catalogue-verify: companions.csv DIFFERS from the committed table"; exit 1; }; \
+	echo "companions.csv identical"; \
+	for t in quick medium bright; do \
 	  $(MAKE) --no-print-directory catalogue TIER=$$t CATALOGUE_OUT=$(VERIFY_OUT) AILANG=$(AILANG) >/dev/null || exit 1; \
 	  cmp data/starmap/stars_$$t.bin $(VERIFY_OUT)/stars_$$t.bin && cmp data/starmap/stars_$$t.json $(VERIFY_OUT)/stars_$$t.json \
 	    || { echo "catalogue-verify: $$t DIFFERS from the committed tier"; exit 1; }; \
 	  echo "$$t identical"; done; \
 	$(MAKE) --no-print-directory starmap STARMAP_OUT=$(VERIFY_OUT)/stars.json AILANG=$(AILANG) >/dev/null || exit 1; \
 	cmp data/starmap/stars.json $(VERIFY_OUT)/stars.json || { echo "catalogue-verify: stars.json DIFFERS from the committed map"; exit 1; }; \
-	echo "stars.json identical"
+	echo "stars.json identical"; \
+	python3 tools/check_companions.py
 
 .PHONY: catalogue-parity
 PARITY_TIER ?= medium
@@ -436,3 +463,4 @@ destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars remov
 	$(GODOT) --headless --path . --script tools/destar_io.gd -- apply $(SKY)/noirlab_10k.png $(SKY)/destar_patches.bin $(SKY)/noirlab_10k_destarred.png
 
 include mk/ai.mk
+include mk/site.mk

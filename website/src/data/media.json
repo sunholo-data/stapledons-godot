@@ -1,0 +1,52 @@
+{
+  "voyage": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/08a41ea16711e28a2feb28bf61d88ea0fa5145b1dc28fd2a7619944f4f507fbd.mp4",
+      "bytes": 3645225
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/add9f61a82730368e52293927707fdc136a587e07047b6aa1165ce83632755e2.webm",
+      "bytes": 1765976
+    }
+  },
+  "lookaround": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/2e3034338fdf52c73f327ed46e753eda2a37007564b3bd5e848c7e9db5049350.mp4",
+      "bytes": 1015325
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/7c369427ce2e2151cb5ae5aa308c93072781ac34477b30764f9c716406b531c8.webm",
+      "bytes": 632923
+    }
+  },
+  "map": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/eac3b8076575076a8e20193e9ede016814f189849b782ab869993731d309db66.mp4",
+      "bytes": 7421884
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/f7199e3e66678faf53970a12e77136ccc011e01775c1702bc8d395fd46f3adb3.webm",
+      "bytes": 8216476
+    }
+  },
+  "cmb": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/4efe296814adbf0458d85b8b3474b23003f5464515bdfe0928d0d346dfb7d172.mp4",
+      "bytes": 1264852
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/cb0fab56578ff342548a704bdbd2b610fee165faa0f06cdf1716317fdab3c466.webm",
+      "bytes": 691354
+    }
+  },
+  "hero": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/0a1ef8b217102ac6a59dae8195595983705c38d8dede47870b8ac25b17e86373.mp4",
+      "bytes": 3337874
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/f01c9d04c75f57d424a17de7e69eae7259e88b6ec22d33ee62addeb233bfa164.webm",
+      "bytes": 1275387
+    }
+  }
+}

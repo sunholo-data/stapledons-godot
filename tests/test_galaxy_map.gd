@@ -262,6 +262,10 @@ func test_signal_and_preselect(map: GalaxyMap) -> bool:
 func test_picking(map: GalaxyMap) -> bool:
 	ok("nearest_index picks the closest within the radius", GalaxyMap.nearest_index(PackedVector2Array([Vector2(10, 10), Vector2(50, 50), Vector2(52, 49)]), Vector2(53, 49), 8.0) == 2)
 	ok("nothing within the radius gives -1", GalaxyMap.nearest_index(PackedVector2Array([Vector2(10, 10)]), Vector2(100, 100), 8.0) == -1)
+	var lf := ThemeDB.fallback_font
+	var la := GalaxyMap.label_box(lf, Vector2(100, 100), "Luyten 726-8 A", 12)
+	ok("label boxes: two names 50 px apart on a line overlap, 40 px apart vertically do not",
+		la.intersects(GalaxyMap.label_box(lf, Vector2(150, 100), "Gliese 1", 12)) and not la.intersects(GalaxyMap.label_box(lf, Vector2(100, 140), "Gliese 1", 12)))
 	map.frame_star(acen_a)
 	var sp := map.screen_position(acen_a)
 	ok("alpha Cen projects inside the 800x600 viewport", Rect2(0, 0, 800, 600).has_point(sp))

@@ -148,6 +148,11 @@ pure func voiceSegs(r: Request) -> [Seg] = match r.segments { Some(ss) => ss, No
 export pure func ttsCap(s: Seg) -> int = 2 * length(s.text) + 50
 pure func ttsCaps(ss: [Seg]) -> int = match ss { [] => 0, s :: rest => ttsCap(s) + ttsCaps(rest) }
 pure func chars4(s: string) -> int = ceilDiv(length(s), 4)
+-- One call at its cap (AI.9 hardening): what a call that was sent but never
+-- answered (a transport error, a dropped connection) may have been billed:
+-- the prompt's tokens in and the output cap out.
+export pure func textCallCap(j: Job) -> Units = { tokensIn: chars4(j.prompt.system) + chars4(j.prompt.user), tokensOut: textCap(j.r), calls: 1 }
+export pure func ttsCallCap(s: Seg) -> Units = { tokensIn: chars4(s.text), tokensOut: ttsCap(s), calls: 1 }
 -- Worst case of one request: text up to three attempts at the cap (two
 -- retries on bad_output), one image call, speech at the caps.
 export pure func estimate(r: Request, p: Price, pr: Prompt) -> int =
@@ -223,6 +228,16 @@ export pure func failed(l: Ledger, j: Job, prov: string, u: Units, code: string)
   let after = charge(l, j.hop.provider, n);
   let used = if u.tokensIn + u.tokensOut + u.calls > 0 then [AppendUsage(usageLine({ req: j.r.req, provider: prov, route: j.hop.provider, model: j.hop.model, kind: j.r.kind, units: u, nusd: n, ms: 0 }, after))] else [];
   { acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: after }
+}
+
+-- The reservation (AI.9 hardening): before a live call the service writes
+-- this provisional usage line, the request's worst case (`est`), to
+-- <cache_dir>/inflight.json (cache.reserveUsage). If the bridge kills the
+-- service mid-call (its per-kind timeout) it appends the line to usage.ndjson,
+-- so the indicator and the next launch's ledger count the call.
+export pure func reservation(l: Ledger, j: Job, prov: string) -> string {
+  let u = usageLine({ req: j.r.req, provider: prov, route: j.hop.provider, model: j.hop.model, kind: j.r.kind, units: { tokensIn: 0, tokensOut: 0, calls: 0 }, nusd: j.est, ms: 0 }, charge(l, j.hop.provider, j.est));
+  concat([substring(u, 0, length(u) - 1), ",\"provisional\":true}"])
 }
 
 -- ------------------------------------------------------------ the stub

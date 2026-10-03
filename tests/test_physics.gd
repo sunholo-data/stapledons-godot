@@ -627,9 +627,37 @@ func test_cmb() -> void:
 	g275.build(omb275, Exposure.psf_sigma_angle())
 	check("gamma 275: pole at gamma (1 + beta) T0 = 1,498.7 K", g275.pole_temperature, 2.725 * 275.0 * (2.0 - omb275), 1e-6)
 	check("gamma 275: the disc is visible to the dark-adapted eye (centre > 100 x L_dark)", 1.0 if g275.profile(0.0) > 100.0 * l_dark else 0.0, 1.0, 0.0)
+	# the gamma 40-60 ring (fix/cmb-ring): the profile's colour was 0/0 = NaN where the
+	# blurred radiance underflowed float32, and the shader drew NaN texels as a white ring
+	for gr: float in [40.0, 50.0, 60.0, 275.0, 707.0]:
+		var omb_r := 1.0 - sqrt(1.0 - 1.0 / (gr * gr)) if gr < 700.0 else cap
+		for sig: float in [Exposure.psf_sigma_angle(), 0.0]:
+			_check_profile_shape(gr, omb_r, sig)
 	var slow := CmbGlow.new()
 	slow.build(0.01, Exposure.psf_sigma_angle())
 	check("0.99c: no visible CMB (profile empty, illuminance 0)", slow.theta_max + slow.illuminance, 0.0, 0.0)
+
+
+## Every profile texel finite, radiance non-increasing outward (no ring), and
+## nothing left at the cutoff (no step): the last sample <= 1e-12 of the pole.
+func _check_profile_shape(g: float, omb: float, sigma: float) -> void:
+	var c := CmbGlow.new()
+	c.build(omb, sigma)
+	var finite := 1.0
+	var mono := 1.0
+	var prev := INF
+	for i in CmbGlow.PROFILE_SIZE:
+		var px := c.image.get_pixel(i, 0)
+		for ch in [px.r, px.g, px.b, px.a]:
+			if is_nan(ch) or is_inf(ch): finite = 0.0
+		if px.a > prev + 1e-9: mono = 0.0
+		prev = px.a
+	var tag := "gamma %.0f %s" % [g, "PSF" if sigma > 0.0 else "sharp"]
+	check("%s: every CMB profile texel is finite (no NaN colour)" % tag, finite, 1.0, 0.0)
+	check("%s: radiance never rises outward (no ring)" % tag, mono, 1.0, 0.0)
+	var edge := pow(10.0, c.image.get_pixel(CmbGlow.PROFILE_SIZE - 1, 0).a)
+	var pole := pow(10.0, c.image.get_pixel(0, 0).a)
+	check("%s: no step at theta_max (edge <= 1e-12 x pole or below 1e-30 cd/m^2)" % tag, 1.0 if edge <= 1e-12 * pole or edge < 1e-30 else 0.0, 1.0, 0.0)
 
 
 func _profile_flux(c: CmbGlow) -> float:

@@ -77,7 +77,7 @@ void sky() {
 		if (th < cmb_theta_max) {
 			float x = th / cmb_theta_max * (cmb_size - 1.0);
 			vec4 p = textureLod(cmb_profile, vec2((x + 0.5) / cmb_size, 0.5), 0.0);
-			if (p.a > -59.0) {
+			if (p.a > -59.0 && !any(isnan(p.rgb))) { // defence in depth (fix/cmb-ring)
 				COLOR += p.rgb * pow(10.0, p.a) * cmb_k;
 			}
 		}
