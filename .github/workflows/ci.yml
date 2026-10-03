@@ -35,5 +35,17 @@ jobs:
           sudo install /tmp/godot/Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
           godot --headless --version
 
-      - name: make test
-        run: make test
+      - name: record x86_64 goldens (throwaway branch only)
+        run: |
+          make deps
+          python3 tools/replay.py --ticks 10000 | tee replay-before.x86_64.txt || true
+          python3 tools/replay.py --ticks 2000 --case session2k | tee -a replay-before.x86_64.txt || true
+          python3 tools/replay.py --record all --ticks 10000
+          python3 tools/replay.py --record session2k --ticks 2000
+          mkdir -p out && cp .godot/tmp/replay/*.vm.ndjson out/ && cp replay-before.x86_64.txt out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: x86-goldens
+          path: |
+            tests/replays/*.x86_64.*
+            out/
