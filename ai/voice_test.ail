@@ -36,7 +36,7 @@ pure func checkVoiceDescriptor() -> bool {
   let k = { kind: "voice", entityId: "medic", emotion: "-", ageStage: 0, variant: voiceVariant("Aoede", segs) };
   markedLine(segs) == "{neutral}Hi. {loving}Sleep." && length(k.variant) == 16 && voiceVariant("Kore", segs) != k.variant &&
   k.variant == "afd0d50311d1013c" &&
-  voiceDescriptor(k, 123, { ogg: B.fromString(""), durationMs: 400, segmentsMs: [0, 200] }) ==
+  voiceDescriptor(k, 123, { ogg: B.fromString(""), wav: B.fromString(""), durationMs: 400, segmentsMs: [0, 200] }) ==
     "{\"key\":{\"kind\":\"voice\",\"entity_id\":\"medic\",\"emotion\":\"-\",\"age_stage\":0,\"variant\":\"afd0d50311d1013c\"},\"mime\":\"audio/ogg\",\"bytes\":123,\"duration_ms\":400,\"segments_ms\":[0,200]}"
 }
 

@@ -146,6 +146,10 @@ paths: AILANG packages in runtime/cache/registry/OWNER/PKG/VER/ (or
     `generated_at` line churns on every run, so ignore it when diffing.
     `std/map.fromList` is still evaluator-only on the strict VM.
     `std/io.readLine` still returns "" for both a blank line and end of input.
+  - Open (v0.52.0, workaround in-tree, cite the issue at the site): the bytecode
+    VM silently drops a service request whose handler builds a list of ~1100+
+    elements by non-tail recursion (no result, no error, exit 0; the interpreter
+    answers) (#1576; `ai/voice.ail` builds stub tones by doubling).
   - Breaking in v0.52.0: an explicitly imported name may not also be defined at
     module level (MOD015). Alias the import (`import M (x as mX)`) or rename.
   - Fixed in v0.52.0; the in-tree workarounds still cite the issue and are

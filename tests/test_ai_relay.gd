@@ -198,6 +198,21 @@ func test_e2e() -> bool:
 	var a2 := by_req(events_of(rig["relay"], "ai_accepted"))
 	assert_bool("cache hit: recorded and accepted with launch_count == 0", a2.get("1", {}).get("kind") == "portrait" and rig["bridge"].launch_count == 0 and rig["relay"].hits == 1)
 	rig["sim"].stop()
+	# AI.10a task 1: the service's voice index line carries duration_ms and segments_ms, so the same
+	# session again over the same library voices the line from the library (no service call for it).
+	var again := Session.stub_rig(fresh("voice_hit").path_join("log.ndjson"), lib)
+	bridges.append(again["bridge"])
+	var t2 := Session.run_session(again["sim"], again["relay"], again["bridge"])
+	again["sim"].stop()
+	var a4 := by_req(events_of(again["relay"], "ai_accepted"))
+	var voice_line := {}
+	for l in FileAccess.get_file_as_string(lib.path_join("index.ndjson")).split("\n", false):
+		if l.contains("\"kind\":\"voice\""):
+			voice_line = AiCache.ints(JSON.parse_string(l))
+	assert_bool("the service's voice index line carries duration_ms %s and segments_ms %s" % [voice_line.get("duration_ms"), voice_line.get("segments_ms")],
+		voice_line.get("duration_ms", 0) > 0 and voice_line.get("segments_ms") == [0])
+	assert_bool("the same session again: the voice is a library hit (hits %d: portrait x2 + voice; forwarded %d: the texts)" % [again["relay"].hits, again["relay"].forwarded],
+		t2 == 5 and a4.get("5", {}).get("kind") == "voice" and a4["5"].get("sha256") == acc.get("5", {}).get("sha256") and again["relay"].hits == 3 and again["relay"].forwarded == 3)
 	# A cached asset needs neither live AI nor a key: mode off, no keys, still a hit.
 	var off := Session.stub_rig(fresh("hit_off").path_join("log.ndjson"), lib, [])
 	bridges.append(off["bridge"])

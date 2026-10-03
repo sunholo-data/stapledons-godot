@@ -9,12 +9,13 @@ module stapledons/ai/stub_test
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/string (concat, join, length, contains, startsWith, endsWith)
-import std/bytes (fromBase64, fromString)
+import std/bytes (fromBase64, fromString, toString, slice)
+import std/crypto (sha256Bytes)
 import ./key (CacheKey)
 import ./route (Routing, parseRouting)
 import ./wire (Request, Out, OOk, OErr, CtxField, CStr, encodeOut, usdStr)
 import ./spend (Price, Ledger, ledgerOf, total, spentBy, cost, usdOf)
-import ./cache (Blob, Op, Mkdir, Write, Rename, Append, blobOps)
+import ./cache (Blob, Op, Mkdir, Write, WriteSide, Rename, Append, blobOps)
 import ./provider (Ctx, Case, Png, Step, Act, WriteBlob, AppendUsage, Say, Prep, Done, Run, prepare, failed, handle, reservation, textCallCap, ttsCallCap, stubText, spelled, textBody, parseStubText, providerOf, providerName, requestError, Stub, Live)
 import ./reply (pngSize)
 
@@ -134,11 +135,15 @@ export pure func checkStubActs() -> bool {
 -- Blob writes: shard dir, bytes to <path>.tmp, rename onto <path>, then the
 -- index line; an existing blob only gains an index line.
 pure func opNames(ops: [Op]) -> [string] =
-  match ops { [] => [], o :: r => (match o { Mkdir(d) => concat(["mkdir ", d]), Write(p) => concat(["write ", p]), Rename(x, y) => concat(["rename ", x, " ", y]), Append(p, l) => concat(["append ", p, " ", l]) }) :: opNames(r) }
+  match ops { [] => [], o :: r => (match o { Mkdir(d) => concat(["mkdir ", d]), Write(p) => concat(["write ", p]), WriteSide(p) => concat(["side ", p]), Rename(x, y) => concat(["rename ", x, " ", y]), Append(p, l) => concat(["append ", p, " ", l]) }) :: opNames(r) }
 export pure func checkCacheOps() -> bool {
-  let b = { sha256: "ab12", ext: "txt", mime: "text/plain", data: fromString("x"), index: "{}" };
+  let b = { sha256: "ab12", ext: "txt", mime: "text/plain", data: fromString("x"), index: "{}", side: None };
+  let v = {b | ext: "ogg", side: Some({ ext: "wav", data: fromString("w") })};
   opNames(blobOps("c", b, false)) == ["mkdir c/blobs/ab", "write c/blobs/ab/ab12.txt.tmp", "rename c/blobs/ab/ab12.txt.tmp c/blobs/ab/ab12.txt", "append c/index.ndjson {}\n"] &&
-  opNames(blobOps("c", b, true)) == ["mkdir c/blobs/ab", "append c/index.ndjson {}\n"]
+  opNames(blobOps("c", b, true)) == ["mkdir c/blobs/ab", "append c/index.ndjson {}\n"] &&
+  opNames(blobOps("c", v, false)) == ["mkdir c/blobs/ab", "write c/blobs/ab/ab12.ogg.tmp", "rename c/blobs/ab/ab12.ogg.tmp c/blobs/ab/ab12.ogg",
+    "side c/blobs/ab/ab12.wav.tmp", "rename c/blobs/ab/ab12.wav.tmp c/blobs/ab/ab12.wav", "append c/index.ndjson {}\n"] &&
+  opNames(blobOps("c", v, true)) == ["mkdir c/blobs/ab", "side c/blobs/ab/ab12.wav.tmp", "rename c/blobs/ab/ab12.wav.tmp c/blobs/ab/ab12.wav", "append c/index.ndjson {}\n"]
 }
 
 -- A failed live call still costs what it used (AI.5 evaluation): the ledger
@@ -197,7 +202,27 @@ export pure func checkStubRefusals() -> bool =
   (match parseStubText("{\"gossip\":{}}") { Ok(_) => false, Err(e) => e == "config: stub_text: unknown purpose gossip" }) &&
   (match parseStubText("{\"line\":{\"a\":1}}") { Ok(_) => false, Err(e) => e == "config: stub_text line.a is not a string" })
 
-export pure func stubChecks() -> bool = checkStubText() && checkStubRoutes() && checkStubImage() && checkStubVoice() && checkStubBudget() && checkStubActs() && checkCacheOps() && checkStubRefusals() && checkFailedCharges() && checkInterruptedCharges()
+-- AI.10a task 1: a voice index line carries duration_ms and segments_ms (so
+-- a library voice is a cache hit), equal to the descriptor's; the offsets
+-- are exact, strictly increasing and below the duration; the blob carries a
+-- WAV playback copy of the same PCM (Godot cannot decode Ogg Opus).
+pure func increasing(xs: [int], prev: int, dur: int) -> bool = match xs { [] => true, x :: r => x > prev && x < dur && increasing(r, x, dur) }
+pure func noSide(b: Blob) -> bool = match b.side { Some(_) => false, None => true }
+pure func wavHead(b: Blob) -> bool = match b.side {
+  Some(s) => s.ext == "wav" && (match slice(s.data, 0, 4) { Some(h) => toString(h) == "RIFF", None => false }) && contains(b.index, concat(["\"wav_sha256\":\"", sha256Bytes(s.data), "\""])),
+  None => false }
+export pure func checkVoiceIndex() -> bool {
+  let three = {voiceRq("13") | segments: Some([{ emotion: "neutral", text: "Hi" }, { emotion: "grieving", text: "I know, I know." }, { emotion: "loving", text: "Sleep." }])};
+  let v = answer(bothCtx(), three);
+  (match okOf(v) { Some(o) => endsWith(o.body, "\"duration_ms\":1248,\"segments_ms\":[0,200,949]}"), None => false }) &&
+  (match blobOf(v.acts) { Some(b) => contains(b.index, "\"duration_ms\":1248,\"segments_ms\":[0,200,949]") && wavHead(b), None => false }) &&
+  (match blobOf(answer(bothCtx(), voiceRq("12")).acts) { Some(b) => contains(b.index, "\"duration_ms\":1200,\"segments_ms\":[0]") && wavHead(b), None => false }) &&
+  increasing([0, 200, 949], -1, 1248) && !increasing([0, 200, 200], -1, 1248) && !increasing([0, 1248], -1, 1248) &&
+  (match blobOf(answer(bothCtx(), textRq("7")).acts) { Some(b) => !contains(b.index, "duration_ms") && noSide(b), None => false }) &&
+  (match blobOf(answer(bothCtx(), rq("9", "portrait", "line", ckey("portrait", "neutral", "0"))).acts) { Some(b) => !contains(b.index, "duration_ms") && noSide(b), None => false })
+}
+
+export pure func stubChecks() -> bool = checkStubText() && checkStubRoutes() && checkStubImage() && checkStubVoice() && checkStubBudget() && checkStubActs() && checkCacheOps() && checkStubRefusals() && checkFailedCharges() && checkInterruptedCharges() && checkVoiceIndex()
 
 test "AI.4 stub text: words for numbers, first allowed emotion, trimmed, fixture cases" { checkStubText() }
 test "AI.4 stub answers every route and stamps meta.route" { checkStubRoutes() }
@@ -209,3 +234,4 @@ test "AI.5 blob writes: temp file, rename, then the index line" { checkCacheOps(
 test "AI.4 requests refused before routing; provider names" { checkStubRefusals() }
 test "AI.5 a failed live call is charged and logged before its error" { checkFailedCharges() }
 test "AI.9 a sent but unanswered call is charged at its cap; the reservation is the worst case" { checkInterruptedCharges() }
+test "AI.10a a voice index line carries duration_ms and segments_ms; a WAV playback copy" { checkVoiceIndex() }

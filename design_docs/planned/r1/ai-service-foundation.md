@@ -848,6 +848,96 @@ loopback and fake services only, no key):
   - Residual for AI.10b: the ceiling bounds one Godot run (`usage_from` is
     per AiBridge), so the run's real cost is the whole `usage.ndjson`.
 
+AI.10a as built (2026-10-03, AILANG v0.52.0, stub only, no key, no live call):
+- **Per-segment composition** was already in place from AI.5 (`ai/voice.ail`
+  `assemble`, the TTS adapter one call per segment); AI.10a adds the stub
+  descriptor test over three segments (offsets exact, strictly increasing,
+  below `duration_ms`).
+- **Library voice is a hit.** The service's voice index lines carry
+  `duration_ms` and `segments_ms` (`cache.Origin.timing`), so `AiCache.lookup`
+  serves a library voice line (`test_ai_relay.gd`: the same session again
+  voices the line from the library). `tests/ai/cache.SHA256SUMS` re-recorded.
+- **Mark's rulings (attended 2026-10-03, on the stub capture):** (1) swap
+  timing **150 ms early**: `swap_offset_ms` defaults to -150 (the portrait and
+  the subtitle segment lead the voice), the crossfade stays 120 ms; (2) **keep
+  the WAV copy** beside each Ogg Opus voice blob, the Ogg canonical and hashed,
+  the WAV verifiably derived from it (below), and AI.10b's accepted core voice
+  ships its WAV too.
+- **WAV playback copy (ruled: kept).** Godot 4.7 has no Ogg
+  Opus decoder (`AudioStreamOggVorbis` refuses the stub's blob; the engine has
+  only WAV, MP3 and Vorbis streams). Every voice blob therefore gets a WAV of
+  the same PCM beside it (`blobs/ab/<ogg sha256>.wav`, `std/audio.wavFromPcm`),
+  written by the service with the blob (temp file, rename, before the index
+  line). The Ogg Opus blob stays the canonical asset: its sha256 is in the
+  record, and the sim validates its descriptor. `AiCache.playback_path` finds
+  the copy; without one the line plays as text (`no_playback_copy` logged).
+  When the accepted line's voice joins the core layer (AI.10b), its WAV copy
+  must join too (or the core voice is text-only in the game). Mark kept this
+  over WAV-only storage and an Opus GDExtension.
+  **Derivation is checked** (`ai/tools/playback_verify.ail`, `make
+  ai-playback-verify` in `make test`): no Opus decoder exists to compare the
+  other way, but `std/audio.encode` is deterministic, so the WAV's PCM
+  re-encoded with `OggOpus(24000)` must equal the Ogg blob byte for byte (the
+  index line's sha256), its header must be the canonical 24 kHz mono 16-bit
+  header for that PCM, and its length must give `duration_ms`. A WAV that
+  passes is exactly the PCM the Ogg was encoded from; one changed sample is
+  refused. `make ai-style-frame` runs the same check over the library it plays.
+  The voice index line also records `wav_sha256`; `AiCache.playback` plays a
+  WAV only when its sha256 matches (else `playback_unverified`, text only), and
+  the verifier checks it first.
+- **Core layer carries the WAV** (evaluation round 1). A core voice line must
+  name `wav_sha256` and `duration_ms` (its source may be `service`, a line
+  accepted from the library); `SHA256SUMS` lists the WAV after its Ogg at
+  `blobs/ab/<ogg sha256>.wav`, so `ai-core-assets`, `ai-core-bundle` (a "keep"
+  import for every blob) and `ai-core-publish` (`ai/<wav sha256>.wav`) carry it
+  with no further change, and core verify re-encodes it to the Ogg.
+  `make ai-playback-verify` builds a one-voice core layer from the stub's
+  library, verifies it, and refuses it with a doctored WAV.
+- **Drift guard.** While the voice plays the conversation's clock follows the
+  audio playback position (Godot's sync recipe, never backwards; not before the
+  first mix, whose stale time made a capture jump 0.6 s), so a frame hitch
+  cannot make the swaps drift from the voice; otherwise the frame clock. In the
+  30 fps movie capture the two clocks agree within about 18 ms.
+- **G1 re-checked:** v0.52.0's `std/ai` has `callSpeech(model, text, voice,
+  style) -> Result[bytes, AIError]` and `speechSampleRate`. The adapter stays on
+  `std/net` for now: `callSpeech` reports no token usage, and AI.9's charging
+  (billed and interrupted calls) needs the usage the REST reply carries; and
+  the process binds one std/ai provider. Reported upstream; switching is a
+  change for after AI.10b's attended run.
+- **VM finding (ailang#1576).** The stub tone of a long segment (more than
+  about a thousand periods: a grieving segment of 43 code points) made the
+  service drop the request silently on the bytecode VM (no result, no error,
+  exit 0; the interpreter answered). `stubPcm` now repeats a period by doubling
+  (recursion depth log2 n); the bytes are unchanged (ailang#1576).
+- **Cast.** `data/ai/cast/medic.json` (departure age 35, persona, `voice_id`
+  Aoede pending ⏸ C, style, the four core portrait keys and the avatar).
+  `AiRelay` reads its cast from `data/ai/cast/` (name and voice).
+- **Conversation** (`ui/conversation/conversation.{tscn,gd}`, `Conversation`):
+  two stacked portraits crossfading over `crossfade_ms` (120), the subtitle
+  revealed segment by segment, an `AudioStreamPlayer` on the WAV copy. Segment
+  i starts at `segments_ms[i]`; the portrait swaps at that plus
+  `swap_offset_ms` (default -150, Mark's ruling; 0 swaps at the segment
+  start). No voice record: offsets at a reading pace
+  (60 ms a character, at least 1.5 s). The clock is the frame clock, so the
+  headless test and a movie-mode capture see the same swaps. Missing emotion:
+  `AiCache.fallback_chain`; a voice blob in no layer: `missing_blob`, text only.
+  `ConversationSession` gives it events: the stub rehearsal, a replayed log
+  (relay in replay mode, no AI process), or the game's `AiSession` (`--ai-live`,
+  for AI.10b; with live off nothing is generated and no service starts).
+- **Rehearsal.** The stub answers the style-frame line from the fixture case
+  `medic_style_frame` (neutral, loving, grieving; about 8.3 s of tones);
+  `tests/replays/medic_rehearsal.ndjson` is re-recorded byte for byte by
+  `make ai-conversation` (in `make test`), and replays in `make replay` (x86_64
+  golden copied from arm64: dtau 0 throughout, as `ai_stub_session`).
+- **Style frame.** `make ai-style-frame` (GPU window) fetches and stages the
+  core layer, re-records the rehearsal over a scratch library (it must equal
+  the committed log), then replays the log through the conversation in movie
+  mode at 30 fps: `renders/ai_medic/swap_<i>_<emotion>.png` (each taken the
+  frame after its fade completes), `contact_sheet.png`, `line.ogg`,
+  `line.wav`, `timeline.json` and `frame.avi` (MJPEG with PCM audio). The
+  capture shows a time and segment overlay for judging the swap timing.
+  For a live log, `FRAME_LIB=<library>` names the library with its blobs.
+
 ### Follow-up: the AI model bake-off (after AI.10b)
 
 Mark, attended 2026-10-02: "we may actually run with models and compare their

@@ -1,0 +1,8 @@
+{"v":2,"type":"hello","want":{"major":2,"minor":1}}
+{"v":2,"type":"new_game","seed":20261007,"scenario":"sol","diag":false}
+{"v":2,"type":"input","tick":1,"dtau":0.0,"intents":[{"k":"ai_open","kind":"text","purpose":"line","entity_id":"medic","emotions":["neutral","loving","grieving"],"context":{"topic":"infirmary_night","stub_case":"medic_style_frame"}}]}
+{"v":2,"type":"input","tick":2,"dtau":0.0,"intents":[{"k":"record","source":"ai","req":"1","kind":"text","sha256":"02bebe689c7c09f00d1de048cdbbed7891c8028438535278b81b8eba8c2d6cf4","body":"{neutral} You came down to the infirmary again. {loving} Sit with me a while; the ship is quiet tonight. {grieving} I keep thinking of the ones we left behind, and the light that left Earth with us."}]}
+{"v":2,"type":"input","tick":3,"dtau":0.0,"intents":[{"k":"ai_open","kind":"voice","purpose":"line","entity_id":"medic","line_req":"1"}]}
+{"v":2,"type":"input","tick":4,"dtau":0.0,"intents":[{"k":"record","source":"ai","req":"2","kind":"voice","sha256":"1e856506a2dadba2c4ec29990c468ba4676ae2f9870b5fdb21190f949fc8c55d","body":"{\"key\":{\"kind\":\"voice\",\"entity_id\":\"medic\",\"emotion\":\"-\",\"age_stage\":0,\"variant\":\"87ad711300fe3348\"},\"mime\":\"audio/ogg\",\"bytes\":32917,\"duration_ms\":8298,\"segments_ms\":[0,1850,4198]}"}]}
+{"v":2,"type":"input","tick":5,"dtau":0.0,"intents":[]}
+{"v":2,"type":"quit"}
