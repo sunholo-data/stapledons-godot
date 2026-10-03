@@ -21,12 +21,12 @@
   },
   "map": {
     "mp4": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/eac3b8076575076a8e20193e9ede016814f189849b782ab869993731d309db66.mp4",
-      "bytes": 7421884
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/62d77d17e76b5e83aa17d9eb17f4abae7e65ccf3f75f9beaf669e3dcaf9f274a.mp4",
+      "bytes": 8267288
     },
     "webm": {
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/f7199e3e66678faf53970a12e77136ccc011e01775c1702bc8d395fd46f3adb3.webm",
-      "bytes": 8216476
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/6da3466987860825345e15aa58ace40bf89c82519008bdcff4f239cd3fdffbd5.webm",
+      "bytes": 8890845
     }
   },
   "cmb": {
@@ -47,6 +47,16 @@
     "webm": {
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/f01c9d04c75f57d424a17de7e69eae7259e88b6ec22d33ee62addeb233bfa164.webm",
       "bytes": 1275387
+    }
+  },
+  "medic": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/9c14304928d5ce13b2f3a299df46b93831168f82b4e7aa2fe99a449ffc8ad2df.mp4",
+      "bytes": 350701
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/6ac363a3577c552126cadb24c54b419a0b6bc83e68e3bd7e3ddb373c48b920a4.webm",
+      "bytes": 334331
     }
   }
 }

@@ -55,35 +55,35 @@ const GALLERY = [
     file: 'map-plan.jpg',
     title: 'Galaxy map: plan a journey',
     caption:
-      'Every number on the panel comes from the AILANG simulation: ship-years, Earth-years, boost energy, drag, the forward CMB temperature. Here: α Centauri A at 0.999917c, 0.056 ship-years against 4.357 Earth-years.',
+      'Every number on the panel comes from the AILANG simulation: ship-years, Earth-years, boost energy, drag, the forward CMB temperature. Here: α Centauri A at 0.999917c, 0.0556 ship-years against 4.321 Earth-years.',
     group: 'map',
   },
   {
     file: 'map-commit.jpg',
     title: 'Commit, and you cannot take it back',
     caption:
-      '"A commitment cannot be undone. Hold for 1.5 s to commit." At 0.99c, 0.6208 years for you and 4.400 for everyone at home.',
+      '"A commitment cannot be undone. Hold for 1.5 s to commit." At 0.99c, 0.6157 years for you and 4.365 for everyone at home.',
     group: 'map',
   },
   {
     file: 'map-transit.jpg',
     title: 'In transit: Cancel is refused',
     caption:
-      'The simulation, not the UI, owns the commit rule. Mid-cruise the ship clock reads +0.32 yr while Earth\'s reads +2.27 yr.',
+      'The simulation, not the UI, owns the commit rule. Mid-cruise the ship clock reads +0.32 yr while Earth\'s reads +2.24 yr.',
     group: 'map',
   },
   {
     file: 'map-arrived.jpg',
     title: 'Arrival',
     caption:
-      'Arrived at α Centauri A: +0.6257 years on the ship clock, +4.4054 on Earth\'s. The energy radiated over the whole trip equals the plan, 6.123e17 J.',
+      'Arrived at α Centauri A: +0.6212 years on the ship clock, +4.3702 on Earth\'s. The energy radiated over the whole trip equals the plan, 6.112e17 J.',
     group: 'map',
   },
   {
     file: 'map-overview.jpg',
     title: 'The neighbourhood, from the real catalogues',
     caption:
-      'The galaxy map drawn from the binary catalogue tiers, Sol at the centre (the M1.7 catalogue switch).',
+      'The galaxy map drawn from the binary catalogue tiers: the 5,687 stars within 25 pc, Sol at the centre (M1.7).',
     group: 'map',
   },
 ];

@@ -1,0 +1,21 @@
+release:
+  label: Release
+  description: A versioned GitHub release, with its review build.
+progress:
+  label: Progress
+  description: Merged work between releases.
+sky:
+  label: Sky
+  description: The relativistic sky and the star catalogues.
+journey:
+  label: Journey
+  description: Planning, committing and flying journeys.
+ai:
+  label: AI
+  description: The optional crew AI layer.
+planets:
+  label: Planets
+  description: Planets, moons and flybys (M5).
+art:
+  label: Art
+  description: Concept and in-game art.

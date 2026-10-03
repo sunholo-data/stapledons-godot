@@ -14,7 +14,7 @@ relativistic time dilation. You have **100 subjective years** aboard your ship.
 
 Every journey is a trade. Pick a destination and a cruise speed between 0.9c and 0.999999c. The
 faster you go, the less time passes for you, and the more centuries pass for everyone else.
-Civilisations you have just met may be extinct, transcendent or unrecognisable when you return.
+The galaxy you leave is not the galaxy you come back to.
 
 The game is named after [Olaf Stapledon](https://en.wikipedia.org/wiki/Olaf_Stapledon), author
 of *Star Maker* and *Last and First Men*: vast timescales, philosophical exploration, and the
@@ -49,15 +49,20 @@ numbers on the screen are the ones you would compute by hand.
 The game is **pre-alpha**. Release 1 builds the foundations, and is partly done:
 
 - **Running today:** the relativistic sky (335,157 real stars over the Milky Way, aberration,
-  Doppler colour and beaming, a photometric naked-eye exposure), and the journey core (the
-  galaxy map, the planner, the irreversible commit, the two clocks, deterministic replay).
-- **Also merged:** the forward cosmic-background disc at high γ (M1.8), and the galaxy map on
-  the binary catalogue tiers (M1.7).
-- **Planned for Release 1:** black holes rendered to general relativity (M3) and the first
-  playable journey with a placeholder ship deck (M4).
-- **The full vision, after Release 1:** a galaxy simulation of civilisations that rise, merge
-  and die while you travel; a crew that ages and has children; trading technology and ideas;
-  and a legacy report when the game fast-forwards to Year 1,000,000.
+  Doppler colour and beaming, a photometric naked-eye exposure, the forward glow of the cosmic
+  background at high γ); the galaxy map on the real catalogues, with companion stars at their
+  system's distance; the journey core (the planner, the irreversible commit, the two clocks,
+  deterministic replay); and, on a test stub, the crew's optional AI layer with the Medic's
+  conversation scene.
+- **In progress:** the first playable journey through the ship's interior (M4, its first steps
+  merged, including the first bridge art), and planets and flybys inside a star system (M5, a new
+  milestone whose physics packages are published).
+- **Planned for Release 1:** black holes rendered to general relativity (M3).
+- **After Release 1:** the wider game: a galaxy that changes while you travel, a finite crew,
+  trade in technology and ideas. None of it is built yet.
+
+Concept art for the captain, the crew and the bridge is on the [concept art](/concept-art) page,
+and every release gets a [news](/news) post.
 
 See the [roadmap](roadmap.md) for the detail.
 

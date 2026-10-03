@@ -24,6 +24,14 @@ Third-party assets keep their own licences, and the Apache licence does not cove
 | Fonts on this site (Montserrat, Inter, JetBrains Mono, via Google Fonts) | [SIL Open Font License 1.1](https://openfontlicense.org) |
 | AILANG logo and favicon | AILANG's (Sunholo), used unaltered |
 
+## Art
+
+The concept and game art (the captain, the crew portraits, the bridge) is **AI-assisted**: made
+with image models and Blender under Sunholo's art direction, and owned by Sunholo. Art committed to
+the game repo is covered by its Apache-2.0 licence like the rest of the repo. Art that is only
+hosted in the project's asset bucket (the `refs/` reference sets shown on the
+[concept art](/concept-art) page) is shown here for information, not licensed for reuse.
+
 ## Data
 
 - **Milky Way panorama:** NOIRLab `noirlab2430b` (E. Slawik / NOIRLab / NSF / AURA), licensed

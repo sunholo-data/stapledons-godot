@@ -116,6 +116,12 @@ The sky is drawn from real catalogues, built by AILANG tools from pinned downloa
 Together that is **335,157 stars**, instanced on the GPU, with positions kept in float64 and
 rebased around the ship so the direction to a target at a 1,000 AU stand-off holds to 2.4e-8 rad.
 
+Stars in multiple systems are kept together. A companion within 60″ and 2,000 AU of its system's
+primary, agreeing with it in parallax and proper motion, takes its system's distance instead of its
+own noisier one: 20,524 companions in all, so Sirius B now sits beside Sirius A at 8.6 ly. The
+galaxy map draws the 5,687 stars within 25 pc from the same catalogue tiers, with α Centauri A
+and B as separate, selectable stars.
+
 Behind them is the NOIRLab all-sky Milky Way panorama (E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0). An AILANG pass
 removes the photo stars that the catalogue draws itself (every one brighter than V 4.5, and 96–99%
 of those down to V 7), so stars are not counted twice, and fits a

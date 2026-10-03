@@ -5,6 +5,8 @@
 #
 #   tools/site_media.sh render [CLIP...]   PNG frames -> renders/site/frames/CLIP/ (needs a GPU window)
 #   tools/site_media.sh encode [CLIP...]   frames -> renders/site/CLIP.mp4 (H.264) + .webm (VP9) + poster
+#   tools/site_media.sh asset FILE...      upload any file (full-size art) content-addressed to the same
+#                                          bucket folder; prints "FILE URL" per line
 #   tools/site_media.sh publish [CLIP...]  upload to gs://stapledons-voyage-assets/site/<sha256>.<ext>
 #                                          (--no-clobber, immutable) and rewrite website/src/data/media.json
 #
@@ -80,7 +82,22 @@ publish() {
     echo "site-media-publish: wrote $MANIFEST"
 }
 
+asset() {
+    command -v gcloud >/dev/null || { echo "site-media asset: needs gcloud (maintainers only)" >&2; exit 1; }
+    for src in $clips; do
+        ext=${src##*.}
+        case "$ext" in jpg|jpeg) type=image/jpeg ;; png) type=image/png ;; webp) type=image/webp ;; *) type=application/octet-stream ;; esac
+        sha=$(shasum -a 256 "$src" | cut -d' ' -f1)
+        obj="$BUCKET/$sha.$ext"
+        gcloud storage objects describe "$obj" >/dev/null 2>&1 || \
+            gcloud storage cp --quiet --no-clobber --content-type="$type" \
+                --cache-control="public, max-age=31536000, immutable" "$src" "$obj" >&2
+        echo "$src $PUBLIC/$sha.$ext"
+    done
+}
+
 case "$cmd" in
+    asset) asset ;;
     render) render ;;
     encode) encode ;;
     publish) publish ;;
