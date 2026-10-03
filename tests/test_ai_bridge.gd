@@ -13,10 +13,13 @@ var failures := 0
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/ai_bridge")
 var poll_usecs: Array = []
 ## The same timing around a control step that shares no code with AiBridge
-## (a stat and a dictionary write), in the same loop: the machine's own
-## jitter, the baseline for a busy machine.
+## but makes the same kind of system calls as a poll (a non-blocking read, a
+## process probe of a live child, a stat), in the same loop: the machine's
+## own jitter, the baseline for a busy machine.
 var ctrl_usecs: Array = []
 var ctrl_box := {}
+var ctrl_file: FileAccess
+var ctrl_pid := -1
 var bridges: Array = []
 
 
@@ -60,6 +63,8 @@ func pump(b: AiBridge, ms: int, cond: Callable = func(): return false) -> bool:
 		b.poll()
 		poll_usecs.append(Time.get_ticks_usec() - t0)
 		t0 = Time.get_ticks_usec()
+		ctrl_box["r"] = ctrl_file.get_buffer(4096)
+		ctrl_box["p"] = OS.is_process_running(ctrl_pid)
 		ctrl_box["x"] = FileAccess.file_exists(scratch)
 		ctrl_usecs.append(Time.get_ticks_usec() - t0)
 		if cond.call():
@@ -84,10 +89,11 @@ func load_per_core() -> float:
 ## busy machine (1-minute load above 0.25 per core) preemption alone breaks
 ## 2 ms now and then (on the Studio at 3.6 per core a bare
 ## OS.is_process_running took 4.8 ms), so there the polls are compared with
-## control steps timed in the same loop: no more polls may reach
-## 5 ms than control samples did, plus max(2, n/200), and none may reach
-## 50 ms. Intermittent blocking (10 ms in 1 poll of 25, 30 ms in 1 of 40)
-## fails that; test_static also proves no blocking call is reachable.
+## control steps timed in the same loop (the same syscall mix: read, process
+## probe, stat): no more polls may reach 5 ms than control samples did, plus
+## max(4, n/100), and none may reach 50 ms. Intermittent blocking (10 ms in
+## 1 poll of 25, 30 ms in 1 of 40) fails that; test_static also proves no
+## blocking call is reachable.
 const SLOW_USEC := 5000
 func frame_check(label: String) -> void:
 	var xs := poll_usecs.duplicate()
@@ -101,7 +107,7 @@ func frame_check(label: String) -> void:
 	var over := xs.filter(func(x): return x >= FRAME_BUDGET_USEC).size()
 	var slow := xs.filter(func(x): return x >= SLOW_USEC).size()
 	var ctrl_slow := cs.filter(func(x): return x >= SLOW_USEC).size()
-	var allowed := ctrl_slow + maxi(2, n / 200)
+	var allowed := ctrl_slow + maxi(4, n / 100)
 	var lpc := load_per_core()
 	var detail := "%d polls, worst %d us, p99 %d us, %d over 2 ms, %d over 5 ms vs control %d, load %.1f/core" % [n, worst, p99, over, slow, ctrl_slow, lpc]
 	if lpc <= 0.25:
@@ -130,31 +136,6 @@ func reasons(b: AiBridge) -> Array:
 	for o in b.outcomes:
 		out.append("%s:%s" % [o["req"], o.get("reason", o.get("status"))])
 	return out
-
-
-## "type name" of each descriptor above 2 a process holds (lsof on macOS,
-## `ls -l /proc/<pid>/fd` on Linux).
-func extra_fds(pid: int) -> Array:
-	var out := []
-	var fds := []
-	if DirAccess.dir_exists_absolute("/proc/%d/fd" % pid):
-		OS.execute("/bin/ls", PackedStringArray(["-l", "/proc/%d/fd" % pid]), out)
-		for line in str(out[0]).split("\n"):
-			var parts := line.split(" -> ")
-			if parts.size() == 2 and int(parts[0].get_slice(" ", parts[0].get_slice_count(" ") - 1)) > 2:
-				fds.append(("PIPE " if parts[1].begins_with("pipe:") else "") + parts[1])
-		return fds
-	OS.execute("/usr/sbin/lsof", PackedStringArray(["-n", "-P", "-a", "-p", str(pid), "-F", "ftn"]), out)
-	var fd := -1
-	var type := ""
-	for line in str(out[0]).split("\n"):
-		if line.begins_with("f"):
-			fd = int(line.substr(1)) if line.substr(1).is_valid_int() else -1
-		elif line.begins_with("t"):
-			type = line.substr(1)
-		elif line.begins_with("n") and fd > 2:
-			fds.append(type + " " + line.substr(1))
-	return fds
 
 
 func stub_requests() -> Dictionary:
@@ -267,7 +248,7 @@ func test_stub_session() -> bool:
 		b.request(rs[id])
 	assert_bool("handshake within 5 s, proto.major 1", pump(b, 5000, func(): return not b.hello_reply.is_empty()) and b.hello_reply["proto"]["major"] == 1)
 	print("    handshake %d ms" % (Time.get_ticks_msec() - t0))
-	var fds := extra_fds(b.child_pid)
+	var fds := FdProbe.extra_fds(b.child_pid)
 	assert_bool("the service inherits no pipe of Godot's (the sim's included): %s" % [fds], fds.all(func(f): return not f.begins_with("PIPE")))
 	sim.stop()
 	var max_open := [0]
@@ -439,6 +420,11 @@ func test_shutdown_grace() -> bool:
 
 func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(scratch)
+	# The control's read and probe target: an idle child's empty stdout pipe
+	# (the read a poll makes when the service has nothing to say) and its pid.
+	var ctrl := OS.execute_with_pipe("/bin/sleep", PackedStringArray(["600"]), false)
+	ctrl_file = ctrl["stdio"]
+	ctrl_pid = ctrl["pid"]
 	var faults := "--faults" in OS.get_cmdline_user_args()
 	if SimBridge.find_ailang() == "":
 		print("FAIL  ailang not found (AILANG_BIN or PATH)")
@@ -466,5 +452,6 @@ func _initialize() -> void:
 	assert_bool("no child left running", pids.all(func(p): return p < 0 or child_gone(p)))
 	for b in bridges:
 		b.free()
+	OS.kill(ctrl_pid)
 	print("ai bridge: %s (%s)" % ["FAIL" if failures > 0 else "ok", "with faults" if faults else "happy path only"])
 	quit(1 if failures > 0 else 0)

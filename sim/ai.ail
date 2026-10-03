@@ -228,7 +228,8 @@ pure func keyMatches(want: CacheKey, j: Json) -> bool =
   match get(j, "key") {
     Some(k) => strIs(k, "kind", want.kind) && strIs(k, "entity_id", want.entityId) && strIs(k, "emotion", want.emotion) &&
       natOf(k, "age_stage") == Some(want.ageStage) &&
-      (if want.kind == "voice" || want.kind == "text" then getString(k, "variant") != None else strIs(k, "variant", want.variant)),
+      -- Only media reach here (text records are textResult's); a voice key's variant is sha-derived, so only its presence is checked.
+      (if want.kind == "voice" then getString(k, "variant") != None else strIs(k, "variant", want.variant)),
     None => false
   }
 pure func mimeIs(j: Json, prefix: string) -> bool = match getString(j, "mime") { Some(m) => startsWith(m, prefix) && length(m) > length(prefix), None => false }

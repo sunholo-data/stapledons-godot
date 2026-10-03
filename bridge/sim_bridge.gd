@@ -8,7 +8,8 @@ extends RefCounted
 
 const SIM_FILE := "sim/ship.ail"
 const PROTO_MAJOR := 2
-const PROTO_MINOR := 0
+## 2.1 (AI.3): the sim's `ai` section and AI events; AiRelay reads them (AI.7).
+const PROTO_MINOR := 1
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -33,6 +34,11 @@ var launch_override: Dictionary = {}
 ## When set before start(), every line written to the sim's stdin is also
 ## appended here byte for byte: an NDJSON input log that replays the session.
 var record_path := ""
+## Optional AiRelay (AI.7): unset, nothing changes. Set, its queued intents
+## (`take_intents()`) ride on every send after the caller's, and it is shown
+## every accepted tick's events (`on_events`). Intents of a line the sim does
+## not accept are dropped; their requests expire in the sim (ai_ttl_ticks).
+var ai_relay: Object = null
 var _line_bytes := PackedByteArray()
 
 
@@ -54,7 +60,9 @@ func start() -> bool:
 	if launch.is_empty():
 		return false
 	var started := Time.get_ticks_msec()
-	var proc := OS.execute_with_pipe(launch["bin"], launch["args"], false)
+	# Through the descriptor scrub (as AiBridge): execute_with_pipe sets no
+	# close-on-exec, so the sim would otherwise inherit every pipe Godot holds.
+	var proc := OS.execute_with_pipe(AiBridge.scrub_shell(), AiBridge.scrubbed(launch), false)
 	if proc.is_empty():
 		push_error("failed to start %s" % launch["bin"])
 		return false
@@ -86,13 +94,15 @@ func hello(deadline: int = Time.get_ticks_msec() + 5000) -> bool:
 
 ## Start a world. Returns false (child kept, `last_error` = the sim's reason)
 ## if the sim refuses the request.
-func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: Dictionary = {}) -> bool:
+func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: Dictionary = {}, ai_core: String = "") -> bool:
 	if _pid < 0 or hello_reply.is_empty():
 		last_error = "no_hello"
 		return false
 	var msg := {"v": 2, "type": "new_game", "seed": seed, "scenario": scenario, "diag": diag}
 	if not params.is_empty():
 		msg["params"] = params
+	if ai_core != "":
+		msg["ai_core"] = ai_core
 	_write(encode(msg))
 	if not _read_state(Time.get_ticks_msec() + 2000, "step_timeout"):
 		return false
@@ -122,6 +132,8 @@ func send(intents: Array, dtau: float) -> bool:
 		last_error = "no_game"
 		return false
 	var tick := int(world["tick"]) + 1
+	if ai_relay != null:
+		intents = intents + ai_relay.take_intents()
 	_write(encode({"v": 2, "type": "input", "tick": tick, "dtau": dtau, "intents": intents}))
 	if not _read_state(Time.get_ticks_msec() + 2000, "step_timeout"):
 		return false
@@ -139,6 +151,8 @@ func send(intents: Array, dtau: float) -> bool:
 	world["status"] = "ok"
 	last_refused = state.get("refused", [])
 	last_events = state.get("events", [])
+	if ai_relay != null:
+		ai_relay.on_events(last_events)
 	return true
 
 
