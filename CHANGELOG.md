@@ -8,12 +8,14 @@
   `design_docs/planned/r1/m1-companion-parallax.md`): a star within 60″ and
   2,000 AU of a brighter star, with parallaxes within 20% (and 5% or 3σ) and
   proper motions within the orbital bound, takes the system root's parallax.
-  `make companions` writes `data/starmap/companions/companions.csv` (20,524 companions over
-  CNS5 + GCNS + the bright tier); every tier and `stars.json` apply it. Sirius B
+  `make companions` writes `data/starmap/companions/companions.csv` (20,515 companions over
+  CNS5 + GCNS + the bright tier; 9 cross-identifications, e.g. GJ 10136 = CNS5:252,
+  dropped as the same star); every tier and `stars.json` apply it, the GCNS tiers move
+  CNS5-record roots with their companions, and every build refuses a split pair. Sirius B
   now 8.601 ly (was 8.709), Luyten 726-8 B 8.817 (was 8.724), Wolf 424 B 14.112
   (was 14.593). α Cen B is the old rule (c) case: its bytes are unchanged;
-  `bright_overrides.json` is retired. No primary row moves; every non-companion
-  row is byte-identical.
+  `bright_overrides.json` is retired. No primary row moves in quick, bright or the map; every non-companion
+  row is byte-identical (the GCNS tiers also move 488 root rows).
 - **Tests:** `make companions-test` (thresholds just inside/outside, real-line
   fixtures, strict VM = interpreter); `tools/check_companions.py` (oracle) in
   `make catalogue-verify`.

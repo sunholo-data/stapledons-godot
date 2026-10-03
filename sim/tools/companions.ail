@@ -26,20 +26,21 @@ import ./catalogue (Row)
 import ./extract (number, distanceLy)
 import ./bright (Astro, Phot, directionFrom, directionAt, findAll, indexBy)
 import std/string (substring, trim, length, split, concat, compare, startsWith, join, floatToStr, stringToFloat)
-import std/list (map, filter, flatMap, sortBy, range, zipWith, drop, length as size)
+import std/list (map, filter, flatMap, sortBy, range, zipWith, zip, drop, take, length as size)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/math (sqrt, floatToInt, PI)
-import std/array (fromList as toArray, get, length as alen)
+import std/array (fromList as toArray, toList, get, length as alen)
 
 -- id: the tier row id ("<Gaia id>", "CNS5:<n>", "HIP <n>"); u: galactic unit vector at J2016.0;
 -- plx, eplx mas; pmra (pmRA*), pmde mas/yr; mag: G (CNS5, GCNS; CNS5 falls back to Hipparcos G,
 -- then its adopted G) or Hipparcos V (bright rows), 99 when unknown; epoch: the epoch of the
 -- star's own tier position (a bright companion is placed at its root's epoch, as rule (c) did).
-export type Star = {id: string, ux: float, uy: float, uz: float, plx: float, eplx: float, pmra: float, pmde: float, mag: float, epoch: float}
+-- cat: the record's catalogue, "cns5", "gcns" or "hip".
+export type Star = {id: string, cat: string, ux: float, uy: float, uz: float, plx: float, eplx: float, pmra: float, pmde: float, mag: float, epoch: float}
 -- A companion: its id, its parent and root, the root's parallax and epoch, its own parallax, and
--- the separation (arcsec) and projected separation (AU) to its parent.
-export type Link = {id: string, parent: string, root: string, plx: float, epoch: float, ownPlx: float, sep: float, au: float}
+-- the separation (arcsec) and projected separation (AU) to its parent; rootCat: the root record's catalogue.
+export type Link = {id: string, parent: string, root: string, rootCat: string, plx: float, epoch: float, ownPlx: float, sep: float, au: float}
 
 export pure func maxSepArcsec() -> float = 60.0
 export pure func maxProjAu() -> float = 2000.0
@@ -56,9 +57,9 @@ pure func field(line: string, lo: int, hi: int) -> Option[float] = number(colAt(
 pure func firstOf(xs: [Option[float]], dflt: float) -> float = match flatMap(\o. match o { Some(v) => [v], None => [] }, xs) {
   v :: _ => v, [] => dflt }
 pure func deg() -> float = PI() / 180.0
-pure func star(id: string, ra: float, dec: float, epoch: float, plx: float, eplx: float, pmra: float, pmde: float, mag: float) -> Star =
+pure func star(cat: string, id: string, ra: float, dec: float, epoch: float, plx: float, eplx: float, pmra: float, pmde: float, mag: float) -> Star =
   match directionFrom(ra * deg(), dec * deg(), pmra, pmde, 2016.0 - epoch) {
-    (x, y, z) => {id: id, ux: x, uy: y, uz: z, plx: plx, eplx: eplx, pmra: pmra, pmde: pmde, mag: mag, epoch: epoch} }
+    (x, y, z) => {id: id, cat: cat, ux: x, uy: y, uz: z, plx: plx, eplx: eplx, pmra: pmra, pmde: pmde, mag: mag, epoch: epoch} }
 -- All of a row's numbers, or nothing (a row the rule cannot judge is never a candidate).
 pure func present(xs: [Option[float]]) -> [float] = flatMap(\o. match o { Some(v) => [v], None => [] }, xs)
 
@@ -71,7 +72,7 @@ pure func cnsStar(line: string) -> [Star] {
   match present([field(line, 55, 74), field(line, 76, 98), field(line, 100, 108), field(line, 130, 148),
       field(line, 150, 162), field(line, 184, 206), field(line, 230, 252)]) {
     [ra, de, ep, plx, e, pa, pd] => if plx <= 0.0 then [] else
-      [star(id, ra, de, ep, plx, e, pa, pd, firstOf([field(line, 362, 371), field(line, 461, 480), field(line, 544, 555)], 99.0))],
+      [star("cns5", id, ra, de, ep, plx, e, pa, pd, firstOf([field(line, 362, 371), field(line, 461, 480), field(line, 544, 555)], 99.0))],
     _ => []
   }
 }
@@ -81,7 +82,7 @@ export pure func cnsStars(text: string) -> [Star] = flatMap(cnsStar, split(text,
 pure func gcnsStar(line: string) -> [Star] = match present([field(line, 23, 36), field(line, 46, 59), field(line, 69, 77),
     field(line, 79, 85), field(line, 87, 95), field(line, 105, 113)]) {
   [ra, de, plx, e, pa, pd] => if plx <= 0.0 then [] else
-    [star(trim(colAt(line, 3, 21)), ra, de, 2016.0, plx, e, pa, pd, firstOf([field(line, 123, 130)], 99.0))],
+    [star("gcns", trim(colAt(line, 3, 21)), ra, de, 2016.0, plx, e, pa, pd, firstOf([field(line, 123, 130)], 99.0))],
   _ => []
 }
 export pure func gcnsStars(text: string) -> [Star] = flatMap(gcnsStar, split(text, "\n"))
@@ -99,7 +100,7 @@ export pure func hipStars(rows: [Row], hips: [Astro], errs: Array[HipErr], phot:
       [a] => match findAll(errs, \x. x.hip, h) {
         [e] => match findAll(phot, \p. p.hip, h) {
           [p] => match directionAt(a, 2016.0) { (x, y, z) =>
-            [{id: r.id, ux: x, uy: y, uz: z, plx: a.plx, eplx: e.e, pmra: a.pmra, pmde: a.pmde, mag: p.v, epoch: 2016.0}] },
+            [{id: r.id, cat: "hip", ux: x, uy: y, uz: z, plx: a.plx, eplx: e.e, pmra: a.pmra, pmde: a.pmde, mag: p.v, epoch: 2016.0}] },
           _ => [] },
         _ => [] },
       _ => [] } }, rows)
@@ -114,10 +115,35 @@ export pure func findId[a](arr: Array[a], key: a -> string, k: string) -> Option
   let i = lowerS(arr, key, k, 0, alen(arr));
   if i < alen(arr) && key(get(arr, i)) == k then Some(get(arr, i)) else None
 }
--- CNS5 stars, then GCNS stars that are not CNS5 rows, then bright rows.
-export pure func candidates(cns: [Star], gcns: [Star], hip: [Star]) -> [Star] {
+-- One record per star. A GCNS row whose Gaia id is a CNS5 row is that row. A GCNS row that is not in
+-- CNS5 but sits within 2 arcsec of a CNS5 row WITHOUT a Gaia id, or of a bright (HIP) row, with the
+-- pair test's parallax and motion agreement (and, for a HIP row, |G - V| < 0.5), is that same star
+-- listed under another name (a cross-identification: CNS5 adopted a non-Gaia parallax, or rule (a)'s
+-- 1 arcsec GCNS match missed it): the GCNS record is dropped, so the star is never its own companion.
+-- Seen: CNS5:252 = GJ 10136 on Gaia 2371519626175864960 (0.024 arcsec); HIP 27890 on Gaia
+-- 4756622820871136640 (1.03 arcsec, V 4.65 / G 4.34). CNS5 components listed beside their primary
+-- (a "B" row on its A's position) stay companions: their partner is a CNS5 row.
+export type Same = {id: string, gaia: string, sep: float}
+export type Candidates = {stars: [Star], same: [Same]}
+pure func sameMax() -> float = 2.0 / arcsecPerRad()
+pure func nonGaia(s: Star) -> bool = s.cat == "hip" || startsWith(s.id, "CNS5:")
+export pure func sameStar(n: Star, g: Star) -> bool =
+  chord2(n, g) <= sameMax() * sameMax() && (n.cat != "hip" || absF(n.mag - g.mag) < 0.5) &&
+    (if outranks(n, g) then samePair(n, g, chord(n, g) * arcsecPerRad()) else samePair(g, n, chord(n, g) * arcsecPerRad()))
+pure func sameScan(arr: Array[Star], n: Star, j: int) -> [Same] =
+  if j >= alen(arr) then [] else { let g = get(arr, j);
+    if g.uz > n.uz + sameMax() then []
+    else if sameStar(n, g) then {id: n.id, gaia: g.id, sep: chord(n, g) * arcsecPerRad()} :: sameScan(arr, n, j + 1)
+    else sameScan(arr, n, j + 1) }
+export pure func candidates(cns: [Star], gcns: [Star], hip: [Star]) -> Candidates {
   let ids = byId(\s. s.id, cns);
-  flatMap(\x. x, [cns, filter(\s. match findId(ids, \c. c.id, s.id) { Some(_) => false, None => true }, gcns), hip])
+  let only = filter(\s. match findId(ids, \c. c.id, s.id) { Some(_) => false, None => true }, gcns);
+  let arr = toArray(sortBy(\a b. if a.uz < b.uz then -1 else if a.uz > b.uz then 1 else compare(a.id, b.id), only));
+  let same = sortBy(\a b. compare(a.id, b.id), flatMap(\n. if nonGaia(n) then sameScan(arr, n, lowerZ(arr, n.uz - sameMax(), 0, alen(arr))) else [],
+    flatMap(\x. x, [cns, hip])));
+  let dropped = byId(\x. x.gaia, same);
+  {stars: flatMap(\x. x, [cns, filter(\s. match findId(dropped, \x. x.gaia, s.id) { Some(_) => false, None => true }, only), hip]),
+    same: same}
 }
 
 -- p outranks q: brighter, then the smaller parallax error, then the smaller id (a total order).
@@ -163,7 +189,7 @@ export pure func systems(stars: [Star]) -> [Link] {
   sortBy(\a b. compare(a.id, b.id), flatMap(\i. { let pi = get(parents, i);
     if pi < 0 then [] else {
       let q = get(arr, i); let p = get(arr, pi); let r = get(arr, rootOf(parents, i)); let s = chord(p, q) * arcsecPerRad();
-      [{id: q.id, parent: p.id, root: r.id, plx: r.plx, epoch: r.epoch, ownPlx: q.plx, sep: s, au: s * 1000.0 / p.plx}]
+      [{id: q.id, parent: p.id, root: r.id, rootCat: r.cat, plx: r.plx, epoch: r.epoch, ownPlx: q.plx, sep: s, au: s * 1000.0 / p.plx}]
     } }, range(0, n)))
 }
 export pure func linkIndex(links: [Link]) -> Array[Link] = toArray(links)
@@ -177,6 +203,41 @@ export pure func moveRow(r: Row, l: Link) -> Row {
 }
 export pure func applyRows(rows: [Row], links: Array[Link]) -> [Row] =
   map(\r. match findId(links, \l. l.id, r.id) { Some(l) => moveRow(r, l), None => r }, rows)
+-- The GCNS tiers (medium, large): a root whose record is a CNS5 row also has a GCNS row (EDR3
+-- parallax); it moves to the root record's parallax too, so it sits with its companions. Roots from
+-- GCNS are their own record there and stay. (Quick and bright rows are their roots' own records.)
+export type Root = {id: string, plx: float}
+export pure func cnsRoots(links: Array[Link]) -> Array[Root] =
+  byId(\x. x.id, dedupRoots(sortBy(\a b. compare(a.id, b.id), map(\l. {id: l.root, plx: l.plx}, filter(\l. l.rootCat == "cns5", toList(links))))))
+pure func dedupRoots(xs: [Root]) -> [Root] = flatMap(\p. match p { (a, b) => if a.id == b.id then [] else [b] },
+  zip({id: "", plx: 0.0} :: xs, xs))
+export pure func applyGcnsRows(rows: [Row], links: Array[Link]) -> [Row] {
+  let roots = cnsRoots(links);
+  map(\r. match findId(links, \l. l.id, r.id) {
+    Some(l) => moveRow(r, l),
+    None => match findId(roots, \x. x.id, r.id) {
+      Some(x) => moveRow(r, {id: r.id, parent: "", root: x.id, rootCat: "cns5", plx: x.plx, epoch: 0.0, ownPlx: 0.0, sep: 0.0, au: 0.0}),
+      None => r } }, rows)
+}
+export pure func rootsIn(rows: [Row], links: Array[Link]) -> int {
+  let roots = cnsRoots(links);
+  size(filter(\r. match findId(roots, \x. x.id, r.id) { Some(_) => match findId(links, \l. l.id, r.id) { Some(_) => false, None => true }, None => false }, rows))
+}
+-- The tier check: every companion whose root is also a row of the tier is at the root's distance
+-- there (within 1e-5 ly: the CNS5/GCNS CSV positions carry 1e-6 ly digits). The ids of split pairs.
+pure func absD(x: float) -> float = if x < 0.0 then 0.0 - x else x
+export pure func splitPairs(rows: [Row], links: Array[Link]) -> [string] {
+  let by = byId(\r. r.id, rows);
+  flatMap(\r. match findId(links, \l. l.id, r.id) {
+    Some(l) => match findId(by, \x. x.id, l.root) {
+      Some(root) => if absD(lenOf(r) - lenOf(root)) <= 0.00001 then [] else [concat([r.id, " vs root ", l.root])],
+      None => [] },
+    None => [] }, rows)
+}
+export pure func checkTier(rows: [Row], links: Array[Link]) -> Result[[Row], string] = match splitPairs(rows, links) {
+  [] => Ok(rows),
+  bad => Err(concat(["companion rule: companions not at their root's distance in this tier: ", join(", ", take(10, bad))]))
+}
 -- A bright row: its HIP2 direction propagated to the root's epoch, at the root's distance (rule (c)'s
 -- arithmetic exactly, so alpha Cen B's bytes are unchanged).
 export pure func applyHip(rows: [Row], hips: [Astro], links: Array[Link]) -> [Row] {
@@ -206,19 +267,19 @@ export pure func checkPinned(links: Array[Link]) -> Result[(), string] {
 -- data/starmap/companions/companions.csv: the rule's output, one companion per line, sorted by id; floats in
 -- shortest round-trip form (floatToStr), so every tier reads back exactly the values computed here.
 -- Lines starting with "#" carry the provenance (rule, input digests) and are skipped on reading.
-export pure func linksHeader() -> string = "id,root,root_plx,root_epoch,parent,sep_arcsec,proj_au,own_plx"
+export pure func linksHeader() -> string = "id,root,root_cat,root_plx,root_epoch,parent,sep_arcsec,proj_au,own_plx"
 export pure func linkLine(l: Link) -> string =
-  join(",", [l.id, l.root, floatToStr(l.plx), floatToStr(l.epoch), l.parent, floatToStr(l.sep), floatToStr(l.au), floatToStr(l.ownPlx)])
+  join(",", [l.id, l.root, l.rootCat, floatToStr(l.plx), floatToStr(l.epoch), l.parent, floatToStr(l.sep), floatToStr(l.au), floatToStr(l.ownPlx)])
 export pure func linksText(comments: [string], links: [Link]) -> string =
   concat([join("\n", flatMap(\x. x, [map(\c. concat(["# ", c]), comments), [linksHeader()], map(linkLine, links)])), "\n"])
 pure func num(s: string) -> Option[float] = stringToFloat(s)
 pure func parseLink(line: string) -> Result[Link, string] = match split(line, ",") {
-  [id, root, plx, ep, parent, sep, au, own] => match present([num(plx), num(ep), num(sep), num(au), num(own)]) {
+  [id, root, cat, plx, ep, parent, sep, au, own] => match present([num(plx), num(ep), num(sep), num(au), num(own)]) {
     [p, e, s, a, o] => if id == "" || root == "" || p <= 0.0 then Err(concat(["companions.csv: bad row ", line]))
-      else Ok({id: id, parent: parent, root: root, plx: p, epoch: e, ownPlx: o, sep: s, au: a}),
+      else Ok({id: id, parent: parent, root: root, rootCat: cat, plx: p, epoch: e, ownPlx: o, sep: s, au: a}),
     _ => Err(concat(["companions.csv: bad number in ", line]))
   },
-  _ => Err(concat(["companions.csv: expected 8 fields in ", line]))
+  _ => Err(concat(["companions.csv: expected 9 fields in ", line]))
 }
 -- The links in file order; refused unless the header is right and the ids are strictly increasing
 -- (sorted and unique, as the binary search needs).

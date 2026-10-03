@@ -17,7 +17,8 @@ import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
 
 deps:              ## fetch locked AILANG packages into the cache; fail if the resolution would change
-	cd sim && $(AILANG) lock
+	@# resolve AILANG first: a relative path (make test AILANG=runtime/bin/ailang) must still work after the cd
+	a=$$(command -v $(AILANG)); case $$a in /*) ;; *) a=$$PWD/$$a;; esac; cd sim && $$a lock
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 

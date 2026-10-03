@@ -13,12 +13,28 @@ the same companions, parents and roots, the same root parallax (bit for bit: bot
 catalogue text), separations within 0.005 arcsec (the two propagations differ by up to ~1 mas for
 fast stars at the Hipparcos epoch, 25 years from J2016.0).
 
-Run by `make catalogue-verify` (needs data/raw). Exit 1 on any disagreement.
+Cross-identifications (a CNS5 row without a Gaia id sitting within 2 arcsec of a GCNS source that is
+not in CNS5, with the pair test's parallax and motion agreement) are the same star: the GCNS record
+is dropped before pairing, as in the AILANG rule; the oracle finds them its own way and compares the
+list with the table's "# same:" lines (HIP ones excepted).
+
+Two more checks:
+  * stars.json: every companion whose root is also a map row sits at the root's distance (1e-5 ly).
+  * chance alignments, by the evaluator's method (companions round 1): a CRC32-selected half of all
+    stars is rotated in RA by 0.7 and by 1.9 degrees; a pair whose members fall in different halves
+    and pass the rule is a pure chance alignment. The count (x2 for the whole sky) is printed; more
+    than 10 per sky fails.
+
+Run by `make catalogue-verify` (needs data/raw). Exit 1 on any disagreement. With
+`--precision CSV` it also writes the links where the root's parallax is less precise than the
+companion's own (by over 3x) and differs from it by more than 5% (the design note's precision appendix).
 """
 import bisect
 import gzip
+import json
 import math
 import sys
+import zlib
 
 RAW = "data/raw/"
 TABLE = "data/starmap/companions/companions.csv"
@@ -58,7 +74,7 @@ def cns5():
     return out
 
 
-def gcns(skip):
+def gcns(skip, g_only_ids=None):
     out = []
     with gzip.open(RAW + "table1c.dat.gz", "rt") as f:
         for line in f:
@@ -68,6 +84,8 @@ def gcns(skip):
             sid = line[2:21].strip()
             if sid in skip:
                 continue
+            if g_only_ids is not None:
+                g_only_ids.add(sid)
             g = num(line, 123, 130)
             out.append(star(sid, ra, de, 2016.0, plx, e, pa, pd, 99.0 if g is None else g))
     return out
@@ -114,19 +132,115 @@ def companions(stars):
 
 
 def table():
-    rows = {}
+    rows, same = {}, {}
     for line in open(TABLE):
+        if line.startswith("# same: "):
+            name, rest = line[8:].split(" = ")
+            same[name] = rest.split(",")[0]
+            continue
         if line.startswith("#") or line.startswith("id,"):
             continue
         f = line.rstrip("\n").split(",")
-        rows[f[0]] = {"root": f[1], "plx": float(f[2]), "parent": f[4], "sep": float(f[5])}
-    return rows
+        rows[f[0]] = {"root": f[1], "plx": float(f[3]), "parent": f[5], "sep": float(f[6])}
+    return rows, same
+
+
+def sep_arcsec(p, q):
+    return 2 * math.asin(math.dist(p["u"], q["u"]) / 2) * 206264.80624709636
+
+
+def cross_ids(cns_stars, gcns_only):
+    """CNS5 rows named CNS5:n (no Gaia id) -> the GCNS-only source they are."""
+    by_dec = sorted(gcns_only, key=lambda s: s["u"][2])
+    zs = [s["u"][2] for s in by_dec]
+    lim = 2.0 / 206264.80624709636 * 1.000001
+    out = {}
+    for n in cns_stars:
+        if not n["id"].startswith("CNS5:"):
+            continue
+        j = bisect.bisect_left(zs, n["u"][2] - lim)
+        while j < len(by_dec) and zs[j] <= n["u"][2] + lim:
+            g = by_dec[j]
+            sep = sep_arcsec(n, g)
+            if sep <= 2.0:
+                p, q = (n, g) if key(n) < key(g) else (g, n)
+                if same_system(p, q, sep):
+                    out[n["id"]] = g["id"]
+            j += 1
+    return out
+
+
+def chance(stars):
+    """Pairs between two halves of the sky after rotating one half in RA (evaluator's method)."""
+    total = []
+    for deg in (0.7, 1.9):
+        c, s_ = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+        moved = []
+        for t in stars:
+            if zlib.crc32(t["id"].encode()) & 1:
+                x, y, z = t["u"]
+                t = dict(t, u=(c * x - s_ * y, s_ * x + c * y, z), half=1)
+            else:
+                t = dict(t, half=0)
+            moved.append(t)
+        moved.sort(key=lambda t: t["u"][2])
+        zs = [t["u"][2] for t in moved]
+        lim = 2 * math.sin(N_ARCSEC / 206264.80624709636 / 2) * 1.000001
+        n = 0
+        for i, a in enumerate(moved):
+            j = i + 1
+            while j < len(moved) and zs[j] - zs[i] <= lim:
+                b = moved[j]
+                if a["half"] != b["half"]:
+                    sep = sep_arcsec(a, b)
+                    p, q = (a, b) if key(a) < key(b) else (b, a)
+                    if sep <= N_ARCSEC and same_system(p, q, sep):
+                        n += 1
+                j += 1
+        total.append(2 * n)
+    return total
+
+
+def write_precision(path, py, by):
+    worse = big = 0
+    rows = []
+    for sid, o in sorted(py.items()):
+        q, r = by[sid], by[o["root"]]
+        if r["eplx"] > q["eplx"]:
+            worse += 1
+            if r["eplx"] > 3 * q["eplx"] and abs(q["plx"] - r["plx"]) > 0.05 * q["plx"]:
+                big += 1
+                rows.append(f"{sid},{o['root']},{q['plx']},{q['eplx']},{r['plx']},{r['eplx']},"
+                            f"{1000 / q['plx'] * 3.261563777:.4f},{1000 / r['plx'] * 3.261563777:.4f}")
+    with open(path, "w") as f:
+        f.write(f"# companion rule precision appendix (tools/check_companions.py --precision): of {len(py)} CNS5/GCNS links,\n"
+                f"# {worse} give the companion a less precise parallax than its own; in these {big} the root's error is over 3x the\n"
+                f"# companion's and the move is over 5%.\n")
+        f.write("id,root,own_plx,own_eplx,root_plx,root_eplx,own_dist_ly,root_dist_ly\n" + "\n".join(rows) + "\n")
+    print(f"precision: {worse} of {len(py)} links less precise at the root; {big} over 3x and > 5% -> {path}")
+
+
+def map_split():
+    stars = json.load(open("data/starmap/stars.json"))["stars"]
+    by = {s["id"].replace("Gaia DR3 ", ""): s for s in stars}
+    ail, _ = table()
+    bad = []
+    for sid, r in ail.items():
+        if sid in by and r["root"] in by and abs(by[sid]["dist_ly"] - by[r["root"]]["dist_ly"]) > 1e-5:
+            bad.append(f"stars.json: {sid} at {by[sid]['dist_ly']} vs root {r['root']} at {by[r['root']]['dist_ly']}")
+    return bad
 
 
 def main():
     c = cns5()
-    py = companions(c + gcns({s["id"] for s in c}))
-    ail = table()
+    g_only = set()
+    g = gcns({s["id"] for s in c}, g_only)
+    same_py = cross_ids(c, g)
+    g = [s for s in g if s["id"] not in set(same_py.values())]
+    py = companions(c + g)
+    ail, same_ail = table()
+    if "--precision" in sys.argv:
+        write_precision(sys.argv[sys.argv.index("--precision") + 1], py, {s["id"]: s for s in c + g})
     hip = lambda sid, r: sid.startswith("HIP ") or r["parent"].startswith("HIP ") or r["root"].startswith("HIP ")
     skipped = {sid for sid, r in ail.items() if hip(sid, r)}
     bad = []
@@ -145,8 +259,17 @@ def main():
                       ("3902874650601954816", "3902874650602495232")):
         if py.get(pin, {}).get("root") != root:
             bad.append(f"oracle: {pin} root {py.get(pin, {}).get('root')}, want {root}")
+    same_cns = {k: v for k, v in same_ail.items() if k.startswith("CNS5:")}
+    if same_cns != same_py:
+        bad.append(f"cross-identifications: table {sorted(same_cns.items())} vs oracle {sorted(same_py.items())}")
+    bad += map_split()
+    ch = chance(c + g)
+    if max(ch) > 10:
+        bad.append(f"chance alignments {ch} per sky exceed 10")
     print(f"check_companions: oracle {len(py)} companions over CNS5 + GCNS; table {len(ail)}, "
-          f"{len(skipped)} involving bright (HIP) rows not compared; {len(bad)} disagreements")
+          f"{len(skipped)} involving bright (HIP) rows not compared; cross-identifications {len(same_py)} (CNS5) "
+          f"agree; stars.json pairs together; chance alignments per sky at 0.7 / 1.9 deg: {ch[0]} / {ch[1]}; "
+          f"{len(bad)} disagreements")
     for b in bad[:20]:
         print("  " + b)
     return 1 if bad else 0

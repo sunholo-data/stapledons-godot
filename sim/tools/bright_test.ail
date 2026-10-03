@@ -143,7 +143,7 @@ pure func checkSharedHipGuard(t: Texts) -> bool {
 -- 4.321 ly), 19 arcsec from A on the sky (~4e-4 ly, ~25 AU). Rule (c) did this by hand before.
 pure func companionRows(t: Texts) -> [Row] = match world(t, "") {
   Ok(b) => applyHip(b.rows, parseHip2(t.h2), linkIndex(systems(candidates(cnsStars(t.c5), [],
-    hipStars(b.rows, parseHip2(t.h2), hipErrors(t.h2), parseHipMain(t.hm)))))),
+    hipStars(b.rows, parseHip2(t.h2), hipErrors(t.h2), parseHipMain(t.hm))).stars))),
   Err(_) => [] }
 pure func checkAlphaCenBRaw(t: Texts) -> bool = match rowOf(t, "HIP 71681") {
   [b] => within(dist(b), 1000.0 / 796.92 * 3.261563777, 0.000001), _ => false }
