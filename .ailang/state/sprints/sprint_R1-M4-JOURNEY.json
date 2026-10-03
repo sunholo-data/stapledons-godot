@@ -151,7 +151,16 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "Package half done: medium.glowEmittanceAt released in sunholo/relativity 0.6.0 (ailang-packages PR #92), independent eval 97/100, 9/9 mutants killed. The game-side pin was never landed at 0.6.0: M5.1a (R1-M5-PLANETS, branch sprint/m5.1a-system-data) pins relativity 0.7.0, which carries glowEmittanceAt unchanged, so that pin (commit 5057d92, its own self-contained commit) is this item's game-side pin, done. V23 re-probe still to run against the pinned version.",
+      "package_release": {
+        "version": "sunholo/relativity@0.6.0",
+        "published": true,
+        "eval": {
+          "file": ".ailang/state/evaluations/eval_R1-M4-JOURNEY-M4.6a_round_1.json",
+          "score": 97,
+          "result": "pass"
+        }
+      }
     },
     {
       "id": "M4.0_AREA_BUNDLES",
