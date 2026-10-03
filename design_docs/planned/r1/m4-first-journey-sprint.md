@@ -373,6 +373,12 @@ fields, no arithmetic on physics values).
 - Phase sequence boost → cruise → brake with no flip event.
 
 #### M4.2: The iso interior with the live sky — Track B (art-gated)
+**Status:** ✅ executed attended (Mark, 2026-10-03), branch `sprint/m4.2-interior`, PR to
+`main` (Mark's instruction for this attended run, not `m4-track-b`). Built on the bridge v1
+bundle and the blockout fixture. AC14 passes on both (`make validate-areas`, `make m4-smoke`).
+G-M4-1..4 run in `make golden`: the glow overlay has its check values in `tests/test_physics.gd`,
+a GPU golden, and renders in `make capture-m4`. The glow stays off in play until the sim emits
+`ship.ism.glow_pole_w_m2` (M4.1 step 2). ⏸ S1: the captures await Mark's review.
 **Scope:** the five-layer composite (M1 background + starfield in an HDR
 `SubViewport`, panorama 0.15, play GLB 1, foreground 1.6, HUD), **one
 tonemap** (AgX + M1.5 exposure in the SubViewport; the parent must not
