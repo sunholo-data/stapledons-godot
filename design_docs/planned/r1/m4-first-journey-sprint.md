@@ -24,6 +24,12 @@ a named package call at a verified 0.5.1 export, V12–V25); the real risks
 are the two unlanded sibling sprints, the GPU gates CI can't run, and one
 over-cap milestone (F1).
 
+**Quorum note.** The design quorum's round 2 ran with **gpt6-1-sol ABSENT**
+(unreachable); the round-2 disposition (the narrow-refinement carve-out)
+rests on the three present external reviewers (oc-kimi-k3, gemini-3-1-pro,
+oc-glm-5-3) with that seat empty. This first carve-out use is surfaced to
+Mark here and again in the M4 report at ⏸ P-land.
+
 **Command legend.**
 - `$A` = `/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
   AILANG **v0.51.0** (Makefile `AILANG_RELEASE`, CI and the lockfile move
@@ -61,8 +67,14 @@ over-cap milestone (F1).
 ### What can start NOW vs what waits
 
 **Startable now (the doc's Track A, plus M4.0 and M4.6a):** M4.6a, M4.0,
-M4.1 — all three have no unlanded dependency (M2 is landed; M4.1's
-`glow_pole_w_m2` step waits only on M4.6a in the same wave). After them:
+M4.1 — all three have no unlanded dependency (M2 is landed). M4.1's
+`glow_pole_w_m2` is **step 2**, a separate later step gated on M4.6a's
+publish (⏸ P-pkg); it is not part of what starts now. M4.6a and M4.1 are
+**not** file-disjoint — M4.6a bumps `sim/ailang.toml`, `sim/ailang.lock`
+and the bundled `runtime/cache` that M4.1 builds against — so they land in
+sequence: M4.1's PR (step 1, at pin 0.5.1) merges **first** and touches
+none of those three; the pin bump lands in its own commit after ⏸ P-pkg;
+M4.1 step 2 follows as a small follow-up on the bumped pin. After them:
 M4.3a → M4.4 ∥ M4.7 → M4.5, and M4.6's **ungated** half (CPU physics tests,
 `lint-precision`) once M4.0 + M4.1 + M4.6a exist.
 
@@ -88,7 +100,7 @@ Planning figures:
   exception: M4.1 is estimated at 700** (F1) — approval of this plan
   includes the waiver-or-split note there.
 - **Pace:** ~2 h per milestone including independent evaluation
-  (generator ≠ judge), in waves of disjoint files. M4 adds GPU gates and a
+  (generator ≠ judge), in waves of mostly disjoint files. M4 adds GPU gates and a
   package publish the loop already knows how to do (M1.P, M2.0 precedent).
 - **Total:** 3,220 counted LOC planned (1,900 code + 1,320 tests). M2's 1.5×
   ratio suggests ~4,800 changed lines actual.
@@ -96,12 +108,19 @@ Planning figures:
 ## Findings made while planning (2026-10-03)
 
 **F1. M4.1 is over the 650 LOC cap (380 + 320 = 700).** The design doc owns
-the estimate and the mission fixes one feature per sub-milestone, so this
-plan does not split it. The milestone has a natural seam — `ship.ism` ships
-in two steps (load/drag/glow at pin 0.5.1; `glow_pole_w_m2` only after
-M4.6a lands) — so if execution overruns, the executor splits at that seam
-and lands step 1 as the milestone, step 2 as a follow-up. The approval ask
-(Q3) includes this waiver.
+the estimate and the sub-milestone structure (one feature per
+sub-milestone, 10 rows), so this plan does **not** pre-split it — a
+pre-split into M4.1a/M4.1b would add an 11th milestone the design doc does
+not define. The risk is real: M2's actual/estimate ratio was ~1.5×, so a
+realistic M4.1 is ~1,000 changed lines. The **named split point** is the
+`ship.ism` seam the doc itself defines — step 1: everything at pin 0.5.1
+(`ship.ism{load_w_m2, drag_n, glow_w_m2}`, `drag_energy_j`, clocks, news,
+legacy log, archive predicates, `record`, `scriptedRoundTrip`); step 2:
+`glow_pole_w_m2` only, already scheduled as a separate step gated on
+M4.6a's publish (⏸ P-pkg). If execution overruns, the executor cuts the
+milestone at that seam: step 1 lands as M4.1, step 2 becomes follow-up
+milestone M4.1b (it is gated on ⏸ P-pkg anyway, so no critical-path
+change). The approval ask (Q3) includes this waiver.
 
 **F2. M1.6b's merge state is ambiguous in the data.** Its JSON row is
 `passes: true`, but the R1-M1-SKY-2 plan records its merge as waiting on
@@ -117,15 +136,20 @@ R1-M1-SKY-2's 2026-10-02 audit plus the doc's V15 export grep of the
 installed 0.5.1 package, and the executor re-runs `pkg search` at kickoff.
 
 **F4. Six of the eighteen ACs ride on M4.5's playthrough bot**
-(AC3, AC4, AC5, AC6, AC7, AC16). They are assigned below to the feature
+(AC3, AC4, AC5, AC6, AC7, AC16). AC6 is assigned to M4.5 itself (its
+command needs the bot); the other five are "Feeds" rows on the feature
 whose scope they check, with the explicit note that the *command* runs once
 M4.5's harness exists. No feature may mark `passes: true` on an AC whose
-command has not been run.
+command has not been run — the feeding features pass on their own interim
+gates (sim tests, greps, harness replays), each with a runnable command in
+its own milestone.
 
-**F5. Track B's critical input is R1-M1-SKY-2, which is itself unapproved
-(`status: planned`, `approved: false`) with two open PRs.** M4 Track A is
-fully unblocked; M4 landing is not. This plan does not re-approve or
-re-plan that sprint; it records the dependency.
+**F5. Track B's critical input is R1-M1-SKY-2 — approved by Mark per ledger
+D-19 (attended, 2026-10-02: "start wave 1"); only its sprint JSON's
+`approved` flag is stale (still `false`, `status: planned`) — with two open
+PRs.** M4 Track A is
+fully unblocked; M4 landing is not. This plan does not re-plan that sprint;
+it records the dependency.
 
 **F6. M4 adds no Python, by design and by AC18.** The five tools the first
 draft named in Python are AILANG (`sim/tools/{lore_import, lore_values,
@@ -136,12 +160,16 @@ shell glue. `make python-guard` must stay green with zero new `*.py`.
 ## Milestones
 
 Each milestone is one iteration, test-first, evaluated by a different agent
-or model from the executor (generator ≠ judge). Each lands as its own PR.
+or model from the executor (generator ≠ judge). Track A milestones (M4.6a,
+M4.0, M4.1, M4.3a, M4.4, M4.7, M4.5 — and M4.6's ungated half) each land as
+their own PR to main. The Track B train (M4.2 → M4.3b → M4.6's gated half)
+lands as **stacked PRs into the integration branch `m4-track-b`**, which
+merges to main only after ⏸ S1 sign-off (see the pause-points table).
 `passes` starts as `null`. Tracks follow the design doc's §Order: **Track A**
 (sim and UI) and **Track B** (interior), with review builds published at
 every sub-milestone.
 
-### Wave 1 (parallel: disjoint files — all startable NOW)
+### Wave 1 (all startable NOW; concurrent branches, sequenced merges — M4.6a and M4.1 share the pin files, see the pin-bump note under M4.6a)
 
 #### M4.6a: `medium.glowEmittanceAt` in `sunholo/relativity` (package first, gate 3)
 **Scope (in `$PKG`):** the one new formula in M4 —
@@ -154,7 +182,10 @@ The release number is whatever `kind` assigns after 0.5.1. The
 **controller publishes** under the loop's standing publish grant *for this
 package only* after an independent physics PASS; then `sim/ailang.toml`,
 `sim/ailang.lock` and the bundled `runtime/cache` are bumped **together**
-(V23 closes).
+(V23 closes). The pin bump lands in **its own commit on main** after
+⏸ P-pkg: M4.1's PR (step 1, at pin 0.5.1) merges **before** it and touches
+none of the three; M4.1 step 2 (`glow_pole_w_m2`) then lands as a small
+follow-up on the bumped pin.
 
 **Files:** `$PKG/packages/relativity/medium.ail`,
 `$PKG/packages/relativity/medium_test.ail`, `$PKG` CHANGELOG + `ailang.toml`;
@@ -236,8 +267,10 @@ from PCG stream `"news"`; displayed quantities as sim fields (`gap_years`,
 `news_epoch`, `news_age_years`, progress, `one_minus_beta`); live
 `ship.ism{load_w_m2, drag_n, glow_w_m2}` at current rapidity (package calls
 at pin 0.5.1) plus `drag_energy_j` = ledger `drag_j` since commit (M2
-semantics F·c, V24 — **no new ledger scope**); `glow_pole_w_m2` added **only
-after M4.6a** (the sim never computes 4 × `glowInwardFlux` itself);
+semantics F·c, V24 — **no new ledger scope**) — that is **step 1**, landing
+at pin 0.5.1; **step 2** (separate, later, gated on ⏸ P-pkg) adds
+`glow_pole_w_m2` from the post-M4.6a release (the sim never computes 4 ×
+`glowInwardFlux` itself);
 `news{…, body_source ∈ template | ai | fallback, fallback_reason}` on the
 existing `ai_fallback` event (V21); legacy log (append-only change set);
 archive hint predicates (the six README hints, V16); `record` validation
@@ -250,8 +283,10 @@ stay green **unmodified**.
 scriptedRoundTrip), `Makefile`.
 
 **Estimated:** 380 + 320 = **700** LOC (**over the 650 cap — F1 waiver**)
-· **Deps:** M2 protocol and planner (landed); M4.6a (for
-`glow_pole_w_m2` only) · **Art-gated:** no · **Registry:** depend
+· **Deps:** M2 protocol and planner (landed); **no milestone dependency** —
+step 2 (`glow_pole_w_m2`) is a separate later step gated on M4.6a's publish
+(⏸ P-pkg); step 1 touches none of `sim/ailang.toml`, `sim/ailang.lock`,
+`runtime/cache` · **Art-gated:** no · **Registry:** depend
 `sunholo/relativity@0.5.1` (`planBurnCoastBurn`, `coastAt`, `gammaOf`,
 `oneMinusBeta`, `rapidityOfBeta`, `loadScale`, `kineticFlux`,
 `mirrorDragForce`, `cruiseDragEnergy`, `glowInwardFlux` — V15).
@@ -357,6 +392,8 @@ mechanics, but the composited sky needs the v2 starfield, and the glow's
 exposure needs M1.5a · **Art-gated:** **yes** (lands on the blockout;
 approved bundle when delivered) · **Registry:** depend
 `sunholo/relativity` (post-M4.6a release) for the glow profile mirror.
+**Merge:** PR into the Track-B integration branch `m4-track-b` (not main);
+merges to main with the stacked train after ⏸ S1 sign-off.
 
 **Acceptance (AC ids, commands from the design doc):**
 - **AC14** — `make validate-areas BUNDLE=tests/fixtures/areas/bridge_blockout && make validate-areas BUNDLE=assets/areas/bridge && make m4-smoke BUNDLE=tests/fixtures/areas/bridge_blockout`
@@ -403,15 +440,15 @@ screen scene.
 R1-AI-FOUNDATION's, soft dep).
 
 **Acceptance (AC ids, commands from the design doc):**
-- **AC6** — `make playthrough AI=none`, `AI=stub`, `AI=digits` (each
-  followed by `make display-audit`) — `AI=digits`: session log holds
-  `ai_fallback{reason: "ai_numeral"}`, `body_source` = `fallback`, the
-  notice shows the `ai_numeral` phrase; `AI=none`: `body_source` =
-  `template`, no notice; `AI=stub`: `ai` with the "generated" tag.
-  *(Command needs M4.5's bot; until then the same three paths are asserted
-  in sim tests and a scripted bridge session. If R1-AI-FOUNDATION slips,
-  `AI=stub`/`AI=digits` use the injected fixture, per the design doc's
-  Interfaces.)*
+- Sim-test gate (this milestone's runnable gate) — `make sim`
+  (`$A test --package sim`) — asserts `news.body_source` and
+  `fallback_reason` for all three paths: `template` (no request made; no
+  notice), `ai` (an accepted `record`; the "generated" tag is bound copy),
+  `fallback` (a digits fixture closes with `ai_fallback{reason:
+  "ai_numeral"}`; the reason→phrase table entry exists and is digit-free);
+  plus a scripted bridge session snapshotting the three panel renderings.
+- Feeds **AC6** — `make playthrough AI=none|stub|digits` needs M4.5's bot,
+  so **M4.5 owns AC6**; M4.4 passes on the sim-test gate above (F4).
 - Feeds AC3 (no save/load on "Begin again"), AC4 (the three labels are
   bound copy).
 - Interim gate: template lint (numerals only in slots; reason phrases
@@ -498,7 +535,8 @@ D-14); shortcuts M, L and K keep the minimum path independent of pathing.
 wiring only.
 
 **Estimated:** 40 + 30 = 70 LOC · **Deps:** M4.2, M4.3a · **Art-gated:**
-**yes** · **Registry:** none.
+**yes** · **Registry:** none. **Merge:** stacks on M4.2's branch in
+`m4-track-b`; merges to main with the train after ⏸ S1 sign-off.
 
 **Acceptance (AC ids, commands from the design doc):**
 - Feeds **AC4** (audit runs on the composited scene), **AC10** G-M4-3
@@ -537,7 +575,9 @@ at default warp); entry `codexUnlocks` against `tests/expected_unlocks.json`;
 `playthrough-time`, `codex-unlocks`).
 
 **Estimated:** 120 + 230 = 350 LOC · **Deps:** M4.3a, M4.4, M4.7, M2
-replay (landed) · **Art-gated:** no — but the **final** run is on the
+replay (landed), **M4.2 and M4.3b** (AC4's audit and the final run are on
+the composited interior; AC7's proxy includes the 20 s walking per
+interactable) · **Art-gated:** no — but the **final** run is on the
 approved bundle · **Registry:** none (harness; AILANG FS caps for the
 proxy, Godot for the audit — F6, no Python).
 
@@ -552,6 +592,13 @@ proxy, Godot for the audit — F6, no Python).
 - **AC5** — `make replay SESSION=$(SCRATCH)/session.ndjson && make parity-m4`
   — byte-identical incl. `record` intents and archive unlocks; AI process
   count during replay 0.
+- **AC6** — `make playthrough AI=none`, `AI=stub`, `AI=digits` (each
+  followed by `make display-audit`) — `AI=digits`: session log holds
+  `ai_fallback{reason: "ai_numeral"}`, `body_source` = `fallback`, the
+  notice shows the `ai_numeral` phrase; `AI=none`: `body_source` =
+  `template`, no notice; `AI=stub`: `ai` with the "generated" tag. (If
+  R1-AI-FOUNDATION slips, `AI=stub`/`AI=digits` use the injected fixture,
+  per the design doc's Interfaces.)
 - **AC7** — `make playthrough playthrough-time` — proxy ≤ 360 s; each leg
   45–120 s (expected 62.0).
 - **AC16** — `make playthrough codex-unlocks` — the seven expected entries
@@ -592,9 +639,14 @@ fixture.
 
 **Estimated:** 80 + 130 = 210 LOC · **Deps:** M4.2 (gated half), M4.6a
 (glow profile), **external: M1.6b camera golden** (passed; merge pending
-R-a — F2) · **Art-gated:** **partly** (CPU tests and lint are not; goldens,
+R-a — F2), **M1.2d bright tier (PR #69, soft)** — the "arrived at α Cen"
+render and the arrival view need the A/B astrometry; no golden pins the
+separation, so nothing blocks · **Art-gated:** **partly** (CPU tests and
+lint are not; goldens,
 renders and bench are) · **Registry:** depend `sunholo/relativity`
-(post-M4.6a release).
+(post-M4.6a release). **Merge:** the ungated half (CPU tests,
+`lint-precision`) lands on main as its own PR; the gated half stacks on
+M4.3b in `m4-track-b`, and ⏸ S1's `make capture-m4` runs on that branch.
 
 **Acceptance (AC ids, commands from the design doc):**
 - **AC9** — `make test` (`physics`, `lint-precision`) — CPU physics; no
@@ -624,19 +676,21 @@ renders and bench are) · **Registry:** depend `sunholo/relativity`
 |---|---|---|---|---|---|
 | M4.6a | `medium.glowEmittanceAt` in `sunholo/relativity` + tests/CHANGELOG/release; sim pin + lock + cache | 60 | — | no | 1 |
 | M4.0 | Bundle loader, blockout fixture, `validate-areas`, `ship_frame` | 400 | — | no | 1 |
-| M4.1 | `consequence.ail`: Earth clock, stand-off, news epoch/tier, display fields, live `ship.ism`, `body_source`, legacy log, archive predicates, `record`, `scriptedRoundTrip` | **700** (cap waiver F1) | M2 (landed); M4.6a (glow_pole step) | no | 1 |
+| M4.1 | `consequence.ail`: Earth clock, stand-off, news epoch/tier, display fields, live `ship.ism`, `body_source`, legacy log, archive predicates, `record`, `scriptedRoundTrip` | **700** (cap waiver F1) | M2 (landed); step 2 (glow_pole) gated on M4.6a/⏸ P-pkg | no | 1 |
 | M4.3a | Transit loop, warp, boost/brake pacing, HUD (incl. ISM), arrival card, sky-only harness | 280 | M4.1, M2 map | no | 2 |
 | M4.2 | Interior scene, composite, glow overlay, walking, interactables | 480 | M4.0; **ext M1.3 (#67), M1.5a** | **yes** | 2 |
 | M4.4 | News panel, templates, AI relay + fallback notice, return trip, legacy screen ⏸ S4 | 350 | M4.1, M4.3a; soft ext AI foundation | no | 3 |
 | M4.7 | Lore import, codex UI, unlocks, registry, `lore-check` (AILANG) | 320 | M4.1; design repo at `1ef3bc9` | no | 3 |
 | M4.3b | HUD and transit moved into the interior | 70 | M4.2, M4.3a | **yes** | 3 |
-| M4.5 | Playthrough bot, display audit, replay/parity, time proxy, codex-unlocks | 350 | M4.3a, M4.4, M4.7, M2 replay | no (final run on approved bundle) | 4 |
-| M4.6 | CPU tests + `lint-precision` (ungated); G-M4-1..4, `capture-m4`, bench (gated) ⏸ S1 | 210 | M4.2, M4.6a; ext M1.6b | partly | 4 (ungated half from wave 2) |
+| M4.5 | Playthrough bot, display audit, replay/parity, time proxy, codex-unlocks | 350 | M4.3a, M4.4, M4.7, M2 replay, M4.2, M4.3b | no (final run on approved bundle) | 4 |
+| M4.6 | CPU tests + `lint-precision` (ungated); G-M4-1..4, `capture-m4`, bench (gated) ⏸ S1 | 210 | M4.2, M4.6a; ext M1.6b, M1.2d (#69, soft) | partly | 4 (ungated half from wave 2) |
 | | **Total** | **1,900 + 1,320 = 3,220** | | | **4 waves** |
 
-**Critical path:** two 5-deep chains converge at wave 4 —
-Track A: M4.6a → M4.1 → M4.3a → M4.4 → M4.5; Track B: M4.0 → M4.2 → M4.3b →
-M4.6(gated) → ⏸ S1. M4 lands when both tracks, M4.5's final approved-bundle
+**Critical path:** two chains converge at wave 4 —
+Track A: M4.1 → M4.3a → M4.4 → M4.5 (M4.6a runs beside it: publish at
+⏸ P-pkg, then M4.1 step 2 and M4.2's glow profile); Track B: M4.0 → M4.2 →
+M4.3b → M4.6(gated) → ⏸ S1, landing as stacked PRs on `m4-track-b` until
+S1. M4 lands when both tracks, M4.5's final approved-bundle
 run and S1 are done; if bridge v1 hasn't arrived, M4 lands on the latest
 delivered bundle and the swap follows as a data change (design doc
 §Critical-path effect).
@@ -656,10 +710,18 @@ delivered bundle and the swap follows as a data change (design doc
 | ⏸ P0 | — | **this plan** | everything (approval ask Q3) |
 | ⏸ P-pkg | M4.6a | controller publishes the `sunholo/relativity` release under the **standing publish grant (this package only)**: independent physics PASS → `ailang pkg quality` no gates → CHANGELOG + `[release] kind` → dry run → publish; then pin + relock + bundled cache (V23) | M4.1's `glow_pole_w_m2`, M4.2's glow, M4.6's G-M4-4 |
 | ⏸ RB-1 | M4.0 + M4.2 end-to-end on the blockout | first review build: `make publish-dev` → `tools/install_review_build.sh --dev`, plus captures; **non-blocking**, repeated at every sub-milestone (D-16 "get something up so I can review it") | nothing |
-| ⏸ S1 | M4.6's `make capture-m4` | composited reference renders `renders/m4/` (physics gate 2), incl. the cruise frame with the glow at ε = 1e-9; AC11's `grep "S1 sign-off"` | the M4.2 / M4.3b / M4.6 merges and landing |
+| ⏸ S1 | M4.6's `make capture-m4`, run on `m4-track-b` | composited reference renders `renders/m4/` (physics gate 2), incl. the cruise frame with the glow at ε = 1e-9; AC11's `grep "S1 sign-off"` | the merge of `m4-track-b` (the stacked M4.2 → M4.3b → M4.6-gated train) to main, and landing |
 | ⏸ S2 | each delivered bundle | recurring art review of each area bundle drop | **satisfied for the style frame (D-16)**; recurring reviews are non-blocking |
 | ⏸ S4 | M4.4 | news template copy ("the game doesn't judge": facts only) | M4.4 merge |
 | ⏸ P-land | wave 4 + S1 | `design_docs/implemented/r1/m4-report.md` (S1/S2 sign-offs, renders, bench, proxy time, lore-check output, upstream AILANG reports); R2 roadmap gains the human playtest; design-repo roadmap status; changelog | landing |
+
+**S1 mechanism (executable ordering).** M4.2, M4.3b and M4.6's gated half
+land as **stacked PRs into the integration branch `m4-track-b`** (M4.3b is
+built on M4.2's branch, M4.6's gated half on M4.3b's), so each is
+reviewable in order without merging M4.2 to main early. ⏸ S1's renders are
+produced by `make capture-m4` **on `m4-track-b`** and reviewed there; on
+sign-off the branch merges to main as one merge. Track A milestones and
+M4.6's ungated half merge to main independently as their own PRs.
 
 ## Registry reuse gate
 
@@ -690,9 +752,9 @@ decisions:
 
 | Risk | Mitigation |
 |---|---|
-| R1-M1-SKY-2 slips (unapproved; #67/#69 open; M1.5a not started), stalling Track B | Track A proceeds to completion; Track B starts on the blockout the day M1.3/M1.5a land; blocker logged in the sprint JSON |
+| R1-M1-SKY-2 slips (approved per D-19 — only its JSON `approved` flag is stale; #67/#69 open; M1.5a not started), stalling Track B | Track A proceeds to completion; Track B starts on the blockout the day M1.3/M1.5a land; blocker logged in the sprint JSON |
 | R1-AI-FOUNDATION slips | Soft by D-8: ship with no AI process; AC6's `digits` case uses the injected fixture; `template` is the designed default |
-| M4.1 overruns its 700 LOC (over cap) | Split at the `ship.ism` seam (F1): step 1 (pin 0.5.1 fields) lands as the milestone, `glow_pole_w_m2` follows M4.6a |
+| M4.1 overruns its 700 LOC (over cap; M2's ratio was ~1.5×, so ~1,000 changed lines is realistic) | Split at the named `ship.ism` seam (F1): step 1 (pin 0.5.1 fields) lands as M4.1, step 2 (`glow_pole_w_m2`) becomes follow-up M4.1b — it is gated on ⏸ P-pkg anyway, so no critical-path change |
 | Bridge v1 bundle late | M4 lands on the latest delivered bundle; swap is a data change (AC14); blockout fixture keeps CI honest |
 | Glow too faint to read, or reads as a heat bloom | ε = 1e-9 is a scenario parameter (D-15); G-M4-4 pins profile, absolute pole value and zero-at-rest by gate, not by eye; S1 looks at the cruise frame; a different look is a scenario ε, never a hidden gain |
 | Double tonemap dims the starbow / starbow in the wrong place | G-M4-2 single-tonemap golden; one `ship_basis` with CPU tests; G-M4-3 in every phase |
@@ -754,3 +816,27 @@ decisions:
   `m4-report.md`, update the design repo's roadmap status, add the
   changelog entry, and put the human playtest (protocol from the design
   doc's first draft) on the R2 roadmap (D-14).
+
+## Revision round 2 (2026-10-03, planner; eval round 1 = 85/100 PASS with 3 blocking)
+
+Fixes to `.ailang/state/evaluations/eval_stapledon_iter11_m4_plan_round1.json`,
+applied to this plan and `sprint_R1-M4-JOURNEY.json` only:
+
+| # | Defect | Fix and where it landed |
+|---|---|---|
+| B1 | M4.1 dependency contradiction (markdown "startable now, glow_pole only" vs JSON `depends_on: [M4.6a]`; false "disjoint files / parallel" wave 1) | JSON `M4.1_CONSEQUENCE_STUB.depends_on` → `[]`; step 2 (`glow_pole_w_m2`) stated as a separate later step gated on M4.6a's publish (⏸ P-pkg); the sim never computes 4 × `glowInwardFlux`. "Disjoint/parallel" wording removed (wave-1 heading, "Startable now", pace bullet). Pin-bump merge order stated under M4.6a and P-pkg: M4.1's PR (step 1, pin 0.5.1) merges first and touches none of `sim/ailang.toml`/`sim/ailang.lock`/`runtime/cache`; the pin bump lands in its own commit after P-pkg; step 2 follows on the bumped pin. `critical_path` no longer starts with M4.6a. Milestone table M4.1 Deps cell updated. |
+| B2 | AC6 unsatisfiable by M4.4 under rule F4 (its command needs M4.5, which depends on M4.4) | AC6's playthrough command moved to **M4.5** (markdown M4.5 acceptance + JSON `M4.5_PLAYTHROUGH_AUDIT.acceptance_criteria`). M4.4 keeps a sim-test gate — `make sim` (`$A test --package sim`) asserting `news.body_source`/`fallback_reason` for the template, ai and fallback paths plus a scripted bridge session — and a "Feeds AC6" row. F4 (both files) reworded. |
+| B3 | S1 ordering not executable (S1 blocked merges whose inputs land later; no stacking mechanism) | Mechanism chosen and stated: M4.2, M4.3b and M4.6's gated half land as **stacked PRs into integration branch `m4-track-b`**; `make capture-m4` runs on `m4-track-b` and S1 is shown from that branch; the branch merges to main after S1 sign-off. Stated in the pause-points table (S1 row + "S1 mechanism" note), the Milestones intro, the critical-path paragraph, and the M4.2 / M4.3b / M4.6 notes (markdown **Merge:** lines; JSON descriptions and `pause_points[S1]`). |
+| NB1 | R1-M1-SKY-2 called "unapproved" — it was APPROVED by Mark (ledger D-19, attended 2026-10-02); only its JSON `approved` flag is stale | Reworded in F5 (both files), the Risks table, and JSON `external_dependencies[0]`. |
+| NB2 | M4.5 `depends_on` omitted M4.2/M4.3b although AC4's audit/final run and AC7's walking proxy exercise the interior | Added to M4.5's Deps (markdown section + milestone table) and JSON `depends_on`. |
+| NB3 | M1.2d (PR #69, α Cen A/B astrometry) missing from M4.6 although the "arrived at α Cen" render/arrival view use the bright tier | Checked the doc: no G-M4 golden pins the A/B separation, so it is **soft**; added to M4.6's Deps (markdown + milestone table), JSON `M4.6_PHYSICS_GATES.depends_on` and `external_dependencies[1].needed_by`. |
+| NB4 | gpt6-1-sol's round-2 absence not recorded as a named hole | "Quorum note" added to the Summary (round 2 ran with that seat ABSENT; disposition on the 3 present external reviewers); JSON finding F7; surfaced to Mark in Q3 and again at ⏸ P-land. |
+| NB5 | M4.1 size risk (700 LOC vs the 650 cap; M2 overran ~1.5×) | Not pre-split: the design doc owns the sub-milestone structure and estimates (10 rows), and it cannot be changed here, so an M4.1a/M4.1b pre-split would add an 11th milestone the doc does not define. Risk stated (realistic ~1,000 changed lines) with the **named split point** (the `ship.ism` seam): on overrun step 1 lands as M4.1 and step 2 becomes follow-up M4.1b, already gated on ⏸ P-pkg (F1, Risks table, JSON `loc_cap_exceptions`). |
+
+Not actionable here (design-doc file, out of this revision's scope): the
+design doc's "9 sub-milestones" status line vs its 10-row table, and AC1's
+19-minute τ_b bound being a 0.3 % margin (consider a `scriptedRoundTrip`
+assertion). Left for the design doc's owner.
+
+Totals unchanged: **10 milestones, 4 waves, 3,220 counted LOC (1,900 code +
+1,320 tests)**; `approved: null`, every `passes: null`.
