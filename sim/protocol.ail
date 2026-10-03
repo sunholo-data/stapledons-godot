@@ -136,8 +136,9 @@ export pure func encodeInput(m: Input) -> string =
     GQuit => envelope("quit", [])
   }
 pure func encodeClock(c: Clock) -> string = obj([f("tau", num(c.tau)), f("t", num(c.t)), f("year", num(c.year)), f("age", num(c.age))])
-pure func encodeShip(s: ShipView) -> string =
-  obj([f("phase", q(s.phase)), f("beta", num(s.beta)), f("one_minus_beta", num(s.oneMinusBeta)), f("gamma", num(s.gamma)), f("heading", vec(s.heading)), f("pos", vec(s.pos)), f("x", num(s.x)), f("flown", num(s.flown))])
+pure func encodeShip(s: ShipView) -> string = obj(shipFields(s))
+pure func shipFields(s: ShipView) -> [string] =
+  [f("phase", q(s.phase)), f("beta", num(s.beta)), f("one_minus_beta", num(s.oneMinusBeta)), f("gamma", num(s.gamma)), f("heading", vec(s.heading)), f("pos", vec(s.pos)), f("x", num(s.x)), f("flown", num(s.flown))]
 pure func encodePlanView(v: PlanView) -> string =
   obj([f("target", targetObj(v.target)), f("distance", num(v.distance)), f("profile", q(v.profile)), f("fell_back", bool(v.fellBack)),
     f("cruise_phi", num(v.cruisePhi)), f("cruise_beta", num(v.cruiseBeta)), f("cruise_one_minus_beta", num(v.cruiseOneMinusBeta)), f("cruise_gamma", num(v.cruiseGamma)),
@@ -187,10 +188,8 @@ export pure func encodeCq(v: CqView, from: int) -> string =
   obj([f("gap_years", num(v.gapYears)), f("news_epoch", num(v.newsEpoch)), f("news_age_years", num(v.newsAgeYears)), f("progress", num(v.progress)),
     f("standoff_ly", num(v.standoffLy))] ++ opt("news", newsObj, v.cq.news) ++
     [f("archive", obj([f("unlocked", strArr(v.cq.unlocked))])), f("legacy", obj([f("count", intToStr(countOf(v.cq.log))), f("appended", arr(each(entryObj, dropN(v.cq.log, from))))]))])
-pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string {
-  let base = encodeShip(s);
-  concat([substring(base, 0, length(base) - 1), ",", f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("drag_energy_j", num(dragEnergy))])), "}"])
-}
+pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string =
+  obj(shipFields(s) ++ [f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("drag_energy_j", num(dragEnergy))]))])
 
 -- ------------------------------------------------------------ reading
 pure func bind(r: Result[a, string], g: a -> Result[b, string]) -> Result[b, string] = match r { Ok(x) => g(x), Err(c) => Err(c) }

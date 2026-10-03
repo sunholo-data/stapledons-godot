@@ -222,11 +222,30 @@ pure func checkRecordAccepted() -> bool {
 -- Another request's outcome never touches the news item (a crew line accepted, a crew line cancelled).
 pure func lineOpen() -> Intent = IAiOpen({kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: []})
 pure func checkRecordOtherRequest() -> bool {
-  let w = (run(legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099()), 0.0, [newsOpen(), lineOpen(), lineOpen()])).world;
-  let ok = run(w, 0.0, [textRec("2", "Hello there.")]);
+  -- the crew line is opened BEFORE the news request: ids 1 (line), 2 (news), 3 (line)
+  let w = (run(legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099()), 0.0, [lineOpen(), newsOpen(), lineOpen()])).world;
+  let ok = run(w, 0.0, [textRec("1", "Hello there.")]);
   let bad = run(ok.world, 0.0, [textRec("3", "Year 2041")]);
-  (newsOf(w)).aiRequestId == Some("1") && (newsOf(ok.world)).bodySource == "template" && (newsOf(bad.world)).bodySource == "template" && fallbackReason(bad) == "ai_numeral" &&
+  (newsOf(w)).aiRequestId == Some("2") && (newsOf(ok.world)).aiRequestId == Some("2") && (newsOf(ok.world)).bodySource == "template" && (newsOf(bad.world)).bodySource == "template" && fallbackReason(bad) == "ai_numeral" &&
   (newsOf(bad.world)).fallbackReason == None
+}
+-- progress: 0 docked, rising through the trip, 1 at arrival, always in [0, 1].
+pure func prog(w: World) -> float = (cqView(w)).progress
+pure func checkProgress() -> bool {
+  let w0 = newWorld(5, false, withStandoff(1000.0));
+  let c = committedTo(w0, acenAt(4.37), phi099());
+  match c.journey {
+    Committed(k) => {
+      let tp = k.plan.trip;
+      let a = (run(c, tp.tauBurn * 0.5, [])).world;
+      let b = (run(a, tp.tauBurn * 0.5 + 0.1, [])).world;
+      let m = (run(b, 0.2, [])).world;
+      let landed = (run(m, tp.tauTotal, [])).world;
+      prog(w0) == 0.0 && prog(c) == 0.0 && prog(a) > 0.0 && prog(a) < prog(b) && prog(b) < prog(m) && prog(m) < 1.0 && prog(landed) == 1.0 &&
+      allTrue(map(\x. x >= 0.0 && x <= 1.0, [prog(a), prog(b), prog(m), prog(landed)]))
+    },
+    _ => false
+  }
 }
 -- No open request: refused, nothing closes, the item stays a template.
 pure func checkRecordNoRequest() -> bool {
@@ -332,6 +351,16 @@ pure func checkWire22() -> bool {
   !contains(t2, "drag_energy_j") && !contains(t2, "consequence") &&
   !contains(c1, "consequence") && !contains(c1, "drag_energy_j") && contains(c2, "\"kind\":\"commit\"") && contains(c2, "\"consequence\":{") && contains(t2, "\"distance\":4.354187")
 }
+-- The legacy log on the wire is a delta: each tick carries only the entries appended since the last, count is the running total.
+pure func checkWireLegacyDelta() -> bool {
+  let g = newGame(",\"params\":{\"standoff_au\":1000}");
+  let s = feed(feed(newSession(), [hello(2)]), [g, tickLine(1, "0", acenLine())]);
+  let t2 = reply(s, tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}"));
+  let s2 = feed(s, [tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}")]);
+  let t3 = reply(s2, tickLine(3, "0.000001", ""));
+  contains(t2, "\"count\":1,\"appended\":[{\"tick\":2,\"kind\":\"commit\"") &&
+  contains(t3, "\"count\":3,\"appended\":[{\"tick\":3,\"kind\":\"departure\"") && contains(t3, "\"kind\":\"boost\"") && !contains(t3, "\"kind\":\"commit\"")
+}
 -- A bad archive row or out-of-range stand-off is a new_game error and changes nothing.
 pure func checkWireBad() -> bool {
   let s = feed(newSession(), [hello(2)]);
@@ -375,6 +404,8 @@ test "archive hints fire once, in table order, as their predicates hold" { check
 test "cruise_above_gamma_275 fires at gamma 316; first_black_hole never" { checkArchiveGamma() }
 test "hint predicates and the six-hint vocabulary" { checkHints() }
 test "protocol 2.2: consequence section and ship.ism only for minor 2; 2.0/2.1 streams unchanged" { checkWire22() }
+test "legacy log on the wire is a delta; count is the running total" { checkWireLegacyDelta() }
+test "progress: 0 docked, rising in flight, 1 at arrival, within [0, 1]" { checkProgress() }
 test "protocol 2.2: bad stand-off and archive rows are bad_params / bad_game" { checkWireBad() }
 test "strict entry scriptedRoundTrip agrees with the world" { checkScripted() }
 
@@ -382,6 +413,6 @@ export pure func consequenceVm(n: int) -> string =
   if checkRoundTrip(4.37) && checkRoundTripCanon() && checkRoundTripCatalogue() && checkNewsEpoch() && checkClockAtRest() && checkDwell() && checkTrackingOff() && checkStandoff() && checkStandoffTooNear() &&
     checkTiers() && checkNewsTiers() && checkTemplateSeeded() && checkIsmCruise() && checkIsmRelaxes() && checkDragEnergy() && checkDragWindow() &&
     checkRecordRefusals() && checkRecordAccepted() && checkRecordOtherRequest() && checkRecordNoRequest() && checkRecordExpired() && checkLegacyAppendOnly() && checkLegacyKinds() &&
-    checkArchive() && checkArchiveGamma() && checkHints() && checkWire22() && checkWireBad() && checkScripted()
+    checkArchive() && checkArchiveGamma() && checkHints() && checkWire22() && checkWireLegacyDelta() && checkProgress() && checkWireBad() && checkScripted()
   then "consequence-ok" else "consequence-BAD"
 
