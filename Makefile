@@ -122,6 +122,17 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry voyageVm --args-json 0 sim/core_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry voyageVm --args-json 0 sim/core_test.ail); \
 	echo "strict voyageVm: VM $$got | interpreter $$interp"; [ "$$got" = "voyage-ok" ] && [ "$$interp" = "voyage-ok" ]
+	@# scriptedRoundTrip (M4.1, AC1): Sol -> alpha Cen -> Sol, 0.99c, 1,000 AU stand-off, zero dwell; which = Earth yr, ship yr, news epoch at alpha Cen, end gap, tier at alpha Cen, tier at the return
+	@for k in 0 1 2 3 4 5; do \
+	  want=$$(python3 -c "import math,sys; a=750000*1.032295275553596; p=2.6466524123622457; s=1000*149597870700/9460730472580800; dl=4.37-s; db=2*math.sinh(p/2)**2/a; dc=dl-2*db; t=2*math.sinh(p)/a+dc/math.tanh(p); tau=2*p/a+dc/math.sinh(p); print(repr([2*t,2*tau,t-dl,2*t-2*tau,0.0,2.0][int(sys.argv[1])]))" $$k); \
+	  got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry scriptedRoundTrip --args-json $$k sim/core.ail); \
+	  interp=$$($(AILANG) run --quiet --package-dir sim --entry scriptedRoundTrip --args-json $$k sim/core.ail); \
+	  echo "strict scriptedRoundTrip($$k): VM $$got | interpreter $$interp | closed form $$want"; \
+	  [ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)" || exit 1; \
+	done
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
+	echo "strict consequenceVm: VM $$got | interpreter $$interp"; [ "$$got" = "consequence-ok" ] && [ "$$interp" = "consequence-ok" ]
 	@# rngVm (M2.4): vectors, independence, then a digest of 10,000 draws per stream (integers only); strict VM = interpreter = tools/rng_ref.py
 	@for seed in 7 9007199254740991; do \
 	  want="rng-ok $$(python3 tools/rng_ref.py --digest $$seed 10000)"; \

@@ -5,14 +5,16 @@ module stapledons/sim/core
 -- Physics comes from the published sunholo/relativity package.
 
 import std/option (Option, Some, None)
+import std/math (intToFloat)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn)
 import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag)
 import ./tripphase (tripPhaseIndex)
-import ./rng (Rng, Stream, zeroRng, draw, streamName, top53)
-import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
+import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeIndex, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
+import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
+import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
 export type ShipPhase = AtRest | Boosting | Cruising | Braking deriving (Eq)
@@ -94,12 +96,14 @@ export type Drawn = { stream: string, n: int, value: int }
 export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent] }
 export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None }
 
+-- standoffAu: the arrival stand-off (M4.1, D-14); 0 plans to the star itself (M2),
+-- the M4 client sets 1000. Sol (star index 0) never has one.
 -- aiMaxOpen, aiTtlTicks: AI request limits (design ai-service-foundation
 -- (a1)); echoed as the last two params keys since protocol 2.1 (AI.3).
-export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int }
+export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
 export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
-  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks() }
+  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0 }
 
 -- Radiated energy = boostJ + dragJ. The mass budget is closed (higgs-bubble
 -- §8): availableKg is carried unchanged; nothing is deducted or enforced.
@@ -109,7 +113,8 @@ export pure func availableKgStart() -> float = 20000.0
 -- lastPlanId: the id of the most recent accepted plan (0 before any); plan
 -- ids increase monotonically from 1 and are never reused.
 -- ai: open AI requests and their ids (sim/ai.ail, AI.2).
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState }
+-- cq: the consequence state (sim/consequence.ail, M4.1): news, legacy log, archive.
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -133,7 +138,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi() }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq() }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -209,17 +214,19 @@ pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending 
   let here = position(a.ship);
   let dv = { x: rq.target.pos.x - here.x, y: rq.target.pos.y - here.y, z: rq.target.pos.z - here.z };
   let d = norm(dv);
-  let reachable = d > 0.0 && d - d == 0.0;
+  -- M4.1: plan to the stand-off point, 1,000 AU short on the same heading (0 for Sol and by default).
+  let dist = d - standoffFor(p.standoffAu, rq.target.index);
+  let reachable = d > 0.0 && d - d == 0.0 && dist > 0.0;
   match rq.flipG {
     Some(g) =>
       if !diag then refuseIntent(a, "diag_only")
       else if !reachable || !(g > 0.0 && g - g == 0.0) then refuseIntent(a, "out_of_range")
-      else storePlan(a, rq.target, here, normalize(dv), true, planFlipAndBurn(d, g * standardGravity())),
+      else storePlan(a, rq.target, here, normalize(dv), true, planFlipAndBurn(dist, g * standardGravity())),
     None =>
       -- `phi == phi` first: a NaN fails every comparison, so it is refused here
       -- on both runtimes (ailang#1419) rather than reaching the package's `requires`.
       if !reachable || !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < cruisePhiMin(p) || rq.cruisePhi > cruisePhiMax(p) then refuseIntent(a, "out_of_range")
-      else storePlan(a, rq.target, here, normalize(dv), false, planBurnCoastBurn(d, p.boostG * standardGravity(), rq.cruisePhi))
+      else storePlan(a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi))
   }
 }
 -- The cruise-rapidity range a plan accepts (both ends included) and the
@@ -327,6 +334,11 @@ pure func pieceLedger(l: Ledger, p: Params, tp: TripPlan, i: int, before: Motion
   if i == 1 then {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), tp.phiPeak, p.bubbleRadiusM) * piece * julianYearS()}
   else {l | boostJ: l.boostJ + photonDriveEnergy(l.mEffKg, absf(after.phi - before.phi))}
 
+-- Where the autopilot lands: the target itself, or (stand-off) the planned distance along the heading.
+pure func arrivalPoint(p: Params, pl: Plan) -> Vec3 =
+  if standoffFor(p.standoffAu, pl.target.index) == 0.0 then pl.target.pos
+  else { let d = pl.trip.trip.distance; { x: pl.from.x + pl.heading.x * d, y: pl.from.y + pl.heading.y * d, z: pl.from.z + pl.heading.z * d } }
+
 pure func atRest(s: Ship, dtau: float) -> Ship = {step(s, 0.0, dtau) | phase: AtRest}
 
 pure func fly(p: Params, f: Flight, rem: float) -> Flight {
@@ -351,7 +363,7 @@ pure func fly(p: Params, f: Flight, rem: float) -> Flight {
       if j == 3 then {
         let snapped = {after | phi: 0.0};
         let res = arrivalResiduals(after, f.ship.x0, f.c);
-        let landed = { motion: snapped, heading: f.ship.heading, origin: f.c.plan.target.pos, x0: snapped.x, phase: AtRest };
+        let landed = { motion: snapped, heading: f.ship.heading, origin: arrivalPoint(p, f.c.plan), x0: snapped.x, phase: AtRest };
         fly(p, {ship: landed, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, tp, i, before, snapped, piece),
           events: {event("arrived") | arrived: Some(res)} :: crossed, arrived: true}, left)
       } else
@@ -365,7 +377,7 @@ pure func fly(p: Params, f: Flight, rem: float) -> Flight {
 -- advance the ship by dtau: under the autopilot while committed,
 -- otherwise by the diag thrust with the phase derived from it; the ledger
 -- follows either way.
-export pure func tick(w: World, input: TickInput) -> Ticked
+pure func tickBase(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
@@ -385,6 +397,96 @@ export pure func tick(w: World, input: TickInput) -> Ticked
         refused: reversed(a.refused, []), events: reversed(a.events, []) }
     }
   }
+}
+
+-- ------------------------------------------------------------ consequence (M4.1)
+-- The M2 tick is unchanged; observe() then reads its events and the new world
+-- and updates the consequence state: the legacy log, the news item (tier and
+-- template from the `news` stream at arrival), its AI provenance and the archive
+-- unlocks. Nothing here touches the ship, the journey or the ledger.
+type Obs = { cq: Cq, rng: Rng }
+
+pure func starOf(j: Journey) -> string =
+  match j { Planned(p) => p.target.id, Committed(c) => c.plan.target.id, Arrived(c) => c.plan.target.id, Idle => "" }
+pure func logAt(c: Cq, w: World, kind: string, star: string) -> Cq = append(c, entry(w.tick, kind, star, w.ship.motion.tau, w.ship.motion.t))
+pure func logKinds(c: Cq, w: World, ks: [string], star: string) -> Cq = match ks { [] => c, k :: more => logKinds(logAt(c, w, k, star), w, more, star) }
+pure func phaseKinds(to: string) -> [string] = if to == "boosting" then ["departure", "boost"] else if to == "cruising" then ["cruise"] else if to == "braking" then ["brake"] else []
+
+pure func linkNews(c: Cq, x: AiEvent) -> Cq =
+  match c.news {
+    None => c,
+    Some(n) => match x {
+      ERequest(r) => if r.purpose == "news" then {c | news: Some(newsRequested(n, r.req))} else c,
+      EAcceptedText(a) => {c | news: Some(newsAccepted(n, a.req))},
+      EAcceptedMedia(_) => c,
+      EFallback(f) => {c | news: Some(newsFellBack(n, f.req, f.reason))}
+    }
+  }
+
+-- Arrival: the news item at the arrival point (epoch t - |p|, tier by the Earth-years since departure), then the log.
+pure func arrive(w: World, o: Obs) -> Obs =
+  match w.journey {
+    Arrived(c) => {
+      let tgt = c.plan.target;
+      let cl = clocks(w.ship.motion.t, w.ship.motion.tau, position(w.ship));
+      let dep = match o.cq.depT { Some(d) => d, None => c.t0 };
+      let elapsed = cl.newsEpoch - dep;
+      let tier = newsTier(elapsed);
+      let d = draw(w.seed, o.rng, SNews);
+      let n = { tier: tier, templateId: templateId(tier, top53(d.value)), starId: tgt.id, elapsedYears: elapsed, newsEpoch: cl.newsEpoch, newsAgeYears: cl.newsAgeYears,
+        aiRequestId: None, bodySource: "template", fallbackReason: None };
+      let c1 = logKinds({o.cq | news: Some(n)}, w, ["arrival", "news"], tgt.id);
+      { cq: if tgt.index == homeIndex() then logAt(c1, w, "return", tgt.id) else c1, rng: d.rng }
+    },
+    _ => o
+  }
+
+pure func observeEvent(before: World, w: World, o: Obs, e: Event) -> Obs =
+  if e.kind == "committed" then
+    { cq: {logAt(o.cq, w, "commit", starOf(w.journey)) | depT: match o.cq.depT { None => Some(before.ship.motion.t), Some(_) => o.cq.depT }, dragJ0: before.ledger.dragJ}, rng: o.rng }
+  else if e.kind == "arrived" then arrive(w, o)
+  else match e.phase {
+    Some(c) => { cq: logKinds(o.cq, w, phaseKinds(c.to), starOf(w.journey)), rng: o.rng },
+    None => match e.ai { Some(x) => { cq: linkNews(o.cq, x), rng: o.rng }, None => o }
+  }
+pure func observeAll(before: World, w: World, o: Obs, es: [Event]) -> Obs =
+  match es { [] => o, e :: more => observeAll(before, w, observeEvent(before, w, o, e), more) }
+
+pure func observe(before: World, after: World, es: [Event]) -> World = if !before.cq.on then after else observeOn(before, after, es)
+pure func observeOn(before: World, after: World, es: [Event]) -> World {
+  let o = observeAll(before, after, { cq: after.cq, rng: after.rng }, es);
+  let m = after.ship.motion;
+  { after | cq: unlock(o.cq, after.tick, m.tau, m.t, after.ship.phase == Cruising, beta(after.ship), gamma(after.ship)), rng: o.rng }
+}
+
+export pure func tick(w: World, input: TickInput) -> Ticked
+  requires { input.dtau >= 0.0 }
+  ensures { result.world.tick == w.tick + 1 }
+{
+  let r = tickBase(w, input);
+  { world: observe(w, r.world, r.events), refused: r.refused, events: r.events }
+}
+
+-- ------------------------------------------------------------ consequence readouts (M4.1)
+-- The live ISM at the ship's current rapidity (package calls; zero at rest).
+export pure func ismNow(w: World) -> IsmNow = ismAt(ismPerM3(w.params), w.ship.motion.phi, w.params.bubbleRadiusM, w.params.glowEps, w.params.glowFIn)
+-- The ledger's drag_j since the latest commit (M2 semantics F*c); 0 before the first commit.
+export pure func dragEnergyJ(w: World) -> float = match w.cq.depT { None => 0.0, Some(_) => w.ledger.dragJ - w.cq.dragJ0 }
+
+-- Every displayed number is a field: Godot never subtracts two of them.
+export type CqView = { gapYears: float, newsEpoch: float, newsAgeYears: float, progress: float, standoffLy: float, cq: Cq }
+pure func progressOf(w: World) -> float =
+  match w.journey {
+    Committed(c) => {
+      let f = (w.ship.motion.x - w.ship.x0) / c.plan.trip.trip.distance;
+      if f < 0.0 then 0.0 else if f > 1.0 then 1.0 else f
+    },
+    Arrived(_) => 1.0,
+    _ => 0.0
+  }
+export pure func cqView(w: World) -> CqView {
+  let cl = clocks(w.ship.motion.t, w.ship.motion.tau, position(w.ship));
+  { gapYears: cl.gapYears, newsEpoch: cl.newsEpoch, newsAgeYears: cl.newsAgeYears, progress: progressOf(w), standoffLy: standoffLy(w.params.standoffAu), cq: w.cq }
 }
 
 -- Scripted alpha Cen journey for `make strict` (AC10): plan 4.37 ly at
@@ -444,3 +546,35 @@ export pure func journeyView(w: World) -> JourneyView =
     Committed(c) => { state: "committed", planId: c.plan.id, plan: Some(planView(w.params, c.plan, c.tau0, c.t0)) },
     Arrived(c) => { state: "arrived", planId: c.plan.id, plan: Some(planView(w.params, c.plan, c.tau0, c.t0)) }
   }
+
+-- new_game's codex table: set, then the rows whose hint already holds (`always`) unlock at tick 0.
+export pure func withArchive(w: World, rows: [ArchiveRow]) -> World {
+  let m = w.ship.motion;
+  {w | cq: unlock({w.cq | archive: rows}, 0, m.tau, m.t, false, 0.0, 1.0)}
+}
+
+-- ------------------------------------------------------------ scripted round trip (M4.1, AC1)
+-- A leg flown exactly to arrival with zero dwell: plan, commit, one tick of
+-- tauTotal, then 1e-12 ticks while a last-ulp shortfall leaves it Committed.
+pure func tauTotalOf(w: World) -> float =
+  match w.journey { Planned(p) => p.trip.tauTotal, Committed(c) => c.plan.trip.tauTotal, Arrived(c) => c.plan.trip.tauTotal, Idle => 0.0 }
+pure func settle(w: World) -> World =
+  match w.journey { Committed(_) => settle(tick(w, {dtau: 0.000000000001, intents: []}).world), _ => w }
+export pure func scriptedLeg(w: World, t: Target, phi: float) -> World {
+  let planned = tick(w, {dtau: 0.0, intents: [IPlan({target: t, cruisePhi: phi, flipG: None})]}).world;
+  let c = tick(planned, {dtau: 0.0, intents: [ICommit(planned.lastPlanId)]}).world;
+  settle(tick(c, {dtau: tauTotalOf(c), intents: []}).world)
+}
+-- Sol -> alpha Cen -> Sol at 0.99c, 1,000 AU stand-off, zero dwell (make strict compares each value with a
+-- closed form). which: 0 Earth years, 1 ship years, 2 news epoch at alpha Cen, 3 gap at the end, 4 news tier
+-- at alpha Cen, 5 news tier at the return, 6 the stand-off in ly.
+export pure func scriptedRoundTrip(which: int) -> float {
+  let acen = { index: 1, id: "alpha Cen", pos: { x: 0.0, y: 0.0, z: -4.37 } };
+  let sol = { index: 0, id: "Sol", pos: { x: 0.0, y: 0.0, z: 0.0 } };
+  let out = scriptedLeg(newWorld(0, false, {defaultParams() | standoffAu: 1000.0}), acen, 2.6466524123622457);
+  let back = scriptedLeg(out, sol, 2.6466524123622457);
+  let tierOf = \w. match w.cq.news { Some(n) => intToFloat(n.tier), None => 0.0 - 1.0 };
+  if which == 0 then back.ship.motion.t else if which == 1 then back.ship.motion.tau
+  else if which == 2 then (cqView(out)).newsEpoch else if which == 3 then (cqView(back)).gapYears
+  else if which == 4 then tierOf(out) else if which == 5 then tierOf(back) else standoffLy(1000.0)
+}
