@@ -5,7 +5,7 @@ GODOT_SIM = AILANG_BIN="$$(command -v $(AILANG))" $(GODOT)
 SIM := sim/ship.ail
 SIMFLAGS := --quiet --package-dir sim --caps IO --entry main
 SCRATCH := .godot/tmp
-AILANG_RELEASE ?= v0.51.0
+AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
