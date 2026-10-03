@@ -35,5 +35,28 @@ jobs:
           sudo install /tmp/godot/Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
           godot --headless --version
 
-      - name: make test
-        run: make test
+      - name: record x86_64 goldens (throwaway branch only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          make deps
+          python3 tools/replay.py --ticks 10000 --scratch out052 | tee out052.txt || true
+          python3 tools/replay.py --ticks 2000 --case session2k --scratch out052 | tee -a out052.txt || true
+          python3 tools/replay.py --record all --ticks 10000
+          python3 tools/replay.py --record session2k --ticks 2000
+          gh release download v0.51.0 --repo sunholo-data/ailang -p 'linux.x64.ailang.tar.gz' -D /tmp/a51
+          tar xzf /tmp/a51/linux.x64.ailang.tar.gz -C /tmp/a51
+          git show origin/main:sim/ailang.lock > /dev/null 2>&1 || git fetch -q origin main
+          git worktree add -q /tmp/base origin/main
+          (cd /tmp/base && AILANG=/tmp/a51/ailang python3 tools/replay.py --ticks 10000 --scratch $GITHUB_WORKSPACE/out051 | tee $GITHUB_WORKSPACE/out051.txt || true)
+          (cd /tmp/base && AILANG=/tmp/a51/ailang python3 tools/replay.py --ticks 2000 --case session2k --scratch $GITHUB_WORKSPACE/out051 | tee -a $GITHUB_WORKSPACE/out051.txt || true)
+          rm -f out052/*.interp.ndjson out051/*.interp.ndjson
+      - uses: actions/upload-artifact@v4
+        with:
+          name: x86-goldens
+          path: |
+            tests/replays/*.x86_64.*
+            out052/
+            out051/
+            out052.txt
+            out051.txt
