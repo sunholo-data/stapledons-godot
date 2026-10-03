@@ -10,6 +10,9 @@ const SIM_FILE := "sim/ship.ail"
 const PROTO_MAJOR := 2
 ## 2.1 (AI.3): the sim's `ai` section and AI events; AiRelay reads them (AI.7).
 const PROTO_MINOR := 1
+## 2.3 (M5.1b): the `system` section (the star, planets and moons as seen from
+## the ship). Asked for by setting `want_minor = SYSTEM_MINOR` before hello().
+const SYSTEM_MINOR := 3
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -39,6 +42,10 @@ var record_path := ""
 ## every accepted tick's events (`on_events`). Intents of a line the sim does
 ## not accept are dropped; their requests expire in the sim (ai_ttl_ticks).
 var ai_relay: Object = null
+## The protocol minor hello() asks for (PROTO_MINOR unless a caller opts in).
+var want_minor := PROTO_MINOR
+## The last `system` section, as parsed by parse_system(); {} until one arrives.
+var system: Dictionary = {}
 var _line_bytes := PackedByteArray()
 
 
@@ -81,7 +88,7 @@ func start() -> bool:
 func hello(deadline: int = Time.get_ticks_msec() + 5000) -> bool:
 	if _pid < 0:
 		return false
-	_write(encode({"v": 2, "type": "hello", "want": {"major": PROTO_MAJOR, "minor": PROTO_MINOR}}))
+	_write(encode({"v": 2, "type": "hello", "want": {"major": PROTO_MAJOR, "minor": want_minor}}))
 	if not _read_state(deadline, "startup_timeout"):
 		return false
 	var proto = state.get("proto")
@@ -112,6 +119,9 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 		last_error = state.get("status", "bad_response")
 		return false
 	if state.get("full") != true or state.get("tick") != 0 or typeof(state.get("changes")) != TYPE_DICTIONARY:
+		return _fail("bad_response")
+	system = {}
+	if not _take_system(state["changes"]):
 		return _fail("bad_response")
 	world = state["changes"].duplicate(true)
 	world["tick"] = 0
@@ -145,6 +155,8 @@ func send(intents: Array, dtau: float) -> bool:
 	if state.get("tick") != tick:
 		return _fail("bad_response")
 	var changes: Dictionary = state["changes"]
+	if not _take_system(changes):
+		return _fail("bad_response")
 	for section in changes:
 		world[section] = changes[section].duplicate(true) if changes[section] is Dictionary else changes[section]
 	world["tick"] = tick
@@ -288,6 +300,41 @@ func _read_state(deadline: int, timeout_code: String) -> bool:
 		last_line = line
 		return true
 	return _fail(timeout_code)
+
+# ------------------------------------------------------------ 2.3 system (M5.1b)
+# Parse-only: the sim computed every number; this checks the shape and keeps it.
+const _BODY_STRINGS := ["id", "name", "kind", "host", "status", "ring_id", "source"]
+const _BODY_NUMBERS := ["radius_km", "flattening", "w_deg", "r_au", "phase_deg", "e_v_lux", "p_v", "minnaert_k", "light_age_s"]
+const _BODY_VECTORS := ["rel_km", "pole", "sun_dir"]
+
+## A `system` section checked field by field: `{}` if anything is missing or mistyped.
+static func parse_system(v: Variant) -> Dictionary:
+	if typeof(v) != TYPE_DICTIONARY or typeof(v.get("jd")) != TYPE_FLOAT or v.get("frame") != "galactic" \
+			or not v.get("ephemeris") in ["jpl-approx", "mean-orbit"] or typeof(v.get("bodies")) != TYPE_ARRAY:
+		return {}
+	for b in v["bodies"]:
+		if typeof(b) != TYPE_DICTIONARY or typeof(b.get("visitable")) != TYPE_BOOL:
+			return {}
+		for k in _BODY_STRINGS:
+			if typeof(b.get(k)) != TYPE_STRING:
+				return {}
+		for k in _BODY_NUMBERS:
+			if typeof(b.get(k)) != TYPE_FLOAT:
+				return {}
+		for k in _BODY_VECTORS:
+			var x = b.get(k)
+			if typeof(x) != TYPE_DICTIONARY or typeof(x.get("x")) != TYPE_FLOAT or typeof(x.get("y")) != TYPE_FLOAT or typeof(x.get("z")) != TYPE_FLOAT:
+				return {}
+	return v.duplicate(true)
+
+func _take_system(changes: Dictionary) -> bool:
+	if not changes.has("system"):
+		return true
+	var parsed := parse_system(changes["system"])
+	if parsed.is_empty():
+		return false
+	system = parsed
+	return true
 
 func _fail(code: String) -> bool:
 	last_error = code

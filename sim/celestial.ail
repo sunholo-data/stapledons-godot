@@ -1,0 +1,152 @@
+module stapledons/sim/celestial
+
+-- M5.1b: where Sol's bodies are seen from the ship, and how bright they are
+-- (design m5-planets §M5.1, sprint R1-M5-PLANETS §M5.1b). Pure: no I/O, no
+-- hidden state, clean under --strict-bytecode (`make strict-m5`, systemVm).
+-- Every formula is a sunholo/celestial or sunholo/relativity function; this
+-- module only composes them with the cited data in sim/data/sol.ail.
+--
+-- Frames and units. The package works in ecliptic J2000, AU and TDB days;
+-- the game's galactic frame is Sol-centred, in light years (core.ail). Here
+-- positions are heliocentric ecliptic AU from `planetAt`/`satelliteAt`,
+-- rotated by `eclipticToGalactic`, scaled to km and offset by the host
+-- star's catalogue position (Sol: the origin). The light-time iteration runs
+-- in the galactic frame, where the ship lives; it needs only distances.
+--
+-- The moving observer needs nothing extra: the rest-frame image at the
+-- ship's event is fixed by the retarded positions; the ship's velocity
+-- enters only in the renderer's aberration and Doppler (design §M5.1). Do
+-- not add a second retardation for the observer.
+--
+-- Known limit (follow-up, celestial 0.1.1): Standish's Earth row is the
+-- Earth-Moon barycentre, so Earth and the Moon are both offset by the
+-- barycentre's 4,671 km lever (the design composes the rows as published).
+import std/math (sqrt, atan2, floor)
+import std/option (Option, Some, None)
+import pkg/sunholo/celestial/kepler (Vec3, State, add, sub, scale, norm, dot, cross)
+import pkg/sunholo/celestial/ephemeris (auKm, planetAt, satelliteAt, windowStartJd, windowEndJd, j2000)
+import pkg/sunholo/celestial/frames (eclipticToGalactic, poleAndSpin)
+import pkg/sunholo/celestial/lighttime (retarded, secondsPerDay)
+import pkg/sunholo/celestial/reflect (discIlluminance, starIlluminanceAt)
+import pkg/sunholo/relativity/photometry (illuminanceFromV)
+import pkg/sunholo/relativity/medium (cSI, julianYearS)
+import ./data/sol (Star, Planet, Moon, sun, planets, moons)
+
+-- A system: its star, planets and moons, the star's catalogue position (ly,
+-- galactic, Sol-centred) and the star's apparent V at 1 AU.
+export type System = { id: string, star: Star, planets: [Planet], moons: [Moon], originLy: Vec3, sunV1Au: float }
+
+-- V = -26.74 at 1 AU (design §M5.0a check row; Allen's Astrophysical Quantities).
+export pure func solSystem() -> System =
+  { id: "sol", star: sun(), planets: planets(), moons: moons(), originLy: { x: 0.0, y: 0.0, z: 0.0 }, sunV1Au: 0.0 - 26.74 }
+
+-- What bodyAt returns: galactic, km and km/s, the pole a unit vector, W in degrees.
+export type BodyState = { pos: Vec3, vel: Vec3, pole: Vec3, wDeg: float }
+-- One body as seen from the ship (design §M5.1 field list).
+export type BodyView = { id: string, name: string, kind: string, host: string, status: string,
+  relKm: Vec3, radiusKm: float, flattening: float, pole: Vec3, wDeg: float,
+  sunDir: Vec3, rAu: float, phaseDeg: float, eVLux: float, pV: float, minnaertK: float, ringId: string,
+  lightAgeS: float, visitable: bool, source: string }
+export type SystemView = { jd: float, ephemeris: string, frame: string, bodies: [BodyView] }
+
+-- ------------------------------------------------------------ time base
+-- system.jd = scenario epoch (a JD, `epoch_jd`) + Earth time t in Julian years.
+export pure func daysPerJulianYear() -> float = 365.25
+export pure func jdAt(epochJd: float, tYears: float) -> float = epochJd + tYears * daysPerJulianYear()
+export pure func defaultEpochJd() -> float = j2000()
+-- Standish Table 2a's window (3000 BC-3000 AD); outside it the orbits are mean orbits.
+export pure func ephemerisAt(jd: float) -> string =
+  if jd >= windowStartJd() && jd <= windowEndJd() then "jpl-approx" else "mean-orbit"
+
+-- ------------------------------------------------------------ frames
+export pure func lyKm() -> float = cSI() * julianYearS() / 1000.0
+pure func celKmPerSPerAuPerDay() -> float = auKm() / secondsPerDay()
+pure func celZero() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
+pure func celUnit(v: Vec3) -> Vec3 { let n = norm(v); if n > 0.0 then scale(1.0 / n, v) else celZero() }
+pure func celDeg(r: float) -> float = r * 180.0 / 3.141592653589793
+-- Angle between two vectors (radians), atan2 form: accurate near 0 and pi.
+pure func celAngle(a: Vec3, b: Vec3) -> float = atan2(norm(cross(a, b)), dot(a, b))
+pure func originAu(sys: System) -> Vec3 = scale(lyKm() / auKm(), sys.originLy)
+-- Heliocentric ecliptic AU -> galactic AU about the game's origin.
+pure func galAu(sys: System, helioEcl: Vec3) -> Vec3 = add(originAu(sys), eclipticToGalactic(helioEcl))
+
+-- ------------------------------------------------------------ positions
+pure func hostOf(sys: System, id: string) -> [Planet] = celFilterP(sys.planets, id)
+pure func celFilterP(ps: [Planet], id: string) -> [Planet] =
+  match ps { [] => [], p :: rest => if p.id == id then [p] else celFilterP(rest, id) }
+-- A moon's heliocentric ecliptic state: its host's row plus its planetocentric state.
+pure func moonHelio(sys: System, m: Moon, jd: float) -> State =
+  match hostOf(sys, m.host) {
+    h :: _ => { let hs = planetAt(h.el, h.rates, jd); let ms = satelliteAt(m.sat, jd); { pos: add(hs.pos, ms.pos), vel: add(hs.vel, ms.vel) } },
+    [] => satelliteAt(m.sat, jd)
+  }
+
+pure func stateGal(sys: System, s: State, pole: Vec3, w: float) -> BodyState =
+  { pos: scale(auKm(), galAu(sys, s.pos)), vel: scale(celKmPerSPerAuPerDay(), eclipticToGalactic(s.vel)), pole: eclipticToGalactic(pole), wDeg: celDeg(w) }
+
+-- The body's position and velocity in the galactic frame (km, km/s, float64,
+-- about the game's origin) and its pole and W, at jd (TDB). None for an unknown id.
+export pure func bodyAt(sys: System, id: string, jd: float) -> Option[BodyState] =
+  if id == sys.star.id then { let sp = poleAndSpin(sys.star.pole, jd); Some(stateGal(sys, { pos: celZero(), vel: celZero() }, sp.pole, sp.w)) }
+  else match hostOf(sys, id) {
+    p :: _ => { let sp = poleAndSpin(p.pole, jd); Some(stateGal(sys, planetAt(p.el, p.rates, jd), sp.pole, sp.w)) },
+    [] => celMoonAt(sys, sys.moons, id, jd)
+  }
+pure func celMoonAt(sys: System, ms: [Moon], id: string, jd: float) -> Option[BodyState] =
+  match ms {
+    [] => None,
+    m :: rest => if m.id == id then { let sp = poleAndSpin(m.pole, jd); Some(stateGal(sys, moonHelio(sys, m, jd), sp.pole, sp.w)) } else celMoonAt(sys, rest, id, jd)
+  }
+
+-- ------------------------------------------------------------ the view
+-- What a body contributes to the view, before the observer is applied.
+type Src = { id: string, name: string, kind: string, host: string, status: string, radiusKm: float, polarKm: float,
+  pV: float, k: float, ring: string, source: string, visitable: bool }
+
+-- Light time from the ship (galactic AU) to a source whose heliocentric
+-- ecliptic position is helio(t); the view of one reflecting body.
+pure func viewOf(sys: System, s: Src, helio: (float) -> Vec3, poleAt: (float) -> Vec3, wAt: (float) -> float, shipAu: Vec3, shipKm: Vec3, jd: float) -> BodyView {
+  let r = retarded(\t. galAu(sys, helio(t)), shipAu, jd);
+  let helioGal = eclipticToGalactic(helio(r.time));
+  let relKm = sub(scale(auKm(), r.pos), shipKm);
+  let dKm = norm(relKm);
+  let rAu = norm(helioGal);
+  let toStar = scale(0.0 - 1.0, helioGal);
+  let alpha = celAngle(toStar, scale(0.0 - 1.0, relKm));
+  let e1 = illuminanceFromV(sys.sunV1Au);
+  -- A uniform sphere's illuminance is exactly inverse-square for d >= R, so
+  -- inside the body the surface value (d = R) is used.
+  let dEff = if dKm > s.radiusKm then dKm else s.radiusKm;
+  let lux = if s.kind == "star" then starIlluminanceAt(e1, dEff / auKm())
+            else if rAu > 0.0 && s.pV > 0.0 then discIlluminance(e1, s.pV, s.radiusKm, rAu, dEff, alpha, s.k) else 0.0;
+  { id: s.id, name: s.name, kind: s.kind, host: s.host, status: s.status, relKm: relKm, radiusKm: s.radiusKm,
+    flattening: (s.radiusKm - s.polarKm) / s.radiusKm, pole: eclipticToGalactic(poleAt(r.time)), wDeg: celDeg(wAt(r.time)),
+    sunDir: celUnit(toStar), rAu: rAu, phaseDeg: if s.kind == "star" then 0.0 else celDeg(alpha), eVLux: lux, pV: s.pV, minnaertK: s.k,
+    ringId: s.ring, lightAgeS: r.lagDays * secondsPerDay(), visitable: s.visitable, source: s.source }
+}
+
+pure func starSrc(st: Star) -> Src =
+  { id: st.id, name: st.name, kind: "star", host: "", status: "star", radiusKm: st.radiusKm, polarKm: st.radiusKm,
+    pV: 0.0, k: 1.0, ring: "", source: st.cite.orbit, visitable: false }
+-- Visitable: a measured radius and albedo (every Sol planet and moon; M5.5 refuses others).
+pure func planetSrc(p: Planet) -> Src =
+  { id: p.id, name: p.name, kind: "planet", host: "", status: "confirmed", radiusKm: p.radiusKm, polarKm: p.polarKm,
+    pV: p.pV, k: p.minnaertK, ring: p.ring, source: p.cite.orbit, visitable: p.radiusKm > 0.0 && p.pV > 0.0 }
+-- Moons: Lambert (k = 1); sol.ail cites no Minnaert k for any moon.
+pure func moonSrc(m: Moon) -> Src =
+  { id: m.id, name: m.name, kind: "moon", host: m.host, status: "confirmed", radiusKm: m.radiusKm, polarKm: m.polarKm,
+    pV: m.pV, k: 1.0, ring: "", source: m.cite.orbit, visitable: m.radiusKm > 0.0 && m.pV > 0.0 }
+
+pure func celMap(g: a -> b, xs: [a]) -> [b] = match xs { [] => [], x :: r => g(x) :: celMap(g, r) }
+
+-- Every body of the system as seen from the ship at shipLy (galactic ly) at
+-- jd: the star, then the planets, then the moons, in data order.
+export pure func systemAt(sys: System, jd: float, shipLy: Vec3) -> SystemView {
+  let shipKm = scale(lyKm(), shipLy);
+  let shipAu = scale(lyKm() / auKm(), shipLy);
+  let st = sys.star;
+  let starV = viewOf(sys, starSrc(st), \t. celZero(), \t. poleAndSpin(st.pole, t).pole, \t. poleAndSpin(st.pole, t).w, shipAu, shipKm, jd);
+  let pv = celMap(\p. viewOf(sys, planetSrc(p), \t. planetAt(p.el, p.rates, t).pos, \t. poleAndSpin(p.pole, t).pole, \t. poleAndSpin(p.pole, t).w, shipAu, shipKm, jd), sys.planets);
+  let mv = celMap(\m. viewOf(sys, moonSrc(m), \t. moonHelio(sys, m, t).pos, \t. poleAndSpin(m.pole, t).pole, \t. poleAndSpin(m.pole, t).w, shipAu, shipKm, jd), sys.moons);
+  { jd: jd, ephemeris: ephemerisAt(jd), frame: "galactic", bodies: starV :: (pv ++ mv) }
+}

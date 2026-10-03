@@ -21,6 +21,8 @@ import std/result (Ok, Err)
 import std/option (Option, Some, None)
 import std/string (join, contains, startsWith)
 import std/list (map, foldl)
+import ./protocol (systemMinor, helloFor, encodeSystem, decodeSystem)
+import ./celestial (SystemView, BodyView, solSystem, systemAt, defaultEpochJd)
 
 pure func status(line: string) -> string =
   match decode(line) { Ok(j) => match getString(j, "status") { Some(x) => x, None => "missing" }, Err(_) => "decode_error" }
@@ -582,3 +584,55 @@ test "M2.6b params echo carries the cruise-rapidity bounds and default" { checkP
 test "M2.6b ship.flown: distance since the commit, 0 after arrival" { checkFlownOnWire() }
 test "AC2 2.1 AI codecs round-trip; malformed fields stay bad_intent" { checkAiCodecs() }
 test "AC1 protocol 2.1: hello minor 1, AI params last in params, ai section last in full states" { checkHello21() }
+
+-- ------------------------------------------------- M5.1b, protocol 2.3: the system section
+-- The minor is read from systemMinor(), never written as a literal (sprint F4:
+-- whichever of M4 and M5 merges second takes the next minor).
+pure func helloWant(m: int) -> string = join("", ["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", show(m), "}}"])
+pure func sysGame(params: string) -> string = newGame(join("", ["\"seed\":7,\"scenario\":\"sol\",\"diag\":true", params]))
+pure func helloMinor(want: int) -> int = match decodeHello(serve(newSession(), helloWant(want)).reply) { Ok(g) => g.minor, Err(_) => -1 }
+export pure func checkHello23() -> bool =
+  helloMinor(systemMinor()) == systemMinor() && helloMinor(systemMinor() + 7) == systemMinor() && helloMinor(2) == 2 && helloMinor(1) == 1 && helloMinor(0) == 1
+  && helloFor(systemMinor()).minor == systemMinor() && systemMinor() >= 3
+test "2.3 hello: want >= systemMinor() is answered systemMinor(); 2, 1 and 0 as before" { checkHello23() }
+
+-- Below the system minor the stream never carries `system`; at it, the full state
+-- and every tick that moved the clock or the ship do; a tick that moved nothing does not.
+pure func sysReplies(want: int, params: string) -> [string] {
+  let a = serve(newSession(), helloWant(want));
+  let g = serve(a.session, sysGame(params));
+  let t1 = serve(g.session, tickLine(1, "0", ""));
+  let t2 = serve(t1.session, tickLine(2, "0.25", ""));
+  let t3 = serve(t2.session, tickLine(3, "0", "{\"k\":\"thrust\",\"thrust\":0}"));
+  [g.reply, t1.reply, t2.reply, t3.reply]
+}
+pure func hasSystem(r: string) -> bool = contains(r, "\"system\":{")
+export pure func checkSystemOnWire() -> bool {
+  let r3 = sysReplies(systemMinor(), "");
+  let r2 = sysReplies(2, "");
+  map(hasSystem, r3) == [true, false, true, false] && map(hasSystem, r2) == [false, false, false, false]
+  && map(\r. status(r), r3) == ["ok", "ok", "ok", "ok"]
+  && (match r3 { g :: _ => contains(g, "\"system\":{\"jd\":2451545,\"ephemeris\":\"jpl-approx\",\"frame\":\"galactic\",\"bodies\":[{\"id\":\"sun\"")
+      && !contains(g, "epoch_jd"), [] => false })
+  && (match r3 { _ :: _ :: t2 :: _ => contains(t2, "\"system\":{\"jd\":2451636.3125,"), _ => false })
+}
+test "2.3 system section: in the full state and on ticks that move the clock; never below the system minor" { checkSystemOnWire() }
+
+-- epoch_jd is a scenario parameter (D-12): it sets system.jd, stays out of the params echo, and is range-checked.
+export pure func checkEpochJd() -> bool {
+  let ok = sysReplies(systemMinor(), ",\"params\":{\"epoch_jd\":2460251.5}");
+  let bad = serve(serve(newSession(), helloWant(systemMinor())).session, sysGame(",\"params\":{\"epoch_jd\":1.5e9}"));
+  (match ok { g :: _ => contains(g, "\"system\":{\"jd\":2460251.5,") && !contains(g, "epoch_jd"), [] => false })
+  && status(bad.reply) == "bad_params" && defaultParams().epochJd == defaultEpochJd()
+}
+test "2.3 epoch_jd sets system.jd, is not echoed, and 1.5e9 is bad_params" { checkEpochJd() }
+
+-- decodeSystem(encodeSystem(v)) re-encodes to the same bytes (every field, -0.0 and exponents kept by num).
+pure func sysText(v: SystemView) -> string = encodeSystem(v)
+export pure func checkSystemRoundTrip() -> bool {
+  let views = [systemAt(solSystem(), defaultEpochJd(), {x: 0.0, y: 0.0, z: 0.0}), systemAt(solSystem(), 2460251.5, {x: 0.00001, y: 0.0 - 0.000002, z: 4.2}),
+    systemAt(solSystem(), 2451545.0 + 365.25 * 5000.0, {x: 0.0, y: 0.0, z: 0.0})];
+  foldl(\acc v. acc && (match decodeSystem(sysText(v)) { Ok(w) => sysText(w) == sysText(v) && w.ephemeris == v.ephemeris, Err(_) => false }), true, views)
+  && (match decodeSystem("{\"jd\":1,\"ephemeris\":\"jpl-approx\",\"frame\":\"galactic\",\"bodies\":[{\"id\":\"x\"}]}") { Err(c) => c == "bad_state", Ok(_) => false })
+}
+test "2.3 decodeSystem(encodeSystem(v)) re-encodes byte for byte; a body missing fields is bad_state" { checkSystemRoundTrip() }

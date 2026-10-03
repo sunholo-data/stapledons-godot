@@ -14,6 +14,7 @@ import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEner
 import ./tripphase (tripPhaseIndex)
 import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeIndex, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
+import ./celestial (defaultEpochJd)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
@@ -100,10 +101,12 @@ export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None,
 -- the M4 client sets 1000. Sol (star index 0) never has one.
 -- aiMaxOpen, aiTtlTicks: AI request limits (design ai-service-foundation
 -- (a1)); echoed as the last two params keys since protocol 2.1 (AI.3).
-export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float }
+-- epochJd: the scenario epoch as a Julian Date (M5.1b, D-12); system.jd = epochJd + t
+-- (sim/celestial.ail). Like standoffAu it is set by `epoch_jd` and not in the params echo.
+export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float, epochJd: float }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
 export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
-  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0 }
+  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0, epochJd: defaultEpochJd() }
 
 -- Radiated energy = boostJ + dragJ. The mass budget is closed (higgs-bubble
 -- §8): availableKg is carried unchanged; nothing is deducted or enforced.

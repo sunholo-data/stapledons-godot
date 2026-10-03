@@ -329,6 +329,59 @@ func test_wrong_tick_reply() -> bool:
 	assert_bool("wrong tick child cleaned", child_gone(s.child_pid))
 	return true
 
+## M5.1b: protocol 2.3's `system` section through the real sim. A client that
+## opts in (want_minor = SYSTEM_MINOR) gets Sol's 21 bodies at system.jd =
+## epoch_jd + t x 365.25; the default client's stream has no system at all.
+func test_system_section() -> bool:
+	var s := SimBridge.new()
+	s.want_minor = SimBridge.SYSTEM_MINOR
+	var ok: bool = s.start() and s.hello_reply.get("proto", {}).get("minor") == float(SimBridge.SYSTEM_MINOR) \
+		and s.new_game(7, "sol", true, {"epoch_jd": 2460251.5})
+	assert_bool("2.3 session starts (%s)" % s.last_error, ok)
+	if not ok:
+		return true
+	var bodies: Array = s.system.get("bodies", [])
+	assert_bool("system in the full state: jd = epoch_jd, galactic, 21 bodies, the Sun first",
+		s.system.get("jd") == 2460251.5 and s.system.get("frame") == "galactic" and s.system.get("ephemeris") == "jpl-approx"
+		and bodies.size() == 21 and bodies[0]["id"] == "sun" and bodies[0]["kind"] == "star")
+	var jup: Dictionary = {}
+	for b in bodies:
+		if b["id"] == "jupiter":
+			jup = b
+	assert_bool("Jupiter: radius, ring, light age, visitable", jup.get("radius_km") == 71492.0 and jup.get("ring_id") == "jupiter"
+		and jup.get("light_age_s", 0.0) > 2000.0 and jup.get("visitable") == true)
+	assert_bool("dtau 0 at rest: no system section, the last one kept", s.send([], 0.0) and not s.state["changes"].has("system") and s.system.get("jd") == 2460251.5)
+	assert_bool("0.5 yr later: jd + 182.625 d", s.send([], 0.5) and s.state["changes"].has("system") and s.system.get("jd") == 2460434.125)
+	s.stop()
+	var d := SimBridge.new()
+	var dok: bool = d.start() and d.new_game(7, "sol", true)
+	assert_bool("default client: no system section", dok and d.system.is_empty() and not d.world.has("system") and d.send([], 0.5) and not d.world.has("system"))
+	d.stop()
+	return true
+
+## The recorded 2.3 stream M5.2a starts from (tests/fixtures/system_sol.ndjson,
+## the sim's own output: hello, new_game at epoch_jd 2460251.5, one tick) parses;
+## a section with a wrong frame or a missing field does not.
+func test_system_fixture() -> bool:
+	var lines := FileAccess.get_file_as_string("res://tests/fixtures/system_sol.ndjson").strip_edges().split("\n")
+	var parsed := 0
+	var first: Dictionary = {}
+	for line in lines:
+		var m = JSON.parse_string(line)
+		if typeof(m) == TYPE_DICTIONARY and m.get("type") == "state" and m["changes"].has("system"):
+			var sys := SimBridge.parse_system(m["changes"]["system"])
+			if not sys.is_empty() and sys["bodies"].size() == 21:
+				parsed += 1
+				if first.is_empty():
+					first = m["changes"]["system"]
+	assert_bool("system_sol fixture: both system sections parse (21 bodies)", parsed == 2)
+	var wrong := first.duplicate(true)
+	wrong["frame"] = "ecliptic"
+	var missing := first.duplicate(true)
+	missing["bodies"][3].erase("e_v_lux")
+	assert_bool("wrong frame or a missing body field is refused", SimBridge.parse_system(wrong).is_empty() and SimBridge.parse_system(missing).is_empty())
+	return true
+
 
 func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(scratch)
@@ -357,6 +410,8 @@ func _init() -> void:
 		test_truncated_line_timeout,
 		test_forced_child_cleanup,
 		test_wrong_tick_reply,
+		test_system_section,
+		test_system_fixture,
 	]
 	for t in tests:
 		# a GDScript runtime error aborts the function and returns null: count it
