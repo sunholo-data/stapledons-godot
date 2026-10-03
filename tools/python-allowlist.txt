@@ -14,6 +14,7 @@ tests/fixtures/fake_ailang.py	harness
 tests/fixtures/fake_sim.py	harness
 tests/offaxis_v11_equiv.py	oracle
 tools/catalogue_probe.py	harness
+tools/check_companions.py	oracle
 tools/check_star_names.py	oracle
 tools/gen_ai_session.py	harness
 tools/gen_session.py	harness

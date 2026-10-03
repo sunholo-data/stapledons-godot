@@ -7,14 +7,16 @@
 # Timings are reported, never used as a gate (plan F3, Q3).
 set -eu
 A=$1; TIER=$2; OUT=$3; RUNS=${4:-5}
-entry=main hip= tool=sim/tools/catalogue_main.ail
+entry=gcnsMain hip= tool=sim/tools/bright_main.ail
+# every tier applies the committed companion table (make companions)
+COMP=data/starmap/companions/companions.csv
 case $TIER in
-  quick) src=data/raw/cns5.csv raw=data/raw/cns5.dat tool=sim/tools/bright_main.ail entry=mainFill hip=',"hip":"data/raw/hip_main.dat"' ;;
+  quick) src=data/raw/cns5.csv raw=data/raw/cns5.dat entry=mainFill hip=',"hip":"data/raw/hip_main.dat"' ;;
   medium|large) src=data/raw/gcns.csv raw=data/raw/table1c.dat.gz ;;
-  bright) src=data/raw/hip_main.dat raw=data/raw/hip2.dat.gz entry=brightMain tool=sim/tools/bright_main.ail ;;
+  bright) src=data/raw/hip_main.dat raw=data/raw/hip2.dat.gz entry=brightMain ;;
   *) echo "catalogue-parity: TIER must be quick, medium, large or bright (got '$TIER')" >&2; exit 2 ;;
 esac
-for f in "$src" "$raw"; do [ -f "$f" ] || { echo "catalogue-parity: missing $f (make sky-assets / starmap-manager)" >&2; exit 2; }; done
+for f in "$src" "$raw" "$COMP"; do [ -f "$f" ] || { echo "catalogue-parity: missing $f (make sky-assets / starmap-manager)" >&2; exit 2; }; done
 ver=$("$A" --version | head -1 | cut -d' ' -f2)
 case $(uname) in Darwin) TIMEFLAG=-l ;; *) TIMEFLAG=-v ;; esac
 rm -rf "$OUT"; mkdir -p "$OUT"
@@ -22,8 +24,8 @@ rm -rf "$OUT"; mkdir -p "$OUT"
 # one <label> <engine flag or ""> : run the writer into $OUT/<label>, append "<label> <secs> <rss>"
 one() {
   d=$OUT/$1; mkdir -p "$d"
-  args="{\"tier\":\"$TIER\",\"csv\":\"$src\",\"raw\":\"$raw\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\"$hip}"
-  [ "$TIER" != bright ] || args="{\"hip2\":\"$raw\",\"hipMain\":\"$src\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"overrides\":\"data/starmap/bright_overrides.json\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\"}"
+  args="{\"tier\":\"$TIER\",\"csv\":\"$src\",\"raw\":\"$raw\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\",\"companions\":\"$COMP\"$hip}"
+  [ "$TIER" != bright ] || args="{\"hip2\":\"$raw\",\"hipMain\":\"$src\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$COMP\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\"}"
   t0=$(date +%s)
   # shellcheck disable=SC2086
   if ! /usr/bin/time $TIMEFLAG env -u AI_LIVE "$A" run --quiet --caps IO,FS --package-dir sim $2 --entry $entry --args-json "$args" \

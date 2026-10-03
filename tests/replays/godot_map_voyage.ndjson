@@ -1,6 +1,6 @@
 {"v":2,"type":"hello","want":{"major":2,"minor":1}}
 {"v":2,"type":"new_game","seed":0,"scenario":"sol","diag":false}
-{"v":2,"type":"input","tick":1,"dtau":0.00013689253935660506,"intents":[{"k":"plan","target":{"index":8,"id":"CNS5:1676","pos":{"x":-5.770603,"y":-6.237832,"z":-1.328845}},"cruise_phi":3.6115998675643866}]}
+{"v":2,"type":"input","tick":1,"dtau":0.00013689253935660506,"intents":[{"k":"plan","target":{"index":9,"id":"CNS5:1676","pos":{"x":-5.770603,"y":-6.237832,"z":-1.328845}},"cruise_phi":3.6115998675643866}]}
 {"v":2,"type":"input","tick":2,"dtau":0.00013689253935660506,"intents":[]}
 {"v":2,"type":"input","tick":3,"dtau":0.00013689253935660506,"intents":[]}
 {"v":2,"type":"input","tick":4,"dtau":0.00013689253935660506,"intents":[{"k":"plan","target":{"index":2,"id":"CNS5:3627","pos":{"x":3.094521,"y":-3.015404,"z":-0.051608}},"cruise_phi":2.6466524123622457}]}

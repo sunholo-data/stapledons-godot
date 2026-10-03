@@ -7,6 +7,7 @@ module stapledons/sim/tools/bright_test
 import ./bright (Astro, Cns, Phot, Gcns, Bright, hipRow, indexBy, parseHip2, parseHipMain, parseCnsHip, gcnsIndex, fill, bright, gcnsMatch, directionAt, chord2, flagHip)
 import ./catalogue (Row)
 import ./catalogue_main (applyFill, planFill)
+import ./companions (cnsStars, hipStars, hipErrors, candidates, systems, linkIndex, applyHip)
 import ./extract (icrsToGalactic, distanceLy)
 import ./extract as X
 import std/string (concat, join, split, startsWith, replace, contains)
@@ -66,9 +67,8 @@ pure func withoutCns(t: Texts, desig: string) -> Texts =
 -- Arcturus as a GCNS row at its J2016.0 position (x 1000 ly), from an independent Python
 -- propagation (spherical linear, not bright.ail's vector form); G = V - 0.45.
 pure func arcturusGcns() -> string = "id,x,y,z,G,BPRP,wd\narcturus,344.362932,92.411369,934.277427,-0.500000,1.500000,0\n"
-pure func worldWith(t: Texts, gcns: string, ovs: [{hip: int, system: int}]) -> Result[Bright, string] =
-  bright(parseHip2(t.h2), parseHipMain(t.hm), parseCnsHip(t.c5), gcnsIndex(gcns), ovs)
-pure func world(t: Texts, gcns: string) -> Result[Bright, string] = worldWith(t, gcns, [{hip: 71681, system: 71683}])
+pure func world(t: Texts, gcns: string) -> Result[Bright, string] =
+  bright(parseHip2(t.h2), parseHipMain(t.hm), parseCnsHip(t.c5), gcnsIndex(gcns))
 -- the same world with one field of Rigel's lines rewritten (the cut tests)
 pure func rigel(t: Texts, hm: string, h2: string) -> Texts =
   {h2: replace(t.h2, "    3.78 ", h2), hm: replace(t.hm, "| 0.18|", hm), c5: t.c5}
@@ -84,7 +84,7 @@ pure func dist(r: Row) -> float = sqrt(r.x * r.x + r.y * r.y + r.z * r.z)
 -- its CNS5 row it would be (the negative control). The tier is Rigel plus alpha Cen B, in HIP order.
 pure func checkVegaExcluded(t: Texts) -> bool =
   ids(t, "") == ["HIP 24436", "HIP 71681"] && ids(withoutCns(t, "4607"), "") == ["HIP 24436", "HIP 71681", "HIP 91262"] &&
-  (match world(t, "") { Ok(b) => b.cns5 == 6 && b.gcns == 0 && b.overridden == 1 && b.noColour == [], Err(_) => false })
+  (match world(t, "") { Ok(b) => b.cns5 == 6 && b.gcns == 0 && b.noColour == [], Err(_) => false })
 -- Arcturus moves 2.3 arcsec/yr: its J1991.25 position is 56 arcsec from the J2016.0 GCNS row, so it
 -- matches only after propagation; |G - V| >= 2 refuses the match; without its CNS5 row the GCNS row
 -- alone keeps it out of the bright tier.
@@ -138,10 +138,16 @@ pure func checkSharedHipGuard(t: Texts) -> bool {
   size(filled(t, "CNS5:1142")) == 1 && size(fill([a, b], ph).rows) == 0 && fill([a, b], ph).ambiguous == ["a"] &&
     size(fill([a, {id: "b", hip: 21421, epoch: 2016.0, ra: 0.0, dec: 0.0, plx: 50.0, g: 3.0, missing: false}], ph).rows) == 1
 }
--- alpha Cen: A is CNS5 3627 (filled, V -0.01); B (HIP 71681) is a bright row at the CNS5 system
--- distance (754.81 mas, 4.321 ly), 19 arcsec from A on the sky (~4e-4 ly, ~25 AU), never at its own
--- HIP2 4.09 ly.
-pure func checkAlphaCenComponents(t: Texts) -> bool = match rowOf(t, "HIP 71681") {
+-- alpha Cen: A is CNS5 3627 (filled, V -0.01); B (HIP 71681) is a bright row (rule a) at its own HIP2
+-- parallax (4.09 ly) until the companion rule moves it to the CNS5 system distance (754.81 mas,
+-- 4.321 ly), 19 arcsec from A on the sky (~4e-4 ly, ~25 AU). Rule (c) did this by hand before.
+pure func companionRows(t: Texts) -> [Row] = match world(t, "") {
+  Ok(b) => applyHip(b.rows, parseHip2(t.h2), linkIndex(systems(candidates(cnsStars(t.c5), [],
+    hipStars(b.rows, parseHip2(t.h2), hipErrors(t.h2), parseHipMain(t.hm))).stars))),
+  Err(_) => [] }
+pure func checkAlphaCenBRaw(t: Texts) -> bool = match rowOf(t, "HIP 71681") {
+  [b] => within(dist(b), 1000.0 / 796.92 * 3.261563777, 0.000001), _ => false }
+pure func checkAlphaCenComponents(t: Texts) -> bool = match filter(\r. r.id == "HIP 71681", companionRows(t)) {
   [b] => match filter(\r. r.id == "CNS5:3627", X.parseCns5(t.c5).rows) {
     [a] => { let sys = match distanceLy(Some(754.8099975585938)) { Some(d) => d, None => 0.0 };
       size(filled(t, "CNS5:3627")) == 1 && within(dist(b), sys, 0.0000001) && within(sys, 4.3211, 0.0001) &&
@@ -155,12 +161,6 @@ pure func checkAlphaCenComponents(t: Texts) -> bool = match rowOf(t, "HIP 71681"
 pure func checkCuts(t: Texts) -> bool =
   ids(rigel(t, "| 7.00|", "    3.78 "), "") == ["HIP 71681"] && ids(rigel(t, "| 6.99|", "    3.78 "), "") == ["HIP 24436", "HIP 71681"] &&
   ids(rigel(t, "| 0.18|", "   -3.78 "), "") == ["HIP 71681"]
--- An override is refused when its system HIP id is in no CNS5 row, when it names a CNS5 row
--- itself (Arcturus), or when it names no HIP2 V < 7 star.
-pure func isRefused(r: Result[Bright, string]) -> bool = match r { Err(_) => true, Ok(_) => false }
-pure func checkOverrideRefused(t: Texts) -> bool =
-  isRefused(world(withoutCns(t, "3627"), "")) && isRefused(worldWith(t, "", [{hip: 69673, system: 71683}])) &&
-  isRefused(worldWith(t, "", [{hip: 1, system: 71683}])) && !isRefused(worldWith(t, "", []))
 
 -- The fill is a quick-tier step: planFill refuses it on medium, and the quick sidecar records the
 -- fill count and the hip_main digest; a plan without a fill keeps the M1.2c sidecar (no new keys).
@@ -221,7 +221,7 @@ pure func checkKeptRowAt2016(t: Texts) -> bool = match rowOf(withoutCns(t, "2914
 -- (5) A V < 7 star with no B-V is excluded and counted (bright_main writes size(noColour) as
 -- count_excluded); the same star with a B-V is kept.
 pure func rigelWith(bv: Option[float]) -> Result[Bright, string] =
-  bright(astro(inline(), 24436), indexBy(\p. p.hip, [{hip: 24436, v: 0.18, bv: bv}]), [], gcnsIndex(""), [])
+  bright(astro(inline(), 24436), indexBy(\p. p.hip, [{hip: 24436, v: 0.18, bv: bv}]), [], gcnsIndex(""))
 pure func checkNoBvExcluded() -> bool =
   (match rigelWith(None) { Ok(b) => size(b.rows) == 0 && b.noColour == ["HIP 24436"], Err(_) => false }) &&
   (match rigelWith(Some(0.0 - 0.03)) { Ok(b) => size(b.rows) == 1 && b.noColour == [], Err(_) => false })
@@ -248,7 +248,7 @@ pure func checks(t: Texts) -> [(string, bool)] = [
   ("VegaExcluded", checkVegaExcluded(t)), ("ArcturusPmMatch", checkArcturusPmMatch(t)),
   ("RigelIncluded", checkRigelIncluded(t)), ("Cns5EpochMatch", checkCns5EpochMatch(t)),
   ("SiriusFilled", checkSiriusFilled(t)), ("SharedHipGuard", checkSharedHipGuard(t)),
-  ("AlphaCenComponents", checkAlphaCenComponents(t)), ("OverrideRefused", checkOverrideRefused(t)), ("Cuts", checkCuts(t)), ("FillQuickOnly", checkFillQuickOnly()),
+  ("AlphaCenComponents", checkAlphaCenComponents(t)), ("AlphaCenBRaw", checkAlphaCenBRaw(t)), ("Cuts", checkCuts(t)), ("FillQuickOnly", checkFillQuickOnly()),
   ("TwoMissingShareHip", checkTwoMissingShareHip()), ("WindowBothSides", checkWindowBothSides()), ("GcnsRadius", checkGcnsRadius(t)),
   ("KeptRowAt2016", checkKeptRowAt2016(t)), ("NoBvExcluded", checkNoBvExcluded()), ("FlagOutOfTable", checkFlagOutOfTable()),
   ("PlxZeroSkipped", checkPlxZeroSkipped(t)), ("CnsPlxGate", checkCnsPlxGate(t))]
@@ -260,7 +260,7 @@ test "M1.2d checkCns5EpochMatch" { checkCns5EpochMatch(inline()) }
 test "M1.2d checkSiriusFilled" { checkSiriusFilled(inline()) }
 test "M1.2d checkSharedHipGuard" { checkSharedHipGuard(inline()) }
 test "M1.2d checkAlphaCenComponents" { checkAlphaCenComponents(inline()) }
-test "M1.2d checkOverrideRefused" { checkOverrideRefused(inline()) }
+test "M1.2d checkAlphaCenBRaw" { checkAlphaCenBRaw(inline()) }
 test "M1.2d checkCuts" { checkCuts(inline()) }
 test "M1.2d checkFillQuickOnly" { checkFillQuickOnly() }
 

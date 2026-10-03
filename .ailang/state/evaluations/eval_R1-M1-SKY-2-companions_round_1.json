@@ -1,0 +1,153 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "companions (M1 follow-up: companion stars take their system's distance, Mark's attended ruling 2026-10-03)",
+  "pr": 89,
+  "branch": "fix/companion-parallax",
+  "commits": ["00e89d1"],
+  "evaluator": "independent evaluator (Claude Fable 5.1), fresh clone under the scratchpad, AILANG v0.52.0 (runtime/bin/ailang), generator was Opus 5.5",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-03T15:30:00+02:00",
+  "design_doc": "design_docs/planned/r1/m1-companion-parallax.md",
+  "sprint_plan": "none (ruling implementation on R1-M1-SKY-2; no sprint JSON for this change)",
+  "score": 89,
+  "total_score": 89,
+  "pass_threshold": 70,
+  "result": "pass",
+  "hard_fails": [],
+  "breakdown": {
+    "tests_pass": {
+      "max": 20,
+      "score": 20,
+      "evidence": "make test exit 0 locally with AILANG=<abs>/runtime/bin/ailang v0.52.0 (10m05s wall: ailang test 418 passed, sim package 167/167, replay 7 cases identical, parity-v2 identical, strict VM rng 6 seeds identical, companions-test ok, bright-test ok, starmap-test ok, galaxy map 0 failures, sim bridge 0 failures, test_star_catalogue 40/40, python-guard ok); make golden 0 failures (star positions, exposure, CMB); gh pr checks 89: headless tests pass (x86_64 CI, 18m58s)"
+    },
+    "lint_clean": {
+      "max": 10,
+      "score": 10,
+      "evidence": "python-guard ok (check_companions.py listed as oracle, tools/python-allowlist.txt:17); ailang check inside make test: 33 files checked, all passed; no TODO/FIXME/HACK in the diff"
+    },
+    "acceptance_criteria": {
+      "max": 30,
+      "score": 30,
+      "evidence": "all four rows of the design note's table pass by their commands: make companions-test (companions-ok, companions-fixtures-ok, strict VM = interpreter); make bright-test inside make test (rule (c) gone, AlphaCenBRaw + AlphaCenComponents); make catalogue-verify: companions.csv, quick, medium, bright, stars.json all identical, check_companions.py oracle 20,470 companions, 56 HIP rows skipped, 0 disagreements; make starmap-test ok; make replay 7 cases identical; make golden see tests_pass"
+    },
+    "code_quality": {
+      "max": 15,
+      "score": 12,
+      "evidence": "companions.ail is pure, 242 lines, strict-VM clean; the shells in bright_main.ail are thin and every tier refuses an unpinned table; 46 evaluator mutations: 44 killed, 2 survivors are equivalent mutants (see mutations). Deductions: -1 outranks() compares Hipparcos V for bright rows with Gaia G for everyone else (finding 6); -1 self-pairs (the same source listed in CNS5 without its Gaia id and in GCNS) are not distinguished from companions (finding 3); -1 ui/galaxy_map.gd grows to 886 lines, already above the 800-line limit before this PR"
+    },
+    "documentation": {
+      "max": 15,
+      "score": 11,
+      "evidence": "CHANGELOG entry with the before/after distances (all three verified); design note with pillar table, rule table, counts (20,524 / 52 HIP / 12 CNS5-only roots, 508 map rows, 3 out 1 in: all verified), known misses, false pairs; fixtures README has the cut commands. Deductions: -1 'every tier' is claimed but the medium/large tiers leave 504 companions split from their root (finding 1); -1 the chance-alignment figure comes from an untracked spike and the text does not say what was rotated relative to what, so it cannot be reproduced (finding 4); -1 CNS5:252, the PR's example of the largest mover, is the same star as its 'root' (0.024 arcsec), not a pair (finding 3); -1 the note does not say that inside 33 pc the 60 arcsec cap binds before 2,000 AU (600 AU at 10 pc), nor quantify 'the root is normally the best measured' (21% of links hand the companion a less precise parallax than its own, finding 2)"
+    },
+    "design_fidelity": {
+      "max": 10,
+      "score": 6,
+      "evidence": "The ruling is implemented as a general rule with the parameters the note proposes; every tier and the map read the table; alpha Cen B's bytes are unchanged (checked in stars.json and stars_bright.bin) and rule (c)/bright_overrides.json are gone; no primary row moves; Sirius B 8.7089 -> 8.6009 ly, Luyten 726-8 B 8.7244 -> 8.8167, Wolf 424 B 14.5926 -> 14.1121; 5,175 of 5,175 non-companion map rows identical, 5,384 / 46,641 / 10,709 identical binary records in quick / medium / bright. Deductions: -3 in the medium and large tiers the root's own row sits at its GCNS (EDR3) parallax while its companions are moved to the CNS5 value of the root, so 504 of 3,371 medium companions are still split from their primary, by up to 0.57 ly; Luyten 726-8 A/B, a pinned pair, is still 0.053 ly apart in the medium tier (finding 1); -1 self-pairs are treated as binaries and override CNS5's curated non-Gaia parallax (finding 3)"
+    }
+  },
+  "total": "20 + 10 + 30 + 12 + 11 + 6 = 89",
+  "gates": {
+    "make_test": "exit 0 (10m05s; 418 passed, 0 failed; sim package 167 passed; replay 7 identical; parity-v2 identical; galaxy map 0 failures; sim bridge 0 failures)",
+    "make_companions_test": "companions-ok, companions-fixtures-ok (VM = interpreter)",
+    "make_catalogue_verify": "companions.csv identical; quick identical; medium identical; bright identical; stars.json identical; check_companions: oracle 20470 companions over CNS5 + GCNS; table 20524, 56 involving bright (HIP) rows not compared; 0 disagreements (69 s wall)",
+    "make_starmap_test": "starmap-ok (strict VM = interpreter)",
+    "make_replay": "7 cases, all identical (godot_map_voyage 72 lines sha256 0865894c50e4b553 cmp arm64 golden)",
+    "make_golden": "0 failures (perl alarm 900; star positions, exposure star/sky, V_lim 6.897, CMB sharp/PSF/zeros)",
+    "ci": "gh pr checks 89: headless tests (physics, sim, parity, strict VM) pass, 18m58s, run 37120635650 (x86_64); mergeable CLEAN, no conflicts with origin/main (merge-tree 0)",
+    "environment_note": "With the dev build on PATH (ailang v0.52.0-17-g790169359-dirty) make test fails at deps (lock generator string) and catalogue-verify at the quick sidecar's 'ailang' field; both are environment, not the PR. make test AILANG=runtime/bin/ailang (the CLAUDE.md form) also fails at deps because the deps target runs `cd sim && $(AILANG) lock` with a relative path (pre-existing). An absolute path works."
+  },
+  "classified_diff_verification": {
+    "stars_json": "5,687 -> 5,685 rows; 508 rows changed, every one a companion; 0 non-companion rows changed (5,175 identical as JSON); vmag/teff/flags untouched on every changed row; max direction change 1.7e-6 deg (rows move along their own direction); Sirius B 8.70894 -> 8.60094 ly (= Sirius A), Sirius A, Luyten 726-8 A, Wolf 424 A, alpha Cen A/B unchanged; left the 25 pc map: Gaia DR3 3525007929026463744 (80.25 ly, own 40.64 -> root 39.53 mas), 1437124683199762304 (81.51, 40.016 -> 39.994), 1572366022165982208 (81.51, 40.015 -> 39.926); joined: Gaia DR3 779689533779300736 (80.53 ly, a companion)",
+    "stars_quick_bin": "5,908 records; 524 positional differences; 5,384 identical records (5,383 non-companions + the one companion that moves below float32)",
+    "stars_medium_bin": "50,000 records; 46,641 records common to both; 3,359 records in main not in the branch and 3,359 new (3,314 companions re-placed + the 45-out / 45-in churn of the 50,000 cut); sidecar count_excluded 965 -> 969, companions 3371, ailang v0.51.0 -> v0.52.0, package 0.5.1 -> 0.5.2",
+    "stars_bright_bin": "10,713 records; 4 changed (HIP 2487, 27890, 69481, 78821); HIP 71681 (alpha Cen B) identical",
+    "companions_csv": "20,524 rows (+ header + 2 provenance lines); 52 HIP roots, 12 CNS5-only roots, 20,460 Gaia roots; max sep 59.94 arcsec, max proj 1999.93 AU; own/root parallax ratio within [0.8025, 1.1999]; 767 (3.7%) admitted by the 3-sigma branch (|dplx| > 5%); 13 chains with parent != root; 15 links with sep < 0.2 arcsec"
+  },
+  "astrophysics_verdict": {
+    "thresholds": "Defensible and conservative. 2,000 AU: El-Badry, Rix & Heintz 2021 go to 1 pc (206,000 AU) and, inside 100 pc, keep high-purity pairs to about 10^4 AU, so the cap drops roughly the widest 15-25% of recoverable Gaia pairs (dN/ds ~ s^-1.6 beyond a few hundred AU); within 33 pc the 60 arcsec cap binds first (600 AU at 10 pc, 300 AU at 5 pc), so for the map the effective limit is angular: epsilon Ind A-B (402 arcsec, 1,460 AU) and 40 Eri A-BC (83 arcsec) stay outside, harmlessly since their parallaxes already agree. Pure 3 sigma does reject the motivating pairs: from the fixture lines Luyten 726-8 A 369.93 +- 0.27 (DR2) vs B 373.84 +- 0.56 is 6.3 sigma and Wolf 424 A 231.12 +- 0.58 vs B 223.51 +- 0.53 is 9.7 sigma, because the formal 5-parameter errors on 1-3 arcsec pairs with 16-27 yr orbits ignore orbital motion; 5% admits them (1.1%, 3.3%). The 20% hard cap is necessary: a ground-based sigma of 6.6 mas on 34 mas (CNS5:252) makes 3 sigma a 58% window. The 0.2|mu_p| floor is looser than El-Badry's orbital bound + 2 sigma_mu and dominates for most GCNS pairs; it costs nothing measurable in chance pairs (below) and is what admits pairs whose Hipparcos motion is a photocentre motion.",
+    "chance_alignment": "The design's ~15 per sky in GCNS is a safe upper figure but its method is not reproducible: the spike is untracked and 'sky rotated 0.5-2 deg' does not say what was rotated against what (rotating the whole sky breaks no pair). Independent estimate (scratchpad spike on the oracle's parser): rotate a CRC-selected half of all 332,017 stars in RA by 0.7 deg and by 1.9 deg, count pairs whose members lie in different halves (pure chance alignments, x2 for the whole sky). Result: 0 cross-half pairs at both angles (validated: a 7 arcsec rotation yields 10,357 cross-half pairs, half of the real pairs wider than 7 arcsec, as expected), i.e. fewer than about 6 chance pairs per sky at 95%. Order-of-magnitude check agrees: ~250 random neighbours inside the AU-limited radius at 100 pc, times ~0.1 for parallax within 5%, times ~0.05-0.1 for the proper-motion vector, gives 1-3.",
+    "root_vs_weighted_mean": "Sound for the class that motivated the rule (a bright Hipparcos/ground primary with a close Gaia companion whose solution the glare and the orbit corrupt: Sirius, alpha Cen, Luyten 726-8, Wolf 424), where a weighted mean would be dominated by the corrupted, formally precise companion value and would move the golden targets. Overstated as a general claim: over the 20,468 non-HIP links the root's parallax error exceeds the companion's in 4,395 (21%), by more than 3x in 1,009, by more than 10x in 238; in 113 links the companion is handed a value more than 5% from its own, more precise one. Example: CNS5:3950 (GJ 12312 A, HIP 78734, Hipparcos 43.67 +- 2.14) drags two clean Gaia companions at 40.68 +- 0.07 and 40.84 +- 0.20 (which agree with each other to 0.4%) from 80.0 to 74.7 ly. Keeping primaries fixed is a defensible engineering choice under the ruling; the note should state the trade-off with these counts. Follow-up to consider: for wide (> 2 arcsec) pairs whose members all have clean Gaia solutions (sigma < 0.1 mas), take the precision-weighted system parallax and move the root too; Sirius and alpha Cen have Hipparcos roots and would be untouched.",
+    "largest_movers_spot_check": "Real physical pairs confirmed from the catalogue rows and known systems: beta1/beta2 Tuc (HIP 2487 -> Gaia 4900927434176620160, 26.9 arcsec, 19.36 -> 22.84 mas), kappa1/kappa2 Boo (HIP 69481 -> Gaia 1511793067598402944, 13.5 arcsec), beta1/beta2 Sco (HIP 78821 -> HIP 78820, 13.6 arcsec, 8.19 -> 8.07 mas), GJ 12312 A + two Gaia components (CNS5:3950, flagged a triple in CNS5), Sirius, alpha Cen, Luyten 726-8, Wolf 424, GJ 667 C. Not pairs: the PR's CNS5:252 (95.9 -> 109.4 ly) is GJ 10136 itself, a CNS5 row with no Gaia id (34.0 +- 6.6 mas, Kirkpatrick+2021) sitting 0.024 arcsec from Gaia 2371519626175864960 (29.81 +- 1.26, same proper motion); likewise CNS5:5630 (65.2 -> 75.7 ly, 0.004 arcsec, 50.0 +- 3.0 -> 43.09 +- 1.81), CNS5:3192, CNS5:528 and 12 more of the 15 sub-0.2-arcsec links; and HIP 27890 (HD 40409, V 4.65) 1.03 arcsec from Gaia 4756622820871136640 (G 4.34, plx 36.60 vs 36.67) is the same star, missed by rule (a)'s 1 arcsec GCNS match because its Hipparcos and Gaia proper motions differ by 36 mas/yr."
+  },
+  "replay_recommendation": {
+    "question": "Fresh godot_map_voyage recording would change Sirius A's map index 8 -> 9 (Sirius B now sorts 2.3e-7 ly ahead). Leave the committed log, or re-record now?",
+    "recommendation": "Re-record now, as a separate commit on this branch (or the first commit after merge) that touches only tests/replays/godot_map_voyage.ndjson and its two arch goldens, reviewed to be exactly index 8 -> 9 (1 occurrence in the input, 3 echoes in the state golden; x86_64 copied from arm64 and confirmed by CI as M1.7 did), plus a guard in tools/test_replay.py that every plan intent's target index in a committed log matches stars.json's index for that id.",
+    "why": "The replay logs record what Godot sent against the shipped map; a log whose index 8 is now Sirius B while its id says CNS5:1676 is internally inconsistent and docs/m1.7/galaxy_map_panel.json already says 9. The sim never resolves the index (sim/protocol.ail:186 just echoes it), and galaxy_map.gd:613/636 guard with catalogue[i]['id'] == t['id'], so nothing breaks today; but the next person to re-record for any other reason will meet an unexplained golden diff. Keeping the re-record out of this PR's main commit preserves its evidence that the goldens did not move because of the data change."
+  },
+  "mutations": {
+    "method": "46 single-point mutations of sim/tools/companions.ail in a second clone, each run through make companions-test (strict VM + interpreter + fixtures)",
+    "killed": 44,
+    "survived_equivalent": [
+      "uz sort without the id tie-break: equivalent (the parent is the brightest qualifying star whatever the scan order; the output is re-sorted by id)",
+      "cnsStar keeps plx == 0 rows (plx < 0.0 instead of <= 0.0): equivalent for the links (a zero-parallax star fails the AU test as a parent and the 20% test as a companion); the fixtures have no such row"
+    ],
+    "killed_list": "sep 60->62, 60->58; AU 2000->2100, ->1900, at q's distance, dropped; frac 0.2->0.22, ->0.18, dropped, of q.plx; close 0.05->0.052, ->0.048; sigma 3->3.1, ->2.9, e_p only; 5%-or-3sigma -> and; pmFloor 0.2->0.21, ->0.19; orbit 0.44->0.45, ->0.43, plx^1; pm min not max, scalar not vector, dropped; outranks non-strict, fainter wins, ties by larger eplx; parent plx not root; root = parent; first not brightest parent; root epoch own; ownPlx = root plx; scan forward only; band half width; output unsorted; chord bound x2; applyRows own plx; applyRows moves every row; pinned drops alpha Cen B; pinned Sirius B -> 1675; checkPinned always Ok; parseLinks accepts unsorted, accepts duplicate ids; candidates keep the GCNS duplicate of a CNS5 row"
+  },
+  "findings": [
+    {
+      "n": 1,
+      "severity": "medium",
+      "file": "sim/tools/companions.ail:159-168 (systems: plx: r.plx), sim/tools/bright_main.ail:112-120 (gcnsMain)",
+      "issue": "In the medium and large tiers the companion is moved to the ROOT'S CNS5 parallax, but the root's own row in those tiers comes from gcns.csv (EDR3). Where CNS5 adopted a different value (488 roots, mostly DR2 citations such as Luyten 726-8 A 369.93 vs EDR3 367.712), the pair stays split: 504 of 3,371 medium companions, residuals up to 0.57 ly (Gaia 5849837820492182272 at 54 ly: 54.044 vs root row 53.474); Luyten 726-8 B, a pinned pair, is still 0.053 ly from A in the medium tier. The design's 'in every tier' holds for quick and the map only.",
+      "suggestion": "In gcnsMain also pin each ROOT row to the table's root_plx when its own value differs (roots are enumerable from the table), or carry the GCNS value of the root in the table for the GCNS tiers. Add a medium-tier check to companions_test or catalogue-verify: for every link whose root is also a tier row, |dist(companion) - dist(root)| below float32 resolution."
+    },
+    {
+      "n": 2,
+      "severity": "medium",
+      "file": "design_docs/planned/r1/m1-companion-parallax.md:47-52",
+      "issue": "'The root ... normally the best measured' is not quantified. 21% of links (4,395 / 20,468) give the companion a less precise parallax than its own; 113 move it more than 5% away from a value more than 3x more precise (CNS5:3950 / GJ 12312 A: Hipparcos 43.67 +- 2.14 drags two Gaia components at 40.68 +- 0.07 and 40.84 +- 0.20 from 80.0 to 74.7 ly).",
+      "suggestion": "State the trade-off and the counts in the note; record as a follow-up a precision-weighted system parallax for wide pairs with clean Gaia members (would not touch Sirius or alpha Cen)."
+    },
+    {
+      "n": 3,
+      "severity": "low",
+      "file": "sim/tools/companions.ail:118-121 (candidates), design note 'Counts' and PR text",
+      "issue": "15 links have sep < 0.2 arcsec: CNS5 rows without a Gaia id (CNS5 adopted a non-Gaia parallax: Kirkpatrick+2021, Bartlett+2020, Dieterich+2017) sitting on the GCNS source they are. The rule treats them as binaries and overrides CNS5's curated choice (CNS5:252 34.0 +- 6.6 -> 29.81 +- 1.26; CNS5:5630 50.0 +- 3.0 -> 43.09 +- 1.81). The PR's headline mover CNS5:252 (95.9 -> 109.4 ly) is this case, not a pair. HIP 27890 (HD 40409) 1.03 arcsec from its own Gaia row is the same thing surfaced by rule (a)'s 1 arcsec GCNS match.",
+      "suggestion": "Classify sub-0.2-arcsec links with matching proper motion as 'same source' in the table (a column or a separate count), and decide explicitly whether to adopt Gaia there; widen rule (a)'s GCNS match to allow for proper-motion differences (2-3 arcsec with |G - V| < 2)."
+    },
+    {
+      "n": 4,
+      "severity": "low",
+      "file": "design_docs/planned/r1/m1-companion-parallax.md:66-70",
+      "issue": "The chance-alignment estimate (~15 per sky in GCNS) and the shape exploration come from an untracked Python spike and the method ('sky rotated 0.5-2 deg') is ambiguous; the independent half-sky rotation gives 0 cross-half pairs at 0.7 and 1.9 deg (< ~6 per sky).",
+      "suggestion": "Put the estimate in-tree as part of check_companions.py (oracle) or an AILANG entry, with the rotation method stated."
+    },
+    {
+      "n": 5,
+      "severity": "low",
+      "file": "tests/replays/godot_map_voyage.ndjson:3, docs/m1.7/galaxy_map_panel.json:809",
+      "issue": "Committed input log carries target index 8 for CNS5:1676; in the shipped stars.json index 8 is now Sirius B. Goldens still match because the sim only echoes the index.",
+      "suggestion": "See replay_recommendation."
+    },
+    {
+      "n": 6,
+      "severity": "low",
+      "file": "sim/tools/companions.ail:95-106 (hipStars mag: p.v), 124-125 (outranks)",
+      "issue": "Bright rows rank by Hipparcos V, CNS5/GCNS rows by Gaia G; V - G is +0.3 to +1.5 for K/M stars, so a HIP primary can be out-ranked by a redder Gaia star up to about a magnitude fainter in V. None of the 5 bright links is wrong (beta1 Tuc G 4.33 vs beta2 V 4.53 etc.), so cosmetic today.",
+      "suggestion": "Convert V to an approximate G (or compare in the same band from hip_main's B-V) before ranking, or document the mixed scale."
+    },
+    {
+      "n": 7,
+      "severity": "low",
+      "file": "design_docs/planned/r1/m1-companion-parallax.md:42-43",
+      "issue": "The note presents 2,000 AU as the binding limit; inside 33 pc the 60 arcsec cap binds first (600 AU at 10 pc). Not wrong, but the note's 'binds beyond 33 pc' should say the map's effective limit is angular.",
+      "suggestion": "One sentence in the rule table; consider max(60 arcsec, 2,000 AU / d) as a follow-up since CNS5 chance pairs are 0.2 per sky."
+    },
+    {
+      "n": 8,
+      "severity": "low",
+      "file": "Makefile:19-22 (deps)",
+      "issue": "Pre-existing: `make test AILANG=runtime/bin/ailang`, the form CLAUDE.md gives, fails at deps because `cd sim && $(AILANG) lock` runs the relative path from sim/. Not this PR's change.",
+      "suggestion": "Resolve AILANG to an absolute path in the Makefile (e.g. $(abspath $(AILANG)))."
+    }
+  ],
+  "deviation_verdicts": [
+    "Rule (c) / bright_overrides.json retired: correct, alpha Cen B bytes unchanged in stars_bright.bin and stars.json; bright_test pins the raw 4.09 ly and the moved 4.321 ly.",
+    "Root parallax rather than weighted mean: accepted under the ruling with finding 2 disclosed.",
+    "Committed replay log left alone: acceptable for this PR; re-record as its own commit (replay_recommendation).",
+    "No sprint plan / sprint JSON for this change: acceptable for a ruling implementation inside R1-M1-SKY-2; the design note carries the acceptance table."
+  ],
+  "feedback": [],
+  "notes": "PASS at 89/100. The rule is correctly implemented, pure, deterministic, oracle-checked (0 disagreements on 20,468 rows) and mutation-hard (44/44 effective kills). The one substantive defect is finding 1: the medium/large tiers move companions to a CNS5 parallax their primary does not sit at in that tier, so 'every tier' is only true for quick and the map; it should be fixed before the medium tier is relied on for binaries, but it is not a regression (those pairs were split before by their own parallaxes) and does not block merge. Findings 2-4 are honesty-of-the-note items: the precision inversion count, the self-pairs, and the irreproducible chance figure."
+}

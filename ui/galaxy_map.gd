@@ -822,6 +822,12 @@ func _accept() -> void:
 		get_viewport().set_input_as_handled()
 
 
+## The screen box of a string drawn at baseline `at` (draw_string's origin), for label overlap tests.
+static func label_box(font: Font, at: Vector2, text: String, size: int) -> Rect2:
+	var sz := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size)
+	return Rect2(at - Vector2(0, font.get_ascent(size)), sz)
+
+
 func _draw_overlay() -> void:
 	var font := ThemeDB.fallback_font
 	var faint := Color(0.35, 0.45, 0.6, 0.35)
@@ -845,11 +851,13 @@ func _draw_overlay() -> void:
 			if at.y >= 0.0:
 				_overlay.draw_string(font, at + Vector2(4, -4), "%d ly" % int(r), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.5, 0.6, 0.8, 0.8))
 	var taken: Array[Vector2] = [] # label spots already used (A/B pairs share a position)
+	var boxes: Array[Rect2] = [] # drawn label boxes: a faint name never overlaps one (M1.7 eval: Luyten 726-8 A over Gliese 1)
 	if not camera.is_position_behind(Vector3.ZERO):
 		var sol := camera.unproject_position(Vector3.ZERO)
 		_overlay.draw_circle(sol, 4.0, Color(1.0, 0.9, 0.5))
 		_overlay.draw_string(font, sol + Vector2(8, -6), "Sol", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1.0, 0.9, 0.5))
 		taken.append(sol)
+		boxes.append(label_box(font, sol + Vector2(8, -6), "Sol", 15))
 	if selected_index >= 0 and not camera.is_position_behind(world_pos(selected_index)):
 		var sp := screen_position(selected_index)
 		if not camera.is_position_behind(Vector3.ZERO):
@@ -857,15 +865,19 @@ func _draw_overlay() -> void:
 		_overlay.draw_arc(sp, 11.0, 0.0, TAU, 40, Color(0.5, 0.85, 1.0), 2.0, true)
 		_overlay.draw_string(font, sp + Vector2(14, 18), display_name(selected_index), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.6, 0.9, 1.0))
 		taken.append(sp)
+		boxes.append(label_box(font, sp + Vector2(14, 18), display_name(selected_index), 16))
 	for i: int in names: # faint names for the other named stars, without overlaps
 		var w := world_pos(i)
 		if i == selected_index or camera.is_position_behind(w):
 			continue
 		var p := camera.unproject_position(w)
-		if not view.has_point(p) or taken.any(func(q: Vector2) -> bool: return q.distance_to(p) < NAME_SPACING_PX):
+		var box := label_box(font, p + Vector2(6, -4), names[i], 12)
+		if not view.has_point(p) or taken.any(func(q: Vector2) -> bool: return q.distance_to(p) < NAME_SPACING_PX) \
+				or boxes.any(func(b: Rect2) -> bool: return b.intersects(box)):
 			continue
 		_overlay.draw_string(font, p + Vector2(6, -4), names[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.62, 0.68, 0.8, 0.75))
 		taken.append(p)
+		boxes.append(box)
 	var ship = ship_world_pos()
 	if in_transit() and ship != null and not camera.is_position_behind(ship):
 		var s := camera.unproject_position(ship)

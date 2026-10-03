@@ -1,0 +1,294 @@
+module stapledons/sim/tools/companions_test
+-- The companion rule (sim/tools/companions.ail): every threshold on synthetic stars (just inside and
+-- just outside), and the pinned cases on real catalogue lines: Sirius B, alpha Cen B (the retired
+-- rule (c): its bytes are unchanged), Luyten 726-8 B, Wolf 424 B, and two false pairs. The real lines
+-- are cut from the downloads (tools/fixtures/README.md, "Companion rule") and inlined so the checks
+-- run under `ailang test` and on the strict VM; `companionsFixtures` (FS) checks the inline copies
+-- equal the fixture files. `make companions-test`: strict VM = interpreter, fixtures VM = interpreter.
+import ./companions (Star, Link, Candidates, applyGcnsRows, splitPairs, checkTier, rootsIn, cnsStars, gcnsStars, hipStars, hipErrors, candidates, systems, linkIndex, companionOf, outranks,
+  applyRows, applyHip, movedIn, checkPinned, linksText, parseLinks, linkLine, rootDistance, findId)
+import ./bright (parseHip2, parseHipMain, parseCnsHip, gcnsIndex, bright)
+import ./catalogue (Row)
+import std/string (concat, join, split, startsWith, replace)
+import std/list (map, filter, reverse, flatMap, length as size)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/math (sqrt, sin, cos, PI)
+import std/fs (readFile)
+
+pure func failedChecks(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func verdictOf(tag: string, bad: [string]) -> string =
+  match bad { [] => concat([tag, "-ok"]), _ => concat([tag, "-BAD: ", join(",", bad)]) }
+
+-- Synthetic stars on the galactic equator: `at` arcsec from (1, 0, 0) toward +y.
+pure func at(id: string, arcsec: float, plx: float, eplx: float, pmra: float, pmde: float, mag: float) -> Star {
+  let a = arcsec * PI() / 648000.0;
+  {id: id, cat: "gcns", ux: cos(a), uy: sin(a), uz: 0.0, plx: plx, eplx: eplx, pmra: pmra, pmde: pmde, mag: mag, epoch: 2016.0}
+}
+pure func p100() -> Star = at("p", 0.0, 100.0, 0.01, 100.0, 0.0, 1.0)
+-- (1) 60 arcsec: 59 in, 61 out (10 pc, so the AU cap is far).
+pure func checkAngle() -> bool =
+  companionOf(p100(), at("q", 59.0, 100.0, 0.01, 100.0, 0.0, 5.0)) && !companionOf(p100(), at("q", 61.0, 100.0, 0.01, 100.0, 0.0, 5.0))
+-- (2) 2,000 AU at the primary's distance (20 mas = 50 pc): 39 arcsec = 1,950 AU in, 41 = 2,050 AU out;
+-- at 39.5 arcsec a companion at 19.5 mas is in (1,975 AU at p's distance, 2,026 at its own).
+pure func checkProjectedAu() -> bool {
+  let p = at("p", 0.0, 20.0, 0.01, 100.0, 0.0, 1.0);
+  companionOf(p, at("q", 39.0, 20.0, 0.01, 100.0, 0.0, 5.0)) && !companionOf(p, at("q", 41.0, 20.0, 0.01, 100.0, 0.0, 5.0)) &&
+  companionOf(p, at("q", 39.5, 19.5, 0.01, 100.0, 0.0, 5.0))
+}
+-- (3) the 20% cap holds even when the errors are huge: 19% in, 21% out.
+pure func checkFracCap() -> bool {
+  let p = at("p", 0.0, 100.0, 100.0, 100.0, 0.0, 1.0);
+  companionOf(p, at("q", 10.0, 81.0, 100.0, 100.0, 0.0, 5.0)) && !companionOf(p, at("q", 10.0, 79.0, 100.0, 100.0, 0.0, 5.0))
+}
+-- (3) 5% with tiny errors: 4.9% in, 5.1% out; 3 sigma: 6 mas apart (6%) is in with errors 1.42 + 1.42
+-- (3 sigma = 6.02) and out with 1.40 + 1.40 (5.94).
+pure func checkCloseOrSigma() -> bool {
+  let p = p100();
+  companionOf(p, at("q", 10.0, 95.1, 0.01, 100.0, 0.0, 5.0)) && !companionOf(p, at("q", 10.0, 94.9, 0.01, 100.0, 0.0, 5.0)) &&
+  companionOf(at("p", 0.0, 100.0, 1.42, 100.0, 0.0, 1.0), at("q", 10.0, 94.0, 1.42, 100.0, 0.0, 5.0)) &&
+  !companionOf(at("p", 0.0, 100.0, 1.4, 100.0, 0.0, 1.0), at("q", 10.0, 94.0, 1.4, 100.0, 0.0, 5.0))
+}
+-- (4) proper motion: at 100 mas, 10 arcsec the orbital bound is 0.44 x 1000 / sqrt(10) = 139.1 mas/yr
+-- (p moves 100 mas/yr, floor 20): 138 in, 141 out. With p at 1,000 mas/yr the floor (200) rules:
+-- 199 in, 201 out. The difference is a vector (pmDE alone here).
+pure func checkProperMotion() -> bool {
+  let p = p100();
+  let fast = at("p", 0.0, 100.0, 0.01, 1000.0, 0.0, 1.0);
+  companionOf(p, at("q", 10.0, 100.0, 0.01, 100.0, 138.0, 5.0)) && !companionOf(p, at("q", 10.0, 100.0, 0.01, 100.0, 141.0, 5.0)) &&
+  companionOf(fast, at("q", 10.0, 100.0, 0.01, 1000.0, 199.0, 5.0)) && !companionOf(fast, at("q", 10.0, 100.0, 0.01, 1000.0, 201.0, 5.0))
+}
+-- Only a brighter star is a parent; equal magnitudes fall to the smaller parallax error, then the id.
+pure func checkRank() -> bool {
+  let q = at("q", 10.0, 100.0, 0.01, 100.0, 0.0, 5.0);
+  !companionOf(q, p100()) && companionOf(p100(), q) &&
+  outranks(at("a", 0.0, 1.0, 0.1, 0.0, 0.0, 5.0), at("b", 0.0, 1.0, 0.2, 0.0, 0.0, 5.0)) &&
+  outranks(at("a", 0.0, 1.0, 0.1, 0.0, 0.0, 5.0), at("b", 0.0, 1.0, 0.1, 0.0, 0.0, 5.0)) &&
+  !outranks(at("b", 0.0, 1.0, 0.1, 0.0, 0.0, 5.0), at("a", 0.0, 1.0, 0.1, 0.0, 0.0, 5.0))
+}
+-- A triple: C qualifies only to B (50 arcsec), B to A (40); C takes A's parallax (the root), its parent
+-- stays B. The brightest qualifying neighbour is the parent: D near both A and B takes A directly.
+pure func linkOf(ls: [Link], id: string) -> Option[Link] = findId(linkIndex(ls), \l. l.id, id)
+pure func checkRootChain() -> bool {
+  let a = at("A", 0.0, 100.0, 0.01, 100.0, 0.0, 1.0);
+  let b = at("B", 40.0, 101.0, 0.01, 100.0, 0.0, 5.0);
+  let c = at("C", 90.0, 102.0, 0.01, 100.0, 0.0, 9.0);
+  let d = at("D", 20.0, 100.0, 0.01, 100.0, 0.0, 7.0);
+  let ls = systems([c, a, d, b]);
+  size(ls) == 3 &&
+  (match linkOf(ls, "C") { Some(l) => l.root == "A" && l.parent == "B" && l.plx == 100.0, None => false }) &&
+  (match linkOf(ls, "D") { Some(l) => l.root == "A" && l.parent == "A", None => false }) &&
+  (match linkOf(ls, "B") { Some(l) => l.root == "A", None => false }) && (match linkOf(ls, "A") { Some(_) => false, None => true })
+}
+-- The parent is the BRIGHTEST qualifying neighbour, wherever it falls in the scan (here last: equal uz
+-- sorts by id): m's parent is z9, not a1.
+pure func checkBrightestParent() -> bool =
+  match linkOf(systems([at("a1", 20.0, 100.0, 0.01, 100.0, 0.0, 5.0), at("m", 10.0, 100.0, 0.01, 100.0, 0.0, 7.0),
+      at("z9", 0.0, 100.0, 0.01, 100.0, 0.0, 1.0)]), "m") { Some(l) => l.parent == "z9" && l.root == "z9", None => false }
+-- The search band is the full 60 arcsec in uz, both ways: a pair 55 arcsec apart toward the pole is
+-- found whichever star is the brighter (and one 65 arcsec apart is not).
+pure func atZ(id: string, arcsec: float, mag: float) -> Star {
+  let a = arcsec * PI() / 648000.0;
+  {id: id, cat: "gcns", ux: cos(a), uy: 0.0, uz: sin(a), plx: 100.0, eplx: 0.01, pmra: 100.0, pmde: 0.0, mag: mag, epoch: 2016.0}
+}
+pure func checkBand() -> bool =
+  size(systems([atZ("p", 0.0, 1.0), atZ("q", 55.0, 5.0)])) == 1 && size(systems([atZ("p", 55.0, 1.0), atZ("q", 0.0, 5.0)])) == 1 &&
+  size(systems([atZ("p", 0.0, 1.0), atZ("q", 65.0, 5.0)])) == 0
+
+-- Real lines (tools/fixtures/*), verbatim. CNS5: Sirius B/A (1675/1676), alpha Cen AB (3627),
+-- Luyten 726-8 A/B (424/425), Wolf 424 A/B (3092/3093), GJ 604 (3925), GJ 13207/13208 (5485/5486),
+-- GJ 10136 (252, no Gaia id: it is GCNS 2371519626175864960).
+pure func cns5Lines() -> [string] = [
+  "1675 244    B    2 0       2947050466531873024      - 101.28662552099249   -16.720932526023173     2016.0    2020yCat.1350....0G 374.5105905289588    0.26141906   2020yCat.1350....0G  -461.570505530133       0.27794569730758667   -914.5196209016666       0.3315037190914154   2020yCat.1350....0G                                                                   8.524133   0.001747320256337465  8.120362   0.046782510166774566  8.398789   0.039065152344803976                                                                                      8.524133    0.001747320256337465  0.12534332275390625    0.03910421020556419 1                                                                                                                                          ",
+  "1676 244    A    2 1                         -  32349 101.2885410520664    -16.713143062644765     1991.25   2007A&A...474..653V 379.2099914550781    1.58         2007A&A...474..653V  -546.01                 1.3300000429153442   -1223.07                  1.2400000095367432   2007A&A...474..653V                                                                                                 -                                -                                - -1.063531480944323   0.08194515854120255  0.006585664343293107 0.1311736603695266   -1.0635315    0.08194515854120255  0.006585664343293107    0.1311736603695266 2                                                                                                                                          ",
+  "3627 559    AB   3 1                         -  71683 219.9204081301028    -60.83514521897498      1991.25   2007A&A...474..653V 754.8099975585938    4.11         2007A&A...474..653V -3679.25                 3.890000104904175      473.67                  3.240000009536743    2007A&A...474..653V                                                                                                 -                                -                                - -0.15340459131661227 0.0945361778140068   0.49216332456974893  0.1471417305381334   -0.1534046     0.0945361778140068  0.49216332456974893     0.1471417305381334 2                                                                                                                                          ",
+  " 424 65     A    2 1       5140693571158739840      -  24.771554293454546  -17.948299887129313     2016.0    2020yCat.1350....0G 369.92999267578125   0.27         2018A&A...616A...1G  3385.800048828125       0.5                    532.0                   0.4000000059604645   2018A&A...616A...1G   29.0                   2.0                 1953GCRV..C......0W 10.507542   7.544402933236169E-4 12.820644  0.0055727591180932895  9.067688    0.01248432343651413                                                                                     10.507542    7.544402933236169E-4  1.390736309723883     0.013733316273056115 0   6.283 0.019   5.69  0.021   5.343 0.021 2003tmc..book.....C   5.115 0.231   4.697 0.127   4.766 0.015   4.608 0.027 2014yCat.2328....0C",
+  " 425 65     B    2 0       5140693571158946048      -  24.771674208211856  -17.947682860008488     2016.0    2020yCat.1350....0G 373.8443122683992    0.5584941    2020yCat.1350....0G  3178.6942575748953      0.42692017555236816    584.0613350385156       0.30229246616363525  2020yCat.1350....0G                                                                  10.817838   0.002016822788600924 13.252207   0.010037538092495739  9.423653   0.015391142567862469                                                                                     10.817838    0.002016822788600924  1.4018749670840285    0.018420896843057644 0                                                                                                                                          ",
+  "3092 473    A    2 1       3902874650602495232      - 188.3144928018531      9.022091624851694     2016.0    2020yCat.1350....0G 231.11849780261377   0.57605594   2020yCat.1350....0G -1795.6609024600048      0.5651155710220337     217.78856656191624      0.5500162839889526   2020yCat.1350....0G                                                                  11.235116  0.0014617931502114475 12.916022    0.04421039634132808  9.381813    0.04559258479587413                                                                                     11.235116   0.0014617931502114475  1.3555332823589619     0.06352112194401394 0   6.995 0.024   6.397 0.034   6.042 0.02  2003yCat.2246....0C   5.835 0.123   5.489 0.057   5.493 0.015   5.326 0.035 2014yCat.2328....0C",
+  "3093 473    B    2 0       3902874650601954816      - 188.3146767758809      9.021829208339808     2016.0    2020yCat.1350....0G 223.50767882442508   0.5250833    2020yCat.1350....0G -1710.4676540646703      0.5541852712631226     203.09780864044555      0.4507122337818146   2020yCat.1350....0G                                                                  11.240162  0.0016890267925612182 13.037464   0.049526091186468425  9.539625    0.05949696932114262                                                                                     11.240162   0.0016890267925612182  1.3504576393411305     0.07742359502510442 0   6.995 0.024   6.397 0.034   6.042 0.02  2003yCat.2246....0C   5.835 0.123   5.489 0.057   5.493 0.015   5.326 0.035 2014yCat.2328....0C",
+  "3925 604         - 0       5994771148252505216  78170 239.41821382382682   -42.62508240537215      2016.0    2020yCat.1350....0G  67.87261993835378   0.027915422  2020yCat.1350....0G  -257.09792547764425     0.026307549327611923  -190.7977977298853       0.02200172282755375  2020yCat.1350....0G   35.82001876831055      0.16611722111701965 2020yCat.1350....0G  7.658037  1.9783203725757916E-4  8.27292     5.31813452186762E-4  6.906685   3.690963536581659E-4                                                                                      7.658037   1.9783203725757916E-4  0.7488931213197756   0.0014522595037425492 0   6.032 0.023   5.452 0.051   5.284 0.016 2003yCat.2246....0C   5.269 0.181   5.141 0.079   5.278 0.016   5.204 0.032 2014yCat.2328....0C",
+  "5485 13207       - 0       1958031442283263616 109537 332.81938828912376    41.016265120273985     2016.0    2020yCat.1350....0G  42.23358104635537   0.022955826  2020yCat.1350....0G  -210.73548663992378     0.01766059547662735    232.50673671647502      0.01883370243012905  2020yCat.1350....0G    8.625969886779785     0.540608823299408   2020yCat.1350....0G 10.382534  2.7398246129994435E-4 11.325597   6.481777473190162E-4  9.422249   3.257542559605014E-4                                                                                     10.382534   2.7398246129994435E-4  0.9607933873220175   0.0014887075694695498 0   8.228 0.02    7.636 0.031   7.435 0.018 2003yCat.2246....0C   7.2   0.035   7.213 0.019   7.149 0.016   6.925 0.094 2014yCat.2328....0C",
+  "5486 13208       - 0       1958030617647715328      - 332.8501471342748     40.999937747390554     2016.0    2020yCat.1350....0G  78.93157695245002   0.028031928  2020yCat.1350....0G   -91.37297496206372     0.018902236595749855    67.11856221476702      0.020303890109062195 2020yCat.1350....0G                                                                  13.217788   7.022411273281378E-4 15.392482   0.003130727961551627 11.862342   0.001427777272239907                                                                                     13.217788    7.022411273281378E-4  1.356210028899406     0.003678315580312004 0   9.725 0.02    9.097 0.017   8.79  0.016 2003yCat.2246....0C   8.578 0.022   8.405 0.02    8.2   0.021   8.45  0.313 2014yCat.2328....0C",
+  " 252 10136       - 0                         -      -  12.795312           -15.738187              2016.55   2021ApJS..253....7K  34.0                6.6          2021ApJS..253....7K    65.2                  3.4                    -29.2                   3.6                  2021ApJS..253....7K                                                                                                 -                                -                                -                                                                                                                     -                                           -                                                                  12.743 0.023  12.416 0.025  12.217 0.365   8.414       2014yCat.2328....0C"]
+-- HIP2 and hip_main: alpha Cen B (71681) and A (71683), HD 40409 (27890: it is GCNS 4756622820871136640).
+pure func hip2Lines() -> [string] = [
+  " 71681  95 3 1  3.8382255459 -1.0618492493  796.92 -3614.39   802.98  19.15  14.24  25.90  20.48  19.52 132 99.00  4    0.0    0  1.2429 0.1154 0.000 0  0.900 0.020  0.880   1.25  -2.04   1.06   2.68   1.29   1.01  -0.95   0.18   0.26   1.07   0.46   0.84  -0.69  -2.28   1.00",
+  " 71683  95 3 1  3.8383352142 -1.0617735850  754.81 -3679.25   473.67   3.07   2.46   4.11   3.89   3.24 136 99.00  0    0.0    0  0.1373 0.0472 0.063 0  0.710 0.040  0.690   1.11  -3.26   1.01   2.46   0.91   1.01  -0.89  -0.09   1.05   1.12   0.16  -0.31  -1.46  -4.75   1.00",
+  " 27890   1 1 1  1.5450454619 -1.1011460457   38.10   118.57   572.93   0.57   0.54   0.58   0.66   0.59 121  1.58  0    3.7    0  4.8015 0.0005 0.005 0  1.021 0.045  1.030   1.02   0.02   1.00  -0.34   0.06   1.01   0.03   0.05   0.14   1.01   0.06  -0.01   0.20   0.24   1.00"]
+pure func hipMainLines() -> [string] = [
+  "H|       71681| |14 39 39.39|-60 50 22.1| 1.35| |G|219.91412833|-60.83947139|B| 742.12|-3600.35|  952.11| 46.20| 36.28|  1.40| 26.10| 19.75| 0.29|-0.07|-0.01|-0.03|-0.06|-0.04|-0.06|-0.01|-0.13| 0.47|  1|-3.09| 71681|      |     |      |     | | 0.900|0.020|G|0.88|0.02|A| | 1.2429|0.1154|     |   |B|     |     |       |D| | |14396-6050|I| 3| 1|C|L|D|  |   |       |     |     |    |S| |D|128621|          |          |          |0.88|K1V         |1 ",
+  "H|       71683| |14 39 40.90|-60 50 06.5|-0.01| |G|219.92041034|-60.83514707|A| 742.12|-3678.19|  481.84|  1.42|  1.08|  1.40|  1.51|  1.24| 0.29|-0.31|-0.16| 0.15| 0.05|-0.09| 0.00| 0.14| 0.09| 0.45|  1|-3.09| 71683|      |     |      |     | | 0.710|0.040|G|0.69|0.02|A| | 0.1373|0.0472|0.063|105|A| 0.06| 0.26|       |D| | |14396-6050|I| 3| 1|C|P|D|  |   |       |     |     |    |S| |D|128620|          |          |P-60  5483|0.69|G2V         |X ",
+  "H|       27890| |05 54 05.90|-63 05 27.7| 4.65| |G|088.52458376|-63.09102096| |  36.67|  120.11|  573.43|  0.48|  0.44|  0.48|  0.56|  0.53|-0.09| 0.11|-0.10| 0.24|-0.10| 0.00|-0.10| 0.15|-0.14|-0.08|  1| 0.49| 27890| 5.982|0.004| 4.764|0.004| | 1.022|0.045|G|1.03|0.02|A| | 4.8015|0.0005|0.005|116| | 4.80| 4.81|       | | | |          | |  | 1|G| | |  |   |       |     |     |    |S| | | 40409|          |C-63   218|P-63   498|1.03|K1III/IV    |1 "]
+-- GCNS table1c: GJ 10136's and HD 40409's own Gaia sources, Luyten 726-8 A and B (EDR3; also CNS5 rows),
+-- GJ 604 (also a CNS5 row) and the background star 43 arcsec from it.
+pure func gcnsLines() -> [string] = [
+  "  2371519626175864960     12.7952951 0.84067    -15.7381800 0.51182    29.813 1.25793    71.416 1.21497   -30.981 1.47983                                        18.9422     26.91           1.10   1                                        F 0.978            0.03063      0.03243      0.03380      0.03529     -3.59828     -3.45279     -3.75693      5.62234      5.39501      5.87023    -33.13447    -31.79475    -34.59539                                                                                  PSO J005110.844-1544  2016arXiv161205560C  24.434          22.036   0.016  20.205   0.015  18.546   0.025    00511078-1544169   15.277   0.050  14.164   0.048  13.466   0.039 J005110.86-154417.3   12.765   0.013  12.415   0.009  12.217   0.365   8.414        ",
+  "  5140693571158739840     24.7715543 0.42790    -17.9482999 0.33829   367.712 0.74180  3385.316 0.67216   544.386 0.37875  10.5075   1439.13  12.8206    194.83   9.0677     86.97   1.6716 12.37   9                                        F 0.928 0.125      0.00271      0.00271      0.00272      0.00273     -0.67030     -0.66894     -0.67168      0.05251      0.05241      0.05262     -2.63522     -2.62991     -2.64068                                                                                  PSO J013904.663-1756  2016arXiv161205560C  13.065   0.012                                                                                                                                                                                                          ",
+  "  5140693571158946048     24.7716742 0.33533    -17.9476829 0.28195   373.844 0.50087  3178.694 0.42692   584.061 0.30229  10.8178    538.34  13.2522    108.17   9.4237     70.54   1.5972 10.45  10   29.000   2.0000  1953GCRV..C......0W F 0.886 0.136      0.00267      0.00267      0.00267      0.00268     -0.65928     -0.65842     -0.66017      0.05167      0.05160      0.05174     -2.59184     -2.58843     -2.59532  -42.462  -42.943  -41.954  -18.211  -18.255  -18.165  -19.191  -20.969  -17.149                                                                                                                                                                                                                                                                    ",
+  "  4756622820871136640     88.5266821 0.08621    -63.0873352 0.08508    36.598 0.09240   148.129 0.16329   550.143 0.13675   4.3440    896.49   4.8739   1155.81   3.6664    235.48   1.2309  2.21   6   26.328   0.1373  2018A&A...616A...1G T 1.000 0.057      0.02716      0.02726      0.02732      0.02739      0.97203      0.96990      0.97447    -23.53814    -23.48653    -23.59721    -13.83215    -13.80182    -13.86686  -69.615  -69.792  -69.413  -35.744  -35.861  -35.615    3.919    3.833    4.007                                                                                                              05540606-6305230    2.954   0.272   2.419   0.252   2.304   0.254                                                                                     ",
+  "  5994771148252505216    239.4182138 0.01965    -42.6250824 0.01476    67.843 0.02459  -257.098 0.02631  -190.798 0.02200   7.6580   5488.17   8.2729   2041.57   6.9067   2941.61   1.2526  0.92   0   35.820   0.1661  2018A&A...616A...1G T 1.000 0.067      0.01473      0.01473      0.01474      0.01475     13.28750     13.28270     13.29281     -6.02923     -6.02705     -6.03164      2.08557      2.08481      2.08640   22.848   22.694   22.999  -34.869  -34.937  -34.800    6.677    6.653    6.701                                                                                                              15574075-4237271    6.032   0.023   5.452   0.051   5.284   0.016 J155740.44-423730.0    5.347   0.049   5.168   0.033   5.278   0.016   5.204   0.032",
+  "  5994771079533026688    239.4334304 0.03378    -42.6292480 0.02502    10.629 0.04150  -246.209 0.04347  -297.332 0.03517  15.4464   2448.76  16.7551    330.50  14.3115    859.05   1.4144  1.18   0                                        F 1.000 0.036      0.09319      0.09373      0.09412      0.09449     84.85158     84.50079     85.18249    -38.49117    -38.33204    -38.64128     13.30007     13.24509     13.35194                                                                                                                                                                                               15574439-4237403   12.841   0.024  12.297   0.022  12.087   0.026                                                       11.234   0.147   8.860        "]
+
+type Texts = {c5: string, h2: string, hm: string, gc: string}
+pure func joinLines(ls: [string]) -> string = concat([join("\n", ls), "\n"])
+pure func inline() -> Texts = {c5: joinLines(cns5Lines()), h2: joinLines(hip2Lines()), hm: joinLines(hipMainLines()), gc: joinLines(gcnsLines())}
+pure func brightRows(t: Texts) -> [Row] = match bright(parseHip2(t.h2), parseHipMain(t.hm), parseCnsHip(t.c5), gcnsIndex("")) {
+  Ok(b) => b.rows, Err(_) => [] }
+pure func cands(t: Texts) -> Candidates =
+  candidates(cnsStars(t.c5), gcnsStars(t.gc), hipStars(brightRows(t), parseHip2(t.h2), hipErrors(t.h2), parseHipMain(t.hm)))
+pure func world(t: Texts) -> [Star] = cands(t).stars
+pure func links(t: Texts) -> [Link] = systems(world(t))
+pure func rootOf(t: Texts, id: string) -> string = match linkOf(links(t), id) { Some(l) => l.root, None => "-" }
+-- Sirius B (Gaia, 374.51 mas) takes Sirius A's Hipparcos parallax (CNS5 1676, 379.21 mas, 8.601 ly).
+pure func checkSiriusB(t: Texts) -> bool = match linkOf(links(t), "2947050466531873024") {
+  Some(l) => l.root == "CNS5:1676" && l.parent == "CNS5:1676" && l.plx == 379.2099914550781 && l.ownPlx == 374.5105905289588 &&
+    l.sep > 5.0 && l.sep < 12.0 && l.au < 50.0,
+  None => false
+}
+-- alpha Cen B (HIP 71681, a bright row) takes CNS5 3627's parallax at its own HIP2 direction moved to
+-- 3627's epoch (J1991.25): exactly the bytes the retired rule (c) wrote (data/starmap/stars.json, M1.7).
+pure func checkAlphaCenB(t: Texts) -> bool = match linkOf(links(t), "HIP 71681") {
+  Some(l) => l.root == "CNS5:3627" && l.epoch == 1991.25 && l.plx == 754.8099975585938 &&
+    (match filter(\r. r.id == "HIP 71681", applyHip(brightRows(t), parseHip2(t.h2), linkIndex(links(t)))) {
+      [b] => b.x == 3.094279167661899 && b.y == 0.0 - 3.015648140050498 && b.z == 0.0 - 0.05181368755211183, _ => false }),
+  None => false
+}
+-- Luyten 726-8 B (UV Cet) -> A (BL Cet), 2.3 arcsec; Wolf 424 B -> A, 1.1 arcsec. Both parallaxes
+-- disagree by 6-10 sigma (Gaia's errors on close pairs are too small), and agree within 5%.
+pure func checkLuytenWolf(t: Texts) -> bool =
+  rootOf(t, "5140693571158946048") == "5140693571158739840" && rootOf(t, "3902874650601954816") == "3902874650602495232" &&
+  rootOf(t, "5140693571158739840") == "-" && rootOf(t, "3902874650602495232") == "-"
+-- False pairs: the GCNS star 43 arcsec from GJ 604 (634 AU projected) is at 307 ly against 48 ly
+-- (parallaxes 84% apart): no link. GJ 13207 / 13208: 102 arcsec, 87% apart: no link. GJ 604's GCNS
+-- row is its CNS5 row (one candidate, so no self-pair).
+pure func checkFalsePairs(t: Texts) -> bool =
+  rootOf(t, "5994771079533026688") == "-" && rootOf(t, "5994771148252505216") == "-" &&
+  rootOf(t, "1958030617647715328") == "-" && rootOf(t, "1958031442283263616") == "-" &&
+  size(filter(\s. s.id == "5994771148252505216", world(t))) == 1
+-- Exactly the four companions, the same whatever the input order.
+pure func checkOrderFree(t: Texts) -> bool =
+  map(\l. l.id, links(t)) == ["2947050466531873024", "3902874650601954816", "5140693571158946048", "HIP 71681"] &&
+  map(linkLine, systems(reverse(world(t)))) == map(linkLine, links(t))
+-- The pinned outcomes pass on these lines and fail when one is missing or re-rooted.
+pure func isErr(r: Result[(), string]) -> bool = match r { Err(_) => true, Ok(_) => false }
+pure func checkPinnedGuard(t: Texts) -> bool {
+  let ls = links(t);
+  !isErr(checkPinned(linkIndex(ls))) && isErr(checkPinned(linkIndex(filter(\l. l.id != "HIP 71681", ls)))) &&
+  isErr(checkPinned(linkIndex(map(\l. if l.id == "2947050466531873024" then {id: l.id, parent: l.parent, root: "CNS5:1675", rootCat: l.rootCat,
+    plx: l.plx, epoch: l.epoch, ownPlx: l.ownPlx, sep: l.sep, au: l.au} else l, ls))))
+}
+-- companions.csv round trip (bit-exact floats), and the refusals: header, order, duplicates, fields.
+pure func checkTableRoundTrip(t: Texts) -> bool {
+  let ls = links(t);
+  let txt = linksText(["rule", "inputs"], ls);
+  startsWith(txt, "# rule\n# inputs\nid,root,") &&
+  (match parseLinks(txt) { Ok(back) => map(linkLine, back) == map(linkLine, ls) && map(\l. l.plx, back) == map(\l. l.plx, ls), Err(_) => false }) &&
+  isErrL(parseLinks(replace(txt, "id,root,", "id,ROOT,"))) && isErrL(parseLinks(linksText([], reverse(ls)))) &&
+  isErrL(parseLinks(linksText([], flatMap(\l. [l, l], ls)))) && isErrL(parseLinks(concat([txt, "x,y\n"])))
+}
+pure func isErrL(r: Result[[Link], string]) -> bool = match r { Err(_) => true, Ok(_) => false }
+-- applyRows moves a linked row along its own direction to the root's distance and leaves every
+-- other row exactly as it was.
+pure func lenOf(r: Row) -> float = sqrt(r.x * r.x + r.y * r.y + r.z * r.z)
+pure func checkApplyRows(t: Texts) -> bool {
+  let ix = linkIndex(links(t));
+  let b = {id: "2947050466531873024", x: -5.842239, y: -6.316659, z: -1.346276, teff: 9000.0, v: 8.5, flags: 0};
+  let o = {id: "other", x: 1.0, y: 2.0, z: 3.0, teff: 3000.0, v: 12.0, flags: 4};
+  match applyRows([o, b], ix) {
+    [o2, b2] => o2.id == o.id && o2.x == o.x && o2.y == o.y && o2.z == o.z && o2.teff == o.teff && o2.v == o.v && o2.flags == o.flags && b2.teff == b.teff && b2.v == b.v && b2.flags == b.flags &&
+      lenOf(b2) - 8.60094374 < 0.0000001 && 8.60094374 - lenOf(b2) < 0.0000001 &&
+      b2.x / b.x - b2.z / b.z < 0.000000000001 && b2.z / b.z - b2.x / b.x < 0.000000000001 && movedIn([o, b], ix) == 1,
+    _ => false
+  }
+}
+
+-- Cross-identifications: GJ 10136 is CNS5:252 (no Gaia id, ground-based 34.0 +- 6.6 mas) and Gaia
+-- 2371519626175864960 (29.81 mas), 0.024 arcsec apart with the same motion; HD 40409 is HIP 27890 and
+-- Gaia 4756622820871136640, 1.03 arcsec apart (V 4.65, G 4.34). Both GCNS records are dropped before
+-- pairing, so neither star is moved by "its companion", which is itself. Sirius B (a CNS5 row with a
+-- Gaia id) is never dropped.
+pure func sameIs(t: Texts, n: string, g: string) -> bool = size(filter(\x. x.id == n && x.gaia == g, cands(t).same)) == 1
+pure func checkSameStar(t: Texts) -> bool =
+  sameIs(t, "CNS5:252", "2371519626175864960") && sameIs(t, "HIP 27890", "4756622820871136640") && size(cands(t).same) == 2 &&
+  rootOf(t, "CNS5:252") == "-" && rootOf(t, "HIP 27890") == "-" &&
+  size(filter(\s. s.id == "2371519626175864960" || s.id == "4756622820871136640", world(t))) == 0 &&
+  size(filter(\s. s.id == "2947050466531873024", world(t))) == 1
+-- The same rule on synthetic records: a non-Gaia CNS5 row and a GCNS source 1.9 arcsec apart are one
+-- star, 2.1 arcsec apart they are a pair; a HIP row is the GCNS source only when |G - V| < 0.5; two
+-- Gaia sources are never merged.
+pure func named(s: Star, id: string, cat: string) -> Star =
+  {id: id, cat: cat, ux: s.ux, uy: s.uy, uz: s.uz, plx: s.plx, eplx: s.eplx, pmra: s.pmra, pmde: s.pmde, mag: s.mag, epoch: s.epoch}
+pure func sameOf(n: Star, g: Star) -> int = size(candidates([n], [g], []).same)
+pure func sameHip(n: Star, g: Star) -> int = size(candidates([], [g], [n]).same)
+pure func checkSameRule() -> bool {
+  let n = named(at("x", 0.0, 50.0, 3.0, 300.0, 0.0, 99.0), "CNS5:9", "cns5");
+  sameOf(n, at("1", 1.9, 48.0, 1.0, 300.0, 0.0, 15.0)) == 1 && sameOf(n, at("1", 2.1, 48.0, 1.0, 300.0, 0.0, 15.0)) == 0 &&
+  sameOf(named(n, "77", "cns5"), at("1", 0.1, 48.0, 1.0, 300.0, 0.0, 15.0)) == 0 &&
+  sameHip(named(at("x", 0.0, 50.0, 1.0, 300.0, 0.0, 5.0), "HIP 9", "hip"), at("1", 1.0, 50.0, 0.1, 300.0, 0.0, 4.6)) == 1 &&
+  sameHip(named(at("x", 0.0, 50.0, 1.0, 300.0, 0.0, 5.0), "HIP 9", "hip"), at("1", 1.0, 50.0, 0.1, 300.0, 0.0, 5.6)) == 0
+}
+-- The GCNS tiers: Luyten 726-8 A's GCNS row (EDR3, 367.7 mas) is the root of B, whose link carries A's
+-- CNS5 parallax (369.9 mas). Moving B alone leaves the pair split by 0.05 ly (the tier check refuses);
+-- applyGcnsRows moves A's row to the same parallax, and the tier check passes.
+pure func gcnsRow(s: Star) -> Row = { let d = 1000.0 / s.plx * 3.261563777;
+  {id: s.id, x: s.ux * d, y: s.uy * d, z: s.uz * d, teff: 3000.0, v: 12.0, flags: 0} }
+pure func isOk(r: Result[[Row], string]) -> bool = match r { Ok(_) => true, Err(_) => false }
+pure func checkGcnsTier(t: Texts) -> bool {
+  let ix = linkIndex(links(t));
+  let rows = map(gcnsRow, filter(\s. startsWith(s.id, "514069357115"), gcnsStars(t.gc)));
+  size(rows) == 2 && size(splitPairs(applyRows(rows, ix), ix)) == 1 && !isOk(checkTier(applyRows(rows, ix), ix)) &&
+  splitPairs(applyGcnsRows(rows, ix), ix) == [] && isOk(checkTier(applyGcnsRows(rows, ix), ix)) && rootsIn(rows, ix) == 1 &&
+  (match filter(\r. r.id == "5140693571158739840", applyGcnsRows(rows, ix)) {
+    [a] => lenOf(a) - 1000.0 / 369.9 * 3.261563777 < 0.01 && 1000.0 / 369.9 * 3.261563777 - lenOf(a) < 0.01, _ => false }) &&
+  gcnsRootStays()
+}
+-- A root that is a GCNS record is its own row in the GCNS tiers: it is not touched (not even rescaled).
+pure func gcnsRootStays() -> bool {
+  let r = {id: "g1", x: 1.0, y: 2.0, z: 3.0, teff: 3000.0, v: 12.0, flags: 0};
+  let ix = linkIndex([{id: "g2", parent: "g1", root: "g1", rootCat: "gcns", plx: 267.0, epoch: 2016.0, ownPlx: 266.0, sep: 5.0, au: 20.0}]);
+  rootsIn([r], ix) == 0 && (match applyGcnsRows([r], ix) { [o] => o.x == r.x && o.y == r.y && o.z == r.z, _ => false })
+}
+pure func synthetic() -> [(string, bool)] = [("Angle", checkAngle()), ("ProjectedAu", checkProjectedAu()), ("FracCap", checkFracCap()),
+  ("CloseOrSigma", checkCloseOrSigma()), ("ProperMotion", checkProperMotion()), ("Rank", checkRank()), ("RootChain", checkRootChain()),
+  ("BrightestParent", checkBrightestParent()), ("Band", checkBand()), ("SameRule", checkSameRule())]
+pure func real(t: Texts) -> [(string, bool)] = [("SiriusB", checkSiriusB(t)), ("AlphaCenB", checkAlphaCenB(t)), ("LuytenWolf", checkLuytenWolf(t)),
+  ("FalsePairs", checkFalsePairs(t)), ("OrderFree", checkOrderFree(t)), ("PinnedGuard", checkPinnedGuard(t)),
+  ("TableRoundTrip", checkTableRoundTrip(t)), ("ApplyRows", checkApplyRows(t)),
+  ("SameStar", checkSameStar(t)), ("GcnsTier", checkGcnsTier(t))]
+
+test "companions checkAngle" { checkAngle() }
+test "companions checkProjectedAu" { checkProjectedAu() }
+test "companions checkFracCap" { checkFracCap() }
+test "companions checkCloseOrSigma" { checkCloseOrSigma() }
+test "companions checkProperMotion" { checkProperMotion() }
+test "companions checkRank" { checkRank() }
+test "companions checkRootChain" { checkRootChain() }
+test "companions checkBrightestParent" { checkBrightestParent() }
+test "companions checkBand" { checkBand() }
+test "companions checkSiriusB" { checkSiriusB(inline()) }
+test "companions checkAlphaCenB" { checkAlphaCenB(inline()) }
+test "companions checkLuytenWolf" { checkLuytenWolf(inline()) }
+test "companions checkFalsePairs" { checkFalsePairs(inline()) }
+test "companions checkOrderFree" { checkOrderFree(inline()) }
+test "companions checkPinnedGuard" { checkPinnedGuard(inline()) }
+test "companions checkTableRoundTrip" { checkTableRoundTrip(inline()) }
+test "companions checkApplyRows" { checkApplyRows(inline()) }
+test "companions checkSameRule" { checkSameRule() }
+test "companions checkSameStar" { checkSameStar(inline()) }
+test "companions checkGcnsTier" { checkGcnsTier(inline()) }
+
+export func companionsVm(_: int) -> string = verdictOf("companions", failedChecks(flatMap(\x. x, [synthetic(), real(inline())])))
+pure func pick(text: string, keep: string -> bool) -> string = joinLines(filter(keep, filter(\l. l != "", split(text, "\n"))))
+export func companionsFixtures(dir: string) -> string ! {FS} {
+  let c5 = concat([pick(readFile(concat([dir, "/cns5_bright.dat"])), \l. startsWith(l, "1675 ") || startsWith(l, "1676 ") || startsWith(l, "3627 ")),
+    readFile(concat([dir, "/cns5_companions.dat"]))]);
+  let h2 = concat([pick(readFile(concat([dir, "/hip2_bright.dat"])), \l. startsWith(l, " 71681 ") || startsWith(l, " 71683 ")),
+    readFile(concat([dir, "/hip2_companions.dat"]))]);
+  let hm = concat([pick(readFile(concat([dir, "/hip_main_bright.dat"])), \l. startsWith(l, "H|       71681|") || startsWith(l, "H|       71683|")),
+    readFile(concat([dir, "/hip_main_companions.dat"]))]);
+  let t = {c5: c5, h2: h2, hm: hm, gc: readFile(concat([dir, "/table1c_companions.dat"]))};
+  let same = [("cns5 bytes", t.c5 == inline().c5), ("hip2 bytes", t.h2 == inline().h2), ("hip_main bytes", t.hm == inline().hm),
+    ("gcns bytes", t.gc == inline().gc)];
+  verdictOf("companions-fixtures", failedChecks(flatMap(\x. x, [same, real(t)])))
+}

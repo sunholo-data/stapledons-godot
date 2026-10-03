@@ -17,8 +17,11 @@ entry agrees with them:
 
 The IAU ICRS -> galactic matrix below is the one tools/extract.py used; it is
 independent of the AILANG pipeline (sim/tools/extract.ail, bright.ail).
-Negative controls: alpha Cen A and B ids swapped must fail, and so must a row
-whose id is not in the catalogue.
+Negative controls, each of which must fail for its own reason: alpha Cen A and
+B ids swapped (V), a row whose id is not in the catalogue, a reference
+position 5 degrees off (direction; kills a removed or loosened-to-30-degree
+direction check), a reference distance 10 % off (distance), and one row named
+twice (the duplicate-name check).
 
 stdlib only. Exit 0 when every row passes.
 """
@@ -102,6 +105,22 @@ def main():
     print("negative control (id not in the catalogue):")
     if not check([ghost], stars):
         bad.append("negative control: unknown id passed")
+    # one known-good row, each control changing one thing; the failure must name that thing
+    base = next((r for r in names if r["name"] == "Barnard's Star"), names[0])
+    print("control base row (must pass):")
+    if check([base], stars):
+        bad.append("negative control: the base row %s does not pass" % base["name"])
+    dec = base["ref"]["dec_deg"]
+    controls = [
+        ("reference position 5 deg off", [dict(base, ref=dict(base["ref"], dec_deg=dec - 5.0 if dec > 0 else dec + 5.0))], "direction"),
+        ("reference distance 10 % off", [dict(base, ref=dict(base["ref"], dist_ly=base["ref"]["dist_ly"] * 1.10))], "distance"),
+        ("one row named twice", [base, dict(base)], "named twice"),
+    ]
+    for label, rows, why in controls:
+        print("negative control (%s):" % label)
+        got = check(rows, stars)
+        if len(got) != 1 or why not in got[0]:
+            bad.append("negative control: %s gave %s, want one '%s' failure" % (label, got, why))
     print("star names: %d rows, %d failures" % (len(names), len(bad)))
     for b in bad:
         print("  " + b)
