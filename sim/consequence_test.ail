@@ -15,7 +15,7 @@ import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (standardGravity, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/journey (planBurnCoastBurn, coastAt)
-import pkg/sunholo/relativity/medium (loadScale, mirrorDragForce, glowInwardFlux, cruiseDragEnergy)
+import pkg/sunholo/relativity/medium (loadScale, mirrorDragForce, glowInwardFlux, cruiseDragEnergy, glowEmittanceAt, glowTemperatureAt)
 import std/option (Option, Some, None)
 import std/string (join, contains, intToStr, repeat)
 import std/list (map, foldl)
@@ -161,9 +161,13 @@ pure func midCruise() -> World {
 pure func checkIsmCruise() -> bool {
   let w = midCruise();
   let i = ismNow(w);
-  relNear(i.loadWM2, 221961.0, 0.001) && relNear(i.dragN, 23.2598, 0.001) && relNear(i.glowWM2, 0.0000240719, 0.001) &&
+  relNear(i.loadWM2, 221961.0, 0.001) && relNear(i.dragN, 23.2598, 0.001) && relNear(i.glowWM2, 0.00000240719, 0.001) &&
   relNear(i.loadWM2, loadScale(nM3(), phi099()), 0.001) && relNear(i.dragN, mirrorDragForce(nM3(), phi099(), 100.0), 0.001) &&
-  relNear(i.glowWM2, glowInwardFlux(nM3(), phi099(), 0.000000001, 0.5), 0.001)
+  relNear(i.glowWM2, glowInwardFlux(nM3(), phi099(), 0.0000000001, 0.5), 0.001) &&
+  -- M4.1 step 2 (eps 1e-10): the pole emittance and blackbody temperature (relativity 0.8.0, HB-96, HB-102)
+  relNear(i.glowPoleWM2, glowEmittanceAt(nM3(), phi099(), 0.0000000001, 0.5, 1.0), 0.001) && relNear(i.glowPoleWM2, 0.00000962878, 0.001) &&
+  relNear(i.glowPoleK, glowTemperatureAt(nM3(), phi099(), 1.0), 0.001) && relNear(i.glowPoleK, 1357.52, 0.001) &&
+  relNear(i.glowPoleWM2, 4.0 * i.glowWM2, 0.000000000001)
 }
 -- Boost ramps up, the brake relaxes it; zero at rest.
 pure func checkIsmRelaxes() -> bool {
@@ -177,7 +181,7 @@ pure func checkIsmRelaxes() -> bool {
       let landed = (run(braking, tp.tauBurn, [])).world;
       let a = ismNow(boosting); let b = ismNow(cruising); let d = ismNow(braking); let z = ismNow(landed);
       a.loadWM2 > 0.0 && a.loadWM2 < b.loadWM2 && d.loadWM2 > 0.0 && d.loadWM2 < b.loadWM2 && a.dragN < b.dragN && d.glowWM2 < b.glowWM2 &&
-      isArrived(landed.journey) && z.loadWM2 == 0.0 && z.dragN == 0.0 && z.glowWM2 == 0.0 && (ismNow(newWorld(5, false, defaultParams()))).loadWM2 == 0.0
+      isArrived(landed.journey) && z.loadWM2 == 0.0 && z.dragN == 0.0 && z.glowWM2 == 0.0 && z.glowPoleWM2 == 0.0 && z.glowPoleK == 0.0 && d.glowPoleK < b.glowPoleK && (ismNow(newWorld(5, false, defaultParams()))).loadWM2 == 0.0
     },
     _ => false
   }
@@ -353,7 +357,7 @@ pure func checkWire22() -> bool {
   let c2 = reply(feed(s2, [newGame(",\"params\":{\"standoff_au\":1000}"), tickLine(1, "0", acenLine())]), commit);
   contains(h2, "\"minor\":2") && contains(h1, "\"minor\":1") && contains(reply(newSession(), hello(0)), "\"minor\":1") &&
   contains(g2, "\"consequence\":{") && contains(g2, "\"gap_years\":0") && contains(g2, "\"unlocked\":[\"two-clocks\"]") && contains(g2, "\"standoff_ly\":0.0158125") &&
-  contains(g2, "\"ism\":{\"load_w_m2\":0,\"drag_n\":0,\"glow_w_m2\":0,\"drag_energy_j\":0}") &&
+  contains(g2, "\"ism\":{\"load_w_m2\":0,\"drag_n\":0,\"glow_w_m2\":0,\"glow_pole_w_m2\":0,\"glow_pole_k\":0,\"drag_energy_j\":0}") &&
   !contains(g1, "consequence") && !contains(g1, "\"ism\"") && !contains(g0, "consequence") && !contains(g0, "standoff") &&
   !contains(t2, "drag_energy_j") && !contains(t2, "consequence") &&
   !contains(c1, "consequence") && !contains(c1, "drag_energy_j") && contains(c2, "\"kind\":\"commit\"") && contains(c2, "\"consequence\":{") && contains(t2, "\"distance\":4.354187")

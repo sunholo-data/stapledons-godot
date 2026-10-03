@@ -285,7 +285,7 @@ export pure func checkHello24() -> bool =
   (match decodeHello(serve(newSession(), ntHelloW(navMinor())).reply) { Ok(h) => h.minor == navMinor() && h.relativity == relativityPin(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == navMinor(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(systemMinor())).reply) { Ok(h) => h.minor == systemMinor() && h.relativity == helloMsg().relativity, Err(_) => false })
-  && navMinor() == systemMinor() + 1 && relativityPin() == "0.7.0"
+  && navMinor() == systemMinor() + 1 && relativityPin() == "0.8.0"
 test "2.4 hello: minor 4 with relativity = the pinned release; 3 keeps the 2.3 hello" { checkHello24() }
 
 -- At minor 4 a body plan is accepted and its journey carries target_kind, intercept and pass

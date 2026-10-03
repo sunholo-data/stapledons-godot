@@ -68,9 +68,10 @@ var map: GalaxyMap = null
 var map_open := false
 var auto := true # interactive: keys walk and the sim ticks (captures and tests drive it)
 var caption := "" # capture caption line on the HUD
-## Review captures only: a glow pole (W/m^2) shown instead of the sim's (-1 = the sim's).
-## Never set in play; the HUD then says PREVIEW.
-var glow_preview := -1.0
+## Review captures only (the eps comparison sheet): the sim's glow pole times eps_candidate /
+## eps_sim, so one sim state shows other wall efficiencies (luminance is linear in eps; T is
+## independent of it, D-30). 1 = the sim's. Never set in play; the HUD then says PREVIEW.
+var glow_eps_scale := 1.0
 var last_error := ""
 var screen := Vector2(960, 540) # canvas units
 var _layers := {}
@@ -172,13 +173,13 @@ func apply_state(world: Dictionary) -> void:
 	if not world.has("ship"):
 		return
 	sky.apply(world)
-	if glow_preview >= 0.0:
-		sky.set_glow_pole(glow_preview)
+	if glow_eps_scale != 1.0 and sky.glow_pole >= 0.0: # 0 = the glow switched off
+		sky.set_glow(sky.glow_pole * glow_eps_scale, sky.glow_t_pole)
 	_push_glow_tint()
 	var c: Dictionary = world.get("clock", {})
 	avatar.set_years(float(c.get("tau", 0.0)))
 	var s: Dictionary = world["ship"]
-	var glow := "glow %s W/m^2 at the pole%s" % [String.num_scientific(sky.glow_pole), " (PREVIEW)" if glow_preview >= 0.0 else ""] if sky.glow_pole >= 0.0 else "glow: no ship.ism.glow_pole_w_m2 from the sim yet"
+	var glow := "glow %s W/m^2, %.0f K at the pole%s" % [String.num_scientific(sky.glow_pole), sky.glow_t_pole, " (PREVIEW x%s)" % String.num_scientific(glow_eps_scale) if glow_eps_scale != 1.0 else ""] if sky.glow_pole >= 0.0 else "glow: no ship.ism.glow_pole_w_m2 from the sim"
 	status_label.text = "%s%s   beta %.4f c   gamma %.3f\nship %.4f yr   Earth %.4f yr   %s\n%s" % [
 		caption + "\n" if caption != "" else "", str(s.get("phase", "")), s["beta"], s["gamma"], c.get("tau", 0.0), c.get("t", 0.0), glow, sky.exposure.hud_line()]
 	if archive.visible:
@@ -561,7 +562,8 @@ func _set_layers_visible(on: bool) -> void:
 ## Bridge v2 hook: the glow's exposed pole pixel goes to every plate's material (no effect
 ## while rim_strength is 0, which v1 never changes).
 func _push_glow_tint() -> void:
-	var rgb := ForwardGlow.WHITE_RGB * (ForwardGlow.luminance(maxf(sky.glow_pole, 0.0)) * sky.exposure.k())
+	var t := maxf(sky.glow_t_pole, 0.0)
+	var rgb := ForwardGlow.colour(t) * (ForwardGlow.luminance(maxf(sky.glow_pole, 0.0), t) * sky.exposure.k())
 	for layer: String in _plates:
 		var r: TextureRect = _plates[layer][0]
 		if r.material is ShaderMaterial:

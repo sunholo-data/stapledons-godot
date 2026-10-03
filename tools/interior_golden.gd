@@ -13,16 +13,26 @@ extends RefCounted
 ##           shape, 0 at rest; (b) absolute: the unit-gain linear float target reads the
 ##           package pole (tools/glow_probe) within 1 % at 0.99c and the cap; (c) the real
 ##           panorama camera (off-centre, ship frame): pixels within 1 % of
-##           ForwardGlow.wall_cos; (d) the photometric chain: E/pi x lm/W x k x colour
-##           within 1 % (no hand-tuned gain)
+##           ForwardGlow.wall_cos; (d) the photometric chain: E/pi x eta(T) x k x colour(T)
+##           at 0.999c and the cap within 1 % of the exact CPU chain (no hand-tuned gain)
+##   G-M4-5  colour ramp (D-30): the shader's blackbody colour x efficacy, read back through a
+##           unit-luminance normalisation, at 10 temperatures 800 K..30,000 K within 1 % of
+##           ForwardGlow.colour(T) (exact, the package's rgbUnitLuminance) per channel, and the
+##           shader's efficacy within 1 % of ForwardGlow.efficacy(T) (blackbody.luminousEfficacy)
 
 const BUNDLE := "res://assets/areas/bridge"
 const ALPHA_CEN_A := "CNS5:3627"
 const PEAK := 5.0 # linear splat peak of a unit-flux star (as main.gd's goldens)
 const TOL_PX := 0.75
 const WIN := 12
-## tools/glow_probe, sunholo/relativity 0.7.0 glowEmittanceAt(n, phi, 1e-9, 0.5, 1).
-const POLE := {"0.99c": 9.628776871706524e-05, "cap": 1.1250843031053142}
+## tools/glow_probe, sunholo/relativity 0.8.0 glowEmittanceAt(n, phi, 1e-10, 0.5, 1) and
+## glowTemperatureAt(n, phi, 1) (eps 1e-10, HB-111).
+const POLE := {"0.99c": 9.628776871706523e-06, "0.999c": 0.00010757658235978286, "cap": 0.11250843031053141}
+const T_POLE := {"0.99c": 1357.5234659678836, "0.999c": 2481.898408081983, "cap": 14114.023335759706}
+## (a)-(c) read the unit-gain float target, which is half precision: the eps 1e-9 poles (probe "E9",
+## the same shape x 10) keep every case above half's normal range (6.1e-5).
+const POLE_E9 := {"0.99c": 9.628776871706524e-05, "cap": 1.1250843031053142}
+const RAMP := [800.0, 1000.0, 1357.5, 2000.0, 2482.0, 4000.0, 6600.0, 10000.0, 14114.0, 30000.0]
 
 var main: Node
 var it: Interior
@@ -41,6 +51,7 @@ func run(m: Node) -> int:
 	f += await _g1()
 	f += await _g3()
 	f += await _g4()
+	f += await _g5()
 	it.queue_free()
 	await main.get_tree().process_frame
 	f += await _build(true)
@@ -259,7 +270,7 @@ func _g4() -> int:
 	mat.set_shader_parameter("radius", 100.0)
 	var cases := [["0.99c", 0.0], ["0.99c", 45.0], ["0.99c", 80.0], ["cap", 0.0], ["rest", 0.0]]
 	for c: Array in cases:
-		var pole: float = POLE.get(c[0], 0.0)
+		var pole: float = POLE_E9.get(c[0], 0.0)
 		var th := deg_to_rad(c[1])
 		mat.set_shader_parameter("pole", pole)
 		sky.camera.look(atan2(-sin(th), -cos(th)), 0.0, 0.0) # look along (sin th, 0, cos th)
@@ -274,37 +285,80 @@ func _g4() -> int:
 	sky.orient(acen)
 	var p: Array = sky.cam["position_m"]
 	mat.set_shader_parameter("cam_ship", Vector3(p[0], p[1], p[2]))
-	mat.set_shader_parameter("pole", POLE["cap"])
+	mat.set_shader_parameter("pole", POLE_E9["cap"])
 	var img := await _sky_image()
 	var worst := 0.0
 	for q in [[0.5, 0.05], [0.2, 0.3], [0.8, 0.3], [0.5, 0.5], [0.1, 0.9], [0.9, 0.9]]:
 		var x := int(q[0] * size.x)
 		var y := int(q[1] * size.y)
 		var d := AreaBundle.unproject(cam_screen, x + 0.5, y + 0.5) # texture column x is screen column x (D-28: no flip)
-		var want := ForwardGlow.profile(POLE["cap"], ForwardGlow.wall_cos(PackedFloat64Array([p[0], p[1], p[2]]), d, 100.0))
+		var want := ForwardGlow.profile(POLE_E9["cap"], ForwardGlow.wall_cos(PackedFloat64Array([p[0], p[1], p[2]]), d, 100.0))
 		var got := img.get_pixel(x, y).r
 		var e := absf(got - want) / maxf(want, 1e-30)
 		worst = maxf(worst, e)
 	var ok_c := worst <= 0.01
 	print("%s  G-M4-4 glow (c) bridge camera off-centre, cap: 6 pixels vs ForwardGlow.wall_cos, worst %.4f %% (limit 1 %%)" % ["ok  " if ok_c else "FAIL", worst * 100.0])
 	fails += 0 if ok_c else 1
-	# (d) the photometric chain, linear tonemap: E / pi x lm/W x k x colour
+	# (d) the photometric chain, linear tonemap: E / pi x eta(T) x k x colour(T) (blackbody, D-30)
 	mat.set_shader_parameter("debug_unit", false)
-	sky.radius_m = 100.0
-	sky.glow_pole = POLE["0.99c"]
-	sky.update_exposure()
 	mat.set_shader_parameter("cam_ship", Vector3.ZERO)
 	mat.set_shader_parameter("ship_x", Vector3(1, 0, 0))
 	mat.set_shader_parameter("ship_y", Vector3(0, 1, 0))
 	mat.set_shader_parameter("ship_z", Vector3(0, 0, 1))
+	sky.radius_m = 100.0
 	sky.camera.look(PI, 0.0, 0.0)
-	var lin := await _sky_image()
-	var want_g := ForwardGlow.luminance(POLE["0.99c"]) * sky.exposure.k() * ForwardGlow.WHITE_RGB.y
-	var got_g := lin.get_pixel(size.x / 2, size.y / 2).g
-	var ok_d := absf(got_g - want_g) <= 0.01 * want_g
-	print("%s  G-M4-4 glow (d) photometric: pixel G %s = E/pi x %.2f lm/W x k (EV %+.2f) x colour %s (limit 1 %%)" % ["ok  " if ok_d else "FAIL", String.num_scientific(got_g), ForwardGlow.LM_PER_W, sky.exposure.ev, String.num_scientific(want_g)])
-	fails += 0 if ok_d else 1
+	for speed: String in ["0.999c", "cap"]:
+		sky.glow_pole = POLE[speed]
+		sky.glow_t_pole = T_POLE[speed]
+		sky.update_exposure()
+		var lin := await _sky_image()
+		var t: float = T_POLE[speed]
+		var want_g := ForwardGlow.colour(t).y * ForwardGlow.luminance(POLE[speed], t) * sky.exposure.k()
+		var got_g := lin.get_pixel(size.x / 2, size.y / 2).g
+		var ok_d := absf(got_g - want_g) <= 0.01 * want_g
+		print("%s  G-M4-4 glow (d) photometric %s: pixel G %s = E/pi x %s lm/W (%.0f K) x k (EV %+.2f) x colour G %.4f -> %s (limit 1 %%)" % ["ok  " if ok_d else "FAIL", speed, String.num_scientific(got_g), String.num_scientific(ForwardGlow.efficacy(t)), t, sky.exposure.ev, ForwardGlow.colour(t).y, String.num_scientific(want_g)])
+		fails += 0 if ok_d else 1
 	sky.set_debug_unit(false)
 	sky.glow_pole = -1.0
+	sky.glow_t_pole = -1.0
+	sky.update_exposure()
+	return fails
+
+
+## G-M4-5: the blackbody colour ramp. Pole straight ahead (cos 1, so T = t_pole), debug_colour with
+## scale = 1 / eta_exact(T): the pixel is rgb_lut(T) x eta_lut(T) / eta_exact(T), which must equal
+## the exact unit-luminance colour (per channel, 1 % of the largest channel) with the same Y (1 %).
+func _g5() -> int:
+	var sky := it.sky
+	var mat := sky.glow_mat
+	var fails := 0
+	sky.set_debug_unit(true)
+	mat.set_shader_parameter("debug_unit", false)
+	mat.set_shader_parameter("debug_colour", true)
+	mat.set_shader_parameter("ship_x", Vector3(1, 0, 0))
+	mat.set_shader_parameter("ship_y", Vector3(0, 1, 0))
+	mat.set_shader_parameter("ship_z", Vector3(0, 0, 1))
+	mat.set_shader_parameter("cam_ship", Vector3.ZERO)
+	mat.set_shader_parameter("radius", 100.0)
+	mat.set_shader_parameter("pole", 1.0)
+	sky.camera.look(PI, 0.0, 0.0) # along +Z: the pole
+	for t: float in RAMP:
+		var eta := ForwardGlow.efficacy(t)
+		mat.set_shader_parameter("t_pole", t)
+		mat.set_shader_parameter("scale", 1.0 / eta)
+		var img := await _sky_image()
+		var px := img.get_pixel(size.x / 2, size.y / 2)
+		var got := Vector3(px.r, px.g, px.b)
+		var want := ForwardGlow.colour(t)
+		var m := maxf(want.x, maxf(want.y, want.z))
+		var err := maxf(absf(got.x - want.x), maxf(absf(got.y - want.y), absf(got.z - want.z))) / m
+		var y_got := 0.2126729 * got.x + 0.7151522 * got.y + 0.0721750 * got.z # = eta_lut / eta_exact
+		var ok := err <= 0.01 and absf(y_got - 1.0) <= 0.01
+		fails += 0 if ok else 1
+		print("%s  G-M4-5 colour %6.0f K: shader rgb (%.4f, %.4f, %.4f) vs CPU (%.4f, %.4f, %.4f), worst %.3f %% of max; efficacy shader/CPU %.4f (%s lm/W) (limit 1 %%)" % [
+			"ok  " if ok else "FAIL", t, got.x, got.y, got.z, want.x, want.y, want.z, err * 100.0, y_got, String.num_scientific(eta)])
+	mat.set_shader_parameter("debug_colour", false)
+	mat.set_shader_parameter("pole", 0.0)
+	sky.set_debug_unit(false)
 	sky.update_exposure()
 	return fails

@@ -6,19 +6,16 @@ extends RefCounted
 ##   05     the navigation console opens the galaxy map (alpha Cen A selected)
 ##   06-09  committed to alpha Cen A at 0.99c: the boost (beta 0.5), the cruise with the captain walking,
 ##          pans -5 / +5 m (sky fixed, plates at 0.15 / 1.6), a pan past the overscan (clamped)
-##   10     glow preview at 0.99c: the pole value is the package probe's (tools/glow_probe),
-##          because the sim does not emit ship.ism.glow_pole_w_m2 yet (M4.1 step 2)
+##   10     the glow at 0.99c from the sim's ship.ism.glow_pole_w_m2 / glow_pole_k (M4.1 step 2)
 ##   10b    the brake at beta 0.5 (no turnover)
 ##   11     arrived at alpha Cen A
-##   12-13  home at the cap (cruise_phi_max): the cruise, and its glow preview
+##   12-13  home at the cap (cruise_phi_max): the cruise, and the same frame captioned for the glow
 ##   14     the four life stages side by side (years forced: a debug view, labelled)
 ## plus contact_sheet.png and capture_log.json (every frame's sim fields).
 
 const DT := 1.0 / 20.0
 const FINE_DTAU := 2e-7 # ship-yr (6 s) per step through the burns
 const ALPHA_CEN_A := "CNS5:3627"
-## tools/glow_probe (sunholo/relativity 0.7.0): glowEmittanceAt(n, phi, 1e-9, 0.5, 1) at 0.99c and the cap.
-const PROBE_POLE := {"0.99c": 9.628776871706524e-05, "cap": 1.1250843031053142}
 
 var main: Node
 var it: Interior
@@ -71,7 +68,7 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	it.set_pan(base + Vector2(12.0, 5.0))
 	await _shot("09_b099_pan_clamped", "0.99c, pan (+12, +5) m, beyond the [6, 3] m overscan: the plates clamp, no edge shows.")
 	it.set_pan(base)
-	await _glow_preview("10_b099_glow_preview", "0.99c")
+	await _glow_shot("10_b099_glow", "0.99c")
 	while map.journey_state() == "committed" and sim.world["ship"]["flown"] < distance - 0.05:
 		it.tick()
 	# close in on the brake with steps a third of the ship time left, then fine steps through it
@@ -98,7 +95,7 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	while map.journey_state() == "committed" and not (sim.world["ship"]["phase"] == "cruising" and sim.world["ship"]["flown"] > 0.3 * distance):
 		it.tick()
 	await _shot("12_cap_cruise", "Home at the cap (1 - beta = 1e-6, gamma 707): the cruise.")
-	await _glow_preview("13_cap_glow_preview", "cap")
+	await _glow_shot("13_cap_glow", "cap")
 	var stages := []
 	it.avatar.set_motion(Vector2(0.0, 1.0)) # face the camera for the stage strip
 	for y in [0.0, 20.0, 40.0, 60.0]:
@@ -135,11 +132,10 @@ func _commit(fine := false) -> bool:
 	return true
 
 
-func _glow_preview(name: String, speed: String) -> void:
-	it.glow_preview = PROBE_POLE[speed]
-	it.caption = "GLOW PREVIEW %s: pole %s W/m^2 from the package probe (sim field pending, M4.1 step 2)" % [speed, String.num_scientific(PROBE_POLE[speed])]
+func _glow_shot(name: String, speed: String) -> void:
+	it.apply_state(main.sim.world)
+	it.caption = "GLOW %s: pole %s W/m^2 at %.0f K from the sim (blackbody, D-30)" % [speed, String.num_scientific(it.sky.glow_pole), it.sky.glow_t_pole]
 	await _frame(name)
-	it.glow_preview = -1.0
 
 
 func _shot(name: String, caption: String) -> void:
@@ -155,7 +151,7 @@ func _frame(name: String) -> void:
 	tiles.append(img)
 	var s: Dictionary = sim.world["ship"]
 	var row := {"frame": name, "caption": it.caption, "phase": s["phase"], "beta": s["beta"], "gamma": s["gamma"], "one_minus_beta": s.get("one_minus_beta"),
-		"tau": sim.world["clock"]["tau"], "t": sim.world["clock"]["t"], "heading": s["heading"], "glow_pole_w_m2": it.sky.glow_pole, "ev": it.sky.exposure.ev,
+		"tau": sim.world["clock"]["tau"], "t": sim.world["clock"]["t"], "heading": s["heading"], "glow_pole_w_m2": it.sky.glow_pole, "glow_pole_k": it.sky.glow_t_pole, "ev": it.sky.exposure.ev,
 		"captain": {"stage": it.avatar.stage, "facing": it.avatar.facing, "pos_play_m": [it.avatar_pos.x, it.avatar_pos.y, it.avatar_pos.z]}, "pan_m": [it.pan.x, it.pan.y],
 		"prompt": it.prompt_label.text, "map_open": it.map_open}
 	log_rows.append(row)

@@ -11,7 +11,7 @@ extends SubViewport
 ## the interior view unchanged. The vertical fov is the plate's VIEW region's (the camera
 ## spans the overscanned plate; the screen shows the view region).
 ## Velocity comes from the sim only: ship.heading, beta, gamma, pos (galactic, the play
-## session's frame) and ship.ism.glow_pole_w_m2 for the glow.
+## session's frame) and ship.ism.glow_pole_w_m2 / glow_pole_k for the glow.
 
 const GLOW_SHADER := preload("res://interior/glow_overlay.gdshader")
 
@@ -30,6 +30,7 @@ var heading_gal := PackedFloat64Array([0.0, 0.0, -1.0])
 var heading_world := Vector3(0.0, -1.0, 0.0)
 var beta := 0.0
 var glow_pole := -1.0 # the sim's W/m^2; -1 = the state carries none (glow off)
+var glow_t_pole := -1.0 # the sim's K (glow_pole_k); -1 = none
 var radius_m := 100.0
 var basis := PackedFloat64Array() # ship basis, galactic columns
 
@@ -76,7 +77,10 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 	add_child(glow)
 	var p: Array = cam["position_m"]
 	glow_mat.set_shader_parameter("cam_ship", Vector3(p[0], p[1], p[2]))
-	glow_mat.set_shader_parameter("colour", ForwardGlow.WHITE_RGB)
+	glow_mat.set_shader_parameter("bb_lut", Blackbody.build_lut())
+	glow_mat.set_shader_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
+	glow_mat.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
+	glow_mat.set_shader_parameter("log10_eff_k", log(ForwardGlow.EFF_K) / log(10.0))
 	configure_pixel()
 	orient(heading_gal)
 
@@ -140,12 +144,13 @@ func apply(world: Dictionary) -> void:
 	var params: Variant = world.get("params")
 	if params is Dictionary and params.has("bubble_radius_m"):
 		radius_m = params["bubble_radius_m"]
-	set_glow_pole(ForwardGlow.pole_of(world))
+	set_glow(ForwardGlow.pole_of(world), ForwardGlow.temperature_of(world))
 
 
-## The glow's pole emittance (W/m^2; < 0 = off) and the shared exposure.
-func set_glow_pole(w: float) -> void:
-	glow_pole = w
+## The glow's pole emittance (W/m^2; < 0 = off), its pole temperature (K) and the shared exposure.
+func set_glow(w: float, t_pole: float) -> void:
+	glow_pole = w if t_pole >= 0.0 else -1.0
+	glow_t_pole = t_pole
 	update_exposure()
 
 
@@ -159,7 +164,8 @@ func update_exposure() -> void:
 		background.set_scene_exposure(exposure.k())
 	glow_mat.set_shader_parameter("radius", radius_m)
 	glow_mat.set_shader_parameter("pole", maxf(glow_pole, 0.0))
-	glow_mat.set_shader_parameter("scale", exposure.k() * ForwardGlow.LM_PER_W / PI)
+	glow_mat.set_shader_parameter("t_pole", maxf(glow_t_pole, 0.0))
+	glow_mat.set_shader_parameter("scale", exposure.k() / PI)
 
 
 ## The glow's luminance (cd/m^2) seen along a world (sky-frame) direction.
@@ -170,7 +176,7 @@ func glow_luminance(n: Vector3) -> float:
 	var d := ShipFrame.to_ship(basis, g)
 	var p: Array = cam["position_m"]
 	var c := ForwardGlow.wall_cos(PackedFloat64Array([p[0], p[1], p[2]]), d, radius_m)
-	return ForwardGlow.luminance(ForwardGlow.profile(glow_pole, c)) if not is_nan(c) else 0.0
+	return ForwardGlow.radiance(ForwardGlow.profile(glow_pole, c)) * ForwardGlow.efficacy_lut(ForwardGlow.temperature(glow_t_pole, c)) if not is_nan(c) else 0.0
 
 
 ## The eye's centre-weighted meter (M1.8) sees the stars, the CMB and, here, the glow.

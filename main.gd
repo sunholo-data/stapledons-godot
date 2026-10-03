@@ -67,13 +67,13 @@ func _ready() -> void:
 	var args := _user_args()
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("glow-eps-sheet")
 	UiScale.configure(get_window(), _fixed_scale)
 	# Launching with no arguments (a double-clicked review build, `make run`) opens
 	# the bridge interior (M4.2); `--map` the galaxy map alone, `--voyage` the M0/M1 sky flight.
 	if args.is_empty() or (args.size() == 1 and args.has("record")):
 		args["interior"] = ""
-	if args.has("interior") or args.has("interior-capture") or args.has("m4-smoke"):
+	if args.has("interior") or args.has("interior-capture") or args.has("glow-eps-sheet") or args.has("m4-smoke"):
 		await _run_interior(args)
 		return
 	if args.has("map") or args.has("map-capture"):
@@ -189,7 +189,7 @@ func _run_map(args: Dictionary) -> void:
 ## galaxy map is the navigation console's screen: built here, attached to the same sim, and
 ## shown by the interior on demand. --interior-capture and --m4-smoke drive it by script.
 func _run_interior(args: Dictionary) -> void:
-	var capture := args.has("interior-capture")
+	var capture := args.has("interior-capture") or args.has("glow-eps-sheet")
 	var smoke := args.has("m4-smoke")
 	_map_mode = true # the interior and its map own the clock; no voyage ticks
 	if capture:
@@ -234,7 +234,10 @@ func _run_interior(args: Dictionary) -> void:
 	get_viewport().size_changed.connect(func() -> void: it.resize(get_window().size, get_viewport().get_visible_rect().size))
 	print("interior: bundle %s (%s), %d walk triangles, %d interactables, captain at %s" % [dir, bundle.manifest.get("version", "unversioned"), it.walk.triangle_count(), it.walk.interactables.size(), it.avatar_pos])
 	if capture: # loaded by path: tools/ is excluded from exports
-		get_tree().quit(await load("res://tools/interior_capture.gd").new().run(self, it, map, _out_dir(args["interior-capture"])))
+		if args.has("glow-eps-sheet"):
+			get_tree().quit(await load("res://tools/glow_eps_sheet.gd").new().run(self, it, map, _out_dir(args["glow-eps-sheet"])))
+		else:
+			get_tree().quit(await load("res://tools/interior_capture.gd").new().run(self, it, map, _out_dir(args["interior-capture"])))
 	elif smoke:
 		get_tree().quit(await InteriorSmoke.new().run(self, it, map, sim))
 

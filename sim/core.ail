@@ -107,7 +107,7 @@ export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None,
 -- (sim/celestial.ail). Like standoffAu it is set by `epoch_jd` and not in the params echo.
 export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float, epochJd: float }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
-export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
+export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.0000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
   aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0, epochJd: defaultEpochJd() }
 
 -- Radiated energy = boostJ + dragJ. The mass budget is closed (higgs-bubble
