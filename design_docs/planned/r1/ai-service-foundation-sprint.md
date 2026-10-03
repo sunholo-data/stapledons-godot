@@ -814,6 +814,26 @@ AI.8 · **Registry:** none (G4 decision point at start)
 **Acceptance:** AC15 `make ai-live-guard`; AC14 (re-run, wiring path);
 `godot --headless --path . --script tests/test_ai_settings.gd`;
 `make export-macos && make export-smoke` (Studio); `make test AILANG=$A`.
+**Status (2026-10-03):** executed on `sprint/ai9-keys` (AILANG v0.52.0), awaiting
+evaluation. All five tasks are done, plus the four must-fix items from the AI.7/AI.8
+evaluations and the v0.52.0 bump:
+- [x] ADC: every live launch passes `--ai-no-adc`, and Gemini is bound with
+  `--ai-key-file <key file>` (G4 resolved by v0.52.0's flags; the wrapper's
+  `GOOGLE_APPLICATION_CREDENTIALS=/nonexistent` and the service's refusal stay).
+- [x] Uncharged parse failures (`ai/adapters.ail`): a billed but unparsable
+  OpenRouter or TTS reply is charged (`make ai-loopback`, `ai-loopback-mutants`).
+- [x] Minimal environment: the live wrapper execs `env -i` (`test_ai_bridge.gd` `live_env`).
+- [x] AC15 `make ai-live-guard`, with a narrow allow rule (`tests/test_ai_relay.gd` only),
+  the `live_allowed` default asserted, and 10 guard mutants.
+- [x] `tests/test_ai_settings.gd` (`make ai-settings`), with AC14 re-run through the wired path.
+- [x] `main.gd`: one hunk of 3 changed lines.
+- [x] `make export-macos && make export-smoke`, run here (arm64, GPU window): the stub
+  says hello from the bundled runtime with no ailang on PATH, and the capture smoke passes.
+  The stub PNGs and `ai_core` blobs now ship as raw bytes ("keep" imports).
+The OpenRouter-image decision point: v0.52.0 still has no OpenRouter image output, so
+portraits stay Gemini-only (the default). The **library voice duration index**
+(`duration_ms`/`segments_ms` on the service's voice index lines, so that a library
+voice line can be a cache hit) is left for AI.10a: see its task 1.
 
 ### Wave A6
 
@@ -827,6 +847,9 @@ stub, so the attended run only swaps the provider.
    (24 kHz s16le mono), encode once (`OggOpus(24000)`); `segments_ms` from
    `durationMs` of each PCM prefix; descriptor test on the stub (offsets exact,
    strictly increasing, below `duration_ms`). G1 decision point re-checked.
+   **Carried from AI.7/AI.9:** the service's library voice index lines gain
+   `duration_ms` and `segments_ms`, so a library voice line is a cache hit
+   (`AiCache.lookup` already requires them). This re-records `tests/ai/cache.SHA256SUMS`.
 2. `data/ai/cast/medic.json`: identity, departure age 35, persona,
    `voice_id: "Aoede"` (pending ⏸ C), `style`, core portrait keys.
 3. `ui/conversation/conversation.{tscn,gd}`: large portrait, crossfade

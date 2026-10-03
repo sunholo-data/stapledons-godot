@@ -1,5 +1,5 @@
 #!/bin/sh
-# AI.6 mutation check for bridge/ai_bridge.gd (as markers-mutants and ai-mutants):
+# AI.6 (and AI.9: key file, no ADC, minimal env) mutation check for bridge/ai_bridge.gd (as markers-mutants and ai-mutants):
 # each mutant, applied in place, must make tests/test_ai_bridge.gd fail the named
 # assertion. The original file is restored after every mutant and on exit. A
 # mutant whose anchor no longer matches fails the check, so it cannot rot.
@@ -55,6 +55,10 @@ func poll() -> void:\n\tvar t0 := Time.get_ticks_usec()	func poll() -> void:\n\t
 func poll() -> void:\n\tvar t0 := Time.get_ticks_usec()	func poll() -> void:\n\tvar t0 := Time.get_ticks_usec()\n\tif _phase == Phase.BUSY and randi() % 40 == 0:\n\t\tvar w := Time.get_ticks_msec() + 30\n\t\twhile Time.get_ticks_msec() < w: pass	timeouts	frame never blocked
 case $n in [3-9]) eval "exec $n>&-" 2>/dev/null;; [1-9][0-9]*) [ -n "$BASH_VERSION" ] && eval "exec $n>&-" 2>/dev/null;; esac;	[ "$n" -gt 2 ] 2>/dev/null && eval "exec $n>&-" 2>/dev/null;	static	FD_SCRUB under /bin/dash
 return "/bin/bash" if FileAccess.file_exists("/bin/bash") else "/bin/sh"	return "/bin/dash" if FileAccess.file_exists("/bin/dash") else "/bin/sh"	static	[5, 12, 13] closed
+args.append_array(["--ai", image, "--ai-key-file", key_files["gemini"]])	args.append_array(["--ai", image])	live_plan	--ai gemini-2.5-flash-image --ai-key-file
+"IO,FS,Env,Net,AI", "--ai-no-adc"])	"IO,FS,Env,Net,AI"])	live_plan	--ai-no-adc in the ailang arguments
+exec /usr/bin/env -i PATH=	exec /usr/bin/env PATH=	live_env	no FOO_API_KEY
+[ "$a" = 1 ] && l=AI_LIVE=1;	l=AI_LIVE=1;	live_env	AI_LIVE absent
 EOF
 echo "ai-bridge-mutants: $n mutants, $fails not killed"
 [ "$fails" -eq 0 ]

@@ -21,7 +21,7 @@ import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/string (concat, split, intToStr)
 import ./wire (Request, WRequest, decodeIn, encodeOut)
-import ./spend (ledgerOf)
+import ./spend (Units, ledgerOf, total)
 import ./provider (Ctx, Act, Say, WriteBlob, AppendUsage, Job, Run, Done, prepare, okText, okVoice, failed, castVoice)
 import ./service (start)
 import ./cache (writeBlob, appendUsage)
@@ -67,6 +67,35 @@ func ttsCheck(cfg: Loop, c: Ctx, lines: [string], key: string) -> () ! {IO, FS, 
     }
   }
 
+-- AI.9 (AI.7 finding): a billed reply that does not parse is charged. The
+-- server answers <base>/nocontent with a chat completion that has usage but
+-- no content, and <base>/capped with speech over its token cap; each failure
+-- must count one call and its tokens, and move the ledger.
+func billedLine(what: string, j: Job, prov: string, u: Units, code: string, dir: string) -> () ! {IO, FS} {
+  let s = failed(ledgerOf(0.5), j, prov, u, code);
+  println(concat(["billed ", what, ": ", code, ", ", intToStr(u.calls), " calls, ", intToStr(u.tokensIn), "+", intToStr(u.tokensOut), " tokens, ledger 0 -> ", intToStr(total(s.ledger)), " nano-USD"]));
+  act(dir, s.acts)
+}
+func billedCheck(cfg: Loop, c: Ctx, lines: [string], kg: string, ko: string) -> () ! {IO, FS, Net} {
+  let dir = concat([cfg.out, "/cache"]);
+  match job(c, lines, "1") {
+    None => println("FAIL billed openrouter: no job"),
+    Some(j) => {
+      let jb = {j | r: {j.r | req: "b1"}};
+      let a = openRouterTextAt(concat([cfg.base, "/nocontent"]), jb, ko);
+      match a.outcome { Ok(_) => println("FAIL billed openrouter: parsed"), Err(code) => billedLine("openrouter", jb, "openrouter", a.units, code, dir) }
+    }
+  };
+  match job(c, lines, "12") {
+    None => println("FAIL billed tts: no job"),
+    Some(j) => {
+      let jb = {j | r: {j.r | req: "b12"}};
+      let s = geminiVoiceAt(concat([cfg.base, "/capped"]), jb, kg, castVoice(jb.r), c.styles);
+      match s.outcome { Ok(_) => println("FAIL billed tts: parsed"), Err(code) => billedLine("tts", jb, "gemini", s.units, code, dir) }
+    }
+  }
+}
+
 export func loopback(cfg: Loop) -> () ! {IO, FS, Net, Env} {
   let kg = getEnvOr("GOOGLE_API_KEY", "");
   let ko = getEnvOr("OPENROUTER_API_KEY", "");
@@ -79,6 +108,7 @@ export func loopback(cfg: Loop) -> () ! {IO, FS, Net, Env} {
       let lines = split(text(cfg.requests), "\n");
       orCheck(cfg, c, lines, ko);
       ttsCheck(cfg, c, lines, kg);
+      billedCheck(cfg, c, lines, kg, ko);
       println("loopback-done")
     }
   }

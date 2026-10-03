@@ -98,6 +98,22 @@ export pure func parseOpenRouter(body: string) -> Result[Reply, string] =
     }
   }
 
+-- A reply the provider billed: it decodes and is not an error body, whether
+-- or not it parses (AI.9, the AI.7 finding). Its reported tokens are charged
+-- with the error, so a billed but unusable reply still moves the ledger.
+export type Billed = { tokensIn: int, tokensOut: int } deriving (Eq)
+export pure func billedOpenRouter(body: string) -> Option[Billed] =
+  match decode(body) {
+    Err(_) => None,
+    Ok(j) => match get(j, "error") {
+      Some(_) => None,
+      None => {
+        let u = match getObject(j, "usage") { Some(x) => x, None => jo([]) };
+        Some({ tokensIn: natOr(u, "prompt_tokens"), tokensOut: natOr(u, "completion_tokens") })
+      }
+    }
+  }
+
 -- ------------------------------------------------------------ images
 pure func at(b: bytes, i: int) -> int = match byteAt(b, i) { Some(v) => v, None => 0 - 1 }
 pure func be32(b: bytes, i: int) -> int = ((at(b, i) * 256 + at(b, i + 1)) * 256 + at(b, i + 2)) * 256 + at(b, i + 3)
@@ -141,4 +157,9 @@ export pure func parseTts(body: string, cap: int) -> Result[Speech, string] =
           }
         }
     }
+  }
+export pure func billedTts(body: string) -> Option[Billed] =
+  match decode(body) {
+    Err(_) => None,
+    Ok(j) => match get(j, "error") { Some(_) => None, None => Some({ tokensIn: inputTokensOf(body), tokensOut: outputTokensOf(body) }) }
   }

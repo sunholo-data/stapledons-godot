@@ -99,7 +99,9 @@ func _run_map(args: Dictionary) -> void:
 	if capture:
 		get_window().size = Vector2i(1600, 900)
 	sim.record_path = args.get("record", "")
-	if not sim.start() or not sim.new_game(SEED, "sol", false):
+	var ai := AiSession.new(args) # AI.9: settings, relay, service, indicator; live only by the player's tick
+	add_child(ai)
+	if not sim.start() or not sim.new_game(SEED, "sol", false, {}, AiSession.ai_core()) or not ai.attach(sim):
 		push_error("sim session failed: %s" % sim.last_error)
 		get_tree().quit(2)
 		return

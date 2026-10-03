@@ -51,13 +51,16 @@ const MAX_CHUNKS_PER_POLL := 16
 ## service.
 const FD_SCRUB := 'for f in /dev/fd/*; do n=${f##*/}; case $n in [3-9]) eval "exec $n>&-" 2>/dev/null;; [1-9][0-9]*) [ -n "$BASH_VERSION" ] && eval "exec $n>&-" 2>/dev/null;; esac; done; exec "$@"'
 
-## Live launch (design (a2) as amended by AI.5): the keys travel as key-file
-## paths, never as text. This wrapper (run as `/bin/sh -c LIVE_WRAP <ailang>
-## <gemini key file|""> <openrouter key file|""> <0|1> run ...`) clears any
-## inherited key and AI_LIVE, reads each key file into its env var, points
-## ADC at a nonexistent file and execs ailang (same pid), so `ps` shows only
-## paths. AI_LIVE=1 passes through only when `live_allowed` (attended runs).
-const LIVE_WRAP := 'g=$1; o=$2; a=$3; shift 3; unset GOOGLE_API_KEY OPENROUTER_API_KEY; [ "$a" = 1 ] || unset AI_LIVE; if [ -n "$g" ]; then GOOGLE_API_KEY=$(cat "$g"); export GOOGLE_API_KEY; fi; if [ -n "$o" ]; then OPENROUTER_API_KEY=$(cat "$o"); export OPENROUTER_API_KEY; fi; GOOGLE_APPLICATION_CREDENTIALS=/nonexistent exec "$0" "$@"'
+## Live launch (design (a2) as amended by AI.5 and AI.9): the keys travel as
+## key-file paths, never as text. The wrapper (run as `/bin/sh -c LIVE_WRAP
+## <ailang> <gemini key file|""> <openrouter key file|""> <0|1> <home> run ...`)
+## execs `env -i` with only PATH, HOME, GOOGLE_APPLICATION_CREDENTIALS=/nonexistent
+## and, when allowed, AI_LIVE=1: nothing else of Godot's environment (other
+## *_API_KEY variables, an inherited AI_LIVE or key) reaches the service. An
+## inner sh reads each key file into its env var and execs ailang (same pid
+## throughout), so `ps` shows only paths. AI_LIVE=1 passes only when
+## `live_allowed` (the player's tick, AiSettings; never in automation).
+const LIVE_WRAP := """g=$1; o=$2; a=$3; h=$4; shift 4; l=; [ "$a" = 1 ] && l=AI_LIVE=1; exec /usr/bin/env -i PATH="$PATH" HOME="$h" GOOGLE_APPLICATION_CREDENTIALS=/nonexistent $l /bin/sh -c 'if [ -n "$1" ]; then GOOGLE_API_KEY=$(cat "$1"); export GOOGLE_API_KEY; fi; if [ -n "$2" ]; then OPENROUTER_API_KEY=$(cat "$2"); export OPENROUTER_API_KEY; fi; shift 2; exec "$@"' sh "$g" "$o" "$0" "$@" """
 const LIVE_HOSTS := "generativelanguage.googleapis.com,openrouter.ai"
 
 enum Phase { IDLE, LAUNCHING, HANDSHAKE, READY, BUSY }
@@ -245,9 +248,15 @@ static func _run_args(ailang: String, ai_dir: String, config: Dictionary) -> Pac
 		ai_dir.path_join(SERVICE_FILE.get_file())])
 
 
-## The live launch: the wrapper, then the service with IO,FS,Env,Net,AI, std/ai
-## bound to the Gemini image model (AI.5 transport finding) and the two hosts.
-func live_plan(ailang: String, root: String) -> Dictionary:
+## The live launch: the wrapper, then the service with IO,FS,Env,Net,AI and the
+## two hosts. std/ai is bound to the Gemini image model (AI.5 transport
+## finding) only with a Gemini key, and then always with `--ai-key-file` and
+## `--ai-no-adc` (AI.9): on v0.51+ gcloud Application Default Credentials in
+## HOME win over GOOGLE_API_KEY, so env precedence would bill a gcloud
+## project instead of the key. `--ai-no-adc` is passed in every live launch.
+## `home` is HOME for ailang (its package cache): the bundled runtime's in an
+## exported build, else Godot's own.
+func live_plan(ailang: String, root: String, home: String = "") -> Dictionary:
 	var ai_dir := root.path_join("ai")
 	var models = JSON.parse_string(FileAccess.get_file_as_string(root.path_join("data/ai/models.json")))
 	var image: String = models["models"]["gemini"]["image"] if models is Dictionary else "gemini-2.5-flash-image"
@@ -255,13 +264,9 @@ func live_plan(ailang: String, root: String) -> Dictionary:
 	cfg["provider"] = "live"
 	cfg["keys_present"] = []
 	var args := PackedStringArray(["-c", LIVE_WRAP, ailang, key_files.get("gemini", ""), key_files.get("openrouter", ""), "1" if live_allowed else "0",
-		"run", "--quiet", "--bytecode", "--package-dir", ai_dir, "--caps", "IO,FS,Env,Net,AI"])
-	# std/ai is bound only with a Gemini key: `--ai gemini-…` without
-	# GOOGLE_API_KEY makes ailang fall back to Application Default Credentials
-	# (a gcloud identity, or a startup failure where there is none). Without
-	# it, text routes to OpenRouter over std/net and media answer no_key.
+		home if home != "" else OS.get_environment("HOME"), "run", "--quiet", "--bytecode", "--package-dir", ai_dir, "--caps", "IO,FS,Env,Net,AI", "--ai-no-adc"])
 	if key_files.has("gemini"):
-		args.append_array(["--ai", image])
+		args.append_array(["--ai", image, "--ai-key-file", key_files["gemini"]])
 	args.append_array(["--net-allow-domains", LIVE_HOSTS, "--entry", "live", "--args-json", SimBridge.encode(cfg), ai_dir.path_join(SERVICE_FILE.get_file())])
 	return {"bin": "/bin/sh", "args": args}
 
@@ -274,7 +279,7 @@ func stub_config(root: String) -> Dictionary:
 
 ## Source checkout: ailang from AILANG_BIN or PATH, the service from the repo.
 ## Exported build: the sim's bundled runtime with its own HOME, plus ai/ and
-## data/ai/ unpacked beside it (the export preset must include them; AI.7).
+## data/ai/ unpacked beside it (the export preset includes them, AI.9).
 func launch_plan() -> Dictionary:
 	if not OS.has_feature("template"):
 		var bin := SimBridge.find_ailang()
@@ -286,12 +291,11 @@ func launch_plan() -> Dictionary:
 			return live_plan(bin, res)
 		var dev := _run_args(bin, res.path_join("ai"), stub_config(res))
 		return {"bin": dev[0], "args": dev.slice(1)}
-	if live:
-		push_error("AiBridge: live AI in an exported build arrives with the settings UI (AI.9)")
-		return {}
 	var root := SimBridge._unpack_runtime()
 	if root == "" or not _unpack_ai(root):
 		return {}
+	if live:
+		return live_plan(root.path_join("runtime/bin/ailang"), root, root.path_join("home"))
 	var args := PackedStringArray(["HOME=" + root.path_join("home")])
 	args.append_array(_run_args(root.path_join("runtime/bin/ailang"), root.path_join("ai"), stub_config(root)))
 	return {"bin": "/usr/bin/env", "args": args}
@@ -301,14 +305,21 @@ static func _unpack_ai(root: String) -> bool:
 	if not FileAccess.file_exists("res://" + SERVICE_FILE):
 		push_error("exported build has no AI service (res://%s missing)" % SERVICE_FILE)
 		return false
+	# The marker holds a digest of what was unpacked, so a build with another
+	# ai/ lockfile or data/ai/ (same AILANG version, same runtime dir) unpacks
+	# again; the runtime's package cache is re-copied for ai/'s packages.
 	var marker := root.path_join(".ai-unpacked")
-	if FileAccess.file_exists(marker):
+	var digest := ""
+	for f in ["res://ai/ailang.lock", "res://data/ai/routing.json", "res://data/ai/models.json", "res://data/ai/prices.json", "res://ai/service.ail"]:
+		digest += FileAccess.get_file_as_string(f).sha256_text()
+	digest = digest.sha256_text()
+	if FileAccess.get_file_as_string(marker) == digest:
 		return true
-	for pair in [["res://ai", root.path_join("ai")], ["res://data/ai", root.path_join("data/ai")]]:
+	for pair in [["res://ai", root.path_join("ai")], ["res://data/ai", root.path_join("data/ai")], ["res://runtime/cache", root.path_join("home/.ailang/cache")]]:
 		if not SimBridge._copy_tree(pair[0], pair[1]):
 			push_error("failed to unpack %s" % pair[0])
 			return false
-	FileAccess.open(marker, FileAccess.WRITE).store_string("1")
+	FileAccess.open(marker, FileAccess.WRITE).store_string(digest)
 	return true
 
 

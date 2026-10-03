@@ -715,6 +715,53 @@ AI.8 as built (2026-10-03, no upload yet):
   also adds `ai_core/*` to the export preset's include filter, which AI.8
   leaves untouched.
 
+AI.9 as built (2026-10-03, AILANG v0.52.0, stub only, no key):
+- **Settings** (`ui/settings/ai_settings.gd`, `AiSettings`): live is on only
+  with a key **and** the tick, and never in an automation run (`--capture`,
+  `--map-capture`, `--golden`, `--bench`, `--ai-hello`). An env key
+  (`GOOGLE_API_KEY`, `OPENROUTER_API_KEY`) wins over a saved file
+  (`user://ai_key_<provider>`, made empty, `chmod 600`, then written). The
+  service still gets key **files** only: an env key is copied to a 0600
+  session file, which is removed when the session ends. The tick is the
+  player's attended consent, so `AiSettings.apply` is the one place that sets
+  `AiBridge.live_allowed`, which lets `AI_LIVE=1` reach the service. The
+  ceiling is clamped to 0.05–20 (Q2). `user://ai_settings.cfg` holds the
+  tick, the ceiling and text-only, never a key.
+- **ADC (G4, resolved by v0.52.0).** Every live launch passes `--ai-no-adc`,
+  and a Gemini route is bound with `--ai --ai-key-file <gemini key file>`, so
+  gcloud ADC in HOME cannot win over the key. The *ADC hazard* above no longer
+  needs a HOME without gcloud. The wrapper keeps
+  `GOOGLE_APPLICATION_CREDENTIALS=/nonexistent`, and the service keeps its
+  refusal without `GOOGLE_API_KEY` (TTS and the refusal read the env).
+- **Minimal environment.** `LIVE_WRAP` execs `/usr/bin/env -i` with PATH,
+  HOME (Godot's, or the bundled runtime's in an export),
+  `GOOGLE_APPLICATION_CREDENTIALS=/nonexistent` and, only when allowed,
+  `AI_LIVE=1`. An inner `sh` reads the key files into the env and execs
+  ailang, so no key is ever in argv, not even `env`'s.
+- **Charged parse failures.** `billedOpenRouter` and `billedTts`
+  (`ai/reply.ail`): a reply that decodes and is not an error body counts as
+  one call with its reported tokens, even when it does not parse. That
+  resolves the AI.7 *uncharged parse failures* finding.
+- **Indicator** (`ui/ai_indicator.gd`): the running cost per provider is the
+  sum of the `usd` of the usage lines the service appended this session, by
+  route. That includes charged failures, whose error results carry no
+  `meta.usd`.
+- **Wiring** (`bridge/ai_session.gd`, `AiSession`): only the galaxy map, the
+  default game, is wired. `main.gd` gets one hunk, and the `--voyage` sky
+  flight has no AI. `ai_core` is the sha256 of
+  `res://data/ai/core/index.ndjson`, which is bundled through `data/ai/*`.
+  With live off the relay is `off`: core hits still record, everything else
+  falls back, and no service starts. Captures get no indicator in their
+  frames.
+- **Guard** (`tools/ai_live_guard.sh`, AC15). Under the AI.5 wire, the
+  provider is chosen by the entry (`--entry live`) and the entry argument,
+  not by `--provider` flags. So rule A matches `--entry live`, a non-stub
+  `"provider"` and `--provider gemini|openrouter`. The make target proves
+  every rule on a mutated scratch copy.
+- **Export.** The `.ai-unpacked` marker holds a digest of the lockfile, the
+  data tables and the service. A build with another `ai/` unpacks again, and
+  re-copies the runtime's package cache (which now holds gemini_live).
+
 ### Follow-up: the AI model bake-off (after AI.10b)
 
 Mark, attended 2026-10-02: "we may actually run with models and compare their

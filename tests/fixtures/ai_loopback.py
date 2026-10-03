@@ -44,7 +44,14 @@ def serve(d):
                                   "x_goog_api_key": self.headers.get("x-goog-api-key"),
                                   "content_type": self.headers.get("Content-Type"), "body": body}) + "\n")
             log.flush()
-            if self.path == OR_PATH:
+            if self.path == "/nocontent" + OR_PATH:
+                # AI.9: billed (usage reported) but no content: provider_error, still charged.
+                out = json.dumps({"id": "gen-billed", "choices": [{"finish_reason": "stop", "message": {"role": "assistant"}}],
+                                  "usage": {"prompt_tokens": 312, "completion_tokens": 27}}).encode()
+            elif self.path == "/capped" + TTS_PATH:
+                # AI.9: the committed fixture as is: 118 output tokens over a cap of 98, bad_output, still charged.
+                out = fixture("gemini_tts_ok.json")
+            elif self.path == OR_PATH:
                 seen["or"] += 1
                 out = fixture("openrouter_wait.json" if seen["or"] == 1 else "openrouter_ok.json")
             elif self.path == TTS_PATH:
@@ -82,6 +89,7 @@ def check(d, kg, ko):
     reqs = [json.loads(l) for l in open(os.path.join(d, "requests.ndjson"))]
     ors = [r for r in reqs if r["path"] == OR_PATH]
     tts = [r for r in reqs if r["path"] == TTS_PATH]
+    billed = [r for r in reqs if r["path"] in ("/nocontent" + OR_PATH, "/capped" + TTS_PATH)]
     if len(ors) != 2:
         fails.append("expected 2 chat completions (one retry after the Wait fixture), got %d" % len(ors))
     for r in ors:
@@ -102,7 +110,22 @@ def check(d, kg, ko):
     lane = open(os.path.join(d, "lane.out")).read()
     if '"req":"1","status":"ok"' not in lane or '"req":"12","status":"ok","kind":"voice"' not in lane:
         fails.append("lane results not ok: %s" % lane[-400:])
-    if len(reqs) != len(ors) + len(tts):
+    # AI.9: each billed failure is one call with its tokens, a nonzero charge and a usage line.
+    want = {"openrouter": "billed openrouter: provider_error, 1 calls, 312+27 tokens, ledger 0 -> ",
+            "tts": "billed tts: bad_output, 1 calls, "}
+    for k, w in want.items():
+        line = next((l for l in lane.splitlines() if l.startswith("billed " + k + ":")), "")
+        nano = line.rsplit("-> ", 1)[-1].split(" ")[0] if "-> " in line else ""
+        if not line.startswith(w) or not nano.isdigit() or int(nano) <= 0:
+            fails.append("billed %s failure not charged: %r" % (k, line))
+    usage = open(os.path.join(d, "cache", "usage.ndjson")).read() if os.path.exists(os.path.join(d, "cache", "usage.ndjson")) else ""
+    for req in ("b1", "b12"):
+        lines = [json.loads(l) for l in usage.splitlines() if json.loads(l).get("req") == req]
+        if len(lines) != 1 or lines[0]["calls"] != 1 or not lines[0]["usd"] > 0:
+            fails.append("usage.ndjson has no charged line for billed failure %s: %s" % (req, lines))
+    if len(billed) != 2:
+        fails.append("expected 2 billed-failure calls (/nocontent, /capped), got %d" % len(billed))
+    if len(reqs) != len(ors) + len(tts) + len(billed):
         fails.append("unexpected paths: %s" % sorted({r["path"] for r in reqs}))
     places = [os.path.join(d, "lane.out"), os.path.join(d, "lane.err")]
     for root, _, files in os.walk(os.path.join(d, "cache")):
@@ -114,8 +137,8 @@ def check(d, kg, ko):
                 fails.append("key text in %s" % os.path.relpath(p, d))
     for f in fails:
         print("FAIL " + f)
-    print("ai-loopback: %d chat completions (Bearer, retry after Wait), %d TTS (x-goog-api-key); keys absent from stdout, stderr and %d cache files%s"
-          % (len(ors), len(tts), len(places) - 2, "" if not fails else " -- FAILED"))
+    print("ai-loopback: %d chat completions (Bearer, retry after Wait), %d TTS (x-goog-api-key), %d billed failures charged; keys absent from stdout, stderr and %d cache files%s"
+          % (len(ors), len(tts), len(billed), len(places) - 2, "" if not fails else " -- FAILED"))
     return 1 if fails else 0
 
 

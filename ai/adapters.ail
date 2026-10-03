@@ -24,7 +24,7 @@ import std/net (httpRequest)
 import ./wire (Seg)
 import ./spend (Units)
 import ./provider (Job, Style, styleFor, textCap, ttsCap)
-import ./reply (Reply, Image, textOf, stepReply, openRouterBody, parseOpenRouter, parseImage, ttsBody, parseTts)
+import ./reply (Reply, Image, Billed, textOf, stepReply, openRouterBody, parseOpenRouter, parseImage, ttsBody, parseTts, billedOpenRouter, billedTts)
 import ./voice (Clip, assemble)
 
 export type Attempt = { outcome: Result[string, string], units: Units, tries: int }
@@ -33,6 +33,8 @@ export type Spoken = { outcome: Result[Clip, string], units: Units }
 pure func msg(role: string, content: string) -> Message = { role: role, content: content, tool_calls: [], tool_call_id: "", images: [] }
 pure func noUnits() -> Units = { tokensIn: 0, tokensOut: 0, calls: 0 }
 pure func plus(u: Units, i: int, o: int) -> Units = { tokensIn: u.tokensIn + i, tokensOut: u.tokensOut + o, calls: u.calls + 1 }
+-- A reply that did not parse is still one call and its tokens when it was billed (AI.9).
+pure func billed(u: Units, b: Option[Billed]) -> Units = match b { Some(t) => plus(u, t.tokensIn, t.tokensOut), None => u }
 -- Up to three attempts: a reply that fails the screen is retried (bad_output).
 pure func next(j: Job, rp: Reply, u: Units, n: int) -> Result[Attempt, Units] {
   let u2 = plus(u, rp.tokensIn, rp.tokensOut);
@@ -60,7 +62,7 @@ func orTry(base: string, j: Job, key: string, n: int, u: Units) -> Attempt ! {Ne
       openRouterBody(j.hop.model, j.prompt, textCap(j.r))) {
     Err(_) => { outcome: Err("provider_error"), units: u, tries: n },
     Ok(resp) => match parseOpenRouter(resp.body) {
-      Err(code) => { outcome: Err(code), units: u, tries: n },
+      Err(code) => { outcome: Err(code), units: billed(u, billedOpenRouter(resp.body)), tries: n },
       Ok(rp) => match next(j, rp, u, n) { Ok(a) => a, Err(u2) => orTry(base, j, key, n + 1, u2) }
     }
   }
@@ -83,7 +85,7 @@ func speak(base: string, j: Job, key: string, voice: string, styles: [Style], ss
         ttsBody(s.text, voice, styleFor(styles, s.emotion), ttsCap(s))) {
       Err(_) => { outcome: Err("provider_error"), units: u },
       Ok(resp) => match parseTts(resp.body, ttsCap(s)) {
-        Err(code) => { outcome: Err(code), units: u },
+        Err(code) => { outcome: Err(code), units: billed(u, billedTts(resp.body)) },
         Ok(sp) => speak(base, j, key, voice, styles, rest, acc ++ [sp.pcm], plus(u, sp.tokensIn, sp.tokensOut))
       }
     }

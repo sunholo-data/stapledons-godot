@@ -361,6 +361,10 @@ func test_key_hygiene() -> bool:
 		var has_g: bool = c[0].has("gemini")
 		assert_bool("%s: --ai %s" % [c[3], "bound to the image model" if has_g else "not passed (no Gemini key, so no ADC fallback)"],
 			final_argv.contains("--ai gemini-2.5-flash-image") == has_g and (has_g or final_argv.find(" --ai ") < 0))
+		# AI.9: gcloud ADC in HOME wins over GOOGLE_API_KEY on v0.51+, so Gemini
+		# is bound to the key file's path, and ADC is off in every live launch.
+		assert_bool("%s: --ai-no-adc%s" % [c[3], ", --ai-key-file <the Gemini key file>" if has_g else ""],
+			final_argv.contains(" --ai-no-adc") and (final_argv.contains("--ai-key-file " + c[0].get("gemini", "")) if has_g else final_argv.find("--ai-key-file") < 0))
 	# Through the relay and the bridge: the live service refuses at hello (no
 	# AI_LIVE), three failures, service_down; the request falls back.
 	var lib := fresh("live_relay")
