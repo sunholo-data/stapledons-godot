@@ -484,15 +484,8 @@ func _capture_cmb(out: String) -> bool:
 	var tiles := []
 	var params: Dictionary = sim.world["params"]
 	for g: float in [275.0, 707.0]:
-		var phi := minf(log(g + sqrt(g * g - 1.0)), params["cruise_phi_max"])
-		var target := {"index": 0, "id": "cmb-capture", "pos": {"x": HEADING.x * 1000.0, "y": HEADING.y * 1000.0, "z": HEADING.z * 1000.0}}
-		if not sim.new_game(SEED, "sol", true) or not sim.send([{"k": "plan", "target": target, "cruise_phi": phi}], 0.0) \
-				or not sim.send([{"k": "commit", "plan_id": int(sim.world["journey"]["plan_id"])}], 0.0):
-			push_error("capture: CMB journey refused (%s %s)" % [sim.last_refused, sim.last_error])
+		if not _cruise_at(g, params):
 			return false
-		while sim.world["ship"]["phase"] != "cruising":
-			if not sim.send([], 1e-6):
-				return false
 		var tag := "sky_g%d" % int(g)
 		for view in [["forward", 0.0], ["starboard", -PI / 2]]:
 			camera.look(view[1], 0.0, 0.0)
@@ -509,6 +502,34 @@ func _capture_cmb(out: String) -> bool:
 		camera.fov = 70.0
 		_configure_pixel()
 	_save_sheet(tiles, 3, out.path_join("cmb_sheet.png"))
+	# fix/cmb-ring: gamma 40-60 through a 20 deg lens, where NaN profile texels drew a white ring
+	var ring := []
+	camera.look(0.0, 0.0, 0.0)
+	camera.fov = 20.0
+	_configure_pixel()
+	for g: float in [40.0, 50.0, 60.0]:
+		if not _cruise_at(g, params):
+			return false
+		_apply_state()
+		ring.append(await _capture_one(out, "sky_g%d_forward_20deg.png" % int(g)))
+	camera.fov = 70.0
+	_configure_pixel()
+	_save_sheet(ring, 3, out.path_join("cmb_ring_sheet.png"))
+	return true
+
+
+## A fresh diag game, a journey planned and committed at gamma g (clamped to
+## the sim's cap), stepped through the boost until it cruises.
+func _cruise_at(g: float, params: Dictionary) -> bool:
+	var phi := minf(log(g + sqrt(g * g - 1.0)), params["cruise_phi_max"])
+	var target := {"index": 0, "id": "cmb-capture", "pos": {"x": HEADING.x * 1000.0, "y": HEADING.y * 1000.0, "z": HEADING.z * 1000.0}}
+	if not sim.new_game(SEED, "sol", true) or not sim.send([{"k": "plan", "target": target, "cruise_phi": phi}], 0.0) \
+			or not sim.send([{"k": "commit", "plan_id": int(sim.world["journey"]["plan_id"])}], 0.0):
+		push_error("capture: CMB journey refused (%s %s)" % [sim.last_refused, sim.last_error])
+		return false
+	while sim.world["ship"]["phase"] != "cruising":
+		if not sim.send([], 1e-6):
+			return false
 	return true
 
 

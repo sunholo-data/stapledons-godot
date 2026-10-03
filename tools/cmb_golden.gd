@@ -9,6 +9,7 @@ extends RefCounted
 ##             to the pole reads the CPU profile within 1%; the view centre at
 ##             theta' = 45 deg and the whole frame at 90 deg read exactly 0
 ##   rest      beta = 0: every pixel of a frame looking ahead is exactly 0
+##   no ring   gamma 40, 50, 60 (pole 218-327 K): the frame ahead is exactly 0 at k = 1e6
 
 const OMB := 1e-6
 
@@ -49,6 +50,11 @@ func run(main: Node) -> int:
 		failures += await _zero(main, sb, beta, gamma, "theta' = %.0f deg at gamma 707" % deg, deg > 60.0)
 	cam.look(0.0, 0.0, 0.0)
 	failures += await _zero(main, sb, 0.0, 1.0, "beta = 0, looking ahead", true)
+	# fix/cmb-ring: at gamma 40-60 the pole is 218-327 K (L <= 1e-19 cd/m^2), so even at
+	# k = 1e6 (eye mode is ~20) the frame is black; NaN profile texels drew a white ring here
+	for g: float in [40.0, 50.0, 60.0]:
+		var b := sqrt(1.0 - 1.0 / (g * g))
+		failures += await _zero(main, sb, b, g, "gamma %.0f, looking ahead (no ring)" % g, true, 1e6)
 	sb.set_velocity(Vector3(0, 0, -1), 0.0, 1.0)
 	return failures
 
@@ -93,9 +99,9 @@ func _pixel(main: Node, sb: SkyBackground, px: Vector2i, want: float, t: float, 
 
 ## At a huge exposure (1e30 per cd/m^2) the whole frame (or the 9 x 9 pixels
 ## at the view centre) must be exactly black, as the CPU profile says.
-func _zero(main: Node, sb: SkyBackground, beta: float, gamma: float, label: String, whole: bool) -> int:
+func _zero(main: Node, sb: SkyBackground, beta: float, gamma: float, label: String, whole: bool, k := 1e30) -> int:
 	sb.set_velocity(Vector3(0, 0, -1), beta, gamma)
-	sb.set_scene_exposure(1e30)
+	sb.set_scene_exposure(k)
 	var img: Image = await main._grab()
 	var w := img.get_width()
 	var h := img.get_height()
@@ -105,6 +111,6 @@ func _zero(main: Node, sb: SkyBackground, beta: float, gamma: float, label: Stri
 			peak = maxf(peak, img.get_pixel(x, y).get_luminance())
 	var cam: FreeLookCamera = main.camera
 	var cpu := sb.cmb.profile(Relativity.angle_between(cam.view_dir(), Vector3(0, 0, -1)))
-	var ok := peak == 0.0 and cpu == 0.0
-	print("%s  CMB golden: %s: %s peak %.4f at k = 1e30 (want exactly 0), CPU centre %s" % ["ok  " if ok else "FAIL", label, "frame" if whole else "centre 9x9", peak, String.num_scientific(cpu)])
+	var ok := peak == 0.0 and cpu * k < 1e-3
+	print("%s  CMB golden: %s: %s peak %.4f at k = %s (want exactly 0), CPU centre %s" % ["ok  " if ok else "FAIL", label, "frame" if whole else "centre 9x9", peak, String.num_scientific(k), String.num_scientific(cpu)])
 	return 0 if ok else 1
