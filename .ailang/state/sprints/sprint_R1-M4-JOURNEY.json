@@ -1,7 +1,13 @@
 {
   "sprint_id": "R1-M4-JOURNEY",
-  "status": "planned",
-  "approved": null,
+  "status": "in-progress",
+  "approved": {
+    "by": "Mark Edmondson",
+    "decision": "D-22",
+    "when": "2026-10-03",
+    "mode": "attended",
+    "note": "approved as drafted with the evaluator's two consistency fixes applied as the executor's first step"
+  },
   "created": "2026-10-03T04:29:17Z",
   "design_doc": "design_docs/planned/r1/m4-first-journey.md",
   "sprint_plan": "design_docs/planned/r1/m4-first-journey-sprint.md",
@@ -392,7 +398,7 @@
     },
     {
       "id": "M4.5_PLAYTHROUGH_AUDIT",
-      "description": "Track A verification harness. Scripted playthrough bot (tests/playthrough_min.json through Godot's input layer, headless, real sim) writing $(SCRATCH)/session.ndjson and display_samples.ndjson — on the fixture bundle until the approved bundle arrives, on the approved bundle for landing; display audit (tests/display_audit.gd, Godot headless, make display-audit): every numeric label a DisplayBinding{node_path, field, format}, fails on a number != format(state[field]), an unbound digit, or a missing field; codex bodies hash-equal via LoreBinding; replay: make replay SESSION=... (cmp on state streams), make parity-m4 (VM = interpreter, AI process never spawned); ten-minute proxy (sim/tools/session_audit.ail entry playthroughTime, AILANG with FS caps): sim ticks at default warp + 1.5 s per click/key + 200 wpm reading + 20 s walking per interactable (budget <= 330 s, limit 360; legs 45-120 s); entry codexUnlocks against tests/expected_unlocks.json; tests/adversarial.json (re-plan, cancel and Commit mid-transit).",
+      "description": "Track A verification harness. Scripted playthrough bot (tests/playthrough_min.json through Godot's input layer, headless, real sim) writing $(SCRATCH)/session.ndjson and display_samples.ndjson — on the fixture bundle until the approved bundle arrives, on the approved bundle for landing; display audit (tests/display_audit.gd, Godot headless, make display-audit): every numeric label a DisplayBinding{node_path, field, format}, fails on a number != format(state[field]), an unbound digit, or a missing field; codex bodies hash-equal via LoreBinding; replay: make replay SESSION=... (cmp on state streams), make parity-m4 (VM = interpreter, AI process never spawned); ten-minute proxy (sim/tools/session_audit.ail entry playthroughTime, AILANG with FS caps): sim ticks at default warp + 1.5 s per click/key + 200 wpm reading + 20 s walking per interactable (budget <= 330 s, limit 360; legs 45-120 s); entry codexUnlocks against tests/expected_unlocks.json; tests/adversarial.json (re-plan, cancel and Commit mid-transit). MERGE: builds on integration branch m4-track-b (its Track-B deps M4.2 and M4.3b live only there) as a stacked PR, and merges to main with the train after S1 sign-off.",
       "depends_on": [
         "M4.3a_TRANSIT_WARP_HUD",
         "M4.4_NEWS_LEGACY",

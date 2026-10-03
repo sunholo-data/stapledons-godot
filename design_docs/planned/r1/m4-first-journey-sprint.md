@@ -161,8 +161,9 @@ shell glue. `make python-guard` must stay green with zero new `*.py`.
 
 Each milestone is one iteration, test-first, evaluated by a different agent
 or model from the executor (generator ≠ judge). Track A milestones (M4.6a,
-M4.0, M4.1, M4.3a, M4.4, M4.7, M4.5 — and M4.6's ungated half) each land as
-their own PR to main. The Track B train (M4.2 → M4.3b → M4.6's gated half)
+M4.0, M4.1, M4.3a, M4.4, M4.7 — and M4.6's ungated half) each land as
+their own PR to main. The Track B train (M4.2 → M4.3b → M4.6's gated half → M4.5,
+which needs M4.2 and M4.3b)
 lands as **stacked PRs into the integration branch `m4-track-b`**, which
 merges to main only after ⏸ S1 sign-off (see the pause-points table).
 `passes` starts as `null`. Tracks follow the design doc's §Order: **Track A**
@@ -579,7 +580,10 @@ replay (landed), **M4.2 and M4.3b** (AC4's audit and the final run are on
 the composited interior; AC7's proxy includes the 20 s walking per
 interactable) · **Art-gated:** no — but the **final** run is on the
 approved bundle · **Registry:** none (harness; AILANG FS caps for the
-proxy, Godot for the audit — F6, no Python).
+proxy, Godot for the audit — F6, no Python). **Merge:** builds on
+`m4-track-b` (its Track-B deps M4.2 and M4.3b live only there), as a
+stacked PR into that branch, and merges to main with the train after ⏸ S1
+sign-off.
 
 **Acceptance (AC ids, commands from the design doc):**
 - **AC3** — `make playthrough SCRIPT=adversarial`;
@@ -787,9 +791,12 @@ decisions:
    Adding a credential is an infrastructure decision, so it is Mark's.
 3. **Q3: approve sprint R1-M4-JOURNEY as written?** Including: the M4.1
    LOC-cap waiver (700 > 650, split at the `ship.ism` seam on overrun —
-   F1); the wave plan that starts Track A (M4.6a ∥ M4.0 ∥ M4.1)
-   immediately on approval while Track B waits on R1-M1-SKY-2; and the
-   pause points P-pkg, RB-1, S1, S4 above. **Recommendation: approve.**
+   F1); wave 1 (M4.6a ∥ M4.0 ∥ M4.1) starting immediately on approval
+   while Track B waits on R1-M1-SKY-2; the pause points P-pkg, RB-1, S1,
+   S4 above; and the S1 stacking mechanism (Track B lands as stacked PRs
+   into `m4-track-b`, merging to main after S1 sign-off). Note: the
+   round-2 design quorum ran with gpt6-1-sol ABSENT (3 present external
+   reviewers, that seat empty — F7). **Recommendation: approve.**
    Default: no execution until approved (gate: sprint plans stop for
    approval).
 
