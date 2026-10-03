@@ -1,0 +1,341 @@
+module stapledons/sim/navigation_test
+
+-- M5.5a: body targets, stop and flyby geometry, the intercept, refusals
+-- (design m5-planets §M5.5, AC14, AC15, AC17 residual half, AC4 planner half;
+-- sprint R1-M5-PLANETS §M5.5a). Expected values come from the package
+-- functions composed directly in the test (bodyAt, planBurnCoastBurn,
+-- motionAt, betaOf, gammaOf), never from the planner's own helpers.
+-- `navigationVm` runs every check on the strict VM (`make strict-m5`).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/list (map, foldl)
+import std/string (join, contains)
+import std/math (sqrt)
+import pkg/sunholo/celestial/kepler (Vec3, add, sub, scale, norm, dot, cross, absf)
+import pkg/sunholo/celestial/ephemeris (auKm)
+import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn, motionAt)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta, standardGravity, betaOf, gammaOf)
+import ./celestial (solSystem, bodyAt, jdAt, lyKm, defaultEpochJd)
+import ./data/acen (bodies)
+import ./navigation (NavCtx, BodyReq, Leg, NavPlan, Pass, planBody, planBodyN, interceptIterations, residualMax, safetyMinKm, defaultStandoffKm,
+  standoffMaxKm, bodyPhiMin, bodyPhiMax, allFacts, stopArrivalT, runOutMarginKm, staleAt)
+import ./core (World, Ticked, Intent, IPlan, IPlanBody, ICommit, Plan, Journey, Planned, Committed, Arrived, newWorld, defaultParams, tick, initShip, position, navOf)
+import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, relativityPin, decodeHello, helloMsg)
+
+-- ------------------------------------------------------------ fixtures
+pure func ntAllTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+pure func ntRelNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol * absf(b)
+pure func ntJ0() -> float = defaultEpochJd()
+pure func ntZero() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
+pure func ntVeq(a: Vec3, b: Vec3) -> bool = a.x == b.x && a.y == b.y && a.z == b.z
+pure func ntNoPass(n: NavPlan) -> bool = match n.pass { None => true, Some(_) => false }
+pure func ntBodyKm(id: string, t: float) -> Vec3 = match bodyAt(solSystem(), id, jdAt(ntJ0(), t)) { Some(b) => b.pos, None => { x: 1.0e30, y: 0.0, z: 0.0 } }
+pure func ntBodyVel(id: string, t: float) -> Vec3 = match bodyAt(solSystem(), id, jdAt(ntJ0(), t)) { Some(b) => b.vel, None => ntZero() }
+pure func ntBodyPole(id: string, t: float) -> Vec3 = match bodyAt(solSystem(), id, jdAt(ntJ0(), t)) { Some(b) => b.pole, None => ntZero() }
+pure func ntUnitV(v: Vec3) -> Vec3 = scale(1.0 / norm(v), v)
+pure func ntLyOf(km: Vec3) -> Vec3 = scale(1.0 / lyKm(), km)
+-- The ship 50,000 km above Earth (galactic +z) at J2000: the M5.5b start.
+pure func ntEarthUpKm() -> Vec3 = add(ntBodyKm("earth", 0.0), { x: 0.0, y: 0.0, z: 50000.0 })
+-- The chase: 0.2 AU ahead of Mercury along its velocity. Mercury closes at about
+-- 50 km/s, so at 0.001c the intercept contracts by about 0.17 per step, the
+-- design's worst case: step 11 and step 12 still differ by more than the JD
+-- grid (jd near 2.45e6 resolves 4e-5 s; a faster contraction reaches the grid's
+-- fixed point before step 11).
+export pure func chaseKm() -> Vec3 = add(ntBodyKm("mercury", 0.0), scale(0.2 * auKm(), ntUnitV(ntBodyVel("mercury", 0.0))))
+pure func ntAccel() -> float = defaultParams().boostG * standardGravity()
+export pure func ctxAt(hereKm: Vec3) -> NavCtx = { sys: solSystem(), epochJd: ntJ0(), t0: 0.0, hereLy: ntLyOf(hereKm), accel: ntAccel(), bubbleKm: defaultParams().bubbleRadiusM / 1000.0 }
+export pure func stopReq(id: string, beta: float, s: Option[float]) -> BodyReq = { id: id, cruisePhi: rapidityOfBeta(beta), mode: "stop", standoffKm: s, bKm: 0.0, clockDeg: 0.0, runOutKm: None }
+pure func ntFlyReq(id: string, beta: float, b: float, clock: float) -> BodyReq = { id: id, cruisePhi: rapidityOfBeta(beta), mode: "flyby", standoffKm: None, bKm: b, clockDeg: clock, runOutKm: None }
+pure func ntRSaturn() -> float = 60268.0
+pure func ntRMars() -> float = 3396.19
+pure func ntRingSaturnKm() -> float = 140612.0
+pure func ntBubbleKm() -> float = 0.1
+pure func ntSaturnFly() -> BodyReq = ntFlyReq("saturn", 0.5, 3.0 * ntRSaturn(), 0.0)
+pure func ntIoStop() -> BodyReq = stopReq("io", 0.001, None)
+export pure func chaseStop() -> BodyReq = stopReq("mercury", 0.001, None)
+pure func ntRefusalOf(r: Result[Leg, string]) -> string = match r { Ok(_) => "ok", Err(w) => w }
+pure func ntLegOk(r: Result[Leg, string], g: Leg -> bool) -> bool = match r { Ok(l) => g(l), Err(_) => false }
+pure func ntPassOk(l: Leg, g: Pass -> bool) -> bool = match l.nav.pass { Some(p) => g(p), None => false }
+pure func ntTripNear(a: TripPlan, b: TripPlan, tol: float) -> bool =
+  ntRelNear(a.trip.distance, b.trip.distance, tol) && ntRelNear(a.trip.galaxyTime, b.trip.galaxyTime, tol) && ntRelNear(a.trip.shipTime, b.trip.shipTime, tol)
+  && ntRelNear(a.tauBurn, b.tauBurn, tol) && ntRelNear(a.tauTotal, b.tauTotal, tol) && ntRelNear(a.phiPeak, b.phiPeak, tol) && a.fellBack == b.fellBack
+
+-- A world with the ship at rest at hereKm (galactic ly), J2000, default scenario.
+pure func ntWorldAt(hereKm: Vec3) -> World = {newWorld(0, false, defaultParams()) | ship: {initShip() | origin: ntLyOf(hereKm)}}
+pure func ntRun(w: World, dtau: float, xs: [Intent]) -> Ticked = tick(w, {dtau: dtau, intents: xs})
+pure func ntRefused(t: Ticked) -> string = match t.refused { [] => "", r :: _ => r.reason }
+pure func ntPlanOf(w: World) -> Option[Plan] = match w.journey { Planned(p) => Some(p), Committed(c) => Some(c.plan), Arrived(c) => Some(c.plan), _ => None }
+
+-- ------------------------------------------------------------ AC14: the sim computes the target
+-- The core stores exactly the planner's leg: target.pos is the computed arrival
+-- point, the index the body's place in system.bodies; the plan carries no client pos.
+export pure func checkBodyTarget() -> bool {
+  let w = (ntRun(ntWorldAt(ntEarthUpKm()), 0.0, [IPlanBody(ntSaturnFly())])).world;
+  match ntPlanOf(w) {
+    Some(p) => ntLegOk(planBody(ctxAt(ntEarthUpKm()), ntSaturnFly()), \l. ntVeq(p.target.pos, l.arrivalLy) && p.target.id == "saturn" && p.target.index == 6
+        && ntVeq(p.heading, l.heading) && p.trip.trip.distance == l.trip.trip.distance && p.flip == false)
+      && (match navOf(w) { Some(n) => n.bodyId == "saturn" && n.mode == "flyby" && n.index == 6, None => false }),
+    None => false
+  }
+}
+test "AC14 a body plan's target is the sim's arrival point (index 6 = Saturn in system.bodies)" { checkBodyTarget() }
+
+-- Stop: the leg is |B(t_a) - x0| - standoff with t_a the 12-step intercept, and the
+-- trip is planBurnCoastBurn on that length (1e-9); the arrival point is standoff
+-- from the body's centre at the arrival time (to 1 km: the body moves on by the residual).
+export pure func stopLegKm(here: Vec3, id: string, s: float, tA: float) -> float = norm(sub(ntBodyKm(id, tA), here)) - s
+export pure func ownStopT(here: Vec3, id: string, s: float, phi: float, t: float, n: int) -> float =
+  if n <= 0 then t else ownStopT(here, id, s, phi, (planBurnCoastBurn(stopLegKm(here, id, s, t) / lyKm(), ntAccel(), phi)).trip.galaxyTime, n - 1)
+export pure func checkStopIsPackage() -> bool {
+  let here = ntEarthUpKm();
+  let rq = stopReq("jupiter", 0.1, None);
+  let s = defaultStandoffKm(71492.0, 221900.0);
+  let tA = ownStopT(here, "jupiter", s, rq.cruisePhi, 0.0, 12);
+  let len = stopLegKm(here, "jupiter", s, tA);
+  ntLegOk(planBody(ctxAt(here), rq), \l. ntRelNear(l.trip.trip.distance * lyKm(), len, 0.000000001)
+    && ntTripNear(l.trip, planBurnCoastBurn(len / lyKm(), ntAccel(), rq.cruisePhi), 0.000000001) && !l.trip.fellBack
+    && l.nav.standoffKm == s && s == 10.0 * 71492.0
+    && absf(norm(sub(scale(lyKm(), l.arrivalLy), ntBodyKm("jupiter", l.nav.interceptT))) - s) < 1.0
+    && l.nav.interceptT == l.trip.trip.galaxyTime && ntNoPass(l.nav))
+}
+test "AC14 stop plan = planBurnCoastBurn on |B(t_a) - x0| - standoff to 1e-9 (Jupiter at 0.1c, default stand-off 10 R)" { checkStopIsPackage() }
+
+-- Flyby: the pass point is the foot of the perpendicular at exactly b from B(t_p);
+-- the leg is sqrt(D^2 - b^2) + run-out (default dBurn + 1e6 km); the trip is
+-- planBurnCoastBurn on it; at the pass beta = 0.5 and D = gamma (perpendicular).
+pure func ntLineDist(p: Vec3, a: Vec3, w: Vec3) -> float = norm(sub(sub(p, a), scale(dot(sub(p, a), w), w)))
+export pure func checkFlybyIsPackage() -> bool {
+  let here = ntEarthUpKm();
+  let rq = ntSaturnFly();
+  let dBurnKm = (planBurnCoastBurn(1.0, ntAccel(), rq.cruisePhi)).dBurn * lyKm();
+  ntLegOk(planBody(ctxAt(here), rq), \l. ntPassOk(l, \p. {
+    let b = ntBodyKm("saturn", p.t);
+    let d = norm(sub(b, here));
+    let len = sqrt(d * d - p.bKm * p.bKm) + dBurnKm + runOutMarginKm();
+    let w = ntUnitV(sub(scale(lyKm(), l.arrivalLy), here));
+    ntRelNear(l.trip.trip.distance * lyKm(), len, 0.000000001) && ntTripNear(l.trip, planBurnCoastBurn(l.trip.trip.distance, ntAccel(), rq.cruisePhi), 0.000000001)
+    && ntRelNear(ntLineDist(b, here, w), 3.0 * ntRSaturn(), 0.000000001) && p.bKm == 3.0 * ntRSaturn()
+    && ntRelNear(p.beta, betaOf(rq.cruisePhi), 0.000000000001) && ntRelNear(p.dAtPass, gammaOf(rq.cruisePhi), 0.000001)
+    && l.nav.interceptT == p.t && ntRelNear(norm(sub(scale(lyKm(), l.nav.interceptLy), b)), 1.0, 1.0) && p.t * 31557600.0 > 8000.0 && p.t * 31557600.0 < 9500.0
+  }))
+}
+test "AC14 flyby plan: pass at exactly b (3 R, Saturn, 0.5c), leg = sqrt(D^2 - b^2) + run-out, trip = planBurnCoastBurn to 1e-9, D at pass = gamma" { checkFlybyIsPackage() }
+
+-- The clock angle: 0 deg puts the pass point on the body's north side, 180 on the
+-- south, 90 to the right as seen from the ship (cross(u, north)), in the ring plane.
+pure func ntSideOf(rq: BodyReq) -> Vec3 =
+  match planBody(ctxAt(ntEarthUpKm()), rq) {
+    Ok(l) => match l.nav.pass {
+      Some(p) => { let b = ntBodyKm("saturn", p.t); let w = ntUnitV(sub(scale(lyKm(), l.arrivalLy), ntEarthUpKm())); let q = add(ntEarthUpKm(), scale(dot(sub(b, ntEarthUpKm()), w), w)); ntUnitV(sub(q, b)) },
+      None => ntZero() },
+    Err(_) => ntZero()
+  }
+export pure func checkClock() -> bool {
+  let pole = ntBodyPole("saturn", 0.0);
+  let u = ntUnitV(sub(ntBodyKm("saturn", 0.0), ntEarthUpKm()));
+  let north = ntUnitV(sub(pole, scale(dot(pole, u), u)));
+  let n0 = ntSideOf(ntSaturnFly());
+  let n180 = ntSideOf(ntFlyReq("saturn", 0.5, 3.0 * ntRSaturn(), 180.0));
+  let n90 = ntSideOf(ntFlyReq("saturn", 0.5, 2.5 * ntRSaturn(), 90.0));
+  dot(n0, north) > 0.999 && dot(n180, north) < 0.0 - 0.999 && dot(n90, cross(u, north)) > 0.999 && absf(dot(n90, pole)) < 0.001
+}
+test "flyby clock: 0 = north, 180 = south, 90 = right of the body seen from the ship (in its ring plane)" { checkClock() }
+
+-- Short legs fall back to flip-and-burn exactly as M2 does: the Moon at 0.99c.
+export pure func checkShortLegFallsBack() -> bool {
+  let here = ntEarthUpKm();
+  let rq = stopReq("moon", 0.99, None);
+  ntLegOk(planBody(ctxAt(here), rq), \l. l.trip.fellBack && l.trip.tauCoast == 0.0
+    && ntTripNear(l.trip, {planFlipAndBurn(l.trip.trip.distance, ntAccel()) | fellBack: true}, 0.0)
+    && ntRelNear(l.trip.trip.distance * lyKm(), stopLegKm(here, "moon", l.nav.standoffKm, ownStopT(here, "moon", l.nav.standoffKm, rq.cruisePhi, 0.0, 12)), 0.000000001))
+}
+test "AC14 a short leg (Moon at 0.99c) falls back to flip-and-burn, as M2" { checkShortLegFallsBack() }
+
+-- ------------------------------------------------------------ AC17 (residual) and the iteration count
+export pure func checkResidual() -> bool =
+  ntLegOk(planBody(ctxAt(ntEarthUpKm()), ntSaturnFly()), \l. l.nav.residual < 0.000000001)
+  && ntLegOk(planBody(ctxAt(ntEarthUpKm()), ntIoStop()), \l. l.nav.residual < 0.000000001 && l.nav.mode == "stop")
+  && ntLegOk(planBody(ctxAt(chaseKm()), chaseStop()), \l. l.nav.residual < 0.000000001)
+  && residualMax() == 0.000000001
+test "AC17 the intercept residual is < 1e-9 of the leg: Saturn flyby at 0.5c, Io stop at 0.001c, the Mercury chase" { checkResidual() }
+
+-- Exactly 12 steps: the chase (contraction about 0.1) arrives at the 12-step iterate
+-- of an independent loop, bit for bit, and not at the 11-step one; one step is no_converge.
+export pure func checkTwelveSteps() -> bool {
+  let here = chaseKm();
+  let rq = chaseStop();
+  let s = defaultStandoffKm(2440.53, 0.0);
+  let t12 = ownStopT(here, "mercury", s, rq.cruisePhi, 0.0, 12);
+  let t11 = ownStopT(here, "mercury", s, rq.cruisePhi, 0.0, 11);
+  interceptIterations() == 12 && stopArrivalT(ctxAt(here), "mercury", s, rq.cruisePhi, 12) == t12 && t12 != t11
+  && ntLegOk(planBody(ctxAt(here), rq), \l. l.trip.trip.distance == norm(sub(l.arrivalLy, ntLyOf(here))) && ntRelNear(l.trip.trip.distance * lyKm(), stopLegKm(here, "mercury", s, t12), 0.000000000001)
+      && !ntRelNear(l.trip.trip.distance * lyKm(), stopLegKm(here, "mercury", s, t11), 0.000000000001))
+  && ntRefusalOf(planBodyN(ctxAt(here), rq, 1)) == "no_converge"
+}
+test "AC17 the intercept runs exactly 12 fixed steps (12-step iterate, not 11); a 1-step intercept is refused no_converge" { checkTwelveSteps() }
+
+-- ------------------------------------------------------------ AC15: refusals (one fixture triggers, one just passes)
+-- not_visitable: every alpha Cen body (no measured radius and albedo), the Sun, an unknown id; Mars passes.
+export pure func checkNotVisitable() -> bool =
+  ntAllTrue(map(\b. ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq(b.id, 0.1, None))) == "not_visitable", bodies()))
+  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("sun", 0.1, Some(5.0e6)))) == "not_visitable"
+  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("pluto", 0.1, None))) == "not_visitable"
+  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("mars", 0.1, None))) == "ok"
+test "AC15/AC11 not_visitable: every alpha Cen body, the Sun, an unknown id; Mars is accepted" { checkNotVisitable() }
+
+-- too_close: a stand-off or pass distance 1 km under the safety minimum (1.1 R + bubble) is refused, at it accepted.
+export pure func checkTooClose() -> bool {
+  let m = safetyMinKm(ntRMars(), ntBubbleKm());
+  let c = ctxAt(ntEarthUpKm());
+  m == 1.1 * ntRMars() + 0.1
+  && ntRefusalOf(planBody(c, stopReq("mars", 0.1, Some(m - 1.0)))) == "too_close" && ntRefusalOf(planBody(c, stopReq("mars", 0.1, Some(m)))) == "ok"
+  && ntRefusalOf(planBody(c, ntFlyReq("mars", 0.1, m - 1.0, 0.0))) == "too_close" && ntRefusalOf(planBody(c, ntFlyReq("mars", 0.1, m, 0.0))) == "ok"
+  && ntLegOk(planBody(c, stopReq("mars", 0.1, Some(1.0e12))), \l. l.nav.standoffKm == standoffMaxKm() && standoffMaxKm() == 0.1 * auKm())
+}
+test "AC15 too_close: stand-off or b 1 km under 1.1 R + bubble refused, at it accepted; a stand-off over 0.1 AU is clamped" { checkTooClose() }
+
+-- collision: from behind the Sun to Mars the line passes the Sun's centre at about h / 2
+-- (h = the sideways offset): h = 1.8 R_sun grazes inside the Sun, 3 R_sun clears it (Mars moves on about 0.2 R_sun during the leg).
+export pure func behindSun(h: float) -> Vec3 {
+  let m = ntBodyKm("mars", 0.0);
+  let p = ntUnitV(cross(m, { x: 0.0, y: 0.0, z: 1.0 }));
+  add(scale(0.0 - 1.0, m), scale(h * 695700.0, p))
+}
+export pure func checkCollision() -> bool =
+  ntRefusalOf(planBody(ctxAt(behindSun(0.0)), stopReq("mars", 0.1, None))) == "collision"
+  && ntRefusalOf(planBody(ctxAt(behindSun(1.8)), stopReq("mars", 0.1, None))) == "collision"
+  && ntRefusalOf(planBody(ctxAt(behindSun(3.0)), stopReq("mars", 0.1, None))) == "ok"
+  && ntRefusalOf(planBody(ctxAt(ntZero()), stopReq("mars", 0.1, None))) == "collision"
+test "AC15 collision: a leg through the Sun (offset 0 or 1.8 R_sun) is refused, 3 R_sun clears; a start inside the Sun collides" { checkCollision() }
+
+-- ring_crossing: a pass at clock 90 lies in Saturn's ring plane, so b just inside the
+-- outer ring (F, 140,612 km) crosses it and b just outside does not.
+export pure func checkRingCrossing() -> bool {
+  let c = ctxAt(ntEarthUpKm());
+  ntRefusalOf(planBody(c, ntFlyReq("saturn", 0.5, ntRingSaturnKm() - 10.0, 90.0))) == "ring_crossing"
+  && ntRefusalOf(planBody(c, ntFlyReq("saturn", 0.5, ntRingSaturnKm() + 10.0, 90.0))) == "ok"
+  && ntRefusalOf(planBody(c, ntFlyReq("saturn", 0.5, 1.5 * ntRSaturn(), 90.0))) == "ring_crossing"
+  && ntRefusalOf(planBody(c, ntSaturnFly())) == "ok"
+}
+test "AC15 ring_crossing: Saturn pass in the ring plane 10 km inside the F ring refused, 10 km outside accepted" { checkRingCrossing() }
+
+-- committed: a body plan while committed is refused (M2's rule); while only planned it replaces the plan.
+export pure func checkCommitted() -> bool {
+  let w0 = ntWorldAt(ntEarthUpKm());
+  let p1 = ntRun(w0, 0.0, [IPlanBody(stopReq("mars", 0.1, None))]);
+  let p2 = ntRun(p1.world, 0.0, [IPlanBody(ntSaturnFly())]);
+  let c = ntRun(p2.world, 0.0, [ICommit(2)]);
+  let again = ntRun(c.world, 0.0, [IPlanBody(stopReq("mars", 0.1, None))]);
+  ntRefused(p1) == "" && ntRefused(p2) == "" && p2.world.lastPlanId == 2 && ntRefused(c) == ""
+  && ntRefused(again) == "committed" && again.world.lastPlanId == 2 && (match again.world.journey { Committed(_) => true, _ => false })
+}
+test "AC15 committed: a body plan during a committed journey is refused; before commit it replaces the plan" { checkCommitted() }
+
+-- out_of_range: cruise speed outside 0.001c..0.99c, an unknown mode, a run-out <= 0, a ship inside the stand-off.
+export pure func checkOutOfRange() -> bool {
+  let c = ctxAt(ntEarthUpKm());
+  ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | cruisePhi: bodyPhiMin() * 0.999})) == "out_of_range"
+  && ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | cruisePhi: bodyPhiMin()})) == "ok"
+  && ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | cruisePhi: bodyPhiMax() * 1.001})) == "out_of_range"
+  && ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | mode: "orbit"})) == "out_of_range"
+  && ntRefusalOf(planBody(c, {ntFlyReq("mars", 0.1, 10000.0, 0.0) | runOutKm: Some(0.0)})) == "out_of_range"
+  && ntRefusalOf(planBody(c, stopReq("earth", 0.1, None))) == "out_of_range"
+  && bodyPhiMin() == rapidityOfBeta(0.001) && bodyPhiMax() == rapidityOfBeta(0.99)
+}
+test "out_of_range: cruise speed outside 0.001c..0.99c, an unknown mode, run-out 0, a ship already inside the stand-off" { checkOutOfRange() }
+
+-- ------------------------------------------------------------ commit and arrival
+-- A body plan is stale once the Earth clock moves (the body has moved on); a commit in
+-- the planning tick holds, and the autopilot lands exactly on the computed arrival point.
+pure func ntFlyToEnd(w: World, n: int) -> World = if n <= 0 then w else match w.journey { Committed(_) => ntFlyToEnd((ntRun(w, 0.01, [])).world, n - 1), _ => w }
+export pure func checkCommitAndArrive() -> bool {
+  let w0 = ntWorldAt(ntEarthUpKm());
+  let rq = stopReq("moon", 0.01, None);
+  let late = ntRun(ntRun(w0, 0.0, [IPlanBody(rq)]).world, 0.000001, []);
+  let stale = ntRun(late.world, 0.0, [ICommit(1)]);
+  let now = ntRun(w0, 0.0, [IPlanBody(rq), ICommit(1)]);
+  let done = ntFlyToEnd(now.world, 10);
+  -- with M4's 1,000 AU star stand-off set, a body leg still lands on its own arrival point
+  let m4 = {w0 | params: {w0.params | standoffAu: 1000.0}};
+  let doneM4 = ntFlyToEnd((ntRun(m4, 0.0, [IPlanBody(ntFlyReq("saturn", 0.5, 180804.0, 0.0)), ICommit(1)])).world, 10);
+  ntRefused(stale) == "stale_plan" && ntRefused(now) == "" && staleAt(None, 5.0) == false
+  && (match done.journey { Arrived(c) => ntVeq(position(done.ship), c.plan.target.pos) && done.ship.motion.phi == 0.0, _ => false })
+  && (match doneM4.journey { Arrived(c) => ntVeq(position(doneM4.ship), c.plan.target.pos), _ => false })
+}
+test "a body plan goes stale when the clock moves; committed at once, the leg lands on the computed arrival point" { checkCommitAndArrive() }
+
+-- ------------------------------------------------------------ protocol 2.4
+pure func ntHelloW(m: int) -> string = join("", ["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", show(m), "}}"])
+pure func ntGame() -> string = "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":true}"
+pure func ntTickL(t: int, dtau: string, intents: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", show(t), ",\"dtau\":", dtau, ",\"intents\":[", intents, "]}"])
+-- Diag: one tick at +1 g and one at -1 g of 0.004 yr leave the ship at rest about 1 AU
+-- below the Sun (galactic -z), clear of it; then a Saturn flyby and a Mars stop.
+pure func ntMoveOut() -> [string] = [ntTickL(1, "0.004", "{\"k\":\"thrust\",\"thrust\":1}"), ntTickL(2, "0.004", "{\"k\":\"thrust\",\"thrust\":-1}")]
+pure func ntFlyIntent(pos: string) -> string =
+  join("", ["{\"k\":\"plan\",\"target\":{\"kind\":\"body\",\"id\":\"saturn\"", pos, "},\"cruise_phi\":0.5493061443340548,\"approach\":{\"mode\":\"flyby\",\"b_km\":180804,\"clock_deg\":0}}"])
+pure func ntStopIntent() -> string = "{\"k\":\"plan\",\"target\":{\"kind\":\"body\",\"id\":\"mars\"},\"cruise_phi\":0.1003353477310756}"
+pure func ntSession(want: int, plan: string) -> [string] = [ntHelloW(want), ntGame()] ++ ntMoveOut() ++ [ntTickL(3, "0", plan), ntTickL(4, "0", ntStopIntent()), ntTickL(5, "0", "{\"k\":\"commit\",\"plan_id\":2}")]
+pure func ntRunLines(s: Session, ls: [string]) -> [string] = match ls { [] => [], l :: rest => { let r = serve(s, l); r.reply :: ntRunLines(r.session, rest) } }
+pure func ntStatusOf(r: string) -> string = if contains(r, "\"status\":\"ok\"") then "ok" else if contains(r, "\"status\":\"bad_intent\"") then "bad_intent" else "other"
+pure func ntNth(xs: [string], n: int) -> string = match xs { [] => "", x :: r => if n <= 0 then x else ntNth(r, n - 1) }
+export pure func navLines() -> [string] = ntRunLines(newSession(), ntSession(navMinor(), ntFlyIntent("")))
+
+-- The hello: minor 4 reports the pinned relativity release; 3 and below keep their bytes.
+export pure func checkHello24() -> bool =
+  (match decodeHello(serve(newSession(), ntHelloW(navMinor())).reply) { Ok(h) => h.minor == navMinor() && h.relativity == relativityPin(), Err(_) => false })
+  && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == navMinor(), Err(_) => false })
+  && (match decodeHello(serve(newSession(), ntHelloW(systemMinor())).reply) { Ok(h) => h.minor == systemMinor() && h.relativity == helloMsg().relativity, Err(_) => false })
+  && navMinor() == systemMinor() + 1 && relativityPin() == "0.7.0"
+test "2.4 hello: minor 4 with relativity = the pinned release; 3 keeps the 2.3 hello" { checkHello24() }
+
+-- At minor 4 a body plan is accepted and its journey carries target_kind, intercept and pass
+-- (flyby) or hold (stop); below minor 4 the same line is bad_intent and changes nothing.
+export pure func checkBodyPlanOnWire() -> bool {
+  let r4 = navLines();
+  let r3 = ntRunLines(newSession(), ntSession(systemMinor(), ntFlyIntent("")));
+  let fly = ntNth(r4, 4);
+  let stop = ntNth(r4, 5);
+  map(ntStatusOf, r4) == ["other", "ok", "ok", "ok", "ok", "ok", "ok"]
+  && contains(fly, "\"target\":{\"index\":6,\"id\":\"saturn\",\"pos\":{") && contains(fly, "\"target_kind\":\"body\",\"intercept\":{\"t\":")
+  && contains(fly, "\"pass\":{\"t\":") && contains(fly, "\"b_km\":180804,\"beta\":0.49999999999999994,\"d_at_pass\":1.15470053") && !contains(fly, "\"hold\":")
+  && contains(stop, "\"hold\":{\"body\":\"mars\",\"offset_km\":33961.9}") && !contains(stop, "\"pass\":")
+  && contains(ntNth(r4, 6), "\"refused\":[]") && contains(ntNth(r4, 6), "\"state\":\"committed\"")
+  && ntStatusOf(ntNth(r3, 4)) == "bad_intent" && contains(ntNth(r3, 4), "\"tick\":2,") && map(ntStatusOf, [ntNth(r3, 1), ntNth(r3, 2), ntNth(r3, 3)]) == ["ok", "ok", "ok"]
+}
+test "2.4 body plans on the wire: journey.plan gains target_kind, intercept, pass or hold; below minor 4 bad_intent" { checkBodyPlanOnWire() }
+
+-- AC14 (client pos ignored): the same plan with a bogus target index and pos decodes to the
+-- same intent and gives the same replies, byte for byte.
+export pure func checkClientPosIgnored() -> bool {
+  let bogus = ",\"index\":0,\"pos\":{\"x\":4.2,\"y\":-1,\"z\":1e9}";
+  let a = ntRunLines(newSession(), ntSession(navMinor(), ntFlyIntent("")));
+  let b = ntRunLines(newSession(), ntSession(navMinor(), ntFlyIntent(bogus)));
+  a == b && (match decodeInput(ntTickL(3, "0", ntFlyIntent(bogus))) { Ok(x) => encodeInput(x) == ntTickL(3, "0", ntFlyIntent("")), Err(_) => false })
+}
+test "AC14 a body target's client index and pos are ignored: same intent, same replies byte for byte" { checkClientPosIgnored() }
+
+-- encodeInput(decodeInput(x)) for every body form: stop with and without a stand-off, flyby with a run-out.
+export pure func checkBodyCodec() -> bool {
+  let lines = [
+    ntTickL(1, "0", "{\"k\":\"plan\",\"target\":{\"kind\":\"body\",\"id\":\"io\"},\"cruise_phi\":0.001,\"approach\":{\"mode\":\"stop\"}}"),
+    ntTickL(1, "0", "{\"k\":\"plan\",\"target\":{\"kind\":\"body\",\"id\":\"io\"},\"cruise_phi\":0.001,\"approach\":{\"mode\":\"stop\",\"standoff_km\":25000.5}}"),
+    ntTickL(1, "0", "{\"k\":\"plan\",\"target\":{\"kind\":\"body\",\"id\":\"saturn\"},\"cruise_phi\":0.5,\"approach\":{\"mode\":\"flyby\",\"b_km\":180804,\"clock_deg\":-90,\"run_out_km\":2000000}}")];
+  ntAllTrue(map(\l. match decodeInput(l) { Ok(x) => encodeInput(x) == l, Err(_) => false }, lines))
+  && (match decodeInput(ntTickL(1, "0", "{\"k\":\"plan\",\"target\":{\"kind\":\"body\",\"id\":\"io\"},\"cruise_phi\":0.001,\"approach\":{\"mode\":\"flyby\"}}")) { Err(c) => c == "bad_intent", Ok(_) => false })
+}
+test "2.4 body plan codec: decode then encode is byte-identical; a flyby without b_km is bad_intent" { checkBodyCodec() }
+
+-- ------------------------------------------------------------ strict VM entry (make strict-m5, navigationVm)
+export pure func navigationChecks() -> [(string, bool)] = [
+  ("bodyTarget", checkBodyTarget()), ("stopIsPackage", checkStopIsPackage()), ("flybyIsPackage", checkFlybyIsPackage()), ("clock", checkClock()),
+  ("shortLeg", checkShortLegFallsBack()), ("residual", checkResidual()), ("twelveSteps", checkTwelveSteps()), ("notVisitable", checkNotVisitable()),
+  ("tooClose", checkTooClose()), ("collision", checkCollision()), ("ringCrossing", checkRingCrossing()), ("committed", checkCommitted()),
+  ("outOfRange", checkOutOfRange()), ("commitAndArrive", checkCommitAndArrive()), ("hello24", checkHello24()), ("bodyPlanOnWire", checkBodyPlanOnWire()),
+  ("clientPosIgnored", checkClientPosIgnored()), ("bodyCodec", checkBodyCodec())
+]
+-- The protocol 2.4 session (hello, diag game, move out, a Saturn flyby plan, a Mars stop
+-- plan, commit), then navigation-ok: compared byte for byte, VM vs interpreter.
+export pure func navigationVm(n: int) -> string {
+  let bad = foldl(\acc p. match p { (k, ok) => if ok then acc else k :: acc }, [], navigationChecks());
+  if bad == [] then join("\n", navLines() ++ ["navigation-ok"]) else join(" ", ["FAILED", join(",", bad)])
+}

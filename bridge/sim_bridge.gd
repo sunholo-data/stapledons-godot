@@ -13,6 +13,10 @@ const PROTO_MINOR := 1
 ## 2.3 (M5.1b): the `system` section (the star, planets and moons as seen from
 ## the ship). Asked for by setting `want_minor = SYSTEM_MINOR` before hello().
 const SYSTEM_MINOR := 3
+## 2.4 (M5.5a): body targets. Plans to a planet or moon (body_plan()); a body
+## plan's journey.plan carries target_kind, intercept and pass or hold
+## (parse_plan_nav()). Asked for by setting `want_minor = NAV_MINOR`.
+const NAV_MINOR := 4
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -46,6 +50,9 @@ var ai_relay: Object = null
 var want_minor := PROTO_MINOR
 ## The last `system` section, as parsed by parse_system(); {} until one arrives.
 var system: Dictionary = {}
+## The body planner's fields of the current plan, as parsed by parse_plan_nav();
+## {} for a star plan or no plan.
+var plan_nav: Dictionary = {}
 var _line_bytes := PackedByteArray()
 
 
@@ -121,6 +128,7 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 	if state.get("full") != true or state.get("tick") != 0 or typeof(state.get("changes")) != TYPE_DICTIONARY:
 		return _fail("bad_response")
 	system = {}
+	plan_nav = {}
 	if not _take_system(state["changes"]):
 		return _fail("bad_response")
 	world = state["changes"].duplicate(true)
@@ -155,7 +163,7 @@ func send(intents: Array, dtau: float) -> bool:
 	if state.get("tick") != tick:
 		return _fail("bad_response")
 	var changes: Dictionary = state["changes"]
-	if not _take_system(changes):
+	if not _take_system(changes) or not _take_plan_nav(changes):
 		return _fail("bad_response")
 	for section in changes:
 		world[section] = changes[section].duplicate(true) if changes[section] is Dictionary else changes[section]
@@ -303,6 +311,8 @@ func _read_state(deadline: int, timeout_code: String) -> bool:
 
 # ------------------------------------------------------------ 2.3 system (M5.1b)
 # Parse-only: the sim computed every number; this checks the shape and keeps it.
+# sun_dir is a unit vector for planets and moons and the zero vector for the
+# star (kind "star"): never normalise a star's sun_dir.
 const _BODY_STRINGS := ["id", "name", "kind", "host", "status", "ring_id", "source"]
 const _BODY_NUMBERS := ["radius_km", "flattening", "w_deg", "r_au", "phase_deg", "e_v_lux", "p_v", "minnaert_k", "light_age_s"]
 const _BODY_VECTORS := ["rel_km", "pole", "sun_dir"]
@@ -334,6 +344,61 @@ func _take_system(changes: Dictionary) -> bool:
 	if parsed.is_empty():
 		return false
 	system = parsed
+	return true
+
+# ------------------------------------------------------------ 2.4 body plans (M5.5a)
+## The plan intent's body form. The sim computes the target from the id (any
+## pos is ignored). approach: {} (a stop at the default stand-off),
+## {"mode": "stop", "standoff_km": km} or {"mode": "flyby", "b_km": km,
+## "clock_deg": deg, "run_out_km": km} (run_out_km optional).
+static func body_plan(id: String, cruise_phi: float, approach: Dictionary = {}) -> Dictionary:
+	var m := {"k": "plan", "target": {"kind": "body", "id": id}, "cruise_phi": cruise_phi}
+	if not approach.is_empty():
+		m["approach"] = approach
+	return m
+
+static func _is_vec(x: Variant) -> bool:
+	return typeof(x) == TYPE_DICTIONARY and typeof(x.get("x")) == TYPE_FLOAT and typeof(x.get("y")) == TYPE_FLOAT and typeof(x.get("z")) == TYPE_FLOAT
+
+static func _floats(d: Variant, keys: Array) -> bool:
+	if typeof(d) != TYPE_DICTIONARY:
+		return false
+	for k in keys:
+		if typeof(d.get(k)) != TYPE_FLOAT:
+			return false
+	return true
+
+## A journey.plan's body fields checked: {target_kind, intercept{t, pos}, pass{t,
+## b_km, beta, d_at_pass} | hold{body, offset_km}}; {} for a star plan or a bad shape
+## (`ok` false then).
+static func parse_plan_nav(plan: Variant) -> Dictionary:
+	if typeof(plan) != TYPE_DICTIONARY or not plan.has("target_kind"):
+		return {}
+	var it = plan.get("intercept")
+	if plan["target_kind"] != "body" or not _floats(it, ["t"]) or not _is_vec(it.get("pos")):
+		return {"ok": false}
+	var nav := {"ok": true, "target_kind": "body", "intercept": it.duplicate(true)}
+	if plan.has("pass"):
+		if not _floats(plan["pass"], ["t", "b_km", "beta", "d_at_pass"]):
+			return {"ok": false}
+		nav["pass"] = plan["pass"].duplicate(true)
+	elif plan.has("hold"):
+		var h = plan["hold"]
+		if not _floats(h, ["offset_km"]) or typeof(h.get("body")) != TYPE_STRING:
+			return {"ok": false}
+		nav["hold"] = h.duplicate(true)
+	else:
+		return {"ok": false}
+	return nav
+
+func _take_plan_nav(changes: Dictionary) -> bool:
+	if not changes.has("journey"):
+		return true
+	var j = changes["journey"]
+	var parsed := parse_plan_nav(j.get("plan") if typeof(j) == TYPE_DICTIONARY else null)
+	if parsed.get("ok", true) == false:
+		return false
+	plan_nav = parsed
 	return true
 
 func _fail(code: String) -> bool:

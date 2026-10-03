@@ -1,0 +1,267 @@
+module stapledons/sim/navigation
+
+-- M5.5a: planning a leg to a body of the system (design m5-planets §M5.5,
+-- sprint R1-M5-PLANETS §M5.5a). Pure: no I/O, no hidden state, clean under
+-- --strict-bytecode (`make strict-m5`, navigationVm). core.ail dispatches the
+-- `plan` intent's body form here and stores what comes back.
+--
+-- One journey model: a body leg is an M2 burn-coast-burn (with its
+-- flip-and-burn fallback) from the ship to an arrival point the sim computes
+-- itself; the client sends only the body id (its `pos` is never read).
+-- Every formula is a package function: bodyAt (sim/celestial.ail, built on
+-- sunholo/celestial) for where a body is, planBurnCoastBurn and motionAt
+-- (sunholo/relativity) for the leg, doppler for D at the pass. What is here
+-- is geometry and composition: the intercept iteration, the pass point, and
+-- the safety checks.
+--
+-- Units: geometry in km (bodyAt's galactic frame), the leg and its trip in
+-- light years and years (core.ail's frame; c = 1). Times are galaxy (Earth)
+-- years since the scenario epoch, as in the ship's clock; jd = jdAt(epoch, t).
+import std/math (sqrt, cos, sin)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import pkg/sunholo/celestial/kepler (Vec3, add, sub, scale, norm, dot, cross, absf)
+import pkg/sunholo/celestial/ephemeris (auKm)
+import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, motionAt)
+import pkg/sunholo/relativity/kinematics (betaOf, rapidityOfBeta)
+import pkg/sunholo/relativity/optics (doppler)
+import ./celestial (System, BodyState, bodyAt, jdAt, lyKm)
+import ./data/sol (Planet, Moon, Ring, rings)
+
+-- ------------------------------------------------------------ intent and result
+-- The plan intent's body form. mode is "stop" or "flyby". standoffKm: None
+-- takes the default stand-off; bKm and clockDeg are the flyby's pass distance
+-- and side (0 = the body's north, 90 = right of it as seen from the ship,
+-- i.e. clockwise on the sky); runOutKm: None takes the default run-out.
+export type BodyReq = { id: string, cruisePhi: float, mode: string, standoffKm: Option[float], bKm: float, clockDeg: float, runOutKm: Option[float] }
+-- The flyby's pass: galaxy time, closest distance to the centre (km), beta
+-- and the Doppler factor of the body's light there (rest-frame direction).
+export type Pass = { t: float, bKm: float, beta: float, dAtPass: float }
+-- What the planner adds to an M2 plan. index: the body's place in
+-- system.bodies; t0: the galaxy time the plan was made at (a commit at any
+-- other time is stale: the body has moved); interceptT/interceptLy: when
+-- and where the body is at arrival (stop) or at the pass (flyby);
+-- standoffKm: the stop's distance from the centre (0 for a flyby);
+-- residual: the intercept iteration's last step, as a fraction of the leg.
+export type NavPlan = { bodyId: string, index: int, mode: string, t0: float, interceptT: float, interceptLy: Vec3, standoffKm: float, pass: Option[Pass], residual: float }
+-- The leg core.ail stores: the arrival point (ly), its heading and trip.
+export type Leg = { arrivalLy: Vec3, heading: Vec3, trip: TripPlan, nav: NavPlan }
+-- Everything the planner reads from the world: the system, the scenario
+-- epoch (JD), the ship's galaxy time and position (ly), the drive's proper
+-- acceleration (c/yr) and the bubble radius (km).
+export type NavCtx = { sys: System, epochJd: float, t0: float, hereLy: Vec3, accel: float, bubbleKm: float }
+
+-- ------------------------------------------------------------ constants
+-- The intercept iteration count, fixed (deterministic on both runtimes). The
+-- contraction is v_body / v_ship <= 50 km/s / 0.001c = 0.17, so 12 steps leave
+-- less than 1e-9 of the leg (design §M5.5).
+export pure func interceptIterations() -> int = 12
+export pure func residualMax() -> float = 0.000000001
+-- In-system cruise speeds: 0.001c to 0.99c, as rapidities (both ends accepted).
+export pure func bodyPhiMin() -> float = rapidityOfBeta(0.001)
+export pure func bodyPhiMax() -> float = rapidityOfBeta(0.99)
+-- The longest stand-off a player may set (larger values are clamped to it).
+export pure func standoffMaxKm() -> float = 0.1 * auKm()
+-- The flyby's default run-out beyond the braking distance.
+export pure func runOutMarginKm() -> float = 1000000.0
+-- The safety minimum for a stand-off or a pass distance: the body's radius
+-- with a 10 % margin (above every atmosphere in Sol: Jupiter's 1 mbar level is
+-- about 0.4 % of its radius) plus the bubble. Below it the plan is too_close.
+export pure func safetyMinKm(radiusKm: float, bubbleKm: float) -> float = 1.1 * radiusKm + bubbleKm
+-- The default stand-off: the larger of 10 radii and 1.5 x the outer ring.
+export pure func defaultStandoffKm(radiusKm: float, ringKm: float) -> float =
+  if 10.0 * radiusKm > 1.5 * ringKm then 10.0 * radiusKm else 1.5 * ringKm
+
+-- ------------------------------------------------------------ bodies
+-- What the checks need about a body: its place in system.bodies, radius,
+-- outer ring radius (0 if none) and whether it may be a plan target
+-- (a measured radius and albedo).
+export type Facts = { id: string, index: int, radiusKm: float, ringKm: float, visitable: bool }
+pure func ringOuterKm(host: string) -> float =
+  navFold(\acc r. if r.host == host then navFold(\m b. if b.rOut > m then b.rOut else m, acc, r.bands) else acc, 0.0, rings())
+pure func navFold(g: (b, a) -> b, z: b, xs: [a]) -> b = match xs { [] => z, x :: r => navFold(g, g(z, x), r) }
+pure func planetFacts(ps: [Planet], i: int) -> [Facts] =
+  match ps { [] => [], p :: r => { id: p.id, index: i, radiusKm: p.radiusKm, ringKm: ringOuterKm(p.id), visitable: p.radiusKm > 0.0 && p.pV > 0.0 } :: planetFacts(r, i + 1) }
+pure func moonFacts(ms: [Moon], i: int) -> [Facts] =
+  match ms { [] => [], m :: r => { id: m.id, index: i, radiusKm: m.radiusKm, ringKm: 0.0, visitable: m.radiusKm > 0.0 && m.pV > 0.0 } :: moonFacts(r, i + 1) }
+-- Every body in system.bodies order: the star (not a target: no albedo), planets, moons.
+export pure func allFacts(sys: System) -> [Facts] =
+  { id: sys.star.id, index: 0, radiusKm: sys.star.radiusKm, ringKm: 0.0, visitable: false } :: (planetFacts(sys.planets, 1) ++ moonFacts(sys.moons, 1 + navLen(sys.planets)))
+pure func navLen(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + navLen(r) }
+pure func factsOf(fs: [Facts], id: string) -> Option[Facts] = match fs { [] => None, f :: r => if f.id == id then Some(f) else factsOf(r, id) }
+-- Bodies outside this system (the alpha Cen worlds, R1) and unknown ids are not_visitable too.
+pure func targetFacts(sys: System, id: string) -> Result[Facts, string] =
+  match factsOf(allFacts(sys), id) { Some(f) => if f.visitable then Ok(f) else Err("not_visitable"), None => Err("not_visitable") }
+
+pure func navZero() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
+pure func navUnit(v: Vec3) -> Vec3 { let n = norm(v); if n > 0.0 then scale(1.0 / n, v) else navZero() }
+pure func navStateAt(c: NavCtx, id: string, t: float) -> BodyState =
+  match bodyAt(c.sys, id, jdAt(c.epochJd, t)) { Some(b) => b, None => { pos: navZero(), vel: navZero(), pole: navZero(), wDeg: 0.0 } }
+pure func navPosAt(c: NavCtx, id: string, t: float) -> Vec3 = (navStateAt(c, id, t)).pos
+pure func navHereKm(c: NavCtx) -> Vec3 = scale(lyKm(), c.hereLy)
+pure func navIterate(g: float -> float, t: float, n: int) -> float = if n <= 0 then t else navIterate(g, g(t), n - 1)
+pure func navTripOf(c: NavCtx, legKm: float, phi: float) -> TripPlan = planBurnCoastBurn(legKm / lyKm(), c.accel, phi)
+
+-- ------------------------------------------------------------ time along the leg
+-- Proper time at which the trip has covered x ly: bisection on the package's
+-- closed-form motionAt (monotonic in tau), 64 fixed halvings, so no formula
+-- of the trip is restated here.
+export pure func tauAtX(p: TripPlan, x: float) -> float = navBisect(p, x, 0.0, p.tauTotal, 64)
+pure func navBisect(p: TripPlan, x: float, lo: float, hi: float, n: int) -> float =
+  if n <= 0 then (lo + hi) / 2.0
+  else { let mid = (lo + hi) / 2.0; if (motionAt(p, mid)).x < x then navBisect(p, x, mid, hi, n - 1) else navBisect(p, x, lo, mid, n - 1) }
+-- Galaxy time at which the ship is xKm along the leg.
+pure func timeAtKm(c: NavCtx, p: TripPlan, xKm: float) -> float = c.t0 + (motionAt(p, tauAtX(p, xKm / lyKm()))).t
+
+-- ------------------------------------------------------------ stop geometry
+-- The arrival point standoffKm short of the body's centre at time tA, on the
+-- line from the ship; the leg is that distance.
+type Aim = { pointKm: Vec3, bodyKm: Vec3, legKm: float }
+pure func stopAim(c: NavCtx, id: string, s: float, tA: float) -> Aim {
+  let b = navPosAt(c, id, tA);
+  let d = sub(b, navHereKm(c));
+  let dn = norm(d);
+  { pointKm: sub(b, scale(s / dn, d)), bodyKm: b, legKm: dn - s }
+}
+-- t_a <- t0 + planBurnCoastBurn(|aim(t_a) - x0|).galaxyTime, n times from t0.
+export pure func stopArrivalT(c: NavCtx, id: string, s: float, phi: float, n: int) -> float =
+  navIterate(\t. c.t0 + (navTripOf(c, (stopAim(c, id, s, t)).legKm, phi)).trip.galaxyTime, c.t0, n)
+
+-- ------------------------------------------------------------ flyby geometry
+-- The pass point: the foot of the perpendicular from the body's centre (at
+-- time tP) to the leg's line, at exactly bKm, on the side clockDeg. North is
+-- the body's pole projected across the approach direction u (the galactic
+-- pole, then +x, if the pole is along u); 90 deg is right of it as seen from
+-- the ship (cross(u, north)). With sin a = b / D the point is
+-- B + b (cos a n - sin a u), so |Q - B| = b and (Q - B).(Q - x0) = 0.
+type PassAim = { pointKm: Vec3, bodyKm: Vec3, toPassKm: float, legKm: float, endKm: Vec3 }
+pure func navPerpTo(u: Vec3, v: Vec3) -> Vec3 = sub(v, scale(dot(v, u), u))
+pure func northAcross(u: Vec3, pole: Vec3) -> Vec3 {
+  let p = navPerpTo(u, pole);
+  if norm(p) > 0.000000001 then navUnit(p)
+  else { let g = navPerpTo(u, { x: 0.0, y: 0.0, z: 1.0 }); if norm(g) > 0.000000001 then navUnit(g) else navUnit(navPerpTo(u, { x: 1.0, y: 0.0, z: 0.0 })) }
+}
+pure func passAim(c: NavCtx, rq: BodyReq, runOut: float, tP: float) -> PassAim {
+  let st = navStateAt(c, rq.id, tP);
+  let x0 = navHereKm(c);
+  let d = sub(st.pos, x0);
+  let dn = norm(d);
+  let u = scale(1.0 / dn, d);
+  let north = northAcross(u, st.pole);
+  let rad = rq.clockDeg * 3.141592653589793 / 180.0;
+  let side = add(scale(cos(rad), north), scale(sin(rad), cross(u, north)));
+  let sa = rq.bKm / dn;
+  let q = add(st.pos, scale(rq.bKm, sub(scale(sqrt(1.0 - sa * sa), side), scale(sa, u))));
+  let toPass = norm(sub(q, x0));
+  let w = scale(1.0 / toPass, sub(q, x0));
+  { pointKm: q, bodyKm: st.pos, toPassKm: toPass, legKm: toPass + runOut, endKm: add(q, scale(runOut, w)) }
+}
+-- t_p <- t0 + (galaxy time at the pass point of planBurnCoastBurn(|end - x0|)), n times from t0.
+export pure func flybyPassT(c: NavCtx, rq: BodyReq, runOut: float, n: int) -> float =
+  navIterate(\t. { let a = passAim(c, rq, runOut, t); timeAtKm(c, navTripOf(c, a.legKm, rq.cruisePhi), a.toPassKm) }, c.t0, n)
+-- The braking distance at the cruise rapidity (the package's dBurn) plus the margin.
+pure func defaultRunOutKm(c: NavCtx, phi: float) -> float = (planBurnCoastBurn(1000000000.0, c.accel, phi)).dBurn * lyKm() + runOutMarginKm()
+
+-- ------------------------------------------------------------ safety
+-- For each body: the time the ship is nearest it on the leg (two refinements
+-- from t0, the body moving), its centre then, and the leg's nearest point.
+type Near = { t: float, bodyKm: Vec3, pole: Vec3, distKm: float }
+pure func clampLeg(s: float, legKm: float) -> float = if s < 0.0 then 0.0 else if s > legKm then legKm else s
+pure func nearestAt(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, id: string, t: float, n: int) -> Near {
+  let st = navStateAt(c, id, t);
+  let x0 = navHereKm(c);
+  let s = clampLeg(dot(sub(st.pos, x0), w), legKm);
+  if n <= 0 then { t: t, bodyKm: st.pos, pole: st.pole, distKm: norm(sub(add(x0, scale(s, w)), st.pos)) }
+  else nearestAt(c, p, w, legKm, id, timeAtKm(c, p, s), n - 1)
+}
+-- collision: the leg passes within R + bubble of any body (the target included:
+-- its stand-off and pass distance already clear 1.1 R).
+pure func collides(c: NavCtx, p: TripPlan, w: Vec3, legKm: float) -> bool =
+  navFold(\acc f. acc || (nearestAt(c, p, w, legKm, f.id, c.t0, 2)).distKm < f.radiusKm + c.bubbleKm, false, allFacts(c.sys))
+-- ring_crossing: the leg crosses a ring host's equatorial plane inside its outer
+-- ring radius (host and pole taken at the ship's nearest approach to it).
+pure func crossesRing(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, f: Facts) -> bool {
+  let nr = nearestAt(c, p, w, legKm, f.id, c.t0, 2);
+  let x0 = navHereKm(c);
+  let den = dot(w, nr.pole);
+  if f.ringKm <= 0.0 || absf(den) < 0.000000000001 then false
+  else { let s = dot(sub(nr.bodyKm, x0), nr.pole) / den; s >= 0.0 && s <= legKm && norm(sub(add(x0, scale(s, w)), nr.bodyKm)) < f.ringKm }
+}
+pure func ringCrossing(c: NavCtx, p: TripPlan, w: Vec3, legKm: float) -> bool =
+  navFold(\acc f. acc || crossesRing(c, p, w, legKm, f), false, allFacts(c.sys))
+
+-- ------------------------------------------------------------ the planner
+pure func navFinite(x: float) -> bool = x - x == 0.0
+pure func navPhiOk(phi: float) -> bool = phi == phi && phi >= bodyPhiMin() && phi <= bodyPhiMax()
+-- The leg from the ship to endKm, its trip, and the checks every plan shares
+-- (no_converge, then collision, then ring_crossing).
+pure func navFinish(c: NavCtx, endKm: Vec3, phi: float, residual: float, nav: NavPlan) -> Result[Leg, string] {
+  let endLy = scale(1.0 / lyKm(), endKm);
+  let dLy = sub(endLy, c.hereLy);
+  let legLy = norm(dLy);
+  let trip = planBurnCoastBurn(legLy, c.accel, phi);
+  let w = navUnit(sub(endKm, navHereKm(c)));
+  let legKm = legLy * lyKm();
+  if !(residual < residualMax()) || !navFinite(legLy) then Err("no_converge")
+  else if collides(c, trip, w, legKm) then Err("collision")
+  else if ringCrossing(c, trip, w, legKm) then Err("ring_crossing")
+  else Ok({ arrivalLy: endLy, heading: scale(1.0 / legLy, dLy), trip: trip, nav: {nav | residual: residual} })
+}
+pure func navToLy(v: Vec3) -> Vec3 = scale(1.0 / lyKm(), v)
+
+-- Stop: arrive standoffKm from the body's centre at the arrival time.
+pure func planStop(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, string] {
+  let asked = match rq.standoffKm { Some(x) => x, None => defaultStandoffKm(f.radiusKm, f.ringKm) };
+  let s = if asked > standoffMaxKm() then standoffMaxKm() else asked;
+  if !(s >= safetyMinKm(f.radiusKm, c.bubbleKm)) then Err("too_close")
+  else if !(norm(sub(navPosAt(c, rq.id, c.t0), navHereKm(c))) > s) then Err("out_of_range")
+  else {
+    let tA = stopArrivalT(c, rq.id, s, rq.cruisePhi, n);
+    let aim = stopAim(c, rq.id, s, tA);
+    let tNext = c.t0 + (navTripOf(c, aim.legKm, rq.cruisePhi)).trip.galaxyTime;
+    let res = norm(sub((stopAim(c, rq.id, s, tNext)).pointKm, aim.pointKm)) / aim.legKm;
+    let arrive = c.t0 + (planBurnCoastBurn(norm(sub(navToLy(aim.pointKm), c.hereLy)), c.accel, rq.cruisePhi)).trip.galaxyTime;
+    navFinish(c, aim.pointKm, rq.cruisePhi, res,
+      { bodyId: rq.id, index: f.index, mode: "stop", t0: c.t0, interceptT: arrive, interceptLy: navToLy(navPosAt(c, rq.id, arrive)), standoffKm: s, pass: None, residual: res })
+  }
+}
+
+-- Flyby: pass at bKm on the side clockDeg at cruise speed, stop runOut beyond.
+pure func planFlyby(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, string] {
+  let runOut = match rq.runOutKm { Some(x) => x, None => defaultRunOutKm(c, rq.cruisePhi) };
+  if !(rq.bKm >= safetyMinKm(f.radiusKm, c.bubbleKm)) then Err("too_close")
+  else if !(runOut > 0.0) || !navFinite(rq.clockDeg) || !(norm(sub(navPosAt(c, rq.id, c.t0), navHereKm(c))) > 2.0 * rq.bKm) then Err("out_of_range")
+  else {
+    let tP = flybyPassT(c, rq, runOut, n);
+    let a = passAim(c, rq, runOut, tP);
+    let trip = planBurnCoastBurn(norm(sub(navToLy(a.endKm), c.hereLy)), c.accel, rq.cruisePhi);
+    let tauP = tauAtX(trip, a.toPassKm / lyKm());
+    let m = motionAt(trip, tauP);
+    let tPass = c.t0 + m.t;
+    let res = norm(sub((passAim(c, rq, runOut, tPass)).pointKm, a.pointKm)) / a.legKm;
+    let w = navUnit(sub(a.endKm, navHereKm(c)));
+    let bodyThen = navPosAt(c, rq.id, tPass);
+    let pass = { t: tPass, bKm: rq.bKm, beta: betaOf(m.phi), dAtPass: doppler(navUnit(sub(bodyThen, a.pointKm)), w, m.phi) };
+    navFinish(c, a.endKm, rq.cruisePhi, res,
+      { bodyId: rq.id, index: f.index, mode: "flyby", t0: c.t0, interceptT: tPass, interceptLy: navToLy(bodyThen), standoffKm: 0.0, pass: Some(pass), residual: res })
+  }
+}
+
+-- A body plan with n intercept iterations (tests vary n; the game uses 12).
+-- Refusals, in order: not_visitable, out_of_range (cruise speed, mode,
+-- run-out, already inside the stand-off), too_close, no_converge, collision,
+-- ring_crossing. `committed` is core.ail's (the commit rule).
+export pure func planBodyN(c: NavCtx, rq: BodyReq, n: int) -> Result[Leg, string] =
+  match targetFacts(c.sys, rq.id) {
+    Err(why) => Err(why),
+    Ok(f) =>
+      if !navPhiOk(rq.cruisePhi) then Err("out_of_range")
+      else if rq.mode == "stop" then planStop(c, rq, f, n)
+      else if rq.mode == "flyby" then planFlyby(c, rq, f, n)
+      else Err("out_of_range")
+  }
+export pure func planBody(c: NavCtx, rq: BodyReq) -> Result[Leg, string] = planBodyN(c, rq, interceptIterations())
+
+-- A body plan made at galaxy time t0 is stale at any other time (the body has
+-- moved); a star plan never is (M2's rule: position only).
+export pure func staleAt(nav: Option[NavPlan], t: float) -> bool = match nav { Some(n) => n.t0 != t, None => false }

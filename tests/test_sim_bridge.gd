@@ -382,6 +382,57 @@ func test_system_fixture() -> bool:
 	assert_bool("wrong frame or a missing body field is refused", SimBridge.parse_system(wrong).is_empty() and SimBridge.parse_system(missing).is_empty())
 	return true
 
+## 2.4 (M5.5a) live: a body plan needs minor 4 (bad_intent below it, the tick not
+## advanced). Diag: two 0.004 yr ticks at +1 g then -1 g leave the ship at rest
+## about 1 AU below the Sun; a Saturn flyby then carries a pass, a Mars stop a hold.
+func test_nav_plan_live() -> bool:
+	var s := SimBridge.new()
+	s.want_minor = SimBridge.NAV_MINOR
+	var ok: bool = s.start() and s.hello_reply.get("proto", {}).get("minor") == float(SimBridge.NAV_MINOR) \
+		and s.hello_reply.get("relativity") == "0.7.0" and s.new_game(7, "sol", true)
+	assert_bool("2.4 session starts (%s)" % s.last_error, ok)
+	if not ok:
+		return true
+	ok = s.send([{"k": "thrust", "thrust": 1.0}], 0.004) and s.send([{"k": "thrust", "thrust": -1.0}], 0.004)
+	var fly := SimBridge.body_plan("saturn", 0.5493061443340548, {"mode": "flyby", "b_km": 180804.0, "clock_deg": 0.0})
+	ok = ok and s.send([fly], 0.0) and s.last_refused.is_empty()
+	var p: Dictionary = s.world.get("journey", {}).get("plan", {})
+	assert_bool("Saturn flyby: target is index 6 at the sim's point, pass at b = 180804 km, beta 0.5",
+		ok and p.get("target", {}).get("id") == "saturn" and int(p["target"]["index"]) == 6 and s.plan_nav.get("pass", {}).get("b_km") == 180804.0
+		and absf(float(s.plan_nav["pass"]["beta"]) - 0.5) < 1e-12 and s.plan_nav.has("intercept"))
+	var stop := SimBridge.body_plan("mars", 0.1003353477310756)
+	assert_bool("Mars stop (default stand-off 10 R): hold, no pass", s.send([stop], 0.0) and s.plan_nav.get("hold", {}).get("offset_km") == 33961.9 and not s.plan_nav.has("pass"))
+	assert_bool("a star plan clears plan_nav", s.send([{"k": "cancel"}], 0.0) and s.plan_nav.is_empty())
+	s.stop()
+	var d := SimBridge.new()
+	d.want_minor = SimBridge.SYSTEM_MINOR
+	var dok: bool = d.start() and d.new_game(7, "sol", true)
+	assert_bool("below minor 4 a body plan is bad_intent and the tick does not advance", dok and not d.send([fly], 0.0) and d.last_error == "bad_intent" and int(d.world["tick"]) == 0)
+	d.stop()
+	return true
+
+## The recorded 2.4 stream (tests/fixtures/nav_session.ndjson, the sim's own
+## output from navigationVm): the flyby and stop plans parse; a bad shape does not.
+func test_nav_fixture() -> bool:
+	var lines := FileAccess.get_file_as_string("res://tests/fixtures/nav_session.ndjson").strip_edges().split("\n")
+	var kinds: Array = []
+	var fly_plan: Dictionary = {}
+	for line in lines:
+		var m = JSON.parse_string(line)
+		if typeof(m) == TYPE_DICTIONARY and m.get("type") == "state" and m["changes"].has("journey") and m["changes"]["journey"].has("plan"):
+			var nav := SimBridge.parse_plan_nav(m["changes"]["journey"]["plan"])
+			kinds.append("pass" if nav.has("pass") else ("hold" if nav.has("hold") else "none"))
+			if nav.has("pass"):
+				fly_plan = m["changes"]["journey"]["plan"]
+	assert_bool("nav_session fixture: flyby, stop, committed stop (%s)" % [kinds], kinds == ["pass", "hold", "hold"])
+	var bad := fly_plan.duplicate(true)
+	bad["pass"].erase("d_at_pass")
+	var star := fly_plan.duplicate(true)
+	star.erase("target_kind")
+	assert_bool("a pass missing d_at_pass is refused; a plan without target_kind is a star plan",
+		SimBridge.parse_plan_nav(bad).get("ok") == false and SimBridge.parse_plan_nav(star).is_empty())
+	return true
+
 
 func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(scratch)
@@ -412,6 +463,8 @@ func _init() -> void:
 		test_wrong_tick_reply,
 		test_system_section,
 		test_system_fixture,
+		test_nav_plan_live,
+		test_nav_fixture,
 	]
 	for t in tests:
 		# a GDScript runtime error aborts the function and returns null: count it
