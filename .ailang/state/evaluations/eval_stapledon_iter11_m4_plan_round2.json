@@ -1,0 +1,76 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "round": 2,
+  "evaluator_model": "claude-sonnet-5-5 (independent of Kimi K3 planner and Opus 5.5 design author)",
+  "score": 88,
+  "pass": true,
+  "rubric": {
+    "round1_blocking_fixes_B1_B3 verified in both files (30)": 27,
+    "round1_nonblocking_fixes_NB1_NB5 (15)": 14,
+    "markdown_and_JSON_consistency (15)": 11,
+    "no_new_contradictions_in_deps_waves_AC_owners (15)": 10,
+    "no_approval_or_question_resolved_by_loop; approved:null (10)": 10,
+    "unchanged_strengths: design fidelity, physics gates, package-first, no Python, sizing (15)": 15,
+    "note": "All eight claimed fixes landed as claimed. The revision introduced two new, small defects: M4.5 is declared a Track A merge-to-main PR yet now depends on Track B code that stays on m4-track-b until S1 (new B-R2-1), and Q3 in the markdown was not updated to match the JSON (B-R2-2). Both are one-sentence fixes."
+  },
+  "rederived": [
+    {
+      "claim": "B1: M4.1 depends_on is [] in the JSON and the markdown agrees; wave-1 'disjoint/parallel' wording removed; pin-bump merge order stated",
+      "your_command": "jq -r '.features[]|\"\\(.id) deps=\\(.depends_on)\"' sprint_R1-M4-JOURNEY.json; grep -n -i disjoint m4-first-journey-sprint.md; git diff HEAD~1..HEAD on the plan",
+      "your_result": "M4.1 deps=[] (JSON); M4.1 table Deps cell and Deps line say 'no milestone dependency', step 2 gated on M4.6a/P-pkg; JSON critical_path starts at M4.1; P-pkg row (both files) states M4.1 step 1 merges first and touches none of sim/ailang.toml, sim/ailang.lock, runtime/cache. Remaining 'disjoint' hits: line 73 ('not file-disjoint'), line 103 ('mostly disjoint'), line 827 (the revision table). No false 'disjoint' claim left.",
+      "matches": true
+    },
+    {
+      "claim": "B2: AC6 moved to M4.5; M4.4 keeps a sim-test gate and a 'Feeds AC6' row; F4 reworded",
+      "your_command": "jq -r '.features[]|select(.id|test(\"M4.4|M4.5\"))|.acceptance_criteria[]' sprint JSON; read plan M4.4 and M4.5 acceptance blocks and F4",
+      "your_result": "M4.5 now carries AC3, AC4, AC5, AC6, AC7, AC16 with the three AI=none|stub|digits commands; M4.4 has a 'make sim' gate asserting body_source/fallback_reason for template, ai and fallback plus a scripted bridge session, and 'Feeds AC6 ... M4.5 owns AC6'. No circularity left (M4.4 passes on its own gate). Minor: the parenthetical equates `make sim` with `$A test --package sim`; the Makefile `sim` target runs check, `cd sim && ailang test --package .` and the Godot bridge test, so it is a superset, not an error.",
+      "matches": true
+    },
+    {
+      "claim": "B3: S1 mechanism is stated (stacked PRs into integration branch m4-track-b, capture-m4 run there, one merge to main after S1) in both files",
+      "your_command": "read plan pause-points table, 'S1 mechanism' paragraph, Milestones intro, critical-path paragraph, M4.2/M4.3b/M4.6 Merge lines; jq pause_points S1 and P-pkg",
+      "your_result": "Present and consistent in plan and JSON (S1 row says capture-m4 runs on m4-track-b and blocks the branch merge and landing). The ordering is now executable for Track B itself. It does, however, collide with M4.5 (see B-R2-1).",
+      "matches": true
+    },
+    {
+      "claim": "NB1-NB5 claims: D-19 wording for SKY-2; M4.5 deps include M4.2/M4.3b; M1.2d added (soft) to M4.6; gpt6-1-sol absence recorded; M4.1 not pre-split but split point named",
+      "your_command": "grep and jq on both files; compare with ledger D-19 and my round-1 findings",
+      "your_result": "NB1 F5, Risks row and JSON external_dependencies[0] now say approved per D-19, flag stale. NB2 M4.5 deps = M4.3a, M4.4, M4.7, M4.2, M4.3b in both files. NB3 M4.6 deps and external_dependencies[1].needed_by include M1.2d, marked soft with a reasoned note. NB4 'Quorum note' in the Summary, JSON F7, Q3 in the JSON, P-land mention. NB5 F1, Risks row and JSON loc_cap_exceptions give the seam and the M4.1b follow-up. Not-actionable items (doc '9 sub-milestones' line; AC1 19-minute margin) are honestly left to the design doc and disclosed. Gap: the markdown Q3 text was not updated (B-R2-2).",
+      "matches": true
+    },
+    {
+      "claim": "Totals, approval and open questions unchanged by the revision: 10 milestones, 4 waves, 3,220 LOC, approved:null, every passes:null, Q1/Q2/Q3 left to Mark",
+      "your_command": "jq '.approved,.status,[.features[].estimated_loc]|add' and listing of passes; jq .questions_for_mark",
+      "your_result": "approved null, status planned, every passes null, LOC sum 3220, 4 waves, Q1 and Q2 still carry 'Mark's call; the loop does not edit it'. No ruling or approval was resolved by the loop. The 'm4-track-b' integration branch is a planner-chosen mechanism, flagged to Mark in the JSON Q3.",
+      "matches": true
+    }
+  ],
+  "objections": [
+    {"round": 2, "reviewer": "round-1 evaluator B1", "objection": "M4.1 dependency contradiction", "verdict": "answered", "evidence": "JSON deps [] and markdown agree; step 1/step 2 and merge order explicit."},
+    {"round": 2, "reviewer": "round-1 evaluator B2", "objection": "AC6 unowned/circular", "verdict": "answered", "evidence": "AC6 owned by M4.5 in both files; M4.4 has its own runnable gate."},
+    {"round": 2, "reviewer": "round-1 evaluator B3", "objection": "S1 ordering not executable", "verdict": "answered", "evidence": "m4-track-b stacked-PR mechanism in both files for M4.2, M4.3b, M4.6-gated. Introduces B-R2-1 for M4.5."}
+  ],
+  "blocking": [
+    {
+      "file": "design_docs/planned/r1/m4-first-journey-sprint.md (lines 163-166 and 724) and .ailang/state/sprints/sprint_R1-M4-JOURNEY.json (M4.5.depends_on; pause_points S1)",
+      "line": 163,
+      "finding": "New contradiction from combining fix NB2 with B3. The plan says Track A milestones 'M4.6a, M4.0, M4.1, M4.3a, M4.4, M4.7, M4.5' each land as their own PR to main, and S1 says 'Track A milestones ... merge to main independently'. But M4.5 now depends on M4.2 and M4.3b, which by B3 live only on integration branch m4-track-b until S1 sign-off, and M4.5's AC4 (audit on the composited interior), AC7 (walking proxy) and final run need that code. M4.5 therefore cannot be a standalone PR to main before S1, and it is the same wave-4 item as M4.6-gated; the plan never says where it lands.",
+      "fix": "Move M4.5 out of the 'own PR to main' list. State that M4.5 is built on m4-track-b (rebased on main after M4.4 and M4.7 merge) and merges to main with the train after S1, or split M4.5 so only the interior-independent pieces (replay/parity, session_audit.ail, codexUnlocks fixtures) go to main early. Mirror in the JSON pause_points[S1] and M4.5 description."
+    },
+    {
+      "file": "design_docs/planned/r1/m4-first-journey-sprint.md",
+      "line": 788,
+      "finding": "Markdown and JSON are no longer consistent on Q3. The JSON Q3 now asks Mark to approve the S1 stacking mechanism (m4-track-b) and surfaces the gpt6-1-sol absence; the markdown Q3 (lines 788-794) is unchanged and says only waiver, wave plan 'M4.6a || M4.0 || M4.1' and pause points. The revision table claims the absence is 'surfaced to Mark in Q3', which is true only in the JSON and in the Summary note. A new process choice (integration branch) therefore reaches Mark's approval ask only via the JSON.",
+      "fix": "Copy the JSON Q3 wording (S1 stacking via m4-track-b; round-2 quorum ran with gpt6-1-sol absent, F7) into the markdown Q3; reword the wave plan clause so it says M4.1 step 2 waits on P-pkg."
+    }
+  ],
+  "non_blocking": [
+    "Ownership of AC8's glow_pole clause under the split: M4.1's acceptance still lists 'glow_pole_w_m2 = glowEmittanceAt(...) after M4.6a' and M4.1 has a single passes flag. If M4.1 must wait for step 2 to pass, M4.3a (dep: M4.1) waits on a package publish; if M4.1 passes on step 1, the pole clause needs a named owner (M4.1b is mentioned in F1 and Risks but is not a feature row in the JSON). State which, e.g. 'M4.1 passes on step 1 with AC8 minus the pole clause; the pole clause is owned by M4.2 or by M4.1b'.",
+    "M4.6 is one JSON feature with deps on M4.2 for the whole feature, while the plan says its ungated half merges to main independently after M4.0 + M4.1 + M4.6a. The single passes flag should say it passes only when both halves are done; no action needed beyond noting that.",
+    "m4-track-b is a planner-chosen process choice (integration branch, one merge after S1). It is reasonable and is flagged in the JSON Q3, but check that CI (AC18) runs on stacked PRs into that branch.",
+    "M4.5's AC4 and AC11 still depend on the approved bundle that a Blender agent builds; the plan lands M4 on the latest delivered bundle if it has not arrived, which is consistent with D-16 and the design doc.",
+    "Left deliberately to the design-doc owner and disclosed in the plan: the doc's '9 sub-milestones' line vs 10 rows, and the thin AC1 margin at tau_b = 19 min (I measured 9.71e-5).",
+    "Round-1 non-blocking items are all closed except the two above; the plan's F3 still says gh is unusable in the planning environment, which was environment-specific (works in this evaluator's environment) and is harmless."
+  ],
+  "summary": "PASS (88/100). Every fix the planner claims (B1-B3, NB1-NB5) is present in both the plan markdown and the sprint JSON, and the two agree on all of them except Q3: M4.1 depends_on is [] with a stated step-1/step-2 split and merge order; AC6 is owned by M4.5 with M4.4 passing on its own sim-test gate; the S1 ordering is made executable with the m4-track-b stacked-PR mechanism; the D-19 wording, M4.5/M4.6 dependency additions and the gpt6-1-sol disclosure are in. Totals (10 milestones, 4 waves, 3,220 LOC), approved:null, all passes:null and the open questions are unchanged, and the loop resolved no ruling. Two small new defects remain: M4.5 is still described as a Track A merge-to-main PR although it now depends on Track B code that sits on m4-track-b until S1 (B-R2-1), and the markdown Q3 does not carry the stacking mechanism or the quorum note that the JSON Q3 does (B-R2-2). Both are single-sentence fixes."
+}

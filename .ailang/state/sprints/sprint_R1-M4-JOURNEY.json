@@ -1,0 +1,614 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "status": "planned",
+  "approved": null,
+  "created": "2026-10-03T04:29:17Z",
+  "design_doc": "design_docs/planned/r1/m4-first-journey.md",
+  "sprint_plan": "design_docs/planned/r1/m4-first-journey-sprint.md",
+  "ailang": {
+    "pin": "v0.51.0",
+    "binary": "/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang",
+    "legend": "$A = pinned binary on every make line (AILANG=$A, AILANG_BIN=$A where Godot drives the sim); a fresh worktree runs make runtime first. $PKG = fresh ailang-packages clone at origin/main, packages/relativity (never the dirty local copy). $D = sibling checkout ../stapledons-design (private), pinned at 1ef3bc9 for the lore import. GPU gates (make golden, make capture-m4, make bench) run on the Studio GPU window, not CI."
+  },
+  "order": [
+    "M4.6a_PKG_GLOW_EMITTANCE",
+    "M4.0_AREA_BUNDLES",
+    "M4.1_CONSEQUENCE_STUB",
+    "M4.3a_TRANSIT_WARP_HUD",
+    "M4.2_INTERIOR_COMPOSITE",
+    "M4.4_NEWS_LEGACY",
+    "M4.7_ARCHIVE_CODEX",
+    "M4.3b_HUD_IN_INTERIOR",
+    "M4.5_PLAYTHROUGH_AUDIT",
+    "M4.6_PHYSICS_GATES"
+  ],
+  "critical_path": [
+    "M4.1_CONSEQUENCE_STUB",
+    "M4.3a_TRANSIT_WARP_HUD",
+    "M4.4_NEWS_LEGACY",
+    "M4.5_PLAYTHROUGH_AUDIT",
+    "M4.6_PHYSICS_GATES"
+  ],
+  "waves": {
+    "1": [
+      "M4.6a_PKG_GLOW_EMITTANCE",
+      "M4.0_AREA_BUNDLES",
+      "M4.1_CONSEQUENCE_STUB"
+    ],
+    "2": [
+      "M4.3a_TRANSIT_WARP_HUD",
+      "M4.2_INTERIOR_COMPOSITE"
+    ],
+    "3": [
+      "M4.4_NEWS_LEGACY",
+      "M4.7_ARCHIVE_CODEX",
+      "M4.3b_HUD_IN_INTERIOR"
+    ],
+    "4": [
+      "M4.5_PLAYTHROUGH_AUDIT",
+      "M4.6_PHYSICS_GATES"
+    ]
+  },
+  "velocity": {
+    "target_loc_per_day": 2300,
+    "estimated_total_loc": 3220,
+    "estimated_days": 3,
+    "estimated_days_unattended_loop": "4-6",
+    "estimated_iterations": "10 planned + ~2 contingency",
+    "loc_cap_per_milestone": 650,
+    "loc_cap_exceptions": [
+      {
+        "feature": "M4.1_CONSEQUENCE_STUB",
+        "estimated_loc": 700,
+        "waiver": "Design doc owns the estimate and the sub-milestone structure (10 rows), so NO pre-split. Risk: M2's actual/estimate ratio was ~1.5x, so ~1,000 changed lines is realistic. Named split point (the ship.ism seam the doc defines): step 1 = everything at pin 0.5.1 (ship.ism load/drag/glow_w_m2, drag_energy_j, clocks, news, legacy, predicates, record, scriptedRoundTrip); step 2 = glow_pole_w_m2 only, already a separate later step gated on M4.6a's publish (P-pkg). On overrun step 1 lands as M4.1 and step 2 becomes follow-up milestone M4.1b (no critical-path change). Part of approval ask Q3."
+      }
+    ],
+    "basis": "R1-M2-JOURNEY attended: 10 milestones 2026-10-01 18:40 -> 2026-10-02 08:07 UTC (~13.5 h), evals 89-96, ~5,000 changed lines vs ~3,400 estimate (~1.5x). M4: 10 features in 4 waves, ~2 h each incl. independent eval, plus a package publish (M1.P/M2.0 precedent), GPU gates and the S1/S4 Mark reviews: ~20-24 h attended (~3 days). Unattended loop at one item per 6 h: 12 iterations ~ 4-6 days incl. waits. Track B cannot finish before R1-M1-SKY-2's wave 5 (M1.5a) regardless."
+  },
+  "external_dependencies": [
+    {
+      "what": "Sprint R1-M1-SKY-2 (APPROVED by Mark per ledger D-19, attended 2026-10-02 'start wave 1'; only its sprint JSON's approved flag is stale at false / status planned): M1.3_STAR_RENDERING_V2 (open PR #67, head 257d8cf) and M1.5a_PHOTOMETRIC_EXPOSURE (passes null, wave 5 there)",
+      "needed_by": [
+        "M4.2_INTERIOR_COMPOSITE",
+        "M4.3b_HUD_IN_INTERIOR",
+        "M4.6_PHYSICS_GATES"
+      ],
+      "risk": "The composite's starfield layer needs M1.3's rebase; the glow overlay's photometric exposure needs M1.5a. Track B cannot start on the real sky until both land; the blockout fixture keeps scene mechanics developable. Track A is unaffected. Verified via sprint_R1-M1-SKY-2.json and git ls-remote refs/pull/67/head (gh CLI TLS-broken, F3)."
+    },
+    {
+      "what": "Sprint R1-M1-SKY-2: M1.2d_BRIGHT_TIER (open PR #69, head e42d660) — alpha Cen A/B real astrometry (D-19 moves them to the CNS5 system distance 4.32 ly)",
+      "needed_by": [
+        "M4.2_INTERIOR_COMPOSITE",
+        "M4.6_PHYSICS_GATES"
+      ],
+      "risk": "Without it A and B share one catalogue position (V6); the arrival view, the catalogue playthrough and M4.6's 'arrived at alpha Cen' reference render (AC11) degrade, but AC1/AC8 run on the scripted 4.37 ly target and no G-M4 golden pins the A/B separation, so no AC blocks (soft for M4.6). The 4.37 vs 4.32 canon gap is question Q1 (design open question 4)."
+    },
+    {
+      "what": "Sprint R1-M1-SKY-2: M1.6b_CAMERA_GOLDEN (passes true in JSON; merge awaits Mark's R-a render review per that plan)",
+      "needed_by": [
+        "M4.6_PHYSICS_GATES"
+      ],
+      "risk": "G-M4 goldens build on the M1.6b camera. Available on its branch now; on main pending R-a (F2)."
+    },
+    {
+      "what": "Sprint R1-AI-FOUNDATION (status in_progress): AI.1-AI.6 passed; AI.7 open PR #68 (head 50b1c8f); AI.8, AI.9, AI.10a, AI.10b open",
+      "needed_by": [
+        "M4.4_NEWS_LEGACY"
+      ],
+      "risk": "Soft by D-8: M4 is fully playable on templated text. If it slips, M4 ships with no AI process and AC6's digits case uses an injected fixture (design doc Interfaces assumed)."
+    },
+    {
+      "what": "Bridge v1 Blender area bundle (ship-interior brief §7 step 2); style frame v1 approved for build-out (D-16, so art stop S2 is satisfied)",
+      "needed_by": [
+        "M4.5_PLAYTHROUGH_AUDIT",
+        "M4.6_PHYSICS_GATES"
+      ],
+      "risk": "AC4/AC11's final runs need the approved bundle. If it hasn't arrived, M4 lands on the latest delivered bundle and the swap follows as a data change (AC14); a Blender agent builds it in parallel."
+    },
+    {
+      "what": "Design repo sunholo-data/stapledons-design (private) sibling checkout at 1ef3bc9",
+      "needed_by": [
+        "M4.7_ARCHIVE_CODEX"
+      ],
+      "risk": "lore-import CHECK=1 cross-repo half needs the sibling; present in every loop iteration and attended session, absent in CI (no credential) — question Q2 (design open question 5). Self-consistency half is fail-closed everywhere."
+    }
+  ],
+  "features": [
+    {
+      "id": "M4.6a_PKG_GLOW_EMITTANCE",
+      "description": "Package first (gate 3): medium.glowEmittanceAt(n, phi, eps, fIn, cosTheta) = eps*f_in*K*max(0,cos theta) in sunholo/relativity (in $PKG, fresh clone). Tests (pole = 4x glowInwardFlux, sphere mean = glowInwardFlux, zero at phi 0, finite sweep, VM = interpreter), CHANGELOG, [release] kind, ailang pkg quality with no gates, publish --dry-run; controller publishes under the standing publish grant (this package only) after independent physics PASS; sim pin, lockfile and bundled runtime/cache bumped together (closes V23).",
+      "depends_on": [],
+      "art_gated": false,
+      "estimated_loc": 60,
+      "loc_cap": 650,
+      "wave": 1,
+      "files": [
+        "$PKG/packages/relativity/medium.ail",
+        "$PKG/packages/relativity/medium_test.ail",
+        "$PKG CHANGELOG.md + ailang.toml",
+        "sim/ailang.toml",
+        "sim/ailang.lock",
+        "runtime/cache/registry/sunholo/relativity/"
+      ],
+      "acceptance_criteria": [
+        "Package gate-3 sequence: cd $PKG && $A test --package relativity (sphere-mean and pole = 4x mean checks pass); $A pkg quality reports no gates; $A pkg publish --dry-run clean; CHANGELOG + [release] kind",
+        "Pin: grep -n relativity sim/ailang.toml shows the new version; ailang lock (make deps) relocks; bundled cache holds the new version",
+        "V23 (design doc, PENDING until this lands): re-run the V12 probe extended with glowEmittanceAt(n, phi, 1e-9, 0.5, 1.0) == 4 x glowInwardFlux(n, phi, 1e-9, 0.5) (interim hand-derived 9.62878e-5 at 0.99c), sphere mean == glowInwardFlux, VM = interpreter; grep -n '^export' $P/medium.ail at the new version",
+        "Feeds AC8's glow_pole clause (make sim) and AC9/AC10 G-M4-4"
+      ],
+      "test_first": [
+        "glowEmittanceAt(n, phi, eps, f_in, 1.0) == 4 x glowInwardFlux(n, phi, eps, f_in) at 0.99c and 0.999999c",
+        "sphere mean of glowEmittanceAt over cos theta == glowInwardFlux (mean of max(0, cos) = 1/4)",
+        "zero at phi = 0 and at cos theta <= 0",
+        "finite and >= 0 over a phi sweep to the 0.999999c cap"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.0_AREA_BUNDLES",
+      "description": "Area bundle loader interior/area_bundle.gd (brief §9 schema field-for-field per V17; refuses a missing layer; unknown keys kept and ignored; optional placeholder bool with HUD tag); blockout test fixture copied from origin/spike/iso-bridge into tests/fixtures/areas/bridge_blockout/ with hand-written manifest; assets/areas/bridge/ holds the current bundle (blockout until bridge v1); make validate-areas (tools/validate_area.gd, Godot headless --script: alpha 0 where space shows, manifest/camera schema, camera round trip <= 1 px, GLB Y-up metres with WALK_/SPAWN_/INTERACT_); interior/ship_frame.gd float64 ship_basis(heading): ship +Z = direction of travel, up = direction of travel all journey (D-14, no flip), galactic-pole roll fallback.",
+      "depends_on": [],
+      "art_gated": false,
+      "estimated_loc": 400,
+      "loc_cap": 650,
+      "wave": 1,
+      "files": [
+        "interior/area_bundle.gd",
+        "interior/ship_frame.gd",
+        "tools/validate_area.gd",
+        "tests/fixtures/areas/bridge_blockout/",
+        "assets/areas/bridge/",
+        "tests/test_area_bundle.gd",
+        "Makefile"
+      ],
+      "acceptance_criteria": [
+        "AC13: make validate-areas — bundles valid (fixture and delivered): alpha, camera round trip <= 1 px, GLB metres/Y-up",
+        "AC14 (validation half): make validate-areas BUNDLE=tests/fixtures/areas/bridge_blockout && make validate-areas BUNDLE=assets/areas/bridge (the m4-smoke half lands with M4.2)",
+        "AC18 (applies to every milestone): make test AILANG=$A AILANG_BIN=$A green"
+      ],
+      "test_first": [
+        "loader refuses a bundle with a missing layer; accepts the fixture; keeps unknown keys; placeholder: true surfaces the HUD tag",
+        "ship_basis CPU tests: orthonormal to 1e-12, heading -> +Z, pole fallback (into tests/test_physics.gd; M4.6 extends them, AC9)",
+        "validate_area.gd positive control: a broken alpha or camera JSON must fail"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.1_CONSEQUENCE_STUB",
+      "description": "Pure sim module sim/consequence.ail (I/O stays in sim/ship.ail): Earth clock at rest (D-12, no pause); the 1,000 AU stand-off owned here (M2 plans to the star itself, V18); light-delayed news epoch (t_e = t - |p - p_Sol| = 0.043984 yr at alpha Cen with planBurnCoastBurn arrival 4.398171, V24); news tier + seeded template id (PCG stream news); displayed quantities as sim fields (gap_years, news_epoch, news_age_years, progress, one_minus_beta); live ship.ism{load_w_m2, drag_n, glow_w_m2} at current rapidity (package calls at pin 0.5.1) plus drag_energy_j = ledger drag_j since commit (M2 semantics F*c, V24; no new ledger scope); glow_pole_w_m2 added ONLY after M4.6a (the sim never computes 4 x glowInwardFlux itself); news body_source in template|ai|fallback + fallback_reason on the existing ai_fallback event (V21); append-only legacy log; archive hint predicates (six README hints, V16); record validation (ai_numeral / ai_length 280, D-21); make strict gains scriptedRoundTrip; protocol additive minor bump with M2 old-message tests unmodified. TWO STEPS: step 1 (everything above at pin 0.5.1) has NO milestone dependency and touches none of sim/ailang.toml, sim/ailang.lock, runtime/cache; step 2 (glow_pole_w_m2 only) is a separate later step gated on M4.6a's publish (pause P-pkg) — the pin bump lands in its own commit on main after M4.1's PR merges, and step 2 follows as a small follow-up on the bumped pin. The sim never computes 4 x glowInwardFlux itself.",
+      "depends_on": [],
+      "art_gated": false,
+      "estimated_loc": 700,
+      "loc_cap": 650,
+      "wave": 1,
+      "files": [
+        "sim/consequence.ail",
+        "sim/consequence_test.ail",
+        "sim/ship.ail",
+        "sim/protocol.ail",
+        "sim/ai.ail",
+        "sim/core_test.ail",
+        "Makefile"
+      ],
+      "acceptance_criteria": [
+        "AC1: make sim strict (scriptedRoundTrip) — round trip on the scripted 4.37 ly target, 1,000 AU stand-off, zero dwell: Earth 2 x planBurnCoastBurn(d - s, a, phi).trip.galaxyTime (8.796343), ship 2 x .shipTime (1.240885) within 1e-9, within 1e-4 of 2 x coastAt(d - s, 0.99) (tau_b <= 19 min clause); news epoch = t - (d-s) within 1e-9; gap_years = t - tau exactly; strict VM = interpreter",
+        "AC2: make sim tools-test — news tiers: fixtures hit all five; alpha Cen <1, return 5-15; template choice seeded and replayable; numerals only in slots",
+        "AC8 (sim half): make sim (ISM fixture) — load_w_m2 2.21961e5, drag_n 23.2598, glow_w_m2 2.40719e-5 (eps 1e-9, f_in 0.5) each within 1e-3 of the package; drag_energy_j 1.36530e17 within 1e-3; ledger integral = cruiseDragEnergy within 1e-9; glow_pole_w_m2 = glowEmittanceAt(n, phi, eps, f_in, 1.0) after M4.6a; all zero at beta = 0 (the make lore-values half lands with M4.7)",
+        "Feeds AC5 and AC16 (commands run under M4.5)"
+      ],
+      "test_first": [
+        "scriptedRoundTrip red against the unmodified sim, then green at the V12 numbers",
+        "news-epoch and tier fixtures (all five tiers; alpha Cen arrival t_e 0.043984)",
+        "stand-off: plan distance = d - 1,000 AU on the same heading",
+        "live ship.ism at 0.99c equals the package values; relaxes through the brake; zero at rest",
+        "record refusals: digits -> ai_numeral, > 280 chars -> ai_length, no open request -> refused; each closes with ai_fallback and sets body_source/fallback_reason",
+        "legacy log append-only; archive predicates fire once, in order",
+        "protocol minor bump: every M2 old-message test unmodified and green"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.3a_TRANSIT_WARP_HUD",
+      "description": "Track A. Transit loop on a sky-only harness scene: boost -> cruise -> brake pacing (fixed 3 s real per burn phase, dtau chosen and logged so it replays); time warp as a recorded intent (0.002 / 0.01 default / 0.05 ship-yr/s; 0.99c leg = 62.0 s); no pause while docked/planning (D-12); ui/journey_hud.tscn with every value through DisplayBinding (tau and t side by side same size, gap_years, phase, beta 4 dp, gamma 3 dp, distance remaining, Earth-yr to arrival, ISM readout: load W/m2 and suns, drag energy J and kg, glow on/off, warp level); arrival card (distance, ship years, Earth years, gap); brake = legacy entry + one-line HUD notice, no turnover; velocity from sim fields only.",
+      "depends_on": [
+        "M4.1_CONSEQUENCE_STUB"
+      ],
+      "art_gated": false,
+      "estimated_loc": 280,
+      "loc_cap": 650,
+      "wave": 2,
+      "files": [
+        "ui/journey_hud.tscn",
+        "ui/display_binding.gd",
+        "ui/arrival_card.tscn",
+        "harness scene + warp/dtau wiring (bridge)",
+        "Makefile"
+      ],
+      "acceptance_criteria": [
+        "Feeds AC3: make playthrough SCRIPT=adversarial; ! grep -rniE \"save_game\\|load_game\\|ResourceSaver\" interior ui (the grep half runs here; the adversarial run needs M4.5)",
+        "Feeds AC7: make playthrough playthrough-time (runs under M4.5; the warp rates and 3 s burns set here are what the proxy measures)",
+        "Interim gate: make test AILANG=$A AILANG_BIN=$A green; a scripted harness session replays byte-identically with make replay SESSION=... (warp intents in the input log)"
+      ],
+      "test_first": [
+        "warp intent logged and replayed (0.01 default; level change only while committed)",
+        "dtau pacing: each burn phase spans 3 s real regardless of tau_b",
+        "HUD fixtures: every numeric label is a DisplayBinding; a hand-set number fails the audit positive control (M4.5 runs it)",
+        "phase sequence boost -> cruise -> brake with no flip event"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.2_INTERIOR_COMPOSITE",
+      "description": "Track B (art-gated; art is swappable data, D-16). Five-layer composite: M1 background + starfield in an HDR SubViewport, panorama (pan 0.15), play GLB (pan 1), foreground (pan 1.6), HUD; ONE tonemap (AgX + M1.5 exposure in the SubViewport; the parent never re-tonemaps, G-M4-2); sky camera = cam JSON x ship_basis; velocity from sim fields only (spike _set_speed and painted band not ported); forward-glow dome overlay (additive, pre-tonemap) driven by ship.ism.glow_pole_w_m2 with profile glow_profile(glow_pole_w_m2, cos theta) mirroring glowEmittanceAt, W/m2 -> scene radiance via M1.5 photometric exposure, no hand-tuned gain; walking on the bundle's WALK_ navmesh (static captain); interactables (nav console -> M2 galaxy map; Archive terminal -> news/log/codex; shortcuts M, L, K). Built and merged against whatever bundle is current — blockout first; a bundle swap is a data drop validated by make validate-areas, never a code change. MERGE: PR into the Track-B integration branch m4-track-b (not main); merges to main with the stacked train after pause S1 sign-off.",
+      "depends_on": [
+        "M4.0_AREA_BUNDLES",
+        "M4.6a_PKG_GLOW_EMITTANCE",
+        "ext:R1-M1-SKY-2 M1.3 (PR #67)",
+        "ext:R1-M1-SKY-2 M1.5a (not started)"
+      ],
+      "art_gated": true,
+      "estimated_loc": 480,
+      "loc_cap": 650,
+      "wave": 2,
+      "files": [
+        "interior/interior.tscn",
+        "interior/glow_overlay.gdshader + toon/outline shaders",
+        "interior/walk.gd",
+        "main.gd wiring",
+        "Makefile (m4-smoke)"
+      ],
+      "acceptance_criteria": [
+        "AC14: make validate-areas BUNDLE=tests/fixtures/areas/bridge_blockout && make validate-areas BUNDLE=assets/areas/bridge && make m4-smoke BUNDLE=tests/fixtures/areas/bridge_blockout — the swap needs no code change and the slice runs on each bundle",
+        "Feeds AC10 (G-M4-1..4), AC11 (make capture-m4), AC12 (make bench SCENE=bridge) — commands run under M4.6",
+        "Interim gate: composite order and one-tonemap asserted in the CPU harness before the GPU golden exists"
+      ],
+      "test_first": [
+        "layer order and parallax factors pinned (0 / 0.15 / 1 / 1.6)",
+        "one-tonemap: parent viewport applies no second tonemap/glow (CPU assertion; GPU proof is G-M4-2)",
+        "glow_profile CPU mirror equals the package within 1e-12 relative at theta = 0/45/80/90/120 deg (extends into M4.6's test_physics.gd)",
+        "placeholder bundle shows the placeholder-art HUD tag",
+        "avatar constrained to WALK_; avatar position never enters the sim"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.4_NEWS_LEGACY",
+      "description": "Track A. News beat as an Archive-terminal text panel only (D-14): Transmission received, header from fields, one template paragraph from data/news/templates.json (numerals only in slots; tiers set the tone, facts only — pause S4 copy review); relative calendar (Earth +4.40 yr), epoch and start_age 30 as scenario parameters; the AI path: results return as record intents, the panel shows what news.body_source names — fallback shows the template under the visible notice 'Live transmission unavailable: archived text shown' plus a fixed reason->phrase table (no digits) and a diagnostics entry; template shows no notice; ai shows a small generated tag; all three labels fixed copy through DisplayBinding. Return trip: map opens with Sol highlighted, D-12 commit ritual again. Legacy screen: entries, closing line from fields (You were away 1.24 years. Home is 8.80 years older.), Begin again (new voyage, new seed, no reload).",
+      "depends_on": [
+        "M4.1_CONSEQUENCE_STUB",
+        "M4.3a_TRANSIT_WARP_HUD"
+      ],
+      "art_gated": false,
+      "estimated_loc": 350,
+      "loc_cap": 650,
+      "wave": 3,
+      "files": [
+        "ui/news_panel.tscn",
+        "data/news/templates.json",
+        "AI relay wiring (bridge)",
+        "Archive-terminal news tab + diagnostics list",
+        "legacy screen scene"
+      ],
+      "acceptance_criteria": [
+        "Sim-test gate (this milestone's runnable gate): make sim ($A test --package sim) — news.body_source and fallback_reason asserted for all three paths: template (no request made; no notice), ai (an accepted record; the generated tag is bound copy), fallback (a digits fixture closes with ai_fallback{reason: ai_numeral}; the reason->phrase table entry exists and is digit-free); plus a scripted bridge session snapshotting the three panel renderings",
+        "Feeds AC6: make playthrough AI=none|stub|digits needs M4.5's bot, so M4.5 owns AC6; M4.4 passes on the sim-test gate above (F4)",
+        "Feeds AC3 (no save/load on Begin again) and AC4 (the three labels are bound copy)",
+        "Interim gate: template lint (numerals only in slots; reason phrases contain no digits) in make test"
+      ],
+      "test_first": [
+        "template fixtures for all five tiers; numeral lint fails on a digit outside a slot",
+        "the three body_source renderings, each snapshot-tested",
+        "reason->phrase table: every known reason code has a digit-free phrase; an unknown reason fails loudly, never silently",
+        "return-trip commit ritual re-arms with the M2 commit rule still enforced by the sim",
+        "legacy closing line computed from sim fields only (a GDScript subtraction mutation must fail the audit)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.7_ARCHIVE_CODEX",
+      "description": "Track A. make lore-import (shell copy of $D lore/archive/*.md, physics/higgs-bubble.md, physics/relativity-spec.md into data/lore/; manifest by sim/tools/lore_import.ail with design-repo sha + sha256 per file); CHECK=1 fail-closed self-consistency everywhere incl. CI, cross-repo half where the sibling exists (skipped with notice in CI — Q2); check-value registry (make lore-values -> data/lore/check_values.json): source (a) sim/tools/lore_values.ail evaluating package exports as pkg:<function>(<args>) ids (no rel:check registry exists, V24) plus m4:glow_eps/m4:glow_f_in/m4:glow_099 seeded by the V12 probe; (b) HB rows; (b') RS rows; (c) tests/test_physics.gd CHECKS; (a) vs (b) agree at printed precision; eps <= HB-61 asserted. make lore-check (sim/tools/lore_check.ail, strict VM = interpreter, in make test): valid front matter, every checks id resolves, unlock names a known hint, every body number binds to a listed check by shown s.f. + the README's textual unit-alias table; drifted fixture must fail. Codex UI (ui/archive/codex.tscn, lore_loader.gd): third Archive tab, locked greyed, Markdown subset into RichTextLabel, unlock toasts only from the sim's archive.unlocked.",
+      "depends_on": [
+        "M4.1_CONSEQUENCE_STUB",
+        "ext:stapledons-design at 1ef3bc9 (sibling checkout)"
+      ],
+      "art_gated": false,
+      "estimated_loc": 320,
+      "loc_cap": 650,
+      "wave": 3,
+      "files": [
+        "sim/tools/lore_import.ail",
+        "sim/tools/lore_values.ail",
+        "sim/tools/lore_check.ail (+ tests)",
+        "data/lore/",
+        "ui/archive/codex.tscn",
+        "interior/lore_loader.gd",
+        "tests/fixtures/lore/drifted.md",
+        "tests/expected_unlocks.json",
+        "Makefile"
+      ],
+      "acceptance_criteria": [
+        "AC15: make lore-values lore-check and make lore-check LORE=tests/fixtures/lore/drifted.md exits non-zero — every unlock a known hint; every number binds; HB rows with package functions agree with the package; m4:glow_eps <= HB-61; strict VM = interpreter",
+        "AC17: make lore-import CHECK=1 — vendored lore hash-equals its manifest (fail-closed, CI included) and, where the sibling exists, the design repo at the manifest's sha",
+        "AC8 (registry half): make lore-values — the ISM/glow rows registered and equal to their HB rows at printed s.f.",
+        "Feeds AC16 (make playthrough codex-unlocks, runs under M4.5)"
+      ],
+      "test_first": [
+        "drifted.md (one number off in its last digit) fails; unknown hint fails; unresolvable checks id fails",
+        "number binding: shown s.f. rounding + textual unit aliases (yr<->years, min<->minutes, deg<->degree sign, sun<->suns, solar-mass, r_s, K<->kelvin, trailing c, em-dash<->no unit); a number needing numeric conversion does NOT bind",
+        "registry: (a) vs (b) agreement for HB-16, HB-17, HB-35, HB-40, HB-41, HB-45, HB-49, HB-53, HB-54, HB-61; eps <= HB-61",
+        "expected_unlocks.json: the seven minimum-path entries in order (always, first_commit, first_boost, cruise_above_0.9c at the 0.99c default); cmb-forward does NOT unlock at gamma 7.09"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.3b_HUD_IN_INTERIOR",
+      "description": "Track B (art-gated). M4.3a's HUD, warp and arrival card run inside M4.2's composite; the starbow forms overhead during boost, holds in cruise, relaxes through the brake to the rest-frame sky (up = direction of travel throughout, D-14); shortcuts M, L and K keep the minimum path independent of pathing. MERGE: stacks on M4.2's branch in m4-track-b; merges to main with the train after pause S1 sign-off.",
+      "depends_on": [
+        "M4.2_INTERIOR_COMPOSITE",
+        "M4.3a_TRANSIT_WARP_HUD"
+      ],
+      "art_gated": true,
+      "estimated_loc": 70,
+      "loc_cap": 650,
+      "wave": 3,
+      "files": [
+        "interior/interior.tscn",
+        "ui/journey_hud.tscn (reparenting)",
+        "wiring only"
+      ],
+      "acceptance_criteria": [
+        "Feeds AC4 (audit runs on the composited scene), AC10 G-M4-3 (forward pole during boost, cruise and brake — make golden under M4.6), AC11 (make capture-m4)",
+        "Interim gate: make m4-smoke BUNDLE=assets/areas/bridge green; the M4.3a harness-session replay still replays inside the interior"
+      ],
+      "test_first": [
+        "same HUD audit fixtures as M4.3a, run against the composited scene",
+        "orientation invariant: forward pole faces the heading in all three phases (CPU assertion; GPU proof is G-M4-3)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.5_PLAYTHROUGH_AUDIT",
+      "description": "Track A verification harness. Scripted playthrough bot (tests/playthrough_min.json through Godot's input layer, headless, real sim) writing $(SCRATCH)/session.ndjson and display_samples.ndjson — on the fixture bundle until the approved bundle arrives, on the approved bundle for landing; display audit (tests/display_audit.gd, Godot headless, make display-audit): every numeric label a DisplayBinding{node_path, field, format}, fails on a number != format(state[field]), an unbound digit, or a missing field; codex bodies hash-equal via LoreBinding; replay: make replay SESSION=... (cmp on state streams), make parity-m4 (VM = interpreter, AI process never spawned); ten-minute proxy (sim/tools/session_audit.ail entry playthroughTime, AILANG with FS caps): sim ticks at default warp + 1.5 s per click/key + 200 wpm reading + 20 s walking per interactable (budget <= 330 s, limit 360; legs 45-120 s); entry codexUnlocks against tests/expected_unlocks.json; tests/adversarial.json (re-plan, cancel and Commit mid-transit).",
+      "depends_on": [
+        "M4.3a_TRANSIT_WARP_HUD",
+        "M4.4_NEWS_LEGACY",
+        "M4.7_ARCHIVE_CODEX",
+        "M4.2_INTERIOR_COMPOSITE",
+        "M4.3b_HUD_IN_INTERIOR"
+      ],
+      "art_gated": false,
+      "estimated_loc": 350,
+      "loc_cap": 650,
+      "wave": 4,
+      "files": [
+        "tests/playthrough_min.json",
+        "tests/adversarial.json",
+        "tests/display_audit.gd",
+        "sim/tools/session_audit.ail (+ test)",
+        "Makefile (playthrough, display-audit, replay, parity-m4, playthrough-time, codex-unlocks)"
+      ],
+      "acceptance_criteria": [
+        "AC3: make playthrough SCRIPT=adversarial; ! grep -rniE \"save_game\\|load_game\\|ResourceSaver\" interior ui — re-plan, cancel and Commit mid-transit each get committed, state unchanged; no save/load path",
+        "AC4: make playthrough display-audit — 0 mismatches, 0 unbound numerals, >= 500 samples, both clocks and the ISM readout on every transit sample, codex bodies hash-equal (on the approved bundle)",
+        "AC5: make replay SESSION=$(SCRATCH)/session.ndjson && make parity-m4 — byte-identical incl. record intents and archive unlocks; AI process count during replay 0",
+        "AC6: make playthrough AI=none, AI=stub, AI=digits (each followed by make display-audit) — AI=digits: session log holds ai_fallback{reason: ai_numeral}, body_source = fallback, the notice shows the ai_numeral phrase; AI=none: body_source = template, no notice; AI=stub: ai with the generated tag. If R1-AI-FOUNDATION slips, AI=stub/AI=digits use the injected fixture (design doc Interfaces)",
+        "AC7: make playthrough playthrough-time — proxy <= 360 s; each leg 45-120 s (expected 62.0)",
+        "AC16: make playthrough codex-unlocks — the seven expected entries at their hints, in order; codex shows only unlocked entries"
+      ],
+      "test_first": [
+        "audit positive controls: an unbound numeral fixture and a stale-format fixture both fail",
+        "proxy model checked against a synthetic session log (fixture), incl. the 1.5 s commit holds",
+        "codexUnlocks against a fixture stream with a wrong order -> fails",
+        "replay harness proves cmp detects an injected one-bit divergence"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M4.6_PHYSICS_GATES",
+      "description": "Both tracks, partly art-gated; pause S1. UNGATED half (can start wave 2, after M4.0 + M4.1 + M4.6a): tests/test_physics.gd — ship_basis cases; projection of a galactic direction through cam_bridge.json x ship basis; alpha Cen cruise mirror (gamma(0.99) = 7.088812050083356 from gammaOf; coastAt 4.398169 / 0.620438; sim planBurnCoastBurn 4.398171 / 0.620443); ISM load 2.21961e5 (HB-40 at 3 s.f.); glow values (eps 1e-9, 2.40719e-5 at 0.99c, 0.281271 at 0.999999c <= 1 W/m2 HB-61) and the profile against glowEmittanceAt within 1e-12 at 0/45/80/90/120 deg; finite flux at every stop point (gate 5) — every expected value copied from the V12 probe, never computed in GDScript; make lint-precision (in make test) with positive-control fixture. GATED half: make golden G-M4-1 (composite position <= 0.75 px, pan-invariant), G-M4-2 (one tonemap <= 1/255), G-M4-3 (forward pole <= 0.75 px in all three phases), G-M4-4 (profile within 1% at 0/45/80 deg, exactly 0 at rest; absolute pole value in a debug linear float target = glow_pole_w_m2 within 1% at 0.99c and 0.999999c); make capture-m4 -> renders/m4/ (docked; boost beta 0.5, 0.9; cruise 0.99 with glow; brake beta 0.5; arrived alpha Cen; arrived home; pans -5/0/+5, contact sheet, on the approved bundle); make bench SCENE=bridge (p99 < 16.7 ms at 2560x1440, M4 Max, medium tier, 30 s scripted transit). MERGE: the ungated half (CPU tests, lint-precision) lands on main as its own PR; the gated half stacks on M4.3b in m4-track-b; pause S1's make capture-m4 runs on m4-track-b and the branch merges to main after sign-off.",
+      "depends_on": [
+        "M4.2_INTERIOR_COMPOSITE",
+        "M4.6a_PKG_GLOW_EMITTANCE",
+        "ext:R1-M1-SKY-2 M1.6b (passed; merge pending R-a)",
+        "ext:R1-M1-SKY-2 M1.2d (PR #69, soft — the 'arrived at alpha Cen' render and arrival view; no golden pins the A/B separation)"
+      ],
+      "art_gated": "partly (CPU tests and lint-precision are not gated; goldens, renders and bench are)",
+      "estimated_loc": 210,
+      "loc_cap": 650,
+      "wave": 4,
+      "files": [
+        "tests/test_physics.gd",
+        "Makefile (lint-precision, golden G-M4-1..4, capture-m4, bench)",
+        "renders/m4/",
+        "lint-precision positive-control fixture"
+      ],
+      "acceptance_criteria": [
+        "AC9: make test (physics, lint-precision) — CPU physics; no hand-computed gamma or 1-beta",
+        "AC10: make golden — G-M4-1 (<= 0.75 px, pan-invariant), G-M4-2 (<= 1/255), G-M4-3 (<= 0.75 px, all three phases), G-M4-4 (profile and absolute pole <= 1%, 0 at rest)",
+        "AC11: make capture-m4; grep -n \"S1 sign-off\" design_docs/implemented/r1/m4-report.md — renders on the approved bundle, reviewed by Mark (pause S1)",
+        "AC12: make bench SCENE=bridge — p99 < 16.7 ms at 2560x1440",
+        "AC18: GitHub Actions CI green — make test incl. lore-check, lint-precision, python-guard (no new *.py); make strict and every parity target; M2's old-message tests unmodified"
+      ],
+      "test_first": [
+        "test_physics.gd rows written from the V12 probe output before the composite exists (they fail on main)",
+        "lint-precision positive control (a planted 1.0 - beta outside physics//tests/) fails",
+        "G-M4-4's debug float target reads back W/m2 before exposure — a hand-tuned gain mutation fails the absolute gate"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "findings": [
+    "F1: M4.1 is estimated at 700 LOC, over the 650 cap. The design doc owns the estimate and the plan keeps one feature per sub-milestone; the natural seam is ship.ism step 1 (pin 0.5.1) vs glow_pole_w_m2 (after M4.6a). On overrun the executor splits at the seam. Waiver is part of approval ask Q3.",
+    "F2: M1.6b shows passes=true in sprint_R1-M1-SKY-2.json but that plan records its merge as awaiting Mark's R-a review. Treated as: available on its branch now, on main pending R-a.",
+    "F3: gh CLI is TLS-broken in this environment (x509 on api.github.com) and the registry index fetch is Forbidden. PRs #67 (M1.3, 257d8cf), #68 (AI.7, 50b1c8f), #69 (M1.2d, e42d660) verified via git ls-remote refs/pull/*/head. pkg search audit reuses R1-M1-SKY-2's 2026-10-02 results plus the doc's V15 export grep; executor re-runs pkg search at kickoff.",
+    "F4: AC3, AC4, AC5, AC6, AC7 and AC16 all ride on M4.5's playthrough bot. AC6 is owned by M4.5 (its command needs the bot); AC3/AC4/AC5/AC7/AC16 are 'Feeds' rows on the features whose scope they check, and those features pass on their own interim gates with runnable commands (sim tests, greps, harness replays). No feature marks passes=true on an AC whose command has not run.",
+    "F5: R1-M1-SKY-2 is approved by Mark per ledger D-19 (attended 2026-10-02, 'start wave 1'); only its sprint JSON's approved flag is stale (false / status planned). It has two open PRs; Track A of M4 is fully unblocked, Track B's start date is set by that sprint, not by M4.",
+    "F6: M4 adds no Python (design doc quorum round 1; AC18). The five first-draft Python tools are AILANG (sim/tools/{lore_import,lore_values,lore_check,session_audit}.ail) or Godot headless (tools/validate_area.gd, tests/display_audit.gd); the lore copy is shell glue; make python-guard must stay green with zero new *.py.",
+    "F7 (quorum note): design quorum round 2 ran with gpt6-1-sol ABSENT (unreachable); the round-2 disposition (narrow-refinement carve-out) rests on the 3 present external reviewers (oc-kimi-k3, gemini-3-1-pro, oc-glm-5-3) with that seat empty. The first carve-out use is surfaced to Mark in this plan (Q3) and again in the M4 report at P-land."
+  ],
+  "github_issues": [],
+  "pause_points": [
+    {
+      "id": "P0",
+      "after": null,
+      "what": "plan approval by Mark (now) — question Q3"
+    },
+    {
+      "id": "P-pkg",
+      "after": "M4.6a_PKG_GLOW_EMITTANCE",
+      "what": "controller publishes the sunholo/relativity release under the standing publish grant (this package only): independent physics PASS -> ailang pkg quality no gates -> CHANGELOG + [release] kind -> dry run -> publish; then sim pin + relock + bundled cache together (V23). The pin bump lands in its own commit on main: M4.1's PR (step 1, pin 0.5.1) merges before it and touches none of toml/lock/cache; M4.1 step 2 (glow_pole_w_m2) follows on the bumped pin. Blocks M4.1's step 2, M4.2's glow and G-M4-4"
+    },
+    {
+      "id": "RB-1",
+      "after": "M4.0_AREA_BUNDLES + M4.2_INTERIOR_COMPOSITE end-to-end on the blockout",
+      "what": "first review build for Mark (make publish-dev; tools/install_review_build.sh --dev) plus captures; NON-BLOCKING, repeated at every sub-milestone (D-16: get something up so I can review it, then tweak as we go)"
+    },
+    {
+      "id": "S1",
+      "after": "M4.6_PHYSICS_GATES (make capture-m4, run on m4-track-b)",
+      "what": "Mark reviews the composited reference renders renders/m4/ (physics gate 2), incl. the cruise frame with the glow at eps 1e-9; AC11's grep 'S1 sign-off'. Executable ordering: M4.2, M4.3b and M4.6's gated half land as stacked PRs into the integration branch m4-track-b (M4.3b built on M4.2's branch, M4.6-gated on M4.3b's); capture-m4 runs on m4-track-b and S1 is shown from that branch; the branch merges to main as one merge after sign-off. Blocks the m4-track-b merge to main and landing. Track A milestones and M4.6's ungated half merge to main independently as their own PRs"
+    },
+    {
+      "id": "S2",
+      "after": null,
+      "what": "SATISFIED for the bridge style frame (D-16). Recurring, non-blocking art review of each delivered area bundle as it arrives"
+    },
+    {
+      "id": "S4",
+      "after": "M4.4_NEWS_LEGACY",
+      "what": "Mark reviews the news template copy (Pillar 2: facts only). Blocks the M4.4 merge"
+    },
+    {
+      "id": "P-land",
+      "after": "M4.5_PLAYTHROUGH_AUDIT + M4.6_PHYSICS_GATES + S1",
+      "what": "landing: design_docs/implemented/r1/m4-report.md (S1/S2 sign-offs, renders, bench, proxy time, lore-check output, upstream AILANG reports); design doc moves to implemented/; design-repo roadmap status; changelog; R2 roadmap gains the human playtest (D-14)"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "Q1",
+      "question": "alpha Cen distance: HB-4 (4.37 ly) vs the catalogue after D-19 (4.32 ly) — the HB journey rows and the two-clocks/ism-glow Archive entries are computed at 4.37 ly with no stand-off, while the HUD will show ~1% less once M1.2 lands D-19 (design open question 4)",
+      "recommendation": "a design-repo change that sets HB-4 to the catalogue value and regenerates the dependent HB rows and entries from the package, with lore-check proving the entries",
+      "default": "M4 proceeds: AC1 and AC8 assert on the scripted 4.37 ly target, the catalogue playthrough asserts only the package relation, and the M4 report lists the gap. Canon change in the normative physics doc — Mark's call; the loop does not edit it"
+    },
+    {
+      "id": "Q2",
+      "question": "CI access to the private sunholo-data/stapledons-design repo for lore-import CHECK=1 half (ii) cross-repo verification (design open question 5)",
+      "recommendation": "a read-only deploy key stored as a CI secret, recorded in infra/gcp/setup.sh alongside the other infrastructure",
+      "default": "CI runs the fail-closed self-consistency half only; the cross-repo half runs in every loop iteration and attended session, where the sibling exists. Infrastructure decision — Mark's call"
+    },
+    {
+      "id": "Q3",
+      "question": "Approve sprint R1-M4-JOURNEY as written? Includes the M4.1 LOC-cap waiver (700 > 650; split at the ship.ism seam on overrun — F1), wave 1 (M4.6a || M4.0 || M4.1) starting immediately on approval while Track B waits on R1-M1-SKY-2, pause points P-pkg, RB-1, S1, S4, and the S1 stacking mechanism (Track B lands as stacked PRs into m4-track-b, merging to main after S1 sign-off). Note: the round-2 design quorum ran with gpt6-1-sol ABSENT (3 present external reviewers, that seat empty — F7)",
+      "recommendation": "approve",
+      "default": "no execution until approved (sprint plans stop for approval)"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "M4.6a_PKG_GLOW_EMITTANCE",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "Gate 3: the one new formula (glow angular profile) goes into the single physics package first; sim/GDScript/shaders only mirror it"
+    },
+    {
+      "milestone": "M4.0_AREA_BUNDLES",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot scene/GLB/JSON I/O; no package applies (pkg search re-audit deferred to executor kickoff — F3)"
+    },
+    {
+      "milestone": "M4.1_CONSEQUENCE_STUB",
+      "package": "sunholo/relativity@0.5.1",
+      "action": "depend",
+      "reason": "planBurnCoastBurn, coastAt, gammaOf, oneMinusBeta, rapidityOfBeta, loadScale, kineticFlux, mirrorDragForce, cruiseDragEnergy, glowInwardFlux by name (V15); sim stays pure"
+    },
+    {
+      "milestone": "M4.3a_TRANSIT_WARP_HUD",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI bound to sim fields via DisplayBinding; no physics arithmetic"
+    },
+    {
+      "milestone": "M4.2_INTERIOR_COMPOSITE",
+      "package": "sunholo/relativity (post-M4.6a release)",
+      "action": "depend",
+      "reason": "glow_profile mirrors glowEmittanceAt; exposure mirror comes from M1.5a"
+    },
+    {
+      "milestone": "M4.4_NEWS_LEGACY",
+      "package": "none",
+      "action": "none",
+      "reason": "Templates and fixed copy; AI transport is R1-AI-FOUNDATION's (soft dep)"
+    },
+    {
+      "milestone": "M4.7_ARCHIVE_CODEX",
+      "package": "sunholo/relativity@0.5.1 (+ M4.6a release)",
+      "action": "depend",
+      "reason": "Registry source (a) evaluates exported package functions as pkg:<function>(<args>) ids (V24); no markdown/lore package exists per the 2026-10-02 audit"
+    },
+    {
+      "milestone": "M4.3b_HUD_IN_INTERIOR",
+      "package": "none",
+      "action": "none",
+      "reason": "Reparenting and wiring only"
+    },
+    {
+      "milestone": "M4.5_PLAYTHROUGH_AUDIT",
+      "package": "none",
+      "action": "none",
+      "reason": "Harness (AILANG FS caps + Godot headless); no logic worth packaging; no Python (F6)"
+    },
+    {
+      "milestone": "M4.6_PHYSICS_GATES",
+      "package": "sunholo/relativity (post-M4.6a release)",
+      "action": "depend",
+      "reason": "Every check value copied from the package probe (V12/V24), never recomputed in GDScript"
+    }
+  ],
+  "revision_round_2": {
+    "date": "2026-10-03",
+    "trigger": ".ailang/state/evaluations/eval_stapledon_iter11_m4_plan_round1.json (85/100 PASS, 3 blocking)",
+    "fixes": [
+      "B1: M4.1 depends_on now [] (step 1, pin 0.5.1, touches no pin files); glow_pole_w_m2 is step 2, a separate later step gated on M4.6a's publish (P-pkg); pin bump lands in its own commit after M4.1's PR merges; false 'disjoint files / parallel' wording removed; critical_path no longer starts with M4.6a",
+      "B2: AC6's playthrough command moved to M4.5 (acceptance_criteria); M4.4 keeps a sim-test gate (make sim asserting body_source/fallback_reason for template/ai/fallback) plus 'Feeds AC6'; F4 reworded in both files",
+      "B3: S1 executable mechanism chosen — M4.2/M4.3b/M4.6-gated land as stacked PRs into integration branch m4-track-b, capture-m4 runs there, S1 shown from that branch, branch merges to main after sign-off; stated in pause_points[S1], the plan's pause-points table and the M4.2/M4.3b/M4.6 notes",
+      "NB1: R1-M1-SKY-2 recorded as approved per ledger D-19 (only its JSON approved flag stale) — F5, external_dependencies[0]",
+      "NB2: M4.5 depends_on gained M4.2_INTERIOR_COMPOSITE and M4.3b_HUD_IN_INTERIOR (AC4 audit/final run and AC7 walking exercise the interior)",
+      "NB3: M1.2d (PR #69) added to M4.6 depends_on (soft — no golden pins the A/B separation) and external_dependencies[1].needed_by",
+      "NB4: quorum note — round 2 ran with gpt6-1-sol ABSENT, disposition on the 3 present external reviewers (F7, plan Summary, Q3, P-land)",
+      "NB5: M4.1 size risk stated (700 LOC vs 650 cap; M2 ~1.5x -> ~1,000 realistic); no pre-split (design doc owns the 10-row structure); named split point = ship.ism seam, step 2 becomes M4.1b on overrun (loc_cap_exceptions, F1)"
+    ],
+    "totals": "unchanged: 10 milestones, 4 waves, 3,220 counted LOC (1,900 code + 1,320 tests)"
+  }
+}

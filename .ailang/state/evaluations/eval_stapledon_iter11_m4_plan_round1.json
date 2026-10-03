@@ -1,0 +1,98 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "round": 1,
+  "evaluator_model": "claude-sonnet-5-5 (independent of Opus 5.5 design author and Kimi K3 planner)",
+  "score": 85,
+  "pass": true,
+  "rubric": {
+    "objections_answered_round1_and_round2 (25)": 24,
+    "numbers_and_claims_rederived (20)": 19,
+    "stays_inside_attended_rulings D-6..D-21 (10)": 10,
+    "plan_covers_every_sub_milestone_and_AC (15)": 14,
+    "dependencies_and_executability_vs_external_state (15)": 8,
+    "definition_of_done_compliance: physics gates, package-first, pure core, no Python, determinism (10)": 9,
+    "sizing_honesty_vs_M2_velocity (5)": 4,
+    "note": "Planning-iteration adaptation of the 100-point sprint-evaluator rubric. Score would be about 93 with the three blocking plan-wording fixes."
+  },
+  "rederived": [
+    {
+      "claim": "Round trip at 0.99c, d=4.37 ly less 1000 AU, default boost 7.5e5 g: Earth 8.796343 yr, ship 1.240885 yr, per-leg 4.398171 / 0.620443, arrival news epoch t_e 0.043984 yr, leg = 62.04 s at 0.01 ship-yr/s, gap 7.5555",
+      "your_command": "$A run --package-dir sim --caps IO --entry main /tmp/evalp/p.ail  (own probe: planBurnCoastBurn/coastAt/gammaOf/rapidityOfBeta against pinned relativity 0.5.1, d = 4.37 - 1000*astronomicalUnitM()/lightYearM())",
+      "your_result": "gamma 7.088812050083356; d-s 4.35418749259018; plan galaxyTime 4.398171425676279, shipTime 0.6204427104843891; coastAt 4.398169184434525 / 0.620438114787203; t_e 0.043983933086098936; 2*t 8.796342851352557, 2*tau 1.2408854209687783, gap 7.555457; leg seconds 62.0443",
+      "matches": true
+    },
+    {
+      "claim": "ISM/glow readouts at 0.99c, n=1e5 m^-3, R=100 m, eps=1e-9, f_in=0.5: load 2.21961e5 W/m2, drag 23.2598 N, drag energy 1.36530e17 J, glow 2.40719e-5 W/m2 (0.281271 at 0.999999c); pole = 4x mean = 9.62878e-5 / 1.12508",
+      "your_command": "same probe: loadScale, mirrorDragForce, cruiseDragEnergy(.., p.dCoast), glowInwardFlux at phi(0.99) and phi(0.999999)",
+      "your_result": "load 221961.2727892787; drag 23.25982143207345; E 1.365299549837781e17; glow 2.407194217926631e-5; glow(0.999999c) 0.2812710757682347; 4x = 9.62878e-5 and 1.125084",
+      "matches": true
+    },
+    {
+      "claim": "V24: M2's drag ledger integral equals cruiseDragEnergy (ratio 0.9999999999999999) because mirrorDragPower = F*c; burn drag omitted from ledger by construction; the ledger lines cited exist",
+      "your_command": "probe q.ail: cruiseDragEnergy(n,phi,R,dCoast)/(mirrorDragPower(n,phi,R)*p.tauCoast*julianYearS()); sed -n on sim/core.ail 106,222,327, sim/protocol.ail:155, sim/protocol_test.ail:143, sim/core_test.ail:439,615; sim/core.ail:158-165 and 300-328",
+      "your_result": "ratio=0.9999999999999999. core.ail:106 Ledger{..dragJ}; :222 planBurnCoastBurn(d, p.boostG*standardGravity(), cruisePhi); :327 pieceLedger adds dragJ only when i==1 (cruise), else boostJ; protocol.ail:155 emits drag_j; protocol_test.ail:143 glowWM2 0.000024071942179266308 (= my glow); core_test.ail:439 and :615 use planBurnCoastBurn(4.37,...)",
+      "matches": true
+    },
+    {
+      "claim": "AC1's 1e-4 round-trip clause vs coastAt holds for tau_b <= 19 min per phase (boost offset 2.56e-6 ship-yr per minute per leg)",
+      "your_command": "probe q.ail: planBurnCoastBurn with a = phi/tau_b for tau_b = 19 min, and at the default 1.798 min; compare 2*(shipTime) to 2*coastAt shipTime",
+      "your_result": "tau_b 19.0 min: round-trip ship diff 9.713e-5 (< 1e-4, bound is tight but true); default 1.798 min: 9.19e-6 (= 2 x 4.60e-6); Earth diff at 19 min 4.74e-5",
+      "matches": true
+    },
+    {
+      "claim": "Design-repo premises at 1ef3bc9: 10 lore entries with the stated unlock hints; 60 distinct checks ids (48 HB, 12 RS) all resolve to table rows; seven expected slice unlocks; HB-1/3/4/15/16/17/35/40/41/45/49/53/54/61/62 values",
+      "your_command": "git -C ../stapledons-design show origin/main:<lore files> | awk front matter; id resolution loop over higgs-bubble.md and relativity-spec.md; README unlock-hint table; grep of HB rows",
+      "your_result": "origin/main = 1ef3bc96; unlocks always x3 (bubble, one-g, nothing-crosses), first_commit (two-clocks), first_boost (photon-drive), cruise_above_0.9c x2 (ism-glow, starbow), cruise_above_gamma_275 (cmb-forward), first_black_hole x2; 60 ids, 48 HB, 12 RS, 0 missing; HB rows as quoted in V14 (HB-4 4.37 ly, HB-15 1,000 AU, HB-61 3.6e-9, HB-62 38.44 K)",
+      "matches": true
+    },
+    {
+      "claim": "No angular glow function exists at 0.5.1, so glowEmittanceAt must be added package-first; sim pins 0.5.1; plan's external state (PRs #67/#68/#69 open; AI.1-AI.6 passed; M1.2c and M1.6b passes true; M1.3, M1.5a, M1.2d null)",
+      "your_command": "grep glowEmittanceAt in runtime/cache/registry/sunholo/relativity/0.5.1; grep relativity sim/ailang.toml; gh pr list --repo sunholo-data/stapledons-godot --state open; jq on sprint_R1-AI-FOUNDATION.json and sprint_R1-M1-SKY-2.json in the worktree",
+      "your_result": "no match for glowEmittanceAt; toml pin 0.5.1; open PRs 67 (M1.3), 68 (AI.7), 69 (M1.2d) exactly as the plan says (gh works here, contrary to plan F3's TLS claim in its environment); AI.1-6 true, AI.7+ null; SKY-2 M1.6b/M1.P/M1.2c true, rest null. SKY-2 JSON still says approved:false/status planned although ledger D-19 records Mark approving it",
+      "matches": true
+    }
+  ],
+  "objections": [
+    {"round": 1, "reviewer": "gemini-3-1-pro", "objection": "AI fallback silent; no player-visible sign", "verdict": "answered", "evidence": "Doc M4.1 'AI results are inputs' + M4.4 'AI path' + AC6: sim-owned news.body_source in {template, ai, fallback} and fallback_reason, fixed notice plus digit-free reason phrase, diagnostics list. Reasonable scoping: 'template' (no request) shows no notice, consistent with D-8; sim already emits ai_fallback (sim/ai.ail:58,167,274,287 verified). Respects D-21 (280 chars, no digits; sim/ai.ail:78 maxCharsFor=280). Plan M4.1/M4.4 carry it."},
+    {"round": 1, "reviewer": "oc-glm-5-3", "objection": "Design-repo premises unverified; eps unassigned; drag halved vs D-11; lore front matter; brief section 9 schema", "verdict": "answered", "evidence": "V14/V16/V17/V19/V22 reproduced by me against 1ef3bc9. eps = 1e-9 (D-15, sim default) <= HB-61 3.6e-9; f_in=0.5 stated as scenario parameter. The doc also corrected its own wrong 'eps x load' glow to eps*f_in*K/4 per higgs-bubble section 6 (my glow number matches). D-11 ruling text has no drag numbers; HB section 5 sphere values are canon. Lore hint vocabulary and unit-alias approach follow the README."},
+    {"round": 1, "reviewer": "oc-kimi-k3", "objection": "Package functions asserted not verified (V4 grepped 0.3.0); goldens from scratchpad m4.py; coastAt unexplained; 1e-4 clause hides tau_b bound; minor claims; CI skips lore drift check", "verdict": "answered", "evidence": "Re-pinned to 0.5.1 named functions with an AILANG probe (my own probe reproduces every number); Python demoted to oracle (V13); coastAt defined as the tau_b->0 reference only; the 19-minute bound is real (I measured 9.71e-5 at 19.0 min); CI half (i) fail-closed, half (ii) needs a credential and is escalated as open question 5 rather than decided. Partial residue: the lore-check cross-repo half is genuinely skipped in CI, honestly disclosed."},
+    {"round": 1, "reviewer": "controller", "objection": "Named Python tools (display_audit, playthrough_time, validate_area, lore_check, codex_unlocks) violate the repo Python policy", "verdict": "answered", "evidence": "Replaced by AILANG sim/tools/*.ail and Godot headless scripts; AC18 asserts python-guard with no new *.py; plan F6 repeats it; neither the doc nor the plan adds a *.py"},
+    {"round": 2, "reviewer": "oc-kimi-k3", "objection": "glow_pole_w_m2 (9.62878e-5) cited as package value (V12) but 0.5.1 has only the mean; M4.1 silently depends on an unreleased package", "verdict": "answered", "evidence": "Applied verbatim: M4.6a row (package-first, no deps, not art-gated), M4.1 'Depends on: M2 protocol and planner; M4.6a (for glow_pole_w_m2)', the quoted two-step ship.ism sentence, the AC8 pole row wording, V23 as PENDING, V15 note. LOC reallocated (M4.6 100+170 -> 80+130 plus 20+40) so the total stays 3,220; a sensible bookkeeping adjustment, not a design change. Plan JSON then over-applies it (see blocking B1)."},
+    {"round": 2, "reviewer": "gemini-3-1-pro", "objection": "M2 codebase claims (drag_j accumulator, core_test target 4.37, protocol_test.ail:143) unverified in the log", "verdict": "answered", "evidence": "V25 and V12's sed -n 143p command added. I re-ran the cited lines: core.ail:106/:327, protocol.ail:155, core_test.ail:439/:615, protocol_test.ail:143 all say what V25 says. Note the field is dragJ in core and drag_j only on the wire, which V25 states."},
+    {"round": 2, "reviewer": "oc-glm-5-3", "objection": "drag_energy_j machinery/semantics unobserved; mirrorDragPower F*c vs F*v; window and error budget; news epoch must use planBurnCoastBurn arrival; rel:check registry may not exist", "verdict": "answered", "evidence": "V24 measured F*c (I get ratio 0.9999999999999999). Window = ledger drag_j minus value at commit; the burn term is 0 by construction (core.ail:158-165 comment and :327 confirm M2 omits burn drag), so the doc declines the reviewer's ~1.2e-6 estimate as 'not part of drag_j' and says so openly. Conditional 'if M2 has no ledger' correctly not triggered. t_e now 0.043984 from planBurnCoastBurn (mine: 0.043983933). The registry claim was checked and corrected: M4.7 source (a) now registers pkg:<function>(<args>) ids."},
+    {"round": 2, "reviewer": "gpt6-1-sol", "objection": "absent (no result)", "verdict": "partially", "evidence": "Reviewer absent in round 2, so the 4th eye never saw the revised doc. Carve-out legitimacy: every present blocking reviewer (kimi, gemini, glm) supplied a concrete proposed_fix and none disputes direction (all three are premise-verification / sequencing / provenance defects). Each fix is applied as written (table in the doc's 'Quorum round 2 response' maps fix to location); no direction change. The one adaptation (LOC reallocation, and V numbers shifted to V23/V24/V25) is mechanical. So the carve-out was legitimate. Residual: gpt6-1-sol absence is not recorded as a named hole in the doc or plan; no second look at the rewritten doc exists beyond this evaluation."}
+  ],
+  "blocking": [
+    {
+      "file": ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json (feature M4.1_CONSEQUENCE_STUB.depends_on) and design_docs/planned/r1/m4-first-journey-sprint.md:63-67, 144, 253",
+      "line": 253,
+      "finding": "Dependency contradiction on M4.1. The markdown says M4.1 depends on M4.6a 'for glow_pole_w_m2 only' and lists M4.6a, M4.0 and M4.1 as 'all startable NOW' in one parallel wave of 'disjoint files'. The JSON hard-codes M4.1.depends_on = [M4.6a], so M4.1 cannot start until M4.6a is published after an independent physics PASS and pinned. M4.6a also edits sim/ailang.toml, sim/ailang.lock and runtime/cache that M4.1 builds against, so the files are not disjoint, and the two-step ship.ism split is the only thing keeping M4.1 off the critical path of an external publish.",
+      "fix": "Make M4.1 depends_on [] in the JSON with 'step 2 (glow_pole_w_m2) after M4.6a' as an explicit sub-step (or put M4.6a in wave 0 and drop the 'startable now/parallel' wording). State that the pin bump lands in its own commit before M4.1 step 2 and that M4.1 step 1 does not touch the toml, lock or cache."
+    },
+    {
+      "file": "design_docs/planned/r1/m4-first-journey-sprint.md",
+      "line": 119,
+      "finding": "F4 says no feature may mark passes:true on an AC whose command has not been run, but M4.4 (wave 3) is assigned AC6 as a primary acceptance whose command (make playthrough AI=none|stub|digits) needs M4.5, which depends on M4.4 and runs in wave 4. M4.4 can therefore never pass under F4. M4.3a (AC3, AC7) and M4.7 (AC16) are phrased 'Feeds', so they are fine; AC6 is not.",
+      "fix": "Move AC6 to M4.5's acceptance (keep the sim-test and scripted-bridge interim gate in M4.4, with passes judged on that gate), as was done for AC3, AC4, AC5, AC7, AC16. Mirror in the JSON."
+    },
+    {
+      "file": "design_docs/planned/r1/m4-first-journey-sprint.md",
+      "line": 659,
+      "finding": "S1 ordering cannot be executed as written. S1 'blocks the M4.2 / M4.3b / M4.6 merges', but M4.3b (wave 3) depends on M4.2, and S1's renders come from M4.6's gated make capture-m4 in wave 4, which needs M4.2. The plan says every milestone 'lands as its own PR', yet M4.3b cannot be built on an unmerged M4.2 unless PRs are stacked. The plan never says which, so the executor and controller will deadlock or merge M4.2 before gate 2.",
+      "fix": "State the mechanism: M4.2, M4.3b and M4.6 are one stacked PR train (or one branch) merged together after S1, and M4.3b/M4.6 are built on M4.2's branch. Or change S1 to block only landing/merge-to-main of the Track B train while earlier Track A items merge independently. Mirror in pause_points of the JSON."
+    }
+  ],
+  "non_blocking": [
+    "Plan F5/Risks and the JSON external_dependencies call R1-M1-SKY-2 'unapproved (approved false)'. Ledger D-19 records Mark approving it on 2026-10-02 ('start wave 1'); only its JSON field is stale. Reword to 'approved per D-19, JSON flag not updated' (sprint plan lines 125-128; JSON external_dependencies[0]).",
+    "M4.5 depends_on omits M4.2 and M4.3b although AC4, AC7 (walking 20 s x 4 visits) and the 'final run on the approved bundle' need the interior; wave 4 order implies it, the dependency list should say so (sprint plan line 539; JSON M4.5.depends_on).",
+    "M1.2d (PR #69, alpha Cen A/B astrometry) is listed as needed_by M4.2 only in external_dependencies; no milestone Deps cite it, but M4.6's 'arrived at alpha Cen' render and the arrival view need it. Add it to M4.6 deps/needed_by.",
+    "Design doc status line says '9 sub-milestones (M4.3 splits into a/b)'; the table has 10 rows after M4.6a (design doc line 50-51).",
+    "gpt6-1-sol's round-2 absence (a named hole) is not recorded as such in the doc's round-2 response or the plan; per the skill the first carve-out use is also supposed to be surfaced to Mark. Say which path and surface it in the report.",
+    "AC1's 1e-4 clause is only a 0.3 percent margin below 1e-4 at the stated 19-minute bound (I measured 9.71e-5); fine as a bound, but the doc should not present it as a comfortable margin, and a boost_g scenario parameter below about 7e5 g would break it. Consider an assertion in scriptedRoundTrip that tau_b <= 19 min.",
+    "Plan F3 states gh is unusable in the planning environment; gh pr list works in this evaluator's environment and agrees with the plan's git ls-remote evidence (#67, #68, #69 open). No action beyond noting the environment variance.",
+    "M4.1 is 700 LOC (over the 650 cap) with a split-at-seam waiver. M2's actual/estimate ratio was about 1.5x, so a realistic M4.1 is about 1,000 LOC; the waiver is honest, but suggest pre-splitting at the ship.ism seam (this also resolves B1).",
+    "Sizing: 20-24 h attended and 4-6 days on the loop vs M2's 13.5 h for 10 milestones and about 3,400 estimated LOC is a reasonable, conservative uplift for GPU gates, a package publish and an unfinished Track B dependency (M1.3, M1.5a). The plan's own target_loc_per_day 2300 would imply about 1.4 days; the 3-day figure is the defensible one.",
+    "Physics gates are correctly mapped: spec check values (test_physics.gd rows copied from the AILANG probe), GPU goldens G-M4-1..4 including an absolute pole gate, reference renders with S1, package-first M4.6a with tests/CHANGELOG/kind/quality/dry-run and the Guardrails' standing publish grant, sim core purity (scriptedRoundTrip under make strict), precision (no 1.0-beta; lint-precision with positive control), determinism (record intents replay, AI never spawned in replay). approved:null and status planned in the JSON; Q1 (4.37 vs 4.32 ly canon), Q2 (CI deploy key) and Q3 (approval) are carried as Mark's decisions and not resolved by the loop."
+  ],
+  "summary": "PASS (85/100), with three plan-wording fixes to make before Mark approves. The revised design doc answers all round-1 and round-2 objections. I re-derived the round-trip times (Earth 8.796343, ship 1.240885, t_e 0.043984), the ISM and glow numbers, the drag-ledger ratio 0.9999999999999999, the 19-minute tau_b bound and the lore premises at 1ef3bc9 with my own AILANG probes and greps, and all match. The doc stays inside D-6/D-11/D-12/D-14/D-15/D-16/D-19/D-20/D-21 and leaves canon and infrastructure choices (HB-4 vs 4.32 ly, CI deploy key) to Mark. The round-2 carve-out was legitimate: every present blocker gave a concrete proposed_fix, none disputed direction, and each fix was applied as written. The sprint plan covers all 10 sub-milestones and all 18 ACs with runnable commands, adds no Python, puts the package work (M4.6a) before its use, and is honestly sized against M2. Blocking defects: (B1) M4.1 is hard-dependent on M4.6a in the JSON but 'startable now, glow_pole only' in the markdown, in a wave described as disjoint-file parallel; (B2) AC6 is assigned to M4.4 although its command needs M4.5, which depends on M4.4, so M4.4 cannot pass under rule F4; (B3) S1 'blocks the M4.2/M4.3b/M4.6 merges' but M4.3b depends on M4.2 and S1's renders come from M4.6 in wave 4, with no stated stacking mechanism."
+}
