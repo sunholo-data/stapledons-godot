@@ -1,7 +1,7 @@
 # M5: Planets and flybys
 
-**Status:** Planned (design; Mark's open-question answers recorded; no sprint
-plan yet). Created 2026-10-03 from ledger **D-26** (attended 2026-10-03, queue
+**Status:** **Approved** (Mark, attended 2026-10-03); awaiting the sprint plan
+(sprint-planner, run separately). Created 2026-10-03 from ledger **D-26** (attended 2026-10-03, queue
 row 6c): "a new R1 milestone M5 'Planets and flybys': AILANG-driven
 solar-system data, Godot planet rendering with rings and relativistic flyby
 views, Sol's planets plus the α Cen arrival scene; design doc first." Mark's
@@ -13,6 +13,10 @@ player-facing in R1:** the player flies through the solar system with M2's
 plan → commit → boost → cruise → brake. That adds in-system navigation
 (M5.5), its UX (M5.6) and a second package, **`sunholo/celestial`**, for
 orbits and reflected light (M5.0a).
+**Approved 2026-10-03** (Mark, attended), with his answers to N1–N3: a
+lighter confirm for short in-system legs (defined in
+[M5.6](#m56-in-system-ux-system-map-plan-transit)), 0.001c–0.99c in-system,
+and stops and flybys at all 11 moons with ring planes refused.
 **Release:** r1 · **Milestone:** M5 (new; the design repo's roadmap has no M5
 row yet, see [§Design-repo changes](#design-repo-changes-m5-needs))
 **Priority:** P1. It completes M4's arrival scene and the "3D objects nearby"
@@ -580,8 +584,34 @@ until ailang#1465), and is a `make strict` entry (`solTourRoundTrip`).
     planned line is drawn on the map with the intercept point.
   - Refusals show the sim's reason in words (a fixed reason → phrase table,
     as M4's news fallback).
-- **Commit.** The same D-12 dialog (both clocks, 1.5 s hold), so the ritual is
-  learned here. Whether short legs get a lighter confirm is new question N1.
+- **Commit: two dialogs, one rule (Mark, N1).** The sim's commit rule is the
+  same for every leg (no cancel until arrival). Only the dialog differs, and
+  **the sim, not the UI, decides which one**: every plan carries
+  `confirm ∈ {"full", "light"}`.
+  - **Threshold.** `confirm = "light"` when the target is a body in the
+    current system **and** the plan's Earth time is at most **24 hours**
+    (`plan.earth_years ≤ 1/365.25`). Everything else is `"full"`: every
+    interstellar journey (a star target), and any in-system leg longer than a
+    day (for example Earth → Neptune at 0.001c, about 173 days). Time, not
+    distance, is the threshold because Earth time is the cost the full ritual
+    exists to show. A day covers nearly every useful in-system leg at
+    0.01c and above (Earth → Saturn at 0.1c is about 12.5 h). The threshold is
+    a scenario parameter, `light_confirm_max_earth_s` = 86,400, so it can be
+    tuned as data.
+  - **The light confirm** is a one-line strip over the planning panel: the
+    target and mode ("Fly by Saturn, 3 R♄, north side" or "Stop at the Moon,
+    20,000 km"), cruise β, ship time and Earth time side by side, and the
+    fixed line "No cancel once committed". Confirm is one press (Enter or
+    click), with no 1.5 s hold; Esc returns to planning. Every number goes
+    through `DisplayBinding`.
+  - **The full dialog** is M4's D-12 dialog unchanged: both clocks, years left
+    at home, the 1.5 s hold.
+  - **Logged and replayed the same way.** Both dialogs emit the same
+    `commit{plan_id}` intent into M2's input log; the dialog type is not an
+    input. Replay re-derives `confirm` from the plan, and the sim refuses a
+    commit only for M2's reasons, never by dialog type. The Sol tour (M5.5)
+    contains both kinds: its Moon, Saturn and Jupiter legs are light, and the
+    α Cen leg is full.
 - **Transit.**
   - The bridge interior (M4.2) with the dome, up = direction of travel
     (D-14), or the sky-only harness if M4.2 has not landed.
@@ -744,6 +774,7 @@ function's output at the pinned release, copied into the test from the probe.
 | AC16 | Gravity: during cruise and holds the ship stays on the planned line or offset to 1e-6 km; the leg's `hold_j` equals the tick sum of `hover_power(m_eff, ‖accelerationAt‖)` dτ to 1e-9 relative; at the start position ‖g‖ equals the package value (0.1254 m/s², oracle) | `make sim` |
 | AC17 | Intercept: at the Sol tour's Saturn pass tick, the ship–Saturn distance equals the planned `b_km` within 1 km, and the intercept iteration's residual is < 1e-9 of the leg | `make sim` and `make replay SESSION=sol_tour` |
 | AC18 | Replay: the Sol tour's input log (plans, commits, warp `dtau`, including the automatic step-down) replays to byte-identical state; camera input is not in the log | `make replay SESSION=sol_tour` and `make journey-replay` |
+| AC19a | Confirm class: the sim sets `confirm = "light"` for a body target with Earth time ≤ `light_confirm_max_earth_s` and `"full"` otherwise, including every star target; boundary fixtures at 86,399 s, 86,400 s and 86,401 s; both dialogs emit the same `commit{plan_id}` intent, and the Sol tour replays with both kinds | `make sim` (confirm fixtures), `make ui` (dialog audit), `make replay SESSION=sol_tour` |
 | AC19 | Display audit: every number on the system map, the planning panel and the in-system HUD is a formatted sim field (M4's `DisplayBinding` audit) | `make ui` |
 | AC20 | Everything above runs without a GPU except AC8, AC9 and AC13; `make test` is green locally and in CI; no new Python outside `tools/python-allowlist.txt` | `make test` (includes `python-guard`) |
 
@@ -822,20 +853,25 @@ ruling, so it is listed only as a fallback for his decision.
 7. **The moon list.** **DEFAULT TAKEN — the 11 moons** (Mark, attended
    2026-10-03; not asked, the default stands).
 
-**New questions raised by the re-scope (each has a default; the loop does not
-decide them alone):**
+**Questions raised by the re-scope, answered (Mark, attended 2026-10-03,
+with the design's approval):**
 
-- **N1. A lighter commit for short in-system legs?** The sim rule is the same
-  for every leg (no cancel). The question is only the dialog. **Default:** the
-  full D-12 dialog for every leg, so the ritual is learned at Saturn before it
-  matters at α Cen. The alternative is a one-click confirm for legs under one
-  Earth day.
-- **N2. The in-system speed range.** **Default:** 0.001c–0.99c. Lower speeds
+- **N1. A lighter commit for short in-system legs?** **ANSWERED — YES, a
+  lighter confirm for short in-system legs; interstellar journeys keep the
+  full commit dialog** (Mark, attended 2026-10-03). Defined in M5.6: the sim
+  sets `confirm = "light"` for a body target whose Earth time is ≤ 24 h
+  (scenario parameter `light_confirm_max_earth_s` = 86,400), otherwise
+  `"full"`. The light confirm is a one-line strip (target, mode, β, both
+  times, "No cancel once committed"), one press, no hold. Both emit the same
+  logged `commit{plan_id}` and replay identically. AC19a checks it.
+- **N2. The in-system speed range.** **ANSWERED — the default, 0.001c–0.99c**
+  (Mark, attended 2026-10-03). Lower speeds
   make Earth → Mars take days of ship time, which the warp levels cover.
   Higher speeds, up to the interstellar slider's 0.999999c, cover the boost
   distance (tens of AU) and are pointless inside the system.
 - **N3. Can the player stop near a moon, and fly by inside a ring gap
-  (Cassini Division)?** **Default:** stops and flybys at all 11 moons; ring
+  (Cassini Division)?** **ANSWERED — as proposed** (Mark, attended
+  2026-10-03): stops and flybys at all 11 moons; ring
   planes are refused inside the outer ring radius, gaps included, because at
   cruise speed the bubble wall meets ring particles. A slow (≤ 0.001c) gap
   transit is R2 material if Mark wants it.
