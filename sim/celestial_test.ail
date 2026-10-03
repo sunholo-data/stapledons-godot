@@ -19,6 +19,14 @@ import pkg/sunholo/celestial/rings (RingBand)
 import std/math (sqrt, atan2, exp, log, cos)
 import std/list (map, foldl, length)
 import std/string (join)
+import ./celestial (System, BodyState, BodyView, SystemView, solSystem, bodyAt, systemAt, jdAt, ephemerisAt, defaultEpochJd, lyKm, daysPerJulianYear)
+import ./protocol (encodeSystem, newSession, serve, Session, Served)
+import pkg/sunholo/celestial/kepler (stateFromElements, sub, scale, add)
+import pkg/sunholo/celestial/ephemeris (julianDate, auKm, windowStartJd, windowEndJd, planetAt)
+import pkg/sunholo/celestial/frames (eclipticToGalactic)
+import pkg/sunholo/celestial/lighttime (lightTimeDays)
+import pkg/sunholo/relativity/photometry (vFromIlluminance, illuminanceFromV)
+import std/option (Option, Some, None)
 
 pure func allTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
 pure func anyTrue(xs: [bool]) -> bool = foldl(\acc x. acc || x, false, xs)
@@ -311,4 +319,152 @@ export pure func checks() -> [(string, bool)] = [
 export pure func dataVm(n: int) -> string {
   let bad = foldl(\acc p. match p { (k, ok) => if ok then acc else k :: acc }, [], checks());
   if bad == [] then "sol-data-ok" else join(" ", ["FAILED", join(",", bad)])
+}
+
+-- ------------------------------------------------------------ M5.1b: systemAt (AC5)
+-- Expected values come from the package functions composed directly (AC5's
+-- "package value"), and from published observations: Jupiter's 2023-11-03
+-- opposition (V -2.9, distance 3.97 AU; light time about 1,980 s), and the
+-- design's retarded offset (v x lag, about 0.4 R_J).
+
+pure func sysJupOpp() -> float = julianDate(2023, 11, 3.0)
+pure func sysPlanet(id: string) -> [Planet] = foldl(\acc p. if p.id == id then [p] else acc, [], planets())
+pure func sysMoon(id: string) -> [Moon] = foldl(\acc m. if m.id == id then [m] else acc, [], moons())
+pure func sysPosAu(id: string, jd: float) -> Vec3 = match bodyAt(solSystem(), id, jd) { Some(b) => scale(1.0 / auKm(), b.pos), None => { x: 1.0e9, y: 0.0, z: 0.0 } }
+pure func sysClose(a: Vec3, b: Vec3, tol: float) -> bool = norm(sub(a, b)) <= tol
+-- The package composition AC5 names: stateFromElements(elementsAt(...).orbit) rotated to galactic.
+pure func sysPkgPlanetAu(p: Planet, jd: float) -> Vec3 = eclipticToGalactic(stateFromElements(elementsAt(p.el, p.rates, jd).orbit).pos)
+
+export pure func checkSysPositions() -> bool {
+  let jds = [j2000(), sysJupOpp(), julianDate(1600, 1, 1.0), julianDate(4500, 6, 1.0)];
+  allTrue(map(\jd. allTrue(map(\p. sysClose(sysPosAu(p.id, jd), sysPkgPlanetAu(p, jd), 0.000000000001), planets())), jds))
+  && allTrue(map(\m. allTrue(map(\h. sysClose(sysPosAu(m.id, sysJupOpp()), add(sysPkgPlanetAu(h, sysJupOpp()), eclipticToGalactic(satelliteAt(m.sat, sysJupOpp()).pos)), 0.000000000001), sysPlanet(m.host))), moons()))
+  && sysClose(sysPosAu("sun", sysJupOpp()), { x: 0.0, y: 0.0, z: 0.0 }, 0.0)
+  && (match bodyAt(solSystem(), "pluto", j2000()) { None => true, Some(_) => false })
+}
+test "AC5 sim positions equal stateFromElements o eclipticToGalactic to 1e-12 AU (planets, moons on their hosts)" { checkSysPositions() }
+
+-- Velocities: planetAt's AU/day rotated and scaled to km/s.
+export pure func checkSysVelocity() -> bool =
+  allTrue(map(\p. match bodyAt(solSystem(), p.id, sysJupOpp()) {
+    Some(b) => sysClose(b.vel, scale(auKm() / 86400.0, eclipticToGalactic(planetAt(p.el, p.rates, sysJupOpp()).vel)), 0.000000001),
+    None => false }, planets()))
+test "bodyAt velocity is planetAt's, in km/s, galactic" { checkSysVelocity() }
+
+-- The observer on Earth at the 2023-11-03 opposition (as a galactic ly position).
+pure func sysEarthLy(jd: float) -> Vec3 = match bodyAt(solSystem(), "earth", jd) { Some(b) => scale(1.0 / lyKm(), b.pos), None => { x: 0.0, y: 0.0, z: 0.0 } }
+pure func sysView(v: SystemView, id: string) -> [BodyView] = foldl(\acc b. if b.id == id then [b] else acc, [], v.bodies)
+pure func sysOpp() -> SystemView = systemAt(solSystem(), sysJupOpp(), sysEarthLy(sysJupOpp()))
+pure func sysJupFn(t: float) -> Vec3 = match sysPlanet("jupiter") { p :: _ => eclipticToGalactic(planetAt(p.el, p.rates, t).pos), [] => { x: 0.0, y: 0.0, z: 0.0 } }
+
+export pure func checkSysLightTime() -> bool {
+  let obs = scale(lyKm() / auKm(), sysEarthLy(sysJupOpp()));
+  let want = lightTimeDays(sysJupFn, obs, sysJupOpp()) * 86400.0;
+  match sysView(sysOpp(), "jupiter") {
+    j :: _ => absf(j.lightAgeS - want) <= 0.000001 && j.lightAgeS > 1900.0 && j.lightAgeS < 2100.0 && j.phaseDeg < 1.0,
+    [] => false
+  }
+}
+test "AC5 Jupiter's retarded lag from Earth at opposition equals lightTimeDays within 1e-6 s (about 1,980 s)" { checkSysLightTime() }
+
+-- The planet is drawn where it was: rel_km (retarded) differs from the
+-- instantaneous difference by about v x lag (design: 27,400 km, 0.38 R_J).
+export pure func checkSysRetardedOffset() -> bool {
+  let jd = sysJupOpp();
+  let shipKm = scale(lyKm(), sysEarthLy(jd));
+  match sysView(sysOpp(), "jupiter") {
+    j :: _ => match bodyAt(solSystem(), "jupiter", jd) {
+      Some(b) => { let off = norm(sub(j.relKm, sub(b.pos, shipKm))); off > 20000.0 && off < 32000.0 },
+      None => false },
+    [] => false
+  }
+}
+test "rel_km is the retarded position: Jupiter lags its instantaneous position by v x lag (about 26,000 km)" { checkSysRetardedOffset() }
+
+export pure func checkSysEphemerisLabel() -> bool =
+  systemAt(solSystem(), j2000(), { x: 0.0, y: 0.0, z: 0.0 }).ephemeris == "jpl-approx"
+  && systemAt(solSystem(), windowEndJd() + 1.0, { x: 0.0, y: 0.0, z: 0.0 }).ephemeris == "mean-orbit"
+  && systemAt(solSystem(), windowStartJd() - 1.0, { x: 0.0, y: 0.0, z: 0.0 }).ephemeris == "mean-orbit"
+  && ephemerisAt(windowEndJd()) == "jpl-approx" && ephemerisAt(windowStartJd()) == "jpl-approx"
+  && allTrue(map(\jd. (ephemerisAt(jd) == "mean-orbit") == (match planets() { p :: _ => elementsAt(p.el, p.rates, jd).meanOrbit, [] => false }),
+      [windowStartJd() - 0.5, windowStartJd(), j2000(), windowEndJd(), windowEndJd() + 0.5, jdAt(defaultEpochJd(), 1000000.0)]))
+  && systemAt(solSystem(), j2000(), { x: 0.0, y: 0.0, z: 0.0 }).frame == "galactic"
+test "AC5 outside 3000 BC-3000 AD the system reports ephemeris mean-orbit (agrees with elementsAt's flag)" { checkSysEphemerisLabel() }
+
+export pure func checkSysTimeBase() -> bool =
+  jdAt(2451545.0, 0.0) == 2451545.0 && jdAt(2451545.0, 1.0) == 2451545.0 + 365.25 && daysPerJulianYear() == 365.25
+  && defaultEpochJd() == 2451545.0 && lyKm() == 9460730472580.8
+test "time base: jd = epoch_jd + t x 365.25; 1 ly = 9,460,730,472,580.8 km" { checkSysTimeBase() }
+
+-- Jupiter at opposition through the whole photometric chain: observed about V -2.9.
+export pure func checkSysJupiterV() -> bool =
+  match sysView(sysOpp(), "jupiter") { j :: _ => j.eVLux > 0.0 && absf(vFromIlluminance(j.eVLux) - (0.0 - 2.9)) <= 0.25, [] => false }
+test "Jupiter at the 2023 opposition: e_v_lux gives V -2.9 within 0.25 mag" { checkSysJupiterV() }
+
+-- Pole and W at the retarded time, rotated to galactic (the planet is seen as it was).
+export pure func checkSysPoleAtRetarded() -> bool =
+  match sysView(sysOpp(), "saturn") {
+    v :: _ => allTrue(map(\p. { let tr = sysJupOpp() - v.lightAgeS / 86400.0; let sp = poleAndSpin(p.pole, tr);
+        sysClose(v.pole, eclipticToGalactic(sp.pole), 0.000000000001) && absf(v.wDeg - deg(sp.w)) <= 0.000001
+        && (match bodyAt(solSystem(), "saturn", tr) { Some(b) => sysClose(b.pole, v.pole, 0.000000000001) && absf(b.wDeg - v.wDeg) <= 0.000001, None => false }) }, sysPlanet("saturn"))),
+    [] => false
+  }
+test "pole and W are the IAU model's at the retarded time, in galactic (Saturn at Jupiter's opposition)" { checkSysPoleAtRetarded() }
+
+pure func sysFinite(x: float) -> bool = x - x == 0.0
+pure func sysFiniteV(v: Vec3) -> bool = sysFinite(v.x) && sysFinite(v.y) && sysFinite(v.z)
+pure func sysUnitOrZero(v: Vec3) -> bool = absf(norm(v) - 1.0) <= 0.000000000001 || norm(v) == 0.0
+-- The pole is the package's unit pole through eclipticToGalactic, whose published
+-- 10-digit Hipparcos matrix is orthonormal to about 4e-11 (hence 1e-9, not 1e-12).
+pure func sysBodyOk(b: BodyView) -> bool =
+  sysFiniteV(b.relKm) && sysFiniteV(b.pole) && sysFiniteV(b.sunDir) && sysFinite(b.eVLux) && sysFinite(b.phaseDeg)
+  && absf(norm(b.pole) - 1.0) <= 0.000000001 && sysUnitOrZero(b.sunDir)
+  && b.wDeg >= 0.0 && b.wDeg < 360.0 && b.lightAgeS >= 0.0 && b.eVLux >= 0.0 && b.phaseDeg >= 0.0 && b.phaseDeg <= 180.0
+  && b.radiusKm > 0.0 && b.flattening >= 0.0 && b.flattening < 0.1 && b.source != ""
+  && (if b.kind == "star" then b.status == "star" && !b.visitable else b.status == "confirmed" && b.visitable && absf(norm(b.sunDir) - 1.0) <= 0.000000000001)
+-- Every field, from the opposition view and from inside the Sun (the ship's start, origin).
+export pure func checkSysFields() -> bool {
+  let v = sysOpp();
+  let o = systemAt(solSystem(), j2000(), { x: 0.0, y: 0.0, z: 0.0 });
+  length(v.bodies) == 21 && map(\b. b.id, v.bodies) == ["sun"] ++ map(\p. p.id, planets()) ++ map(\m. m.id, moons())
+  && allTrue(map(sysBodyOk, v.bodies)) && allTrue(map(sysBodyOk, o.bodies))
+  && (match sysView(o, "sun") { s :: _ => norm(s.relKm) == 0.0 && s.lightAgeS == 0.0 && s.eVLux > 1.0e9, [] => false })
+  && (match sysView(v, "saturn") { s :: _ => s.ringId == "saturn" && s.minnaertK == 0.825 && s.kind == "planet", [] => false })
+  && (match sysView(v, "titan") { s :: _ => s.host == "saturn" && s.kind == "moon" && s.source == "jplsat", [] => false })
+  && (match sysView(v, "earth") { e :: _ => norm(e.relKm) < 1.0 && e.lightAgeS < 0.00001, [] => false })
+}
+test "systemAt: 21 bodies (star, 8 planets, 12 moons) with every design field finite and in range, also from inside the Sun" { checkSysFields() }
+
+-- The Sun's illuminance at Earth's distance is relativity's illuminanceFromV(-26.74) / d^2
+-- (1.27e5 lux at 1 AU with the package's zero point; the design's oracle row says 1.261e5).
+export pure func checkSysSunLux() -> bool =
+  match sysView(sysOpp(), "sun") {
+    s :: _ => { let dAu = norm(s.relKm) / auKm(); relNear(s.eVLux * dAu * dAu, illuminanceFromV(0.0 - 26.74), 0.000000000001) && relNear(s.eVLux * dAu * dAu, 127000.0, 0.001) },
+    [] => false
+  }
+test "the Sun's e_v_lux at Earth is illuminanceFromV(-26.74) x (1 AU / d)^2" { checkSysSunLux() }
+
+-- A protocol 2.3 session through the pure server: hello, new_game (a 2023 epoch), a
+-- tick at rest with dtau 0 (no system section: nothing moved), a tick of 0.5 yr.
+pure func sysSession() -> [string] = [
+  "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":3}}",
+  "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"epoch_jd\":2460251.5}}",
+  "{\"v\":2,\"type\":\"input\",\"tick\":1,\"dtau\":0,\"intents\":[]}",
+  "{\"v\":2,\"type\":\"input\",\"tick\":2,\"dtau\":0.5,\"intents\":[]}"]
+pure func sysRun(s: Session, ls: [string]) -> [string] =
+  match ls { [] => [], l :: rest => { let r = serve(s, l); r.reply :: sysRun(r.session, rest) } }
+export pure func systemVmLines() -> [string] = sysRun(newSession(), sysSession())
+
+-- ------------------------------------------------------------ strict VM entry (make strict-m5, systemVm)
+export pure func systemChecks() -> [(string, bool)] = [
+  ("positions", checkSysPositions()), ("velocity", checkSysVelocity()), ("lightTime", checkSysLightTime()),
+  ("retardedOffset", checkSysRetardedOffset()), ("ephemerisLabel", checkSysEphemerisLabel()), ("timeBase", checkSysTimeBase()),
+  ("jupiterV", checkSysJupiterV()), ("poleAtRetarded", checkSysPoleAtRetarded()), ("fields", checkSysFields()), ("sunLux", checkSysSunLux())
+]
+-- The encoded system sections (opposition view; J2000 from the origin) and
+-- the protocol 2.3 session lines, then system-ok: compared byte for byte VM vs interpreter.
+export pure func systemVm(n: int) -> string {
+  let bad = foldl(\acc p. match p { (k, ok) => if ok then acc else k :: acc }, [], systemChecks());
+  if bad == [] then join("\n", [encodeSystem(sysOpp()), encodeSystem(systemAt(solSystem(), j2000(), { x: 0.0, y: 0.0, z: 0.0 }))] ++ systemVmLines() ++ ["system-ok"])
+  else join(" ", ["FAILED", join(",", bad)])
 }

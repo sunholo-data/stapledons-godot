@@ -2,11 +2,11 @@
 # Included from the Makefile by one line (F4: M5 stays out of the Makefile hunks
 # M4 edits). Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: m5-test strict-m5 acen-snapshot acen-snapshot-verify
+.PHONY: m5-test strict-m5 parity-v2-system system-fixture-check acen-snapshot acen-snapshot-verify
 
 test: m5-test
 
-m5-test: strict-m5 acen-snapshot-verify   ## M5 checks that run without a GPU window
+m5-test: strict-m5 parity-v2-system acen-snapshot-verify   ## M5 checks that run without a GPU window
 
 # M5.1a: the cited Sol and alpha Cen data modules load and pass every provenance
 # check on the strict VM, printing the same bytes as the interpreter (AC6 data half).
@@ -16,6 +16,23 @@ strict-m5:         ## sim/data/{sol,acen}.ail checks (celestial_test dataVm): st
 	@$(AILANG) run --quiet --package-dir sim --entry dataVm --args-json 0 sim/celestial_test.ail > $(SCRATCH)/m5-data-interp.txt
 	@cmp $(SCRATCH)/m5-data-vm.txt $(SCRATCH)/m5-data-interp.txt && test "$$(cat $(SCRATCH)/m5-data-vm.txt)" = "sol-data-ok" && \
 	  echo "strict-m5 dataVm: $$(cat $(SCRATCH)/m5-data-vm.txt) (strict VM = interpreter)"
+	@# M5.1b (AC4 system half): systemAt checks, two encoded system sections and a protocol 2.3 session, strict VM = interpreter
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry systemVm --args-json 0 sim/celestial_test.ail > $(SCRATCH)/m5-system-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry systemVm --args-json 0 sim/celestial_test.ail > $(SCRATCH)/m5-system-interp.txt
+	@cmp $(SCRATCH)/m5-system-vm.txt $(SCRATCH)/m5-system-interp.txt && test "$$(tail -1 $(SCRATCH)/m5-system-vm.txt)" = "system-ok" && \
+	  echo "strict-m5 systemVm: $$(tail -1 $(SCRATCH)/m5-system-vm.txt), $$(wc -l < $(SCRATCH)/m5-system-vm.txt | tr -d ' ') lines, digest $$(shasum -a 256 $(SCRATCH)/m5-system-vm.txt | cut -c1-16) (strict VM = interpreter)"
+
+# M5.1b (AC4 system half): the protocol 2.3 tail of tests/fixtures/v2_session.ndjson.
+# parity-v2 has already compared the whole session VM = interpreter byte for byte;
+# here: before the minor-3 hello no line carries `system`; after it the full state and
+# the three ticks that move the clock carry it, the dtau-0 tick does not.
+parity-v2-system: parity-v2   ## v2 session's 2.3 tail: system lines where the clock moved (VM = interpreter via parity-v2)
+	@awk -v want=4 'BEGIN { seen = 0; bad = 0; n = 0 } \
+	  /"type":"hello","proto":\{"major":2,"minor":3\}/ { seen = 1; next } \
+	  { has = index($$0, "\"system\":{\"jd\":") > 0; if (!seen && has) bad = 1; if (seen && has) n++ } \
+	  END { if (!seen || bad || n != want) { printf "parity-v2-system FAILED (seen %d, system before 2.3 %d, system lines %d)\n", seen, bad, n; exit 1 } \
+	        printf "parity-v2-system: no system below 2.3; %d system lines after the 2.3 hello (dtau-0 tick silent)\n", n }' $(SCRATCH)/v2_vm.txt
+	@grep -c '"system":{"jd":2460251.5,"ephemeris":"jpl-approx","frame":"galactic","bodies":\[{"id":"sun"' $(SCRATCH)/v2_vm.txt | grep -qx 1
 
 # The NASA Exoplanet Archive snapshot behind sim/data/acen.ail's statuses
 # (the starmap-manager source, narrowed to alpha Cen). The archive changes, so
