@@ -234,6 +234,11 @@ func key_files(which: Array) -> Dictionary:
 	return out
 
 
+## Diagnostics never print a key: any key text is replaced before printing.
+func redact(text: String) -> String:
+	return text.replace(KEY_G, "<GEMINI KEY>").replace(KEY_O, "<OPENROUTER KEY>").replace("\n", " | ")
+
+
 func has_key(text: String) -> bool:
 	return text.contains(KEY_G) or text.contains(KEY_O)
 
@@ -259,6 +264,7 @@ func live_run(files: Dictionary, provider: String) -> Dictionary:
 	cfg["provider"] = provider
 	args[i] = SimBridge.encode(AiCache.ints(cfg))
 	plan["args"] = args
+	var t0 := Time.get_ticks_msec()
 	var proc := OS.execute_with_pipe(AiBridge.scrub_shell(), AiBridge.scrubbed(plan), false)
 	var pid: int = proc["pid"]
 	var samples := []
@@ -286,7 +292,7 @@ func live_run(files: Dictionary, provider: String) -> Dictionary:
 	var err: PackedByteArray = proc["stderr"].get_buffer(65536)
 	if OS.is_process_running(pid):
 		OS.kill(pid)
-	return {"argv": samples, "stdout": got.get_string_from_utf8().strip_edges(), "stderr": err.get_string_from_utf8(), "lib": b.cache_dir}
+	return {"argv": samples, "stdout": got.get_string_from_utf8().strip_edges(), "stderr": err.get_string_from_utf8(), "lib": b.cache_dir, "ms": Time.get_ticks_msec() - t0}
 
 
 func fatal(detail: String) -> String:
@@ -308,7 +314,8 @@ func test_key_hygiene() -> bool:
 		var final_argv: String = argv.back() if not argv.is_empty() else ""
 		assert_bool("%s: live argv sampled %d times (last: ...%s), never a key" % [c[3], argv.size(), final_argv.right(60)],
 			final_argv.contains("--entry live") and final_argv.contains("--caps IO,FS,Env,Net,AI") and not argv.any(func(a): return has_key(a)))
-		assert_bool("%s: stdout is the refusal, no key in stdout or stderr" % c[3], r["stdout"] == c[2] and not has_key(r["stdout"]) and not has_key(r["stderr"]))
+		var ok_out: bool = r["stdout"] == c[2] and not has_key(r["stdout"]) and not has_key(r["stderr"])
+		assert_bool("%s: stdout is the refusal, no key in stdout or stderr%s" % [c[3], "" if ok_out else " -- stdout [%s] stderr tail [%s] (%d ms)" % [redact(r["stdout"]), redact(str(r["stderr"]).right(400)), r["ms"]]], ok_out)
 		assert_bool("%s: refused before the cache was made" % c[3], not DirAccess.dir_exists_absolute(r["lib"]))
 	# Through the relay and the bridge: the live service refuses at hello (no
 	# AI_LIVE), three failures, service_down; the request falls back.
