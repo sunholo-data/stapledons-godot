@@ -217,6 +217,11 @@ in the package first; the sim, GDScript and shaders only mirror it).
 - Finite and ≥ 0 over a φ sweep to the 0.999999c cap.
 
 #### M4.0: Area bundles and the frame contract
+**Status:** ✅ executed attended (Mark, 2026-10-03), branch `sprint/m4.0-areas`. AC13 and the
+AC14 validation half pass (`make validate-areas`, both bundles). The bridge build-out v1 bundle
+(Blender `art/bridge-buildout-v1`) also passes all 16 checks. `make m4-smoke` is a failing stub
+until M4.2.
+
 **Scope:** `interior/area_bundle.gd` — loads brief §9 bundles from
 `assets/areas/<area>/` (`manifest.json`, `cam_`, `pano_`, `play_`, `fg_`),
 schema field-for-field per V17, refuses a missing layer, keeps and ignores
@@ -412,6 +417,16 @@ merges to main with the stacked train after ⏸ S1 sign-off.
   θ = 0°, 45°, 80°, 90°, 120° (extends into M4.6's `test_physics.gd`).
 - Placeholder bundle shows the "placeholder art" HUD tag.
 - Avatar constrained to `WALK_`; avatar position never enters the sim.
+
+**Carried from M4.0 (eval round 1):**
+- **Export staging for `assets/areas/`.** M4.0 loads bundles raw at runtime, and
+  `assets/areas/.gdignore` keeps Godot from importing them. So an exported build will not
+  contain `assets/areas/` unless it is staged, as `make sky-bundle` does for the sky. Either
+  stage it into the export or add an export-preset include filter for json/png/glb. Then
+  extend `make export-smoke` to load the bundle from inside the `.app`.
+- **`play_origin_ship_m` becomes an optional typed field** (3 numbers) in `AreaBundle`, with a
+  control, when the loader first places the GLB in the ship frame. Bridge v1 already declares
+  it (`[0, 0, 82]`); it is never required, so brief §9's field-for-field contract stands.
 
 ### Wave 3 (parallel)
 

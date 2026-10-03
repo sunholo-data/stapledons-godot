@@ -180,10 +180,22 @@
         "ship_basis CPU tests: orthonormal to 1e-12, heading -> +Z, pole fallback (into tests/test_physics.gd; M4.6 extends them, AC9)",
         "validate_area.gd positive control: a broken alpha or camera JSON must fail"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-03T13:30:00Z",
+      "completed": "2026-10-03T14:10:00Z",
+      "notes": "executed attended (Mark, 2026-10-03). interior/area_bundle.gd: brief §9 loader, V17 schema field for field, refuses a missing layer (lists every error), keeps unknown keys, optional placeholder -> hud_tag(); float64 camera project/unproject with the basis orthonormalised in float64. interior/ship_frame.gd: float64 ship_basis(heading), galactic frame, +Z = heading, NGP roll, galactic +X fallback when |NGP projection| < 1e-6, no phase input (D-14 no flip); 15 checks in tests/test_physics.gd (orthonormal and det +1 to 1e-12 over 73 headings). tools/validate_area.gd + make validate-areas [BUNDLE=dir] (in make test): 14-16 checks covering schema, resolution, alpha (exact-0 coverage, speck, haze, fg centre clear), round trip <= 1 px (analytic + declared pixel) plus needle visible in the pano within 3 px (1 px + ink outline), GLB loads/metres/walk extent/Y-up (walk area normals)/WALK_/SPAWN_/INTERACT_/manifest name lists. tests/test_area_bundle.gd (make area-test, in make test): 56 checks incl. positive controls (painted star, haze, opaque plate, no alpha, art across fg centre, truncated cam JSON, camera moved 3.7 m, declared pixel 2.3 px off, size mismatch, Z-up GLB, cm GLB, no SPAWN_/INTERACT_, manifest name not in GLB). Fixture from origin/spike/iso-bridge 4eda978; its GLB gains walk disc, 2 spawns, 2 INTERACT_ via tools/build_blockout_fixture.gd (a deviation: the GLB is generated, not a verbatim copy). assets/areas/bridge = blockout (placeholder: true). Bridge build-out v1 bundle (Blender art/bridge-buildout-v1 ba19b98) passes all 16 checks. Over the 650 LOC cap (~837 code lines): the validator is richer than planned, plus the fixture builder. F3 audit: sunholo/relativity 0.5.2 has no frame or basis function, so no package applies. m4-smoke is a failing stub until M4.2. ROUND-1 FIXES (eval 86/100): needle image tolerance is now one-sided (solid top in [tip-2.5, tip+0.5] px), with camera-shift controls at -4.5/+4.5/-2.5 (fail) and +0.5 (pass); new positive controls for the foreground mostly-clear check, the camera.panorama mismatch and the metres check on its own; a near-pole test shows the Y re-derivation in ship_basis matters (plain Gram-Schmidt reaches 1.5e-10); a short heading array returns an empty basis; the M4.2 export-staging and play_origin_ship_m follow-ups are recorded; LOC waiver added to loc_cap_exceptions. OVERSCAN (coordinator, round 2): layers.panorama/foreground.overscan_px [x, y] is an optional typed field. The expected plate size is view + 2 x overscan, with view = camera resolution - 2 x panorama overscan; the foreground mostly-clear and centre-box rules are measured on the view region. Controls: synthetic view-region plates, a padded fixture bundle that passes, an unpadded fg that fails, negative overscan refused. The revised bridge v1 bundle (game PR #97, art/bridge-v1-bundle 4d3d598, pano 4096x2288, fg 6432x3472) passes 16/16.",
+      "actual_loc": {
+        "code_lines_excl_comments": {
+          "impl": 545,
+          "tests": 292
+        },
+        "physical_lines": {
+          "impl": 735,
+          "tests": 350
+        }
+      },
+      "executed_by": "executed attended (Mark, 2026-10-03)",
+      "branch": "sprint/m4.0-areas"
     },
     {
       "id": "M4.1_CONSEQUENCE_STUB",
@@ -273,7 +285,8 @@
         "interior/glow_overlay.gdshader + toon/outline shaders",
         "interior/walk.gd",
         "main.gd wiring",
-        "Makefile (m4-smoke)"
+        "Makefile (m4-smoke)",
+        "export_presets.cfg or a staging target (assets/areas into the export)"
       ],
       "acceptance_criteria": [
         "AC14: make validate-areas BUNDLE=tests/fixtures/areas/bridge_blockout && make validate-areas BUNDLE=assets/areas/bridge && make m4-smoke BUNDLE=tests/fixtures/areas/bridge_blockout — the swap needs no code change and the slice runs on each bundle",
@@ -285,7 +298,9 @@
         "one-tonemap: parent viewport applies no second tonemap/glow (CPU assertion; GPU proof is G-M4-2)",
         "glow_profile CPU mirror equals the package within 1e-12 relative at theta = 0/45/80/90/120 deg (extends into M4.6's test_physics.gd)",
         "placeholder bundle shows the placeholder-art HUD tag",
-        "avatar constrained to WALK_; avatar position never enters the sim"
+        "avatar constrained to WALK_; avatar position never enters the sim",
+        "carried from M4.0 eval: export staging for assets/areas (gitignored by .gdignore, loaded raw): stage into the export like make sky-bundle, or add an export-preset include filter for json/png/glb; make export-smoke loads the bundle from the .app",
+        "carried from M4.0 eval: play_origin_ship_m becomes an OPTIONAL typed field (3 numbers) in AreaBundle, with a control, when the loader first places the GLB; never required"
       ],
       "passes": null,
       "started": null,
@@ -616,5 +631,13 @@
       "NB5: M4.1 size risk stated (700 LOC vs 650 cap; M2 ~1.5x -> ~1,000 realistic); no pre-split (design doc owns the 10-row structure); named split point = ship.ism seam, step 2 becomes M4.1b on overrun (loc_cap_exceptions, F1)"
     ],
     "totals": "unchanged: 10 milestones, 4 waves, 3,220 counted LOC (1,900 code + 1,320 tests)"
-  }
+  },
+  "loc_cap_exceptions": [
+    {
+      "feature": "M4.0_AREA_BUNDLES",
+      "estimated_loc": 400,
+      "actual_loc": "~837 code lines excl. comments (545 impl + 292 tests) after round 1; round-1 fixes add about 90 test lines",
+      "waiver": "Granted after the fact (eval round 1, 86/100, accepted with a note). The overrun is the validator (306 physical lines: speck/haze/foreground rules, manifest name cross-check, needle image check) plus the 68-line fixture builder that generates the blockout GLB collections. The work is cohesive and cannot be split after the fact. It matches the M2 actual/estimate history (~1.5x)."
+    }
+  ]
 }

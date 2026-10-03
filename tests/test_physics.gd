@@ -757,6 +757,99 @@ func _test_main_eye_meter_wiring() -> void:
 	m.free()
 
 
+## M4.0 frame contract (interior/ship_frame.gd, float64): ship +Z = direction of
+## travel, up = direction of travel for the whole journey (D-14, no flip), roll
+## from the north galactic pole projected normal to the heading, galactic +X
+## within 1e-6 of a pole. M4.6 extends these (AC9).
+func test_ship_frame() -> void:
+	print("Ship frame (M4.0 frame contract, D-14: up = direction of travel, no flip)")
+	var headings: Array[PackedFloat64Array] = [
+		PackedFloat64Array([1.0, 0.0, 0.0]), PackedFloat64Array([0.0, 1.0, 0.0]),
+		PackedFloat64Array([-1.0, 0.0, 0.0]), PackedFloat64Array([0.0, -1.0, 0.0]),
+		PackedFloat64Array([0.0, 0.0, 1.0]), PackedFloat64Array([0.0, 0.0, -1.0]),
+		PackedFloat64Array([1e-7, 0.0, 1.0]), PackedFloat64Array([0.0, -3e-7, -1.0]),
+		PackedFloat64Array([1e-5, 0.0, 1.0]),
+	]
+	# a fixed spread of off-axis headings (deterministic LCG, no hidden state)
+	var seed := 12345
+	for i in 64:
+		var v := PackedFloat64Array()
+		for k in 3:
+			seed = (seed * 1103515245 + 12345) % 2147483648
+			v.append(float(seed) / 1073741824.0 - 1.0)
+		headings.append(v)
+	var worst_ortho := 0.0
+	var worst_z := 0.0
+	var worst_det := 0.0
+	var worst_pole_x := 0.0
+	for h in headings:
+		var n := sqrt(h[0] * h[0] + h[1] * h[1] + h[2] * h[2])
+		var u := PackedFloat64Array([h[0] / n, h[1] / n, h[2] / n])
+		var b := ShipFrame.ship_basis(h)
+		for i in 3:
+			for j in 3:
+				var d := b[3 * i] * b[3 * j] + b[3 * i + 1] * b[3 * j + 1] + b[3 * i + 2] * b[3 * j + 2]
+				worst_ortho = maxf(worst_ortho, absf(d - (1.0 if i == j else 0.0)))
+		for k in 3:
+			worst_z = maxf(worst_z, absf(b[6 + k] - u[k]))
+		worst_det = maxf(worst_det, absf(ShipFrame.det(b) - 1.0))
+		# away from the poles ship X lies in the galactic plane (NGP is in the ship Y-Z plane)
+		if absf(u[2]) < 1.0 - 1e-6:
+			worst_pole_x = maxf(worst_pole_x, absf(b[2]))
+	check("ship basis orthonormal to 1e-12 (73 headings incl. poles)", worst_ortho, 0.0, 1e-12)
+	check("ship +Z = heading to 1e-12 (direction of travel is up)", worst_z, 0.0, 1e-12)
+	check("ship basis is right-handed (det +1)", worst_det, 0.0, 1e-12)
+	check("off-pole roll: ship X in the galactic plane (X . NGP = 0)", worst_pole_x, 0.0, 1e-12)
+	var gc := ShipFrame.ship_basis(PackedFloat64Array([1.0, 0.0, 0.0]))
+	check("heading galactic centre: ship +Y = north galactic pole (z)", gc[5], 1.0, 1e-12)
+	check("heading galactic centre: ship +X = Y x Z = galactic +y", gc[1], 1.0, 1e-12)
+	var np := ShipFrame.ship_basis(PackedFloat64Array([0.0, 0.0, 1.0]))
+	check("heading NGP (pole fallback): ship +Y = galactic +X", np[3], 1.0, 1e-12)
+	var near := ShipFrame.ship_basis(PackedFloat64Array([0.0, 4e-7, 1.0]))
+	check("heading 4e-7 rad from NGP: fallback, ship +Y . galactic +X ~ 1", near[3], 1.0, 1e-12)
+	var sp := ShipFrame.ship_basis(PackedFloat64Array([0.0, 0.0, -1.0]))
+	check("heading SGP (pole fallback): ship +Y = galactic +X", sp[3], 1.0, 1e-12)
+	check("heading SGP: ship +Z = galactic -z (no flip, still up)", sp[8], -1.0, 1e-12)
+	var outside := ShipFrame.ship_basis(PackedFloat64Array([0.0, 1e-5, 1.0]))
+	check("heading 1e-5 rad from NGP: no fallback, ship +Y follows the pole projection (galactic -y)", outside[4], -1.0, 1e-9)
+	check("short heading array is refused (empty basis, no error)", float(ShipFrame.ship_basis(PackedFloat64Array([1.0, 0.0])).size()), 0.0, 0.0)
+	# Just outside the pole fallback (1.0-1.3e-6 rad) the NGP projection is ~1e-6 long, so plain
+	# Gram-Schmidt leaves |Y . Z| ~1e-10; ship_basis re-derives Y = Z x X and stays at 1e-12.
+	var naive_worst := 0.0
+	var near_worst := 0.0
+	for i in 200:
+		var ang := 1.0e-6 * (1.0 + i * 0.0015)
+		var phi := i * 0.37
+		for sgn in [1.0, -1.0]:
+			var nh := PackedFloat64Array([sin(ang) * cos(phi), sin(ang) * sin(phi), sgn * cos(ang)])
+			var nb := ShipFrame.ship_basis(nh)
+			var e := 0.0
+			for i2 in 3:
+				for j2 in 3:
+					var dd := nb[3 * i2] * nb[3 * j2] + nb[3 * i2 + 1] * nb[3 * j2 + 1] + nb[3 * i2 + 2] * nb[3 * j2 + 2]
+					e = maxf(e, absf(dd - (1.0 if i2 == j2 else 0.0)))
+			near_worst = maxf(near_worst, e)
+			# the naive reference: Y = unit(NGP - (NGP . Z) Z)
+			var zd := nh[2]
+			var gy := [-zd * nh[0], -zd * nh[1], 1.0 - zd * nh[2]]
+			var gn := sqrt(gy[0] * gy[0] + gy[1] * gy[1] + gy[2] * gy[2])
+			naive_worst = maxf(naive_worst, absf((gy[0] * nh[0] + gy[1] * nh[1] + gy[2] * nh[2]) / gn))
+	check("near-pole headings defeat plain Gram-Schmidt (|Y.Z| > 1e-12): the test has teeth", 1.0 if naive_worst > 1e-12 else 0.0, 1.0, 0.0)
+	check("near-pole headings (1.0-1.3e-6 rad): ship basis still orthonormal to 1e-12", near_worst, 0.0, 1e-12)
+	check("zero heading is refused (empty basis)", float(ShipFrame.ship_basis(PackedFloat64Array([0.0, 0.0, 0.0])).size()), 0.0, 0.0)
+	# the round trip ship -> galactic -> ship is exact to float64
+	var hb := ShipFrame.ship_basis(headings[20])
+	var v := PackedFloat64Array([0.3, -0.7, 0.2])
+	var back := ShipFrame.to_ship(hb, ShipFrame.to_galactic(hb, v))
+	check("to_ship(to_galactic(v)) = v", absf(back[0] - v[0]) + absf(back[1] - v[1]) + absf(back[2] - v[2]), 0.0, 1e-15)
+	# the sky camera = ship_basis(heading) x cam.forward/up, the same for boost and brake (no flip)
+	var cam := {"forward": [-0.5302520394325256, 0.26512596011161804, 0.8053204417228699],
+		"up": [0.7203004956245422, -0.3601502478122711, 0.592839777469635]}
+	var sc := ShipFrame.sky_camera(PackedFloat64Array([1.0, 0.0, 0.0]), cam)
+	check("bridge cam forward . heading = cam forward z (0.80532)", sc["forward"][0], 0.8053204417228699, 1e-12)
+	check("bridge cam up . NGP = cam up y when heading galactic centre", sc["up"][2], -0.3601502478122711, 1e-12)
+
+
 ## The camera cases need a node in a viewport, so they run once the main loop
 ## has started; everything else runs in _init.
 func _initialize() -> void:
@@ -785,6 +878,7 @@ func _init() -> void:
 	test_angular_psf()
 	test_cmb()
 	test_sky_meter()
+	test_ship_frame()
 
 	print("Aberration (sources crowd toward the direction of motion)")
 	check("90 deg source at 0.9c appears at acos(0.9) = 25.842 deg", angle_deg(Relativity.aberrate(side, fwd, 0.9), fwd), rad_to_deg(acos(0.9)), 1e-4)
