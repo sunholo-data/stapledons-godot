@@ -1,6 +1,6 @@
 # Captain avatar set — PICKED A: Longline Navigator
 
-Mark picked proposal A in the attended task on 2026-10-03. The eight final views preserve that identity, costume language and cream/ochre/violet palette. Final set status is proposed for visual review; the identity choice is picked. Art owned by Sunholo, contributed under Apache-2.0.
+Mark picked proposal A in the attended task on 2026-10-03. The eight final views preserve that identity, costume language and cream/ochre/violet palette. Final set status is proposed for visual review; the identity choice is picked. AI-generated (gpt-6.1-sol); no copyright claimed (D-33).
 
 Generator: OpenAI built-in `image_gen.imagegen`; exact model ID/version is not exposed by the tool and is not guessed. Date: 2026-10-03. Seeds: none exposed. Native generations: 1024×1536 RGBA. No upscaling, tracing or third-party inputs.
 

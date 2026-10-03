@@ -1,6 +1,6 @@
 # Captain silhouette proposals
 
-Stage 0, front only. Three alternatives for Mark; no final identity selected. Art owned by Sunholo, contributed under Apache-2.0.
+Stage 0, front only. Three alternatives for Mark; no final identity selected. AI-generated (gpt-6.1-sol); no copyright claimed (D-33).
 
 Generator: OpenAI built-in `image_gen.imagegen`. Exact model ID/version: **not exposed by the tool** (not guessed). Date: 2026-10-03. Seed: none exposed. All sources generated specifically for this project; no third-party image inputs.
 
