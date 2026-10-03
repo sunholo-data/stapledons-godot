@@ -148,6 +148,7 @@ var dist := 18.0
 ## the tree so the committed capture PNGs do not change.
 var show_hint := true
 var hint := Label.new()
+var credits := Credits.new() # M5.2a: attribution panel (C)
 
 var _points := MultiMeshInstance3D.new()
 var _overlay := Control.new()
@@ -255,6 +256,8 @@ func _build() -> void:
 	hint.visible = show_hint
 	box.add_child(hint)
 	_build_dialog(layer)
+	credits.visible = show_hint # captures keep their pinned PNGs; C still toggles the panel in play
+	layer.add_child(credits)
 	_update_camera()
 
 
