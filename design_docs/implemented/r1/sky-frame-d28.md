@@ -12,6 +12,16 @@
   galactic → engine map was wrong. The spec does not state the frame today; see
   "Design-repo note" below.
 
+## Game vision alignment
+
+Scored with the `game-vision-designer` skill's pillars. This is a correctness fix with no
+gameplay change, so only one pillar is touched. Verdict: **ALIGNED** (net +2), go.
+
+| Pillar | Relevance | Score | Notes |
+|---|---|---|---|
+| Hard sci-fi authenticity (physics truth) | ++ | +2 | The sky you see is the real sky, not its mirror image: Antares and α Cen right of the galactic centre, the LMC where it is, starboard really is l 270. Checked by an independent real-sky oracle, not only by GPU = CPU |
+| All other pillars | 0 | 0 | No change to choices, time, the ship or the story |
+
 ## Problem
 
 `Starfield.galactic_to_world` mapped galactic `(x, y, z)` to Godot `(y, z, −x)`. That matrix
@@ -105,7 +115,10 @@ Every reference render is regenerated and opened (gate 2). The `docs/` copies ar
   l 270). Port shows Cygnus and the Great Rift. Astern, Barnard's Loop is on Orion's east (left)
   side.
 - `exposure_starboard_before_after.jpg`: the M1.5a sheet. At 0.99c the blueshifted forward sky
-  now enters the starboard view from the left edge, where the bow is.
+  enters the starboard view from the left edge, where the bow is, both before and after: the
+  camera geometry was always right. What changed is which part of the sky (and which stars)
+  appear there: at rest the view now shows l 270 (Vela, Carina, the LMC below centre) instead
+  of l 90.
 - `galaxy_map_before_after.jpg`: the neighbourhood un-mirrored, with the same panel numbers.
 - `interior_before_after.jpg`: the M4.2 bridge at rest, in the 0.99c cruise and on arrival. It
   is visually identical, as it should be: the old local flip had already produced the true

@@ -14,11 +14,6 @@ const PROTO_MINOR := 1
 ## the ship). Asked for by setting `want_minor = SYSTEM_MINOR` before hello().
 const SYSTEM_MINOR := 3
 
-## The minor this session asks for (opt-in, set before start()). The interior (M4.2) asks
-## for 2 (M4.1: ship.ism and the consequence section); everything else keeps 2.1, so the
-## recorded sessions and their replay goldens are unchanged. M5.1b asks for SYSTEM_MINOR (2.3).
-var want_minor := PROTO_MINOR
-
 var _pipe: FileAccess
 var _stderr: FileAccess
 var _record: FileAccess
@@ -47,6 +42,10 @@ var record_path := ""
 ## every accepted tick's events (`on_events`). Intents of a line the sim does
 ## not accept are dropped; their requests expire in the sim (ai_ttl_ticks).
 var ai_relay: Object = null
+## The protocol minor hello() asks for (PROTO_MINOR unless a caller opts in, before
+## start()): the interior (M4.2) asks for 2 (ship.ism, consequence), the system view
+## SYSTEM_MINOR. Everything else keeps 2.1, so the recorded replay goldens are unchanged.
+var want_minor := PROTO_MINOR
 ## The last `system` section, as parsed by parse_system(); {} until one arrives.
 var system: Dictionary = {}
 var _line_bytes := PackedByteArray()
