@@ -875,6 +875,26 @@ stub, so the attended run only swaps the provider.
 **Acceptance:** `godot --headless --path . --script tests/test_conversation.gd`;
 `make ai-style-frame LOG=tests/replays/medic_rehearsal.ndjson && test -s renders/ai_medic/contact_sheet.png && test -s renders/ai_medic/line.ogg`;
 `make replay AILANG=$A` (case `medic_rehearsal`); `make test AILANG=$A`.
+**Status (2026-10-03):** executed on `sprint/ai10a-style-frame` (AILANG v0.52.0,
+stub only, no key, no live call), awaiting evaluation.
+- [x] Task 1: per-segment composition (in place since AI.5) with a three-segment
+  descriptor test (`stub_test` `checkVoiceIndex`); the library voice index lines
+  carry `duration_ms`/`segments_ms`, so a library voice is a hit
+  (`test_ai_relay.gd`, second session); `tests/ai/cache.SHA256SUMS` re-recorded
+  (55 files). G1 re-checked: v0.52.0 has `std/ai.callSpeech`, but it reports no
+  token usage, so the adapter stays on `std/net` (design, AI.10a as built).
+- [x] Task 2: `data/ai/cast/medic.json`; the relay reads its cast from `data/ai/cast/`.
+- [x] Task 3: `ui/conversation/conversation.{tscn,gd}` (+ `conversation_session.gd`):
+  crossfade 120 ms, swap offset 0/-150, subtitles by segment, WAV playback copy.
+  `--ai-live` runs the same script through `AiSession` for AI.10b.
+- [x] Task 4: `tests/test_conversation.gd` (`make ai-conversation`, in `make test`),
+  with 8 conversation mutants in `make ai-bridge-mutants`.
+- [x] Task 5: `make ai-style-frame` on `tests/replays/medic_rehearsal.ndjson`
+  (goldens per arch); renders opened and looked at.
+- Deviations: a WAV playback copy beside each voice blob (Godot 4.7 cannot
+  decode Ogg Opus; question for Mark); `stubPcm` builds tones by doubling (a
+  v0.52.0 VM bug dropped long segments silently; reported); over the 650 cap
+  (about 660 code + 370 test lines).
 
 ### Wave A7
 

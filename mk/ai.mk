@@ -488,3 +488,41 @@ ai-export-smoke:   ## AI.9: the exported .app's AI service says hello in stub mo
 	@h=$(SCRATCH)/ai-export-smoke/hello.json; cat $$h; grep -q '"type":"hello"' $$h && grep -q '"provider":"stub"' $$h && grep -q '"live":false' $$h && \
 	  echo "ai-export-smoke: OK (stub hello from the bundled runtime)"
 export-smoke: ai-export-smoke
+
+# ---------------------------------------------------------------- AI.10a: the Medic style frame, on the stub
+# Design (c). tests/test_conversation.gd (headless): the stub rehearsal re-records
+# tests/replays/medic_rehearsal.ndjson byte for byte; the portrait swaps at each segments_ms offset
+# (± one frame), crossfades, falls back, and degrades to text without audio. make ai-style-frame
+# (GPU window; never in make test) replays a log through the conversation scene with the blobs and
+# writes renders/ai_medic/: a PNG at each swap, contact_sheet.png, line.ogg, timeline.json and
+# frame.avi (Godot's movie writer, audio included). For the rehearsal log it first re-records the
+# rehearsal over a scratch library (which must reproduce the committed log) and uses that library;
+# for another log pass FRAME_LIB=<library dir> (AI.10b: the attended run's user://ai_cache).
+.PHONY: ai-conversation ai-rehearsal-record ai-style-frame
+ai-test: ai-conversation
+
+AI_SF := $(CURDIR)/$(SCRATCH)/ai-style-frame
+SF_OUT := renders/ai_medic
+REHEARSAL := tests/replays/medic_rehearsal.ndjson
+
+ai-conversation: import   ## AI.10a: the Medic conversation on the stub: rehearsal log, swap timing, crossfade, fallbacks, no-audio, replay
+	$(GODOT_SIM) --headless --path . --script tests/test_conversation.gd
+
+ai-rehearsal-record: import   ## AI.10a: re-record tests/replays/medic_rehearsal.ndjson on the stub (then make replay-record LOG=medic_rehearsal; a reviewed diff)
+	$(GODOT_SIM) --headless --path . --script tests/test_conversation.gd -- --record="$(CURDIR)/$(REHEARSAL)"
+
+ai-style-frame: LOG ?= $(REHEARSAL)
+ai-style-frame: import ai-core-assets ai-core-bundle   ## AI.10a/b (GPU window): replay LOG through the conversation; renders/ai_medic/ PNGs, contact sheet, line.ogg, frame.avi
+	@rm -rf $(SF_OUT) $(AI_SF) && mkdir -p $(SF_OUT) $(AI_SF)
+	@lib="$(FRAME_LIB)"; \
+	if [ -z "$$lib" ] && [ "$(abspath $(LOG))" = "$(abspath $(REHEARSAL))" ]; then \
+	  lib=$(AI_SF)/library; \
+	  $(GODOT_SIM) --headless --path . --script tests/test_conversation.gd -- --record=$(AI_SF)/rehearsal.ndjson --library=$$lib > $(AI_SF)/record.out 2>&1 || { cat $(AI_SF)/record.out; exit 1; }; \
+	  cmp $(AI_SF)/rehearsal.ndjson $(REHEARSAL) || { echo "ai-style-frame: the stub rehearsal no longer reproduces $(REHEARSAL)"; exit 1; }; \
+	  echo "ai-style-frame: stub rehearsal re-recorded == $(REHEARSAL); library $$lib"; \
+	fi; \
+	test -n "$$lib" || { echo "ai-style-frame: FRAME_LIB=<library dir> is needed for $(LOG)"; exit 2; }; \
+	$(GODOT_SIM) --path . --resolution 1280x720 --fixed-fps 30 --write-movie "$(CURDIR)/$(SF_OUT)/frame.avi" res://ui/conversation/conversation.tscn -- \
+	  --conversation=medic --log="$(abspath $(LOG))" --library="$$lib" --core=res://ai_core --out="$(CURDIR)/$(SF_OUT)" > $(AI_SF)/frame.out 2>&1 || { tail -20 $(AI_SF)/frame.out; exit 1; }
+	@test -s $(SF_OUT)/contact_sheet.png && test -s $(SF_OUT)/line.ogg && test -s $(SF_OUT)/frame.avi && test -s $(SF_OUT)/timeline.json
+	@echo "ai-style-frame: $$(ls $(SF_OUT)/swap_*.png | wc -l | tr -d ' ') swap PNGs, contact_sheet.png, line.ogg ($$(wc -c < $(SF_OUT)/line.ogg | tr -d ' ') bytes), frame.avi ($$(du -h $(SF_OUT)/frame.avi | cut -f1)) in $(SF_OUT)/; open and look at them"

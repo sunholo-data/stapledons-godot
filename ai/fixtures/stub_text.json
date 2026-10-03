@@ -4,7 +4,8 @@
     "bad_marker": "{neutral} It is fine. {sad It is not.",
     "unlisted_emotion": "{neutral} I am well. {angry} I am not.",
     "non_ascii": "{loving} Élise, ça va? The stars are 星 bright tonight. {grieving} Ich vermisse dich — always.",
-    "over_length": "{neutral} The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums."
+    "over_length": "{neutral} The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums. The ship hums.",
+    "medic_style_frame": "{neutral} You came down to the infirmary again. {loving} Sit with me a while; the ship is quiet tonight. {grieving} I keep thinking of the ones we left behind, and the light that left Earth with us."
   },
   "news": {
     "digits": "{neutral} We left Sol 42 years ago, by the ship's clock.",

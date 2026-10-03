@@ -59,12 +59,27 @@ func blob_path(e: Dictionary) -> String:
 
 
 func has_blob(sha: String) -> bool:
+	return not find_sha(sha).is_empty()
+
+
+## The index entry (core first) whose blob is `sha` and is on disk, or {}.
+func find_sha(sha: String) -> Dictionary:
 	for layer in [_core, _lib]:
 		for entries in layer.values():
 			for x in entries:
 				if x["entry"].get("sha256") == sha and FileAccess.file_exists(blob_path(x["entry"])):
-					return true
-	return false
+					return x["entry"]
+	return {}
+
+
+## The voice line's playback copy beside its Ogg blob (AI.10a: the service
+## writes a WAV of the same PCM, since Godot 4 cannot decode Ogg Opus), or ""
+## when there is none.
+func playback_path(e: Dictionary) -> String:
+	if e.is_empty():
+		return ""
+	var p := blob_path(e).get_basename() + ".wav"
+	return p if FileAccess.file_exists(p) else ""
 
 
 ## The record body for a media hit: the descriptor the sim validates, keyed by

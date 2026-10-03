@@ -3,7 +3,9 @@
 # each mutant, applied in place, must make tests/test_ai_bridge.gd fail the named
 # assertion. AI.9 hardening adds session spend and interrupted-call mutants, and
 # a second table of mutants of the AI session, settings and the bridge's usage
-# reader that tests/test_ai_settings.gd must kill. The originals are restored
+# reader that tests/test_ai_settings.gd must kill. AI.10a adds a third table: the
+# conversation's swap timing, crossfade, fallback, subtitle, no-audio path, the
+# playback copy and the cast, which tests/test_conversation.gd must kill. The originals are restored
 # after every mutant and on exit. A mutant whose anchor no longer matches fails
 # the check, so it cannot rot.
 # Usage: tests/ai_bridge_mutants.sh <godot> <scratch dir>   (AILANG_BIN set)
@@ -13,7 +15,7 @@
 set -u
 GODOT=$1
 SCRATCH=$2
-FILES="bridge/ai_bridge.gd bridge/ai_session.gd ui/settings/ai_settings.gd"
+FILES="bridge/ai_bridge.gd bridge/ai_session.gd ui/settings/ai_settings.gd bridge/ai_cache.gd bridge/ai_relay.gd ui/conversation/conversation.gd"
 mkdir -p "$SCRATCH/orig"
 for f in $FILES; do mkdir -p "$SCRATCH/orig/$(dirname $f)"; cp "$f" "$SCRATCH/orig/$f"; done
 restore() { for f in $FILES; do cp "$SCRATCH/orig/$f" "$f"; done; }
@@ -92,6 +94,19 @@ bridge/ai_session.gd	if settings.automation and _hello_out == "":	if false:	key_
 bridge/ai_session.gd	settings.forget_session_keys() # a crash	pass # a crash	key_edges	stale session key files removed at startup
 ui/settings/ai_settings.gd	FileAccess.get_file_as_string(key_path(p)).strip_edges() != ""	true	key_edges	a key file holding nothing is no key
 bridge/ai_bridge.gd	f.seek(usage_from)	f.seek(0)	indicator_budget	the earlier session's 5.0 not counted
+EOF
+while IFS="$TAB" read -r src from to only want; do
+	[ -z "$src" ] && continue
+	mutate "$src" "$from" "$to" tests/test_conversation.gd "$only" "$want"
+done <<'EOF'
+ui/conversation/conversation.gd	t_ms >= float(offsets[_seg + 1]) + swap_offset_ms	t_ms >= float(offsets[_seg + 1])	offset	swaps at
+ui/conversation/conversation.gd	offsets = segs_ms.map(func(x): return int(x))	offsets = reading_offsets(segments)	swaps	each swap within one frame after its offset
+ui/conversation/conversation.gd	clampf((t_ms - _fade_from) / crossfade_ms, 0.0, 1.0)	1.0	swaps	each crossfade completes crossfade_ms after its swap
+ui/conversation/conversation.gd	segments.slice(0, i + 1)	segments	swaps	subtitle reveals two segments
+ui/conversation/conversation.gd	var e := cache.portrait_for(entity, emotion, years)	var e := cache.lookup({"kind": "portrait", "entity_id": entity, "emotion": emotion, "variant": "0"}, years)	fallback	happy -> loving, angry -> neutral, sad -> grieving
+ui/conversation/conversation.gd	if e.is_empty():\n\t\t\t_log("missing_blob"	if false:\n\t\t\t_log("missing_blob"	no_audio	missing_blob logged, no stream
+bridge/ai_cache.gd	get_basename() + ".wav"	get_basename() + ".ogg"	swaps	the WAV stream is loaded
+bridge/ai_relay.gd	"voice": c["voice_id"]	"voice": "Kore"	swaps	the relay's cast comes from medic.json
 EOF
 echo "ai-bridge-mutants: $n mutants, $fails not killed"
 [ "$fails" -eq 0 ]

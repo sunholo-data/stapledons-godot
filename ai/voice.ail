@@ -40,9 +40,16 @@ export pure func toneSamples(text: string, p: int) -> int {
   let n = if want < 4800 then 4800 else if want > 192000 then 192000 else want;
   n / p * p
 }
+-- b repeated n times by doubling (recursion depth log2 n). Not a list of n
+-- periods: on the v0.52.0 bytecode VM, a segment of more than about a
+-- thousand periods (a grieving segment of 43 code points) made the service's
+-- handler silently drop the request (no result, no error, exit 0) while the
+-- interpreter answered (reported upstream, AI.10a). Same bytes either way.
+pure func times(b: bytes, n: int) -> bytes =
+  if n <= 0 then fromInts([]) else if n % 2 == 1 then concatList([b, times(b, n - 1)]) else { let h = times(b, n / 2); concatList([h, h]) }
 export pure func stubPcm(s: Seg) -> bytes {
   let p = periodFor(s.emotion);
-  concatList(rep(toneSamples(s.text, p) / p, period(p)))
+  times(period(p), toneSamples(s.text, p) / p)
 }
 
 pure func msOf(n: int) -> int = durationMs(n, rate(), 1, 16)

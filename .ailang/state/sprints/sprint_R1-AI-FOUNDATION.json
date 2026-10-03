@@ -599,10 +599,11 @@
         "make test AILANG=$A"
       ],
       "registry": "depend std/audio, sunholo/gemini_live@0.5.0",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-03",
+      "completed": "2026-10-03",
+      "actual_loc": {"code": 660, "tests": 370, "insertions": 1082},
+      "notes": "Executed on sprint/ai10a-style-frame (AILANG v0.52.0, stub only, no key, no live call); awaiting independent evaluation. Task 1: service voice index lines carry duration_ms/segments_ms (cache.Origin.timing), so a library voice is a cache hit (test_ai_relay e2e: second session voices the line from the library, hits 3, forwarded 3); tests/ai/cache.SHA256SUMS re-recorded (55 files); stub_test checkVoiceIndex (3 segments, offsets [0,200,949] < 1248) and checkCacheOps side ops; 3 new ai-mutants rows. Deviation: WAV playback copy. Godot 4.7 has no Ogg Opus decoder, so each voice blob gets blobs/ab/<ogg sha>.wav (std/audio.wavFromPcm), written with the blob before its index line; the Ogg stays the canonical hashed asset (question for Mark; the accepted core voice in AI.10b needs its WAV too). G1 re-checked: v0.52.0 std/ai has callSpeech, but it reports no token usage, so the adapter stays on std/net. VM finding: a stub segment of more than ~1000 tone periods made the service silently drop the request on the bytecode VM (interpreter fine); stubPcm now repeats by doubling, same bytes; reported upstream. Task 2: data/ai/cast/medic.json; AiRelay.load_cast reads data/ai/cast/. Task 3: ui/conversation/conversation.{tscn,gd} + conversation_session.gd (stub rehearsal, log replay, AiSession --ai-live path for AI.10b). Task 4: tests/test_conversation.gd (make ai-conversation, in make test): the rehearsal re-records tests/replays/medic_rehearsal.ndjson byte for byte; swaps at segments_ms within one 60 Hz frame; crossfade completes at offset + 120 ms; -150 ms offset; fallback chain; missing_blob and no_playback_copy degrade to text; replay with launch_count 0; session_off (no key: relay off, no launch). 8 conversation mutants in make ai-bridge-mutants. Task 5: make ai-style-frame (GPU): renders/ai_medic/swap_{0_neutral,1_loving,2_grieving}.png, contact_sheet.png, line.ogg, line.wav, timeline.json, frame.avi (MJPEG + PCM); opened and looked at. make replay: medic_rehearsal VM == interpreter == golden (x86_64 copied from arm64, dtau 0). make test green (arm64). Over the 650 cap: about 660 code + 370 test lines."
     },
     {
       "id": "AI.10b_LIVE_LINE_STOP",

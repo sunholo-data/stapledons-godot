@@ -848,6 +848,65 @@ loopback and fake services only, no key):
   - Residual for AI.10b: the ceiling bounds one Godot run (`usage_from` is
     per AiBridge), so the run's real cost is the whole `usage.ndjson`.
 
+AI.10a as built (2026-10-03, AILANG v0.52.0, stub only, no key, no live call):
+- **Per-segment composition** was already in place from AI.5 (`ai/voice.ail`
+  `assemble`, the TTS adapter one call per segment); AI.10a adds the stub
+  descriptor test over three segments (offsets exact, strictly increasing,
+  below `duration_ms`).
+- **Library voice is a hit.** The service's voice index lines carry
+  `duration_ms` and `segments_ms` (`cache.Origin.timing`), so `AiCache.lookup`
+  serves a library voice line (`test_ai_relay.gd`: the same session again
+  voices the line from the library). `tests/ai/cache.SHA256SUMS` re-recorded.
+- **WAV playback copy (deviation, question for Mark).** Godot 4.7 has no Ogg
+  Opus decoder (`AudioStreamOggVorbis` refuses the stub's blob; the engine has
+  only WAV, MP3 and Vorbis streams). Every voice blob therefore gets a WAV of
+  the same PCM beside it (`blobs/ab/<ogg sha256>.wav`, `std/audio.wavFromPcm`),
+  written by the service with the blob (temp file, rename, before the index
+  line). The Ogg Opus blob stays the canonical asset: its sha256 is in the
+  record, and the sim validates its descriptor. `AiCache.playback_path` finds
+  the copy; without one the line plays as text (`no_playback_copy` logged).
+  When the accepted line's voice joins the core layer (AI.10b), its WAV copy
+  must join too (or the core voice is text-only in the game). Alternatives:
+  store voice as WAV only (15x larger), or decode Opus in Godot (a GDExtension).
+- **G1 re-checked:** v0.52.0's `std/ai` has `callSpeech(model, text, voice,
+  style) -> Result[bytes, AIError]` and `speechSampleRate`. The adapter stays on
+  `std/net` for now: `callSpeech` reports no token usage, and AI.9's charging
+  (billed and interrupted calls) needs the usage the REST reply carries; and
+  the process binds one std/ai provider. Reported upstream; switching is a
+  change for after AI.10b's attended run.
+- **VM finding (reported upstream).** The stub tone of a long segment (more than
+  about a thousand periods: a grieving segment of 43 code points) made the
+  service drop the request silently on the bytecode VM (no result, no error,
+  exit 0; the interpreter answered). `stubPcm` now repeats a period by doubling
+  (recursion depth log2 n); the bytes are unchanged.
+- **Cast.** `data/ai/cast/medic.json` (departure age 35, persona, `voice_id`
+  Aoede pending ⏸ C, style, the four core portrait keys and the avatar).
+  `AiRelay` reads its cast from `data/ai/cast/` (name and voice).
+- **Conversation** (`ui/conversation/conversation.{tscn,gd}`, `Conversation`):
+  two stacked portraits crossfading over `crossfade_ms` (120), the subtitle
+  revealed segment by segment, an `AudioStreamPlayer` on the WAV copy. Segment
+  i starts at `segments_ms[i]`; the portrait swaps at that plus
+  `swap_offset_ms` (0 or -150). No voice record: offsets at a reading pace
+  (60 ms a character, at least 1.5 s). The clock is the frame clock, so the
+  headless test and a movie-mode capture see the same swaps. Missing emotion:
+  `AiCache.fallback_chain`; a voice blob in no layer: `missing_blob`, text only.
+  `ConversationSession` gives it events: the stub rehearsal, a replayed log
+  (relay in replay mode, no AI process), or the game's `AiSession` (`--ai-live`,
+  for AI.10b; with live off nothing is generated and no service starts).
+- **Rehearsal.** The stub answers the style-frame line from the fixture case
+  `medic_style_frame` (neutral, loving, grieving; about 8.3 s of tones);
+  `tests/replays/medic_rehearsal.ndjson` is re-recorded byte for byte by
+  `make ai-conversation` (in `make test`), and replays in `make replay` (x86_64
+  golden copied from arm64: dtau 0 throughout, as `ai_stub_session`).
+- **Style frame.** `make ai-style-frame` (GPU window) fetches and stages the
+  core layer, re-records the rehearsal over a scratch library (it must equal
+  the committed log), then replays the log through the conversation in movie
+  mode at 30 fps: `renders/ai_medic/swap_<i>_<emotion>.png` (each taken the
+  frame after its fade completes), `contact_sheet.png`, `line.ogg`,
+  `line.wav`, `timeline.json` and `frame.avi` (MJPEG with PCM audio). The
+  capture shows a time and segment overlay for judging the swap timing.
+  For a live log, `FRAME_LIB=<library>` names the library with its blobs.
+
 ### Follow-up: the AI model bake-off (after AI.10b)
 
 Mark, attended 2026-10-02: "we may actually run with models and compare their
