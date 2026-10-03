@@ -1,0 +1,186 @@
+module stapledons/ai/tools/core_import
+
+-- The core layer (sprint R1-AI-FOUNDATION AI.8, design (a4)). AILANG with FS,
+-- per the Python policy.
+--   main    imports the accepted Medic set (4 portraits, 1 avatar) from a
+--           Blender checkout at a pinned commit: writes <out>/index.ndjson and
+--           <out>/SHA256SUMS, and, if `blobs` is set, the blobs in the layer
+--           layout <blobs>/blobs/ab/<sha256>.png. `make ai-core-import`.
+--   verify  the committed index and SHA256SUMS are consistent and every key is
+--           valid; if <blobs> exists, every blob's sha256 and size match too.
+--           Prints `ai_core <sha256 of index.ndjson>`, the new_game value.
+--           `make ai-core-verify` (offline, in `make test`).
+-- SHA256SUMS lists each blob at its layer path, then index.ndjson, so it pins
+-- the index bytes as well and `shasum -a 256 -c` reads it.
+-- Private helpers carry a `core` prefix: the test runner mixes up same-named
+-- private functions across modules (ailang#1461); unprefixed, verify failed
+-- only under `ailang test`.
+import std/fs (readFileBytes, readFileResult, writeFile, writeFileBytes, mkdirAll, fileExists)
+import std/bytes (fromBase64)
+import std/bytes as B
+import std/crypto (sha256Bytes, sha256Hex)
+import std/json (Json, decode, encode, js, get, getString, getNumber)
+import std/string (concat, join, split, startsWith, length, substring, intToStr)
+import std/math (floor, floatToInt)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/io (println, exit)
+import stapledons/ai/key (CacheKey, keyError, canonical, isLowerHex, member)
+import stapledons/ai/reply (pngSize)
+import stapledons/ai/cache (blobPath)
+
+export type Item = { file: string, prompt: string, key: CacheKey }
+pure func corePortrait(e: string, age: int) -> CacheKey = { kind: "portrait", entityId: "medic", emotion: e, ageStage: age, variant: "0" }
+-- The Medic set accepted for the foundation, each with the prompt it was made from.
+export pure func medicSet() -> [Item] = [
+  { file: "portrait_medic_age0_neutral_v2.png", prompt: "prompts.md", key: corePortrait("neutral", 0) },
+  { file: "portrait_medic_age0_loving_v2.png", prompt: "prompt_loving.txt", key: corePortrait("loving", 0) },
+  { file: "portrait_medic_age0_grieving_v2.png", prompt: "prompt_grieving.txt", key: corePortrait("grieving", 0) },
+  { file: "portrait_medic_age50_neutral_v2.png", prompt: "prompt_age50_neutral.txt", key: corePortrait("neutral", 50) },
+  { file: "avatar_medic_static_v2.png", prompt: "prompt_mini_avatar.txt", key: { kind: "avatar", entityId: "medic", emotion: "-", ageStage: 0, variant: "0" } }
+]
+
+export type Asset = { item: Item, sha: string, n: int, w: int, h: int, inputSha: string, data: bytes }
+export pure func assetOf(it: Item, png: bytes, prompt: bytes) -> Result[Asset, string] =
+  match pngSize(png) {
+    Some(s) => if s.w > 0 && s.h > 0 then Ok({ item: it, sha: sha256Bytes(png), n: B.length(png), w: s.w, h: s.h, inputSha: sha256Bytes(prompt), data: png })
+               else Err(concat(["empty PNG: ", it.file])),
+    None => Err(concat(["not a PNG: ", it.file]))
+  }
+
+pure func cq(s: string) -> string = encode(js(s))
+pure func cf(k: string, v: string) -> string = concat([cq(k), ":", v])
+pure func coreKeyJson(k: CacheKey) -> string =
+  concat(["{", join(",", [cf("kind", cq(k.kind)), cf("entity_id", cq(k.entityId)), cf("emotion", cq(k.emotion)), cf("age_stage", intToStr(k.ageStage)), cf("variant", cq(k.variant))]), "}"])
+export pure func indexLine(a: Asset, commit: string, dir: string) -> string =
+  concat(["{", join(",", [cf("key", coreKeyJson(a.item.key)), cf("sha256", cq(a.sha)), cf("mime", cq("image/png")), cf("bytes", intToStr(a.n)), cf("ext", cq("png")),
+    cf("origin", cq("core")), cf("provider", cq("imagegen")), cf("model", cq("image_gen")), cf("input_sha256", cq(a.inputSha)), cf("seed", "null"),
+    cf("source", cq(concat(["blender@", commit, ":", dir, "/", a.item.file]))), cf("width", intToStr(a.w)), cf("height", intToStr(a.h))]), "}"])
+
+pure func coreSumLine(sha: string, path: string) -> string = concat([sha, "  ", path, "\n"])
+export pure func sumsOf(index: string, xs: [Asset]) -> string =
+  concat([coreBlobSums(xs), coreSumLine(sha256Hex(index), "index.ndjson")])
+pure func coreBlobSums(xs: [Asset]) -> string = match xs { [] => "", a :: r => concat([coreSumLine(a.sha, blobPath(a.sha, "png")), coreBlobSums(r)]) }
+
+-- ------------------------------------------------------------ verify (pure)
+export type Entry = { key: CacheKey, sha: string, ext: string, n: int }
+pure func coreStr(j: Json, k: string) -> string = match getString(j, k) { Some(s) => s, None => "" }
+pure func coreNat(j: Json, k: string) -> int = match getNumber(j, k) { Some(x) => if x >= 0.0 && floor(x) == x && x < 1.0e15 then floatToInt(x) else -1, None => -1 }
+pure func coreMimeOk(mime: string, ext: string) -> bool =
+  (mime == "image/png" && ext == "png") || (mime == "audio/ogg" && ext == "ogg") || (mime == "text/plain" && ext == "txt")
+pure func coreSourceOk(s: string) -> bool =
+  startsWith(s, "blender@") && length(s) > 50 && isLowerHex(substring(s, 8, 48), 40) && substring(s, 48, 49) == ":"
+pure func coreEntryOf(line: string) -> Result[Entry, string] =
+  match decode(line) {
+    Err(_) => Err("not JSON"),
+    Ok(j) => match get(j, "key") {
+      None => Err("no key"),
+      Some(kj) => {
+        let k = { kind: coreStr(kj, "kind"), entityId: coreStr(kj, "entity_id"), emotion: coreStr(kj, "emotion"), ageStage: coreNat(kj, "age_stage"), variant: coreStr(kj, "variant") };
+        let e = { key: k, sha: coreStr(j, "sha256"), ext: coreStr(j, "ext"), n: coreNat(j, "bytes") };
+        match keyError(k) {
+          Some(x) => Err(x),
+          None => if !isLowerHex(e.sha, 64) then Err("sha256 is not 64 lowercase hex")
+            else if e.n <= 0 then Err("bytes must be positive")
+            else if !coreMimeOk(coreStr(j, "mime"), e.ext) then Err("mime and ext disagree")
+            else if coreStr(j, "origin") != "core" then Err("origin is not core")
+            else if !coreSourceOk(coreStr(j, "source")) then Err("source is not blender@<commit>:<path>")
+            else if e.ext == "png" && (coreNat(j, "width") <= 0 || coreNat(j, "height") <= 0) then Err("an image needs width and height")
+            else Ok(e)
+        }
+      }
+    }
+  }
+
+pure func coreNonEmpty(xs: [string]) -> [string] = match xs { [] => [], x :: r => if x == "" then coreNonEmpty(r) else x :: coreNonEmpty(r) }
+-- The entries in order, or the first bad line (1-based) with its reason.
+export pure func entries(index: string) -> Result[[Entry], string] = coreWalk(coreNonEmpty(split(index, "\n")), 1, [])
+@allow_empty_ok("the recursion base: every line has been read")
+pure func coreWalk(ls: [string], i: int, seen: [string]) -> Result[[Entry], string] =
+  match ls {
+    [] => Ok([]),
+    l :: r => match coreEntryOf(l) {
+      Err(e) => Err(concat(["line ", intToStr(i), ": ", e])),
+      Ok(e) => if member(canonical(e.key), seen) then Err(concat(["line ", intToStr(i), ": duplicate key ", canonical(e.key)]))
+        else match coreWalk(r, i + 1, canonical(e.key) :: seen) { Ok(es) => Ok(e :: es), Err(x) => Err(x) }
+    }
+  }
+pure func coreEntrySums(es: [Entry]) -> string = match es { [] => "", e :: r => concat([coreSumLine(e.sha, blobPath(e.sha, e.ext)), coreEntrySums(r)]) }
+
+-- ai_core (the sha256 of index.ndjson), or the first inconsistency.
+export pure func verifyCore(index: string, sums: string) -> Result[string, string] =
+  if index == "" then Err("index.ndjson is empty") else match entries(index) {
+    Err(e) => Err(e),
+    Ok(es) => if sums == concat([coreEntrySums(es), coreSumLine(sha256Hex(index), "index.ndjson")]) then Ok(sha256Hex(index))
+      else Err("SHA256SUMS does not match index.ndjson")
+  }
+
+-- ------------------------------------------------------------ effects
+func coreFail(msg: string) -> () ! {IO} = { println(concat(["core: ", msg])); exit(1) }
+func coreReadBytes(path: string) -> Result[bytes, string] ! {FS} =
+  match readFileBytes(path) {
+    Ok(b64) => (match fromBase64(b64) { Some(b) => Ok(b), None => Err(concat(["cannot decode ", path])) }),
+    Err(_) => Err(concat(["cannot read ", path]))
+  }
+func coreText(path: string) -> string ! {FS} = match readFileResult(path) { Ok(t) => t, Err(_) => "" }
+
+export type ImportConfig = { src: string, commit: string, dir: string, out: string, blobs: string }
+@allow_empty_ok("the recursion base: every item has been loaded")
+func coreLoad(src: string, items: [Item]) -> Result[[Asset], string] ! {FS} =
+  match items {
+    [] => Ok([]),
+    it :: r => match coreReadBytes(concat([src, "/", it.file])) {
+      Err(e) => Err(e),
+      Ok(png) => match coreReadBytes(concat([src, "/", it.prompt])) {
+        Err(e) => Err(e),
+        Ok(p) => match assetOf(it, png, p) { Err(e) => Err(e), Ok(a) => (match coreLoad(src, r) { Ok(xs) => Ok(a :: xs), Err(e) => Err(e) }) }
+      }
+    }
+  }
+pure func coreLines(xs: [Asset], c: ImportConfig) -> string = match xs { [] => "", a :: r => concat([indexLine(a, c.commit, c.dir), "\n", coreLines(r, c)]) }
+func coreWriteBlobs(root: string, xs: [Asset]) -> () ! {FS} =
+  match xs {
+    [] => (),
+    a :: r => { mkdirAll(concat([root, "/blobs/", substring(a.sha, 0, 2)])); writeFileBytes(concat([root, "/", blobPath(a.sha, "png")]), a.data); coreWriteBlobs(root, r) }
+  }
+export func main(c: ImportConfig) -> () ! {IO, FS} =
+  if !isLowerHex(c.commit, 40) then coreFail("commit must be a full 40-hex sha") else match coreLoad(c.src, medicSet()) {
+    Err(e) => coreFail(e),
+    Ok(xs) => {
+      let index = coreLines(xs, c);
+      mkdirAll(c.out);
+      writeFile(concat([c.out, "/index.ndjson"]), index);
+      writeFile(concat([c.out, "/SHA256SUMS"]), sumsOf(index, xs));
+      if c.blobs == "" then () else coreWriteBlobs(c.blobs, xs);
+      println(concat(["core-import: ", intToStr(B.length(B.fromString(index))), " index bytes, 5 assets from blender@", c.commit, "; ai_core ", sha256Hex(index)]))
+    }
+  }
+
+export type VerifyConfig = { dir: string, blobs: string }
+func coreCheckBlobs(root: string, es: [Entry]) -> Result[int, string] ! {FS} =
+  match es {
+    [] => Ok(0),
+    e :: r => match coreReadBytes(concat([root, "/", blobPath(e.sha, e.ext)])) {
+      Err(x) => Err(x),
+      Ok(b) => if sha256Bytes(b) != e.sha || B.length(b) != e.n then Err(concat(["blob ", e.sha, " does not match its index line"]))
+        else (match coreCheckBlobs(root, r) { Ok(n) => Ok(n + 1), Err(x) => Err(x) })
+    }
+  }
+export func verify(c: VerifyConfig) -> () ! {IO, FS} = {
+  let index = coreText(concat([c.dir, "/index.ndjson"]));
+  match verifyCore(index, coreText(concat([c.dir, "/SHA256SUMS"]))) {
+    Err(e) => coreFail(e),
+    Ok(core) => match entries(index) {
+      Err(e) => coreFail(e),
+      Ok(es) => {
+        if fileExists(c.blobs) then (match coreCheckBlobs(c.blobs, es) {
+          Ok(n) => println(concat(["core-verify: ", intToStr(n), " blobs in ", c.blobs, " match their sha256 and size"])),
+          Err(e) => coreFail(e)
+        }) else println(concat(["core-verify: no blobs at ", c.blobs, " (offline: index and SHA256SUMS only)"]));
+        println(concat(["core-verify: ", intToStr(coreLen(es)), " index lines, keys valid, SHA256SUMS consistent"]));
+        println(concat(["ai_core ", core]))
+      }
+    }
+  }
+}
+pure func coreLen(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + coreLen(r) }

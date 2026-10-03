@@ -1,0 +1,193 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.7",
+  "pr": 68,
+  "branch": "sprint/ai7-relay",
+  "commit": "284590e",
+  "round": 1,
+  "evaluator": "independent (generator != judge); fresh clone of origin/sprint/ai7-relay, no live AI call, no real key, Secret Manager untouched",
+  "result": "pass (conditional on CI green)",
+  "score": 90,
+  "breakdown": {
+    "tests_pass": {
+      "max": 20,
+      "score": 20,
+      "note": "make test AILANG=runtime/bin/ailang rc 0 on arm64 (replay: 7 cases identical incl. ai_stub_session; ai relay ok for cache, disabled_old_sim, cancels, e2e, news, key_hygiene, routes and for replay_noai; ai bridge ok with faults; sim bridge 0 failures; ai-loopback 2 chat completions + 1 TTS, keys absent). Standalone re-runs: make ai-relay, make replay-noai, make ai-loopback rc 0. make ai-mutants 18/18 killed, make record-mutants 8/8 killed, make ai-bridge-mutants 17/17 killed. The only FAIL lines in the log are the star-names oracle's negative control and ailang CACHE_WRITE_FAILED warnings. GitHub CI: see ci."
+    },
+    "lint_clean": {
+      "max": 10,
+      "score": 10,
+      "note": "python-guard ok (13 allowlisted; tests/fixtures/ai_loopback.py listed as harness, the right role: it serves fixtures to a test and checks evidence). No repo lint target beyond that."
+    },
+    "acceptance_criteria": {
+      "max": 30,
+      "score": 27,
+      "note": "7/7 acceptance commands green (AC10, AC14, AC14b, AC18, AC12 part via make replay + replay-noai, test_sim_bridge with the hook unset, make test). -3: three things the criteria's wording promises are not actually proven by the tests, found by mutation (see mutations.survived): the AI_LIVE clear in LIVE_WRAP (AC14), the Gemini key file being read (AC14), and a service error result mapping to ai_cancel (AC10's 'error -> mapped ai_cancel')."
+    },
+    "code_quality": {
+      "max": 15,
+      "score": 10,
+      "note": "-3 LOC: 1001 counted against a cap of 650 (estimate 390); the overrun is recorded in the sprint JSON with its reason (folded-in carried leftovers), which is the right discipline, but it is still 54 percent over a cap. -2 the decision-order tests cover one path per branch and miss the two orderings the design calls out (cache before offline, cache before no_key) and the REASONS mapping. No file over 800 lines (test_ai_relay.gd 456), no TODO/HACK, no function over 50 lines, sprint JSON complete (passes, dates, notes, actual_loc, loc_overrun), sprint plan status line updated."
+    },
+    "documentation": {
+      "max": 15,
+      "score": 14,
+      "note": "changelogs/unreleased/2026-10-02-ai-relay.md present and accurate; design doc gains the as-built launch block and an 'AI.7 as built' section listing the modes, order, hook, cache-hit keying, the library-voice miss and the resume note; sprint plan has the status line. -1: the unfixed charge finding lives only in the sprint JSON notes, not in the design doc's as-built section where AI.9/AI.10 will look. (No examples/runnable in this repo; that rubric row does not apply.)"
+    },
+    "design_fidelity": {
+      "max": 10,
+      "score": 9,
+      "note": "(a3) is implemented as written: subscribes to last_events through an optional SimBridge hook, order text_only -> cache -> offline -> no_key -> forward, ok -> record, error -> mapped ai_cancel, intents ride on the next send, text-only never opens media, enabled only at minor >= 1, replay mode starts nothing. route_for mirrors ai/route.ail (checked against the service hello in --routes), fallback_chain mirrors sim/markers.ail (checked against its source). -1 for the two as-built narrowings (library voice is a miss; media hit keyed by the request key) which are sound but untested where they bite."
+    },
+    "total": 90
+  },
+  "ci": {
+    "status": "IN_PROGRESS at hand-off (started 2026-10-02T21:55Z, make test step running; AI.6 took 21m37s). The pass verdict is CONDITIONAL on this run going green: it is the only proof of the copied x86_64 golden. If it fails on make replay (ai_stub_session) the golden must be re-recorded on x86_64 and this round re-scored.",
+    "run": "https://github.com/sunholo-data/stapledons-godot/actions/runs/37069624838",
+    "what_it_proves": "ubuntu-latest x86_64 runs make test, which includes make replay (the copied ai_stub_session.state.x86_64.ndjson), ai-relay, replay-noai and ai-loopback on the other architecture"
+  },
+  "folded_in_items": {
+    "AI.3 digit fixtures 0-9": "DONE. sim/ai_test.ail everyDigitRefused over 0..9 plus '56789'; ai/reply_test.ail everyDigit over 0..9. record-mutants gains digit-5 and digit-9 mutants (killed), ai-mutants gains digit-7 (killed).",
+    "AI.3 ai.lines after a portrait": "DONE. sim/ai_test.ail checkAiLines records media('69','portrait') and asserts ai.lines unchanged; record-mutant 'media joins lines' killed.",
+    "AI.3 PROTO_MINOR 1": "DONE. bridge/sim_bridge.gd:12; the hello in tests/replays/ai_stub_session.ndjson asks minor 1 and the golden answers {major:2,minor:1}.",
+    "AI.3 keyMatches branch": "DONE. sim/ai.ail:232 checks only 'voice' for a sha-derived variant (text never reaches keyMatches); record-mutant on that line killed.",
+    "AI.3 doc wording": "DONE. ai_numeral row now says 'any ASCII digit in the body (markers hold none ...)'.",
+    "AI.5 failed() charge test + mutant": "DONE. ai/stub_test.ail checkFailedCharges (4000 n$ charged, usage before error, zero units -> no usage line); ai-mutants 'ledger: l' killed.",
+    "AI.5 loopback harness": "DONE. tests/fixtures/ai_loopback.py (allowlisted 'harness') + ai/loopback_lane.ail; make ai-loopback runs with --caps IO,FS,Net,Env --net-allow-localhost --net-allow-http, no AI cap, fake keys, env -u AI_LIVE; checks OpenRouter path + Bearer + body (model, roles, max_tokens 172) + the retry after the Wait fixture, TTS path + x-goog-api-key + body, and that neither key reaches stdout, stderr or the 4 cache files. Verified rc 0 twice.",
+    "AI.5 rounding tests": "DONE. ai/spend_test.ail checkSpendRounding (2.01 $/Mtok -> 2010 n$, 0.0157 -> 15700000); two ai-mutants (+0.5 removed in nanoOf and in the scaled rounding) killed.",
+    "AI.5 anyDigit": "DONE. everyDigit in reply_test.ail; ai-mutant dropping contains(s, \"7\") killed.",
+    "AI.5 issue citations": "DONE. ailang#1534 (dirOf `_ :: []` arm) and ailang#1535 (readLine blank/EOF) cited at the sites in ai/service.ail.",
+    "AI.5 design-doc launch block": "DONE. Replaced with the as-built stub and live commands (entry argument, LIVE_WRAP, --ai gemini-2.5-flash-image, both hosts).",
+    "AI.6 frame-rule control step": "DONE. tests/test_ai_bridge.gd: control step is a non-blocking pipe read of an idle /bin/sleep child's stdout, OS.is_process_running on it, and a stat; allowance ctrl_slow + max(4, n/100). ai-bridge-mutants still 17/17 (the four intermittent-blocking mutants included), ai-godot green with --faults.",
+    "SimBridge inherited-pipe scrub": "DONE. bridge/sim_bridge.gd:65 starts the sim through AiBridge.scrub_shell()/scrubbed(); tests/test_sim_bridge.gd test_no_inherited_pipe (another sim's pipes open, FdProbe shows none inherited) green; tests/fd_probe.gd shared by both bridge tests. make replay: all 7 goldens unchanged (git diff vs origin/main touches only the three new ai_stub_session files)."
+  },
+  "mutations": {
+    "total": 30,
+    "killed": 20,
+    "survived": [
+      {
+        "mutant": "relay order: offline check moved before the cache lookup (a hit in mode off is cancelled offline)",
+        "file": "bridge/ai_relay.gd:132-139",
+        "why": "no test asks for a cached asset with mode off; test_e2e's hit session uses mode stub with both keys",
+        "fix": "in test_e2e, run the second (hit) session with relay.mode = 'off' and keys []: a hit must still record with launch_count 0",
+        "severity": "test gap (the design orders cache before offline for exactly this case)"
+      },
+      {
+        "mutant": "relay order: no_key check moved before the cache lookup",
+        "file": "bridge/ai_relay.gd:132-142",
+        "why": "same gap",
+        "fix": "same test",
+        "severity": "test gap"
+      },
+      {
+        "mutant": "relay: an error result is treated as ok (if o.type == result) and queued as a record",
+        "file": "bridge/ai_relay.gd:167-171",
+        "why": "no session produces a service error result; only a bridge cancel (service_down) exercises _cancel from _on_outcome, so the REASONS mapping (budget, no_key, text_only, bad_output -> provider_error) is untested end to end",
+        "fix": "a stub session with ceiling_usd 0.05 (as make ai-stub budget) and a portrait request: expect ai_fallback reason budget; or a text request through the stub with text_only on the bridge only",
+        "severity": "test gap in AC10's 'error -> mapped ai_cancel'"
+      },
+      {
+        "mutant": "cache: the media hit descriptor keyed by the entry's key instead of the request's",
+        "file": "bridge/ai_relay.gd:152, bridge/ai_cache.gd:72-80",
+        "why": "in every test the request key equals the entry key (age_stage 0); declared deviation 3 (an older age_stage asset validates for the years asked) is never exercised",
+        "fix": "a library line at age_stage 0 requested with age_stage 50: the record must be accepted (sim keyMatches needs the request's stage)",
+        "severity": "test gap for a declared deviation"
+      },
+      {
+        "mutant": "hygiene: LIVE_WRAP no longer unsets AI_LIVE when not allowed",
+        "file": "bridge/ai_bridge.gd:62",
+        "why": "the test never has AI_LIVE=1 in Godot's environment, so clearing it changes nothing; the four live_run cases pass with or without the clear",
+        "fix": "OS.set_environment('AI_LIVE', '1') around the hello-only live_run cases (they send no request, so even a mutant cannot spend): the refusal must still be 'AI_LIVE=1 is not set'. Evaluator verified the wrapper by hand: with allowed=0 an inherited AI_LIVE=1 and inherited GOOGLE_API_KEY/OPENROUTER_API_KEY are gone from the exec'd env, with allowed=1 AI_LIVE passes through and is never invented, key files land in env, argv after the shift is only 'run --entry live'",
+        "severity": "test gap on a safety property (wrapper itself correct)"
+      },
+      {
+        "mutant": "hygiene: live_allowed ignored (always 1)",
+        "file": "bridge/ai_bridge.gd:255",
+        "why": "same root cause (no AI_LIVE in the env)",
+        "fix": "same",
+        "severity": "test gap"
+      },
+      {
+        "mutant": "hygiene: the Gemini key file is never read (GOOGLE_API_KEY exported empty)",
+        "file": "bridge/ai_bridge.gd:62",
+        "why": "the four cases are (both,live), (both,openrouter), (gemini-only,openrouter), (openrouter-only,gemini): none routes to gemini with a Gemini key present, so a Gemini key that never reaches the env gives the same refusals. The OpenRouter side is covered by (both,openrouter)",
+        "fix": "add (gemini-only, gemini) expecting the AI_LIVE refusal",
+        "severity": "test gap (asymmetric coverage)"
+      },
+      {
+        "mutant": "relay: a voice request for a line the relay never saw is forwarded without segments",
+        "file": "bridge/ai_relay.gd:127",
+        "why": "no test opens a voice for an unknown line_req through the relay (the sim refuses ai_stale/ai_unknown_req before the relay sees most such cases); the stub would answer bad_request -> provider_error, the same reason",
+        "severity": "near-equivalent; low"
+      },
+      {
+        "mutant": "replay: open() queues in replay mode",
+        "file": "bridge/ai_relay.gd:66",
+        "why": "the replay driver replays logged ai_open intents and never calls open()",
+        "severity": "low (on_events guard is killed, which is the one that matters)"
+      },
+      {
+        "mutant": "cache: a voice hit's descriptor keeps the request variant",
+        "file": "bridge/ai_cache.gd:74-75",
+        "why": "unreachable today: a library voice line is always a miss (deviation 2) and no core voice lines exist",
+        "severity": "equivalent until the voice follow-up"
+      }
+    ],
+    "killed_list": [
+      "relay: text_only check dropped",
+      "relay: off mode forwards anyway",
+      "relay: no_key check dropped",
+      "relay: offline mislabelled no_key",
+      "relay: cache hits ignored",
+      "relay: enabled for a 2.0 sim",
+      "replay: relay injects during replay",
+      "replay: missing blob not flagged",
+      "cache: oldest line wins",
+      "cache: age_stage == years excluded",
+      "cache: age_stage above years accepted",
+      "cache: library wins over core",
+      "cache: text from the library",
+      "cache: library voice without duration served",
+      "cache: grieving skips sad",
+      "cache: unknown emotion not forced to neutral",
+      "cache: refresh never re-reads",
+      "hygiene: key text on argv",
+      "hygiene: key echoed to stderr",
+      "hygiene: key echoed to stdout before hello"
+    ]
+  },
+  "confirmations": {
+    "base_url_cannot_redirect_live": "CONFIRMED. ai/adapters.ail: openRouterText and geminiVoice call the *At variants with the constants openRouterBase() / geminiBase(); ai/service.ail:151,154 call only openRouterText/geminiText/geminiVoice/geminiImage; openRouterTextAt/geminiVoiceAt are imported only by ai/loopback_lane.ail, whose Loop config is not the service's config type (no 'base' field in service.ail or wire.ail). The live launch additionally passes --net-allow-domains generativelanguage.googleapis.com,openrouter.ai, so even a redirected base could not connect.",
+    "live_wrapper_key_hygiene": "CONFIRMED. LIVE_WRAP receives key-file paths, shift 3 removes them before exec, reads each with $(cat) into the env var; argv of the exec'd process is run --entry live ... (hand run and test sampling with ps -o args agree). AiBridge never prints its launch args (push_error sites at ai_bridge.gd:146,275,283,295,302,376 carry no args or key); the service prints no env. Fixture-key search over stdout, stderr, the session log and every library file is negative in the test and in make ai-loopback.",
+    "x86_64_golden": "The copied golden is expected to be identical: the session is dtau 0 throughout (no exp/log, so ailang#1465 cannot bite) and the AI section is integer/sha data. CI on ubuntu x86_64 runs make replay for this case; its result is the proof (see ci)."
+  },
+  "deviations_verdicts": {
+    "1_x86_golden_copied_from_arm64": "ACCEPTABLE if CI is green (dtau 0 session, no floating maths that differs per arch).",
+    "2_library_voice_is_a_cache_miss": "ACCEPTABLE for AI.7, must be a tracked follow-up before AI.10a: the service's indexLine should carry duration_ms and segments_ms (changes tests/ai/cache.SHA256SUMS). Until then every voice line is regenerated and paid for even when identical.",
+    "3_media_hit_descriptor_uses_request_key": "ACCEPTABLE and necessary (sim keyMatches requires the request's age_stage); the sha256 still identifies the real asset. Needs the differing-stage test noted above.",
+    "4_relay_intents_in_a_refused_line_are_dropped": "ACCEPTABLE for R1: the sim refuses per intent, not per line, so this only happens on a step_timeout or malformed line; requests expire via ai_ttl_ticks. Document in AI.9 that a dropped record is not retried.",
+    "5_live_launch_in_exported_build_left_to_AI.9": "ACCEPTABLE; launch_plan push_errors and returns {} rather than silently running the stub, which is the right failure.",
+    "6_ai_live_guard_must_allow_test_ai_relay.gd": "ACCEPTABLE WITH A CONDITION: the test launches --entry live with provider gemini/openrouter in the config, so AI.9's guard needs an allow rule; the rule must be narrow (that file, and only because live_allowed is false there, so AI_LIVE is cleared by the wrapper). The guard should also assert live_allowed defaults to false in ai_bridge.gd.",
+    "7_LOC_1001_vs_cap_650": "RECORDED, deducted (-3). Code is 383 (under the 390 estimate for code+tests); the overrun is 618 lines of tests, most carried from three earlier evaluations. Not a reason to fail, but the next milestone should not fold in leftovers of this size."
+  },
+  "unfixed_finding_uncharged_parse_failure": {
+    "where": "ai/adapters.ail:62-63 (orTry: Ok(resp) => match parseOpenRouter { Err(code) => units: u }) and :85-86 (speak: parseTts Err => units: u); next() at :37-41 does count a parsed reply",
+    "severity": "LOW today, MEDIUM before the first live session with TTS",
+    "why": "With data/ai/prices.json every text and TTS model is priced per token and has no per_call price, so an uncounted call costs 0 n$ by construction today. The ledger is also protected on admission: prepare() reserves the request's worst case before the call, so a single uncharged attempt cannot push the total past the ceiling. The real risk is a reply that the provider billed but we could not parse (a Gemini TTS response that carries usageMetadata but no audio inlineData is the realistic case, at 10 $/Mtok out): the usage line is never written, the ledger undercounts, and over many such failures the running cost shown to the player drifts below the provider's bill. It also undercounts calls in usage.ndjson, which AI.10b's cost report reads.",
+    "fix": "make parseOpenRouter/parseTts return the usage with the error (Err((code, units)) or a parsed-but-bad variant) and count the call with plus() before returning; add a loopback case where the server answers a parsable envelope with no content and assert the usage line. Do it in AI.9 or AI.10a, before AI.10b."
+  },
+  "other_observations": [
+    "bridge/ai_bridge.gd:62 LIVE_WRAP clears only GOOGLE_API_KEY and OPENROUTER_API_KEY; the live child (which has the Env capability) inherits the rest of the launching shell's environment, including any other *_API_KEY variables the developer's shell carries. Not a leak the service can be made to exploit from the wire, but a smaller env (env -i with PATH, HOME and the two keys) would make the hygiene argument structural rather than by inspection. Non-blocking; AI.9.",
+    "bridge/ai_relay.gd:47 reads routing_path in _init, so setting routing_path after construction has no effect; either read lazily or document.",
+    "bridge/ai_relay.gd:149 a core text hit reads the blob at record time; a missing core blob yields body '' and the sim refuses ai_hash, which is the right outcome but is not logged as missing_blob."
+  ],
+  "blocking_findings": [],
+  "non_blocking": [
+    "F1 test gap: cache hit must record in mode off and with no key (design (a3) order) - add the mode-off/no-key hit session.",
+    "F2 test gap: a service error result -> ai_cancel mapping is untested end to end - add a budget-ceiling stub session.",
+    "F3 test gap: the AI_LIVE clear and live_allowed are unproven in-test (wrapper verified by hand) - set AI_LIVE=1 in Godot's env around the hello-only live_run cases; add the (gemini-only, gemini) case.",
+    "F4 test gap: a media hit with a differing age_stage (deviation 3) is untested.",
+    "F5 the uncharged parse-failure attempt: low now, fix before any live TTS session (see unfixed_finding_uncharged_parse_failure).",
+    "F6 record the uncharged-parse finding and the voice-index follow-up in the design doc's as-built section, not only in the sprint JSON."
+  ]
+}

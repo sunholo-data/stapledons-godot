@@ -276,6 +276,23 @@ func test_record_replays() -> bool:
 	return true
 
 
+## Godot's OS.execute_with_pipe marks no descriptor close-on-exec, so a child
+## inherits every pipe Godot holds. SimBridge starts the sim through
+## AiBridge.FD_SCRUB (as AiBridge does): with another sim's pipes open in
+## Godot, the new sim holds no pipe beyond its own stdin, stdout and stderr.
+func test_no_inherited_pipe() -> bool:
+	var other := SimBridge.new()
+	var s := SimBridge.new()
+	var ok := other.start() and s.start() and s.new_game(1)
+	var fds := FdProbe.extra_fds(s.child_pid)
+	assert_bool("the sim inherits no pipe of Godot's (another sim's included): %s" % [fds], ok and fds.all(func(f): return not f.begins_with("PIPE")))
+	ok = ok and s.send([{"k": "thrust", "thrust": 1.0}], 0.01)
+	assert_bool("the scrubbed sim still runs the session", ok and s.world["tick"] == 1 and s.child_pid > 0)
+	other.stop()
+	s.stop()
+	return true
+
+
 func test_startup_timeout() -> bool:
 	var s := fake("silent_start")
 	var t := Time.get_ticks_msec()
@@ -334,6 +351,7 @@ func _init() -> void:
 		test_no_input_before_new_game,
 		test_record_tee,
 		test_record_replays,
+		test_no_inherited_pipe,
 		test_startup_timeout,
 		test_step_timeout,
 		test_truncated_line_timeout,

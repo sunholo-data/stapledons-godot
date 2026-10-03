@@ -2,11 +2,11 @@
 # Included from the Makefile by its last line; every AI target lives here so the
 # sprint changes one Makefile line. Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
+.PHONY: ai-loopback ai-relay replay-noai ai-session-record ai-test strict-ai markers-mutants deps-ai ai-pkg-test ai-stub ai-stub-record ai-mutants ai-adapter ai-adapter-record replay-compat record-mutants ai-godot ai-bridge-mutants
 
 test: ai-test
 
-ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter replay-compat ai-godot   ## AI foundation checks that run without a GPU window or a key
+ai-test: deps-ai strict-ai ai-pkg-test ai-stub ai-adapter ai-loopback replay-compat ai-godot ai-relay replay-noai   ## AI foundation checks that run without a GPU window or a key
 
 # AC7 (part): the pure marker grammar runs entirely on the bytecode VM and prints
 # byte for byte what the interpreter prints; its last line is markers-ok. The
@@ -139,6 +139,25 @@ ai-adapter:        ## AC9: adapters under --ai-stub (no Net), parsers on fixture
 	@test ! -e $(AI_A)/live || { echo "a refused live start created its cache"; exit 1; }
 	@echo "ai-adapter: live refused before any call without GOOGLE_API_KEY, without OPENROUTER_API_KEY, without both, and without AI_LIVE=1 (caps IO,FS,Env; keys cleared)"
 
+# AI.7 (carried from the AI.5 evaluation): the std/net halves of the adapters, OpenRouter
+# chat completions and Gemini TTS, against tests/fixtures/ai_loopback.py on 127.0.0.1 with fake
+# keys in the env (cleared of anything real) and --caps IO,FS,Net,Env --net-allow-localhost
+# --net-allow-http: no AI capability, no provider host allowed. The harness checks the URL paths,
+# the Bearer and x-goog-api-key headers, the bodies, one retry after the "Wait" fixture, and
+# that neither key reached the lane's stdout, stderr or any cache file (blobs, index, usage).
+AI_L := $(SCRATCH)/ai-loopback
+AI_FAKE_G := loopback-fake-gemini-7f3a
+AI_FAKE_O := loopback-fake-openrouter-c41d
+ai-loopback:       ## AI.5 leftover: OpenRouter + TTS POST halves against a loopback fixture server, fake keys never logged
+	@rm -rf $(AI_L) && mkdir -p $(AI_L)
+	@python3 tests/fixtures/ai_loopback.py serve $(AI_L) & \
+	for i in $$(seq 100); do [ -f $(AI_L)/port ] && break; sleep 0.1; done; \
+	printf '{"routing":"data/ai/routing.json","fixtures":"ai/fixtures","requests":"tests/ai/requests.ndjson","out":"$(AI_L)","base":"http://127.0.0.1:%s"}' "$$(cat $(AI_L)/port)" > $(AI_L)/lane.json; \
+	env -u AI_LIVE GOOGLE_APPLICATION_CREDENTIALS=/nonexistent GOOGLE_API_KEY=$(AI_FAKE_G) OPENROUTER_API_KEY=$(AI_FAKE_O) \
+	  $(AILANG) run --quiet --package-dir ai --caps IO,FS,Net,Env --net-allow-localhost --net-allow-http --entry loopback --args-file $(AI_L)/lane.json ai/loopback_lane.ail > $(AI_L)/lane.out 2> $(AI_L)/lane.err; rc=$$?; \
+	touch $(AI_L)/stop; wait; cat $(AI_L)/lane.out | cut -c1-160; test $$rc = 0 && test "$$(tail -1 $(AI_L)/lane.out)" = "loopback-done"
+	@python3 tests/fixtures/ai_loopback.py check $(AI_L) $(AI_FAKE_G) $(AI_FAKE_O)
+
 ai-adapter-record: ## regenerate tests/ai/adapter.golden.txt and the prompt goldens (a reviewed diff; never in make test)
 	$(ai_adapter_run)
 	@cp $(AI_A)/lane.out tests/ai/adapter.golden.txt; mkdir -p tests/ai/prompts
@@ -147,7 +166,7 @@ ai-adapter-record: ## regenerate tests/ai/adapter.golden.txt and the prompt gold
 
 # AI.4 and AI.5 mutation check (as markers-mutants): each mutant of the service's pure modules, applied to a
 # scratch copy of ai/, must fail its named test.
-ai-mutants:        ## AI.4, AI.5: route, key, stub, cache order, acts order, budget, wire, screen, prompt, live guard; each fails a named test
+ai-mutants:        ## AI.4, AI.5, AI.8: route, key, stub, cache order, acts order, budget, wire, screen, prompt, live guard, core verify; each fails a named test
 	@set -e; A=$$(command -v $(AILANG)); case "$$A" in /*) ;; *) A="$$PWD/$$A";; esac; \
 	for m in \
 	  'route.ail@else if !serves(h.provider, kind) then@else if false then@AI.4 routing config errors refused at start@route_test.ail' \
@@ -163,7 +182,16 @@ ai-mutants:        ## AI.4, AI.5: route, key, stub, cache order, acts order, bud
 	  'wire.ail@"no_key", "text_only", "budget"@"no_key", "budget"@AI.4 ai/1 codecs round-trip every fixture both ways@wire_test.ail' \
 	  'reply.ail@else if c.noNumerals && anyDigit(body) then Some("numeral")@else if false then Some("numeral")@AI.5 screen: grammar, palette, brackets, digits, display length@reply_test.ail' \
 	  'prompt.ail@"Describe and feel; never judge the player'"'"'s choices or say whether a decision was right or wrong."@"Describe and feel."@AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and the cap@prompt_test.ail' \
-	  'service.ail@else if !aiLive then Some(@else if false then Some(@AI.5 live refused without its key, without any key, or without AI_LIVE=1@live_test.ail'; do \
+	  'service.ail@else if !aiLive then Some(@else if false then Some(@AI.5 live refused without its key, without any key, or without AI_LIVE=1@live_test.ail' \
+	  'provider.ail@{ acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: after }@{ acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: l }@AI.5 a failed live call is charged and logged before its error@stub_test.ail' \
+	  'spend.ail@usd * 1000000000.0 + 0.5@usd * 1000000000.0@AI.5 prices and ceilings round to the nearest nano-dollar@spend_test.ail' \
+	  'spend.ail@x * scale + 0.5@x * scale@AI.5 prices and ceilings round to the nearest nano-dollar@spend_test.ail' \
+	  'reply.ail@ || contains(s, "7")@@AI.5 screen: grammar, palette, brackets, digits, display length@reply_test.ail' \
+	  'tools/core_import.ail@Some(x) => Err(x),@Some(_) => Ok(e),@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
+	  'tools/core_import.ail@if member(canonical(e.key), seen) then@if false then@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
+	  'tools/core_import.ail@else if coreStr(j, "origin") != "core" then@else if false then@AI.8 verify: each bad index line is refused with its line and reason@tools/core_import_test.ail' \
+	  'tools/core_import.ail@Ok(es) => if sums == concat(@Ok(es) => if true || sums == concat(@AI.8 verify: SHA256SUMS must list exactly the index blobs and the index@tools/core_import_test.ail' \
+	  'tools/core_import.ail@cf("input_sha256", cq(a.inputSha))@cf("input_sha256", cq(a.sha))@AI.8 an index line from a fixture PNG: key, sha256, bytes, size, prompt hash, pinned source@tools/core_import_test.ail'; do \
 	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; rest=$${rest#*@}; name=$${rest%%@*}; tfile=$${rest#*@}; \
 	  rm -rf $(MUTANT_DIR) && mkdir -p $(MUTANT_DIR) && cp -R ai $(MUTANT_DIR)/ai; \
 	  FROM="$$from" TO="$$to" perl -0pi -e 's/\Q$$ENV{FROM}\E/$$ENV{TO}/ or die "anchor not found: $$ENV{FROM}\n"' $(MUTANT_DIR)/ai/$$file; \
@@ -207,8 +235,11 @@ AI3_REFUSALS := AC3 record refusals fire on their fixtures and close the request
 record-mutants:    ## AI.3: voice variant compared, no numeral check, 65 lines, no dedupe, offsets not strict; each fails a named test
 	@set -e; A=$$(command -v $(AILANG)); case "$$A" in /*) ;; *) A="$$PWD/$$A";; esac; \
 	for m in \
-	  'if want.kind == "voice" || want.kind == "text" then getString(k, "variant") != None else@if false then true else@$(AI3_REFUSALS)' \
+	  'if want.kind == "voice" then getString(k, "variant") != None else@if false then true else@$(AI3_REFUSALS)' \
 	  'c.noNumerals && hasDigit(r.body)@false@$(AI3_REFUSALS)' \
+	  'contains(s, "5") || @@$(AI3_REFUSALS)' \
+	  ' || contains(s, "9")@@$(AI3_REFUSALS)' \
+	  'segments: x.segments})}, _ => st }@segments: x.segments})}, _ => {st | lines: keepLine(st.lines, {req: o.req, entityId: o.key.entityId, segments: []})} }@ai.lines keeps the last 64 accepted lines; ai_stale past them' \
 	  'maxLines() -> int = 64@maxLines() -> int = 65@ai.lines keeps the last 64 accepted lines; ai_stale past them' \
 	  'Some(es) => dedupe(es, [])@Some(es) => es@ai_open refusal order holds with a full queue; emotions deduplicated' \
 	  'v > prev && v < dur@v >= prev && v < dur@$(AI3_REFUSALS)'; do \
@@ -230,3 +261,105 @@ ai-godot: import   ## AC11 bridge half: lazy launch, non-blocking relay, priorit
 
 ai-bridge-mutants: import   ## AI.6: AiBridge mutants (priority, timeout kill, backoff, window, assembly, ...); each fails a named check
 	AILANG_BIN="$$(command -v $(AILANG))" sh tests/ai_bridge_mutants.sh "$(GODOT)" "$(SCRATCH)/bridge-mutants"
+
+# ---------------------------------------------------------------- AI.7: AiRelay, AiCache, end to end
+# AC10, AC14, AC18 and the routes check: the sim, AiRelay and the stub service (--caps IO,FS) record
+# tests/replays/ai_stub_session.ndjson again through the tee and must reproduce it byte for byte; a
+# cache hit records with no launch; the live launch (key files, no AI_LIVE) refuses at hello and no
+# fixture key text reaches argv (ps), stdout, stderr, the session log or the library.
+ai-relay: import   ## AC10/AC14/AC18: relay + cache end to end on the stub, key hygiene, routes
+	$(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --news --key-hygiene --routes
+
+# AC12 part: the visual replay path. Godot replays ai_stub_session through SimBridge with the relay in
+# replay mode; every state line must equal this arch's golden and no AI process may start.
+replay-noai: import   ## AC12 part: ai_stub_session through Godot, relay in replay mode, AiBridge.launch_count == 0
+	$(GODOT_SIM) --headless --path . --script tests/test_ai_relay.gd -- --replay-noai
+
+ai-session-record: import   ## re-record tests/replays/ai_stub_session.ndjson through Godot (then make replay-record LOG=ai_stub_session; a reviewed diff)
+	$(GODOT_SIM) --headless --path . --script tools/record_ai_session.gd -- "$(CURDIR)/tests/replays/ai_stub_session.ndjson"
+
+# ---------------------------------------------------------------- AI.8: the core layer
+# Design (a4). The accepted Medic set (4 portraits, 1 avatar) is a pinned, content-addressed layer:
+# data/ai/core/{index.ndjson,SHA256SUMS} in git, the blobs in the public bucket as
+# gs://stapledons-voyage-assets/ai/<sha256>.<ext> (immutable, like sky/, D-18), locally under
+# data/raw/ai_core/blobs/ab/<sha256>.<ext> (gitignored). ai_core, the new_game value, is the
+# sha256 of index.ndjson ($(AI_CORE)).
+AI_CORE_DIR := data/ai/core
+AI_CORE_BLOBS := data/raw/ai_core
+AI_CORE_BASE ?= https://storage.googleapis.com/stapledons-voyage-assets/ai
+AI_CORE_GS ?= gs://stapledons-voyage-assets/ai
+AI_CORE_SRC := assets/stapledon/characters/medic_v2
+BLENDER ?= $(HOME)/dev/blender
+AI_CORE_COMMIT ?= $(shell sed -n '1s/.*"source":"blender@\([0-9a-f]*\):.*/\1/p' $(AI_CORE_DIR)/index.ndjson)
+AI_CORE = $(shell shasum -a 256 $(AI_CORE_DIR)/index.ndjson | cut -c1-64)
+AI_CORE_RUN = $(AILANG) run --quiet --package-dir ai --caps IO,FS
+AI_C := $(SCRATCH)/ai-core
+ai_core_import = $(AI_CORE_RUN) --entry main --args-json '{"src":"$(1)","commit":"$(2)","dir":"$(3)","out":"$(4)","blobs":"$(5)"}' ai/tools/core_import.ail
+ai_core_verify = $(AI_CORE_RUN) --entry verify --args-json '{"dir":"$(1)","blobs":"$(2)"}' ai/tools/core_import.ail
+# Pinned blob lines of a SHA256SUMS: "<sha256> <layer path>".
+ai_core_blobs = grep '  blobs/' $(1)
+
+.PHONY: ai-core-import ai-core-verify ai-core-assets ai-core-bundle ai-core-publish
+ai-test: ai-core-verify
+
+ai-core-import:    ## AI.8 maintainers: re-import the Medic set from $(BLENDER) at AI_CORE_COMMIT (git archive, not the working tree) into data/ai/core + data/raw/ai_core
+	@rm -rf $(AI_C)/src && mkdir -p $(AI_C)/src
+	git -C "$(BLENDER)" archive "$(AI_CORE_COMMIT)" "$(AI_CORE_SRC)" | tar -x -C $(AI_C)/src
+	$(call ai_core_import,$(AI_C)/src/$(AI_CORE_SRC),$(AI_CORE_COMMIT),$(AI_CORE_SRC),$(AI_CORE_DIR),$(AI_CORE_BLOBS))
+
+# AC17. Offline: the import over tests/ai/core_fixture equals its expected index and sums, its blobs
+# verify, and a corrupted blob is refused; the committed index and SHA256SUMS are consistent with
+# valid keys (and blob hashes when data/raw/ai_core has the blobs: AILANG, then shasum as an
+# independent reference); with the Blender checkout at hand, a fresh import from the pinned commit
+# equals the committed files. AI_CORE_FETCH=1 fetches the blobs from the bucket first.
+ai-core-verify:    ## AC17: core index <-> SHA256SUMS, keys, fixture import, blob hashes if present, pinned Blender re-import if available
+	@$(if $(filter 1,$(AI_CORE_FETCH)),$(MAKE) --no-print-directory ai-core-assets,true)
+	@rm -rf $(AI_C)/fx && $(call ai_core_import,tests/ai/core_fixture,0000000000000000000000000000000000000000,tests/ai/core_fixture,$(AI_C)/fx,$(AI_C)/fx/layer) > /dev/null
+	@cmp $(AI_C)/fx/index.ndjson tests/ai/core_fixture/expected/index.ndjson && cmp $(AI_C)/fx/SHA256SUMS tests/ai/core_fixture/expected/SHA256SUMS
+	@$(call ai_core_verify,$(AI_C)/fx,$(AI_C)/fx/layer) | grep -q '^core-verify: 5 blobs in' || { echo "ai-core-verify: fixture blobs did not verify"; exit 1; }
+	@f=$$(find $(AI_C)/fx/layer -name '*.png' | head -1); printf 'x' >> "$$f"; \
+	  if $(call ai_core_verify,$(AI_C)/fx,$(AI_C)/fx/layer) > $(AI_C)/fx/bad.out; then echo "ai-core-verify: a corrupted fixture blob passed"; exit 1; fi; \
+	  grep -q '^core: blob [0-9a-f]* does not match its index line' $(AI_C)/fx/bad.out || { cat $(AI_C)/fx/bad.out; exit 1; }
+	@echo "ai-core-verify: fixture import == tests/ai/core_fixture/expected (index, SHA256SUMS); its 5 blobs verify; a corrupted blob is refused"
+	@$(call ai_core_verify,$(AI_CORE_DIR),$(AI_CORE_BLOBS)) > $(AI_C)/verify.out; rc=$$?; cat $(AI_C)/verify.out; test $$rc = 0
+	@test "$$(tail -1 $(AI_C)/verify.out)" = "ai_core $(AI_CORE)" && grep -qx '$(AI_CORE)  index.ndjson' $(AI_CORE_DIR)/SHA256SUMS || { echo "ai-core-verify: ai_core differs from shasum -a 256 of index.ndjson"; exit 1; }
+	@if [ -d $(AI_CORE_BLOBS)/blobs ]; then (cd $(AI_CORE_BLOBS) && $(call ai_core_blobs,"$(CURDIR)/$(AI_CORE_DIR)/SHA256SUMS") | shasum -a 256 -c --quiet) && echo "ai-core-verify: shasum -a 256 agrees on every blob in $(AI_CORE_BLOBS)"; fi
+	@if git -C "$(BLENDER)" cat-file -e "$(AI_CORE_COMMIT)^{commit}" 2>/dev/null; then \
+	  rm -rf $(AI_C)/pin && mkdir -p $(AI_C)/pin/src && git -C "$(BLENDER)" archive "$(AI_CORE_COMMIT)" "$(AI_CORE_SRC)" | tar -x -C $(AI_C)/pin/src && \
+	  $(call ai_core_import,$(AI_C)/pin/src/$(AI_CORE_SRC),$(AI_CORE_COMMIT),$(AI_CORE_SRC),$(AI_C)/pin,) > /dev/null && \
+	  cmp $(AI_C)/pin/index.ndjson $(AI_CORE_DIR)/index.ndjson && cmp $(AI_C)/pin/SHA256SUMS $(AI_CORE_DIR)/SHA256SUMS && \
+	  echo "ai-core-verify: a fresh import from blender@$(AI_CORE_COMMIT) == data/ai/core"; \
+	else echo "ai-core-verify: no Blender checkout with $(AI_CORE_COMMIT) at $(BLENDER); pinned re-import skipped"; fi
+
+ai-core-assets:    ## AI.8: fetch the pinned core blobs from the public bucket (anonymous HTTPS), sha-checked, into data/raw/ai_core
+	@mkdir -p $(AI_C) && $(call ai_core_blobs,$(AI_CORE_DIR)/SHA256SUMS) > $(AI_C)/fetch.lst
+	@missing=0; while read -r sum path; do \
+	  dst=$(AI_CORE_BLOBS)/$$path; \
+	  if [ -f "$$dst" ] && [ "$$(shasum -a 256 "$$dst" | cut -c1-64)" = "$$sum" ]; then echo "  have     $$path"; continue; fi; \
+	  mkdir -p "$$(dirname "$$dst")"; url="$(AI_CORE_BASE)/$$sum.$${path##*.}"; \
+	  if ! curl -fsSL --max-time 300 -o "$$dst.part" "$$url"; then rm -f "$$dst.part"; echo "  absent   $$url"; missing=$$((missing + 1)); continue; fi; \
+	  if [ "$$(shasum -a 256 "$$dst.part" | cut -c1-64)" != "$$sum" ]; then rm -f "$$dst.part"; echo "  CORRUPT  $$url"; missing=$$((missing + 1)); continue; fi; \
+	  mv "$$dst.part" "$$dst"; echo "  fetched  $$path  <- $$url"; \
+	done < $(AI_C)/fetch.lst; \
+	test $$missing -eq 0 || { echo "ai-core-assets: $$missing pinned blob(s) not fetched"; exit 1; }
+
+# Stages res://ai_core/ (gitignored) for the export: index.ndjson plus the pinned blobs, verified.
+# AI.9 makes export-macos depend on it. No blobs -> a warning and no core layer (the game falls
+# back to text and the library).
+ai-core-bundle:    ## AI.8: stage the verified core layer into ai_core/ for the export
+	@rm -rf ai_core
+	@if [ -d $(AI_CORE_BLOBS)/blobs ]; then \
+	  $(call ai_core_verify,$(AI_CORE_DIR),$(AI_CORE_BLOBS)) > /dev/null || exit 1; mkdir -p ai_core && cp $(AI_CORE_DIR)/index.ndjson ai_core/ && \
+	  $(call ai_core_blobs,$(AI_CORE_DIR)/SHA256SUMS) | while read -r sum path; do mkdir -p "ai_core/$$(dirname $$path)" && cp "$(AI_CORE_BLOBS)/$$path" "ai_core/$$path"; done && \
+	  (cd ai_core && grep -v '  index.ndjson$$' ../$(AI_CORE_DIR)/SHA256SUMS | shasum -a 256 -c --quiet && shasum -a 256 index.ndjson | grep -q '^$(AI_CORE) ') && \
+	  echo "ai-core-bundle: staged $$(find ai_core -type f | wc -l | tr -d ' ') files ($$(du -sh ai_core | cut -f1)), ai_core $(AI_CORE)"; \
+	else echo "ai-core-bundle: WARNING no core blobs in $(AI_CORE_BLOBS); this build has no core layer (run make ai-core-assets)"; fi
+
+ai-core-publish:   ## AI.8 maintainers (gcloud auth): upload the pinned core blobs to gs://stapledons-voyage-assets/ai/<sha256>.<ext> (never overwrites)
+	@command -v gcloud > /dev/null || { echo "ai-core-publish: needs gcloud (maintainers only)"; exit 1; }
+	@$(call ai_core_verify,$(AI_CORE_DIR),$(AI_CORE_BLOBS)) | grep -q '^core-verify: 5 blobs in' || { echo "ai-core-publish: blobs missing or not matching; run make ai-core-import first"; exit 1; }
+	@$(call ai_core_blobs,$(AI_CORE_DIR)/SHA256SUMS) | while read -r sum path; do \
+	  obj="$(AI_CORE_GS)/$$sum.$${path##*.}"; \
+	  if gcloud storage objects describe "$$obj" > /dev/null 2>&1; then echo "  exists   $$obj"; continue; fi; \
+	  gcloud storage cp --no-clobber --cache-control="public, max-age=31536000, immutable" "$(AI_CORE_BLOBS)/$$path" "$$obj" && echo "  uploaded $$obj"; \
+	done

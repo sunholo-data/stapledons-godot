@@ -15,7 +15,7 @@ import ./route (Routing, parseRouting)
 import ./wire (Request, Out, OOk, OErr, CtxField, CStr, encodeOut)
 import ./spend (Price, Ledger, ledgerOf, total, spentBy)
 import ./cache (Blob, Op, Mkdir, Write, Rename, Append, blobOps)
-import ./provider (Ctx, Case, Png, Step, Act, WriteBlob, AppendUsage, Say, handle, stubText, spelled, textBody, parseStubText, providerOf, providerName, requestError, Stub, Live)
+import ./provider (Ctx, Case, Png, Step, Act, WriteBlob, AppendUsage, Say, Prep, Done, Run, prepare, failed, handle, stubText, spelled, textBody, parseStubText, providerOf, providerName, requestError, Stub, Live)
 import ./reply (pngSize)
 
 pure func routing() -> Routing = match parseRouting(join("", [
@@ -141,6 +141,23 @@ export pure func checkCacheOps() -> bool {
   opNames(blobOps("c", b, true)) == ["mkdir c/blobs/ab", "append c/index.ndjson {}\n"]
 }
 
+-- A failed live call still costs what it used (AI.5 evaluation): the ledger
+-- is charged for the units, the usage line comes before the error; a call
+-- that used nothing charges nothing and logs no usage.
+pure func errCode(acts: [Act]) -> string = match said(acts) { Some(o) => (match o { OErr(e) => concat([e.code, "@", e.provider, "@", e.route]), _ => "" }), None => "" }
+export pure func checkFailedCharges() -> bool =
+  match prepare(bothCtx(), half(), textRq("3"), "live") {
+    Done(_) => false,
+    Run(j) => {
+      let f = failed(half(), j, "openrouter", { tokensIn: 100, tokensOut: 50, calls: 2 }, "bad_output");
+      let z = failed(half(), j, "openrouter", { tokensIn: 0, tokensOut: 0, calls: 0 }, "provider_error");
+      total(f.ledger) == 4000 && spentBy(f.ledger, "openrouter") == 4000 && shape(f.acts) == ["usage", "say"] &&
+      errCode(f.acts) == "bad_output@openrouter@openrouter" &&
+      contains(usageOf(f.acts), "\"tokens_in\":100,\"tokens_out\":50,\"calls\":2") &&
+      total(z.ledger) == 0 && shape(z.acts) == ["say"] && errCode(z.acts) == "provider_error@openrouter@openrouter"
+    }
+  }
+
 pure func refusedProvider(n: string, why: string) -> bool = match providerOf(n) { Ok(_) => false, Err(e) => e == why }
 -- Refused before routing: bad id, kind, purpose, key, or key of another kind;
 -- a stub_case the table lacks; the provider names; the fixture table.
@@ -160,7 +177,7 @@ export pure func checkStubRefusals() -> bool =
   (match parseStubText("{\"gossip\":{}}") { Ok(_) => false, Err(e) => e == "config: stub_text: unknown purpose gossip" }) &&
   (match parseStubText("{\"line\":{\"a\":1}}") { Ok(_) => false, Err(e) => e == "config: stub_text line.a is not a string" })
 
-export pure func stubChecks() -> bool = checkStubText() && checkStubRoutes() && checkStubImage() && checkStubVoice() && checkStubBudget() && checkStubActs() && checkCacheOps() && checkStubRefusals()
+export pure func stubChecks() -> bool = checkStubText() && checkStubRoutes() && checkStubImage() && checkStubVoice() && checkStubBudget() && checkStubActs() && checkCacheOps() && checkStubRefusals() && checkFailedCharges()
 
 test "AI.4 stub text: words for numbers, first allowed emotion, trimmed, fixture cases" { checkStubText() }
 test "AI.4 stub answers every route and stamps meta.route" { checkStubRoutes() }
@@ -170,3 +187,4 @@ test "AI.5 budget refused once the total would pass the ceiling" { checkStubBudg
 test "AI.5 acts: blob and usage before the result" { checkStubActs() }
 test "AI.5 blob writes: temp file, rename, then the index line" { checkCacheOps() }
 test "AI.4 requests refused before routing; provider names" { checkStubRefusals() }
+test "AI.5 a failed live call is charged and logged before its error" { checkFailedCharges() }

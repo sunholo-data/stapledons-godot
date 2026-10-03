@@ -11,7 +11,7 @@ module stapledons/sim/protocol
 import std/json (Json, encode, decode, js, jnum, get, has, getNumber, getString, getBool, getArray, asObject)
 import std/result (Result, Ok, Err)
 import std/option (Option, Some, None)
-import std/string (concat, join, length, substring, startsWith, endsWith, contains, intToStr)
+import std/string (concat, join, length, substring, startsWith, endsWith, contains, intToStr, split)
 import std/math (floor, floatToInt, intToFloat)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
@@ -52,8 +52,10 @@ pure func small(frac: string, z: int) -> string =
   if startsWith(frac, "0") then small(substring(frac, 1, length(frac)), z + 1)
   else if z < 6 then concat(["0.", zeros(z), frac])
   else concat([mantissa(frac), "e-", intToStr(z + 1)])
+-- std/json writes |x| >= 1e21 as `1e+21` since v0.52.0 (ailang#1460); the wire keeps `1e21`.
 pure func mag(s: string) -> string =
-  if startsWith(s, "0.") then small(substring(s, 2, length(s)), 0)
+  if contains(s, "e+") then join("e", split(s, "e+"))
+  else if startsWith(s, "0.") then small(substring(s, 2, length(s)), 0)
   else if contains(s, ".") || contains(s, "e") || length(s) <= 17 then s
   else concat([mantissa(trimZeros(s)), "e", intToStr(length(s) - 1)])
 export pure func num(x: float) -> string =

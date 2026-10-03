@@ -6,7 +6,7 @@ module stapledons/ai/service
 -- at a time, until quit or end of input. Nothing is printed before the first
 -- line arrives. Blank lines are skipped; readLine returns "" both for a
 -- blank line and at end of input, so 16 empty reads in a row end the loop
--- (reported upstream).
+-- (ailang#1535).
 --
 -- Entries (configuration is the entry argument, never argv or env):
 --   main    (--caps IO,FS)  the stub. {provider: "stub", keys_present, text_only,
@@ -53,6 +53,7 @@ func run(dir: string, acts: [Act]) -> () ! {IO, FS} =
     [] => (),
     a :: r => { (match a { WriteBlob(b) => writeBlob(dir, b), AppendUsage(l) => appendUsage(dir, l), Say(o) => say(o) }); run(dir, r) }
   }
+-- ailang#1535: readLine gives "" for a blank line and at end of input alike.
 pure func maxBlanks() -> int = 16
 
 -- What one input line asks for. The stub loop and the live loop share it;
@@ -88,7 +89,7 @@ func loadPngs(dir: string, es: [string]) -> Result[[Png], string] ! {FS} =
 func readText(path: string) -> Result[string, string] ! {FS} =
   match readFileResult(path) { Ok(t) => Ok(t), Err(_) => Err(concat(["config: cannot read ", path])) }
 -- The directory of a path ("data/ai/routing.json" -> "data/ai"; "x.json" -> ".").
--- No `_ :: []` arm: the bytecode VM matches it against longer lists (reported upstream).
+-- No `_ :: []` arm: the bytecode VM matches it against longer lists (ailang#1534).
 pure func dirOf(path: string) -> string =
   match revList(split(path, "/"), []) { [] => ".", _ :: rest => (match rest { [] => ".", _ => join("/", revList(rest, [])) }) }
 pure func revList(xs: [string], acc: [string]) -> [string] = match xs { [] => acc, x :: r => revList(r, x :: acc) }

@@ -1,0 +1,72 @@
+module stapledons/ai/tools/core_import_test
+
+-- The core layer (AI.8, design (a4)): the Medic set's table, index lines built
+-- from a fixture PNG, SHA256SUMS, and the verifier's refusals. The import over
+-- a fixture directory runs end to end in `make ai-core-verify`.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/bytes (fromBase64, fromString)
+import std/string (concat, join, split)
+import std/crypto (sha256Hex)
+import stapledons/ai/key (keyError, canonical)
+import ./core_import (medicSet, assetOf, indexLine, sumsOf, verifyCore, Item)
+
+pure func fixturePng() -> bytes =
+  match fromBase64("iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAU0lEQVR42u3YQQkAAAgEQaMZzeiWEORgtsF8tya8AgAAAAAAAAAAAAAAAAB4APRRAAAAAAAAAAAAAAAAAAAAAABZAGcOAAAAAAAAAAAAAAAAILgFvGdRS4UpY/4AAAAASUVORK5CYII=") {
+    Some(b) => b, None => fromString("")
+  }
+pure func commit() -> string = "8f04dfc86dd310e73c9052351ad37fbcedb542d5"
+pure func srcDir() -> string = "assets/stapledon/characters/medic_v2"
+pure func first() -> Item = match medicSet() { it :: _ => it, [] => { file: "", prompt: "", key: { kind: "", entityId: "", emotion: "", ageStage: 0, variant: "" } } }
+
+pure func allValid(xs: [Item]) -> bool = match xs { [] => true, it :: r => keyError(it.key) == None && allValid(r) }
+pure func keys(xs: [Item]) -> [string] = match xs { [] => [], it :: r => canonical(it.key) :: keys(r) }
+
+pure func checkSet() -> bool =
+  allValid(medicSet()) &&
+  keys(medicSet()) == ["portrait/medic/neutral/0/0", "portrait/medic/loving/0/0", "portrait/medic/grieving/0/0", "portrait/medic/neutral/50/0", "avatar/medic/-/0/0"]
+
+test "AI.8 the Medic set is 4 portraits and 1 avatar, every key valid" { checkSet() }
+
+pure func fixtureLine() -> string =
+  concat(["{\"key\":{\"kind\":\"portrait\",\"entity_id\":\"medic\",\"emotion\":\"neutral\",\"age_stage\":0,\"variant\":\"0\"},",
+    "\"sha256\":\"8976b7f3272ddb0aefac9ed00c3012ac0a79c5c75d4fe3e11429e19bbb04c731\",\"mime\":\"image/png\",\"bytes\":140,\"ext\":\"png\",",
+    "\"origin\":\"core\",\"provider\":\"imagegen\",\"model\":\"image_gen\",\"input_sha256\":\"", sha256Hex("p"), "\",\"seed\":null,",
+    "\"source\":\"blender@", commit(), ":", srcDir(), "/portrait_medic_age0_neutral_v2.png\",\"width\":64,\"height\":64}"])
+
+pure func checkLine() -> bool =
+  (match assetOf(first(), fixturePng(), fromString("p")) { Ok(a) => indexLine(a, commit(), srcDir()) == fixtureLine(), Err(_) => false }) &&
+  (match assetOf(first(), fromString("not a png at all, just some text"), fromString("p")) { Ok(_) => false, Err(e) => e == "not a PNG: portrait_medic_age0_neutral_v2.png" })
+
+test "AI.8 an index line from a fixture PNG: key, sha256, bytes, size, prompt hash, pinned source" { checkLine() }
+
+pure func idx() -> string = concat([fixtureLine(), "\n"])
+pure func goodSums() -> string =
+  concat(["8976b7f3272ddb0aefac9ed00c3012ac0a79c5c75d4fe3e11429e19bbb04c731  blobs/89/8976b7f3272ddb0aefac9ed00c3012ac0a79c5c75d4fe3e11429e19bbb04c731.png\n",
+    sha256Hex(idx()), "  index.ndjson\n"])
+
+pure func checkSums() -> bool =
+  match assetOf(first(), fixturePng(), fromString("p")) { Ok(a) => sumsOf(idx(), [a]) == goodSums(), Err(_) => false }
+
+test "AI.8 SHA256SUMS: one line per blob at its layer path, then the index" { checkSums() }
+
+pure func swap(s: string, from: string, to: string) -> string = join(to, split(s, from))
+pure func coreRefused(index: string, sums: string, why: string) -> bool = match verifyCore(index, sums) { Ok(_) => false, Err(e) => e == why }
+
+pure func checkVerifyOk() -> bool =
+  (match verifyCore(idx(), goodSums()) { Ok(h) => h == sha256Hex(idx()), Err(_) => false }) &&
+  coreRefused("", "", "index.ndjson is empty")
+pure func checkVerifySums() -> bool =
+  coreRefused(idx(), swap(goodSums(), "8976b7f3272ddb0aefac9ed00c3012ac0a79c5c75d4fe3e11429e19bbb04c731  ", "0976b7f3272ddb0aefac9ed00c3012ac0a79c5c75d4fe3e11429e19bbb04c731  "), "SHA256SUMS does not match index.ndjson") &&
+  coreRefused(idx(), concat([goodSums(), "00  extra.png\n"]), "SHA256SUMS does not match index.ndjson")
+pure func checkVerifyLines() -> bool =
+  coreRefused(swap(idx(), "\"neutral\"", "\"joy\""), goodSums(), "line 1: bad_key:emotion") &&
+  coreRefused(swap(idx(), "blender@8f04", "blender@HEAD"), goodSums(), "line 1: source is not blender@<commit>:<path>") &&
+  coreRefused(swap(idx(), "\"mime\":\"image/png\"", "\"mime\":\"audio/ogg\""), goodSums(), "line 1: mime and ext disagree") &&
+  coreRefused(swap(idx(), "\"origin\":\"core\"", "\"origin\":\"library\""), goodSums(), "line 1: origin is not core") &&
+  coreRefused(swap(idx(), "\"width\":64", "\"width\":0"), goodSums(), "line 1: an image needs width and height") &&
+  coreRefused(concat([idx(), idx()]), goodSums(), "line 2: duplicate key portrait/medic/neutral/0/0")
+
+test "AI.8 verify: a consistent index passes and ai_core is its sha256; an empty index is refused" { checkVerifyOk() }
+test "AI.8 verify: SHA256SUMS must list exactly the index blobs and the index" { checkVerifySums() }
+test "AI.8 verify: each bad index line is refused with its line and reason" { checkVerifyLines() }

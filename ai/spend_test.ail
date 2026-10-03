@@ -14,6 +14,12 @@ pure func priceTable() -> string = join("", ["{\"v\":1,\"_note\":\"x\",\"prices\
 pure func spendPrices() -> [Price] = match parsePrices(priceTable()) { Ok(ps) => ps, Err(_) => [] }
 pure func priced(p: string, m: string, u: Units) -> int = match priceFor(spendPrices(), p, m) { Some(x) => cost(x, u), None => 0 - 1 }
 pure func units(i: int, o: int, c: int) -> Units = { tokensIn: i, tokensOut: o, calls: c }
+-- Rounding to the nearest n$ (AI.5 evaluation): 2.01 $/Mtok is 2009.9999... n$ a
+-- token and 0.0157 $ a call 15699999.99... n$ in float64; floor would lose one.
+pure func roundTable() -> string = "{\"v\":1,\"prices\":{\"gemini\":{\"m\":{\"in_per_mtok\":2.01,\"out_per_mtok\":4.06,\"per_call\":0.0157}}}}"
+pure func checkSpendRounding() -> bool =
+  nanoOf(0.0157) == 15700000 && nanoOf(0.00013) == 130000 &&
+  (match parsePrices(roundTable()) { Ok(ps) => (match priceFor(ps, "gemini", "m") { Some(p) => p.inTok == 2010 && p.outTok == 4060 && p.perCall == 15700000, None => false }), Err(_) => false })
 pure func pricesRefused(t: string, want: string) -> bool = match parsePrices(t) { Ok(_) => false, Err(e) => e == want }
 
 -- $/Mtok -> n$/token; tokens x price; a flat per-call price; exact sums.
@@ -51,9 +57,10 @@ pure func checkSpendUsage() -> bool {
     "{\"req\":\"9\",\"provider\":\"stub\",\"route\":\"gemini\",\"model\":\"gemini-2.5-flash-image\",\"kind\":\"portrait\",\"tokens_in\":0,\"tokens_out\":0,\"calls\":1,\"usd\":0.039,\"ms\":0,\"totals\":{\"gemini\":0.039,\"openrouter\":0.001,\"all\":0.04}}"
 }
 
-export pure func spendChecks() -> bool = checkSpendPrices() && checkSpendLedger() && checkSpendCeiling() && checkSpendUsage()
+export pure func spendChecks() -> bool = checkSpendRounding() && checkSpendPrices() && checkSpendLedger() && checkSpendCeiling() && checkSpendUsage()
 
 test "AI.5 prices keyed by provider and model price tokens and calls exactly" { checkSpendPrices() }
 test "AI.5 ledger per provider plus total; refused once the total would pass the ceiling" { checkSpendLedger() }
 test "AI.5 the player's ceiling is bounded 0.05..20, default 0.50" { checkSpendCeiling() }
 test "AI.5 usage lines carry provider, route, model and running totals" { checkSpendUsage() }
+test "AI.5 prices and ceilings round to the nearest nano-dollar" { checkSpendRounding() }
