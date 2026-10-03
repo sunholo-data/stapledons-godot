@@ -296,6 +296,7 @@ branch merges to main as one merge after its ⏸ review. M5.4 is its own PR. M5.
 ### Wave 1
 
 #### M5.0a1: `sunholo/celestial` orbits (new package, part 1)
+**Status:** ✅ published in `sunholo/celestial@0.1.0` (ailang-packages PR #91); independent eval 89/100 (`eval_R1-M5-PLANETS-M5.0a_round_1.json`, covers M5.0a1 + M5.0a2).
 **Scope (in `$PKG/packages/celestial`):** `ailang pkg init` with the package
 manifest, `[release] kind`, a README that cites the design repo's
 `physics/planets-spec.md` (as relativity cites its spec), and an AGENT.md.
@@ -345,6 +346,7 @@ expected value is the published reference date or constant, not the
 oracle's output.**
 
 #### M5.0b: `sunholo/relativity`: `optics.apparentDisc` and `medium.hoverPower`
+**Status:** ✅ published in `sunholo/relativity@0.7.0` after M4.6a's 0.6.0; independent eval 93/100 (`eval_R1-M5-PLANETS-M5.0b_round_1.json`).
 **Scope (in `$PKG/packages/relativity`):**
 `optics.apparentDisc(cosTheta, alpha, phi)` returns the apparent centre and
 apparent radius of a sphere of angular radius α at rest angle θ. It
@@ -385,6 +387,7 @@ cap, `hoverPower` linearity.
 ### Wave 2
 
 #### M5.0a2: `sunholo/celestial` light, gravity and rings; publish 0.1.0
+**Status:** ✅ `sunholo/celestial@0.1.0` published after the independent eval (89/100, B1 fixed first); ⏸ P-pkg-a needed no Mark action (Q1).
 **Scope:**
 - **`lighttime`**: `retardedTime(srcFn, obs, t)`, a fixed-point iteration
   run exactly 4 times.
@@ -429,6 +432,12 @@ modules.
 ### Wave 3
 
 #### M5.1a: Sol and α Cen data, and the package pins
+**Status:** ✅ executed on `sprint/m5.1a-system-data` (2026-10-03); independent eval PASS 89/100, round-1 follow-ups applied.
+- [x] Pins in their own commit: relativity 0.7.0, celestial 0.1.0; lockfile relocked; bundled cache refreshed.
+- [x] `sim/data/sol.ail`, `sim/data/acen.ail` with citation keys and per-field provenance; `sim/celestial_test.ail` (22 checks).
+- [x] AC6 via `make sim` (test blocks) and `make strict-m5` (strict VM = interpreter).
+- [x] Mutants (dropped citation key, unknown key, retracted row, upgraded candidate, provenance without a note, moon P misread, ring edge) fail.
+- [x] Deviations recorded in the sprint JSON: design §M5.1 names **12** moons (it says 11); the design-repo ring table's Uranus row is wrong (published 1.637-2.002 R); its other differences are scope or definition (tested as published edges); Uranus/Neptune Minnaert k assumed 1 (no citable value).
 **Scope:**
 - **`sim/data/sol.ail`**, every row with a citation key: the Standish
   Table 2a elements and rates for the 8 planets; the IAU 2015 poles, W₀ and

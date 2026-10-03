@@ -510,3 +510,4 @@ destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars remov
 
 include mk/ai.mk
 include mk/site.mk
+include mk/m5.mk

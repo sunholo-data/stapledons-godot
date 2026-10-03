@@ -1,11 +1,31 @@
 {
   "ailang_version": "v0.52.0",
-  "generated_at": "2026-10-03T12:49:55.420491Z",
+  "generated_at": "2026-10-03T14:08:43.610989Z",
   "generator": "ailang lock v0.52.0",
   "packages": [
     {
+      "ailang": ">=0.52.0",
+      "content_hash": "sha256:7aed87f3c115758eaae241b8679d44f148198bfb391f607d36ac3897d4125baf",
+      "effects": [
+        "IO"
+      ],
+      "exports": [
+        "sunholo/celestial/ephemeris",
+        "sunholo/celestial/frames",
+        "sunholo/celestial/gravity",
+        "sunholo/celestial/kepler",
+        "sunholo/celestial/lighttime",
+        "sunholo/celestial/reflect",
+        "sunholo/celestial/rings"
+      ],
+      "interface_hash": "sha256:059817dc4966efd61dcbdf5d6184ebbaf3e03b471b9df51ac22729eaa7e5ebf5",
+      "name": "sunholo/celestial",
+      "source": "registry",
+      "version": "0.1.0"
+    },
+    {
       "ailang": ">=0.45.0",
-      "content_hash": "sha256:5fd949a35d3238c5a5ce700a6b5a0b162412296ddec1fd78826a8cdbe22f4992",
+      "content_hash": "sha256:bea504dfe4ae8291a8ea2f3d2535b488c51fbc844b727bc8f83f7a2bf34ea001",
       "effects": [
         "IO"
       ],
@@ -25,7 +45,7 @@
       "interface_hash": "sha256:c747d1b1e1ebd1480f06fb1609393ebf801cf5d6455ee7e51bab1fd7521acced",
       "name": "sunholo/relativity",
       "source": "registry",
-      "version": "0.5.2"
+      "version": "0.7.0"
     }
   ],
   "schema": "ailang.lock/v1",

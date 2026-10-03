@@ -1,0 +1,97 @@
+module stapledons/sim/data/acen
+
+-- M5.1a: the alpha Centauri system as data (design m5-planets §M5.7, Mark's Q3
+-- honesty rules). Pure, no I/O. Every body has a status in
+-- {star, confirmed, candidate}; retracted claims (alpha Cen B b, 2012, refuted
+-- 2015-16) are never loaded. Every number is a Field with its provenance:
+--   measured  : from observation, cited;
+--   inferred  : derived through a named relation (the note names it);
+--   assumed   : no measurement exists; the value is stated as an assumption.
+-- Planet status follows the NASA Exoplanet Archive `ps` snapshot of
+-- 2026-10-03 (pinned by sha256 in data/planets/EXOPLANETS.SHA256): a planet is
+-- "confirmed" only if the archive lists it, and never upgraded by us.
+
+export type Field = { value: float, prov: string, note: string, cite: string }
+-- kind: "star" | "planet"; host: the id of the star it orbits ("" for stars).
+export type Body = { id: string, name: string, kind: string, host: string, status: string, fields: [(string, Field)] }
+-- The AB visual orbit (B relative to A).
+export type Binary = { fields: [(string, Field)] }
+
+export pure func acenCitations() -> [(string, string)] = [
+  ("akeson2021", "Akeson et al. 2021, AJ 162:14, alpha Cen AB orbit, parallax and masses"),
+  ("archive20261003", "NASA Exoplanet Archive, table ps, hostname in (Proxima Cen, alf Cen A, alf Cen B), retrieved 2026-10-03 (data/planets/EXOPLANETS.SHA256)"),
+  ("suarez2025", "Suarez Mascareno et al. 2025, A&A 700:A11 (the archive's default parameter set for Proxima b and d)"),
+  ("anglada2016", "Anglada-Escude et al. 2016, Nature 536:437 (Proxima b discovery; Proxima mass 0.12 Msun)"),
+  ("faria2022", "Faria et al. 2022, A&A 658:A115 (Proxima d)"),
+  ("damasso2020", "Damasso et al. 2020, Sci. Adv. 6:eaax7467 (Proxima c candidate, disputed)"),
+  ("beichman2025", "Beichman et al. 2025, ApJL (arXiv:2508.03814), JWST/MIRI candidate alpha Cen A b, Table 4 orbit families"),
+  ("chen2017", "Chen & Kipping 2017, ApJ 834:17, probabilistic mass-radius relation (Terran R = 1.008 M^0.279; Neptunian R = 0.808 M^0.589, continuous at 2.04 M_Earth)"),
+  ("kervella2020", "Kervella et al. 2020, A&A 635:L14, Proxima c orbital period and semi-major axis adopted for the inclination and mass analysis"),
+  ("assumption", "assumed by the game; no measurement exists")
+]
+
+pure func m(v: float, note: string, cite: string) -> Field = { value: v, prov: "measured", note: note, cite: cite }
+pure func inf(v: float, relation: string, cite: string) -> Field = { value: v, prov: "inferred", note: relation, cite: cite }
+pure func asm(v: float, why: string) -> Field = { value: v, prov: "assumed", note: why, cite: "assumption" }
+
+export pure func abOrbit() -> Binary = { fields: [
+  ("period_yr", m(79.762, "+-0.019", "akeson2021")),
+  ("a_arcsec", m(17.493, "+-0.0096", "akeson2021")),
+  ("a_au", m(23.299, "a_arcsec / parallax", "akeson2021")),
+  ("e", m(0.51947, "+-0.00015", "akeson2021")),
+  ("incl_deg", m(79.243, "+-0.0089", "akeson2021")),
+  ("node_deg", m(205.073, "+-0.025", "akeson2021")),
+  ("argperi_deg", m(231.519, "+-0.027", "akeson2021")),
+  ("tperi_yr", m(1875.66, "+-0.012 (epoch of periastron, years)", "akeson2021")),
+  ("parallax_mas", m(750.81, "+-0.38", "akeson2021")),
+  ("mass_a_sun", m(1.0788, "+-0.0029", "akeson2021")),
+  ("mass_b_sun", m(0.9092, "+-0.0025", "akeson2021"))
+] }
+
+-- Chen & Kipping 2017 (Terran / Neptunian), with the minimum mass m sin i as M
+-- (inclination assumed 90 deg): Proxima b 1.008 * 1.055^0.279, d 1.008 * 0.26^0.279,
+-- c 1.008 * 2.04^0.279 * (5.8/2.04)^0.589.
+pure func rTerran(mE: float, label: string) -> Field = inf(mE, label, "chen2017")
+
+export pure func bodies() -> [Body] = [
+  { id: "acen-a", name: "alpha Centauri A", kind: "star", host: "", status: "star",
+    fields: [("mass_sun", m(1.0788, "+-0.0029", "akeson2021"))] },
+  { id: "acen-b", name: "alpha Centauri B", kind: "star", host: "", status: "star",
+    fields: [("mass_sun", m(0.9092, "+-0.0025", "akeson2021"))] },
+  -- Proxima's position is the bright-tier catalogue's (M1.2d), not repeated here.
+  { id: "proxima", name: "Proxima Centauri", kind: "star", host: "", status: "star",
+    fields: [("mass_sun", inf(0.12, "mass-luminosity relation as used by the discovery paper", "anglada2016"))] },
+  { id: "proxima-b", name: "Proxima Centauri b", kind: "planet", host: "proxima", status: "confirmed",
+    fields: [("period_d", m(11.18465, "archive default", "suarez2025")), ("a_au", m(0.04848, "archive default", "suarez2025")),
+             ("e", asm(0.0, "circular: the default fit lists e = 0")), ("msini_earth", m(1.055, "minimum mass (RV)", "suarez2025")),
+             ("incl_deg", asm(90.0, "non-transiting, inclination unknown; edge-on makes the mass the minimum mass")),
+             ("node_deg", asm(0.0, "unknown")), ("argperi_deg", asm(0.0, "unknown")), ("mean_anom_deg", asm(0.0, "orbital phase at J2000 not modelled")),
+             ("radius_earth", rTerran(1.0232, "Chen & Kipping Terran R = 1.008 M^0.279 with M = m sin i")),
+             ("p_v", asm(0.3, "no albedo measurement; a rocky-planet value is assumed"))] },
+  { id: "proxima-d", name: "Proxima Centauri d", kind: "planet", host: "proxima", status: "confirmed",
+    fields: [("period_d", m(5.12338, "archive default (discovery Faria 2022)", "suarez2025")), ("a_au", m(0.02881, "archive default", "suarez2025")),
+             ("e", asm(0.0, "circular: the default fit lists e = 0")), ("msini_earth", m(0.26, "minimum mass (RV)", "suarez2025")),
+             ("incl_deg", asm(90.0, "inclination unknown")), ("node_deg", asm(0.0, "unknown")), ("argperi_deg", asm(0.0, "unknown")),
+             ("mean_anom_deg", asm(0.0, "orbital phase at J2000 not modelled")),
+             ("radius_earth", rTerran(0.6922, "Chen & Kipping Terran R = 1.008 M^0.279 with M = m sin i")),
+             ("p_v", asm(0.3, "no albedo measurement; a rocky-planet value is assumed"))] },
+  -- Not in the archive's confirmed table on the snapshot date: candidate (disputed).
+  { id: "proxima-c", name: "Proxima Centauri c", kind: "planet", host: "proxima", status: "candidate",
+    fields: [("period_d", m(1928.0, "+-20 (RV), disputed", "kervella2020")), ("a_au", m(1.489, "+-0.049", "kervella2020")),
+             ("e", asm(0.0, "circular assumed")), ("msini_earth", m(5.8, "+-1.9, minimum mass (RV)", "damasso2020")),
+             ("incl_deg", asm(90.0, "inclination unknown")), ("node_deg", asm(0.0, "unknown")), ("argperi_deg", asm(0.0, "unknown")),
+             ("mean_anom_deg", asm(0.0, "orbital phase at J2000 not modelled")),
+             ("radius_earth", rTerran(2.2758, "Chen & Kipping Neptunian R = 1.008 * 2.04^0.279 (M/2.04)^0.589 with M = m sin i")),
+             ("p_v", asm(0.3, "no albedo measurement"))] },
+  -- JWST/MIRI direct-imaging candidate. Orbit: ONE OF SEVERAL FITS (Table 4 family
+  -- "prograde, a < 2 au"); the period follows from Kepler's third law around A.
+  { id: "acen-a-b", name: "alpha Centauri A b", kind: "planet", host: "acen-a", status: "candidate",
+    fields: [("a_au", inf(1.66, "orbit family fit (prograde, a < 2 au), one of several fits; +-0.06", "beichman2025")),
+             ("e", inf(0.37, "orbit family fit, one of several fits; +-0.12", "beichman2025")),
+             ("period_d", inf(752.0, "Kepler's third law: 365.25 sqrt(a^3 / M_A), a 1.66 au, M_A 1.0788", "beichman2025")),
+             ("incl_deg", asm(90.0, "only the mutual inclination to AB is fitted (54 +- 11 deg)")),
+             ("node_deg", asm(0.0, "unknown")), ("argperi_deg", asm(0.0, "unknown")), ("mean_anom_deg", asm(0.0, "orbital phase not modelled")),
+             ("mass_earth", inf(120.0, "atmosphere models, range 90-150", "beichman2025")),
+             ("radius_earth", inf(11.77, "1.05 R_Jup (range 1.0-1.1) from photometry and atmosphere models; 1 R_Jup = 11.209 R_Earth", "beichman2025")),
+             ("p_v", asm(0.3, "the paper's blackbody models assume Bond albedo 0.3"))] }
+]
