@@ -154,33 +154,98 @@ func build() -> void:
 
 ## Writes every instance relative to the current origin, then the ship offset.
 func _fill() -> void:
-	var mm := multimesh
-	mm.instance_count = count
-	_buf.resize(FLOATS * count)
+	_buf = _fill_into(multimesh, _buf, pos, custom, count)
+	_fill_points()
+	_upload_ship()
+
+
+## One instance per star into mm: hi/lo pairs relative to the origin, then custom.
+## Returns the buffer (packed arrays are values in GDScript: the caller keeps it).
+func _fill_into(mm: MultiMesh, buf: PackedFloat32Array, p: PackedFloat64Array, cu: PackedFloat32Array, n: int) -> PackedFloat32Array:
+	mm.instance_count = n
+	buf.resize(FLOATS * n)
 	var ox := origin[0]
 	var oy := origin[1]
 	var oz := origin[2]
-	for k in count:
+	for k in n:
 		var b := FLOATS * k
-		var rx := pos[3 * k] - ox
-		var ry := pos[3 * k + 1] - oy
-		var rz := pos[3 * k + 2] - oz
+		var rx := p[3 * k] - ox
+		var ry := p[3 * k + 1] - oy
+		var rz := p[3 * k + 2] - oz
 		# origin (row ends 3, 7, 11) = hi; writing to a float32 array rounds, reading back gives f32(r)
-		_buf[b + 3] = rx
-		_buf[b + 7] = ry
-		_buf[b + 11] = rz
+		buf[b + 3] = rx
+		buf[b + 7] = ry
+		buf[b + 11] = rz
 		# basis column x (0, 4, 8) = lo, the rounding error of hi
-		_buf[b] = rx - _buf[b + 3]
-		_buf[b + 4] = ry - _buf[b + 7]
-		_buf[b + 8] = rz - _buf[b + 11]
+		buf[b] = rx - buf[b + 3]
+		buf[b + 4] = ry - buf[b + 7]
+		buf[b + 8] = rz - buf[b + 11]
 		var c := 4 * k
-		_buf[b + 12] = custom[c]
-		_buf[b + 13] = custom[c + 1]
-		_buf[b + 14] = custom[c + 2]
-		_buf[b + 15] = custom[c + 3]
-	if count > 0:
-		mm.buffer = _buf
-	_upload_ship()
+		buf[b + 12] = cu[c]
+		buf[b + 13] = cu[c + 1]
+		buf[b + 14] = cu[c + 2]
+		buf[b + 15] = cu[c + 3]
+	if n > 0:
+		mm.buffer = buf
+	return buf
+
+
+# ------------------------------------------------------------ M5.2a point sources
+## Bodies below Planets.DISC_PX (planets/system_view.gd) are drawn as stars:
+## a second MultiMesh sharing this one's quad, so its material (velocity,
+## exposure, PSF, floor, ship pair) is the same uniform set, and the band-ratio
+## Doppler applies unchanged. A point is placed POINT_LY out along its float64
+## direction from the ship with its flux scaled so the shader's |p|^2 / r^2
+## rescale gives back its illuminance at the ship.
+const POINT_LY := 1000.0
+var points: MultiMeshInstance3D
+var point_count := 0
+var _point_pos := PackedFloat64Array()
+var _point_custom := PackedFloat32Array()
+var _point_buf := PackedFloat32Array()
+
+
+func clear_point_sources() -> void:
+	point_count = 0
+	_point_pos.clear()
+	_point_custom.clear()
+	_fill_points()
+
+
+## list: [{dir: [x, y, z] float64 unit world direction from the ship, lux: E_v at the ship, t: kelvin}].
+func add_point_sources(list: Array) -> void:
+	_point_pos.resize(3 * (point_count + list.size()))
+	_point_custom.resize(4 * (point_count + list.size()))
+	for s: Dictionary in list:
+		var d = s["dir"]
+		var k := point_count
+		var x: float = ship[0] + d[0] * POINT_LY
+		var y: float = ship[1] + d[1] * POINT_LY
+		var z: float = ship[2] + d[2] * POINT_LY
+		var p2 := x * x + y * y + z * z
+		_point_pos[3 * k] = x
+		_point_pos[3 * k + 1] = y
+		_point_pos[3 * k + 2] = z
+		_point_custom[4 * k] = s["t"]
+		_point_custom[4 * k + 1] = s["lux"] * POINT_LY * POINT_LY / p2
+		_point_custom[4 * k + 2] = 0.0
+		_point_custom[4 * k + 3] = p2
+		point_count += 1
+	_fill_points()
+
+
+func _fill_points() -> void:
+	if multimesh == null:
+		return
+	if points == null:
+		points = MultiMeshInstance3D.new()
+		points.multimesh = MultiMesh.new()
+		points.multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		points.multimesh.use_custom_data = true
+		points.multimesh.mesh = multimesh.mesh
+		points.custom_aabb = custom_aabb
+		add_child(points)
+	_point_buf = _fill_into(points.multimesh, _point_buf, _point_pos, _point_custom, point_count)
 
 
 ## x, y, z: the sim's float64 world position in ly (never through a Vector3).

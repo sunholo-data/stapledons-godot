@@ -20,3 +20,5 @@ data/starmap/stars_*.tmp
 data/starmap/stars_*.bak
 ai_core/
 **/.ailang/cache/
+# M5.2a: planet textures are fetched by make planet-assets (pins in data/planets/SHA256SUMS), never committed
+assets/planets/

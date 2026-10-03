@@ -531,6 +531,13 @@ old-message compatibility.
 ### Wave 5 to 7, RENDER track (stacked into `m5-render`)
 
 #### M5.2a: physically lit globes, point/disc handoff, textures
+**Status:** ✅ executed on `sprint/m5.2a-globes` (2026-10-03), **⏸ L-tex open**: `make planet-publish` has not run (Mark's licence check first); `make planet-assets` falls back to the source URL until then. Independent eval pending.
+- [x] AC7 photometry half: `make physics` (`_m5_photometry`, 22 checks): `physics/planets.gd` = the package probe (`sim/tools/planets_probe.ail`) within 1e-12 relative for `starIlluminanceAt`, `lambertPhase`, `minnaertRadiance`, `minnaertPhase`, `rhoFromGeometricAlbedo`, `discIlluminance`; `make lint-precision` (= `lint-precision-m5` until M4.6) covers `planets/`.
+- [x] AC8 part: `make golden` / `make golden-m5`: G-M5-4 (uniform 1.0021, normalised texture over 4 rotations 1.0041, centroid 0.001 px, extent 200.00 px) and G-M5-6 (point 1.0010, disc 1.0013, 0.03 % apart); M1 golden counts unchanged.
+- [x] AC10: `make planet-assets && test -z "$(git ls-files assets/planets)" && grep -q 'CC BY 4.0' data/planets/CREDITS`.
+- [x] Texture normalisation: `tools/planet_textures.gd -- --check` (in `make test` as `planet-textures-check`): 9 textures within 0.04 % of p_V.
+- [x] Renders opened: `make capture-m5a` → `renders/m5/m5.2a/` (nine globes, Jupiter in EYE, the Sun, the crossover pair, a sheet).
+- [ ] ⏸ L-tex: Mark's licence check, then `make planet-publish` (maintainer).
 **Scope:**
 - **`planets/system_view.gd`** is fed only by `state.system` and renders
   into M4's (today: M1's) sky SubViewport, pre-exposed. Placement: float64
