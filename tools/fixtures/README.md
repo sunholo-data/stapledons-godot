@@ -47,3 +47,22 @@ Measured expectations (2026-09-28, planner's task-1 evidence reproduced
 byte-for-byte):
   * A19 ReadMe 200 / 10530 B / cns5.dat Lrecl 761 Records 5909
 ```
+
+## M1.2d bright tier (`sim/tools/bright_test.ail`, `make bright-test`)
+
+Cut the same way (raw lines, never edited) after `download_stars.sh quick` and `download_stars.sh bright`.
+`bright_test.ail` inlines the same lines, and `brightFixtures` fails if the files and the inline copies differ.
+
+```
+# HIP2 (VizieR I/311 hip2.dat.gz, Lrecl 276): Aldebaran, Rigel, Sirius, Groombridge 1830,
+# Arcturus, alpha Cen B, alpha Cen A, Vega (HIP is bytes 1-6)
+for h in 24436 32349 57939 69673 71681 71683 91262 21421; do
+  gunzip -c data/raw/hip2.dat.gz | awk -v h=$h 'substr($0,1,6)+0==h'; done > tools/fixtures/hip2_bright.dat
+# hip_main (VizieR I/239 hip_main.dat, Lrecl 450; HIP is bytes 9-14), same stars
+for h in 21421 24436 32349 57939 69673 71681 71683 91262; do
+  awk -v h=$h 'substr($0,9,6)+0==h' data/raw/hip_main.dat; done > tools/fixtures/hip_main_bright.dat
+# CNS5 (cns5.dat): Aldebaran A/B (both HIP 21421), Sirius B/A, Groombridge 1830, Arcturus,
+# alpha Cen AB, Vega (designation is bytes 1-4)
+for d in 1142 1143 1675 1676 2914 3517 3627 4607; do
+  awk -v d=$d 'substr($0,1,4)+0==d' data/raw/cns5.dat; done > tools/fixtures/cns5_bright.dat
+```

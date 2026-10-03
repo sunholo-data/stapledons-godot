@@ -1,0 +1,87 @@
+module stapledons/sim/tools/bright_main
+-- M1.2d shells (FS) for sim/tools/bright.ail, on catalogue_main's validated, atomic writer:
+--   mainFill   the quick tier with rule (b), the HIP photometry fill: catalogue_main.main's inputs
+--              plus hip_main.dat (I/239); the CNS5 HIP column and Gaia G come from the raw cns5.dat.
+--   brightMain the bright tier, rules (a) and (c).
+-- A separate module so catalogue_main (medium/large `--entry main`) does not load extract.ail,
+-- whose own `main` the v0.51.0 VM picked instead (reported upstream).
+--   ailang run --quiet --bytecode --caps IO,FS --package-dir sim --entry brightMain --args-json \
+--     '{"hip2":"data/raw/hip2.dat.gz","hipMain":"data/raw/hip_main.dat","cns5":"data/raw/cns5.dat","gcns":"data/raw/gcns.csv",
+--       "overrides":"data/starmap/bright_overrides.json","lock":"sim/ailang.lock","out":"data/starmap","ailang":"v0.51.0"}' \
+--     sim/tools/bright_main.ail
+import ./catalogue (Fill)
+import ./catalogue_bytes (encodeRows)
+import ./catalogue (selectTier)
+import ./catalogue_main (Pkg, Plan, sidecarWith, planFill, lockPackage, outputName, fail, writeFail, rawDigest, commit)
+import ./bright (Bright, parseHip2, parseHipMain, parseCnsHip, gcnsIndex, parseOverrides, fill, bright)
+import std/result (Result, Ok, Err)
+import std/option (Some, None)
+import std/string (concat, join, intToStr)
+import std/list (length as size)
+import std/crypto (sha256Hex, sha256Bytes)
+import std/bytes (fromBase64, toString as utf8)
+import std/json (Json, kv, js, jint)
+import std/gzip (decompressFile)
+import std/fs (readFileResult)
+import std/io (println)
+
+pure func brightSource() -> string =
+  "HIP2 VizieR I/311 hip2.dat.gz x I/239 hip_main.dat: V < 7, Plx > 0, unmatched to CNS5 (HIP id) and GCNS (1 arcsec at J2016.0, |G-V| < 2); data/starmap/bright_overrides.json"
+-- M1.2d rules (a) and (c): the bright tier; count_excluded = V < 7 stars without B-V (no teff).
+export pure func brightPlan(i: {hip2: string, hipMain: string, cns5: string, gcns: string, overrides: string,
+    shas: [{key: string, value: Json}], ailang: string, pkg: Pkg}) -> Result[{plan: Plan, b: Bright},string] =
+  match parseOverrides(i.overrides) {
+    Err(e) => Err(e),
+    Ok(os) => match bright(parseHip2(i.hip2),parseHipMain(i.hipMain),parseCnsHip(i.cns5),gcnsIndex(i.gcns),os) {
+      Err(e) => Err(e),
+      Ok(r) => match selectTier(r.rows,"large") {
+        Err(e) => Err(e),
+        Ok(_) => match encodeRows(r.rows) {
+          Err(e) => Err(e),
+          Ok(b) => Ok({b: r, plan: {bin: b, count: size(r.rows), excluded: size(r.noColour),
+            sidecar: sidecarWith("bright",brightSource(),size(r.rows),size(r.noColour),
+              [kv("matched_cns5",jint(r.cns5)), kv("matched_gcns",jint(r.gcns)), kv("overridden",jint(r.overridden))],
+              i.shas,sha256Bytes(b),i.ailang,i.pkg)}})
+        }
+      }
+    }
+  }
+func readText(path: string) -> Result[string,string] ! {FS} = match readFileResult(path) {
+  Err(e) => Err(concat(["cannot read ",path,": ",e])), Ok(t) => Ok(t)
+}
+func readGz(path: string) -> Result[string,string] ! {FS} = match decompressFile(path) {
+  Err(e) => Err(concat(["cannot gunzip ",path,": ",e])),
+  Ok(b64) => match fromBase64(b64) { Some(b) => Ok(utf8(b)), None => Err(concat([path," did not decode"])) }
+}
+func installed(p: Plan, out: string, tier: string, msg: string) -> () ! {FS, IO} = match commit(p,out,tier) {
+  Err(e) => writeFail(e),
+  Ok(warn) => println(concat(["catalogue ",tier,": ",intToStr(p.count)," rows, ",intToStr(p.excluded)," excluded",msg,
+    " -> ",outputName(out,tier,"bin")," (",intToStr(p.count*24)," B)",warn]))
+}
+-- The quick tier with the M1.2d rule (b) fill: main's inputs plus hip_main.dat (I/239); the CNS5 HIP
+-- column and Gaia G come from the raw cns5.dat.
+export func mainFill(a: {tier: string, csv: string, raw: string, lock: string, out: string, ailang: string, hip: string}) -> () ! {FS, IO} =
+  match readText(a.csv) { Err(e) => fail(e), Ok(csv) => match readText(a.raw) { Err(e) => fail(e), Ok(rawText) =>
+  match readText(a.hip) { Err(e) => fail(e), Ok(hipText) => match rawDigest(a.raw) { Err(e) => fail(e), Ok(rawSha) =>
+  match rawDigest(a.hip) { Err(e) => fail(e), Ok(hipSha) => match readText(a.lock) { Err(e) => fail(e), Ok(lock) =>
+  match lockPackage(lock,"sunholo/relativity") { Err(e) => fail(e), Ok(pkg) => {
+    let f = fill(parseCnsHip(rawText),parseHipMain(hipText));
+    match planFill({tier: a.tier, csv: csv, rawSha: rawSha, ailang: a.ailang, pkg: pkg},f.rows,hipSha) {
+      Err(e) => fail(e),
+      Ok(p) => installed(p,a.out,a.tier,concat(["; HIP photometry filled ",intToStr(size(f.rows)),", left missing: ",
+        intToStr(size(f.ambiguous))," sharing a HIP id (",join(" ",f.ambiguous),"), ",intToStr(size(f.noPhot))," without HIP V and B-V (",join(" ",f.noPhot),")"]))
+    }
+  } } } } } } } }
+-- The bright tier (rules a and c). hip2 is the pinned .gz, read directly.
+export func brightMain(a: {hip2: string, hipMain: string, cns5: string, gcns: string, overrides: string, lock: string, out: string, ailang: string}) -> () ! {FS, IO} =
+  match readGz(a.hip2) { Err(e) => fail(e), Ok(h2) => match readText(a.hipMain) { Err(e) => fail(e), Ok(hm) =>
+  match readText(a.cns5) { Err(e) => fail(e), Ok(c5) => match readText(a.gcns) { Err(e) => fail(e), Ok(gc) =>
+  match readText(a.overrides) { Err(e) => fail(e), Ok(ov) => match readText(a.lock) { Err(e) => fail(e), Ok(lock) =>
+  match lockPackage(lock,"sunholo/relativity") { Err(e) => fail(e), Ok(pkg) =>
+  match rawDigest(a.hip2) { Err(e) => fail(e), Ok(s1) => match rawDigest(a.cns5) { Err(e) => fail(e), Ok(s3) =>
+  match brightPlan({hip2: h2, hipMain: hm, cns5: c5, gcns: gc, overrides: ov, ailang: a.ailang, pkg: pkg,
+      shas: [kv("hip2",js(s1)), kv("hip_main",js(sha256Hex(hm))), kv("cns5",js(s3)), kv("gcns",js(sha256Hex(gc))), kv("overrides",js(sha256Hex(ov)))]}) {
+    Err(e) => fail(e),
+    Ok(r) => installed(r.plan,a.out,"bright",concat([" (no B-V: ",join(" ",r.b.noColour),"); matched CNS5 ",intToStr(r.b.cns5),
+      ", GCNS ",intToStr(r.b.gcns),", overrides ",intToStr(r.b.overridden)]))
+  } } } } } } } } } }

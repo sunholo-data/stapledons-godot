@@ -1,0 +1,185 @@
+module stapledons/sim/tools/bright
+-- M1.2d bright tier (D-5, D-19) and the CNS5 photometry fill (plan F1/F2, rules a-c).
+-- Inputs, all fixed width except gcns.csv:
+--   I/311 hip2.dat(.gz)  van Leeuwen 2007: HIP 1-6, RArad 16-28, DErad 30-42 (ICRS, J1991.25),
+--                        Plx 44-50 mas, pmRA* 52-59, pmDE 61-68 mas/yr
+--   I/239 hip_main.dat   ESA 1997: HIP 9-14, Vmag 42-46 (Johnson V), B-V 246-251 (HIP2 has no V)
+--   J/A+A/670/A19 cns5.dat  CNS5 1-4, GaiaDR3 28-46, HIP 48-53, RAdeg 55-74, DEdeg 76-98,
+--                        Epoch 100-108, plx 130-148, G/BP/RP 362-371/395-404/428-437
+--   data/raw/gcns.csv    extract.ail output (GCNS, epoch J2016.0)
+-- Rules:
+--   (a) HIP2 V < 7, Plx > 0, matched to no CNS5 row (by CNS5's HIP column, exact) and to no GCNS
+--       row (within 1 arcsec at J2016.0 after proper motion, |G - V| < 2) -> a bright row at its
+--       J2016.0 position and HIP2 parallax; teff = teffFromBV(B-V), v = V verbatim, flags 8.
+--   (b) a CNS5 row without Gaia photometry whose HIP id no other CNS5 row carries gets that HIP
+--       star's V and teffFromBV(B-V) in place, flags 8 (fill; applied by catalogue_main, quick).
+--   (c) data/starmap/bright_overrides.json: a component HIP lists separately from its CNS5 system
+--       row takes the system row's parallax, at its own HIP2 position propagated to that row's epoch.
+-- flags 8 = photometry from Hipparcos (V, B-V); + 16 when B-V is outside the teffFromBV table.
+import ./catalogue (Row, Fill)
+import ./extract (number, icrsToGalactic, distanceLy)
+import std/string (substring, trim, length, split, concat, join, intToStr)
+import std/list (map, filter, flatMap, sortBy, head, length as size)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/math (sin, cos, sqrt, atan2, floatToInt, PI)
+import std/array (fromList as toArray, get, length as alen)
+import std/json (decode, get as jget, asArray, asNumber)
+import pkg/sunholo/relativity/photometry (teffFromBV, bvInTable)
+
+export type Astro = {hip: int, ra: float, dec: float, plx: float, pmra: float, pmde: float}
+export type Phot = {hip: int, v: float, bv: Option[float]}
+export type Cns = {id: string, hip: int, epoch: float, ra: float, dec: float, plx: float, g: float, missing: bool}
+export type Gcns = {ux: float, uy: float, uz: float, g: float}
+export type Override = {hip: int, system: int}
+export type Filled = {rows: [Fill], ambiguous: [string], noPhot: [string]}
+export type Bright = {rows: [Row], cns5: int, gcns: int, overridden: int, noColour: [string]}
+type Verdict = {kind: string, row: Row}
+
+export pure func flagHip() -> int = 8
+-- Sorted-array index by an int key (std/map.fromList is evaluator-only on the strict VM, v0.51.0).
+export pure func indexBy[a](key: a -> int, xs: [a]) -> Array[a] =
+  toArray(sortBy(\p q. if key(p) < key(q) then -1 else if key(p) > key(q) then 1 else 0, xs))
+pure func lowerBy[a](arr: Array[a], key: a -> int, k: int, lo: int, hi: int) -> int =
+  if lo >= hi then lo else { let mid = (lo + hi) / 2;
+    if key(get(arr, mid)) < k then lowerBy(arr, key, k, mid + 1, hi) else lowerBy(arr, key, k, lo, mid) }
+pure func runFrom[a](arr: Array[a], key: a -> int, k: int, i: int) -> [a] =
+  if i < alen(arr) && key(get(arr, i)) == k then get(arr, i) :: runFrom(arr, key, k, i + 1) else []
+-- every element with key k, in index order
+export pure func findAll[a](arr: Array[a], key: a -> int, k: int) -> [a] = runFrom(arr, key, k, lowerBy(arr, key, k, 0, alen(arr)))
+-- byte columns lo..hi, 1-based inclusive as the ReadMe files write them
+pure func colAt(line: string, lo: int, hi: int) -> string =
+  if length(line) < lo then "" else substring(line, lo - 1, if hi < length(line) then hi else length(line))
+pure func presentAll(xs: [Option[float]]) -> [float] = flatMap(\o. match o { Some(x) => [x], None => [] }, xs)
+pure func fieldAt(line: string, c: (int, int)) -> Option[float] = match c { (lo, hi) => number(colAt(line, lo, hi)) }
+
+export pure func parseHip2(text: string) -> [Astro] = flatMap(\line.
+  match presentAll(map(\c. fieldAt(line, c), [(1, 6), (16, 28), (30, 42), (44, 50), (52, 59), (61, 68)])) {
+    [h, ra, de, plx, pa, pd] => [{hip: floatToInt(h), ra: ra, dec: de, plx: plx, pmra: pa, pmde: pd}],
+    _ => []
+  }, split(text, "\n"))
+export pure func parseHipMain(text: string) -> Array[Phot] = indexBy(\p. p.hip, flatMap(\line.
+  match presentAll(map(\c. fieldAt(line, c), [(9, 14), (42, 46)])) {
+    [h, v] => [{hip: floatToInt(h), v: v, bv: fieldAt(line, (246, 251))}],
+    _ => []
+  }, split(text, "\n")))
+-- CNS5 rows with a position and a positive parallax (the rows extract.ail keeps), id as extract.ail.
+export pure func parseCnsHip(text: string) -> [Cns] = flatMap(\line. {
+  let gaia = trim(colAt(line, 28, 46));
+  let hipNo = match fieldAt(line, (48, 53)) { Some(h) => floatToInt(h), None => 0 };
+  let phot = presentAll(map(\c. fieldAt(line, c), [(362, 371), (395, 404), (428, 437)]));
+  match presentAll(map(\c. fieldAt(line, c), [(55, 74), (76, 98), (100, 108), (130, 148)])) {
+    [ra, de, ep, plx] => if plx <= 0.0 then [] else [{
+      id: if gaia != "" && gaia != "-" then gaia else concat(["CNS5:", trim(colAt(line, 1, 4))]),
+      hip: hipNo, epoch: ep, ra: ra, dec: de, plx: plx, g: match phot { [gm, _, _] => gm, _ => 99.0 }, missing: size(phot) < 3}],
+    _ => []
+  }
+}, split(text, "\n"))
+-- GCNS rows that could match a V < 7 star at all: G present and G < 9 (|G - V| < 2).
+export pure func gcnsIndex(csv: string) -> Array[Gcns] = toArray(sortBy(\a b. if a.uz < b.uz then -1 else if a.uz > b.uz then 1 else 0,
+  flatMap(\line. match split(line, ",") {
+    [_, x, y, z, g, _, _] => match presentAll(map(number, [x, y, z, g])) {
+      [fx, fy, fz, fg] => { let r = sqrt(fx*fx + fy*fy + fz*fz);
+        if fg < 9.0 && r > 0.0 then [{ux: fx / r, uy: fy / r, uz: fz / r, g: fg}] else [] },
+      _ => []
+    },
+    _ => []
+  }, split(csv, "\n"))))
+export pure func parseOverrides(json: string) -> Result[[Override], string] = match decode(json) {
+  Err(e) => Err(concat(["bright_overrides.json: ", e])),
+  Ok(j) => match jget(j, "components") {
+    None => Err("bright_overrides.json has no components"),
+    Some(cs) => match asArray(cs) {
+      None => Err("bright_overrides.json components is not an array"),
+      Some(xs) => {
+        let os = flatMap(\c. match presentAll(map(\k. match jget(c, k) { Some(n) => asNumber(n), None => None }, ["hip", "system_hip"])) {
+          [h, s] => [{hip: floatToInt(h), system: floatToInt(s)}], _ => [] }, xs);
+        if size(os) == size(xs) then Ok(os) else Err("bright_overrides.json: every component needs hip and system_hip")
+      }
+    }
+  }
+}
+
+-- HIP2 direction at `epoch` (linear space motion on the sphere from J1991.25), galactic unit vector.
+pure func masRad() -> float = PI() / 648000000.0
+export pure func directionAt(a: Astro, epoch: float) -> (float, float, float) {
+  let k = (epoch - 1991.25) * masRad();
+  let ca = cos(a.ra); let sa = sin(a.ra); let cd = cos(a.dec); let sd = sin(a.dec);
+  let px = cd * ca - k * (a.pmra * sa + a.pmde * sd * ca);
+  let py = cd * sa + k * (a.pmra * ca - a.pmde * sd * sa);
+  let pz = sd + k * a.pmde * cd;
+  icrsToGalactic(atan2(py, px) * 180.0 / PI(), atan2(pz, sqrt(px * px + py * py)) * 180.0 / PI())
+}
+-- squared chord of 1 arcsec; |duz| <= chord, so a uz band bounds the candidates
+pure func arcsecRad() -> float = PI() / 648000.0
+export pure func chord2(u: (float, float, float), x: float, y: float, z: float) -> float =
+  match u { (ux, uy, uz) => (ux - x) * (ux - x) + (uy - y) * (uy - y) + (uz - z) * (uz - z) }
+pure func lowerZ(idx: Array[Gcns], z: float, lo: int, hi: int) -> int =
+  if lo >= hi then lo else { let mid = (lo + hi) / 2;
+    if get(idx, mid).uz < z then lowerZ(idx, z, mid + 1, hi) else lowerZ(idx, z, lo, mid) }
+pure func scanFrom(idx: Array[Gcns], u: (float, float, float), z: float, v: float, i: int) -> bool =
+  if i >= alen(idx) then false else { let c = get(idx, i);
+    if c.uz > z + arcsecRad() then false
+    else if chord2(u, c.ux, c.uy, c.uz) < arcsecRad() * arcsecRad() && c.g - v < 2.0 && v - c.g < 2.0 then true
+    else scanFrom(idx, u, z, v, i + 1) }
+-- D-5: a GCNS row within 1 arcsec of the star's J2016.0 position with |G - V| < 2.
+export pure func gcnsMatch(idx: Array[Gcns], a: Astro, v: float, epoch: float) -> bool {
+  let u = directionAt(a, epoch);
+  match u { (_, _, uz) => scanFrom(idx, u, uz, v, lowerZ(idx, uz - arcsecRad(), 0, alen(idx))) }
+}
+
+export pure func hipRow(id: string, u: (float, float, float), dist: float, v: float, bv: float) -> Row =
+  match u { (ux, uy, uz) => {id: id, x: ux * dist, y: uy * dist, z: uz * dist, teff: teffFromBV(bv), v: v,
+    flags: flagHip() + (if bvInTable(bv) then 0 else 16)} }
+-- A missing row that shares its HIP id is the HIP star only when it is the group's one missing row
+-- and no other row's Gaia G lies within 2 mag of the HIP V (the D-5 |G - V| < 2 guard): Aldebaran A
+-- (companion G 11.9 vs V 0.87) is filled, a faint companion of a Gaia-measured primary is not.
+pure func group(cnsBy: Array[Cns], h: int) -> [Cns] = findAll(cnsBy, \c. c.hip, h)
+pure func owner(c: Cns, cnsBy: Array[Cns], v: float) -> bool =
+  size(filter(\o. o.id != c.id && (o.missing || (o.g - v < 2.0 && v - o.g < 2.0)), group(cnsBy, c.hip))) == 0
+pure func photOf(phot: Array[Phot], h: int) -> Option[Phot] = head(findAll(phot, \p. p.hip, h))
+pure func cnsIndex(cns: [Cns]) -> Array[Cns] = indexBy(\c. c.hip, filter(\c. c.hip > 0, cns))
+-- Rule (b).
+export pure func fill(cns: [Cns], phot: Array[Phot]) -> Filled {
+  let cnsBy = cnsIndex(cns);
+  let want = filter(\c. c.missing && c.hip > 0, cns);
+  let got = flatMap(\c. match photOf(phot, c.hip) { None => [], Some(p) => match p.bv { None => [],
+    Some(bv) => if owner(c, cnsBy, p.v) then [{id: c.id, teff: teffFromBV(bv), v: p.v, flags: flagHip() + (if bvInTable(bv) then 0 else 16)}] else [] } }, want);
+  let left = filter(\c. size(filter(\f. f.id == c.id, got)) == 0, want);
+  let dup = \c. size(group(cnsBy, c.hip)) > 1;
+  {rows: got, ambiguous: map(\c. c.id, filter(dup, left)), noPhot: map(\c. c.id, filter(\c. !dup(c), left))}
+}
+pure func hipName(h: int) -> string = concat(["HIP ", intToStr(h)])
+-- a verdict without a tier row (matched, refused, or no colour)
+pure func tag(k: string, a: Astro) -> Verdict = {kind: k, row: {id: hipName(a.hip), x: 0.0, y: 0.0, z: 0.0, teff: 0.0, v: 0.0, flags: 0}}
+pure func at(k: string, a: Astro, epoch: float, plx: float, v: float, bv: float) -> Verdict = match distanceLy(Some(plx)) {
+  Some(d) => {kind: k, row: hipRow(hipName(a.hip), directionAt(a, epoch), d, v, bv)}, None => tag("bad", a) }
+pure func classify(a: Astro, p: Phot, cnsBy: Array[Cns], ovs: [Override], idx: Array[Gcns]) -> Verdict =
+  match head(filter(\o. o.hip == a.hip, ovs)) {
+    Some(o) => match group(cnsBy, o.system) {
+      [s] => match p.bv {
+        Some(bv) => if size(group(cnsBy, a.hip)) > 0 then tag("bad", a) else at("override", a, s.epoch, s.plx, p.v, bv),
+        None => tag("bad", a)
+      },
+      _ => tag("bad", a)
+    },
+    None => if size(group(cnsBy, a.hip)) > 0 then tag("cns5", a)
+      else if gcnsMatch(idx, a, p.v, 2016.0) then tag("gcns", a)
+      else match p.bv { Some(bv) => at("keep", a, 2016.0, a.plx, p.v, bv), None => tag("nocolour", a) }
+  }
+pure func kinds(vs: [Verdict], k: string) -> [Verdict] = filter(\x. x.kind == k, vs)
+-- Rules (a) and (c), in HIP2 order. Every override must apply exactly once, to a V < 7 star whose
+-- system HIP id belongs to exactly one CNS5 row and which is not itself a CNS5 row.
+export pure func bright(hips: [Astro], phot: Array[Phot], cns: [Cns], idx: Array[Gcns], ovs: [Override]) -> Result[Bright, string] {
+  let cnsBy = cnsIndex(cns);
+  let vs = flatMap(\a. match photOf(phot, a.hip) {
+    Some(p) => if p.v < 7.0 && a.plx > 0.0 then [classify(a, p, cnsBy, ovs, idx)] else [],
+    None => [] }, hips);
+  let bad = kinds(vs, "bad");
+  let applied = kinds(vs, "override");
+  if size(bad) > 0 then Err(concat(["bright override cannot apply (system row missing or shared, no B-V, or itself a CNS5 row): ", join(", ", map(\x. x.row.id, bad))]))
+  else if size(applied) != size(ovs) then Err("a bright override names a star that is not a HIP2 V < 7 row")
+  else Ok({rows: map(\x. x.row, filter(\x. x.kind == "keep" || x.kind == "override", vs)),
+    cns5: size(kinds(vs, "cns5")), gcns: size(kinds(vs, "gcns")), overridden: size(applied),
+    noColour: map(\x. x.row.id, kinds(vs, "nocolour"))})
+}

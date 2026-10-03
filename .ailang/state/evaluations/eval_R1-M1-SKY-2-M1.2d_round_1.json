@@ -1,0 +1,70 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.2d",
+  "pr": 69,
+  "branch": "sprint/m1.2d-bright",
+  "evaluation_round": 1,
+  "evaluator": "independent (generator != judge)",
+  "result": "pass",
+  "score": 88,
+  "breakdown": {
+    "tests_pass": {"points": 20, "max": 20, "notes": "make test rc=0 on a fresh clone (9m40s). catalogue-verify: quick, medium, bright identical to a fresh rebuild from the sha-pinned inputs. catalogue-parity bright 5/5 and quick 5/5 (VM = interpreter, bin + sidecar). bright-test strict VM = interpreter, fixtures VM = interpreter."},
+    "lint_clean": {"points": 10, "max": 10, "notes": "python-guard, strict-bytecode and the file checks inside make test are green; no new Python."},
+    "acceptance_criteria": {"points": 27, "max": 30, "notes": "All six named checks plus four extra pass; bright = 10,713 rows, 257,112 B = 24 x 10,713, inside [1000, 20000]; parity 5/5; test-bright-audit in make test. Deduction: the plan's 'catalogue-stats finds 0 defaulted rows in quick after the fill' is met only in the sense 'no unflagged defaults'; 633 quick rows still carry MISSING_PHOT (flag 2). The sprint notes say this openly."},
+    "code_quality": {"points": 12, "max": 15, "notes": "Pure core, std/map avoided for strict VM, sorted-array index. Deductions: 8 of 33 independent mutants survive (see mutation_audit), LOC 805 vs 650 cap, giants too cool (declared)."},
+    "documentation": {"points": 14, "max": 15, "notes": "Changelog in changelogs/unreleased, sprint JSON and plan updated with deviations, fixtures README. hip2.dat.gz / hip_main.dat are pinned in SHA256SUMS but not yet in the public bucket (maintainer sky-publish); catalogue-inputs falls back to VizieR and worked."},
+    "design_fidelity": {"points": 5, "max": 10, "notes": "Rules (a), (b), (c) implemented as written; D-19 override as data with citation. All deviations are declared and justified."}
+  },
+  "hard_fails": [],
+  "pre_existing": "ailang test --package sim run standalone fails 'T3 sidecar exact fields and digests' and 'T3 medium sidecar counts' on BOTH origin/main (15cde03: 126 tests, 124 passed, 2 failed) and this branch (136 tests, 134 passed, 2 failed). Both pass inside make test. Not caused by M1.2d.",
+  "byte_change_check": {
+    "medium": "byte-identical to origin/main (cmp stars_medium.bin); sidecar unchanged",
+    "quick": "bin changed (same 5,908 rows); sidecar gains hip_filled=137 and sha256.hip_main; 137 rows have flags 8 (V verbatim, teffFromBV(B-V)); 633 rows stay MISSING_PHOT",
+    "bright": "new, 10,713 rows"
+  },
+  "star_audit": {
+    "method": "independent oracle (scratch Python, not committed): ICRS to galactic, nearest committed row per tier, compared with literature RA/Dec/distance/V",
+    "Sirius": "quick row at 8.60 ly, 0.00 ly off expected position; V -1.44 (hip_main verbatim, literature -1.46), teff 9597 K (literature ~9900-10000), flags 8, no bright duplicate. OK",
+    "alpha_Cen_A": "quick (CNS5 system row 3627) 4.321 ly, V -0.01, teff 5550 K, flags 8. OK",
+    "alpha_Cen_B": "bright row HIP 71681: 4.321040 ly vs A 4.321040 ly (same system distance, not the 4.09 ly HIP2 parallax); 3D separation 0.000401 ly = 19.12 arcsec from A (about 19 arcsec expected at the 1991.25 epoch the override uses); V 1.35 (literature 1.33), teff 5059 K (literature ~5200). OK",
+    "Arcturus": "quick, 36.72 ly (literature 36.7), V -0.05, teff 4302 K (literature ~4290). Excellent; propagation to CNS5 epoch matters here (pm 2.3 arcsec/yr).",
+    "Vega": "quick, 25.04 ly, V 0.03, teff 9714 K (literature ~9600). OK; absent from bright (matched).",
+    "Rigel": "bright, 862.8 ly (HIP2 plx 3.78 mas; literature ~860), V 0.18 (hip_main; literature 0.13), teff 10,120 K vs literature ~12,100 (cool: dwarf teffFromBV on a supergiant). Position within 2.9 ly of the J2000 expectation (distance difference only).",
+    "Canopus": "bright, 309.2 ly (literature ~310), V -0.62 (hip_main; SIMBAD -0.74), teff 8070 K vs ~7400 (warm: dwarf calibration, bv 0.15).",
+    "Betelgeuse": "bright, 497.9 ly (HIP2; modern estimates ~500-550), V 0.45, teff 3590 K (literature ~3600). OK.",
+    "Polaris": "bright, 432.6 ly (literature ~433), V 1.97 (1.98), teff 5815 K vs ~6000. OK.",
+    "verdict": "Positions and distances agree with Hipparcos and literature to the data's precision; V agrees with hip_main; teff errors up to about 2000 K for supergiants (Rigel 17% cool) are the declared dwarf-calibration limit."
+  },
+  "mutation_audit": {
+    "run": "33 mutants of sim/tools/bright.ail, each run through make bright-test (strict VM + fixtures)",
+    "killed": 25,
+    "survived": [
+      {"mutant": "guard-ignore-missing: drop the o.missing term in owner() (bright.ail:139)", "assessment": "REAL GAP: no fixture with two missing rows sharing one HIP id. The real-data quick tier would change, but only make catalogue-verify would notice."},
+      {"mutant": "guard-onesided: 2-mag window checked on one side only in owner() (bright.ail:139)", "assessment": "REAL GAP: the |G-V| < 2 window is exercised on one side only."},
+      {"mutant": "gcns-radius-2 / gcns-radius-half: 1 arcsec match radius changed to 2 arcsec or 0.5 arcsec (bright.ail:123)", "assessment": "REAL GAP: no fixture at the radius boundary; the 1 arcsec number is untested."},
+      {"mutant": "epoch-keep-1991: kept (rule a) rows built at 1991.25 instead of 2016.0 (bright.ail:168)", "assessment": "REAL GAP: epoch propagation of kept rows is not asserted, though J2016.0 is declared. (The GCNS-match epoch and the override epoch mutants were killed.)"},
+      {"mutant": "bv-none-keep: no-B-V stars kept with bv 0.5 instead of excluded (bright.ail:168)", "assessment": "REAL GAP: no unit test for the declared B-V exclusion; only the real-data count (7 excluded) would show it."},
+      {"mutant": "flag-oor: flag 16 for B-V outside the teffFromBV table dropped (bright.ail:133)", "assessment": "minor gap"},
+      {"mutant": "cut-plx-ge: Plx >= 0 instead of > 0 (bright.ail:176)", "assessment": "minor; a Plx of 0 would be refused rather than skipped"},
+      {"mutant": "cns-plx-gate: CNS5 plx <= 0 gate (bright.ail:72)", "assessment": "minor; covered at the extract level"},
+      {"mutant": "override-epoch-1991 (s.epoch replaced by 1991.25) and override-multi", "assessment": "equivalent on the fixture data (alpha Cen row epoch is 1991.25; the extra pattern arm duplicates the `_` arm). Not counted as gaps."}
+    ],
+    "killed_list": "shared-HIP guard (owner always true, window ignored, 2-mag to 20 and 0.5), GCNS 2-mag (20, one-sided, no gate), GCNS epoch, epoch propagation off and sign flipped, RA proper-motion term, override own parallax / epoch 2016 / allowed CNS5 row, cuts V<7.5, V<6, V<=7, no plx cut, CNS5 match skipped, flag 8, fill gate, fill V."
+  },
+  "deviation_verdicts": {
+    "Sirius V -1.44": "ACCEPT. hip_main verbatim is the pinned source; literature -1.46 comes from a later reduction. Documented. Confirmed in the committed quick bin.",
+    "shared-HIP 2-mag rule": "ACCEPT. Sound (Aldebaran A filled, faint companions not) and 11 shared rows stay missing, listed in the build log. Test coverage of the rule is partial (two survivors above).",
+    "bright rows at J2016.0, alpha Cen B at 1991.25": "ACCEPT. Consistent with the CNS5 system row, giving the correct 19 arcsec separation at the same distance. Add a fixture assertion for the J2016.0 epoch of kept rows.",
+    "no-B-V stars excluded": "ACCEPT as a data decision (7 stars, listed in the sidecar's build output via count_excluded). The rule needs a unit test.",
+    "new bright_main.ail": "ACCEPT. Upstream VM bug reported; catalogue_main is untouched in behaviour, medium bytes identical.",
+    "std/map to sorted array": "ACCEPT. Required by strict bytecode; verified under strict VM = interpreter.",
+    "files outside the plan's list": "ACCEPT. All are justified (loader flag constants, stats, parity script); star_catalogue.gd change small.",
+    "giants too cool": "ACCEPT for R1 with a follow-up. Rigel 10,120 K vs ~12,100 K, Canopus warm. Needs a luminosity-class-aware colour table before M1.5b visuals judge star colours; the package owns the maths, so file against sunholo/relativity.",
+    "LOC 805 over cap 650": "ACCEPT with a note. Bulk is tests and fixtures; the pure core is 185 lines."
+  },
+  "recommendations": [
+    "Add fixtures killing the five real survivors: two missing rows with one HIP id; companion G on the faint side of the window; 1 arcsec boundary (0.9 and 1.1 arcsec); kept-row epoch is 2016.0; a V < 7 star with no B-V is excluded and counted.",
+    "Publish hip2.dat.gz and hip_main.dat to the public bucket (make sky-publish, maintainer).",
+    "Track the supergiant teff error for M1.5b."
+  ]
+}
