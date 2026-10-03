@@ -12,6 +12,7 @@ import {
   Cpu,
   Download,
   Lock,
+  Newspaper,
   Orbit,
   Play,
   Repeat,
@@ -81,8 +82,9 @@ function StatusBanner() {
       <Link to="/docs/roadmap" className={styles.status}>
         <span className={styles.statusPill}>Pre-alpha</span>
         <span className={styles.statusText}>
-          <strong>Release 1 is under way.</strong> The relativistic sky and the journey core run
-          today; black holes and the first playable journey come next.
+          <strong>Release 1 is under way.</strong> The relativistic sky, the galaxy map and the
+          journey core run today. The ship's interior and planets with flybys are in progress; black
+          holes come after.
         </span>
         <span className={styles.statusLink}>
           Roadmap <ArrowRight size={16} />
@@ -381,6 +383,36 @@ function BuiltWithAilang() {
   );
 }
 
+function ConceptTeaser() {
+  const base = useBaseUrl('/img/concept/');
+  return (
+    <section className={styles.section}>
+      <div className={clsx(styles.container, styles.sampleGrid)}>
+        <div>
+          <p className={styles.eyebrow}>Concept and work-in-progress art</p>
+          <h2 className={styles.sectionTitle}>The captain, the crew and the bridge</h2>
+          <p className={styles.sampleLead}>
+            Ligne claire in the tradition of Moebius and Métal Hurlant: tiny people in vast, grown-looking
+            spaces. The bridge sits at the top of the spire inside the sphere ship, and the sky behind its
+            railings is never painted. It is the live relativistic sky, through the same camera.
+          </p>
+          <Link to="/concept-art" className={clsx(styles.btn, styles.btnPrimary)}>
+            See the concept art <ArrowRight size={18} />
+          </Link>
+        </div>
+        <div className={styles.conceptStack}>
+          <Link to="/concept-art" className={styles.conceptMain}>
+            <img src={base + 'bridge-v1-rest.jpg'} alt="Bridge v1 in the engine over the live sky" loading="lazy" width="1600" height="900" />
+          </Link>
+          <Link to="/concept-art" className={styles.conceptSide}>
+            <img src={base + 'captain-age30.jpg'} alt="The captain at age 30" loading="lazy" width="640" height="960" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function GalleryTeaser() {
   const picks = ['sky-099c.jpg', 'cmb-gamma-275.jpg', 'map-commit.jpg', 'milky-way-destarred.jpg', 'sky-091c.jpg', 'map-transit.jpg'];
   const items = picks.map((f) => GALLERY.find((g) => g.file === f)).filter(Boolean);
@@ -412,10 +444,12 @@ function GalleryTeaser() {
 
 const MILESTONES = [
   ['M0', 'Spike', 'done', 'AILANG sim + Godot starfield, tested relativity'],
-  ['M1', 'The relativistic sky', 'progress', '335k stars, Milky Way, exposure, forward CMB; performance bar left'],
+  ['M1', 'The relativistic sky', 'progress', '335k stars, Milky Way, exposure, forward CMB, real-catalogue map; acceptance step open'],
   ['M2', 'The journey core', 'done', 'Planner, commit, two clocks, deterministic replay'],
+  ['AI', 'Crew AI foundation', 'done', 'Opt-in, cost-capped, on a test stub; first live run pending'],
+  ['M4', 'First playable journey', 'progress', 'Interior loader and consequence sim merged; bridge art in review'],
+  ['M5', 'Planets and flybys', 'progress', 'Design approved, physics packages published'],
   ['M3', 'Black holes', 'planned', 'Shadow, lensing, Einstein rings, checked against GR'],
-  ['M4', 'First playable journey', 'planned', 'Plan, commit, live through it, arrive changed'],
 ];
 const LABEL = {done: 'Done', progress: 'In progress', planned: 'Planned'};
 
@@ -426,9 +460,8 @@ function Roadmap() {
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Release 1: foundations</h2>
           <p className={styles.sectionSubtitle}>
-            What exists today, and what is still a plan. The full vision (civilisations rising and
-            dying while you travel, a crew that ages, a legacy report at Year 1,000,000) comes after
-            these foundations.
+            What exists today, what is being built, and what is still a plan. The wider game comes
+            after these foundations.
           </p>
         </div>
         <ol className={styles.milestones}>
@@ -468,7 +501,10 @@ function Closing() {
           <Link to="/docs/intro" className={clsx(styles.btn, styles.btnPrimary)}>
             <BookOpen size={18} /> About the game
           </Link>
-          <Link to="/docs/try-it" className={clsx(styles.btn, styles.btnSecondary)}>
+          <Link to="/news" className={clsx(styles.btn, styles.btnSecondary)}>
+            <Newspaper size={18} /> Follow the news
+          </Link>
+          <Link to="/docs/try-it" className={clsx(styles.btn, styles.btnGhost)}>
             <Download size={18} /> Try the review build
           </Link>
           <a href={DESIGN_URL} className={clsx(styles.btn, styles.btnGhost)}>
@@ -492,6 +528,7 @@ export default function Home() {
         <Stats />
         <BuiltWithAilang />
         <GalleryTeaser />
+        <ConceptTeaser />
         <Roadmap />
         <Closing />
       </main>

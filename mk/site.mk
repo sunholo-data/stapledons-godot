@@ -19,3 +19,8 @@ site-media:        ## website clips: render frames in Godot (GPU window) and enc
 
 site-media-publish: ## maintainers (gcloud): upload the clips to gs://stapledons-voyage-assets/site/<sha256>.<ext>, rewrite website/src/data/media.json
 	sh tools/site_media.sh publish $(CLIPS)
+
+.PHONY: news-draft
+news-draft:        ## draft website/news/<date>-<TAG>.md from the GitHub release + changelogs/unreleased (draft: true; edit by hand; never publishes)
+	@test -n "$(TAG)" || { echo "usage: make news-draft TAG=vX.Y.Z-name"; exit 2; }
+	node website/scripts/news-draft.mjs --tag "$(TAG)"

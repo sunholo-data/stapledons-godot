@@ -570,6 +570,46 @@
   white-space: pre;
 }
 
+/* ---------- Concept teaser ---------- */
+.eyebrow {
+  margin-bottom: 0.5rem;
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ifm-color-primary);
+}
+
+.conceptStack {
+  position: relative;
+  padding-right: 18%;
+}
+
+.conceptMain,
+.conceptSide {
+  display: block;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+  box-shadow: var(--card-shadow-hover);
+}
+
+.conceptMain img,
+.conceptSide img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.conceptSide {
+  position: absolute;
+  right: 0;
+  bottom: -12%;
+  width: 30%;
+  border: 3px solid var(--ifm-background-color);
+}
+
 /* ---------- Gallery teaser ---------- */
 .thumbs {
   display: grid;

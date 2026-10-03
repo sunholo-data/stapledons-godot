@@ -9,14 +9,16 @@ import media from '@site/src/data/media.json';
 //
 // Clips play only while on screen, and not at all when the viewer asks for
 // reduced motion (they can still press play).
-export default function Clip({name, className, label, controls = false, eager = false}) {
+// `sound` clips (e.g. a voice) never autoplay: they show controls, start muted=false, and wait
+// for the viewer.
+export default function Clip({name, className, label, controls = false, eager = false, sound = false}) {
   const ref = useRef(null);
   const clip = media[name];
   const poster = useBaseUrl(`/img/posters/${name}.jpg`);
 
   useEffect(() => {
     const v = ref.current;
-    if (!v) return undefined;
+    if (!v || sound) return undefined;
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
       v.controls = true;
@@ -35,7 +37,7 @@ export default function Clip({name, className, label, controls = false, eager = 
     );
     io.observe(v);
     return () => io.disconnect();
-  }, []);
+  }, [sound]);
 
   if (!clip) return null;
   return (
@@ -43,10 +45,10 @@ export default function Clip({name, className, label, controls = false, eager = 
       ref={ref}
       className={className}
       poster={poster}
-      muted
-      loop
+      muted={!sound}
+      loop={!sound}
       playsInline
-      controls={controls}
+      controls={controls || sound}
       preload={eager ? 'auto' : 'none'}
       aria-label={label}
       title={label}>
@@ -57,10 +59,10 @@ export default function Clip({name, className, label, controls = false, eager = 
 }
 
 // A figure for docs pages: the clip plus a caption.
-export function ClipFigure({name, caption}) {
+export function ClipFigure({name, caption, sound = false}) {
   return (
     <figure className="sv-figure">
-      <Clip name={name} label={caption} controls />
+      <Clip name={name} label={caption} controls sound={sound} />
       <figcaption>{caption}</figcaption>
     </figure>
   );
