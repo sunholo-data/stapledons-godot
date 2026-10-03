@@ -548,10 +548,10 @@
         "R-d: Mark reviews exposure renders and dev build; Q8 answered before merge"
       ],
       "pause_after": "R-d (blocks merge; critical path)",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-03T09:00:00Z",
+      "completed": "2026-10-03T14:00:00Z",
+      "notes": "Executed to the R-d pause (merge waits for Mark, gate 2). The plan text (corrected F5, PR #53) is authoritative over this row's description, which still has the pre-correction 'brighter, D = gamma at 90 deg' wording: the test asserts the 90 deg patch is DARKER (D = 1/gamma = 0.141) and the boundary at cos theta' = (1 - 1/gamma)/beta = 29.818 deg. Q8 already answered in D-19 (dark-adapted naked eye default, camera-like labelled). Model: sky/exposure.gd, EV100 with L_white = 1.2 x 2^EV; eye mode EV = max(EV_dark, meter), EV_dark puts the Crumey threshold star (F = 2, against 22 mag/arcsec^2) at the display floor (AgX linear 0.0041 = sRGB code 7, ~2x a 1000:1 panel's black); camera mode log-average K 12.5; fixed EV locks the rest-frame value; bias and mag-floor aids off by default and labelled. CPU meter: 16x9 rays through the panorama mirror. Background calibrated to 22 mag/arcsec^2 at the median of the |b| >= 70 caps, plus an un-stretch power law (exponent 0.32) anchoring the photo's 99.9th percentile at 20 mag/arcsec^2 (deviation: the photo is tone-stretched ~290x; linear calibration made the Milky Way ~6 mag too bright). AC8: V_lim 6.3 at 2560x1440 (make bench, Metal and Vulkan) and 6.5 at 960x540 (make golden); Crumey model 6.256. Goldens: display floor, star lux ratio 1.0014, sky cd/m^2 ratio 0.9939. The starfield deliberately does not apply the pinhole cos^3 (tried; it made edge stars 2.6x brighter and broke the on-screen ordering). No package change needed (0.5.1 has both functions)."
     },
     {
       "id": "M1.8_FORWARD_CMB",

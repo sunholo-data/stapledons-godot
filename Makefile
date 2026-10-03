@@ -139,13 +139,15 @@ wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ai
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull
+golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c 'background marker' $(SCRATCH)/golden.log)" = 16 && test "$$(grep -c '^ok    stand-off alpha Cen A' $(SCRATCH)/golden.log)" = 8 && \
-	  grep -q '^ok    hot white dwarf 60 kK' $(SCRATCH)/golden.log && grep -q '^ok    faint-star cull' $(SCRATCH)/golden.log && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull)"; exit 1; }
+	  grep -q '^ok    hot white dwarf 60 kK' $(SCRATCH)/golden.log && grep -q '^ok    faint-star cull' $(SCRATCH)/golden.log && \
+	  grep -q '^ok    display floor' $(SCRATCH)/golden.log && grep -q '^ok    exposure golden (star)' $(SCRATCH)/golden.log && \
+	  grep -q '^ok    exposure golden (sky)' $(SCRATCH)/golden.log && grep -q '^ok    limiting magnitude' $(SCRATCH)/golden.log && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
@@ -155,9 +157,9 @@ bench:             ## M1.3 AC7 (stars part): scripted flight at 2560x1440, vsync
 	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
 	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
 	  grep -E '^(bench|starfield):' $(SCRATCH)/bench_$$drv.log; \
-	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
+	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log && grep -q '^bench: limiting magnitude .*: ok$$' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
 
-capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window)
+capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window); M1.5a: + camera auto / fixed-EV starboard pairs, exposure_sheet.png
 	$(GODOT_SIM) --path . -- --capture=renders
 
 run:               ## interactive galaxy map (the default launch): click a star, set the speed, hold Commit 1.5 s

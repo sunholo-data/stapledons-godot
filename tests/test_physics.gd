@@ -342,6 +342,167 @@ func _ang(a: Array, b: Array) -> float:
 	return atan2(sqrt(cx * cx + cy * cy + cz * cz), (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])) if na > 0.0 and nb > 0.0 else INF
 
 
+## M1.5a scene units and exposure (F5). Package values from sunholo/relativity
+## 0.5.1 (photometry.luminanceFromSurfaceMag, pointThresholdIlluminance,
+## limitingMagnitude), printed by `ailang run` on the VM and the interpreter (identical).
+func test_exposure_units() -> void:
+	print("Photometric exposure: scene units (M1.5a)")
+	var l22 := Relativity.luminance_from_surface_mag(22.0)
+	check("package: luminanceFromSurfaceMag(22) = 1.725242969719464e-4 cd/m^2", l22 / 1.725242969719464e-4, 1.0, 1e-12)
+	check("package: luminanceFromSurfaceMag(0) = 1.0886e5 cd/m^2 (doc value)", Relativity.luminance_from_surface_mag(0.0) / 1.0886e5, 1.0, 1e-4)
+	check("package: pointThresholdIlluminance(L22) = 4.024468740009986e-9 lux", Relativity.point_threshold_illuminance(l22) / 4.024468740009986e-9, 1.0, 1e-12)
+	check("package: pointThresholdIlluminance(2e-4) = 4.276147913741731e-9 lux", Relativity.point_threshold_illuminance(0.0002) / 4.276147913741731e-9, 1.0, 1e-12)
+	check("package: pointThresholdIlluminance(1) = 6.19362769e-8 lux (bright branch)", Relativity.point_threshold_illuminance(1.0) / 6.19362769e-8, 1.0, 1e-8)
+	check("package: pointThresholdIlluminance(0) = zeta 1.1495286872003704e-9 (dark cut-off)", Relativity.point_threshold_illuminance(0.0) / 1.1495286872003704e-9, 1.0, 1e-12)
+	check("NaN background clamps before the branch (= dark cut-off)", Relativity.point_threshold_illuminance(NAN) / 1.1495286872003704e-9, 1.0, 1e-12)
+	check("package: limitingMagnitude(L22, 2) = 6.25565361492508", Relativity.limiting_magnitude(l22, 2.0), 6.25565361492508, 1e-9)
+	check("package: limitingMagnitude(L22, 1) = 7.00822860408503", Relativity.limiting_magnitude(l22, 1.0), 7.00822860408503, 1e-9)
+	check("package doc: limitingMagnitude(2e-4, 1) = 6.942", Relativity.limiting_magnitude(0.0002, 1.0), 6.942, 5e-4)
+	check("vFromIlluminance inverts illuminanceFromV", Relativity.v_from_illuminance(Relativity.illuminance_from_v(6.3)), 6.3, 1e-12)
+	check("Exposure dark sky = L(22 mag/arcsec^2)", Exposure.dark_sky_luminance(), l22, 0.0)
+	check("model limit at the default field factor is inside AC8 (6.0-6.8)", 1.0 if Relativity.limiting_magnitude(l22, Exposure.FIELD_FACTOR) >= 6.0 and Relativity.limiting_magnitude(l22, Exposure.FIELD_FACTOR) <= 6.8 else 0.0, 1.0, 0.0)
+	# camera: EV100 saturation-based mapping and the reflected-light meter
+	check("L_white(EV 0) = 1.2 cd/m^2", Exposure.l_white(0.0), 1.2, 1e-12)
+	check("one EV halves the sensitivity", Exposure.l_white(3.0) / Exposure.l_white(2.0), 2.0, 1e-12)
+	check("meter: L_avg = 0.125 cd/m^2 gives EV 0 (K = 12.5)", Exposure.metered_ev(0.125), 0.0, 1e-12)
+	check("meter maps L_avg to 1 / (1.2 x 8) = 0.104 linear", 0.125 / Exposure.l_white(Exposure.metered_ev(0.125)), 1.0 / 9.6, 1e-12)
+	var sr := Exposure.centre_pixel_sr(70.0, 540.0)
+	check("centre pixel of a 70 deg x 540 px pinhole = (2 tan 35 / 540)^2 sr", sr, pow(2.0 * tan(deg_to_rad(35.0)) / 540.0, 2.0), 1e-18)
+	var e := Exposure.new()
+	e.configure(70.0, 540.0)
+	check("eye mode at the dark sky sits at EV_dark", e.ev, e.ev_dark(), 1e-12)
+	var peak := Exposure.threshold_lux() * e.star_scale()
+	check("the threshold star (F = 2) peaks at the display floor at EV_dark", peak, Exposure.DISPLAY_FLOOR, 1e-12)
+	check("star scale: splat sum (peak x 2 pi sigma^2) x Omega_px = E k", peak * TAU * 0.81 * sr / Exposure.threshold_lux(), e.k(), 1e-15)
+	check("EV_dark rises 2 EV when the pixel shrinks 4x in solid angle (same V_lim)", Exposure.dark_adapted_ev(sr / 4.0) - Exposure.dark_adapted_ev(sr), 2.0, 1e-9)
+	e.update(1.0)
+	check("eye light-adapts once the meter wants less sensitivity (L_avg 1 cd/m^2)", e.ev, Exposure.metered_ev(1.0), 1e-12)
+	e.mode = Exposure.Mode.CAMERA
+	e.update(l22)
+	check("camera mode meters the dark sky (EV below EV_dark)", e.ev, Exposure.metered_ev(l22), 1e-12)
+	e.set_fixed(true, l22)
+	var locked := e.ev
+	e.update(l22 / 50.0)
+	check("fixed EV ignores the meter", e.ev, locked, 0.0)
+	e.set_fixed(false, 0.0)
+	e.bias = 1.5
+	e.update(l22)
+	check("bias aid adds EV", e.ev, Exposure.metered_ev(l22) + 1.5, 1e-12)
+	check("bias aid is labelled on the HUD", 1.0 if e.hud_line().contains("aid: bias +1.5 EV") else 0.0, 1.0, 0.0)
+	var d := Exposure.new()
+	check("aids are off by default (no aid line, floor off, bias 0)", 1.0 if not d.hud_line().contains("aid") and not d.floor_on and d.bias == 0.0 and d.mode == Exposure.Mode.EYE else 0.0, 1.0, 0.0)
+	check("magnitude floor off by default sends zeros to the shader", d.floor_params().length(), 0.0, 0.0)
+
+
+## Panorama calibration (SkyBackground): the dark patch is the median of the
+## galactic caps |b| >= 70 deg, whatever the rest of the photo holds.
+func test_sky_calibration() -> void:
+	print("Sky background calibration to 22 mag/arcsec^2 (M1.5a)")
+	var w := 1024
+	var h := 512
+	var photo := Image.create(w, h, false, Image.FORMAT_RGB8)
+	photo.fill(Color8(200, 200, 200)) # a bright band everywhere
+	var dark := Color8(30, 30, 30)
+	for j in h:
+		if absf(90.0 - 180.0 * (j + 0.5) / h) >= 72.0:
+			for i in w:
+				photo.set_pixel(i, j, dark)
+	var model := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	model.fill(Color8(SkyModel.encode_t(5000.0), 0, 0, 255))
+	var sb := SkyBackground.new()
+	var env := Environment.new()
+	sb.attach(env, 540.0, 70.0, photo, model)
+	var y_lin := 0.2126729 * dark.srgb_to_linear().r + 0.7151522 * dark.srgb_to_linear().g + 0.0721750 * dark.srgb_to_linear().b
+	check("dark patch = the caps' linear luminance, not the bright band", sb.dark_patch_y / y_lin, 1.0, 0.02)
+	check("cd/m^2 per photo unit puts the patch at L(22)", sb.cdm2_per_unit * sb.dark_patch_y, Exposure.dark_sky_luminance(), 1e-15)
+	var pole := Vector3(0, 1, 0)
+	check("CPU seen luminance at the pole at rest = L(22) (+-2%)", sb.seen_luminance(pole, Vector3(0, 0, -1), 0.0) / Exposure.dark_sky_luminance(), 1.0, 0.02)
+	# un-stretch: the band is the photo's peak quantile, 44x the patch in the photo; it must read 20 mag/arcsec^2
+	check("un-stretch exponent = 0.4 (22 - 20) ln 10 / ln(Y_band / Y_dark)", sb.stretch, 0.8 * log(10.0) / log(sb.peak_y / sb.dark_patch_y), 1e-12)
+	check("stretch < 1 for this high-contrast photo", 1.0 if sb.stretch < 1.0 else 0.0, 1.0, 0.0)
+	check("band (peak quantile) reads MILKY_WAY_MAG = 20 mag/arcsec^2: 10^0.8 x L(22) (+-2%)", sb.seen_luminance(Vector3(0, 0, -1), Vector3(0, 0, -1), 0.0) / Exposure.dark_sky_luminance(), pow(10.0, 0.8), 0.13)
+	var flat := SkyBackground.new()
+	var grey := Image.create(64, 32, false, Image.FORMAT_RGB8)
+	grey.fill(Color8(90, 90, 90))
+	flat.attach(env, 540.0, 70.0, grey, model)
+	check("a uniform photo keeps stretch = 1 (goldens unchanged)", flat.stretch, 1.0, 0.0)
+	var meter_fwd := sb.seen_luminance(Vector3(0, 0, -1), Vector3(0, 0, -1), 0.9)
+	var rest_fwd := sb.seen_luminance(Vector3(0, 0, -1), Vector3(0, 0, -1), 0.0)
+	check("CPU meter mirror: forward at 0.9c = rest x surfaceBrightnessRatio(5000 K, sqrt 19) (+-2%)", meter_fwd / rest_fwd / Relativity.surface_brightness_ratio(SkyModel.decode_t(SkyModel.encode_t(5000.0)), sqrt(19.0)), 1.0, 0.02)
+
+
+## Corrected F5: with theta' the APPARENT angle from the direction of travel,
+## D = 1 / (gamma (1 - beta cos theta')). Sideways at speed is redshifted and
+## darker (D = 1/gamma), the rest-frame 90 deg direction (theta' = 8.1 deg at
+## 0.99c) is brighter (D = gamma), and D = 1 at cos theta' = (1 - 1/gamma) / beta.
+## Patch luminance is checked two ways: the sky background (extended thermal
+## source, SkyModel.radiance) and an isotropic starfield (counted stars x
+## pointFluxRatio over the patch's apparent solid angle).
+func test_sideways_darker() -> void:
+	print("Exposure honesty: sideways is darker at speed (corrected F5)")
+	var b := 0.99
+	var g := Relativity.gamma_of(b)
+	var fwd := Vector3(0, 0, -1)
+	var side := Vector3(1, 0, 0)
+	check("D at theta' = 90 deg, 0.99c = 1/gamma = 0.14107", Relativity.doppler_apparent(side, fwd, b), 1.0 / g, 1e-9)
+	check("1/gamma at 0.99c = 0.141067", 1.0 / g, 0.14106736, 1e-7)
+	var th8 := acos(b)
+	check("rest-frame 90 deg appears at theta' = acos(0.99) = 8.1096 deg", rad_to_deg(th8), 8.1096144, 1e-6)
+	check("D there = gamma = 7.0888", Relativity.doppler_apparent(Vector3(sin(th8), 0, -cos(th8)), fwd, b), g, 1e-5)
+	var c1 := (1.0 - 1.0 / g) / b
+	check("D = 1 boundary: theta' = acos((1 - 1/gamma)/beta) = 29.818 deg (29.8) at 0.99c", rad_to_deg(acos(c1)), 29.818, 0.001)
+	check("D = 1 exactly on the boundary", Relativity.doppler_apparent(Vector3(sqrt(1.0 - c1 * c1), 0, -c1), fwd, b), 1.0, 1e-6)
+	check("just inside the boundary is blueshifted (D > 1)", 1.0 if Relativity.doppler_apparent(Vector3(sin(acos(c1) - 0.01), 0, -cos(acos(c1) - 0.01)), fwd, b) > 1.0 else 0.0, 1.0, 0.0)
+	check("just outside is redshifted (D < 1)", 1.0 if Relativity.doppler_apparent(Vector3(sin(acos(c1) + 0.01), 0, -cos(acos(c1) + 0.01)), fwd, b) < 1.0 else 0.0, 1.0, 0.0)
+	# the sky background: a 4600 K texel seen at theta' = 90 deg and 8.1 deg
+	var lin := Blackbody.rgb_unit_luminance(4600.0) * 0.2
+	var y0 := SkyModel.radiance(lin, 4600.0, 1.0).dot(Vector3(0.2126729, 0.7151522, 0.0721750))
+	var y90 := SkyModel.radiance(lin, 4600.0, Relativity.doppler_apparent(side, fwd, b)).dot(Vector3(0.2126729, 0.7151522, 0.0721750))
+	var y8 := SkyModel.radiance(lin, 4600.0, g).dot(Vector3(0.2126729, 0.7151522, 0.0721750))
+	check("sky patch at theta' = 90 deg, 0.99c is BELOW rest (ratio < 1e-3)", 1.0 if y90 < 1e-3 * y0 else 0.0, 1.0, 0.0)
+	check("sky patch at theta' = 8.1 deg (D = gamma) is ABOVE rest", 1.0 if y8 > y0 else 0.0, 1.0, 0.0)
+	# an isotropic starfield (Fibonacci sphere, 5800 K, unit flux): mean seen luminance of a cone
+	var n_stars := 400000
+	var cones := [[90.0, 10.0], [rad_to_deg(th8), 0.75]] # [centre theta' deg, half-angle deg]
+	var y_t := Blackbody.luminance(5800.0)
+	for cone in cones:
+		var axis := Vector3(sin(deg_to_rad(cone[0])), 0, -cos(deg_to_rad(cone[0])))
+		var cmin := cos(deg_to_rad(cone[1]))
+		var rest_sum := 0.0
+		var seen_sum := 0.0
+		var seen_n := 0
+		for k in n_stars:
+			var z := 1.0 - 2.0 * (k + 0.5) / n_stars
+			var r := sqrt(1.0 - z * z)
+			var ph := k * 2.399963229728653
+			var n := Vector3(r * cos(ph), r * sin(ph), z)
+			if n.dot(axis) >= cmin:
+				rest_sum += 1.0
+			var a := Relativity.aberrate(n, fwd, b)
+			if a.dot(axis) >= cmin:
+				var dd := Relativity.doppler(n, fwd, b)
+				seen_sum += Blackbody.luminance(5800.0 * dd) / y_t / (dd * dd)
+				seen_n += 1
+		var ratio := seen_sum / rest_sum
+		if cone[0] > 45.0:
+			check("starfield patch at theta' = 90 deg, 0.99c is BELOW rest (%d stars vs %d; luminance ratio %s)" % [seen_n, int(rest_sum), str(ratio)], 1.0 if ratio < 1e-3 else 0.0, 1.0, 0.0)
+			check("star count per apparent sr at 90 deg = D^2 = 1/gamma^2 (+-20%)", seen_n / rest_sum * g * g, 1.0, 0.2)
+		else:
+			check("starfield patch at theta' = 8.1 deg, 0.99c is ABOVE rest (luminance ratio %.1f)" % ratio, 1.0 if ratio > 1.0 else 0.0, 1.0, 0.0)
+	# at a FIXED exposure the sideways frame is darker; the auto meter would hide it
+	var e := Exposure.new()
+	e.configure(70.0, 540.0)
+	e.mode = Exposure.Mode.CAMERA
+	e.set_fixed(true, y0)
+	var rest_px := y0 * e.k()
+	var fixed_px := y90 * e.k()
+	e.set_fixed(false, 0.0)
+	e.update(y90)
+	var auto_px := y90 * e.k()
+	check("fixed EV: the 0.99c sideways sky renders below 1e-3 of the rest frame", 1.0 if fixed_px < 1e-3 * rest_px else 0.0, 1.0, 0.0)
+	check("auto (camera) meter re-brightens it > 1000x, up to the EV clamp (metering, not physics)", 1.0 if auto_px > 1000.0 * fixed_px else 0.0, 1.0, 0.0)
+
+
 ## The camera cases need a node in a viewport, so they run once the main loop
 ## has started; everything else runs in _init.
 func _initialize() -> void:
@@ -364,6 +525,9 @@ func _init() -> void:
 	test_lut_range()
 	test_star_brightness()
 	test_rebasing_precision()
+	test_exposure_units()
+	test_sky_calibration()
+	test_sideways_darker()
 
 	print("Aberration (sources crowd toward the direction of motion)")
 	check("90 deg source at 0.9c appears at acos(0.9) = 25.842 deg", angle_deg(Relativity.aberrate(side, fwd, 0.9), fwd), rad_to_deg(acos(0.9)), 1e-4)

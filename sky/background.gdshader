@@ -4,7 +4,7 @@
 // Per pixel, with n' = EYEDIR the direction light APPEARS to come from in the ship frame:
 //   1. n = deaberrate(n', beta)              galaxy-frame direction, sampled from the panorama
 //   2. D = 1 / (gamma (1 - beta n'.bh))      dopplerApparent
-//   3. radiance = Y x surfaceBrightnessRatio(T_c, D) x rgb(D T_c) x tint
+//   3. radiance = Y x surfaceBrightnessRatio(T_c, D) x rgb(D T_c) x tint  (Y un-stretched, M1.5a)
 //      where tint = photo / (Y rgb(T_c)) carries the photo's off-locus colour (1 on the locus),
 //      so D = 1 reproduces the photo exactly.
 // World frame as sky/starfield.gd: galactic (x, y, z) -> world (y, z, -x).
@@ -23,6 +23,10 @@ uniform sampler2D bb_lut : filter_linear, repeat_disable;
 uniform float lut_log_tmin;
 uniform float lut_log_tmax;
 uniform float exposure = 1.0;
+// M1.5a un-stretch of the tone-stretched photo (sky/background.gd): luminance
+// Y -> y_dark (Y / y_dark)^stretch, chromaticity kept; stretch = 1 is the identity.
+uniform float y_dark = 1.0;
+uniform float stretch = 1.0;
 
 vec4 lut(float t) {
 	float u = (log(t) - lut_log_tmin) / (lut_log_tmax - lut_log_tmin);
@@ -48,6 +52,10 @@ void sky() {
 	// one ship pixel spans D times more galaxy-frame angle (explicit lod: no seam at the wrap)
 	float lod = max(0.0, log2(pano_px_per_screen_px * d));
 	vec3 lin = textureLod(photo, uv, lod).rgb;
+	float y_photo = dot(lin, vec3(0.2126729, 0.7151522, 0.0721750));
+	if (stretch != 1.0 && y_photo > 0.0) {
+		lin *= pow(y_photo / y_dark, stretch - 1.0);
+	}
 	float t_c = exp(log(t_lo) + (log(t_hi) - log(t_lo)) * textureLod(model, uv, lod).r);
 	vec4 rest = lut(t_c);
 	vec4 seen = lut(t_c * d);
