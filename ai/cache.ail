@@ -7,7 +7,7 @@ module stapledons/ai/cache
 -- before the result is printed, so a reader that sees the result also sees
 -- the line and the whole blob. Index lines carry no clock and no request id:
 -- the same requests give the same bytes (`make ai-stub`, cache.SHA256SUMS).
-import std/fs (mkdirAll, writeFileBytes, renameFile, fileExists, appendFile)
+import std/fs (mkdirAll, writeFile, writeFileBytes, renameFile, fileExists, appendFile)
 import std/json (encode, js)
 import std/string (concat, join, substring, intToStr)
 import std/option (Option, Some, None)
@@ -50,3 +50,8 @@ export func writeBlob(dir: string, b: Blob) -> () ! {FS} =
   runOps(blobOps(dir, b, fileExists(concat([dir, "/", blobPath(b.sha256, b.ext)]))), b.data)
 -- usage.ndjson (design (a4)): one line per priced call, appended before the result is printed.
 export func appendUsage(dir: string, line: string) -> () ! {FS} = appendFile(concat([dir, "/usage.ndjson"]), concat([line, "\n"]))
+-- inflight.json (AI.9 hardening): the provisional usage line of the call in
+-- flight (provider.reservation), replaced before every live call. Godot
+-- removes it before sending a request and appends it to usage.ndjson only if
+-- it kills the service mid-call.
+export func reserveUsage(dir: string, line: string) -> () ! {FS} = { mkdirAll(dir); writeFile(concat([dir, "/inflight.json"]), concat([line, "\n"])) }

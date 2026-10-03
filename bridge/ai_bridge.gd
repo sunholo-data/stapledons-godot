@@ -19,6 +19,14 @@ extends Node
 ##   request. Every one of those is a failure; 3 failures within 10 minutes
 ##   disable the service for the session and cancel every queued and open
 ##   request with `service_down`.
+## - Session spend (AI.9 hardening): the service's ledger starts from what this
+##   session already spent, read from usage.ndjson (the lines written since
+##   the first launch, the same source as the indicator) and passed as the
+##   config's `spent`, so the player's ceiling bounds the session, not one
+##   service process. A live service writes its reservation (the request's
+##   worst case) to inflight.json before each call; when the bridge kills it
+##   mid-call (timeout) or it dies mid-call (fault), the bridge appends that
+##   provisional line to usage.ndjson, so the call is never uncounted.
 ##
 ## Outcomes are emitted on `outcome` and kept in `outcomes` (see
 ## `take_outcomes`): the service's `result` object as parsed (`status` "ok" or
@@ -40,6 +48,13 @@ const FAIL_LIMIT := 3
 const FAIL_WINDOW_MS := 600000
 const QUIT_GRACE_MS := 1000
 const READ_CHUNK := 4096
+const USAGE_FILE := "usage.ndjson"
+const RESERVE_FILE := "inflight.json"
+const PROVIDERS := ["gemini", "openrouter"]
+## One usage line can never count for more than US$1000 (the ceiling's top is
+## US$20): an absurd or overflowing usd counts as this, so it fails closed
+## (every later request is refused budget) and sums never overflow.
+const MAX_LINE_NUSD := 1000000000000
 const MAX_CHUNKS_PER_POLL := 16
 ## OS.execute_with_pipe marks no descriptor close-on-exec, so a child inherits
 ## every pipe Godot holds: the sim's stdin among them, and the pipes of any
@@ -84,6 +99,9 @@ var key_files: Dictionary = {}
 var live_allowed := false
 ## The player's session ceiling in US$ (0.05..20, D-20), stub and live alike.
 var ceiling_usd := 0.5
+## Byte offset of usage.ndjson where this session's lines begin: taken at the
+## first launch (nothing of this session's is written before it); -1 before.
+var usage_from := -1
 ## Tests: keep every stdout line the service printed (key hygiene).
 var keep_lines := false
 var lines_read: Array = []
@@ -215,6 +233,9 @@ func shutdown() -> void:
 			OS.delay_msec(5)
 		if _alive(pid):
 			OS.kill(pid)
+		# Quit mid-call: the call may have been billed, and the next session
+		# deletes the reservation unread, so it is charged now.
+		_charge_interrupted(_in_flight)
 	for t in _kill_tasks:
 		WorkerThreadPool.wait_for_task_completion(t)
 	_kill_tasks.clear()
@@ -274,7 +295,48 @@ func live_plan(ailang: String, root: String, home: String = "") -> Dictionary:
 func stub_config(root: String) -> Dictionary:
 	return {"provider": "stub", "keys_present": stub_keys, "text_only": text_only,
 		"cache_dir": ProjectSettings.globalize_path(cache_dir),
-		"routing": root.path_join("data/ai/routing.json"), "fixtures": root.path_join("ai/fixtures"), "ceiling_usd": ceiling_usd}
+		"routing": root.path_join("data/ai/routing.json"), "fixtures": root.path_join("ai/fixtures"), "ceiling_usd": ceiling_usd,
+		"spent": spent_list()}
+
+
+func usage_path() -> String:
+	return ProjectSettings.globalize_path(cache_dir).path_join(USAGE_FILE)
+
+
+func reserve_path() -> String:
+	return ProjectSettings.globalize_path(cache_dir).path_join(RESERVE_FILE)
+
+
+## This session's spend per route in nano-USD: the `usd` of every usage.ndjson
+## line written since the first launch (ok, failed and provisional alike).
+## Before the first launch the session has spent nothing.
+func session_nusd() -> Dictionary:
+	var out := {"gemini": 0, "openrouter": 0}
+	var f := FileAccess.open(usage_path(), FileAccess.READ) if usage_from >= 0 else null
+	if f == null:
+		return out
+	f.seek(usage_from)
+	var json := JSON.new()
+	for line in f.get_buffer(f.get_length()).get_string_from_utf8().split("\n", false):
+		if json.parse(line) != OK: # a corrupted line is skipped quietly, never logged
+			continue
+		var u = json.data
+		if u is Dictionary and out.has(u.get("route")) and (u.get("usd") is float or u.get("usd") is int) and float(u["usd"]) >= 0.0:
+			var usd := float(u["usd"])
+			var n: int = MAX_LINE_NUSD if not usd < MAX_LINE_NUSD / 1.0e9 else mini(roundi(usd * 1.0e9), MAX_LINE_NUSD)
+			out[u["route"]] = mini(out[u["route"]] + n, MAX_LINE_NUSD)
+	return out
+
+
+func session_usd() -> Dictionary:
+	var n := session_nusd()
+	return {"gemini": n["gemini"] / 1.0e9, "openrouter": n["openrouter"] / 1.0e9}
+
+
+## The config's `spent`: [{provider, nusd}] for the service's ledger.
+func spent_list() -> Array:
+	var n := session_nusd()
+	return PROVIDERS.map(func(p): return {"provider": p, "nusd": n[p]})
 
 
 ## Source checkout: ailang from AILANG_BIN or PATH, the service from the repo.
@@ -301,21 +363,21 @@ func launch_plan() -> Dictionary:
 	return {"bin": "/usr/bin/env", "args": args}
 
 
-static func _unpack_ai(root: String) -> bool:
+## `cache_src` is the bundled package cache (an exported build always has one;
+## tests on a checkout without `make runtime` pass a stand-in).
+static func _unpack_ai(root: String, cache_src: String = "res://runtime/cache") -> bool:
 	if not FileAccess.file_exists("res://" + SERVICE_FILE):
 		push_error("exported build has no AI service (res://%s missing)" % SERVICE_FILE)
 		return false
-	# The marker holds a digest of what was unpacked, so a build with another
-	# ai/ lockfile or data/ai/ (same AILANG version, same runtime dir) unpacks
-	# again; the runtime's package cache is re-copied for ai/'s packages.
+	# The marker holds a digest of every file unpacked from ai/ and data/ai/
+	# (AI.9 hardening: every module, not only service.ail), so a rebuilt export
+	# with the same AILANG version never runs stale modules; the runtime's
+	# package cache is re-copied for ai/'s packages (keyed by ai/ailang.lock).
 	var marker := root.path_join(".ai-unpacked")
-	var digest := ""
-	for f in ["res://ai/ailang.lock", "res://data/ai/routing.json", "res://data/ai/models.json", "res://data/ai/prices.json", "res://ai/service.ail"]:
-		digest += FileAccess.get_file_as_string(f).sha256_text()
-	digest = digest.sha256_text()
+	var digest := unpack_digest()
 	if FileAccess.get_file_as_string(marker) == digest:
 		return true
-	for pair in [["res://ai", root.path_join("ai")], ["res://data/ai", root.path_join("data/ai")], ["res://runtime/cache", root.path_join("home/.ailang/cache")]]:
+	for pair in [["res://ai", root.path_join("ai")], ["res://data/ai", root.path_join("data/ai")], [cache_src, root.path_join("home/.ailang/cache")]]:
 		if not SimBridge._copy_tree(pair[0], pair[1]):
 			push_error("failed to unpack %s" % pair[0])
 			return false
@@ -323,7 +385,39 @@ static func _unpack_ai(root: String) -> bool:
 	return true
 
 
+## Every file _unpack_ai copies from ai/ and data/ai/ (as SimBridge._copy_tree
+## walks them), sorted: the input of the unpack digest.
+static func unpack_files() -> PackedStringArray:
+	var out := PackedStringArray()
+	for d in ["res://ai", "res://data/ai"]:
+		_list_tree(d, out)
+	out.sort()
+	return out
+
+
+static func _list_tree(dir: String, out: PackedStringArray) -> void:
+	var da := DirAccess.open(dir)
+	if da == null:
+		return
+	for f in da.get_files():
+		out.append(dir.path_join(f))
+	for d in da.get_directories():
+		_list_tree(dir.path_join(d), out)
+
+
+static func unpack_digest() -> String:
+	var h := HashingContext.new()
+	h.start(HashingContext.HASH_SHA256)
+	for f in unpack_files():
+		h.update((f + "\n").to_utf8_buffer())
+		h.update(FileAccess.get_file_as_bytes(f))
+	return h.finish().hex_encode()
+
+
 func _launch() -> void:
+	if usage_from < 0:
+		var f := FileAccess.open(usage_path(), FileAccess.READ)
+		usage_from = f.get_length() if f != null else 0
 	var plan := launch_override if not launch_override.is_empty() else launch_plan()
 	launch_count += 1
 	launch_times.append(now_msec())
@@ -383,6 +477,7 @@ func _send_next() -> void:
 			msg[k] = _in_flight[k]
 	_phase = Phase.BUSY
 	_deadline = now_msec() + int(timeout_ms[_in_flight["kind"]])
+	DirAccess.remove_absolute(reserve_path()) # a reservation now is this request's
 	sent_count += 1
 	sent_total += 1
 	_write(SimBridge.encode(msg))
@@ -462,6 +557,7 @@ func _timeout() -> void:
 	var r := _in_flight
 	_in_flight = {}
 	_kill()
+	_charge_interrupted(r)
 	_cancel(r, "timeout")
 	_failure("timeout", false)
 
@@ -469,11 +565,31 @@ func _timeout() -> void:
 ## Crash, bad handshake or garbled reply: kill, keep the open request (it is
 ## resent first after the restart), restart after the backoff.
 func _fault(code: String) -> void:
+	var r := _in_flight
 	if not _in_flight.is_empty():
 		_queues[PRIORITY[_in_flight["kind"]]].push_front(_in_flight)
 		_in_flight = {}
 	_kill()
+	_charge_interrupted(r)
 	_failure(code)
+
+
+## A request killed (or lost with its process) mid-call may have been billed:
+## if the service reserved it (inflight.json names this request), append that
+## provisional line, its worst case, to usage.ndjson.
+func _charge_interrupted(r: Dictionary) -> void:
+	if r.is_empty() or not FileAccess.file_exists(reserve_path()):
+		return
+	var line := FileAccess.get_file_as_string(reserve_path()).strip_edges()
+	DirAccess.remove_absolute(reserve_path())
+	var json := JSON.new()
+	var u = json.data if line.begins_with("{") and json.parse(line) == OK else null
+	if not (u is Dictionary and u.get("req") == r.get("req") and u.get("provisional") == true):
+		return
+	var f := FileAccess.open(usage_path(), FileAccess.READ_WRITE if FileAccess.file_exists(usage_path()) else FileAccess.WRITE)
+	if f != null:
+		f.seek_end()
+		f.store_string(line + "\n")
 
 
 func _failure(code: String, backoff: bool = true) -> void:

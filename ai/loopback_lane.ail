@@ -23,7 +23,7 @@ import std/string (concat, split, intToStr)
 import ./wire (Request, WRequest, decodeIn, encodeOut)
 import ./spend (Units, ledgerOf, total)
 import ./provider (Ctx, Act, Say, WriteBlob, AppendUsage, Job, Run, Done, prepare, okText, okVoice, failed, castVoice)
-import ./service (start)
+import ./service (start, admitLive)
 import ./cache (writeBlob, appendUsage)
 import ./adapters (openRouterTextAt, geminiVoiceAt)
 
@@ -96,10 +96,41 @@ func billedCheck(cfg: Loop, c: Ctx, lines: [string], kg: string, ko: string) -> 
   }
 }
 
+-- AI.9 hardening: a call that was sent but got no reply is charged at its
+-- cap. The server reads <base>/drop requests and closes the connection
+-- without answering (a transport error after send). Then the reservation the
+-- live loop writes before a call (<cache>/inflight.json, the request's worst
+-- case), which Godot appends to usage.ndjson if it kills the service mid-call.
+func droppedCheck(cfg: Loop, c: Ctx, lines: [string], kg: string, ko: string) -> () ! {IO, FS, Net} {
+  let dir = concat([cfg.out, "/cache"]);
+  match job(c, lines, "1") {
+    None => println("FAIL dropped openrouter: no job"),
+    Some(j) => {
+      let jd = {j | r: {j.r | req: "d1"}};
+      let a = openRouterTextAt(concat([cfg.base, "/drop"]), jd, ko);
+      match a.outcome { Ok(_) => println("FAIL dropped openrouter: answered"), Err(code) => billedLine("dropped openrouter", jd, "openrouter", a.units, code, dir) }
+    }
+  };
+  match job(c, lines, "12") {
+    None => println("FAIL dropped tts: no job"),
+    Some(j) => {
+      let jd = {j | r: {j.r | req: "d12"}};
+      let s = geminiVoiceAt(concat([cfg.base, "/drop"]), jd, kg, castVoice(jd.r), c.styles);
+      match s.outcome { Ok(_) => println("FAIL dropped tts: answered"), Err(code) => billedLine("dropped tts", jd, "gemini", s.units, code, dir) };
+      -- The reservation through the live loop's own step (service.admitLive):
+      -- it prepares the request and writes inflight.json before the call.
+      match admitLive(dir, c, ledgerOf(0.5), {j.r | req: "912"}, "gemini") {
+        Run(ja) => println(concat(["reserved 912: ", intToStr(ja.est), " nano-USD"])),
+        Done(_) => println("FAIL reserved 912: not admitted")
+      }
+    }
+  }
+}
+
 export func loopback(cfg: Loop) -> () ! {IO, FS, Net, Env} {
   let kg = getEnvOr("GOOGLE_API_KEY", "");
   let ko = getEnvOr("OPENROUTER_API_KEY", "");
-  let s = { provider: "stub", keys_present: ["gemini", "openrouter"], text_only: false, cache_dir: concat([cfg.out, "/cache"]), routing: cfg.routing, fixtures: cfg.fixtures, ceiling_usd: 0.5 };
+  let s = { provider: "stub", keys_present: ["gemini", "openrouter"], text_only: false, cache_dir: concat([cfg.out, "/cache"]), routing: cfg.routing, fixtures: cfg.fixtures, ceiling_usd: 0.5, spent: [] };
   if kg == "" || ko == "" then println("FAIL loopback needs fake GOOGLE_API_KEY and OPENROUTER_API_KEY")
   else match start(s, ["gemini", "openrouter"]) {
     Err(e) => println(concat(["FAIL start: ", e])),
@@ -109,6 +140,7 @@ export func loopback(cfg: Loop) -> () ! {IO, FS, Net, Env} {
       orCheck(cfg, c, lines, ko);
       ttsCheck(cfg, c, lines, kg);
       billedCheck(cfg, c, lines, kg, ko);
+      droppedCheck(cfg, c, lines, kg, ko);
       println("loopback-done")
     }
   }

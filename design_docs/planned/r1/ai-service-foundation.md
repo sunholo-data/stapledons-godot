@@ -762,6 +762,92 @@ AI.9 as built (2026-10-03, AILANG v0.52.0, stub only, no key):
   data tables and the service. A build with another `ai/` unpacks again, and
   re-copies the runtime's package cache (which now holds gemini_live).
 
+AI.9 hardening (2026-10-03, before AI.10b's attended live run; findings of
+the AI.9 evaluation, `eval_R1-AI-FOUNDATION-AI.9_round_1.json`; stub,
+loopback and fake services only, no key):
+- **The ceiling bounds the session.** Before this, every service process
+  started its ledger at zero, and the bridge restarts the service after every
+  settings change, fault and timeout, so the ceiling bounded one process.
+  Now `AiBridge` takes the byte offset of `usage.ndjson` at its first launch
+  (the session start), sums the `usd` of every line written since then by
+  route (`session_nusd`, exact nano-USD; the indicator shows the same sum),
+  and passes it as the config's `spent: [{provider, nusd}]` on every launch,
+  stub and live. The service starts its ledger from it (`spend.ledgerFrom`;
+  an unknown provider or a negative amount is a `config` refusal). Test:
+  requests 1-12 at the 0.05 ceiling through the stub, once in one process and
+  once with a fresh process per request (and a line of an earlier session in
+  the file), must give the same outcomes, `budget` at requests 10 and 11 in
+  both (`test_ai_bridge.gd` `session_ceiling`).
+- **Interrupted calls are charged.** A std/net or std/ai call that errors
+  after it may have been sent (transport error, dropped connection) is
+  charged at its cap: the prompt's tokens in and the output cap out, one call
+  (`textCallCap`, `ttsCallCap`; `make ai-loopback` drops one OpenRouter and
+  one TTS call on the floor). Before each live call the service writes its
+  reservation, a provisional usage line at the request's worst case `est`
+  (`"provisional":true`), to `<cache_dir>/inflight.json`; the bridge deletes
+  that file before it sends each request and, when it kills the service
+  mid-call (timeout) or the service dies mid-call (fault), appends the line
+  to `usage.ndjson` if it names the request in flight. So the indicator and
+  the next launch's ledger both count the call. A faulted request is resent,
+  so a call that succeeds on the resend is counted twice (worst case plus
+  actual): conservative, never under.
+- **Guard.** Rule A now normalises each line (quotes dropped, blanks
+  collapsed), scans `*.py` and `*.gd` under tests/ and tools/ too, and
+  treats any `--entry` whose value is not a literal word (`$x`, `$(X)`, a
+  Python or GDScript variable) as live, unless the line pins `--package-dir
+  sim` and names no `ai/` package (the sim has no live entry). Rule C
+  matches any assignment or mapping of AI_LIVE (`AI_LIVE"? *[:=]`). The
+  mutation-table exemption is by place and shape only (a whole-line quoted
+  row inside the ai-live-guard recipe; the here-document of
+  `tests/ai_bridge_mutants.sh`), not by a line suffix. Rule E and the file
+  lists use `git ls-files` in a work tree, so `.claude/worktrees/*` cannot
+  move the result. The five evasions the evaluator found, and a Python
+  variable as the entry, are guard mutants that must be caught.
+- **Smaller gaps.** `test_live_env` keys live under `app data/Stapledon's
+  Voyage/` (a space and an apostrophe, like the real macOS user://). The
+  unpack marker is a digest of every file `_unpack_ai` copies from `ai/` and
+  `data/ai/` (`unpack_files`), not five of them. A stale
+  `user://.ai_key_session_*` from a crash is removed when the next session
+  starts. Both export smokes run with a scratch HOME. New cases: an empty or
+  blank key file is no key; an automation run has no indicator; an earlier
+  session's usage lines are not counted.
+- **Mutants.** Every new test has a mutant it kills: 6 in `make ai-mutants`
+  (4 ai/ rows, 2 loopback rows), 13 in `make ai-bridge-mutants` (9 bridge rows
+  and a new table of 4 for `test_ai_settings.gd`), and 7 new guard mutants
+  plus the tracked/untracked rule E pair in `make ai-live-guard`.
+- **For AI.10b.** The ceiling and the indicator now agree and both count
+  interrupted calls, but the reservation is the request's worst case, not
+  the provider's bill. Keep `--ceiling-usd` low and watch the indicator.
+- **Round 2** (`eval_R1-AI-FOUNDATION-AI.9h_round_1.json`, 78/100, CI red):
+  - CI: `_unpack_ai` takes the package cache as a parameter, and the test
+    passes a one-file stand-in when `res://runtime/cache` is absent (a
+    checkout without `make runtime`, as on CI). Where the runtime exists the
+    real cache is copied and checked.
+  - Fail closed on absurd spend (probe P4). One usage line counts for at most
+    US$1000 in the bridge (`MAX_LINE_NUSD`, and so does a route's sum).
+    `spend.charge` caps each provider's spend at `maxNusd()` (US$1000), and
+    `admit` is `0 <= estimate <= ceiling - total`, so a saturated or huge
+    amount refuses every request instead of wrapping and admitting.
+  - Quit mid-call: `shutdown()` charges the reservation of the request in
+    flight. Before this, the next session deleted it unread.
+  - Guard: the sim exception needs a literal `sim/...ail` program on the
+    line. Python argv single tokens (`"--entry=live"`) are read. The
+    here-document exemption covers only the mutation tables (`done
+    <<'EOF'`), and the row exemption only the guard recipe's `for m in`
+    list. A–C scan every tracked `.gd`/`.py`/`.sh` (ui/, bridge/ too, with
+    the launch builder's two pinned lines exempt, which rule D checks) and
+    every tracked `.mk`. Every `include` must point into `mk/`. `-u AI_LIVE`
+    must be a whole word. Four sim-tooling lines whose entry is a variable
+    now clear AI_LIVE.
+  - `service.admitLive` (prepare, then write the reservation) is the live
+    loop's step and is run by `make ai-loopback`. A mutant that drops the
+    reservation fails it.
+  - Smaller: the spaced-path assertion reads one argv element per line;
+    corrupted usage lines are skipped without a push_error; the sprint JSON
+    records this hardening.
+  - Residual for AI.10b: the ceiling bounds one Godot run (`usage_from` is
+    per AiBridge), so the run's real cost is the whole `usage.ndjson`.
+
 ### Follow-up: the AI model bake-off (after AI.10b)
 
 Mark, attended 2026-10-02: "we may actually run with models and compare their

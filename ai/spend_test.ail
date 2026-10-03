@@ -6,7 +6,7 @@ module stapledons/ai/spend_test
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/string (join, contains)
-import ./spend (Price, Units, Ledger, parsePrices, priceFor, cost, ledgerOf, admit, charge, total, spentBy, ceilingError, nanoOf, usdOf, usageLine, defaultCeilingUsd)
+import ./spend (Price, Units, Ledger, parsePrices, priceFor, cost, ledgerOf, admit, charge, total, spentBy, ceilingError, nanoOf, usdOf, usageLine, defaultCeilingUsd, ledgerFrom, spentError, maxNusd)
 
 pure func priceTable() -> string = join("", ["{\"v\":1,\"_note\":\"x\",\"prices\":{",
   "\"gemini\":{\"gemini-2.5-flash\":{\"in_per_mtok\":0.3,\"out_per_mtok\":2.5},\"gemini-2.5-flash-image\":{\"per_call\":0.039}},",
@@ -57,10 +57,35 @@ pure func checkSpendUsage() -> bool {
     "{\"req\":\"9\",\"provider\":\"stub\",\"route\":\"gemini\",\"model\":\"gemini-2.5-flash-image\",\"kind\":\"portrait\",\"tokens_in\":0,\"tokens_out\":0,\"calls\":1,\"usd\":0.039,\"ms\":0,\"totals\":{\"gemini\":0.039,\"openrouter\":0.001,\"all\":0.04}}"
 }
 
-export pure func spendChecks() -> bool = checkSpendRounding() && checkSpendPrices() && checkSpendLedger() && checkSpendCeiling() && checkSpendUsage()
+-- AI.9 hardening: a relaunched service starts from the session's spend, so
+-- the ceiling bounds the session, not one process. Unknown providers and
+-- negative amounts are configuration errors.
+pure func checkSpendCarried() -> bool {
+  let l = ledgerFrom(0.05, [{ provider: "openrouter", nusd: 1000 }, { provider: "gemini", nusd: 39000000 }, { provider: "openrouter", nusd: 2000 }]);
+  total(l) == 39003000 && spentBy(l, "openrouter") == 3000 && spentBy(l, "gemini") == 39000000 && l.ceiling == 50000000 &&
+  admit(l, 10997000) && !admit(l, 10997001) && total(ledgerFrom(0.5, [])) == 0 &&
+  spentError([{ provider: "gemini", nusd: 0 }]) == None && spentError([]) == None &&
+  spentError([{ provider: "openai", nusd: 1 }]) == Some("config: spent: unknown provider openai") &&
+  spentError([{ provider: "gemini", nusd: 0 - 1 }]) == Some("config: spent gemini is negative")
+}
+
+-- AI.9 hardening round 2 (evaluator probe P4): an absurd carried amount
+-- (int64 max, as a saturated usd 1e300 would give) fails closed: it counts as
+-- maxNusd(), every request is refused, and no sum or headroom check wraps.
+pure func checkSpendOverflow() -> bool {
+  let big = 9223372036854775807;
+  let l = ledgerFrom(0.5, [{ provider: "gemini", nusd: big }, { provider: "openrouter", nusd: big - 807 }]);
+  spentBy(l, "gemini") == maxNusd() && total(l) == 2 * maxNusd() && !admit(l, 0) && !admit(l, 1) &&
+  !admit(ledgerOf(0.5), big) && !admit(charge(ledgerOf(0.5), "gemini", big), 1) && !admit(ledgerOf(0.5), 0 - 1) &&
+  spentBy(charge(charge(ledgerOf(0.5), "gemini", big), "gemini", big), "gemini") == maxNusd()
+}
+
+export pure func spendChecks() -> bool = checkSpendRounding() && checkSpendPrices() && checkSpendLedger() && checkSpendCeiling() && checkSpendUsage() && checkSpendCarried() && checkSpendOverflow()
 
 test "AI.5 prices keyed by provider and model price tokens and calls exactly" { checkSpendPrices() }
 test "AI.5 ledger per provider plus total; refused once the total would pass the ceiling" { checkSpendLedger() }
 test "AI.5 the player's ceiling is bounded 0.05..20, default 0.50" { checkSpendCeiling() }
 test "AI.5 usage lines carry provider, route, model and running totals" { checkSpendUsage() }
 test "AI.5 prices and ceilings round to the nearest nano-dollar" { checkSpendRounding() }
+test "AI.9 a relaunched service starts its ledger from the session's spend" { checkSpendCarried() }
+test "AI.9 an absurd carried spend fails closed; admit never wraps" { checkSpendOverflow() }
