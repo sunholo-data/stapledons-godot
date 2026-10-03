@@ -1,7 +1,11 @@
 # Sprint plan: R1-M5-PLANETS, planets and flybys
 
-**Status:** Proposed 2026-10-03 (sprint-planner, attended session). **Not
-approved, nothing executed.** It waits for Mark at ⏸ P0.
+**Status:** **Approved** by Mark at ⏸ P0 (attended, 2026-10-03), with
+Q1–Q6 answered (see [§Questions](#questions-for-mark-answered-at--p0-attended-2026-10-03)):
+the 15-milestone split (Q6); `sunholo/celestial` 0.1.0 publishes under the
+relativity rule, so ⏸ P-pkg-a no longer needs Mark (Q1); the defaults for
+Q2–Q5. Proposed the same day by sprint-planner. **Nothing executed yet**;
+execution starts with wave 1 (M5.0a1 ∥ M5.0b) through the sprint-executor.
 
 ## Summary
 
@@ -34,7 +38,7 @@ gates that CI can't run.
 
 **Command legend** (the same as M4's plan).
 - `$A` = `/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang`,
-  AILANG **v0.51.0**. Every `make` line passes `AILANG=$A` (and
+  AILANG **v0.52.0** (on main since PR #73; Makefile `AILANG_RELEASE`). Every `make` line passes `AILANG=$A` (and
   `AILANG_BIN=$A` where Godot drives the sim). A fresh clone runs
   `make runtime` first.
 - `$PKG` = a **fresh clone** of `sunholo-data/ailang-packages` at
@@ -61,7 +65,7 @@ gates that CI can't run.
 | **M1.8 forward CMB + centre-weighted eye meter** | ✅ **merged (PR #79, `28fd310`) during planning** | It added `sky/sky_meter.gd` and edited `sky/exposure.gd`, `sky/starfield.gd`, `main.gd` and `tests/test_physics.gd`. **M5.4 builds on its meter** (F3) |
 | M4 sprint `R1-M4-JOURNEY` | Plan on main, `status: planned`; the mission loop is running **wave 1 (M4.6a, M4.0, M4.1)**, and no branch has been pushed yet | `sprint_R1-M4-JOURNEY.json`; `git ls-remote origin` |
 | M4.3a HUD and `DisplayBinding`, M4.1 stand-off, M4.7 lore-check, M4.6 `lint-precision` | ❌ not started (M4 waves 2–4) | `ls ui/display_binding.gd sim/consequence.ail sim/tools/lore_check.ail`: none exists |
-| AILANG v0.52.0 bump | ⏳ branch `chore/ailang-0.52.0` (x86_64 replay goldens re-recorded, "needs Mark's approval") | `git log origin/chore/ailang-0.52.0`. Risk R7 |
+| AILANG v0.52.0 | ✅ **merged (PR #73)**; main pins v0.52.0 with relativity 0.5.2 | `git show origin/main:Makefile | grep AILANG_RELEASE` = v0.52.0. R7 retired |
 | Planet, orbit or celestial code in the game | none | V1 in the design doc |
 | Registry: orbit, ephemeris or reflected-light package | **none** | [Registry reuse gate](#registry-reuse-gate) |
 
@@ -192,7 +196,7 @@ and AC10 becomes
 This plan puts **`medium.hoverPower(mEffKg, gMs2)`** in relativity's
 bubble-energetics module (`medium`), so M3's function can later compose it.
 That module is the one M4.6a edits, which is one more reason M5.0b rebases
-after M4.6a. Q5.
+after M4.6a. **Mark approved this (Q5).**
 
 **F8. AC12 needs PL-n rows in the design repo before M5.7, not at
 landing.** `make lore-check`'s cross-repo half resolves `PL-n` ids in
@@ -201,7 +205,7 @@ repo until landing ("or earlier, if Mark wants the spec first"). M5.7's
 AC12 can't pass without at least the PL-n check-value rows. Plan: a
 docs-only PR to `stapledons-design` opens alongside M5.7 with
 `planets-spec.md` (PL-1…) and RS-24 to RS-29, and its values are copied from
-the package probes. Q3.
+the package probes. **Mark approved this (Q3).**
 
 **F9. No new Python.** The sol tour is a hand-written NDJSON input log
 replayed by the existing `tools/replay.py` harness (role: harness). The
@@ -212,7 +216,7 @@ texture normalisation is a Godot headless `--script`
 
 ## Registry reuse gate
 
-Searches run 2026-10-03 with the pinned `$A` (v0.51.0):
+Searches run 2026-10-03 with the main checkout's `runtime/bin/ailang` (v0.51.0 at the time; the registry is server-side, so the result holds on v0.52.0):
 `ailang search {orbit, orbits, ephemeris, kepler, celestial, astronomy,
 albedo, planet, gravity}` → **No packages found** for every term.
 `ailang pkg search {orbit, ephemeris, kepler, celestial}` → **No packages
@@ -242,7 +246,7 @@ no Kepler, albedo, phase-law or ring functions (design V3). The full listing
 
 ```
 W1  M5.0a1 ─┐            M5.0b ── (waits for M4.6a's publish) ── ⏸ P-pkg-b
-W2  M5.0a2 ─┴─ ⏸ P-pkg-a (independent eval, publish celestial 0.1.0)
+W2  M5.0a2 ─┴─ ⏸ P-pkg-a (independent eval ≥ 70, publish celestial 0.1.0; no Mark action, Q1)
 W3  M5.1a  (pins both, data)                                     needs P-pkg-a + P-pkg-b
 W4  M5.1b  (systemAt, `system` change set)
       ├── RENDER track ───────────────────┐   ├── NAVIGATION track ─────────┐
@@ -782,7 +786,7 @@ reviewed diff.
 **Files:** `ui/system_map.tscn`, `ui/system_map.gd`, `ui/plan_panel_body.gd`,
 `ui/light_confirm.tscn` (new), `ui/galaxy_map.gd` (Sol → system zoom hook),
 `ui/display_binding.gd` (**extended if M4.3a has landed, otherwise created
-with M4.3a's planned API**, Q4), `tests/test_system_map.gd` (new),
+with M4.3a's planned API**, Mark Q4), `tests/test_system_map.gd` (new),
 `mk/m5.mk` (`ui` gains the test). **Conflict:** `ui/galaxy_map.gd`
 (M2-owned; M4 doesn't list it), `ui/display_binding.gd` with M4.3a.
 
@@ -918,9 +922,9 @@ the bench scene flag, ≤ 15 lines), `mk/m5.mk` (`capture-m5`, the
 
 | Id | After | What Mark does | Blocks |
 |---|---|---|---|
-| **⏸ P0** | now | Approves this plan and answers Q1–Q6 | everything |
+| **⏸ P0** | now | **DONE: approved by Mark (attended 2026-10-03), Q1–Q6 answered** | (nothing; satisfied) |
 | **⏸ P-pkg-b** | M5.0b, after M4.6a's release is published | The controller publishes relativity under the **standing publish grant (relativity only)**, after an independent eval ≥ 70, quality with no gates and a dry run. Mark is told the version; no action needed unless the eval fails | M5.1a |
-| **⏸ P-pkg-a** | M5.0a2 | **A first publish of a new package, `sunholo/celestial` 0.1.0.** The standing grant covers relativity only, so **Mark's yes is needed** (Q1 asks for it now, conditional on eval ≥ 70, quality with no gates and AC1) | M5.1a |
+| **⏸ P-pkg-a** | M5.0a2 | The controller publishes the new package `sunholo/celestial` 0.1.0 under **the relativity rule (Mark, Q1, P0 2026-10-03)**: an independent eval ≥ 70 (AC1), `pkg quality` with no gates, a dry run. **No Mark action needed**; he is told the version | M5.1a |
 | **⏸ L-tex** | M5.2a, before `make planet-publish` | **The texture licence check:** the Solar System Scope source URL and its CC BY 4.0 terms as of the download date, the exact attribution text in `data/planets/CREDITS` and on the in-game credits screen, the file list with sha256s, and confirmation that no unlicensed texture (the Go build's `earth.jpg` and `alien/*`) is included. The upload is a maintainer action (gcloud) | the M5.2a merge (AC10) |
 | **⏸ R-m5a** | M5.2b (`renders/m5/rest/`) | **Gate-2 review of the rest-frame planet renders:** Earth start (EYE and fixed EV), Jupiter at opposition with a moon shadow, Saturn with ring shadows, a ring close-up, the point/disc crossover | the `m5-render` merge |
 | **⏸ R-m5b** | M5.3 (`renders/m5/flyby/` + the G-M5-1..3 log) | **Gate-2 review of the flyby aberration warp:** Saturn at β 0, 0.5, 0.9 and 0.99, forward, sideways and astern; the outline stays a circle, the leading edge goes violet, you see round the far side | the `m5-render` merge to main |
@@ -936,38 +940,35 @@ the bench scene flag, ≤ 15 lines), `mk/m5.mk` (`capture-m5`, the
 |---|---|---|---|
 | R1 | **Overrun.** At 1.6×, 4,040 becomes about 6,400 lines; the Godot milestones may run 2.4× like AI.6/7/9 | High | Every milestone planned at ≤ 400. Named seams inside the larger milestones: M5.3 can cut the far-to-near multi-tile compositor into M5.3b; M5.5b can cut the Sol tour into M5.5c; M5.2a can cut the texture tooling into M5.2c. 3 contingency iterations |
 | R2 | **M4 conflicts** on `protocol.ail`, `ship.ail`, `sim_bridge.gd`, `main.gd`, the Makefile and `test_physics.gd` | High (M4 wave 1 is running now) | The F4 table: `mk/m5.mk`, `tools/m5_golden.gd`, `sim/navigation.ail`, function-block additions, the minor version taken at merge time, M5 rebasing on whatever M4 merged |
-| R3 | **M4.6a's relativity release slips**, holding M5.0b's publish and so M5.1a and the whole sim spine | Medium | M5.0a1 and M5.0a2 proceed regardless. If M4.6a isn't published by the time M5.0a2 is, Mark decides (Q2): wait, or publish M5.0b first and let M4.6a rebase |
+| R3 | **M4.6a's relativity release slips**, holding M5.0b's publish and so M5.1a and the whole sim spine | Medium | M5.0a1 and M5.0a2 proceed regardless. Mark ruled (Q2): M5.0b waits for M4.6a's release and publishes after it |
 | R4 | **The first release of a new package** finds gaps in the quality gates or the registry publish | Medium | Precedent: M1.P and M2.0 published relativity cleanly. The independent eval runs on the whole package before publish. A dry run first |
 | R5 | **Saturn's equinox check misses ±10 d** with JPL elements plus IAU poles | Low-medium | As in the design: use the IAU model's higher-order pole terms (data, not code) |
 | R6 | **GPU gates** (G-M5-1..9, capture, bench) can't run in CI, and the bench is sensitive to host load (M1.8's p99 missed under load) | Medium | Run in the Studio GPU window, logs in notes; the bench records `uptime` load and an A/B against `origin/main` |
-| R7 | **AILANG v0.52.0** (`chore/ailang-0.52.0`) lands mid-sprint | Medium | CLAUDE.md: CI, the bundled runtime and the lockfile move together. The `sol_tour` per-arch goldens are re-recorded as a reviewed diff. AI.9 and M1.7 already ran on 0.52.0 |
+| R7 | ~~AILANG v0.52.0 lands mid-sprint~~: **retired**. The bump already merged (PR #73), so main is on **v0.52.0** with relativity 0.5.2 and the sprint runs on it from the start. A *later* bump during the sprint follows CLAUDE.md (CI, the bundled runtime and the lockfile move together; the `sol_tour` per-arch goldens are re-recorded as a reviewed diff) | none | none |
 | R8 | **VM vs interpreter gaps** in new sim code (ailang#1478 pattern constructors, #1473 bare variable arms, #1419 NaN) | Medium | Strict entries for `systemVm`, `navigationVm` and `solTourRoundTrip` from the first commit; every disagreement shrunk and reported with `ailang messages` |
-| R9 | **The soft dependencies on M4 haven't landed** by M5.6 and M5.7 (`DisplayBinding`, the HUD, the arrival card, lore-check, the stand-off) | Medium-high | M5.6a creates `DisplayBinding` with M4.3a's planned API (Q4); M5.7 uses a scenario stand-off; **AC12 is the one hard blocker** (M4.7), and M5.7 can merge with AC12 marked pending only if Mark agrees (Q3) |
+| R9 | **The soft dependencies on M4 haven't landed** by M5.6 and M5.7 (`DisplayBinding`, the HUD, the arrival card, lore-check, the stand-off) | Medium-high | M5.6a creates `DisplayBinding` with M4.3a's planned API (Mark, Q4); M5.7 uses a scenario stand-off; **AC12 is the one hard blocker** (M4.7 lore-check, plus the design-repo PL-n PR that goes up alongside M5.7, Mark Q3) |
 | R10 | ~~PR #79 waits at R-e~~: **retired**, #79 merged during planning | none | none |
 | R11 | **The tile budget astern at 0.99c** (14× magnification) | Low-medium | The cap at 4,096², a bench run already at M5.3, tiles only for resolved groups |
 | R12 | **Exoplanet status changes** before M5.1a (Proxima d, α Cen A b) | Low | Status comes from the pinned snapshot, never hard-coded |
 
-## Questions for Mark (at ⏸ P0)
+## Questions for Mark (answered at ⏸ P0, attended 2026-10-03)
 
 1. **Publishing a new package (P-pkg-a).** May the controller publish
-   `sunholo/celestial` 0.1.0 under the same rule as relativity (an
-   independent eval ≥ 70, `pkg quality` with no gates, a dry run, AC1), or
-   do you want to approve that first publish yourself?
-2. **If M4.6a's release slips.** If M4.6a's relativity release isn't
-   published by the time celestial 0.1.0 is, should M5.0b wait (the default)
-   or publish first and let M4.6a rebase onto it?
-3. **The design-repo spec timing (F8).** May a docs-only
-   `stapledons-design` PR with `planets-spec.md` (PL-1…) and RS-24 to RS-29
-   go up during the sprint, alongside M5.7, so that AC12's lore-check can
-   resolve the PL-n ids? The default otherwise is that M5.7 merges with AC12
-   pending until landing.
-4. **Who creates `DisplayBinding`** if M4.3a hasn't landed when M5.6a starts?
-   The default is that M5.6a creates it with M4.3a's planned API and M4.3a
-   adopts it (design §Depends).
-5. **The `hover_power` name and home (F7).** Is `medium.hoverPower(mEffKg,
-   gMs2)` in relativity right? M3's `hoverPowerPerKg` would later compose
-   it.
-6. **The 15-milestone split (F1).** Do you accept splitting five design rows
-   to respect the cap at the calibrated 1.6×? The alternative is the M4
-   approach: keep the design's 10 rows, pre-split nothing, and name seams for
-   overruns.
+   `sunholo/celestial` 0.1.0 under the same rule as relativity?
+   **ANSWERED: yes.** It publishes after an independent eval ≥ 70,
+   `pkg quality` with no gates and a dry run (AC1), the same rule as
+   relativity. ⏸ P-pkg-a no longer needs Mark.
+2. **If M4.6a's relativity release slips.** **ANSWERED: the default.**
+   M5.0b waits for M4.6a's release and publishes after it.
+3. **The design-repo spec timing (F8).** **ANSWERED: the default.** A
+   docs-only `stapledons-design` PR with `planets-spec.md` (PL-1…) and
+   RS-24 to RS-29 goes up alongside M5.7, so AC12's lore-check can resolve
+   the PL-n ids.
+4. **Who creates `DisplayBinding`** if M4.3a hasn't landed when M5.6a
+   starts? **ANSWERED: the default.** M5.6a creates `ui/display_binding.gd`
+   with M4.3a's planned API, and M4.3a adopts it.
+5. **The `hover_power` name and home (F7).** **ANSWERED: the default.**
+   `medium.hoverPower(mEffKg, gMs2)` lives in relativity; M3's
+   `hoverPowerPerKg` can compose it later.
+6. **The 15-milestone split (F1).** **ANSWERED: accepted.** The five design
+   rows are split as planned.

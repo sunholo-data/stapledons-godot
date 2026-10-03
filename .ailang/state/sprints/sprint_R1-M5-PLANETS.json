@@ -1,15 +1,27 @@
 {
   "sprint_id": "R1-M5-PLANETS",
   "created": "2026-10-03",
-  "status": "planned",
-  "approved": null,
+  "status": "approved",
+  "approved": {
+    "by": "Mark",
+    "date": "2026-10-03",
+    "how": "attended, at P0",
+    "answers": {
+      "Q1": "YES: sunholo/celestial 0.1.0 publishes under the relativity rule (independent eval >= 70, pkg quality no gates, dry run); P-pkg-a needs no Mark action",
+      "Q2": "DEFAULT: M5.0b waits for M4.6a release and publishes after it",
+      "Q3": "DEFAULT: docs-only stapledons-design PR (planets-spec PL-n, RS-24..29) goes up alongside M5.7",
+      "Q4": "DEFAULT: M5.6a creates ui/display_binding.gd with M4.3a planned API if M4.3a has not landed; M4.3a adopts it",
+      "Q5": "DEFAULT: medium.hoverPower(mEffKg, gMs2) in sunholo/relativity",
+      "Q6": "ACCEPTED: the 15-milestone split"
+    }
+  },
   "design_doc": "design_docs/planned/r1/m5-planets.md",
   "sprint_plan": "design_docs/planned/r1/m5-planets-sprint.md",
   "github_issues": [],
   "ailang": {
-    "pin": "v0.51.0",
+    "pin": "v0.52.0",
     "binary": "/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang",
-    "legend": "$A = pinned binary on every make line (AILANG=$A, AILANG_BIN=$A where Godot drives the sim); a fresh clone runs make runtime first. $PKG = fresh ailang-packages clone at origin/main (packages/celestial new, packages/relativity existing). $D = ../stapledons-design. GPU gates (make golden, make capture-m5, make bench SCENE=flyby) run on the Studio GPU window, not CI. All new M5 make targets live in mk/m5.mk (one include line in Makefile)."
+    "legend": "$A = pinned binary (v0.52.0, on main since PR #73) on every make line (AILANG=$A, AILANG_BIN=$A where Godot drives the sim); a fresh clone runs make runtime first. $PKG = fresh ailang-packages clone at origin/main (packages/celestial new, packages/relativity existing). $D = ../stapledons-design. GPU gates (make golden, make capture-m5, make bench SCENE=flyby) run on the Studio GPU window, not CI. All new M5 make targets live in mk/m5.mk (one include line in Makefile)."
   },
   "velocity": {
     "target_loc_per_day": 1150,
@@ -872,7 +884,7 @@
         "M5.0b_PKG_RELATIVITY_APPARENT_DISC",
         "M5.1a_SOL_ACEN_DATA_PINS"
       ],
-      "risk": "M5.0b publishes strictly after it (shared medium.ail, CHANGELOG, version); a slip holds the sim spine. Q2"
+      "risk": "M5.0b publishes strictly after it (shared medium.ail, CHANGELOG, version); Mark Q2: M5.0b waits. A slip holds the sim spine"
     },
     {
       "what": "R1-M4-JOURNEY M4.1 consequence stub (protocol.ail, ship.ail; stand-off)",
@@ -916,9 +928,9 @@
       "risk": "SATISFIED: merged to main (28fd310) during planning; M5.4 applies the P99.5 term to sky/sky_meter.gd"
     },
     {
-      "what": "AILANG v0.52.0 bump (branch chore/ailang-0.52.0)",
+      "what": "AILANG v0.52.0 bump",
       "needed_by": [],
-      "risk": "If it lands mid-sprint, pins move together and sol_tour per-arch goldens are re-recorded as a reviewed diff"
+      "risk": "RETIRED: merged (PR #73); main is on v0.52.0 with relativity 0.5.2. A later bump follows CLAUDE.md (pins move together; sol_tour per-arch goldens re-recorded as a reviewed diff)"
     },
     {
       "what": "Design repo PL-n and RS-24..29 rows (stapledons-design docs PR)",
@@ -932,7 +944,7 @@
     {
       "id": "P0",
       "after": null,
-      "what": "Mark approves this plan and answers Q1-Q6"
+      "what": "SATISFIED: Mark approved the plan at P0 (attended 2026-10-03), Q1-Q6 answered (see approved.answers)"
     },
     {
       "id": "P-pkg-b",
@@ -942,7 +954,7 @@
     {
       "id": "P-pkg-a",
       "after": "M5.0a2_PKG_CELESTIAL_LIGHT_PUBLISH",
-      "what": "First publish of the NEW package sunholo/celestial 0.1.0: Mark's yes needed (standing grant is relativity-only; Q1), after independent eval >= 70 (AC1), quality no gates, dry run. Blocks M5.1a"
+      "what": "Controller publishes the NEW package sunholo/celestial 0.1.0 under the relativity rule (Mark Q1, P0 2026-10-03): independent eval >= 70 (AC1), quality no gates, dry run. No Mark action needed. Blocks M5.1a"
     },
     {
       "id": "L-tex",
@@ -997,11 +1009,11 @@
     "F9: no new Python - sol tour is a hand-written NDJSON log replayed by the existing tools/replay.py harness; texture tooling is shell glue + Godot headless"
   ],
   "questions_for_mark": [
-    "Q1: May the controller publish the NEW package sunholo/celestial 0.1.0 under the relativity rule (independent eval >= 70, quality no gates, dry run, AC1), or do you approve that first publish yourself?",
-    "Q2: If M4.6a's relativity release is not published when celestial 0.1.0 is, should M5.0b wait (default) or publish first and let M4.6a rebase?",
-    "Q3: May a docs-only stapledons-design PR (planets-spec PL-1.., relativity-spec RS-24..29) go up alongside M5.7 so AC12 can pass, or does M5.7 merge with AC12 pending until landing?",
-    "Q4: If M4.3a has not landed when M5.6a starts, M5.6a creates ui/display_binding.gd with M4.3a's planned API and M4 adopts it (default) - agreed?",
-    "Q5: hover_power as medium.hoverPower(mEffKg, gMs2) in relativity (M3's hoverPowerPerKg composes it later) - agreed?",
-    "Q6: Accept the 15-milestone split (F1), or keep the design's 10 rows with named overrun seams (the M4 approach)?"
+    "Q1: May the controller publish the NEW package sunholo/celestial 0.1.0 under the relativity rule (independent eval >= 70, quality no gates, dry run, AC1), or do you approve that first publish yourself? -> ANSWERED at P0 (2026-10-03), see approved.answers",
+    "Q2: If M4.6a's relativity release is not published when celestial 0.1.0 is, should M5.0b wait (default) or publish first and let M4.6a rebase? -> ANSWERED at P0 (2026-10-03), see approved.answers",
+    "Q3: May a docs-only stapledons-design PR (planets-spec PL-1.., relativity-spec RS-24..29) go up alongside M5.7 so AC12 can pass, or does M5.7 merge with AC12 pending until landing? -> ANSWERED at P0 (2026-10-03), see approved.answers",
+    "Q4: If M4.3a has not landed when M5.6a starts, M5.6a creates ui/display_binding.gd with M4.3a's planned API and M4 adopts it (default) - agreed? -> ANSWERED at P0 (2026-10-03), see approved.answers",
+    "Q5: hover_power as medium.hoverPower(mEffKg, gMs2) in relativity (M3's hoverPowerPerKg composes it later) - agreed? -> ANSWERED at P0 (2026-10-03), see approved.answers",
+    "Q6: Accept the 15-milestone split (F1), or keep the design's 10 rows with named overrun seams (the M4 approach)? -> ANSWERED at P0 (2026-10-03), see approved.answers"
   ]
 }
