@@ -2,11 +2,12 @@
 # Included from the Makefile by one line (F4: M5 stays out of the Makefile hunks
 # M4 edits). Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: m5-test strict-m5 parity-v2-system hello-pin acen-snapshot acen-snapshot-verify
+.PHONY: m5-test strict-m5 parity-v2-system hello-pin acen-snapshot acen-snapshot-verify \
+  planets-test planet-textures-check lint-precision lint-precision-m5 planet-assets planet-verify planet-publish planet-textures golden-m5 capture-m5a
 
 test: m5-test
 
-m5-test: strict-m5 parity-v2-system hello-pin acen-snapshot-verify   ## M5 checks that run without a GPU window
+m5-test: strict-m5 parity-v2-system hello-pin acen-snapshot-verify planets-test planet-textures-check lint-precision-m5   ## M5 checks that run without a GPU window
 
 # M5.1a: the cited Sol and alpha Cen data modules load and pass every provenance
 # check on the strict VM, printing the same bytes as the interpreter (AC6 data half).
@@ -64,3 +65,46 @@ acen-snapshot-verify: ## the local snapshot matches data/planets/EXOPLANETS.SHA2
 	  grep -q '^"Proxima Cen b","Proxima Cen",1,11.18465' $(ACEN_SNAPSHOT) && grep -q '^"Proxima Cen d","Proxima Cen",1,5.12338' $(ACEN_SNAPSHOT) && \
 	  ! grep -q '"Proxima Cen c"\|"alf Cen' $(ACEN_SNAPSHOT) && echo "acen-snapshot-verify: pinned snapshot; Proxima b, d listed; Proxima c and alpha Cen A b absent (candidates)"; \
 	else echo "acen-snapshot-verify: $(ACEN_SNAPSHOT) not fetched (make acen-snapshot); pin present, check skipped"; fi
+
+# ------------------------------------------------------------ M5.2a globes, photometry, textures
+planets-test:      ## M5.2a: SystemView on the recorded system section, point/disc switch, placement, albedo table (headless)
+	$(GODOT) --headless --path . --script tests/test_planets.gd
+
+# The precision lint for the planet renderer (gate 5: gamma and 1 - beta come from the sim or the
+# package, never by hand). M4.6's lint-precision absorbs this: until then `lint-precision` is this.
+PRECISION_M5 := planets physics/planets.gd tools/m5_golden.gd tools/planet_textures.gd
+lint-precision: lint-precision-m5
+lint-precision-m5: ## M5.2a: no hand-computed gamma or 1 - beta in the planet renderer
+	@if grep -rnE '1(\.0)? *- *(beta|b)\b|sqrt\( *1(\.0)? *- *(b|beta) *\* *(b|beta)' $(PRECISION_M5); then \
+	  echo "lint-precision-m5: FAILED (take gamma and 1 - beta from the sim or Relativity)"; exit 1; fi
+	@echo "lint-precision-m5: $(PRECISION_M5) clean (no hand-computed gamma or 1 - beta)"
+
+# Planet albedo textures (D-18 pattern): pins and CREDITS tracked in data/planets/, files in the
+# gitignored assets/planets/. planet-publish uploads to the public bucket (maintainers, gcloud):
+# run only after Mark's licence check (sprint R1-M5-PLANETS, pause L-tex).
+planet-assets:     ## M5.2a: pinned planet textures into assets/planets: the public bucket, else the original source, sha256-checked
+	@sh tools/planet_assets.sh fetch && sh tools/planet_assets.sh verify | tail -1
+
+planet-verify:     ## M5.2a: sha256-check assets/planets against data/planets/SHA256SUMS
+	@sh tools/planet_assets.sh verify
+
+planet-publish:    ## M5.2a maintainers (gcloud auth): upload the pinned textures to gs://stapledons-voyage-assets/planets/<sha256>.<ext> (never overwrites; after L-tex)
+	sh tools/planet_assets.sh publish
+
+planet-textures:   ## M5.2a: rewrite data/planets/ALBEDO from the fetched textures (a reviewed diff)
+	$(GODOT) --headless --path . --script tools/planet_textures.gd -- --write
+
+planet-textures-check: ## M5.2a: every texture's disc-integrated albedo with its ALBEDO mean = p_V within 1% (skipped if not fetched)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tools/planet_textures.gd -- --check > $(SCRATCH)/planet-textures.log 2>&1; rc=$$?; \
+	  grep -E '^(ok|FAIL|planet-textures)' $(SCRATCH)/planet-textures.log; test $$rc = 0
+
+golden-m5:         ## M5 GPU goldens alone (needs a GPU window): G-M5-4 Jupiter photometry, G-M5-6 point/disc handoff
+	@mkdir -p $(SCRATCH)
+	@perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --golden-m5 > $(SCRATCH)/golden-m5.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|skip|      G-M5|m5 golden)' $(SCRATCH)/golden-m5.log; \
+	  test $$rc = 0 && grep -q '^ok    G-M5-4 Jupiter at opposition (uniform p_V' $(SCRATCH)/golden-m5.log && \
+	  grep -q '^ok    G-M5-6 point/disc handoff' $(SCRATCH)/golden-m5.log && grep -q '^m5 golden: 0 failures$$' $(SCRATCH)/golden-m5.log || \
+	  { echo "golden-m5: FAILED (exit $$rc, or a G-M5-4 / G-M5-6 line is missing)"; exit 1; }
+
+capture-m5a:       ## M5.2a reference renders (needs a GPU window) -> renders/m5/m5.2a/: nine globes, Jupiter in EYE, the Sun, the crossover pair, a sheet
+	perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --capture-m5=renders/m5/m5.2a

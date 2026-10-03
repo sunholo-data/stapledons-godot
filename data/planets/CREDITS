@@ -1,0 +1,23 @@
+Planet textures
+===============
+
+Planet surface and cloud textures: Solar System Scope (INOVE), https://www.solarsystemscope.com/textures/
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0),
+https://creativecommons.org/licenses/by/4.0/
+
+Files (2k, as downloaded 2026-10-03 from https://www.solarsystemscope.com/textures/download/<file>;
+sha256 pins in data/planets/SHA256SUMS):
+  2k_mercury.jpg  2k_venus_atmosphere.jpg  2k_earth_daymap.jpg  2k_earth_clouds.jpg  2k_moon.jpg
+  2k_mars.jpg  2k_jupiter.jpg  2k_saturn.jpg  2k_uranus.jpg  2k_neptune.jpg
+
+Changes made: none to the files. The game rescales each texture's brightness at render time so its
+disc-integrated albedo equals the body's measured V-band geometric albedo (Mallama et al. 2017), and
+composites Earth's cloud map over its day map; the brightness you see is the data's, the pattern and
+colour are the texture's.
+
+Source notes (Solar System Scope): the textures are based on NASA elevation and imagery data, with
+colours tuned to true-colour spacecraft and Hubble images; unmapped regions are filled with fictional
+terrain matching the surroundings, and colours are slightly more saturated than true colour.
+
+In-game credit line:
+  Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0

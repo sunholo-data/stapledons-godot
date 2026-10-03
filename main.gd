@@ -50,6 +50,8 @@ var starfield := Starfield.new()
 var background := SkyBackground.new()
 var exposure := Exposure.new() # M1.5a: photometric EV, metering, fixed EV, aids
 var eye_meter := SkyMeter.new() # M1.8: centre-weighted, sees stars and the CMB
+var credits := Credits.new() # M5.2a (L-tex): third-party credits, C toggles
+var system_view := SystemView.new() # M5.2a: planets and the Sun from the sim's `system` section
 var has_background := false
 var env := Environment.new()
 var camera := FreeLookCamera.new() # yaw, pitch, roll; client state, never sent to the sim
@@ -67,7 +69,7 @@ func _ready() -> void:
 	var args := _user_args()
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5")
 	UiScale.configure(get_window(), _fixed_scale)
 	# Launching with no arguments (a double-clicked review build, `make run`) opens
 	# the bridge interior (M4.2); `--map` the galaxy map alone, `--voyage` the M0/M1 sky flight.
@@ -84,10 +86,15 @@ func _ready() -> void:
 	if args.has("golden"):
 		await _run_golden()
 		return
+	if args.has("golden-m5") or args.has("capture-m5"): # M5 goldens / reference renders (tools/m5_golden.gd)
+		var m5: GDScript = load("res://tools/m5_golden.gd")
+		get_tree().quit(await m5.new().main(self, args) if m5 != null and m5.can_instantiate() else 2) # a broken script exits, not hangs
+		return
 	if not load_stars(args.get("tier", "")):
 		get_tree().quit(2)
 		return
 	sim.record_path = args.get("record", "")
+	sim.want_minor = SimBridge.SYSTEM_MINOR if not _fixed_scale else sim.want_minor # M5.2a: interactive flights draw the system
 	var course := {"k": "heading", "heading": {"x": HEADING.x, "y": HEADING.y, "z": HEADING.z}}
 	if not sim.start() or not sim.new_game(SEED, "sol", true) or not sim.send([course], 0.0):
 		push_error("sim session failed: %s" % sim.last_error)
@@ -327,6 +334,8 @@ func _build_scene() -> void:
 	camera.far = 1000.0
 	add_child(camera)
 	add_child(starfield)
+	system_view.setup(starfield)
+	add_child(system_view)
 	if not _user_args().has("golden"):
 		has_background = background.attach(env, get_viewport().get_visible_rect().size.y, camera.fov)
 		if not has_background:
@@ -345,6 +354,8 @@ func _build_scene() -> void:
 	sky_note.add_theme_font_size_override("font_size", 13)
 	sky_note.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 0.85))
 	layer.add_child(sky_note)
+	credits.visible = not _fixed_scale # attribution (C); captures, goldens and the bench stay unchanged
+	layer.add_child(credits)
 	add_child(layer)
 	_configure_exposure(_user_args())
 	get_viewport().size_changed.connect(_configure_pixel)
@@ -426,12 +437,14 @@ func _apply_state() -> void:
 	starfield.set_ship_position(p["x"], p["y"], p["z"]) # float64; the starfield rebases (M1.3)
 	exposure.update(_meter(beta), _meter_eye(beta))
 	_push_exposure()
+	system_view.set_view(exposure.pixel_rad, get_viewport().get_texture().get_size().y)
+	system_view.update(sim.system, exposure.k())
 	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s\n%s\n%s" % [
 		beta, s["gamma"], c["tau"], c["t"], x, warp, camera.hud_line(heading), exposure.hud_line()]
 
 
 func _process(delta: float) -> void:
-	if _map_mode or _user_args().has("capture") or _user_args().has("golden") or _user_args().has("bench") or _user_args().has("movie"):
+	if _map_mode or _fixed_scale:
 		return
 	var look := Input.get_axis("ui_right", "ui_left")
 	var tilt := Input.get_axis("ui_down", "ui_up")
@@ -675,6 +688,7 @@ func _run_golden() -> void:
 	failures += await load("res://tools/exposure_golden.gd").new().run(self)
 	failures += await load("res://tools/cmb_golden.gd").new().run(self)
 	failures += await load("res://tools/interior_golden.gd").new().run(self) # M4.2: G-M4-1..4
+	failures += await load("res://tools/m5_golden.gd").new().run(self)
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 

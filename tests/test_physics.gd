@@ -1110,6 +1110,55 @@ func test_forward_glow() -> void:
 
 ## The camera cases need a node in a viewport, so they run once the main loop
 ## has started; everything else runs in _init.
+
+## M5.2a (AC7, photometry half): physics/planets.gd against the pinned package.
+## Every expected value is sunholo/celestial 0.1.0 reflect (and relativity
+## 0.7.0 illuminanceFromV) as printed by sim/tools/planets_probe.ail; none is
+## computed here. Relative tolerance 1e-12 (zeros exactly).
+func _m5_photometry() -> void:
+	print("M5.2a reflected-light photometry (sunholo/celestial reflect probe)")
+	var rel := func(name: String, got: float, want: float) -> void:
+		check(name, got / want if want != 0.0 else got, 1.0 if want != 0.0 else 0.0, 1e-12)
+	var e1 := Relativity.illuminance_from_v(-26.74)
+	var d2r := func(d: float) -> float: return d * 3.141592653589793 / 180.0
+	var au := 149597870.7
+	rel.call("illuminanceFromV(-26.74) = e1AU 127,057.41 lux", e1, 127057.41052085394)
+	rel.call("starIlluminanceAt(e1, 5.2 AU)", Planets.star_illuminance_at(e1, 5.2), 4698.868732280101)
+	rel.call("starIlluminanceAt(e1, 0.3871 AU)", Planets.star_illuminance_at(e1, 0.3871), 847917.6145818504)
+	rel.call("lambertPhase(0) = 1", Planets.lambert_phase(0.0), 1.0)
+	rel.call("lambertPhase(30 deg)", Planets.lambert_phase(d2r.call(30.0)), 0.8808427795789276)
+	rel.call("lambertPhase(90 deg) = 1/pi", Planets.lambert_phase(d2r.call(90.0)), 0.3183098861837907)
+	rel.call("lambertPhase(150 deg)", Planets.lambert_phase(d2r.call(150.0)), 0.014817375794488915)
+	rel.call("minnaertRadiance(0.75, k 1, 1000 lx, 0.6, 0.8) Lambert", Planets.minnaert_radiance(0.75, 1.0, 1000.0, 0.6, 0.8), 143.2394487827058)
+	rel.call("minnaertRadiance(0.7071, k 0.825, 1305 lx, 0.6, 0.8)", Planets.minnaert_radiance(0.7071, 0.825, 1305.0, 0.6, 0.8), 200.3897530480214)
+	rel.call("minnaertRadiance(0.7071, k 1.2, 1305 lx, 0.3, 0.5)", Planets.minnaert_radiance(0.7071, 1.2, 1305.0, 0.3, 0.5), 60.29495602547271)
+	rel.call("minnaertRadiance unlit (cos i -0.1) = 0", Planets.minnaert_radiance(0.7071, 0.825, 1305.0, -0.1, 0.5), 0.0)
+	rel.call("minnaertPhase(30 deg, k 0.825) (Simpson 256)", Planets.minnaert_phase(d2r.call(30.0), 0.825), 0.8868218817547876)
+	rel.call("minnaertPhase(90 deg, k 0.825)", Planets.minnaert_phase(d2r.call(90.0), 0.825), 0.35370683872336034)
+	rel.call("rhoFromGeometricAlbedo(0.538, 1) Jupiter", Planets.rho_from_geometric_albedo(0.538, 1.0), 0.807)
+	rel.call("rhoFromGeometricAlbedo(0.499, 0.825) Saturn", Planets.rho_from_geometric_albedo(0.499, 0.825), 0.661175)
+	rel.call("discIlluminance Jupiter at opposition, 4.2 AU", Planets.disc_illuminance(e1, 0.538, 71492.0, 5.2, 4.2 * au, 0.0, 1.0), 0.00003272962857913474)
+	rel.call("discIlluminance Saturn at 6 deg, 8.6 AU (Minnaert phase)", Planets.disc_illuminance(e1, 0.499, 60268.0, 9.6, 8.6 * au, d2r.call(6.0), 0.825), 0.000001501607259141241)
+	rel.call("discIlluminance Moon at quadrature, 384,400 km", Planets.disc_illuminance(e1, 0.12, 1737.4, 1.0, 384400.0, d2r.call(90.0), 1.0), 0.09914350074248762)
+	# the disc the shader draws integrates to the package's discIlluminance (CPU, midpoint grid)
+	for c: Array in [[0.538, 1.0, 0.0], [0.499, 0.825, 6.0], [0.12, 1.0, 90.0]]:
+		var ang := 1e-4
+		var lux := Planets.star_illuminance_at(e1, 5.2)
+		var want := Planets.disc_illuminance(e1, c[0], ang, 5.2, 1.0, d2r.call(c[2]), c[1])
+		var got := Planets.integrate_disc(Planets.rho_from_geometric_albedo(c[0], c[1]), c[1], lux, d2r.call(c[2]), ang, 600)
+		check("disc integral of minnaertRadiance / discIlluminance (p %.3f, k %.3f, phase %.0f deg)" % c, got / want, 1.0, 0.003)
+	check("limb-darkened Sun (u 0.6): disc mean of L(mu) = the mean it was given", _limb_mean(), 1.0, 1e-4)
+
+
+func _limb_mean() -> float:
+	# area-weighted mean of L(mu) over the disc: integral of 2 r L(sqrt(1 - r^2)) dr
+	var s := 0.0
+	var n := 20000
+	for i in n:
+		var r := (i + 0.5) / n
+		s += 2.0 * r * Planets.limb_darkened(1.0, sqrt(1.0 - r * r)) / n
+	return s
+
 func _initialize() -> void:
 	var vp := SubViewport.new()
 	vp.size = Vector2i(960, 540)
@@ -1140,6 +1189,7 @@ func _init() -> void:
 	test_forward_glow()
 	test_ship_frame()
 	test_sky_frame()
+	_m5_photometry()
 
 	print("Aberration (sources crowd toward the direction of motion)")
 	check("90 deg source at 0.9c appears at acos(0.9) = 25.842 deg", angle_deg(Relativity.aberrate(side, fwd, 0.9), fwd), rad_to_deg(acos(0.9)), 1e-4)

@@ -21,7 +21,7 @@ Stapledon's Voyage is made by [Sunholo](https://www.sunholo.com).
 | Asset | Licence or terms |
 |---|---|
 | Milky Way panorama, NOIRLab `noirlab2430b` (E. Slawik / NOIRLab / NSF / AURA), and the sky textures derived from it | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
-| Planet textures: [Solar System Scope](https://www.solarsystemscope.com/textures/) (solarsystemscope.com) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Planet textures, [Solar System Scope](https://www.solarsystemscope.com/textures/) 2k (shown in game as "Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0") | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | Star catalogues: CNS5 (via CDS VizieR), Gaia GCNS (ESA/Gaia/DPAC), Hipparcos (ESA) | The providers' terms; cite the sources listed below |
 | Godot Engine | [MIT](https://godotengine.org/license/) |
 | Fonts on this site (Montserrat, Inter, JetBrains Mono, via Google Fonts) | [SIL Open Font License 1.1](https://openfontlicense.org) |
@@ -34,12 +34,13 @@ with image models and Blender under Sunholo's art direction. **No copyright is c
 
 ## Data
 
-- **Planet textures:** [Solar System Scope](https://www.solarsystemscope.com/textures/)
-  (solarsystemscope.com), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Used
-  for the planets in the M5 planets-and-flybys work.
 - **Milky Way panorama:** NOIRLab `noirlab2430b` (E. Slawik / NOIRLab / NSF / AURA), licensed
   [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The game uses it with the
   catalogue stars removed and a fitted colour-temperature model.
+- **Planet textures:** [Solar System Scope](https://www.solarsystemscope.com/textures/) 2k maps
+  (based on NASA imagery; unmapped regions filled in, colours slightly saturated), licensed
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The game keeps the files unchanged and
+  rescales their brightness to each body's measured albedo. In game, press **C** for the credits.
 - **CNS5**, the fifth Catalogue of Nearby Stars (Golovin et al. 2023), via VizieR.
 - **GCNS**, the Gaia Catalogue of Nearby Stars (Gaia Collaboration, Smart et al. 2021). This
   work uses data from the European Space Agency mission
