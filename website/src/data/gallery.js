@@ -50,7 +50,7 @@ const GALLERY = [
     file: 'milky-way-destarred.jpg',
     title: 'The Milky Way, with the catalogue stars taken out',
     caption:
-      'The NOIRLab all-sky panorama (E. Slawik, CC BY 4.0) after the AILANG destar pass removed the photo stars the catalogue draws itself, so stars are not counted twice. The renderer recolours each texel as a blackbody.',
+      'The NOIRLab all-sky panorama (E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0) after the AILANG destar pass removed the photo stars the catalogue draws itself, so stars are not counted twice. The renderer recolours each texel as a blackbody.',
     group: 'sky',
   },
   {

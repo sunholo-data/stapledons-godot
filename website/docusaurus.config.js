@@ -120,7 +120,8 @@ const config = {
               {label: 'Design repo', href: DESIGN_URL},
               {label: 'Relativity spec', href: `${DESIGN_URL}/blob/main/physics/relativity-spec.md`},
               {label: 'Roadmap', to: '/docs/roadmap'},
-              {label: 'Credits', to: '/docs/credits'},
+              {label: 'Credits and licences', to: '/docs/credits'},
+              {label: 'License (Apache-2.0)', href: `${GITHUB_URL}/blob/main/LICENSE`},
             ],
           },
           {
@@ -136,7 +137,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Sunholo. Milky Way panorama: NOIRLab/E. Slawik, CC BY 4.0. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Sunholo / Mark Edmondson. Code: Apache-2.0. Milky Way panorama: E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,

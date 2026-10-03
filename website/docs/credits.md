@@ -8,9 +8,25 @@ description: Data sources, imagery and software behind Stapledon's Voyage.
 
 Stapledon's Voyage is made by [Sunholo](https://www.sunholo.com).
 
+## Licence
+
+The game's code and this site are licensed under the
+[Apache License 2.0](https://github.com/sunholo-data/stapledons-godot/blob/main/LICENSE),
+Copyright 2026 Sunholo / Mark Edmondson.
+
+Third-party assets keep their own licences, and the Apache licence does not cover them:
+
+| Asset | Licence or terms |
+|---|---|
+| Milky Way panorama, NOIRLab `noirlab2430b` (E. Slawik / NOIRLab / NSF / AURA), and the sky textures derived from it | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Star catalogues: CNS5 (via CDS VizieR), Gaia GCNS (ESA/Gaia/DPAC), Hipparcos (ESA) | The providers' terms; cite the sources listed below |
+| Godot Engine | [MIT](https://godotengine.org/license/) |
+| Fonts on this site (Montserrat, Inter, JetBrains Mono, via Google Fonts) | [SIL Open Font License 1.1](https://openfontlicense.org) |
+| AILANG logo and favicon | AILANG's (Sunholo), used unaltered |
+
 ## Data
 
-- **Milky Way panorama:** NOIRLab `noirlab2430b`, by E. Slawik, licensed
+- **Milky Way panorama:** NOIRLab `noirlab2430b` (E. Slawik / NOIRLab / NSF / AURA), licensed
   [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The game uses it with the
   catalogue stars removed and a fitted colour-temperature model.
 - **CNS5**, the fifth Catalogue of Nearby Stars (Golovin et al. 2023), via VizieR.

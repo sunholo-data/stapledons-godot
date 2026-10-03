@@ -61,3 +61,11 @@ make run       # interactive: W/S thrust, arrows look, 1-4 fwd/stbd/astern/up, +
   - The ship moves on a single axis toward the galactic centre.
 
 Findings and the roadmap live in the design repo.
+
+## License
+
+The code is licensed under the [Apache License 2.0](LICENSE) (Copyright 2026 Sunholo / Mark
+Edmondson). Third-party data and imagery keep their own licences, notably the Milky Way panorama
+(NOIRLab `noirlab2430b`, E. Slawik / NOIRLab / NSF / AURA, CC BY 4.0) and the star catalogues
+(CNS5, Gaia GCNS, Hipparcos) under their providers' terms. See the
+[credits page](https://www.sunholo.com/stapledons-godot/docs/credits).
