@@ -12,6 +12,7 @@ extends Node3D
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
 ##   godot --path . -- --golden            shader vs CPU reference positions
 ##   godot --path . -- --bench[=SECONDS]   scripted flight, frame-time report (tools/bench.gd; make bench)
+##   godot --path . -- --movie=voyage|hero|lookaround|cmb  [--map --movie=map]  website clips, PNG frames (tools/site_movie.gd; make site-media)
 ## Sky runs:  -- --tier=quick|medium|large  star tier (default: large if built, else medium; M1.3)
 ##            -- --exposure=eye|camera --fixed-ev --ev-bias=EV --ev-clamp=LO,HI --mag-floor  (M1.5a, sky/exposure.gd)
 ## Any run:  -- --record=path.ndjson  tees the sim's input log (replays headless).
@@ -53,7 +54,7 @@ func _ready() -> void:
 	var args := _user_args()
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie")
 	UiScale.configure(get_window(), _fixed_scale)
 	# Launching with no arguments (a double-clicked review build, `make run`)
 	# opens the galaxy map on alpha Cen A; `--voyage` runs the M0/M1 sky flight.
@@ -79,6 +80,8 @@ func _ready() -> void:
 	_apply_state()
 	if args.has("capture"):
 		await _run_capture(args["capture"])
+	elif args.has("movie"):
+		get_tree().quit(await load("res://tools/site_movie.gd").new().run_sky(self, args))
 	elif args.has("bench"):
 		var secs: float = float(args["bench"]) if args["bench"].is_valid_float() else 30.0
 		# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
@@ -94,7 +97,7 @@ func _ready() -> void:
 ## galaxy_map_transit.png (mid-cruise, after a refused Cancel) and
 ## galaxy_map_arrived.png, adding their readouts to the panel dump.
 func _run_map(args: Dictionary) -> void:
-	var capture: bool = args.has("map-capture")
+	var capture: bool = args.has("map-capture") or args.has("movie")
 	if capture:
 		get_window().size = Vector2i(1600, 900)
 	sim.record_path = args.get("record", "")
@@ -111,6 +114,9 @@ func _run_map(args: Dictionary) -> void:
 	map.load_catalogue("res://data/starmap/stars.json")
 	map.load_names("res://data/starmap/names.json")
 	map.attach(sim)
+	if args.has("movie"): # website clip; loaded by path (tools/ is not exported)
+		get_tree().quit(await load("res://tools/site_movie.gd").new().run_map(self, map, args))
+		return
 	if not capture:
 		if args.get("map", "").is_valid_int():
 			map.preselect(int(args["map"]))
@@ -301,7 +307,7 @@ func _apply_state() -> void:
 
 
 func _process(delta: float) -> void:
-	if _map_mode or _user_args().has("capture") or _user_args().has("golden") or _user_args().has("bench"):
+	if _map_mode or _user_args().has("capture") or _user_args().has("golden") or _user_args().has("bench") or _user_args().has("movie"):
 		return
 	var look := Input.get_axis("ui_right", "ui_left")
 	var tilt := Input.get_axis("ui_down", "ui_up")

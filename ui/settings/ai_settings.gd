@@ -22,7 +22,7 @@ const CEILING_MIN := 0.05
 const CEILING_MAX := 20.0
 const WARNING := "Live AI sends prompts to Google and/or OpenRouter and is billed to YOUR key, up to the session ceiling. A key saved here is stored unencrypted in a file only your user account can read (mode 0600)."
 ## Flags of automation runs: they never go live.
-const AUTOMATION_FLAGS := ["capture", "map-capture", "golden", "bench", "ai-hello"]
+const AUTOMATION_FLAGS := ["capture", "map-capture", "golden", "bench", "ai-hello", "movie"]
 ## Per-kind estimate assumptions (display only): text in/out tokens, voice in/out tokens.
 const TEXT_TOKENS := [600, 172]
 const VOICE_TOKENS := [60, 300]

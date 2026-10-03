@@ -406,3 +406,4 @@ destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars remov
 	$(GODOT) --headless --path . --script tools/destar_io.gd -- apply $(SKY)/noirlab_10k.png $(SKY)/destar_patches.bin $(SKY)/noirlab_10k_destarred.png
 
 include mk/ai.mk
+include mk/site.mk
