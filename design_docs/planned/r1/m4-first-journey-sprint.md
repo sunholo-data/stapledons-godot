@@ -216,6 +216,11 @@ in the package first; the sim, GDScript and shaders only mirror it).
 - Finite and ≥ 0 over a φ sweep to the 0.999999c cap.
 
 #### M4.0: Area bundles and the frame contract
+**Status:** ✅ executed attended (Mark, 2026-10-03), branch `sprint/m4.0-areas`. AC13 and the
+AC14 validation half pass (`make validate-areas`, both bundles). The bridge build-out v1 bundle
+(Blender `art/bridge-buildout-v1`) also passes all 16 checks. `make m4-smoke` is a failing stub
+until M4.2.
+
 **Scope:** `interior/area_bundle.gd` — loads brief §9 bundles from
 `assets/areas/<area>/` (`manifest.json`, `cam_`, `pano_`, `play_`, `fg_`),
 schema field-for-field per V17, refuses a missing layer, keeps and ignores
