@@ -10,7 +10,7 @@ jobs:
     name: headless tests (physics, sim, parity, strict VM)
     runs-on: ubuntu-latest
     env:
-      AILANG_VERSION: v0.51.0
+      AILANG_VERSION: v0.52.0
       GODOT_VERSION: 4.7.2-stable
       # M2.5 replay: the 10k-tick interpreter run takes ~75 s on this 2-core
       # runner (> 60 s, design risk row), so PRs replay the 2k-tick session and

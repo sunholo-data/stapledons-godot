@@ -175,19 +175,21 @@ pure func code(line: string) -> string = match decodeInput(line) { Ok(_) => "ok"
 pure func inp(body: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":1,", body, "}"])
 pure func newGame(body: string) -> string = join("", ["{\"v\":2,\"type\":\"new_game\",", body, "}"])
 pure func intent(body: string) -> string = inp(join("", ["\"dtau\":0.1,\"intents\":[", body, "]"]))
+-- 1e400 is out of float64 range: std/json refuses the whole line since v0.52.0 (bad_json;
+-- v0.51.0 decoded it to a non-finite value, refused per field).
 pure func checkDecodeCodes() -> bool =
   code("{broken") == "bad_json" && code(inp("\"dtau\":NaN,\"intents\":[]")) == "bad_json" &&
   code("{\"type\":\"hello\"}") == "bad_v" && code("{\"v\":3,\"type\":\"hello\"}") == "bad_v" && code("{\"v\":\"2\",\"type\":\"hello\"}") == "bad_v" && code("{\"v\":2.5,\"type\":\"hello\"}") == "bad_v" &&
   code("{\"v\":2,\"type\":\"warp\"}") == "bad_cmd" && code("{\"v\":2}") == "bad_cmd" &&
   code("{\"v\":2,\"type\":\"input\",\"tick\":1.5,\"dtau\":0,\"intents\":[]}") == "bad_tick" && code("{\"v\":2,\"type\":\"input\",\"tick\":-1,\"dtau\":0,\"intents\":[]}") == "bad_tick" &&
   code("{\"v\":2,\"type\":\"input\",\"tick\":9007199254740992,\"dtau\":0,\"intents\":[]}") == "bad_tick" && code("{\"v\":2,\"type\":\"input\",\"dtau\":0,\"intents\":[]}") == "bad_tick" &&
-  code(inp("\"dtau\":-1,\"intents\":[]")) == "bad_step" && code(inp("\"dtau\":1.0000000000000002,\"intents\":[]")) == "bad_step" && code(inp("\"dtau\":1e400,\"intents\":[]")) == "bad_step" && code(inp("\"intents\":[]")) == "bad_step" &&
+  code(inp("\"dtau\":-1,\"intents\":[]")) == "bad_step" && code(inp("\"dtau\":1.0000000000000002,\"intents\":[]")) == "bad_step" && code(inp("\"dtau\":1e400,\"intents\":[]")) == "bad_json" && code(inp("\"intents\":[]")) == "bad_step" &&
   code(inp("\"dtau\":0")) == "bad_intent" && code(inp("\"dtau\":0,\"intents\":{}")) == "bad_intent" && code(intent("{\"k\":\"warp\"}")) == "bad_intent" && code(intent("{}")) == "bad_intent" &&
   code(intent("{\"k\":\"plan\",\"cruise_phi\":1}")) == "bad_intent" && code(intent("{\"k\":\"commit\",\"plan_id\":1.5}")) == "bad_intent" && code(intent("{\"k\":\"draw\"}")) == "bad_intent" &&
-  code(intent("{\"k\":\"plan\",\"target\":{\"index\":0,\"id\":\"x\",\"pos\":{\"x\":1e400,\"y\":0,\"z\":0}},\"cruise_phi\":1}")) == "bad_intent" &&
+  code(intent("{\"k\":\"plan\",\"target\":{\"index\":0,\"id\":\"x\",\"pos\":{\"x\":1e400,\"y\":0,\"z\":0}},\"cruise_phi\":1}")) == "bad_json" &&
   code(intent("{\"k\":\"thrust\",\"thrust\":2}")) == "bad_step" && code(intent("{\"k\":\"thrust\"}")) == "bad_step" &&
   code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0}}")) == "bad_heading" && code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1.00000001,\"y\":0,\"z\":0}}")) == "bad_heading" &&
-  code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1e400,\"y\":0,\"z\":0}}")) == "bad_heading" && code(intent("{\"k\":\"echo\",\"cruise_phi\":1}")) == "bad_intent" &&
+  code(intent("{\"k\":\"heading\",\"heading\":{\"x\":1e400,\"y\":0,\"z\":0}}")) == "bad_json" && code(intent("{\"k\":\"echo\",\"cruise_phi\":1}")) == "bad_intent" &&
   code(newGame("\"seed\":-1,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":9007199254740992,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" &&
   code(newGame("\"seed\":1.5,\"scenario\":\"sol\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":1,\"scenario\":\"andromeda\",\"diag\":true")) == "bad_game" && code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":\"yes\"")) == "bad_game" &&
   code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"warp\":1}")) == "bad_params" && code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"glow_eps\":2}")) == "bad_params" &&
@@ -504,6 +506,7 @@ pure func aiStates() -> [StateMsg] = [
 ]
 pure func aiOpenLine(body: string) -> string = intent(join("", ["{\"k\":\"ai_open\",", body, "}"]))
 pure func okOpen() -> string = "\"kind\":\"text\",\"purpose\":\"line\",\"entity_id\":\"medic\""
+-- age_stage 1e400: bad_json since v0.52.0 (std/json refuses out-of-range numbers), see checkDecodeCodes.
 pure func checkAiCodecs() -> bool =
   allTrue(map(roundTripInput, aiInputs())) && allTrue(map(roundTripState, aiStates())) &&
   contains(encodeState({tick: 1, status: "ok", clock: None, ship: None, journey: None, ledger: None, rng: None, params: None, ai: None, events: [aiEv(ERequest(exampleRequest()), "ai_request")], refused: [], full: false}),
@@ -515,7 +518,7 @@ pure func checkAiCodecs() -> bool =
   code(aiOpenLine("\"purpose\":\"line\",\"entity_id\":\"medic\"")) == "bad_intent" && code(aiOpenLine("\"kind\":\"text\",\"entity_id\":\"medic\"")) == "bad_intent" &&
   code(aiOpenLine("\"kind\":\"text\",\"purpose\":\"line\"")) == "bad_intent" && code(aiOpenLine("\"kind\":1,\"purpose\":\"line\",\"entity_id\":\"medic\"")) == "bad_intent" &&
   code(aiOpenLine(join("", [okOpen(), ",\"emotion\":null"]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"age_stage\":\"0\""]))) == "bad_intent" &&
-  code(aiOpenLine(join("", [okOpen(), ",\"age_stage\":1e400"]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"line_req\":7"]))) == "bad_intent" &&
+  code(aiOpenLine(join("", [okOpen(), ",\"age_stage\":1e400"]))) == "bad_json" && code(aiOpenLine(join("", [okOpen(), ",\"line_req\":7"]))) == "bad_intent" &&
   code(aiOpenLine(join("", [okOpen(), ",\"emotions\":\"neutral\""]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"emotions\":[\"neutral\",1]"]))) == "bad_intent" &&
   code(aiOpenLine(join("", [okOpen(), ",\"context\":[]"]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"context\":{\"a\":1}"]))) == "bad_intent" &&
   code(aiOpenLine(join("", [okOpen(), ",\"context\":{\"a\":{\"b\":\"c\"}}"]))) == "bad_intent" && code(aiOpenLine(join("", [okOpen(), ",\"context\":{\"a\":[\"x\",null]}"]))) == "bad_intent" &&

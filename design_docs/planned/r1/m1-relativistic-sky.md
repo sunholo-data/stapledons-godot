@@ -450,8 +450,9 @@ rejects the whole command.
 - **Omitted heading:** the current heading is kept.
 - **Missing `thrust` or `dtau`:** they default to 0, as in v1.0.
 - **Finite:** the value equals itself and its magnitude is at most
-  1.0e308. `std/json` decodes `1e400` to a non-finite value that encodes as
-  `null`, and treats `NaN` as a decode error (row V17).
+  1.0e308. `std/json` treats `NaN` as a decode error (row V17). Since AILANG
+  v0.52.0 it also refuses out-of-range literals such as `1e400` (`bad_json`);
+  v0.51.0 decoded them to a non-finite value, refused per field.
 - **Why 1e-9 for the norm:** the client must normalise in **float64
   scalars**, not with `Vector3.normalized()`. Godot's `Vector3` is float32,
   and its normalisation error of about 6e-8 would be rejected, which is the

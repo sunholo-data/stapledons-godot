@@ -16,7 +16,17 @@ uniform float one_minus_beta = 1.0;             // 1 - |beta|, float64 on the CP
 uniform sampler2D bb_lut : filter_linear, repeat_disable;
 uniform float lut_log_tmin;
 uniform float lut_log_tmax;
-uniform float exposure = 5.0;             // linear radiance of a mag-0 star's splat peak
+// Linear splat peak per lux (sky/exposure.gd star_scale):
+// 1 / (L_white 2 pi sigma^2 Omega_px), Omega_px the CENTRE pixel's solid angle.
+// Deliberately the same across the frame: a star's on-screen brightness never
+// depends on where it sits (the pinhole's off-axis pixels span up to cos^3 less
+// solid angle, 0.38 at Sirius in the port view; not applied, so brightness
+// ordering reads true anywhere on screen).
+uniform float exposure = 5.0;
+// Magnitude-floor readability aid (off when floor_flux = 0): a star whose seen
+// illuminance is at least floor_flux lux is lifted to a splat peak of floor_peak.
+uniform float floor_flux = 0.0;
+uniform float floor_peak = 0.0;
 uniform float psf_sigma_px = 0.9;         // point-spread sigma in pixels
 uniform float sky_radius = 100.0;
 uniform vec3 ship_hi = vec3(0.0);         // ship - O, float32 pair (see header)
@@ -63,12 +73,15 @@ void vertex() {
 	vec4 rest = lut(t_eff);
 	vec4 seen = lut(t_eff * d);
 	float band_ratio = pow(10.0, seen.a - rest.a) / (d * d);
-	v_color = seen.rgb * flux * band_ratio * exposure;
-
 	// Project the apparent direction (rotation only: stars are at infinity),
 	// then expand the quad to a fixed pixel footprint around it.
 	vec3 view_dir = mat3(VIEW_MATRIX) * n_app;
+	v_color = seen.rgb * flux * band_ratio * exposure;
 	float peak = max(v_color.r, max(v_color.g, v_color.b));
+	if (floor_flux > 0.0 && flux * band_ratio >= floor_flux && peak < floor_peak && peak > 0.0) {
+		v_color *= floor_peak / peak;
+		peak = floor_peak;
+	}
 	// The splat reaches out to where the PSF falls to cull_peak (at most 4
 	// sigma): faint stars get small quads, so overdraw scales with brightness.
 	// Truncation cost: a 2-D Gaussian keeps 1 - exp(-k^2/2) of its energy inside

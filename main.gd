@@ -4,6 +4,8 @@ extends Node3D
 ## Interactive:  W / S thrust forward / reverse at 1 g, arrows look around,
 ##               Q / E roll, 1-4 look forward / starboard / astern / up (roll 0),
 ##               +/- time warp. The HUD shows the view-to-velocity angle.
+##               Exposure (M1.5a): F fixed EV at the rest value, M eye / camera
+##               metering, [ ] exposure bias (aid), G magnitude floor (aid).
 ## Galaxy map:  godot --path . [-- --map[=INDEX]]   (default with no arguments; M2.6a/b; --map-capture=renders [--map-commit])
 ## Sky flight:  godot --path . -- --voyage   (the M0/M1 relativistic voyage; W/S thrust, arrows + Q/E look and roll, 1-4 views, +/- warp)
 ## Headless-ish checks (need a GPU window, not --headless):
@@ -11,6 +13,7 @@ extends Node3D
 ##   godot --path . -- --golden            shader vs CPU reference positions
 ##   godot --path . -- --bench[=SECONDS]   scripted flight, frame-time report (tools/bench.gd; make bench)
 ## Sky runs:  -- --tier=quick|medium|large  star tier (default: large if built, else medium; M1.3)
+##            -- --exposure=eye|camera --fixed-ev --ev-bias=EV --ev-clamp=LO,HI --mag-floor  (M1.5a, sky/exposure.gd)
 ## Any run:  -- --record=path.ndjson  tees the sim's input log (replays headless).
 ## Interactive runs: Cmd/Ctrl + / - / 0 change the UI size (UiScale; HiDPI aware).
 ##
@@ -20,8 +23,7 @@ extends Node3D
 
 const TICK_HZ := 20.0
 const HEADING := Vector3(0, 0, -1) # galactic centre
-const EXPOSURE := 5.0 # linear splat peak of a V = 0 star (goldens use flux 1 = V 0)
-const BG_EXPOSURE := 0.075 # hand-set ratio to the stars until M1.5 calibrates both
+const GOLDEN_PEAK := 5.0 # goldens only: linear splat peak of a unit-flux test star (the sky uses sky/exposure.gd)
 const SEED := 0
 const ALPHA_CEN_A := 1 # stars.json index 1 (Gl 559, vmag 0.01); B is index 2 with the same id
 const LOOK_RATE := 1.2 # rad/s for the yaw, pitch and roll keys
@@ -33,6 +35,7 @@ const GOLDEN_VIEWS := [["along v, rolled +30", null, null, 30.0], ["off-axis yaw
 var sim := SimBridge.new()
 var starfield := Starfield.new()
 var background := SkyBackground.new()
+var exposure := Exposure.new() # M1.5a: photometric EV, metering, fixed EV, aids
 var has_background := false
 var env := Environment.new()
 var camera := FreeLookCamera.new() # yaw, pitch, roll; client state, never sent to the sim
@@ -182,8 +185,7 @@ func _panel_dump(map: GalaxyMap, speed: String) -> Dictionary:
 
 
 ## M1.3: binary tier (+ bright on top when built) -> starfield. Catalogue E_v
-## is in lux, so the exposure is per lux: a V = 0 star peaks at EXPOSURE as
-## before (M1.5a replaces this with photometric exposure).
+## is in lux; the exposure (M1.5a) is photometric, set by _apply_state.
 func load_stars(tier: String) -> bool:
 	if tier == "":
 		tier = "large" if FileAccess.file_exists("res://data/starmap/stars_large.bin") else "medium"
@@ -191,7 +193,7 @@ func load_stars(tier: String) -> bool:
 		push_error("starfield: %s" % starfield.last_error)
 		return false
 	starfield.build()
-	starfield.set_exposure(EXPOSURE / Relativity.illuminance_from_v(0.0))
+	_push_exposure()
 	print("starfield: tiers %s, %d stars drawn, %d without photometry skipped, rebase %s" % [
 		starfield.tiers, starfield.count, starfield.skipped_missing, Starfield.Rebase.keys()[starfield.rebase_mode]])
 	return true
@@ -231,7 +233,6 @@ func _build_scene() -> void:
 	add_child(starfield)
 	if not _user_args().has("golden"):
 		has_background = background.attach(env, get_viewport().get_visible_rect().size.y, camera.fov)
-		background.set_exposure(BG_EXPOSURE)
 		if not has_background:
 			# The M1.4 panorama is not in the repo (data/raw is ignored), so a
 			# build without it flies over black. Say so instead of failing silently.
@@ -249,6 +250,34 @@ func _build_scene() -> void:
 	sky_note.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 0.85))
 	layer.add_child(sky_note)
 	add_child(layer)
+	_configure_exposure(_user_args())
+	get_viewport().size_changed.connect(func() -> void: exposure.configure(camera.fov, get_viewport().get_texture().get_size().y))
+
+
+## M1.5a: the exposure model's pixel solid angle follows the 3D render size.
+func _configure_exposure(args: Dictionary) -> void:
+	exposure.configure(camera.fov, get_viewport().get_texture().get_size().y)
+	exposure.mode = Exposure.Mode.CAMERA if args.get("exposure", "") == "camera" else Exposure.Mode.EYE
+	exposure.bias = float(args.get("ev-bias", "0"))
+	exposure.floor_on = args.has("mag-floor")
+	if args.get("ev-clamp", "").contains(","):
+		var lh: PackedStringArray = args["ev-clamp"].split(",")
+		exposure.clamp_ev = Vector2(float(lh[0]), float(lh[1]))
+	if args.has("fixed-ev"):
+		exposure.set_fixed(true, _meter(0.0))
+
+
+## Log-average seen luminance of the current view (cd/m^2); the dark sky when
+## the panorama is not bundled.
+func _meter(beta: float) -> float:
+	return background.meter(camera, heading, beta) if has_background else Exposure.dark_sky_luminance()
+
+
+func _push_exposure() -> void:
+	starfield.set_exposure(exposure.star_scale())
+	starfield.set_floor(exposure.floor_params())
+	if has_background:
+		background.set_scene_exposure(exposure.k())
 
 
 func _apply_state() -> void:
@@ -263,8 +292,10 @@ func _apply_state() -> void:
 	var x: float = s["x"]
 	var p: Dictionary = s["pos"]
 	starfield.set_ship_position(p["x"], p["y"], p["z"]) # float64; the starfield rebases (M1.3)
-	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s\n%s" % [
-		beta, s["gamma"], c["tau"], c["t"], x, warp, camera.hud_line(heading)]
+	exposure.update(_meter(beta))
+	_push_exposure()
+	hud.text = "beta  %.6f c\ngamma %.4f\nship  %.3f yr\nEarth %.3f yr\ntravelled %.3f ly\nwarp %.2f ship-yr/s\n%s\n%s" % [
+		beta, s["gamma"], c["tau"], c["t"], x, warp, camera.hud_line(heading), exposure.hud_line()]
 
 
 func _process(delta: float) -> void:
@@ -302,6 +333,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_4: camera.look(0.0, FreeLookCamera.PITCH_LIMIT, 0.0)
 		KEY_EQUAL: warp *= 2.0
 		KEY_MINUS: warp /= 2.0
+		KEY_F: exposure.set_fixed(not exposure.fixed, _meter(0.0))
+		KEY_M: exposure.mode = Exposure.Mode.CAMERA if exposure.mode == Exposure.Mode.EYE else Exposure.Mode.EYE
+		KEY_BRACKETLEFT: exposure.bias -= 0.5
+		KEY_BRACKETRIGHT: exposure.bias += 0.5
+		KEY_G: exposure.floor_on = not exposure.floor_on
+		_: return
+	if sim.world.has("ship"):
+		_apply_state()
 
 
 func _notification(what: int) -> void:
@@ -325,6 +364,7 @@ func _run_capture(dir: String) -> void:
 	var views := {"forward": [0.0, 0.0, 0.0], "starboard": [-PI / 2, 0.0, 0.0], "port": [PI / 2, 0.0, 0.0], "astern": [PI, 0.0, 0.0],
 		"offaxis": [deg_to_rad(50.0), deg_to_rad(25.0), 0.0], "rolled": [deg_to_rad(-30.0), deg_to_rad(10.0), deg_to_rad(35.0)]}
 	var tiles := []
+	var exposure_tiles := []
 	for target in targets:
 		while sim.world["ship"]["beta"] < target:
 			if not sim.send([{"k": "thrust", "thrust": 1.0}], 0.005):
@@ -335,15 +375,42 @@ func _run_capture(dir: String) -> void:
 		for view in views:
 			camera.look(views[view][0], views[view][1], views[view][2])
 			_apply_state() # the HUD's view/v line follows the view
-			var img := await _grab()
-			var name := "sky_b%s_%s.png" % [str(target).replace(".", ""), view]
-			img.save_png(out.path_join(name))
+			var img := await _capture_one(out, "sky_b%s_%s.png" % [str(target).replace(".", ""), view])
 			tiles.append(img)
-			var ship: Dictionary = sim.world["ship"]
-			print("captured %s  beta=%.6f gamma=%.4f tau=%.4f t=%.4f  %s" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"], camera.hud_line(heading)])
+			if view == "starboard" and target in [0.0, 0.99]:
+				exposure_tiles.append_array(await _capture_exposure_pair(out, target))
 	_save_sheet(tiles, views.size(), out.path_join("contact_sheet.png"))
+	_save_sheet(exposure_tiles, 3, out.path_join("exposure_sheet.png"))
 	sim.stop()
 	get_tree().quit(0)
+
+
+func _capture_one(out: String, name: String) -> Image:
+	var img := await _grab()
+	img.save_png(out.path_join(name))
+	var ship: Dictionary = sim.world["ship"]
+	print("captured %s  beta=%.6f gamma=%.4f tau=%.4f t=%.4f  %s  EV %+.2f %s %s (meter %s cd/m^2)" % [name, ship["beta"], ship["gamma"], sim.world["clock"]["tau"], sim.world["clock"]["t"],
+		camera.hud_line(heading), exposure.ev, exposure.mode_name(), "fixed" if exposure.fixed else "auto", String.num_scientific(_meter(ship["beta"]))])
+	return img
+
+
+## M1.5a exposure honesty (corrected F5): beside the default (eye) starboard
+## view, the camera-metered view auto-exposed and at the EV fixed at the rest
+## value. At 0.99c the auto meter brightens the exposure for the redshifted
+## sideways sky; the fixed pair shows the darkening as physics.
+func _capture_exposure_pair(out: String, target: float) -> Array:
+	var tag := "sky_b%s_starboard" % str(target).replace(".", "")
+	var eye := (await _grab())
+	exposure.mode = Exposure.Mode.CAMERA
+	_apply_state()
+	var auto := await _capture_one(out, tag + "_camera_auto.png")
+	exposure.set_fixed(true, _meter(0.0))
+	_apply_state()
+	var fixed := await _capture_one(out, tag + "_camera_fixed.png")
+	exposure.set_fixed(false, 0.0)
+	exposure.mode = Exposure.Mode.EYE
+	_apply_state()
+	return [eye, auto, fixed]
 
 
 func _save_sheet(tiles: Array, cols: int, path: String) -> void:
@@ -364,7 +431,7 @@ func _save_sheet(tiles: Array, cols: int, path: String) -> void:
 func _run_golden() -> void:
 	starfield.set_custom_stars([])
 	starfield.build()
-	starfield.set_exposure(EXPOSURE)
+	starfield.set_exposure(GOLDEN_PEAK)
 	camera.look(0.0, 0.0, 0.0)
 	var cases := [
 		{"label": "at rest, 20 deg starboard", "theta": 20.0, "beta": 0.0},
@@ -412,6 +479,8 @@ func _run_golden() -> void:
 	failures += await _golden_background_colour()
 	failures += await _golden_background_tint()
 	failures += await _golden_hot_white_dwarf()
+	# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
+	failures += await load("res://tools/exposure_golden.gd").new().run(self)
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -522,7 +591,7 @@ func _golden_cull() -> int:
 	starfield.material.set_shader_parameter("cull_peak", 0.0)
 	camera.look(0.0, 0.0, 0.0)
 	starfield.set_velocity(HEADING, 0.0, 1.0)
-	starfield.set_custom_stars([{"pos": Vector3(0.1, 0.05, -1.0).normalized() * 1000.0, "t": 5700.0, "flux": 2.0 * cull / EXPOSURE}])
+	starfield.set_custom_stars([{"pos": Vector3(0.1, 0.05, -1.0).normalized() * 1000.0, "t": 5700.0, "flux": 2.0 * cull / GOLDEN_PEAK}])
 	starfield.set_ship_position(0.0, 0.0, 0.0)
 	var img := await _grab()
 	var top := 0.0
@@ -531,7 +600,7 @@ func _golden_cull() -> int:
 			var c := img.get_pixel(x, y)
 			top = maxf(top, maxf(c.r, maxf(c.g, c.b)))
 	# and a star 40x brighter (peak 8e-3) must show, so the frame is live
-	starfield.set_custom_stars([{"pos": Vector3(0.1, 0.05, -1.0).normalized() * 1000.0, "t": 5700.0, "flux": 80.0 * cull / EXPOSURE}])
+	starfield.set_custom_stars([{"pos": Vector3(0.1, 0.05, -1.0).normalized() * 1000.0, "t": 5700.0, "flux": 80.0 * cull / GOLDEN_PEAK}])
 	var live := _peak(await _grab())
 	starfield.material.set_shader_parameter("cull_peak", cull)
 	var ok := top * 255.0 < 0.5 and live > 0.0

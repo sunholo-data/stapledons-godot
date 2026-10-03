@@ -11,6 +11,7 @@ extends RefCounted
 ##   3. Replay: the recorded frames again with the starfield hidden. The star
 ##      pass is the per-frame difference (GPU time when the driver reports it;
 ##      Godot 4.7's Metal driver reports 0, so make bench also runs Vulkan).
+##   4. AC8 (M1.5a): the V 5.0-7.5 limiting-magnitude ladder (tools/exposure_golden.gd).
 ## Prints one `bench:` summary line and writes the numbers to .godot/tmp/bench.json.
 
 const SIZE := Vector2i(2560, 1440)
@@ -38,6 +39,7 @@ func run(main: Node, seconds: float) -> int:
 	var sf: Starfield = main.starfield
 	for i in WARMUP:
 		await tree.process_frame
+	main._configure_exposure({}) # the pixel solid angle at SIZE (M1.5a)
 	var rebase_ms := _time_rebases(sf)
 	var mode := Starfield.Rebase.CPU if rebase_ms < REBASE_TARGET_MS else Starfield.Rebase.GPU
 	sf.set_rebase_mode(mode)
@@ -46,7 +48,13 @@ func run(main: Node, seconds: float) -> int:
 	if frames.is_empty():
 		return 2
 	var off := await _replay(main, frames)
-	return _report(main, frames, off, rebase_ms, mode, seconds)
+	var rc := _report(main, frames, off, rebase_ms, mode, seconds)
+	# AC8 (M1.5a): the limiting-magnitude ladder at this render size, after the
+	# flight (it swaps in a uniform 22 mag/arcsec^2 sky)
+	var lim: Dictionary = await load("res://tools/exposure_golden.gd").new().limiting_magnitude(main)
+	var ok: bool = lim["v_lim"] >= 6.0 and lim["v_lim"] <= 6.8
+	print("bench: limiting magnitude %s: %s" % [lim["line"], "ok" if ok else "MISS"])
+	return rc if ok else 1
 
 
 func _time_rebases(sf: Starfield) -> float:

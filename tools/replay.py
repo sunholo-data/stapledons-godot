@@ -20,7 +20,8 @@ every journey runs through exp-derived floats. A missing golden is a failure.
 AILANG comes from $AILANG (default `ailang`); its --version is printed. The
 interpreter runs with --max-recursion-depth: ship.ail's read loop is a tail
 call, which the VM eliminates and the interpreter does not (RT_REC_003 at
-10,000 lines on v0.51.0, reported upstream).
+10,000 lines on v0.51.0, reported upstream; tail calls run in constant
+stack on the interpreter since v0.52.0, ailang#1486, so the flag is now belt and braces).
 
 --compat: protocol 2.1 changed only the first lines of every 2.0 golden. The
 2.0 goldens are frozen in tests/replays/compat-2.0/ with the sha256 of each
