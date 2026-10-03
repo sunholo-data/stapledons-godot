@@ -71,7 +71,7 @@ interior-test:     ## M4.2 composite order and pan factors, one tonemap, glow CP
 transit-test:      ## M4.3a: warp intent, 3 s burn pacing, HUD bindings + audit positive controls, phases, arrival card, standoff_au 1000 (real sim, headless); AC3 grep half
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_transit.gd > $(SCRATCH)/transit-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/transit-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
-	  test $$rc = 0 && grep -q '^transit: [0-9]* passed, 0 failures$$' $(SCRATCH)/transit-test.log || { echo "transit-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/transit-test.log)"; exit 1; }
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/transit-test.log && grep -q '^transit: [0-9]* passed, 0 failures$$' $(SCRATCH)/transit-test.log || { echo "transit-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/transit-test.log)"; exit 1; }
 	@! grep -rniE "save_game|load_game|ResourceSaver" interior ui || { echo "transit-test: AC3 grep half found a save/load path"; exit 1; }
 
 glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy from sunholo/relativity 0.7.0 (tools/glow_probe), VM = interpreter

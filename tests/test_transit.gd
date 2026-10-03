@@ -74,7 +74,7 @@ func test_warp(h: TransitHarness, res: Dictionary, log: Array) -> void:
 func test_pacing(res: Dictionary, label: String) -> void:
 	for p in ["boosting", "braking"]:
 		var n: int = res["phase_ticks"].get(p, 0)
-		ok("%s: %s spans 3 s of real time (%d ticks of 0.05 s)" % [label, p, n], absf(n * TransitHarness.TICK_DT - Transit.BURN_REAL_S) < 1e-9)
+		ok("%s: %s spans 3 s of real time (%d ticks of 0.05 s)" % [label, p, n], absf(n * TransitHarness.TICK_DT - 3.0) < 1e-9)
 
 
 func test_phases(res: Dictionary) -> void:
@@ -151,6 +151,7 @@ func test_standoff(h: TransitHarness, res: Dictionary, log: Array) -> void:
 
 ## A script error inside _init leaves the tree running; the watchdog ends it with no summary line.
 const WATCHDOG_S := 90.0
+const EXPECTED_CHECKS := 39
 
 
 func _init() -> void:
@@ -181,5 +182,7 @@ func _init() -> void:
 		ok("the slow boost is 10x longer in ship time (%.2f vs %.2f min)" % [a, b], absf(b / a - 10.0) < 1e-6)
 		test_pacing(r2, "75,000 g boost")
 		slow.sim.stop()
+	# a script error inside a check returns early and the run goes on: fewer checks than this is a failure
+	ok("all %d checks ran" % EXPECTED_CHECKS, checks + 1 >= EXPECTED_CHECKS)
 	print("transit: %d passed, %d failures" % [checks - failures, failures])
 	quit(1 if failures > 0 else 0)
