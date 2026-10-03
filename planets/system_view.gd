@@ -22,6 +22,9 @@ const SHADER := preload("res://planets/planet.gdshader")
 const CULL_LUX_FRACTION := 1e-4
 const CULL_PX := 0.1
 const TEX_DIR := "res://assets/planets"
+## Exported builds: assets/planets is .gdignore'd, so `make planet-bundle` stages byte copies
+## as res://planet_bundle/<file>.bin (the .bin keeps the editor from importing them).
+const BUNDLE_DIR := "res://planet_bundle"
 const ALBEDO_TABLE := "res://data/planets/ALBEDO"
 
 var starfield: Starfield
@@ -63,8 +66,7 @@ func _textures(id: String) -> Array:
 	if not textures.has(id):
 		var out := []
 		for f: String in String(albedo_table[id]["file"]).split("+"):
-			var path := TEX_DIR.path_join(f)
-			var img := Image.load_from_file(path) if FileAccess.file_exists(path) else null
+			var img := load_texture_image(f)
 			if img == null:
 				out = []
 				break
@@ -72,6 +74,20 @@ func _textures(id: String) -> Array:
 			out.append(ImageTexture.create_from_image(img))
 		textures[id] = out
 	return textures[id]
+
+
+## A texture's image: the source checkout's assets/planets, else the export bundle; null if neither.
+static func load_texture_image(file: String, tex_dir := TEX_DIR, bundle_dir := BUNDLE_DIR) -> Image:
+	var path := tex_dir.path_join(file)
+	if FileAccess.file_exists(path):
+		return Image.load_from_file(path)
+	var bundled := bundle_dir.path_join(file + ".bin")
+	if not FileAccess.file_exists(bundled):
+		return null
+	var img := Image.new()
+	var bytes := FileAccess.get_file_as_bytes(bundled)
+	var err := img.load_jpg_from_buffer(bytes) if file.get_extension() == "jpg" else img.load_png_from_buffer(bytes)
+	return img if err == OK else null
 
 
 func set_view(pixel_rad: float, height_px: float) -> void:

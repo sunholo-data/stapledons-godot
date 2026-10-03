@@ -2,7 +2,7 @@
 # Included from the Makefile by one line (F4: M5 stays out of the Makefile hunks
 # M4 edits). Uses AILANG and SCRATCH from the Makefile.
 
-.PHONY: m5-test strict-m5 parity-v2-system hello-pin acen-snapshot acen-snapshot-verify \
+.PHONY: planet-bundle export-smoke-planets m5-test strict-m5 parity-v2-system hello-pin acen-snapshot acen-snapshot-verify \
   planets-test planet-textures-check lint-precision lint-precision-m5 planet-assets planet-verify planet-publish planet-textures golden-m5 capture-m5a
 
 test: m5-test
@@ -108,3 +108,28 @@ golden-m5:         ## M5 GPU goldens alone (needs a GPU window): G-M5-4 Jupiter 
 
 capture-m5a:       ## M5.2a reference renders (needs a GPU window) -> renders/m5/m5.2a/: nine globes, Jupiter in EYE, the Sun, the crossover pair, a sheet
 	perl -e 'alarm 900; exec @ARGV' $(GODOT) --path . -- --capture-m5=renders/m5/m5.2a
+
+# ------------------------------------------------------------ planet textures in exported builds
+# assets/planets is .gdignore'd, so Godot's export skips it (the sky_bundle / areas_bundle
+# pattern): stage sha256-verified byte copies as planet_bundle/<file>.bin (gitignored; in the
+# export's include_filter with data/planets/*). No textures = a FAILED build, never untextured globes.
+export-macos: planet-bundle
+publish-dev: export-smoke-planets
+
+planet-bundle:     ## M5.2a: fetch + verify the pinned planet textures and stage them into planet_bundle/ for the export (fails if any is missing)
+	@sh tools/planet_assets.sh fetch >/dev/null || { echo "planet-bundle: FAILED, pinned planet textures not fetched (bucket and source)"; exit 1; }
+	@sh tools/planet_assets.sh verify >/dev/null || { echo "planet-bundle: FAILED, assets/planets does not match data/planets/SHA256SUMS"; exit 1; }
+	@rm -rf planet_bundle && mkdir -p planet_bundle && n=0; \
+	  for p in $$(awk '$$2 == "texture" { print $$3 }' data/planets/SHA256SUMS); do cp "$$p" "planet_bundle/$$(basename $$p).bin"; n=$$((n + 1)); done; \
+	  test "$$n" -eq "$$(awk '$$2 == "texture"' data/planets/SHA256SUMS | wc -l | tr -d ' ')" && test "$$n" -gt 0 || { echo "planet-bundle: FAILED, staged $$n textures"; exit 1; }; \
+	  echo "planet-bundle: staged $$n pinned textures ($$(du -sh planet_bundle | cut -f1))"
+
+export-smoke-planets: export-macos   ## the exported .app loads all nine textures from its bundle and draws a textured Jupiter (GPU window)
+	@mkdir -p $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
+	  env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" perl -e 'alarm 300; exec @ARGV' "$(APP)/Contents/MacOS/$$exe" -- --planet-smoke="$(CURDIR)/$(SCRATCH)/export-smoke/planet_smoke.png" > $(SCRATCH)/export-smoke/planet-smoke.log 2>&1; rc=$$?; \
+	  grep '^planet-smoke:' $(SCRATCH)/export-smoke/planet-smoke.log; \
+	  test $$rc = 0 && grep -q '^planet-smoke: 9/9 textured bodies (res://planet_bundle)$$' $(SCRATCH)/export-smoke/planet-smoke.log && \
+	  grep -q '^planet-smoke: Jupiter disc textured$$' $(SCRATCH)/export-smoke/planet-smoke.log && test -s $(SCRATCH)/export-smoke/planet_smoke.png || \
+	  { echo "export-smoke-planets: FAILED (exit $$rc)"; exit 1; }
+	@echo "export-smoke-planets: OK, the exported app draws textured globes from its bundle ($(SCRATCH)/export-smoke/planet_smoke.png)"
