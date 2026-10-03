@@ -6,7 +6,7 @@ extends SubViewport
 ##
 ## Sky camera = cam_<area>.json x ship_basis(heading) (ShipFrame, float64, D-14: up = the
 ## direction of travel all journey, no flip). The galactic vectors go to Godot's sky frame
-## (Starfield.galactic_to_world) and become the FreeLookCamera's yaw, pitch and roll in
+## (SkyFrame, D-28: a rotation, so the view is the camera JSON's, unmirrored) and become the FreeLookCamera's yaw, pitch and roll in
 ## float64, so the camera's CPU projection (FreeLookCamera.project) and the sky meter work on
 ## the interior view unchanged. The vertical fov is the plate's VIEW region's (the camera
 ## spans the overscanned plate; the screen shows the view region).
@@ -124,7 +124,7 @@ static func euler_of(f: PackedFloat64Array, u: PackedFloat64Array) -> Array:
 
 
 ## Sim state -> sky. ship.heading / pos are galactic (play session); Godot's sky frame is
-## Starfield.galactic_to_world, converted here in float64.
+## SkyFrame, converted here in float64.
 func apply(world: Dictionary) -> void:
 	var s: Dictionary = world["ship"]
 	var h: Dictionary = s["heading"]
@@ -135,7 +135,8 @@ func apply(world: Dictionary) -> void:
 	if has_background:
 		background.set_velocity(heading_world, beta, s["gamma"])
 	var p: Dictionary = s["pos"]
-	starfield.set_ship_position(p["y"], p["z"], -p["x"])
+	var pw := SkyFrame.to_world64([p["x"], p["y"], p["z"]])
+	starfield.set_ship_position(pw[0], pw[1], pw[2])
 	var params: Variant = world.get("params")
 	if params is Dictionary and params.has("bubble_radius_m"):
 		radius_m = params["bubble_radius_m"]
@@ -165,7 +166,7 @@ func update_exposure() -> void:
 func glow_luminance(n: Vector3) -> float:
 	if glow_pole <= 0.0 or basis.is_empty():
 		return 0.0
-	var g := PackedFloat64Array([-n.z, n.x, n.y]) # world -> galactic
+	var g := SkyFrame.to_galactic64([n.x, n.y, n.z])
 	var d := ShipFrame.to_ship(basis, g)
 	var p: Array = cam["position_m"]
 	var c := ForwardGlow.wall_cos(PackedFloat64Array([p[0], p[1], p[2]]), d, radius_m)
@@ -194,7 +195,7 @@ func set_debug_unit(on: bool) -> void:
 
 
 static func _to_world(g: PackedFloat64Array) -> PackedFloat64Array:
-	return PackedFloat64Array([g[1], g[2], -g[0]])
+	return SkyFrame.to_world64(g)
 
 
 static func _vec(a: PackedFloat64Array) -> Vector3:

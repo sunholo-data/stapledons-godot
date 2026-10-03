@@ -9,8 +9,10 @@
 //      a radial profile by theta' built on the CPU (sky/cmb.gd), times cmb_k (pixel per cd/m^2)
 //      where tint = photo / (Y rgb(T_c)) carries the photo's off-locus colour (1 on the locus),
 //      so D = 1 reproduces the photo exactly.
-// World frame as sky/starfield.gd: galactic (x, y, z) -> world (y, z, -x).
+// World frame: SkyFrame (sky/sky_frame.gd, D-28) through sky_frame.gdshaderinc, the one shader copy.
 shader_type sky;
+
+#include "res://sky/sky_frame.gdshaderinc"
 
 uniform sampler2D photo : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D model : filter_linear_mipmap, repeat_enable; // r = T_c code / 255
@@ -57,7 +59,7 @@ void sky() {
 		n = normalize((np + ((g - 1.0) * c + g * b) * bh) / (g * one_plus_bc));
 		d = 1.0 / (g * one_plus_bc);
 	}
-	vec3 gal = vec3(-n.z, n.x, n.y);
+	vec3 gal = sky_world_to_galactic(n);
 	vec2 uv = vec2(0.5 - atan(gal.y, gal.x) / TAU, 0.5 - asin(clamp(gal.z, -1.0, 1.0)) / PI);
 	// one ship pixel spans D times more galaxy-frame angle (explicit lod: no seam at the wrap)
 	float lod = max(0.0, log2(pano_px_per_screen_px * d));

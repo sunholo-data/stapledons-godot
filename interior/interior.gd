@@ -30,14 +30,6 @@ extends Node
 signal map_toggled(open: bool)
 
 const LAYERS := ["sky", "panorama", "play", "foreground", "hud"]
-## The M1 sky frame is a MIRROR of the galactic frame: Starfield.galactic_to_world (x, y, z)
-## -> (y, z, -x) has determinant -1, so a Godot camera (right = forward x up) whose forward and
-## up are the mirrored ship-frame vectors sees the sky left-right reversed against
-## cam_<area>.json. Showing the sky texture flipped horizontally gives exactly the view
-## through the panorama camera (aberration, Doppler and the glow are mirror-symmetric about
-## the velocity; the forward pole sits on the centre column). make golden's G-M4-1 checks
-## stars against the camera JSON. If M1's mapping is made a rotation, this becomes false.
-const SKY_FLIP_H := true
 const CANVAS := {"sky": -40, "panorama": -30, "play": -20, "foreground": -10, "hud": 10}
 const PLATE_SHADER := preload("res://interior/plate.gdshader")
 const TOON := preload("res://interior/toon.gdshader")
@@ -103,8 +95,7 @@ func setup(b: AreaBundle, opts := {}) -> bool:
 	var view_fov := 2.0 * rad_to_deg(atan(tan(deg_to_rad(float(b.camera["fov_vertical_deg"])) / 2.0) * _view.y / float(b.camera["resolution"][1])))
 	sky.setup(b.camera, view_fov, px, opts)
 	add_child(sky)
-	sky_rect.texture = sky.get_texture()
-	sky_rect.flip_h = SKY_FLIP_H
+	sky_rect.texture = sky.get_texture() # as rendered: SkyFrame is a rotation (D-28), no flip
 	_full(sky_rect)
 	_layer("sky").add_child(sky_rect)
 	_plate("panorama", b.load_image("panorama"))
