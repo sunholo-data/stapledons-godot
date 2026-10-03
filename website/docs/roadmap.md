@@ -34,8 +34,8 @@ orientation.
 | The big catalogue: 335,157 stars instanced on the GPU, float64 rebasing (M1.3) | <span className="sv-status sv-status--done">Done</span> |
 | Milky Way background: NOIRLab panorama, destarred in AILANG, Doppler shifted per texel (M1.4) | <span className="sv-status sv-status--done">Done</span> |
 | Photometric exposure: dark-adapted eye, honest HUD, labelled aids (M1.5a) | <span className="sv-status sv-status--done">Done</span> |
-| Galaxy map and goldens on the catalogue tiers (M1.7, [PR #81](https://github.com/sunholo-data/stapledons-godot/pull/81)) | <span className="sv-status sv-status--review">In review</span> |
-| Forward CMB disc (M1.8, [PR #79](https://github.com/sunholo-data/stapledons-godot/pull/79)) | <span className="sv-status sv-status--review">In review</span> |
+| Galaxy map and goldens on the catalogue tiers (M1.7, [PR #81](https://github.com/sunholo-data/stapledons-godot/pull/81)) | <span className="sv-status sv-status--done">Done</span> |
+| Forward CMB disc (M1.8, [PR #79](https://github.com/sunholo-data/stapledons-godot/pull/79); ring fix [#88](https://github.com/sunholo-data/stapledons-godot/pull/88)) | <span className="sv-status sv-status--done">Done</span> |
 | 60 fps at 1440p with the full catalogue and background, on an M4 Max | Acceptance |
 
 ## M2: The journey core <span className="sv-status sv-status--done">Done</span>

@@ -212,17 +212,17 @@ const SHOWCASE = [
     clip: 'cmb',
     icon: Sparkles,
     title: 'The cosmic background, set on fire',
-    status: <Pill kind="review">In review (M1.8)</Pill>,
+    status: <Pill kind="done">Runs today</Pill>,
     body: (
       <>
         <p>
           Push past γ 100 and something appears dead ahead that no star can explain: the 2.7 K
           microwave background, Doppler shifted into the visible. It shows faintly from γ ≈ 146,
-          glows orange at γ ≈ 295 (about 1,600 K) and burns at 3,853.7 K at γ 707, the cruise cap.
+          glows orange at γ ≈ 275 (1,500 K) and burns at 3,853.7 K at γ 707, the cruise cap.
         </p>
         <p className={styles.small}>
-          Forward view through a 20° lens, γ 100 to 707 on a committed journey near Sol. This clip
-          comes from the forward-CMB work in pull request #79, not yet merged.
+          Forward view through a 20° lens, γ 20 to 707 on a committed journey near Sol: first the
+          stars crowd into a shrinking blue ball, then the CMB takes over the bow.
         </p>
       </>
     ),
@@ -382,7 +382,7 @@ function BuiltWithAilang() {
 }
 
 function GalleryTeaser() {
-  const picks = ['sky-099c.jpg', 'cmb-gamma-orange.jpg', 'map-commit.jpg', 'milky-way-destarred.jpg', 'sky-091c.jpg', 'map-transit.jpg'];
+  const picks = ['sky-099c.jpg', 'cmb-gamma-275.jpg', 'map-commit.jpg', 'milky-way-destarred.jpg', 'sky-091c.jpg', 'map-transit.jpg'];
   const items = picks.map((f) => GALLERY.find((g) => g.file === f)).filter(Boolean);
   const base = useBaseUrl('/img/gallery/');
   return (
@@ -412,7 +412,7 @@ function GalleryTeaser() {
 
 const MILESTONES = [
   ['M0', 'Spike', 'done', 'AILANG sim + Godot starfield, tested relativity'],
-  ['M1', 'The relativistic sky', 'progress', '335k stars, Milky Way, exposure; CMB disc in review'],
+  ['M1', 'The relativistic sky', 'progress', '335k stars, Milky Way, exposure, forward CMB; performance bar left'],
   ['M2', 'The journey core', 'done', 'Planner, commit, two clocks, deterministic replay'],
   ['M3', 'Black holes', 'planned', 'Shadow, lensing, Einstein rings, checked against GR'],
   ['M4', 'First playable journey', 'planned', 'Plan, commit, live through it, arrive changed'],

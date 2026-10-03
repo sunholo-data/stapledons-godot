@@ -51,8 +51,8 @@ The game is **pre-alpha**. Release 1 builds the foundations, and is partly done:
 - **Running today:** the relativistic sky (335,157 real stars over the Milky Way, aberration,
   Doppler colour and beaming, a photometric naked-eye exposure), and the journey core (the
   galaxy map, the planner, the irreversible commit, the two clocks, deterministic replay).
-- **In review:** the forward cosmic-background disc at high γ, and the catalogue switch for
-  the galaxy map.
+- **Also merged:** the forward cosmic-background disc at high γ (M1.8), and the galaxy map on
+  the binary catalogue tiers (M1.7).
 - **Planned for Release 1:** black holes rendered to general relativity (M3) and the first
   playable journey with a placeholder ship deck (M4).
 - **The full vision, after Release 1:** a galaxy simulation of civilisations that rise, merge

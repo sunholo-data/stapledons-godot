@@ -9,7 +9,7 @@ extends RefCounted
 ##   voyage     forward view, at rest -> 0.99c at 1 g (rapidity eased), hold
 ##   hero       the voyage clip without the HUD (the site's background video)
 ##   lookaround at 0.99c, one full turn in yaw: crowded bow, dark beam, black stern
-##   cmb        forward, 20 deg lens, gamma 100 -> 707: the forward CMB disc (M1.8)
+##   cmb        forward, 20 deg lens, gamma 20 -> 707: the forward CMB disc (M1.8)
 ##   map        galaxy map orbit while the cruise slider sweeps 0.9c -> cap
 
 const SIZE := Vector2i(1280, 720)
@@ -17,7 +17,7 @@ const MAP_SIZE := Vector2i(1600, 900)
 const FPS := 30
 const G_PER_YR := 1.0323 # 1 g in c per ship-year (dphi/dtau), only to pace frames
 const MAX_DT := 0.01
-const BOOST_DT := 2e-8 # ship-years per sim tick during the minutes-long boost (~0.6 s)
+const BOOST_DT := 2e-9 # ship-years per sim tick during the minutes-long boost (~0.06 s; coarser steps repeat frames at low gamma)
 const PHI_099 := 2.6466524123622457 # atanh(0.99)
 
 
@@ -106,11 +106,11 @@ func run_sky(main: Node, args: Dictionary) -> int:
 			main._apply_state()
 			await _frame(main, out, i)
 	elif clip == "cmb":
-		# gamma 100 -> 707 (the cruise cap), log-eased, forward through a 20 deg
+		# gamma 20 -> 707 (the cruise cap), log-eased, forward through a 20 deg
 		# lens, on a committed journey as in --capture (D-11: the boost takes
 		# minutes of ship time, so the ship stays near Sol and its catalogue).
 		# The disc is the forward CMB (M1.8): it renders only in a build that
-		# has it; before M1.8 lands this clip shows the starfield alone.
+		# has it; on a tree without M1.8 this clip shows the starfield alone.
 		var sim: SimBridge = main.sim
 		var phi_max: float = minf(log(707.0 + sqrt(707.0 * 707.0 - 1.0)), sim.world["params"]["cruise_phi_max"])
 		var h: Vector3 = main.HEADING * 1000.0
@@ -123,7 +123,7 @@ func run_sky(main: Node, args: Dictionary) -> int:
 		main._configure_exposure(args)
 		var secs := 20.0
 		n = int(secs * FPS)
-		var g0 := log(100.0)
+		var g0 := log(20.0)
 		var g1 := log(707.0)
 		for i in n:
 			var t := i / float(FPS)
