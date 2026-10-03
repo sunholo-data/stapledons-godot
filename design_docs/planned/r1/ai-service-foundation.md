@@ -818,6 +818,35 @@ loopback and fake services only, no key):
 - **For AI.10b.** The ceiling and the indicator now agree and both count
   interrupted calls, but the reservation is the request's worst case, not
   the provider's bill. Keep `--ceiling-usd` low and watch the indicator.
+- **Round 2** (`eval_R1-AI-FOUNDATION-AI.9h_round_1.json`, 78/100, CI red):
+  - CI: `_unpack_ai` takes the package cache as a parameter, and the test
+    passes a one-file stand-in when `res://runtime/cache` is absent (a
+    checkout without `make runtime`, as on CI). Where the runtime exists the
+    real cache is copied and checked.
+  - Fail closed on absurd spend (probe P4). One usage line counts for at most
+    US$1000 in the bridge (`MAX_LINE_NUSD`, and so does a route's sum).
+    `spend.charge` caps each provider's spend at `maxNusd()` (US$1000), and
+    `admit` is `0 <= estimate <= ceiling - total`, so a saturated or huge
+    amount refuses every request instead of wrapping and admitting.
+  - Quit mid-call: `shutdown()` charges the reservation of the request in
+    flight. Before this, the next session deleted it unread.
+  - Guard: the sim exception needs a literal `sim/...ail` program on the
+    line. Python argv single tokens (`"--entry=live"`) are read. The
+    here-document exemption covers only the mutation tables (`done
+    <<'EOF'`), and the row exemption only the guard recipe's `for m in`
+    list. A–C scan every tracked `.gd`/`.py`/`.sh` (ui/, bridge/ too, with
+    the launch builder's two pinned lines exempt, which rule D checks) and
+    every tracked `.mk`. Every `include` must point into `mk/`. `-u AI_LIVE`
+    must be a whole word. Four sim-tooling lines whose entry is a variable
+    now clear AI_LIVE.
+  - `service.admitLive` (prepare, then write the reservation) is the live
+    loop's step and is run by `make ai-loopback`. A mutant that drops the
+    reservation fails it.
+  - Smaller: the spaced-path assertion reads one argv element per line;
+    corrupted usage lines are skipped without a push_error; the sprint JSON
+    records this hardening.
+  - Residual for AI.10b: the ceiling bounds one Godot run (`usage_from` is
+    per AiBridge), so the run's real cost is the whole `usage.ndjson`.
 
 ### Follow-up: the AI model bake-off (after AI.10b)
 

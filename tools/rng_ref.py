@@ -104,8 +104,9 @@ def chi_square(seed, sid, draws, bins, shift):
 
 def run_sim(entry, arg, strict):
     ail = os.environ.get("AILANG", "ailang")
-    cmd = [ail, "run", "--quiet"] + (["--bytecode", "--strict-bytecode"] if strict else []) + [
-        "--package-dir", SIM, "--entry", entry, "--args-json", str(arg), os.path.join(SIM, "rng_test.ail")]
+    flags = ["--bytecode", "--strict-bytecode"] if strict else []
+    # env -u AI_LIVE: the entry is a variable, so make ai-live-guard wants AI_LIVE cleared here.
+    cmd = ["env", "-u", "AI_LIVE", ail, "run", "--quiet"] + flags + ["--package-dir", SIM, "--entry", entry, "--args-json", str(arg), os.path.join(SIM, "rng_test.ail")]
     return subprocess.run(cmd, check=True, capture_output=True, text=True).stdout.strip().split("\n")
 
 

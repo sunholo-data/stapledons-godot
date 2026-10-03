@@ -210,8 +210,8 @@ catalogue-vm:     ## T1 transform/selection + T3 validation, T4 N3 (exact 50,000
 	@mkdir -p $(SCRATCH)
 	@set -e; for entry in transformVm selectionVm quotaVm mainVm; do \
 	  case $$entry in mainVm) f=sim/tools/catalogue_main_test.ail;; *) f=sim/tools/catalogue_test.ail;; esac; \
-	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-vm.txt; \
-	  $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-interp.txt; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-vm.txt; \
+	  env -u AI_LIVE $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 $$f > $(SCRATCH)/$$entry-interp.txt; \
 	  cmp $(SCRATCH)/$$entry-vm.txt $(SCRATCH)/$$entry-interp.txt; \
 	  case $$entry in transformVm) want=transform-ok;; selectionVm) want=selection-ok;; quotaVm) want=quota-ok;; mainVm) want=main-ok;; esac; \
 	  test "$$(cat $(SCRATCH)/$$entry-vm.txt)" = "$$want"; cat $(SCRATCH)/$$entry-vm.txt; \

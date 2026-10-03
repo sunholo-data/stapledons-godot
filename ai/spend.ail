@@ -40,6 +40,12 @@ export pure func ledgerOf(ceilingUsd: float) -> Ledger = { spent: [], ceiling: n
 -- the session began, provisional lines included), so a relaunched service
 -- starts from that total, not from zero. A provider may appear more than once.
 export type Spent = { provider: string, nusd: int }
+-- An absurd carried amount fails closed: charge counts each provider's spend
+-- as at most maxNusd()
+-- (US$1000, far above the US$20 top ceiling), so the ledger is at or over any
+-- ceiling and every request is refused budget; sums never overflow.
+export pure func maxNusd() -> int = 1000000000000
+pure func capped(n: int) -> int = if n > maxNusd() then maxNusd() else n
 export pure func ledgerFrom(ceilingUsd: float, carried: [Spent]) -> Ledger =
   match carried { [] => ledgerOf(ceilingUsd), x :: r => charge(ledgerFrom(ceilingUsd, r), x.provider, x.nusd) }
 export pure func spentError(carried: [Spent]) -> Option[string] =
@@ -94,9 +100,10 @@ export pure func total(l: Ledger) -> int = sumOf(l.spent)
 export pure func spentBy(l: Ledger, provider: string) -> int =
   match l.spent { [] => 0, x :: r => (if x.provider == provider then x.nusd else 0) + spentBy({l | spent: r}, provider) }
 -- Admitted iff the total plus the call's worst case stays within the ceiling.
-export pure func admit(l: Ledger, estimate: int) -> bool = total(l) + estimate <= l.ceiling
+-- Written as headroom, so a huge estimate or total cannot wrap and admit.
+export pure func admit(l: Ledger, estimate: int) -> bool = estimate >= 0 && estimate <= l.ceiling - total(l)
 pure func addTo(xs: [{provider: string, nusd: int}], p: string, n: int) -> [{provider: string, nusd: int}] =
-  match xs { [] => [{ provider: p, nusd: n }], x :: r => if x.provider == p then { provider: p, nusd: x.nusd + n } :: r else x :: addTo(r, p, n) }
+  match xs { [] => [{ provider: p, nusd: capped(n) }], x :: r => if x.provider == p then { provider: p, nusd: capped(capped(x.nusd) + capped(n)) } :: r else x :: addTo(r, p, n) }
 export pure func charge(l: Ledger, provider: string, n: int) -> Ledger = {l | spent: addTo(l.spent, provider, n)}
 
 -- One usage.ndjson line: the call and the running totals, per provider and all.

@@ -51,6 +51,10 @@ const READ_CHUNK := 4096
 const USAGE_FILE := "usage.ndjson"
 const RESERVE_FILE := "inflight.json"
 const PROVIDERS := ["gemini", "openrouter"]
+## One usage line can never count for more than US$1000 (the ceiling's top is
+## US$20): an absurd or overflowing usd counts as this, so it fails closed
+## (every later request is refused budget) and sums never overflow.
+const MAX_LINE_NUSD := 1000000000000
 const MAX_CHUNKS_PER_POLL := 16
 ## OS.execute_with_pipe marks no descriptor close-on-exec, so a child inherits
 ## every pipe Godot holds: the sim's stdin among them, and the pipes of any
@@ -229,6 +233,9 @@ func shutdown() -> void:
 			OS.delay_msec(5)
 		if _alive(pid):
 			OS.kill(pid)
+		# Quit mid-call: the call may have been billed, and the next session
+		# deletes the reservation unread, so it is charged now.
+		_charge_interrupted(_in_flight)
 	for t in _kill_tasks:
 		WorkerThreadPool.wait_for_task_completion(t)
 	_kill_tasks.clear()
@@ -309,10 +316,15 @@ func session_nusd() -> Dictionary:
 	if f == null:
 		return out
 	f.seek(usage_from)
+	var json := JSON.new()
 	for line in f.get_buffer(f.get_length()).get_string_from_utf8().split("\n", false):
-		var u = JSON.parse_string(line)
+		if json.parse(line) != OK: # a corrupted line is skipped quietly, never logged
+			continue
+		var u = json.data
 		if u is Dictionary and out.has(u.get("route")) and (u.get("usd") is float or u.get("usd") is int) and float(u["usd"]) >= 0.0:
-			out[u["route"]] += roundi(float(u["usd"]) * 1.0e9)
+			var usd := float(u["usd"])
+			var n: int = MAX_LINE_NUSD if not usd < MAX_LINE_NUSD / 1.0e9 else mini(roundi(usd * 1.0e9), MAX_LINE_NUSD)
+			out[u["route"]] = mini(out[u["route"]] + n, MAX_LINE_NUSD)
 	return out
 
 
@@ -351,7 +363,9 @@ func launch_plan() -> Dictionary:
 	return {"bin": "/usr/bin/env", "args": args}
 
 
-static func _unpack_ai(root: String) -> bool:
+## `cache_src` is the bundled package cache (an exported build always has one;
+## tests on a checkout without `make runtime` pass a stand-in).
+static func _unpack_ai(root: String, cache_src: String = "res://runtime/cache") -> bool:
 	if not FileAccess.file_exists("res://" + SERVICE_FILE):
 		push_error("exported build has no AI service (res://%s missing)" % SERVICE_FILE)
 		return false
@@ -363,7 +377,7 @@ static func _unpack_ai(root: String) -> bool:
 	var digest := unpack_digest()
 	if FileAccess.get_file_as_string(marker) == digest:
 		return true
-	for pair in [["res://ai", root.path_join("ai")], ["res://data/ai", root.path_join("data/ai")], ["res://runtime/cache", root.path_join("home/.ailang/cache")]]:
+	for pair in [["res://ai", root.path_join("ai")], ["res://data/ai", root.path_join("data/ai")], [cache_src, root.path_join("home/.ailang/cache")]]:
 		if not SimBridge._copy_tree(pair[0], pair[1]):
 			push_error("failed to unpack %s" % pair[0])
 			return false
@@ -568,7 +582,8 @@ func _charge_interrupted(r: Dictionary) -> void:
 		return
 	var line := FileAccess.get_file_as_string(reserve_path()).strip_edges()
 	DirAccess.remove_absolute(reserve_path())
-	var u = JSON.parse_string(line) if line.begins_with("{") and line.find("\n") < 0 else null
+	var json := JSON.new()
+	var u = json.data if line.begins_with("{") and json.parse(line) == OK else null
 	if not (u is Dictionary and u.get("req") == r.get("req") and u.get("provisional") == true):
 		return
 	var f := FileAccess.open(usage_path(), FileAccess.READ_WRITE if FileAccess.file_exists(usage_path()) else FileAccess.WRITE)

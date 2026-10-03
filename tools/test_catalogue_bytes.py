@@ -25,10 +25,11 @@ def expected(rows):
 def run(entry, args, vm):
     if entry == "oracle":
         args = [[[float(r[k]) for k in (*FIELDS, "flags")] for r in rows] for rows in args]
-    cmd = [AILANG, "run", "--quiet", "--package-dir", "sim", "--entry", entry,
+    # env -u AI_LIVE: the entry is a variable, so make ai-live-guard wants AI_LIVE cleared here.
+    cmd = ["env", "-u", "AI_LIVE", AILANG, "run", "--quiet", "--package-dir", "sim", "--entry", entry,
            "--args-json", json.dumps(args), "sim/tools/catalogue_bytes_test.ail"]
     if vm:
-        cmd.insert(2, "--bytecode")
+        cmd.insert(5, "--bytecode")
     result = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=60)
     if result.returncode:
         raise AssertionError(result.stderr + result.stdout)

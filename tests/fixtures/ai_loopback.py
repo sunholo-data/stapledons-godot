@@ -134,10 +134,10 @@ def check(d, kg, ko):
             fails.append("%s call not charged: %r" % (k, line))
     res = os.path.join(d, "cache", "inflight.json")
     rv = json.loads(open(res).read()) if os.path.exists(res) else {}
-    est = next((l.split(": ")[1].split(" ")[0] for l in lane.splitlines() if l.startswith("reserved d12: ")), "")
-    if rv.get("req") != "d12" or rv.get("provisional") is not True or rv.get("route") != "gemini" or not est.isdigit() \
+    est = next((l.split(": ")[1].split(" ")[0] for l in lane.splitlines() if l.startswith("reserved 912: ")), "")
+    if rv.get("req") != "912" or rv.get("provisional") is not True or rv.get("route") != "gemini" or not est.isdigit() \
             or int(est) <= 0 or round(rv.get("usd", 0) * 1e9) != int(est):
-        fails.append("reservation (inflight.json) is not the worst case of d12: %s vs %s" % (rv, est))
+        fails.append("reservation (inflight.json) is not the worst case of 912: %s vs %s" % (rv, est))
     usage = open(os.path.join(d, "cache", "usage.ndjson")).read() if os.path.exists(os.path.join(d, "cache", "usage.ndjson")) else ""
     for req in ("b1", "b12", "d1", "d12"):
         lines = [json.loads(l) for l in usage.splitlines() if json.loads(l).get("req") == req]

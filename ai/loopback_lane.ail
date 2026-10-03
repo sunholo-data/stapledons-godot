@@ -22,9 +22,9 @@ import std/result (Result, Ok, Err)
 import std/string (concat, split, intToStr)
 import ./wire (Request, WRequest, decodeIn, encodeOut)
 import ./spend (Units, ledgerOf, total)
-import ./provider (Ctx, Act, Say, WriteBlob, AppendUsage, Job, Run, Done, prepare, okText, okVoice, failed, castVoice, reservation)
-import ./service (start)
-import ./cache (writeBlob, appendUsage, reserveUsage)
+import ./provider (Ctx, Act, Say, WriteBlob, AppendUsage, Job, Run, Done, prepare, okText, okVoice, failed, castVoice)
+import ./service (start, admitLive)
+import ./cache (writeBlob, appendUsage)
 import ./adapters (openRouterTextAt, geminiVoiceAt)
 
 export type Loop = { routing: string, fixtures: string, requests: string, out: string, base: string }
@@ -117,8 +117,12 @@ func droppedCheck(cfg: Loop, c: Ctx, lines: [string], kg: string, ko: string) ->
       let jd = {j | r: {j.r | req: "d12"}};
       let s = geminiVoiceAt(concat([cfg.base, "/drop"]), jd, kg, castVoice(jd.r), c.styles);
       match s.outcome { Ok(_) => println("FAIL dropped tts: answered"), Err(code) => billedLine("dropped tts", jd, "gemini", s.units, code, dir) };
-      reserveUsage(dir, reservation(ledgerOf(0.5), jd, "gemini"));
-      println(concat(["reserved d12: ", intToStr(jd.est), " nano-USD"]))
+      -- The reservation through the live loop's own step (service.admitLive):
+      -- it prepares the request and writes inflight.json before the call.
+      match admitLive(dir, c, ledgerOf(0.5), {j.r | req: "912"}, "gemini") {
+        Run(ja) => println(concat(["reserved 912: ", intToStr(ja.est), " nano-USD"])),
+        Done(_) => println("FAIL reserved 912: not admitted")
+      }
     }
   }
 }

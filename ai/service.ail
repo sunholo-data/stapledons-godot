@@ -164,6 +164,11 @@ func liveRun(c: Ctx, k: Keys, l: Ledger, j: Job) -> Step ! {Net, AI} {
     Err(code) => failed(l, j, prov, { tokensIn: 0, tokensOut: 0, calls: 1 }, code)
   }
 }
+-- One live request admitted: prepare it and, if it runs, write its
+-- reservation (inflight.json, the worst case) before the caller makes the
+-- call. The live loop and make ai-loopback share this step.
+export func admitLive(dir: string, c: Ctx, l: Ledger, r: Request, prov: string) -> Prep ! {FS} =
+  match prepare(c, l, r, prov) { Done(x) => Done(x), Run(j) => { reserveUsage(dir, reservation(l, j, prov)); Run(j) } }
 func liveLoop(cfg: Session, c: Ctx, k: Keys, p: Provider, l: Ledger, blanks: int) -> () ! {IO, FS, Net, AI} =
   match lineOf(readLine(()), p) {
     Blank => if blanks + 1 >= maxBlanks() then () else liveLoop(cfg, c, k, p, l, blanks + 1),
@@ -171,7 +176,7 @@ func liveLoop(cfg: Session, c: Ctx, k: Keys, p: Provider, l: Ledger, blanks: int
     Greet => { say(hello(cfg, c, p)); liveLoop(cfg, c, k, p, l, 0) },
     Bad(o) => { say(o); liveLoop(cfg, c, k, p, l, 0) },
     Ask(r) => {
-      let s = match prepare(c, l, r, providerName(p)) { Done(x) => x, Run(j) => { reserveUsage(cfg.cache_dir, reservation(l, j, providerName(p))); liveRun(c, k, l, j) } };
+      let s = match admitLive(cfg.cache_dir, c, l, r, providerName(p)) { Done(x) => x, Run(j) => liveRun(c, k, l, j) };
       run(cfg.cache_dir, s.acts);
       liveLoop(cfg, c, k, p, s.ledger, 0)
     }

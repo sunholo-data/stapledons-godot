@@ -26,7 +26,7 @@ one() {
   [ "$TIER" != bright ] || args="{\"hip2\":\"$raw\",\"hipMain\":\"$src\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"overrides\":\"data/starmap/bright_overrides.json\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\"}"
   t0=$(date +%s)
   # shellcheck disable=SC2086
-  if ! /usr/bin/time $TIMEFLAG "$A" run --quiet --caps IO,FS --package-dir sim $2 --entry $entry --args-json "$args" \
+  if ! /usr/bin/time $TIMEFLAG env -u AI_LIVE "$A" run --quiet --caps IO,FS --package-dir sim $2 --entry $entry --args-json "$args" \
       "$tool" > "$d.log" 2> "$d.time"; then
     cat "$d.log" "$d.time" >&2; echo "catalogue-parity: $1 run failed" >&2; exit 1
   fi

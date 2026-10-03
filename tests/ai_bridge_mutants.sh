@@ -77,6 +77,10 @@ usage_from = f.get_length() if f != null else 0	usage_from = 0	session_ceiling	a
 DirAccess.remove_absolute(reserve_path()) # a reservation now is this request's	pass	killed_charge	left before send
 u.get("req") == r.get("req") and 	true and 	killed_charge	stale req
 GOOGLE_API_KEY=$(cat "$1")	GOOGLE_API_KEY=$(cat $1)	live_env	keys from the files only
+shift 2; exec "$@"'	shift 2; exec $@'	live_env	keeps the spaced path whole
+\t\t_charge_interrupted(_in_flight)	\t\tpass	killed_charge	quit mid-call
+var n: int = MAX_LINE_NUSD if not usd < MAX_LINE_NUSD / 1.0e9 else mini(roundi(usd * 1.0e9), MAX_LINE_NUSD)	var n: int = roundi(usd * 1.0e9)	absurd_spend	two usd 1e300 lines
+out[u["route"]] = mini(out[u["route"]] + n, MAX_LINE_NUSD)	out[u["route"]] += n	absurd_spend	two usd 1e300 lines
 for d in ["res://ai", "res://data/ai"]:	for d in ["res://data/ai"]:	static	unpack digest covers every ai/*.ail
 var digest := unpack_digest()	var digest := FileAccess.get_file_as_string("res://ai/service.ail").sha256_text()	static	_unpack_ai writes that digest
 EOF

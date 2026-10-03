@@ -178,7 +178,7 @@ ai-mutants:        ## AI.4, AI.5, AI.8, AI.9: route, key, stub, cache order, act
 	  'cache.ail@(if present then [] else [Write(tmp), Rename(tmp, path)])@(if present then [] else [Write(path)])@AI.5 blob writes: temp file, rename, then the index line@stub_test.ail' \
 	  'provider.ail@{ acts: [blob, usage, result], ledger: after }@{ acts: [result, blob, usage], ledger: after }@AI.5 acts: blob and usage before the result@stub_test.ail' \
 	  'provider.ail@if r.kind == "text" then 3 * cost(@if r.kind == "text" then cost(@AI.5 budget refused once the total would pass the ceiling@stub_test.ail' \
-	  'spend.ail@total(l) + estimate <= l.ceiling@total(l) <= l.ceiling@AI.5 ledger per provider plus total; refused once the total would pass the ceiling@spend_test.ail' \
+	  'spend.ail@estimate >= 0 && estimate <= l.ceiling - total(l)@0 <= l.ceiling - total(l)@AI.5 ledger per provider plus total; refused once the total would pass the ceiling@spend_test.ail' \
 	  'wire.ail@"no_key", "text_only", "budget"@"no_key", "budget"@AI.4 ai/1 codecs round-trip every fixture both ways@wire_test.ail' \
 	  'reply.ail@else if c.noNumerals && anyDigit(body) then Some("numeral")@else if false then Some("numeral")@AI.5 screen: grammar, palette, brackets, digits, display length@reply_test.ail' \
 	  'prompt.ail@"Describe and feel; never judge the player'"'"'s choices or say whether a decision was right or wrong."@"Describe and feel."@AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and the cap@prompt_test.ail' \
@@ -201,6 +201,9 @@ ai-mutants:        ## AI.4, AI.5, AI.8, AI.9: route, key, stub, cache order, act
 	  'tools/core_import.ail@cf("input_sha256", cq(a.inputSha))@cf("input_sha256", cq(a.sha))@AI.8 an index line from a fixture PNG: key, sha256, bytes, size, prompt hash, pinned source@tools/core_import_test.ail' \
   'spend.ail@x :: r => charge(ledgerFrom(ceilingUsd, r), x.provider, x.nusd)@x :: r => ledgerFrom(ceilingUsd, r)@AI.9 a relaunched service starts its ledger from the session'"'"'s spend@spend_test.ail' \
   'spend.ail@else if x.nusd < 0 then@else if false then@AI.9 a relaunched service starts its ledger from the session'"'"'s spend@spend_test.ail' \
+  'spend.ail@estimate >= 0 && estimate <= l.ceiling - total(l)@total(l) + estimate <= l.ceiling@AI.9 an absurd carried spend fails closed; admit never wraps@spend_test.ail' \
+  'spend.ail@[] => [{ provider: p, nusd: capped(n) }]@[] => [{ provider: p, nusd: n }]@AI.9 an absurd carried spend fails closed; admit never wraps@spend_test.ail' \
+  'spend.ail@nusd: capped(capped(x.nusd) + capped(n)) }@nusd: x.nusd + n }@AI.9 an absurd carried spend fails closed; admit never wraps@spend_test.ail' \
   'provider.ail@units: { tokensIn: 0, tokensOut: 0, calls: 0 }, nusd: j.est, ms: 0 }, charge(l, j.hop.provider, j.est))@units: { tokensIn: 0, tokensOut: 0, calls: 0 }, nusd: 0, ms: 0 }, charge(l, j.hop.provider, 0))@AI.9 a sent but unanswered call is charged at its cap; the reservation is the worst case@stub_test.ail' \
   'provider.ail@tokensOut: textCap(j.r), calls: 1 }@tokensOut: 0, calls: 1 }@AI.9 a sent but unanswered call is charged at its cap; the reservation is the worst case@stub_test.ail'; do \
 	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; rest=$${rest#*@}; name=$${rest%%@*}; tfile=$${rest#*@}; \
@@ -386,12 +389,15 @@ ai-core-publish:   ## AI.8 maintainers (gcloud auth): upload the pinned core blo
 # builder with AI_LIVE and the keys unset (tests/test_ai_settings.gd --launch-default).
 # AI.9 hardening adds the five evasions the AI.9 evaluation found (two spaces, a quoted entry, a
 # make variable as the entry, a recipe ending in the old exemption suffix, a Python harness with
-# env={"AI_LIVE": "1"}) plus a Python variable as the entry; \x40 in a row stands for @.
+# env={"AI_LIVE": "1"}) plus a Python variable as the entry; round 2 adds the evaluator's plausible
+# survivors (a single "--entry=live" argv token, a second here-document in the mutant script, the
+# sim exception without a sim/ program), -u AI_LIVE_OLD, a game script outside tests/ and tools/,
+# and an include outside mk/. \x40 in a row stands for @.
 .PHONY: ai-live-guard ai-settings ai-runtime ai-export-smoke ai-loopback-mutants
 ai-test: ai-live-guard ai-settings
 
 AI_G := $(SCRATCH)/ai-live-guard
-ai_guard_scan = Makefile mk .github tests tools bridge/ai_bridge.gd ui/settings/ai_settings.gd
+ai_guard_scan = Makefile mk .github tests tools bridge ui
 ai-live-guard: import   ## AC15: no target, test, CI job or launch path can start a live provider; each rule's mutant is caught
 	@sh tools/ai_live_guard.sh .
 	@set -e; for m in \
@@ -411,7 +417,14 @@ ai-live-guard: import   ## AC15: no target, test, CI job or launch path can star
 	  'mk/ai.mk@\z@\nai-mutant:\n\tprintf x | $$(AILANG) run --entry live ai/service.ail # \x40A x'"'"' \\n@A mk/ai.mk' \
 	  'tools/replay.py@\z@\nsubprocess.run([ailang, "run", "--entry", "live", "ai/service.ail"], env={"AI_LIVE": "1"})\n@A tools/replay.py' \
 	  'tools/replay.py@\z@\nenv = {"AI_LIVE": "1", "PATH": "/usr/bin"}\n@C tools/replay.py' \
-	  'tools/replay.py@\z@\nsubprocess.run([ailang, "run", "--entry", entry, "ai/service.ail"])\n@A tools/replay.py'; do \
+	  'tools/replay.py@\z@\nsubprocess.run([ailang, "run", "--entry", entry, "ai/service.ail"])\n@A tools/replay.py' \
+	  'tools/replay.py@\z@\nsubprocess.run([ailang, "run", "--entry=live", "ai/service.ail"])\n@A tools/replay.py' \
+	  'tests/ai_bridge_mutants.sh@\z@\nsh <<'"'"'EOF'"'"'\nailang run --entry live ai/service.ail\nEOF\n@A tests/ai_bridge_mutants.sh' \
+	  'mk/ai.mk@\z@\nai-mutant:\n\t$$(AILANG) run --package-dir sim --entry $$(E) $$(AI_DIR)/service.ail\n@A mk/ai.mk' \
+	  'mk/ai.mk@\z@\nai-mutant:\n\tenv -u AI_LIVE_OLD $$(AILANG) run --entry live ai/service.ail\n@A mk/ai.mk' \
+	  'ui/ui_scale.gd@\z@\nfunc _rogue() -> void:\n\tOS.set_environment("AI_LIVE", "1")\n@B ui/ui_scale.gd' \
+	  'ui/ui_scale.gd@\z@\nfunc _rogue2() -> void:\n\tOS.execute("ailang", ["run", "--entry", "live", "ai/service.ail"])\n@A ui/ui_scale.gd' \
+	  'Makefile@\z@\ninclude infra/live.mk\n@A Makefile: include outside mk/'; do \
 	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; want=$${rest#*@}; \
 	  rm -rf $(AI_G) && mkdir -p $(AI_G) && git ls-files $(ai_guard_scan) | grep -v '^tests/replays/\|^tests/ai/\|^tests/fixtures/\|\.uid$$' | tar -cf - -T - | tar -xf - -C $(AI_G); \
 	  FROM="$$from" TO="$$to" perl -0pi -e '$$t = $$ENV{TO}; $$t =~ s/\\n/\n/g; $$t =~ s/\\t/\t/g; $$t =~ s/\\x40/chr(64)/ge; s/$$ENV{FROM}/$$t/m or die "anchor not found: $$ENV{FROM}\n"' $(AI_G)/$$file; \
@@ -433,16 +446,21 @@ ai-settings: import   ## AI.9: settings (opt-in, keys 0600, kinds, ceiling, text
 
 # AI.9 must-fix 2: a billed but unparsable reply is charged. Each mutant of ai/adapters.ail drops
 # the charge on one parse failure, or (AI.9 hardening) on a call sent but never answered, and must
-# fail make ai-loopback's billed or dropped check.
-ai-loopback-mutants:   ## AI.9: OpenRouter and TTS parse failures or dropped calls uncharged; each fails ai-loopback
-	@set -e; cp ai/adapters.ail $(SCRATCH)/adapters.ail.orig; trap 'cp $(SCRATCH)/adapters.ail.orig ai/adapters.ail' EXIT; \
-	for m in 'units: billed(u, billedOpenRouter(resp.body))@billed openrouter failure not charged' 'units: billed(u, billedTts(resp.body))@billed tts failure not charged' \
-	  'units: sent(u, textCallCap(j))@dropped openrouter call not charged' 'units: sent(u, ttsCallCap(s))@dropped tts call not charged'; do \
-	  from=$${m%%@*}; want=$${m#*@}; cp $(SCRATCH)/adapters.ail.orig ai/adapters.ail; \
-	  FROM="$$from" perl -0pi -e 's/\Q$$ENV{FROM}\E/units: u/ or die "anchor not found\n"' ai/adapters.ail; \
+# fail make ai-loopback's billed or dropped check; the service.ail mutant drops the reservation that
+# the live loop's admitLive writes before a call (the lane runs that same step).
+ai-loopback-mutants:   ## AI.9: parse failures or dropped calls uncharged, no reservation before a live call; each fails ai-loopback
+	@set -e; cp ai/adapters.ail $(SCRATCH)/adapters.ail.orig; cp ai/service.ail $(SCRATCH)/service.ail.orig; \
+	trap 'cp $(SCRATCH)/adapters.ail.orig ai/adapters.ail; cp $(SCRATCH)/service.ail.orig ai/service.ail' EXIT; \
+	for m in 'adapters@units: billed(u, billedOpenRouter(resp.body))@units: u@billed openrouter failure not charged' \
+	  'adapters@units: billed(u, billedTts(resp.body))@units: u@billed tts failure not charged' \
+	  'adapters@units: sent(u, textCallCap(j))@units: u@dropped openrouter call not charged' 'adapters@units: sent(u, ttsCallCap(s))@units: u@dropped tts call not charged' \
+	  'service@Run(j) => { reserveUsage(dir, reservation(l, j, prov)); Run(j) }@Run(j) => Run(j)@reservation (inflight.json) is not the worst case'; do \
+	  file=ai/$${m%%@*}.ail; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; want=$${rest#*@}; \
+	  cp $(SCRATCH)/adapters.ail.orig ai/adapters.ail; cp $(SCRATCH)/service.ail.orig ai/service.ail; \
+	  FROM="$$from" TO="$$to" perl -0pi -e 's/\Q$$ENV{FROM}\E/$$ENV{TO}/ or die "anchor not found\n"' $$file; \
 	  if $(MAKE) --no-print-directory ai-loopback > $(SCRATCH)/loopback-mutant.txt 2>&1; then echo "mutant SURVIVED: $$from"; exit 1; fi; \
 	  grep -qF "FAIL $$want" $(SCRATCH)/loopback-mutant.txt || { tail -5 $(SCRATCH)/loopback-mutant.txt; exit 1; }; \
-	  echo "mutant killed: adapters.ail '$$from' -> 'units: u' fails '$$want'"; \
+	  echo "mutant killed: $$file '$$from' -> '$$to' fails '$$want'"; \
 	done
 ai-mutants: ai-loopback-mutants
 

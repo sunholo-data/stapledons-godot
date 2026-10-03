@@ -3,21 +3,22 @@
 # The live service refuses before any call unless AI_LIVE=1 and a key are in
 # its environment (ai/service.ail `live`); this guard keeps every path that
 # could put AI_LIVE=1 there narrow and visible. Static rules over ROOT:
-#   A  Makefile, mk/*.mk, .github and every *.sh, *.py, *.gd under tests/ and
-#      tools/: a line that could run the service live must clear AI_LIVE on
+#   A  Makefile, every *.mk, .github and every tracked *.sh, *.py, *.gd
+#      (tests/, tools/, ui/, bridge/, ...): a line that could run the service live must clear AI_LIVE on
 #      that line (env -u AI_LIVE, or $(AI_NOKEYS)). Lines are normalised first
 #      (quotes dropped, runs of blanks one space; AI.9 hardening), so
 #      `--entry  live`, `--entry "live"` and `"--entry", "live"` all match.
 #      Could run live: --entry live; --entry with a non-literal value ($x,
 #      ${x}, $(X), a Python/GDScript variable), unless the line pins
-#      --package-dir sim (the sim has no live entry) and names no ai/ package;
+#      --package-dir sim and names a literal sim/...ail program (the sim has
+#      no live entry) and no ai/ package; every `include` points into mk/;
 #      --provider gemini|openrouter|live; a non-stub "provider" in the
 #      arguments of a run line.
-#   B  tests/ and tools/: never `live_allowed = true`; AI_LIVE=1 set in a
+#   B  every tracked script: never `live_allowed = true`; AI_LIVE=1 set in a
 #      process environment only by tests/test_ai_relay.gd (AI.7 F3: around its
 #      hello-only spawns, cleared again), which is safe because live_allowed
 #      defaults to false and the live wrapper clears AI_LIVE (rule D).
-#   C  Makefile, mk, .github, tests, tools: no assignment or mapping of
+#   C  the files of rule A: no assignment or mapping of
 #      AI_LIVE to anything (AI_LIVE=, AI_LIVE: , "AI_LIVE": in a Python or
 #      GDScript dict); messages naming AI_LIVE=1 are not assignments.
 #   D  the launch builder (bridge/ai_bridge.gd): `live` and `live_allowed`
@@ -44,33 +45,44 @@ if [ "$(git rev-parse --show-toplevel 2>/dev/null)" = "$(pwd -P)" ]; then
 else
 	files() { find "$@" -type f 2>/dev/null; }
 fi
-shellish=$(files Makefile mk .github tests tools | grep -E '(^|/)Makefile$|\.mk$|\.sh$|\.ya?ml$' | grep -v "^tools/ai_live_guard.sh$" | sort)
-scripts=$(files tests tools | grep -E '\.(gd|py|sh)$' | grep -v "^tools/ai_live_guard.sh$" | sort)
+# Every tracked make file (an `include`d one anywhere is scanned too), shell
+# script, CI file, and every tracked .gd, .py and .sh (ui/ and bridge/ too).
+shellish=$( (files Makefile mk .github tests tools; files . | sed 's|^\./||' | grep -E '\.mk$') | grep -E '(^|/)Makefile$|\.mk$|\.sh$|\.ya?ml$' | grep -v "^tools/ai_live_guard.sh$" | sort -u)
+scripts=$(files . | sed 's|^\./||' | grep -E '\.(gd|py|sh)$' | grep -vE '^(\.godot|build|runtime)/' | grep -v "^tools/ai_live_guard.sh$" | sort)
+scanned=$(printf '%s\n' $shellish $scripts | sort -u)
 
 # Mutation tables hold breaches on purpose and are exempt, by place and shape
-# only: in mk/ai.mk, inside the ai-live-guard recipe, a row that is one
-# single-quoted string and nothing else ("\t  '...' \", where '"'"' is an
-# escaped quote inside it); in
-# tests/ai_bridge_mutants.sh, the lines of its <<'EOF' here-document (data).
-# A comment line is never a breach.
+# only (AI.9 hardening round 2): in mk/ai.mk, the rows of the ai-live-guard
+# recipe's `for m in \ ... ; do \` list, each one single-quoted string and
+# nothing else ('"'"' is an escaped quote inside it); in
+# tests/ai_bridge_mutants.sh, the here-documents that feed its mutation loops
+# (opened by a line `done <<'EOF'`), not any other here-document. In
+# bridge/ai_bridge.gd, the launch builder that rule D pins: the LIVE_WRAP line
+# and live_plan's `"--entry", "live"` line. A comment line is never a breach.
+EXEMPT='
+	$in_guard = 1 if $f eq "mk/ai.mk" && /^ai-live-guard:/;
+	$in_guard = 0 if $in_guard && /^\s*$/;
+	if ($in_table) { $in_table = 0 if /; do \\$/; next if /^\t  \x27(?:[^\x27]|\x27"\x27"\x27)*\x27( \\|; do \\)$/; }
+	$in_table = 1 if $in_guard && /for m in \\$/;
+	if ($f eq "tests/ai_bridge_mutants.sh") { if (/^done <<\x27EOF\x27$/) { $heredoc = 1; next } if ($heredoc && /^EOF$/) { $heredoc = 0; next } next if $heredoc; }
+	next if $f eq "bridge/ai_bridge.gd" && (/^const LIVE_WRAP := / || /^\targs\.append_array\(\["--net-allow-domains", LIVE_HOSTS, "--entry", "live", "--args-json", SimBridge\.encode\(cfg\), /);
+	next if /^\s*#/;
+'
 # A
-for f in $(printf '%s\n' $shellish $scripts | sort -u); do
+for f in $scanned; do
 	F="$f" perl -ne '
 		BEGIN { $f = $ENV{F}; $py = ($f =~ /\.(py|gd)$/); }
-		$in_guard = 1 if $f eq "mk/ai.mk" && /^ai-live-guard:/;
-		$in_guard = 0 if $in_guard && /^\s*$/;
-		if ($f eq "tests/ai_bridge_mutants.sh") { if (/<<.EOF.$/) { $heredoc = 1; next } if ($heredoc && /^EOF$/) { $heredoc = 0; next } next if $heredoc; }
-		next if $in_guard && /^\t  \x27(?:[^\x27]|\x27"\x27"\x27)*\x27( \\|; do \\)$/;
-		next if /^\s*#/;
+		'"$EXEMPT"'
 		chomp; my $raw = $_; my $n = $raw;
 		$n =~ tr/"\x27//d; $n =~ s/[,\[\]]/ /g; $n =~ s/\s+/ /g;
-		my $sim = $n =~ /--package-dir(?: |=)(?:sim|SIM)(?: |$)/ && $n !~ /ai\/service|--package-dir(?: |=)ai(?: |$)/;
+		# The sim has no live entry: a non-literal entry is allowed only on a line
+		# pinned to --package-dir sim that also names a literal sim/ program.
+		my $sim = $n =~ /--package-dir(?: |=)(?:sim|SIM)(?: |$)/ && $n =~ /(?:^| )(?:\.\/)?sim\/[A-Za-z0-9_\/.-]+\.ail(?: |$)/ && $n !~ /ai\/service|--package-dir(?: |=)\S*ai(?: |$)/;
 		my @why;
 		if ($py) {
 			# argv lists: "--entry", <next> is live unless <next> is a quoted word other than live
 			while ($raw =~ /["\x27]--entry["\x27]\s*,\s*([^\s,\]]+)/g) { my $v = $1; my $lit = $v =~ /^["\x27]([A-Za-z_][A-Za-z0-9_]*)["\x27]$/; push @why, "--entry $v" unless ($lit && $1 ne "live") || (!$lit && $sim); }
 			push @why, "--entry= + variable" if $raw =~ /["\x27]--entry=["\x27]?\s*\+/;
-			next unless @why || $raw =~ /(^|[^a-z])run\s/;  # else only shell command strings are read as shell
 		}
 		while ($n =~ /(?:^| |=)--entry(?:=| )([^ ]+)/g) {
 			my $v = $1; $v =~ s/[;|&]+$//; $v =~ s/\)$// unless $v =~ /\(/;
@@ -80,8 +92,9 @@ for f in $(printf '%s\n' $shellish $scripts | sort -u); do
 		}
 		push @why, "--provider $1" if $n =~ /(?:^| |=)--provider(?:=| )(gemini|openrouter|live)\b/ && $n =~ /(^|[^a-z])run |--entry/;
 		push @why, "provider $1" if $n =~ /(^|[^a-z])run / && $n =~ /provider ?: ?(gemini|openrouter|live)\b/;
+		print "A $f: include outside mk/: $raw\n" if $f =~ /(^|\/)Makefile$|\.mk$/ && /^-?include\s/ && !/^-?include\s+mk\/[A-Za-z0-9_.-]+\.mk\s*$/;
 		next unless @why;
-		next if $n =~ /-u AI_LIVE|\$\(AI_NOKEYS\)/;
+		next if $n =~ /-u AI_LIVE(?: |$)|\$\(AI_NOKEYS\)/;
 		print "A $f:$.:$raw (" . join(", ", @why) . "; AI_LIVE not cleared on the line)\n";
 	' "$f"
 done > $T
@@ -95,14 +108,10 @@ if [ -f tests/test_ai_relay.gd ] && grep -q 'set_environment("AI_LIVE"' tests/te
 	echo "B tests/test_ai_relay.gd sets AI_LIVE and never unsets it" >> $T
 fi
 # C
-for f in $(printf '%s\n' $shellish $scripts | sort -u); do
+for f in $scanned; do
 	F="$f" perl -ne '
 		BEGIN { $f = $ENV{F}; }
-		$in_guard = 1 if $f eq "mk/ai.mk" && /^ai-live-guard:/;
-		$in_guard = 0 if $in_guard && /^\s*$/;
-		if ($f eq "tests/ai_bridge_mutants.sh") { if (/<<.EOF.$/) { $heredoc = 1; next } if ($heredoc && /^EOF$/) { $heredoc = 0; next } next if $heredoc; }
-		next if $in_guard && /^\t  \x27(?:[^\x27]|\x27"\x27"\x27)*\x27( \\|; do \\)$/;
-		next if /^\s*#/;
+		'"$EXEMPT"'
 		next unless /(^|[^A-Za-z0-9_])AI_LIVE["\x27]? *[:=]/;
 		(my $m = $_) =~ s/AI_LIVE=1 (is not set|and|reaches|passes|in Godot)|(without|with) AI_LIVE=1|AI_LIVE=1\)//g;
 		next unless $m =~ /(^|[^A-Za-z0-9_])AI_LIVE["\x27]? *[:=]/;

@@ -205,9 +205,18 @@ func test_unpack_digest() -> void:
 		ail.size() >= 20 and (ail + want).all(func(f): return f in files))
 	var root := scratch.path_join("unpack")
 	OS.execute("/bin/rm", PackedStringArray(["-rf", root]))
-	var ok := AiBridge._unpack_ai(root)
-	assert_bool("_unpack_ai writes that digest as its marker and copies the modules",
-		ok and FileAccess.get_file_as_string(root.path_join(".ai-unpacked")) == AiBridge.unpack_digest() and FileAccess.file_exists(root.path_join("ai/adapters.ail")))
+	# A checkout without `make runtime` (CI) has no bundled package cache; an
+	# exported build always has one. Use a one-file stand-in then.
+	var cache := "res://runtime/cache"
+	var probe := "registry"
+	if not DirAccess.dir_exists_absolute(cache):
+		cache = scratch.path_join("unpack_cache_standin")
+		DirAccess.make_dir_recursive_absolute(cache.path_join("registry"))
+		FileAccess.open(cache.path_join("registry/standin.txt"), FileAccess.WRITE).store_string("stand-in")
+	var ok := AiBridge._unpack_ai(root, cache)
+	assert_bool("_unpack_ai writes that digest as its marker and copies the modules and the package cache (%s)" % ("bundled" if cache.begins_with("res://") else "stand-in"),
+		ok and FileAccess.get_file_as_string(root.path_join(".ai-unpacked")) == AiBridge.unpack_digest() and FileAccess.file_exists(root.path_join("ai/adapters.ail"))
+		and DirAccess.dir_exists_absolute(root.path_join("home/.ailang/cache").path_join(probe)))
 
 
 ## FD_SCRUB under the shell AiBridge picks, and under dash (Ubuntu's /bin/sh)
@@ -285,7 +294,7 @@ func plan_output(plan: Dictionary) -> String:
 func test_live_env() -> bool:
 	print("live wrapper: env -i, only PATH, HOME, the key files and (when allowed) AI_LIVE")
 	var dump := scratch.path_join("envdump.sh")
-	FileAccess.open(dump, FileAccess.WRITE).store_string("#!/bin/sh\nenv\necho \"ARGS $*\"\n")
+	FileAccess.open(dump, FileAccess.WRITE).store_string("#!/bin/sh\nenv\nfor a in \"$@\"; do printf 'ARG<%s>\\n' \"$a\"; done\n")
 	OS.execute("/bin/chmod", PackedStringArray(["755", dump]))
 	# The real macOS user:// is ".../app_userdata/Stapledon's Voyage/": a space
 	# and an apostrophe, so an unquoted path in the wrapper would break here.
@@ -306,7 +315,7 @@ func test_live_env() -> bool:
 		var out := plan_output(plan)
 		var env := {}
 		for l in out.split("\n", false):
-			if not l.begins_with("ARGS ") and l.find("=") > 0:
+			if not l.begins_with("ARG<") and l.find("=") > 0:
 				env[l.get_slice("=", 0)] = l.substr(l.find("=") + 1)
 		var label := "%s, permission %s" % [c[0].keys(), c[1]]
 		assert_bool("%s: no FOO_API_KEY, no inherited key; only %s (got %s)" % [label, allowed, env.keys()],
@@ -315,8 +324,9 @@ func test_live_env() -> bool:
 			env.get("GOOGLE_API_KEY") == ("fake-gemini-from-file" if c[0].has("gemini") else null) and env.get("OPENROUTER_API_KEY") == "fake-openrouter-from-file"
 			and env.get("GOOGLE_APPLICATION_CREDENTIALS") == "/nonexistent" and env.get("HOME") == "/home/stand-in" and env.has("PATH"))
 		assert_bool("%s: AI_LIVE %s; ailang got its arguments" % [label, "=1" if c[1] == "1" else "absent"],
-			env.get("AI_LIVE") == ("1" if c[1] == "1" else null) and out.find("ARGS run --quiet") >= 0)
-		assert_bool("%s: --ai-key-file keeps the spaced path whole" % label, not c[0].has("gemini") or out.find("--ai-key-file %s --net-allow-domains" % files["gemini"]) >= 0)
+			env.get("AI_LIVE") == ("1" if c[1] == "1" else null) and out.find("ARG<run>\nARG<--quiet>\n") >= 0)
+		# One argv element per line: a path split at its space would show as two.
+		assert_bool("%s: --ai-key-file keeps the spaced path whole (one argument)" % label, not c[0].has("gemini") or out.find("ARG<--ai-key-file>\nARG<%s>\n" % files["gemini"]) >= 0)
 	OS.unset_environment("FOO_API_KEY")
 	OS.unset_environment("GOOGLE_API_KEY")
 	return true
@@ -515,6 +525,35 @@ func test_crash_loop() -> bool:
 	return true
 
 
+## AI.9 hardening round 2 (evaluator probe P4): an absurd usd in usage.ndjson
+## (1e300, two lines so a naive sum would overflow) counts as the cap, at or
+## above any ceiling: after a restart every request is refused budget.
+func test_absurd_spend() -> bool:
+	print("absurd spend: fails closed")
+	var dir := scratch.path_join("absurd")
+	OS.execute("/bin/rm", PackedStringArray(["-rf", dir]))
+	DirAccess.make_dir_recursive_absolute(dir)
+	var b := stub_bridge()
+	b.cache_dir = dir
+	var rs := stub_requests()
+	b.request(rs["1"])
+	pump(b, 15000, func(): return b.outcomes.size() == 1)
+	var f := FileAccess.open(dir.path_join("usage.ndjson"), FileAccess.READ_WRITE)
+	f.seek_end()
+	for i in 2:
+		f.store_string('{"req":"x%d","provider":"gemini","route":"gemini","model":"m","kind":"portrait","usd":1e300}\n' % i)
+	f.store_string("not json\n")
+	f.close()
+	var n: int = b.session_nusd()["gemini"]
+	b.shutdown()
+	b.request(rs["2"])
+	pump(b, 15000, func(): return b.outcomes.size() == 2)
+	assert_bool("two usd 1e300 lines count as the cap %d (got %d); request 2 refused budget after a restart (%s)" % [AiBridge.MAX_LINE_NUSD, n, reasons(b)],
+		n == AiBridge.MAX_LINE_NUSD and reasons(b) == ["1:ok", "2:error"] and b.outcomes[1].get("code") == "budget")
+	b.shutdown()
+	return true
+
+
 ## AI.9 hardening: a request the bridge kills mid-call (timeout) or loses
 ## with its process (fault) is charged at the reservation the service wrote
 ## for it (inflight.json): the provisional line is appended to usage.ndjson and
@@ -533,7 +572,8 @@ func test_killed_charge() -> bool:
 	var res := ProjectSettings.globalize_path("res://")
 	var line := '{"req":"1","provider":"gemini","route":"gemini","model":"gemini-2.5-flash-image","kind":"portrait","tokens_in":0,"tokens_out":0,"calls":0,"usd":0.0123,"ms":0,"totals":{"gemini":0.0123,"openrouter":0,"all":0.0123},"provisional":true}'
 	var cases := [["timeout", line, "exec sleep 600", 1, 12300000], ["stale req", line.replace('"req":"1"', '"req":"9"'), "exec sleep 600", 0, 0],
-		["left before send", "", "exec sleep 600", 0, 0], ["fault", line, "exit 3", 1, 12300000]]
+		["left before send", "", "exec sleep 600", 0, 0], ["fault", line, "exit 3", 1, 12300000],
+		["quit mid-call", line, "exec sleep 600", 1, 12300000]]
 	for c in cases:
 		var dir := scratch.path_join("reserve_" + c[0].replace(" ", "_"))
 		OS.execute("/bin/rm", PackedStringArray(["-rf", dir]))
@@ -542,6 +582,9 @@ func test_killed_charge() -> bool:
 			FileAccess.open(dir.path_join("inflight.json"), FileAccess.WRITE).store_string(line + "\n")
 		var b := reserving(dir, c[1], c[2])
 		b.request(req("1", "portrait"))
+		if c[0] == "quit mid-call":
+			pump(b, 5000, func(): return FileAccess.file_exists(dir.path_join("inflight.json")))
+			b.shutdown()
 		pump(b, 5000, func(): return b.outcomes.size() == 1 or b.failure_times.size() >= 1)
 		var usage := FileAccess.get_file_as_string(dir.path_join("usage.ndjson"))
 		var lines := usage.split("\n", false)
@@ -615,7 +658,7 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):
 			only = a.substr(7).split(",")
-	var tests := ["static", "live_plan", "live_env", "assemble", "stub_session", "session_ceiling"]
+	var tests := ["static", "live_plan", "live_env", "assemble", "stub_session", "session_ceiling", "absurd_spend"]
 	if faults:
 		tests.append_array(["partial", "timeouts", "killed_charge", "crash_loop", "garbage", "handshake_faults", "shutdown_grace"])
 	for t in tests:
