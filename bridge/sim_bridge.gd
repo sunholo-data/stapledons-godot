@@ -46,7 +46,9 @@ var record_path := ""
 ## every accepted tick's events (`on_events`). Intents of a line the sim does
 ## not accept are dropped; their requests expire in the sim (ai_ttl_ticks).
 var ai_relay: Object = null
-## The protocol minor hello() asks for (PROTO_MINOR unless a caller opts in).
+## The protocol minor hello() asks for (PROTO_MINOR unless a caller opts in, before
+## start()): the interior (M4.2) asks for 2 (ship.ism, consequence), the system view
+## SYSTEM_MINOR. Everything else keeps 2.1, so the recorded replay goldens are unchanged.
 var want_minor := PROTO_MINOR
 ## The last `system` section, as parsed by parse_system(); {} until one arrives.
 var system: Dictionary = {}

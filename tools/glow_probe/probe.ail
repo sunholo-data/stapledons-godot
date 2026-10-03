@@ -1,0 +1,43 @@
+module stapledons/glow_probe/probe
+
+-- M4.2 check values for tests/test_physics.gd and tests/test_interior.gd (gate 2: every
+-- expected value comes from the package, never from GDScript). Run:
+--   make glow-probe   (ailang run --package-dir tools/glow_probe --caps IO --entry main ...)
+-- ISM defaults are the sim's (core.ail defaultParams): n 0.1 cm^-3, eps 1e-9, f_in 0.5.
+import std/io (println)
+import std/math (cos, PI)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/medium (glowEmittanceAt, glowInwardFlux, kineticFlux)
+import pkg/sunholo/relativity/blackbody (cmf)
+
+pure func nPerM3() -> float = 100000.0
+pure func eps() -> float = 0.000000001
+pure func fIn() -> float = 0.5
+
+pure func deg(d: float) -> float = d * PI() / 180.0
+
+-- CIE ybar (this package's fit) summed at 1 nm over [lo, hi], trapezoid ends.
+pure func ybarSum(l: float, hi: float, acc: float) -> float =
+  if l > hi then acc
+  else ybarSum(l + 1.0, hi, acc + (if l == 380.0 || l == 780.0 then 0.5 else 1.0) * cmf(l).y)
+
+func row(label: string, phi: float) -> () ! {IO} {
+  let n = nPerM3();
+  println("${label} phi ${phi}");
+  println("${label} K ${kineticFlux(n, phi)}");
+  println("${label} glowInwardFlux ${glowInwardFlux(n, phi, eps(), fIn())}");
+  println("${label} pole ${glowEmittanceAt(n, phi, eps(), fIn(), 1.0)}");
+  println("${label} cos45 ${cos(deg(45.0))} E ${glowEmittanceAt(n, phi, eps(), fIn(), cos(deg(45.0)))}");
+  println("${label} cos80 ${cos(deg(80.0))} E ${glowEmittanceAt(n, phi, eps(), fIn(), cos(deg(80.0)))}");
+  println("${label} cos90 ${cos(deg(90.0))} E ${glowEmittanceAt(n, phi, eps(), fIn(), cos(deg(90.0)))}");
+  println("${label} cos120 ${cos(deg(120.0))} E ${glowEmittanceAt(n, phi, eps(), fIn(), cos(deg(120.0)))}")
+}
+
+export func main() -> () ! {IO} {
+  row("b099", rapidityOfBeta(0.99));
+  row("cap", rapidityOfOneMinusBeta(0.000001));
+  row("rest", 0.0);
+  -- equal-energy white over 380-780 nm: 683 lm/W x mean ybar over the band
+  println("ybar_sum_380_780 ${ybarSum(380.0, 780.0, 0.0)}");
+  println("efficacy_equal_energy_380_780_lm_per_w ${683.0 * ybarSum(380.0, 780.0, 0.0) / 400.0}")
+}

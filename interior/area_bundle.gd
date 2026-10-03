@@ -20,6 +20,20 @@ extends RefCounted
 ## "placeholder art" tag in the HUD. Unknown keys are KEPT (manifest holds the whole document)
 ## and ignored, so a richer brief revision or the Blender side's extras do not break the loader.
 ## preview_rest.png / preview_099c.png are review-only and not required.
+## M4.2 optional typed fields (never required, so brief §9's contract stands):
+##   play_origin_ship_m [x, y, z]   where the play GLB's origin sits in the ship frame (metres);
+##                                  default the bubble centre. glb_to_ship() uses it.
+##   layers.play.camera  String      the iso camera JSON (isocam_<area>.json); default: the
+##                                  manifest's iso_pitch/yaw/size and the spike's framing
+##   pan_range_m [x, y]              the iso camera's pan range about the focus (metres); default
+##                                  what the plates' overscan covers (pan_range_m())
+##   layers.play.plate {file}        bridge v2: a projected illustrated plate for the play layer
+##                                  (the GLB then only carries walking and interaction)
+##
+## Export staging: assets/areas/ carries a .gdignore (raw files, no import), and Godot's export
+## skips .gdignore'd directories, so `make areas-stage` copies each bundle to
+## res://areas_bundle/<area>/<file>.bin (the sky_bundle pattern). Every file read here falls
+## back to <file>.bin, and resolve_dir() finds the staged copy in an exported build.
 ##
 ## A bundle with any schema error or a missing layer file is refused: ok() is false and
 ## errors lists every problem (not just the first), so an art hand-off gets one full report.
@@ -29,6 +43,9 @@ extends RefCounted
 const CAMERA_FRAME := "ship: +Z = direction of travel (up), origin = bubble centre, metres"
 const HUD_TAG := "placeholder art"
 const UNIT_TOL := 1e-4 # cam forward/up are float32 out of Blender: unit and orthogonal to this
+const SOURCE_DIR := "res://assets/areas"
+const STAGED_DIR := "res://areas_bundle"
+const STAGED_SUFFIX := ".bin"
 
 var dir := ""
 var manifest := {}
@@ -49,7 +66,7 @@ static func load_dir(path: String) -> AreaBundle:
 		return b
 	b.placeholder = b.manifest.get("placeholder", false)
 	for layer in ["panorama", "play", "foreground"]:
-		if not FileAccess.file_exists(b.path(layer)):
+		if not _exists(b.path(layer)):
 			b.errors.append("missing layer %s: %s" % [layer, b.path(layer)])
 	var c: Variant = _read_json(b.path("camera"), b.errors, "camera " + str(b.manifest["camera"]))
 	if c is Dictionary:
@@ -104,8 +121,74 @@ func area() -> String:
 	return manifest["area"]
 
 
+## The bundle directory for an area: the source checkout's assets/areas/<area>, else the
+## export's staged res://areas_bundle/<area> (make areas-stage).
+static func resolve_dir(area_name: String) -> String:
+	var src := SOURCE_DIR.path_join(area_name)
+	if FileAccess.file_exists(src.path_join("manifest.json")):
+		return src
+	return STAGED_DIR.path_join(area_name)
+
+
+## Where play_origin_ship_m puts the GLB origin in the ship frame (default the bubble centre).
+func play_origin_ship_m() -> PackedFloat64Array:
+	var o: Variant = manifest.get("play_origin_ship_m")
+	return PackedFloat64Array([float(o[0]), float(o[1]), float(o[2])]) if _vec3(o) else PackedFloat64Array([0.0, 0.0, 0.0])
+
+
+## A play-frame point (glTF: Y up = ship +Z, -Z = ship +Y) -> ship frame metres, float64.
+func glb_to_ship(p: Vector3) -> PackedFloat64Array:
+	var o := play_origin_ship_m()
+	return PackedFloat64Array([o[0] + p.x, o[1] - p.z, o[2] + p.y])
+
+
+## The iso camera's pan range [x, y] metres about the focus: the optional typed pan_range_m,
+## else what the plates' overscan covers (overscan_px / (parallax x plate px per metre), the
+## tighter plate); Vector2.INF when the plates have no overscan (blockout): no limit.
+func pan_range_m() -> Vector2:
+	var r: Variant = manifest.get("pan_range_m")
+	if r is Array and r.size() == 2 and _num(r[0]) and _num(r[1]):
+		return Vector2(float(r[0]), float(r[1]))
+	var ppm := float(view_size().y) / float(manifest["layers"]["play"]["iso_size_m"])
+	var out := Vector2.INF
+	for layer in ["panorama", "foreground"]:
+		var os := Vector2(overscan(layer))
+		var k := float(manifest["layers"][layer]["parallax"]) * ppm
+		if os.x > 0.0:
+			out.x = minf(out.x, os.x / k)
+		if os.y > 0.0:
+			out.y = minf(out.y, os.y / k)
+	return out
+
+
+## Bridge v2 hook: does the play layer carry a projected illustrated plate?
+func has_play_plate() -> bool:
+	return manifest["layers"]["play"].get("plate") is Dictionary
+
+
+func play_plate_path() -> String:
+	return dir.path_join(manifest["layers"]["play"]["plate"]["file"]) if has_play_plate() else ""
+
+
+## The iso camera: layers.play.camera's JSON when present, else the manifest's angles with the
+## spike's framing (v_offset = 0.38 x size). Keys: projection, pitch_deg, yaw_deg, size_m,
+## focus_m, v_offset_m.
+func iso_camera() -> Dictionary:
+	var play: Dictionary = manifest["layers"]["play"]
+	var c := {"projection": "orthographic", "pitch_deg": float(play["iso_pitch_deg"]), "yaw_deg": float(play["iso_yaw_deg"]),
+		"size_m": float(play["iso_size_m"]), "focus_m": manifest["focus_m"], "v_offset_m": 0.38 * float(play["iso_size_m"])}
+	if play.get("camera") is String:
+		var e := PackedStringArray()
+		var j: Variant = _read_json(dir.path_join(play["camera"]), e, "play camera")
+		if j is Dictionary:
+			for k in c:
+				if j.has(k):
+					c[k] = j[k]
+	return c
+
+
 func load_image(layer: String) -> Image:
-	return Image.load_from_file(path(layer))
+	return load_png(path(layer))
 
 
 ## The play area as a node tree (glTF is metres, Y up; the caller adds it to the scene).
@@ -113,12 +196,31 @@ func instantiate_play() -> Node3D:
 	return load_glb(path("play"))
 
 
+## A PNG from a bundle file (or its staged .bin copy), decoded from its bytes.
+static func load_png(file: String) -> Image:
+	var bytes := _bytes(file)
+	var img := Image.new()
+	return img if not bytes.is_empty() and img.load_png_from_buffer(bytes) == OK else null
+
+
 static func load_glb(file: String) -> Node3D:
 	var doc := GLTFDocument.new()
 	var st := GLTFState.new()
-	if doc.append_from_file(file, st) != OK:
+	var bytes := _bytes(file)
+	if bytes.is_empty() or doc.append_from_buffer(bytes, file.get_base_dir(), st) != OK:
 		return null
 	return doc.generate_scene(st) as Node3D
+
+
+## A bundle file or its staged copy (<file>.bin).
+static func _exists(file: String) -> bool:
+	return FileAccess.file_exists(file) or FileAccess.file_exists(file + STAGED_SUFFIX)
+
+
+static func _bytes(file: String) -> PackedByteArray:
+	if FileAccess.file_exists(file):
+		return FileAccess.get_file_as_bytes(file)
+	return FileAccess.get_file_as_bytes(file + STAGED_SUFFIX) if FileAccess.file_exists(file + STAGED_SUFFIX) else PackedByteArray()
 
 
 ## Every schema problem of a manifest dictionary (V17), empty when valid.
@@ -164,6 +266,16 @@ static func check_manifest(m: Dictionary) -> PackedStringArray:
 			e.append("layers.%s.parallax must be > 0" % layer)
 	if not (float(m["layers"]["play"]["iso_size_m"]) > 0.0):
 		e.append("layers.play.iso_size_m must be > 0")
+	if m.has("pan_range_m") and not (m["pan_range_m"] is Array and m["pan_range_m"].size() == 2 and _num(m["pan_range_m"][0]) and _num(m["pan_range_m"][1])
+			and m["pan_range_m"][0] >= 0 and m["pan_range_m"][1] >= 0):
+		e.append("pan_range_m must be [x, y] non-negative numbers")
+	if m.has("play_origin_ship_m") and not _vec3(m["play_origin_ship_m"]):
+		e.append("play_origin_ship_m must be an array of 3 numbers")
+	var play: Dictionary = m["layers"]["play"]
+	if play.has("camera") and not (play["camera"] is String and not (play["camera"] as String).is_empty()):
+		e.append("layers.play.camera must be a non-empty string")
+	if play.has("plate") and not (play["plate"] is Dictionary and play["plate"].get("file") is String and not (play["plate"]["file"] as String).is_empty()):
+		e.append("layers.play.plate must be {file: String}")
 	return e
 
 
@@ -248,11 +360,11 @@ static func _basis(cam: Dictionary) -> Array:
 
 
 static func _read_json(file: String, e: PackedStringArray, label: String) -> Variant:
-	if not FileAccess.file_exists(file):
+	if not _exists(file):
 		e.append("missing %s (%s)" % [label, file])
 		return null
 	var j := JSON.new()
-	if j.parse(FileAccess.get_file_as_string(file)) != OK:
+	if j.parse(_bytes(file).get_string_from_utf8()) != OK:
 		e.append("%s is not valid JSON: line %d: %s" % [label, j.get_error_line(), j.get_error_message()])
 		return null
 	if typeof(j.data) != TYPE_DICTIONARY:
