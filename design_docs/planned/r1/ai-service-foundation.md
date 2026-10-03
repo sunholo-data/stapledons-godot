@@ -671,6 +671,28 @@ AI.7 as built (2026-10-02, stub only, no key):
 - **Recording.** `tools/record_ai_session.gd` waits for the service between
   ticks, so `tests/replays/ai_stub_session.ndjson` does not depend on latency
   and the AC10 test re-records it byte for byte.
+- **Uncharged parse failures (finding, open).** In `ai/adapters.ail`, an
+  OpenRouter or TTS reply that fails to parse (`parseOpenRouter`/`parseTts`
+  error, e.g. TTS output over its token cap) returns the units so far without
+  counting that call, so the attempt is never charged or logged in
+  `usage.ndjson`. Per-call prices are 0 for both today, so nothing is lost in
+  money, but tokens a capped TTS reply reports are dropped. Fix before the
+  attended live run (AI.10b): count the call and the reported tokens when the
+  body decodes.
+- **Library voice (follow-up).** See *Cache hits*: the service's voice index
+  lines need `duration_ms` and `segments_ms` before a library voice can hit;
+  adding them re-records `tests/ai/cache.SHA256SUMS`.
+- **ADC hazard (finding, reported upstream 2026-10-03).** On v0.51.0,
+  `--ai gemini-…` uses Vertex AI through gcloud ADC whenever
+  `~/.config/gcloud/application_default_credentials.json` exists, even with
+  `GOOGLE_API_KEY` set and `GOOGLE_APPLICATION_CREDENTIALS=/nonexistent`; with
+  neither key nor ADC it exits at startup. So the live launch passes `--ai`
+  only when a Gemini key file is given (OpenRouter-only sessions never bind
+  std/ai), and an attended live Gemini run (AI.10b) must use a HOME without
+  gcloud ADC, or it bills the developer's project instead of the key.
+- **Stub ceiling.** AiBridge starts the stub with the `session` entry and its
+  `ceiling_usd` (default 0.50), so the player's ceiling and `budget` hold in
+  stub mode too.
 - **State and resume.** `ai.lines` and each open request's segment count are
   sim state the `ai` section does not show; replay is from input logs, so
   nothing is lost, but a save/restore milestone must carry them.

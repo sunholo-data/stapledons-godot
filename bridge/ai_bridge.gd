@@ -79,6 +79,7 @@ var text_only := false
 var live := false
 var key_files: Dictionary = {}
 var live_allowed := false
+## The player's session ceiling in US$ (0.05..20, D-20), stub and live alike.
 var ceiling_usd := 0.5
 ## Tests: keep every stdout line the service printed (key hygiene).
 var keep_lines := false
@@ -237,9 +238,10 @@ func assemble(chunk: PackedByteArray) -> PackedStringArray:
 
 static func _run_args(ailang: String, ai_dir: String, config: Dictionary) -> PackedStringArray:
 	# The stub needs IO and FS only: it cannot read env, reach the network or
-	# call a model. Configuration is the entry argument, never argv flags.
+	# call a model. Configuration is the entry argument, never argv flags;
+	# `session` is the stub entry with the player's ceiling (ceiling_usd).
 	return PackedStringArray([ailang, "run", "--quiet", "--bytecode", "--package-dir", ai_dir,
-		"--caps", "IO,FS", "--entry", "main", "--args-json", SimBridge.encode(config),
+		"--caps", "IO,FS", "--entry", "session", "--args-json", SimBridge.encode(config),
 		ai_dir.path_join(SERVICE_FILE.get_file())])
 
 
@@ -252,17 +254,22 @@ func live_plan(ailang: String, root: String) -> Dictionary:
 	var cfg := stub_config(root)
 	cfg["provider"] = "live"
 	cfg["keys_present"] = []
-	cfg["ceiling_usd"] = ceiling_usd
 	var args := PackedStringArray(["-c", LIVE_WRAP, ailang, key_files.get("gemini", ""), key_files.get("openrouter", ""), "1" if live_allowed else "0",
-		"run", "--quiet", "--bytecode", "--package-dir", ai_dir, "--caps", "IO,FS,Env,Net,AI", "--ai", image,
-		"--net-allow-domains", LIVE_HOSTS, "--entry", "live", "--args-json", SimBridge.encode(cfg), ai_dir.path_join(SERVICE_FILE.get_file())])
+		"run", "--quiet", "--bytecode", "--package-dir", ai_dir, "--caps", "IO,FS,Env,Net,AI"])
+	# std/ai is bound only with a Gemini key: `--ai gemini-…` without
+	# GOOGLE_API_KEY makes ailang fall back to Application Default Credentials
+	# (a gcloud identity, or a startup failure where there is none). Without
+	# it, text routes to OpenRouter over std/net and media answer no_key.
+	if key_files.has("gemini"):
+		args.append_array(["--ai", image])
+	args.append_array(["--net-allow-domains", LIVE_HOSTS, "--entry", "live", "--args-json", SimBridge.encode(cfg), ai_dir.path_join(SERVICE_FILE.get_file())])
 	return {"bin": "/bin/sh", "args": args}
 
 
 func stub_config(root: String) -> Dictionary:
 	return {"provider": "stub", "keys_present": stub_keys, "text_only": text_only,
 		"cache_dir": ProjectSettings.globalize_path(cache_dir),
-		"routing": root.path_join("data/ai/routing.json"), "fixtures": root.path_join("ai/fixtures")}
+		"routing": root.path_join("data/ai/routing.json"), "fixtures": root.path_join("ai/fixtures"), "ceiling_usd": ceiling_usd}
 
 
 ## Source checkout: ailang from AILANG_BIN or PATH, the service from the repo.

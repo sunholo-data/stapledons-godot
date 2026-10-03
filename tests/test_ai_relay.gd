@@ -84,7 +84,7 @@ func test_cache() -> bool:
 		return JSON.stringify(e)
 	FileAccess.open(lib.path_join("index.ndjson"), FileAccess.WRITE).store_string("\n".join([
 		line.call("portrait", "sad", 0, "0", "a0"), line.call("portrait", "sad", 50, "0", "a50"), line.call("portrait", "sad", 0, "0", "b0"),
-		line.call("portrait", "happy", 0, "0", "lib-happy"), line.call("text", "-", 0, "-", "lib-text", {"mime": "text/plain", "ext": "txt"}),
+		line.call("portrait", "happy", 0, "0", "lib-happy"), line.call("portrait", "angry", 0, "0", "angry0"), line.call("text", "-", 0, "-", "lib-text", {"mime": "text/plain", "ext": "txt"}),
 		line.call("voice", "-", 0, "v1", "lib-voice", {"mime": "audio/ogg", "ext": "ogg"}), "not json", "{\"key\":1}"]) + "\n")
 	FileAccess.open(core.path_join("index.ndjson"), FileAccess.WRITE).store_string(line.call("portrait", "happy", 0, "0", "core-happy") + "\n")
 	var c := AiCache.new()
@@ -94,6 +94,7 @@ func test_cache() -> bool:
 	var key := func(kind, emo, stage, variant := "0"): return {"kind": kind, "entity_id": "medic", "emotion": emo, "age_stage": stage, "variant": variant}
 	assert_bool("greatest age_stage <= years: 30 -> stage 0, 50 -> 50, 70 -> 50", c.lookup(key.call("portrait", "sad", 30), 30).get("sha256") == "b0"
 		and c.lookup(key.call("portrait", "sad", 50), 50).get("sha256") == "a50" and c.lookup(key.call("portrait", "sad", 70), 70).get("sha256") == "a50")
+	assert_bool("a library line at stage 0 serves a request at 50 (the only stage <= 50)", c.lookup(key.call("portrait", "angry", 50), 50).get("sha256") == "angry0" and c.lookup(key.call("portrait", "angry", 0), 0).get("sha256") == "angry0")
 	assert_bool("within the library the newest line for a key wins (b0 over a0)", c.lookup(key.call("portrait", "sad", 0), 0).get("sha256") == "b0")
 	assert_bool("core wins over the library for the same key", c.lookup(key.call("portrait", "happy", 0), 0).get("sha256") == "core-happy")
 	assert_bool("text resolves from core only; a library voice line without duration is a miss",
@@ -197,6 +198,33 @@ func test_e2e() -> bool:
 	var a2 := by_req(events_of(rig["relay"], "ai_accepted"))
 	assert_bool("cache hit: recorded and accepted with launch_count == 0", a2.get("1", {}).get("kind") == "portrait" and rig["bridge"].launch_count == 0 and rig["relay"].hits == 1)
 	rig["sim"].stop()
+	# A cached asset needs neither live AI nor a key: mode off, no keys, still a hit.
+	var off := Session.stub_rig(fresh("hit_off").path_join("log.ndjson"), lib, [])
+	bridges.append(off["bridge"])
+	off["relay"].mode = "off"
+	off["relay"].open("portrait", "line", "medic", {"emotion": "grieving", "age_stage": 0})
+	off["relay"].open("text", "line", "medic")
+	off["sim"].send([], 0.0)
+	off["sim"].send([], 0.0)
+	var a3 := by_req(events_of(off["relay"], "ai_accepted"))
+	var f3 := by_req(events_of(off["relay"], "ai_fallback"))
+	assert_bool("mode off, no keys: the cached portrait still records (the uncached text falls back offline)",
+		a3.get("1", {}).get("kind") == "portrait" and f3.get("2", {}).get("reason") == "offline" and off["bridge"].launch_count == 0)
+	off["sim"].stop()
+	# A service error result end to end: at the US$0.05 ceiling the second portrait is refused budget.
+	var bl := fresh("budget")
+	var bud := Session.stub_rig(bl.path_join("log.ndjson"), bl.path_join("library"))
+	bridges.append(bud["bridge"])
+	bud["bridge"].ceiling_usd = 0.05
+	bud["relay"].open("portrait", "line", "medic", {"emotion": "grieving", "age_stage": 0})
+	bud["relay"].open("portrait", "line", "medic", {"emotion": "sad", "age_stage": 0})
+	bud["sim"].send([], 0.0)
+	Session.idle(bud["bridge"], 20000)
+	bud["sim"].send([], 0.0)
+	var fb := by_req(events_of(bud["relay"], "ai_fallback"))
+	assert_bool("ceiling 0.05: the first portrait accepted, the second refused budget -> ai_fallback budget",
+		by_req(events_of(bud["relay"], "ai_accepted")).get("1", {}).get("kind") == "portrait" and fb.get("2", {}).get("reason") == "budget")
+	bud["sim"].stop()
 	return true
 
 
@@ -263,9 +291,17 @@ func live_run(files: Dictionary, provider: String) -> Dictionary:
 	var cfg = JSON.parse_string(args[i])
 	cfg["provider"] = provider
 	args[i] = SimBridge.encode(AiCache.ints(cfg))
+	# Defence in depth: these runs only say hello, so no provider call can be
+	# made even if the wrapper failed; the allowlist is narrowed to a host that
+	# cannot resolve as well.
+	args[args.find("--net-allow-domains") + 1] = "invalid.invalid"
 	plan["args"] = args
 	var t0 := Time.get_ticks_msec()
+	# AI_LIVE=1 in Godot's own environment for the spawn only: the wrapper must
+	# clear it (live_allowed is false), so the refusal still names AI_LIVE.
+	OS.set_environment("AI_LIVE", "1")
 	var proc := OS.execute_with_pipe(AiBridge.scrub_shell(), AiBridge.scrubbed(plan), false)
+	OS.unset_environment("AI_LIVE")
 	var pid: int = proc["pid"]
 	var samples := []
 	for n in 300:
@@ -280,7 +316,7 @@ func live_run(files: Dictionary, provider: String) -> Dictionary:
 	proc["stdio"].store_string('{"v":1,"type":"hello","want":{"major":1}}\n')
 	proc["stdio"].flush()
 	var got := PackedByteArray()
-	var end := Time.get_ticks_msec() + 15000
+	var end := Time.get_ticks_msec() + 60000 # a cold first start on CI can take seconds; a refusal exits at once
 	while Time.get_ticks_msec() < end:
 		var chunk: PackedByteArray = proc["stdio"].get_buffer(4096)
 		got.append_array(chunk)
@@ -300,11 +336,12 @@ func fatal(detail: String) -> String:
 
 
 func test_key_hygiene() -> bool:
-	print("AC14: key files, never key text: argv, stdout, stderr, session log, library")
+	print("AC14: key files, never key text: argv, stdout, stderr, session log, library (AI_LIVE=1 in Godot's env is cleared)")
 	var both := key_files(["gemini", "openrouter"])
 	var cases := [
 		[both, "live", fatal("live provider refused: AI_LIVE=1 is not set (attended sessions only)"), "both keys read (the refusal is AI_LIVE, not a key)"],
 		[both, "openrouter", fatal("live provider refused: AI_LIVE=1 is not set (attended sessions only)"), "OPENROUTER_API_KEY read from its file"],
+		[key_files(["gemini"]), "gemini", fatal("live provider refused: AI_LIVE=1 is not set (attended sessions only)"), "gemini only: GOOGLE_API_KEY read from its file"],
 		[key_files(["gemini"]), "openrouter", fatal("provider openrouter refused: OPENROUTER_API_KEY is empty"), "an OpenRouter route with its key env var empty refuses"],
 		[key_files(["openrouter"]), "gemini", fatal("provider gemini refused: GOOGLE_API_KEY is empty"), "a Gemini route with its key env var empty refuses"],
 	]
@@ -317,6 +354,13 @@ func test_key_hygiene() -> bool:
 		var ok_out: bool = r["stdout"] == c[2] and not has_key(r["stdout"]) and not has_key(r["stderr"])
 		assert_bool("%s: stdout is the refusal, no key in stdout or stderr%s" % [c[3], "" if ok_out else " -- stdout [%s] stderr tail [%s] (%d ms)" % [redact(r["stdout"]), redact(str(r["stderr"]).right(400)), r["ms"]]], ok_out)
 		assert_bool("%s: refused before the cache was made" % c[3], not DirAccess.dir_exists_absolute(r["lib"]))
+		# std/ai is bound (--ai) only with a Gemini key file: without one, ailang
+		# falls back to Application Default Credentials at startup (a gcloud
+		# identity where one exists; on CI, no ADC: it exits before the service
+		# runs, Ubuntu run 37104445321).
+		var has_g: bool = c[0].has("gemini")
+		assert_bool("%s: --ai %s" % [c[3], "bound to the image model" if has_g else "not passed (no Gemini key, so no ADC fallback)"],
+			final_argv.contains("--ai gemini-2.5-flash-image") == has_g and (has_g or final_argv.find(" --ai ") < 0))
 	# Through the relay and the bridge: the live service refuses at hello (no
 	# AI_LIVE), three failures, service_down; the request falls back.
 	var lib := fresh("live_relay")
