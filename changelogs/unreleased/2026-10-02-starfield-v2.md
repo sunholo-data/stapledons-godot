@@ -4,6 +4,10 @@
   default large when built, else medium) through `sky/star_catalogue.gd`, plus the bright tier on
   top once M1.2d builds it. The large tier is 324,307 instances (7,005 GCNS rows without
   photometry are skipped). The starfield no longer reads `stars.json`.
+- With M1.2d merged, the medium and large tiers also stack quick's 137 HIP-filled rows (flag 8:
+  Sirius, α Cen A/B, Procyon, Altair, ...; GCNS has no photometry for them and the bright tier
+  excludes them as CNS5 matches) and the bright tier: 335,157 stars on the large tier.
+  `make capture` gains a port view (galactic l = 270: Canopus, α Cen, Sirius, the LMC).
 - Instance custom data is (T_eff, E_v at Sol in lux from `illuminanceFromV`, flags, |p|²); the
   shader rescales E_v by inverse square and multiplies by `pointFluxRatio(T, D)`.
 - Rebasing (gate 5): positions are float64 on the CPU and uploaded as float32 hi/lo pairs with

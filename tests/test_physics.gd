@@ -231,6 +231,31 @@ func test_star_brightness() -> void:
 	sf.set_ship_position(4.0 * 0.5, 0.0, -3.0 * 0.5)
 	check("flux at the ship = E_v x |p|^2 / r^2 (halfway: 4x)", sf.flux_at_ship(0) / Relativity.illuminance_from_v(2.0), 4.0, 1e-6)
 	sf.free()
+	# only_flags: the HIP-filled rows of a tier (flag 8), nothing else
+	var hipcat := _tier_fixture([[1.0, 2.0, 3.0, 9900.0, -1.44, 8.0], [2.0, 2.0, 2.0, 3000.0, 11.0, 0.0], [5.0, 0.0, 0.0, 0.0, 99.0, 2.0]])
+	var sh := Starfield.new()
+	sh.append_catalogue(hipcat, StarCatalogue.FLAG_HIP)
+	check("only_flags = FLAG_HIP keeps just the HIP-filled row", sh.count, 1, 0.0)
+	check("and it is the V -1.44 row", sh.custom[1] / Relativity.illuminance_from_v(-1.44), 1.0, 1e-6)
+	sh.free()
+	# the committed tiers: medium (GCNS) + bright + quick's HIP fill must draw Sirius
+	# (Gl 244: SIMBAD l 227.230, b -8.890, 8.6 ly; GCNS has no Gaia photometry for it)
+	var sm := Starfield.new()
+	check("medium tier loads with bright + HIP fill", 1.0 if sm.load_tiers("medium") else 0.0, 1.0, 0.0)
+	check("stacked tiers are medium, quick:hip, bright", 1.0 if sm.tiers == ["medium", "quick:hip", "bright"] else 0.0, 1.0, 0.0)
+	var sl := deg_to_rad(227.230)
+	var sb := deg_to_rad(-8.890)
+	var sdir := [cos(sb) * sin(sl), sin(sb), -cos(sb) * cos(sl)] # galactic -> world
+	var best := -1.0
+	for k in sm.count:
+		var px := sm.pos[3 * k]
+		var py := sm.pos[3 * k + 1]
+		var pz := sm.pos[3 * k + 2]
+		var r := sqrt(px * px + py * py + pz * pz)
+		if (px * sdir[0] + py * sdir[1] + pz * sdir[2]) / r > cos(deg_to_rad(0.2)):
+			best = maxf(best, sm.custom[4 * k + 1])
+	check("Sirius drawn within 0.2 deg of SIMBAD, E_v of V -1.44 (+-0.05 mag)", -2.5 * log(best / Relativity.illuminance_from_v(0.0)) / log(10.0) if best > 0.0 else 99.0, -1.44, 0.05)
+	sm.free()
 
 
 func _tier_fixture(rows: Array) -> StarCatalogue:

@@ -320,8 +320,9 @@ func _grab() -> Image:
 func _run_capture(dir: String) -> void:
 	var out := _out_dir(dir)
 	var targets := [0.0, 0.5, 0.9, 0.99]
-	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a)
-	var views := {"forward": [0.0, 0.0, 0.0], "starboard": [-PI / 2, 0.0, 0.0], "astern": [PI, 0.0, 0.0],
+	# [yaw, pitch, roll]; M1.6b adds an off-axis view and a rolled one (R-a); M1.3 adds port
+	# (galactic l = 270: Canopus, alpha Cen, Sirius, the LMC once the bright tier is on)
+	var views := {"forward": [0.0, 0.0, 0.0], "starboard": [-PI / 2, 0.0, 0.0], "port": [PI / 2, 0.0, 0.0], "astern": [PI, 0.0, 0.0],
 		"offaxis": [deg_to_rad(50.0), deg_to_rad(25.0), 0.0], "rolled": [deg_to_rad(-30.0), deg_to_rad(10.0), deg_to_rad(35.0)]}
 	var tiles := []
 	for target in targets:

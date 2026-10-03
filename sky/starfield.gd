@@ -55,11 +55,19 @@ func clear() -> void:
 	tiers.clear()
 
 
-## The active tier, then the bright tier on top when stars_bright.bin exists
-## (M1.2d). A refused tier (sidecar, size or sha256) loads nothing: false.
+## The active tier, then on top: for medium/large (GCNS), quick's HIP-filled
+## rows (flag 8: Sirius, alpha Cen, Procyon, ... which Gaia cannot measure, so
+## GCNS has no photometry for them and the bright tier excludes them as CNS5
+## matches), then the bright tier (M1.2d) when stars_bright.bin exists.
+## A refused tier (sidecar, size or sha256) loads nothing: false.
 func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
 	clear()
-	for t in [tier, "bright"]:
+	var stack := [[tier, 0]]
+	if tier != "quick":
+		stack.append(["quick", StarCatalogue.FLAG_HIP])
+	stack.append(["bright", 0])
+	for entry in stack:
+		var t: String = entry[0]
 		if t == "bright" and not FileAccess.file_exists("%s/stars_bright.bin" % dir):
 			continue
 		var c := StarCatalogue.load_tier(t, dir)
@@ -67,17 +75,20 @@ func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
 			last_error = "tier %s: %s" % [t, StarCatalogue.last_error]
 			clear()
 			return false
-		append_catalogue(c)
-		tiers.append(t)
+		append_catalogue(c, entry[1])
+		tiers.append(t + (":hip" if entry[1] != 0 else ""))
 	return true
 
 
-func append_catalogue(c: StarCatalogue) -> void:
+## only_flags != 0: append only the rows carrying those flag bits.
+func append_catalogue(c: StarCatalogue, only_flags := 0) -> void:
 	var k := count
 	pos.resize(3 * (count + c.count))
 	custom.resize(4 * (count + c.count))
 	var d := c.data
 	for i in c.count:
+		if only_flags != 0 and c.flags(i) & only_flags == 0:
+			continue
 		if c.missing_photometry(i):
 			skipped_missing += 1
 			continue
