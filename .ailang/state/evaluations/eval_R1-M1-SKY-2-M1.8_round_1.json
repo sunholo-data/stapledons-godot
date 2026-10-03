@@ -1,0 +1,192 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.8",
+  "title": "Forward CMB glow (queue row 6a, D-11), with the two pre-M1.8 follow-ups: angular PSF and centre-weighted eye meter",
+  "pr": 79,
+  "branch": "sprint/m1.8-cmb",
+  "commits_evaluated": [
+    "978b052"
+  ],
+  "diff_base": "298daed (M1.5a round 2 / PR #80 lands separately; judged on git diff 298daed...origin/sprint/m1.8-cmb)",
+  "round": 1,
+  "result": "pass",
+  "score": 90,
+  "pass_threshold": 70,
+  "evaluator": "independent physics evaluator (Claude Fable 5.1), generator != judge; fresh clone under the scratchpad, runtime/bin/ailang v0.52.0, make sky-assets + catalogue-inputs + catalogue TIER=large",
+  "judged_against": [
+    "design_docs/planned/r1/m1-remaining-sprint.md #### M1.8 (scope, files, acceptance)",
+    "design_docs/stapledon-mission.md D-11 (the forward CMB disc is real and must be rendered), D-15 (cap 0.999999c), queue row 6a",
+    ".ailang/state/evaluations/eval_R1-M1-SKY-2-M1.5a_round_1.json: findings 1 (angular PSF) and 5 (meter must see stars and weight the centre), deviation 4 (adaptation must come with M1.8)",
+    "stapledons-design/physics/relativity-spec.md section 2 Spectrum (blackbody at D T), section 6 (HB-62..HB-70 via higgs-bubble.md)",
+    "sunholo/relativity 0.5.2: optics.cmbSeenTemperature / cmbSeenTemperatureApparent, blackbody.photopicRadiance, blackbody.pointFluxRatio"
+  ],
+  "breakdown": {
+    "tests_pass": {
+      "points": 20,
+      "max": 20,
+      "note": "make test AILANG=runtime/bin/ailang exit 0 on the clean clone: physics 397/397 (M1.8 adds test_angular_psf, test_cmb, test_sky_meter), sim/strict/parity/replay/catalogue/star-names/bright-audit/tools/AI gates all green, python-guard ok (no .py added). GitHub CI on the PR head 978b052: completed, success. Note for other evaluators: the PATH ailang on this host is a dirty dev build and makes `make deps` fail on the lockfile generator line; use AILANG=runtime/bin/ailang."
+    },
+    "lint_clean": {
+      "points": 10,
+      "max": 10,
+      "note": "python-guard green; no other lint target in this repo. Every new GDScript parses clean headless and under the GPU window once the project import has run. (My first golden run hung on 'Identifier SimBridge not declared' because it started before the fresh clone's class-name import; same trap the M1.5a evaluator hit. Wrap GPU runs in a watchdog, e.g. perl -e 'alarm 600; exec @ARGV' -- make golden, since this host has no timeout(1).)"
+    },
+    "acceptance_criteria": {
+      "points": 28,
+      "max": 30,
+      "note": "AC1 make physics: T ahead at the cap 3,853.7 K (HB-63) and the package value to 1e-12, 38.44 K at 0.99c (HB-62), rest-frame 90 deg 1,926.9 K appearing at asin(1/gamma), apparent 90 deg T0/gamma, radiance at beta 0 exactly 0 (below 1e-30 of L_dark), lookup finite and monotone: all present and reproduced. AC2 make golden: 7 CMB cases, 0 failures; sharp disc at theta' ~0, 1/gamma, 2/gamma ratios 0.9982/0.9944/0.9946, PSF disc 0.9984, 45 deg and 90 deg and beta 0 exactly 0 (the 'within 1%' wording at 45/90 deg is unsatisfiable for a zero and was correctly read as 'exactly 0'). AC3 make capture: gamma 275 and 707, forward and starboard, eye / camera auto / camera fixed-at-rest plus the two 4 deg zooms and cmb_sheet.png rendered on my clone and opened; they reproduce docs/m1.8 (EV +12.44, eye meter 696.7 cd/m^2; EV +17.44, 22,219 cd/m^2; gamma 275 EV -0.77, 0.0735 cd/m^2). AC4 R-e is Mark's by design. -2: the main.gd wiring that hands the CMB to the eye meter is covered only by captures (mutant M4b survives make physics and make golden), and nothing asserts that the lookup's range actually covers the cap (mutant M5a survives because of the exact fallback)."
+    },
+    "code_quality": {
+      "points": 12,
+      "max": 15,
+      "note": "sky/cmb.gd and sky/sky_meter.gd are small, documented, float64 throughout (PackedFloat64Array, 1 - beta form, gamma from 1 - beta), with the profile and lookup read back on the CPU exactly as the shader samples them. Sprint artefacts are consistent (JSON passes/started/completed/notes/actual_loc, plan status line, changelog). -2: main.gd grew from 806 to 883 lines although the M1.5a follow-up list asked for the capture helpers to move out; _capture_cmb (30 lines) and the eye-meter cache belong in tools/ or sky/. -1: counted LOC ~709 (823 raw minus 114 of goldens, which the plan's counting rule excludes) is 1.09x the 650 cap and 2.4x the 300 estimate with no plan revision or waiver row; the growth is the two sanctioned follow-ups, but the plan should have been re-estimated when they were folded in."
+    },
+    "documentation": {
+      "points": 13,
+      "max": 15,
+      "note": "changelogs/unreleased/2026-10-03-forward-cmb.md is complete and numerically right; the plan's M1.8 status line records the follow-ups, the deviations and the measurements; docs/m1.8 carries the R-e renders. -2: nothing tells Mark (or the HUD) that the 3 deg halo in the camera frames is Godot's glow post-process (glow_bloom 0.05, hdr_threshold 1.0 on a 6e4-clamped pixel), not the CMB's angular profile (theta_max ~1.1 deg), and no HUD or lore line says the disc at gamma 707 is 1.98e8 cd/m^2, an eighth of the solar disc; both matter for the R-e look."
+    },
+    "design_fidelity": {
+      "points": 7,
+      "max": 10,
+      "note": "Every scope item is delivered: the CMB term is added per pixel in sky/background.gdshader under the stars and over the galaxy in the same exposure (cmb_k = Exposure.k()), the GDScript mirrors of cmbSeenTemperature / cmbSeenTemperatureApparent / photopicRadiance are checked against the package to 1e-12 / 1e-6, the lookup over [0, 5000 K] is finite, the M4 'not yet rendered' text is never needed. -1: the PSF is fixed in SKY angle, which is the eye's blur only at the production field of view; at the 4 deg zoom the eye behind a 17.5x optic blurs by 6'/17.5 of sky, so the zoomed disc is drawn ~17x too soft (capture-only today, but document or scale sigma by fov/70). -2: the M1.5a evaluation said a true adaptation model 'must come with M1.8'; what landed is an adaptation LEVEL (the meter), with no saturation, glare or afterimage, so the gamma 707 eye frame shows a clean 2-px dot where a dark-adapted observer would see a blinding source. The physics of the disc is right; the perception of it is the open R-e question (see findings 1 and next_steps)."
+    }
+  },
+  "hard_fails": [],
+  "physics_gate_2": {
+    "check_values_asserted": "tests/test_physics.gd test_cmb: HB-62 38.44 K, HB-63 3,853.7 K, package pole 3853.7309940335736 K (1e-12), 1/gamma 1926.867102770845 K, 2/gamma 770.7475347575637 K, apparent 45 deg 0.0131574 K, apparent 90 deg T0/gamma 0.0038537 K, rest-frame 90 deg gamma T0 1926.8664604500 K at asin(1/gamma) = 0.0810 deg (HB-68), photopicRadiance 1.9842652619e8 / 290755.10 / 0.00275544 cd/m^2 and the package-doc 2856 K and 5772 K values; at rest 2.725 K everywhere and radiance exactly 0.",
+    "oracle_independent": "Python (second language) from the spec's definitions, not from the package or GDScript: gamma(1e-6) = 707.1069579633; pole T0 gamma (1 + beta) = 3853.7309940336 K; naive 1 - beta cos theta' loses 3e-11 at the pole (the 1 - beta form is needed for the 1e-12 assertion; mutant M2 confirms); T at 1/gamma 1926.867 K, at 2/gamma 770.748 K, at apparent 90 deg 0.0038537 K; rest-frame 90 deg 1926.866 K at 0.08103 deg; gamma 275 pole 1498.75 K, HB-67 gamma(1500 K) = 275.23. photopicRadiance from 2hc^2 = 1.1910429723971884e-16 W m^2 sr^-1 (exact SI) x 683 lm/W on the Wyman-Sloan-Shirley ybar at 1 nm: 1.98426526e8 cd/m^2 at the pole (claim 1.98e8 ok), 7,673 cd/m^2 at gamma 275, 0.0076 at the Draper point gamma 146 (HB-64/65 consistent: a faint red glow). The oracle shares the ybar fit with the package (the package doc bounds it at 0.5% of CIE over 1,900-6,000 K, 1% at 800 K); it is independent in the Planck/photometric scale and the integration, not in the colour-matching model.",
+    "disc_size": "Half-temperature radius 1/gamma = 4.86' at gamma 707 (claim 4.9' ok). The VISIBLE disc, where T0 D gives L above the 23.5 mag/arcsec^2 sky (4.33e-5 cd/m^2), has radius 10.5' = 2.17/gamma (T 675 K there); above 1e-3 cd/m^2 it is 9.9'. At gamma 275 the visible radius is 13.8' (1/gamma = 12.5'). So the 4.9' figure is the thermal core, and the disc the eye sees is about twice that; the executor's own CORE_CUT 1e-15 puts the profile edge at ~11.8' plus 9 sigma of PSF, theta_max ~1.1 deg, which is right.",
+    "disc_illuminance": "integral 2 pi sin(theta) photopicRadiance(T0 D(theta)) dtheta = 188.73 lux at the cap (claim ~189 ok), 0.0197 lux at gamma 275. The blurred profile integrates to the same illuminance (test, 1e-12 and 1%).",
+    "lookup_table": "1025 entries over [0, 5000 K], log10 L linear in T, floor -60: all finite in the oracle and in the GDScript test; first entry above the floor at T ~127 K; log-linear interpolation errors at 700 / 1000 / 1499 / 2000 / 3000 / 3853.7 / 4999 K are 3.4e-4, 9e-5, 8e-7, 1.7e-5, 5e-6, 2e-6, 8e-7 (test limit 2e-3; a 65-entry table fails it, mutant M5c). Above 5000 K the exact function is used, so the range covers every speed up to the D-15 cap with margin (pole 3,853.7 K).",
+    "psf_sigma_6_arcmin": "Defensible. Shlaer 1937 (J Gen Physiol 21:165) gives scotopic minimum angle of resolution of 10-20', and a Gaussian of FWHM 14' (sigma 6') sits inside that; at threshold it is really neural summation rather than optical blur, but for the purpose (star splat width, EV_dark constant) a Gaussian is the right engineering form. EV_dark = log2(E_thr / (2 pi sigma^2) / floor / 1.2) has no pixel term, so it is -4.40 at every size (test, exact); the 0.7 px clamp at 540 rows (6.2') costs 0.10 mag of V_lim, measured (6.8 at 960x540 golden, 6.9 at 2560x1440 bench), and the dark sky renders linear 7.63e-4 = 1/255 at both sizes (golden and bench lines). The M1.5a 7.1x resolution dependence is gone. Caveat: the dark-adapted sigma is also applied when the eye is light-adapted at EV +12 (photopic acuity ~1'), and the real ocular PSF at 2e8 cd/m^2 is dominated by wide-angle scatter (CIE glare function), which a 6' Gaussian under-represents; see finding 1.",
+    "meter": "Sound as an adaptation-level model. L_eye = (sum w L Omega + sum w E') / sum w Omega with w = exp(-theta^2 / 2 (12 deg)^2) and pinhole cos^3 cell solid angles; point sources enter as seen illuminance E pointFluxRatio(T, D) = E Y(DT)/Y(T)/D^2 (I re-derived: I_nu/nu^3 invariant gives L' = L(DT), dOmega' = dOmega/D^2, so E' = E Y(DT)/Y(T)/D^2; the package form). The CMB enters as its integrated illuminance at the heading. Oracle: sum w Omega = 0.27068 sr at 70 deg and 0.00849 sr at 4 deg, so L_eye = 697 cd/m^2 (EV 12.45) and 22,238 cd/m^2 (EV 17.44); the captures print 696.7 and 22,219 (EV +12.44 / +17.44). The arithmetic mean is the right statistic (a log mean cannot see a point source). Physiologically EV 12.4 is an overcast-day adaptation and EV 17.4 a sunlit one; both are plausible mean-field adaptations and the zoom's higher level is physically right in direction (an optic of magnification M raises retinal illuminance ~M^2). What is NOT modelled: the disc itself is 1.98e8 cd/m^2 over a 20' disc, an eighth of the solar disc (1.6e9); discomfort glare for a point source on a dark surround starts near 1e4-1e5 cd/m^2 and photochemical retinal damage from the sun takes seconds to minutes of fixation, so at gamma 707 looking ahead through the dome is a glare and, with fixation, a retinal-hazard situation. D-15 shields UV/X-rays with glazing; a 3,854 K blackbody is visible and near-IR, so the glazing does nothing for this. A warning, a saturation/afterimage effect or auto-dimming glazing is a design decision for Mark, not something the executor should have invented; it is listed in next_steps as a ledger question.",
+    "renders_verdict": {
+      "sky_g707_forward (eye, EV +12.4)": "Physics right: a 2-px warm-white dot (3,854 K renders cream against D65) at the pole, sky otherwise black because the whole aberrated starfield is in the few degrees around the pole and the eye is light-adapted. Honest for the model, but visually it says 'a dim star', not 'a blinding disc'; the glare question above.",
+      "sky_g707_forward_zoom (4 deg, EV +17.4)": "A soft cream disc of ~12' radius, colour right for 3,854 K; drawn ~17x too soft because the PSF is in sky angle (finding 2); the physical visible radius is 10.5'.",
+      "sky_g707_forward_camera_auto (EV -14 clamp) and camera_fixed (EV -9.7)": "Blown-out white blob ~3 deg across: the pixel is clamped at 6e4 and the halo is Godot's glow, not the CMB profile. Correct as 'the meter / the camera cannot hold it', but the halo size is an engine artefact and should be labelled as such for R-e.",
+      "sky_g707_starboard (eye pinned EV_dark; camera fixed EV -9.9)": "Black. Correct: at 90 deg D = 1/707, every star and the CMB are redshifted out of the visual band; the eye-meter reads 1.8e-35 cd/m^2.",
+      "sky_g275_forward (eye, EV -0.8)": "A red-orange dot (1,499 K, HB-66/67 'plainly visible orange') inside the crowd of blue-white aberrated stars; the eye light-adapts slightly (EV -0.8 from -4.4). Physics right; the colour reads pink where the saturated red core meets the blue stars.",
+      "sky_g275_forward_zoom (4 deg, EV +4.2)": "Orange disc, blurred stars around it: right colour, same over-softening as the 707 zoom.",
+      "sky_b099_forward (eye, EV -3.8)": "The new meter now light-adapts the eye to the 0.99c headlight (M1.5a finding 5 closed); the galaxy and the aberrated stars are legible, no CMB (38 K, HB-62).",
+      "cmb_sheet.png": "The 12 tiles are consistent across gamma 275/707 x forward/starboard x eye/auto/fixed; my re-render is pixel-for-pixel the same picture as docs/m1.8."
+    },
+    "verdict": "Gate 2 passes for the physics M1.8 claims: the temperatures, the Doppler form near c, the photometric scale, the disc size, the illuminance, the lookup and the GPU-vs-CPU agreement are all right and independently reproduced. The open item is perceptual (glare / damage at the disc), which is Mark's R-e call."
+  },
+  "bench": {
+    "host": "Apple M4 Max, load 6.9 -> 5.0 on 16 cores during the run (under 1 per core)",
+    "metal": "frame ms p50 8.471 p95 9.264 p99 9.672 (target < 16.7: ok); 2 of 3560 frames over budget; V_lim 6.9 at 2560x1440, PSF 6.0' = 1.79 px, sky 1/255",
+    "vulkan": "frame ms p50 8.455 p95 9.236 p99 9.573 ok; viewport GPU p50 2.765 p99 6.553 ms; star pass p50 0.893 ms (target < 2.0: ok); V_lim 6.9",
+    "note": "The executor's p99 miss of 41-57 ms under host load 8-17 (origin/main missing equally in its A/B) does not reproduce on a quiet host: p99 9.6 ms with the eye meter re-read every 100 ms. Environmental, as claimed."
+  },
+  "mutations": {
+    "run": "13 mutants against make physics in a second clone (baseline 397 passed, 0 failed, ~2 s each; applied with a Python replacer, run, reverted); the one that survived make physics and touches the GPU path (M3a) was also run through make golden",
+    "killed": [
+      "M1 Doppler form: T0 / (gamma (1 + beta cos theta')) (rest-frame sign fed the apparent angle): 19 failures (pole, 1/gamma, 2/gamma, 45 deg, 90 deg, HB-62, vector form, profile and meter checks)",
+      "M2 naive 1 - beta cos theta' (cancels near c): 1 failure, 'package: T ahead at the cap' to 1e-12 (got 0.999999999971); the 1 - beta form is load-bearing",
+      "M3a PSF dropped at the wiring (background.gd builds the sharp disc): survives make physics (CmbGlow is tested directly) but KILLED by make golden: 'PSF disc' pixel reads 3249 vs CPU 3836 cd/m^2 (ratio 0.847), the sharp core aliases on the half-pixel offset",
+      "M3b PSF dropped inside CmbGlow.build: 1 failure ('a 6 arcmin PSF lowers the 4.9 arcmin core's peak')",
+      "M4a meter ignores the CMB (sky_meter.gd): 2 failures (gamma 707 forward light-adapts; HUD says light-adapted)",
+      "M5b lookup range 3000 K and clamped (no exact fallback): 4 failures (lookup at 3853.7 and 4999 K, 'above T_MAX exact', sharp profile at the pole)",
+      "M5c lookup 1025 -> 65 entries: 4 failures (0.2% at 700, 1000, 1499, 2000 K)",
+      "M6 photopic scale +1%: 6 failures (package radiance values)",
+      "M7 centre weight removed (uniform meter): 1 failure (31 deg off-centre star counts less)",
+      "M8 PSF back to pixels in star_scale: 3 failures (threshold star on the floor at 1440 rows, splat-sum identities)",
+      "M9 T0 2.7255 K: 12 failures"
+    ],
+    "survived": [
+      "M4b main.gd passes null for the CMB to the eye meter: no headless or golden test exercises main's wiring; only the captures show EV +12.4. Recommend a golden case that calls main._meter_eye_now at gamma 707 forward and asserts light-adapted (or the capture log line asserted by the Makefile).",
+      "M5a T_MAX 5000 -> 3000 with the exact fallback kept: equivalent in output (the fallback is exact), so the range is not asserted. Recommend check(CmbGlow.T_MAX >= pole T at the cap) so the design's '[0, 5000 K]' is a tested contract, not a comment."
+    ]
+  },
+  "loc": {
+    "raw_diff": "823 added / 49 deleted across 14 code, shader, test and Makefile files (excluding docs, renders, changelog, sprint JSON, .uid)",
+    "counted": "~709 by the plan's rule (goldens tools/cmb_golden.gd 110 and tools/exposure_golden.gd 4 excluded); cap 650, estimate 300",
+    "main_gd": "883 lines (806 before M1.8)"
+  },
+  "findings": [
+    {
+      "priority": "P1",
+      "scope": "sky/sky_meter.gd, sky/exposure.gd state_name(), main.gd hud; D-15 glazing",
+      "title": "The disc at gamma 707 is a glare and retinal-hazard source and nothing in the model, the HUD or the ledger says so",
+      "detail": "1.98e8 cd/m^2 over a ~20' disc is an eighth of the solar disc. The eye model adapts the mean field to EV +12.4 (697 cd/m^2) and draws a clean dot; a real observer gets discomfort glare, an afterimage, and with fixation a photochemical lesion in minutes. The glazing ruled in D-15 absorbs UV/X, not 3,854 K visible light. This is the 'true adaptation model must come with M1.8' item from the M1.5a evaluation, half done. Not a physics error in M1.8's claims, so not blocking the milestone, but it belongs in front of Mark at R-e: HUD label ('blinding: disc 2e8 cd/m^2'), a saturation/afterimage effect, or auto-dimming dome glazing as lore. Recommend an OPEN ledger row."
+    },
+    {
+      "priority": "P2",
+      "scope": "main.gd _meter_eye_now (mutant M4b), sky/cmb.gd T_MAX (mutant M5a)",
+      "title": "Two contracts covered only by captures or comments",
+      "detail": "The main-to-meter CMB wiring and the lookup range have no failing test when broken. Add a golden (or a physics check through a MainLoop stub) for the first and a one-line check for the second."
+    },
+    {
+      "priority": "P3",
+      "scope": "sky/exposure.gd psf_sigma_angle(), main.gd _capture_cmb zoom",
+      "title": "The PSF is fixed in sky angle; at a zoomed field of view it should scale with the magnification",
+      "detail": "sigma = 6' of sky is the eye's blur only at the natural field of view; through a 70/4 = 17.5x optic the eye's 6' is 0.34' of sky. The 4 deg zoom renders are therefore ~17x too soft (the disc should show its 10.5' visible edge). Capture-only today; either document the zoom as a diagnostic or set sigma_sky = 6' x fov / 70."
+    },
+    {
+      "priority": "P3",
+      "scope": "main.gd env.glow_*, docs/m1.8 camera frames",
+      "title": "The camera frames' 3 deg halo is Godot glow on a 6e4-clamped pixel, not the CMB profile",
+      "detail": "theta_max of the profile is ~1.1 deg; the halo in the camera-auto/fixed frames is the post-process bloom of a saturated pixel. Fair as 'the camera cannot hold it' but uncalibrated; say so in the R-e note so the look is not read as physics."
+    },
+    {
+      "priority": "P3",
+      "scope": "main.gd (883 lines)",
+      "title": "main.gd keeps growing against the M1.5a follow-up to shrink it",
+      "detail": "Move _capture_cmb, _capture_exposure_pair and the eye-meter cache into tools/capture.gd or sky/; a MainLoop-style split would also let the meter wiring be tested headless (finding 2)."
+    },
+    {
+      "priority": "P3",
+      "scope": "sky/exposure.gd PSF_SIGMA_ARCMIN, sky/cmb.gd",
+      "title": "The dark-adapted sigma is used when the eye is light-adapted",
+      "detail": "At EV +12 the eye is photopic (acuity ~1') and its PSF is dominated by glare scatter; a single 6' Gaussian is the scotopic case. Acceptable for M1 (the star splat width is what it tunes); revisit with the glare model."
+    }
+  ],
+  "deviations": [
+    {
+      "id": 1,
+      "what": "AC '1,926.9 K at theta' = 90 deg' asserted for the REST-FRAME 90 deg direction (which appears at asin(1/gamma) = 0.081 deg); at apparent 90 deg the CMB is T0/gamma = 0.0039 K",
+      "verdict": "ACCEPT. The AC conflated the two frames; the package doc (optics.cmbSeenTemperature vs cmbSeenTemperatureApparent) and my oracle agree with the executor, both readings are asserted, and the Doppler convention D = 1/(gamma (1 - beta cos theta')) is the one in use throughout. Sideways at speed is redshifted."
+    },
+    {
+      "id": 2,
+      "what": "Captures fly a real journey (new_game, plan, commit, boost, cruise) to reach gamma 275 and 707 instead of injecting a velocity",
+      "verdict": "ACCEPT, better than the plan: it exercises the sim's cruise cap (D-15 cruise_phi_max gives gamma 707.0 at 1 - beta = 1e-6) and keeps the ship at Sol so the starfield is the familiar one; the HUD rows (ship 0.000 yr, travelled 0.001 ly) show the D-11 boost-in-minutes profile."
+    },
+    {
+      "id": 3,
+      "what": "The 4 deg zoom re-meters the eye (EV +17.4 vs +12.4)",
+      "verdict": "ACCEPT with finding 3. Re-adapting to a higher level through a magnifying optic is physically right in direction (more flux on the retina), and the EV reproduces from the meter's definition; the zoom's PSF should scale with the magnification, and the zoom should be labelled a diagnostic view, not a game view."
+    },
+    {
+      "id": 4,
+      "what": "main.gd grows to 883 lines",
+      "verdict": "ACCEPT with a deduction (-2 code quality) and finding 5; the growth is 77 lines of capture driver and meter cache that belong elsewhere."
+    },
+    {
+      "id": 5,
+      "what": "make bench p99 miss of 41-57 ms under host load 8-17, origin/main missing equally",
+      "verdict": "ACCEPT as environmental, now verified: on a quiet host p99 is 9.67 ms (metal) / 9.57 ms (vulkan), 2 of ~3560 frames over 16.7 ms, V_lim 6.9, star pass 0.89 ms, with the eye meter running every 100 ms."
+    },
+    {
+      "id": 6,
+      "what": "LOC ~823 raw (~709 counted) over the 650 cap, 300 estimated",
+      "verdict": "ACCEPT with a deduction (-1 code quality). The overrun is the two follow-ups the M1.5a evaluation and the coordinator put 'before M1.8' (angular PSF, centre-weighted meter) plus ~200 lines of tests for them; they were sanctioned, not scope creep, and splitting them into their own PR would have cost a second GPU gate cycle. The plan's estimate should have been revised when they were folded in; counted LOC is 1.09x the cap, inside the plan's own '1.1x overrun still fits'."
+    }
+  ],
+  "evidence": {
+    "clone": "scratchpad/m18-eval (git clone --no-hardlinks, origin reset to GitHub, eval-m18 from origin/sprint/m1.8-cmb at 978b052), runtime/bin/ailang v0.52.0",
+    "make_test": "exit 0 (scratchpad/make_test.log)",
+    "make_golden": "exit 0, golden: 0 failures, 7 'ok    CMB golden' lines (scratchpad/make_golden.log)",
+    "make_capture": "exit 0, renders/ 12 CMB frames + 2 zooms + cmb_sheet.png, opened (scratchpad/make_capture.log)",
+    "make_bench": "exit 0 both drivers (scratchpad/make_bench.log)",
+    "mutations": "scratchpad/mutations.log and mut_*.log; M3a golden in scratchpad/m18-mut2 (golden: 1 failures)",
+    "oracle": "inline Python, outputs quoted in physics_gate_2"
+  },
+  "next_steps": [
+    "R-e (Mark, gate 2): review docs/m1.8; the physics is signed off here, the question is the look of a blinding disc on a light-adapted eye and whether the game warns, saturates or dims (finding 1). Suggest an OPEN ledger row: 'Forward CMB at gamma >= 300: HUD warning / saturation+afterimage / auto-dimming glazing as lore / nothing (the disc is a 2 px dot)?'",
+    "Before merge (small, executor): a test for the main.gd -> eye meter CMB wiring and a check that CmbGlow.T_MAX covers the cap pole temperature (finding 2); a one-line note in the plan status that the camera frames' halo is Godot glow (finding 4).",
+    "Follow-up (M1.5b or a small sprint): PSF sigma scaled by fov/70 for zoomed views, or label the zoom a diagnostic (finding 3); move the capture drivers out of main.gd (finding 5).",
+    "Later (with a glare model): photopic PSF and CIE glare scatter when the eye is light-adapted (finding 6)."
+  ]
+}

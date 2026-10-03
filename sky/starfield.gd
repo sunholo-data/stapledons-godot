@@ -290,6 +290,11 @@ func set_exposure(e: float) -> void:
 	material.set_shader_parameter("exposure", e)
 
 
+## The point-spread sigma in pixels (Exposure.psf_sigma_px: fixed in angle, M1.8).
+func set_psf(sigma_px: float) -> void:
+	material.set_shader_parameter("psf_sigma_px", sigma_px)
+
+
 ## Magnitude-floor aid: Vector2(floor lux, floor peak); zeros switch it off.
 func set_floor(p: Vector2) -> void:
 	material.set_shader_parameter("floor_flux", p.x)

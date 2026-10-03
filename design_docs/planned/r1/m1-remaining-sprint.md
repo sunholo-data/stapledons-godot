@@ -739,6 +739,20 @@ tiers), #43 · **Registry:** none (UI and data).
 ### Wave 6
 
 #### M1.8: Forward CMB glow (queue row 6a, D-11)
+**Status (2026-10-03):** executed to ⏸ R-e. The two pre-M1.8 follow-ups from M1.5a are done.
+(1) The angular PSF is σ = 6′, clamped to at least 0.7 px. EV_dark is −4.40 at every size, and the
+dark sky shows linear 7.6e-4 (1/255) at both 960×540 and 2560×1440. V_lim is 6.8 at 960×540 and
+6.9 at 2560×1440. (2) The eye meter is centre-weighted, with stars and the CMB (`sky/sky_meter.gd`).
+`make physics` (CMB, PSF and meter tests), `make golden` (7 CMB cases, 0 failures) and
+`make capture` (γ 275/707) were run and the renders opened (`docs/m1.8/`).
+Deviation: the AC "1,926.9 K at θ′ = 90°" holds for the REST-FRAME 90° direction, which appears at
+asin(1/γ). At apparent 90° the CMB is T0/γ = 0.0039 K (package doc). Both are asserted.
+Evaluation round 1: 90/100. Mark approved R-e. Mutants killed before merge: main.gd's eye-meter wiring
+dropping the CMB (now tested off-tree in `make physics`), and `T_MAX` 5000 → 3000 (the lookup must cover the 3,853.7 K cap pole).
+Recorded for later, not in M1.8:
+- The 4° zoom keeps the eye's 6′ PSF in scene angle. It should scale with magnification (evaluator P3).
+- The halo around the disc in the camera frames is Godot glow (bloom), not physics, and needs a label.
+- Glare and auto-dimming glazing for the forward disc are a separate milestone (Mark's choice).
 **Scope:**
 - Add a CMB term to `sky/background.gdshader`: per pixel,
   radiance += `photopicRadiance(T₀ · D(n′))` in cd/m². It is drawn under the

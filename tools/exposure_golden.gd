@@ -89,6 +89,7 @@ func _star_lux(main: Node) -> int:
 	main.starfield.set_velocity(Vector3(0, 0, -1), 0.0, 1.0)
 	main.starfield.set_floor(Vector2.ZERO)
 	main.starfield.set_exposure(e.star_scale())
+	main.starfield.set_psf(e.psf_sigma_px())
 	var img: Image = await main._grab()
 	var c: Vector3 = main._window_sum(img)
 	var got := 0.2126729 * c.x + 0.7151522 * c.y + 0.0721750 * c.z
@@ -144,6 +145,7 @@ func limiting_magnitude(main: Node) -> Dictionary:
 	main.starfield.set_velocity(Vector3(0, 0, -1), 0.0, 1.0)
 	main.starfield.set_floor(Vector2.ZERO)
 	main.starfield.set_exposure(e.star_scale())
+	main.starfield.set_psf(e.psf_sigma_px())
 	var img: Image = await main._grab()
 	var bgs := []
 	for k in 200: # background: a ring of pixels well outside the block
@@ -166,6 +168,6 @@ func limiting_magnitude(main: Node) -> Dictionary:
 			run = false
 	main.starfield.set_custom_stars([])
 	var model := Relativity.limiting_magnitude(Exposure.dark_sky_luminance(), Exposure.FIELD_FACTOR)
-	var line := "V_lim %.1f measured in the rendered frame (%dx%d, EV %+.2f dark-adapted, sky %d/255; ladder V %.1f-%.1f step %.1f, visible = peak >= %d levels above sky; levels above sky %s); Crumey model F = %.0f: %.3f; AC8 %.1f <= V_lim <= %.1f" % [
-		v_lim, size.x, size.y, e.ev, bg, LADDER_V0, LADDER_V1, LADDER_STEP, Exposure.VIS_LEVELS, str(levels), Exposure.FIELD_FACTOR, model, AC8.x, AC8.y]
+	var line := "V_lim %.1f measured in the rendered frame (%dx%d, EV %+.2f dark-adapted, PSF %.1f arcmin = %.2f px, sky %d/255 = linear %s; ladder V %.1f-%.1f step %.1f, visible = peak >= %d levels above sky; levels above sky %s); Crumey model F = %.0f: %.3f; AC8 %.1f <= V_lim <= %.1f" % [
+		v_lim, size.x, size.y, e.ev, rad_to_deg(e.psf_sigma_rad()) * 60.0, e.psf_sigma_px(), bg, String.num_scientific(Exposure.dark_sky_luminance() * e.k()), LADDER_V0, LADDER_V1, LADDER_STEP, Exposure.VIS_LEVELS, str(levels), Exposure.FIELD_FACTOR, model, AC8.x, AC8.y]
 	return {"v_lim": v_lim, "model": model, "ev": e.ev, "line": line}

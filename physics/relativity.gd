@@ -17,6 +17,37 @@ static func gamma_of(b: float) -> float:
 	return 1.0 / sqrt(1.0 - b * b)
 
 
+## gamma from 1 - beta (the sim's one_minus_beta), exact near c.
+static func gamma_of_one_minus_beta(omb: float) -> float:
+	return 1.0 / sqrt(omb * (2.0 - omb))
+
+
+## CMB temperature, K (higgs-bubble HB-5; the package's medium.cmbTemperatureK).
+const CMB_T0 := 2.725
+
+
+## Temperature of the CMB arriving from galaxy-frame direction n (toward the
+## source): T0 gamma (1 + beta n.bh). Mirrors optics.cmbSeenTemperature
+## (0.5.0+): 1,926.9 K for n at 90 deg at 1 - beta = 1e-6.
+static func cmb_seen_temperature(n: Vector3, bh: Vector3, omb: float) -> float:
+	return CMB_T0 * gamma_of_one_minus_beta(omb) * (1.0 + (1.0 - omb) * n.dot(bh))
+
+
+## The same from the APPARENT angle theta' between the view ray and the
+## direction of travel: T0 / (gamma (1 - beta cos theta')), with
+## 1 - beta cos theta' = (1 - beta) + 2 beta sin^2(theta'/2) so nothing cancels
+## near c. Mirrors optics.cmbSeenTemperatureApparent (0.5.0+): 3,853.7 K on the
+## pole at the cap (HB-63), half that near theta' = 1/gamma, T0/gamma at 90 deg.
+static func cmb_temperature_apparent(theta_app: float, omb: float) -> float:
+	var s := sin(0.5 * theta_app)
+	return CMB_T0 / (gamma_of_one_minus_beta(omb) * (omb + 2.0 * (1.0 - omb) * s * s))
+
+
+## Angle between unit vectors without the acos cancellation at small angles.
+static func angle_between(a: Vector3, b: Vector3) -> float:
+	return atan2(a.cross(b).length(), a.dot(b))
+
+
 ## Velocity is passed as a unit direction plus a float64 speed b, because
 ## Godot's Vector3 is float32 and would cost ~7 significant digits in D.
 
