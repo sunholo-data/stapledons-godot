@@ -66,3 +66,20 @@ for h in 21421 24436 32349 57939 69673 71681 71683 91262; do
 for d in 1142 1143 1675 1676 2914 3517 3627 4607; do
   awk -v d=$d 'substr($0,1,4)+0==d' data/raw/cns5.dat; done > tools/fixtures/cns5_bright.dat
 ```
+
+## Companion rule (`sim/tools/companions_test.ail`, `make companions-test`)
+
+Cut the same way after `make catalogue-inputs`. `companions_test.ail` inlines these lines plus the
+Sirius, alpha Cen lines of the bright fixtures above, and `companionsFixtures` fails if the files and
+the inline copies differ.
+
+```
+# CNS5: Luyten 726-8 A/B (GJ 65), Wolf 424 A/B (GJ 473), GJ 604 (the GCNS false pair's
+# foreground star), GJ 13207 / GJ 13208 (a false pair: 102 arcsec, parallaxes 87% apart)
+for d in 424 425 3092 3093 3925 5485 5486; do
+  awk -v d=$d 'substr($0,1,4)+0==d' data/raw/cns5.dat; done > tools/fixtures/cns5_companions.dat
+# GCNS (J/A+A/649/A6 table1c.dat.gz, Lrecl 760; source_id bytes 3-21): GJ 604 and the background
+# star 43 arcsec from it at 307 ly (a false pair the parallax test rejects)
+gunzip -c data/raw/table1c.dat.gz | awk 'substr($0,3,19)=="5994771079533026688" || substr($0,3,19)=="5994771148252505216"' \
+  > tools/fixtures/table1c_companions.dat
+```

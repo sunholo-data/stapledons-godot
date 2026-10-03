@@ -13,8 +13,10 @@ module stapledons/sim/tools/bright
 --       J2016.0 position and HIP2 parallax; teff = teffFromBV(B-V), v = V verbatim, flags 8.
 --   (b) a CNS5 row without Gaia photometry whose HIP id no other CNS5 row carries gets that HIP
 --       star's V and teffFromBV(B-V) in place, flags 8 (fill; applied by catalogue_main, quick).
---   (c) data/starmap/bright_overrides.json: a component HIP lists separately from its CNS5 system
---       row takes the system row's parallax, at its own HIP2 position propagated to that row's epoch.
+--   (c) retired into the companion rule (sim/tools/companions.ail, design_docs/planned/r1/
+--       m1-companion-parallax.md): a bright row that is a companion of a brighter star takes that
+--       system's parallax, at its own HIP2 position propagated to the system row's epoch. alpha Cen B
+--       (HIP 71681, D-19) is the case rule (c) carried by hand; its bytes are unchanged.
 -- flags 8 = photometry from Hipparcos (V, B-V); + 16 when B-V is outside the teffFromBV table.
 import ./catalogue (Row, Fill)
 import ./extract (number, icrsToGalactic, distanceLy)
@@ -24,16 +26,14 @@ import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/math (sin, cos, sqrt, atan2, floatToInt, PI)
 import std/array (fromList as toArray, get, length as alen)
-import std/json (decode, get as jget, asArray, asNumber)
 import pkg/sunholo/relativity/photometry (teffFromBV, bvInTable)
 
 export type Astro = {hip: int, ra: float, dec: float, plx: float, pmra: float, pmde: float}
 export type Phot = {hip: int, v: float, bv: Option[float]}
 export type Cns = {id: string, hip: int, epoch: float, ra: float, dec: float, plx: float, g: float, missing: bool}
 export type Gcns = {ux: float, uy: float, uz: float, g: float}
-export type Override = {hip: int, system: int}
 export type Filled = {rows: [Fill], ambiguous: [string], noPhot: [string]}
-export type Bright = {rows: [Row], cns5: int, gcns: int, overridden: int, noColour: [string]}
+export type Bright = {rows: [Row], cns5: int, gcns: int, noColour: [string]}
 type Verdict = {kind: string, row: Row}
 
 export pure func flagHip() -> int = 8
@@ -85,29 +85,18 @@ export pure func gcnsIndex(csv: string) -> Array[Gcns] = toArray(sortBy(\a b. if
     },
     _ => []
   }, split(csv, "\n"))))
-export pure func parseOverrides(json: string) -> Result[[Override], string] = match decode(json) {
-  Err(e) => Err(concat(["bright_overrides.json: ", e])),
-  Ok(j) => match jget(j, "components") {
-    None => Err("bright_overrides.json has no components"),
-    Some(cs) => match asArray(cs) {
-      None => Err("bright_overrides.json components is not an array"),
-      Some(xs) => {
-        let os = flatMap(\c. match presentAll(map(\k. match jget(c, k) { Some(n) => asNumber(n), None => None }, ["hip", "system_hip"])) {
-          [h, s] => [{hip: floatToInt(h), system: floatToInt(s)}], _ => [] }, xs);
-        if size(os) == size(xs) then Ok(os) else Err("bright_overrides.json: every component needs hip and system_hip")
-      }
-    }
-  }
-}
+
 
 -- HIP2 direction at `epoch` (linear space motion on the sphere from J1991.25), galactic unit vector.
 pure func masRad() -> float = PI() / 648000000.0
-export pure func directionAt(a: Astro, epoch: float) -> (float, float, float) {
-  let k = (epoch - 1991.25) * masRad();
-  let ca = cos(a.ra); let sa = sin(a.ra); let cd = cos(a.dec); let sd = sin(a.dec);
-  let px = cd * ca - k * (a.pmra * sa + a.pmde * sd * ca);
-  let py = cd * sa + k * (a.pmra * ca - a.pmde * sd * sa);
-  let pz = sd + k * a.pmde * cd;
+export pure func directionAt(a: Astro, epoch: float) -> (float, float, float) = directionFrom(a.ra, a.dec, a.pmra, a.pmde, epoch - 1991.25)
+-- ICRS ra, dec (rad) moved dt years by pmRA* and pmDE (mas/yr), as a galactic unit vector.
+export pure func directionFrom(ra: float, dec: float, pmra: float, pmde: float, dt: float) -> (float, float, float) {
+  let k = dt * masRad();
+  let ca = cos(ra); let sa = sin(ra); let cd = cos(dec); let sd = sin(dec);
+  let px = cd * ca - k * (pmra * sa + pmde * sd * ca);
+  let py = cd * sa + k * (pmra * ca - pmde * sd * sa);
+  let pz = sd + k * pmde * cd;
   icrsToGalactic(atan2(py, px) * 180.0 / PI(), atan2(pz, sqrt(px * px + py * py)) * 180.0 / PI())
 }
 -- squared chord of 1 arcsec; |duz| <= chord, so a uz band bounds the candidates
@@ -154,32 +143,21 @@ pure func hipName(h: int) -> string = concat(["HIP ", intToStr(h)])
 pure func tag(k: string, a: Astro) -> Verdict = {kind: k, row: {id: hipName(a.hip), x: 0.0, y: 0.0, z: 0.0, teff: 0.0, v: 0.0, flags: 0}}
 pure func at(k: string, a: Astro, epoch: float, plx: float, v: float, bv: float) -> Verdict = match distanceLy(Some(plx)) {
   Some(d) => {kind: k, row: hipRow(hipName(a.hip), directionAt(a, epoch), d, v, bv)}, None => tag("bad", a) }
-pure func classify(a: Astro, p: Phot, cnsBy: Array[Cns], ovs: [Override], idx: Array[Gcns]) -> Verdict =
-  match head(filter(\o. o.hip == a.hip, ovs)) {
-    Some(o) => match group(cnsBy, o.system) {
-      [s] => match p.bv {
-        Some(bv) => if size(group(cnsBy, a.hip)) > 0 then tag("bad", a) else at("override", a, s.epoch, s.plx, p.v, bv),
-        None => tag("bad", a)
-      },
-      _ => tag("bad", a)
-    },
-    None => if size(group(cnsBy, a.hip)) > 0 then tag("cns5", a)
-      else if gcnsMatch(idx, a, p.v, 2016.0) then tag("gcns", a)
-      else match p.bv { Some(bv) => at("keep", a, 2016.0, a.plx, p.v, bv), None => tag("nocolour", a) }
-  }
+pure func classify(a: Astro, p: Phot, cnsBy: Array[Cns], idx: Array[Gcns]) -> Verdict =
+  if size(group(cnsBy, a.hip)) > 0 then tag("cns5", a)
+  else if gcnsMatch(idx, a, p.v, 2016.0) then tag("gcns", a)
+  else match p.bv { Some(bv) => at("keep", a, 2016.0, a.plx, p.v, bv), None => tag("nocolour", a) }
 pure func kinds(vs: [Verdict], k: string) -> [Verdict] = filter(\x. x.kind == k, vs)
--- Rules (a) and (c), in HIP2 order. Every override must apply exactly once, to a V < 7 star whose
--- system HIP id belongs to exactly one CNS5 row and which is not itself a CNS5 row.
-export pure func bright(hips: [Astro], phot: Array[Phot], cns: [Cns], idx: Array[Gcns], ovs: [Override]) -> Result[Bright, string] {
+-- Rule (a), in HIP2 order. Companions (alpha Cen B among them) are moved to their system's distance
+-- afterwards, by sim/tools/companions.ail.
+export pure func bright(hips: [Astro], phot: Array[Phot], cns: [Cns], idx: Array[Gcns]) -> Result[Bright, string] {
   let cnsBy = cnsIndex(cns);
   let vs = flatMap(\a. match photOf(phot, a.hip) {
-    Some(p) => if p.v < 7.0 && a.plx > 0.0 then [classify(a, p, cnsBy, ovs, idx)] else [],
+    Some(p) => if p.v < 7.0 && a.plx > 0.0 then [classify(a, p, cnsBy, idx)] else [],
     None => [] }, hips);
   let bad = kinds(vs, "bad");
-  let applied = kinds(vs, "override");
-  if size(bad) > 0 then Err(concat(["bright override cannot apply (system row missing or shared, no B-V, or itself a CNS5 row): ", join(", ", map(\x. x.row.id, bad))]))
-  else if size(applied) != size(ovs) then Err("a bright override names a star that is not a HIP2 V < 7 row")
-  else Ok({rows: map(\x. x.row, filter(\x. x.kind == "keep" || x.kind == "override", vs)),
-    cns5: size(kinds(vs, "cns5")), gcns: size(kinds(vs, "gcns")), overridden: size(applied),
+  if size(bad) > 0 then Err(concat(["bright row without a distance: ", join(", ", map(\x. x.row.id, bad))]))
+  else Ok({rows: map(\x. x.row, kinds(vs, "keep")),
+    cns5: size(kinds(vs, "cns5")), gcns: size(kinds(vs, "gcns")),
     noColour: map(\x. x.row.id, kinds(vs, "nocolour"))})
 }

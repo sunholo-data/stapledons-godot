@@ -50,18 +50,26 @@ export pure func applyFill(rows: [Row], fs: [Fill]) -> [Row] =
   map(\r. match filter(\f. f.id == r.id, fs) { [f] => {id: r.id, x: r.x, y: r.y, z: r.z, teff: f.teff, v: f.v, flags: f.flags}, _ => r }, rows)
 -- hipSha "" = no fill (medium, large, and quick before M1.2d); a fill is refused off the quick tier.
 export pure func planFill(i: {tier: string, csv: string, rawSha: string, ailang: string, pkg: Pkg}, fs: [Fill], hipSha: string) -> Result[Plan,string] =
+  planAdjusted(i,fs,hipSha,\rs. rs,\_. [],[])
+-- The companion rule (sim/tools/companions.ail, applied by bright_main) enters as `adjust`, run on every
+-- row after the fill and before the tier selection; `extra` adds sidecar keys from the selected rows and
+-- `shas` the extra input digests. planFill's identity adjust leaves the M1.2c/M1.2d sidecars unchanged.
+export pure func planAdjusted(i: {tier: string, csv: string, rawSha: string, ailang: string, pkg: Pkg}, fs: [Fill], hipSha: string,
+    adjust: [Row] -> [Row], extra: [Row] -> [{key: string, value: Json}], shas: [{key: string, value: Json}]) -> Result[Plan,string] =
   if !sha256Text(i.rawSha) then Err("raw sha256 must be 64 lowercase hex digits") else
   if hipSha != "" && (i.tier != "quick" || !sha256Text(hipSha)) then Err("the HIP photometry fill applies to the quick tier only, with a hip_main sha256") else
   match transform(i.csv) {
     Err(e) => Err(e),
-    Ok(s) => match selectTier(applyFill(s.rows,fs),i.tier) {
+    Ok(s) => match selectTier(adjust(applyFill(s.rows,fs)),i.tier) {
       Err(e) => Err(e),
       Ok(sel) => match encodeRows(sel.rows) {
         Err(e) => Err(e),
         Ok(b) => Ok({bin: b, count: size(sel.rows), excluded: sel.excluded,
-          sidecar: if hipSha == "" then sidecar(i.tier,size(sel.rows),sel.excluded,i.rawSha,sha256Hex(i.csv),sha256Bytes(b),i.ailang,i.pkg)
-            else sidecarWith(i.tier,source(i.tier),size(sel.rows),sel.excluded,[kv("hip_filled",jint(size(fs)))],
-              [kv("raw",js(i.rawSha)), kv("csv",js(sha256Hex(i.csv))), kv("hip_main",js(hipSha))],sha256Bytes(b),i.ailang,i.pkg)})
+          sidecar: if hipSha == "" && size(shas) == 0 then sidecar(i.tier,size(sel.rows),sel.excluded,i.rawSha,sha256Hex(i.csv),sha256Bytes(b),i.ailang,i.pkg)
+            else sidecarWith(i.tier,source(i.tier),size(sel.rows),sel.excluded,
+              append(if hipSha == "" then [] else [kv("hip_filled",jint(size(fs)))], extra(sel.rows)),
+              append([kv("raw",js(i.rawSha)), kv("csv",js(sha256Hex(i.csv)))], append(if hipSha == "" then [] else [kv("hip_main",js(hipSha))], shas)),
+              sha256Bytes(b),i.ailang,i.pkg)})
       }
     }
   }

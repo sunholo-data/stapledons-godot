@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Companion stars take their system's distance, 2026-10-03 (Mark's ruling; M1.7 evaluation follow-ups)
+
+- **Companion rule** (`sim/tools/companions.ail`, design
+  `design_docs/planned/r1/m1-companion-parallax.md`): a star within 60″ and
+  2,000 AU of a brighter star, with parallaxes within 20% (and 5% or 3σ) and
+  proper motions within the orbital bound, takes the system root's parallax.
+  `make companions` writes `data/starmap/companions/companions.csv` (20,524 companions over
+  CNS5 + GCNS + the bright tier); every tier and `stars.json` apply it. Sirius B
+  now 8.601 ly (was 8.709), Luyten 726-8 B 8.817 (was 8.724), Wolf 424 B 14.112
+  (was 14.593). α Cen B is the old rule (c) case: its bytes are unchanged;
+  `bright_overrides.json` is retired. No primary row moves; every non-companion
+  row is byte-identical.
+- **Tests:** `make companions-test` (thresholds just inside/outside, real-line
+  fixtures, strict VM = interpreter); `tools/check_companions.py` (oracle) in
+  `make catalogue-verify`.
+- **`make catalogue-verify` green again:** tier sidecars regenerated on v0.52.0 /
+  relativity 0.5.2 (they still said v0.51.0 / 0.5.1 after the bump).
+- **`tools/check_star_names.py`:** negative controls for direction (5°),
+  distance (10%) and a name row repeated.
+- **Galaxy map labels** skip a name whose box overlaps a drawn label;
+  `docs/m1.7/destar_before_after.png` labelled before/after.
+
 ### Review-build polish, 2026-10-02 (Mark's feedback on `v0.3.1-m2-journey`)
 
 - **Trackpad zoom on the galaxy map:** pinch (magnify gesture) and two-finger
