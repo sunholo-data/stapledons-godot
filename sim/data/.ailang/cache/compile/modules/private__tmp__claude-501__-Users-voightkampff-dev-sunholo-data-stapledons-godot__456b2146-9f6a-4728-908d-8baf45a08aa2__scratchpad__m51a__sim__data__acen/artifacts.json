@@ -1,0 +1,11 @@
+{
+  "version": "v5",
+  "module_id": "private/tmp/claude-501/-Users-voightkampff-dev-sunholo-data-stapledons-godot/456b2146-9f6a-4728-908d-8baf45a08aa2/scratchpad/m51a/sim/data/acen",
+  "cache_key": "cac9497db937d8c2dac54ffcfe7f7da528fa8d667293596cd70e5d3af6cd6959",
+  "sha256": {
+    "constructors.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "core.gob": "97dd9b6f131ac5ec0c71c1b83b2d9008b4b76be08862a7807edfa819f7dd7715",
+    "coretypeinfo.gob": "b52a29eb1427fcc260ddf4cf1e45468ab17dfc0e797f80cb394acea9ad38a18a",
+    "iface.json": "4bba212b65ba6c63f01d631ff844f857ef9862db23e49e7af886b1221815f169"
+  }
+}

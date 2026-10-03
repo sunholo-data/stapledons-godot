@@ -1,0 +1,11 @@
+{
+  "version": "v5",
+  "module_id": "pkg/sunholo/celestial/kepler",
+  "cache_key": "9fe3f7efff953dcd1adb9ed4abf084c2367073c0856cc3da4fe9f76ebd8385e9",
+  "sha256": {
+    "constructors.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "core.gob": "35a1b1d02accf6c9625c2fe8ffa80882c716e45acfc85d328887faa607230c47",
+    "coretypeinfo.gob": "5454bd81c8237672e5e82a406bbcd6d5d0e0c1aa61ee5fdeb1095e317c596b7f",
+    "iface.json": "63cbfab23855103475e67beb32cc7cfc413b022906a904051d121ebe51c82c01"
+  }
+}

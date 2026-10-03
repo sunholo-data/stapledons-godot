@@ -1,0 +1,246 @@
+module stapledons/sim/data/sol
+
+-- M5.1a: Sol's system as data (design m5-planets §M5.1). Pure, no I/O.
+-- Every row carries citation keys (Cite) that resolve in citations(); the
+-- numbers are copied digit for digit from the cited table. Angles are
+-- written in degrees as tabulated and converted once, here, to radians.
+-- The Sun, 8 planets, the 12 moons design §M5.1 names (Q7 default; it says "11") and 4 ring systems.
+import pkg/sunholo/celestial/ephemeris (MeanElements, ElementRates, SatElements)
+import pkg/sunholo/celestial/frames (PoleModel, PoleTerm, obliquityJ2000)
+import pkg/sunholo/celestial/rings (RingBand)
+
+-- Citation keys, one per field group. "" is never allowed (celestial_test).
+export type Cite = { orbit: string, pole: string, shape: string, gm: string, albedo: string, limb: string }
+export type Star = { id: string, name: string, pole: PoleModel, radiusKm: float, gm: float, cite: Cite }
+-- radiusKm is the equatorial radius the albedo goes with; polarKm the polar one.
+export type Planet = { id: string, name: string, el: MeanElements, rates: ElementRates, pole: PoleModel,
+  radiusKm: float, polarKm: float, gm: float, pV: float, minnaertK: float, ring: string, cite: Cite }
+export type Moon = { id: string, name: string, host: string, sat: SatElements, pole: PoleModel,
+  radiusKm: float, polarKm: float, gm: float, pV: float, cite: Cite }
+-- tint is a rest-frame sRGB tint from imagery, labelled as a tint, not a spectrum.
+export type Tint = { r: float, g: float, b: float }
+export type Ring = { host: string, names: [string], bands: [RingBand], tint: Tint, cite: string, tauCite: string, w0Cite: string, tintCite: string }
+
+-- key -> full reference. Every Cite field and ring cite must be a key here.
+export pure func citations() -> [(string, string)] = [
+  ("standish1992", "Standish & Williams 1992, JPL SSD 'Approximate Positions of the Planets', Tables 2a/2b (3000 BC-3000 AD); Earth row is the Earth-Moon barycentre"),
+  ("archinal2018", "Archinal et al. 2018, CMDA 130:22, IAU WGCCRE 2015 report, as tabulated in NAIF pck00011.tpc (2022-12-27): poles, W, radii"),
+  ("park2021", "Park et al. 2021, AJ 161:105, DE440 GM values, NAIF gm_de440.tpc"),
+  ("mallama2017", "Mallama, Krobusek & Pavlov 2017, Icarus 282:19, V-band geometric albedo p_V"),
+  ("binder1973", "Binder & McCarthy 1973, AJ 78:939, Minnaert k 1.0 over Jupiter's disc, 0.75-0.90 on Saturn (0.6-2.0 um); Saturn uses the midpoint 0.825"),
+  ("lambert-assumed", "assumed: Lambert (Minnaert k = 1); no citable visible-continuum k for this body was found"),
+  ("jplsat", "JPL SSD 'Planetary Satellite Mean Elements' (Moon DE405/LE405 ecliptic; JUP365, SAT441, NEP097 Laplace), retrieved 2026-10-03"),
+  ("nssdc-sats", "NASA NSSDC Moon, Jovian, Saturnian and Neptunian satellite fact sheets: visual geometric albedo"),
+  ("pds-rings", "PDS Rings Node, 'Vital Statistics for Saturn's Rings': boundaries and optical depth (range midpoint; log midpoint for decade ranges)"),
+  ("nssdc-rings", "NASA NSSDC Jupiter/Saturn/Uranus/Neptune ring fact sheets: radius, width, optical depth, albedo (range midpoints)"),
+  ("w0-assumed", "assumed: no tabulated particle albedo for this band; the nearest tabulated band's value is used"),
+  ("tint-design", "assumed tint: colours of stapledons-design features/future/planetary-rings.md (white/tan, rusty red, grey/dark, reddish)")
+]
+
+pure func rad(d: float) -> float = d * 3.141592653589793 / 180.0
+pure func perDay(dPerCy: float) -> float = rad(dPerCy) / 36525.0
+
+-- Standish Table 2a row (degrees) and its rates per century plus Table 2b (b, c, s, f).
+pure func me(a: float, e: float, i: float, l: float, w: float, n: float) -> MeanElements =
+  { a: a, e: e, incl: rad(i), meanLong: rad(l), longPeri: rad(w), node: rad(n) }
+pure func rt(a: float, e: float, i: float, l: float, w: float, n: float, b: float, c: float, s: float, f: float) -> ElementRates =
+  { a: a, e: e, incl: rad(i), meanLong: rad(l), longPeri: rad(w), node: rad(n), b: rad(b), c: rad(c), s: rad(s), f: rad(f) }
+
+-- WGCCRE model as in pck00011: ra1, dec1 deg/century; w1 deg/day, w2 deg/day^2;
+-- each periodic term (phase0 deg, rate deg/century, ra, dec, w amplitudes in deg).
+pure func pole(ra0: float, ra1: float, dec0: float, dec1: float, w0: float, w1: float, w2: float, ts: [PoleTerm]) -> PoleModel =
+  { ra0: rad(ra0), ra1: rad(ra1), dec0: rad(dec0), dec1: rad(dec1), w0: rad(w0), w1: rad(w1), w2: rad(w2), terms: ts }
+pure func term(p: float, r: float, a: float, d: float, w: float) -> PoleTerm =
+  { phase0: rad(p), rate: perDay(r), ra: rad(a), dec: rad(d), w: rad(w) }
+
+pure func planetCite(albedo: string, limb: string) -> Cite =
+  { orbit: "standish1992", pole: "archinal2018", shape: "archinal2018", gm: "park2021", albedo: albedo, limb: limb }
+
+export pure func sun() -> Star =
+  { id: "sun", name: "Sun", pole: pole(286.13, 0.0, 63.87, 0.0, 84.176, 14.1844, 0.0, []), radiusKm: 695700.0,
+    gm: 132712440041.27942, cite: { orbit: "standish1992", pole: "archinal2018", shape: "archinal2018", gm: "park2021", albedo: "archinal2018", limb: "archinal2018" } }
+
+pure func planet(id: string, name: string, el: MeanElements, r: ElementRates, p: PoleModel, req: float, rpol: float, gm: float, pv: float, k: float, ring: string, limb: string) -> Planet =
+  { id: id, name: name, el: el, rates: r, pole: p, radiusKm: req, polarKm: rpol, gm: gm, pV: pv, minnaertK: k, ring: ring, cite: planetCite("mallama2017", limb) }
+
+export pure func planets() -> [Planet] = [
+  planet("mercury", "Mercury",
+    me(0.38709843, 0.20563661, 7.00559432, 252.25166724, 77.45771895, 48.33961819),
+    rt(0.0, 0.00002123, 0.0 - 0.00590158, 149472.67486623, 0.15940013, 0.0 - 0.12214182, 0.0, 0.0, 0.0, 0.0),
+    pole(281.0103, 0.0 - 0.0328, 61.4155, 0.0 - 0.0049, 329.5988, 6.1385108, 0.0,
+      [term(174.7910857, 149472.535875, 0.0, 0.0, 0.01067257), term(349.5821714, 298945.07175, 0.0, 0.0, 0.0 - 0.00112309),
+       term(164.3732571, 448417.607625, 0.0, 0.0, 0.0 - 0.0001104), term(339.1643429, 597890.1435, 0.0, 0.0, 0.0 - 0.00002539),
+       term(153.9554286, 747362.679375, 0.0, 0.0, 0.0 - 0.00000571)]),
+    2440.53, 2438.26, 22031.868551400003, 0.142, 1.0, "", "lambert-assumed"),
+  planet("venus", "Venus",
+    me(0.72332102, 0.00676399, 3.39777545, 181.97970850, 131.76755713, 76.67261496),
+    rt(0.0 - 0.00000026, 0.0 - 0.00005107, 0.00043494, 58517.81560260, 0.05679648, 0.0 - 0.27274174, 0.0, 0.0, 0.0, 0.0),
+    pole(272.76, 0.0, 67.16, 0.0, 160.20, 0.0 - 1.4813688, 0.0, []),
+    6051.8, 6051.8, 324858.592, 0.689, 1.0, "", "lambert-assumed"),
+  -- Standish gives the Earth-Moon barycentre, not the geocentre (celestial AGENT.md).
+  planet("earth", "Earth",
+    me(1.00000018, 0.01673163, 0.0 - 0.00054346, 100.46691572, 102.93005885, 0.0 - 5.11260389),
+    rt(0.0 - 0.00000003, 0.0 - 0.00003661, 0.0 - 0.01337178, 35999.37306329, 0.31795260, 0.0 - 0.24123856, 0.0, 0.0, 0.0, 0.0),
+    pole(0.0, 0.0 - 0.641, 90.0, 0.0 - 0.557, 190.147, 360.9856235, 0.0, []),
+    6378.1366, 6356.7519, 398600.43550702266, 0.434, 1.0, "", "lambert-assumed"),
+  planet("mars", "Mars",
+    me(1.52371243, 0.09336511, 1.85181869, 0.0 - 4.56813164, 0.0 - 23.91744784, 49.71320984),
+    rt(0.00000097, 0.00009149, 0.0 - 0.00724757, 19140.29934243, 0.45223625, 0.0 - 0.26852431, 0.0, 0.0, 0.0, 0.0),
+    pole(317.269202, 0.0 - 0.10927547, 54.432516, 0.0 - 0.05827105, 176.049863, 350.891982443297, 0.0,
+      [term(198.991226, 19139.4819985, 0.000068, 0.0, 0.0), term(226.292679, 38280.8511281, 0.000238, 0.0, 0.0),
+       term(249.663391, 57420.7251593, 0.000052, 0.0, 0.0), term(266.18351, 76560.636795, 0.000009, 0.0, 0.0),
+       term(79.398797, 0.5042615, 0.419057, 0.0, 0.0), term(122.433576, 19139.9407476, 0.0, 0.000051, 0.0),
+       term(43.058401, 38280.8753272, 0.0, 0.000141, 0.0), term(57.663379, 57420.7517205, 0.0, 0.000031, 0.0),
+       term(79.476401, 76560.6495004, 0.0, 0.000005, 0.0), term(166.325722, 0.5042615, 0.0, 1.591274, 0.0),
+       term(129.071773, 19140.0328244, 0.0, 0.0, 0.000145), term(36.352167, 38281.0473591, 0.0, 0.0, 0.000157),
+       term(56.668646, 57420.929536, 0.0, 0.0, 0.00004), term(67.364003, 76560.2552215, 0.0, 0.0, 0.000001),
+       term(104.79268, 95700.4387578, 0.0, 0.0, 0.000001), term(95.391654, 0.5042615, 0.0, 0.0, 0.584542)]),
+    3396.19, 3376.2, 42828.37362069909, 0.170, 1.0, "", "lambert-assumed"),
+  planet("jupiter", "Jupiter",
+    me(5.20248019, 0.04853590, 1.29861416, 34.33479152, 14.27495244, 100.29282654),
+    rt(0.0 - 0.00002864, 0.00018026, 0.0 - 0.00322699, 3034.90371757, 0.18199196, 0.13024619, 0.0 - 0.00012452, 0.06064060, 0.0 - 0.35635438, 38.35125000),
+    pole(268.056595, 0.0 - 0.006499, 64.495303, 0.002413, 284.95, 870.5360000, 0.0,
+      [term(99.360714, 4850.4046, 0.000117, 0.000050, 0.0), term(175.895369, 1191.9605, 0.000938, 0.000404, 0.0),
+       term(300.323162, 262.5475, 0.001432, 0.000617, 0.0), term(114.012305, 6070.2476, 0.000030, 0.0 - 0.000013, 0.0),
+       term(49.511251, 64.3000, 0.002150, 0.000926, 0.0)]),
+    71492.0, 66854.0, 126686531.9003704, 0.538, 1.0, "jupiter", "binder1973"),
+  planet("saturn", "Saturn",
+    me(9.54149883, 0.05550825, 2.49424102, 50.07571329, 92.86136063, 113.63998702),
+    rt(0.0 - 0.00003065, 0.0 - 0.00032044, 0.00451969, 1222.11494724, 0.54179478, 0.0 - 0.25015002, 0.00025899, 0.0 - 0.13434469, 0.87320147, 38.35125000),
+    pole(40.589, 0.0 - 0.036, 83.537, 0.0 - 0.004, 38.90, 810.7939024, 0.0, []),
+    60268.0, 54364.0, 37931206.23436167, 0.499, 0.825, "saturn", "binder1973"),
+  planet("uranus", "Uranus",
+    me(19.18797948, 0.04685740, 0.77298127, 314.20276625, 172.43404441, 73.96250215),
+    rt(0.0 - 0.00020455, 0.0 - 0.00001550, 0.0 - 0.00180155, 428.49512595, 0.09266985, 0.05739699, 0.00058331, 0.0 - 0.97731848, 0.17689245, 7.67025000),
+    pole(257.311, 0.0, 0.0 - 15.175, 0.0, 203.81, 0.0 - 501.1600928, 0.0, []),
+    25559.0, 24973.0, 5793951.256527211, 0.488, 1.0, "uranus", "lambert-assumed"),
+  planet("neptune", "Neptune",
+    me(30.06952752, 0.00895439, 1.77005520, 304.22289287, 46.68158724, 131.78635853),
+    rt(0.00006447, 0.00000818, 0.00022400, 218.46515314, 0.01009938, 0.0 - 0.00606302, 0.0 - 0.00041348, 0.68346318, 0.0 - 0.10162547, 7.67025000),
+    pole(299.36, 0.0, 43.46, 0.0, 249.978, 541.1397757, 0.0, [term(357.85, 52.316, 0.70, 0.0 - 0.51, 0.0 - 0.48)]),
+    24764.0, 24341.0, 6835103.145462294, 0.442, 1.0, "neptune", "lambert-assumed")
+]
+
+-- A JPL SSD satellite row as tabulated: a (km), e, w, M, i, node (deg), P (d),
+-- P apsis and P node (yr, magnitudes), Laplace pole RA/Dec (deg). The trap in
+-- the celestial AGENT.md: P is the sidereal period in some tables (Moon,
+-- SAT441, NEP097) and the anomalistic one in JUP365, and the rates' signs are
+-- not tabulated. `sidereal` says which P this is; wSign/nSign are the apse and
+-- node directions (+1 advance, -1 regress). celestial_test checks every moon
+-- against its published sidereal period, so a wrong reading fails.
+pure func jplSat(a: float, e: float, w: float, m: float, i: float, n: float, p: float, pw: float, pn: float,
+                 ra: float, dec: float, sidereal: bool, wSign: float, nSign: float) -> SatElements {
+  let wdot = if pw == 0.0 then 0.0 else wSign * 6.283185307179586 / (pw * 365.25);
+  let ndot = if pn == 0.0 then 0.0 else nSign * 6.283185307179586 / (pn * 365.25);
+  { a: a, e: e, argPeri: rad(w), meanAnom: rad(m), incl: rad(i), node: rad(n), epochJd: 2451545.0,
+    meanAnomRate: if sidereal then 6.283185307179586 / p - wdot - ndot else 6.283185307179586 / p,
+    periRate: wdot, nodeRate: ndot, poleRa: rad(ra), poleDec: rad(dec) }
+}
+
+pure func moonCite() -> Cite = { orbit: "jplsat", pole: "archinal2018", shape: "archinal2018", gm: "park2021", albedo: "nssdc-sats", limb: "lambert-assumed" }
+pure func moon(id: string, name: string, host: string, s: SatElements, p: PoleModel, req: float, rpol: float, gm: float, pv: float) -> Moon =
+  { id: id, name: name, host: host, sat: s, pole: p, radiusKm: req, polarKm: rpol, gm: gm, pV: pv, cite: moonCite() }
+
+-- The Moon's elements are referred to the ecliptic: its "Laplace pole" is the ecliptic pole.
+pure func eclRa() -> float = 270.0
+pure func eclDec() -> float = 90.0 - obliquityJ2000() * 180.0 / 3.141592653589793
+
+-- Split per system: one 12-element literal exceeds the bytecode VM's register
+-- budget under --strict-bytecode (evaluator-only; reported to AILANG, message
+-- inbox_1791037931866_b80f2b7c, v0.52.0).
+export pure func moons() -> [Moon] = earthMoon() ++ galilean() ++ saturnian() ++ neptunian()
+
+pure func earthMoon() -> [Moon] = [
+  moon("moon", "Moon", "earth", jplSat(384400.0, 0.0554, 318.15, 135.27, 5.16, 125.08, 27.322, 5.997, 18.600, eclRa(), eclDec(), true, 1.0, 0.0 - 1.0),
+    pole(269.9949, 0.0031, 66.5392, 0.0130, 38.3213, 13.17635815, 0.0 - 0.0000000000014,
+      [term(125.045, 0.0 - 1935.5364525, 0.0 - 3.8787, 1.5419, 3.5610), term(250.089, 0.0 - 3871.072905, 0.0 - 0.1204, 0.0239, 0.1208),
+       term(260.008, 475263.3328725, 0.0700, 0.0 - 0.0278, 0.0 - 0.0642), term(176.625, 487269.629985, 0.0 - 0.0172, 0.0068, 0.0158),
+       term(357.529, 35999.0509575, 0.0, 0.0, 0.0252), term(311.589, 964468.49931, 0.0072, 0.0 - 0.0029, 0.0 - 0.0066),
+       term(134.963, 477198.869325, 0.0, 0.0009, 0.0 - 0.0047), term(276.617, 12006.300765, 0.0, 0.0, 0.0 - 0.0046),
+       term(34.226, 63863.5132425, 0.0, 0.0, 0.0028), term(15.134, 0.0 - 5806.6093575, 0.0 - 0.0052, 0.0008, 0.0052),
+       term(119.743, 131.84064, 0.0, 0.0, 0.0040), term(239.961, 6003.1503825, 0.0, 0.0, 0.0019),
+       term(25.053, 473327.79642, 0.0043, 0.0 - 0.0009, 0.0 - 0.0044)]),
+    1737.4, 1737.4, 4902.80011845755, 0.12)
+]
+
+pure func galilean() -> [Moon] = [
+  -- JUP365: P is anomalistic; Io's and Europa's apses regress (Laplace resonance).
+  moon("io", "Io", "jupiter", jplSat(421800.0, 0.004, 49.1, 330.9, 0.0, 0.0, 1.762732, 1.333, 0.0, 268.1, 64.5, false, 0.0 - 1.0, 0.0 - 1.0),
+    pole(268.05, 0.0 - 0.009, 64.50, 0.003, 200.39, 203.4889538, 0.0, [term(283.9, 4850.7, 0.094, 0.040, 0.0 - 0.085), term(355.8, 1191.3, 0.024, 0.011, 0.0 - 0.022)]),
+    1829.4, 1815.7, 5959.915466180539, 0.62),
+  moon("europa", "Europa", "jupiter", jplSat(671100.0, 0.009, 45.0, 345.4, 0.5, 184.0, 3.525463, 1.394, 30.202, 268.1, 64.5, false, 0.0 - 1.0, 0.0 - 1.0),
+    pole(268.08, 0.0 - 0.009, 64.51, 0.003, 36.022, 101.3747235, 0.0,
+      [term(355.8, 1191.3, 1.086, 0.468, 0.0 - 0.980), term(119.9, 262.1, 0.060, 0.026, 0.0 - 0.054), term(229.8, 64.3, 0.015, 0.007, 0.0 - 0.014), term(352.25, 2382.6, 0.009, 0.002, 0.0 - 0.008)]),
+    1562.6, 1559.5, 3202.712099607295, 0.68),
+  moon("ganymede", "Ganymede", "jupiter", jplSat(1070400.0, 0.001, 198.3, 324.8, 0.2, 58.5, 7.155588, 68.301, 137.812, 268.2, 64.6, false, 1.0, 0.0 - 1.0),
+    pole(268.20, 0.0 - 0.009, 64.57, 0.003, 44.064, 50.3176081, 0.0, [term(355.8, 1191.3, 0.0 - 0.037, 0.0 - 0.016, 0.033), term(119.9, 262.1, 0.431, 0.186, 0.0 - 0.389), term(229.8, 64.3, 0.091, 0.039, 0.0 - 0.082)]),
+    2631.2, 2631.2, 9887.832752719638, 0.44),
+  moon("callisto", "Callisto", "jupiter", jplSat(1882700.0, 0.007, 43.8, 87.4, 0.3, 309.1, 16.690440, 277.921, 577.264, 268.7, 64.8, false, 1.0, 0.0 - 1.0),
+    pole(268.72, 0.0 - 0.009, 64.83, 0.003, 259.51, 21.5710715, 0.0, [term(119.9, 262.1, 0.0 - 0.068, 0.0 - 0.029, 0.061), term(229.8, 64.3, 0.590, 0.254, 0.0 - 0.533), term(113.35, 6070.0, 0.010, 0.0 - 0.004, 0.0 - 0.009)]),
+    2410.3, 2410.3, 7179.283402579837, 0.19)
+]
+
+pure func saturnian() -> [Moon] = [
+  -- SAT441: P is sidereal; apses advance, nodes regress (Saturn's oblateness).
+  moon("mimas", "Mimas", "saturn", jplSat(186000.0, 0.020, 160.4, 275.3, 1.6, 66.2, 0.942422, 0.493, 0.986, 40.6, 83.5, true, 1.0, 0.0 - 1.0),
+    pole(40.66, 0.0 - 0.036, 83.52, 0.0 - 0.004, 333.46, 381.9945550, 0.0, [term(177.4, 0.0 - 36505.5, 13.56, 0.0 - 1.53, 0.0 - 13.48), term(316.45, 506.2, 0.0, 0.0, 0.0 - 44.85)]),
+    207.8, 190.6, 2.503488768152587, 0.6),
+  moon("enceladus", "Enceladus", "saturn", jplSat(238400.0, 0.005, 119.5, 57.0, 0.0, 0.0, 1.370218, 2.916, 0.0, 40.6, 83.5, true, 1.0, 0.0 - 1.0),
+    pole(40.66, 0.0 - 0.036, 83.52, 0.0 - 0.004, 6.32, 262.7318996, 0.0, []),
+    256.6, 248.3, 7.210366688598896, 1.0),
+  moon("tethys", "Tethys", "saturn", jplSat(295000.0, 0.001, 335.3, 0.0, 1.1, 273.0, 1.887802, 0.005, 4.982, 40.6, 83.5, true, 1.0, 0.0 - 1.0),
+    pole(40.66, 0.0 - 0.036, 83.52, 0.0 - 0.004, 8.95, 190.6979085, 0.0, [term(300.0, 0.0 - 7225.9, 9.66, 0.0 - 1.09, 0.0 - 9.60), term(316.45, 506.2, 0.0, 0.0, 2.23)]),
+    538.4, 526.3, 41.21352885489587, 0.8),
+  moon("dione", "Dione", "saturn", jplSat(377700.0, 0.002, 116.0, 212.0, 0.0, 0.0, 2.736916, 11.698, 0.0, 40.6, 83.5, true, 1.0, 0.0 - 1.0),
+    pole(40.66, 0.0 - 0.036, 83.52, 0.0 - 0.004, 357.6, 131.5349316, 0.0, []),
+    563.4, 559.6, 73.11607172482067, 0.7),
+  moon("rhea", "Rhea", "saturn", jplSat(527200.0, 0.001, 44.3, 31.5, 0.3, 133.7, 4.517503, 33.939, 35.775, 40.6, 83.5, true, 1.0, 0.0 - 1.0),
+    pole(40.38, 0.0 - 0.036, 83.55, 0.0 - 0.004, 235.16, 79.6900478, 0.0, [term(345.2, 0.0 - 1016.3, 3.10, 0.0 - 0.35, 0.0 - 3.08)]),
+    765.0, 762.4, 153.9417519146563, 0.7),
+  moon("titan", "Titan", "saturn", jplSat(1221900.0, 0.029, 78.3, 11.7, 0.3, 78.6, 15.945448, 346.680, 687.370, 36.4, 84.0, true, 1.0, 0.0 - 1.0),
+    pole(39.4827, 0.0, 83.4279, 0.0, 186.5855, 22.5769768, 0.0, []),
+    2575.15, 2574.47, 8978.137095521046, 0.22)
+]
+
+pure func neptunian() -> [Moon] = [
+  -- NEP097: P is sidereal; Triton is retrograde (i 157.3 deg), so its node advances.
+  moon("triton", "Triton", "neptune", jplSat(354800.0, 0.000, 0.0, 63.0, 157.3, 178.1, 5.876994, 0.0, 340.379, 299.8, 43.1, true, 1.0, 1.0),
+    pole(299.36, 0.0, 41.17, 0.0, 296.53, 0.0 - 61.2572637, 0.0,
+      [term(177.85, 52.316, 0.0 - 32.35, 22.55, 22.25), term(355.70, 104.632, 0.0 - 6.28, 2.10, 6.73), term(533.55, 156.948, 0.0 - 2.08, 0.55, 2.05),
+       term(711.40, 209.264, 0.0 - 0.74, 0.16, 0.74), term(889.25, 261.580, 0.0 - 0.28, 0.05, 0.28), term(1067.10, 313.896, 0.0 - 0.11, 0.02, 0.11),
+       term(1244.95, 366.212, 0.0 - 0.07, 0.01, 0.05), term(1422.80, 418.528, 0.0 - 0.02, 0.0, 0.02), term(1600.65, 470.844, 0.0 - 0.01, 0.0, 0.01)]),
+    1352.6, 1352.6, 1428.495462910464, 0.72)
+]
+
+-- Ring profiles in the host's equatorial plane, km (celestial's RingBand).
+pure func band(rIn: float, rOut: float, tau: float, w0: float) -> RingBand = { rIn: rIn, rOut: rOut, tau: tau, w0: w0 }
+-- A narrow ring tabulated by radius and width.
+pure func narrow(r: float, width: float, tau: float, w0: float) -> RingBand = band(r - width / 2.0, r + width / 2.0, tau, w0)
+
+export pure func rings() -> [Ring] = [
+  -- Saturn: D, C, B (B1..B5: inner, core B3), Cassini Division, A with the Encke gap, F (PDS);
+  -- w0 = NSSDC particle albedo (D has none: C's value).
+  { host: "saturn", names: ["D", "C", "B1", "B2", "B3 core", "B4", "B5", "Cassini Division", "A inner", "A outer", "F"],
+    bands: [band(66900.0, 74491.0, 0.0001, 0.21), band(74491.0, 91975.0, 0.2, 0.21), band(91975.0, 99000.0, 1.3, 0.5),
+            band(99000.0, 104000.0, 2.75, 0.5), band(104000.0, 110000.0, 3.6, 0.5), band(110000.0, 116500.0, 2.5, 0.5),
+            band(116500.0, 117570.0, 2.75, 0.5), band(117570.0, 122050.0, 0.1, 0.3), band(122050.0, 133423.0, 0.7, 0.5),
+            band(133745.0, 136770.0, 0.7, 0.5), band(139826.0, 140612.0, 0.105, 0.6)],
+    tint: { r: 0.83, g: 0.77, b: 0.66 }, cite: "pds-rings", tauCite: "pds-rings", w0Cite: "nssdc-rings", tintCite: "tint-design" },
+  -- Jupiter: halo, main, gossamer (Amalthea, Thebe). Only the main ring has a tabulated albedo.
+  { host: "jupiter", names: ["halo", "main", "Amalthea gossamer", "Thebe gossamer"],
+    bands: [band(89400.0, 123000.0, 0.000003, 0.015), band(123000.0, 128940.0, 0.000005, 0.015),
+            band(128940.0, 181350.0, 0.0000001, 0.015), band(181350.0, 221900.0, 0.0000001, 0.015)],
+    tint: { r: 0.60, g: 0.45, b: 0.35 }, cite: "nssdc-rings", tauCite: "nssdc-rings", w0Cite: "w0-assumed", tintCite: "tint-design" },
+  -- Uranus: 6, 5, 4, alpha, beta, eta, gamma, delta, epsilon (radius +- width/2; albedo x 1e-3).
+  { host: "uranus", names: ["6", "5", "4", "alpha", "beta", "eta", "gamma", "delta", "epsilon"],
+    bands: [narrow(41837.0, 1.5, 0.3, 0.015), narrow(42234.0, 2.0, 0.5, 0.015), narrow(42571.0, 2.0, 0.3, 0.015),
+            narrow(44718.0, 7.0, 0.4, 0.015), narrow(45661.0, 8.0, 0.3, 0.015), narrow(47176.0, 1.6, 0.4, 0.015),
+            narrow(47627.0, 2.5, 0.3, 0.015), narrow(48300.0, 5.0, 0.5, 0.015), narrow(51149.0, 58.0, 1.4, 0.018)],
+    tint: { r: 0.40, g: 0.40, b: 0.40 }, cite: "nssdc-rings", tauCite: "nssdc-rings", w0Cite: "nssdc-rings", tintCite: "tint-design" },
+  -- Neptune: Galle, Le Verrier, Lassell (out to Arago), Arago, Adams. Widths "< 100" use 100 km;
+  -- Arago has no tabulated tau (Lassell's is used). The Adams arcs (tau 0.12) are not modelled here.
+  { host: "neptune", names: ["Galle", "Le Verrier", "Lassell", "Arago", "Adams"],
+    bands: [narrow(41900.0, 2000.0, 0.0001, 0.015), narrow(53200.0, 100.0, 0.01, 0.015), band(53250.0, 57150.0, 0.0001, 0.015),
+            narrow(57200.0, 100.0, 0.0001, 0.015), narrow(62933.0, 15.0, 0.055, 0.015)],
+    tint: { r: 0.55, g: 0.42, b: 0.38 }, cite: "nssdc-rings", tauCite: "nssdc-rings", w0Cite: "nssdc-rings", tintCite: "tint-design" }
+]

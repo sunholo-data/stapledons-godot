@@ -1,0 +1,11 @@
+{
+  "version": "v5",
+  "module_id": "private/tmp/claude-501/-Users-voightkampff-dev-sunholo-data-stapledons-godot/456b2146-9f6a-4728-908d-8baf45a08aa2/scratchpad/m51a/sim/data/sol",
+  "cache_key": "9e88b11de4254b4a35a1c48c09fb89fd86c0ce007c352859599bc39a58fa9f10",
+  "sha256": {
+    "constructors.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "core.gob": "34c07a1a3d00d6bd018fd96ac7d23c8218ca156126a3860efc65d1b09d780bb3",
+    "coretypeinfo.gob": "a734fa05d537a9a8b1e0be5db6cf9160446ef2f0a59ee4b2af8236e2fca3b3e4",
+    "iface.json": "18635b71fba9a336262fcac868b8df588daa8e59e685226becc13e20b1ddd2e8"
+  }
+}

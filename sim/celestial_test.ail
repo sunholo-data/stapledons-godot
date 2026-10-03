@@ -1,0 +1,270 @@
+module stapledons/sim/celestial_test
+
+-- M5.1a: the provenance half of the celestial tests (design m5-planets AC6,
+-- sprint R1-M5-PLANETS §M5.1a). M5.1b adds the systemAt half.
+-- Expected values are published numbers independent of the data rows:
+--   NSSDC planetary fact sheet: sidereal orbit periods (d), obliquity to orbit
+--   (deg), sidereal rotation periods (h);
+--   NSSDC satellite fact sheets: sidereal orbital periods (d);
+--   IAU 2015 B3 nominal GM (via sunholo/celestial gravity);
+--   the design repo's ring table (features/future/planetary-rings.md);
+--   Kepler's third law and the Chen & Kipping 2017 relation for alpha Cen.
+import ./data/sol (Cite, Star, Planet, Moon, Ring, citations, sun, planets, moons, rings)
+import ./data/acen (Field, Body, Binary, abOrbit, bodies, acenCitations)
+import pkg/sunholo/celestial/kepler (Vec3, norm, dot, orbitNormal, absf, wrapPi)
+import pkg/sunholo/celestial/ephemeris (elementsAt, satelliteAt, satelliteElementsAt)
+import pkg/sunholo/celestial/frames (poleAndSpin, rotationPeriod)
+import pkg/sunholo/celestial/gravity (gmSunNominal, gmEarthNominal, gmJupiterNominal)
+import pkg/sunholo/celestial/rings (RingBand)
+import std/math (sqrt, atan2, exp, log)
+import std/list (map, foldl, length)
+import std/string (join)
+
+pure func allTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+pure func anyTrue(xs: [bool]) -> bool = foldl(\acc x. acc || x, false, xs)
+pure func deg(r: float) -> float = r * 180.0 / 3.141592653589793
+pure func angleDeg(a: Vec3, b: Vec3) -> float {
+  let c = { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x };
+  deg(atan2(norm(c), dot(a, b)))
+}
+pure func relNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol * absf(b)
+pure func memberS(x: string, xs: [string]) -> bool = anyTrue(map(\y. y == x, xs))
+pure func keysOf(kv: [(string, string)]) -> [string] = map(\p. match p { (k, _) => k }, kv)
+pure func lookup(name: string, kv: [(string, Field)]) -> [Field] =
+  foldl(\acc p. match p { (k, f) => if k == name then f :: acc else acc }, [], kv)
+pure func hasField(name: string, kv: [(string, Field)]) -> bool = length(lookup(name, kv)) == 1
+pure func fieldValue(name: string, kv: [(string, Field)]) -> float = match lookup(name, kv) { f :: _ => f.value, [] => 0.0 - 1.0 }
+pure func j2000() -> float = 2451545.0
+
+-- ------------------------------------------------------------ Sol: citations (AC6)
+pure func solKeys() -> [string] = keysOf(citations())
+pure func citeOk(c: Cite) -> bool =
+  allTrue(map(\k. k != "" && memberS(k, solKeys()), [c.orbit, c.pole, c.shape, c.gm, c.albedo, c.limb]))
+pure func ringCiteOk(r: Ring) -> bool = allTrue(map(\k. k != "" && memberS(k, solKeys()), [r.cite, r.tauCite, r.w0Cite, r.tintCite]))
+
+export pure func checkSolCitations() -> bool =
+  citeOk(sun().cite) && allTrue(map(\p. citeOk(p.cite), planets())) && allTrue(map(\m. citeOk(m.cite), moons()))
+  && allTrue(map(ringCiteOk, rings()))
+
+test "every Sol body and ring row has citation keys that resolve" { checkSolCitations() }
+
+-- Design §M5.1 names the Moon; Io, Europa, Ganymede, Callisto; Mimas, Enceladus,
+-- Tethys, Dione, Rhea, Titan; Triton. That is 12 moons (the design's "11" is a
+-- miscount); all 12 named ones are loaded.
+pure func designMoons() -> [string] = ["moon", "io", "europa", "ganymede", "callisto", "mimas", "enceladus", "tethys", "dione", "rhea", "titan", "triton"]
+pure func planetIds() -> [string] = map(\p. p.id, planets())
+pure func unique(xs: [string]) -> bool = match xs { [] => true, x :: rest => !memberS(x, rest) && unique(rest) }
+
+export pure func checkSolInventory() -> bool {
+  let moonIds = map(\m. m.id, moons());
+  length(planets()) == 8 && moonIds == designMoons() && length(rings()) == 4
+  && unique(planetIds()) && unique(moonIds) && !memberS("sun", planetIds())
+  && allTrue(map(\m. memberS(m.host, planetIds()), moons()))
+  && map(\r. r.host, rings()) == ["saturn", "jupiter", "uranus", "neptune"]
+  && allTrue(map(\p. p.ring == "" || memberS(p.ring, map(\r. r.host, rings())), planets()))
+  && allTrue(map(\p. p.radiusKm >= p.polarKm && p.polarKm > 0.0 && p.pV > 0.0 && p.minnaertK > 0.0 && p.minnaertK <= 1.0 && p.gm > 0.0, planets()))
+  && allTrue(map(\m. m.radiusKm >= m.polarKm && m.polarKm > 0.0 && m.pV > 0.0 && m.gm > 0.0, moons()))
+}
+
+test "8 planets, the design's named moons, 4 ring systems; ids unique; hosts exist" { checkSolInventory() }
+
+-- ------------------------------------------------------------ Sol: transcription checks
+-- NSSDC sidereal orbit periods (days), from Standish's mean-longitude rate.
+pure func nssdcOrbitDays() -> [float] = [87.969, 224.701, 365.256, 686.980, 4332.589, 10759.22, 30685.4, 60189.0]
+pure func planetPeriodDays(p: Planet) -> float = 360.0 * 36525.0 / deg(p.rates.meanLong)
+pure func zipCheck(ps: [Planet], ws: [float], f: (Planet, float) -> bool) -> bool =
+  match ps { [] => true, p :: pr => match ws { [] => false, w :: wr => f(p, w) && zipCheck(pr, wr, f) } }
+
+export pure func checkOrbitPeriods() -> bool = zipCheck(planets(), nssdcOrbitDays(), \p w. relNear(planetPeriodDays(p), w, 0.0002))
+
+test "Standish mean-longitude rates give NSSDC's sidereal periods (0.02 %)" { checkOrbitPeriods() }
+
+-- NSSDC obliquity to orbit (deg). IAU poles are the north-of-the-invariable-plane
+-- poles, so retrograde rotators (w1 < 0: Venus, Uranus) measure 180 - obliquity.
+pure func nssdcObliquity() -> [float] = [0.034, 177.36, 23.44, 25.19, 3.13, 26.73, 97.77, 28.32]
+pure func obliquityAt(p: Planet) -> float {
+  let a = angleDeg(poleAndSpin(p.pole, j2000()).pole, orbitNormal(elementsAt(p.el, p.rates, j2000()).orbit));
+  if p.pole.w1 < 0.0 then 180.0 - a else a
+}
+
+export pure func checkObliquities() -> bool = zipCheck(planets(), nssdcObliquity(), \p w. absf(obliquityAt(p) - w) <= 0.05)
+
+test "IAU 2015 poles against the orbit normals give NSSDC's obliquities (0.05 deg)" { checkObliquities() }
+
+-- NSSDC sidereal rotation periods (hours; negative = retrograde). Neptune's IAU
+-- rate (15.97 h) and NSSDC's Voyager radio period (16.11 h) differ by 0.9 %.
+pure func nssdcRotationH() -> [float] = [1407.6, 0.0 - 5832.6, 23.9345, 24.6229, 9.9250, 10.656, 0.0 - 17.24, 16.11]
+
+export pure func checkRotation() -> bool = zipCheck(planets(), nssdcRotationH(), \p w. relNear(rotationPeriod(p.pole) * 24.0, w, 0.01))
+
+test "IAU 2015 W rates give NSSDC's rotation periods (1 %)" { checkRotation() }
+
+-- NSSDC satellite fact sheets: sidereal orbital periods (days), moons() order.
+pure func nssdcMoonDays() -> [float] = [27.3217, 1.769138, 3.551181, 7.154553, 16.689017, 0.9424218, 1.370218, 1.887802, 2.736915, 4.517500, 15.945421, 5.876854]
+
+-- The JPL P column is sidereal in some tables and anomalistic in others, and
+-- the rate signs are not tabulated (celestial AGENT.md trap). One published
+-- sidereal period later the moon must be back where it was: for the Moon by
+-- mean longitude (its eccentric orbit's apse turns 4.5 deg a month), for the
+-- others by position. 1e-3 d catches every wrong reading (Io's: 1.756 d).
+pure func meanLongitude(m: Moon, jd: float) -> float {
+  let o = satelliteElementsAt(m.sat, jd);
+  o.node + o.argPeri + o.meanAnom
+}
+pure func returnsAfter(m: Moon, p: float) -> bool {
+  let t0 = j2000() + 1000.0;
+  let tolRad = 6.283185307179586 * 0.001 / p;
+  if m.id == "moon" then absf(wrapPi(meanLongitude(m, t0 + p) - meanLongitude(m, t0))) <= tolRad
+  else angleDeg(satelliteAt(m.sat, t0).pos, satelliteAt(m.sat, t0 + p).pos) <= deg(tolRad)
+}
+pure func zipMoons(ms: [Moon], ws: [float]) -> bool =
+  match ms { [] => ws == [], m :: mr => match ws { [] => false, w :: wr => returnsAfter(m, w) && zipMoons(mr, wr) } }
+
+export pure func checkMoonPeriods() -> bool = zipMoons(moons(), nssdcMoonDays())
+
+test "every moon returns after its published sidereal period (P column read correctly)" { checkMoonPeriods() }
+
+-- The 12 moons rotate synchronously: |W period| equals the orbital period (0.1 %).
+pure func zipSync(ms: [Moon], ws: [float]) -> bool =
+  match ms { [] => true, m :: mr => match ws { [] => false, w :: wr => relNear(absf(rotationPeriod(m.pole)), w, 0.001) && zipSync(mr, wr) } }
+
+export pure func checkSynchronous() -> bool = zipSync(moons(), nssdcMoonDays())
+
+test "IAU W rates of the 12 moons are synchronous with their published periods" { checkSynchronous() }
+
+export pure func checkGm() -> bool = relNear(sun().gm, gmSunNominal(), 0.000001)
+  && allTrue(map(\p. if p.id == "earth" then relNear(p.gm, gmEarthNominal(), 0.000001)
+                     else if p.id == "jupiter" then relNear(p.gm, gmJupiterNominal(), 0.000001) else true, planets()))
+
+test "DE440 GMs agree with the IAU 2015 nominal Sun, Earth and Jupiter to 1e-6" { checkGm() }
+
+-- ------------------------------------------------------------ rings (AC6)
+pure func radiusOf(host: string) -> float = foldl(\acc p. if p.id == host then p.radiusKm else acc, 0.0, planets())
+pure func ringOf(host: string) -> [RingBand] = foldl(\acc r. if r.host == host then r.bands else acc, [], rings())
+pure func innerR(bs: [RingBand]) -> float = match bs { [] => 0.0, x :: _ => x.rIn }
+pure func outerR(bs: [RingBand]) -> float = foldl(\acc x. if x.rOut > acc then x.rOut else acc, 0.0, bs)
+pure func bandNamed(host: string, name: string) -> [RingBand] =
+  foldl(\acc r. if r.host == host then pickNamed(r.names, r.bands, name) else acc, [], rings())
+pure func pickNamed(ns: [string], bs: [RingBand], name: string) -> [RingBand] =
+  match ns { [] => [], n :: nr => match bs { [] => [], x :: br => if n == name then [x] else pickNamed(nr, br, name) } }
+pure func edge(host: string, name: string, outer: bool) -> float =
+  match bandNamed(host, name) { x :: _ => (if outer then x.rOut else x.rIn) / radiusOf(host), [] => 0.0 - 99.0 }
+pure func centre(host: string, name: string) -> float =
+  match bandNamed(host, name) { x :: _ => (x.rIn + x.rOut) / 2.0 / radiusOf(host), [] => 0.0 - 99.0 }
+pure func within1pc(got: float, want: float) -> bool = absf(got - want) <= 0.01
+
+pure func sortedDisjoint(bs: [RingBand], prev: float) -> bool =
+  match bs { [] => true, x :: rest => x.rIn >= prev && x.rIn < x.rOut && x.tau > 0.0 && x.w0 > 0.0 && x.w0 <= 1.0 && sortedDisjoint(rest, x.rOut) }
+
+export pure func checkRingShape() -> bool =
+  allTrue(map(\r. length(r.names) == length(r.bands) && sortedDisjoint(r.bands, radiusOf(r.host))
+                  && r.tint.r > 0.0 && r.tint.r <= 1.0 && r.tint.g > 0.0 && r.tint.g <= 1.0 && r.tint.b > 0.0 && r.tint.b <= 1.0, rings()))
+  && length(ringOf("saturn")) == 11 && length(ringOf("jupiter")) == 4 && length(ringOf("uranus")) == 9 && length(ringOf("neptune")) == 5
+
+test "ring bands sorted, disjoint, outside the globe, tau > 0, 0 < w0 <= 1, a tint" { checkRingShape() }
+
+-- The design repo's ring table (Saturn 1.11-2.27, Jupiter 1.29-1.81, Uranus
+-- 1.49-1.95, Neptune 1.69-2.54 R), within 1 % of R where the published
+-- profiles agree with it:
+export pure func checkRingTableAgrees() -> bool =
+  within1pc(innerR(ringOf("saturn")) / radiusOf("saturn"), 1.11) && within1pc(edge("saturn", "A outer", true), 2.27)
+  && within1pc(edge("jupiter", "main", true), 1.81)
+  && within1pc(centre("neptune", "Galle"), 1.69) && within1pc(outerR(ringOf("neptune")) / radiusOf("neptune"), 2.54)
+
+test "ring radii match the design repo's table within 1 % of R (Saturn D..A, Jupiter main, Neptune)" { checkRingTableAgrees() }
+
+-- ...and where the table disagrees with PDS/NSSDC by more than 1 % of R, the
+-- data follows the published profile and this list names every such edge, so a
+-- corrected table (or a data change) shows up here. Reported in M5.1a's notes.
+export pure func checkRingTableDisagreements() -> bool =
+  within1pc(edge("saturn", "F", true), 2.333) && !within1pc(edge("saturn", "F", true), 2.27)
+  && within1pc(innerR(ringOf("jupiter")) / radiusOf("jupiter"), 1.25) && !within1pc(innerR(ringOf("jupiter")) / radiusOf("jupiter"), 1.29)
+  && within1pc(outerR(ringOf("jupiter")) / radiusOf("jupiter"), 3.10)
+  && within1pc(innerR(ringOf("uranus")) / radiusOf("uranus"), 1.637) && !within1pc(innerR(ringOf("uranus")) / radiusOf("uranus"), 1.49)
+  && within1pc(outerR(ringOf("uranus")) / radiusOf("uranus"), 2.002) && !within1pc(outerR(ringOf("uranus")) / radiusOf("uranus"), 1.95)
+  && within1pc(innerR(ringOf("neptune")) / radiusOf("neptune"), 1.652) && !within1pc(innerR(ringOf("neptune")) / radiusOf("neptune"), 1.69)
+
+test "the edges where the design table and the published profiles disagree are exactly the listed ones" { checkRingTableDisagreements() }
+
+-- ------------------------------------------------------------ alpha Cen honesty (AC6, Q3)
+pure func acenKeys() -> [string] = keysOf(acenCitations())
+pure func fieldOk(f: Field) -> bool =
+  memberS(f.prov, ["measured", "inferred", "assumed"]) && memberS(f.cite, acenKeys())
+  && (f.prov == "measured" || f.note != "")
+pure func fieldsOk(kv: [(string, Field)]) -> bool = length(kv) > 0 && allTrue(map(\p. match p { (_, f) => fieldOk(f) }, kv))
+pure func planetFields() -> [string] = ["period_d", "a_au", "e", "incl_deg", "node_deg", "argperi_deg", "mean_anom_deg", "radius_earth", "p_v"]
+pure func bodyOk(b: Body) -> bool =
+  memberS(b.status, ["star", "confirmed", "candidate"]) && memberS(b.kind, ["star", "planet"])
+  && (b.kind == "star") == (b.status == "star") && fieldsOk(b.fields)
+  && (if b.kind == "planet" then allTrue(map(\n. hasField(n, b.fields), planetFields()))
+        && (hasField("msini_earth", b.fields) || hasField("mass_earth", b.fields))
+        && memberS(b.host, map(\x. x.id, bodies())) else b.host == "")
+
+export pure func checkAcenProvenance() -> bool = allTrue(map(bodyOk, bodies())) && fieldsOk(abOrbit().fields)
+  && unique(map(\x. x.id, bodies()))
+
+test "every alpha Cen body has a status and per-field provenance (measured | inferred | assumed)" { checkAcenProvenance() }
+
+-- No retracted row is loaded: alpha Cen B b (2012) was refuted in 2015-16.
+export pure func checkNoRetracted() -> bool =
+  !anyTrue(map(\x. x.status == "retracted" || x.id == "acen-b-b" || x.host == "acen-b", bodies()))
+
+test "no retracted body is loaded (alpha Cen B b absent)" { checkNoRetracted() }
+
+-- Status as the archive snapshot of 2026-10-03 lists it, never upgraded by us.
+pure func statusOf(id: string) -> string = foldl(\acc x. if x.id == id then x.status else acc, "", bodies())
+export pure func checkStatuses() -> bool =
+  statusOf("acen-a") == "star" && statusOf("acen-b") == "star" && statusOf("proxima") == "star"
+  && statusOf("proxima-b") == "confirmed" && statusOf("proxima-d") == "confirmed"
+  && statusOf("proxima-c") == "candidate" && statusOf("acen-a-b") == "candidate" && length(bodies()) == 7
+
+test "statuses: Proxima b and d confirmed (archive), Proxima c and A b candidates" { checkStatuses() }
+
+-- No modelled discs: every alpha Cen planet's radius or albedo is not measured,
+-- so it can never be drawn as a resolved disc or be a visitable target.
+pure func provOf(name: string, kv: [(string, Field)]) -> string = match lookup(name, kv) { f :: _ => f.prov, [] => "" }
+export pure func checkNoModelledDisc() -> bool =
+  allTrue(map(\x. x.kind == "star" || provOf("radius_earth", x.fields) != "measured" || provOf("p_v", x.fields) != "measured", bodies()))
+
+test "no alpha Cen planet has both a measured radius and a measured albedo" { checkNoModelledDisc() }
+
+-- AB orbit: a(AU) = a(") / parallax; Kepler's third law with Akeson's masses;
+-- periastron 11.2 AU and apastron 35.4 AU (HB-92/93 quote 11.2 and 35.6).
+export pure func checkAbOrbit() -> bool {
+  let f = abOrbit().fields;
+  let a = fieldValue("a_au", f);
+  let e = fieldValue("e", f);
+  let mTot = fieldValue("mass_a_sun", f) + fieldValue("mass_b_sun", f);
+  absf(a - fieldValue("a_arcsec", f) / (fieldValue("parallax_mas", f) / 1000.0)) <= 0.001
+  && absf(fieldValue("period_yr", f) - sqrt(a * a * a / mTot)) <= 0.05
+  && absf(a * (1.0 - e) - 11.2) <= 0.05 && absf(a * (1.0 + e) - 35.4) <= 0.05
+}
+
+test "alpha Cen AB: a = a\"/parallax, Kepler's third law, periastron 11.2 au" { checkAbOrbit() }
+
+-- Inferred values recomputed from their named relations.
+pure func powf(x: float, y: float) -> float = exp(y * log(x))
+pure func fv(id: string, name: string) -> float = foldl(\acc x. if x.id == id then fieldValue(name, x.fields) else acc, 0.0 - 1.0, bodies())
+export pure func checkInferred() -> bool =
+  absf(fv("proxima-b", "radius_earth") - powf(fv("proxima-b", "msini_earth"), 0.279)) <= 0.0001
+  && absf(fv("proxima-d", "radius_earth") - powf(fv("proxima-d", "msini_earth"), 0.279)) <= 0.0001
+  && absf(fv("proxima-c", "radius_earth") - powf(2.04, 0.279) * powf(fv("proxima-c", "msini_earth") / 2.04, 0.589)) <= 0.0001
+  && absf(fv("acen-a-b", "period_d") - 365.25 * sqrt(powf(fv("acen-a-b", "a_au"), 3.0) / fv("acen-a", "mass_sun"))) <= 0.5
+  && absf(fv("acen-a-b", "radius_earth") - 1.05 * 11.209) <= 0.001
+
+test "inferred radii (Chen & Kipping) and A b's Kepler period recompute from their relations" { checkInferred() }
+
+-- ------------------------------------------------------------ strict VM entry (make strict-m5)
+export pure func checks() -> [(string, bool)] = [
+  ("solCitations", checkSolCitations()), ("solInventory", checkSolInventory()), ("orbitPeriods", checkOrbitPeriods()),
+  ("obliquities", checkObliquities()), ("rotation", checkRotation()), ("moonPeriods", checkMoonPeriods()),
+  ("synchronous", checkSynchronous()), ("gm", checkGm()), ("ringShape", checkRingShape()),
+  ("ringTableAgrees", checkRingTableAgrees()), ("ringTableDisagreements", checkRingTableDisagreements()),
+  ("acenProvenance", checkAcenProvenance()), ("noRetracted", checkNoRetracted()), ("statuses", checkStatuses()),
+  ("noModelledDisc", checkNoModelledDisc()), ("abOrbit", checkAbOrbit()), ("inferred", checkInferred())
+]
+
+export pure func dataVm(n: int) -> string {
+  let bad = foldl(\acc p. match p { (k, ok) => if ok then acc else k :: acc }, [], checks());
+  if bad == [] then "sol-data-ok" else join(" ", ["FAILED", join(",", bad)])
+}

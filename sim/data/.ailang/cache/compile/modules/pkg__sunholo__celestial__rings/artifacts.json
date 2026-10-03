@@ -1,0 +1,11 @@
+{
+  "version": "v5",
+  "module_id": "pkg/sunholo/celestial/rings",
+  "cache_key": "157bec30babe650c30576abfa1c12b9b1feec36203f0f40570c5444c15f8cf6b",
+  "sha256": {
+    "constructors.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "core.gob": "50ee5ed68de99a088b8a6918f2e4d52551c6be0c545fa65ee1c014ad94c50267",
+    "coretypeinfo.gob": "60e3d736a48f8e461f63cd242066107db7342bfc64947a38a9547458874cd1a4",
+    "iface.json": "c95f4b8c557e8255116a7697c2d1bf92cb8fad9b19095c1078893024b1fa83c2"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "v5",
+  "module_id": "pkg/sunholo/celestial/frames",
+  "cache_key": "76daea62d1fc2652c5c45eaa0f3b2d9bb87a9099fce832ee5de018a71d0859ad",
+  "sha256": {
+    "constructors.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "core.gob": "039b15df684b56186796ebaa2932ccbfd71168bf323a69ba147113c0f6428e84",
+    "coretypeinfo.gob": "c1f99652bb2b1c34efc2f75b78cfd9460fb154c461c09404f7c288c07c8a9175",
+    "iface.json": "16982392da6bc4141d8e9a120a044d69e08c547fa7179e4fb61b6221661e6952"
+  }
+}
