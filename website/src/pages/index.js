@@ -447,8 +447,8 @@ const MILESTONES = [
   ['M1', 'The relativistic sky', 'progress', '335k stars, Milky Way, exposure, forward CMB, real-catalogue map; acceptance step open'],
   ['M2', 'The journey core', 'done', 'Planner, commit, two clocks, deterministic replay'],
   ['AI', 'Crew AI foundation', 'done', 'Opt-in, cost-capped, on a test stub; first live run pending'],
-  ['M4', 'First playable journey', 'progress', 'Interior loader and consequence sim merged; bridge art in review'],
-  ['M5', 'Planets and flybys', 'progress', 'Design approved, physics packages published'],
+  ['M4', 'First playable journey', 'progress', 'Interior loader, consequence sim and bridge v1 merged'],
+  ['M5', 'Planets and flybys', 'progress', 'Design approved, packages published, system data merged'],
   ['M3', 'Black holes', 'planned', 'Shadow, lensing, Einstein rings, checked against GR'],
 ];
 const LABEL = {done: 'Done', progress: 'In progress', planned: 'Planned'};

@@ -145,7 +145,7 @@ func run_sky(main: Node, args: Dictionary) -> int:
 func run_map(main: Node, map: GalaxyMap, args: Dictionary) -> int:
 	_setup(main, MAP_SIZE) # the map's panel layout is pinned at the --map-capture size
 	var out := _out(main, args, "map")
-	var target := 1 # alpha Cen A
+	var target: int = map.index_of(main.ALPHA_CEN_A) # alpha Cen A (M1.7: looked up by id)
 	map.preselect(target)
 	map.frame_star(target)
 	var secs := 24.0

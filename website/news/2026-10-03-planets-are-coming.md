@@ -26,6 +26,6 @@ systems), choose to stop or fly by at 0.001c to 0.99c, commit, and ride the leg.
 exact: light-time delay, aberration, and the Terrell rotation that makes a passing sphere look
 turned. At α Centauri, the known and candidate planets will show as points only, with a badge
 saying how sure the astronomy is. The first step, the Sol and α Cen data and the game's package
-pins, is in review ([#99](https://github.com/sunholo-data/stapledons-godot/pull/99)).
+pins, has merged ([#99](https://github.com/sunholo-data/stapledons-godot/pull/99)).
 
 See the [roadmap](/docs/roadmap).

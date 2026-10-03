@@ -139,12 +139,12 @@ export default function ConceptArt() {
         <section className={styles.block}>
           <div className={styles.blockHead}>
             <h2>The bridge, v1</h2>
-            <Pill kind="review">Demo art, in review</Pill>
+            <Pill kind="done">Demo art, merged</Pill>
           </div>
           <p className={styles.note}>
-            The first real interior, approved for the playable demo and replacing the blockout (game{' '}
-            <a href="https://github.com/sunholo-data/stapledons-godot/pull/97">PR #97</a>, open). It will be
-            revisited by the v2 work below.
+            The first real interior, merged as demo art for the playable journey, replacing the blockout
+            (game <a href="https://github.com/sunholo-data/stapledons-godot/pull/97">PR #97</a>). The v2 work
+            below will revisit it.
           </p>
           {BRIDGE_V1.map((it) => (
             <Wide key={it.file} it={it} base={base} />

@@ -18,7 +18,7 @@ stands in the engine over the live sky.
   proposals, and drawn front and back at 30, 50, 70 and 90, because the game spans a 100-year
   career.
 - **Crew cast proposals**: one portrait per role, next to the Medic's accepted set.
-- **Bridge v1** ([#97](https://github.com/sunholo-data/stapledons-godot/pull/97), in review): the first real interior, a disc at the top of the
+- **Bridge v1** ([#97](https://github.com/sunholo-data/stapledons-godot/pull/97), demo art): the first real interior, a disc at the top of the
   spire inside the sphere ship. The sky behind the railings is not painted; it is the game's live
   sky, through the same camera, so at 0.99c it crowds forward and turns blue.
 
