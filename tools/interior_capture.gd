@@ -34,10 +34,12 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	map = galaxy_map
 	out = dir
 	var sim: SimBridge = main.sim
-	await _shot("01_rest_spawn", "Docked at Sol. The captain at the spawn (y0, front).")
+	# the spawn is the captain's chair: step 1.5 m toward the camera so the captain shows
+	it.walk_path(it.walk.path(it.avatar_pos, it.avatar_pos + Vector3(1.1, 0.0, 1.1)), DT, 30)
+	await _shot("01_rest_spawn", "Docked at Sol. The captain steps off the chair (spawn), y0, front.")
 	it.walk_path(it.walk.path(it.avatar_pos, it.avatar_pos + Vector3(-3.0, 0.0, -5.0)), DT, 50)
 	await _shot("02_rest_walk_back", "Docked. Walking up the screen: the back sprite.")
-	it.walk_path(it.walk.path(it.avatar_pos, it.avatar_pos + Vector3(-6.0, 0.0, 6.0)), DT, 60)
+	it.walk_path(it.walk.path(it.avatar_pos, it.avatar_pos + Vector3(3.5, 0.0, 3.5)), DT, 60) # +X+Z: toward the camera
 	await _shot("03_rest_walk_front", "Docked. Walking down the screen: the front sprite; the camera follows within its pan range.")
 	it.walk_path(it.walk.path(it.avatar_pos, it.walk.interactables["console_navigation_1"].get_center()), DT, 2000)
 	await _shot("04_rest_nav_console", "At the navigation console: the prompt (E).")
@@ -49,7 +51,7 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	map.set_cruise_phi(map.phi_default)
 	it.tick()
 	await _shot("05_map_from_console", "The navigation console opened the galaxy map (alpha Cen A, 0.99c).")
-	if not _commit():
+	if not _commit(true):
 		return 2
 	it.close_map()
 	# the boost lasts minutes of ship time, less than one transit tick: step it finely (M4.3a
@@ -70,10 +72,16 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	await _shot("09_b099_pan_clamped", "0.99c, pan (+12, +5) m, beyond the [6, 3] m overscan: the plates clamp, no edge shows.")
 	it.set_pan(base)
 	await _glow_preview("10_b099_glow_preview", "0.99c")
-	while map.journey_state() == "committed" and sim.world["ship"]["flown"] < distance - 0.02:
+	while map.journey_state() == "committed" and sim.world["ship"]["flown"] < distance - 0.05:
 		it.tick()
-	while map.journey_state() == "committed" and not (sim.world["ship"]["phase"] == "braking" and sim.world["ship"]["beta"] < 0.5) and sim.send([], FINE_DTAU):
-		pass
+	# close in on the brake with steps a third of the ship time left, then fine steps through it
+	while map.journey_state() == "committed" and not (sim.world["ship"]["phase"] == "braking" and sim.world["ship"]["beta"] < 0.5):
+		var s: Dictionary = sim.world["ship"]
+		var dt := FINE_DTAU
+		if s["phase"] == "cruising":
+			dt = maxf(FINE_DTAU, 0.3 * (distance - float(s["flown"])) / (float(s["gamma"]) * float(s["beta"])))
+		if not sim.send([], dt):
+			break
 	await _shot("10b_brake_b05", "The brake at beta 0.5: a thrust reversal, no turnover; up is still the direction of travel.")
 	while map.journey_state() == "committed":
 		it.tick()
@@ -92,6 +100,7 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	await _shot("12_cap_cruise", "Home at the cap (1 - beta = 1e-6, gamma 707): the cruise.")
 	await _glow_preview("13_cap_glow_preview", "cap")
 	var stages := []
+	it.avatar.set_motion(Vector2(0.0, 1.0)) # face the camera for the stage strip
 	for y in [0.0, 20.0, 40.0, 60.0]:
 		it.avatar.set_years(y)
 		stages.append(await _grab())
@@ -105,13 +114,21 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	return 0
 
 
-func _commit() -> bool:
+## Commit the map's plan through its hold. fine: send the commit on a FINE_DTAU tick instead,
+## so the boost (minutes of ship time) is not over inside the commit tick.
+func _commit(fine := false) -> bool:
 	var sim: SimBridge = main.sim
 	if not map.open_commit_dialog():
 		push_error("capture: no plan to commit (%s %s)" % [sim.last_refused, sim.last_error])
 		return false
-	map.hold_commit(GalaxyMap.HOLD_S + 0.05)
-	it.tick()
+	if fine:
+		var id := map.dialog_plan_id
+		map.close_commit_dialog()
+		sim.send([{"k": "commit", "plan_id": id}], FINE_DTAU)
+		map.refresh()
+	else:
+		map.hold_commit(GalaxyMap.HOLD_S + 0.05)
+		it.tick()
 	if map.journey_state() != "committed":
 		push_error("capture: commit refused (%s)" % sim.last_refused)
 		return false
