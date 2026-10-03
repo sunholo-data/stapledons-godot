@@ -19,3 +19,4 @@ Regenerated from full mission log headings; one line per entry. No log archive y
 | 9 | 2026-10-02 | REFUTATION | iteration 9, concurrent attended M2 landing superseded duplicate draft; independent review 91/100 [REFUTATION] |
 | 10 | 2026-10-02 | REFUTATION | iteration 10 (orphan), M4 round-1 quorum blocked 3/3; crashed at gate 2; credited in iteration 11 |
 | 11 | 2026-10-03 | PRODUCT | iteration 11, M4 design through quorum and sprint plan R1-M4-JOURNEY proposed; independent eval 88/100 [PRODUCT] |
+| 12 | 2026-10-03 | PRODUCT | iteration 12, M4.1 step 1 LANDED (consequence stub, protocol 2.2); independent eval 91/100 [PRODUCT] |
