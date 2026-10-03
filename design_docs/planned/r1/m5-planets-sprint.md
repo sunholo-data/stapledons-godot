@@ -480,6 +480,12 @@ one citation key, or adds a retracted row, must fail.
 ### Wave 4
 
 #### M5.1b: `sim/celestial.ail` and the `system` change set
+**Status:** ✅ executed on `sprint/m5.1b-system-at` (2026-10-03); protocol **2.3** (main was at 2.2). Independent eval pending.
+- [x] AC5 in `make sim` (`celestial_test.ail`): positions = `stateFromElements` ∘ `eclipticToGalactic` to 1e-12 AU (8 planets at 4 epochs, 12 moons on their hosts); Jupiter's lag from Earth at the 2023-11-03 opposition = `lightTimeDays` within 1e-6 s (1,986 s); `mean-orbit` outside the window (agrees with `elementsAt`'s flag).
+- [x] AC4 system half: `make strict-m5` runs `systemVm` (strict VM = interpreter, byte for byte); `make parity-v2-system` checks the 2.3 tail of `v2_session.ndjson` (VM = interpreter via `parity-v2`).
+- [x] `git diff origin/main -- sim/protocol_test.ail` is additions only.
+- [x] `make test` green.
+- [x] Deviations (sprint JSON notes): `ship.ail` unchanged (the pure server already builds every reply; ship.ail prints it); the bridge keeps the section in `SimBridge.system` (`state` is the raw message) and opts in via `want_minor`; `kind` is star | planet | moon with `ring_id` naming a ring host; α Cen's system waits for M5.7 (its AB orbit is M5.7's registry row); the Earth-Moon barycentre split is a celestial 0.1.1 follow-up (gate 3).
 **Scope:** pure functions with no I/O, clean under `--strict-bytecode`:
 - `bodyAt(sys, id, jd)` returns position and velocity in the galactic frame
   (km, km/s, float64) plus the pole and W.

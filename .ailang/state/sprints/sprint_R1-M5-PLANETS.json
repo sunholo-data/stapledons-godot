@@ -372,10 +372,23 @@
         "AC5's three checks; system encoder round trip; old-message compatibility"
       ],
       "art_gated": false,
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-03",
+      "completed": "2026-10-03",
+      "notes": "sim/celestial.ail (pure, strict-clean): bodyAt(sys,id,jd) galactic km, km/s, pole, W; systemAt(sys,jd,shipLy) -> 21 BodyViews (Sun, 8 planets, 12 moons) with every design field plus host; rel_km at the retarded time via celestial lighttime.retarded in the galactic frame; e_v_lux = discIlluminance with relativity illuminanceFromV(-26.74); star e_v_lux inverse-square, clamped at the surface (exact for a uniform sphere at d >= R) so a ship at the origin stays finite. Time base jd = epoch_jd + t*365.25 (new scenario param epoch_jd, default J2000, |v| <= 1e9, not in the params echo, the standoff_au precedent; core.ail +5/-2). Protocol 2.3 (main was 2.2 from M4.1): want >= 3 -> minor 3 and a system{jd, ephemeris, frame, bodies} member after consequence, in the full state and on ticks whose clock or ship position moved; 2.2 and below byte-unchanged (every replay golden unchanged: no golden diff). decodeSystem is the inverse; tests read systemMinor(), never a literal. Bridge: want_minor (default stays 1), SimBridge.system + static parse_system (field-typed; a bad section is bad_response). Tests: celestial_test +10 checks (AC5 positions 1e-12 AU at 4 epochs incl. outside the window, moons on hosts; velocity; Jupiter light time vs lightTimeDays within 1e-6 s = 1,986 s at the 2023-11-03 opposition; retarded offset ~26,000 km; pole/W at t_r; mean-orbit label = elementsAt flag; time base; Jupiter V -2.9 +/-0.25; Sun lux; all fields finite incl. from inside the Sun); protocol_test +4 (additions only); test_sim_bridge +2 (live 2.3 session, fixture). Strict: systemVm in make strict-m5 (strict VM = interpreter, 7 lines); parity-v2-system checks the 2.3 tail appended before the quit of v2_session.ndjson. Mutants killed: no retardation, 365-d year, no window upper bound, pole not rotated, W at jd, no surface clamp, Sun V. Deviations: (1) ship.ail unchanged: the pure server builds every reply and ship.ail prints it; (2) the bridge keeps the section in SimBridge.system (state is the raw message) and opts in via want_minor instead of raising PROTO_MINOR (no change for M4.3a/M4.4 clients); (3) kind is star|planet|moon, a ring host is shown by ring_id; (4) only Sol is emitted: alpha Cen bodies need the AB orbit (the M5.7 registry row); (5) the Standish Earth row is the Earth-Moon barycentre, so Earth and the Moon carry the 4,671 km lever as the design composes them; a barycentre split is proposed for celestial 0.1.1 (gate 3), open item; (6) the Sun at 1 AU is 1.2706e5 lux with relativity's zero point (the design oracle row says 1.261e5); (7) pole unit length is 1 +/- 4e-11 (the package's 10-digit Hipparcos matrix), tested at 1e-9. tests/fixtures/system_sol.ndjson is the sim's arm64 output (hello, new_game epoch_jd 2460251.5, one tick) for M5.2a; checked structurally only (cross-arch trig, ailang#1465).",
+      "branch": "sprint/m5.1b-system-at",
+      "protocol_minor": "2.3",
+      "actual_loc": {
+        "code": 270,
+        "tests": 265,
+        "total": 535,
+        "note": "git numstat: celestial.ail 152 (92 non-comment), protocol.ail +45/-5, core.ail +5/-2, sim_bridge.gd +48, mk/m5.mk +19, ailang.toml 1; tests: celestial_test +156, protocol_test +54, test_sim_bridge +55; fixtures +9 lines. 1.98x the 270 estimate, inside the 650 cap"
+      },
+      "open_items": [
+        "celestial 0.1.1: Earth-Moon (and planet-system) barycentre split, before the M5.5b/M5.7 start at Earth",
+        "alpha Cen system section (M5.7)",
+        "M5.2a sets want_minor = SYSTEM_MINOR (or the next minor if M4 lands first)"
+      ]
     },
     {
       "id": "M5.2a_PLANET_GLOBES_PHOTOMETRY",
