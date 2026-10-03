@@ -4,7 +4,7 @@ module stapledons/sim/tools/bright_test
 -- below so the named checks run under `ailang test` and on the strict VM, and `brightFixtures`
 -- (FS) checks the inline copies equal tools/fixtures/*_bright.dat byte for byte and reruns every
 -- check on the file text. `make bright-test`: strict VM = interpreter, then fixtures VM = interpreter.
-import ./bright (Astro, Cns, Phot, Bright, indexBy, parseHip2, parseHipMain, parseCnsHip, gcnsIndex, fill, bright, gcnsMatch, directionAt, chord2, flagHip)
+import ./bright (Astro, Cns, Phot, Gcns, Bright, hipRow, indexBy, parseHip2, parseHipMain, parseCnsHip, gcnsIndex, fill, bright, gcnsMatch, directionAt, chord2, flagHip)
 import ./catalogue (Row)
 import ./catalogue_main (applyFill, planFill)
 import ./extract (icrsToGalactic, distanceLy)
@@ -13,7 +13,8 @@ import std/string (concat, join, split, startsWith, replace, contains)
 import std/list (map, filter, head, length as size, concat as concat_)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
-import std/math (sqrt, PI)
+import std/math (sqrt, sin, cos, PI)
+import std/array (fromList as toArray)
 import std/fs (readFile)
 import pkg/sunholo/relativity/photometry (teffFromBV)
 
@@ -175,11 +176,82 @@ pure func checkFillQuickOnly() -> bool {
   !contains(sidecarOf("quick", [], ""), "hip_")
 }
 
+-- M1.2d eval gaps: fixtures that kill the surviving mutants of the round-1 mutation audit.
+-- (1) Two MISSING_PHOT rows sharing one HIP id: each is the other's rival, so neither is filled and
+-- both are listed ambiguous (dropping the `missing` term would fill both, their G being 99).
+pure func cnsAt(id: string, g: float, missing: bool) -> Cns =
+  {id: id, hip: 21421, epoch: 1991.25, ra: 0.0, dec: 0.0, plx: 50.0, g: g, missing: missing}
+pure func phot21421() -> Array[Phot] = indexBy(\p. p.hip, [{hip: 21421, v: 0.87, bv: Some(1.538)}])
+pure func checkTwoMissingShareHip() -> bool {
+  let r = fill([cnsAt("a", 99.0, true), cnsAt("b", 99.0, true)], phot21421());
+  size(r.rows) == 0 && r.ambiguous == ["a", "b"] && r.noPhot == [] &&
+    size(fill([cnsAt("a", 99.0, true)], phot21421()).rows) == 1
+}
+-- (2) The |G - V| < 2 window on both sides (V 0.87): a rival at G = V + 2.1 or V - 2.1 is outside it
+-- and A is filled; at V + 1.9 or V - 1.9 it is inside and A is left ambiguous. Each one-sided
+-- mutant of the window is refused by one of the four cases.
+pure func filledWith(g: float) -> int = size(fill([cnsAt("a", 99.0, true), cnsAt("b", g, false)], phot21421()).rows)
+pure func checkWindowBothSides() -> bool =
+  filledWith(0.87 + 2.1) == 1 && filledWith(0.87 - 2.1) == 1 && filledWith(0.87 + 1.9) == 0 && filledWith(0.87 - 1.9) == 0
+-- (3) The 1 arcsec GCNS match radius, at J2016.0 with |G - V| < 2: a GCNS row 0.9 arcsec from
+-- Rigel's propagated position matches, one 1.1 arcsec away does not (radius 0.5 or 2 arcsec fails).
+-- The offset is a great-circle step toward the north galactic pole.
+pure func gcnsAtOffset(u: (float, float, float), arcsec: float) -> Array[Gcns] = match u { (ux, uy, uz) => {
+  let tn = sqrt(1.0 - uz * uz);
+  let d = arcsec * PI() / 648000.0;
+  let tx = (0.0 - uz * ux) / tn; let ty = (0.0 - uz * uy) / tn; let tz = tn;
+  toArray([{ux: ux * cos(d) + tx * sin(d), uy: uy * cos(d) + ty * sin(d), uz: uz * cos(d) + tz * sin(d), g: 0.0}]) } }
+pure func checkGcnsRadius(t: Texts) -> bool = match astro(t, 24436) {
+  [a] => { let u = directionAt(a, 2016.0);
+    gcnsMatch(gcnsAtOffset(u, 0.0), a, 0.18, 2016.0) && gcnsMatch(gcnsAtOffset(u, 0.9), a, 0.18, 2016.0) &&
+    !gcnsMatch(gcnsAtOffset(u, 1.1), a, 0.18, 2016.0) && !gcnsMatch(gcnsAtOffset(u, 3.0), a, 0.18, 2016.0) },
+  _ => false
+}
+-- (4) A kept row sits at its J2016.0 position. Groombridge 1830 (HIP 57939; CNS5 row dropped so it is
+-- a bright row) moves 7 arcsec/yr, so J1991.25 would be 0.02 ly off. Expected value hand-propagated
+-- (independent Python, spherical linear: RA += pmRA*/cos(dec)*dt, Dec += pmDE*dt, dt = 24.75 yr)
+-- from RA 3.1107451467, Dec 0.6585617448 rad, pm 4003.98 / -5813.62 mas/yr, plx 109.99 mas
+-- (29.6533 ly), through the IAU galactic matrix: (-8.104964, 1.639034, 28.477006) ly. The two forms
+-- agree to ~2e-5 ly; the tolerance is 5e-4 ly.
+pure func checkKeptRowAt2016(t: Texts) -> bool = match rowOf(withoutCns(t, "2914"), "HIP 57939") {
+  [r] => within(r.x, 0.0 - 8.104964, 0.0005) && within(r.y, 1.639034, 0.0005) && within(r.z, 28.477006, 0.0005) &&
+    within(dist(r), 29.6533, 0.0001),
+  _ => false
+}
+-- (5) A V < 7 star with no B-V is excluded and counted (bright_main writes size(noColour) as
+-- count_excluded); the same star with a B-V is kept.
+pure func rigelWith(bv: Option[float]) -> Result[Bright, string] =
+  bright(astro(inline(), 24436), indexBy(\p. p.hip, [{hip: 24436, v: 0.18, bv: bv}]), [], gcnsIndex(""), [])
+pure func checkNoBvExcluded() -> bool =
+  (match rigelWith(None) { Ok(b) => size(b.rows) == 0 && b.noColour == ["HIP 24436"], Err(_) => false }) &&
+  (match rigelWith(Some(0.0 - 0.03)) { Ok(b) => size(b.rows) == 1 && b.noColour == [], Err(_) => false })
+-- (6) Flag 16 for a B-V outside the teffFromBV table (-0.33..2.17): both ends, in a bright row and in
+-- a fill; inside the table it stays 8.
+pure func checkFlagOutOfTable() -> bool {
+  let u = (1.0, 0.0, 0.0);
+  let f = \bv. size(filter(\x. x.flags == 24, fill([cnsAt("a", 99.0, true)], indexBy(\p. p.hip, [{hip: 21421, v: 0.87, bv: Some(bv)}])).rows));
+  hipRow("h", u, 10.0, 1.0, 2.5).flags == 24 && hipRow("h", u, 10.0, 1.0, 0.0 - 0.5).flags == 24 &&
+    hipRow("h", u, 10.0, 1.0, 1.0).flags == 8 && f(2.5) == 1 && f(0.0 - 0.5) == 1 && f(1.0) == 0
+}
+-- (7) Plx > 0, not >= 0: a HIP2 row with Plx 0.00 is skipped, as a negative one is (>= would reach the
+-- distance step and refuse the whole build).
+pure func checkPlxZeroSkipped(t: Texts) -> bool =
+  ids(rigel(t, "| 0.18|", "    0.00 "), "") == ["HIP 71681"]
+-- (8) The CNS5 parallax gate: a row with Plx 0 or below is not read (the row 1143 plx rewritten).
+pure func cns5With(t: Texts, plx: string) -> Texts =
+  {h2: t.h2, hm: t.hm, c5: replace(t.c5, "47.27153969330315", plx)}
+pure func checkCnsPlxGate(t: Texts) -> bool =
+  size(parseCnsHip(t.c5)) == 8 && size(parseCnsHip(cns5With(t, "0.000000000000000").c5)) == 7 &&
+  size(parseCnsHip(cns5With(t, "-4.72715396933031").c5)) == 7 && size(parseCnsHip(cns5With(t, "0.000000000000001").c5)) == 8
+
 pure func checks(t: Texts) -> [(string, bool)] = [
   ("VegaExcluded", checkVegaExcluded(t)), ("ArcturusPmMatch", checkArcturusPmMatch(t)),
   ("RigelIncluded", checkRigelIncluded(t)), ("Cns5EpochMatch", checkCns5EpochMatch(t)),
   ("SiriusFilled", checkSiriusFilled(t)), ("SharedHipGuard", checkSharedHipGuard(t)),
-  ("AlphaCenComponents", checkAlphaCenComponents(t)), ("OverrideRefused", checkOverrideRefused(t)), ("Cuts", checkCuts(t)), ("FillQuickOnly", checkFillQuickOnly())]
+  ("AlphaCenComponents", checkAlphaCenComponents(t)), ("OverrideRefused", checkOverrideRefused(t)), ("Cuts", checkCuts(t)), ("FillQuickOnly", checkFillQuickOnly()),
+  ("TwoMissingShareHip", checkTwoMissingShareHip()), ("WindowBothSides", checkWindowBothSides()), ("GcnsRadius", checkGcnsRadius(t)),
+  ("KeptRowAt2016", checkKeptRowAt2016(t)), ("NoBvExcluded", checkNoBvExcluded()), ("FlagOutOfTable", checkFlagOutOfTable()),
+  ("PlxZeroSkipped", checkPlxZeroSkipped(t)), ("CnsPlxGate", checkCnsPlxGate(t))]
 
 test "M1.2d checkVegaExcluded" { checkVegaExcluded(inline()) }
 test "M1.2d checkArcturusPmMatch" { checkArcturusPmMatch(inline()) }
@@ -191,6 +263,15 @@ test "M1.2d checkAlphaCenComponents" { checkAlphaCenComponents(inline()) }
 test "M1.2d checkOverrideRefused" { checkOverrideRefused(inline()) }
 test "M1.2d checkCuts" { checkCuts(inline()) }
 test "M1.2d checkFillQuickOnly" { checkFillQuickOnly() }
+
+test "M1.2d gap checkTwoMissingShareHip" { checkTwoMissingShareHip() }
+test "M1.2d gap checkWindowBothSides" { checkWindowBothSides() }
+test "M1.2d gap checkGcnsRadius" { checkGcnsRadius(inline()) }
+test "M1.2d gap checkKeptRowAt2016" { checkKeptRowAt2016(inline()) }
+test "M1.2d gap checkNoBvExcluded" { checkNoBvExcluded() }
+test "M1.2d gap checkFlagOutOfTable" { checkFlagOutOfTable() }
+test "M1.2d gap checkPlxZeroSkipped" { checkPlxZeroSkipped(inline()) }
+test "M1.2d gap checkCnsPlxGate" { checkCnsPlxGate(inline()) }
 
 export func brightVm(_: int) -> string = verdictOf("bright-vm", failedChecks(checks(inline())))
 export func brightFixtures(dir: string) -> string ! {FS} {
