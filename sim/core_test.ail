@@ -176,7 +176,8 @@ pure func plOf(w: World) -> Option[Plan] = match w.journey { Planned(p) => Some(
 pure func plId(w: World) -> int = match w.journey { Planned(p) => p.id, Committed(c) => c.plan.id, Arrived(c) => c.plan.id, Idle => 0 }
 pure func plAcen() -> Target = {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z: -4.37}}
 pure func plAt(d: float) -> Target = {index: 9, id: "probe", pos: {x: d, y: 0.0, z: 0.0}}
-pure func plGl559() -> Target = {index: 1, id: "Gl 559", pos: {x: 1.5, y: -4.09, z: -0.05}}
+-- M1.7: alpha Cen A as data/starmap/stars.json carries it (CNS5:3627, the CNS5 system parallax, D-19).
+pure func plAcenA() -> Target = {index: 2, id: "CNS5:3627", pos: {x: 3.094521, y: -3.015404, z: -0.051608}}
 pure func plCruise(t: Target, phi: float) -> Intent = IPlan({target: t, cruisePhi: phi, flipG: None})
 pure func plFlip(t: Target, g: float) -> Intent = IPlan({target: t, cruisePhi: 2.0, flipG: Some(g)})
 pure func plDo(w: World, xs: [Intent]) -> Ticked = tick(w, {dtau: 0.0, intents: xs})
@@ -213,12 +214,13 @@ pure func checkPlanAlphaCen() -> bool {
   plTrip(w, 3.5823937227478337, 6.00250277725247) &&
   plField(w, \p. p.flip && rel(p.trip.trip.peakBeta, 0.9516558449006334, tol9()) && rel(p.trip.trip.peakGamma, 3.2555651770846072, tol9()) && p.trip.tauCoast == 0.0)
 }
--- Catalogue doubles (stars.json Gl 559): d is a float64 scalar, bit for bit.
--- float32-rounded positions would be 3.3e-8 off in d, 1.3e-8 in ship time.
-pure func checkPlanGl559() -> bool {
-  let w = plDo(plWorld(true, defaultParams()), [plFlip(plGl559(), 1.0)]).world;
-  plTrip(w, 3.5780871495240905, 5.988497264963769) &&
-  plField(w, \p. p.trip.trip.distance == 4.35667304258651 && rel(p.trip.trip.peakBeta, 0.9514456743125428, tol9()) && p.target.id == "Gl 559")
+-- Catalogue doubles (stars.json CNS5:3627, M1.7): d is a float64 scalar, bit for bit
+-- (float32-rounded positions would move d by 2.3e-8 ly). Expected values: the 1 g flip-and-burn
+-- closed form tau = 2 c/g acosh(1 + g d / 2c^2), t = 2 c/g sinh(...), beta = tanh(...).
+pure func checkPlanAcenA() -> bool {
+  let w = plDo(plWorld(true, defaultParams()), [plFlip(plAcenA(), 1.0)]).world;
+  plTrip(w, 3.566522686148632, 5.951034407059531) &&
+  plField(w, \p. p.trip.trip.distance == 4.32103979249451 && rel(p.trip.trip.peakBeta, 0.9508768841337906, tol9()) && p.target.id == "CNS5:3627")
 }
 -- Row 8: 100 ly, boost_g 1 g, cruise 0.99c.
 pure func checkPlanCoast100() -> bool {
@@ -435,9 +437,9 @@ pure func checkPlanIds() -> bool {
 pure func checkPlanIsPackage() -> bool {
   let a = 750000.0 * standardGravity();
   let w = plDo(plWorld(true, defaultParams()), [plCruise(plAcen(), phi099())]).world;
-  let f = plDo(plWorld(true, defaultParams()), [plFlip(plGl559(), 1.0)]).world;
+  let f = plDo(plWorld(true, defaultParams()), [plFlip(plAcenA(), 1.0)]).world;
   let want = planBurnCoastBurn(4.37, a, phi099());
-  let wantF = planFlipAndBurn(4.35667304258651, standardGravity());
+  let wantF = planFlipAndBurn(4.32103979249451, standardGravity());
   plField(w, \p. p.trip.tauTotal == want.tauTotal && p.trip.trip.galaxyTime == want.trip.galaxyTime && p.trip.dCoast == want.dCoast) &&
   plField(f, \p. p.trip.tauTotal == wantF.tauTotal && p.trip.trip.galaxyTime == wantF.trip.galaxyTime)
 }
@@ -504,14 +506,14 @@ pure func checkBoundaryTicks(c0: World) -> bool {
 pure func checkVoyageBoundaries() -> bool = checkVoyageAt(phi099()) && checkVoyageAt(plPhiCap()) && checkFlipVoyage()
 -- The diag 1 g flip-and-burn check profile: boost straight into brake (tauCoast = 0).
 pure func checkFlipVoyage() -> bool {
-  let c0 = plDo(plDo(plWorld(true, defaultParams()), [plFlip(plGl559(), 1.0)]).world, [ICommit(1)]).world;
+  let c0 = plDo(plDo(plWorld(true, defaultParams()), [plFlip(plAcenA(), 1.0)]).world, [ICommit(1)]).world;
   let c = apCommit(c0);
   let tp = c.plan.trip;
   let v = voyage({w: c0, ok: true, events: [], ticks: 0}, 0.01, 1000);
   let cs = phaseEvents(v.events);
   v.ok && isArrived(v.w.journey) && crossingNames(cs) == "at_rest>boosting,boosting>braking,braking>at_rest" &&
   crossingTaus(cs, [c.tau0, c.tau0 + tp.tauBurn, c.tau0 + tp.tauTotal]) && checkResidualsOf(v, tp.trip.distance) &&
-  veqExact(position(v.w.ship), plGl559().pos)
+  veqExact(position(v.w.ship), plAcenA().pos)
 }
 
 pure func veqExact(a: Vec3, b: Vec3) -> bool = a.x == b.x && a.y == b.y && a.z == b.z
@@ -531,8 +533,8 @@ pure func checkArrivalResidual() -> bool {
   let v = voyage({w: c0, ok: true, events: [], ticks: 0}, 0.01, 1000);
   let s = v.w.ship;
   let after = wait(v.w, 0.5).world;
-  let cap = voyage({w: apCommitted(defaultParams(), plGl559(), plPhiCap()), ok: true, events: [], ticks: 0}, 0.01, 1000);
-  checkResidualsOf(v, 4.37) && checkResidualsOf(cap, 4.35667304258651) && veqExact(position(cap.w.ship), plGl559().pos) &&
+  let cap = voyage({w: apCommitted(defaultParams(), plAcenA(), plPhiCap()), ok: true, events: [], ticks: 0}, 0.01, 1000);
+  checkResidualsOf(v, 4.37) && checkResidualsOf(cap, 4.32103979249451) && veqExact(position(cap.w.ship), plAcenA().pos) &&
   s.motion.phi == 0.0 && s.phase == AtRest && veqExact(position(s), plAcen().pos) &&
   absf(s.motion.tau - (c.tau0 + 0.01 * intToFloat(v.ticks))) <= 0.000000000001 &&
   near9(s.motion.t, c.t0 + c.plan.trip.trip.galaxyTime + (0.01 * intToFloat(v.ticks) - c.plan.trip.tauTotal)) &&
@@ -615,7 +617,7 @@ pure func checkLedgerAtArrival() -> bool {
   let tp = planBurnCoastBurn(4.37, 750000.0 * standardGravity(), phi099());
   let landed = voyage({w: apCommitted(p, plAcen(), phi099()), ok: true, events: [], ticks: 0}, 0.01, 1000).w;
   let rested = wait(landed, 1.0).world;
-  checkLedgerAt(p, plAcen(), phi099()) && checkLedgerAt(p, plGl559(), plPhiCap()) && checkLedgerAt({defaultParams() | mEffKg: 0.5, ismNCm3: 1.0}, plAt(10.0), phi09()) &&
+  checkLedgerAt(p, plAcen(), phi099()) && checkLedgerAt(p, plAcenA(), plPhiCap()) && checkLedgerAt({defaultParams() | mEffKg: 0.5, ismNCm3: 1.0}, plAt(10.0), phi09()) &&
   rel(landed.ledger.boostJ, photonDriveEnergy(3.0, 2.0 * tp.phiPeak), tol9()) &&
   rested.ledger.boostJ == landed.ledger.boostJ && rested.ledger.dragJ == landed.ledger.dragJ
 }
@@ -657,7 +659,7 @@ export pure func voyageVm(n: int) -> string =
   then "voyage-ok" else "voyage-BAD"
 
 export pure func planVm(n: int) -> string =
-  if checkPlanCruise09() && checkPlanCruise099() && checkPlanCruiseCap() && checkPlanAlphaCen() && checkPlanGl559() && checkPlanCoast100() && checkPlanFallback() &&
+  if checkPlanCruise09() && checkPlanCruise099() && checkPlanCruiseCap() && checkPlanAlphaCen() && checkPlanAcenA() && checkPlanCoast100() && checkPlanFallback() &&
     checkPlanReadouts() && checkCruiseRange() && checkDiagOnly() && checkCommittedRefusesAll() && checkCommitTurns() && checkCommitMoving() && checkStalePlan() && checkPlanIds() && checkPlanIsPackage()
   then "plan-ok" else "plan-BAD"
 
@@ -682,7 +684,7 @@ test "AC2 plan alpha Cen cruise 0.9c (row 1)" { checkPlanCruise09() }
 test "AC2 plan alpha Cen cruise 0.99c (row 2: 0.6227 ship-yr, 4.414 Earth-yr)" { checkPlanCruise099() }
 test "AC2 plan alpha Cen cruise at the cap (row 3)" { checkPlanCruiseCap() }
 test "AC2 plan alpha Cen 1 g flip, diag (row 6)" { checkPlanAlphaCen() }
-test "AC2 plan Gl 559 catalogue doubles, 1 g flip (row 7)" { checkPlanGl559() }
+test "AC2 plan alpha Cen A catalogue doubles (CNS5:3627), 1 g flip (row 7)" { checkPlanAcenA() }
 test "AC2 plan 100 ly cruise 0.99c at 1 g (row 8)" { checkPlanCoast100() }
 test "AC2 plan falls back to flip-and-burn (rows 9, 4)" { checkPlanFallback() }
 test "AC3 plan readouts equal the readout table and derived fields" { checkPlanReadouts() }

@@ -21,7 +21,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test test-bright-audit sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -234,6 +234,21 @@ catalogue:        ## M1.2b-T3/M1.2d: data/raw -> $(CATALOGUE_OUT)/stars_$(TIER).
 	  medium|large) $(CAT_RUN) --bytecode --entry main --args-json $(call cat_args,$(TIER),data/raw/gcns.csv,data/raw/table1c.dat.gz,$(CATALOGUE_OUT)) sim/tools/catalogue_main.ail;; \
 	  *) echo "catalogue: TIER must be quick, medium, large or bright (got '$(TIER)')"; exit 2;; esac
 
+# M1.7 (F6, Q7): the galaxy map catalogue, from the quick + bright tier rows within 25 pc (float64; ids
+# "Gaia DR3 n" / "CNS5:n" / "HIP n"). STARMAP_OUT picks the file (catalogue-verify writes a scratch copy).
+STARMAP_OUT ?= data/starmap/stars.json
+map_args = "{\"csv\":\"data/raw/cns5.csv\",\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"overrides\":\"data/starmap/bright_overrides.json\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+.PHONY: starmap starmap-test
+starmap:          ## M1.7: data/raw -> $(STARMAP_OUT), the galaxy map catalogue (quick + bright within 25 pc) on the VM
+	$(CAT_RUN) --bytecode --entry mapMain --args-json $(call map_args,$(STARMAP_OUT)) sim/tools/bright_main.ail
+
+starmap-test:     ## M1.7 map catalogue (sim/tools/starmap.ail): named checks, strict VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry starmapVm --args-json 0 sim/tools/starmap_test.ail > $(SCRATCH)/starmap-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry starmapVm --args-json 0 sim/tools/starmap_test.ail > $(SCRATCH)/starmap-interp.txt
+	@cmp $(SCRATCH)/starmap-vm.txt $(SCRATCH)/starmap-interp.txt && test "$$(cat $(SCRATCH)/starmap-vm.txt)" = "starmap-ok"
+	@echo "starmap-test: $$(cat $(SCRATCH)/starmap-vm.txt) (strict VM = interpreter)"
+
 test-bright-audit: ## M1.2d AC11 auditor (tools/bright_star_audit.gd) on synthetic renders; the render gate itself is M1.5b
 	$(GODOT) --headless --path . --script tests/test_bright_audit.gd
 
@@ -260,12 +275,15 @@ star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, e
 	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
 
 VERIFY_OUT := $(SCRATCH)/verify
-catalogue-verify: catalogue-inputs ## M1.2c/M1.2d determinism: rebuild quick, medium and bright into .godot/tmp/verify and cmp bin + sidecar with the committed files
+catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files
 	@rm -rf $(VERIFY_OUT); for t in quick medium bright; do \
 	  $(MAKE) --no-print-directory catalogue TIER=$$t CATALOGUE_OUT=$(VERIFY_OUT) AILANG=$(AILANG) >/dev/null || exit 1; \
 	  cmp data/starmap/stars_$$t.bin $(VERIFY_OUT)/stars_$$t.bin && cmp data/starmap/stars_$$t.json $(VERIFY_OUT)/stars_$$t.json \
 	    || { echo "catalogue-verify: $$t DIFFERS from the committed tier"; exit 1; }; \
-	  echo "$$t identical"; done
+	  echo "$$t identical"; done; \
+	$(MAKE) --no-print-directory starmap STARMAP_OUT=$(VERIFY_OUT)/stars.json AILANG=$(AILANG) >/dev/null || exit 1; \
+	cmp data/starmap/stars.json $(VERIFY_OUT)/stars.json || { echo "catalogue-verify: stars.json DIFFERS from the committed map"; exit 1; }; \
+	echo "stars.json identical"
 
 .PHONY: catalogue-parity
 PARITY_TIER ?= medium

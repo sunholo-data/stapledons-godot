@@ -3,6 +3,8 @@ module stapledons/sim/tools/bright_main
 --   mainFill   the quick tier with rule (b), the HIP photometry fill: catalogue_main.main's inputs
 --              plus hip_main.dat (I/239); the CNS5 HIP column and Gaia G come from the raw cns5.dat.
 --   brightMain the bright tier, rules (a) and (c).
+--   mapMain    M1.7: the galaxy map catalogue data/starmap/stars.json (sim/tools/starmap.ail) from
+--              the quick rows (with the fill) and the bright rows, within 25 pc.
 -- A separate module so catalogue_main (medium/large `--entry main`) does not load extract.ail,
 -- whose own `main` the v0.51.0 VM picked instead (reported upstream).
 --   ailang run --quiet --bytecode --caps IO,FS --package-dir sim --entry brightMain --args-json \
@@ -11,8 +13,9 @@ module stapledons/sim/tools/bright_main
 --     sim/tools/bright_main.ail
 import ./catalogue (Fill)
 import ./catalogue_bytes (encodeRows)
-import ./catalogue (selectTier)
-import ./catalogue_main (Pkg, Plan, sidecarWith, planFill, lockPackage, outputName, fail, writeFail, rawDigest, commit)
+import ./catalogue (Row, selectTier, transform)
+import ./catalogue_main (Pkg, Plan, sidecarWith, planFill, applyFill, lockPackage, outputName, fail, writeFail, rawDigest, commit)
+import ./starmap (mapRows, mapJson, mapRadiusLy)
 import ./bright (Bright, parseHip2, parseHipMain, parseCnsHip, gcnsIndex, parseOverrides, fill, bright)
 import std/result (Result, Ok, Err)
 import std/option (Some, None)
@@ -20,9 +23,9 @@ import std/string (concat, join, intToStr)
 import std/list (length as size)
 import std/crypto (sha256Hex, sha256Bytes)
 import std/bytes (fromBase64, toString as utf8)
-import std/json (Json, kv, js, jint)
+import std/json (Json, kv, js, jint, jo)
 import std/gzip (decompressFile)
-import std/fs (readFileResult)
+import std/fs (readFileResult, writeFileResult, renameFileResult)
 import std/io (println)
 
 pure func brightSource() -> string =
@@ -85,3 +88,53 @@ export func brightMain(a: {hip2: string, hipMain: string, cns5: string, gcns: st
     Ok(r) => installed(r.plan,a.out,"bright",concat([" (no B-V: ",join(" ",r.b.noColour),"); matched CNS5 ",intToStr(r.b.cns5),
       ", GCNS ",intToStr(r.b.gcns),", overrides ",intToStr(r.b.overridden)]))
   } } } } } } } } } }
+
+-- M1.7: the map rows are exactly the tiers' rows (quick with rule b, bright with rules a and c),
+-- before the float32 encoding; Ok carries the file text and the row count.
+export pure func mapPlan(i: {csv: string, cns5: string, hip2: string, hipMain: string, gcns: string, overrides: string,
+    shas: [{key: string, value: Json}], ailang: string, pkg: Pkg}) -> Result[{text: string, count: int}, string] {
+  let phot = parseHipMain(i.hipMain);
+  let cns = parseCnsHip(i.cns5);
+  match transform(i.csv) {
+    Err(e) => Err(e),
+    Ok(s) => match selectTier(applyFill(s.rows, fill(cns, phot).rows), "quick") {
+      Err(e) => Err(e),
+      Ok(q) => match parseOverrides(i.overrides) {
+        Err(e) => Err(e),
+        Ok(os) => match bright(parseHip2(i.hip2), phot, cns, gcnsIndex(i.gcns), os) {
+          Err(e) => Err(e),
+          Ok(b) => match mapRows(q.rows, b.rows, mapRadiusLy()) {
+            Err(e) => Err(e),
+            Ok(rows) => Ok({count: size(rows), text: mapJson(rows, size(q.rows), size(b.rows), [
+              kv("ailang", js(i.ailang)),
+              kv("package", jo([kv("name", js(i.pkg.name)), kv("version", js(i.pkg.version)), kv("content_hash", js(i.pkg.hash))])),
+              kv("producer", js("stapledons/sim/tools/bright_main mapMain (sim/tools/starmap.ail)")),
+              kv("sha256", jo(i.shas))])})
+          }
+        }
+      }
+    }
+  }
+}
+-- Temp file beside the target, then a rename: a refusal or a failed write leaves the old map.
+export func mapMain(a: {csv: string, cns5: string, hip2: string, hipMain: string, gcns: string, overrides: string, lock: string, out: string, ailang: string}) -> () ! {FS, IO} =
+  match readText(a.csv) { Err(e) => fail(e), Ok(csv) => match readGz(a.hip2) { Err(e) => fail(e), Ok(h2) =>
+  match readText(a.hipMain) { Err(e) => fail(e), Ok(hm) => match readText(a.cns5) { Err(e) => fail(e), Ok(c5) =>
+  match readText(a.gcns) { Err(e) => fail(e), Ok(gc) => match readText(a.overrides) { Err(e) => fail(e), Ok(ov) =>
+  match readText(a.lock) { Err(e) => fail(e), Ok(lock) => match lockPackage(lock,"sunholo/relativity") { Err(e) => fail(e), Ok(pkg) =>
+  match rawDigest(a.hip2) { Err(e) => fail(e), Ok(s2) => match rawDigest(a.cns5) { Err(e) => fail(e), Ok(s5) =>
+  match mapPlan({csv: csv, cns5: c5, hip2: h2, hipMain: hm, gcns: gc, overrides: ov, ailang: a.ailang, pkg: pkg,
+      shas: [kv("cns5_csv",js(sha256Hex(csv))), kv("cns5",js(s5)), kv("hip_main",js(sha256Hex(hm))), kv("hip2",js(s2)),
+        kv("gcns",js(sha256Hex(gc))), kv("overrides",js(sha256Hex(ov)))]}) {
+    Err(e) => fail(e),
+    Ok(m) => {
+      let tmp = concat([a.out, ".tmp"]);
+      match writeFileResult(tmp, m.text) {
+        Err(e) => writeFail(concat(["cannot write ", tmp, ": ", e, "; nothing changed"])),
+        Ok(_) => match renameFileResult(tmp, a.out) {
+          Err(e) => writeFail(concat(["cannot install ", a.out, ": ", e, "; ", tmp, " left for inspection, ", a.out, " unchanged"])),
+          Ok(_) => println(concat(["starmap: ", intToStr(m.count), " stars within 25 pc -> ", a.out, " (sha256 ", sha256Hex(m.text), ")"]))
+        }
+      }
+    }
+  } } } } } } } } } } }

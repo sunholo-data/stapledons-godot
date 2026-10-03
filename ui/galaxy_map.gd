@@ -8,7 +8,9 @@ extends Node3D
 ## (`journey`, `clock`, `ship`, `ledger`, `params`) and Godot only formats it.
 ## Selection sends `plan` with the star's catalogue index, id and float64
 ## position taken from the parsed JSON dictionary (never from a Vector3),
-## plus the slider's rapidity.
+## plus the slider's rapidity. The catalogue (M1.7, Q7) is the quick + bright
+## tier rows within 25 pc; ids are stable ("Gaia DR3 n", "CNS5:n", "HIP n"), one
+## per star, so alpha Cen A (CNS5:3627) and B (HIP 71681) are two rows.
 ##
 ## The slider is linear in rapidity between the bounds the sim echoes in
 ## `params` (cruise_phi_min/max; default cruise_phi_default = 0.99c, D-14).
@@ -16,7 +18,8 @@ extends Node3D
 ## Commit is one dialog with both clocks and the years left, sent only after a
 ## 1.5 s hold (D-12). After the commit the Cancel button stays enabled: the
 ## sim, not the UI, refuses it (`committed`) and the panel shows the refusal.
-## Star names come from data/starmap/names.json (D-17), the catalogue id below.
+## Star names come from data/starmap/names.json (D-17), keyed by catalogue id;
+## the subtitle is the catalogue id and the catalogue's own distance.
 ## Mouse: drag to orbit, wheel to zoom, click a star to select it.
 ## Trackpad: pinch (InputEventMagnifyGesture) or two-finger scroll
 ## (InputEventPanGesture, one unit of delta.y = one wheel notch, same
@@ -115,8 +118,9 @@ const ARRIVED_ROWS := [
 var sim: SimBridge
 var auto_tick := true
 var catalogue: Array = [] # parsed stars.json dictionaries (float64 x, y, z)
-var names: Dictionary = {} # catalogue index -> common name (names.json, D-17)
-var name_mismatches := 0 # names.json rows whose id is not the catalogue's
+var index_by_id: Dictionary = {} # catalogue id -> index (ids are unique, M1.7)
+var names: Dictionary = {} # catalogue index -> common name (names.json rows are keyed by id, D-17)
+var name_mismatches := 0 # names.json rows whose id is not in the catalogue
 var phi_min := 0.0
 var phi_max := 0.0
 var phi_default := 0.0
@@ -321,6 +325,9 @@ func load_catalogue(path: String) -> void:
 	_build()
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	catalogue = data["stars"]
+	index_by_id.clear()
+	for i in catalogue.size():
+		index_by_id[String(catalogue[i]["id"])] = i
 	var quad := QuadMesh.new()
 	var mat := ShaderMaterial.new()
 	mat.shader = STAR_SHADER
@@ -332,9 +339,9 @@ func load_catalogue(path: String) -> void:
 	mm.instance_count = catalogue.size()
 	for i in catalogue.size():
 		var s: Dictionary = catalogue[i]
-		var rgb := Blackbody.rgb_unit_luminance(Relativity.temperature_for_class(s["spectral"]))
+		var rgb := Blackbody.rgb_unit_luminance(point_teff(s))
 		rgb /= maxf(rgb.x, maxf(rgb.y, rgb.z))
-		var px := clampf(5.5 - 0.3 * float(s["vmag"]), 1.3, 6.0)
+		var px := clampf(5.5 - 0.3 * float(s["vmag"]), 1.3, 6.0) # V 99 (no photometry): the smallest point
 		var glow := clampf(0.95 - 0.04 * float(s["vmag"]), 0.3, 0.95)
 		mm.set_instance_transform(i, Transform3D(Basis(), world_pos(i)))
 		mm.set_instance_custom_data(i, Color(rgb.x * glow, rgb.y * glow, rgb.z * glow, px))
@@ -342,8 +349,21 @@ func load_catalogue(path: String) -> void:
 	_points.extra_cull_margin = 16384.0
 
 
-## Common names (D-17): rows keyed by catalogue index; a row whose id is not
-## that entry's id is ignored and counted. Returns the number of names loaded.
+## Point colour (drawing only): the catalogue teff, or a neutral 4,000 K for a
+## row without photometry (teff 0, flags bit 2).
+static func point_teff(s: Dictionary) -> float:
+	var t := float(s.get("teff", 0.0))
+	return t if t > 0.0 else 4000.0
+
+
+## The index of catalogue id `id`, or -1.
+func index_of(id: String) -> int:
+	return index_by_id.get(id, -1)
+
+
+## Common names (D-17): rows keyed by catalogue id (M1.7); a row whose id is
+## not in the catalogue, or names an id twice, is ignored and counted.
+## Returns the number of names loaded.
 func load_names(path: String) -> int:
 	names.clear()
 	name_mismatches = 0
@@ -351,8 +371,8 @@ func load_names(path: String) -> int:
 	if typeof(data) != TYPE_DICTIONARY:
 		return 0
 	for r: Dictionary in data.get("names", []):
-		var i := int(r["index"])
-		if i >= 0 and i < catalogue.size() and catalogue[i]["id"] == r["id"]:
+		var i := index_of(String(r.get("id", "")))
+		if i >= 0 and not names.has(i):
 			names[i] = String(r["name"])
 		else:
 			name_mismatches += 1
@@ -607,10 +627,16 @@ func title_text() -> String:
 	return target_name()
 
 
-## The catalogue id and index under the name.
+## Under the name: the catalogue id and the catalogue's own distance (D-17),
+## from stars.json (the panel's distance row is the sim's plan distance).
 func subtitle_text() -> String:
 	var t = field_value(sim.world, "journey.plan.target") if sim != null else null
-	return "" if t == null else "%s  ·  catalogue #%d" % [t["id"], int(t["index"])]
+	if t == null:
+		return ""
+	var i := int(t["index"])
+	if i >= 0 and i < catalogue.size() and catalogue[i]["id"] == t["id"]:
+		return "%s  ·  %.2f ly" % [t["id"], float(catalogue[i]["dist_ly"])]
+	return String(t["id"])
 
 
 static func speed_label(plan: Dictionary) -> String:

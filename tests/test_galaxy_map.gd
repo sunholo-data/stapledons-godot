@@ -1,32 +1,37 @@
 extends SceneTree
 ## Headless galaxy-map test (M2.6a, design AC15 part) against the real sim:
-## selection by catalogue index, the plan payload (float64 catalogue doubles,
+## selection by catalogue id (M1.7: stable ids, alpha Cen A and B are two
+## stars), the plan payload (float64 catalogue doubles,
 ## slider rapidity), the slider's range and default against the sim's own
 ## acceptance bounds, panel labels = formatted sim fields, the clock never
 ## pausing, target_selected and preselect, and screen-space picking in a fixed
 ## 800x600 viewport.
 ## Run:  godot --headless --path . --script tests/test_galaxy_map.gd
 
-const ALPHA_CEN_A := 1 # stars.json index 1: "Gl 559", vmag 0.01 (index 2 is B, same id)
+## M1.7 catalogue ids: alpha Cen A is the CNS5 system row (HIP photometry, Q1),
+## B the bright tier's HIP 71681 at the CNS5 system parallax (Q2 (a), D-19).
+const ACEN_A_ID := "CNS5:3627"
+const ACEN_B_ID := "HIP 71681"
+const BARNARD_ID := "Gaia DR3 4472832130942575872"
 const RECORD := "user://test_galaxy_map_input.ndjson"
-## Committed golden: the M2.6a capture's alpha Cen A 0.99c panel.
-const GOLDEN := "res://docs/m2.6a/galaxy_map_panel.json"
+## Committed golden: the M1.7 capture's alpha Cen A 0.99c panel.
+const GOLDEN := "res://docs/m1.7/galaxy_map_panel.json"
 ## Literal texts of that panel's clock-independent rows (the clock-dependent
 ## arrival / age / years-left rows move with the tick). Pinned here and checked
 ## against the golden too, so the label test does not reuse format_row.
 const ALPHA_CEN_099 := {
-	"journey.plan.ship_years": "0.6208 ship-yr",
-	"journey.plan.earth_years": "4.400 Earth-yr",
-	"journey.plan.distance": "4.356 ly",
+	"journey.plan.ship_years": "0.6157 ship-yr",
+	"journey.plan.earth_years": "4.365 Earth-yr",
+	"journey.plan.distance": "4.321 ly",
 	"journey.plan.cruise_beta": "0.990000c",
 	"journey.plan.cruise_one_minus_beta": "0.01000",
 	"journey.plan.cruise_gamma": "7.0888",
 	"journey.plan.boost_minutes": "1.80 min",
 	"journey.plan.energy.boost_j": "2.379e17 J",
 	"journey.plan.energy.brake_j": "2.379e17 J",
-	"journey.plan.energy.drag_j": "1.366e17 J",
-	"journey.plan.energy.total_j": "6.123e17 J",
-	"journey.plan.energy.total_kg": "6.813 kg",
+	"journey.plan.energy.drag_j": "1.355e17 J",
+	"journey.plan.energy.total_j": "6.112e17 J",
+	"journey.plan.energy.total_kg": "6.801 kg",
 	"journey.plan.ism.load_w_m2": "2.220e5 W/m2",
 	"journey.plan.ism.glow_w_m2": "2.407e-5 W/m2",
 	"journey.plan.ism.drag_n": "23.26 N",
@@ -36,6 +41,8 @@ const ALPHA_CEN_099 := {
 }
 
 var failures := 0
+var acen_a := -1 # catalogue indices, looked up by id once the catalogue loads
+var acen_b := -1
 
 func ok(name: String, cond: bool) -> void:
 	if not cond: failures += 1
@@ -77,6 +84,8 @@ func new_map(vp: SubViewport) -> GalaxyMap:
 	map.load_catalogue("res://data/starmap/stars.json")
 	map.load_names("res://data/starmap/names.json")
 	map.attach(sim)
+	acen_a = map.index_of(ACEN_A_ID)
+	acen_b = map.index_of(ACEN_B_ID)
 	return map
 
 func plan_of(map: GalaxyMap) -> Dictionary:
@@ -90,25 +99,48 @@ func row(map: GalaxyMap, field: String) -> Dictionary:
 
 
 func test_select_sends_catalogue_doubles(map: GalaxyMap) -> bool:
-	var star: Dictionary = map.catalogue[ALPHA_CEN_A]
-	ok("index 1 is alpha Cen A (Gl 559, vmag 0.01)", star["id"] == "Gl 559" and same(star["vmag"], 0.01))
-	var intent := map.plan_intent(ALPHA_CEN_A)
+	var star: Dictionary = map.catalogue[acen_a]
+	ok("CNS5:3627 is alpha Cen A (HIP V -0.01, flag 8)", acen_a >= 0 and star["id"] == ACEN_A_ID and same(star["vmag"], -0.01) and int(star["flags"]) == 8)
+	var intent := map.plan_intent(acen_a)
 	var t: Dictionary = intent["target"]
-	ok("plan carries index and id", intent["k"] == "plan" and t["index"] == ALPHA_CEN_A and typeof(t["index"]) == TYPE_INT and t["id"] == "Gl 559")
+	ok("plan carries index and id", intent["k"] == "plan" and t["index"] == acen_a and typeof(t["index"]) == TYPE_INT and t["id"] == ACEN_A_ID)
 	var p: Dictionary = t["pos"]
 	ok("pos x, y, z are the parsed JSON doubles, bit for bit", same(p["x"], star["x"]) and same(p["y"], star["y"]) and same(p["z"], star["z"]))
-	ok("pos y is not float32-rounded (-3.04 has no exact float32)", not same(p["y"], float(Vector3(0, star["y"], 0).y)))
+	ok("pos y is not float32-rounded (-3.015404 has no exact float32)", not same(p["y"], float(Vector3(0, star["y"], 0).y)))
 	ok("plan carries the slider's cruise_phi", same(intent["cruise_phi"], map.cruise_phi))
-	map.select(ALPHA_CEN_A)
+	map.select(acen_a)
 	map.tick()
 	var plan := plan_of(map)
-	ok("sim planned alpha Cen A", map.sim.world["journey"]["state"] == "planned" and plan["target"]["index"] == ALPHA_CEN_A)
+	ok("sim planned alpha Cen A", map.sim.world["journey"]["state"] == "planned" and plan["target"]["index"] == acen_a)
 	var echo: Dictionary = plan["target"]["pos"]
 	ok("sim echoes pos bit for bit", same(echo["x"], star["x"]) and same(echo["y"], star["y"]) and same(echo["z"], star["z"]))
-	# (3.12, -3.04, -0.05) since the 2026-10-02 longitude fix; |r| moved by 0.00024 ly in the
-	# 0.01 ly re-rounding.  sim/core_test's checkPlanGl559 keeps the pre-fix doubles
-	# (1.5, -4.09, -0.05) -> 4.35667304258651 as a fixed maths fixture.
-	ok("distance is the catalogue-double distance (|(3.12, -3.04, -0.05)| = 4.356432026326131)", same(plan["distance"], f64(0x40116cfc8461455f)))
+	# CNS5 754.81 mas (the HIP system parallax, D-19) at the CNS5 position, 1e-6 ly digits;
+	# sim/core_test's checkPlanAlphaCenA pins the same doubles -> the same d.
+	ok("distance is the catalogue-double distance (|(3.094521, -3.015404, -0.051608)| = 4.32103979249451)", same(plan["distance"], f64(0x401148bea7c5ea08)))
+	ok("the sim's distance is stars.json dist_ly, bit for bit (the map shows the catalogue's own distance, D-17)", same(plan["distance"], star["dist_ly"]))
+	return true
+
+
+## alpha Cen A and B are two selectable stars with their own ids (M1.7, F2):
+## B sits at the CNS5 system distance, 19 arcsec from A, never at its own
+## HIP2 parallax (4.09 ly).
+func test_alpha_cen_pair(map: GalaxyMap) -> bool:
+	ok("alpha Cen B is its own catalogue row", acen_b >= 0 and acen_b != acen_a and map.catalogue[acen_b]["id"] == ACEN_B_ID)
+	var a: Dictionary = map.catalogue[acen_a]
+	var b: Dictionary = map.catalogue[acen_b]
+	ok("B is at the system distance (4.3210 ly, within 1e-6 of A), not 4.09 ly", absf(float(b["dist_ly"]) - float(a["dist_ly"])) < 1.0e-6 and same(b["dist_ly"], f64(0x401148be90cd7009)))
+	var sep := rad_to_deg(acos(clampf((float(a["x"]) * float(b["x"]) + float(a["y"]) * float(b["y"]) + float(a["z"]) * float(b["z"])) / (float(a["dist_ly"]) * float(b["dist_ly"])), -1.0, 1.0))) * 3600.0
+	ok("B is 5-25 arcsec from A (%.1f arcsec)" % sep, sep > 5.0 and sep < 25.0)
+	ok("B's V is Hipparcos 1.35 (flag 8)", same(b["vmag"], 1.35) and int(b["flags"]) == 8)
+	map.select(acen_b)
+	map.tick()
+	var plan := plan_of(map)
+	ok("selecting B plans B (id HIP 71681), at its catalogue distance", plan["target"]["id"] == ACEN_B_ID and plan["target"]["index"] == acen_b and same(plan["distance"], b["dist_ly"]))
+	ok("B's title is its common name, subtitle its id and catalogue distance", map.title_text() == "Alpha Centauri B" and map.subtitle_text() == "HIP 71681  ·  4.32 ly")
+	map.select(acen_a)
+	map.tick()
+	ok("back on A", plan_of(map)["target"]["id"] == ACEN_A_ID)
+	ok("every catalogue id is unique (index_by_id covers every row)", map.index_by_id.size() == map.catalogue.size())
 	return true
 
 
@@ -188,14 +220,14 @@ func test_labels_are_sim_values(map: GalaxyMap) -> bool:
 ## Design check row 2 (alpha Cen at 4.37 ly, 0.99c): the same formatting of
 ## the sim's reply reads 0.6227 ship-yr, 4.414 Earth-yr, 1.80 boost-min, 6.818 kg.
 func test_check_row_digits(map: GalaxyMap) -> bool:
-	map.plan_target({"index": ALPHA_CEN_A, "id": "Gl 559", "pos": {"x": 0.0, "y": 0.0, "z": -4.37}})
+	map.plan_target({"index": acen_a, "id": ACEN_A_ID, "pos": {"x": 0.0, "y": 0.0, "z": -4.37}})
 	map.tick()
 	ok("check-row plan accepted", map.sim.last_refused.is_empty() and same(plan_of(map)["distance"], 4.37))
 	ok("ship time reads 0.6227 ship-yr", row(map, "journey.plan.ship_years")["text"] == "0.6227 ship-yr")
 	ok("Earth time reads 4.414 Earth-yr", row(map, "journey.plan.earth_years")["text"] == "4.414 Earth-yr")
 	ok("boost reads 1.80 min", row(map, "journey.plan.boost_minutes")["text"] == "1.80 min")
 	ok("total reads 6.818 kg", row(map, "journey.plan.energy.total_kg")["text"] == "6.818 kg")
-	map.select(ALPHA_CEN_A)
+	map.select(acen_a)
 	map.tick()
 	return true
 
@@ -216,55 +248,60 @@ func test_clock_never_pauses(map: GalaxyMap) -> bool:
 func test_signal_and_preselect(map: GalaxyMap) -> bool:
 	var got := []
 	map.target_selected.connect(func(id: String) -> void: got.append(id))
-	map.select(3)
-	ok("target_selected fires with the star id", got == ["Gl 699"] and map.selected_index == 3)
-	map.preselect(ALPHA_CEN_A)
-	ok("preselect selects without emitting", got == ["Gl 699"] and map.selected_index == ALPHA_CEN_A)
+	var barnard := map.index_of(BARNARD_ID)
+	map.select(barnard)
+	ok("target_selected fires with the star id", got == [BARNARD_ID] and map.selected_index == barnard)
+	map.preselect(acen_a)
+	ok("preselect selects without emitting", got == [BARNARD_ID] and map.selected_index == acen_a)
 	map.tick()
-	ok("preselect plans the star", plan_of(map)["target"]["index"] == ALPHA_CEN_A)
-	ok("preselect out of range is ignored", not map.preselect(99999) and map.selected_index == ALPHA_CEN_A)
+	ok("preselect plans the star", plan_of(map)["target"]["index"] == acen_a)
+	ok("preselect out of range is ignored", not map.preselect(99999) and map.selected_index == acen_a)
 	return true
 
 
 func test_picking(map: GalaxyMap) -> bool:
 	ok("nearest_index picks the closest within the radius", GalaxyMap.nearest_index(PackedVector2Array([Vector2(10, 10), Vector2(50, 50), Vector2(52, 49)]), Vector2(53, 49), 8.0) == 2)
 	ok("nothing within the radius gives -1", GalaxyMap.nearest_index(PackedVector2Array([Vector2(10, 10)]), Vector2(100, 100), 8.0) == -1)
-	map.frame_star(ALPHA_CEN_A)
-	var sp := map.screen_position(ALPHA_CEN_A)
+	map.frame_star(acen_a)
+	var sp := map.screen_position(acen_a)
 	ok("alpha Cen projects inside the 800x600 viewport", Rect2(0, 0, 800, 600).has_point(sp))
 	var hit := map.pick(sp + Vector2(2, -1))
-	ok("a click on alpha Cen picks a Gl 559 star (A and B share a position)", hit >= 0 and map.catalogue[hit]["id"] == "Gl 559")
+	ok("a click on alpha Cen picks A or B (19 arcsec apart: one pixel)", hit == acen_a or hit == acen_b)
 	ok("a click on empty sky picks nothing", map.pick(Vector2(-500, -500)) == -1)
 	return true
 
 
-## Star names (D-17): keyed by catalogue index, id checked; the panel title
-## is the common name and the subtitle the catalogue id. The mappings are
-## verified against literature positions by tools/check_star_names.py.
+## Star names (D-17): keyed by catalogue id (M1.7); the panel title is the
+## common name and the subtitle the catalogue id and the catalogue's own
+## distance. The mappings are verified against literature positions by
+## tools/check_star_names.py.
 func test_names(map: GalaxyMap) -> bool:
-	ok("names.json loads with every id matching its catalogue entry", map.names.size() >= 50 and map.name_mismatches == 0)
-	var want := {0: "Proxima Centauri", 1: "Alpha Centauri A", 2: "Alpha Centauri B", 3: "Barnard's Star", 4: "Wolf 359",
-		5: "Lalande 21185", 8: "Sirius A", 9: "Sirius B", 12: "Epsilon Eridani", 18: "61 Cygni A", 19: "61 Cygni B",
-		20: "Tau Ceti", 23: "Procyon A"}
+	ok("names.json loads with every id in the catalogue", map.names.size() >= 50 and map.name_mismatches == 0)
+	var want := {"Gaia DR3 5853498713190525696": "Proxima Centauri", ACEN_A_ID: "Alpha Centauri A", ACEN_B_ID: "Alpha Centauri B",
+		BARNARD_ID: "Barnard's Star", "Gaia DR3 3864972938605115520": "Wolf 359", "Gaia DR3 762815470562110464": "Lalande 21185",
+		"CNS5:1676": "Sirius A", "Gaia DR3 2947050466531873024": "Sirius B", "Gaia DR3 5164707970261890560": "Epsilon Eridani",
+		"Gaia DR3 1872046609345556480": "61 Cygni A", "Gaia DR3 1872046574983497216": "61 Cygni B",
+		"Gaia DR3 2452378776434477184": "Tau Ceti", "CNS5:1895": "Procyon"}
 	var all_named := true
-	for i in want:
-		if map.display_name(i) != want[i]:
+	for id in want:
+		if map.display_name(map.index_of(id)) != want[id]:
 			all_named = false
-			print("    index %d named %s, want %s" % [i, map.display_name(i), want[i]])
-	ok("catalogue indices carry the common names (A/B of a shared id by index)", all_named)
-	ok("an unnamed star shows its catalogue id", map.display_name(26) == "GJ 1111")
-	# a row whose id is not the catalogue's is ignored, not trusted
+			print("    %s named %s, want %s" % [id, map.display_name(map.index_of(id)), want[id]])
+	ok("catalogue ids carry the common names (alpha Cen and Sirius A/B by their own ids)", all_named)
+	ok("an unnamed star shows its catalogue id", map.display_name(map.index_of("CNS5:2653")) == "CNS5:2653")
+	# a row whose id the catalogue lacks, or a second name for one id, is ignored, not trusted
 	var bad := ProjectSettings.globalize_path("user://names_mismatch.json")
 	var f := FileAccess.open(bad, FileAccess.WRITE)
-	f.store_string('{"names": [{"index": 1, "id": "Gl 551", "name": "Wrong"}, {"index": 3, "id": "Gl 699", "name": "Barnard\'s Star"}]}')
+	f.store_string('{"names": [{"id": "Gl 559", "name": "Wrong"}, {"id": "%s", "name": "Barnard\'s Star"}, {"id": "%s", "name": "Twice"}]}' % [BARNARD_ID, BARNARD_ID])
 	f.close()
 	var n := map.load_names(bad)
-	ok("a mismatched row is ignored and counted", n == 1 and map.name_mismatches == 1 and map.display_name(1) == "Gl 559")
+	ok("an unknown id and a repeated id are ignored and counted", n == 1 and map.name_mismatches == 2 and map.display_name(map.index_of(BARNARD_ID)) == "Barnard's Star"
+		and map.display_name(acen_a) == ACEN_A_ID)
 	map.load_names("res://data/starmap/names.json")
-	map.select(ALPHA_CEN_A)
+	map.select(acen_a)
 	map.tick()
 	ok("panel title is the common name", map.title_text() == "Alpha Centauri A" and map._title.text == "Alpha Centauri A")
-	ok("subtitle is the catalogue id and index", map.subtitle_text() == "Gl 559  ·  catalogue #1" and map._subtitle.text == map.subtitle_text())
+	ok("subtitle is the catalogue id and the catalogue distance (4.32 ly, Q2 default)", map.subtitle_text() == "CNS5:3627  ·  4.32 ly" and map._subtitle.text == map.subtitle_text())
 	return true
 
 
@@ -288,7 +325,7 @@ func sent_lines(kind: String) -> int:
 ## The commit dialog (D-12): both clocks and years left from the sim; nothing
 ## is sent before 1.5 s of continuous hold (fake clock); then commit {plan_id}.
 func test_commit_hold(map: GalaxyMap) -> bool:
-	map.select(ALPHA_CEN_A)
+	map.select(acen_a)
 	map.set_cruise_phi(map.phi_default)
 	map.tick()
 	ok("planned alpha Cen A at 0.99c; Commit enabled", map.journey_state() == "planned" and not map.commit_button.disabled)
@@ -301,8 +338,8 @@ func test_commit_hold(map: GalaxyMap) -> bool:
 	for r in drows:
 		raw_ok = raw_ok and same(r["raw"], GalaxyMap.field_value(map.sim.world, r["field"]))
 	ok("dialog numbers are the sim's fields (bits)", raw_ok)
-	ok("dialog reads 0.6208 ship-yr / 4.400 Earth-yr (pinned)", drows[0]["text"] == "0.6208 ship-yr" and drows[1]["text"] == "4.400 Earth-yr")
-	ok("dialog labels on screen show those texts", (map.dialog_grid.get_child(1) as Label).text == "0.6208 ship-yr" and (map.dialog_grid.get_child(3) as Label).text == "4.400 Earth-yr")
+	ok("dialog reads 0.6157 ship-yr / 4.365 Earth-yr (pinned)", drows[0]["text"] == "0.6157 ship-yr" and drows[1]["text"] == "4.365 Earth-yr")
+	ok("dialog labels on screen show those texts", (map.dialog_grid.get_child(1) as Label).text == "0.6157 ship-yr" and (map.dialog_grid.get_child(3) as Label).text == "4.365 Earth-yr")
 	ok("dialog years left = the sim's years_left at 2 decimals", drows[3]["text"] == "%.2f yr" % map.sim.world["journey"]["plan"]["years_left"])
 	# Back sends nothing
 	map.close_commit_dialog()
@@ -353,11 +390,11 @@ func test_post_commit_cancel(map: GalaxyMap) -> bool:
 	ok("journey unchanged by Cancel", map.sim.world["journey"] == before)
 	map.tick()
 	ok("the refusal stays on the panel until the next player action", map._status.text.contains("refused: committed"))
-	map.select(3)
+	map.select(map.index_of(BARNARD_ID))
 	map.tick()
 	ok("selecting another star is refused committed, journey unchanged", map.sim.last_refused.size() == 1 and map.sim.last_refused[0]["reason"] == "committed" and map.sim.world["journey"] == before)
 	ok("the map never sent new_game after the session start", sent_lines('"new_game"') == 1)
-	map.selected_index = ALPHA_CEN_A
+	map.selected_index = acen_a
 	return true
 
 
@@ -409,7 +446,7 @@ func test_transit(map: GalaxyMap) -> bool:
 	ok("the sim arrived", map.journey_state() == "arrived" and map.title_text() == "Arrived at Alpha Centauri A")
 	ok("arrival supersedes the earlier refusal note", not map._status.text.contains("refused") and map._status.text.contains("journey: arrived"))
 	var arows := map.panel_rows()
-	ok("arrived readout: flown is the plan distance, not the rebased ship.flown", arows[4]["field"] == "journey.plan.distance" and arows[4]["text"] == "4.356 ly"
+	ok("arrived readout: flown is the plan distance, not the rebased ship.flown", arows[4]["field"] == "journey.plan.distance" and arows[4]["text"] == "4.321 ly"
 		and map.sim.world["ship"]["flown"] == 0.0)
 	ok("arrived progress bar is full", same(map.progress_values()[0], plan["distance"]) and same(map.progress_bar.value, map.progress_bar.max_value))
 	var sp: Dictionary = map.sim.world["ship"]["pos"]
@@ -532,6 +569,7 @@ func _initialize() -> void:
 		return
 	var tests: Array[Callable] = [
 		test_select_sends_catalogue_doubles.bind(map),
+		test_alpha_cen_pair.bind(map),
 		test_default_and_range.bind(map),
 		test_labels_are_sim_values.bind(map),
 		test_check_row_digits.bind(map),

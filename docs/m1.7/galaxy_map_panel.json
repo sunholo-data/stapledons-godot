@@ -1,0 +1,1333 @@
+{
+  "sim": {
+    "v": 2.0,
+    "type": "hello",
+    "proto": {
+      "major": 2.0,
+      "minor": 1.0
+    },
+    "sim": "stapledons/sim 0.1.0",
+    "relativity": "0.4.0",
+    "rng": "splitmix64-1"
+  },
+  "params": {
+    "epoch": 0.0,
+    "start_age": 30.0,
+    "boost_g": 750000.0,
+    "m_eff_kg": 1.0,
+    "ism_n_cm3": 0.1,
+    "bubble_radius_m": 100.0,
+    "glow_eps": 1e-09,
+    "glow_f_in": 0.5,
+    "cruise_min_beta": 0.9,
+    "cap_one_minus_beta": 1e-06,
+    "cruise_phi_min": 1.4722194895832204,
+    "cruise_phi_max": 7.254328619262047,
+    "cruise_phi_default": 2.6466524123622457,
+    "ai_max_open": 8.0,
+    "ai_ttl_ticks": 3600.0
+  },
+  "check_row_4_37ly": {
+    "speed": "0.99c",
+    "tick": 1,
+    "clock": {
+      "tau": 0.0001368925393566,
+      "t": 0.0001368925393566,
+      "year": 0.0001368925393566,
+      "age": 30.000136892539356
+    },
+    "title": "Alpha Centauri A",
+    "subtitle": "CNS5:3627  ·  4.32 ly",
+    "target": {
+      "index": 2.0,
+      "id": "CNS5:3627",
+      "pos": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -4.37
+      }
+    },
+    "cruise_phi": 2.6466524123622457,
+    "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+    "rows": [
+      {
+        "label": "Ship time",
+        "field": "journey.plan.ship_years",
+        "raw": 0.6226958707592057,
+        "text": "0.6227 ship-yr"
+      },
+      {
+        "label": "Earth time",
+        "field": "journey.plan.earth_years",
+        "raw": 4.414143655383168,
+        "text": "4.414 Earth-yr"
+      },
+      {
+        "label": "Arrival, if committed now",
+        "field": "journey.plan.arrive_year",
+        "raw": 4.414280547922525,
+        "text": "Earth +4.414 yr"
+      },
+      {
+        "label": "Age on arrival (placeholder)",
+        "field": "journey.plan.age_on_arrival",
+        "raw": 30.62283276329856,
+        "text": "30.62 yr"
+      },
+      {
+        "label": "Years left (placeholder)",
+        "field": "journey.plan.years_left",
+        "raw": 99.37716723670144,
+        "text": "99.38 yr"
+      },
+      {
+        "label": "Distance",
+        "field": "journey.plan.distance",
+        "raw": 4.37,
+        "text": "4.370 ly"
+      },
+      {
+        "label": "Cruise speed",
+        "field": "journey.plan.cruise_beta",
+        "raw": 0.99,
+        "text": "0.990000c"
+      },
+      {
+        "label": "Cruise 1 - beta",
+        "field": "journey.plan.cruise_one_minus_beta",
+        "raw": 0.01000000000000001,
+        "text": "0.01000"
+      },
+      {
+        "label": "Cruise gamma",
+        "field": "journey.plan.cruise_gamma",
+        "raw": 7.088812050083356,
+        "text": "7.0888"
+      },
+      {
+        "label": "Boost, each end",
+        "field": "journey.plan.boost_minutes",
+        "raw": 1.7979782022600483,
+        "text": "1.80 min"
+      },
+      {
+        "label": "Boost energy",
+        "field": "journey.plan.energy.boost_j",
+        "raw": 2.3786925619268595e+17,
+        "text": "2.379e17 J"
+      },
+      {
+        "label": "Brake energy",
+        "field": "journey.plan.energy.brake_j",
+        "raw": 2.3786925619268595e+17,
+        "text": "2.379e17 J"
+      },
+      {
+        "label": "Drag energy",
+        "field": "journey.plan.energy.drag_j",
+        "raw": 1.3702577394591198e+17,
+        "text": "1.370e17 J"
+      },
+      {
+        "label": "Total radiated",
+        "field": "journey.plan.energy.total_j",
+        "raw": 6.127642863312838e+17,
+        "text": "6.128e17 J"
+      },
+      {
+        "label": "Total as mass",
+        "field": "journey.plan.energy.total_kg",
+        "raw": 6.817922175341585,
+        "text": "6.818 kg"
+      },
+      {
+        "label": "ISM load",
+        "field": "journey.plan.ism.load_w_m2",
+        "raw": 221961.2727892787,
+        "text": "2.220e5 W/m2"
+      },
+      {
+        "label": "Glow, inward",
+        "field": "journey.plan.ism.glow_w_m2",
+        "raw": 2.407194217926e-05,
+        "text": "2.407e-5 W/m2"
+      },
+      {
+        "label": "Drag force",
+        "field": "journey.plan.ism.drag_n",
+        "raw": 23.25982143207345,
+        "text": "23.26 N"
+      },
+      {
+        "label": "Hold power",
+        "field": "journey.plan.ism.hold_w",
+        "raw": 6973119039.76238,
+        "text": "6.973e9 W"
+      },
+      {
+        "label": "Forward CMB",
+        "field": "journey.plan.cmb_forward_k",
+        "raw": 38.44085554458952,
+        "text": "38.44 K"
+      },
+      {
+        "label": "Profile",
+        "field": "journey.plan.profile",
+        "raw": "burn_coast_burn",
+        "text": "burn_coast_burn"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "speed": "0.9c",
+      "tick": 6,
+      "clock": {
+        "tau": 0.00082135523613963,
+        "t": 0.00082135523613963,
+        "year": 0.00082135523613963,
+        "age": 30.00082135523614
+      },
+      "title": "Alpha Centauri A",
+      "subtitle": "CNS5:3627  ·  4.32 ly",
+      "target": {
+        "index": 2.0,
+        "id": "CNS5:3627",
+        "pos": {
+          "x": 3.094521,
+          "y": -3.015404,
+          "z": -0.051608
+        }
+      },
+      "cruise_phi": 1.4722194895832204,
+      "speed_label": "Cruise 0.900000c  ·  gamma 2.2942",
+      "rows": [
+        {
+          "label": "Ship time",
+          "field": "journey.plan.ship_years",
+          "raw": 2.09277727133908,
+          "text": "2.093 ship-yr"
+        },
+        {
+          "label": "Earth time",
+          "field": "journey.plan.earth_years",
+          "raw": 4.801156944140465,
+          "text": "4.801 Earth-yr"
+        },
+        {
+          "label": "Arrival, if committed now",
+          "field": "journey.plan.arrive_year",
+          "raw": 4.8019782993766045,
+          "text": "Earth +4.802 yr"
+        },
+        {
+          "label": "Age on arrival (placeholder)",
+          "field": "journey.plan.age_on_arrival",
+          "raw": 32.09359862657522,
+          "text": "32.09 yr"
+        },
+        {
+          "label": "Years left (placeholder)",
+          "field": "journey.plan.years_left",
+          "raw": 97.9064013734248,
+          "text": "97.91 yr"
+        },
+        {
+          "label": "Distance",
+          "field": "journey.plan.distance",
+          "raw": 4.32103979249451,
+          "text": "4.321 ly"
+        },
+        {
+          "label": "Cruise speed",
+          "field": "journey.plan.cruise_beta",
+          "raw": 0.9,
+          "text": "0.900000c"
+        },
+        {
+          "label": "Cruise 1 - beta",
+          "field": "journey.plan.cruise_one_minus_beta",
+          "raw": 0.09999999999999998,
+          "text": "0.1000"
+        },
+        {
+          "label": "Cruise gamma",
+          "field": "journey.plan.cruise_gamma",
+          "raw": 2.294157338705618,
+          "text": "2.2942"
+        },
+        {
+          "label": "Boost, each end",
+          "field": "journey.plan.boost_minutes",
+          "raw": 1.0001383403612385,
+          "text": "1.00 min"
+        },
+        {
+          "label": "Boost energy",
+          "field": "journey.plan.energy.boost_j",
+          "raw": 1.3231648905001936e+17,
+          "text": "1.323e17 J"
+        },
+        {
+          "label": "Brake energy",
+          "field": "journey.plan.energy.brake_j",
+          "raw": 1.3231648905001936e+17,
+          "text": "1.323e17 J"
+        },
+        {
+          "label": "Drag energy",
+          "field": "journey.plan.energy.drag_j",
+          "raw": 3.9862760672446576e+16,
+          "text": "3.986e16 J"
+        },
+        {
+          "label": "Total radiated",
+          "field": "journey.plan.energy.total_j",
+          "raw": 3.044957387724853e+17,
+          "text": "3.045e17 J"
+        },
+        {
+          "label": "Total as mass",
+          "field": "journey.plan.energy.total_kg",
+          "raw": 3.3879720081329374,
+          "text": "3.388 kg"
+        },
+        {
+          "label": "ISM load",
+          "field": "journey.plan.ism.load_w_m2",
+          "raw": 19212.828745135495,
+          "text": "1.921e4 W/m2"
+        },
+        {
+          "label": "Glow, inward",
+          "field": "journey.plan.ism.glow_w_m2",
+          "raw": 1.5052987296e-06,
+          "text": "1.505e-6 W/m2"
+        },
+        {
+          "label": "Drag force",
+          "field": "journey.plan.ism.drag_n",
+          "raw": 2.01335557415512,
+          "text": "2.013 N"
+        },
+        {
+          "label": "Hold power",
+          "field": "journey.plan.ism.hold_w",
+          "raw": 603588816.4039648,
+          "text": "6.036e8 W"
+        },
+        {
+          "label": "Forward CMB",
+          "field": "journey.plan.cmb_forward_k",
+          "raw": 11.877999621148335,
+          "text": "11.88 K"
+        },
+        {
+          "label": "Profile",
+          "field": "journey.plan.profile",
+          "raw": "burn_coast_burn",
+          "text": "burn_coast_burn"
+        }
+      ]
+    },
+    {
+      "speed": "cap",
+      "tick": 7,
+      "clock": {
+        "tau": 0.00095824777549623,
+        "t": 0.00095824777549623,
+        "year": 0.00095824777549623,
+        "age": 30.000958247775497
+      },
+      "title": "Alpha Centauri A",
+      "subtitle": "CNS5:3627  ·  4.32 ly",
+      "target": {
+        "index": 2.0,
+        "id": "CNS5:3627",
+        "pos": {
+          "x": 3.094521,
+          "y": -3.015404,
+          "z": -0.051608
+        }
+      },
+      "cruise_phi": 7.254328619262047,
+      "speed_label": "Cruise 0.999999c  ·  gamma 707.1070",
+      "rows": [
+        {
+          "label": "Ship time",
+          "field": "journey.plan.ship_years",
+          "raw": 0.00612703774512114,
+          "text": "0.006127 ship-yr"
+        },
+        {
+          "label": "Earth time",
+          "field": "journey.plan.earth_years",
+          "raw": 4.321046693128163,
+          "text": "4.321 Earth-yr"
+        },
+        {
+          "label": "Arrival, if committed now",
+          "field": "journey.plan.arrive_year",
+          "raw": 4.322004940903659,
+          "text": "Earth +4.322 yr"
+        },
+        {
+          "label": "Age on arrival (placeholder)",
+          "field": "journey.plan.age_on_arrival",
+          "raw": 30.007085285520617,
+          "text": "30.01 yr"
+        },
+        {
+          "label": "Years left (placeholder)",
+          "field": "journey.plan.years_left",
+          "raw": 99.99291471447938,
+          "text": "99.99 yr"
+        },
+        {
+          "label": "Distance",
+          "field": "journey.plan.distance",
+          "raw": 4.32103979249451,
+          "text": "4.321 ly"
+        },
+        {
+          "label": "Cruise speed",
+          "field": "journey.plan.cruise_beta",
+          "raw": 0.999999,
+          "text": "0.999999c"
+        },
+        {
+          "label": "Cruise 1 - beta",
+          "field": "journey.plan.cruise_one_minus_beta",
+          "raw": 1e-06,
+          "text": "1.000e-6"
+        },
+        {
+          "label": "Cruise gamma",
+          "field": "journey.plan.cruise_gamma",
+          "raw": 707.1069579633089,
+          "text": "707.1070"
+        },
+        {
+          "label": "Boost, each end",
+          "field": "journey.plan.boost_minutes",
+          "raw": 4.928159311189213,
+          "text": "4.93 min"
+        },
+        {
+          "label": "Boost energy",
+          "field": "journey.plan.energy.boost_j",
+          "raw": 6.519865414820472e+17,
+          "text": "6.520e17 J"
+        },
+        {
+          "label": "Brake energy",
+          "field": "journey.plan.energy.brake_j",
+          "raw": 6.519865414820472e+17,
+          "text": "6.520e17 J"
+        },
+        {
+          "label": "Drag energy",
+          "field": "journey.plan.energy.drag_j",
+          "raw": 1.36459353039552e+19,
+          "text": "1.365e19 J"
+        },
+        {
+          "label": "Total radiated",
+          "field": "journey.plan.energy.total_j",
+          "raw": 1.4949908386919297e+19,
+          "text": "1.495e19 J"
+        },
+        {
+          "label": "Total as mass",
+          "field": "journey.plan.energy.total_kg",
+          "raw": 166.34016404702214,
+          "text": "166.340 kg"
+        },
+        {
+          "label": "ISM load",
+          "field": "journey.plan.ism.load_w_m2",
+          "raw": 2253353077.72868,
+          "text": "2.253e9 W/m2"
+        },
+        {
+          "label": "Glow, inward",
+          "field": "journey.plan.ism.glow_w_m2",
+          "raw": 0.28127107577632854,
+          "text": "0.2813 W/m2"
+        },
+        {
+          "label": "Drag force",
+          "field": "journey.plan.ism.drag_n",
+          "raw": 236133.94153285777,
+          "text": "2.361e5 N"
+        },
+        {
+          "label": "Hold power",
+          "field": "journey.plan.ism.hold_w",
+          "raw": 70791174749363.72,
+          "text": "7.079e13 W"
+        },
+        {
+          "label": "Forward CMB",
+          "field": "journey.plan.cmb_forward_k",
+          "raw": 3853.7309940335736,
+          "text": "3853.73 K"
+        },
+        {
+          "label": "Profile",
+          "field": "journey.plan.profile",
+          "raw": "burn_coast_burn",
+          "text": "burn_coast_burn"
+        }
+      ]
+    },
+    {
+      "speed": "0.99c",
+      "tick": 8,
+      "clock": {
+        "tau": 0.00109514031485284,
+        "t": 0.00109514031485284,
+        "year": 0.00109514031485284,
+        "age": 30.001095140314852
+      },
+      "title": "Alpha Centauri A",
+      "subtitle": "CNS5:3627  ·  4.32 ly",
+      "target": {
+        "index": 2.0,
+        "id": "CNS5:3627",
+        "pos": {
+          "x": 3.094521,
+          "y": -3.015404,
+          "z": -0.051608
+        }
+      },
+      "cruise_phi": 2.6466524123622457,
+      "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+      "rows": [
+        {
+          "label": "Ship time",
+          "field": "journey.plan.ship_years",
+          "raw": 0.6157194190340582,
+          "text": "0.6157 ship-yr"
+        },
+        {
+          "label": "Earth time",
+          "field": "journey.plan.earth_years",
+          "raw": 4.364688900327117,
+          "text": "4.365 Earth-yr"
+        },
+        {
+          "label": "Arrival, if committed now",
+          "field": "journey.plan.arrive_year",
+          "raw": 4.3657840406419695,
+          "text": "Earth +4.366 yr"
+        },
+        {
+          "label": "Age on arrival (placeholder)",
+          "field": "journey.plan.age_on_arrival",
+          "raw": 30.61681455934891,
+          "text": "30.62 yr"
+        },
+        {
+          "label": "Years left (placeholder)",
+          "field": "journey.plan.years_left",
+          "raw": 99.38318544065108,
+          "text": "99.38 yr"
+        },
+        {
+          "label": "Distance",
+          "field": "journey.plan.distance",
+          "raw": 4.32103979249451,
+          "text": "4.321 ly"
+        },
+        {
+          "label": "Cruise speed",
+          "field": "journey.plan.cruise_beta",
+          "raw": 0.99,
+          "text": "0.990000c"
+        },
+        {
+          "label": "Cruise 1 - beta",
+          "field": "journey.plan.cruise_one_minus_beta",
+          "raw": 0.01000000000000001,
+          "text": "0.01000"
+        },
+        {
+          "label": "Cruise gamma",
+          "field": "journey.plan.cruise_gamma",
+          "raw": 7.088812050083356,
+          "text": "7.0888"
+        },
+        {
+          "label": "Boost, each end",
+          "field": "journey.plan.boost_minutes",
+          "raw": 1.7979782022600483,
+          "text": "1.80 min"
+        },
+        {
+          "label": "Boost energy",
+          "field": "journey.plan.energy.boost_j",
+          "raw": 2.3786925619268595e+17,
+          "text": "2.379e17 J"
+        },
+        {
+          "label": "Brake energy",
+          "field": "journey.plan.energy.brake_j",
+          "raw": 2.3786925619268595e+17,
+          "text": "2.379e17 J"
+        },
+        {
+          "label": "Drag energy",
+          "field": "journey.plan.energy.drag_j",
+          "raw": 1.3549057154934858e+17,
+          "text": "1.355e17 J"
+        },
+        {
+          "label": "Total radiated",
+          "field": "journey.plan.energy.total_j",
+          "raw": 6.112290839347205e+17,
+          "text": "6.112e17 J"
+        },
+        {
+          "label": "Total as mass",
+          "field": "journey.plan.energy.total_kg",
+          "raw": 6.8008407450156865,
+          "text": "6.801 kg"
+        },
+        {
+          "label": "ISM load",
+          "field": "journey.plan.ism.load_w_m2",
+          "raw": 221961.2727892787,
+          "text": "2.220e5 W/m2"
+        },
+        {
+          "label": "Glow, inward",
+          "field": "journey.plan.ism.glow_w_m2",
+          "raw": 2.407194217926e-05,
+          "text": "2.407e-5 W/m2"
+        },
+        {
+          "label": "Drag force",
+          "field": "journey.plan.ism.drag_n",
+          "raw": 23.25982143207345,
+          "text": "23.26 N"
+        },
+        {
+          "label": "Hold power",
+          "field": "journey.plan.ism.hold_w",
+          "raw": 6973119039.76238,
+          "text": "6.973e9 W"
+        },
+        {
+          "label": "Forward CMB",
+          "field": "journey.plan.cmb_forward_k",
+          "raw": 38.44085554458952,
+          "text": "38.44 K"
+        },
+        {
+          "label": "Profile",
+          "field": "journey.plan.profile",
+          "raw": "burn_coast_burn",
+          "text": "burn_coast_burn"
+        }
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "id": "HIP 71681",
+      "title": "Alpha Centauri B",
+      "subtitle": "HIP 71681  ·  4.32 ly",
+      "panel": {
+        "speed": "0.99c",
+        "tick": 2,
+        "clock": {
+          "tau": 0.00027378507871321,
+          "t": 0.00027378507871321,
+          "year": 0.00027378507871321,
+          "age": 30.000273785078715
+        },
+        "title": "Alpha Centauri B",
+        "subtitle": "HIP 71681  ·  4.32 ly",
+        "target": {
+          "index": 1.0,
+          "id": "HIP 71681",
+          "pos": {
+            "x": 3.094279167661899,
+            "y": -3.015648140050498,
+            "z": -0.05181368755211183
+          }
+        },
+        "cruise_phi": 2.6466524123622457,
+        "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+        "rows": [
+          {
+            "label": "Ship time",
+            "field": "journey.plan.ship_years",
+            "raw": 0.6157193702605479,
+            "text": "0.6157 ship-yr"
+          },
+          {
+            "label": "Earth time",
+            "field": "journey.plan.earth_years",
+            "raw": 4.36468855458087,
+            "text": "4.365 Earth-yr"
+          },
+          {
+            "label": "Arrival, if committed now",
+            "field": "journey.plan.arrive_year",
+            "raw": 4.364962339659583,
+            "text": "Earth +4.365 yr"
+          },
+          {
+            "label": "Age on arrival (placeholder)",
+            "field": "journey.plan.age_on_arrival",
+            "raw": 30.61599315533926,
+            "text": "30.62 yr"
+          },
+          {
+            "label": "Years left (placeholder)",
+            "field": "journey.plan.years_left",
+            "raw": 99.38400684466072,
+            "text": "99.38 yr"
+          },
+          {
+            "label": "Distance",
+            "field": "journey.plan.distance",
+            "raw": 4.321039450205725,
+            "text": "4.321 ly"
+          },
+          {
+            "label": "Cruise speed",
+            "field": "journey.plan.cruise_beta",
+            "raw": 0.99,
+            "text": "0.990000c"
+          },
+          {
+            "label": "Cruise 1 - beta",
+            "field": "journey.plan.cruise_one_minus_beta",
+            "raw": 0.01000000000000001,
+            "text": "0.01000"
+          },
+          {
+            "label": "Cruise gamma",
+            "field": "journey.plan.cruise_gamma",
+            "raw": 7.088812050083356,
+            "text": "7.0888"
+          },
+          {
+            "label": "Boost, each end",
+            "field": "journey.plan.boost_minutes",
+            "raw": 1.7979782022600483,
+            "text": "1.80 min"
+          },
+          {
+            "label": "Boost energy",
+            "field": "journey.plan.energy.boost_j",
+            "raw": 2.3786925619268595e+17,
+            "text": "2.379e17 J"
+          },
+          {
+            "label": "Brake energy",
+            "field": "journey.plan.energy.brake_j",
+            "raw": 2.3786925619268595e+17,
+            "text": "2.379e17 J"
+          },
+          {
+            "label": "Drag energy",
+            "field": "journey.plan.energy.drag_j",
+            "raw": 1.3549056081649858e+17,
+            "text": "1.355e17 J"
+          },
+          {
+            "label": "Total radiated",
+            "field": "journey.plan.energy.total_j",
+            "raw": 6.112290732018705e+17,
+            "text": "6.112e17 J"
+          },
+          {
+            "label": "Total as mass",
+            "field": "journey.plan.energy.total_kg",
+            "raw": 6.800840625596624,
+            "text": "6.801 kg"
+          },
+          {
+            "label": "ISM load",
+            "field": "journey.plan.ism.load_w_m2",
+            "raw": 221961.2727892787,
+            "text": "2.220e5 W/m2"
+          },
+          {
+            "label": "Glow, inward",
+            "field": "journey.plan.ism.glow_w_m2",
+            "raw": 2.407194217926e-05,
+            "text": "2.407e-5 W/m2"
+          },
+          {
+            "label": "Drag force",
+            "field": "journey.plan.ism.drag_n",
+            "raw": 23.25982143207345,
+            "text": "23.26 N"
+          },
+          {
+            "label": "Hold power",
+            "field": "journey.plan.ism.hold_w",
+            "raw": 6973119039.76238,
+            "text": "6.973e9 W"
+          },
+          {
+            "label": "Forward CMB",
+            "field": "journey.plan.cmb_forward_k",
+            "raw": 38.44085554458952,
+            "text": "38.44 K"
+          },
+          {
+            "label": "Profile",
+            "field": "journey.plan.profile",
+            "raw": "burn_coast_burn",
+            "text": "burn_coast_burn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "CNS5:1676",
+      "title": "Sirius A",
+      "subtitle": "CNS5:1676  ·  8.60 ly",
+      "panel": {
+        "speed": "0.99c",
+        "tick": 3,
+        "clock": {
+          "tau": 0.00041067761806981,
+          "t": 0.00041067761806981,
+          "year": 0.00041067761806981,
+          "age": 30.00041067761807
+        },
+        "title": "Sirius A",
+        "subtitle": "CNS5:1676  ·  8.60 ly",
+        "target": {
+          "index": 8.0,
+          "id": "CNS5:1676",
+          "pos": {
+            "x": -5.770603,
+            "y": -6.237832,
+            "z": -1.328845
+          }
+        },
+        "cruise_phi": 2.6466524123622457,
+        "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+        "rows": [
+          {
+            "label": "Ship time",
+            "field": "journey.plan.ship_years",
+            "raw": 1.2255727256051872,
+            "text": "1.226 ship-yr"
+          },
+          {
+            "label": "Earth time",
+            "field": "journey.plan.earth_years",
+            "raw": 8.687824368731716,
+            "text": "8.688 Earth-yr"
+          },
+          {
+            "label": "Arrival, if committed now",
+            "field": "journey.plan.arrive_year",
+            "raw": 8.688235046349787,
+            "text": "Earth +8.688 yr"
+          },
+          {
+            "label": "Age on arrival (placeholder)",
+            "field": "journey.plan.age_on_arrival",
+            "raw": 31.225983403223257,
+            "text": "31.23 yr"
+          },
+          {
+            "label": "Years left (placeholder)",
+            "field": "journey.plan.years_left",
+            "raw": 98.77401659677676,
+            "text": "98.77 yr"
+          },
+          {
+            "label": "Distance",
+            "field": "journey.plan.distance",
+            "raw": 8.600943906215063,
+            "text": "8.601 ly"
+          },
+          {
+            "label": "Cruise speed",
+            "field": "journey.plan.cruise_beta",
+            "raw": 0.99,
+            "text": "0.990000c"
+          },
+          {
+            "label": "Cruise 1 - beta",
+            "field": "journey.plan.cruise_one_minus_beta",
+            "raw": 0.01000000000000001,
+            "text": "0.01000"
+          },
+          {
+            "label": "Cruise gamma",
+            "field": "journey.plan.cruise_gamma",
+            "raw": 7.088812050083356,
+            "text": "7.0888"
+          },
+          {
+            "label": "Boost, each end",
+            "field": "journey.plan.boost_minutes",
+            "raw": 1.7979782022600483,
+            "text": "1.80 min"
+          },
+          {
+            "label": "Boost energy",
+            "field": "journey.plan.energy.boost_j",
+            "raw": 2.3786925619268595e+17,
+            "text": "2.379e17 J"
+          },
+          {
+            "label": "Brake energy",
+            "field": "journey.plan.energy.brake_j",
+            "raw": 2.3786925619268595e+17,
+            "text": "2.379e17 J"
+          },
+          {
+            "label": "Drag energy",
+            "field": "journey.plan.energy.drag_j",
+            "raw": 2.696917808009362e+17,
+            "text": "2.697e17 J"
+          },
+          {
+            "label": "Total radiated",
+            "field": "journey.plan.energy.total_j",
+            "raw": 7.454302931863081e+17,
+            "text": "7.454e17 J"
+          },
+          {
+            "label": "Total as mass",
+            "field": "journey.plan.energy.total_kg",
+            "raw": 8.294030574978109,
+            "text": "8.294 kg"
+          },
+          {
+            "label": "ISM load",
+            "field": "journey.plan.ism.load_w_m2",
+            "raw": 221961.2727892787,
+            "text": "2.220e5 W/m2"
+          },
+          {
+            "label": "Glow, inward",
+            "field": "journey.plan.ism.glow_w_m2",
+            "raw": 2.407194217926e-05,
+            "text": "2.407e-5 W/m2"
+          },
+          {
+            "label": "Drag force",
+            "field": "journey.plan.ism.drag_n",
+            "raw": 23.25982143207345,
+            "text": "23.26 N"
+          },
+          {
+            "label": "Hold power",
+            "field": "journey.plan.ism.hold_w",
+            "raw": 6973119039.76238,
+            "text": "6.973e9 W"
+          },
+          {
+            "label": "Forward CMB",
+            "field": "journey.plan.cmb_forward_k",
+            "raw": 38.44085554458952,
+            "text": "38.44 K"
+          },
+          {
+            "label": "Profile",
+            "field": "journey.plan.profile",
+            "raw": "burn_coast_burn",
+            "text": "burn_coast_burn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "Gaia DR3 4472832130942575872",
+      "title": "Barnard's Star",
+      "subtitle": "Gaia DR3 4472832130942575872  ·  5.96 ly",
+      "panel": {
+        "speed": "0.99c",
+        "tick": 4,
+        "clock": {
+          "tau": 0.00054757015742642,
+          "t": 0.00054757015742642,
+          "year": 0.00054757015742642,
+          "age": 30.000547570157423
+        },
+        "title": "Barnard's Star",
+        "subtitle": "Gaia DR3 4472832130942575872  ·  5.96 ly",
+        "target": {
+          "index": 3.0,
+          "id": "Gaia DR3 4472832130942575872",
+          "pos": {
+            "x": 4.954497,
+            "y": 2.982781,
+            "z": 1.451172
+          }
+        },
+        "cruise_phi": 2.6466524123622457,
+        "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+        "rows": [
+          {
+            "label": "Ship time",
+            "field": "journey.plan.ship_years",
+            "raw": 0.8495971095171045,
+            "text": "0.8496 ship-yr"
+          },
+          {
+            "label": "Earth time",
+            "field": "journey.plan.earth_years",
+            "raw": 6.022603890869001,
+            "text": "6.023 Earth-yr"
+          },
+          {
+            "label": "Arrival, if committed now",
+            "field": "journey.plan.arrive_year",
+            "raw": 6.023151461026427,
+            "text": "Earth +6.023 yr"
+          },
+          {
+            "label": "Age on arrival (placeholder)",
+            "field": "journey.plan.age_on_arrival",
+            "raw": 30.850144679674532,
+            "text": "30.85 yr"
+          },
+          {
+            "label": "Years left (placeholder)",
+            "field": "journey.plan.years_left",
+            "raw": 99.14985532032549,
+            "text": "99.15 yr"
+          },
+          {
+            "label": "Distance",
+            "field": "journey.plan.distance",
+            "raw": 5.962375633130975,
+            "text": "5.962 ly"
+          },
+          {
+            "label": "Cruise speed",
+            "field": "journey.plan.cruise_beta",
+            "raw": 0.99,
+            "text": "0.990000c"
+          },
+          {
+            "label": "Cruise 1 - beta",
+            "field": "journey.plan.cruise_one_minus_beta",
+            "raw": 0.01000000000000001,
+            "text": "0.01000"
+          },
+          {
+            "label": "Cruise gamma",
+            "field": "journey.plan.cruise_gamma",
+            "raw": 7.088812050083356,
+            "text": "7.0888"
+          },
+          {
+            "label": "Boost, each end",
+            "field": "journey.plan.boost_minutes",
+            "raw": 1.7979782022600483,
+            "text": "1.80 min"
+          },
+          {
+            "label": "Boost energy",
+            "field": "journey.plan.energy.boost_j",
+            "raw": 2.3786925619268595e+17,
+            "text": "2.379e17 J"
+          },
+          {
+            "label": "Brake energy",
+            "field": "journey.plan.energy.brake_j",
+            "raw": 2.3786925619268595e+17,
+            "text": "2.379e17 J"
+          },
+          {
+            "label": "Drag energy",
+            "field": "journey.plan.energy.drag_j",
+            "raw": 1.8695650367040797e+17,
+            "text": "1.870e17 J"
+          },
+          {
+            "label": "Total radiated",
+            "field": "journey.plan.energy.total_j",
+            "raw": 6.626950160557798e+17,
+            "text": "6.627e17 J"
+          },
+          {
+            "label": "Total as mass",
+            "field": "journey.plan.energy.total_kg",
+            "raw": 7.37347646760917,
+            "text": "7.373 kg"
+          },
+          {
+            "label": "ISM load",
+            "field": "journey.plan.ism.load_w_m2",
+            "raw": 221961.2727892787,
+            "text": "2.220e5 W/m2"
+          },
+          {
+            "label": "Glow, inward",
+            "field": "journey.plan.ism.glow_w_m2",
+            "raw": 2.407194217926e-05,
+            "text": "2.407e-5 W/m2"
+          },
+          {
+            "label": "Drag force",
+            "field": "journey.plan.ism.drag_n",
+            "raw": 23.25982143207345,
+            "text": "23.26 N"
+          },
+          {
+            "label": "Hold power",
+            "field": "journey.plan.ism.hold_w",
+            "raw": 6973119039.76238,
+            "text": "6.973e9 W"
+          },
+          {
+            "label": "Forward CMB",
+            "field": "journey.plan.cmb_forward_k",
+            "raw": 38.44085554458952,
+            "text": "38.44 K"
+          },
+          {
+            "label": "Profile",
+            "field": "journey.plan.profile",
+            "raw": "burn_coast_burn",
+            "text": "burn_coast_burn"
+          }
+        ]
+      }
+    }
+  ],
+  "commit_dialog": {
+    "plan_id": 8,
+    "title": "Commit to Alpha Centauri A?",
+    "rows": [
+      {
+        "label": "Ship time (you)",
+        "field": "journey.plan.ship_years",
+        "raw": 0.6157194190340582,
+        "text": "0.6157 ship-yr"
+      },
+      {
+        "label": "Earth time (home)",
+        "field": "journey.plan.earth_years",
+        "raw": 4.364688900327117,
+        "text": "4.365 Earth-yr"
+      },
+      {
+        "label": "Arrival",
+        "field": "journey.plan.arrive_year",
+        "raw": 4.3657840406419695,
+        "text": "Earth +4.366 yr"
+      },
+      {
+        "label": "Years left (placeholder)",
+        "field": "journey.plan.years_left",
+        "raw": 99.38318544065108,
+        "text": "99.38 yr"
+      }
+    ]
+  },
+  "transit": {
+    "speed": "transit",
+    "tick": 72,
+    "clock": {
+      "tau": 0.31623203285420964,
+      "t": 2.235026173177746,
+      "year": 2.235026173177746,
+      "age": 30.31623203285421
+    },
+    "title": "En route to Alpha Centauri A",
+    "subtitle": "CNS5:3627  ·  4.32 ly",
+    "target": {
+      "index": 2.0,
+      "id": "CNS5:3627",
+      "pos": {
+        "x": 3.094521,
+        "y": -3.015404,
+        "z": -0.051608
+      }
+    },
+    "cruise_phi": 2.6466524123622457,
+    "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+    "rows": [
+      {
+        "label": "Phase",
+        "field": "ship.phase",
+        "raw": "cruising",
+        "text": "cruising"
+      },
+      {
+        "label": "Ship clock",
+        "field": "clock.tau",
+        "raw": 0.31623203285420964,
+        "text": "ship +0.3162 yr"
+      },
+      {
+        "label": "Earth clock",
+        "field": "clock.year",
+        "raw": 2.235026173177746,
+        "text": "Earth +2.2350 yr"
+      },
+      {
+        "label": "Crew age (placeholder)",
+        "field": "clock.age",
+        "raw": 30.31623203285421,
+        "text": "30.32 yr"
+      },
+      {
+        "label": "Flown since commit",
+        "field": "ship.flown",
+        "raw": 2.211590613119601,
+        "text": "2.2116 ly"
+      },
+      {
+        "label": "Distance",
+        "field": "journey.plan.distance",
+        "raw": 4.32103979249451,
+        "text": "4.321 ly"
+      },
+      {
+        "label": "Speed",
+        "field": "ship.beta",
+        "raw": 0.99,
+        "text": "0.990000c"
+      },
+      {
+        "label": "1 - beta",
+        "field": "ship.one_minus_beta",
+        "raw": 0.01000000000000001,
+        "text": "0.01000"
+      },
+      {
+        "label": "Gamma",
+        "field": "ship.gamma",
+        "raw": 7.088812050083356,
+        "text": "7.0888"
+      },
+      {
+        "label": "Arrives",
+        "field": "journey.plan.arrive_year",
+        "raw": 4.3657840406419695,
+        "text": "Earth +4.366 yr"
+      },
+      {
+        "label": "Age on arrival (placeholder)",
+        "field": "journey.plan.age_on_arrival",
+        "raw": 30.61681455934891,
+        "text": "30.62 yr"
+      },
+      {
+        "label": "Radiated so far",
+        "field": "ledger.radiated_j",
+        "raw": 3.072159217598752e+17,
+        "text": "3.072e17 J"
+      },
+      {
+        "label": "Trip total (plan)",
+        "field": "journey.plan.energy.total_j",
+        "raw": 6.112290839347205e+17,
+        "text": "6.112e17 J"
+      }
+    ],
+    "status": "journey: committed  ·  refused: committed"
+  },
+  "arrived": {
+    "speed": "arrived",
+    "tick": 133,
+    "clock": {
+      "tau": 0.6212320328542099,
+      "t": 4.370201514147263,
+      "year": 4.370201514147263,
+      "age": 30.62123203285421
+    },
+    "title": "Arrived at Alpha Centauri A",
+    "subtitle": "CNS5:3627  ·  4.32 ly",
+    "target": {
+      "index": 2.0,
+      "id": "CNS5:3627",
+      "pos": {
+        "x": 3.094521,
+        "y": -3.015404,
+        "z": -0.051608
+      }
+    },
+    "cruise_phi": 2.6466524123622457,
+    "speed_label": "Cruise 0.990000c  ·  gamma 7.0888",
+    "rows": [
+      {
+        "label": "Phase",
+        "field": "ship.phase",
+        "raw": "at_rest",
+        "text": "at_rest"
+      },
+      {
+        "label": "Ship clock",
+        "field": "clock.tau",
+        "raw": 0.6212320328542099,
+        "text": "ship +0.6212 yr"
+      },
+      {
+        "label": "Earth clock",
+        "field": "clock.year",
+        "raw": 4.370201514147263,
+        "text": "Earth +4.3702 yr"
+      },
+      {
+        "label": "Crew age (placeholder)",
+        "field": "clock.age",
+        "raw": 30.62123203285421,
+        "text": "30.62 yr"
+      },
+      {
+        "label": "Flown (arrived)",
+        "field": "journey.plan.distance",
+        "raw": 4.32103979249451,
+        "text": "4.321 ly"
+      },
+      {
+        "label": "Arrived",
+        "field": "journey.plan.arrive_year",
+        "raw": 4.3657840406419695,
+        "text": "Earth +4.366 yr"
+      },
+      {
+        "label": "Radiated, whole trip",
+        "field": "ledger.radiated_j",
+        "raw": 6.112290839347206e+17,
+        "text": "6.112e17 J"
+      },
+      {
+        "label": "Trip total (plan)",
+        "field": "journey.plan.energy.total_j",
+        "raw": 6.112290839347205e+17,
+        "text": "6.112e17 J"
+      }
+    ],
+    "events": [
+      {
+        "k": "phase",
+        "from": "cruising",
+        "to": "braking",
+        "tau": 0.6168111408794414
+      },
+      {
+        "k": "phase",
+        "from": "braking",
+        "to": "at_rest",
+        "tau": 0.6168145593489112
+      },
+      {
+        "k": "arrived",
+        "residual_x": 3.552713678800501e-15,
+        "residual_t": 5.3290705182007506e-15,
+        "residual_phi": 4.843059286940843e-11
+      }
+    ]
+  }
+}

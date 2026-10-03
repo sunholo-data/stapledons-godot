@@ -3,8 +3,9 @@ module stapledons/sim/tools/destar
 -- M1.4a Option A (D-10) star removal, AILANG port of the former spike
 -- tools/m14a_destar.py (CLAUDE.md "Python"). Remove from the NOIRLab panorama
 -- only the point sources cross-matched to a star in the shipped point layers
--- (HIP V<7.5, GCNS, CNS5); unmatched sources stay as pixels, so no star is
--- dropped from both layers and none is drawn twice.
+-- (HIP2 bright tier: V<7, Plx>0, with B-V; GCNS; CNS5); unmatched sources stay as
+-- pixels, so no star is dropped from both layers and none is drawn twice. M1.7: the
+-- HIP cut was V<7.5 before, which also masked V 7-7.5 stars no point layer draws.
 --
 -- The spike worked on the whole 50M-pixel image (percentile and maximum
 -- filters, four Gaussian blurs). This port is catalogue-driven and local:
@@ -72,12 +73,15 @@ pure func missing() -> float = 0.0 - 1.0e300
 pure func num(s: string) -> float = match stringToFloat(trim(s)) { Some(v) => if v == v then v else missing(), None => missing() }
 pure func has(v: float) -> bool = v > 0.0 - 1.0e299
 
--- VizieR TSV, columns HIP, Vmag, _Glon, _Glat, B-V, Plx
+-- The bright point layer's cut (sim/tools/bright.ail, M1.2d): V < 7, Plx > 0, a B-V for its teff.
+pure func hipVLimit() -> float = 7.0
+-- VizieR TSV, columns HIP, Vmag, _Glon, _Glat, B-V, Plx (I/239 values; the bright tier takes its
+-- parallax from HIP2 I/311, so a star whose sign of Plx differs between the two is the only mismatch)
 export pure func hipCands(img: Img, text: string) -> [Cand] =
   foldl(\acc line. match split(line, "\t") {
-      [h, v, l, b, _, _] => {
-        let vm = num(v); let gl = num(l); let gb = num(b);
-        if has(num(h)) && has(vm) && has(gl) && has(gb) then match lbToPx(img, gl, gb) { (x, y) => { v: vm, x: x, y: y, src: 0 } :: acc } else acc
+      [h, v, l, b, bv, plx] => {
+        let vm = num(v); let gl = num(l); let gb = num(b); let p = num(plx);
+        if has(num(h)) && has(vm) && vm < hipVLimit() && has(num(bv)) && has(p) && p > 0.0 && has(gl) && has(gb) then match lbToPx(img, gl, gb) { (x, y) => { v: vm, x: x, y: y, src: 0 } :: acc } else acc
       },
       _ => acc
     }, [], split(text, "\n"))

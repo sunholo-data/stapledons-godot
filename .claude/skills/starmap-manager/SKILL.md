@@ -56,8 +56,11 @@ Pipeline (all AILANG, no Python): `download_stars.sh` → `data/raw/{cns5.dat,ta
 The quick and medium tiers are committed with `git add -f` (`.gitignore` ignores `stars_*`);
 after a rebuild, `make catalogue-verify` must still print `identical` for both.
 
-`data/starmap/stars.json` is the legacy JSON catalogue the game still loads; the M1.7 catalogue
-switch replaces it with the binary tiers. Its old shell generator was removed in M1.2c.
+`data/starmap/stars.json` is the galaxy map catalogue (M1.7, Q7): the quick + bright tier rows
+within 25 pc, float64, one star per line, ids `Gaia DR3 n` / `CNS5:n` / `HIP n`. `make starmap`
+writes it (sim/tools/starmap.ail via bright_main.ail `mapMain`); `make catalogue-verify` rebuilds
+and cmp-checks it. `data/starmap/names.json` names entries by those ids (D-17), verified by
+`tools/check_star_names.py`. The starfield draws the binary tiers, not this file.
 
 ## Available Scripts
 
