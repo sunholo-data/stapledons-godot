@@ -9,7 +9,7 @@ extends RefCounted
 ## wins; within the library the newest line wins. Text resolves from core
 ## only (a library line is never replayed as a new line), and a library voice
 ## line counts only when it carries `duration_ms` and `segments_ms` (the
-## service's index lines do not yet; such lines are a miss).
+## service writes both since AI.10a; an older line without them is a miss).
 ## `age_stage` resolves to the greatest stage <= the years asked for.
 
 const EMOTIONS := ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]

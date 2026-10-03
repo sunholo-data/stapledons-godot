@@ -29,7 +29,7 @@ import std/bytes as B
 import ./key (CacheKey, member, aiKinds, isDecimal, keyError, size)
 import ./route (Routing, Route, Via, NoRoute, Hop, resolve)
 import ./wire (Request, In, WRequest, Out, OOk, OErr, CtxField, CStr, CList, Meta, Seg, encodeIn, keyObj)
-import ./cache (Blob, Origin, indexLine, blobPath)
+import ./cache (Blob, Origin, Timing, indexLine, blobPath)
 import ./spend (Price, Units, Ledger, Usage, priceFor, cost, admit, charge, usageLine, usdOf)
 import ./prompt (Lore, Prompt, buildPrompt, imagePrompt)
 import ./reply (Image, pngSize)
@@ -185,8 +185,8 @@ export pure func prepare(c: Ctx, l: Ledger, r: Request, prov: string) -> Prep =
 
 -- ------------------------------------------------------------ answers
 pure func resultMeta(j: Job, prov: string, n: int, ms: int) -> Meta = { provider: prov, route: j.hop.provider, model: j.hop.model, inputSha256: j.input, ms: ms, usd: usdOf(n) }
-pure func originOf(j: Job, prov: string, sz: Option[{w: int, h: int}]) -> Origin =
-  { provider: prov, route: j.hop.provider, model: j.hop.model, inputSha256: j.input, seed: j.r.seed, size: sz }
+pure func originOf(j: Job, prov: string, sz: Option[{w: int, h: int}], tm: Option[Timing]) -> Origin =
+  { provider: prov, route: j.hop.provider, model: j.hop.model, inputSha256: j.input, seed: j.r.seed, size: sz, timing: tm }
 -- The acts of an ok result, in order: the blob (and its index line), the
 -- usage line, then the result. A reader that sees the result sees both.
 pure func okStep(l: Ledger, j: Job, prov: string, u: Units, ms: int, out: Meta -> Out, b: Blob) -> Step {
@@ -202,7 +202,7 @@ export pure func okText(l: Ledger, j: Job, prov: string, u: Units, ms: int, body
   let data = fromString(body);
   let n = B.length(data);
   okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: body, asset: Some({ path: blobPath(sha, "txt"), mime: "text/plain", bytes: n }), meta: m }),
-    { sha256: sha, ext: "txt", mime: "text/plain", data: data, index: indexLine(j.r.key, sha, "text/plain", n, "txt", originOf(j, prov, None)) })
+    { sha256: sha, ext: "txt", mime: "text/plain", data: data, index: indexLine(j.r.key, sha, "text/plain", n, "txt", originOf(j, prov, None, None)), side: None })
 }
 pure func descriptor(k: CacheKey, n: int, w: int, ht: int) -> string =
   concat(["{\"key\":", keyObj(k), ",\"mime\":\"image/png\",\"bytes\":", intToStr(n), ",\"width\":", intToStr(w), ",\"height\":", intToStr(ht), "}"])
@@ -210,7 +210,7 @@ export pure func okImage(l: Ledger, j: Job, prov: string, u: Units, ms: int, img
   let sha = sha256Bytes(img.data);
   let n = B.length(img.data);
   okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: descriptor(j.r.key, n, img.w, img.h), asset: Some({ path: blobPath(sha, "png"), mime: "image/png", bytes: n }), meta: m }),
-    { sha256: sha, ext: "png", mime: "image/png", data: img.data, index: indexLine(j.r.key, sha, "image/png", n, "png", originOf(j, prov, Some({ w: img.w, h: img.h }))) })
+    { sha256: sha, ext: "png", mime: "image/png", data: img.data, index: indexLine(j.r.key, sha, "image/png", n, "png", originOf(j, prov, Some({ w: img.w, h: img.h }), None)), side: None })
 }
 -- The voice key's variant is what is said and by whom (design (a4)).
 export pure func castVoice(r: Request) -> string = match r.cast { Some(c) => (match getString(c, "voice") { Some(v) => v, None => "Aoede" }), None => "Aoede" }
@@ -220,7 +220,8 @@ export pure func okVoice(l: Ledger, j: Job, prov: string, u: Units, ms: int, c: 
   let n = B.length(c.ogg);
   let k = voiceKey(j.r);
   okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: voiceDescriptor(k, n, c), asset: Some({ path: blobPath(sha, "ogg"), mime: "audio/ogg", bytes: n }), meta: m }),
-    { sha256: sha, ext: "ogg", mime: "audio/ogg", data: c.ogg, index: indexLine(k, sha, "audio/ogg", n, "ogg", originOf(j, prov, None)) })
+    { sha256: sha, ext: "ogg", mime: "audio/ogg", data: c.ogg, index: indexLine(k, sha, "audio/ogg", n, "ogg", originOf(j, prov, None, Some({ durationMs: c.durationMs, segmentsMs: c.segmentsMs }))),
+      side: Some({ ext: "wav", data: c.wav }) })
 }
 -- A failed call still costs what it used: charged, logged, then the error.
 export pure func failed(l: Ledger, j: Job, prov: string, u: Units, code: string) -> Step {

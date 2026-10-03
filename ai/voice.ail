@@ -18,13 +18,15 @@ import std/result (Result, Ok, Err)
 import std/string (concat, join, length, substring, intToStr)
 import std/bytes (fromInts, concatList)
 import std/bytes as B
-import std/audio (encode, durationMs, OggOpus)
+import std/audio (encode, durationMs, wavFromPcm, OggOpus)
 import std/crypto (sha256Hex)
 import ./key (CacheKey, emotions8)
 import ./wire (Seg, keyObj)
 
 export pure func rate() -> int = 24000
-export type Clip = { ogg: bytes, durationMs: int, segmentsMs: [int] }
+-- wav: the same PCM as a WAV file, the playback copy beside the Ogg blob
+-- (Godot 4 plays WAV and Ogg Vorbis, not Ogg Opus; AI.10a).
+export type Clip = { ogg: bytes, wav: bytes, durationMs: int, segmentsMs: [int] }
 
 -- Period in samples: neutral 240 Hz, then a step up per emotion.
 pure func indexOf(e: string, es: [string], i: int) -> int = match es { [] => 0, x :: r => if x == e then i else indexOf(e, r, i + 1) }
@@ -48,7 +50,7 @@ pure func offsets(pcms: [bytes], at: int) -> [int] = match pcms { [] => [], b ::
 export pure func assemble(pcms: [bytes]) -> Result[Clip, string] {
   let all = concatList(pcms);
   match encode(all, rate(), 1, OggOpus(24000)) {
-    Ok(ogg) => Ok({ ogg: ogg, durationMs: msOf(B.length(all)), segmentsMs: offsets(pcms, 0) }),
+    Ok(ogg) => Ok({ ogg: ogg, wav: wavFromPcm(all, rate(), 1, 16), durationMs: msOf(B.length(all)), segmentsMs: offsets(pcms, 0) }),
     Err(e) => Err(e)
   }
 }

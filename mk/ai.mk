@@ -205,7 +205,10 @@ ai-mutants:        ## AI.4, AI.5, AI.8, AI.9: route, key, stub, cache order, act
   'spend.ail@[] => [{ provider: p, nusd: capped(n) }]@[] => [{ provider: p, nusd: n }]@AI.9 an absurd carried spend fails closed; admit never wraps@spend_test.ail' \
   'spend.ail@nusd: capped(capped(x.nusd) + capped(n)) }@nusd: x.nusd + n }@AI.9 an absurd carried spend fails closed; admit never wraps@spend_test.ail' \
   'provider.ail@units: { tokensIn: 0, tokensOut: 0, calls: 0 }, nusd: j.est, ms: 0 }, charge(l, j.hop.provider, j.est))@units: { tokensIn: 0, tokensOut: 0, calls: 0 }, nusd: 0, ms: 0 }, charge(l, j.hop.provider, 0))@AI.9 a sent but unanswered call is charged at its cap; the reservation is the worst case@stub_test.ail' \
-  'provider.ail@tokensOut: textCap(j.r), calls: 1 }@tokensOut: 0, calls: 1 }@AI.9 a sent but unanswered call is charged at its cap; the reservation is the worst case@stub_test.ail'; do \
+  'provider.ail@tokensOut: textCap(j.r), calls: 1 }@tokensOut: 0, calls: 1 }@AI.9 a sent but unanswered call is charged at its cap; the reservation is the worst case@stub_test.ail' \
+  'provider.ail@originOf(j, prov, None, Some({ durationMs: c.durationMs, segmentsMs: c.segmentsMs }))@originOf(j, prov, None, None)@AI.10a a voice index line carries duration_ms and segments_ms; a WAV playback copy@stub_test.ail' \
+  'provider.ail@side: Some({ ext: "wav", data: c.wav })@side: None@AI.10a a voice index line carries duration_ms and segments_ms; a WAV playback copy@stub_test.ail' \
+  'cache.ail@(match b.side { Some(sd) => sideOps(concat([dir, "/", blobPath(b.sha256, sd.ext)])), None => [] }) ++@@AI.5 blob writes: temp file, rename, then the index line@stub_test.ail'; do \
 	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; rest=$${rest#*@}; name=$${rest%%@*}; tfile=$${rest#*@}; \
 	  rm -rf $(MUTANT_DIR) && mkdir -p $(MUTANT_DIR) && cp -R ai $(MUTANT_DIR)/ai; \
 	  FROM="$$from" TO="$$to" perl -0pi -e 's/\Q$$ENV{FROM}\E/$$ENV{TO}/ or die "anchor not found: $$ENV{FROM}\n"' $(MUTANT_DIR)/ai/$$file; \
