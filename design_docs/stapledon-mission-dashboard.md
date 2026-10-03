@@ -1,21 +1,21 @@
 # Stapledon mission dashboard (snapshot)
 
-- Updated 2026-10-02, iteration9; bookkeeping issue4.
-- Review build v0.3.0-m2-journey; relativity0.4.0, AILANGv0.51.0, Godot4.7.2.
-- M2 attended landing PR40/25f3bf2; design roadmap PR3/1ef3bc9; 10 milestones done.
-- Clause2 MET; clauses1/3/4 UNMET,5 ongoing. This iteration goal unmoved.
-- Our duplicate docs candidate withdrawn after measured origin drift; no new behavior.
-- Independent Sonnet5.5 review 91/100; report .ailang/state/evaluations/eval_stapledon_iter9_m2_landing_round1.json.
-- Fresh local suite: UNMEASURED: full make test exceeded1800s; owned process terminated(rc143); physics78/type16 passed, remainder not measured; reviewed M2 landed SHA headless CI green; later PR41 tracked separately.
-- Next M4 design quorum/bounded plan, stop for concrete plan approval before code.
-- M1 T3 writer/sidecars then T4 full-tier integration remain routable.
-- M1.6b/M4 visual milestones retain human render gates.
-- Ledger17 resolved, zero OPEN; no decision/approval request manufactured.
-- Required roles: Opus designer, GPT6.1 planner/executor, Sonnet judge.
-- Native cross-provider pins unavailable; exact subscription CLI via Agent transports.
-- Kimi over ration, no inference; Opus154914tok; judge1752317tok.
-- Evaluator transport workspace-routing timeout recovered original judge.
-- Metered$0; quota Codex/Anthropic, native Agent tokens not reported.
-- Harness share0/10; last3 landings moved clauses2/1/1, no drift alarm.
-- Superseded draft .stapledon-wt-iter9 is not a resume target.
-- Full memory: stapledon-mission-log.md and iteration9 evaluation artifacts.
+- Updated 2026-10-03, iteration 11; bookkeeping issue #4.
+- Pins: AILANG v0.51.0, relativity 0.5.1, Godot 4.7.2.
+- Bar: clause 2 MET; clauses 1, 3, 4 UNMET; 5 ongoing.
+- Clause 1: R1-M1-SKY-2, attended, in flight (open PRs #67 M1.3, #69 M1.2d).
+- AI foundation: AI.1–AI.6 landed; AI.7 PR #68 open (attended).
+- Clause 4: M4 design passed quorum round 2 (carve-out; gpt6-1-sol absent).
+  Sprint plan R1-M4-JOURNEY proposed: 10 milestones, 4 waves, ~3,220 LOC.
+  Independent Sonnet eval: r1 85 → r2 88 PASS; 2 small consistency fixes
+  owed at approval.
+- Clause 3: M3 design drafted; no quorum or plan yet; next routable work.
+- Parked on Mark: D-22 (approve M4 plan), D-23 (α Cen 4.37 vs 4.32 ly),
+  D-24 (CI deploy key for the design repo). All carry defaults.
+- Loop: every 6 h. Routing this fire: controller and designer Opus 5.5,
+  planner Kimi K3 (pi/openrouter), evaluator Sonnet; codex and ollama over
+  daily ration.
+- Metered this iteration: 3.41 USD of 5 (quorum 0.50, planner 2.91).
+- Fire health: 2 of the last 3 fires crashed (02:13Z gate 3, 21:56Z gate 2).
+- Harness share 0/11; last 3 landings moved none/2/1; no drift alarm.
+- Full memory: stapledon-mission-log.md, stapledon-mission.md.
