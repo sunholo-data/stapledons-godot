@@ -772,3 +772,48 @@ Append-only. One entry per iteration, newest at the bottom.
 - **Ruled out:** re-chasing kimi's "no ISM exports" (stale, 0.3.0 grep); glm's F·v drag hypothesis (measured F·c, ratio 1.0); parking round 2 for a human (no direction dispute, so the carve-out applies, per standing rule 8); a third planner run this iteration (budget); touching attended PRs #67–#69.
 - **Retro:** the rig has no GNU `timeout` (the first inbox read failed on `timeout`/`gtimeout`, which are absent); use bounded `date +%s` loops, as the skill says. Two crashed fires in the last three slots (02:13Z gate 3, 21:56Z gate 2) form a pattern for the report, not a harness fix (Gate 2 admissibility). Harness share 0 of 11 numbered iterations. Last three landings: iter 11 → none (plan), attended M2 → clause 2, iter 8 → clause 1; no drift alarm.
 - **Next:** D-22. If approved: M4.6a, M4.0 and M4.1 step 1 (after the two eval-r2 consistency fixes). While D-22 is open: M3 design quorum and sprint plan (clause 3, independent of M1). DECISIONS FOR MARK: D-22, D-23, D-24.
+
+## 2026-10-03: iteration 12, M4.1 step 1 LANDED (consequence stub, protocol 2.2); independent eval 91/100 [PRODUCT]
+
+- **Progress:** R1 bar: clause 2 MET; clauses 1, 3 and 4 UNMET; clause 5 ongoing. This iteration moved clause 4: M4.1 step 1 is the first critical-path milestone of R1-M4-JOURNEY.
+- **Gate 0/1:** armed; gh account `sunholo-voight-kampff`; billing CLEAN; 0 directives on #4 since the watermark; the stapledon inboxes held nothing unread.
+  - Every ledger row D-1..D-27 is RESOLVED. D-22 (the plan) and D-23..D-27 were attended rulings on 2026-10-03, so they are acknowledged, not re-asked.
+  - The main checkout fast-forwarded d9805b4 → 7d02b04. An untracked quorum JSON byte-identical to origin's copy was removed first.
+  - Every skill copy matches `origin/dev` (DRIFT check printed nothing).
+  - origin/main CI was green on the previous merges.
+- **Pick/reality:** the clause map ran 1 → R1-M1-SKY-2 (attended; only M1.5b left in its JSON), 3 → M3 (no quorum or plan), 4 → M4, approved.
+  - The pick was **M4.1 step 1**. It is the head of `critical_path`, wave 1, and needs no other milestone. M4.0 and M4.6a are also wave 1 but off the critical path; M4.0 then turned up in attended PR #95 during the run, with no file overlap.
+  - Reality checks:
+    - Record validation (`ai_numeral`, `ai_length`, `maxCharsFor`) already existed in `sim/ai.ail` and was reused.
+    - The design repo HB-4 still reads 4.37 ly, so D-23's canon regeneration has not been done.
+    - The package pin is relativity 0.5.2, not the 0.5.1 the plan names.
+- **Executor** (Sonnet 5.5, Agent tool, worktree `.wt-stapledon-iter12-m4.1`): wrote 3 commits.
+  - The D-22 plan fixes: M4.5 now builds on `m4-track-b`, and the plan's Q3 matches the JSON's.
+  - `sim/consequence.ail` (100 lines) plus `sim/consequence_test.ail` (387 lines), with changes to core and protocol, about 715 LOC against the 650 cap under the waiver.
+  - It added the module to the exports list in `sim/ailang.toml`. The relativity pin, the lockfile and `runtime/cache` are untouched.
+  - Test-first: 27/27 RED before the code; 14 of its own mutants killed.
+  - Protocol 2.2 is negotiated, and consequence tracking is off below minor 2. This keeps the 2.1 rng bytes and the replay goldens unchanged.
+  - AC1 is asserted at 4.37 ly (the V12 values) and at 4.32 ly, where the package computes the expected values.
+- **Evaluator** (Opus 5.5, Agent tool, worktree `.wt-stapledon-iter12-eval`): **91/100 PASS, 0 blocking.**
+  - It recomputed the check values independently (4.32 ly: Earth 8.695333, ship 1.226636, t_e 0.043479).
+  - 9 mutants of its own: 6 killed, 3 survived (MA: legacy log sent in full; MB: any request becomes the news request; MC: progress stuck at 0).
+  - The resumed executor killed all three with tests only and found no code bug. It also builds `ship.ism` from fields (finding 5).
+  - The controller re-ran MC first-party: 30/31 with the mutant, 31/31 restored, tree clean.
+  - Finding 4: `standoff_au` defaults to 0, so the M4 client must send 1000. This is recorded as an open item for M4.3a.
+- **Landing:** PR #92 first showed DIRTY. Main had moved (attended #85/#87–#91), and `pull_request` CI does not run on a conflicting PR.
+  - The only conflict was in `sim/ailang.toml`'s exports list (consequence vs companions); taking the union resolved it.
+  - Local `make test` on the merge, run with the v0.52.0 runtime: RC=0.
+  - PR head CI `ded6b99`: success. Merge `1e53d02`: CI **success**.
+- **Upstream:** one DX report went to `user` (`inbox_1791035190593_c85a913b`), with the body verified as delivered. A module type error is reported once per test, against a temp-dir path. A malformed `test "x" = e` fails as a bare "parse" with no position.
+- **Routing evidence:** base=7d02b0459afe6c0e4d75dc38cdd4073a3b0e24fc@2026-10-03T11:30:29Z; gate3b target 1e53d02a5e4350efe8141cecaee96fbb7a45fc76@2026-10-03T13:59:00Z.
+  - **Controller:** `claude:claude-opus-5-5` (tok: not reported).
+  - **Designer and planner:** not spawned; the doc and the plan already existed and were approved.
+  - **Executor:** resolver `recipe claude:claude-sonnet-5-5 declared:provider-pin`. Spawned as Agent `model=sonnet` under the operator's standing Agent-tool request (same model, subscription), not denied. 271,246 + 285,134 tok over 2 runs (build, then the mutant fixes).
+  - **Evaluator:** resolver `reroute pi:openrouter/minimax/minimax-m3 generator-equals-judge`. Spawned as Agent `model=opus`, the last entry of `MISSION_EVALUATOR_FALLBACK`, because the operator required the Agent tool. `MISSION_EVALUATOR_RESOLVED=sonnet` would have equalled the Sonnet executor. Opus ≠ the Sonnet generator. Deviation from the resolver FLAGGED. 138,481 tok.
+  - **Metered:** 0 USD. Routing note: `MISSION_ROUTING_NOTE` (the codex/ollama/openrouter lanes over ration; planner → opus).
+- **Ruled out:** a third evaluator round (the fixes are test-only answers to the evaluator's own non-blocking findings, and the controller verified one first-party); bumping the relativity pin in step 1 (out of scope until M4.6a publishes); touching attended PR #95.
+- **Retro:** two items.
+  - `pull_request` CI silently never starts on a conflicting PR: 0 check-runs for 10 minutes, with `mergeStateStatus` DIRTY. Read `mergeStateStatus` before polling check-runs. This is instance 1 on this mission, so it gets no skill edit (the guardrail forbids editing the shared skill from this mission anyway).
+  - Attended sessions merged 8 PRs during this slot, so the loop's branch goes stale within an hour. Merge origin/main before pushing.
+  - Harness share 0 of 12. The last 3 landings moved clause 4 (iter 12), none (iter 11, plan only) and clause 2 (attended M2). No drift alarm.
+- **Next:** M4.3a (critical path; it must make the client send `standoff_au` 1000) or M4.6a (package `glowEmittanceAt`, under the standing publish grant after an independent physics PASS), then M4.1 step 2. DECISIONS FOR MARK: none.
