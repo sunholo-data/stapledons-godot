@@ -5,6 +5,7 @@ They pin the harness's teeth: a VM-only harness, a loose golden compare, a
 dropped reply and a stale digest must each fail. Run: python3 tools/test_replay.py
 """
 import hashlib
+import json
 import os
 import subprocess
 import sys
@@ -187,6 +188,59 @@ class Compat(Base):
         rc, out = self.replay("--compat", "--case", "c1", FAKE_PROTO="21", FAKE_DIVERGE="1")
         self.assertEqual(rc, 1, out)
         self.assertIn("VM != interpreter", out)
+
+
+# The hand-written design check row (alpha_cen and the protocol logs): a fixed target on an axis at
+# 4.37 ly, independent of the catalogue (M1.7 evaluation), so it has no stars.json index.
+DESIGN_ROW = "alpha Cen"
+
+
+def plan_index_mismatches(log_texts, stars):
+    """Every plan intent's target index must be the stars.json index of its id."""
+    index = {s["id"]: i for i, s in enumerate(stars)}
+    bad = []
+    for name, text in log_texts:
+        for n, line in enumerate(text.splitlines(), 1):
+            try:  # some logs carry deliberately malformed lines (refusal tests); they hold no intent
+                msg = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(msg, dict) or not isinstance(msg.get("intents"), list):
+                continue
+            for it in msg["intents"]:
+                if not isinstance(it, dict):
+                    continue
+                t = it.get("target")
+                if it.get("k") != "plan" or not isinstance(t, dict) or t.get("id") == DESIGN_ROW:
+                    continue
+                if index.get(t.get("id")) != t.get("index"):
+                    bad.append("%s:%d plan %s index %s, stars.json %s" % (name, n, t.get("id"), t.get("index"), index.get(t.get("id"))))
+    return bad
+
+
+class MapIndex(unittest.TestCase):
+    """A committed log's plan targets point at the shipped map: index == stars.json index of the id
+    (companions round 1: Sirius B moving ahead of Sirius A changed Sirius A's index 8 -> 9)."""
+
+    def logs(self):
+        d = os.path.join(ROOT, "tests", "replays")
+        return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+                if f.endswith(".ndjson") and ".state." not in f]
+
+    def stars(self):
+        with open(os.path.join(ROOT, "data", "starmap", "stars.json")) as f:
+            return json.load(f)["stars"]
+
+    def test_committed_logs_match_the_map(self):
+        self.assertEqual(plan_index_mismatches(self.logs(), self.stars()), [])
+
+    def test_a_stale_index_fails(self):  # control: the log as it was before the re-record
+        logs = [(n, t.replace('"index":9,"id":"CNS5:1676"', '"index":8,"id":"CNS5:1676"')) for n, t in self.logs()]
+        self.assertEqual(len(plan_index_mismatches(logs, self.stars())), 1)
+
+    def test_an_unknown_id_fails(self):
+        logs = [(n, t.replace('"id":"CNS5:1676"', '"id":"CNS5:999999"')) for n, t in self.logs()]
+        self.assertEqual(len(plan_index_mismatches(logs, self.stars())), 1)
 
 
 class AiSession(unittest.TestCase):
