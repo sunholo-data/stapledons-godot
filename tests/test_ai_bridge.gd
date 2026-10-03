@@ -189,7 +189,25 @@ func test_static() -> bool:
 				bad.append("%s: %s" % [fname, l.strip_edges()])
 	assert_bool("no blocking call reachable outside shutdown(): %s" % [bad], bad.is_empty() and fns.has("poll") and fns.has("_launch"))
 	test_scrub()
+	test_unpack_digest()
 	return true
+
+
+## AI.9 hardening: the exported build's unpack marker is a digest of every file
+## _unpack_ai copies from ai/ and data/ai/, so a rebuilt export that changes
+## only another module (adapters.ail, reply.ail, a fixture) unpacks again.
+func test_unpack_digest() -> void:
+	var files := AiBridge.unpack_files()
+	var ail := Array(DirAccess.get_files_at("res://ai")).filter(func(f): return f.ends_with(".ail")).map(func(f): return "res://ai/" + f)
+	var want := ["res://ai/adapters.ail", "res://ai/reply.ail", "res://ai/service.ail", "res://ai/ailang.lock", "res://ai/fixtures/stub_text.json",
+		"res://ai/fixtures/stub_portrait_neutral.png", "res://data/ai/prices.json", "res://data/ai/routing.json", "res://data/ai/models.json"]
+	assert_bool("unpack digest covers every ai/*.ail (%d), fixtures and data/ai (%d files)" % [ail.size(), files.size()],
+		ail.size() >= 20 and (ail + want).all(func(f): return f in files))
+	var root := scratch.path_join("unpack")
+	OS.execute("/bin/rm", PackedStringArray(["-rf", root]))
+	var ok := AiBridge._unpack_ai(root)
+	assert_bool("_unpack_ai writes that digest as its marker and copies the modules",
+		ok and FileAccess.get_file_as_string(root.path_join(".ai-unpacked")) == AiBridge.unpack_digest() and FileAccess.file_exists(root.path_join("ai/adapters.ail")))
 
 
 ## FD_SCRUB under the shell AiBridge picks, and under dash (Ubuntu's /bin/sh)
@@ -269,7 +287,11 @@ func test_live_env() -> bool:
 	var dump := scratch.path_join("envdump.sh")
 	FileAccess.open(dump, FileAccess.WRITE).store_string("#!/bin/sh\nenv\necho \"ARGS $*\"\n")
 	OS.execute("/bin/chmod", PackedStringArray(["755", dump]))
-	var files := {"gemini": scratch.path_join("g.key"), "openrouter": scratch.path_join("o.key")}
+	# The real macOS user:// is ".../app_userdata/Stapledon's Voyage/": a space
+	# and an apostrophe, so an unquoted path in the wrapper would break here.
+	var kdir := scratch.path_join("app data/Stapledon's Voyage")
+	DirAccess.make_dir_recursive_absolute(kdir)
+	var files := {"gemini": kdir.path_join("ai_key_gemini"), "openrouter": kdir.path_join("ai_key_openrouter")}
 	FileAccess.open(files["gemini"], FileAccess.WRITE).store_string("fake-gemini-from-file\n")
 	FileAccess.open(files["openrouter"], FileAccess.WRITE).store_string("fake-openrouter-from-file")
 	OS.set_environment("FOO_API_KEY", "leak-foo")
@@ -294,6 +316,7 @@ func test_live_env() -> bool:
 			and env.get("GOOGLE_APPLICATION_CREDENTIALS") == "/nonexistent" and env.get("HOME") == "/home/stand-in" and env.has("PATH"))
 		assert_bool("%s: AI_LIVE %s; ailang got its arguments" % [label, "=1" if c[1] == "1" else "absent"],
 			env.get("AI_LIVE") == ("1" if c[1] == "1" else null) and out.find("ARGS run --quiet") >= 0)
+		assert_bool("%s: --ai-key-file keeps the spaced path whole" % label, not c[0].has("gemini") or out.find("--ai-key-file %s --net-allow-domains" % files["gemini"]) >= 0)
 	OS.unset_environment("FOO_API_KEY")
 	OS.unset_environment("GOOGLE_API_KEY")
 	return true
@@ -349,6 +372,44 @@ func test_stub_session() -> bool:
 	var dt := Time.get_ticks_msec() - t
 	pump(b, 500, func(): return child_gone(pid))
 	assert_bool("shutdown: quit honoured inside the grace (%d ms), child gone" % dt, dt < AiBridge.QUIT_GRACE_MS and child_gone(pid))
+	return true
+
+
+## AI.9 hardening: the ceiling bounds the session, not one service process.
+## Requests 1-12 of tests/ai/requests.ndjson through the stub at the 0.05
+## ceiling, once in one process and once with the service shut down after every
+## answer (every request a fresh process, as after a settings change or a
+## fault): the outcomes, budget refusals included, must be identical. The
+## restarted run's cache starts with a line from an earlier session, which must
+## not count (the session begins at the first launch).
+func run_budget(dir: String, restart: bool, prior: String) -> Array:
+	OS.execute("/bin/rm", PackedStringArray(["-rf", dir]))
+	DirAccess.make_dir_recursive_absolute(dir)
+	if prior != "":
+		FileAccess.open(dir.path_join("usage.ndjson"), FileAccess.WRITE).store_string(prior + "\n")
+	var b := stub_bridge()
+	b.cache_dir = dir
+	b.ceiling_usd = 0.05
+	var rs := stub_requests()
+	var got := []
+	for i in range(1, 13):
+		b.request(rs[str(i)])
+		pump(b, 15000, func(): return b.outcomes.size() == got.size() + 1)
+		var o: Dictionary = b.outcomes[-1] if b.outcomes.size() == got.size() + 1 else {"req": str(i), "status": "missing"}
+		got.append("%s:%s" % [o["req"], o.get("code", o.get("status"))])
+		if restart:
+			b.shutdown()
+	got.append("launches %d" % b.launch_count)
+	b.shutdown()
+	return got
+
+
+func test_session_ceiling() -> bool:
+	print("session ceiling: a restart between requests refuses budget at the same cumulative point")
+	var one := run_budget(scratch.path_join("budget_one"), false, "")
+	var many := run_budget(scratch.path_join("budget_restart"), true, '{"req":"7","provider":"gemini","route":"gemini","model":"m","kind":"portrait","usd":5.0}')
+	assert_bool("one process: requests 10 and 11 refused budget at 0.05 (%s)" % [one], one.slice(0, 12).filter(func(x): return x.ends_with(":budget")) == ["10:budget", "11:budget"] and one[-1] == "launches 1")
+	assert_bool("a fresh process per request: the same outcomes, budget at the same point (%s)" % [many], many.slice(0, 12) == one.slice(0, 12) and many[-1] == "launches 12")
 	return true
 
 
@@ -454,6 +515,44 @@ func test_crash_loop() -> bool:
 	return true
 
 
+## AI.9 hardening: a request the bridge kills mid-call (timeout) or loses
+## with its process (fault) is charged at the reservation the service wrote
+## for it (inflight.json): the provisional line is appended to usage.ndjson and
+## the next launch's ledger starts from it. A stale reservation (another
+## request's, or one left before this request was sent) is never charged.
+func reserving(dir: String, line: String, after: String) -> AiBridge:
+	var b := fake("hang")
+	b.cache_dir = dir
+	var hello := '{"v":1,"type":"hello","proto":{"major":1,"minor":0},"service":"reserve","provider":"gemini","live":true,"cache_dir":"-","routes":{}}'
+	b.launch_override = {"bin": "/bin/sh", "args": PackedStringArray(["-c", 'read l; printf "%s\\n" "$1"; read r; [ -n "$2" ] && printf "%s\\n" "$2" > "$3/inflight.json"; ' + after, "sh", hello, line, dir])}
+	return b
+
+
+func test_killed_charge() -> bool:
+	print("killed mid-call: charged at its reservation")
+	var res := ProjectSettings.globalize_path("res://")
+	var line := '{"req":"1","provider":"gemini","route":"gemini","model":"gemini-2.5-flash-image","kind":"portrait","tokens_in":0,"tokens_out":0,"calls":0,"usd":0.0123,"ms":0,"totals":{"gemini":0.0123,"openrouter":0,"all":0.0123},"provisional":true}'
+	var cases := [["timeout", line, "exec sleep 600", 1, 12300000], ["stale req", line.replace('"req":"1"', '"req":"9"'), "exec sleep 600", 0, 0],
+		["left before send", "", "exec sleep 600", 0, 0], ["fault", line, "exit 3", 1, 12300000]]
+	for c in cases:
+		var dir := scratch.path_join("reserve_" + c[0].replace(" ", "_"))
+		OS.execute("/bin/rm", PackedStringArray(["-rf", dir]))
+		DirAccess.make_dir_recursive_absolute(dir)
+		if c[0] == "left before send":
+			FileAccess.open(dir.path_join("inflight.json"), FileAccess.WRITE).store_string(line + "\n")
+		var b := reserving(dir, c[1], c[2])
+		b.request(req("1", "portrait"))
+		pump(b, 5000, func(): return b.outcomes.size() == 1 or b.failure_times.size() >= 1)
+		var usage := FileAccess.get_file_as_string(dir.path_join("usage.ndjson"))
+		var lines := usage.split("\n", false)
+		var spent: Array = b.stub_config(res)["spent"]
+		assert_bool("%s: %d provisional usage line(s), session gemini %d nano-USD, next launch's spent %s" % [c[0], lines.size(), b.session_nusd()["gemini"], spent],
+			lines.size() == c[3] and (c[3] == 0 or lines[0] == line) and b.session_nusd()["gemini"] == c[4] and spent[0] == {"provider": "gemini", "nusd": c[4]}
+			and not FileAccess.file_exists(dir.path_join("inflight.json")))
+		b.shutdown()
+	return true
+
+
 func test_garbage() -> bool:
 	print("fake garbage: stray lines ignored, broken JSON is a failure")
 	var b := fake("garbage")
@@ -516,9 +615,9 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):
 			only = a.substr(7).split(",")
-	var tests := ["static", "live_plan", "live_env", "assemble", "stub_session"]
+	var tests := ["static", "live_plan", "live_env", "assemble", "stub_session", "session_ceiling"]
 	if faults:
-		tests.append_array(["partial", "timeouts", "crash_loop", "garbage", "handshake_faults", "shutdown_grace"])
+		tests.append_array(["partial", "timeouts", "killed_charge", "crash_loop", "garbage", "handshake_faults", "shutdown_grace"])
 	for t in tests:
 		if only.is_empty() or t in only:
 			if call("test_" + t) != true: # a script error aborts a test silently

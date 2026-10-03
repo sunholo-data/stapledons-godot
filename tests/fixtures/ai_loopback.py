@@ -44,6 +44,11 @@ def serve(d):
                                   "x_goog_api_key": self.headers.get("x-goog-api-key"),
                                   "content_type": self.headers.get("Content-Type"), "body": body}) + "\n")
             log.flush()
+            if self.path.startswith("/drop/"):
+                # AI.9 hardening: the call was sent, no reply comes back (transport error after send).
+                self.close_connection = True
+                self.connection.shutdown(2)
+                return
             if self.path == "/nocontent" + OR_PATH:
                 # AI.9: billed (usage reported) but no content: provider_error, still charged.
                 out = json.dumps({"id": "gen-billed", "choices": [{"finish_reason": "stop", "message": {"role": "assistant"}}],
@@ -90,6 +95,7 @@ def check(d, kg, ko):
     ors = [r for r in reqs if r["path"] == OR_PATH]
     tts = [r for r in reqs if r["path"] == TTS_PATH]
     billed = [r for r in reqs if r["path"] in ("/nocontent" + OR_PATH, "/capped" + TTS_PATH)]
+    dropped = [r for r in reqs if r["path"] in ("/drop" + OR_PATH, "/drop" + TTS_PATH)]
     if len(ors) != 2:
         fails.append("expected 2 chat completions (one retry after the Wait fixture), got %d" % len(ors))
     for r in ors:
@@ -118,14 +124,30 @@ def check(d, kg, ko):
         nano = line.rsplit("-> ", 1)[-1].split(" ")[0] if "-> " in line else ""
         if not line.startswith(w) or not nano.isdigit() or int(nano) <= 0:
             fails.append("billed %s failure not charged: %r" % (k, line))
+    # AI.9 hardening: a call sent but never answered is charged at its cap: the
+    # OpenRouter text cap is 172 output tokens, the one-segment TTS cap 98.
+    want = {"dropped openrouter": "dropped openrouter: provider_error, 1 calls, ", "dropped tts": "dropped tts: provider_error, 1 calls, 6+98 tokens"}
+    for k, w in want.items():
+        line = next((l for l in lane.splitlines() if l.startswith("billed " + k + ":")), "")
+        nano = line.rsplit("-> ", 1)[-1].split(" ")[0] if "-> " in line else ""
+        if not line.startswith("billed " + w) or not nano.isdigit() or int(nano) <= 0 or (k == "dropped openrouter" and "+172 tokens" not in line):
+            fails.append("%s call not charged: %r" % (k, line))
+    res = os.path.join(d, "cache", "inflight.json")
+    rv = json.loads(open(res).read()) if os.path.exists(res) else {}
+    est = next((l.split(": ")[1].split(" ")[0] for l in lane.splitlines() if l.startswith("reserved d12: ")), "")
+    if rv.get("req") != "d12" or rv.get("provisional") is not True or rv.get("route") != "gemini" or not est.isdigit() \
+            or int(est) <= 0 or round(rv.get("usd", 0) * 1e9) != int(est):
+        fails.append("reservation (inflight.json) is not the worst case of d12: %s vs %s" % (rv, est))
     usage = open(os.path.join(d, "cache", "usage.ndjson")).read() if os.path.exists(os.path.join(d, "cache", "usage.ndjson")) else ""
-    for req in ("b1", "b12"):
+    for req in ("b1", "b12", "d1", "d12"):
         lines = [json.loads(l) for l in usage.splitlines() if json.loads(l).get("req") == req]
         if len(lines) != 1 or lines[0]["calls"] != 1 or not lines[0]["usd"] > 0:
             fails.append("usage.ndjson has no charged line for billed failure %s: %s" % (req, lines))
     if len(billed) != 2:
         fails.append("expected 2 billed-failure calls (/nocontent, /capped), got %d" % len(billed))
-    if len(reqs) != len(ors) + len(tts) + len(billed):
+    if len(dropped) != 2:
+        fails.append("expected 2 dropped calls (/drop chat completion, /drop TTS), got %d" % len(dropped))
+    if len(reqs) != len(ors) + len(tts) + len(billed) + len(dropped):
         fails.append("unexpected paths: %s" % sorted({r["path"] for r in reqs}))
     places = [os.path.join(d, "lane.out"), os.path.join(d, "lane.err")]
     for root, _, files in os.walk(os.path.join(d, "cache")):
@@ -137,8 +159,8 @@ def check(d, kg, ko):
                 fails.append("key text in %s" % os.path.relpath(p, d))
     for f in fails:
         print("FAIL " + f)
-    print("ai-loopback: %d chat completions (Bearer, retry after Wait), %d TTS (x-goog-api-key), %d billed failures charged; keys absent from stdout, stderr and %d cache files%s"
-          % (len(ors), len(tts), len(billed), len(places) - 2, "" if not fails else " -- FAILED"))
+    print("ai-loopback: %d chat completions (Bearer, retry after Wait), %d TTS (x-goog-api-key), %d billed failures and %d dropped calls charged, reservation = worst case; keys absent from stdout, stderr and %d cache files%s"
+          % (len(ors), len(tts), len(billed), len(dropped), len(places) - 2, "" if not fails else " -- FAILED"))
     return 1 if fails else 0
 
 

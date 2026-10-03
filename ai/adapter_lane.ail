@@ -86,7 +86,7 @@ pure func allOk(xs: [{line: string, ok: bool}]) -> bool = match xs { [] => true,
 func printAll(xs: [{line: string, ok: bool}]) -> () ! {IO} = match xs { [] => (), x :: r => { println(x.line); printAll(r) } }
 
 export func lane(cfg: Lane) -> () ! {IO, FS, AI} {
-  let s = { provider: "stub", keys_present: ["gemini"], text_only: false, cache_dir: concat([cfg.out, "/cache"]), routing: cfg.routing, fixtures: cfg.fixtures, ceiling_usd: 0.5 };
+  let s = { provider: "stub", keys_present: ["gemini"], text_only: false, cache_dir: concat([cfg.out, "/cache"]), routing: cfg.routing, fixtures: cfg.fixtures, ceiling_usd: 0.5, spent: [] };
   match start(s, ["gemini"]) {
     Err(e) => println(concat(["FAIL start: ", e])),
     Ok(c) => {

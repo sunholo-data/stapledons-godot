@@ -184,9 +184,9 @@ export-macos: runtime sky-bundle import   ## build the macOS .app (arm64, ad-hoc
 	@du -sh "$(APP)"
 
 export-smoke:      ## run the exported .app's capture with NO ailang on PATH; must produce the contact sheet
-	@rm -rf $(SCRATCH)/export-smoke && mkdir -p $(SCRATCH)/export-smoke
+	@rm -rf $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home && mkdir -p $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home
 	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
-	env -i PATH=/usr/bin:/bin HOME="$$HOME" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
+	env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" "$(APP)/Contents/MacOS/$$exe" -- --capture="$(CURDIR)/$(SCRATCH)/export-smoke"
 	@test -s $(SCRATCH)/export-smoke/contact_sheet.png && echo "export-smoke: OK ($$(ls $(SCRATCH)/export-smoke | wc -l | tr -d ' ') files)"
 
 DEV_BUCKET ?= stapledons-voyage-dev-builds

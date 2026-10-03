@@ -5,8 +5,9 @@ extends SceneTree
 ## every key is a fixture. Nothing here spends: the indicator check runs the
 ## stub service (`--caps IO,FS`), and the wired live path (AC14 re-run) keeps
 ## live_allowed false, so the service refuses at hello.
-##   (default)          opt-in, keys, 0600, kinds, ceiling, text-only, panel,
-##                      indicator + budget, wired path
+##   (default)          opt-in, keys, key edges, 0600, kinds, ceiling, text-only,
+##                      panel, indicator + budget, wired path
+##   --only=a,b         just those tests (the mutation check)
 ##   --launch-default   only the ai-live-guard runtime half: the builder with
 ##                      AI_LIVE unset and default settings emits the stub,
 ##                      --caps IO,FS, and never live
@@ -131,6 +132,28 @@ func test_keys() -> bool:
 	return true
 
 
+## AI.9 hardening: an empty or blank key file is no key; a session key file a
+## crash left behind is removed when the next session starts; an automation
+## run gets no indicator.
+func test_key_edges() -> bool:
+	print("key edges: empty key file, stale session key files, automation without indicator")
+	var d := fresh("key_edges")
+	var s := settings_in(d)
+	for text in ["", "  \n"]:
+		FileAccess.open(ProjectSettings.globalize_path(s.key_path("gemini")), FileAccess.WRITE).store_string(text)
+		assert_bool("a key file holding %s is no key" % ("nothing" if text == "" else "blanks"), s.key_source("gemini") == "" and s.keys_present().is_empty())
+	var stale := []
+	for p in AiSettings.PROVIDERS:
+		var f := ProjectSettings.globalize_path(s.session_key_path(p))
+		AiSettings._write_private(f, "st-stale-" + p)
+		stale.append(f)
+	var a := session_in(d)
+	assert_bool("stale session key files removed at startup", stale.all(func(f): return not FileAccess.file_exists(f)))
+	var c := session_in(fresh("key_edges_capture"), {"map-capture": "x"})
+	assert_bool("automation run (--map-capture): no indicator, live off", c.indicator == null and not c.settings.live_on() and a.indicator != null)
+	return true
+
+
 func test_kinds() -> bool:
 	print("kinds each key enables (routing table); OpenRouter only: voice and portraits stay on the core set")
 	var s := settings_in(fresh("kinds"))
@@ -230,7 +253,11 @@ func test_indicator_budget() -> bool:
 	a.cache.core_dir = lib.path_join("no_core")
 	a.cache.library_dir = lib
 	a.cache.load_layers()
-	a.indicator._usage_from = 0
+	# A line from an earlier session is already in usage.ndjson: it must not
+	# count toward this session's indicator or ceiling (the session starts at
+	# the first launch).
+	DirAccess.make_dir_recursive_absolute(lib)
+	FileAccess.open(lib.path_join("usage.ndjson"), FileAccess.WRITE).store_string('{"req":"4","provider":"gemini","route":"gemini","model":"m","kind":"portrait","usd":5.0}\n')
 	var sim := SimBridge.new()
 	sim.record_path = d.path_join("session.ndjson")
 	assert_bool("sim starts with ai_core %s..." % AiSession.ai_core().left(12), sim.start() and sim.new_game(Session.SEED, "sol", false, {}, AiSession.ai_core()) and a.attach(sim))
@@ -244,7 +271,7 @@ func test_indicator_budget() -> bool:
 	var ind := a.indicator
 	var cancels: Array = a.relay.seen.filter(func(e): return e["k"] == "ai_fallback" and e.get("reason") == "budget")
 	assert_bool("the second portrait passes the 0.05 ceiling: ai_cancel{budget} -> ai_fallback budget (%d)" % cancels.size(), cancels.size() == 1 and ind.budget_hit)
-	assert_bool("per provider: OpenRouter %.6f > 0 (text), Gemini 0.039 (one portrait); total %.6f" % [ind.usd["openrouter"], ind.total()],
+	assert_bool("per provider: OpenRouter %.6f > 0 (text), Gemini 0.039 (one portrait, the earlier session's 5.0 not counted); total %.6f" % [ind.usd["openrouter"], ind.total()],
 		ind.usd["openrouter"] > 0.0 and is_equal_approx(ind.usd["gemini"], 0.039) and is_equal_approx(ind.total(), ind.usd["openrouter"] + 0.039))
 	a.settings.opt_in = true
 	a.settings.save_key("gemini", KEY_G)
@@ -318,7 +345,11 @@ func run_all() -> void:
 		return
 	var tests := ["launch_default"]
 	if not "--launch-default" in OS.get_cmdline_user_args():
-		tests.append_array(["opt_in", "keys", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired"])
+		tests.append_array(["opt_in", "keys", "key_edges", "kinds", "ceiling", "text_only", "panel", "indicator_budget", "wired"])
+	# --only=name,name runs a subset (tests/ai_settings_mutants.sh uses it).
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--only="):
+			tests = Array(a.substr(7).split(","))
 	for t in tests:
 		if call("test_" + t) != true:
 			assert_bool("test_%s ran to its end" % t, false)

@@ -29,6 +29,7 @@ func _init(args: Dictionary = {}, dir: String = "user://") -> void:
 	settings.dir = dir
 	settings.apply_args(args)
 	settings.load_settings()
+	settings.forget_session_keys() # a crash may have left the last session's (AI.9 hardening)
 	relay = AiRelay.new(bridge, cache)
 	settings.apply(bridge, relay)
 	_hello_out = args.get("ai-hello", "")
