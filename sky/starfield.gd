@@ -284,6 +284,13 @@ func set_velocity(direction: Vector3, beta: float, gamma: float) -> void:
 	material.set_shader_parameter("one_minus_beta", 1.0 / (gamma * gamma * (1.0 + beta)))
 
 
-## Linear radiance of the splat peak per unit of the flux in custom data.
+## Linear radiance of the splat peak per unit of the flux in custom data
+## (lux; Exposure.star_scale), at the centre pixel.
 func set_exposure(e: float) -> void:
 	material.set_shader_parameter("exposure", e)
+
+
+## Magnitude-floor aid: Vector2(floor lux, floor peak); zeros switch it off.
+func set_floor(p: Vector2) -> void:
+	material.set_shader_parameter("floor_flux", p.x)
+	material.set_shader_parameter("floor_peak", p.y)

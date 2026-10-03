@@ -73,6 +73,38 @@ static func illuminance_from_v(v: float) -> float:
 	return pow(10.0, -0.4 * (v + 13.98))
 
 
+## Johnson V of an illuminance in lux (inverse of illuminance_from_v).
+## Mirrors photometry.vFromIlluminance (sunholo/relativity 0.5.0+).
+static func v_from_illuminance(lux: float) -> float:
+	return -13.98 - 2.5 * log(lux) / log(10.0)
+
+
+## Luminance in cd/m^2 of a surface brightness mu in V mag/arcsec^2: the
+## package zero point spread over one arcsec^2. Mirrors
+## photometry.luminanceFromSurfaceMag (0.5.0+): mu = 22 gives 1.7252e-4 cd/m^2.
+static func luminance_from_surface_mag(mu: float) -> float:
+	var arcsec := PI / 648000.0
+	return pow(10.0, -0.4 * (mu + 13.98)) / (arcsec * arcsec)
+
+
+## Naked-eye threshold illuminance (lux) of a point source against background
+## luminance lb (cd/m^2), field factor 1: Crumey (2014, MNRAS 442, 2600) fitted
+## to Blackwell (1946). Mirrors photometry.pointThresholdIlluminance (0.5.0+),
+## including its ordering: NaN, negative and below-1e-5 backgrounds clamp to
+## 1e-5 cd/m^2 before the branch.
+static func point_threshold_illuminance(lb: float) -> float:
+	var b := lb if (lb == lb and lb > 0.00001) else 0.00001
+	var q := sqrt(sqrt(b))
+	var h := sqrt(b)
+	var s := 0.0006505 * q - 0.0008461 * h if b <= 0.0708 else 0.0001772 * q + 0.00007167 * h
+	return s * s
+
+
+## Faintest V visible against lb at field factor f (photometry.limitingMagnitude).
+static func limiting_magnitude(lb: float, f: float) -> float:
+	return v_from_illuminance(f * point_threshold_illuminance(lb))
+
+
 ## Relative flux from an apparent magnitude.
 static func flux_from_mag(mag: float) -> float:
 	return pow(10.0, -0.4 * mag)

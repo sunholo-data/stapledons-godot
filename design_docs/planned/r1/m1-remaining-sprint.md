@@ -685,6 +685,7 @@ tiers), #43 · **Registry:** none (UI and data).
   satisfies M4's dependency "M1.2 tiers (α Cen A/B real astrometry)".
 
 #### M1.5a: Photometric exposure, and honesty about it (F5)
+**Status (2026-10-03):** executed to ⏸ R-d. `make physics`, `make golden` and `make bench` pass (AC8: V_lim 6.3 at 2560×1440, 6.5 at 960×540); captures opened. Q8 was answered in D-19. Deviation: the panorama un-stretch (see the sprint JSON notes).
 **Scope:**
 - **Scene units:**
   - stars integrate to their E_v in lux;
