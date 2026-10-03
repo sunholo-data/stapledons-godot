@@ -204,6 +204,8 @@ pure func saturnian() -> [Moon] = [
 
 pure func neptunian() -> [Moon] = [
   -- NEP097: P is sidereal; Triton is retrograde (i 157.3 deg), so its node advances.
+  -- JPL tabulates P node 340.379 yr, half the ~688 yr pole precession that the
+  -- IAU N7 term (52.316 deg/century) and Neptune's J2 imply; transcribed as published.
   moon("triton", "Triton", "neptune", jplSat(354800.0, 0.000, 0.0, 63.0, 157.3, 178.1, 5.876994, 0.0, 340.379, 299.8, 43.1, true, 1.0, 1.0),
     pole(299.36, 0.0, 41.17, 0.0, 296.53, 0.0 - 61.2572637, 0.0,
       [term(177.85, 52.316, 0.0 - 32.35, 22.55, 22.25), term(355.70, 104.632, 0.0 - 6.28, 2.10, 6.73), term(533.55, 156.948, 0.0 - 2.08, 0.55, 2.05),

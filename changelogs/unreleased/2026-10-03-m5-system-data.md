@@ -11,13 +11,14 @@
     - NSSDC satellite albedos.
 
     The ring profiles are `[(r_in, r_out, tau, w0)]` bands with a tint, taken from PDS Rings Node (Saturn) and NSSDC (the others). Every row carries citation keys that resolve in `citations()`.
-  - `sim/data/acen.ail` holds the AB orbit (Akeson 2021), Proxima b and d (confirmed in the NASA Exoplanet Archive snapshot of 2026-10-03), Proxima c (candidate) and α Cen A b (candidate, from one of Beichman 2025's four orbit families). Every number records its provenance: `measured`, `inferred` (the relation is named) or `assumed` (with the reason). No retracted row (α Cen B b) is loaded.
-  - `sim/celestial_test.ail` holds the provenance half of AC6, 17 checks in all. They cover:
+  - `sim/data/acen.ail` holds the AB orbit (Akeson 2021), Proxima b and d (confirmed in the NASA Exoplanet Archive snapshot of 2026-10-03), Proxima c (candidate; P and a as adopted by Kervella 2020) and α Cen A b (candidate, from one of Beichman 2025's four orbit families). Every number records its provenance: `measured`, `inferred` (the relation is named) or `assumed` (with the reason). No retracted row (α Cen B b) is loaded.
+  - `sim/celestial_test.ail` holds the provenance half of AC6, 22 checks in all. They cover:
     - citation keys;
     - NSSDC orbit periods, obliquities and rotation periods;
     - each moon's return after its published sidereal period, which catches a misread JPL `P` column or a wrong rate sign;
     - synchronous rotation;
-    - ring structure, and the design-repo ring table where it agrees with the published profiles, with an explicit list of the edges where it doesn't;
+    - Kepler's third law for planets and moons, NSSDC eccentricities and masses, albedos in (0, 1], and node directions;
+    - ring structure including the Encke gap, the design-repo ring table where it agrees, and the published edges beyond it (its Uranus row is wrong: 1.637-2.002 R);
     - α Cen status and provenance, Kepler's third law for AB, and the recomputed inferred radii.
   - `make strict-m5` (in the new `mk/m5.mk`, part of `make test`) checks that the strict VM, the interpreter and `sol-data-ok` all agree. `make acen-snapshot` fetches the archive rows, and `make acen-snapshot-verify` checks them against `data/planets/EXOPLANETS.SHA256`.
 

@@ -432,12 +432,12 @@ modules.
 ### Wave 3
 
 #### M5.1a: Sol and α Cen data, and the package pins
-**Status:** ✅ executed on `sprint/m5.1a-system-data` (2026-10-03), awaiting independent evaluation.
+**Status:** ✅ executed on `sprint/m5.1a-system-data` (2026-10-03); independent eval PASS 89/100, round-1 follow-ups applied.
 - [x] Pins in their own commit: relativity 0.7.0, celestial 0.1.0; lockfile relocked; bundled cache refreshed.
-- [x] `sim/data/sol.ail`, `sim/data/acen.ail` with citation keys and per-field provenance; `sim/celestial_test.ail` (17 checks).
+- [x] `sim/data/sol.ail`, `sim/data/acen.ail` with citation keys and per-field provenance; `sim/celestial_test.ail` (22 checks).
 - [x] AC6 via `make sim` (test blocks) and `make strict-m5` (strict VM = interpreter).
 - [x] Mutants (dropped citation key, unknown key, retracted row, upgraded candidate, provenance without a note, moon P misread, ring edge) fail.
-- [x] Deviations recorded in the sprint JSON: design §M5.1 names **12** moons (it says 11); the design-repo ring table disagrees with PDS/NSSDC at five edges (tested explicitly); Uranus/Neptune Minnaert k assumed 1 (no citable value).
+- [x] Deviations recorded in the sprint JSON: design §M5.1 names **12** moons (it says 11); the design-repo ring table's Uranus row is wrong (published 1.637-2.002 R); its other differences are scope or definition (tested as published edges); Uranus/Neptune Minnaert k assumed 1 (no citable value).
 **Scope:**
 - **`sim/data/sol.ail`**, every row with a citation key: the Standish
   Table 2a elements and rates for the 8 planets; the IAU 2015 poles, W₀ and

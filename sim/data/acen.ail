@@ -25,7 +25,8 @@ export pure func acenCitations() -> [(string, string)] = [
   ("faria2022", "Faria et al. 2022, A&A 658:A115 (Proxima d)"),
   ("damasso2020", "Damasso et al. 2020, Sci. Adv. 6:eaax7467 (Proxima c candidate, disputed)"),
   ("beichman2025", "Beichman et al. 2025, ApJL (arXiv:2508.03814), JWST/MIRI candidate alpha Cen A b, Table 4 orbit families"),
-  ("chen2017", "Chen & Kipping 2017, ApJ 834:17, probabilistic mass-radius relation (Terran R = M^0.279; Neptunian R ~ M^0.589)"),
+  ("chen2017", "Chen & Kipping 2017, ApJ 834:17, probabilistic mass-radius relation (Terran R = 1.008 M^0.279; Neptunian R = 0.808 M^0.589, continuous at 2.04 M_Earth)"),
+  ("kervella2020", "Kervella et al. 2020, A&A 635:L14, Proxima c orbital period and semi-major axis adopted for the inclination and mass analysis"),
   ("assumption", "assumed by the game; no measurement exists")
 ]
 
@@ -48,8 +49,8 @@ export pure func abOrbit() -> Binary = { fields: [
 ] }
 
 -- Chen & Kipping 2017 (Terran / Neptunian), with the minimum mass m sin i as M
--- (inclination assumed 90 deg): Proxima b 1.055^0.279, d 0.26^0.279,
--- c 2.04^0.279 * (5.8/2.04)^0.589.
+-- (inclination assumed 90 deg): Proxima b 1.008 * 1.055^0.279, d 1.008 * 0.26^0.279,
+-- c 1.008 * 2.04^0.279 * (5.8/2.04)^0.589.
 pure func rTerran(mE: float, label: string) -> Field = inf(mE, label, "chen2017")
 
 export pure func bodies() -> [Body] = [
@@ -65,22 +66,22 @@ export pure func bodies() -> [Body] = [
              ("e", asm(0.0, "circular: the default fit lists e = 0")), ("msini_earth", m(1.055, "minimum mass (RV)", "suarez2025")),
              ("incl_deg", asm(90.0, "non-transiting, inclination unknown; edge-on makes the mass the minimum mass")),
              ("node_deg", asm(0.0, "unknown")), ("argperi_deg", asm(0.0, "unknown")), ("mean_anom_deg", asm(0.0, "orbital phase at J2000 not modelled")),
-             ("radius_earth", rTerran(1.0151, "Chen & Kipping Terran R = M^0.279 with M = m sin i")),
+             ("radius_earth", rTerran(1.0232, "Chen & Kipping Terran R = 1.008 M^0.279 with M = m sin i")),
              ("p_v", asm(0.3, "no albedo measurement; a rocky-planet value is assumed"))] },
   { id: "proxima-d", name: "Proxima Centauri d", kind: "planet", host: "proxima", status: "confirmed",
     fields: [("period_d", m(5.12338, "archive default (discovery Faria 2022)", "suarez2025")), ("a_au", m(0.02881, "archive default", "suarez2025")),
              ("e", asm(0.0, "circular: the default fit lists e = 0")), ("msini_earth", m(0.26, "minimum mass (RV)", "suarez2025")),
              ("incl_deg", asm(90.0, "inclination unknown")), ("node_deg", asm(0.0, "unknown")), ("argperi_deg", asm(0.0, "unknown")),
              ("mean_anom_deg", asm(0.0, "orbital phase at J2000 not modelled")),
-             ("radius_earth", rTerran(0.6867, "Chen & Kipping Terran R = M^0.279 with M = m sin i")),
+             ("radius_earth", rTerran(0.6922, "Chen & Kipping Terran R = 1.008 M^0.279 with M = m sin i")),
              ("p_v", asm(0.3, "no albedo measurement; a rocky-planet value is assumed"))] },
   -- Not in the archive's confirmed table on the snapshot date: candidate (disputed).
   { id: "proxima-c", name: "Proxima Centauri c", kind: "planet", host: "proxima", status: "candidate",
-    fields: [("period_d", m(1928.0, "+-20 (RV), disputed", "damasso2020")), ("a_au", m(1.489, "+-0.049", "damasso2020")),
+    fields: [("period_d", m(1928.0, "+-20 (RV), disputed", "kervella2020")), ("a_au", m(1.489, "+-0.049", "kervella2020")),
              ("e", asm(0.0, "circular assumed")), ("msini_earth", m(5.8, "+-1.9, minimum mass (RV)", "damasso2020")),
              ("incl_deg", asm(90.0, "inclination unknown")), ("node_deg", asm(0.0, "unknown")), ("argperi_deg", asm(0.0, "unknown")),
              ("mean_anom_deg", asm(0.0, "orbital phase at J2000 not modelled")),
-             ("radius_earth", rTerran(2.2577, "Chen & Kipping Neptunian R = 2.04^0.279 (M/2.04)^0.589 with M = m sin i")),
+             ("radius_earth", rTerran(2.2758, "Chen & Kipping Neptunian R = 1.008 * 2.04^0.279 (M/2.04)^0.589 with M = m sin i")),
              ("p_v", asm(0.3, "no albedo measurement"))] },
   -- JWST/MIRI direct-imaging candidate. Orbit: ONE OF SEVERAL FITS (Table 4 family
   -- "prograde, a < 2 au"); the period follows from Kepler's third law around A.

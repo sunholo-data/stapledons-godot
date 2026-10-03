@@ -16,7 +16,7 @@ import pkg/sunholo/celestial/ephemeris (elementsAt, satelliteAt, satelliteElemen
 import pkg/sunholo/celestial/frames (poleAndSpin, rotationPeriod)
 import pkg/sunholo/celestial/gravity (gmSunNominal, gmEarthNominal, gmJupiterNominal)
 import pkg/sunholo/celestial/rings (RingBand)
-import std/math (sqrt, atan2, exp, log)
+import std/math (sqrt, atan2, exp, log, cos)
 import std/list (map, foldl, length)
 import std/string (join)
 
@@ -106,14 +106,16 @@ pure func nssdcMoonDays() -> [float] = [27.3217, 1.769138, 3.551181, 7.154553, 1
 -- the rate signs are not tabulated (celestial AGENT.md trap). One published
 -- sidereal period later the moon must be back where it was: for the Moon by
 -- mean longitude (its eccentric orbit's apse turns 4.5 deg a month), for the
--- others by position. 1e-3 d catches every wrong reading (Io's: 1.756 d).
+-- others by position. 5e-4 d catches every wrong reading (Io's: 1.756 d;
+-- Titan's P read as anomalistic: 1.0e-3 d). Triton gets 8e-4 d: JPL's P is
+-- 1.4e-4 d longer than NSSDC's, and its retrograde node adds 5.3e-4 d.
 pure func meanLongitude(m: Moon, jd: float) -> float {
   let o = satelliteElementsAt(m.sat, jd);
   o.node + o.argPeri + o.meanAnom
 }
 pure func returnsAfter(m: Moon, p: float) -> bool {
   let t0 = j2000() + 1000.0;
-  let tolRad = 6.283185307179586 * 0.001 / p;
+  let tolRad = 6.283185307179586 * (if m.id == "triton" then 0.0008 else 0.0005) / p;
   if m.id == "moon" then absf(wrapPi(meanLongitude(m, t0 + p) - meanLongitude(m, t0))) <= tolRad
   else angleDeg(satelliteAt(m.sat, t0).pos, satelliteAt(m.sat, t0 + p).pos) <= deg(tolRad)
 }
@@ -123,6 +125,43 @@ pure func zipMoons(ms: [Moon], ws: [float]) -> bool =
 export pure func checkMoonPeriods() -> bool = zipMoons(moons(), nssdcMoonDays())
 
 test "every moon returns after its published sidereal period (P column read correctly)" { checkMoonPeriods() }
+
+-- Node direction: Saturn's, Jupiter's and Neptune's oblateness (and the Sun, for
+-- the Moon) make a node regress when cos i > 0 and advance when cos i < 0
+-- (Triton), so nodeRate * cos(i) <= 0 for every moon with a node rate.
+export pure func checkNodeSigns() -> bool = allTrue(map(\m. m.sat.nodeRate * cos(m.sat.incl) <= 0.0, moons()))
+
+test "every moon's node rate has the oblateness sign (nodeRate cos i <= 0)" { checkNodeSigns() }
+
+-- Kepler's third law: planets around the Sun (IAU nominal GM), moons around
+-- their host (host + moon GM from the data), against NSSDC periods, 1 %.
+pure func kepPeriodDays(aKm: float, gm: float) -> float = 6.283185307179586 * sqrt(aKm * aKm * aKm / gm) / 86400.0
+pure func hostGm(id: string) -> float = foldl(\acc p. if p.id == id then p.gm else acc, 0.0, planets())
+export pure func checkKepler() -> bool =
+  zipCheck(planets(), nssdcOrbitDays(), \p w. relNear(kepPeriodDays(p.el.a * 149597870.7, gmSunNominal() + p.gm), w, 0.01))
+  && zipSync2(moons(), nssdcMoonDays())
+pure func zipSync2(ms: [Moon], ws: [float]) -> bool =
+  match ms { [] => true, m :: mr => match ws { [] => false, w :: wr => relNear(kepPeriodDays(m.sat.a, hostGm(m.host) + m.gm), w, 0.01) && zipSync2(mr, wr) } }
+
+test "Kepler's third law: semi-major axes and GMs give NSSDC's periods (1 %)" { checkKepler() }
+
+-- NSSDC eccentricities (planet table to 3 decimals; satellite sheets) and masses
+-- (1e24 kg, 3 figures; G = 6.674e-20 km^3 kg^-1 s^-2).
+pure func nssdcPlanetE() -> [float] = [0.206, 0.007, 0.017, 0.094, 0.049, 0.052, 0.047, 0.010]
+pure func nssdcMoonE() -> [float] = [0.0549, 0.004, 0.009, 0.001, 0.007, 0.0202, 0.0045, 0.0000, 0.0022, 0.0010, 0.0292, 0.000016]
+pure func nssdcMass24() -> [float] = [0.330, 4.87, 5.97, 0.642, 1898.0, 568.0, 86.8, 102.0]
+pure func zipMoonE(ms: [Moon], ws: [float]) -> bool =
+  match ms { [] => ws == [], m :: mr => match ws { [] => false, w :: wr => absf(m.sat.e - w) <= 0.001 && zipMoonE(mr, wr) } }
+export pure func checkEccentricityMass() -> bool =
+  zipCheck(planets(), nssdcPlanetE(), \p w. absf(p.el.e - w) <= 0.004) && zipMoonE(moons(), nssdcMoonE())
+  && zipCheck(planets(), nssdcMass24(), \p w. relNear(p.gm, 0.00000000000000000006674 * w * 1000000000000000000000000.0, 0.01))
+
+test "eccentricities and GMs agree with NSSDC (planets 0.004, moons 0.001, masses 1 %)" { checkEccentricityMass() }
+
+export pure func checkAlbedos() -> bool =
+  allTrue(map(\p. p.pV > 0.0 && p.pV <= 1.0, planets())) && allTrue(map(\m. m.pV > 0.0 && m.pV <= 1.0, moons()))
+
+test "geometric albedos are in (0, 1]" { checkAlbedos() }
 
 -- The 12 moons rotate synchronously: |W period| equals the orbital period (0.1 %).
 pure func zipSync(ms: [Moon], ws: [float]) -> bool =
@@ -173,18 +212,22 @@ export pure func checkRingTableAgrees() -> bool =
 
 test "ring radii match the design repo's table within 1 % of R (Saturn D..A, Jupiter main, Neptune)" { checkRingTableAgrees() }
 
--- ...and where the table disagrees with PDS/NSSDC by more than 1 % of R, the
--- data follows the published profile and this list names every such edge, so a
--- corrected table (or a data change) shows up here. Reported in M5.1a's notes.
-export pure func checkRingTableDisagreements() -> bool =
-  within1pc(edge("saturn", "F", true), 2.333) && !within1pc(edge("saturn", "F", true), 2.27)
-  && within1pc(innerR(ringOf("jupiter")) / radiusOf("jupiter"), 1.25) && !within1pc(innerR(ringOf("jupiter")) / radiusOf("jupiter"), 1.29)
-  && within1pc(outerR(ringOf("jupiter")) / radiusOf("jupiter"), 3.10)
-  && within1pc(innerR(ringOf("uranus")) / radiusOf("uranus"), 1.637) && !within1pc(innerR(ringOf("uranus")) / radiusOf("uranus"), 1.49)
-  && within1pc(outerR(ringOf("uranus")) / radiusOf("uranus"), 2.002) && !within1pc(outerR(ringOf("uranus")) / radiusOf("uranus"), 1.95)
-  && within1pc(innerR(ringOf("neptune")) / radiusOf("neptune"), 1.652) && !within1pc(innerR(ringOf("neptune")) / radiusOf("neptune"), 1.69)
+-- Published edges beyond the table's scope (positive assertions only): Saturn's
+-- F ring (2.33 R) lies outside the table's D..A span, Jupiter's gossamer rings
+-- (to 3.10 R) outside its halo+main span, Neptune's 1.69 is the Galle ring's
+-- centre (its inner edge 1.65), and Jupiter's halo inner edge is NSSDC's 89,400
+-- km (1.25 R; Burns et al. give ~92,000 km, the table's 1.29). The Encke gap
+-- (PDS 133,423-133,745 km) is the boundary between A inner and A outer.
+-- The one real table error is Uranus: its 6..epsilon rings span 1.637-2.002 R,
+-- not 1.49-1.95 (to be corrected in the design repo).
+export pure func checkRingPublishedEdges() -> bool =
+  within1pc(edge("saturn", "F", true), 2.333) && within1pc(outerR(ringOf("jupiter")) / radiusOf("jupiter"), 3.10)
+  && within1pc(innerR(ringOf("jupiter")) / radiusOf("jupiter"), 1.25) && within1pc(innerR(ringOf("neptune")) / radiusOf("neptune"), 1.652)
+  && edge("saturn", "A inner", true) * radiusOf("saturn") == 133423.0 && edge("saturn", "A outer", false) * radiusOf("saturn") == 133745.0
+  && within1pc(innerR(ringOf("uranus")) / radiusOf("uranus"), 1.637) && within1pc(outerR(ringOf("uranus")) / radiusOf("uranus"), 2.002)
+  && !within1pc(innerR(ringOf("uranus")) / radiusOf("uranus"), 1.49) && !within1pc(outerR(ringOf("uranus")) / radiusOf("uranus"), 1.95)
 
-test "the edges where the design table and the published profiles disagree are exactly the listed ones" { checkRingTableDisagreements() }
+test "published ring edges: F, gossamer, halo, Galle, the Encke gap; the Uranus row of the design table is wrong" { checkRingPublishedEdges() }
 
 -- ------------------------------------------------------------ alpha Cen honesty (AC6, Q3)
 pure func acenKeys() -> [string] = keysOf(acenCitations())
@@ -246,9 +289,9 @@ test "alpha Cen AB: a = a\"/parallax, Kepler's third law, periastron 11.2 au" { 
 pure func powf(x: float, y: float) -> float = exp(y * log(x))
 pure func fv(id: string, name: string) -> float = foldl(\acc x. if x.id == id then fieldValue(name, x.fields) else acc, 0.0 - 1.0, bodies())
 export pure func checkInferred() -> bool =
-  absf(fv("proxima-b", "radius_earth") - powf(fv("proxima-b", "msini_earth"), 0.279)) <= 0.0001
-  && absf(fv("proxima-d", "radius_earth") - powf(fv("proxima-d", "msini_earth"), 0.279)) <= 0.0001
-  && absf(fv("proxima-c", "radius_earth") - powf(2.04, 0.279) * powf(fv("proxima-c", "msini_earth") / 2.04, 0.589)) <= 0.0001
+  absf(fv("proxima-b", "radius_earth") - 1.008 * powf(fv("proxima-b", "msini_earth"), 0.279)) <= 0.0001
+  && absf(fv("proxima-d", "radius_earth") - 1.008 * powf(fv("proxima-d", "msini_earth"), 0.279)) <= 0.0001
+  && absf(fv("proxima-c", "radius_earth") - 1.008 * powf(2.04, 0.279) * powf(fv("proxima-c", "msini_earth") / 2.04, 0.589)) <= 0.0001
   && absf(fv("acen-a-b", "period_d") - 365.25 * sqrt(powf(fv("acen-a-b", "a_au"), 3.0) / fv("acen-a", "mass_sun"))) <= 0.5
   && absf(fv("acen-a-b", "radius_earth") - 1.05 * 11.209) <= 0.001
 
@@ -259,7 +302,8 @@ export pure func checks() -> [(string, bool)] = [
   ("solCitations", checkSolCitations()), ("solInventory", checkSolInventory()), ("orbitPeriods", checkOrbitPeriods()),
   ("obliquities", checkObliquities()), ("rotation", checkRotation()), ("moonPeriods", checkMoonPeriods()),
   ("synchronous", checkSynchronous()), ("gm", checkGm()), ("ringShape", checkRingShape()),
-  ("ringTableAgrees", checkRingTableAgrees()), ("ringTableDisagreements", checkRingTableDisagreements()),
+  ("ringTableAgrees", checkRingTableAgrees()), ("ringPublishedEdges", checkRingPublishedEdges()), ("nodeSigns", checkNodeSigns()),
+  ("kepler", checkKepler()), ("eccentricityMass", checkEccentricityMass()), ("albedos", checkAlbedos()),
   ("acenProvenance", checkAcenProvenance()), ("noRetracted", checkNoRetracted()), ("statuses", checkStatuses()),
   ("noModelledDisc", checkNoModelledDisc()), ("abOrbit", checkAbOrbit()), ("inferred", checkInferred())
 ]
