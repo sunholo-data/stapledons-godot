@@ -758,6 +758,10 @@ that builds bundle and CI can verify offline.
 · **Registry:** depend std/crypto, std/fs
 **Acceptance:** AC17 `make ai-core-verify` (and `AI_CORE_FETCH=1 make
 ai-core-verify` after P-pub); `make test AILANG=$A`.
+**Status (2026-10-03):** ✅ executed on `sprint/ai8-core`. AC17 `make ai-core-verify` and
+`make test AILANG=$A` are green on arm64. Stopped before P-pub: nothing uploaded and no secret
+created. `AI_CORE_FETCH=1 make ai-core-verify` waits for the publish. Details and deviations
+are in the sprint JSON notes.
 **Pause after:** P-pub (controller, attended, gcloud: core publish and the
 empty `openrouter-api-key` secret; Mark adds its value whenever he likes, and
 AI.10b falls back to Gemini text if he hasn't).

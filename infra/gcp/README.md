@@ -20,7 +20,7 @@ m@sunholo.com.
 | AI key | Gemini API key (uid `d89b4007-b72c-4044-8d99-7b42da1babfd`), restricted to `generativelanguage.googleapis.com`; value only in Secret Manager secret `gemini-api-key` | `google_apikeys_key` + `google_secret_manager_secret` / `_version` (the value stays out of state, e.g. `ignore_changes`) |
 | Budget | `stapledons-voyage monthly`, 140 DKK (about US$20) per month, alerts at 50/90/100 %, id `b42c642f-2bac-4ce0-a2cb-5f225ec786e9` | `google_billing_budget` |
 | APIs (D-20) | `generativelanguage`, `apikeys`, `secretmanager`, `billingbudgets` | `google_project_service` |
-| OpenRouter key | Secret Manager `openrouter-api-key` (value added by Mark; text generation via AILANG's OpenRouter provider) | `google_secret_manager_secret` |
+| OpenRouter key | Secret Manager `openrouter-api-key`, created empty by `setup.sh` §10; Mark adds the value himself (`gcloud secrets versions add openrouter-api-key --data-file=-`), since an OpenRouter key can't be minted with gcloud. Text generation via AILANG's OpenRouter provider | `google_secret_manager_secret` (the version stays out of Terraform state, as for `gemini-api-key`) |
 | Dev-builds bucket | `gs://stapledons-voyage-dev-builds`, `EU`, uniform access, public access prevention **enforced**, labels `purpose=dev-builds`, lifecycle: delete `macos/builds/*` after 30 days (`dev-builds-lifecycle.json`) | `google_storage_bucket` with `lifecycle_rule` |
 
 ## Layout
@@ -28,6 +28,11 @@ m@sunholo.com.
 - `ATTRIBUTION.txt`: CC BY 4.0 credit for the NOIRLab source image.
 - `sky/<sha256>.<ext>`: content-addressed textures and pinned inputs. Never
   overwritten; served with `Cache-Control: public, max-age=31536000, immutable`.
+- `ai/<sha256>.<ext>`: the AI core layer's blobs (design ai-service-foundation
+  (a4), sprint AI.8): accepted portraits and avatars, later voice lines. Same
+  scheme as `sky/`; no new bucket resources. Pins: `data/ai/core/SHA256SUMS`.
+  `make ai-core-assets` fetches them anonymously, `make ai-core-publish`
+  (maintainers, gcloud) uploads them `--no-clobber`.
 
 Public URL base: `https://storage.googleapis.com/stapledons-voyage-assets/`.
 
