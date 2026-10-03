@@ -11,6 +11,7 @@ __pycache__/
 *.pyc
 sim/tools/.ailang/
 sky_bundle/
+areas_bundle/
 # Generated catalogue tiers (make catalogue). The quick and medium tiers are committed (M1.2c,
 # D-3, added with git add -f, so they stay tracked and a rebuild shows as a diff); large and every
 # temp/backup stay ignored. make catalogue-verify checks the committed bytes are reproducible.
@@ -20,3 +21,4 @@ data/starmap/stars_*.tmp
 data/starmap/stars_*.bak
 ai_core/
 **/.ailang/cache/
+tools/glow_probe/.ailang/

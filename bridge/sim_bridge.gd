@@ -14,6 +14,11 @@ const PROTO_MINOR := 1
 ## the ship). Asked for by setting `want_minor = SYSTEM_MINOR` before hello().
 const SYSTEM_MINOR := 3
 
+## The minor this session asks for (opt-in, set before start()). The interior (M4.2) asks
+## for 2 (M4.1: ship.ism and the consequence section); everything else keeps 2.1, so the
+## recorded sessions and their replay goldens are unchanged.
+var want_minor := PROTO_MINOR
+
 var _pipe: FileAccess
 var _stderr: FileAccess
 var _record: FileAccess

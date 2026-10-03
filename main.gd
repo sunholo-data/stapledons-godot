@@ -6,7 +6,10 @@ extends Node3D
 ##               +/- time warp. The HUD shows the view-to-velocity angle.
 ##               Exposure (M1.5a): F fixed EV at the rest value, M eye / camera
 ##               metering, [ ] exposure bias (aid), G magnitude floor (aid).
-## Galaxy map:  godot --path . [-- --map[=INDEX|ID]]   (default with no arguments; M2.6a/b; --map-capture=renders [--map-commit])
+## Interior:    godot --path . [-- --interior [--bundle=DIR]]   (default with no arguments; M4.2: the bridge with
+##              the live sky; WASD walk, E use, M galaxy map, L log, K codex; --interior-capture=DIR the S1 review
+##              captures (tools/interior_capture.gd); --m4-smoke [--bundle=DIR] the scripted slice (make m4-smoke))
+## Galaxy map:  godot --path . -- --map[=INDEX|ID]   (M2.6a/b; --map-capture=renders [--map-commit])
 ## Sky flight:  godot --path . -- --voyage   (the M0/M1 relativistic voyage; W/S thrust, arrows + Q/E look and roll, 1-4 views, +/- warp)
 ## Headless-ish checks (need a GPU window, not --headless):
 ##   godot --path . -- --capture=renders   scripted voyage, PNG per speed/view
@@ -31,6 +34,7 @@ const ALPHA_CEN_A := "CNS5:3627" # stars.json id (M1.7): the CNS5 system row, HI
 const MAP_TOUR := [["HIP 71681", "galaxy_map_acen_b.png"], ["CNS5:1676", "galaxy_map_sirius.png"],
 	["Gaia DR3 4472832130942575872", "galaxy_map_barnard.png"]]
 const LOOK_RATE := 1.2 # rad/s for the yaw, pitch and roll keys
+const STANDOFF_AU := 1000.0 # M4.1: the M4 client plans to the 1,000 AU stand-off (the sim defaults to 0)
 ## Off-axis golden (M1.6b, AC5): a velocity off every axis, and three camera
 ## orientations ([label, yaw, pitch, roll] in degrees; null yaw/pitch = along v).
 const OFF_AXIS := Vector3(0.5773502691896258, 0.5773502691896258, -0.5773502691896258) # (1,1,-1)/sqrt3
@@ -58,12 +62,15 @@ func _ready() -> void:
 	var args := _user_args()
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture")
 	UiScale.configure(get_window(), _fixed_scale)
-	# Launching with no arguments (a double-clicked review build, `make run`)
-	# opens the galaxy map on alpha Cen A; `--voyage` runs the M0/M1 sky flight.
-	if args.is_empty():
-		args["map"] = ALPHA_CEN_A
+	# Launching with no arguments (a double-clicked review build, `make run`) opens
+	# the bridge interior (M4.2); `--map` the galaxy map alone, `--voyage` the M0/M1 sky flight.
+	if args.is_empty() or (args.size() == 1 and args.has("record")):
+		args["interior"] = ""
+	if args.has("interior") or args.has("interior-capture") or args.has("m4-smoke"):
+		await _run_interior(args)
+		return
 	if args.has("map") or args.has("map-capture"):
 		_map_mode = true # the map owns the clock; no voyage ticks
 		await _run_map(args)
@@ -171,6 +178,60 @@ func _run_map(args: Dictionary) -> void:
 	f.close()
 	sim.stop()
 	get_tree().quit(0)
+
+
+## The bridge interior (M4.2) on a play session at protocol 2.2 with the M4 stand-off. The
+## galaxy map is the navigation console's screen: built here, attached to the same sim, and
+## shown by the interior on demand. --interior-capture and --m4-smoke drive it by script.
+func _run_interior(args: Dictionary) -> void:
+	var capture := args.has("interior-capture")
+	var smoke := args.has("m4-smoke")
+	_map_mode = true # the interior and its map own the clock; no voyage ticks
+	if capture:
+		get_window().size = Vector2i(1600, 900)
+	var dir: String = args.get("bundle", "")
+	if dir == "":
+		dir = AreaBundle.resolve_dir("bridge")
+	elif not dir.begins_with("res://") and not dir.is_absolute_path():
+		dir = "res://" + dir
+	var bundle := AreaBundle.load_dir(dir)
+	if not bundle.ok():
+		push_error("interior: bundle %s refused: %s" % [dir, "; ".join(bundle.errors)])
+		get_tree().quit(2)
+		return
+	sim.record_path = args.get("record", "")
+	sim.want_minor = 2
+	var ai := AiSession.new(args)
+	add_child(ai)
+	if not sim.start() or not sim.new_game(SEED, "sol", false, {"standoff_au": STANDOFF_AU}, AiSession.ai_core()) or not ai.attach(sim):
+		push_error("sim session failed: %s" % sim.last_error)
+		get_tree().quit(2)
+		return
+	var map: GalaxyMap = load("res://ui/galaxy_map.tscn").instantiate()
+	map.auto_tick = not (capture or smoke)
+	add_child(map)
+	map.load_catalogue("res://data/starmap/stars.json")
+	map.load_names("res://data/starmap/names.json")
+	map.attach(sim)
+	var acen := map.index_of(ALPHA_CEN_A)
+	if map.preselect(acen):
+		map.frame_star(acen)
+	remove_child(map) # the console shows it
+	var it := Interior.new()
+	it.name = "Interior"
+	if not it.setup(bundle, {"size": get_window().size, "canvas": get_viewport().get_visible_rect().size, "background": not smoke, "tier": args.get("tier", "")}):
+		push_error("interior: %s" % it.last_error)
+		get_tree().quit(2)
+		return
+	add_child(it)
+	it.auto = not (capture or smoke)
+	it.attach(sim, map)
+	get_viewport().size_changed.connect(func() -> void: it.resize(get_window().size, get_viewport().get_visible_rect().size))
+	print("interior: bundle %s (%s), %d walk triangles, %d interactables, captain at %s" % [dir, bundle.manifest.get("version", "unversioned"), it.walk.triangle_count(), it.walk.interactables.size(), it.avatar_pos])
+	if capture: # loaded by path: tools/ is excluded from exports
+		get_tree().quit(await load("res://tools/interior_capture.gd").new().run(self, it, map, _out_dir(args["interior-capture"])))
+	elif smoke:
+		get_tree().quit(await InteriorSmoke.new().run(self, it, map, sim))
 
 
 ## Commit ritual and transit for R2: dialog mid-hold, commit at 1.5 s (fake
@@ -608,6 +669,7 @@ func _run_golden() -> void:
 	# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
 	failures += await load("res://tools/exposure_golden.gd").new().run(self)
 	failures += await load("res://tools/cmb_golden.gd").new().run(self)
+	failures += await load("res://tools/interior_golden.gd").new().run(self) # M4.2: G-M4-1..4
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 

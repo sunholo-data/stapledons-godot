@@ -1,0 +1,14 @@
+[package]
+name = "stapledons/glow_probe"
+version = "0.1.0"
+edition = "1"
+description = "M4.2 check-value probe: the forward-glow profile and photometry from sunholo/relativity (glowEmittanceAt, 0.7.0). Not part of the sim; the sim pins its own version."
+
+[exports]
+modules = ["stapledons/glow_probe/probe"]
+
+[effects]
+max = ["IO"]
+
+[dependencies]
+"sunholo/relativity" = "0.7.0"

@@ -850,6 +850,45 @@ func test_ship_frame() -> void:
 	check("bridge cam up . NGP = cam up y when heading galactic centre", sc["up"][2], -0.3601502478122711, 1e-12)
 
 
+## M4.2 forward glow (design m4-first-journey.md "M4.2" / "M4.6"; higgs-bubble.md §6). Every
+## expected value is copied from the AILANG probe (tools/glow_probe, make glow-probe:
+## sunholo/relativity 0.7.0 glowInwardFlux / glowEmittanceAt at n 0.1 cm^-3, eps 1e-9, f_in 0.5,
+## VM = interpreter), never computed here; e-notation because Godot parses long plain decimals
+## inexactly. The design's interim check values: glow_w_m2 2.40719e-5 W/m^2 at 0.99c and
+## 0.281271 at 0.999999c (<= 1 W/m^2, HB-61); the pole 9.6288e-5 and 1.12508 (G-M4-4 b).
+func test_forward_glow() -> void:
+	print("Forward glow (M4.2): ForwardGlow mirrors glowEmittanceAt; Lambertian E/pi; the off-centre camera's wall point")
+	var mean_099 := 2.407194217926631e-05
+	var mean_cap := 0.28127107577632854
+	var pole_099 := 9.628776871706524e-05
+	var pole_cap := 1.1250843031053142
+	check("glow_w_m2 at 0.99c = design check 2.40719e-5 (5 s.f.)", mean_099, 2.40719e-05, 5e-11)
+	check("glow_w_m2 at 0.999999c = design check 0.281271 (6 s.f.), <= 1 W/m^2 (HB-61)", mean_cap, 0.281271, 5e-7)
+	check("pole = 4 x glow_w_m2 at 0.99c (package)", pole_099 / (4.0 * mean_099), 1.0, 1e-12)
+	check("pole at 0.99c = design 9.6288e-5 (G-M4-4 b)", pole_099, 9.6288e-05, 5e-10)
+	check("pole at 0.999999c = design 1.12508 (G-M4-4 b)", pole_cap, 1.12508, 5e-6)
+	# [theta, cos theta (probe), glowEmittanceAt (probe)] at 0.99c and the cap
+	var rows := [[0.0, 1.0, pole_099, pole_cap], [45.0, 0.7071067811865476, 6.808573420515876e-05, 0.7955547401323088],
+		[80.0, 0.17364817766693041, 1.672019556933325e-05, 0.19536883895590618],
+		[90.0, 6.123233995736757e-17, 5.895925387819721e-21, 6.889154452844258e-17], [120.0, -0.4999999999999998, 0.0, 0.0]]
+	for r: Array in rows:
+		for k in 2:
+			var pole: float = [pole_099, pole_cap][k]
+			var want: float = r[2 + k]
+			var got := ForwardGlow.profile(pole, r[1])
+			check("glow_profile %s theta %3.0f deg (rel. to the package, 1e-12)" % [["0.99c", "cap"][k], r[0]], got / want if want != 0.0 else got, 1.0 if want != 0.0 else 0.0, 1e-12)
+	check("glow is 0 at rest (pole 0, any angle)", ForwardGlow.profile(0.0, 0.7), 0.0, 0.0)
+	check("Lambertian radiance = E / pi at the 0.99c pole", ForwardGlow.radiance(pole_099), pole_099 / PI, 0.0)
+	# hand-derived (python3: 9.628776871706524e-05 / pi x 182.5654375783963); the package has no
+	# radiance/efficacy function yet (gate-3 follow-up)
+	check("luminance at the 0.99c pole = E / pi x 182.565 lm/W (cd/m^2)", ForwardGlow.luminance(pole_099), 0.005595511757131118, 1e-15)
+	check("pole luminance at 0.99c / the 23.5 mag/arcsec^2 dark sky (~130: NOT faint to the dark-adapted eye)", ForwardGlow.luminance(pole_099) / Exposure.dark_sky_luminance(), 130.0, 10.0)
+	var cam := PackedFloat64Array([16.0, -8.0, 83.7]) # cam_bridge.json position_m (ship frame)
+	check("bridge camera straight up: wall cos = sqrt(R^2 - 16^2 - 8^2) / R", ForwardGlow.wall_cos(cam, PackedFloat64Array([0, 0, 1]), 100.0), 0.9838699100999074, 1e-15)
+	check("bridge camera, ray straight down: the aft wall (cos < 0, glow 0)", ForwardGlow.profile(1.0, ForwardGlow.wall_cos(cam, PackedFloat64Array([0, 0, -1]), 100.0)), 0.0, 0.0)
+	check("finite flux at every stop: pole finite at rest and the cap", 1.0 if is_finite(ForwardGlow.profile(pole_cap, 1.0)) and is_finite(ForwardGlow.profile(0.0, 1.0)) else 0.0, 1.0, 0.0)
+
+
 ## The camera cases need a node in a viewport, so they run once the main loop
 ## has started; everything else runs in _init.
 func _initialize() -> void:
@@ -878,6 +917,7 @@ func _init() -> void:
 	test_angular_psf()
 	test_cmb()
 	test_sky_meter()
+	test_forward_glow()
 	test_ship_frame()
 
 	print("Aberration (sources crowd toward the direction of motion)")
