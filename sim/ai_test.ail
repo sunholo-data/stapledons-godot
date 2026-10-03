@@ -7,13 +7,15 @@ module stapledons/sim/ai_test
 -- `aiVm` runs them on the strict VM (`make strict-ai`, AC7 part).
 import ./core (World, Params, Intent, IPlan, ICommit, IThrust, IRecord, IAiOpen, IAiCancel, Event, Refusal, Ticked, Committed, Idle, Planned,
   defaultParams, newWorld, tick)
-import ./ai (AiOpen, AiEvent, ERequest, EFallback, AiRequest, OpenReq, CStr, CList, emotions8, validEntityId, maxCharsFor)
+import ./ai (AiOpen, AiEvent, ERequest, EFallback, EAcceptedText, EAcceptedMedia, AiRequest, OpenReq, CStr, CList, emotions8, validEntityId, maxCharsFor)
 import ./rng (Rng, SAi, value, top53)
 import ./protocol (StateMsg, Session, newSession, serve, decodeState, encodeState)
 import std/option (Option, Some, None)
 import std/result (Ok, Err)
 import std/string (join, contains, intToStr, repeat)
 import std/list (map, foldl)
+import std/crypto (sha256Hex)
+import std/json (encode, js)
 
 -- ------------------------------------------------------------ helpers
 pure func allTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
@@ -95,10 +97,10 @@ pure func checkAiRequestFields() -> bool {
   let t = run(play(), [IAiOpen({textOpen() | purpose: "news", context: [{name: "topic", value: CStr("arrival")}, {name: "canon", value: CList(["archive.two-clocks"])}]}), IAiOpen(portraitOpen())]);
   match requests(t.events) {
     [a, b] => a.req == "1" && a.kind == "text" && a.purpose == "news" && a.key.emotion == "-" && a.key.ageStage == 0 && a.key.variant == "-" && a.key.entityId == "medic" &&
-      a.constraints.maxChars == 200 && a.constraints.noNumerals && strsEq(a.constraints.emotions, emotions8()) && a.expiresTick == 1 + 3600 &&
+      a.constraints.maxChars == 280 && a.constraints.noNumerals && strsEq(a.constraints.emotions, emotions8()) && a.expiresTick == 1 + 3600 &&
       (match a.context { [x, y] => x.name == "topic" && y.name == "canon", _ => false }) &&
       b.req == "2" && b.key.kind == "portrait" && b.key.emotion == "grieving" && b.key.ageStage == 50 && b.key.variant == "0" && b.constraints.maxChars == 280 &&
-      maxCharsFor("archive") == 600 && maxCharsFor("line") == 280,
+      maxCharsFor("archive") == 600 && maxCharsFor("line") == 280 && maxCharsFor("news") == 280 && maxCharsFor("probe") == 280,
     _ => false
   }
 }
@@ -162,15 +164,216 @@ pure func checkAiCancel() -> bool {
   strsEq(fallbacks(b.events), ["2:service_down", "1:provider_error"]) && strsEq(reasons(b.refused), ["1:ai_unknown_req", "2:ai_unknown_req", "3:ai_unknown_req"]) &&
   strsEq(openIds(b.world), []) && b.world.ai.lastReq == 2 && b.world.rng.ai == a.world.rng.ai
 }
--- record: refused `unsupported`, committed or not, until AI.3; it closes nothing.
-pure func checkAiRecordUnsupported() -> bool {
-  let a = run(play(), [IAiOpen(textOpen())]);
-  let r = IRecord({source: "ai", req: "1", kind: "text", sha256: "00", body: "{neutral} hi"});
-  let idle = run(a.world, [r]);
+-- ------------------------------------------------------------ AC3, AC4, AC6 part: record validation (AI.3)
+pure func has(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || has(x, r) }
+pure func hexA() -> string = repeat("ab", 32)
+pure func line2() -> string = "{loving}We made it. {grieving}She did not."
+pure func txt(req: string, body: string) -> Intent = IRecord({source: "ai", req: req, kind: "text", sha256: sha256Hex(body), body: body})
+pure func media(req: string, kind: string, body: string) -> Intent = IRecord({source: "ai", req: req, kind: kind, sha256: hexA(), body: body})
+-- Accepted results as "req:text:display:segments" or "req:media:kind".
+pure func acceptedOf(es: [Event]) -> [string] =
+  match es {
+    [] => [],
+    e :: more => match e.ai {
+      Some(x) => (match x {
+        EAcceptedText(t) => join(":", [t.req, "text", t.text, intToStr(len(t.segments))]) :: acceptedOf(more),
+        EAcceptedMedia(m) => join(":", [m.req, "media", m.kind]) :: acceptedOf(more),
+        _ => acceptedOf(more) }),
+      None => acceptedOf(more)
+    }
+  }
+pure func len(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + len(r) }
+
+-- A refused record for open request `req`: listed in refused, closes the
+-- request with ai_fallback{req, why} (no accepted event), the tick proceeds
+-- and a later open in the same tick still opens; a later valid record on the id
+-- is ai_unknown_req and emits nothing (one outcome per request).
+pure func closesIn(w: World, r: Intent, req: string, why: string) -> bool {
+  let t = run(w, [r, IAiOpen(textOpen())]);
+  let again = run(t.world, [txt(req, line2())]);
+  strsEq(reasons(t.refused), [join("", ["0:", why])]) && strsEq(fallbacks(t.events), [join(":", [req, why])]) &&
+  strsEq(acceptedOf(t.events), []) && !has(req, openIds(t.world)) && has(intToStr(w.ai.lastReq + 1), openIds(t.world)) &&
+  t.world.tick == w.tick + 1 && strsEq(reasons(again.refused), ["0:ai_unknown_req"]) && strsEq(fallbacks(again.events), []) &&
+  strsEq(acceptedOf(again.events), [])
+}
+pure func acceptsIn(w: World, r: Intent, req: string, want: string) -> bool {
+  let t = run(w, [r]);
+  strsEq(reasons(t.refused), []) && strsEq(fallbacks(t.events), []) && strsEq(acceptedOf(t.events), [want]) && !has(req, openIds(t.world))
+}
+-- Open request "1" in a play world.
+pure func openW(o: AiOpen) -> World = run(play(), [IAiOpen(o)]).world
+pure func medicText() -> World = openW({textOpen() | emotions: Some(["neutral", "loving", "grieving"])})
+pure func allText() -> World = openW(textOpen())
+-- Request "2": a voice line for accepted line "1" (two segments).
+pure func voiceOpen(line: string) -> AiOpen = {open("voice", "line", "medic") | lineReq: Some(line)}
+pure func voiceW() -> World = run(run(play(), [IAiOpen(textOpen()), txt("1", line2())]).world, [IAiOpen(voiceOpen("1"))]).world
+
+-- Media descriptors (design (a1) ai_descriptor; key per design (a4)).
+pure func q(s: string) -> string = join("", ["\"", s, "\""])
+pure func keyJ(kind: string, emotion: string, age: string, variant: string) -> string =
+  join("", ["{\"kind\":", q(kind), ",\"entity_id\":\"medic\",\"emotion\":", q(emotion), ",\"age_stage\":", age, ",\"variant\":", variant, "}"])
+pure func desc(key: string, rest: string) -> string = join("", ["{\"key\":", key, ",", rest, "}"])
+pure func pkey() -> string = keyJ("portrait", "grieving", "50", q("0"))
+pure func img() -> string = "\"mime\":\"image/png\",\"bytes\":2287104,\"width\":1024,\"height\":1536"
+pure func vkey(variant: string) -> string = keyJ("voice", "-", "0", variant)
+pure func voice(variant: string, dur: string, segs: string) -> string =
+  desc(vkey(variant), join("", ["\"mime\":\"audio/ogg\",\"bytes\":84211,\"duration_ms\":", dur, ",\"segments_ms\":", segs]))
+
+pure func checkAiRefusals() -> bool = recSource() && recLength() && recText() && recImages() && recVoice()
+pure func recSource() -> bool {
+  let w = medicText();
+  let p = openW(portraitOpen());
+  -- ai_source (closes); for a request that is not open it closes nothing
+  closesIn(w, IRecord({source: "player", req: "1", kind: "text", sha256: sha256Hex(line2()), body: line2()}), "1", "ai_source") &&
+  strsEq(reasons(run(w, [IRecord({source: "", req: "9", kind: "text", sha256: "00", body: "x"})]).refused), ["0:ai_source"]) &&
+  strsEq(openIds(run(w, [IRecord({source: "", req: "9", kind: "text", sha256: "00", body: "x"})]).world), ["1"]) &&
+  -- ai_unknown_req: closes nothing, emits nothing
+  strsEq(reasons(run(w, [txt("9", line2()), txt("01", line2())]).refused), ["0:ai_unknown_req", "1:ai_unknown_req"]) &&
+  strsEq(openIds(run(w, [txt("9", line2())]).world), ["1"]) && strsEq(fallbacks(run(w, [txt("9", line2())]).events), []) &&
+  -- ai_kind
+  closesIn(w, IRecord({source: "ai", req: "1", kind: "voice", sha256: sha256Hex(line2()), body: line2()}), "1", "ai_kind") &&
+  closesIn(p, media("1", "avatar", desc(pkey(), img())), "1", "ai_kind") &&
+  -- ai_hash: text sha256 of the body (lowercase hex); media 64 lowercase hex
+  closesIn(w, IRecord({source: "ai", req: "1", kind: "text", sha256: sha256Hex("other"), body: line2()}), "1", "ai_hash") &&
+  closesIn(w, IRecord({source: "ai", req: "1", kind: "text", sha256: "C54B26B4285685F740038564CFF29C479785D6D5F151549CC694A2A0342154DA", body: line2()}), "1", "ai_hash") &&
+  closesIn(p, IRecord({source: "ai", req: "1", kind: "portrait", sha256: "00", body: desc(pkey(), img())}), "1", "ai_hash") &&
+  closesIn(p, IRecord({source: "ai", req: "1", kind: "portrait", sha256: repeat("AB", 32), body: desc(pkey(), img())}), "1", "ai_hash") &&
+  closesIn(p, IRecord({source: "ai", req: "1", kind: "portrait", sha256: repeat("a", 63), body: desc(pkey(), img())}), "1", "ai_hash")
+}
+pure func recLength() -> bool =
+  -- ai_length: display text over max_chars, in code points; the body bound (max_chars + 176) refuses unparsed
+  closesIn(allText(), txt("1", repeat("a", 281)), "1", "ai_length") && acceptsIn(allText(), txt("1", join("", ["{happy}", repeat("a", 280)])), "1", join(":", ["1", "text", repeat("a", 280), "1"])) &&
+  closesIn(allText(), txt("1", repeat("ø", 281)), "1", "ai_length") && acceptsIn(allText(), txt("1", repeat("ø", 280)), "1", join(":", ["1", "text", repeat("ø", 280), "1"])) &&
+  closesIn(allText(), txt("1", join("", [repeat(" ", 455), "Hi"])), "1", "ai_length") && acceptsIn(allText(), txt("1", join("", [repeat(" ", 454), "Hi"])), "1", "1:text:Hi:1") &&
+  closesIn(allText(), txt("1", repeat("a{sad}", 5000)), "1", "ai_length") &&
+  closesIn(openW(open("text", "archive", "archive")), txt("1", repeat("b", 601)), "1", "ai_length") &&
+  acceptsIn(openW(open("text", "archive", "archive")), txt("1", repeat("b", 600)), "1", join(":", ["1", "text", repeat("b", 600), "1"])) &&
+  closesIn(openW(open("text", "news", "medic")), txt("1", repeat("n", 281)), "1", "ai_length") &&
+  acceptsIn(openW(open("text", "news", "medic")), txt("1", repeat("n", 280)), "1", join(":", ["1", "text", repeat("n", 280), "1"]))
+pure func recText() -> bool {
+  let w = medicText();
+  -- ai_numeral: any ASCII digit, every purpose (D-21)
+  closesIn(w, txt("1", "{loving}Year 2041."), "1", "ai_numeral") && closesIn(openW(open("text", "archive", "archive")), txt("1", "Founded in 1"), "1", "ai_numeral") &&
+  closesIn(openW(open("text", "news", "medic")), txt("1", "0 days"), "1", "ai_numeral") &&
+  acceptsIn(w, txt("1", "{loving}Year two thousand and forty-one."), "1", "1:text:Year two thousand and forty-one.:1") &&
+  -- ai_markup: the grammar (b), including a segment of invisible characters only
+  closesIn(w, txt("1", "{joyful}Hi"), "1", "ai_markup") && closesIn(w, txt("1", "[sigh] Hi"), "1", "ai_markup") &&
+  closesIn(w, txt("1", "Hi{loving}"), "1", "ai_markup") && closesIn(w, txt("1", "{loving}​"), "1", "ai_markup") && closesIn(w, txt("1", ""), "1", "ai_markup") &&
+  -- ai_emotion: a marker (or the leading neutral) outside constraints.emotions
+  closesIn(w, txt("1", "{happy}Hi"), "1", "ai_emotion") && closesIn(openW({textOpen() | emotions: Some(["loving"])}), txt("1", "Hi"), "1", "ai_emotion") &&
+  acceptsIn(w, txt("1", line2()), "1", "1:text:We made it. She did not.:2") &&
+  -- table order when several checks fail
+  closesIn(w, IRecord({source: "x", req: "1", kind: "voice", sha256: "00", body: "1"}), "1", "ai_source") &&
+  closesIn(w, IRecord({source: "ai", req: "1", kind: "voice", sha256: "00", body: "1"}), "1", "ai_kind") &&
+  closesIn(w, IRecord({source: "ai", req: "1", kind: "text", sha256: "00", body: repeat("1", 300)}), "1", "ai_hash") &&
+  closesIn(w, txt("1", repeat("1", 300)), "1", "ai_length") && closesIn(w, txt("1", "[1]"), "1", "ai_numeral") &&
+  closesIn(w, txt("1", "{happy}{sad}"), "1", "ai_markup")
+}
+pure func recImages() -> bool {
+  let p = openW(portraitOpen());
+  -- ai_descriptor, images: a JSON object with the request's key (variant included), image mime, bytes, width, height
+  acceptsIn(p, media("1", "portrait", desc(pkey(), img())), "1", "1:media:portrait") &&
+  acceptsIn(p, media("1", "portrait", desc(pkey(), join("", [img(), ",\"source\":\"blender\""]))), "1", "1:media:portrait") &&
+  acceptsIn(openW(open("avatar", "line", "medic")), media("1", "avatar", desc(keyJ("avatar", "-", "0", q("0")), img())), "1", "1:media:avatar") &&
+  closesIn(p, media("1", "portrait", "not json"), "1", "ai_descriptor") && closesIn(p, media("1", "portrait", "[1,2]"), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(keyJ("portrait", "sad", "50", q("0")), img())), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(keyJ("portrait", "grieving", "0", q("0")), img())), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(keyJ("portrait", "grieving", "50", q("1")), img())), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(keyJ("avatar", "grieving", "50", q("0")), img())), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(pkey(), "\"mime\":\"audio/ogg\",\"bytes\":1,\"width\":1,\"height\":1")), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(pkey(), "\"mime\":\"image/\",\"bytes\":1,\"width\":1,\"height\":1")), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(pkey(), "\"mime\":\"image/png\",\"bytes\":1,\"width\":0,\"height\":1")), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(pkey(), "\"mime\":\"image/png\",\"bytes\":1,\"width\":1")), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(pkey(), "\"mime\":\"image/png\",\"width\":1,\"height\":1")), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(pkey(), "\"mime\":\"image/png\",\"bytes\":1.5,\"width\":1,\"height\":1")), "1", "ai_descriptor") &&
+  closesIn(p, media("1", "portrait", desc(pkey(), join("", [img(), ",\"pad\":\"", repeat("x", 4000), "\""]))), "1", "ai_descriptor")
+}
+pure func recVoice() -> bool {
+  let v = voiceW();
+  -- ai_descriptor, voice: key without the sha-derived variant compared, audio mime, one offset per line segment, 0 first, strictly increasing, below duration_ms
+  acceptsIn(v, media("2", "voice", voice(q("3f2a9c0d1e4b5a6c"), "5300", "[0,2100]")), "2", "2:media:voice") &&
+  acceptsIn(v, media("2", "voice", voice(q("-"), "5300", "[0,5299]")), "2", "2:media:voice") &&
+  closesIn(v, media("2", "voice", desc("{\"kind\":\"voice\",\"entity_id\":\"medic\",\"emotion\":\"-\",\"age_stage\":0}", "\"mime\":\"audio/ogg\",\"bytes\":1,\"duration_ms\":5300,\"segments_ms\":[0,2100]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice("7", "5300", "[0,2100]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", desc(keyJ("voice", "neutral", "0", q("x")), "\"mime\":\"audio/ogg\",\"bytes\":1,\"duration_ms\":5300,\"segments_ms\":[0,2100]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "5300", "[0]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "5300", "[0,2100,4000]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "5300", "[0,0]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "5300", "[100,2100]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "5300", "[0,5300]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "5300", "[0,2100.5]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "5300", "[2100,0]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "0", "[0,2100]")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", voice(q("x"), "5300", "\"0,2100\"")), "2", "ai_descriptor") &&
+  closesIn(v, media("2", "voice", desc(vkey(q("x")), "\"mime\":\"image/png\",\"bytes\":1,\"duration_ms\":5300,\"segments_ms\":[0,2100]")), "2", "ai_descriptor")
+}
+
+-- One outcome per request (AC4): after an acceptance, a refusal, a cancel
+-- or an expiry, a record on the id is ai_unknown_req and emits nothing; in
+-- one tick the first of record and cancel wins.
+pure func onceAfter(w: World, xs: [Intent]) -> bool {
+  let t = run(run(w, xs).world, [txt("1", line2())]);
+  strsEq(reasons(t.refused), ["0:ai_unknown_req"]) && strsEq(fallbacks(t.events), []) && strsEq(acceptedOf(t.events), [])
+}
+pure func checkAiOnce() -> bool {
+  let w = allText();
+  let both = run(w, [txt("1", line2()), IAiCancel({req: "1", reason: "timeout"}), txt("1", line2())]);
+  let cancelFirst = run(w, [IAiCancel({req: "1", reason: "timeout"}), txt("1", line2())]);
+  let ttl = run(withParams({defaultParams() | aiTtlTicks: 1}), [IAiOpen(textOpen())]).world;
+  onceAfter(w, [txt("1", line2())]) && onceAfter(w, [txt("1", "{joyful}x")]) && onceAfter(w, [IAiCancel({req: "1", reason: "offline"})]) &&
+  onceAfter(ttl, []) &&
+  strsEq(acceptedOf(both.events), ["1:text:We made it. She did not.:2"]) && strsEq(reasons(both.refused), ["1:ai_unknown_req", "2:ai_unknown_req"]) &&
+  strsEq(fallbacks(both.events), []) &&
+  strsEq(fallbacks(cancelFirst.events), ["1:timeout"]) && strsEq(reasons(cancelFirst.refused), ["1:ai_unknown_req"]) && strsEq(acceptedOf(cancelFirst.events), [])
+}
+
+-- The sim's sha256Hex(body) equals `printf '%s' BODY | shasum -a 256`
+-- (committed vectors), UTF-8 bytes, non-ASCII included; a record carrying
+-- the shasum vector of a non-ASCII body is accepted.
+pure func checkAiHash() -> bool =
+  sha256Hex(line2()) == "c54b26b4285685f740038564cff29c479785d6d5f151549cc694a2a0342154da" &&
+  sha256Hex("{fearful}Ça va? 星が見える") == "70e55f9aa9ee1218d06264b79f9cc9dc7bb6536a37f820496cfa23021f795684" &&
+  sha256Hex("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" &&
+  sha256Hex("Æblegrød 🚀") == "dd0e8fc559034b790c508382d2f45b59eba237fc8c2af5aa247fb931d0036b1d" &&
+  acceptsIn(allText(), IRecord({source: "ai", req: "1", kind: "text", sha256: "70e55f9aa9ee1218d06264b79f9cc9dc7bb6536a37f820496cfa23021f795684", body: "{fearful}Ça va? 星が見える"}),
+    "1", "1:text:Ça va? 星が見える:1")
+
+-- ai.lines: the last 64 accepted text lines (oldest first). A voice open
+-- naming an evicted line is ai_stale; a voice request keeps the segment
+-- count it opened with, so its record still validates after the line has
+-- left ai.lines. Refused text and media never join ai.lines.
+pure func pairs(i: int, n: int) -> [Intent] =
+  if i > n then [] else IAiOpen(textOpen()) :: txt(intToStr(i), "{loving}Hello {grieving}there") :: pairs(i + 1, n)
+pure func checkAiLines() -> bool {
+  let a = run(play(), pairs(1, 64)).world;
+  let b = run(a, [IAiOpen(voiceOpen("1")), IAiOpen(voiceOpen("64"))]);
+  let c = run(b.world, [IAiOpen(textOpen()), txt("67", "Fresh line.")]);
+  let d = run(c.world, [IAiOpen(voiceOpen("1")), IAiOpen(voiceOpen("2")), media("65", "voice", voice(q("v"), "900", "[0,450]"))]);
+  let r = run(c.world, [IAiOpen(textOpen()), txt("68", "{joyful}no"), IAiOpen(portraitOpen())]);
+  len(a.ai.lines) == 64 && a.ai.lastReq == 64 && strsEq(reasons(b.refused), []) && strsEq(reqIds(b.events), ["65", "66"]) &&
+  len(c.world.ai.lines) == 64 && (match c.world.ai.lines { x :: _ => x.req == 2, [] => false }) &&
+  strsEq(reasons(d.refused), ["0:ai_stale"]) && strsEq(reqIds(d.events), ["68"]) && strsEq(acceptedOf(d.events), ["65:media:voice"]) &&
+  len(r.world.ai.lines) == 64 && strsEq(map(\l. intToStr(l.req), r.world.ai.lines), map(\l. intToStr(l.req), c.world.ai.lines)) &&
+  (match a.ai.lines { x :: _ => x.entityId == "medic" && len(x.segments) == 2, [] => false })
+}
+
+-- ai_open refusal precedence holds with a full queue (AI.2 evaluation): the
+-- table's order ai_kind, ai_bad_key, ai_stale before ai_too_many; and the
+-- emotions list is deduplicated, first occurrence kept.
+pure func checkAiOpenPrecedence() -> bool {
+  let full = run(withParams({defaultParams() | aiMaxOpen: 2}), [IAiOpen(textOpen()), IAiOpen(portraitOpen())]).world;
+  let t = run(full, [IAiOpen(open("warp", "line", "medic")), IAiOpen(open("text", "line", "BAD")), IAiOpen(voiceOpen("9")), IAiOpen(textOpen()), IAiOpen(open("text", "probe", "medic"))]);
+  let d = run(play(), [IAiOpen({textOpen() | emotions: Some(["neutral", "neutral", "loving", "neutral", "grieving", "loving"])})]);
+  strsEq(reasons(t.refused), ["0:ai_kind", "1:ai_bad_key", "2:ai_stale", "3:ai_too_many", "4:diag_only"]) &&
+  (match requests(d.events) { [x] => strsEq(x.constraints.emotions, ["neutral", "loving", "grieving"]), _ => false })
+}
+
+-- Records are accepted while a journey is committed (D-20) and leave it committed.
+pure func checkAiRecordWhileCommitted() -> bool {
   let c = run(committed(), [IAiOpen(textOpen())]);
-  let cr = tick(c.world, {dtau: 0.25, intents: [r]});
-  strsEq(reasons(idle.refused), ["0:unsupported"]) && strsEq(openIds(idle.world), ["1"]) &&
-  strsEq(reasons(cr.refused), ["0:unsupported"]) && strsEq(openIds(cr.world), ["1"])
+  let cr = tick(c.world, {dtau: 0.25, intents: [txt("1", line2())]});
+  strsEq(reasons(cr.refused), []) && strsEq(acceptedOf(cr.events), ["1:text:We made it. She did not.:2"]) &&
+  (match cr.world.journey { Committed(_) => true, _ => false })
 }
 
 -- ------------------------------------------------------------ AC5: AI never touches the journey
@@ -239,17 +442,32 @@ pure func checkAiNeverTouchesJourney() -> bool {
 
 -- ------------------------------------------------------------ strict VM (aiVm)
 -- A scripted 2.1 session: opens of every kind, refusals, cancels, an
--- expiry, opens while committed. Prints every reply (VM == interpreter,
+-- expiry, opens while committed, then records (AI.3). Prints every reply (VM == interpreter,
 -- byte for byte), then ai-ok when every check above holds.
 pure func script() -> [string] = [hello(), "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"ai_ttl_ticks\":3,\"ai_max_open\":3}}",
   tickLine(1, "0", join(",", aiLines())),
   tickLine(2, "0", "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"probe\",\"entity_id\":\"medic\"},{\"k\":\"ai_open\",\"kind\":\"voice\",\"purpose\":\"line\",\"entity_id\":\"medic\",\"line_req\":\"1\"}"),
   tickLine(3, "0", acenLine()), tickLine(4, "0", "{\"k\":\"commit\",\"plan_id\":1}"),
   tickLine(5, "0.25", "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"archive\",\"entity_id\":\"archive\",\"emotions\":[\"neutral\"]},{\"k\":\"thrust\",\"thrust\":1},{\"k\":\"ai_cancel\",\"req\":\"5\",\"reason\":\"text_only\"}"),
-  tickLine(6, "0.25", ""), tickLine(7, "0.25", ""), tickLine(8, "0.25", "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"news\",\"entity_id\":\"medic\"}")]
+  tickLine(6, "0.25", ""), tickLine(7, "0.25", ""), tickLine(8, "0.25", "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"news\",\"entity_id\":\"medic\"}")] ++ recordScript()
+-- AI.3: a second game with records on the wire: text, portrait and voice
+-- accepted (ai_accepted with segments or the descriptor), then refusals
+-- that close their requests (ai_fallback), an unknown request, an
+-- invisible-only segment and an over-long body.
+pure func wireRec(req: string, kind: string, sha: string, body: string) -> string =
+  join("", ["{\"k\":\"record\",\"source\":\"ai\",\"req\":\"", req, "\",\"kind\":\"", kind, "\",\"sha256\":\"", sha, "\",\"body\":", encode(js(body)), "}"])
+pure func wireText(req: string, body: string) -> string = wireRec(req, "text", sha256Hex(body), body)
+pure func openText() -> string = "{\"k\":\"ai_open\",\"kind\":\"text\",\"purpose\":\"line\",\"entity_id\":\"medic\",\"emotions\":[\"neutral\",\"loving\",\"grieving\",\"loving\"]}"
+pure func recordScript() -> [string] = [game("true"),
+  tickLine(1, "0", join(",", [openText(), "{\"k\":\"ai_open\",\"kind\":\"portrait\",\"purpose\":\"line\",\"entity_id\":\"medic\",\"emotion\":\"grieving\",\"age_stage\":50}",
+    wireText("1", line2()), wireRec("2", "portrait", hexA(), desc(pkey(), img()))])),
+  tickLine(2, "0", join(",", ["{\"k\":\"ai_open\",\"kind\":\"voice\",\"purpose\":\"line\",\"entity_id\":\"medic\",\"line_req\":\"1\"}",
+    wireRec("3", "voice", hexA(), voice(q("3f2a9c0d1e4b5a6c"), "5300", "[0,2100]")), openText(), wireText("4", "{joyful}Hi"), wireText("9", "Hi")])),
+  tickLine(3, "0", join(",", [openText(), openText(), openText(), wireText("5", "Year 2041"), wireText("6", "{loving}​"), wireText("7", repeat("a{sad}", 100))]))]
 pure func replies(s: Session, lines: [string]) -> [string] = match lines { [] => [], l :: more => { let r = serve(s, l); r.reply :: replies(r.session, more) } }
 export pure func aiVm(n: int) -> string =
-  if checkAiOpenRefusals() && checkAiRequestFields() && checkAiIds() && checkAiSeeds() && checkAiExpiry() && checkAiCancel() && checkAiRecordUnsupported() && checkAiNeverTouchesJourney()
+  if checkAiOpenRefusals() && checkAiRequestFields() && checkAiIds() && checkAiSeeds() && checkAiExpiry() && checkAiCancel() && checkAiNeverTouchesJourney() &&
+    checkAiRefusals() && checkAiOnce() && checkAiHash() && checkAiLines() && checkAiOpenPrecedence() && checkAiRecordWhileCommitted()
   then join("\n", replies(newSession(), script()) ++ ["ai-ok"]) else "ai-BAD"
 
 test "AC3 ai_open refusals: ai_kind, diag_only, ai_bad_key, ai_stale, ai_too_many open nothing" { checkAiOpenRefusals() }
@@ -258,5 +476,10 @@ test "AC4 request ids monotonic, decimal, never reused" { checkAiIds() }
 test "seed = top 53 bits of one ai-stream draw per open" { checkAiSeeds() }
 test "AC4 expiry emits ai_fallback expired exactly at expires_tick" { checkAiExpiry() }
 test "ai_cancel closes once; unknown requests refused ai_unknown_req" { checkAiCancel() }
-test "record stays unsupported until AI.3, committed or not" { checkAiRecordUnsupported() }
 test "AC5 AI intents never touch ship, journey, ledger or non-ai streams" { checkAiNeverTouchesJourney() }
+test "AC3 record refusals fire on their fixtures and close the request (ai_unknown_req closes nothing)" { checkAiRefusals() }
+test "AC4 one outcome per request: a second record is ai_unknown_req" { checkAiOnce() }
+test "AC6 sha256Hex(body) equals the shasum vectors, non-ASCII included" { checkAiHash() }
+test "ai.lines keeps the last 64 accepted lines; ai_stale past them" { checkAiLines() }
+test "ai_open refusal order holds with a full queue; emotions deduplicated" { checkAiOpenPrecedence() }
+test "record accepted while committed, journey stays committed" { checkAiRecordWhileCommitted() }

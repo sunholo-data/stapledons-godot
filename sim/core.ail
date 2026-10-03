@@ -95,7 +95,7 @@ export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossin
 export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None }
 
 -- aiMaxOpen, aiTtlTicks: AI request limits (design ai-service-foundation
--- (a1)); not echoed on the wire until AI.3 (protocol 2.1 minor bump).
+-- (a1)); echoed as the last two params keys since protocol 2.1 (AI.3).
 export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
 export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,

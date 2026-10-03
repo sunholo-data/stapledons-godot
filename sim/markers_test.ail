@@ -61,6 +61,11 @@ pure func mkInvalid() -> [{raw: string, code: string}] = [
   {raw: "{happy}", code: "empty_segment"},
   {raw: "", code: "empty_segment"},
   {raw: "   ", code: "empty_segment"},
+  {raw: "{happy}\u200B", code: "empty_segment"},
+  {raw: "\u200B", code: "empty_segment"},
+  {raw: "{sad}\u200B\u200D\uFEFF {happy}Hi", code: "empty_segment"},
+  {raw: "\u2060 {sad}x", code: "empty_segment"},
+  {raw: "{loving}\u00AD\u200E\u202A\u2066\u034F", code: "empty_segment"},
   {raw: "[sigh] Hi", code: "bracket"},
   {raw: "{sad}Hi [pause] there", code: "bracket"},
   {raw: "Hi ]", code: "bracket"},
@@ -148,6 +153,15 @@ pure func checkNonAscii() -> bool =
   (match parseLine("{fearful}Ça va? 星が見える") { Ok(s) => length(displayText(s)) == 12, Err(_) => false }) &&
   mkParsesTo("{loving}Æ ø å", [mkSeg("loving", "Æ ø å")])
 
+-- AI.3 (AI.1 evaluation): a segment made only of invisible characters
+-- (zero-width space U+200B, joiners, word joiner, BOM, soft hyphen, bidi
+-- marks; std/string.trim keeps them) is empty_segment; an invisible
+-- character inside visible text is kept.
+pure func checkInvisibleOnly() -> bool =
+  mkCode("{happy}\u200B") == "ai_markup:empty_segment" && mkCode("\u200C\u200D\u2060\uFEFF") == "ai_markup:empty_segment" &&
+  mkCode("Hi {sad}\u200B {happy}there") == "ai_markup:empty_segment" && mkCode("{grieving}\u2063\u180E\u200F\u202E\u2069") == "ai_markup:empty_segment" &&
+  mkParsesTo("{happy}Hi\u200Bthere", [mkSeg("happy", "Hi\u200Bthere")]) && mkParsesTo("\u200Bx", [mkSeg("neutral", "\u200Bx")])
+
 pure func checkEmotions8() -> bool =
   join(",", emotions8()) == "neutral,happy,sad,angry,fearful,curious,loving,grieving" &&
   mkAll(map(isEmotion, emotions8())) && !isEmotion("joyful") && !isEmotion("Happy") && !isEmotion("") && !isEmotion("-")
@@ -170,7 +184,7 @@ pure func checkPickPortrait() -> bool {
 pure func mkAllChecks() -> bool =
   checkEveryErrorCode() && checkBracketRefused() && checkLeadingNeutral() && checkMergeAdjacent() && checkTrimming() &&
   checkDisplayText() && checkSegmentLimit() && checkPrintParse() && checkParsePrint() && checkNonAscii() &&
-  checkEmotions8() && checkFallbackTable() && checkPickPortrait()
+  checkEmotions8() && checkFallbackTable() && checkPickPortrait() && checkInvisibleOnly()
 
 -- Strict-VM entry (`make strict-ai`): the normal form or error code of every
 -- fixture, the emotion list (checked against data/ai/emotion_styles.json),
@@ -194,3 +208,4 @@ test "AI.1 non-ASCII text, length in code points" { checkNonAscii() }
 test "AI.1 the 8 emotions" { checkEmotions8() }
 test "AI.1 portrait fallback chains" { checkFallbackTable() }
 test "AI.1 portrait pick from the emotions a person has" { checkPickPortrait() }
+test "AI.3 a segment of invisible characters only is empty_segment" { checkInvisibleOnly() }

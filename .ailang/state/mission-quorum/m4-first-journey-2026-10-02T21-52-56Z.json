@@ -1,0 +1,64 @@
+{
+  "doc": "m4-first-journey.md",
+  "iso_ts": "2026-10-02T21:52:56Z",
+  "reviewers": [
+    {
+      "model": "gemini-3-1-pro",
+      "cost_usd": 0.031262000000000005,
+      "tokens_in": 14311,
+      "tokens_out": 220,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The document violates the 'no silent fallbacks' axiom. In M4.1 and M4.4, if the AI service generates rejected text (e.g., due to length or numerals), the design states 'the template stands (fallback logged)'. Masking an AI generation failure or constraint violation by seamlessly displaying the pre-authored template without an in-game, player-visible indicator is a silent fallback.",
+        "catch": "Section M4.1 ('AI results are inputs') and Section M4.4 ('AI path (optional): ... otherwise the template stands (fallback logged)').",
+        "proposed_fix": "Modify the AI rejection path to explicitly surface the fallback to the player in-game. Change 'the template stands' to 'the template is displayed with an explicit in-game warning (e.g., [TRANSMISSION DEGRADED - FALLBACK ACTIVE]) to ensure the AI failure is not silently swallowed by the UI'."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0.1133874,
+      "tokens_in": 13121,
+      "tokens_out": 21595,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Load-bearing premises about the sibling design repo are asserted, not verified, and the doc's own log proves the underlying content was in flux during this revision. The forward glow's defining constant ε is never assigned a value anywhere in the doc — M4.1 says `glow_w_m2 = ε × load, ε being higgs-bubble.md's inelastic fraction`, M4.2 defers the spectrum to the same file, and no gate pins ε (G-M4-4 compares the overlay to the CPU profile, i.e. internal consistency, not the constant's value). Worse, V11 shows the drag numbers were halved against D-11's attended worked estimates (flat-mirror 46.52 N / 2.73e17 J → sphere 23.26 N / 1.3653e17 J) 'before the higgs-bubble.md reconciliation', yet the only evidence is a scratchpad `m4.py`, not the package, and nothing verifies that higgs-bubble.md's HB table now carries the reconciled sphere rows. AC8 requires the sim's readouts to be 'equal to the HB rows' and M4.7 requires registry source (a) to agree with the vendored HB table — if that table still holds D-11's flat-mirror values, both acceptance criteria are unsatisfiable as written. The same unverified border covers `lore/archive/*.md`, whose `id, title, unlock, checks:` front matter M4.7's importer and `make lore-check` presuppose with no V row, and brief §9's manifest schema, which M4.0's loader implements field-for-field sight unseen. The verification log stops at the game repo's edge exactly where M4's two most novel subsystems (glow, lore-check) depend.",
+        "catch": "Rows V1–V11 pin only the game repo (`e9d35c5`, `fe16790`). Nothing pins `../stapledons-design`: (1) higgs-bubble.md's current HB rows and the existence/value of ε; (2) whether `lore/archive/*.md` exists today with the `checks:` front matter and unlock kinds the importer and `lore-check` require; (3) brief §9's manifest fields vs. the M4.0 loader schema. Additionally, ε is a free constant that no check in M4 constrains, and the drag numbers diverge 2× from the attended ruling D-11 on the strength of an unverified 'reconciliation'.",
+        "proposed_fix": "Add three read-only verification rows at a pinned design-repo sha and record that sha in the doc's Evidence line. V12: `git -C ../stapledons-design rev-parse HEAD \u0026\u0026 grep -n 'HB-' physics/higgs-bubble.md`, quoting the rows for load 2.2196e5 W/m², drag 23.26 N (specular sphere), 1.3653e17 J, and ε; if the table still shows D-11's flat-mirror 46.52 N / 2.73e17 J, either land the reconciliation in higgs-bubble.md before M4.1 or revert M4.1's drag numbers — AC8 asserts equality with the HB rows and cannot precede them. V13: `ls ../stapledons-design/lore/archive/*.md` plus a front-matter dump showing `id, title, unlock, checks:` with unlock kinds matching the sim's event kinds; if the entries are unwritten, mark M4.7 blocked-on-delivery the way M4.2 is art-gated and move the unlock-kind list from assumption to check. V14: brief §9's `manifest.json` field list quoted against M4.0's loader/validator schema. Then state ε's numeric value and HB id in M4.1, register it in `data/lore/check_values.json`, and extend G-M4-4 with an absolute case (overlay radiance at θ = 0 equals ε × load within 1 %) so the glow's brightness is pinned by a gate rather than only by Mark's eye at S1."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.263559,
+      "tokens_in": 13053,
+      "tokens_out": 14960,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Gate 1 failure: the milestone's numeric backbone — AC1's trip times, AC8's ISM constants, and the claim 'No new formula in M4: trip, ISM and glow functions come from the package' — rests on package functions whose existence is asserted, never verified. The log's own V4 grep of relativity 0.3.0 lists gammaOf/oneMinusBeta/flipAndBurn/burnCoastBurn/coastAt and nothing else: no boost→cruise→brake trip export and no ISM load/drag/flux export anywhere (higgs-bubble.md is a Markdown design doc, not a package). Worse, the golden values (4.398169/0.620438 yr; 2.2196e5 W/m²; 23.26 N; 1.3653e17 J) were all produced by an out-of-tree Python scratchpad (m4.py, V9–V11), and V11 records that higgs-bubble.md was 'reconciled' to that same scratchpad (flat-mirror 46.52 N → sphere 23.26 N). So AC8's 'equal to the HB rows' currently means 'equal to numbers the author's Python script wrote into a design doc' — the anti-drift mechanism the doc advertises (AC15, lore-values (a) vs (b)) is circular at inception, and the 1e-9/1e-3 tolerances have no verified upstream source to bind to until M2 lands functions this doc has not confirmed anyone is building.",
+        "catch": "Two specific things to verify or fix before this proceeds. (1) V4's grep output includes `coastAt`, an existing closed-form journey export whose name matches precisely the τ_b→0 computation M4/M2 plan to (re)build, yet the doc never states its signature, what it computes, or why it is not reused or referenced by AC1 — a Gate 2 conflict-surface gap hiding inside the doc's own evidence row. (2) AC1's 'within 1e-4 of the τ_b→0 values' clause silently constrains M2's boost/brake duration: V9's own rates (Δship 2.56e-6 per minute per phase; the 60-min row already shows 1.53e-4 for one phase) mean the round-trip total stays under 1e-4 only for τ_b of order 10–20 min (depending on whether V9's deltas are per phase or per leg — the doc doesn't say), while τ_b is explicitly 'whatever τ_b M2 fixes' in a co-evolving doc. Minor unverified claims to log or drop: the four fixture files on spike/iso-bridge (only cam_bridge.json has a row), PR #16, and the 331k-star count.",
+        "proposed_fix": "(1) Add verification rows before this leaves 'Planned': V12 — paste `coastAt`'s signature and doc comment from journey.ail; if it is the fixed-β coast trip, route AC1's 'package trip function' to it or add a justified non-reuse note to 'Interfaces assumed' (Gate 2). V13 — grep the package registry for ISM/flux/drag exports; if none exist, rewrite the offending sentences as 'ISM load, drag and glow functions are added to the relativity package by M2 item N (else implemented in sim/consequence.ail under physics gate 2)' so the premise is a tracked dependency rather than an assertion. V14 — `git ls-tree -r --name-only origin/spike/iso-bridge` for the four fixture paths, and record the stapledons-design HEAD sha plus higgs-bubble.md sha256, with prose stating the HB rows' current provenance is m4.py pending the package cross-check. (2) Amend AC1's second clause to 'within 1e-4 of the τ_b→0 values, valid for M2's τ_b ≤ 10 min per phase (per V9); if M2 ships a larger τ_b the tolerance becomes the package's computed boost/brake correction', and add that bound as a row in 'Interfaces assumed' so the constraint is contractual, not silent. (3) Close the CI hole the doc itself creates: make `lore-import CHECK=1` fail closed where it matters — clone the design repo in the CI job, or fail the build when the sibling checkout is absent — so AC17's cross-repo drift check actually runs in the environment where regressions are caught, instead of skipping with a notice."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Direction sound and dependencies landed (M2) or in flight (M1-SKY-2, AI foundation). Notes: new OQ1 warp units and OQ3 lore vendoring have defaults but no ledger ruling; new OQ2 (forward CMB) is covered by D-19's M1.8; AC4/AC7/AC15/AC16 name Python tools that must be harness-role under the repo Python policy."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "gemini-3-1-pro: The document violates the 'no silent fallbacks' axiom. In M4.1 and M4.4, if the AI service generates rejected text (e.g., due to length or numerals), the design states 'the template stands (fallback logged)'. Masking an AI generation failure or constraint violation by seamlessly displaying the pre-authored template without an in-game, player-visible indicator is a silent fallback.",
+      "oc-glm-5-3: Load-bearing premises about the sibling design repo are asserted, not verified, and the doc's own log proves the underlying content was in flux during this revision. The forward glow's defining constant ε is never assigned a value anywhere in the doc — M4.1 says `glow_w_m2 = ε × load, ε being higgs-bubble.md's inelastic fraction`, M4.2 defers the spectrum to the same file, and no gate pins ε (G-M4-4 compares the overlay to the CPU profile, i.e. internal consistency, not the constant's value). Worse, V11 shows the drag numbers were halved against D-11's attended worked estimates (flat-mirror 46.52 N / 2.73e17 J → sphere 23.26 N / 1.3653e17 J) 'before the higgs-bubble.md reconciliation', yet the only evidence is a scratchpad `m4.py`, not the package, and nothing verifies that higgs-bubble.md's HB table now carries the reconciled sphere rows. AC8 requires the sim's readouts to be 'equal to the HB rows' and M4.7 requires registry source (a) to agree with the vendored HB table — if that table still holds D-11's flat-mirror values, both acceptance criteria are unsatisfiable as written. The same unverified border covers `lore/archive/*.md`, whose `id, title, unlock, checks:` front matter M4.7's importer and `make lore-check` presuppose with no V row, and brief §9's manifest schema, which M4.0's loader implements field-for-field sight unseen. The verification log stops at the game repo's edge exactly where M4's two most novel subsystems (glow, lore-check) depend.",
+      "oc-kimi-k3: Gate 1 failure: the milestone's numeric backbone — AC1's trip times, AC8's ISM constants, and the claim 'No new formula in M4: trip, ISM and glow functions come from the package' — rests on package functions whose existence is asserted, never verified. The log's own V4 grep of relativity 0.3.0 lists gammaOf/oneMinusBeta/flipAndBurn/burnCoastBurn/coastAt and nothing else: no boost→cruise→brake trip export and no ISM load/drag/flux export anywhere (higgs-bubble.md is a Markdown design doc, not a package). Worse, the golden values (4.398169/0.620438 yr; 2.2196e5 W/m²; 23.26 N; 1.3653e17 J) were all produced by an out-of-tree Python scratchpad (m4.py, V9–V11), and V11 records that higgs-bubble.md was 'reconciled' to that same scratchpad (flat-mirror 46.52 N → sphere 23.26 N). So AC8's 'equal to the HB rows' currently means 'equal to numbers the author's Python script wrote into a design doc' — the anti-drift mechanism the doc advertises (AC15, lore-values (a) vs (b)) is circular at inception, and the 1e-9/1e-3 tolerances have no verified upstream source to bind to until M2 lands functions this doc has not confirmed anyone is building."
+    ],
+    "absent_reviewers": [],
+    "total_cost_usd": 0.4082084,
+    "total_tokens_in": 40485,
+    "total_tokens_out": 36775
+  }
+}

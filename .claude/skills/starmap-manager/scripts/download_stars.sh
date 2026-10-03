@@ -15,6 +15,13 @@
 #            query date into the "#" header lines, so the file's sha256 changes
 #            per download; the pin is on the data rows (grep -v '^#'), printed
 #            as "rows sha256" and recorded as hip_v7.rows in SHA256SUMS.
+#   bright - the M1.2d bright tier (D-5) and the CNS5 photometry fill: the
+#            Hipparcos new reduction (van Leeuwen 2007, VizieR I/311
+#            hip2.dat.gz, kept compressed: bright.ail reads it through
+#            std/gzip; astrometry, epoch J1991.25) and the
+#            original catalogue (ESA 1997, VizieR I/239 hip_main.dat; Johnson
+#            V and B-V, which HIP2 does not carry).  Both are fixed width and
+#            parsed by sim/tools/bright.ail.  The `hip` case above stays.
 #
 # Everything lands in data/raw/ (gitignored). For every artifact this script
 # prints its byte size and sha256, and appends "<sha256>  <name>" to
@@ -81,6 +88,8 @@ fetch() {
 A19_BASE="https://cdsarc.cds.unistra.fr/ftp/J/A+A/670/A19"
 HIP_V7_URL="https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=I/239/hip_main&-out=HIP,Vmag,_Glon,_Glat,B-V,Plx&Vmag=%3C7.5&-out.max=unlimited"
 A6_BASE="https://cdsarc.cds.unistra.fr/ftp/J/A+A/649/A6"
+I311_BASE="https://cdsarc.cds.unistra.fr/ftp/I/311"
+I239_BASE="https://cdsarc.cds.unistra.fr/ftp/I/239"
 
 echo "=== Starmap Data Downloader ==="
 echo "Tier:   $TIER"
@@ -138,9 +147,21 @@ case "$TIER" in
         echo "Hipparcos tier complete!"
         ;;
 
+    bright)
+        echo "Hipparcos new reduction (I/311 hip2.dat, 117,955 records, Lrecl 276)"
+        echo "  + Hipparcos main catalogue (I/239 hip_main.dat, 118,218 records, Lrecl 450)"
+        echo ""
+        fetch "$I311_BASE/hip2.dat.gz" "hip2.dat.gz"
+        fetch "$I311_BASE/ReadMe" "hip2_readme.txt"
+        fetch "$I239_BASE/hip_main.dat" "hip_main.dat"
+        fetch "$I239_BASE/ReadMe" "hip_main_readme.txt"
+        echo ""
+        echo "Bright tier complete!"
+        ;;
+
     *)
         echo "ERROR: Unknown tier '$TIER'" >&2
-        echo "Usage: $0 <quick|medium|large|hip>" >&2
+        echo "Usage: $0 <quick|medium|large|hip|bright>" >&2
         exit 1
         ;;
 esac

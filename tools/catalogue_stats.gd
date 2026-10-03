@@ -1,12 +1,13 @@
 extends SceneTree
 ## Catalogue tier statistics (M1.2c; replaces the planned catalogue_stats.py, plan F3).
-##   godot --headless --path . --script tools/catalogue_stats.gd -- [--tier quick|medium|large] [--dir DIR]
-## Without --tier: every tier present in DIR (default res://data/starmap; quick and medium are
-## committed, large is built on demand). Each tier is read through sky/star_catalogue.gd, so the
+##   godot --headless --path . --script tools/catalogue_stats.gd -- [--tier quick|medium|large|bright] [--dir DIR]
+## Without --tier: every tier present in DIR (default res://data/starmap; quick, medium and bright
+## are committed, large is built on demand). Each tier is read through sky/star_catalogue.gd, so the
 ## sidecar format, count and sha256 are checked first. Per tier it prints
 ##   rows in the bin; rows excluded (sidecar count_excluded: missing-photometry rows the medium
 ##   quota passed over; they are NOT in the bin); rows in the bin with photometry, and without
 ##   (MISSING_PHOT, kept in the bin); the M-dwarf share of the rows with photometry; white dwarfs;
+##   rows with Hipparcos photometry (flag 8, M1.2d);
 ##   defaulted-photometry violations: a MISSING_PHOT row must read teff == 0 and v == 99, and any
 ##   other row must have neither (teff 0 or v 99 alone is a default without its flag), every
 ##   record; flags outside StarCatalogue.FLAG_SETS.
@@ -18,7 +19,7 @@ const StarCat := preload("res://sky/star_catalogue.gd")
 ## Mamajek "modern mean dwarf" table, M0V = 3,850-3,900 K).
 const M_DWARF_TEFF := 3900.0
 const AC3_MIN_SHARE := 0.60
-const TIERS := ["quick", "medium", "large"]
+const TIERS := ["quick", "medium", "large", "bright"]
 
 
 func _init() -> void:
@@ -32,7 +33,7 @@ func _init() -> void:
 		elif a[i] == "--dir" and i + 1 < a.size():
 			dir = a[i + 1]; i += 2
 		else:
-			printerr("usage: catalogue_stats.gd -- [--tier quick|medium|large] [--dir DIR] (got %s)" % [a])
+			printerr("usage: catalogue_stats.gd -- [--tier quick|medium|large|bright] [--dir DIR] (got %s)" % [a])
 			quit(2); return
 	var tiers: Array = [tier] if tier != "" else TIERS.filter(
 		func(t: String) -> bool: return t != "large" or FileAccess.file_exists("%s/stars_large.bin" % dir))
@@ -51,6 +52,7 @@ func report(tier: String, dir: String) -> bool:
 	var complete := 0
 	var m_dwarfs := 0
 	var wd := 0
+	var hip := 0
 	var violations := 0
 	var unknown := {}
 	for i in c.count:
@@ -64,14 +66,16 @@ func report(tier: String, dir: String) -> bool:
 			violations += 1
 		if c.white_dwarf(i):
 			wd += 1
+		if c.hip_photometry(i):
+			hip += 1
 		if not c.missing_photometry(i):
 			complete += 1
 			if c.teff(i) < M_DWARF_TEFF:
 				m_dwarfs += 1
 	var share := float(m_dwarfs) / complete if complete > 0 else 0.0
-	print("%-6s  in bin %d (with photometry %d, without %d)  excluded before the bin %d  M-dwarf share %.1f%% of rows with photometry (%d, teff < %d K)  white dwarfs %d  defaulted-photometry violations %d  unknown flags %s" % [
+	print("%-6s  in bin %d (with photometry %d, without %d)  excluded before the bin %d  M-dwarf share %.1f%% of rows with photometry (%d, teff < %d K)  white dwarfs %d  HIP photometry %d  defaulted-photometry violations %d  unknown flags %s" % [
 		tier, c.count, complete, c.count - complete, int(c.sidecar.get("count_excluded", -1)), 100.0 * share, m_dwarfs,
-		int(M_DWARF_TEFF), wd, violations, unknown if unknown.size() > 0 else "none"])
+		int(M_DWARF_TEFF), wd, hip, violations, unknown if unknown.size() > 0 else "none"])
 	var ok := violations == 0 and unknown.is_empty()
 	if tier == "medium" and share < AC3_MIN_SHARE:
 		print("medium  AC3 FAIL: M-dwarf share %.1f%% < %d%%" % [100.0 * share, int(100 * AC3_MIN_SHARE)])

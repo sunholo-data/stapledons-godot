@@ -442,10 +442,11 @@
         "make catalogue-parity AILANG=$A still 5/5 identical; make catalogue-stats finds 0 defaulted rows in quick after the fill",
         "make test (incl. test_bright_audit) green; AC11 render gate deferred to M1.5b"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-02T22:10:00+01:00",
+      "completed": "2026-10-03T00:30:00+01:00",
+      "notes": "Executed 2026-10-02 on sprint/m1.2d-bright (AILANG v0.51.0, relativity 0.5.1); awaiting independent evaluation. sim/tools/bright.ail (pure): HIP2 x hip_main join, CNS5 parse with its HIP column, epoch and G, GCNS index (G < 9, sorted by uz, binary search), vector proper-motion propagation, 1 arcsec + |G-V| < 2 GCNS match, CNS5 match by HIP id, rules (a)/(b)/(c). std/map is evaluator-only on the strict VM, so the joins use a sorted std/array index (reported upstream). sim/tools/bright_main.ail (FS): mainFill (quick + rule b) and brightMain (bright tier) on catalogue_main's atomic writer; catalogue_main gains planFill/applyFill/sidecarWith only. Real data: bright 10,713 rows (257,112 B), 7 excluded without B-V, 463 CNS5 and 4,120 GCNS matches, 1 override (alpha Cen B at 4.321 ly, 19 arcsec from A); quick fill 137 rows (Sirius -1.44, alpha Cen A, Procyon, Altair, Vega, Arcturus, Capella, Aldebaran ...); 11 shared-HIP rows and CNS5:1164 left missing. Quick tier bytes CHANGED: bin sha256 73f4d0e1... -> 422a0600..., same 5,908 rows, complete 5,138 -> 5,275, M-dwarf share 76.8% -> 75.5%. Medium bytes unchanged. Gates: make bright-test (strict VM = interpreter, fixtures VM = interpreter); ailang test named checks (10) pass; 17 mutants killed; make catalogue-parity 5/5 for bright, quick and medium; make catalogue-verify quick/medium/bright identical; make catalogue-stats PASS (0 violations); make test green incl. test-bright-audit (16 checks on synthetic renders). Deviations: Sirius V is -1.44 (I/239) not -1.46; shared-HIP fill under the |G-V| guard; bright rows at J2016.0; no-B-V stars excluded not kept as MISSING_PHOT; entries in a new bright_main.ail (VM ran extract.ail's main for catalogue_main --entry main once extract was imported; reported upstream); LOC ~805 counted vs 650 cap. Inputs hip2.dat.gz and hip_main.dat are pinned in data/sky/SHA256SUMS but NOT yet in the public bucket (needs make sky-publish, maintainer); catalogue-inputs falls back to VizieR. Pre-existing (on main d85acf9 too): ailang test --package sim run alone fails 'T3 sidecar exact fields' and 'T3 medium sidecar counts' (ailang#1461-class name mixup); they pass inside make test and via mainVm.",
+      "actual_loc": 805
     },
     {
       "id": "M1.3_STAR_RENDERING_V2",

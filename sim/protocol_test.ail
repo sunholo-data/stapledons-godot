@@ -19,7 +19,7 @@ import pkg/sunholo/relativity/optics (Vec3)
 import std/json (decode, getString, getNumber)
 import std/result (Ok, Err)
 import std/option (Option, Some, None)
-import std/string (join, contains)
+import std/string (join, contains, startsWith)
 import std/list (map, foldl)
 
 pure func status(line: string) -> string =
@@ -167,7 +167,7 @@ pure func checkInputRoundTrip() -> bool = allTrue(map(roundTripInput, inputFixtu
 pure func checkStateRoundTrip() -> bool = allTrue(map(roundTripState, stateFixtures()))
 pure func checkHelloRoundTrip() -> bool {
   let h = helloMsg();
-  match decodeHello(encodeHello(h)) { Ok(g) => g.major == 2 && g.minor == 0 && g.sim == h.sim && g.relativity == h.relativity && g.rng == "splitmix64-1", Err(_) => false }
+  match decodeHello(encodeHello(h)) { Ok(g) => g.major == 2 && g.minor == 1 && g.sim == h.sim && g.relativity == h.relativity && g.rng == "splitmix64-1", Err(_) => false }
 }
 
 -- ------------------------------------------------- reason codes (decode)
@@ -210,7 +210,7 @@ pure func checkHandshake() -> bool {
   let pre2 = serve(newSession(), tickLine(1, "0", ""));
   let h = serve(newSession(), hello());
   let noGame = serve(h.session, tickLine(1, "0", ""));
-  let first = match decodeHello(h.reply) { Ok(g) => g.major == 2 && g.minor == 0 && g.rng == "splitmix64-1", Err(_) => false };
+  let first = match decodeHello(h.reply) { Ok(g) => g.major == 2 && g.minor == 1 && g.rng == "splitmix64-1", Err(_) => false };
   let full = stateOf(serve(h.session, diagGame()).reply);
   stateOf(pre.reply).status == "no_hello" && none(stateOf(pre.reply).ship) && stateOf(pre2.reply).status == "no_hello" &&
   first && stateOf(noGame.reply).status == "no_game" && full.full && full.tick == 0 && full.status == "ok" &&
@@ -242,7 +242,7 @@ pure func checkRefusedProceeds() -> bool {
   let diag = feed(newSession(), [hello(), diagGame(), tickLine(1, "0.5", "{\"k\":\"thrust\",\"thrust\":1}"), tickLine(2, "0.5", join("", [all, ",{\"k\":\"heading\",\"heading\":{\"x\":1,\"y\":0,\"z\":0}}"]))]);
   let d = stateOf(diag.reply);
   p.status == "ok" && p.tick == 1 && allEq(refusalEq, p.refused, [{i: 0, reason: "diag_only"}, {i: 1, reason: "diag_only"}]) && shipX(p) == -1.0 &&
-  d.status == "ok" && d.tick == 2 && allEq(refusalEq, d.refused, [{i: 1, reason: "moving"}, {i: 3, reason: "unsupported"}, {i: 5, reason: "moving"}]) &&
+  d.status == "ok" && d.tick == 2 && allEq(refusalEq, d.refused, [{i: 1, reason: "moving"}, {i: 3, reason: "ai_unknown_req"}, {i: 5, reason: "moving"}]) &&
   none(d.journey)
 }
 -- The diag adapter reproduces core.turn/step exactly (what v1.1 served).
@@ -531,22 +531,27 @@ pure func checkAiCodecs() -> bool =
   code(newGame("\"seed\":1,\"scenario\":\"sol\",\"diag\":true,\"ai_core\":7")) == "bad_game" &&
   accepts("ai_max_open", ["1", "64"]) && refuses("ai_max_open", ["0", "65", "1.5", "-1"]) &&
   accepts("ai_ttl_ticks", ["1", "1000000"]) && refuses("ai_ttl_ticks", ["0", "1000001", "2.5"])
--- AI.2 changes nothing a 2.0 session sees: hello minor 0, no AI params in
--- the echo, no `ai` section in a full state (AI.3 flips all three with the
--- goldens); new_game's ai_core only lands in the world.
-pure func checkNoWireChange20() -> bool {
+-- AI.3, protocol 2.1 on the wire (AC1): the hello answers minor 1; every
+-- full state echoes ai_max_open and ai_ttl_ticks as the last keys of params
+-- and the ai section as the last section; ticks without AI intents still
+-- carry no ai section and no AI key.
+pure func checkHello21() -> bool {
   let r = feed(newSession(), [hello(), diagGame()]).reply;
-  let c = feed(newSession(), [hello(), newGame(join("", ["\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"ai_core\":\"", hexA(), "\""]))]);
+  let hl = serve(newSession(), hello()).reply;
+  let c = feed(newSession(), [hello(), newGame(join("", ["\"seed\":7,\"scenario\":\"sol\",\"diag\":true,\"params\":{\"ai_ttl_ticks\":9,\"ai_max_open\":3},\"ai_core\":\"", hexA(), "\""]))]);
   let quiet = feed(c.session, [tickLine(1, "0.5", "{\"k\":\"thrust\",\"thrust\":1}")]).reply;
-  helloMsg().minor == 0 && !contains(r, "ai_max_open") && !contains(r, "ai_ttl_ticks") && !contains(r, "\"ai\":{") &&
-  c.reply == r && !contains(quiet, "\"ai\":{") && !contains(quiet, "ai_")
+  helloMsg().major == 2 && helloMsg().minor == 1 && startsWith(hl, "{\"v\":2,\"type\":\"hello\",\"proto\":{\"major\":2,\"minor\":1},") &&
+  contains(r, "\"ai_max_open\":8,\"ai_ttl_ticks\":3600},\"ai\":{\"last_req\":0,\"open\":[],\"core\":\"\"}},\"events\":[],\"refused\":[],\"full\":true}") &&
+  contains(c.reply, join("", ["\"ai_max_open\":3,\"ai_ttl_ticks\":9},\"ai\":{\"last_req\":0,\"open\":[],\"core\":\"", hexA(), "\"}},\"events\":[]"])) &&
+  (match decodeState(c.reply) { Ok(m) => (match m.params { Some(p) => p.aiMaxOpen == 3 && p.aiTtlTicks == 9, None => false }) && (match m.ai { Some(a) => a.core == hexA() && a.lastReq == 0, None => false }), Err(_) => false }) &&
+  !contains(quiet, "\"ai\":{") && !contains(quiet, "ai_")
 }
 
 pure func encodedFixtures() -> [string] = map(encodeInput, inputFixtures() ++ aiInputs()) ++ map(encodeState, stateFixtures() ++ aiStates()) ++ [encodeHello(helloMsg())]
 export pure func protocolVm(n: int) -> string =
   if checkFloatText() && checkInputRoundTrip() && checkStateRoundTrip() && checkHelloRoundTrip() && checkDecodeCodes() && checkHandshake() && checkParamsEcho() && checkMalformedKeepsTick() && checkRefusedProceeds() && checkDiagKinematics() && checkChangeSets() && checkParamBounds() && checkEcho() &&
     checkParamRange() && checkMEffTooSmall() && checkClockFields() && checkPhaseOnWire() && checkJourneyOnWire() && checkAlphaCenPanel() && checkLedgerOnWire() && checkArrivalOnWire() && checkDrawOnWire() && checkPhiBoundsEcho() && checkFlownOnWire() &&
-    checkAiCodecs() && checkNoWireChange20()
+    checkAiCodecs() && checkHello21()
   then join("\n", encodedFixtures() ++ ["protocol-ok"]) else "protocol-BAD"
 
 test "v2 float text is shortest round-trip incl -0.0 and 1e308" { checkFloatText() }
@@ -573,4 +578,4 @@ test "M2.4 draw events, rng change-set, diag only, unknown stream malformed" { c
 test "M2.6b params echo carries the cruise-rapidity bounds and default" { checkPhiBoundsEcho() }
 test "M2.6b ship.flown: distance since the commit, 0 after arrival" { checkFlownOnWire() }
 test "AC2 2.1 AI codecs round-trip; malformed fields stay bad_intent" { checkAiCodecs() }
-test "AI.2 no wire change for a 2.0 session (hello minor 0, no ai params or section)" { checkNoWireChange20() }
+test "AC1 protocol 2.1: hello minor 1, AI params last in params, ai section last in full states" { checkHello21() }

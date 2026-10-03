@@ -500,9 +500,11 @@ never matches (ailang#1478).
 1–3 and (diag) 6–9 to 1e-9; plan readouts equal the readout table to 1e-9
 relative; a 0.01-yr stepped α Cen voyage at 0.99c and at the cap hits each
 phase boundary and `motionAt` to 1e-9; the residuals; the ledger at arrival;
-`cruise_phi` below 0.9c or above the cap refused `out_of_range`; every intent
-kind against a `Committed` world leaves `journey` unchanged and is refused
-`committed` (one arm per `Intent` constructor and no wildcard; AILANG does
+`cruise_phi` below 0.9c or above the cap refused `out_of_range`; every journey
+intent against a `Committed` world leaves `journey` unchanged and is refused
+`committed` (narrowed from "every intent kind" by D-20, 2026-10-02: the AI
+intents `ai_open`, `ai_cancel` and `record` are accepted while committed and
+never touch ship, journey or ledger; one arm per `Intent` constructor and no wildcard; AILANG does
 not check match exhaustiveness, so the coverage is test-enforced:
 `checkCommittedRefusesAll` sends every constructor, and a constructor added
 without an arm is a runtime match failure, never an accepted intent); `thrust`/`heading`/`flip_g`

@@ -9,6 +9,8 @@ import pkg/sunholo/relativity/blackbody_photometry (bbTeffFromBpRp, bbVFromG, bb
 export type Row = {id: string, x: float, y: float, z: float, teff: float, v: float, flags: int}
 export type Summary = {rows: [Row], input: int, wd: int, missing: int}
 export type Selection = {rows: [Row], excluded: int}
+-- M1.2d rule (b): Hipparcos photometry for a CNS5 row Gaia could not measure, by row id (bright.ail).
+export type Fill = {id: string, teff: float, v: float, flags: int}
 type Tally = {excluded: int, count: int}
 -- T4 (ailang#1501): lists are flat arrays, so `x :: acc` copies and a consing foldl is O(n^2)
 -- (331,312 GCNS rows took minutes). Every list here is built by map/filter/flatMap/take, which
@@ -19,14 +21,16 @@ pure func finite(s: string) -> bool = match stringToFloat(s) {
   Some(v) => v == v && v >= -1.7976931348623157e308 && v <= 1.7976931348623157e308, None => false
 }
 pure func optional(s: string) -> bool = s == "" || finite(s)
-pure func number(s: string) -> float = match stringToFloat(s) { Some(v) => v, None => 0.0 }
+-- toFloat0, not number: extract.ail exports a number and the test runner mixes same-named
+-- functions across modules (ailang#1461)
+pure func toFloat0(s: string) -> float = match stringToFloat(s) { Some(v) => v, None => 0.0 }
 pure func convert(id: string, x: string, y: string, z: string, g: string, c: string, wd: string) -> Row {
   let white = wd == "1";
   let missing = g == "" || c == "";
-  let colour = number(c);
-  {id: id, x: number(x), y: number(y), z: number(z),
+  let colour = toFloat0(c);
+  {id: id, x: toFloat0(x), y: toFloat0(y), z: toFloat0(z),
     teff: if missing then 0.0 else if white then bbTeffFromBpRp(colour) else teffFromBpRp(colour),
-    v: if missing then 99.0 else if white then bbVFromG(number(g),colour) else vFromG(number(g),colour),
+    v: if missing then 99.0 else if white then bbVFromG(toFloat0(g),colour) else vFromG(toFloat0(g),colour),
     flags: (if white then 1 else 0) + (if missing then 2 else
       (if white then 4 else 0) + (if (if white then bbBpRpInvertible(colour) else bpRpInTable(colour)) then 0 else 16))}
 }

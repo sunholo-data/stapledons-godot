@@ -154,8 +154,8 @@ func _init() -> void:
 	check("refuses a missing pair", open("absent") == null and StarCat.last_error.contains("cannot read sidecar"))
 
 	stats_cases()
-	# the committed tiers (M1.2c, D-3) load and agree with their sidecars
-	for tier in ["quick", "medium"]:
+	# the committed tiers (M1.2c, D-3; bright M1.2d, Q4) load and agree with their sidecars
+	for tier in ["quick", "medium", "bright"]:
 		var t := StarCat.load_tier(tier)
 		check("committed %s tier loads" % tier, t != null, StarCat.last_error)
 		if t != null:

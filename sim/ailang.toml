@@ -5,7 +5,7 @@ edition = "1"
 description = "Stapledon's Voyage simulation (runs as a Godot sidecar over NDJSON stdio)."
 
 [exports]
-modules = ["stapledons/sim/core", "stapledons/sim/protocol", "stapledons/sim/ship", "stapledons/sim/tripphase", "stapledons/sim/rng", "stapledons/sim/markers", "stapledons/sim/ai", "stapledons/sim/tools/catalogue_probe", "stapledons/sim/tools/catalogue", "stapledons/sim/tools/catalogue_bytes", "stapledons/sim/tools/sky_model", "stapledons/sim/tools/sky_model_test", "stapledons/sim/tools/catalogue_main", "stapledons/sim/tools/extract", "stapledons/sim/tools/extract_test", "stapledons/sim/tools/destar", "stapledons/sim/tools/destar_test"]
+modules = ["stapledons/sim/core", "stapledons/sim/protocol", "stapledons/sim/ship", "stapledons/sim/tripphase", "stapledons/sim/rng", "stapledons/sim/markers", "stapledons/sim/ai", "stapledons/sim/tools/catalogue_probe", "stapledons/sim/tools/catalogue", "stapledons/sim/tools/catalogue_bytes", "stapledons/sim/tools/sky_model", "stapledons/sim/tools/sky_model_test", "stapledons/sim/tools/catalogue_main", "stapledons/sim/tools/extract", "stapledons/sim/tools/extract_test", "stapledons/sim/tools/destar", "stapledons/sim/tools/destar_test", "stapledons/sim/tools/bright", "stapledons/sim/tools/bright_main", "stapledons/sim/tools/bright_test"]
 
 [effects]
 max = ["IO", "FS"]
