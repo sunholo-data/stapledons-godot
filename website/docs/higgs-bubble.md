@@ -43,7 +43,7 @@ thing that was invented.
 | **Tides are not shielded.** The wall stops particles, not curvature; near a small black hole the tide across 100 m is lethal | Gravity is geometry | Gaia BH1, at 10 r_s: 1.14 × 10⁶ g (HB-72) |
 
 Not every row runs in the game yet: the planner, the energy ledger and the commit rule do (M2),
-the forward CMB is in review (M1.8), and black holes are planned (M3). See the
+the forward CMB renders (M1.8), and black holes are planned (M3). See the
 [roadmap](roadmap.md).
 
 ## Why the strictness

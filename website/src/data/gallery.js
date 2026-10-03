@@ -1,6 +1,6 @@
 // Gallery stills (static/img/gallery/). Every image is a real capture from the
-// game; captions say what produced it and what it shows. `status` marks
-// captures from work still in review, so nothing reads as shipped early.
+// game; captions say what produced it and what it shows. An optional `status`
+// marks captures from work still in review, so nothing reads as shipped early.
 const GALLERY = [
   {
     file: 'sky-rest.jpg',
@@ -31,20 +31,18 @@ const GALLERY = [
     group: 'sky',
   },
   {
-    file: 'cmb-gamma-orange.jpg',
-    title: 'The forward CMB disc at γ 295',
+    file: 'cmb-gamma-275.jpg',
+    title: 'The forward CMB disc at γ 275',
     caption:
-      'The 2.7 K cosmic microwave background, Doppler shifted to about 1,600 K straight ahead, glows orange in the bow. The eye has light-adapted (EV +1.7). From the forward-CMB work in review (M1.8, PR #79).',
+      'The 2.7 K cosmic microwave background, Doppler shifted to 1,500 K straight ahead (check value HB-67), glows orange in the bow among the last crowded stars. The eye has light-adapted (EV +0.2).',
     group: 'cmb',
-    status: 'In review',
   },
   {
     file: 'cmb-gamma-707.jpg',
     title: 'γ 707, the cruise cap: the CMB at 3,854 K',
     caption:
-      'At 0.999999c the forward CMB is a 3,853.7 K blackbody (check value HB-63), brighter than every star around it. In review (M1.8, PR #79).',
+      'At 0.999999c the forward CMB is a 3,853.7 K blackbody (check value HB-63), brighter than every star around it.',
     group: 'cmb',
-    status: 'In review',
   },
   {
     file: 'milky-way-destarred.jpg',
@@ -85,9 +83,8 @@ const GALLERY = [
     file: 'map-overview.jpg',
     title: 'The neighbourhood, from the real catalogues',
     caption:
-      'The galaxy map drawn from the binary catalogue tiers, Sol at the centre. From the catalogue switch in review (M1.7, PR #81).',
+      'The galaxy map drawn from the binary catalogue tiers, Sol at the centre (the M1.7 catalogue switch).',
     group: 'map',
-    status: 'In review',
   },
 ];
 

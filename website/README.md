@@ -86,9 +86,9 @@ make site-media-publish            # maintainers (gcloud): upload --no-clobber, 
 | `voyage` | forward view, rest → 0.99c at 1 g | |
 | `lookaround` | a full turn in yaw at 0.99c | |
 | `map` | galaxy map orbit, cruise slider 0.9c → cap | rendered at 1600×900, the `--map-capture` size |
-| `cmb` | forward, 20° lens, γ 100 → 707 | needs the forward CMB disc (M1.8, PR #79); on a tree without it the clip shows stars only |
+| `cmb` | forward, 20° lens, γ 20 → 707 | the forward CMB disc (M1.8, with the #88 ring fix) |
 
-The published `cmb` clip was rendered from the PR #79 tree. Encoding needs `ffmpeg` with libx264
+All published clips are rendered from `main`. Encoding needs `ffmpeg` with libx264
 and libvpx (`brew install ffmpeg`, or `FFMPEG=$(npx -y ffmpeg-static)`).
 
 Look at every frame you publish (contact sheets: `ffmpeg -i renders/site/frames/CLIP/f%05d.png

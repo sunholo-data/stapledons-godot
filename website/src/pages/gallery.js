@@ -11,7 +11,7 @@ import styles from './gallery.module.css';
 const CLIPS = [
   {name: 'voyage', title: 'Rest to 0.99c, looking forward', text: 'A 1 g burn through the AILANG simulation, rapidity eased over 18 s. 24 s loop.'},
   {name: 'lookaround', title: 'One full turn at 0.99c', text: 'Bow, beam, stern and back at γ 7.09: the bright window ahead and the dark behind. 20 s loop.'},
-  {name: 'cmb', title: 'The forward CMB disc, γ 100 to 707', text: '20° lens, on a committed journey near Sol. From pull request #79 (M1.8, in review). 20 s loop.'},
+  {name: 'cmb', title: 'The forward CMB disc, γ 20 to 707', text: '20° lens, on a committed journey near Sol: the stars crowd into a shrinking ball, then the CMB warms from deep red to near white. 20 s loop.'},
   {name: 'map', title: 'Galaxy map, cruise slider 0.9c to the cap', text: 'The planner panel recomputed by the simulation every tick as the camera orbits Sol and α Centauri. 24 s loop.'},
 ];
 
@@ -46,9 +46,8 @@ export default function Gallery() {
           <h1 className={styles.title}>Gallery</h1>
           <p className={styles.lead}>
             Every image and clip here is a capture from the game: the Godot renderer, driven by the
-            AILANG simulation. Captions say what produced each one. Captures marked{' '}
-            <span className="sv-status sv-status--review">In review</span> come from work that has
-            not merged yet. See the <Link to="/docs/roadmap">roadmap</Link>.
+            AILANG simulation. Captions say what produced each one, and the <Link to="/docs/roadmap">roadmap</Link> says
+            what is built and what is planned.
           </p>
         </div>
       </header>
