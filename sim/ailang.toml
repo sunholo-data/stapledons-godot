@@ -14,4 +14,5 @@ max = ["IO", "FS"]
 level = "experimental"
 
 [dependencies]
-"sunholo/relativity" = "0.5.2"
+"sunholo/celestial" = "0.1.0"
+"sunholo/relativity" = "0.7.0"
