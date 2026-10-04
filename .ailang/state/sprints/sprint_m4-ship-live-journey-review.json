@@ -1,6 +1,6 @@
 {
   "id": "m4-ship-live-journey-review",
-  "status": "in_progress",
+  "status": "review-build-verified",
   "approved_by": "Mark attended request 2026-10-04",
   "features": [
     {
@@ -20,5 +20,5 @@
       "passes": true
     }
   ],
-  "checkpoint": "Implementation frozen; local normal-sim/demo/frozen/input tests and staged GPU captures passed. Native export, shared regression and independent evaluation owned by integration agent."
+  "checkpoint": "20300d6 implementation reviewed; make ui ship-demo-ci actualexit0; full earlier physics/parity checks and golden complete. Re-export actualexit0; existing-home packaged live smoke and fresh-home empty-PATH live + normal export smoke actualexit0. Independent judge and release publication recorded separately."
 }

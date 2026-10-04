@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Open Commons arcade and live journey review, 2026-10-04
+
+- Replace the generic pavilion with the first section of the approved Commons layout: an open curved arcade, planted plaza and guarded walking link. This remains a bounded prototype; other districts and final painting are still to come.
+- Committed review journeys now show actual simulation acceleration, coast and braking aboard ship, with about 20 seconds per phase using labelled time compression. Navigation remains reachable at laptop window sizes.
+- Refresh the bundled simulation cache when its contents change, including nested modules, so updates do not reuse an older simulation.
+- Retain 4× exposure. Target MacBook Air performance remains to be measured.
+
 ### Commons architectural review and 4× default, 2026-10-04
 
 - Set the review demo sky exposure to 4× by default, as requested; physical sky inputs remain unchanged.

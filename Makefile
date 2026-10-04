@@ -536,6 +536,13 @@ ship-commons-assets-test:
 	@$(GODOT) --headless --path . --script tools/validate_ship_commons.gd -- bad-envelope > $(SCRATCH)/ship-commons-negative.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-commons: FAIL$$' $(SCRATCH)/ship-commons-negative.log
 ship-commons-arcade-test:
 	@$(GODOT) --headless --path . --script tests/test_ship_commons_arcade.gd > $(SCRATCH)/ship-commons-arcade.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-commons-arcade.log; test $$rc = 0 && grep -q '^ship-commons-arcade: OK' $(SCRATCH)/ship-commons-arcade.log
+.PHONY: ship-demo-live-test ship-demo-live-capture ship-commons-arcade-test
+ship-demo-live-test: import
+	@$(GODOT) --headless --path . --script tests/test_runtime_fingerprint.gd > $(SCRATCH)/ship-runtime-fingerprint.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-runtime-fingerprint.log; test $$rc = 0 && grep -q '^ok nested module edit invalidates bundled cache$$' $(SCRATCH)/ship-runtime-fingerprint.log
+	@$(GODOT_SIM) --headless --path . --script tests/test_live_journey.gd > $(SCRATCH)/ship-live-sim.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-live-sim.log; test $$rc = 0 && grep -q '^ok both clocks match plan$$' $(SCRATCH)/ship-live-sim.log
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_demo_live.gd > $(SCRATCH)/ship-live-demo.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-live-demo.log; test $$rc = 0 && grep -q '^ok arrival stays rest$$' $(SCRATCH)/ship-live-demo.log
+ship-demo-live-capture:
+	$(GODOT_SIM) --path . --script tools/ship_demo_live_capture.gd
 validate-ship-commons:
 	$(GODOT) --headless --path . --script tools/validate_ship_commons.gd
 ship-commons-capture:
@@ -568,7 +575,7 @@ ship-demo-launch-test:
 
 # Headless demo regressions are part of the normal CI suite; GPU optics stays explicit.
 test: ship-demo-ci
-ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test ship-demo-journey-test ship-commons-test ship-commons-assets-test validate-ship-commons ship-commons-arcade-test
+ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test ship-demo-journey-test ship-commons-test ship-commons-assets-test validate-ship-commons ship-commons-arcade-test ship-demo-live-test
 
 ship-demo-input-test:
 	@$(GODOT) --headless --path . --script tests/test_ship_demo_input.gd > $(SCRATCH)/ship-demo-input.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-input.log; test $$rc = 0 && grep -q '^ship-demo-input: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-input.log

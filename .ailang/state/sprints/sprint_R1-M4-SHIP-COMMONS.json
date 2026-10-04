@@ -12,7 +12,7 @@
   "sprint_plan": "design_docs/planned/r1/m4-ship-commons-build-sprint.md",
   "velocity": {
     "estimated_total_loc": 1050,
-    "estimated_sessions": "3–5",
+    "estimated_sessions": "3\u20135",
     "target_loc_per_day": null,
     "basis": "Geometry/demo and 61-line control patch are not reliable art velocity; allow material and performance iteration."
   },
@@ -89,7 +89,7 @@
       "passes": null,
       "started": "2026-10-04T16:27:06.430Z",
       "completed": null,
-      "notes": "Draft published as v0.4.0-dev.6-commons-sky-review,commit447d7cafede916aecf3a15b2f9f2157ab9484768. ZIP hash verified:694deef81ac070a636ebb4e77328823f32ac9ccf321473ec14e0183aa13ccca5; archive integrity passes. Full local test/golden, ship-demo-ci, packaged Commons/lift and normal simulation/AI/planet smokes pass. Independent draft evaluation88/100. Website live model/page verified200. Studio enabled five-view p95 9.34–9.64ms, no causal speedup claim. Remote CI in progress; no merge. Actual M2 Air benchmark remains required; performance signoff and sprint completion stay pending."
+      "notes": "Draft published as v0.4.0-dev.6-commons-sky-review,commit447d7cafede916aecf3a15b2f9f2157ab9484768. ZIP hash verified:694deef81ac070a636ebb4e77328823f32ac9ccf321473ec14e0183aa13ccca5; archive integrity passes. Full local test/golden, ship-demo-ci, packaged Commons/lift and normal simulation/AI/planet smokes pass. Independent draft evaluation88/100. Website live model/page verified200. Studio enabled five-view p95 9.34\u20139.64ms, no causal speedup claim. Remote CI in progress; no merge. Actual M2 Air benchmark remains required; performance signoff and sprint completion stay pending."
     }
   ],
   "continuation": {
@@ -109,12 +109,12 @@
       16,
       64
     ],
-    "checks": "Fullmake test actualexit0; fullgolden0; journey47; Commons25; judge27/camera244; packagedsmokesgreen. Studio9.575–9.660ms p95. WebsitePages37223606266 success; model/download/stronggainimage200. Publisheddev7 source0c2a9eb,hash706015f1016b34e5b7689eeb5ab5b49a2a0bab90ed77b5a1b76231cd1dd3c674 verified. RemoteCI37223416140 pending; Airpending."
+    "checks": "Fullmake test actualexit0; fullgolden0; journey47; Commons25; judge27/camera244; packagedsmokesgreen. Studio9.575\u20139.660ms p95. WebsitePages37223606266 success; model/download/stronggainimage200. Publisheddev7 source0c2a9eb,hash706015f1016b34e5b7689eeb5ab5b49a2a0bab90ed77b5a1b76231cd1dd3c674 verified. RemoteCI37223416140 pending; Airpending."
   },
   "arcade_continuation": {
     "approved_by": "Mark",
     "approved_instruction": "yep approved - continue",
-    "status": "asset-review-ready",
+    "status": "draft-review-verified",
     "scope": "Measured zoning direction; first bounded open curved arcade/plaza only",
     "milestones": [
       {
@@ -130,10 +130,10 @@
       {
         "id": "CB-A3",
         "description": "Actual inside views, capsule/geometry checks and independent review",
-        "passes": null
+        "passes": true
       }
     ],
     "performance": "Actual M2 Air pending",
-    "checks": "39 strict runtime destinations/routes/capsule checks; actual43–55m terrace+openarch/roof gate; exact runtime coarse triangle subset; UV/material/envelope/shaft and actual-mesh negative gate; Blender health/reimport and nine real game views inspected"
+    "checks": "39 strict runtime destinations/routes/capsule checks; actual43\u201355m terrace+openarch/roof gate; exact runtime coarse triangle subset; UV/material/envelope/shaft and actual-mesh negative gate; Blender health/reimport and nine real game views inspected; independent Commons draft review89/100; same-eye Studio paired baseline/enabled p95 under9.7ms with +9,682,944bytes video memory; source integration, golden and bundled native smokes passed. Actual Air/full production signoff pending."
   }
 }
