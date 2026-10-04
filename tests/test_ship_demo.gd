@@ -16,6 +16,9 @@ func _run() -> void:
 	var camera: Camera3D = Camera.new();viewport.add_child(camera)
 	var sky := InteriorSky.new();root.add_child(sky)
 	sky.setup({"position_m":[16,-8,83.7],"forward":[1,0,0],"up":[0,0,1]},78,viewport.size,{"stars":false,"background":false})
+	var photo:=Image.create(64,32,false,Image.FORMAT_RGBA8);photo.fill(Color(.05,.05,.05))
+	var model:=Image.create(64,32,false,Image.FORMAT_RGBA8);model.fill(Color(.5,.5,.5))
+	sky.has_background=sky.background.attach(sky.env,540,78.,photo,model)
 	for px in [Vector2i(960,540),Vector2i(540,960),Vector2i(1920,1080)]:
 		viewport.size=px
 		for tilt in [-60.,-30.,15.]:
@@ -23,6 +26,7 @@ func _run() -> void:
 				camera.follow(Vector3(16,82,8),tilt,0.47,distance)
 				camera.fov=78. if distance<100 else 52.
 				camera.sync_sky(sky,px)
+				check("sky sampling follows observer pixels",absf(float(sky.background.material.get_shader_parameter("pano_px_per_screen_px"))-32./180.*camera.fov/px.y)<.000001)
 				check("observer FOV/aspect",sky.camera.fov==camera.fov and sky.size==px)
 				check("observer eye metres",Vector3(sky.cam.position_m[0],sky.cam.position_m[2],-sky.cam.position_m[1]).distance_to(camera.position)<.0001)
 				for p in [Vector2.ZERO,Vector2(px),Vector2(px)*.5,Vector2(px.x,0),Vector2(0,px.y)]:

@@ -120,7 +120,7 @@
       "passes": true,
       "started": "2026-10-04T14:37:49.098Z",
       "completed": "2026-10-04T14:37:49.098Z",
-      "notes": "Shared observer centre/corner rays217 checks pass across aspects/tilts/FOV/pullback. Inspected GPU overlook and whole-ship render. Native materials; separate matched sky target behind finite geometry preserves occlusion. Exterior review wall overlay zero. Independent GPU optics audit requested from evaluator."
+      "notes": "Shared observer centre/corner rays217 checks pass across aspects/tilts/FOV/pullback. Inspected GPU overlook and whole-ship render. Native materials; separate matched sky target behind finite geometry preserves occlusion. Exterior review wall overlay zero. Independent GPU optics audit requested from evaluator. Sky panorama texture angular pixel scale follows FOV/render-height changes; synthetic-image regression failed21cases before fix,244totalchecks now pass."
     },
     {
       "id": "SD3",
@@ -173,7 +173,7 @@
   },
   "evidence": {
     "geometry": "tools/validate_ship_demo.gd actual transformed tier tops82,57,32,7,-18,-43,-68 and needle98; wrong-tier/tip controls",
-    "observer_cpu_checks": 217,
+    "observer_cpu_checks": 244,
     "lift_checks": 24,
     "roundtrips": 3,
     "captures": "art/ship-demo-v1/capture-manifest.json",

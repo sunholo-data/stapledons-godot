@@ -25,6 +25,10 @@ func sync_sky(sky: InteriorSky, px: Vector2i) -> void:
 	sky.view_fov=fov;sky.camera.fov=fov
 	if sky.size!=px: sky.resize(px)
 	sky.configure_pixel()
+	if sky.has_background:
+		var photo: Texture2D=sky.background.material.get_shader_parameter("photo")
+		if photo!=null:
+			sky.background.material.set_shader_parameter("pano_px_per_screen_px",photo.get_height()/180.0*fov/maxi(px.y,1))
 	sky.glow_mat.set_shader_parameter("cam_ship",Vector3(position.x,-position.z,position.y))
 	sky.orient(heading)
 	# External inspection is not an observer inside the bubble wall.
