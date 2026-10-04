@@ -180,6 +180,11 @@
     "studio_benchmark": "art/ship-demo-v1/studio-benchmark.json",
     "target_laptop_benchmark": "pending",
     "export_smoke": "ship-demo-export-smoke: OK",
-    "implementation_commit": "3b6b1b4"
+    "implementation_commit": "93813ed",
+    "review_build": "v0.4.0-dev.4-ship-geometry-review",
+    "review_build_commit": "4e5c9526bb43e8a4d1d6c1e25975fa7ab42a17fe",
+    "review_zip_sha256": "d6e24889b0ca9fc96cdba0b7b4422b98dd1c837b0699c8a37c4ead7a3538bbcf",
+    "publication": "Private dev bucket latest.json verified; ZIP integrity verified; local make test/golden and final packaged demo smoke passed. CI headless pending at publication, macOS build succeeded.",
+    "reference_hub": "https://www.sunholo.com/stapledons-godot/docs/ship-layer-reference"
   }
 }
