@@ -1,0 +1,75 @@
+---
+title: Bubble ship — geometry and style review
+sidebar_position: 7
+---
+
+import ShipGeometryReview from '@site/src/components/ShipGeometryReview';
+
+This is the shared review reference for the bubble ship: **measured Blender alternatives
+for geometry**, followed by the **concept sheet for style**. Both layouts use the actual
+bridge geometry, unchanged in scale, inside a sphere of radius 100 m. Neither floor
+schedule is approved yet.
+
+<ShipGeometryReview />
+
+## What the comparison establishes
+
+The bridge floor is at **Z +82 m**, its main circular deck is **44 m across**, and the
+actual needle reaches **Z +98 m**. The bubble is **200 m across**, centred at the ship
+origin. Blender +Z is forward/up; −Z is aft/down. There is no occupied level above the
+bridge. The three thin sphere circles are measurement guides, not a solid hull.
+
+**A** follows the existing 25 m tier cadence: bridge, then +57, +32, +7, −18, −43 and
+−68 m. The last two tiers extend the old four-tier blockout. **B** explores twenty decks,
+8.5 m apart, ending at −79.5 m. All lower decks use the same radius rule:
+`0.55 × sqrt(100² − Z²)`. This preserves a broad gap to the bubble; deck widths are not
+copied from the illustration.
+
+The lower floors are opaque slabs 1 m thick, with a tapered central spire beneath the
+actual bridge. This is a **dimension and occlusion blockout**, not a structurally engineered
+ship. Rooms, roofs, gardens, lifts, bracing and railings on lower levels are absent; they
+will add occlusion. The imported bridge rails and fronds are present. Invisible game
+collision meshes are excluded. Bridge fronds have their existing attachments; speculative
+lower-level growth has not been invented to fill the foreground.
+
+## What you can see looking downward
+
+From the interior eye, 4.11 m inside the edge, the centre ray at 30°, 45° and 60° down
+hits the bridge floor in both layouts. A camera cannot see through that floor.
+At the rim eye, 0.7 m inside the edge, the 45° centre ray reaches the next deck in B,
+but clears A's decks. At 60° it reaches the next deck in both. Use the angle selector
+above to compare the full images: a centre-ray result describes only the middle pixel,
+not everything in the wide field of view.
+
+These are ordinary geometric visibility studies. They do not simulate relativistic
+aberration or boundary glow. They establish which physical structures are in a camera's
+view before those optical effects are applied.
+
+## How this relates to the game panorama
+
+The current game composite uses two different projections: the panorama/sky camera looks
+inward and about 53.6° upward, while the orthographic play layer looks downward at 14°.
+Those layers are not a single physically coherent camera for arbitrary tilting and panning.
+The measured views here instead render **all ship geometry through one perspective camera**.
+They are a reference for choosing future camera behaviour, not a claim that the current
+composite already produces these sightlines.
+
+Play, foreground and panorama describe rendering distance and composition, not physical
+ship storeys. Nearby rails and fronds can form foreground parallax, but every visible
+member needs a real root and a position in the shared model. The central spire is one
+continuous structure; it must not be duplicated in a panorama plate.
+
+## Style concept — not a dimension reference
+
+![Whole-ship cutaway and bridge-rim support concept](/img/concept/ship-layers-v1.jpg)
+
+[Open the full-resolution concept sheet](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_layers_v1/ship_layers_concept_v1.png).
+
+This AI-generated sheet proposes colour, atmosphere, zoning and a hand-painted finish.
+**Its proportions, floor spacing and sightlines are illustrative and must not be measured.**
+For Blender builds, use the models and coordinate tables above. The commons, homes,
+garden cathedral, workshops and engineering remain a zoning proposal rather than a fixed
+floor schedule. Review geometry first, then dress the chosen spaces in this style.
+
+**AI-generated concept art under Sunholo art direction. No copyright is claimed.** See
+[Credits and licences](credits.md) and [Concept art](/concept-art).

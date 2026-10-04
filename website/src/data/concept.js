@@ -9,7 +9,7 @@ export const SHIP_LAYERS = {
   full: `${B}/refs/ship_layers_v1/ship_layers_concept_v1.png`,
   title: 'Ship layers: whole-ship cutaway and bridge-rim roots',
   caption:
-    'Concept v1 for review, 4 October 2026. One central spire inside a spherical bubble; the bridge is the highest occupied deck. Lower levels widen toward the equator, and the rim detail proposes attached supports rising from below. Zoning and mezzanines are proposals; the boundary outline is a reference aid, not a physics rendering.',
+    'Style concept v1 for review, 4 October 2026. Proportions and sightlines are illustrative, not dimensionally reliable. One central spire inside a spherical bubble; the bridge is the highest occupied deck. Lower levels widen toward the equator, and the rim detail proposes attached supports rising from below. Zoning and mezzanines are proposals; the boundary outline is a reference aid, not a physics rendering.',
 };
 
 export const CAPTAIN = {

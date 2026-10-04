@@ -76,14 +76,14 @@ export default function ConceptArt() {
         <section id="ship-layers" className={styles.block}>
           <div className={styles.blockHead}>
             <h2>The whole ship</h2>
-            <Pill kind="progress">Spatial reference proposal</Pill>
+            <Pill kind="progress">Style concept proposal</Pill>
           </div>
           <Wide it={SHIP_LAYERS} base={base} />
           <p className={styles.note}>
-            A shared reference for Blender builds: the deck stack must fit the sphere, and foreground
-            curves need roots in real ship structure. Read the{' '}
-            <Link to="/docs/ship-layer-reference">ship-layer reference and authoring constraints</Link>
-            {' '}before using the drawing to build geometry.
+            Compare two measured Blender layouts, rotate the models, download the source files,
+            and inspect bridge sightlines on the{' '}
+            <Link to="/docs/ship-layer-reference">bubble-ship geometry and style review page</Link>
+            {' '}. Use those models for dimensions; this drawing guides style.
           </p>
         </section>
 
