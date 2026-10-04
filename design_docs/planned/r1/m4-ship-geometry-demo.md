@@ -123,6 +123,12 @@ Deliver: source design + sprint JSON; master Blender demo copy and derived GLBs;
 
 ## Approved viewpoint clarification (2026-10-04)
 
+Laptop usability refinement (2026-10-04): Option/Alt plus pointer movement looks without
+a held secondary click; two-finger scroll gestures and wheel events zoom continuously.
+Whole-ship zoom remains in its overview. Zoom is locked during lift travel and benchmark
+sampling. Verify plain-pointer, modifier-look, fractional scroll, overview and guard
+behaviour with `make ship-demo-input-test` (included in headless CI).
+
 One observer defines eye position in ship metres, forward/up, vertical perspective FOV, viewport/aspect and ship-to-galactic frame. Play geometry, finite background decks and real foreground members use that observer. External sky sampling uses its matching rays; velocity remains the sim-owned boost, independent of the direction the camera looks. SR changes external light, not the co-moving ship meshes. Update glow intersection origin during camera movement instead of retaining the old bridge eye.
 
 The first demo is at rest; the existing SR renderer must remain usable through the shared view contract and existing golden checks. Test matching rays at centre/corners after tilt, roll, resize, pullback and lift movement. Do not add independently scaled plate parallax. GR black-hole lensing is not implemented in this checkout (M3 remains planned); provide a documented observer input seam for its future integration, without advertising or faking GR visuals in the demo. Any future GR integration must transform the full external sky consistently, including catalogue stars, and pass its own package-first reference/golden checks. A shared camera is necessary, not sufficient, to certify that future physics.

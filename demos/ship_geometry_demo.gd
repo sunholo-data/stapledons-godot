@@ -81,7 +81,7 @@ func _hud() -> void:
 	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Reference rim [4]","rim"],["Reset [R]","reset"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_preset.bind(pair[1]));row.add_child(button)
 	var benchmark_button:=Button.new();benchmark_button.text="Benchmark at1920×1080 [B] (saves report)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));hud.add_child(benchmark_button)
-	var hint:=Label.new();hint.text="WASD walk · drag right mouse to look · wheel pulls back · E lift · G sphere guides · Esc close demo";hud.add_child(hint)
+	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · two-finger scroll / wheel to zoom · E lift · G guides · Esc close";hud.add_child(hint)
 func set_preset(name: String) -> void:
 	if name=="reset":
 		if lift!=null:lift.reset()
@@ -123,7 +123,7 @@ func _process(delta: float) -> void:
 	label.text="SEVEN-TIER GEOMETRY DEMO · at rest · native materials · GR not implemented\n%s · deck %d · eye %.2f m · 78° perspective\n%s" % [view_name,active_level,camera.position.y,caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
-	if event is InputEventMouseMotion and event.button_mask&MOUSE_BUTTON_MASK_RIGHT:
+	if event is InputEventMouseMotion and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
 		if camera_mode=="external review":
 			var offset:=camera.position-Vector3(0,5,0)
 			offset=offset.rotated(Vector3.UP,-event.relative.x*.004).rotated(camera.basis.x,-event.relative.y*.004)
@@ -131,10 +131,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		camera.yaw-=event.relative.x*.004;camera.tilt=clampf(camera.tilt-event.relative.y*.22,-80,75)
 		if camera_mode!="player":
 			var eye:=camera.position;camera.follow(eye-Vector3.UP*1.7,camera.tilt,camera.yaw,0.)
+	if event is InputEventPanGesture:
+		_zoom(-event.delta.y*2.)
 	if event is InputEventMouseButton and event.pressed:
-		if lift!=null and lift.travelling():return
-		if event.button_index==MOUSE_BUTTON_WHEEL_UP:camera.pullback=clampf(camera.pullback+2.,0.,300.);camera_mode="player"
-		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:camera.pullback=clampf(camera.pullback-2.,0.,300.);camera_mode="player"
+		if event.button_index==MOUSE_BUTTON_WHEEL_UP:_zoom(2.*event.factor)
+		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:_zoom(-2.*event.factor)
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_1:set_preset("bridge")
@@ -147,6 +148,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_E:
 				if lift!=null:lift.board()
 			KEY_ESCAPE:get_tree().quit()
+func _zoom(amount: float) -> void:
+	if amount==0. or benchmark.running or (lift!=null and lift.travelling()):return
+	if camera_mode=="external review":
+		var target:=Vector3(0,5,0)
+		var offset:=camera.position-target
+		camera.position=target+offset.normalized()*clampf(offset.length()+amount,60.,650.)
+		camera.look_at(target)
+	else:
+		camera.pullback=clampf(camera.pullback+amount,0.,300.);camera_mode="player"
 func centre_hit() -> Dictionary:
 	var forward: Vector3=-camera.basis.z
 	var query:=PhysicsRayQueryParameters3D.create(camera.position,camera.position+forward*500.)
