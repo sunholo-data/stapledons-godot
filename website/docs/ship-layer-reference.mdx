@@ -5,24 +5,22 @@ sidebar_position: 7
 
 import ShipGeometryReview from '@site/src/components/ShipGeometryReview';
 
-This is the shared review reference for the bubble ship: **measured Blender alternatives
-for geometry**, followed by the **concept sheet for style**. Both layouts use the actual
-bridge geometry, unchanged in scale, inside a sphere of radius 100 m. Mark prefers **seven major tiers**, with buildings, forests and other architecture within
-them. The twenty-deck option is retained for comparison; the detailed radii and clearance
-remain proposals.
+This is the shared review reference for the chosen bubble ship: **seven major layers**
+inside a sphere of radius 100 m, with **at least 5 m clearance for the lower-floor geometry**.
+Mark chose this layout on 4 October 2026. The bridge uses its actual geometry, unchanged
+in scale. Buildings, forests and other architecture will occupy the major tiers.
 
 <ShipGeometryReview />
 
-## What the comparison establishes
+## The chosen geometry
 
 The bridge floor is at **Z +82 m**, its main circular deck is **44 m across**, and the
 actual needle reaches **Z +98 m**. The bubble is **200 m across**, centred at the ship
 origin. Blender +Z is forward/up; −Z is aft/down. There is no occupied level above the
 bridge. The three thin sphere circles are measurement guides, not a solid hull.
 
-**A** follows the existing 25 m tier cadence: bridge, then +57, +32, +7, −18, −43 and
-−68 m. The last two tiers extend the old four-tier blockout. **B** explores twenty decks,
-8.5 m apart, ending at −79.5 m. Revision 2 replaces the old 55% radius rule with a **95 m radius inner spherical envelope**.
+The seven-tier schedule follows a 25 m cadence: bridge, then +57, +32, +7, −18, −43 and
+−68 m. Revision 2 replaces the old 55% radius rule with a **95 m radius inner spherical envelope**.
 This gives every lower floor at least **5 m clearance to the 100 m bubble**, rather than a
 gap that grows toward the equator. Deck widths are derived from the sphere, not the illustration.
 The 1 m slab thickness and small edge lip are included in the fit:
@@ -42,7 +40,7 @@ actual bridge. This is a **dimension and occlusion blockout**, not a structurall
 ship. Rooms, roofs, gardens, lifts, bracing and railings on lower levels are absent; they
 will add occlusion. The 5 m clearance is for floor geometry only: roofs and tree canopies
 need their own sphere checks at their actual heights. For a point at height `h`, its horizontal
-radius must stay below `sqrt(100² − h²)`; using `sqrt(95² − h²)` also preserves the proposed
+radius must stay below `sqrt(100² − h²)`; using `sqrt(95² − h²)` also preserves the accepted
 5 m buffer. Upper-tier buildings and trees need greater setbacks because the sphere narrows
 overhead. The imported bridge rails and fronds are present. Invisible game
 collision meshes are excluded. Bridge fronds have their existing attachments; speculative
@@ -51,10 +49,9 @@ lower-level growth has not been invented to fill the foreground.
 ## What you can see looking downward
 
 From the interior eye, 4.11 m inside the edge, the centre ray at 30°, 45° and 60° down
-hits the bridge floor in both layouts. A camera cannot see through that floor.
+hits the bridge floor. A camera cannot see through that floor.
 With the revised wider floors, at the rim eye, 0.7 m inside the edge, the 30°, 45° and
-60° centre rays reach the next deck in A. In B the next deck is closer and is reached even
-at 15° down. A's 15° centre ray still clears the modeled ship. Use the angle selector
+60° centre rays reach the next deck. The 15° centre ray still clears the modeled ship. Use the angle selector
 above to compare the full images: a centre-ray result describes only the middle pixel,
 not everything in the wide field of view.
 
@@ -75,6 +72,40 @@ Play, foreground and panorama describe rendering distance and composition, not p
 ship storeys. Nearby rails and fronds can form foreground parallax, but every visible
 member needs a real root and a position in the shared model. The central spire is one
 continuous structure; it must not be duplicated in a panorama plate.
+
+## From the Blender reference to the game
+
+**Recommended approach:** keep one master ship assembly in metres, with linked collections
+for the bridge, six lower tiers, central structure, architecture and vegetation. Export
+separate game assets from that common design, so all views share positions and proportions.
+
+| View | Asset derived from the shared design |
+|---|---|
+| Walking and close inspection | Detailed bridge or local tier sections, with nearby architecture and gameplay collision |
+| Looking down or pulling back to the whole ship | Simpler tier and exterior meshes, with reduced detail for distant buildings and forests |
+| Galaxy map | Small ship image or simplified mesh, kept legible as a schematic marker |
+
+The bridge can be the first detailed section of this assembly. The lower tiers become
+part of the same coordinate system rather than unrelated scenery. For a continuous
+zoom and tilt, visible ship geometry needs consistent camera projection. The current
+painted bridge plate is composed for its fixed isometric view; extending free camera
+movement will also require suitable materials or baked textures for the other angles.
+
+The current game loads an area's GLB from an area bundle at runtime. The galaxy map
+currently draws a diamond at the simulated ship position. Neither a detailed whole-ship
+loader nor a model-based map marker is implemented by this reference-page change.
+
+A smaller transform alone does not make a fully detailed ship inexpensive. Use reduced
+geometry and materials for distant views, and keep full local detail to the nearby areas.
+Godot offers [mesh LOD](https://docs.godotengine.org/en/stable/tutorials/3d/mesh_lod.html)
+and [visibility ranges](https://docs.godotengine.org/en/stable/tutorials/3d/visibility_ranges.html)
+for detail changes. Its automatic LOD is an import-time facility; the current runtime
+GLB loading path needs deliberately prepared detail levels or a revised import pipeline.
+
+At interstellar map scale, a physically sized 200 m ship is invisible. A map marker
+should therefore keep a readable screen size, anchored to the true simulated position.
+A rendered ship icon can share the ship's silhouette and colours without loading its
+interior. A selected-ship close-up can show the simplified 3D model.
 
 ## Style concept — not a dimension reference
 

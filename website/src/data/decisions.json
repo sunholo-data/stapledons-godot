@@ -3,13 +3,36 @@
  "designPin": "f4d876caf98f33691fb165c8a73be5c76abd313c",
  "decisions": [
   {
+   "id": "D-35",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-04",
+   "title": "Boundary clearance in the selected seven-layer geometry reference.",
+   "question": "Boundary clearance in the selected seven-layer geometry reference.",
+   "ruling": "DECIDED (Mark, attended 2026-10-04): retain the proposed 5 m minimum clearance.",
+   "words": [],
+   "provenance": "Attended ship-geometry review; art/ship-dimensions-v2/layout.json and website/docs/ship-layer-reference.mdx.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L125",
+   "sourceLabel": "stapledon-mission.md, line 125",
+   "refs": [],
+   "groups": [
+    "visual",
+    "physics"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
+  {
    "id": "D-34",
    "source": "ledger",
    "status": "resolved",
    "date": "2026-10-04",
    "title": "Bubble-ship major tier count for the geometry/art study.",
    "question": "Bubble-ship major tier count for the geometry/art study.",
-   "ruling": "DECIDED (Mark, attended 2026-10-04): seven layers are preferred over twenty closely spaced decks; architecture within those layers will include buildings, forests and other spaces.",
+   "ruling": "DECIDED (Mark, attended 2026-10-04): seven major layers are chosen; remove the twenty-deck option from the review; architecture within those layers will include buildings, forests and other spaces.",
    "words": [],
    "provenance": "Attended ship-geometry review; art/ship-dimensions-v2 and website/docs/ship-layer-reference.mdx.",
    "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L124",

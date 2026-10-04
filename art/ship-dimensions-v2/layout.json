@@ -1,5 +1,5 @@
 {
-  "status": "Seven major tiers preferred by Mark; detailed clearance and radii provisional",
+  "status": "Chosen: seven major tiers with at least 5m lower-floor boundary clearance; architecture to be designed",
   "units": "metres",
   "bubble_radius_m": 100,
   "lower_floor_inner_envelope_radius_m": 95,
@@ -10,7 +10,6 @@
     "radius_m": 22,
     "source": "Actual bridge geometry unchanged; smaller than the full sphere-following cross-section"
   },
-  "preferred_variant": "tiers",
   "alternatives": [
     {
       "id": "tiers",
@@ -54,133 +53,13 @@
           "minimum_boundary_clearance_m": 5
         }
       ]
-    },
-    {
-      "id": "dense",
-      "count": 20,
-      "spacing_m": 8.5,
-      "schedule": [
-        {
-          "level": 1,
-          "top_z_m": 73.5,
-          "radius_m": 60.10928476066151,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 2,
-          "top_z_m": 65,
-          "radius_m": 69.2020323027551,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 3,
-          "top_z_m": 56.5,
-          "radius_m": 76.2924426740431,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 4,
-          "top_z_m": 48,
-          "radius_m": 81.9017052762383,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 5,
-          "top_z_m": 39.5,
-          "radius_m": 86.31878471367523,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 6,
-          "top_z_m": 31,
-          "radius_m": 89.7197772825746,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 7,
-          "top_z_m": 22.5,
-          "radius_m": 92.21707470987366,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 8,
-          "top_z_m": 14,
-          "radius_m": 93.88275858019496,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 9,
-          "top_z_m": 5.5,
-          "radius_m": 94.76065583914949,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 10,
-          "top_z_m": -3,
-          "radius_m": 94.83575211733825,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 11,
-          "top_z_m": -11.5,
-          "radius_m": 94.09404100918681,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 12,
-          "top_z_m": -20,
-          "radius_m": 92.56987857520376,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 13,
-          "top_z_m": -28.5,
-          "radius_m": 90.22365441110342,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 14,
-          "top_z_m": -37,
-          "radius_m": 86.98893820416096,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 15,
-          "top_z_m": -45.5,
-          "radius_m": 82.7617165442629,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 16,
-          "top_z_m": -54,
-          "radius_m": 77.37966692414834,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 17,
-          "top_z_m": -62.5,
-          "radius_m": 70.57939427988327,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 18,
-          "top_z_m": -71,
-          "radius_m": 61.89580172938467,
-          "minimum_boundary_clearance_m": 5
-        },
-        {
-          "level": 19,
-          "top_z_m": -79.5,
-          "radius_m": 50.36551516240071,
-          "minimum_boundary_clearance_m": 5
-        }
-      ]
     }
   ],
   "architecture": "Buildings, forests and other spaces inside major tiers; their occupied volumes must be checked against the sphere at their own heights.",
   "limitations": [
-    "Five-metre buffer is a review proposal for lower floors, not approved canon.",
+    "Five-metre lower-floor envelope accepted by Mark on 2026-10-04; existing bridge geometry unchanged.",
     "Floor clearances do not certify roofs, trees, railings or structural viability.",
     "No architecture or relativistic effects modeled yet."
-  ]
+  ],
+  "selected_variant": "tiers"
 }
