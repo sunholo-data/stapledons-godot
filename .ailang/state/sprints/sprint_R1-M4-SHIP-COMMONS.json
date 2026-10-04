@@ -1,0 +1,95 @@
+{
+  "sprint_id": "R1-M4-SHIP-COMMONS",
+  "status": "in-progress",
+  "approved": {
+    "by": "Mark Edmondson",
+    "when": "2026-10-04T16:27:06.430Z",
+    "mode": "attended",
+    "note": "Approved first Commons build; also requested mid-journey demo sky review."
+  },
+  "created": "2026-10-04",
+  "design_doc": "design_docs/planned/r1/m4-ship-commons-build.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-commons-build-sprint.md",
+  "velocity": {
+    "estimated_total_loc": 1050,
+    "estimated_sessions": "3–5",
+    "target_loc_per_day": null,
+    "basis": "Geometry/demo and 61-line control patch are not reliable art velocity; allow material and performance iteration."
+  },
+  "order": [
+    "CB-M1",
+    "CB-M2",
+    "CB-M3"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "CB-M1",
+      "package": null,
+      "action": "none",
+      "reason": "Blender/Godot asset work; reuse measured assembly, WALK and lift. No new package-like capability; prior geometry audit found no suitable authoring package."
+    },
+    {
+      "milestone": "CB-M2",
+      "package": null,
+      "action": "none",
+      "reason": "Blender UV/material authoring and Godot shading; reuse observer/sky. No new physics or simulation package capability."
+    },
+    {
+      "milestone": "CB-M3",
+      "package": null,
+      "action": "none",
+      "reason": "Reuse existing Godot benchmark/export and shell publication tooling; no new package-like capability."
+    }
+  ],
+  "features": [
+    {
+      "id": "CB-M1",
+      "description": "Measured flat-colour Commons pavilion, courtyard and real walk connection to lift in a distinct editable Blender assembly",
+      "estimated_loc": 350,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "CB1: envelope, heights, file health and GLB reimport verified",
+        "CB2: active Commons path, capsule/edge and unchanged lift clearance",
+        "CB3: inside-observer blockout captures inspected"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "CB-M2",
+      "description": "Reusable UV-painted module kit proven in Godot from multiple angles, with detailed and coarse exports",
+      "estimated_loc": 370,
+      "dependencies": [
+        "CB-M1"
+      ],
+      "acceptance_criteria": [
+        "CB3: multi-angle paint inspection recorded, five inside views and labeled outside diagnostic",
+        "CB4: compatible material export, geometry/texture caps and measured counters; coarse silhouette preserved"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "CB-M3",
+      "description": "Measured cost comparison, independent evaluation, draft website and Mac review delivery",
+      "estimated_loc": 330,
+      "dependencies": [
+        "CB-M2"
+      ],
+      "acceptance_criteria": [
+        "CB4: baseline/delta and resource statistics recorded",
+        "CB5: actual M2 Air benchmark required for performance signoff; unresolved target explicitly blocks signoff",
+        "CB6: regressions, exported-app smoke and published ZIP hash verified",
+        "Independent evaluator report and updated review hub"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ]
+}
