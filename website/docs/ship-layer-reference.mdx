@@ -8,26 +8,30 @@ import TierConcepts from '@site/src/components/ShipGeometryReview/Concepts';
 import JourneyReview from '@site/src/components/ShipGeometryReview/Journey';
 import CommonsReview from '@site/src/components/ShipGeometryReview/Commons';
 import CommonsPlanning from '@site/src/components/ShipGeometryReview/Planning';
+import LiveJourneyReview from '@site/src/components/ShipGeometryReview/LiveJourney';
 
 The working reference for the ship's geometry, art and playable spaces. We build and
 review **one level at a time**, opening areas as they become playable.
 
-## Next: agree the Commons plan
+## Current build: open Commons arcade
 
-The approved Level 1 concept calls for sweeping terraces, open arcades, planting and
-civic life. The current generic pavilion is a working test and **does not yet match
-that architecture**. Review the proposed circulation/zoning before the next build;
-then develop one representative arcade/plaza section with the bridge's inked finish.
+The bridge lift reaches an open civic plaza and a curved, planted arcade in the
+approved building band. This replaces the generic barrel-roofed hall. Cream terraces,
+teal ribs, open bays and civic seating begin translating the approved concept into
+measured, playable geometry. Other zones and tiers remain coarse.
+
+<CommonsReview />
+
+<details>
+<summary>Approved concept and zoning reference</summary>
+
+The approved direction is sweeping terraces, open arcades, planting and civic life.
+The zoning sets an open plaza, curved arcade groups and planted walks; exact details
+develop through playable sections. The earlier paintover is a finish study only.
 
 <CommonsPlanning />
 
-## Current build: Commons
-
-The bridge lift reaches the first Commons courtyard, with a pavilion, planted terrace,
-canopy, seating and reading tables. Other tiers remain undressed. The model below is the
-current assembly; exterior orbit is for inspection, while the screenshots show player views.
-
-<CommonsReview />
+</details>
 
 ## Decisions
 
@@ -38,13 +42,14 @@ current assembly; exterior orbit is for inspection, while the screenshots show p
 | Viewpoint | Ship and sky share one observer. Floors and roofs remain opaque. |
 | Asset workflow | One measured Blender assembly, reusable painted modules and simpler distant models. |
 | Release approach | Develop the Commons first, then open further levels incrementally. |
+| Commons layout | Approved zoning direction: open civic plaza, curved arcades and planted walks; build and review one section at a time. |
 | Travel sky | Use 4× exposure for now, preserving physical inputs and directional contrast. It remains a labelled display aid. |
 
 <ShipGeometryReview />
 
 ## Still to review
 
-- **Commons:** agree the concept-based floor plan, then block and paint one arcade/plaza section.
+- **Commons:** review the first arcade/plaza section against the approved concept before expanding.
 - **Later tiers:** concepts and zoning remain proposals; population and life-support capacity are unresolved.
 - **Laptop performance:** actual M2 Air measurement is pending. The latest Studio run is about 9.6 ms p95 at 1920×1080.
 - **Travel effects:** physically supported glow/bubble effects remain future work. The current demo does not show travel glow or GR lensing.
@@ -57,6 +62,7 @@ current assembly; exterior orbit is for inspection, while the screenshots show p
 
 - First connected ship area: [bridge-to-Commons lift recording](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_demo_v1/bridge-lift-roundtrip.mp4).
 - First painted pavilion: [Commons revision 1](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_commons_v1/courtyard.png).
+- Generic pavilion and terrace test: [Commons revision 2](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_commons_v2/planted_terrace.png). Its architecture was superseded by the approved open-arcade direction.
 
 </details>
 
@@ -71,11 +77,16 @@ illustrative; the measured Blender model governs construction.
 </details>
 
 <details>
-<summary>Travel sky and exposure comparisons</summary>
+<summary>Journey playback and sky comparisons</summary>
 
-The demo uses a frozen simulation midpoint at **0.99c**. Turning the camera leaves the
-travel heading fixed. Exposure changes the displayed sky, preserving its physical inputs;
-even strong gains leave the side view subdued and can saturate forward highlights.
+Navigation now shows the boost, cruise and braking of an actual committed voyage.
+Review playback gives each nonzero phase about 20 real seconds, with variable time
+compression labelled alongside both clocks. Turning the camera leaves travel heading fixed.
+
+<LiveJourneyReview />
+
+The earlier frozen **0.99c** exposure comparison remains below. Exposure is a display
+aid; even strong gains leave the side view subdued and can saturate forward highlights.
 Geometry retains prototype lighting.
 
 <JourneyReview />
@@ -91,9 +102,12 @@ gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.s
 ```
 
 Open **Ship geometry demo**. **WASD** walks, **Option + drag** looks, scrolling zooms,
-and **E** uses the lift. The review opens at **4× exposure**. **J** cycles exposure; **5/6** compare rest/cruise and
+and **E** uses the lift. **M** opens navigation: select a star and hold **Commit**;
+the map closes and you can watch acceleration, cruise and braking aboard ship.
+**7** looks forward/up to see the star field change; pan around to compare directions.
+The review opens at **4× exposure**. **J** cycles exposure; **5/6** compare frozen rest/cruise snapshots outside committed travel and
 **7/8/9** look forward/side/aft. **Tab** shows all controls. **B** measures performance
-on your laptop and displays the report location.
+on your laptop outside committed travel and displays the report location.
 
 <details>
 <summary>Build plans and verification</summary>
