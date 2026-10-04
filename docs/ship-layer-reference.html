@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Montserrat:wght@600;700;800&amp;display=swap">
 <link rel="icon" type="image/svg+xml" href="/stapledons-godot/img/ailang-logo.svg">
 <link rel="preconnect" href="https://storage.googleapis.com"><link rel="stylesheet" href="/stapledons-godot/assets/css/styles.51505265.css">
-<script src="/stapledons-godot/assets/js/runtime~main.660c71c6.js" defer="defer"></script>
+<script src="/stapledons-godot/assets/js/runtime~main.acb6ba87.js" defer="defer"></script>
 <script src="/stapledons-godot/assets/js/main.56c74f4b.js" defer="defer"></script>
 </head>
 <body>
@@ -149,7 +149,9 @@ Cloud CLI authenticated:</p>
 <div class="language-sh codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#F8F8F2;--prism-background-color:#282A36"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-sh codeBlock_bY9V thin-scrollbar" style="color:#F8F8F2;background-color:#282A36"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#F8F8F2"><span class="token plain">gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.sh </span><span class="token parameter variable" style="color:rgb(189, 147, 249);font-style:italic">--jq</span><span class="token plain"> .content </span><span class="token operator">|</span><span class="token plain"> base64 </span><span class="token parameter variable" style="color:rgb(189, 147, 249);font-style:italic">-d</span><span class="token plain"> </span><span class="token operator">|</span><span class="token plain"> </span><span class="token function" style="color:rgb(80, 250, 123)">bash</span><span class="token plain"> </span><span class="token parameter variable" style="color:rgb(189, 147, 249);font-style:italic">-s</span><span class="token plain"> -- </span><span class="token parameter variable" style="color:rgb(189, 147, 249);font-style:italic">--dev</span><br></div></code></pre></div></div>
 <p>In the game, choose <strong>Ship geometry demo</strong> to open a separate review window while your
 existing voyage keeps running. Use <strong>1</strong> for bridge, <strong>2</strong> for overlook,
-<strong>3</strong> for whole ship, <strong>WASD</strong> to walk, right-drag to look, and the wheel to pull back.
+<strong>3</strong> for whole ship and <strong>WASD</strong> to walk. Hold <strong>Option</strong> while sliding one finger on the
+trackpad to look; no held click is needed. Right-drag remains available with a mouse.
+Use <strong>two-finger scrolling</strong> or the mouse wheel to zoom, including in the whole-ship view.
 Press <strong>E</strong> at the lift landing to descend or return, <strong>R</strong> to reset, and <strong>Escape</strong> to close
 the review window. <strong>4</strong> is a diagnostic rim camera, not a reachable standing position.
 Press <strong>B</strong> to benchmark the four views at 1920×1080; the demo displays where it saved the report.</p>
