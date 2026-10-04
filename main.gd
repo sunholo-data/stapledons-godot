@@ -67,7 +67,7 @@ const SKY_NOTE := "sky background not bundled in this build"
 
 func _ready() -> void:
 	var args := _user_args()
-	if args.has("ship-demo"):
+	if args.has("ship-demo") or args.has("ship-demo-smoke"):
 		get_tree().change_scene_to_file.call_deferred("res://demos/ship_geometry_demo.tscn")
 		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
@@ -250,7 +250,7 @@ func _run_interior(args: Dictionary) -> void:
 		var review_layer := CanvasLayer.new(); review_layer.layer = 30; add_child(review_layer)
 		var review_button := Button.new(); review_button.text = "Ship geometry demo"
 		review_button.position = Vector2(18, 110); review_layer.add_child(review_button)
-		review_button.pressed.connect(func() -> void: sim.stop(); get_tree().change_scene_to_file("res://demos/ship_geometry_demo.tscn"))
+		review_button.pressed.connect(_open_ship_demo_review)
 	if capture: # loaded by path: tools/ is excluded from exports
 		get_tree().quit(await load("res://tools/interior_capture.gd").new().run(self, it, map, _out_dir(args["interior-capture"])))
 	elif smoke:
@@ -1025,3 +1025,15 @@ func _centroid(img: Image) -> Vector2:
 				sum += Vector2(x + 0.5, y + 0.5) * l
 				wsum += l
 	return sum / wsum if wsum > 0.0 else Vector2(-1, -1)
+
+
+## Open a separate review process; the active voyage and its clock keep running.
+func _open_ship_demo_review(smoke := false) -> int:
+	var launch:=PackedStringArray()
+	if OS.has_feature("editor"):
+		launch.append_array(PackedStringArray(["--path",ProjectSettings.globalize_path("res://")]))
+	if smoke:launch.append("--headless")
+	launch.append_array(PackedStringArray(["--","--ship-demo-smoke" if smoke else "--ship-demo"]))
+	var pid:=OS.create_instance(launch)
+	if pid<0:push_error("Could not launch ship geometry review window")
+	return pid

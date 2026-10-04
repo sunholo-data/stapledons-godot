@@ -152,14 +152,23 @@
         "Exported demo/install and capture manifest verified"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-04T14:56:10.610Z",
       "completed": null,
-      "notes": null
+      "notes": "Implementation and review tooling ready. In-app1920x1080 benchmark records actual model/CPU/GPU/RAM and requires target confirmation; specifiedMacBookAirM2(2022)24GB measurements remain pending. Unitbench/isolated child launch pass; actual GLB heights/tip negativecontrols and3lift roundtrips pass; input/camera locks fixed after independent review. Studio benchmark, compatibility gates and packaged export in progress; no laptop performance claimed."
     }
   ],
   "handoff": {
     "sent": true,
     "mode": "local sprint-executor agent",
     "reason": "Approved scope and shared-view clarification."
+  },
+  "target_hardware": {
+    "machine": "MacBook Air M2 (2022)",
+    "ram_gb": 24,
+    "resolution": [
+      1920,
+      1080
+    ],
+    "evidence": "user specified; measured report pending"
   }
 }

@@ -2,6 +2,7 @@ extends SceneTree
 ## Independent mesh check, including negative-control malformed manifests.
 const EXPECTED := [82,57,32,7,-18,-43,-68]
 var failures := 0
+var mesh_tops := {}
 func check(label: String, ok: bool) -> void:
 	print("  %s %s" % ["ok" if ok else "FAIL", label])
 	if not ok: failures += 1
@@ -18,8 +19,15 @@ func _initialize() -> void:
 	var scene := AreaBundle.load_glb("res://assets/ship_demo/ship.glb")
 	check("real mesh export", scene != null)
 	if scene == null: quit(1); return
+	var negative:="" if OS.get_cmdline_user_args().size()<2 else OS.get_cmdline_user_args()[1]
+	if negative!="":_mutate(scene,negative)
 	var faces := PackedVector3Array()
 	_scan(scene,Transform3D.IDENTITY,faces)
+	for i in range(1,7):
+		var prefix:="Deck %02d top" % i
+		check("actual exported tier height %d" % i,mesh_tops.has(prefix) and absf(mesh_tops.get(prefix,INF)-EXPECTED[i])<.001)
+	check("actual bridge floor82m",mesh_tops.has("deck_floor_fill") and absf(mesh_tops.get("deck_floor_fill",INF)-82.)<.001)
+	check("actual bridge needle98m",mesh_tops.has("spire_needle") and absf(mesh_tops.get("spire_needle",INF)-98.)<.001)
 	check("opaque shaft opening", _shaft_clear(faces))
 	var bridge := AreaBundle.load_glb("res://assets/ship_demo/walk_bridge.glb")
 	var lower := AreaBundle.load_glb("res://assets/ship_demo/walk_lower.glb")
@@ -36,11 +44,15 @@ func _scan(n: Node, xf: Transform3D, faces: PackedVector3Array) -> void:
 	if n is Node3D: xf = xf * n.transform
 	if n is MeshInstance3D and n.mesh != null:
 		var lower := String(n.name).begins_with("Deck")
+		var key:=String(n.name)
+		if lower and key.contains("top"):key=key.substr(0,11)
+		var top:=-INF
 		for v in n.mesh.get_faces():
 			var w: Vector3 = xf*v
-			faces.append(w)
+			faces.append(w);top=maxf(top,w.y)
 			if w.length()>100.001: check("physical vertex inside bubble",false)
 			if lower and w.length()>95.001: check("lower floor envelope",false)
+		mesh_tops[key]=top
 	for child in n.get_children(): _scan(child,xf,faces)
 func _shaft_clear(faces: PackedVector3Array) -> bool:
 	for x in [6.2,8.,9.8]:
@@ -48,3 +60,7 @@ func _shaft_clear(faces: PackedVector3Array) -> bool:
 			for i in range(0,faces.size(),3):
 				if Geometry3D.segment_intersects_triangle(Vector3(x,83.4,z),Vector3(x,55.5,z),faces[i],faces[i+1],faces[i+2]) != null: return false
 	return true
+
+func _mutate(n: Node, mode: String) -> void:
+	if n is Node3D and ((mode=="wrong-tier" and String(n.name).begins_with("Deck 03 top")) or (mode=="wrong-tip" and n.name=="spire_needle")):n.position.y+=1.
+	for child in n.get_children():_mutate(child,mode)

@@ -536,3 +536,17 @@ ship-demo-smoke: validate-ship-demo ship-demo-test ship-demo-lift-test
 ship-demo-movie:
 	$(GODOT) --path . --script tools/ship_demo_movie.gd
 	ffmpeg -y -framerate 24 -i renders/ship_demo/movie/%05d.png -c:v libx264 -crf 22 -pix_fmt yuv420p -movflags +faststart renders/ship_demo/bridge_lift_roundtrip.mp4
+ship-demo-optics:
+	$(GODOT) --path . --script tools/ship_demo_optics.gd
+ship-demo-bench:
+	$(GODOT) --path . --script tools/ship_demo_bench.gd
+ship-demo-benchmark-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_benchmark.gd > $(SCRATCH)/ship-demo-benchmark.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-benchmark.log; test $$rc = 0 && grep -q '^ship-demo-benchmark: OK$$' $(SCRATCH)/ship-demo-benchmark.log
+ship-demo-geometry-negative-test:
+	@for mutation in wrong-tier wrong-tip; do $(GODOT) --headless --path . --script tools/validate_ship_demo.gd -- assets/ship_demo/manifest.json $$mutation > $(SCRATCH)/ship-demo-$$mutation.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-demo: FAIL$$' $(SCRATCH)/ship-demo-$$mutation.log || exit 1; done
+export-macos: ship-demo-stage
+ship-demo-export-smoke:
+	@mkdir -p $(SCRATCH)
+	@"$(APP)/Contents/MacOS/Stapledons Voyage" --headless -- --ship-demo-smoke > $(SCRATCH)/ship-demo-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-export.log; test $$rc = 0 && grep -q '^ship-demo-export-smoke: OK$$' $(SCRATCH)/ship-demo-export.log
+ship-demo-launch-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_launch.gd > $(SCRATCH)/ship-demo-launch.log 2>&1; rc=$$?; tail -5 $(SCRATCH)/ship-demo-launch.log; test $$rc = 0 && grep -q '^ship-demo-launch: OK$$' $(SCRATCH)/ship-demo-launch.log

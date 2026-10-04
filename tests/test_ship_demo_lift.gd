@@ -18,8 +18,13 @@ func _run() -> void:
 	demo.avatar_pos=Vector3(8,82,-4.8)
 	check("can board bridge",lift.board())
 	check("boarding blocks reentry",not lift.board())
+	var wheel:=InputEventMouseButton.new();wheel.button_index=MOUSE_BUTTON_WHEEL_UP;wheel.pressed=true
+	demo._unhandled_input(wheel)
+	check("boarding wheel cannot escape shaft",demo.camera.pullback==0.)
 	lift.advance(.81)
 	check("attached while descending",demo.avatar.get_parent()==lift.platform)
+	demo._unhandled_input(wheel)
+	check("descending wheel cannot escape shaft",demo.camera.pullback==0.)
 	check("bridge gate closes after departure",lift.gates[0].visible)
 	var shape:=CapsuleShape3D.new();shape.radius=.35;shape.height=1.8
 	var clear:=true
@@ -39,6 +44,11 @@ func _run() -> void:
 	check("bridge ready after return",lift.state=="bridge_ready")
 	check("roundtrip endpoint centimetre",demo.avatar_pos.distance_to(Vector3(8,82,-4.8))<.01)
 	check("one captain",demo.avatar.get_parent()==demo.geometry)
+	for trip in 2:
+		for direction in 2:
+			check("repeat board",lift.board())
+			lift.advance(.81);lift.advance(11.01);lift.advance(.81)
+		check("repeat stable bridge endpoint",lift.state=="bridge_ready" and demo.avatar_pos.distance_to(Vector3(8,82,-4.8))<.01 and demo.avatar.get_parent()==demo.geometry and lift.gates[0].visible and lift.gates[1].visible)
 	demo.avatar_pos=Vector3(18,82,9)
 	check("cannot board remotely",not lift.board())
 	demo.queue_free();await process_frame
