@@ -1,0 +1,165 @@
+{
+  "sprint_id": "R1-M4-SHIP-DEMO",
+  "status": "in-progress",
+  "approved": {
+    "by": "Mark Edmondson",
+    "when": "2026-10-04T14:23:44.076Z",
+    "mode": "attended",
+    "note": "Approved overlook plus one-tier lift; one meaningful perspective shared by geometry and external sky/SR, with future GR observer seam."
+  },
+  "created": "2026-10-04T12:58:34.708Z",
+  "design_doc": "design_docs/planned/r1/m4-ship-geometry-demo.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-geometry-demo-sprint.md",
+  "ailang": {
+    "pin": "v0.52.0",
+    "binary": "runtime/bin/ailang",
+    "relativity_pin": "0.7.0"
+  },
+  "velocity": {
+    "estimated_total_loc": 1560,
+    "estimated_sessions": "3–5",
+    "target_loc_per_day": null,
+    "basis": "Prior M4 estimate 2300 LOC/day not reliable for new camera/Blender art work; bounded milestones rather than calendar guarantee."
+  },
+  "order": [
+    "SD1",
+    "SD2",
+    "SD3",
+    "SD4"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "SD1",
+      "package": null,
+      "action": "none",
+      "search_terms": [
+        "geometry",
+        "navigation",
+        "rendering"
+      ],
+      "inspected": [
+        "sunholo/celestial",
+        "sunholo/a2ui"
+      ],
+      "reason": "Godot/Blender presentation and validation; astronomical mechanics and declarative UI packages do not provide this capability. Existing sky physics pins unchanged."
+    },
+    {
+      "milestone": "SD2",
+      "package": null,
+      "action": "none",
+      "search_terms": [
+        "geometry",
+        "navigation",
+        "rendering"
+      ],
+      "inspected": [
+        "sunholo/celestial",
+        "sunholo/a2ui"
+      ],
+      "reason": "Godot/Blender presentation and validation; astronomical mechanics and declarative UI packages do not provide this capability. Existing sky physics pins unchanged."
+    },
+    {
+      "milestone": "SD3",
+      "package": null,
+      "action": "none",
+      "search_terms": [
+        "geometry",
+        "navigation",
+        "rendering"
+      ],
+      "inspected": [
+        "sunholo/celestial",
+        "sunholo/a2ui"
+      ],
+      "reason": "Godot/Blender presentation and validation; astronomical mechanics and declarative UI packages do not provide this capability. Existing sky physics pins unchanged."
+    },
+    {
+      "milestone": "SD4",
+      "package": null,
+      "action": "none",
+      "search_terms": [
+        "geometry",
+        "navigation",
+        "rendering"
+      ],
+      "inspected": [
+        "sunholo/celestial",
+        "sunholo/a2ui"
+      ],
+      "reason": "Godot/Blender presentation and validation; astronomical mechanics and declarative UI packages do not provide this capability. Existing sky physics pins unchanged."
+    }
+  ],
+  "features": [
+    {
+      "id": "SD1",
+      "description": "Measured assets and lift route",
+      "estimated_loc": 280,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Seven tier heights and lower-floor 95m envelope verified",
+        "Real platform openings and safe capsule route surveyed"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "SD2",
+      "description": "Perspective overlook and pullback",
+      "estimated_loc": 500,
+      "dependencies": [
+        "SD1"
+      ],
+      "acceptance_criteria": [
+        "Shared camera projection/attitude/FOV for visible ship and sky",
+        "Reference ray hits and inspected captures agree",
+        "Diagnostic rim camera distinguished from reachable player viewpoint",
+        "Shared observer rays agree at centre/corners through tilt, resize, pullback and lift; GR is documented as future, not claimed implemented"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "SD3",
+      "description": "Lift and first-tier landing",
+      "estimated_loc": 460,
+      "dependencies": [
+        "SD2"
+      ],
+      "acceptance_criteria": [
+        "25m descent/return endpoint error no more than 1cm",
+        "Separate active walk regions preserve correct heights",
+        "No swept floor/spire collision, duplicate boarding or unsafe landing"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "SD4",
+      "description": "Laptop performance and review build",
+      "estimated_loc": 320,
+      "dependencies": [
+        "SD3"
+      ],
+      "acceptance_criteria": [
+        "Actual laptop benchmark at four views records resolution and frame times",
+        "Current compatibility checks pass",
+        "Exported demo/install and capture manifest verified"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "handoff": {
+    "sent": true,
+    "mode": "local sprint-executor agent",
+    "reason": "Approved scope and shared-view clarification."
+  }
+}
