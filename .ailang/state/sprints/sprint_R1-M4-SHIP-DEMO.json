@@ -154,7 +154,7 @@
       "passes": null,
       "started": "2026-10-04T14:56:10.610Z",
       "completed": null,
-      "notes": "Implementation and review tooling ready. In-app1920x1080 benchmark records actual model/CPU/GPU/RAM and requires target confirmation; specifiedMacBookAirM2(2022)24GB measurements remain pending. Unitbench/isolated child launch pass; actual GLB heights/tip negativecontrols and3lift roundtrips pass; input/camera locks fixed after independent review. Studio benchmark, compatibility gates and packaged export in progress; no laptop performance claimed."
+      "notes": "Review tooling implemented; packaged demo asset/captain/lift roundtrip smoke passed; final16captures and692frames24fps reviewed. StudioM4Max128GB1920x1080p95 frame times26.063–28.579ms exceed16.67ms budget, not a performance pass. ActualMacBookAirM2(2022)24GB benchmark remains pending; SD4passes=null. Full existing gates and independent evaluation owned by root."
     }
   ],
   "handoff": {
@@ -170,5 +170,16 @@
       1080
     ],
     "evidence": "user specified; measured report pending"
+  },
+  "evidence": {
+    "geometry": "tools/validate_ship_demo.gd actual transformed tier tops82,57,32,7,-18,-43,-68 and needle98; wrong-tier/tip controls",
+    "observer_cpu_checks": 217,
+    "lift_checks": 24,
+    "roundtrips": 3,
+    "captures": "art/ship-demo-v1/capture-manifest.json",
+    "studio_benchmark": "art/ship-demo-v1/studio-benchmark.json",
+    "target_laptop_benchmark": "pending",
+    "export_smoke": "ship-demo-export-smoke: OK",
+    "implementation_commit": "3b6b1b4"
   }
 }
