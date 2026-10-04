@@ -35,7 +35,7 @@ var sky_only := false
 var controls := VBoxContainer.new()
 var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [0,1,2,4,6]
-var brightness_stops := 1
+var brightness_stops := 2
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
@@ -77,7 +77,7 @@ func setup(opts := {}) -> bool:
 	if not set_sky_state(opts.get("sky_state","cruise")):
 		push_error("ship demo missing simulation sky review states");return false
 	ready_ok=true
-	set_brightness_trial(opts.get("brightness_stops",1))
+	set_brightness_trial(opts.get("brightness_stops",2))
 	print("ship-demo-ready: OK")
 	return true
 func _draw_layer(texture: Texture2D, layer: int) -> void:

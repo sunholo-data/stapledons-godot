@@ -98,3 +98,19 @@ state/heading invariance and benchmark lock; `make golden` checks calibrated ren
 `make ship-demo-ci` checks navigation/assets/envelope; native reference captures prove
 baseline/2×/4× appearance and multi-angle Commons quality; packaged smokes and ZIP
 hash precede the next draft release. Actual Air profiling remains pending.
+
+## Review correction — approved concept, 2026-10-04
+
+Mark confirmed the Level1 concept was approved and pointed out that the generic
+barrel-roofed test pavilion does not match it. Treat its architectural character
+as the target: sweeping terraces, open curved arcades, planted promenades, civic
+plazas and warm inhabited spaces. Preserve the measured bridge/spire and sphere;
+the concept's enlarged core/illustrative sky are not geometric changes.
+
+Before further architecture, agree a whole-Common circulation/zoning plan, then
+block one representative arcade/plaza section. Do not spend another full art pass
+refining the current generic pavilion as though it were the accepted design.
+The current pavilion remains a historic working test, not approved final architecture.
+The new bridge-style paintover is a finish study only; it is not a UV-textured asset.
+
+Mark selected4× sky exposure for the review default; physics inputs stay unchanged.

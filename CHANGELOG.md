@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Commons architectural review and 4× default, 2026-10-04
+
+- Set the review demo sky exposure to 4× by default, as requested; physical sky inputs remain unchanged.
+- Record that the generic pavilion is a prototype, not a faithful build of the approved Commons concept. Add an unbuilt zoning proposal and finish-only paint study for review before replacing its architecture.
+
 ### Commons expansion and exposure trial, 2026-10-04
 
 - Add reusable planted terrace canopy, seating, reading tables and pavilion details within the current playable Commons.

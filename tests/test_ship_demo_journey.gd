@@ -18,7 +18,7 @@ func _run() -> void:
 	var heading:Vector3=demo.sky.heading_world
 	var beta:float=demo.sky.beta
 	var world_before:=SimBridge.encode(demo.sky_world)
-	check("default trial is labelled 2x",demo.brightness_stops==1 and demo.brightness_label().contains("display aid"))
+	check("default trial is labelled 4x",demo.brightness_stops==2 and demo.brightness_label().contains("display aid"))
 	demo.set_brightness_trial(0)
 	var baseline_scale:float=demo.sky.exposure.star_scale()
 	for stops in [1,2,4,6]:
