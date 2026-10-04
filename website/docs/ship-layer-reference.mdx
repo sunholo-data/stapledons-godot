@@ -4,6 +4,7 @@ sidebar_position: 7
 ---
 
 import ShipGeometryReview from '@site/src/components/ShipGeometryReview';
+import ShipDemoReview from '@site/src/components/ShipGeometryReview/Demo';
 
 This is the shared review reference for the chosen bubble ship: **seven major layers**
 inside a sphere of radius 100 m, with **at least 5 m clearance for the lower-floor geometry**.
@@ -126,8 +127,9 @@ use the same observer contract for all external light and pass its own physics c
 
 ## Approved demo plan
 
-Mark approved the bounded demo on 4 October 2026. Implementation is in progress; the
-Blender reference above remains the measured reference, not a claim of a completed game demo.
+Mark approved the bounded demo on 4 October 2026. The geometry, shared observer and guarded
+lift are implemented in the review branch. Final verification and laptop measurement are
+tracked in the sprint; this is a review demo, not a production art sign-off.
 
 1. Perspective bridge view, correct downward occlusion, and whole-ship inspection pullback.
 2. One guarded lift from +82 m to the next tier at +57 m, a small walkable landing, and return.
@@ -141,6 +143,36 @@ that the captain's walking capsule can occupy those points.
 
 [Implementation design](https://github.com/sunholo-data/stapledons-godot/blob/demo/ship-geometry-seven/design_docs/planned/r1/m4-ship-geometry-demo.md)
 and [sprint plan](https://github.com/sunholo-data/stapledons-godot/blob/demo/ship-geometry-seven/design_docs/planned/r1/m4-ship-geometry-demo-sprint.md).
+
+## Playable demo model and game captures
+
+The demo uses the real bridge mesh above six proportioned lower tiers. A guarded lift
+connects the bridge at +82 m to a bounded landing at +57 m through genuine floor openings.
+These are native material geometry previews; the painted production bridge remains available
+in the normal game. Buildings and forests are still absent.
+
+<ShipDemoReview />
+
+The common observer has an independent GPU check: **54 star-versus-finite-marker cases**
+across viewport proportions, tilt, roll, field of view and SR velocities of 0 and 0.9c.
+Worst displacement was **0.17 pixels**, below the 0.75 pixel limit. An opaque surface
+blocked the star completely, and a deliberately mismatched sky camera was detected.
+[GPU audit](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_demo_v1/optics/audit.json).
+
+Target laptop: **MacBook Air M2 (2022), 24 GB**, at **1920×1080**. Actual laptop performance
+is awaiting measurement; Studio measurements are evidence for the Studio only.
+
+Install the latest private Mac review build from a Terminal with GitHub CLI and Google
+Cloud CLI authenticated:
+
+```sh
+gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.sh --jq .content | base64 -d | bash -s -- --dev
+```
+
+In the game, choose **Ship geometry demo**. Use **1** for bridge, **2** for overlook,
+**3** for whole ship, **WASD** to walk, right-drag to look, and the wheel to pull back.
+Press **E** at the lift landing to descend or return, **R** to reset, and **Escape** to return
+to the normal game. **4** is a diagnostic rim camera, not a reachable standing position.
 
 ## Style concept — not a dimension reference
 
