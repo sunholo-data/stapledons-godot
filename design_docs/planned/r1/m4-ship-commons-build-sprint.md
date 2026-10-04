@@ -65,3 +65,12 @@ is not evidence that the embedded atlas costs nothing. Presentation/host timing
 varies, especially the baseline mid-lift sample; no causal speedup is claimed.
 Raw reports remain local under `renders/ship_demo/`. Actual M2 Air performance
 is still required: CB-M3 and the sprint remain in progress.
+
+Published Mac review: `v0.4.0-dev.6-commons-sky-review`, source
+`447d7cafede916aecf3a15b2f9f2157ab9484768`. The public review hub is
+https://www.sunholo.com/stapledons-godot/docs/ship-layer-reference (page and
+same-origin model verified HTTP200; Pages deployment37220009708 succeeded).
+The private latest build manifest and local ZIP both give SHA256
+`694deef81ac070a636ebb4e77328823f32ac9ccf321473ec14e0183aa13ccca5`;
+`unzip -tq` passed. Metadata is pinned in `art/ship-commons-v1/review-build.json`.
+Remote source CI37220288520 is in progress. No production merge was performed.

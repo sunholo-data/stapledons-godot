@@ -91,7 +91,7 @@
       "passes": null,
       "started": "2026-10-04T16:27:06.430Z",
       "completed": null,
-      "notes": "Draft checks pass: full test/golden, ship-demo-ci, packaged app Commons/lift and simulation smokes. Studio enabled five-view p95 9.34–9.64 ms; baseline timings variable, no causal speedup claim. Independent evaluation ready. Website published; Mac publication underway. Actual M2 Air benchmark remains required, so performance signoff and sprint completion stay pending."
+      "notes": "Draft published as v0.4.0-dev.6-commons-sky-review,commit447d7cafede916aecf3a15b2f9f2157ab9484768. ZIP hash verified:694deef81ac070a636ebb4e77328823f32ac9ccf321473ec14e0183aa13ccca5; archive integrity passes. Full local test/golden, ship-demo-ci, packaged Commons/lift and normal simulation/AI/planet smokes pass. Independent draft evaluation88/100. Website live model/page verified200. Studio enabled five-view p95 9.34–9.64ms, no causal speedup claim. Remote CI in progress; no merge. Actual M2 Air benchmark remains required; performance signoff and sprint completion stay pending."
     }
   ]
 }
