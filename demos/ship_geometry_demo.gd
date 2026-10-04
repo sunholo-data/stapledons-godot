@@ -275,21 +275,26 @@ func _export_smoke() -> void:
 	await get_tree().process_frame
 	var ok:=ready_ok and not avatar.stages.is_empty()
 	ok=ok and not commons.is_empty() and commons.visual.get_parent()==geometry
+	print("ship-demo-smoke-stage assets: ",ok)
 	if ok:
 		for direction in 2:
 			ok=ok and lift.board()
 			lift.advance(.81);lift.advance(11.01);lift.advance(.81)
 		ok=ok and lift.state=="bridge_ready" and walk==walk_bridge and avatar_pos.distance_to(Vector3(8,82,-4.8))<.01
+	print("ship-demo-smoke-stage lift: ",ok)
 	if ok:
 		journey_auto_tick=false;open_navigation()
 		ok=ok and journey_map!=null
+		print("ship-demo-smoke-stage navigation: ",ok," ",caption)
 		if ok:
 			ok=journey_map.open_commit_dialog() and journey_map.hold_commit(GalaxyMap.HOLD_S) and journey_tick()
 			ok=ok and live_journey and not navigation_window.visible and sky.beta>0.
+			print("ship-demo-smoke-stage commit: ",ok," refused=",journey_sim.last_refused)
 			for i in 1220:
 				if not live_journey:break
 				ok=journey_tick() and ok
 			ok=ok and journey_map.journey_state()=="arrived" and sky.beta==0.
+			print("ship-demo-smoke-stage arrival: ",ok," phase=",sky_world.ship.phase)
 	print("ship-demo-export-smoke: %s" % ("OK" if ok else "FAIL"))
 	get_tree().quit(0 if ok else 1)
 

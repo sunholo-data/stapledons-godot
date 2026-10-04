@@ -19,6 +19,8 @@ The fixed 0.1 ship-year/real-second map rate skips minute-scale burns. Opt-in pr
 | Isolated normal demo session; automatic navigation close; sky mirroring; attitude retained; snapshot and benchmark lock | `AILANG_BIN=$PWD/runtime/bin/ailang godot --headless --path . --script tests/test_ship_demo_live.gd` |
 | Sequential reachable captain-eye acceleration/coast/braking/arrival renders with metadata | `AILANG_BIN=$PWD/runtime/bin/ailang godot --path . --script tools/ship_demo_live_capture.gd` |
 | Frozen-state compatibility | `godot --headless --path . --script tests/test_ship_demo_journey.gd` and `tests/test_ship_demo_input.gd` |
+| Runtime cache responds to nested source and dependency changes | `godot --headless --path . --script tests/test_runtime_fingerprint.gd` |
+| Native commit and hold controls visible at1280×800 and900×600; viewport click opens dialog | `AILANG_BIN=$PWD/runtime/bin/ailang godot --path . --script tools/ship_demo_live_capture.gd` |
 | Native bundled runtime navigation, commit and arrival without PATH | Exported ship demo `-- --ship-demo-smoke` with empty PATH/AILANG_BIN |
 | Shared physics regression and shader audit | `make test golden` |
 

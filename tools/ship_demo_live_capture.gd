@@ -17,7 +17,18 @@ func _run()->void:
 	for i in 6:await process_frame
 	await RenderingServer.frame_post_draw
 	demo.navigation_window.get_texture().get_image().save_png(OUT+"/navigation.png")
-	demo.journey_map.open_commit_dialog();demo.journey_map.hold_commit(GalaxyMap.HOLD_S)
+	demo.navigation_window.size=Vector2i(900,600)
+	for i in 6:await process_frame
+	await RenderingServer.frame_post_draw
+	demo.navigation_window.get_texture().get_image().save_png(OUT+"/navigation_minimum.png")
+	click(demo.journey_map.commit_button)
+	for i in 6:await process_frame
+	if not demo.journey_map.dialog.visible:
+		push_error("native commit click did not open dialog");quit(1);return
+	await RenderingServer.frame_post_draw
+	demo.navigation_window.get_texture().get_image().save_png(OUT+"/commit_minimum.png")
+	demo.navigation_window.size=Vector2i(1280,800)
+	demo.journey_map.hold_commit(GalaxyMap.HOLD_S)
 	if not demo.journey_tick():quit(1);return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var phase_counts:={"boosting":0,"cruising":0,"braking":0,"at_rest":0}
@@ -36,3 +47,9 @@ func shot(name:String)->void:
 	demo.sky.update_exposure();await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(OUT+"/"+name+".png")
 	shots.append({"name":name,"world":demo.sky_world.duplicate(true),"captain_eye":not demo.camera.external,"eye_m":demo.camera.ship_vector(demo.camera.position),"heading":Array(demo.camera.heading),"view_travel_deg":demo.sky.camera.view_velocity_angle(demo.sky.heading_world),"geometry_visible":not demo.sky_only,"brightness_stops":demo.brightness_stops,"time_compression_ship_years_per_real_s":demo.journey_map.pacing.rate})
+
+func click(button:Button)->void:
+	for pressed in [true,false]:
+		var event:=InputEventMouseButton.new();event.button_index=MOUSE_BUTTON_LEFT
+		event.position=button.get_global_rect().get_center();event.pressed=pressed
+		demo.navigation_window.push_input(event,true)

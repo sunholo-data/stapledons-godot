@@ -221,7 +221,14 @@ func _build() -> void:
 	box.add_child(progress_bar)
 	_grid.columns = 2
 	_grid.add_theme_constant_override("h_separation", 14)
-	box.add_child(_grid)
+	if live_pacing:
+		var scroll:=ScrollContainer.new()
+		scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
+		scroll.custom_minimum_size.y=80
+		scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+		_grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		box.add_child(scroll);scroll.add_child(_grid)
+	else:box.add_child(_grid)
 	box.add_child(HSeparator.new())
 	box.add_child(_speed)
 	slider.step = 0.0
