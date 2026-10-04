@@ -5,7 +5,7 @@
   "base_floor_m": 57,
   "new_finish_top_m": 57.025,
   "envelope_radius_m": 95,
-  "maximum_new_vertex_radius_m": 72.97539032285773,
+  "maximum_new_vertex_radius_m": 82.87856038890662,
   "bounds_ship_m": {
     "min": [
       4.300000190734863,
@@ -13,20 +13,10 @@
       57.0
     ],
     "max": [
-      36.060001373291016,
+      56.60515594482422,
       20.059999465942383,
-      65.41999816894531
+      61.998836517333984
     ]
-  },
-  "pavilion": {
-    "footprint_m": [
-      14,
-      12
-    ],
-    "eave_height_m": 3.3,
-    "roof_height_m": 8.1,
-    "door_clear_width_m": 3.5,
-    "door_clear_height_m": 2.7
   },
   "court_bounds_ship_xy_m": [
     14,
@@ -57,7 +47,7 @@
     "coarse": "commons_coarse.glb",
     "assembly": "full_assembly.glb"
   },
-  "triangle_count": 13976,
+  "triangle_count": 24528,
   "material_count": 1,
   "modules": {
     "rail": [
@@ -71,11 +61,16 @@
       "COMMONS_west_north_post_-6.5",
       "COMMONS_west_north_post_0",
       "COMMONS_west_north_post_6.5",
-      "COMMONS_east_beam_0.55",
-      "COMMONS_east_beam_1.2",
-      "COMMONS_east_post_-15.0",
-      "COMMONS_east_post_0",
-      "COMMONS_east_post_15.0",
+      "COMMONS_east_south_beam_0.55",
+      "COMMONS_east_south_beam_1.2",
+      "COMMONS_east_south_post_-7.0",
+      "COMMONS_east_south_post_0",
+      "COMMONS_east_south_post_7.0",
+      "COMMONS_east_north_beam_0.55",
+      "COMMONS_east_north_beam_1.2",
+      "COMMONS_east_north_post_-5.75",
+      "COMMONS_east_north_post_0",
+      "COMMONS_east_north_post_5.75",
       "COMMONS_south_beam_0.55",
       "COMMONS_south_beam_1.2",
       "COMMONS_south_post_-11.0",
@@ -85,99 +80,119 @@
       "COMMONS_north_beam_1.2",
       "COMMONS_north_post_-11.0",
       "COMMONS_north_post_0",
-      "COMMONS_north_post_11.0"
+      "COMMONS_north_post_11.0",
+      "COMMONS_arcade_outer_guard_0.55",
+      "COMMONS_arcade_outer_guard_1.2",
+      "COMMONS_outer_guard_post_0",
+      "COMMONS_outer_guard_post_1",
+      "COMMONS_outer_guard_post_2",
+      "COMMONS_outer_guard_post_3",
+      "COMMONS_outer_guard_post_4",
+      "COMMONS_outer_guard_post_5",
+      "COMMONS_outer_guard_post_6",
+      "COMMONS_outer_guard_post_7",
+      "COMMONS_outer_guard_post_8",
+      "COMMONS_arcade_end_guard_-5.0_0.55",
+      "COMMONS_arcade_end_guard_-5.0_1.2",
+      "COMMONS_arcade_end_guard_18.0_0.55",
+      "COMMONS_arcade_end_guard_18.0_1.2",
+      "COMMONS_link_guard_4.0_beam_0.55",
+      "COMMONS_link_guard_4.0_beam_1.2",
+      "COMMONS_link_guard_4.0_post_-3.3",
+      "COMMONS_link_guard_4.0_post_0",
+      "COMMONS_link_guard_4.0_post_3.3",
+      "COMMONS_link_guard_8.5_beam_0.55",
+      "COMMONS_link_guard_8.5_beam_1.2",
+      "COMMONS_link_guard_8.5_post_-3.3",
+      "COMMONS_link_guard_8.5_post_0",
+      "COMMONS_link_guard_8.5_post_3.3"
     ],
     "floor": [
-      "COMMONS_floor_paving"
+      "COMMONS_floor_paving",
+      "COMMONS_arcade_floor",
+      "COMMONS_plaza_arcade_link_floor"
     ],
     "roof": [
-      "COMMONS_vault_roof"
+      "COMMONS_arcade_terrace"
     ],
-    "wall": [
-      "COMMONS_vault_front_panel",
-      "COMMONS_vault_back_panel",
-      "COMMONS_sidewall_19.0_0",
-      "COMMONS_sidewall_19.0_1",
-      "COMMONS_sidewall_19.0_2",
-      "COMMONS_sidewall_33.0_0",
-      "COMMONS_sidewall_33.0_1",
-      "COMMONS_sidewall_33.0_2",
-      "COMMONS_back_0",
-      "COMMONS_back_1",
-      "COMMONS_back_2",
-      "COMMONS_back_3",
-      "COMMONS_front_0",
-      "COMMONS_front_1",
-      "COMMONS_front_2",
-      "COMMONS_front_3",
-      "COMMONS_door_header"
+    "arcade": [
+      "COMMONS_arcade_inner_spandrel_0",
+      "COMMONS_arcade_inner_spandrel_1",
+      "COMMONS_arcade_inner_spandrel_2",
+      "COMMONS_arcade_inner_spandrel_3",
+      "COMMONS_arcade_outer_spandrel_0",
+      "COMMONS_arcade_outer_spandrel_1",
+      "COMMONS_arcade_outer_spandrel_2",
+      "COMMONS_arcade_outer_spandrel_3"
+    ],
+    "ink": [
+      "COMMONS_arch_ink_inner_0",
+      "COMMONS_arch_ink_inner_1",
+      "COMMONS_arch_ink_inner_2",
+      "COMMONS_arch_ink_inner_3",
+      "COMMONS_arch_ink_outer_0",
+      "COMMONS_arch_ink_outer_1",
+      "COMMONS_arch_ink_outer_2",
+      "COMMONS_arch_ink_outer_3",
+      "COMMONS_terrace_ink_42.75",
+      "COMMONS_terrace_ink_55.35"
     ],
     "rib": [
-      "COMMONS_vault_rib_0",
-      "COMMONS_vault_rib_1",
-      "COMMONS_vault_rib_2",
-      "COMMONS_vault_rib_3"
+      "COMMONS_grown_arch_inner_0",
+      "COMMONS_grown_arch_inner_1",
+      "COMMONS_grown_arch_inner_2",
+      "COMMONS_grown_arch_inner_3",
+      "COMMONS_grown_arch_outer_0",
+      "COMMONS_grown_arch_outer_1",
+      "COMMONS_grown_arch_outer_2",
+      "COMMONS_grown_arch_outer_3",
+      "COMMONS_terrace_teal_edge_42.75",
+      "COMMONS_terrace_teal_edge_55.35",
+      "COMMONS_radial_grown_rib_0",
+      "COMMONS_radial_grown_rib_1",
+      "COMMONS_radial_grown_rib_2",
+      "COMMONS_radial_grown_rib_3",
+      "COMMONS_radial_grown_rib_4"
     ],
     "structure": [
-      "COMMONS_rib_foot_0_19.0",
-      "COMMONS_rib_foot_0_33.0",
-      "COMMONS_rib_foot_1_19.0",
-      "COMMONS_rib_foot_1_33.0",
-      "COMMONS_rib_foot_2_19.0",
-      "COMMONS_rib_foot_2_33.0",
-      "COMMONS_rib_foot_3_19.0",
-      "COMMONS_rib_foot_3_33.0"
-    ],
-    "door": [
-      "COMMONS_door_jamb_24.25",
-      "COMMONS_door_jamb_27.75",
-      "COMMONS_door_crown"
-    ],
-    "panel": [
-      "COMMONS_front_relief_0",
-      "COMMONS_front_relief_1",
-      "COMMONS_east_relief_0",
-      "COMMONS_east_relief_1",
-      "COMMONS_back_relief_0",
-      "COMMONS_back_relief_1"
+      "COMMONS_arcade_pier_inner_0",
+      "COMMONS_arcade_pier_foot_inner_0",
+      "COMMONS_arcade_pier_inner_1",
+      "COMMONS_arcade_pier_foot_inner_1",
+      "COMMONS_arcade_pier_inner_2",
+      "COMMONS_arcade_pier_foot_inner_2",
+      "COMMONS_arcade_pier_inner_3",
+      "COMMONS_arcade_pier_foot_inner_3",
+      "COMMONS_arcade_pier_inner_4",
+      "COMMONS_arcade_pier_foot_inner_4",
+      "COMMONS_arcade_pier_outer_0",
+      "COMMONS_arcade_pier_foot_outer_0",
+      "COMMONS_arcade_pier_outer_1",
+      "COMMONS_arcade_pier_foot_outer_1",
+      "COMMONS_arcade_pier_outer_2",
+      "COMMONS_arcade_pier_foot_outer_2",
+      "COMMONS_arcade_pier_outer_3",
+      "COMMONS_arcade_pier_foot_outer_3",
+      "COMMONS_arcade_pier_outer_4",
+      "COMMONS_arcade_pier_foot_outer_4"
     ],
     "trim": [
-      "COMMONS_front_relief_frame_0",
-      "COMMONS_front_relief_grown_line_0",
-      "COMMONS_front_relief_frame_1",
-      "COMMONS_front_relief_grown_line_1",
-      "COMMONS_east_relief_frame_0",
-      "COMMONS_east_relief_frame_1",
+      "COMMONS_civic_shield_inner_0",
+      "COMMONS_civic_shield_inner_1",
+      "COMMONS_civic_shield_inner_2",
+      "COMMONS_civic_shield_inner_3",
+      "COMMONS_civic_shield_inner_4",
+      "COMMONS_civic_shield_outer_0",
+      "COMMONS_civic_shield_outer_1",
+      "COMMONS_civic_shield_outer_2",
+      "COMMONS_civic_shield_outer_3",
+      "COMMONS_civic_shield_outer_4",
       "COMMONS_court_inlay_5.2",
-      "COMMONS_court_inlay_5.55",
-      "COMMONS_civic_shelf_trim_0_57.5",
-      "COMMONS_civic_shelf_trim_0_58.2",
-      "COMMONS_civic_shelf_trim_0_58.9",
-      "COMMONS_civic_shelf_trim_1_57.5",
-      "COMMONS_civic_shelf_trim_1_58.2",
-      "COMMONS_civic_shelf_trim_1_58.9",
-      "COMMONS_back_relief_border_0",
-      "COMMONS_back_relief_border_1"
-    ],
-    "bench": [
-      "COMMONS_bench_seat_0",
-      "COMMONS_bench_back_0",
-      "COMMONS_bench_leg_0_-0.65",
-      "COMMONS_bench_leg_0_0.65",
-      "COMMONS_bench_seat_1",
-      "COMMONS_bench_back_1",
-      "COMMONS_bench_leg_1_-0.65",
-      "COMMONS_bench_leg_1_0.65",
-      "COMMONS_bench_seat_2",
-      "COMMONS_bench_back_2",
-      "COMMONS_bench_leg_2_-0.65",
-      "COMMONS_bench_leg_2_0.65",
-      "COMMONS_bench_seat_3",
-      "COMMONS_bench_back_3",
-      "COMMONS_bench_leg_3_-0.65",
-      "COMMONS_bench_leg_3_0.65"
+      "COMMONS_court_inlay_5.55"
     ],
     "planter": [
+      "COMMONS_terrace_planter_0",
+      "COMMONS_terrace_planter_1",
       "COMMONS_planter_0",
       "COMMONS_planter_rim_0",
       "COMMONS_planter_1",
@@ -186,12 +201,45 @@
       "COMMONS_planter_rim_2",
       "COMMONS_planter_3",
       "COMMONS_planter_rim_3",
-      "COMMONS_planted_seat_box_0",
-      "COMMONS_planted_seat_box_1",
-      "COMMONS_planted_seat_box_2",
-      "COMMONS_planted_seat_box_3"
+      "COMMONS_civic_planter_0",
+      "COMMONS_civic_planter_1",
+      "COMMONS_civic_planter_2",
+      "COMMONS_civic_planter_3",
+      "COMMONS_civic_planter_4"
     ],
     "foliage": [
+      "COMMONS_trailing_leaf_0_0",
+      "COMMONS_trailing_leaf_0_1",
+      "COMMONS_trailing_leaf_0_2",
+      "COMMONS_trailing_leaf_0_3",
+      "COMMONS_trailing_leaf_0_4",
+      "COMMONS_trailing_leaf_0_5",
+      "COMMONS_trailing_leaf_0_6",
+      "COMMONS_trailing_leaf_0_7",
+      "COMMONS_trailing_leaf_0_8",
+      "COMMONS_trailing_leaf_0_9",
+      "COMMONS_trailing_leaf_0_10",
+      "COMMONS_trailing_leaf_0_11",
+      "COMMONS_trailing_leaf_0_12",
+      "COMMONS_trailing_leaf_0_13",
+      "COMMONS_trailing_leaf_0_14",
+      "COMMONS_trailing_leaf_0_15",
+      "COMMONS_trailing_leaf_1_0",
+      "COMMONS_trailing_leaf_1_1",
+      "COMMONS_trailing_leaf_1_2",
+      "COMMONS_trailing_leaf_1_3",
+      "COMMONS_trailing_leaf_1_4",
+      "COMMONS_trailing_leaf_1_5",
+      "COMMONS_trailing_leaf_1_6",
+      "COMMONS_trailing_leaf_1_7",
+      "COMMONS_trailing_leaf_1_8",
+      "COMMONS_trailing_leaf_1_9",
+      "COMMONS_trailing_leaf_1_10",
+      "COMMONS_trailing_leaf_1_11",
+      "COMMONS_trailing_leaf_1_12",
+      "COMMONS_trailing_leaf_1_13",
+      "COMMONS_trailing_leaf_1_14",
+      "COMMONS_trailing_leaf_1_15",
       "COMMONS_leaf_0_0",
       "COMMONS_leaf_0_1",
       "COMMONS_leaf_0_2",
@@ -240,42 +288,104 @@
       "COMMONS_leaf_3_9",
       "COMMONS_leaf_3_10",
       "COMMONS_leaf_3_11",
-      "COMMONS_plant_fan_0_0",
-      "COMMONS_plant_fan_0_1",
-      "COMMONS_plant_fan_0_2",
-      "COMMONS_plant_fan_0_3",
-      "COMMONS_plant_fan_0_4",
-      "COMMONS_plant_fan_0_5",
-      "COMMONS_plant_fan_0_6",
-      "COMMONS_plant_fan_0_7",
-      "COMMONS_plant_fan_0_8",
-      "COMMONS_plant_fan_1_0",
-      "COMMONS_plant_fan_1_1",
-      "COMMONS_plant_fan_1_2",
-      "COMMONS_plant_fan_1_3",
-      "COMMONS_plant_fan_1_4",
-      "COMMONS_plant_fan_1_5",
-      "COMMONS_plant_fan_1_6",
-      "COMMONS_plant_fan_1_7",
-      "COMMONS_plant_fan_1_8",
-      "COMMONS_plant_fan_2_0",
-      "COMMONS_plant_fan_2_1",
-      "COMMONS_plant_fan_2_2",
-      "COMMONS_plant_fan_2_3",
-      "COMMONS_plant_fan_2_4",
-      "COMMONS_plant_fan_2_5",
-      "COMMONS_plant_fan_2_6",
-      "COMMONS_plant_fan_2_7",
-      "COMMONS_plant_fan_2_8",
-      "COMMONS_plant_fan_3_0",
-      "COMMONS_plant_fan_3_1",
-      "COMMONS_plant_fan_3_2",
-      "COMMONS_plant_fan_3_3",
-      "COMMONS_plant_fan_3_4",
-      "COMMONS_plant_fan_3_5",
-      "COMMONS_plant_fan_3_6",
-      "COMMONS_plant_fan_3_7",
-      "COMMONS_plant_fan_3_8"
+      "COMMONS_civic_leaf_0_0",
+      "COMMONS_civic_leaf_0_1",
+      "COMMONS_civic_leaf_0_2",
+      "COMMONS_civic_leaf_0_3",
+      "COMMONS_civic_leaf_0_4",
+      "COMMONS_civic_leaf_0_5",
+      "COMMONS_civic_leaf_0_6",
+      "COMMONS_civic_leaf_0_7",
+      "COMMONS_civic_leaf_0_8",
+      "COMMONS_civic_leaf_0_9",
+      "COMMONS_civic_leaf_0_10",
+      "COMMONS_civic_leaf_0_11",
+      "COMMONS_civic_leaf_0_12",
+      "COMMONS_civic_leaf_0_13",
+      "COMMONS_civic_leaf_0_14",
+      "COMMONS_civic_leaf_0_15",
+      "COMMONS_civic_leaf_1_0",
+      "COMMONS_civic_leaf_1_1",
+      "COMMONS_civic_leaf_1_2",
+      "COMMONS_civic_leaf_1_3",
+      "COMMONS_civic_leaf_1_4",
+      "COMMONS_civic_leaf_1_5",
+      "COMMONS_civic_leaf_1_6",
+      "COMMONS_civic_leaf_1_7",
+      "COMMONS_civic_leaf_1_8",
+      "COMMONS_civic_leaf_1_9",
+      "COMMONS_civic_leaf_1_10",
+      "COMMONS_civic_leaf_1_11",
+      "COMMONS_civic_leaf_1_12",
+      "COMMONS_civic_leaf_1_13",
+      "COMMONS_civic_leaf_1_14",
+      "COMMONS_civic_leaf_1_15",
+      "COMMONS_civic_leaf_2_0",
+      "COMMONS_civic_leaf_2_1",
+      "COMMONS_civic_leaf_2_2",
+      "COMMONS_civic_leaf_2_3",
+      "COMMONS_civic_leaf_2_4",
+      "COMMONS_civic_leaf_2_5",
+      "COMMONS_civic_leaf_2_6",
+      "COMMONS_civic_leaf_2_7",
+      "COMMONS_civic_leaf_2_8",
+      "COMMONS_civic_leaf_2_9",
+      "COMMONS_civic_leaf_2_10",
+      "COMMONS_civic_leaf_2_11",
+      "COMMONS_civic_leaf_2_12",
+      "COMMONS_civic_leaf_2_13",
+      "COMMONS_civic_leaf_2_14",
+      "COMMONS_civic_leaf_2_15",
+      "COMMONS_civic_leaf_3_0",
+      "COMMONS_civic_leaf_3_1",
+      "COMMONS_civic_leaf_3_2",
+      "COMMONS_civic_leaf_3_3",
+      "COMMONS_civic_leaf_3_4",
+      "COMMONS_civic_leaf_3_5",
+      "COMMONS_civic_leaf_3_6",
+      "COMMONS_civic_leaf_3_7",
+      "COMMONS_civic_leaf_3_8",
+      "COMMONS_civic_leaf_3_9",
+      "COMMONS_civic_leaf_3_10",
+      "COMMONS_civic_leaf_3_11",
+      "COMMONS_civic_leaf_3_12",
+      "COMMONS_civic_leaf_3_13",
+      "COMMONS_civic_leaf_3_14",
+      "COMMONS_civic_leaf_3_15",
+      "COMMONS_civic_leaf_4_0",
+      "COMMONS_civic_leaf_4_1",
+      "COMMONS_civic_leaf_4_2",
+      "COMMONS_civic_leaf_4_3",
+      "COMMONS_civic_leaf_4_4",
+      "COMMONS_civic_leaf_4_5",
+      "COMMONS_civic_leaf_4_6",
+      "COMMONS_civic_leaf_4_7",
+      "COMMONS_civic_leaf_4_8",
+      "COMMONS_civic_leaf_4_9",
+      "COMMONS_civic_leaf_4_10",
+      "COMMONS_civic_leaf_4_11",
+      "COMMONS_civic_leaf_4_12",
+      "COMMONS_civic_leaf_4_13",
+      "COMMONS_civic_leaf_4_14",
+      "COMMONS_civic_leaf_4_15"
+    ],
+    "bench": [
+      "COMMONS_bench_seat_0",
+      "COMMONS_bench_back_0",
+      "COMMONS_bench_leg_0_-0.65",
+      "COMMONS_bench_leg_0_0.65",
+      "COMMONS_bench_seat_1",
+      "COMMONS_bench_back_1",
+      "COMMONS_bench_leg_1_-0.65",
+      "COMMONS_bench_leg_1_0.65",
+      "COMMONS_bench_seat_2",
+      "COMMONS_bench_back_2",
+      "COMMONS_bench_leg_2_-0.65",
+      "COMMONS_bench_leg_2_0.65",
+      "COMMONS_bench_seat_3",
+      "COMMONS_bench_back_3",
+      "COMMONS_bench_leg_3_-0.65",
+      "COMMONS_bench_leg_3_0.65"
     ],
     "archive": [
       "COMMONS_archive_kiosk",
@@ -287,41 +397,36 @@
       "COMMONS_scale_head_1",
       "COMMONS_scale_body_1"
     ],
-    "canopy": [
-      "COMMONS_canopy_post_16.0_-6.5",
-      "COMMONS_canopy_post_16.0_0.5",
-      "COMMONS_canopy_post_21.5_-6.5",
-      "COMMONS_canopy_post_21.5_0.5",
-      "COMMONS_terrace_canopy",
-      "COMMONS_canopy_grown_rib_16.0",
-      "COMMONS_canopy_grown_rib_18.75",
-      "COMMONS_canopy_grown_rib_21.5"
-    ],
     "interior": [
-      "COMMONS_interior_seat_0",
-      "COMMONS_interior_back_0",
-      "COMMONS_interior_leg_0_-0.58",
-      "COMMONS_interior_leg_0_0.58",
-      "COMMONS_interior_seat_1",
-      "COMMONS_interior_back_1",
-      "COMMONS_interior_leg_1_-0.58",
-      "COMMONS_interior_leg_1_0.58",
-      "COMMONS_interior_seat_2",
-      "COMMONS_interior_back_2",
-      "COMMONS_interior_leg_2_-0.58",
-      "COMMONS_interior_leg_2_0.58",
-      "COMMONS_interior_seat_3",
-      "COMMONS_interior_back_3",
-      "COMMONS_interior_leg_3_-0.58",
-      "COMMONS_interior_leg_3_0.58",
-      "COMMONS_reading_table_0",
-      "COMMONS_reading_table_leg_0_-0.55",
-      "COMMONS_reading_table_leg_0_0.55",
-      "COMMONS_reading_table_1",
-      "COMMONS_reading_table_leg_1_-0.55",
-      "COMMONS_reading_table_leg_1_0.55",
-      "COMMONS_civic_shelf_0",
-      "COMMONS_civic_shelf_1"
+      "COMMONS_arcade_seat_0",
+      "COMMONS_arcade_seat_back_0",
+      "COMMONS_arcade_seat_leg_0_-0.58",
+      "COMMONS_arcade_seat_leg_0_0.58",
+      "COMMONS_arcade_seat_1",
+      "COMMONS_arcade_seat_back_1",
+      "COMMONS_arcade_seat_leg_1_-0.58",
+      "COMMONS_arcade_seat_leg_1_0.58",
+      "COMMONS_arcade_seat_2",
+      "COMMONS_arcade_seat_back_2",
+      "COMMONS_arcade_seat_leg_2_-0.58",
+      "COMMONS_arcade_seat_leg_2_0.58",
+      "COMMONS_arcade_seat_3",
+      "COMMONS_arcade_seat_back_3",
+      "COMMONS_arcade_seat_leg_3_-0.58",
+      "COMMONS_arcade_seat_leg_3_0.58",
+      "COMMONS_civic_table_0",
+      "COMMONS_civic_table_pedestal_0",
+      "COMMONS_civic_table_1",
+      "COMMONS_civic_table_pedestal_1"
+    ],
+    "canopy": [
+      "COMMONS_plaza_leaf_shade",
+      "COMMONS_shade_post_16.0_-6.5",
+      "COMMONS_shade_post_16.0_0.5",
+      "COMMONS_shade_post_21.5_-6.5",
+      "COMMONS_shade_post_21.5_0.5",
+      "COMMONS_shade_grown_edge_-6.5",
+      "COMMONS_shade_grown_edge_0.5"
     ]
   },
   "player_views": [
@@ -333,9 +438,9 @@
         58.7
       ],
       "target_ship_m": [
-        26,
-        4,
-        61.0
+        46,
+        7,
+        60.2
       ]
     },
     {
@@ -346,35 +451,61 @@
         58.725
       ],
       "target_ship_m": [
-        26,
-        10,
-        61.2
+        48,
+        8,
+        60.2
       ]
     },
     {
-      "name": "pavilion_inside",
+      "name": "arcade_inside",
       "eye_ship_m": [
-        26,
-        10,
+        49,
+        8,
         58.725
       ],
       "target_ship_m": [
         26,
         -3,
-        58.725
+        59.0
       ]
     },
     {
       "name": "reverse_to_bridge",
       "eye_ship_m": [
-        30,
-        -1,
+        49.5,
+        14,
         58.725
       ],
       "target_ship_m": [
         13,
         -5,
-        81
+        81.0
+      ]
+    },
+    {
+      "name": "arcade_along",
+      "eye_ship_m": [
+        45,
+        -2,
+        58.725
+      ],
+      "target_ship_m": [
+        51,
+        14,
+        59.0
+      ]
+    },
+    {
+      "name": "planted_plaza",
+      "eye_ship_m": [
+        18.75,
+        -3,
+        58.725
+      ],
+      "target_ship_m": [
+        48,
+        8,
+        60.2
       ]
     }
   ],
@@ -390,15 +521,139 @@
     "Human figures are reference mannequins, not crew simulation",
     "Structural attachment bay is an art blockout, not an engineering certification"
   ],
-  "revision": 2,
-  "expansion": {
-    "canopy_clear_height_m": 3.2,
-    "new_interior_seats": 4,
-    "new_planted_boxes": 4,
-    "reading_tables": 2,
-    "walk_bounds_unchanged": true
+  "revision": 3,
+  "architecture": "Open curved arcade in approved radius43\u201355 zone; civic plaza retained",
+  "arcade": {
+    "inner_radius_m": 43,
+    "outer_radius_m": 55,
+    "angle_range_deg": [
+      -5,
+      18
+    ],
+    "bays": 4,
+    "arch_peak_height_m": 3.75,
+    "roof_top_m": 61.39,
+    "upper_terrace_accessible": false
   },
-  "coarse_triangle_count": 7224,
+  "lod_center_ship_m": [
+    48,
+    8,
+    60
+  ],
+  "benchmark_view": {
+    "eye_ship_m": [
+      23,
+      -3,
+      58.725
+    ],
+    "target_ship_m": [
+      48,
+      8,
+      60.2
+    ]
+  },
+  "walk_targets_ship_m": [
+    [
+      16,
+      4.8,
+      57
+    ],
+    [
+      26,
+      -3,
+      57.025
+    ],
+    [
+      26,
+      8,
+      57.025
+    ],
+    [
+      6.5,
+      4.5,
+      57
+    ],
+    [
+      35,
+      10,
+      57.025
+    ],
+    [
+      26,
+      18,
+      57.025
+    ],
+    [
+      18.75,
+      -3,
+      57.025
+    ],
+    [
+      49,
+      8,
+      57.025
+    ],
+    [
+      49.5,
+      14,
+      57.025
+    ],
+    [
+      45,
+      -2,
+      57.025
+    ]
+  ],
+  "sight_checks": {
+    "roof_eye_ship_m": [
+      [
+        49,
+        8,
+        58.725
+      ],
+      [
+        48,
+        3,
+        58.725
+      ],
+      [
+        49.5,
+        14,
+        58.725
+      ]
+    ],
+    "open_plaza_ray_ship_m": [
+      [
+        26,
+        10,
+        58.7
+      ],
+      [
+        26,
+        20,
+        58.7
+      ]
+    ],
+    "open_arch_ray_ship_m": [
+      [
+        38,
+        6.27,
+        58.7
+      ],
+      [
+        55,
+        9.08,
+        58.7
+      ]
+    ]
+  },
+  "expansion": {
+    "walk_bounds_unchanged": false,
+    "guarded_link_width_m": 4.5,
+    "scope": "One arcade zone segment only; whole zoning remains incremental"
+  },
+  "texture_density": "Nominal112 texels/m on local4m patches; broad terrace slabs subdivided, deterministic per-face variation",
+  "coarse_triangle_count": 11380,
   "texture": {
     "file": "paint-atlas-v1.png",
     "size_px": [
@@ -410,6 +665,6 @@
     "baked_lighting": false,
     "alpha": "ignored; opaque material"
   },
-  "coarse_preservation": "Same major opaque roof/wall/rib/rail vertices; fine courtyard props omitted",
-  "texture_density": "Nominal112 texels/m at4m patches; deterministic per-face variation; broad vault caps subdivided"
+  "coarse_preservation": "Same major opaque terrace/arcade/rib/rail/link vertices; fine seating, planting and ink omitted",
+  "runtime_positions": "Commons-only uncompressed GLTF positions preserve exact detailed/coarse metre geometry; production loader unchanged"
 }

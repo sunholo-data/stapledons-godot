@@ -114,18 +114,18 @@
   "arcade_continuation": {
     "approved_by": "Mark",
     "approved_instruction": "yep approved - continue",
-    "status": "executing",
+    "status": "asset-review-ready",
     "scope": "Measured zoning direction; first bounded open curved arcade/plaza only",
     "milestones": [
       {
         "id": "CB-A1",
         "description": "Measured masterv3, native open arcade/plaza and WALK",
-        "passes": null
+        "passes": true
       },
       {
         "id": "CB-A2",
         "description": "Compatible UV ink/paint and coarse geometry",
-        "passes": null
+        "passes": true
       },
       {
         "id": "CB-A3",
@@ -133,6 +133,7 @@
         "passes": null
       }
     ],
-    "performance": "Actual M2 Air pending"
+    "performance": "Actual M2 Air pending",
+    "checks": "39 strict runtime destinations/routes/capsule checks; actual43–55m terrace+openarch/roof gate; exact runtime coarse triangle subset; UV/material/envelope/shaft and actual-mesh negative gate; Blender health/reimport and nine real game views inspected"
   }
 }

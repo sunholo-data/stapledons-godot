@@ -24,14 +24,16 @@ func _run() -> void:
 	demo.lift.advance(.81);demo.lift.advance(5.5);await _shot("mid_lift",false)
 	demo.lift.advance(5.51);demo.lift.advance(.81)
 	var views: Array=kit.manifest.player_views.duplicate()
-	views.append({"name":"pavilion_side","eye_ship_m":[35,10,58.725],"target_ship_m":[26,10,61.2]})
-	views.append({"name":"pavilion_back","eye_ship_m":[26,18,58.725],"target_ship_m":[26,10,61.2]})
-	if kit.manifest.get("revision",1)>=2:
+	if kit.manifest.get("revision",1)<3:
+		views.append({"name":"pavilion_side","eye_ship_m":[35,10,58.725],"target_ship_m":[26,10,61.2]})
+		views.append({"name":"pavilion_back","eye_ship_m":[26,18,58.725],"target_ship_m":[26,10,61.2]})
+	if kit.manifest.get("revision",1)==2:
 		views.append({"name":"planted_terrace","eye_ship_m":[18.75,-3,58.725],"target_ship_m":[26,8,60.2]})
 		views.append({"name":"interior_reading","eye_ship_m":[26,12.5,58.725],"target_ship_m":[21,10.2,58]})
 	for view in views:
 		var eye:=_vec(view.eye_ship_m);var target:=_vec(view.target_ship_m)
 		demo.avatar_pos=eye-Vector3.UP*1.7
+		if not demo.walk.is_walkable(demo.avatar_pos):push_error("Unreachable Commons capture "+view.name);quit(1);return
 		demo.camera_mode="Commons standing eye";demo.camera.pullback=0.;demo.camera.reference=false
 		demo.camera.position=eye;demo.camera.look_at(target);demo._sync_observer()
 		await _shot(view.name,false)

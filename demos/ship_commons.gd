@@ -3,13 +3,19 @@ extends RefCounted
 static func asset(file: String) -> String:
 	var source := "res://assets/ship_commons/"+file
 	return source if FileAccess.file_exists(source) else "res://ship_commons_bundle/"+file+".bin"
+static func load_mesh(file: String) -> Node3D:
+	var document:=GLTFDocument.new();var state:=GLTFState.new()
+	# Per-mesh AABB compression quantizes detail/coarse differently. Preserve
+	# authored metre positions for this measured review kit only.
+	var error:=document.append_from_buffer(FileAccess.get_file_as_bytes(file),"",state,GLTFDocument.IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION)
+	return document.generate_scene(state) as Node3D if error==OK else null
 static func install(demo: Node) -> Dictionary:
 	var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
 	var files: Dictionary=manifest.assets
-	var visual:=AreaBundle.load_glb(asset(files.get("painted",files.blockout)))
-	var collider:=AreaBundle.load_glb(asset(files.collision))
-	var nav:=AreaBundle.load_glb(asset(files.walk))
-	var coarse: Node3D=AreaBundle.load_glb(asset(files.coarse)) if files.has("coarse") else null
+	var visual:=load_mesh(asset(files.get("painted",files.blockout)))
+	var collider:=load_mesh(asset(files.collision))
+	var nav:=load_mesh(asset(files.walk))
+	var coarse: Node3D=load_mesh(asset(files.coarse)) if files.has("coarse") else null
 	if visual==null or collider==null or nav==null:
 		push_error("Commons kit incomplete");return {}
 	var removed:=_remove_guard(demo.geometry,manifest.remove_base_guard_names)
@@ -27,7 +33,8 @@ static func install(demo: Node) -> Dictionary:
 	return {"visual":visual,"coarse":coarse,"collision":collider,"walk":nav,"manifest":manifest}
 static func update_detail(kit: Dictionary, eye: Vector3) -> void:
 	if kit.is_empty() or kit.get("coarse")==null:return
-	var near:=eye.distance_to(Vector3(26,61,-10))<=100.
+	var center: Array=kit.manifest.get("lod_center_ship_m",[26,10,61]) if kit.has("manifest") else [26,10,61]
+	var near:=eye.distance_to(Vector3(center[0],center[2],-center[1]))<=100.
 	kit.visual.visible=near;kit.coarse.visible=not near
 static func _paint_material(n: Node) -> Material:
 	if n is MeshInstance3D and n.mesh!=null:return n.mesh.surface_get_material(0)

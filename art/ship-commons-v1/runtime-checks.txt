@@ -1,4 +1,4 @@
-ERROR: Failed to open 'user://logs/godot2026-10-04T19.57.45.log'.
+ERROR: Failed to open 'user://logs/godot2026-10-04T21.24.23.log'.
    at: copy (core/io/dir_access.cpp:429)
 ERROR: Failed to open log file for writing: user://logs/godot.log
    at: rotate_file (core/io/logger.cpp:169)
@@ -10,14 +10,26 @@ ERROR: Condition "ret != noErr" is true. Returning: ""
   ok same safe lift landing
   ok lift hole remains nonwalkable
   ok spire inaccessible
+  ok authored destination itself safe (16.0, 57.0, -4.8)
   ok connected route to (16.0, 57.0, -4.8)
-  ok connected route to (26.0, 57.0, 3.0)
-  ok connected route to (26.0, 57.0, -8.0)
-  ok connected route to (6.0, 57.0, -4.5)
-  ok connected route to (35.0, 57.0, -10.0)
-  ok connected route to (26.0, 57.0, -18.0)
-  ok connected route to (18.75, 57.0, 3.0)
-  ok connected route to (26.0, 57.0, -12.5)
+  ok authored destination itself safe (26.0, 57.025, 3.0)
+  ok connected route to (26.0, 57.025, 3.0)
+  ok authored destination itself safe (26.0, 57.025, -8.0)
+  ok connected route to (26.0, 57.025, -8.0)
+  ok authored destination itself safe (6.5, 57.0, -4.5)
+  ok connected route to (6.5, 57.0, -4.5)
+  ok authored destination itself safe (35.0, 57.025, -10.0)
+  ok connected route to (35.0, 57.025, -10.0)
+  ok authored destination itself safe (26.0, 57.025, -18.0)
+  ok connected route to (26.0, 57.025, -18.0)
+  ok authored destination itself safe (18.75, 57.025, 3.0)
+  ok connected route to (18.75, 57.025, 3.0)
+  ok authored destination itself safe (49.0, 57.025, -8.0)
+  ok connected route to (49.0, 57.025, -8.0)
+  ok authored destination itself safe (49.5, 57.025, -14.0)
+  ok connected route to (49.5, 57.025, -14.0)
+  ok authored destination itself safe (45.0, 57.025, 2.0)
+  ok connected route to (45.0, 57.025, 2.0)
   ok courtyard camera safe
   ok pavilion interior camera safe
 ship-demo-ready: OK
@@ -25,11 +37,13 @@ ship-demo-ready: OK
   ok detail/coarse share one atlas resource
   ok bridge still active initially
   ok real capsule clearance to (16.0, 57.0, -4.8)
-  ok real capsule clearance to (26.0, 57.0, 3.0)
-  ok real capsule clearance to (26.0, 57.0, -8.0)
-  ok real capsule clearance to (6.0, 57.0, -4.5)
-  ok real capsule clearance to (35.0, 57.0, -10.0)
-  ok real capsule clearance to (26.0, 57.0, -18.0)
-  ok real capsule clearance to (18.75, 57.0, 3.0)
-  ok real capsule clearance to (26.0, 57.0, -12.5)
-ship-commons: 25 passed, 0 failures
+  ok real capsule clearance to (26.0, 57.025, 3.0)
+  ok real capsule clearance to (26.0, 57.025, -8.0)
+  ok real capsule clearance to (6.5, 57.0, -4.5)
+  ok real capsule clearance to (35.0, 57.025, -10.0)
+  ok real capsule clearance to (26.0, 57.025, -18.0)
+  ok real capsule clearance to (18.75, 57.025, 3.0)
+  ok real capsule clearance to (49.0, 57.025, -8.0)
+  ok real capsule clearance to (49.5, 57.025, -14.0)
+  ok real capsule clearance to (45.0, 57.025, 2.0)
+ship-commons: 39 passed, 0 failures

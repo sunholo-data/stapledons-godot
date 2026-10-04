@@ -16,13 +16,18 @@ func _initialize() -> void:
 	_scan(scene,Transform3D.IDENTITY)
 	check("actual new vertices inside95m envelope",maximum<=95.001)
 	check("actual Commons finished floor",absf(minimum_y-57.)<.001)
-	check("actual pavilion top65.42m",absf(maximum_y-65.42)<.002)
+	check("actual architectural height",absf(maximum_y-(61.99884 if manifest.get("revision",1)>=3 else 65.42))<.002)
 	check("actual triangles under30000",triangles<=30000 and triangles==int(manifest.triangle_count))
 	check("actual material count at most4",materials.size()<=4)
-	for p in [Vector3(26,58.7,-10),Vector3(21,58.7,-10),Vector3(31,58.7,-10)]:
-		check("roof blocks upward ray "+str(p),_hit(p,p+Vector3.UP*20))
-	check("opaque back wall",_hit(Vector3(26,58.7,-10),Vector3(26,58.7,-20)))
-	check("opaque side wall",_hit(Vector3(26,58.7,-10),Vector3(40,58.7,-10)))
+	if manifest.get("revision",1)>=3:
+		for p in manifest.sight_checks.roof_eye_ship_m:
+			var eye:=_ship(p);check("opaque curved terrace "+str(eye),_hit(eye,eye+Vector3.UP*20))
+		for key in ["open_plaza_ray_ship_m","open_arch_ray_ship_m"]:
+			var ray: Array=manifest.sight_checks[key];check("real open arcade/plaza "+key,not _hit(_ship(ray[0]),_ship(ray[1])))
+	else:
+		for p in [Vector3(26,58.7,-10),Vector3(21,58.7,-10),Vector3(31,58.7,-10)]:check("roof blocks upward ray "+str(p),_hit(p,p+Vector3.UP*20))
+		check("opaque back wall",_hit(Vector3(26,58.7,-10),Vector3(26,58.7,-20)))
+		check("opaque side wall",_hit(Vector3(26,58.7,-10),Vector3(40,58.7,-10)))
 	check("door clear at human eye",not _hit(Vector3(26,58.7,-2),Vector3(26,58.7,-8)))
 	check("door clear for capsule width",not _hit(Vector3(25.65,58.7,-2),Vector3(25.65,58.7,-8)) and not _hit(Vector3(26.35,58.7,-2),Vector3(26.35,58.7,-8)))
 	check("4m landing guard opening",not _hit(Vector3(12,58,-4.8),Vector3(16,58,-4.8)))
@@ -48,3 +53,4 @@ func _hit(a: Vector3,b: Vector3) -> bool:
 	for i in range(0,faces.size(),3):
 		if Geometry3D.segment_intersects_triangle(a,b,faces[i],faces[i+1],faces[i+2])!=null:return true
 	return false
+func _ship(p: Array) -> Vector3:return Vector3(p[0],p[2],-p[1])

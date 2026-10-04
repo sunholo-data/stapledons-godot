@@ -1,4 +1,4 @@
-ERROR: Failed to open 'user://logs/godot2026-10-04T19.57.47.log'.
+ERROR: Failed to open 'user://logs/godot2026-10-04T21.22.27.log'.
    at: copy (core/io/dir_access.cpp:429)
 ERROR: Failed to open log file for writing: user://logs/godot.log
    at: rotate_file (core/io/logger.cpp:169)
@@ -16,11 +16,9 @@ ERROR: Condition "ret != noErr" is true. Returning: ""
   ok texture within2K
   ok coarse triangles exact subset of detailed opaque geometry
   ok coarse retains nonempty major silhouette
-  ok coarse retains opaque roof (26.0, 58.7, -10.0)
-  ok coarse retains opaque roof (21.0, 58.7, -10.0)
-  ok coarse retains opaque roof (31.0, 58.7, -10.0)
-  ok coarse retains opaque back wall
-  ok coarse retains opaque side wall
+  ok coarse retains actual opaque terrace
+  ok coarse retains actual opaque terrace
+  ok coarse retains actual opaque terrace
   ok coarse retains opaque terrace canopy
   ok near interior uses detailed kit
   ok far review uses coarse kit

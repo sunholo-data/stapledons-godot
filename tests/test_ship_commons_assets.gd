@@ -6,18 +6,33 @@ func _initialize() -> void:
 	var d: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://assets/ship_commons/manifest.json"))
 	if not d.assets.has("painted") or not d.assets.has("coarse"):
 		check("paint and coarse derivative exist",false);quit(1);return
-	var detail:=AreaBundle.load_glb("res://assets/ship_commons/"+d.assets.painted)
-	var coarse:=AreaBundle.load_glb("res://assets/ship_commons/"+d.assets.coarse)
+	var detail: Node3D=load("res://demos/ship_commons.gd").load_mesh("res://assets/ship_commons/"+d.assets.painted)
+	var coarse: Node3D=load("res://demos/ship_commons.gd").load_mesh("res://assets/ship_commons/"+d.assets.coarse)
 	var detailed_triangles:={};var coarse_triangles:={}
 	_scan(detail,Transform3D.IDENTITY,detailed_triangles);_scan(coarse,Transform3D.IDENTITY,coarse_triangles)
 	var preserved:=true
-	for key in coarse_triangles:if not detailed_triangles.has(key):preserved=false
+	var misses:=0
+	for key in coarse_triangles:
+		if not detailed_triangles.has(key):
+			preserved=false;misses+=1
+			if misses<=1:
+				print("coarse mismatch ",key)
+				var best:=INF;var nearest: Array=[]
+				for triangle in detailed_triangles.values():
+					var distance:=0.
+					for point in coarse_triangles[key]:
+						distance+=minf(point.distance_to(triangle[0]),minf(point.distance_to(triangle[1]),point.distance_to(triangle[2])))
+					if distance<best:best=distance;nearest=triangle
+				print("coarse nearest difference_m=",best," triangle=",nearest)
 	check("coarse triangles exact subset of detailed opaque geometry",preserved)
 	check("coarse retains nonempty major silhouette",coarse_triangles.size()>2000 and coarse_triangles.size()<detailed_triangles.size())
-	for p in [Vector3(26,58.7,-10),Vector3(21,58.7,-10),Vector3(31,58.7,-10)]:
-		check("coarse retains opaque roof "+str(p),_hit(coarse_triangles,p,p+Vector3.UP*20))
-	check("coarse retains opaque back wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(26,58.7,-20)))
-	check("coarse retains opaque side wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(40,58.7,-10)))
+	if d.get("revision",1)>=3:
+		for p in d.sight_checks.roof_eye_ship_m:
+			var eye:=Vector3(p[0],p[2],-p[1]);check("coarse retains actual opaque terrace",_hit(coarse_triangles,eye,eye+Vector3.UP*20))
+	else:
+		for p in [Vector3(26,58.7,-10),Vector3(21,58.7,-10),Vector3(31,58.7,-10)]:check("coarse retains opaque roof "+str(p),_hit(coarse_triangles,p,p+Vector3.UP*20))
+		check("coarse retains opaque back wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(26,58.7,-20)))
+		check("coarse retains opaque side wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(40,58.7,-10)))
 	if d.get("revision",1)>=2:check("coarse retains opaque terrace canopy",_hit(coarse_triangles,Vector3(18.75,58.7,3),Vector3(18.75,63,3)))
 	var kit:={"visual":detail,"coarse":coarse}
 	load("res://demos/ship_commons.gd").update_detail(kit,Vector3(26,58.7,-10))

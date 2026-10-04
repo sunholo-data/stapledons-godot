@@ -132,7 +132,10 @@ Mark selected4× sky exposure for the review default; physics inputs stay unchan
 
 Mark approved the measured zoning proposal and explicitly asked to continue. The
 whole Commons plan is a zoning direction; this build replaces only the bounded
-22×30m prototype section with a representative open curved arcade and civic plaza.
+prototype pavilion with an open civic plaza, plus one arcade bay group in the
+approved arcade zone (radius43–55m, angles−5°..18°), connected by a guarded4m
+walkway. The bounded WALK expands only to this first section; the whole tier is not
+populated. This follows the approved zoning rather than placing a hall in its plaza.
 Use sweeping cream terraces, grown teal ribs, open arches, seating and planted
 promenades from the approved Commons concept. Do not retain the rejected enclosed
 barrel hall as the architectural target. Preserve the actual spire, seven tiers,
