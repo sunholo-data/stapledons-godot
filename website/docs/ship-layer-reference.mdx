@@ -5,6 +5,7 @@ sidebar_position: 7
 
 import ShipGeometryReview from '@site/src/components/ShipGeometryReview';
 import ShipDemoReview from '@site/src/components/ShipGeometryReview/Demo';
+import TierConcepts from '@site/src/components/ShipGeometryReview/Concepts';
 
 This is the shared review reference for the chosen bubble ship: **seven major layers**
 inside a sphere of radius 100 m, with **at least 5 m clearance for the lower-floor geometry**.
@@ -180,7 +181,81 @@ Press **E** at the lift landing to descend or return, **R** to reset, and **Esca
 the review window. **4** is a diagnostic rim camera, not a reachable standing position.
 Press **B** to benchmark the four views at 1920×1080; the demo displays where it saved the report.
 
-## Style concept — not a dimension reference
+## Concepts for each of the seven tiers
+
+These frames develop the existing cream, teal, violet and ochre language into seven
+distinct places. The tier functions are **proposals for review**, with each image paired
+with a measured ship section and a first Blender build. They do not change the approved
+floor geometry. Concept skies and lighting are illustrative; the game renders its own sky.
+The generated frames sometimes broaden the spire, suggest a glass dome or add mezzanines.
+Those details are not approved geometry: retain the actual spire profile, the invisible
+bubble boundary and the measured height envelope when translating them into Blender.
+
+<TierConcepts />
+
+### How much of the other-agent proposal can we use?
+
+The civic terraces, courtyard homes, garden, making quarter, cultivation hall and engineering
+level make a useful design scaffold. The listed gross areas are close: the measured ideal
+discs total **135,633.85 m² (13.563 ha)**. These are not usable room areas; core, openings,
+structure, circulation and services still need to be surveyed. The proposed spire deductions
+and resident counts are assumptions.
+
+The key corrections for Blender builds are:
+
+- **24 m is not a uniform clearance to the rim.** Where an upper slab exists, its underside
+  is 24 m above the lower floor. Elsewhere the sphere determines clearance. On Level 1, a
+  10 m building must remain inside radius 67.35 m; its 75.92 m floor radius cannot also be
+  used as its roof radius. The amber height study above shows the setback.
+- **The needle is not a ceiling.** Its tip is 16 m above the bridge, while the actual 100 m
+  boundary is 18 m above the floor at the axis and about 15.55 m at the 22 m rim.
+- **The spire is inaccessible.** Transit and Archive terminals sit beside it. The lower bowl
+  is available for a future equipment study, without committing to reaction-mass tanks or
+  rocket propulsion. Engineering docks here mean internal service cradles; mass cannot cross
+  the bubble boundary.
+- **The twenty-deck alternative has been removed.** Seven major tiers are the chosen layout.
+
+### Population and life support: a scenario, not a capacity certificate
+
+We can explore **1,000 initial people** as the supplied planning scenario. It is not yet a
+canon change: the earlier interior brief describes roughly 100 people. The current concepts
+leave zoning and population open for review.
+
+The full 100 m sphere encloses about **4.189 million m³**, and the 95 m inner sphere about
+**3.591 million m³**. Neither is measured breathable air volume: solids, rooms, machinery,
+tanks and reserved spaces matter. Likewise, deck area alone cannot establish comfortable
+occupancy or ecological carrying capacity.
+
+NASA's experimental review gives about **50 m² of crops per person for dietary calories**,
+and about 20–25 m² for oxygen. For 1,000 people, the former suggests around 50,000 m² of
+cultivated area as a rough reference, rather than 22,000 m² of floor. Stacking helps but
+requires explicit lighting, power, heat, diet, nutrient/water recycling and failure-recovery
+budgets. It does not establish that our farm supports 1,300–1,500 people without strain.
+[NASA: Bioregenerative Life Support for Humans in Space](https://ntrs.nasa.gov/citations/20205008786).
+
+For the supplied scenario, simple annual **net** growth gives `N(t) = 1000 × (1 + g)^t`:
+
+| Net growth | After 100 ship years |
+|---|---:|
+| 0% | 1,000 |
+| 0.3% | 1,349 |
+| 0.5% | 1,647 |
+| 1.5% | 4,432 |
+
+These are arithmetic scenarios, not forecasts. A plateau at 1,350–1,500 requires explicit
+assumptions or an emergent social outcome; it does not follow from geometry. Retirement
+changes staffing, not population. Existing canon describes an autonomous society with
+births, deaths and disputes, so no automatic population policy is adopted by these images.
+
+### First architecture to build
+
+Begin with the **Commons pavilion and lift approach**, since those are visible from the
+bridge and test the whole design chain: model, height setback, occlusion, paint and distant
+detail. Then develop one home/courtyard kit and one garden canopy test before dressing all
+seven tiers. Generated images suggest form and mood; the Blender master decides where
+every roof, branch and support actually fits.
+
+### Earlier whole-ship style sheet
 
 ![Whole-ship cutaway and bridge-rim support concept](/img/concept/ship-layers-v1.jpg)
 
