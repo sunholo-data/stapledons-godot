@@ -3,7 +3,7 @@ import styles from './styles.module.css';
 const refs='https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_demo_brightness_v1';
 export default function JourneyReview(){
  const [state,setState]=useState('cruise');
- const [brightness,setBrightness]=useState(1);
+ const [brightness,setBrightness]=useState(2);
  const [view,setView]=useState('forward');
  const [skyOnly,setSkyOnly]=useState(false);
  const name=`${state}_${view}_b${brightness}${skyOnly?'_sky_only':''}`;

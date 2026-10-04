@@ -19,7 +19,7 @@ export default function TierConcepts(){
  return <section className={styles.review} aria-label="Seven tier concept proposals">
   <div className={styles.controls} role="group" aria-label="Choose a tier">{concepts.map((c,i)=><button type="button" key={c.id} aria-pressed={i===index} onClick={()=>setIndex(i)}>{i===0?'Bridge':`Level ${i}`}</button>)}</div>
   <h3>{d.title}</h3>
-  <figure className={styles.capture}><a href={`${refs}/${d.id}.png`}><img key={d.id} src={`${refs}/${d.id}.jpg`} alt={`${d.title}: proposed hand-painted architectural concept`}/></a><figcaption>Proposed style and zoning · AI-generated · geometry and illustrative sky are not measurement or physics evidence. <a href={`${refs}/${d.id}.png`}>Full-resolution image</a></figcaption></figure>
+  <figure className={styles.capture}><a href={`${refs}/${d.id}.png`}><img key={d.id} src={`${refs}/${d.id}.jpg`} alt={`${d.title}: hand-painted architectural concept`}/></a><figcaption>{d.id==='commons'?'Approved architectural direction; floor plan under review':'Proposed style and zoning'} · AI-generated · geometry and illustrative sky are not measurement or physics evidence. <a href={`${refs}/${d.id}.png`}>Full-resolution image</a></figcaption></figure>
   <div className={styles.models}>
    <article className={styles.card}><h4>{briefs[d.id][0]}</h4><p>{briefs[d.id][1]}</p><dl><dt>Measured floor</dt><dd>Z {d.z>0?'+':''}{d.z} m · diameter {(d.r*2).toFixed(2)} m</dd><dt>Ideal gross disc area</dt><dd>{Math.round(d.area_m2).toLocaleString('en-US')} m²; usable area not yet surveyed</dd><dt>First height study</dt><dd>{d.concept_height_m} m above floor; building/crown extent checked in Blender</dd></dl></article>
    <figure className={styles.card}>

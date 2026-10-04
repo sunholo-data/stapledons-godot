@@ -7,9 +7,19 @@ import ShipGeometryReview from '@site/src/components/ShipGeometryReview';
 import TierConcepts from '@site/src/components/ShipGeometryReview/Concepts';
 import JourneyReview from '@site/src/components/ShipGeometryReview/Journey';
 import CommonsReview from '@site/src/components/ShipGeometryReview/Commons';
+import CommonsPlanning from '@site/src/components/ShipGeometryReview/Planning';
 
 The working reference for the ship's geometry, art and playable spaces. We build and
 review **one level at a time**, opening areas as they become playable.
+
+## Next: agree the Commons plan
+
+The approved Level 1 concept calls for sweeping terraces, open arcades, planting and
+civic life. The current generic pavilion is a working test and **does not yet match
+that architecture**. Review the proposed circulation/zoning before the next build;
+then develop one representative arcade/plaza section with the bridge's inked finish.
+
+<CommonsPlanning />
 
 ## Current build: Commons
 
@@ -28,13 +38,13 @@ current assembly; exterior orbit is for inspection, while the screenshots show p
 | Viewpoint | Ship and sky share one observer. Floors and roofs remain opaque. |
 | Asset workflow | One measured Blender assembly, reusable painted modules and simpler distant models. |
 | Release approach | Develop the Commons first, then open further levels incrementally. |
-| Travel sky | Keep the physical darkness and directional contrast; exposure trials are labelled display aids. |
+| Travel sky | Use 4× exposure for now, preserving physical inputs and directional contrast. It remains a labelled display aid. |
 
 <ShipGeometryReview />
 
 ## Still to review
 
-- **Commons:** arrangement, painted finish and the next useful spaces to add.
+- **Commons:** agree the concept-based floor plan, then block and paint one arcade/plaza section.
 - **Later tiers:** concepts and zoning remain proposals; population and life-support capacity are unresolved.
 - **Laptop performance:** actual M2 Air measurement is pending. The latest Studio run is about 9.6 ms p95 at 1920×1080.
 - **Travel effects:** physically supported glow/bubble effects remain future work. The current demo does not show travel glow or GR lensing.
@@ -81,7 +91,7 @@ gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.s
 ```
 
 Open **Ship geometry demo**. **WASD** walks, **Option + drag** looks, scrolling zooms,
-and **E** uses the lift. **J** cycles exposure; **5/6** compare rest/cruise and
+and **E** uses the lift. The review opens at **4× exposure**. **J** cycles exposure; **5/6** compare rest/cruise and
 **7/8/9** look forward/side/aft. **Tab** shows all controls. **B** measures performance
 on your laptop and displays the report location.
 
