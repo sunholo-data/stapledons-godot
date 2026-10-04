@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Seven-tier geometry review demo,2026-10-04
+
+- Separate review window preserves the running voyage. One perspective observer aligns native bridge geometry, lower tiers and the existing live star/sky renderer; opaque floor/rail occlusion is preserved. GR remains unimplemented.
+- Demo-only guarded lift openings support a physical25m descent to the first tier, a bounded landing walk and return with separate active WALK regions. Production bridge art stays unchanged.
+- In-app1920×1080 benchmark and packaged smoke checks added. StudioM4Max frame-time p95 measured26–29ms in this run; this does not meet the proposed60fps budget and does not establish MacBookAirM2 performance. Actual target-laptop measurements remain pending.
+
+
 ### Companion stars take their system's distance, 2026-10-03 (Mark's ruling; M1.7 evaluation follow-ups)
 
 - **Companion rule** (`sim/tools/companions.ail`, design
