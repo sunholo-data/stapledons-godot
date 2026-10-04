@@ -1,0 +1,320 @@
+{
+  "version": 1,
+  "stage": "UV painted modular proof",
+  "frame": "ship(x,y,z) -> Godot(x,z,-y)",
+  "base_floor_m": 57,
+  "new_finish_top_m": 57.025,
+  "envelope_radius_m": 95,
+  "maximum_new_vertex_radius_m": 72.97539032285773,
+  "bounds_ship_m": {
+    "min": [
+      4.300000190734863,
+      -10.0600004196167,
+      57.0
+    ],
+    "max": [
+      36.060001373291016,
+      20.059999465942383,
+      65.41999816894531
+    ]
+  },
+  "pavilion": {
+    "footprint_m": [
+      14,
+      12
+    ],
+    "eave_height_m": 3.3,
+    "roof_height_m": 8.1,
+    "door_clear_width_m": 3.5,
+    "door_clear_height_m": 2.7
+  },
+  "court_bounds_ship_xy_m": [
+    14,
+    36,
+    -10,
+    20
+  ],
+  "bench_seat_height_m": 0.46,
+  "reference_human_height_m": 1.7,
+  "remove_base_guard_names": [
+    "Landing perimeter.001"
+  ],
+  "connection_opening_ship_m": {
+    "x": 14,
+    "y_interval": [
+      3,
+      7
+    ],
+    "width_m": 4
+  },
+  "core_inaccessible_radius_m": 4.4,
+  "assets": {
+    "blockout": "commons_blockout.glb",
+    "walk": "walk.glb",
+    "collision": "collision.glb",
+    "assembly_blockout": "ship_commons_blockout.glb",
+    "painted": "commons_painted.glb",
+    "coarse": "commons_coarse.glb",
+    "assembly": "full_assembly.glb"
+  },
+  "triangle_count": 8708,
+  "material_count": 1,
+  "modules": {
+    "rail": [
+      "COMMONS_west_south_beam_0.55",
+      "COMMONS_west_south_beam_1.2",
+      "COMMONS_west_south_post_-6.5",
+      "COMMONS_west_south_post_0",
+      "COMMONS_west_south_post_6.5",
+      "COMMONS_west_north_beam_0.55",
+      "COMMONS_west_north_beam_1.2",
+      "COMMONS_west_north_post_-6.5",
+      "COMMONS_west_north_post_0",
+      "COMMONS_west_north_post_6.5",
+      "COMMONS_east_beam_0.55",
+      "COMMONS_east_beam_1.2",
+      "COMMONS_east_post_-15.0",
+      "COMMONS_east_post_0",
+      "COMMONS_east_post_15.0",
+      "COMMONS_south_beam_0.55",
+      "COMMONS_south_beam_1.2",
+      "COMMONS_south_post_-11.0",
+      "COMMONS_south_post_0",
+      "COMMONS_south_post_11.0",
+      "COMMONS_north_beam_0.55",
+      "COMMONS_north_beam_1.2",
+      "COMMONS_north_post_-11.0",
+      "COMMONS_north_post_0",
+      "COMMONS_north_post_11.0"
+    ],
+    "floor": [
+      "COMMONS_floor_paving"
+    ],
+    "roof": [
+      "COMMONS_vault_roof"
+    ],
+    "wall": [
+      "COMMONS_vault_front_panel",
+      "COMMONS_vault_back_panel",
+      "COMMONS_sidewall_19.0_0",
+      "COMMONS_sidewall_19.0_1",
+      "COMMONS_sidewall_19.0_2",
+      "COMMONS_sidewall_33.0_0",
+      "COMMONS_sidewall_33.0_1",
+      "COMMONS_sidewall_33.0_2",
+      "COMMONS_back_0",
+      "COMMONS_back_1",
+      "COMMONS_back_2",
+      "COMMONS_back_3",
+      "COMMONS_front_0",
+      "COMMONS_front_1",
+      "COMMONS_front_2",
+      "COMMONS_front_3",
+      "COMMONS_door_header"
+    ],
+    "rib": [
+      "COMMONS_vault_rib_0",
+      "COMMONS_vault_rib_1",
+      "COMMONS_vault_rib_2",
+      "COMMONS_vault_rib_3"
+    ],
+    "structure": [
+      "COMMONS_rib_foot_0_19.0",
+      "COMMONS_rib_foot_0_33.0",
+      "COMMONS_rib_foot_1_19.0",
+      "COMMONS_rib_foot_1_33.0",
+      "COMMONS_rib_foot_2_19.0",
+      "COMMONS_rib_foot_2_33.0",
+      "COMMONS_rib_foot_3_19.0",
+      "COMMONS_rib_foot_3_33.0"
+    ],
+    "door": [
+      "COMMONS_door_jamb_24.25",
+      "COMMONS_door_jamb_27.75",
+      "COMMONS_door_crown"
+    ],
+    "panel": [
+      "COMMONS_front_relief_0",
+      "COMMONS_front_relief_1",
+      "COMMONS_east_relief_0",
+      "COMMONS_east_relief_1"
+    ],
+    "trim": [
+      "COMMONS_front_relief_frame_0",
+      "COMMONS_front_relief_grown_line_0",
+      "COMMONS_front_relief_frame_1",
+      "COMMONS_front_relief_grown_line_1",
+      "COMMONS_east_relief_frame_0",
+      "COMMONS_east_relief_frame_1",
+      "COMMONS_court_inlay_5.2",
+      "COMMONS_court_inlay_5.55"
+    ],
+    "bench": [
+      "COMMONS_bench_seat_0",
+      "COMMONS_bench_back_0",
+      "COMMONS_bench_leg_0_-0.65",
+      "COMMONS_bench_leg_0_0.65",
+      "COMMONS_bench_seat_1",
+      "COMMONS_bench_back_1",
+      "COMMONS_bench_leg_1_-0.65",
+      "COMMONS_bench_leg_1_0.65",
+      "COMMONS_bench_seat_2",
+      "COMMONS_bench_back_2",
+      "COMMONS_bench_leg_2_-0.65",
+      "COMMONS_bench_leg_2_0.65",
+      "COMMONS_bench_seat_3",
+      "COMMONS_bench_back_3",
+      "COMMONS_bench_leg_3_-0.65",
+      "COMMONS_bench_leg_3_0.65"
+    ],
+    "planter": [
+      "COMMONS_planter_0",
+      "COMMONS_planter_rim_0",
+      "COMMONS_planter_1",
+      "COMMONS_planter_rim_1",
+      "COMMONS_planter_2",
+      "COMMONS_planter_rim_2",
+      "COMMONS_planter_3",
+      "COMMONS_planter_rim_3"
+    ],
+    "foliage": [
+      "COMMONS_leaf_0_0",
+      "COMMONS_leaf_0_1",
+      "COMMONS_leaf_0_2",
+      "COMMONS_leaf_0_3",
+      "COMMONS_leaf_0_4",
+      "COMMONS_leaf_0_5",
+      "COMMONS_leaf_0_6",
+      "COMMONS_leaf_0_7",
+      "COMMONS_leaf_0_8",
+      "COMMONS_leaf_0_9",
+      "COMMONS_leaf_0_10",
+      "COMMONS_leaf_0_11",
+      "COMMONS_leaf_1_0",
+      "COMMONS_leaf_1_1",
+      "COMMONS_leaf_1_2",
+      "COMMONS_leaf_1_3",
+      "COMMONS_leaf_1_4",
+      "COMMONS_leaf_1_5",
+      "COMMONS_leaf_1_6",
+      "COMMONS_leaf_1_7",
+      "COMMONS_leaf_1_8",
+      "COMMONS_leaf_1_9",
+      "COMMONS_leaf_1_10",
+      "COMMONS_leaf_1_11",
+      "COMMONS_leaf_2_0",
+      "COMMONS_leaf_2_1",
+      "COMMONS_leaf_2_2",
+      "COMMONS_leaf_2_3",
+      "COMMONS_leaf_2_4",
+      "COMMONS_leaf_2_5",
+      "COMMONS_leaf_2_6",
+      "COMMONS_leaf_2_7",
+      "COMMONS_leaf_2_8",
+      "COMMONS_leaf_2_9",
+      "COMMONS_leaf_2_10",
+      "COMMONS_leaf_2_11",
+      "COMMONS_leaf_3_0",
+      "COMMONS_leaf_3_1",
+      "COMMONS_leaf_3_2",
+      "COMMONS_leaf_3_3",
+      "COMMONS_leaf_3_4",
+      "COMMONS_leaf_3_5",
+      "COMMONS_leaf_3_6",
+      "COMMONS_leaf_3_7",
+      "COMMONS_leaf_3_8",
+      "COMMONS_leaf_3_9",
+      "COMMONS_leaf_3_10",
+      "COMMONS_leaf_3_11"
+    ],
+    "archive": [
+      "COMMONS_archive_kiosk",
+      "COMMONS_archive_face"
+    ],
+    "scale": [
+      "COMMONS_scale_head_0",
+      "COMMONS_scale_body_0",
+      "COMMONS_scale_head_1",
+      "COMMONS_scale_body_1"
+    ]
+  },
+  "player_views": [
+    {
+      "name": "arrival",
+      "eye_ship_m": [
+        8,
+        4.8,
+        58.7
+      ],
+      "target_ship_m": [
+        26,
+        4,
+        61.0
+      ]
+    },
+    {
+      "name": "courtyard",
+      "eye_ship_m": [
+        23,
+        -3,
+        58.725
+      ],
+      "target_ship_m": [
+        26,
+        10,
+        61.2
+      ]
+    },
+    {
+      "name": "pavilion_inside",
+      "eye_ship_m": [
+        26,
+        10,
+        58.725
+      ],
+      "target_ship_m": [
+        26,
+        -3,
+        58.725
+      ]
+    },
+    {
+      "name": "reverse_to_bridge",
+      "eye_ship_m": [
+        30,
+        -1,
+        58.725
+      ],
+      "target_ship_m": [
+        13,
+        -5,
+        81
+      ]
+    }
+  ],
+  "limits": {
+    "visible_triangles": 30000,
+    "new_materials": 4,
+    "texture_sets": 2,
+    "texture_max_size": 2048
+  },
+  "limitations": [
+    "Architecture proposal and first small kit only",
+    "Opaque roof and floor, no glass bubble",
+    "Human figures are reference mannequins, not crew simulation",
+    "Structural attachment bay is an art blockout, not an engineering certification"
+  ],
+  "coarse_triangle_count": 3036,
+  "texture": {
+    "file": "paint-atlas-v1.png",
+    "size_px": [
+      1254,
+      1254
+    ],
+    "sets": 1,
+    "mapping": "face-local UV on every opaque surface; no camera projection",
+    "baked_lighting": false,
+    "alpha": "ignored; opaque material"
+  },
+  "coarse_preservation": "Same major opaque roof/wall/rib/rail vertices; fine courtyard props omitted"
+}

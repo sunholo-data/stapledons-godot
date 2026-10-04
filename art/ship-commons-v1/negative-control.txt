@@ -1,0 +1,32 @@
+ERROR: Failed to open 'user://logs/godot2026-10-04T18.59.14.log'.
+   at: copy (core/io/dir_access.cpp:429)
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+  ok opaque material
+  FAIL actual new vertices inside95m envelope
+  ok actual Commons finished floor
+  ok actual pavilion top65.42m
+  ok actual triangles under30000
+  ok actual material count at most4
+  ok roof blocks upward ray (26.0, 58.7, -10.0)
+  ok roof blocks upward ray (21.0, 58.7, -10.0)
+  ok roof blocks upward ray (31.0, 58.7, -10.0)
+  ok opaque back wall
+  ok opaque side wall
+  ok door clear at human eye
+  ok door clear for capsule width
+  ok 4m landing guard opening
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+validate-ship-commons: FAIL
