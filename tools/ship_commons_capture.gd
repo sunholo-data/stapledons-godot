@@ -42,5 +42,6 @@ func _shot(name: String, diagnostic: bool) -> void:
 	demo.sky.update_exposure()
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(out+"/"+name+".png")
-	shots.append({"name":name,"diagnostic":diagnostic,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"fov":demo.camera.fov,"inside_bubble":demo.camera.position.length()<100.,"walkable":demo.walk.is_walkable(demo.avatar_pos),"lift_state":demo.lift.state})
+	var hit: Dictionary=demo.centre_hit()
+	shots.append({"name":name,"diagnostic":diagnostic,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"fov":demo.camera.fov,"inside_bubble":demo.camera.position.length()<100.,"walkable":demo.walk.is_walkable(demo.avatar_pos),"lift_state":demo.lift.state,"centre_hit":str(hit.get("collider","none")),"centre_hit_m":str(hit.get("position",null)),"coarse_visible":demo.commons.coarse.visible})
 	print("Commons captured ",name)

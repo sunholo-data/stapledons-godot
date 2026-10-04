@@ -3,6 +3,9 @@
   "observer": "inside physical eye except explicitly external diagnostic",
   "shots": [
     {
+      "centre_hit": "deck_floor_fill_col:<StaticBody3D#71202506560>",
+      "centre_hit_m": "(20.27272, 82.0, -7.818181)",
+      "coarse_visible": false,
       "diagnostic": false,
       "eye_gltf_m": [
         19.0,
@@ -16,6 +19,9 @@
       "walkable": true
     },
     {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#68031613277>",
+      "centre_hit_m": "(46.96429, 57.0, 11.79253)",
+      "coarse_visible": false,
       "diagnostic": false,
       "eye_gltf_m": [
         8.0,
@@ -29,6 +35,9 @@
       "walkable": false
     },
     {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#86905981605>",
+      "centre_hit_m": "(18.85, 60.08639, -4.317777)",
+      "coarse_visible": false,
       "diagnostic": false,
       "eye_gltf_m": [
         8.0,
@@ -42,6 +51,9 @@
       "walkable": true
     },
     {
+      "centre_hit": "COMMONS_batch_Commons teal_col:<StaticBody3D#86973090068>",
+      "centre_hit_m": "(24.53799, 59.99384, -3.66463)",
+      "coarse_visible": false,
       "diagnostic": false,
       "eye_gltf_m": [
         23.0,
@@ -55,6 +67,9 @@
       "walkable": true
     },
     {
+      "centre_hit": "none",
+      "centre_hit_m": "<null>",
+      "coarse_visible": false,
       "diagnostic": false,
       "eye_gltf_m": [
         26.0,
@@ -68,6 +83,9 @@
       "walkable": true
     },
     {
+      "centre_hit": "deck_body_15_col:<StaticBody3D#71135397700>",
+      "centre_hit_m": "(12.61604, 81.50311, 5.090344)",
+      "coarse_visible": false,
       "diagnostic": false,
       "eye_gltf_m": [
         30.0,
@@ -81,6 +99,9 @@
       "walkable": true
     },
     {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#86905981605>",
+      "centre_hit_m": "(33.15, 59.23375, -10.0)",
+      "coarse_visible": false,
       "diagnostic": false,
       "eye_gltf_m": [
         35.0,
@@ -94,6 +115,9 @@
       "walkable": true
     },
     {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#86905981605>",
+      "centre_hit_m": "(26.0, 59.29734, -16.15)",
+      "coarse_visible": false,
       "diagnostic": false,
       "eye_gltf_m": [
         26.0,
@@ -107,6 +131,9 @@
       "walkable": true
     },
     {
+      "centre_hit": "Deck 02 top 32m_col:<StaticBody3D#68165830997>",
+      "centre_hit_m": "(46.05883, 32.0, 46.05883)",
+      "coarse_visible": true,
       "diagnostic": true,
       "eye_gltf_m": [
         145.0,
