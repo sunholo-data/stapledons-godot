@@ -138,6 +138,7 @@ func _run_map(args: Dictionary) -> void:
 		return
 	var map: GalaxyMap = load("res://ui/galaxy_map.tscn").instantiate()
 	map.auto_tick = not capture
+	map.live_pacing = not capture
 	map.show_hint = not capture # the committed capture PNGs predate the hint
 	add_child(map)
 	map.load_catalogue("res://data/starmap/stars.json")
@@ -227,6 +228,7 @@ func _run_interior(args: Dictionary) -> void:
 		return
 	var map: GalaxyMap = load("res://ui/galaxy_map.tscn").instantiate()
 	map.auto_tick = not (capture or smoke)
+	map.live_pacing = not (capture or smoke)
 	add_child(map)
 	map.load_catalogue("res://data/starmap/stars.json")
 	map.load_names("res://data/starmap/names.json")

@@ -10,7 +10,7 @@ static func summarize(values: Array) -> Dictionary:
 	for v in sorted:sum+=v
 	return {"samples":n,"mean_ms":sum/n,"p50_ms":sorted[ceili(n*.5)-1],"p95_ms":sorted[ceili(n*.95)-1],"p99_ms":sorted[ceili(n*.99)-1],"maximum_ms":sorted[-1]}
 func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictionary:
-	if running:return {}
+	if running or demo.live_journey:return {}
 	var previous_sky_only:bool=demo.sky_only
 	if previous_sky_only:demo.toggle_sky_only()
 	running=true;demo.auto=false;

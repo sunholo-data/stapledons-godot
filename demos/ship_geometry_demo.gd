@@ -1,5 +1,5 @@
 extends Node
-## Isolated native-material spatial review. No simulation mutations or fake GR.
+## Isolated native-material spatial review; its optional voyage is a separate normal simulation.
 const Lift := preload("res://demos/ship_demo_lift.gd")
 const Camera := preload("res://demos/ship_demo_camera.gd")
 const Benchmark := preload("res://demos/ship_demo_benchmark.gd")
@@ -36,6 +36,12 @@ var controls := VBoxContainer.new()
 var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [0,1,2,4,6]
 var brightness_stops := 2
+var journey_sim: SimBridge
+var journey_map: GalaxyMap
+var navigation_window: Window
+var live_journey := false
+var journey_auto_tick := true
+var _journey_accum := 0.
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
@@ -92,9 +98,14 @@ func _resize() -> void:
 func _hud() -> void:
 	var canvas:=CanvasLayer.new();canvas.layer=10;add_child(canvas)
 	hud.position=Vector2(18,14);canvas.add_child(hud)
+	label.add_theme_font_size_override("font_size",18)
 	label.add_theme_color_override("font_shadow_color",Color.BLACK);label.add_theme_constant_override("shadow_offset_x",2);label.add_theme_constant_override("shadow_offset_y",2);hud.add_child(label)
 	var control_button:=Button.new();control_button.text="Controls [Tab] · 5 rest / 6 cruise · 7 forward / 8 side / 9 aft · H sky only"
+	control_button.add_theme_font_size_override("font_size",16)
 	control_button.pressed.connect(toggle_controls);hud.add_child(control_button)
+	var navigation:=Button.new();navigation.text="Navigation [M] · select destination and hold to commit"
+	navigation.add_theme_font_size_override("font_size",16)
+	navigation.pressed.connect(open_navigation);hud.add_child(navigation)
 	hud.add_child(controls);controls.visible=false
 	var row:=HBoxContainer.new();controls.add_child(row)
 	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Reference rim [4]","rim"],["Reset [R]","reset"]]:
@@ -145,7 +156,7 @@ func reference_view(radius: float, tilt: float) -> void:
 	camera.follow(Vector3(radius*2/sqrt(5.),82,radius/sqrt(5.)),-tilt,.463648,0.)
 	_sync_observer()
 func set_sky_state(name: String) -> bool:
-	if benchmark.running or not sky_states.has(name):return false
+	if benchmark.running or live_journey or not sky_states.has(name):return false
 	sky_state=name;sky_world=sky_states[name].duplicate(true)
 	var h:Dictionary=sky_world.ship.heading
 	camera.heading=PackedFloat64Array([h.x,h.y,h.z])
@@ -168,7 +179,12 @@ func toggle_sky_only() -> void:
 	_rects[1].visible=not sky_only
 func _process(delta: float) -> void:
 	if not ready_ok:return
-	if auto and camera_mode=="player" and (lift==null or not lift.travelling()):
+	if journey_map!=null and journey_auto_tick and not benchmark.running:
+		_journey_accum=minf(_journey_accum+delta,4./GalaxyMap.TICK_HZ)
+		while _journey_accum>=1./GalaxyMap.TICK_HZ:
+			_journey_accum-=1./GalaxyMap.TICK_HZ
+			journey_tick()
+	if auto and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()):
 		var move:=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_W))-float(Input.is_physical_key_pressed(KEY_S)))
 		var forward: Vector3=-camera.basis.z;forward.y=0;forward=forward.normalized()
 		var right: Vector3=camera.basis.x;right.y=0;right=right.normalized()
@@ -181,9 +197,10 @@ func _process(delta: float) -> void:
 	if Time.get_ticks_msec()-_last_exposure_ms>250:
 		sky.update_exposure();_last_exposure_ms=Time.get_ticks_msec()
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	label.text="SEVEN-TIER SHIP DEMO · %s · native materials · GR not implemented\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % ["FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT",view_name,active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	label.text="SEVEN-TIER SHIP DEMO · native materials · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name,active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
+	if navigation_window!=null and navigation_window.visible:return
 	if event is InputEventMouseMotion and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
 		if camera_mode=="external review":
 			var offset:=camera.position-Vector3(0,5,0)
@@ -213,7 +230,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
 			KEY_G:guides.visible=not guides.visible
-			KEY_B:await benchmark.run(self)
+			KEY_B:
+				if not live_journey:await benchmark.run(self)
+			KEY_M:open_navigation()
 			KEY_E:
 				if lift!=null:lift.board()
 			KEY_ESCAPE:get_tree().quit()
@@ -235,6 +254,7 @@ func _collision(n: Node) -> void:
 	for child in n.get_children():
 		if not child is StaticBody3D:_collision(child)
 func _exit_tree() -> void:
+	if journey_sim!=null:journey_sim.stop()
 	for n in _walk_nodes:if is_instance_valid(n):n.free()
 
 func _guides() -> void:
@@ -260,5 +280,59 @@ func _export_smoke() -> void:
 			ok=ok and lift.board()
 			lift.advance(.81);lift.advance(11.01);lift.advance(.81)
 		ok=ok and lift.state=="bridge_ready" and walk==walk_bridge and avatar_pos.distance_to(Vector3(8,82,-4.8))<.01
+	if ok:
+		journey_auto_tick=false;open_navigation()
+		ok=ok and journey_map!=null
+		if ok:
+			ok=journey_map.open_commit_dialog() and journey_map.hold_commit(GalaxyMap.HOLD_S) and journey_tick()
+			ok=ok and live_journey and not navigation_window.visible and sky.beta>0.
+			for i in 1220:
+				if not live_journey:break
+				ok=journey_tick() and ok
+			ok=ok and journey_map.journey_state()=="arrived" and sky.beta==0.
 	print("ship-demo-export-smoke: %s" % ("OK" if ok else "FAIL"))
 	get_tree().quit(0 if ok else 1)
+
+## Separate session: this demo never touches main.gd's active voyage.
+func open_navigation() -> void:
+	if benchmark.running:return
+	if journey_map==null:
+		journey_sim=SimBridge.new();journey_sim.want_minor=2
+		if not journey_sim.start() or not journey_sim.new_game(424242,"sol",false,{"standoff_au":1000.}):
+			caption="Navigation unavailable: "+journey_sim.last_error
+			journey_sim.stop();journey_sim=null;return
+		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation · M / Esc return aboard"
+		navigation_window.size=Vector2i(1280,800);navigation_window.min_size=Vector2i(900,600)
+		navigation_window.force_native=true;navigation_window.own_world_3d=true
+		navigation_window.close_requested.connect(close_navigation)
+		navigation_window.window_input.connect(func(event:InputEvent)->void:
+			if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_M,KEY_ESCAPE]:close_navigation())
+		add_child(navigation_window)
+		journey_map=load("res://ui/galaxy_map.tscn").instantiate()
+		journey_map.auto_tick=false;journey_map.live_pacing=true
+		navigation_window.add_child(journey_map)
+		journey_map.load_catalogue("res://data/starmap/stars.json");journey_map.load_names("res://data/starmap/names.json")
+		journey_map.attach(journey_sim)
+		var acen:=journey_map.index_of("CNS5:3627")
+		if journey_map.preselect(acen):journey_map.frame_star(acen)
+		journey_tick()
+	if DisplayServer.get_name()!="headless":navigation_window.popup_centered()
+func close_navigation() -> void:
+	if navigation_window==null:return
+	journey_map.close_commit_dialog();navigation_window.hide()
+func journey_tick() -> bool:
+	if journey_map==null:return false
+	var was_committed:=live_journey
+	if not journey_map.tick():
+		caption="Navigation step failed: "+journey_sim.last_error;return false
+	live_journey=journey_map.journey_state()=="committed"
+	if live_journey or was_committed or sky_state=="live":
+		sky_state="live";sky_world=journey_sim.world.duplicate(true)
+		var h:Dictionary=sky_world.ship.heading
+		camera.heading=PackedFloat64Array([h.x,h.y,h.z])
+		sky.apply(sky_world);_sync_observer()
+	if live_journey and not was_committed:close_navigation()
+	return true
+func journey_label() -> String:
+	if sky_state!="live":return "FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT"
+	return "LIVE %s · %.6fc\nEarth +%.8f yr / ship +%.8f yr · Variable time compression · %s ship-yr/real-s \nM navigation · 7 look forward" % [sky_world.ship.phase,sky.beta,sky_world.clock.year,sky_world.clock.tau,GalaxyMap.sci(journey_map.pacing.rate)]

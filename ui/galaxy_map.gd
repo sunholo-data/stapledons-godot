@@ -117,6 +117,8 @@ const ARRIVED_ROWS := [
 
 var sim: SimBridge
 var auto_tick := true
+var live_pacing := false # explicit opt-in; golden/replay capture inputs stay fixed
+var pacing := preload("res://ui/journey_pacing.gd").new()
 var catalogue: Array = [] # parsed stars.json dictionaries (float64 x, y, z)
 var index_by_id: Dictionary = {} # catalogue id -> index (ids are unique, M1.7)
 var names: Dictionary = {} # catalogue index -> common name (names.json rows are keyed by id, D-17)
@@ -510,11 +512,16 @@ func tick() -> bool:
 	_pending = {}
 	_queue = []
 	var state := journey_state()
-	var sent := sim.send(intents, TRANSIT_DTAU if state == "committed" else HOST_DTAU)
+	var dtau := TRANSIT_DTAU if state == "committed" else HOST_DTAU
+	if live_pacing:
+		var committing := intents.any(func(i): return i.get("k", "") == "commit")
+		dtau = pacing.step(sim.world, committing, HOST_DTAU, TICK_HZ)
+	var sent := sim.send(intents, dtau)
 	if sent and not intents.is_empty():
 		_refusal_note = "" if sim.last_refused.is_empty() else "refused: %s" % ", ".join(sim.last_refused.map(func(r): return str(r["reason"])))
 	elif sent and journey_state() != state:
 		_refusal_note = "" # a new journey state (arrival) supersedes the old refusal
+	if live_pacing and journey_state() != "committed":pacing.rate = HOST_RATE
 	refresh()
 	return sent
 
@@ -688,6 +695,7 @@ func refresh() -> void:
 	var c = field_value(sim.world, "clock")
 	if c != null:
 		_clock.text = "Now: Earth +%.4f yr  ·  ship +%.4f yr  ·  tick %d" % [c["year"], c["tau"], sim.world["tick"]]
+		if live_pacing:_clock.text += "\nVariable time compression · %s ship-yr/real-s" % sci(pacing.rate)
 	var rows := panel_rows()
 	while _grid.get_child_count() < rows.size() * 2:
 		var l := Label.new()
@@ -834,6 +842,7 @@ static func label_box(font: Font, at: Vector2, text: String, size: int) -> Rect2
 func _draw_overlay() -> void:
 	var font := ThemeDB.fallback_font
 	var faint := Color(0.35, 0.45, 0.6, 0.35)
+	if _overlay.size.x <= PANEL_WIDTH + 60 or _overlay.size.y <= 24:return
 	var view := Rect2(Vector2(8, 8), _overlay.size - Vector2(PANEL_WIDTH + 60, 24))
 	for r: float in RINGS_LY: # scale rings in the galactic plane around Sol
 		var pts := PackedVector2Array()
