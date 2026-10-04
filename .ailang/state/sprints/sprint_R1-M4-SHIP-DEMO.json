@@ -99,10 +99,10 @@
         "Seven tier heights and lower-floor 95m envelope verified",
         "Real platform openings and safe capsule route surveyed"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-04T14:30:20.821Z",
+      "completed": "2026-10-04T14:30:20.821Z",
+      "notes": "Failing manifest test first. Distinct Blender demo master, real 4m shaft through bridge + first lower slab, nine 27.9m clear rays, mesh/envelope and separate WALK checks passed. Blender hero inspected; runtime swept capsule check follows SD3."
     },
     {
       "id": "SD2",
