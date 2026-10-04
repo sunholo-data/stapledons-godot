@@ -75,7 +75,7 @@ func _exposure_for(main: Node) -> Exposure:
 
 
 ## A star at the view centre at the default dark-adapted EV, bright enough
-## (V 1.0) that no channel clips: the 21 x 21 window sum of linear pixels is
+## (V 2.5 even at the 4× trial) that no channel clips: the 21 x 21 window sum of linear pixels is
 ## E_v k / Omega_px (the splat integrates to the star's illuminance).
 func _star_lux(main: Node) -> int:
 	_linear(main.env)
@@ -83,22 +83,30 @@ func _star_lux(main: Node) -> int:
 	main.env.background_color = Color.BLACK
 	main.camera.look(0.0, 0.0, 0.0)
 	var e := _exposure_for(main)
-	var lux := Relativity.illuminance_from_v(1.0)
+	# V2.5 keeps the 4x fixture below clipping; production highlights may saturate.
+	var lux := Relativity.illuminance_from_v(2.5)
 	main.starfield.set_custom_stars([{"pos": Vector3(0, 0, -1000.0), "t": 6500.0, "flux": lux}])
 	main.starfield.set_ship_position(0.0, 0.0, 0.0)
 	main.starfield.set_velocity(Vector3(0, 0, -1), 0.0, 1.0)
 	main.starfield.set_floor(Vector2.ZERO)
-	main.starfield.set_exposure(e.star_scale())
 	main.starfield.set_psf(e.psf_sigma_px())
-	var img: Image = await main._grab()
-	var c: Vector3 = main._window_sum(img)
-	var got := 0.2126729 * c.x + 0.7151522 * c.y + 0.0721750 * c.z
-	var want := lux * e.k() / e.pixel_sr
-	var ok := absf(got / want - 1.0) < 0.01
-	print("%s  exposure golden (star): V 1.0 = %s lux at EV %+.3f, splat sum %.4f, want E k / Omega_px = %.4f (ratio %.4f, limit 1%%)" % [
-		"ok  " if ok else "FAIL", String.num_scientific(lux), e.ev, got, want, got / want])
+	var failures:=0
+	for stops in [0,1,2,4,6]:
+		# Fainter known-lux fixtures keep strong trials below the display ceiling.
+		lux=Relativity.illuminance_from_v({0:2.5,1:2.5,2:2.5,4:4.0,6:5.5}[stops])
+		main.starfield.set_custom_stars([{"pos":Vector3(0,0,-1000.),"t":6500.,"flux":lux}])
+		e.bias=-float(stops);e.update(Exposure.dark_sky_luminance())
+		main.starfield.set_exposure(e.star_scale())
+		var img: Image = await main._grab()
+		var c: Vector3 = main._window_sum(img)
+		var got := 0.2126729 * c.x + 0.7151522 * c.y + 0.0721750 * c.z
+		var want := lux * e.k() / e.pixel_sr
+		var ok := absf(got / want - 1.0) < 0.01
+		if not ok:failures+=1
+		print("%s  exposure golden (star): +%d stops at EV %+.3f, splat sum %.4f, want E k / Omega_px = %.4f (ratio %.4f, limit 1%%)" % [
+			"ok  " if ok else "FAIL", stops, e.ev, got, want, got / want])
 	main.starfield.set_custom_stars([])
-	return 0 if ok else 1
+	return failures
 
 
 ## The panorama calibration end to end: a uniform panorama is its own dark

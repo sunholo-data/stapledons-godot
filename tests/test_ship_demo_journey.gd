@@ -17,6 +17,20 @@ func _run() -> void:
 	check("simulation cruise speed",absf(demo.sky.beta-.99)<1e-12)
 	var heading:Vector3=demo.sky.heading_world
 	var beta:float=demo.sky.beta
+	var world_before:=SimBridge.encode(demo.sky_world)
+	check("default trial is labelled 2x",demo.brightness_stops==1 and demo.brightness_label().contains("display aid"))
+	demo.set_brightness_trial(0)
+	var baseline_scale:float=demo.sky.exposure.star_scale()
+	for stops in [1,2,4,6]:
+		check("exposure trial accepted",demo.set_brightness_trial(stops))
+		check("exposure trial scales display only",absf(demo.sky.exposure.star_scale()/baseline_scale-pow(2.,stops))<1e-6 and SimBridge.encode(demo.sky_world)==world_before and demo.sky.beta==beta and demo.sky.heading_world==heading)
+	check("out of range exposure rejected",not demo.set_brightness_trial(7) and demo.brightness_stops==6)
+	check("baseline restored",demo.set_brightness_trial(0) and demo.sky.exposure.bias==0. and demo.sky.exposure.star_scale()==baseline_scale)
+	demo.sky.exposure.update(100.,100.)
+	var metered_ev:float=demo.sky.exposure.ev
+	demo._sync_observer()
+	check("attitude sync preserves metered exposure",demo.sky.exposure.ev==metered_ev)
+	demo.sky.update_exposure()
 	for direction in ["forward","side","aft"]:
 		demo.look_direction(direction)
 		check("%s preserves heading/velocity" % direction,demo.sky.heading_world.distance_to(heading)<1e-7 and demo.sky.beta==beta)
@@ -36,6 +50,7 @@ func _run() -> void:
 	demo.set_preset("bridge")
 	check("inside view restores simulation glow",demo.sky.glow_pole==ForwardGlow.pole_of(demo.sky_world))
 	demo.benchmark.running=true
+	check("benchmark rejects brightness change",not demo.set_brightness_trial(1) and demo.brightness_stops==0)
 	check("benchmark rejects sky change",not demo.set_sky_state("rest") and demo.sky.beta==beta)
 	demo.benchmark.running=false;demo.toggle_sky_only()
 	var observation:={"geometry_visible":true,"frames":0}

@@ -22,14 +22,16 @@ static func to_sky_direction(v: Vector3, h: PackedFloat64Array) -> Vector3:
 	return SkyFrame.to_world(Vector3(gal[0],gal[1],gal[2]))
 func sync_sky(sky: InteriorSky, px: Vector2i) -> void:
 	sky.cam={"position_m":ship_vector(position),"forward":ship_vector(-basis.z),"up":ship_vector(basis.y)}
+	var projection_changed:bool=sky.view_fov!=fov or sky.size!=px
 	sky.view_fov=fov;sky.camera.fov=fov
-	if sky.size!=px: sky.resize(px)
-	sky.configure_pixel()
+	if sky.size!=px:sky.resize(px)
+	elif projection_changed:sky.configure_pixel()
 	if sky.has_background:
 		var photo: Texture2D=sky.background.material.get_shader_parameter("photo")
 		if photo!=null:
 			sky.background.material.set_shader_parameter("pano_px_per_screen_px",photo.get_height()/180.0*fov/maxi(px.y,1))
 	sky.glow_mat.set_shader_parameter("cam_ship",Vector3(position.x,-position.z,position.y))
 	sky.orient(heading)
+	if projection_changed:sky.update_exposure()
 	# External inspection is not an observer inside the bubble wall.
 	if position.length()>=100.: sky.set_glow_pole(0.)

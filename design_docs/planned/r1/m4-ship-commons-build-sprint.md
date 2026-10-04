@@ -74,3 +74,40 @@ The private latest build manifest and local ZIP both give SHA256
 `694deef81ac070a636ebb4e77328823f32ac9ccf321473ec14e0183aa13ccca5`;
 `unzip -tq` passed. Metadata is pinned in `art/ship-commons-v1/review-build.json`.
 Remote source CI37220288520 is in progress. No production merge was performed.
+
+## Continuation plan — approved by Mark, 2026-10-04
+
+Authorization: “ok continue - lets alter the star brightness to trial it and build out the area more.”
+
+1. Root: reuse Exposure.bias; baseline/2×/4×/16×/64× labelled controls, initial2×; meaningful
+   state/ratio/lock checks and GPU/capture evidence. About80 code/check lines.
+2. Commons executor: expand reusable detail within existing playable area; update
+   Blender master, detailed/coarse exports, manifest, capsule/opacity checks and captures.
+   Authoring estimate300–600 lines; art timing remains iterative, not LOC-predictable.
+3. Separate evaluator: inspect both control behaviour and reachable painted area;
+   root publishes the next draft build and review-page comparisons after checks.
+
+Registry reuse: each step is rendering/authoring integration using existing Exposure,
+asset kit and tests; no new package capability or physics formula. Actual M2 Air
+performance still gates completion. Later levels open incrementally when playable.
+
+### Continuation review checkpoint
+
+Assets11b4009 / capture audit01a9be7: canopy, planted terrace, pavilion reading
+furniture and reusable detail.13,976 detailed /7,224 coarse triangles, one1254² atlas.
+Independent runtime25, extra route27, camera244 and journey47checks pass; GPU goldens
+pass with all five known-lux exposure fixtures within1%. Exported demo and normal
+simulation/AI/interior smoke checks pass. Final paired Studio profiling (1920×1080,
+120warmup/300sample frames, same2×cruise setting):
+
+| View | Baseline p95 ms | Expanded p95 ms | Primitive delta |
+|---|---:|---:|---:|
+| Bridge | 9.569 | 9.575 | +13,976 |
+| Overlook | 9.554 | 9.578 | +13,976 |
+| Mid-lift | 9.576 | 9.642 | +13,976 |
+| Courtyard | 9.643 | 9.660 | +13,964 |
+| Overview | 9.548 | 9.611 | +7,212 |
+
+Video-memory counter delta7,782,400bytes. Raw machine diagnostics remain local.
+The CPU-heavy full-suite process was suspended during this pair, then resumed.
+This is Studio evidence only; actual Air and full sprint completion remain pending.

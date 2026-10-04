@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Commons expansion and exposure trial, 2026-10-04
+
+- Add reusable planted terrace canopy, seating, reading tables and pavilion details within the current playable Commons.
+- Trial labelled sky exposure at baseline,2×,4×,16× and64× (default2×), with physical sky inputs unchanged. J cycles settings.
+- Preserve the sky meter while turning the camera; record the active exposure in captures and benchmarks.
+
 ### Commons and journey sky review, 2026-10-04
 
 - Add the first painted Commons pavilion and courtyard, with collision, lift access and a coarse distance model.

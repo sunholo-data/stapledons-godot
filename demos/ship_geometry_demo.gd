@@ -34,6 +34,8 @@ var sky_state := "rest"
 var sky_only := false
 var controls := VBoxContainer.new()
 var commons: Dictionary = {}
+const BRIGHTNESS_STOPS := [0,1,2,4,6]
+var brightness_stops := 1
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
@@ -75,6 +77,7 @@ func setup(opts := {}) -> bool:
 	if not set_sky_state(opts.get("sky_state","cruise")):
 		push_error("ship demo missing simulation sky review states");return false
 	ready_ok=true
+	set_brightness_trial(opts.get("brightness_stops",1))
 	print("ship-demo-ready: OK")
 	return true
 func _draw_layer(texture: Texture2D, layer: int) -> void:
@@ -103,9 +106,21 @@ func _hud() -> void:
 	for pair in [["Look forward/up [7]","forward"],["Look side [8]","side"],["Look aft/down [9]","aft"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));sky_row.add_child(button)
 	var sky_button:=Button.new();sky_button.text="Sky only diagnostic [H]";sky_button.pressed.connect(toggle_sky_only);controls.add_child(sky_button)
+	var brightness_row:=HBoxContainer.new();controls.add_child(brightness_row)
+	for stops in BRIGHTNESS_STOPS:
+		var button:=Button.new();button.text="Calibrated baseline" if stops==0 else "Exposure trial %d×" % int(pow(2.,stops))
+		button.pressed.connect(set_brightness_trial.bind(stops));brightness_row.add_child(button)
 	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · two-finger scroll / wheel to zoom · E lift · G guides · Esc close";controls.add_child(hint)
 func toggle_controls() -> void:
 	if not benchmark.running:controls.visible=not controls.visible
+func set_brightness_trial(stops: int) -> bool:
+	if benchmark.running or not stops in BRIGHTNESS_STOPS:return false
+	brightness_stops=stops
+	sky.exposure.bias=-float(stops)
+	sky.update_exposure()
+	return true
+func brightness_label() -> String:
+	return "Calibrated sky" if brightness_stops==0 else "Sky exposure trial %d× — display aid" % int(pow(2.,brightness_stops))
 func set_preset(name: String) -> void:
 	if name=="reset":
 		if lift!=null:lift.reset()
@@ -166,7 +181,7 @@ func _process(delta: float) -> void:
 	if Time.get_ticks_msec()-_last_exposure_ms>250:
 		sky.update_exposure();_last_exposure_ms=Time.get_ticks_msec()
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	label.text="SEVEN-TIER SHIP DEMO · %s · native materials · GR not implemented\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % ["FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT",view_name,active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	label.text="SEVEN-TIER SHIP DEMO · %s · native materials · GR not implemented\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % ["FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT",view_name,active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
 	if event is InputEventMouseMotion and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
@@ -194,6 +209,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_8:look_direction("side")
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
+			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
 			KEY_G:guides.visible=not guides.visible

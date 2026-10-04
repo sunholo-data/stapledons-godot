@@ -73,3 +73,28 @@ After first Commons review: complete its kit/footprint as needed, then Homes cou
 Main risks: paint seams/repetition at close range, export losing shading, costly outlines/vegetation, new roofs obscuring expected views, and decorative collision blocking the lift. Early in-engine sample, actual view captures and measured costs address these before duplication.
 
 Deliver editable master/linked kit, textures and hashes, detailed/coarse GLBs and separate WALK data, geometry/material manifest, player-camera captures, benchmark comparison, independent evaluation, updated review webpage and laptop build. Art review precedes any production integration.
+
+## Approved continuation — 2026-10-04
+
+Mark requested a brighter-star trial and further development of the current area.
+Vision alignment remains +4: Ship Is Home and Grounded Strangeness. This bounded
+continuation keeps the current seven-tier geometry, courtyard/WALK, lift and simulation.
+
+Offer calibrated sky baseline, +1 stop (2×) and +2 stops (4×) via existing exposure
+bias; default to labelled2× trial for review. Apply exposure to the whole sky pipeline,
+not selected stars; no magnitude floor, new photons or directional compensation.
+Optional16× and64× settings extend the comparison because the modest boost leaves the side view nearly black at0.99c. Strong settings can saturate forward highlights. Photometric inputs, aberration, Doppler and heading remain unchanged. This is an
+explicit display aid, not a claim of naked-eye visibility or passive bubble amplification.
+The geometry layer retains its existing diagnostic lighting, so no full coupled
+interior/eye-adaptation realism is claimed. Compare reachable and sky-only views.
+
+Expand the existing Commons with reusable seating, planters/low vegetation,
+canopy/terrace forms and pavilion detail. Preserve capsule routes and lift clearance;
+keep the kit within existing material/triangle/envelope caps and derive coarse geometry
+from the same master. No new tier or flyby is part of this continuation.
+
+Checks: `make ship-demo-journey-test` verifies exposure ratios, baseline restoration,
+state/heading invariance and benchmark lock; `make golden` checks calibrated rendering;
+`make ship-demo-ci` checks navigation/assets/envelope; native reference captures prove
+baseline/2×/4× appearance and multi-angle Commons quality; packaged smokes and ZIP
+hash precede the next draft release. Actual Air profiling remains pending.

@@ -93,5 +93,24 @@
       "completed": null,
       "notes": "Draft published as v0.4.0-dev.6-commons-sky-review,commit447d7cafede916aecf3a15b2f9f2157ab9484768. ZIP hash verified:694deef81ac070a636ebb4e77328823f32ac9ccf321473ec14e0183aa13ccca5; archive integrity passes. Full local test/golden, ship-demo-ci, packaged Commons/lift and normal simulation/AI/planet smokes pass. Independent draft evaluation88/100. Website live model/page verified200. Studio enabled five-view p95 9.34–9.64ms, no causal speedup claim. Remote CI in progress; no merge. Actual M2 Air benchmark remains required; performance signoff and sprint completion stay pending."
     }
-  ]
+  ],
+  "continuation": {
+    "approved_by": "Mark",
+    "approved_instruction": "alter star brightness to trial it and build out area more",
+    "status": "in-progress",
+    "scope": [
+      "labelled baseline/2x/4x exposure trials",
+      "reusable detail within current Commons court"
+    ],
+    "physics": "Existing exposure only; physical inputs and heading preserved",
+    "performance": "Actual M2 Air pending",
+    "exposure_settings": [
+      1,
+      2,
+      4,
+      16,
+      64
+    ],
+    "checks": "Journey47; Commons25; independent route27/camera244; fullGPUgolden0; packagedsmokespass. Studio9.575–9.660ms p95; fullsuite/publicationpending; Airpending."
+  }
 }
