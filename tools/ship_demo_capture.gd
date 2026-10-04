@@ -5,7 +5,7 @@ func _initialize() -> void:
 	_run.call_deferred()
 func _run() -> void:
 	root.size=Vector2i(1280,720)
-	demo=load("res://demos/ship_geometry_demo.tscn").instantiate();root.add_child(demo)
+	demo=load("res://demos/ship_geometry_demo.tscn").instantiate();demo.setup_options={"sky_state":"rest"};root.add_child(demo)
 	await process_frame
 	if not demo.ready_ok:quit(1);return
 	demo.auto=false

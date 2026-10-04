@@ -553,7 +553,13 @@ ship-demo-launch-test:
 
 # Headless demo regressions are part of the normal CI suite; GPU optics stays explicit.
 test: ship-demo-ci
-ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test
+ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test ship-demo-journey-test
 
 ship-demo-input-test:
 	@$(GODOT) --headless --path . --script tests/test_ship_demo_input.gd > $(SCRATCH)/ship-demo-input.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-input.log; test $$rc = 0 && grep -q '^ship-demo-input: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-input.log
+ship-demo-journey-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_journey.gd > $(SCRATCH)/ship-demo-journey.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-journey.log; test $$rc = 0 && grep -q '^ship-demo-journey: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-journey.log
+ship-demo-sky-states:
+	AILANG_BIN=$$(command -v $(AILANG)) $(GODOT) --headless --path . --script tools/ship_demo_sky_states.gd
+ship-demo-journey-capture:
+	$(GODOT) --path . --script tools/ship_demo_journey_capture.gd

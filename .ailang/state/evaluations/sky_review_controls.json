@@ -1,0 +1,34 @@
+{
+  "review": "Frozen mid-journey sky controls",
+  "timestamp": "2026-10-04T16:42:47.409Z",
+  "generator": "root",
+  "evaluator": "Independent sprint evaluator",
+  "result": "pass",
+  "scope": "Simulation-backed rest/cruise snapshots; fixed velocity with freely changing observer; explicit sky-only diagnostic and compact controls",
+  "reproducibility": {
+    "source": "tools/ship_demo_sky_states.gd uses SimBridge and pinned AILANG0.52.0/relativity0.7.0; seed424242, targetCNS5:3627,0.01ship-year steps until cruising beyond half route",
+    "independent_replay": "Scratch copy wrote /private/tmp/ship-demo-sky-reproduced.json; cmp against assets/ship_demo/sky_review.json exact byte match. /private/tmp/ship-demo-sky-reproduce.log contains explicit OK marker.",
+    "state": "Cruise beta0.99,gamma7.088812050083356,ship tau0.31yr,Earth t2.197516567129922yr,tick33; rest snapshot retains same simulated heading."
+  },
+  "tests": {
+    "journey": "Independently ran make ship-demo-journey-test:33passed,0failures",
+    "judge_invariants": "/private/tmp/ship-demo-journey-independent.gd/.log:36passed,0failures, adding exact astronomical float64 upload, shadergamma and whole-snapshot immutability checks",
+    "regressions": "Independently ran input9,camera244,lift24, all zero failures before benchmark-only follow-up; journey33/36 rerun covers benchmark change.",
+    "gpu_optics": "Read audit:81cases including beta0,.9,.99; worst0.1700519621px <=.75px; opaque blocker0.9237867->0; deliberately mismatched FOV137.568px; zero failures.",
+    "golden": "/private/tmp/ship-demo-journey-golden.log ends golden:0failures",
+    "full_suite": "/private/tmp/ship-commons-journey-full-test.log was still running at evaluation. Root must verify final exit0 and final export/CI before publication; prior full suite was green.",
+    "visual": "Independently opened cruise_forward,cruise_side,cruise_aft,cruise_aft_sky_only. Forward points0.5deg from travel, side90deg, aft179.5deg; opaque deck blocks aft sky and labeled H mode explicitly hides finite geometry."
+  },
+  "resolved_finding": {
+    "issue": "Starting benchmark while H sky-only active left ship viewport disabled/hidden and falsely profiled four ship views.",
+    "fix": "Benchmark clears diagnostic hiding before running; asserts geometry visible and UPDATE_ALWAYS through async measurement frames, records state/beta/gamma/heading/snapshot tick, then restores prior H mode.",
+    "evidence": "Three new actual asynchronous controller assertions pass."
+  },
+  "physics_boundary": "No new SR/GR formulas. Camera attitude/FOV/origin still sync through shared observer. Sim heading/beta/gamma/astronomical position remain fixed and independent of looking. Local observer metres do not replace sim galactic coordinates. Current fixture has no ship.ism.glow_pole_w_m2, so ForwardGlow.pole_of=-1 and wall glow is off; external overview forces0 then interior restores actual sim value. No inferred pole/epsilon changes. GR remains unimplemented.",
+  "limitations": [
+    "Frozen snapshot is clearly labeled and does not advance or alter active voyage.",
+    "Actual target MacBook Air benchmark remains pending.",
+    "Independent review here covers sky/controller/benchmark refinements; Commons geometry is separate work and not yet reviewed.",
+    "Refresh staged snapshot JSON/export and verify packaged mode before review-build publication."
+  ]
+}

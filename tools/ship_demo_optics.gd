@@ -52,7 +52,7 @@ func _run() -> void:
 				var expected: Vector2=target*Vector2(px)
 				var ray:=cam.project_ray_normal(expected)
 				marker.position=cam.position+ray*30.
-				for beta in [0.,.9]:
+				for beta in [0.,.9,.99]:
 					var apparent:=Camera.to_sky_direction(ray,cam.heading).normalized()
 					var velocity:=SkyFrame.to_world(Vector3(cam.heading[0],cam.heading[1],cam.heading[2])).normalized()
 					var rest:=Relativity.deaberrate(apparent,velocity,beta)

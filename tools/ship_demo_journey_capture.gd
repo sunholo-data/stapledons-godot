@@ -1,0 +1,28 @@
+extends SceneTree
+var demo: Node
+var out := "res://renders/ship_demo/journey"
+func _initialize() -> void:
+	_run.call_deferred()
+func _run() -> void:
+	root.size=Vector2i(1280,720)
+	demo=load("res://demos/ship_geometry_demo.tscn").instantiate();root.add_child(demo);demo.auto=false
+	await process_frame
+	if not demo.ready_ok:quit(1);return
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
+	var shots:=[]
+	for state in ["rest","cruise"]:
+		demo.set_sky_state(state)
+		for direction in ["forward","side","aft"]:
+			demo.look_direction(direction)
+			await shot(state+"_"+direction,shots)
+			demo.toggle_sky_only()
+			await shot(state+"_"+direction+"_sky_only",shots)
+			demo.toggle_sky_only()
+	var f:=FileAccess.open(out+"/manifest.json",FileAccess.WRITE)
+	f.store_string(SimBridge.encode({"description":"Frozen simulation snapshots. Up is travel; camera turning does not change velocity. Sky-only frames diagnostically hide the opaque ship.","shots":shots})+"\n")
+	print("ship-demo-journey-capture: OK");quit()
+func shot(name: String, shots: Array) -> void:
+	for i in 6:await process_frame
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(out+"/"+name+".png")
+	shots.append({"name":name,"beta":demo.sky.beta,"heading":Array(demo.camera.heading),"eye_m":Array(demo.camera.ship_vector(demo.camera.position)),"view_travel_deg":demo.sky.camera.view_velocity_angle(demo.sky.heading_world),"sky_only":demo.sky_only,"captain_eye":not demo.camera.external,"ship_state":demo.sky_world.ship,"vertical_fov":demo.camera.fov})

@@ -27,6 +27,11 @@ var lift: Node3D = null
 var guides := MeshInstance3D.new()
 var manifest: Dictionary = {}
 var _last_exposure_ms := 0
+var sky_states: Dictionary = {}
+var sky_world: Dictionary = {}
+var sky_state := "rest"
+var sky_only := false
+var controls := VBoxContainer.new()
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
@@ -59,9 +64,12 @@ func setup(opts := {}) -> bool:
 	_draw_layer(sky.get_texture(),-40);_draw_layer(geometry_view.get_texture(),-20)
 	lift=Lift.new();geometry.add_child(lift);lift.setup(self)
 	_guides();_hud();get_viewport().size_changed.connect(_resize)
-	set_preset("bridge");sky.starfield.set_velocity(Vector3(0,-1,0),0.,1.)
-	if sky.has_background:sky.background.set_velocity(Vector3(0,-1,0),0.,1.)
-	sky.set_glow_pole(0.);ready_ok=true
+	set_preset("bridge")
+	var review_path:=asset("sky_review.json")
+	if FileAccess.file_exists(review_path):sky_states=JSON.parse_string(FileAccess.get_file_as_string(review_path)).get("states",{})
+	if not set_sky_state(opts.get("sky_state","cruise")):
+		push_error("ship demo missing simulation sky review states");return false
+	ready_ok=true
 	print("ship-demo-ready: OK")
 	return true
 func _draw_layer(texture: Texture2D, layer: int) -> void:
@@ -71,17 +79,28 @@ func _draw_layer(texture: Texture2D, layer: int) -> void:
 	canvas.add_child(rect);_rects.append(rect)
 func _resize() -> void:
 	var px:=get_window().size
-	geometry_view.size=px;camera.sync_sky(sky,px)
+	geometry_view.size=px;_sync_observer()
 	for rect in _rects:rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 func _hud() -> void:
 	var canvas:=CanvasLayer.new();canvas.layer=10;add_child(canvas)
 	hud.position=Vector2(18,14);canvas.add_child(hud)
 	label.add_theme_color_override("font_shadow_color",Color.BLACK);label.add_theme_constant_override("shadow_offset_x",2);label.add_theme_constant_override("shadow_offset_y",2);hud.add_child(label)
-	var row:=HBoxContainer.new();hud.add_child(row)
+	var control_button:=Button.new();control_button.text="Controls [Tab] · 5 rest / 6 cruise · 7 forward / 8 side / 9 aft · H sky only"
+	control_button.pressed.connect(toggle_controls);hud.add_child(control_button)
+	hud.add_child(controls);controls.visible=false
+	var row:=HBoxContainer.new();controls.add_child(row)
 	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Reference rim [4]","rim"],["Reset [R]","reset"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_preset.bind(pair[1]));row.add_child(button)
-	var benchmark_button:=Button.new();benchmark_button.text="Benchmark at1920×1080 [B] (saves report)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));hud.add_child(benchmark_button)
-	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · two-finger scroll / wheel to zoom · E lift · G guides · Esc close";hud.add_child(hint)
+	var benchmark_button:=Button.new();benchmark_button.text="Benchmark at1920×1080 [B] (saves report)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));controls.add_child(benchmark_button)
+	var sky_row:=HBoxContainer.new();controls.add_child(sky_row)
+	for pair in [["Rest [5]","rest"],["Mid-journey 0.99c [6]","cruise"]]:
+		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_sky_state.bind(pair[1]));sky_row.add_child(button)
+	for pair in [["Look forward/up [7]","forward"],["Look side [8]","side"],["Look aft/down [9]","aft"]]:
+		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));sky_row.add_child(button)
+	var sky_button:=Button.new();sky_button.text="Sky only diagnostic [H]";sky_button.pressed.connect(toggle_sky_only);controls.add_child(sky_button)
+	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · two-finger scroll / wheel to zoom · E lift · G guides · Esc close";controls.add_child(hint)
+func toggle_controls() -> void:
+	if not benchmark.running:controls.visible=not controls.visible
 func set_preset(name: String) -> void:
 	if name=="reset":
 		if lift!=null:lift.reset()
@@ -100,11 +119,32 @@ func set_preset(name: String) -> void:
 		"rim":
 			camera_mode="diagnostic rim — not reachable";camera.reference=true
 			camera.follow(Vector3(19.0513,82,9.52565),-30,.463648,0.)
-	camera.sync_sky(sky,geometry_view.size)
+	_sync_observer()
 func reference_view(radius: float, tilt: float) -> void:
 	camera_mode="diagnostic reference — not a standing location";camera.reference=true
 	camera.follow(Vector3(radius*2/sqrt(5.),82,radius/sqrt(5.)),-tilt,.463648,0.)
+	_sync_observer()
+func set_sky_state(name: String) -> bool:
+	if benchmark.running or not sky_states.has(name):return false
+	sky_state=name;sky_world=sky_states[name].duplicate(true)
+	var h:Dictionary=sky_world.ship.heading
+	camera.heading=PackedFloat64Array([h.x,h.y,h.z])
+	sky.apply(sky_world);_sync_observer()
+	return true
+func _sync_observer() -> void:
 	camera.sync_sky(sky,geometry_view.size)
+	if not sky_world.is_empty():
+		var pole:float=0. if camera.position.length()>=100. else ForwardGlow.pole_of(sky_world)
+		if sky.glow_pole!=pole:sky.set_glow_pole(pole)
+func look_direction(direction: String) -> void:
+	if benchmark.running:return
+	var tilt:float={"forward":89.5,"side":0.,"aft":-89.5}.get(direction,0.)
+	camera_mode="player";camera.reference=false
+	camera.follow(avatar_pos,tilt,0.,0.);_sync_observer()
+func toggle_sky_only() -> void:
+	if benchmark.running:return
+	sky_only=not sky_only;geometry_view.render_target_update_mode=SubViewport.UPDATE_DISABLED if sky_only else SubViewport.UPDATE_ALWAYS
+	_rects[1].visible=not sky_only
 func _process(delta: float) -> void:
 	if not ready_ok:return
 	if auto and camera_mode=="player" and (lift==null or not lift.travelling()):
@@ -116,11 +156,11 @@ func _process(delta: float) -> void:
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
 	avatar.visible=camera.pullback>.5 or camera_mode!="player"
-	camera.sync_sky(sky,geometry_view.size)
+	_sync_observer()
 	if Time.get_ticks_msec()-_last_exposure_ms>250:
 		sky.update_exposure();_last_exposure_ms=Time.get_ticks_msec()
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	label.text="SEVEN-TIER GEOMETRY DEMO · at rest · native materials · GR not implemented\n%s · deck %d · eye %.2f m · 78° perspective\n%s" % [view_name,active_level,camera.position.y,caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	label.text="SEVEN-TIER SHIP DEMO · %s · native materials · GR not implemented\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % ["FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT",view_name,active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
 	if event is InputEventMouseMotion and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
@@ -128,7 +168,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var offset:=camera.position-Vector3(0,5,0)
 			offset=offset.rotated(Vector3.UP,-event.relative.x*.004).rotated(camera.basis.x,-event.relative.y*.004)
 			camera.position=Vector3(0,5,0)+offset;camera.look_at(Vector3(0,5,0));return
-		camera.yaw-=event.relative.x*.004;camera.tilt=clampf(camera.tilt-event.relative.y*.22,-80,75)
+		camera.yaw-=event.relative.x*.004;camera.tilt=clampf(camera.tilt-event.relative.y*.22,-89.5,89.5)
 		if camera_mode!="player":
 			var eye:=camera.position;camera.follow(eye-Vector3.UP*1.7,camera.tilt,camera.yaw,0.)
 	if event is InputEventPanGesture:
@@ -142,6 +182,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_2:set_preset("overlook")
 			KEY_3:set_preset("overview")
 			KEY_4:set_preset("rim")
+			KEY_5:set_sky_state("rest")
+			KEY_6:set_sky_state("cruise")
+			KEY_7:look_direction("forward")
+			KEY_8:look_direction("side")
+			KEY_9:look_direction("aft")
+			KEY_H:toggle_sky_only()
+			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
 			KEY_G:guides.visible=not guides.visible
 			KEY_B:await benchmark.run(self)
