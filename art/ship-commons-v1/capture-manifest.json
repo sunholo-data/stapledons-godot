@@ -45,7 +45,7 @@
       "walkable": false
     },
     {
-      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87358966437>",
       "centre_hit_m": "(18.85, 60.08639, -4.317777)",
       "coarse_visible": false,
       "diagnostic": false,
@@ -66,7 +66,7 @@
       "walkable": true
     },
     {
-      "centre_hit": "COMMONS_batch_Commons teal_col:<StaticBody3D#87325411604>",
+      "centre_hit": "COMMONS_batch_Commons teal_col:<StaticBody3D#87426074900>",
       "centre_hit_m": "(24.53799, 59.99384, -3.66463)",
       "coarse_visible": false,
       "diagnostic": false,
@@ -129,7 +129,7 @@
       "walkable": true
     },
     {
-      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87358966437>",
       "centre_hit_m": "(33.15, 59.23375, -10.0)",
       "coarse_visible": false,
       "diagnostic": false,
@@ -150,7 +150,7 @@
       "walkable": true
     },
     {
-      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87358966437>",
       "centre_hit_m": "(26.0, 59.29734, -16.15)",
       "coarse_visible": false,
       "diagnostic": false,
@@ -171,7 +171,7 @@
       "walkable": true
     },
     {
-      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87358966437>",
       "centre_hit_m": "(23.26484, 59.64354, -3.850099)",
       "coarse_visible": false,
       "diagnostic": false,
@@ -192,7 +192,7 @@
       "walkable": true
     },
     {
-      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87358966437>",
       "centre_hit_m": "(19.1498, 57.73172, -9.348908)",
       "coarse_visible": false,
       "diagnostic": false,
