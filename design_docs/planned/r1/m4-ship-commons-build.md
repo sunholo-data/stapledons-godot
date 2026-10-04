@@ -114,3 +114,16 @@ The current pavilion remains a historic working test, not approved final archite
 The new bridge-style paintover is a finish study only; it is not a UV-textured asset.
 
 Mark selected4× sky exposure for the review default; physics inputs stay unchanged.
+
+### Review publication, 2026-10-04
+
+- Published native build `v0.4.0-dev.8-commons-review-4x`, source
+  `6e613a9d384bcc5558ab6859dc2596dba4832dd2`; default exposure 4×.
+- Archive checksum `3394468b430671341752a5403b88869d86ebff36429443f61ff8e757783f8660`;
+  latest manifest verified, ZIP integrity passed, focused journey checks 47/47
+  and packaged ship smoke passed. No geometry or physics changes in this update.
+- Review page source `cee12ee`, Pages publication `8f3c22f`: approved concept,
+  unbuilt measured zoning proposal and finish-only paintover shown separately.
+- Next: Mark reviews the proposed Commons circulation and use zones. Develop one
+  representative open arcade/plaza section matching the approved concept after
+  layout agreement. No replacement architecture approval inferred.
