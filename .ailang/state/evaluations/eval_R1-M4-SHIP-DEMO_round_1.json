@@ -1,0 +1,141 @@
+{
+  "sprint_id": "R1-M4-SHIP-DEMO",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-04T15:08:18.240Z",
+  "evaluator": "Independent sprint evaluator; separate from implementation executor",
+  "evaluated_commit": "93813ed33afaaa412a10e0b44ee36e4d28fbe9e3",
+  "branch": "demo/ship-geometry-seven",
+  "design_doc": "design_docs/planned/r1/m4-ship-geometry-demo.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-geometry-demo-sprint.md",
+  "total_score": 90,
+  "pass_threshold": 70,
+  "result": "fail",
+  "result_reason": "Full sprint completion is pending the required actual MacBook Air M2/24GB benchmark. This is not a rejection of the functioning draft review build.",
+  "review_build_result": "pass",
+  "production_landing_result": "pending",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 23,
+    "code_quality": 13,
+    "documentation": 15,
+    "design_fidelity": 9
+  },
+  "hard_fails": [
+    {
+      "condition": "mandatory_target_performance_evidence_missing",
+      "details": "PERF-1/SD4 requires four-view profiling on the specified MacBook Air M2 (2022),24GB at1920x1080. Studio measurement is explicitly not a substitute; no performance signoff or completed-sprint claim is permitted."
+    }
+  ],
+  "automated_checks": {
+    "tests_pass": true,
+    "tests_evidence": "Root independently ran make test AILANG=runtime/bin/ailang, exit0; /private/tmp/ship-demo-full-test.log. Latest changed camera helper separately passes244 checks.",
+    "golden_pass": true,
+    "golden_evidence": "Existing GPU make golden exits0, /private/tmp/ship-demo-golden.log. Optional textured Jupiter case skipped because planet assets not fetched; unrelated to ship demo.",
+    "project_checks": "Godot import/parse, existing precision/Python guards and latest targeted headless gates pass. Repository has no generic make lint target; adapted rubric uses its actual checks. git diff --check clean.",
+    "file_sizes_ok": true,
+    "new_code_max_lines": 184,
+    "latest_optics": "/private/tmp/ship-demo-optics-final.log:54 cases, worst0.1700px <=0.75px, opaque blocker0.9238->0.0000 luminance; deliberately wrong skyFOV137.57px mismatch; zero failures.",
+    "latest_export": "/private/tmp/ship-demo-export-final.log and /private/tmp/ship-demo-export-smoke-final.log: refreshed packaged app, ship-demo-ready: OK and ship-demo-export-smoke: OK. Normal export smoke separately passed49files and production bridge M4 traversal.",
+    "ci": "New demo regressions wired into make test and therefore CI. Root owns final branch CI result; local approval here does not assert remote CI completion."
+  },
+  "acceptance_criteria": [
+    {
+      "feature_id": "SD1",
+      "criterion": "Measured seven-tier heights, 95m lower envelope,100m bubble and98m needle",
+      "met": true,
+      "evidence": "Actual transformed GLB mesh tops and needle checked, stale tier/tip mutation controls rejected. Separate bridge/lower WALK and real4m openings verified."
+    },
+    {
+      "feature_id": "SD2",
+      "criterion": "Shared perspective, sky attitude/FOV/aspect and pixel sampling",
+      "met": true,
+      "evidence": "244 camera checks cover three aspects, tilt, pullback/FOV, observer origins and panorama sampling. Actual-demo GPU ray/occlusion audit passes54 cases including beta0 and0.9, roll and differing FOV/aspect."
+    },
+    {
+      "feature_id": "SD2",
+      "criterion": "Reference/player distinction and inspected captures",
+      "met": true,
+      "evidence": "Read capture manifest and independently opened overlook/overview, latest mid-lift and lower walk. Real floor/rail occlusion is visible; rim and exterior are clearly labeled diagnostics, not standing locations. No static duplicated ship panorama is instantiated."
+    },
+    {
+      "feature_id": "SD3",
+      "criterion": "Safe25m lift, separate active WALK and stable return",
+      "met": true,
+      "evidence": "24 transport checks include110 actual-world capsule samples, endpoint error <=1cm, reentry lock, parent attachment/detachment, three total roundtrips, guarded openings and walking-domain switches. Wheel during travel is regression-tested."
+    },
+    {
+      "feature_id": "SD4",
+      "criterion": "Target laptop four-view benchmark",
+      "met": false,
+      "evidence": "Tool records actual hardware and locks inputs during sample. Only StudioM4Max/Mac16,9/128GB report exists; pending target confirmation true. Studio p95=26.063–28.579ms exceeds16.67ms target. Actual Air run required."
+    },
+    {
+      "feature_id": "SD4",
+      "criterion": "Compatibility and separate review entry preserve production journey",
+      "met": true,
+      "evidence": "Full existing test and golden suites pass. Review button launches another process; live voyage is retained. Child launch test preserves parent world sentinel; Escape quits only demo."
+    },
+    {
+      "feature_id": "SD4",
+      "criterion": "Packaged app/captain/lift and captures",
+      "met": true,
+      "evidence": "Latest packaged smoke loads GLBs/captain, executes both lift directions and verifies bridge WALK/endpoint.16 fresh captures reflect open rails and current UI. Root owns final upload/hash/install check."
+    }
+  ],
+  "documentation_check": {
+    "changelog_updated": true,
+    "examples_created": true,
+    "example": "demos/ship_geometry_demo.tscn and demos/README.md (Godot presentation feature, no AILANG example appropriate)",
+    "design_doc_status": "Correctly approved/in-progress; remains planned while SD4 laptop evidence outstanding.",
+    "sprint_artifacts": "SD1–3 passes true; SD4 null with concrete evidence and missing-target explanation. Do not mark completed or move plans until remaining criterion resolved."
+  },
+  "design_fidelity": {
+    "score": 9,
+    "notes": "One observer drives finite geometry and infinite sky; native materials explicitly diagnostic, production painted renderer retained. Actual openings and separate walk domains avoid teleporting through floors. No new relativity formulas/simulation state changes. GR consistently stated unimplemented. Runtime creates collision for all visual meshes, broader than the active-section-only proposal; acceptable for this bounded blockout but merits resource tuning before detailed architecture."
+  },
+  "resolved_review_findings": [
+    {
+      "issue": "Wheel input could restore300m pullback during travel",
+      "resolution": "Lift-travel wheel guard plus boarding/descending regression checks."
+    },
+    {
+      "issue": "Manifest heights alone could hide stale geometry",
+      "resolution": "Actual transformed lower-top/bridge-floor/needle assertions and wrong-tier/wrong-tip controls."
+    },
+    {
+      "issue": "Single roundtrip did not prove repeated state stability",
+      "resolution": "Three complete cycles verify endpoints, guards and one avatar."
+    },
+    {
+      "issue": "Replacing main scene stopped/discarded live voyage",
+      "resolution": "Separate review process preserves live main/sim; Escape only quits demo."
+    },
+    {
+      "issue": "GPU M2 substring could falsely identify M2 Pro/Max/Ultra as target Air",
+      "resolution": "Actual model/CPU/GPU/RAM recorded; explicit target confirmation remains pending."
+    },
+    {
+      "issue": "User input/HUD buttons could corrupt stationary benchmark",
+      "resolution": "Keyboard/mouse guard plus disabled HUD buttons while sampling."
+    },
+    {
+      "issue": "Export executable name hardcoded incorrectly",
+      "resolution": "CFBundleExecutable lookup; latest target smoke passes."
+    },
+    {
+      "issue": "Panorama angular sampling remained stale after resize/FOV change",
+      "resolution": "Sampling updated from actual photo height, FOV and render height;21 failing negative checks now pass."
+    }
+  ],
+  "feedback": [
+    {
+      "file": "art/ship-demo-v1/studio-benchmark.json",
+      "category": "acceptance_criteria",
+      "severity": "completion_gate",
+      "issue": "Actual target-laptop performance is unmeasured; Studio p95 also exceeds target.",
+      "suggestion": "Publish this draft build for laptop review, run in-app B benchmark on MacBook Air M2/24GB with other game windows closed, inspect all four frame-time distributions/hardware/resolution, then reduce costs if needed before completing PERF-1."
+    }
+  ],
+  "notes": "Draft development review publication is approved. Full-sprint result remains fail/pending despite score above threshold because mandatory target evidence is missing. No production merge, no document landing, no claim of60fps or finished arbitrary-angle paint/GR. Observed headless shutdown RID/ObjectDB warnings do not invalidate successful smoke markers but remain a minor cleanup concern. Publication and user install verification are root responsibilities."
+}
