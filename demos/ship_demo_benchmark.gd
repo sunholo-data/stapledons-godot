@@ -25,14 +25,23 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 	report["sky_review"]={"state":demo.sky_state,"beta":demo.sky.beta,"gamma":demo.sky_world.ship.gamma,"heading":Array(demo.camera.heading),"snapshot_tick":demo.sky_world.tick,"sky_only":false}
 	report["commons_enabled"]=not demo.commons.is_empty()
 	report["sky_exposure_trial"]={"stops":demo.brightness_stops,"label":demo.brightness_label(),"bias_ev":demo.sky.exposure.bias}
+	# Use the same authored standing-eye view in both baseline and enabled runs.
+	var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string(load("res://demos/ship_commons.gd").asset("manifest.json")))
+	var courtyard_eye:=Vector3(23,58.725,3)
+	var courtyard_target:=Vector3(26,61.2,-10)
+	for view: Dictionary in manifest.get("player_views",[]):
+		if view.name=="courtyard":
+			var eye: Array=view.eye_ship_m;var target: Array=view.target_ship_m
+			courtyard_eye=Vector3(eye[0],eye[2],-eye[1])
+			courtyard_target=Vector3(target[0],target[2],-target[1])
 	for name in ["bridge","overlook","mid_lift","commons_courtyard","overview"]:
 		demo.set_preset("reset")
 		if name=="mid_lift":
 			demo.lift.board();demo.lift.advance(.81);demo.lift.advance(5.5)
 		elif name=="commons_courtyard":
-			demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=Vector3(23,57.025,3)
-			demo.camera_mode="benchmark reference";demo.camera.position=Vector3(23,58.725,3)
-			demo.camera.look_at(Vector3(26,61.2,-10));demo._sync_observer()
+			demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=courtyard_eye-Vector3.UP*1.7
+			demo.camera_mode="benchmark reference";demo.camera.position=courtyard_eye
+			demo.camera.look_at(courtyard_target);demo._sync_observer()
 		else:demo.set_preset(name)
 		demo.caption="BENCHMARK %s · warm-up" % name
 		for i in warmup:await demo.get_tree().process_frame
@@ -44,7 +53,7 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 			var now:=Time.get_ticks_usec();times.append((now-previous)/1000.);previous=now
 			draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME));tris.append(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
 		var timing:=summarize(times)
-		report.views.append({"view":name,"frame_times":timing,"frame_times_ms":times,"draw_calls":summarize(draws),"rendered_primitives":summarize(tris),"video_memory_bytes":Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED),"texture_memory_bytes":Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED),"p95_within_60fps_budget":timing.p95_ms<=1000./60.})
+		report.views.append({"view":name,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"view_direction":[-demo.camera.basis.z.x,-demo.camera.basis.z.y,-demo.camera.basis.z.z],"frame_times":timing,"frame_times_ms":times,"draw_calls":summarize(draws),"rendered_primitives":summarize(tris),"video_memory_bytes":Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED),"texture_memory_bytes":Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED),"p95_within_60fps_budget":timing.p95_ms<=1000./60.})
 	var f:=FileAccess.open(output_path,FileAccess.WRITE)
 	if f!=null:f.store_string(JSON.stringify(report,"  "));f.close()
 	demo.set_preset("reset");demo.auto=true
