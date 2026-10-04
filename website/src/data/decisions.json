@@ -1,7 +1,30 @@
 {
- "generated": "2026-10-03",
+ "generated": "2026-10-04",
  "designPin": "f4d876caf98f33691fb165c8a73be5c76abd313c",
  "decisions": [
+  {
+   "id": "D-34",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-04",
+   "title": "Bubble-ship major tier count for the geometry/art study.",
+   "question": "Bubble-ship major tier count for the geometry/art study.",
+   "ruling": "DECIDED (Mark, attended 2026-10-04): seven layers are preferred over twenty closely spaced decks; architecture within those layers will include buildings, forests and other spaces.",
+   "words": [],
+   "provenance": "Attended ship-geometry review; art/ship-dimensions-v2 and website/docs/ship-layer-reference.mdx.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L124",
+   "sourceLabel": "stapledon-mission.md, line 124",
+   "refs": [],
+   "groups": [
+    "visual",
+    "physics"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
   {
    "id": "SUP-voice-format",
    "source": "supplementary",
@@ -235,6 +258,81 @@
      }
     ]
    },
+   "superseded": false
+  },
+  {
+   "id": "D-33",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-03",
+   "title": "Licensing of our own AI-generated work: the captain and bridge art and generatio",
+   "question": "Licensing of our own AI-generated work: the captain and bridge art and generation notes say 'owned by Sunholo, Apache-2.0', but purely AI-generated output may not be copyrightable. Scope?",
+   "ruling": "DECIDED (Mark, attended 2026-10-03): art only, no claim: remove ownership/Apache claims from AI-generated art (captain, bridge, concept art) and label it AI-generated, no copyright claimed; the code keeps Apache-2.0; third-party CC BY credits stay",
+   "words": [],
+   "provenance": "assets/characters/captain/*, refs/bridge_v2 BRIEF, website/docs/credits.md, README.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L123",
+   "sourceLabel": "stapledon-mission.md, line 123",
+   "refs": [],
+   "groups": [
+    "visual",
+    "ai"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
+  {
+   "id": "D-32",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-03",
+   "title": "Release naming convention for game builds (tags so far: v0.1.0-m0 … v0.3.2-m2-jo",
+   "question": "Release naming convention for game builds (tags so far: v0.1.0-m0 … v0.3.2-m2-journey, v0.4.0-dev.1).",
+   "ruling": "DECIDED (Mark, attended 2026-10-03): semantic versioning, vMAJOR.MINOR.PATCH with SemVer pre-release suffixes for dev builds (e.g. v0.4.0-dev.1); 0.x while pre-alpha",
+   "words": [],
+   "provenance": "Site News is tied to release tags; v0.4.0-dev.1 published 2026-10-03.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L122",
+   "sourceLabel": "stapledon-mission.md, line 122",
+   "refs": [],
+   "groups": [
+    "process"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
+  {
+   "id": "D-31",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-03",
+   "title": "Planet texture licence (M5.2a L-tex): Solar System Scope 2k set, CC BY 4.0, 10 f",
+   "question": "Planet texture licence (M5.2a L-tex): Solar System Scope 2k set, CC BY 4.0, 10 files pinned in data/planets/SHA256SUMS; no in-game credits screen exists yet. Approve the source and the credit line?",
+   "ruling": "DECIDED (Mark, attended 2026-10-03): approved, Solar System Scope textures under CC BY 4.0, and the attribution must be displayed in game (a reachable credits line or panel), on the website and in release notes",
+   "words": [],
+   "provenance": "M5.2a PR #106; data/planets/CREDITS.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L121",
+   "sourceLabel": "stapledon-mission.md, line 121",
+   "refs": [
+    {
+     "repo": "game",
+     "n": 106,
+     "url": "https://github.com/sunholo-data/stapledons-godot/issues/106",
+     "kind": "pr"
+    }
+   ],
+   "groups": [
+    "planets",
+    "process"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
    "superseded": false
   },
   {

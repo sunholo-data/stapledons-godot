@@ -7,8 +7,9 @@ import ShipGeometryReview from '@site/src/components/ShipGeometryReview';
 
 This is the shared review reference for the bubble ship: **measured Blender alternatives
 for geometry**, followed by the **concept sheet for style**. Both layouts use the actual
-bridge geometry, unchanged in scale, inside a sphere of radius 100 m. Neither floor
-schedule is approved yet.
+bridge geometry, unchanged in scale, inside a sphere of radius 100 m. Mark prefers **seven major tiers**, with buildings, forests and other architecture within
+them. The twenty-deck option is retained for comparison; the detailed radii and clearance
+remain proposals.
 
 <ShipGeometryReview />
 
@@ -21,14 +22,29 @@ bridge. The three thin sphere circles are measurement guides, not a solid hull.
 
 **A** follows the existing 25 m tier cadence: bridge, then +57, +32, +7, −18, −43 and
 −68 m. The last two tiers extend the old four-tier blockout. **B** explores twenty decks,
-8.5 m apart, ending at −79.5 m. All lower decks use the same radius rule:
-`0.55 × sqrt(100² − Z²)`. This preserves a broad gap to the bubble; deck widths are not
-copied from the illustration.
+8.5 m apart, ending at −79.5 m. Revision 2 replaces the old 55% radius rule with a **95 m radius inner spherical envelope**.
+This gives every lower floor at least **5 m clearance to the 100 m bubble**, rather than a
+gap that grows toward the equator. Deck widths are derived from the sphere, not the illustration.
+The 1 m slab thickness and small edge lip are included in the fit:
+`radius = sqrt(95² − max(Z², (Z−1)²)) − 0.08` metres.
+
+The actual bridge is a deliberate exception in this study: its 22 m radius is much smaller
+than the bubble cross-section at +82 m. It remains the existing decision platform above the
+wider tiers; an expanded upper terrace would require a separate geometry choice.
+
+Seven layers are major inhabited tiers, not seven single-storey floors. The 25 m cadence
+leaves about 24 m between lower floor slabs before architecture and bracing. Buildings can
+contain smaller storeys, and forests can occupy tall open volumes. The actual bridge ramp
+and underside locally reduce the space beneath the bridge.
 
 The lower floors are opaque slabs 1 m thick, with a tapered central spire beneath the
 actual bridge. This is a **dimension and occlusion blockout**, not a structurally engineered
 ship. Rooms, roofs, gardens, lifts, bracing and railings on lower levels are absent; they
-will add occlusion. The imported bridge rails and fronds are present. Invisible game
+will add occlusion. The 5 m clearance is for floor geometry only: roofs and tree canopies
+need their own sphere checks at their actual heights. For a point at height `h`, its horizontal
+radius must stay below `sqrt(100² − h²)`; using `sqrt(95² − h²)` also preserves the proposed
+5 m buffer. Upper-tier buildings and trees need greater setbacks because the sphere narrows
+overhead. The imported bridge rails and fronds are present. Invisible game
 collision meshes are excluded. Bridge fronds have their existing attachments; speculative
 lower-level growth has not been invented to fill the foreground.
 
@@ -36,8 +52,9 @@ lower-level growth has not been invented to fill the foreground.
 
 From the interior eye, 4.11 m inside the edge, the centre ray at 30°, 45° and 60° down
 hits the bridge floor in both layouts. A camera cannot see through that floor.
-At the rim eye, 0.7 m inside the edge, the 45° centre ray reaches the next deck in B,
-but clears A's decks. At 60° it reaches the next deck in both. Use the angle selector
+With the revised wider floors, at the rim eye, 0.7 m inside the edge, the 30°, 45° and
+60° centre rays reach the next deck in A. In B the next deck is closer and is reached even
+at 15° down. A's 15° centre ray still clears the modeled ship. Use the angle selector
 above to compare the full images: a centre-ray result describes only the middle pixel,
 not everything in the wide field of view.
 

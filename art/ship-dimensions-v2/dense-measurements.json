@@ -314,5 +314,7 @@
       "hit_m": null,
       "distance_m": null
     }
-  ]
+  ],
+  "lower_floor_maximum_radius_m": 94.984761019721,
+  "lower_floor_actual_minimum_boundary_clearance_m": 5.015238980278994
 }
