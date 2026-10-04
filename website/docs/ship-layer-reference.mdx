@@ -6,6 +6,8 @@ sidebar_position: 7
 import ShipGeometryReview from '@site/src/components/ShipGeometryReview';
 import ShipDemoReview from '@site/src/components/ShipGeometryReview/Demo';
 import TierConcepts from '@site/src/components/ShipGeometryReview/Concepts';
+import JourneyReview from '@site/src/components/ShipGeometryReview/Journey';
+import CommonsReview from '@site/src/components/ShipGeometryReview/Commons';
 
 This is the shared review reference for the chosen bubble ship: **seven major layers**
 inside a sphere of radius 100 m, with **at least 5 m clearance for the lower-floor geometry**.
@@ -137,7 +139,7 @@ tracked in the sprint; this is a review demo, not a production art sign-off.
 3. Inspected captures, compatibility checks and a laptop review build. Actual laptop performance
    must be measured; Studio performance cannot certify it.
 
-Buildings, forests and unrestricted traversal of all seven tiers follow later. The lift
+The first Commons building is reviewed below; broader architecture, forests and unrestricted traversal of all seven tiers follow later. The lift
 needs real floor openings and separate active walk surfaces; it must not pass through a
 solid floor. Reference camera presets near the rim are diagnostic views and do not certify
 that the captain's walking capsule can occupy those points.
@@ -149,16 +151,16 @@ and [sprint plan](https://github.com/sunholo-data/stapledons-godot/blob/demo/shi
 
 The demo uses the real bridge mesh above six proportioned lower tiers. A guarded lift
 connects the bridge at +82 m to a bounded landing at +57 m through genuine floor openings.
-These are native material geometry previews; the painted production bridge remains available
-in the normal game. Buildings and forests are still absent.
+These initial captures are native material geometry previews; the painted production bridge remains available
+in the normal game. The new Commons build is reviewed separately below; other tiers remain undressed.
 
 <ShipDemoReview />
 
-The common observer has an independent GPU check: **54 star-versus-finite-marker cases**
-across viewport proportions, tilt, roll, field of view and SR velocities of 0 and 0.9c.
+The common observer has an independent GPU check: **81 star-versus-finite-marker cases**
+across viewport proportions, tilt, roll, field of view and SR velocities of 0, 0.9 and 0.99c.
 Worst displacement was **0.17 pixels**, below the 0.75 pixel limit. An opaque surface
 blocked the star completely, and a deliberately mismatched sky camera was detected.
-[GPU audit](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_demo_v1/optics/audit.json).
+[GPU audit](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_demo_journey_v1/optics_audit.json).
 
 Target laptop: **MacBook Air M2 (2022), 24 GB**, at **1920×1080**. Actual laptop performance
 is awaiting measurement; Studio measurements are evidence for the Studio only.
@@ -181,7 +183,43 @@ trackpad to look; no held click is needed. Right-drag remains available with a m
 Use **two-finger scrolling** or the mouse wheel to zoom, including in the whole-ship view.
 Press **E** at the lift landing to descend or return, **R** to reset, and **Escape** to close
 the review window. **4** is a diagnostic rim camera, not a reachable standing position.
-Press **B** to benchmark the four views at 1920×1080; the demo displays where it saved the report.
+Press **B** to benchmark the five views at 1920×1080; the demo displays where it saved the report.
+
+### Mid-journey sky and look direction
+
+The demo now opens at a **frozen 0.99c mid-journey snapshot**. Press **5** for rest and
+**6** for cruise. Use **7** to look forward/up, **8** sideways and **9** aft/down, or look
+freely with Option and the trackpad. **Tab** reveals the full controls. Travel remains
+along the ship's up axis when the camera turns; braking does not turn the ship over.
+The whole ship remains co-moving geometry, rather than being distorted like external light.
+
+The decks correctly hide most of the aft sky. **H** toggles a labeled sky-only diagnostic
+that hides the ship so you can inspect that sky. It does not make floors transparent in
+the ordinary view. Compare the same directions at rest and cruise below.
+
+<JourneyReview />
+
+Normal voyages already update their sky from the changing simulation state. Their current
+transit pace is 0.1 ship-years per real second: a nearby Solar System stop can finish inside
+one update, while Alpha Centauri takes roughly six seconds at default cruise. This frozen
+review mode gives you time to inspect; it does not change the active journey's clock.
+The current snapshot protocol lacks the renderer's forward-glow pole field, so this review
+does not demonstrate bubble glow. GR lensing also remains unimplemented here.
+
+The Mac build includes textured Mercury–Neptune and the Moon. M5 still tracks rings and
+atmospheres, relativistic resolved-planet flyby rendering, and the in-system transit view
+with slower playback near closest approach. The planet assets are available; the full
+moving Solar System flyby demo is not yet complete.
+
+### First Commons model and material proof
+
+Mark approved the first architectural build: a Commons pavilion, courtyard and real walk
+connection to the existing lift. This proves reusable geometry, painted multi-angle
+materials and coarse distant exports before populating all seven tiers. Player-eye views
+inside the bubble govern sightlines; exterior concepts serve as style/assembly references.
+[Approved build plan](https://github.com/sunholo-data/stapledons-godot/blob/demo/ship-geometry-seven/design_docs/planned/r1/m4-ship-commons-build-sprint.md).
+
+<CommonsReview />
 
 ## Concepts for each of the seven tiers
 
