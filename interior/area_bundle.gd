@@ -34,6 +34,7 @@ extends RefCounted
 ##                                  camera's pan-0 view; covers_pan_range_m optional [x, y]
 ##   layers.<plate>.facing String    bridge v2 (§9.3): a forward-facing mask (grey, any size, UV
 ##                                  aligned with the plate) for the live forward-glow term
+##   layers.<plate>.visible bool     optional, default true; hide geometry duplicated by play
 ##
 ## Export staging: assets/areas/ carries a .gdignore (raw files, no import), and Godot's export
 ## skips .gdignore'd directories, so `make areas-stage` copies each bundle to
@@ -311,6 +312,9 @@ static func check_manifest(m: Dictionary) -> PackedStringArray:
 			if cv != null and not (cv is Array and cv.size() == 2 and _num(cv[0]) and _num(cv[1]) and cv[0] >= 0 and cv[1] >= 0):
 				e.append("layers.play.plate.covers_pan_range_m must be [x, y] non-negative numbers")
 	for layer in ["panorama", "foreground"]:
+		var visible: Variant = m["layers"][layer].get("visible")
+		if visible != null and not visible is bool:
+			e.append("layers.%s.visible must be a bool" % layer)
 		var f: Variant = m["layers"][layer].get("facing")
 		if f != null and not (f is String and not (f as String).is_empty()):
 			e.append("layers.%s.facing must be a non-empty string" % layer)

@@ -6,6 +6,7 @@
   "layers": {
     "panorama": {
       "file": "pano_bridge.png",
+      "visible": false,
       "parallax": 0.15,
       "overscan_px": [
         128,
@@ -151,5 +152,5 @@
     "note": "static light and shadow of ship geometry only (Mark, 2026-10-03); characters are never baked; space alpha 0"
   },
   "live_glow_hint": "pano_bridge_facing.png: max(n . ship +Z, 0), 8-bit grey, half resolution, linear. The play layer uses the GLB's own normals.",
-  "panorama_content": "forward sky first (Mark, 2026-10-03): v1's up-looking camera with the spire needle; the ship backdrop is kept for later views"
+  "panorama_content": "Hidden after attended playtest (Mark, 2026-10-04): the needle duplicates the play-layer spire and drifts behind the rail under parallax. The live sky still uses this camera; near ship geometry is drawn only by the play layer."
 }

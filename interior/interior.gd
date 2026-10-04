@@ -41,7 +41,7 @@ const PLATE_PROJECT := preload("res://interior/plate_project.gdshader")
 const PLATE_INK_M := 0.015 # thin hull for the outer half of the silhouette ink (the plate has the inner half)
 const TOON := preload("res://interior/toon.gdshader")
 const OUTLINE := preload("res://interior/outline.gdshader")
-const WALK_SPEED := 1.4 # m/s
+const WALK_SPEED := 2.2 # m/s; attended playtest: quicker movement around the bridge
 const BACK_M := 150.0 # iso camera distance behind the focus
 const TICK_HZ := 20.0
 const CAPTAIN_DIR := "res://assets/characters/captain"
@@ -356,6 +356,9 @@ func _plate(layer: String, img: Image) -> void:
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var m := ShaderMaterial.new()
 	m.shader = PLATE_SHADER
+	# Near ship geometry belongs to the play layer. A panorama containing the same
+	# spire would drift independently under parallax and appear as a second tower.
+	r.visible = bundle.manifest["layers"][layer].get("visible", true)
 	var facing := bundle.facing_path(layer)
 	if facing != "": # bridge v2: the live forward glow reaches the forward-facing painted surfaces
 		var fimg := AreaBundle.load_png(facing)
