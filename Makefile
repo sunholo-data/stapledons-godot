@@ -530,3 +530,9 @@ ship-demo-assets-test:
 	$(GODOT) --headless --path . --script tests/test_ship_demo_assets.gd
 	$(GODOT) --headless --path . --script tools/validate_ship_demo.gd
 	@$(GODOT) --headless --path . --script tools/validate_ship_demo.gd -- tests/fixtures/ship_demo/bad_height.json > $(SCRATCH)/ship-demo-negative.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-demo: FAIL$$' $(SCRATCH)/ship-demo-negative.log
+ship-demo-lift-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_demo_lift.gd > $(SCRATCH)/ship-demo-lift.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-lift.log | grep -v '^  ok'; test $$rc = 0 && grep -q '^ship-demo-lift: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-lift.log
+ship-demo-smoke: validate-ship-demo ship-demo-test ship-demo-lift-test
+ship-demo-movie:
+	$(GODOT) --path . --script tools/ship_demo_movie.gd
+	ffmpeg -y -framerate 24 -i renders/ship_demo/movie/%05d.png -c:v libx264 -crf 22 -pix_fmt yuv420p -movflags +faststart renders/ship_demo/bridge_lift_roundtrip.mp4

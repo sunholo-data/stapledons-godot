@@ -134,10 +134,10 @@
         "Separate active walk regions preserve correct heights",
         "No swept floor/spire collision, duplicate boarding or unsafe landing"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-04T14:43:51.465Z",
+      "completed": "2026-10-04T14:43:51.465Z",
+      "notes": "Failing missing-controller test first. Lift16 checks pass: capsule clearance110 samples in actual collision world, boarding/reentry lock, attached avatar, guarded openings, separate active WALK, safe landing and exact25m roundtrip. GPU midway/lower walk/return captures inspected;24fps review clip follows. Pullback locked to physical eye during travel."
     },
     {
       "id": "SD4",

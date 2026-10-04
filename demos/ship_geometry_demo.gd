@@ -1,6 +1,8 @@
 extends Node
 ## Isolated native-material spatial review. No simulation mutations or fake GR.
+const Lift := preload("res://demos/ship_demo_lift.gd")
 const Camera := preload("res://demos/ship_demo_camera.gd")
+var setup_options := {}
 var camera: Camera3D = Camera.new()
 var sky := InteriorSky.new()
 var geometry_view := SubViewport.new()
@@ -24,7 +26,7 @@ var guides := MeshInstance3D.new()
 var manifest: Dictionary = {}
 var _last_exposure_ms := 0
 func _ready() -> void:
-	setup()
+	setup(setup_options)
 func asset(file: String) -> String:
 	var source := "res://assets/ship_demo/"+file
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
@@ -52,6 +54,7 @@ func setup(opts := {}) -> bool:
 	sky.setup({"position_m":[8,4.8,83.7],"forward":[1,0,0],"up":[0,0,1]},78.,px,opts)
 	add_child(sky)
 	_draw_layer(sky.get_texture(),-40);_draw_layer(geometry_view.get_texture(),-20)
+	lift=Lift.new();geometry.add_child(lift);lift.setup(self)
 	_guides();_hud();get_viewport().size_changed.connect(_resize)
 	set_preset("bridge");sky.starfield.set_velocity(Vector3(0,-1,0),0.,1.)
 	if sky.has_background:sky.background.set_velocity(Vector3(0,-1,0),0.,1.)
@@ -79,7 +82,9 @@ func set_preset(name: String) -> void:
 	if name=="reset":
 		if lift!=null:lift.reset()
 		active_level=0;walk=walk_bridge;avatar_pos=Vector3(8,82,-4.8);name="bridge"
+	if lift!=null and lift.travelling() and name!="reset":return
 	camera.reference=false
+	guides.visible=name=="overview"
 	match name:
 		"bridge":
 			camera_mode="player";camera.follow(avatar_pos,-18,.47,3.)
@@ -87,7 +92,7 @@ func set_preset(name: String) -> void:
 			if active_level==0:avatar_pos=walk.closest_walkable(Vector3(18,82,9),3.)
 			camera_mode="player";camera.follow(avatar_pos,-30,.47,0.)
 		"overview":
-			camera_mode="external review";camera.position=Vector3(225,125,225);camera.look_at(Vector3(0,5,0));camera.external=true
+			camera_mode="external review";camera.position=Vector3(145,90,145);camera.look_at(Vector3(0,5,0));camera.external=true
 		"rim":
 			camera_mode="diagnostic rim — not reachable";camera.reference=true
 			camera.follow(Vector3(19.0513,82,9.52565),-30,.463648,0.)
@@ -104,14 +109,14 @@ func _process(delta: float) -> void:
 		var right: Vector3=camera.basis.x;right.y=0;right=right.normalized()
 		avatar_pos=walk.step(avatar_pos,(right*move.x+forward*move.y).normalized()*2.2*delta)
 	if lift!=null:lift.advance(delta if auto else 0.)
-	avatar.position=avatar_pos
+	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
 	avatar.visible=camera.pullback>.5 or camera_mode!="player"
 	camera.sync_sky(sky,geometry_view.size)
 	if Time.get_ticks_msec()-_last_exposure_ms>250:
 		sky.update_exposure();_last_exposure_ms=Time.get_ticks_msec()
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	label.text="SEVEN-TIER GEOMETRY DEMO · at rest · native materials · GR not implemented\n%s · deck %d · eye %.2f m · 78° perspective\n%s" % [view_name,active_level,camera.position.y,caption]
+	label.text="SEVEN-TIER GEOMETRY DEMO · at rest · native materials · GR not implemented\n%s · deck %d · eye %.2f m · 78° perspective\n%s" % [view_name,active_level,camera.position.y,caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and event.button_mask&MOUSE_BUTTON_MASK_RIGHT:
 		if camera_mode=="external review":
