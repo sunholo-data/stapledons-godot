@@ -98,13 +98,13 @@ func _resize() -> void:
 func _hud() -> void:
 	var canvas:=CanvasLayer.new();canvas.layer=10;add_child(canvas)
 	hud.position=Vector2(18,14);canvas.add_child(hud)
-	label.add_theme_font_size_override("font_size",18)
+	label.add_theme_font_size_override("font_size",12)
 	label.add_theme_color_override("font_shadow_color",Color.BLACK);label.add_theme_constant_override("shadow_offset_x",2);label.add_theme_constant_override("shadow_offset_y",2);hud.add_child(label)
 	var control_button:=Button.new();control_button.text="Controls [Tab] · 5 rest / 6 cruise · 7 forward / 8 side / 9 aft · H sky only"
-	control_button.add_theme_font_size_override("font_size",16)
+	control_button.add_theme_font_size_override("font_size",12)
 	control_button.pressed.connect(toggle_controls);hud.add_child(control_button)
 	var navigation:=Button.new();navigation.text="Navigation [M] · select destination and hold to commit"
-	navigation.add_theme_font_size_override("font_size",16)
+	navigation.add_theme_font_size_override("font_size",12)
 	navigation.pressed.connect(open_navigation);hud.add_child(navigation)
 	hud.add_child(controls);controls.visible=false
 	var row:=HBoxContainer.new();controls.add_child(row)
