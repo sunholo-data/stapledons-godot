@@ -4,7 +4,7 @@ import styles from './styles.module.css';
 const refs='https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_commons_v2';
 export default function CommonsReview(){
  useEffect(()=>{import('@google/model-viewer').catch(()=>{});},[]);
- const model=useBaseUrl('/models/ship-commons-v1/full_assembly.glb');
+ const model=useBaseUrl('/models/ship-commons-v1/full_assembly.glb?revision=2');
  return <section className={styles.review} aria-label="First Commons architectural model">
   <model-viewer src={model} poster={`${refs}/external_diagnostic.png`} alt="Measured seven-tier ship with a Commons pavilion and courtyard beside the bridge lift" camera-controls="" touch-action="pan-y" camera-orbit="35deg 70deg 340m" camera-target="0m 0m 0m" field-of-view="45deg" min-camera-orbit="auto auto 5m" max-camera-orbit="auto auto 650m" class={styles.viewer}/>
   <p>Whole-ship assembly inspection; exterior orbit is diagnostic. The interior captures below establish actual player sightlines. This expanded area adds a planted terrace, canopy and reading furniture. It remains a reusable painted-material proof, not final dressing of the whole ship.</p>

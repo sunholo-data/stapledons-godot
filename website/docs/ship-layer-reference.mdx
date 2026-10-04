@@ -164,10 +164,11 @@ blocked the star completely, and a deliberately mismatched sky camera was detect
 
 Target laptop: **MacBook Air M2 (2022), 24 GB**, at **1920×1080**. Actual laptop performance
 is awaiting measurement; Studio measurements are evidence for the Studio only.
-The first Studio run (M4 Max, 128 GB) recorded **26–29 ms p95 frame times**, above the
-16.67 ms target for 60 fps. This includes presentation timing and concurrent machine work;
-it is a measured limitation, not an Air result. Close other game windows before benchmarking.
-[Studio report and raw samples](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_demo_v1/studio_benchmark.json).
+The expanded Commons Studio comparison recorded **9.58–9.66 ms p95 frame times**
+at 1920×1080 (300 samples per view), with baseline **9.55–9.64 ms**. The reported
+video-memory increase was about **7.4 MiB**. These wall-frame timings include
+presentation; this is Studio evidence, not laptop signoff. Close other game windows
+before benchmarking.
 
 Install the latest private Mac review build from a Terminal with GitHub CLI and Google
 Cloud CLI authenticated:
