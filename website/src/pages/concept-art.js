@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 import Clip from '@site/src/components/Clip';
-import {BRIDGE_V1, BRIDGE_V2, CAPTAIN, CREW, MEDIC} from '@site/src/data/concept';
+import {BRIDGE_V1, BRIDGE_V2, CAPTAIN, CREW, MEDIC, SHIP_LAYERS} from '@site/src/data/concept';
 import styles from './concept-art.module.css';
 
 function Pill({kind, children}) {
@@ -71,6 +71,20 @@ export default function ConceptArt() {
               bridge railings crowd forward and turn blue, exactly as in the sky flight.
             </p>
           </div>
+        </section>
+
+        <section id="ship-layers" className={styles.block}>
+          <div className={styles.blockHead}>
+            <h2>The whole ship</h2>
+            <Pill kind="progress">Spatial reference proposal</Pill>
+          </div>
+          <Wide it={SHIP_LAYERS} base={base} />
+          <p className={styles.note}>
+            A shared reference for Blender builds: the deck stack must fit the sphere, and foreground
+            curves need roots in real ship structure. Read the{' '}
+            <Link to="/docs/ship-layer-reference">ship-layer reference and authoring constraints</Link>
+            {' '}before using the drawing to build geometry.
+          </p>
         </section>
 
         <section className={styles.block}>
