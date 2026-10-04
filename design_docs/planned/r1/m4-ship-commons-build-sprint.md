@@ -1,5 +1,12 @@
 # Sprint: first Commons architecture and multi-angle paint
 
+Approved continuation2026-10-04: Mark accepted the measured zoning proposal and
+said “yep approved — continue”. Replace the bounded generic pavilion with the first
+open curved arcade/plaza matching the approved Commons concept. Sequence:
+native measured masterv3/WALK → compatible paint/coarse → actual inside-eye
+captures and regression/independent checks. Existing caps and Air-pending status
+remain. This is the current Commons continuation, not full-tier construction.
+
 **ID:** R1-M4-SHIP-COMMONS. **Status:** approved by Mark; execution started.
 **Design:** [m4-ship-commons-build.md](m4-ship-commons-build.md).
 **Summary:** Establish the whole-ship asset workflow with one useful Commons area visible from the bridge and visitable via the existing lift. Medium risk: material portability and performance.

@@ -127,3 +127,22 @@ Mark selected4× sky exposure for the review default; physics inputs stay unchan
 - Next: Mark reviews the proposed Commons circulation and use zones. Develop one
   representative open arcade/plaza section matching the approved concept after
   layout agreement. No replacement architecture approval inferred.
+
+## Approved open arcade continuation — 2026-10-04
+
+Mark approved the measured zoning proposal and explicitly asked to continue. The
+whole Commons plan is a zoning direction; this build replaces only the bounded
+22×30m prototype section with a representative open curved arcade and civic plaza.
+Use sweeping cream terraces, grown teal ribs, open arches, seating and planted
+promenades from the approved Commons concept. Do not retain the rejected enclosed
+barrel hall as the architectural target. Preserve the actual spire, seven tiers,
+opaque roofs/floors, current lift, sphere envelope and labelled4× sky default.
+
+Execute sequentially: (1) distinct measured masterv3 and native geometry/WALK,
+(2) compatible UV ink/paint and exact coarse major-geometry derivative,
+(3) inside-eye captures, actual path/capsule/roof/shaft checks and independent review.
+Keep new visible triangles below30k, no more than4materials or2×2K texture sets.
+Roof terraces are inaccessible in this bounded sample; no next tier, glass dome,
+new physics or impossible player camera is included. Reference views must show
+real obstruction rather than invent a clear bridge sightline. Root publishes only
+after source/evidence checks. Actual M2 Air performance remains unsigned.

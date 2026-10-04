@@ -46,9 +46,7 @@
       "id": "CB-M1",
       "description": "Measured flat-colour Commons pavilion, courtyard and real walk connection to lift in a distinct editable Blender assembly",
       "estimated_loc": 350,
-      "dependencies": [
-
-      ],
+      "dependencies": [],
       "acceptance_criteria": [
         "CB1: envelope, heights, file health and GLB reimport verified",
         "CB2: active Commons path, capsule/edge and unchanged lift clearance",
@@ -112,5 +110,29 @@
       64
     ],
     "checks": "Fullmake test actualexit0; fullgolden0; journey47; Commons25; judge27/camera244; packagedsmokesgreen. Studio9.575–9.660ms p95. WebsitePages37223606266 success; model/download/stronggainimage200. Publisheddev7 source0c2a9eb,hash706015f1016b34e5b7689eeb5ab5b49a2a0bab90ed77b5a1b76231cd1dd3c674 verified. RemoteCI37223416140 pending; Airpending."
+  },
+  "arcade_continuation": {
+    "approved_by": "Mark",
+    "approved_instruction": "yep approved - continue",
+    "status": "executing",
+    "scope": "Measured zoning direction; first bounded open curved arcade/plaza only",
+    "milestones": [
+      {
+        "id": "CB-A1",
+        "description": "Measured masterv3, native open arcade/plaza and WALK",
+        "passes": null
+      },
+      {
+        "id": "CB-A2",
+        "description": "Compatible UV ink/paint and coarse geometry",
+        "passes": null
+      },
+      {
+        "id": "CB-A3",
+        "description": "Actual inside views, capsule/geometry checks and independent review",
+        "passes": null
+      }
+    ],
+    "performance": "Actual M2 Air pending"
   }
 }
