@@ -18,6 +18,7 @@ func _initialize() -> void:
 		check("coarse retains opaque roof "+str(p),_hit(coarse_triangles,p,p+Vector3.UP*20))
 	check("coarse retains opaque back wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(26,58.7,-20)))
 	check("coarse retains opaque side wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(40,58.7,-10)))
+	if d.get("revision",1)>=2:check("coarse retains opaque terrace canopy",_hit(coarse_triangles,Vector3(18.75,58.7,3),Vector3(18.75,63,3)))
 	var kit:={"visual":detail,"coarse":coarse}
 	load("res://demos/ship_commons.gd").update_detail(kit,Vector3(26,58.7,-10))
 	check("near interior uses detailed kit",detail.visible and not coarse.visible)

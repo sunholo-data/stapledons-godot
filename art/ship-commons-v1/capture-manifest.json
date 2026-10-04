@@ -3,10 +3,15 @@
   "observer": "inside physical eye except explicitly external diagnostic",
   "shots": [
     {
-      "centre_hit": "deck_floor_fill_col:<StaticBody3D#71202506560>",
+      "centre_hit": "deck_floor_fill_col:<StaticBody3D#71370278720>",
       "centre_hit_m": "(20.27272, 82.0, -7.818181)",
       "coarse_visible": false,
       "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         19.0,
         83.6999969482422,
@@ -19,10 +24,15 @@
       "walkable": true
     },
     {
-      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#68031613277>",
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#68199385437>",
       "centre_hit_m": "(46.96429, 57.0, 11.79253)",
       "coarse_visible": false,
       "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         8.0,
         71.1999969482422,
@@ -35,10 +45,15 @@
       "walkable": false
     },
     {
-      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#86905981605>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
       "centre_hit_m": "(18.85, 60.08639, -4.317777)",
       "coarse_visible": false,
       "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         8.0,
         58.7000007629395,
@@ -51,10 +66,15 @@
       "walkable": true
     },
     {
-      "centre_hit": "COMMONS_batch_Commons teal_col:<StaticBody3D#86973090068>",
+      "centre_hit": "COMMONS_batch_Commons teal_col:<StaticBody3D#87325411604>",
       "centre_hit_m": "(24.53799, 59.99384, -3.66463)",
       "coarse_visible": false,
       "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         23.0,
         58.7249984741211,
@@ -71,6 +91,11 @@
       "centre_hit_m": "<null>",
       "coarse_visible": false,
       "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         26.0,
         58.7249984741211,
@@ -83,10 +108,15 @@
       "walkable": true
     },
     {
-      "centre_hit": "deck_body_15_col:<StaticBody3D#71135397700>",
+      "centre_hit": "deck_body_15_col:<StaticBody3D#71303169860>",
       "centre_hit_m": "(12.61604, 81.50311, 5.090344)",
       "coarse_visible": false,
       "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         30.0,
         58.7249984741211,
@@ -99,10 +129,15 @@
       "walkable": true
     },
     {
-      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#86905981605>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
       "centre_hit_m": "(33.15, 59.23375, -10.0)",
       "coarse_visible": false,
       "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         35.0,
         58.7249984741211,
@@ -115,10 +150,15 @@
       "walkable": true
     },
     {
-      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#86905981605>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
       "centre_hit_m": "(26.0, 59.29734, -16.15)",
       "coarse_visible": false,
       "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         26.0,
         58.7249984741211,
@@ -131,10 +171,57 @@
       "walkable": true
     },
     {
-      "centre_hit": "Deck 02 top 32m_col:<StaticBody3D#68165830997>",
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
+      "centre_hit_m": "(23.26484, 59.64354, -3.850099)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        18.75,
+        58.7249984741211,
+        3.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "lower_ready",
+      "name": "planted_terrace",
+      "walkable": true
+    },
+    {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#87258303141>",
+      "centre_hit_m": "(19.1498, 57.73172, -9.348908)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        26.0,
+        58.7249984741211,
+        -12.5
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "lower_ready",
+      "name": "interior_reading",
+      "walkable": true
+    },
+    {
+      "centre_hit": "Deck 02 top 32m_col:<StaticBody3D#68333603157>",
       "centre_hit_m": "(46.05883, 32.0, 46.05883)",
       "coarse_visible": true,
       "diagnostic": true,
+      "display_aid": {
+        "brightness_multiplier": 2.0,
+        "brightness_stops": 1,
+        "physical_simulation_change": false
+      },
       "eye_gltf_m": [
         145.0,
         90.0,

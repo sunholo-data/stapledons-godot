@@ -21,6 +21,7 @@ func _run() -> void:
 	check("spire inaccessible",not walk.is_walkable(Vector3(0,57,0)))
 	var start:=Vector3(8,57,-4.8)
 	var targets:=[Vector3(16,57,-4.8),Vector3(26,57,3),Vector3(26,57,-8),Vector3(6,57,-4.5),Vector3(35,57,-10),Vector3(26,57,-18)]
+	if d.get("revision",1)>=2:targets.append_array([Vector3(18.75,57,3),Vector3(26,57,-12.5)])
 	for target in targets:
 		var route:=walk.path(start,target,40000)
 		check("connected route to "+str(target),not route.is_empty())

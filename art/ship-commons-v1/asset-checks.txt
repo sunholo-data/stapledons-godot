@@ -1,4 +1,4 @@
-ERROR: Failed to open 'user://logs/godot2026-10-04T19.04.34.log'.
+ERROR: Failed to open 'user://logs/godot2026-10-04T19.57.47.log'.
    at: copy (core/io/dir_access.cpp:429)
 ERROR: Failed to open log file for writing: user://logs/godot.log
    at: rotate_file (core/io/logger.cpp:169)
@@ -21,6 +21,7 @@ ERROR: Condition "ret != noErr" is true. Returning: ""
   ok coarse retains opaque roof (31.0, 58.7, -10.0)
   ok coarse retains opaque back wall
   ok coarse retains opaque side wall
+  ok coarse retains opaque terrace canopy
   ok near interior uses detailed kit
   ok far review uses coarse kit
 ship-commons-assets: OK

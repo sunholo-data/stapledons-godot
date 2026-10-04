@@ -1,4 +1,4 @@
-ERROR: Failed to open 'user://logs/godot2026-10-04T18.59.14.log'.
+ERROR: Failed to open 'user://logs/godot2026-10-04T19.57.46.log'.
    at: copy (core/io/dir_access.cpp:429)
 ERROR: Failed to open log file for writing: user://logs/godot.log
    at: rotate_file (core/io/logger.cpp:169)
@@ -20,6 +20,8 @@ ERROR: Condition "ret != noErr" is true. Returning: ""
   ok door clear at human eye
   ok door clear for capsule width
   ok 4m landing guard opening
+  ok opaque terrace canopy
+  ok canopy standing head clearance
   ok new mesh leaves lift shaft clear
   ok new mesh leaves lift shaft clear
   ok new mesh leaves lift shaft clear

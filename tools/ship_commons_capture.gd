@@ -26,6 +26,9 @@ func _run() -> void:
 	var views: Array=kit.manifest.player_views.duplicate()
 	views.append({"name":"pavilion_side","eye_ship_m":[35,10,58.725],"target_ship_m":[26,10,61.2]})
 	views.append({"name":"pavilion_back","eye_ship_m":[26,18,58.725],"target_ship_m":[26,10,61.2]})
+	if kit.manifest.get("revision",1)>=2:
+		views.append({"name":"planted_terrace","eye_ship_m":[18.75,-3,58.725],"target_ship_m":[26,8,60.2]})
+		views.append({"name":"interior_reading","eye_ship_m":[26,12.5,58.725],"target_ship_m":[21,10.2,58]})
 	for view in views:
 		var eye:=_vec(view.eye_ship_m);var target:=_vec(view.target_ship_m)
 		demo.avatar_pos=eye-Vector3.UP*1.7
@@ -43,5 +46,7 @@ func _shot(name: String, diagnostic: bool) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(out+"/"+name+".png")
 	var hit: Dictionary=demo.centre_hit()
+	var display_aid:={"brightness_stops":demo.brightness_stops,"brightness_multiplier":pow(2.,demo.brightness_stops),"physical_simulation_change":false}
 	shots.append({"name":name,"diagnostic":diagnostic,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"fov":demo.camera.fov,"inside_bubble":demo.camera.position.length()<100.,"walkable":demo.walk.is_walkable(demo.avatar_pos),"lift_state":demo.lift.state,"centre_hit":str(hit.get("collider","none")),"centre_hit_m":str(hit.get("position",null)),"coarse_visible":demo.commons.coarse.visible})
 	print("Commons captured ",name)
+	shots[-1]["display_aid"]=display_aid

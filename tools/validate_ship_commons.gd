@@ -26,6 +26,9 @@ func _initialize() -> void:
 	check("door clear at human eye",not _hit(Vector3(26,58.7,-2),Vector3(26,58.7,-8)))
 	check("door clear for capsule width",not _hit(Vector3(25.65,58.7,-2),Vector3(25.65,58.7,-8)) and not _hit(Vector3(26.35,58.7,-2),Vector3(26.35,58.7,-8)))
 	check("4m landing guard opening",not _hit(Vector3(12,58,-4.8),Vector3(16,58,-4.8)))
+	if manifest.get("revision",1)>=2:
+		check("opaque terrace canopy",_hit(Vector3(18.75,58.7,3),Vector3(18.75,63,3)))
+		check("canopy standing head clearance",not _hit(Vector3(18.75,58.7,3),Vector3(18.75,59.05,3)))
 	for x in [6.2,8.,9.8]:
 		for z in [-6.2,-8.,-9.8]:check("new mesh leaves lift shaft clear",not _hit(Vector3(x,83.4,z),Vector3(x,55.5,z)))
 	scene.free();print("validate-ship-commons: %s" % ("OK" if failures==0 else "FAIL"));quit(1 if failures else 0)

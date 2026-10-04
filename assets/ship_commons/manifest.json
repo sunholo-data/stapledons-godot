@@ -57,7 +57,7 @@
     "coarse": "commons_coarse.glb",
     "assembly": "full_assembly.glb"
   },
-  "triangle_count": 8708,
+  "triangle_count": 13976,
   "material_count": 1,
   "modules": {
     "rail": [
@@ -137,7 +137,9 @@
       "COMMONS_front_relief_0",
       "COMMONS_front_relief_1",
       "COMMONS_east_relief_0",
-      "COMMONS_east_relief_1"
+      "COMMONS_east_relief_1",
+      "COMMONS_back_relief_0",
+      "COMMONS_back_relief_1"
     ],
     "trim": [
       "COMMONS_front_relief_frame_0",
@@ -147,7 +149,15 @@
       "COMMONS_east_relief_frame_0",
       "COMMONS_east_relief_frame_1",
       "COMMONS_court_inlay_5.2",
-      "COMMONS_court_inlay_5.55"
+      "COMMONS_court_inlay_5.55",
+      "COMMONS_civic_shelf_trim_0_57.5",
+      "COMMONS_civic_shelf_trim_0_58.2",
+      "COMMONS_civic_shelf_trim_0_58.9",
+      "COMMONS_civic_shelf_trim_1_57.5",
+      "COMMONS_civic_shelf_trim_1_58.2",
+      "COMMONS_civic_shelf_trim_1_58.9",
+      "COMMONS_back_relief_border_0",
+      "COMMONS_back_relief_border_1"
     ],
     "bench": [
       "COMMONS_bench_seat_0",
@@ -175,7 +185,11 @@
       "COMMONS_planter_2",
       "COMMONS_planter_rim_2",
       "COMMONS_planter_3",
-      "COMMONS_planter_rim_3"
+      "COMMONS_planter_rim_3",
+      "COMMONS_planted_seat_box_0",
+      "COMMONS_planted_seat_box_1",
+      "COMMONS_planted_seat_box_2",
+      "COMMONS_planted_seat_box_3"
     ],
     "foliage": [
       "COMMONS_leaf_0_0",
@@ -225,7 +239,43 @@
       "COMMONS_leaf_3_8",
       "COMMONS_leaf_3_9",
       "COMMONS_leaf_3_10",
-      "COMMONS_leaf_3_11"
+      "COMMONS_leaf_3_11",
+      "COMMONS_plant_fan_0_0",
+      "COMMONS_plant_fan_0_1",
+      "COMMONS_plant_fan_0_2",
+      "COMMONS_plant_fan_0_3",
+      "COMMONS_plant_fan_0_4",
+      "COMMONS_plant_fan_0_5",
+      "COMMONS_plant_fan_0_6",
+      "COMMONS_plant_fan_0_7",
+      "COMMONS_plant_fan_0_8",
+      "COMMONS_plant_fan_1_0",
+      "COMMONS_plant_fan_1_1",
+      "COMMONS_plant_fan_1_2",
+      "COMMONS_plant_fan_1_3",
+      "COMMONS_plant_fan_1_4",
+      "COMMONS_plant_fan_1_5",
+      "COMMONS_plant_fan_1_6",
+      "COMMONS_plant_fan_1_7",
+      "COMMONS_plant_fan_1_8",
+      "COMMONS_plant_fan_2_0",
+      "COMMONS_plant_fan_2_1",
+      "COMMONS_plant_fan_2_2",
+      "COMMONS_plant_fan_2_3",
+      "COMMONS_plant_fan_2_4",
+      "COMMONS_plant_fan_2_5",
+      "COMMONS_plant_fan_2_6",
+      "COMMONS_plant_fan_2_7",
+      "COMMONS_plant_fan_2_8",
+      "COMMONS_plant_fan_3_0",
+      "COMMONS_plant_fan_3_1",
+      "COMMONS_plant_fan_3_2",
+      "COMMONS_plant_fan_3_3",
+      "COMMONS_plant_fan_3_4",
+      "COMMONS_plant_fan_3_5",
+      "COMMONS_plant_fan_3_6",
+      "COMMONS_plant_fan_3_7",
+      "COMMONS_plant_fan_3_8"
     ],
     "archive": [
       "COMMONS_archive_kiosk",
@@ -236,6 +286,42 @@
       "COMMONS_scale_body_0",
       "COMMONS_scale_head_1",
       "COMMONS_scale_body_1"
+    ],
+    "canopy": [
+      "COMMONS_canopy_post_16.0_-6.5",
+      "COMMONS_canopy_post_16.0_0.5",
+      "COMMONS_canopy_post_21.5_-6.5",
+      "COMMONS_canopy_post_21.5_0.5",
+      "COMMONS_terrace_canopy",
+      "COMMONS_canopy_grown_rib_16.0",
+      "COMMONS_canopy_grown_rib_18.75",
+      "COMMONS_canopy_grown_rib_21.5"
+    ],
+    "interior": [
+      "COMMONS_interior_seat_0",
+      "COMMONS_interior_back_0",
+      "COMMONS_interior_leg_0_-0.58",
+      "COMMONS_interior_leg_0_0.58",
+      "COMMONS_interior_seat_1",
+      "COMMONS_interior_back_1",
+      "COMMONS_interior_leg_1_-0.58",
+      "COMMONS_interior_leg_1_0.58",
+      "COMMONS_interior_seat_2",
+      "COMMONS_interior_back_2",
+      "COMMONS_interior_leg_2_-0.58",
+      "COMMONS_interior_leg_2_0.58",
+      "COMMONS_interior_seat_3",
+      "COMMONS_interior_back_3",
+      "COMMONS_interior_leg_3_-0.58",
+      "COMMONS_interior_leg_3_0.58",
+      "COMMONS_reading_table_0",
+      "COMMONS_reading_table_leg_0_-0.55",
+      "COMMONS_reading_table_leg_0_0.55",
+      "COMMONS_reading_table_1",
+      "COMMONS_reading_table_leg_1_-0.55",
+      "COMMONS_reading_table_leg_1_0.55",
+      "COMMONS_civic_shelf_0",
+      "COMMONS_civic_shelf_1"
     ]
   },
   "player_views": [
@@ -304,7 +390,15 @@
     "Human figures are reference mannequins, not crew simulation",
     "Structural attachment bay is an art blockout, not an engineering certification"
   ],
-  "coarse_triangle_count": 3036,
+  "revision": 2,
+  "expansion": {
+    "canopy_clear_height_m": 3.2,
+    "new_interior_seats": 4,
+    "new_planted_boxes": 4,
+    "reading_tables": 2,
+    "walk_bounds_unchanged": true
+  },
+  "coarse_triangle_count": 7224,
   "texture": {
     "file": "paint-atlas-v1.png",
     "size_px": [
@@ -316,5 +410,6 @@
     "baked_lighting": false,
     "alpha": "ignored; opaque material"
   },
-  "coarse_preservation": "Same major opaque roof/wall/rib/rail vertices; fine courtyard props omitted"
+  "coarse_preservation": "Same major opaque roof/wall/rib/rail vertices; fine courtyard props omitted",
+  "texture_density": "Nominal112 texels/m at4m patches; deterministic per-face variation; broad vault caps subdivided"
 }
