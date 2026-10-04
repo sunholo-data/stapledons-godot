@@ -23,10 +23,15 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 	var hardware:={"model":str(model_output[0]).strip_edges() if model_status==0 and not model_output.is_empty() else "unavailable","os":OS.get_name(),"cpu":OS.get_processor_name(),"gpu":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"renderer":RenderingServer.get_current_rendering_method(),"memory":OS.get_memory_info()}
 	var report:={"version":1,"measured_hardware":hardware,"user_target":"MacBook Air M2 (2022),24GB","target_measurement_pending":true,"target_confirmation":"Confirm report came from the specified MacBook Air; GPU substring alone cannot identify the laptop","resolution":[1920,1080],"warmup_frames":warmup,"sample_frames":samples,"timer":"wall time between process frames, includes presentation/vsync; not GPU-only time","views":[],"GR":"not implemented"}
 	report["sky_review"]={"state":demo.sky_state,"beta":demo.sky.beta,"gamma":demo.sky_world.ship.gamma,"heading":Array(demo.camera.heading),"snapshot_tick":demo.sky_world.tick,"sky_only":false}
-	for name in ["bridge","overlook","mid_lift","overview"]:
+	report["commons_enabled"]=not demo.commons.is_empty()
+	for name in ["bridge","overlook","mid_lift","commons_courtyard","overview"]:
 		demo.set_preset("reset")
 		if name=="mid_lift":
 			demo.lift.board();demo.lift.advance(.81);demo.lift.advance(5.5)
+		elif name=="commons_courtyard":
+			demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=Vector3(23,57.025,3)
+			demo.camera_mode="benchmark reference";demo.camera.position=Vector3(23,58.725,3)
+			demo.camera.look_at(Vector3(26,61.2,-10));demo._sync_observer()
 		else:demo.set_preset(name)
 		demo.caption="BENCHMARK %s · warm-up" % name
 		for i in warmup:await demo.get_tree().process_frame

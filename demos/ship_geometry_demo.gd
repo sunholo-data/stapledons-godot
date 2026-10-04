@@ -3,6 +3,7 @@ extends Node
 const Lift := preload("res://demos/ship_demo_lift.gd")
 const Camera := preload("res://demos/ship_demo_camera.gd")
 const Benchmark := preload("res://demos/ship_demo_benchmark.gd")
+const Commons := preload("res://demos/ship_commons.gd")
 var benchmark := Benchmark.new()
 var setup_options := {}
 var camera: Camera3D = Camera.new()
@@ -32,6 +33,7 @@ var sky_world: Dictionary = {}
 var sky_state := "rest"
 var sky_only := false
 var controls := VBoxContainer.new()
+var commons: Dictionary = {}
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
@@ -58,6 +60,9 @@ func setup(opts := {}) -> bool:
 	for file in ["walk_bridge.glb","walk_lower.glb"]:
 		var n:=AreaBundle.load_glb(asset(file));_walk_nodes.append(n)
 	walk_bridge=WalkArea.from_scene(_walk_nodes[0],.35);walk_lower=WalkArea.from_scene(_walk_nodes[1],.35);walk=walk_bridge
+	if opts.get("commons",true):
+		commons=Commons.install(self)
+		if commons.is_empty():return false
 	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.position=avatar_pos
 	sky.setup({"position_m":[8,4.8,83.7],"forward":[1,0,0],"up":[0,0,1]},78.,px,opts)
 	add_child(sky)
@@ -133,6 +138,7 @@ func set_sky_state(name: String) -> bool:
 	return true
 func _sync_observer() -> void:
 	camera.sync_sky(sky,geometry_view.size)
+	if not commons.is_empty():Commons.update_detail(commons,camera.position)
 	if not sky_world.is_empty():
 		var pole:float=0. if camera.position.length()>=100. else ForwardGlow.pole_of(sky_world)
 		if sky.glow_pole!=pole:sky.set_glow_pole(pole)
@@ -155,7 +161,7 @@ func _process(delta: float) -> void:
 	if lift!=null:lift.advance(delta if auto else 0.)
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
-	avatar.visible=camera.pullback>.5 or camera_mode!="player"
+	avatar.visible=camera.pullback>.5 or camera.external
 	_sync_observer()
 	if Time.get_ticks_msec()-_last_exposure_ms>250:
 		sky.update_exposure();_last_exposure_ms=Time.get_ticks_msec()
@@ -232,6 +238,7 @@ func _export_smoke() -> void:
 	auto=false
 	await get_tree().process_frame
 	var ok:=ready_ok and not avatar.stages.is_empty()
+	ok=ok and not commons.is_empty() and commons.visual.get_parent()==geometry
 	if ok:
 		for direction in 2:
 			ok=ok and lift.board()

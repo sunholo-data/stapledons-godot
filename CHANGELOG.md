@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Commons and journey sky review, 2026-10-04
+
+- Add the first painted Commons pavilion and courtyard, with collision, lift access and a coarse distance model.
+- Open the ship review in an actual frozen 0.99c simulation snapshot, with rest and forward/side/aft comparisons.
+- Include native export checks and five-view profiling. MacBook Air performance remains pending.
+
 ### Seven-tier geometry review demo,2026-10-04
 
 - Trackpad controls: Option plus one-finger movement looks without a held click; two-finger scrolling zooms. Mouse right-drag and wheel still work. Whole-ship zoom keeps its overview, with zoom disabled during lift travel and benchmark sampling.

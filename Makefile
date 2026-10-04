@@ -526,6 +526,19 @@ ship-demo-capture:
 ship-demo-stage:
 	@mkdir -p ship_demo_bundle
 	@for f in assets/ship_demo/*.glb assets/ship_demo/*.json; do cp "$$f" "ship_demo_bundle/$$(basename "$$f").bin"; done
+ship-commons-stage:
+	@mkdir -p ship_commons_bundle
+	@for name in manifest.json commons_painted.glb commons_coarse.glb collision.glb walk.glb; do cp "assets/ship_commons/$$name" "ship_commons_bundle/$$name.bin"; done
+ship-commons-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_commons.gd > $(SCRATCH)/ship-commons-test.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-commons-test.log; test $$rc = 0 && grep -q '^ship-commons: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-commons-test.log
+ship-commons-assets-test:
+	@$(GODOT) --headless --path . --script tests/test_ship_commons_assets.gd > $(SCRATCH)/ship-commons-assets.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-commons-assets.log; test $$rc = 0 && grep -q '^ship-commons-assets: OK$$' $(SCRATCH)/ship-commons-assets.log
+	@$(GODOT) --headless --path . --script tools/validate_ship_commons.gd -- bad-envelope > $(SCRATCH)/ship-commons-negative.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-commons: FAIL$$' $(SCRATCH)/ship-commons-negative.log
+validate-ship-commons:
+	$(GODOT) --headless --path . --script tools/validate_ship_commons.gd
+ship-commons-capture:
+	$(GODOT) --path . --script tools/ship_commons_capture.gd
+ship-commons-bench: ship-demo-bench
 ship-demo-assets-test:
 	$(GODOT) --headless --path . --script tests/test_ship_demo_assets.gd
 	$(GODOT) --headless --path . --script tools/validate_ship_demo.gd
@@ -544,7 +557,7 @@ ship-demo-benchmark-test:
 	@$(GODOT) --headless --path . --script tests/test_ship_demo_benchmark.gd > $(SCRATCH)/ship-demo-benchmark.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-benchmark.log; test $$rc = 0 && grep -q '^ship-demo-benchmark: OK$$' $(SCRATCH)/ship-demo-benchmark.log
 ship-demo-geometry-negative-test:
 	@for mutation in wrong-tier wrong-tip; do $(GODOT) --headless --path . --script tools/validate_ship_demo.gd -- assets/ship_demo/manifest.json $$mutation > $(SCRATCH)/ship-demo-$$mutation.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-demo: FAIL$$' $(SCRATCH)/ship-demo-$$mutation.log || exit 1; done
-export-macos: ship-demo-stage
+export-macos: ship-demo-stage ship-commons-stage
 ship-demo-export-smoke:
 	@mkdir -p $(SCRATCH)
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); "$(APP)/Contents/MacOS/$$exe" --headless -- --ship-demo-smoke > $(SCRATCH)/ship-demo-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-export.log; test $$rc = 0 && grep -q '^ship-demo-export-smoke: OK$$' $(SCRATCH)/ship-demo-export.log
@@ -553,7 +566,7 @@ ship-demo-launch-test:
 
 # Headless demo regressions are part of the normal CI suite; GPU optics stays explicit.
 test: ship-demo-ci
-ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test ship-demo-journey-test
+ship-demo-ci: import ship-demo-smoke ship-demo-assets-test ship-demo-geometry-negative-test ship-demo-benchmark-test ship-demo-launch-test ship-demo-input-test ship-demo-journey-test ship-commons-test ship-commons-assets-test validate-ship-commons
 
 ship-demo-input-test:
 	@$(GODOT) --headless --path . --script tests/test_ship_demo_input.gd > $(SCRATCH)/ship-demo-input.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-input.log; test $$rc = 0 && grep -q '^ship-demo-input: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-input.log

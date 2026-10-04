@@ -1,0 +1,157 @@
+{
+  "sprint_id": "R1-M4-SHIP-COMMONS",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-04T17:21:47.777Z",
+  "evaluator": "Independent evaluator, separate from Commons generator and root integrator",
+  "asset_commit": "3bfa1e325be32db50bac957b67d52aa460dce957",
+  "latest_asset_evidence_commit": "717967a",
+  "integration": "Reviewed current working-tree default install, observer-selected detail, shared-material resource, export staging/filter and five-view benchmark changes.",
+  "design_doc": "design_docs/planned/r1/m4-ship-commons-build.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-commons-build-sprint.md",
+  "total_score": 88,
+  "pass_threshold": 70,
+  "result": "fail",
+  "result_reason": "Draft delivery is approved; full sprint/performance completion remains pending actual M2 Air measurements and final root-owned publication verification.",
+  "review_build_result": "pass",
+  "production_landing_result": "pending",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 20,
+    "code_quality": 14,
+    "documentation": 15,
+    "design_fidelity": 9
+  },
+  "hard_fails": [
+    {
+      "condition": "mandatory_target_hardware_performance_evidence_pending",
+      "details": "CB5 requires actual MacBook Air M2 (2022),24GB,1920x1080 evidence. Studio profiles cannot complete this gate. CB-M3 remains null and plans stay planned."
+    }
+  ],
+  "automated_checks": {
+    "commons_runtime": "Independently ran current tests/test_ship_commons.gd with unique log /private/tmp/commons-independent-runtime.log:21passed,0failures, actualexit0.",
+    "judge_routes": "/private/tmp/commons-independent-routes.gd/.log:27passed,0failures, actualexit0. Adds nonempty connected capsule-safe routes to courtyard/interior/side/back/reverse review-eye footprints and proves LOD leaves collision/WALK identity unchanged.",
+    "assets": "/private/tmp/commons-independent-assets.gd/.log:UV padding/material opacity/embedded<=2K texture tests pass. Tightened coarse triangle position keys from3 to9decimal places; preservation remains green, stronger than millimetre-rounded source check.",
+    "geometry": "/private/tmp/commons-independent-geometry.log:validate-ship-commons:OK and actualexit0. /private/tmp/commons-independent-negative.log:bad-envelope returns actualexit1 and FAIL marker; harness exits0 only when expected rejection verified.",
+    "regressions": "Independently ran camera244,lift24,input9 with Commons default installation; all explicit success markers and actualexit0. Root reports fullmake test and GPUgoldens green before final material/integration-only changes; targeted Commons gates cover these latest changes.",
+    "repository_health": "git diff --check clean; all new scripts below800lines. Blender health/reimport attestations in art/ship-commons-v1 inspected: no missing external files; clean master/full-assembly GLB reimport.",
+    "ci": "New navigation, geometry, UV/coarse and negative controls wired into ship-demo-ci/make test. Root must verify final source CI/export/published hash.",
+    "final_package_and_ci": "Root reports final ship-demo-ci actualexit0, packaged Commons ship-demo-export-smoke actualexit0 with lift roundtrip, normal export-smoke actualexit0, website HTTP200. Source unchanged since profile. Root owns final published ZIP hash/install confirmation."
+  },
+  "acceptance_criteria": [
+    {
+      "id": "CB1",
+      "met": true,
+      "evidence": "Distinct editable master plus packed1254atlas/embedded generators; supplied Blender health/reimport reports clean. Actual new vertices<=95m, maximum72.97539m; floor/roof extrema57/65.42m; base bridge/seven-tier assets unchanged."
+    },
+    {
+      "id": "CB2",
+      "met": true,
+      "evidence": "Separate Commons WALK switches only lower domain; landing spawn/hole/core safe. Exactly one old landing guard replaced by4m connection. Connected actual-world capsule routes and lift24checks pass; roof/wall/door/shaft ray validation green."
+    },
+    {
+      "id": "CB3",
+      "met": true,
+      "evidence": "Nine actual captures include reachable bridge, midlift, arrival,courtyard,interior,reverse,side,back and labeled exterior. Independent visual review includes final refreshed bridge/courtyard/interior plus side/back/reverse. Manifest now records eye/FOV/walk state, actual centre hit and coarse state. Bridge centre hit is existing floor, correctly retained and documented."
+    },
+    {
+      "id": "CB4",
+      "met": true,
+      "evidence": "Detail8708triangles/coarse3036,1opaque material,1254x1254atlas. Finer-precision independent triangle subset test and major roof/wall-ray retention green. Actual Studio paired five-view resource/frame reports available; runtime material shared across detail/coarse."
+    },
+    {
+      "id": "CB5",
+      "met": false,
+      "evidence": "Actual target Air run absent; target_measurement_pending remains true. StudioM4Max128GB/Mac16,9 only. No Air performance claim or complete-sprint status allowed."
+    },
+    {
+      "id": "CB6",
+      "met": null,
+      "evidence": "Source regressions/asset staging/filter inspected and green; root owns final packaged smoke, ZIP hash/upload/install verification and final branch CI."
+    }
+  ],
+  "geometry_and_rendering": {
+    "coordinates": "Blender metres/+Zup -> Godot(x,z,-y); visual/collision/WALK share unmodified authored transforms in demo.geometry. LOD reference eye and pavilion centre are in the same local metre frame.",
+    "collision": "Separate additive collision export remains active when detail/coarse visibility changes; decorative mesh does not become navigation. Existing floor collider is retained below57.025m paving; lower WALK height follows actual finish.",
+    "lod": "At<=100m from(26,61,-10), detailed kit; farther coarse. Opaque roof/wall/rib/rail/door/Archive geometry retained. Fine props/engraving intentionally omitted. No automatic GLB LOD assumption.",
+    "material": "View-independent face-local UVs padded inside palette quadrants. One embedded brush atlas, solid opacity, roughness0.82. No baked stars, camera projection or glow. Runtime coarse uses same material resource as detail."
+  },
+  "studio_benchmark": {
+    "hardware": "Apple M4 Max Studio,1920x1080,Forward+,cruise beta0.99 snapshot tick33; no target-laptop inference",
+    "configuration": "120warmup/300samples per five matching stationary views, baselineCommonsfalse then enabledtrue; sky-onlyfalse; reported wall-frame timings include presentation/vsync.",
+    "paired_reports": [
+      "renders/ship_demo/studio_benchmark_baseline.json",
+      "renders/ship_demo/studio_benchmark_commons.json"
+    ],
+    "enabled_p95_ms": {
+      "bridge": 9.479,
+      "overlook": 9.338,
+      "mid_lift": 9.544,
+      "commons_courtyard": 9.58,
+      "overview": 9.639
+    },
+    "primitive_deltas": {
+      "bridge": 8708,
+      "overlook": 8708,
+      "mid_lift": 8708,
+      "commons_courtyard": 8696,
+      "overview": 3024
+    },
+    "delta_explanation": "Courtyard8696=8708detail−12removed guard triangles; overview3024=3036coarse−12removed guard. Near views add one draw call; courtyard/overview counters unchanged.",
+    "reported_video_memory_delta_bytes": 7421952,
+    "reported_texture_memory_delta_bytes": 0,
+    "cautions": "Texture counter delta0 does not establish zero atlas memory cost. Baseline midliftp95=26.549ms vs enabled9.544ms is timing variability, not an optimization claim. Enabled Studio run meets16.67ms budget but cannot establish Air suitability. Root later profile refinements, if any, must retain original run configuration/provenance.",
+    "aggregate_p95_comparison_ms": [
+      {
+        "view": "bridge",
+        "baseline": 9.564,
+        "commons": 9.479,
+        "delta": -0.085
+      },
+      {
+        "view": "overlook",
+        "baseline": 10.072,
+        "commons": 9.338,
+        "delta": -0.734
+      },
+      {
+        "view": "mid_lift",
+        "baseline": 26.549,
+        "commons": 9.544,
+        "delta": -17.005
+      },
+      {
+        "view": "commons_courtyard",
+        "baseline": 9.846,
+        "commons": 9.58,
+        "delta": -0.266
+      },
+      {
+        "view": "overview",
+        "baseline": 9.618,
+        "commons": 9.639,
+        "delta": 0.021
+      }
+    ]
+  },
+  "documentation_check": {
+    "changelog": "Root integration adds Commons review entry.",
+    "readme": "Art README accurately distinguishes material proof, local kit, unfinished floor/underside, reference figures, absent full-tier population and pending laptop performance.",
+    "sprint": "CB-M1/CB-M2 true with concrete evidence; CB-M3 null pending actualAir/finaldelivery. Approved design/plans stay planned."
+  },
+  "resolved_review_findings": [
+    "Added actual first-hit capture audit required byCB3.",
+    "UV/coarse preservation and bad-envelope controls added to CI.",
+    "Refreshed bridge capture hides local captain billboard at standing eye; bridge floor obstruction preserved and explained.",
+    "Sprint tracking updated from all-null placeholders to completed M1/M2 evidence and pending M3."
+  ],
+  "remaining_art_review": "Material proof is coherent from multiple angles; side/back views are tight reachable surface inspections. Broad roof panels have lower texel density than small modules and visible brush repetition/seams; floor/bridge underside remain native diagnostic. This is a draft local Commons kit, not finished ship art or structural/habitability certification.",
+  "feedback": [
+    {
+      "severity": "completion_gate",
+      "issue": "Actual Air profiling and final source/export/upload verification pending.",
+      "suggestion": "Publish the draft after root's final packaged smoke/hash checks, run in-app five-view benchmark on the specified Air, inspect frame/resource distributions, and tune if needed before completingCB5/CB-M3 or landing to production."
+    }
+  ],
+  "notes": "No new physics formulas, simulation mutations, GR or fabricated wall-glow pole introduced. Draft review-build publication approved; root reports final packaging/CI checks passed. Final ZIP hash/upload verification remains root responsibility. Raw diagnostics stay local; this report contains aggregate timing/resource evidence only. No production merge or full-ship completion claim."
+}

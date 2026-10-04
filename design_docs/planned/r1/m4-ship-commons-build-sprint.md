@@ -32,3 +32,36 @@ All three milestones: `none` for new package dependencies. They author Blender g
 ## Approval and handoff
 
 Approval covers the bounded Commons area, multi-angle material proof, coarse export and draft delivery. It does not adopt the seven generated images as exact architectural plans or approve full-ship final dressing. After approval, hand off to sprint-executor; a different agent evaluates. No plan commit or modeling before approval, per project workflow.
+
+## Execution checkpoint — 2026-10-04
+
+- [x] CB-M1: measured pavilion/court and separate expanded Commons WALK;21 real route/capsule/inspection-eye checks, actual-mesh envelope/roof/door/shaft checks, Blender scene health and GLB reimport. Asset pin717967a.
+- [x] CB-M2: embedded padded-UV paint atlas;8,708 detailed /3,036 coarse triangles, exact major opaque geometry preserved; shared runtime material, distance selection; nine inspected internal/diagnostic views with first-hit audit.
+- [ ] CB-M3: Studio paired comparison, independent evaluation, export and draft reference/build publication underway. Actual M2 Air performance remains pending; this sprint is not complete until its performance gate is resolved.
+
+The reached bridge overlook is floor/rail-occluded: centre ray first hits the actual
+bridge deck. Arrival/court/interior provide useful views of the Commons. This is
+recorded evidence of the geometry, not an excuse to make the floor transparent.
+
+### Draft delivery validation, 2026-10-04
+
+Full `make test` and `make golden` passed. Final `make ship-demo-ci`, packaged
+`ship-demo-export-smoke`, bundled simulation/AI smokes and normal `export-smoke`
+passed. The review website is live with the same-origin complete assembly model.
+
+Final paired Studio measurements (M4 Max, 1920×1080, 300 frames per view):
+
+| View | Baseline p95 ms | Commons p95 ms | Primitive delta |
+|---|---:|---:|---:|
+| Bridge | 9.564 | 9.479 | +8,708 |
+| Overlook | 10.072 | 9.338 | +8,708 |
+| Mid-lift | 26.549 | 9.544 | +8,708 |
+| Courtyard | 9.846 | 9.580 | +8,696 |
+| Overview | 9.618 | 9.639 | +3,024 |
+
+The courtyard and overview deltas include removal of the old 12-triangle guard.
+The reported video-memory delta is 7,421,952 bytes. Texture-counter delta zero
+is not evidence that the embedded atlas costs nothing. Presentation/host timing
+varies, especially the baseline mid-lift sample; no causal speedup is claimed.
+Raw reports remain local under `renders/ship_demo/`. Actual M2 Air performance
+is still required: CB-M3 and the sprint remain in progress.

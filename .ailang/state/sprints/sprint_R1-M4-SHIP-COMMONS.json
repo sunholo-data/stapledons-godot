@@ -46,16 +46,18 @@
       "id": "CB-M1",
       "description": "Measured flat-colour Commons pavilion, courtyard and real walk connection to lift in a distinct editable Blender assembly",
       "estimated_loc": 350,
-      "dependencies": [],
+      "dependencies": [
+
+      ],
       "acceptance_criteria": [
         "CB1: envelope, heights, file health and GLB reimport verified",
         "CB2: active Commons path, capsule/edge and unchanged lift clearance",
         "CB3: inside-observer blockout captures inspected"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-04T16:27:06.430Z",
+      "completed": "2026-10-04T17:13:07.767Z",
+      "notes": "Measured master+kit717967a; runtime21 connected navigation/capsule/inside-eye checks; actual geometry envelope/roof/wall/door/shaft validation; Blender health and clean GLB reimport. Reachable bridge first-hit is its deck floor; obstruction retained."
     },
     {
       "id": "CB-M2",
@@ -68,10 +70,10 @@
         "CB3: multi-angle paint inspection recorded, five inside views and labeled outside diagnostic",
         "CB4: compatible material export, geometry/texture caps and measured counters; coarse silhouette preserved"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-04T16:27:06.430Z",
+      "completed": "2026-10-04T17:13:07.767Z",
+      "notes": "One embedded1254px AI brush atlas,8,708 detail /3,036 coarse triangles; actual UV padding and opacity checks; coarse major triangles/ray occlusion preserved; runtime distance detail selection and shared material resource. Nine final multi-angle captures inspected."
     },
     {
       "id": "CB-M3",
@@ -87,9 +89,9 @@
         "Independent evaluator report and updated review hub"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-04T16:27:06.430Z",
       "completed": null,
-      "notes": null
+      "notes": "Draft checks pass: full test/golden, ship-demo-ci, packaged app Commons/lift and simulation smokes. Studio enabled five-view p95 9.34–9.64 ms; baseline timings variable, no causal speedup claim. Independent evaluation ready. Website published; Mac publication underway. Actual M2 Air benchmark remains required, so performance signoff and sprint completion stay pending."
     }
   ]
 }
