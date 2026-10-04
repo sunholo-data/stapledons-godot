@@ -547,7 +547,7 @@ ship-demo-geometry-negative-test:
 export-macos: ship-demo-stage
 ship-demo-export-smoke:
 	@mkdir -p $(SCRATCH)
-	@exe=$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); "$(APP)/Contents/MacOS/$exe" --headless -- --ship-demo-smoke > $(SCRATCH)/ship-demo-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-export.log; test $$rc = 0 && grep -q '^ship-demo-export-smoke: OK$$' $(SCRATCH)/ship-demo-export.log
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); "$(APP)/Contents/MacOS/$$exe" --headless -- --ship-demo-smoke > $(SCRATCH)/ship-demo-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-export.log; test $$rc = 0 && grep -q '^ship-demo-export-smoke: OK$$' $(SCRATCH)/ship-demo-export.log
 ship-demo-launch-test:
 	@$(GODOT) --headless --path . --script tests/test_ship_demo_launch.gd > $(SCRATCH)/ship-demo-launch.log 2>&1; rc=$$?; tail -5 $(SCRATCH)/ship-demo-launch.log; test $$rc = 0 && grep -q '^ship-demo-launch: OK$$' $(SCRATCH)/ship-demo-launch.log
 
