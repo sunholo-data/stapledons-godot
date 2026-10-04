@@ -1,0 +1,30 @@
+{
+  "review": "Laptop controls refinement",
+  "timestamp": "2026-10-04T16:08:03.596Z",
+  "generator": "root",
+  "evaluator": "Independent sprint evaluator",
+  "base_sprint": "R1-M4-SHIP-DEMO",
+  "result": "pass",
+  "scope": "Option/Alt pointer look, fractional two-finger pan zoom, wheel-factor precision, external overview zoom retention",
+  "evidence": {
+    "actual_controller_tests": "Independently ran make ship-demo-input-test:9 passed,0 failures",
+    "additional_judge_tests": "/private/tmp/trackpad-independent.gd and /private/tmp/trackpad-independent.log:13 passed,0 failures (adds fractional wheel precision,60m/650m overview clamp and descending gesture+wheel lock)",
+    "camera_regression": "Independently ran make ship-demo-test:244 passed,0 failures",
+    "lift_regression": "Independently ran make ship-demo-lift-test:24 passed,0 failures",
+    "prior_compatibility": "Fullmake test and GPUgoldens previously green; patch changes only demo controls/tests/Makefile, no new physics/core code."
+  },
+  "findings": [],
+  "verified_behavior": [
+    "Plain pointer movement leaves view unchanged.",
+    "Option/Alt motion looks without a held click; right drag still works.",
+    "Vertical fractional pan zooms continuously; horizontal pan does not zoom.",
+    "Wheel factor .25 produces .5m change with existing2m scale.",
+    "Overview zoom keeps external review mode and clamps radius60–650m.",
+    "Boarding and descending reject gesture/wheel zoom, preserving lift eye.",
+    "Benchmark blocks look and zoom; prior HUD button disabling remains."
+  ],
+  "limitations": [
+    "Synthetic Godot input events verify controller behavior; actual MacBook Air trackpad delivery/usability remains user hardware review.",
+    "This approval does not complete PERF-1 or approve production merge. Refresh exported app and release checksum before publishing updated review build."
+  ]
+}
