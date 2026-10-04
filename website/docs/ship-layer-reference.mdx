@@ -161,6 +161,10 @@ blocked the star completely, and a deliberately mismatched sky camera was detect
 
 Target laptop: **MacBook Air M2 (2022), 24 GB**, at **1920×1080**. Actual laptop performance
 is awaiting measurement; Studio measurements are evidence for the Studio only.
+The first Studio run (M4 Max, 128 GB) recorded **26–29 ms p95 frame times**, above the
+16.67 ms target for 60 fps. This includes presentation timing and concurrent machine work;
+it is a measured limitation, not an Air result. Close other game windows before benchmarking.
+[Studio report and raw samples](https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_demo_v1/studio_benchmark.json).
 
 Install the latest private Mac review build from a Terminal with GitHub CLI and Google
 Cloud CLI authenticated:
@@ -169,10 +173,12 @@ Cloud CLI authenticated:
 gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.sh --jq .content | base64 -d | bash -s -- --dev
 ```
 
-In the game, choose **Ship geometry demo**. Use **1** for bridge, **2** for overlook,
+In the game, choose **Ship geometry demo** to open a separate review window while your
+existing voyage keeps running. Use **1** for bridge, **2** for overlook,
 **3** for whole ship, **WASD** to walk, right-drag to look, and the wheel to pull back.
-Press **E** at the lift landing to descend or return, **R** to reset, and **Escape** to return
-to the normal game. **4** is a diagnostic rim camera, not a reachable standing position.
+Press **E** at the lift landing to descend or return, **R** to reset, and **Escape** to close
+the review window. **4** is a diagnostic rim camera, not a reachable standing position.
+Press **B** to benchmark the four views at 1920×1080; the demo displays where it saved the report.
 
 ## Style concept — not a dimension reference
 
