@@ -3,6 +3,29 @@
  "designPin": "f4d876caf98f33691fb165c8a73be5c76abd313c",
  "decisions": [
   {
+   "id": "D-36",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-04",
+   "title": "Ship geometry demo scope and camera consistency.",
+   "question": "Ship geometry demo scope and camera consistency.",
+   "ruling": "APPROVED (Mark, attended 2026-10-04): bridge overlook and one-tier lift demo, with one meaningful perspective shared by stars, existing SR, play area and background geometry; future GR must use that same viewpoint.",
+   "words": [],
+   "provenance": "Approved design/sprint: design_docs/planned/r1/m4-ship-geometry-demo.md; isolated demo/ship-geometry-seven implementation branch.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L126",
+   "sourceLabel": "stapledon-mission.md, line 126",
+   "refs": [],
+   "groups": [
+    "visual",
+    "process"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
+  {
    "id": "D-35",
    "source": "ledger",
    "status": "resolved",

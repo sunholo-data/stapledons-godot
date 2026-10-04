@@ -107,6 +107,41 @@ should therefore keep a readable screen size, anchored to the true simulated pos
 A rendered ship icon can share the ship's silhouette and colours without loading its
 interior. A selected-ship close-up can show the simplified 3D model.
 
+## One viewpoint across the ship and stars
+
+The approved demo uses **one logical observer**: eye position, forward/up, perspective field
+of view and viewport size. Nearby decks, rails, architecture and real foreground members
+use that same view. There are no independently drifting copies in a panorama plate.
+
+The sky may be rendered in a separate pass so stars stay behind solid ship geometry, but
+its viewing rays must agree with the ship camera. Separate render passes do not imply separate
+viewpoints. Camera tilt, roll, field-of-view changes and resize must update both together.
+The bubble glow also needs the current eye position when the captain or lift moves.
+
+The existing SR renderer changes external light using the simulated ship velocity, which
+is independent of where the camera looks. The co-moving ship is not distorted as though it
+were a passing external object. **GR black-hole lensing is a future milestone in this
+checkout**, not a feature already provided by this model. Its eventual integration must
+use the same observer contract for all external light and pass its own physics checks.
+
+## Approved demo plan
+
+Mark approved the bounded demo on 4 October 2026. Implementation is in progress; the
+Blender reference above remains the measured reference, not a claim of a completed game demo.
+
+1. Perspective bridge view, correct downward occlusion, and whole-ship inspection pullback.
+2. One guarded lift from +82 m to the next tier at +57 m, a small walkable landing, and return.
+3. Inspected captures, compatibility checks and a laptop review build. Actual laptop performance
+   must be measured; Studio performance cannot certify it.
+
+Buildings, forests and unrestricted traversal of all seven tiers follow later. The lift
+needs real floor openings and separate active walk surfaces; it must not pass through a
+solid floor. Reference camera presets near the rim are diagnostic views and do not certify
+that the captain's walking capsule can occupy those points.
+
+[Implementation design](https://github.com/sunholo-data/stapledons-godot/blob/demo/ship-geometry-seven/design_docs/planned/r1/m4-ship-geometry-demo.md)
+and [sprint plan](https://github.com/sunholo-data/stapledons-godot/blob/demo/ship-geometry-seven/design_docs/planned/r1/m4-ship-geometry-demo-sprint.md).
+
 ## Style concept — not a dimension reference
 
 ![Whole-ship cutaway and bridge-rim support concept](/img/concept/ship-layers-v1.jpg)
