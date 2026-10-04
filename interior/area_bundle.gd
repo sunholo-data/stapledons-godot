@@ -27,8 +27,13 @@ extends RefCounted
 ##                                  manifest's iso_pitch/yaw/size and the spike's framing
 ##   pan_range_m [x, y]              the iso camera's pan range about the focus (metres); default
 ##                                  what the plates' overscan covers (pan_range_m())
-##   layers.play.plate {file}        bridge v2: a projected illustrated plate for the play layer
-##                                  (the GLB then only carries walking and interaction)
+##   layers.play.plate {file, projection: "isocam", resolution [w, h], size_m, ...}
+##                                  bridge v2 (m4-2-requirements §9.1): an illustrated plate
+##                                  projected through the pan-0 iso camera onto the play GLB;
+##                                  size_m = its vertical extent (metres), centred on the iso
+##                                  camera's pan-0 view; covers_pan_range_m optional [x, y]
+##   layers.<plate>.facing String    bridge v2 (§9.3): a forward-facing mask (grey, any size, UV
+##                                  aligned with the plate) for the live forward-glow term
 ##
 ## Export staging: assets/areas/ carries a .gdignore (raw files, no import), and Godot's export
 ## skips .gdignore'd directories, so `make areas-stage` copies each bundle to
@@ -68,6 +73,11 @@ static func load_dir(path: String) -> AreaBundle:
 	for layer in ["panorama", "play", "foreground"]:
 		if not _exists(b.path(layer)):
 			b.errors.append("missing layer %s: %s" % [layer, b.path(layer)])
+	if b.has_play_plate() and not _exists(b.play_plate_path()):
+		b.errors.append("missing play plate: %s" % b.play_plate_path())
+	for layer in ["panorama", "foreground"]:
+		if b.facing_path(layer) != "" and not _exists(b.facing_path(layer)):
+			b.errors.append("missing %s facing mask: %s" % [layer, b.facing_path(layer)])
 	var c: Variant = _read_json(b.path("camera"), b.errors, "camera " + str(b.manifest["camera"]))
 	if c is Dictionary:
 		b.camera = c
@@ -168,6 +178,17 @@ func has_play_plate() -> bool:
 
 func play_plate_path() -> String:
 	return dir.path_join(manifest["layers"]["play"]["plate"]["file"]) if has_play_plate() else ""
+
+
+## The play plate's manifest entry (bridge v2), {} without one.
+func play_plate() -> Dictionary:
+	return manifest["layers"]["play"]["plate"] if has_play_plate() else {}
+
+
+## A plate layer's forward-facing mask (bridge v2, layers.<layer>.facing), "" without one.
+func facing_path(layer: String) -> String:
+	var l: Variant = manifest["layers"].get(layer)
+	return dir.path_join(l["facing"]) if l is Dictionary and l.get("facing") is String else ""
 
 
 ## The iso camera: layers.play.camera's JSON when present, else the manifest's angles with the
@@ -274,8 +295,25 @@ static func check_manifest(m: Dictionary) -> PackedStringArray:
 	var play: Dictionary = m["layers"]["play"]
 	if play.has("camera") and not (play["camera"] is String and not (play["camera"] as String).is_empty()):
 		e.append("layers.play.camera must be a non-empty string")
-	if play.has("plate") and not (play["plate"] is Dictionary and play["plate"].get("file") is String and not (play["plate"]["file"] as String).is_empty()):
-		e.append("layers.play.plate must be {file: String}")
+	if play.has("plate"):
+		var pl: Variant = play["plate"]
+		if not (pl is Dictionary and pl.get("file") is String and not (pl["file"] as String).is_empty()):
+			e.append("layers.play.plate must be {file: String, ...}")
+		else:
+			if pl.get("projection", "isocam") != "isocam":
+				e.append("layers.play.plate.projection must be \"isocam\"")
+			if not (_num(pl.get("size_m")) and float(pl["size_m"]) > 0.0):
+				e.append("layers.play.plate.size_m must be a number > 0")
+			var r: Variant = pl.get("resolution")
+			if not (r is Array and r.size() == 2 and _num(r[0]) and _num(r[1]) and r[0] > 0 and r[1] > 0):
+				e.append("layers.play.plate.resolution must be [w, h] positive integers")
+			var cv: Variant = pl.get("covers_pan_range_m")
+			if cv != null and not (cv is Array and cv.size() == 2 and _num(cv[0]) and _num(cv[1]) and cv[0] >= 0 and cv[1] >= 0):
+				e.append("layers.play.plate.covers_pan_range_m must be [x, y] non-negative numbers")
+	for layer in ["panorama", "foreground"]:
+		var f: Variant = m["layers"][layer].get("facing")
+		if f != null and not (f is String and not (f as String).is_empty()):
+			e.append("layers.%s.facing must be a non-empty string" % layer)
 	return e
 
 

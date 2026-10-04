@@ -7,14 +7,19 @@ extends Node
 ##   | sky        | InteriorSky (SubViewport, own World3D, HDR)  | 0 (at infinity)      |
 ##   | panorama   | TextureRect, pano_<area>.png                 | layers.panorama 0.15 |
 ##   | play       | SubViewport (own World3D, transparent), GLB  | 1                    |
-##   |            | toon + ink, the captain; v2: a plate under it |                      |
+##   |            | toon + ink, the captain; v2: the GLB carries |                      |
+##   |            | the projected illustrated plate              |                      |
 ##   | foreground | TextureRect, fg_<area>.png                   | layers.foreground 1.6|
 ##   | hud        | labels, prompt, Archive panel                | -                    |
 ##
 ## ONE tonemap: the sky SubViewport tonemaps itself (AgX + M1.5a exposure); the main viewport
 ## has no WorldEnvironment and no 3D of its own, so nothing re-tonemaps or glows the sky
 ## (G-M4-2). The play layer renders in its own SubViewport (its own AgX for the toon set, no
-## glow) with a transparent background.
+## glow) with a transparent background. Bridge v2 (m4-2-requirements §9): with a
+## layers.play.plate the GLB meshes draw the illustrated plate, projected through the pan-0
+## iso camera (interior/plate_project.gdshader; plate_uv() is the CPU mirror), and the play
+## layer tonemaps LINEAR, because the plate is already display-referred (painted, spire-lit,
+## white point 0.88): AgX would re-tone it. The live forward glow adds to it (_push_glow_tint).
 ##
 ## Art is data (D-16): everything comes from the AreaBundle; a swap is a data drop.
 ## Plates: the camera spans the overscanned panorama plate, the screen shows its view region
@@ -32,6 +37,8 @@ signal map_toggled(open: bool)
 const LAYERS := ["sky", "panorama", "play", "foreground", "hud"]
 const CANVAS := {"sky": -40, "panorama": -30, "play": -20, "foreground": -10, "hud": 10}
 const PLATE_SHADER := preload("res://interior/plate.gdshader")
+const PLATE_PROJECT := preload("res://interior/plate_project.gdshader")
+const PLATE_INK_M := 0.015 # thin hull for the outer half of the silhouette ink (the plate has the inner half)
 const TOON := preload("res://interior/toon.gdshader")
 const OUTLINE := preload("res://interior/outline.gdshader")
 const WALK_SPEED := 1.4 # m/s
@@ -46,7 +53,7 @@ var sky_rect := TextureRect.new()
 var pano_rect := TextureRect.new()
 var play_view := SubViewport.new()
 var play_rect := TextureRect.new()
-var play_plate_rect: TextureRect = null # bridge v2 hook
+var plate_mat: ShaderMaterial = null # bridge v2: the projected play plate (template for every mesh)
 var fg_rect := TextureRect.new()
 var play_env := Environment.new()
 var iso_cam := Camera3D.new()
@@ -78,6 +85,7 @@ var _iso := {}
 var _focus := Vector3.ZERO
 var _plates := {} # layer -> [rect, overscan Vector2, plate px Vector2]
 var _view := Vector2(3840, 2160)
+var _plate_mats: Array[ShaderMaterial] = []
 var _accum := 0.0
 var _move := Vector2.ZERO
 
@@ -348,6 +356,12 @@ func _plate(layer: String, img: Image) -> void:
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var m := ShaderMaterial.new()
 	m.shader = PLATE_SHADER
+	var facing := bundle.facing_path(layer)
+	if facing != "": # bridge v2: the live forward glow reaches the forward-facing painted surfaces
+		var fimg := AreaBundle.load_png(facing)
+		if fimg != null:
+			m.set_shader_parameter("rim_mask", ImageTexture.create_from_image(fimg))
+			m.set_shader_parameter("rim_strength", 1.0)
 	r.material = m
 	_layer(layer).add_child(r)
 	_plates[layer] = [r, Vector2(bundle.overscan(layer)), Vector2(img.get_size())]
@@ -361,8 +375,7 @@ func _layout() -> void:
 		var os: Vector2 = _plates[layer][1]
 		var plate_px: Vector2 = _plates[layer][2]
 		r.size = plate_px * s
-		var factor := pan_factor(layer) if layer != "play_plate" else 1.0
-		r.position = (screen - _view * s) * 0.5 - os * s + plate_shift(pan, factor, ppm, os, s)
+		r.position = (screen - _view * s) * 0.5 - os * s + plate_shift(pan, pan_factor(layer), ppm, os, s)
 
 
 func _build_play(b: AreaBundle, px: Vector2i) -> bool:
@@ -372,7 +385,8 @@ func _build_play(b: AreaBundle, px: Vector2i) -> bool:
 	play_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	add_child(play_view)
 	play_env.background_mode = Environment.BG_CLEAR_COLOR
-	play_env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	# v2: the plate is display-referred; LINEAR keeps it (and the captain sprite) as painted
+	play_env.tonemap_mode = Environment.TONE_MAPPER_LINEAR if b.has_play_plate() else Environment.TONE_MAPPER_AGX
 	play_env.glow_enabled = true # the spire's halo (spike look); only on the set's own pixels,
 	play_env.glow_hdr_threshold = 1.2 # the transparent background stays alpha 0 over the sky
 	play_env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -390,7 +404,12 @@ func _build_play(b: AreaBundle, px: Vector2i) -> bool:
 		last_error = "play GLB did not load: %s" % b.path("play")
 		return false
 	play_view.add_child(play_scene)
-	_toonify(play_scene, b.has_play_plate())
+	if b.has_play_plate():
+		plate_mat = _plate_material(b)
+		if plate_mat == null:
+			last_error = "play plate did not load: %s" % b.play_plate_path()
+			return false
+	_toonify(play_scene, plate_mat)
 	var rules: Variant = b.manifest.get("walk_rules")
 	var radius: float = rules.get("agent_radius_m", 0.35) if rules is Dictionary else 0.35
 	reach = rules.get("reach_m", 1.5) if rules is Dictionary else 1.5
@@ -406,22 +425,19 @@ func _build_play(b: AreaBundle, px: Vector2i) -> bool:
 	iso_cam.v_offset = float(_iso["v_offset_m"])
 	play_view.add_child(iso_cam)
 	iso_cam.current = true
+	if plate_mat != null:
+		var pc := plate_camera()
+		for m in _plate_mats:
+			m.set_shader_parameter("cam_origin", pc["origin"])
+			m.set_shader_parameter("cam_right", pc["right"])
+			m.set_shader_parameter("cam_up", pc["up"])
+			m.set_shader_parameter("v_offset", pc["v_offset"])
 	if not avatar.load_dir(CAPTAIN_DIR):
 		last_error = avatar.last_error
 		return false
 	play_view.add_child(avatar)
 	avatar_pos = walk.spawn_point()
 	avatar.position = avatar_pos
-	if b.has_play_plate(): # bridge v2: the projected illustrated plate under the GLB layer
-		play_plate_rect = TextureRect.new()
-		_plates["play_plate"] = [play_plate_rect, Vector2.ZERO, Vector2.ZERO]
-		var img := AreaBundle.load_png(b.play_plate_path())
-		if img != null:
-			play_plate_rect.texture = ImageTexture.create_from_image(img)
-			_plates["play_plate"][2] = Vector2(img.get_size())
-		play_plate_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		play_plate_rect.stretch_mode = TextureRect.STRETCH_SCALE
-		_layer("play").add_child(play_plate_rect)
 	play_rect.texture = play_view.get_texture()
 	_full(play_rect)
 	_layer("play").add_child(play_rect)
@@ -429,14 +445,22 @@ func _build_play(b: AreaBundle, px: Vector2i) -> bool:
 
 
 ## Toon + ink on every mesh (the WALK_ meshes are the visible deck too). With a v2 play plate
-## the set is drawn by the plate, so the GLB meshes only carry walking and interaction.
-func _toonify(node: Node, hide_all: bool) -> void:
+## every mesh draws the projected plate instead (plus a thin outer ink hull).
+func _toonify(node: Node, plate: ShaderMaterial = null) -> void:
 	if node is MeshInstance3D:
 		var mi := node as MeshInstance3D
-		if hide_all:
-			mi.visible = false
-		elif mi.mesh != null:
+		if mi.mesh != null:
 			for i in mi.mesh.get_surface_count():
+				var ink := ShaderMaterial.new()
+				ink.shader = OUTLINE
+				if plate != null:
+					ink.set_shader_parameter("width", PLATE_INK_M)
+					ink.set_shader_parameter("ink", Color(0.259, 0.208, 0.333)) # the plate's ink #423555
+					var m := plate.duplicate() as ShaderMaterial # shares the plate texture
+					m.next_pass = ink
+					_plate_mats.append(m)
+					mi.set_surface_override_material(i, m)
+					continue
 				var src := mi.mesh.surface_get_material(i) as BaseMaterial3D
 				var toon := ShaderMaterial.new()
 				toon.shader = TOON
@@ -445,13 +469,54 @@ func _toonify(node: Node, hide_all: bool) -> void:
 					if src.emission_enabled:
 						toon.set_shader_parameter("emission", src.emission)
 						toon.set_shader_parameter("emission_energy", src.emission_energy_multiplier * 2.0)
-				var ink := ShaderMaterial.new()
-				ink.shader = OUTLINE
 				ink.set_shader_parameter("width", 0.03)
 				toon.next_pass = ink
 				mi.set_surface_override_material(i, toon)
 	for c in node.get_children():
-		_toonify(c, hide_all)
+		_toonify(c, plate)
+
+
+## Bridge v2: the plate material template (texture with mipmaps: the 270 px/m plate is
+## minified 2-4x on screen).
+func _plate_material(b: AreaBundle) -> ShaderMaterial:
+	var img := AreaBundle.load_png(b.play_plate_path())
+	if img == null:
+		return null
+	img.generate_mipmaps()
+	var m := ShaderMaterial.new()
+	m.shader = PLATE_PROJECT
+	m.set_shader_parameter("plate", ImageTexture.create_from_image(img))
+	m.set_shader_parameter("size_m", float(b.play_plate()["size_m"]))
+	m.set_shader_parameter("aspect", float(img.get_width()) / float(img.get_height()))
+	return m
+
+
+## The pan-0 iso camera the plate was rendered through (GLB frame): the camera position at
+## pan (0, 0) (focus + BACK_M along its +Z), its right and up vectors, and v_offset.
+func plate_camera() -> Dictionary:
+	return plate_camera_of(_iso)
+
+
+static func plate_camera_of(iso: Dictionary) -> Dictionary:
+	var bas := Basis.from_euler(Vector3(deg_to_rad(float(iso["pitch_deg"])), deg_to_rad(float(iso["yaw_deg"])), 0.0), EULER_ORDER_YXZ)
+	var f: Array = iso["focus_m"]
+	return {"origin": Vector3(f[0], f[1], f[2]) + bas.z * BACK_M, "right": bas.x, "up": bas.y, "v_offset": float(iso["v_offset_m"])}
+
+
+## CPU mirror of plate_project.gdshader: the plate uv (0..1, v down) of a GLB-frame point.
+static func plate_uv(p: Vector3, cam: Dictionary, size_m: float, aspect: float) -> Vector2:
+	var d: Vector3 = p - cam["origin"]
+	return Vector2(0.5 + d.dot(cam["right"]) / (size_m * aspect), 0.5 - (d.dot(cam["up"]) - float(cam["v_offset"])) / size_m)
+
+
+## CPU mirror of the live glow term: the factor on the plate colour for a world normal n
+## (plate_project.gdshader: glow_strength x facing + rim_strength x rim).
+static func plate_glow_factor(n: Vector3, cam: Dictionary, glow_strength := 1.0, rim_strength := 0.5) -> float:
+	var nn := n.normalized()
+	var facing := maxf(nn.y, 0.0)
+	var view: Vector3 = (cam["right"] as Vector3).cross(cam["up"]).normalized()
+	var rim := pow(1.0 - clampf(absf(nn.dot(view)), 0.0, 1.0), 3.0) * facing
+	return glow_strength * facing + rim_strength * rim
 
 
 func _build_hud() -> void:
@@ -558,10 +623,14 @@ func _set_layers_visible(on: bool) -> void:
 	play_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS if on else SubViewport.UPDATE_DISABLED
 
 
-## Bridge v2 hook: the glow's exposed pole pixel goes to every plate's material (no effect
-## while rim_strength is 0, which v1 never changes).
+## The glow's exposed pole pixel goes to every plate's material: the projected play plate
+## (bridge v2) and the panorama (rim_strength 1 with a facing mask, else 0: v1 unchanged).
+## While the sim sends no ship.ism.glow_pole_w_m2 (ForwardGlow.pole_of -> -1) the pole is
+## clamped to 0: no glow, no error.
 func _push_glow_tint() -> void:
 	var rgb := ForwardGlow.WHITE_RGB * (ForwardGlow.luminance(maxf(sky.glow_pole, 0.0)) * sky.exposure.k())
+	for m in _plate_mats:
+		m.set_shader_parameter("glow_rgb", rgb)
 	for layer: String in _plates:
 		var r: TextureRect = _plates[layer][0]
 		if r.material is ShaderMaterial:

@@ -30,6 +30,9 @@ extends SceneTree
 ##                face +/-Y); WALK_ meshes, SPAWN_ points and INTERACT_ objects present; any
 ##                manifest `walk` / `spawns` / `interactables` lists (Blender extras) name real
 ##                nodes.
+##   plate        bridge v2, when layers.play.plate is declared (m4-2-requirements §9.7): the
+##                declared resolution, the alpha rules above, the pan range covered, and every
+##                GLB triangle that projects into the plate lands on its coverage (<= 2 px).
 
 const NEEDLE_TIP_SHIP_M := [0.0, 0.0, 98.0]
 const ROUND_TRIP_PX := 1.0
@@ -43,6 +46,8 @@ const SOLID := 128 # alpha byte: a "solid" pixel for the haze and needle rules
 const METRES_EXTENT := [1.0, 2000.0]
 const WALK_EXTENT := [2.0, 500.0]
 const Y_UP_FRACTION := 0.5
+const PLATE_EDGE_PX := 2 # bridge v2: a GLB point may sit this far from plate coverage (anti-aliased silhouettes)
+const PLATE_COVER_TOL := 0.001 # fraction of in-plate GLB triangles allowed off the plate's coverage
 
 
 static func validate(dir: String) -> Array[Dictionary]:
@@ -68,6 +73,8 @@ static func validate(dir: String) -> Array[Dictionary]:
 		out.append(check_alpha(fg, "foreground", true, true, b.view_rect("foreground") if fg.get_size() == b.plate_size("foreground") else Rect2i()))
 	out.append_array(check_round_trip(b, pano))
 	out.append_array(check_glb(b.path("play"), b.manifest))
+	if b.has_play_plate():
+		out.append_array(check_plate(b))
 	return out
 
 
@@ -215,6 +222,79 @@ static func check_glb(file: String, manifest: Dictionary) -> Array[Dictionary]:
 			"all listed names found" if missing.is_empty() else "not in the GLB: " + ", ".join(missing))
 	scene.free()
 	return out
+
+
+## Bridge v2 play plate (m4-2-requirements §9.7): declared resolution, the alpha rules, the
+## pan range it covers, and coverage: every GLB triangle that projects into the plate (through
+## the pan-0 iso camera, Interior.plate_uv) lands on plate coverage (alpha > 0 within
+## PLATE_EDGE_PX), so no visible surface would sample space.
+static func check_plate(b: AreaBundle) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var pl := b.play_plate()
+	var img := AreaBundle.load_png(b.play_plate_path())
+	var want := Vector2i(int(pl["resolution"][0]), int(pl["resolution"][1]))
+	_add(out, "plate: %s = declared %dx%d" % [b.play_plate_path().get_file(), want.x, want.y], img != null and img.get_size() == want,
+		"unreadable" if img == null else "got %dx%d" % [img.get_width(), img.get_height()])
+	if img == null or img.get_size() != want:
+		return out
+	out.append(check_alpha(img, "play plate", true, false))
+	var iso := b.iso_camera()
+	var size_m := float(pl["size_m"])
+	var aspect := float(img.get_width()) / float(img.get_height())
+	var view := Vector2(b.view_size())
+	var view_m := Vector2(float(iso["size_m"]) * view.x / view.y, float(iso["size_m"]))
+	var need := b.pan_range_m()
+	if not need.is_finite():
+		need = Vector2.ZERO
+	var has := (Vector2(size_m * aspect, size_m) - view_m) * 0.5
+	_add(out, "plate: covers the pan range (+/- [%.2f, %.2f] m about the pan-0 view)" % [need.x, need.y], has.x >= need.x - 0.01 and has.y >= need.y - 0.01,
+		"plate %.3f x %.3f m, view %.3f x %.3f m: covers +/- [%.3f, %.3f] m" % [size_m * aspect, size_m, view_m.x, view_m.y, has.x, has.y])
+	var scene := AreaBundle.load_glb(b.path("play"))
+	if scene == null:
+		_add(out, "plate: coverage of the GLB", false, "GLB did not load")
+		return out
+	var cam := Interior.plate_camera_of(iso)
+	var tally := {"in": 0, "bad": 0, "first": ""}
+	_plate_cover(scene, Transform3D.IDENTITY, img, cam, size_m, aspect, tally)
+	scene.free()
+	var frac := float(tally["bad"]) / maxf(float(tally["in"]), 1.0)
+	_add(out, "plate: every GLB triangle in the plate lands on its coverage (alpha > 0 within %d px)" % PLATE_EDGE_PX, tally["in"] > 0 and frac <= PLATE_COVER_TOL,
+		"%d triangles in the plate, %d on alpha 0 (%.4f %%, limit %.2f %%)%s" % [tally["in"], tally["bad"], frac * 100.0, PLATE_COVER_TOL * 100.0, (", first " + tally["first"]) if tally["first"] != "" else ""])
+	return out
+
+
+static func _plate_cover(n: Node, parent: Transform3D, img: Image, cam: Dictionary, size_m: float, aspect: float, tally: Dictionary) -> void:
+	var xf := parent
+	if n is Node3D:
+		xf = parent * (n as Node3D).transform
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+		var faces := (n as MeshInstance3D).mesh.get_faces()
+		var w := img.get_width()
+		var h := img.get_height()
+		for i in range(0, faces.size(), 3):
+			var c := (xf * faces[i] + xf * faces[i + 1] + xf * faces[i + 2]) / 3.0
+			var uv := Interior.plate_uv(c, cam, size_m, aspect)
+			var px := int(uv.x * w)
+			var py := int(uv.y * h)
+			if px < 0 or py < 0 or px >= w or py >= h:
+				continue
+			tally["in"] += 1
+			var covered := false
+			for dy in range(-PLATE_EDGE_PX, PLATE_EDGE_PX + 1):
+				for dx in range(-PLATE_EDGE_PX, PLATE_EDGE_PX + 1):
+					var x := clampi(px + dx, 0, w - 1)
+					var y := clampi(py + dy, 0, h - 1)
+					if img.get_pixel(x, y).a8 > 0:
+						covered = true
+						break
+				if covered:
+					break
+			if not covered:
+				tally["bad"] += 1
+				if tally["first"] == "":
+					tally["first"] = "%s at plate (%d, %d)" % [n.name, px, py]
+	for ch in n.get_children():
+		_plate_cover(ch, xf, img, cam, size_m, aspect, tally)
 
 
 static func _scan(n: Node, parent: Transform3D, info: Dictionary, group: String) -> void:

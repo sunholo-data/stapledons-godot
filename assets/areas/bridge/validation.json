@@ -1,12 +1,12 @@
 {
   "area": "bridge",
-  "version": "buildout_v1_m4_2",
+  "version": "bridge_v2",
   "pano_bridge.png": {
     "resolution": [
       4096,
       2288
     ],
-    "zero_alpha_fraction": 0.9880826723325503,
+    "zero_alpha_fraction": 0.988091422127677,
     "top_third_exact_zero_alpha": true
   },
   "fg_bridge.png": {
@@ -23,17 +23,17 @@
       2048.000071101644,
       1501.4248806648002
     ],
-    "render_top_pixel_y": 1501,
-    "ink_stroke_top_pixel_y": 1499,
-    "difference_px": 0.4248806648001846,
+    "render_top_pixel_y": 1502,
+    "ink_stroke_top_pixel_y": 1500,
+    "difference_px": 0.5751193351998154,
     "analytical_roundtrip_error_px": 0.0003205394388915749,
     "declared_pixel_agrees_px": 5.537329943614022e-06
   },
   "glb": {
-    "bytes": 1562544,
-    "meshes": 94,
-    "unique_mesh_data": 17,
-    "triangles": 68312,
+    "bytes": 2870736,
+    "meshes": 131,
+    "unique_mesh_data": 31,
+    "triangles": 198518,
     "units": "metres, glTF Y up",
     "walk_meshes": [
       "WALK_bridge_deck",
@@ -67,8 +67,8 @@
     ]
   },
   "walk": {
-    "area_m2_raster": 1307.91,
-    "agent_area_m2_raster": 1217.055,
+    "area_m2_raster": 1307.9250000000002,
+    "agent_area_m2_raster": 1216.6425000000002,
     "meshes": [
       "WALK_bridge_deck",
       "WALK_bridge_ramp_head"
@@ -156,7 +156,7 @@
             4096,
             2288
           ],
-          "zero_alpha_fraction": 0.9880826723325503,
+          "zero_alpha_fraction": 0.988091422127677,
           "top_third_exact_zero_alpha": true
         },
         "fg_bridge.png": {
@@ -178,9 +178,9 @@
           2048.000071101644,
           1501.4248806648002
         ],
-        "render_top_pixel_y": 1501,
-        "ink_stroke_top_pixel_y": 1499,
-        "difference_px": 0.4248806648001846,
+        "render_top_pixel_y": 1502,
+        "ink_stroke_top_pixel_y": 1500,
+        "difference_px": 0.5751193351998154,
         "analytical_roundtrip_error_px": 0.0003205394388915749,
         "declared_pixel_agrees_px": 5.537329943614022e-06
       }
@@ -190,10 +190,10 @@
       "ok": true,
       "detail": {
         "errors": [],
-        "bytes": 1562544,
-        "meshes": 94,
-        "unique_mesh_data": 17,
-        "triangles": 68312,
+        "bytes": 2870736,
+        "meshes": 131,
+        "unique_mesh_data": 31,
+        "triangles": 198518,
         "units": "metres, glTF Y up",
         "walk_meshes": [
           "WALK_bridge_deck",
@@ -249,7 +249,7 @@
       "name": "walk_slope",
       "ok": true,
       "detail": {
-        "max_slope_deg": 8.446106545292452,
+        "max_slope_deg": 8.445967037757647,
         "limit_deg": 10.0,
         "worst_mesh": "WALK_bridge_ramp_head"
       }
@@ -258,20 +258,20 @@
       "name": "walk_steps",
       "ok": true,
       "detail": {
-        "max_step_m": 0.0,
+        "max_step_m": 2.0448010218387935e-06,
         "limit_m": 0.05,
-        "junction_vertex_pairs": 4
+        "junction_vertex_pairs": 60
       }
     },
     {
       "name": "walk_rim",
       "ok": true,
       "detail": {
-        "rail_inner_r_m": 21.2973790679581,
+        "rail_inner_r_m": 21.297360992881522,
         "rail_outer_r_m": 21.595874856748736,
-        "walk_limit_r_m": 20.7973790679581,
+        "walk_limit_r_m": 20.797360992881522,
         "deck_walk_max_r_m": 21.937375147102866,
-        "ramp_walk_max_r_m": 24.932877879479282,
+        "ramp_walk_max_r_m": 24.933016036899527,
         "ramp_walk_continues_past_rail": true,
         "violations": [],
         "n_violations": 0
@@ -281,13 +281,22 @@
       "name": "walk_obstacles",
       "ok": true,
       "detail": {
-        "walk_under_obstacles_m2": 0.0,
-        "overlap_by_object_m2": [],
-        "obstacles_checked": 17,
+        "walk_under_obstacles_m2": 0.0075000000000000015,
+        "overlap_by_object_m2": [
+          [
+            "v2_desk_props_03",
+            0.005
+          ],
+          [
+            "v2_desk_props_01",
+            0.003
+          ]
+        ],
+        "obstacles_checked": 24,
         "lowest_walk_contact_fraction": [
           [
             "archive_terminal",
-            0.546
+            0.538
           ],
           [
             "archive_shrine_ribs",
@@ -324,9 +333,9 @@
       "detail": {
         "regions_at_agent_radius": 1,
         "region_areas_m2": [
-          1217.06
+          1216.64
         ],
-        "dropped_tiny_regions": 0,
+        "dropped_tiny_regions": 1,
         "agent_radius_m": 0.35
       }
     },
@@ -357,10 +366,10 @@
         "agent_floor_distance_m": {
           "archive_terminal": 0.0,
           "captain_chair": 0.0,
-          "console_decision_0": 0.045,
-          "console_decision_1": 0.088,
-          "console_decision_2": 0.045,
-          "console_decision_3": 0.088,
+          "console_decision_0": 0.047,
+          "console_decision_1": 0.089,
+          "console_decision_2": 0.047,
+          "console_decision_3": 0.089,
           "console_navigation_0": 0.0,
           "console_navigation_1": 0.0,
           "console_navigation_2": 0.0,

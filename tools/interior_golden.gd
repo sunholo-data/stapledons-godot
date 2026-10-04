@@ -15,6 +15,11 @@ extends RefCounted
 ##           panorama camera (off-centre, ship frame): pixels within 1 % of
 ##           ForwardGlow.wall_cos; (d) the photometric chain: E/pi x lm/W x k x colour
 ##           within 1 % (no hand-tuned gain)
+##   G-M4-5  bridge v2 play plate (m4-2-requirements §9): (a) projection: at pans 0, +/-6 m
+##           across and +/-3 m up, open-deck points render the plate texel Interior.plate_uv
+##           gives (CPU box filter over the screen pixel's plate footprint) within 4/255 per
+##           channel in the play SubViewport; (b) the live glow term: an up-facing deck pixel
+##           brightens by glow_rgb x plate_glow_factor (linear light) within 2 %
 
 const BUNDLE := "res://assets/areas/bridge"
 const ALPHA_CEN_A := "CNS5:3627"
@@ -41,6 +46,8 @@ func run(m: Node) -> int:
 	f += await _g1()
 	f += await _g3()
 	f += await _g4()
+	if it.bundle.has_play_plate():
+		f += await _g5()
 	it.queue_free()
 	await main.get_tree().process_frame
 	f += await _build(true)
@@ -308,3 +315,140 @@ func _g4() -> int:
 	sky.glow_pole = -1.0
 	sky.update_exposure()
 	return fails
+
+
+func _play_image() -> Image:
+	for i in 3:
+		await main.get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	return it.play_view.get_texture().get_image()
+
+
+## Open, up-facing deck points the iso camera sees: candidates on the WALK_ deck, kept when a
+## ray from the camera hits them first (trimesh colliders built here, test-only) on a surface
+## facing +Y, then the flattest (lowest plate variance over the screen footprint) first.
+func _deck_points(plate: Image, pc: Dictionary, size_m: float, aspect: float, foot: float) -> Array:
+	var bodies := []
+	var stack: Array[Node] = [it.play_scene]
+	var walk_faces := PackedVector3Array()
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+			var mi := n as MeshInstance3D
+			var body := StaticBody3D.new()
+			var cs := CollisionShape3D.new()
+			cs.shape = mi.mesh.create_trimesh_shape()
+			body.add_child(cs)
+			mi.add_child(body)
+			bodies.append(body)
+			if String(mi.name).begins_with("WALK_"):
+				var f := mi.mesh.get_faces()
+				for k in range(0, f.size(), 3):
+					walk_faces.append(mi.global_transform * ((f[k] + f[k + 1] + f[k + 2]) / 3.0))
+		for c in n.get_children():
+			stack.append(c)
+	await main.get_tree().physics_frame
+	await main.get_tree().physics_frame
+	var space := it.play_view.find_world_3d().direct_space_state
+	var back: Vector3 = (pc["right"] as Vector3).cross(pc["up"]).normalized() # toward the camera
+	var cands := []
+	var step := maxi(1, walk_faces.size() / 400)
+	for k in range(0, walk_faces.size(), step):
+		var p: Vector3 = walk_faces[k]
+		var q := PhysicsRayQueryParameters3D.create(p + back * 300.0, p - back * 0.05)
+		var hit := space.intersect_ray(q)
+		if hit.is_empty() or (hit["position"] as Vector3).distance_to(p) > 0.02 or (hit["normal"] as Vector3).y < 0.99:
+			continue
+		var uv := Interior.plate_uv(p, pc, size_m, aspect) * Vector2(plate.get_size())
+		cands.append([_spread(plate, uv, foot * 3.0), p])
+	for bd in bodies:
+		bd.queue_free()
+	cands.sort_custom(func(a, b): return a[0] < b[0])
+	return cands.map(func(c): return c[1])
+
+
+func _g5() -> int:
+	var fails := 0
+	var plate := AreaBundle.load_png(it.bundle.play_plate_path())
+	var pc := it.plate_camera()
+	var size_m := float(it.bundle.play_plate()["size_m"])
+	var aspect := float(plate.get_width()) / float(plate.get_height())
+	var foot := 270.0 * float(it.bundle.iso_camera()["size_m"]) / float(it.play_view.size.y) # plate px per screen px
+	it.sky.glow_pole = -1.0
+	it._push_glow_tint()
+	var pts := await _deck_points(plate, pc, size_m, aspect, foot)
+	for pan in [Vector2.ZERO, Vector2(6, 0), Vector2(-6, 0), Vector2(0, 3), Vector2(0, -3)]:
+		it.set_pan(pan)
+		var img := await _play_image()
+		var worst := 0.0
+		var n := 0
+		for p: Vector3 in pts:
+			if n >= 8:
+				break
+			var sp := it.iso_cam.unproject_position(p)
+			if sp.x < 4 or sp.y < 4 or sp.x > img.get_width() - 5 or sp.y > img.get_height() - 5:
+				continue
+			var uv := Interior.plate_uv(p, pc, size_m, aspect)
+			var want := _box(plate, uv * Vector2(plate.get_size()), foot)
+			var got := img.get_pixel(int(sp.x), int(sp.y))
+			worst = maxf(worst, maxf(absf(got.r - want.r), maxf(absf(got.g - want.g), absf(got.b - want.b))))
+			n += 1
+		var ok := n >= 3 and worst <= 4.0 / 255.0
+		print("%s  G-M4-5 plate projection pan (%+.0f, %+.0f) m: %d open deck points, worst %.2f/255 (limit 4/255)" % ["ok  " if ok else "FAIL", pan.x, pan.y, n, worst * 255.0])
+		fails += 0 if ok else 1
+	# (b) the live glow term on an up-facing open deck pixel, linear light
+	it.set_pan(Vector2.ZERO)
+	var img0 := await _play_image()
+	var sp0 := Vector2(-1, -1)
+	for p: Vector3 in pts: # the flattest open deck point on screen at pan 0, not near black
+		var sp := it.iso_cam.unproject_position(p)
+		if sp.x >= 4 and sp.y >= 4 and sp.x <= img0.get_width() - 5 and sp.y <= img0.get_height() - 5 and img0.get_pixel(int(sp.x), int(sp.y)).get_luminance() > 0.1:
+			sp0 = sp
+			break
+	var base := img0.get_pixel(int(sp0.x), int(sp0.y)).srgb_to_linear()
+	var fct := Interior.plate_glow_factor(Vector3.UP, pc)
+	it.sky.glow_pole = 1.0
+	it._push_glow_tint()
+	var unit: Vector3 = (it._plate_mats[0] as ShaderMaterial).get_shader_parameter("glow_rgb")
+	var pole := 0.25 / maxf(unit.y * fct, 1e-30) # a pole that lifts green by 25 % (stays below white)
+	it.sky.glow_pole = pole
+	it._push_glow_tint()
+	var g: Vector3 = (it._plate_mats[0] as ShaderMaterial).get_shader_parameter("glow_rgb")
+	var lit := (await _play_image()).get_pixel(int(sp0.x), int(sp0.y)).srgb_to_linear()
+	var want := Vector3(base.r * (1.0 + g.x * fct), base.g * (1.0 + g.y * fct), base.b * (1.0 + g.z * fct))
+	var err := maxf(absf(lit.r - want.x) / want.x, maxf(absf(lit.g - want.y) / want.y, absf(lit.b - want.z) / want.z))
+	var ok_b := err <= 0.02
+	print("%s  G-M4-5 plate glow: deck pixel %s -> %s, CPU base x (1 + glow_rgb x %.3f) = (%.4f, %.4f, %.4f), worst %.2f %% (limit 2 %%)" % ["ok  " if ok_b else "FAIL", base, lit, fct, want.x, want.y, want.z, err * 100.0])
+	fails += 0 if ok_b else 1
+	it.sky.glow_pole = -1.0
+	it._push_glow_tint()
+	return fails
+
+
+## Standard deviation of the plate's luminance over a k x k box (flat regions compare cleanly
+## under the GPU's mipmap filtering).
+static func _spread(img: Image, c: Vector2, k: float) -> float:
+	var r := int(ceil(k * 0.5))
+	var s := 0.0
+	var s2 := 0.0
+	var n := 0
+	for y in range(int(c.y) - r, int(c.y) + r + 1, 2):
+		for x in range(int(c.x) - r, int(c.x) + r + 1, 2):
+			var l := img.get_pixel(clampi(x, 0, img.get_width() - 1), clampi(y, 0, img.get_height() - 1)).get_luminance()
+			s += l
+			s2 += l * l
+			n += 1
+	var m := s / n
+	return sqrt(maxf(s2 / n - m * m, 0.0))
+
+
+## Mean colour of a k x k plate-pixel box centred on c (the screen pixel's footprint).
+static func _box(img: Image, c: Vector2, k: float) -> Color:
+	var r := int(ceil(k * 0.5))
+	var acc := Color(0, 0, 0, 0)
+	var n := 0
+	for y in range(int(c.y) - r, int(c.y) + r + 1):
+		for x in range(int(c.x) - r, int(c.x) + r + 1):
+			acc += img.get_pixel(clampi(x, 0, img.get_width() - 1), clampi(y, 0, img.get_height() - 1))
+			n += 1
+	return acc / float(n)

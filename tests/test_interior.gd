@@ -85,24 +85,31 @@ func test_glow_mirror() -> void:
 
 
 func test_bundle_fields() -> void:
-	print("AreaBundle: optional typed play_origin_ship_m and layers.play.plate (bridge v2 hook)")
+	print("AreaBundle: optional typed play_origin_ship_m and layers.play.plate (bridge v2)")
 	var b := AreaBundle.load_dir(BRIDGE)
-	check("bridge v1 loads", b.ok(), str(b.errors))
+	check("bridge (v2) loads", b.ok(), str(b.errors))
 	check("play_origin_ship_m read typed [0, 0, 82]", b.play_origin_ship_m() == PackedFloat64Array([0.0, 0.0, 82.0]))
 	check("glTF -> ship frame: glTF +Y up is ship +Z, origin added", b.glb_to_ship(Vector3(1.0, 2.0, 3.0)) == PackedFloat64Array([1.0, -3.0, 84.0]))
 	var f := AreaBundle.load_dir(FIXTURE)
 	check("fixture has no play_origin_ship_m: defaults to the bubble centre, no error", f.ok() and f.play_origin_ship_m() == PackedFloat64Array([0.0, 0.0, 0.0]))
-	check("no layers.play.plate in v1: has_play_plate() false", not b.has_play_plate())
+	check("bridge v2 declares layers.play.plate: has_play_plate() true, 10920 x 5940, 22 m", b.has_play_plate()
+		and Vector2i(int(b.play_plate()["resolution"][0]), int(b.play_plate()["resolution"][1])) == Vector2i(10920, 5940) and float(b.play_plate()["size_m"]) == 22.0 and b.play_plate_path().ends_with("plate_bridge.png"))
+	check("fixture (v1-style) has no play plate", not f.has_play_plate())
+	check("bridge v2 panorama facing mask declared and present", b.facing_path("panorama").ends_with("pano_bridge_facing.png") and FileAccess.file_exists(b.facing_path("panorama")))
 	var m: Dictionary = b.manifest.duplicate(true)
 	m["play_origin_ship_m"] = [0.0, 82.0]
 	check("control: play_origin_ship_m with 2 numbers is refused", not AreaBundle.check_manifest(m).is_empty())
 	m["play_origin_ship_m"] = "0 0 82"
 	check("control: play_origin_ship_m as a string is refused", not AreaBundle.check_manifest(m).is_empty())
 	m = b.manifest.duplicate(true)
-	m["layers"]["play"]["plate"] = {"file": "plate_bridge.png"}
-	check("layers.play.plate {file} accepted", AreaBundle.check_manifest(m).is_empty(), str(AreaBundle.check_manifest(m)))
+	m["layers"]["play"]["plate"] = {"file": "plate_bridge.png", "projection": "isocam", "resolution": [10920, 5940], "size_m": 22.0}
+	check("layers.play.plate {file, projection, resolution, size_m} accepted", AreaBundle.check_manifest(m).is_empty(), str(AreaBundle.check_manifest(m)))
 	m["layers"]["play"]["plate"] = {"file": 3}
 	check("control: layers.play.plate.file must be a string", not AreaBundle.check_manifest(m).is_empty())
+	m["layers"]["play"]["plate"] = {"file": "plate_bridge.png", "projection": "isocam", "resolution": [10920, 5940]}
+	check("control: layers.play.plate.size_m is required", not AreaBundle.check_manifest(m).is_empty())
+	m["layers"]["play"]["plate"] = {"file": "plate_bridge.png", "projection": "pano", "resolution": [10920, 5940], "size_m": 22.0}
+	check("control: layers.play.plate.projection must be isocam", not AreaBundle.check_manifest(m).is_empty())
 	m = b.manifest.duplicate(true)
 	m["layers"]["play"]["camera"] = 7
 	check("control: layers.play.camera must be a string", not AreaBundle.check_manifest(m).is_empty())
@@ -156,7 +163,7 @@ func test_parallax() -> void:
 
 
 func test_composite() -> void:
-	print("Composite: layer order, pan factors, one tonemap, placeholder tag (fixture and bridge v1)")
+	print("Composite: layer order, pan factors, one tonemap, placeholder tag (fixture and bridge v2)")
 	for dir in [FIXTURE, BRIDGE]:
 		var it := Interior.new()
 		var ok := it.setup(AreaBundle.load_dir(dir), {"background": false, "stars": false, "size": Vector2i(960, 540)})
@@ -178,6 +185,30 @@ func test_composite() -> void:
 			and Basis(SkyFrame.to_world(Vector3(1, 0, 0)), SkyFrame.to_world(Vector3(0, 1, 0)), SkyFrame.to_world(Vector3(0, 0, 1))).determinant() == 1.0
 			and not (it.get_script() as GDScript).get_script_constant_map().has("SKY_FLIP_H"))
 		check("%s: the play layer renders over a transparent background (the sky shows through)" % dir.get_file(), it.play_view.transparent_bg and it.play_env.background_mode == Environment.BG_CLEAR_COLOR)
+		var v2 := it.bundle.has_play_plate()
+		check("%s: play layer tonemap %s (v2 plate display-referred: LINEAR; toon set: AgX)" % [dir.get_file(), "LINEAR" if v2 else "AgX"],
+			it.play_env.tonemap_mode == (Environment.TONE_MAPPER_LINEAR if v2 else Environment.TONE_MAPPER_AGX))
+		var mats := _surface_materials(it.play_scene)
+		var proj := mats.filter(func(mm): return mm is ShaderMaterial and (mm as ShaderMaterial).shader == Interior.PLATE_PROJECT)
+		if v2:
+			check("bridge v2: every GLB surface draws the projected plate (%d surfaces)" % mats.size(), not mats.is_empty() and proj.size() == mats.size())
+			it.set_pan(Vector2.ZERO)
+			var pc := it.plate_camera()
+			check("bridge v2: the plate camera is the iso camera at pan 0 (origin, right, up)", (pc["origin"] as Vector3).distance_to(it.iso_cam.position) < 1e-4
+				and (pc["right"] as Vector3).distance_to(it.iso_cam.transform.basis.x) < 1e-5 and (pc["up"] as Vector3).distance_to(it.iso_cam.transform.basis.y) < 1e-5)
+			var f := it.bundle.iso_camera()["focus_m"] as Array
+			var centre := Vector3(f[0], f[1], f[2]) + (pc["up"] as Vector3) * float(pc["v_offset"])
+			check("bridge v2: plate_uv of the pan-0 view centre is (0.5, 0.5)", Interior.plate_uv(centre, pc, 22.0, 10920.0 / 5940.0).distance_to(Vector2(0.5, 0.5)) < 1e-6)
+			it.sky.glow_pole = ForwardGlow.profile(1.1250843031053142, 1.0) # the cap's pole (tools/glow_probe)
+			it._push_glow_tint()
+			var g: Vector3 = (proj[0] as ShaderMaterial).get_shader_parameter("glow_rgb")
+			var want := ForwardGlow.WHITE_RGB * (ForwardGlow.luminance(1.1250843031053142) * it.sky.exposure.k())
+			check("bridge v2: the live glow reaches the plate (glow_rgb = E/pi x lm/W x k x colour)", g.distance_to(want) <= 1e-6 * maxf(want.length(), 1e-30) and g.length() > 0.0, "%s vs %s" % [g, want])
+			it.sky.glow_pole = -1.0 # the sim sends no glow_pole_w_m2 (before PR #113): no glow, no error
+			it._push_glow_tint()
+			check("bridge v2: no sim pole -> glow_rgb 0", ((proj[0] as ShaderMaterial).get_shader_parameter("glow_rgb") as Vector3) == Vector3.ZERO)
+		else:
+			check("%s: toon set (no plate material)" % dir.get_file(), proj.is_empty())
 		var tag := it.bundle.placeholder
 		check("%s: placeholder tag %s" % [dir.get_file(), "shown" if tag else "hidden"], it.tag_label.visible == tag and (it.tag_label.text == AreaBundle.HUD_TAG or not tag))
 		it.set_pan(Vector2(20.0, 0.0))
@@ -186,8 +217,18 @@ func test_composite() -> void:
 	await process_frame
 
 
+func _surface_materials(n: Node) -> Array:
+	var out := []
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+		for i in (n as MeshInstance3D).mesh.get_surface_count():
+			out.append((n as MeshInstance3D).get_surface_override_material(i))
+	for c in n.get_children():
+		out.append_array(_surface_materials(c))
+	return out
+
+
 func test_walk() -> void:
-	print("Walking: the avatar stays on WALK_ (fixture and bridge v1)")
+	print("Walking: the avatar stays on WALK_ (fixture and bridge v2)")
 	for dir in [FIXTURE, BRIDGE]:
 		var b := AreaBundle.load_dir(dir)
 		var scene := b.instantiate_play()
