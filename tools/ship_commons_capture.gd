@@ -10,13 +10,14 @@ func _run() -> void:
 	await process_frame
 	var kit: Dictionary=load("res://demos/ship_commons.gd").install(demo)
 	if kit.is_empty():quit(1);return
+	demo.commons=kit
 	demo.auto=false
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
 	var bridge_eye:=Vector3(19,83.7,-7)
 	if not demo.walk_bridge.is_walkable(bridge_eye-Vector3.UP*1.7):
 		push_error("Commons bridge observer not reachable");quit(1);return
 	demo.avatar_pos=bridge_eye-Vector3.UP*1.7;demo.camera_mode="Commons bridge standing eye"
-	demo.camera.pullback=0.;demo.camera.position=bridge_eye;demo.camera.look_at(Vector3(26,61,-10));demo._sync_observer()
+	demo.camera.pullback=0.;demo.camera.position=bridge_eye;demo.camera.look_at(Vector3(33,65,-16));demo._sync_observer()
 	await _shot("bridge_overlook",false)
 	demo.avatar_pos=Vector3(8,82,-4.8);demo.set_preset("bridge")
 	if not demo.lift.board():quit(1);return

@@ -1,4 +1,4 @@
-ERROR: Failed to open 'user://logs/godot2026-10-04T18.56.23.log'.
+ERROR: Failed to open 'user://logs/godot2026-10-04T19.07.33.log'.
    at: copy (core/io/dir_access.cpp:429)
 ERROR: Failed to open log file for writing: user://logs/godot.log
    at: rotate_file (core/io/logger.cpp:169)
@@ -14,13 +14,18 @@ ERROR: Condition "ret != noErr" is true. Returning: ""
   ok connected route to (26.0, 57.0, 3.0)
   ok connected route to (26.0, 57.0, -8.0)
   ok connected route to (6.0, 57.0, -4.5)
+  ok connected route to (35.0, 57.0, -10.0)
+  ok connected route to (26.0, 57.0, -18.0)
   ok courtyard camera safe
   ok pavilion interior camera safe
 ship-demo-ready: OK
   ok runtime connection removes one old guard
+  ok detail/coarse share one atlas resource
   ok bridge still active initially
   ok real capsule clearance to (16.0, 57.0, -4.8)
   ok real capsule clearance to (26.0, 57.0, 3.0)
   ok real capsule clearance to (26.0, 57.0, -8.0)
   ok real capsule clearance to (6.0, 57.0, -4.5)
-ship-commons: 16 passed, 0 failures
+  ok real capsule clearance to (35.0, 57.0, -10.0)
+  ok real capsule clearance to (26.0, 57.0, -18.0)
+ship-commons: 21 passed, 0 failures

@@ -20,7 +20,8 @@ func _run() -> void:
 	check("lift hole remains nonwalkable",not walk.is_walkable(Vector3(8,57,-8)))
 	check("spire inaccessible",not walk.is_walkable(Vector3(0,57,0)))
 	var start:=Vector3(8,57,-4.8)
-	for target in [Vector3(16,57,-4.8),Vector3(26,57,3),Vector3(26,57,-8),Vector3(6,57,-4.5)]:
+	var targets:=[Vector3(16,57,-4.8),Vector3(26,57,3),Vector3(26,57,-8),Vector3(6,57,-4.5),Vector3(35,57,-10),Vector3(26,57,-18)]
+	for target in targets:
 		var route:=walk.path(start,target,40000)
 		check("connected route to "+str(target),not route.is_empty())
 		for point in route:
@@ -34,12 +35,13 @@ func _run() -> void:
 	await process_frame
 	var kit: Dictionary=load("res://demos/ship_commons.gd").install(demo)
 	check("runtime connection removes one old guard",not kit.is_empty())
+	check("detail/coarse share one atlas resource",load("res://demos/ship_commons.gd")._paint_material(kit.visual)==load("res://demos/ship_commons.gd")._paint_material(kit.coarse))
 	check("bridge still active initially",demo.walk==demo.walk_bridge)
 	await physics_frame
 	var shape:=CapsuleShape3D.new();shape.radius=.35;shape.height=1.8
 	var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape
 	var space: PhysicsDirectSpaceState3D=demo.geometry.get_world_3d().direct_space_state
-	for target in [Vector3(16,57,-4.8),Vector3(26,57,3),Vector3(26,57,-8),Vector3(6,57,-4.5)]:
+	for target in targets:
 		var clear:=true
 		for point in demo.walk_lower.path(start,target,40000):
 			query.transform=Transform3D(Basis.IDENTITY,point+Vector3.UP*.95)
