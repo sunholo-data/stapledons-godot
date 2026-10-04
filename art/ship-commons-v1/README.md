@@ -2,7 +2,7 @@
 
 Current master: `ship_commons_master_v3.blend`. V1/V2 remain historical material and route experiments; the generic barrel pavilion was rejected as the architectural target. V3 follows the approved concept and measured zoning: retained open civic plaza, guarded connection and first curved arcade section. The whole tier is not populated.
 
-Plaza bounds remain ship XY14–36 / −10–20 at structural Z57. Arcade piers use radii43/55m, angles−5°..18°, four open bays and an opaque terrace slab at61.15–61.39m. Local roof/edge overhangs and the outer walking strip remain within the approved43–57m arcade band. A4.5m guarded link connects the plaza. WALK finish is57.025m. The upper terrace is inaccessible. New vertices reach radius82.879m, within95m. Actual spire, seven tiers, lift and4× sky trial are preserved.
+Plaza bounds remain ship XY14–36 / −10–20 at structural Z57. Arcade piers use nominal radii43/55m, angles−5°..18°, four open bays and an opaque terrace slab at61.15–61.39m. Minor roof/edge projections and the outer walking strip extend locally beyond those pier radii, remaining inside the95m envelope; these bounded construction details are draft art-review items. The guarded link is4.5m wide, providing extra clearance over the proposed4m approach. WALK finish is57.025m. The upper terrace is inaccessible. New vertices reach radius82.879m, within95m. Actual spire, seven tiers, lift and4× sky trial are preserved.
 
 ## Authoring and assets
 
