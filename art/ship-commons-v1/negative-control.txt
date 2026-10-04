@@ -1,4 +1,4 @@
-ERROR: Failed to open 'user://logs/godot2026-10-04T18.59.14.log'.
+ERROR: Failed to open 'user://logs/godot2026-10-04T19.04.34.log'.
    at: copy (core/io/dir_access.cpp:429)
 ERROR: Failed to open log file for writing: user://logs/godot.log
    at: rotate_file (core/io/logger.cpp:169)
@@ -12,11 +12,11 @@ ERROR: Condition "ret != noErr" is true. Returning: ""
   ok actual pavilion top65.42m
   ok actual triangles under30000
   ok actual material count at most4
-  ok roof blocks upward ray (26.0, 58.7, -10.0)
-  ok roof blocks upward ray (21.0, 58.7, -10.0)
-  ok roof blocks upward ray (31.0, 58.7, -10.0)
-  ok opaque back wall
-  ok opaque side wall
+  FAIL roof blocks upward ray (26.0, 58.7, -10.0)
+  FAIL roof blocks upward ray (21.0, 58.7, -10.0)
+  FAIL roof blocks upward ray (31.0, 58.7, -10.0)
+  FAIL opaque back wall
+  FAIL opaque side wall
   ok door clear at human eye
   ok door clear for capsule width
   ok 4m landing guard opening

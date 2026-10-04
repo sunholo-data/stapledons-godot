@@ -12,8 +12,8 @@ func _initialize() -> void:
 	var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://assets/ship_commons/manifest.json"))
 	var scene:=AreaBundle.load_glb("res://assets/ship_commons/"+manifest.assets.get("painted",manifest.assets.blockout))
 	if scene==null:check("real exported geometry",false);quit(1);return
+	if OS.get_cmdline_user_args().has("bad-envelope"):scene.position.x+=100.
 	_scan(scene,Transform3D.IDENTITY)
-	if OS.get_cmdline_user_args().has("bad-envelope"):maximum=96.
 	check("actual new vertices inside95m envelope",maximum<=95.001)
 	check("actual Commons finished floor",absf(minimum_y-57.)<.001)
 	check("actual pavilion top65.42m",absf(maximum_y-65.42)<.002)

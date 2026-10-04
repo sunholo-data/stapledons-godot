@@ -38,11 +38,8 @@ func _run() -> void:
 func _vec(v: Array) -> Vector3:return Vector3(v[0],v[2],-v[1])
 func _shot(name: String, diagnostic: bool) -> void:
 	for i in 5:await process_frame
-	demo.set_process(false)
-	demo.avatar.visible=false # Standing-eye reviews hide the captain sprite at the observer.
-	for i in 2:await process_frame
+	demo.sky.update_exposure()
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(out+"/"+name+".png")
 	shots.append({"name":name,"diagnostic":diagnostic,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"fov":demo.camera.fov,"inside_bubble":demo.camera.position.length()<100.,"walkable":demo.walk.is_walkable(demo.avatar_pos),"lift_state":demo.lift.state})
 	print("Commons captured ",name)
-	demo.set_process(true)

@@ -14,6 +14,10 @@ func _initialize() -> void:
 	for key in coarse_triangles:if not detailed_triangles.has(key):preserved=false
 	check("coarse triangles exact subset of detailed opaque geometry",preserved)
 	check("coarse retains nonempty major silhouette",coarse_triangles.size()>2000 and coarse_triangles.size()<detailed_triangles.size())
+	for p in [Vector3(26,58.7,-10),Vector3(21,58.7,-10),Vector3(31,58.7,-10)]:
+		check("coarse retains opaque roof "+str(p),_hit(coarse_triangles,p,p+Vector3.UP*20))
+	check("coarse retains opaque back wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(26,58.7,-20)))
+	check("coarse retains opaque side wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(40,58.7,-10)))
 	var kit:={"visual":detail,"coarse":coarse}
 	load("res://demos/ship_commons.gd").update_detail(kit,Vector3(26,58.7,-10))
 	check("near interior uses detailed kit",detail.visible and not coarse.visible)
@@ -29,7 +33,7 @@ func _scan(n: Node, xf: Transform3D, tris: Dictionary) -> void:
 			var keys:=[]
 			for j in 3:
 				var p:=xf*faces[i+j];keys.append("%.3f,%.3f,%.3f" % [p.x,p.y,p.z])
-			keys.sort();tris[str(keys)]=true
+			keys.sort();tris[str(keys)]=[xf*faces[i],xf*faces[i+1],xf*faces[i+2]]
 		for s in n.mesh.get_surface_count():
 			var arrays: Array=n.mesh.surface_get_arrays(s)
 			check("all vertices have UVs",arrays[Mesh.ARRAY_TEX_UV].size()==arrays[Mesh.ARRAY_VERTEX].size())
@@ -42,3 +46,7 @@ func _scan(n: Node, xf: Transform3D, tris: Dictionary) -> void:
 			check("embedded opaque paint material",mat!=null and mat.albedo_texture!=null and mat.transparency==BaseMaterial3D.TRANSPARENCY_DISABLED)
 			if mat!=null and mat.albedo_texture!=null:check("texture within2K",mat.albedo_texture.get_width()<=2048 and mat.albedo_texture.get_height()<=2048)
 	for c in n.get_children():_scan(c,xf,tris)
+func _hit(tris: Dictionary,a: Vector3,b: Vector3) -> bool:
+	for triangle in tris.values():
+		if Geometry3D.segment_intersects_triangle(a,b,triangle[0],triangle[1],triangle[2])!=null:return true
+	return false
