@@ -111,3 +111,12 @@ simulation/AI/interior smoke checks pass. Final paired Studio profiling (1920×1
 Video-memory counter delta7,782,400bytes. Raw machine diagnostics remain local.
 The CPU-heavy full-suite process was suspended during this pair, then resumed.
 This is Studio evidence only; actual Air and full sprint completion remain pending.
+
+Continuation draft delivered: `v0.4.0-dev.7-commons-exposure-trial`, source
+`0c2a9eb21bcd16eaa1356df7d0b6948684910b4e`. Full local `make test` exited0;
+`make golden` and packaged review/normal smokes pass. Published latest manifest
+and ZIP give SHA256
+`706015f1016b34e5b7689eeb5ab5b49a2a0bab90ed77b5a1b76231cd1dd3c674`;
+archive integrity passed. Website deployment37223606266 succeeded; page/model,
+Blender download and strong-gain image verified HTTP200. Source CI37223416140
+is in progress. No production merge; actual M2 Air still gates full completion.

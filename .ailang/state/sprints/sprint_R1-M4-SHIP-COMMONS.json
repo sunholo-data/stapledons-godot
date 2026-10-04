@@ -97,7 +97,7 @@
   "continuation": {
     "approved_by": "Mark",
     "approved_instruction": "alter star brightness to trial it and build out area more",
-    "status": "in-progress",
+    "status": "draft-delivered",
     "scope": [
       "labelled baseline/2x/4x exposure trials",
       "reusable detail within current Commons court"
@@ -111,6 +111,6 @@
       16,
       64
     ],
-    "checks": "Journey47; Commons25; independent route27/camera244; fullGPUgolden0; packagedsmokespass. Studio9.575–9.660ms p95; fullsuite/publicationpending; Airpending."
+    "checks": "Fullmake test actualexit0; fullgolden0; journey47; Commons25; judge27/camera244; packagedsmokesgreen. Studio9.575–9.660ms p95. WebsitePages37223606266 success; model/download/stronggainimage200. Publisheddev7 source0c2a9eb,hash706015f1016b34e5b7689eeb5ab5b49a2a0bab90ed77b5a1b76231cd1dd3c674 verified. RemoteCI37223416140 pending; Airpending."
   }
 }
