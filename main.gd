@@ -67,6 +67,9 @@ const SKY_NOTE := "sky background not bundled in this build"
 
 func _ready() -> void:
 	var args := _user_args()
+	if args.has("ship-demo"):
+		get_tree().change_scene_to_file.call_deferred("res://demos/ship_geometry_demo.tscn")
+		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
 	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5") or args.has("planet-smoke")
@@ -243,6 +246,11 @@ func _run_interior(args: Dictionary) -> void:
 	it.attach(sim, map)
 	get_viewport().size_changed.connect(func() -> void: it.resize(get_window().size, get_viewport().get_visible_rect().size))
 	print("interior: bundle %s (%s), %d walk triangles, %d interactables, captain at %s" % [dir, bundle.manifest.get("version", "unversioned"), it.walk.triangle_count(), it.walk.interactables.size(), it.avatar_pos])
+	if not capture and not smoke:
+		var review_layer := CanvasLayer.new(); review_layer.layer = 30; add_child(review_layer)
+		var review_button := Button.new(); review_button.text = "Ship geometry demo"
+		review_button.position = Vector2(18, 110); review_layer.add_child(review_button)
+		review_button.pressed.connect(func() -> void: sim.stop(); get_tree().change_scene_to_file("res://demos/ship_geometry_demo.tscn"))
 	if capture: # loaded by path: tools/ is excluded from exports
 		get_tree().quit(await load("res://tools/interior_capture.gd").new().run(self, it, map, _out_dir(args["interior-capture"])))
 	elif smoke:

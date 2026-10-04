@@ -512,3 +512,21 @@ destar:           ## M1.4a offline: NOIRLab 10k -> catalogue-matched stars remov
 include mk/ai.mk
 include mk/site.mk
 include mk/m5.mk
+
+# Isolated seven-tier perspective/lift smoke test. Does not replace production rendering.
+run-ship-demo:
+	$(GODOT) --path . demos/ship_geometry_demo.tscn
+validate-ship-demo:
+	$(GODOT) --headless --path . --script tools/validate_ship_demo.gd
+ship-demo-test:
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_ship_demo.gd > $(SCRATCH)/ship-demo-test.log 2>&1; rc=$$?; tail -3 $(SCRATCH)/ship-demo-test.log; test $$rc = 0 && grep -q '^ship-demo: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-test.log
+ship-demo-capture:
+	$(GODOT) --path . --script tools/ship_demo_capture.gd
+ship-demo-stage:
+	@mkdir -p ship_demo_bundle
+	@for f in assets/ship_demo/*.glb assets/ship_demo/*.json; do cp "$$f" "ship_demo_bundle/$$(basename "$$f").bin"; done
+ship-demo-assets-test:
+	$(GODOT) --headless --path . --script tests/test_ship_demo_assets.gd
+	$(GODOT) --headless --path . --script tools/validate_ship_demo.gd
+	@$(GODOT) --headless --path . --script tools/validate_ship_demo.gd -- tests/fixtures/ship_demo/bad_height.json > $(SCRATCH)/ship-demo-negative.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-demo: FAIL$$' $(SCRATCH)/ship-demo-negative.log

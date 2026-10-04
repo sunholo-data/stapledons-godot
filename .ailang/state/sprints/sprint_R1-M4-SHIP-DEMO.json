@@ -117,10 +117,10 @@
         "Diagnostic rim camera distinguished from reachable player viewpoint",
         "Shared observer rays agree at centre/corners through tilt, resize, pullback and lift; GR is documented as future, not claimed implemented"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-04T14:37:49.098Z",
+      "completed": "2026-10-04T14:37:49.098Z",
+      "notes": "Shared observer centre/corner rays217 checks pass across aspects/tilts/FOV/pullback. Inspected GPU overlook and whole-ship render. Native materials; separate matched sky target behind finite geometry preserves occlusion. Exterior review wall overlay zero. Independent GPU optics audit requested from evaluator."
     },
     {
       "id": "SD3",
