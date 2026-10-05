@@ -2,13 +2,15 @@ import React, {useState} from 'react';
 import styles from './styles.module.css';
 const base='https://storage.googleapis.com/stapledons-voyage-assets/refs';
 const views=[
- ['solar_departure_v2/earth_start.png',"Earth · close side view"],
- ['solar_departure_v2/sun_arrival.png',"Sun · three solar radii"],
- ['solar_departure_v2/jupiter_arrival.png',"Jupiter · close side view"],
- ['solar_departure_v2/callisto_arrival.png',"Callisto · clearance stop"],
- ['solar_departure_v2/saturn_arrival.png',"Saturn · close rings"],
+ ['solar_departure_v3/acen-a_arrival.png',"Alpha Centauri A · 1 AU"],
+ ['solar_departure_v3/jupiter_approach_80s.png',"Jupiter · gradual braking approach"],
+ ['solar_departure_v3/earth_start.png',"Earth · close side view"],
+ ['solar_departure_v3/sun_arrival.png',"Sun · three solar radii"],
+ ['solar_departure_v3/jupiter_arrival.png',"Jupiter · close side view"],
+ ['solar_departure_v3/callisto_arrival.png',"Callisto · clearance stop"],
+ ['solar_departure_v3/saturn_arrival.png',"Saturn · close rings"],
  ['ship_grounded_v2/grounded_contact.png',"Bridge · restored floor and captain contact"],
- ['solar_departure_v2/CNS5_3627_cruising.png',"Outbound toward Alpha Centauri"],
+ ['solar_departure_v3/CNS5_3627_braking.png',"Outbound toward Alpha Centauri"],
  ['solar_departure_v1/map_second_departure.png',"Navigation from the current ship"],
 
  ['ship_lighting_v1/bridge_inward_moody.png','Lighting study · bridge inward'],

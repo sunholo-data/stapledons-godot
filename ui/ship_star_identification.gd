@@ -74,7 +74,8 @@ func update_candidates() -> void:
 		# The astronomical renderer has opaque foreground surfaces too.
 		# Ship BVH alone cannot hide a background star behind a planet or Sun.
 		var observed:Vector3=sample.direction
-		if sky.system_view!=null and sky.system_view.visible and sky.system_view.occludes_direction(PackedFloat64Array([observed.x,observed.y,observed.z]),sample.get("replacement",{}).get("body_id","")):continue
+		var replacement:Dictionary=sample.get("replacement",{})
+		if sky.system_view!=null and sky.system_view.visible and sky.system_view.occludes_direction(PackedFloat64Array([observed.x,observed.y,observed.z]),replacement.get("body_id",""),replacement.get("distance",INF)):continue
 		var ray: Vector3 = demo.camera.project_ray_normal(point)
 		if not demo.sky_only and occlusion.blocked(demo.camera.global_position,ray):continue
 		candidates.append({id=field.ids[k],point=canvas_to_pixel.affine_inverse()*point,pixel=point,index=k})

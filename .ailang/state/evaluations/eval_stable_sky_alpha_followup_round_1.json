@@ -1,0 +1,63 @@
+{
+  "review": "Stable sky exposure, measured Alpha Centauri and slower guided approach follow-up",
+  "round": 1,
+  "timestamp": "2026-10-05T17:33:50.377224+00:00",
+  "source": "b033dab plus frozen finite-point depth fix and75-check moon fixture",
+  "result": "conditional_bounded_pass",
+  "score": 89,
+  "whole_sprint": "in_progress",
+  "scope": "Technical candidate suitable for explicitly requested user visual review; actual final-head Linux CI success is required before merging. No CUA or evaluator implementation changes.",
+  "score_breakdown": {
+    "tests": 20,
+    "lint": 5,
+    "acceptance": 29,
+    "code_quality": 10,
+    "documentation": 15,
+    "design_fidelity": 10
+  },
+  "score_notes": [
+    "Pinned literal local make test completed exit0; focused Alpha targets and final-depth tests add coverage after suite began. Latest CI is not yet green.",
+    "Existing native shutdown leak diagnostics remain; no warning-free claim.",
+    "Long SystemView rendering/meter functions remain maintenance complexity.",
+    "User owns native visual/full-tour review; whole art/performance/Solar sprint is not complete."
+  ],
+  "independent_checks": {
+    "finite_depth": "/private/tmp/stable-sky-judge-depth.log:actualexit0,20checks0failures,noSCRIPT ERROR. Near/far source distance, nearer front surface, own-ID skip, boosted rays and ring ordering included.",
+    "exposure": "/private/tmp/stable-sky-judge-exposure.log:actualexit0,1364checks0failures,noSCRIPT ERROR. Actual-final-camera observer/frame order and compact-boundary continuity checked.",
+    "source_review": "Read pacing, Exposure/InteriorSky, demo sync, Alpha producer/data/negotiated protocol/navigation, physical replacement projection and pending depth diff. No new blocking issue found."
+  },
+  "correctness": {
+    "meter_order": "Interactive apply marks meter dirty and defers sampling until final attitude/position sync. At most one display adaptation per frame; cached final meter20Hz, explicit32EV/s rising anticipation/4EV/s return; actual-FOV bright protection may still snap deliberately. Fixed/debug/reference policy remains instantaneous.",
+    "guided_pacing": "Only guided host proper-time increments use30sboost/20scruise/90sbraking and quadratic remaining-time profile. Normal navigation20sphase policy unchanged. AILANG still integrates authoritative1g motion; no beta interpolation/teleport. Last tenth of braking~28wallseconds.",
+    "finite_alpha": "Measured radii/temperatures and visible Hipparcos magnitude flux, existing package Kepler/light-time/frames used. Continuous negotiated2.5 A/B emitters suppress exactCNS5:3627/HIP71681 identities reversibly. J2016 apparent catalogue is anchored to emission epoch; stationary barycentre explicitly approximate.",
+    "one_AU_stop": "Sixth genuine moving-A stop, available near binary and clamps stand-off1AU; simultaneous package orbital positions own intercept and A/B collision radii. AlphaA at1AU~0.65degree, not giant;3-radius capture only renderer diagnostic. Sol negotiated<=4 serialization retained.",
+    "finite_identification_depth": "Finite replacement distance is physicalkm from actual source. Own exactID remains skipped; inverse-aberrated float64 ray compares sphere front hit/ring hit with finite source distance. DefaultINF preserves catalogue behavior. Farther aligned B/globe cannot suppress nearer A selection.",
+    "bootstrap": "Normal source/exported bootstrap now30s, explicit fixture override5s; game requests2s and cleanup unchanged. This intentionally broadens earlier exported-only policy for uncached source compilation, documented and measured."
+  },
+  "shared_evidence": {
+    "local_full": "/private/tmp/stable-sky-full-local.log:root actual literal pinned-runtime make test exit0. PATHdirtyv0.52.0-17 runs are not release evidence; final checks use runtime/bin/ailang releasev0.52.0 bf2436a.",
+    "alpha": "/private/tmp/stable-sky-final-goldens.log:fullgolden+golden-m5+alpha target actualexit0, strict alphaPhysics/alphaNavigation, VM/interpreter+fixturecmp,13GD. Author34namedAILANG and10HDRGPUcases0,0.1696%maxradiance/.000126pxphysical-IDcentroid.",
+    "composition": "/private/tmp/stable-sky-glow-planet.log:7checksactual0; prior compositionnegativecontrol retained.",
+    "actual_tour": "/private/tmp/alpha-six-leg-native-final.log72checksactual0; /private/tmp/stable-sky-tour-capture.log actual41source-nativecaptures0. Root opened Earth/Jupiter/Saturn,80sJupiterbraking,outboundbraking,AlphaA1AU. This is source-controller native proof, not exported full-tour.",
+    "exposure_pixels": "/private/tmp/exposure-frame-capture.log:12nativeimages actual0,consecutivefixed-viewEV/pixelstep0. metrics.json explicitly marks normal protocol body records with controlled placement, not actual route captures.",
+    "performance": "/private/tmp/exposure-cpu-bench.log:Studio productionCPUmean~0.0295mssteady/~0.708mswalking,80samples/240walkframes. No Air claim; full frame cost differs from meteringCPU.",
+    "moon_fixture": "Old80s loop bound caused subsequentCI failure after90sbraking.200swallbudget uses genuine1g guided config; /private/tmp/moon-lifecycle-90s.log75checks0. No gameplay change in fixture correction.",
+    "package": "/private/tmp/stable-sky-packaged-smokes.log:root genuine clean-home final exportsmokes actualexit0,49skyfiles,legacyinterior,9/9textures/texturedJupiter,identification livepick,current captain-eye/live-rest single-nav startup,Solarready. Shutdown diagnostics remain.",
+    "baseline_CI": "dc0744 CI37336072861 success; does not validate new b033dab/depth changes.",
+    "new_CI": "b033dab37346288259 failed obsolete moon-test budget; final corrected-head CI pending."
+  },
+  "pending": [
+    "Final corrected-head Linux CI actualsuccess before landing.",
+    "User native visual/full-tour acceptance, per explicit no-computer-control instruction.",
+    "MacBookAirM2/24GB1920x1080 performance remains unverified."
+  ],
+  "limits": [
+    "Exposure anticipation/fade is display policy, not physiological or new physics; fast turns can invoke immediate highlight protection.",
+    "Alpha stationary barycentre/systemic motion approximation, uniform photospheres/coarse moons, no new GR/gravity/tides/thermal safety simulation.",
+    "Ship geometry lighting remains internal study; external simulation Sun illumination is follow-up.",
+    "Physical HDR continuity gates do not eliminate8-bit display quantization.",
+    "Native shutdown RID/ObjectDB/resource leak diagnostics remain."
+  ],
+  "prior_report": ".ailang/state/evaluations/eval_combined_glow_ship_transit_round_1.json",
+  "implementation_edits_by_evaluator": false
+}

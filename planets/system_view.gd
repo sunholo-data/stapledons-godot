@@ -497,8 +497,8 @@ func display_anticipation_ev(cam: FreeLookCamera, size_px: Vector2, base_ev: flo
 
 ## Identification masking: solid globes (including night faces and the Sun)
 ## cover a star. Finite ring optical depths transmit; they are not solid walls.
-func occludes_direction(observed_ray:PackedFloat64Array,skip_id:String="")->bool:
-	var opacity:=_f32(1.0-_directional_transmission(observed_ray,true,skip_id))
+func occludes_direction(observed_ray:PackedFloat64Array,skip_id:String="",max_distance_km:float=INF)->bool:
+	var opacity:=_f32(1.0-_directional_transmission(observed_ray,true,skip_id,max_distance_km))
 	return opacity>=1.0
 
 func directional_transmission(observed_ray:PackedFloat64Array)->float:
@@ -507,7 +507,7 @@ func directional_transmission(observed_ray:PackedFloat64Array)->float:
 static func _f32(value:float)->float:
 	return PackedFloat32Array([value])[0]
 
-func _directional_transmission(observed_ray:PackedFloat64Array,renderer_precision:bool,skip_id:String="")->float:
+func _directional_transmission(observed_ray:PackedFloat64Array,renderer_precision:bool,skip_id:String="",max_distance_km:float=INF)->float:
 	if not visible:return 1.0
 	var rest:=observed_ray
 	if relativistic_enabled and velocity_beta>0.0:
@@ -516,13 +516,24 @@ func _directional_transmission(observed_ray:PackedFloat64Array,renderer_precisio
 	for b:Dictionary in rendered_bodies:
 		if b.id == skip_id: continue
 		var pl:Array=b._place;var centre:Vector3=pl[1];var radius:float=pl[2]
+		# A replacement is a finite physical source. Compare hit distances in
+		# float64 kilometres, never the normalized float32 rendering placement.
+		var physical:=Planets.world_of(b.rel_km)
 		var along:=ray.dot(centre);var perpendicular:=centre-along*ray
-		if along>0.0 and perpendicular.length_squared()<=radius*radius:return 0.0
+		if along>0.0 and perpendicular.length_squared()<=radius*radius:
+			if is_inf(max_distance_km):return 0.0
+			var physical_along:=rest[0]*physical[0]+rest[1]*physical[1]+rest[2]*physical[2]
+			var px:=physical[0]-physical_along*rest[0];var py:=physical[1]-physical_along*rest[1];var pz:=physical[2]-physical_along*rest[2]
+			var h2:float=b.radius_km*b.radius_km-(px*px+py*py+pz*pz)
+			if h2>=0.0 and physical_along-sqrt(h2)<max_distance_km:return 0.0
 		var ring:Dictionary=ring_systems.get(b.get("ring_id",""),{})
 		if not ring.is_empty():
 			var basis:Basis=b._basis
 			var hit:=Planets.ring_plane_hit(PackedFloat64Array([-centre.x,-centre.y,-centre.z]),rest,PackedFloat64Array([basis.z.x,basis.z.y,basis.z.z]))
 			if hit.hits:
+				if not is_inf(max_distance_km):
+					var physical_hit:=Planets.ring_plane_hit(PackedFloat64Array([-physical[0],-physical[1],-physical[2]]),rest,PackedFloat64Array([basis.z.x,basis.z.y,basis.z.z]))
+					if not physical_hit.hits or physical_hit.distance>=max_distance_km:continue
 				var layer:=Planets.ring_transmission(Planets.ring_band(ring.bands,hit.radius*b.radius_km/radius).tau,hit.mu)
 				if renderer_precision:
 					# GLSL computes float alpha=1-trans, then ordered alpha blending.

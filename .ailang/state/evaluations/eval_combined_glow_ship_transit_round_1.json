@@ -1,7 +1,7 @@
 {
   "review": "Combined approved glow, close-tour ship and transit integration: bounded technical delivery",
   "round": 1,
-  "timestamp": "2026-10-05T15:42:05.639123+00:00",
+  "timestamp": "2026-10-05T17:33:50.376951+00:00",
   "reviewed_source": "e79729c648f50b3a96dfd1d9b5d149c81663a53b",
   "generator": "root / implementation authors",
   "judge": "sprint_evaluator (independent; no implementation edits)",
@@ -18,7 +18,7 @@
     "design_fidelity": 10
   },
   "score_notes": {
-    "tests": "Required full gate coverage is established by the unchanged-prefix full run, controlled SHA correction and remaining-gates resumed command exit0, plus independent final bootstrap10/0 exit0. The initial full command did not exit0: its old transit digest failed and is retained as evidence. Final remote CI must be green before landing.",
+    "tests": "Required full gate coverage is established by the unchanged-prefix full run, controlled SHA correction and remaining-gates resumed command exit0, plus independent final bootstrap10/0 exit0. The initial full command did not exit0: its old transit digest failed and is retained as evidence. Final remote CI must be green before landing. New independent offline-fixture presentation test806/0actualexit0 closes CI-only optional-art dependency; full corrected remote run remains required.",
     "lint": "Relevant precision/python checks pass; no separate generic make lint target. Existing native renderer/RID/ObjectDB shutdown warnings remain, so no warning-free claim.",
     "acceptance": "Bounded controller, contact, observer, renderer, replay and native packaged startup/assets gates met. Full native-app tour remains not directly demonstrated; source full tour and exported startup are separate proofs.",
     "code_quality": "Long rendering functions in planets/system_view.gd (update/_draw_disc/ray_colour) retain maintenance complexity, capped long-function deduction5.",
@@ -51,7 +51,7 @@
       },
       "unexpected_changes": []
     },
-    "canon_landing": "Root attests linkedcanonPR7 merged ebe46f9 after independently matched primary PRdiff; game explicitly labels spectrum stand-in approximation."
+    "canon_landing": "Linked canonPR7 merged ebe46f9; primary values independently matched pinned0.8 probe."
   },
   "independent_dev12_evidence": {
     "floor": "/private/tmp/dev12-judge-bridge-floor.log:14 passed/0 failures, actual exit 0. Four real visible-top supports at82m match original material families, three shaft points clear, WALK files unchanged.",
@@ -85,6 +85,10 @@
     {
       "issue": "Fresh-home bundled relativity0.8 compilation exceeded five-second bootstrap twice; independent measured valid hello9.594s versus warmed0.270s.",
       "resolution": "e79729c scopes hello budget30s to exported non-overridden launch; editor/explicit overrides5s, new_game/send2s unchanged. Independent headless final actualexit0,10checks0failures,noSCRIPT ERROR: /private/tmp/combined-judge-bootstrap.log. Mock silent children killed; physical world preserved. Genuine rebuilt native fresh-home smokes exit0 supplied by root."
+    },
+    {
+      "issue": "Linux checkout without ignored optional planet artwork accessed meter_images.earth in presentation test, raised SCRIPT ERROR and left SceneTree alive; prior remote CI hang is not a passing result.",
+      "resolution": "Test-only deterministic four-PNG scratch fixtures exercise real loader and exact384-byte preparation, reuse and absent-art fallback; disables unrelated optional preload in observer test. Recipe adds120s process watchdog and SCRIPT ERROR rejection. Independent corrected test actualexit0,806checks0failures,noSCRIPT ERROR: /private/tmp/combined-judge-presentation-offline-fixture.log. Isolated missing-art author proof actualexit0; negative watchdog evidence pending."
     }
   ],
   "shared_final_gates": {
@@ -94,10 +98,10 @@
     "native_export": "Rebuilt final package clean-home sequential smokes actualexit0 per root, /private/tmp/combined-export-smokes-final.log: AIhello,49sky captures, legacyM4, livejourney, identification,currentstartup,Solarstartup,9/9textures,texturedJupiter. Positive markers independently read; shutdown diagnostics disclosed.",
     "native_source_tour": "Root actual0.8 normal-controller source-run21capture tour completed; not represented as native exported full-tour.",
     "ignored_export_script": "Exported release binary ignores editor --script; root terminated attempted harness143 with no captures. It is rejected as tour proof.",
-    "remote_ci": "Final e79729c run37322449770 still running; mandatory actual success before landing. Superseded7f8 run37320789485 cancelled by root for redundant-run diagnosis; cancellation is not a passing result."
+    "remote_ci": "Baseline dc0744 full CI37336072861 SUCCESS, saved /private/tmp/combined-ci-complete.log. Subsequent b033dab CI37346288259 failed obsolete80s moon-test budget; corrected75-check fixture passed locally. New final-head CI remains mandatory before landing."
   },
   "pending_delivery_checks": [
-    "Remote CI37322449770 must succeed before landing.",
+    "New CI run after test-only optional-art hang correction must actually succeed before landing.",
     "Native full-tour visual review handed to user at explicit request; no further computer-control review."
   ],
   "limits": [

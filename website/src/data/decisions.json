@@ -3,6 +3,28 @@
  "designPin": "f4d876caf98f33691fb165c8a73be5c76abd313c",
  "decisions": [
   {
+   "id": "D-37",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-05",
+   "title": "Guided-tour Alpha Centauri close stop.",
+   "question": "Guided-tour Alpha Centauri close stop.",
+   "ruling": "DECIDED (Mark, attended 2026-10-05): stop about 1 AU away.",
+   "words": [],
+   "provenance": "Attended instruction: “we can stop at like 1 AU away”; design_docs/planned/r1/m4-alpha-centauri-finite-stars.md and the six-leg Solar departure tour.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L131",
+   "sourceLabel": "stapledon-mission.md, line 131",
+   "refs": [],
+   "groups": [
+    "gameplay"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
+  {
    "id": "D-36",
    "source": "ledger",
    "status": "resolved",

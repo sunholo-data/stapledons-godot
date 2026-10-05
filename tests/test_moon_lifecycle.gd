@@ -2,6 +2,9 @@ extends SceneTree
 var checks:=0
 var failures:=0
 var samples:=[]
+# Guided phases take 30s boost + optional 20s cruise + 90s braking.
+# Bound each physical leg at 200 wall seconds (including numeric step margin).
+const MAX_LEG_WALL_SECONDS := 200.0
 func check(label:String,ok:bool)->void:
 	checks+=1
 	if not ok:failures+=1;print("FAIL ",label)
@@ -25,7 +28,7 @@ func sample(sv:SystemView,world:Dictionary,host:String)->Dictionary:
 	return rows
 func run()->void:
 	var sim:=SimBridge.new();sim.want_minor=5
-	if not sim.start() or not sim.new_game(42,"solar_departure",false,{"standoff_au":1000.}):print(sim.last_error);quit(1);return
+	if not sim.start() or not sim.new_game(42,"solar_departure",false,{"standoff_au":1000.,"boost_g":1.,"m_eff_kg":10.,"cap_one_minus_beta":.01}):print(sim.last_error);quit(1);return
 	var sf:=Starfield.new();sf.set_custom_stars([]);sf.point_overlay=true;sf.build();root.add_child(sf)
 	var sv:=SystemView.new();sv.setup(sf,false);sv.relativistic_enabled=true;sv.lod_range=Vector2(1.5,3.5);sv.set_view(2.*tan(deg_to_rad(39.))/720.,720.);root.add_child(sv)
 	var controller=load("res://demos/solar_departure.gd").new();var catalogue:Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json"));var outbound:Dictionary={}
@@ -35,7 +38,7 @@ func run()->void:
 	for destination in ["sun","jupiter","callisto","saturn"]:
 		check(destination+" physical leg commits",controller.advance())
 		var previous:Dictionary={}
-		for tick in 1600:
+		for tick in int(MAX_LEG_WALL_SECONDS * controller.TICK_HZ):
 			if sim.world.journey.state=="arrived":break
 			previous=sim.world.duplicate(true)
 			if not controller.step():check("physical tick",false);break

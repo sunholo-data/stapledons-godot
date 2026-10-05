@@ -26,8 +26,10 @@ independently evaluate together before publishing another review build.
   existing ring/collision checks, retain Saturn clearance outside its ring envelope.
 - A resolved Sun close stop uses its measured radius and existing intercept math,
   with explicit kinematic/inertial, thermal and gravity limitations. Alpha Centauri
-  remains a catalogue point at the existing safe stand-off until resolved stellar
-  properties and system rendering are available; do not invent surface detail.
+  first reaches the catalogue system stand-off, then the measured finite-star
+  Alpha Centauri A at the approved 1 AU stop. A/B render continuously from measured
+  radii, temperatures and package-retarded binary positions; do not invent surface
+  detail.
 - Smooth stationary ship-attitude turns independently of velocity. Travel retains
   the existing forward-pole rule and no turnover flip. Replan at the actual epoch
   before commitment after any stationary presentation turn.
