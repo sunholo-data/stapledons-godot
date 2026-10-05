@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 const refs='https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_commons_v3';
 const unified='https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_grounded_v2';
@@ -7,7 +8,7 @@ export default function CommonsReview(){
  const [view,setView]=useState(views[0][0]);
  const [focus,setFocus]=useState(false);
  useEffect(()=>{import('@google/model-viewer').catch(()=>{});},[]);
- const model=`${unified}/full_assembly.glb`;
+ const model=useBaseUrl('/models/ship-commons-v1/full_assembly.glb?revision=5');
  return <section className={styles.review} aria-label="Current Commons architectural model">
   <div className={styles.controls}><button type="button" aria-pressed={!focus} onClick={()=>setFocus(false)}>Whole ship</button><button type="button" aria-pressed={focus} onClick={()=>setFocus(true)}>Inspect Commons</button></div>
   <model-viewer src={model} poster={`${refs}/external_diagnostic.png`} alt="Measured seven-tier ship with an open curved Commons arcade, civic plaza and walking connection from the bridge lift" camera-controls="" touch-action="pan-y" camera-orbit={focus?'115deg 70deg 52m':'35deg 70deg 340m'} camera-target={focus?'47m 59m -5m':'0m 0m 0m'} field-of-view="45deg" min-camera-orbit="auto auto 5m" max-camera-orbit="auto auto 650m" class={styles.viewer}/>
