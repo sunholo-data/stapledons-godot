@@ -12,7 +12,7 @@ func build(root: Node) -> void:
 	_collect(root)
 func _collect(node: Node) -> void:
 	if node is Sprite3D:sprites.append(node)
-	if node is MeshInstance3D and node.mesh != null:
+	if node is MeshInstance3D and node.mesh != null and node.cast_shadow!=GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY:
 		var faces := PackedVector3Array()
 		for s in node.mesh.get_surface_count():
 			if node.mesh is ImmediateMesh:continue # diagnostic line guides

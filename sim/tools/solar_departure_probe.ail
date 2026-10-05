@@ -13,7 +13,7 @@ pure func vector(v: Vec3) -> string = concat(["{\"x\":",num(v.x),",\"y\":",num(v
 pure func snapshot(w: World) -> string =
   concat(["{\"tick\":",num(intToFloat(w.tick)),",\"pos\":",vector(position(w.ship)),",\"tau\":",num(w.ship.motion.tau),",\"t\":",num(w.ship.motion.t),",\"phi\":",num(w.ship.motion.phi),"}"])
 pure func trace(w: World, i: int) -> string =
-  if i >= 3 then snapshot(w) else {
+  if i >= 5 then snapshot(w) else {
     let start = snapshot(w);
     match intentForLeg(w, i, outbound()) {
       None => "invalid itinerary",

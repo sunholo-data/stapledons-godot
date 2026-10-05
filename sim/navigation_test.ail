@@ -175,13 +175,15 @@ export pure func checkTwelveSteps() -> bool {
 test "AC17 the intercept runs exactly 12 fixed steps (12-step iterate, not 11); a 1-step intercept is refused no_converge" { checkTwelveSteps() }
 
 -- ------------------------------------------------------------ AC15: refusals (one fixture triggers, one just passes)
--- not_visitable: every alpha Cen body (no measured radius and albedo), the Sun, an unknown id; Mars passes.
+-- Unknown alpha Cen bodies and Sun flybys remain unsupported. The bounded
+-- measured Solar Sun stop reuses the normal geometric stop solver.
 export pure func checkNotVisitable() -> bool =
   ntAllTrue(map(\b. ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq(b.id, 0.1, None))) == "not_visitable", bodies()))
-  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("sun", 0.1, Some(5.0e6)))) == "not_visitable"
+  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("sun", 0.1, Some(5.0e6)))) == "ok"
+  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), ntFlyReq("sun", 0.1, 5.0e6, 0.0))) == "not_visitable"
   && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("pluto", 0.1, None))) == "not_visitable"
   && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("mars", 0.1, None))) == "ok"
-test "AC15/AC11 not_visitable: every alpha Cen body, the Sun, an unknown id; Mars is accepted" { checkNotVisitable() }
+test "AC15/AC11 unsupported bodies and Sun flybys refused, measured Sun stop and Mars accepted" { checkNotVisitable() }
 
 -- too_close: a stand-off or pass distance 1 km under the safety minimum (1.1 R + bubble) is refused, at it accepted.
 export pure func checkTooClose() -> bool {

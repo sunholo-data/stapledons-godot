@@ -131,6 +131,14 @@
     "rim_radius_m": 20.7
   },
   "master_blend": "ship_geometry_demo_v1.blend",
+  "render_floor_restore": {
+    "node": "bridge_floor_top82",
+    "top_ship_z_m": 82,
+    "render_only": true,
+    "source": "original WALK_bridge_deck top triangles, shaft-clipped",
+    "master": "art/ship-demo-v1/grounded-bridge-v2/stapledon_bridge_mesh_grounded_v2.blend",
+    "walk_files_unchanged": true
+  },
   "limitations": [
     "Lower landing only; no buildings/forests",
     "Demo bridge cut distinct from production",

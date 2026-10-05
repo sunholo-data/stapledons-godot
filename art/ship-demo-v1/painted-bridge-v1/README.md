@@ -1,5 +1,7 @@
 # Painted 3D bridge — first material interpretation
 
+Historical v1 material proof: current playable exports now include the physical floor restoration documented in `../grounded-bridge-v2/README.md`. Pins and exact unchanged-geometry statements below describe the v1 release, before that explicit new surface.
+
 This is a review draft of the original painted bridge palette on the measured, freely viewable 3D ship. It does not claim a pixel-identical match or final art approval. The approved `assets/areas/bridge/plate_bridge.png` remains a reference only; no plate, camera silhouette or baked lighting is projected into this model.
 
 The ten packed 627×627 pigment images reuse genuine brush variation from the existing Commons paint atlas (its source/provenance remains `art/ship-commons-v1/README.md`). Nine component families cover teal, cream, violet, ochre, coral, mint, leaf, spire and glow. A separate ash-gray pigment applies only to cream deck bodies/fill, preserving the original darker floor value without changing sky exposure or cream props. Authoring colours in the JSON are linear RGB. The earlier near-white floor draft was superseded after actual native review.

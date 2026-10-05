@@ -22,7 +22,7 @@ import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarL
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
-  CqView, cqView, ismNow, dragEnergyJ, withArchive, navOf, departureOf)
+  CqView, cqView, ismNow, dragEnergyJ, withArchive, navOf, departureOf, journeyHeadingOf)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
@@ -186,7 +186,7 @@ pure func encodeJourneyNav(j: JourneyView, nav: Option[NavPlan]) -> string =
   match nav { None => encodeJourney(j), Some(n) => obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", \v. obj(planViewFields(v) ++ navFields(n)), j.plan)) }
 pure func encodeJourneyDeparture(w: World) -> string {
   let j = journeyView(w);
-  let extra = (match navOf(w) { Some(n) => navFields(n), None => [] }) ++ opt("departure", vec, departureOf(w));
+  let extra = (match navOf(w) { Some(n) => navFields(n), None => [] }) ++ opt("departure", vec, departureOf(w)) ++ opt("heading", vec, journeyHeadingOf(w));
   obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", \v. obj(planViewFields(v) ++ extra), j.plan))
 }
 pure func withDeparture(s: Session, before: World, after: World, x: Extras) -> Extras =
@@ -260,7 +260,7 @@ pure func encodeSystemRings(v: SystemView) -> string =
   obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)),
     f("bodies", arr(each(bodyObj, v.bodies))), f("rings", arr(each(ringObj, rings())))])
 pure func solarLegObj(leg: TourLeg) -> string =
-  obj([f("id", q(leg.id)), f("kind", q(leg.kind)), f("cruise_phi", num(leg.cruisePhi))])
+  obj([f("id", q(leg.id)), f("name", q(leg.name)), f("kind", q(leg.kind)), f("cruise_phi", num(leg.cruisePhi))] ++ opt("standoff_km", num, leg.standoffKm))
 pure func solarTour(p: Params) -> string =
   obj([f("approximation", q(solarApproximation())), f("earth_standoff_km", num(earthStandoffKm())),
     f("legs", arr(each(solarLegObj, solarLegs(p))))])

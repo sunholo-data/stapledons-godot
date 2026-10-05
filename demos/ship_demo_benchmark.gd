@@ -2,6 +2,8 @@ extends RefCounted
 ## In-app reproducible review benchmark. Studio results are never laptop results.
 const OUTPUT := "user://ship_demo_benchmark.json"
 var running := false
+var upload:=preload("res://demos/benchmark_upload.gd").new()
+const BUILD:="v0.4.0-dev.12-close-tour"
 static func summarize(values: Array) -> Dictionary:
 	var sorted:=values.duplicate();sorted.sort()
 	var n:=sorted.size()
@@ -9,6 +11,11 @@ static func summarize(values: Array) -> Dictionary:
 	var sum:=0.
 	for v in sorted:sum+=v
 	return {"samples":n,"mean_ms":sum/n,"p50_ms":sorted[ceili(n*.5)-1],"p95_ms":sorted[ceili(n*.95)-1],"p99_ms":sorted[ceili(n*.99)-1],"maximum_ms":sorted[-1]}
+static func summarize_counts(values:Array)->Dictionary:
+	var stats:=summarize(values)
+	var out:Dictionary={}
+	for key:String in stats:out[key.trim_suffix("_ms")]=stats[key]
+	return out
 func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictionary:
 	if running or demo.live_journey:return {}
 	var previous_sky_only:bool=demo.sky_only
@@ -21,7 +28,7 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 	var model_output:=[]
 	var model_status:=OS.execute("/usr/sbin/sysctl",PackedStringArray(["-n","hw.model"]),model_output) if OS.get_name()=="macOS" else -1
 	var hardware:={"model":str(model_output[0]).strip_edges() if model_status==0 and not model_output.is_empty() else "unavailable","os":OS.get_name(),"cpu":OS.get_processor_name(),"gpu":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"renderer":RenderingServer.get_current_rendering_method(),"memory":OS.get_memory_info()}
-	var report:={"version":1,"measured_hardware":hardware,"user_target":"MacBook Air M2 (2022),24GB","target_measurement_pending":true,"target_confirmation":"Confirm report came from the specified MacBook Air; GPU substring alone cannot identify the laptop","resolution":[1920,1080],"warmup_frames":warmup,"sample_frames":samples,"timer":"wall time between process frames, includes presentation/vsync; not GPU-only time","views":[],"GR":"not implemented"}
+	var report:={"version":2,"build":BUILD,"measured_hardware":hardware,"user_target":"MacBook Air M2 (2022),24GB","target_measurement_pending":true,"target_confirmation":"Confirm report came from the specified MacBook Air; GPU substring alone cannot identify the laptop","resolution":[1920,1080],"warmup_frames":warmup,"sample_frames":samples,"timer":"wall time between process frames, includes presentation/vsync; not GPU-only time","views":[],"GR":"not implemented"}
 	report["sky_review"]={"state":demo.sky_state,"beta":demo.sky.beta,"gamma":demo.sky_world.ship.gamma,"heading":Array(demo.camera.heading),"snapshot_tick":demo.sky_world.tick,"sky_only":false}
 	report["commons_enabled"]=not demo.commons.is_empty()
 	report["sky_exposure_trial"]={"stops":demo.brightness_stops,"label":demo.brightness_label(),"bias_ev":demo.sky.exposure.bias}
@@ -44,7 +51,9 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 			demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=courtyard_eye-Vector3.UP*1.7
 			demo.camera_mode="benchmark reference";demo.camera.position=courtyard_eye
 			demo.camera.look_at(courtyard_target);demo._sync_observer()
-		elif name=="forward_dome":demo.look_direction("forward")
+		elif name=="forward_dome":
+			demo.camera_mode="player";demo.camera.reference=false
+			demo.camera.follow(demo.avatar_pos,89.5,0.,0.);demo._sync_observer()
 		else:demo.set_preset(name)
 		demo.caption="BENCHMARK %s · warm-up" % name
 		for i in warmup:await demo.get_tree().process_frame
@@ -56,13 +65,16 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 			var now:=Time.get_ticks_usec();times.append((now-previous)/1000.);previous=now
 			draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME));tris.append(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
 		var timing:=summarize(times)
-		report.views.append({"view":name,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"view_direction":[-demo.camera.basis.z.x,-demo.camera.basis.z.y,-demo.camera.basis.z.z],"frame_times":timing,"frame_times_ms":times,"draw_calls":summarize(draws),"rendered_primitives":summarize(tris),"video_memory_bytes":Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED),"texture_memory_bytes":Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED),"p95_within_60fps_budget":timing.p95_ms<=1000./60.})
+		report.views.append({"view":name,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"view_direction":[-demo.camera.basis.z.x,-demo.camera.basis.z.y,-demo.camera.basis.z.z],"frame_times":timing,"frame_times_ms":times,"draw_calls":summarize_counts(draws),"rendered_primitives":summarize_counts(tris),"video_memory_bytes":Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED),"texture_memory_bytes":Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED),"p95_within_60fps_budget":timing.p95_ms<=1000./60.})
 	var f:=FileAccess.open(output_path,FileAccess.WRITE)
 	if f!=null:f.store_string(JSON.stringify(report,"  "));f.close()
 	demo.set_preset("reset");demo.auto=true
-	demo.caption="Benchmark saved: "+ProjectSettings.globalize_path(output_path) if f!=null else "Benchmark report could not be saved."
+	demo.caption="Benchmark saved locally: "+output_path.get_file() if f!=null else "Benchmark report could not be saved."
 	print("ship-demo-benchmark-report: ",ProjectSettings.globalize_path(output_path) if f!=null else "WRITE FAILED")
 	for button in buttons:button.disabled=false
 	running=false
+	if f!=null and output_path==OUTPUT:
+		upload.start(report)
+		demo.caption+=" · "+upload.status
 	if previous_sky_only:demo.toggle_sky_only()
 	return report

@@ -7,10 +7,21 @@ const Commons := preload("res://demos/ship_commons.gd")
 const Identification := preload("res://ui/ship_star_identification.gd")
 const Lighting := preload("res://demos/ship_lighting.gd")
 const SolarDeparture := preload("res://demos/solar_departure.gd")
+const Attitude:=preload("res://demos/ship_attitude.gd")
+var tour_attitude:=Attitude.new()
+var _attitude_stop:=-99
+var _attitude_pending:=-99
+var _attitude_mode:=""
+var _tour_view_from:=Vector2.ZERO
+var _tour_view_to:=Vector2.ZERO
+var _tour_view_elapsed:=0.
+var _tour_view_active:=false
 const WALK_SPEED_MPS := 3.5
 var lighting:Dictionary={}
 var star_identification: Control
 var benchmark := Benchmark.new()
+var audit_link:=LinkButton.new()
+var audit_local:=Button.new()
 var setup_options := {}
 var camera: Camera3D = Camera.new()
 var sky := InteriorSky.new()
@@ -20,6 +31,7 @@ var walk_bridge: WalkArea
 var walk_lower: WalkArea
 var walk: WalkArea
 var avatar := CaptainAvatar.new()
+var avatar_shadow:Node3D
 var avatar_pos := Vector3(8,82,-4.8)
 var active_level := 0
 var label := Label.new()
@@ -80,6 +92,7 @@ func setup(opts := {}) -> bool:
 		commons=Commons.install(self)
 		if commons.is_empty():return false
 	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.position=avatar_pos
+	avatar_shadow=avatar.install_grounded_shadow();avatar_shadow.reparent(geometry)
 	sky.setup({"position_m":[8,4.8,83.7],"forward":[1,0,0],"up":[0,0,1]},78.,px,opts)
 	add_child(sky)
 	_draw_layer(sky.get_texture(),-40);_draw_layer(geometry_view.get_texture(),-20)
@@ -121,7 +134,7 @@ func _hud() -> void:
 	navigation_button.add_theme_font_size_override("font_size",12)
 	navigation_button.pressed.connect(open_navigation);hud.add_child(navigation_button)
 	var tour_row:=HBoxContainer.new();hud.add_child(tour_row)
-	var solar_start:=Button.new();solar_start.text="New Solar departure · Earth → Jupiter → Saturn → Alpha Centauri"
+	var solar_start:=Button.new();solar_start.text="New Solar departure · Earth → Sun → Jupiter → Callisto → Saturn → Alpha Centauri"
 	solar_start.add_theme_font_size_override("font_size",12)
 	solar_start.pressed.connect(start_solar_departure);tour_row.add_child(solar_start)
 	solar_pause.text="Pause tour";solar_pause.visible=false
@@ -131,13 +144,16 @@ func _hud() -> void:
 	tour_row.add_child(solar_pause)
 	solar_next.text="Next stop";solar_next.visible=false
 	solar_next.pressed.connect(func()->void:
-		if solar_tour!=null:solar_tour.advance();_apply_journey_world())
+		if solar_tour!=null:solar_tour.prepare_next();_apply_journey_world())
 	tour_row.add_child(solar_next)
 	hud.add_child(controls);controls.visible=false
 	var row:=HBoxContainer.new();controls.add_child(row)
 	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Reference rim [4]","rim"],["Reset [R]","reset"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_preset.bind(pair[1]));row.add_child(button)
-	var benchmark_button:=Button.new();benchmark_button.text="Benchmark at1920×1080 [B] (saves report)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));controls.add_child(benchmark_button)
+	var benchmark_button:=Button.new();benchmark_button.text="Benchmark at1920×1080 [B] (uploads public summary)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));controls.add_child(benchmark_button)
+	audit_local.text="Show local audit in Finder"
+	audit_local.pressed.connect(func()->void:OS.shell_show_in_file_manager(ProjectSettings.globalize_path(Benchmark.OUTPUT)))
+	controls.add_child(audit_local)
 	var sky_row:=HBoxContainer.new();controls.add_child(sky_row)
 	for pair in [["Rest [5]","rest"],["Mid-journey 0.99c [6]","cruise"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_sky_state.bind(pair[1]));sky_row.add_child(button)
@@ -196,6 +212,7 @@ func _sync_observer() -> void:
 		var pole:float=0. if camera.position.length()>=100. else ForwardGlow.pole_of(sky_world)
 		if sky.glow_pole!=pole:sky.set_glow_pole(pole)
 func look_direction(direction: String) -> void:
+	_tour_view_active=false
 	if benchmark.running:return
 	var tilt:float={"forward":89.5,"side":0.,"aft":-89.5}.get(direction,0.)
 	camera_mode="player";camera.reference=false
@@ -216,9 +233,17 @@ func set_lighting(profile:String)->void:
 func lighting_manifest()->Dictionary:
 	return Lighting.manifest(lighting)
 func _process(delta: float) -> void:
-	if solar_tour!=null:solar_next.disabled=live_journey or solar_tour.complete or not solar_tour.failed.is_empty()
+	var uploaded:Dictionary=benchmark.upload.poll()
+	if not uploaded.is_empty():
+		caption=uploaded.status
+		if uploaded.ok:
+			audit_link.text="Open public performance audit"
+			audit_link.uri=uploaded.url
+			if audit_link.get_parent()==null:hud.add_child(audit_link)
+	if solar_tour!=null:solar_next.disabled=live_journey or solar_tour.complete or solar_tour.attitude_hold or solar_tour.pending_index>=0 or not solar_tour.failed.is_empty()
 	navigation_button.text="Navigation [M] · pauses tour for browsing" if solar_tour!=null else "Navigation [M] · select destination and hold to commit"
 	if not ready_ok:return
+	_update_tour_attitude(delta)
 	if journey_map!=null and journey_auto_tick and not benchmark.running:
 		_journey_accum=minf(_journey_accum+delta,4./GalaxyMap.TICK_HZ)
 		while _journey_accum>=1./GalaxyMap.TICK_HZ:
@@ -231,17 +256,19 @@ func _process(delta: float) -> void:
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
 	avatar.visible=camera.pullback>.5 or camera.external
+	avatar_shadow.global_position=avatar.global_position
 	_sync_observer()
 	if Time.get_ticks_msec()-_last_exposure_ms>250:
 		sky.update_exposure();_last_exposure_ms=Time.get_ticks_msec()
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	label.text="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	label.text="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
 	if UiScale.handle(get_window(),event):
 		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
 	if event is InputEventMouseMotion and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
+		_tour_view_active=false
 		if camera_mode=="external review":
 			var offset:=camera.position-Vector3(0,5,0)
 			offset=offset.rotated(Vector3.UP,-event.relative.x*.004).rotated(camera.basis.x,-event.relative.y*.004)
@@ -420,6 +447,9 @@ func start_solar_departure() -> bool:
 	_create_navigation("solar_departure")
 	if journey_map==null:return false
 	solar_tour=SolarDeparture.new()
+	solar_tour.deferred_commit=true
+	_attitude_stop=-99;_attitude_pending=-99;_attitude_mode=""
+	tour_attitude.reset(ShipFrame.ship_basis(camera.heading))
 	var destination_index:int=journey_map.index_of("CNS5:3627")
 	var destination:Dictionary=journey_map.catalogue[destination_index].duplicate(true)
 	destination.index=destination_index
@@ -455,7 +485,47 @@ func _apply_journey_world()->void:
 		sky_state="live";sky_world=journey_sim.world.duplicate(true)
 		var h:Dictionary=sky_world.ship.heading
 		camera.heading=PackedFloat64Array([h.x,h.y,h.z])
+		if solar_tour!=null and live_journey:
+			tour_attitude.reset(ShipFrame.ship_basis(camera.heading))
+			camera.attitude_basis=tour_attitude.current.duplicate()
 		sky.apply(sky_world);_sync_observer()
+func _begin_tour_turn(target:PackedFloat64Array,tilt:float,mode:String)->void:
+	tour_attitude.turn_to(target,3.)
+	_attitude_mode=mode
+	solar_tour.attitude_hold=true
+	_tour_view_from=Vector2(camera.tilt,camera.yaw)
+	_tour_view_to=Vector2(tilt,0.)
+	_tour_view_elapsed=0.;_tour_view_active=true
+func _update_tour_attitude(delta:float)->void:
+	if solar_tour==null or benchmark.running:return
+	if solar_tour.paused:return
+	if solar_tour.pending_index>=0:
+		if _attitude_pending!=solar_tour.pending_index:
+			_attitude_pending=solar_tour.pending_index
+			var h:Dictionary=solar_tour.pending_heading
+			_begin_tour_turn(ShipFrame.ship_basis(PackedFloat64Array([h.x,h.y,h.z])),89.5,"departure")
+	elif not live_journey and _attitude_stop!=solar_tour.leg_index:
+		_attitude_stop=solar_tour.leg_index
+		var id:String="earth" if solar_tour.leg_index<0 else solar_tour.itinerary[solar_tour.leg_index].id
+		for body:Dictionary in sky_world.get("system",{}).get("bodies",[]):
+			if body.id==id:
+				var v:Dictionary=body.rel_km
+				_begin_tour_turn(Attitude.side_basis(PackedFloat64Array([v.x,v.y,v.z])),15.,"stop")
+				break
+	tour_attitude.advance(delta)
+	camera.attitude_basis=tour_attitude.current.duplicate()
+	if _tour_view_active:
+		_tour_view_elapsed=minf(3.,_tour_view_elapsed+maxf(delta,0.))
+		var t:float=_tour_view_elapsed/3.;t=t*t*(3.-2.*t)
+		camera.tilt=lerpf(_tour_view_from.x,_tour_view_to.x,t)
+		camera.yaw=lerp_angle(_tour_view_from.y,_tour_view_to.y,t)
+		if _tour_view_elapsed>=3.:_tour_view_active=false
+	if not tour_attitude.turning() and not _attitude_mode.is_empty():
+		var finished:=_attitude_mode;_attitude_mode=""
+		solar_tour.attitude_hold=false
+		if finished=="departure":
+			if solar_tour.commit_prepared():_apply_journey_world()
+			else:caption="Tour departure failed: "+solar_tour.failed
 func journey_label() -> String:
 	if solar_tour!=null:return solar_tour.status_text()+ (" · PAUSED" if solar_tour.paused else "")
 	if sky_state!="live":return "FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT"

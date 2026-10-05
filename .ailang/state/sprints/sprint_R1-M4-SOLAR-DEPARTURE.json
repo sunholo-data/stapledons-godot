@@ -155,5 +155,14 @@
       "M2 Air performance",
       "further art and production landing"
     ]
+  },
+  "followup": {
+    "design_doc": "design_docs/planned/r1/m4-tour-transition-followup.md",
+    "sprint_plan": "design_docs/planned/r1/m4-tour-transition-followup-sprint.md",
+    "approved_by": "Mark attended 2026-10-05: closer planets alongside ship, smooth transitions, performance investigation, public B upload, grounded shadows",
+    "status": "in_progress",
+    "build": "v0.4.0-dev.12-close-tour",
+    "target_hardware_baseline": "art/ship-performance-v1/m2-air-dev11-baseline.json",
+    "target_new_build_measurement_pending": true
   }
 }

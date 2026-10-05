@@ -649,3 +649,26 @@ solar-departure-export-smoke:
 	@mkdir -p $(SCRATCH)/solar-export-home
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/solar-export-home" "$(APP)/Contents/MacOS/$$exe" -- --solar-departure-smoke > $(SCRATCH)/solar-export.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-export.log; test $$rc = 0 && grep -q '^solar-departure-smoke: OK$$' $(SCRATCH)/solar-export.log
 publish-dev: solar-departure-export-smoke
+
+.PHONY: ship-attitude-test
+ship-attitude-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_attitude.gd > $(SCRATCH)/ship-attitude.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-attitude.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-attitude.log && grep -q '^ship-attitude: 0 failures$$' $(SCRATCH)/ship-attitude.log
+ship-demo-ci: ship-attitude-test
+.PHONY: benchmark-upload-test
+benchmark-upload-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_benchmark_upload.gd > $(SCRATCH)/benchmark-upload.log 2>&1; rc=$$?; cat $(SCRATCH)/benchmark-upload.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/benchmark-upload.log && grep -q '^benchmark-upload: 0 failures$$' $(SCRATCH)/benchmark-upload.log
+ship-demo-ci: benchmark-upload-test
+.PHONY: shadow-contacts-test
+shadow-contacts-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_shadow_contacts.gd > $(SCRATCH)/shadow-contacts.log 2>&1; rc=$$?; cat $(SCRATCH)/shadow-contacts.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/shadow-contacts.log && grep -q '^shadow-contacts: 0 failures$$' $(SCRATCH)/shadow-contacts.log
+ship-demo-ci: shadow-contacts-test
+.PHONY: tour-attitude-test
+tour-attitude-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_tour_attitude.gd > $(SCRATCH)/tour-attitude.log 2>&1; rc=$$?; cat $(SCRATCH)/tour-attitude.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/tour-attitude.log && grep -q '^tour-attitude: 0 failures$$' $(SCRATCH)/tour-attitude.log
+ship-demo-ci: tour-attitude-test
+.PHONY: bridge-floor-test
+bridge-floor-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_bridge_floor.gd > $(SCRATCH)/bridge-floor.log 2>&1; rc=$$?; cat $(SCRATCH)/bridge-floor.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/bridge-floor.log && grep -q '^bridge-floor: [0-9]* passed, 0 failures$$' $(SCRATCH)/bridge-floor.log
+ship-demo-ci: bridge-floor-test
+
+include mk/planet-presentation.mk

@@ -90,7 +90,7 @@ export pure func allFacts(sys: System) -> [Facts] =
 pure func navLen(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + navLen(r) }
 pure func factsOf(fs: [Facts], id: string) -> Option[Facts] = match fs { [] => None, f :: r => if f.id == id then Some(f) else factsOf(r, id) }
 -- Bodies outside this system (the alpha Cen worlds, R1) and unknown ids are not_visitable too.
-pure func targetFacts(sys: System, id: string) -> Result[Facts, string] =
+export pure func targetFacts(sys: System, id: string) -> Result[Facts, string] =
   match factsOf(allFacts(sys), id) { Some(f) => if f.visitable then Ok(f) else Err("not_visitable"), None => Err("not_visitable") }
 
 pure func navZero() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
@@ -252,7 +252,10 @@ pure func planFlyby(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, str
 -- run-out, already inside the stand-off), too_close, no_converge, collision,
 -- ring_crossing. `committed` is core.ail's (the commit rule).
 export pure func planBodyN(c: NavCtx, rq: BodyReq, n: int) -> Result[Leg, string] =
-  match targetFacts(c.sys, rq.id) {
+  -- Bounded Solar demo adapter: measured Sun, stop only. The original stop
+  -- solver and geometric checks apply; no new emitter flyby or stellar model.
+  match (if c.sys.id == "sol" && rq.id == "sun" && rq.mode == "stop" && c.sys.star.id == "sun" && c.sys.star.radiusKm > 0.0
+    then Ok({id: "sun", index: 0, radiusKm: c.sys.star.radiusKm, ringKm: 0.0, visitable: true}) else targetFacts(c.sys, rq.id)) {
     Err(why) => Err(why),
     Ok(f) =>
       if !navPhiOk(rq.cruisePhi) then Err("out_of_range")

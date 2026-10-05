@@ -539,6 +539,11 @@ export pure func departureOf(w: World) -> Option[Vec3] =
     Planned(p) => Some(p.from), Committed(c) => Some(c.plan.from),
     Arrived(c) => Some(c.plan.from), Idle => None
   }
+export pure func journeyHeadingOf(w: World) -> Option[Vec3] =
+  match w.journey {
+    Planned(p) => Some(p.heading), Committed(c) => Some(c.plan.heading),
+    Arrived(c) => Some(c.plan.heading), Idle => None
+  }
 
 -- Minutes per Julian year (525,960, exact).
 export pure func minutesPerYear() -> float = julianYearS() / 60.0

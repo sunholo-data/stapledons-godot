@@ -6,6 +6,7 @@ var tilt := -25.0
 var pullback := 3.0
 var external := false
 var reference := false
+var attitude_basis:=PackedFloat64Array()
 var heading := PackedFloat64Array([0.,0.,-1.])
 func _init() -> void:
 	fov=78.;near=.05;far=1200.;keep_aspect=Camera3D.KEEP_HEIGHT
@@ -31,7 +32,8 @@ func sync_sky(sky: InteriorSky, px: Vector2i) -> void:
 		if photo!=null:
 			sky.background.material.set_shader_parameter("pano_px_per_screen_px",photo.get_height()/180.0*fov/maxi(px.y,1))
 	sky.glow_mat.set_shader_parameter("cam_ship",Vector3(position.x,-position.z,position.y))
-	sky.orient(heading)
+	if attitude_basis.is_empty():sky.orient(heading)
+	else:sky.orient_basis(attitude_basis)
 	if projection_changed:sky.update_exposure()
 	# External inspection is not an observer inside the bubble wall.
 	if position.length()>=100.: sky.set_glow_pole(0.)

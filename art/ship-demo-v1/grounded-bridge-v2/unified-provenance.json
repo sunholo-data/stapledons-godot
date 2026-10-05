@@ -1,0 +1,35 @@
+{
+  "source_master": "/private/tmp/stapledon-ship-demo/art/ship-demo-v1/painted-bridge-v1/stapledon_unified_ship_painted_v1.blend",
+  "master": "/Users/voightkampff/dev/blender/scenes/stapledon_unified_ship_grounded_v2.blend",
+  "source_glb": "/private/tmp/stapledon-ship-demo/assets/areas/bridge/play_bridge.glb",
+  "source_sha256": "7b7eb1395ed3ffe6b56981c880b989b774fdf15cfe58fe195e6012eedeb7042a",
+  "existing_geometry_uv_material_before": "e8cb43f5633764f3a34762ba9102a992aa89c3f85e57cf3161fdedfabec3b7f5",
+  "existing_geometry_uv_material_after": "e8cb43f5633764f3a34762ba9102a992aa89c3f85e57cf3161fdedfabec3b7f5",
+  "added_render_mesh": "bridge_floor_top82",
+  "added_vertices": 12160,
+  "added_triangles": 4217,
+  "top_ship_z_m": 82.0,
+  "shaft_ship_xy_m": [
+    6,
+    10,
+    6,
+    10
+  ],
+  "source_material_families": [
+    "cream",
+    "ochre",
+    "teal",
+    "coral"
+  ],
+  "painted_materials": [
+    "Bridge UV gouache ash floor",
+    "Bridge UV gouache p_ochre",
+    "Bridge UV gouache p_teal",
+    "Bridge UV gouache p_coral"
+  ],
+  "uv": "original ship XY metres /4m; packed existing family pigments",
+  "walk_modified": false,
+  "physics_modified": false,
+  "baked_lighting": false,
+  "exported_mesh_instances": 500
+}

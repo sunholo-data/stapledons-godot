@@ -112,3 +112,23 @@ static func _texture(path: String) -> Texture2D:
 		img.decompress()
 	img.generate_mipmaps()
 	return ImageTexture.create_from_image(img)
+
+## Current 3D ship: the painted billboard has no physical thickness. A small
+## stationary 3D volume casts a grounded shadow; it never draws or masks stars.
+func install_grounded_shadow()->Node3D:
+	var existing:=get_node_or_null("GroundedShadow")
+	if existing!=null:return existing
+	cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var root:=Node3D.new();root.name="GroundedShadow";add_child(root)
+	for side in [-1.,1.]:
+		var leg:=CapsuleMesh.new();leg.radius=.085;leg.height=.8
+		_shadow_part(root,leg,Vector3(side*.12,.4,0.))
+	var body:=CapsuleMesh.new();body.radius=.23;body.height=.8
+	_shadow_part(root,body,Vector3(0.,1.05,0.))
+	var head:=SphereMesh.new();head.radius=.12;head.height=.24
+	_shadow_part(root,head,Vector3(0.,1.62,0.))
+	return root
+static func _shadow_part(parent:Node3D,mesh:Mesh,position:Vector3)->void:
+	var part:=MeshInstance3D.new();part.mesh=mesh;part.position=position
+	part.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	parent.add_child(part)

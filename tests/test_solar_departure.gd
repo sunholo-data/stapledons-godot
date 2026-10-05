@@ -17,7 +17,8 @@ func _run()->void:
 		if body.id=="earth":earth=body
 	var rel:Dictionary=earth.rel_km
 	var separation:=sqrt(rel.x*rel.x+rel.y*rel.y+rel.z*rel.z)
-	check("new scenario is near Earth at ten radii",absf(separation-10.*earth.radius_km)<20.)
+	check("new scenario is near Earth at two radii",absf(separation-2.*earth.radius_km)<20.)
+	check("close-view metadata carries exact per-leg standoffs",sim.world.solar_departure.legs[0].id=="sun" and sim.world.solar_departure.legs[0].get("standoff_km",0.)==2087100. and sim.world.solar_departure.legs[1].get("standoff_km",0.)==142984. and sim.world.solar_departure.legs[3].get("standoff_km",0.)==210918.)
 	check("scenario carries itinerary and EMB approximation",sim.world.has("solar_departure") and sim.world.solar_departure.approximation.contains("barycentre"))
 	if not sim.world.has("solar_departure"):
 		sim.stop();print("solar-departure: %d passed, %d failures" %[passed,failures]);quit(1);return
@@ -30,10 +31,31 @@ func _run()->void:
 	check("controller accepts exact catalogue destination",controller.attach(sim,outbound))
 	var before:Dictionary=sim.world.duplicate(true)
 	check("initial dwelling advances real time without moving ship",controller.step() and sim.world.ship.pos==before.ship.pos and sim.world.clock.tau>before.clock.tau and absf(sim.world.clock.tau-before.clock.tau-0.05/31557600.)<1e-15)
+	controller.deferred_commit=true
+	controller.dwell_left=0.05
+	check("dwell expiry prepares only until runtime attitude turn is ready",controller.step() and controller.pending_index==0 and sim.world.journey.state=="planned" and controller.leg_index==-1)
+	var deferred:Dictionary=sim.world.duplicate(true)
+	check("a pending prepared leg cannot be duplicated",not controller.prepare_next() and sim.world==deferred)
+	controller.attitude_hold=true
+	check("three wall seconds of attitude hold leave both clocks and position unchanged",_held_ticks(controller,60) and sim.world==deferred and not controller.commit_prepared())
+	controller.attitude_hold=false
 	var previous:Dictionary=sim.world.ship.pos.duplicate()
 	var completed:=0
-	for id in ["jupiter","saturn","CNS5:3627"]:
-		var advanced:bool=controller.advance()
+	for id in ["sun","jupiter","callisto","saturn","CNS5:3627"]:
+		var start:Dictionary=sim.world.duplicate(true)
+		controller.attitude_hold=true
+		check("attitude hold pauses clocks and rejects premature leg",controller.step() and sim.world==start and not controller.prepare_next())
+		controller.attitude_hold=false
+		# The first leg was genuinely prepared by dwell expiry above; later
+		# legs exercise the explicit Next path, without altering controller state.
+		var prepared:bool=controller.pending_index==0 if completed==0 else controller.prepare_next()
+		check("prepare exposes authoritative heading without committing",prepared and sim.world.journey.state=="planned" and controller.pending_heading==sim.world.journey.plan.heading and sim.world.ship.pos==start.ship.pos and sim.world.clock==start.clock)
+		var planned:Dictionary=sim.world.duplicate(true)
+		check("pending presentation turn pauses simulation",controller.step() and sim.world==planned)
+		# A caller accidentally advancing epoch between planning and commitment
+		# still gets a fresh intercept; commit_prepared does not use a stale plan.
+		sim.send([],0.05/31557600.)
+		var advanced:bool=controller.commit_prepared()
 		check("explicit next leg commits (%s)" %controller.failed,advanced and sim.world.journey.state=="committed" and sim.world.journey.plan.target.id==id)
 		if not advanced:sim.stop();print("solar-departure: %d passed, %d failures" %[passed,failures]);quit(1);return
 		check("new plan starts at actual previous endpoint",sim.world.journey.plan.departure==previous)
@@ -50,17 +72,23 @@ func _run()->void:
 			if counts.has(sim.world.ship.phase):counts[sim.world.ship.phase]+=1
 		check("all phases are visible with continuous clocks",counts.boosting>100 and counts.braking>100 and counts.cruising>100 and monotonic)
 		check("arrival rests",sim.world.journey.state=="arrived" and sim.world.ship.beta==0.)
-		if id in ["jupiter","saturn"]:
+		if id in ["sun","jupiter","callisto","saturn"]:
 			check("body arrival at exact planner endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
-			check("body stop uses actual intercept and safe standoff",sim.world.journey.plan.hold.body==id and sim.world.journey.plan.hold.offset_km>=10.*(71492. if id=="jupiter" else 60268.))
+			var required:float={"sun":2087100.,"jupiter":142984.,"callisto":24103.,"saturn":210918.}[id]
+			check("body stop uses exact close standoff via package planner",sim.world.journey.plan.hold.body==id and absf(sim.world.journey.plan.hold.offset_km-required)<1e-6)
 		else:
 			var p:Dictionary=sim.world.ship.pos;var q:Dictionary=sim.world.journey.plan.target.pos
 			var gap:=sqrt(pow(p.x-q.x,2.)+pow(p.y-q.y,2.)+pow(p.z-q.z,2.))
 			check("outbound stops at package stellar standoff",absf(gap-sim.world.consequence.standoff_ly)<1e-10 and gap>0.01)
 		previous=sim.world.ship.pos.duplicate();completed+=1
-	check("completed itinerary cannot start extra leg",completed==3 and controller.complete and not controller.advance())
+	check("completed itinerary cannot start extra leg",completed==5 and controller.complete and not controller.advance())
 	check("HUD exposes both clocks and honest approximation",controller.status_text().contains("Earth +") and controller.status_text().contains("ship +") and controller.status_text().contains("barycentre"))
 	var log:=FileAccess.get_file_as_string(RECORD)
 	check("one initialization only, no resets between legs",log.count('"type":"new_game"')==1)
 	sim.stop()
 	print("solar-departure: %d passed, %d failures" %[passed,failures]);quit(1 if failures else 0)
+
+func _held_ticks(controller:RefCounted,count:int)->bool:
+	for i in count:
+		if not controller.step():return false
+	return true
