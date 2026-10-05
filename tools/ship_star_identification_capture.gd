@@ -103,6 +103,38 @@ func _run() -> void:
 	var covered:=await grab(root);check(covered.get_pixelv(Vector2i(centre)).get_luminance()<.01,"actual composite opaque patch hides GPU source")
 	await physical_click(centre);check(not overlay.card.visible,"covered star cannot be clicked")
 	covered.save_png(OUT+"/opaque_mesh.png");blocker.queue_free();await process_frame
+	# Actual captain billboard: opaque torso occludes; texture padding does not.
+	demo.camera.follow(demo.avatar_pos,-18.,.47,3.);demo._sync_observer()
+	demo.avatar.visible=true
+	var avatar: Sprite3D=demo.avatar
+	var avatar_image:=avatar.texture.get_image()
+	var opaque:=Vector2(avatar_image.get_width()*.5,avatar_image.get_height()*.6)
+	var nearest:=INF
+	for y in range(0,avatar_image.get_height(),8):
+		for x in range(0,avatar_image.get_width(),8):
+			if avatar_image.get_pixel(x,y).a>.999:
+				var distance:=Vector2(x,y).distance_to(Vector2(avatar_image.get_width()*.5,avatar_image.get_height()*.6))
+				if distance<nearest:nearest=distance;opaque=Vector2(x,y)
+	check(nearest<100.,"actual captain has an opaque torso texture sample")
+	for sample in [{pixel=opaque,opaque=true},{pixel=Vector2(8,8),opaque=false}]:
+		var rectangle:=avatar.get_item_rect()
+		var local:=Vector3(rectangle.position.x+sample.pixel.x,rectangle.position.y+rectangle.size.y-sample.pixel.y,0.)*avatar.pixel_size
+		var point: Vector3=avatar.global_position+demo.camera.global_basis*local
+		var direction: Vector3=(point-demo.camera.global_position).normalized()
+		var world_direction:=Camera.to_sky_direction(direction,demo.camera.heading)
+		field.set_custom_stars([{id="audit",pos=world_direction*1000.,t=5700.,flux=1.}]);field.set_velocity(Vector3.UP,0.,1.);field.set_exposure(1.)
+		overlay.occlusion.build(demo.geometry);overlay.update_candidates()
+		var screen: Vector2=demo.camera.unproject_position(point)
+		var finite:=await grab(demo.geometry_view)
+		var alpha:=finite.get_pixelv(Vector2i(screen)).a
+		check((alpha>.95 if sample.opaque else alpha<.01),"actual GPU captain mask matches authored body/padding")
+		check(overlay.candidates.is_empty() if sample.opaque else overlay.candidates.size()==1,"captain GPU mask and identification eligibility agree")
+		await physical_click(screen)
+		check(not overlay.card.visible if sample.opaque else overlay.card.visible,"native captain body/padding click behavior")
+		if overlay.card.visible:overlay.close_card()
+		(await grab(root)).save_png(OUT+("/captain_body.png" if sample.opaque else "/captain_padding.png"))
+		rows.append({captain_mask="body" if sample.opaque else "transparent_padding",gpu_alpha=alpha,ring_count=overlay.candidates.size(),screen_px=[screen.x,screen.y]})
+	demo.avatar.visible=false
 	# A real binary row rendered in isolation, preserving its exact ID and packed data.
 	field.load_tiers("medium");field.build();field.set_ship_position(0.,0.,0.);field.set_velocity(Vector3.UP,0.,1.);field.set_exposure(1e10)
 	overlay.info.load_files()

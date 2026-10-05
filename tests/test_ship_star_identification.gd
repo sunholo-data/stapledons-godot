@@ -106,6 +106,18 @@ func _run() -> void:
 	check(identify.candidates.size()==1 and identify.candidates[0].pixel.distance_to(original)>1.,"apparent cache invalidates on uploaded live boost")
 	demo.sky.starfield.set_velocity(Vector3.UP,0.,1.);demo.sky.starfield.set_ship_position(.5,0,0);identify.update_candidates()
 	check(identify.candidates.size()==1 and identify.candidates[0].pixel.distance_to(original)>.1,"apparent cache invalidates on uploaded ship offset")
+	demo.sky.starfield.set_ship_position(0,0,0)
+	var sprite := Sprite3D.new();var image := Image.create(32,32,false,Image.FORMAT_RGBA8);image.fill(Color.TRANSPARENT)
+	for y in range(8,24):
+		for x in range(8,24):image.set_pixel(x,y,Color.WHITE)
+	sprite.texture=ImageTexture.create_from_image(image);sprite.pixel_size=.1;sprite.billboard=BaseMaterial3D.BILLBOARD_ENABLED;sprite.alpha_cut=SpriteBase3D.ALPHA_CUT_DISCARD
+	demo.geometry.add_child(sprite);sprite.position=demo.camera.position-demo.camera.basis.z*10.
+	identify.occlusion.build(demo.geometry);identify.update_candidates()
+	check(identify.candidates.is_empty(),"opaque billboard sprite pixels block identification")
+	sprite.position+=demo.camera.basis.x*1.2;identify.update_candidates()
+	check(identify.candidates.size()==1,"transparent billboard padding keeps star visible")
+	sprite.queue_free();await process_frame;identify.update_candidates()
+	check(identify.candidates.size()==1,"freed sprite references are ignored")
 	identify.info.records.erase("b");identify.reindex();identify.update_candidates();check(identify.candidates.is_empty(),"absent metadata fails closed")
 	demo.queue_free();await process_frame
 	print("ship-star-identification: %d passed, %d failures" % [passed, failed]); quit(1 if failed else 0)

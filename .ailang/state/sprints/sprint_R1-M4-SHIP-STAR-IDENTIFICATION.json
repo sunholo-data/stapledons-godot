@@ -30,7 +30,7 @@
       ],
       "passes": true,
       "completed": "2026-10-05",
-      "notes": "Integrated native shared factual card, held-I rings, exact-ID overlap choice/map handoff, actual uploaded shader ray/visibility mirrors, cached opaque mesh BVHs and current transform/LOD visibility. Native canvas conversion verified at 1920/1280/900. 37 source checks and native source smoke pass; inspection does not create or mutate a voyage. Legacy painted-plate interior integration deferred because its occlusion uses alpha plates rather than this finite mesh host."
+      "notes": "Integrated native shared factual card, held-I rings, exact-ID overlap choice/map handoff, actual uploaded shader ray/visibility mirrors, cached opaque mesh BVHs/current transform/LOD visibility and billboard texture-mip alpha masks. Native canvas conversion verified at 1920/1280/900. 40 source checks and native source smoke pass; inspection does not create or mutate a voyage. Legacy painted-plate interior integration deferred because its occlusion uses alpha plates rather than this finite mesh host."
     },
     {
       "id": "SI-C",
@@ -41,7 +41,7 @@
         "SI7"
       ],
       "passes": null,
-      "notes": "GPU audit 274 cases, worst 0.5058px including actual GPU centroids, CPU/GPU nearby large rebases, isolated exact Sirius row and real boosting/cruising/braking voyage states; native click and noncollider opaque composite pass. Final cache refresh GPU audit, paired budget benchmark, packaged smoke and independent evaluation pending; actual M2 Air pending."
+      "notes": "Final cached GPU/native audit 276 cases, worst 0.5058px including actual GPU centroids, CPU/GPU nearby large rebases, isolated exact Sirius row and real boosting/cruising/braking voyage states; native click, noncollider opaque composite and actual captain body/padding masks pass. Source smoke passes. Paired budget benchmark, packaged smoke and independent evaluation pending; actual M2 Air pending."
     }
   ]
 }

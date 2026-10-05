@@ -7831,6 +7831,24 @@
       ]
     },
     {
+      "captain_mask": "body",
+      "gpu_alpha": 1.0,
+      "ring_count": 0,
+      "screen_px": [
+        450.0,
+        394.008178710938
+      ]
+    },
+    {
+      "captain_mask": "transparent_padding",
+      "gpu_alpha": 0.0,
+      "ring_count": 1,
+      "screen_px": [
+        376.4384765625,
+        260.896636962891
+      ]
+    },
+    {
       "error_px": 0.00006103515625,
       "real_id": "CNS5:1676",
       "star_px": [
