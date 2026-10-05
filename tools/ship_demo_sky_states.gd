@@ -21,7 +21,7 @@ func _run() -> void:
 		if sim.world.ship.phase=="cruising" and sim.world.ship.flown>sim.world.journey.plan.distance*.5:
 			ready=true;break
 	if not ready:sim.stop();quit(1);return
-	var record:={"source":"AILANG simulation; frozen review states, not the active voyage","ailang":"v0.52.0","relativity":"0.7.0","seed":424242,"target":target,"step_ship_years":.01,"states":{"rest":rest,"cruise":sim.world.duplicate(true)}}
+	var record:={"source":"AILANG simulation; frozen review states, not the active voyage","ailang":"v0.52.0","relativity":"0.8.0","seed":424242,"target":target,"step_ship_years":.01,"states":{"rest":rest,"cruise":sim.world.duplicate(true)}}
 	var file:=FileAccess.open("res://assets/ship_demo/sky_review.json",FileAccess.WRITE)
 	file.store_string(SimBridge.encode(record)+"\n");file.close();sim.stop()
 	print("ship-demo-sky-states: OK");quit()
