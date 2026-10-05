@@ -56,6 +56,10 @@ const PSF_MIN_PX := 0.7
 ## Player clamp default: a physical camera's limits. The floor is about ISO
 ## 102400, f/1.4, 30 s (EV100 = log2(1.4^2 / 30) - log2(1024) = -13.9).
 const EV_CLAMP := Vector2(-14.0, 20.0)
+## Conservative P99.5 scene-linear target before current AgX's soft shoulder.
+## Godot4.7 uses allenwp/AgX, not the old hard16.2917 cutoff. This is an
+## explicit display/metering policy; fixed EV bypasses it.
+const HIGHLIGHT_TARGET := 1.0
 const FLOOR_MAG := 8.0 # magnitude-floor aid: stars to V 8 shown at the display floor
 
 var mode := Mode.EYE
@@ -134,9 +138,13 @@ func mode_ev(l_avg: float, l_eye := -1.0) -> float:
 	return maxf(ev_dark(), metered_ev(l_eye if l_eye >= 0.0 else l_avg)) if mode == Mode.EYE else metered_ev(l_avg)
 
 
-func update(l_avg: float, l_eye := -1.0) -> void:
-	ev_meter = metered_ev(l_eye if mode == Mode.EYE and l_eye >= 0.0 else l_avg)
-	ev = fixed_ev if fixed else clampf(mode_ev(l_avg, l_eye) + bias, clamp_ev.x, clamp_ev.y)
+static func highlight_ev(l_p995:float)->float:
+	return log(maxf(l_p995,1e-30)/(SAT*HIGHLIGHT_TARGET))/log(2.0)
+
+func update(l_avg: float, l_eye := -1.0, l_p995 := 0.0) -> void:
+	var high:=highlight_ev(l_p995)
+	ev_meter = maxf(metered_ev(l_eye if mode == Mode.EYE and l_eye >= 0.0 else l_avg),high)
+	ev = fixed_ev if fixed else clampf(maxf(mode_ev(l_avg, l_eye),high) + bias, clamp_ev.x, clamp_ev.y)
 
 
 ## Lock at the rest-frame value (l_rest, l_eye_rest: the meters' readings of the same view at beta 0).

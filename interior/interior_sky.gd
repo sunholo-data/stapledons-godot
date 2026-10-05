@@ -22,7 +22,7 @@ var background := SkyBackground.new()
 var exposure := Exposure.new()
 var system_view := SystemView.new() # SD4: same camera/starfield/exposure as catalogue sky
 var system_state := {} # authoritative protocol2.3 section, never synthesised
-var resolved_bodies_supported := true # M5.3 required before moving resolved discs
+var resolved_bodies_supported := true # audited M5.3 inverse rays for moving resolved discs
 var _debug_unit := false
 var eye_meter := SkyMeter.new()
 var glow := MeshInstance3D.new()
@@ -69,6 +69,7 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 	starfield.build() # an empty field still gets its material (goldens add custom stars)
 	add_child(starfield)
 	system_view.setup(starfield, opts.get("planet_textures", true))
+	system_view.relativistic_enabled = opts.get("planet_relativistic", true)
 	add_child(system_view)
 	if opts.get("background", true):
 		has_background = background.attach(env, px.y, view_fov)
@@ -148,7 +149,8 @@ func apply(world: Dictionary) -> void:
 	if params is Dictionary and params.has("bubble_radius_m"):
 		radius_m = params["bubble_radius_m"]
 	system_state = SimBridge.parse_system(world.get("system"))
-	resolved_bodies_supported = beta == 0.0
+	system_view.set_velocity(heading_world, beta, s["gamma"], s.get("one_minus_beta", 1.0 / (s["gamma"] * s["gamma"] * (1.0 + beta))))
+	resolved_bodies_supported = beta == 0.0 or system_view.relativistic_enabled
 	set_glow_pole(ForwardGlow.pole_of(world))
 
 
@@ -159,17 +161,19 @@ func set_glow_pole(w: float) -> void:
 
 
 func update_exposure() -> void:
+	system_view.set_view(exposure.pixel_rad,size.y)
+	system_view.update(system_state,exposure.k())
+	system_view.visible=resolved_bodies_supported and not _debug_unit
 	var l_avg := background.meter(camera, heading_world, beta) if has_background else Exposure.dark_sky_luminance()
-	exposure.update(l_avg, _meter_eye())
+	exposure.update(l_avg, _meter_eye(), system_view.highlight_luminance(camera,Vector2(size)))
 	starfield.set_exposure(exposure.star_scale())
 	starfield.set_psf(exposure.psf_sigma_px())
 	starfield.set_floor(exposure.floor_params())
 	if has_background:
 		background.set_scene_exposure(exposure.k())
-	system_view.set_view(exposure.pixel_rad, size.y)
-	system_view.update(system_state, exposure.k())
-	# Unresolved points stay in the shared relativistic starfield. Resolved bodies
-	# require the audited M5.3 inverse warp; do not display rest-only discs in flight.
+	system_view.set_exposure(exposure.k())
+	# Unresolved points share the relativistic starfield. Resolved discs use the
+	# audited M5.3 inverse rays, or are hidden if the caller explicitly opts out.
 	system_view.visible = resolved_bodies_supported and not _debug_unit
 	glow_mat.set_shader_parameter("radius", radius_m)
 	glow_mat.set_shader_parameter("pole", maxf(glow_pole, 0.0))
@@ -192,8 +196,8 @@ func _meter_eye() -> float:
 	if starfield.count > 0 and eye_meter.needs_build(starfield):
 		eye_meter.build(starfield)
 	var sky := func(n: Vector3) -> float:
-		return (background.seen_luminance(n, heading_world, beta) if has_background else Exposure.dark_sky_luminance()) + glow_luminance(n)
-	return eye_meter.centre_weighted(camera, Vector2(size), heading_world, beta, sky, starfield, background.cmb if beta > 0.0 and has_background else null)
+		return (background.seen_luminance(n, heading_world, beta) if has_background else Exposure.dark_sky_luminance()) + glow_luminance(n) + system_view.eye_luminance(n)
+	return eye_meter.centre_weighted(camera, Vector2(size), heading_world, beta, sky, starfield, background.cmb if beta > 0.0 and has_background else null, system_view.compact_meter_sources())
 
 
 ## Unit-gain debug render for G-M4-4 (W/m^2 in a linear float target, no exposure/tonemap).

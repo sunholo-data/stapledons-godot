@@ -95,7 +95,7 @@ static func _weight(cam: FreeLookCamera, n_app: Vector3, size: Vector2) -> float
 
 ## sky: Callable(n_ship: Vector3) -> cd/m^2 of the extended sky (panorama or
 ## the flat dark sky); sf may be null (no stars); cmb may be null.
-func centre_weighted(cam: FreeLookCamera, size: Vector2, dir: Vector3, b: float, sky: Callable, sf: Starfield, cmb: CmbGlow) -> float:
+func centre_weighted(cam: FreeLookCamera, size: Vector2, dir: Vector3, b: float, sky: Callable, sf: Starfield, cmb: CmbGlow, resolved_points: Array = []) -> float:
 	var half_v := tan(deg_to_rad(cam.fov) * 0.5)
 	var half_h := half_v * size.x / size.y
 	var cell := (2.0 * half_h / GRID.x) * (2.0 * half_v / GRID.y)
@@ -118,6 +118,8 @@ func centre_weighted(cam: FreeLookCamera, size: Vector2, dir: Vector3, b: float,
 		for k in near:
 			var n := Vector3(sf.pos[3 * k] - sf.ship[0], sf.pos[3 * k + 1] - sf.ship[1], sf.pos[3 * k + 2] - sf.ship[2]).normalized()
 			num += _weight(cam, Relativity.aberrate(n, dir, b), size) * seen_point(sf.flux_at_ship(k), sf.custom[4 * k], n, dir, b)
+	for p:Dictionary in resolved_points:
+		num += _weight(cam, Relativity.aberrate(p.dir, dir, b), size) * seen_point(p.lux,p.t,p.dir,dir,b)
 	if cmb != null and cmb.illuminance > 0.0:
 		num += _weight(cam, dir, size) * cmb.illuminance
 	return num / den
