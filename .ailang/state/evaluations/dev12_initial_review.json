@@ -1,0 +1,37 @@
+{
+  "review": "Dev12 close-tour continuity and contact follow-up",
+  "design_doc": "design_docs/planned/r1/m4-tour-transition-followup.md",
+  "timestamp": "2026-10-05T13:10:32.109275+00:00",
+  "result": "partial_source_pass",
+  "bounded_delivery": "pending final frozen rendering/native/package gates",
+  "whole_sprint": "in_progress",
+  "independent_checks": {
+    "floor": "/private/tmp/dev12-judge-bridge-floor.log:14 passed/0 failures, actual exit 0. Four real visible-top supports at82m match original material families, three shaft points clear, WALK files unchanged.",
+    "floor_asset_pins": "All seven current GLB/WALK/manifest/editable-master byte lengths and SHA256 match asset-pins.json.",
+    "prior_mesh_preservation": "/private/tmp/dev12_floor_glb_judge.py: actual exit0; actual d245f4b GLBs compared with final floor GLBs. All152bridge/499unified existing mesh attributes/topology/material names/node transforms unchanged; sole added bridge_floor_top82.",
+    "shadow": "/private/tmp/dev12-judge-shadow.log:0 failures actualexit0. Invisible human volumes touch floor, shadows-only geometry excluded from star mask.",
+    "shared_attitude": "/private/tmp/dev12-judge-tour-attitude.log:0 failures actualexit0; initial/prepared turn holds clocks/position, pause guarded, deferredcommit after3seconds, movingD14 and sharedskybasis, firstperson shadow visible. Native renderer/ObjectDB shutdown leak diagnostics remain.",
+    "upload": "/private/tmp/dev12-judge-upload.log:0 failures actualexit0. Mock CLI only, asynchronous pending and failure/success, URL appears only after confirmation, filtered report retains aggregate hardware/timing and indexed stalls while raw frames/local paths/free-memory omitted.",
+    "native_contact": "Opened renders/ship_contact/original.png and low_bias.png. Originalbias.04/.3 groundedcontact cleaner; lowbias.015/.08 addsacne. Rootactualcaptureexit0.",
+    "planet_presentation": "/private/tmp/dev12-judge-presentation.log:800 checks/0 failures, actual exit0, no errors. Exact cache invalidation/reuse, complementary LOD weights, bounded texture reuse, opacity and foreground-point gating.",
+    "tour_metadata": "21 local immutable capture records independently checked: captain eye83.7m/FOV78, proper attitude determinant, monotonic ship/Earth clocks, Sun/Jupiter/Callisto/Saturn/Alpha boost-cruise-brake-rest sequence and fixed velocity heading per leg.",
+    "close_native_art": "Opened Earth/Sun/Jupiter/Saturn arrival views: true large discs beside bridge with real deck/rail/frond occlusion. Saturn cap extends beyond FOV honestly; no radius inflation or sky cutout. Sun surface detail is not invented. Root capture actualexit0."
+  },
+  "source_review": {
+    "route": "New-session Earth2R; Sun3R, Jupiter2R, genuine Callisto10R clearance leg, Saturn1.5ring-envelope, exact catalogue Alpha at1000AU. Existing package planner/collision checks retained; explicit no gravity/thermal simulation.",
+    "turns": "Stationary float64 quaternion interpolation only. Prepare current-epoch plan withdt0, holdtick through turn, replan beforecommit. Per-leg travel uses unchanged D14, no velocityheading reversal or position reset.",
+    "public_upload": "Authorized existingbucket prefix, allowlisted generated fields, no embedded credentials, systemCLI on worker, argument-based invocation with60second Perl alarm; local complete JSON preserved independently. No evaluator cloud writes."
+  },
+  "pending": [
+    "Final fulltests/goldens and native packaged startup/full-tour proof.",
+    "Final aggregate presentation/frame benchmark and display-preview refresh.",
+    "Target M2Air performance and whole-sprint external sunlight/furtherart remain pending."
+  ],
+  "implementation_changes_by_evaluator": false,
+  "shared_renderer_gates": {
+    "HDR_flux": "Author actualexit0 /private/tmp/planet-transition-golden-final.log:86 HDR samples, maxfluxerror0.434%, maxstep0.506% under unchanged4%/2.5% gates. Earlier8-bitquantization failure is explicitly distinguished.",
+    "moving_bounds": "Author actualexit0 /private/tmp/planet-bounds-golden.log:6 nonempty bounded/fullscreen bit-identical FOV-edge/roll/Sun/ring cases.",
+    "unchanged_optics_rings": "Author final logs flyby-presentation-golden andring-presentation-golden 0failures, markers read independently.",
+    "actual_moon_lifecycle": "Author actualexit0 /private/tmp/moon-lifecycle.log:73checks. Physical unocculted Jup/Satmoons persist braking\u2192arrival\u2192rest; Mimas remains physically occulted."
+  }
+}

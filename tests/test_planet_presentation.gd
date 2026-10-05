@@ -62,12 +62,35 @@ func run()->void:
 	jupiter.kind="star";jupiter.id="foreground_sun";b.rel_km.x=5000000.
 	sv.update({"bodies":[jupiter,b]},1.)
 	check("foreground Sun masks farther unresolved moon",not sv.drawn_points.has("moon") and sf.point_count==0)
-	var art:=SystemView.new();art.setup(null,true);art.preload_textures(["earth","jupiter","saturn"])
-	check("bounded warmup prepares requested maps and CPU images",art.textures.size()==3 and art.meter_images.earth.size()==2 and art.preload_bytes<40*1024*1024)
+	# Offline checkout has no downloaded planet art. Exercise the real loader with
+	# deterministic tiny fixtures outside assets/, independently of optional art.
+	var fixture_dir:="res://.godot/tmp/planet-preload-fixture"
+	DirAccess.make_dir_recursive_absolute(fixture_dir)
+	# POSIX traversal through assets/planets/../.. requires the empty lookup
+	# directory to exist; no artwork is read, replaced or written there.
+	DirAccess.make_dir_recursive_absolute(SystemView.TEX_DIR)
+	var fixture:=Image.create(8,4,false,Image.FORMAT_RGB8);fixture.fill(Color(.2,.4,.6))
+	for name:String in ["day.png","cloud.png","jupiter.png","saturn.png"]:
+		check("write offline preload fixture "+name,fixture.save_png(fixture_dir.path_join(name))==OK)
+	var relative:="../../.godot/tmp/planet-preload-fixture/"
+	var art:=SystemView.new();art.setup(null,true)
+	art.albedo_table={
+		"earth":{"file":relative+"day.png+"+relative+"cloud.png","k":1.,"mean":.3},
+		"jupiter":{"file":relative+"jupiter.png","k":1.,"mean":.3},
+		"saturn":{"file":relative+"saturn.png","k":.825,"mean":.3}}
+	art.preload_textures(["earth","jupiter","saturn"])
+	check("bounded warmup prepares requested maps and CPU images",art.textures.size()==3 and art.textures.get("earth",[]).size()==2 and art.meter_images.get("earth",[]).size()==2 and art.preload_bytes==4*fixture.get_data_size())
 	var initial_bytes:=art.preload_bytes;art.preload_textures(["earth"])
 	check("warmup reuses maps without allocations",art.preload_bytes==initial_bytes)
+	var unavailable:=SystemView.new();unavailable.setup(null,true)
+	unavailable.albedo_table={"missing":{"file":relative+"absent.png","k":1.,"mean":.3}}
+	unavailable.preload_textures(["missing"])
+	check("absent optional art yields cached empty map without CPU image",unavailable.textures.get("missing",[]).is_empty() and not unavailable.meter_images.has("missing") and unavailable.preload_bytes==0)
+	unavailable.preload_textures(["missing"])
+	check("missing-map retry stays bounded without allocations",unavailable.textures.size()==1 and unavailable.preload_bytes==0)
+	unavailable.free()
 	print("presentation stats ",sv.presentation_stats()," warmup ",art.presentation_stats())
-	var sky:=InteriorSky.new();root.add_child(sky);sky.setup({"position_m":[8,4.8,83.7],"forward":[0,0,1],"up":[0,1,0]},78.,Vector2i(1280,720),{"stars":false,"background":false,"planet_textures":false})
+	var sky:=InteriorSky.new();root.add_child(sky);sky.setup({"position_m":[8,4.8,83.7],"forward":[0,0,1],"up":[0,1,0]},78.,Vector2i(1280,720),{"stars":false,"background":false,"planet_textures":false,"planet_preload":false})
 	sky.apply(sim.world);var heading:=sky.heading_gal.duplicate();var world_heading:=sky.heading_world;var beta:=sky.beta
 	sky.orient_basis(ShipFrame.ship_basis(PackedFloat64Array([0,1,0])))
 	check("attitude override leaves authoritative observer motion unchanged",sky.heading_gal==heading and sky.heading_world==world_heading and sky.beta==beta)

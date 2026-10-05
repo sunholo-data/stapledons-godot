@@ -40,5 +40,8 @@ jobs:
           make deps
           AILANG=ailang python3 tools/replay.py --case m4_transit_harness
 
+      - name: Check offline presentation and bootstrap before full suite
+        run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test
+
       - name: make test
         run: make test

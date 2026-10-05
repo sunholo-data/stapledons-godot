@@ -145,6 +145,34 @@
   ],
   "camera_decision": "A: painted 3D geometry with real lighting; retain free camera and shared observer. Mood remains art review.",
   "review_delivery": {
+    "version": "v0.4.0-dev.12-close-tour",
+    "source_commit": "e79729c648f50b3a96dfd1d9b5d149c81663a53b",
+    "evaluation": ".ailang/state/evaluations/eval_combined_glow_ship_transit_round_1.json",
+    "result": "conditional technical pass; native visual review handed to user",
+    "score": 89,
+    "zip_sha256": "7eacbfde34b2635269d54912554bbfff34885f8697b0661ac5849220d8a0cb1d",
+    "downloaded_checksum_verified": true,
+    "installer_verified": true,
+    "website_deployment": "93ea488",
+    "remaining": [
+      "CI and production landing",
+      "user native full-tour art review",
+      "new M2 Air performance measurement",
+      "simulation-driven external sunlight on ship geometry",
+      "further art"
+    ]
+  },
+  "followup": {
+    "design_doc": "design_docs/planned/r1/m4-tour-transition-followup.md",
+    "sprint_plan": "design_docs/planned/r1/m4-tour-transition-followup-sprint.md",
+    "approved_by": "Mark attended 2026-10-05: closer planets alongside ship, smooth transitions, performance investigation, public B upload, grounded shadows",
+    "status": "in_progress",
+    "build": "v0.4.0-dev.12-close-tour",
+    "target_hardware_baseline": "art/ship-performance-v1/m2-air-dev11-baseline.json",
+    "target_new_build_measurement_pending": true,
+    "delivery": "dev12 deployed and installer verified; test-only offline CI fixture fix pending landing"
+  },
+  "previous_review_delivery": {
     "version": "v0.4.0-dev.11-solar-departure",
     "source_commit": "0e91c712b1e3dbcf30ff6c64a1ab9ed62c111f96",
     "evaluation": ".ailang/state/evaluations/eval_R1-M4-SOLAR-DEPARTURE_dev11_round_1.json",
@@ -155,14 +183,5 @@
       "M2 Air performance",
       "further art and production landing"
     ]
-  },
-  "followup": {
-    "design_doc": "design_docs/planned/r1/m4-tour-transition-followup.md",
-    "sprint_plan": "design_docs/planned/r1/m4-tour-transition-followup-sprint.md",
-    "approved_by": "Mark attended 2026-10-05: closer planets alongside ship, smooth transitions, performance investigation, public B upload, grounded shadows",
-    "status": "in_progress",
-    "build": "v0.4.0-dev.12-close-tour",
-    "target_hardware_baseline": "art/ship-performance-v1/m2-air-dev11-baseline.json",
-    "target_new_build_measurement_pending": true
   }
 }

@@ -1,0 +1,115 @@
+{
+  "review": "Combined approved glow, close-tour ship and transit integration: bounded technical delivery",
+  "round": 1,
+  "timestamp": "2026-10-05T15:42:05.639123+00:00",
+  "reviewed_source": "e79729c648f50b3a96dfd1d9b5d149c81663a53b",
+  "generator": "root / implementation authors",
+  "judge": "sprint_evaluator (independent; no implementation edits)",
+  "result": "conditional_bounded_pass",
+  "score": 89,
+  "whole_sprint": "in_progress",
+  "scope": "User-authorized merge/deployment review of the playable combined build; this is not completion of the whole ship/Solar/art/performance sprint.",
+  "score_breakdown": {
+    "tests": 20,
+    "lint": 5,
+    "acceptance": 29,
+    "code_quality": 10,
+    "documentation": 15,
+    "design_fidelity": 10
+  },
+  "score_notes": {
+    "tests": "Required full gate coverage is established by the unchanged-prefix full run, controlled SHA correction and remaining-gates resumed command exit0, plus independent final bootstrap10/0 exit0. The initial full command did not exit0: its old transit digest failed and is retained as evidence. Final remote CI must be green before landing.",
+    "lint": "Relevant precision/python checks pass; no separate generic make lint target. Existing native renderer/RID/ObjectDB shutdown warnings remain, so no warning-free claim.",
+    "acceptance": "Bounded controller, contact, observer, renderer, replay and native packaged startup/assets gates met. Full native-app tour remains not directly demonstrated; source full tour and exported startup are separate proofs.",
+    "code_quality": "Long rendering functions in planets/system_view.gd (update/_draw_disc/ray_colour) retain maintenance complexity, capped long-function deduction5.",
+    "documentation": "Design follow-up, current changelog, runnable probe/golden/controller harnesses document actual limits and the scoped exported-bootstrap change.",
+    "design_fidelity": "Existing authoritative motion and package physics retained; real geometry and shared observer; no synthetic beta, arrival reset, oversize planet, or fabricated Alpha surface."
+  },
+  "independent_combined_evidence": {
+    "replay_leaf_audit": "/private/tmp/combined-replay-diff-results.json:16 changed NDJSON references,48 leaves, only glow_eps/glow_w_m2 scaling0.1; clocks/motion/target/ledger/events unchanged. SHA-only references require actual final replay/parity generators.",
+    "actual_snapshot_audit": "/private/tmp/combined-sky-snapshot-diff.json:0.8 provenance, epsilon/glow changes, actual pole/T fields and5new transit metrics perstate; all clocks/position/velocity/heading/ledger unchanged.",
+    "glow_probe": "Interpreter and VM pinned0.8 actualexit0; /private/tmp/combined-judge-glow-{interp,vm}.log byte-identical. Strict-bytecode IO probe is not a supported strict pure harness; not claimed.",
+    "package_preservation": "Actual0.8 optics/kinematics/journey/hyper/photometry source modules byte-identical with bundled0.7; new spectral APIs additive inmedium/blackbody. Package old\u03b51e-11 changelog ishistorical; caller usesapproved1e-10.",
+    "canon": "Primary PR7 diff /private/tmp/glow-canon-pr7.diff independently read. HB-96/98/100/101/102/103/104/105/106/107/109/110 agree with0.8 actualprobe atprintedprecision; approximation isexplicit real GeV cascades are notPlanck spectrum. Canon landing pending.",
+    "controlled_transit_digest": {
+      "scratch": "/private/tmp/transit-refreeze-judge-thwlfbf2",
+      "source_before": "1879d66",
+      "source_current": "16948a40df2653617d6c3f7793c25a8efcdbfc50",
+      "input_sha256": "32815e01810e910b85e740401b9ab352272ca22b4ffcb307ae5dc9bab2e96575",
+      "old_sha256": "e1a8a7818d5278d546526da8c27013444df1c966d3e8fe954dfb0e5f44f150c1",
+      "committed_arm64_reference": "e1a8a7818d5278d546526da8c27013444df1c966d3e8fe954dfb0e5f44f150c1",
+      "old_reference_matches": true,
+      "current_sha256": "e8cabac62833d388f3646ff2df79dbf5199aebd3f273cef0209824dc019851bd",
+      "reply_count": 428,
+      "vm_interpreter_identical_before": true,
+      "vm_interpreter_identical_after": true,
+      "changed_leaves": {
+        "glow_pole_w_m2": 417,
+        "glow_pole_k": 417,
+        "glow_eps": 1,
+        "glow_w_m2": 420
+      },
+      "unexpected_changes": []
+    },
+    "canon_landing": "Root attests linkedcanonPR7 merged ebe46f9 after independently matched primary PRdiff; game explicitly labels spectrum stand-in approximation."
+  },
+  "independent_dev12_evidence": {
+    "floor": "/private/tmp/dev12-judge-bridge-floor.log:14 passed/0 failures, actual exit 0. Four real visible-top supports at82m match original material families, three shaft points clear, WALK files unchanged.",
+    "floor_asset_pins": "All seven current GLB/WALK/manifest/editable-master byte lengths and SHA256 match asset-pins.json.",
+    "prior_mesh_preservation": "/private/tmp/dev12_floor_glb_judge.py: actual exit0; actual d245f4b GLBs compared with final floor GLBs. All152bridge/499unified existing mesh attributes/topology/material names/node transforms unchanged; sole added bridge_floor_top82.",
+    "shadow": "/private/tmp/dev12-judge-shadow.log:0 failures actualexit0. Invisible human volumes touch floor, shadows-only geometry excluded from star mask.",
+    "shared_attitude": "/private/tmp/dev12-judge-tour-attitude.log:0 failures actualexit0; initial/prepared turn holds clocks/position, pause guarded, deferredcommit after3seconds, movingD14 and sharedskybasis, firstperson shadow visible. Native renderer/ObjectDB shutdown leak diagnostics remain.",
+    "upload": "/private/tmp/dev12-judge-upload.log:0 failures actualexit0. Mock CLI only, asynchronous pending and failure/success, URL appears only after confirmation, filtered report retains aggregate hardware/timing and indexed stalls while raw frames/local paths/free-memory omitted.",
+    "native_contact": "Opened renders/ship_contact/original.png and low_bias.png. Originalbias.04/.3 groundedcontact cleaner; lowbias.015/.08 addsacne. Rootactualcaptureexit0.",
+    "planet_presentation": "/private/tmp/dev12-judge-presentation.log:800 checks/0 failures, actual exit0, no errors. Exact cache invalidation/reuse, complementary LOD weights, bounded texture reuse, opacity and foreground-point gating.",
+    "tour_metadata": "21 local immutable capture records independently checked: captain eye83.7m/FOV78, proper attitude determinant, monotonic ship/Earth clocks, Sun/Jupiter/Callisto/Saturn/Alpha boost-cruise-brake-rest sequence and fixed velocity heading per leg.",
+    "close_native_art": "Opened Earth/Sun/Jupiter/Saturn arrival views: true large discs beside bridge with real deck/rail/frond occlusion. Saturn cap extends beyond FOV honestly; no radius inflation or sky cutout. Sun surface detail is not invented. Root capture actualexit0."
+  },
+  "dev12_source_review": {
+    "route": "New-session Earth2R; Sun3R, Jupiter2R, genuine Callisto10R clearance leg, Saturn1.5ring-envelope, exact catalogue Alpha at1000AU. Existing package planner/collision checks retained; explicit no gravity/thermal simulation.",
+    "turns": "Stationary float64 quaternion interpolation only. Prepare current-epoch plan withdt0, holdtick through turn, replan beforecommit. Per-leg travel uses unchanged D14, no velocityheading reversal or position reset.",
+    "public_upload": "Authorized existingbucket prefix, allowlisted generated fields, no embedded credentials, systemCLI on worker, argument-based invocation with60second Perl alarm; local complete JSON preserved independently. No evaluator cloud writes."
+  },
+  "renderer_gates": {
+    "HDR_flux": "Author actualexit0 /private/tmp/planet-transition-golden-final.log:86 HDR samples, maxfluxerror0.434%, maxstep0.506% under unchanged4%/2.5% gates. Earlier8-bitquantization failure is explicitly distinguished.",
+    "moving_bounds": "Author actualexit0 /private/tmp/planet-bounds-golden.log:6 nonempty bounded/fullscreen bit-identical FOV-edge/roll/Sun/ring cases.",
+    "unchanged_optics_rings": "Author final logs flyby-presentation-golden andring-presentation-golden 0failures, markers read independently.",
+    "actual_moon_lifecycle": "Author actualexit0 /private/tmp/moon-lifecycle.log:73checks. Physical unocculted Jup/Satmoons persist braking\u2192arrival\u2192rest; Mimas remains physically occulted."
+  },
+  "resolved_findings": [
+    {
+      "issue": "Glow bubble wall default transparent priority0 is drawn before resolved body blend_mix materials1+rank, so night/globe/ring coverage can erase foreground wall emission.",
+      "requested_resolution": "Place additive wall emission after resolved bodies and add native wall+opaque/night-body composition fixture. No evaluator implementation edits.",
+      "resolution": "Closed in16948a4: wall priority126 after opaque body composition; native seven-check fixture actualexit0, including old priority0 negative control. Both diagnostic output PNGs independently opened. Physics golden actualexit0 shared by root."
+    },
+    {
+      "issue": "Fresh-home bundled relativity0.8 compilation exceeded five-second bootstrap twice; independent measured valid hello9.594s versus warmed0.270s.",
+      "resolution": "e79729c scopes hello budget30s to exported non-overridden launch; editor/explicit overrides5s, new_game/send2s unchanged. Independent headless final actualexit0,10checks0failures,noSCRIPT ERROR: /private/tmp/combined-judge-bootstrap.log. Mock silent children killed; physical world preserved. Genuine rebuilt native fresh-home smokes exit0 supplied by root."
+    }
+  ],
+  "shared_final_gates": {
+    "local_required_suite": "/private/tmp/combined-make-test.log + /private/tmp/combined-make-test-resume.log: required coverage completed, resume actualexit0. Initial known transit SHA mismatch explicitly retained; root isolated unchanged AI timing retry actualexit0.",
+    "golden": "/private/tmp/merged-glow-golden-final.log actualexit0; /private/tmp/glow-planet-golden-final.log seven assertions actualexit0, including old-priority negative control.",
+    "staged_package": "Actual bundled registry relativity0.8.0 modules independently compared byte-for-byte to resolved package cache.",
+    "native_export": "Rebuilt final package clean-home sequential smokes actualexit0 per root, /private/tmp/combined-export-smokes-final.log: AIhello,49sky captures, legacyM4, livejourney, identification,currentstartup,Solarstartup,9/9textures,texturedJupiter. Positive markers independently read; shutdown diagnostics disclosed.",
+    "native_source_tour": "Root actual0.8 normal-controller source-run21capture tour completed; not represented as native exported full-tour.",
+    "ignored_export_script": "Exported release binary ignores editor --script; root terminated attempted harness143 with no captures. It is rejected as tour proof.",
+    "remote_ci": "Final e79729c run37322449770 still running; mandatory actual success before landing. Superseded7f8 run37320789485 cancelled by root for redundant-run diagnosis; cancellation is not a passing result."
+  },
+  "pending_delivery_checks": [
+    "Remote CI37322449770 must succeed before landing.",
+    "Native full-tour visual review handed to user at explicit request; no further computer-control review."
+  ],
+  "limits": [
+    "Actual MacBook Air M2/24GB1920x1080 performance pending; Studio CPU/profile/paired timing data do not establish Air performance.",
+    "Native-app full-tour visual acceptance handed to user at explicit request; independent technical record retains separate source-tour and genuine exported-startup evidence.",
+    "External simulation Sun illumination on ship geometry and further art remain follow-up; current ship key is an internal lighting study.",
+    "Glow spectral blackbody rendering is an explicit game stand-in for impact cascade, with approved epsilon1e-10; no new GR/gravity/thermal hazard simulation.",
+    "Alpha is a catalogue point; standing-eye FOV/real geometry can hide moons, and most moon surfaces are coarse.",
+    "Final linear HDR handoff passes0.434%flux/0.506%step;8-bit display quantization retains2.050%error/3.416%step, not zero-step display.",
+    "Native shutdown resource/RID/ObjectDB leak diagnostics remain despite successful command exits."
+  ],
+  "evaluator_external_mutations": false,
+  "landing_authority": "User authorized merging all open PRs/branches; root owns landing/publication. Evaluator performed no merge, fixture overwrite, or cloud write.",
+  "user_review_handoff": "User explicitly instructed: \"I will review it forget the computer control\". No further CUA or automated native visual tour is requested. Root publishes the technically checked review candidate for the user to conduct native full-tour visual review; this is not claimed as evaluator-completed native tour proof."
+}
