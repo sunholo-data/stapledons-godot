@@ -149,10 +149,10 @@ func build() -> void:
 	quad.size = Vector2(2, 2)
 	material = ShaderMaterial.new()
 	material.shader = SHADER
-	material.set_shader_parameter("bb_lut", Blackbody.build_lut())
-	material.set_shader_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
-	material.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
-	material.set_shader_parameter("cull_peak", CULL_PEAK)
+	_parameter("bb_lut", Blackbody.build_lut())
+	_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
+	_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
+	_parameter("cull_peak", CULL_PEAK)
 	quad.material = material
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
@@ -215,6 +215,16 @@ var point_count := 0
 var _point_pos := PackedFloat64Array()
 var _point_custom := PackedFloat32Array()
 var _point_buf := PackedFloat32Array()
+var point_overlay := false # only planet point flux; catalogue stars stay below opaque bodies
+var point_material:ShaderMaterial
+
+func _parameter(name:StringName,value:Variant)->void:
+	material.set_shader_parameter(name,value)
+	if point_material!=null:point_material.set_shader_parameter(name,value)
+
+func replace_point_sources(list:Array)->void:
+	point_count=0;_point_pos.clear();_point_custom.clear()
+	add_point_sources(list) # one upload, including replacement with an empty list
 
 
 func clear_point_sources() -> void:
@@ -257,6 +267,10 @@ func _fill_points() -> void:
 		points.multimesh.mesh = multimesh.mesh
 		points.custom_aabb = custom_aabb
 		add_child(points)
+	if point_overlay and point_material==null:
+		point_material=material.duplicate()
+		point_material.render_priority=127
+		points.material_override=point_material
 	_point_buf = _fill_into(points.multimesh, _point_buf, _point_pos, _point_custom, point_count)
 
 
@@ -297,8 +311,8 @@ func _upload_ship() -> void:
 	if material == null:
 		return
 	var s := ship_pair()
-	material.set_shader_parameter("ship_hi", s[0])
-	material.set_shader_parameter("ship_lo", s[1])
+	_parameter("ship_hi", s[0])
+	_parameter("ship_lo", s[1])
 
 
 ## [hi, lo] float32 pair of the ship's offset from the origin.
@@ -355,24 +369,24 @@ static func splat_energy(flux: float, t_kelvin: float, d: float) -> float:
 ## direction: unit heading in the galaxy frame. beta and gamma come from the
 ## sim in float64; 1 - beta is formed here so it survives float32 upload.
 func set_velocity(direction: Vector3, beta: float, gamma: float) -> void:
-	material.set_shader_parameter("beta_dir", direction.normalized())
-	material.set_shader_parameter("beta_mag", beta)
-	material.set_shader_parameter("gamma_f", gamma)
-	material.set_shader_parameter("one_minus_beta", 1.0 / (gamma * gamma * (1.0 + beta)))
+	_parameter("beta_dir", direction.normalized())
+	_parameter("beta_mag", beta)
+	_parameter("gamma_f", gamma)
+	_parameter("one_minus_beta", 1.0 / (gamma * gamma * (1.0 + beta)))
 
 
 ## Linear radiance of the splat peak per unit of the flux in custom data
 ## (lux; Exposure.star_scale), at the centre pixel.
 func set_exposure(e: float) -> void:
-	material.set_shader_parameter("exposure", e)
+	_parameter("exposure", e)
 
 
 ## The point-spread sigma in pixels (Exposure.psf_sigma_px: fixed in angle, M1.8).
 func set_psf(sigma_px: float) -> void:
-	material.set_shader_parameter("psf_sigma_px", sigma_px)
+	_parameter("psf_sigma_px", sigma_px)
 
 
 ## Magnitude-floor aid: Vector2(floor lux, floor peak); zeros switch it off.
 func set_floor(p: Vector2) -> void:
-	material.set_shader_parameter("floor_flux", p.x)
-	material.set_shader_parameter("floor_peak", p.y)
+	_parameter("floor_flux", p.x)
+	_parameter("floor_peak", p.y)

@@ -70,6 +70,10 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 	add_child(starfield)
 	system_view.setup(starfield, opts.get("planet_textures", true))
 	system_view.relativistic_enabled = opts.get("planet_relativistic", true)
+	if opts.get("planet_smooth_lod",true):
+		system_view.lod_range=Vector2(1.5,3.5)
+		starfield.point_overlay=true
+	if opts.get("planet_preload",true):system_view.preload_textures()
 	add_child(system_view)
 	if opts.get("background", true):
 		has_background = background.attach(env, px.y, view_fov)
@@ -103,11 +107,16 @@ func configure_pixel() -> void:
 
 ## The sky camera for a galactic heading: ship_basis(heading) x cam.forward/up.
 func orient(heading: PackedFloat64Array) -> void:
-	var sc := ShipFrame.sky_camera(heading, cam)
-	if sc.is_empty():
-		return
 	heading_gal = heading
-	basis = ShipFrame.ship_basis(heading)
+	orient_basis(ShipFrame.ship_basis(heading))
+
+## Attitude only: leave simulation velocity/heading and clocks untouched.
+func orient_basis(attitude:PackedFloat64Array)->void:
+	if attitude.size()!=9:return
+	basis=attitude.duplicate()
+	var transform_direction:=func(v:Array)->PackedFloat64Array:
+		return PackedFloat64Array([basis[0]*v[0]+basis[3]*v[1]+basis[6]*v[2],basis[1]*v[0]+basis[4]*v[1]+basis[7]*v[2],basis[2]*v[0]+basis[5]*v[1]+basis[8]*v[2]])
+	var sc:={"forward":transform_direction.call(cam.forward),"up":transform_direction.call(cam.up)}
 	var f := _to_world(sc["forward"])
 	var u := _to_world(sc["up"])
 	var e := euler_of(f, u)

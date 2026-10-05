@@ -47,6 +47,16 @@ var rendered_bodies: Array = []
 var meter_images := {}
 var ring_systems := {} # optional protocol2.5 authority table; host -> data
 var e1_au := 0.0 # the star's illuminance at 1 AU, recovered from the sim's own star row
+var lod_range := Vector2(Planets.DISC_PX,Planets.DISC_PX) # legacy captures opt out
+var lod_weights := {}
+var preparation_count := 0
+var reuse_count := 0
+var preparation_usec := 0
+var preload_usec := 0
+var preload_bytes := 0
+var _prepared_system := {}
+var _prepared_view := []
+var _prepared := false
 
 
 func setup(sf: Starfield, load_textures := true) -> void:
@@ -79,10 +89,31 @@ func _textures(id: String) -> Array:
 			if img == null:
 				out = []
 				break
+			if not meter_images.has(id):meter_images[id]=[]
+			meter_images[id].append(img.duplicate())
+			preload_bytes+=img.get_data_size()
 			img.generate_mipmaps()
 			out.append(ImageTexture.create_from_image(img))
 		textures[id] = out
 	return textures[id]
+
+## Bounded source maps are warmed before playable frames; no first-approach
+## file decode, mip generation or GPU readback is needed during a journey.
+func preload_textures(ids:Array=[]) -> void:
+	if not use_textures:return
+	var started:=Time.get_ticks_usec()
+	var selected:Array=albedo_table.keys() if ids.is_empty() else ids
+	for id:String in selected:
+		if albedo_table.has(id):_textures(id)
+	preload_usec+=Time.get_ticks_usec()-started
+
+func presentation_stats()->Dictionary:
+	return {"preparations":preparation_count,"reuses":reuse_count,"preparation_usec":preparation_usec,"preload_usec":preload_usec,"cpu_texture_bytes":preload_bytes,"weights":lod_weights.duplicate()}
+
+func disc_weight(px:float)->float:
+	if lod_range.y<=lod_range.x:return 1.0 if px>=lod_range.x else 0.0
+	var t:=clampf((px-lod_range.x)/(lod_range.y-lod_range.x),0.,1.)
+	return t*t*(3.-2.*t)
 
 
 ## A texture's image: the source checkout's assets/planets, else the export bundle; null if neither.
@@ -110,11 +141,16 @@ func set_view(pixel_rad: float, height_px: float) -> void:
 
 ## One `system` section -> points and discs. k: Exposure.k() (linear pixel per cd/m^2).
 func update(system: Dictionary, k: float) -> void:
+	var view:=[px_rad,view_height_px,velocity_heading,velocity_beta,velocity_gamma,velocity_omb,relativistic_enabled,use_textures,lod_range]
+	if _prepared and view==_prepared_view and system==_prepared_system:
+		reuse_count+=1;set_exposure(k);return
+	var started:=Time.get_ticks_usec()
+	_prepared=true;_prepared_system=system.duplicate(true);_prepared_view=view
+	preparation_count+=1
+	lod_weights.clear()
 	rendered_bodies.clear()
 	drawn_points.clear()
 	drawn_discs.clear()
-	if starfield != null:
-		starfield.clear_point_sources()
 	for d: MeshInstance3D in discs.values():
 		d.visible = false
 	ring_systems.clear()
@@ -134,13 +170,11 @@ func update(system: Dictionary, k: float) -> void:
 		var extent:=r
 		for band: Dictionary in ring_systems.get(b.get("ring_id",""),{}).get("bands",[]):extent=maxf(extent,band.r_out_km)
 		var px := _diameter_seen(w, extent, dist)
-		if px >= Planets.DISC_PX:
-			order.append([dist, b])
-		elif b["e_v_lux"] >= floor_lux or px >= CULL_PX:
-			points.append({"dir": [w[0] / dist, w[1] / dist, w[2] / dist], "lux": b["e_v_lux"], "t": Planets.T_SUN})
+		var weight:=disc_weight(px);lod_weights[b.id]=weight
+		order.append([dist,b]) # physical ray/meter/occlusion remains independent of LOD
+		if weight<1.0 and (b["e_v_lux"] >= floor_lux or px >= CULL_PX):
+			points.append({"id":b.id,"distance":dist,"dir": [w[0] / dist, w[1] / dist, w[2] / dist], "lux": b["e_v_lux"]*(1.-weight), "t": Planets.T_SUN})
 			drawn_points.append(b["id"])
-	if starfield != null and not points.is_empty():
-		starfield.add_point_sources(points)
 	order.sort_custom(func(a, c): return a[0] > c[0]) # far to near: nearer discs draw over farther ones
 	for i in order.size():
 		var record:Dictionary=order[i][1].duplicate(true)
@@ -148,8 +182,41 @@ func update(system: Dictionary, k: float) -> void:
 		record["_basis"]=Planets.body_basis(record.pole,record.w_deg)
 		var sun_array:=Planets.world_of(record.sun_dir)
 		record["_sun"]=Vector3(sun_array[0],sun_array[1],sun_array[2]).normalized() if record.kind!="star" else Vector3.ZERO
+		record["_compact_meter"]=_compact_meter_body(record)
+		var rest_w:=Planets.world_of(record.rel_km)
+		record["_rest_dir"]=PackedFloat64Array([rest_w[0]/record._place[3],rest_w[1]/record._place[3],rest_w[2]/record._place[3]])
+		var extent:float=record.radius_km
+		for band:Dictionary in ring_systems.get(record.get("ring_id",""),{}).get("bands",[]):extent=maxf(extent,band.r_out_km)
+		record["_outer_cos"]=cos(Planets.angular_radius(extent,record._place[3]))
 		rendered_bodies.append(record)
-		_draw_disc(order[i][1], k, i)
+		if lod_weights[record.id]>0.0:_draw_disc(order[i][1], k*lod_weights[record.id], i)
+	var visible_points:=[]
+	for point:Dictionary in points:
+		var transmission:=_point_transmission(point)
+		if transmission>0.0:
+			point.lux*=transmission;visible_points.append(point)
+		else:drawn_points.erase(point.id)
+	if starfield != null:starfield.replace_point_sources(visible_points)
+	preparation_usec+=Time.get_ticks_usec()-started
+
+## The overlay contains only a body's own complementary PSF. Farther bodies
+## retain physical globe/ring masking; opaque night faces cover them too.
+func _point_transmission(point:Dictionary)->float:
+	var rest:=PackedFloat64Array(point.dir);var ray:=Vector3(rest[0],rest[1],rest[2]);var transmission:=1.
+	for body:Dictionary in rendered_bodies:
+		if body.id==point.id:continue
+		var pl:Array=body._place
+		if pl[3]-body.radius_km>=point.distance:continue
+		var centre:Vector3=pl[1];var radius:float=pl[2];var along:=ray.dot(centre)
+		var h2:=radius*radius-(centre-along*ray).length_squared()
+		if along>0.0 and h2>=0.0 and (along-sqrt(h2))*pl[3]/Planets.PLACE<point.distance:return 0.
+		var ring:Dictionary=ring_systems.get(body.get("ring_id",""),{})
+		if not ring.is_empty():
+			var pole:Vector3=body._basis.z
+			var hit:=Planets.ring_plane_hit(PackedFloat64Array([-centre.x,-centre.y,-centre.z]),rest,PackedFloat64Array([pole.x,pole.y,pole.z]))
+			if hit.hits and hit.distance*pl[3]/Planets.PLACE<point.distance:
+				transmission*=Planets.ring_transmission(Planets.ring_band(ring.bands,hit.radius*body.radius_km/radius).tau,hit.mu)
+	return transmission
 
 
 ## The star's 1 AU illuminance, from the sim's own rows: the star's e_v_lux =
@@ -197,6 +264,19 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 	var pl := Planets.place(b["rel_km"], b["radius_km"])
 	m.set_shader_parameter("centre_w", pl[1])
 	var moving := relativistic_enabled and velocity_beta > 0.0
+	var extent:float=b.radius_km
+	for band:Dictionary in ring_systems.get(b.get("ring_id",""),{}).get("bands",[]):extent=maxf(extent,band.r_out_km)
+	if moving:
+		var w:=Planets.world_of(b.rel_km);var dist:float=pl[3]
+		var c:float=(w[0]*velocity_heading.x+w[1]*velocity_heading.y+w[2]*velocity_heading.z)/dist
+		var cap:=Planets.apparent_disc64(c,Planets.angular_radius(extent,dist),velocity_beta,velocity_gamma)
+		var transverse:=Vector3(w[0]/dist-c*velocity_heading.x,w[1]/dist-c*velocity_heading.y,w[2]/dist-c*velocity_heading.z)
+		if transverse.length_squared()>1e-20:transverse=transverse.normalized()
+		else:transverse=Vector3.UP.cross(velocity_heading).normalized() if absf(velocity_heading.y)<.9 else Vector3.RIGHT.cross(velocity_heading).normalized()
+		var direction:=velocity_heading*cos(cap[0])+transverse*sin(cap[0])
+		m.set_shader_parameter("apparent_centre_w",direction*Planets.PLACE)
+		m.set_shader_parameter("apparent_radius_sin",sin(cap[1]))
+		m.set_shader_parameter("bounded_draw",cap[1]<deg_to_rad(60.))
 	m.set_shader_parameter("beta_dir", velocity_heading)
 	m.set_shader_parameter("beta_mag", velocity_beta if moving else 0.0)
 	m.set_shader_parameter("gamma_f", velocity_gamma)
@@ -209,7 +289,7 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 	m.set_shader_parameter("radius", pl[2])
 	m.set_shader_parameter("exposure", k)
 	var diam := _diameter_seen(Planets.world_of(b["rel_km"]),b["radius_km"],pl[3])
-	m.set_shader_parameter("ss", 8 if diam < 32.0 else 3)
+	m.set_shader_parameter("ss", 16 if lod_range.y>lod_range.x and diam<8.0 else (8 if diam < 32.0 else 3))
 	var star: bool = b["kind"] == "star"
 	m.set_shader_parameter("star", star)
 	m.set_shader_parameter("tint", Blackbody.rgb_unit_luminance(Planets.T_SUN))
@@ -269,6 +349,11 @@ func ray_colour(direction: PackedFloat64Array, skip_compact_meter := false) -> V
 	var colour:=Vector3.ZERO
 	for b:Dictionary in rendered_bodies:
 		if skip_compact_meter and _compact_meter_body(b):continue
+		# Conservative rest-cap rejection avoids sphere/ring/texture work for
+		# distant sources that occupy almost none of a metering sample's field.
+		# Margin exceeds float32 direction roundoff; final intersections unchanged.
+		var axis:PackedFloat64Array=b._rest_dir
+		if rest[0]*axis[0]+rest[1]*axis[1]+rest[2]*axis[2]<b._outer_cos-1e-5:continue
 		var pl:Array=b._place
 		var centre:Vector3=pl[1];var radius:float=pl[2]
 		var along:=ray.dot(centre);var perpendicular:=centre-along*ray
@@ -340,7 +425,7 @@ static func _image_colour(img:Image,uv:Vector2)->Vector3:
 
 func set_exposure(k:float)->void:
 	for id:String in drawn_discs:
-		(discs[id].material_override as ShaderMaterial).set_shader_parameter("exposure",k)
+		(discs[id].material_override as ShaderMaterial).set_shader_parameter("exposure",k*lod_weights.get(id,1.))
 
 func seen_luminance(n:Vector3)->float:
 	if not visible:return 0.0
@@ -399,6 +484,7 @@ func _directional_transmission(observed_ray:PackedFloat64Array,renderer_precisio
 ## field grid missing the Sun or a small bright moon. Extended discs retain
 ## ray sampling; this does not alter rendered geometry/radiance.
 func _compact_meter_body(b:Dictionary)->bool:
+	if b.has("_compact_meter"):return b._compact_meter
 	var pl:Array=b._place
 	return _diameter_seen(Planets.world_of(b.rel_km),b.radius_km,pl[3])*px_rad<deg_to_rad(2.0)
 
@@ -408,7 +494,9 @@ func compact_meter_sources()->Array:
 	for b:Dictionary in rendered_bodies:
 		if _compact_meter_body(b):
 			var pl:Array=b._place
-			points.append({"dir":pl[0],"lux":b.e_v_lux,"t":Planets.T_SUN})
+			var n:Vector3=pl[0]
+			var transmission:=_point_transmission({"id":b.id,"distance":pl[3],"dir":[n.x,n.y,n.z]})
+			if transmission>0.0:points.append({"dir":n,"lux":b.e_v_lux*transmission,"t":Planets.T_SUN})
 	return points
 
 func eye_luminance(n:Vector3)->float:

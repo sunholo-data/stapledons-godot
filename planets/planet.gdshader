@@ -35,6 +35,10 @@ uniform vec3 beta_dir = vec3(0,0,-1);
 uniform float beta_mag = 0.0;
 uniform float gamma_f = 1.0;
 uniform float one_minus_beta = 1.0;
+// Draw bounds only; the fragment still traces the original rest sphere/rings.
+uniform vec3 apparent_centre_w = vec3(0,0,-10);
+uniform float apparent_radius_sin = 0.0;
+uniform bool bounded_draw = false;
 uniform sampler2D bb_lut : filter_linear, repeat_disable;
 uniform float lut_log_tmin;
 uniform float lut_log_tmax;
@@ -49,17 +53,18 @@ vec3 view_ray(vec2 frag, vec2 vp, mat4 inv_proj) {
 }
 
 void vertex() {
-	if (beta_mag > 0.0) {
-		// Direct rest-ray sampling replaces a finite-resolution rest tile.
+	vec3 draw_centre = beta_mag > 0.0 ? apparent_centre_w : centre_w;
+	vec3 c = (VIEW_MATRIX * vec4(draw_centre, 1.0)).xyz;
+	float dist = length(c);
+	float s = beta_mag > 0.0 ? apparent_radius_sin : clamp(radius * ring_outer / dist, 0.0, 0.999);
+	if (beta_mag > 0.0 && (!bounded_draw || abs(c.z) <= dist*s)) {
+		// Large caps and caps crossing the camera plane retain the safe fallback.
 		POSITION = vec4(VERTEX.xy, 0.0, 1.0);
 	} else {
-	vec3 c = (VIEW_MATRIX * vec4(centre_w, 1.0)).xyz;
-	float dist = length(c);
 	vec3 ax = c / dist;
 	vec3 up = abs(ax.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
 	vec3 e1 = normalize(cross(up, ax));
 	vec3 e2 = cross(ax, e1);
-	float s = clamp(radius * ring_outer / dist, 0.0, 0.999);
 	float pix = 2.0 / (abs(PROJECTION_MATRIX[1][1]) * VIEWPORT_SIZE.y); // the centre pixel's angle (rad); abs: the matrix carries the Y flip
 	float half_w = dist * (s / sqrt(1.0 - s * s) + 3.0 * pix);
 	vec3 p = c + (VERTEX.x * e1 + VERTEX.y * e2) * half_w;
