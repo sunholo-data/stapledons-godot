@@ -209,6 +209,8 @@ func _process(delta: float) -> void:
 	label.text="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
+	if UiScale.handle(get_window(),event):
+		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
 	if event is InputEventMouseMotion and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
 		if camera_mode=="external review":
@@ -313,20 +315,42 @@ func _identification_smoke() -> void:
 	Input.parse_input_event(key)
 	for frame in 3:await get_tree().process_frame
 	var ok: bool = ready_ok and star_identification.held and not star_identification.candidates.is_empty()
+	print("ship-identification-smoke-stage candidates: ",ok," count=",star_identification.candidates.size())
 	if ok:
 		var candidate: Dictionary = star_identification.candidates[0]
+		for option in star_identification.candidates:
+			if star_identification.at_point(option.point).size()==1 and not hud.get_global_rect().has_point(option.point):
+				candidate=option;break
 		var click := InputEventMouseButton.new();click.button_index=MOUSE_BUTTON_LEFT;click.pressed=true;click.position=candidate.pixel;click.global_position=candidate.pixel
+		print("identify-smoke-pixel: ",candidate.pixel," UI=",candidate.point," transform=",get_viewport().get_stretch_transform()," window=",get_window().position)
 		get_viewport().push_input(click,false)
 		await get_tree().process_frame
+		click.pressed=false;get_viewport().push_input(click,false)
+		await get_tree().process_frame
+		if star_identification.card.visible and star_identification.selected_id.is_empty():
+			# A real catalogue blend opens its choice list, exactly as normal play.
+			var list: VBoxContainer=star_identification.content.get_child(1).get_child(0)
+			for button in list.get_children():
+				if button.text.ends_with(candidate.id):
+					var point: Vector2=get_viewport().get_stretch_transform()*button.get_global_rect().get_center()
+					for pressed in [true,false]:
+						var choice:=InputEventMouseButton.new();choice.button_index=MOUSE_BUTTON_LEFT;choice.pressed=pressed;choice.position=point;choice.global_position=point
+						get_viewport().push_input(choice,false);await get_tree().process_frame
+					break
 		ok=star_identification.selected_id==candidate.id and star_identification.card.visible and journey_map==null
+		print("ship-identification-smoke-stage card: ",ok," picked=",star_identification.selected_id," want=",candidate.id)
 		key.pressed=false;Input.parse_input_event(key);await get_tree().process_frame
 		ok=ok and not star_identification.held and star_identification.card.visible
+		print("ship-identification-smoke-stage release: ",ok)
 		star_identification.open_map.emit(candidate.id)
 		ok=ok and journey_map!=null and journey_map.catalogue[journey_map.selected_index].id==candidate.id and not live_journey
+		print("ship-identification-smoke-stage map: ",ok)
 	print("ship-star-identification-export-smoke: %s" % ("OK" if ok else "FAIL"))
 	var tree := get_tree()
-	queue_free();await tree.process_frame;await tree.process_frame
-	tree.quit(0 if ok else 1)
+	# A coroutine owned by this Node is cancelled when queue_free completes.
+	# Connect the surviving SceneTree itself for shutdown after cleanup instead.
+	tree.create_timer(.1).timeout.connect(tree.quit.bind(0 if ok else 1),CONNECT_ONE_SHOT)
+	queue_free()
 
 ## Separate session: this demo never touches main.gd's active voyage.
 func open_navigation() -> void:

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### One current ship and known-star identification, 2026-10-05
+
+- Normal launch opens one current expanded ship at the captain’s measured eye, with live navigation at rest. Scrolling reveals a labelled third-person view. Original painted/capture modes remain explicit reference tools.
+- Add genuine UV-painted bridge surfaces and packed editable Blender masters; preserve exact geometry, walk meshes and the existing Commons paint. This first texture interpretation remains open for art review.
+- In the current ship, hold I to highlight known visible stars, hover for a name and click for catalogue facts. The details card persists after release; Esc closes it. Overlapping sources offer individual choices.
+- Open the same exact catalogue ID in navigation explicitly. Inspection leaves the running voyage and irreversible commitment unchanged.
+- Carry producer IDs through the sky renderer, and place highlights on apparent star directions while respecting opaque ship geometry. Catalogue distance is labelled from Sol; unavailable fields remain unavailable.
+
+
 ### Open Commons arcade and live journey review, 2026-10-04
 
 - Replace the generic pavilion with the first section of the approved Commons layout: an open curved arcade, planted plaza and guarded walking link. This remains a bounded prototype; other districts and final painting are still to come.

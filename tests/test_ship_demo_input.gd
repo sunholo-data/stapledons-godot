@@ -10,6 +10,8 @@ func _run() -> void:
 	var demo: Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options={"stars":false,"background":false};root.add_child(demo);await process_frame
 	demo.auto=false
+	# Start zoom test away from the zero-pullback clamp; default is captain-eye.
+	demo.camera.pullback=3.
 	var motion:=InputEventMouseMotion.new();motion.relative=Vector2(20,10)
 	var yaw: float=demo.camera.yaw
 	demo._unhandled_input(motion);check("plain pointer motion does not look",demo.camera.yaw==yaw)

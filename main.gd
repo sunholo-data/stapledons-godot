@@ -6,7 +6,8 @@ extends Node3D
 ##               +/- time warp. The HUD shows the view-to-velocity angle.
 ##               Exposure (M1.5a): F fixed EV at the rest value, M eye / camera
 ##               metering, [ ] exposure bias (aid), G magnitude floor (aid).
-## Interior:    godot --path . [-- --interior [--bundle=DIR]]   (default with no arguments; M4.2: the bridge with
+## Current ship: godot --path . (default: live navigation, expanded painted 3D ship, captain eye)
+## Interior reference: godot --path . -- --interior [--bundle=DIR] (M4.2: original fixed-view bridge with
 ##              the live sky; WASD walk, E use, M galaxy map, L log, K codex; --interior-capture=DIR the S1 review
 ##              captures (tools/interior_capture.gd); --m4-smoke [--bundle=DIR] the scripted slice (make m4-smoke))
 ## Galaxy map:  godot --path . -- --map[=INDEX|ID]   (M2.6a/b; --map-capture=renders [--map-commit])
@@ -65,17 +66,33 @@ var sky_note := Label.new()
 const SKY_NOTE := "sky background not bundled in this build"
 
 
+## One player entry; explicit legacy/capture modes remain reference tools.
+static func current_ship_entry(args: Dictionary) -> bool:
+	return args.is_empty() or args.has("ship-demo") or args.has("ship-demo-smoke") or args.has("ship-identification-smoke")
+func _start_current_ship(live_start: bool) -> void:
+	UiScale.configure(get_window(),not live_start)
+	var demo: Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
+	if live_start:demo.setup_options={"live_start":true,"sky_state":"rest"}
+	get_tree().root.add_child(demo)
+	get_tree().current_scene=demo
+	if live_start:
+		var ok:bool=demo.ready_ok and demo.journey_map!=null and demo.sky_state=="live" and demo.sky.beta==0. and demo.camera.pullback==0.
+		print("current-ship-startup: %s live-rest captain-eye single-navigation" % ("OK" if ok else "FAIL"))
+		if not ok:get_tree().quit(1)
+	queue_free()
+
+
 func _ready() -> void:
 	var args := _user_args()
-	if args.has("ship-demo") or args.has("ship-demo-smoke"):
-		get_tree().change_scene_to_file.call_deferred("res://demos/ship_geometry_demo.tscn")
+	if current_ship_entry(args):
+		_start_current_ship.call_deferred(not (args.has("ship-demo-smoke") or args.has("ship-identification-smoke")))
 		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
 	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5") or args.has("planet-smoke")
 	UiScale.configure(get_window(), _fixed_scale)
-	# Launching with no arguments (a double-clicked review build, `make run`) opens
-	# the bridge interior (M4.2); `--map` the galaxy map alone, `--voyage` the M0/M1 sky flight.
+	# Explicit --interior keeps the original painted reference/capture mode;
+	# --map and --voyage remain dedicated developer modes.
 	if args.is_empty() or (args.size() == 1 and args.has("record")):
 		args["interior"] = ""
 	if args.has("interior") or args.has("interior-capture") or args.has("m4-smoke"):
@@ -250,7 +267,7 @@ func _run_interior(args: Dictionary) -> void:
 	print("interior: bundle %s (%s), %d walk triangles, %d interactables, captain at %s" % [dir, bundle.manifest.get("version", "unversioned"), it.walk.triangle_count(), it.walk.interactables.size(), it.avatar_pos])
 	if not capture and not smoke:
 		var review_layer := CanvasLayer.new(); review_layer.layer = 30; add_child(review_layer)
-		var review_button := Button.new(); review_button.text = "Ship geometry demo"
+		var review_button := Button.new(); review_button.text = "Open current ship (from art reference)"
 		review_button.position = Vector2(18, 110); review_layer.add_child(review_button)
 		review_button.pressed.connect(_open_ship_demo_review)
 	if capture: # loaded by path: tools/ is excluded from exports

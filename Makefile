@@ -585,3 +585,26 @@ ship-demo-sky-states:
 	AILANG_BIN=$$(command -v $(AILANG)) $(GODOT) --headless --path . --script tools/ship_demo_sky_states.gd
 ship-demo-journey-capture:
 	$(GODOT) --path . --script tools/ship_demo_journey_capture.gd
+
+# Known-star identification: actual source, GPU and packaged interactions.
+.PHONY: ship-star-identification-test ship-star-identification-capture ship-star-identification-bench ship-star-identification-export-smoke
+ship-star-identification-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_star_identification.gd > $(SCRATCH)/ship-star-identification.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-identification.log; test $$rc = 0 && grep -q '^ship-star-identification: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-star-identification.log
+ship-star-identification-capture:
+	$(GODOT_SIM) --path . --script tools/ship_star_identification_capture.gd
+ship-star-identification-bench:
+	$(GODOT_SIM) --path . --script tools/ship_star_identification_bench.gd
+ship-demo-ci: ship-star-identification-test
+ship-star-identification-export-smoke:
+	@mkdir -p $(SCRATCH)/identify-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/identify-export-home" "$(APP)/Contents/MacOS/$$exe" -- --ship-identification-smoke > $(SCRATCH)/ship-identification-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-identification-export.log; test $$rc = 0 && grep -q '^ship-star-identification-export-smoke: OK$$' $(SCRATCH)/ship-identification-export.log
+publish-dev: ship-star-identification-export-smoke
+.PHONY: ship-demo-consolidation-test
+ship-demo-consolidation-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_demo_consolidation.gd > $(SCRATCH)/ship-demo-consolidation.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-consolidation.log; test $$rc = 0 && grep -q '^ship-demo-consolidation: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-demo-consolidation.log
+ship-demo-ci: ship-demo-consolidation-test
+.PHONY: current-ship-export-smoke
+current-ship-export-smoke:
+	@mkdir -p $(SCRATCH)/current-ship-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/current-ship-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 180 > $(SCRATCH)/current-ship-export.log 2>&1; rc=$$?; cat $(SCRATCH)/current-ship-export.log; test $$rc = 0 && grep -q '^current-ship-startup: OK live-rest captain-eye single-navigation$$' $(SCRATCH)/current-ship-export.log
+publish-dev: current-ship-export-smoke

@@ -45,7 +45,11 @@ Evidence:
   the sprite mask (39 passing checks, one failure).
 - `source-checks.txt`: 40 identity/input/floor/cache/mesh/sprite checks pass.
 - `source-smoke.txt`: real application smoke route, viewport I/click/card/release
-  and exact-ID map handoff; no developer-only script is needed by the app.
+  and exact-ID map handoff, verified native process exit 0. The smoke handles
+  overlapping catalogue stars through the actual choice buttons. Headless mouse
+  input does not exercise this native route. An earlier marker-only run did not
+  terminate; shutdown now uses a surviving SceneTree timer after node cleanup.
+  Existing shutdown RID diagnostics remain recorded in the log.
 - `capture-manifest.json`: 276 GPU/native cases, worst 0.5058 pixels
   against a 1-pixel limit; resolutions 1920×1080, 1280×800, 900×600. Includes default
   GPU and CPU rebasing near 100000 light-years, beta 0/.99/.9999, tilt/roll/FOV,
@@ -64,3 +68,10 @@ These are reviewed artifacts, not checked-in runtime textures. Packaged smoke,
 paired benchmark and independent approval are tracked in
 the sprint JSON. Studio measurements are not MacBook Air measurements; actual
 2022 M2 Air / 24GB performance remains pending.
+
+`benchmark-aggregate.json` records matched 1920×1080 views with 120 warmup and
+300 sampled frames each. Frame p95 is 9.3–9.7 ms; worst incremental wall-frame
+p95 is +0.13 ms. Negative paired deltas are noise. The held overlay still costs
+1.3–3.5 ms CPU update p95 on this Studio, so these results do not predict Air
+performance. Native mouse dispatch is required for the packaged I-click smoke;
+headless source tests cover the logic separately.

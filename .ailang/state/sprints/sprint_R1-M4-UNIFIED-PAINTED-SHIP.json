@@ -1,0 +1,37 @@
+{
+  "sprint_id": "R1-M4-UNIFIED-PAINTED-SHIP",
+  "status": "in_progress",
+  "approved_by": "Mark attended5October2026 consolidation and Blender+paintedassets request",
+  "design_doc": "design_docs/planned/r1/m4-unified-painted-ship.md",
+  "sprint_plan": "design_docs/planned/r1/m4-unified-painted-ship-sprint.md",
+  "github_issues": [],
+  "features": [
+    {
+      "id": "US-A",
+      "description": "One main entry and coherent live captain-eye view",
+      "acceptance_criteria": [
+        "ship-demo-consolidation-test",
+        "normal native entry smoke"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-B",
+      "description": "Bounded UV painted bridge on unchanged Blender geometry",
+      "acceptance_criteria": [
+        "geometry and material pins",
+        "native multiangle style review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "US-C",
+      "description": "Independent physics/UI/style and bundled published review",
+      "acceptance_criteria": [
+        "source/golden/native gates",
+        "downloadedchecksum/site verification"
+      ],
+      "passes": false
+    }
+  ]
+}

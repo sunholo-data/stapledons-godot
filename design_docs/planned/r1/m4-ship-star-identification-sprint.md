@@ -1,6 +1,6 @@
 # Ship star identification sprint
 
-Status: Proposed; awaiting Mark’s approval. Design: [m4-ship-star-identification.md](m4-ship-star-identification.md). Bounded deliverable: identify known, visible sky stars from the current ship demo; read existing catalogue facts; explicitly open the existing map on the same ID.
+Status: Approved by Mark,5October2026: “yep continue”; implementation in progress. Design: [m4-ship-star-identification.md](m4-ship-star-identification.md). Bounded deliverable: identify known, visible sky stars from the current ship demo; read existing catalogue facts; explicitly open the existing map on the same ID.
 
 Recent evidence: the live journey implementation and native export/viewport correction completed in one attended iteration; Commons required authoring and separate review. This feature has new identity/projection/occlusion integration, so estimate two focused sessions plus native/GPU evaluation rather than promise a fixed completion time. Estimate450–650implementation/testLOC.
 
@@ -18,4 +18,4 @@ Add GPU capture cases and compare star-centre alignment (<=1px for resolvable so
 
 Run new named Make targets in design, existing `make ui ship-demo-ci`, appropriate full regression and `make golden`. Generator≠judge independent evaluator must assess identity, projected physics, occlusion and actual click interaction. No physics formulas outside the package. Publish the next draft Mac build and reference evidence only after passing source/native/golden/evaluation gates. Actual M2Air performance remains user-hardware signoff; do not merge production before its applicable gates pass.
 
-Approval checkpoint: confirm the concrete defaults in the design. Hand off the approved plan to sprint-executor only after approval, as required by project CLAUDE.md and sprint-planner. Current dev9 remains the deployed build.
+Approval checkpoint satisfied by Mark’s attended response. Approved plan handed to sprint-executor; separate evaluation follows implementation. Current dev9 remains the deployed build.

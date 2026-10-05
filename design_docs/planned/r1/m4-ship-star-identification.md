@@ -9,7 +9,7 @@
 | Grounded Strangeness | +2 | Highlights follow rendered apparent directions and known identities. |
 | We Are Not Built For This | 0 | No new crew or psychological mechanics. |
 
-**Status:** Planned, awaiting approval of bounded sprint. **Release:** R1. **Priority:** high.
+**Status:** Approved, implementation in progress (Mark: “yep continue”,5October2026). **Release:** R1. **Priority:** high.
 **Requested:** Mark,5October2026: hotkey/click sky stars for existing map information; highlight only stars with available information.
 **Implements:** [Journey planning](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/journey-planning-ui.md), [SR source-direction and observer rules](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md#2-special-relativity-moving-observer-flat-space).
 **Depends on:** ship geometry review/live journey, current sky tiers and stable map catalogue IDs. **Estimate:**450–650implementation/test LOC, two focused sessions plus independent evaluation/export. Pillar net+7: aligned, go to planning.
@@ -55,6 +55,6 @@ Identity plumbing and apparent-ray occlusion are the main work; a plain2D ring o
 
 Milestones: SI-A exact identity/metadata (150–220LOC); SI-B apparent projection/occlusion/input/card (200–280LOC); SI-C meaningful GPU/native tests, benchmark, independent review and demo publication (100–150LOC). Existing journey/sky behavior must remain green. Deliverables: shared lookup/card, overlay, hash-pinned identity mapping, tests/captures, documented controls and next reviewed dev build. No implementation begun in this planning step.
 
-## Proposed defaults for approval
+## Approved interaction defaults
 
-HoldI+left-click; persistent card after release; overlap candidate list; current map knowledge is eligibility; inspection leaves voyage running; only explicit Open in map can enter planning. These are proposed defaults, not recorded user rulings on the key or card design.
+HoldI+left-click; persistent card after release; overlap candidate list; current map knowledge is eligibility; inspection leaves voyage running; only explicit Open in map can enter planning. Approved by Mark’s attended “yep continue” response to the concrete interaction and sprint plan.
