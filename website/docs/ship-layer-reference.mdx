@@ -9,11 +9,12 @@ import JourneyReview from '@site/src/components/ShipGeometryReview/Journey';
 import CommonsReview from '@site/src/components/ShipGeometryReview/Commons';
 import CommonsPlanning from '@site/src/components/ShipGeometryReview/Planning';
 import LiveJourneyReview from '@site/src/components/ShipGeometryReview/LiveJourney';
+import UnifiedReview from '@site/src/components/ShipGeometryReview/Unified';
 
 The working reference for the ship's geometry, art and playable spaces. We build and
 review **one level at a time**, opening areas as they become playable.
 
-## Current build: open Commons arcade
+## Current build: one playable ship
 
 The bridge lift reaches an open civic plaza and a curved, planted arcade in the
 approved building band. This replaces the generic barrel-roofed hall. Cream terraces,
@@ -21,6 +22,13 @@ teal ribs, open bays and civic seating begin translating the approved concept in
 measured, playable geometry. Other zones and tiers remain coarse.
 
 <CommonsReview />
+
+The bridge now has **painted textures on the measured 3D surfaces**, alongside the
+Commons painted modules. The old bridge paintover was a flat rendered plate;
+this first texture pass supports turning, moving and looking down between decks.
+Geometry and walkable areas are preserved. Fine ink detail remains an art review.
+
+<UnifiedReview />
 
 <details>
 <summary>Approved concept and zoning reference</summary>
@@ -44,6 +52,7 @@ develop through playable sections. The earlier paintover is a finish study only.
 | Release approach | Develop the Commons first, then open further levels incrementally. |
 | Commons layout | Approved zoning direction: open civic plaza, curved arcades and planted walks; build and review one section at a time. |
 | Travel sky | Use 4× exposure for now, preserving physical inputs and directional contrast. It remains a labelled display aid. |
+| Star inspection | Hold I and click a known, visible star for catalogue facts; open that same star in the map explicitly. |
 
 <ShipGeometryReview />
 
@@ -51,7 +60,8 @@ develop through playable sections. The earlier paintover is a finish study only.
 
 - **Commons:** review the first arcade/plaza section against the approved concept before expanding.
 - **Later tiers:** concepts and zoning remain proposals; population and life-support capacity are unresolved.
-- **Laptop performance:** actual M2 Air measurement is pending. The latest Studio run is about 9.6 ms p95 at 1920×1080.
+- **Bridge finish:** review this first texture pass before refining the ink detail.
+- **Laptop performance:** actual M2 Air measurement is pending. The latest Studio test measured 9.3–9.7 ms p95 at 1920×1080; star inspection adds CPU work despite little frame-time change on that machine.
 - **Travel effects:** physically supported glow/bubble effects remain future work. The current demo does not show travel glow or GR lensing.
 - **Solar System flyby:** planet textures exist; a moving flyby with suitable playback pacing is still to do.
 
@@ -101,11 +111,15 @@ With GitHub CLI and Google Cloud CLI authenticated:
 gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.sh --jq .content | base64 -d | bash -s -- --dev
 ```
 
-Open **Ship geometry demo**. **WASD** walks, **Option + drag** looks, scrolling zooms,
-and **E** uses the lift. **M** opens navigation: select a star and hold **Commit**;
+The app opens directly into the current ship, at the captain’s measured eye.
+**WASD** walks, **Option + drag** looks, scrolling zooms out to a labelled
+third-person view,
+and **E** uses the lift. Hold **I** to highlight known, visible stars; hover for a name
+and click for catalogue details. Releasing **I** clears the rings; **Esc** closes
+the card. **Open in map** selects the same star for planning. **M** opens navigation: select a star and hold **Commit**;
 the map closes and you can watch acceleration, cruise and braking aboard ship.
 **7** looks forward/up to see the star field change; pan around to compare directions.
-The review opens at **4× exposure**. **J** cycles exposure; **5/6** compare frozen rest/cruise snapshots outside committed travel and
+The ship starts at rest in a live navigation session, at **4× exposure**. **J** cycles exposure; **5/6** compare frozen rest/cruise snapshots outside committed travel and
 **7/8/9** look forward/side/aft. **Tab** shows all controls. **B** measures performance
 on your laptop outside committed travel and displays the report location.
 
