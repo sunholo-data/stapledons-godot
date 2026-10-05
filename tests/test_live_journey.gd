@@ -5,7 +5,7 @@ func check(label:String,ok:bool)->void:
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
 	var sim:=SimBridge.new();sim.want_minor=2
-	if not sim.start() or not sim.new_game(424242,"sol",false):check("normal startup",false);quit(1);return
+	if not sim.start() or not sim.new_game(424242,"sol",false):check("normal startup (%s)" %sim.last_error,false);quit(1);return
 	var map:=GalaxyMap.new();root.add_child(map);map.auto_tick=false;map.live_pacing=true
 	map.load_catalogue("res://data/starmap/stars.json");map.attach(sim)
 	var prior_distance:=-1.
