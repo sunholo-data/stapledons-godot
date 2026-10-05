@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-M4-UNIFIED-PAINTED-SHIP",
-  "status": "in_progress",
+  "status": "review_build_published",
   "approved_by": "Mark attended5October2026 consolidation and Blender+paintedassets request",
   "design_doc": "design_docs/planned/r1/m4-unified-painted-ship.md",
   "sprint_plan": "design_docs/planned/r1/m4-unified-painted-ship-sprint.md",
@@ -13,7 +13,7 @@
         "ship-demo-consolidation-test",
         "normal native entry smoke"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-B",
@@ -22,7 +22,7 @@
         "geometry and material pins",
         "native multiangle style review"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-C",
@@ -31,7 +31,9 @@
         "source/golden/native gates",
         "downloadedchecksum/site verification"
       ],
-      "passes": false
+      "passes": true
     }
-  ]
+  ],
+  "review_build": "v0.4.0-dev.10-unified-painted-ship",
+  "notes": "Independent technical draft pass 94/100; native packaged startup and I-click pass, downloaded ZIP SHA256 verified, deployed website model SHA256 matches. Final detailed ink/art approval, target M2 Air performance, remaining tiers and production landing remain pending."
 }

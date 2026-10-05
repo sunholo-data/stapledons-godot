@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-M4-SHIP-STAR-IDENTIFICATION",
-  "status": "in_progress",
+  "status": "review_build_published",
   "approved_by": "Mark, attended 2026-10-05: yep continue",
   "design_doc": "design_docs/planned/r1/m4-ship-star-identification.md",
   "sprint_plan": "design_docs/planned/r1/m4-ship-star-identification-sprint.md",
@@ -40,8 +40,9 @@
         "SI6",
         "SI7"
       ],
-      "passes": null,
-      "notes": "Final cached GPU/native audit 276 cases, worst 0.5058px including actual GPU centroids, CPU/GPU nearby large rebases, isolated exact Sirius row and real boosting/cruising/braking voyage states; native click, noncollider opaque composite and actual captain body/padding masks pass. Source smoke passes. Paired budget benchmark, packaged smoke and independent evaluation pending; actual M2 Air pending."
+      "passes": true,
+      "notes": "276 GPU/native cases pass; native bundled click, release, exact map and normal startup exit 0. Matched wall-frame p95 overhead +0.13 ms worst; CPU update p95 1.3–3.5 ms. Independent draft score 96/100. Dev.10 downloaded SHA256 verified. Actual M2 Air performance and production landing remain pending."
     }
-  ]
+  ],
+  "review_build": "v0.4.0-dev.10-unified-painted-ship"
 }
