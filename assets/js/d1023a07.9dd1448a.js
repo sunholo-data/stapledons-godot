@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkstapledons_voyage_site=self.webpackChunkstapledons_voyage_site||[]).push([[5591],{2024(e){e.exports=JSON.parse('{"metadata":{"permalink":"/stapledons-godot/news","page":1,"postsPerPage":10,"totalPages":1,"totalCount":10,"blogDescription":"How the game evolves: releases, captures and what comes next.","blogTitle":"Stapledon\'s Voyage news"}}')}}]);

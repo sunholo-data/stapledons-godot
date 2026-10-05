@@ -4,11 +4,38 @@
         <title>Stapledon's Voyage news</title>
         <link>https://www.sunholo.com/stapledons-godot/news</link>
         <description>Releases and progress on Stapledon's Voyage, a hard-SF game in Godot 4 and AILANG.</description>
-        <lastBuildDate>Sat, 03 Oct 2026 20:15:00 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 05 Oct 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
         <copyright>Copyright © 2026 Sunholo / Mark Edmondson</copyright>
+        <item>
+            <title><![CDATA[Manual sky exposure and a one-AU arrival: v0.4.0-dev.14]]></title>
+            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/05/stable-sky-and-one-au-arrival</link>
+            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/05/stable-sky-and-one-au-arrival</guid>
+            <pubDate>Mon, 05 Oct 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[The painted ship and Solar departure tour share one perspective. This review build removes automatic sky dimming: exposure stays at your manually selected brightness while you move and look around. The tour finishes one AU from Alpha Centauri A.]]></description>
+            <content:encoded><![CDATA[<p>The painted ship and Solar departure tour share one perspective. This review build removes automatic sky dimming: exposure stays at your manually selected brightness while you move and look around. The tour finishes one AU from Alpha Centauri A.</p>
+<!-- -->
+<div class="card_P9Qi"><div class="head_TLZj"><span class="sv-status sv-status--progress">Development build: macOS only (Apple Silicon)</span><span class="tag_SXRh">v0.4.0-dev.14-manual-sky</span></div><p class="title_s4XC">Painted ship and Solar departure tour</p><a class="button_ks9I" href="https://github.com/sunholo-data/stapledons-godot/releases/download/v0.4.0-dev.14-manual-sky/StapledonsVoyage-v0.4.0-dev.14-manual-sky-macos.zip"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg> Download for macOS</a><p class="small_L0zK">Pre-alpha and <strong>unsigned</strong>. After unzipping, clear the quarantine flag once:</p><pre class="code_FlHl"><code>xattr -dr com.apple.quarantine "Stapledons Voyage.app"</code></pre></div>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/manual_sky_v14/alpha_1au_pan_0.png" alt="Alpha Centauri A and its background stars at the actual one-AU stop, manual exposure" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/05/stable-sky-and-one-au-arrival#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>One current painted ship:</strong> seven major tiers, a bridge floor and captain shadow that meet the walking surface, faster movement, trackpad look and known-star inspection. <a href="https://github.com/sunholo-data/stapledons-godot/pull/117" target="_blank" rel="noopener noreferrer" class="">Integration PR</a>.</li>
+<li class=""><strong>Gradual approaches:</strong> the guided tour uses physical 1 g acceleration with 90 seconds of braking playback. Earth, Jupiter and Saturn sit beside the bridge at their close stops. Ordinary navigation keeps its existing pacing. <a href="https://github.com/sunholo-data/stapledons-godot/pull/117" target="_blank" rel="noopener noreferrer" class="">Integration PR</a>.</li>
+<li class=""><strong>Manual sky exposure:</strong> J cycles the brightness settings, also available under Tab. Bright planets and suns can wash out at a setting chosen for stars; camera pans and journeys no longer change exposure automatically. The physical light and SR calculations remain unchanged.</li>
+<li class=""><strong>Smoother tour starts:</strong> initialize the camera from the new session and ease departure time compression over three seconds. This corrects an initial camera jump and an abrupt first movement beside Earth.</li>
+<li class=""><strong>Measured stars:</strong> Alpha Centauri A/B use measured radii and temperatures; the final leg intercepts the moving primary at 1 AU. A's disc is about 0.65° wide there. <a href="https://github.com/sunholo-data/stapledons-godot/pull/117" target="_blank" rel="noopener noreferrer" class="">Integration PR</a>.</li>
+<li class=""><strong>Review evidence:</strong> the gallery and geometry reference include fresh native captures and editable Blender masters. B keeps the full benchmark locally and attempts an authenticated upload of filtered aggregate measurements. <a href="https://github.com/sunholo-data/stapledons-godot/pull/117" target="_blank" rel="noopener noreferrer" class="">Integration PR</a>.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/05/stable-sky-and-one-au-arrival#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p>Ship lighting is still an internal lighting study; external sunlight, detailed moon surfaces and further Commons art remain in progress. Fresh M2 Air performance needs a laptop measurement. Tour stops are inertial clearance stops: gravity, thermal hazards and GR are not simulated. Stellar photospheres are uniform emitters.</p>
+<p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.14-manual-sky" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.14-manual-sky</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/docs/ship-layer-reference">Ship reference</a>.</p>]]></content:encoded>
+            <category>Release</category>
+            <category>Journey</category>
+            <category>Planets</category>
+            <category>Art</category>
+        </item>
         <item>
             <title><![CDATA[Walkable bridge demo: v0.4.0-dev.1]]></title>
             <link>https://www.sunholo.com/stapledons-godot/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1</link>
@@ -19,7 +46,7 @@
 relativistic sky, open the galaxy map from the nav console, and fly a journey to α Centauri A
 through the bubble. macOS only, Apple Silicon.</p>
 <!-- -->
-<div class="card_P9Qi"><div class="head_TLZj"><span class="sv-status sv-status--progress">Development build: macOS only (Apple Silicon)</span><span class="tag_SXRh">v0.4.0-dev.1</span></div><p class="title_s4XC">Walkable bridge demo</p><a class="button_ks9I" href="https://github.com/sunholo-data/stapledons-godot/releases/download/v0.4.0-dev.1/StapledonsVoyage-v0.4.0-dev.1-macos.zip"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg> Download for macOS</a><p class="small_L0zK">Pre-alpha and <strong>unsigned</strong>. After unzipping, clear the quarantine flag once:</p><pre class="code_FlHl"><code>xattr -dr com.apple.quarantine "Stapledons Voyage.app"</code></pre></div>
+<div class="card_P9Qi"><div class="head_TLZj"><span class="sv-status sv-status--progress">Development build: macOS only (Apple Silicon)</span><span class="tag_SXRh">v0.4.0-dev.14-manual-sky</span></div><p class="title_s4XC">Painted ship and Solar departure tour</p><a class="button_ks9I" href="https://github.com/sunholo-data/stapledons-godot/releases/download/v0.4.0-dev.14-manual-sky/StapledonsVoyage-v0.4.0-dev.14-manual-sky-macos.zip"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg> Download for macOS</a><p class="small_L0zK">Pre-alpha and <strong>unsigned</strong>. After unzipping, clear the quarantine flag once:</p><pre class="code_FlHl"><code>xattr -dr com.apple.quarantine "Stapledons Voyage.app"</code></pre></div>
 <p><img decoding="async" loading="lazy" alt="The captain on the bridge at 0.99c, under the live relativistic sky" src="https://www.sunholo.com/stapledons-godot/assets/images/bridge-demo-cruise-55c3f571c972ee7a3171239bcef15193.jpg" width="1600" height="900" class="img_ev3q"></p>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
