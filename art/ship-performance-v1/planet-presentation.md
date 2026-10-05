@@ -53,6 +53,9 @@ lifecycle73checks pass: four Jovian moons and five unocculted Saturn moons retai
 representation across braking, arrival and stationary epochs. Mimas remains
 physically behind Saturn in all three samples. No arrival-specific array loss
 was found; camera, geometry and adapted brightness still govern native visibility.
+The standing-eye Jupiter/Saturn stop frames do not contain all moons within
+the78degree camera field. Most moons, including Callisto, still have simple
+uniform surfaces; they do not yet have measured detail textures.
 Native transition harness
 `tools/planet_transition_golden.gd` records86actual integrated-flux samples and
 adjacent transition steps at rest and beta0.9, plus five snapshots per velocity.
@@ -62,7 +65,10 @@ quadrature, while legacy captures retain their8x8 policy. The earlier8-bit
 readback showed3.44% steps from four-pixel quantization; increasing quadrature
 alone did not remove them. Measuring physical flux before8-bit conversion
 distinguishes that output limit from the handoff itself. Display PNG/metrics
-are recorded separately; final window preview refresh remains pending.
+are recorded separately. Final1:1display previews were refreshed and opened,
+using an explicit linear-HDR to sRGB transfer for the LDR canvas. Final8-bit
+flux error is2.050%, adjacent display step3.416%; these output quantization
+steps remain, and are not presented as a zero-step display result.
 
 Twelve package optics cases and Saturn radiometry/shadow goldens pass after
 the bound change. Six additional moving FOV-edge/roll/large-Sun/Saturn-ring

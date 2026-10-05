@@ -8,6 +8,11 @@ func run()->void:
 	root.content_scale_factor=1.0
 	var viewport:=SubViewport.new();viewport.size=root.size;viewport.own_world_3d=true;viewport.use_hdr_2d=true;viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS;root.add_child(viewport)
 	var preview:=TextureRect.new();preview.size=Vector2(root.size);preview.texture=viewport.get_texture();root.add_child(preview)
+	# HDR viewport pixels are linear. The ordinary LDR canvas expects encoded
+	# colour, unlike a3D tonemap output; explicitly apply the existing sRGB transfer.
+	var preview_shader:=Shader.new()
+	preview_shader.code="shader_type canvas_item; render_mode unshaded; void fragment(){vec4 c=texture(TEXTURE,UV); vec3 encoded=mix(12.92*c.rgb,1.055*pow(max(c.rgb,vec3(0.0)),vec3(1.0/2.4))-0.055,step(vec3(0.0031308),c.rgb));COLOR=vec4(encoded,c.a);}"
+	var preview_material:=ShaderMaterial.new();preview_material.shader=preview_shader;preview.material=preview_material
 	var environment:=Environment.new();environment.background_mode=Environment.BG_COLOR;environment.background_color=Color.BLACK;environment.tonemap_mode=Environment.TONE_MAPPER_LINEAR
 	var we:=WorldEnvironment.new();we.environment=environment;viewport.add_child(we)
 	var camera:=FreeLookCamera.new();camera.fov=35.;camera.current=true;viewport.add_child(camera)
