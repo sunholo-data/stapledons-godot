@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui lore-test lore-import-check lore-check replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -730,3 +730,9 @@ lore-test:         ## M4.7 lore binding, registry and checker: strict VM = inter
 	@$(MAKE) --no-print-directory lore-values
 	@AILANG=$(AILANG) sh tests/test_lore_check.sh
 	@AILANG=$(AILANG) SCRATCH=$(SCRATCH) sh tests/test_lore_import.sh
+
+.PHONY: codex-test
+codex-test:        ## M4.7 the Archive codex: lore loader + manifest refusal, Markdown subset, locked/greyed rows, toasts, LoreBinding, the real sim's minimum-path unlocks vs tests/expected_unlocks.json (headless)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_codex.gd > $(SCRATCH)/codex-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/codex-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/codex-test.log && grep -q '^codex: [0-9]* passed, 0 failures$$' $(SCRATCH)/codex-test.log || { echo "codex-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/codex-test.log)"; exit 1; }

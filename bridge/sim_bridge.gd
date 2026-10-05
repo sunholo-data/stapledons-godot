@@ -52,6 +52,9 @@ var ai_relay: Object = null
 ## start()): the interior (M4.2) asks for 2 (ship.ism, consequence), the system view
 ## SYSTEM_MINOR. Everything else keeps 2.1, so the recorded replay goldens are unchanged.
 var want_minor := PROTO_MINOR
+## The codex table `archive: [{id, unlock}]` new_game carries (protocol 2.2, M4.7: LoreLoader.archive_rows()).
+## Empty = the field is left out, so every existing session and its replay log are unchanged.
+var archive_rows: Array = []
 ## The last `system` section, as parsed by parse_system(); {} until one arrives.
 var system: Dictionary = {}
 ## The body planner's fields of the current plan, as parsed by parse_plan_nav();
@@ -128,6 +131,8 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 		msg["params"] = params
 	if ai_core != "":
 		msg["ai_core"] = ai_core
+	if not archive_rows.is_empty():
+		msg["archive"] = archive_rows
 	_write(encode(msg))
 	if not _read_state(Time.get_ticks_msec() + 2000, "step_timeout"):
 		return false
