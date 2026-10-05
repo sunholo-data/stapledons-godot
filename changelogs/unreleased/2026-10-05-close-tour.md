@@ -19,3 +19,8 @@
 This review retains fixed internal lighting. External stellar illumination,
 thermal hazards, gravity-bound orbits, resolved Alpha Centauri detail and GR
 remain unfinished. New-build M2 Air performance needs a fresh laptop audit.
+
+- Exported first-launch simulation compilation has a bounded30-second bootstrap
+  handshake allowance; editor/test launches retain five seconds and normal
+  gameplay/AI request timeouts are unchanged. Clean-home validation caught the
+  previous five-second first-install failure.

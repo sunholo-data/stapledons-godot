@@ -52,3 +52,16 @@ when the CLI/auth/network is unavailable, and never embed credentials. Headless
 fixtures must exercise both successful and failed upload without cloud writes.
 The original forward-dome benchmark was blocked by its own running guard; fix
 the actual camera pose and label counter statistics without millisecond units.
+
+## Combined delivery: cold exported bootstrap
+
+The final relativity0.8 clean-home export twice fails the existing five-second
+simulation handshake. An independent fresh-source bundled run produced a valid
+hello after9.594seconds with empty stderr; a warmed run took0.270seconds.
+This is first-launch compilation, rather than a refused or broken simulation.
+Allow30seconds only for exported simulation bootstrap, retaining five seconds
+for editor/explicit test launches and all existing per-request and AI timeouts.
+The child must still be killed and cleaned up when its bounded handshake fails.
+Focused policy/dead-child tests and genuinely fresh-home packaged startup are
+required before merging or publishing. This is a delivery fix within the
+user's instruction to merge and deploy the current demo.

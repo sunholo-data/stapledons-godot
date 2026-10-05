@@ -685,3 +685,8 @@ bridge-floor-test: import
 ship-demo-ci: bridge-floor-test
 
 include mk/planet-presentation.mk
+
+.PHONY: sim-bootstrap-test
+sim-bootstrap-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_sim_bootstrap.gd > $(SCRATCH)/sim-bootstrap.log 2>&1; rc=$$?; cat $(SCRATCH)/sim-bootstrap.log; test $$rc = 0 && grep -q '^sim-bootstrap: [0-9]* checks 0 failures$$' $(SCRATCH)/sim-bootstrap.log
+ship-demo-ci: sim-bootstrap-test
