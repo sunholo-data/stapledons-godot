@@ -2,6 +2,12 @@
 // game; captions say what produced it and what it shows. An optional `status`
 // marks captures from work still in review, so nothing reads as shipped early.
 const GALLERY = [
+  {"file": "solar-earth_start", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v1/earth_start.png", "title": "Earth departure", "caption": "Looking from the captain’s eye toward Earth before departure. Earth uses the published Earth–Moon barycentre approximation; this is an inertial stand-off, not a close orbit.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-jupiter_arrival", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v1/jupiter_arrival.png", "title": "Jupiter stop", "caption": "The guided tour brakes to rest at Jupiter. Planet textures, sunlight and exposure share the live observer; the surrounding star field becomes subdued when the eye adapts to the planet.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-saturn_arrival", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v1/saturn_arrival.png", "title": "Saturn and its rings", "caption": "The next physical stop shows Saturn’s measured ring bands and shadows. The tour retains its position and both clocks between legs.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-alpha_centauri_cruising", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v1/alpha_centauri_cruising.png", "title": "Outbound toward Alpha Centauri", "caption": "After Saturn, acceleration gathers the star field ahead through relativistic aberration and Doppler boosting. This is an actual committed journey with labelled time compression.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-map_second_departure", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v1/map_second_departure.png", "title": "Navigation from the current ship", "caption": "A second route starts at the ship’s Alpha Centauri endpoint rather than resetting to Sol. Recenter, Fit route and Home frame the map; the destination list is the surveyed catalogue.", "group": "ship", "status": "Demo review"},
+
   {
     file: 'ship-lighting-bridge-inward',
     url: 'https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_lighting_v1/bridge_inward_moody.png',
