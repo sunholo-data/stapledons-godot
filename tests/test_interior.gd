@@ -9,22 +9,27 @@ const FIXTURE := "res://tests/fixtures/areas/bridge_blockout"
 const BRIDGE := "res://assets/areas/bridge"
 const CAPTAIN := "res://assets/characters/captain"
 const TMP := "res://.godot/tmp/test_interior"
-## tools/glow_probe (sunholo/relativity 0.7.0 glowEmittanceAt, n 0.1 cm^-3, eps 1e-9,
-## f_in 0.5), VM = interpreter. [cos theta, emittance W/m^2] at 0, 45, 80, 90, 120 deg.
+## tools/glow_probe (sunholo/relativity 0.8.0 glowEmittanceAt at n 0.1 cm^-3, eps 1e-9 (the
+## profile's shape is eps-free), f_in 0.5, and glowTemperatureAt, glowEfficacyAt), VM = interpreter.
+## [cos theta, emittance W/m^2, T K, efficacy lm/W] at 0, 45, 80, 90, 120 deg.
 ## Written in e-notation: Godot 4.7 parses long plain decimals inexactly (0.000...0589 -> 0.0).
 const PROBE := {
-	"b099": {"pole": 9.628776871706524e-05, "mean": 2.407194217926631e-05, "rows": [
-		[1.0, 9.628776871706524e-05], [0.7071067811865476, 6.808573420515876e-05],
-		[0.17364817766693041, 1.672019556933325e-05],
-		[6.123233995736757e-17, 5.895925387819721e-21],
-		[-0.4999999999999998, 0.0]]},
-	"cap": {"pole": 1.1250843031053142, "mean": 0.28127107577632854, "rows": [
-		[1.0, 1.1250843031053142], [0.7071067811865476, 0.7955547401323088],
-		[0.17364817766693041, 0.19536883895590618],
-		[6.123233995736757e-17, 6.889154452844258e-17],
-		[-0.4999999999999998, 0.0]]},
+	"b099": {"pole": 9.628776871706524e-05, "mean": 2.407194217926631e-05, "t_pole": 1357.5234659678836, "rows": [
+		[1.0, 9.628776871706524e-05, 1357.5234659678836, 0.02330771971150398],
+		[0.7071067811865476, 6.808573420515876e-05, 1244.8545070377681, 0.00663739380989841],
+		[0.17364817766693041, 1.672019556933325e-05, 876.3243976071535, 9.463427494097849e-06],
+		[6.123233995736757e-17, 5.895925387819721e-21, 0.12008604992240152, 0.0],
+		[-0.4999999999999998, 0.0, 0.0, 0.0]]},
+	"cap": {"pole": 1.1250843031053142, "mean": 0.28127107577632854, "t_pole": 14114.023335759706, "rows": [
+		[1.0, 1.1250843031053142, 14114.023335759706, 43.680672134631656],
+		[0.7071067811865476, 0.7955547401323088, 12942.616464776731, 50.75159149995064],
+		[0.17364817766693041, 0.19536883895590618, 9111.0491329183, 81.16197072046828],
+		[6.123233995736757e-17, 6.889154452844258e-17, 1.2485215566388435, 0.0],
+		[-0.4999999999999998, 0.0, 0.0, 0.0]]},
 }
-const PROBE_LM_PER_W := 182.5654375783963
+## tools/glow_probe: blackbody.rgbUnitLuminance(T) at the 0.99c and cap pole temperatures.
+const PROBE_RGB := {1357.5234659678836: [3.2646230444998383, 0.4274661253758046, 1.3877787807814457e-17],
+	14114.023335759708: [0.7972469393146389, 0.9925892373297938, 1.6708677622368724]}
 
 var failures := 0
 var passes := 0
@@ -56,21 +61,44 @@ func copy_dir(src: String, dst: String, suffix := "") -> void:
 
 
 func test_glow_mirror() -> void:
-	print("Forward glow: CPU mirror of glowEmittanceAt (package 0.7.0 probe), within 1e-12 relative")
+	print("Forward glow: CPU mirror of glowEmittanceAt / glowTemperatureAt / glowEfficacyAt (package 0.8.0 probe)")
 	for speed: String in PROBE:
 		var p: Dictionary = PROBE[speed]
 		for row: Array in p["rows"]:
 			var got := ForwardGlow.profile(p["pole"], row[0])
 			var ok := absf(got - row[1]) <= 1e-12 * absf(row[1]) if row[1] != 0.0 else got == 0.0
 			check("%s glow_profile(pole, %.6f) = %s (package %s)" % [speed, row[0], str(got), str(row[1])], ok)
+			var t := ForwardGlow.temperature(p["t_pole"], row[0])
+			check("%s temperature(T_pole, %.6f) = %s K (package glowTemperatureAt %s, 1e-12)" % [speed, row[0], str(t), str(row[2])], absf(t - row[2]) <= 1e-12 * row[2] if row[2] != 0.0 else t == 0.0)
+			var e := ForwardGlow.efficacy(t)
+			# the package and Blackbody share the CMF fit and the 1 nm sum; Blackbody.cmf returns a
+			# float32 Vector3, so the sum agrees to ~1e-8, not to the ulp
+			check("%s efficacy(%.1f K) = %s lm/W (package glowEfficacyAt %s, 1e-7)" % [speed, t, str(e), str(row[3])], absf(e - row[3]) <= 1e-7 * row[3] if row[3] != 0.0 else e == 0.0)
 		check("%s pole = 4 x glowInwardFlux (package mean %s)" % [speed, str(p["mean"])], rel(p["pole"], 4.0 * p["mean"]) < 1e-12)
 	check("profile is 0 at rest (pole 0)", ForwardGlow.profile(0.0, 1.0) == 0.0)
 	check("profile clamps a rounded-past-1 cosine to the pole", ForwardGlow.profile(2.0, 1.0000000000000002) == 2.0)
 	check("profile propagates NaN (package parity, ailang#1419)", is_nan(ForwardGlow.profile(1.0, NAN)))
+	check("temperature clamps past 1, is 0 aft and at rest, NaN in NaN out", ForwardGlow.temperature(1000.0, 1.0000000000000002) == 1000.0 and ForwardGlow.temperature(1000.0, -0.5) == 0.0 and ForwardGlow.temperature(0.0, 1.0) == 0.0 and is_nan(ForwardGlow.temperature(1000.0, NAN)))
 	check("Lambertian: radiance = emittance / pi", ForwardGlow.radiance(PI) == 1.0)
-	check("efficacy equals the probe's equal-energy 380-780 nm value", ForwardGlow.LM_PER_W == PROBE_LM_PER_W)
-	var w := ForwardGlow.WHITE_RGB
-	check("glow colour has unit luminance (illuminant E in linear sRGB)", absf(0.2126729 * w.x + 0.7151522 * w.y + 0.0721750 * w.z - 1.0) < 1e-6)
+	check("luminance = radiance x efficacy (glowLuminanceAt)", ForwardGlow.luminance(PI, 6600.0) == ForwardGlow.efficacy(6600.0))
+	for t: float in PROBE_RGB:
+		var want: Array = PROBE_RGB[t]
+		var c := ForwardGlow.colour(t)
+		check("colour(%.1f K) = rgbUnitLuminance (probe, 1e-6)" % t, absf(c.x - want[0]) < 1e-6 and absf(c.y - want[1]) < 1e-6 and absf(c.z - want[2]) < 1e-6, str(c))
+	check("colour is black where there is no light (below the 300 K lookup)", ForwardGlow.colour(200.0) == Vector3.ZERO and ForwardGlow.colour(NAN) == Vector3.ZERO)
+	# the shader's path: Blackbody's lookup (log10 Y linear in log T) within 0.5 % of the exact efficacy
+	var worst := 0.0
+	for i in 400:
+		var t := exp(log(400.0) + i / 399.0 * (log(1e6) - log(400.0)))
+		worst = maxf(worst, absf(ForwardGlow.efficacy_lut(t) / ForwardGlow.efficacy(t) - 1.0))
+	check("efficacy_lut within 0.5 %% of the exact efficacy over 400 K..1e6 K (worst %.4f %%)" % (worst * 100.0), worst < 0.005)
+	var finite := true
+	for i in 2001:
+		var t := pow(10.0, -3.0 + i * 0.006) # 1e-3 K .. 1e9 K, past both ends of the lookup
+		var v := ForwardGlow.efficacy_lut(t)
+		var c := ForwardGlow.colour_lut(t)
+		finite = finite and is_finite(v) and v >= 0.0 and is_finite(c.x) and is_finite(c.y) and is_finite(c.z)
+	check("efficacy_lut and colour_lut finite and >= 0 over 1e-3 K..1e9 K (gate 5)", finite and ForwardGlow.efficacy_lut(NAN) == 0.0 and ForwardGlow.efficacy_lut(INF) >= 0.0)
 	# the wall point the panorama camera's rays reach (the camera is not at the bubble centre)
 	var c := PackedFloat64Array([0.0, 0.0, 0.0])
 	check("wall_cos from the centre = the ray's own z", absf(ForwardGlow.wall_cos(c, PackedFloat64Array([0.6, 0.0, 0.8]), 100.0) - 0.8) < 1e-15)
@@ -82,6 +110,7 @@ func test_glow_mirror() -> void:
 	check("wall_cos is NaN outside the bubble", is_nan(ForwardGlow.wall_cos(PackedFloat64Array([0, 0, 120]), PackedFloat64Array([0, 0, 1]), 100.0)))
 	check("pole_of reads ship.ism.glow_pole_w_m2", ForwardGlow.pole_of({"ship": {"ism": {"glow_pole_w_m2": 9.6e-5}}}) == 9.6e-5)
 	check("pole_of: no field -> -1 (glow off; never derived from glow_w_m2)", ForwardGlow.pole_of({"ship": {"ism": {"glow_w_m2": 2.4e-5}}}) == -1.0)
+	check("temperature_of reads ship.ism.glow_pole_k; absent -> -1", ForwardGlow.temperature_of({"ship": {"ism": {"glow_pole_k": 1357.5}}}) == 1357.5 and ForwardGlow.temperature_of({"ship": {"ism": {}}}) == -1.0)
 
 
 func test_bundle_fields() -> void:
@@ -199,11 +228,12 @@ func test_composite() -> void:
 			var f := it.bundle.iso_camera()["focus_m"] as Array
 			var centre := Vector3(f[0], f[1], f[2]) + (pc["up"] as Vector3) * float(pc["v_offset"])
 			check("bridge v2: plate_uv of the pan-0 view centre is (0.5, 0.5)", Interior.plate_uv(centre, pc, 22.0, 10920.0 / 5940.0).distance_to(Vector2(0.5, 0.5)) < 1e-6)
-			it.sky.glow_pole = ForwardGlow.profile(1.1250843031053142, 1.0) # the cap's pole (tools/glow_probe)
+			it.sky.glow_t_pole = 14114.023335759706
+			it.sky.glow_pole = ForwardGlow.profile(0.11250843031053144, 1.0) # the cap's pole (tools/glow_probe)
 			it._push_glow_tint()
 			var g: Vector3 = (proj[0] as ShaderMaterial).get_shader_parameter("glow_rgb")
-			var want := ForwardGlow.WHITE_RGB * (ForwardGlow.luminance(1.1250843031053142) * it.sky.exposure.k())
-			check("bridge v2: the live glow reaches the plate (glow_rgb = E/pi x lm/W x k x colour)", g.distance_to(want) <= 1e-6 * maxf(want.length(), 1e-30) and g.length() > 0.0, "%s vs %s" % [g, want])
+			var want := ForwardGlow.colour(it.sky.glow_t_pole) * (ForwardGlow.luminance(it.sky.glow_pole, it.sky.glow_t_pole) * it.sky.exposure.k())
+			check("bridge v2: the live glow reaches the plate (glow_rgb = E/pi x eta(T) x k x colour(T))", g.distance_to(want) <= 1e-6 * maxf(want.length(), 1e-30) and g.length() > 0.0, "%s vs %s" % [g, want])
 			it.sky.glow_pole = -1.0 # the sim sends no glow_pole_w_m2 (before PR #113): no glow, no error
 			it._push_glow_tint()
 			check("bridge v2: no sim pole -> glow_rgb 0", ((proj[0] as ShaderMaterial).get_shader_parameter("glow_rgb") as Vector3) == Vector3.ZERO)

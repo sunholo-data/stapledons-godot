@@ -15,4 +15,4 @@ level = "experimental"
 
 [dependencies]
 "sunholo/celestial" = "0.1.0"
-"sunholo/relativity" = "0.7.0"
+"sunholo/relativity" = "0.8.0"

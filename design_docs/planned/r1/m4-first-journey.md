@@ -231,8 +231,9 @@ A pure module `sim/consequence.ail` beside M2's journey state; I/O stays in
 - **ISM readout (D-11).** The wall is an elastic mirror for massive
   particles (higgs-bubble.md §5). Inputs are the scenario parameters M2
   already carries (`sim/core.ail` `defaultParams`, V18): n = 0.1 cm⁻³ (HB-3),
-  R = 100 m (HB-1), **ε = 1 × 10⁻⁹** (`glowEps`; D-15's attended default,
-  inside HB-61's design-guide ceiling of 3.6 × 10⁻⁹), and **f_in = ½**
+  R = 100 m (HB-1), **ε = 1 × 10⁻¹⁰** (`glowEps`, HB-111; D-15's 10⁻⁹ was
+  lowered by D-29 and its attended follow-up of 2026-10-03, chosen from the
+  rendered comparison `make glow-eps-sheet`; inside HB-61's design-guide ceiling of 3.6 × 10⁻⁹), and **f_in = ½**
   (`glowFIn`; M2's default, the same assumption HB-61 states; no Mark ruling
   fixes f_in, and it stays a scenario parameter). Every readout is one named
   function of `sunholo/relativity/medium` 0.5.1:
@@ -274,7 +275,7 @@ A pure module `sim/consequence.ail` beside M2's journey state; I/O stays in
   within 1e-9 (`sim/core_test.ail:602–615`). Boost energy per kg of m_eff, `photonDriveEnergy(1,
   φ)` = 2.3787 × 10¹⁷ J at 0.99c (HB-35), is on M2's planner. All of these
   are readouts; no budget is enforced (non-goal). **Check values:** ε
-  (`m4:glow_eps`, 1e-9, source D-15), f_in (`m4:glow_f_in`, 0.5, source the
+  (`m4:glow_eps`, 1e-10, source D-29 follow-up / HB-111), f_in (`m4:glow_f_in`, 0.5, source the
   M2 scenario default) and the 0.99c `glow_w_m2` above (`m4:glow_099`) are
   registered in `data/lore/check_values.json` (M4.7). The registry
   cross-checks ε ≤ HB-61.
@@ -348,7 +349,7 @@ and captures for Mark.
   emittance there is ε f_in K max(0, cos θ) = **4 · `glow_w_m2` ·
   max(0, cos θ)** (W/m²). Its mean over the whole inner sphere is exactly
   `glow_w_m2`, since the mean of max(0, cos θ) over a sphere is ¼. So the
-  pole value at 0.99c with the defaults is 9.6288 × 10⁻⁵ W/m². It is zero at
+  pole value at 0.99c with the defaults is 9.6288 × 10⁻⁶ W/m² (HB-102, ε 10⁻¹⁰). It is zero at
   β = 0. **Package first (gate 3):** the angular profile is a formula, and
   0.5.1 has only the mean (`glowInwardFlux`). So **M4.6a** adds
   `medium.glowEmittanceAt(n, phi, eps, fIn, cosTheta)` = ε f_in K max(0,
@@ -360,11 +361,16 @@ and captures for Mark.
   value at cosθ = 1 is 4 × `glowInwardFlux`. The sim emits
   `ship.ism.glow_pole_w_m2` = `glowEmittanceAt(…, 1.0)`. The shader and the
   GDScript CPU reference `glow_profile(glow_pole_w_m2, cos_theta)` mirror the
-  package. The spectrum follows higgs-bubble.md. The overlay converts W/m² to scene radiance with M1.5's
+  package. **Spectrum (D-30):** a blackbody at T = T_pole cos^¼ θ, with
+  T_pole = `ship.ism.glow_pole_k` = `glowTemperatureAt(…, 1.0)` (relativity
+  0.8.0); the overlay draws E/π × η(T) × colour(T) through Blackbody's colour
+  lookup (`glowRadianceAt`, `glowEfficacyAt`, `glowLuminanceAt`;
+  `interior/forward_glow.gd`, G-M4-5). The overlay converts W/m² to scene radiance with M1.5's
   photometric exposure, the one used for stars, so the glow's brightness
   follows from the physics plus the one shared exposure, not from a
-  hand-tuned gain. It is faint by design (ε = 1e-9) and disappears as the
-  ship brakes.
+  hand-tuned gain. It is faint at cruise (ε = 10⁻¹⁰: the 0.99c pole is
+  1.65 × 10⁻³ of the dark sky, HB-105), becomes visible from about 0.997c
+  (HB-112) and disappears as the ship brakes.
 - **Walking** on the bundle's `WALK_` navmesh, static captain avatar
   (ai-showcase §4); avatar position never goes to the sim.
 - **Interactables:** navigation console → M2 galaxy map; Archive terminal →
@@ -485,8 +491,10 @@ full.
   Earth-yr and 0.620438 ship-yr from `coastAt`, with the sim's
   `planBurnCoastBurn` 4.398171 / 0.620443 at D-15's boost); the ISM load at
   0.99c (2.21961 × 10⁵ W/m², `loadScale`, HB-40 at its 3 s.f.); the glow
-  values: ε = 1e-9, `glow_w_m2` = 2.40719 × 10⁻⁵ W/m² at 0.99c and
-  0.281271 W/m² at 0.999999c (≤ 1 W/m², HB-61), and the profile
+  values: ε = 1e-10 (HB-111), `glow_w_m2` = 2.40719 × 10⁻⁶ W/m² at 0.99c and
+  0.0281271 W/m² at 0.999999c (≤ 1 W/m², HB-61), the pole temperatures
+  1,357.52 K and 14,114.0 K, the pole luminance against the dark sky
+  (1.65 × 10⁻³ and 3.61 × 10⁴, HB-105, HB-107), and the profile
   `glow_profile(glow_pole_w_m2, cos θ)` at θ = 0°, 45°, 80°, 90° and 120°
   against `glowEmittanceAt` within 1e-12 relative; finite flux at every stop
   point (no star within 100 AU; gate 5). Every expected value is copied from
@@ -507,9 +515,14 @@ full.
     θ = 0°, 45° and 80° matches the CPU profile within 1 %. At β = 0 it is
     exactly 0. (b) *Absolute (quorum round 1):* the overlay renders into a
     debug linear float target in W/m² units (unit gain, before exposure and
-    tonemap). Its value at θ = 0 equals the sim's `glow_pole_w_m2` =
-    4 × `glow_w_m2` within 1 %, at 0.99c (9.6288 × 10⁻⁵) and at 0.999999c
-    (1.12508). So the glow's brightness is pinned to ε × the package flux by
+    tonemap). Its value at θ = 0 equals the pole within 1 %, at 0.99c
+    (9.6288 × 10⁻⁵) and at 0.999999c (1.12508), the ε = 10⁻⁹ poles: the
+    target is half precision, and the shape is linear in ε. (d) the
+    photometric chain E/π × η(T) × k × colour(T) at 0.999c and the cap
+    within 1 %. **G-M4-5, colour ramp (D-30):** the shader's blackbody
+    colour × efficacy at 10 temperatures 800 K..30,000 K within 1 % of
+    `ForwardGlow.colour` / `efficacy` (the package's rgbUnitLuminance and
+    luminousEfficacy). So the glow's brightness is pinned to ε × the package flux by
     a gate, not only by Mark's eye at S1. The reviewer proposed "ε × load"
     for this case. It is replaced by the package's ε f_in K, because
     higgs-bubble.md §6 defines the glow on the kinetic flux K, not the load.
@@ -651,7 +664,7 @@ AI process and AC6's `digits` case uses an injected fixture.
 | AC5 | Replay byte-identical incl. `record` intents and archive unlocks; VM = interpreter; AI process count during replay 0 | `make replay SESSION=$(SCRATCH)/session.ndjson && make parity-m4` |
 | AC6 | AI optionality: `AI=none`, `AI=stub` and `AI=digits` all complete with the audit passing. With `AI=digits`, the session log holds `ai_fallback{reason: "ai_numeral"}`, the news item's `body_source` is `fallback`, and the panel shows the fallback notice with the `ai_numeral` phrase. With `AI=none`, `body_source` is `template` and there is no notice. With `AI=stub`, `body_source` is `ai` with the "generated" tag | `make playthrough AI=none`, `AI=stub`, `AI=digits` (each followed by `make display-audit`) |
 | AC7 | Minimum-path proxy ≤ 360 s (the R1 bar per D-14); each leg 45–120 s at default warp (expected 62.0 s) | `make playthrough playthrough-time` (`sim/tools/session_audit.ail` `playthroughTime`, AILANG) |
-| AC8 | ISM readout, live and plan, at 0.99c on the 4.37 ly scripted target: `load_w_m2` 2.21961e5, `drag_n` 23.2598, `glow_w_m2` 2.40719e-5 with ε = 1e-9 and f_in = 0.5, each within 1e-3 relative of the package value (V12). `drag_energy_j` at arrival (the ledger's `drag_j` since commit; M2 semantics F·c, V24) is 1.36530e17 within 1e-3, and the ledger integral equals `cruiseDragEnergy(n, φ, R, dCoast)` within 1e-9 (ratio 0.9999999999999999 in V24; burn contribution 0 by construction; tick bound ≤ 1e-9; M4.1). glow_pole_w_m2 = glowEmittanceAt(n, φ, ε, f_in, 1.0) from the package release carrying M4.6a; interim expectation 9.62878e-5 (= 4 × V12's glowInwardFlux, hand-derived, not a package value until M4.6a). Each value also equals its HB row (HB-40, HB-49, HB-53, HB-45 via K) at that row's printed significant figures (V14). At β = 0 all are 0 | `make sim` (ISM fixture) and `make lore-values` |
+| AC8 | ISM readout, live and plan, at 0.99c on the 4.37 ly scripted target: `load_w_m2` 2.21961e5, `drag_n` 23.2598, `glow_w_m2` 2.40719e-6 with ε = 1e-10 (HB-111) and f_in = 0.5, each within 1e-3 relative of the package value (V12). `drag_energy_j` at arrival (the ledger's `drag_j` since commit; M2 semantics F·c, V24) is 1.36530e17 within 1e-3, and the ledger integral equals `cruiseDragEnergy(n, φ, R, dCoast)` within 1e-9 (ratio 0.9999999999999999 in V24; burn contribution 0 by construction; tick bound ≤ 1e-9; M4.1). glow_pole_w_m2 = glowEmittanceAt(n, φ, ε, f_in, 1.0) = 9.62878e-6 (HB-102) and glow_pole_k = glowTemperatureAt(n, φ, 1.0) = 1357.52 K (HB-96), relativity 0.8.0 (M4.1 step 2, landed with the D-30 game PR; `sim/consequence_test.ail` checkIsmCruise). Each value also equals its HB row (HB-40, HB-49, HB-53, HB-45 via K) at that row's printed significant figures (V14). At β = 0 all are 0 | `make sim` (ISM fixture) and `make lore-values` |
 | AC9 | CPU physics: `ship_basis`, projection reference, α Cen cruise mirror (`coastAt` and `planBurnCoastBurn` values from V12), ISM load, glow values and the profile against `glowEmittanceAt`, finite flux at stand-offs; no hand-computed γ or 1−β | `make test` (`physics`, `lint-precision`) |
 | AC10 | GPU golden G-M4-1 (≤ 0.75 px, pan-invariant), G-M4-2 (≤ 1/255), G-M4-3 (≤ 0.75 px, all three phases), G-M4-4 (profile and absolute pole value ≤ 1 %, 0 at rest) | `make golden` |
 | AC11 | Reference renders in `renders/m4/` on the approved bundle, reviewed by Mark | `make capture-m4`; `grep -n "S1 sign-off" design_docs/implemented/r1/m4-report.md` |
@@ -707,7 +720,7 @@ news template copy. (S3, the human playtest, moved to R2.)
 | S2 approval or Blender delivery is late, stalling M4 | Track A proceeds; the blocker is logged; the bundle format is fixed (brief §9), so delivery needs no code change |
 | M2 lands with different names, phases or a different stand-off | M4 adopts M2's names; AC1 asserts against M2's package trip function, not hard-coded numbers |
 | The default warp gives sub-second legs at high γ (0.999999c: 0.0062 ship-yr, 0.6 s) | Accepted as the honest consequence; the proxy is defined at the slice default; open question 1 |
-| The glow is too faint to see, or reads as a heat bloom | ε = 1e-9 (D-15, a scenario parameter); G-M4-4 pins the profile, the absolute pole value and zero at rest; S1 looks at the cruise frame. At 0.99c the pole emits 9.6e-5 W/m²; whether that reads at the slice default follows from ε and M1.5's exposure alone, and a different look is a scenario ε, never a hidden gain |
+| The glow is too faint to see, or reads as a heat bloom | ε = 1e-10 (D-29 follow-up, HB-111, a scenario parameter; chosen from `make glow-eps-sheet`); G-M4-4 pins the profile, the absolute pole value and zero at rest; S1 looks at the cruise frame. At 0.99c the pole emits 9.6e-5 W/m²; whether that reads at the slice default follows from ε and M1.5's exposure alone, and a different look is a scenario ε, never a hidden gain |
 | Double tonemap dims the starbow, or the starbow lands in the wrong place | G-M4-2 (single HDR tonemap); one `ship_basis` with CPU tests; G-M4-3 in every phase |
 | The destination star blows up (1/r²) or merges with its companion; AI text slips a number on screen | 1,000 AU stand-off, M1.2 tiers, finite-flux test; `ai_numeral`, AC6 |
 | Lore in the design repo changes after import | Vendored with sha; `lore-import CHECK=1` flags it; `lore-check` re-runs on every import |

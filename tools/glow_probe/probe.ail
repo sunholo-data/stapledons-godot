@@ -1,43 +1,77 @@
 module stapledons/glow_probe/probe
 
--- M4.2 check values for tests/test_physics.gd and tests/test_interior.gd (gate 2: every
--- expected value comes from the package, never from GDScript). Run:
---   make glow-probe   (ailang run --package-dir tools/glow_probe --caps IO --entry main ...)
--- ISM defaults are the sim's (core.ail defaultParams): n 0.1 cm^-3, eps 1e-9, f_in 0.5.
+-- Forward-glow check values for tests/test_physics.gd, tests/test_interior.gd and the
+-- interior goldens (gate 2/3: every expected value comes from the package, never from
+-- GDScript). sunholo/relativity 0.8.0: glowEmittanceAt, glowTemperatureAt, glowRadianceAt,
+-- glowEfficacyAt, glowLuminanceAt, luminousEfficacy, rgbUnitLuminance (D-30 blackbody).
+-- Run: make glow-probe (interpreter and VM must print the same lines).
+-- ISM defaults are the sim's (core.ail defaultParams): n 0.1 cm^-3, f_in 0.5; eps is printed
+-- for each candidate of the D-29 follow-up (the eps comparison sheet) and the sim default.
 import std/io (println)
 import std/math (cos, PI)
 import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta)
-import pkg/sunholo/relativity/medium (glowEmittanceAt, glowInwardFlux, kineticFlux)
-import pkg/sunholo/relativity/blackbody (cmf)
+import pkg/sunholo/relativity/medium (glowEmittanceAt, glowInwardFlux, kineticFlux, glowTemperatureAt, glowRadianceAt, glowEfficacyAt, glowLuminanceAt)
+import pkg/sunholo/relativity/blackbody (luminousEfficacy, rgbUnitLuminance)
+import pkg/sunholo/relativity/photometry (luminanceFromSurfaceMag)
 
 pure func nPerM3() -> float = 100000.0
-pure func eps() -> float = 0.000000001
 pure func fIn() -> float = 0.5
+pure func darkSky() -> float = luminanceFromSurfaceMag(23.5)
 
 pure func deg(d: float) -> float = d * PI() / 180.0
 
--- CIE ybar (this package's fit) summed at 1 nm over [lo, hi], trapezoid ends.
-pure func ybarSum(l: float, hi: float, acc: float) -> float =
-  if l > hi then acc
-  else ybarSum(l + 1.0, hi, acc + (if l == 380.0 || l == 780.0 then 0.5 else 1.0) * cmf(l).y)
+func epsRow(label: string, phi: float, eps: float) -> () ! {IO} {
+  let n = nPerM3();
+  let l = glowLuminanceAt(n, phi, eps, fIn(), 1.0);
+  println("${label} eps ${eps} mean ${glowInwardFlux(n, phi, eps, fIn())} pole ${glowEmittanceAt(n, phi, eps, fIn(), 1.0)} radiance ${glowRadianceAt(n, phi, eps, fIn(), 1.0)} lum ${l} dark ${l / darkSky()}")
+}
+
+func angleRow(label: string, phi: float, d: float) -> () ! {IO} {
+  let n = nPerM3();
+  let c = cos(deg(d));
+  println("${label} theta ${d} cos ${c} E9 ${glowEmittanceAt(n, phi, 0.000000001, fIn(), c)} T ${glowTemperatureAt(n, phi, c)} eff ${glowEfficacyAt(n, phi, c)}")
+}
 
 func row(label: string, phi: float) -> () ! {IO} {
   let n = nPerM3();
   println("${label} phi ${phi}");
   println("${label} K ${kineticFlux(n, phi)}");
-  println("${label} glowInwardFlux ${glowInwardFlux(n, phi, eps(), fIn())}");
-  println("${label} pole ${glowEmittanceAt(n, phi, eps(), fIn(), 1.0)}");
-  println("${label} cos45 ${cos(deg(45.0))} E ${glowEmittanceAt(n, phi, eps(), fIn(), cos(deg(45.0)))}");
-  println("${label} cos80 ${cos(deg(80.0))} E ${glowEmittanceAt(n, phi, eps(), fIn(), cos(deg(80.0)))}");
-  println("${label} cos90 ${cos(deg(90.0))} E ${glowEmittanceAt(n, phi, eps(), fIn(), cos(deg(90.0)))}");
-  println("${label} cos120 ${cos(deg(120.0))} E ${glowEmittanceAt(n, phi, eps(), fIn(), cos(deg(120.0)))}")
+  println("${label} T_pole ${glowTemperatureAt(n, phi, 1.0)} eff_pole ${glowEfficacyAt(n, phi, 1.0)}");
+  angleRow(label, phi, 0.0);
+  angleRow(label, phi, 45.0);
+  angleRow(label, phi, 80.0);
+  angleRow(label, phi, 90.0);
+  angleRow(label, phi, 120.0);
+  epsRow(label, phi, 0.00000000001);
+  epsRow(label, phi, 0.00000000003);
+  epsRow(label, phi, 0.0000000001);
+  epsRow(label, phi, 0.0000000003);
+  epsRow(label, phi, 0.000000001)
+}
+
+func effRow(t: float) -> () ! {IO} {
+  let c = rgbUnitLuminance(t);
+  println("bb T ${t} eff ${luminousEfficacy(t)} rgb ${c.r} ${c.g} ${c.b}")
 }
 
 export func main() -> () ! {IO} {
+  println("dark_sky_23.5 ${darkSky()}");
   row("b099", rapidityOfBeta(0.99));
+  row("b0995", rapidityOfBeta(0.995));
+  row("b0999", rapidityOfBeta(0.999));
+  row("b09999", rapidityOfOneMinusBeta(0.0001));
   row("cap", rapidityOfOneMinusBeta(0.000001));
   row("rest", 0.0);
-  -- equal-energy white over 380-780 nm: 683 lm/W x mean ybar over the band
-  println("ybar_sum_380_780 ${ybarSum(380.0, 780.0, 0.0)}");
-  println("efficacy_equal_energy_380_780_lm_per_w ${683.0 * ybarSum(380.0, 780.0, 0.0) / 400.0}")
+  effRow(300.0);
+  effRow(800.0);
+  effRow(1000.0);
+  effRow(1357.5234659678836);
+  effRow(2000.0);
+  effRow(2481.898408081983);
+  effRow(4000.0);
+  effRow(6600.0);
+  effRow(10000.0);
+  effRow(14114.023335759708);
+  effRow(30000.0);
+  effRow(100000.0)
 }

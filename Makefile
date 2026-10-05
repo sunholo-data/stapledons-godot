@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test transit-test deps area-test validate-areas m4-smoke interior-test glow-probe capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: all test transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -75,6 +75,7 @@ transit-test:      ## M4.3a: warp intent, 3 s burn pacing, HUD bindings + audit 
 	@! grep -rniE "save_game|load_game|ResourceSaver" interior ui || { echo "transit-test: AC3 grep half found a save/load path"; exit 1; }
 
 glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy from sunholo/relativity 0.7.0 (tools/glow_probe), VM = interpreter
+glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy from sunholo/relativity 0.8.0 (tools/glow_probe), VM = interpreter
 	@mkdir -p $(SCRATCH)
 	cd tools/glow_probe && $(AILANG) lock >/dev/null && git checkout -q ailang.lock 2>/dev/null || true
 	$(AILANG) run --quiet --package-dir tools/glow_probe --caps IO --entry main tools/glow_probe/probe.ail > $(SCRATCH)/glow-probe.txt
@@ -84,6 +85,10 @@ glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy f
 capture-m4:        ## M4.2 S1 review captures to renders/m4/ (needs a GPU window): the captain walking on the bridge at rest, 0.99c and the cap, the nav console opening the map, pans, glow preview, contact sheet
 	$(GODOT_SIM) --path . -- --interior-capture=renders/m4
 	test -s renders/m4/contact_sheet.png
+
+glow-eps-sheet:    ## D-29 follow-up: interior + forward sky at 0.99c..cap for each candidate eps through the eye exposure -> renders/glow/eps_compare.{png,jpg} + glow_eps_sheet.json (needs a GPU window)
+	$(GODOT_SIM) --path . -- --glow-eps-sheet=renders/glow
+	test -s renders/glow/eps_compare.jpg
 
 areas-stage:       ## M4.2: stage assets/areas/<area>/ into areas_bundle/<area>/<file>.bin for the export (assets/areas is .gdignore'd; previews and review/ stay out)
 	@rm -rf areas_bundle
@@ -200,7 +205,7 @@ wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ai
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..4 (composite position, one tonemap, forward pole, glow); bridge v2: G-M4-5 (plate projection, live glow term)
+golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..5 (composite position, one tonemap, forward pole, glow, glow colour ramp); bridge v2 G-M4-5 plate6 and spectral glow G-M4-6 colour10
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
@@ -210,10 +215,10 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 	  grep -q '^ok    exposure golden (sky)' $(SCRATCH)/golden.log && grep -q '^ok    limiting magnitude' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    CMB golden' $(SCRATCH)/golden.log)" = 10 && \
 	  grep -q '^ok    G-M4-1 composite position: 72 cases' $(SCRATCH)/golden.log && grep -q '^ok    G-M4-2 one tonemap' $(SCRATCH)/golden.log && \
-	  test "$$(grep -c '^ok    G-M4-3 forward pole' $(SCRATCH)/golden.log)" = 6 && test "$$(grep -c '^ok    G-M4-4 glow' $(SCRATCH)/golden.log)" = 7 && \
+	  test "$$(grep -c '^ok    G-M4-3 forward pole' $(SCRATCH)/golden.log)" = 6 && test "$$(grep -c '^ok    G-M4-4 glow' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-M4-6 colour' $(SCRATCH)/golden.log)" = 10 && \
 	  test "$$(grep -c '^ok    G-M4-5 plate' $(SCRATCH)/golden.log)" = 6 && \
 	  grep -q '^interior golden: 0 failures$$' $(SCRATCH)/golden.log && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 7 + bridge v2 G-M4-5 6)"; exit 1; }
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.

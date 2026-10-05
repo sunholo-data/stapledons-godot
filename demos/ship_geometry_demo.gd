@@ -210,7 +210,8 @@ func _sync_observer() -> void:
 	if not commons.is_empty():Commons.update_detail(commons,camera.position)
 	if not sky_world.is_empty():
 		var pole:float=0. if camera.position.length()>=100. else ForwardGlow.pole_of(sky_world)
-		if sky.glow_pole!=pole:sky.set_glow_pole(pole)
+		var temperature:float=ForwardGlow.temperature_of(sky_world)
+		if sky.glow_pole!=pole or sky.glow_t_pole!=temperature:sky.set_glow(pole,temperature)
 func look_direction(direction: String) -> void:
 	_tour_view_active=false
 	if benchmark.running:return
