@@ -652,7 +652,7 @@ func subtitle_text() -> String:
 		return ""
 	var i := int(t["index"])
 	if i >= 0 and i < catalogue.size() and catalogue[i]["id"] == t["id"]:
-		return "%s  ·  %.2f ly" % [t["id"], float(catalogue[i]["dist_ly"])]
+		return preload("res://ui/star_info.gd").catalogue_subtitle(catalogue[i])
 	return String(t["id"])
 
 

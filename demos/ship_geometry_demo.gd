@@ -4,6 +4,8 @@ const Lift := preload("res://demos/ship_demo_lift.gd")
 const Camera := preload("res://demos/ship_demo_camera.gd")
 const Benchmark := preload("res://demos/ship_demo_benchmark.gd")
 const Commons := preload("res://demos/ship_commons.gd")
+const Identification := preload("res://ui/ship_star_identification.gd")
+var star_identification: Control
 var benchmark := Benchmark.new()
 var setup_options := {}
 var camera: Camera3D = Camera.new()
@@ -45,6 +47,7 @@ var _journey_accum := 0.
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
+	if OS.get_cmdline_user_args().has("--ship-identification-smoke"):_identification_smoke.call_deferred()
 func asset(file: String) -> String:
 	var source := "res://assets/ship_demo/"+file
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
@@ -84,6 +87,12 @@ func setup(opts := {}) -> bool:
 		push_error("ship demo missing simulation sky review states");return false
 	ready_ok=true
 	set_brightness_trial(opts.get("brightness_stops",2))
+	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
+	star_identification = Identification.new();identify_canvas.add_child(star_identification)
+	star_identification.setup(self);star_identification.open_map.connect(open_identified_star)
+	if opts.get("live_start",false):
+		sky_state="live";open_navigation();close_navigation()
+		if journey_map==null:sky_state="rest"
 	print("ship-demo-ready: OK")
 	return true
 func _draw_layer(texture: Texture2D, layer: int) -> void:
@@ -121,7 +130,7 @@ func _hud() -> void:
 	for stops in BRIGHTNESS_STOPS:
 		var button:=Button.new();button.text="Calibrated baseline" if stops==0 else "Exposure trial %d×" % int(pow(2.,stops))
 		button.pressed.connect(set_brightness_trial.bind(stops));brightness_row.add_child(button)
-	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · two-finger scroll / wheel to zoom · E lift · G guides · Esc close";controls.add_child(hint)
+	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · scroll to zoom · E lift · hold I + click known star · G guides · Esc close";controls.add_child(hint)
 func toggle_controls() -> void:
 	if not benchmark.running:controls.visible=not controls.visible
 func set_brightness_trial(stops: int) -> bool:
@@ -141,7 +150,7 @@ func set_preset(name: String) -> void:
 	guides.visible=name=="overview"
 	match name:
 		"bridge":
-			camera_mode="player";camera.follow(avatar_pos,-18,.47,3.)
+			camera_mode="player";camera.follow(avatar_pos,-18,.47,0.)
 		"overlook":
 			if active_level==0:avatar_pos=walk.closest_walkable(Vector3(18,82,9),3.)
 			camera_mode="player";camera.follow(avatar_pos,-30,.47,0.)
@@ -197,7 +206,7 @@ func _process(delta: float) -> void:
 	if Time.get_ticks_msec()-_last_exposure_ms>250:
 		sky.update_exposure();_last_exposure_ms=Time.get_ticks_msec()
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	label.text="SEVEN-TIER SHIP DEMO · native materials · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name,active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	label.text="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else "Travel is UP; floors correctly block the aft sky.\n",brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
 	if navigation_window!=null and navigation_window.visible:return
@@ -297,6 +306,27 @@ func _export_smoke() -> void:
 			print("ship-demo-smoke-stage arrival: ",ok," phase=",sky_world.ship.phase)
 	print("ship-demo-export-smoke: %s" % ("OK" if ok else "FAIL"))
 	get_tree().quit(0 if ok else 1)
+func _identification_smoke() -> void:
+	auto=false;journey_auto_tick=false
+	set_sky_state("rest");look_direction("forward")
+	var key := InputEventKey.new();key.physical_keycode=KEY_I;key.pressed=true
+	Input.parse_input_event(key)
+	for frame in 3:await get_tree().process_frame
+	var ok: bool = ready_ok and star_identification.held and not star_identification.candidates.is_empty()
+	if ok:
+		var candidate: Dictionary = star_identification.candidates[0]
+		var click := InputEventMouseButton.new();click.button_index=MOUSE_BUTTON_LEFT;click.pressed=true;click.position=candidate.pixel;click.global_position=candidate.pixel
+		get_viewport().push_input(click,false)
+		await get_tree().process_frame
+		ok=star_identification.selected_id==candidate.id and star_identification.card.visible and journey_map==null
+		key.pressed=false;Input.parse_input_event(key);await get_tree().process_frame
+		ok=ok and not star_identification.held and star_identification.card.visible
+		star_identification.open_map.emit(candidate.id)
+		ok=ok and journey_map!=null and journey_map.catalogue[journey_map.selected_index].id==candidate.id and not live_journey
+	print("ship-star-identification-export-smoke: %s" % ("OK" if ok else "FAIL"))
+	var tree := get_tree()
+	queue_free();await tree.process_frame;await tree.process_frame
+	tree.quit(0 if ok else 1)
 
 ## Separate session: this demo never touches main.gd's active voyage.
 func open_navigation() -> void:
@@ -325,6 +355,11 @@ func open_navigation() -> void:
 func close_navigation() -> void:
 	if navigation_window==null:return
 	journey_map.close_commit_dialog();navigation_window.hide()
+func open_identified_star(id: String) -> void:
+	open_navigation()
+	if journey_map != null:
+		var index := journey_map.index_of(id)
+		if index >= 0 and journey_map.preselect(index):journey_map.frame_star(index)
 func journey_tick() -> bool:
 	if journey_map==null:return false
 	var was_committed:=live_journey

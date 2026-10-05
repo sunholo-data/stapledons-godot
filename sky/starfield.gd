@@ -42,6 +42,8 @@ var rebase_mode := Rebase.GPU
 var count := 0
 var pos := PackedFloat64Array() # 3 per star: world ly from Sol, float64
 var custom := PackedFloat32Array() # 4 per star: teff, E_v at Sol (lux), flags, |p|^2
+var ids: Array[String] = [] # same filtered, stacked order as pos/custom
+var identity_revision := 0
 var skipped_missing := 0 # MISSING_PHOT rows (teff 0, v 99): nothing to draw
 var tiers: Array[String] = []
 var last_error := ""
@@ -54,9 +56,11 @@ var _buf := PackedFloat32Array()
 
 
 func clear() -> void:
+	identity_revision += 1
 	count = 0
 	pos.clear()
 	custom.clear()
+	ids.clear()
 	skipped_missing = 0
 	tiers.clear()
 
@@ -88,6 +92,7 @@ func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
 
 ## only_flags != 0: append only the rows carrying those flag bits.
 func append_catalogue(c: StarCatalogue, only_flags := 0) -> void:
+	identity_revision += 1
 	var k := count
 	pos.resize(3 * (count + c.count))
 	custom.resize(4 * (count + c.count))
@@ -102,6 +107,7 @@ func append_catalogue(c: StarCatalogue, only_flags := 0) -> void:
 		# galactic -> world (SkyFrame, D-28), widened to float64 before any arithmetic
 		var w := SkyFrame.to_world64([d[j], d[j + 1], d[j + 2]])
 		_put(k, w[0], w[1], w[2], d[j + 3], Relativity.illuminance_from_v(d[j + 4]), d[j + 5])
+		ids.append(c.ids[i] if c.ids.size() == c.count else "")
 		k += 1
 	count = k
 	pos.resize(3 * count)
@@ -126,11 +132,13 @@ func set_custom_stars(list: Array) -> void:
 
 
 func append_stars(list: Array) -> void:
+	identity_revision += 1
 	pos.resize(3 * (count + list.size()))
 	custom.resize(4 * (count + list.size()))
 	for s: Dictionary in list:
 		var p = s["pos"]
 		_put(count, p[0], p[1], p[2], s["t"], s["flux"], s.get("flags", 0.0))
+		ids.append(s.get("id", ""))
 		count += 1
 	if multimesh != null:
 		_fill()

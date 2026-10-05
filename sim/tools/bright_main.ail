@@ -31,7 +31,7 @@ import std/string (concat, join, intToStr, floatToStr)
 import std/list (map, nth, length as size, concat as append)
 import std/crypto (sha256Hex, sha256Bytes)
 import std/bytes (fromBase64, toString as utf8)
-import std/json (Json, kv, js, jint, jo, asString)
+import std/json (Json, kv, js, jint, jo, ja, asString)
 import std/gzip (decompressFile)
 import std/fs (readFileResult, writeFileResult, renameFileResult)
 import std/io (println)
@@ -74,7 +74,7 @@ export pure func brightPlan(t: Tier, links: Array[Link], shas: [{key: string, va
       Err(e) => Err(e),
       Ok(bin) => Ok({bin: bin, count: size(rows), excluded: size(t.b.noColour),
         sidecar: sidecarWith("bright",brightSource(),size(rows),size(t.b.noColour),
-          append([kv("matched_cns5",jint(t.b.cns5)), kv("matched_gcns",jint(t.b.gcns))], ruleKeys(movedIn(rows,links))),
+          append([kv("ids",ja(map(\r. js(r.id),rows))), kv("matched_cns5",jint(t.b.cns5)), kv("matched_gcns",jint(t.b.gcns))], ruleKeys(movedIn(rows,links))),
           shas,sha256Bytes(bin),ailang,pkg)})
     }
   } }

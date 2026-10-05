@@ -29,7 +29,8 @@ pure func checkSidecarFields() -> bool = match plan(inputs("quick",three(),raw()
     Ok(j) => {
       let sha = object(j,"sha256");
       let pk = object(j,"package");
-      keys(j) == ["tier","count","count_excluded","source","format_version","record_bytes","fields","ailang","package","producer","sha256"] &&
+      keys(j) == ["tier","count","count_excluded","source","ids","format_version","record_bytes","fields","ailang","package","producer","sha256"] &&
+      strings(j,"ids") == ["a","m","w"] &&
       keys(sha) == ["raw","csv","bin"] && keys(pk) == ["name","version","content_hash"] &&
       field(sha,"bin") == sha256Bytes(p.bin) && field(sha,"csv") == sha256Hex(three()) && field(sha,"raw") == raw() &&
       field(j,"tier") == "quick" && jnum(j,"count") == 3.0 && jnum(j,"count_excluded") == 0.0 &&
@@ -46,7 +47,7 @@ pure func checkSidecarFields() -> bool = match plan(inputs("quick",three(),raw()
 -- Medium: count and count_excluded come from the selection (the missing-photometry row is excluded).
 pure func checkSidecarMedium() -> bool = match plan(inputs("medium",three(),raw())) {
   Ok(p) => match decode(p.sidecar) {
-    Ok(j) => jnum(j,"count") == 2.0 && jnum(j,"count_excluded") == 1.0 && field(j,"tier") == "medium" &&
+    Ok(j) => strings(j,"ids") == ["a","w"] && jnum(j,"count") == 2.0 && jnum(j,"count_excluded") == 1.0 && field(j,"tier") == "medium" &&
       byteLength(p.bin) == 48 && field(object(j,"sha256"),"bin") == sha256Bytes(p.bin) && field(j,"source") != field(okQuick(),"source"),
     Err(_) => false
   },

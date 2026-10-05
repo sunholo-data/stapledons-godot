@@ -16,7 +16,9 @@
       "acceptance_criteria": [
         "SI1"
       ],
-      "passes": false
+      "passes": true,
+      "completed": "2026-10-05",
+      "notes": "Exact selected Row.id lists in hash/count-checked sidecars; quick/medium/bright regenerated from pinned inputs with unchanged binaries. Producer mainVm test first main-BAD then all catalogue-vm markers pass. Exact filtering, stacking, malformed/duplicate IDs and missing metadata covered."
     },
     {
       "id": "SI-B",
@@ -26,7 +28,9 @@
         "SI4",
         "SI5"
       ],
-      "passes": false
+      "passes": true,
+      "completed": "2026-10-05",
+      "notes": "Integrated native shared factual card, held-I rings, exact-ID overlap choice/map handoff, actual uploaded shader ray/visibility mirrors, cached opaque mesh BVHs and current transform/LOD visibility. Native canvas conversion verified at 1920/1280/900. 37 source checks and native source smoke pass; inspection does not create or mutate a voyage. Legacy painted-plate interior integration deferred because its occlusion uses alpha plates rather than this finite mesh host."
     },
     {
       "id": "SI-C",
@@ -36,7 +40,8 @@
         "SI6",
         "SI7"
       ],
-      "passes": false
+      "passes": null,
+      "notes": "GPU audit 274 cases, worst 0.5058px including actual GPU centroids, CPU/GPU nearby large rebases, isolated exact Sirius row and real boosting/cruising/braking voyage states; native click and noncollider opaque composite pass. Final cache refresh GPU audit, paired budget benchmark, packaged smoke and independent evaluation pending; actual M2 Air pending."
     }
   ]
 }
