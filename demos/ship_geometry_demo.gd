@@ -51,7 +51,7 @@ var sky_state := "rest"
 var sky_only := false
 var controls := VBoxContainer.new()
 var commons: Dictionary = {}
-const BRIGHTNESS_STOPS := [0,1,2,4,6]
+const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
@@ -160,9 +160,9 @@ func _hud() -> void:
 	for pair in [["Look forward/up [7]","forward"],["Look side [8]","side"],["Look aft/down [9]","aft"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));sky_row.add_child(button)
 	var sky_button:=Button.new();sky_button.text="Sky only diagnostic [H]";sky_button.pressed.connect(toggle_sky_only);controls.add_child(sky_button)
-	var brightness_row:=HBoxContainer.new();controls.add_child(brightness_row)
+	var brightness_row:=GridContainer.new();brightness_row.columns=4;controls.add_child(brightness_row)
 	for stops in BRIGHTNESS_STOPS:
-		var button:=Button.new();button.text="Calibrated baseline" if stops==0 else "Exposure trial %d×" % int(pow(2.,stops))
+		var button:=Button.new();button.text="Reference sky" if stops==0 else ("Dim %d stops"%(-stops) if stops<0 else "%d× brighter"%int(pow(2.,stops)))
 		button.pressed.connect(set_brightness_trial.bind(stops));brightness_row.add_child(button)
 	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · scroll to zoom · E lift · hold I + click known star · G guides · Esc close";controls.add_child(hint)
 func toggle_controls() -> void:
@@ -171,10 +171,15 @@ func set_brightness_trial(stops: int) -> bool:
 	if benchmark.running or not stops in BRIGHTNESS_STOPS:return false
 	brightness_stops=stops
 	sky.exposure.bias=-float(stops)
+	# Demo display choice: fixed dark-sky reference plus explicit player aid.
+	# Scene motion, bright bodies and camera pans never adjust this exposure.
+	sky.set_temporal_exposure(false)
+	sky.exposure.fixed=true
+	sky.exposure.fixed_ev=sky.exposure.ev_dark()-float(stops)
 	sky.update_exposure()
 	return true
 func brightness_label() -> String:
-	return ("Calibrated sky" if brightness_stops==0 else "Sky exposure trial %d× — display aid" % int(pow(2.,brightness_stops))) + (" · display anticipation/fade EV" if sky.temporal_exposure else "")
+	return "Manual sky exposure EV %.2f · %s"%[sky.exposure.fixed_ev,"calibrated reference" if brightness_stops==0 else ("%d stops dimmer · display aid"%(-brightness_stops) if brightness_stops<0 else "%d× display aid"%int(pow(2.,brightness_stops)))]
 func set_preset(name: String) -> void:
 	if name=="reset":
 		if lift!=null:lift.reset()
@@ -244,7 +249,7 @@ func _process(delta: float) -> void:
 	if solar_tour!=null:solar_next.disabled=live_journey or solar_tour.complete or solar_tour.attitude_hold or solar_tour.pending_index>=0 or not solar_tour.failed.is_empty()
 	navigation_button.text="Navigation [M] · pauses tour for browsing" if solar_tour!=null else "Navigation [M] · select destination and hold to commit"
 	if not ready_ok:return
-	sky.set_temporal_exposure(auto and not benchmark.running)
+	sky.set_temporal_exposure(false)
 	_update_tour_attitude(delta)
 	if journey_map!=null and journey_auto_tick and not benchmark.running:
 		_journey_accum=minf(_journey_accum+delta,4./GalaxyMap.TICK_HZ)
@@ -342,6 +347,9 @@ func _export_smoke() -> void:
 	auto=false
 	await get_tree().process_frame
 	var ok:=ready_ok and not avatar.stages.is_empty()
+	var manual_ev:float=sky.exposure.ev_dark()-brightness_stops
+	ok=ok and sky.exposure.fixed and not sky.temporal_exposure and sky.exposure.ev==manual_ev
+	print("ship-demo-smoke-stage manual exposure: ",ok," EV=",sky.exposure.ev)
 	ok=ok and not commons.is_empty() and commons.visual.get_parent()==geometry
 	print("ship-demo-smoke-stage assets: ",ok)
 	if ok:
@@ -360,7 +368,7 @@ func _export_smoke() -> void:
 			print("ship-demo-smoke-stage commit: ",ok," refused=",journey_sim.last_refused)
 			for i in 1220:
 				if not live_journey:break
-				ok=journey_tick() and ok
+				ok=journey_tick() and ok and sky.exposure.fixed and not sky.temporal_exposure and sky.exposure.ev==manual_ev
 			ok=ok and journey_map.journey_state()=="arrived" and sky.beta==0.
 			print("ship-demo-smoke-stage arrival: ",ok," phase=",sky_world.ship.phase)
 	print("ship-demo-export-smoke: %s" % ("OK" if ok else "FAIL"))
@@ -451,7 +459,9 @@ func start_solar_departure() -> bool:
 	solar_tour=SolarDeparture.new()
 	solar_tour.deferred_commit=true
 	_attitude_stop=-99;_attitude_pending=-99;_attitude_mode=""
-	tour_attitude.reset(ShipFrame.ship_basis(camera.heading))
+	var initial_heading:Dictionary=journey_sim.world.ship.heading
+	tour_attitude.reset(ShipFrame.ship_basis(PackedFloat64Array([initial_heading.x,initial_heading.y,initial_heading.z])))
+	camera.attitude_basis=tour_attitude.current.duplicate()
 	var destination_index:int=journey_map.index_of("CNS5:3627")
 	var destination:Dictionary=journey_map.catalogue[destination_index].duplicate(true)
 	destination.index=destination_index

@@ -204,6 +204,12 @@ func set_temporal_exposure(on: bool) -> void:
 
 func update_exposure() -> void:
 	_exposure_dirty = true
+	if exposure.fixed and not _debug_unit:
+		_prepare_exposure_scene()
+		exposure.update(0.)
+		_upload_exposure()
+		_exposure_dirty=false
+		return
 	if temporal_exposure and not _debug_unit and not exposure.fixed:return
 	_sample_exposure()
 	exposure.update(_meter_samples[0],_meter_samples[1],_meter_samples[2])
@@ -215,6 +221,12 @@ func finish_exposure_frame(delta: float, frame_id: int = Engine.get_process_fram
 	if frame_id == _finished_exposure_frame:return
 	_finished_exposure_frame = frame_id
 	exposure_frame_count += 1
+	if exposure.fixed and not _debug_unit:
+		_prepare_exposure_scene()
+		exposure.update(0.)
+		_upload_exposure()
+		_exposure_dirty=false
+		return
 	_meter_age += clampf(delta,0.,.1)
 	var controls := [camera.fov,size,exposure.mode,exposure.bias,exposure.fixed,exposure.fixed_ev]
 	var view := [camera.transform,cam.get("position_m"),controls]

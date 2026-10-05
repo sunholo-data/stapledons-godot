@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Manual sky exposure correction, 2026-10-05
+
+- Remove automatic exposure changes from the current ship demo, following laptop review. Camera motion, bright planets and nearby stars no longer dim the background automatically. Keep physical source brightness and SR calculations unchanged; manual brightness settings control the display.
+- Withdraw dev13 as the default private download after its unresolved-star anticipation caused missing starfields. Retain dev12 as the fallback until the manual-exposure replacement is visually verified.
+- Initialize the tour camera from the new session heading, removing a one-frame old-heading jump. Ease guided departure time compression over three seconds so nearby planets do not leap on the first compressed tick; simulation motion and ordinary navigation remain unchanged.
+
 ### Laptop sky and approach follow-up, 2026-10-05
 
 - Meter the final shared camera view rather than temporary simulation headings, preventing Earth/Jupiter and Sun exposure from alternating between updates. Interactive brightness adaptation is a labelled display policy; fixed EV and physical reference paths stay explicit.
