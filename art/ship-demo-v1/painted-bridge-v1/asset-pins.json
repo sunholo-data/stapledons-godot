@@ -1,0 +1,49 @@
+{
+  "blender_commit": "e4da963",
+  "pins": {
+    "assets/ship_demo/ship.glb": {
+      "bytes": 8705408,
+      "sha256": "2e985adb701f4b64bf236e0f62c1cf7b9db9a290fff3c652f8f6e9544162abbd",
+      "materials": 14,
+      "images": 10,
+      "all_materials_opaque": true,
+      "all_materials_double_sided": true
+    },
+    "assets/ship_demo/walk_bridge.glb": {
+      "bytes": 325488,
+      "sha256": "9775c88d9f4d7ba7cb041ceedc61b22d6fca631092a73d051b0efdbad58f319b",
+      "materials": 0,
+      "images": 0,
+      "all_materials_opaque": true,
+      "all_materials_double_sided": true
+    },
+    "assets/ship_demo/walk_lower.glb": {
+      "bytes": 1208,
+      "sha256": "dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213",
+      "materials": 0,
+      "images": 0,
+      "all_materials_opaque": true,
+      "all_materials_double_sided": true
+    },
+    "assets/ship_demo/manifest.json": {
+      "bytes": 2474,
+      "sha256": "b8e42f7c43d7cec5b4c08a8de5fc8e034b92f454374cbe1276876de82709a033"
+    },
+    "assets/ship_commons/full_assembly.glb": {
+      "bytes": 13102076,
+      "sha256": "0501920091f062e4c749a77c7fd8a9770acb8b37c7a2cd685cb259f371687058",
+      "materials": 15,
+      "images": 11,
+      "all_materials_opaque": true,
+      "all_materials_double_sided": true
+    },
+    "art/ship-demo-v1/painted-bridge-v1/stapledon_bridge_mesh_painted_v1.blend": {
+      "bytes": 7813143,
+      "sha256": "d9a76f9413cbb69e9583dcf85dc62080cdfaab68767645a13d51808fdb28ae59"
+    },
+    "art/ship-demo-v1/painted-bridge-v1/stapledon_unified_ship_painted_v1.blend": {
+      "bytes": 11093516,
+      "sha256": "8deadae1f064afff30e88274821f53a7d840a01fffcf0688a92c5af4da8fbc57"
+    }
+  }
+}
