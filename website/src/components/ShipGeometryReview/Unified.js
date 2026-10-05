@@ -6,7 +6,7 @@ const views=[
  ['ship_unified_v1/native/captain_inward.png','Bridge · looking inward'],
  ['ship_unified_v1/native/captain_overlook.png','Bridge · overlook toward lower tiers'],
  ['ship_unified_v1/native/third_person_3m.png','Bridge · optional third-person pullback'],
- ['ship_identification_v1/native_900_card.png','Known-star inspection · factual card'],
+ ['ship_identification_v1/bridge_identify.png','Known-star inspection · Alpha Centauri card'],
  ['ship_identification_v1/live_boosting.png','Committed journey · acceleration'],
  ['ship_identification_v1/live_braking.png','Committed journey · braking'],
 ];
