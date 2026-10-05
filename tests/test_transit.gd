@@ -137,6 +137,31 @@ func test_card(res: Dictionary) -> void:
 	card.queue_free()
 
 
+## D1: at arrival the card sits clear of the HUD (both were drawn at the top-left corner, unreadable).
+func test_card_layout(h: TransitHarness) -> void:
+	h.refresh()
+	await process_frame
+	await process_frame
+	var c := h.card.get_global_rect()
+	var u := h.hud.get_global_rect()
+	ok("arrived: the card is visible and its rect (%s) does not overlap the HUD's (%s)" % [c, u], h.card.visible and h.hud.visible and c.size.x > 0.0 and not c.intersects(u))
+	ok("the card is inside the viewport and its panel is opaque enough to read over the sky", Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(c) and (h.card.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a >= 0.9)
+
+
+## F1: a refusal of the pending warp, matched by index, drops it; any other refusal does not.
+func test_settle() -> void:
+	var t := Transit.new()
+	var w := {"journey": {"state": "committed"}}
+	t.request_warp(0.05, w)
+	t._pending_at = 1
+	t.settle([{"i": 4}, {"i": 3}], 2) # index 2 + 1 = 3: refused
+	ok("settle: a refusal at the pending intent's index keeps the old warp level", t.warp == Transit.WARP_DEFAULT and t._pending < 0.0)
+	t.request_warp(0.05, w)
+	t._pending_at = 1
+	t.settle([{"i": 4}], 2)
+	ok("settle: a refusal of some other intent does not stop the level changing", t.warp == 0.05)
+
+
 func test_standoff(h: TransitHarness, res: Dictionary, log: Array) -> void:
 	ok("the client's new_game params carry standoff_au 1000", Transit.new_game_params() == {"standoff_au": 1000.0} and Transit.STANDOFF_AU == 1000.0)
 	var ng: Dictionary = log.filter(func(m): return m.get("type") == "new_game")[0]
@@ -151,7 +176,7 @@ func test_standoff(h: TransitHarness, res: Dictionary, log: Array) -> void:
 
 ## A script error inside _init leaves the tree running; the watchdog ends it with no summary line.
 const WATCHDOG_S := 90.0
-const EXPECTED_CHECKS := 39
+const EXPECTED_CHECKS := 43
 
 
 func _init() -> void:
@@ -171,6 +196,8 @@ func _init() -> void:
 	test_phases(res)
 	test_hud(h, res)
 	test_card(res)
+	test_settle()
+	await test_card_layout(h)
 	test_standoff(h, res, log)
 	ok("the committed replay session is this run's input log, byte for byte", FileAccess.get_file_as_string(LOG) == FileAccess.get_file_as_string(SESSION_LOG))
 	# pacing is independent of the phase's ship time: 10x the boost length, the same 3 s
