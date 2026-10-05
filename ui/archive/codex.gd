@@ -11,7 +11,9 @@ signal selected_changed(id: String)
 
 const GREY := 0.4 # alpha of a locked row
 const TOAST_S := 4.0
-const PANEL_SIZE := Vector2(800, 440)
+const PANEL_SIZE := Vector2(840, 420)
+const PANEL_DROP := 50.0 # px below centre, so the toast above it never covers the panel
+const TOAST_W := 700.0
 
 var entries: Array = []
 var selected := ""
@@ -44,16 +46,17 @@ func _build() -> void:
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.position.y += PANEL_DROP
 	panel.visible = false
 	add_child(panel)
 	var split := HBoxContainer.new()
 	split.add_theme_constant_override("separation", 16)
 	panel.add_child(split)
 	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(250, 0)
+	left.custom_minimum_size = Vector2(300, 0)
 	split.add_child(left)
 	var head := Label.new()
-	head.text = "ARCHIVE  [CODEX]   (Esc closes; L log, K codex)"
+	head.text = "ARCHIVE: CODEX   (Esc closes)"
 	head.add_theme_font_size_override("font_size", 12)
 	head.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
 	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -63,6 +66,7 @@ func _build() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	left.add_child(scroll)
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_list.add_theme_constant_override("separation", 2)
 	scroll.add_child(_list)
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -104,7 +108,8 @@ func load_lore(dir: String = LoreLoader.DIR) -> bool:
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.clip_text = false
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		b.custom_minimum_size = Vector2(230, 0)
+		b.custom_minimum_size = Vector2(280, 0)
+		b.add_theme_font_size_override("font_size", 13)
 		b.tooltip_text = LoreLoader.HINT_TEXT.get(e["unlock"], "")
 		b.pressed.connect(select.bind(e["id"]))
 		_list.add_child(b)
@@ -118,10 +123,13 @@ func show_world(world: Dictionary) -> void:
 	_build()
 	var u: Variant = GalaxyMap.field_value(world, "consequence.archive.unlocked")
 	var now: Array = u if u is Array else []
+	var fresh: Array = []
 	for id in now:
 		if not _unlocked.has(id) and _rows.has(id):
 			toast_log.append(id)
-			_toast(_title_of(id))
+			fresh.append(_title_of(id))
+	if not fresh.is_empty():
+		_toast(fresh)
 	_unlocked = now.duplicate()
 	if selected != "" and not _unlocked.has(selected):
 		selected = ""
@@ -146,6 +154,7 @@ func select(id: String) -> bool:
 		return false
 	var e := _entry(id)
 	selected = id
+	_refresh_rows()
 	_body.text = "[font_size=22][b]%s[/b][/font_size]\n\n%s" % [LoreLoader._inline(e["title"]), LoreLoader.to_bbcode(e["body"])]
 	_hint.text = ""
 	selected_changed.emit(id)
@@ -178,6 +187,7 @@ func _refresh_rows() -> void:
 		b.disabled = not open_row
 		b.modulate = Color(1, 1, 1, 1.0 if open_row else GREY)
 		b.tooltip_text = LoreLoader.HINT_TEXT.get(_entry(id).get("unlock", ""), "")
+		b.add_theme_color_override("font_color", Color(0.55, 0.85, 1.0) if id == selected else Color(0.88, 0.9, 0.95))
 	if selected == "":
 		_show_placeholder()
 
@@ -200,7 +210,8 @@ func _title_of(id: String) -> String:
 	return _entry(id).get("title", id)
 
 
-func _toast(title: String) -> void:
+## One toast per batch of unlocks (a tick can open several): the titles, on at most two lines.
+func _toast(titles: Array) -> void:
 	var p := PanelContainer.new()
 	var st := StyleBoxFlat.new()
 	st.bg_color = Color(0.08, 0.1, 0.16, 0.95)
@@ -208,8 +219,10 @@ func _toast(title: String) -> void:
 	p.add_theme_stylebox_override("panel", st)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var l := Label.new()
-	l.text = "Archive entry open: %s" % title
+	l.text = "Archive entry open: %s" % titles[0] if titles.size() == 1 else "Archive: %d entries open: %s" % [titles.size(), ", ".join(titles)]
 	l.add_theme_font_size_override("font_size", 14)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(TOAST_W, 0)
 	p.add_child(l)
 	toast_box.add_child(p)
 	if is_inside_tree():
