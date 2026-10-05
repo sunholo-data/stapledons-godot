@@ -39,7 +39,7 @@ const LOOK_RATE := 1.2 # rad/s for the yaw, pitch and roll keys
 ## (right, world +X) looks at l 270 (Vela, Canopus, alpha Cen, the LMC) and port (left, -X) at
 ## l 90 (Cygnus); tests/test_physics.gd test_sky_frame checks the longitudes.
 const VIEW_YAW := {"forward": 0.0, "starboard": -PI / 2, "port": PI / 2, "astern": PI}
-const STANDOFF_AU := 1000.0 # M4.1: the M4 client plans to the 1,000 AU stand-off (the sim defaults to 0)
+const STANDOFF_AU := Transit.STANDOFF_AU # M4.1/M4.3a: the M4 client plans to the 1,000 AU stand-off (the sim defaults to 0)
 ## Off-axis golden (M1.6b, AC5): a velocity off every axis, and three camera
 ## orientations ([label, yaw, pitch, roll] in degrees; null yaw/pitch = along v).
 const OFF_AXIS := Vector3(0.5773502691896258, 0.5773502691896258, -0.5773502691896258) # (1,1,-1)/sqrt3
@@ -78,6 +78,10 @@ func _ready() -> void:
 	if args.has("interior") or args.has("interior-capture") or args.has("m4-smoke"):
 		await _run_interior(args)
 		return
+	if args.has("transit"):
+		_map_mode = true # the harness owns the clock
+		_run_transit(args)
+		return
 	if args.has("map") or args.has("map-capture"):
 		_map_mode = true # the map owns the clock; no voyage ticks
 		await _run_map(args)
@@ -112,6 +116,25 @@ func _ready() -> void:
 		var secs: float = float(args["bench"]) if args["bench"].is_valid_float() else 30.0
 		# loaded by path: tools/ is excluded from exports, so main.gd must not name the class
 		get_tree().quit(await load("res://tools/bench.gd").new().run(self, secs))
+
+
+## The M4.3a sky-only transit harness: alpha Cen A planned and committed at the default speed, flown at
+## real time under Transit (3 s burns, warp 1/2/3 = 0.002/0.01/0.05 ship-yr/s), HUD and arrival card on top.
+## `--transit` interactive; `--record=path` tees the input log. The scripted flight is TransitHarness.run_session.
+func _run_transit(args: Dictionary) -> void:
+	sim.record_path = args.get("record", "")
+	sim.want_minor = 2
+	if not sim.start() or not sim.new_game(SEED, "sol", false, Transit.new_game_params()):
+		push_error("sim session failed: %s" % sim.last_error)
+		get_tree().quit(2)
+		return
+	var h := TransitHarness.new()
+	h.auto = true
+	add_child(h)
+	h.attach(sim)
+	h.queue({"k": "plan", "target": TransitHarness.TARGET, "cruise_phi": sim.world["params"]["cruise_phi_default"]})
+	h.tick(h.TICK_DT)
+	h.queue({"k": "commit", "plan_id": sim.world["journey"]["plan_id"]})
 
 
 ## Galaxy map (M2.6a) on a play session (not diag): `--map` interactive,

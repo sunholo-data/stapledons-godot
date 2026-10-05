@@ -1,0 +1,95 @@
+module stapledons/sim/transit_test
+
+-- M4.3a: the warp intent and the transit readouts the HUD formats.
+--   * `warp{level}` (0.002 / 0.01 / 0.05 ship-yr/s) is a recorded intent: accepted while
+--     committed (it changes no sim state; the client chooses dtau), refused `not_committed`
+--     otherwise (D-12: no pause, and warp exists only while committed); any other level is
+--     bad_intent on the wire.
+--   * The consequence section (2.2) carries what Godot must not compute: distance_remaining,
+--     earth_years_remaining, phase_remaining_yr, load_suns, drag_energy_kg.
+import ./core (World, Params, Intent, IPlan, ICommit, IWarp, Target, Ticked, Journey, Idle, Planned, Committed, Arrived,
+  defaultParams, newWorld, tick, cqView, dragEnergyJ, ismNow, isWarpLevel)
+import ./protocol (Session, newSession, serve)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
+import pkg/sunholo/relativity/hyper (absf)
+import std/option (Option, Some, None)
+import std/string (join, contains, intToStr)
+import std/list (foldl)
+
+pure func near(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
+pure func relNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol * absf(b)
+pure func acen() -> Target = {index: 1, id: "alpha Cen", pos: {x: 0.0, y: 0.0, z: -4.37}}
+pure func world0() -> World = newWorld(3, false, {defaultParams() | standoffAu: 1000.0})
+pure func run(w: World, dtau: float, xs: [Intent]) -> Ticked = tick(w, {dtau: dtau, intents: xs})
+pure func planned() -> World = (run(world0(), 0.0, [IPlan({target: acen(), cruisePhi: rapidityOfBeta(0.99), flipG: None})])).world
+pure func committed() -> World = (run(planned(), 0.0, [ICommit(1)])).world
+pure func reasons(t: Ticked) -> [string] = match t.refused { [] => [], r :: _ => [r.reason] }
+pure func isCommitted(j: Journey) -> bool = match j { Committed(_) => true, _ => false }
+pure func tauBurn(w: World) -> float = match w.journey { Committed(c) => c.plan.trip.tauBurn, _ => 0.0 }
+
+pure func checkWarpIntent() -> bool {
+  let idle = run(world0(), 0.0, [IWarp(0.01)]);
+  let pl = run(planned(), 0.0, [IWarp(0.01)]);
+  let co = run(committed(), 0.0, [IWarp(0.05)]);
+  let flying = (run(committed(), 0.001, [])).world;
+  let later = run(flying, 0.001, [IWarp(0.002)]);
+  reasons(idle) == ["not_committed"] && reasons(pl) == ["not_committed"] && reasons(co) == [] && reasons(later) == [] &&
+  isCommitted(co.world.journey) && co.world.ship.motion.tau == committed().ship.motion.tau && co.world.ship.motion.phi == committed().ship.motion.phi && isWarpLevel(0.002) && isWarpLevel(0.01) && isWarpLevel(0.05) && !isWarpLevel(0.02)
+}
+pure func checkWarpArrived() -> bool {
+  let w = committed();
+  let done = (run(w, 5.0, [])).world;
+  reasons(run(done, 0.0, [IWarp(0.01)])) == ["not_committed"]
+}
+
+pure func tickLine(t: int, dtau: string, intents: string) -> string =
+  join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":", dtau, ",\"intents\":[", intents, "]}"])
+pure func feed(s: Session, lines: [string]) -> Session = foldl(\acc line. serve(acc, line).session, s, lines)
+pure func reply(s: Session, line: string) -> string = serve(s, line).reply
+pure func acenLine() -> string = "{\"k\":\"plan\",\"target\":{\"index\":1,\"id\":\"alpha Cen\",\"pos\":{\"x\":0,\"y\":0,\"z\":-4.37}},\"cruise_phi\":2.6466524123622457}"
+pure func session() -> Session = feed(newSession(), ["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":2}}",
+  "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":false,\"params\":{\"standoff_au\":1000}}", tickLine(1, "0", acenLine()), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}")])
+pure func checkWarpWire() -> bool {
+  let s = session();
+  let ok = reply(s, tickLine(3, "0", "{\"k\":\"warp\",\"level\":0.01}"));
+  let bad = reply(s, tickLine(3, "0", "{\"k\":\"warp\",\"level\":0.02}"));
+  let none = reply(s, tickLine(3, "0", "{\"k\":\"warp\"}"));
+  let early = reply(feed(newSession(), ["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":2}}", "{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"sol\",\"diag\":false}"]), tickLine(1, "0", "{\"k\":\"warp\",\"level\":0.05}"));
+  contains(ok, "\"refused\":[]") && contains(bad, "bad_intent") && contains(none, "bad_intent") && contains(early, "not_committed")
+}
+
+pure func checkRemaining() -> bool {
+  let w = committed();
+  let v0 = cqView(w);
+  let mid = (run(w, 0.5, [])).world;
+  let vm = cqView(mid);
+  let end = (run(mid, 5.0, [])).world;
+  let ve = cqView(end);
+  let pre = cqView(planned());
+  near(v0.phaseRemainingYr, tauBurn(w), 0.000000000001) && v0.phaseRemainingYr > 0.0 &&
+  relNear(v0.distanceRemaining, 4.37 - 0.0158125, 0.0001) && vm.distanceRemaining < v0.distanceRemaining && vm.distanceRemaining > 0.0 &&
+  vm.earthYearsRemaining < v0.earthYearsRemaining && vm.earthYearsRemaining > 0.0 && relNear(v0.earthYearsRemaining, 4.398171, 0.0001) &&
+  ve.distanceRemaining == 0.0 && ve.earthYearsRemaining == 0.0 && ve.phaseRemainingYr == 0.0 &&
+  pre.distanceRemaining == 0.0 && pre.earthYearsRemaining == 0.0 && pre.phaseRemainingYr == 0.0
+}
+pure func checkSuns() -> bool {
+  let mid = (run(committed(), 0.5, [])).world;
+  let i = ismNow(mid);
+  let v = cqView(mid);
+  v.loadSuns > 0.0 && relNear(v.loadSuns, i.loadWM2 / 1361.0, 0.000000001) && v.dragEnergyKg == dragEnergyJ(mid) / 89875517873681764.0 &&
+  (cqView(world0())).loadSuns == 0.0 && (cqView(world0())).dragEnergyKg == 0.0
+}
+pure func checkRemainingWire() -> bool {
+  let t = reply(session(), tickLine(3, "0.0001", ""));
+  contains(t, "\"distance_remaining\":") && contains(t, "\"earth_years_remaining\":") && contains(t, "\"phase_remaining_yr\":") && contains(t, "\"load_suns\":") && contains(t, "\"drag_energy_kg\":")
+}
+
+test "warp intent: accepted while committed (no state change), not_committed otherwise" { checkWarpIntent() }
+test "warp intent after arrival is not_committed" { checkWarpArrived() }
+test "warp on the wire: level 0.01 accepted, other levels bad_intent, before commit not_committed" { checkWarpWire() }
+test "distance_remaining, earth_years_remaining, phase_remaining_yr: committed values, zero otherwise" { checkRemaining() }
+test "load_suns = load_w_m2 / 1361, drag_energy_kg = drag_energy_j / c^2" { checkSuns() }
+test "protocol 2.2 consequence section carries the transit readouts" { checkRemainingWire() }
+
+export pure func transitVm(n: int) -> string =
+  if checkWarpIntent() && checkWarpArrived() && checkWarpWire() && checkRemaining() && checkSuns() && checkRemainingWire() then "transit-ok" else "transit-BAD"
