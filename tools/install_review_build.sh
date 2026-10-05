@@ -20,9 +20,14 @@ trap 'rm -rf "$TMP"' EXIT
 if [ "${1:-}" = "--dev" ]; then
   command -v gcloud >/dev/null || { echo "Install the Google Cloud CLI and run: gcloud auth login" >&2; exit 1; }
   gcloud storage cp "gs://$DEV_BUCKET/macos/latest.json" "$TMP/latest.json" --quiet
-  zip_path=$(sed -E 's/.*"zip":"([^"]+)".*/\1/' "$TMP/latest.json")
-  want=$(sed -E 's/.*"sha256":"([^"]+)".*/\1/' "$TMP/latest.json")
-  ver=$(sed -E 's/.*"version":"([^"]+)".*/\1/' "$TMP/latest.json")
+  # plutil is bundled with macOS. Parse JSON rather than relying on the
+  # publisher's whitespace or key order (compact and pretty manifests work).
+  zip_path=$(plutil -extract zip raw -expect string -o - "$TMP/latest.json")
+  want=$(plutil -extract sha256 raw -expect string -o - "$TMP/latest.json")
+  ver=$(plutil -extract version raw -expect string -o - "$TMP/latest.json")
+  [[ "$zip_path" == macos/builds/*macos.zip && "$zip_path" != *..* ]] || { echo "Invalid dev archive path" >&2; exit 1; }
+  [[ "$want" =~ ^[a-f0-9]{64}$ ]] || { echo "Invalid dev archive checksum" >&2; exit 1; }
+  [ -n "$ver" ] || { echo "Missing dev build version" >&2; exit 1; }
   echo "Installing dev build $ver into $DEST"
   gcloud storage cp "gs://$DEV_BUCKET/$zip_path" "$TMP/" --quiet
   ZIP="$TMP/$(basename "$zip_path")"

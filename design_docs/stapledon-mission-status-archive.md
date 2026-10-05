@@ -2,6 +2,8 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-02: iteration 9, duplicate M2 landing draft withdrawn after attended PR40; Sonnet review 91/100; clause2 MET by attended work,1/3/4 UNMET,5 ongoing; goal unmoved; next M4 plan then approval; no open decisions.
+
 ## STATUS 2026-10-02: attended, M2 journey core LANDED (sprint R1-M2-JOURNEY, PRs #22–#35 + #37); clause 2 MET
 
 - **M2 ✅**: 10 milestones, each independently evaluated: M2.0 96 (Fable;

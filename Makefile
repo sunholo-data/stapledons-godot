@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test deps area-test validate-areas m4-smoke interior-test glow-probe capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: all test transit-test deps area-test validate-areas m4-smoke interior-test glow-probe capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -67,6 +67,12 @@ interior-test:     ## M4.2 composite order and pan factors, one tonemap, glow CP
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tests/test_interior.gd > $(SCRATCH)/interior-test.log 2>&1; rc=$$?; cat $(SCRATCH)/interior-test.log | grep -v '^  ok'; \
 	  test $$rc = 0 && grep -q '^interior: [0-9]* passed, 0 failures$$' $(SCRATCH)/interior-test.log || { echo "interior-test: FAILED (a parse error exits 0, so the summary line is required)"; exit 1; }
+
+transit-test:      ## M4.3a: warp intent, 3 s burn pacing, HUD bindings + audit positive controls, phases, arrival card, standoff_au 1000 (real sim, headless); AC3 grep half
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_transit.gd > $(SCRATCH)/transit-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/transit-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/transit-test.log && grep -q '^transit: [0-9]* passed, 0 failures$$' $(SCRATCH)/transit-test.log || { echo "transit-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/transit-test.log)"; exit 1; }
+	@! grep -rniE "save_game|load_game|ResourceSaver" interior ui || { echo "transit-test: AC3 grep half found a save/load path"; exit 1; }
 
 glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy from sunholo/relativity 0.7.0 (tools/glow_probe), VM = interpreter
 	@mkdir -p $(SCRATCH)
@@ -172,6 +178,9 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	echo "strict consequenceVm: VM $$got | interpreter $$interp"; [ "$$got" = "consequence-ok" ] && [ "$$interp" = "consequence-ok" ]
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry transitVm --args-json 0 sim/transit_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry transitVm --args-json 0 sim/transit_test.ail); \
+	echo "strict transitVm (M4.3a): VM $$got | interpreter $$interp"; [ "$$got" = "transit-ok" ] && [ "$$interp" = "transit-ok" ]
 	@# rngVm (M2.4): vectors, independence, then a digest of 10,000 draws per stream (integers only); strict VM = interpreter = tools/rng_ref.py
 	@for seed in 7 9007199254740991; do \
 	  want="rng-ok $$(python3 tools/rng_ref.py --digest $$seed 10000)"; \

@@ -20,9 +20,9 @@ import pkg/sunholo/celestial/rings (RingBand)
 import ./data/sol (Ring, rings)
 import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
-  Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, Refusal, Event, Crossing, Residuals, Params, defaultParams,
+  Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
-  CqView, cqView, ismNow, dragEnergyJ, withArchive, navOf, departureOf, journeyHeadingOf)
+  CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
@@ -130,7 +130,8 @@ pure func encodeIntent(i: Intent) -> string =
     IAiOpen(o) => obj([f("k", q("ai_open")), f("kind", q(o.kind)), f("purpose", q(o.purpose)), f("entity_id", q(o.entityId))] ++
       opt("emotion", q, o.emotion) ++ opt("age_stage", num, o.ageStage) ++ opt("line_req", q, o.lineReq) ++ opt("emotions", strArr, o.emotions) ++
       (match o.context { [] => [], _ => [f("context", ctxObj(o.context))] })),
-    IAiCancel(c) => obj([f("k", q("ai_cancel")), f("req", q(c.req)), f("reason", q(c.reason))])
+    IAiCancel(c) => obj([f("k", q("ai_cancel")), f("req", q(c.req)), f("reason", q(c.reason))]),
+    IWarp(l) => obj([f("k", q("warp")), f("level", num(l))])
   }
 -- 2.4 body plan: approach {mode: "stop", standoff_km?} or {mode: "flyby", b_km, clock_deg, run_out_km?}.
 pure func approachObj(b: BodyReq) -> string =
@@ -232,7 +233,8 @@ pure func dropN(xs: [a], n: int) -> [a] = if n <= 0 then xs else match xs { [] =
 pure func countOf(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + countOf(r) }
 export pure func encodeCq(v: CqView, from: int) -> string =
   obj([f("gap_years", num(v.gapYears)), f("news_epoch", num(v.newsEpoch)), f("news_age_years", num(v.newsAgeYears)), f("progress", num(v.progress)),
-    f("standoff_ly", num(v.standoffLy))] ++ opt("news", newsObj, v.cq.news) ++
+    f("standoff_ly", num(v.standoffLy)), f("distance_remaining", num(v.distanceRemaining)), f("earth_years_remaining", num(v.earthYearsRemaining)),
+    f("phase_remaining_yr", num(v.phaseRemainingYr)), f("load_suns", num(v.loadSuns)), f("drag_energy_kg", num(v.dragEnergyKg))] ++ opt("news", newsObj, v.cq.news) ++
     [f("archive", obj([f("unlocked", strArr(v.cq.unlocked))])), f("legacy", obj([f("count", intToStr(countOf(v.cq.log))), f("appended", arr(each(entryObj, dropN(v.cq.log, from))))]))])
 pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string =
   obj(shipFields(s) ++ [f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("drag_energy_j", num(dragEnergy))]))])
@@ -330,6 +332,7 @@ pure func intentOf(k: string, j: Json) -> Result[Intent, string] =
       bind(optStr(j, "emotion", "bad_intent"), \em. bind(optIf(j, "age_stage", \x. req(numF(x, "age_stage"), "bad_intent")), \ag.
       bind(optStr(j, "line_req", "bad_intent"), \lr. bind(optIf(j, "emotions", \x. strsAt(x, "emotions", "bad_intent")), \ems. bind(ctxOf(j, "bad_intent"), \cx.
       Ok(IAiOpen({kind: kd, purpose: pu, entityId: eid, emotion: em, ageStage: ag, lineReq: lr, emotions: ems, context: cx}))))))))))
+    else if k == "warp" then bind(req(numF(j, "level"), "bad_intent"), \l. check(isWarpLevel(l), IWarp(l), "bad_intent"))
     else if k == "ai_cancel" then bind(str(j, "req"), \r. bind(str(j, "reason"), \why. check(isCancelReason(why), IAiCancel({req: r, reason: why}), "bad_intent")))
     else Err("bad_intent")
 pure func optStr(j: Json, k: string, c: string) -> Result[Option[string], string] =

@@ -86,6 +86,7 @@ export type Intent =
   | IRecord(AiRecord)
   | IDraw(Stream) | IEcho(PlanReq)
   | IAiOpen(AiOpen) | IAiCancel(AiCancel)
+  | IWarp(float)
 export type Refusal = { i: int, reason: string }
 -- A `phase` event carries the crossing (from/to are phaseName strings, tau
 -- the ship's proper time at the boundary); an `arrived` event carries the
@@ -197,7 +198,8 @@ pure func refuseWhileCommitted(diag: bool, p: Params, a: Pending, it: Intent) ->
     IEcho(_) => refuseIntent(a, "committed"),
     IRecord(r) => aiStep(a, recordResult(a.rng, a.ai, r)),
     IAiOpen(o) => aiOpenIntent(diag, p, a, o),
-    IAiCancel(c) => aiStep(a, cancelRequest(a.rng, a.ai, c))
+    IAiCancel(c) => aiStep(a, cancelRequest(a.rng, a.ai, c)),
+    IWarp(_) => a
   }
 
 -- AI intents (sim/ai.ail): the step's ai state, its `ai` stream counter,
@@ -304,7 +306,8 @@ pure func applyFree(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
     IDraw(st) => if diag then drawIntent(a, st) else refuseIntent(a, "diag_only"),
     IRecord(r) => aiStep(a, recordResult(a.rng, a.ai, r)),
     IAiOpen(o) => aiOpenIntent(diag, p, a, o),
-    IAiCancel(c) => aiStep(a, cancelRequest(a.rng, a.ai, c))
+    IAiCancel(c) => aiStep(a, cancelRequest(a.rng, a.ai, c)),
+    IWarp(_) => refuseIntent(a, "not_committed")
   }
 -- Draw (diag, M2.4): the stream's next value; its counter advances and
 -- the value is reported in a `draw` event.
@@ -490,10 +493,27 @@ export pure func tick(w: World, input: TickInput) -> Ticked
 -- The live ISM at the ship's current rapidity (package calls; zero at rest).
 export pure func ismNow(w: World) -> IsmNow = ismAt(ismPerM3(w.params), w.ship.motion.phi, w.params.bubbleRadiusM, w.params.glowEps, w.params.glowFIn)
 -- The ledger's drag_j since the latest commit (M2 semantics F*c); 0 before the first commit.
+export pure func isWarpLevel(x: float) -> bool = x == 0.002 || x == 0.01 || x == 0.05
 export pure func dragEnergyJ(w: World) -> float = match w.cq.depT { None => 0.0, Some(_) => w.ledger.dragJ - w.cq.dragJ0 }
 
 -- Every displayed number is a field: Godot never subtracts two of them.
-export type CqView = { gapYears: float, newsEpoch: float, newsAgeYears: float, progress: float, standoffLy: float, cq: Cq }
+-- M4.3a transit readouts (the HUD formats them, never derives them): distance and Earth years left,
+-- ship years to the end of the current phase (the client's dtau never overshoots a phase), the load in
+-- suns (solarConstantWM2) and the drag energy as mass. All 0 outside a committed flight.
+export type CqView = { gapYears: float, newsEpoch: float, newsAgeYears: float, progress: float, standoffLy: float,
+  distanceRemaining: float, earthYearsRemaining: float, phaseRemainingYr: float, loadSuns: float, dragEnergyKg: float, cq: Cq }
+export pure func solarConstantWM2() -> float = 1361.0
+pure func nonNeg(x: float) -> float = if x > 0.0 then x else 0.0
+pure func remainingOf(w: World) -> {distance: float, earth: float, phase: float} =
+  match w.journey {
+    Committed(c) => {
+      let tp = c.plan.trip;
+      let i = tripPhaseIndex(tp, c.el);
+      { distance: nonNeg(tp.trip.distance - (w.ship.motion.x - w.ship.x0)), earth: nonNeg(c.t0 + tp.trip.galaxyTime - w.ship.motion.t),
+        phase: if i == 3 then 0.0 else nonNeg(phaseEnd(tp, i) - c.el) }
+    },
+    _ => { distance: 0.0, earth: 0.0, phase: 0.0 }
+  }
 pure func progressOf(w: World) -> float =
   match w.journey {
     Committed(c) => {
@@ -505,7 +525,10 @@ pure func progressOf(w: World) -> float =
   }
 export pure func cqView(w: World) -> CqView {
   let cl = clocks(w.ship.motion.t, w.ship.motion.tau, position(w.ship));
-  { gapYears: cl.gapYears, newsEpoch: cl.newsEpoch, newsAgeYears: cl.newsAgeYears, progress: progressOf(w), standoffLy: standoffLy(w.params.standoffAu), cq: w.cq }
+  let rem = remainingOf(w);
+  { gapYears: cl.gapYears, newsEpoch: cl.newsEpoch, newsAgeYears: cl.newsAgeYears, progress: progressOf(w), standoffLy: standoffLy(w.params.standoffAu),
+    distanceRemaining: rem.distance, earthYearsRemaining: rem.earth, phaseRemainingYr: rem.phase,
+    loadSuns: (ismNow(w)).loadWM2 / solarConstantWM2(), dragEnergyKg: dragEnergyJ(w) / (cSI() * cSI()), cq: w.cq }
 }
 
 -- Scripted alpha Cen journey for `make strict` (AC10): plan 4.37 ly at
