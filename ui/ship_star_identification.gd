@@ -55,7 +55,7 @@ func update_candidates() -> void:
 	var ctx := StarProjection.context(field)
 	# Camera pan changes projection/occlusion, not the apparent physics ray.
 	# Invalidate on actual uploaded observer/photometry or identity changes.
-	var signature: Array = [field.identity_revision,field.rebases,field.origin,ctx.ship,ctx.b,ctx.g,ctx.bh,ctx.om,ctx.exposure,ctx.floor_flux,ctx.floor_peak,ctx.min_r2,ctx.cull_peak]
+	var signature: Array = [field.identity_revision,field.replacement_revision,field.rebases,field.origin,ctx.ship,ctx.b,ctx.g,ctx.bh,ctx.om,ctx.exposure,ctx.floor_flux,ctx.floor_peak,ctx.min_r2,ctx.cull_peak]
 	if signature != _cache_signature:
 		_sample_cache.clear();_cache_signature = signature
 	var view := sky.camera.global_basis.transposed()
@@ -74,7 +74,7 @@ func update_candidates() -> void:
 		# The astronomical renderer has opaque foreground surfaces too.
 		# Ship BVH alone cannot hide a background star behind a planet or Sun.
 		var observed:Vector3=sample.direction
-		if sky.system_view!=null and sky.system_view.visible and sky.system_view.occludes_direction(PackedFloat64Array([observed.x,observed.y,observed.z])):continue
+		if sky.system_view!=null and sky.system_view.visible and sky.system_view.occludes_direction(PackedFloat64Array([observed.x,observed.y,observed.z]),sample.get("replacement",{}).get("body_id","")):continue
 		var ray: Vector3 = demo.camera.project_ray_normal(point)
 		if not demo.sky_only and occlusion.blocked(demo.camera.global_position,ray):continue
 		candidates.append({id=field.ids[k],point=canvas_to_pixel.affine_inverse()*point,pixel=point,index=k})

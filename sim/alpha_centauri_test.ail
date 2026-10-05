@@ -1,0 +1,69 @@
+module stapledons/sim/alpha_centauri_test
+import ./data/acen (bodies, Body, Field)
+import std/option (Some, None)
+import std/result (Ok, Err)
+import ./alpha_centauri (stellarRadiusKm, stellarValue, catalogueA, catalogueId, catalogueEmissionJd, localPositionAu, abRelativeAu, alphaBodies, alphaBodyAt)
+import pkg/sunholo/celestial/kepler (norm, sub, add, scale, absf)
+import pkg/sunholo/celestial/ephemeris (j2000, auKm)
+import pkg/sunholo/relativity/photometry (illuminanceFromV)
+import ./celestial (lyKm)
+import ./celestial (solSystem, jdAt)
+import ./navigation (planBody, safetyMinKm)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta, standardGravity)
+pure func field(xs: [(string,Field)], key:string)->float = match xs { []=>0.0,(k,f)::rest=>if k==key then f.value else field(rest,key) }
+pure func value(xs:[Body], id:string,key:string)->float = match xs { []=>0.0,b::rest=>if b.id==id then field(b.fields,key) else value(rest,id,key) }
+export pure func measuredStars()->bool = value(bodies(),"acen-a","radius_sun")==1.2234 && value(bodies(),"acen-b","radius_sun")==0.8632
+ && value(bodies(),"acen-a","teff_k")==5795.0 && value(bodies(),"acen-b","teff_k")==5231.0
+ && value(bodies(),"acen-a","luminosity_sun")==1.521 && value(bodies(),"acen-b","luminosity_sun")==0.503
+test "Alpha A/B have primary-source physical radii, effective temperatures and luminosities" { measuredStars() }
+export pure func alphaDataVm(n:int)->string = if measuredStars() then "alpha-data: OK" else "alpha-data: FAIL"
+
+pure func alphaNear(a:float,b:float,t:float)->bool = absf(a-b)<t
+export pure func measuredRadiiKm()->bool = alphaNear(stellarRadiusKm("acen-a"),851119.38,0.00001) && alphaNear(stellarRadiusKm("acen-b"),600528.24,0.00001)
+export pure func binaryExtrema()->bool {
+ let tp=j2000()+(1875.66-2000.0)*365.25;
+ alphaNear(norm(abRelativeAu(tp)),23.299*(1.0-0.51947),0.000001) && alphaNear(norm(abRelativeAu(tp+79.762*365.25/2.0)),23.299*(1.0+0.51947),0.000001)
+}
+export pure func anchoredBinary()->bool {
+ let t=catalogueEmissionJd();let a=localPositionAu("acen-a",t);let b=localPositionAu("acen-b",t);
+ let t2=t+5000.0;let a2=localPositionAu("acen-a",t2);let b2=localPositionAu("acen-b",t2);
+ norm(a)<0.000000001 && norm(sub(sub(b,a),abRelativeAu(t)))<0.000000001 && norm(sub(add(scale(1.0788,a),scale(0.9092,b)),add(scale(1.0788,a2),scale(0.9092,b2))))<0.000000001
+}
+export pure func continuousPhysicalStars()->bool = match alphaBodies(j2000()+16.0*365.25,{x:0.0,y:0.0,z:0.0}) {
+ a::b::[]=>a.id=="acen-a" && b.id=="acen-b" && a.visitable && b.visitable && catalogueId(a.id)=="CNS5:3627" && catalogueId(b.id)=="HIP 71681" && alphaNear(a.eVLux,illuminanceFromV(0.0-0.01),0.00000001) && a.lightAgeS>100000000.0,
+ _=>false
+}
+export pure func inverseSquareLocal()->bool {
+ let eye=add(catalogueA(),{x:1000.0*auKm()/lyKm(),y:0.0,z:0.0});
+ match alphaBodies(j2000()+26.0*365.25,eye) { a::b::[]=>
+  alphaNear(a.eVLux/(illuminanceFromV(stellarValue(a.id,"v_earth"))*norm(catalogueA())*norm(catalogueA())*lyKm()*lyKm()/(norm(a.relKm)*norm(a.relKm))),1.0,0.00000001) && norm(sub(a.relKm,b.relKm))>10.0*auKm() && a.radiusKm<norm(a.relKm), _=>false }
+}
+test "Alpha measured radii use nominal solar radius in kilometres" { measuredRadiiKm() }
+test "Alpha published orbit gives periastron and apastron" { binaryExtrema() }
+test "Alpha apparent catalogue anchor and binary mass centre are stable" { anchoredBinary() }
+test "Alpha physical emitters continuously replace exact catalogue IDs from Sol" { continuousPhysicalStars() }
+test "Alpha local retarded binary illuminance obeys measured V inverse square" { inverseSquareLocal() }
+export pure func alphaPhysicsVm(n:int)->string = if measuredStars() && measuredRadiiKm() && binaryExtrema() && anchoredBinary() && continuousPhysicalStars() && inverseSquareLocal() then "alpha-physics: OK" else "alpha-physics: FAIL"
+
+export pure func movingAStop()->bool {
+ let jd=j2000()+26.0*365.25;
+ let eye=add(catalogueA(),{x:1000.0*auKm()/lyKm(),y:0.0,z:0.0});
+ let c={sys:solSystem(),epochJd:jd,t0:0.0,hereLy:eye,accel:standardGravity(),bubbleKm:0.1};
+ let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(auKm()),bKm:0.0,clockDeg:0.0,runOutKm:None};
+ match planBody(c,request) { Err(_)=>false,Ok(leg)=>match alphaBodyAt("acen-a",jdAt(jd,leg.nav.interceptT)) {None=>false,Some(a)=>match alphaBodyAt("acen-b",jdAt(jd,leg.nav.interceptT)) {None=>false,Some(b)=>
+ alphaNear(norm(sub(scale(lyKm(),leg.arrivalLy),a.pos)),auKm(),0.1) && norm(sub(scale(lyKm(),leg.arrivalLy),b.pos))>safetyMinKm(stellarRadiusKm("acen-b"),0.1) && norm(sub(leg.nav.interceptLy,scale(1.0/lyKm(),a.pos)))<0.000000000001 && leg.nav.interceptT>1.0 && leg.nav.residual<0.000000001}}}
+}
+export pure func stellarUnsafeRefused()->bool {
+ let c={sys:solSystem(),epochJd:j2000(),t0:0.0,hereLy:add(catalogueA(),{x:0.001,y:0.0,z:0.0}),accel:standardGravity(),bubbleKm:0.1};
+ let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(stellarRadiusKm("acen-a")),bKm:0.0,clockDeg:0.0,runOutKm:None};
+ match planBody(c,request) {Err(s)=>s=="too_close",_=>false}
+}
+test "moving Alpha A intercept stops at one AU and clears binary B after years of travel" { movingAStop() }
+test "stellar stop rejects a photosphere intersection" { stellarUnsafeRefused() }
+export pure func alphaNavigationVm(n:int)->string = if movingAStop() && stellarUnsafeRefused() then "alpha-navigation: OK" else "alpha-navigation: FAIL"
+export pure func alphaNavigationDebug(n:int)->string {
+ let jd=j2000()+26.0*365.25;let eye=add(catalogueA(),{x:1000.0*auKm()/lyKm(),y:0.0,z:0.0});
+ let c={sys:solSystem(),epochJd:jd,t0:0.0,hereLy:eye,accel:standardGravity(),bubbleKm:0.1};
+ let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(auKm()),bKm:0.0,clockDeg:0.0,runOutKm:None};
+ match planBody(c,request) {Err(s)=>s,Ok(leg)=>match alphaBodyAt("acen-a",jdAt(jd,leg.nav.interceptT)) {None=>"missing",Some(a)=>"distance ${show(norm(sub(scale(lyKm(),leg.arrivalLy),a.pos)))} time ${show(leg.nav.interceptT)} residual ${show(leg.nav.residual)} unsafe ${show(stellarUnsafeRefused())}"}}
+}

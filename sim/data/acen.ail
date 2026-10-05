@@ -19,6 +19,8 @@ export type Binary = { fields: [(string, Field)] }
 
 export pure func acenCitations() -> [(string, string)] = [
   ("akeson2021", "Akeson et al. 2021, AJ 162:14, alpha Cen AB orbit, parallax and masses"),
+  ("kervella2017", "Kervella et al. 2017, A&A 597:A137, Table 5 and section4.3; https://arxiv.org/html/1610.06185; photospheric radii, luminosities and effective temperatures"),
+  ("hip1997", "ESA Hipparcos catalogue I/239 hip_main.dat, HIP71683/71681 V magnitudes; existing pinned data/raw/hip_main.dat"),
   ("archive20261003", "NASA Exoplanet Archive, table ps, hostname in (Proxima Cen, alf Cen A, alf Cen B), retrieved 2026-10-03 (data/planets/EXOPLANETS.SHA256)"),
   ("suarez2025", "Suarez Mascareno et al. 2025, A&A 700:A11 (the archive's default parameter set for Proxima b and d)"),
   ("anglada2016", "Anglada-Escude et al. 2016, Nature 536:437 (Proxima b discovery; Proxima mass 0.12 Msun)"),
@@ -55,9 +57,11 @@ pure func rTerran(mE: float, label: string) -> Field = inf(mE, label, "chen2017"
 
 export pure func bodies() -> [Body] = [
   { id: "acen-a", name: "alpha Centauri A", kind: "star", host: "", status: "star",
-    fields: [("mass_sun", m(1.0788, "+-0.0029", "akeson2021"))] },
+    fields: [("mass_sun", m(1.0788, "+-0.0029", "akeson2021")), ("radius_sun", m(1.2234, "+-0.0053; published2017 interferometric radius, not rescaled to later parallax", "kervella2017")),
+      ("teff_k", inf(5795.0, "+-19K; Stefan-Boltzmann law from bolometric flux and angular diameter", "kervella2017")), ("luminosity_sun", inf(1.521, "+-0.015; bolometric flux and published parallax", "kervella2017")), ("v_earth", m(0.0-0.01, "HIP71683 V magnitude", "hip1997"))] },
   { id: "acen-b", name: "alpha Centauri B", kind: "star", host: "", status: "star",
-    fields: [("mass_sun", m(0.9092, "+-0.0025", "akeson2021"))] },
+    fields: [("mass_sun", m(0.9092, "+-0.0025", "akeson2021")), ("radius_sun", m(0.8632, "+-0.0037; published2017 interferometric radius, not rescaled to later parallax", "kervella2017")),
+      ("teff_k", inf(5231.0, "+-21K; Stefan-Boltzmann law from bolometric flux and angular diameter", "kervella2017")), ("luminosity_sun", inf(0.503, "+-0.007; bolometric flux and published parallax", "kervella2017")), ("v_earth", m(1.35, "HIP71681 V magnitude", "hip1997"))] },
   -- Proxima's position is the bright-tier catalogue's (M1.2d), not repeated here.
   { id: "proxima", name: "Proxima Centauri", kind: "star", host: "", status: "star",
     fields: [("mass_sun", inf(0.12, "mass-luminosity relation as used by the discovery paper", "anglada2016"))] },

@@ -35,7 +35,7 @@ func _run()->void:
 	DirAccess.make_dir_recursive_absolute(OUT)
 	demo=load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options={"size":root.size,"sky_state":"rest"};root.add_child(demo);await process_frame
-	demo.auto=false;demo.journey_auto_tick=false
+	demo.auto=true;demo.journey_auto_tick=false
 	if not demo.start_solar_departure():print("solar-departure-capture: FAIL start");quit(1);return
 	await turn_stationary();await capture("earth_start")
 	var itinerary:Array=demo.solar_tour.itinerary.duplicate(true)
@@ -45,11 +45,13 @@ func _run()->void:
 		await turn_stationary()
 		if failed or not demo.live_journey:print("capture-departure-failed: ",demo.solar_tour.failed," pending=",demo.solar_tour.pending_index," hold=",demo.solar_tour.attitude_hold," mode=",demo._attitude_mode);failed=true;break
 		var seen:={};var phase_ticks:=0;var old_phase:=""
-		for tick in 2000:
+		for tick in 4000:
 			if not demo.journey_tick():failed=true;break
 			var phase:String=demo.sky_world.ship.phase
 			if phase!=old_phase:phase_ticks=0;old_phase=phase
 			phase_ticks+=1
+			if phase=="braking" and phase_ticks in [600,1200,1600]:
+				await capture(destination+"_approach_%ds" % int(phase_ticks/20))
 			if phase_ticks==120 and not seen.has(phase):
 				seen[phase]=true;await capture(destination+"_"+phase)
 			if demo.journey_sim.world.journey.state=="arrived":break

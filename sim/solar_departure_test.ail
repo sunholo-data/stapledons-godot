@@ -71,7 +71,7 @@ export pure func finishLeg(w: World, n: int) -> World =
     }
   }
 pure func chain(w: World, n: int) -> bool =
-  if n >= 5 then true else {
+  if n >= 6 then true else {
     let before = position(w.ship);
     let landed = finishLeg(w, n);
     match landed.journey {
@@ -98,7 +98,7 @@ test "direct close Jupiter to Saturn remains collision refused, requiring a genu
 export pure func checkBounds() -> bool {
   let target = fixtureTarget();
   (match intentForLeg(started(), -1, fixtureTarget()) { None => true, _ => false })
-  && (match intentForLeg(started(), 5, fixtureTarget()) { None => true, _ => false })
+  && (match intentForLeg(started(), 6, fixtureTarget()) { None => true, _ => false })
   && (match intentForLeg(started(), 4, {target | id: "wrong ID"}) { None => true, _ => false })
 }
 test "itinerary bounds and exact outbound identity are fail closed" { checkBounds() }

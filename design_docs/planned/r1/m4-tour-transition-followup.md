@@ -59,8 +59,10 @@ The final relativity0.8 clean-home export twice fails the existing five-second
 simulation handshake. An independent fresh-source bundled run produced a valid
 hello after9.594seconds with empty stderr; a warmed run took0.270seconds.
 This is first-launch compilation, rather than a refused or broken simulation.
-Allow30seconds only for exported simulation bootstrap, retaining five seconds
-for editor/explicit test launches and all existing per-request and AI timeouts.
+Allow30seconds for normal source and exported simulation bootstrap, retaining
+five seconds for explicit launch-override fixtures and all existing per-request
+and AI timeouts. The later source cold-load check also exceeded five seconds
+(8.773seconds with the pinned release), so editor startup needs the same headroom.
 The child must still be killed and cleaned up when its bounded handshake fails.
 Focused policy/dead-child tests and genuinely fresh-home packaged startup are
 required before merging or publishing. This is a delivery fix within the

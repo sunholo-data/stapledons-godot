@@ -133,3 +133,20 @@ export-smoke-planets: export-macos   ## the exported .app loads all nine texture
 	  grep -q '^planet-smoke: Jupiter disc textured$$' $(SCRATCH)/export-smoke/planet-smoke.log && test -s $(SCRATCH)/export-smoke/planet_smoke.png || \
 	  { echo "export-smoke-planets: FAILED (exit $$rc)"; exit 1; }
 	@echo "export-smoke-planets: OK, the exported app draws textured globes from its bundle ($(SCRATCH)/export-smoke/planet_smoke.png)"
+
+# Measured Alpha Centauri emitters and moving-star arrival (same optics packages).
+.PHONY: alpha-centauri-test alpha-centauri-source-test alpha-centauri-golden
+alpha-centauri-source-test:
+	@mkdir -p $(SCRATCH)
+	@for entry in alphaPhysicsVm alphaNavigationVm; do \
+	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$entry --args-json 0 sim/alpha_centauri_test.ail > $(SCRATCH)/$$entry-vm.txt && \
+	  $(AILANG) run --quiet --package-dir sim --entry $$entry --args-json 0 sim/alpha_centauri_test.ail > $(SCRATCH)/$$entry-interp.txt && \
+	  cmp $(SCRATCH)/$$entry-vm.txt $(SCRATCH)/$$entry-interp.txt && grep -q ': OK$$' $(SCRATCH)/$$entry-vm.txt || exit 1; \
+	  cat $(SCRATCH)/$$entry-vm.txt; done
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry alphaFixtures --args-json 0 sim/tools/alpha_star_probe.ail > $(SCRATCH)/alpha-physical-fixture.json
+	@cmp $(SCRATCH)/alpha-physical-fixture.json tests/fixtures/alpha_centauri_physical.json && echo 'alpha fixture: matches pinned producer'
+alpha-centauri-test: import alpha-centauri-source-test
+	@$(GODOT_SIM) --headless --path . --script tests/test_alpha_centauri.gd > $(SCRATCH)/alpha-centauri.log 2>&1; rc=$$?; cat $(SCRATCH)/alpha-centauri.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/alpha-centauri.log && grep -q '^alpha-centauri: [0-9]* passed, 0 failures$$' $(SCRATCH)/alpha-centauri.log
+alpha-centauri-golden:
+	@$(GODOT_SIM) --path . --script tools/alpha_centauri_golden.gd > $(SCRATCH)/alpha-centauri-golden.log 2>&1; rc=$$?; cat $(SCRATCH)/alpha-centauri-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/alpha-centauri-golden.log && grep -q '^alpha-centauri-golden: 10 cases, 0 failures$$' $(SCRATCH)/alpha-centauri-golden.log
+m5-test: alpha-centauri-test

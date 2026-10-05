@@ -141,6 +141,17 @@ func set_view(pixel_rad: float, height_px: float) -> void:
 
 ## One `system` section -> points and discs. k: Exposure.k() (linear pixel per cd/m^2).
 func update(system: Dictionary, k: float) -> void:
+	if starfield != null:
+		var replaced: Array[String] = []
+		var replacements := {}
+		for body: Dictionary in system.get("bodies", []):
+			if not str(body.get("catalogue_id", "")).is_empty():
+				replaced.append(body.catalogue_id)
+				var direction := Planets.world_of(body.rel_km)
+				var distance := Planets.length64(direction)
+				replacements[body.catalogue_id] = {"dir":Vector3(direction[0],direction[1],direction[2]).normalized(),"lux":body.e_v_lux,"t":body.teff_k,"body_id":body.id,"distance":distance}
+		starfield.set_catalogue_replacements(replaced)
+		starfield.set_catalogue_replacement_sources(replacements)
 	var view:=[px_rad,view_height_px,velocity_heading,velocity_beta,velocity_gamma,velocity_omb,relativistic_enabled,use_textures,lod_range]
 	if _prepared and view==_prepared_view and system==_prepared_system:
 		reuse_count+=1;set_exposure(k);return
@@ -173,7 +184,7 @@ func update(system: Dictionary, k: float) -> void:
 		var weight:=disc_weight(px);lod_weights[b.id]=weight
 		order.append([dist,b]) # physical ray/meter/occlusion remains independent of LOD
 		if weight<1.0 and (b["e_v_lux"] >= floor_lux or px >= CULL_PX):
-			points.append({"id":b.id,"distance":dist,"dir": [w[0] / dist, w[1] / dist, w[2] / dist], "lux": b["e_v_lux"]*(1.-weight), "t": Planets.T_SUN})
+			points.append({"id":b.id,"distance":dist,"dir": [w[0] / dist, w[1] / dist, w[2] / dist], "lux": b["e_v_lux"]*(1.-weight), "t": b.get("teff_k", Planets.T_SUN)})
 			drawn_points.append(b["id"])
 	order.sort_custom(func(a, c): return a[0] > c[0]) # far to near: nearer discs draw over farther ones
 	for i in order.size():
@@ -231,7 +242,7 @@ func _diameter_seen(w: PackedFloat64Array, r: float, dist: float) -> float:
 func _find_e1(bodies: Array) -> void:
 	for b: Dictionary in bodies:
 		var d := Planets.length64(Planets.world_of(b["rel_km"]))
-		if b["kind"] == "star" and d > b["radius_km"] and b["e_v_lux"] > 0.0:
+		if b["id"] == "sun" and d > b["radius_km"] and b["e_v_lux"] > 0.0:
 			e1_au = b["e_v_lux"] * (d / AU_KM) * (d / AU_KM)
 			return
 	for b: Dictionary in bodies:
@@ -293,13 +304,14 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 	m.set_shader_parameter("ss", 16 if lod_range.y>lod_range.x and diam<8.0 else (8 if diam < 32.0 else 3))
 	var star: bool = b["kind"] == "star"
 	m.set_shader_parameter("star", star)
-	m.set_shader_parameter("tint", Blackbody.rgb_unit_luminance(Planets.T_SUN))
+	m.set_shader_parameter("tint", Blackbody.rgb_unit_luminance(b.get("teff_k", Planets.T_SUN)))
+	m.set_shader_parameter("emitter_temp_k", b.get("teff_k", Planets.T_SUN))
 	if star:
 		m.set_shader_parameter("ring_count",0)
 		m.set_shader_parameter("ring_outer",1.0)
 		var ang := Planets.angular_radius(b["radius_km"], pl[3])
 		m.set_shader_parameter("star_mean", b["e_v_lux"] / (PI * sin(ang) * sin(ang)))
-		m.set_shader_parameter("limb_u", Planets.SUN_LIMB_U)
+		m.set_shader_parameter("limb_u", b.get("limb_u", Planets.SUN_LIMB_U))
 	else:
 		var kk: float = b["minnaert_k"]
 		var sd := Planets.world_of(b["sun_dir"])
@@ -372,7 +384,11 @@ func ray_colour(direction: PackedFloat64Array, skip_compact_meter := false) -> V
 			var ce:=n.dot(-ray)
 			if star:
 				var angle:=Planets.angular_radius(b.radius_km,pl[3])
-				value=Blackbody.rgb_unit_luminance(Planets.T_SUN)*Planets.limb_darkened(b.e_v_lux/(PI*sin(angle)*sin(angle)),ce)
+				var temp: float = b.get("teff_k", Planets.T_SUN)
+				value=Blackbody.rgb_unit_luminance(temp)*Planets.limb_darkened(b.e_v_lux/(PI*sin(angle)*sin(angle)),ce,b.get("limb_u", Planets.SUN_LIMB_U))
+				if doppler != 1.0 and temp != Planets.T_SUN:
+					value *= Blackbody.lut_rgb(temp*doppler)/Blackbody.lut_rgb(temp) * Blackbody.lut_rgb(Planets.T_SUN)/Blackbody.lut_rgb(Planets.T_SUN*doppler)
+					value *= pow(10.0,Blackbody.lut_log10_y(temp*doppler)-Blackbody.lut_log10_y(temp)-Blackbody.lut_log10_y(Planets.T_SUN*doppler)+Blackbody.lut_log10_y(Planets.T_SUN))
 			else:
 				var ci:=n.dot(sun)
 				if ci>0.0 and ce>=0.0:
@@ -444,10 +460,45 @@ func highlight_luminance(cam:FreeLookCamera,size_px:Vector2)->float:
 			samples.append(seen_luminance(n))
 	samples.sort();return samples[int(floor(.995*(samples.size()-1)))]
 
+## Display anticipation, not an eye model: a 30-degree peripheral margin
+## prepares the shared exposure before a finite body enters the camera frame.
+## Directions/radii come from the same package apparentDisc cap as rendering;
+## candidate luminance is the unchanged physical inverse-ray renderer.
+func display_anticipation_ev(cam: FreeLookCamera, size_px: Vector2, base_ev: float) -> float:
+	if not visible:return base_ev
+	var half_v := tan(deg_to_rad(cam.fov)*.5)
+	var view_radius := atan(half_v*sqrt(1.+pow(size_px.x/size_px.y,2.)))
+	var margin := deg_to_rad(30.)
+	var target := base_ev
+	for b: Dictionary in rendered_bodies:
+		var extent: float = b.radius_km
+		for band: Dictionary in ring_systems.get(b.get("ring_id",""),{}).get("bands",[]):extent=maxf(extent,band.r_out_km)
+		var axis: Vector3 = b._place[0]
+		var radius := Planets.angular_radius(extent,b._place[3])
+		if relativistic_enabled and velocity_beta>0.0:
+			var cosine := axis.dot(velocity_heading)
+			var cap := Planets.apparent_disc64(cosine,radius,velocity_beta,velocity_gamma)
+			var tangent := axis-cosine*velocity_heading
+			if tangent.length_squared()>1e-20:tangent=tangent.normalized()
+			else:tangent=Vector3.UP.cross(velocity_heading).normalized() if absf(velocity_heading.y)<.9 else Vector3.RIGHT.cross(velocity_heading).normalized()
+			axis=velocity_heading*cos(cap[0])+tangent*sin(cap[0]);radius=cap[1]
+		var gap := acos(clampf(axis.dot(cam.view_dir()),-1.,1.))-radius-view_radius
+		if gap>=margin:continue
+		var fraction := clampf(1.-maxf(gap,0.)/margin,0.,1.)
+		var weight := fraction*fraction*(3.-2.*fraction)
+		var right := axis.cross(Vector3.UP).normalized() if absf(axis.y)<.9 else axis.cross(Vector3.RIGHT).normalized()
+		var up := right.cross(axis).normalized()
+		var peak := seen_luminance(axis)
+		for i in 8:
+			var angle := TAU*i/8.
+			peak=maxf(peak,seen_luminance((axis*cos(radius*.75)+(right*cos(angle)+up*sin(angle))*sin(radius*.75)).normalized()))
+		target=maxf(target,lerpf(base_ev,maxf(base_ev,Exposure.highlight_ev(peak)),weight))
+	return target
+
 ## Identification masking: solid globes (including night faces and the Sun)
 ## cover a star. Finite ring optical depths transmit; they are not solid walls.
-func occludes_direction(observed_ray:PackedFloat64Array)->bool:
-	var opacity:=_f32(1.0-_directional_transmission(observed_ray,true))
+func occludes_direction(observed_ray:PackedFloat64Array,skip_id:String="")->bool:
+	var opacity:=_f32(1.0-_directional_transmission(observed_ray,true,skip_id))
 	return opacity>=1.0
 
 func directional_transmission(observed_ray:PackedFloat64Array)->float:
@@ -456,13 +507,14 @@ func directional_transmission(observed_ray:PackedFloat64Array)->float:
 static func _f32(value:float)->float:
 	return PackedFloat32Array([value])[0]
 
-func _directional_transmission(observed_ray:PackedFloat64Array,renderer_precision:bool)->float:
+func _directional_transmission(observed_ray:PackedFloat64Array,renderer_precision:bool,skip_id:String="")->float:
 	if not visible:return 1.0
 	var rest:=observed_ray
 	if relativistic_enabled and velocity_beta>0.0:
 		rest=Planets.inverse_ray64(observed_ray,PackedFloat64Array([velocity_heading.x,velocity_heading.y,velocity_heading.z]),velocity_beta,velocity_gamma,velocity_omb)
 	var ray:=Vector3(rest[0],rest[1],rest[2]);var transmission:=1.0
 	for b:Dictionary in rendered_bodies:
+		if b.id == skip_id: continue
 		var pl:Array=b._place;var centre:Vector3=pl[1];var radius:float=pl[2]
 		var along:=ray.dot(centre);var perpendicular:=centre-along*ray
 		if along>0.0 and perpendicular.length_squared()<=radius*radius:return 0.0
@@ -497,7 +549,7 @@ func compact_meter_sources()->Array:
 			var pl:Array=b._place
 			var n:Vector3=pl[0]
 			var transmission:=_point_transmission({"id":b.id,"distance":pl[3],"dir":[n.x,n.y,n.z]})
-			if transmission>0.0:points.append({"dir":n,"lux":b.e_v_lux*transmission,"t":Planets.T_SUN})
+			if transmission>0.0:points.append({"dir":n,"lux":b.e_v_lux*transmission,"t":b.get("teff_k", Planets.T_SUN)})
 	return points
 
 func eye_luminance(n:Vector3)->float:

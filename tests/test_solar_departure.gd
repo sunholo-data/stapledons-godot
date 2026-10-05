@@ -10,7 +10,7 @@ func check(name:String,condition:bool)->void:
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
 	var sim:=SimBridge.new();sim.want_minor=5;sim.record_path=RECORD
-	if not sim.start() or not sim.new_game(42,"solar_departure",false,{"standoff_au":1000.}):
+	if not sim.start() or not sim.new_game(42,"solar_departure",false,{"standoff_au":1000.,"boost_g":1.0,"m_eff_kg":10.,"cap_one_minus_beta":.01}):
 		check("scenario starts (%s)" % sim.last_error,false);sim.stop();quit(1);return
 	var earth:Dictionary={}
 	for body:Dictionary in sim.world.system.bodies:
@@ -41,7 +41,7 @@ func _run()->void:
 	controller.attitude_hold=false
 	var previous:Dictionary=sim.world.ship.pos.duplicate()
 	var completed:=0
-	for id in ["sun","jupiter","callisto","saturn","CNS5:3627"]:
+	for id in ["sun","jupiter","callisto","saturn","CNS5:3627","acen-a"]:
 		var start:Dictionary=sim.world.duplicate(true)
 		controller.attitude_hold=true
 		check("attitude hold pauses clocks and rejects premature leg",controller.step() and sim.world==start and not controller.prepare_next())
@@ -64,24 +64,43 @@ func _run()->void:
 		var heading:Dictionary=sim.world.ship.heading.duplicate()
 		var monotonic:=true
 		var counts:={"boosting":0,"cruising":0,"braking":0}
-		for tick in 1600:
+		var brake_first_diameter := 0.0
+		var brake_last_diameter := 0.0
+		for tick in 4000:
 			if sim.world.journey.state=="arrived":break
 			var old_tau:float=sim.world.clock.tau;var old_year:float=sim.world.clock.year
 			if not controller.step():check("controller step",false);break
 			monotonic=monotonic and sim.world.clock.tau>old_tau and sim.world.clock.year>old_year and sim.world.ship.heading==heading
 			if counts.has(sim.world.ship.phase):counts[sim.world.ship.phase]+=1
-		check("all phases are visible with continuous clocks",counts.boosting>100 and counts.braking>100 and counts.cruising>100 and monotonic)
+			if id=="jupiter" and sim.world.ship.phase=="braking":
+				for body:Dictionary in sim.world.system.bodies:
+					if body.id=="jupiter":
+						var diameter:=rad_to_deg(2.*Planets.angular_radius(body.radius_km,Planets.length64(Planets.world_of(body.rel_km))))
+						if brake_first_diameter==0.:brake_first_diameter=diameter
+						brake_last_diameter=diameter
+		var coast:float=sim.world.journey.plan.ship_years-2.*sim.world.journey.plan.boost_minutes/(365.25*24.*60.)
+		check("physical phases are visible with continuous clocks",counts.boosting>100 and counts.braking>100 and (counts.cruising>100 if coast>1e-12 else counts.cruising==0) and monotonic)
+		print("    phase counts ",id," ",counts," physical coast years ",coast)
+		if id=="jupiter":check("one-g braking starts while Jupiter is small and grows throughout braking",brake_first_diameter<1. and brake_last_diameter>30.)
 		check("arrival rests",sim.world.journey.state=="arrived" and sim.world.ship.beta==0.)
-		if id in ["sun","jupiter","callisto","saturn"]:
+		if id in ["sun","jupiter","callisto","saturn","acen-a"]:
 			check("body arrival at exact planner endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
-			var required:float={"sun":2087100.,"jupiter":142984.,"callisto":24103.,"saturn":210918.}[id]
+			var required:float={"sun":2087100.,"jupiter":142984.,"callisto":24103.,"saturn":210918.,"acen-a":149597870.7}[id]
 			check("body stop uses exact close standoff via package planner",sim.world.journey.plan.hold.body==id and absf(sim.world.journey.plan.hold.offset_km-required)<1e-6)
+			if id=="acen-a":
+				var a:Dictionary={};var b:Dictionary={}
+				for body:Dictionary in sim.world.system.bodies:
+					if body.id=="acen-a":a=body
+					if body.id=="acen-b":b=body
+				# Rendered coordinates are retarded, so allow orbital light-time
+				# displacement; exact simultaneous intercept is checked in AILANG.
+				check("actual finite A is approximately 1 AU, B has stellar clearance",absf(Planets.length64(Planets.world_of(a.rel_km))-required)<20000. and Planets.length64(Planets.world_of(b.rel_km))>1.1*b.radius_km+.1)
 		else:
 			var p:Dictionary=sim.world.ship.pos;var q:Dictionary=sim.world.journey.plan.target.pos
 			var gap:=sqrt(pow(p.x-q.x,2.)+pow(p.y-q.y,2.)+pow(p.z-q.z,2.))
 			check("outbound stops at package stellar standoff",absf(gap-sim.world.consequence.standoff_ly)<1e-10 and gap>0.01)
 		previous=sim.world.ship.pos.duplicate();completed+=1
-	check("completed itinerary cannot start extra leg",completed==5 and controller.complete and not controller.advance())
+	check("completed itinerary cannot start extra leg",completed==6 and controller.complete and not controller.advance())
 	check("HUD exposes both clocks and honest approximation",controller.status_text().contains("Earth +") and controller.status_text().contains("ship +") and controller.status_text().contains("barycentre"))
 	var log:=FileAccess.get_file_as_string(RECORD)
 	check("one initialization only, no resets between legs",log.count('"type":"new_game"')==1)

@@ -72,6 +72,11 @@ var pixel_sr := 1.0 # solid angle of the centre pixel
 var pixel_rad := 1.0 # angular size of the centre pixel
 var ev := 0.0 # in use
 var ev_meter := 0.0 # what the active meter asked for
+## Presentation policy, not a physiological adaptation model. References are instantaneous.
+const DISPLAY_EV_RATE := 4.0 # display EV/s returning to a dim view
+const DISPLAY_EV_RISE_RATE := 32.0 # prepares a bright view across the peripheral margin
+var temporal_enabled := false
+var _adapt_frame := -1
 
 
 ## Pinhole camera: the centre pixel spans 2 tan(fov/2) / height radians.
@@ -115,7 +120,8 @@ static func dark_adapted_ev() -> float:
 func configure(fov_deg: float, height_px: float) -> void:
 	pixel_sr = centre_pixel_sr(fov_deg, height_px)
 	pixel_rad = sqrt(pixel_sr)
-	update(dark_sky_luminance())
+	if not temporal_enabled or _adapt_frame < 0:
+		update(dark_sky_luminance())
 
 
 func ev_dark() -> float:
@@ -147,6 +153,23 @@ func update(l_avg: float, l_eye := -1.0, l_p995 := 0.0) -> void:
 	# The readability bias raises dim sky, but adaptive resolved-body protection
 	# remains the final lower EV bound. Fixed EV explicitly bypasses both meters.
 	ev = fixed_ev if fixed else clampf(maxf(mode_ev(l_avg, l_eye) + bias,high), clamp_ev.x, clamp_ev.y)
+
+
+## Advance at most once per rendered frame. Protection against measured highlights
+## is immediate; sensitivity returns at a bounded display EV rate. Repeated host
+## apply/update calls cannot accelerate the fade or integrate a transient view.
+func update_adaptive(l_avg: float, l_eye: float, l_p995: float, delta: float, frame_id: int, anticipation_ev: float = -INF) -> void:
+	if not temporal_enabled or fixed:
+		update(l_avg, l_eye, l_p995)
+		return
+	if frame_id == _adapt_frame:return
+	_adapt_frame = frame_id
+	var previous := ev
+	update(l_avg, l_eye, l_p995)
+	var target := clampf(maxf(ev,anticipation_ev),clamp_ev.x,clamp_ev.y)
+	var protection := clampf(maxf(highlight_ev(l_p995),mode_ev(l_avg,l_eye)+bias), clamp_ev.x, clamp_ev.y)
+	var rate := DISPLAY_EV_RISE_RATE if target>previous else DISPLAY_EV_RATE
+	ev = clampf(maxf(move_toward(previous, target, rate * clampf(delta, 0.0, 0.1)), protection), clamp_ev.x, clamp_ev.y)
 
 
 ## Lock at the rest-frame value (l_rest, l_eye_rest: the meters' readings of the same view at beta 0).
@@ -189,6 +212,7 @@ func state_name() -> String:
 
 func hud_line() -> String:
 	var s := "EV %+.1f  %s  %s" % [ev, mode_name(), state_name()]
+	if temporal_enabled and not fixed:s += " · display anticipation/fade EV"
 	var aids := PackedStringArray()
 	if bias != 0.0:
 		aids.append("bias %+.1f EV" % bias)

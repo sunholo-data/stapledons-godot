@@ -44,6 +44,11 @@ var pos := PackedFloat64Array() # 3 per star: world ly from Sol, float64
 var custom := PackedFloat32Array() # 4 per star: teff, E_v at Sol (lux), flags, |p|^2
 var ids: Array[String] = [] # same filtered, stacked order as pos/custom
 var identity_revision := 0
+var _replacement_revision := -1
+var _replacement_ids: Array[String] = []
+var _replaced_flux := {}
+var catalogue_replacement_sources := {}
+var replacement_revision := 0
 var skipped_missing := 0 # MISSING_PHOT rows (teff 0, v 99): nothing to draw
 var tiers: Array[String] = []
 var last_error := ""
@@ -57,12 +62,35 @@ var _buf := PackedFloat32Array()
 
 func clear() -> void:
 	identity_revision += 1
+	_replaced_flux.clear()
+	catalogue_replacement_sources.clear()
+	_replacement_revision = -1
 	count = 0
 	pos.clear()
 	custom.clear()
 	ids.clear()
 	skipped_missing = 0
 	tiers.clear()
+
+
+## Exact catalogue rows replaced by physical emitters. Reversible and cached:
+## scanning the catalogue happens only when IDs or the catalogue change.
+func set_catalogue_replacements(replacements: Array[String]) -> void:
+	if replacements == _replacement_ids and _replacement_revision == identity_revision:
+		return
+	_replacement_ids = replacements.duplicate()
+	_replacement_revision = identity_revision
+	var changed := false
+	for row in count:
+		if ids[row] in replacements:
+			if not _replaced_flux.has(row): _replaced_flux[row] = custom[4 * row + 1]
+			if custom[4 * row + 1] != 0.0: changed = true
+			custom[4 * row + 1] = 0.0
+		elif _replaced_flux.has(row):
+			custom[4 * row + 1] = _replaced_flux[row]
+			_replaced_flux.erase(row)
+			changed = true
+	if changed and multimesh != null: _fill()
 
 
 ## The active tier, then on top: for medium/large (GCNS), quick's HIP-filled
@@ -225,6 +253,12 @@ func _parameter(name:StringName,value:Variant)->void:
 func replace_point_sources(list:Array)->void:
 	point_count=0;_point_pos.clear();_point_custom.clear()
 	add_point_sources(list) # one upload, including replacement with an empty list
+
+
+func set_catalogue_replacement_sources(sources: Dictionary) -> void:
+	if sources == catalogue_replacement_sources: return
+	catalogue_replacement_sources = sources.duplicate(true)
+	replacement_revision += 1
 
 
 func clear_point_sources() -> void:

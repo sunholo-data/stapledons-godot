@@ -27,6 +27,7 @@ import pkg/sunholo/relativity/kinematics (betaOf, rapidityOfBeta)
 import pkg/sunholo/relativity/optics (doppler)
 import ./celestial (System, BodyState, bodyAt, jdAt, lyKm)
 import ./data/sol (Planet, Moon, Ring, rings)
+import ./alpha_centauri (alphaBodyAt, stellarRadiusKm, catalogueA)
 
 -- ------------------------------------------------------------ intent and result
 -- The plan intent's body form. mode is "stop" or "flyby". standoffKm: None
@@ -87,6 +88,9 @@ pure func moonFacts(ms: [Moon], i: int) -> [Facts] =
 -- Every body in system.bodies order: the star (not a target: no albedo), planets, moons.
 export pure func allFacts(sys: System) -> [Facts] =
   { id: sys.star.id, index: 0, radiusKm: sys.star.radiusKm, ringKm: 0.0, visitable: false } :: (planetFacts(sys.planets, 1) ++ moonFacts(sys.moons, 1 + navLen(sys.planets)))
+pure func alphaFacts(sys:System)->[Facts] = [
+ {id:"acen-a",index:1+navLen(sys.planets)+navLen(sys.moons),radiusKm:stellarRadiusKm("acen-a"),ringKm:0.0,visitable:true},
+ {id:"acen-b",index:2+navLen(sys.planets)+navLen(sys.moons),radiusKm:stellarRadiusKm("acen-b"),ringKm:0.0,visitable:true}]
 pure func navLen(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + navLen(r) }
 pure func factsOf(fs: [Facts], id: string) -> Option[Facts] = match fs { [] => None, f :: r => if f.id == id then Some(f) else factsOf(r, id) }
 -- Bodies outside this system (the alpha Cen worlds, R1) and unknown ids are not_visitable too.
@@ -96,7 +100,7 @@ export pure func targetFacts(sys: System, id: string) -> Result[Facts, string] =
 pure func navZero() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
 pure func navUnit(v: Vec3) -> Vec3 { let n = norm(v); if n > 0.0 then scale(1.0 / n, v) else navZero() }
 pure func navStateAt(c: NavCtx, id: string, t: float) -> BodyState =
-  match bodyAt(c.sys, id, jdAt(c.epochJd, t)) { Some(b) => b, None => { pos: navZero(), vel: navZero(), pole: navZero(), wDeg: 0.0 } }
+  match (if id=="acen-a" || id=="acen-b" then alphaBodyAt(id,jdAt(c.epochJd,t)) else bodyAt(c.sys, id, jdAt(c.epochJd, t))) { Some(b) => b, None => { pos: navZero(), vel: navZero(), pole: navZero(), wDeg: 0.0 } }
 pure func navPosAt(c: NavCtx, id: string, t: float) -> Vec3 = (navStateAt(c, id, t)).pos
 pure func navHereKm(c: NavCtx) -> Vec3 = scale(lyKm(), c.hereLy)
 pure func navIterate(g: float -> float, t: float, n: int) -> float = if n <= 0 then t else navIterate(g, g(t), n - 1)
@@ -177,7 +181,7 @@ pure func nearestAt(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, id: string, t
 -- collision: the leg passes within R + bubble of any body (the target included:
 -- its stand-off and pass distance already clear 1.1 R).
 pure func collides(c: NavCtx, p: TripPlan, w: Vec3, legKm: float) -> bool =
-  navFold(\acc f. acc || (nearestAt(c, p, w, legKm, f.id, c.t0, 2)).distKm < f.radiusKm + c.bubbleKm, false, allFacts(c.sys))
+  navFold(\acc f. acc || (nearestAt(c, p, w, legKm, f.id, c.t0, 2)).distKm < f.radiusKm + c.bubbleKm, false, allFacts(c.sys) ++ (if norm(sub(c.hereLy,catalogueA()))<0.1 then alphaFacts(c.sys) else []))
 -- ring_crossing: the leg crosses a ring host's equatorial plane inside its outer
 -- ring radius (host and pole taken at the ship's nearest approach to it).
 pure func crossesRing(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, f: Facts) -> bool {
@@ -212,7 +216,8 @@ pure func navToLy(v: Vec3) -> Vec3 = scale(1.0 / lyKm(), v)
 -- Stop: arrive standoffKm from the body's centre at the arrival time.
 pure func planStop(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, string] {
   let asked = match rq.standoffKm { Some(x) => x, None => defaultStandoffKm(f.radiusKm, f.ringKm) };
-  let s = if asked > standoffMaxKm() then standoffMaxKm() else asked;
+  let maxS = if rq.id=="acen-a" || rq.id=="acen-b" then auKm() else standoffMaxKm();
+  let s = if asked > maxS then maxS else asked;
   if !(s >= safetyMinKm(f.radiusKm, c.bubbleKm)) then Err("too_close")
   else if !(norm(sub(navPosAt(c, rq.id, c.t0), navHereKm(c))) > s) then Err("out_of_range")
   else {
@@ -255,7 +260,9 @@ export pure func planBodyN(c: NavCtx, rq: BodyReq, n: int) -> Result[Leg, string
   -- Bounded Solar demo adapter: measured Sun, stop only. The original stop
   -- solver and geometric checks apply; no new emitter flyby or stellar model.
   match (if c.sys.id == "sol" && rq.id == "sun" && rq.mode == "stop" && c.sys.star.id == "sun" && c.sys.star.radiusKm > 0.0
-    then Ok({id: "sun", index: 0, radiusKm: c.sys.star.radiusKm, ringKm: 0.0, visitable: true}) else targetFacts(c.sys, rq.id)) {
+    then Ok({id: "sun", index: 0, radiusKm: c.sys.star.radiusKm, ringKm: 0.0, visitable: true})
+    else if c.sys.id=="sol" && (rq.id=="acen-a" || rq.id=="acen-b") && rq.mode=="stop" && norm(sub(c.hereLy,catalogueA()))<0.1 then match factsOf(alphaFacts(c.sys),rq.id) {Some(f)=>Ok(f),None=>Err("not_visitable")}
+    else targetFacts(c.sys, rq.id)) {
     Err(why) => Err(why),
     Ok(f) =>
       if !navPhiOk(rq.cruisePhi) then Err("out_of_range")

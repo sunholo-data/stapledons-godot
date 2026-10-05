@@ -183,5 +183,32 @@
       "M2 Air performance",
       "further art and production landing"
     ]
+  },
+  "laptop_followup": {
+    "requested": "Mark: Earth/Jupiter white texture pulses; Sun galaxy/black pulses; abrupt view exposure; slower approaches; Alpha Centauri scale check",
+    "status": "in_progress",
+    "guided_pacing": {
+      "boost_wall_seconds": 30,
+      "cruise_wall_seconds": 20,
+      "braking_wall_seconds": 90,
+      "profile": "quadratic physical braking progress; final tenth ~28 wall seconds",
+      "unit_check": "/private/tmp/tour-pacing-green.log: 6 checks, 0 failures",
+      "normal_sidecar_check": "solar-departure: 60 passed, 0 failures; /private/tmp/tour-sim-followup.log",
+      "note": "Existing acceleration parameter changed only for guided session; physically earlier braking, no synthetic position/size changes"
+    },
+    "exposure": "final shared observer only; bounded temporal display policy under implementation; fixed/unit references preserved",
+    "alpha_centauri": "Measured A/B finite views and existing body-intercept extension under test; Mark selects final moving-A-centre standoff1 AU after catalogue stand-off",
+    "guided_scenario_params": {
+      "boost_g": 1.0,
+      "m_eff_kg": 10.0,
+      "cap_one_minus_beta": 0.01,
+      "ism_n_cm3": 0.1
+    },
+    "baseline_ci": {
+      "run": 37336072861,
+      "commit": "dc0744cc3b65f53ead7bb9a96801d1091aa1d698",
+      "status": "success",
+      "covers_new_followup": false
+    }
   }
 }

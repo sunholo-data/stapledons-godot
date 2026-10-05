@@ -11,6 +11,7 @@ import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
 import ./celestial (solSystem, bodyAt, lyKm)
 import ./navigation (BodyReq, safetyMinKm, targetFacts)
 import ./data/sol (sun)
+import pkg/sunholo/celestial/ephemeris (auKm)
 import ./core (World, Params, Target, Intent, IPlanBody, IPlan, cruisePhiDefault)
 
 export type TourLeg = { id: string, name: string, kind: string, cruisePhi: float, standoffKm: Option[float] }
@@ -46,7 +47,8 @@ export pure func legs(p: Params) -> [TourLeg] = [
   {id: "jupiter", name: "Jupiter", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(jupiterStandoffKm())},
   {id: "callisto", name: "Callisto clearance", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(callistoStandoffKm())},
   {id: "saturn", name: "Saturn", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(saturnStandoffKm())},
-  {id: "CNS5:3627", name: "Alpha Centauri", kind: "star", cruisePhi: cruisePhiDefault(p), standoffKm: None}
+  {id: "CNS5:3627", name: "Alpha Centauri system", kind: "star", cruisePhi: cruisePhiDefault(p), standoffKm: None},
+  {id: "acen-a", name: "Alpha Centauri A — 1 AU", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(auKm())}
 ]
 pure func legAt(xs: [TourLeg], n: int) -> Option[TourLeg] =
   if n < 0 then None else match xs { [] => None, x :: rest => if n == 0 then Some(x) else legAt(rest, n - 1) }

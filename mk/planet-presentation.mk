@@ -15,3 +15,14 @@ ship-demo-ci: planet-presentation-test moon-lifecycle-test
 .PHONY: glow-planet-golden
 glow-planet-golden:
 	@$(GODOT_SIM) --path . --script tools/glow_planet_golden.gd > $(SCRATCH)/glow-planet-golden.log 2>&1; rc=$$?; cat $(SCRATCH)/glow-planet-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/glow-planet-golden.log && grep -q '^glow-planet-golden: 0 failures$$' $(SCRATCH)/glow-planet-golden.log
+
+.PHONY: exposure-frames-test exposure-frame-capture
+exposure-frames-test: import
+	@AILANG_BIN="$$(command -v $(AILANG))" perl -e 'alarm 120; exec @ARGV' $(GODOT) --headless --path . --script tests/test_exposure_frames.gd > $(SCRATCH)/exposure-frames.log 2>&1; rc=$$?; cat $(SCRATCH)/exposure-frames.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/exposure-frames.log && grep -q '^exposure-frames: [0-9]* checks 0 failures$$' $(SCRATCH)/exposure-frames.log
+exposure-frame-capture:
+	@$(GODOT_SIM) --path . --script tools/exposure_frame_capture.gd > $(SCRATCH)/exposure-frame-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/exposure-frame-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/exposure-frame-capture.log && grep -q '^exposure-frame-capture: 0 failures$$' $(SCRATCH)/exposure-frame-capture.log
+ship-demo-ci: exposure-frames-test
+
+.PHONY: exposure-cpu-bench
+exposure-cpu-bench:
+	@$(GODOT_SIM) --headless --path . --script tools/exposure_cpu_bench.gd

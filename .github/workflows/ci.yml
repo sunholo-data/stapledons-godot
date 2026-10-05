@@ -41,7 +41,7 @@ jobs:
           AILANG=ailang python3 tools/replay.py --case m4_transit_harness
 
       - name: Check offline presentation and bootstrap before full suite
-        run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test
+        run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test exposure-frames-test tour-pacing-test alpha-centauri-test
 
       - name: make test
         run: make test

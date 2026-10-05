@@ -35,6 +35,21 @@ var heading_world := Vector3(0.0, -1.0, 0.0)
 var beta := 0.0
 var glow_pole := -1.0 # the sim's W/m^2; -1 = the state carries none (glow off)
 var glow_t_pole := -1.0 # the sim's K (glow_pole_k); -1 = none
+var temporal_exposure := false
+var _exposure_dirty := true
+var _finished_exposure_frame := -1
+var _meter_view_state := []
+const DISPLAY_METER_HZ := 20.0
+var _meter_age := INF
+var _meter_controls := []
+var _meter_physical_state := []
+var _meter_direction := Vector3.ZERO
+var _meter_preparations := -1
+var meter_sample_count := 0
+var meter_sample_usec := 0
+var exposure_frame_count := 0
+var _anticipated_ev := -INF
+var _meter_samples := PackedFloat64Array([Exposure.dark_sky_luminance(),Exposure.dark_sky_luminance(),0.0])
 var radius_m := 100.0
 var basis := PackedFloat64Array() # ship basis, galactic columns
 
@@ -181,12 +196,61 @@ func set_glow_pole(w: float) -> void:
 	set_glow(w, glow_t_pole)
 
 
+func set_temporal_exposure(on: bool) -> void:
+	if temporal_exposure == on:return
+	temporal_exposure = on
+	exposure.temporal_enabled = on
+	_exposure_dirty = true
+
 func update_exposure() -> void:
+	_exposure_dirty = true
+	if temporal_exposure and not _debug_unit and not exposure.fixed:return
+	_sample_exposure()
+	exposure.update(_meter_samples[0],_meter_samples[1],_meter_samples[2])
+	_upload_exposure()
+
+## Called after the ship camera's final attitude/position sync. Meter only the
+## actual presented view, then advance display adaptation once per frame.
+func finish_exposure_frame(delta: float, frame_id: int = Engine.get_process_frames()) -> void:
+	if frame_id == _finished_exposure_frame:return
+	_finished_exposure_frame = frame_id
+	exposure_frame_count += 1
+	_meter_age += clampf(delta,0.,.1)
+	var controls := [camera.fov,size,exposure.mode,exposure.bias,exposure.fixed,exposure.fixed_ev]
+	var view := [camera.transform,cam.get("position_m"),controls]
+	if _exposure_dirty or view != _meter_view_state:_prepare_exposure_scene()
+	var physical := [heading_world,beta,basis.duplicate(),radius_m,glow_pole,glow_t_pole,starfield.ship.duplicate(),system_view.velocity_gamma,system_view.velocity_omb,system_view.preparation_count]
+	var changed := view != _meter_view_state or physical != _meter_physical_state
+	var snap := _meter_direction.length_squared()<.5 or acos(clampf(_meter_direction.dot(camera.view_dir()),-1.,1.))>deg_to_rad(10.)
+	var force_sample := system_view.preparation_count != _meter_preparations or controls != _meter_controls or snap
+	if changed and (not temporal_exposure or _debug_unit or exposure.fixed or force_sample or _meter_age>=1./DISPLAY_METER_HZ):
+		_sample_exposure(true)
+		_meter_view_state=view;_meter_controls=controls.duplicate(true);_meter_physical_state=physical
+		_meter_direction=camera.view_dir();_meter_preparations=system_view.preparation_count;_meter_age=0.
+	_exposure_dirty=false
+	if _debug_unit:exposure.update(_meter_samples[0],_meter_samples[1],_meter_samples[2])
+	else:exposure.update_adaptive(_meter_samples[0],_meter_samples[1],_meter_samples[2],delta,frame_id,_anticipated_ev)
+	_upload_exposure()
+
+func _prepare_exposure_scene() -> void:
 	system_view.set_view(exposure.pixel_rad,size.y)
 	system_view.update(system_state,exposure.k())
-	system_view.visible=resolved_bodies_supported and not _debug_unit
+	system_view.visible = resolved_bodies_supported and not _debug_unit
+
+func _sample_exposure(prepared := false) -> void:
+	var started := Time.get_ticks_usec()
+	if not prepared:_prepare_exposure_scene()
 	var l_avg := background.meter(camera, heading_world, beta) if has_background else Exposure.dark_sky_luminance()
-	exposure.update(l_avg, _meter_eye(), system_view.highlight_luminance(camera,Vector2(size)))
+	_meter_samples = PackedFloat64Array([l_avg,_meter_eye(),system_view.highlight_luminance(camera,Vector2(size))])
+	var base_ev := exposure.ev_dark()+exposure.bias if exposure.mode==Exposure.Mode.EYE else Exposure.metered_ev(l_avg)+exposure.bias
+	_anticipated_ev = system_view.display_anticipation_ev(camera,Vector2(size),base_ev) if temporal_exposure and not _debug_unit and not exposure.fixed else -INF
+	_exposure_dirty = false
+	meter_sample_count+=1;meter_sample_usec+=Time.get_ticks_usec()-started
+
+func exposure_stats() -> Dictionary:
+	return {"frames":exposure_frame_count,"samples":meter_sample_count,"sample_cpu_usec":meter_sample_usec,"display_meter_hz":DISPLAY_METER_HZ}
+
+func _upload_exposure() -> void:
 	starfield.set_exposure(exposure.star_scale())
 	starfield.set_psf(exposure.psf_sigma_px())
 	starfield.set_floor(exposure.floor_params())

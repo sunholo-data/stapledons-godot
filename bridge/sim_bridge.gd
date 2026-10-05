@@ -95,11 +95,11 @@ func start() -> bool:
 	return hello(started + bootstrap_budget_ms(OS.has_feature("template"), not launch_override.is_empty()))
 
 
-## Bundled source has no compiled cache on first launch. A measured cold compile
-## exceeded 9 s; allow 30 s only for exported bundled bootstrap. Editor/fixture
+## Normal source has no compiled cache on first launch. A measured cold compile
+## exceeded 9 s; allow 30 s for normal source/exported bootstrap. Explicit fixture
 ## launches retain 5 s; new_game/input deadlines and child cleanup are unchanged.
 static func bootstrap_budget_ms(exported: bool, overridden: bool) -> int:
-	return 30000 if exported and not overridden else 5000
+	return 5000 if overridden else 30000
 
 
 ## Send `hello` and accept only an integer protocol major of 2.

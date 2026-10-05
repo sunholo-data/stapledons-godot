@@ -40,7 +40,7 @@ func run()->void:
 			check(id+" looking away restores dark-adapted exposure",absf(sky.exposure.ev-baseline)<1e-10)
 		var solar:Dictionary={}
 		for bb:Dictionary in source.system.bodies:
-			if bb.kind=="star":solar=bb.duplicate(true)
+			if bb.id=="sun":solar=bb.duplicate(true)
 		solar.rel_km={"x":149597870.7,"y":0.,"z":0.};solar.e_v_lux=127057.41052085394
 		var sun_world:=source.duplicate(true);sun_world.system.bodies=[solar]
 		sky.apply(sun_world);sky.camera.look(0.,0.,0.);sky.update_exposure()

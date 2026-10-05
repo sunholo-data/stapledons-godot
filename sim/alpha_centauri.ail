@@ -1,0 +1,68 @@
+module stapledons/sim/alpha_centauri
+-- Bounded observed binary composition. No planets, new orbit solver or dynamics.
+import std/math (sqrt)
+import pkg/sunholo/celestial/kepler (Vec3, add, sub, scale, norm, cross, stateFromElements, twoPi)
+import pkg/sunholo/celestial/frames (equatorialToGalactic)
+import pkg/sunholo/celestial/ephemeris (auKm, j2000)
+import pkg/sunholo/celestial/lighttime (retarded, secondsPerDay)
+import pkg/sunholo/celestial/reflect (starIlluminanceAt)
+import pkg/sunholo/relativity/photometry (illuminanceFromV)
+import pkg/sunholo/relativity/medium (cSI)
+import ./data/acen (Body, Field, bodies, abOrbit)
+import ./data/sol (sun)
+import ./celestial (BodyView, BodyState, lyKm)
+import std/option (Option, Some, None)
+
+pure func field(xs:[(string,Field)],key:string)->float = match xs { []=>0.0,(k,f)::rest=>if key==k then f.value else field(rest,key) }
+pure func bodyField(xs:[Body],id:string,key:string)->float = match xs { []=>0.0,b::rest=>if b.id==id then field(b.fields,key) else bodyField(rest,id,key) }
+export pure func stellarValue(id:string,key:string)->float = bodyField(bodies(),id,key)
+export pure func stellarRadiusKm(id:string)->float = stellarValue(id,"radius_sun")*(sun()).radiusKm
+export pure func catalogueId(id:string)->string = if id=="acen-a" then "CNS5:3627" else if id=="acen-b" then "HIP 71681" else ""
+export pure func catalogueA()->Vec3 = {x:3.094521,y:0.0-3.015404,z:0.0-0.051608}
+pure func unit(v:Vec3)->Vec3 = scale(1.0/norm(v),v)
+pure func npole()->Vec3 = equatorialToGalactic({x:0.0,y:0.0,z:1.0})
+pure func rad(d:float)->float = d*twoPi()/360.0
+pure func element(key:string)->float = field((abOrbit()).fields,key)
+-- Visual orbit: X north, Y east, Z toward Earth, a right-handed tangent
+-- basis. Omega is measured east from north, omega is the secondary B's.
+type AlphaOrbitState = {pos:Vec3,vel:Vec3}
+pure func alphaOrbitState(jd:float)->AlphaOrbitState {
+  let n=twoPi()/(element("period_yr")*365.25);
+  let a=element("a_au");
+  let year=2000.0+(jd-j2000())/365.25;
+  let state=stateFromElements({a:a,e:element("e"),incl:rad(element("incl_deg")),node:rad(element("node_deg")),argPeri:rad(element("argperi_deg")),meanAnom:twoPi()*(year-element("tperi_yr"))/element("period_yr"),gm:n*n*a*a*a});
+  {pos:alphaRotate(state.pos),vel:alphaRotate(state.vel)}
+}
+pure func alphaRotate(v:Vec3)->Vec3 {
+ let radial=unit(catalogueA());let east=unit(cross(npole(),radial));let north=unit(cross(radial,east));
+ add(scale(v.x,north),add(scale(v.y,east),scale(0.0-v.z,radial)))
+}
+export pure func abRelativeAu(jd:float)->Vec3 = (alphaOrbitState(jd)).pos
+-- Catalogue astrometry is apparent at J2016. Anchor the physical orbit at
+-- its corresponding emission epoch, rather than retard the catalogue twice.
+export pure func catalogueEmissionJd()->float = j2000()+16.0*365.25-norm(catalogueA())*lyKm()*1000.0/cSI()/secondsPerDay()
+export pure func localPositionAu(id:string,jd:float)->Vec3 {
+  let ma=element("mass_a_sun");let mb=element("mass_b_sun");let f=mb/(ma+mb);
+  let bary=scale(f,abRelativeAu(catalogueEmissionJd()));
+  add(bary,scale(if id=="acen-a" then 0.0-f else 1.0-f,abRelativeAu(jd)))
+}
+export pure func enabledAt(shipLy:Vec3)->bool = true
+-- Geometric navigation uses simultaneous positions, not the retarded image.
+-- A/B stop-only adapter consumes this measured package Kepler state.
+export pure func alphaBodyAt(id:string,jd:float)->Option[BodyState] =
+ if id!="acen-a" && id!="acen-b" then None else {
+  let ma=element("mass_a_sun");let mb=element("mass_b_sun");let f=mb/(ma+mb);
+  Some({pos:add(scale(lyKm(),catalogueA()),scale(auKm(),localPositionAu(id,jd))),vel:scale((if id=="acen-a" then 0.0-f else 1.0-f)*auKm()/secondsPerDay(),(alphaOrbitState(jd)).vel),pole:npole(),wDeg:0.0})
+ }
+pure func view(id:string,jd:float,shipLy:Vec3)->BodyView {
+  let shipAu=scale(lyKm()/auKm(),sub(shipLy,catalogueA()));
+  let ret=retarded(\t.localPositionAu(id,t),shipAu,jd);
+  let rel=scale(auKm(),sub(ret.pos,shipAu));let radius=stellarRadiusKm(id);
+  let d=norm(rel);let distance=if d>radius then d else radius;
+  let earthDistanceAu=norm(catalogueA())*lyKm()/auKm();
+  let e1=illuminanceFromV(stellarValue(id,"v_earth"))*earthDistanceAu*earthDistanceAu;
+  {id:id,name:if id=="acen-a" then "alpha Centauri A" else "alpha Centauri B",kind:"star",host:"",status:"star",relKm:rel,radiusKm:radius,flattening:0.0,pole:npole(),wDeg:0.0,
+    sunDir:{x:0.0,y:0.0,z:0.0},rAu:0.0,phaseDeg:0.0,eVLux:starIlluminanceAt(e1,distance/auKm()),pV:0.0,minnaertK:1.0,ringId:"",lightAgeS:ret.lagDays*secondsPerDay(),visitable:true,
+    source:"Kervella2017 radius/Teff; Akeson2021 binary; Hipparcos V; stationary barycentre; uniform photosphere, no measured spin; no thermal/gravity safety"}
+}
+export pure func alphaBodies(jd:float,shipLy:Vec3)->[BodyView] = [view("acen-a",jd,shipLy),view("acen-b",jd,shipLy)]

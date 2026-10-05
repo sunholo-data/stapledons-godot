@@ -1,5 +1,5 @@
 extends SceneTree
-## Exported cold compilation gets headroom; editor/test sessions and requests stay bounded.
+## Normal cold compilation gets headroom; explicit fixture sessions and requests stay bounded.
 var failures:=0
 var checks:=0
 func _initialize()->void:run.call_deferred()
@@ -13,11 +13,11 @@ func fake(mode:String)->SimBridge:
 func gone(pid:int)->bool:return OS.execute("/bin/kill",["-0",str(pid)],[])!=0
 func run()->void:
 	var policy:=SimBridge.new()
-	check("explicit exported-only bootstrap policy",policy.has_method("bootstrap_budget_ms"))
+	check("explicit normal-vs-fixture bootstrap policy",policy.has_method("bootstrap_budget_ms"))
 	if not policy.has_method("bootstrap_budget_ms"):
 		print("sim-bootstrap: %d checks %d failures"%[checks,failures]);quit(1);return
 	check("exported bundled bootstrap bounded to30s",policy.call("bootstrap_budget_ms",true,false)==30000)
-	check("editor bootstrap remains5s",policy.call("bootstrap_budget_ms",false,false)==5000)
+	check("normal source bootstrap has30s cold-compile headroom",policy.call("bootstrap_budget_ms",false,false)==30000)
 	check("exported launch override remains5s",policy.call("bootstrap_budget_ms",true,true)==5000)
 	check("editor launch override remains5s",policy.call("bootstrap_budget_ms",false,true)==5000)
 	var silent:=fake("silent_start");var t:=Time.get_ticks_msec();var started:=silent.start();var elapsed:=Time.get_ticks_msec()-t

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Laptop sky and approach follow-up, 2026-10-05
+
+- Meter the final shared camera view rather than temporary simulation headings, preventing Earth/Jupiter and Sun exposure from alternating between updates. Interactive brightness adaptation is a labelled display policy; fixed EV and physical reference paths stay explicit.
+- Set the guided tour to 1 g so braking starts farther out, then give approaches 90 wall seconds with progressively less time compression near arrival. Ordinary map sessions retain their acceleration and pacing.
+- Add measured Alpha Centauri A/B radii and temperatures, continuous exact-ID rendering and star inspection, and a final moving-A intercept at 1 AU after the system stand-off. Binary motion uses the existing package orbit/light-time functions; the stellar surface is a uniform emitter.
+
 ### Solar departure and moody ship review, 2026-10-05
 
 - Increase collision-safe walking to 3.5 m/s and restore warm internal light, cool fill and geometry shadows on the painted ship. Retain the movable camera and shared observer; simulation-driven external ship sunlight remains pending.

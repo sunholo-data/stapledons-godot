@@ -45,7 +45,6 @@ var _walk_nodes: Array[Node3D] = []
 var lift: Node3D = null
 var guides := MeshInstance3D.new()
 var manifest: Dictionary = {}
-var _last_exposure_ms := 0
 var sky_states: Dictionary = {}
 var sky_world: Dictionary = {}
 var sky_state := "rest"
@@ -134,7 +133,8 @@ func _hud() -> void:
 	navigation_button.add_theme_font_size_override("font_size",12)
 	navigation_button.pressed.connect(open_navigation);hud.add_child(navigation_button)
 	var tour_row:=HBoxContainer.new();hud.add_child(tour_row)
-	var solar_start:=Button.new();solar_start.text="New Solar departure · Earth → Sun → Jupiter → Callisto → Saturn → Alpha Centauri"
+	var solar_start:=Button.new();solar_start.text="New Solar tour · Earth → outer planets → Alpha Centauri A (1 AU)"
+	solar_start.tooltip_text="Earth → Sun → Jupiter → Callisto → Saturn → Alpha Centauri system → Alpha Centauri A (1 AU)"
 	solar_start.add_theme_font_size_override("font_size",12)
 	solar_start.pressed.connect(start_solar_departure);tour_row.add_child(solar_start)
 	solar_pause.text="Pause tour";solar_pause.visible=false
@@ -174,7 +174,7 @@ func set_brightness_trial(stops: int) -> bool:
 	sky.update_exposure()
 	return true
 func brightness_label() -> String:
-	return "Calibrated sky" if brightness_stops==0 else "Sky exposure trial %d× — display aid" % int(pow(2.,brightness_stops))
+	return ("Calibrated sky" if brightness_stops==0 else "Sky exposure trial %d× — display aid" % int(pow(2.,brightness_stops))) + (" · display anticipation/fade EV" if sky.temporal_exposure else "")
 func set_preset(name: String) -> void:
 	if name=="reset":
 		if lift!=null:lift.reset()
@@ -244,6 +244,7 @@ func _process(delta: float) -> void:
 	if solar_tour!=null:solar_next.disabled=live_journey or solar_tour.complete or solar_tour.attitude_hold or solar_tour.pending_index>=0 or not solar_tour.failed.is_empty()
 	navigation_button.text="Navigation [M] · pauses tour for browsing" if solar_tour!=null else "Navigation [M] · select destination and hold to commit"
 	if not ready_ok:return
+	sky.set_temporal_exposure(auto and not benchmark.running)
 	_update_tour_attitude(delta)
 	if journey_map!=null and journey_auto_tick and not benchmark.running:
 		_journey_accum=minf(_journey_accum+delta,4./GalaxyMap.TICK_HZ)
@@ -259,8 +260,7 @@ func _process(delta: float) -> void:
 	avatar.visible=camera.pullback>.5 or camera.external
 	avatar_shadow.global_position=avatar.global_position
 	_sync_observer()
-	if Time.get_ticks_msec()-_last_exposure_ms>250:
-		sky.update_exposure();_last_exposure_ms=Time.get_ticks_msec()
+	sky.finish_exposure_frame(delta)
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
 	label.text="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
@@ -420,6 +420,7 @@ func _create_navigation(scenario:String) -> void:
 	if journey_map==null:
 		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
 		var params:Dictionary={"standoff_au":1000.}
+		if scenario=="solar_departure":params.merge({"boost_g":1.0,"m_eff_kg":10.0,"cap_one_minus_beta":0.01})
 		if not journey_sim.start() or not journey_sim.new_game(424242,scenario,false,params):
 			caption="Navigation unavailable: "+journey_sim.last_error
 			journey_sim.stop();journey_sim=null;return

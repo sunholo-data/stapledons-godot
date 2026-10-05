@@ -19,6 +19,7 @@ import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/celestial/rings (RingBand)
 import ./data/sol (Ring, rings)
 import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
+import ./alpha_centauri (alphaBodies, catalogueId as alphaCatalogueId, stellarValue as alphaStellarValue)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
@@ -247,6 +248,11 @@ pure func bodyObj(b: BodyView) -> string =
     f("rel_km", vec(b.relKm)), f("radius_km", num(b.radiusKm)), f("flattening", num(b.flattening)), f("pole", vec(b.pole)), f("w_deg", num(b.wDeg)),
     f("sun_dir", vec(b.sunDir)), f("r_au", num(b.rAu)), f("phase_deg", num(b.phaseDeg)), f("e_v_lux", num(b.eVLux)), f("p_v", num(b.pV)),
     f("minnaert_k", num(b.minnaertK)), f("ring_id", q(b.ringId)), f("light_age_s", num(b.lightAgeS)), f("visitable", bool(b.visitable)), f("source", q(b.source))])
+pure func finiteBodyObj(b:BodyView)->string =
+  if alphaCatalogueId(b.id)=="" then bodyObj(b) else {
+    let old=bodyObj(b);
+    concat([substring(old,0,length(old)-1),",",f("catalogue_id",q(alphaCatalogueId(b.id))),",",f("teff_k",num(alphaStellarValue(b.id,"teff_k"))),",",f("limb_u",num(0.0)),"}"])
+  }
 export pure func encodeSystem(v: SystemView) -> string =
   obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)), f("bodies", arr(each(bodyObj, v.bodies)))])
 -- 2.5 exposes the already-cited profiles without changing old system bytes.
@@ -258,9 +264,9 @@ pure func ringObj(r: Ring) -> string =
   obj([f("host", q(r.host)), f("names", strArr(r.names)), f("bands", arr(each(bandObj, r.bands))),
     f("tint", obj([f("r", num(r.tint.r)), f("g", num(r.tint.g)), f("b", num(r.tint.b))])),
     f("cite", q(r.cite)), f("tau_cite", q(r.tauCite)), f("w0_cite", q(r.w0Cite)), f("tint_cite", q(r.tintCite))])
-pure func encodeSystemRings(v: SystemView) -> string =
+export pure func encodeSystemRings(v: SystemView) -> string =
   obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)),
-    f("bodies", arr(each(bodyObj, v.bodies))), f("rings", arr(each(ringObj, rings())))])
+    f("bodies", arr(each(finiteBodyObj, v.bodies))), f("rings", arr(each(ringObj, rings())))])
 pure func solarLegObj(leg: TourLeg) -> string =
   obj([f("id", q(leg.id)), f("name", q(leg.name)), f("kind", q(leg.kind)), f("cruise_phi", num(leg.cruisePhi))] ++ opt("standoff_km", num, leg.standoffKm))
 pure func solarTour(p: Params) -> string =
@@ -268,8 +274,12 @@ pure func solarTour(p: Params) -> string =
     f("legs", arr(each(solarLegObj, solarLegs(p))))])
 -- system.jd = epoch_jd + Earth time; the ship's galactic position in ly.
 pure func systemOf(w: World) -> SystemView = systemAt(solSystem(), jdAt(w.params.epochJd, w.ship.motion.t), position(w.ship))
+pure func finiteSystemOf(w:World)->SystemView {
+  let v=systemOf(w);
+  {v | bodies:v.bodies ++ alphaBodies(v.jd,position(w.ship))}
+}
 pure func systemFull(s: Session, w: World) -> [string] =
-  if s.minor >= departureMinor() then [f("system", encodeSystemRings(systemOf(w)))]
+  if s.minor >= departureMinor() then [f("system", encodeSystemRings(finiteSystemOf(w)))]
   else if s.minor >= systemMinor() then [f("system", encodeSystem(systemOf(w)))] else []
 -- Sent on a tick only when it can have changed: the clock (jd) or the ship's position moved.
 pure func withSystem(s: Session, before: World, after: World, x: Extras) -> Extras =

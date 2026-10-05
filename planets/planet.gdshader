@@ -28,6 +28,7 @@ uniform sampler2D cloud_tex : source_color, filter_linear_mipmap, repeat_enable;
 uniform float tex_lod = 0.0;                     // mip level: about one texel per pixel at this disc size
 uniform bool star = false;
 uniform float star_mean = 0.0;                   // the star disc's mean radiance (cd/m^2)
+uniform float emitter_temp_k = 5772.0;
 uniform float limb_u = 0.6;
 uniform int ss = 4;
 // M5.3 inverse optics mirrors pinned relativity0.7 / existing sky background.
@@ -159,7 +160,8 @@ void fragment() {
 			}
 			if (sample_alpha<=0.0) continue;
 			if (beta_mag > 0.0) {
-				vec4 rest=bb(5772.0); vec4 seen=bb(5772.0*d);
+				float temp=star ? emitter_temp_k : 5772.0;
+				vec4 rest=bb(temp); vec4 seen=bb(temp*d);
 				radiance *= (seen.rgb/max(rest.rgb,vec3(1e-4))) * pow(10.0,seen.a-rest.a);
 			}
 			sum += min(radiance,vec3(60000.0));

@@ -44,3 +44,13 @@ Executor owns code/authoring; a different evaluator checks behavior, geometry/ph
 - Actual M2 Air shadow/planet resource measurements. Studio results cannot approve these on behalf of the laptop.
 
 No new large catalogue import, fictional star generator, whole-ship buildout, population/life-support certification, GR lensing or travel glow is included. Record those separately on the roadmap. Reaching beyond the present destination/sky fidelity envelope requires a later data/background milestone.
+
+### Attended laptop follow-up
+
+Continue SD7/SD8 under Mark's explicit reports and request for a slower approach:
+fix final-observer exposure scheduling and add bounded interactive adaptation;
+extend guided braking to 90 wall seconds with reduced compression near arrival;
+verify actual Alpha Centauri finite-body support before claiming a close-up.
+Executor and independent evaluator keep display policy separate from physical
+radiance and preserve ordinary journey pacing. Delivery is a new immutable dev
+version after focused checks, full CI and independent review.

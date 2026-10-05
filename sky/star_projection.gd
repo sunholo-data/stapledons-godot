@@ -12,6 +12,8 @@ static func direction(field: Starfield, k: int, ctx: Dictionary) -> Dictionary:
 	var hi := Vector3(buf[offset+3],buf[offset+7],buf[offset+11])
 	var lo := Vector3(buf[offset],buf[offset+4],buf[offset+8])
 	var rel: Vector3 = (hi-ctx.ship[0])+(lo-ctx.ship[1])
+	var replacement: Dictionary = field.catalogue_replacement_sources.get(field.ids[k],{})
+	if not replacement.is_empty(): rel = replacement.dir * Starfield.POINT_LY
 	if rel.length_squared() == 0.:return {}
 	var n := rel.normalized()
 	var b: float = ctx.b
@@ -25,12 +27,17 @@ static func direction(field: Starfield, k: int, ctx: Dictionary) -> Dictionary:
 		d = Starfield.f32(g*bc)
 		var parallel := Starfield.f32(Starfield.f32(Starfield.f32(g-1.)*c) + Starfield.f32(g*b))
 		n = ((n + bh*parallel)/d).normalized()
-	return {direction=n,doppler=d,r2=rel.length_squared()}
+	var result := {direction=n,doppler=d,r2=rel.length_squared()}
+	if not replacement.is_empty(): result.replacement = replacement
+	return result
 static func visible(field: Starfield, k: int, sample: Dictionary, ctx: Dictionary) -> bool:
 	var t := field.custom[k*4]
 	var d: float = sample.doppler
-	var ratio := pow(10., Blackbody.lut_log10_y(t*d)-Blackbody.lut_log10_y(t))/(d*d)
 	var flux: float = field.custom[k*4+1]*field.custom[k*4+3]/maxf(sample.r2,ctx.min_r2)
+	if sample.has("replacement"):
+		t = sample.replacement.t
+		flux = sample.replacement.lux
+	var ratio := pow(10., Blackbody.lut_log10_y(t*d)-Blackbody.lut_log10_y(t))/(d*d)
 	var color: Vector3 = Blackbody.lut_rgb(t*d)*flux*ratio*float(ctx.exposure)
 	var peak := maxf(color.x,maxf(color.y,color.z))
 	if ctx.floor_flux > 0. and flux*ratio >= ctx.floor_flux and peak > 0.:peak = maxf(peak,ctx.floor_peak)

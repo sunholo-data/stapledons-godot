@@ -119,3 +119,43 @@ The art choice is the main uncertainty; measure first rather than commit the who
 Approved defaults: 3.5 m/s movement; painted 3D geometry with real lighting and free camera; matched baseline/moody comparisons for art review; nearest-star outbound demo; real destinations and explicit unknown information. Mark reviews finish captures; a future switch to constrained cameras/plates would be a separate decision.
 
 Deliverables: sprint/state files; movement/map update; lighting comparison and recorded camera decision; integrated Earth/Jupiter/Saturn/outbound demo; coverage legend; Blender assets and native art evidence; independent evaluations; one verified Mac review build and lean reference-page updates per playable increment.
+
+### Laptop review follow-up: exposure and approach pacing (5 October)
+
+Mark reports Earth/Jupiter alternating white and textured, the Sun making the
+panorama pulse black/visible, and an abrupt exposure jump when looking away.
+Interactive exposure must meter the final shared observer, once per rendered
+frame; intermediate simulation attitude updates must not replace its exposure.
+A bounded temporal display adaptation may ease the final observer's EV changes.
+This is a labelled display policy, not a new biological or radiometric model;
+fixed EV and unit-gain reference paths retain their existing semantics.
+Regression commands must reproduce stable Earth/Jupiter exposure under repeated
+simulation updates and verify bounded, frame-rate-independent look-away changes.
+
+The guided tour reserves 30 wall seconds for boost, 20 for any cruise and 90 for
+braking. During braking, presentation time compression decreases progressively
+so the last tenth of physical braking receives about 28 wall seconds. AILANG
+still owns acceleration, braking onset, ephemerides, clocks and endpoints; no
+planet is enlarged or moved. Ordinary map journeys retain their current pacing.
+Acceptance: `make tour-pacing-test solar-departure-test ship-demo-live-test`, with
+native review captures showing the approach. Mark also requests checking the
+Alpha Centauri radius/finite-disc integration: the current source contains
+binary orbit/mass data but no measured stellar radii, and only supplies Sol bodies to the live finite renderer. A closer
+review stop alone cannot substitute for that integration.
+
+Mark explicitly selects a final Alpha Centauri A stop at 1 AU from its moving
+centre, after the catalogue stand-off. Extend the existing package-backed body
+intercept and companion collision checks; do not treat the static catalogue
+coordinate as the physical star. The guided session sets existing `boost_g=1`
+so braking begins well before the planetary endpoint (the old 750,000 g setting
+left only ~25 km of braking at 0.002c). This is a scenario parameter change, not
+a new motion formula. Normal map sessions retain their existing acceleration.
+At 1 g the outbound leg may be triangular, with no cruise phase; show the
+authoritative peak velocity rather than imposing the requested cruise speed.
+Accept only actual stopped A-centre distance of 1 AU and companion clearance,
+with continuous clocks and no resets/teleports.
+
+The 1 g scenario also uses the existing effective-mass parameter at 10 kg and
+limits the speed cap to 0.99c (`cap_one_minus_beta=0.01`). The package brake/ISM
+validation must accept this complete parameter set; never bypass it or reduce
+ISM density to make the tour run. These are guided-scenario settings only.
