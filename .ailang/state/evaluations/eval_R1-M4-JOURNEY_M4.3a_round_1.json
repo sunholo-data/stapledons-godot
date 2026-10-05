@@ -1,0 +1,174 @@
+{
+  "eval_id": "eval_R1-M4-JOURNEY_M4.3a_round_1",
+  "milestone": "M4.3a_TRANSIT_WARP_HUD",
+  "sprint_id": "R1-M4-JOURNEY",
+  "worktree": "/Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter14-eval",
+  "head_commit": "4b92429",
+  "pr": 115,
+  "eval_date": "2026-10-05",
+  "evaluator_model": "claude-sonnet-4-6",
+  "evaluator_session": "iter14-eval",
+  "generator_session": "iter13-executor",
+  "generator_model": "claude-sonnet-5-5",
+  "result": "PASS",
+  "score": 95,
+  "score_max": 100,
+  "threshold": 70,
+  "blocking_findings": 0,
+
+  "categories": {
+    "tests_pass": {
+      "points_earned": 19,
+      "points_max": 20,
+      "hard_fail": false,
+      "evidence": [
+        "make transit-test: 39/39 passed, 0 failed",
+        "make strict transitVm: VM transit-ok == interpreter transit-ok",
+        "make replay SESSION=tests/replays/m4_transit_harness.ndjson: sha256 e1a8a7818d5278d546526da8c27013444df1c966d3e8fe954dfb0e5f44f150c1 matches arm64 golden",
+        "make test: 1609 lines, no test failures; terminated by evaluator background timeout (not by failure); cache-write warning only (ARTIFACT_TOO_LARGE falls back to fresh compile)",
+        "known: x86_64 golden for m4_transit_harness not committed — expected per ailang#1465 arch divergence, tracked in draft PR #118; arm64 passes"
+      ],
+      "deduction_reason": "-1: make test terminated by background timeout before completion; could not confirm final rc=0 line, though all seen output is green and all M4.3a sub-targets pass individually"
+    },
+    "lint_clean": {
+      "points_earned": 10,
+      "points_max": 10,
+      "hard_fail": false,
+      "evidence": [
+        "No 1.0-beta patterns in new GDScript (bridge/transit.gd, ui/*.gd)",
+        "No new Python files",
+        "No files > 800 lines (core.ail ~627, test_transit.gd ~small, transit.gd ~small)",
+        "No backwards-compat hacks (no _unused vars, no re-exported types)",
+        "No hardcoded physics constants in GDScript — all values from sim fields or Transit constants"
+      ]
+    },
+    "acceptance_criteria": {
+      "points_earned": 30,
+      "points_max": 30,
+      "hard_fail": false,
+      "criteria_met": 10,
+      "criteria_total": 10,
+      "evidence": [
+        "Transit loop on sky-only harness: TransitHarness.run_session() drives boost→cruise→brake→arrived; test_transit.gd 39 checks",
+        "Warp as recorded intent: IWarp(float) in sim; accepted while committed (IWarp(_) => a), refused not_committed otherwise; warp=0.002/0.01/0.05 only",
+        "3s burn pacing: BURN_REAL_S=3.0; dtau=burn_years*real_dt/BURN_REAL_S latched from cq.phase_remaining_yr; cruise dtau=warp*real_dt; no wall-clock dependence",
+        "HUD via DisplayBinding: all 12 ROWS + 2 CLOCKS in journey_hud.gd are DisplayBinding instances; audit() positive-control checked by test_transit.gd:test_hud",
+        "Arrival card: ArrivalCard.ROWS binds journey.plan.distance, journey.plan.ship_years, journey.plan.earth_years, consequence.gap_years; visible only when journey.state==arrived",
+        "Protocol 2.2 additive fields: consequence section carries distance_remaining, earth_years_remaining, phase_remaining_yr, load_suns, drag_energy_kg; digest unchanged at e701da00be0a7012",
+        "standoff_au 1000: Transit.STANDOFF_AU=1000.0; new_game_params() sends it; replay log line 1 confirms params:{standoff_au:1000.0}; M4.1 eval finding 4 satisfied",
+        "Warp levels: Transit.WARP_LEVELS=[0.002,0.01,0.05]; isWarpLevel() in core.ail; bad level → bad_intent on wire; tested in checkWarpWire",
+        "Replay byte-identical: m4_transit_harness.ndjson 429 lines; arm64 sha256 matches golden e1a8a7818d5278d5",
+        "Solar constant 1361 W/m² (IAU 2015 nominal): solarConstantWM2()=1361.0 in core.ail and transit_test.ail; executor mutation '1360' killed (1-3 tests fail)"
+      ]
+    },
+    "code_quality": {
+      "points_earned": 12,
+      "points_max": 15,
+      "hard_fail": false,
+      "mutations_unlisted": [
+        {
+          "id": "mut_eval_1",
+          "description": "ArrivalCard gap field → wrong source (ship.clock.tau instead of consequence.gap_years)",
+          "file": "ui/arrival_card.gd",
+          "change": "ROWS[3][1] = 'clock.tau' instead of 'consequence.gap_years'",
+          "result": "KILLED",
+          "killed_by": "test_arrival_card (gap check), test_transit.gd line ~220",
+          "verdict": "test suite exercises arrival card gap field"
+        },
+        {
+          "id": "mut_eval_2",
+          "description": "Glow format: onoff → sci W/m2 (should be on/off toggle, not scientific notation)",
+          "file": "ui/journey_hud.gd",
+          "change": "ROWS[10][2] = 'sci W/m2' instead of 'onoff'",
+          "result": "KILLED",
+          "killed_by": "test_hud (DisplayBinding audit, glow format check)",
+          "verdict": "test suite validates format specifier for glow field"
+        },
+        {
+          "id": "mut_eval_3",
+          "description": "Transit.settle() dead code: for r in refused → for r in []",
+          "file": "bridge/transit.gd",
+          "change": "settle() never checks refused list",
+          "result": "SURVIVED",
+          "verdict": "DEAD CODE — IWarp while committed is never refused by sim; settle() refusal check is unreachable in all normal operation; test gap noted as minor finding"
+        }
+      ],
+      "deduction_reason": "-2: settle() mutation survived (dead code path, not covered by any test); -1: minor design debt (unreachable code in settle())"
+    },
+    "documentation": {
+      "points_earned": 15,
+      "points_max": 15,
+      "evidence": [
+        "CHANGELOG: changelogs/unreleased/2026-10-03-m4.3a-transit-hud.md documents all M4.3a additions; notes x86_64 golden open item; notes 1361 W/m² solar constant",
+        "Sprint JSON: sprint_R1-M4-JOURNEY.json M4.3a passes=true, mutations listed (14+), notes populated",
+        "Design doc: m4-first-journey.md stays in design_docs/planned/r1/ (correct — M4 is a multi-milestone doc; M4.3b not yet started)",
+        "Protocol 2.2 change-set: executor notes protocol digest unchanged (backward compatible additive bump)"
+      ]
+    },
+    "design_fidelity": {
+      "points_earned": 9,
+      "points_max": 10,
+      "evidence": [
+        "All HUD values via DisplayBinding — no computed values in GDScript ✓",
+        "No physics computation in GDScript (dtau from sim fields, not formulas) ✓",
+        "Protocol 2.2 additive only (no breaking changes) ✓",
+        "Warp recorded as intent (IWarp), not applied directly to world ✓",
+        "3s burn pacing via phase_remaining_yr latch (deterministic, no wall-clock) ✓",
+        "Phase sequence boost→cruise→brake matches design ✓",
+        "Arrival card exact fields from design doc ✓",
+        "standoff_au 1000 consistent with M4.1 eval finding 4 ✓"
+      ],
+      "deduction_reason": "-1: --map flag alone sends no standoff_au (noted as open item in executor notes; by design for now, needs M4.5 or a follow-up)"
+    }
+  },
+
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "minor",
+      "blocking": false,
+      "category": "test-coverage",
+      "file": "bridge/transit.gd",
+      "line": 58,
+      "summary": "Transit.settle() refusal-check branch is dead code; mutation survived",
+      "detail": "settle() iterates refused to find a refused step()-included IWarp (offset + _pending_at). This can never trigger: step() only emits IWarp while committed, and committed IWarp is never refused by the sim. The mutation 'for r in []:' survived 39/39 tests. The code is defensive and not incorrect, but it is untestable. Future changes that add new intent types via step() while not committed would inherit this unexercised path.",
+      "recommendation": "Either add a comment explaining the dead path and its intent, or remove it. If kept, add a unit test that directly calls settle() with a synthetic refused list matching _pending_at."
+    },
+    {
+      "id": "F2",
+      "severity": "informational",
+      "blocking": false,
+      "category": "ci",
+      "file": "tests/replays/m4_transit_harness.state.arm64.sha256",
+      "summary": "x86_64 replay golden not committed; CI fails on x86_64 runners",
+      "detail": "Per ailang#1465, exp/log differ 1 ulp between arm64 and x86_64. The arm64 golden is committed and passes. The x86_64 golden is being recorded in draft PR #118. This is a known expected CI failure unrelated to M4.3a correctness.",
+      "recommendation": "Merge PR #118 alongside or before PR #115. No M4.3a code change needed."
+    },
+    {
+      "id": "F3",
+      "severity": "informational",
+      "blocking": false,
+      "category": "test-coverage",
+      "summary": "GPU visual capture not available in eval environment",
+      "detail": "Definition of Done gate 2 requires reference renders that have been opened. The --transit flag requires a display server. No renders generated or inspected in this evaluation. This is expected for an eval session.",
+      "recommendation": "Maintainer to run 'make capture' and open renders/*.png before final merge approval."
+    }
+  ],
+
+  "gate_results": {
+    "make_transit_test": {"status": "pass", "output": "39 passed, 0 failed"},
+    "make_strict_transitvm": {"status": "pass", "output": "VM transit-ok == interpreter transit-ok"},
+    "make_replay_arm64": {"status": "pass", "sha256": "e1a8a7818d5278d546526da8c27013444df1c966d3e8fe954dfb0e5f44f150c1"},
+    "make_test": {"status": "timeout", "note": "background task hit 30-min evaluator limit; 1609 lines logged, no failures seen; individual M4.3a sub-targets confirmed green"},
+    "make_golden": {"status": "unmeasured", "note": "requires display server; not available in eval environment"},
+    "make_capture": {"status": "unmeasured", "note": "requires display server; not available in eval environment"},
+    "standoff_au_1000": {"status": "pass", "evidence": "Transit.STANDOFF_AU=1000.0, new_game_params(), replay log, main.gd"},
+    "solar_constant_1361": {"status": "pass", "evidence": "solarConstantWM2()=1361.0 in core.ail and transit_test.ail"},
+    "protocol_digest_unchanged": {"status": "pass", "digest": "e701da00be0a7012"},
+    "no_physics_in_gdscript": {"status": "pass", "evidence": "all dtau from sim fields; no 1.0-beta pattern"},
+    "displaybinding_all_hud": {"status": "pass", "evidence": "12 ROWS + 2 CLOCKS all DisplayBinding; audit() positive-control in test_hud"},
+    "protocol_22_additive": {"status": "pass", "evidence": "5 new consequence fields; no existing fields removed or changed"},
+    "warp_intent_refused_correctly": {"status": "pass", "evidence": "IWarp accepted committed, refused not_committed; checkWarpIntent, test_warp_intent"},
+    "dtau_deterministic": {"status": "pass", "evidence": "dtau from phase_remaining_yr and fixed constants only; replay byte-identical"}
+  }
+}
