@@ -77,3 +77,12 @@ coverage), including the large-cap fallback. Actual aggregate/native benchmark,
 packaged tests and independent review remain required before publishing.
 Existing user M2 Air baseline is retained separately; no Air performance claim
 is made here.
+
+Combined-branch transit replay re-freeze: the arm64 VM and interpreter both
+produce e8cabac62833d388f3646ff2df79dbf5199aebd3f273cef0209824dc019851bd.
+GitHub Linux x86_64 run37320061545 independently produces the identical digest
+with VM/interpreter parity; its only failure was the previous committed digest.
+The independent old/new archive comparison found only the approved epsilon
+and mean-glow scaling plus additive pole radiance/temperature fields; motion,
+clocks, targets and ledger remain unchanged. Both platform fixtures now record
+these actual runs.
