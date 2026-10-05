@@ -12,8 +12,8 @@
    "ruling": "APPROVED (Mark, attended 2026-10-04): bridge overlook and one-tier lift demo, with one meaningful perspective shared by stars, existing SR, play area and background geometry; future GR must use that same viewpoint.",
    "words": [],
    "provenance": "Approved design/sprint: design_docs/planned/r1/m4-ship-geometry-demo.md; isolated demo/ship-geometry-seven implementation branch.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L126",
-   "sourceLabel": "stapledon-mission.md, line 126",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L130",
+   "sourceLabel": "stapledon-mission.md, line 130",
    "refs": [],
    "groups": [
     "visual",
@@ -35,8 +35,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-04): retain the proposed 5 m minimum clearance.",
    "words": [],
    "provenance": "Attended ship-geometry review; art/ship-dimensions-v2/layout.json and website/docs/ship-layer-reference.mdx.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L125",
-   "sourceLabel": "stapledon-mission.md, line 125",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L129",
+   "sourceLabel": "stapledon-mission.md, line 129",
    "refs": [],
    "groups": [
     "visual",
@@ -58,8 +58,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-04): seven major layers are chosen; remove the twenty-deck option from the review; architecture within those layers will include buildings, forests and other spaces.",
    "words": [],
    "provenance": "Attended ship-geometry review; art/ship-dimensions-v2 and website/docs/ship-layer-reference.mdx.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L124",
-   "sourceLabel": "stapledon-mission.md, line 124",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L128",
+   "sourceLabel": "stapledon-mission.md, line 128",
    "refs": [],
    "groups": [
     "visual",
@@ -316,8 +316,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-03): art only, no claim: remove ownership/Apache claims from AI-generated art (captain, bridge, concept art) and label it AI-generated, no copyright claimed; the code keeps Apache-2.0; third-party CC BY credits stay",
    "words": [],
    "provenance": "assets/characters/captain/*, refs/bridge_v2 BRIEF, website/docs/credits.md, README.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L123",
-   "sourceLabel": "stapledon-mission.md, line 123",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L127",
+   "sourceLabel": "stapledon-mission.md, line 127",
    "refs": [],
    "groups": [
     "visual",
@@ -339,8 +339,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-03): semantic versioning, vMAJOR.MINOR.PATCH with SemVer pre-release suffixes for dev builds (e.g. v0.4.0-dev.1); 0.x while pre-alpha",
    "words": [],
    "provenance": "Site News is tied to release tags; v0.4.0-dev.1 published 2026-10-03.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L122",
-   "sourceLabel": "stapledon-mission.md, line 122",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L126",
+   "sourceLabel": "stapledon-mission.md, line 126",
    "refs": [],
    "groups": [
     "process"
@@ -361,8 +361,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-03): approved, Solar System Scope textures under CC BY 4.0, and the attribution must be displayed in game (a reachable credits line or panel), on the website and in release notes",
    "words": [],
    "provenance": "M5.2a PR #106; data/planets/CREDITS.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L121",
-   "sourceLabel": "stapledon-mission.md, line 121",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L125",
+   "sourceLabel": "stapledon-mission.md, line 125",
    "refs": [
     {
      "repo": "game",
@@ -390,9 +390,9 @@
    "question": "Forward glow spectrum: higgs-bubble.md does not define the colour of the wall glow (placeholder equal-energy white, 182.6 lm/W). Options: hot-plasma blackbody from the impact energy / neutral white / hydrogen recombination lines.",
    "ruling": "DECIDED (Mark, attended 2026-10-03): the glow spectrum is a hot-plasma blackbody whose temperature is derived from the impact energy, computed in sunholo/relativity first (package-first), replacing the equal-energy white placeholder.",
    "words": [],
-   "provenance": "M4.2 PR #102; sky/forward_glow.gd.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L120",
-   "sourceLabel": "stapledon-mission.md, line 120",
+   "provenance": "M4.2 PR #102; interior/forward_glow.gd.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L124",
+   "sourceLabel": "stapledon-mission.md, line 124",
    "refs": [
     {
      "repo": "game",
@@ -420,10 +420,17 @@
    "question": "Forward glow strength (M4.2 evaluation): at the canon ε = 1e-9 the bubble-wall glow pole is 130× the 23.5 mag/arcsec² dark sky at 0.99c and drowns the starfield, contradicting \"faint by design\". Options: lower ε (~1e-11) / keep and fix the text / tie to the glazing follow-up.",
    "ruling": "DECIDED (Mark, attended 2026-10-03): lower the canon wall conversion efficiency to about 1e-11 so the forward glow is faint and the starbow stays visible (design-repo canon change: higgs-bubble.md eps and dependent HB rows, the package check values and the sim).",
    "words": [],
-   "provenance": "eval_R1-M4-JOURNEY-M4.2_round_1.json; test_physics.gd:885; m4-first-journey.md:362.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L119",
-   "sourceLabel": "stapledon-mission.md, line 119",
-   "refs": [],
+   "provenance": "Merge approval (Mark, attended 2026-10-05): \"can we merge in all the PRs and branches now?\" authorizes landing the current PR #113 proposal, ε = 1e-10 with its checked spectral implementation and controlled replay re-freeze, together with the linked canon update. eval_R1-M4-JOURNEY-M4.2_round_1.json; test_physics.gd:885; m4-first-journey.md:362.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L123",
+   "sourceLabel": "stapledon-mission.md, line 123",
+   "refs": [
+    {
+     "repo": "game",
+     "n": 113,
+     "url": "https://github.com/sunholo-data/stapledons-godot/issues/113",
+     "kind": "pr"
+    }
+   ],
    "groups": [
     "visual",
     "text"
@@ -444,8 +451,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-03): fix the mirror at the source now in a dedicated PR: one right-handed rotation map used everywhere (the seven copies removed), the interior's local flip dropped, and every reference render regenerated and reviewed.",
    "words": [],
    "provenance": "eval_R1-M4-JOURNEY-M4.2_round_1.json; sky/starfield.gd:31.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L118",
-   "sourceLabel": "stapledon-mission.md, line 118",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L122",
+   "sourceLabel": "stapledon-mission.md, line 122",
    "refs": [],
    "groups": [
     "visual",
@@ -467,8 +474,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-03): physically motivated glare/saturation around the forward disc plus auto-dimming labelled glazing, as a follow-up milestone (queue row 6b); M1.8 merges as is. R-e approved.",
    "words": [],
    "provenance": "eval_R1-M1-SKY-2-M1.8_round_1.json; sky/sky_meter.gd, sky/exposure.gd.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L117",
-   "sourceLabel": "stapledon-mission.md, line 117",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L121",
+   "sourceLabel": "stapledon-mission.md, line 121",
    "refs": [],
    "groups": [
     "visual",
@@ -502,8 +509,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-03): a new R1 milestone M5 'Planets and flybys' (queue row 6c): AILANG-driven solar-system data, Godot planet rendering with rings and relativistic flyby views, Sol's planets plus the α Cen arrival scene; design doc first.",
    "words": [],
    "provenance": "stapledons-design/features/future/*planet*; legacy/go-engine-features/ailang-solar-system-demo.md.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L116",
-   "sourceLabel": "stapledon-mission.md, line 116",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L120",
+   "sourceLabel": "stapledon-mission.md, line 120",
    "refs": [],
    "groups": [
     "planets",
@@ -525,8 +532,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-03): Milky Way anchor 20.8 mag/arcsec² cited to Leinert et al. 1998 (A&AS 127, 1, Table 16) and Duriscoe 2013 (PASP 125, 1370), replacing the uncited 20, with a Gaia/Tycho integrated-flux calibration as a later M1 item; dark sky moves to the deep-space value (~23.5 mag/arcsec², integrated starlight + diffuse galactic light + EBL, no airglow or zodiacal light) in M1.5a itself, with the AC8 naked-eye window moving accordingly (~6.9); R-d approved on the look (eye default, camera labelled).",
    "words": [],
    "provenance": "eval_R1-M1-SKY-2-M1.5a_round_1.json; sky/background.gd MILKY_WAY_MAG; sky/exposure.gd DARK_SKY_MAG.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L115",
-   "sourceLabel": "stapledon-mission.md, line 115",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L119",
+   "sourceLabel": "stapledon-mission.md, line 119",
    "refs": [],
    "groups": [
     "visual",
@@ -566,8 +573,8 @@
    "ruling": "MOOT (Mark, attended 2026-10-03): sunholo-data/stapledons-design is now a public repo, so CI clones it anonymously for the cross-repo lore check; no deploy key or secret needed.",
    "words": [],
    "provenance": "design_docs/planned/r1/m4-first-journey.md Open questions 5; plan Q2.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L114",
-   "sourceLabel": "stapledon-mission.md, line 114",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L118",
+   "sourceLabel": "stapledon-mission.md, line 118",
    "refs": [],
    "groups": [
     "infra"
@@ -588,8 +595,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-03): change the design canon to the catalogue distance, 4.32 ly (HB-4 and the dependent HB rows and Archive entries regenerated from the package), so HUD and Archive agree.",
    "words": [],
    "provenance": "design_docs/planned/r1/m4-first-journey.md Open questions 4; plan Q1.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L113",
-   "sourceLabel": "stapledon-mission.md, line 113",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L117",
+   "sourceLabel": "stapledon-mission.md, line 117",
    "refs": [],
    "groups": [
     "physics",
@@ -618,8 +625,8 @@
    "ruling": "APPROVED (Mark, attended 2026-10-03): sprint plan R1-M4-JOURNEY as drafted, with the evaluator's two consistency fixes applied as the executor's first step; wave 1 starts next iteration, Track B waits on R1-M1-SKY-2.",
    "words": [],
    "provenance": "Iteration 11 (2026-10-03): quorum artifacts m4-first-journey-2026-10-02T21-52-56Z.json (round 1, blocked 3/3) and …2026-10-03T04-12-08Z.json (round 2, blocked 3/3 on verification rows, gpt6-1-sol absent; narrow-refinement carve-out applied); evaluations eval_stapledon_iter11_m4_plan_round1.json (85) and …round2.json (88).",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L112",
-   "sourceLabel": "stapledon-mission.md, line 112",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L116",
+   "sourceLabel": "stapledon-mission.md, line 116",
    "refs": [],
    "groups": [
     "process"
@@ -702,8 +709,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-02): no-digits applies to EVERY generated text (crew lines, news, Archive), so numbers on screen come only from sim fields and prose refers to them in words; per-purpose length caps are 280 characters for crew lines, 280 for news items (raised from 200), and 600 for Archive answers.",
    "words": [],
    "provenance": "eval_R1-AI-FOUNDATION-AI.2_round_1.json; sim/ai.ail maxCharsFor.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L111",
-   "sourceLabel": "stapledon-mission.md, line 111",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L115",
+   "sourceLabel": "stapledon-mission.md, line 115",
    "refs": [],
    "groups": [
     "text",
@@ -725,8 +732,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-02): AI intents are accepted while a journey is committed and only journey intents are refused (M2 AC7 narrows to 'every journey intent'); build-time generation and the Medic style-frame call are paid by a Gemini key owned by GCP project stapledons-voyage, kept in Secret Manager (gemini-api-key), with a ~US$20/month budget alert (140 DKK, billing account currency); the unattended loop never spends; the player's live-generation spend ceiling is player-set in settings (default US$0.50); plan the AI foundation sprint now to run alongside M1. Other design defaults accepted: marker syntax {emotion}, per-segment speech, Medic line limited to the three existing portraits (other five commissioned), voice Aoede after audition, player key via env var or 0600 file in R1.",
    "words": [],
    "provenance": "design_docs/planned/r1/ai-service-foundation.md, Open questions.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L110",
-   "sourceLabel": "stapledon-mission.md, line 110",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L114",
+   "sourceLabel": "stapledon-mission.md, line 114",
    "refs": [],
    "groups": [
     "ai",
@@ -755,8 +762,8 @@
    "ruling": "APPROVED (Mark, attended 2026-10-02): sprint R1-M1-SKY-2 approved, start wave 1; merge PR #43 (AILANG destar) before the dependent milestones; alpha Cen A and B both at the CNS5 system distance 4.32 ly, separated on the sky (no literature override; B never uses its own 4.09 ly Hipparcos value); default exposure is the dark-adapted naked eye with camera-like as a labelled setting; planner defaults accepted: fill Hipparcos photometry into CNS5 rows Gaia cannot measure, retire the Python fallback and move stats/audit tools to Godot, commit stars_bright.bin, galaxy map shows CNS5 + bright stars within 25 pc, forward CMB in M1 as M1.8, D-6 'goes dark sideways' canon edit waits for Mark (M1.5a ships the honest exposure).",
    "words": [],
    "provenance": "design_docs/planned/r1/m1-remaining-sprint.md, Questions for Mark.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L109",
-   "sourceLabel": "stapledon-mission.md, line 109",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L113",
+   "sourceLabel": "stapledon-mission.md, line 113",
    "refs": [
     {
      "repo": "game",
@@ -802,8 +809,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-02): a new GCP project stapledons-voyage (sunholo.com org, Holosun Billing), created with gcloud and every command recorded in infra/gcp/setup.sh for a later Terraform migration; large assets go in a PUBLIC-read bucket gs://stapledons-voyage-assets (EU, content-addressed sky/<sha256>), and builds BUNDLE the textures; DEV builds go in a PRIVATE bucket gs://stapledons-voyage-dev-builds (public access prevention enforced, 30-day expiry) installed with tools/install_review_build.sh --dev; RELEASES go through private GitHub releases ('dev ones in the bucket and we release via github').",
    "words": [],
    "provenance": "PR #45 packaging options; infra/gcp/README.md.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L108",
-   "sourceLabel": "stapledon-mission.md, line 108",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L112",
+   "sourceLabel": "stapledon-mission.md, line 112",
    "refs": [
     {
      "repo": "game",
@@ -831,8 +838,8 @@
    "ruling": "R1 ACCEPTED, CONTINUE TO M2.6b (Mark, attended 2026-10-02): the map always shows the catalogue's own distance; full-precision positions come with the M1.2 catalogue tiers (alpha Cen A ~4.365 ly), and the 4.37 ly check row stays a package test, never shown in game; add common star names (alpha Centauri A, Sirius, Barnard's Star...) from a name table in M2.6b with the catalogue id as subtitle; the executor-chosen scenario-parameter ranges in the M2 design doc protocol section are RATIFIED as written.",
    "words": [],
    "provenance": "Review page https://claude.ai/artifact/WSyzsBATgJZVBJRSoa9E8E; release v0.2.0-m2-map; PR #28 (eval 89).",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L107",
-   "sourceLabel": "stapledon-mission.md, line 107",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L111",
+   "sourceLabel": "stapledon-mission.md, line 111",
    "refs": [
     {
      "repo": "game",
@@ -1006,8 +1013,8 @@
     "I thought we did do art direction"
    ],
    "provenance": "~/dev/blender docs/stapledon/bridge_style_v1, style_revision_v2, crew_exterior_style_v1; art/README.md review state.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L106",
-   "sourceLabel": "stapledon-mission.md, line 106",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L110",
+   "sourceLabel": "stapledon-mission.md, line 110",
    "refs": [],
    "groups": [
     "visual"
@@ -1050,8 +1057,8 @@
    "ruling": "DECIDED (Mark, attended 2026-10-01): (1) the wall passes light of every energy and the crew is protected by real glazing and hull inside the bubble, which absorb the blueshifted UV/X-rays; 'Radiation Shielding Automatic' (2025-12-06) is superseded in part, no extra hand-wave; (2) the cruise slider reaches 0.999999c (gamma ~707) with the ISM drag energy (~gamma*d) as the natural brake; the 10-20 default gamma cap is retired, a cap stays a scenario parameter; (3) the boundary does not refract, so the crew sees exactly the relativistic sky; (4) M2 OQ6 bubble defaults m_eff = 1 kg, boost proper acceleration 7.5e5 g, inelastic glow fraction epsilon = 1e-9, all scenario parameters.",
    "words": [],
    "provenance": "stapledons-design PR #2 open points; M2 OQ6.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L105",
-   "sourceLabel": "stapledon-mission.md, line 105",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L109",
+   "sourceLabel": "stapledon-mission.md, line 109",
    "refs": [
     {
      "repo": "design",
@@ -1097,8 +1104,8 @@
    "ruling": "M4 OQs DECIDED (Mark, attended 2026-10-01): no flip exists, up = direction of travel throughout; slice default cruise 0.99c for Sol -> alpha Cen (player can change it); journeys stop 1,000 AU from the target star; relative calendar; the news beat is a text panel at the Archive terminal; art stop S2 WAITS for Mark's approval of the Blender bridge style frame (no shipping on the spike blockout); R1 uses the scripted minimum-path proxy for the under-10-minutes bar and the 3-new-player human playtest moves to R2 (bar clause 4 amended); time while docked follows D-12 (no pause).",
    "words": [],
    "provenance": "design_docs/planned/r1/m4-first-journey.md Open questions.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L104",
-   "sourceLabel": "stapledon-mission.md, line 104",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L108",
+   "sourceLabel": "stapledon-mission.md, line 108",
    "refs": [],
    "groups": [
     "gameplay",
@@ -1128,8 +1135,8 @@
    "ruling": "M2 OQ3-OQ5 DECIDED (Mark, attended 2026-10-01): calendar is relative ('Earth +6.003 yr') with epoch and start_age as scenario parameters, start_age 30; manual thrust only in diag sessions, in play the clock runs at rest at a fixed host rate with no pause while planning; commit ritual is one dialog showing both clocks and the years left at home with a 1.5 s hold.",
    "words": [],
    "provenance": "design_docs/planned/r1/m2-journey-core.md Open questions.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L102",
-   "sourceLabel": "stapledon-mission.md, line 102",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L106",
+   "sourceLabel": "stapledon-mission.md, line 106",
    "refs": [],
    "groups": [
     "gameplay",
@@ -1159,8 +1166,8 @@
     "all of what you just said should be recorded and available in-game lore"
    ],
    "provenance": "Attended session 2026-10-01; physics review of the bubble (tides, ISM load, photon drive, CMB).",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L101",
-   "sourceLabel": "stapledon-mission.md, line 101",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L105",
+   "sourceLabel": "stapledon-mission.md, line 105",
    "refs": [],
    "groups": [
     "physics"
@@ -1190,8 +1197,8 @@
     "ok lets go with NOIRlab"
    ],
    "provenance": "Attended spike, branch m1.4a-background-spike, docs/m1.4a/README.md (matched-window crops, parallax validity note: a single panorama holds to about 50 ly from Sol).",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L100",
-   "sourceLabel": "stapledon-mission.md, line 100",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L104",
+   "sourceLabel": "stapledon-mission.md, line 104",
    "refs": [],
    "groups": [
     "visual",
@@ -1297,8 +1304,8 @@
     "yes put that in"
    ],
    "provenance": "Attended session 2026-09-28.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L99",
-   "sourceLabel": "stapledon-mission.md, line 99",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L103",
+   "sourceLabel": "stapledon-mission.md, line 103",
    "refs": [],
    "groups": [
     "process",
@@ -1320,8 +1327,8 @@
    "ruling": "DECIDED (Mark, attended 2026-09-28). (1) KEYS AND COST: the PLAYER'S OWN KEY. The game ships PRE-GENERATED CORE CONTENT (the accepted founding cast, their portraits, avatars and voices, the Archive, and templated fallback lines), and live generation is OPT-IN with the player's key. Without a key the game is fully playable on the pre-generated core. (2) PROVIDERS: stay MODEL-NEUTRAL and swap models as needed through AILANG's provider routing; GEMINI is the default (text, image and TTS). (3) VOICE: NO LIVE real-time voice for now (no streaming conversation with the Archive; gemini_live deferred). Speech is PRE-RECORDED or generated per line and cached, and TEXT-ONLY mode is always available.",
    "words": [],
    "provenance": "Attended session 2026-09-28; features/ai-showcase.md §7.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L98",
-   "sourceLabel": "stapledon-mission.md, line 98",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L102",
+   "sourceLabel": "stapledon-mission.md, line 102",
    "refs": [],
    "groups": [
     "ai",
@@ -1352,8 +1359,8 @@
     "yes this is more like it - lets go with these"
    ],
    "provenance": "Attended session 2026-09-28; feasibility spikes v1–v3 on branch spike/iso-bridge.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L96",
-   "sourceLabel": "stapledon-mission.md, line 96",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L100",
+   "sourceLabel": "stapledon-mission.md, line 100",
    "refs": [],
    "groups": [
     "visual",
@@ -1393,8 +1400,8 @@
     "Yes I accept those stars"
    ],
    "provenance": "Quorum round 1 (oc-glm-5-3), 2026-09-28; design doc Problem 5, rows V14 and M1.2d.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L95",
-   "sourceLabel": "stapledon-mission.md, line 95",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L99",
+   "sourceLabel": "stapledon-mission.md, line 99",
    "refs": [],
    "groups": [
     "physics",
@@ -1418,8 +1425,8 @@
     "record decisions as ratified"
    ],
    "provenance": "Handover comment on #1; photometry 0.2.0 deliberately has no WD model.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L94",
-   "sourceLabel": "stapledon-mission.md, line 94",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L98",
+   "sourceLabel": "stapledon-mission.md, line 98",
    "refs": [
     {
      "repo": "game",
@@ -1450,8 +1457,8 @@
     "record decisions as ratified"
    ],
    "provenance": "Handover comment on #1, 2026-09-27.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L93",
-   "sourceLabel": "stapledon-mission.md, line 93",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L97",
+   "sourceLabel": "stapledon-mission.md, line 97",
    "refs": [
     {
      "repo": "game",
@@ -1481,8 +1488,8 @@
     "record decisions as ratified"
    ],
    "provenance": "Measured on Mamajek v2022.04.16: 0.1015 mag at BP−RP 3.0; M9V/M9.5V BP−RP reverses. Evaluator verdict: honest amendment.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L92",
-   "sourceLabel": "stapledon-mission.md, line 92",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L96",
+   "sourceLabel": "stapledon-mission.md, line 96",
    "refs": [],
    "groups": [
     "physics"
@@ -1505,8 +1512,8 @@
     "record decisions as ratified"
    ],
    "provenance": "Charter iteration-0 definition; loop armed by Mark 2026-09-27; iteration 0 ran M1.1 under the standing publish grant.",
-   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L91",
-   "sourceLabel": "stapledon-mission.md, line 91",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L95",
+   "sourceLabel": "stapledon-mission.md, line 95",
    "refs": [],
    "groups": [
     "process"

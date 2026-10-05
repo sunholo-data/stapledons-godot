@@ -11,3 +11,7 @@ planet-bounds-golden:
 planet-cpu-bench:
 	@$(GODOT_SIM) --headless --path . --script tools/planet_cpu_bench.gd
 ship-demo-ci: planet-presentation-test moon-lifecycle-test
+
+.PHONY: glow-planet-golden
+glow-planet-golden:
+	@$(GODOT_SIM) --path . --script tools/glow_planet_golden.gd > $(SCRATCH)/glow-planet-golden.log 2>&1; rc=$$?; cat $(SCRATCH)/glow-planet-golden.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/glow-planet-golden.log && grep -q '^glow-planet-golden: 0 failures$$' $(SCRATCH)/glow-planet-golden.log

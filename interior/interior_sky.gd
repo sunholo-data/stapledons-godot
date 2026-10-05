@@ -82,6 +82,8 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 	quad.size = Vector2(2.0, 2.0)
 	glow.mesh = quad
 	glow_mat.shader = GLOW_SHADER
+	# Bubble wall is in front of finite bodies; planet PSFs remain priority 127.
+	glow_mat.render_priority = 126
 	glow.material_override = glow_mat
 	glow.extra_cull_margin = 16384.0
 	glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

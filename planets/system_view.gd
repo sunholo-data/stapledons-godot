@@ -260,7 +260,8 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 		add_child(mi)
 		discs[id] = mi
 	var m: ShaderMaterial = mi.material_override
-	m.render_priority = clampi(1 + rank, 1, 127) # after the stars (priority 0), far to near
+	assert(rank < 125, "Finite-body priorities must remain below the bubble wall (126)")
+	m.render_priority = 1 + rank # stars 0, finite bodies 1..125, bubble wall 126, PSFs 127
 	var pl := Planets.place(b["rel_km"], b["radius_km"])
 	m.set_shader_parameter("centre_w", pl[1])
 	var moving := relativistic_enabled and velocity_beta > 0.0
