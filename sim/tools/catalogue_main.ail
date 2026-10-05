@@ -65,9 +65,8 @@ export pure func planAdjusted(i: {tier: string, csv: string, rawSha: string, ail
       Ok(sel) => match encodeRows(sel.rows) {
         Err(e) => Err(e),
         Ok(b) => Ok({bin: b, count: size(sel.rows), excluded: sel.excluded,
-          sidecar: if hipSha == "" && size(shas) == 0 then sidecar(i.tier,size(sel.rows),sel.excluded,i.rawSha,sha256Hex(i.csv),sha256Bytes(b),i.ailang,i.pkg)
-            else sidecarWith(i.tier,source(i.tier),size(sel.rows),sel.excluded,
-              append(if hipSha == "" then [] else [kv("hip_filled",jint(size(fs)))], extra(sel.rows)),
+          sidecar: sidecarWith(i.tier,source(i.tier),size(sel.rows),sel.excluded,
+              append([kv("ids",ja(map(\r. js(r.id),sel.rows)))], append(if hipSha == "" then [] else [kv("hip_filled",jint(size(fs)))], extra(sel.rows))),
               append([kv("raw",js(i.rawSha)), kv("csv",js(sha256Hex(i.csv)))], append(if hipSha == "" then [] else [kv("hip_main",js(hipSha))], shas)),
               sha256Bytes(b),i.ailang,i.pkg)})
       }

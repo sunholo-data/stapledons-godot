@@ -1,0 +1,78 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "art/ship-layers-v1/ship_layers_concept_v1.png",
+  "bridge_geometry_reference": "renders/ship_demo/bridge.png from demo/ship-geometry-seven",
+  "common_prompt": "Use case: stylized-concept. Create a landscape art-direction frame for Stapledon's Voyage, one inhabited tier in a seven-tier ship inside a transparent 200m-diameter spherical bubble. Style: 1970s European science fiction comics, delicate purple ink lines, hand-painted gouache washes, flowing grown technology, cream stone, muted teal, violet, ochre and coral accents, tiny 1.7m humans in spacious structures. Match the provided whole-ship reference's materials and captain costume, but do not copy its old tier proportions or add floors. One coherent ordinary perspective, physically supported architecture, obvious routes and railings. Artificial interior lighting; small peripheral glimpses of quiet unwarped dark space are atmosphere only, not a physics render. One continuous pale central generator spire: inaccessible solid core, no doors inside it; Archive terminals and lifts adjacent and separate. No labels, text, logos, UI or watermark. This is an architectural concept, not a dimension-certified render. Keep ordinary human-sized doorways, chairs and stairs to communicate scale. Show one scene, not a contact sheet. ",
+  "tiers": [
+    {
+      "id": "bridge",
+      "title": "Bridge — the decision balcony",
+      "z": 82,
+      "r": 22,
+      "prompt": "Bridge top deck at +82m, diameter44m. View across a gently curved cream-and-teal decision platform, violet rim rail, ochre console tables, a captain in a cream long coat. Existing slender teal curled fronds are physically rooted at rim bases. The single pale needle rises toward +98m, not a building or habitable tower. Preserve the simple existing bridge, plenty of unobstructed overhead sky and open deck, no city on top. At the far rim a partial glimpse of the much broader Commons terrace25m below makes vertical scale legible. Camera human eyeheight, slightly raised only enough to see rim deck and lower terrace; no impossible cutaway or transparent floor.",
+      "index": 0,
+      "area_m2": 1520.5308443374597,
+      "concept_height_m": 2
+    },
+    {
+      "id": "commons",
+      "title": "Level 1 — the Commons & high terraces",
+      "z": 57,
+      "r": 75.92,
+      "prompt": "Level1 floor+57m, discdiameter151.84m. Human-eye wide perspective along an open civic terrace: shared council pavilion, informal food market, conversation nooks, stage, sheltered communal dining and guest rooms, not a palace or prestige-only officer district. Low curving cream structures6–10m tall, kept well inward from the spherical boundary; at10mheight roofs mustfit radius67.35m. Wide bare peripheral viewingpromenade and rail. Above centre is the much SMALLER44m diameter bridge25m higher, casting local shelter only, NOT a full overhead deck; large outer ring opens upward toward the invisible curved dome. Adjacent external lift atcore, tiny people crossing a plaza, a limited Archive alcove atcore. Teal/coral/ochre civic colors, calm and lived-in.",
+      "index": 1,
+      "area_m2": 18107.657506659976,
+      "concept_height_m": 10
+    },
+    {
+      "id": "homes",
+      "title": "Level 2 — homes & neighbourhoods",
+      "z": 32,
+      "r": 89.36830909525345,
+      "prompt": "Level2 floor+32m, diameter178.74m. A welcoming neighbourhood of 2–3storey courtyard dwellings6–10m tall, grass-roof terraces, shaded paths, family laundry, children and older residents, local clinic and small school. Homes modest individually, spacious public lanes and planted courts; no suburb stretching to an Earthhorizon. Pale continuous inaccessible spire visible across the district; a narrower upperfloor25m above is visible as a real shaded ceiling with outeredge openings framing darkspace. Buildingsroof at+42m stay radius<=85.21m; at outerrim keep low planting and broad rail promenade. Cream walls, coral shutters, muted mint and violet structure. Architectural section legible by viewpoint, no manufactured giant domebuilding.",
+      "index": 2,
+      "area_m2": 25090.941303448173,
+      "concept_height_m": 10
+    },
+    {
+      "id": "garden",
+      "title": "Level 3 — the Garden Cathedral",
+      "z": 7,
+      "r": 94.66175425861609,
+      "prompt": "Level3 floor+7m, diameter189.32m, beneath a floor at+32m whose undersideis+31m. Interior ecological sanctuary: mature15–20m treecanopies under the actual24m overhead gap, forest clearings, shallow ponds and winding water channels, mossy quiet sitting pavilions, tiny stewards and walkers. No literalreligious church occupyingthe forest; 'cathedral' means emotional scale. Tall20m crowns mustremainwithin horizontalradius91.08m at+27m; peripheralplanting shorter. View from low path through a calm canopy to the pale continuous central spire and distant upper slab edge, real cream/violet ribs attached to floor and slab. A discreet cultivation light canopy integrated into slab underside, no natural sun or Earthmountains. Leafgreen, tealwater, golden foliage accents, quiet bittersweet home.",
+      "index": 3,
+      "area_m2": 28151.33336494823,
+      "concept_height_m": 20
+    },
+    {
+      "id": "workshops",
+      "title": "Level 4 — the making quarter & academy",
+      "z": -18,
+      "r": 93.00061022576077,
+      "prompt": "Level4 floor-18m, diameter186m. Mixed neighbourhood of communal makerspaces, research labs, academy classrooms and modest dwellings,2–3storey6–10m structures under anactual24m gap. Humaneye view through wide curved public workshopstreet: visible benches, repairtools, ceramics and textilework, students examining a model, residents helping oneanother. Cream and ochreworkspaces with coral interiors, teal piping, violet supports. Real upperfloor underside25m higher, external lift gantry beside the single forbidden pale core with small Archive terminals. No gigantic militarymachines, no endless industrialcity. Show pedestrian routes, grounded columns, controlled clutter and an edgegathering balcony.",
+      "index": 4,
+      "area_m2": 27171.991439090645,
+      "concept_height_m": 10
+    },
+    {
+      "id": "farms",
+      "title": "Level 5 — cultivation & environmental systems",
+      "z": -43,
+      "r": 84.11619943916709,
+      "prompt": "Level5 floor-43m, diameter168.23m,24m overhead gap. A credible designed cultivation hall: distinct zones of broad grain/legume crop beds and fruitvegetables, modular 4–6rack-height leafy-crop farm galleries, algae tanks and closed waterprocessing along serviceedges. Fourtosix shelves use muchof24m height but have safe aisles, separate cultivationlights at each rack, access platforms and visible serviceclearance. No claimofproven foodcapacity. Wider serviceavenue with tiny agronomists, waterloops and spare modular bays, central inaccessible pale spire behind separate externaltransit. Cream structure, sagegreen plants, tealglass tanks, warmwhite growlights (no oversaturated magenta). Real upperdeck visiblyshades the hall; do not imply all racks get sunlight fromstars.",
+      "index": 5,
+      "area_m2": 22228.448801632105,
+      "concept_height_m": 18
+    },
+    {
+      "id": "engineering",
+      "title": "Level 6 — engineering & stewardship",
+      "z": -68,
+      "r": 65.21931086925804,
+      "prompt": "Level6 floor-68m, diameter130.44m, beneath actual-43m floorand24m overheadgap. Spacious maintenance and fabrication hall with repaircradles for INTERNAL service robots, material recovery, pumps and replaceable power modules, working crews and quiet protected watchalcoves. Pale solid central Higgs generator spire continues downward; technicians work on external interfaces only, Archive controlterminals onits outside. Lower bowl is suggested as inaccessible equipment volume below floor, not proven reactionmass engines or glowing rocket nozzles. No external spacecraftdock, no doorsopeningthroughthe bubble: people and masscannotleave. Cream/violet ribbedstructure, warmochre machinery, tealinstruments, railings on safe accessgalleries. A quiet human scale scene of stewardship, reuse and repair, not warfare.",
+      "index": 6,
+      "area_m2": 13362.94816745005,
+      "concept_height_m": 12
+    }
+  ]
+}

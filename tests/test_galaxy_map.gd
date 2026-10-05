@@ -33,7 +33,7 @@ const ALPHA_CEN_099 := {
 	"journey.plan.energy.total_j": "6.112e17 J",
 	"journey.plan.energy.total_kg": "6.801 kg",
 	"journey.plan.ism.load_w_m2": "2.220e5 W/m2",
-	"journey.plan.ism.glow_w_m2": "2.407e-5 W/m2",
+	"journey.plan.ism.glow_w_m2": "2.407e-6 W/m2", # eps 1e-10 (HB-111)
 	"journey.plan.ism.drag_n": "23.26 N",
 	"journey.plan.ism.hold_w": "6.973e9 W",
 	"journey.plan.cmb_forward_k": "38.44 K",

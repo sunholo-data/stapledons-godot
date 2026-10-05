@@ -2,6 +2,62 @@
 
 ## Unreleased
 
+### Laptop sky and approach follow-up, 2026-10-05
+
+- Meter the final shared camera view rather than temporary simulation headings, preventing Earth/Jupiter and Sun exposure from alternating between updates. Interactive brightness adaptation is a labelled display policy; fixed EV and physical reference paths stay explicit.
+- Set the guided tour to 1 g so braking starts farther out, then give approaches 90 wall seconds with progressively less time compression near arrival. Ordinary map sessions retain their acceleration and pacing.
+- Add measured Alpha Centauri A/B radii and temperatures, continuous exact-ID rendering and star inspection, and a final moving-A intercept at 1 AU after the system stand-off. Binary motion uses the existing package orbit/light-time functions; the stellar surface is a uniform emitter.
+
+### Solar departure and moody ship review, 2026-10-05
+
+- Increase collision-safe walking to 3.5 m/s and restore warm internal light, cool fill and geometry shadows on the painted ship. Retain the movable camera and shared observer; simulation-driven external ship sunlight remains pending.
+- Add a guided Earth → Jupiter → Saturn → Alpha Centauri journey with actual acceleration, cruise, braking and continuous positions/clocks. Planet stops are inertial; Earth uses the Earth–Moon barycentre approximation.
+- Render moving planet discs and Saturn rings through package-backed inverse aberration, radiometry and shared metering. Opaque planet faces also mask known-star inspection.
+- Start subsequent map routes from the current ship endpoint; add recenter/fit controls and honest surveyed-catalogue coverage.
+- Publish selected native lighting, planet-stop, outbound and navigation screenshots in the gallery. M2 Air performance and further ship art remain pending.
+
+
+### One current ship and known-star identification, 2026-10-05
+
+- Normal launch opens one current expanded ship at the captain’s measured eye, with live navigation at rest. Scrolling reveals a labelled third-person view. Original painted/capture modes remain explicit reference tools.
+- Add genuine UV-painted bridge surfaces and packed editable Blender masters; preserve exact geometry, walk meshes and the existing Commons paint. This first texture interpretation remains open for art review.
+- In the current ship, hold I to highlight known visible stars, hover for a name and click for catalogue facts. The details card persists after release; Esc closes it. Overlapping sources offer individual choices.
+- Open the same exact catalogue ID in navigation explicitly. Inspection leaves the running voyage and irreversible commitment unchanged.
+- Carry producer IDs through the sky renderer, and place highlights on apparent star directions while respecting opaque ship geometry. Catalogue distance is labelled from Sol; unavailable fields remain unavailable.
+
+
+### Open Commons arcade and live journey review, 2026-10-04
+
+- Replace the generic pavilion with the first section of the approved Commons layout: an open curved arcade, planted plaza and guarded walking link. This remains a bounded prototype; other districts and final painting are still to come.
+- Committed review journeys now show actual simulation acceleration, coast and braking aboard ship, with about 20 seconds per phase using labelled time compression. Navigation remains reachable at laptop window sizes.
+- Refresh the bundled simulation cache when its contents change, including nested modules, so updates do not reuse an older simulation.
+- Retain 4× exposure. Target MacBook Air performance remains to be measured.
+
+### Commons architectural review and 4× default, 2026-10-04
+
+- Set the review demo sky exposure to 4× by default, as requested; physical sky inputs remain unchanged.
+- Record that the generic pavilion is a prototype, not a faithful build of the approved Commons concept. Add an unbuilt zoning proposal and finish-only paint study for review before replacing its architecture.
+
+### Commons expansion and exposure trial, 2026-10-04
+
+- Add reusable planted terrace canopy, seating, reading tables and pavilion details within the current playable Commons.
+- Trial labelled sky exposure at baseline,2×,4×,16× and64× (default2×), with physical sky inputs unchanged. J cycles settings.
+- Preserve the sky meter while turning the camera; record the active exposure in captures and benchmarks.
+
+### Commons and journey sky review, 2026-10-04
+
+- Add the first painted Commons pavilion and courtyard, with collision, lift access and a coarse distance model.
+- Open the ship review in an actual frozen 0.99c simulation snapshot, with rest and forward/side/aft comparisons.
+- Include native export checks and five-view profiling. MacBook Air performance remains pending.
+
+### Seven-tier geometry review demo,2026-10-04
+
+- Trackpad controls: Option plus one-finger movement looks without a held click; two-finger scrolling zooms. Mouse right-drag and wheel still work. Whole-ship zoom keeps its overview, with zoom disabled during lift travel and benchmark sampling.
+- Separate review window preserves the running voyage. One perspective observer aligns native bridge geometry, lower tiers and the existing live star/sky renderer; opaque floor/rail occlusion is preserved. GR remains unimplemented.
+- Demo-only guarded lift openings support a physical25m descent to the first tier, a bounded landing walk and return with separate active WALK regions. Production bridge art stays unchanged.
+- In-app1920×1080 benchmark and packaged smoke checks added. StudioM4Max frame-time p95 measured26–29ms in this run; this does not meet the proposed60fps budget and does not establish MacBookAirM2 performance. Actual target-laptop measurements remain pending.
+
+
 ### Companion stars take their system's distance, 2026-10-03 (Mark's ruling; M1.7 evaluation follow-ups)
 
 - **Companion rule** (`sim/tools/companions.ail`, design

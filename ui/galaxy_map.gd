@@ -117,6 +117,9 @@ const ARRIVED_ROWS := [
 
 var sim: SimBridge
 var auto_tick := true
+var live_pacing := false # explicit opt-in; golden/replay capture inputs stay fixed
+var guided_read_only := false # guided itinerary owns planning/commit/cancel
+var pacing := preload("res://ui/journey_pacing.gd").new()
 var catalogue: Array = [] # parsed stars.json dictionaries (float64 x, y, z)
 var index_by_id: Dictionary = {} # catalogue id -> index (ids are unique, M1.7)
 var names: Dictionary = {} # catalogue index -> common name (names.json rows are keyed by id, D-17)
@@ -131,6 +134,8 @@ var camera := Camera3D.new()
 var slider := HSlider.new()
 var commit_button := Button.new()
 var cancel_button := Button.new()
+var centre_button := Button.new()
+var fit_button := Button.new()
 var progress_bar := ProgressBar.new()
 var dialog := PanelContainer.new()
 var dialog_title := Label.new()
@@ -156,6 +161,7 @@ var _title := Label.new()
 var _subtitle := Label.new()
 var _status := Label.new()
 var _clock := Label.new()
+var _coverage := Label.new()
 var _grid := GridContainer.new()
 var _speed := Label.new()
 var _pending: Dictionary = {}
@@ -211,6 +217,17 @@ func _build() -> void:
 	_subtitle.add_theme_font_size_override("font_size", 13)
 	for l in [_title, _subtitle, _status, _clock]:
 		box.add_child(l)
+	# Keep explicit framing reachable even in short windows with long plans.
+	var framing := HBoxContainer.new()
+	centre_button.text = "Centre on ship"
+	centre_button.pressed.connect(centre_on_ship)
+	fit_button.text = "Fit journey"
+	fit_button.pressed.connect(fit_journey)
+	framing.add_child(centre_button);framing.add_child(fit_button)
+	box.add_child(framing)
+	_coverage.add_theme_font_size_override("font_size",12)
+	_coverage.add_theme_color_override("font_color",Color(.6,.65,.75))
+	box.add_child(_coverage)
 	progress_bar.show_percentage = false
 	progress_bar.step = 0.0
 	_bar_style(progress_bar, Color(1.0, 0.6, 0.35))
@@ -219,7 +236,14 @@ func _build() -> void:
 	box.add_child(progress_bar)
 	_grid.columns = 2
 	_grid.add_theme_constant_override("h_separation", 14)
-	box.add_child(_grid)
+	# Fixed actions remain reachable in every map mode, including reference
+	# views and smaller native windows. Only the long readout scrolls.
+	var scroll:=ScrollContainer.new()
+	scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size.y=80
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	_grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	box.add_child(scroll);scroll.add_child(_grid)
 	box.add_child(HSeparator.new())
 	box.add_child(_speed)
 	slider.step = 0.0
@@ -246,7 +270,7 @@ func _build() -> void:
 	buttons.add_child(cancel_button)
 	box.add_child(buttons)
 	var help := Label.new()
-	help.text = "Slider: cruise speed, 0.9c to the cap (uniform in rapidity)\nDrag: orbit · wheel: zoom · click: select a star"
+	help.text = "Slider: cruise speed, 0.9c to the cap (uniform in rapidity)\nDrag: orbit · Shift-drag: pan · wheel: zoom · click: select"
 	help.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
 	help.add_theme_font_size_override("font_size", 13)
 	box.add_child(help)
@@ -327,6 +351,8 @@ func _build_dialog(layer: CanvasLayer) -> void:
 func load_catalogue(path: String) -> void:
 	_build()
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+	_coverage.text=preload("res://ui/catalogue_coverage.gd").summary(data)
+	_coverage.tooltip_text=preload("res://ui/catalogue_coverage.gd").details(data)
 	catalogue = data["stars"]
 	index_by_id.clear()
 	for i in catalogue.size():
@@ -430,13 +456,14 @@ func preselect(i: int) -> bool:
 	if i < 0 or i >= catalogue.size():
 		return false
 	selected_index = i
-	_pending = plan_intent(i)
+	if not guided_read_only:_pending = plan_intent(i)
 	_overlay.queue_redraw()
 	return true
 
 
 ## Plan an arbitrary target (design check rows; not a catalogue selection).
 func plan_target(target: Dictionary) -> void:
+	if guided_read_only:return
 	_pending = {"k": "plan", "target": target, "cruise_phi": cruise_phi}
 
 
@@ -444,7 +471,7 @@ func plan_target(target: Dictionary) -> void:
 func set_cruise_phi(phi: float, clamp: bool = true) -> void:
 	cruise_phi = clampf(phi, phi_min, phi_max) if clamp else phi
 	slider.set_value_no_signal(cruise_phi)
-	if selected_index >= 0:
+	if selected_index >= 0 and not guided_read_only:
 		_pending = plan_intent(selected_index)
 
 
@@ -459,6 +486,7 @@ func in_transit() -> bool:
 
 ## Open the commit dialog on the sim's current plan. Nothing is sent.
 func open_commit_dialog() -> bool:
+	if guided_read_only:return false
 	if journey_state() != "planned" or field_value(sim.world, "journey.plan") == null:
 		return false
 	dialog_plan_id = int(sim.world["journey"]["plan_id"])
@@ -476,6 +504,7 @@ func close_commit_dialog() -> void:
 ## Accumulate hold time (real or fake clock). At HOLD_S the commit for the
 ## plan shown is queued for the next tick and the dialog closes; true then.
 func hold_commit(delta: float) -> bool:
+	if guided_read_only:return false
 	if not dialog.visible:
 		return false
 	hold_s += delta
@@ -497,6 +526,7 @@ func release_commit() -> void:
 ## Cancel is always available. Before a commit the sim clears the plan; after
 ## it the sim refuses (`committed`) and the panel shows that refusal.
 func press_cancel() -> void:
+	if guided_read_only:return
 	close_commit_dialog()
 	_queue.append({"k": "cancel"})
 
@@ -506,15 +536,20 @@ func press_cancel() -> void:
 func tick() -> bool:
 	if sim == null:
 		return false
-	var intents := ([] if _pending.is_empty() else [_pending]) + _queue
+	var intents := [] if guided_read_only else ([] if _pending.is_empty() else [_pending]) + _queue
 	_pending = {}
 	_queue = []
 	var state := journey_state()
-	var sent := sim.send(intents, TRANSIT_DTAU if state == "committed" else HOST_DTAU)
+	var dtau := TRANSIT_DTAU if state == "committed" else HOST_DTAU
+	if live_pacing:
+		var committing := intents.any(func(i): return i.get("k", "") == "commit")
+		dtau = pacing.step(sim.world, committing, HOST_DTAU, TICK_HZ)
+	var sent := sim.send(intents, dtau)
 	if sent and not intents.is_empty():
 		_refusal_note = "" if sim.last_refused.is_empty() else "refused: %s" % ", ".join(sim.last_refused.map(func(r): return str(r["reason"])))
 	elif sent and journey_state() != state:
 		_refusal_note = "" # a new journey state (arrival) supersedes the old refusal
+	if live_pacing and journey_state() != "committed":pacing.rate = HOST_RATE
 	refresh()
 	return sent
 
@@ -638,7 +673,7 @@ func subtitle_text() -> String:
 		return ""
 	var i := int(t["index"])
 	if i >= 0 and i < catalogue.size() and catalogue[i]["id"] == t["id"]:
-		return "%s  ·  %.2f ly" % [t["id"], float(catalogue[i]["dist_ly"])]
+		return preload("res://ui/star_info.gd").catalogue_subtitle(catalogue[i])
 	return String(t["id"])
 
 
@@ -661,6 +696,7 @@ func status_text() -> String:
 		s += "  ·  " + _refusal_note
 	if field_value(sim.world, "journey.plan.fell_back") == true:
 		s += "  ·  fell back to flip-and-burn"
+	if guided_read_only:s += "\nGuided tour owns the journey · browse and recenter only"
 	return s
 
 
@@ -679,7 +715,9 @@ func refresh() -> void:
 	_title.text = title_text()
 	_subtitle.text = subtitle_text()
 	_status.text = status_text()
-	commit_button.disabled = journey_state() != "planned"
+	commit_button.disabled = guided_read_only or journey_state() != "planned"
+	cancel_button.disabled = guided_read_only
+	slider.editable = not guided_read_only
 	var pv := progress_values()
 	progress_bar.visible = not pv.is_empty()
 	if not pv.is_empty():
@@ -688,6 +726,7 @@ func refresh() -> void:
 	var c = field_value(sim.world, "clock")
 	if c != null:
 		_clock.text = "Now: Earth +%.4f yr  ·  ship +%.4f yr  ·  tick %d" % [c["year"], c["tau"], sim.world["tick"]]
+		if live_pacing:_clock.text += "\nVariable time compression · %s ship-yr/real-s" % sci(pacing.rate)
 	var rows := panel_rows()
 	while _grid.get_child_count() < rows.size() * 2:
 		var l := Label.new()
@@ -716,11 +755,90 @@ func _update_camera() -> void:
 	camera.look_at_from_position(pivot + off, pivot, Vector3.UP)
 
 
-## Frame star i and Sol together.
+## Explicit known-star handoff frames the current ship and selected row.
 func frame_star(i: int) -> void:
-	var p := world_pos(i)
-	pivot = p * 0.5
-	dist = maxf(10.0, p.length() * 2.5)
+	var ship = ship_world_pos()
+	_frame_points(PackedVector3Array([ship if ship != null else Vector3.ZERO, world_pos(i)]))
+
+
+## Display geometry only. Committed/arrived routes use the exact float64
+## recorded departure from protocol 2.5, including when the map is reopened.
+## Old streams lack departure: do not fabricate a completed route from Sol.
+func route_points() -> PackedVector3Array:
+	if sim == null:return PackedVector3Array()
+	var ship = ship_world_pos()
+	if ship == null:return PackedVector3Array()
+	var plan = field_value(sim.world,"journey.plan")
+	if in_transit():
+		if plan == null or not plan.has("departure"):return PackedVector3Array()
+		return PackedVector3Array([_map_position(plan.departure),_map_position(plan.target.pos)])
+	var target = catalogue[selected_index] if selected_index >= 0 else null
+	if target != null:return PackedVector3Array([ship,world_pos(selected_index)])
+	if plan != null:return PackedVector3Array([ship,_map_position(plan.target.pos)])
+	return PackedVector3Array()
+
+
+static func _map_position(p: Dictionary) -> Vector3:
+	return Starfield.galactic_to_world(Vector3(p.x,p.y,p.z))
+
+
+func ship_marker_visible() -> bool:
+	var ship = ship_world_pos()
+	return ship != null and not camera.is_position_behind(ship)
+
+
+func ship_location_text() -> String:
+	var p = field_value(sim.world,"ship.pos") if sim != null else null
+	if p == null:return "Ship"
+	var name := _position_name(p)
+	if not name.is_empty():return "Ship · "+name
+	return "Ship · current position"
+
+
+func _position_name(p: Dictionary) -> String:
+	if p.x==0. and p.y==0. and p.z==0.:return "Sol"
+	for i in catalogue.size():
+		var star: Dictionary=catalogue[i]
+		if star.x==p.x and star.y==p.y and star.z==p.z:return display_name(i)
+	return ""
+
+
+func departure_label() -> String:
+	if not in_transit():return "Current position"
+	var p = field_value(sim.world,"journey.plan.departure")
+	var name := _position_name(p) if p != null else ""
+	return "Departure"+(" · "+name if not name.is_empty() else "")
+
+
+func centre_on_ship() -> void:
+	var ship = ship_world_pos()
+	if ship != null:_frame_points(PackedVector3Array([ship]),false)
+
+
+func fit_journey() -> void:
+	var points := route_points()
+	var ship = ship_world_pos()
+	if ship != null:points.append(ship)
+	if not points.is_empty():_frame_points(points)
+
+
+## Keep both endpoints inside the map area left of the information panel.
+## Framing is requested explicitly; refresh/ticks never overwrite orbit/zoom.
+func _frame_points(points: PackedVector3Array, resize_distance: bool = true) -> void:
+	var midpoint := Vector3.ZERO
+	for point in points:midpoint += point
+	midpoint /= points.size()
+	var radius := 0.0
+	for point in points:radius=maxf(radius,point.distance_to(midpoint))
+	var size := camera.get_viewport().get_visible_rect().size
+	var aspect := size.x/maxf(size.y,1.)
+	var tangent := tan(deg_to_rad(camera.fov)*.5)
+	var usable := maxf(64.,size.x-PANEL_WIDTH-64.)/maxf(size.x,1.)
+	if resize_distance:
+		var angle := atan(tangent*minf(1.,aspect*usable))
+		dist=clampf(maxf(10.,radius/maxf(sin(angle),.01)*1.2),DIST_MIN,DIST_MAX)
+	_update_camera()
+	pivot=midpoint+camera.global_basis.x*dist*tangent*aspect*minf(float(PANEL_WIDTH)/maxf(size.x,1.),.8)
 	_update_camera()
 
 
@@ -815,8 +933,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		var mm := event as InputEventMouseMotion
 		if mm.position.distance_to(_drag_from) > 4.0:
 			_dragging = true
-		yaw -= mm.relative.x * 0.006
-		pitch = clampf(pitch + mm.relative.y * 0.006, -1.5, 1.5)
+		if mm.shift_pressed:
+			var ly_per_pixel := 2.*dist*tan(deg_to_rad(camera.fov)*.5)/maxf(camera.get_viewport().get_visible_rect().size.y,1.)
+			pivot += (-camera.global_basis.x*mm.relative.x+camera.global_basis.y*mm.relative.y)*ly_per_pixel
+		else:
+			yaw -= mm.relative.x * 0.006
+			pitch = clampf(pitch + mm.relative.y * 0.006, -1.5, 1.5)
 		_update_camera()
 
 
@@ -834,6 +956,7 @@ static func label_box(font: Font, at: Vector2, text: String, size: int) -> Rect2
 func _draw_overlay() -> void:
 	var font := ThemeDB.fallback_font
 	var faint := Color(0.35, 0.45, 0.6, 0.35)
+	if _overlay.size.x <= PANEL_WIDTH + 60 or _overlay.size.y <= 24:return
 	var view := Rect2(Vector2(8, 8), _overlay.size - Vector2(PANEL_WIDTH + 60, 24))
 	for r: float in RINGS_LY: # scale rings in the galactic plane around Sol
 		var pts := PackedVector2Array()
@@ -863,8 +986,6 @@ func _draw_overlay() -> void:
 		boxes.append(label_box(font, sol + Vector2(8, -6), "Sol", 15))
 	if selected_index >= 0 and not camera.is_position_behind(world_pos(selected_index)):
 		var sp := screen_position(selected_index)
-		if not camera.is_position_behind(Vector3.ZERO):
-			_overlay.draw_dashed_line(camera.unproject_position(Vector3.ZERO), sp, Color(0.5, 0.85, 1.0, 0.7), 1.5, 6.0)
 		_overlay.draw_arc(sp, 11.0, 0.0, TAU, 40, Color(0.5, 0.85, 1.0), 2.0, true)
 		_overlay.draw_string(font, sp + Vector2(14, 18), display_name(selected_index), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.6, 0.9, 1.0))
 		taken.append(sp)
@@ -881,9 +1002,17 @@ func _draw_overlay() -> void:
 		_overlay.draw_string(font, p + Vector2(6, -4), names[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.62, 0.68, 0.8, 0.75))
 		taken.append(p)
 		boxes.append(box)
+	var route := route_points()
+	if route.size()==2 and not camera.is_position_behind(route[0]) and not camera.is_position_behind(route[1]):
+		_overlay.draw_dashed_line(camera.unproject_position(route[0]),camera.unproject_position(route[1]),Color(0.5,0.85,1.,.7),1.5,6.)
+		_overlay.draw_string(font,camera.unproject_position(route[0])+Vector2(8,16),departure_label(),HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(.65,.8,1.))
+		if in_transit():
+			var end := camera.unproject_position(route[1])
+			_overlay.draw_arc(end,9.,0.,TAU,32,Color(.4,1.,.65),1.5,true)
+			_overlay.draw_string(font,end+Vector2(14,-12),"Destination: "+target_name(),HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(.4,1.,.65))
 	var ship = ship_world_pos()
-	if in_transit() and ship != null and not camera.is_position_behind(ship):
+	if ship_marker_visible():
 		var s := camera.unproject_position(ship)
 		var diamond := PackedVector2Array([s + Vector2(0, -7), s + Vector2(6, 0), s + Vector2(0, 7), s + Vector2(-6, 0)])
 		_overlay.draw_colored_polygon(diamond, Color(1.0, 0.55, 0.3))
-		_overlay.draw_string(font, s + Vector2(-38, -8), "ship", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1.0, 0.6, 0.35))
+		_overlay.draw_string(font, s + Vector2(8, -20), ship_location_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1.0, 0.6, 0.35))

@@ -149,3 +149,63 @@ static func integrate_disc(rho: float, k: float, lux: float, alpha: float, ang_r
 			var nrm := Vector3(x, y, sqrt(1.0 - r2))
 			sum += minnaert_radiance(rho, k, lux, nrm.dot(s), maxf(nrm.z, 1e-3) if k < 1.0 else nrm.z)
 	return sum * cell * cell * ang_r * ang_r
+
+
+## M5.3 mirrors relativity0.7 optics.deaberrate / apparentDisc. All arithmetic
+## is float64; gamma and one_minus_beta are authoritative sim values.
+static func inverse_ray64(n: PackedFloat64Array, heading: PackedFloat64Array, beta: float, gamma: float, omb: float) -> PackedFloat64Array:
+	if beta <= 0.0: return n.duplicate()
+	var c := -(n[0]*heading[0]+n[1]*heading[1]+n[2]*heading[2])
+	var denom := gamma * (omb+beta*(1.0+c) if c<0.0 else 1.0+beta*c)
+	var factor := (gamma-1.0)*c+gamma*beta
+	var out := PackedFloat64Array([(n[0]-factor*heading[0])/denom,(n[1]-factor*heading[1])/denom,(n[2]-factor*heading[2])/denom])
+	var length := length64(out)
+	return PackedFloat64Array([out[0]/length,out[1]/length,out[2]/length])
+
+static func doppler_seen64(n: PackedFloat64Array, heading: PackedFloat64Array, beta: float, gamma: float, omb: float) -> float:
+	var c := n[0]*heading[0]+n[1]*heading[1]+n[2]*heading[2]
+	return 1.0/(gamma*(omb+beta*(1.0-c)))
+
+static func apparent_disc64(cos_theta: float, alpha: float, beta: float, gamma: float) -> Array:
+	var theta := acos(clampf(cos_theta,-1.0,1.0))
+	var e_negative_phi := 1.0/(gamma*(1.0+beta))
+	var near := 2.0*atan2(e_negative_phi*sin((theta-alpha)/2.0),cos((theta-alpha)/2.0))
+	var far := 2.0*atan2(e_negative_phi*sin((theta+alpha)/2.0),cos((theta+alpha)/2.0))
+	return [(near+far)/2.0,(far-near)/2.0]
+
+
+## M5.2b mirrors celestial0.1.0 rings, including its grazing/near-equal limits.
+static func _expm1_over_x(x: float) -> float:
+	return 1.0+x/2.0*(1.0+x/3.0*(1.0+x/4.0*(1.0+x/5.0))) if absf(x)<0.001 else (exp(x)-1.0)/x
+
+static func ring_lit_radiance(w0: float, phase_p: float, tau: float, mu0: float, mu: float, lux: float) -> float:
+	if mu0<=0.0 or tau<=0.0:return 0.0
+	var x:=tau*(1.0/mu+1.0/mu0)
+	var attenuation:=x*_expm1_over_x(-x) if x<.001 else 1.0-exp(-x)
+	return w0*phase_p*mu0/(4.0*(mu+mu0))*attenuation*lux/PI
+
+static func ring_unlit_radiance(w0: float, phase_p: float, tau: float, mu0: float, mu: float, lux: float) -> float:
+	if mu0<=0.0 or tau<=0.0:return 0.0
+	var x:=tau*(mu-mu0)/(mu*mu0)
+	var reflectance:=w0*phase_p*mu0/4.0*exp(-tau/mu0)*tau/(mu*mu0)*_expm1_over_x(x) if absf(x)<.001 else w0*phase_p*mu0/(4.0*(mu-mu0))*(exp(-tau/mu)-exp(-tau/mu0))
+	return reflectance*lux/PI
+
+static func ring_transmission(tau: float, mu: float) -> float:
+	return 1.0 if tau<=0.0 else (0.0 if mu==0.0 else exp(-tau/absf(mu)))
+
+static func ring_plane_hit(p: PackedFloat64Array, direction: PackedFloat64Array, pole: PackedFloat64Array) -> Dictionary:
+	var dn:=direction[0]*pole[0]+direction[1]*pole[1]+direction[2]*pole[2]
+	var mu:=absf(dn)/length64(direction)
+	if dn==0.0:return {"hits":false,"radius":0.0,"mu":0.0,"distance":0.0}
+	var s:=-(p[0]*pole[0]+p[1]*pole[1]+p[2]*pole[2])/dn
+	if s<=0.0:return {"hits":false,"radius":0.0,"mu":mu,"distance":s}
+	return {"hits":true,"radius":length64(PackedFloat64Array([p[0]+s*direction[0],p[1]+s*direction[1],p[2]+s*direction[2]])),"mu":mu,"distance":s}
+
+static func ring_band(bands: Array, r: float) -> Dictionary:
+	for b: Dictionary in bands:
+		if r>=b.r_in_km and r<b.r_out_km:return b
+	return {"tau":0.0,"w0":0.0}
+
+static func ring_shadow_transmission(bands: Array, p: PackedFloat64Array, sun: PackedFloat64Array, pole: PackedFloat64Array) -> float:
+	var hit:=ring_plane_hit(p,sun,pole)
+	return ring_transmission(ring_band(bands,hit.radius).tau,hit.mu) if hit.hits else 1.0

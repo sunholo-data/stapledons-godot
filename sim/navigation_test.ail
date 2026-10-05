@@ -20,7 +20,7 @@ import ./data/acen (bodies)
 import ./navigation (NavCtx, BodyReq, Leg, NavPlan, Pass, planBody, planBodyN, interceptIterations, residualMax, safetyMinKm, defaultStandoffKm,
   standoffMaxKm, bodyPhiMin, bodyPhiMax, allFacts, stopArrivalT, runOutMarginKm, staleAt)
 import ./core (World, Ticked, Intent, IPlan, IPlanBody, ICommit, Plan, Journey, Planned, Committed, Arrived, newWorld, defaultParams, tick, initShip, position, navOf)
-import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, relativityPin, decodeHello, helloMsg)
+import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, departureMinor, relativityPin, decodeHello, helloMsg)
 
 -- ------------------------------------------------------------ fixtures
 pure func ntAllTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
@@ -175,13 +175,15 @@ export pure func checkTwelveSteps() -> bool {
 test "AC17 the intercept runs exactly 12 fixed steps (12-step iterate, not 11); a 1-step intercept is refused no_converge" { checkTwelveSteps() }
 
 -- ------------------------------------------------------------ AC15: refusals (one fixture triggers, one just passes)
--- not_visitable: every alpha Cen body (no measured radius and albedo), the Sun, an unknown id; Mars passes.
+-- Unknown alpha Cen bodies and Sun flybys remain unsupported. The bounded
+-- measured Solar Sun stop reuses the normal geometric stop solver.
 export pure func checkNotVisitable() -> bool =
   ntAllTrue(map(\b. ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq(b.id, 0.1, None))) == "not_visitable", bodies()))
-  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("sun", 0.1, Some(5.0e6)))) == "not_visitable"
+  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("sun", 0.1, Some(5.0e6)))) == "ok"
+  && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), ntFlyReq("sun", 0.1, 5.0e6, 0.0))) == "not_visitable"
   && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("pluto", 0.1, None))) == "not_visitable"
   && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("mars", 0.1, None))) == "ok"
-test "AC15/AC11 not_visitable: every alpha Cen body, the Sun, an unknown id; Mars is accepted" { checkNotVisitable() }
+test "AC15/AC11 unsupported bodies and Sun flybys refused, measured Sun stop and Mars accepted" { checkNotVisitable() }
 
 -- too_close: a stand-off or pass distance 1 km under the safety minimum (1.1 R + bubble) is refused, at it accepted.
 export pure func checkTooClose() -> bool {
@@ -283,9 +285,9 @@ export pure func navLines() -> [string] = ntRunLines(newSession(), ntSession(nav
 -- The hello: minor 4 reports the pinned relativity release; 3 and below keep their bytes.
 export pure func checkHello24() -> bool =
   (match decodeHello(serve(newSession(), ntHelloW(navMinor())).reply) { Ok(h) => h.minor == navMinor() && h.relativity == relativityPin(), Err(_) => false })
-  && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == navMinor(), Err(_) => false })
+  && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == departureMinor(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(systemMinor())).reply) { Ok(h) => h.minor == systemMinor() && h.relativity == helloMsg().relativity, Err(_) => false })
-  && navMinor() == systemMinor() + 1 && relativityPin() == "0.7.0"
+  && navMinor() == systemMinor() + 1 && relativityPin() == "0.8.0"
 test "2.4 hello: minor 4 with relativity = the pinned release; 3 keeps the 2.3 hello" { checkHello24() }
 
 -- At minor 4 a body plan is accepted and its journey carries target_kind, intercept and pass

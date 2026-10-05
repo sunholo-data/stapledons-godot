@@ -395,8 +395,55 @@ func write_glb(path: String, rot: Vector3, scale: float, markers: bool, extra_bo
 	root_node.free()
 
 
+## Bridge v2 play plate (m4-2-requirements §9.7): a small synthetic plate on the blockout
+## fixture passes; each plate check fails on a plate broken its way.
+func plate_fixture(case: String, opts := {}) -> String:
+	var d := copy_fixture(case)
+	var w: int = opts.get("w", 404)
+	var h: int = opts.get("h", 220)
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.6, 0.55, 0.5, 1.0))
+	img.fill_rect(Rect2i(0, 0, 60, 40), Color(0, 0, 0, 0)) # a corner of space (alpha rule: some exactly 0)
+	if opts.get("hole", false): # the plate's centre painted out: GLB surfaces would sample space
+		img.fill_rect(Rect2i(w / 4, h / 2, w / 2, h / 2), Color(0, 0, 0, 0))
+	if opts.get("opaque", false):
+		img.fill(Color(0.6, 0.55, 0.5, 1.0))
+	img.save_png(d.path_join("plate_bridge.png"))
+	var m := read_json(d.path_join("manifest.json"))
+	m["layers"]["play"]["plate"] = {"file": "plate_bridge.png", "projection": "isocam",
+		"resolution": opts.get("declared", [w, h]), "size_m": opts.get("size_m", 22.0)}
+	if opts.has("drop"):
+		m["layers"]["play"]["plate"].erase(opts["drop"])
+	write_json(d.path_join("manifest.json"), m)
+	return d
+
+
+func test_plate() -> void:
+	var good := Validate.validate(plate_fixture("plate_ok"))
+	check("synthetic v2 plate on the blockout passes every check", all_pass(good))
+	check("the plate checks ran (4 of them)", result(good, "plate: every GLB triangle") != {} and result(good, "plate: covers") != {}
+		and result(good, "plate: plate_bridge.png") != {} and result(good, "alpha: play plate") != {})
+	var b := AreaBundle.load_dir(plate_fixture("plate_schema", {"drop": "size_m"}))
+	check("a plate without size_m is refused by the loader", not b.ok() and "; ".join(b.errors).contains("size_m"), "; ".join(b.errors))
+	var c := Validate.validate(plate_fixture("plate_res", {"declared": [808, 440]}))
+	check("a plate whose size is not the declared resolution fails", not result(c, "plate: plate_bridge.png").get("ok", true))
+	c = Validate.validate(plate_fixture("plate_opaque", {"opaque": true}))
+	check("an opaque plate (space painted over) fails the alpha rules", not result(c, "alpha: play plate").get("ok", true))
+	c = Validate.validate(plate_fixture("plate_short", {"size_m": 15.0, "w": 276, "h": 150}))
+	check("a plate smaller than the iso view fails the pan-range check", not result(c, "plate: covers").get("ok", true), str(result(c, "plate: covers")))
+	c = Validate.validate(plate_fixture("plate_hole", {"hole": true}))
+	check("a plate with its centre painted out fails the GLB coverage check", not result(c, "plate: every GLB triangle").get("ok", true), str(result(c, "plate: every GLB triangle")))
+	var it := Interior.plate_camera_of({"pitch_deg": -14.0, "yaw_deg": 45.0, "focus_m": [-8.0, 1.0, 9.0], "v_offset_m": 6.08, "size_m": 16.0})
+	var uv := Interior.plate_uv(Vector3(-8.0, 1.0, 9.0) + it["up"] * 6.08, it, 22.0, 40.4444 / 22.0)
+	check("plate_uv: the pan-0 view centre is the plate centre", uv.distance_to(Vector2(0.5, 0.5)) < 1e-6, str(uv))
+	var up := Interior.plate_glow_factor(Vector3.UP, it)
+	var side := Interior.plate_glow_factor(Vector3(1, 0, 0), it)
+	check("glow factor: an up-facing surface gets the forward glow, a side-facing one none", up > 1.0 and absf(side) < 1e-9, "up %f side %f" % [up, side])
+
+
 func _init() -> void:
 	test_loader()
 	test_validator()
+	test_plate()
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)

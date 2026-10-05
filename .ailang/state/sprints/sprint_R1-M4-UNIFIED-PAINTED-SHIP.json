@@ -1,0 +1,39 @@
+{
+  "sprint_id": "R1-M4-UNIFIED-PAINTED-SHIP",
+  "status": "review_build_published",
+  "approved_by": "Mark attended5October2026 consolidation and Blender+paintedassets request",
+  "design_doc": "design_docs/planned/r1/m4-unified-painted-ship.md",
+  "sprint_plan": "design_docs/planned/r1/m4-unified-painted-ship-sprint.md",
+  "github_issues": [],
+  "features": [
+    {
+      "id": "US-A",
+      "description": "One main entry and coherent live captain-eye view",
+      "acceptance_criteria": [
+        "ship-demo-consolidation-test",
+        "normal native entry smoke"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-B",
+      "description": "Bounded UV painted bridge on unchanged Blender geometry",
+      "acceptance_criteria": [
+        "geometry and material pins",
+        "native multiangle style review"
+      ],
+      "passes": true
+    },
+    {
+      "id": "US-C",
+      "description": "Independent physics/UI/style and bundled published review",
+      "acceptance_criteria": [
+        "source/golden/native gates",
+        "downloadedchecksum/site verification"
+      ],
+      "passes": true
+    }
+  ],
+  "review_build": "v0.4.0-dev.10-unified-painted-ship",
+  "notes": "Independent technical draft pass 94/100; native packaged startup and I-click pass, downloaded ZIP SHA256 verified, deployed website model SHA256 matches. Final detailed ink/art approval, target M2 Air performance, remaining tiers and production landing remain pending."
+}

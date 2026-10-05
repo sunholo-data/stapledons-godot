@@ -1,0 +1,123 @@
+module stapledons/sim/solar_departure_test
+
+import std/result (Ok, Err)
+import std/option (Some, None)
+import pkg/sunholo/celestial/kepler (sub, scale, norm, absf, dot)
+import ./celestial (solSystem, bodyAt, lyKm)
+import ./core (World, Target, Intent, ICommit, IPlanBody, Planned, Arrived, newWorld, defaultParams, position, tick)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
+import std/string (concat)
+import ./solar_departure (initialize, initializeAtStandoff, earthStandoffKm, intentForLeg)
+import ./navigation (safetyMinKm)
+import ./data/sol (sun)
+
+pure func fixtureTarget() -> Target = { index: 0, id: "CNS5:3627", pos: {x: 3.094521, y: 0.0 - 3.015404, z: 0.0 - 0.051608} }
+pure func base() -> World = newWorld(42, false, defaultParams())
+pure func started() -> World = match initialize(base()) { Ok(w) => w, Err(_) => base() }
+export pure func checkInitial() -> bool =
+  match bodyAt(solSystem(), "earth", (base()).params.epochJd) {
+    None => false,
+    Some(earth) => {
+      let w = started();
+      absf(norm(sub(scale(lyKm(), position(w.ship)), earth.pos)) - earthStandoffKm()) < 0.000001
+      && w.ship.motion.phi == 0.0 && w.ship.motion.tau == 0.0 && w.ship.motion.t == 0.0 && w.tick == 0
+      && dot(w.ship.heading, scale(1.0 / norm(earth.pos), earth.pos)) > 0.999999999
+    }
+  }
+test "new demo starts exactly two Earth radii away at rest, zero clocks" { checkInitial() }
+export pure func checkUnsafe() -> bool {
+  let w = base();
+  match initialize({w | params: {w.params | bubbleRadiusM: 1000000000.0}}) { Err(e) => e == "unsafe_solar_start", Ok(_) => false }
+}
+test "an unsafe giant bubble is rejected rather than intersecting Earth" { checkUnsafe() }
+export pure func checkConfiguredStart() -> bool {
+  let safe = 3.0 * 6378.1366;
+  let minimum = safetyMinKm(6378.1366, (base()).params.bubbleRadiusM / 1000.0);
+  (match initializeAtStandoff(base(), minimum - 1.0) { Err(e) => e == "unsafe_solar_start", _ => false })
+  && (match initializeAtStandoff(base(), safe) {
+    Ok(w) => match bodyAt(solSystem(), "earth", w.params.epochJd) {
+      Some(b) => absf(norm(sub(scale(lyKm(), position(w.ship)), b.pos)) - safe) < 0.000001,
+      None => false
+    },
+    Err(_) => false
+  })
+}
+test "configured new Earth start accepts measured clearance and rejects below package minimum" { checkConfiguredStart() }
+export pure func checkSunBoundary() -> bool {
+  let w = started();
+  let minimum = safetyMinKm((sun()).radiusKm, w.params.bubbleRadiusM / 1000.0);
+  let request = IPlanBody({id: "sun", cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: Some(minimum - 1.0), bKm: 0.0, clockDeg: 0.0, runOutKm: None});
+  let refused = tick(w, {dtau: 0.0, intents: [request]});
+  match refused.refused { r :: _ => r.reason == "too_close" && norm(sub(position(refused.world.ship), position(w.ship))) == 0.0, [] => false }
+}
+test "bounded Sun adapter retains exact package minimum refusal and does not move ship" { checkSunBoundary() }
+export pure func checkNoReinitialize() -> bool {
+  let existing = (tick(started(), {dtau: 0.000000001, intents: []})).world;
+  match initialize(existing) { Err(e) => e == "solar_start_requires_new_session", Ok(_) => false }
+}
+test "initialization cannot reposition an existing simulation" { checkNoReinitialize() }
+export pure func finishLeg(w: World, n: int) -> World =
+  match intentForLeg(w, n, fixtureTarget()) {
+    None => w,
+    Some(intent) => {
+      let planned = (tick(w, {dtau: 0.0, intents: [intent]})).world;
+      match planned.journey {
+        Planned(p) => {
+          let committed = (tick(planned, {dtau: 0.0, intents: [ICommit(p.id)]})).world;
+          (tick(committed, {dtau: p.trip.tauTotal, intents: []})).world
+        },
+        _ => planned
+      }
+    }
+  }
+pure func chain(w: World, n: int) -> bool =
+  if n >= 6 then true else {
+    let before = position(w.ship);
+    let landed = finishLeg(w, n);
+    match landed.journey {
+      Arrived(c) => c.plan.from.x == before.x && c.plan.from.y == before.y && c.plan.from.z == before.z
+        && position(landed.ship).x == c.plan.target.pos.x && position(landed.ship).y == c.plan.target.pos.y && position(landed.ship).z == c.plan.target.pos.z
+        && landed.ship.motion.phi == 0.0 && landed.ship.motion.tau > w.ship.motion.tau && landed.ship.motion.t > w.ship.motion.t
+        && landed.tick == w.tick + 3 && chain(landed, n + 1),
+      _ => false
+    }
+  }
+export pure func checkSequence() -> bool = chain(started(), 0)
+test "Earth Sun Jupiter Callisto Saturn outbound are true successive commits without resetting clocks or endpoints" { checkSequence() }
+export pure func checkDirectJupiterCollision() -> bool {
+  let jupiter = finishLeg(finishLeg(started(), 0), 1);
+  match intentForLeg(jupiter, 3, fixtureTarget()) {
+    None => false,
+    Some(intent) => {
+      let result = tick(jupiter, {dtau: 0.0, intents: [intent]});
+      match result.refused { r :: _ => r.reason == "collision" && norm(sub(position(result.world.ship), position(jupiter.ship))) == 0.0, [] => false }
+    }
+  }
+}
+test "direct close Jupiter to Saturn remains collision refused, requiring a genuine clearance leg" { checkDirectJupiterCollision() }
+export pure func checkBounds() -> bool {
+  let target = fixtureTarget();
+  (match intentForLeg(started(), -1, fixtureTarget()) { None => true, _ => false })
+  && (match intentForLeg(started(), 6, fixtureTarget()) { None => true, _ => false })
+  && (match intentForLeg(started(), 4, {target | id: "wrong ID"}) { None => true, _ => false })
+}
+test "itinerary bounds and exact outbound identity are fail closed" { checkBounds() }
+export pure func solarDepartureVm(n: int) -> string =
+  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
+
+pure func clearance(w: World, id: string) -> string {
+  let pl = (tick(w, {dtau: 0.0, intents: [IPlanBody({id: id, cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None})]}));
+  match pl.world.journey {
+    Planned(p) => {
+      let committed = (tick(pl.world, {dtau: 0.0, intents: [ICommit(p.id)]})).world;
+      let arrived = (tick(committed, {dtau: p.trip.tauTotal, intents: []})).world;
+      let saturn = finishLeg(arrived, 3);
+      concat([id,": ", match saturn.journey { Arrived(c) => if c.plan.target.id == "saturn" then "accepted" else "saturn rejected", _ => "saturn rejected" }])
+    },
+    _ => concat([id,": ",match pl.refused { r :: _ => r.reason, [] => "unknown" }])
+  }
+}
+export pure func clearanceVm(n: int) -> string {
+  let jupiter = finishLeg(finishLeg(started(), 0), 1);
+  concat([clearance(jupiter, "callisto"),"\n",clearance(jupiter, "ganymede"),"\n",clearance(jupiter,"europa"),"\n",clearance(jupiter,"io")])
+}

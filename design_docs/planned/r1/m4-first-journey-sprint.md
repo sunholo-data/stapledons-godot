@@ -497,7 +497,7 @@ notice in CI — Q2); the **check-value registry** (`make lore-values` →
 `data/lore/check_values.json`): source (a) `sim/tools/lore_values.ail`
 evaluating the package's exported functions as `pkg:<function>(<args>)`
 ids (no `rel:check` registry exists, V24) plus the M4 values
-(`m4:glow_eps` 1e-9, `m4:glow_f_in` 0.5, `m4:glow_099`), seeded by the V12
+(`m4:glow_eps` 1e-10 since the D-29 follow-up (HB-111; was 1e-9), `m4:glow_f_in` 0.5, `m4:glow_099`), seeded by the V12
 probe; (b) HB rows; (b′) RS rows; (c) `tests/test_physics.gd`'s `CHECKS`;
 (a) vs (b) agree at printed precision; ε ≤ HB-61 asserted. **`make
 lore-check`** (`sim/tools/lore_check.ail`, strict VM = interpreter, in

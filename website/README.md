@@ -24,7 +24,7 @@ cd website
 npm ci
 SITE_URL=https://www.sunholo.com BASE_URL=/stapledons-godot/ npm run build
 SITE_URL=https://www.sunholo.com BASE_URL=/stapledons-godot/ npx docusaurus serve
-npm run start        # dev server with live reload, http://localhost:3000/
+npm run start        # dev server with live reload, http://localhost:3000/stapledons-godot/
 ```
 
 The build fails on any broken internal link (`onBrokenLinks: 'throw'`).
@@ -33,8 +33,8 @@ The build fails on any broken internal link (`onBrokenLinks: 'throw'`).
 
 | Variable | Default | For the live site |
 |---|---|---|
-| `SITE_URL` | `https://sunholo-data.github.io` | `https://www.sunholo.com` |
-| `BASE_URL` | `/` | `/stapledons-godot/` |
+| `SITE_URL` | `https://www.sunholo.com` | `https://www.sunholo.com` |
+| `BASE_URL` | `/stapledons-godot/` | `/stapledons-godot/` |
 
 `make site` passes the live values (`SITE_URL`, `SITE_BASE` in `mk/site.mk`).
 

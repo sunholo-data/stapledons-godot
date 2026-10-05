@@ -389,7 +389,7 @@ func test_nav_plan_live() -> bool:
 	var s := SimBridge.new()
 	s.want_minor = SimBridge.NAV_MINOR
 	var ok: bool = s.start() and s.hello_reply.get("proto", {}).get("minor") == float(SimBridge.NAV_MINOR) \
-		and s.hello_reply.get("relativity") == "0.7.0" and s.new_game(7, "sol", true)
+		and s.hello_reply.get("relativity") == "0.8.0" and s.new_game(7, "sol", true)
 	assert_bool("2.4 session starts (%s)" % s.last_error, ok)
 	if not ok:
 		return true

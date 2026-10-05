@@ -1,0 +1,7 @@
+00:00.244  blend            | Read blend: "/private/tmp/stapledon-ship-demo/art/ship-demo-v1/ship_geometry_demo_v1.blend"
+00:00.263  blend            | Read blend: "/private/tmp/stapledon-ship-demo/art/ship-commons-v1/ship_commons_master_v3.blend"
+00:00.348  blend            | Read blend: "/Users/voightkampff/dev/blender/scenes/stapledon_unified_ship_painted_v1.blend"
+COMMONS_PRESERVATION_OK 348 unpainted object UV/material records unchanged; 1 source packed images unchanged
+Blender 5.2.1 LTS (hash 9e2066aef7ef built 2026-08-25 01:35:57)
+
+Blender quit

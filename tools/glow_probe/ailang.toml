@@ -11,4 +11,4 @@ modules = ["stapledons/glow_probe/probe"]
 max = ["IO"]
 
 [dependencies]
-"sunholo/relativity" = "0.7.0"
+"sunholo/relativity" = "0.8.0"

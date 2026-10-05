@@ -1,0 +1,48 @@
+{
+  "sprint_id": "R1-M4-SHIP-STAR-IDENTIFICATION",
+  "status": "review_build_published",
+  "approved_by": "Mark, attended 2026-10-05: yep continue",
+  "design_doc": "design_docs/planned/r1/m4-ship-star-identification.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-star-identification-sprint.md",
+  "estimated_total_loc_range": [
+    450,
+    650
+  ],
+  "estimated_sessions": 2,
+  "features": [
+    {
+      "id": "SI-A",
+      "description": "Exact pinned renderer identity and shared factual metadata",
+      "acceptance_criteria": [
+        "SI1"
+      ],
+      "passes": true,
+      "completed": "2026-10-05",
+      "notes": "Exact selected Row.id lists in hash/count-checked sidecars; quick/medium/bright regenerated from pinned inputs with unchanged binaries. Producer mainVm test first main-BAD then all catalogue-vm markers pass. Exact filtering, stacking, malformed/duplicate IDs and missing metadata covered."
+    },
+    {
+      "id": "SI-B",
+      "description": "HoldI visible-star projection, occlusion, card and exact map handoff",
+      "acceptance_criteria": [
+        "SI2",
+        "SI4",
+        "SI5"
+      ],
+      "passes": true,
+      "completed": "2026-10-05",
+      "notes": "Integrated native shared factual card, held-I rings, exact-ID overlap choice/map handoff, actual uploaded shader ray/visibility mirrors, cached opaque mesh BVHs/current transform/LOD visibility and billboard texture-mip alpha masks. Native canvas conversion verified at 1920/1280/900. 40 source checks and native source smoke pass; inspection does not create or mutate a voyage. Legacy painted-plate interior integration deferred because its occlusion uses alpha plates rather than this finite mesh host."
+    },
+    {
+      "id": "SI-C",
+      "description": "GPU alignment, native clicks/export, measured overhead and independent evaluation",
+      "acceptance_criteria": [
+        "SI3",
+        "SI6",
+        "SI7"
+      ],
+      "passes": true,
+      "notes": "276 GPU/native cases pass; native bundled click, release, exact map and normal startup exit 0. Matched wall-frame p95 overhead +0.13 ms worst; CPU update p95 1.3–3.5 ms. Independent draft score 96/100. Dev.10 downloaded SHA256 verified. Actual M2 Air performance and production landing remain pending."
+    }
+  ],
+  "review_build": "v0.4.0-dev.10-unified-painted-ship"
+}

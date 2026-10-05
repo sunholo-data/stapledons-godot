@@ -108,7 +108,7 @@ export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None,
 -- (sim/celestial.ail). Like standoffAu it is set by `epoch_jd` and not in the params echo.
 export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float, epochJd: float }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
-export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
+export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.0000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
   aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0, epochJd: defaultEpochJd() }
 
 -- Radiated energy = boostJ + dragJ. The mass budget is closed (higgs-bubble
@@ -554,6 +554,19 @@ export type PlanView = { target: Target, distance: float, profile: string, fellB
   boostMinutes: float, shipYears: float, earthYears: float, arriveYear: float, ageOnArrival: float, yearsLeft: float,
   energy: Energy, ism: Ism, cmbForwardK: float }
 export type JourneyView = { state: string, planId: int, plan: Option[PlanView] }
+
+-- Exact plan-time position, retained after the ship's arrival rebase. Display
+-- clients must not reconstruct it from rounded headings or target distances.
+export pure func departureOf(w: World) -> Option[Vec3] =
+  match w.journey {
+    Planned(p) => Some(p.from), Committed(c) => Some(c.plan.from),
+    Arrived(c) => Some(c.plan.from), Idle => None
+  }
+export pure func journeyHeadingOf(w: World) -> Option[Vec3] =
+  match w.journey {
+    Planned(p) => Some(p.heading), Committed(c) => Some(c.plan.heading),
+    Arrived(c) => Some(c.plan.heading), Idle => None
+  }
 
 -- Minutes per Julian year (525,960, exact).
 export pure func minutesPerYear() -> float = julianYearS() / 60.0

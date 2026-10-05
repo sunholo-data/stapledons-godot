@@ -17,6 +17,8 @@ const SYSTEM_MINOR := 3
 ## plan's journey.plan carries target_kind, intercept and pass or hold
 ## (parse_plan_nav()). Asked for by setting `want_minor = NAV_MINOR`.
 const NAV_MINOR := 4
+## 2.5: exact recorded journey departure for map route framing.
+const DEPARTURE_MINOR := 5
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -90,7 +92,14 @@ func start() -> bool:
 		_record = FileAccess.open(record_path, FileAccess.WRITE)
 		if _record == null:
 			push_error("cannot record to %s" % record_path)
-	return hello(started + 5000)
+	return hello(started + bootstrap_budget_ms(OS.has_feature("template"), not launch_override.is_empty()))
+
+
+## Normal source has no compiled cache on first launch. A measured cold compile
+## exceeded 9 s; allow 30 s for normal source/exported bootstrap. Explicit fixture
+## launches retain 5 s; new_game/input deadlines and child cleanup are unchanged.
+static func bootstrap_budget_ms(exported: bool, overridden: bool) -> int:
+	return 5000 if overridden else 30000
 
 
 ## Send `hello` and accept only an integer protocol major of 2.
@@ -253,12 +262,39 @@ func _launch_plan() -> Dictionary:
 	return {"bin": "/usr/bin/env", "args": args}
 
 
+## Runtime cache identity includes simulation source and dependency pins. A new
+## app revision must not execute a previous build's sim just because AILANG has
+## the same version. Existing caches are retained for older builds.
+static func runtime_fingerprint(version:String, inputs:Dictionary)->String:
+	var hash:=HashingContext.new();hash.start(HashingContext.HASH_SHA256)
+	hash.update(version.to_utf8_buffer())
+	var names:=inputs.keys();names.sort()
+	for name in names:
+		hash.update(str(name).to_utf8_buffer());hash.update(PackedByteArray([0]))
+		hash.update(inputs[name]);hash.update(PackedByteArray([0]))
+	return version+"-"+hash.finish().hex_encode()
+
+## Stable relative paths include nested data modules imported by the sim.
+static func runtime_inputs(directory:String, prefix:="")->Dictionary:
+	var inputs:Dictionary={}
+	var source:=DirAccess.open(directory)
+	if source==null:return inputs
+	for name in source.get_files():
+		if name.ends_with(".ail") or name in ["ailang.toml","ailang.lock"]:
+			inputs[prefix+name]=FileAccess.get_file_as_bytes(directory.path_join(name))
+	for name in source.get_directories():
+		if not name.begins_with("."):
+			inputs.merge(runtime_inputs(directory.path_join(name),prefix+name+"/"))
+	return inputs
+
 static func _unpack_runtime() -> String:
 	var version := FileAccess.get_file_as_string("res://runtime/VERSION").strip_edges()
 	if version == "":
 		push_error("exported build has no bundled runtime (res://runtime/VERSION missing)")
 		return ""
-	var root := ProjectSettings.globalize_path("user://runtime-%s" % version)
+	var inputs:=runtime_inputs("res://sim")
+	if inputs.is_empty():return ""
+	var root := ProjectSettings.globalize_path("user://runtime-%s" % runtime_fingerprint(version,inputs))
 	var marker := root.path_join(".unpacked")
 	if not FileAccess.file_exists(marker):
 		for pair in [["res://runtime", root.path_join("runtime")], ["res://sim", root.path_join("sim")],

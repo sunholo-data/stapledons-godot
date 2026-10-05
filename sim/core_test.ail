@@ -235,7 +235,7 @@ pure func checkPlanFallback() -> bool {
   plTrip(close, 0.000017190007186656455, 0.001002579912238613) && plField(close, \p. p.trip.fellBack && rel(p.trip.phiPeak, 6.654436202069182, tol9()))
 }
 
--- Readouts (design readout table; n = 1e5 m^-3, R = 100 m, m_eff 1 kg, eps 1e-9, f_in 1/2).
+-- Readouts (design readout table; n = 1e5 m^-3, R = 100 m, m_eff 1 kg, eps 1e-10 (D-29 follow-up, 2026-10-03), f_in 1/2; the glow is 1/10 of the design table's eps 1e-9 values).
 pure func plView(w: World) -> Option[PlanView] = (journeyView(w)).plan
 pure func plViewOk(w: World, g: PlanView -> bool) -> bool = match plView(w) { Some(v) => g(v), None => false }
 pure func plNear(a: float, b: float, absTol: float) -> bool = absf(a - b) <= absTol
@@ -245,12 +245,12 @@ pure func plRow(v: PlanView, boost: float, drag: float, total: float, kg: float,
   rel(v.ism.dragN, force, tol9()) && rel(v.ism.holdW, hold, tol9()) && rel(v.cmbForwardK, tf, tol9())
 pure func plPanel(phi: float) -> World = plDo(plWorld(false, defaultParams()), [plCruise(plAcen(), phi)]).world
 pure func checkPlanReadouts() -> bool {
-  let r09 = plViewOk(plPanel(phi09()), \v. plRow(v, 132316489050019360.0, 40314432176987310.0, 304947410277026050.0, 3.393, 19212.82874513549, 0.0000015052987296077217, 2.0133555741551197, 603588816.4039646, 11.877999621148337) &&
+  let r09 = plViewOk(plPanel(phi09()), \v. plRow(v, 132316489050019360.0, 40314432176987310.0, 304947410277026050.0, 3.393, 19212.82874513549, 0.00000015052987296077217, 2.0133555741551197, 603588816.4039646, 11.877999621148337) &&
     plNear(v.boostMinutes, 1.00, 0.005) && rel(v.cruiseBeta, 0.9, tol9()));
-  let r099 = plViewOk(plPanel(phi099()), \v. plRow(v, 237869256192685950.0, 137025773945911980.0, 612764286331283800.0, 6.818, 221961.27278927868, 0.000024071942179266308, 23.25982143207345, 6973119039.76238, 38.44085554458952) &&
+  let r099 = plViewOk(plPanel(phi099()), \v. plRow(v, 237869256192685950.0, 137025773945911980.0, 612764286331283800.0, 6.818, 221961.27278927868, 0.0000024071942179266308, 23.25982143207345, 6973119039.76238, 38.44085554458952) &&
     plNear(v.boostMinutes, 1.80, 0.005) && rel(v.shipYears, 0.6226958707592057, tol9()) && rel(v.earthYears, 4.414143655383168, tol9()) &&
     rel(v.cruiseBeta, 0.99, tol9()) && rel(v.cruiseOneMinusBeta, 0.01, tol9()) && v.profile == "burn_coast_burn" && !v.fellBack && v.distance == 4.37);
-  let rcap = plViewOk(plPanel(plPhiCap()), \v. plRow(v, 651986541482047200.0, 13800617973906030000.0, 15104591056870126000.0, 168.06, 2253353077.7286806, 0.2812710757763286, 236133.9415328578, 70791174749363.73, 3853.730994033574) &&
+  let rcap = plViewOk(plPanel(plPhiCap()), \v. plRow(v, 651986541482047200.0, 13800617973906030000.0, 15104591056870126000.0, 168.06, 2253353077.7286806, 0.02812710757763286, 236133.9415328578, 70791174749363.73, 3853.730994033574) &&
     plNear(v.boostMinutes, 4.93, 0.005) && rel(v.cruiseOneMinusBeta, 0.000001, tol9()) && rel(v.cruiseGamma, 707.106957963309, tol9()));
   r09 && r099 && rcap && checkPlanDerived() && checkPlanMEff() && checkOneMinusBetaReadout() && checkCommittedView()
 }

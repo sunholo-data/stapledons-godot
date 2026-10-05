@@ -56,6 +56,10 @@ const PSF_MIN_PX := 0.7
 ## Player clamp default: a physical camera's limits. The floor is about ISO
 ## 102400, f/1.4, 30 s (EV100 = log2(1.4^2 / 30) - log2(1024) = -13.9).
 const EV_CLAMP := Vector2(-14.0, 20.0)
+## Conservative P99.5 scene-linear target before current AgX's soft shoulder.
+## Godot4.7 uses allenwp/AgX, not the old hard16.2917 cutoff. This is an
+## explicit display/metering policy; fixed EV bypasses it.
+const HIGHLIGHT_TARGET := 1.0
 const FLOOR_MAG := 8.0 # magnitude-floor aid: stars to V 8 shown at the display floor
 
 var mode := Mode.EYE
@@ -68,6 +72,11 @@ var pixel_sr := 1.0 # solid angle of the centre pixel
 var pixel_rad := 1.0 # angular size of the centre pixel
 var ev := 0.0 # in use
 var ev_meter := 0.0 # what the active meter asked for
+## Presentation policy, not a physiological adaptation model. References are instantaneous.
+const DISPLAY_EV_RATE := 4.0 # display EV/s returning to a dim view
+const DISPLAY_EV_RISE_RATE := 32.0 # prepares a bright view across the peripheral margin
+var temporal_enabled := false
+var _adapt_frame := -1
 
 
 ## Pinhole camera: the centre pixel spans 2 tan(fov/2) / height radians.
@@ -111,7 +120,8 @@ static func dark_adapted_ev() -> float:
 func configure(fov_deg: float, height_px: float) -> void:
 	pixel_sr = centre_pixel_sr(fov_deg, height_px)
 	pixel_rad = sqrt(pixel_sr)
-	update(dark_sky_luminance())
+	if not temporal_enabled or _adapt_frame < 0:
+		update(dark_sky_luminance())
 
 
 func ev_dark() -> float:
@@ -134,9 +144,32 @@ func mode_ev(l_avg: float, l_eye := -1.0) -> float:
 	return maxf(ev_dark(), metered_ev(l_eye if l_eye >= 0.0 else l_avg)) if mode == Mode.EYE else metered_ev(l_avg)
 
 
-func update(l_avg: float, l_eye := -1.0) -> void:
-	ev_meter = metered_ev(l_eye if mode == Mode.EYE and l_eye >= 0.0 else l_avg)
-	ev = fixed_ev if fixed else clampf(mode_ev(l_avg, l_eye) + bias, clamp_ev.x, clamp_ev.y)
+static func highlight_ev(l_p995:float)->float:
+	return log(maxf(l_p995,1e-30)/(SAT*HIGHLIGHT_TARGET))/log(2.0)
+
+func update(l_avg: float, l_eye := -1.0, l_p995 := 0.0) -> void:
+	var high:=highlight_ev(l_p995)
+	ev_meter = maxf(metered_ev(l_eye if mode == Mode.EYE and l_eye >= 0.0 else l_avg),high)
+	# The readability bias raises dim sky, but adaptive resolved-body protection
+	# remains the final lower EV bound. Fixed EV explicitly bypasses both meters.
+	ev = fixed_ev if fixed else clampf(maxf(mode_ev(l_avg, l_eye) + bias,high), clamp_ev.x, clamp_ev.y)
+
+
+## Advance at most once per rendered frame. Protection against measured highlights
+## is immediate; sensitivity returns at a bounded display EV rate. Repeated host
+## apply/update calls cannot accelerate the fade or integrate a transient view.
+func update_adaptive(l_avg: float, l_eye: float, l_p995: float, delta: float, frame_id: int, anticipation_ev: float = -INF) -> void:
+	if not temporal_enabled or fixed:
+		update(l_avg, l_eye, l_p995)
+		return
+	if frame_id == _adapt_frame:return
+	_adapt_frame = frame_id
+	var previous := ev
+	update(l_avg, l_eye, l_p995)
+	var target := clampf(maxf(ev,anticipation_ev),clamp_ev.x,clamp_ev.y)
+	var protection := clampf(maxf(highlight_ev(l_p995),mode_ev(l_avg,l_eye)+bias), clamp_ev.x, clamp_ev.y)
+	var rate := DISPLAY_EV_RISE_RATE if target>previous else DISPLAY_EV_RATE
+	ev = clampf(maxf(move_toward(previous, target, rate * clampf(delta, 0.0, 0.1)), protection), clamp_ev.x, clamp_ev.y)
 
 
 ## Lock at the rest-frame value (l_rest, l_eye_rest: the meters' readings of the same view at beta 0).
@@ -179,6 +212,7 @@ func state_name() -> String:
 
 func hud_line() -> String:
 	var s := "EV %+.1f  %s  %s" % [ev, mode_name(), state_name()]
+	if temporal_enabled and not fixed:s += " · display anticipation/fade EV"
 	var aids := PackedStringArray()
 	if bias != 0.0:
 		aids.append("bias %+.1f EV" % bias)

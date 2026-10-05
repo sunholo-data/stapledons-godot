@@ -1,0 +1,123 @@
+{
+  "air_pending": true,
+  "method": "Frozen actual tour stops; same observer and fixed EV in each pair. Compare planets+meter enabled versus disabled. Wall intervals include presentation/vsync; negative deltas are noise.",
+  "pairs": [
+    {
+      "exposure_ev": 12.8579511357528,
+      "incremental_planet_p95_ms": 0.0120000000000005,
+      "measurements": [
+        {
+          "frame_times": {
+            "maximum_ms": 9.604,
+            "mean_ms": 8.33586333333333,
+            "p50_ms": 8.002,
+            "p95_ms": 9.526,
+            "p99_ms": 9.564,
+            "samples": 300
+          },
+          "planets_and_meter": false,
+          "video_memory_bytes": 1347764224.0
+        },
+        {
+          "frame_times": {
+            "maximum_ms": 10.322,
+            "mean_ms": 8.33471333333334,
+            "p50_ms": 8.018,
+            "p95_ms": 9.538,
+            "p99_ms": 9.653,
+            "samples": 300
+          },
+          "planets_and_meter": true,
+          "video_memory_bytes": 1347764224.0
+        }
+      ],
+      "resolved_bodies": [
+        "sun",
+        "moon",
+        "earth"
+      ],
+      "stop": "Earth"
+    },
+    {
+      "exposure_ev": 9.50565056423459,
+      "incremental_planet_p95_ms": 0.016,
+      "measurements": [
+        {
+          "frame_times": {
+            "maximum_ms": 9.741,
+            "mean_ms": 8.33057,
+            "p50_ms": 7.994,
+            "p95_ms": 9.515,
+            "p99_ms": 9.62,
+            "samples": 300
+          },
+          "planets_and_meter": false,
+          "video_memory_bytes": 1347764224.0
+        },
+        {
+          "frame_times": {
+            "maximum_ms": 10.365,
+            "mean_ms": 8.33395333333333,
+            "p50_ms": 8.025,
+            "p95_ms": 9.531,
+            "p99_ms": 9.672,
+            "samples": 300
+          },
+          "planets_and_meter": true,
+          "video_memory_bytes": 1347764224.0
+        }
+      ],
+      "resolved_bodies": [
+        "europa",
+        "jupiter",
+        "ganymede",
+        "io"
+      ],
+      "stop": "Jupiter"
+    },
+    {
+      "exposure_ev": 6.70584695140853,
+      "incremental_planet_p95_ms": 0.0330000000000013,
+      "measurements": [
+        {
+          "frame_times": {
+            "maximum_ms": 9.655,
+            "mean_ms": 8.33576333333333,
+            "p50_ms": 7.986,
+            "p95_ms": 9.501,
+            "p99_ms": 9.584,
+            "samples": 300
+          },
+          "planets_and_meter": false,
+          "video_memory_bytes": 1347764224.0
+        },
+        {
+          "frame_times": {
+            "maximum_ms": 9.7,
+            "mean_ms": 8.33255666666667,
+            "p50_ms": 8.019,
+            "p95_ms": 9.534,
+            "p99_ms": 9.664,
+            "samples": 300
+          },
+          "planets_and_meter": true,
+          "video_memory_bytes": 1347764224.0
+        }
+      ],
+      "resolved_bodies": [
+        "titan",
+        "saturn",
+        "tethys",
+        "dione",
+        "rhea"
+      ],
+      "stop": "Saturn"
+    }
+  ],
+  "resolution": [
+    1920,
+    1080
+  ],
+  "samples": 300,
+  "warmup": 120
+}

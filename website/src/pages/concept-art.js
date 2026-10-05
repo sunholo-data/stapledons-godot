@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 import Clip from '@site/src/components/Clip';
-import {BRIDGE_V1, BRIDGE_V2, CAPTAIN, CREW, MEDIC} from '@site/src/data/concept';
+import {BRIDGE_V1, BRIDGE_V2, CAPTAIN, CREW, MEDIC, SHIP_LAYERS} from '@site/src/data/concept';
 import styles from './concept-art.module.css';
 
 function Pill({kind, children}) {
@@ -71,6 +71,20 @@ export default function ConceptArt() {
               bridge railings crowd forward and turn blue, exactly as in the sky flight.
             </p>
           </div>
+        </section>
+
+        <section id="ship-layers" className={styles.block}>
+          <div className={styles.blockHead}>
+            <h2>The whole ship</h2>
+            <Pill kind="progress">Style concept proposal</Pill>
+          </div>
+          <Wide it={SHIP_LAYERS} base={base} />
+          <p className={styles.note}>
+            Compare two measured Blender layouts, rotate the models, download the source files,
+            and inspect bridge sightlines on the{' '}
+            <Link to="/docs/ship-layer-reference">bubble-ship geometry and style review page</Link>
+            {' '}. Use those models for dimensions; this drawing guides style.
+          </p>
         </section>
 
         <section className={styles.block}>

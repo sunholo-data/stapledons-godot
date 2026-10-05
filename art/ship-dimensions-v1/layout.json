@@ -1,0 +1,175 @@
+{
+  "status": "Two provisional alternatives for measured review; not approved ship design",
+  "units": "metres",
+  "frame": "Blender +Z forward/up; sphere centre at origin",
+  "bubble_radius_m": 100,
+  "bridge": {
+    "surface_z_m": 82,
+    "main_deck_radius_m": 22,
+    "actual_bounds_m": {
+      "min": [
+        -26.26193618774414,
+        -22.000001907348633,
+        78.30455017089844
+      ],
+      "max": [
+        22.276901245117188,
+        22.000001907348633,
+        98
+      ],
+      "maximum_radius": 98.00000088194625
+    },
+    "source": "bridge_v2 play_bridge.glb excluding WALK collision meshes"
+  },
+  "lower_deck_radius_rule": "0.55 * sqrt(100^2 - z^2)",
+  "lower_deck_thickness_m": 1,
+  "alternatives": [
+    {
+      "id": "tiers",
+      "deck_count": 7,
+      "spacing_m": 25,
+      "schedule": [
+        {
+          "level": 1,
+          "top_z_m": 57,
+          "radius_m": 45.19045806362224
+        },
+        {
+          "level": 2,
+          "top_z_m": 32,
+          "radius_m": 52.10796484223885
+        },
+        {
+          "level": 3,
+          "top_z_m": 7,
+          "radius_m": 54.86508452558877
+        },
+        {
+          "level": 4,
+          "top_z_m": -18,
+          "radius_m": 54.10166356037493
+        },
+        {
+          "level": 5,
+          "top_z_m": -43,
+          "radius_m": 49.65558880931733
+        },
+        {
+          "level": 6,
+          "top_z_m": -68,
+          "radius_m": 40.326666115611395
+        }
+      ]
+    },
+    {
+      "id": "dense",
+      "deck_count": 20,
+      "spacing_m": 8.5,
+      "schedule": [
+        {
+          "level": 1,
+          "top_z_m": 73.5,
+          "radius_m": 37.29369082029828
+        },
+        {
+          "level": 2,
+          "top_z_m": 65,
+          "radius_m": 41.79638142231933
+        },
+        {
+          "level": 3,
+          "top_z_m": 56.5,
+          "radius_m": 45.37999972454826
+        },
+        {
+          "level": 4,
+          "top_z_m": 48,
+          "radius_m": 48.249766838814885
+        },
+        {
+          "level": 5,
+          "top_z_m": 39.5,
+          "radius_m": 50.52746159268246
+        },
+        {
+          "level": 6,
+          "top_z_m": 31,
+          "radius_m": 52.290510611391056
+        },
+        {
+          "level": 7,
+          "top_z_m": 22.5,
+          "radius_m": 53.58973199223897
+        },
+        {
+          "level": 8,
+          "top_z_m": 14,
+          "radius_m": 54.45833269574088
+        },
+        {
+          "level": 9,
+          "top_z_m": 5.5,
+          "radius_m": 54.916749494120644
+        },
+        {
+          "level": 10,
+          "top_z_m": -3,
+          "radius_m": 54.975244428742656
+        },
+        {
+          "level": 11,
+          "top_z_m": -11.5,
+          "radius_m": 54.635102040721044
+        },
+        {
+          "level": 12,
+          "top_z_m": -20,
+          "radius_m": 53.88877434122992
+        },
+        {
+          "level": 13,
+          "top_z_m": -28.5,
+          "radius_m": 52.719013410723086
+        },
+        {
+          "level": 14,
+          "top_z_m": -37,
+          "radius_m": 51.09674647176668
+        },
+        {
+          "level": 15,
+          "top_z_m": -45.5,
+          "radius_m": 48.977029054445524
+        },
+        {
+          "level": 16,
+          "top_z_m": -54,
+          "radius_m": 46.291575907501795
+        },
+        {
+          "level": 17,
+          "top_z_m": -62.5,
+          "radius_m": 42.93436123898899
+        },
+        {
+          "level": 18,
+          "top_z_m": -71,
+          "radius_m": 38.73109216120816
+        },
+        {
+          "level": 19,
+          "top_z_m": -79.5,
+          "radius_m": 33.36351862438973
+        }
+      ]
+    }
+  ],
+  "eye_height_m": 1.7,
+  "vertical_fov_deg": 78,
+  "limitations": [
+    "Lower layouts provisional, missing rooms, roofs, vegetation and structural bracing.",
+    "Boundary circles are non-physical guides and hidden from eye views.",
+    "Whole-model perspective study; current game mixes upward perspective panorama and downward orthographic play layer.",
+    "No relativistic optical effects or final painted materials."
+  ]
+}

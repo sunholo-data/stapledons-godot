@@ -1,0 +1,526 @@
+{
+  "captures": [
+    {
+      "eye_m": [
+        8.0,
+        83.6999969482422,
+        -4.80000019073486
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.649999976158142,
+        "fill_energy": 0.649999976158142,
+        "key_energy": 1.29999995231628,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": false,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": false
+        },
+        "profile": "baseline",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_outward_baseline",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        8.0,
+        83.6999969482422,
+        -4.80000019073486
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.219999998807907,
+        "fill_energy": 0.140000000596046,
+        "key_energy": 1.5,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": true,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": true
+        },
+        "profile": "moody",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_outward_moody",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        8.0,
+        83.6999969482422,
+        -4.80000019073486
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.219999998807907,
+        "fill_energy": 0.140000000596046,
+        "key_energy": 1.5,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": false,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": true
+        },
+        "profile": "moody_no_shadows",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_outward_moody_no_shadows",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        8.0,
+        83.6999969482422,
+        -4.80000019073486
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.649999976158142,
+        "fill_energy": 0.649999976158142,
+        "key_energy": 1.29999995231628,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": false,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": false
+        },
+        "profile": "baseline",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_inward_baseline",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        8.0,
+        83.6999969482422,
+        -4.80000019073486
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.219999998807907,
+        "fill_energy": 0.140000000596046,
+        "key_energy": 1.5,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": true,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": true
+        },
+        "profile": "moody",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_inward_moody",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        8.0,
+        83.6999969482422,
+        -4.80000019073486
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.219999998807907,
+        "fill_energy": 0.140000000596046,
+        "key_energy": 1.5,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": false,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": true
+        },
+        "profile": "moody_no_shadows",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_inward_moody_no_shadows",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        18.0,
+        83.6999969482422,
+        9.0
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.649999976158142,
+        "fill_energy": 0.649999976158142,
+        "key_energy": 1.29999995231628,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": false,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": false
+        },
+        "profile": "baseline",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_overlook_baseline",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        18.0,
+        83.6999969482422,
+        9.0
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.219999998807907,
+        "fill_energy": 0.140000000596046,
+        "key_energy": 1.5,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": true,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": true
+        },
+        "profile": "moody",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_overlook_moody",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        18.0,
+        83.6999969482422,
+        9.0
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.219999998807907,
+        "fill_energy": 0.140000000596046,
+        "key_energy": 1.5,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": false,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": true
+        },
+        "profile": "moody_no_shadows",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "bridge_overlook_moody_no_shadows",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        46.0,
+        58.7000007629395,
+        -5.0
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.649999976158142,
+        "fill_energy": 0.649999976158142,
+        "key_energy": 1.29999995231628,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": false,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": false
+        },
+        "profile": "baseline",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "commons_arcade_baseline",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        46.0,
+        58.7000007629395,
+        -5.0
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.219999998807907,
+        "fill_energy": 0.140000000596046,
+        "key_energy": 1.5,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": true,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": true
+        },
+        "profile": "moody",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "commons_arcade_moody",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    },
+    {
+      "eye_m": [
+        46.0,
+        58.7000007629395,
+        -5.0
+      ],
+      "fov": 78.0,
+      "lighting": {
+        "ambient_energy": 0.219999998807907,
+        "fill_energy": 0.140000000596046,
+        "key_energy": 1.5,
+        "key_rotation_deg": [
+          -45.0,
+          -24.9999980926514,
+          0.0
+        ],
+        "key_shadows": false,
+        "practical": {
+          "angle_deg": 70.0,
+          "colour": [
+            1.0,
+            0.759999990463257,
+            0.479999989271164
+          ],
+          "energy": 2.0,
+          "position_m": [
+            46.0,
+            61.5,
+            -5.0
+          ],
+          "range_m": 10.0,
+          "shadow_enabled": false,
+          "visible": true
+        },
+        "profile": "moody_no_shadows",
+        "recipe_sha256": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+        "shadow_distance_m": 100.0,
+        "source": "ship-fixed internal lighting study, not simulation sunlight"
+      },
+      "name": "commons_arcade_moody_no_shadows",
+      "sky_brightness_stops": 2,
+      "sky_state": "rest"
+    }
+  ],
+  "model_and_embedded_material_sha256": {
+    "assets/ship_commons/commons_painted.glb": "b02eb87fa9c51aa951fa01c1f8a7778e0ae74c18020b6495a231d2413b401cf8",
+    "assets/ship_demo/ship.glb": "2e985adb701f4b64bf236e0f62c1cf7b9db9a290fff3c652f8f6e9544162abbd"
+  },
+  "note": "Fixed internal lighting study; external simulation Sun illumination is a separate later integration. Sky remains4x.",
+  "shadow_failures": 0
+}

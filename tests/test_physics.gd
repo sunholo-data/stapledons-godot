@@ -1069,43 +1069,54 @@ func test_ship_frame() -> void:
 	check("bridge cam up . NGP = cam up y when heading galactic centre", sc["up"][2], -0.3601502478122711, 1e-12)
 
 
-## M4.2 forward glow (design m4-first-journey.md "M4.2" / "M4.6"; higgs-bubble.md §6). Every
-## expected value is copied from the AILANG probe (tools/glow_probe, make glow-probe:
-## sunholo/relativity 0.7.0 glowInwardFlux / glowEmittanceAt at n 0.1 cm^-3, eps 1e-9, f_in 0.5,
-## VM = interpreter), never computed here; e-notation because Godot parses long plain decimals
-## inexactly. The design's interim check values: glow_w_m2 2.40719e-5 W/m^2 at 0.99c and
-## 0.281271 at 0.999999c (<= 1 W/m^2, HB-61); the pole 9.6288e-5 and 1.12508 (G-M4-4 b).
+## M4.2 forward glow (design m4-first-journey.md "M4.2" / "M4.6"; higgs-bubble.md §6, HB-95..HB-112).
+## Every expected value is copied from the AILANG probe (tools/glow_probe, make glow-probe:
+## sunholo/relativity 0.8.0 at n 0.1 cm^-3, f_in 0.5, VM = interpreter), never computed here;
+## e-notation because Godot parses long plain decimals inexactly. eps = 1e-10 (HB-111, the
+## D-29 follow-up chosen from renders/glow/eps_compare: the brightest candidate that keeps the
+## starbow, the Doppler colours and the CMB disc readable at every speed).
 func test_forward_glow() -> void:
-	print("Forward glow (M4.2): ForwardGlow mirrors glowEmittanceAt; Lambertian E/pi; the off-centre camera's wall point")
-	var mean_099 := 2.407194217926631e-05
-	var mean_cap := 0.28127107577632854
-	var pole_099 := 9.628776871706524e-05
-	var pole_cap := 1.1250843031053142
-	check("glow_w_m2 at 0.99c = design check 2.40719e-5 (5 s.f.)", mean_099, 2.40719e-05, 5e-11)
-	check("glow_w_m2 at 0.999999c = design check 0.281271 (6 s.f.), <= 1 W/m^2 (HB-61)", mean_cap, 0.281271, 5e-7)
+	print("Forward glow: ForwardGlow mirrors glowEmittanceAt / glowTemperatureAt / glowLuminanceAt (blackbody, D-30); Lambertian E/pi; the off-centre camera's wall point")
+	var mean_099 := 2.407194217926631e-06
+	var mean_cap := 0.028127107577632853
+	var pole_099 := 9.628776871706523e-06
+	var pole_cap := 0.11250843031053141
+	var t_099 := 1357.5234659678836
+	var t_cap := 14114.023335759706
+	check("glow_w_m2 at 0.99c, eps 1e-10 = canon HB-109 2.41e-6", mean_099, 2.41e-06, 5e-09)
+	check("glow_w_m2 at 0.999999c = canon HB-110 2.81e-2, <= 1 W/m^2 (HB-61)", mean_cap, 0.0281, 5e-05)
 	check("pole = 4 x glow_w_m2 at 0.99c (package)", pole_099 / (4.0 * mean_099), 1.0, 1e-12)
-	check("pole at 0.99c = design 9.6288e-5 (G-M4-4 b)", pole_099, 9.6288e-05, 5e-10)
-	check("pole at 0.999999c = design 1.12508 (G-M4-4 b)", pole_cap, 1.12508, 5e-6)
-	# [theta, cos theta (probe), glowEmittanceAt (probe)] at 0.99c and the cap
-	var rows := [[0.0, 1.0, pole_099, pole_cap], [45.0, 0.7071067811865476, 6.808573420515876e-05, 0.7955547401323088],
+	check("pole at 0.99c = canon HB-102 9.63e-6", pole_099, 9.63e-06, 5e-09)
+	check("pole at 0.999999c = canon HB-103 0.1125", pole_cap, 0.1125, 5e-05)
+	check("pole temperature at 0.99c = canon HB-96 1,358 K", t_099, 1358.0, 0.5)
+	check("pole temperature at 0.999999c = canon HB-98 14,114 K", t_cap, 14114.0, 0.5)
+	# [theta, cos theta (probe), glowEmittanceAt at eps 1e-9 (probe; the shape)] at 0.99c and the cap
+	var rows := [[0.0, 1.0, 9.628776871706524e-05, 1.1250843031053142], [45.0, 0.7071067811865476, 6.808573420515876e-05, 0.7955547401323088],
 		[80.0, 0.17364817766693041, 1.672019556933325e-05, 0.19536883895590618],
 		[90.0, 6.123233995736757e-17, 5.895925387819721e-21, 6.889154452844258e-17], [120.0, -0.4999999999999998, 0.0, 0.0]]
 	for r: Array in rows:
 		for k in 2:
-			var pole: float = [pole_099, pole_cap][k]
+			var pole: float = [9.628776871706524e-05, 1.1250843031053142][k]
 			var want: float = r[2 + k]
 			var got := ForwardGlow.profile(pole, r[1])
 			check("glow_profile %s theta %3.0f deg (rel. to the package, 1e-12)" % [["0.99c", "cap"][k], r[0]], got / want if want != 0.0 else got, 1.0 if want != 0.0 else 0.0, 1e-12)
 	check("glow is 0 at rest (pole 0, any angle)", ForwardGlow.profile(0.0, 0.7), 0.0, 0.0)
-	check("Lambertian radiance = E / pi at the 0.99c pole", ForwardGlow.radiance(pole_099), pole_099 / PI, 0.0)
-	# hand-derived (python3: 9.628776871706524e-05 / pi x 182.5654375783963); the package has no
-	# radiance/efficacy function yet (gate-3 follow-up)
-	check("luminance at the 0.99c pole = E / pi x 182.565 lm/W (cd/m^2)", ForwardGlow.luminance(pole_099), 0.005595511757131118, 1e-15)
-	check("pole luminance at 0.99c / the 23.5 mag/arcsec^2 dark sky (~130: NOT faint to the dark-adapted eye)", ForwardGlow.luminance(pole_099) / Exposure.dark_sky_luminance(), 130.0, 10.0)
+	check("Lambertian radiance = E / pi at the 0.99c pole (glowRadianceAt 3.06493e-6)", ForwardGlow.radiance(pole_099) / 3.0649348701220195e-06, 1.0, 1e-12)
+	# glowLuminanceAt (probe, eps 1e-10): 7.1437e-8 cd/m^2 at 0.99c, 1.5643 at the cap
+	check("luminance at the 0.99c pole = glowLuminanceAt 7.14366e-8 cd/m^2 (1e-7)", ForwardGlow.luminance(pole_099, t_099) / 7.143664288681888e-08, 1.0, 1e-7)
+	check("luminance at the cap pole = glowLuminanceAt 1.56432 cd/m^2 (1e-7)", ForwardGlow.luminance(pole_cap, t_cap) / 1.5643160647071177, 1.0, 1e-7)
+	check("luminance at the 0.999c pole = glowLuminanceAt 2.61896e-4 cd/m^2 (1e-7)", ForwardGlow.luminance(0.00010757658235978286, 2481.898408081983) / 0.00026189628614000504, 1.0, 1e-7)
+	check("efficacy at the 0.99c pole = canon HB-100 0.0233 lm/W", ForwardGlow.efficacy(t_099), 0.0233, 5e-05)
+	check("efficacy at the cap pole = canon HB-101 43.7 lm/W", ForwardGlow.efficacy(t_cap), 43.7, 0.05)
+	var l_dark := Exposure.dark_sky_luminance()
+	check("0.99c pole / the 23.5 mag/arcsec^2 dark sky = canon HB-105 1.65e-3 (faint: the starbow is untouched)", ForwardGlow.luminance(pole_099, t_099) / l_dark, 1.65e-03, 2e-05)
+	check("cap pole / the dark sky = canon HB-107 3.61e4", ForwardGlow.luminance(pole_cap, t_cap) / l_dark, 36100.0, 400.0)
+	check("0.999c pole / the dark sky ~6 (visible from about 0.997c, HB-112)", ForwardGlow.luminance(0.00010757658235978286, 2481.898408081983) / l_dark, 6.04, 0.1)
 	var cam := PackedFloat64Array([16.0, -8.0, 83.7]) # cam_bridge.json position_m (ship frame)
 	check("bridge camera straight up: wall cos = sqrt(R^2 - 16^2 - 8^2) / R", ForwardGlow.wall_cos(cam, PackedFloat64Array([0, 0, 1]), 100.0), 0.9838699100999074, 1e-15)
 	check("bridge camera, ray straight down: the aft wall (cos < 0, glow 0)", ForwardGlow.profile(1.0, ForwardGlow.wall_cos(cam, PackedFloat64Array([0, 0, -1]), 100.0)), 0.0, 0.0)
 	check("finite flux at every stop: pole finite at rest and the cap", 1.0 if is_finite(ForwardGlow.profile(pole_cap, 1.0)) and is_finite(ForwardGlow.profile(0.0, 1.0)) else 0.0, 1.0, 0.0)
+	check("finite luminance at rest (T 0) and the cap", 1.0 if ForwardGlow.luminance(0.0, 0.0) == 0.0 and is_finite(ForwardGlow.luminance(pole_cap, t_cap)) else 0.0, 1.0, 0.0)
 
 
 ## The camera cases need a node in a viewport, so they run once the main loop

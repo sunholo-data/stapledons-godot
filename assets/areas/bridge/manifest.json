@@ -1,23 +1,43 @@
 {
   "area": "bridge",
-  "version": "buildout_v1_m4_2",
-  "status": "buildout_v1_m4_2_for_review",
+  "version": "bridge_v2",
+  "status": "bridge_v2_for_review",
   "placeholder": false,
   "layers": {
     "panorama": {
       "file": "pano_bridge.png",
+      "visible": false,
       "parallax": 0.15,
       "overscan_px": [
         128,
         64
-      ]
+      ],
+      "facing": "pano_bridge_facing.png"
     },
     "play": {
       "file": "play_bridge.glb",
       "iso_pitch_deg": -14,
       "iso_yaw_deg": 45,
       "iso_size_m": 16,
-      "camera": "isocam_bridge.json"
+      "camera": "isocam_bridge.json",
+      "plate": {
+        "file": "plate_bridge.png",
+        "projection": "isocam",
+        "resolution": [
+          10920,
+          5940
+        ],
+        "size_m": 22.0,
+        "size_axis": "vertical",
+        "px_per_m": 270,
+        "centre": "isocam pan-0 view centre (focus_m, v_offset_m, pitch, yaw)",
+        "covers_pan_range_m": [
+          6,
+          3
+        ],
+        "baked_light": true,
+        "status": "Codex refine full run, merged and locked: 22 of 47 tiles refined, 25 Blender paint pass (retry pending)"
+      }
     },
     "foreground": {
       "file": "fg_bridge.png",
@@ -43,7 +63,7 @@
     3840,
     2160
   ],
-  "palette_note": "Bridge v1 palette kept: cream deck, coral captain ring, teal helm floor and consoles, ochre for human touchpoints and inlays, violet ink and rails, mint screens, pale luminous spire. No authored sky or membrane.",
+  "palette_note": "Bridge v2 palette (Mark, 2026-10-03): pulled toward the captain sheet. Cream #F2E3C7, ochre #D9A340 and violet #3B2959 as the sheet; teal, coral, mint and leaf desaturated and warmed as gouache pigments; a warm pale spire. No authored sky or membrane.",
   "play_origin_ship_m": [
     0.0,
     0.0,
@@ -102,12 +122,12 @@
     "ramp_head_m": 3.0,
     "ramp_start_r_m": 21.9
   },
-  "source_scene": "stapledon_bridge_buildout_v1.blend",
-  "source_layout": "assets/stapledon/bridge_layout_v1.json",
+  "source_scene": "stapledon_bridge_v2.blend",
+  "source_layout": "assets/stapledon/bridge_layout_v2.json",
   "validation": {
     "needle_tip_ship_m": [
-      0,
-      0,
+      0.0,
+      0.0,
       98.0
     ],
     "needle_tip_pixel": [
@@ -121,6 +141,16 @@
     "rim_rail_28",
     "rim_rail_29",
     "rim_rail_30",
-    "rim_rail_31"
-  ]
+    "rim_rail_31",
+    "v2_rail_lamp_14",
+    "v2_rail_lamp_15"
+  ],
+  "baked_light": {
+    "plate": true,
+    "panorama": true,
+    "glb": false,
+    "note": "static light and shadow of ship geometry only (Mark, 2026-10-03); characters are never baked; space alpha 0"
+  },
+  "live_glow_hint": "pano_bridge_facing.png: max(n . ship +Z, 0), 8-bit grey, half resolution, linear. The play layer uses the GLB's own normals.",
+  "panorama_content": "Hidden after attended playtest (Mark, 2026-10-04): the needle duplicates the play-layer spire and drifts behind the rail under parallax. The live sky still uses this camera; near ship geometry is drawn only by the play layer."
 }

@@ -1,0 +1,214 @@
+{
+  "sprint_id": "R1-M4-SOLAR-DEPARTURE",
+  "status": "in_progress",
+  "approved_by": "Mark attended 2026-10-05: ok sounds good; choose easiest camera; lighting is central to game feel",
+  "requested_by": "Mark attended 2026-10-05: make a plan for faster walking, lighting/camera, navigation and Solar System departure",
+  "design_doc": "design_docs/planned/r1/m4-ship-lighting-and-solar-departure.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-lighting-and-solar-departure-sprint.md",
+  "github_issues": [
+    117
+  ],
+  "velocity": {
+    "estimated_total_loc": 2400,
+    "contingency_percent": 30,
+    "estimated_sessions": [
+      10,
+      16
+    ],
+    "note": "Art review, remaining approved M5 work and Air performance separately gated; no duplicated M5 estimate."
+  },
+  "features": [
+    {
+      "id": "SD1",
+      "description": "Faster collision-safe traversal; real ship-origin route/framing and marker",
+      "estimated_loc": 220,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "ship-movement-test and existing input/lift gates",
+        "map-origin-test real A-to-B-to-C route and UI recenter without reset"
+      ],
+      "passes": null,
+      "external_prerequisites": []
+    },
+    {
+      "id": "SD2",
+      "description": "Matched moody lighting and free/near-fixed camera comparison",
+      "estimated_loc": 300,
+      "dependencies": [
+        "SD1"
+      ],
+      "acceptance_criteria": [
+        "ship-lighting-test and opened same-pose captures",
+        "recorded camera/light/sky manifest and shadow profiling"
+      ],
+      "passes": null,
+      "external_prerequisites": []
+    },
+    {
+      "id": "SD3",
+      "description": "Apply reviewed camera policy and atmospheric painted finish",
+      "estimated_loc": 280,
+      "dependencies": [
+        "SD2"
+      ],
+      "acceptance_criteria": [
+        "recorded art/camera decision",
+        "shared-observer and native star-inspection gates pass"
+      ],
+      "passes": null,
+      "external_prerequisites": [],
+      "note": "Mark delegated camera selection; A selected. Finish feedback remains open without blocking the approved first pass."
+    },
+    {
+      "id": "SD4",
+      "description": "Render physical Earth/Sun/planet scene from unified ship observer",
+      "estimated_loc": 220,
+      "dependencies": [
+        "SD3"
+      ],
+      "acceptance_criteria": [
+        "ship-planets-test and package angular-size references",
+        "golden-m5 and opened near-Earth captures"
+      ],
+      "passes": null,
+      "external_prerequisites": [
+        "completed M5 foundations"
+      ]
+    },
+    {
+      "id": "SD5",
+      "description": "Complete reused M5 Saturn rings/shadows and illumination/meter readiness",
+      "estimated_loc": 480,
+      "dependencies": [
+        "SD4"
+      ],
+      "acceptance_criteria": [
+        "M5 extended ring/photometry goldens",
+        "quality/pins and measured external illumination conventions"
+      ],
+      "execution_parts": [
+        "ring and shadow support",
+        "meter and illumination checks"
+      ],
+      "passes": null,
+      "external_prerequisites": [
+        "approved M5.2b and M5.4 work"
+      ]
+    },
+    {
+      "id": "SD6",
+      "description": "Package-driven physical Earth/Jupiter/Saturn itinerary",
+      "estimated_loc": 380,
+      "dependencies": [
+        "SD5"
+      ],
+      "acceptance_criteria": [
+        "solar-departure-test deterministic target/intercept/turn behavior",
+        "safe encounter route, both clocks and no planetary scale/position cheats"
+      ],
+      "passes": null,
+      "external_prerequisites": [
+        "approved M5.5b and required M5 navigation work"
+      ]
+    },
+    {
+      "id": "SD7",
+      "description": "Outbound acceleration and correctly paced flyby presentation",
+      "estimated_loc": 340,
+      "dependencies": [
+        "SD6"
+      ],
+      "acceptance_criteria": [
+        "solar-departure-capture continuous package state",
+        "golden and golden-m5 actual high-speed cases before high-beta encounters"
+      ],
+      "passes": null,
+      "external_prerequisites": [
+        "approved M5.3/M5.6b readiness"
+      ]
+    },
+    {
+      "id": "SD8",
+      "description": "Coverage/provenance, independent evaluation and one verified deployed demo",
+      "estimated_loc": 180,
+      "dependencies": [
+        "SD7"
+      ],
+      "acceptance_criteria": [
+        "catalogue-coverage-test distinguishes measured/unknown/fictional",
+        "independent evaluation, native package and downloaded checksum/site verification",
+        "actual M2 Air status explicitly measured or pending"
+      ],
+      "passes": null,
+      "external_prerequisites": []
+    }
+  ],
+  "camera_decision": "A: painted 3D geometry with real lighting; retain free camera and shared observer. Mood remains art review.",
+  "review_delivery": {
+    "version": "v0.4.0-dev.12-close-tour",
+    "source_commit": "e79729c648f50b3a96dfd1d9b5d149c81663a53b",
+    "evaluation": ".ailang/state/evaluations/eval_combined_glow_ship_transit_round_1.json",
+    "result": "conditional technical pass; native visual review handed to user",
+    "score": 89,
+    "zip_sha256": "7eacbfde34b2635269d54912554bbfff34885f8697b0661ac5849220d8a0cb1d",
+    "downloaded_checksum_verified": true,
+    "installer_verified": true,
+    "website_deployment": "93ea488",
+    "remaining": [
+      "CI and production landing",
+      "user native full-tour art review",
+      "new M2 Air performance measurement",
+      "simulation-driven external sunlight on ship geometry",
+      "further art"
+    ]
+  },
+  "followup": {
+    "design_doc": "design_docs/planned/r1/m4-tour-transition-followup.md",
+    "sprint_plan": "design_docs/planned/r1/m4-tour-transition-followup-sprint.md",
+    "approved_by": "Mark attended 2026-10-05: closer planets alongside ship, smooth transitions, performance investigation, public B upload, grounded shadows",
+    "status": "in_progress",
+    "build": "v0.4.0-dev.12-close-tour",
+    "target_hardware_baseline": "art/ship-performance-v1/m2-air-dev11-baseline.json",
+    "target_new_build_measurement_pending": true,
+    "delivery": "dev12 deployed and installer verified; test-only offline CI fixture fix pending landing"
+  },
+  "previous_review_delivery": {
+    "version": "v0.4.0-dev.11-solar-departure",
+    "source_commit": "0e91c712b1e3dbcf30ff6c64a1ab9ed62c111f96",
+    "evaluation": ".ailang/state/evaluations/eval_R1-M4-SOLAR-DEPARTURE_dev11_round_1.json",
+    "result": "pass",
+    "score": 94,
+    "remaining": [
+      "simulation-driven external sunlight on ship geometry",
+      "M2 Air performance",
+      "further art and production landing"
+    ]
+  },
+  "laptop_followup": {
+    "requested": "Mark: Earth/Jupiter white texture pulses; Sun galaxy/black pulses; abrupt view exposure; slower approaches; Alpha Centauri scale check",
+    "status": "in_progress",
+    "guided_pacing": {
+      "boost_wall_seconds": 30,
+      "cruise_wall_seconds": 20,
+      "braking_wall_seconds": 90,
+      "profile": "quadratic physical braking progress; final tenth ~28 wall seconds",
+      "unit_check": "/private/tmp/tour-pacing-green.log: 6 checks, 0 failures",
+      "normal_sidecar_check": "solar-departure: 60 passed, 0 failures; /private/tmp/tour-sim-followup.log",
+      "note": "Existing acceleration parameter changed only for guided session; physically earlier braking, no synthetic position/size changes"
+    },
+    "exposure": "final shared observer only; bounded temporal display policy under implementation; fixed/unit references preserved",
+    "alpha_centauri": "Measured A/B finite views and existing body-intercept extension under test; Mark selects final moving-A-centre standoff1 AU after catalogue stand-off",
+    "guided_scenario_params": {
+      "boost_g": 1.0,
+      "m_eff_kg": 10.0,
+      "cap_one_minus_beta": 0.01,
+      "ism_n_cm3": 0.1
+    },
+    "baseline_ci": {
+      "run": 37336072861,
+      "commit": "dc0744cc3b65f53ead7bb9a96801d1091aa1d698",
+      "status": "success",
+      "covers_new_followup": false
+    }
+  }
+}

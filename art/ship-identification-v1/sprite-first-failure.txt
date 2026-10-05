@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ship-demo-ready: OK
+ERROR: opaque billboard sprite pixels block identification
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/test_ship_star_identification.gd:7)
+       [1] _run (res://tests/test_ship_star_identification.gd:116)
+ship-star-identification: 39 passed, 1 failures

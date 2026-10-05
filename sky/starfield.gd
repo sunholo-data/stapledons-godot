@@ -42,6 +42,13 @@ var rebase_mode := Rebase.GPU
 var count := 0
 var pos := PackedFloat64Array() # 3 per star: world ly from Sol, float64
 var custom := PackedFloat32Array() # 4 per star: teff, E_v at Sol (lux), flags, |p|^2
+var ids: Array[String] = [] # same filtered, stacked order as pos/custom
+var identity_revision := 0
+var _replacement_revision := -1
+var _replacement_ids: Array[String] = []
+var _replaced_flux := {}
+var catalogue_replacement_sources := {}
+var replacement_revision := 0
 var skipped_missing := 0 # MISSING_PHOT rows (teff 0, v 99): nothing to draw
 var tiers: Array[String] = []
 var last_error := ""
@@ -54,11 +61,36 @@ var _buf := PackedFloat32Array()
 
 
 func clear() -> void:
+	identity_revision += 1
+	_replaced_flux.clear()
+	catalogue_replacement_sources.clear()
+	_replacement_revision = -1
 	count = 0
 	pos.clear()
 	custom.clear()
+	ids.clear()
 	skipped_missing = 0
 	tiers.clear()
+
+
+## Exact catalogue rows replaced by physical emitters. Reversible and cached:
+## scanning the catalogue happens only when IDs or the catalogue change.
+func set_catalogue_replacements(replacements: Array[String]) -> void:
+	if replacements == _replacement_ids and _replacement_revision == identity_revision:
+		return
+	_replacement_ids = replacements.duplicate()
+	_replacement_revision = identity_revision
+	var changed := false
+	for row in count:
+		if ids[row] in replacements:
+			if not _replaced_flux.has(row): _replaced_flux[row] = custom[4 * row + 1]
+			if custom[4 * row + 1] != 0.0: changed = true
+			custom[4 * row + 1] = 0.0
+		elif _replaced_flux.has(row):
+			custom[4 * row + 1] = _replaced_flux[row]
+			_replaced_flux.erase(row)
+			changed = true
+	if changed and multimesh != null: _fill()
 
 
 ## The active tier, then on top: for medium/large (GCNS), quick's HIP-filled
@@ -88,6 +120,7 @@ func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
 
 ## only_flags != 0: append only the rows carrying those flag bits.
 func append_catalogue(c: StarCatalogue, only_flags := 0) -> void:
+	identity_revision += 1
 	var k := count
 	pos.resize(3 * (count + c.count))
 	custom.resize(4 * (count + c.count))
@@ -102,6 +135,7 @@ func append_catalogue(c: StarCatalogue, only_flags := 0) -> void:
 		# galactic -> world (SkyFrame, D-28), widened to float64 before any arithmetic
 		var w := SkyFrame.to_world64([d[j], d[j + 1], d[j + 2]])
 		_put(k, w[0], w[1], w[2], d[j + 3], Relativity.illuminance_from_v(d[j + 4]), d[j + 5])
+		ids.append(c.ids[i] if c.ids.size() == c.count else "")
 		k += 1
 	count = k
 	pos.resize(3 * count)
@@ -126,11 +160,13 @@ func set_custom_stars(list: Array) -> void:
 
 
 func append_stars(list: Array) -> void:
+	identity_revision += 1
 	pos.resize(3 * (count + list.size()))
 	custom.resize(4 * (count + list.size()))
 	for s: Dictionary in list:
 		var p = s["pos"]
 		_put(count, p[0], p[1], p[2], s["t"], s["flux"], s.get("flags", 0.0))
+		ids.append(s.get("id", ""))
 		count += 1
 	if multimesh != null:
 		_fill()
@@ -141,10 +177,10 @@ func build() -> void:
 	quad.size = Vector2(2, 2)
 	material = ShaderMaterial.new()
 	material.shader = SHADER
-	material.set_shader_parameter("bb_lut", Blackbody.build_lut())
-	material.set_shader_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
-	material.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
-	material.set_shader_parameter("cull_peak", CULL_PEAK)
+	_parameter("bb_lut", Blackbody.build_lut())
+	_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
+	_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
+	_parameter("cull_peak", CULL_PEAK)
 	quad.material = material
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
@@ -207,6 +243,22 @@ var point_count := 0
 var _point_pos := PackedFloat64Array()
 var _point_custom := PackedFloat32Array()
 var _point_buf := PackedFloat32Array()
+var point_overlay := false # only planet point flux; catalogue stars stay below opaque bodies
+var point_material:ShaderMaterial
+
+func _parameter(name:StringName,value:Variant)->void:
+	material.set_shader_parameter(name,value)
+	if point_material!=null:point_material.set_shader_parameter(name,value)
+
+func replace_point_sources(list:Array)->void:
+	point_count=0;_point_pos.clear();_point_custom.clear()
+	add_point_sources(list) # one upload, including replacement with an empty list
+
+
+func set_catalogue_replacement_sources(sources: Dictionary) -> void:
+	if sources == catalogue_replacement_sources: return
+	catalogue_replacement_sources = sources.duplicate(true)
+	replacement_revision += 1
 
 
 func clear_point_sources() -> void:
@@ -249,6 +301,10 @@ func _fill_points() -> void:
 		points.multimesh.mesh = multimesh.mesh
 		points.custom_aabb = custom_aabb
 		add_child(points)
+	if point_overlay and point_material==null:
+		point_material=material.duplicate()
+		point_material.render_priority=127
+		points.material_override=point_material
 	_point_buf = _fill_into(points.multimesh, _point_buf, _point_pos, _point_custom, point_count)
 
 
@@ -289,8 +345,8 @@ func _upload_ship() -> void:
 	if material == null:
 		return
 	var s := ship_pair()
-	material.set_shader_parameter("ship_hi", s[0])
-	material.set_shader_parameter("ship_lo", s[1])
+	_parameter("ship_hi", s[0])
+	_parameter("ship_lo", s[1])
 
 
 ## [hi, lo] float32 pair of the ship's offset from the origin.
@@ -347,24 +403,24 @@ static func splat_energy(flux: float, t_kelvin: float, d: float) -> float:
 ## direction: unit heading in the galaxy frame. beta and gamma come from the
 ## sim in float64; 1 - beta is formed here so it survives float32 upload.
 func set_velocity(direction: Vector3, beta: float, gamma: float) -> void:
-	material.set_shader_parameter("beta_dir", direction.normalized())
-	material.set_shader_parameter("beta_mag", beta)
-	material.set_shader_parameter("gamma_f", gamma)
-	material.set_shader_parameter("one_minus_beta", 1.0 / (gamma * gamma * (1.0 + beta)))
+	_parameter("beta_dir", direction.normalized())
+	_parameter("beta_mag", beta)
+	_parameter("gamma_f", gamma)
+	_parameter("one_minus_beta", 1.0 / (gamma * gamma * (1.0 + beta)))
 
 
 ## Linear radiance of the splat peak per unit of the flux in custom data
 ## (lux; Exposure.star_scale), at the centre pixel.
 func set_exposure(e: float) -> void:
-	material.set_shader_parameter("exposure", e)
+	_parameter("exposure", e)
 
 
 ## The point-spread sigma in pixels (Exposure.psf_sigma_px: fixed in angle, M1.8).
 func set_psf(sigma_px: float) -> void:
-	material.set_shader_parameter("psf_sigma_px", sigma_px)
+	_parameter("psf_sigma_px", sigma_px)
 
 
 ## Magnitude-floor aid: Vector2(floor lux, floor peak); zeros switch it off.
 func set_floor(p: Vector2) -> void:
-	material.set_shader_parameter("floor_flux", p.x)
-	material.set_shader_parameter("floor_peak", p.y)
+	_parameter("floor_flux", p.x)
+	_parameter("floor_peak", p.y)

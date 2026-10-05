@@ -17,7 +17,7 @@
     "m_eff_kg": 1.0,
     "ism_n_cm3": 0.1,
     "bubble_radius_m": 100.0,
-    "glow_eps": 1e-09,
+    "glow_eps": 1e-10,
     "glow_f_in": 0.5,
     "cruise_min_beta": 0.9,
     "cap_one_minus_beta": 1e-06,
@@ -149,8 +149,8 @@
       {
         "label": "Glow, inward",
         "field": "journey.plan.ism.glow_w_m2",
-        "raw": 2.407194217926e-05,
-        "text": "2.407e-5 W/m2"
+        "raw": 2.40719421792e-06,
+        "text": "2.407e-6 W/m2"
       },
       {
         "label": "Drag force",
@@ -301,8 +301,8 @@
         {
           "label": "Glow, inward",
           "field": "journey.plan.ism.glow_w_m2",
-          "raw": 1.5052987296e-06,
-          "text": "1.505e-6 W/m2"
+          "raw": 1.5052987296077213e-07,
+          "text": "1.505e-7 W/m2"
         },
         {
           "label": "Drag force",
@@ -452,8 +452,8 @@
         {
           "label": "Glow, inward",
           "field": "journey.plan.ism.glow_w_m2",
-          "raw": 0.28127107577632854,
-          "text": "0.2813 W/m2"
+          "raw": 0.02812710757763285,
+          "text": "0.02813 W/m2"
         },
         {
           "label": "Drag force",
@@ -603,8 +603,8 @@
         {
           "label": "Glow, inward",
           "field": "journey.plan.ism.glow_w_m2",
-          "raw": 2.407194217926e-05,
-          "text": "2.407e-5 W/m2"
+          "raw": 2.40719421792e-06,
+          "text": "2.407e-6 W/m2"
         },
         {
           "label": "Drag force",
@@ -760,8 +760,8 @@
           {
             "label": "Glow, inward",
             "field": "journey.plan.ism.glow_w_m2",
-            "raw": 2.407194217926e-05,
-            "text": "2.407e-5 W/m2"
+            "raw": 2.40719421792e-06,
+            "text": "2.407e-6 W/m2"
           },
           {
             "label": "Drag force",
@@ -916,8 +916,8 @@
           {
             "label": "Glow, inward",
             "field": "journey.plan.ism.glow_w_m2",
-            "raw": 2.407194217926e-05,
-            "text": "2.407e-5 W/m2"
+            "raw": 2.40719421792e-06,
+            "text": "2.407e-6 W/m2"
           },
           {
             "label": "Drag force",
@@ -1072,8 +1072,8 @@
           {
             "label": "Glow, inward",
             "field": "journey.plan.ism.glow_w_m2",
-            "raw": 2.407194217926e-05,
-            "text": "2.407e-5 W/m2"
+            "raw": 2.40719421792e-06,
+            "text": "2.407e-6 W/m2"
           },
           {
             "label": "Drag force",

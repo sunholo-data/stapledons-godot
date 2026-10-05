@@ -34,6 +34,8 @@ var sidecar: Dictionary
 var count := 0
 ## count * 6 floats, record i at [6 i, 6 i + 6)
 var data: PackedFloat32Array
+var ids: Array[String] = [] # exact producer order; empty means no usable identity
+var identity_error := ""
 
 
 static func little_endian_host() -> bool:
@@ -85,7 +87,24 @@ static func from_files(bin_path: String, json_path: String) -> StarCatalogue:
 	c.sidecar = m
 	c.count = n
 	c.data = bytes.to_float32_array()
+	c.load_identity(m.get("ids", []))
 	return c
+
+func load_identity(rows: Variant) -> bool:
+	ids.clear()
+	identity_error = ""
+	if not rows is Array or rows.size() != count:
+		identity_error = "identity count differs from binary"
+		return false
+	var seen := {}
+	for id in rows:
+		if not id is String or id.is_empty() or seen.has(id):
+			identity_error = "empty or duplicate catalogue identity"
+			ids.clear()
+			return false
+		seen[id] = true
+		ids.append(id)
+	return true
 
 
 ## Tier by name from a directory (default res://data/starmap).

@@ -1,0 +1,153 @@
+{
+  "sprint_id": "R1-M4-SHIP-COMMONS",
+  "evaluation_round": 3,
+  "timestamp": "2026-10-04T19:32:12.697Z",
+  "evaluator": "Independent judge, separate from author and integrator",
+  "asset_commit": "01005eb",
+  "authoring_commit": "ad9123a",
+  "design_doc": "design_docs/planned/r1/m4-ship-commons-build.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-commons-build-sprint.md",
+  "total_score": 89,
+  "pass_threshold": 70,
+  "result": "fail",
+  "review_build_result": "pass",
+  "production_landing_result": "pending",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 20,
+    "code_quality": 14,
+    "documentation": 15,
+    "design_fidelity": 10
+  },
+  "result_reason": "Bounded approved open arcade passes draft source/art/resource review. Actual M2 Air performance remains mandatory for full completion; final release also awaits independently reviewed live-journey continuation and root export/publication.",
+  "hard_fails": [
+    {
+      "condition": "mandatory_target_hardware_performance_pending",
+      "details": "Actual MacBook Air M2 (2022),24GB,1920x1080 unmeasured; Studio comparison cannot fulfill this gate."
+    }
+  ],
+  "architecture_review": {
+    "reference": "Original approved Commons concept at /private/tmp/stapledon-ship-layer-reference/art/ship-tier-concepts-v1/commons.png, and explicitly approved measured zoning.",
+    "judgment": "Open multi-bay curved cream arcade, teal ribs/pointed arches, retained civic plaza, planted seating and guarded connection are a faithful representative first section of the concept. Rejected closed barrel hall removed. Sparse bounded sample is explicitly distinguished from finished populated Commons/full ship.",
+    "measured": "Nominal inner/outer piers43/55m, angles\u22125..18deg, four bays; actual opaque terrace61.15\u201361.39m, highest trim61.99884m. Roof/outer walking strip extend beyond nominal piers to about57m; this is a measured prototype variation, not independent proof of user approval of a larger zone.",
+    "limitations": "Upper terrace inaccessible; foliage and paint remain prototype. Diagnostic lighting, unfinished base ship surfaces, no inhabited civic simulation/engineering certification or glass dome."
+  },
+  "automated_checks": {
+    "runtime": "Source tests/test_ship_commons.gd:39passed,0failures, actualexit0; /private/tmp/commons-v3-judge-runtime.log. Strict authored destinations, nonempty connected paths and actual world capsule clearance.",
+    "judge_routes": "Evaluator-only fixed-coordinate tests:30passed,0failures, actualexit0; /private/tmp/commons-v3-judge-routes.log. Explicit approved-section standing-eye footprints, destination safety, capsule-safe connected routes, distance LOD leaves collision/WALK identity unchanged.",
+    "assets": "Evaluator tightened source coarse triangle keys from3 to9decimal places, using actual uncompressed runtime loader:OK, actualexit0; /private/tmp/commons-v3-judge-assets.log. UV padding, opaque material, atlas dimensions and exact major triangle subset preserved.",
+    "geometry": "Actual envelope/height/count/open-plaza/open-arch/opaque terrace/shaft validator OK actualexit0; /private/tmp/commons-v3-judge-geometry.log. Bad-envelope mutation correctly rejects with exit1+FAIL; /private/tmp/commons-v3-judge-negative.log.",
+    "architecture_gate": "Source arcade gate verifies6142 actual terrace vertices in measured band, opaque overhead roof, open plaza and actual open arch; actualexit0 /private/tmp/commons-v3-judge-arcade.log. Wired into ship-demo-ci.",
+    "camera": "Shared-camera244passed,0failures, actualexit0; /private/tmp/commons-v3-judge-camera.log.",
+    "provenance": "All9 current masterv3/atlas/GLB pins independently match. Blender supplied inspect has no missing external assets; full-assembly reimport logs inspected. Distinct editablev3 retains embedded authoring scripts; v1/v2 historical.",
+    "lint": "git diff --check clean.",
+    "full_suite": "Root reports original full run passed simulation/parity, later isolated AI crash-loop timing outlier; isolated rerun actualexit0 and comprehensive remaining suite via make test -o sim actualexit0. Not represented as a single uninterrupted fresh full run.",
+    "golden": "Root reports full make golden actualexit0, all0failures. No model shader or physics changes introduced by Commons."
+  },
+  "acceptance_criteria": [
+    {
+      "id": "approved_architecture",
+      "met": true,
+      "evidence": "Actual open curved representative arcade in nominal approved zone, guarded connection and plaza; original rejected hall removed. Multi-angle physical native views inspected against concept."
+    },
+    {
+      "id": "CB1",
+      "met": true,
+      "evidence": "Editable masterv3/embedded source, actual max new radius82.87856m inside95m; seven tier/base bridge/lift assets unchanged."
+    },
+    {
+      "id": "CB2",
+      "met": true,
+      "evidence": "39source+30judge strict route/capsule gates. Safe physical inside-eye viewpoints; inaccessible spire/upper terrace and shaft preserved."
+    },
+    {
+      "id": "CB3",
+      "met": true,
+      "evidence": "Nine current native captures: bridge, midlift, arrival, courtyard, inside/along arcade, reverse, planted plaza, external diagnostic. Capture audit has eye/FOV/first hit/WALK/inside status and4x display aid. Actual bridge obstruction retained; no invented clear look-down."
+    },
+    {
+      "id": "CB4",
+      "met": true,
+      "evidence": "24,528detail/11,380coarse,1material,1254atlas below30k/4material/2x2K caps. Exact major coarse triangles preserved under runtime loader; matched paired Studio profile below."
+    },
+    {
+      "id": "CB5",
+      "met": false,
+      "evidence": "Target Air performance remains pending."
+    },
+    {
+      "id": "CB6",
+      "met": null,
+      "evidence": "Root final native export/live-journey integration/publication not yet verified for combined next release."
+    }
+  ],
+  "runtime_geometry": {
+    "loader": "Commons-only GLTF IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION preserves authored detail/coarse positions; production AreaBundle loader unchanged. Uncompressed collision/nav/visual use same metre frame.",
+    "lod": "Manifest centre ship(48,8,60) -> Godot(48,60,-8), <=100m detailed; farther coarse. Major roofs/floors/arches/rails preserved, collision and WALK remain active.",
+    "benchmark": "Baseline/enabled use same manifest standing eye/target even when Commons disabled; report stores actual eye and view direction. No different courtyard camera invalidates comparison.",
+    "sky": "Current captures use frozen actual0.99c snapshot and fixed heading,4x labelled whole-sky display aid; camera only turns. This report does not establish live acceleration/braking correctness."
+  },
+  "studio_benchmark": {
+    "configuration": "Apple M4 Max Studio,1920x1080,4x exposure stops2, frozen cruise beta0.99; Commons disabled/enabled matching five views;120warmup/300samples each. Raw reports remain local.",
+    "paired_p95_ms": [
+      {
+        "view": "bridge",
+        "baseline": 9.668,
+        "commons": 9.451,
+        "delta": -0.217,
+        "primitive_delta": 24528
+      },
+      {
+        "view": "overlook",
+        "baseline": 9.617,
+        "commons": 9.604,
+        "delta": -0.013,
+        "primitive_delta": 24528
+      },
+      {
+        "view": "mid_lift",
+        "baseline": 9.618,
+        "commons": 9.61,
+        "delta": -0.008,
+        "primitive_delta": 24528
+      },
+      {
+        "view": "commons_courtyard",
+        "baseline": 9.503,
+        "commons": 9.561,
+        "delta": 0.058,
+        "primitive_delta": 24528
+      },
+      {
+        "view": "overview",
+        "baseline": 9.667,
+        "commons": 9.539,
+        "delta": -0.128,
+        "primitive_delta": 11368
+      }
+    ],
+    "video_memory_delta_bytes": 9682944,
+    "courtyard_eye_godot_m": [
+      23,
+      58.725,
+      3
+    ],
+    "courtyard_target_ship_m": [
+      48,
+      8,
+      60.2
+    ],
+    "interpretation": "Local views add24,528primitives; overview11,380coarse\u221212removed guard. Enabled p95 range9.451\u20139.610ms. Small negative timings are noise, not causal speedup or Air suitability. Wall frame samples include presentation."
+  },
+  "resolved_findings": [
+    "Replaced absence-only arcade gate with nonempty measured terrace+opaque roof+openarch proof.",
+    "Disabled mesh compression only for Commons so actual runtime coarse triangles preserve authored detail positions.",
+    "Strict authored-eye destination safety avoids silently snapped planter-adjacent viewpoint; relocated unsafe destination.",
+    "README corrected nominal approved zone versus minor measured overhang, avoiding invented43\u201357m approval."
+  ],
+  "documentation_feedback": "Resolved ate726b56: nominal43/55piers, minor projections/walk strip and actual4.5m link explicitly documented as draft construction details/extra clearance, no invented larger-band approval.",
+  "delivery_gate": "Draft Commons source/art/resource review passes. Combined next build needs separate live-journey judge and final root CI/export/hash/site verification. Full sprint remains unsigned until actual target Air performance.",
+  "notes": "No evaluator implementation edits. No merge/full completion. Aggregate resource/timing evidence only; raw machine diagnostics stay local.",
+  "documentation_commit": "e726b56"
+}

@@ -7,8 +7,8 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 // Where the site is served. Both are configurable at build time:
 //   SITE_URL=https://www.sunholo.com BASE_URL=/stapledons-godot/ npm run build
-const SITE_URL = process.env.SITE_URL || 'https://sunholo-data.github.io';
-const BASE_URL_RAW = process.env.BASE_URL || '/';
+const SITE_URL = process.env.SITE_URL || 'https://www.sunholo.com';
+const BASE_URL_RAW = process.env.BASE_URL || '/stapledons-godot/';
 const BASE_URL = BASE_URL_RAW.endsWith('/') ? BASE_URL_RAW : `${BASE_URL_RAW}/`;
 
 const GITHUB_URL = 'https://github.com/sunholo-data/stapledons-godot';

@@ -11,7 +11,14 @@ REMOTE=${SITE_REMOTE:-$(git remote get-url origin)}
 BASE=${SITE_BASE:-/stapledons-godot/}
 
 [ -f "$BUILD/index.html" ] || { echo "site-deploy: no $BUILD/index.html (run make site)" >&2; exit 1; }
-grep -q "href=\"$BASE" "$BUILD/index.html" || { echo "site-deploy: $BUILD was not built for base $BASE" >&2; exit 1; }
+# Check generated assets, not ordinary content links which can contain the
+# project path even when the build itself used the wrong base URL.
+asset_prefix="${BASE}assets/"
+grep -q "href=\"${asset_prefix}css/" "$BUILD/index.html" &&
+    grep -q "src=\"${asset_prefix}js/" "$BUILD/index.html" || {
+    echo "site-deploy: CSS/JS assets were not built for base $BASE; run make site" >&2
+    exit 1
+}
 
 src=$(git rev-parse --short HEAD)
 dirty=$(git status --porcelain -- website | head -1)

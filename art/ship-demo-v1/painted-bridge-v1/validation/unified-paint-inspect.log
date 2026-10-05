@@ -1,0 +1,6 @@
+./blender.sh --background "scenes/stapledon_unified_ship_painted_v1.blend" --python-exit-code 1 --python scripts/inspect.py
+00:00.247  blend            | Read blend: "/Users/voightkampff/dev/blender/scenes/stapledon_unified_ship_painted_v1.blend"
+BLENDER_SCENE_REPORT={"animated_objects": [], "blend_file": "/Users/voightkampff/dev/blender/scenes/stapledon_unified_ship_painted_v1.blend", "camera": "Paint review \u2014 actual captain eye", "cycles_device": "GPU", "frames": [1, 250, 24], "mesh_triangles": 231897, "mesh_vertices": 243017, "missing_external_files": [], "objects": {"CAMERA": 19, "EMPTY": 13, "LIGHT": 1, "MESH": 502}, "render_engine": "CYCLES", "render_output": "/private/tmp/claude-501/-Users-voightkampff-dev-sunholo-data-stapledons-godot/456b2146-9f6a-4728-908d-8baf45a08aa2/scratchpad/blender/renders/ship_commons_v1/blockout/courtyard.png", "resolution": [1280, 720, 100], "scene": "Scene"}
+Blender 5.2.1 LTS (hash 9e2066aef7ef built 2026-08-25 01:35:57)
+
+Blender quit

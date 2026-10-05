@@ -1,0 +1,68 @@
+extends SceneTree
+var failures:=0
+func check(name: String, ok: bool) -> void:
+	print("  %s %s" % ["ok" if ok else "FAIL",name]);if not ok:failures+=1
+func _initialize() -> void:
+	var d: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://assets/ship_commons/manifest.json"))
+	if not d.assets.has("painted") or not d.assets.has("coarse"):
+		check("paint and coarse derivative exist",false);quit(1);return
+	var detail: Node3D=load("res://demos/ship_commons.gd").load_mesh("res://assets/ship_commons/"+d.assets.painted)
+	var coarse: Node3D=load("res://demos/ship_commons.gd").load_mesh("res://assets/ship_commons/"+d.assets.coarse)
+	var detailed_triangles:={};var coarse_triangles:={}
+	_scan(detail,Transform3D.IDENTITY,detailed_triangles);_scan(coarse,Transform3D.IDENTITY,coarse_triangles)
+	var preserved:=true
+	var misses:=0
+	for key in coarse_triangles:
+		if not detailed_triangles.has(key):
+			preserved=false;misses+=1
+			if misses<=1:
+				print("coarse mismatch ",key)
+				var best:=INF;var nearest: Array=[]
+				for triangle in detailed_triangles.values():
+					var distance:=0.
+					for point in coarse_triangles[key]:
+						distance+=minf(point.distance_to(triangle[0]),minf(point.distance_to(triangle[1]),point.distance_to(triangle[2])))
+					if distance<best:best=distance;nearest=triangle
+				print("coarse nearest difference_m=",best," triangle=",nearest)
+	check("coarse triangles exact subset of detailed opaque geometry",preserved)
+	check("coarse retains nonempty major silhouette",coarse_triangles.size()>2000 and coarse_triangles.size()<detailed_triangles.size())
+	if d.get("revision",1)>=3:
+		for p in d.sight_checks.roof_eye_ship_m:
+			var eye:=Vector3(p[0],p[2],-p[1]);check("coarse retains actual opaque terrace",_hit(coarse_triangles,eye,eye+Vector3.UP*20))
+	else:
+		for p in [Vector3(26,58.7,-10),Vector3(21,58.7,-10),Vector3(31,58.7,-10)]:check("coarse retains opaque roof "+str(p),_hit(coarse_triangles,p,p+Vector3.UP*20))
+		check("coarse retains opaque back wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(26,58.7,-20)))
+		check("coarse retains opaque side wall",_hit(coarse_triangles,Vector3(26,58.7,-10),Vector3(40,58.7,-10)))
+	if d.get("revision",1)>=2:check("coarse retains opaque terrace canopy",_hit(coarse_triangles,Vector3(18.75,58.7,3),Vector3(18.75,63,3)))
+	var kit:={"visual":detail,"coarse":coarse}
+	load("res://demos/ship_commons.gd").update_detail(kit,Vector3(26,58.7,-10))
+	check("near interior uses detailed kit",detail.visible and not coarse.visible)
+	load("res://demos/ship_commons.gd").update_detail(kit,Vector3(250,100,250))
+	check("far review uses coarse kit",not detail.visible and coarse.visible)
+	detail.free();coarse.free()
+	print("ship-commons-assets: %s" % ("OK" if failures==0 else "FAIL"));quit(1 if failures else 0)
+func _scan(n: Node, xf: Transform3D, tris: Dictionary) -> void:
+	if n is Node3D:xf=xf*n.transform
+	if n is MeshInstance3D and n.mesh!=null:
+		var faces: PackedVector3Array=n.mesh.get_faces()
+		for i in range(0,faces.size(),3):
+			var keys:=[]
+			for j in 3:
+				var p:=xf*faces[i+j];keys.append("%.3f,%.3f,%.3f" % [p.x,p.y,p.z])
+			keys.sort();tris[str(keys)]=[xf*faces[i],xf*faces[i+1],xf*faces[i+2]]
+		for s in n.mesh.get_surface_count():
+			var arrays: Array=n.mesh.surface_get_arrays(s)
+			check("all vertices have UVs",arrays[Mesh.ARRAY_TEX_UV].size()==arrays[Mesh.ARRAY_VERTEX].size())
+			var uv: PackedVector2Array=arrays[Mesh.ARRAY_TEX_UV]
+			var safe:=true
+			for p in uv:
+				if not p.is_finite() or fmod(p.x,.5)<.009 or fmod(p.x,.5)>.491 or fmod(p.y,.5)<.009 or fmod(p.y,.5)>.491:safe=false
+			check("UVs avoid atlas quadrant boundaries",safe)
+			var mat: StandardMaterial3D=n.mesh.surface_get_material(s)
+			check("embedded opaque paint material",mat!=null and mat.albedo_texture!=null and mat.transparency==BaseMaterial3D.TRANSPARENCY_DISABLED)
+			if mat!=null and mat.albedo_texture!=null:check("texture within2K",mat.albedo_texture.get_width()<=2048 and mat.albedo_texture.get_height()<=2048)
+	for c in n.get_children():_scan(c,xf,tris)
+func _hit(tris: Dictionary,a: Vector3,b: Vector3) -> bool:
+	for triangle in tris.values():
+		if Geometry3D.segment_intersects_triangle(a,b,triangle[0],triangle[1],triangle[2])!=null:return true
+	return false

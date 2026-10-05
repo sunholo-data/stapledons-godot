@@ -1,0 +1,43 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.8",
+  "pr": 76,
+  "branch": "sprint/ai8-core",
+  "commit": "df8ca26",
+  "round": 1,
+  "evaluator": "independent (generator != judge); fresh clone of origin/sprint/ai8-core under the scratchpad, no upload, no gcloud, no Secret Manager, no live AI; Blender repo read only via git archive/cat-file",
+  "result": "pass (CI was still pending when written)",
+  "score": 91,
+  "breakdown": {
+    "tests_pass": {"max": 20, "score": 20, "note": "make test AILANG=runtime/bin/ailang rc 0 on arm64; its ai-core-verify step printed 'a fresh import from blender@8f04dfc86dd310e73c9052351ad37fbcedb542d5 == data/ai/core' and ai_core 2c5d6caf...f628. make ai-mutants rc 0, 5 new AI.8 mutants killed. No gcloud/curl in the make test log."},
+    "lint_clean": {"max": 10, "score": 10, "note": "python-guard ok, no new Python."},
+    "acceptance_criteria": {"max": 30, "score": 28, "note": "AC17 met: make ai-core-verify green both without blobs (index/sums/keys, fixture import == expected, corrupted blob refused, pinned re-import) and with blobs (AILANG + independent shasum -a 256 -c agree). ai_core == shasum of index.ndjson == its SHA256SUMS line. Reproducible: make ai-core-import re-run from the pinned commit left git status clean (byte-identical index, sums). make ai-core-bundle staged 6 files (11M) and shasum -c passed; with no blobs it warns and copies nothing. AI_CORE_FETCH=1 is untestable before P-pub (declared). -2: acceptance covers the bundle/assets/publish targets only by the executor's own notes (publish is read-only reviewed here, never run)."},
+    "code_quality": {"max": 15, "score": 12, "note": "Clean pure/effect split, core-prefixed helpers (cites ailang#1461). -3 for mutation gaps found (see findings): image width/height swap, bytes==0, height==0, short-source and commit-shape checks are all unkilled by unit tests, fixture and the 5 shipped mutants."},
+    "documentation": {"max": 15, "score": 15, "note": "changelog, README ai/ prefix, design (a4) 'as built', sprint status and JSON notes, all consistent with the code."},
+    "design_fidelity": {"max": 10, "score": 9, "note": "All (a4) tasks delivered: importer, 4 portraits + 1 avatar with width/height/mime/bytes, pinned source per line, 4 make targets, README, ai_core export as $(AI_CORE). -1: the sprint says setup.sh gains the secret in section 8; it is already there as section 10, so setup.sh is unchanged (accepted deviation)."},
+    "conditional": {"note": "Regression surface and performance categories not triggered (no sim/VM/types change)."}
+  },
+  "ci": "gh pr checks 76: 'headless tests (physics, sim, parity, strict VM)' pending at evaluation time (run 37110085884). The local make test is the CI-equivalent and is green; CI skips the pinned re-import with a printed notice because it has no Blender checkout.",
+  "verified": {
+    "pinned_commit_via_git_archive": "mk/ai.mk ai-core-import (git -C $(BLENDER) archive $(AI_CORE_COMMIT) assets/... | tar -x) and ai-core-verify use git archive of 8f04dfc86dd310e73c9052351ad37fbcedb542d5 (cat-file confirms the commit exists); the working tree is never read. AI_CORE_COMMIT is derived from index line 1's source field.",
+    "ai_core_hash_reproducible": true,
+    "publish_safety": "ai-core-publish (mk/ai.mk, end of file) needs gcloud, verifies blobs first, skips objects that already exist (describe) and uploads with --no-clobber to gs://stapledons-voyage-assets/ai/<sha256>.<ext> only, immutable cache-control. Not run.",
+    "no_upload_in_make_test": "ai-test gains only the ai-core-verify prerequisite; ai-core-assets runs only with AI_CORE_FETCH=1; publish/import/bundle are not prerequisites of test."
+  },
+  "findings": [
+    {"severity": "minor", "file": "ai/tools/core_import.ail:49", "issue": "assetOf width/height swap (w: s.h, h: s.w) survives unit test, fixture check and real verify: the fixture PNG is 64x64 and the real set is 1254x1254, all square. Orientation is never asserted.", "suggestion": "Add a non-square fixture PNG or a unit test with a non-square PNG header, and an ai-mutants row for it."},
+    {"severity": "minor", "file": "ai/tools/core_import.ail:79-83", "issue": "Surviving own mutants: bytes <= 0 relaxed to < 0; height check dropped from the width||height test; source length > 50 relaxed to > 5; commit 40-hex guard in main (line 128) removed; blob-size check in coreCheckBlobs (line 156) removed (the size check is redundant with the sha, so effectively equivalent).", "suggestion": "Add refusal cases for bytes 0 and height 0 in checkVerifyLines; a short source; a non-hex commit run of main."},
+    {"severity": "info", "file": "mk/ai.mk:ai-core-verify", "issue": "The fixture expected files are produced by the importer itself, so that check alone is self-referential; the real guard is the pinned re-import plus the independent shasum, which only run where the Blender checkout or blobs exist (CI prints a skip).", "suggestion": "Acceptable; AI.9 or P-pub should run AI_CORE_FETCH=1 make ai-core-verify in CI once the bucket has the blobs."}
+  ],
+  "killed_by_shipped_mutants": "5/5 (core verify and importer rows in ai-mutants)",
+  "own_mutants": {"run": 15, "killed": 6, "survived_notable": ["w/h swap", "bytes<=0", "height check", "source length", "commit guard", "blob size check (equivalent)", "x<1e15 bound", "blobs=='' guard", "prompt file for loving (only fixture check kills it)"]},
+  "deviations": {
+    "setup_sh_section_10": "accepted",
+    "sha256sums_includes_index": "accepted (improves: pins the index bytes, shasum -c works)",
+    "file_locations": "accepted (data/raw/ai_core local, flat bucket objects, ai_core/ stage, all gitignored or documented)",
+    "bundle_warns_no_copy": "accepted (same as sky-bundle; AI.9 wires the export)",
+    "modules_exported": "accepted (ailang.toml exports needed for ailang test)",
+    "loc_317_vs_160": "accepted (under 650 cap; recorded in sprint JSON)"
+  },
+  "passed": true
+}

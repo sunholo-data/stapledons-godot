@@ -21,14 +21,18 @@ the visible band and disappear.
 
 ## Run it
 
-Requires Godot 4.7+ and AILANG 0.50+ on `PATH`, or set `AILANG_BIN`.
+Requires Godot 4.7+ and the pinned AILANG v0.52.0 on `PATH`, or use `AILANG=runtime/bin/ailang`.
 
 ```sh
 make test      # physics reference, sim vs closed form, VM/interpreter parity, strict-VM core (headless)
 make golden    # GPU shader vs CPU reference star positions (opens a window)
 make capture   # 1 g voyage driven by the AILANG sim, PNGs to renders/
-make run       # interactive: W/S thrust, arrows look, 1-4 fwd/stbd/astern/up, +/- time warp
+make run       # current expanded ship: WASD walk, Option-drag look, E lift, M navigation, hold I identify
 ```
+
+Normal launch opens one current ship at the captain’s measured eye, initially at rest in a live navigation session. Scroll out for a labelled third-person view. Select a star in navigation and hold Commit to watch actual acceleration, cruise and braking aboard ship. Hold I and click a known visible star to read catalogue facts; Open in map selects that exact source.
+
+The original fixed-view painted bridge remains an explicit `--interior` art/capture reference. `make voyage` runs the dedicated sky controls.
 
 ## Layout
 

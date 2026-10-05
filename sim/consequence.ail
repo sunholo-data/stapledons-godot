@@ -5,10 +5,11 @@ module stapledons/sim/consequence
 -- This module holds the consequence state and the rules that need no ship
 -- or journey types; core.ail feeds it each tick (observe) and reads it for
 -- the readouts. Physics comes from sunholo/relativity; nothing here derives
--- a formula (the glow pole waits for the package, M4.6a).
+-- a formula (the glow pole and temperature are sunholo/relativity 0.8.0's
+-- glowEmittanceAt and glowTemperatureAt, M4.1 step 2).
 import std/option (Option, Some, None)
 import pkg/sunholo/relativity/optics (Vec3, norm)
-import pkg/sunholo/relativity/medium (astronomicalUnitM, lightYearM, loadScale, mirrorDragForce, glowInwardFlux)
+import pkg/sunholo/relativity/medium (astronomicalUnitM, lightYearM, loadScale, mirrorDragForce, glowInwardFlux, glowEmittanceAt, glowTemperatureAt)
 import pkg/sunholo/relativity/hyper (absf)
 
 -- ------------------------------------------------------------ stand-off (D-14)
@@ -87,10 +88,15 @@ pure func unlockRows(c: Cq, rows: [ArchiveRow], tick: int, tau: float, t: float,
 
 -- ------------------------------------------------------------ live ISM (D-11)
 -- Package calls at the ship's current rapidity; n in m^-3. All zero at rest.
-export type IsmNow = { loadWM2: float, dragN: float, glowWM2: float }
+-- M4.1 step 2: the glow's forward pole, emittance glowEmittanceAt(..., 1) (W/m^2)
+-- and blackbody temperature glowTemperatureAt(..., 1) (K; D-30, independent of
+-- eps). The renderer mirrors the shape (pole x cos, T_pole x cos^(1/4)) and
+-- never derives either number.
+export type IsmNow = { loadWM2: float, dragN: float, glowWM2: float, glowPoleWM2: float, glowPoleK: float }
 export pure func ismAt(n: float, phi: float, r: float, eps: float, fIn: float) -> IsmNow {
   let p = absf(phi);
-  { loadWM2: loadScale(n, p), dragN: mirrorDragForce(n, p, r), glowWM2: glowInwardFlux(n, p, eps, fIn) }
+  { loadWM2: loadScale(n, p), dragN: mirrorDragForce(n, p, r), glowWM2: glowInwardFlux(n, p, eps, fIn),
+    glowPoleWM2: glowEmittanceAt(n, p, eps, fIn, 1.0), glowPoleK: glowTemperatureAt(n, p, 1.0) }
 }
 
 -- ------------------------------------------------------------ AI provenance
