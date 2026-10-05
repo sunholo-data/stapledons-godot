@@ -2,6 +2,10 @@ import React, {useState} from 'react';
 import styles from './styles.module.css';
 const base='https://storage.googleapis.com/stapledons-voyage-assets/refs';
 const views=[
+ ['ship_lighting_v1/bridge_inward_moody.png','Lighting study · bridge inward'],
+ ['ship_lighting_v1/bridge_inward_baseline.png','Lighting study · same view before'],
+ ['ship_lighting_v1/bridge_outward_moody.png','Lighting study · bridge outlook'],
+ ['ship_lighting_v1/commons_arcade_moody.png','Lighting study · Commons shade'],
  ['ship_unified_v1/native/captain_default.png','Bridge · standing captain eye'],
  ['ship_unified_v1/native/captain_inward.png','Bridge · looking inward'],
  ['ship_unified_v1/native/captain_overlook.png','Bridge · overlook toward lower tiers'],

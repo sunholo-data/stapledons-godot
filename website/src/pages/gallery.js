@@ -16,6 +16,7 @@ const CLIPS = [
 ];
 
 const GROUPS = [
+  ['ship', 'The painted ship'],
   ['sky', 'The relativistic sky'],
   ['cmb', 'The forward CMB'],
   ['map', 'The galaxy map and the journey'],
@@ -73,7 +74,7 @@ export default function Gallery() {
                 it.group === g ? (
                   <figure key={it.file} className={styles.item}>
                     <button type="button" className={styles.open} onClick={() => setOpen(i)} aria-label={`Open: ${it.title}`}>
-                      <img src={base + it.file} alt={it.title} loading="lazy" width="800" height="450" />
+                      <img src={it.url || base + it.file} alt={it.title} loading="lazy" width="800" height="450" />
                     </button>
                     <figcaption>
                       <strong>{it.title}</strong>
@@ -96,7 +97,7 @@ export default function Gallery() {
             <ChevronLeft size={26} />
           </button>
           <figure className={styles.lbFigure} onClick={(e) => e.stopPropagation()}>
-            <img src={base + cur.file} alt={cur.title} />
+            <img src={cur.url || base + cur.file} alt={cur.title} />
             <figcaption>
               <strong>{cur.title}.</strong> {cur.caption}
             </figcaption>

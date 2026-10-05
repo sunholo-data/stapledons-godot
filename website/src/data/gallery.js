@@ -3,6 +3,27 @@
 // marks captures from work still in review, so nothing reads as shipped early.
 const GALLERY = [
   {
+    file: 'ship-lighting-bridge-inward',
+    url: 'https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_lighting_v1/bridge_inward_moody.png',
+    title: 'Painted bridge: warm light and cool shadows',
+    caption: 'Standing captain eye on the measured bridge. The painted surfaces receive real shadows from the spire, rails and fronds. This is a fixed internal lighting study; external sunlight is still being integrated. Sky exposure remains 4×.',
+    group: 'ship', status: 'Lighting review',
+  },
+  {
+    file: 'ship-lighting-bridge-outward',
+    url: 'https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_lighting_v1/bridge_outward_moody.png',
+    title: 'Bridge outlook from the same observer',
+    caption: 'The ship geometry and live sky use the same camera attitude and perspective. Decks remain opaque; changing the lighting does not change the star field.',
+    group: 'ship', status: 'Lighting review',
+  },
+  {
+    file: 'ship-lighting-commons',
+    url: 'https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_lighting_v1/commons_arcade_moody.png',
+    title: 'Under the Commons arcade',
+    caption: 'A warm reading light makes the shaded seating area readable. Teal ribs, painted terraces and the first planted bays are playable; further Commons detail and the other tiers remain unfinished.',
+    group: 'ship', status: 'Lighting review',
+  },
+  {
     file: 'sky-rest.jpg',
     title: 'At rest, looking toward the galactic centre',
     caption:
