@@ -35,5 +35,10 @@ jobs:
           sudo install /tmp/godot/Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
           godot --headless --version
 
+      - name: Check transit replay before full suite
+        run: |
+          make deps
+          AILANG=ailang python3 tools/replay.py --case m4_transit_harness
+
       - name: make test
         run: make test
