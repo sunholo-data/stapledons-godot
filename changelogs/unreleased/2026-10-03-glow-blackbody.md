@@ -23,7 +23,7 @@
     The shader reads T and efficacy from Blackbody's existing colour lookup (`efficacy_lut`,
     `colour_lut`), which is finite and tested over 1e-3 K to 1e9 K.
   - **Goldens.** G-M4-4 (d) now checks the blackbody chain at 0.999c and at the cap. The new
-    G-M4-5 compares the GPU colour ramp against the CPU at 10 temperatures. The worst
+    G-M4-6 compares the GPU colour ramp against the CPU at 10 temperatures. The worst
     difference is 0.07 %.
   - **ε comparison sheet.** `make glow-eps-sheet` renders the bridge interior and the forward
     sky at 0.99c, 0.995c, 0.999c, 0.9999c and the cap, for each candidate ε, through the eye
@@ -31,3 +31,7 @@
     published copy is `gs://stapledons-voyage-assets/refs/glow/eps_compare.jpg`.
   - **Review captures.** The M4.2 captures no longer use the probe's "glow preview" poles,
     because the sim now owns the glow values.
+
+The blackbody spectrum is the canon’s labelled game stand-in for the impact
+cascade, not a claim that real GeV cascades yield Planck radiation. Plate
+projection retains G-M4-5; the combined spectral colour ramp is G-M4-6.

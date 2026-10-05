@@ -361,11 +361,11 @@ and captures for Mark.
   value at cosθ = 1 is 4 × `glowInwardFlux`. The sim emits
   `ship.ism.glow_pole_w_m2` = `glowEmittanceAt(…, 1.0)`. The shader and the
   GDScript CPU reference `glow_profile(glow_pole_w_m2, cos_theta)` mirror the
-  package. **Spectrum (D-30):** a blackbody at T = T_pole cos^¼ θ, with
+  package. **Spectrum (D-30):** the canon uses a blackbody as a game stand-in for the impact cascade, not a claim that real GeV cascades produce Planck radiation. See higgs-bubble.md §6 in the design repo. The stand-in is a blackbody at T = T_pole cos^¼ θ, with
   T_pole = `ship.ism.glow_pole_k` = `glowTemperatureAt(…, 1.0)` (relativity
   0.8.0); the overlay draws E/π × η(T) × colour(T) through Blackbody's colour
   lookup (`glowRadianceAt`, `glowEfficacyAt`, `glowLuminanceAt`;
-  `interior/forward_glow.gd`, G-M4-5). The overlay converts W/m² to scene radiance with M1.5's
+  `interior/forward_glow.gd`, G-M4-6). The overlay converts W/m² to scene radiance with M1.5's
   photometric exposure, the one used for stars, so the glow's brightness
   follows from the physics plus the one shared exposure, not from a
   hand-tuned gain. It is faint at cruise (ε = 10⁻¹⁰: the 0.99c pole is
@@ -519,7 +519,7 @@ full.
     (9.6288 × 10⁻⁵) and at 0.999999c (1.12508), the ε = 10⁻⁹ poles: the
     target is half precision, and the shape is linear in ε. (d) the
     photometric chain E/π × η(T) × k × colour(T) at 0.999c and the cap
-    within 1 %. **G-M4-5, colour ramp (D-30):** the shader's blackbody
+    within 1 %. **G-M4-6, colour ramp (D-30):** the shader's blackbody
     colour × efficacy at 10 temperatures 800 K..30,000 K within 1 % of
     `ForwardGlow.colour` / `efficacy` (the package's rgbUnitLuminance and
     luminousEfficacy). So the glow's brightness is pinned to ε × the package flux by

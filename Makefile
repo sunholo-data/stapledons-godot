@@ -74,7 +74,6 @@ transit-test:      ## M4.3a: warp intent, 3 s burn pacing, HUD bindings + audit 
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/transit-test.log && grep -q '^transit: [0-9]* passed, 0 failures$$' $(SCRATCH)/transit-test.log || { echo "transit-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/transit-test.log)"; exit 1; }
 	@! grep -rniE "save_game|load_game|ResourceSaver" interior ui || { echo "transit-test: AC3 grep half found a save/load path"; exit 1; }
 
-glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy from sunholo/relativity 0.7.0 (tools/glow_probe), VM = interpreter
 glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy from sunholo/relativity 0.8.0 (tools/glow_probe), VM = interpreter
 	@mkdir -p $(SCRATCH)
 	cd tools/glow_probe && $(AILANG) lock >/dev/null && git checkout -q ailang.lock 2>/dev/null || true
@@ -205,7 +204,7 @@ wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ai
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..5 (composite position, one tonemap, forward pole, glow, glow colour ramp); bridge v2 G-M4-5 plate6 and spectral glow G-M4-6 colour10
+golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
