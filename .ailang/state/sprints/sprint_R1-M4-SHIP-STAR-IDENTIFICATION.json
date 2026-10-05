@@ -1,0 +1,42 @@
+{
+  "sprint_id": "R1-M4-SHIP-STAR-IDENTIFICATION",
+  "status": "in_progress",
+  "approved_by": "Mark, attended 2026-10-05: yep continue",
+  "design_doc": "design_docs/planned/r1/m4-ship-star-identification.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-star-identification-sprint.md",
+  "estimated_total_loc_range": [
+    450,
+    650
+  ],
+  "estimated_sessions": 2,
+  "features": [
+    {
+      "id": "SI-A",
+      "description": "Exact pinned renderer identity and shared factual metadata",
+      "acceptance_criteria": [
+        "SI1"
+      ],
+      "passes": false
+    },
+    {
+      "id": "SI-B",
+      "description": "HoldI visible-star projection, occlusion, card and exact map handoff",
+      "acceptance_criteria": [
+        "SI2",
+        "SI4",
+        "SI5"
+      ],
+      "passes": false
+    },
+    {
+      "id": "SI-C",
+      "description": "GPU alignment, native clicks/export, measured overhead and independent evaluation",
+      "acceptance_criteria": [
+        "SI3",
+        "SI6",
+        "SI7"
+      ],
+      "passes": false
+    }
+  ]
+}
