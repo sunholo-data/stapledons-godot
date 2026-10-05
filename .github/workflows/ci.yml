@@ -35,5 +35,13 @@ jobs:
           sudo install /tmp/godot/Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
           godot --headless --version
 
-      - name: make test
-        run: make test
+      - name: record x86_64 golden for m4_transit_harness (throwaway branch only)
+        run: |
+          make deps
+          python3 tools/replay.py --record m4_transit_harness
+          ls -la tests/replays/m4_transit_harness.state.*
+          cat tests/replays/m4_transit_harness.state.x86_64.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: x86-golden-m4-transit
+          path: tests/replays/m4_transit_harness.state.x86_64.*
