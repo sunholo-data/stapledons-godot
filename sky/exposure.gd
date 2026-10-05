@@ -144,7 +144,9 @@ static func highlight_ev(l_p995:float)->float:
 func update(l_avg: float, l_eye := -1.0, l_p995 := 0.0) -> void:
 	var high:=highlight_ev(l_p995)
 	ev_meter = maxf(metered_ev(l_eye if mode == Mode.EYE and l_eye >= 0.0 else l_avg),high)
-	ev = fixed_ev if fixed else clampf(maxf(mode_ev(l_avg, l_eye),high) + bias, clamp_ev.x, clamp_ev.y)
+	# The readability bias raises dim sky, but adaptive resolved-body protection
+	# remains the final lower EV bound. Fixed EV explicitly bypasses both meters.
+	ev = fixed_ev if fixed else clampf(maxf(mode_ev(l_avg, l_eye) + bias,high), clamp_ev.x, clamp_ev.y)
 
 
 ## Lock at the rest-frame value (l_rest, l_eye_rest: the meters' readings of the same view at beta 0).

@@ -25,9 +25,16 @@ func run()->void:
 			var p99:float=sky.system_view.call("highlight_luminance",sky.camera,Vector2(sky.size))
 			check(id+" physical radiance reaches eye/highlight meter",p99>1.0 and sky.exposure.ev>baseline+10.)
 			check(id+" shared scene-linear highlight target",p99*sky.exposure.k()<=1.01)
+			sky.exposure.bias=-2.;sky.update_exposure()
+			check(id+" approved 4x bias retains automatic highlight protection",p99*sky.exposure.k()<=1.01)
+			check(id+" biased camera mode also protects resolved disc",_camera_mode(sky,p99))
+			sky.exposure.bias=0.
 			check(id+" camera mode protects resolved disc",_camera_mode(sky,p99))
 			sky.exposure.fixed=true;sky.exposure.fixed_ev=baseline;sky.update_exposure()
 			check(id+" explicit fixed EV remains fixed",sky.exposure.ev==baseline)
+			sky.exposure.bias=-2.;sky.update_exposure()
+			check(id+" biased fixed EV remains explicitly locked",sky.exposure.ev==baseline)
+			sky.exposure.bias=0.
 			sky.exposure.fixed=false;sky.exposure.mode=Exposure.Mode.EYE
 			sky.camera.look(PI,0.,0.);sky.update_exposure()
 			check(id+" looking away restores dark-adapted exposure",absf(sky.exposure.ev-baseline)<1e-10)
@@ -40,6 +47,8 @@ func run()->void:
 		check("compact Sun flux is integrated despite sparse disc samples",sky.system_view.compact_meter_sources().size()==1 and sky.exposure.ev>baseline+15.)
 		sky.camera.look(PI,0.,0.);sky.update_exposure()
 		check("compact Sun outside view leaves dark sky unchanged",absf(sky.exposure.ev-baseline)<1e-10)
+		sky.exposure.bias=-2.;sky.update_exposure()
+		check("clear dark sky retains approved 4x brightness",absf(sky.exposure.ev-(baseline-2.))<1e-10)
 		check("metering leaves authoritative sim world unchanged",sim.world==source)
 		sim.stop();sky.queue_free();await process_frame
 	print("planet-meter: %d checks %d failures"%[checks,failures]);quit(1 if failures else 0)
