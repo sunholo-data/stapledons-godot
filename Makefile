@@ -641,10 +641,10 @@ planet-meter-test: import
 	@$(GODOT_SIM) --headless --path . --script tests/test_planet_meter.gd > $(SCRATCH)/planet-meter.log 2>&1; rc=$$?; cat $(SCRATCH)/planet-meter.log; test $$rc = 0 && grep -q '^planet-meter: [0-9]* checks 0 failures$$' $(SCRATCH)/planet-meter.log
 ship-demo-ci: flyby-optics-test planet-rings-test ring-protocol-test planet-meter-test
 solar-departure-capture:
-	@$(GODOT_SIM) --path . --script tools/solar_departure_capture.gd > $(SCRATCH)/solar-departure-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure-capture.log; test $$rc = 0 && grep -q '^solar-departure-capture: OK$$' $(SCRATCH)/solar-departure-capture.log
+	@$(GODOT_SIM) --path . --script tools/solar_departure_capture.gd > $(SCRATCH)/solar-departure-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/solar-departure-capture.log && grep -q '^solar-departure-capture: OK$$' $(SCRATCH)/solar-departure-capture.log
 .PHONY: solar-departure-bench
 solar-departure-bench:
-	@$(GODOT_SIM) --path . --script tools/solar_departure_bench.gd > $(SCRATCH)/solar-departure-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure-bench.log; test $$rc = 0 && grep -q '^solar-departure-bench: OK$$' $(SCRATCH)/solar-departure-bench.log
+	@$(GODOT_SIM) --path . --script tools/solar_departure_bench.gd > $(SCRATCH)/solar-departure-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure-bench.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/solar-departure-bench.log && grep -q '^solar-departure-bench: OK$$' $(SCRATCH)/solar-departure-bench.log
 solar-departure-export-smoke:
 	@mkdir -p $(SCRATCH)/solar-export-home
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/solar-export-home" "$(APP)/Contents/MacOS/$$exe" -- --solar-departure-smoke > $(SCRATCH)/solar-export.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-export.log; test $$rc = 0 && grep -q '^solar-departure-smoke: OK$$' $(SCRATCH)/solar-export.log

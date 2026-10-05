@@ -21,7 +21,7 @@ func _run()->void:
 		var h:Dictionary=world.ship.heading;demo.camera.heading=PackedFloat64Array([h.x,h.y,h.z])
 		demo.look_direction("forward");demo.sky.update_exposure()
 		demo.sky.exposure.fixed_ev=demo.sky.exposure.ev;demo.sky.exposure.fixed=true
-		var pair:={"stop":["Earth","Jupiter","Saturn"][index],"exposure_ev":demo.sky.exposure.ev,"resolved_bodies":demo.sky.system_view.drawn_discs.keys(),"measurements":[]}
+		var pair:={"stop":["Earth","Jupiter","Saturn"][index],"exposure_ev":demo.sky.exposure.ev,"resolved_bodies":Array(demo.sky.system_view.drawn_discs),"measurements":[]}
 		for enabled in [false,true]:
 			demo.sky.system_state=world.system if enabled else {}
 			demo.sky.update_exposure()
