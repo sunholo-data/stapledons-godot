@@ -37,6 +37,8 @@ func run()->void:
     if i%3==0:demo.sky.apply(demo.sky_world);demo._sync_observer()
     demo.sky.finish_exposure_frame(1./60.)
     await process_frame
+   demo._process(0.) # Refresh the HUD from the same authoritative captured state.
+   await process_frame
    await RenderingServer.frame_post_draw
    var name:=phase+"_"+view
    demo.sky.get_texture().get_image().save_png(output.path_join(name+".png"))
