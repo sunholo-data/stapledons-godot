@@ -20,6 +20,10 @@ var camera := FreeLookCamera.new()
 var starfield := Starfield.new()
 var background := SkyBackground.new()
 var exposure := Exposure.new()
+var system_view := SystemView.new() # SD4: same camera/starfield/exposure as catalogue sky
+var system_state := {} # authoritative protocol2.3 section, never synthesised
+var resolved_bodies_supported := true # M5.3 required before moving resolved discs
+var _debug_unit := false
 var eye_meter := SkyMeter.new()
 var glow := MeshInstance3D.new()
 var glow_mat := ShaderMaterial.new()
@@ -64,6 +68,8 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 			push_warning("interior sky: %s" % starfield.last_error)
 	starfield.build() # an empty field still gets its material (goldens add custom stars)
 	add_child(starfield)
+	system_view.setup(starfield, opts.get("planet_textures", true))
+	add_child(system_view)
 	if opts.get("background", true):
 		has_background = background.attach(env, px.y, view_fov)
 	var quad := QuadMesh.new()
@@ -89,6 +95,7 @@ func resize(px: Vector2i) -> void:
 ## The exposure's pixel solid angle and the CMB PSF follow the render height (as main.gd).
 func configure_pixel() -> void:
 	exposure.configure(view_fov, size.y)
+	system_view.set_view(exposure.pixel_rad, size.y)
 	if has_background:
 		background.set_psf(exposure.psf_sigma_rad())
 
@@ -140,6 +147,8 @@ func apply(world: Dictionary) -> void:
 	var params: Variant = world.get("params")
 	if params is Dictionary and params.has("bubble_radius_m"):
 		radius_m = params["bubble_radius_m"]
+	system_state = SimBridge.parse_system(world.get("system"))
+	resolved_bodies_supported = beta == 0.0
 	set_glow_pole(ForwardGlow.pole_of(world))
 
 
@@ -157,6 +166,11 @@ func update_exposure() -> void:
 	starfield.set_floor(exposure.floor_params())
 	if has_background:
 		background.set_scene_exposure(exposure.k())
+	system_view.set_view(exposure.pixel_rad, size.y)
+	system_view.update(system_state, exposure.k())
+	# Unresolved points stay in the shared relativistic starfield. Resolved bodies
+	# require the audited M5.3 inverse warp; do not display rest-only discs in flight.
+	system_view.visible = resolved_bodies_supported and not _debug_unit
 	glow_mat.set_shader_parameter("radius", radius_m)
 	glow_mat.set_shader_parameter("pole", maxf(glow_pole, 0.0))
 	glow_mat.set_shader_parameter("scale", exposure.k() * ForwardGlow.LM_PER_W / PI)
@@ -184,6 +198,8 @@ func _meter_eye() -> float:
 
 ## Unit-gain debug render for G-M4-4 (W/m^2 in a linear float target, no exposure/tonemap).
 func set_debug_unit(on: bool) -> void:
+	_debug_unit = on
+	system_view.visible = resolved_bodies_supported and not on
 	glow_mat.set_shader_parameter("debug_unit", on)
 	use_hdr_2d = on
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR if on else Environment.TONE_MAPPER_AGX
