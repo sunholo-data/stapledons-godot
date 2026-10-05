@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkstapledons_voyage_site=self.webpackChunkstapledons_voyage_site||[]).push([[6889],{6666(e){e.exports=JSON.parse('{"authors":[{"name":"Sunholo","title":"Stapledon\'s Voyage team","url":"https://www.sunholo.com","imageURL":"https://ailang.sunholo.com/img/favicon.ico","key":"sunholo","page":null,"count":9}]}')}}]);
