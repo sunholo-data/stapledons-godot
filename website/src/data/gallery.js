@@ -2,6 +2,35 @@
 // game; captions say what produced it and what it shows. An optional `status`
 // marks captures from work still in review, so nothing reads as shipped early.
 const GALLERY = [
+  {"file": "solar-earth_start", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v2/earth_start.png", "title": "Earth beside the bridge", "caption": "The close tour starts at two measured Earth radii from its centre. The ship and sky share the standing observer. Earth uses the Earth–Moon barycentre approximation; this is an inertial stop.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-sun_arrival", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v2/sun_arrival.png", "title": "Close Sun stop", "caption": "The measured solar disc at three solar radii. This kinematic review omits gravity and thermal hazards; the Sun is a uniform blackbody emitter, and external ship illumination remains unfinished.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-jupiter_arrival", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v2/jupiter_arrival.png", "title": "Jupiter fills the outlook", "caption": "A continuous committed journey brakes to two measured Jupiter radii. A smooth stationary turn places the planet beside the bridge; the moons keep their ephemerides and may lie outside this view.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-saturn_arrival", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v2/saturn_arrival.png", "title": "Saturn’s close ring view", "caption": "The stop stays outside Saturn’s measured ring envelope. Ring tilt, opaque decks and the same perspective determine what the captain can see. This is a stop at rest, not a gravity-bound orbit.", "group": "ship", "status": "Demo review"},
+  {"file": "ship-grounded-contact", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_grounded_v2/grounded_contact.png", "title": "Captain and bridge meet the floor", "caption": "The restored painted deck top is at +82 m. The captain casts a stationary three-dimensional shadow volume with both legs meeting the floor; the visible captain remains painted billboard art.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-outbound-v2", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v2/CNS5_3627_cruising.png", "title": "Beyond Saturn toward Alpha Centauri", "caption": "The actual committed outbound leg gathers and shifts the star field ahead. Every boost, cruise and braking phase keeps the same travel heading; no surface detail is invented for Alpha Centauri.", "group": "ship", "status": "Demo review"},
+  {"file": "solar-map_second_departure", "url": "https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v1/map_second_departure.png", "title": "Navigation from the current ship", "caption": "A second route starts at the ship’s Alpha Centauri endpoint rather than resetting to Sol. Recenter, Fit route and Home frame the map; the destination list is the surveyed catalogue.", "group": "ship", "status": "Demo review"},
+
+  {
+    file: 'ship-lighting-bridge-inward',
+    url: 'https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_lighting_v1/bridge_inward_moody.png',
+    title: 'Painted bridge: warm light and cool shadows',
+    caption: 'Standing captain eye on the measured bridge. The painted surfaces receive real shadows from the spire, rails and fronds. This is a fixed internal lighting study; external sunlight is still being integrated. Sky exposure remains 4×.',
+    group: 'ship', status: 'Lighting review',
+  },
+  {
+    file: 'ship-lighting-bridge-outward',
+    url: 'https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_lighting_v1/bridge_outward_moody.png',
+    title: 'Bridge outlook from the same observer',
+    caption: 'The ship geometry and live sky use the same camera attitude and perspective. Decks remain opaque; changing the lighting does not change the star field.',
+    group: 'ship', status: 'Lighting review',
+  },
+  {
+    file: 'ship-lighting-commons',
+    url: 'https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_lighting_v1/commons_arcade_moody.png',
+    title: 'Under the Commons arcade',
+    caption: 'A warm reading light makes the shaded seating area readable. Teal ribs, painted terraces and the first planted bays are playable; further Commons detail and the other tiers remain unfinished.',
+    group: 'ship', status: 'Lighting review',
+  },
   {
     file: 'sky-rest.jpg',
     title: 'At rest, looking toward the galactic centre',

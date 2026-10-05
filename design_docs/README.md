@@ -49,3 +49,4 @@ design_docs/
 | [r1/m4-first-journey.md](planned/r1/m4-first-journey.md) | Planned 2026-10-01: OQ1–7 resolved (D-12, D-14); new NQ1/NQ3 have defaults; Track B waits on art stop S2; depends on M2 |
 | [r1/sky-frame-d28.md](implemented/r1/sky-frame-d28.md) | Implemented 2026-10-03 (D-28, PR `fix/sky-mirror`, awaiting Mark's render review): one right-handed galactic → world map (`SkyFrame`), the M1 sky un-mirrored, the interior flip removed, starboard = l 270 |
 | [r1/m5-planets.md](planned/r1/m5-planets.md) | **Approved** 2026-10-03 (Mark, attended; D-26, queue row 6c): flyby player-facing, new package `sunholo/celestial`, 2k textures, light confirm for short in-system legs; awaiting sprint plan |
+| [r1/m4-ship-geometry-demo.md](planned/r1/m4-ship-geometry-demo.md) | Approved, implementation in progress: correct bridge overlook, whole-ship pullback and one-tier lift; [sprint](planned/r1/m4-ship-geometry-demo-sprint.md) |
