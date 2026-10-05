@@ -17,6 +17,8 @@ const SYSTEM_MINOR := 3
 ## plan's journey.plan carries target_kind, intercept and pass or hold
 ## (parse_plan_nav()). Asked for by setting `want_minor = NAV_MINOR`.
 const NAV_MINOR := 4
+## 2.5: exact recorded journey departure for map route framing.
+const DEPARTURE_MINOR := 5
 
 var _pipe: FileAccess
 var _stderr: FileAccess

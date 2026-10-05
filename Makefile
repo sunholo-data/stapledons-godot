@@ -608,3 +608,44 @@ current-ship-export-smoke:
 	@mkdir -p $(SCRATCH)/current-ship-export-home
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/current-ship-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 180 > $(SCRATCH)/current-ship-export.log 2>&1; rc=$$?; cat $(SCRATCH)/current-ship-export.log; test $$rc = 0 && grep -q '^current-ship-startup: OK live-rest captain-eye single-navigation$$' $(SCRATCH)/current-ship-export.log
 publish-dev: current-ship-export-smoke
+
+.PHONY: ship-movement-test map-origin-test ship-planets-test ship-lighting-capture ship-lighting-test ship-lighting-bench
+ship-movement-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_movement.gd > $(SCRATCH)/ship-movement.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-movement.log; test $$rc = 0 && grep -q '^ship-movement: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-movement.log
+map-origin-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_map_origin.gd > $(SCRATCH)/map-origin.log 2>&1; rc=$$?; cat $(SCRATCH)/map-origin.log; test $$rc = 0 && grep -q '^map-origin: [0-9]* passed, 0 failures$$' $(SCRATCH)/map-origin.log
+ship-planets-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_planets.gd > $(SCRATCH)/ship-planets.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-planets.log; test $$rc = 0 && grep -q '^ship-planets: [0-9]* passed, 0 failed$$' $(SCRATCH)/ship-planets.log
+ship-lighting-capture:
+	@$(GODOT_SIM) --path . --script tools/ship_lighting_capture.gd > $(SCRATCH)/ship-lighting-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-lighting-capture.log; test $$rc = 0 && grep -q '^ship-lighting-capture: OK$$' $(SCRATCH)/ship-lighting-capture.log
+ship-lighting-test: ship-lighting-capture
+ship-lighting-bench:
+	$(GODOT_SIM) --path . --script tools/ship_lighting_bench.gd
+ship-demo-ci: ship-movement-test map-origin-test ship-planets-test
+
+.PHONY: catalogue-coverage-test solar-departure-test
+catalogue-coverage-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_catalogue_coverage.gd > $(SCRATCH)/catalogue-coverage.log 2>&1; rc=$$?; cat $(SCRATCH)/catalogue-coverage.log; test $$rc = 0 && grep -q '^catalogue-coverage: [0-9]* passed, 0 failures$$' $(SCRATCH)/catalogue-coverage.log
+solar-departure-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_solar_departure.gd > $(SCRATCH)/solar-departure.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure.log; test $$rc = 0 && grep -q '^solar-departure: [0-9]* passed, 0 failures$$' $(SCRATCH)/solar-departure.log
+ship-demo-ci: catalogue-coverage-test solar-departure-test
+
+.PHONY: flyby-optics-test planet-rings-test ring-protocol-test planet-meter-test solar-departure-capture solar-departure-export-smoke
+flyby-optics-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_flyby_optics.gd > $(SCRATCH)/flyby-optics.log 2>&1; rc=$$?; cat $(SCRATCH)/flyby-optics.log; test $$rc = 0 && grep -q '^flyby-optics: [0-9]* checks, 0 failures$$' $(SCRATCH)/flyby-optics.log
+planet-rings-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_planet_rings.gd > $(SCRATCH)/planet-rings.log 2>&1; rc=$$?; cat $(SCRATCH)/planet-rings.log; test $$rc = 0 && grep -q '^planet-rings: [0-9]* checks 0 failures$$' $(SCRATCH)/planet-rings.log
+ring-protocol-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_ring_protocol.gd > $(SCRATCH)/ring-protocol.log 2>&1; rc=$$?; cat $(SCRATCH)/ring-protocol.log; test $$rc = 0 && grep -q '^ring-protocol: 0 failures$$' $(SCRATCH)/ring-protocol.log
+planet-meter-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_planet_meter.gd > $(SCRATCH)/planet-meter.log 2>&1; rc=$$?; cat $(SCRATCH)/planet-meter.log; test $$rc = 0 && grep -q '^planet-meter: [0-9]* checks 0 failures$$' $(SCRATCH)/planet-meter.log
+ship-demo-ci: flyby-optics-test planet-rings-test ring-protocol-test planet-meter-test
+solar-departure-capture:
+	@$(GODOT_SIM) --path . --script tools/solar_departure_capture.gd > $(SCRATCH)/solar-departure-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure-capture.log; test $$rc = 0 && grep -q '^solar-departure-capture: OK$$' $(SCRATCH)/solar-departure-capture.log
+.PHONY: solar-departure-bench
+solar-departure-bench:
+	@$(GODOT_SIM) --path . --script tools/solar_departure_bench.gd > $(SCRATCH)/solar-departure-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-departure-bench.log; test $$rc = 0 && grep -q '^solar-departure-bench: OK$$' $(SCRATCH)/solar-departure-bench.log
+solar-departure-export-smoke:
+	@mkdir -p $(SCRATCH)/solar-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/solar-export-home" "$(APP)/Contents/MacOS/$$exe" -- --solar-departure-smoke > $(SCRATCH)/solar-export.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-export.log; test $$rc = 0 && grep -q '^solar-departure-smoke: OK$$' $(SCRATCH)/solar-export.log
+publish-dev: solar-departure-export-smoke

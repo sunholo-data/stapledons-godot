@@ -34,7 +34,9 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 			var eye: Array=view.eye_ship_m;var target: Array=view.target_ship_m
 			courtyard_eye=Vector3(eye[0],eye[2],-eye[1])
 			courtyard_target=Vector3(target[0],target[2],-target[1])
-	for name in ["bridge","overlook","mid_lift","commons_courtyard","overview"]:
+	var views:=["bridge","overlook","mid_lift","commons_courtyard","overview"]
+	if demo.solar_tour!=null:views.append("forward_dome")
+	for name in views:
 		demo.set_preset("reset")
 		if name=="mid_lift":
 			demo.lift.board();demo.lift.advance(.81);demo.lift.advance(5.5)
@@ -42,6 +44,7 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 			demo.active_level=1;demo.walk=demo.walk_lower;demo.avatar_pos=courtyard_eye-Vector3.UP*1.7
 			demo.camera_mode="benchmark reference";demo.camera.position=courtyard_eye
 			demo.camera.look_at(courtyard_target);demo._sync_observer()
+		elif name=="forward_dome":demo.look_direction("forward")
 		else:demo.set_preset(name)
 		demo.caption="BENCHMARK %s · warm-up" % name
 		for i in warmup:await demo.get_tree().process_frame

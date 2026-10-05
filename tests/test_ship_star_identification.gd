@@ -69,6 +69,22 @@ func _run() -> void:
 	identify.suppressed=true;identify.set_held(true);check(not identify.held,"modal/benchmark suppression refuses hold")
 	identify.suppressed=false;identify.set_held(true)
 	click.alt_pressed=true;check(not identify.handle_input(click),"Option click remains look");click.alt_pressed=false
+	var planet_sim:=SimBridge.new();planet_sim.want_minor=5
+	check(planet_sim.start() and planet_sim.new_game(17),"actual body fields available for foreground test")
+	var earth:Dictionary={}
+	for body:Dictionary in planet_sim.world.system.bodies:
+		if body.id=="earth":earth=body.duplicate(true)
+	var rel:Vector3=SkyFrame.to_galactic(n*50000.)
+	earth.rel_km={"x":rel.x,"y":rel.y,"z":rel.z}
+	demo.sky.system_view.set_velocity(Vector3.UP,0.,1.,1.)
+	demo.sky.system_view.update({"bodies":[earth]},demo.sky.exposure.k())
+	identify.update_candidates()
+	check(identify.candidates.is_empty(),"opaque astronomical globe masks I rings and clicks")
+	rel=SkyFrame.to_galactic(n*50000.+demo.sky.camera.screen_right()*15000.)
+	earth.rel_km={"x":rel.x,"y":rel.y,"z":rel.z}
+	demo.sky.system_view.update({"bodies":[earth]},demo.sky.exposure.k());identify.update_candidates()
+	check(identify.candidates.size()==1,"clear sky beside planet retains known star")
+	demo.sky.system_view.update({},demo.sky.exposure.k());planet_sim.stop()
 	var blocker := MeshInstance3D.new();var box := BoxMesh.new();box.size=Vector3(2,2,.2);blocker.mesh=box
 	demo.geometry.add_child(blocker);blocker.position=demo.camera.position-demo.camera.basis.z*10.;blocker.basis=demo.camera.basis
 	for child in demo.geometry.get_children():

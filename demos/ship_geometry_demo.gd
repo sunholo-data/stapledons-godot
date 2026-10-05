@@ -5,6 +5,10 @@ const Camera := preload("res://demos/ship_demo_camera.gd")
 const Benchmark := preload("res://demos/ship_demo_benchmark.gd")
 const Commons := preload("res://demos/ship_commons.gd")
 const Identification := preload("res://ui/ship_star_identification.gd")
+const Lighting := preload("res://demos/ship_lighting.gd")
+const SolarDeparture := preload("res://demos/solar_departure.gd")
+const WALK_SPEED_MPS := 3.5
+var lighting:Dictionary={}
 var star_identification: Control
 var benchmark := Benchmark.new()
 var setup_options := {}
@@ -44,10 +48,15 @@ var navigation_window: Window
 var live_journey := false
 var journey_auto_tick := true
 var _journey_accum := 0.
+var solar_tour: RefCounted
+var solar_pause := Button.new()
+var solar_next := Button.new()
+var navigation_button := Button.new()
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
 	if OS.get_cmdline_user_args().has("--ship-identification-smoke"):_identification_smoke.call_deferred()
+	if OS.get_cmdline_user_args().has("--solar-departure-smoke"):_solar_departure_smoke.call_deferred()
 func asset(file: String) -> String:
 	var source := "res://assets/ship_demo/"+file
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
@@ -62,12 +71,8 @@ func setup(opts := {}) -> bool:
 	add_child(geometry_view);geometry_view.add_child(geometry);geometry.add_child(visual)
 	_collision(visual)
 	geometry_view.add_child(camera);camera.current=true
-	var env:=Environment.new();env.background_mode=Environment.BG_CLEAR_COLOR
-	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;env.ambient_light_color=Color(.65,.70,.78);env.ambient_light_energy=.65
-	env.tonemap_mode=Environment.TONE_MAPPER_AGX
-	var we:=WorldEnvironment.new();we.environment=env;geometry.add_child(we)
-	var light:=DirectionalLight3D.new();light.rotation_degrees=Vector3(-45,-25,0);light.light_energy=1.3;geometry.add_child(light)
-	var fill:=DirectionalLight3D.new();fill.rotation_degrees=Vector3(-20,155,0);fill.light_energy=.65;geometry.add_child(fill)
+	lighting=Lighting.install(geometry)
+	set_lighting(opts.get("lighting","moody"))
 	for file in ["walk_bridge.glb","walk_lower.glb"]:
 		var n:=AreaBundle.load_glb(asset(file));_walk_nodes.append(n)
 	walk_bridge=WalkArea.from_scene(_walk_nodes[0],.35);walk_lower=WalkArea.from_scene(_walk_nodes[1],.35);walk=walk_bridge
@@ -112,9 +117,22 @@ func _hud() -> void:
 	var control_button:=Button.new();control_button.text="Controls [Tab] · 5 rest / 6 cruise · 7 forward / 8 side / 9 aft · H sky only"
 	control_button.add_theme_font_size_override("font_size",12)
 	control_button.pressed.connect(toggle_controls);hud.add_child(control_button)
-	var navigation:=Button.new();navigation.text="Navigation [M] · select destination and hold to commit"
-	navigation.add_theme_font_size_override("font_size",12)
-	navigation.pressed.connect(open_navigation);hud.add_child(navigation)
+	navigation_button.text="Navigation [M] · select destination and hold to commit"
+	navigation_button.add_theme_font_size_override("font_size",12)
+	navigation_button.pressed.connect(open_navigation);hud.add_child(navigation_button)
+	var tour_row:=HBoxContainer.new();hud.add_child(tour_row)
+	var solar_start:=Button.new();solar_start.text="New Solar departure · Earth → Jupiter → Saturn → Alpha Centauri"
+	solar_start.add_theme_font_size_override("font_size",12)
+	solar_start.pressed.connect(start_solar_departure);tour_row.add_child(solar_start)
+	solar_pause.text="Pause tour";solar_pause.visible=false
+	solar_pause.pressed.connect(func()->void:
+		if solar_tour!=null:solar_tour.paused=not solar_tour.paused
+		solar_pause.text="Resume tour" if solar_tour!=null and solar_tour.paused else "Pause tour")
+	tour_row.add_child(solar_pause)
+	solar_next.text="Next stop";solar_next.visible=false
+	solar_next.pressed.connect(func()->void:
+		if solar_tour!=null:solar_tour.advance();_apply_journey_world())
+	tour_row.add_child(solar_next)
 	hud.add_child(controls);controls.visible=false
 	var row:=HBoxContainer.new();controls.add_child(row)
 	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Reference rim [4]","rim"],["Reset [R]","reset"]]:
@@ -165,7 +183,7 @@ func reference_view(radius: float, tilt: float) -> void:
 	camera.follow(Vector3(radius*2/sqrt(5.),82,radius/sqrt(5.)),-tilt,.463648,0.)
 	_sync_observer()
 func set_sky_state(name: String) -> bool:
-	if benchmark.running or live_journey or not sky_states.has(name):return false
+	if benchmark.running or live_journey or solar_tour!=null or not sky_states.has(name):return false
 	sky_state=name;sky_world=sky_states[name].duplicate(true)
 	var h:Dictionary=sky_world.ship.heading
 	camera.heading=PackedFloat64Array([h.x,h.y,h.z])
@@ -186,7 +204,20 @@ func toggle_sky_only() -> void:
 	if benchmark.running:return
 	sky_only=not sky_only;geometry_view.render_target_update_mode=SubViewport.UPDATE_DISABLED if sky_only else SubViewport.UPDATE_ALWAYS
 	_rects[1].visible=not sky_only
+func walk_motion(move: Vector2,delta: float) -> void:
+	var forward: Vector3=-camera.basis.z;forward.y=0;forward=forward.normalized()
+	var right: Vector3=camera.basis.x;right.y=0;right=right.normalized()
+	var displacement:Vector3=(right*move.x+forward*move.y).normalized()*WALK_SPEED_MPS*maxf(delta,0.)
+	# Endpoint-only stepping can tunnel across the lift opening after a stall.
+	var steps:int=maxi(1,ceili(displacement.length()/maxf(.05,walk.radius*.5)))
+	for step in steps:avatar_pos=walk.step(avatar_pos,displacement/steps)
+func set_lighting(profile:String)->void:
+	Lighting.apply(lighting,profile)
+func lighting_manifest()->Dictionary:
+	return Lighting.manifest(lighting)
 func _process(delta: float) -> void:
+	if solar_tour!=null:solar_next.disabled=live_journey or solar_tour.complete or not solar_tour.failed.is_empty()
+	navigation_button.text="Navigation [M] · pauses tour for browsing" if solar_tour!=null else "Navigation [M] · select destination and hold to commit"
 	if not ready_ok:return
 	if journey_map!=null and journey_auto_tick and not benchmark.running:
 		_journey_accum=minf(_journey_accum+delta,4./GalaxyMap.TICK_HZ)
@@ -195,9 +226,7 @@ func _process(delta: float) -> void:
 			journey_tick()
 	if auto and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()):
 		var move:=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_W))-float(Input.is_physical_key_pressed(KEY_S)))
-		var forward: Vector3=-camera.basis.z;forward.y=0;forward=forward.normalized()
-		var right: Vector3=camera.basis.x;right.y=0;right=right.normalized()
-		avatar_pos=walk.step(avatar_pos,(right*move.x+forward*move.y).normalized()*2.2*delta)
+		walk_motion(move,delta)
 	if lift!=null:lift.advance(delta if auto else 0.)
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
@@ -354,10 +383,16 @@ func _identification_smoke() -> void:
 
 ## Separate session: this demo never touches main.gd's active voyage.
 func open_navigation() -> void:
+	if solar_tour!=null:
+		solar_tour.paused=true;solar_pause.text="Resume tour"
+	_create_navigation("sol")
+	if DisplayServer.get_name()!="headless" and navigation_window!=null:navigation_window.popup_centered()
+func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=2
-		if not journey_sim.start() or not journey_sim.new_game(424242,"sol",false,{"standoff_au":1000.}):
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
+		var params:Dictionary={"standoff_au":1000.}
+		if not journey_sim.start() or not journey_sim.new_game(424242,scenario,false,params):
 			caption="Navigation unavailable: "+journey_sim.last_error
 			journey_sim.stop();journey_sim=null;return
 		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation · M / Esc return aboard"
@@ -374,8 +409,27 @@ func open_navigation() -> void:
 		journey_map.attach(journey_sim)
 		var acen:=journey_map.index_of("CNS5:3627")
 		if journey_map.preselect(acen):journey_map.frame_star(acen)
-		journey_tick()
-	if DisplayServer.get_name()!="headless":navigation_window.popup_centered()
+		if scenario=="sol":journey_tick()
+func start_solar_departure() -> bool:
+	if benchmark.running or live_journey or (journey_sim!=null and journey_sim.world.get("journey",{}).get("state","")=="committed"):
+		caption="Finish the committed journey before starting a new Solar demo.";return false
+	if journey_sim!=null:journey_sim.stop()
+	if navigation_window!=null:
+		remove_child(navigation_window);navigation_window.queue_free()
+	journey_sim=null;journey_map=null;navigation_window=null;solar_tour=null
+	_create_navigation("solar_departure")
+	if journey_map==null:return false
+	solar_tour=SolarDeparture.new()
+	var destination_index:int=journey_map.index_of("CNS5:3627")
+	var destination:Dictionary=journey_map.catalogue[destination_index].duplicate(true)
+	destination.index=destination_index
+	if not solar_tour.attach(journey_sim,destination):
+		caption="Solar departure could not attach to the new session.";solar_tour=null;return false
+	journey_map.guided_read_only=true
+	solar_pause.visible=true;solar_next.visible=true;solar_pause.text="Pause tour"
+	sky_state="live";caption="Guided tour: 12-second stops; Next stop skips a dwell. M pauses for navigation."
+	_apply_journey_world();look_direction("forward");close_navigation()
+	return true
 func close_navigation() -> void:
 	if navigation_window==null:return
 	journey_map.close_commit_dialog();navigation_window.hide()
@@ -387,16 +441,41 @@ func open_identified_star(id: String) -> void:
 func journey_tick() -> bool:
 	if journey_map==null:return false
 	var was_committed:=live_journey
-	if not journey_map.tick():
+	var ok:bool=solar_tour.step() if solar_tour!=null else journey_map.tick()
+	if not ok:
 		caption="Navigation step failed: "+journey_sim.last_error;return false
+	if solar_tour!=null:journey_map.refresh()
+	_apply_journey_world()
+	if live_journey and not was_committed:close_navigation()
+	return true
+func _apply_journey_world()->void:
+	var was_committed:=live_journey
 	live_journey=journey_map.journey_state()=="committed"
 	if live_journey or was_committed or sky_state=="live":
 		sky_state="live";sky_world=journey_sim.world.duplicate(true)
 		var h:Dictionary=sky_world.ship.heading
 		camera.heading=PackedFloat64Array([h.x,h.y,h.z])
 		sky.apply(sky_world);_sync_observer()
-	if live_journey and not was_committed:close_navigation()
-	return true
 func journey_label() -> String:
+	if solar_tour!=null:return solar_tour.status_text()+ (" · PAUSED" if solar_tour.paused else "")
 	if sky_state!="live":return "FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT"
 	return "LIVE %s · %.6fc\nEarth +%.8f yr / ship +%.8f yr · Variable time compression · %s ship-yr/real-s \nM navigation · 7 look forward" % [sky_world.ship.phase,sky.beta,sky_world.clock.year,sky_world.clock.tau,GalaxyMap.sci(journey_map.pacing.rate)]
+
+func _solar_departure_smoke()->void:
+	auto=false;journey_auto_tick=false
+	var ok:=start_solar_departure()
+	if ok:
+		ok=solar_tour.advance() and journey_tick() and live_journey
+		var before:Dictionary=journey_sim.world.duplicate(true)
+		ok=not start_solar_departure() and journey_sim.world==before and ok
+		open_navigation()
+		ok=solar_tour.paused and journey_map.guided_read_only and not journey_map.open_commit_dialog() and ok
+		close_navigation();solar_tour.paused=false
+		for tick in 20:ok=journey_tick() and ok
+		ok=sky.system_view.drawn_points.has("saturn") and sky_world.ship.phase=="boosting" and sky_world.clock.tau>before.clock.tau and ok
+		for frame in 12:await get_tree().process_frame
+	print("solar-departure-smoke: %s" %("OK" if ok else "FAIL"))
+	var tree:=get_tree()
+	solar_tour=null
+	tree.create_timer(.1).timeout.connect(tree.quit.bind(0 if ok else 1),CONNECT_ONE_SHOT)
+	queue_free()

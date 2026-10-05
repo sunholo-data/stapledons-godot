@@ -532,6 +532,14 @@ export type PlanView = { target: Target, distance: float, profile: string, fellB
   energy: Energy, ism: Ism, cmbForwardK: float }
 export type JourneyView = { state: string, planId: int, plan: Option[PlanView] }
 
+-- Exact plan-time position, retained after the ship's arrival rebase. Display
+-- clients must not reconstruct it from rounded headings or target distances.
+export pure func departureOf(w: World) -> Option[Vec3] =
+  match w.journey {
+    Planned(p) => Some(p.from), Committed(c) => Some(c.plan.from),
+    Arrived(c) => Some(c.plan.from), Idle => None
+  }
+
 -- Minutes per Julian year (525,960, exact).
 export pure func minutesPerYear() -> float = julianYearS() / 60.0
 -- The crew's span for "years left" (design §M2.3; placeholder for the crew model).

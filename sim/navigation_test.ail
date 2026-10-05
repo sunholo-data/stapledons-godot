@@ -20,7 +20,7 @@ import ./data/acen (bodies)
 import ./navigation (NavCtx, BodyReq, Leg, NavPlan, Pass, planBody, planBodyN, interceptIterations, residualMax, safetyMinKm, defaultStandoffKm,
   standoffMaxKm, bodyPhiMin, bodyPhiMax, allFacts, stopArrivalT, runOutMarginKm, staleAt)
 import ./core (World, Ticked, Intent, IPlan, IPlanBody, ICommit, Plan, Journey, Planned, Committed, Arrived, newWorld, defaultParams, tick, initShip, position, navOf)
-import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, relativityPin, decodeHello, helloMsg)
+import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, departureMinor, relativityPin, decodeHello, helloMsg)
 
 -- ------------------------------------------------------------ fixtures
 pure func ntAllTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
@@ -283,7 +283,7 @@ export pure func navLines() -> [string] = ntRunLines(newSession(), ntSession(nav
 -- The hello: minor 4 reports the pinned relativity release; 3 and below keep their bytes.
 export pure func checkHello24() -> bool =
   (match decodeHello(serve(newSession(), ntHelloW(navMinor())).reply) { Ok(h) => h.minor == navMinor() && h.relativity == relativityPin(), Err(_) => false })
-  && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == navMinor(), Err(_) => false })
+  && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == departureMinor(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(systemMinor())).reply) { Ok(h) => h.minor == systemMinor() && h.relativity == helloMsg().relativity, Err(_) => false })
   && navMinor() == systemMinor() + 1 && relativityPin() == "0.7.0"
 test "2.4 hello: minor 4 with relativity = the pinned release; 3 keeps the 2.3 hello" { checkHello24() }

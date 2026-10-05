@@ -71,6 +71,10 @@ func update_candidates() -> void:
 		if not Rect2(Vector2.ZERO,px).has_point(point):continue
 		if not sample.has("visible"):sample.visible = StarProjection.visible(field,k,sample,ctx)
 		if not sample.visible:continue
+		# The astronomical renderer has opaque foreground surfaces too.
+		# Ship BVH alone cannot hide a background star behind a planet or Sun.
+		var observed:Vector3=sample.direction
+		if sky.system_view!=null and sky.system_view.visible and sky.system_view.occludes_direction(PackedFloat64Array([observed.x,observed.y,observed.z])):continue
 		var ray: Vector3 = demo.camera.project_ray_normal(point)
 		if not demo.sky_only and occlusion.blocked(demo.camera.global_position,ray):continue
 		candidates.append({id=field.ids[k],point=canvas_to_pixel.affine_inverse()*point,pixel=point,index=k})

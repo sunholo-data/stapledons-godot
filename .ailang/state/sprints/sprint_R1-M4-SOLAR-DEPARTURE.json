@@ -1,0 +1,147 @@
+{
+  "sprint_id": "R1-M4-SOLAR-DEPARTURE",
+  "status": "in_progress",
+  "approved_by": "Mark attended 2026-10-05: ok sounds good; choose easiest camera; lighting is central to game feel",
+  "requested_by": "Mark attended 2026-10-05: make a plan for faster walking, lighting/camera, navigation and Solar System departure",
+  "design_doc": "design_docs/planned/r1/m4-ship-lighting-and-solar-departure.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-lighting-and-solar-departure-sprint.md",
+  "github_issues": [
+    117
+  ],
+  "velocity": {
+    "estimated_total_loc": 2400,
+    "contingency_percent": 30,
+    "estimated_sessions": [
+      10,
+      16
+    ],
+    "note": "Art review, remaining approved M5 work and Air performance separately gated; no duplicated M5 estimate."
+  },
+  "features": [
+    {
+      "id": "SD1",
+      "description": "Faster collision-safe traversal; real ship-origin route/framing and marker",
+      "estimated_loc": 220,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "ship-movement-test and existing input/lift gates",
+        "map-origin-test real A-to-B-to-C route and UI recenter without reset"
+      ],
+      "passes": null,
+      "external_prerequisites": []
+    },
+    {
+      "id": "SD2",
+      "description": "Matched moody lighting and free/near-fixed camera comparison",
+      "estimated_loc": 300,
+      "dependencies": [
+        "SD1"
+      ],
+      "acceptance_criteria": [
+        "ship-lighting-test and opened same-pose captures",
+        "recorded camera/light/sky manifest and shadow profiling"
+      ],
+      "passes": null,
+      "external_prerequisites": []
+    },
+    {
+      "id": "SD3",
+      "description": "Apply reviewed camera policy and atmospheric painted finish",
+      "estimated_loc": 280,
+      "dependencies": [
+        "SD2"
+      ],
+      "acceptance_criteria": [
+        "recorded art/camera decision",
+        "shared-observer and native star-inspection gates pass"
+      ],
+      "passes": null,
+      "external_prerequisites": [],
+      "note": "Mark delegated camera selection; A selected. Finish feedback remains open without blocking the approved first pass."
+    },
+    {
+      "id": "SD4",
+      "description": "Render physical Earth/Sun/planet scene from unified ship observer",
+      "estimated_loc": 220,
+      "dependencies": [
+        "SD3"
+      ],
+      "acceptance_criteria": [
+        "ship-planets-test and package angular-size references",
+        "golden-m5 and opened near-Earth captures"
+      ],
+      "passes": null,
+      "external_prerequisites": [
+        "completed M5 foundations"
+      ]
+    },
+    {
+      "id": "SD5",
+      "description": "Complete reused M5 Saturn rings/shadows and illumination/meter readiness",
+      "estimated_loc": 480,
+      "dependencies": [
+        "SD4"
+      ],
+      "acceptance_criteria": [
+        "M5 extended ring/photometry goldens",
+        "quality/pins and measured external illumination conventions"
+      ],
+      "execution_parts": [
+        "ring and shadow support",
+        "meter and illumination checks"
+      ],
+      "passes": null,
+      "external_prerequisites": [
+        "approved M5.2b and M5.4 work"
+      ]
+    },
+    {
+      "id": "SD6",
+      "description": "Package-driven physical Earth/Jupiter/Saturn itinerary",
+      "estimated_loc": 380,
+      "dependencies": [
+        "SD5"
+      ],
+      "acceptance_criteria": [
+        "solar-departure-test deterministic target/intercept/turn behavior",
+        "safe encounter route, both clocks and no planetary scale/position cheats"
+      ],
+      "passes": null,
+      "external_prerequisites": [
+        "approved M5.5b and required M5 navigation work"
+      ]
+    },
+    {
+      "id": "SD7",
+      "description": "Outbound acceleration and correctly paced flyby presentation",
+      "estimated_loc": 340,
+      "dependencies": [
+        "SD6"
+      ],
+      "acceptance_criteria": [
+        "solar-departure-capture continuous package state",
+        "golden and golden-m5 actual high-speed cases before high-beta encounters"
+      ],
+      "passes": null,
+      "external_prerequisites": [
+        "approved M5.3/M5.6b readiness"
+      ]
+    },
+    {
+      "id": "SD8",
+      "description": "Coverage/provenance, independent evaluation and one verified deployed demo",
+      "estimated_loc": 180,
+      "dependencies": [
+        "SD7"
+      ],
+      "acceptance_criteria": [
+        "catalogue-coverage-test distinguishes measured/unknown/fictional",
+        "independent evaluation, native package and downloaded checksum/site verification",
+        "actual M2 Air status explicitly measured or pending"
+      ],
+      "passes": null,
+      "external_prerequisites": []
+    }
+  ],
+  "camera_decision": "A: painted 3D geometry with real lighting; retain free camera and shared observer. Mood remains art review."
+}

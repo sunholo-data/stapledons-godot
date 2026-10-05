@@ -1,0 +1,46 @@
+module stapledons/sim/solar_departure
+
+-- Bounded explicitly selected demonstration. Only initialize changes the
+-- position, and only for a NEW session: subsequent stops/turns use core.tick.
+-- Earth is the published Earth-Moon barycentre approximation (celestial0.1.0).
+-- No orbit-following force, ephemeris substitution or close-planet teleport.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import pkg/sunholo/celestial/kepler (Vec3, sub, scale, norm)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
+import ./celestial (solSystem, bodyAt, lyKm)
+import ./navigation (BodyReq)
+import ./core (World, Params, Target, Intent, IPlanBody, IPlan, cruisePhiDefault)
+
+export type TourLeg = { id: string, kind: string, cruisePhi: float }
+export pure func approximation() -> string = "Earth position is the Earth-Moon barycentre approximation; inertial stops, not gravity-bound orbits."
+export pure func earthStandoffKm() -> float = 10.0 * 6378.1366
+-- The observer starts on the dayside ten equatorial radii from the centre.
+-- Epoch is the scenario's exact epoch_jd; the normal sol scenario is untouched.
+export pure func initialize(w: World) -> Result[World, string] =
+  if w.tick != 0 || w.ship.motion.tau != 0.0 || w.ship.motion.t != 0.0 then Err("solar_start_requires_new_session")
+  else if w.params.bubbleRadiusM / 1000.0 + 1.1 * 6378.1366 >= earthStandoffKm() then Err("unsafe_solar_start")
+  else match bodyAt(solSystem(), "earth", w.params.epochJd) {
+    None => Err("earth_ephemeris_unavailable"),
+    Some(earth) => {
+      let here = sub(earth.pos, scale(earthStandoffKm() / norm(earth.pos), earth.pos));
+      Ok({w | ship: {w.ship | origin: scale(1.0 / lyKm(), here), heading: scale(1.0 / norm(earth.pos), earth.pos)}})
+    }
+  }
+
+-- Low system cruise speed, inside (not on) the accepted minimum boundary,
+-- with genuine stop intercepts and
+-- default safe standoffs (10 radii or 1.5 outer ring, whichever is larger).
+export pure func legs(p: Params) -> [TourLeg] = [
+  {id: "jupiter", kind: "body", cruisePhi: rapidityOfBeta(0.002)},
+  {id: "saturn", kind: "body", cruisePhi: rapidityOfBeta(0.002)},
+  {id: "CNS5:3627", kind: "star", cruisePhi: cruisePhiDefault(p)}
+]
+pure func legAt(xs: [TourLeg], n: int) -> Option[TourLeg] =
+  if n < 0 then None else match xs { [] => None, x :: rest => if n == 0 then Some(x) else legAt(rest, n - 1) }
+export pure func intentForLeg(w: World, n: int, outbound: Target) -> Option[Intent] =
+  match legAt(legs(w.params), n) {
+    None => None,
+    Some(leg) => if leg.kind == "body" then Some(IPlanBody({id: leg.id, cruisePhi: leg.cruisePhi, mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None}))
+      else if outbound.id == leg.id then Some(IPlan({target: outbound, cruisePhi: leg.cruisePhi, flipG: None})) else None
+  }

@@ -16,10 +16,13 @@ import std/math (floor, floatToInt, intToFloat)
 import pkg/sunholo/relativity/optics (Vec3, norm)
 import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/celestial/rings (RingBand)
+import ./data/sol (Ring, rings)
+import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
-  CqView, cqView, ismNow, dragEnergyJ, withArchive, navOf)
+  CqView, cqView, ismNow, dragEnergyJ, withArchive, navOf, departureOf)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
@@ -54,7 +57,8 @@ export pure func relativityPin() -> string = "0.7.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPin()}
+  if want >= departureMinor() then {helloMsg() | minor: departureMinor(), relativity: relativityPin()}
+  else if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPin()}
   else if want >= systemMinor() then {helloMsg() | minor: systemMinor()} else if want >= 2 then {helloMsg() | minor: 2} else helloMsg()
 -- Protocol 2.3 (M5.1b): a client that asks for minor >= 3 also gets the `system` section
 -- (Sol's bodies as seen from the ship). Tests read the minor from here, never a literal (F4).
@@ -63,7 +67,9 @@ export pure func systemMinor() -> int = 3
 -- plan intent's body form, and a body plan's journey.plan carries target_kind,
 -- intercept, and pass (flyby) or hold (stop). Below 4 a body plan is bad_intent.
 export pure func navMinor() -> int = 4
-pure func sessionMinor(want: int) -> int = if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- 2.5 adds the exact recorded plan departure; older replay bytes are unchanged.
+export pure func departureMinor() -> int = 5
+pure func sessionMinor(want: int) -> int = if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -178,6 +184,14 @@ pure func navFields(n: NavPlan) -> [string] =
                   None => [f("hold", obj([f("body", q(n.bodyId)), f("offset_km", num(n.standoffKm))]))] })
 pure func encodeJourneyNav(j: JourneyView, nav: Option[NavPlan]) -> string =
   match nav { None => encodeJourney(j), Some(n) => obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", \v. obj(planViewFields(v) ++ navFields(n)), j.plan)) }
+pure func encodeJourneyDeparture(w: World) -> string {
+  let j = journeyView(w);
+  let extra = (match navOf(w) { Some(n) => navFields(n), None => [] }) ++ opt("departure", vec, departureOf(w));
+  obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", \v. obj(planViewFields(v) ++ extra), j.plan))
+}
+pure func withDeparture(s: Session, before: World, after: World, x: Extras) -> Extras =
+  if s.minor < departureMinor() then x
+  else { let ja = encodeJourneyDeparture(after); {x | journey: if encodeJourneyDeparture(before) == ja then None else Some(ja)} }
 -- Events: {k} plus the echo's plan fields, a phase crossing {from, to, tau}
 -- the arrival residuals {residual_x, residual_t, residual_phi} or a draw
 -- {stream, n, value} (value: the top 53 bits, an exact JSON integer).
@@ -233,9 +247,28 @@ pure func bodyObj(b: BodyView) -> string =
     f("minnaert_k", num(b.minnaertK)), f("ring_id", q(b.ringId)), f("light_age_s", num(b.lightAgeS)), f("visitable", bool(b.visitable)), f("source", q(b.source))])
 export pure func encodeSystem(v: SystemView) -> string =
   obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)), f("bodies", arr(each(bodyObj, v.bodies)))])
+-- 2.5 exposes the already-cited profiles without changing old system bytes.
+-- Radius km, optical depth and single-scattering albedo come from data/sol;
+-- assumed tints retain their provenance instead of becoming renderer constants.
+pure func bandObj(b: RingBand) -> string =
+  obj([f("r_in_km", num(b.rIn)), f("r_out_km", num(b.rOut)), f("tau", num(b.tau)), f("w0", num(b.w0))])
+pure func ringObj(r: Ring) -> string =
+  obj([f("host", q(r.host)), f("names", strArr(r.names)), f("bands", arr(each(bandObj, r.bands))),
+    f("tint", obj([f("r", num(r.tint.r)), f("g", num(r.tint.g)), f("b", num(r.tint.b))])),
+    f("cite", q(r.cite)), f("tau_cite", q(r.tauCite)), f("w0_cite", q(r.w0Cite)), f("tint_cite", q(r.tintCite))])
+pure func encodeSystemRings(v: SystemView) -> string =
+  obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)),
+    f("bodies", arr(each(bodyObj, v.bodies))), f("rings", arr(each(ringObj, rings())))])
+pure func solarLegObj(leg: TourLeg) -> string =
+  obj([f("id", q(leg.id)), f("kind", q(leg.kind)), f("cruise_phi", num(leg.cruisePhi))])
+pure func solarTour(p: Params) -> string =
+  obj([f("approximation", q(solarApproximation())), f("earth_standoff_km", num(earthStandoffKm())),
+    f("legs", arr(each(solarLegObj, solarLegs(p))))])
 -- system.jd = epoch_jd + Earth time; the ship's galactic position in ly.
 pure func systemOf(w: World) -> SystemView = systemAt(solSystem(), jdAt(w.params.epochJd, w.ship.motion.t), position(w.ship))
-pure func systemFull(s: Session, w: World) -> [string] = if s.minor >= systemMinor() then [f("system", encodeSystem(systemOf(w)))] else []
+pure func systemFull(s: Session, w: World) -> [string] =
+  if s.minor >= departureMinor() then [f("system", encodeSystemRings(systemOf(w)))]
+  else if s.minor >= systemMinor() then [f("system", encodeSystem(systemOf(w)))] else []
 -- Sent on a tick only when it can have changed: the clock (jd) or the ship's position moved.
 pure func withSystem(s: Session, before: World, after: World, x: Extras) -> Extras =
   if s.minor < systemMinor() || (before.ship.motion.t == after.ship.motion.t && encodeVec(position(before.ship)) == encodeVec(position(after.ship)) && before.params.epochJd == after.params.epochJd) then x
@@ -355,7 +388,7 @@ export pure func decodeInput(line: string) -> Result[Input, string] =
 pure func inputOf(t: string, j: Json) -> Result[Input, string] =
     if t == "hello" then bind(req(get(j, "want"), "bad_cmd"), \w. bind(req(natF(w, "major"), "bad_cmd"), \ma. bind(req(natF(w, "minor"), "bad_cmd"), \mi. Ok(GHello({major: ma, minor: mi})))))
     else if t == "new_game" then bind(req(natF(j, "seed"), "bad_game"), \seed. bind(req(getString(j, "scenario"), "bad_game"), \sc.
-      bind(check(sc == "sol", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
+      bind(check(sc == "sol" || sc == "solar_departure", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
       bind(optStr(j, "ai_core", "bad_game"), \core. bind(check(match core { Some(h) => isSha256Hex(h), None => true }, core, "bad_game"), \_c.
       Ok(GNewGame({seed: seed, scenario: sc, diag: diag, params: ps, aiCore: core})))))))))
     -- ailang#1467: `\tick.` would be captured by the imported core.tick, hence `\tk.`
@@ -537,20 +570,25 @@ export pure func serve(s: Session, line: string) -> Served =
     Ok(m) => match m {
       GHello(h) => { session: {s | hello: true, minor: sessionMinor(h.minor)}, reply: encodeHello(helloFor(h.minor)) },
       GQuit => { session: s, reply: "" },
-      GNewGame(g) => if !s.hello then malformed(s, "no_hello") else {
+      GNewGame(g) => if !s.hello then malformed(s, "no_hello") else if g.scenario == "solar_departure" && s.minor < departureMinor() then malformed(s, "bad_game") else {
         let p = applyAll(defaultParams(), g.params);
         match scenarioError(p) {
           Some(c) => malformed(s, c),
           None => match (if s.minor >= 2 then archiveRows(line) else Ok([])) {
             Err(c) => malformed(s, c),
             Ok(rows) => {
-              let w0 = newWorld(g.seed, g.diag, p);
+              let initial = newWorld(g.seed, g.diag, p);
+              match (if g.scenario == "solar_departure" then solarInitialize(initial) else Ok(initial)) {
+              Err(c) => malformed(s, c),
+              Ok(w0) => {
               let w1 = {w0 | ai: {w0.ai | core: match g.aiCore { Some(h) => h, None => "" }}};
               -- below minor 2 the consequence tracking is off: the stream is exactly M2's
               let w = if s.minor >= 2 then withArchive(w1, rows) else {w1 | cq: {w1.cq | on: false}};
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
                 journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)), events: [], refused: [], full: true};
-              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSection(w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w), journey: None }) else encodeState(st) }
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSection(w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []), journey: None }) else encodeState(st) }
+              }
+              }
             }
           }
         }
@@ -564,7 +602,7 @@ export pure func serve(s: Session, line: string) -> Served =
             ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
             ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), rng: changed(encodeRng, w.rng, next.rng), params: None,
             ai: changed(encodeAiView, aiView(w.ai), aiView(next.ai)), events: t.events, refused: t.refused, full: false };
-          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withSystem(s, w, next, cqExtras(w, next))) else encodeState(state) }
+          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(w, next)))) else encodeState(state) }
         }
       }
     }

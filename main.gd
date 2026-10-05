@@ -68,7 +68,7 @@ const SKY_NOTE := "sky background not bundled in this build"
 
 ## One player entry; explicit legacy/capture modes remain reference tools.
 static func current_ship_entry(args: Dictionary) -> bool:
-	return args.is_empty() or args.has("ship-demo") or args.has("ship-demo-smoke") or args.has("ship-identification-smoke")
+	return args.is_empty() or args.has("ship-demo") or args.has("ship-demo-smoke") or args.has("ship-identification-smoke") or args.has("solar-departure-smoke")
 func _start_current_ship(live_start: bool) -> void:
 	UiScale.configure(get_window(),not live_start)
 	var demo: Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
@@ -85,7 +85,7 @@ func _start_current_ship(live_start: bool) -> void:
 func _ready() -> void:
 	var args := _user_args()
 	if current_ship_entry(args):
-		_start_current_ship.call_deferred(not (args.has("ship-demo-smoke") or args.has("ship-identification-smoke")))
+		_start_current_ship.call_deferred(not (args.has("ship-demo-smoke") or args.has("ship-identification-smoke") or args.has("solar-departure-smoke")))
 		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
@@ -144,6 +144,7 @@ func _ready() -> void:
 ## galaxy_map_arrived.png, adding their readouts to the panel dump.
 func _run_map(args: Dictionary) -> void:
 	var capture: bool = args.has("map-capture") or args.has("movie")
+	if not capture:sim.want_minor=SimBridge.DEPARTURE_MINOR
 	if capture:
 		get_window().size = Vector2i(1600, 900)
 	sim.record_path = args.get("record", "")
@@ -236,7 +237,7 @@ func _run_interior(args: Dictionary) -> void:
 		get_tree().quit(2)
 		return
 	sim.record_path = args.get("record", "")
-	sim.want_minor = 2
+	sim.want_minor = 2 if capture or smoke else SimBridge.DEPARTURE_MINOR
 	var ai := AiSession.new(args)
 	add_child(ai)
 	if not sim.start() or not sim.new_game(SEED, "sol", false, {"standoff_au": STANDOFF_AU}, AiSession.ai_core()) or not ai.attach(sim):
