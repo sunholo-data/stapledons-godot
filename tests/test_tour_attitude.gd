@@ -13,6 +13,9 @@ func _run()->void:
 	if demo.solar_tour==null:quit(1);return
 	var clock:Dictionary=demo.journey_sim.world.clock.duplicate(true)
 	var position:Dictionary=demo.journey_sim.world.ship.pos.duplicate(true)
+	var initial_observer:Basis=demo.sky.camera.global_basis
+	demo._process(0.)
+	check(initial_observer.is_equal_approx(demo.sky.camera.global_basis),'first tour frame preserves the initial observer, without an old-heading jump')
 	demo._update_tour_attitude(0.)
 	check(demo.solar_tour.attitude_hold,'initial side-view turn holds simulation')
 	demo.solar_tour.paused=true
@@ -33,11 +36,31 @@ func _run()->void:
 	demo._update_tour_attitude(0.)
 	check(demo.solar_tour.attitude_hold and not demo.live_journey,'departure turns before committing')
 	for frame in 179:
-		demo._update_tour_attitude(1./60.);demo.journey_tick()
+		demo._process(1./60.);demo.journey_tick()
 	check(demo.journey_sim.world.clock==clock and demo.journey_sim.world.ship.pos==position,'prepared turn cannot advance or teleport ship')
-	demo._update_tour_attitude(1./60.)
+	var earth_before:=observer_ray(demo,"earth")
+	demo._process(1./60.)
 	check(demo.live_journey and demo.solar_tour.pending_index<0,'commit follows complete turn')
+	var first_physical_seconds:float=(demo.journey_sim.world.clock.tau-clock.tau)*31557600.
+	check(absf(first_physical_seconds-.05)<1e-6,'actual commitment advances one real-time display tick, not 102 compressed seconds')
+	var first_angle:=rad_to_deg(earth_before.angle_to(observer_ray(demo,"earth")))
+	check(first_angle<.2,'actual near-Earth departure commitment has no compressed first-frame jump')
+	var max_earth_step:=first_angle
+	for tick in 60:
+		var previous_ray:=observer_ray(demo,"earth")
+		demo.journey_tick();demo._process(0.)
+		max_earth_step=maxf(max_earth_step,rad_to_deg(previous_ray.angle_to(observer_ray(demo,"earth"))))
+	print('actual departure max Earth angular step ',max_earth_step,' deg; firstcommit ',first_angle)
+	check(max_earth_step<3.,'first three departure seconds bound actual near-Earth angular steps below three degrees')
 	var expected:=ShipFrame.ship_basis(demo.camera.heading)
 	check(demo.camera.attitude_basis==expected,'travel returns exact forward-pole frame without turnover flip')
 	demo.queue_free();await process_frame
 	print('tour-attitude: %d failures'%failures);quit(1 if failures else 0)
+
+func observer_ray(demo:Node,id:String)->Vector3:
+	for body:Dictionary in demo.sky_world.system.bodies:
+		if body.id==id:
+			var v:=Planets.world_of(body.rel_km)
+			var ray:=Relativity.aberrate(Vector3(v[0],v[1],v[2]).normalized(),demo.sky.heading_world,demo.sky.beta)
+			return demo.sky.camera.global_basis.transposed()*ray
+	return Vector3.ZERO

@@ -1,6 +1,6 @@
 // The current downloadable build. Update this one file when a new build is published
 // (and add a News post for its release, see news/README.md).
-const TAG = 'v0.4.0-dev.13-stable-sky';
+const TAG = 'v0.4.0-dev.14-manual-sky';
 const REPO = 'https://github.com/sunholo-data/stapledons-godot';
 const ZIP = `StapledonsVoyage-${TAG}-macos.zip`;
 

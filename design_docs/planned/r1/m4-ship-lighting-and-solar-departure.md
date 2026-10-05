@@ -132,11 +132,25 @@ fixed EV and unit-gain reference paths retain their existing semantics.
 Regression commands must reproduce stable Earth/Jupiter exposure under repeated
 simulation updates and verify bounded, frame-rate-independent look-away changes.
 
+**Superseded by attended laptop review, 2026-10-05:** Mark rejects automatic
+exposure in the demo and approves manual exposure instead. The current ship
+must use a fixed dark-sky reference plus the selected manual offset throughout
+camera turns, planet approaches and stellar arrival. Default remains the approved
+4× display aid. Manual dimming may recover bright surface detail; clipping at a
+star-friendly setting is accepted. Physical source radiance and SR calculations
+remain unchanged. Verify the actual Sol/Solar/Alpha arrival views, not only
+synthetic fixed-camera fixtures. The optional metering subsystem is not the
+current-demo display policy.
+
 The guided tour reserves 30 wall seconds for boost, 20 for any cruise and 90 for
 braking. During braking, presentation time compression decreases progressively
 so the last tenth of physical braking receives about 28 wall seconds. AILANG
 still owns acceleration, braking onset, ephemerides, clocks and endpoints; no
 planet is enlarged or moved. Ordinary map journeys retain their current pacing.
+The manual-exposure corrective follow-up also eases guided departure compression
+from real time over three display seconds, extending boost to approximately
+32 seconds. It initializes the initial observer from the new session heading;
+the previous session heading must not appear for an intermediate frame.
 Acceptance: `make tour-pacing-test solar-departure-test ship-demo-live-test`, with
 native review captures showing the approach. Mark also requests checking the
 Alpha Centauri radius/finite-disc integration: the current source contains

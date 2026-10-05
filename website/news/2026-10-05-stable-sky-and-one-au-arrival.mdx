@@ -1,31 +1,33 @@
 ---
-title: "Stable sky and a one-AU arrival: v0.4.0-dev.13"
+title: "Manual sky exposure and a one-AU arrival: v0.4.0-dev.14"
 date: 2026-10-05
 authors: [sunholo]
 tags: [release, journey, planets, art]
-release_tag: "v0.4.0-dev.13-stable-sky"
-release_url: "https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.13-stable-sky"
+release_tag: "v0.4.0-dev.14-manual-sky"
+release_url: "https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.14-manual-sky"
 ---
 
 import DownloadCard from '@site/src/components/DownloadCard';
 
-The painted ship and Solar departure tour share one perspective. This review build fixes alternating sky exposure, gives planet approaches more time, and finishes one AU from Alpha Centauri A.
+The painted ship and Solar departure tour share one perspective. This review build removes automatic sky dimming: exposure stays at your manually selected brightness while you move and look around. The tour finishes one AU from Alpha Centauri A.
 
 {/* truncate */}
 
 <DownloadCard compact />
 
-![Alpha Centauri A at one AU, viewed from the standing bridge eye](https://storage.googleapis.com/stapledons-voyage-assets/refs/solar_departure_v3/acen-a_arrival.png)
+![Alpha Centauri A and its background stars at the actual one-AU stop, manual exposure](https://storage.googleapis.com/stapledons-voyage-assets/refs/manual_sky_v14/alpha_1au_pan_0.png)
 
 ## What's new
 
 - **One current painted ship:** seven major tiers, a bridge floor and captain shadow that meet the walking surface, faster movement, trackpad look and known-star inspection. [Integration PR](https://github.com/sunholo-data/stapledons-godot/pull/117).
 - **Gradual approaches:** the guided tour uses physical 1 g acceleration with 90 seconds of braking playback. Earth, Jupiter and Saturn sit beside the bridge at their close stops. Ordinary navigation keeps its existing pacing. [Integration PR](https://github.com/sunholo-data/stapledons-godot/pull/117).
-- **Stable exposure and measured stars:** one final-camera exposure update per frame prevents the white/texture and galaxy/black oscillation. Alpha Centauri A/B use measured radii and temperatures; the final leg intercepts the moving primary at 1 AU. A's disc is about 0.65° wide there. [Integration PR](https://github.com/sunholo-data/stapledons-godot/pull/117).
+- **Manual sky exposure:** J cycles the brightness settings, also available under Tab. Bright planets and suns can wash out at a setting chosen for stars; camera pans and journeys no longer change exposure automatically. The physical light and SR calculations remain unchanged.
+- **Smoother tour starts:** initialize the camera from the new session and ease departure time compression over three seconds. This corrects an initial camera jump and an abrupt first movement beside Earth.
+- **Measured stars:** Alpha Centauri A/B use measured radii and temperatures; the final leg intercepts the moving primary at 1 AU. A's disc is about 0.65° wide there. [Integration PR](https://github.com/sunholo-data/stapledons-godot/pull/117).
 - **Review evidence:** the gallery and geometry reference include fresh native captures and editable Blender masters. B keeps the full benchmark locally and attempts an authenticated upload of filtered aggregate measurements. [Integration PR](https://github.com/sunholo-data/stapledons-godot/pull/117).
 
 ## Not yet
 
 Ship lighting is still an internal lighting study; external sunlight, detailed moon surfaces and further Commons art remain in progress. Fresh M2 Air performance needs a laptop measurement. Tour stops are inertial clearance stops: gravity, thermal hazards and GR are not simulated. Stellar photospheres are uniform emitters.
 
-**Release:** [v0.4.0-dev.13-stable-sky](https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.13-stable-sky) · [Gallery](/gallery) · [Ship reference](/docs/ship-layer-reference).
+**Release:** [v0.4.0-dev.14-manual-sky](https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.14-manual-sky) · [Gallery](/gallery) · [Ship reference](/docs/ship-layer-reference).
