@@ -143,5 +143,17 @@
       "external_prerequisites": []
     }
   ],
-  "camera_decision": "A: painted 3D geometry with real lighting; retain free camera and shared observer. Mood remains art review."
+  "camera_decision": "A: painted 3D geometry with real lighting; retain free camera and shared observer. Mood remains art review.",
+  "review_delivery": {
+    "version": "v0.4.0-dev.11-solar-departure",
+    "source_commit": "0e91c712b1e3dbcf30ff6c64a1ab9ed62c111f96",
+    "evaluation": ".ailang/state/evaluations/eval_R1-M4-SOLAR-DEPARTURE_dev11_round_1.json",
+    "result": "pass",
+    "score": 94,
+    "remaining": [
+      "simulation-driven external sunlight on ship geometry",
+      "M2 Air performance",
+      "further art and production landing"
+    ]
+  }
 }

@@ -1,0 +1,191 @@
+{
+  "sprint_id": "R1-M4-SOLAR-DEPARTURE",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-05T09:42:19.704659+00:00",
+  "evaluator": "Independent judge /root/sprint_evaluator, separate from implementation generators",
+  "pass_threshold": 70,
+  "result": "pass",
+  "review_build_result": "pass",
+  "review_build_scope": "Bounded dev11 usable review delivery: movement/map, fixed internal moody lighting and delegated camera A, shared planetary observer with rings/inverse-ray optics/meter/identification occlusion, guided physical Solar stops and outbound journey, catalogue coverage.",
+  "whole_sprint_result": "in_progress",
+  "production_landing_result": "pending",
+  "hard_fails": [],
+  "source_commit": "0e91c71",
+  "planet_source_commits": [
+    "4e32b9d",
+    "28672d0"
+  ],
+  "source_hashes": {
+    "demos/ship_geometry_demo.gd": "2e5c9bd6f4bbed0158bc91b7347fab1608db3f6bdbb13b1d915ad265be981d63",
+    "demos/solar_departure.gd": "6d6ce6f1f66b98526101dc77377312a4fd303b45fde95c0ec9ef97d5151d1d88",
+    "demos/ship_lighting.gd": "24acb703e04a2f4cc3dbee389fad5ac508791674fc0a98a96bc2fe11fb69ff4e",
+    "sim/solar_departure.ail": "0ad345826c45a519abac1b293f05cddec634f5e9d8f88cfcead3a34a5cfe0a56",
+    "sim/protocol.ail": "ec0fbbd962dcf5aca6b6861922e0a582a83b1d2e5d8ac891eff3db8b69253305",
+    "ui/galaxy_map.gd": "3b8c67aab49d3f32718ffdf72ae8448a32906c1bc4ff7dbcd96591bc9905fed2",
+    "interior/interior_sky.gd": "856cbab6f432bb412c6173eae3ee047a9745f75ff5ffbea1647217602114550b",
+    "planets/system_view.gd": "caa125b745cb54a2e84bf82ffa0e3dab7015424d2b0f3544af5c0a16263da616",
+    "planets/planet.gdshader": "cb84f6f3212ff2a422fcb23ac1f43f9bfee8a1c8639de8cba7f9dbc7245ecad3",
+    "sky/exposure.gd": "6883dd9b8deaa875cc4b1bc57c4f603270be08331abefa28f595ad72206cc1e2",
+    "sky/sky_meter.gd": "8b3a69e0dbfae4070f43f817323f1bdad36ce79d2aa0947ffb337f2e4af85c7b",
+    "ui/ship_star_identification.gd": "e7e232d90fa09521a7c197caaadc95e6017da8e8bbfdb523009578a3b3487318"
+  },
+  "design_doc": "design_docs/planned/r1/m4-ship-lighting-and-solar-departure.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-lighting-and-solar-departure-sprint.md",
+  "bounded_scope_authority": "User approved implementation and delegated camera A. Root explicitly requested bounded dev11 review delivery separately from whole-sprint completion; no production merge.",
+  "total_score": 94,
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 28,
+    "code_quality": 14,
+    "documentation": 13,
+    "design_fidelity": 9
+  },
+  "result_reason": "The bounded review build is usable and tested through actual packaged native entry, identification and guided Solar journey. Simulator remains authoritative for motion, time, heading, exact departures and endpoints. Planet rendering shares the observer and validated package optics/radiometry. Whole-sprint and hardware/art follow-ups remain explicit.",
+  "independent_checks": {
+    "movement": "/private/tmp/solar-judge-movement-final.log:6passed,0failures,actualexit0. Actual3.5m displacement, frame-rate/diagonal/boundary and stalled-frame lift guard checks.",
+    "map": "/private/tmp/solar-judge-map.log:53passed,0failures,actualexit0. Real3leg AILANG journey preserves exact float64 departures, clocks, recenter/manualpan/reopen and exactIDhandoff. Legacy negotiated1/4 omit new departure field.",
+    "lighting_isolation": "/private/tmp/solar-judge-lighting.log:6passed,0failures,actualexit0. Separate ship/sky World3D, all3profiles preserve sky exposure/beta/gamma; look leaves key fixed; simulator and4xchoice unchanged.",
+    "art": "Opened all12 native PNGs in renders/ship_lighting (4poses x baseline/moody/shadow-off). Moody warm-key/cool-fill is coherent; actual rail/frond/spire/arcade shadows visibly disappear when cast shadows disabled. Source capture log endsOK with6540/12414/14974/24038 changed sampledpixels.",
+    "map_visual": "Opened refreshed native planned/committed 1280x800 and planned 900x600 captures. Exact Alpha Centauri departure, current ship/destination and Centre/Fit/actions visible; detailed rows scroll above footer.",
+    "lint": "git diff --check clean.",
+    "solar_itinerary": "/private/tmp/solar-judge-itinerary.log: 36 passed, 0 failures, actual exit 0, no engine/script errors. Normal core-driven Earth/Jupiter/Saturn/Alpha Centauri route; all motion phases, monotonic clocks, per-leg exact departure, endpoint standoffs, no in-flight reset/advance, one initialization, pause and actual guided map mutation guards.",
+    "planet_identification": "/private/tmp/solar-judge-occlusion.log: 12 checks, 0 failures, actual exit 0, no errors. Opaque night faces, aberrated body direction, clear sky/limb, hidden/stale snapshots, transmissive rings, gaps and renderer-effective f32 grazing opacity.",
+    "flyby_cpu": "/private/tmp/solar-judge-flyby.log: 1061 checks, 0 failures, actual exit 0 and no errors. Actual pinned-package apparent-disc/inverse-ray/Doppler fixtures at beta 0/.5/.9/.99 and 1024 deterministic direction roundtrips. CPU evidence only; GPU/native delivery remains separately pending."
+  },
+  "resolved_findings": [
+    {
+      "issue": "Endpoint-only walking can tunnel across guarded lift opening in a long frame. Safe(8,82,-4.8),yaw0,walk_motion(Vector2(-1,0),2s) jumped toz=-11.8 while120smallframes stayed atz=-4.8.",
+      "evidence": "/private/tmp/solar_movement_hole_judge.gd and /private/tmp/solar-judge-hole.log; root test-first5pass1fail /private/tmp/ship-movement-stall-red.log.",
+      "resolution": "Root added radius-bounded motion substeps; independent final6check actualexit0 includes stalled-frame regression."
+    },
+    {
+      "issue": "Finite positive grazing-ring transmission can nevertheless round renderer alpha to one.",
+      "resolution": "Identification now reproduces float32 per-layer opacity/transmission; independent 12-check test verifies opaque grazing rings, transmissive rings and clear gaps."
+    },
+    {
+      "issue": "4x readability bias initially weakened resolved-body highlight protection.",
+      "resolution": "Adaptive EV now max(mode_ev+bias, highlight_ev) before clamp; fixed EV remains explicit bypass. Independent final meter 23 checks, 0 failures, actual exit 0 at /private/tmp/solar-judge-meter-final.log."
+    },
+    {
+      "issue": "Initial map capture footer and lighting practical provenance were incomplete.",
+      "resolution": "Refreshed native map 1280/900 actions opened; all 12 lighting records now contain practical parameters and recipe SHA."
+    }
+  ],
+  "shared_gates": {
+    "full_tests": "Root attests final actual exit 0 /private/tmp/solar-full-final-test.log: 261/261. Final ship-specific summaries independently read; earlier concurrency/stale expectation failure is superseded.",
+    "final_source": "Root attests focused final source actual exit 0 /private/tmp/solar-final-new-source-tests.log; normal renderer, movement, map, meter and SI additions covered.",
+    "goldens": "Root/planet author attest physics golden and golden-m5 actual positives; final /private/tmp/flyby-golden-final.log and /private/tmp/ring-golden-final.log independently inspected: 0 failures. 12 moving-disc cases <.75px limb/centre and <1% radiance; 918+263 ring/globe samples \u22641.14%, analytic shadow edges \u2264.174px.",
+    "final_capture_benchmark": "Root attests actual exit 0 /private/tmp/solar-metered-final-capture-bench.log; both positive capture/bench markers read.",
+    "native_package": "Root confirms complete sequential session 90433 actual exit 0 /private/tmp/dev11-package-smokes.log. Independently inspected current startup, exact-ID identification, Solar smoke, 9/9 textured planetary bundle checks, AI stub, 49 captures and staged bridge interior positive markers.",
+    "lint": "Independent git diff --check clean.",
+    "ci": "Final remote source CI still in progress at review time; root owns final delivery verification."
+  },
+  "final_capture_review": {
+    "manifest": "renders/solar_departure/capture-manifest.json",
+    "record_count": 13,
+    "opened_images": [
+      "earth_start.png",
+      "jupiter_arrival.png",
+      "saturn_arrival.png",
+      "alpha_centauri_cruising.png"
+    ],
+    "visual_result": "Planet surface detail and Saturn rings visible after final bias/highlight correction; outbound sky responds to real 0.99c cruise. UI labels Earth-Moon barycentre approximation, inertial stops, display aid and GR not implemented.",
+    "checks": "Independently verified all 13 deep-copy records: 83.7m captain eye, FOV78, exposure EV/k identity, highlight*k\u22641, beta/gamma identity, monotonic both clocks, boost/cruise/brake/rest order and fixed heading per leg."
+  },
+  "performance_aggregates": {
+    "lighting": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "warmup": 120,
+      "samples": 300,
+      "pairs": [
+        {
+          "pose": "bridge_outward",
+          "eye_m": [
+            8.0,
+            83.6999969482422,
+            -4.80000019073486
+          ],
+          "without_shadow_p95_ms": 9.573,
+          "with_shadow_p95_ms": 9.663,
+          "delta_ms": 0.0899999999999999
+        },
+        {
+          "pose": "bridge_inward",
+          "eye_m": [
+            8.0,
+            83.6999969482422,
+            -4.80000019073486
+          ],
+          "without_shadow_p95_ms": 9.611,
+          "with_shadow_p95_ms": 9.629,
+          "delta_ms": 0.0179999999999989
+        },
+        {
+          "pose": "bridge_overlook",
+          "eye_m": [
+            18.0,
+            83.6999969482422,
+            9.0
+          ],
+          "without_shadow_p95_ms": 9.56,
+          "with_shadow_p95_ms": 9.619,
+          "delta_ms": 0.0589999999999993
+        },
+        {
+          "pose": "commons_arcade",
+          "eye_m": [
+            46.0,
+            58.7000007629395,
+            -5.0
+          ],
+          "without_shadow_p95_ms": 9.578,
+          "with_shadow_p95_ms": 9.628,
+          "delta_ms": 0.0500000000000007
+        }
+      ],
+      "interpretation": "Vsync/presentation-limited Studio wall-frame measurement, not isolated GPU shadow cost. Actual M2Air pending."
+    },
+    "planet_stop_pairs": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "warmup": 120,
+      "samples": 300,
+      "pairs": [
+        {
+          "stop": "Earth",
+          "disabled_p95_ms": 9.526,
+          "enabled_p95_ms": 9.538,
+          "delta_ms": 0.0120000000000005
+        },
+        {
+          "stop": "Jupiter",
+          "disabled_p95_ms": 9.515,
+          "enabled_p95_ms": 9.531,
+          "delta_ms": 0.016
+        },
+        {
+          "stop": "Saturn",
+          "disabled_p95_ms": 9.501,
+          "enabled_p95_ms": 9.534,
+          "delta_ms": 0.0330000000000013
+        }
+      ],
+      "interpretation": "Frozen stops with matched observer and fixed EV. Studio wall intervals include presentation/vsync; not isolated GPU cost, no Air performance guarantee."
+    }
+  },
+  "limitations": [
+    "Actual MacBook Air M2 (2022), 24GB, 1920x1080 performance remains pending.",
+    "Ship broad key is an internal fixed lighting study, not the simulation Sun. External simulation-driven sunlight on ship geometry remains follow-up.",
+    "Further user art feedback, full-ship architecture and production landing remain pending; whole sprint stays in_progress.",
+    "Earth placement is the published Earth-Moon barycentre approximation. Stops are inertial package endpoints, not gravity-bound orbits. No atmospheric scatter, GR or new ephemeris correction is claimed.",
+    "Native packaged logs retain renderer/ObjectDB/resource leak shutdown diagnostics despite actual exit 0; zero-warning shutdown is not claimed.",
+    "Root owns final remote CI result, release metadata, downloadable artifact checksum and website publication verification."
+  ],
+  "notes": "No implementation edits or GPU work by evaluator during root final delivery gates. Raw Studio diagnostics and machine metadata are not included in this report."
+}

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Solar departure and moody ship review, 2026-10-05
+
+- Increase collision-safe walking to 3.5 m/s and restore warm internal light, cool fill and geometry shadows on the painted ship. Retain the movable camera and shared observer; simulation-driven external ship sunlight remains pending.
+- Add a guided Earth → Jupiter → Saturn → Alpha Centauri journey with actual acceleration, cruise, braking and continuous positions/clocks. Planet stops are inertial; Earth uses the Earth–Moon barycentre approximation.
+- Render moving planet discs and Saturn rings through package-backed inverse aberration, radiometry and shared metering. Opaque planet faces also mask known-star inspection.
+- Start subsequent map routes from the current ship endpoint; add recenter/fit controls and honest surveyed-catalogue coverage.
+- Publish selected native lighting, planet-stop, outbound and navigation screenshots in the gallery. M2 Air performance and further ship art remain pending.
+
+
 ### One current ship and known-star identification, 2026-10-05
 
 - Normal launch opens one current expanded ship at the captain’s measured eye, with live navigation at rest. Scrolling reveals a labelled third-person view. Original painted/capture modes remain explicit reference tools.
