@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
     <channel>
         <title>Stapledon's Voyage news</title>
-        <link>https://www.sunholo.com/stapledons-godot/news</link>
+        <link>https://sunholo-data.github.io/news</link>
         <description>Releases and progress on Stapledon's Voyage, a hard-SF game in Godot 4 and AILANG.</description>
         <lastBuildDate>Sat, 03 Oct 2026 20:15:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
@@ -11,8 +11,8 @@
         <copyright>Copyright © 2026 Sunholo / Mark Edmondson</copyright>
         <item>
             <title><![CDATA[Walkable bridge demo: v0.4.0-dev.1]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1</guid>
+            <link>https://sunholo-data.github.io/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1</link>
+            <guid>https://sunholo-data.github.io/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1</guid>
             <pubDate>Sat, 03 Oct 2026 20:15:00 GMT</pubDate>
             <description><![CDATA[A development build you can download: walk the captain around the bridge under the live]]></description>
             <content:encoded><![CDATA[<p>A development build you can download: walk the captain around the bridge under the live
@@ -20,8 +20,8 @@ relativistic sky, open the galaxy map from the nav console, and fly a journey to
 through the bubble. macOS only, Apple Silicon.</p>
 <!-- -->
 <div class="card_P9Qi"><div class="head_TLZj"><span class="sv-status sv-status--progress">Development build: macOS only (Apple Silicon)</span><span class="tag_SXRh">v0.4.0-dev.1</span></div><p class="title_s4XC">Walkable bridge demo</p><a class="button_ks9I" href="https://github.com/sunholo-data/stapledons-godot/releases/download/v0.4.0-dev.1/StapledonsVoyage-v0.4.0-dev.1-macos.zip"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg> Download for macOS</a><p class="small_L0zK">Pre-alpha and <strong>unsigned</strong>. After unzipping, clear the quarantine flag once:</p><pre class="code_FlHl"><code>xattr -dr com.apple.quarantine "Stapledons Voyage.app"</code></pre></div>
-<p><img decoding="async" loading="lazy" alt="The captain on the bridge at 0.99c, under the live relativistic sky" src="https://www.sunholo.com/stapledons-godot/assets/images/bridge-demo-cruise-55c3f571c972ee7a3171239bcef15193.jpg" width="1600" height="900" class="img_ev3q"></p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" alt="The captain on the bridge at 0.99c, under the live relativistic sky" src="https://sunholo-data.github.io/assets/images/bridge-demo-cruise-55c3f571c972ee7a3171239bcef15193.jpg" width="1600" height="900" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://sunholo-data.github.io/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
 <li class=""><strong>The walkable bridge</strong> (M4.2, <a href="https://github.com/sunholo-data/stapledons-godot/pull/102" target="_blank" rel="noopener noreferrer" class="">#102</a>): the bridge disc at the top of the spire,
 composited with the live sky through the same camera. The captain walks it (<strong>WASD</strong>, <strong>E</strong> to
@@ -33,14 +33,14 @@ Centauri A and watch the boost, the 0.99c cruise, the brake and the arrival.</li
 naked-eye exposure, and the forward glow of the cosmic background at extreme speed.</li>
 <li class=""><strong>L</strong> opens the log and <strong>K</strong> the codex.</li>
 </ul>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://sunholo-data.github.io/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
 <ul>
 <li class="">The forward bubble-wall glow is off; it returns with the next simulation step.</li>
 <li class="">The standalone sky flight (<code>-- --voyage</code>) shows a mirrored sky in this build: fixed on main
 (<a href="https://github.com/sunholo-data/stapledons-godot/pull/107" target="_blank" rel="noopener noreferrer" class="">#107</a>), in the next build. The view
 from the bridge is correct.</li>
-<li class="">The bridge is v1 demo art; the final art is in progress (<a class="" href="https://www.sunholo.com/stapledons-godot/concept-art">concept art</a>).</li>
-<li class="">Pre-alpha and unsigned; see <a class="" href="https://www.sunholo.com/stapledons-godot/docs/try-it">Try it</a> for install notes.</li>
+<li class="">The bridge is v1 demo art; the final art is in progress (<a class="" href="https://sunholo-data.github.io/concept-art">concept art</a>).</li>
+<li class="">Pre-alpha and unsigned; see <a class="" href="https://sunholo-data.github.io/docs/try-it">Try it</a> for install notes.</li>
 </ul>
 <p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.1" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.1</a> (macOS development build)</p>]]></content:encoded>
             <category>Release</category>
@@ -49,15 +49,15 @@ from the bridge is correct.</li>
         </item>
         <item>
             <title><![CDATA[Concept art: the captain and the bridge]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/03/concept-art-the-captain-and-the-bridge</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/03/concept-art-the-captain-and-the-bridge</guid>
+            <link>https://sunholo-data.github.io/news/2026/10/03/concept-art-the-captain-and-the-bridge</link>
+            <guid>https://sunholo-data.github.io/news/2026/10/03/concept-art-the-captain-and-the-bridge</guid>
             <pubDate>Sat, 03 Oct 2026 18:00:00 GMT</pubDate>
             <description><![CDATA[The ship has faces now. The captain is picked, the crew have proposed portraits, and the bridge]]></description>
             <content:encoded><![CDATA[<p>The ship has faces now. The captain is picked, the crew have proposed portraits, and the bridge
 stands in the engine over the live sky.</p>
 <!-- -->
-<p><img decoding="async" loading="lazy" alt="The captain, the Longline Navigator, at 30, 50, 70 and 90" src="https://www.sunholo.com/stapledons-godot/assets/images/captain-sheet-b80ad204032c2da390e54bea169a2acd.jpg" width="1600" height="1400" class="img_ev3q"></p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/concept-art-the-captain-and-the-bridge#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" alt="The captain, the Longline Navigator, at 30, 50, 70 and 90" src="https://sunholo-data.github.io/assets/images/captain-sheet-b80ad204032c2da390e54bea169a2acd.jpg" width="1600" height="1400" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://sunholo-data.github.io/news/2026/10/03/concept-art-the-captain-and-the-bridge#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
 <li class=""><strong>The captain, the Longline Navigator</strong> (<a href="https://github.com/sunholo-data/stapledons-godot/pull/98" target="_blank" rel="noopener noreferrer" class="">#98</a>): picked from three silhouette
 proposals, and drawn front and back at 30, 50, 70 and 90, because the game spans a 100-year
@@ -67,23 +67,23 @@ career.</li>
 spire inside the sphere ship. The sky behind the railings is not painted; it is the game's live
 sky, through the same camera, so at 0.99c it crowds forward and turns blue.</li>
 </ul>
-<p><img decoding="async" loading="lazy" alt="Bridge v1 in the engine at rest and at 0.99c" src="https://www.sunholo.com/stapledons-godot/assets/images/bridge-v1-parallax-503713bbccc018cf00e5a99ba0ab7fad.jpg" width="1600" height="600" class="img_ev3q"></p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/concept-art-the-captain-and-the-bridge#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" alt="Bridge v1 in the engine at rest and at 0.99c" src="https://sunholo-data.github.io/assets/images/bridge-v1-parallax-503713bbccc018cf00e5a99ba0ab7fad.jpg" width="1600" height="600" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://sunholo-data.github.io/news/2026/10/03/concept-art-the-captain-and-the-bridge#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
 <p>Bridge v1 is demo art. A v2 quality study is done and the final art is being made. Everything is
-on the <a class="" href="https://www.sunholo.com/stapledons-godot/concept-art">concept art</a> page, labelled with its status.</p>]]></content:encoded>
+on the <a class="" href="https://sunholo-data.github.io/concept-art">concept art</a> page, labelled with its status.</p>]]></content:encoded>
             <category>Progress</category>
             <category>Art</category>
         </item>
         <item>
             <title><![CDATA[Planets are coming]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/03/planets-are-coming</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/03/planets-are-coming</guid>
+            <link>https://sunholo-data.github.io/news/2026/10/03/planets-are-coming</link>
+            <guid>https://sunholo-data.github.io/news/2026/10/03/planets-are-coming</guid>
             <pubDate>Sat, 03 Oct 2026 16:00:00 GMT</pubDate>
             <description><![CDATA[A new milestone, M5, brings planets, moons and flybys inside a star system, with the same rule as]]></description>
             <content:encoded><![CDATA[<p>A new milestone, M5, brings planets, moons and flybys inside a star system, with the same rule as
 the sky: real data, real physics.</p>
 <!-- -->
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-done">What's done<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/planets-are-coming#whats-done" class="hash-link" aria-label="Direct link to What's done" title="Direct link to What's done" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-done">What's done<a href="https://sunholo-data.github.io/news/2026/10/03/planets-are-coming#whats-done" class="hash-link" aria-label="Direct link to What's done" title="Direct link to What's done" translate="no">​</a></h2>
 <ul>
 <li class=""><strong>The design and the sprint plan are approved</strong> (<a href="https://github.com/sunholo-data/stapledons-godot/pull/84" target="_blank" rel="noopener noreferrer" class="">#84</a>, <a href="https://github.com/sunholo-data/stapledons-godot/pull/86" target="_blank" rel="noopener noreferrer" class="">#86</a>).</li>
 <li class=""><strong>A new AILANG package, <a href="https://github.com/sunholo-data/ailang-packages/tree/main/packages/celestial" target="_blank" rel="noopener noreferrer" class=""><code>sunholo/celestial</code></a>
@@ -92,27 +92,27 @@ the sky: real data, real physics.</p>
 <li class=""><strong><code>sunholo/relativity</code> 0.6 and 0.7</strong>: the bubble's forward glow, and the aberrated outline of a
 nearby sphere, which is what a planet looks like as you pass it near light speed.</li>
 </ul>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-planned">What's planned<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/planets-are-coming#whats-planned" class="hash-link" aria-label="Direct link to What's planned" title="Direct link to What's planned" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-planned">What's planned<a href="https://sunholo-data.github.io/news/2026/10/03/planets-are-coming#whats-planned" class="hash-link" aria-label="Direct link to What's planned" title="Direct link to What's planned" translate="no">​</a></h2>
 <p>Start held above Earth, pick a body on a system map (the Sun, 8 planets, 11 moons, 4 ring
 systems), choose to stop or fly by at 0.001c to 0.99c, commit, and ride the leg. The views will be
 exact: light-time delay, aberration, and the Terrell rotation that makes a passing sphere look
 turned. At α Centauri, the known and candidate planets will show as points only, with a badge
 saying how sure the astronomy is. The first step, the Sol and α Cen data and the game's package
 pins, has merged (<a href="https://github.com/sunholo-data/stapledons-godot/pull/99" target="_blank" rel="noopener noreferrer" class="">#99</a>).</p>
-<p>See the <a class="" href="https://www.sunholo.com/stapledons-godot/docs/roadmap">roadmap</a>.</p>]]></content:encoded>
+<p>See the <a class="" href="https://sunholo-data.github.io/docs/roadmap">roadmap</a>.</p>]]></content:encoded>
             <category>Progress</category>
             <category>Planets</category>
         </item>
         <item>
             <title><![CDATA[The ship's AI foundation]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/03/the-ships-ai-foundation</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/03/the-ships-ai-foundation</guid>
+            <link>https://sunholo-data.github.io/news/2026/10/03/the-ships-ai-foundation</link>
+            <guid>https://sunholo-data.github.io/news/2026/10/03/the-ships-ai-foundation</guid>
             <pubDate>Sat, 03 Oct 2026 15:00:00 GMT</pubDate>
             <description><![CDATA[The crew's optional AI layer runs end to end, so far on a deterministic test stub: lines with]]></description>
             <content:encoded><![CDATA[<p>The crew's optional AI layer runs end to end, so far on a deterministic test stub: lines with
 emotion markers, portraits that change with them, a voice, and a hard cost ceiling.</p>
 <!-- -->
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/the-ships-ai-foundation#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://sunholo-data.github.io/news/2026/10/03/the-ships-ai-foundation#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
 <li class=""><strong>Emotion markers</strong> (AI.1–AI.3): a line carries markers like <code>{loving}</code>, validated before the
 game uses it.</li>
@@ -125,8 +125,8 @@ live.</li>
 <li class=""><strong>The conversation scene</strong> (AI.10a, <a href="https://github.com/sunholo-data/stapledons-godot/pull/91" target="_blank" rel="noopener noreferrer" class="">#91</a>): the portrait cross-fades as each emotion
 marker arrives, the subtitles build segment by segment, and the voice plays.</li>
 </ul>
-<figure class="sv-figure"><video poster="/stapledons-godot/img/posters/medic.jpg" playsinline="" controls="" preload="none" aria-label="The Medic scene on the stub. Placeholder voice: the stub's test tones, not a performance." title="The Medic scene on the stub. Placeholder voice: the stub's test tones, not a performance."><source src="https://storage.googleapis.com/stapledons-voyage-assets/site/6ac363a3577c552126cadb24c54b419a0b6bc83e68e3bd7e3ddb373c48b920a4.webm" type="video/webm"><source src="https://storage.googleapis.com/stapledons-voyage-assets/site/9c14304928d5ce13b2f3a299df46b93831168f82b4e7aa2fe99a449ffc8ad2df.mp4" type="video/mp4"></video><figcaption>The Medic scene on the stub. Placeholder voice: the stub's test tones, not a performance.</figcaption></figure>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/the-ships-ai-foundation#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<figure class="sv-figure"><video poster="/img/posters/medic.jpg" playsinline="" controls="" preload="none" aria-label="The Medic scene on the stub. Placeholder voice: the stub's test tones, not a performance." title="The Medic scene on the stub. Placeholder voice: the stub's test tones, not a performance."><source src="https://storage.googleapis.com/stapledons-voyage-assets/site/6ac363a3577c552126cadb24c54b419a0b6bc83e68e3bd7e3ddb373c48b920a4.webm" type="video/webm"><source src="https://storage.googleapis.com/stapledons-voyage-assets/site/9c14304928d5ce13b2f3a299df46b93831168f82b4e7aa2fe99a449ffc8ad2df.mp4" type="video/mp4"></video><figcaption>The Medic scene on the stub. Placeholder voice: the stub's test tones, not a performance.</figcaption></figure>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://sunholo-data.github.io/news/2026/10/03/the-ships-ai-foundation#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
 <p>No live model has been called. The first live run (AI.10b) is attended: one real line and a few
 voice auditions under a US$1 ceiling. The voice in the clip is a placeholder.</p>]]></content:encoded>
             <category>Progress</category>
@@ -134,14 +134,14 @@ voice auditions under a US$1 ceiling. The voice in the clip is a placeholder.</p
         </item>
         <item>
             <title><![CDATA[A galaxy map from real catalogues]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/03/a-galaxy-map-from-real-catalogues</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/03/a-galaxy-map-from-real-catalogues</guid>
+            <link>https://sunholo-data.github.io/news/2026/10/03/a-galaxy-map-from-real-catalogues</link>
+            <guid>https://sunholo-data.github.io/news/2026/10/03/a-galaxy-map-from-real-catalogues</guid>
             <pubDate>Sat, 03 Oct 2026 12:00:00 GMT</pubDate>
             <description><![CDATA[The galaxy map now draws from the same star catalogues as the sky, and stars that belong together]]></description>
             <content:encoded><![CDATA[<p>The galaxy map now draws from the same star catalogues as the sky, and stars that belong together
 stay together.</p>
 <!-- -->
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/a-galaxy-map-from-real-catalogues#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://sunholo-data.github.io/news/2026/10/03/a-galaxy-map-from-real-catalogues#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
 <li class=""><strong>The map on the catalogue tiers</strong> (<a href="https://github.com/sunholo-data/stapledons-godot/pull/81" target="_blank" rel="noopener noreferrer" class="">#81</a>): 5,687 stars within 25 pc, up from 3,802,
 with full-precision positions. α Centauri A and B are separate stars you can select.</li>
@@ -150,23 +150,23 @@ with full-precision positions. α Centauri A and B are separate stars you can se
 rather than its own noisier one. That moved 20,524 companions; Sirius B, for one, now sits with
 Sirius A at 8.6 ly.</li>
 </ul>
-<p><img decoding="async" loading="lazy" alt="The galaxy map planning a trip to Sirius A, 8.60 ly" src="https://www.sunholo.com/stapledons-godot/assets/images/map-sirius-9bbe0b8275f42d4b20bbde0f92a69b66.jpg" width="1600" height="900" class="img_ev3q"></p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/a-galaxy-map-from-real-catalogues#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
-<p>Both are in the <a class="" href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1">walkable bridge demo, v0.4.0-dev.1</a>.</p>]]></content:encoded>
+<p><img decoding="async" loading="lazy" alt="The galaxy map planning a trip to Sirius A, 8.60 ly" src="https://sunholo-data.github.io/assets/images/map-sirius-9bbe0b8275f42d4b20bbde0f92a69b66.jpg" width="1600" height="900" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://sunholo-data.github.io/news/2026/10/03/a-galaxy-map-from-real-catalogues#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p>Both are in the <a class="" href="https://sunholo-data.github.io/news/2026/10/03/walkable-bridge-demo-v0-4-0-dev-1">walkable bridge demo, v0.4.0-dev.1</a>.</p>]]></content:encoded>
             <category>Progress</category>
             <category>Sky</category>
             <category>Journey</category>
         </item>
         <item>
             <title><![CDATA[The relativistic sky]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/03/the-relativistic-sky</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/03/the-relativistic-sky</guid>
+            <link>https://sunholo-data.github.io/news/2026/10/03/the-relativistic-sky</link>
+            <guid>https://sunholo-data.github.io/news/2026/10/03/the-relativistic-sky</guid>
             <pubDate>Sat, 03 Oct 2026 09:00:00 GMT</pubDate>
             <description><![CDATA[The sky out of the window is now the real one: 335,157 stars over the Milky Way, exposed for a]]></description>
             <content:encoded><![CDATA[<p>The sky out of the window is now the real one: 335,157 stars over the Milky Way, exposed for a
 dark-adapted human eye, with the cosmic background glowing ahead at extreme speeds.</p>
 <!-- -->
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/the-relativistic-sky#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://sunholo-data.github.io/news/2026/10/03/the-relativistic-sky#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
 <li class=""><strong>Starfield v2</strong> (<a href="https://github.com/sunholo-data/stapledons-godot/pull/67" target="_blank" rel="noopener noreferrer" class="">#67</a>): 335,157 stars from CNS5, Gaia GCNS and Hipparcos,
 instanced on the GPU, with float64 positions rebased around the ship.</li>
@@ -178,23 +178,23 @@ HUD always says how it is exposing; the readability aids are off by default and 
 <li class=""><strong>The forward CMB glow</strong> (<a href="https://github.com/sunholo-data/stapledons-godot/pull/79" target="_blank" rel="noopener noreferrer" class="">#79</a>, fixed in <a href="https://github.com/sunholo-data/stapledons-godot/pull/88" target="_blank" rel="noopener noreferrer" class="">#88</a>): above γ ≈ 150 the 2.7 K
 microwave background, blueshifted, shows up dead ahead; at γ 707 it is a 3,853.7 K blackbody.</li>
 </ul>
-<figure class="sv-figure"><video poster="/stapledons-godot/img/posters/cmb.jpg" muted="" loop="" playsinline="" controls="" preload="none" aria-label="γ 20 to 707 through a 20° lens: the stars crowd into a shrinking ball, then the forward CMB warms from deep red to near white." title="γ 20 to 707 through a 20° lens: the stars crowd into a shrinking ball, then the forward CMB warms from deep red to near white."><source src="https://storage.googleapis.com/stapledons-voyage-assets/site/d2308a4b5abb3aa872f5ac5579e96a08d8964ba1ed2c4bff561c109e4356bcfb.webm" type="video/webm"><source src="https://storage.googleapis.com/stapledons-voyage-assets/site/32e2836dc80608b3c0898da8256b2579facb2289c221b352b473dc88ead33784.mp4" type="video/mp4"></video><figcaption>γ 20 to 707 through a 20° lens: the stars crowd into a shrinking ball, then the forward CMB warms from deep red to near white.</figcaption></figure>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/03/the-relativistic-sky#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<figure class="sv-figure"><video poster="/img/posters/cmb.jpg" muted="" loop="" playsinline="" controls="" preload="none" aria-label="γ 20 to 707 through a 20° lens: the stars crowd into a shrinking ball, then the forward CMB warms from deep red to near white." title="γ 20 to 707 through a 20° lens: the stars crowd into a shrinking ball, then the forward CMB warms from deep red to near white."><source src="https://storage.googleapis.com/stapledons-voyage-assets/site/d2308a4b5abb3aa872f5ac5579e96a08d8964ba1ed2c4bff561c109e4356bcfb.webm" type="video/webm"><source src="https://storage.googleapis.com/stapledons-voyage-assets/site/32e2836dc80608b3c0898da8256b2579facb2289c221b352b473dc88ead33784.mp4" type="video/mp4"></video><figcaption>γ 20 to 707 through a 20° lens: the stars crowd into a shrinking ball, then the forward CMB warms from deep red to near white.</figcaption></figure>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://sunholo-data.github.io/news/2026/10/03/the-relativistic-sky#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
 <p>M1's acceptance step (M1.5b) is still open: the reference renders at five speeds and the 60 fps
-bench at 1440p with everything on. See the <a class="" href="https://www.sunholo.com/stapledons-godot/docs/roadmap">roadmap</a>.</p>]]></content:encoded>
+bench at 1440p with everything on. See the <a class="" href="https://sunholo-data.github.io/docs/roadmap">roadmap</a>.</p>]]></content:encoded>
             <category>Progress</category>
             <category>Sky</category>
         </item>
         <item>
             <title><![CDATA[v0.3: plan, commit, transit, arrive]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/02/v0-3-m2-journey</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/02/v0-3-m2-journey</guid>
+            <link>https://sunholo-data.github.io/news/2026/10/02/v0-3-m2-journey</link>
+            <guid>https://sunholo-data.github.io/news/2026/10/02/v0-3-m2-journey</guid>
             <pubDate>Fri, 02 Oct 2026 00:00:00 GMT</pubDate>
             <description><![CDATA[The journey core is complete: pick a star, commit, watch both clocks run, and arrive. Once you]]></description>
             <content:encoded><![CDATA[<p>The journey core is complete: pick a star, commit, watch both clocks run, and arrive. Once you
 commit, there is no going back.</p>
 <!-- -->
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/02/v0-3-m2-journey#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://sunholo-data.github.io/news/2026/10/02/v0-3-m2-journey#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
 <li class=""><strong>Commit:</strong> hold for 1.5 s. After that the simulation refuses every cancel, and says so.</li>
 <li class=""><strong>Transit and arrival:</strong> the phase, both clocks, the distance flown and the energy radiated,
@@ -203,8 +203,8 @@ live, until you arrive.</li>
 interpreter.</li>
 <li class="">v0.3.1 opens straight onto the galaxy map; v0.3.2 adds trackpad zoom and Retina scaling.</li>
 </ul>
-<p><img decoding="async" loading="lazy" alt="Commit, and you cannot take it back" src="https://www.sunholo.com/stapledons-godot/assets/images/map-commit-42ba3aab027e73d71296c755453f239b.jpg" width="1600" height="900" class="img_ev3q"></p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/02/v0-3-m2-journey#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" alt="Commit, and you cannot take it back" src="https://sunholo-data.github.io/assets/images/map-commit-42ba3aab027e73d71296c755453f239b.jpg" width="1600" height="900" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://sunholo-data.github.io/news/2026/10/02/v0-3-m2-journey#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
 <p>The interior of the ship, and a journey you live through on board, are the next milestone (M4).</p>
 <p><strong>Releases:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.3.0-m2-journey" target="_blank" rel="noopener noreferrer" class="">v0.3.0</a>,
 <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.3.1-m2-journey" target="_blank" rel="noopener noreferrer" class="">v0.3.1</a>,
@@ -214,22 +214,22 @@ interpreter.</li>
         </item>
         <item>
             <title><![CDATA[v0.2.0: a galaxy map with real numbers]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/01/v0-2-0-m2-map</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/01/v0-2-0-m2-map</guid>
+            <link>https://sunholo-data.github.io/news/2026/10/01/v0-2-0-m2-map</link>
+            <guid>https://sunholo-data.github.io/news/2026/10/01/v0-2-0-m2-map</guid>
             <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
             <description><![CDATA[The game now opens on a 3D map of the nearby stars. Click one and the simulation plans the trip:]]></description>
             <content:encoded><![CDATA[<p>The game now opens on a 3D map of the nearby stars. Click one and the simulation plans the trip:
 your years against Earth's.</p>
 <!-- -->
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/01/v0-2-0-m2-map#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://sunholo-data.github.io/news/2026/10/01/v0-2-0-m2-map#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
 <li class="">A galaxy map of the nearby-star catalogue: drag to orbit, scroll to zoom, click to plan.</li>
 <li class="">A cruise slider from 0.9c to 0.999999c, spaced evenly in rapidity, 0.99c by default.</li>
 <li class="">Every number on the panel comes straight from the AILANG simulation. α Centauri A at 0.99c:
 0.6208 years for you, 4.401 for Earth, 1.80 minutes of boost at each end.</li>
 </ul>
-<p><img decoding="async" loading="lazy" alt="The galaxy map planning a trip to α Centauri A" src="https://www.sunholo.com/stapledons-godot/assets/images/map-plan-46d3a1bfc2390a5045e1a551a2a5ac8e.jpg" width="1600" height="900" class="img_ev3q"></p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/01/v0-2-0-m2-map#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" alt="The galaxy map planning a trip to α Centauri A" src="https://sunholo-data.github.io/assets/images/map-plan-46d3a1bfc2390a5045e1a551a2a5ac8e.jpg" width="1600" height="900" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://sunholo-data.github.io/news/2026/10/01/v0-2-0-m2-map#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
 <p>Committing to the journey and flying it came in the next build.</p>
 <p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.2.0-m2-map" target="_blank" rel="noopener noreferrer" class="">v0.2.0-m2-map</a> (macOS review build)</p>]]></content:encoded>
             <category>Release</category>
@@ -237,14 +237,14 @@ your years against Earth's.</p>
         </item>
         <item>
             <title><![CDATA[v0.1.0: the spike]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/09/27/v0-1-0-m0</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/09/27/v0-1-0-m0</guid>
+            <link>https://sunholo-data.github.io/news/2026/09/27/v0-1-0-m0</link>
+            <guid>https://sunholo-data.github.io/news/2026/09/27/v0-1-0-m0</guid>
             <pubDate>Sun, 27 Sep 2026 00:00:00 GMT</pubDate>
             <description><![CDATA[The first review build: an AILANG simulation driving a Godot starfield, with relativity that is]]></description>
             <content:encoded><![CDATA[<p>The first review build: an AILANG simulation driving a Godot starfield, with relativity that is
 tested rather than eyeballed.</p>
 <!-- -->
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/09/27/v0-1-0-m0#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://sunholo-data.github.io/news/2026/09/27/v0-1-0-m0#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
 <li class="">The simulation runs in AILANG as a child process, talking one line of JSON per tick with Godot
 (about 50 µs per round trip). It flies the ship at 1 g with exact rapidity kinematics.</li>
@@ -253,8 +253,8 @@ Doppler-shifted blackbody and beamed brighter ahead.</li>
 <li class="">27 physics reference checks, and 9 cases where the GPU shader must put a star where the CPU
 reference says, to under 0.1 px.</li>
 </ul>
-<p><img decoding="async" loading="lazy" alt="The sky at 0, 0.5, 0.9 and 0.99c, looking forward, starboard and astern" src="https://www.sunholo.com/stapledons-godot/assets/images/m0-contact-sheet-2f53caa4b822ab484bde1f045ca3ebc1.jpg" width="1440" height="1080" class="img_ev3q"></p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/09/27/v0-1-0-m0#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" alt="The sky at 0, 0.5, 0.9 and 0.99c, looking forward, starboard and astern" src="https://sunholo-data.github.io/assets/images/m0-contact-sheet-2f53caa4b822ab484bde1f045ca3ebc1.jpg" width="1440" height="1080" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://sunholo-data.github.io/news/2026/09/27/v0-1-0-m0#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
 <p>No Milky Way behind the stars, one axis of motion, and star colours from the spectral class
 only. All three were fixed in M1.</p>
 <p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.1.0-m0" target="_blank" rel="noopener noreferrer" class="">v0.1.0-m0</a> (macOS review build)</p>]]></content:encoded>

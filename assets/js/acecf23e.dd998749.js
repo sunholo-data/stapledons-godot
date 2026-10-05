@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkstapledons_voyage_site=self.webpackChunkstapledons_voyage_site||[]).push([[1903],{1912(s){s.exports=JSON.parse('{"blogBasePath":"/stapledons-godot/news","blogTitle":"Stapledon\'s Voyage news","authorsListPath":"/stapledons-godot/news/authors"}')}}]);

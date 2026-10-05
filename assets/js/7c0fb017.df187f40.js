@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkstapledons_voyage_site=self.webpackChunkstapledons_voyage_site||[]).push([[7169],{6822(e){e.exports=JSON.parse('{"metadata":{"permalink":"/news","page":1,"postsPerPage":10,"totalPages":1,"totalCount":9,"blogDescription":"How the game evolves: releases, captures and what comes next.","blogTitle":"Stapledon\'s Voyage news"}}')}}]);
