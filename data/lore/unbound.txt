@@ -1,0 +1,6 @@
+# Known failures of the vendored canon, one per line: entry id | number as written | reason.
+# The design repo owns the lore; this repo does not edit it (CLAUDE.md, M4.7). `make lore-check` lists
+# every allowance, and an allowance that no longer matches a failure is an error, so each line goes
+# away when the canon is fixed and re-imported.
+archive.photon-drive | 2.379 × 10¹⁷ J | HB-35 is 2.379 × 10¹⁷ J/kg (per kilogram of effective mass); the prose drops "per kilogram", so the unit J does not equal J/kg. Canon fix: write "joules" per kilogram with a J/kg row (as HB-53/HB-54 split J and kg), or give the figure its own J row.
+archive.photon-drive | 6.520 × 10¹⁷ J | The same for HB-36 (6.520 × 10¹⁷ J/kg).

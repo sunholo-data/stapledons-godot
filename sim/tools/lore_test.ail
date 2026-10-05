@@ -1,0 +1,149 @@
+module stapledons/sim/tools/lore_test
+-- M4.7 lore binding (sim/tools/lore.ail): decimal rounding, the README's unit-alias table, shown-
+-- significant-figure binding, front matter, unknown hints, unresolved ids and the drifted positive
+-- control. `make lore-test`: strict VM = interpreter.
+import ./lore (Dec, Num, Row, decOf, roundTo, sameValue, numbers, parseRows, unitsOf, binds, parseEntry, checkEntry, normUnit)
+import std/string (concat, join, contains)
+import std/list (map, filter, length as size)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+
+pure func failedChecks(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func verdictOf(tag: string, bad: [string]) -> string =
+  match bad { [] => concat([tag, "-ok"]), _ => concat([tag, "-BAD: ", join(",", bad)]) }
+
+pure func table() -> string = join("\n", [
+  "| ID | Quantity | Value | Unit |", "|---|---|---|---|",
+  "| HB-1 | Radius | 100 | m |",
+  "| HB-6 | Gravity | 1 | g |",
+  "| HB-7 | Speed | 0.99 | c |",
+  "| HB-16 | gamma | 7.0888 | — |",
+  "| HB-21 | ship time | 0.6227 | yr |",
+  "| HB-22 | ship time | 227.4 | days |",
+  "| HB-30 | boost | 10 | min |",
+  "| HB-35 | boost energy per kg | 2.379 × 10¹⁷ | J/kg |",
+  "| HB-41 | load in suns | 163 | sun |",
+  "| HB-53 | drag energy | 1.37 × 10¹⁷ | J |",
+  "| HB-54 | the same as mass | 1.52 | kg |",
+  "| HB-12 | Gaia BH1 | 9.62 | M☉ |",
+  "| HB-75 | radius | 2,248 | r_s |",
+  "| HB-62 | CMB | 38.44 | K |",
+  "| HB-68 | angle | 0.0810 | deg |",
+  "| HB-10 | Sgr A* mass | 4.297 × 10⁶ | M☉ |",
+  "| HB-9 | Higgs share | 1 | % |",
+  "| HB-111 | eps | 1 × 10⁻¹⁰ | — |",
+  "| HB-72 | tide | 1.14 × 10⁶ | g |",
+  "| HB-78 | tide | 105 | g |",
+  "| HB-76 | the same radius | 63,900 | km |",
+  "| HB-99 | big | 999.6 | — |"])
+pure func reg() -> [Row] = parseRows(table())
+pure func units() -> [string] = unitsOf(reg())
+
+pure func entry(unlock: string, checks: string, body: string) -> string =
+  join("\n", ["---", "id: archive.sample", "title: A Sample", concat(["unlock: ", unlock, "   # when it opens"]), concat(["checks: [", checks, "]"]), "---", body])
+pure func problems(text: string) -> [string] = checkEntry("sample.md", text, reg())
+pure func clean(text: string) -> bool = size(problems(text)) == 0
+pure func failsWith(text: string, needle: string) -> bool = match problems(text) { [] => false, ps => contains(join(" | ", ps), needle) }
+
+pure func numTexts(s: string) -> [string] = map(\n. n.text, numbers(s, units()))
+pure func binding(s: string, id: string) -> bool =
+  match numbers(s, units()) { n :: _ => match findIn(id) { Some(r) => binds(n, r), None => false }, [] => false }
+pure func findIn(id: string) -> Option[Row] = pick(reg(), id)
+pure func pick(rs: [Row], id: string) -> Option[Row] = match rs { [] => None, r :: rest => if r.id == id then Some(r) else pick(rest, id) }
+
+pure func t(label: string, ok: bool) -> (string, bool) = (label, ok)
+-- binds: the first number in s binds to the registry row id; misses: it must not.
+pure func yes(s: string, id: string) -> (string, bool) = (concat(["binds ", s, " -> ", id]), binding(s, id))
+pure func no(s: string, id: string) -> (string, bool) = (concat(["does not bind ", s, " -> ", id]), !binding(s, id))
+
+-- Exact decimal rounding, half up, with carry.
+pure func rounding() -> [(string, bool)] {
+  let d = decOf("227", "4", true, 0);
+  [t("227.4 to 3 sf is 227", sameValue(roundTo(d, 3), decOf("227", "", false, 0))),
+   t("227.4 to 2 sf is 230", sameValue(roundTo(d, 2), decOf("230", "", false, 0))),
+   t("999.6 to 3 sf carries to 1000", sameValue(roundTo(decOf("999", "6", true, 0), 3), decOf("1000", "", false, 0))),
+   t("0.0810 to 2 sf is 0.081", sameValue(roundTo(decOf("0", "0810", true, 0), 2), decOf("0", "081", true, 0))),
+   t("45.00 shows 4 sf", decOf("45", "00", true, 0).sf == 4),
+   t("2248 shows 4 sf", decOf("2248", "", false, 0).sf == 4),
+   t("3890 shows 3 sf (a trailing zero without a point is not counted)", decOf("3890", "", false, 0).sf == 3),
+   t("1.66 x 10^6 is 0.166 x 10^7", decOf("1", "66", true, 6).e == 7),
+   t("a half rounds up", sameValue(roundTo(decOf("2", "5", true, 0), 1), decOf("3", "", false, 0)))]
+}
+
+-- The scanner: thousands separators, x 10^n, cites skipped, spelled-out counts ignored.
+pure func scanning() -> [(string, bool)] =
+  [t("units attach", numTexts("a radius of 100 m, at 0.99c") == ["100 m", "0.99c"]),
+   t("thousands and exponents", numTexts("beyond 2,248 horizon radii of 1.14 × 10⁶ g") == ["2,248 horizon radii", "1.14 × 10⁶ g"]),
+   t("cites are skipped", numTexts("a mass [cite: GRAVITY Collaboration 2022, A&A 657, L12] of 9.62 solar masses") == ["9.62 solar masses"]),
+   t("spelled-out counts are not numbers", numTexts("ten horizon radii, three properties, one hand-wave") == []),
+   t("negative exponents, a comma that is not a separator, a factor of", numTexts("2.11 × 10⁻⁴ g, 4,5 and a factor of 4.3589.") == ["2.11 × 10⁻⁴ g", "4", "5", "4.3589"]),
+   t("days", numTexts("about 227 days") == ["227 days"])]
+
+-- The README's alias table, pair by pair: each prose spelling binds to its registry unit.
+pure func aliases() -> [(string, bool)] =
+  [yes("0.6227 years", "HB-21"), yes("0.6227 yr", "HB-21"), yes("10 minutes", "HB-30"), yes("163 suns", "HB-41"), yes("9.62 solar masses", "HB-12"),
+   yes("2,248 horizon radii", "HB-75"), yes("38.44 kelvin", "HB-62"), yes("38.44 K", "HB-62"), yes("0.0810°", "HB-68"), yes("0.99c", "HB-7"),
+   yes("1 g", "HB-6"), yes("1%", "HB-9"), yes("a factor of 7.0888 here", "HB-16"), yes("7.0888", "HB-16"), yes("100 m", "HB-1"),
+   t("normUnit years", normUnit("years") == "yr"), t("normUnit degree sign", normUnit("°") == "deg"), t("normUnit dash", normUnit("—") == ""), t("normUnit g", normUnit("g") == "g")]
+
+-- No numeric conversion: a number in another unit than its row's never binds.
+pure func noConversion() -> [(string, bool)] =
+  [no("1.52 J", "HB-54"), no("1.52 g", "HB-54"), no("1.37 × 10¹⁷ kg", "HB-53"), no("0.6227 days", "HB-21"), no("227.4 yr", "HB-22"),
+   no("100 kg", "HB-1"), no("0.99", "HB-7"), no("7.0888 yr", "HB-16"), no("2,248 km", "HB-75"), no("2.379 × 10¹⁷ J", "HB-35"),
+   yes("2.379 × 10¹⁷ J/kg", "HB-35"), no("100 m", "HB-7")]
+
+-- Shown significant figures: the row rounded to the shown figures, never more figures than the row.
+pure func sigFigs() -> [(string, bool)] =
+  [yes("227 days", "HB-22"), yes("227.4 days", "HB-22"), no("227.5 days", "HB-22"), no("228 days", "HB-22"), no("227.40 days", "HB-22"),
+   yes("1.37 × 10¹⁷ J", "HB-53"), no("1.38 × 10¹⁷ J", "HB-53"), no("1.370 × 10¹⁷ J", "HB-53"), yes("1.4 × 10¹⁷ J", "HB-53"), no("1.3 × 10¹⁷ J", "HB-53"),
+   no("1.37 × 10¹⁶ J", "HB-53"), yes("63,900 km", "HB-76"), no("63,901 km", "HB-76"), yes("105 g", "HB-78"), no("106 g", "HB-78"),
+   yes("4.297 × 10⁶ solar masses", "HB-10"), no("4.298 × 10⁶ solar masses", "HB-10"), yes("1,000", "HB-99"), no("1,001", "HB-99"),
+   yes("1 × 10⁻¹⁰", "HB-111"), no("1.0 × 10⁻¹⁰", "HB-111"), no("1 × 10⁻⁹", "HB-111")]
+
+
+-- A clean entry; each fault is caught, with its own message.
+pure func good() -> string = entry("always", "HB-1, HB-7, HB-54", "A radius of 100 m at 0.99c. It costs 1.52 kg, spelled out: three properties.")
+pure func fm(id: string, title: string, rest: [string]) -> string = join("\n", ["---", concat(["id: ", id]), concat(["title: ", title])] ++ rest ++ ["---", "b"])
+pure func entries() -> [(string, bool)] =
+  [t("a clean entry", clean(good())),
+   t("unknown hint 'start' fails", failsWith(entry("start", "HB-1", "100 m."), "unknown unlock hint 'start'")),
+   t("unknown hint 'event:arrive' fails", failsWith(entry("event:arrive", "HB-1", "100 m."), "unknown unlock hint")),
+   t("each known hint passes", clean(entry("first_commit", "HB-1", "100 m.")) && clean(entry("first_boost", "HB-1", "100 m.")) && clean(entry("cruise_above_0.9c", "HB-1", "100 m.")) && clean(entry("cruise_above_gamma_275", "HB-1", "100 m.")) && clean(entry("first_black_hole", "HB-1", "100 m."))),
+   t("an unresolvable checks id fails", failsWith(entry("always", "HB-1, HB-999", "100 m."), "check id 'HB-999' does not resolve")),
+   t("a number off by one fails", failsWith(entry("always", "HB-1", "A radius of 101 m."), "number '101 m' binds to none")),
+   t("the wrong unit fails", failsWith(entry("always", "HB-1", "A radius of 100 km."), "number '100 km' binds to none")),
+   t("a speed with no listed row fails", failsWith(entry("always", "HB-1", "At 0.99c."), "number '0.99c' binds to none")),
+   t("a number whose row is not listed fails", failsWith(entry("always", "HB-7", "A radius of 100 m."), "number '100 m' binds to none")),
+   t("a cite is skipped", clean(entry("first_boost", "HB-1", "100 m. [cite: Smith 2022, 14 pp] More text."))),
+   t("a year outside a cite fails", failsWith(entry("always", "HB-1", "100 m. Written in 2022."), "number '2022' binds to none")),
+   t("missing checks", failsWith(fm("archive.x", "T", ["unlock: always"]), "front matter lacks checks")),
+   t("no front matter", failsWith("no front matter at all", "no front matter")),
+   t("checks not a list", failsWith(fm("archive.x", "T", ["unlock: always", "checks: HB-1"]), "checks must be a [list]")),
+   t("id without archive. prefix", failsWith(fm("sample", "T", ["unlock: always", "checks: [HB-1]"]), "id must be archive.<name>")),
+   t("the title is checked too", failsWith(fm("archive.x", "The 100 kg Title", ["unlock: always", "checks: [HB-1]"]), "number '100 kg' binds to none"))]
+
+-- The comment after a front-matter value is dropped, and the front matter parses to its fields.
+pure func frontMatter() -> [(string, bool)] =
+  [t("fields", match parseEntry(good()) {
+    Ok(e) => e.id == "archive.sample" && e.title == "A Sample" && e.unlock == "always" && e.checks == ["HB-1", "HB-7", "HB-54"],
+    Err(_) => false })]
+
+-- The registry parser takes the last two cells and skips non-registry rows.
+pure func rows() -> [(string, bool)] =
+  [t("22 rows", size(reg()) == 22),
+   t("HB-35 unit and sf", match pick(reg(), "HB-35") { Some(r) => r.unit == "J/kg" && r.dec.sf == 4, None => false }),
+   t("HB-111 dimensionless 1e-10", match pick(reg(), "HB-111") { Some(r) => r.unit == "" && r.dec.e == -9, None => false })]
+
+pure func checks() -> [(string, bool)] = rounding() ++ scanning() ++ aliases() ++ noConversion() ++ sigFigs() ++ entries() ++ frontMatter() ++ rows()
+pure func allOk(cs: [(string, bool)]) -> bool = size(failedChecks(cs)) == 0
+
+test "M4.7 lore: exact decimal rounding" { allOk(rounding()) }
+test "M4.7 lore: number scanner" { allOk(scanning()) }
+test "M4.7 lore: unit aliases" { allOk(aliases()) }
+test "M4.7 lore: no numeric conversion" { allOk(noConversion()) }
+test "M4.7 lore: shown significant figures" { allOk(sigFigs()) }
+test "M4.7 lore: entries (hints, ids, numbers, front matter)" { allOk(entries()) }
+test "M4.7 lore: registry rows" { allOk(rows()) }
+
+export func loreVm(_: int) -> string = verdictOf("lore", failedChecks(checks()))

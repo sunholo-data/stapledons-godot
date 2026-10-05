@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui lore-test lore-import-check lore-check replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -695,3 +695,38 @@ ship-demo-ci: sim-bootstrap-test
 tour-pacing-test: import
 	@$(GODOT) --headless --path . --script tests/test_tour_pacing.gd > $(SCRATCH)/tour-pacing.log 2>&1; rc=$$?; cat $(SCRATCH)/tour-pacing.log; test $$rc = 0 && grep -q "^tour-pacing: 0 failures$$" $(SCRATCH)/tour-pacing.log
 ship-demo-ci: tour-pacing-test
+
+# ---- M4.7: the Archive codex's lore (design m4-first-journey.md "M4.7")
+D ?= ../stapledons-design
+LORE_DATA ?= data/lore
+LORE ?=
+CHECK ?=
+LORE_ENV = D=$(D) LORE_DATA=$(LORE_DATA) AILANG=$(AILANG) SCRATCH=$(SCRATCH) LORE=$(LORE)
+
+.PHONY: lore-import lore-import-check lore-values lore-check lore-test lore-import-test
+
+lore-import:       ## M4.7 AC17: copy the design repo's lore (git objects at D's HEAD) into data/lore + manifest; CHECK=1 verifies the manifest (fail-closed, offline) and, where D has its sha, the design repo
+	@mkdir -p $(SCRATCH)
+	@if [ "$(CHECK)" = 1 ]; then $(LORE_ENV) sh tools/lore_import.sh check; else $(LORE_ENV) sh tools/lore_import.sh import; fi
+
+lore-import-check: ## M4.7 AC17 (in make test): lore-import CHECK=1
+	@$(MAKE) --no-print-directory lore-import CHECK=1
+
+lore-values:       ## M4.7 AC8/AC15: the check-value registry data/lore/check_values.json; fails unless package values equal their HB rows at printed s.f. and eps <= HB-61
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry values --args-json '{"dir":"$(LORE_DATA)","out":"$(LORE_DATA)/check_values.json"}' sim/tools/lore_values.ail
+
+lore-check: lore-values  ## M4.7 AC15: every entry's unlock is a known hint, every checks id resolves, every number binds (LORE=file|dir checks that instead, e.g. LORE=tests/fixtures/lore/drifted.md must fail)
+	@$(LORE_ENV) sh tools/lore_check.sh
+
+lore-test:         ## M4.7 lore binding, registry and checker: strict VM = interpreter, then the positive controls (drifted.md, unknown hint, unresolved id) on the real files
+	@mkdir -p $(SCRATCH)
+	@for m in lore_test:loreVm lore_check_test:loreCheckVm lore_values_test:loreValuesVm; do f=$${m%%:*}; e=$${m##*:}; \
+	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 0 sim/tools/$$f.ail > $(SCRATCH)/$$f-vm.txt 2>&1; \
+	  $(AILANG) run --quiet --package-dir sim --entry $$e --args-json 0 sim/tools/$$f.ail > $(SCRATCH)/$$f-interp.txt 2>&1; \
+	  cmp $(SCRATCH)/$$f-vm.txt $(SCRATCH)/$$f-interp.txt && grep -q -- '-ok$$' $(SCRATCH)/$$f-vm.txt || { echo "lore-test: $$f FAILED"; cat $(SCRATCH)/$$f-vm.txt $(SCRATCH)/$$f-interp.txt; exit 1; }; \
+	  echo "lore-test: $$f: $$(cat $(SCRATCH)/$$f-vm.txt) (strict VM = interpreter)"; done
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry loreValuesReal --args-json '"$(LORE_DATA)"' sim/tools/lore_values_test.ail | grep -q -- '-ok$$' || { echo "lore-test: the real HB rows disagree with the package"; exit 1; }
+	@echo "lore-test: the ten AC8/AC15 HB rows (16 17 35 40 41 45 49 53 54 61) agree with the package at printed s.f."
+	@$(MAKE) --no-print-directory lore-values
+	@AILANG=$(AILANG) sh tests/test_lore_check.sh
+	@AILANG=$(AILANG) SCRATCH=$(SCRATCH) sh tests/test_lore_import.sh

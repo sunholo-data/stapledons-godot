@@ -1,0 +1,259 @@
+module stapledons/sim/tools/lore
+-- M4.7: the logic under test for `make lore-check` (design m4-first-journey §M4.7; the design repo's
+-- lore/archive/README.md is the contract). Pure: no effects, strict VM = interpreter.
+--   * front matter: id, title, unlock, checks
+--   * every number in the title and body (decimal, thousands separator, "x 10^n" in superscripts;
+--     `[cite: ...]` is skipped) must bind to one of the entry's listed registry rows:
+--       the registry value rounded to the SHOWN significant figures equals the shown number, the shown
+--       figures do not exceed the registry's, and the unit after the number equals the row's unit
+--       through the README's textual alias table. No numeric conversion exists, so 1.5 kg never
+--       binds to a row in J.
+-- Numbers are decimal digit strings (Dec), never floats, so rounding is exact.
+import std/string (concat, join, split, trim, startsWith, endsWith, substring, length, chars)
+import std/list (map, filter, foldl, reverse, length as size, nth)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import stapledons/sim/consequence (isHint)
+
+-- value = 0.<sig> x 10^e; sig has no leading or trailing zeros (zero: sig ""); sf = shown significant figures.
+export type Dec = { sig: string, e: int, sf: int }
+-- unit: the registry's spelling after aliasing; "" = no unit (the registry's "—").
+export type Num = { text: string, dec: Dec, unit: string }
+export type Row = { id: string, printed: string, dec: Dec, unit: string }
+export type Entry = { id: string, title: string, unlock: string, checks: [string], body: string }
+
+-- ------------------------------------------------------------ characters
+pure func isDigit(c: string) -> bool = c >= "0" && c <= "9"
+pure func isSpace(c: string) -> bool = c == " " || c == "\n" || c == "\t" || c == "\r"
+pure func isLetter(c: string) -> bool = (c >= "a" && c <= "z") || (c >= "A" && c <= "Z")
+-- Unicode superscripts: the exponent in "1.37 x 10^17" is written ¹⁷.
+pure func supDigit(c: string) -> Option[string] =
+  if c == "⁰" then Some("0") else if c == "¹" then Some("1") else if c == "²" then Some("2") else if c == "³" then Some("3")
+  else if c == "⁴" then Some("4") else if c == "⁵" then Some("5") else if c == "⁶" then Some("6") else if c == "⁷" then Some("7")
+  else if c == "⁸" then Some("8") else if c == "⁹" then Some("9") else None
+pure func nextDigit(c: string) -> string =
+  if c == "0" then "1" else if c == "1" then "2" else if c == "2" then "3" else if c == "3" then "4" else if c == "4" then "5"
+  else if c == "5" then "6" else if c == "6" then "7" else if c == "7" then "8" else if c == "8" then "9" else "0"
+pure func digitVal(c: string) -> int =
+  if c == "1" then 1 else if c == "2" then 2 else if c == "3" then 3 else if c == "4" then 4 else if c == "5" then 5
+  else if c == "6" then 6 else if c == "7" then 7 else if c == "8" then 8 else if c == "9" then 9 else 0
+
+-- ------------------------------------------------------------ decimals
+pure func leadingZeros(s: string) -> int = lz(chars(s), 0)
+pure func lz(cs: [string], n: int) -> int = match cs { [] => n, c :: r => if c == "0" then lz(r, n + 1) else n }
+pure func stripTrailingZeros(s: string) -> string = joinRev(dropZeros(reverse(chars(s))))
+pure func dropZeros(rs: [string]) -> [string] = match rs { [] => [], c :: r => if c == "0" then dropZeros(r) else rs }
+pure func joinRev(rs: [string]) -> string = join("", reverse(rs))
+pure func maxi(a: int, b: int) -> int = if a > b then a else b
+
+-- int digits, fraction digits (commas already removed), whether a decimal point was written, the
+-- power of ten from "x 10^n".
+export pure func decOf(intDigits: string, frac: string, hasPoint: bool, exp10: int) -> Dec {
+  let all = concat([intDigits, frac]);
+  let lead = leadingZeros(all);
+  let sig = substring(all, lead, length(all));
+  if sig == "" then { sig: "", e: 0, sf: 1 }
+  else {
+    let st = stripTrailingZeros(sig);
+    { sig: st, e: length(intDigits) - lead + exp10, sf: if hasPoint then length(sig) else maxi(1, length(st)) }
+  }
+}
+
+-- Round half up to n significant figures (n >= 1), exactly, on the digit string.
+export pure func roundTo(d: Dec, n: int) -> Dec =
+  if length(d.sig) <= n then d
+  else {
+    let head = substring(d.sig, 0, n);
+    if substring(d.sig, n, n + 1) < "5" then { sig: stripTrailingZeros(head), e: d.e, sf: n }
+    else match incRev(reverse(chars(head))) {
+      (res, carry) => if carry then { sig: "1", e: d.e + 1, sf: n } else { sig: stripTrailingZeros(joinRev(res)), e: d.e, sf: n }
+    }
+  }
+-- Increment a reversed digit list; the flag is a carry out of the top digit.
+pure func incRev(cs: [string]) -> ([string], bool) =
+  match cs {
+    [] => ([], true),
+    c :: r => if c == "9" then (match incRev(r) { (rr, k) => ("0" :: rr, k) }) else (nextDigit(c) :: r, false)
+  }
+
+export pure func sameValue(a: Dec, b: Dec) -> bool = a.sig == b.sig && (a.sig == "" || a.e == b.e)
+
+-- ------------------------------------------------------------ units (the README's alias table)
+-- Prose spelling -> registry spelling. Anything not here is its own spelling.
+pure func aliasOf(w: string) -> string =
+  if w == "years" then "yr" else if w == "minutes" then "min" else if w == "suns" then "sun" else if w == "kelvin" then "K"
+  else if w == "solar masses" then "M☉" else if w == "horizon radii" then "r_s" else if w == "°" then "deg" else w
+export pure func normUnit(u: string) -> string = if u == "—" || u == "-" then "" else aliasOf(trim(u))
+
+-- ------------------------------------------------------------ scanning numbers
+-- A run of digits with thousands commas: "2,248" but not "4, 5" or "1,5".
+pure func readInt(cs: [string], acc: string) -> (string, [string]) =
+  match cs {
+    d :: rest => if isDigit(d) then readInt(rest, concat([acc, d]))
+      else if d == "," && acc != "" then (match rest { a :: b :: c :: after => if isDigit(a) && isDigit(b) && isDigit(c) && !startsDigit(after) then readInt(after, concat([acc, a, b, c])) else (acc, cs), _ => (acc, cs) })
+      else (acc, cs),
+    [] => (acc, cs)
+  }
+pure func startsDigit(cs: [string]) -> bool = match cs { d :: _ => isDigit(d), [] => false }
+pure func readFrac(cs: [string]) -> (string, [string]) =
+  match cs { d :: rest => if isDigit(d) then (match readFrac(rest) { (f, r2) => (concat([d, f]), r2) }) else ("", cs), [] => ("", cs) }
+pure func dropSpaces(cs: [string]) -> [string] = match cs { c :: r => if c == " " then dropSpaces(r) else cs, [] => [] }
+
+-- " x 10^n" (also "x10^n", "×10^-n"): the exponent, or None when the text after the mantissa is not that.
+pure func readExp(cs: [string]) -> Option[(int, [string])] =
+  match dropSpaces(cs) {
+    x :: rest => if x != "×" then None else (match dropSpaces(rest) {
+      a :: b :: sup => if a == "1" && b == "0" then supRun(sup) else None,
+      _ => None
+    }),
+    [] => None
+  }
+pure func supRun(cs: [string]) -> Option[(int, [string])] =
+  match cs {
+    m :: rest => if m == "⁻" then (match supDigits(rest, "") { (ds, r2) => if ds == "" then None else Some((0 - toInt(ds), r2)) })
+      else (match supDigits(cs, "") { (ds, r2) => if ds == "" then None else Some((toInt(ds), r2)) }),
+    [] => None
+  }
+pure func supDigits(cs: [string], acc: string) -> (string, [string]) =
+  match cs { c :: rest => (match supDigit(c) { Some(d) => supDigits(rest, concat([acc, d])), None => (acc, cs) }), [] => (acc, cs) }
+pure func toInt(ds: string) -> int = foldl(\a c. a * 10 + digitVal(c), 0, chars(ds))
+
+-- The unit after a number: "c" attached (0.99c), ° or %, else the next word(s) when it is a known unit.
+-- Words end at whitespace and at , ; : . ) ( ! ? " and the Archive's em dash.
+pure func isWordEnd(c: string) -> bool = isSpace(c) || c == "," || c == ";" || c == ":" || c == "." || c == ")" || c == "(" || c == "!" || c == "?" || c == "\"" || c == "—"
+pure func readWord(cs: [string], acc: string) -> (string, [string]) =
+  match cs { c :: rest => if isWordEnd(c) then (acc, cs) else readWord(rest, concat([acc, c])), [] => (acc, cs) }
+pure func dropWs(cs: [string]) -> [string] = match cs { c :: r => if isSpace(c) then dropWs(r) else cs, [] => [] }
+
+pure func unitAfter(cs: [string], units: [string]) -> (string, [string]) =
+  match cs {
+    [] => ("", cs),
+    c :: rest =>
+      if c == "°" then ("deg", rest)
+      else if c == "%" then ("%", rest)
+      else if c == "c" && (match rest { [] => true, n :: _ => !isLetter(n) && !isDigit(n) }) then ("c", rest)
+      else if !isSpace(c) then ("", cs)
+      else match readWord(dropWs(cs), "") {
+        (w, after) =>
+          if w == "solar" || w == "horizon" then
+            (match readWord(dropWs(after), "") { (w2, after2) =>
+              if (w == "solar" && w2 == "masses") || (w == "horizon" && w2 == "radii") then (aliasOf(concat([w, " ", w2])), after2) else ("", cs) })
+          else if has(units, aliasOf(w)) then (aliasOf(w), after)
+          else ("", cs)
+      }
+  }
+pure func has(xs: [string], x: string) -> bool = match xs { [] => false, y :: r => y == x || has(r, x) }
+
+-- After "[cite:" skip to the closing bracket.
+pure func skipCite(cs: [string]) -> [string] = match cs { c :: r => if c == "]" then r else skipCite(r), [] => [] }
+pure func isCite(cs: [string]) -> bool = match cs { a :: b :: c :: d :: e :: f :: _ => a == "[" && b == "c" && c == "i" && d == "t" && e == "e" && f == ":", _ => false }
+
+-- Every number in `text`, in order. `units` are the registry's units (plus the aliases) that may
+-- follow a number.
+export pure func numbers(text: string, units: [string]) -> [Num] = reverse(scan(chars(text), units, []))
+pure func scan(cs: [string], units: [string], acc: [Num]) -> [Num] =
+  match cs {
+    [] => acc,
+    c :: rest =>
+      if isCite(cs) then scan(skipCite(cs), units, acc)
+      else if isDigit(c) then
+        (match readInt(cs, "") { (ip, r1) =>
+          (match readPoint(r1) { (frac, hasP, r2) =>
+            (match readExp(r2) {
+              Some((ex, r3)) => take(cs, ip, frac, hasP, ex, r3, units, rest, acc),
+              None => take(cs, ip, frac, hasP, 0, r2, units, rest, acc)
+            }) }) })
+      else scan(rest, units, acc)
+  }
+pure func readPoint(cs: [string]) -> (string, bool, [string]) =
+  match cs { p :: d :: more => if p == "." && isDigit(d) then (match readFrac(p2(cs)) { (f, r) => (f, true, r) }) else ("", false, cs), _ => ("", false, cs) }
+pure func p2(cs: [string]) -> [string] = match cs { _ :: r => r, [] => [] }
+pure func take(all: [string], ip: string, frac: string, hasP: bool, ex: int, after: [string], units: [string], _rest: [string], acc: [Num]) -> [Num] =
+  match unitAfter(after, units) {
+    (u, r) => scan(r, units, { text: join("", firstN(all, size(all) - size(r))), dec: decOf(ip, frac, hasP, ex), unit: u } :: acc)
+  }
+pure func firstN(cs: [string], n: int) -> [string] = if n <= 0 then [] else match cs { [] => [], c :: r => c :: firstN(r, n - 1) }
+
+-- ------------------------------------------------------------ the registry rows
+-- A registry table row "| HB-16 | quantity | 7.0888 | — |" (value and unit are the last two cells).
+export pure func parseRow(line: string) -> Option[Row] {
+  let cells = map(trim, split(line, "|"));
+  match cells {
+    _ :: id :: _ => if (startsWith(id, "HB-") || startsWith(id, "RS-")) && size(cells) >= 5 then rowFrom(id, nth_(cells, size(cells) - 3), nth_(cells, size(cells) - 2)) else None,
+    _ => None
+  }
+}
+pure func nth_(xs: [string], i: int) -> string = match nth(xs, i) { Some(x) => x, None => "" }
+export pure func rowFrom(id: string, value: string, unit: string) -> Option[Row] =
+  match numbers(value, []) {
+    n :: _ => Some({ id: id, printed: value, dec: n.dec, unit: normUnit(unit) }),
+    [] => None
+  }
+export pure func parseRows(md: string) -> [Row] = foldl(\a l. match parseRow(l) { Some(r) => a ++ [r], None => a }, [], split(md, "\n"))
+export pure func unitsOf(rows: [Row]) -> [string] = foldl(\a r. if r.unit == "" || has(a, r.unit) then a else a ++ [r.unit], baseUnits(), rows)
+pure func baseUnits() -> [string] = ["yr", "min", "sun", "K", "M☉", "r_s", "deg", "m", "kg", "N", "J", "GeV", "g", "%", "c"]
+export pure func findRow(rows: [Row], id: string) -> Option[Row] = match rows { [] => None, r :: rest => if r.id == id then Some(r) else findRow(rest, id) }
+
+-- ------------------------------------------------------------ binding
+export pure func binds(n: Num, r: Row) -> bool =
+  n.unit == r.unit && n.dec.sf <= r.dec.sf && sameValue(roundTo(r.dec, n.dec.sf), n.dec)
+
+-- ------------------------------------------------------------ entries
+-- Front matter: "---", key: value lines (a trailing " # comment" is dropped), "---".
+export pure func parseEntry(text: string) -> Result[Entry, string] {
+  let ls = split(text, "\n");
+  match ls {
+    first :: rest =>
+      if trim(first) != "---" then Err("no front matter (the file must open with ---)")
+      else match splitAt(rest, []) {
+        None => Err("front matter is not closed by ---"),
+        Some((fm, bodyLines)) => entryOf(fm, join("\n", bodyLines))
+      },
+    [] => Err("empty file")
+  }
+}
+pure func splitAt(ls: [string], acc: [string]) -> Option[([string], [string])] =
+  match ls { [] => None, l :: r => if trim(l) == "---" then Some((reverse(acc), r)) else splitAt(r, l :: acc) }
+pure func fmValue(fm: [string], key: string) -> Option[string] =
+  match fm {
+    [] => None,
+    l :: r => if startsWith(l, concat([key, ":"])) then Some(trim(dropComment(substring(l, length(key) + 1, length(l))))) else fmValue(r, key)
+  }
+pure func dropComment(s: string) -> string = match split(s, " #") { h :: _ => h, [] => s }
+pure func entryOf(fm: [string], body: string) -> Result[Entry, string] =
+  match fmValue(fm, "id") {
+    None => Err("front matter lacks id"),
+    Some(id) => match fmValue(fm, "title") {
+      None => Err("front matter lacks title"),
+      Some(title) => match fmValue(fm, "unlock") {
+        None => Err("front matter lacks unlock"),
+        Some(u) => match fmValue(fm, "checks") {
+          None => Err("front matter lacks checks"),
+          Some(cs) => if startsWith(cs, "[") && endsWith(cs, "]") then
+              Ok({ id: id, title: title, unlock: u, checks: filter(\x. x != "", map(trim, split(substring(cs, 1, length(cs) - 1), ","))), body: body })
+            else Err("checks must be a [list]")
+        }
+      }
+    }
+  }
+
+-- All the problems in one entry file; [] = clean. `file` is only a label here.
+export pure func checkEntry(file: string, text: string, reg: [Row]) -> [string] =
+  match parseEntry(text) {
+    Err(e) => [concat([file, ": front matter: ", e])],
+    Ok(en) => {
+      let pre = concat([file, " (", en.id, "): "]);
+      let idProblem = if startsWith(en.id, "archive.") && length(en.id) > 8 then [] else [concat([pre, "id must be archive.<name>"])];
+      let hintProblem = if isHint(en.unlock) then [] else [concat([pre, "unknown unlock hint '", en.unlock, "'"])];
+      let found = map(\i. (i, findRow(reg, i)), en.checks);
+      let missing = map(\p. match p { (i, _) => concat([pre, "check id '", i, "' does not resolve in the registry"]) }, filter(\p. match p { (_, r) => isNone(r) }, found));
+      let rows = foldl(\a p. match p { (_, Some(r)) => a ++ [r], (_, None) => a }, [], found);
+      let units = unitsOf(reg);
+      let nums = concat2(numbers(en.title, units), numbers(en.body, units));
+      let unbound = map(\n. concat([pre, "number '", n.text, "' binds to none of [", join(", ", en.checks), "]"]), filter(\n. !anyBinds(n, rows), nums));
+      idProblem ++ hintProblem ++ missing ++ unbound
+    }
+  }
+pure func isNone(o: Option[Row]) -> bool = match o { None => true, Some(_) => false }
+pure func concat2(a: [Num], b: [Num]) -> [Num] = a ++ b
+pure func anyBinds(n: Num, rows: [Row]) -> bool = match rows { [] => false, r :: rest => binds(n, r) || anyBinds(n, rest) }

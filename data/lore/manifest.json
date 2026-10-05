@@ -1,0 +1,19 @@
+{
+  "design_repo": "sunholo-data/stapledons-design",
+  "design_sha": "ebe46f912d639650fb1e11ef2465ff6c1fd30756",
+  "files": [
+    {"path": "archive/README.md", "sha256": "4877f7785bda0ab356cb5f6e5d4026f54cd0ffe145cc8bde2554c4cc53c99427"},
+    {"path": "archive/bubble.md", "sha256": "4892ad8905e3d4c3f097a5b25f9881624964b871306019dfd5680f46c39a5714"},
+    {"path": "archive/cmb-forward.md", "sha256": "0c4792739ecc2078f7a686861e9895148707739d6af8dea75388c14113e9fd38"},
+    {"path": "archive/ism-glow.md", "sha256": "33ca886ca88d30a6526db7a28d8d82a5985019727966f93cfdcf1b258bf70458"},
+    {"path": "archive/nothing-crosses.md", "sha256": "039c098ab4642672be2d000c1294321e693e65a5d6e79aa2b13aca790c959297"},
+    {"path": "archive/one-g.md", "sha256": "eef59e24147d6092737a0cc90de66ee6170d5490639c708bd5363eba279ec392"},
+    {"path": "archive/photon-drive.md", "sha256": "8818497a25fd023d341a03ad1b7c2c0d6957e4ea588f717f0db7b12116f80111"},
+    {"path": "archive/shadow-ring.md", "sha256": "96fb5fd1176c8010c9e2c8b202c4b820ba0e312cae79b2cc620eeb4f7ab2dd58"},
+    {"path": "archive/starbow.md", "sha256": "7c7dcedc6a6e1b93f46812c4174f8ce6c08fa0ba5c2bf4f346ebccc5f0a9b4f9"},
+    {"path": "archive/tides.md", "sha256": "f2fd63517a32e76b4b46bae6cd31257c24a05ca74146baf6d2555bbf8db8fc22"},
+    {"path": "archive/two-clocks.md", "sha256": "6411d815a6257c4d19441baf7bd29e018a19c29eb6d1e68b821bd2ee5652a15e"},
+    {"path": "physics/higgs-bubble.md", "sha256": "8a871af0e01897e8ac94b565d20f77a55645688b01de8c838c11d88feaf64673"},
+    {"path": "physics/relativity-spec.md", "sha256": "e306b4e9cbbf17e0cfd47646e1d5fe1267f55a6c5ae7bc4c0ca71a9a2f1a8c50"}
+  ]
+}
