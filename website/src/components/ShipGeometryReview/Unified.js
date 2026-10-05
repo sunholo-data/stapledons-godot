@@ -2,10 +2,13 @@ import React, {useState} from 'react';
 import styles from './styles.module.css';
 const base='https://storage.googleapis.com/stapledons-voyage-assets/refs';
 const views=[
- ['solar_departure_v1/earth_start.png',"Earth departure"],
- ['solar_departure_v1/jupiter_arrival.png',"Jupiter stop"],
- ['solar_departure_v1/saturn_arrival.png',"Saturn and its rings"],
- ['solar_departure_v1/alpha_centauri_cruising.png',"Outbound toward Alpha Centauri"],
+ ['solar_departure_v2/earth_start.png',"Earth · close side view"],
+ ['solar_departure_v2/sun_arrival.png',"Sun · three solar radii"],
+ ['solar_departure_v2/jupiter_arrival.png',"Jupiter · close side view"],
+ ['solar_departure_v2/callisto_arrival.png',"Callisto · clearance stop"],
+ ['solar_departure_v2/saturn_arrival.png',"Saturn · close rings"],
+ ['ship_grounded_v2/grounded_contact.png',"Bridge · restored floor and captain contact"],
+ ['solar_departure_v2/CNS5_3627_cruising.png',"Outbound toward Alpha Centauri"],
  ['solar_departure_v1/map_second_departure.png',"Navigation from the current ship"],
 
  ['ship_lighting_v1/bridge_inward_moody.png','Lighting study · bridge inward'],
@@ -26,6 +29,7 @@ export default function UnifiedReview(){
  return <section className={styles.review} aria-label="Unified painted ship review">
   <div className={styles.controls}><label>Review view <select value={selected} onChange={e=>setSelected(Number(e.target.value))}>{views.map(([,name],i)=><option key={name} value={i}>{name}</option>)}</select></label></div>
   <figure className={styles.capture}><a href={`${base}/${path}`}><img src={`${base}/${path}`} alt={label} loading="lazy"/></a><figcaption>{label} · native game capture</figcaption></figure>
-  <p className={styles.hint}>Paint follows the 3D surfaces. These are game views; the orbitable model above is a construction diagnostic.</p>
+  <p className={styles.hint}>Paint follows the 3D surfaces. These are game views. The editable models preserve measured dimensions; concept paintings remain style references.</p>
+  <details><summary>Current painted Blender models</summary><p><a href={`${base}/ship_grounded_v2/stapledon_unified_ship_grounded_v2.blend`}>Full ship Blender master</a> · <a href={`${base}/ship_grounded_v2/stapledon_bridge_mesh_grounded_v2.blend`}>Bridge Blender master</a> · <a href={`${base}/ship_grounded_v2/full_assembly.glb`}>Full ship GLB</a> · <a href={`${base}/ship_grounded_v2/asset-pins.json`}>Asset pins</a></p></details>
  </section>;
 }

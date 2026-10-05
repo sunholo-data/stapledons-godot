@@ -26,7 +26,7 @@ measured, playable geometry. Other zones and tiers remain coarse.
 The bridge now has **painted textures on the measured 3D surfaces**, alongside the
 Commons painted modules. The old bridge paintover was a flat rendered plate;
 this first texture pass supports turning, moving and looking down between decks.
-Geometry and walkable areas are preserved. Fine ink detail remains an art review.
+The restored bridge floor meets the captain and prop bases at +82 m; the lift opening remains clear. Fine ink detail remains an art review.
 
 <UnifiedReview />
 
@@ -66,9 +66,9 @@ develop through playable sections. The earlier paintover is a finish study only.
 - **Commons:** review the first arcade/plaza section against the approved concept before expanding.
 - **Later tiers:** concepts and zoning remain proposals; population and life-support capacity are unresolved.
 - **Bridge finish:** review this first texture pass before refining the ink detail.
-- **Laptop performance:** actual M2 Air measurement is pending. The latest Studio test measured 9.3–9.7 ms p95 at 1920×1080; star inspection adds CPU work despite little frame-time change on that machine.
+- **Laptop performance:** the M2 Air baseline is roughly 60 FPS at rest, with occasional stalls and 18–19 ms p95 in most ship views. The new build still needs a laptop comparison; Studio timings do not establish Air performance.
 - **Travel effects:** physically supported glow/bubble effects remain future work. The current demo does not show travel glow or GR lensing.
-- **Solar departure tour:** Earth → Jupiter → Saturn → Alpha Centauri, with continuous positions, acceleration and braking. Jupiter and Saturn are stops at rest; they are not gravity-bound orbits. Earth uses the Earth–Moon barycentre approximation.
+- **Solar departure tour:** Earth → Sun → Jupiter → Callisto → Saturn → Alpha Centauri. Close stops turn the ship smoothly to place the body beside the bridge. Callisto provides collision-safe clearance before Saturn. These are inertial stops, not gravity-bound orbits; thermal hazards and GR are not modelled. Earth uses the Earth–Moon barycentre approximation.
 
 ## Progress gallery
 
@@ -128,7 +128,7 @@ the map closes and you can watch acceleration, cruise and braking aboard ship.
 
 The ship starts at rest in a live navigation session, at **4× exposure**. **J** cycles exposure; **5/6** compare frozen rest/cruise snapshots outside committed travel and
 **7/8/9** look forward/side/aft. **Tab** shows all controls. **B** measures performance
-on your laptop outside committed travel and displays the report location.
+on your laptop outside committed travel, saves the full report locally and uploads a public timing summary using your authenticated Cloud CLI. A link appears after upload succeeds; the local report remains available if it fails.
 
 <details>
 <summary>Build plans and verification</summary>
