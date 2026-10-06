@@ -1,0 +1,119 @@
+{
+  "sprint_id": "R1-M5-TRAPPIST-1",
+  "status": "approved",
+  "approved_by": "Mark Edmondson, attended 2026-10-06 (\"yes lets go ahead with this demo expansion\")",
+  "requested_by": "Mark (attended 2026-10-06; D-41)",
+  "design_doc": "design_docs/planned/r1/m4-real-time-tour.md",
+  "sprint_plan": "design_docs/planned/r1/m5-trappist1-sprint.md",
+  "github_issues": [],
+  "registry_reuse": [
+    {
+      "milestone": "TB2,TB5",
+      "package": "sunholo/celestial",
+      "action": "depend",
+      "reason": "Kepler orbits, light-time, reflected light exist"
+    },
+    {
+      "milestone": "TB3",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "finite star photometry"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 285,
+    "estimated_total_loc": 850,
+    "estimated_days": 3
+  },
+  "features": [
+    {
+      "id": "TB1",
+      "description": "Pinned NASA Exoplanet Archive TRAPPIST-1 snapshot, re-verified vs Agol 2021",
+      "estimated_loc": 60,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "B1: make planet-verify"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TB2",
+      "description": "sim/data/trappist1.ail with {value,status,source} rows and transit-epoch orbit phasing",
+      "estimated_loc": 220,
+      "dependencies": [
+        "TB1"
+      ],
+      "acceptance_criteria": [
+        "B1: trappist1_test.ail citations and values"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TB3",
+      "description": "Body feed near the star, exact Gaia-point suppression, finite M-dwarf disc",
+      "estimated_loc": 160,
+      "dependencies": [
+        "TB2"
+      ],
+      "acceptance_criteria": [
+        "B2: make solar-departure-test"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TB4",
+      "description": "Assumed-albedo Minnaert appearance; label derived from status (flip test)",
+      "estimated_loc": 120,
+      "dependencies": [
+        "TB3"
+      ],
+      "acceptance_criteria": [
+        "B4: make physics, make golden"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TB5",
+      "description": "Inner-system stop between e and f orbits with clearance for all bodies",
+      "estimated_loc": 170,
+      "dependencies": [
+        "TB3"
+      ],
+      "acceptance_criteria": [
+        "B3: sim tests"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TB6",
+      "description": "Goldens, inspected renders, make test, evaluation, dev build",
+      "estimated_loc": 120,
+      "dependencies": [
+        "TB4",
+        "TB5"
+      ],
+      "acceptance_criteria": [
+        "B4, B5"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ]
+}

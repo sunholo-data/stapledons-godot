@@ -1,0 +1,104 @@
+{
+  "sprint_id": "R1-M4-REAL-TIME-TOUR",
+  "status": "approved",
+  "approved_by": "Mark Edmondson, attended 2026-10-06 (\"yes lets go ahead with this demo expansion\")",
+  "requested_by": "Mark (attended 2026-10-06; D-39, D-40, D-41)",
+  "design_doc": "design_docs/planned/r1/m4-real-time-tour.md",
+  "sprint_plan": "design_docs/planned/r1/m4-real-time-tour-sprint.md",
+  "github_issues": [],
+  "registry_reuse": [
+    {
+      "milestone": "RT0-RT4",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "plans, rapidity, drag check and Doppler exist; no new formula"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 325,
+    "estimated_total_loc": 650,
+    "estimated_days": 2
+  },
+  "features": [
+    {
+      "id": "RT0",
+      "description": "Measure smallest m_eff passing scenarioError at 3M g and the γ-707 cap; record cost",
+      "estimated_loc": 20,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "A1: GUIDED_DRIVE starts in make solar-departure-test",
+        "value and energy consequence recorded; ISM never lowered"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RT1",
+      "description": "Itinerary β per leg (0.99/0.999/0.9999/0.999999), TRAPPIST-1 and Aldebaran star legs",
+      "estimated_loc": 90,
+      "dependencies": [
+        "RT0"
+      ],
+      "acceptance_criteria": [
+        "A2: make strict parity and sim tests",
+        "replays re-recorded with reason if bytes change"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RT2",
+      "description": "Single GUIDED_DRIVE used by demo, tests and tools",
+      "estimated_loc": 40,
+      "dependencies": [
+        "RT0"
+      ],
+      "acceptance_criteria": [
+        "A3: full voyage to Aldebaran, no refusal/fallback, cumulative Earth time within 1%",
+        "no solar_departure caller keeps boost_g 1"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RT3",
+      "description": "Real-time guided pacing; cruise-interlude interface (begin/advance/done); demo card with tiered text",
+      "estimated_loc": 370,
+      "dependencies": [
+        "RT1",
+        "RT2"
+      ],
+      "acceptance_criteria": [
+        "A4: make tour-pacing-test (dtau, 600 s rule, chunked interlude exactness, boundary 1e-12, map pacing byte-identical)",
+        "A5: card mutation test and tier from cumulative Earth time",
+        "A6: make ship-demo-live-test and make export-smoke"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RT4",
+      "description": "Capture tool and inspected renders through γ 707; golden if forward glow/LUT edge uncovered",
+      "estimated_loc": 130,
+      "dependencies": [
+        "RT3"
+      ],
+      "acceptance_criteria": [
+        "A7: renders opened; sky finite at γ 707",
+        "A8: make test locally and CI"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ]
+}
