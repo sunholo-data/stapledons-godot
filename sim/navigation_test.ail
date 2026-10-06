@@ -43,9 +43,9 @@ pure func ntEarthUpKm() -> Vec3 = add(ntBodyKm("earth", 0.0), { x: 0.0, y: 0.0, 
 -- fixed point before step 11).
 export pure func chaseKm() -> Vec3 = add(ntBodyKm("mercury", 0.0), scale(0.2 * auKm(), ntUnitV(ntBodyVel("mercury", 0.0))))
 pure func ntAccel() -> float = defaultParams().boostG * standardGravity()
-export pure func ctxAt(hereKm: Vec3) -> NavCtx = { sys: solSystem(), epochJd: ntJ0(), t0: 0.0, hereLy: ntLyOf(hereKm), accel: ntAccel(), bubbleKm: defaultParams().bubbleRadiusM / 1000.0 }
-export pure func stopReq(id: string, beta: float, s: Option[float]) -> BodyReq = { id: id, cruisePhi: rapidityOfBeta(beta), mode: "stop", standoffKm: s, bKm: 0.0, clockDeg: 0.0, runOutKm: None }
-pure func ntFlyReq(id: string, beta: float, b: float, clock: float) -> BodyReq = { id: id, cruisePhi: rapidityOfBeta(beta), mode: "flyby", standoffKm: None, bKm: b, clockDeg: clock, runOutKm: None }
+export pure func ctxAt(hereKm: Vec3) -> NavCtx = { sys: solSystem(), epochJd: ntJ0(), t0: 0.0, hereLy: ntLyOf(hereKm), accel: ntAccel(), bubbleKm: defaultParams().bubbleRadiusM / 1000.0, capPhi: bodyPhiMax(), approach: None }
+export pure func stopReq(id: string, beta: float, s: Option[float]) -> BodyReq = { id: id, cruisePhi: rapidityOfBeta(beta), mode: "stop", standoffKm: s, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: None }
+pure func ntFlyReq(id: string, beta: float, b: float, clock: float) -> BodyReq = { id: id, cruisePhi: rapidityOfBeta(beta), mode: "flyby", standoffKm: None, bKm: b, clockDeg: clock, runOutKm: None, timing: None }
 pure func ntRSaturn() -> float = 60268.0
 pure func ntRMars() -> float = 3396.19
 pure func ntRingSaturnKm() -> float = 140612.0
@@ -240,7 +240,7 @@ export pure func checkOutOfRange() -> bool {
   && ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | cruisePhi: bodyPhiMin()})) == "ok"
   && ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | cruisePhi: bodyPhiMax() * 1.001})) == "out_of_range"
   && ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | mode: "orbit"})) == "out_of_range"
-  && ntRefusalOf(planBody(c, {ntFlyReq("mars", 0.1, 10000.0, 0.0) | runOutKm: Some(0.0)})) == "out_of_range"
+  && ntRefusalOf(planBody(c, {ntFlyReq("mars", 0.1, 10000.0, 0.0) | runOutKm: Some(0.0), timing: None})) == "out_of_range"
   && ntRefusalOf(planBody(c, stopReq("earth", 0.1, None))) == "out_of_range"
   && bodyPhiMin() == rapidityOfBeta(0.001) && bodyPhiMax() == rapidityOfBeta(0.99)
 }
@@ -287,7 +287,7 @@ export pure func checkHello24() -> bool =
   (match decodeHello(serve(newSession(), ntHelloW(navMinor())).reply) { Ok(h) => h.minor == navMinor() && h.relativity == relativityPin(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == departureMinor(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(systemMinor())).reply) { Ok(h) => h.minor == systemMinor() && h.relativity == helloMsg().relativity, Err(_) => false })
-  && navMinor() == systemMinor() + 1 && relativityPin() == "0.8.0"
+  && navMinor() == systemMinor() + 1 && relativityPin() == "0.9.0"
 test "2.4 hello: minor 4 with relativity = the pinned release; 3 keeps the 2.3 hello" { checkHello24() }
 
 -- At minor 4 a body plan is accepted and its journey carries target_kind, intercept and pass

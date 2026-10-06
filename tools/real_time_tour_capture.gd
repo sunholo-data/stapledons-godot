@@ -50,6 +50,7 @@ func fly_leg(leg: int, sim: SimBridge) -> void:
 	var taken := {}
 	var card_taken := false
 	var braking_taken := false
+	var approach_ticks := 0
 	for i in 40000:
 		if sim.world.journey.state == "arrived": break
 		if not tour.step(): print("step FAIL ", tour.failed); failures += 1; return
@@ -68,6 +69,10 @@ func fly_leg(leg: int, sim: SimBridge) -> void:
 			taken["cruise"] = true
 			await shot("%d_%s_cruise_peak_forward" % [leg, slug], sim, "forward", false)
 			if long_leg: await shot("%d_%s_cruise_peak_side" % [leg, slug], sim, "side", false)
+		if phase == "approaching":
+			approach_ticks += 1
+			if approach_ticks == 1: await shot("%d_%s_approach_start" % [leg, slug], sim, "target", false, spec.kind == "body" and spec.id != "acen-a")
+			if approach_ticks == 250: await shot("%d_%s_approach_mid" % [leg, slug], sim, "target", false, spec.kind == "body" and spec.id != "acen-a")
 		if phase == "braking" and not braking_taken and float(sim.world.ship.get("beta", 0.0)) < 0.5 * float(sim.world.journey.plan.cruise_beta):
 			braking_taken = true
 			await shot("%d_%s_braking" % [leg, slug], sim, "forward", false, spec.id == "jupiter")

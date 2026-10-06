@@ -64,6 +64,7 @@ var _journey_accum := 0.
 var solar_tour: RefCounted
 var solar_pause := Button.new()
 var solar_next := Button.new()
+var solar_skip := Button.new()
 var navigation_button := Button.new()
 func _ready() -> void:
 	setup(setup_options)
@@ -140,7 +141,7 @@ func _hud() -> void:
 	navigation_button.pressed.connect(open_navigation);hud.add_child(navigation_button)
 	var tour_row:=HBoxContainer.new();hud.add_child(tour_row)
 	var solar_start:=Button.new();solar_start.text="New voyage · Earth → outer planets → α Cen → TRAPPIST-1 → Aldebaran (real time)"
-	solar_start.tooltip_text="Earth → Sun → Jupiter → Callisto → Saturn → Alpha Centauri system → Alpha Centauri A (1 AU)"
+	solar_start.tooltip_text="Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
 	solar_start.add_theme_font_size_override("font_size",12)
 	solar_start.pressed.connect(start_solar_departure);tour_row.add_child(solar_start)
 	solar_pause.text="Pause tour";solar_pause.visible=false
@@ -152,6 +153,10 @@ func _hud() -> void:
 	solar_next.pressed.connect(func()->void:
 		if solar_tour!=null:solar_tour.prepare_next();_apply_journey_world())
 	tour_row.add_child(solar_next)
+	solar_skip.text="Skip stage [K]";solar_skip.visible=false
+	solar_skip.tooltip_text="Jump to the next stage of this leg: accelerating → cruise → braking → final approach → arrival"
+	solar_skip.pressed.connect(skip_stage)
+	tour_row.add_child(solar_skip)
 	hud.add_child(controls);controls.visible=false
 	var row:=HBoxContainer.new();controls.add_child(row)
 	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Reference rim [4]","rim"],["Reset [R]","reset"]]:
@@ -263,6 +268,7 @@ func _process(delta: float) -> void:
 			audit_link.text="Open public performance audit"
 			audit_link.uri=uploaded.url
 			if audit_link.get_parent()==null:hud.add_child(audit_link)
+	if solar_tour!=null:solar_skip.disabled=not live_journey or solar_tour.paused or solar_tour.attitude_hold
 	if solar_tour!=null:solar_next.disabled=live_journey or solar_tour.complete or solar_tour.attitude_hold or solar_tour.pending_index>=0 or not solar_tour.failed.is_empty()
 	navigation_button.text="Navigation [M] · pauses tour for browsing" if solar_tour!=null else "Navigation [M] · select destination and hold to commit"
 	if not ready_ok:return
@@ -319,6 +325,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_H:toggle_sky_only()
 			KEY_V:set_auto_view(not sky.system_view.body_fader)
 			KEY_ENTER:continue_interlude()
+			KEY_K:skip_stage()
 			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
@@ -486,7 +493,7 @@ func start_solar_departure() -> bool:
 		caption="Solar departure could not attach to the new session.";solar_tour=null;return false
 	solar_tour.pin_destinations(sky.starfield)
 	journey_map.guided_read_only=true
-	solar_pause.visible=true;solar_next.visible=true;solar_pause.text="Pause tour"
+	solar_pause.visible=true;solar_next.visible=true;solar_skip.visible=true;solar_pause.text="Pause tour"
 	sky_state="live";caption="Guided tour: 12-second stops; Next stop skips a dwell. M pauses for navigation."
 	_apply_journey_world();look_direction("forward");close_navigation()
 	return true
@@ -514,6 +521,9 @@ func _show_interlude() -> void:
 	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
 	interlude_card.visible=card!=null
 	if card!=null:interlude_card.show_interlude(card)
+## Skip to the next stage of the leg (labelled; the sim is stepped exactly to the boundary).
+func skip_stage() -> void:
+	if solar_tour!=null and solar_tour.skip_stage():_apply_journey_world();_show_interlude()
 func continue_interlude() -> void:
 	if solar_tour!=null and solar_tour.interlude is CardInterlude:(solar_tour.interlude as CardInterlude).finish()
 func _apply_journey_world()->void:
@@ -566,7 +576,7 @@ func _update_tour_attitude(delta:float)->void:
 			else:caption="Tour departure failed: "+solar_tour.failed
 ## Compact HUD (Mark, 2026-10-06): where, how fast and both clocks, read from the sim;
 ## the review/debug block shows with the controls panel (Tab).
-const PHASE_WORDS := {"at_rest":"STOPPED","boosting":"ACCELERATING","cruising":"CRUISING","braking":"BRAKING"}
+const PHASE_WORDS := {"at_rest":"STOPPED","boosting":"ACCELERATING","cruising":"CRUISING","braking":"BRAKING","approaching":"FINAL APPROACH"}
 func hud_text(view_name: String, details: String) -> String:
 	var ship: Dictionary = sky_world.get("ship", {}) if sky_world is Dictionary else {}
 	var clock: Dictionary = sky_world.get("clock", {}) if sky_world is Dictionary else {}
@@ -574,10 +584,16 @@ func hud_text(view_name: String, details: String) -> String:
 	if solar_tour != null:
 		var state: String = "CRUISE INTERLUDE" if solar_tour.interlude != null else PHASE_WORDS.get(str(ship.get("phase", "")), str(ship.get("phase", "")).to_upper())
 		where = "→ %s · %s" % [solar_tour.leg_name() if solar_tour.leg_index >= 0 else "Earth", state]
-	var lines := [where, speed_text(ship)]
+	var speed := speed_text(ship)
+	if solar_tour != null and sky_world is Dictionary and sky_world.get("journey", {}).get("state", "") == "committed":
+		speed += " · %.2f M g this leg" % (solar_tour.leg_thrust_g() / 1.0e6)
+	var lines := [where, speed]
+	var dist := distances_text(sky_world if sky_world is Dictionary else {}, solar_tour)
+	if not dist.is_empty(): lines.append(dist)
 	if not clock.is_empty():
 		lines.append("Ship +%s · Earth +%s since departure" % [duration_text(float(clock.get("tau", 0.0))), duration_text(float(clock.get("year", 0.0)))])
-	var view := ("AUTO" if sky.system_view.body_fader else "REALISTIC") + " view · V view · J brightness · Tab details"
+	var view := ("AUTO" if sky.system_view.body_fader else "REALISTIC") + " view · V view · J brightness · K skip stage · Tab details"
+	if solar_tour != null and solar_tour.skips > 0: view += " · skipped %d stage%s" % [solar_tour.skips, "" if solar_tour.skips == 1 else "s"]
 	if camera_mode == "player" and camera.pullback > 0.01: view += " · third-person camera"
 	lines.append(view)
 	if not caption.is_empty(): lines.append(caption)
@@ -596,6 +612,46 @@ static func speed_text(ship: Dictionary) -> String:
 		if i > 0 and (km_s.length() - i) % 3 == 0: grouped += ","
 		grouped += km_s[i]
 	return ("%." + str(digits) + "fc · γ %s · %s km/s") % [1.0 - omb, ("%.2f" % float(ship.get("gamma", 1.0))) if float(ship.get("gamma", 1.0)) < 1000.0 else "%.0f" % float(ship.get("gamma", 1.0)), grouped]
+
+## Distances (Mark, 2026-10-06): to the destination (the sim's distance_remaining), from
+## the last stop where the leg was committed (plan.departure), and from Earth (the
+## system section's Earth, else Sol). Only vector lengths of sim positions, in float64.
+static func distances_text(world: Dictionary, tour) -> String:
+	var parts := PackedStringArray()
+	var journey: Dictionary = world.get("journey", {})
+	var ship: Dictionary = world.get("ship", {})
+	var committed: bool = journey.get("state", "") == "committed"
+	if committed:
+		var name: String = tour.leg_name() if tour != null else str(journey.get("plan", {}).get("target", {}).get("id", "destination"))
+		parts.append("To %s %s" % [name, distance_text(float(world.get("consequence", {}).get("distance_remaining", 0.0)))])
+		var dep: Dictionary = journey.get("plan", {}).get("departure", {})
+		var pos: Dictionary = ship.get("pos", {})
+		if not dep.is_empty() and not pos.is_empty():
+			var from_name: String = "last stop"
+			if tour != null: from_name = "Earth" if tour.leg_index <= 0 else str(tour.itinerary[tour.leg_index - 1].get("name", "last stop"))
+			parts.append("from %s %s" % [from_name, distance_text(sqrt(pow(float(pos.x) - float(dep.x), 2.0) + pow(float(pos.y) - float(dep.y), 2.0) + pow(float(pos.z) - float(dep.z), 2.0)))])
+	var earth_ly := -1.0
+	for b: Dictionary in world.get("system", {}).get("bodies", []):
+		if b.get("id", "") == "earth": earth_ly = Planets.length64(Planets.world_of(b.rel_km)) / 9460730472580.8
+	var pos2: Dictionary = ship.get("pos", {})
+	if earth_ly < 0.0 and not pos2.is_empty(): earth_ly = sqrt(pow(float(pos2.x), 2.0) + pow(float(pos2.y), 2.0) + pow(float(pos2.z), 2.0))
+	if earth_ly >= 0.0: parts.append("from Earth %s" % distance_text(earth_ly))
+	return " · ".join(parts)
+
+## A distance in light-years, shown in km, AU or ly as it reads best.
+static func distance_text(ly: float) -> String:
+	var km := ly * 9460730472580.8
+	if km < 1.0e6: return "%s km" % _grouped(int(round(km)))
+	var au := km / 149597870.7
+	if ly < 0.1: return ("%.3f AU" if au < 10.0 else "%.1f AU" if au < 1000.0 else "%.0f AU") % au
+	return ("%.2f ly" if ly < 100.0 else "%.1f ly") % ly
+
+static func _grouped(n: int) -> String:
+	var t := String.num_int64(n);var out := ""
+	for i in t.length():
+		if i > 0 and (t.length() - i) % 3 == 0: out += ","
+		out += t[i]
+	return out
 
 ## Years as a readable duration: seconds through years.
 static func duration_text(years: float) -> String:

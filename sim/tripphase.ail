@@ -4,8 +4,9 @@ module stapledons/sim/tripphase
 -- importing the TripPhase constructors: their `Arrived` would clash with the
 -- Journey constructor of the same name, and an aliased constructor import
 -- (`Arrived as X`) is accepted but never matches (ailang#1478).
---   0 Accelerating (boost), 1 Coasting (cruise), 2 Decelerating (brake), 3 Arrived
-import pkg/sunholo/relativity/journey (TripPlan, phaseAt, Accelerating, Coasting, Decelerating, Arrived)
+--   0 Accelerating (boost), 1 Coasting (cruise), 2 Decelerating (brake), 3 Arrived,
+--   4 the final approach (Decelerating with inApproach, relativity 0.9.0)
+import pkg/sunholo/relativity/journey (TripPlan, phaseAt, inApproach, Accelerating, Coasting, Decelerating, Arrived)
 
 export pure func tripPhaseIndex(p: TripPlan, tau: float) -> int =
-  match phaseAt(p, tau) { Accelerating => 0, Coasting => 1, Decelerating => 2, Arrived => 3 }
+  match phaseAt(p, tau) { Accelerating => 0, Coasting => 1, Decelerating => if inApproach(p, tau) then 4 else 2, Arrived => 3 }

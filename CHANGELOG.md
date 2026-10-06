@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Even legs, a gentle final approach and skip-to-next-stage, 2026-10-06
+
+- Every in-system leg of the guided voyage has the same rhythm: 30 s accelerating, about 60 s cruising, braking, then a 25 s final approach. The sim solves each leg's thrust and cruise speed (0.07c to the Callisto hop, above 0.999c to Jupiter and Saturn); Sun → Jupiter takes about 2¼ minutes instead of 6½ (D-46).
+- Arrivals ease in: a new trip profile brakes hard, then approaches gently from where the body is 4° across. It's in `sunholo/relativity` 0.9.0 (published; existing outputs bit-identical), and the ship reports a new `approaching` phase.
+- **Skip stage [K]** jumps exactly to the next stage of the leg (accelerating → cruise → braking → approach → arrival). The HUD shows "FINAL APPROACH" and this leg's thrust, and labels how many stages were skipped.
+- The HUD also shows the distance to the destination, from the last stop, and from Earth.
+
 ### Real-time voyage to Aldebaran, 2026-10-06
 
 - The guided tour runs in real time: one ship second per wall second, with no time compression (D-39). A single drive is used for the whole voyage: 3,000,000 g, cap 1 − β = 5 × 10⁻⁷, m_eff 10 kg. It passes the unchanged brake-vs-drag check. Solar System legs cruise at 0.99c (Earth → Jupiter is about 6 ship minutes and 39 Earth minutes).
