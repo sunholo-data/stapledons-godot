@@ -22,7 +22,7 @@ import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import pkg/sunholo/celestial/kepler (Vec3, add, sub, scale, norm, dot, cross, absf)
 import pkg/sunholo/celestial/ephemeris (auKm)
-import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, motionAt)
+import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planBurnCoastBrakeApproach, motionAt, rapidityForTimedLeg, rapidityForTimedApproach)
 import pkg/sunholo/relativity/kinematics (betaOf, rapidityOfBeta)
 import pkg/sunholo/relativity/optics (doppler)
 import ./celestial (System, BodyState, bodyAt, jdAt, lyKm)
@@ -34,7 +34,14 @@ import ./alpha_centauri (alphaBodyAt, stellarRadiusKm, catalogueA)
 -- takes the default stand-off; bKm and clockDeg are the flyby's pass distance
 -- and side (0 = the body's north, 90 = right of it as seen from the ship,
 -- i.e. clockwise on the sky); runOutKm: None takes the default run-out.
-export type BodyReq = { id: string, cruisePhi: float, mode: string, standoffKm: Option[float], bKm: float, clockDeg: float, runOutKm: Option[float] }
+export type BodyReq = { id: string, cruisePhi: float, mode: string, standoffKm: Option[float], bKm: float, clockDeg: float, runOutKm: Option[float], timing: Option[Timing] }
+-- A timed stop (D-46, guided tour): the sim chooses this leg's acceleration
+-- and cruise speed so the boost lasts boostS and the cruise about cruiseS
+-- (seconds), and ends with a gentler final approach lasting approachS that
+-- begins where the body is approachDeg across. cruisePhi is then ignored.
+export type Timing = { boostS: float, cruiseS: float, approachS: float, approachDeg: float }
+-- A final approach: its proper acceleration (c/yr) and starting rapidity.
+export type Approach = { a: float, phi: float }
 -- The flyby's pass: galaxy time, closest distance to the centre (km), beta
 -- and the Doppler factor of the body's light there (rest-frame direction).
 export type Pass = { t: float, bKm: float, beta: float, dAtPass: float }
@@ -50,7 +57,7 @@ export type Leg = { arrivalLy: Vec3, heading: Vec3, trip: TripPlan, nav: NavPlan
 -- Everything the planner reads from the world: the system, the scenario
 -- epoch (JD), the ship's galaxy time and position (ly), the drive's proper
 -- acceleration (c/yr) and the bubble radius (km).
-export type NavCtx = { sys: System, epochJd: float, t0: float, hereLy: Vec3, accel: float, bubbleKm: float }
+export type NavCtx = { sys: System, epochJd: float, t0: float, hereLy: Vec3, accel: float, bubbleKm: float, capPhi: float, approach: Option[Approach] }
 
 -- ------------------------------------------------------------ constants
 -- The intercept iteration count, fixed (deterministic on both runtimes). The
@@ -104,7 +111,10 @@ pure func navStateAt(c: NavCtx, id: string, t: float) -> BodyState =
 pure func navPosAt(c: NavCtx, id: string, t: float) -> Vec3 = (navStateAt(c, id, t)).pos
 pure func navHereKm(c: NavCtx) -> Vec3 = scale(lyKm(), c.hereLy)
 pure func navIterate(g: float -> float, t: float, n: int) -> float = if n <= 0 then t else navIterate(g, g(t), n - 1)
-pure func navTripOf(c: NavCtx, legKm: float, phi: float) -> TripPlan = planBurnCoastBurn(legKm / lyKm(), c.accel, phi)
+pure func navTripOf(c: NavCtx, legKm: float, phi: float) -> TripPlan = navTripLy(c, legKm / lyKm(), phi)
+-- Every leg's trip: burn-coast-burn, or with the context's final approach.
+pure func navTripLy(c: NavCtx, legLy: float, phi: float) -> TripPlan =
+  match c.approach { Some(ap) => planBurnCoastBrakeApproach(legLy, c.accel, phi, ap.a, ap.phi), None => planBurnCoastBurn(legLy, c.accel, phi) }
 
 -- ------------------------------------------------------------ time along the leg
 -- Proper time at which the trip has covered x ly: bisection on the package's
@@ -203,7 +213,7 @@ pure func navFinish(c: NavCtx, endKm: Vec3, phi: float, residual: float, nav: Na
   let endLy = scale(1.0 / lyKm(), endKm);
   let dLy = sub(endLy, c.hereLy);
   let legLy = norm(dLy);
-  let trip = planBurnCoastBurn(legLy, c.accel, phi);
+  let trip = navTripLy(c, legLy, phi);
   let w = navUnit(sub(endKm, navHereKm(c)));
   let legKm = legLy * lyKm();
   if !(residual < residualMax()) || !navFinite(legLy) then Err("no_converge")
@@ -225,7 +235,7 @@ pure func planStop(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, stri
     let aim = stopAim(c, rq.id, s, tA);
     let tNext = c.t0 + (navTripOf(c, aim.legKm, rq.cruisePhi)).trip.galaxyTime;
     let res = norm(sub((stopAim(c, rq.id, s, tNext)).pointKm, aim.pointKm)) / aim.legKm;
-    let arrive = c.t0 + (planBurnCoastBurn(norm(sub(navToLy(aim.pointKm), c.hereLy)), c.accel, rq.cruisePhi)).trip.galaxyTime;
+    let arrive = c.t0 + (navTripLy(c, norm(sub(navToLy(aim.pointKm), c.hereLy)), rq.cruisePhi)).trip.galaxyTime;
     navFinish(c, aim.pointKm, rq.cruisePhi, res,
       { bodyId: rq.id, index: f.index, mode: "stop", t0: c.t0, interceptT: arrive, interceptLy: navToLy(navPosAt(c, rq.id, arrive)), standoffKm: s, pass: None, residual: res })
   }
@@ -239,7 +249,7 @@ pure func planFlyby(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, str
   else {
     let tP = flybyPassT(c, rq, runOut, n);
     let a = passAim(c, rq, runOut, tP);
-    let trip = planBurnCoastBurn(norm(sub(navToLy(a.endKm), c.hereLy)), c.accel, rq.cruisePhi);
+    let trip = navTripLy(c, norm(sub(navToLy(a.endKm), c.hereLy)), rq.cruisePhi);
     let tauP = tauAtX(trip, a.toPassKm / lyKm());
     let m = motionAt(trip, tauP);
     let tPass = c.t0 + m.t;
@@ -250,6 +260,36 @@ pure func planFlyby(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, str
     navFinish(c, a.endKm, rq.cruisePhi, res,
       { bodyId: rq.id, index: f.index, mode: "flyby", t0: c.t0, interceptT: tPass, interceptLy: navToLy(bodyThen), standoffKm: 0.0, pass: Some(pass), residual: res })
   }
+}
+
+-- A timed stop (D-46): from the straight distance to the stand-off point now,
+-- the package solvers give the cruise rapidity (boost lasts boostS at
+-- a = phi / boostS, cruise about cruiseS) and the approach (begins where the
+-- body is approachDeg across, at least the stand-off out, lasts approachS).
+-- The cruise may exceed the in-system 0.99c up to the session cap (capPhi).
+-- If the approachDeg point lies before the brake (approach rapidity >= cruise),
+-- the approach starts at half the cruise rapidity instead.
+pure func navStandoff(c: NavCtx, rq: BodyReq, f: Facts) -> float {
+  let asked = match rq.standoffKm { Some(x) => x, None => defaultStandoffKm(f.radiusKm, f.ringKm) };
+  let maxS = if rq.id=="acen-a" || rq.id=="acen-b" then auKm() else standoffMaxKm();
+  if asked > maxS then maxS else asked
+}
+pure func yearS() -> float = 31557600.0
+pure func planTimedStop(c: NavCtx, rq: BodyReq, tm: Timing, f: Facts, n: int) -> Result[Leg, string] {
+  let s = navStandoff(c, rq, f);
+  let dKm = norm(sub(navPosAt(c, rq.id, c.t0), navHereKm(c))) - s;
+  let tB = tm.boostS / yearS();
+  let phi = rapidityForTimedLeg(dKm / lyKm(), tB, tm.cruiseS / yearS());
+  let xKm = f.radiusKm / sin(tm.approachDeg * 3.141592653589793 / 360.0) - s;
+  let xA = if xKm > s then xKm else s;
+  let tA = tm.approachS / yearS();
+  let phiA = rapidityForTimedApproach(xA / lyKm(), tA);
+  -- A body already approachDeg across before the brake could begin (the Sun) still
+  -- gets an approachS-long approach, from half the cruise rapidity.
+  let phiUse = if phiA < phi then phiA else 0.5 * phi;
+  let ap = if phiUse > 0.0 && tA > 0.0 then Some({ a: phiUse / tA, phi: phiUse }) else None;
+  if !(tB > 0.0) || !(tm.cruiseS >= 0.0) || !(phi >= bodyPhiMin()) || !(phi <= c.capPhi) then Err("out_of_range")
+  else planStop({c | accel: phi / tB, approach: ap}, {rq | cruisePhi: phi}, f, n)
 }
 
 -- A body plan with n intercept iterations (tests vary n; the game uses 12).
@@ -265,10 +305,14 @@ export pure func planBodyN(c: NavCtx, rq: BodyReq, n: int) -> Result[Leg, string
     else targetFacts(c.sys, rq.id)) {
     Err(why) => Err(why),
     Ok(f) =>
+      match rq.timing {
+        Some(tm) => if rq.mode == "stop" then planTimedStop(c, rq, tm, f, n) else Err("out_of_range"),
+        None =>
       if !navPhiOk(rq.cruisePhi) then Err("out_of_range")
       else if rq.mode == "stop" then planStop(c, rq, f, n)
       else if rq.mode == "flyby" then planFlyby(c, rq, f, n)
       else Err("out_of_range")
+      }
   }
 export pure func planBody(c: NavCtx, rq: BodyReq) -> Result[Leg, string] = planBodyN(c, rq, interceptIterations())
 

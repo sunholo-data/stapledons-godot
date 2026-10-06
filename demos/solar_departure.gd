@@ -59,6 +59,46 @@ func pin_destinations(starfield: Starfield) -> void:
 	if starfield==null:return
 	for id:String in stars:starfield.pin_destination(stars[id])
 
+## A body leg's plan intent; a timed leg (D-46) forwards the sim's own timing.
+static func _body_intent(spec: Dictionary) -> Dictionary:
+	var intent:=SimBridge.body_plan(spec.id,spec.cruise_phi,{"mode":"stop","standoff_km":spec.standoff_km})
+	if spec.has("timing"):intent["timing"]=spec.timing.duplicate()
+	return intent
+
+## Skip to the next stage of the committed leg (D-46): accelerating -> cruise ->
+## braking -> final approach -> arrival. The sim is stepped by exactly the time
+## the sim reports to the phase boundary (consequence.phase_remaining_yr), so
+## clocks and consequences stay the sim's. A long cruise skips through its
+## interlude; at rest the existing Next stop applies. Labelled on the HUD.
+var skips := 0
+func skip_stage() -> bool:
+	if sim==null or not failed.is_empty() or paused or attitude_hold or pending_index>=0:return false
+	if interlude!=null:
+		if interlude is CardInterlude:(interlude as CardInterlude).finish()
+		return step()
+	if sim.world.journey.state!="committed":return false
+	if sim.world.ship.phase=="cruising" and pacing.interlude_due(sim.world):return step()
+	# The consequence section is reported for the state before its tick, so refresh it
+	# with a zero-length tick before reading the time to the boundary.
+	if not _send([],0.):return false
+	var left:float=float(sim.world.get("consequence",{}).get("phase_remaining_yr",0.0))
+	if not (left>0.0):return false
+	# phase_remaining_yr crosses the bridge as a ~12-digit decimal, so landing exactly on the
+	# boundary can fall short; a nudge of 1e-9 of the step (60 ns on a 60 s cruise) crosses
+	# it, and the sim splits the step exactly at the boundary.
+	if not _send([],left+maxf(left*1e-9,maxf(absf(float(sim.world.clock.tau))*4e-15,1e-18))):return false
+	skips+=1
+	if sim.world.journey.state=="arrived":
+		if leg_index==itinerary.size()-1:complete=true
+		else:dwell_left=DWELL_SECONDS
+	return true
+
+## This leg's thrust in g: the timed leg's own drive (plan.drive), else the session's.
+func leg_thrust_g() -> float:
+	var plan:Dictionary=sim.world.get("journey",{}).get("plan",{}) if sim!=null else {}
+	if plan.has("drive"):return float(plan.drive.boost_g)
+	return float(GUIDED_DRIVE.boost_g)
+
 func _star_intent(spec: Dictionary) -> Dictionary:
 	var row:Dictionary=stars.get(spec.id,{})
 	if row.is_empty():return {}
@@ -80,7 +120,7 @@ func prepare_next() -> bool:
 	if next>=itinerary.size():complete=true;return false
 	var spec:Dictionary=itinerary[next]
 	var intent:Dictionary
-	if spec.kind=="body":intent=SimBridge.body_plan(spec.id,spec.cruise_phi,{"mode":"stop","standoff_km":spec.standoff_km})
+	if spec.kind=="body":intent=_body_intent(spec)
 	else:
 		intent=_star_intent(spec)
 		if intent.is_empty():failed="star leg catalogue identity missing";return false
@@ -96,7 +136,7 @@ func commit_prepared() -> bool:
 	var next:=pending_index
 	var spec:Dictionary=itinerary[next]
 	var intent:Dictionary
-	if spec.kind=="body":intent=SimBridge.body_plan(spec.id,spec.cruise_phi,{"mode":"stop","standoff_km":spec.standoff_km})
+	if spec.kind=="body":intent=_body_intent(spec)
 	else:intent=_star_intent(spec)
 	if intent.is_empty():failed="star leg catalogue identity missing";return false
 	if not _send([intent],0.):return false
@@ -150,5 +190,5 @@ func leg_name() -> String:
 func status_text() -> String:
 	if sim==null:return "Solar departure unavailable"
 	var label:String="Earth standoff" if leg_index<0 else itinerary[leg_index].get("name",itinerary[leg_index].id)
-	var motion:String="PAUSED FOR ATTITUDE TURN · next "+pending_name if pending_index>=0 or attitude_hold else ("1 second/second at stops" if sim.world.journey.state!="committed" else ("CRUISE INTERLUDE · time passes aboard" if interlude!=null else "REAL TIME · 1 ship second per second · 3,000,000 g drive"))
+	var motion:String="PAUSED FOR ATTITUDE TURN · next "+pending_name if pending_index>=0 or attitude_hold else ("1 second/second at stops" if sim.world.journey.state!="committed" else ("CRUISE INTERLUDE · time passes aboard" if interlude!=null else "REAL TIME · 1 ship second per second · %.2f M g this leg" % (leg_thrust_g()/1.0e6)))
 	return "GUIDED SOLAR DEPARTURE · %s · %s\nEarth +%.8f yr / ship +%.8f yr · %s\n%s" % [label,sim.world.ship.phase,sim.world.clock.year,sim.world.clock.tau,motion,sim.world.solar_departure.approximation]

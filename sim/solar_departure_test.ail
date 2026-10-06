@@ -1,10 +1,10 @@
 module stapledons/sim/solar_departure_test
 
 import std/result (Ok, Err)
-import std/option (Some, None)
+import std/option (Option, Some, None)
 import pkg/sunholo/celestial/kepler (sub, scale, norm, absf, dot)
 import ./celestial (solSystem, bodyAt, lyKm)
-import ./core (World, Target, Intent, ICommit, IPlanBody, Planned, Arrived, newWorld, defaultParams, position, tick, scenarioError)
+import ./core (World, Target, Intent, ICommit, IPlanBody, Planned, Arrived, Plan, newWorld, defaultParams, position, tick, scenarioError, phaseName)
 import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta)
 import std/string (concat)
 import ./solar_departure (TourLeg, initialize, initializeAtStandoff, earthStandoffKm, intentForLeg, legs, legCount, solCruisePhi, acenOneMinusBeta, trappistOneMinusBeta, aldebaranOneMinusBeta)
@@ -55,7 +55,7 @@ test "configured new Earth start accepts measured clearance and rejects below pa
 export pure func checkSunBoundary() -> bool {
   let w = started();
   let minimum = safetyMinKm((sun()).radiusKm, w.params.bubbleRadiusM / 1000.0);
-  let request = IPlanBody({id: "sun", cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: Some(minimum - 1.0), bKm: 0.0, clockDeg: 0.0, runOutKm: None});
+  let request = IPlanBody({id: "sun", cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: Some(minimum - 1.0), bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: None});
   let refused = tick(w, {dtau: 0.0, intents: [request]});
   match refused.refused { r :: _ => r.reason == "too_close" && norm(sub(position(refused.world.ship), position(w.ship))) == 0.0, [] => false }
 }
@@ -129,11 +129,57 @@ export pure func checkBounds() -> bool {
   && (match intentForLeg(started(), 4, {target | id: "wrong ID"}) { None => true, _ => false })
 }
 test "itinerary bounds and exact outbound identity are fail closed" { checkBounds() }
+-- D-46 timed legs: each in-system leg boosts for 30 s, cruises about 60 s,
+-- and ends with a 25 s final approach; the thrust differs per leg.
+pure func planned(w: World, n: int) -> Option[Plan] =
+  match intentForLeg(w, n, targetFor(n)) {
+    None => None,
+    Some(intent) => match ((tick(w, {dtau: 0.0, intents: [intent]})).world).journey { Planned(p) => Some(p), _ => None }
+  }
+pure func secs(y: float) -> float = y * 31557600.0
+pure func timedOk(p: Plan) -> bool =
+  absf(secs(p.trip.tauBurn) - 30.0) < 0.000001 && secs(p.trip.tauCoast) > 45.0 && secs(p.trip.tauCoast) < 75.0
+  && absf(secs(p.trip.tauApproach) - 25.0) < 0.000001 && p.trip.phiApproach > 0.0 && p.trip.phiApproach < p.trip.phiPeak && !p.trip.fellBack
+pure func timedChain(w: World, n: int, acc: [float]) -> [float] =
+  if n >= 4 then acc else match planned(w, n) {
+    None => [0.0 - 1.0],
+    Some(p) => if timedOk(p) then timedChain(finishLeg(w, n), n + 1, acc ++ [p.trip.phiPeak, p.trip.a]) else [0.0 - 2.0 - intToFloat(n)]
+  }
+export pure func checkTimedLegs() -> bool {
+  let r = timedChain(started(), 0, []);
+  match r {
+    [sunPhi, sunA, jupPhi, jupA, calPhi, calA, satPhi, satA] =>
+      jupPhi > rapidityOfBeta(0.999) && satPhi > rapidityOfBeta(0.999) && calPhi < rapidityOfBeta(0.2)
+      && sunA != jupA && jupA != calA && jupA > (guided()).params.boostG * 1.0
+    , _ => false
+  }
+}
+test "timed in-system legs: 30 s boost, 45-75 s cruise, 25 s approach; Jupiter and Saturn above 0.999c, Callisto slow" { checkTimedLegs() }
+export pure func checkApproachPhase() -> bool =
+  match planned(started(), 0) {
+    None => false,
+    Some(p) => {
+      let committed = (tick({started() | journey: Planned(p)}, {dtau: 0.0, intents: [ICommit(p.id)]})).world;
+      let inside = (tick(committed, {dtau: p.trip.tauTotal - p.trip.tauApproach * 0.5, intents: []})).world;
+      let braking = (tick(committed, {dtau: p.trip.tauTotal - p.trip.tauApproach * 1.5, intents: []})).world;
+      phaseName(inside.ship.phase) == "approaching" && phaseName(braking.ship.phase) == "braking"
+    }
+  }
+test "the ship reports approaching during the final approach and braking before it" { checkApproachPhase() }
+export pure func checkTimedDrag() -> bool {
+  let w = started();
+  let weak = {w | params: {w.params | mEffKg: 0.000000000000000000000001}};
+  match intentForLeg(weak, 1, targetFor(1)) {
+    None => false,
+    Some(intent) => match (tick(finishLeg(weak, 0), {dtau: 0.0, intents: [intent]})).refused { r :: _ => r.reason == "m_eff_too_small", [] => false }
+  }
+}
+test "a timed leg whose thrust cannot hold against ISM drag is refused (m_eff_too_small)" { checkTimedDrag() }
 export pure func solarDepartureVm(n: int) -> string =
-  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
+  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() && checkTimedLegs() && checkApproachPhase() && checkTimedDrag() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
 
 pure func clearance(w: World, id: string) -> string {
-  let pl = (tick(w, {dtau: 0.0, intents: [IPlanBody({id: id, cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None})]}));
+  let pl = (tick(w, {dtau: 0.0, intents: [IPlanBody({id: id, cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: None})]}));
   match pl.world.journey {
     Planned(p) => {
       let committed = (tick(pl.world, {dtau: 0.0, intents: [ICommit(p.id)]})).world;

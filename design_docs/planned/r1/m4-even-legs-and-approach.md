@@ -11,6 +11,8 @@
 
 Net +5: aligned.
 
+**Measured (sim, 2026-10-06):** every in-system leg boosts 30 s, cruises 58–60 s, brakes 15–27 s and approaches for exactly 25 s, about 2¼ minutes each (Sun → Jupiter was 6½). Jupiter's approach starts with it about 4° across.
+
 **Status:** Approved by Mark, attended 2026-10-06 ("All three"), after reviewing dev.17 ("its taking too long to get to jupiter"; "we arrived at jupiter very suddenly"; "cruise at a speed that takes about 1 min to get to each, but we should have the same approximate accel/braking approach for each"; "can we add skip to next stage button").
 **Release:** R1, a follow-up to the real-time voyage (`m4-real-time-tour.md`, Sprint A).
 **Depends on:** `sunholo/relativity` 0.8.0 `journey` (the closed forms reused); the body-stop navigation (`sim/navigation.ail`); the guided tour (`demos/solar_departure.gd`).
@@ -49,7 +51,7 @@ New profile `planBurnCoastBrakeApproach(distance, a, phiCruise, aApproach, phiAp
 The sim chooses the approach to start where the target is `approach_deg` (4°) across, and to last `approach_s` (25 s):
 - x_a = R/sin(2°) − stand-off, at least the stand-off;
 - φ_a solves x_a = approach_s·c·(cosh φ − 1)/φ, so a_approach = φ_a·c/approach_s;
-- if φ_a ≥ φ_cruise, the leg brakes normally with no approach.
+- if φ_a ≥ φ_cruise (the Sun, already 4° across before the brake could begin), the approach still lasts approach_s, starting at half the cruise rapidity. For the Sun that's about 0.85c, at roughly 11° across.
 
 Jupiter's approach then begins at 0.46c, about 1.9 million km out, and Jupiter grows over ~25 s instead of ~8. A new ship phase `approaching` appears in the protocol.
 

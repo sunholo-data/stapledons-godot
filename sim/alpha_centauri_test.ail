@@ -8,7 +8,7 @@ import pkg/sunholo/celestial/ephemeris (j2000, auKm)
 import pkg/sunholo/relativity/photometry (illuminanceFromV)
 import ./celestial (lyKm)
 import ./celestial (solSystem, jdAt)
-import ./navigation (planBody, safetyMinKm)
+import ./navigation (planBody, safetyMinKm, bodyPhiMax)
 import pkg/sunholo/relativity/kinematics (rapidityOfBeta, standardGravity)
 pure func field(xs: [(string,Field)], key:string)->float = match xs { []=>0.0,(k,f)::rest=>if k==key then f.value else field(rest,key) }
 pure func value(xs:[Body], id:string,key:string)->float = match xs { []=>0.0,b::rest=>if b.id==id then field(b.fields,key) else value(rest,id,key) }
@@ -48,14 +48,14 @@ export pure func alphaPhysicsVm(n:int)->string = if measuredStars() && measuredR
 export pure func movingAStop()->bool {
  let jd=j2000()+26.0*365.25;
  let eye=add(catalogueA(),{x:1000.0*auKm()/lyKm(),y:0.0,z:0.0});
- let c={sys:solSystem(),epochJd:jd,t0:0.0,hereLy:eye,accel:standardGravity(),bubbleKm:0.1};
- let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(auKm()),bKm:0.0,clockDeg:0.0,runOutKm:None};
+ let c={sys:solSystem(),epochJd:jd,t0:0.0,hereLy:eye,accel:standardGravity(),bubbleKm:0.1,capPhi:bodyPhiMax(),approach:None};
+ let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(auKm()),bKm:0.0,clockDeg:0.0,runOutKm:None,timing:None};
  match planBody(c,request) { Err(_)=>false,Ok(leg)=>match alphaBodyAt("acen-a",jdAt(jd,leg.nav.interceptT)) {None=>false,Some(a)=>match alphaBodyAt("acen-b",jdAt(jd,leg.nav.interceptT)) {None=>false,Some(b)=>
  alphaNear(norm(sub(scale(lyKm(),leg.arrivalLy),a.pos)),auKm(),0.1) && norm(sub(scale(lyKm(),leg.arrivalLy),b.pos))>safetyMinKm(stellarRadiusKm("acen-b"),0.1) && norm(sub(leg.nav.interceptLy,scale(1.0/lyKm(),a.pos)))<0.000000000001 && leg.nav.interceptT>1.0 && leg.nav.residual<0.000000001}}}
 }
 export pure func stellarUnsafeRefused()->bool {
- let c={sys:solSystem(),epochJd:j2000(),t0:0.0,hereLy:add(catalogueA(),{x:0.001,y:0.0,z:0.0}),accel:standardGravity(),bubbleKm:0.1};
- let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(stellarRadiusKm("acen-a")),bKm:0.0,clockDeg:0.0,runOutKm:None};
+ let c={sys:solSystem(),epochJd:j2000(),t0:0.0,hereLy:add(catalogueA(),{x:0.001,y:0.0,z:0.0}),accel:standardGravity(),bubbleKm:0.1,capPhi:bodyPhiMax(),approach:None};
+ let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(stellarRadiusKm("acen-a")),bKm:0.0,clockDeg:0.0,runOutKm:None,timing:None};
  match planBody(c,request) {Err(s)=>s=="too_close",_=>false}
 }
 test "moving Alpha A intercept stops at one AU and clears binary B after years of travel" { movingAStop() }
@@ -63,7 +63,7 @@ test "stellar stop rejects a photosphere intersection" { stellarUnsafeRefused() 
 export pure func alphaNavigationVm(n:int)->string = if movingAStop() && stellarUnsafeRefused() then "alpha-navigation: OK" else "alpha-navigation: FAIL"
 export pure func alphaNavigationDebug(n:int)->string {
  let jd=j2000()+26.0*365.25;let eye=add(catalogueA(),{x:1000.0*auKm()/lyKm(),y:0.0,z:0.0});
- let c={sys:solSystem(),epochJd:jd,t0:0.0,hereLy:eye,accel:standardGravity(),bubbleKm:0.1};
- let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(auKm()),bKm:0.0,clockDeg:0.0,runOutKm:None};
+ let c={sys:solSystem(),epochJd:jd,t0:0.0,hereLy:eye,accel:standardGravity(),bubbleKm:0.1,capPhi:bodyPhiMax(),approach:None};
+ let request={id:"acen-a",cruisePhi:rapidityOfBeta(0.002),mode:"stop",standoffKm:Some(auKm()),bKm:0.0,clockDeg:0.0,runOutKm:None,timing:None};
  match planBody(c,request) {Err(s)=>s,Ok(leg)=>match alphaBodyAt("acen-a",jdAt(jd,leg.nav.interceptT)) {None=>"missing",Some(a)=>"distance ${show(norm(sub(scale(lyKm(),leg.arrivalLy),a.pos)))} time ${show(leg.nav.interceptT)} residual ${show(leg.nav.residual)} unsafe ${show(stellarUnsafeRefused())}"}}
 }

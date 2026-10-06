@@ -70,7 +70,8 @@ func _run()->void:
 		check("tour cannot turn/skip committed leg",not controller.advance() and sim.world==committed)
 		var heading:Dictionary=sim.world.ship.heading.duplicate()
 		var monotonic:=true
-		var counts:={"boosting":0,"cruising":0,"braking":0}
+		var counts:={"boosting":0,"cruising":0,"braking":0,"approaching":0}
+		var approach_start_deg:=-1.0
 		var interludes_before:int=controller.interludes_done
 		var interlude_ticks:=0
 		var stalls:=0
@@ -93,13 +94,22 @@ func _run()->void:
 			# (float64 tau differences resolve ~1e-8 relative at tau ~ 0.2 yr; compression would be >= 2x)
 			monotonic=monotonic and sim.world.clock.tau-old_tau<=(1./20.)/31557600.*(1.+1e-6)
 			if counts.has(sim.world.ship.phase):counts[sim.world.ship.phase]+=1
-			if id=="jupiter" and sim.world.ship.phase=="braking":
+			if id=="jupiter" and approach_start_deg<0. and sim.world.ship.phase=="approaching":
+				for body:Dictionary in sim.world.system.bodies:
+					if body.id=="jupiter":approach_start_deg=rad_to_deg(2.*Planets.angular_radius(body.radius_km,Planets.length64(Planets.world_of(body.rel_km))))
+			if id=="jupiter" and sim.world.ship.phase in ["braking","approaching"]:
 				for body:Dictionary in sim.world.system.bodies:
 					if body.id=="jupiter":
 						var diameter:=rad_to_deg(2.*Planets.angular_radius(body.radius_km,Planets.length64(Planets.world_of(body.rel_km))))
 						if brake_first_diameter==0.:brake_first_diameter=diameter
 						brake_last_diameter=diameter
-		var coast:float=sim.world.journey.plan.ship_years-2.*sim.world.journey.plan.boost_minutes/(365.25*24.*60.)
+		# Cruise from the plan's own fields: a timed leg (D-46) brakes from cruise to the approach rapidity, then approaches.
+		var pl:Dictionary=sim.world.journey.plan
+		var boost_y:float=pl.boost_minutes/(365.25*24.*60.)
+		var leg_drive:Dictionary=pl.get("drive",{})
+		var approach_y:float=float(leg_drive.get("approach_minutes",0.))/(365.25*24.*60.)
+		var brake_y:float=boost_y*(1.-float(leg_drive.get("approach_phi",0.))/float(pl.cruise_phi))
+		var coast:float=pl.ship_years-boost_y-brake_y-approach_y
 		var coast_s:=coast*31557600.
 		var cut:bool=coast_s>controller.pacing.CUT_THRESHOLD_S*(1.+1e-9)
 		check("real-time boost and braking with continuous clocks (%s, %d zero-advance ticks)"%[id,stalls],counts.boosting>100 and counts.braking>100 and monotonic and stalls<=3)
@@ -108,7 +118,11 @@ func _run()->void:
 		else:
 			check("short cruise plays entirely in real time, no interlude (%s)"%id,controller.interludes_done==interludes_before and absi(counts.cruising-int(round(coast_s*20.)))<=20)
 		print("    phase counts ",id," ",counts," coast ",snappedf(coast_s,0.1)," s, interlude ticks ",interlude_ticks," Earth year ",sim.world.clock.year)
-		if id=="jupiter":check("braking starts while Jupiter is small and grows throughout braking",brake_first_diameter<1. and brake_last_diameter>30.)
+		if id=="jupiter":check("braking starts while Jupiter is small and it grows through the approach",brake_first_diameter<1. and brake_last_diameter>30.)
+		if id in ["sun","jupiter","callisto","saturn"]:
+			check("timed leg (D-46): 30 s boost (%s)"%id,absi(counts.boosting-600)<=2)
+			check("timed leg (D-46): 25 s final approach in real time (%s, %d ticks)"%[id,counts.approaching],absi(counts.approaching-500)<=40)
+		if id=="jupiter":check("Jupiter's approach begins with it about 4 degrees across (%.2f)"%approach_start_deg,absf(approach_start_deg-4.)<=0.5)
 		check("arrival rests",sim.world.journey.state=="arrived" and sim.world.ship.beta==0.)
 		if id in ["sun","jupiter","callisto","saturn","acen-a"]:
 			check("body arrival at exact planner endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
@@ -137,6 +151,19 @@ func _run()->void:
 	var log:=FileAccess.get_file_as_string(RECORD)
 	check("one initialization only, no resets between legs",log.count('"type":"new_game"')==1)
 	sim.stop()
+	# Skip to next stage (D-46): each skip lands exactly on the next phase of the leg.
+	var s2:=SimBridge.new();s2.want_minor=5
+	if s2.start() and s2.new_game(42,"solar_departure",false,load("res://demos/solar_departure.gd").guided_params()):
+		var c2=load("res://demos/solar_departure.gd").new();c2.attach(s2,catalogue.stars)
+		check("skip is unavailable before a leg is committed",not c2.skip_stage())
+		c2.advance()
+		var seen:=[s2.world.ship.phase]
+		for i in 4:
+			c2.skip_stage();seen.append(s2.world.ship.phase if s2.world.journey.state=="committed" else "arrived")
+		check("skips walk boost -> cruise -> braking -> approach -> arrival (%s)"%str(seen),seen==["boosting","cruising","braking","approaching","arrived"])
+		check("after the skips the ship is exactly at the planned stop",s2.world.ship.pos==s2.world.journey.plan.target.pos and c2.skips==4)
+		s2.stop()
+	else:check("second session for the skip test",false)
 	print("solar-departure: %d passed, %d failures" %[passed,failures]);quit(1 if failures else 0)
 
 func _held_ticks(controller:RefCounted,count:int)->bool:
