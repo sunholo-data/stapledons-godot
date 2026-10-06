@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Realistic and Auto views, 2026-10-06
+
+- Ship demo: a View button `[V]` switches between **Realistic** (default: one manual exposure; sunlit planets clip, as for a real observer) and **Auto** (each resolved body faded on its own to fit the display, labelled as a composite on the HUD). The manual exposure presets work in both; the sky exposure, star photometry and SR maths are unchanged (D-38).
+- `tools/exposure_auto_view.gd` renders Earth and Jupiter stops in both views.
+
 ### Boot splash, 2026-10-06
 
 - Replace Godot's default boot logo with a Stapledon's Voyage splash in the style of the website hero: the destarred Milky Way around the galactic centre, the wordmark and tagline, and "Simulation built in AILANG" with the AILANG logo. `make splash` recomposes it in Godot from the panorama (`tools/splash_compose.gd`). Exported builds hold it for at least 1.5 s; editor and headless runs are not delayed.

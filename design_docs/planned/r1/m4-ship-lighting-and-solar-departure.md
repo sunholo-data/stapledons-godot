@@ -142,6 +142,20 @@ remain unchanged. Verify the actual Sol/Solar/Alpha arrival views, not only
 synthetic fixed-camera fixtures. The optional metering subsystem is not the
 current-demo display policy.
 
+**Realistic and Auto views (D-38, Mark, attended 2026-10-06).** The manual
+exposure above is the **Realistic** view and stays the default: sunlit bodies
+are 10–20 stops over white at a star-friendly EV (Earth ≈ 20, Jupiter ≈ 16), so
+they clip, as they would for a real observer. An **Auto** view button `[V]` adds
+a per-body fader: each resolved body's gain is `min(1, 0.5 / (L_peak · k))`,
+where `L_peak` is its brightest displayed radiance (sub-solar point × texture
+peak 2, or the limb-darkened star centre, capped by the PSF splat peak for
+sub-PSF discs). The sky EV, star photometry and SR maths are unchanged; the
+gain never brightens; the HUD labels the composite and how many stops it dims.
+Manual presets apply in both views. Each body gets its own gain, so in Auto,
+moons and their planet read alike rather than by true albedo. Acceptance:
+`make manual-exposure-test`; `tools/exposure_auto_view.gd` renders Earth and
+Jupiter in both views (`renders/ship_demo/auto_view/`).
+
 The guided tour reserves 30 wall seconds for boost, 20 for any cruise and 90 for
 braking. During braking, presentation time compression decreases progressively
 so the last tenth of physical braking receives about 28 wall seconds. AILANG
