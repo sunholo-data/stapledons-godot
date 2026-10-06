@@ -721,8 +721,8 @@ lore-check: lore-values  ## M4.7 AC15: every entry's unlock is a known hint, eve
 lore-test:         ## M4.7 lore binding, registry and checker: strict VM = interpreter, then the positive controls (drifted.md, unknown hint, unresolved id) on the real files
 	@mkdir -p $(SCRATCH)
 	@for m in lore_test:loreVm lore_check_test:loreCheckVm lore_values_test:loreValuesVm; do f=$${m%%:*}; e=$${m##*:}; \
-	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 0 sim/tools/$$f.ail > $(SCRATCH)/$$f-vm.txt 2>&1; \
-	  $(AILANG) run --quiet --package-dir sim --entry $$e --args-json 0 sim/tools/$$f.ail > $(SCRATCH)/$$f-interp.txt 2>&1; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 0 sim/tools/$$f.ail > $(SCRATCH)/$$f-vm.txt 2>&1; \
+	  env -u AI_LIVE $(AILANG) run --quiet --package-dir sim --entry $$e --args-json 0 sim/tools/$$f.ail > $(SCRATCH)/$$f-interp.txt 2>&1; \
 	  cmp $(SCRATCH)/$$f-vm.txt $(SCRATCH)/$$f-interp.txt && grep -q -- '-ok$$' $(SCRATCH)/$$f-vm.txt || { echo "lore-test: $$f FAILED"; cat $(SCRATCH)/$$f-vm.txt $(SCRATCH)/$$f-interp.txt; exit 1; }; \
 	  echo "lore-test: $$f: $$(cat $(SCRATCH)/$$f-vm.txt) (strict VM = interpreter)"; done
 	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry loreValuesReal --args-json '"$(LORE_DATA)"' sim/tools/lore_values_test.ail | grep -q -- '-ok$$' || { echo "lore-test: the real HB rows disagree with the package"; exit 1; }
