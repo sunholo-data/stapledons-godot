@@ -606,7 +606,9 @@ export pure func planView(p: Params, pl: Plan, tau: float, t: float) -> PlanView
     ism: { dragN: mirrorDragForce(n, phi, p.bubbleRadiusM), holdW: mirrorDragPower(n, phi, p.bubbleRadiusM),
            loadWM2: loadScale(n, phi), glowWM2: glowInwardFlux(n, phi, p.glowEps, p.glowFIn) },
     cmbForwardK: cmbForwardTemperature(phi),
-    drive: if tp.a != p.boostG * standardGravity() || tp.tauApproach > 0.0
+    -- Only a timed body leg (its own thrust, nav present) or a plan with an approach:
+    -- diag flip-and-burn plans also use their own thrust but keep their 2.x bytes.
+    drive: if tp.tauApproach > 0.0 || (match pl.nav { Some(_) => tp.a != p.boostG * standardGravity(), None => false })
       then Some({ boostG: tp.a / standardGravity(), approachMinutes: tp.tauApproach * minutesPerYear(), approachPhi: tp.phiApproach, approachOneMinusBeta: oneMinusBeta(tp.phiApproach) })
       else None }
 }
