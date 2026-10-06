@@ -8,6 +8,8 @@
 - The voyage continues past α Cen to TRAPPIST-1 at 0.9999c and Aldebaran at 0.999999c (D-41). It is measured at 0.891 ship years against 120.47 Earth years.
 - Cruises longer than 10 minutes of ship time play 10 s in real time, then hand over to a cruise interlude (`ui/cruise_interlude.gd`), the seam for in-ship gameplay. The demo's interlude is a card (`ui/card_interlude.gd`, `ui/interlude_card.gd`). It shows speed, γ, both clocks and the age of news from home, all read from simulation fields, and a line of scale chosen from the cumulative Earth time: "…Everyone you knew is gone." The clock lands exactly on the braking boundary, and braking plays in real time.
 - Ordinary map journeys keep their pacing, checked byte-identical against a recorded golden.
+- The ship demo HUD is compact: destination and phase, speed (β from the sim's exact 1 − β, γ, km/s) and both clocks; the review and debug details are behind Tab.
+- Destination stars render where the simulation navigates (`Starfield.pin_destination`). The sky's GCNS tier placed some stars thousands of AU from the navigation catalogue (TRAPPIST-1 by 0.042 ly), which showed at a 1,000 AU stand-off. A pinned destination later drawn as a physical emitter is suppressed with its identity, so its light is not counted twice.
 
 ### Realistic and Auto views, 2026-10-06
 

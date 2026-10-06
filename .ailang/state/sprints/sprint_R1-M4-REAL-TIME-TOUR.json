@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-M4-REAL-TIME-TOUR",
-  "status": "in_progress",
+  "status": "completed",
   "approved_by": "Mark Edmondson, attended 2026-10-06 (\"yes lets go ahead with this demo expansion\")",
   "requested_by": "Mark (attended 2026-10-06; D-39, D-40, D-41)",
   "design_doc": "design_docs/planned/r1/m4-real-time-tour.md",
@@ -95,10 +95,10 @@
         "A7: renders opened; sky finite at γ 707",
         "A8: make test locally and CI"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-06T13:03:05Z",
+      "completed": "2026-10-06T13:03:05Z",
+      "notes": "tools/real_time_tour_capture.gd flies the real voyage (55 frames, all finite; Earth +120.47 yr, ship +0.891 yr) and samples the target pixel on arrival: every target centred and bright (TRAPPIST-1 orange-white 0.93/0.80/0.63). Review found and fixed: (1) GCNS vs CNS5 position disagreement (median 0.021 ly, TRAPPIST-1 0.042 ly) -> Starfield.pin_destination + test_destination_pin; (2) pinned row doubled alpha Cen light when replaced by physical emitters -> suppressed with identity; (3) capture tool composited a HiDPI-cropped corner -> stretched. Gamma-707 forward view saturates white from the existing bubble-wall glow model (eps 1e-10): flagged to Mark, not a renderer fault. Compact HUD (speed from exact 1-beta, both clocks) per Mark. make test rc=0; ship-demo-ci rc=0."
     }
   ]
 }

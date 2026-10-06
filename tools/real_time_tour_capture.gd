@@ -20,7 +20,10 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(OUT)
 	sky = InteriorSky.new(); root.add_child(sky)
 	sky.setup({"position_m": [0, 0, 0], "forward": [0, 0, 1], "up": [0, 1, 0]}, 78., root.size, {"stars": true, "background": true, "planet_textures": true})
-	var rect := TextureRect.new(); rect.texture = sky.get_texture(); rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.add_child(rect)
+	var rect := TextureRect.new(); rect.texture = sky.get_texture()
+	# Stretch to the window: at native size the window (HiDPI) showed a cropped corner, putting the view centre off-screen.
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; rect.stretch_mode = TextureRect.STRETCH_SCALE
+	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.add_child(rect)
 	var layer := CanvasLayer.new(); layer.layer = 12; root.add_child(layer)
 	card_view = InterludeCard.new(); card_view.visible = false; layer.add_child(card_view)
 	sky.exposure.fixed = true; sky.exposure.fixed_ev = sky.exposure.ev_dark() - 2.; sky.set_temporal_exposure(false)
@@ -30,6 +33,7 @@ func run() -> void:
 	var catalogue: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json")).get("stars", [])
 	tour = SolarDeparture.new()
 	if not tour.attach(sim, catalogue): print("real-time-tour-capture: attach FAIL"); quit(1); return
+	tour.pin_destinations(sky.starfield)
 	for leg in tour.itinerary.size():
 		if not tour.advance(): print("leg ", leg, " FAIL ", tour.failed); failures += 1; break
 		await fly_leg(leg, sim)
@@ -90,7 +94,16 @@ func shot(name: String, sim: SimBridge, look: String, with_card: bool, auto_view
 		for x in range(0, img.get_width(), 8):
 			var c := img.get_pixel(x, y); nan = nan or not (is_finite(c.r) and is_finite(c.g) and is_finite(c.b))
 	if nan: failures += 1
-	records.append({"name": name, "phase": sim.world.ship.phase, "beta": sim.world.ship.get("beta", 0.0), "gamma": sim.world.ship.get("gamma", 1.0),
+	var target_px := Vector2i(-1, -1)
+	var target_peak := Color(0, 0, 0)
+	if look == "target":
+		target_px = Vector2i(sky.camera.project(n, Vector2(root.size)))
+		for y in range(maxi(0, target_px.y - 4), mini(img.get_height(), target_px.y + 5)):
+			for x in range(maxi(0, target_px.x - 4), mini(img.get_width(), target_px.x + 5)):
+				var c := img.get_pixel(x, y)
+				if c.r + c.g + c.b > target_peak.r + target_peak.g + target_peak.b: target_peak = c
+		print("TARGET ", name, " px ", target_px, " peak ", target_peak)
+	records.append({"name": name, "target_px": [target_px.x, target_px.y], "target_peak": [target_peak.r, target_peak.g, target_peak.b], "phase": sim.world.ship.phase, "beta": sim.world.ship.get("beta", 0.0), "gamma": sim.world.ship.get("gamma", 1.0),
 		"earth_year": sim.world.clock.year, "ship_tau": sim.world.clock.tau, "look": look, "card": card != null, "auto_view": auto_view, "finite": not nan})
 	print("SHOT ", name, " beta=", sim.world.ship.get("beta", 0.0), " Earth+", snappedf(sim.world.clock.year, 0.001))
 	card_view.visible = false

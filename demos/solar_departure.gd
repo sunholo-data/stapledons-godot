@@ -53,6 +53,12 @@ func attach(bridge: SimBridge, catalogue: Array) -> bool:
 	sim=bridge;stars=found;itinerary=metadata.legs.duplicate(true)
 	return true
 
+## Every star-leg destination renders at the position the sim navigates to
+## (Starfield.pin_destination): one sky catalogue can sit thousands of AU off.
+func pin_destinations(starfield: Starfield) -> void:
+	if starfield==null:return
+	for id:String in stars:starfield.pin_destination(stars[id])
+
 func _star_intent(spec: Dictionary) -> Dictionary:
 	var row:Dictionary=stars.get(spec.id,{})
 	if row.is_empty():return {}
