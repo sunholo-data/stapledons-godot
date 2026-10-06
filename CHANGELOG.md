@@ -15,6 +15,7 @@
 
 - Ship demo: a View button `[V]` switches between **Realistic** (default: one manual exposure; sunlit planets clip, as for a real observer) and **Auto** (each resolved body faded on its own to fit the display, labelled as a composite on the HUD). The manual exposure presets work in both; the sky exposure, star photometry and SR maths are unchanged (D-38).
 - `tools/exposure_auto_view.gd` renders Earth and Jupiter stops in both views.
+- Auto view: stars (the Sun, Alpha Centauri A/B) fade to a higher target than lit bodies, so the Sun stays the brightest thing on screen: white with its warm channel order kept (255, 254, 254), not a grey star. `tools/exposure_auto_view.gd` checks it.
 
 ### Boot splash, 2026-10-06
 

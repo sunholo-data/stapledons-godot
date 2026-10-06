@@ -63,8 +63,14 @@ var _prepared := false
 ## catalogue sky keeps the shared exposure. Off = one physical exposure ("Realistic").
 const FADER_TARGET := 0.5 # linear pre-tonemap: below AgX's shoulder, so surface detail survives
 const FADER_TEX_PEAK := 2.0 # textured albedo / disc mean at the brightest clouds and ice
+## Emitters stay the brightest thing on screen: a star's disc centre lands at
+## the top of AgX's shoulder, level with the brightest catalogue stars at the
+## demo's EV. AgX desaturates there, so the Sun reads white (R >= G >= B kept),
+## which is its true colour from space; at 0.5 it read as a grey star.
+const FADER_STAR_TARGET := 16.0
 var body_fader := false
 var _fader_peak := {} # id -> brightest displayed radiance before exposure (cd/m^2)
+var _fader_star := {} # id -> true for emitters (stars)
 var _points_physical := [] # visible point sources at physical lux, before any fader gain
 var _points_key := []
 
@@ -169,7 +175,7 @@ func update(system: Dictionary, k: float) -> void:
 	_prepared=true;_prepared_system=system.duplicate(true);_prepared_view=view
 	preparation_count+=1
 	lod_weights.clear()
-	_fader_peak.clear()
+	_fader_peak.clear();_fader_star.clear()
 	rendered_bodies.clear()
 	drawn_points.clear()
 	drawn_discs.clear()
@@ -193,7 +199,7 @@ func update(system: Dictionary, k: float) -> void:
 		for band: Dictionary in ring_systems.get(b.get("ring_id",""),{}).get("bands",[]):extent=maxf(extent,band.r_out_km)
 		var px := _diameter_seen(w, extent, dist)
 		var weight:=disc_weight(px);lod_weights[b.id]=weight
-		_fader_peak[b.id]=_displayed_peak(b,dist)
+		_fader_peak[b.id]=_displayed_peak(b,dist);_fader_star[b.id]=b.kind=="star"
 		order.append([dist,b]) # physical ray/meter/occlusion remains independent of LOD
 		if weight<1.0 and (b["e_v_lux"] >= floor_lux or px >= CULL_PX):
 			points.append({"id":b.id,"distance":dist,"dir": [w[0] / dist, w[1] / dist, w[2] / dist], "lux": b["e_v_lux"]*(1.-weight), "t": b.get("teff_k", Planets.T_SUN)})
@@ -479,7 +485,7 @@ func _displayed_peak(b:Dictionary,dist:float)->float:
 func fader_gain(id:String,k:float)->float:
 	var peak:float=_fader_peak.get(id,0.0)
 	if not body_fader or peak<=0.0 or k<=0.0:return 1.0
-	return minf(1.0,FADER_TARGET/(peak*k))
+	return minf(1.0,(FADER_STAR_TARGET if _fader_star.get(id,false) else FADER_TARGET)/(peak*k))
 
 
 ## How far the fader dims the most-dimmed visible body, in stops (0 = none).
