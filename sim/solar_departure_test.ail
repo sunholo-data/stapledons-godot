@@ -4,16 +4,25 @@ import std/result (Ok, Err)
 import std/option (Some, None)
 import pkg/sunholo/celestial/kepler (sub, scale, norm, absf, dot)
 import ./celestial (solSystem, bodyAt, lyKm)
-import ./core (World, Target, Intent, ICommit, IPlanBody, Planned, Arrived, newWorld, defaultParams, position, tick)
-import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
+import ./core (World, Target, Intent, ICommit, IPlanBody, Planned, Arrived, newWorld, defaultParams, position, tick, scenarioError)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta)
 import std/string (concat)
-import ./solar_departure (initialize, initializeAtStandoff, earthStandoffKm, intentForLeg)
-import ./navigation (safetyMinKm)
+import ./solar_departure (TourLeg, initialize, initializeAtStandoff, earthStandoffKm, intentForLeg, legs, legCount, solCruisePhi, acenOneMinusBeta, trappistOneMinusBeta, aldebaranOneMinusBeta)
+import ./navigation (safetyMinKm, bodyPhiMax)
 import ./data/sol (sun)
 
 pure func fixtureTarget() -> Target = { index: 0, id: "CNS5:3627", pos: {x: 3.094521, y: 0.0 - 3.015404, z: 0.0 - 0.051608} }
+-- Catalogue rows (data/starmap/stars.json, ly, galactic frame) for the outbound star legs.
+pure func trappistTarget() -> Target = { index: 1, id: "Gaia DR3 2635476908753563008", pos: {x: 7.742, y: 20.946483, z: 0.0 - 33.930598} }
+pure func aldebaranTarget() -> Target = { index: 2, id: "CNS5:1142", pos: {x: 0.0 - 62.516711, y: 0.0 - 1.060038, z: 0.0 - 23.064639} }
+pure func targetFor(n: int) -> Target = if n == 6 then trappistTarget() else if n == 7 then aldebaranTarget() else fixtureTarget()
+-- D-39/D-40 guided drive (demos/solar_departure.gd GUIDED_DRIVE mirrors it).
+pure func guided() -> World {
+  let w = newWorld(42, false, defaultParams());
+  {w | params: {w.params | boostG: 3000000.0, mEffKg: 10.0, capOneMinusBeta: 0.0000005}}
+}
 pure func base() -> World = newWorld(42, false, defaultParams())
-pure func started() -> World = match initialize(base()) { Ok(w) => w, Err(_) => base() }
+pure func started() -> World = match initialize(guided()) { Ok(w) => w, Err(_) => guided() }
 export pure func checkInitial() -> bool =
   match bodyAt(solSystem(), "earth", (base()).params.epochJd) {
     None => false,
@@ -57,7 +66,7 @@ export pure func checkNoReinitialize() -> bool {
 }
 test "initialization cannot reposition an existing simulation" { checkNoReinitialize() }
 export pure func finishLeg(w: World, n: int) -> World =
-  match intentForLeg(w, n, fixtureTarget()) {
+  match intentForLeg(w, n, targetFor(n)) {
     None => w,
     Some(intent) => {
       let planned = (tick(w, {dtau: 0.0, intents: [intent]})).world;
@@ -71,7 +80,7 @@ export pure func finishLeg(w: World, n: int) -> World =
     }
   }
 pure func chain(w: World, n: int) -> bool =
-  if n >= 6 then true else {
+  if n >= legCount() then true else {
     let before = position(w.ship);
     let landed = finishLeg(w, n);
     match landed.journey {
@@ -83,7 +92,24 @@ pure func chain(w: World, n: int) -> bool =
     }
   }
 export pure func checkSequence() -> bool = chain(started(), 0)
-test "Earth Sun Jupiter Callisto Saturn outbound are true successive commits without resetting clocks or endpoints" { checkSequence() }
+test "Earth to Aldebaran: every leg is a true successive commit without resetting clocks or endpoints" { checkSequence() }
+-- D-39/D-40/D-41 cruise speeds, as exact 1 - beta (never 1 - beta computed near c).
+pure func phiOf(n: int) -> float = match legs((guided()).params) { xs => phiAt(xs, n) }
+pure func phiAt(xs: [TourLeg], n: int) -> float = match xs { [] => 0.0 - 1.0, x :: rest => if n == 0 then x.cruisePhi else phiAt(rest, n - 1) }
+pure func idAt(xs: [TourLeg], n: int) -> string = match xs { [] => "", x :: rest => if n == 0 then x.id else idAt(rest, n - 1) }
+export pure func checkSpeeds() -> bool {
+  let sol = solCruisePhi();
+  let xs = legs((guided()).params);
+  sol == bodyPhiMax() && sol == rapidityOfBeta(0.99) && acenOneMinusBeta() == 0.001 && trappistOneMinusBeta() == 0.0001 && aldebaranOneMinusBeta() == 0.000001
+  && legCount() == 8
+  && phiOf(0) == sol && phiOf(1) == sol && phiOf(2) == sol && phiOf(3) == sol
+  && phiOf(4) == rapidityOfOneMinusBeta(0.001) && phiOf(5) == sol
+  && phiOf(6) == rapidityOfOneMinusBeta(0.0001) && phiOf(7) == rapidityOfOneMinusBeta(0.000001)
+  && idAt(xs, 6) == "Gaia DR3 2635476908753563008" && idAt(xs, 7) == "CNS5:1142"
+}
+test "cruise speeds per leg: 0.99c Sol and A, 0.999c, 0.9999c, 0.999999c outbound" { checkSpeeds() }
+export pure func checkGuidedDriveValid() -> bool = match scenarioError((guided()).params) { None => true, Some(_) => false }
+test "the guided drive passes the unchanged brake-vs-drag scenario check" { checkGuidedDriveValid() }
 export pure func checkDirectJupiterCollision() -> bool {
   let jupiter = finishLeg(finishLeg(started(), 0), 1);
   match intentForLeg(jupiter, 3, fixtureTarget()) {
@@ -98,12 +124,13 @@ test "direct close Jupiter to Saturn remains collision refused, requiring a genu
 export pure func checkBounds() -> bool {
   let target = fixtureTarget();
   (match intentForLeg(started(), -1, fixtureTarget()) { None => true, _ => false })
-  && (match intentForLeg(started(), 6, fixtureTarget()) { None => true, _ => false })
+  && (match intentForLeg(started(), legCount(), fixtureTarget()) { None => true, _ => false })
+  && (match intentForLeg(started(), 6, aldebaranTarget()) { None => true, _ => false })
   && (match intentForLeg(started(), 4, {target | id: "wrong ID"}) { None => true, _ => false })
 }
 test "itinerary bounds and exact outbound identity are fail closed" { checkBounds() }
 export pure func solarDepartureVm(n: int) -> string =
-  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
+  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
 
 pure func clearance(w: World, id: string) -> string {
   let pl = (tick(w, {dtau: 0.0, intents: [IPlanBody({id: id, cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None})]}));

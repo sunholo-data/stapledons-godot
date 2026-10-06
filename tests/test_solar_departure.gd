@@ -10,7 +10,7 @@ func check(name:String,condition:bool)->void:
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
 	var sim:=SimBridge.new();sim.want_minor=5;sim.record_path=RECORD
-	if not sim.start() or not sim.new_game(42,"solar_departure",false,{"standoff_au":1000.,"boost_g":1.0,"m_eff_kg":10.,"cap_one_minus_beta":.01}):
+	if not sim.start() or not sim.new_game(42,"solar_departure",false,load("res://demos/solar_departure.gd").guided_params()):
 		check("scenario starts (%s)" % sim.last_error,false);sim.stop();quit(1);return
 	var earth:Dictionary={}
 	for body:Dictionary in sim.world.system.bodies:
@@ -28,7 +28,7 @@ func _run()->void:
 	for index in catalogue.stars.size():
 		var star:Dictionary=catalogue.stars[index]
 		if star.id=="CNS5:3627":outbound=star.duplicate();outbound.index=index
-	check("controller accepts exact catalogue destination",controller.attach(sim,outbound))
+	check("controller accepts exact catalogue destination",controller.attach(sim,catalogue.stars))
 	var before:Dictionary=sim.world.duplicate(true)
 	check("initial dwelling advances real time without moving ship",controller.step() and sim.world.ship.pos==before.ship.pos and sim.world.clock.tau>before.clock.tau and absf(sim.world.clock.tau-before.clock.tau-0.05/31557600.)<1e-15)
 	controller.deferred_commit=true
@@ -41,7 +41,8 @@ func _run()->void:
 	controller.attitude_hold=false
 	var previous:Dictionary=sim.world.ship.pos.duplicate()
 	var completed:=0
-	for id in ["sun","jupiter","callisto","saturn","CNS5:3627","acen-a"]:
+	var ids:=["sun","jupiter","callisto","saturn","CNS5:3627","acen-a","Gaia DR3 2635476908753563008","CNS5:1142"]
+	for id in ids:
 		var start:Dictionary=sim.world.duplicate(true)
 		controller.attitude_hold=true
 		check("attitude hold pauses clocks and rejects premature leg",controller.step() and sim.world==start and not controller.prepare_next())
@@ -64,13 +65,27 @@ func _run()->void:
 		var heading:Dictionary=sim.world.ship.heading.duplicate()
 		var monotonic:=true
 		var counts:={"boosting":0,"cruising":0,"braking":0}
+		var interludes_before:int=controller.interludes_done
+		var interlude_ticks:=0
+		var stalls:=0
 		var brake_first_diameter := 0.0
 		var brake_last_diameter := 0.0
-		for tick in 4000:
+		for tick in 30000:
 			if sim.world.journey.state=="arrived":break
 			var old_tau:float=sim.world.clock.tau;var old_year:float=sim.world.clock.year
-			if not controller.step():check("controller step",false);break
-			monotonic=monotonic and sim.world.clock.tau>old_tau and sim.world.clock.year>old_year and sim.world.ship.heading==heading
+			var in_interlude:bool=controller.interlude!=null or controller.pacing.interlude_due(sim.world)
+			if not controller.step():check("controller step (%s)"%controller.failed,false);break
+			if in_interlude or controller.interlude!=null:
+				interlude_ticks+=1
+				monotonic=monotonic and sim.world.clock.tau>=old_tau and sim.world.ship.heading==heading
+				continue
+			# Clocks never go back. A boundary-crossing nudge (~1e-18 yr) or the exact-arrival
+			# snap may add no ship time at float64 resolution: allowed, at most 3 per leg.
+			monotonic=monotonic and sim.world.clock.tau>=old_tau and sim.world.clock.year>=old_year and sim.world.ship.heading==heading
+			if not sim.world.clock.tau>old_tau:stalls+=1
+			# Real time: outside an interlude no host tick advances the ship clock by more than one wall second.
+			# (float64 tau differences resolve ~1e-8 relative at tau ~ 0.2 yr; compression would be >= 2x)
+			monotonic=monotonic and sim.world.clock.tau-old_tau<=(1./20.)/31557600.*(1.+1e-6)
 			if counts.has(sim.world.ship.phase):counts[sim.world.ship.phase]+=1
 			if id=="jupiter" and sim.world.ship.phase=="braking":
 				for body:Dictionary in sim.world.system.bodies:
@@ -79,9 +94,15 @@ func _run()->void:
 						if brake_first_diameter==0.:brake_first_diameter=diameter
 						brake_last_diameter=diameter
 		var coast:float=sim.world.journey.plan.ship_years-2.*sim.world.journey.plan.boost_minutes/(365.25*24.*60.)
-		check("physical phases are visible with continuous clocks",counts.boosting>100 and counts.braking>100 and (counts.cruising>100 if coast>1e-12 else counts.cruising==0) and monotonic)
-		print("    phase counts ",id," ",counts," physical coast years ",coast)
-		if id=="jupiter":check("one-g braking starts while Jupiter is small and grows throughout braking",brake_first_diameter<1. and brake_last_diameter>30.)
+		var coast_s:=coast*31557600.
+		var cut:bool=coast_s>controller.pacing.CUT_THRESHOLD_S*(1.+1e-9)
+		check("real-time boost and braking with continuous clocks (%s, %d zero-advance ticks)"%[id,stalls],counts.boosting>100 and counts.braking>100 and monotonic and stalls<=3)
+		if cut:
+			check("long cruise: exactly one interlude, after the 10 s real-time hold, ending on the braking boundary (%s)"%id,controller.interludes_done==interludes_before+1 and absi(counts.cruising-int(controller.pacing.CRUISE_HOLD_S*20.))<=2 and controller.last_boundary_error>=0. and controller.last_boundary_error<=1e-12*float(sim.world.journey.plan.ship_years))
+		else:
+			check("short cruise plays entirely in real time, no interlude (%s)"%id,controller.interludes_done==interludes_before and absi(counts.cruising-int(round(coast_s*20.)))<=20)
+		print("    phase counts ",id," ",counts," coast ",snappedf(coast_s,0.1)," s, interlude ticks ",interlude_ticks," Earth year ",sim.world.clock.year)
+		if id=="jupiter":check("braking starts while Jupiter is small and grows throughout braking",brake_first_diameter<1. and brake_last_diameter>30.)
 		check("arrival rests",sim.world.journey.state=="arrived" and sim.world.ship.beta==0.)
 		if id in ["sun","jupiter","callisto","saturn","acen-a"]:
 			check("body arrival at exact planner endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
@@ -100,7 +121,12 @@ func _run()->void:
 			var gap:=sqrt(pow(p.x-q.x,2.)+pow(p.y-q.y,2.)+pow(p.z-q.z,2.))
 			check("outbound stops at package stellar standoff",absf(gap-sim.world.consequence.standoff_ly)<1e-10 and gap>0.01)
 		previous=sim.world.ship.pos.duplicate();completed+=1
-	check("completed itinerary cannot start extra leg",completed==6 and controller.complete and not controller.advance())
+	check("completed itinerary cannot start extra leg",completed==ids.size() and controller.complete and not controller.advance())
+	# D-41: about 11 months lived while ~120 years pass on Earth (design goal 3).
+	var year:float=sim.world.clock.year;var tau:float=sim.world.clock.tau
+	print("    voyage: Earth +%.2f yr, ship +%.3f yr"%[year,tau])
+	check("cumulative Earth time at Aldebaran within 1%% of 120.5 yr (%.2f)"%year,absf(year-120.5)<=0.01*120.5)
+	check("ship time lived is under a year",tau>0.8 and tau<1.0)
 	check("HUD exposes both clocks and honest approximation",controller.status_text().contains("Earth +") and controller.status_text().contains("ship +") and controller.status_text().contains("barycentre"))
 	var log:=FileAccess.get_file_as_string(RECORD)
 	check("one initialization only, no resets between legs",log.count('"type":"new_game"')==1)

@@ -54,6 +54,7 @@ var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var view_button := Button.new()
+var interlude_card: InterludeCard
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
 var navigation_window: Window
@@ -107,6 +108,9 @@ func setup(opts := {}) -> bool:
 	set_brightness_trial(opts.get("brightness_stops",2))
 	set_auto_view(opts.get("auto_view",false))
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
+	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
+	interlude_card = InterludeCard.new();interlude_card.visible = false;interlude_canvas.add_child(interlude_card)
+	interlude_card.continue_pressed.connect(continue_interlude)
 	star_identification = Identification.new();identify_canvas.add_child(star_identification)
 	star_identification.setup(self);star_identification.open_map.connect(open_identified_star)
 	if opts.get("live_start",false):
@@ -313,6 +317,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
 			KEY_V:set_auto_view(not sky.system_view.body_fader)
+			KEY_ENTER:continue_interlude()
 			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
@@ -442,7 +447,7 @@ func _create_navigation(scenario:String) -> void:
 	if journey_map==null:
 		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
 		var params:Dictionary={"standoff_au":1000.}
-		if scenario=="solar_departure":params.merge({"boost_g":1.0,"m_eff_kg":10.0,"cap_one_minus_beta":0.01})
+		if scenario=="solar_departure":params=SolarDeparture.guided_params()
 		if not journey_sim.start() or not journey_sim.new_game(424242,scenario,false,params):
 			caption="Navigation unavailable: "+journey_sim.last_error
 			journey_sim.stop();journey_sim=null;return
@@ -476,10 +481,7 @@ func start_solar_departure() -> bool:
 	var initial_heading:Dictionary=journey_sim.world.ship.heading
 	tour_attitude.reset(ShipFrame.ship_basis(PackedFloat64Array([initial_heading.x,initial_heading.y,initial_heading.z])))
 	camera.attitude_basis=tour_attitude.current.duplicate()
-	var destination_index:int=journey_map.index_of("CNS5:3627")
-	var destination:Dictionary=journey_map.catalogue[destination_index].duplicate(true)
-	destination.index=destination_index
-	if not solar_tour.attach(journey_sim,destination):
+	if not solar_tour.attach(journey_sim,journey_map.catalogue):
 		caption="Solar departure could not attach to the new session.";solar_tour=null;return false
 	journey_map.guided_read_only=true
 	solar_pause.visible=true;solar_next.visible=true;solar_pause.text="Pause tour"
@@ -502,8 +504,16 @@ func journey_tick() -> bool:
 		caption="Navigation step failed: "+journey_sim.last_error;return false
 	if solar_tour!=null:journey_map.refresh()
 	_apply_journey_world()
+	_show_interlude()
 	if live_journey and not was_committed:close_navigation()
 	return true
+## D-41: the cruise interlude's card, shown over the live cruise sky while active.
+func _show_interlude() -> void:
+	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
+	interlude_card.visible=card!=null
+	if card!=null:interlude_card.show_interlude(card)
+func continue_interlude() -> void:
+	if solar_tour!=null and solar_tour.interlude is CardInterlude:(solar_tour.interlude as CardInterlude).finish()
 func _apply_journey_world()->void:
 	var was_committed:=live_journey
 	live_journey=journey_map.journey_state()=="committed"

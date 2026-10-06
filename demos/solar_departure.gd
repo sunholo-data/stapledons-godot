@@ -6,8 +6,14 @@ signal world_updated(world: Dictionary)
 const TICK_HZ := 20.
 const JULIAN_YEAR_SECONDS := 31557600.
 const DWELL_SECONDS := 12.
+## D-39/D-40/D-41 guided drive, one definition for the whole voyage: 3,000,000 g,
+## cap 1 - beta = 5e-7 (the 0.999999c Aldebaran leg), m_eff 10 kg. The sim's
+## unchanged scenarioError (brake vs ISM drag at the cap) accepts it (RT0).
+## sim/solar_departure_test.ail's guided() mirrors these values.
+const GUIDED_DRIVE := {"boost_g":3000000.0,"m_eff_kg":10.0,"cap_one_minus_beta":0.0000005}
+const STANDOFF_AU := 1000.0
 var sim: SimBridge
-var outbound: Dictionary
+var stars: Dictionary = {} # star-leg catalogue id -> row (with its catalogue index)
 var itinerary: Array
 var leg_index := -1
 var dwell_left := DWELL_SECONDS
@@ -20,14 +26,37 @@ var pending_heading: Dictionary = {}
 var pending_name := ""
 var failed := ""
 var pacing := preload("res://ui/journey_pacing.gd").new()
+## The active cruise interlude (D-41), or null. interlude_factory makes the next
+## one: the demo card today, in-ship gameplay later; the host loop is the same.
+var interlude: CruiseInterlude = null
+var interlude_factory: Callable = func() -> CruiseInterlude: return CardInterlude.new()
+var interludes_done := 0
+var last_boundary_error := -1.0
 
-func attach(bridge: SimBridge, destination: Dictionary) -> bool:
+## new_game params for a guided voyage: the catalogue stand-off plus GUIDED_DRIVE.
+static func guided_params() -> Dictionary:
+	var p:Dictionary={"standoff_au":STANDOFF_AU};p.merge(GUIDED_DRIVE);return p
+
+## catalogue: the star rows in catalogue order (GalaxyMap.catalogue or stars.json's
+## "stars"); every star leg is resolved by exact id, failing closed if one is missing.
+func attach(bridge: SimBridge, catalogue: Array) -> bool:
 	if bridge.world.get("journey",{}).get("state","")=="committed":return false
 	var metadata: Dictionary=bridge.world.get("solar_departure",{})
-	if metadata.is_empty() or destination.get("id","")!="CNS5:3627" or int(destination.get("index",-1))<0:return false
+	if metadata.is_empty():return false
+	var found:={}
+	for spec:Dictionary in metadata.legs:
+		if spec.kind!="star":continue
+		for i in catalogue.size():
+			if catalogue[i].get("id","")==spec.id:found[spec.id]=catalogue[i].duplicate(true);found[spec.id].index=i;break
+		if not found.has(spec.id):return false
 	pacing.guided_approach=true
-	sim=bridge;outbound=destination.duplicate(true);itinerary=metadata.legs.duplicate(true)
+	sim=bridge;stars=found;itinerary=metadata.legs.duplicate(true)
 	return true
+
+func _star_intent(spec: Dictionary) -> Dictionary:
+	var row:Dictionary=stars.get(spec.id,{})
+	if row.is_empty():return {}
+	return {"k":"plan","target":{"index":int(row.index),"id":row.id,"pos":{"x":row.x,"y":row.y,"z":row.z}},"cruise_phi":spec.cruise_phi}
 
 func _send(intents: Array, dtau: float) -> bool:
 	if not sim.send(intents,dtau):failed=sim.last_error;return false
@@ -47,8 +76,8 @@ func prepare_next() -> bool:
 	var intent:Dictionary
 	if spec.kind=="body":intent=SimBridge.body_plan(spec.id,spec.cruise_phi,{"mode":"stop","standoff_km":spec.standoff_km})
 	else:
-		if spec.id!=outbound.id:failed="outbound catalogue identity mismatch";return false
-		intent={"k":"plan","target":{"index":int(outbound.index),"id":outbound.id,"pos":{"x":outbound.x,"y":outbound.y,"z":outbound.z}},"cruise_phi":spec.cruise_phi}
+		intent=_star_intent(spec)
+		if intent.is_empty():failed="star leg catalogue identity missing";return false
 	# Body plans are epoch-sensitive: zero elapsed time between plan and commit.
 	if not _send([intent],0.):return false
 	pending_index=next;pending_heading=sim.world.journey.plan.heading.duplicate();pending_name=spec.get("name",spec.id)
@@ -62,7 +91,8 @@ func commit_prepared() -> bool:
 	var spec:Dictionary=itinerary[next]
 	var intent:Dictionary
 	if spec.kind=="body":intent=SimBridge.body_plan(spec.id,spec.cruise_phi,{"mode":"stop","standoff_km":spec.standoff_km})
-	else:intent={"k":"plan","target":{"index":int(outbound.index),"id":outbound.id,"pos":{"x":outbound.x,"y":outbound.y,"z":outbound.z}},"cruise_phi":spec.cruise_phi}
+	else:intent=_star_intent(spec)
+	if intent.is_empty():failed="star leg catalogue identity missing";return false
 	if not _send([intent],0.):return false
 	var commit:={"k":"commit","plan_id":sim.world.journey.plan_id}
 	var dtau:float=pacing.step(sim.world,true,0.,TICK_HZ)
@@ -77,6 +107,11 @@ func step() -> bool:
 	if sim==null or not failed.is_empty():return false
 	if paused or attitude_hold or pending_index>=0:return true
 	if sim.world.journey.state=="committed":
+		if interlude!=null:return _step_interlude()
+		if pacing.interlude_due(sim.world):
+			interlude=interlude_factory.call()
+			interlude.begin(CruiseInterlude.facts_from(sim.world,leg_name()))
+			return true
 		if not _send([],pacing.step(sim.world,false,0.,TICK_HZ)):return false
 		if sim.world.journey.state=="arrived":
 			if leg_index==itinerary.size()-1:complete=true
@@ -88,8 +123,26 @@ func step() -> bool:
 		if dwell_left==0.:return prepare_next() if deferred_commit else advance()
 	return true
 
+## One host frame of the active interlude: step the sim by exactly what it
+## consumes (never past the braking boundary), then check the boundary at the end.
+func _step_interlude() -> bool:
+	var left:float=pacing.cruise_remaining(sim.world)
+	var dt:float=clampf(interlude.advance(left,1./TICK_HZ),0.,left)
+	if dt>0.:
+		if not _send([],dt):return false
+		interlude.observe(sim.world,leg_name())
+	if interlude.done():
+		last_boundary_error=pacing.cruise_remaining(sim.world)
+		if last_boundary_error>1e-12*float(sim.world.journey.plan.ship_years):
+			failed="cruise interlude ended off the braking boundary";return false
+		interlude=null;interludes_done+=1
+	return true
+
+func leg_name() -> String:
+	return "Earth standoff" if leg_index<0 or leg_index>=itinerary.size() else str(itinerary[leg_index].get("name",itinerary[leg_index].id))
+
 func status_text() -> String:
 	if sim==null:return "Solar departure unavailable"
 	var label:String="Earth standoff" if leg_index<0 else itinerary[leg_index].get("name",itinerary[leg_index].id)
-	var motion:String="PAUSED FOR ATTITUDE TURN · next "+pending_name if pending_index>=0 or attitude_hold else ("1 second/second at stops" if sim.world.journey.state!="committed" else "guided 1g · boost ~32s with gentle start / cruise 20s when present / approach 90s")
+	var motion:String="PAUSED FOR ATTITUDE TURN · next "+pending_name if pending_index>=0 or attitude_hold else ("1 second/second at stops" if sim.world.journey.state!="committed" else ("CRUISE INTERLUDE · time passes aboard" if interlude!=null else "REAL TIME · 1 ship second per second · 3,000,000 g drive"))
 	return "GUIDED SOLAR DEPARTURE · %s · %s\nEarth +%.8f yr / ship +%.8f yr · %s\n%s" % [label,sim.world.ship.phase,sim.world.clock.year,sim.world.clock.tau,motion,sim.world.solar_departure.approximation]
