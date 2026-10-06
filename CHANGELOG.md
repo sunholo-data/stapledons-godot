@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Real-time voyage to Aldebaran, 2026-10-06
+
+- The guided tour runs in real time: one ship second per wall second, with no time compression (D-39). A single drive is used for the whole voyage: 3,000,000 g, cap 1 − β = 5 × 10⁻⁷, m_eff 10 kg. It passes the unchanged brake-vs-drag check. Solar System legs cruise at 0.99c (Earth → Jupiter is about 6 ship minutes and 39 Earth minutes).
+- The voyage continues past α Cen to TRAPPIST-1 at 0.9999c and Aldebaran at 0.999999c (D-41). It is measured at 0.891 ship years against 120.47 Earth years.
+- Cruises longer than 10 minutes of ship time play 10 s in real time, then hand over to a cruise interlude (`ui/cruise_interlude.gd`), the seam for in-ship gameplay. The demo's interlude is a card (`ui/card_interlude.gd`, `ui/interlude_card.gd`). It shows speed, γ, both clocks and the age of news from home, all read from simulation fields, and a line of scale chosen from the cumulative Earth time: "…Everyone you knew is gone." The clock lands exactly on the braking boundary, and braking plays in real time.
+- Ordinary map journeys keep their pacing, checked byte-identical against a recorded golden.
+
 ### Realistic and Auto views, 2026-10-06
 
 - Ship demo: a View button `[V]` switches between **Realistic** (default: one manual exposure; sunlit planets clip, as for a real observer) and **Auto** (each resolved body faded on its own to fit the display, labelled as a composite on the HUD). The manual exposure presets work in both; the sky exposure, star photometry and SR maths are unchanged (D-38).

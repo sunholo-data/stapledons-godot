@@ -60,17 +60,20 @@ func fly_leg(leg: int, sim: SimBridge) -> void:
 		if tour.interlude != null and not card_taken and (tour.interlude as CardInterlude).shown() >= 4.0:
 			card_taken = true
 			await shot("%d_%s_card" % [leg, slug], sim, "forward", true)
+		if phase == "cruising" and not taken.has("cruise"):
+			taken["cruise"] = true
+			await shot("%d_%s_cruise_peak_forward" % [leg, slug], sim, "forward", false)
+			if long_leg: await shot("%d_%s_cruise_peak_side" % [leg, slug], sim, "side", false)
 		if phase == "braking" and not braking_taken and float(sim.world.ship.get("beta", 0.0)) < 0.5 * float(sim.world.journey.plan.cruise_beta):
 			braking_taken = true
 			await shot("%d_%s_braking" % [leg, slug], sim, "forward", false, spec.id == "jupiter")
-	await shot("%d_%s_arrived" % [leg, slug], sim, "forward", false, spec.kind == "body" and spec.id != "acen-a")
+	await shot("%d_%s_arrived" % [leg, slug], sim, "target", false, spec.kind == "body" and spec.id != "acen-a")
 
 func shot(name: String, sim: SimBridge, look: String, with_card: bool, auto_view := false) -> void:
 	sky.system_view.body_fader = auto_view
 	sky.apply(sim.world)
 	var n: Vector3 = sky.heading_world
-	if sim.world.journey.state == "arrived" or n.length_squared() < 0.5:
-		var h: Dictionary = sim.world.ship.heading; n = Vector3(h.x, h.y, h.z).normalized()
+	if look == "target": n = target_dir(sim.world)
 	if look == "side": n = n.cross(Vector3.UP if absf(n.y) < 0.9 else Vector3.RIGHT).normalized()
 	var card: CardInterlude = tour.interlude as CardInterlude if with_card else null
 	card_view.visible = card != null
@@ -91,3 +94,15 @@ func shot(name: String, sim: SimBridge, look: String, with_card: bool, auto_view
 		"earth_year": sim.world.clock.year, "ship_tau": sim.world.clock.tau, "look": look, "card": card != null, "auto_view": auto_view, "finite": not nan})
 	print("SHOT ", name, " beta=", sim.world.ship.get("beta", 0.0), " Earth+", snappedf(sim.world.clock.year, 0.001))
 	card_view.visible = false
+
+## World-frame direction from the ship to the leg's target: the body's rendered
+## position, or the catalogue star's position relative to the ship (galactic -> SkyFrame).
+func target_dir(world: Dictionary) -> Vector3:
+	var target: Dictionary = world.journey.plan.target
+	for b: Dictionary in world.get("system", {}).get("bodies", []):
+		if b.id == target.get("id", ""):
+			var w := Planets.world_of(b.rel_km); return Vector3(w[0], w[1], w[2]).normalized()
+	var p: Dictionary = world.ship.pos
+	var tp: Dictionary = world.journey.plan.get("target", {}).get("pos", p)
+	var g := SkyFrame.to_world64(PackedFloat64Array([tp.x - p.x, tp.y - p.y, tp.z - p.z]))
+	return Vector3(g[0], g[1], g[2]).normalized()

@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-M4-REAL-TIME-TOUR",
-  "status": "approved",
+  "status": "in_progress",
   "approved_by": "Mark Edmondson, attended 2026-10-06 (\"yes lets go ahead with this demo expansion\")",
   "requested_by": "Mark (attended 2026-10-06; D-39, D-40, D-41)",
   "design_doc": "design_docs/planned/r1/m4-real-time-tour.md",
@@ -29,10 +29,10 @@
         "A1: GUIDED_DRIVE starts in make solar-departure-test",
         "value and energy consequence recorded; ISM never lowered"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-06T11:39:37Z",
+      "completed": "2026-10-06T11:39:37Z",
+      "notes": "Measured with real new_game calls: 3,000,000 g with m_eff 10 kg passes scenarioError at cap 1-beta 5e-7 (gamma ~1000); drag ~5e5 N vs 3e8 N brake. Real plans: Aldebaran gamma 707.1, boost 73.9 s; TRAPPIST-1 gamma 70.7, boost 50.5 s; burn_coast_burn, no fallback. GUIDED_DRIVE = {boost_g 3e6, m_eff_kg 10, cap_one_minus_beta 5e-7}."
     },
     {
       "id": "RT1",
@@ -45,10 +45,10 @@
         "A2: make strict parity and sim tests",
         "replays re-recorded with reason if bytes change"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-06T11:39:37Z",
+      "completed": "2026-10-06T11:39:37Z",
+      "notes": "sim/solar_departure.ail: in-system legs at navigation.bodyPhiMax (bit-identical; rapidityOfOneMinusBeta(0.01) was 1 ulp over and refused out_of_range), star legs as exact 1-beta (1e-3, 1e-4, 1e-6), TRAPPIST-1 and Aldebaran legs, legCount 8. Tests first: checkSpeeds, checkGuidedDriveValid, chain to Aldebaran. 289/289 sim tests pass."
     },
     {
       "id": "RT2",
@@ -61,10 +61,10 @@
         "A3: full voyage to Aldebaran, no refusal/fallback, cumulative Earth time within 1%",
         "no solar_departure caller keeps boost_g 1"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-06T11:39:37Z",
+      "completed": "2026-10-06T11:39:37Z",
+      "notes": "SolarDeparture.GUIDED_DRIVE + guided_params(); attach(bridge, catalogue) resolves every star leg by exact id, fail closed. Callers switched (demo, test_solar_departure, test_moon_lifecycle, exposure tools). make solar-departure-test: 100 checks, Earth +120.47 yr, ship +0.891 yr."
     },
     {
       "id": "RT3",
@@ -79,10 +79,10 @@
         "A5: card mutation test and tier from cumulative Earth time",
         "A6: make ship-demo-live-test and make export-smoke"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-06T11:39:37Z",
+      "completed": "2026-10-06T11:39:37Z",
+      "notes": "journey_pacing guided = real time, never clamped at phase boundaries (clamping stalled up to 21 frames at body-plan boundaries). interlude_due/cruise_remaining/cruise_elapsed_s; CruiseInterlude seam, CardInterlude, InterludeCard view, demo hook (Enter/Continue). Guard: no interlude with <1 s cruise left (found an infinite zero-length interlude loop). make tour-pacing-test (incl. map pacing golden, 202 values byte-identical) and cruise-interlude test (19 checks); ship-demo-ci green."
     },
     {
       "id": "RT4",
