@@ -91,5 +91,5 @@ func step() -> bool:
 func status_text() -> String:
 	if sim==null:return "Solar departure unavailable"
 	var label:String="Earth standoff" if leg_index<0 else itinerary[leg_index].get("name",itinerary[leg_index].id)
-	var motion:String="PAUSED FOR ATTITUDE TURN · next "+pending_name if pending_index>=0 or attitude_hold else ("1 second/second at stops" if sim.world.journey.state!="committed" else "guided 1g · boost 30s / cruise 20s when present / approach 90s")
+	var motion:String="PAUSED FOR ATTITUDE TURN · next "+pending_name if pending_index>=0 or attitude_hold else ("1 second/second at stops" if sim.world.journey.state!="committed" else "guided 1g · boost ~32s with gentle start / cruise 20s when present / approach 90s")
 	return "GUIDED SOLAR DEPARTURE · %s · %s\nEarth +%.8f yr / ship +%.8f yr · %s\n%s" % [label,sim.world.ship.phase,sim.world.clock.year,sim.world.clock.tau,motion,sim.world.solar_departure.approximation]

@@ -23,6 +23,11 @@ exposure-frame-capture:
 	@$(GODOT_SIM) --path . --script tools/exposure_frame_capture.gd > $(SCRATCH)/exposure-frame-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/exposure-frame-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/exposure-frame-capture.log && grep -q '^exposure-frame-capture: 0 failures$$' $(SCRATCH)/exposure-frame-capture.log
 ship-demo-ci: exposure-frames-test
 
+.PHONY: manual-exposure-test
+manual-exposure-test: import
+	@AILANG_BIN="$$(command -v $(AILANG))" perl -e 'alarm 120; exec @ARGV' $(GODOT) --headless --path . --script tests/test_manual_exposure.gd > $(SCRATCH)/manual-exposure.log 2>&1; rc=$$?; cat $(SCRATCH)/manual-exposure.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/manual-exposure.log && grep -q '^manual-exposure: [0-9]* checks 0 failures$$' $(SCRATCH)/manual-exposure.log
+ship-demo-ci: manual-exposure-test
+
 .PHONY: exposure-cpu-bench
 exposure-cpu-bench:
 	@$(GODOT_SIM) --headless --path . --script tools/exposure_cpu_bench.gd

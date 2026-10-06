@@ -48,7 +48,7 @@ jobs:
           make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang
 
       - name: Check offline presentation and bootstrap before full suite
-        run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test exposure-frames-test tour-pacing-test alpha-centauri-test
+        run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test exposure-frames-test manual-exposure-test tour-attitude-test tour-pacing-test alpha-centauri-test
 
       - name: make test
         run: make test

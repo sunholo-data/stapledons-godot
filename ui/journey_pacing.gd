@@ -9,6 +9,9 @@ var guided_approach:=false
 var plan_id:=-1
 var start_tau:=0.
 var rate:=0.
+var _guided_boost_ticks:=0
+const GUIDED_BOOST_EASE_SECONDS:=3.0
+const SECONDS_PER_YEAR:=31557600.0
 func step(world:Dictionary, committing:bool, host_dt:float, tick_hz:float)->float:
 	var journey:Dictionary=world.journey
 	if journey.state!="committed" and not committing:
@@ -17,6 +20,7 @@ func step(world:Dictionary, committing:bool, host_dt:float, tick_hz:float)->floa
 	var plan:Dictionary=journey.plan
 	if committing or plan_id!=int(journey.plan_id):
 		plan_id=int(journey.plan_id)
+		_guided_boost_ticks=0
 		# The commit tick begins at this exact AILANG clock; every leg rebases.
 		start_tau=float(world.clock.tau) if committing else float(plan.age_on_arrival)-float(world.params.start_age)-float(plan.ship_years)
 	var burn:float=plan.boost_minutes/MINUTES_PER_YEAR
@@ -33,6 +37,14 @@ func step(world:Dictionary, committing:bool, host_dt:float, tick_hz:float)->floa
 	if guided_approach:
 		seconds=90. if phase=="braking" and not committing else (20. if phase=="cruising" and not committing else 30.)
 		increment=duration/(seconds*tick_hz)
+		if committing or phase=="boosting":
+			# Near a departing body, one compressed first tick can move its
+			# apparent position by degrees. Start at real time, then smoothly
+			# reach the existing guided rate over three display seconds.
+			var t:=clampf(_guided_boost_ticks/(GUIDED_BOOST_EASE_SECONDS*tick_hz),0.,1.)
+			t=t*t*(3.-2.*t)
+			increment=lerpf(minf(increment,1./(tick_hz*SECONDS_PER_YEAR)),increment,t)
+			_guided_boost_ticks+=1
 		if phase=="braking" and not committing and duration>0.:
 			# Invert physical progress to the presentation clock. Quadratic
 			# remaining time gives the last tenth of braking ~28 seconds.

@@ -3,7 +3,7 @@ extends RefCounted
 const OUTPUT := "user://ship_demo_benchmark.json"
 var running := false
 var upload:=preload("res://demos/benchmark_upload.gd").new()
-const BUILD:="v0.4.0-dev.13-stable-sky"
+const BUILD:="v0.4.0-dev.14-manual-sky"
 static func summarize(values: Array) -> Dictionary:
 	var sorted:=values.duplicate();sorted.sort()
 	var n:=sorted.size()
