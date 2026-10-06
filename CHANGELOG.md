@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Boot splash, 2026-10-06
+
+- Replace Godot's default boot logo with a Stapledon's Voyage splash in the style of the website hero: the destarred Milky Way around the galactic centre, the wordmark and tagline, and "Simulation built in AILANG" with the AILANG logo. `make splash` recomposes it in Godot from the panorama (`tools/splash_compose.gd`). Exported builds hold it for at least 1.5 s; editor and headless runs are not delayed.
+
 ### Manual sky exposure correction, 2026-10-05
 
 - Remove automatic exposure changes from the current ship demo, following laptop review. Camera motion, bright planets and nearby stars no longer dim the background automatically. Keep physical source brightness and SR calculations unchanged; manual brightness settings control the display.
