@@ -38,6 +38,8 @@ var hello_reply: Dictionary = {}
 var last_refused: Array = []
 var last_events: Array = []
 var last_error := ""
+## The seed of the running world (set by a new_game the sim accepted); -1 before any.
+var last_seed := -1
 var child_pid := -1
 var launch_override: Dictionary = {}
 ## When set before start(), every line written to the sim's stdin is also
@@ -151,6 +153,7 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 	world["tick"] = 0
 	world["status"] = "ok"
 	_game = true
+	last_seed = seed
 	return true
 
 

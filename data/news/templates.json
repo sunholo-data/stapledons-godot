@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "slots": ["elapsed_years", "news_epoch", "news_age_years"],
+  "tiers": [
+    {
+      "tier": 0,
+      "name": "<1",
+      "templates": [
+        "Your family sent word within days of your leaving. Everyone is well and the house is quiet. Only {elapsed_years} years have passed there since you left, and the message is already {news_age_years} years old.",
+        "A short message from home: the family gathered to watch you go and are all in good health. They have started a list of things to tell you. At home, {elapsed_years} years have gone by since you left.",
+        "Home writes that nothing has changed yet. The kitchen is as you left it, and your family keeps your place at the table. This news is {news_age_years} years old; {elapsed_years} years have passed on Earth since your departure.",
+        "Your family sends greetings. The first weeks without you were hard but ordinary, and they are well. {elapsed_years} years of Earth time lie between your departure and the day this message was sent."
+      ]
+    },
+    {
+      "tier": 1,
+      "name": "1-5",
+      "templates": [
+        "Earth sends word after {elapsed_years} years. There has been an election and the new government has taken office. A niece has started school. The news is {news_age_years} years old.",
+        "Home reports {elapsed_years} years of ordinary change: a new head of the space agency, a town fair revived, and a niece learning to read. This message is {news_age_years} years old.",
+        "After {elapsed_years} years on Earth, the family writes of small changes: a house repainted, a new school year begun, a vote held and counted. The transmission is {news_age_years} years old.",
+        "A letter from Earth, {elapsed_years} years after your departure: prices have shifted, a children's choir has formed in the old neighbourhood, and the family still talks about you. It left home {news_age_years} years ago."
+      ]
+    },
+    {
+      "tier": 2,
+      "name": "5-15",
+      "templates": [
+        "Earth writes after {elapsed_years} years. An older relative has died, and the family marked the day without you. A new kind of battery now powers the cities. The message is {news_age_years} years old.",
+        "Much has changed in {elapsed_years} years. A parent fell ill and has since been laid to rest. New machines do work that people once did by hand. This news is {news_age_years} years old.",
+        "In the {elapsed_years} years since you left, home has grown older. Friends have moved away, a parent has grown frail, and a new communications network now covers the planet. The message is {news_age_years} years old.",
+        "Earth reports {elapsed_years} years of change: a new technology in every pocket, a sibling's children almost grown, and a parent's long illness. This transmission is {news_age_years} years old."
+      ]
+    },
+    {
+      "tier": 3,
+      "name": "15-50",
+      "templates": [
+        "{elapsed_years} years have passed on Earth. The children you knew are adults with children of their own, and the old offices are held by people who never met you. The message is {news_age_years} years old.",
+        "A generation has turned over at home in {elapsed_years} years. Your friends are old or gone, and their grandchildren run the schools. Your voyage is now a family story. The message is {news_age_years} years old.",
+        "After {elapsed_years} years, Earth is run by people born after you left. The speech of your childhood has shifted, and your name is kept in a family archive. This message is {news_age_years} years old.",
+        "Earth sends word across {elapsed_years} years. Those who saw you leave are very old or have died; their descendants wrote this. The message is {news_age_years} years old."
+      ]
+    },
+    {
+      "tier": 4,
+      "name": ">=50",
+      "templates": [
+        "{elapsed_years} years have passed on Earth. The names of the people who saw you leave are known only to historians. Whoever wrote this found your voyage in an old record. The message is {news_age_years} years old.",
+        "Home answers after {elapsed_years} years, in a language that has drifted from the one you spoke. No one now living remembers your departure. The message is {news_age_years} years old.",
+        "Across {elapsed_years} years, Earth has been remade. The cities, the nations and the names you knew belong to history books. The message is {news_age_years} years old.",
+        "Whoever keeps the archive at home has found your name after {elapsed_years} years. The people you left are only names in it. This message is {news_age_years} years old."
+      ]
+    }
+  ]
+}

@@ -70,6 +70,9 @@ var hint_label := Label.new()
 var archive := PanelContainer.new()
 var archive_text := Label.new()
 var archive_tab := ""
+var news_panel := NewsPanel.new() # M4.4: the Archive news tab
+var legacy := LegacyScreen.new() # M4.4: shown when the ship is home again
+var _news_seen := ""
 var codex: Codex = null # M4.7: the third Archive tab (ui/archive/codex.tscn); unlocks come only from the sim
 var sim: SimBridge = null
 var map: GalaxyMap = null
@@ -120,6 +123,7 @@ func setup(b: AreaBundle, opts := {}) -> bool:
 ## Hand over the session: the sim (state) and the galaxy map (planning; it owns the tick).
 func attach(bridge: SimBridge, galaxy_map: GalaxyMap) -> void:
 	sim = bridge
+	legacy.attach(bridge)
 	map = galaxy_map
 	if sim != null and sim.world.has("ship"):
 		apply_state(sim.world)
@@ -195,6 +199,7 @@ func apply_state(world: Dictionary) -> void:
 		_fill_archive()
 	if codex != null:
 		codex.show_world(world)
+	_update_news(world)
 
 
 ## Walk the captain by a screen direction (x right, y down) for dt seconds.
@@ -266,6 +271,34 @@ func open_map() -> void:
 	map_toggled.emit(true)
 
 
+## M4.4 the way home: the map opens with Sol highlighted and planned; the commit is the same hold.
+## Only once the ship has arrived somewhere (the sim refuses a plan otherwise or while committed).
+func return_trip() -> bool:
+	if map == null or sim == null or GalaxyMap.field_value(sim.world, "journey.state") != "arrived":
+		return false
+	open_map()
+	map.plan_home()
+	return true
+
+
+## The news beat: it opens by itself when a new item arrives (after the arrival card), shows what the
+## sim's body_source names, and asks the relay for AI text once (only with AI on and a key, D-8).
+func _update_news(world: Dictionary) -> void:
+	news_panel.on_events(sim.last_events if sim != null else [])
+	if news_panel.has_news(world):
+		var n: Dictionary = world["consequence"]["news"]
+		var key := "%s/%s" % [str(n.get("star_id", "")), str(world["consequence"].get("news_epoch", ""))]
+		if key != _news_seen:
+			_news_seen = key
+			if not map_open:
+				open_archive("news")
+		if sim != null and sim.ai_relay is AiRelay:
+			news_panel.request_ai(sim.ai_relay, world)
+	if news_panel.visible or archive_tab == "news":
+		news_panel.show_world(world)
+	legacy.show_world(world, news_panel.visible)
+
+
 func close_map() -> void:
 	if map == null or not map_open:
 		return
@@ -278,6 +311,14 @@ func close_map() -> void:
 
 func open_archive(tab: String) -> void:
 	archive_tab = tab
+	if tab == "news":
+		archive.visible = false
+		if codex != null:
+			codex.close()
+		news_panel.show_world(sim.world if sim != null else {})
+		news_panel.open()
+		return
+	news_panel.close()
 	if tab == "codex" and codex != null:
 		archive.visible = false
 		codex.open()
@@ -290,6 +331,9 @@ func open_archive(tab: String) -> void:
 
 func close_archive() -> void:
 	archive.visible = false
+	news_panel.close()
+	if sim != null:
+		legacy.show_world(sim.world)
 	if codex != null:
 		codex.close()
 
@@ -335,6 +379,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	match k:
 		KEY_E: interact()
 		KEY_M: open_map()
+		KEY_N: open_archive("news")
+		KEY_R: return_trip()
 		KEY_L: open_archive("log")
 		KEY_K: open_archive("codex")
 		KEY_ESCAPE: close_archive()
@@ -555,7 +601,7 @@ func _build_hud() -> void:
 	prompt_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	prompt_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	hud.add_child(prompt_label)
-	hint_label.text = "WASD walk   E use   M map   L log   K codex"
+	hint_label.text = "WASD walk   E use   M map   N news   L log   K codex   R voyage home"
 	hint_label.add_theme_font_size_override("font_size", 13)
 	hint_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.95, 0.8))
 	hint_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE, 12)
@@ -572,24 +618,19 @@ func _build_hud() -> void:
 	archive_text.custom_minimum_size = Vector2(488, 0)
 	archive.add_child(archive_text)
 	hud.add_child(archive)
+	hud.add_child(news_panel)
+	hud.add_child(legacy)
 	codex = load("res://ui/archive/codex.tscn").instantiate()
 	hud.add_child(codex)
 	if not codex.load_lore():
 		last_error = "codex: the vendored lore failed its manifest check (make lore-import CHECK=1)"
 
 
-## The Archive (M4.2 stub; M4.4 news, M4.7 codex fill it): sim fields, formatted only.
+## The Archive log tab (M4.2 stub): sim fields, formatted only. News is the NewsPanel (M4.4), the codex M4.7.
 func _fill_archive() -> void:
 	var cq: Variant = sim.world.get("consequence") if sim != null else null
 	var lines := PackedStringArray(["ARCHIVE  [%s]   (Esc closes; L log, K codex)" % archive_tab.to_upper(), ""])
 	match archive_tab:
-		"news":
-			if cq is Dictionary and cq.get("news") is Dictionary:
-				var n: Dictionary = cq["news"]
-				lines.append("News from home: tier %s (%s), template %s, source %s" % [str(n.get("tier", "")), str(n.get("tier_name", "")), str(n.get("template_id", "")), str(n.get("body_source", ""))])
-				lines.append("News epoch Earth %s yr, %s yr old" % [str(cq.get("news_epoch", "")), str(cq.get("news_age_years", ""))])
-			else:
-				lines.append("No news from home yet. (News arrives on arrival; M4.4 writes it.)")
 		"log":
 			var lg: Variant = cq.get("legacy") if cq is Dictionary else null
 			lines.append("Legacy log: %s entries" % (str(lg.get("count", 0)) if lg is Dictionary else "0"))

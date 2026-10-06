@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "labels": {
+    "title": "Transmission received",
+    "header_lead": "Latest news from Earth: Earth-year ",
+    "header_mid": ", already ",
+    "header_tail": " years old.",
+    "ai_tag": "generated",
+    "fallback_notice": "Live transmission unavailable: archived text shown",
+    "reason_lead": "Reason:",
+    "no_news": "No transmission yet. News arrives when the ship does.",
+    "diagnostics_title": "Diagnostics",
+    "diagnostics_empty": "No transmission problems.",
+    "diagnostics_entry": "News fell back to the archived text; reason code",
+    "legacy_title": "Legacy",
+    "legacy_away": "You were away ",
+    "legacy_older": " years. Home is ",
+    "legacy_tail": " years older.",
+    "begin_again": "Begin again",
+    "return_hint": "Sol is highlighted. Plan the voyage home and hold to commit."
+  },
+  "reasons": {
+    "offline": "the live service was switched off",
+    "no_key": "no service key was available",
+    "text_only": "text-only mode does not allow this request",
+    "timeout": "the service took too long to answer",
+    "service_down": "the service was not running",
+    "budget": "the spending limit was reached",
+    "provider_error": "the provider returned an error",
+    "expired": "no reply in time",
+    "ai_hash": "the generated text arrived damaged",
+    "ai_length": "the generated text was too long",
+    "ai_numeral": "the generated text contained a numeral",
+    "ai_markup": "the generated text was badly formed",
+    "ai_emotion": "the generated text used a feeling that is not allowed",
+    "ai_descriptor": "the generated description was not valid",
+    "ai_kind": "the reply was not the kind of text asked for"
+  }
+}
