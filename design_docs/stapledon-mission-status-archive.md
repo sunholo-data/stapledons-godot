@@ -208,3 +208,8 @@ Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule
 - **Routing**: planner/executor Agent-tool GPT 6.1 Sol; evaluator Agent pin
   `sonnet` rejected (Unknown model), exact Sonnet 5.5 subscription CLI fallback
   completed the independent review. Designer not needed (existing design).
+## STATUS 2026-10-05: iteration 14, M4.3a LANDED (PR #115, merge `f52a2cf`; iteration 13's orphan, verified and finished); Sonnet 4.6 eval r1 95 / r2 96 PASS, 0 blocking; controller render found the arrival card over the HUD (D1), fixed test-first; clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved (critical-path M4.3a); no open decisions.
+
+- **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended); 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan); 4 UNMET → R1-M4-JOURNEY: M4.0 ✅, M4.1 step 1 ✅, M4.2 ✅ (attended), **M4.3a ✅ (this iteration)**; open: M4.6a (attended PR #113, DIRTY), M4.3b, M4.4, M4.7, M4.5, M4.6; 5 ongoing (strict + parity green).
+- **Done**: iteration 13 (2026-10-03 22:40Z) built M4.3a and opened draft PR #115, then died at gate 3 on the Anthropic weekly limit with CI red only on the missing x86_64 replay golden. This iteration recorded that golden on CI (throwaway draft PR #118, digest = arm64), had it judged (Sonnet 4.6, cross-provider recipe: 95 PASS), rendered the harness with Godot Movie Maker, found the arrival card drawn over the HUD (D1), had the executor (Sonnet 5.5, Agent tool) fix it test-first plus the evaluator's F1 settle() test, re-judged the delta (96 PASS), then merged on green CI.
+- **Next**: M4.3b (HUD in the interior; M4.2 and M4.3a are both in) or M4.4 news/legacy, both wave 3; M4.6a stays with attended PR #113. Weekly thread rotated: issue #4 → new issue (see log).
