@@ -60,8 +60,15 @@ var material: ShaderMaterial
 var _buf := PackedFloat32Array()
 
 
+## Tier identities hidden in favour of a pinned destination row (pin_destination).
+var pinned_ids: Array[String] = []
+var _requested_replacements: Array[String] = []
+
+
 func clear() -> void:
 	identity_revision += 1
+	pinned_ids.clear()
+	_requested_replacements.clear()
 	_replaced_flux.clear()
 	catalogue_replacement_sources.clear()
 	_replacement_revision = -1
@@ -75,7 +82,14 @@ func clear() -> void:
 
 ## Exact catalogue rows replaced by physical emitters. Reversible and cached:
 ## scanning the catalogue happens only when IDs or the catalogue change.
-func set_catalogue_replacements(replacements: Array[String]) -> void:
+func set_catalogue_replacements(requested: Array[String]) -> void:
+	_requested_replacements = requested.duplicate()
+	var replacements: Array[String] = requested.duplicate()
+	# A pinned destination replaced by a physical emitter is suppressed with its identity.
+	for id in requested:
+		if ("pin:" + id) in ids and not ("pin:" + id) in replacements: replacements.append("pin:" + id)
+	for id in pinned_ids:
+		if not id in replacements: replacements.append(id)
 	if replacements == _replacement_ids and _replacement_revision == identity_revision:
 		return
 	_replacement_ids = replacements.duplicate()
@@ -91,6 +105,21 @@ func set_catalogue_replacements(replacements: Array[String]) -> void:
 			_replaced_flux.erase(row)
 			changed = true
 	if changed and multimesh != null: _fill()
+
+
+## A destination renders where the simulation navigates (RT4 finding,
+## 2026-10-06): the GCNS tier can place a star thousands of AU from the
+## navigation catalogue (stars.json), which matters at a 1,000 AU stand-off.
+## row is the stars.json entry; tier rows with its identity (the full id, or the
+## bare Gaia number) are hidden and one row is added at its exact position with
+## its catalogue V and Teff. Idempotent; clear() drops it.
+func pin_destination(row: Dictionary) -> void:
+	var id := str(row.get("id", ""))
+	if id.is_empty() or ("pin:" + id) in ids: return
+	for alias: String in [id, id.trim_prefix("Gaia DR3 ")]:
+		if alias in ids and not alias in pinned_ids: pinned_ids.append(alias)
+	append_stars([{"id": "pin:" + id, "pos": SkyFrame.to_world64(PackedFloat64Array([row.x, row.y, row.z])), "t": float(row.teff), "flux": Relativity.illuminance_from_v(float(row.vmag))}])
+	set_catalogue_replacements(_requested_replacements)
 
 
 ## The active tier, then on top: for medium/large (GCNS), quick's HIP-filled

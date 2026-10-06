@@ -14,7 +14,7 @@ func run()->void:
  sky.setup({"position_m":[0,0,0],"forward":[0,0,1],"up":[0,1,0]},78.,root.size,{"stars":true,"background":true,"planet_textures":true})
  var rect:=TextureRect.new();rect.texture=sky.get_texture();rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);root.add_child(rect)
  var sim:=SimBridge.new();sim.want_minor=5
- if not sim.start() or not sim.new_game(424242,"solar_departure",false,{"boost_g":1.,"m_eff_kg":10.,"cap_one_minus_beta":.01}):print("exposure-solar-recovery: startupFAIL ",sim.last_error);quit(1);return
+ if not sim.start() or not sim.new_game(424242,"solar_departure",false,SolarDeparture.guided_params()):print("exposure-solar-recovery: startupFAIL ",sim.last_error);quit(1);return
  sky.exposure.bias=-2.;sky.exposure.fixed=true;sky.exposure.fixed_ev=sky.exposure.ev_dark()-2.;sky.set_temporal_exposure(false)
  await capture(sim.world,"earth_start","earth")
  var catalogue:Array=JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json")).get("stars",[])
@@ -23,7 +23,7 @@ func run()->void:
  for i in catalogue.size():
   if catalogue[i].id=="CNS5:3627":destination=catalogue[i].duplicate();destination.index=i
  var tour:=SolarDeparture.new()
- if not tour.attach(sim,destination):print("exposure-solar-recovery: attachFAIL");quit(1);return
+ if not tour.attach(sim,catalogue):print("exposure-solar-recovery: attachFAIL");quit(1);return
  for i in 2:
   if not tour.advance():failures+=1;break
   var plan:Dictionary=sim.world.journey.plan

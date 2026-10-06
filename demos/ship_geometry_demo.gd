@@ -54,6 +54,7 @@ var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var view_button := Button.new()
+var interlude_card: InterludeCard
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
 var navigation_window: Window
@@ -107,6 +108,9 @@ func setup(opts := {}) -> bool:
 	set_brightness_trial(opts.get("brightness_stops",2))
 	set_auto_view(opts.get("auto_view",false))
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
+	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
+	interlude_card = InterludeCard.new();interlude_card.visible = false;interlude_canvas.add_child(interlude_card)
+	interlude_card.continue_pressed.connect(continue_interlude)
 	star_identification = Identification.new();identify_canvas.add_child(star_identification)
 	star_identification.setup(self);star_identification.open_map.connect(open_identified_star)
 	if opts.get("live_start",false):
@@ -135,7 +139,7 @@ func _hud() -> void:
 	navigation_button.add_theme_font_size_override("font_size",12)
 	navigation_button.pressed.connect(open_navigation);hud.add_child(navigation_button)
 	var tour_row:=HBoxContainer.new();hud.add_child(tour_row)
-	var solar_start:=Button.new();solar_start.text="New Solar tour · Earth → outer planets → Alpha Centauri A (1 AU)"
+	var solar_start:=Button.new();solar_start.text="New voyage · Earth → outer planets → α Cen → TRAPPIST-1 → Aldebaran (real time)"
 	solar_start.tooltip_text="Earth → Sun → Jupiter → Callisto → Saturn → Alpha Centauri system → Alpha Centauri A (1 AU)"
 	solar_start.add_theme_font_size_override("font_size",12)
 	solar_start.pressed.connect(start_solar_departure);tour_row.add_child(solar_start)
@@ -280,7 +284,8 @@ func _process(delta: float) -> void:
 	_sync_observer()
 	sky.finish_exposure_frame(delta)
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	label.text="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	var details:String="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	label.text=hud_text(view_name,details)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
 	if UiScale.handle(get_window(),event):
@@ -313,6 +318,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
 			KEY_V:set_auto_view(not sky.system_view.body_fader)
+			KEY_ENTER:continue_interlude()
 			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
@@ -442,7 +448,7 @@ func _create_navigation(scenario:String) -> void:
 	if journey_map==null:
 		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
 		var params:Dictionary={"standoff_au":1000.}
-		if scenario=="solar_departure":params.merge({"boost_g":1.0,"m_eff_kg":10.0,"cap_one_minus_beta":0.01})
+		if scenario=="solar_departure":params=SolarDeparture.guided_params()
 		if not journey_sim.start() or not journey_sim.new_game(424242,scenario,false,params):
 			caption="Navigation unavailable: "+journey_sim.last_error
 			journey_sim.stop();journey_sim=null;return
@@ -476,11 +482,9 @@ func start_solar_departure() -> bool:
 	var initial_heading:Dictionary=journey_sim.world.ship.heading
 	tour_attitude.reset(ShipFrame.ship_basis(PackedFloat64Array([initial_heading.x,initial_heading.y,initial_heading.z])))
 	camera.attitude_basis=tour_attitude.current.duplicate()
-	var destination_index:int=journey_map.index_of("CNS5:3627")
-	var destination:Dictionary=journey_map.catalogue[destination_index].duplicate(true)
-	destination.index=destination_index
-	if not solar_tour.attach(journey_sim,destination):
+	if not solar_tour.attach(journey_sim,journey_map.catalogue):
 		caption="Solar departure could not attach to the new session.";solar_tour=null;return false
+	solar_tour.pin_destinations(sky.starfield)
 	journey_map.guided_read_only=true
 	solar_pause.visible=true;solar_next.visible=true;solar_pause.text="Pause tour"
 	sky_state="live";caption="Guided tour: 12-second stops; Next stop skips a dwell. M pauses for navigation."
@@ -502,8 +506,16 @@ func journey_tick() -> bool:
 		caption="Navigation step failed: "+journey_sim.last_error;return false
 	if solar_tour!=null:journey_map.refresh()
 	_apply_journey_world()
+	_show_interlude()
 	if live_journey and not was_committed:close_navigation()
 	return true
+## D-41: the cruise interlude's card, shown over the live cruise sky while active.
+func _show_interlude() -> void:
+	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
+	interlude_card.visible=card!=null
+	if card!=null:interlude_card.show_interlude(card)
+func continue_interlude() -> void:
+	if solar_tour!=null and solar_tour.interlude is CardInterlude:(solar_tour.interlude as CardInterlude).finish()
 func _apply_journey_world()->void:
 	var was_committed:=live_journey
 	live_journey=journey_map.journey_state()=="committed"
@@ -552,6 +564,48 @@ func _update_tour_attitude(delta:float)->void:
 		if finished=="departure":
 			if solar_tour.commit_prepared():_apply_journey_world()
 			else:caption="Tour departure failed: "+solar_tour.failed
+## Compact HUD (Mark, 2026-10-06): where, how fast and both clocks, read from the sim;
+## the review/debug block shows with the controls panel (Tab).
+const PHASE_WORDS := {"at_rest":"STOPPED","boosting":"ACCELERATING","cruising":"CRUISING","braking":"BRAKING"}
+func hud_text(view_name: String, details: String) -> String:
+	var ship: Dictionary = sky_world.get("ship", {}) if sky_world is Dictionary else {}
+	var clock: Dictionary = sky_world.get("clock", {}) if sky_world is Dictionary else {}
+	var where := "Ship · %s" % view_name
+	if solar_tour != null:
+		var state: String = "CRUISE INTERLUDE" if solar_tour.interlude != null else PHASE_WORDS.get(str(ship.get("phase", "")), str(ship.get("phase", "")).to_upper())
+		where = "→ %s · %s" % [solar_tour.leg_name() if solar_tour.leg_index >= 0 else "Earth", state]
+	var lines := [where, speed_text(ship)]
+	if not clock.is_empty():
+		lines.append("Ship +%s · Earth +%s since departure" % [duration_text(float(clock.get("tau", 0.0))), duration_text(float(clock.get("year", 0.0)))])
+	var view := ("AUTO" if sky.system_view.body_fader else "REALISTIC") + " view · V view · J brightness · Tab details"
+	if camera_mode == "player" and camera.pullback > 0.01: view += " · third-person camera"
+	lines.append(view)
+	if not caption.is_empty(): lines.append(caption)
+	return "\n".join(lines) + ("\n\n" + details if controls.visible else "")
+
+## Speed from the sim's exact fields: beta with as many nines as 1 - beta needs, gamma, km/s.
+static func speed_text(ship: Dictionary) -> String:
+	var beta: float = float(ship.get("beta", 0.0))
+	if beta <= 0.0: return "At rest"
+	var omb: float = float(ship.get("one_minus_beta", 1.0 - beta))
+	var n := -log(maxf(omb, 1e-15)) / log(10.0)
+	var digits := clampi(int(round(n)) if absf(n - round(n)) < 1e-9 else int(ceil(n)), 4, 9)
+	var km_s := String.num_int64(int(round(beta * 299792.458)))
+	var grouped := ""
+	for i in km_s.length():
+		if i > 0 and (km_s.length() - i) % 3 == 0: grouped += ","
+		grouped += km_s[i]
+	return ("%." + str(digits) + "fc · γ %s · %s km/s") % [1.0 - omb, ("%.2f" % float(ship.get("gamma", 1.0))) if float(ship.get("gamma", 1.0)) < 1000.0 else "%.0f" % float(ship.get("gamma", 1.0)), grouped]
+
+## Years as a readable duration: seconds through years.
+static func duration_text(years: float) -> String:
+	var s := years * 31557600.0
+	if s < 120.0: return "%.0f s" % s
+	if s < 7200.0: return "%.1f min" % (s / 60.0)
+	if s < 172800.0: return "%.1f h" % (s / 3600.0)
+	if years < 2.0: return "%.1f days" % (s / 86400.0)
+	return "%.2f yr" % years
+
 func journey_label() -> String:
 	if solar_tour!=null:return solar_tour.status_text()+ (" · PAUSED" if solar_tour.paused else "")
 	if sky_state!="live":return "FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT"
