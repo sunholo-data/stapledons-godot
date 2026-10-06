@@ -1,0 +1,83 @@
+module stapledons/sim/tools/lore_check
+-- M4.7 `make lore-check` (design m4-first-journey §M4.7, AC15): every Archive entry has valid front
+-- matter, a known unlock hint, resolvable `checks` ids, and every number in its title and body binds
+-- to one of those rows (sim/tools/lore.ail). The registry is data/lore/check_values.json
+-- (`make lore-values`). FS shell only; the logic is pure and runs on the strict VM.
+-- args: registry (path), files (entry files; the Makefile lists them: listDir is evaluator-only on the VM),
+-- named (true for the vendored directory: the id must be archive.<file name>).
+import ./lore (Row, rowFrom, checkEntry, unitsOf)
+import std/string (concat, join, endsWith, length, substring, split, startsWith)
+import std/list (map, filter, foldl, reverse, length as size)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, getString, getArray)
+import std/fs (readFile)
+import std/io (println, exit)
+
+pure func rowsOf(xs: [Json], acc: [Row]) -> [Row] =
+  match xs {
+    [] => reverse(acc),
+    x :: rest => match getString(x, "source") {
+      Some(s) => if s == "hb" || s == "rs" then (match getString(x, "id") { Some(i) => (match getString(x, "value") { Some(v) => (match getString(x, "unit") { Some(u) => (match rowFrom(i, v, u) { Some(r) => rowsOf(rest, r :: acc), None => rowsOf(rest, acc) }), None => rowsOf(rest, acc) }), None => rowsOf(rest, acc) }), None => rowsOf(rest, acc) }) else rowsOf(rest, acc),
+      None => rowsOf(rest, acc)
+    }
+  }
+export pure func registryRows(text: string) -> Result[[Row], string] =
+  match decode(text) {
+    Err(_) => Err("registry is not valid JSON"),
+    Ok(j) => match getArray(j, "values") { None => Err("registry has no values array"), Some(xs) => Ok(rowsOf(xs, [])) }
+  }
+
+pure func baseName(path: string) -> string = match reverse(split(path, "/")) { b :: _ => b, [] => path }
+-- archive.<name> in `name.md`
+pure func nameProblem(path: string, text: string) -> [string] {
+  let b = baseName(path);
+  let want = concat(["id: archive.", substring(b, 0, length(b) - 3)]);
+  if has(split(text, "\n"), want) || has(split(text, "\n"), concat([want, " "])) then [] else [concat([path, ": the front matter id is not archive.", substring(b, 0, length(b) - 3), " (an entry is named after its id)"])]
+}
+pure func has(xs: [string], x: string) -> bool = match xs { [] => false, y :: r => startsWith(y, x) || has(r, x) }
+
+func fileProblems(path: string, reg: [Row], named: bool) -> [string] ! {FS} {
+  let text = readFile(path);
+  checkEntry(path, text, reg) ++ (if named then nameProblem(path, text) else [])
+}
+func allProblems(fs: [string], reg: [Row], named: bool) -> [string] ! {FS} =
+  match fs { [] => [], p :: rest => fileProblems(p, reg, named) ++ allProblems(rest, reg, named) }
+
+-- The allowlist (data/lore/unbound.txt): known failures of the vendored canon that this repo cannot
+-- fix (the design repo owns the lore), one per line as `entry id | number as written | reason`.
+-- An allowed number stays visible in the output, an allowance that matches nothing is itself an
+-- error (so it disappears the day the canon is fixed), and nothing else is excused.
+export type Allow = { entry: string, number: string, reason: string }
+export pure func parseAllow(text: string) -> [Allow] =
+  foldl(\a l. match split(l, " | ") {
+    e :: n :: r :: more => if startsWith(e, "#") then a else a ++ [{ entry: e, number: n, reason: join(" | ", r :: more) }],
+    _ => a
+  }, [], split(text, "\n"))
+pure func needle(w: Allow) -> string = concat(["(", w.entry, "): number '", w.number, "' binds to none"])
+pure func mentions(p: string, n: string) -> bool = size(split(p, n)) > 1
+export pure func applyAllow(ps: [string], allow: [Allow]) -> ([string], [string]) {
+  let remaining = filter(\p. !anyAllow(p, allow), ps);
+  let stale = map(\w. concat(["unbound.txt: the allowance for ", w.entry, " '", w.number, "' matches no failure (remove it)"]), filter(\w. !anyMention(ps, needle(w)), allow));
+  (remaining, stale)
+}
+pure func anyAllow(p: string, allow: [Allow]) -> bool = match allow { [] => false, w :: r => mentions(p, needle(w)) || anyAllow(p, r) }
+pure func anyMention(ps: [string], n: string) -> bool = match ps { [] => false, p :: r => mentions(p, n) || anyMention(r, n) }
+
+export func loreCheck(a: {registry: string, files: [string], named: bool, allow: string}) -> () ! {IO, FS} =
+  match registryRows(readFile(a.registry)) {
+    Err(e) => { println(concat(["lore-check: FAILED: ", e])); exit(1) },
+    Ok(reg) => {
+      let allow = if a.allow == "" then [] else parseAllow(readFile(a.allow));
+      let found = allProblems(a.files, reg, a.named);
+      let applied = applyAllow(found, allow);
+      let ps = match applied { (rem, stale) => rem ++ stale };
+      match ps {
+        [] => {
+          println(concat(["lore-check: ", show(size(a.files)), " entries, every unlock a known hint, every check id resolved, every number bound but ", show(size(allow)), " allowed (", show(size(reg)), " registry rows)"]));
+          println(join("\n", map(\w. concat(["  allowed: ", w.entry, " '", w.number, "': ", w.reason]), allow)))
+        },
+        _ => { println(concat(["lore-check: FAILED (", show(size(ps)), " problems in ", show(size(a.files)), " files)"])); println(join("\n", ps)); exit(1) }
+      }
+    }
+  }

@@ -70,6 +70,7 @@ var hint_label := Label.new()
 var archive := PanelContainer.new()
 var archive_text := Label.new()
 var archive_tab := ""
+var codex: Codex = null # M4.7: the third Archive tab (ui/archive/codex.tscn); unlocks come only from the sim
 var sim: SimBridge = null
 var map: GalaxyMap = null
 var map_open := false
@@ -192,6 +193,8 @@ func apply_state(world: Dictionary) -> void:
 		caption + "\n" if caption != "" else "", str(s.get("phase", "")), s["beta"], s["gamma"], c.get("tau", 0.0), c.get("t", 0.0), glow, sky.exposure.hud_line()]
 	if archive.visible:
 		_fill_archive()
+	if codex != null:
+		codex.show_world(world)
 
 
 ## Walk the captain by a screen direction (x right, y down) for dt seconds.
@@ -275,12 +278,20 @@ func close_map() -> void:
 
 func open_archive(tab: String) -> void:
 	archive_tab = tab
+	if tab == "codex" and codex != null:
+		archive.visible = false
+		codex.open()
+		return
+	if codex != null:
+		codex.close()
 	archive.visible = true
 	_fill_archive()
 
 
 func close_archive() -> void:
 	archive.visible = false
+	if codex != null:
+		codex.close()
 
 
 ## One sim tick through the map (the map's own clock rules; its pending plan rides along).
@@ -561,6 +572,10 @@ func _build_hud() -> void:
 	archive_text.custom_minimum_size = Vector2(488, 0)
 	archive.add_child(archive_text)
 	hud.add_child(archive)
+	codex = load("res://ui/archive/codex.tscn").instantiate()
+	hud.add_child(codex)
+	if not codex.load_lore():
+		last_error = "codex: the vendored lore failed its manifest check (make lore-import CHECK=1)"
 
 
 ## The Archive (M4.2 stub; M4.4 news, M4.7 codex fill it): sim fields, formatted only.
@@ -582,7 +597,7 @@ func _fill_archive() -> void:
 				for e in lg["appended"]:
 					lines.append("  " + JSON.stringify(e))
 		_:
-			lines.append("Codex: the Archive's physics entries land with M4.7.")
+			lines.append("Codex: open it with K (the codex panel).")
 	archive_text.text = "\n".join(lines)
 
 

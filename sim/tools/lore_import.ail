@@ -1,0 +1,88 @@
+module stapledons/sim/tools/lore_import
+-- M4.7: the lore manifest (design m4-first-journey §M4.7 "Import"). `make lore-import` copies the
+-- design repo's lore into data/lore/ (tools/lore_import.sh); this module writes and checks
+-- data/lore/manifest.json: the design-repo commit sha and a sha256 per vendored file, sorted by path.
+--   manifest  hash every file under dir (except manifest.json) and write the manifest
+--   verify    fail-closed: every file hash-equals its manifest row, none missing, none extra
+-- Used twice by CHECK=1: on data/lore (self-consistency, no network) and on the design repo's files
+-- at the manifest's sha (cross-repo). Strict VM, FS caps.
+import std/string (concat, join, startsWith, endsWith, length, substring)
+import std/list (map, filter, foldl, reverse, length as size)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/crypto (sha256Hex)
+import std/json (Json, decode, get, getString, getArray, js, encode)
+import std/fs (readFile, writeFile)
+import std/io (println, exit)
+
+export type Row = { path: string, sha: string }
+
+pure func cat2(a: string, b: string) -> string = concat([a, b])
+
+-- The file list comes from the caller (tools/lore_import.sh, `find`): std/fs.listDir is
+-- evaluator-only on the bytecode VM in v0.52.0 (reported upstream), and these tools run on the VM.
+pure func flat(xss: [[string]]) -> [string] = foldl(\a x. a ++ x, [], xss)
+pure func isManifest(p: string) -> bool = p == "manifest.json"
+pure func sorted(xs: [string]) -> [string] = foldl(\acc x. insertS(x, acc), [], xs)
+pure func insertS(x: string, ys: [string]) -> [string] = match ys { [] => [x], y :: r => if x < y then x :: ys else y :: insertS(x, r) }
+
+func hashRows(dir: string, files: [string]) -> [Row] ! {FS} {
+  let ps = sorted(filter(\p. !isManifest(p), files));
+  map(\p. {path: p, sha: sha256Hex(readFile(concat([dir, "/", p])))}, ps)
+}
+
+pure func rowJson(r: Row) -> string = concat(["    {\"path\": \"", r.path, "\", \"sha256\": \"", r.sha, "\"}"])
+export pure func manifestText(repo: string, sha: string, rows: [Row]) -> string =
+  concat(["{\n  \"design_repo\": \"", repo, "\",\n  \"design_sha\": \"", sha, "\",\n  \"files\": [\n", join(",\n", map(rowJson, rows)), "\n  ]\n}\n"])
+
+export func manifest(a: {dir: string, repo: string, sha: string, files: [string]}) -> () ! {IO, FS} {
+  let rows = hashRows(a.dir, a.files);
+  writeFile(concat([a.dir, "/manifest.json"]), manifestText(a.repo, a.sha, rows));
+  println(concat(["lore-import: ", intStr(size(rows)), " files from ", a.repo, " at ", a.sha, " -> ", a.dir, "/manifest.json"]))
+}
+
+pure func intStr(n: int) -> string = show(n)
+
+export pure func parseRows(text: string) -> Result[[Row], string] =
+  match decode(text) {
+    Err(_) => Err("manifest.json is not valid JSON"),
+    Ok(j) => match getArray(j, "files") {
+      None => Err("manifest.json has no files array"),
+      Some(xs) => rowsOf(xs, [])
+    }
+  }
+pure func rowsOf(xs: [Json], acc: [Row]) -> Result[[Row], string] =
+  match xs {
+    [] => Ok(reverse(acc)),
+    x :: rest => match getString(x, "path") {
+      Some(p) => match getString(x, "sha256") { Some(s) => rowsOf(rest, {path: p, sha: s} :: acc), None => Err("a manifest row lacks sha256") },
+      None => Err("a manifest row lacks path")
+    }
+  }
+
+pure func shaOf(rs: [Row], p: string) -> Option[string] =
+  match rs { [] => None, r :: rest => if r.path == p then Some(r.sha) else shaOf(rest, p) }
+
+-- The problems when `have` (what is on disk) is compared with `want` (the manifest): changed,
+-- missing, extra, in a stable order.
+export pure func problems(want: [Row], have: [Row]) -> [string] {
+  let changed = flat(map(\w. match shaOf(have, w.path) {
+    None => [concat(["missing: ", w.path])],
+    Some(s) => if s == w.sha then [] else [concat(["hash mismatch: ", w.path, " (manifest ", w.sha, ", file ", s, ")"])]
+  }, want));
+  let extra = flat(map(\h. match shaOf(want, h.path) { None => [concat(["extra, not in the manifest: ", h.path])], Some(_) => [] }, have));
+  changed ++ extra
+}
+
+export func verify(a: {dir: string, manifest: string, files: [string]}) -> () ! {IO, FS} {
+  match parseRows(readFile(a.manifest)) {
+    Err(e) => { println(concat(["lore-import: FAILED: ", e])); exit(1) },
+    Ok(want) => {
+      let ps = problems(want, hashRows(a.dir, a.files));
+      match ps {
+        [] => println(concat(["lore-import: ", intStr(size(want)), " files in ", a.dir, " hash-equal the manifest"])),
+        _ => { println(concat(["lore-import: FAILED (", intStr(size(ps)), " problems)"])); println(join("\n", ps)); exit(1) }
+      }
+    }
+  }
+}

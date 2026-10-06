@@ -263,6 +263,7 @@ func _run_interior(args: Dictionary) -> void:
 	sim.want_minor = 2 if capture or smoke else SimBridge.DEPARTURE_MINOR
 	var ai := AiSession.new(args)
 	add_child(ai)
+	sim.archive_rows = LoreLoader.archive_rows(LoreLoader.load_entries()["entries"]) # M4.7: the codex table; the sim decides every unlock
 	if not sim.start() or not sim.new_game(SEED, "sol", false, {"standoff_au": STANDOFF_AU}, AiSession.ai_core()) or not ai.attach(sim):
 		push_error("sim session failed: %s" % sim.last_error)
 		get_tree().quit(2)

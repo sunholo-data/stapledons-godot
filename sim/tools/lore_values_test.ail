@@ -1,0 +1,48 @@
+module stapledons/sim/tools/lore_values_test
+-- M4.7 registry (sim/tools/lore_values.ail): printed-precision agreement and its positive controls on
+-- inline rows (strict VM = interpreter), and the real vendored design docs (FS): the AC8 / AC15 rows
+-- HB-16, 17, 35, 40, 41, 45, 49, 53, 54, 61 agree with the package; eps <= HB-61.
+import ./lore_values (Val, agrees, disagreements, epsWithinGuide, glowFollowsHb45, packageVals, m4Vals, allProblems, registryText)
+import ./lore (Row, parseRows, findRow)
+import std/string (concat, join, contains)
+import std/list (map, filter, length as size)
+import std/option (Option, Some, None)
+import std/fs (readFile)
+
+pure func failedChecks(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func verdictOf(tag: string, bad: [string]) -> string =
+  match bad { [] => concat([tag, "-ok"]), _ => concat([tag, "-BAD: ", join(",", bad)]) }
+
+pure func rowsWith(v16: string, v61: string, v45: string) -> [Row] = parseRows(join("\n", [
+  concat(["| HB-16 | gamma | ", v16, " | — |"]), "| HB-111 | eps | 1 × 10⁻¹⁰ | — |", concat(["| HB-61 | guide | ", v61, " | — |"]), concat(["| HB-45 | K | ", v45, " | W/m² |"])]))
+pure func val(v: float, hb: string) -> Val = { id: "t", value: v, unit: "", source: "test", hb: hb }
+pure func row(v: string) -> Row = match findRow(rowsWith(v, "3.6 × 10⁻⁹", "1.93 × 10⁵"), "HB-16") { Some(r) => r, None => { id: "", printed: "", dec: { sig: "", e: 0, sf: 0 }, unit: "", } }
+
+pure func checks() -> [(string, bool)] = [
+  ("agrees at the printed digits: 7.08881 vs 7.0888", agrees(7.08881, row("7.0888"))),
+  ("agrees at the printed digits: 7.08884 vs 7.0888 (inside half a unit)", agrees(7.08884, row("7.0888"))),
+  ("one printed digit off fails: 7.0889", !agrees(7.0889, row("7.0888")) || !agrees(7.08881, row("7.0889"))),
+  ("a row one digit off fails the registry", size(disagreements([val(7.08881, "HB-16")], rowsWith("7.0889", "3.6 × 10⁻⁹", "1.93 × 10⁵"))) == 1),
+  ("a matching row passes", size(disagreements([val(7.08881, "HB-16")], rowsWith("7.0888", "3.6 × 10⁻⁹", "1.93 × 10⁵"))) == 0),
+  ("an HB row missing from the docs is a problem", size(disagreements([val(1.0, "HB-404")], rowsWith("7.0888", "3.6 × 10⁻⁹", "1.93 × 10⁵"))) == 1),
+  ("eps below HB-61 passes", size(epsWithinGuide(rowsWith("7.0888", "3.6 × 10⁻⁹", "1.93 × 10⁵"))) == 0),
+  ("eps above HB-61 fails", size(epsWithinGuide(rowsWith("7.0888", "9 × 10⁻¹¹", "1.93 × 10⁵"))) == 1),
+  ("glow = eps f_in K/4 with HB-45 at 3 s.f.", size(glowFollowsHb45(rowsWith("7.0888", "3.6 × 10⁻⁹", "1.93 × 10⁵"))) == 0),
+  ("glow vs a drifted HB-45 fails", size(glowFollowsHb45(rowsWith("7.0888", "3.6 × 10⁻⁹", "1.99 × 10⁵"))) == 1),
+  ("the registry names the m4 ids", contains(registryText([], []), "m4:glow_eps") && contains(registryText([], []), "m4:glow_f_in") && contains(registryText([], []), "m4:glow_099"))
+]
+test "M4.7 lore values: agreement, eps guide, glow" { size(failedChecks(checks())) == 0 }
+export func loreValuesVm(_: int) -> string = verdictOf("lore-values", failedChecks(checks()))
+
+-- The real vendored design docs: all ten rows M4 shows, by id, agree; eps <= HB-61.
+export func loreValuesReal(dir: string) -> string ! {FS} {
+  let rows = concat2(parseRows(readFile(concat([dir, "/physics/higgs-bubble.md"]))), parseRows(readFile(concat([dir, "/physics/relativity-spec.md"]))));
+  let ids = ["HB-16", "HB-17", "HB-35", "HB-40", "HB-41", "HB-45", "HB-49", "HB-53", "HB-54", "HB-61"];
+  let covered = filter(\i. match findCovered(i) { Some(_) => false, None => true }, ids);
+  let bad = allProblems(rows);
+  verdictOf("lore-values-real", map(\i. concat(["uncovered ", i]), covered) ++ bad)
+}
+pure func concat2(a: [Row], b: [Row]) -> [Row] = a ++ b
+pure func findCovered(id: string) -> Option[Val] = firstEq(packageVals(), id)
+pure func firstEq(vs: [Val], id: string) -> Option[Val] = match vs { [] => None, v :: r => if v.hb == id then Some(v) else firstEq(r, id) }

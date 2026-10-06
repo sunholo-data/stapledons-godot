@@ -40,6 +40,13 @@ jobs:
           make deps
           AILANG=ailang python3 tools/replay.py --case m4_transit_harness
 
+      - name: Check vendored lore against the design repo (M4.7 AC17, both halves)
+        # stapledons-design is public (ledger D-24), so the cross-repo half needs no credential:
+        # the design repo at the manifest's sha (read as git objects) must equal data/lore.
+        run: |
+          git clone --quiet https://github.com/sunholo-data/stapledons-design /tmp/stapledons-design
+          make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang
+
       - name: Check offline presentation and bootstrap before full suite
         run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test exposure-frames-test manual-exposure-test tour-attitude-test tour-pacing-test alpha-centauri-test
 

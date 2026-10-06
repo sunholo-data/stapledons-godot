@@ -1,0 +1,123 @@
+module stapledons/sim/tools/lore_values
+-- M4.7 check-value registry (design m4-first-journey §M4.7). `make lore-values` writes
+-- data/lore/check_values.json from three kinds of rows:
+--   (b)/(b') the HB-n and RS-n rows printed in the vendored higgs-bubble.md and relativity-spec.md
+--            (value kept as printed; the lore binds to these)
+--   (a)      sunholo/relativity 0.8.0's exported functions evaluated here, ids `pkg:<function>(<args>)`
+--            (there is no rel:check registry: the package's checkNN are private test predicates)
+--   (m4)     the M4 values: m4:glow_eps (HB-111), m4:glow_f_in (the scenario default), m4:glow_099
+-- and then fails unless every (a) row with an HB row agrees with it at that row's printed
+-- significant figures, so the design doc cannot drift from the package, and eps <= HB-61.
+-- Source (c) (tests/test_physics.gd's CHECKS) is not wired: that file has no such table (reported).
+import ./lore (Dec, Row, parseRows, findRow)
+import pkg/sunholo/relativity/kinematics (gammaOfBeta, rapidityOfBeta)
+import pkg/sunholo/relativity/medium (cSI, photonDriveEnergy, loadScale, kineticFlux, mirrorDragForce, cruiseDragEnergy, glowInwardFlux)
+import std/string (concat, join, substring, length, chars, intToStr, floatToStr)
+import std/list (map, filter, foldl, length as size, reverse)
+import std/option (Option, Some, None)
+import std/math (pow, intToFloat)
+import pkg/sunholo/relativity/hyper (absf as abs)
+import std/fs (readFile, writeFile)
+import std/io (println, exit)
+
+-- A computed value, the HB row it must equal (or "" for none), and its provenance.
+export type Val = { id: string, value: float, unit: string, source: string, hb: string }
+
+-- HB-3's density (0.1 cm^-3) in m^-3, the sphere radius R (HB-1), the Sol-alpha Cen distance (HB-4, ly)
+-- and the solar constant (the design repo's `sun` unit: 1,361 W/m^2).
+pure func nM3() -> float = 100000.0
+pure func radiusM() -> float = 100.0
+pure func acenLy() -> float = 4.37
+pure func sunWM2() -> float = 1361.0
+pure func epsCanon() -> float = 0.0000000001
+pure func fIn() -> float = 0.5
+pure func p99() -> float = rapidityOfBeta(0.99)
+pure func p999999() -> float = rapidityOfBeta(0.999999)
+
+export pure func packageVals() -> [Val] = [
+  { id: "pkg:gammaOfBeta(0.99)", value: gammaOfBeta(0.99), unit: "", source: "package", hb: "HB-16" },
+  { id: "pkg:rapidityOfBeta(0.99)", value: p99(), unit: "", source: "package", hb: "HB-17" },
+  { id: "pkg:gammaOfBeta(0.999999)", value: gammaOfBeta(0.999999), unit: "", source: "package", hb: "HB-18" },
+  { id: "pkg:rapidityOfBeta(0.999999)", value: p999999(), unit: "", source: "package", hb: "HB-19" },
+  { id: "pkg:photonDriveEnergy(1,phi0.99)", value: photonDriveEnergy(1.0, p99()), unit: "J/kg", source: "package", hb: "HB-35" },
+  { id: "pkg:photonDriveEnergy(1,phi0.999999)", value: photonDriveEnergy(1.0, p999999()), unit: "J/kg", source: "package", hb: "HB-36" },
+  { id: "pkg:loadScale(n,phi0.99)", value: loadScale(nM3(), p99()), unit: "W/m²", source: "package", hb: "HB-40" },
+  { id: "pkg:loadScale(n,phi0.99)/solarConstant", value: loadScale(nM3(), p99()) / sunWM2(), unit: "sun", source: "package", hb: "HB-41" },
+  { id: "pkg:loadScale(n,phi0.999999)", value: loadScale(nM3(), p999999()), unit: "W/m²", source: "package", hb: "HB-42" },
+  { id: "pkg:loadScale(n,phi0.999999)/solarConstant", value: loadScale(nM3(), p999999()) / sunWM2(), unit: "sun", source: "package", hb: "HB-43" },
+  { id: "pkg:kineticFlux(n,phi0.99)", value: kineticFlux(nM3(), p99()), unit: "W/m²", source: "package", hb: "HB-45" },
+  { id: "pkg:kineticFlux(n,phi0.999999)", value: kineticFlux(nM3(), p999999()), unit: "W/m²", source: "package", hb: "HB-46" },
+  { id: "pkg:mirrorDragForce(n,phi0.99,R)", value: mirrorDragForce(nM3(), p99(), radiusM()), unit: "N", source: "package", hb: "HB-49" },
+  { id: "pkg:mirrorDragForce(n,phi0.999999,R)", value: mirrorDragForce(nM3(), p999999(), radiusM()), unit: "N", source: "package", hb: "HB-50" },
+  { id: "pkg:cruiseDragEnergy(n,phi0.99,R,4.37ly)", value: cruiseDragEnergy(nM3(), p99(), radiusM(), acenLy()), unit: "J", source: "package", hb: "HB-53" },
+  { id: "pkg:cruiseDragEnergy(n,phi0.99,R,4.37ly)/c^2", value: cruiseDragEnergy(nM3(), p99(), radiusM(), acenLy()) / (cSI() * cSI()), unit: "kg", source: "package", hb: "HB-54" },
+  { id: "pkg:8/kineticFlux(n,phi0.999999)", value: 8.0 / kineticFlux(nM3(), p999999()), unit: "", source: "package", hb: "HB-61" }
+]
+
+-- The M4 values: eps and f_in are the sim's defaults; glow_099 is the AC8 mean inward glow at 0.99c.
+export pure func m4Vals() -> [Val] = [
+  { id: "m4:glow_eps", value: epsCanon(), unit: "", source: "D-29 follow-up, HB-111", hb: "HB-111" },
+  { id: "m4:glow_f_in", value: fIn(), unit: "", source: "M2 scenario default", hb: "" },
+  { id: "m4:glow_099", value: glowInwardFlux(nM3(), p99(), epsCanon(), fIn()), unit: "W/m²", source: "package glowInwardFlux", hb: "" }
+]
+
+-- ------------------------------------------------------------ agreement at printed precision
+pure func decFloat(d: Dec) -> float = if d.sig == "" then 0.0 else intToFloat(sigInt(d.sig)) * pow(10.0, intToFloat(d.e - length(d.sig)))
+pure func sigInt(s: string) -> int = foldl(\a c. a * 10 + digit(c), 0, chars(s))
+pure func digit(c: string) -> int =
+  if c == "1" then 1 else if c == "2" then 2 else if c == "3" then 3 else if c == "4" then 4 else if c == "5" then 5
+  else if c == "6" then 6 else if c == "7" then 7 else if c == "8" then 8 else if c == "9" then 9 else 0
+-- v equals the printed row when |v - printed| is within half a unit of the last printed digit
+-- (and a 1e-9 relative slack for the float parse of the printed value).
+export pure func agrees(v: float, r: Row) -> bool {
+  let want = decFloat(r.dec);
+  let half = 0.5 * pow(10.0, intToFloat(r.dec.e - r.dec.sf));
+  abs(v - want) <= half * 1.000000001
+}
+
+export pure func disagreements(vals: [Val], rows: [Row]) -> [string] =
+  foldl(\a v. if v.hb == "" then a else match findRow(rows, v.hb) {
+    None => a ++ [concat([v.id, ": its row ", v.hb, " is not in the vendored design docs"])],
+    Some(r) => if agrees(v.value, r) then a else a ++ [concat([v.id, " = ", floatToStr(v.value), " does not equal ", r.id, " (", r.printed, ") at its printed significant figures"])]
+  }, [], vals)
+
+-- eps <= HB-61 (the design guide's largest eps for a mean inward glow <= 1 W/m^2 at the cap).
+export pure func epsWithinGuide(rows: [Row]) -> [string] =
+  match findRow(rows, "HB-61") {
+    None => ["HB-61 is not in the vendored design docs"],
+    Some(r) => if epsCanon() <= decFloat(r.dec) then [] else [concat(["m4:glow_eps ", floatToStr(epsCanon()), " exceeds HB-61 (", r.printed, ")"])]
+  }
+
+-- AC8: the 0.99c ISM rows equal the HB rows at printed s.f.; the glow equals eps f_in K / 4 with HB-45's K.
+export pure func glowFollowsHb45(rows: [Row]) -> [string] =
+  match findRow(rows, "HB-45") {
+    None => ["HB-45 is not in the vendored design docs"],
+    Some(r) => {
+      let viaRow = epsCanon() * fIn() * decFloat(r.dec) / 4.0;
+      let glow = glowInwardFlux(nM3(), p99(), epsCanon(), fIn());
+      let rel = abs(viaRow - glow) / glow;
+      if rel <= 0.5 * pow(10.0, intToFloat(r.dec.e - r.dec.sf)) / decFloat(r.dec) * 1.000000001 then [] else [concat(["m4:glow_099 ", floatToStr(glow), " is not eps f_in K/4 with HB-45 (", r.printed, ") at its printed s.f."])]
+    }
+  }
+
+export pure func allProblems(rows: [Row]) -> [string] = disagreements(packageVals() ++ m4Vals(), rows) ++ epsWithinGuide(rows) ++ glowFollowsHb45(rows)
+
+-- ------------------------------------------------------------ the registry file
+pure func q(s: string) -> string = concat(["\"", s, "\""])
+pure func rowJson(r: Row, src: string) -> string = concat(["    {\"id\": ", q(r.id), ", \"value\": ", q(r.printed), ", \"unit\": ", q(r.unit), ", \"source\": ", q(src), "}"])
+pure func valJson(v: Val) -> string = concat(["    {\"id\": ", q(v.id), ", \"value\": ", q(floatToStr(v.value)), ", \"unit\": ", q(v.unit), ", \"source\": ", q(v.source), ", \"equals\": ", q(v.hb), "}"])
+export pure func registryText(hb: [Row], rs: [Row]) -> string =
+  concat(["{\n  \"values\": [\n", join(",\n", map(\r. rowJson(r, "hb"), hb) ++ map(\r. rowJson(r, "rs"), rs) ++ map(valJson, packageVals() ++ m4Vals())), "\n  ]\n}\n"])
+
+export func values(a: {dir: string, out: string}) -> () ! {IO, FS} {
+  let hb = parseRows(readFile(concat([a.dir, "/physics/higgs-bubble.md"])));
+  let rs = parseRows(readFile(concat([a.dir, "/physics/relativity-spec.md"])));
+  let ps = allProblems(hb ++ rs);
+  match ps {
+    [] => {
+      writeFile(a.out, registryText(hb, rs));
+      println(concat(["lore-values: ", intToStr(size(hb)), " HB rows, ", intToStr(size(rs)), " RS rows, ", intToStr(size(packageVals())), " package values, ", intToStr(size(m4Vals())), " m4 values -> ", a.out, "; every package value equals its HB row at printed s.f.; m4:glow_eps <= HB-61"]))
+    },
+    _ => { println(concat(["lore-values: FAILED (", intToStr(size(ps)), " problems)"])); println(join("\n", ps)); exit(1) }
+  }
+}
