@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -228,6 +228,9 @@ bench:             ## M1.3 AC7 (stars part): scripted flight at 2560x1440, vsync
 	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
 	  grep -E '^(bench|starfield):' $(SCRATCH)/bench_$$drv.log; \
 	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log && grep -q '^bench: limiting magnitude .*: ok$$' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
+
+splash:            ## compose the boot splash ui/splash/splash.png (Milky Way crop + wordmark + AILANG, like the site hero); needs a GPU window and data/raw/background/noirlab_10k_destarred.png
+	$(GODOT) --path . --script tools/splash_compose.gd
 
 capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window); M1.5a: + camera auto / fixed-EV starboard pairs, exposure_sheet.png; M1.8: gamma 275/707 CMB views, cmb_sheet.png
 	$(GODOT_SIM) --path . -- --capture=renders

@@ -24,8 +24,8 @@ Stapledon's Voyage is made by [Sunholo](https://www.sunholo.com).
 | Planet textures, [Solar System Scope](https://www.solarsystemscope.com/textures/) 2k (shown in game as "Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0") | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | Star catalogues: CNS5 (via CDS VizieR), Gaia GCNS (ESA/Gaia/DPAC), Hipparcos (ESA) | The providers' terms; cite the sources listed below |
 | Godot Engine | [MIT](https://godotengine.org/license/) |
-| Fonts on this site (Montserrat, Inter, JetBrains Mono, via Google Fonts) | [SIL Open Font License 1.1](https://openfontlicense.org) |
-| AILANG logo and favicon | AILANG's (Sunholo), used unaltered |
+| Fonts on this site (Montserrat, Inter, JetBrains Mono, via Google Fonts) and Montserrat Bold on the game's boot splash (`ui/splash/`, licence alongside) | [SIL Open Font License 1.1](https://openfontlicense.org) |
+| AILANG logo and favicon, here and on the boot splash | AILANG's (Sunholo), used unaltered |
 
 ## Art
 
