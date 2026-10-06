@@ -1,0 +1,87 @@
+{
+  "sprint_id": "R1-M4-REAL-TIME-TOUR",
+  "status": "proposed",
+  "approved_by": null,
+  "requested_by": "Mark (attended 2026-10-06; D-39, D-40)",
+  "design_doc": "design_docs/planned/r1/m4-real-time-tour.md",
+  "sprint_plan": "design_docs/planned/r1/m4-real-time-tour-sprint.md",
+  "github_issues": [],
+  "registry_reuse": [
+    {
+      "milestone": "RT1-RT4",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "rapidityOfBeta, plans and Doppler already exist; no new formula"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 450,
+    "estimated_days": 1.5
+  },
+  "features": [
+    {
+      "id": "RT1",
+      "description": "Itinerary cruise speeds in sim/solar_departure.ail: 0.99c Sol and α Cen A legs, 0.999c star leg",
+      "estimated_loc": 60,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make strict parity and sim tests: cruisePhi values and refusal-free plans under GUIDED_DRIVE",
+        "replays re-recorded with reason if bytes change"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RT2",
+      "description": "One GUIDED_DRIVE (3e6 g, cap 0.001, m_eff 10) used by demo, tests and tools",
+      "estimated_loc": 40,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make solar-departure-test: full tour, no refusal/fallback, peak beta per leg, stand-offs unchanged",
+        "no solar_departure caller keeps boost_g 1"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RT3",
+      "description": "Real-time guided pacing; cut for cruise > 600 s after 10 s hold; field-fed cut card",
+      "estimated_loc": 250,
+      "dependencies": [
+        "RT1",
+        "RT2"
+      ],
+      "acceptance_criteria": [
+        "make tour-pacing-test: dtau 1/20 s per tick, cut rule, tau at braking boundary within 1e-12, map pacing byte-identical",
+        "card values follow plan/world/cq fields",
+        "make ship-demo-live-test and make export-smoke"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RT4",
+      "description": "Real-session capture tool and inspected renders; golden for relativistic discs if missing",
+      "estimated_loc": 100,
+      "dependencies": [
+        "RT3"
+      ],
+      "acceptance_criteria": [
+        "tools/real_time_tour_capture.gd frames exist and were opened",
+        "relativistic planet discs finite at beta 0.99 (no NaN/black)",
+        "make test green locally and in CI"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ]
+}
