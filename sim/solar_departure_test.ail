@@ -138,23 +138,26 @@ pure func planned(w: World, n: int) -> Option[Plan] =
   }
 pure func secs(y: float) -> float = y * 31557600.0
 pure func timedOk(p: Plan) -> bool =
-  absf(secs(p.trip.tauBurn) - 30.0) < 0.000001 && secs(p.trip.tauCoast) > 45.0 && secs(p.trip.tauCoast) < 75.0
+  absf(secs(p.trip.tauBurn) - 30.0) < 0.000001 && secs(p.trip.tauCoast) > 50.0 && secs(p.trip.tauCoast) < 70.0
   && absf(secs(p.trip.tauApproach) - 25.0) < 0.000001 && p.trip.phiApproach > 0.0 && p.trip.phiApproach < p.trip.phiPeak && !p.trip.fellBack
 pure func timedChain(w: World, n: int, acc: [float]) -> [float] =
   if n >= 4 then acc else match planned(w, n) {
     None => [0.0 - 1.0],
-    Some(p) => if timedOk(p) then timedChain(finishLeg(w, n), n + 1, acc ++ [p.trip.phiPeak, p.trip.a]) else [0.0 - 2.0 - intToFloat(n)]
+    Some(p) => if timedOk(p) then timedChain(finishLeg(w, n), n + 1, acc ++ [p.trip.phiPeak, p.trip.a, p.trip.phiApproach]) else [0.0 - 2.0 - intToFloat(n)]
   }
 export pure func checkTimedLegs() -> bool {
   let r = timedChain(started(), 0, []);
   match r {
-    [sunPhi, sunA, jupPhi, jupA, calPhi, calA, satPhi, satA] =>
+    [sunPhi, sunA, sunAp, jupPhi, jupA, jupAp, calPhi, calA, calAp, satPhi, satA, satAp] =>
       jupPhi > rapidityOfBeta(0.999) && satPhi > rapidityOfBeta(0.999) && calPhi < rapidityOfBeta(0.2)
       && sunA != jupA && jupA != calA && jupA > (guided()).params.boostG * 1.0
+      -- The Sun is 4 degrees across before its brake could begin: its approach starts at
+      -- exactly half the cruise rapidity. Jupiter's starts at its 4-degree point, below that.
+      && sunAp == 0.5 * sunPhi && jupAp < 0.5 * jupPhi && jupAp > 0.0 && satAp < 0.5 * satPhi && calAp < calPhi
     , _ => false
   }
 }
-test "timed in-system legs: 30 s boost, 45-75 s cruise, 25 s approach; Jupiter and Saturn above 0.999c, Callisto slow" { checkTimedLegs() }
+test "timed in-system legs: 30 s boost, 50-70 s cruise, 25 s approach; Jupiter and Saturn above 0.999c, Callisto slow; the Sun approaches from half its cruise rapidity" { checkTimedLegs() }
 export pure func checkApproachPhase() -> bool =
   match planned(started(), 0) {
     None => false,

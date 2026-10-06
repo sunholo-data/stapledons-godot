@@ -46,7 +46,7 @@ New profile `planBurnCoastBrakeApproach(distance, a, phiCruise, aApproach, phiAp
 3. brake at a to φ_approach;
 4. brake at a_approach to rest.
 
-`TripPlan` gains `aApproach`, `phiApproach`, `tauApproach` and `dApproach` (zero for the existing profiles, which are unchanged bit for bit). `phaseAt` gains `Approaching`, and `motionAt` is closed-form in every phase, measured from each phase's own start.
+`TripPlan` gains `aApproach`, `phiApproach`, `tauApproach` and `dApproach` (zero for the existing profiles, which are unchanged bit for bit). `phaseAt` is unchanged, so existing matches on `TripPhase` stay exhaustive: the approach reports as `Decelerating`, and a new `inApproach(plan, tau)` marks it (the sim maps that to phase index 4). `motionAt` is closed-form in every phase, measured from each phase's own start.
 
 The sim chooses the approach to start where the target is `approach_deg` (4°) across, and to last `approach_s` (25 s):
 - x_a = R/sin(2°) − stand-off, at least the stand-off;
@@ -82,6 +82,6 @@ Like the cruise card, it steps the sim by the exact ship time to the boundary, s
 | E1 | Package: the new profile's tests (continuity at every boundary, energy, the limits a_approach → a and φ_approach → 0 reproduce planBurnCoastBurn bit for bit, monotonic x(τ)); `ailang pkg quality` has no gates; published as 0.9.0; sim pins it | package `make test` / `ailang test`; `make deps` |
 | E2 | Sim: timing solves to boost 30 s ± 1 and cruise 60 s ± 10 on the four in-system legs; refused when drag beats thrust; ordinary body plans unchanged (0.99c cap) | sim tests; `make strict parity` |
 | E3 | The voyage runs Earth → Aldebaran with the approach phase on body legs; the approach lasts 25 s ± 2 and starts with the target 4° ± 0.5 across (rendered angular size) | `make solar-departure-test` |
-| E4 | Skip lands exactly on each boundary (1e-12 of the leg) and is unavailable when nothing is committed; map pacing is byte-identical | `make tour-pacing-test` |
+| E4 | Skip lands on each boundary, overshooting by at most 1e-9 of the step (the bridge carries ~12-digit decimals; the sim splits the step exactly at the boundary), and is unavailable when nothing is committed; map pacing is byte-identical | `make tour-pacing-test` |
 | E5 | Renders: Jupiter's approach sequence (several frames) and the HUD, opened | capture tool |
 | E6 | Gate 1 | `make test` + CI |

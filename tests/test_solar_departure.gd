@@ -158,8 +158,17 @@ func _run()->void:
 		check("skip is unavailable before a leg is committed",not c2.skip_stage())
 		c2.advance()
 		var seen:=[s2.world.ship.phase]
+		var p2:Dictionary=s2.world.journey.plan
 		for i in 4:
 			c2.skip_stage();seen.append(s2.world.ship.phase if s2.world.journey.state=="committed" else "arrived")
+			if i==0:
+				# Landing precision (eval R1 finding 1): the skip overshoots by at most 1e-9 of the step,
+				# so the cruise left after landing is its full planned length less a few ns.
+				var left_s:float=float(s2.world.consequence.phase_remaining_yr)*31557600.
+				var dr:=load("res://demos/solar_departure.gd")
+				var boost_s:float=float(p2.boost_minutes)*60.
+				var full_s:float=float(p2.ship_years)*31557600.-boost_s-boost_s*(1.-float(p2.drive.approach_phi)/float(p2.cruise_phi))-float(p2.drive.approach_minutes)*60.
+				check("skip lands on the boundary to within 1e-9 of the step (%.9f s of %.3f s cruise left)"%[left_s,full_s],absf(left_s-full_s)<=full_s*1e-8+1e-6)
 		check("skips walk boost -> cruise -> braking -> approach -> arrival (%s)"%str(seen),seen==["boosting","cruising","braking","approaching","arrived"])
 		check("after the skips the ship is exactly at the planned stop",s2.world.ship.pos==s2.world.journey.plan.target.pos and c2.skips==4)
 		s2.stop()
