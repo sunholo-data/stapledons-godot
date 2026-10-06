@@ -2,6 +2,12 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-03: iteration 12, M4.1 step 1 LANDED (PR #92, merge `1e53d02`, CI green); Opus eval 91/100 PASS, 3 surviving mutants killed; clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved (critical-path M4.1 step 1); no open decisions.
+
+- **Clause map**: 1 UNMET → R1-M1-SKY-2, attended, only M1.5b (renders report) left open in its JSON; 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan); 4 UNMET → R1-M4-JOURNEY: M4.1 step 1 ✅ (this iteration), M4.0 in attended PR #95, M4.6a and M4.3a routable; 5 ongoing (strict + parity green; 1 DX report filed).
+- **Done**: executor (Sonnet 5.5, Agent tool) built `sim/consequence.ail` plus core/protocol changes (protocol 2.2 additive, `protocolVm` digest unchanged, replay goldens unchanged), and the two D-22 plan fixes. Evaluator (Opus 5.5, Agent tool) scored 91 PASS with 0 blocking. The executor then killed the 3 surviving mutants (MA legacy delta, MB news-request purpose, MC progress) with tests only; the controller re-ran MC first-party (30/31 → 31/31).
+- **Next**: M4.3a (critical path, now unblocked by M4.1) or M4.6a (package `glowEmittanceAt`, unblocks M4.1 step 2, M4.2 and M4.6); M4.3a must make the client send `standoff_au` 1000. The D-23 HB-4 canon regen in the design repo is still pending.
+
 ## STATUS 2026-10-03: iteration 11, M4 design through quorum (round 2, carve-out) and sprint plan R1-M4-JOURNEY PROPOSED; Sonnet eval r2 88/100 PASS, 2 small plan defects named; D-22 OPEN (approve plan); clauses 1/3/4 UNMET, 2 MET, 5 ongoing; goal unmoved (plan only).
 
 - **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended, in flight: PRs #67 M1.3, #69 M1.2d); 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan yet; routable); 4 UNMET → M4, plan proposed, waits on D-22; 5 ongoing.

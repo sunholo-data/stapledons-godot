@@ -24,3 +24,4 @@ Regenerated from full mission log headings; one line per entry. No log archive y
 | 14 | 2026-10-05 | PRODUCT | iteration 14, M4.3a LANDED (iteration 13's orphan verified and finished; arrival-card render defect fixed); independent eval 95 → 96/100 [PRODUCT] |
 | 15 | 2026-10-05 | PRODUCT | iteration 15 (orphan), M4.7 Archive codex built on sprint/m4.7-archive-codex (unpushed); killed by the stall watchdog at gate 3; credited in iteration 16 |
 | 16 | 2026-10-06 | PRODUCT | iteration 16, M4.7 Archive codex LANDED (iteration 15's orphan verified and finished); independent eval 88/100 [PRODUCT] |
+| 17 | 2026-10-06 | PRODUCT | iteration 17, M4.4 news from home, return trip and legacy screen BUILT and judged; held for pause point S4 (D-45); independent eval 97/100 [PRODUCT] |
