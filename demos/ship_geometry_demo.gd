@@ -53,6 +53,7 @@ var controls := VBoxContainer.new()
 var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
+var view_button := Button.new()
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
 var navigation_window: Window
@@ -104,6 +105,7 @@ func setup(opts := {}) -> bool:
 		push_error("ship demo missing simulation sky review states");return false
 	ready_ok=true
 	set_brightness_trial(opts.get("brightness_stops",2))
+	set_auto_view(opts.get("auto_view",false))
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
 	star_identification = Identification.new();identify_canvas.add_child(star_identification)
 	star_identification.setup(self);star_identification.open_map.connect(open_identified_star)
@@ -160,6 +162,7 @@ func _hud() -> void:
 	for pair in [["Look forward/up [7]","forward"],["Look side [8]","side"],["Look aft/down [9]","aft"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));sky_row.add_child(button)
 	var sky_button:=Button.new();sky_button.text="Sky only diagnostic [H]";sky_button.pressed.connect(toggle_sky_only);controls.add_child(sky_button)
+	view_button.pressed.connect(func():set_auto_view(not sky.system_view.body_fader));controls.add_child(view_button)
 	var brightness_row:=GridContainer.new();brightness_row.columns=4;controls.add_child(brightness_row)
 	for stops in BRIGHTNESS_STOPS:
 		var button:=Button.new();button.text="Reference sky" if stops==0 else ("Dim %d stops"%(-stops) if stops<0 else "%d× brighter"%int(pow(2.,stops)))
@@ -178,8 +181,18 @@ func set_brightness_trial(stops: int) -> bool:
 	sky.exposure.fixed_ev=sky.exposure.ev_dark()-float(stops)
 	sky.update_exposure()
 	return true
+## D-38: Realistic = one physical exposure for sky and bodies (sunlit bodies
+## clip at a star-friendly setting); Auto = the same manual sky exposure, with
+## each resolved body faded on its own so planets and stars show together.
+func set_auto_view(on: bool) -> void:
+	sky.system_view.body_fader=on
+	view_button.text="View: Auto, bodies faded to fit [V]" if on else "View: Realistic, one exposure [V]"
+	sky.update_exposure()
 func brightness_label() -> String:
-	return "Manual sky exposure EV %.2f · %s"%[sky.exposure.fixed_ev,"calibrated reference" if brightness_stops==0 else ("%d stops dimmer · display aid"%(-brightness_stops) if brightness_stops<0 else "%d× display aid"%int(pow(2.,brightness_stops)))]
+	var manual:String="Manual sky exposure EV %.2f · %s"%[sky.exposure.fixed_ev,"calibrated reference" if brightness_stops==0 else ("%d stops dimmer · display aid"%(-brightness_stops) if brightness_stops<0 else "%d× display aid"%int(pow(2.,brightness_stops)))]
+	if not sky.system_view.body_fader:return "REALISTIC view · "+manual
+	var faded:=sky.system_view.fader_stops(sky.exposure.k())
+	return "AUTO view · "+manual+(" · bodies dimmed up to %.0f stops (composite)"%faded if faded>=0.5 else " · no body needs dimming")
 func set_preset(name: String) -> void:
 	if name=="reset":
 		if lift!=null:lift.reset()
@@ -267,7 +280,7 @@ func _process(delta: float) -> void:
 	_sync_observer()
 	sky.finish_exposure_frame(delta)
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	label.text="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	label.text="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
 	if UiScale.handle(get_window(),event):
@@ -299,6 +312,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_8:look_direction("side")
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
+			KEY_V:set_auto_view(not sky.system_view.body_fader)
 			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")

@@ -57,6 +57,16 @@ var preload_bytes := 0
 var _prepared_system := {}
 var _prepared_view := []
 var _prepared := false
+## Body fader (D-38 "Auto" view): a labelled display composite, not physics.
+## Each resolved body (planet, moon, star disc) gets its own gain, at most 1,
+## that brings its brightest displayed radiance down to FADER_TARGET while the
+## catalogue sky keeps the shared exposure. Off = one physical exposure ("Realistic").
+const FADER_TARGET := 0.5 # linear pre-tonemap: below AgX's shoulder, so surface detail survives
+const FADER_TEX_PEAK := 2.0 # textured albedo / disc mean at the brightest clouds and ice
+var body_fader := false
+var _fader_peak := {} # id -> brightest displayed radiance before exposure (cd/m^2)
+var _points_physical := [] # visible point sources at physical lux, before any fader gain
+var _points_key := []
 
 
 func setup(sf: Starfield, load_textures := true) -> void:
@@ -159,6 +169,7 @@ func update(system: Dictionary, k: float) -> void:
 	_prepared=true;_prepared_system=system.duplicate(true);_prepared_view=view
 	preparation_count+=1
 	lod_weights.clear()
+	_fader_peak.clear()
 	rendered_bodies.clear()
 	drawn_points.clear()
 	drawn_discs.clear()
@@ -182,6 +193,7 @@ func update(system: Dictionary, k: float) -> void:
 		for band: Dictionary in ring_systems.get(b.get("ring_id",""),{}).get("bands",[]):extent=maxf(extent,band.r_out_km)
 		var px := _diameter_seen(w, extent, dist)
 		var weight:=disc_weight(px);lod_weights[b.id]=weight
+		_fader_peak[b.id]=_displayed_peak(b,dist)
 		order.append([dist,b]) # physical ray/meter/occlusion remains independent of LOD
 		if weight<1.0 and (b["e_v_lux"] >= floor_lux or px >= CULL_PX):
 			points.append({"id":b.id,"distance":dist,"dir": [w[0] / dist, w[1] / dist, w[2] / dist], "lux": b["e_v_lux"]*(1.-weight), "t": b.get("teff_k", Planets.T_SUN)})
@@ -200,14 +212,15 @@ func update(system: Dictionary, k: float) -> void:
 		for band:Dictionary in ring_systems.get(record.get("ring_id",""),{}).get("bands",[]):extent=maxf(extent,band.r_out_km)
 		record["_outer_cos"]=cos(Planets.angular_radius(extent,record._place[3]))
 		rendered_bodies.append(record)
-		if lod_weights[record.id]>0.0:_draw_disc(order[i][1], k*lod_weights[record.id], i)
+		if lod_weights[record.id]>0.0:_draw_disc(order[i][1], k*lod_weights[record.id]*fader_gain(record.id,k), i)
 	var visible_points:=[]
 	for point:Dictionary in points:
 		var transmission:=_point_transmission(point)
 		if transmission>0.0:
 			point.lux*=transmission;visible_points.append(point)
 		else:drawn_points.erase(point.id)
-	if starfield != null:starfield.replace_point_sources(visible_points)
+	_points_physical=visible_points;_points_key=[]
+	_upload_points(k)
 	preparation_usec+=Time.get_ticks_usec()-started
 
 ## The overlay contains only a body's own complementary PSF. Farther bodies
@@ -442,7 +455,49 @@ static func _image_colour(img:Image,uv:Vector2)->Vector3:
 
 func set_exposure(k:float)->void:
 	for id:String in drawn_discs:
-		(discs[id].material_override as ShaderMaterial).set_shader_parameter("exposure",k*lod_weights.get(id,1.))
+		(discs[id].material_override as ShaderMaterial).set_shader_parameter("exposure",k*lod_weights.get(id,1.)*fader_gain(id,k))
+	_upload_points(k)
+
+
+## The brightest radiance the display can show for this body, before exposure:
+## its surface peak (limb-darkened star centre, or a planet's sub-solar point),
+## capped by the PSF splat peak when the disc is smaller than the PSF.
+func _displayed_peak(b:Dictionary,dist:float)->float:
+	var surface:float
+	if b.kind=="star":
+		var s:=sin(Planets.angular_radius(b.radius_km,dist))
+		surface=Planets.limb_darkened(b.e_v_lux/(PI*s*s),1.0,b.get("limb_u",Planets.SUN_LIMB_U)) # the disc centre
+	else:
+		var lux:=Planets.star_illuminance_at(e1_au,b.r_au) if b.r_au>0.0 else 0.0
+		surface=Planets.rho_from_geometric_albedo(b.p_v,b.minnaert_k)*lux/PI*FADER_TEX_PEAK
+	var sigma:=maxf(Exposure.psf_sigma_angle(),Exposure.PSF_MIN_PX*px_rad)
+	return minf(surface,Exposure.peak_luminance(b.e_v_lux,sigma))
+
+
+## Display gain for one body at exposure k: 1 in the Realistic view, else at
+## most 1, never a brightening.
+func fader_gain(id:String,k:float)->float:
+	var peak:float=_fader_peak.get(id,0.0)
+	if not body_fader or peak<=0.0 or k<=0.0:return 1.0
+	return minf(1.0,FADER_TARGET/(peak*k))
+
+
+## How far the fader dims the most-dimmed visible body, in stops (0 = none).
+func fader_stops(k:float)->float:
+	var g:=1.0
+	for id:String in drawn_discs+drawn_points:g=minf(g,fader_gain(id,k))
+	return -log(g)/log(2.0)
+
+
+func _upload_points(k:float)->void:
+	if starfield==null:return
+	var key:=[body_fader,k if body_fader else 0.0,_points_physical.size(),preparation_count]
+	if key==_points_key:return
+	_points_key=key
+	var list:=[]
+	for point:Dictionary in _points_physical:
+		var p:=point.duplicate();p.lux*=fader_gain(p.id,k);list.append(p)
+	starfield.replace_point_sources(list)
 
 func seen_luminance(n:Vector3)->float:
 	if not visible:return 0.0

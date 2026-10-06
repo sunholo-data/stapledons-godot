@@ -41,6 +41,27 @@ func run()->void:
   check("nearEarth view never changes manualEV "+str(i),sky.exposure.ev==expected)
  check("planet pipeline retained",not sky.system_view.rendered_bodies.is_empty() and sky.system_view.drawn_discs.has("earth"))
  check("rendering does not change authoritative source",demo.journey_sim.world==source)
+ var event:InputEventKey
+ # D-38 Realistic/Auto view: the body fader is display-only and never touches the sky exposure.
+ var sv:SystemView=sky.system_view
+ var k:=sky.exposure.k()
+ check("Realistic view is the default",not sv.body_fader and demo.brightness_label().begins_with("REALISTIC view"))
+ for id:String in sv.drawn_discs:check("Realistic disc keeps one exposure "+id,sv.fader_gain(id,k)==1.0)
+ var star_scale:float=sky.exposure.star_scale()
+ demo.set_auto_view(true);sky.apply(source);demo._sync_observer();sky.finish_exposure_frame(.05,4000)
+ check("Auto keeps manual sky EV",sky.exposure.ev==expected and sky.exposure.fixed and sky.exposure.star_scale()==star_scale)
+ var earth_gain:=sv.fader_gain("earth",k)
+ check("Auto dims sunlit Earth by > 10 stops",earth_gain>0.0 and earth_gain<pow(2.,-10.))
+ check("Auto lands Earth's peak at the fader target",absf(sv._fader_peak["earth"]*k*earth_gain-SystemView.FADER_TARGET)<1e-9)
+ var earth_param:float=(sv.discs["earth"].material_override as ShaderMaterial).get_shader_parameter("exposure")
+ check("Auto Earth disc uniform carries the gain",absf(earth_param-k*sv.lod_weights["earth"]*earth_gain)<=1e-12*k)
+ for id:String in sv.drawn_discs+sv.drawn_points:check("fader never brightens "+id,sv.fader_gain(id,k)<=1.0)
+ check("Auto HUD labels the composite",demo.brightness_label().begins_with("AUTO view") and demo.brightness_label().contains("composite"))
+ event=InputEventKey.new();event.physical_keycode=KEY_V;event.pressed=true
+ demo._unhandled_input(event);sky.finish_exposure_frame(.05,4001)
+ check("V returns to Realistic",not sv.body_fader and sv.fader_gain("earth",k)==1.0)
+ earth_param=(sv.discs["earth"].material_override as ShaderMaterial).get_shader_parameter("exposure")
+ check("Realistic Earth disc back at physical exposure",absf(earth_param-k*sv.lod_weights["earth"])<=1e-12*k)
  for stops:int in demo.BRIGHTNESS_STOPS:
   check("manual preset accepted "+str(stops),demo.set_brightness_trial(stops))
   var ev:float=sky.exposure.ev_dark()-stops
@@ -50,7 +71,7 @@ func run()->void:
   check("preset only changes shared presentationK "+str(stops),sky.starfield.material.get_shader_parameter("exposure")==sky.exposure.star_scale())
  check("negative stops label dimming accurately",demo.set_brightness_trial(-16) and demo.brightness_label().contains("16 stops dimmer"))
  demo.set_brightness_trial(2)
- var event:=InputEventKey.new();event.physical_keycode=KEY_J;event.pressed=true
+ event=InputEventKey.new();event.physical_keycode=KEY_J;event.pressed=true
  demo._unhandled_input(event)
  check("J selects explicit next preset",demo.brightness_stops==4 and sky.exposure.fixed_ev==sky.exposure.ev_dark()-4.)
  check("legacy invalid preset remains rejected",not demo.set_brightness_trial(7))
