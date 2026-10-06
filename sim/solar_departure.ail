@@ -7,12 +7,12 @@ module stapledons/sim/solar_departure
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import pkg/sunholo/celestial/kepler (Vec3, sub, scale, norm)
-import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
+import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
 import ./celestial (solSystem, bodyAt, lyKm)
-import ./navigation (BodyReq, safetyMinKm, targetFacts)
+import ./navigation (BodyReq, safetyMinKm, targetFacts, bodyPhiMax)
 import ./data/sol (sun)
 import pkg/sunholo/celestial/ephemeris (auKm)
-import ./core (World, Params, Target, Intent, IPlanBody, IPlan, cruisePhiDefault)
+import ./core (World, Params, Target, Intent, IPlanBody, IPlan)
 
 export type TourLeg = { id: string, name: string, kind: string, cruisePhi: float, standoffKm: Option[float] }
 export pure func approximation() -> string = "Earth position is the Earth-Moon barycentre approximation; inertial geometric-clearance demo, not gravity-bound orbits. Gravity and thermal hazards are not simulated."
@@ -39,17 +39,29 @@ export pure func initializeAtStandoff(w: World, distanceKm: float) -> Result[Wor
     }
   }
 
--- Low system cruise speed, inside (not on) the accepted minimum boundary,
--- with genuine stop intercepts and
--- explicit standoffs checked by the unchanged collision/ring/intercept math.
+-- Real-time voyage cruise speeds (Mark, attended 2026-10-06: D-39, D-40, D-41),
+-- held as exact 1 - beta so nothing computes 1 - beta near c. The guided drive
+-- (3,000,000 g, cap 1 - beta = 5e-7, m_eff 10 kg) is a host scenario parameter
+-- (demos/solar_departure.gd GUIDED_DRIVE) checked by the unchanged scenarioError.
+-- In-system legs (Sol bodies, the alpha Cen A hop) cruise at the navigation cap,
+-- 0.99c exactly as navigation.bodyPhiMax states it (bit-identical, so never refused).
+export pure func solCruisePhi() -> float = bodyPhiMax()
+export pure func acenOneMinusBeta() -> float = 0.001      -- 0.999c: Saturn -> alpha Cen
+export pure func trappistOneMinusBeta() -> float = 0.0001 -- 0.9999c: alpha Cen -> TRAPPIST-1
+export pure func aldebaranOneMinusBeta() -> float = 0.000001 -- 0.999999c: TRAPPIST-1 -> Aldebaran
+-- Genuine stop intercepts with explicit standoffs checked by the unchanged
+-- collision/ring/intercept math; star legs arrive at the catalogue stand-off.
 export pure func legs(p: Params) -> [TourLeg] = [
-  {id: "sun", name: "Sun", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(sunStandoffKm())},
-  {id: "jupiter", name: "Jupiter", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(jupiterStandoffKm())},
-  {id: "callisto", name: "Callisto clearance", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(callistoStandoffKm())},
-  {id: "saturn", name: "Saturn", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(saturnStandoffKm())},
-  {id: "CNS5:3627", name: "Alpha Centauri system", kind: "star", cruisePhi: cruisePhiDefault(p), standoffKm: None},
-  {id: "acen-a", name: "Alpha Centauri A — 1 AU", kind: "body", cruisePhi: rapidityOfBeta(0.002), standoffKm: Some(auKm())}
+  {id: "sun", name: "Sun", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(sunStandoffKm())},
+  {id: "jupiter", name: "Jupiter", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(jupiterStandoffKm())},
+  {id: "callisto", name: "Callisto clearance", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(callistoStandoffKm())},
+  {id: "saturn", name: "Saturn", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(saturnStandoffKm())},
+  {id: "CNS5:3627", name: "Alpha Centauri system", kind: "star", cruisePhi: rapidityOfOneMinusBeta(acenOneMinusBeta()), standoffKm: None},
+  {id: "acen-a", name: "Alpha Centauri A — 1 AU", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(auKm())},
+  {id: "Gaia DR3 2635476908753563008", name: "TRAPPIST-1", kind: "star", cruisePhi: rapidityOfOneMinusBeta(trappistOneMinusBeta()), standoffKm: None},
+  {id: "CNS5:1142", name: "Aldebaran", kind: "star", cruisePhi: rapidityOfOneMinusBeta(aldebaranOneMinusBeta()), standoffKm: None}
 ]
+export pure func legCount() -> int = 8
 pure func legAt(xs: [TourLeg], n: int) -> Option[TourLeg] =
   if n < 0 then None else match xs { [] => None, x :: rest => if n == 0 then Some(x) else legAt(rest, n - 1) }
 export pure func intentForLeg(w: World, n: int, outbound: Target) -> Option[Intent] =
