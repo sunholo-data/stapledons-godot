@@ -904,3 +904,54 @@ Append-only. One entry per iteration, newest at the bottom.
   - The M4.6a sprint-JSON row still reads `passes: null` although #113 landed it (attended; left alone).
 
   DECISIONS FOR MARK: none.
+
+## 2026-10-06: iteration 17, M4.4 news from home, return trip and legacy screen BUILT and judged; held for pause point S4 (D-45); independent eval 97/100 [PRODUCT]
+
+- **Progress:** R1 bar: clause 2 MET; clauses 1, 3 and 4 UNMET; clause 5 ongoing. This iteration moved clause 4: M4.4, an M4.5 dependency, is built and independently judged. Its merge waits on the plan's pause point S4 (Mark's copy review, D-45). In: M4.0, M4.1 (both steps), M4.2, M4.3a, M4.6a, M4.7. Open: M4.3b (routable), then M4.5 and M4.6.
+- **Gate 0/1:** armed; gh account `sunholo-voight-kampff`; billing CLEAN; 0 directives on #119 since 2026-10-06T06:50:34Z (4 comments, none allowlisted).
+  - Inbox: two AILANG upstream replies to our v0.52.0 DX reports (compile cache, MOD010 single-file check), both pointing at dev builds. Informational; the pin stays v0.52.0.
+  - Ledger: 44 rows, all RESOLVED on entry. D-38..D-44 are attended rulings since iteration 16, acknowledged and not re-asked.
+  - Skill drift: none. All 13 skill files (SKILL.md plus 12 resources) at the resolved symlink target are byte-identical to `origin/dev`.
+  - Main CI green at `4689442`. The main checkout is 212 behind origin and holds an attended session's files; it was not touched, and state was read from origin.
+- **Pick/reality:** clause map: 1 → R1-M1-SKY-2 (attended); 3 → M3 (no quorum or plan); 4 → M4.3b or M4.4, both routable.
+  - No orphan: the last slot verdict was COMPLETED, and the open PRs (#129, #130) are attended.
+  - Picked M4.4 (Track A, not art-gated, on M4.5's path). M4.3b is art-gated, and its plan stacks it on an `m4-track-b` branch that no longer exists since M4.2 landed on main.
+  - Reality check: no news panel, `data/news/` or `body_source` UI on origin/main; the sim side (`news.body_source`, `fallback_reason`) is in from M4.1.
+- **Executor** (Sonnet 5.5, Agent tool, worktree `.wt-stapledon-iter17-m4.4`, ~55 min, 207k tok): three commits, `37ea1b0` tests, `e6c5954` implementation and `e5dd64b` the copy sheet, changelog and notes.
+  - Built: the news panel; `data/news/templates.json` (5 tiers × 4) and `copy.json`; `make news-lint` (with a stray-digit positive control) and `make news-test` (71 checks); `checkBodySourceThreePaths` in `make sim`; `GalaxyMap.plan_home`; the legacy screen.
+  - Its six mutations were all RED. Its full `make test` was rc=0.
+  - **~890 LOC vs the 350 estimate, no waiver** (code 545, tests 345).
+  - It admits the tests were not seen RED before the implementation, only through mutations. The judge called the tests test-first in substance (separate earlier commit, none vacuous).
+- **Evaluator** (`pi:openrouter/minimax/minimax-m3`, `mission_pi_run.sh`, fenced, `--max-seconds 3600`):
+  - **Attempt 1: `tool_hang` rc=18 at 821 s.** It ran `make sim` (~10 min) in the foreground. Retried once on the same lane with `make sim` removed (it gets the controller's measurement), per the rc-18 rule. Ticket `tool-hang:pi-evaluator:long-make-target` filed (non-blocking).
+  - **Attempt 2: verdict ok, 1,166 s, 128 tool calls: 97/100 PASS, 0 hard fails, 0 blocking.** Five own mutants RED: a digit in a reason phrase, the 280-character cap, "Begin again" reusing the old seed, the AI request skipping its D-8 guard, and the return trip targeting α Cen.
+  - **Survivor M6: refuted as framed.** It deleted the item's `fallbackReason` assertion from the test itself. The controller's equivalent *code* mutant (`sim/consequence.ail:109`, `fallbackReason: None`) turned the M4.4 gate and 2 sibling tests RED (30/33); restored and clean.
+  - Its seven explicit answers all agree with the claims: no unbound number (D-21); the closing line is pure field formatting; "Begin again" is a new seed with no reload (AC3); no AI request without a key (D-8); no replay golden or protocol digest change (protocolVm `0c5fb7da24b065de`, parity sha matches).
+  - Low findings: a 53-line `build()`, and the LOC table not revised.
+- **Controller, first-party outside the sandbox:**
+  - At `e5dd64b`: `news-lint` rc=0, `news-test` 71/0 and `make sim` 288/288 (10 m 13 s), each rc=0.
+  - Main moved during the iteration (#130, the real-time voyage), and #131 went CONFLICTING. I merged `origin/main` (`b23218f`); only CHANGELOG conflicted, and both entries were kept.
+  - Post-merge `make test` run 1 stopped at `ai-godot` on the known poll-timing flake (worst 34.6 ms vs a 2 ms budget, rig loaded by the evaluator). `ai-godot` alone was green (worst 369 µs). Then `make -k test` was **rc=0**.
+  - Copy read in full; the tier is chosen by the sim (template id), not by GDScript.
+  - `ee98858` sets `passes: true` with the verification notes.
+- **Landing:** NOT merged, by design. Plan pause point ⏸ S4 ("news template copy … gates M4.4 merge"). Draft PR #131; CI on its head was still running at record time (it is not a merge gate this iteration). Filed **D-45** (OPEN) with options A/B/C and a recommendation.
+- **Upstream:** nothing new. The two upstream replies were read.
+- **Routing evidence:** base=46894423a7c7380fecf3b75253831d6afe228734 (gate 1); gate4 base=90bbdff7b539768c3f2b07abde3820633dc21d92@2026-10-06T15:40:34Z (main moved by #130). There is no gate-3b target, because there is no merge.
+  - **Controller:** `claude:claude-opus-5-5` (tok: not reported).
+  - **Designer and planner:** not spawned; the doc and plan are approved (D-22).
+  - **Executor:** resolver `recipe claude:claude-sonnet-5-5 declared:provider-pin`. Spawned as Agent `model=sonnet` under the operator's standing Agent-tool request, as in iterations 12, 14 and 16 (207,172 tok).
+  - **Evaluator:** resolver `reroute pi:openrouter/minimax/minimax-m3 generator-equals-judge`. Probe rc=0. It ran on the pi recipe, not the Agent tool, because the routing table maps a `provider:model` value to its recipe. Judge independence: cross-vendor (MiniMax ≠ Anthropic). Attempt 1: 69,277 in + 4,221 out + 1,551,611 cache-read; attempt 2: 77,742 in + 29,541 out + 7,594,276 cache-read.
+  - **Metered:** 0.6334 USD (0.1189 + 0.5144, from the NDJSON `cost.total`).
+  - Driver routing note: codex and ollama over daily ration; the planner fell to opus (unused).
+- **Ruled out:** M4.3b this fire (art-gated, the stacking branch is gone; next pick); merging #131 before S4 (the plan's pause point); treating M6 as a real gap (code mutant RED); treating the `ai-godot` red as M4.4's (M4.4 does not touch the AI bridge, and it is green alone).
+- **Retro:** three items.
+  - **pi evaluator plus long `make` targets:** the second instance of a pi judge stumbling on this repo's long gates. Iteration 16's were sandbox reds, and this one was a `tool_hang` on a foreground 10-minute `make sim`. On this mission, a pi-evaluator directive should hand over the controller's long-gate measurements and forbid re-running them. Ticket filed; the shared skill is not edited (guardrail).
+  - **Controller instrument slip:** a zsh `rm -f <glob>` with no match broke a `&&` chain, so `make test` never ran, and the notification still reported exit 0. It was caught by a missing log, and re-run. Per-run file names with no glob from now on.
+  - **Main moved under a sprint:** an attended merge (#130) landed mid-iteration and made the PR CONFLICTING. That is normal for this mission (attended and loop work share main). It cost one merge and one full re-test.
+  - Harness share 0/17. The last 3 landings moved clause 4 (iterations 16, 14 and 12). This iteration verified clause-4 work but did not land it. No drift alarm.
+- **Next:** D-45. Under its default, M4.3b (HUD in the interior). Then M4.5 once M4.4 merges. Follow-ups:
+  - The D-23 4.32 ly regen.
+  - A copy pass for the D-42 canon voice.
+  - The design's M4.4 LOC row, at landing.
+
+  DECISIONS FOR MARK: D-45 (S4 copy for M4.4: A approve and merge / B approve with the Sol no-age fix / C hold for a D-42 canon rewrite; recommend B; default: #131 stays draft and the loop takes M4.3b).
