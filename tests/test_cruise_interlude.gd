@@ -55,5 +55,12 @@ func _initialize() -> void:
 	check(D.speed_text({"beta": 0.99, "gamma": 7.0888, "one_minus_beta": 0.01}) == "0.9900c · γ 7.09 · 296,795 km/s", "HUD: 0.99c line")
 	check(D.speed_text({"beta": 0.999999, "gamma": 707.1, "one_minus_beta": 0.000001}).begins_with("0.999999c · γ 707.10"), "HUD: exact nines at γ 707")
 	check(D.duration_text(0.00005) == "26.3 min" and D.duration_text(0.891) == "325.4 days" and D.duration_text(120.47) == "120.47 yr", "HUD: durations")
+	# HUD distances: units and the three parts from sim fields.
+	check(D.distance_text(12903.37 / 9460730472580.8) == "12,903 km" and D.distance_text(1.0 / 63241.077) == "1.000 AU" and D.distance_text(0.0158) == "999.2 AU" and D.distance_text(4.32) == "4.32 ly" and D.distance_text(120.47) == "120.5 ly", "HUD: distance units (%s, %s, %s)" % [D.distance_text(1.0 / 63241.077), D.distance_text(0.0158), D.distance_text(120.47)])
+	var w := {"journey": {"state": "committed", "plan": {"target": {"id": "jupiter"}, "departure": {"x": 0.0, "y": 0.0, "z": 0.0}}}, "ship": {"pos": {"x": 3.0 / 63241.077, "y": 4.0 / 63241.077, "z": 0.0}}, "consequence": {"distance_remaining": 2.0 / 63241.077}, "system": {"bodies": []}}
+	var d: String = D.distances_text(w, null)
+	check(d == "To jupiter 2.000 AU · from last stop 5.000 AU · from Earth 5.000 AU", "HUD: distances line from fields: " + d)
+	w.journey.state = "arrived"
+	check(D.distances_text(w, null) == "from Earth 5.000 AU", "HUD: at rest shows only the distance from Earth")
 	print("cruise-interlude: %d failures" % failures)
 	quit(1 if failures else 0)

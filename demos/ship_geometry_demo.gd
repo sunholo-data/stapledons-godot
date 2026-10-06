@@ -575,6 +575,8 @@ func hud_text(view_name: String, details: String) -> String:
 		var state: String = "CRUISE INTERLUDE" if solar_tour.interlude != null else PHASE_WORDS.get(str(ship.get("phase", "")), str(ship.get("phase", "")).to_upper())
 		where = "→ %s · %s" % [solar_tour.leg_name() if solar_tour.leg_index >= 0 else "Earth", state]
 	var lines := [where, speed_text(ship)]
+	var dist := distances_text(sky_world if sky_world is Dictionary else {}, solar_tour)
+	if not dist.is_empty(): lines.append(dist)
 	if not clock.is_empty():
 		lines.append("Ship +%s · Earth +%s since departure" % [duration_text(float(clock.get("tau", 0.0))), duration_text(float(clock.get("year", 0.0)))])
 	var view := ("AUTO" if sky.system_view.body_fader else "REALISTIC") + " view · V view · J brightness · Tab details"
@@ -596,6 +598,46 @@ static func speed_text(ship: Dictionary) -> String:
 		if i > 0 and (km_s.length() - i) % 3 == 0: grouped += ","
 		grouped += km_s[i]
 	return ("%." + str(digits) + "fc · γ %s · %s km/s") % [1.0 - omb, ("%.2f" % float(ship.get("gamma", 1.0))) if float(ship.get("gamma", 1.0)) < 1000.0 else "%.0f" % float(ship.get("gamma", 1.0)), grouped]
+
+## Distances (Mark, 2026-10-06): to the destination (the sim's distance_remaining), from
+## the last stop where the leg was committed (plan.departure), and from Earth (the
+## system section's Earth, else Sol). Only vector lengths of sim positions, in float64.
+static func distances_text(world: Dictionary, tour) -> String:
+	var parts := PackedStringArray()
+	var journey: Dictionary = world.get("journey", {})
+	var ship: Dictionary = world.get("ship", {})
+	var committed: bool = journey.get("state", "") == "committed"
+	if committed:
+		var name: String = tour.leg_name() if tour != null else str(journey.get("plan", {}).get("target", {}).get("id", "destination"))
+		parts.append("To %s %s" % [name, distance_text(float(world.get("consequence", {}).get("distance_remaining", 0.0)))])
+		var dep: Dictionary = journey.get("plan", {}).get("departure", {})
+		var pos: Dictionary = ship.get("pos", {})
+		if not dep.is_empty() and not pos.is_empty():
+			var from_name: String = "last stop"
+			if tour != null: from_name = "Earth" if tour.leg_index <= 0 else str(tour.itinerary[tour.leg_index - 1].get("name", "last stop"))
+			parts.append("from %s %s" % [from_name, distance_text(sqrt(pow(float(pos.x) - float(dep.x), 2.0) + pow(float(pos.y) - float(dep.y), 2.0) + pow(float(pos.z) - float(dep.z), 2.0)))])
+	var earth_ly := -1.0
+	for b: Dictionary in world.get("system", {}).get("bodies", []):
+		if b.get("id", "") == "earth": earth_ly = Planets.length64(Planets.world_of(b.rel_km)) / 9460730472580.8
+	var pos2: Dictionary = ship.get("pos", {})
+	if earth_ly < 0.0 and not pos2.is_empty(): earth_ly = sqrt(pow(float(pos2.x), 2.0) + pow(float(pos2.y), 2.0) + pow(float(pos2.z), 2.0))
+	if earth_ly >= 0.0: parts.append("from Earth %s" % distance_text(earth_ly))
+	return " · ".join(parts)
+
+## A distance in light-years, shown in km, AU or ly as it reads best.
+static func distance_text(ly: float) -> String:
+	var km := ly * 9460730472580.8
+	if km < 1.0e6: return "%s km" % _grouped(int(round(km)))
+	var au := km / 149597870.7
+	if ly < 0.1: return ("%.3f AU" if au < 10.0 else "%.1f AU" if au < 1000.0 else "%.0f AU") % au
+	return ("%.2f ly" if ly < 100.0 else "%.1f ly") % ly
+
+static func _grouped(n: int) -> String:
+	var t := String.num_int64(n);var out := ""
+	for i in t.length():
+		if i > 0 and (t.length() - i) % 3 == 0: out += ","
+		out += t[i]
+	return out
 
 ## Years as a readable duration: seconds through years.
 static func duration_text(years: float) -> String:
