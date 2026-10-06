@@ -697,6 +697,7 @@ ship-demo-ci: sim-bootstrap-test
 .PHONY: tour-pacing-test
 tour-pacing-test: import
 	@$(GODOT) --headless --path . --script tests/test_tour_pacing.gd > $(SCRATCH)/tour-pacing.log 2>&1; rc=$$?; cat $(SCRATCH)/tour-pacing.log; test $$rc = 0 && grep -q "^tour-pacing: 0 failures$$" $(SCRATCH)/tour-pacing.log
+	@$(GODOT) --headless --path . --script tests/test_cruise_interlude.gd > $(SCRATCH)/cruise-interlude.log 2>&1; rc=$$?; cat $(SCRATCH)/cruise-interlude.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/cruise-interlude.log && grep -q "^cruise-interlude: 0 failures$$" $(SCRATCH)/cruise-interlude.log
 ship-demo-ci: tour-pacing-test
 
 # ---- M4.7: the Archive codex's lore (design m4-first-journey.md "M4.7")
