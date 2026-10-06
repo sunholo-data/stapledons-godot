@@ -9,6 +9,32 @@
     <icon>https://www.sunholo.com/stapledons-godot/https://ailang.sunholo.com/img/favicon.ico</icon>
     <rights>Copyright © 2026 Sunholo / Mark Edmondson</rights>
     <entry>
+        <title type="html"><![CDATA[Even legs and a gentle arrival: v0.4.0-dev.18]]></title>
+        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/06/even-legs-v0-4-0-dev-18</id>
+        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/06/even-legs-v0-4-0-dev-18"/>
+        <updated>2026-10-06T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Every Solar System leg now has the same rhythm, about 2¼ minutes in real time: 30 seconds accelerating, about a minute cruising, then braking into a 25-second final approach. The longer legs simply go faster, above 0.999c to Jupiter and Saturn, so the planets now ease into view instead of appearing in the last few seconds.]]></summary>
+        <content type="html"><![CDATA[<p>Every Solar System leg now has the same rhythm, about 2¼ minutes in real time: 30 seconds accelerating, about a minute cruising, then braking into a 25-second final approach. The longer legs simply go faster, above 0.999c to Jupiter and Saturn, so the planets now ease into view instead of appearing in the last few seconds.</p>
+<!-- -->
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/even_legs_v18/hud_jupiter_final_approach.png" alt="The HUD during the final approach to Jupiter" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/06/even-legs-v0-4-0-dev-18#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>Even legs.</strong> The simulation solves each leg's thrust and cruise speed so the boost lasts 30 s and the cruise about 60 s: 0.07c for the short Callisto hop, 0.99943c (γ 30) to Jupiter, 0.99963c (γ 37) to Saturn. Sun → Jupiter takes about 2¼ minutes instead of 6½.</li>
+<li class=""><strong>A gentle final approach.</strong> A new trip profile brakes hard, then eases in for 25 s from where the planet is 4° across, so Jupiter grows smoothly instead of exploding in the last 8 s. It's built from the same exact constant-acceleration physics, in <code>sunholo/relativity</code> 0.9.0. The HUD says FINAL APPROACH.</li>
+<li class=""><strong>Skip stage [K].</strong> Jump to the next stage of the leg: accelerating → cruise → braking → final approach → arrival. It lands exactly on each stage, and the HUD counts how many you skipped.</li>
+<li class=""><strong>Distances on the HUD:</strong> to the destination, from the last stop, and from Earth, plus this leg's thrust.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/06/even-legs-v0-4-0-dev-18#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p>At the faster in-system speeds, the bubble wall's glow tints the forward view; how to present it is open. Stars beyond the Sun still appear as points: giving every visited star its real size (TRAPPIST-1, Aldebaran) is the next sprint.</p>
+<p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.18-even-legs" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.18-even-legs</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a> · Integration <a href="https://github.com/sunholo-data/stapledons-godot/pull/134" target="_blank" rel="noopener noreferrer" class="">PR #134</a>.</p>]]></content>
+        <author>
+            <name>Sunholo</name>
+            <uri>https://www.sunholo.com</uri>
+        </author>
+        <category label="Release" term="Release"/>
+        <category label="Journey" term="Journey"/>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[A real-time voyage to Aldebaran: v0.4.0-dev.17]]></title>
         <id>https://www.sunholo.com/stapledons-godot/news/2026/10/06/real-time-voyage-v0-4-0-dev-17</id>
         <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/06/real-time-voyage-v0-4-0-dev-17"/>
