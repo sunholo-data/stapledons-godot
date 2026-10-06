@@ -2,6 +2,13 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-03: iteration 11, M4 design through quorum (round 2, carve-out) and sprint plan R1-M4-JOURNEY PROPOSED; Sonnet eval r2 88/100 PASS, 2 small plan defects named; D-22 OPEN (approve plan); clauses 1/3/4 UNMET, 2 MET, 5 ongoing; goal unmoved (plan only).
+
+- **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended, in flight: PRs #67 M1.3, #69 M1.2d); 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan yet; routable); 4 UNMET → M4, plan proposed, waits on D-22; 5 ongoing.
+- **Iteration 10 (orphan, credited)**: fire 2026-10-02 21:50Z ran the M4 round-1 quorum (blocked 3/3) and crashed at gate 2 after 401 s; no record written. Its quorum artifact is committed by this iteration.
+- **Done**: designer (Opus 5.5) answered round 1. Round 2 blocked 3/3 on missing verification rows only, with `gpt6-1-sol` ABSENT (unreachable). The controller measured the disputed premise (M2 drag ledger exists, `mirrorDragPower` = F·c) and applied the reviewers' verbatim fixes under the narrow-refinement carve-out. Planner (Kimi K3) wrote the plan: 10 milestones, 4 waves, ~3,220 LOC. Evaluator (Sonnet) r1 85 (3 blocking, fixed by the planner) → r2 88.
+- **Next**: Mark's D-22 ruling. If approved, M4.6a (package `glowEmittanceAt`), M4.0 and M4.1 step 1 are startable at once. Otherwise M3 quorum and plan are the next routable clause-3 work.
+
 ## STATUS 2026-10-02: iteration 9, duplicate M2 landing draft withdrawn after attended PR40; Sonnet review 91/100; clause2 MET by attended work,1/3/4 UNMET,5 ongoing; goal unmoved; next M4 plan then approval; no open decisions.
 
 ## STATUS 2026-10-02: attended, M2 journey core LANDED (sprint R1-M2-JOURNEY, PRs #22–#35 + #37); clause 2 MET

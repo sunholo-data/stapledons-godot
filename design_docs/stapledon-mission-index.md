@@ -20,3 +20,7 @@ Regenerated from full mission log headings; one line per entry. No log archive y
 | 10 | 2026-10-02 | REFUTATION | iteration 10 (orphan), M4 round-1 quorum blocked 3/3; crashed at gate 2; credited in iteration 11 |
 | 11 | 2026-10-03 | PRODUCT | iteration 11, M4 design through quorum and sprint plan R1-M4-JOURNEY proposed; independent eval 88/100 [PRODUCT] |
 | 12 | 2026-10-03 | PRODUCT | iteration 12, M4.1 step 1 LANDED (consequence stub, protocol 2.2); independent eval 91/100 [PRODUCT] |
+| 13 | 2026-10-03 | PRODUCT | iteration 13 (orphan), M4.3a built (PR #115 draft); died at gate 3 on the Anthropic weekly limit; credited in iteration 14 |
+| 14 | 2026-10-05 | PRODUCT | iteration 14, M4.3a LANDED (iteration 13's orphan verified and finished; arrival-card render defect fixed); independent eval 95 → 96/100 [PRODUCT] |
+| 15 | 2026-10-05 | PRODUCT | iteration 15 (orphan), M4.7 Archive codex built on sprint/m4.7-archive-codex (unpushed); killed by the stall watchdog at gate 3; credited in iteration 16 |
+| 16 | 2026-10-06 | PRODUCT | iteration 16, M4.7 Archive codex LANDED (iteration 15's orphan verified and finished); independent eval 88/100 [PRODUCT] |

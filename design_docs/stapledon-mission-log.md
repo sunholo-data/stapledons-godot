@@ -854,3 +854,53 @@ Append-only. One entry per iteration, newest at the bottom.
   - An evaluator without a display reported renders as UNMEASURED, and the defect it could not see was real. On this mission, a directive for any visible change should hand the evaluator a render recipe (`--write-movie ... -- --transit` works headful on the rig and writes viewport-only frames). Instance 1, so no skill edit (the guardrail forbids editing the shared skill from this mission anyway).
   - Harness share 0. The last 3 landings moved clause 4 (iter 14), clause 4 (iter 12) and none (iter 11, plan only). No drift alarm.
 - **Next:** M4.3b (HUD into M4.2's interior; reuse the M4.3a fixtures and the Movie Maker render) or M4.4 news/legacy. M4.6a stays with attended PR #113. DECISIONS FOR MARK: none.
+
+## 2026-10-06: iteration 16, M4.7 Archive codex LANDED (iteration 15's orphan verified and finished); independent eval 88/100 [PRODUCT]
+
+- **Progress:** R1 bar: clause 2 MET; clauses 1, 3 and 4 UNMET; clause 5 ongoing. This iteration moved clause 4: M4.7 (the design repo's physics lore as in-game Archive entries whose numbers cannot drift) is a dependency of M4.5. M4.0, M4.1 step 1, M4.2, M4.3a and M4.7 are in, and M4.6a plus M4.1 step 2 landed attended (PR #113, merge `f0420c3`). Open: M4.3b, M4.4, then M4.5 and M4.6.
+- **Iteration 15 (orphan, credited):** the fire of 2026-10-05 18:53Z (controller Opus 5.5) picked M4.7. Its executor (Sonnet 5.5) built it on `sprint/m4.7-archive-codex` (worktree `.wt-stapledon-iter15-m4.7`): 3 commits, unpushed, plus uncommitted sprint-JSON notes and a changelog. The driver's stall watchdog then killed it at gate 3 after 3,545 s (`STALL: claude … made NO PROGRESS across 5 samples (600s) with a descendant alive ≥2400s`, slot verdict `KILLED at=gate-3 rc=143`). It wrote no charter row, log entry, evaluation or PR.
+- **Gate 0/1:** armed; gh account `sunholo-voight-kampff`; billing CLEAN; 0 directives on #119 since 2026-10-05T12:27:45Z (2 comments, both the bot's); unread inbox held only controlplane lane notices and sibling missions' FYIs.
+  - Ledger: 37 rows, all RESOLVED. D-34..D-37 are attended rulings since iteration 14, acknowledged, not re-asked.
+  - Skill drift: the resolved symlink copy (ailang main checkout, 22 behind `origin/dev`) differed from origin in 7 resource files. The only delta is the heartbeat stamp path (`$MISSION_DRIVER_ROOT/tools/launchd/…`) plus exit code 19 `provider_quota` in the pi verdict list. The pin copy matched origin. This iteration followed the origin version.
+  - **Main CI red at `1417c32`:** the job had 0 steps and no runner name, and was cancelled after 15 min. It is the same tree as `e514c95` (empty diff), which was green on its PR, so this was the Actions runner outage, not code. A rerun (attempt 2) came back **success**.
+  - The main checkout is behind origin and holds an attended session's untracked files; it was not touched. State was read from origin, and all work went to loop worktrees.
+- **Pick/reality:** clause map: 1 → R1-M1-SKY-2 (attended); 3 → M3 (design, no quorum or plan); 4 → M4.3b, M4.4 and M4.7 routable. The died-mid-flight traces (slot verdict, worktree, unpushed branch, uncommitted notes) made the pick VERIFY AND LAND M4.7. The branch merged into current main with no conflicts (`git merge-tree`).
+- **Executor** (Sonnet 5.5, Agent tool, the same worktree): committed the orphan's notes and changelog (`d9b6412`), merged `origin/main` (`893e7d5`, no conflicts) and ran the gates with the pinned v0.52.0 runtime.
+  - **Defect, fixed test-first:** `make test` stopped at `ai-live-guard` rule A, because the new lore-test recipe lines ran `--entry` without clearing `AI_LIVE` (RED: Makefile:724/725). Fixed with `env -u AI_LIVE` (`3939912`).
+  - Two full runs then failed on timing flakes outside M4.7: the sim-bridge `tee == bytes`, and an ai-bridge poll measured at 2,162 µs against a 2 ms budget. `make sim` alone passed, and the next full `make -k test` was rc=0.
+  - Mutants (a) roundTo, (b) the manifest sha check and (c) a vendored number were all RED. Renders opened. `dedc095` marked `passes: true`.
+- **Evaluator round 1** (`pi:openrouter/minimax/minimax-m3`, via `mission_pi_run.sh`, fenced, verdict `ok`, 1,879 s, 194 tool calls): **88/100 PASS, 0 blocking.**
+  - It ran 9 mutants of its own. Eight were RED: unit alias, hint allow-list, the sig-fig bound, the codex unlock gate, a stale `unbound.txt` allowance, the eps ≤ HB-61 guard, the manifest check and roundTo. One survived: **M6**, where the codex reads a second unlock key first.
+  - Its answers to the five directive questions all PASS: the binder rejects years, code spans and list indices; the J vs J/kg allowance is honest and stale-detected; nothing but `consequence.archive.unlocked` unlocks; no replay golden or protocol change; no physics in GDScript.
+  - Deductions: the plan pins the design repo at `1ef3bc9` while the import is at `ebe46f9` (deviation recorded in the JSON, not the plan); LOC overrun with no waiver; 2 of 10 entries carry the J/kg allowance.
+  - It reported two reds that it measured inside its sandbox: `test_lore_import.sh` 2/6 cross-repo cases (`cp` into `.godot/tmp` was blocked), and `test_physics.gd` 2 failures.
+- **Controller, first-party outside the sandbox at `dedc095`:**
+  - `sh tests/test_lore_import.sh`: all cases ok, including both cross-repo ones.
+  - `make physics`: rc=0, no FAIL lines.
+  - `make lore-test` and `lore-check`: rc=0. `codex-test`: 42/0. `ai-live-guard`: ok.
+  - So both of the evaluator's reds were sandbox artifacts. The diff touches no replay golden, protocol or core sim file. `SimBridge.archive_rows` is opt-in.
+  - I opened two codex renders: readable, no overlap.
+  - Hand-checked the lore's numbers: γ(0.99) = 7.0888; 4.37/0.99 = 4.414 yr; 0.6227 yr = 227 d; aberration 60° at 0.5c and 25.842° at 0.9c = arccos β; Doppler √19 = 4.3589 and 0.22942; 2.26 d at 0.999999c.
+- **M6 killed:** the executor (resumed) added three test-only checks (`b6e99a2`). The controller re-ran the mutant first-party: RED 43/2, restored GREEN 45/0. The delta is 7 test lines and was not re-judged (FLAGGED).
+- **Landing:** PR #123 CI success on head `dedc095` (run 37412863161) and on head `b6e99a2` (run 37415679238). It was CLEAN, marked ready (it was a draft) and merged → `8b8930f`. Main CI on merge `8b8930f` (run 37420415767, the 10k-tick replay): **success**.
+- **Upstream:** nothing new. The `CACHE_WRITE_FAILED … ARTIFACT_TOO_LARGE` lines for `sim/protocol_test` are known noise.
+- **Index:** `ailang mission rotate-log stapledon --keep 20` refused: it expects `## N — date — …` headings, while this log uses `## date: iteration N, …`. It also resolved the log in the main checkout, not this record worktree. The index rows for 13–16 were added by hand (13 and 14 were missing). This is a pin-version/format gap, not a controller lapse.
+- **Routing evidence:** base=1417c32fd5c03e0425142990c950d6ea54fdbd2b@2026-10-06T01:55:26Z (gate 1); gate3b target 8b8930f63090997b8f6caa449788fbf7815f9302 (merge) CI success 2026-10-06T06:48:19Z; gate4 base=1417c32fd5c03e0425142990c950d6ea54fdbd2b@2026-10-06T04:52:16Z.
+  - **Controller:** `claude:claude-opus-5-5` (tok: not reported).
+  - **Designer and planner:** not spawned; the doc and the plan already existed and were approved (D-22).
+  - **Executor:** resolver `recipe claude:claude-sonnet-5-5 declared:provider-pin`. Spawned as Agent `model=sonnet` under the operator's standing Agent-tool request, as in iterations 12 and 14 (72,447 + 78,146 tok over two turns).
+  - **Evaluator:** resolver `reroute pi:openrouter/minimax/minimax-m3 generator-equals-judge`. Openrouter was not over ration this fire; the probe was rc=0. It ran on its own pi recipe and **not on the Agent tool** the operator prompt names, because the routing table maps a `provider:model` value to its recipe. Judge independence: cross-vendor (MiniMax ≠ Anthropic). Tokens: 222,135 in + 38,749 out + 18,991,257 cache-read.
+  - **Metered:** 1.2526 USD (the minimax evaluator) + 0.0001 (the probe).
+- **Ruled out:** redoing M4.7 from scratch (the orphan was complete and verified); treating the main-CI red as a code regression (zero-step job, identical tree green, rerun green); trusting the evaluator's sandboxed reds (re-measured outside the sandbox: green); M4.3b/M4.4 this fire (the orphan outranks a fresh pick by Gate 2's died-mid-flight rule).
+- **Retro:** three items.
+  - **Gate-3 deaths, pattern:** two of the last four non-paused fires died at gate 3, each with a nearly-done branch. Iteration 13 hit the Anthropic weekly limit; iteration 15 hit the stall watchdog, which fires when the controller makes no transcript progress for 600 s while a child process is at least 2,400 s old (a quiet controller beside a long `make test`). Neither loss was work: the next fire's died-mid-flight traces recovered both whole. This fire held the slot by spawning the executor in the background and chaining bounded ≤9-min polls, as standing rule 7 prescribes. For Mark: a quiet foreground wait plus a 40-min test suite is enough to trip the watchdog.
+  - **A sandboxed pi evaluator reports environment reds as code reds.** Inside the fence, `test_lore_import.sh` (a `cp` into `.godot/tmp`) and `test_physics.gd` read red; outside it, both were green. The evaluator half-flagged them as sandbox artifacts, and the controller had to re-measure. On this mission, a pi-evaluator directive should name the out-of-sandbox gates the controller will run. Instance 1, so no skill edit (the guardrail forbids editing the shared skill from this mission anyway).
+  - **Rig hygiene:** three headless Godot test processes from earlier sessions are still running: `test_ship_commons.gd` for 1 d 11 h, `test_ring_protocol.gd` for 20 h, and `test_planet_presentation.gd` for 16 h. They were not started by the loop, so the loop left them alone. They load the rig the full suite runs on (this fire saw two timing flakes, `tee == bytes` and a 2.16 ms poll against a 2 ms budget).
+  - Harness share 0/13. The last 3 landings moved clause 4 (iteration 16), clause 4 (14) and clause 4 (12). No drift alarm.
+- **Next:** M4.3b (HUD in the interior) or M4.4 news/legacy, both wave 3; then M4.5. Follow-ups:
+  - The design repo's D-23 HB-4 regen at 4.32 ly. The vendored lore still says 4.37 ly, consistent with today's HB rows; re-import after the regen.
+  - The `archive.photon-drive` J vs J/kg canon fix.
+  - The plan's `1ef3bc9` → `ebe46f9` note.
+  - The M4.6a sprint-JSON row still reads `passes: null` although #113 landed it (attended; left alone).
+
+  DECISIONS FOR MARK: none.
