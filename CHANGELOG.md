@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### News from home, the AI path, the return trip and the legacy screen, 2026-10-06
+
+- M4.4. The Archive terminal's news tab is a panel: "Transmission received", a header built from sim fields ("Latest news from Earth: Earth-year +0.04, already 4.31 years old."), and one paragraph from `data/news/templates.json` (five tiers of four, numerals only inside `{slots}`, at most 280 characters), or the accepted AI text. What it shows follows the sim's `news.body_source`: `template` has no notice, `ai` a small "generated" tag, `fallback` the template under "Live transmission unavailable: archived text shown", the reason in words from a fixed digit-free table and a diagnostics entry. Nothing is asked of the AI service without AI on and a key (D-8).
+- The map's return trip opens with Sol planned and highlighted (`GalaxyMap.plan_home`, `R` in the interior); the hold-to-commit ritual is unchanged and the sim still refuses a stale plan. Arriving at Sol shows the legacy screen: the sim's log, the closing line from `clock.tau` and `clock.t` ("You were away 1.24 years. Home is 8.80 years older.") and "Begin again" (a new voyage with a new seed on the running sim; no save or load).
+- `make news-lint` (template lint, with the stray-digit fixture as a positive control) and `make news-test` (renderings, reason table, return trip, legacy screen over the real sim) are part of `make test`. `make sim` asserts `body_source` template / ai / fallback(`ai_numeral`) on one arrival. Copy awaits Mark's S4 review (`design_docs/planned/r1/m4.4-s4-copy-review.md`).
+
 ### Realistic and Auto views, 2026-10-06
 
 - Ship demo: a View button `[V]` switches between **Realistic** (default: one manual exposure; sunlit planets clip, as for a real observer) and **Auto** (each resolved body faded on its own to fit the display, labelled as a composite on the HUD). The manual exposure presets work in both; the sky exposure, star photometry and SR maths are unchanged (D-38).
