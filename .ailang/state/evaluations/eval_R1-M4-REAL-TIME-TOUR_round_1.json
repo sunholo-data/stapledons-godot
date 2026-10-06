@@ -1,0 +1,13 @@
+{"sprint_id":"R1-M4-REAL-TIME-TOUR","round":1,"score":84,"result":"pass",
+"breakdown":{"tests_pass":18,"lint":9,"acceptance":25,"code_quality":11,"documentation":12,"design_fidelity":9},
+"checks_run":["make tour-pacing-test (0 failures)","make solar-departure-test (100 passed, 0 failures; Aldebaran 120.47 yr)"],
+"findings":[
+{"severity":"medium","where":"demos/solar_departure.gd:13 vs sim/solar_departure_test.ail guided()","issue":"GUIDED_DRIVE is duplicated host/sim by comment only; no test asserts they agree, so drift passes both suites."},
+{"severity":"medium","where":"ui/journey_pacing.gd guided step()","issue":"Guided step returns constant 1/(hz*SPY) and ignores phase boundaries; test tolerates up to 4 short steps and only checks dt<=TICK, so a mutation that returned a smaller dt only fails via tick-count tolerance (+-4 of ~7000)."},
+{"severity":"low","where":"tests/test_tour_pacing.gd","issue":"Interlude boundary check uses the test's own phase_of and pacing.cruise_remaining; it proves self-consistency with plan fields, not with the sim clock. The sim-side boundary is only checked in the host (_step_interlude, 1e-12*ship_years) and tests/test_solar_departure.gd."},
+{"severity":"low","where":"ui/journey_pacing.gd interlude_due","issue":"1e-9 relative tolerance on the 600 s threshold and left>=1 s guard are untested at edges beyond 600/601 s."},
+{"severity":"low","where":"renders 7_aldebaran_cruise_peak_forward","issue":"washed out white (existing glow model); disclosed as design question, not a defect. 6_trappist-1_arrived shows the target as a single orange pixel; passes finite/target-pixel check but is visually weak."},
+{"severity":"info","where":"sim/solar_departure.ail","issue":"Precision good: cruise speeds as exact 1-beta via rapidityOfOneMinusBeta; sol cruise == bodyPhiMax. Pin does not double count (tests cover tier row, replacement, clear)."}],
+"mutations_surviving":["GUIDED_DRIVE constants changed on host only","guided step returning slightly smaller dt (within 4-tick tolerance)","CUT_THRESHOLD tolerance 1e-9 changed"],
+"ordinary_map_pacing":"protected by golden fixture tests/fixtures/map_pacing_golden.json; guided branch gated on guided_approach; non-guided interlude_due test present",
+"not_run":["make test full","make golden","ship-demo-live-test","export-smoke (A6/A7/A8 taken from author)"]}

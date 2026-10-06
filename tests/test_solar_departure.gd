@@ -28,6 +28,12 @@ func _run()->void:
 	for index in catalogue.stars.size():
 		var star:Dictionary=catalogue.stars[index]
 		if star.id=="CNS5:3627":outbound=star.duplicate();outbound.index=index
+	# GUIDED_DRIVE (host) and guided() (sim/solar_departure_test.ail) must be the same drive (eval R1 finding 1).
+	var sim_src:=FileAccess.get_file_as_string("res://sim/solar_departure_test.ail")
+	var rx:=RegEx.create_from_string("boostG: ([0-9.e+-]+), mEffKg: ([0-9.e+-]+), capOneMinusBeta: ([0-9.e+-]+)")
+	var m:=rx.search(sim_src)
+	var drive:Dictionary=load("res://demos/solar_departure.gd").GUIDED_DRIVE
+	check("host GUIDED_DRIVE equals the sim test's guided() drive",m!=null and float(m.get_string(1))==float(drive.boost_g) and float(m.get_string(2))==float(drive.m_eff_kg) and float(m.get_string(3))==float(drive.cap_one_minus_beta))
 	check("controller accepts exact catalogue destination",controller.attach(sim,catalogue.stars))
 	var before:Dictionary=sim.world.duplicate(true)
 	check("initial dwelling advances real time without moving ship",controller.step() and sim.world.ship.pos==before.ship.pos and sim.world.clock.tau>before.clock.tau and absf(sim.world.clock.tau-before.clock.tau-0.05/31557600.)<1e-15)

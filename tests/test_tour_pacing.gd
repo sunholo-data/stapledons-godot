@@ -33,9 +33,9 @@ func fly(pacing,w:Dictionary,hold_seen:Array)->Dictionary:
 			continue
 		var dt:float=pacing.step(w,false,0.,20.)
 		r.ticks+=1
-		# Never compressed: no step exceeds one wall second; only phase-boundary clamps are shorter.
-		if dt>TICK*(1.+1e-9):r.over+=1
-		elif dt<TICK*(1.-1e-9):r.short+=1
+		# Real time, exactly: every guided tick is one wall second of ship time (no clamping, no compression).
+		if dt>TICK:r.over+=1
+		elif dt<TICK:r.short+=1
 		w.clock.tau+=dt
 	return r
 
@@ -46,7 +46,7 @@ func _initialize()->void:
 	var a:=leg(27.,300.)
 	var seen:=[]
 	var ra:=fly(short,a,seen)
-	check(ra.over==0 and ra.short<=4,'guided dtau is one wall second of ship time per tick, never more; %d boundary clamps'%ra.short)
+	check(ra.over==0 and ra.short==0,'every guided tick is exactly one wall second of ship time (%d over, %d short)'%[ra.over,ra.short])
 	check(ra.interludes==0,'a cruise of 300 s (under 600 s) plays in real time, no cut')
 	check(abs(ra.ticks-(2*27+300)*20)<=4,'real time: 354 ship seconds take ~7080 ticks (%d)'%ra.ticks)
 	check(a.clock.tau-31.>=a._total,'short leg reaches its endpoint')
@@ -58,7 +58,7 @@ func _initialize()->void:
 	check(rb.interludes==1,'a cruise over 600 s gets exactly one interlude')
 	check(seen.size()==1 and absf(seen[0]-long.CRUISE_HOLD_S)<=0.051,'the cut comes after 10 s of real-time cruise (%s)'%str(seen))
 	check(rb.boundary_error>=0. and rb.boundary_error<=1e-12*b._total,'after the interlude the clock sits on the braking boundary (error '+str(rb.boundary_error)+' yr)')
-	check(rb.over==0 and rb.short<=4,'boost, hold and braking stay real time, never compressed')
+	check(rb.over==0 and rb.short==0,'boost, hold and braking: every tick exactly one wall second (%d over, %d short)'%[rb.over,rb.short])
 	check(abs(rb.ticks-int((2*38.7+10.)*20))<=4,'ticks = boost + hold + brake at 20 Hz (%d)'%rb.ticks)
 	check(long.CUT_THRESHOLD_S==600. and long.CRUISE_HOLD_S==10.,'design defaults: threshold 600 s, hold 10 s')
 	# 3. Boundary: a cruise of exactly 600 s is not cut; 601 s is.
