@@ -1,71 +1,75 @@
-# Sprint R1-M4-REAL-TIME-TOUR: real-time guided tour with a labelled interstellar cut
+# Sprint R1-M4-REAL-TIME-TOUR (A): real-time voyage, cruise interludes, Earth → Aldebaran
 
-**Design doc:** [m4-real-time-tour.md](m4-real-time-tour.md) (D-39, D-40).
-**Status:** Proposed 2026-10-06. Awaiting Mark's approval; no execution before it.
-**Estimate:** about 450 LOC, 1.5 days at recent velocity. Recent comparable work was the M4 tour and exposure follow-ups: 300–500 LOC per day, including tests.
-**Risk:** low to medium. There are no core or package changes; the main risks are replay bytes and relativistic planet discs at β 0.99.
+**Design doc:** [m4-real-time-tour.md](m4-real-time-tour.md) (D-39 to D-41). Sprint B (TRAPPIST-1) is planned separately in [m5-trappist1-sprint.md](m5-trappist1-sprint.md).
+**Status:** Approved by Mark, attended 2026-10-06 ("yes lets go ahead with this demo expansion").
+**Estimate:** about 650 LOC, 2 days at recent velocity. Recent comparable work, the M4 tour and exposure follow-ups, ran at 300–500 LOC per day including tests.
+**Risk:** medium. The two unknowns are the γ-707 m_eff (RT0, measured first) and rendering at γ 707.
 
 ## Registry reuse
 
 | Milestone | Package | Action | Reason |
 |---|---|---|---|
-| RT1–RT4 | `sunholo/relativity` (pinned) | depend | `rapidityOfBeta`, plans and Doppler are already in the package. No new formula. |
+| RT0–RT4 | `sunholo/relativity` (pinned) | depend | `rapidityOfBeta`, plans, drag check and Doppler already exist. No new formula. |
 
 ## Milestones
 
-### RT1: itinerary speeds (AILANG), about 60 LOC. Day 1 morning
+### RT0: drive measurement, about 20 LOC. Day 1, first hour
 
-- Write the test first in `sim/solar_departure_test.ail`. It checks that the legs' `cruisePhi` equals `rapidityOfBeta(0.99)` for the Solar System and α Cen A legs and `rapidityOfBeta(0.999)` for the star leg, and that all legs plan without refusal under `boostG 3e6`, `capOneMinusBeta 0.001` and `mEffKg 10`.
-- Add `solCruiseBeta()` and `starCruiseBeta()` to `sim/solar_departure.ail`, citing D-39/D-40.
-- Run `make strict parity`, then the sim tests. If replay bytes change, re-record on arm64 and x86_64 and give the reason in the commit.
+- Use real `new_game` calls to find the smallest `m_eff_kg` that passes `scenarioError` with 3M g at the γ-707 cap (cap 1−β = 5e-7).
+- Record it, with the energy-ledger consequence, in the sprint JSON and the design doc.
+- If no plausible value passes, stop and ask Mark: higher thrust or a slower final leg. Never lower ISM density.
 
-**Acceptance:** design AC1.
+**Acceptance:** design A1.
 
-### RT2: one drive definition (host), about 40 LOC. Day 1 morning, in parallel with RT1
+### RT1: itinerary (AILANG), about 90 LOC. Day 1 morning
 
-- Add `SolarDeparture.GUIDED_DRIVE` and switch all five callers to it.
-- Add a guard test that `git grep '"boost_g":1'` finds no solar_departure caller.
+- Test first in `sim/solar_departure_test.ail`: per-leg β (0.99, 0.999, 0.9999 and 0.999999), the two new star legs by exact catalogue ID, and refusal-free plans under `GUIDED_DRIVE`.
+- Add the constants and legs to `sim/solar_departure.ail`.
+- Run `make strict parity`; re-record replays with the reason if their bytes change.
 
-**Acceptance:** design AC2 (`make solar-departure-test`), which covers the full tour, no fallback, peak β per leg and unchanged stand-offs.
+**Acceptance:** design A2.
 
-### RT3: real-time pacing, cut and card, about 250 LOC. Day 1 afternoon to day 2 morning
+### RT2: `GUIDED_DRIVE`, about 40 LOC. Day 1 morning, in parallel with RT1
 
-- Write the tests first in `tests/test_tour_pacing.gd`:
-  - guided `dtau` is exactly 1/20 s per tick across boost, short cruise and braking;
-  - the cut happens only when the cruise is over 600 s, after a 10 s hold;
-  - after the cut, tau lands on the braking boundary within 1e-12;
-  - ordinary map pacing is byte-identical (a golden list of 200 `dtau` values recorded before the change).
-- In `ui/journey_pacing.gd`: real-time guided mode, a `cut_state` (`none / hold / card`), and the three default constants.
-- Add `ui/cut_card.gd`, an overlay fed only from plan, world and `cq` fields. It shows speed (β, γ), the distance left, the ship and Earth time the cut skips, the light delay from home, and live clocks, with a Continue button and a 6 s timeout. Its test checks that each value is read from a field, by mutating the fields and checking the card follows.
-- In `demos/solar_departure.gd`: pause stepping during the card, and update `status_text()`.
+- Make it the single definition and switch all five callers.
+- Add a guard so that no `solar_departure` caller keeps `boost_g` at 1.
 
-**Acceptance:** design AC3 and AC4 (`make tour-pacing-test`, `make ship-demo-live-test`, `make export-smoke`).
+**Acceptance:** design A3, the full voyage to Aldebaran with cumulative Earth time within 1%.
 
-### RT4: evidence renders, about 100 LOC. Day 2
+### RT3: real-time pacing and the cruise interlude, about 370 LOC. Day 1 afternoon to day 2 morning
 
-- Write `tools/real_time_tour_capture.gd` to take the frames listed in the design doc's RT4 section, and open every frame.
-- If the Jupiter discs at D ≈ 14 lack a golden case, add one to `make golden` (gate 2).
+- Tests first in `tests/test_tour_pacing.gd`:
+  - `dtau` is 1/20 s per tick;
+  - the 600 s rule and the 10 s hold;
+  - the host steps exactly the time `advance()` returns, checked with a fake interlude that consumes time in three uneven chunks;
+  - the clock lands on the braking boundary within 1e-12;
+  - map pacing is byte-identical, against 200 recorded `dtau` values.
+- Real-time guided mode in `ui/journey_pacing.gd`.
+- The `ui/cruise_interlude.gd` interface (`begin`, `advance`, `done`) and its host loop in `demos/solar_departure.gd`.
+- `ui/interlude_card.gd`: the goal-5 contents and the three tier texts, chosen from cumulative Earth time, with animated clocks and Continue or a 6 s timeout. A mutation test checks that every number follows its field.
+- Update `status_text()`.
 
-**Acceptance:** design AC5.
+**Acceptance:** design A4, A5 and A6.
+
+### RT4: evidence, about 130 LOC. Day 2
+
+- `tools/real_time_tour_capture.gd`: the Solar System frames, every interstellar boost peak (forward and side), every card and every braking arrival.
+- Open them all. Check that the sky stays finite at γ 707, and add a `make golden` case if the γ-707 forward glow or LUT edge isn't covered.
+
+**Acceptance:** design A7.
 
 ### Close
 
-- `make test` locally and in CI (AC6).
-- Add a changelog entry.
-- Evaluate with the sprint-evaluator skill, using a different model from the executor.
-- Publish a dev build for laptop review.
+- `make test` locally and in CI (A8).
+- Changelog entry.
+- Evaluation by the sprint-evaluator skill, using a different model from the executor.
+- A dev build for laptop review.
 
 ## Day plan
 
 | When | Work |
 |---|---|
-| Day 1 AM | RT1 and RT2, strict/parity, replays |
-| Day 1 PM | RT3 tests, then pacing |
-| Day 2 AM | RT3 card UI, live and export smoke |
-| Day 2 PM | RT4 renders and review, `make test`, PR, evaluation, dev build |
-
-## Open questions (defaults in the design doc)
-
-1. Cut threshold: 600 s.
-2. Card: 6 s or Continue.
-3. Hold before the cut: 10 s.
+| Day 1 AM | RT0, then RT1 and RT2; strict and parity; replays |
+| Day 1 PM | RT3 tests and pacing |
+| Day 2 AM | RT3 interface and card; live and export smoke |
+| Day 2 PM | RT4 renders and review; `make test`; PR; evaluation; dev build |
