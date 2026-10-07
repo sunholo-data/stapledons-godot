@@ -1,18 +1,55 @@
 {
   "sprint_id": "R1-TRAPPIST1-PLANETS",
-  "status": "in_progress",
+  "status": "completed",
   "approved_by": "Mark Edmondson: TB1-TB6 approved attended 2026-10-06 (m5-trappist1-sprint.md); selected for dev.20 on 2026-10-07",
   "design_doc": "design_docs/planned/r1/m4-real-time-tour.md (Sprint B, D-41); part 1 finite-destination-stars.md (D-47/D-48)",
   "sprint_plan": "design_docs/planned/r1/trappist1-planets-sprint.md",
   "branch": "sprint/trappist1-planets",
   "milestones": [
-    {"id": "TB1", "title": "Pinned archive snapshot (curl TAP), sha256, Agol 2021 cross-check", "status": "completed", "evidence": "data/planets/trappist1_ps.csv, data/planets/EXOPLANETS.SHA256, tools/fetch_trappist1.sh --verify"},
-    {"id": "TB2", "title": "sim/data/trappist1.ail cited rows; sim/trappist1.ail Kepler orbits phased by the transit ephemeris less light time", "status": "completed", "evidence": "sim/trappist1_test.ail (rows, Kepler III, JWST epochs, transit geometry, state); make trappist1-test (strict VM = interpreter; Python oracle worst 1.9e-12 AU)"},
-    {"id": "TB3", "title": "Planets in the system feed within 0.1 ly, b..h after the destination stars, lit by TRAPPIST-1 (teff_k, e1_au_lux)", "status": "completed", "evidence": "checkFeed, checkWire; planets/system_view.gd _e1_of; tests/test_solar_departure.gd _check_trappist_planets"},
-    {"id": "TB4", "title": "Assumed appearance rows (p_V, Lambert) marked; info card deferred", "status": "completed", "evidence": "checkRows"},
-    {"id": "TB5", "title": "HZ stop placed beside the best-lit planet (navigation planBesidePlanet); collision facts for all eight bodies; clearance", "status": "completed", "evidence": "checkStop, checkClearance; make solar-departure-test"},
-    {"id": "TB6", "title": "Renders at the stop, inspected; make test; PR", "status": "in_progress"}
+    {
+      "id": "TB1",
+      "title": "Pinned archive snapshot (curl TAP), sha256, Agol 2021 cross-check",
+      "status": "completed",
+      "evidence": "data/planets/trappist1_ps.csv, data/planets/EXOPLANETS.SHA256, tools/fetch_trappist1.sh --verify"
+    },
+    {
+      "id": "TB2",
+      "title": "sim/data/trappist1.ail cited rows; sim/trappist1.ail Kepler orbits phased by the transit ephemeris less light time",
+      "status": "completed",
+      "evidence": "sim/trappist1_test.ail (rows, Kepler III, JWST epochs, transit geometry, state); make trappist1-test (strict VM = interpreter; Python oracle worst 1.9e-12 AU)"
+    },
+    {
+      "id": "TB3",
+      "title": "Planets in the system feed within 0.1 ly, b..h after the destination stars, lit by TRAPPIST-1 (teff_k, e1_au_lux)",
+      "status": "completed",
+      "evidence": "checkFeed, checkWire; planets/system_view.gd _e1_of; tests/test_solar_departure.gd _check_trappist_planets"
+    },
+    {
+      "id": "TB4",
+      "title": "Assumed appearance rows (p_V, Lambert) marked; info card deferred",
+      "status": "completed",
+      "evidence": "checkRows"
+    },
+    {
+      "id": "TB5",
+      "title": "HZ stop placed beside the best-lit planet (navigation planBesidePlanet); collision facts for all eight bodies; clearance",
+      "status": "completed",
+      "evidence": "checkStop, checkClearance; make solar-departure-test"
+    },
+    {
+      "id": "TB6",
+      "title": "Renders at the stop, inspected; make test; PR",
+      "status": "completed",
+      "evidence": "make trappist1-capture -> renders/trappist1/*.png (10 frames, opened: e 43 px orange disc at 12 deg fov, c crescent, d half lit, star with c at 45 deg fov); make test rc 0 (34.6 min; sim 305/305); make solar-departure-test 155/155"
+    }
   ],
-  "ailang_issues": ["#1614: imported type name shadows a same-named type inside another module's record type (workaround: Exoplanet)"],
-  "started": "2026-10-07T15:20:00Z"
+  "ailang_issues": [
+    "#1614: imported type name shadows a same-named type inside another module's record type (workaround: Exoplanet)"
+  ],
+  "started": "2026-10-07T15:20:00Z",
+  "completed": "2026-10-07T18:00:00Z",
+  "evaluation": {
+    "status": "pending",
+    "note": "sprint-evaluator by a different agent/model"
+  }
 }
