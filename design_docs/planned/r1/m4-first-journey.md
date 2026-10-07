@@ -685,7 +685,7 @@ The first draft's AC8 (3-new-player playtest) is removed from R1 (D-14).
 | M4.0 | Bundle loader, blockout test fixture, `validate-areas`, `ship_frame` | 250 + 150 | — | no |
 | M4.1 | `consequence.ail`: Earth clock, news epoch and tier, display fields, live `ship.ism` (M2 has the plan-view ISM), news `body_source`, legacy log, archive hint predicates, `record`, stand-off; `scriptedRoundTrip` | 380 + 320 | M2 protocol and planner; M4.6a (for glow_pole_w_m2) | no |
 | M4.3a | Transit loop, warp, boost/brake pacing, HUD (incl. ISM), arrival card, on a sky-only harness scene | 200 + 80 | M4.1, M2 map | no |
-| M4.4 | News panel, templates, AI relay, return trip, legacy screen ⏸ S4 | 250 + 100 | M4.1, M4.3a | no |
+| M4.4 | News panel, templates, AI relay, return trip, legacy screen ⏸ S4 (S4 approved, D-45 B) | built 2026-10-06/07: ~545 code + ~385 tests (est. 250 + 100), incl. the D-45(B) no-age variant | M4.1, M4.3a | no |
 | M4.7 | Lore import, codex UI, unlocks, registry, `lore-check` (AILANG) | 180 + 140 | M4.1; design repo `lore/archive/`, `higgs-bubble.md`, `relativity-spec.md` §7 | no |
 | M4.5 | Playthrough bot, display audit, replay/parity, time proxy | 120 + 230 | M4.3a, M4.4, M4.7, M2 replay | no (final run on the approved bundle) |
 | M4.2 | Interior scene, composite, glow overlay, walking, interactables | 380 + 100 | M4.0, M1.3/M1.5 (any valid bundle) | **yes** |
