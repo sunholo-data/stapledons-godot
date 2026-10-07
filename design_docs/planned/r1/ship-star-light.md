@@ -28,7 +28,7 @@ Goals:
 2. Colour: the renderer's blackbody lookup at T × D (Doppler factor at the apparent angle).
 3. Energy: a documented logarithmic map of the seen illuminance at the ship, labelled as compressed on the HUD and in the manifest.
 4. Smooth: eased energy, colour and direction; hysteresis on the dominant star; eclipses respected.
-5. The moody ambient, fill and practicals stay. The broad key fades out as the star light takes over and is fully back in interstellar space.
+5. The moody ambient, fill and practicals stay. The broad key dims as the star light takes over, never below a 25% readability floor, and is fully back in interstellar space. Exactly one directional light casts shadows at any time.
 
 Non-goals: physical interior exposure (a display cannot show 10⁵ lx next to a lamp), planetshine, GR, multiple simultaneous star lights, a new package function.
 
@@ -49,17 +49,21 @@ Non-goals: physical interior exposure (a display cannot show 10⁵ lx next to a 
 ```
 level  = clamp(log10(E / 1 lx) / log10(1e5 lx / 1 lx), 0, 1)
 energy = 2.5 × level          (the moody key is 1.5)
-key    = key_base × (1 − level_eased)
+key    = key_base × max(0.25, 1 − level_eased)   (0.25 = KEY_FLOOR_SHARE)
 ```
 
 | Where | E (lx) | level | star light | broad key |
 |---|---:|---:|---:|---:|
-| Earth, 1 AU | 1.27 × 10⁵ | 1.00 | 2.50 | 0 |
+| Earth, 1 AU | 1.27 × 10⁵ | 1.00 | 2.50 | 0.38 (floor) |
 | Jupiter, 5.2 AU | 4.7 × 10³ | 0.73 | 1.84 | 0.41 |
 | Saturn, 9.5 AU | 1.4 × 10³ | 0.63 | 1.57 | 0.56 |
 | Interstellar | < 1 | 0 | off | 1.5 (moody) |
 
-Every decade of real illuminance is an equal step. Shadows (`moody` profile only) use the key's tuned bias (0.04, normal 0.3, 100 m). The key drops its shadow map below 2% of its base energy.
+Every decade of real illuminance is an equal step. Shadows (`moody` profile only) use the key's tuned bias (0.04, normal 0.3, 100 m).
+
+**Readability floor (ship light, not physical).** `KEY_FLOOR_SHARE = 0.25`: the broad key never drops below 25% of its moody energy, so the deck stays readable when the star is up but below the deck (Earth start, Jupiter arrival). The residual key casts no shadows while the star holds them (Mark's review of the first renders, 2026-10-07).
+
+**Shadow ownership.** Exactly one directional light holds a shadow map. As the eased level rises from 0 to 0.2 the key's shadow opacity fades 1 → 0; at 0.2 the shadow map passes to the star light, whose opacity then fades 0 → 1 by 0.4. The swap happens where both opacities are zero, so nothing pops.
 
 **Easing.** Energy, colour and direction approach their targets with τ = 0.5 s; direction is eased in the sky frame and rotated by the current attitude each frame, so attitude turns never lag the Sun's disc.
 
@@ -74,7 +78,7 @@ Every decade of real illuminance is an equal step. Shadows (`moody` profile only
 | A3 | Energy zero at or below 1 lx, monotonic, bounded, logarithmic | `make ship-star-light-test` |
 | A4 | Colour order by Teff: TRAPPIST-1 < Aldebaran < Sun (blue/red); D > 1 blueshifts | `make ship-star-light-test` |
 | A5 | Smooth: fade < 4% of max per 60 Hz frame; a 40° jump turns < 2°/frame; a ±8% near-equal pair never switches | `make ship-star-light-test` |
-| A6 | Dark interstellar cruise: no star light, moody key restored; an eclipse blocks the light | `make ship-star-light-test` |
+| A6 | Dark interstellar cruise: no star light, moody key restored; an eclipse blocks the light; key ≥ 25% floor and exactly one shadow-casting directional light from 0.3 lx to 10⁶ lx, continuous handover | `make ship-star-light-test` |
 | A7 | The demo installs and drives StarLight; the manifest and HUD label the compression | `make ship-star-light-test` |
 | A8 | Inspected renders at Earth, during the departure turn, near Jupiter, Saturn, the outbound 0.999c cruise, the dark interstellar leg, TRAPPIST-1 and Aldebaran | `make ship-star-light-capture` → `renders/ship_star_light/` |
 | A9 | Cost measured against the ship-only rig | `make ship-star-light-bench` → `renders/ship_star_light/benchmark-aggregate.json` |
@@ -82,13 +86,13 @@ Every decade of real illuminance is an equal step. Shadows (`moody` profile only
 
 ## Risks and mitigations
 
-- **Sun below the deck.** At most stops the star is low or behind the floors, so the bridge is in shadow. That is correct; the departure turn shows the sweep. If it reads as "too dark", the open question below decides.
+- **Sun below the deck.** At most stops the star is low or behind the floors, so the bridge is in shadow. That is correct; the 25% key floor keeps it readable, and the departure turn shows the sweep.
 - **Two shadowed directional lights** while both are partly on. Measured (A9); the key's shadow map is dropped below 2%.
 - **Precision near c.** Only the sim's γ and 1 − β enter D; no `1 − β` is computed here.
 
 ## Open questions for Mark
 
-1. Should a dim share of the ship-fixed key remain when the star is up (now 0%), so the bridge is not dark when the Sun is below the deck?
+1. Resolved: a 25% key floor without shadows (coordinator, from Mark's render review, 2026-10-07).
 2. Is 1 lx (deep twilight) the right floor, so Neptune-distance sunlight (~150 lx) still casts faint shadows and α Cen seen from the Sun's side (~10⁻⁵ lx) casts none?
 
 ## Deliverables

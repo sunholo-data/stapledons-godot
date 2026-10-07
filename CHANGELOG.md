@@ -7,7 +7,7 @@
 - The ship's geometry is lit by the star the player sees (dev.20). A new `StarLight` comes from the dominant finite star's apparent direction, the same aberrated disc centre the sky draws, turned into ship axes by the sky camera's attitude, so the light comes from where the Sun is seen through the bubble. Turning the ship sweeps the Sun's shadows across the bridge; when the star is below the deck, the floors shade it.
 - Its colour is the star's blackbody at T × D (the renderer's lookup, Doppler at the apparent angle): TRAPPIST-1's light is red, Aldebaran's orange, the Sun's white.
 - Its brightness is **log-compressed, not physical**: each decade of the illuminance at the ship (sim `e_v_lux`, Doppler flux ratio, eclipses) is an equal step from 1 lx (off) to 10⁵ lx (full). Earth is full, Jupiter about 73%, interstellar cruise off. The HUD details (Tab) and the lighting manifest say so.
-- The moody ambient, cool fill and Commons practical stay; the ship-fixed broad key fades out as the star takes over and is fully back between the stars. Changes ease over 0.5 s; a second star must be 1.5× brighter to take over.
+- The moody ambient, cool fill and Commons practical stay; the ship-fixed broad key dims as the star takes over, never below a 25% readability floor (ship light, not physical, shadowless), and is fully back between the stars. Exactly one light casts shadows at a time; the handover fades through zero opacity. Changes ease over 0.5 s; a second star must be 1.5× brighter to take over.
 - `make ship-star-light-test` (in `make test`), `make ship-star-light-capture`, `make ship-star-light-bench`.
 
 ### Finite destination stars, 2026-10-07

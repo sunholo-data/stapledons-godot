@@ -17,7 +17,7 @@ the Sun. Simulation-driven starlight on the ship geometry is now
 `demos/ship_star_light.gd` (`StarLight`, design
 `design_docs/planned/r1/ship-star-light.md`): it comes from the star's apparent
 direction with its Doppler-shifted blackbody colour and a log-compressed
-brightness, and it fades this broad key out as it takes over. The ambient, fill
+brightness, and it dims this broad key to a 25% shadowless floor as it takes over. The ambient, fill
 and practical of this study stay as the base. The planet/sky renderer keeps its
 own physical radiometry.
 

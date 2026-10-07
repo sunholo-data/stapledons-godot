@@ -15,18 +15,25 @@ extends RefCounted
 ##              logarithmically from LUX_FLOOR (no light) to LUX_FULL (ENERGY_MAX). Real
 ##              sunlight is ~10^5 brighter than a ship interior lamp; a display cannot
 ##              show that range, so decades become equal steps.
-## The ship-fixed "InternalBroadKey" fades out as the star light's share rises, so the
-## moody ambient, fill and practicals stay the base and interstellar space is unchanged.
+## The ship-fixed "InternalBroadKey" dims as the star light's share rises, down to a 25%
+## readability floor (KEY_FLOOR_SHARE), and hands its shadows to the star; the moody
+## ambient, fill and practicals stay the base and interstellar space is unchanged.
 ## Every change is eased (TAU_S) and the dominant star switches with hysteresis.
 
 const LUX_FLOOR := 1.0 # lx, deep twilight: no star light at or below
 const LUX_FULL := 1.0e5 # lx, direct sunlight (the Sun at 1 AU is 1.27e5 lx): full light
 const ENERGY_MAX := 2.5 # Godot light energy at full (the moody key is 1.5)
-const KEY_DIM := 1.0 # share of the broad key removed at full star light
+## Readability floor: the ship-fixed broad key never drops below this share of its moody
+## energy, so the deck stays readable when the star is up but below the deck (Earth, Jupiter
+## stops). It is ship light, not physical, and the residual casts no shadows.
+const KEY_FLOOR_SHARE := 0.25
+## Shadow ownership: exactly one directional light holds a shadow map at any time. As the
+## star's level rises the key's shadow fades out (0 to HANDOVER), then the star's fades in
+## (HANDOVER to 2 x HANDOVER); the swap happens where both opacities are zero (no pop).
+const SHADOW_HANDOVER := 0.2
 const SWITCH_RATIO := 1.5 # a new star must be this much brighter to take over
 const TAU_S := 0.5 # s, easing time constant of energy, colour and direction
 const VISIBLE_EPS := 1e-3 # energy below which a light is switched off (invisible change)
-const KEY_SHADOW_SHARE := 0.02 # the key drops its shadow map below 2% of its base energy
 
 var light: DirectionalLight3D
 var source_id := "" # the dominant star's sim id ("" = none)
@@ -154,7 +161,10 @@ func apply_rig(rig: Dictionary) -> void:
 	var on := energy >= VISIBLE_EPS
 	light.light_energy = energy if on else 0.0
 	light.visible = on
-	light.shadow_enabled = shadows and on
+	var level := energy / ENERGY_MAX
+	var star_owns := on and level >= SHADOW_HANDOVER
+	light.shadow_enabled = shadows and star_owns
+	light.shadow_opacity = clampf((level - SHADOW_HANDOVER) / SHADOW_HANDOVER, 0.0, 1.0)
 	light.light_color = Color(colour.x, colour.y, colour.z).linear_to_srgb()
 	var up := Vector3.UP if absf(interior_dir.y) < 0.99 else Vector3.RIGHT
 	var b := Basis.looking_at(-interior_dir, up) # the light shines along -Z: from the star
@@ -162,9 +172,10 @@ func apply_rig(rig: Dictionary) -> void:
 	else: light.basis = b
 	var key: DirectionalLight3D = rig.key
 	var base: float = rig.get("key_base", key.light_energy)
-	key.light_energy = base * (1.0 - KEY_DIM * energy / ENERGY_MAX)
+	key.light_energy = base * maxf(KEY_FLOOR_SHARE, 1.0 - level)
 	key.visible = key.light_energy >= VISIBLE_EPS
-	key.shadow_enabled = shadows and key.light_energy >= KEY_SHADOW_SHARE * base
+	key.shadow_enabled = shadows and not star_owns
+	key.shadow_opacity = clampf(1.0 - level / SHADOW_HANDOVER, 0.0, 1.0)
 
 
 func manifest() -> Dictionary:
@@ -174,7 +185,7 @@ func manifest() -> Dictionary:
 		"direction": "physical: the star's aberrated apparent direction, the sky renderer's disc centre, in ship axes",
 		"colour": "physical hue: blackbody at Teff x Doppler factor (the renderer's lookup), unit max channel",
 		"brightness": "log-compressed, not physical: energy = %.1f x log10(E / %s lx) / log10(%s / %s), E = seen illuminance at the ship (sim e_v_lux x Doppler flux ratio x eclipse transmission)" % [ENERGY_MAX, LUX_FLOOR, LUX_FULL, LUX_FLOOR],
-		"broad_key": "ship-fixed key dimmed by the star light's share; ambient, fill and practicals unchanged",
+		"broad_key": "ship-fixed key dimmed by the star light's share down to a %d%% readability floor (ship light, not physical; no shadows while the star owns them); ambient, fill and practicals unchanged" % roundi(100.0 * KEY_FLOOR_SHARE),
 		"easing_s": TAU_S, "switch_ratio": SWITCH_RATIO}
 
 

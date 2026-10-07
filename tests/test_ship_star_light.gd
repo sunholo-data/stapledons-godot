@@ -163,7 +163,32 @@ func _run() -> void:
 	sky.apply(at_rest); star.update(rig, sky, 0.0, true)
 	var key: DirectionalLight3D = rig.key
 	check("at Earth the Sun light is full and shadowed (moody)", is_equal_approx(star.light.light_energy, StarLight.ENERGY_MAX) and star.light.visible and star.light.shadow_enabled)
-	check("at Earth the ship-fixed broad key is replaced", key.light_energy < 0.01 and not key.shadow_enabled)
+	check("at Earth the broad key sits at its 25%% readability floor and casts no shadow", is_equal_approx(key.light_energy, StarLight.KEY_FLOOR_SHARE * rig.key_base) and not key.shadow_enabled and StarLight.KEY_FLOOR_SHARE == 0.25)
+	# Shadow ownership across the whole range: exactly one shadowed directional light.
+	var one_owner := true
+	var key_floor_ok := true
+	var key_monotonic := true
+	var key_prev := INF
+	var opacity_jump := 0.0
+	var op_prev := [1.0, 0.0]
+	var levels := at_rest.duplicate(true)
+	var lux_earth: float = body(at_rest, "sun").e_v_lux
+	for i in 81:
+		body(levels, "sun").e_v_lux = pow(10.0, -0.5 + i * 0.08)
+		sky.apply(levels); star.update(rig, sky, 0.0, true)
+		var casters := int(star.light.shadow_enabled) + int(key.shadow_enabled) + int(rig.fill.shadow_enabled)
+		if casters != 1: one_owner = false
+		if key.light_energy < StarLight.KEY_FLOOR_SHARE * rig.key_base - 1e-6: key_floor_ok = false
+		if key.light_energy > key_prev + 1e-6: key_monotonic = false
+		key_prev = key.light_energy
+		var key_op: float = key.shadow_opacity if key.shadow_enabled else 0.0
+		var star_op: float = star.light.shadow_opacity if star.light.shadow_enabled else 0.0
+		opacity_jump = maxf(opacity_jump, maxf(absf(key_op - op_prev[0]), absf(star_op - op_prev[1])))
+		op_prev = [key_op, star_op]
+	check("exactly one shadow-casting directional light from 0.3 lx to 1e6 lx (moody)", one_owner)
+	check("the broad key never drops below its 25% floor and dims monotonically", key_floor_ok and key_monotonic)
+	check("the shadow handover is continuous (max opacity step %.3f per 0.08 decade < 0.2)" % opacity_jump, opacity_jump < 0.2)
+	body(levels, "sun").e_v_lux = lux_earth
 	check("the shadow bias is the tuned ship key's", star.light.shadow_bias == key.shadow_bias and star.light.shadow_normal_bias == key.shadow_normal_bias)
 	var dark := world.duplicate(true)
 	for b: Dictionary in dark.system.bodies:
