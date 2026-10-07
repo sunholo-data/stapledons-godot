@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -223,9 +223,10 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
 BENCH_SECONDS ?= 30
 BENCH_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),large)
-bench:             ## M1.3 AC7 (stars part): scripted flight at 2560x1440, vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default)
+BENCH_SIZE ?=
+bench:             ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default)
 	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
-	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
+	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
 	  grep -E '^(bench|starfield):' $(SCRATCH)/bench_$$drv.log; \
 	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log && grep -q '^bench: limiting magnitude .*: ok$$' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
 
@@ -513,6 +514,17 @@ sky-assets:       ## M1.4d/D-18: pinned sky textures: from the public bucket in 
 
 sky-regen: sky-inputs destar sky-model   ## M1.4d: full regeneration; outputs must match data/sky/SHA256SUMS
 	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=all
+
+# Starmap tiers too large for git (D-18; starmap-large-tier-and-reach.md L1): the large tier, pinned in
+# data/starmap/SHA256SUMS, fetched from gs://stapledons-voyage-assets/starmap/<sha256>.<ext>.
+.PHONY: starmap-assets starmap-publish
+starmap-assets:   ## L1: the pinned large tier (331,311 GCNS stars, truth positions) from the public bucket in seconds, else rebuilt from the pinned inputs; sha256-checked
+	@if sh tools/starmap_assets.sh fetch; then sh tools/starmap_assets.sh verify; \
+	else echo "starmap-assets: not in the bucket; rebuilding (make catalogue-inputs + catalogue TIER=large)"; \
+	  $(MAKE) --no-print-directory catalogue-inputs catalogue TIER=large AILANG=$(AILANG) && sh tools/starmap_assets.sh verify; fi
+
+starmap-publish:  ## D-18 maintainers (gcloud auth): upload the pinned tiers to gs://stapledons-voyage-assets/starmap/<sha256>.<ext> (never overwrites)
+	sh tools/starmap_assets.sh publish
 
 sky-publish:      ## D-18 maintainers (gcloud auth): upload pinned sky inputs + textures to gs://stapledons-voyage-assets/sky/<sha256>.<ext> (never overwrites)
 	sh tools/sky_assets.sh publish

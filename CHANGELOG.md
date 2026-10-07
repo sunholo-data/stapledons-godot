@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### The full 100 pc sky (large tier), 2026-10-07
+
+- The ship's sky can draw every GCNS star within 100 pc: 335,189 stars instead of 60,883, at truth positions. `make starmap-assets` fetches the pinned large tier (`data/starmap/SHA256SUMS`) from `gs://stapledons-voyage-assets/starmap/` in under a second, or rebuilds it from the pinned inputs. `main.gd` and `InteriorSky` use it whenever it is present.
+- Benchmarked first on the M4 Max, with `make bench BENCH_SIZE=…` (new). Frame time is unchanged at 1920×1080 and 2560×1440, with p99 at 10 to 11.5 ms. The star pass grows from 0.08 to 0.35 ms GPU at p50, loading costs +0.5 s once, and memory rises by +250 MB. The M2 Air estimate is about +1.4 ms per frame. Destinations to 100 pc wait for the galaxy map's level-of-detail design (the design's default: sky first).
+- `tools/starmap_sky_capture.gd` renders medium and large side by side. At rest and 50 ly out, the large tier adds about 20 % more visible faint stars. These are GCNS stars that the destarred panorama had already removed, so the medium sky was missing them. At γ 707 the boosted CMB fills the forward cone; with the CMB off the starbow gains 3 % in light.
+
 ### One position per star, 2026-10-07
 
 - A new star-truth table, `data/starmap/truth/positions.csv`, gives one position for each of the 5,212 stars that more than one catalogue lists. It is built in AILANG by `make starmap-truth` (VM = interpreter). Navigation and every sky tier take positions from it, so a map journey to a Gaia-only star arrives with the star 1,000 AU ahead. TRAPPIST-1 was 3,650 AU away on arrival, 10 UMa 8.7 ly beyond its stop, and GJ 10940 6 ly *behind* the ship.
