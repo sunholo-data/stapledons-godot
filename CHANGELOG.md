@@ -10,6 +10,11 @@
 - Each planet is where it really is when the ship arrives: Kepler orbits from `sunholo/celestial`, phased by the transit epochs less the 40.6-year light-time. Each is lit by TRAPPIST-1's own light: the wire carries the host's `teff_k` and `e1_au_lux`, so `SystemView` no longer lights every planet with the Sun.
 - The stop keeps D-47 (√L = 0.0235 AU from the star) but now sits on that sphere beside the best-lit planet. At the voyage's arrival that is e, 0.72° across. c (crescent), d (half lit) and f are resolved discs too. Every orbit stays more than 30 radii from the resting ship; d, just inside the HZ, comes nearest at 192,000 km. The voyage keeps its 10 stops.
 - `make trappist1-test` (in `make test`) checks the pin, runs the sim checks with the strict VM equal to the interpreter, and runs a Python oracle that recomputes every row and position (worst 2e-12 AU). `make trappist1-capture` renders the stop to `renders/trappist1/`.
+### Star colours in Auto view, and a longer approach to a giant (D-49), 2026-10-07
+
+- In Auto view a star is dimmed just enough to keep its hue and its own blackbody colour is lifted: Aldebaran is golden orange, TRAPPIST-1 red-orange, the Sun a warm white. Realistic view is unchanged; the HUD says "star colours enhanced".
+- Aldebaran's final approach lasts 90 s from where it is 25° across, so the giant grows from the starbow into a 40° disc instead of appearing in the last seconds. Other stops keep 25 s.
+- The voyage capture takes approach frames at the start, middle and 85% of each leg's own approach.
 
 ### Finite destination stars, 2026-10-07
 
