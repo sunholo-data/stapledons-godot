@@ -90,5 +90,6 @@
   ],
   "deferred": [
     "L3 destinations to 100 pc + make bench-map (design open question 1 default: sky first; needs galaxy-map LOD design)"
-  ]
+  ],
+  "round2": "Eval round 1 (79) fixes: make test runs starmap-assets + starmap-consistency-large (missing/short large file FAILS); loud runtime fallback (Starfield.default_tier) and the active tier in the coverage tooltip; export-macos fetches the tier, starmap-export-smoke asserts 331,311 rows in the .app (+15.2 MB pck, +~240 MB peak RSS at the sky scene); bench x3 per tier with GPU-timestamp (Vulkan) vs wall-time (Metal) labels; 335,189 = 324,306 + 170 + 10,713 stated."
 }

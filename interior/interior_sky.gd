@@ -79,7 +79,7 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 	if opts.get("stars", true):
 		var tier: String = opts.get("tier", "")
 		if tier == "":
-			tier = "large" if FileAccess.file_exists("res://data/starmap/stars_large.bin") else "medium"
+			tier = Starfield.default_tier()
 		if not starfield.load_tiers(tier):
 			push_warning("interior sky: %s" % starfield.last_error)
 	starfield.build() # an empty field still gets its material (goldens add custom stars)

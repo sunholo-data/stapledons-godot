@@ -17,6 +17,7 @@ const MAX_RESTORE_LY := 6.7e-6
 
 var tier := "medium"
 var report := false
+var expect_rows := -1 # the active tier's own row count (sidecar), checked when given
 
 
 func _initialize() -> void:
@@ -24,11 +25,21 @@ func _initialize() -> void:
 	for i in args.size():
 		if args[i] == "--tier" and i + 1 < args.size(): tier = args[i + 1]
 		if args[i] == "--report": report = true
+		if args[i] == "--expect-rows" and i + 1 < args.size(): expect_rows = int(args[i + 1])
 	quit(run())
 
 
 func run() -> int:
 	var nav: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json"))
+	var bin := "res://data/starmap/stars_%s.bin" % tier
+	if not FileAccess.file_exists(bin):
+		print("starmap-consistency: FAIL %s is missing (make starmap-assets); no fallback in the gate" % bin)
+		return 1
+	if expect_rows >= 0:
+		var c := StarCatalogue.load_tier(tier)
+		var n := c.count if c != null else -1
+		print("starmap-consistency: %s tier rows %d (want %d)" % [tier, n, expect_rows])
+		if n != expect_rows: return 1
 	var sf := Starfield.new()
 	if not sf.load_tiers(tier):
 		print("starmap-consistency: FAIL tier stack %s did not load: %s" % [tier, sf.last_error])

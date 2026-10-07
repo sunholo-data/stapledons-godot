@@ -4,9 +4,16 @@
 
 ### The full 100 pc sky (large tier), 2026-10-07
 
-- The ship's sky can draw every GCNS star within 100 pc: 335,189 stars instead of 60,883, at truth positions. `make starmap-assets` fetches the pinned large tier (`data/starmap/SHA256SUMS`) from `gs://stapledons-voyage-assets/starmap/` in under a second, or rebuilds it from the pinned inputs. `main.gd` and `InteriorSky` use it whenever it is present.
-- Benchmarked first on the M4 Max, with `make bench BENCH_SIZE=…` (new). Frame time is unchanged at 1920×1080 and 2560×1440, with p99 at 10 to 11.5 ms. The star pass grows from 0.08 to 0.35 ms GPU at p50, loading costs +0.5 s once, and memory rises by +250 MB. The M2 Air estimate is about +1.4 ms per frame. Destinations to 100 pc wait for the galaxy map's level-of-detail design (the design's default: sky first).
-- `tools/starmap_sky_capture.gd` renders medium and large side by side. At rest and 50 ly out, the large tier adds about 20 % more visible faint stars. These are GCNS stars that the destarred panorama had already removed, so the medium sky was missing them. At γ 707 the boosted CMB fills the forward cone; with the CMB off the starbow gains 3 % in light.
+- The ship's sky draws every GCNS star within 100 pc. The large tier has 331,311 rows: all of GCNS minus HIP 27890's duplicate. Of these, 324,306 have photometry and are drawn. With 170 CNS5-only stars and 10,713 bright Hipparcos stars added, the sky draws 335,189 stars, against 60,883 on the medium stack. All are at truth positions.
+- `make starmap-assets` fetches the pinned tier (`data/starmap/SHA256SUMS`) from `gs://stapledons-voyage-assets/starmap/` in under a second. `make test` (and so CI) and `make export-macos` run it. `make starmap-consistency-large` fails if the file is missing or not 331,311 rows. The game falls back to medium with a warning naming the missing file, and the galaxy map's coverage tooltip shows the active sky tier.
+- Benchmarked first on the M4 Max, 3 runs per tier.
+  - GPU timestamps (Vulkan): the star pass costs +0.25 to 0.30 ms at p50 (0.32 ms against 0.02 to 0.07 ms).
+  - Wall time (Metal): frame p99 is 10.6 to 10.8 ms on both tiers.
+  - Loading takes +0.45 s.
+  - Exported app: +15.2 MB, and about +240 MB peak RSS at the sky scene (`make starmap-export-smoke`).
+  - M2 Air: an estimate of about +1.3 to 1.8 ms, not measured.
+  - Destinations to 100 pc wait for the galaxy map's level-of-detail design (the design's default: sky first).
+- `tools/starmap_sky_capture.gd` renders medium and large side by side. At rest and 50 ly out, the large tier adds about 20 % more visible faint stars. These are GCNS stars that the destarred panorama had already removed. At γ 707 the boosted CMB fills the forward cone; with the CMB off the starbow gains 3 % in light.
 
 ### One position per star, 2026-10-07
 

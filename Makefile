@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
+test: python-guard deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -252,7 +252,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime sky-bundle areas-stage import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
+export-macos: runtime sky-bundle areas-stage starmap-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
@@ -336,7 +336,7 @@ starmap-test:     ## M1.7 map catalogue (sim/tools/starmap.ail): named checks, s
 TRUTH ?= data/starmap/truth/positions.csv
 TRUTH_OUT ?= data/starmap/truth
 truth_args = "{\"cns5\":\"data/raw/cns5.dat\",\"cns5Csv\":\"data/raw/cns5.csv\",\"gcnsRaw\":\"data/raw/table1c.dat.gz\",\"gcnsDat\":\"$(SCRATCH)/table1c.dat\",\"gcns\":\"data/raw/gcns.csv\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
-.PHONY: starmap-truth starmap-truth-parity starmap-truth-audit starmap-consistency truth-test
+.PHONY: starmap-truth starmap-truth-parity starmap-truth-audit starmap-consistency starmap-consistency-large truth-test
 starmap-truth:    ## star truth: CNS5 x GCNS x cross-ids -> $(TRUTH_OUT)/positions.csv + positions.json on the VM (rule truth-1)
 	@mkdir -p $(SCRATCH) $(TRUTH_OUT); test -f $(SCRATCH)/table1c.dat || gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
 	$(CAT_RUN) --bytecode --entry truthMain --args-json $(call truth_args,$(TRUTH_OUT)) sim/tools/bright_main.ail
@@ -352,8 +352,13 @@ starmap-truth-audit: ## AC4: every truth disagreement over max(3 sigma, 1%) has 
 	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry auditMain --args-json '{"truth":"$(TRUTH)","doc":"design_docs/implemented/r1/starmap-truth-audit.md"}' sim/tools/bright_main.ail
 
 starmap-consistency: ## AC3 (headless): every stars.json destination in the sky stack once, at the navigation position (<= 1e-9 ly); pins are no-ops (TIER=medium|large)
-	@mkdir -p $(SCRATCH); $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) > $(SCRATCH)/starmap-consistency.log 2>&1; rc=$$?; \
+	@mkdir -p $(SCRATCH); $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) $(CONSISTENCY_ARGS) > $(SCRATCH)/starmap-consistency.log 2>&1; rc=$$?; \
 	  grep -E '^(starmap-consistency|  )' $(SCRATCH)/starmap-consistency.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/starmap-consistency.log && grep -q '^starmap-consistency: PASS$$' $(SCRATCH)/starmap-consistency.log
+
+# The large tier is a gate too (eval R1-STARMAP-LARGE round 1): make test fetches it (starmap-assets, pinned)
+# and checks the large stack; a missing or short file FAILS here (the game's runtime fallback is only a warning).
+starmap-consistency-large: ## the consistency gate on the large stack: stars_large.bin present with 331,311 rows, every destination once, no identity twice
+	@$(MAKE) --no-print-directory starmap-consistency TIER=large CONSISTENCY_ARGS="--expect-rows 331311"
 
 truth-test:       ## star truth (sim/tools/truth.ail): named checks strict VM = interpreter; real-byte fixtures VM = interpreter
 	@mkdir -p $(SCRATCH)
@@ -714,6 +719,16 @@ solar-departure-export-smoke:
 	@mkdir -p $(SCRATCH)/solar-export-home
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/solar-export-home" "$(APP)/Contents/MacOS/$$exe" -- --solar-departure-smoke > $(SCRATCH)/solar-export.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-export.log; test $$rc = 0 && grep -q '^solar-departure-smoke: OK$$' $(SCRATCH)/solar-export.log
 publish-dev: solar-departure-export-smoke
+
+# Large tier in the exported app (eval R1-STARMAP-LARGE round 1): the .app's default sky is the large tier
+# (331,311 rows, bundled from data/starmap/ by export-macos -> starmap-assets); prints its peak RSS at the sky scene.
+.PHONY: starmap-export-smoke
+starmap-export-smoke:
+	@mkdir -p $(SCRATCH)/starmap-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/starmap-export-home" /usr/bin/time -l "$(APP)/Contents/MacOS/$$exe" -- --starmap-smoke > $(SCRATCH)/starmap-export.log 2>&1; rc=$$?; \
+	  grep -E '^starmap-smoke:' $(SCRATCH)/starmap-export.log; echo "starmap-export-smoke: peak RSS $$(awk '/maximum resident set size/{printf "%.0f MB", $$1/1048576}' $(SCRATCH)/starmap-export.log), app $$(du -sh "$(APP)" | cut -f1)"; \
+	  test $$rc = 0 && grep -q '^starmap-smoke: OK$$' $(SCRATCH)/starmap-export.log
+export-smoke: starmap-export-smoke
 
 .PHONY: ship-attitude-test
 ship-attitude-test: import

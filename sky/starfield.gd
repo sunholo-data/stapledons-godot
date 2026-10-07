@@ -130,6 +130,19 @@ func set_catalogue_replacements(requested: Array[String]) -> void:
 	if changed and multimesh != null: _fill()
 
 
+## The tier the ship's sky draws by default: large (every GCNS star within 100 pc,
+## make starmap-assets) when present. Without it the sky falls back to medium (the
+## 50,000 nearest), loudly: the warning names the missing file and the tier in use.
+const LARGE_BIN := "res://data/starmap/stars_large.bin"
+static func default_tier() -> String:
+	if FileAccess.file_exists(LARGE_BIN): return "large"
+	push_warning("starfield: %s is missing (make starmap-assets); the sky uses the medium tier (50,000 nearest GCNS stars) instead of large (all 331,311 within 100 pc)" % LARGE_BIN)
+	return "medium"
+
+## The last stack a Starfield loaded (tier, stars drawn), for the coverage info.
+static var last_loaded := {}
+
+
 ## The identities a navigation id ("Gaia DR3 n", "CNS5:n", "HIP n") has in the
 ## tiers: tiers store Gaia sources as the bare number.
 static func aliases_of(id: String) -> Array[String]:
@@ -205,6 +218,7 @@ func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
 		append_catalogue(c, 0, entry[1])
 		tiers.append(t + (":rest" if entry[1] else ""))
 	restore_navigation_positions("%s/stars.json" % dir)
+	last_loaded = {"tier": tier, "count": count, "tiers": tiers.duplicate()}
 	return true
 
 
