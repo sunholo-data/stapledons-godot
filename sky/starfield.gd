@@ -85,6 +85,11 @@ func clear() -> void:
 func set_catalogue_replacements(requested: Array[String]) -> void:
 	_requested_replacements = requested.duplicate()
 	var replacements: Array[String] = requested.duplicate()
+	# A physical emitter replaces its catalogue row under any alias: tiers store Gaia
+	# sources as the bare number ("Gaia DR3 n" -> "n").
+	for id in requested:
+		var bare:=id.trim_prefix("Gaia DR3 ")
+		if bare!=id and not bare in replacements: replacements.append(bare)
 	# A pinned destination replaced by a physical emitter is suppressed with its identity.
 	for id in requested:
 		if ("pin:" + id) in ids and not ("pin:" + id) in replacements: replacements.append("pin:" + id)
