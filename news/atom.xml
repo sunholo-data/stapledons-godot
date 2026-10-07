@@ -9,23 +9,26 @@
     <icon>https://www.sunholo.com/stapledons-godot/https://ailang.sunholo.com/img/favicon.ico</icon>
     <rights>Copyright © 2026 Sunholo / Mark Edmondson</rights>
     <entry>
-        <title type="html"><![CDATA[Stars with real size: v0.4.0-dev.19]]></title>
-        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/07/finite-stars-v0-4-0-dev-19</id>
-        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/finite-stars-v0-4-0-dev-19"/>
+        <title type="html"><![CDATA[Real exoplanets, real starlight: v0.4.0-dev.20]]></title>
+        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/07/trappist-planets-v0-4-0-dev-20</id>
+        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/trappist-planets-v0-4-0-dev-20"/>
         <updated>2026-10-07T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[Until now only the Sun and α Centauri had a size; every other star you visited was a point seen from 1,000 AU away. Now each star in the voyage is a real disc with its measured radius and temperature, and you arrive where its size means something.]]></summary>
-        <content type="html"><![CDATA[<p>Until now only the Sun and α Centauri had a size; every other star you visited was a point seen from 1,000 AU away. Now each star in the voyage is a real disc with its measured radius and temperature, and you arrive where its size means something.</p>
+        <summary type="html"><![CDATA[The voyage now reaches a real planetary system, the ship is lit by whichever star it is near, and the sky holds six times more stars, each in exactly one place.]]></summary>
+        <content type="html"><![CDATA[<p>The voyage now reaches a real planetary system, the ship is lit by whichever star it is near, and the sky holds six times more stars, each in exactly one place.</p>
 <!-- -->
-<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/finite_stars_v19/9_aldebaran_arrived.png" alt="Aldebaran filling 40 degrees of sky" class="img_ev3q"></p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/finite-stars-v0-4-0-dev-19#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/dev20/trappist-1e_tele12_auto.png" alt="TRAPPIST-1e from the habitable zone" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/trappist-planets-v0-4-0-dev-20#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
-<li class=""><strong>Aldebaran</strong> (45 solar radii, 3,927 K) and <strong>TRAPPIST-1</strong> (0.119 solar radii, 2,566 K) are finite stars with cited measurements, in place of catalogue points.</li>
-<li class=""><strong>One stop rule.</strong> Main-sequence stars stop in their habitable zone, where they look like the Sun from Earth: α Cen A at 1.233 AU, about half a degree; TRAPPIST-1 at 0.0235 AU, a deep-orange disc 2.7° across beside where its planets orbit. Giants stop where they fill 40° of sky: Aldebaran from 0.615 AU.</li>
-<li class=""><strong>The same rhythm everywhere.</strong> Each star's final hop is 30 s accelerating, about a minute cruising, then the 25 s final approach, like the planets.</li>
+<li class=""><strong>TRAPPIST-1's seven planets.</strong> At the habitable-zone stop, planets b–h are where they really are when you arrive. Sizes and orbits come from Agol et al. 2021, positions from transit timings (Ducrot et al. 2020) corrected for 40.6 years of light travel. Planet e is 0.72° across, bigger than our Moon; c is a crescent and d half lit. Albedos and surfaces are assumed and labelled so.</li>
+<li class=""><strong>The ship lit by the real star.</strong> The bridge's key light comes from the Sun, or the star you are visiting, as seen through the bubble: its direction (aberration included), its colour (Doppler included) and a log-compressed brightness, labelled as not physical. Sun shadows sweep the deck as the ship turns; TRAPPIST-1 is a dim red glow; Aldebaran floods the deck with warm light. Deep space hands back to the ship's own lighting.</li>
+<li class=""><strong>Star colours (D-49).</strong> Auto view dims a star just enough to keep its hue and lifts its blackbody colour: Aldebaran golden orange, TRAPPIST-1 an ember. Realistic view is unchanged.</li>
+<li class=""><strong>A giant's approach.</strong> Aldebaran's final approach lasts 90 s, so the giant grows out of the starbow, blue-white at first from your own speed, turning golden as you stop.</li>
+<li class=""><strong>One position per star.</strong> Navigation and the sky now read a single truth table built in AILANG. Before, a map journey could arrive with the star drawn up to 8.7 ly away; now it's always ahead.</li>
+<li class=""><strong>The full 100 pc sky.</strong> 331,311 nearby stars from Gaia instead of about 50,000, for about 0.3 ms a frame.</li>
 </ul>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/finite-stars-v0-4-0-dev-19#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
-<p>Aldebaran is so bright at 40° that it reads white; dimmed, it is pale orange. Its approach is still relativistic, since it is already 4° across six AU out. Both are open questions. TRAPPIST-1's seven planets are next.</p>
-<p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.19-finite-stars" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.19-finite-stars</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a> · Integration <a href="https://github.com/sunholo-data/stapledons-godot/pull/139" target="_blank" rel="noopener noreferrer" class="">PR #139</a>.</p>]]></content>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/trappist-planets-v0-4-0-dev-20#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p>You can't fly to a TRAPPIST-1 planet yet, because its surface would have to be invented. The 100 pc sky's cost on a MacBook Air is an estimate (+1.3–1.8 ms) until measured.</p>
+<p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.20-trappist-planets" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.20-trappist-planets</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a> · PRs #143, #146, #149.</p>]]></content>
         <author>
             <name>Sunholo</name>
             <uri>https://www.sunholo.com</uri>
