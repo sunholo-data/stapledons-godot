@@ -22,6 +22,19 @@
 - In Auto view a star is dimmed just enough to keep its hue and its own blackbody colour is lifted: Aldebaran is golden orange, TRAPPIST-1 red-orange, the Sun a warm white. Realistic view is unchanged; the HUD says "star colours enhanced".
 - Aldebaran's final approach lasts 90 s from where it is 25° across, so the giant grows from the starbow into a 40° disc instead of appearing in the last seconds. Other stops keep 25 s.
 - The voyage capture takes approach frames at the start, middle and 85% of each leg's own approach.
+### The full 100 pc sky (large tier), 2026-10-07
+
+- The ship's sky draws every GCNS star within 100 pc. The large tier has 331,311 rows: all of GCNS minus HIP 27890's duplicate. Of these, 324,306 have photometry and are drawn. With 170 CNS5-only stars and 10,713 bright Hipparcos stars added, the sky draws 335,189 stars, against 60,883 on the medium stack. All are at truth positions.
+- `make starmap-assets` fetches the pinned tier (`data/starmap/SHA256SUMS`) from `gs://stapledons-voyage-assets/starmap/` in under a second. `make test` (and so CI) and `make export-macos` run it. `make starmap-consistency-large` fails if the file is missing or not 331,311 rows. The game falls back to medium with a warning naming the missing file, and the galaxy map's coverage tooltip shows the active sky tier.
+- Benchmarked first on the M4 Max, 3 runs per tier.
+  - GPU timestamps (Vulkan): the star pass costs +0.25 to 0.30 ms at p50 (0.32 ms against 0.02 to 0.07 ms).
+  - Wall time (Metal): frame p99 is 10.6 to 10.8 ms on both tiers.
+  - Loading takes +0.45 s.
+  - Exported app: +15.2 MB, and about +240 MB peak RSS at the sky scene (`make starmap-export-smoke`).
+  - M2 Air: an estimate of about +1.3 to 1.8 ms, not measured.
+  - Destinations to 100 pc wait for the galaxy map's level-of-detail design (the design's default: sky first).
+- `tools/starmap_sky_capture.gd` renders medium and large side by side. At rest and 50 ly out, the large tier adds about 20 % more visible faint stars. These are GCNS stars that the destarred panorama had already removed. At γ 707 the boosted CMB fills the forward cone; with the CMB off the starbow gains 3 % in light.
+
 ### One position per star, 2026-10-07
 
 - A new star-truth table, `data/starmap/truth/positions.csv`, gives one position for each of the 5,212 stars that more than one catalogue lists. It is built in AILANG by `make starmap-truth` (VM = interpreter). Navigation and every sky tier take positions from it, so a map journey to a Gaia-only star arrives with the star 1,000 AU ahead. TRAPPIST-1 was 3,650 AU away on arrival, 10 UMa 8.7 ly beyond its stop, and GJ 10940 6 ly *behind* the ship.
