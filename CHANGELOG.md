@@ -22,6 +22,12 @@
 - In Auto view a star is dimmed just enough to keep its hue and its own blackbody colour is lifted: Aldebaran is golden orange, TRAPPIST-1 red-orange, the Sun a warm white. Realistic view is unchanged; the HUD says "star colours enhanced".
 - Aldebaran's final approach lasts 90 s from where it is 25° across, so the giant grows from the starbow into a 40° disc instead of appearing in the last seconds. Other stops keep 25 s.
 - The voyage capture takes approach frames at the start, middle and 85% of each leg's own approach.
+### One position per star, 2026-10-07
+
+- A new star-truth table, `data/starmap/truth/positions.csv`, gives one position for each of the 5,212 stars that more than one catalogue lists. It is built in AILANG by `make starmap-truth` (VM = interpreter). Navigation and every sky tier take positions from it, so a map journey to a Gaia-only star arrives with the star 1,000 AU ahead. TRAPPIST-1 was 3,650 AU away on arrival, 10 UMa 8.7 ly beyond its stop, and GJ 10940 6 ly *behind* the ship.
+- Rule `truth-1`: CNS5's adopted parallax wherever CNS5 evaluated the star. That is Gaia EDR3 with the Lindegren zero-point correction, or Hipparcos/DR2 for the 69 stars whose EDR3 solution is poor. Gaia EDR3 is used for CNS5 stars without a Gaia id, when its solution is good. The design's "posterior vs 1/ϖ" diagnosis was wrong: every catalogue already uses 1/ϖ, and the offsets were the zero-point correction plus CNS5's per-star source choices. The 14 disagreements over max(3σ, 1 %) are all "better parallax" cases, each one documented in `design_docs/implemented/r1/starmap-truth-audit.md` (`make starmap-truth-audit`).
+- The sky stack now adds every CNS5 star that GCNS lacks (26 destinations were missing from the sky). It restores destinations to their float64 navigation positions and draws no star twice. `make starmap-consistency` checks all 5,685 destinations. `pin_destination` is now an assertion, and a no-op for every destination.
+- Navigation is unchanged apart from CNS5:138, which has no photometry. The medium tier moves about 5,100 stars onto the navigation positions.
 
 ### Finite destination stars, 2026-10-07
 

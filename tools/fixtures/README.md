@@ -89,3 +89,14 @@ gunzip -c data/raw/table1c.dat.gz | awk '{id=substr($0,3,19)} id=="5994771079533
 gunzip -c data/raw/hip2.dat.gz | awk 'substr($0,1,6)+0==27890' > tools/fixtures/hip2_companions.dat
 awk 'substr($0,9,6)+0==27890' data/raw/hip_main.dat > tools/fixtures/hip_main_companions.dat
 ```
+
+## Star truth (sim/tools/truth_test.ail, `make truth-test`)
+
+TRAPPIST-1 (Gaia EDR3, zero-point corrected in CNS5), GJ 332 AB = Gaia 816649002967779584 (CNS5 adopted
+Hipparcos vL07 over an EDR3 solution with RUWE 8.01) and CNS5 252 = GJ 10136 (no Gaia id in CNS5; GCNS
+lists it as Gaia 2371519626175864960, a companion-table cross-identification):
+
+    grep -E "^ 252 |2635476908753563008|816649002967779584" data/raw/cns5.dat > tools/fixtures/cns5_truth.dat
+    gunzip -kf data/raw/table1c.dat.gz
+    awk '{id=substr($0,3,19); gsub(/ /,"",id); if(id=="2635476908753563008"||id=="816649002967779584"||id=="2371519626175864960") print}' \
+        data/raw/table1c.dat > tools/fixtures/table1c_truth.dat
