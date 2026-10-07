@@ -203,7 +203,7 @@ func brightness_label() -> String:
 	var manual:String="Manual sky exposure EV %.2f · %s"%[sky.exposure.fixed_ev,"calibrated reference" if brightness_stops==0 else ("%d stops dimmer · display aid"%(-brightness_stops) if brightness_stops<0 else "%d× display aid"%int(pow(2.,brightness_stops)))]
 	if not sky.system_view.body_fader:return "REALISTIC view · "+manual
 	var faded:=sky.system_view.fader_stops(sky.exposure.k())
-	return "AUTO view · "+manual+(" · bodies dimmed up to %.0f stops (composite)"%faded if faded>=0.5 else " · no body needs dimming")
+	return "AUTO view · "+manual+(" · bodies dimmed up to %.0f stops (composite) · star colours enhanced"%faded if faded>=0.5 else " · no body needs dimming")
 func set_preset(name: String) -> void:
 	if name=="reset":
 		if lift!=null:lift.reset()

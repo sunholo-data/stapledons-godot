@@ -63,11 +63,15 @@ var _prepared := false
 ## catalogue sky keeps the shared exposure. Off = one physical exposure ("Realistic").
 const FADER_TARGET := 0.5 # linear pre-tonemap: below AgX's shoulder, so surface detail survives
 const FADER_TEX_PEAK := 2.0 # textured albedo / disc mean at the brightest clouds and ice
-## Emitters stay the brightest thing on screen: a star's disc centre lands at
-## the top of AgX's shoulder, level with the brightest catalogue stars at the
-## demo's EV. AgX desaturates there, so the Sun reads white (R >= G >= B kept),
-## which is its true colour from space; at 0.5 it read as a grey star.
-const FADER_STAR_TARGET := 16.0
+## Stars in Auto view show their colour (Mark, 2026-10-07: "auto mode dim enough to have
+## pretty star colours"). A star's disc centre lands at 1.2, just above any lit body
+## (0.5 x texture peak 2), low enough that the tone mapper keeps its hue, and its own
+## blackbody chroma is lifted 2.2x (STAR_SATURATION). Measured centres: Aldebaran
+## (3,927 K) golden orange, TRAPPIST-1 (2,566 K) red-orange, the Sun warm white.
+## Realistic view is untouched. Labelled on the HUD.
+const FADER_STAR_TARGET := 1.2
+const STAR_SATURATION := 2.2
+var star_saturation := STAR_SATURATION # what Auto applies; a test sets 1 for the physical tint
 var body_fader := false
 var _fader_peak := {} # id -> brightest displayed radiance before exposure (cd/m^2)
 var _fader_star := {} # id -> true for emitters (stars)
@@ -266,7 +270,7 @@ func _find_e1(bodies: Array) -> void:
 			return
 	for b: Dictionary in bodies:
 		var d := Planets.length64(Planets.world_of(b["rel_km"]))
-		if b["kind"] == "star" or b["p_v"] <= 0.0 or b["r_au"] <= 0.0 or d <= b["radius_km"]:
+		if b["kind"] == "star" or b.has("e1_au_lux") or b["p_v"] <= 0.0 or b["r_au"] <= 0.0 or d <= b["radius_km"]:
 			continue
 		var unit := Planets.disc_illuminance(1.0, b["p_v"], b["radius_km"], b["r_au"], d, deg_to_rad(b["phase_deg"]), b["minnaert_k"])
 		if unit > 0.0 and Planets.phase_function(deg_to_rad(b["phase_deg"]), b["minnaert_k"]) > 0.1:
@@ -274,6 +278,11 @@ func _find_e1(bodies: Array) -> void:
 			return
 
 const AU_KM := 149597870.7 # IAU 2012 B2 (the package's auKm)
+
+## The lighting star's illuminance at 1 AU for body b: a planet of another star
+## carries its host's (e1_au_lux, TRAPPIST-1); every other body is lit by the Sun.
+func _e1_of(b: Dictionary) -> float:
+	return float(b.get("e1_au_lux", e1_au))
 
 
 func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
@@ -319,6 +328,7 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 		m.set_shader_parameter("lut_log_tmax",log(Blackbody.LUT_T_MAX))
 	m.set_shader_parameter("radius", pl[2])
 	m.set_shader_parameter("exposure", k)
+	m.set_shader_parameter("star_saturation", star_saturation if body_fader else 1.0)
 	var diam := _diameter_seen(Planets.world_of(b["rel_km"]),b["radius_km"],pl[3])
 	m.set_shader_parameter("ss", 16 if lod_range.y>lod_range.x and diam<8.0 else (8 if diam < 32.0 else 3))
 	var star: bool = b["kind"] == "star"
@@ -337,7 +347,7 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 		m.set_shader_parameter("sun_dir_w", Vector3(sd[0], sd[1], sd[2]).normalized())
 		m.set_shader_parameter("rho", Planets.rho_from_geometric_albedo(b["p_v"], kk))
 		m.set_shader_parameter("minnaert_k", kk)
-		m.set_shader_parameter("lux", Planets.star_illuminance_at(e1_au, b["r_au"]) if b["r_au"] > 0.0 else 0.0)
+		m.set_shader_parameter("lux", Planets.star_illuminance_at(_e1_of(b), b["r_au"]) if b["r_au"] > 0.0 else 0.0)
 		m.set_shader_parameter("body_basis", Planets.body_basis(b["pole"], b["w_deg"]))
 		var ring:Dictionary=ring_systems.get(b.get("ring_id",""),{})
 		var bands:=PackedVector4Array()
@@ -411,7 +421,7 @@ func ray_colour(direction: PackedFloat64Array, skip_compact_meter := false) -> V
 			else:
 				var ci:=n.dot(sun)
 				if ci>0.0 and ce>=0.0:
-					var radiance:=Planets.minnaert_radiance(Planets.rho_from_geometric_albedo(b.p_v,b.minnaert_k),b.minnaert_k,Planets.star_illuminance_at(e1_au,b.r_au),ci,ce)
+					var radiance:=Planets.minnaert_radiance(Planets.rho_from_geometric_albedo(b.p_v,b.minnaert_k),b.minnaert_k,Planets.star_illuminance_at(_e1_of(b),b.r_au),ci,ce)
 					if not ring.is_empty():
 						radiance*=Planets.ring_shadow_transmission(ring.bands,PackedFloat64Array([n.x*b.radius_km,n.y*b.radius_km,n.z*b.radius_km]),PackedFloat64Array([sun.x,sun.y,sun.z]),PackedFloat64Array([basis.z.x,basis.z.y,basis.z.z]))
 					value=_surface_colour(b,n,basis)*radiance
@@ -425,7 +435,7 @@ func ray_colour(direction: PackedFloat64Array, skip_compact_meter := false) -> V
 					var mu0:=absf(sun.dot(basis.z));var lit:=(-ray).dot(basis.z)*sun.dot(basis.z)>0.0
 					var along_sun:=p.dot(sun);var perp_sun:=p-along_sun*sun
 					var shadow:=along_sun<0.0 and perp_sun.length_squared()<radius*radius
-					var light:=0.0 if shadow else (Planets.ring_lit_radiance(band.w0,1.0,band.tau,mu0,hit.mu,Planets.star_illuminance_at(e1_au,b.r_au)) if lit else Planets.ring_unlit_radiance(band.w0,1.0,band.tau,mu0,hit.mu,Planets.star_illuminance_at(e1_au,b.r_au)))
+					var light:=0.0 if shadow else (Planets.ring_lit_radiance(band.w0,1.0,band.tau,mu0,hit.mu,Planets.star_illuminance_at(_e1_of(b),b.r_au)) if lit else Planets.ring_unlit_radiance(band.w0,1.0,band.tau,mu0,hit.mu,Planets.star_illuminance_at(_e1_of(b),b.r_au)))
 					var trans:=Planets.ring_transmission(band.tau,hit.mu)
 					value=Vector3(ring.tint.r,ring.tint.g,ring.tint.b)*light+trans*value
 					alpha=1.0-trans+trans*alpha
@@ -438,7 +448,7 @@ func ray_colour(direction: PackedFloat64Array, skip_compact_meter := false) -> V
 
 func _surface_colour(b:Dictionary,n:Vector3,basis:Basis)->Vector3:
 	var tex:=_textures(b.id);var row:Dictionary=albedo_table.get(b.id,{})
-	if tex.is_empty() or not is_equal_approx(float(row.get("k",-1.0)),b.minnaert_k):return Blackbody.rgb_unit_luminance(Planets.T_SUN)
+	if tex.is_empty() or not is_equal_approx(float(row.get("k",-1.0)),b.minnaert_k):return Blackbody.rgb_unit_luminance(b.get("teff_k",Planets.T_SUN))
 	if not meter_images.has(b.id):
 		var imgs:=[];for texture:ImageTexture in tex:imgs.append(texture.get_image())
 		meter_images[b.id]=imgs
@@ -462,6 +472,7 @@ static func _image_colour(img:Image,uv:Vector2)->Vector3:
 func set_exposure(k:float)->void:
 	for id:String in drawn_discs:
 		(discs[id].material_override as ShaderMaterial).set_shader_parameter("exposure",k*lod_weights.get(id,1.)*fader_gain(id,k))
+		(discs[id].material_override as ShaderMaterial).set_shader_parameter("star_saturation",star_saturation if body_fader else 1.0)
 	_upload_points(k)
 
 
@@ -474,7 +485,7 @@ func _displayed_peak(b:Dictionary,dist:float)->float:
 		var s:=sin(Planets.angular_radius(b.radius_km,dist))
 		surface=Planets.limb_darkened(b.e_v_lux/(PI*s*s),1.0,b.get("limb_u",Planets.SUN_LIMB_U)) # the disc centre
 	else:
-		var lux:=Planets.star_illuminance_at(e1_au,b.r_au) if b.r_au>0.0 else 0.0
+		var lux:=Planets.star_illuminance_at(_e1_of(b),b.r_au) if b.r_au>0.0 else 0.0
 		surface=Planets.rho_from_geometric_albedo(b.p_v,b.minnaert_k)*lux/PI*FADER_TEX_PEAK
 	var sigma:=maxf(Exposure.psf_sigma_angle(),Exposure.PSF_MIN_PX*px_rad)
 	return minf(surface,Exposure.peak_luminance(b.e_v_lux,sigma))

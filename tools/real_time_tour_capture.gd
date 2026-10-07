@@ -72,7 +72,10 @@ func fly_leg(leg: int, sim: SimBridge) -> void:
 		if phase == "approaching":
 			approach_ticks += 1
 			if approach_ticks == 1: await shot("%d_%s_approach_start" % [leg, slug], sim, "target", false, spec.kind == "body" and spec.id != "acen-a")
-			if approach_ticks == 250: await shot("%d_%s_approach_mid" % [leg, slug], sim, "target", false, spec.kind == "body" and spec.id != "acen-a")
+			# Fractions of this leg's own approach (25 s, or 90 s for a giant: D-49), 20 ticks a second.
+			var total_ticks := 1800 if spec.id == "aldebaran" else 500
+			if approach_ticks == total_ticks / 2: await shot("%d_%s_approach_mid" % [leg, slug], sim, "target", false, spec.kind == "body" and spec.id != "acen-a")
+			if approach_ticks == total_ticks * 17 / 20: await shot("%d_%s_approach_late" % [leg, slug], sim, "target", false, spec.kind == "body" and spec.id != "acen-a")
 		if phase == "braking" and not braking_taken and float(sim.world.ship.get("beta", 0.0)) < 0.5 * float(sim.world.journey.plan.cruise_beta):
 			braking_taken = true
 			await shot("%d_%s_braking" % [leg, slug], sim, "forward", false, spec.id == "jupiter")

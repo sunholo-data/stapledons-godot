@@ -44,6 +44,11 @@ uniform sampler2D bb_lut : filter_linear, repeat_disable;
 uniform float lut_log_tmin;
 uniform float lut_log_tmax;
 uniform float clip_max = 1024.0;                 // the Sun's disc is clipped here until row 6b's glare pass
+// Auto view only (labelled on the HUD): lift a star's own blackbody chroma so its
+// colour survives the tone mapper's highlight desaturation, then renormalise to unit
+// luminance (Rec. 709 Y, as Blackbody.rgb_unit_luminance) so brightness is unchanged.
+// 1 = the physical tint.
+uniform float star_saturation = 1.0;
 
 #include "res://planets/rings.gdshaderinc"
 
@@ -79,7 +84,9 @@ vec3 shade(vec3 n_v, vec3 ray, mat3 inv_view) {
 	float cos_e = dot(n_v, -ray);
 	if (star) {
 		float l = star_mean / (1.0 - limb_u / 3.0) * (1.0 - limb_u * (1.0 - cos_e));
-		return tint * min(l * exposure, clip_max);
+		vec3 t = max(vec3(0.0), vec3(1.0) + (tint - vec3(1.0)) * star_saturation);
+		t /= max(dot(t, vec3(0.2126, 0.7152, 0.0722)), 1e-4);
+		return t * min(l * exposure, clip_max);
 	}
 	float cos_i = dot(n, sun_dir_w);
 	if (cos_i <= 0.0 || cos_e < 0.0) {
