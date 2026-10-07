@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Finite destination stars, 2026-10-07
+
+- Every star the voyage visits has its real size (D-47/D-48). Aldebaran (45 R☉, 3,927 K; Richichi & Roccatagliata 2005, Heiter 2015) and TRAPPIST-1 (0.119 R☉, 2,566 K; Agol 2021) become cited finite stars, replacing their catalogue points.
+- Stops follow one rule. Main-sequence stars stop in their habitable zone (√L AU), where they look like the Sun from Earth: α Cen A at 1.233 AU, TRAPPIST-1 at 0.0235 AU (2.7° across). Giants stop where they fill 40° of sky: Aldebaran at 0.615 AU.
+- Each star's final hop uses the even-leg rhythm: 30 s accelerating, about 60 s cruising, then the 25 s final approach. The voyage now has 10 stops.
+- A finite star named by its Gaia id also hides the sky's bare-number catalogue row, so its light isn't counted twice even without a destination pin.
+
 ### Even legs, a gentle final approach and skip-to-next-stage, 2026-10-06
 
 - Every in-system leg of the guided voyage has the same rhythm: 30 s accelerating, about 60 s cruising, braking, then a 25 s final approach. The sim solves each leg's thrust and cruise speed (0.07c to the Callisto hop, above 0.999c to Jupiter and Saturn); Sun → Jupiter takes about 2¼ minutes instead of 6½ (D-46).
