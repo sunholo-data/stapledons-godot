@@ -63,12 +63,30 @@ var _buf := PackedFloat32Array()
 ## Tier identities hidden in favour of a pinned destination row (pin_destination).
 var pinned_ids: Array[String] = []
 var _requested_replacements: Array[String] = []
+## Star truth (design_docs/planned/r1/starmap-single-truth.md): pin_destination calls that found the
+## destination already at its navigation position (no-ops) and those that had to pin.
+var pin_noops := 0
+var pin_fallbacks := 0
+## load_tiers' float64 restore from stars.json: rows set to the navigation position, and rows whose
+## tier position was more than NAV_RESTORE_LY away (left alone; make starmap-consistency fails on them).
+var nav_restored := 0
+var nav_max_shift := 0.0 # ly: the largest float32-to-float64 correction applied
+var nav_refused: Array[String] = []
+const NAV_RESTORE_LY := 1e-4
+var _index := {}
+var _index_revision := -1
+static var _nav_cache := {}
 
 
 func clear() -> void:
 	identity_revision += 1
 	pinned_ids.clear()
 	_requested_replacements.clear()
+	pin_noops = 0
+	pin_fallbacks = 0
+	nav_restored = 0
+	nav_max_shift = 0.0
+	nav_refused.clear()
 	_replaced_flux.clear()
 	catalogue_replacement_sources.clear()
 	_replacement_revision = -1
@@ -112,32 +130,69 @@ func set_catalogue_replacements(requested: Array[String]) -> void:
 	if changed and multimesh != null: _fill()
 
 
-## A destination renders where the simulation navigates (RT4 finding,
-## 2026-10-06): the GCNS tier can place a star thousands of AU from the
-## navigation catalogue (stars.json), which matters at a 1,000 AU stand-off.
-## row is the stars.json entry; tier rows with its identity (the full id, or the
-## bare Gaia number) are hidden and one row is added at its exact position with
-## its catalogue V and Teff. Idempotent; clear() drops it.
+## The identities a navigation id ("Gaia DR3 n", "CNS5:n", "HIP n") has in the
+## tiers: tiers store Gaia sources as the bare number.
+static func aliases_of(id: String) -> Array[String]:
+	var out: Array[String] = [id]
+	var bare := id.trim_prefix("Gaia DR3 ")
+	if bare != id: out.append(bare)
+	return out
+
+
+## Row of an identity in the stack (the first one), or -1. The index is rebuilt
+## when the identities change.
+func index_of(id: String) -> int:
+	if _index_revision != identity_revision:
+		_index.clear()
+		for k in count:
+			if not _index.has(ids[k]): _index[ids[k]] = k
+		_index_revision = identity_revision
+	return _index.get(id, -1)
+
+
+## A destination renders where the simulation navigates. Since the star-truth
+## table (design_docs/planned/r1/starmap-single-truth.md) every tier takes the
+## navigation position, so this is an assertion: when a row with the destination's
+## identity already sits exactly at its stars.json position, nothing changes
+## (pin_noops). Otherwise (a tier built without the table, or a custom stack) it
+## warns and falls back to the RT4 pin (a destination without photometry, vmag 99,
+## has nothing to draw and is never pinned): tier rows with the identity are hidden and
+## one row is added at the exact position with the catalogue V and Teff.
+## Idempotent; clear() drops it.
 func pin_destination(row: Dictionary) -> void:
 	var id := str(row.get("id", ""))
-	if id.is_empty() or ("pin:" + id) in ids: return
-	for alias: String in [id, id.trim_prefix("Gaia DR3 ")]:
-		if alias in ids and not alias in pinned_ids: pinned_ids.append(alias)
+	if id.is_empty() or index_of("pin:" + id) >= 0: return
+	var want := SkyFrame.to_world64(PackedFloat64Array([row.x, row.y, row.z]))
+	for alias: String in aliases_of(id):
+		var k := index_of(alias)
+		if k >= 0 and pos[3 * k] == want[0] and pos[3 * k + 1] == want[1] and pos[3 * k + 2] == want[2]:
+			pin_noops += 1
+			return
+	if float(row.get("vmag", 99.0)) >= 99.0:
+		return # no photometry: nothing to draw, nothing to pin
+	pin_fallbacks += 1
+	push_warning("pin_destination: %s is not at its navigation position in the sky stack; pinning it" % id)
+	for alias: String in aliases_of(id):
+		if index_of(alias) >= 0 and not alias in pinned_ids: pinned_ids.append(alias)
 	append_stars([{"id": "pin:" + id, "pos": SkyFrame.to_world64(PackedFloat64Array([row.x, row.y, row.z])), "t": float(row.teff), "flux": Relativity.illuminance_from_v(float(row.vmag))}])
 	set_catalogue_replacements(_requested_replacements)
 
 
-## The active tier, then on top: for medium/large (GCNS), quick's HIP-filled
-## rows (flag 8: Sirius, alpha Cen, Procyon, ... which Gaia cannot measure, so
-## GCNS has no photometry for them and the bright tier excludes them as CNS5
-## matches), then the bright tier (M1.2d) when stars_bright.bin exists.
+## The active tier, then on top: for medium/large (GCNS), every quick (CNS5)
+## row whose identity the tier lacks: the HIP-filled rows (flag 8: Sirius, alpha
+## Cen, Procyon, ... which Gaia cannot measure, so GCNS has no photometry for them
+## and the bright tier excludes them as CNS5 matches) and the CNS5 stars GCNS does
+## not list; then the bright tier (M1.2d) when stars_bright.bin exists. The tiers
+## share one position per star (the star-truth table), so no star is drawn twice
+## and none sits elsewhere. Finally the float64 navigation positions of stars.json
+## replace their float32 tier copies (restore_navigation_positions).
 ## A refused tier (sidecar, size or sha256) loads nothing: false.
 func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
 	clear()
-	var stack := [[tier, 0]]
+	var stack := [[tier, false]]
 	if tier != "quick":
-		stack.append(["quick", StarCatalogue.FLAG_HIP])
-	stack.append(["bright", 0])
+		stack.append(["quick", true])
+	stack.append(["bright", false])
 	for entry in stack:
 		var t: String = entry[0]
 		if t == "bright" and not FileAccess.file_exists("%s/stars_bright.bin" % dir):
@@ -147,20 +202,60 @@ func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
 			last_error = "tier %s: %s" % [t, StarCatalogue.last_error]
 			clear()
 			return false
-		append_catalogue(c, entry[1])
-		tiers.append(t + (":hip" if entry[1] != 0 else ""))
+		append_catalogue(c, 0, entry[1])
+		tiers.append(t + (":rest" if entry[1] else ""))
+	restore_navigation_positions("%s/stars.json" % dir)
 	return true
 
 
+## stars.json (the navigation catalogue, float64) sets the position of every
+## stack row with a destination's identity, replacing the float32 tier copy of the
+## same truth position, so the sky and the simulation agree to float64 round-off.
+## A row more than NAV_RESTORE_LY away is a different position, not a rounding: it
+## is left alone and listed in nav_refused.
+func restore_navigation_positions(path: String) -> void:
+	if not FileAccess.file_exists(path): return
+	if not _nav_cache.has(path):
+		var j: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		var rows: Array = []
+		if typeof(j) == TYPE_DICTIONARY and typeof(j.get("stars")) == TYPE_ARRAY:
+			for s: Dictionary in j.stars:
+				rows.append([str(s.id), SkyFrame.to_world64(PackedFloat64Array([s.x, s.y, s.z]))])
+		_nav_cache[path] = rows
+	for r: Array in _nav_cache[path]:
+		var want: PackedFloat64Array = r[1]
+		for alias: String in aliases_of(r[0]):
+			var k := index_of(alias)
+			if k < 0: continue
+			var d := sqrt((pos[3 * k] - want[0]) ** 2 + (pos[3 * k + 1] - want[1]) ** 2 + (pos[3 * k + 2] - want[2]) ** 2)
+			if d > NAV_RESTORE_LY:
+				nav_refused.append(r[0])
+				continue
+			nav_max_shift = maxf(nav_max_shift, d)
+			pos[3 * k] = want[0]
+			pos[3 * k + 1] = want[1]
+			pos[3 * k + 2] = want[2]
+			custom[4 * k + 3] = want[0] * want[0] + want[1] * want[1] + want[2] * want[2]
+			nav_restored += 1
+	if multimesh != null: _fill()
+
+
 ## only_flags != 0: append only the rows carrying those flag bits.
-func append_catalogue(c: StarCatalogue, only_flags := 0) -> void:
+## absent_only: append only rows whose identity the stack does not have yet.
+func append_catalogue(c: StarCatalogue, only_flags := 0, absent_only := false) -> void:
+	var have := {}
+	if absent_only:
+		for k in count: have[ids[k]] = true
 	identity_revision += 1
 	var k := count
 	pos.resize(3 * (count + c.count))
 	custom.resize(4 * (count + c.count))
 	var d := c.data
+	var with_ids := c.ids.size() == c.count
 	for i in c.count:
 		if only_flags != 0 and c.flags(i) & only_flags == 0:
+			continue
+		if absent_only and with_ids and have.has(c.ids[i]):
 			continue
 		if c.missing_photometry(i):
 			skipped_missing += 1
@@ -169,7 +264,7 @@ func append_catalogue(c: StarCatalogue, only_flags := 0) -> void:
 		# galactic -> world (SkyFrame, D-28), widened to float64 before any arithmetic
 		var w := SkyFrame.to_world64([d[j], d[j + 1], d[j + 2]])
 		_put(k, w[0], w[1], w[2], d[j + 3], Relativity.illuminance_from_v(d[j + 4]), d[j + 5])
-		ids.append(c.ids[i] if c.ids.size() == c.count else "")
+		ids.append(c.ids[i] if with_ids else "")
 		k += 1
 	count = k
 	pos.resize(3 * count)

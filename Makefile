@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -302,11 +302,11 @@ CAT_RUN = $(AILANG) run --quiet --caps IO,FS --package-dir sim
 CAT_AILANG = $$($(AILANG) --version | head -1 | cut -d' ' -f2)
 cat_args = "{\"tier\":\"$(1)\",\"csv\":\"$(2)\",\"raw\":\"$(3)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(4)\",\"ailang\":\"$(CAT_AILANG)\"}"
 bright_args = "{\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
-fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\"}"
+fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\"}"
 # The companion rule (design_docs/planned/r1/m1-companion-parallax.md): `make companions` writes the table, every
 # tier and the map apply it (COMPANIONS picks the file; catalogue-verify uses its own rebuilt copy).
 COMPANIONS ?= data/starmap/companions/companions.csv
-gcns_args = "{\"tier\":\"$(1)\",\"csv\":\"data/raw/gcns.csv\",\"raw\":\"data/raw/table1c.dat.gz\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(2)\",\"ailang\":\"$(CAT_AILANG)\",\"companions\":\"$(COMPANIONS)\"}"
+gcns_args = "{\"tier\":\"$(1)\",\"csv\":\"data/raw/gcns.csv\",\"raw\":\"data/raw/table1c.dat.gz\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(2)\",\"ailang\":\"$(CAT_AILANG)\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\"}"
 .PHONY: catalogue catalogue-scan catalogue-main bright-test test-bright-audit companions companions-test
 catalogue:        ## M1.2b-T3/M1.2d: data/raw -> $(CATALOGUE_OUT)/stars_$(TIER).bin + sidecar on the VM (TIER=quick|medium|large|bright; quick carries the HIP photometry fill)
 	@case "$(TIER)" in \
@@ -318,7 +318,7 @@ catalogue:        ## M1.2b-T3/M1.2d: data/raw -> $(CATALOGUE_OUT)/stars_$(TIER).
 # M1.7 (F6, Q7): the galaxy map catalogue, from the quick + bright tier rows within 25 pc (float64; ids
 # "Gaia DR3 n" / "CNS5:n" / "HIP n"). STARMAP_OUT picks the file (catalogue-verify writes a scratch copy).
 STARMAP_OUT ?= data/starmap/stars.json
-map_args = "{\"csv\":\"data/raw/cns5.csv\",\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+map_args = "{\"csv\":\"data/raw/cns5.csv\",\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
 .PHONY: starmap starmap-test
 starmap:          ## M1.7: data/raw -> $(STARMAP_OUT), the galaxy map catalogue (quick + bright within 25 pc) on the VM
 	$(CAT_RUN) --bytecode --entry mapMain --args-json $(call map_args,$(STARMAP_OUT)) sim/tools/bright_main.ail
@@ -329,6 +329,40 @@ starmap-test:     ## M1.7 map catalogue (sim/tools/starmap.ail): named checks, s
 	@$(AILANG) run --quiet --package-dir sim --entry starmapVm --args-json 0 sim/tools/starmap_test.ail > $(SCRATCH)/starmap-interp.txt
 	@cmp $(SCRATCH)/starmap-vm.txt $(SCRATCH)/starmap-interp.txt && test "$$(cat $(SCRATCH)/starmap-vm.txt)" = "starmap-ok"
 	@echo "starmap-test: $$(cat $(SCRATCH)/starmap-vm.txt) (strict VM = interpreter)"
+
+# One position per star (design_docs/planned/r1/starmap-single-truth.md): the star-truth table that every
+# tier and the map take positions from. TRUTH picks the table (catalogue-verify uses its own rebuilt copy).
+TRUTH ?= data/starmap/truth/positions.csv
+TRUTH_OUT ?= data/starmap/truth
+truth_args = "{\"cns5\":\"data/raw/cns5.dat\",\"cns5Csv\":\"data/raw/cns5.csv\",\"gcnsRaw\":\"data/raw/table1c.dat.gz\",\"gcnsDat\":\"$(SCRATCH)/table1c.dat\",\"gcns\":\"data/raw/gcns.csv\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+.PHONY: starmap-truth starmap-truth-parity starmap-truth-audit starmap-consistency truth-test
+starmap-truth:    ## star truth: CNS5 x GCNS x cross-ids -> $(TRUTH_OUT)/positions.csv + positions.json on the VM (rule truth-1)
+	@mkdir -p $(SCRATCH) $(TRUTH_OUT); test -f $(SCRATCH)/table1c.dat || gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
+	$(CAT_RUN) --bytecode --entry truthMain --args-json $(call truth_args,$(TRUTH_OUT)) sim/tools/bright_main.ail
+
+starmap-truth-parity: ## star truth on the VM and the interpreter into scratch: byte-identical to each other and to the committed table
+	@mkdir -p $(SCRATCH)/truth-vm $(SCRATCH)/truth-interp; test -f $(SCRATCH)/table1c.dat || gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
+	@$(CAT_RUN) --bytecode --entry truthMain --args-json $(call truth_args,$(SCRATCH)/truth-vm) sim/tools/bright_main.ail
+	@$(CAT_RUN) --entry truthMain --args-json $(call truth_args,$(SCRATCH)/truth-interp) sim/tools/bright_main.ail
+	@for f in positions.csv positions.json; do cmp $(SCRATCH)/truth-vm/$$f $(SCRATCH)/truth-interp/$$f && cmp $(SCRATCH)/truth-vm/$$f $(TRUTH_OUT)/$$f || exit 1; done
+	@echo "starmap-truth-parity: VM = interpreter = committed ($$(shasum -a 256 $(TRUTH_OUT)/positions.csv | cut -c1-16))"
+
+starmap-truth-audit: ## AC4: every truth disagreement over max(3 sigma, 1%) has a resolution and is listed in the audit doc
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry auditMain --args-json '{"truth":"$(TRUTH)","doc":"design_docs/implemented/r1/starmap-truth-audit.md"}' sim/tools/bright_main.ail
+
+starmap-consistency: ## AC3 (headless): every stars.json destination in the sky stack once, at the navigation position (<= 1e-9 ly); pins are no-ops (TIER=medium|large)
+	@mkdir -p $(SCRATCH); $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) > $(SCRATCH)/starmap-consistency.log 2>&1; rc=$$?; \
+	  grep -E '^(starmap-consistency|  )' $(SCRATCH)/starmap-consistency.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/starmap-consistency.log && grep -q '^starmap-consistency: PASS$$' $(SCRATCH)/starmap-consistency.log
+
+truth-test:       ## star truth (sim/tools/truth.ail): named checks strict VM = interpreter; real-byte fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry truthVm --args-json 0 sim/tools/truth_test.ail > $(SCRATCH)/truth-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry truthVm --args-json 0 sim/tools/truth_test.ail > $(SCRATCH)/truth-interp.txt
+	@cmp $(SCRATCH)/truth-vm.txt $(SCRATCH)/truth-interp.txt && test "$$(cat $(SCRATCH)/truth-vm.txt)" = "truth-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry truthFixtures --args-json '"tools/fixtures"' sim/tools/truth_test.ail > $(SCRATCH)/truth-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry truthFixtures --args-json '"tools/fixtures"' sim/tools/truth_test.ail > $(SCRATCH)/truth-fx-interp.txt
+	@cmp $(SCRATCH)/truth-fx-vm.txt $(SCRATCH)/truth-fx-interp.txt && test "$$(cat $(SCRATCH)/truth-fx-vm.txt)" = "truth-fixtures-ok"
+	@echo "truth-test: $$(cat $(SCRATCH)/truth-vm.txt), $$(cat $(SCRATCH)/truth-fx-vm.txt) (VM = interpreter)"
 
 companions-test:  ## the companion rule (sim/tools/companions.ail): thresholds, Sirius B, alpha Cen B, Luyten 726-8 B, Wolf 424 B, false pairs; strict VM = interpreter, real-line fixtures VM = interpreter
 	@mkdir -p $(SCRATCH)
@@ -372,11 +406,14 @@ star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, e
 	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
 
 VERIFY_OUT := $(SCRATCH)/verify
-catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild companions.csv, quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files; then the Python companion oracle
+catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild companions.csv, the star-truth table, quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files; then the Python companion oracle
 	@rm -rf $(VERIFY_OUT); mkdir -p $(VERIFY_OUT); \
 	$(MAKE) --no-print-directory companions COMPANIONS=$(VERIFY_OUT)/companions.csv AILANG=$(AILANG) >/dev/null || exit 1; \
 	cmp data/starmap/companions/companions.csv $(VERIFY_OUT)/companions.csv || { echo "catalogue-verify: companions.csv DIFFERS from the committed table"; exit 1; }; \
 	echo "companions.csv identical"; \
+	$(MAKE) --no-print-directory starmap-truth TRUTH_OUT=$(VERIFY_OUT)/truth AILANG=$(AILANG) >/dev/null || exit 1; \
+	for f in positions.csv positions.json; do cmp data/starmap/truth/$$f $(VERIFY_OUT)/truth/$$f || { echo "catalogue-verify: truth/$$f DIFFERS from the committed table"; exit 1; }; done; \
+	echo "truth/positions.csv identical"; \
 	for t in quick medium bright; do \
 	  $(MAKE) --no-print-directory catalogue TIER=$$t CATALOGUE_OUT=$(VERIFY_OUT) AILANG=$(AILANG) >/dev/null || exit 1; \
 	  cmp data/starmap/stars_$$t.bin $(VERIFY_OUT)/stars_$$t.bin && cmp data/starmap/stars_$$t.json $(VERIFY_OUT)/stars_$$t.json \

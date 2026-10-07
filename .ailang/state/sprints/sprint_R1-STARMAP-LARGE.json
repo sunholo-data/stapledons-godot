@@ -1,0 +1,91 @@
+{
+  "sprint_id": "R1-STARMAP-LARGE",
+  "status": "planned",
+  "approved_by": "Mark Edmondson, attended 2026-10-07 (selected for dev.20)",
+  "requested_by": "Mark (attended 2026-10-06/07)",
+  "design_doc": "design_docs/planned/r1/starmap-large-tier-and-reach.md",
+  "sprint_plan": "design_docs/planned/r1/starmap-large-tier-sprint.md",
+  "github_issues": [],
+  "registry_reuse": [],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 350,
+    "estimated_days": 1.5
+  },
+  "features": [
+    {
+      "id": "LT0",
+      "description": "Benchmark gate: medium vs large at 1920x1080 and 2560x1440, RSS, load time, M2 Air estimate; stop if not viable",
+      "estimated_loc": 60,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC3: make bench TIER=large"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LT1",
+      "description": "Large tier from truth, catalogue-parity large, BENCH_SIZE",
+      "estimated_loc": 40,
+      "dependencies": [
+        "LT0"
+      ],
+      "acceptance_criteria": [
+        "AC1: make catalogue TIER=large + catalogue-parity PARITY_TIER=large"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LT2",
+      "description": "D-18 pins + make starmap-assets / starmap-publish",
+      "estimated_loc": 120,
+      "dependencies": [
+        "LT1"
+      ],
+      "acceptance_criteria": [
+        "AC2: make starmap-assets"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LT3",
+      "description": "Consistency gate on the large stack",
+      "estimated_loc": 40,
+      "dependencies": [
+        "LT1"
+      ],
+      "acceptance_criteria": [
+        "AC4: make starmap-consistency TIER=large"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LT4",
+      "description": "Renders opened, make test, CHANGELOG, PR",
+      "estimated_loc": 90,
+      "dependencies": [
+        "LT2",
+        "LT3"
+      ],
+      "acceptance_criteria": [
+        "AC6, AC7: make test"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ]
+}

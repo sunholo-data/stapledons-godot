@@ -1,0 +1,108 @@
+{
+  "sprint_id": "R1-STARMAP-TRUTH",
+  "status": "in_progress",
+  "approved_by": "Mark Edmondson, attended 2026-10-07 (selected for dev.20)",
+  "requested_by": "Mark (attended 2026-10-06/07)",
+  "design_doc": "design_docs/planned/r1/starmap-single-truth.md",
+  "sprint_plan": "design_docs/planned/r1/starmap-single-truth-sprint.md",
+  "github_issues": [],
+  "registry_reuse": [],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 850,
+    "estimated_days": 2.5
+  },
+  "features": [
+    {
+      "id": "ST1",
+      "description": "sim/tools/truth.ail core: joins, rule truth-1, disagreement test, CSV; truth_test.ail first",
+      "estimated_loc": 320,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC1",
+        "AC4: make truth-test"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "sim/tools/truth.ail + truth_test.ail (15 named checks strict VM = interpreter; real-byte fixtures TRAPPIST-1, 10 UMa = GJ 332 AB, CNS5 252 VM = interpreter). Finding: no posterior anywhere (extract.ail is 1/plx for both); offsets = CNS5's Lindegren zero-point (+0.028 mas median) and CNS5's Hipparcos/DR2 choice for 69 poor-RUWE EDR3 stars. Rule truth-1 recorded in the plan."
+    },
+    {
+      "id": "ST2",
+      "description": "truthMain shell, make starmap-truth + starmap-truth-parity, committed data/starmap/truth/",
+      "estimated_loc": 90,
+      "dependencies": [
+        "ST1"
+      ],
+      "acceptance_criteria": [
+        "AC1: make starmap-truth starmap-truth-parity"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "make starmap-truth (11 s VM): 5,212 rows (5,203 position, 8 relabel, 1 drop), 14 disagreements, 0 uncertain. make starmap-truth-parity: VM = interpreter = committed."
+    },
+    {
+      "id": "ST3",
+      "description": "Consumers: GCNS tiers take truth positions (relabel/drop cross-ids), quick and map apply the table, truth_sha256 in sidecars",
+      "estimated_loc": 110,
+      "dependencies": [
+        "ST2"
+      ],
+      "acceptance_criteria": [
+        "AC2: make catalogue-verify"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "gcnsMain/mainFill/mapMain read TRUTH; GCNS tiers: truth position, relabel CNS5-only cross-ids, drop HIP 27890's GCNS twin; sidecars + stars.json gain sha256.truth, truth_rule, truth_rows. make catalogue-verify: companions, truth, quick, medium, bright, stars.json identical; companion oracle 0 disagreements."
+    },
+    {
+      "id": "ST4",
+      "description": "Starfield: identity-deduped quick stacking, float64 destination overlay, indexed pin_destination as assertion",
+      "estimated_loc": 130,
+      "dependencies": [
+        "ST3"
+      ],
+      "acceptance_criteria": [
+        "AC3: make destination-pin, make physics"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "Starfield: quick rows absent from the tier stacked (quick:rest), index_of, restore_navigation_positions (float64 from stars.json, refuse > 1e-4 ly), pin_destination assertion (pin_noops/pin_fallbacks, never pins vmag 99). test_destination_pin rewritten (A: no-ops on the shipped stack, B: fallback on a synthetic disagreeing stack); physics 607/0."
+    },
+    {
+      "id": "ST5",
+      "description": "make starmap-consistency, make starmap-truth-audit, audit doc",
+      "estimated_loc": 140,
+      "dependencies": [
+        "ST4"
+      ],
+      "acceptance_criteria": [
+        "AC3: make starmap-consistency",
+        "AC4: make starmap-truth-audit"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "make starmap-consistency PASS on medium: 5,159 drawn, 526 without photometry, 0 missing (was 26), 0 duplicates, max f32 restore 4.2e-6 ly (was 8.71 ly), pins 0 rows. make starmap-truth-audit PASS (14 rows; placeholder doc fails it). Both in make test."
+    },
+    {
+      "id": "ST6",
+      "description": "Arrival renders opened, make test, CHANGELOG, PR",
+      "estimated_loc": 60,
+      "dependencies": [
+        "ST5"
+      ],
+      "acceptance_criteria": [
+        "AC5: tools/starmap_arrival_capture.gd",
+        "AC6: make test"
+      ],
+      "passes": null,
+      "started": "2026-10-07",
+      "completed": null,
+      "notes": "tools/starmap_arrival_capture.gd: before (origin/main tiers) vs after at the 1,000 AU stand-off from Sol: TRAPPIST-1 3,647 -> 1,000 AU; 10 UMa 551,832 -> 1,000 AU; GJ 10940 379,338 AU behind the ship -> 1,000 AU ahead; GJ 11892 372,620 -> 1,000 AU. Renders opened (renders/starmap_crop/)."
+    }
+  ]
+}
