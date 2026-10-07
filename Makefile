@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm trappist1-test catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
+test: python-guard lint-precision deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm trappist1-test catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -44,8 +44,28 @@ extract:           ## data/raw/{cns5,table1c}.dat -> data/raw/{cns5,gcns}.csv (A
 	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"cns5","input":"data/raw/cns5.dat","output":"data/raw/cns5.csv"}' sim/tools/extract.ail
 	$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry main --args-json '{"kind":"gcns","input":"data/raw/table1c.dat","output":"data/raw/gcns.csv"}' sim/tools/extract.ail
 
-physics:           ## CPU physics reference vs known values
-	$(GODOT) --headless --path . --script tests/test_physics.gd
+physics:           ## CPU physics reference vs known values; fails unless the run prints its '<n> passed, 0 failed' summary (a script that fails to parse exits 0 without one)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_physics.gd > $(SCRATCH)/physics.txt 2>&1; rc=$$?; cat $(SCRATCH)/physics.txt; \
+	  [ $$rc -eq 0 ] || { echo "physics: godot exited $$rc"; exit 1; }; \
+	  grep -qE '^[0-9]+ passed, 0 failed$$' $(SCRATCH)/physics.txt || { echo "physics: no '<n> passed, 0 failed' summary line (parse error or early exit?)"; exit 1; }
+
+# Gate 5: never compute 1 - beta near c. A hand-written 1 - beta (also 1.0-beta, 1 -beta) in code of a
+# .gd or .gdshader outside physics/ and tests/ fails (comments are stripped first). Hits that are not
+# a live computation are listed with a reason in tests/fixtures/lint_precision/allowlist.txt
+# (path:line<TAB>reason). The fixture bad_one_minus_beta.gd MUST match all 4 planted lines (else the
+# pattern matches nothing) and good_one_minus_beta.gd must match none. Plain shell, no Python.
+LINT_OMB_DIR := tests/fixtures/lint_precision
+LINT_OMB_RE := (^|[^A-Za-z0-9_.])1(\.0*)?[[:space:]]*-[[:space:]]*beta([^A-Za-z0-9_]|$$)
+lint-precision:    ## no hand-computed 1 - beta in *.gd / *.gdshader outside physics/ and tests/ (positive control: tests/fixtures/lint_precision/bad_one_minus_beta.gd must fail)
+	@hits_in() { sed -E 's#(//|\#).*$$##' "$$1" | grep -n -E '$(LINT_OMB_RE)' | sed "s|^|$$1:|"; }; \
+	  bad=$$(hits_in $(LINT_OMB_DIR)/bad_one_minus_beta.gd | wc -l | tr -d ' '); \
+	  [ "$$bad" -eq 4 ] || { echo "lint-precision: positive control matched $$bad of 4 planted lines; the pattern is broken"; exit 1; }; \
+	  [ -z "$$(hits_in $(LINT_OMB_DIR)/good_one_minus_beta.gd)" ] || { echo "lint-precision: the clean control file matched; the pattern is too broad"; exit 1; }; \
+	  hits=$$(git ls-files -co --exclude-standard -- '*.gd' '*.gdshader' | grep -v -E '^(physics|tests|runtime|addons)/' | while read -r f; do hits_in "$$f"; done \
+	    | awk -F'\t' 'NR==FNR { allow[$$1] = 1; next } { split($$0, a, ":"); if (!((a[1] ":" a[2]) in allow)) print }' $(LINT_OMB_DIR)/allowlist.txt -); \
+	  if [ -n "$$hits" ]; then echo "$$hits"; echo "lint-precision: hand-computed 1 - beta outside physics/ and tests/ (take 1 - beta from the sim or sunholo/relativity, or allowlist it with a reason)"; exit 1; fi; \
+	  echo "lint-precision: ok (positive control matched $$bad lines; $$(grep -c . $(LINT_OMB_DIR)/allowlist.txt) allowlisted non-computations; no live hand-computed 1 - beta)"
 
 # M4.0 area bundles (brief §9). BUNDLE=dir checks one bundle; the default checks the blockout
 # test fixture and the current shipping bundle (AC13, AC14 validation half).
@@ -80,6 +100,12 @@ glow-probe:        ## M4.2 check values: the forward-glow profile and efficacy f
 	$(AILANG) run --quiet --package-dir tools/glow_probe --caps IO --entry main tools/glow_probe/probe.ail > $(SCRATCH)/glow-probe.txt
 	$(AILANG) run --quiet --bytecode --package-dir tools/glow_probe --caps IO --entry main tools/glow_probe/probe.ail > $(SCRATCH)/glow-probe-vm.txt
 	diff $(SCRATCH)/glow-probe.txt $(SCRATCH)/glow-probe-vm.txt && cat $(SCRATCH)/glow-probe.txt
+
+m4-physics-probe:  ## M4.6 check values: cruise (gammaOf, coastAt, planBurnCoastBurn), ISM load, glow profile, every guided-voyage stop (sim/tools/m4_physics_probe.ail), VM = interpreter
+	@mkdir -p $(SCRATCH)
+	$(AILANG) run --quiet --caps IO --package-dir sim --entry main sim/tools/m4_physics_probe.ail > $(SCRATCH)/m4-physics-probe.txt
+	$(AILANG) run --quiet --bytecode --caps IO --package-dir sim --entry main sim/tools/m4_physics_probe.ail > $(SCRATCH)/m4-physics-probe-vm.txt
+	diff $(SCRATCH)/m4-physics-probe.txt $(SCRATCH)/m4-physics-probe-vm.txt && cat $(SCRATCH)/m4-physics-probe.txt
 
 capture-m4:        ## M4.2 S1 review captures to renders/m4/ (needs a GPU window): the captain walking on the bridge at rest, 0.99c and the cap, the nav console opening the map, pans, glow preview, contact sheet
 	$(GODOT_SIM) --path . -- --interior-capture=renders/m4
