@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "slots": ["elapsed_years", "news_epoch", "news_age_years"],
+  "tiers": [
+    {"tier": 0, "name": "<1", "templates": ["Home is well after {elapsed_years} years.", "Home is well, 3 cats too.", "Home is well.", "Home is well still."]},
+    {"tier": 1, "name": "1-5", "templates": ["a", "b", "c", "d"]},
+    {"tier": 2, "name": "5-15", "templates": ["a", "b", "c", "d"]},
+    {"tier": 3, "name": "15-50", "templates": ["a", "b", "c", "d"]},
+    {"tier": 4, "name": ">=50", "templates": ["a", "b", "c", "d"]}
+  ]
+}

@@ -230,6 +230,18 @@ pure func checkRecordAccepted() -> bool {
   let n = newsOf(t.world);
   n.bodySource == "ai" && n.fallbackReason == None && refusal(t) == "" && (newsOf(arrivedWithRequest())).bodySource == "template"
 }
+-- M4.4 gate: all three body_source paths on one arrival. template: no request made (no key, AI off),
+-- nothing to show but the template; ai: an accepted record; fallback: the digits fixture closes the
+-- request with ai_fallback{ai_numeral} and the item says so (never silent).
+pure func checkBodySourceThreePaths() -> bool {
+  let w = legTo(newWorld(5, false, withStandoff(1000.0)), acenAt(4.37), phi099());
+  let tpl = newsOf(w);
+  let ai = newsOf((run(arrivedWithRequest(), 0.0, [textRec("1", "The world turned on without you.")])).world);
+  let dig = run(arrivedWithRequest(), 0.0, [textRec("1", "It was the year 2041.")]);
+  tpl.bodySource == "template" && tpl.aiRequestId == None && tpl.fallbackReason == None &&
+  ai.bodySource == "ai" && ai.aiRequestId == Some("1") && ai.fallbackReason == None &&
+  (newsOf(dig.world)).bodySource == "fallback" && (newsOf(dig.world)).fallbackReason == Some("ai_numeral") && fallbackReason(dig) == "ai_numeral"
+}
 -- Another request's outcome never touches the news item (a crew line accepted, a crew line cancelled).
 pure func lineOpen() -> Intent = IAiOpen({kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: []})
 pure func checkRecordOtherRequest() -> bool {
@@ -407,6 +419,7 @@ test "AC8 drag_energy_j = ledger drag_j since commit = cruiseDragEnergy, 1.36530
 test "AC8 drag_energy_j window restarts at each commit" { checkDragWindow() }
 test "record refusals: digits ai_numeral, over 280 ai_length; body_source fallback + reason" { checkRecordRefusals() }
 test "record accepted: body_source ai" { checkRecordAccepted() }
+test "M4.4 gate: body_source template / ai / fallback(ai_numeral) on the same arrival" { checkBodySourceThreePaths() }
 test "another request's outcome never touches the news item" { checkRecordOtherRequest() }
 test "record with no open request is refused ai_unknown_req, item stays template" { checkRecordNoRequest() }
 test "expired news request closes the item as a fallback with reason expired" { checkRecordExpired() }

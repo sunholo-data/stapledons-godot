@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -737,6 +737,19 @@ lore-test:         ## M4.7 lore binding, registry and checker: strict VM = inter
 	@AILANG=$(AILANG) SCRATCH=$(SCRATCH) sh tests/test_lore_import.sh
 
 .PHONY: codex-test
+news-lint:         ## M4.4 template lint: numerals only in {slots}, five tiers of four, 280 characters filled, fixed labels and reason phrases digit-free; the stray-digit fixture must fail
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tools/news_lint.gd > $(SCRATCH)/news-lint.log 2>&1; rc=$$?; grep '^news-lint' $(SCRATCH)/news-lint.log; \
+	  test $$rc = 0 && grep -q '^news-lint: ok$$' $(SCRATCH)/news-lint.log || { echo "news-lint: FAILED on data/news (log $(SCRATCH)/news-lint.log)"; exit 1; }
+	@$(GODOT) --headless --path . --script tools/news_lint.gd -- res://tests/fixtures/news/stray_digit.json > $(SCRATCH)/news-lint-bad.log 2>&1; rc=$$?; \
+	  test $$rc = 1 && grep -q 'a numeral outside a slot' $(SCRATCH)/news-lint-bad.log || { echo "news-lint: the stray-digit fixture did NOT fail the lint (rc=$$rc)"; cat $(SCRATCH)/news-lint-bad.log; exit 1; }
+	@echo "news-lint: the stray-digit fixture fails as it must"
+
+news-test:         ## M4.4 news panel (template / ai / fallback renderings), reason table, return trip, legacy screen + Begin again, over the real sim (headless)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_news.gd > $(SCRATCH)/news-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/news-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/news-test.log && grep -q '^news: [0-9]* passed, 0 failures$$' $(SCRATCH)/news-test.log || { echo "news-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/news-test.log)"; exit 1; }
+
 codex-test:        ## M4.7 the Archive codex: lore loader + manifest refusal, Markdown subset, locked/greyed rows, toasts, LoreBinding, the real sim's minimum-path unlocks vs tests/expected_unlocks.json (headless)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_codex.gd > $(SCRATCH)/codex-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/codex-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \

@@ -467,6 +467,19 @@ func plan_target(target: Dictionary) -> void:
 	_pending = {"k": "plan", "target": target, "cruise_phi": cruise_phi}
 
 
+## M4.4 the return trip: Sol is home, not a catalogue star. Plan it (the sim plans from where the ship
+## is, and the commit ritual is the same hold as ever) and keep it highlighted on the map.
+const HOME := {"index": 0, "id": "Sol", "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}
+var home_highlight := false
+
+
+func plan_home() -> void:
+	selected_index = -1
+	home_highlight = true
+	plan_target(HOME)
+	_overlay.queue_redraw()
+
+
 ## clamp=false sends phi as given (tests probe the sim's bounds with it).
 func set_cruise_phi(phi: float, clamp: bool = true) -> void:
 	cruise_phi = clampf(phi, phi_min, phi_max) if clamp else phi
@@ -981,6 +994,8 @@ func _draw_overlay() -> void:
 	if not camera.is_position_behind(Vector3.ZERO):
 		var sol := camera.unproject_position(Vector3.ZERO)
 		_overlay.draw_circle(sol, 4.0, Color(1.0, 0.9, 0.5))
+		if home_highlight:
+			_overlay.draw_arc(sol, 11.0, 0.0, TAU, 40, Color(1.0, 0.9, 0.5), 2.0, true)
 		_overlay.draw_string(font, sol + Vector2(8, -6), "Sol", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1.0, 0.9, 0.5))
 		taken.append(sol)
 		boxes.append(label_box(font, sol + Vector2(8, -6), "Sol", 15))
