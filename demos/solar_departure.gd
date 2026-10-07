@@ -7,10 +7,10 @@ const TICK_HZ := 20.
 const JULIAN_YEAR_SECONDS := 31557600.
 const DWELL_SECONDS := 12.
 ## D-39/D-40/D-41 guided drive, one definition for the whole voyage: 3,000,000 g,
-## cap 1 - beta = 5e-7 (the 0.999999c Aldebaran leg), m_eff 10 kg. The sim's
+## cap 1 - beta = 2e-9 (the 1,000 AU timed hops into each star reach gamma ~7,500), m_eff 10 kg. The sim's
 ## unchanged scenarioError (brake vs ISM drag at the cap) accepts it (RT0).
 ## sim/solar_departure_test.ail's guided() mirrors these values.
-const GUIDED_DRIVE := {"boost_g":3000000.0,"m_eff_kg":10.0,"cap_one_minus_beta":0.0000005}
+const GUIDED_DRIVE := {"boost_g":3000000.0,"m_eff_kg":10.0,"cap_one_minus_beta":0.000000002}
 const STANDOFF_AU := 1000.0
 var sim: SimBridge
 var stars: Dictionary = {} # star-leg catalogue id -> row (with its catalogue index)

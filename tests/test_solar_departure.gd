@@ -47,7 +47,7 @@ func _run()->void:
 	controller.attitude_hold=false
 	var previous:Dictionary=sim.world.ship.pos.duplicate()
 	var completed:=0
-	var ids:=["sun","jupiter","callisto","saturn","CNS5:3627","acen-a","Gaia DR3 2635476908753563008","CNS5:1142"]
+	var ids:=["sun","jupiter","callisto","saturn","CNS5:3627","acen-a","Gaia DR3 2635476908753563008","trappist-1","CNS5:1142","aldebaran"]
 	for id in ids:
 		var start:Dictionary=sim.world.duplicate(true)
 		controller.attitude_hold=true
@@ -119,14 +119,15 @@ func _run()->void:
 			check("short cruise plays entirely in real time, no interlude (%s)"%id,controller.interludes_done==interludes_before and absi(counts.cruising-int(round(coast_s*20.)))<=20)
 		print("    phase counts ",id," ",counts," coast ",snappedf(coast_s,0.1)," s, interlude ticks ",interlude_ticks," Earth year ",sim.world.clock.year)
 		if id=="jupiter":check("braking starts while Jupiter is small and it grows through the approach",brake_first_diameter<1. and brake_last_diameter>30.)
-		if id in ["sun","jupiter","callisto","saturn"]:
+		if id in ["sun","jupiter","callisto","saturn","acen-a","trappist-1","aldebaran"]:
 			check("timed leg (D-46): 30 s boost (%s)"%id,absi(counts.boosting-600)<=2)
 			check("timed leg (D-46): 25 s final approach in real time (%s, %d ticks)"%[id,counts.approaching],absi(counts.approaching-500)<=40)
 		if id=="jupiter":check("Jupiter's approach begins with it about 4 degrees across (%.2f)"%approach_start_deg,absf(approach_start_deg-4.)<=0.5)
 		check("arrival rests",sim.world.journey.state=="arrived" and sim.world.ship.beta==0.)
-		if id in ["sun","jupiter","callisto","saturn","acen-a"]:
+		if id in ["sun","jupiter","callisto","saturn","acen-a","trappist-1","aldebaran"]:
 			check("body arrival at exact planner endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
-			var required:float={"sun":2087100.,"jupiter":142984.,"callisto":24103.,"saturn":210918.,"acen-a":149597870.7}[id]
+			# D-47: alpha Cen A and TRAPPIST-1 stop in their habitable zone (sqrt L AU); Aldebaran where it fills 40 degrees.
+			var required:float={"sun":2087100.,"jupiter":142984.,"callisto":24103.,"saturn":210918.,"acen-a":sqrt(1.521)*149597870.7,"trappist-1":sqrt(0.000553)*149597870.7,"aldebaran":45.212*695700./sin(deg_to_rad(20.))}[id]
 			check("body stop uses exact close standoff via package planner",sim.world.journey.plan.hold.body==id and absf(sim.world.journey.plan.hold.offset_km-required)<1e-6)
 			if id=="acen-a":
 				var a:Dictionary={};var b:Dictionary={}
@@ -135,7 +136,13 @@ func _run()->void:
 					if body.id=="acen-b":b=body
 				# Rendered coordinates are retarded, so allow orbital light-time
 				# displacement; exact simultaneous intercept is checked in AILANG.
-				check("actual finite A is approximately 1 AU, B has stellar clearance",absf(Planets.length64(Planets.world_of(a.rel_km))-required)<20000. and Planets.length64(Planets.world_of(b.rel_km))>1.1*b.radius_km+.1)
+				check("actual finite A is at its habitable zone (1.233 AU), B has stellar clearance",absf(Planets.length64(Planets.world_of(a.rel_km))-required)<20000. and Planets.length64(Planets.world_of(b.rel_km))>1.1*b.radius_km+.1)
+			if id in ["trappist-1","aldebaran"]:
+				var st:Dictionary={}
+				for body:Dictionary in sim.world.system.bodies:
+					if body.id==id:st=body
+				var deg:float=rad_to_deg(2.*Planets.angular_radius(st.get("radius_km",0.),Planets.length64(Planets.world_of(st.get("rel_km",{"x":0.,"y":0.,"z":0.})))))
+				check("%s is a finite star at its stop: %.2f degrees across (catalogue point replaced: %s)"%[id,deg,st.get("catalogue_id","")],not st.is_empty() and (absf(deg-40.)<0.5 if id=="aldebaran" else absf(deg-2.70)<0.05) and not str(st.get("catalogue_id","")).is_empty())
 		else:
 			var p:Dictionary=sim.world.ship.pos;var q:Dictionary=sim.world.journey.plan.target.pos
 			var gap:=sqrt(pow(p.x-q.x,2.)+pow(p.y-q.y,2.)+pow(p.z-q.z,2.))
@@ -146,6 +153,7 @@ func _run()->void:
 	var year:float=sim.world.clock.year;var tau:float=sim.world.clock.tau
 	print("    voyage: Earth +%.2f yr, ship +%.3f yr"%[year,tau])
 	check("cumulative Earth time at Aldebaran within 1%% of 120.5 yr (%.2f)"%year,absf(year-120.5)<=0.01*120.5)
+	check("all %d stops reached"%ids.size(),ids.size()==10)
 	check("ship time lived is under a year",tau>0.8 and tau<1.0)
 	check("HUD exposes both clocks and honest approximation",controller.status_text().contains("Earth +") and controller.status_text().contains("ship +") and controller.status_text().contains("barycentre"))
 	var log:=FileAccess.get_file_as_string(RECORD)

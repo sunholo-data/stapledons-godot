@@ -65,6 +65,11 @@ func _initialize() -> void:
 	check(flux_at(sf, "pin:CNS5:3627") == 0.0 and flux_at(sf, "CNS5:3627") == 0.0, "a system-view replacement also suppresses the pinned row (no double light)")
 	sf.set_catalogue_replacements([])
 	check(flux_at(sf, "pin:CNS5:3627") > 0.0 and flux_at(sf, "CNS5:3627") == 0.0, "leaving the system restores the pin, not the tier row")
+	# Without a pin, a physical emitter named "Gaia DR3 n" still replaces the tier row "n".
+	var plain := Starfield.new(); plain.load_tiers("medium")
+	var bare_flux := flux_at(plain, tier_id)
+	plain.set_catalogue_replacements(["Gaia DR3 2635476908753563008"])
+	check(bare_flux > 0.0 and flux_at(plain, tier_id) == 0.0, "a Gaia-id emitter suppresses the bare-number tier row (no double light without a pin)")
 	sf.clear()
 	check(sf.count == 0 and sf.pinned_ids.is_empty(), "clear() drops pins")
 	print("destination-pin: %d failures" % failures)

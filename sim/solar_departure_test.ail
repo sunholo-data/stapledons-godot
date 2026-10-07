@@ -9,17 +9,21 @@ import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta
 import std/string (concat)
 import ./solar_departure (TourLeg, initialize, initializeAtStandoff, earthStandoffKm, intentForLeg, legs, legCount, solCruisePhi, acenOneMinusBeta, trappistOneMinusBeta, aldebaranOneMinusBeta)
 import ./navigation (safetyMinKm, bodyPhiMax)
+import ./destination_stars (destinationStopKm, habitableZoneKm, destinationRadiusKm, destinationValue, destinationLy)
+import ./protocol (finiteSystemOf)
+import ./celestial (BodyView)
+import pkg/sunholo/relativity/photometry (illuminanceFromV)
 import ./data/sol (sun)
 
 pure func fixtureTarget() -> Target = { index: 0, id: "CNS5:3627", pos: {x: 3.094521, y: 0.0 - 3.015404, z: 0.0 - 0.051608} }
 -- Catalogue rows (data/starmap/stars.json, ly, galactic frame) for the outbound star legs.
 pure func trappistTarget() -> Target = { index: 1, id: "Gaia DR3 2635476908753563008", pos: {x: 7.742, y: 20.946483, z: 0.0 - 33.930598} }
 pure func aldebaranTarget() -> Target = { index: 2, id: "CNS5:1142", pos: {x: 0.0 - 62.516711, y: 0.0 - 1.060038, z: 0.0 - 23.064639} }
-pure func targetFor(n: int) -> Target = if n == 6 then trappistTarget() else if n == 7 then aldebaranTarget() else fixtureTarget()
+pure func targetFor(n: int) -> Target = if n == 6 then trappistTarget() else if n == 8 then aldebaranTarget() else fixtureTarget()
 -- D-39/D-40 guided drive (demos/solar_departure.gd GUIDED_DRIVE mirrors it).
 pure func guided() -> World {
   let w = newWorld(42, false, defaultParams());
-  {w | params: {w.params | boostG: 3000000.0, mEffKg: 10.0, capOneMinusBeta: 0.0000005}}
+  {w | params: {w.params | boostG: 3000000.0, mEffKg: 10.0, capOneMinusBeta: 0.000000002, standoffAu: 1000.0}}
 }
 pure func base() -> World = newWorld(42, false, defaultParams())
 pure func started() -> World = match initialize(guided()) { Ok(w) => w, Err(_) => guided() }
@@ -85,11 +89,18 @@ pure func chain(w: World, n: int) -> bool =
     let landed = finishLeg(w, n);
     match landed.journey {
       Arrived(c) => c.plan.from.x == before.x && c.plan.from.y == before.y && c.plan.from.z == before.z
-        && position(landed.ship).x == c.plan.target.pos.x && position(landed.ship).y == c.plan.target.pos.y && position(landed.ship).z == c.plan.target.pos.z
+        && atStop(landed, c.plan)
         && landed.ship.motion.phi == 0.0 && landed.ship.motion.tau > w.ship.motion.tau && landed.ship.motion.t > w.ship.motion.t
         && landed.tick == w.tick + 3 && chain(landed, n + 1),
       _ => false
     }
+  }
+-- A body leg ends exactly on its planned point; a star leg ends at the catalogue
+-- stand-off (1,000 AU short of the star, on the heading).
+pure func atStop(w: World, p: Plan) -> bool =
+  match p.nav {
+    Some(_) => position(w.ship).x == p.target.pos.x && position(w.ship).y == p.target.pos.y && position(w.ship).z == p.target.pos.z,
+    None => absf(norm(sub(p.target.pos, position(w.ship))) - 1000.0 * 149597870.7 / lyKm()) < 0.000000001
   }
 export pure func checkSequence() -> bool = chain(started(), 0)
 test "Earth to Aldebaran: every leg is a true successive commit without resetting clocks or endpoints" { checkSequence() }
@@ -101,11 +112,11 @@ export pure func checkSpeeds() -> bool {
   let sol = solCruisePhi();
   let xs = legs((guided()).params);
   sol == bodyPhiMax() && sol == rapidityOfBeta(0.99) && acenOneMinusBeta() == 0.001 && trappistOneMinusBeta() == 0.0001 && aldebaranOneMinusBeta() == 0.000001
-  && legCount() == 8
+  && legCount() == 10
   && phiOf(0) == sol && phiOf(1) == sol && phiOf(2) == sol && phiOf(3) == sol
   && phiOf(4) == rapidityOfOneMinusBeta(0.001) && phiOf(5) == sol
-  && phiOf(6) == rapidityOfOneMinusBeta(0.0001) && phiOf(7) == rapidityOfOneMinusBeta(0.000001)
-  && idAt(xs, 6) == "Gaia DR3 2635476908753563008" && idAt(xs, 7) == "CNS5:1142"
+  && phiOf(6) == rapidityOfOneMinusBeta(0.0001) && phiOf(8) == rapidityOfOneMinusBeta(0.000001)
+  && idAt(xs, 6) == "Gaia DR3 2635476908753563008" && idAt(xs, 7) == "trappist-1" && idAt(xs, 8) == "CNS5:1142" && idAt(xs, 9) == "aldebaran"
 }
 test "cruise speeds per leg: 0.99c Sol and A, 0.999c, 0.9999c, 0.999999c outbound" { checkSpeeds() }
 export pure func checkGuidedDriveValid() -> bool = match scenarioError((guided()).params) { None => true, Some(_) => false }
@@ -178,8 +189,45 @@ export pure func checkTimedDrag() -> bool {
   }
 }
 test "a timed leg whose thrust cannot hold against ISM drag is refused (m_eff_too_small)" { checkTimedDrag() }
+-- Finite destination stars (D-47): the stop rule from the cited data rows.
+pure func au() -> float = 149597870.7
+export pure func checkStarStops() -> bool {
+  let rAld = 45.212 * 695700.0;
+  absf(destinationStopKm("trappist-1") / au() - 0.023515952032609692) < 0.000000000001
+  && absf(destinationStopKm("aldebaran") / au() - 0.614751694642684) < 0.00001
+  && absf(habitableZoneKm(1.521) / au() - 1.2332882874656679) < 0.000000000001
+  && absf(destinationRadiusKm("aldebaran") - rAld) < 0.001
+  -- the inferred rows recompute from their inputs (theta_LD x catalogue distance; Stefan-Boltzmann)
+  && absf(destinationValue("aldebaran", "radius_sun") - (20.58 / 2000.0) * (66.6441325775892 / 3.261563777) * au() / 695700.0) < 0.001
+  && absf(destinationValue("aldebaran", "luminosity_sun") - 45.212 * 45.212 * (3927.0 / 5772.0) * (3927.0 / 5772.0) * (3927.0 / 5772.0) * (3927.0 / 5772.0)) < 0.01
+}
+test "star stops follow D-47: TRAPPIST-1 HZ 0.0235 AU, Aldebaran 40 deg at 0.615 AU, alpha Cen A HZ 1.233 AU; inferred rows recompute" { checkStarStops() }
+-- The destination-star feed (eval R1 finding 1): ids and order, finite radius, the
+-- illuminance from V and distance, and the planner's body index equal to the star's
+-- place in the system section the client receives.
+pure func indexOf(bs: [BodyView], id: string, i: int) -> int = match bs { [] => 0 - 1, b :: rest => if b.id == id then i else indexOf(rest, id, i + 1) }
+pure func viewOf(bs: [BodyView], id: string) -> Option[BodyView] = match bs { [] => None, b :: rest => if b.id == id then Some(b) else viewOf(rest, id) }
+export pure func checkDestinationFeed() -> bool {
+  let w = chainTo(started(), 0, 9);
+  let sys = finiteSystemOf(w);
+  match (viewOf(sys.bodies, "aldebaran"), planned(w, 9)) {
+    (Some(b), Some(p)) => {
+      let dKm = norm(b.relKm);
+      let earthAu = norm(destinationLy("aldebaran")) * lyKm() / au();
+      let want = illuminanceFromV(0.87) * (earthAu * au() / dKm) * (earthAu * au() / dKm);
+      (match p.nav { Some(n) => n.index == indexOf(sys.bodies, "aldebaran", 0), None => false })
+      && indexOf(sys.bodies, "trappist-1", 0) == indexOf(sys.bodies, "aldebaran", 0) + 1
+      && indexOf(sys.bodies, "acen-b", 0) + 1 == indexOf(sys.bodies, "aldebaran", 0)
+      && b.kind == "star" && b.radiusKm == destinationRadiusKm("aldebaran")
+      && absf(b.eVLux / want - 1.0) < 0.000000001
+    },
+    _ => false
+  }
+}
+pure func chainTo(w: World, n: int, stop: int) -> World = if n >= stop then w else chainTo(finishLeg(w, n), n + 1, stop)
+test "destination stars are fed after alpha Cen in order; the planner's index is the feed's; illuminance is V at Earth scaled by distance" { checkDestinationFeed() }
 export pure func solarDepartureVm(n: int) -> string =
-  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() && checkTimedLegs() && checkApproachPhase() && checkTimedDrag() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
+  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() && checkTimedLegs() && checkApproachPhase() && checkTimedDrag() && checkStarStops() && checkDestinationFeed() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
 
 pure func clearance(w: World, id: string) -> string {
   let pl = (tick(w, {dtau: 0.0, intents: [IPlanBody({id: id, cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: None})]}));

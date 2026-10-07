@@ -1,0 +1,59 @@
+module stapledons/sim/destination_stars
+-- Finite destination stars (design finite-destination-stars.md, D-47/D-48):
+-- Aldebaran and TRAPPIST-1 as finite emitters with cited radii and
+-- temperatures, at the navigation catalogue position (static: no proper
+-- motion, no companions, no planets here; TRAPPIST-1's planets are part 2).
+-- Composition only: illuminance from V and distance (photometry and the
+-- celestial inverse square), the D-47 stop rule from the data rows.
+import std/math (sqrt, sin)
+import std/option (Option, Some, None)
+import pkg/sunholo/celestial/kepler (Vec3, sub, scale, norm)
+import pkg/sunholo/celestial/frames (equatorialToGalactic)
+import pkg/sunholo/celestial/ephemeris (auKm)
+import pkg/sunholo/celestial/reflect (starIlluminanceAt)
+import pkg/sunholo/relativity/photometry (illuminanceFromV)
+import ./data/stars (Star, Field, destinationStars)
+import ./data/sol (sun)
+import ./celestial (BodyView, BodyState, lyKm)
+
+pure func field(xs: [(string, Field)], key: string) -> float = match xs { [] => 0.0, (k, f) :: rest => if key == k then f.value else field(rest, key) }
+pure func starOf(xs: [Star], id: string) -> Option[Star] = match xs { [] => None, s :: rest => if s.id == id then Some(s) else starOf(rest, id) }
+export pure func isDestinationStar(id: string) -> bool = match starOf(destinationStars(), id) { Some(_) => true, None => false }
+export pure func destinationValue(id: string, key: string) -> float = match starOf(destinationStars(), id) { Some(s) => field(s.fields, key), None => 0.0 }
+export pure func destinationCatalogueId(id: string) -> string = match starOf(destinationStars(), id) { Some(s) => s.catalogueId, None => "" }
+export pure func destinationName(id: string) -> string = match starOf(destinationStars(), id) { Some(s) => s.name, None => "" }
+export pure func destinationRadiusKm(id: string) -> float = destinationValue(id, "radius_sun") * (sun()).radiusKm
+-- Galactic position (ly), the navigation catalogue's.
+export pure func destinationLy(id: string) -> Vec3 = { x: destinationValue(id, "x_ly"), y: destinationValue(id, "y_ly"), z: destinationValue(id, "z_ly") }
+export pure func destinationIds() -> [string] = idsOf(destinationStars())
+pure func idsOf(xs: [Star]) -> [string] = match xs { [] => [], s :: rest => s.id :: idsOf(rest) }
+
+-- The D-47 stop rule: main sequence in the habitable zone, sqrt(L / L_sun) AU
+-- (where the star looks like the Sun from Earth); a giant where it fills
+-- 40 degrees of sky, R / sin(20 deg).
+export pure func habitableZoneKm(luminositySun: float) -> float = sqrt(luminositySun) * auKm()
+export pure func giantViewKm(radiusKm: float) -> float = radiusKm / sin(20.0 * 3.141592653589793 / 180.0)
+export pure func destinationStopKm(id: string) -> float =
+  if destinationValue(id, "giant") > 0.5 then giantViewKm(destinationRadiusKm(id)) else habitableZoneKm(destinationValue(id, "luminosity_sun"))
+
+-- Static state for navigation (the star does not move over the voyage here).
+export pure func destinationBodyAt(id: string) -> Option[BodyState] =
+  if isDestinationStar(id) then Some({ pos: scale(lyKm(), destinationLy(id)), vel: { x: 0.0, y: 0.0, z: 0.0 }, pole: equatorialToGalactic({ x: 0.0, y: 0.0, z: 1.0 }), wDeg: 0.0 }) else None
+
+pure func view(id: string, shipLy: Vec3) -> BodyView {
+  let rel = scale(lyKm(), sub(destinationLy(id), shipLy));
+  let radius = destinationRadiusKm(id);
+  let d = norm(rel);
+  let distance = if d > radius then d else radius;
+  let earthAu = norm(destinationLy(id)) * lyKm() / auKm();
+  let e1 = illuminanceFromV(destinationValue(id, "v_earth")) * earthAu * earthAu;
+  { id: id, name: destinationName(id), kind: "star", host: "", status: "star", relKm: rel, radiusKm: radius, flattening: 0.0,
+    pole: equatorialToGalactic({ x: 0.0, y: 0.0, z: 1.0 }), wDeg: 0.0,
+    sunDir: { x: 0.0, y: 0.0, z: 0.0 }, rAu: 0.0, phaseDeg: 0.0, eVLux: starIlluminanceAt(e1, distance / auKm()), pV: 0.0, minnaertK: 1.0, ringId: "",
+    lightAgeS: 0.0, visitable: true,
+    source: "data/stars.ail (cited radius and Teff; catalogue position and V); static position; uniform photosphere, no measured spin" }
+}
+-- Every destination star, always supplied (as alpha Cen is, so there is no
+-- activation cutoff or jump on approach); the renderer culls what it cannot see.
+export pure func destinationBodies(shipLy: Vec3) -> [BodyView] = viewsOf(destinationIds(), shipLy)
+pure func viewsOf(ids: [string], shipLy: Vec3) -> [BodyView] = match ids { [] => [], i :: rest => view(i, shipLy) :: viewsOf(rest, shipLy) }

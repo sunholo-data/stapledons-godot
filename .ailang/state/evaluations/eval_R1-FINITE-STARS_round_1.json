@@ -1,0 +1,28 @@
+{
+  "sprint_id": "R1-FINITE-STARS",
+  "round": 1,
+  "result": "pass",
+  "score": 88,
+  "breakdown": {"tests": 20, "lint": 10, "acceptance": 25, "code_quality": 12, "documentation": 12, "design_fidelity": 9},
+  "verified": [
+    "make solar-departure-test: 145 passed, 0 failures (all 10 stops, 30 s boost / 25 s approach on star hops, Aldebaran 40.00 deg, TRAPPIST-1 2.70 deg, catalogue_id non-empty)",
+    "make replay: 9 cases identical (VM = interpreter); make tour-pacing-test rc=0",
+    "Hand recompute: Aldebaran R = 10.29 mas x 20.4332 pc = 45.21 Rsun; L = R^2 (3927/5772)^4 = 437.97; stops 0.0235 AU, 0.6148 AU, 1.2333 AU all correct",
+    "Body index 3+P+M (after acen-a 1+P+M, acen-b 2+P+M) matches protocol order: systemOf ++ alphaBodies ++ destinationBodies, ids [aldebaran, trappist-1]",
+    "Guided cap 2e-9: scenarioError check (checkGuidedDriveValid) and checkTimedDrag pass in the sim suite"
+  ],
+  "findings": [
+    {"severity": "medium", "file": "sim/solar_departure_test.ail:189-201", "issue": "S2 says star bodies/suppression/planner are covered by sim tests, but the only sim test (checkStarStops) covers the stop rule and data recompute. destinationBodies, the navigation facts index (navigation.ail:~102) and nearDestination gating are exercised only through the Godot integration test. Swapping destinationIds order or an off-by-one in the facts index would survive the sim suite."},
+    {"severity": "low", "file": "sim/solar_departure_test.ail:197-198", "issue": "Aldebaran luminosity recompute uses the rounded 45.212 and a 0.01 tolerance (about 2e-5 relative), and the radius check re-derives the same formula as the data note, so it is partly circular. It still catches a wrong row."},
+    {"severity": "low", "file": "tests/test_solar_departure.gd (required map)", "issue": "acen-a luminosity 1.521 and Aldebaran 45.212 are duplicated as literals in tests (independent oracle, but they drift if the row changes)."},
+    {"severity": "low", "file": "renders/real_time_tour/7_trappist-1_arrived.png", "issue": "S4: TRAPPIST-1 reads as a small white/orange glowing point (disc about 2.7 deg), not clearly a red disc; Aldebaran at 40 deg is blown-out white (K5 colour lost to exposure). Geometry is right, colour is not evidence of Teff."},
+    {"severity": "info", "file": "design_docs/planned/r1/finite-destination-stars.md", "issue": "S3 says 11 stops; the implementation and tests have 10 legs after Earth (CHANGELOG says 10). Doc wording should be reconciled at landing."},
+    {"severity": "info", "file": "sky/starfield.gd:88-92", "issue": "Gaia bare-id alias suppression is correct and tested (test_destination_pin.gd). It is generic for any 'Gaia DR3 ' id."}
+  ],
+  "regressions": "None found: replays identical, tour pacing passes, ordinary map journeys take the unchanged path (nearDestination gates on 0.1 ly; standoff max change applies only to destination stars and acen).",
+  "surviving_mutations_unverified": [
+    "destinationIds order swapped or facts index offset by one (no sim test)",
+    "limb_u or v_earth/e_v_lux scaling error in destination_stars.view (no sim assertion on eVLux)"
+  ],
+  "hard_fails": []
+}

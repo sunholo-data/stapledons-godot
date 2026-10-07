@@ -20,6 +20,7 @@ import pkg/sunholo/celestial/rings (RingBand)
 import ./data/sol (Ring, rings)
 import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
 import ./alpha_centauri (alphaBodies, catalogueId as alphaCatalogueId, stellarValue as alphaStellarValue)
+import ./destination_stars (destinationBodies, destinationCatalogueId, destinationValue)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
@@ -249,10 +250,16 @@ pure func bodyObj(b: BodyView) -> string =
     f("sun_dir", vec(b.sunDir)), f("r_au", num(b.rAu)), f("phase_deg", num(b.phaseDeg)), f("e_v_lux", num(b.eVLux)), f("p_v", num(b.pV)),
     f("minnaert_k", num(b.minnaertK)), f("ring_id", q(b.ringId)), f("light_age_s", num(b.lightAgeS)), f("visitable", bool(b.visitable)), f("source", q(b.source))])
 pure func finiteBodyObj(b:BodyView)->string =
-  if alphaCatalogueId(b.id)=="" then bodyObj(b) else {
+  if alphaCatalogueId(b.id)!="" then starBodyObj(b, alphaCatalogueId(b.id), alphaStellarValue(b.id,"teff_k"))
+  else if destinationCatalogueId(b.id)!="" then starBodyObj(b, destinationCatalogueId(b.id), destinationValue(b.id,"teff_k"))
+  else bodyObj(b)
+-- A finite catalogue star: the body plus its catalogue identity (the renderer
+-- suppresses that point) and measured Teff; uniform photosphere (limb_u 0).
+pure func starBodyObj(b: BodyView, catId: string, teff: float) -> string {
     let old=bodyObj(b);
-    concat([substring(old,0,length(old)-1),",",f("catalogue_id",q(alphaCatalogueId(b.id))),",",f("teff_k",num(alphaStellarValue(b.id,"teff_k"))),",",f("limb_u",num(0.0)),"}"])
-  }
+    concat([substring(old,0,length(old)-1),",",f("catalogue_id",q(catId)),",",f("teff_k",num(teff)),",",f("limb_u",num(0.0)),"}"])
+}
+
 export pure func encodeSystem(v: SystemView) -> string =
   obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)), f("bodies", arr(each(bodyObj, v.bodies)))])
 -- 2.5 exposes the already-cited profiles without changing old system bytes.
@@ -275,9 +282,9 @@ pure func solarTour(p: Params) -> string =
     f("legs", arr(each(solarLegObj, solarLegs(p))))])
 -- system.jd = epoch_jd + Earth time; the ship's galactic position in ly.
 pure func systemOf(w: World) -> SystemView = systemAt(solSystem(), jdAt(w.params.epochJd, w.ship.motion.t), position(w.ship))
-pure func finiteSystemOf(w:World)->SystemView {
+export pure func finiteSystemOf(w:World)->SystemView {
   let v=systemOf(w);
-  {v | bodies:v.bodies ++ alphaBodies(v.jd,position(w.ship))}
+  {v | bodies:v.bodies ++ alphaBodies(v.jd,position(w.ship)) ++ destinationBodies(position(w.ship))}
 }
 pure func systemFull(s: Session, w: World) -> [string] =
   if s.minor >= departureMinor() then [f("system", encodeSystemRings(finiteSystemOf(w)))]
