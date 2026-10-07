@@ -71,6 +71,7 @@ const FADER_TEX_PEAK := 2.0 # textured albedo / disc mean at the brightest cloud
 ## Realistic view is untouched. Labelled on the HUD.
 const FADER_STAR_TARGET := 1.2
 const STAR_SATURATION := 2.2
+var star_saturation := STAR_SATURATION # what Auto applies; a test sets 1 for the physical tint
 var body_fader := false
 var _fader_peak := {} # id -> brightest displayed radiance before exposure (cd/m^2)
 var _fader_star := {} # id -> true for emitters (stars)
@@ -322,7 +323,7 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 		m.set_shader_parameter("lut_log_tmax",log(Blackbody.LUT_T_MAX))
 	m.set_shader_parameter("radius", pl[2])
 	m.set_shader_parameter("exposure", k)
-	m.set_shader_parameter("star_saturation", STAR_SATURATION if body_fader else 1.0)
+	m.set_shader_parameter("star_saturation", star_saturation if body_fader else 1.0)
 	var diam := _diameter_seen(Planets.world_of(b["rel_km"]),b["radius_km"],pl[3])
 	m.set_shader_parameter("ss", 16 if lod_range.y>lod_range.x and diam<8.0 else (8 if diam < 32.0 else 3))
 	var star: bool = b["kind"] == "star"
@@ -466,6 +467,7 @@ static func _image_colour(img:Image,uv:Vector2)->Vector3:
 func set_exposure(k:float)->void:
 	for id:String in drawn_discs:
 		(discs[id].material_override as ShaderMaterial).set_shader_parameter("exposure",k*lod_weights.get(id,1.)*fader_gain(id,k))
+		(discs[id].material_override as ShaderMaterial).set_shader_parameter("star_saturation",star_saturation if body_fader else 1.0)
 	_upload_points(k)
 
 

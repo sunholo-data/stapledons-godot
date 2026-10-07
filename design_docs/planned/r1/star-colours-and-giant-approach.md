@@ -22,11 +22,15 @@
 1. **Auto view star colours.** A star's disc centre aims at 1.2 (just above any lit body, 0.5 × texture peak 2) and, in Auto view only, its own blackbody tint is lifted 2.2× in chroma (`planet.gdshader` `star_saturation`). Realistic view is untouched. The HUD's Auto line adds "star colours enhanced". Measured centres at the stops: Aldebaran (234, 201, 128) golden orange, TRAPPIST-1 red-orange, the Sun a warm white (211, 207, 205). Trade-off: in Auto the Sun is no longer the single brightest pixel (the dev.15 rule); the GPU check now asserts a warm white with its tint order.
 2. **A giant's approach.** `giantTiming()`: 30 s boost, about 60 s cruise, then a **90 s** approach from where the star is **25°** across. Entry is about 0.996c (γ ≈ 12) instead of γ ≈ 800; the apparent disc grows about 0.8° → 7° → 18° → 40° (offline model, rapidity form, aberration of the limb). Main-sequence stars and planets keep the 25 s / 4° rule.
 
+**Colour during the approach is physics, not a bug.** Moving towards the star blue-shifts it: at 0.92c the Doppler factor is about 4.9, so Aldebaran's 3,927 K photosphere looks like a star of about 19,000 K, and at 0.44c (D ≈ 1.6) about 6,300 K. The disc is therefore white, then yellow-white, and turns golden orange only as the ship stops. The lift applies to whatever colour the renderer shows, Doppler included.
+
+**The lift keeps brightness.** The lifted tint is renormalised to unit luminance (Rec. 709 Y, as `Blackbody.rgb_unit_luminance`), so a cool star's red channel can exceed 1 without the disc getting brighter than its 1.2 target. The view toggle (V) changes it on the next frame.
+
 ## Acceptance
 
 | ID | Check | Command |
 |---|---|---|
-| C1 | The Auto-view Sun is a warm white with R ≥ G ≥ B | `godot --path . --script tools/exposure_auto_view.gd` |
+| C1 | The Auto-view Sun is a warm white with R ≥ G ≥ B; a 2,566 K disc in Auto is clearly redder than its physical tint (R−B at least 15 more) at the same luminance (±0.12), and Realistic carries no lift | `godot --path . --script tools/exposure_auto_view.gd` |
 | C2 | Exposure behaviour otherwise unchanged | `make manual-exposure-test` |
 | C3 | Aldebaran's plan has a 90 s approach and 30 s boost; the voyage flies it in real time (1,800 ticks) | `make solar-departure-test`, sim test `checkGiantApproach` |
 | C4 | Renders: Aldebaran golden orange at its stop; the approach frames at 0, ½ and 0.85 of the approach show the disc growing | `godot --path . --script tools/real_time_tour_capture.gd`, inspected |
