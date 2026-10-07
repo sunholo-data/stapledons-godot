@@ -1,0 +1,95 @@
+{
+  "sprint_id": "R1-STARMAP-LARGE",
+  "status": "completed",
+  "approved_by": "Mark Edmondson, attended 2026-10-07 (selected for dev.20)",
+  "requested_by": "Mark (attended 2026-10-06/07)",
+  "design_doc": "design_docs/planned/r1/starmap-large-tier-and-reach.md",
+  "sprint_plan": "design_docs/planned/r1/starmap-large-tier-sprint.md",
+  "github_issues": [],
+  "registry_reuse": [],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 350,
+    "estimated_days": 1.5
+  },
+  "features": [
+    {
+      "id": "LT0",
+      "description": "Benchmark gate: medium vs large at 1920x1080 and 2560x1440, RSS, load time, M2 Air estimate; stop if not viable",
+      "estimated_loc": 60,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC3: make bench TIER=large"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "VIABLE. M4 Max 40c, vsync off, 30 s flight, host load 3-7. medium/large: 1920x1080 frame p50 8.31/8.43, p99 10.07/10.99 ms; star pass GPU p50 0.08/0.34, p99 0.35/0.76 ms; 2560x1440 p99 11.23/11.48 ms, star pass p50 0.10/0.35, p99 0.56/0.99 ms; load_tiers 0.11/0.64 s; static mem 97/248 MB, video 1014/1132 MB. M2 Air estimate (x5-6 GPU): +1.4 ms p50 star pass, ~1 s load. No flux cull needed."
+    },
+    {
+      "id": "LT1",
+      "description": "Large tier from truth, catalogue-parity large, BENCH_SIZE",
+      "estimated_loc": 40,
+      "dependencies": [
+        "LT0"
+      ],
+      "acceptance_criteria": [
+        "AC1: make catalogue TIER=large + catalogue-parity PARITY_TIER=large"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "make catalogue TIER=large: 331,311 rows (HIP 27890's GCNS twin dropped), truth_rule truth-1, sha256.truth in the sidecar. catalogue-parity large: 5/5 VM = interpreter = pinned (interp 1197 s, VM ~60 s, 2.2 GB RSS). BENCH_SIZE + load/memory in tools/bench.gd."
+    },
+    {
+      "id": "LT2",
+      "description": "D-18 pins + make starmap-assets / starmap-publish",
+      "estimated_loc": 120,
+      "dependencies": [
+        "LT1"
+      ],
+      "acceptance_criteria": [
+        "AC2: make starmap-assets"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "data/starmap/SHA256SUMS + tools/starmap_assets.sh; make starmap-publish uploaded starmap/0c706d9b...bin and d82b01d3...json (public bucket, standing approval); make starmap-assets fetch+verify in 0.65 s from a clean state."
+    },
+    {
+      "id": "LT3",
+      "description": "Consistency gate on the large stack",
+      "estimated_loc": 40,
+      "dependencies": [
+        "LT1"
+      ],
+      "acceptance_criteria": [
+        "AC4: make starmap-consistency TIER=large"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "make starmap-consistency TIER=large PASS (335,189 rows, 5,159 destinations drawn, 0 missing, 0 duplicates, f32 restore <= 4.2e-6 ly, pins no-ops); catalogue-stats covers large (M-dwarf 73.4%)."
+    },
+    {
+      "id": "LT4",
+      "description": "Renders opened, make test, CHANGELOG, PR",
+      "estimated_loc": 90,
+      "dependencies": [
+        "LT2",
+        "LT3"
+      ],
+      "acceptance_criteria": [
+        "AC6, AC7: make test"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "tools/starmap_sky_capture.gd, opened: rest +21% lit pixels (GCNS stars the destarred panorama lacked), 50 ly +18%; gamma 707 forward is the boosted CMB in both; stars-only +3% light. make test with the large tier present. make test AILANG=runtime/bin/ailang green locally with stars_large present (28:33)."
+    }
+  ],
+  "deferred": [
+    "L3 destinations to 100 pc + make bench-map (design open question 1 default: sky first; needs galaxy-map LOD design)"
+  ],
+  "round2": "Eval round 1 (79) fixes: make test runs starmap-assets + starmap-consistency-large (missing/short large file FAILS); loud runtime fallback (Starfield.default_tier) and the active tier in the coverage tooltip; export-macos fetches the tier, starmap-export-smoke asserts 331,311 rows in the .app (+15.2 MB pck, +~240 MB peak RSS at the sky scene); bench x3 per tier with GPU-timestamp (Vulkan) vs wall-time (Metal) labels; 335,189 = 324,306 + 170 + 10,713 stated."
+}

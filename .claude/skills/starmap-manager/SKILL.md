@@ -14,6 +14,12 @@ Download, process, and manage astronomical data for the game's 3D starmap. Handl
 # Catalogue inputs into data/raw (public bucket first, else VizieR + sim/tools/extract.ail; pin-checked)
 make catalogue-inputs AILANG=$A
 
+# One position per star: the star-truth table every tier and stars.json read (rule truth-1,
+# design_docs/planned/r1/starmap-single-truth.md); rebuild it BEFORE the tiers, then audit + gate
+make starmap-truth AILANG=$A        # data/starmap/truth/positions.csv + positions.json (~11 s)
+make starmap-truth-audit AILANG=$A  # every disagreement resolved and in starmap-truth-audit.md
+make starmap-consistency            # every destination in the sky once, at its navigation position
+
 # Build a tier (VM; quick ~1 s, medium/large ~80 s)
 make catalogue TIER=quick|medium|large AILANG=$A
 

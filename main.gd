@@ -120,6 +120,16 @@ func _ready() -> void:
 	if not load_stars(args.get("tier", "")):
 		get_tree().quit(2)
 		return
+	if args.has("starmap-smoke"): # exported builds: the default sky stack (large tier, make starmap-assets) loads and draws
+		for i in 120: await get_tree().process_frame
+		var tier: String = starfield.tiers[0] if not starfield.tiers.is_empty() else ""
+		var c := StarCatalogue.load_tier(tier)
+		var rows := c.count if c != null else -1
+		print("starmap-smoke: tiers %s, %s rows %d, %d stars drawn, static memory %.0f MB, video %.0f MB" % [starfield.tiers, tier, rows, starfield.count,
+			Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0, Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0])
+		print("starmap-smoke: %s" % ("OK" if tier == "large" and rows == 331311 else "FAIL (want the large tier with 331311 rows)"))
+		get_tree().quit(0 if tier == "large" and rows == 331311 else 1)
+		return
 	sim.record_path = args.get("record", "")
 	sim.want_minor = SimBridge.SYSTEM_MINOR if not _fixed_scale else sim.want_minor # M5.2a: interactive flights draw the system
 	var course := {"k": "heading", "heading": {"x": HEADING.x, "y": HEADING.y, "z": HEADING.z}}
@@ -349,7 +359,7 @@ func _panel_dump(map: GalaxyMap, speed: String) -> Dictionary:
 ## is in lux; the exposure (M1.5a) is photometric, set by _apply_state.
 func load_stars(tier: String) -> bool:
 	if tier == "":
-		tier = "large" if FileAccess.file_exists("res://data/starmap/stars_large.bin") else "medium"
+		tier = Starfield.default_tier()
 	if not starfield.load_tiers(tier):
 		push_error("starfield: %s" % starfield.last_error)
 		return false

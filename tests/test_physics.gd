@@ -240,11 +240,11 @@ func test_star_brightness() -> void:
 	check("only_flags = FLAG_HIP keeps just the HIP-filled row", sh.count, 1, 0.0)
 	check("and it is the V -1.44 row", sh.custom[1] / Relativity.illuminance_from_v(-1.44), 1.0, 1e-6)
 	sh.free()
-	# the committed tiers: medium (GCNS) + bright + quick's HIP fill must draw Sirius
+	# the committed tiers: medium (GCNS) + bright + quick rows GCNS lacks (HIP fill) must draw Sirius
 	# (Gl 244: SIMBAD l 227.230, b -8.890, 8.6 ly; GCNS has no Gaia photometry for it)
 	var sm := Starfield.new()
 	check("medium tier loads with bright + HIP fill", 1.0 if sm.load_tiers("medium") else 0.0, 1.0, 0.0)
-	check("stacked tiers are medium, quick:hip, bright", 1.0 if sm.tiers == ["medium", "quick:hip", "bright"] else 0.0, 1.0, 0.0)
+	check("stacked tiers are medium, quick:rest, bright", 1.0 if sm.tiers == ["medium", "quick:rest", "bright"] else 0.0, 1.0, 0.0)
 	var sdir := SkyFrame.world_dir_lb(227.230, -8.890)
 	var best := -1.0
 	for k in sm.count:

@@ -201,8 +201,8 @@ export pure func moveRow(r: Row, l: Link) -> Row {
   let k = rootDistance(l) / lenOf(r);
   {id: r.id, x: r.x * k, y: r.y * k, z: r.z * k, teff: r.teff, v: r.v, flags: r.flags}
 }
-export pure func applyRows(rows: [Row], links: Array[Link]) -> [Row] =
-  map(\r. match findId(links, \l. l.id, r.id) { Some(l) => moveRow(r, l), None => r }, rows)
+export pure func linkMove(links: Array[Link], r: Row) -> Row = match findId(links, \l. l.id, r.id) { Some(l) => moveRow(r, l), None => r }
+export pure func applyRows(rows: [Row], links: Array[Link]) -> [Row] = map(\r. linkMove(links, r), rows)
 -- The GCNS tiers (medium, large): a root whose record is a CNS5 row also has a GCNS row (EDR3
 -- parallax); it moves to the root record's parallax too, so it sits with its companions. Roots from
 -- GCNS are their own record there and stay. (Quick and bright rows are their roots' own records.)
@@ -211,13 +211,14 @@ export pure func cnsRoots(links: Array[Link]) -> Array[Root] =
   byId(\x. x.id, dedupRoots(sortBy(\a b. compare(a.id, b.id), map(\l. {id: l.root, plx: l.plx}, filter(\l. l.rootCat == "cns5", toList(links))))))
 pure func dedupRoots(xs: [Root]) -> [Root] = flatMap(\p. match p { (a, b) => if a.id == b.id then [] else [b] },
   zip({id: "", plx: 0.0} :: xs, xs))
+export pure func gcnsMove(roots: Array[Root], links: Array[Link], r: Row) -> Row = match findId(links, \l. l.id, r.id) {
+  Some(l) => moveRow(r, l),
+  None => match findId(roots, \x. x.id, r.id) {
+    Some(x) => moveRow(r, {id: r.id, parent: "", root: x.id, rootCat: "cns5", plx: x.plx, epoch: 0.0, ownPlx: 0.0, sep: 0.0, au: 0.0}),
+    None => r } }
 export pure func applyGcnsRows(rows: [Row], links: Array[Link]) -> [Row] {
   let roots = cnsRoots(links);
-  map(\r. match findId(links, \l. l.id, r.id) {
-    Some(l) => moveRow(r, l),
-    None => match findId(roots, \x. x.id, r.id) {
-      Some(x) => moveRow(r, {id: r.id, parent: "", root: x.id, rootCat: "cns5", plx: x.plx, epoch: 0.0, ownPlx: 0.0, sep: 0.0, au: 0.0}),
-      None => r } }, rows)
+  map(\r. gcnsMove(roots, links, r), rows)
 }
 export pure func rootsIn(rows: [Row], links: Array[Link]) -> int {
   let roots = cnsRoots(links);

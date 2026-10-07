@@ -13,8 +13,13 @@ The selected files live under
 `bridge_outward_moody.png`, `commons_arcade_moody.png`.
 
 This is a ship-fixed internal lighting study. The broad key does not represent
-the Sun. Simulation-driven external sunlight on ship geometry remains a follow-up;
-the planet/sky renderer has its own physical radiometry.
+the Sun. Simulation-driven starlight on the ship geometry is now
+`demos/ship_star_light.gd` (`StarLight`, design
+`design_docs/planned/r1/ship-star-light.md`): it comes from the star's apparent
+direction with its Doppler-shifted blackbody colour and a log-compressed
+brightness, and it dims this broad key to a 25% shadowless floor as it takes over. The ambient, fill
+and practical of this study stay as the base. The planet/sky renderer keeps its
+own physical radiometry.
 
 `make ship-lighting-capture` reproduces four poses with baseline, moody and
 shadow-disabled profiles. The paired 1920×1080 benchmark used 120 warmup and
