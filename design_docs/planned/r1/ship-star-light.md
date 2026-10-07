@@ -69,11 +69,30 @@ Every decade of real illuminance is an equal step. Shadows (`moody` profile only
 
 **Labels.** HUD details (Tab): "Starlight on ship: Sun · 127000 lx at the ship → 100% light (brightness log-compressed, 1–1.0×10^5 lx; direction and colour physical)". `lighting_manifest().star_light` carries the source, the rest-frame and seen illuminance, D, the transmission, and the three "physical / not physical" statements.
 
+## Physics gate (definition of done, gate 2)
+
+The light shows aberration and Doppler, but **adds no new SR maths**. It reuses the values the sky renderer already draws:
+- the resolved-disc centre `Planets.apparent_disc64` (package `apparentDisc`), whose shader counterpart `make golden-m5` covers (G-M5-6 point/disc handoff), along with `make flyby-optics-test` and `make planet-transition-golden`;
+- for point stars, the starfield's aberration, whose CPU mirror `Relativity.aberrate` matches the GPU in `make golden` (144 off-axis cases);
+- Doppler `Planets.doppler_seen64` with the sim's γ and 1 − β;
+- `pointFluxRatio` (`Relativity.point_flux_ratio`, `SkyMeter.seen_point`);
+- the blackbody lookup `Blackbody.lut_rgb`.
+
+`tests/test_physics.gd` asserts the spec check values RS-1 to RS-4 for these formulas.
+
+`tests/test_ship_star_light.gd` adds its own spec check (relativity-spec.md §2 "Aberration" and "Doppler", §7 RS-1). A Sun at 90° in the rest frame, seen from 0.9c, lights the ship from 25.842° off the heading, with D = γ = 2.29416 and colour = the blackbody at 13,242 K.
+
+The same test cross-checks the light's direction against what the renderer draws:
+- the resolved Sun's drawn centre at 0, 0.6c and 0.9999c;
+- TRAPPIST-1 and Aldebaran as starfield points, at rest and at 0.9999c.
+
+No new golden is needed: the light draws nothing in the sky, so GPU-vs-CPU agreement is the existing goldens' job.
+
 ## Acceptance criteria
 
 | # | Criterion | Command |
 |---|---|---|
-| A1 | Light direction equals the rendered disc centre at rest and at 0.6c (< 0.01°), the textbook aberration (< 0.02°) and D at the apparent angle | `make ship-star-light-test` |
+| A1 | Light direction equals the rendered disc centre at rest, 0.6c and 0.9999c and the starfield aberration of point stars (TRAPPIST-1, Aldebaran) at rest and 0.9999c (< 0.01°); spec RS-1 (25.842°, D = γ); colour = blackbody at a hand-computed T × D | `make ship-star-light-test` |
 | A2 | The interior and sky cameras put the Sun on the same pixel (< 0.5 px) in 5 attitudes × 2 views; a mirrored axis is caught | `make ship-star-light-test` |
 | A3 | Energy zero at or below 1 lx, monotonic, bounded, logarithmic | `make ship-star-light-test` |
 | A4 | Colour order by Teff: TRAPPIST-1 < Aldebaran < Sun (blue/red); D > 1 blueshifts | `make ship-star-light-test` |

@@ -114,7 +114,57 @@ func _run() -> void:
 	check("the light moved toward the heading under aberration", star.dir_world.normalized().dot(h) > cos_rest + 0.1)
 	var d_seen := 1.0 / (1.25 * (1.0 - 0.6 * cos_app))
 	check("light Doppler is D = 1/(g(1 - b cos')) at the apparent angle (%.6f vs %.6f)" % [star.target.doppler, d_seen], absf(star.target.doppler - d_seen) < 1e-4)
-	check("light colour uses T x D", star.target.colour.distance_to(StarLight.colour_of(Planets.T_SUN, star.target.doppler)) < 1e-6)
+	# Independent colour check: the shaders' lookup at a hand-computed T x D (textbook D above).
+	var lut_hand := Blackbody.lut_rgb(Planets.T_SUN * d_seen)
+	lut_hand /= maxf(lut_hand.x, maxf(lut_hand.y, lut_hand.z))
+	check("light colour is the blackbody at 5772 K x D(textbook) = %.0f K" % (Planets.T_SUN * d_seen), star.target.colour.distance_to(lut_hand) < 1e-3)
+
+	# Spec check values, stapledons-design physics/relativity-spec.md §2 (Aberration, Doppler)
+	# and §7 RS-1: a source at 90 deg (rest frame) seen from 0.9c appears at 25.842 deg;
+	# its Doppler factor is D = gamma (1 + b cos 90) = gamma = 2.29416.
+	var rs := world.duplicate(true)
+	var h0 := sky.heading_world.normalized()
+	var side := h0.cross(Vector3.UP if absf(h0.y) < 0.9 else Vector3.RIGHT).normalized()
+	body(rs, "sun").rel_km = rel_at(side, SystemView.AU_KM)
+	var g09 := 1.0 / sqrt(1.0 - 0.81)
+	rs.ship.beta = 0.9; rs.ship.gamma = g09; rs.ship.one_minus_beta = 0.1
+	sky.apply(rs); star.update(rig, sky, 0.0, true)
+	check("RS-1: the 90 deg Sun at 0.9c lights the ship from 25.842 deg off the heading (%.4f)" % angle_deg(star.dir_world, sky.heading_world), absf(angle_deg(star.dir_world, sky.heading_world) - 25.842) < 0.002)
+	check("spec Doppler: D = gamma = 2.29416 for the 90 deg source at 0.9c (%.5f)" % star.target.doppler, absf(star.target.doppler - 2.29416) < 1e-4)
+	var rs_rgb := Blackbody.lut_rgb(5772.0 * 2.29416)
+	rs_rgb /= maxf(rs_rgb.x, maxf(rs_rgb.y, rs_rgb.z))
+	check("spec colour: the light is the blackbody at 5772 x 2.29416 = 13242 K", star.target.colour.distance_to(rs_rgb) < 1e-3)
+
+	# Point-source stars: the renderer draws them in the starfield, whose aberration is
+	# Relativity.aberrate (CPU mirror of the shader, `make golden` off-axis cases).
+	# The light's apparent_direction must agree, at rest and at 0.9999c.
+	for beta in [0.0, 0.9999]:
+		var far_stars := world.duplicate(true)
+		var sun_row: Dictionary = body(far_stars, "sun")
+		body(far_stars, "earth").rel_km = rel_at(Vector3.UP, 1.0e9) # keep the night-side Earth out of these sight lines
+		var dirs := {"trappist-1": Vector3(0.2, -0.7, 0.68).normalized(), "aldebaran": Vector3(-0.8, 0.3, -0.52).normalized()}
+		for id: String in dirs:
+			var row: Dictionary = sun_row.duplicate(true)
+			row.id = id; row.name = id
+			row["teff_k"] = 2566.0 if id == "trappist-1" else 3927.0
+			row.radius_km = 82800.0 if id == "trappist-1" else 3.13e7
+			row.rel_km = rel_at(dirs[id], 1000.0 * SystemView.AU_KM)
+			row.e_v_lux = 1.0
+			far_stars.system.bodies.append(row)
+		var g := 1.0 / sqrt((1.0 - beta) * (1.0 + beta)) if beta > 0.0 else 1.0
+		far_stars.ship.beta = beta; far_stars.ship.gamma = g; far_stars.ship.one_minus_beta = 1.0 - beta
+		sky.apply(far_stars)
+		for id: String in dirs:
+			var row := body(far_stars, id)
+			var mine := vec_of(StarLight.apparent_direction(sv, row.rel_km, row.radius_km))
+			var drawn := Relativity.aberrate(dirs[id], sky.heading_world.normalized(), beta)
+			check("%s at %.4fc is a point and the light matches the starfield's aberration (%.5f deg)" % [id, beta, angle_deg(mine, drawn)], sv.drawn_points.has(id) and angle_deg(mine, drawn) < 0.01)
+	# The resolved Sun near c too.
+	var near_fast := near.duplicate(true)
+	near_fast.ship.beta = 0.9999; near_fast.ship.gamma = 1.0 / sqrt(0.0001 * 1.9999); near_fast.ship.one_minus_beta = 0.0001
+	sky.apply(near_fast); star.update(rig, sky, 0.0, true)
+	var fast_centre: Vector3 = sv.discs.sun.material_override.get_shader_parameter("apparent_centre_w") if sv.drawn_discs.has("sun") else Vector3.ZERO
+	check("at 0.9999c the light follows the resolved Sun's drawn centre (%.4f deg)" % angle_deg(star.dir_world, fast_centre), sv.drawn_discs.has("sun") and angle_deg(star.dir_world, fast_centre) < 0.01)
 
 	# --- 4. Frame: the light comes from where the Sun is drawn through the bubble.
 	var vp := SubViewport.new(); vp.size = PX; vp.own_world_3d = true; root.add_child(vp)

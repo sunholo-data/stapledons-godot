@@ -108,7 +108,7 @@ static func emitters(sky: InteriorSky) -> Array:
 		var seen: float = b.e_v_lux * pow(10.0, Blackbody.lut_log10_y(teff * doppler) - Blackbody.lut_log10_y(teff)) / (doppler * doppler)
 		# Eclipses and rings: the renderer's own occlusion along the apparent ray, the star
 		# itself skipped and only bodies nearer than it counted.
-		var transmission: float = sv._directional_transmission(dir, false, b.id, dist) if not sv.rendered_bodies.is_empty() else 1.0
+		var transmission: float = sv.transmission_toward(dir, b.id, dist) if not sv.rendered_bodies.is_empty() else 1.0
 		out.append({"id": b.id, "name": b.get("name", b.id), "dir": dir, "lux": b.e_v_lux, "seen_lux": seen * transmission, "teff": teff, "doppler": doppler, "transmission": transmission, "colour": colour_of(teff, doppler)})
 	return out
 

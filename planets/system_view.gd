@@ -565,6 +565,12 @@ func occludes_direction(observed_ray:PackedFloat64Array,skip_id:String="",max_di
 func directional_transmission(observed_ray:PackedFloat64Array)->float:
 	return _directional_transmission(observed_ray,false)
 
+## Transmission toward a finite source along its observed (apparent) ray: the same
+## globe/ring occlusion, skipping the source itself and counting only bodies nearer
+## than max_distance_km. Used by the ship's star light (demos/ship_star_light.gd).
+func transmission_toward(observed_ray:PackedFloat64Array,skip_id:String,max_distance_km:float)->float:
+	return _directional_transmission(observed_ray,false,skip_id,max_distance_km)
+
 static func _f32(value:float)->float:
 	return PackedFloat32Array([value])[0]
 
