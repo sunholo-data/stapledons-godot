@@ -2,6 +2,12 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-06: iteration 16, M4.7 Archive codex LANDED (PR #123, merge `8b8930f`; iteration 15's orphan, verified and finished); minimax-m3 eval 88 PASS, 0 blocking, survivor M6 killed; clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved (M4.7, an M4.5 dependency); no open decisions.
+
+- **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended); 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan); 4 UNMET → R1-M4-JOURNEY: M4.0 ✅, M4.1 step 1 ✅, M4.2 ✅, M4.3a ✅, M4.6a + M4.1 step 2 ✅ (attended PR #113), **M4.7 ✅ (this iteration)**; open: M4.3b, M4.4 (routable, wave 3), then M4.5 and M4.6; 5 ongoing (strict + parity green).
+- **Done**: the 2026-10-05 18:53Z fire (iteration 15) built M4.7, then the stall watchdog killed it at gate 3 (rc=143) with the branch unpushed. This iteration had the executor (Sonnet 5.5, Agent tool) merge main and fix an `ai-live-guard` defect test-first, with `make test` rc=0. The evaluator (minimax-m3, pi recipe, cross-vendor) scored 88. Its two sandboxed reds were re-measured green outside the sandbox. Survivor M6 was killed by a test (controller RED 43/2 → GREEN 45/0). PR CI was green on both heads. Main CI red at `1417c32` was a zero-step runner outage; the rerun was green.
+- **Next**: M4.3b (HUD in the interior) or M4.4 news/legacy; then M4.5. Follow-ups: the D-23 4.32 ly regen in the design repo, then re-import the lore (it still says 4.37 ly); the `archive.photon-drive` J vs J/kg canon fix.
+
 ## STATUS 2026-10-03: iteration 12, M4.1 step 1 LANDED (PR #92, merge `1e53d02`, CI green); Opus eval 91/100 PASS, 3 surviving mutants killed; clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved (critical-path M4.1 step 1); no open decisions.
 
 - **Clause map**: 1 UNMET → R1-M1-SKY-2, attended, only M1.5b (renders report) left open in its JSON; 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan); 4 UNMET → R1-M4-JOURNEY: M4.1 step 1 ✅ (this iteration), M4.0 in attended PR #95, M4.6a and M4.3a routable; 5 ongoing (strict + parity green; 1 DX report filed).
