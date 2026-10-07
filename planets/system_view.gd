@@ -63,11 +63,14 @@ var _prepared := false
 ## catalogue sky keeps the shared exposure. Off = one physical exposure ("Realistic").
 const FADER_TARGET := 0.5 # linear pre-tonemap: below AgX's shoulder, so surface detail survives
 const FADER_TEX_PEAK := 2.0 # textured albedo / disc mean at the brightest clouds and ice
-## Emitters stay the brightest thing on screen: a star's disc centre lands at
-## the top of AgX's shoulder, level with the brightest catalogue stars at the
-## demo's EV. AgX desaturates there, so the Sun reads white (R >= G >= B kept),
-## which is its true colour from space; at 0.5 it read as a grey star.
-const FADER_STAR_TARGET := 16.0
+## Stars in Auto view show their colour (Mark, 2026-10-07: "auto mode dim enough to have
+## pretty star colours"). A star's disc centre lands at 1.2, just above any lit body
+## (0.5 x texture peak 2), low enough that the tone mapper keeps its hue, and its own
+## blackbody chroma is lifted 2.2x (STAR_SATURATION). Measured centres: Aldebaran
+## (3,927 K) golden orange, TRAPPIST-1 (2,566 K) red-orange, the Sun warm white.
+## Realistic view is untouched. Labelled on the HUD.
+const FADER_STAR_TARGET := 1.2
+const STAR_SATURATION := 2.2
 var body_fader := false
 var _fader_peak := {} # id -> brightest displayed radiance before exposure (cd/m^2)
 var _fader_star := {} # id -> true for emitters (stars)
@@ -319,6 +322,7 @@ func _draw_disc(b: Dictionary, k: float, rank: int) -> void:
 		m.set_shader_parameter("lut_log_tmax",log(Blackbody.LUT_T_MAX))
 	m.set_shader_parameter("radius", pl[2])
 	m.set_shader_parameter("exposure", k)
+	m.set_shader_parameter("star_saturation", STAR_SATURATION if body_fader else 1.0)
 	var diam := _diameter_seen(Planets.world_of(b["rel_km"]),b["radius_km"],pl[3])
 	m.set_shader_parameter("ss", 16 if lod_range.y>lod_range.x and diam<8.0 else (8 if diam < 32.0 else 3))
 	var star: bool = b["kind"] == "star"
