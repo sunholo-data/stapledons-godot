@@ -282,7 +282,7 @@ pure func solarTour(p: Params) -> string =
     f("legs", arr(each(solarLegObj, solarLegs(p))))])
 -- system.jd = epoch_jd + Earth time; the ship's galactic position in ly.
 pure func systemOf(w: World) -> SystemView = systemAt(solSystem(), jdAt(w.params.epochJd, w.ship.motion.t), position(w.ship))
-pure func finiteSystemOf(w:World)->SystemView {
+export pure func finiteSystemOf(w:World)->SystemView {
   let v=systemOf(w);
   {v | bodies:v.bodies ++ alphaBodies(v.jd,position(w.ship)) ++ destinationBodies(position(w.ship))}
 }

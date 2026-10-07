@@ -9,7 +9,10 @@ import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta
 import std/string (concat)
 import ./solar_departure (TourLeg, initialize, initializeAtStandoff, earthStandoffKm, intentForLeg, legs, legCount, solCruisePhi, acenOneMinusBeta, trappistOneMinusBeta, aldebaranOneMinusBeta)
 import ./navigation (safetyMinKm, bodyPhiMax)
-import ./destination_stars (destinationStopKm, habitableZoneKm, destinationRadiusKm, destinationValue)
+import ./destination_stars (destinationStopKm, habitableZoneKm, destinationRadiusKm, destinationValue, destinationLy)
+import ./protocol (finiteSystemOf)
+import ./celestial (BodyView)
+import pkg/sunholo/relativity/photometry (illuminanceFromV)
 import ./data/sol (sun)
 
 pure func fixtureTarget() -> Target = { index: 0, id: "CNS5:3627", pos: {x: 3.094521, y: 0.0 - 3.015404, z: 0.0 - 0.051608} }
@@ -199,8 +202,32 @@ export pure func checkStarStops() -> bool {
   && absf(destinationValue("aldebaran", "luminosity_sun") - 45.212 * 45.212 * (3927.0 / 5772.0) * (3927.0 / 5772.0) * (3927.0 / 5772.0) * (3927.0 / 5772.0)) < 0.01
 }
 test "star stops follow D-47: TRAPPIST-1 HZ 0.0235 AU, Aldebaran 40 deg at 0.615 AU, alpha Cen A HZ 1.233 AU; inferred rows recompute" { checkStarStops() }
+-- The destination-star feed (eval R1 finding 1): ids and order, finite radius, the
+-- illuminance from V and distance, and the planner's body index equal to the star's
+-- place in the system section the client receives.
+pure func indexOf(bs: [BodyView], id: string, i: int) -> int = match bs { [] => 0 - 1, b :: rest => if b.id == id then i else indexOf(rest, id, i + 1) }
+pure func viewOf(bs: [BodyView], id: string) -> Option[BodyView] = match bs { [] => None, b :: rest => if b.id == id then Some(b) else viewOf(rest, id) }
+export pure func checkDestinationFeed() -> bool {
+  let w = chainTo(started(), 0, 9);
+  let sys = finiteSystemOf(w);
+  match (viewOf(sys.bodies, "aldebaran"), planned(w, 9)) {
+    (Some(b), Some(p)) => {
+      let dKm = norm(b.relKm);
+      let earthAu = norm(destinationLy("aldebaran")) * lyKm() / au();
+      let want = illuminanceFromV(0.87) * (earthAu * au() / dKm) * (earthAu * au() / dKm);
+      (match p.nav { Some(n) => n.index == indexOf(sys.bodies, "aldebaran", 0), None => false })
+      && indexOf(sys.bodies, "trappist-1", 0) == indexOf(sys.bodies, "aldebaran", 0) + 1
+      && indexOf(sys.bodies, "acen-b", 0) + 1 == indexOf(sys.bodies, "aldebaran", 0)
+      && b.kind == "star" && b.radiusKm == destinationRadiusKm("aldebaran")
+      && absf(b.eVLux / want - 1.0) < 0.000000001
+    },
+    _ => false
+  }
+}
+pure func chainTo(w: World, n: int, stop: int) -> World = if n >= stop then w else chainTo(finishLeg(w, n), n + 1, stop)
+test "destination stars are fed after alpha Cen in order; the planner's index is the feed's; illuminance is V at Earth scaled by distance" { checkDestinationFeed() }
 export pure func solarDepartureVm(n: int) -> string =
-  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() && checkTimedLegs() && checkApproachPhase() && checkTimedDrag() && checkStarStops() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
+  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() && checkTimedLegs() && checkApproachPhase() && checkTimedDrag() && checkStarStops() && checkDestinationFeed() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
 
 pure func clearance(w: World, id: string) -> string {
   let pl = (tick(w, {dtau: 0.0, intents: [IPlanBody({id: id, cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: None})]}));

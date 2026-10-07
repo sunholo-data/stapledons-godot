@@ -50,6 +50,6 @@ Only the Sun and α Cen A/B are finite in the sim. TRAPPIST-1 and Aldebaran are 
 |---|---|---|
 | S1 | Data rows are cited; inferred values recompute from their inputs; stop rules give 0.0235 AU, 1.233 AU and about 0.61 AU | sim tests |
 | S2 | Star bodies are fed with catalogue suppression (no double light); the planner stops at each by the rule | sim tests; `make solar-departure-test` |
-| S3 | The full voyage reaches all 11 stops; each star hop has a 30 s boost and a 25 s approach; arrival distances match the rule | `make solar-departure-test` |
+| S3 | The full voyage reaches all 10 stops after Earth; each star hop has a 30 s boost and a 25 s approach; arrival distances match the rule | `make solar-departure-test` |
 | S4 | Renders show each star's arrival (Aldebaran filling ~40°, TRAPPIST-1 a red disc beside its HZ) | capture tool |
 | S5 | Gate 1 | `make test`, CI |
