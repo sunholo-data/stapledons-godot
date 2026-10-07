@@ -18,8 +18,11 @@ func settle() -> void:
 	await RenderingServer.frame_post_draw
 
 func shot(name: String) -> void:
+	var card_visible: bool = demo.interlude_card.visible
+	demo.interlude_card.visible = false # the cruise card would cover the deck
 	await settle()
 	root.get_texture().get_image().save_png(OUT + "/" + name + ".png")
+	demo.interlude_card.visible = card_visible
 	var w: Dictionary = demo.journey_sim.world
 	captures.append({"name": name, "phase": w.ship.phase, "beta": w.ship.beta, "gamma": w.ship.gamma, "epoch_jd": w.system.jd, "eye_m": [demo.camera.position.x, demo.camera.position.y, demo.camera.position.z], "tilt_deg": demo.camera.tilt, "yaw_rad": demo.camera.yaw, "attitude": Array(demo.camera.attitude_basis), "lighting": demo.lighting_manifest()})
 	print("capture ", name, " · ", demo.star_light.hud_line(), " · interior dir ", demo.star_light.interior_dir, " · key ", demo.lighting.key.light_energy)
@@ -93,7 +96,9 @@ func _run() -> void:
 			if phase != old_phase: phase_ticks = 0; old_phase = phase
 			phase_ticks += 1
 			if id == "CNS5:3627" and phase == "cruising" and phase_ticks == 120:
-				await poses("04_interstellar_cruise", ["bridge", "overlook"])
+				await poses("04_outbound_cruise", ["bridge", "overlook"])
+			if id == "CNS5:3627" and phase == "braking" and phase_ticks == 2:
+				await poses("04b_interstellar_dark", ["bridge", "overlook", "commons"])
 			if id == "jupiter" and phase == "approaching" and phase_ticks == 60:
 				await poses("02a_near_jupiter", ["overlook"])
 			if demo.journey_sim.world.journey.state == "arrived": break

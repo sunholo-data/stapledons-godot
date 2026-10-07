@@ -76,7 +76,7 @@ Every decade of real illuminance is an equal step. Shadows (`moody` profile only
 | A5 | Smooth: fade < 4% of max per 60 Hz frame; a 40° jump turns < 2°/frame; a ±8% near-equal pair never switches | `make ship-star-light-test` |
 | A6 | Dark interstellar cruise: no star light, moody key restored; an eclipse blocks the light | `make ship-star-light-test` |
 | A7 | The demo installs and drives StarLight; the manifest and HUD label the compression | `make ship-star-light-test` |
-| A8 | Inspected renders at Earth, during the departure turn, near Jupiter, Saturn, interstellar cruise, TRAPPIST-1 and Aldebaran | `make ship-star-light-capture` → `renders/ship_star_light/` |
+| A8 | Inspected renders at Earth, during the departure turn, near Jupiter, Saturn, the outbound 0.999c cruise, the dark interstellar leg, TRAPPIST-1 and Aldebaran | `make ship-star-light-capture` → `renders/ship_star_light/` |
 | A9 | Cost measured against the ship-only rig | `make ship-star-light-bench` → `renders/ship_star_light/benchmark-aggregate.json` |
 | A10 | `make test` green (the new test runs in `ship-demo-ci`) | `make test AILANG=runtime/bin/ailang` |
 

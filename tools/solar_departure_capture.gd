@@ -60,5 +60,5 @@ func _run()->void:
 		await turn_stationary();await capture(destination+"_arrival")
 		if failed:break
 	var file:=FileAccess.open(OUT+"/capture-manifest.json",FileAccess.WRITE)
-	file.store_string(JSON.stringify({"captures":captures,"approximation":demo.journey_sim.world.solar_departure.approximation,"itinerary":itinerary,"note":"Actual standing bridge eye, smooth stationary attitude turns, same geometry/sky observer. Fast capture ticks; normal playback uses 20 Hz. Fixed internal lighting, no external Sun illumination or GR."},"  "))
+	file.store_string(JSON.stringify({"captures":captures,"approximation":demo.journey_sim.world.solar_departure.approximation,"itinerary":itinerary,"note":"Actual standing bridge eye, smooth stationary attitude turns, same geometry/sky observer. Fast capture ticks; normal playback uses 20 Hz. Moody ship lighting plus the star light (direction and colour physical, brightness log-compressed; see ship_star_light.gd). No GR."},"  "))
 	print("solar-departure-capture-images: %d"%captures.size());print("solar-departure-capture: %s" %("FAIL" if failed else "OK"));demo.queue_free();await process_frame;quit(1 if failed else 0)
