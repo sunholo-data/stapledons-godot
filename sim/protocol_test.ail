@@ -142,7 +142,7 @@ pure func edgeView() -> PlanView = { target: {index: maxInt(), id: "Gl \"559\"",
   cruisePhi: phiCap(), cruiseBeta: almostOne(), cruiseOneMinusBeta: tiny(), cruiseGamma: 1.0e308, boostMinutes: 1.7976931348623157e308, shipYears: 0.1,
   earthYears: negZero(), arriveYear: -1.0e308, ageOnArrival: 0.30000000000000004, yearsLeft: -0.00000000015,
   energy: {boostJ: 1.0e21, brakeJ: 237869256192685950.0, dragJ: 0.0, totalJ: 15104591056870126000.0, totalKg: 6.818},
-  ism: {dragN: tiny(), holdW: 70791174749363.73, loadWM2: 2253353077.7286806, glowWM2: 0.000024071942179266308}, cmbForwardK: 3853.730994033574 }
+  ism: {dragN: tiny(), holdW: 70791174749363.73, loadWM2: 2253353077.7286806, glowWM2: 0.000024071942179266308}, cmbForwardK: 3853.730994033574, drive: None }
 pure func stateFixtures() -> [StateMsg] = [
   { tick: 0, status: "ok", clock: Some({tau: 0.1, t: almostOne(), year: tiny(), age: negZero()}),
     ship: Some({phase: "rest", beta: negZero(), oneMinusBeta: 1.0, gamma: 1.0e308, heading: {x: 0.0, y: 0.0, z: -1.0}, pos: {x: phiCap(), y: 0.1, z: tiny()}, x: 1.0e308, flown: negZero()}),

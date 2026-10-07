@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Even legs, a gentle final approach and skip-to-next-stage, 2026-10-06
+
+- Every in-system leg of the guided voyage has the same rhythm: 30 s accelerating, about 60 s cruising, braking, then a 25 s final approach. The sim solves each leg's thrust and cruise speed (0.07c to the Callisto hop, above 0.999c to Jupiter and Saturn); Sun → Jupiter takes about 2¼ minutes instead of 6½ (D-46).
+- Arrivals ease in: a new trip profile brakes hard, then approaches gently from where the body is 4° across. It's in `sunholo/relativity` 0.9.0 (published; existing outputs bit-identical), and the ship reports a new `approaching` phase.
+- **Skip stage [K]** jumps exactly to the next stage of the leg (accelerating → cruise → braking → approach → arrival). The HUD shows "FINAL APPROACH" and this leg's thrust, and labels how many stages were skipped.
+- The HUD also shows the distance to the destination, from the last stop, and from Earth.
 ### News from home, the AI path, the return trip and the legacy screen, 2026-10-06
 
 - M4.4. The Archive terminal's news tab is a panel: "Transmission received", a header built from sim fields ("Latest news from Earth: Earth-year +0.04, already 4.31 years old."), and one paragraph from `data/news/templates.json` (five tiers of four, numerals only inside `{slots}`, at most 280 characters), or the accepted AI text. What it shows follows the sim's `news.body_source`: `template` has no notice, `ai` a small "generated" tag, `fallback` the template under "Live transmission unavailable: archived text shown", the reason in words from a fixed digit-free table and a diagnostics entry. Nothing is asked of the AI service without AI on and a key (D-8).

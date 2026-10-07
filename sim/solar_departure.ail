@@ -9,12 +9,16 @@ import std/result (Result, Ok, Err)
 import pkg/sunholo/celestial/kepler (Vec3, sub, scale, norm)
 import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
 import ./celestial (solSystem, bodyAt, lyKm)
-import ./navigation (BodyReq, safetyMinKm, targetFacts, bodyPhiMax)
+import ./navigation (BodyReq, Timing, safetyMinKm, targetFacts, bodyPhiMax)
 import ./data/sol (sun)
 import pkg/sunholo/celestial/ephemeris (auKm)
 import ./core (World, Params, Target, Intent, IPlanBody, IPlan)
 
-export type TourLeg = { id: string, name: string, kind: string, cruisePhi: float, standoffKm: Option[float] }
+export type TourLeg = { id: string, name: string, kind: string, cruisePhi: float, standoffKm: Option[float], timing: Option[Timing] }
+-- D-46 (Mark, attended 2026-10-06): every in-system leg has the same rhythm:
+-- 30 s of boost, about 60 s of cruise, then a 25 s final approach that begins
+-- where the body is 4 degrees across. The sim solves each leg's thrust and speed.
+export pure func tourTiming() -> Timing = { boostS: 30.0, cruiseS: 60.0, approachS: 25.0, approachDeg: 4.0 }
 export pure func approximation() -> string = "Earth position is the Earth-Moon barycentre approximation; inertial geometric-clearance demo, not gravity-bound orbits. Gravity and thermal hazards are not simulated."
 pure func radiusKm(id: string) -> float = match targetFacts(solSystem(), id) { Ok(f) => f.radiusKm, Err(_) => 0.0 }
 export pure func earthStandoffKm() -> float = 2.0 * radiusKm("earth")
@@ -52,14 +56,14 @@ export pure func aldebaranOneMinusBeta() -> float = 0.000001 -- 0.999999c: TRAPP
 -- Genuine stop intercepts with explicit standoffs checked by the unchanged
 -- collision/ring/intercept math; star legs arrive at the catalogue stand-off.
 export pure func legs(p: Params) -> [TourLeg] = [
-  {id: "sun", name: "Sun", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(sunStandoffKm())},
-  {id: "jupiter", name: "Jupiter", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(jupiterStandoffKm())},
-  {id: "callisto", name: "Callisto clearance", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(callistoStandoffKm())},
-  {id: "saturn", name: "Saturn", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(saturnStandoffKm())},
-  {id: "CNS5:3627", name: "Alpha Centauri system", kind: "star", cruisePhi: rapidityOfOneMinusBeta(acenOneMinusBeta()), standoffKm: None},
-  {id: "acen-a", name: "Alpha Centauri A — 1 AU", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(auKm())},
-  {id: "Gaia DR3 2635476908753563008", name: "TRAPPIST-1", kind: "star", cruisePhi: rapidityOfOneMinusBeta(trappistOneMinusBeta()), standoffKm: None},
-  {id: "CNS5:1142", name: "Aldebaran", kind: "star", cruisePhi: rapidityOfOneMinusBeta(aldebaranOneMinusBeta()), standoffKm: None}
+  {id: "sun", name: "Sun", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(sunStandoffKm()), timing: Some(tourTiming())},
+  {id: "jupiter", name: "Jupiter", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(jupiterStandoffKm()), timing: Some(tourTiming())},
+  {id: "callisto", name: "Callisto clearance", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(callistoStandoffKm()), timing: Some(tourTiming())},
+  {id: "saturn", name: "Saturn", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(saturnStandoffKm()), timing: Some(tourTiming())},
+  {id: "CNS5:3627", name: "Alpha Centauri system", kind: "star", cruisePhi: rapidityOfOneMinusBeta(acenOneMinusBeta()), standoffKm: None, timing: None},
+  {id: "acen-a", name: "Alpha Centauri A — 1 AU", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(auKm()), timing: None},
+  {id: "Gaia DR3 2635476908753563008", name: "TRAPPIST-1", kind: "star", cruisePhi: rapidityOfOneMinusBeta(trappistOneMinusBeta()), standoffKm: None, timing: None},
+  {id: "CNS5:1142", name: "Aldebaran", kind: "star", cruisePhi: rapidityOfOneMinusBeta(aldebaranOneMinusBeta()), standoffKm: None, timing: None}
 ]
 export pure func legCount() -> int = 8
 pure func legAt(xs: [TourLeg], n: int) -> Option[TourLeg] =
@@ -67,6 +71,6 @@ pure func legAt(xs: [TourLeg], n: int) -> Option[TourLeg] =
 export pure func intentForLeg(w: World, n: int, outbound: Target) -> Option[Intent] =
   match legAt(legs(w.params), n) {
     None => None,
-    Some(leg) => if leg.kind == "body" then Some(IPlanBody({id: leg.id, cruisePhi: leg.cruisePhi, mode: "stop", standoffKm: leg.standoffKm, bKm: 0.0, clockDeg: 0.0, runOutKm: None}))
+    Some(leg) => if leg.kind == "body" then Some(IPlanBody({id: leg.id, cruisePhi: leg.cruisePhi, mode: "stop", standoffKm: leg.standoffKm, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: leg.timing}))
       else if outbound.id == leg.id then Some(IPlan({target: outbound, cruisePhi: leg.cruisePhi, flipG: None})) else None
   }

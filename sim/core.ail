@@ -20,7 +20,7 @@ import ./navigation (BodyReq, NavPlan, Leg, planBody, staleAt)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
-export type ShipPhase = AtRest | Boosting | Cruising | Braking deriving (Eq)
+export type ShipPhase = AtRest | Boosting | Cruising | Braking | Approaching deriving (Eq)
 export type Ship = { motion: Motion, heading: Vec3, origin: Vec3, x0: float, phase: ShipPhase }
 export type TurnResult = { accepted: bool, ship: Ship }
 
@@ -165,7 +165,7 @@ export pure func derivePhase(phi: float, thrust: float) -> ShipPhase =
   else Braking
 
 export pure func phaseName(p: ShipPhase) -> string =
-  match p { AtRest => "at_rest", Boosting => "boosting", Cruising => "cruising", Braking => "braking" }
+  match p { AtRest => "at_rest", Boosting => "boosting", Cruising => "cruising", Braking => "braking", Approaching => "approaching" }
 
 -- Per tick piece: thrust (boost or brake, including the piece that ends at
 -- rest) adds m_eff c^2 |dphi|; cruise adds the
@@ -243,8 +243,15 @@ pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending 
 -- body's place in system.bodies and its pos the arrival point.
 pure func planBodyIntent(p: Params, a: Pending, rq: BodyReq) -> Pending {
   let here = position(a.ship);
-  match planBody({ sys: solSystem(), epochJd: p.epochJd, t0: a.ship.motion.t, hereLy: here, accel: p.boostG * standardGravity(), bubbleKm: p.bubbleRadiusM / 1000.0 }, rq) {
-    Ok(l) => storePlan(a, { index: l.nav.index, id: rq.id, pos: l.arrivalLy }, here, l.heading, false, l.trip, Some(l.nav)),
+  match planBody({ sys: solSystem(), epochJd: p.epochJd, t0: a.ship.motion.t, hereLy: here, accel: p.boostG * standardGravity(), bubbleKm: p.bubbleRadiusM / 1000.0, capPhi: cruisePhiMax(p), approach: None }, rq) {
+    Ok(l) =>
+      -- A timed leg (D-46) sets its own thrust: the brake must hold against the
+      -- ISM drag at this leg's peak, and the approach at its own (m_eff_too_small).
+      if (match rq.timing { Some(_) => true, None => false })
+         && !(brakeHoldsAgainstDrag(p.mEffKg, accelSI(l.trip.a), ismPerM3(p), l.trip.phiPeak, p.bubbleRadiusM)
+              && (l.trip.tauApproach == 0.0 || brakeHoldsAgainstDrag(p.mEffKg, accelSI(l.trip.aApproach), ismPerM3(p), l.trip.phiApproach, p.bubbleRadiusM)))
+      then refuseIntent(a, "m_eff_too_small")
+      else storePlan(a, { index: l.nav.index, id: rq.id, pos: l.arrivalLy }, here, l.heading, false, l.trip, Some(l.nav)),
     Err(why) => refuseIntent(a, why)
   }
 }
@@ -340,9 +347,12 @@ pure func reversed(xs: [a], acc: [a]) -> [a] = match xs { [] => acc, x :: more =
 -- ledger is tripEnergy(...).total.
 type Flight = { ship: Ship, c: Commitment, ledger: Ledger, events: [Event], arrived: bool }
 
-pure func phaseOfIndex(i: int) -> ShipPhase = if i == 0 then Boosting else if i == 1 then Cruising else if i == 2 then Braking else AtRest
-pure func phaseEnd(tp: TripPlan, i: int) -> float = if i == 0 then tp.tauBurn else if i == 1 then tp.tauBurn + tp.tauCoast else tp.tauTotal
-pure func phaseAccel(tp: TripPlan, i: int) -> float = if i == 0 then tp.a else if i == 1 then 0.0 else 0.0 - tp.a
+-- 0 boost, 1 cruise, 2 brake, 3 arrived, 4 final approach (relativity 0.9.0,
+-- D-46): the brake (index 2) ends where the approach begins, at
+-- tauTotal - tauApproach, which is exactly tauTotal for every other plan.
+pure func phaseOfIndex(i: int) -> ShipPhase = if i == 0 then Boosting else if i == 1 then Cruising else if i == 2 then Braking else if i == 4 then Approaching else AtRest
+pure func phaseEnd(tp: TripPlan, i: int) -> float = if i == 0 then tp.tauBurn else if i == 1 then tp.tauBurn + tp.tauCoast else if i == 2 then tp.tauTotal - tp.tauApproach else tp.tauTotal
+pure func phaseAccel(tp: TripPlan, i: int) -> float = if i == 0 then tp.a else if i == 1 then 0.0 else if i == 4 then 0.0 - tp.aApproach else 0.0 - tp.a
 pure func crossing(from: ShipPhase, to: ShipPhase, tau: float) -> Event = {event("phase") | phase: Some({ from: phaseName(from), to: phaseName(to), tau: tau })}
 
 -- Residuals at arrival, before the snap: |x_stepped - d|, |t_stepped -
@@ -552,7 +562,11 @@ export type Ism = { dragN: float, holdW: float, loadWM2: float, glowWM2: float }
 export type PlanView = { target: Target, distance: float, profile: string, fellBack: bool,
   cruisePhi: float, cruiseBeta: float, cruiseOneMinusBeta: float, cruiseGamma: float,
   boostMinutes: float, shipYears: float, earthYears: float, arriveYear: float, ageOnArrival: float, yearsLeft: float,
-  energy: Energy, ism: Ism, cmbForwardK: float }
+  energy: Energy, ism: Ism, cmbForwardK: float, drive: Option[Drive] }
+-- A leg with its own drive (D-46 timed legs): its thrust in g, and its final
+-- approach (minutes of proper time, the rapidity and 1 - beta where it begins).
+-- None for every plan flown at the session drive with no approach (bytes unchanged).
+export type Drive = { boostG: float, approachMinutes: float, approachPhi: float, approachOneMinusBeta: float }
 export type JourneyView = { state: string, planId: int, plan: Option[PlanView] }
 
 -- Exact plan-time position, retained after the ship's arrival rebase. Display
@@ -591,7 +605,12 @@ export pure func planView(p: Params, pl: Plan, tau: float, t: float) -> PlanView
     energy: { boostJ: e.boost, brakeJ: e.brake, dragJ: e.drag, totalJ: e.total, totalKg: e.total / (cSI() * cSI()) },
     ism: { dragN: mirrorDragForce(n, phi, p.bubbleRadiusM), holdW: mirrorDragPower(n, phi, p.bubbleRadiusM),
            loadWM2: loadScale(n, phi), glowWM2: glowInwardFlux(n, phi, p.glowEps, p.glowFIn) },
-    cmbForwardK: cmbForwardTemperature(phi) }
+    cmbForwardK: cmbForwardTemperature(phi),
+    -- Only a timed body leg (its own thrust, nav present) or a plan with an approach:
+    -- diag flip-and-burn plans also use their own thrust but keep their 2.x bytes.
+    drive: if tp.tauApproach > 0.0 || (match pl.nav { Some(_) => tp.a != p.boostG * standardGravity(), None => false })
+      then Some({ boostG: tp.a / standardGravity(), approachMinutes: tp.tauApproach * minutesPerYear(), approachPhi: tp.phiApproach, approachOneMinusBeta: oneMinusBeta(tp.phiApproach) })
+      else None }
 }
 
 -- The body planner's part of the current plan (M5.5a; None for a star plan or no plan).

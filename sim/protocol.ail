@@ -22,14 +22,14 @@ import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarL
 import ./alpha_centauri (alphaBodies, catalogueId as alphaCatalogueId, stellarValue as alphaStellarValue)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
-  Drawn, PlanView, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
+  Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
   CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
   AiView, OpenView, aiView, isCancelReason, isSha256Hex, defaultAiMaxOpen, defaultAiTtlTicks)
 import ./celestial (SystemView, BodyView, solSystem, systemAt, jdAt, defaultEpochJd, lyKm)
-import ./navigation (BodyReq, NavPlan, Pass)
+import ./navigation (BodyReq, NavPlan, Pass, Timing)
 
 export type Override = { name: string, value: float }
 export type Input =
@@ -54,7 +54,7 @@ export type HelloMsg = { major: int, minor: int, sim: string, relativity: string
 -- carries ("0.4.0", stale since the 0.5 pins); from 2.4 it is the pinned release,
 -- relativityPin(), which `make hello-pin` checks against sim/ailang.toml.
 export pure func helloMsg() -> HelloMsg = { major: 2, minor: 1, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
-export pure func relativityPin() -> string = "0.8.0"
+export pure func relativityPin() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
@@ -176,7 +176,7 @@ pure func planViewFields(v: PlanView) -> [string] =
     f("arrive_year", num(v.arriveYear)), f("age_on_arrival", num(v.ageOnArrival)), f("years_left", num(v.yearsLeft)),
     f("energy", obj([f("boost_j", num(v.energy.boostJ)), f("brake_j", num(v.energy.brakeJ)), f("drag_j", num(v.energy.dragJ)), f("total_j", num(v.energy.totalJ)), f("total_kg", num(v.energy.totalKg))])),
     f("ism", obj([f("drag_n", num(v.ism.dragN)), f("hold_w", num(v.ism.holdW)), f("load_w_m2", num(v.ism.loadWM2)), f("glow_w_m2", num(v.ism.glowWM2))])),
-    f("cmb_forward_k", num(v.cmbForwardK))]
+    f("cmb_forward_k", num(v.cmbForwardK))] ++ opt("drive", \d. obj([f("boost_g", num(d.boostG)), f("approach_minutes", num(d.approachMinutes)), f("approach_phi", num(d.approachPhi)), f("approach_one_minus_beta", num(d.approachOneMinusBeta))]), v.drive)
 -- 2.4: a body plan's panel is the M2 panel plus target_kind, intercept{t, pos} (when and
 -- where the body is at arrival or at the pass; galaxy years, ly), and pass{t, b_km, beta,
 -- d_at_pass} for a flyby or hold{body, offset_km} for a stop. A star plan's bytes are M2's.
@@ -268,7 +268,8 @@ export pure func encodeSystemRings(v: SystemView) -> string =
   obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)),
     f("bodies", arr(each(finiteBodyObj, v.bodies))), f("rings", arr(each(ringObj, rings())))])
 pure func solarLegObj(leg: TourLeg) -> string =
-  obj([f("id", q(leg.id)), f("name", q(leg.name)), f("kind", q(leg.kind)), f("cruise_phi", num(leg.cruisePhi))] ++ opt("standoff_km", num, leg.standoffKm))
+  obj([f("id", q(leg.id)), f("name", q(leg.name)), f("kind", q(leg.kind)), f("cruise_phi", num(leg.cruisePhi))] ++ opt("standoff_km", num, leg.standoffKm)
+    ++ opt("timing", \t. obj([f("boost_s", num(t.boostS)), f("cruise_s", num(t.cruiseS)), f("approach_s", num(t.approachS)), f("approach_deg", num(t.approachDeg))]), leg.timing))
 pure func solarTour(p: Params) -> string =
   obj([f("approximation", q(solarApproximation())), f("earth_standoff_km", num(earthStandoffKm())),
     f("legs", arr(each(solarLegObj, solarLegs(p))))])
@@ -317,8 +318,14 @@ pure func planOf(j: Json, c: string) -> Result[PlanReq, string] =
 pure func isBodyTarget(j: Json) -> bool = match get(j, "target") { Some(t) => getString(t, "kind") == Some("body"), None => false }
 pure func bodyPlanOf(j: Json, c: string) -> Result[BodyReq, string] =
   bind(req(get(j, "target"), c), \t. bind(req(getString(t, "id"), c), \id. bind(req(numF(j, "cruise_phi"), c), \phi.
-  bind(approachOf(j, c), \ap. Ok({ap | id: id, cruisePhi: phi})))))
-pure func stopReq(s: Option[float]) -> BodyReq = { id: "", cruisePhi: 0.0, mode: "stop", standoffKm: s, bKm: 0.0, clockDeg: 0.0, runOutKm: None }
+  bind(approachOf(j, c), \ap. bind(timingOf(j, c), \tm. Ok({ap | id: id, cruisePhi: phi, timing: tm}))))))
+-- D-46: an optional timed stop, {"boost_s", "cruise_s", "approach_s", "approach_deg"}.
+pure func timingOf(j: Json, c: string) -> Result[Option[Timing], string] =
+  if !has(j, "timing") then Ok(None)
+  else bind(req(get(j, "timing"), c), \t. bind(req(numF(t, "boost_s"), c), \b. bind(req(numF(t, "cruise_s"), c), \cr.
+    bind(req(numF(t, "approach_s"), c), \ap. bind(req(numF(t, "approach_deg"), c), \dg.
+      Ok(Some({ boostS: b, cruiseS: cr, approachS: ap, approachDeg: dg })))))))
+pure func stopReq(s: Option[float]) -> BodyReq = { id: "", cruisePhi: 0.0, mode: "stop", standoffKm: s, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: None }
 -- approach absent: a stop at the default stand-off; flyby clock_deg absent: 0 (north).
 pure func approachOf(j: Json, c: string) -> Result[BodyReq, string] =
   if !has(j, "approach") then Ok(stopReq(None))
@@ -444,9 +451,12 @@ pure func decodePlanView(j: Json) -> Result[PlanView, string] =
   bind(n(j, "cruise_phi"), \phi. bind(n(j, "cruise_beta"), \cb. bind(n(j, "cruise_one_minus_beta"), \comb. bind(n(j, "cruise_gamma"), \cg.
   bind(n(j, "boost_minutes"), \bm. bind(n(j, "ship_years"), \sy. bind(n(j, "earth_years"), \ey.
   bind(n(j, "arrive_year"), \ay. bind(n(j, "age_on_arrival"), \aa. bind(n(j, "years_left"), \yl.
-  bind(sub(j, "energy", decodeEnergy), \en. bind(sub(j, "ism", decodeIsm), \ism. bind(n(j, "cmb_forward_k"), \tk.
+  bind(sub(j, "energy", decodeEnergy), \en. bind(sub(j, "ism", decodeIsm), \ism. bind(n(j, "cmb_forward_k"), \tk. bind(optF(j, "drive", decodeDrive), \dv.
   Ok({target: tg, distance: dist, profile: prof, fellBack: fb, cruisePhi: phi, cruiseBeta: cb, cruiseOneMinusBeta: comb, cruiseGamma: cg,
-      boostMinutes: bm, shipYears: sy, earthYears: ey, arriveYear: ay, ageOnArrival: aa, yearsLeft: yl, energy: en, ism: ism, cmbForwardK: tk}))))))))))))))))))
+      boostMinutes: bm, shipYears: sy, earthYears: ey, arriveYear: ay, ageOnArrival: aa, yearsLeft: yl, energy: en, ism: ism, cmbForwardK: tk, drive: dv})))))))))))))))))))
+pure func decodeDrive(j: Json) -> Result[Drive, string] =
+  bind(n(j, "boost_g"), \g. bind(n(j, "approach_minutes"), \am. bind(n(j, "approach_phi"), \ap. bind(n(j, "approach_one_minus_beta"), \aomb.
+  Ok({boostG: g, approachMinutes: am, approachPhi: ap, approachOneMinusBeta: aomb})))))
 pure func decodeJourney(j: Json) -> Result[JourneyView, string] =
   bind(req(getString(j, "state"), bad()), \st. bind(req(natF(j, "plan_id"), bad()), \id. bind(optF(j, "plan", decodePlanView), \pl.
   Ok({state: st, planId: id, plan: pl}))))

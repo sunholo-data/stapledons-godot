@@ -1,0 +1,54 @@
+{
+  "sprint_id": "R1-M4-EVEN-LEGS",
+  "status": "completed",
+  "approved_by": "Mark Edmondson, attended 2026-10-06 (D-46, 'All three')",
+  "design_doc": "design_docs/planned/r1/m4-even-legs-and-approach.md",
+  "sprint_plan": "design_docs/planned/r1/m4-even-legs-and-approach-sprint.md",
+  "features": [
+    {
+      "id": "EL1",
+      "description": "sunholo/relativity 0.9.0: planBurnCoastBrakeApproach, inApproach, timed-leg/approach solvers",
+      "passes": true,
+      "completed": "2026-10-06T19:59:22Z",
+      "notes": "Published; journeyDigest bit-identical; 13 tests vs Decimal oracle; mutation caught; quality no gates; ailang-packages#96."
+    },
+    {
+      "id": "EL2",
+      "description": "Sim: timed body plans, per-leg thrust/cruise, 25 s approach, approaching phase, per-leg drag check, drive field",
+      "passes": true,
+      "completed": "2026-10-06T19:59:22Z",
+      "notes": "292 sim tests; untimed plans bit-identical (9 replay cases identical); drive emitted only for timed/approach plans."
+    },
+    {
+      "id": "EL3",
+      "description": "Host: timing forwarded, Skip stage [K], HUD FINAL APPROACH / leg thrust / distances",
+      "passes": true,
+      "completed": "2026-10-06T19:59:22Z",
+      "notes": "solar-departure-test 114/114 incl. skip walk and landing precision (<=1e-9 of step)."
+    },
+    {
+      "id": "EL4",
+      "description": "Evidence renders, make test, evaluation, dev.18",
+      "passes": true,
+      "completed": "2026-10-06T19:59:22Z",
+      "notes": "64-frame voyage capture; 9 gallery captures live; make test rc=0; eval round 1 87/100 PASS (Sonnet), findings 1-4 addressed."
+    }
+  ],
+  "evaluation": {
+    "round": 1,
+    "model": "sonnet",
+    "score": 87,
+    "result": "pass",
+    "report": ".ailang/state/evaluations/eval_R1-M4-EVEN-LEGS_round_1.json",
+    "addressed": [
+      "1: skip precision bound stated (1e-9 of step) and measured by a test",
+      "2: Sun half-rapidity approach rule asserted exactly; Jupiter/Saturn use the 4-degree rule",
+      "3: cruise window tightened to 50-70 s",
+      "4: design doc matches the package API (inApproach, phaseAt unchanged)"
+    ],
+    "deferred": [
+      "5: no recorded replay of a timed plan (covered by checkTimedLegs on both engines via make parity)",
+      "6: HUD unit constants duplicated (display only)"
+    ]
+  }
+}
