@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
+test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm trappist1-test catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -638,6 +638,19 @@ ship-lighting-test: ship-lighting-capture
 ship-lighting-bench:
 	$(GODOT_SIM) --path . --script tools/ship_lighting_bench.gd
 ship-demo-ci: ship-movement-test map-origin-test ship-planets-test
+
+.PHONY: trappist1-test
+trappist1-test:    ## TRAPPIST-1 planets (trappist1-planets-sprint.md): snapshot pin, sim checks strict VM = interpreter, and the Python orbit/transcription oracle
+	@mkdir -p $(SCRATCH)
+	@tools/fetch_trappist1.sh --verify
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry trappistVm --args-json 0 sim/trappist1_test.ail > $(SCRATCH)/trappist1-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry trappistVm --args-json 0 sim/trappist1_test.ail > $(SCRATCH)/trappist1-interp.txt
+	@cmp -s $(SCRATCH)/trappist1-vm.txt $(SCRATCH)/trappist1-interp.txt || { echo "trappist1-test: strict VM != interpreter"; diff $(SCRATCH)/trappist1-vm.txt $(SCRATCH)/trappist1-interp.txt | head; exit 1; }
+	@python3 tools/check_trappist1.py $(SCRATCH)/trappist1-vm.txt
+.PHONY: trappist1-capture
+trappist1-capture: ## TB6 renders at the TRAPPIST-1 habitable-zone stop -> renders/trappist1/*.png (GPU window; open them)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/trappist1_capture.gd > $(SCRATCH)/trappist1-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/trappist1-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/trappist1-capture.log
 
 .PHONY: catalogue-coverage-test solar-departure-test
 catalogue-coverage-test: import

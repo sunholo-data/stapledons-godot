@@ -144,6 +144,7 @@ func _run()->void:
 					if body.id==id:st=body
 				var deg:float=rad_to_deg(2.*Planets.angular_radius(st.get("radius_km",0.),Planets.length64(Planets.world_of(st.get("rel_km",{"x":0.,"y":0.,"z":0.})))))
 				check("%s is a finite star at its stop: %.2f degrees across (catalogue point replaced: %s)"%[id,deg,st.get("catalogue_id","")],not st.is_empty() and (absf(deg-40.)<0.5 if id=="aldebaran" else absf(deg-2.70)<0.05) and not str(st.get("catalogue_id","")).is_empty())
+			if id=="trappist-1":_check_trappist_planets(sim.world)
 		else:
 			var p:Dictionary=sim.world.ship.pos;var q:Dictionary=sim.world.journey.plan.target.pos
 			var gap:=sqrt(pow(p.x-q.x,2.)+pow(p.y-q.y,2.)+pow(p.z-q.z,2.))
@@ -183,6 +184,26 @@ func _run()->void:
 		s2.stop()
 	else:check("second session for the skip test",false)
 	print("solar-departure: %d passed, %d failures" %[passed,failures]);quit(1 if failures else 0)
+
+## TRAPPIST-1's planets at the habitable-zone stop (trappist1-planets-sprint.md TB3/TB5):
+## seven planets after the star, b..h, lit by their own star (teff_k, e1_au_lux); the
+## stop keeps sqrt(L) AU from the star and is placed beside e, so planets are discs.
+func _check_trappist_planets(world:Dictionary)->void:
+	var bodies:Array=world.system.bodies
+	var star_index:=-1;var letters:=[];var sizes:={};var star_km:=0.
+	for i in bodies.size():
+		var b:Dictionary=bodies[i]
+		if b.id=="trappist-1":star_index=i;star_km=Planets.length64(Planets.world_of(b.rel_km))
+		if b.get("host","")=="trappist-1":
+			letters.append(b.id.trim_prefix("trappist-1"))
+			sizes[b.id]=rad_to_deg(2.*Planets.angular_radius(b.radius_km,Planets.length64(Planets.world_of(b.rel_km))))
+			check("%s is lit by TRAPPIST-1 (teff_k 2566, e1_au_lux %s) and is not a plan target"%[b.id,str(b.get("e1_au_lux",0.))],b.get("teff_k",0.)==2566. and b.get("e1_au_lux",0.)>0. and b.kind=="planet" and not b.visitable and b.e_v_lux>0.)
+	check("seven planets b..h follow the star in the feed (%s)"%"".join(letters),letters==["b","c","d","e","f","g","h"] and bodies[star_index+1].id=="trappist-1b")
+	check("the stop keeps the HZ rule: %.1f km from the star (sqrt(L) AU = %.1f)"%[star_km,sqrt(0.000553)*149597870.7],absf(star_km-sqrt(0.000553)*149597870.7)<20.)
+	var big:=0
+	for k in sizes:if sizes[k]>=0.25:big+=1
+	print("    TRAPPIST-1 planets across (deg): ",sizes)
+	check("placed beside e: e %.2f degrees across, %d planets at least 0.25 degrees"%[sizes.get("trappist-1e",0.),big],sizes.get("trappist-1e",0.)>0.6 and big>=4)
 
 func _held_ticks(controller:RefCounted,count:int)->bool:
 	for i in count:

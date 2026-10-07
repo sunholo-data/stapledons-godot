@@ -1,0 +1,86 @@
+module stapledons/sim/data/trappist1
+
+-- TRAPPIST-1's seven planets as data (design trappist1-planets-sprint.md, TB2;
+-- Sprint B part 2 of m4-real-time-tour.md, D-41). Pure, no I/O. The star's own
+-- rows (radius, Teff, L, position, V) are sim/data/stars.ail's. Every number is
+-- a Field with its provenance, as in data/acen.ail:
+--   measured : from observation, cited;
+--   inferred : derived through a named relation (the note names it, and
+--              sim/trappist1_test.ail recomputes it);
+--   assumed  : no measurement exists; the value is the game's stated assumption.
+-- Source: the NASA Exoplanet Archive `ps` snapshot of 2026-10-07,
+-- data/planets/trappist1_ps.csv, pinned by sha256 in data/planets/EXOPLANETS.SHA256
+-- (tools/fetch_trappist1.sh fetches and verifies). The archive's default set
+-- for all seven planets is Agol et al. 2021 (radius, mass, a, inclination,
+-- period). Agol's rows carry no transit epoch and its P and t0 (its Table 2)
+-- are osculating Jacobi elements at BJD 2457257.93, so the orbit PHASE uses the
+-- mean linear transit ephemeris of Ducrot et al. 2020 (the archive rows, their
+-- Table 4; Agol 2021 section 2 cites it as the updated mean ephemeris). That
+-- ephemeris predicts the JWST 2024 transits of b and c (Rathcke et al. 2025)
+-- within 15 minutes, which the tests check.
+-- Orbits are circular: Agol's TTV fit gives e cos w and e sin w below 0.009
+-- (e < 0.01), so e = 0 is used and stated. The node on the sky (the orbits'
+-- orientation about the line of sight) is not measurable by transits: 0 is assumed.
+-- Living data: a better measurement replaces its row with a new citation.
+
+export type Field = { value: float, prov: string, note: string, cite: string }
+export type Exoplanet = { id: string, name: string, letter: string, fields: [(string, Field)] }
+
+export pure func trappistCitations() -> [(string, string)] = [
+  ("agol2021", "Agol et al. 2021, PSJ 2:1, Refining the transit-timing and photometric analysis of TRAPPIST-1 (the archive's default parameter set for b-h: radius, mass, a, inclination, period; Table 2 eccentricity vectors; stellar mass 0.0898 Msun)"),
+  ("ducrot2020", "Ducrot et al. 2020, A&A 640:A112, TRAPPIST-1: Global results of the Spitzer Exploration Science Program Red Worlds (Table 4 mean linear transit ephemeris T0, P per planet; archive rows)"),
+  ("rathcke2025", "Rathcke et al. 2025, ApJL 979:L19 (JWST 2024 transit epochs of b and c; archive rows; used only as an independent check of the ephemeris)"),
+  ("archive20261007", "NASA Exoplanet Archive, table ps, hostname = TRAPPIST-1, retrieved 2026-10-07 (data/planets/trappist1_ps.csv, data/planets/EXOPLANETS.SHA256)"),
+  ("iau2015", "IAU 2015 Resolution B3 nominal equatorial Earth radius 6378.1 km"),
+  ("greene2023", "Greene et al. 2023, Nature 618:39 (JWST 15 um dayside of TRAPPIST-1 b: consistent with a dark bare rock)"),
+  ("zieba2023", "Zieba et al. 2023, Nature 620:746 (JWST 15 um dayside of TRAPPIST-1 c: bare rock or a thin atmosphere)"),
+  ("assumption", "assumed by the game; no measurement exists")
+]
+
+pure func m(v: float, note: string, cite: string) -> Field = { value: v, prov: "measured", note: note, cite: cite }
+pure func asm(v: float, why: string) -> Field = { value: v, prov: "assumed", note: why, cite: "assumption" }
+
+-- The host's mass (Agol 2021 section 7), used only to recheck a from P (Kepler III).
+export pure func trappistStarMassSun() -> Field = m(0.0898, "+-0.0023 Msun", "agol2021")
+-- The Earth radius the archive's R_Earth unit converts with.
+export pure func earthRadiusKm() -> Field = m(6378.1, "nominal equatorial", "iau2015")
+
+pure func circular() -> Field = asm(0.0, "circular: Agol 2021's TTV fit gives e < 0.01 (|e cos w|, |e sin w| < 0.009)")
+pure func node() -> Field = asm(0.0, "orientation about the line of sight (sky-plane node) is unmeasurable by transits; 0 for every planet")
+pure func lambert() -> Field = asm(1.0, "Lambert surface (Minnaert k = 1): no phase-curve measurement in V")
+pure func rocky(why: string) -> Field = asm(0.3, why)
+
+-- One planet's rows. Order: b..h (the feed and navigation order).
+pure func planet(letter: string, period: Field, a: Field, radius: Field, mass: Field, incl: Field, t0: Field, ephemP: Field, pV: Field) -> Exoplanet =
+  { id: concatId(letter), name: concatName(letter), letter: letter, fields: [
+      ("period_d", period), ("a_au", a), ("radius_earth", radius), ("mass_earth", mass), ("incl_deg", incl),
+      ("e", circular()), ("node_deg", node()), ("t0_bjd", t0), ("ephem_period_d", ephemP), ("p_v", pV), ("minnaert_k", lambert())] }
+pure func concatId(l: string) -> string = if l == "b" then "trappist-1b" else if l == "c" then "trappist-1c" else if l == "d" then "trappist-1d" else if l == "e" then "trappist-1e" else if l == "f" then "trappist-1f" else if l == "g" then "trappist-1g" else "trappist-1h"
+pure func concatName(l: string) -> string = if l == "b" then "TRAPPIST-1 b" else if l == "c" then "TRAPPIST-1 c" else if l == "d" then "TRAPPIST-1 d" else if l == "e" then "TRAPPIST-1 e" else if l == "f" then "TRAPPIST-1 f" else if l == "g" then "TRAPPIST-1 g" else "TRAPPIST-1 h"
+
+pure func ag(v: float, err: string) -> Field = m(v, err, "agol2021")
+pure func du(v: float, err: string) -> Field = m(v, err, "ducrot2020")
+pure func dark() -> Field = asm(0.1, "dark bare rock assumed: JWST 15 um dayside emission (greene2023, zieba2023) favours little or no atmosphere and a low albedo; no V albedo is measured")
+
+export pure func trappistPlanets() -> [Exoplanet] = [
+  planet("b", ag(1.510826, "+-0.000006 d (osculating, BJD 2457257.93)"), ag(0.01154, "+-0.0001 AU"), ag(1.116, "+-0.014 R_Earth"), ag(1.374, "+-0.069 M_Earth"), ag(89.728, "+-0.165 deg"),
+    du(2457322.514193, "+-0.000003 BJD_TDB"), du(1.51088432, "+-0.00000015 d, mean linear ephemeris"), dark()),
+  planet("c", ag(2.421937, "+-0.000018 d (osculating)"), ag(0.0158, "+-0.00013 AU"), ag(1.097, "+-0.014 R_Earth"), ag(1.308, "+-0.056 M_Earth"), ag(89.778, "+-0.118 deg"),
+    du(2457282.8113871, "+-0.0000038 BJD_TDB"), du(2.42179346, "+-0.00000023 d, mean linear ephemeris"), dark()),
+  planet("d", ag(4.049219, "+-0.000026 d (osculating)"), ag(0.02227, "+-0.00019 AU"), ag(0.788, "+-0.011 R_Earth"), ag(0.388, "+-0.012 M_Earth"), ag(89.896, "+-0.077 deg"),
+    du(2457670.1463014, "+-0.0000184 BJD_TDB"), du(4.04978035, "+-0.00000266 d, mean linear ephemeris"), rocky("no albedo measurement; a rocky-planet value is assumed")),
+  planet("e", ag(6.101013, "+-0.000035 d (osculating)"), ag(0.02925, "+-0.0025 AU as the archive lists it"), ag(0.92, "+-0.013 R_Earth"), ag(0.692, "+-0.022 M_Earth"), ag(89.793, "+-0.048 deg"),
+    du(2457660.3676621, "+-0.0000143 BJD_TDB"), du(6.09956479, "+-0.00000178 d, mean linear ephemeris"), rocky("no albedo measurement; a rocky-planet value is assumed")),
+  planet("f", ag(9.20754, "+-0.000032 d (osculating)"), ag(0.03849, "+-0.00033 AU"), ag(1.045, "+-0.013 R_Earth"), ag(1.039, "+-0.031 M_Earth"), ag(89.74, "+-0.019 deg"),
+    du(2457671.3737299, "+-0.0000157 BJD_TDB"), du(9.20659399, "+-0.00000212 d, mean linear ephemeris"), rocky("no albedo measurement; a rocky-planet value is assumed")),
+  planet("g", ag(12.352446, "+-0.000054 d (osculating)"), ag(0.04683, "+-0.0004 AU"), ag(1.129, "+-0.015 R_Earth"), ag(1.321, "+-0.038 M_Earth"), ag(89.742, "+-0.012 deg"),
+    du(2457665.3628439, "+-0.0000206 BJD_TDB"), du(12.3535557, "+-0.00000341 d, mean linear ephemeris"), rocky("no albedo measurement; a rocky-planet value is assumed")),
+  planet("h", ag(18.772866, "+-0.000214 d (osculating)"), ag(0.06189, "+-0.00053 AU"), ag(0.755, "+-0.014 R_Earth"), ag(0.326, "+-0.02 M_Earth"), ag(89.805, "+-0.013 deg"),
+    du(2457662.5741486, "+-0.0000913 BJD_TDB"), du(18.7672745, "+-0.00001876 d, mean linear ephemeris"), rocky("no albedo measurement; a rocky-planet value is assumed"))
+]
+
+-- The independent epoch check (Rathcke 2025, JWST): (planet id, transit BJD_TDB).
+export pure func jwstTransits() -> [(string, Field)] = [
+  ("trappist-1b", m(2460501.405464, "+-0.00001 BJD_TDB", "rathcke2025")),
+  ("trappist-1c", m(2460501.385348, "+-0.000011 BJD_TDB", "rathcke2025"))
+]

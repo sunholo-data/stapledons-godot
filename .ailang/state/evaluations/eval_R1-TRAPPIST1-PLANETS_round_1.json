@@ -1,0 +1,9 @@
+{"sprint_id":"R1-TRAPPIST1-PLANETS","round":1,"result":"pass","score":89,
+"breakdown":{"tests":19,"lint":9,"acceptance":27,"code_quality":12,"documentation":13,"design_fidelity":9},
+"verified":["make trappist1-test green (snapshot sha256 pin verified, strict VM == interpreter, oracle 1.91e-12 AU)","make replay 9/9 identical","python-guard ok; check_trappist1.py role oracle","mutations: light-time sign flip, albedo x0.5, Sun-lux for host lux each make the sim checks FAIL"],
+"findings":[
+{"sev":"low","where":"sim/data/trappist1.ail planet e a_au","note":"archive lists sigma 0.0025 AU (likely a typo for 0.00025); transcribed as listed and labelled, but the Kepler recheck tolerance 0.5 percent hides it"},
+{"sev":"low","where":"planets/system_view.gd _surface_colour","note":"teff_k lookup applies to any body carrying teff_k; safe for Sol/alpha Cen planets (no key, default T_SUN) but untested for star bodies"},
+{"sev":"low","where":"tools/check_trappist1.py","note":"oracle reads positions and rows from the sim dump; it re-derives the orbit independently, but shares the author's sign convention for the sky basis (north, east, toward Earth); the light-time sign is only covered by the sim JWST epoch test"},
+{"sev":"info","where":"sim/navigation.ail planBesidePlanet","note":"three fixed planner rounds, no convergence assertion beyond the HZ-radius check in the test (within 1 km)"}],
+"renders_opened":false}
