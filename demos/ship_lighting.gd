@@ -1,6 +1,7 @@
 extends RefCounted
 ## Internal light study, separate from the physically calibrated external sky.
-## The broad key approximates fixed ship lighting; it is not the Sun.
+## The broad key approximates fixed ship lighting; it is not the Sun. The star's own
+## light is ship_star_light.gd ("StarLight"), which dims this key as it takes over.
 static func install(host:Node3D)->Dictionary:
 	var env:=Environment.new();env.background_mode=Environment.BG_CLEAR_COLOR
 	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
@@ -30,14 +31,17 @@ static func apply(rig:Dictionary,profile:String)->void:
 	key.light_color=Color.WHITE if baseline else Color(1.,.82,.65)
 	key.light_energy=1.3 if baseline else 1.5
 	key.shadow_enabled=profile=="moody"
+	rig.key_base=key.light_energy;rig.shadows=profile=="moody"
 	fill.light_color=Color.WHITE if baseline else Color(.45,.59,.82)
 	fill.light_energy=.65 if baseline else .14
 	fill.shadow_enabled=false
 	rig.practical.visible=not baseline
 	rig.profile=profile
+	if rig.has("star"):rig.star.apply_rig(rig)
 static func manifest(rig:Dictionary)->Dictionary:
 	var practical:SpotLight3D=rig.practical
 	var position:Vector3=practical.position
 	var rotation:Vector3=rig.key.rotation_degrees
 	var tint:Color=practical.light_color
-	return {"profile":rig.profile,"source":"ship-fixed internal lighting study, not simulation sunlight","ambient_energy":rig.environment.ambient_light_energy,"key_energy":rig.key.light_energy,"fill_energy":rig.fill.light_energy,"key_shadows":rig.key.shadow_enabled,"key_rotation_deg":[rotation.x,rotation.y,rotation.z],"shadow_distance_m":rig.key.directional_shadow_max_distance,"shadow_bias":rig.key.shadow_bias,"shadow_normal_bias":rig.key.shadow_normal_bias,"recipe_sha256":FileAccess.get_sha256("res://demos/ship_lighting.gd"),"practical":{"position_m":[position.x,position.y,position.z],"colour":[tint.r,tint.g,tint.b],"range_m":practical.spot_range,"angle_deg":practical.spot_angle,"energy":practical.light_energy,"visible":practical.visible,"shadow_enabled":practical.shadow_enabled}}
+	var star:Dictionary=rig.star.manifest() if rig.has("star") else {}
+	return {"profile":rig.profile,"source":"ship-fixed internal lighting (ambient, cool fill, broad key, practical); the simulation star light is star_light","star_light":star,"key_base_energy":rig.get("key_base",rig.key.light_energy),"ambient_energy":rig.environment.ambient_light_energy,"key_energy":rig.key.light_energy,"fill_energy":rig.fill.light_energy,"key_shadows":rig.key.shadow_enabled,"key_rotation_deg":[rotation.x,rotation.y,rotation.z],"shadow_distance_m":rig.key.directional_shadow_max_distance,"shadow_bias":rig.key.shadow_bias,"shadow_normal_bias":rig.key.shadow_normal_bias,"recipe_sha256":FileAccess.get_sha256("res://demos/ship_lighting.gd"),"practical":{"position_m":[position.x,position.y,position.z],"colour":[tint.r,tint.g,tint.b],"range_m":practical.spot_range,"angle_deg":practical.spot_angle,"energy":practical.light_energy,"visible":practical.visible,"shadow_enabled":practical.shadow_enabled}}

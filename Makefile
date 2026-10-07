@@ -639,6 +639,16 @@ ship-lighting-bench:
 	$(GODOT_SIM) --path . --script tools/ship_lighting_bench.gd
 ship-demo-ci: ship-movement-test map-origin-test ship-planets-test
 
+# R1-SHIP-STAR-LIGHT: the real star's light on the ship (direction, colour, compressed energy).
+.PHONY: ship-star-light-test ship-star-light-capture ship-star-light-bench
+ship-star-light-test: import
+	@$(GODOT) --headless --path . --script tests/test_ship_star_light.gd > $(SCRATCH)/ship-star-light.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light.log; test $$rc = 0 && grep -q '^ship-star-light: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-star-light.log
+ship-star-light-capture:
+	@$(GODOT_SIM) --path . --script tools/ship_star_light_capture.gd > $(SCRATCH)/ship-star-light-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-star-light-capture.log && grep -q '^ship-star-light-capture: OK$$' $(SCRATCH)/ship-star-light-capture.log
+ship-star-light-bench:
+	@$(GODOT) --path . --script tools/ship_star_light_bench.gd > $(SCRATCH)/ship-star-light-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light-bench.log; test $$rc = 0 && grep -q '^ship-star-light-bench: OK$$' $(SCRATCH)/ship-star-light-bench.log
+ship-demo-ci: ship-star-light-test
+
 .PHONY: catalogue-coverage-test solar-departure-test
 catalogue-coverage-test: import
 	@$(GODOT_SIM) --headless --path . --script tests/test_catalogue_coverage.gd > $(SCRATCH)/catalogue-coverage.log 2>&1; rc=$$?; cat $(SCRATCH)/catalogue-coverage.log; test $$rc = 0 && grep -q '^catalogue-coverage: [0-9]* passed, 0 failures$$' $(SCRATCH)/catalogue-coverage.log
