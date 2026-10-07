@@ -472,6 +472,9 @@ func test_sideways_darker() -> void:
 	var side := Vector3(1, 0, 0)
 	check("D at theta' = 90 deg, 0.99c = 1/gamma = 0.14107", Relativity.doppler_apparent(side, fwd, b), 1.0 / g, 1e-9)
 	check("1/gamma at 0.99c = 0.141067", 1.0 / g, 0.14106736, 1e-7)
+	# M4.6 R3: the alpha Cen cruise mirror; `runtime/bin/ailang run --quiet --caps IO --package-dir sim --entry main sim/tools/m4_physics_probe.ail`
+	# line "cruise gammaOf(rapidityOfBeta(0.99)) 7.088812050083356" (the coastAt / planBurnCoastBurn rows are sim-only: sim/m4_physics_test.ail)
+	check("gamma(0.99c) = package gammaOf 7.088812050083356 (exact)", g, 7.088812050083356, 1e-13)
 	var th8 := acos(b)
 	check("rest-frame 90 deg appears at theta' = acos(0.99) = 8.1096 deg", rad_to_deg(th8), 8.1096144, 1e-6)
 	check("D there = gamma = 7.0888", Relativity.doppler_apparent(Vector3(sin(th8), 0, -cos(th8)), fwd, b), g, 1e-5)
@@ -1067,6 +1070,24 @@ func test_ship_frame() -> void:
 	var sc := ShipFrame.sky_camera(PackedFloat64Array([1.0, 0.0, 0.0]), cam)
 	check("bridge cam forward . heading = cam forward z (0.80532)", sc["forward"][0], 0.8053204417228699, 1e-12)
 	check("bridge cam up . NGP = cam up y when heading galactic centre", sc["up"][2], -0.3601502478122711, 1e-12)
+	# M4.6 R2: the same through the shipped assets/areas/bridge/cam_bridge.json itself (not a copy of it), and a
+	# galactic direction projected onto the camera. Heading galactic centre: ship X = galactic +y, Y = +z, Z = +x
+	# (the gc[] cases above), so a ship-frame vector (a, b, c) is galactic (c, a, b): pure permutation, exact.
+	var cj: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/areas/bridge/cam_bridge.json"))
+	var cf: Array = cj["forward"]
+	var cu: Array = cj["up"]
+	var jc := ShipFrame.sky_camera(PackedFloat64Array([1.0, 0.0, 0.0]), cj)
+	check("cam_bridge.json forward through the GC-heading basis = (f.z, f.x, f.y)", absf(jc["forward"][0] - cf[2]) + absf(jc["forward"][1] - cf[0]) + absf(jc["forward"][2] - cf[1]), 0.0, 1e-15)
+	check("cam_bridge.json up through the GC-heading basis = (u.z, u.x, u.y)", absf(jc["up"][0] - cu[2]) + absf(jc["up"][1] - cu[0]) + absf(jc["up"][2] - cu[1]), 0.0, 1e-15)
+	# galactic +x (the heading) lies at camera forward-coordinate f.z and up-coordinate u.z; galactic +z (NGP) at f.y, u.y
+	check("galactic +x (the heading) projects on the camera forward axis at f.z = 0.80532", jc["forward"][0], 0.8053204417228699, 1e-12)
+	check("galactic +x projects on the camera up axis at u.z = 0.592840", jc["up"][0], 0.592839777469635, 1e-12)
+	check("galactic +z (NGP) projects on the camera forward axis at f.y = 0.265126", jc["forward"][2], 0.26512596011161804, 1e-12)
+	check("galactic +z (NGP) projects on the camera up axis at u.y = -0.360150", jc["up"][2], -0.3601502478122711, 1e-12)
+	check("camera forward and up stay a unit pair after the basis (|f| = |u| = 1, f.u = 0)", absf(Vector3(jc["forward"][0], jc["forward"][1], jc["forward"][2]).length() - 1.0) + absf(Vector3(jc["up"][0], jc["up"][1], jc["up"][2]).length() - 1.0) + absf(Vector3(jc["forward"][0], jc["forward"][1], jc["forward"][2]).dot(Vector3(jc["up"][0], jc["up"][1], jc["up"][2]))), 0.0, 1e-12)
+	# heading the north galactic pole (fallback basis X = -y, Y = +x, Z = +z): ship (a, b, c) is galactic (b, -a, c)
+	var jn := ShipFrame.sky_camera(PackedFloat64Array([0.0, 0.0, 1.0]), cj)
+	check("cam_bridge.json forward through the NGP-heading basis = (f.y, -f.x, f.z)", absf(jn["forward"][0] - cf[1]) + absf(jn["forward"][1] + cf[0]) + absf(jn["forward"][2] - cf[2]), 0.0, 1e-15)
 
 
 ## M4.2 forward glow (design m4-first-journey.md "M4.2" / "M4.6"; higgs-bubble.md §6, HB-95..HB-112).
@@ -1100,6 +1121,18 @@ func test_forward_glow() -> void:
 			var want: float = r[2 + k]
 			var got := ForwardGlow.profile(pole, r[1])
 			check("glow_profile %s theta %3.0f deg (rel. to the package, 1e-12)" % [["0.99c", "cap"][k], r[0]], got / want if want != 0.0 else got, 1.0 if want != 0.0 else 0.0, 1e-12)
+	# M4.6 R5: the same profile at the sim's eps 1e-10 (the plan quoted 1e-9: the glow is 10x fainter, the shape the same).
+	# `runtime/bin/ailang run --quiet --caps IO --package-dir sim --entry main sim/tools/m4_physics_probe.ail`, lines "glow b099|cap theta ...":
+	# [theta, cos theta, glowEmittanceAt at 0.99c, glowEmittanceAt at the cap]
+	var rows10 := [[0.0, 1.0, 9.628776871706523e-06, 0.11250843031053141], [45.0, 0.7071067811865476, 6.8085734205158745e-06, 0.07955547401323088],
+		[80.0, 0.17364817766693041, 1.672019556933325e-06, 0.019536883895590617],
+		[90.0, 6.123233995736757e-17, 5.8959253878197215e-22, 6.889154452844258e-18], [120.0, -0.4999999999999998, 0.0, 0.0]]
+	for r: Array in rows10:
+		for k in 2:
+			var pole10: float = [pole_099, pole_cap][k]
+			var want10: float = r[2 + k]
+			var got10 := ForwardGlow.profile(pole10, r[1])
+			check("glow_profile eps 1e-10 %s theta %3.0f deg (rel. to glowEmittanceAt, 1e-12)" % [["0.99c", "cap"][k], r[0]], got10 / want10 if want10 != 0.0 else got10, 1.0 if want10 != 0.0 else 0.0, 1e-12)
 	check("glow is 0 at rest (pole 0, any angle)", ForwardGlow.profile(0.0, 0.7), 0.0, 0.0)
 	check("Lambertian radiance = E / pi at the 0.99c pole (glowRadianceAt 3.06493e-6)", ForwardGlow.radiance(pole_099) / 3.0649348701220195e-06, 1.0, 1e-12)
 	# glowLuminanceAt (probe, eps 1e-10): 7.1437e-8 cd/m^2 at 0.99c, 1.5643 at the cap
@@ -1117,6 +1150,21 @@ func test_forward_glow() -> void:
 	check("bridge camera, ray straight down: the aft wall (cos < 0, glow 0)", ForwardGlow.profile(1.0, ForwardGlow.wall_cos(cam, PackedFloat64Array([0, 0, -1]), 100.0)), 0.0, 0.0)
 	check("finite flux at every stop: pole finite at rest and the cap", 1.0 if is_finite(ForwardGlow.profile(pole_cap, 1.0)) and is_finite(ForwardGlow.profile(0.0, 1.0)) else 0.0, 1.0, 0.0)
 	check("finite luminance at rest (T 0) and the cap", 1.0 if ForwardGlow.luminance(0.0, 0.0) == 0.0 and is_finite(ForwardGlow.luminance(pole_cap, t_cap)) else 0.0, 1.0, 0.0)
+	# M4.6 R6: finite flux at EVERY stop. The list is the guided voyage, sim/solar_departure.ail legs() (10 legs, HEAD: D-37/D-46/D-47/D-48):
+	# seven 0.99c legs (sun, jupiter, callisto, saturn, acen-a, trappist-1, aldebaran), then the star hops at
+	# 1 - beta 0.001 (alpha Cen), 1e-4 (TRAPPIST-1), 1e-6 (Aldebaran); plus rest and the guided drive cap (1 - beta 2e-9, GUIDED_DRIVE).
+	# [label, pole W/m^2, T_pole K, glowLuminanceAt cd/m^2] from the probe's "stop ..." lines (n 0.1 cm^-3, eps 1e-10, f_in 0.5):
+	var stops := [["0.99c legs", pole_099, t_099, 7.143664288681888e-08], ["alpha Cen hop 0.999c", 1.0757658235978293e-04, 2481.8984080819832, 2.618962861400054e-04],
+		["TRAPPIST-1 hop 0.9999c", 1.110689450883596e-03, 4448.900845148536, 0.024205822857622995], ["Aldebaran hop 0.999999c", pole_cap, t_cap, 1.5643160647071177],
+		["guided cap 1-b 2e-9", 56.3303485183483, 66763.66576978598, 17.67401691969147], ["rest", 0.0, 0.0, 0.0]]
+	for st: Array in stops:
+		var sp_: float = st[1]
+		var sl: float = ForwardGlow.luminance(sp_, st[2])
+		var lut: float = ForwardGlow.efficacy_lut(st[2])
+		var col: Vector3 = ForwardGlow.colour(st[2])
+		var fin := is_finite(sl) and is_finite(lut) and is_finite(col.x) and is_finite(col.y) and is_finite(col.z) and is_finite(ForwardGlow.profile(sp_, 1.0)) and is_finite(ForwardGlow.temperature(st[2], 1.0)) and sl >= 0.0
+		check("stop %s: pole, luminance, LUT efficacy and colour are finite" % st[0], 1.0 if fin else 0.0, 1.0, 0.0)
+		check("stop %s: luminance = glowLuminanceAt (rel. 1e-7)" % st[0], sl / st[3] if st[3] != 0.0 else sl, 1.0 if st[3] != 0.0 else 0.0, 1e-7)
 
 
 ## The camera cases need a node in a viewport, so they run once the main loop

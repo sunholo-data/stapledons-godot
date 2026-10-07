@@ -1,0 +1,78 @@
+module stapledons/sim/m4_physics_test
+
+-- M4.6 (ungated half): the check values only the sim computes (no GDScript mirror), each copied
+-- from `runtime/bin/ailang run --quiet [--bytecode] --caps IO --package-dir sim --entry main
+-- sim/tools/m4_physics_probe.ail` (VM = interpreter, `make m4-physics-probe`), never computed here.
+--   R3 the alpha Cen cruise mirror: gammaOf(0.99), coastAt, planBurnCoastBurn at the 1000 AU stand-off
+--   R4 the ISM load at 0.99c (HB-40 2.22e5)
+--   R6 finite flux/glow/luminance at every stop of the guided voyage (solar_departure.legs, 10 legs,
+--      HEAD of D-37/D-46/D-47/D-48), at rest and at the guided drive cap
+import ./core (defaultParams, Params)
+import ./consequence (standoffLy, ismAt, IsmNow)
+import ./solar_departure (legs, legCount, TourLeg)
+import pkg/sunholo/relativity/kinematics (gammaOf, rapidityOfBeta, rapidityOfOneMinusBeta, standardGravity)
+import pkg/sunholo/relativity/journey (planBurnCoastBurn, coastAt)
+import pkg/sunholo/relativity/medium (loadScale, glowLuminanceAt)
+import pkg/sunholo/relativity/hyper (absf)
+import std/list (foldl, length)
+
+pure func rel(a: float, b: float) -> bool = absf(a - b) <= 0.000000000001 * absf(b)
+pure func fin(x: float) -> bool = x == x && absf(x) < 1000000000000000000000000000000.0
+pure func phi099() -> float = rapidityOfBeta(0.99)
+pure func nM3() -> float = 100000.0
+pure func ismOf(phi: float) -> IsmNow = ismAt(nM3(), phi, (defaultParams()).bubbleRadiusM, (defaultParams()).glowEps, (defaultParams()).glowFIn)
+
+-- R3. gammaOf at 0.99c is the HB-16 7.0888 (probe: gammaOf 7.088812050083356).
+test "gammaOf(phi 0.99c) = 7.088812050083356" { rel(gammaOf(phi099()), 7.088812050083356) }
+-- coastAt (the closed-form coast) at d - s = 4.37 - standoffLy(1000 AU): 4.398169 / 0.620438 y.
+test "coastAt(4.37 - s, 0.99): galaxy 4.398169184434525 y, ship 0.620438114787203 y" {
+  let c = coastAt(4.37 - standoffLy(1000.0), 0.99);
+  rel(c.galaxyTime, 4.398169184434525) && rel(c.shipTime, 0.620438114787203)
+}
+-- the sim's burn-coast-burn plan (750000 g): 4.398171 / 0.620443 y, within 1e-5 y of the coast (the burns cost ~19 min)
+test "planBurnCoastBurn(4.37 - s, 750000 g, phi 0.99): galaxy 4.398171425676279 y, ship 0.6204427104843891 y" {
+  let p = planBurnCoastBurn(4.37 - standoffLy(1000.0), 750000.0 * standardGravity(), phi099());
+  let c = coastAt(4.37 - standoffLy(1000.0), 0.99);
+  rel(p.trip.galaxyTime, 4.398171425676279) && rel(p.trip.shipTime, 0.6204427104843891)
+  && absf(p.trip.galaxyTime - c.galaxyTime) < 0.00001 && absf(p.trip.shipTime - c.shipTime) < 0.00001
+}
+
+-- R4. HB-40: the ISM load at 0.99c, n = 0.1 cm^-3, is 2.22e5 W/m^2 (probe: 221961.2727892787); the sim's readout equals the package.
+test "loadScale(n, phi 0.99c) = 221961.2727892787 W/m^2 and the sim's ismAt reads the same" {
+  rel(loadScale(nM3(), phi099()), 221961.2727892787) && (ismOf(phi099())).loadWM2 == loadScale(nM3(), phi099())
+}
+
+-- R6. One row per distinct cruise speed of the guided voyage: [phi, load, glow mean, glow pole, T pole, luminance] from the probe.
+pure func finiteIsm(i: IsmNow, lum: float) -> bool =
+  fin(i.loadWM2) && fin(i.dragN) && fin(i.glowWM2) && fin(i.glowPoleWM2) && fin(i.glowPoleK) && fin(lum) && i.glowWM2 >= 0.0 && i.glowPoleWM2 >= 0.0
+pure func stopFinite(l: TourLeg) -> bool {
+  let p = defaultParams();
+  finiteIsm(ismOf(l.cruisePhi), glowLuminanceAt(nM3(), l.cruisePhi, p.glowEps, p.glowFIn, 1.0)) && l.cruisePhi > 0.0
+}
+pure func allStopsFinite(xs: [TourLeg]) -> bool = foldl(\acc l. acc && stopFinite(l), true, xs)
+test "the guided voyage has 10 legs and every stop's flux, drag, glow, pole temperature and luminance are finite" {
+  length(legs(defaultParams())) == 10 && legCount() == 10 && allStopsFinite(legs(defaultParams()))
+}
+-- 0.99c legs (sun, jupiter, callisto, saturn, acen-a, trappist-1, aldebaran): glow pole 9.628776871706523e-6 W/m^2, T 1357.52 K
+test "the 0.99c stops: glow pole 9.6288e-6 W/m^2, 1357.52 K, luminance 7.14366e-8 cd/m^2" {
+  let i = ismOf(phi099());
+  let p = defaultParams();
+  rel(i.glowPoleWM2, 0.000009628776871706523) && rel(i.glowPoleK, 1357.5234659678836) && rel(i.glowWM2, 0.000002407194217926631)
+  && rel(glowLuminanceAt(nM3(), phi099(), p.glowEps, p.glowFIn, 1.0), 0.00000007143664288681888)
+}
+-- the star hops: alpha Cen 1-beta 0.001, TRAPPIST-1 1e-4, Aldebaran 1e-6 (the cap)
+test "the star-hop stops: poles 1.0758e-4 (0.999c), 1.1107e-3 (0.9999c), 0.1125 (0.999999c) W/m^2" {
+  rel((ismOf(rapidityOfOneMinusBeta(0.001))).glowPoleWM2, 0.00010757658235978293)
+  && rel((ismOf(rapidityOfOneMinusBeta(0.0001))).glowPoleWM2, 0.001110689450883596)
+  && rel((ismOf(rapidityOfOneMinusBeta(0.000001))).glowPoleWM2, 0.11250843031053141)
+  && rel((ismOf(rapidityOfOneMinusBeta(0.0001))).glowPoleK, 4448.900845148536)
+  && rel((ismOf(rapidityOfOneMinusBeta(0.000001))).glowPoleK, 14114.023335759706)
+}
+-- at rest every flux is exactly 0, and the guided drive's cap (1 - beta 2e-9, demos/solar_departure.gd GUIDED_DRIVE) stays finite
+test "at rest every flux is 0; at the guided drive cap (1 - beta 2e-9) they are finite" {
+  let r = ismOf(0.0);
+  let c = ismOf(rapidityOfOneMinusBeta(0.000000002));
+  r.loadWM2 == 0.0 && r.dragN == 0.0 && r.glowWM2 == 0.0 && r.glowPoleWM2 == 0.0 && r.glowPoleK == 0.0
+  && finiteIsm(c, glowLuminanceAt(nM3(), rapidityOfOneMinusBeta(0.000000002), (defaultParams()).glowEps, (defaultParams()).glowFIn, 1.0))
+  && rel(c.glowPoleWM2, 56.3303485183483)
+}

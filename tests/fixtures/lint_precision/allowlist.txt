@@ -1,0 +1,4 @@
+demos/ship_geometry_demo.gd	var omb: float = float(ship.get("", 1.0 - beta))	fallback default of ship.get("one_minus_beta", ...): live only when the sim omits the field; display-only speed readout, not physics (follow-up: drop the fallback)
+tools/alpha_centauri_golden.gd	var heading:=Vector3.RIGHT;var gamma:=1./sqrt(1.-beta*beta)	golden harness gamma = 1/sqrt(1-beta^2) at beta 0.9, a CPU reference not near c
+tools/planet_bounds_golden.gd	var beta:float=c[1];var gamma:=1./sqrt(1.-beta*beta);var theta:=deg_to_rad(c[2]);var alpha:=deg_to_rad(c[3]);var distance:float=b.radius_km/sin(alpha)	golden harness gamma = 1/sqrt(1-beta^2) at moderate beta, a CPU reference not near c
+tools/planet_transition_golden.gd	var beta:float=0. if j<43 else .9;var gamma:float=1./sqrt(1.-beta*beta);var heading:=Vector3.RIGHT	golden harness gamma = 1/sqrt(1-beta^2) at beta <= 0.9, a CPU reference not near c

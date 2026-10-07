@@ -1,0 +1,63 @@
+module stapledons/sim/tools/m4_physics_probe
+
+-- M4.6 (ungated half) check values for tests/test_physics.gd and sim/m4_physics_test.ail
+-- (gate 2: every expected value comes from the package or the sim, never from GDScript).
+-- Run: make m4-physics-probe (VM and interpreter must print the same lines), or
+--   runtime/bin/ailang run --quiet [--bytecode] --caps IO --package-dir sim --entry main sim/tools/m4_physics_probe.ail
+-- Sections: cruise (gammaOf, coastAt, planBurnCoastBurn at the alpha Cen standoff), ism (loadScale),
+-- glow (glowEmittanceAt at the sim's eps 1e-10, D-29 follow-up), stops (one row per leg of the
+-- guided voyage, solar_departure.legs, plus rest and the guided drive cap).
+import pkg/stapledons/sim/solar_departure (legs, TourLeg)
+import pkg/stapledons/sim/core (defaultParams, Params)
+import pkg/stapledons/sim/consequence (standoffLy, ismAt)
+import pkg/sunholo/relativity/kinematics (gammaOf, gammaOfBeta, rapidityOfBeta, rapidityOfOneMinusBeta, standardGravity)
+import pkg/sunholo/relativity/journey (planBurnCoastBurn, coastAt)
+import pkg/sunholo/relativity/medium (loadScale, glowEmittanceAt, glowTemperatureAt, glowLuminanceAt)
+import std/math (cos, PI)
+import std/io (println)
+import std/list (map)
+
+pure func nPerM3() -> float = 100000.0
+pure func deg(d: float) -> float = d * PI() / 180.0
+
+func glowRow(label: string, phi: float, d: float) -> () ! {IO} {
+  let c = cos(deg(d));
+  println("glow ${label} theta ${d} cos ${c} E ${glowEmittanceAt(nPerM3(), phi, (defaultParams()).glowEps, (defaultParams()).glowFIn, c)}")
+}
+
+func glowRows(label: string, phi: float) -> () ! {IO} {
+  glowRow(label, phi, 0.0);
+  glowRow(label, phi, 45.0);
+  glowRow(label, phi, 80.0);
+  glowRow(label, phi, 90.0);
+  glowRow(label, phi, 120.0)
+}
+
+func stopRow(label: string, phi: float) -> () ! {IO} {
+  let p = defaultParams();
+  let i = ismAt(nPerM3(), phi, p.bubbleRadiusM, p.glowEps, p.glowFIn);
+  println("stop ${label} phi ${phi} load ${i.loadWM2} drag ${i.dragN} glow ${i.glowWM2} pole ${i.glowPoleWM2} T ${i.glowPoleK} lum ${glowLuminanceAt(nPerM3(), phi, p.glowEps, p.glowFIn, 1.0)}")
+}
+
+func legRows(xs: [TourLeg]) -> () ! {IO} {
+  match xs { [] => (), l :: rest => { stopRow(l.id, l.cruisePhi); legRows(rest) } }
+}
+
+export func main() -> () ! {IO} {
+  let phi99 = rapidityOfBeta(0.99);
+  let s = standoffLy(1000.0);
+  let a = 750000.0 * standardGravity();
+  let coast = coastAt(4.37 - s, 0.99);
+  let leg = planBurnCoastBurn(4.37 - s, a, phi99);
+  println("cruise gammaOf(rapidityOfBeta(0.99)) ${gammaOf(phi99)}");
+  println("cruise gammaOfBeta(0.99) ${gammaOfBeta(0.99)}");
+  println("cruise standoffLy(1000 AU) ${s}");
+  println("cruise coastAt(4.37 - s, 0.99) galaxyTime ${coast.galaxyTime} shipTime ${coast.shipTime}");
+  println("cruise planBurnCoastBurn(4.37 - s, 750000 g, phi 0.99) galaxyTime ${leg.trip.galaxyTime} shipTime ${leg.trip.shipTime}");
+  println("ism loadScale(1e5 m^-3, phi 0.99) ${loadScale(nPerM3(), phi99)}");
+  glowRows("b099", phi99);
+  glowRows("cap", rapidityOfOneMinusBeta(0.000001));
+  legRows(legs(defaultParams()));
+  stopRow("rest", 0.0);
+  stopRow("guided-cap-2e-9", rapidityOfOneMinusBeta(0.000000002))
+}
