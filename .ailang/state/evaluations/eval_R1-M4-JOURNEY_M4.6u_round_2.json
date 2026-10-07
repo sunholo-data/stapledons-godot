@@ -1,0 +1,168 @@
+{
+  "round": 2,
+  "iteration": 20,
+  "mission": "stapledon",
+  "sprint": "R1-M4-JOURNEY",
+  "half": "M4.6 ungated",
+  "scope": "narrow (lint-precision c87ab19 + merge f8159e5 conflict check; read-only)",
+  "score": 100,
+  "verdict": "PASS",
+  "blocking": 0,
+  "lint_command": "make lint-precision AILANG=runtime/bin/ailang",
+  "lint_rc": 0,
+  "lint_summary": "lint-precision: ok (positive control matched 4 lines; 4 allowlisted non-computations; no live hand-computed 1 - beta)",
+  "lint_m5_summary": "lint-precision-m5: planets physics/planets.gd tools/m5_golden.gd tools/planet_textures.gd clean (no hand-computed gamma or 1 - beta)",
+  "conflict_check": {
+    "files": "Makefile",
+    "ours_parent": "c87ab19 (lint-precision, eval-round-1 fix)",
+    "theirs_parent": "3100301 (origin/main tip)",
+    "merged": "f8159e5",
+    "phony_line": "PASS — union: all 55 tokens from origin/main present, all 55 tokens from c87ab19 present, merged has exactly the 2 from ours (lint-precision, m4-physics-probe) plus the 2 from theirs (starmap-assets, starmap-publish) for a total of 57.",
+    "test_prereqs_line": "PASS — union: every token from origin/main present; ours added lint-precision after python-guard (now 51 tokens); theirs added starmap-assets, truth-test, starmap-truth-audit, starmap-consistency, starmap-consistency-large; trappist1-test retained (originally ours placed it before the catalogue block; merged kept it at end matching origin/main ordering).",
+    "lint_recipe_intact": "PASS — lines 56-70 of the merged Makefile are the lint-precision comment block, LINT_OMB_DIR, LINT_OMB_RE, and the recipe with hits_in() and the FILENAME == ARGV[1] awk guard, byte-identical to c87ab19.",
+    "merge_marker": "no conflict markers in the merged tree",
+    "token_method": "awk NR==26 / NR==14, then tr ' ' to '\\n', sort, comm -23/-13"
+  },
+  "cases": [
+    {
+      "name": "case1_live_hit_in_allowlisted_file",
+      "expected": "FAIL (rc=2): a new live `1.0 - beta` on a different line (with different code text) than the allowlisted one must NOT be excused",
+      "observed": "FAIL rc=2 — lint flagged demos/ship_geometry_demo.gd:692:return 1.0 - beta; no other output; positive control 4/4 still matched",
+      "restored": "cmp byte-identical to git HEAD (d1beaca876249433d2891d2d4243786f75b6ace653a3abdf8205714feca9cf3f)",
+      "result": "PASS"
+    },
+    {
+      "name": "case2_line_shift_above_allowlisted_entry",
+      "expected": "PASS (rc=0): shifting the allowlisted line by 5 lines must keep the entry valid because the match is on stripped code text, not line number",
+      "observed": "PASS rc=0 — inserted 5 comment-only lines above the allowlisted entry; lint still ok, positive control 4/4",
+      "restored": "cmp byte-identical to git HEAD (d1beaca876249433d2891d2d4243786f75b6ace653a3abdf8205714feca9cf3f)",
+      "result": "PASS"
+    },
+    {
+      "name": "case3_hit_inside_a_string",
+      "expected": "PASS (rc=0): `\"1 - beta label string\"` is a string literal, the sed `\"...\"` -> `\"\"` strip wipes the contents, no live hit",
+      "observed": "PASS rc=0 — added `return \"1 - beta label string\"` to bridge/ai_bridge.gd; lint ok",
+      "restored": "cmp byte-identical to git HEAD (2dd653f3bdfd3dd109f46ecc00f6907d6159d6438316988dcd55066a5b329e33)",
+      "result": "PASS"
+    },
+    {
+      "name": "case4_live_hit_with_trailing_comment",
+      "expected": "FAIL (rc=2): a `#` comment after a live `1.0 - beta` must NOT hide the hit (comments stripped first, pattern matches the live hit)",
+      "observed": "FAIL rc=2 — added `return 1.0 - beta # eval round2: trailing comment`; lint flagged bridge/ai_bridge.gd:675:return 1.0 - beta",
+      "restored": "cmp byte-identical to git HEAD (2dd653f3bdfd3dd109f46ecc00f6907d6159d6438316988dcd55066a5b329e33)",
+      "result": "PASS"
+    },
+    {
+      "name": "case5_empty_allowlist",
+      "expected": "FAIL (rc=2): the `FILENAME == ARGV[1]` guard rejects the old `NR==FNR` bug where an empty allowlist treated every hit as allowlisted (4 live hits across 4 allowlisted files must now be reported)",
+      "observed": "FAIL rc=2 — allowlist truncated to 0 bytes; lint printed all 4 hits: demos/ship_geometry_demo.gd:609, tools/alpha_centauri_golden.gd:22, tools/planet_bounds_golden.gd:21, tools/planet_transition_golden.gd:33",
+      "restored": "cmp byte-identical to git HEAD (5148a66e8bb4bcaf42719fc71bb0afc1db35f5101d03d1bd810414780b67b1c8)",
+      "result": "PASS"
+    },
+    {
+      "name": "case6_live_hit_in_gdshader",
+      "expected": "FAIL (rc=2): a .gdshader file containing a live `1.0 - beta` must be flagged (gdshader is in the lint's git-ls-files glob)",
+      "observed": "FAIL rc=2 — created demos/_eval_round2_shader.gdshader with `float omb = 1.0 - beta;`; lint flagged it as demos/_eval_round2_shader.gdshader:4",
+      "restored": "file deleted (ls reports No such file or directory); git status clean (only .eval_review/ untracked)",
+      "result": "PASS"
+    },
+    {
+      "name": "case7_hash_inside_string_before_live_hit",
+      "expected": "FAIL (rc=2): `\"1 - beta #\"` is wiped by the string strip BEFORE the comment stripper runs, so the live `1.0 - beta` after the string must still be detected",
+      "observed": "FAIL rc=2 — added `var label: String = \"1 - beta #\"` and `var y: float = 1.0 - beta` to bridge/ai_bridge.gd; lint flagged bridge/ai_bridge.gd:676:var y: float = 1.0 - beta (the line INSIDE the string was correctly wiped, the live hit was caught)",
+      "restored": "cmp byte-identical to git HEAD (2dd653f3bdfd3dd109f46ecc00f6907d6159d6438316988dcd55066a5b329e33)",
+      "result": "PASS"
+    },
+    {
+      "name": "case9_multiline_string_inner_line",
+      "expected": "partial FAIL — multi-line strings span more than one sed line, so an inner line `1 - beta` is false-positive flagged; the live hit on a different line is correctly flagged; overall rc=2",
+      "observed": "FAIL rc=2 — added triple-quote block with `computed as 1 - beta` on the inner line plus a live `var y: float = 1.0 - beta` on the next line; lint flagged BOTH lines: 676 (false positive, inner doc string) and 678 (live hit). The live hit detection is correct; the inner-line false positive is a known sed per-line limitation.",
+      "restored": "cmp byte-identical to git HEAD (2dd653f3bdfd3dd109f46ecc00f6907d6159d6438316988dcd55066a5b329e33)",
+      "result": "PASS (lint correctly fails; the per-line limitation is documented in scope)"
+    }
+  ],
+  "allowlist_audit": [
+    {
+      "file": "demos/ship_geometry_demo.gd",
+      "code_text_in_allowlist": "var omb: float = float(ship.get(\"\", 1.0 - beta))",
+      "actual_stripped_line": "var omb: float = float(ship.get(\"\", 1.0 - beta))",
+      "match": "yes",
+      "is_live_computation": true,
+      "reason_summary": "fallback default of ship.get(\"one_minus_beta\", ...): live only when the sim omits the field; display-only speed readout, not physics (follow-up: drop the fallback)",
+      "should_be_fixed": "no — display-only path, not physics; follow-up is already noted in the reason"
+    },
+    {
+      "file": "tools/alpha_centauri_golden.gd",
+      "code_text_in_allowlist": "var heading:=Vector3.RIGHT;var gamma:=1./sqrt(1.-beta*beta)",
+      "actual_stripped_line": "var heading:=Vector3.RIGHT;var gamma:=1./sqrt(1.-beta*beta)",
+      "match": "yes",
+      "is_live_computation": false,
+      "reason_summary": "golden harness gamma = 1/sqrt(1-beta^2) at beta 0.9, a CPU reference not near c",
+      "should_be_fixed": "no — false positive of the regex: `1.-beta*beta` matches the pattern but the expression is gamma = 1/sqrt(1-beta^2), NOT 1-beta"
+    },
+    {
+      "file": "tools/planet_bounds_golden.gd",
+      "code_text_in_allowlist": "var beta:float=c[1];var gamma:=1./sqrt(1.-beta*beta);var theta:=deg_to_rad(c[2]);var alpha:=deg_to_rad(c[3]);var distance:float=b.radius_km/sin(alpha)",
+      "actual_stripped_line": "var beta:float=c[1];var gamma:=1./sqrt(1.-beta*beta);var theta:=deg_to_rad(c[2]);var alpha:=deg_to_rad(c[3]);var distance:float=b.radius_km/sin(alpha)",
+      "match": "yes",
+      "is_live_computation": false,
+      "reason_summary": "golden harness gamma = 1/sqrt(1-beta^2) at moderate beta, a CPU reference not near c",
+      "should_be_fixed": "no — same regex false positive"
+    },
+    {
+      "file": "tools/planet_transition_golden.gd",
+      "code_text_in_allowlist": "var beta:float=0. if j<43 else .9;var gamma:float=1./sqrt(1.-beta*beta);var heading:=Vector3.RIGHT",
+      "actual_stripped_line": "var beta:float=0. if j<43 else .9;var gamma:float=1./sqrt(1.-beta*beta);var heading:=Vector3.RIGHT",
+      "match": "yes",
+      "is_live_computation": false,
+      "reason_summary": "golden harness gamma = 1/sqrt(1-beta^2) at beta <= 0.9, a CPU reference not near c",
+      "should_be_fixed": "no — same regex false positive"
+    }
+  ],
+  "findings": [
+    {
+      "severity": "info",
+      "title": "Round-1 medium finding (path:line allowlist keying) RESOLVED",
+      "evidence": "git show c87ab19 Makefile: hits_in() now strips strings and comments before matching; allowlist entries are `path<TAB>stripped code<TAB>reason`; awk guards with `FILENAME == ARGV[1]` (rejects the NR==FNR empty-allowlist bug). Adversarial case 2 (5-line shift above the allowlisted entry in demos/ship_geometry_demo.gd) stayed green; case 1 (new live `1.0 - beta` in the same file) turned red; case 5 (empty allowlist) turned red with all 4 prior hits flagged.",
+      "suggestion": "none — closed by c87ab19."
+    },
+    {
+      "severity": "low",
+      "title": "Regex false-positives force 3 of 4 allowlist entries",
+      "evidence": "The pattern `(^|[^A-Za-z0-9_.])1(\\.0*)?[[:space:]]*-[[:space:]]*beta([^A-Za-z0-9_]|$)` matches the `1.-beta*beta` inside `gamma := 1./sqrt(1.-beta*beta)` — i.e. it cannot tell that the second operand is `beta*beta` (= beta^2) not `beta`. Three of the four allowlist entries (alpha_centauri_golden, planet_bounds_golden, planet_transition_golden) are excuses for this single regex limitation.",
+      "suggestion": "Optional follow-up: tighten the pattern to require `beta` NOT followed by `*` or any alphanumeric-or-operator (e.g. add `(?![\\*\\w])` after `beta`, or anchor the suffix on a stricter class). Would drop the allowlist from 4 to 1 without changing the live-hit detection on real cases. Out of scope for this round (Round-1 was about path:line keying, not the regex)."
+    },
+    {
+      "severity": "low",
+      "title": "demos/ship_geometry_demo.gd allowlist entry is a live computation",
+      "evidence": "Allowlist entry: `var omb: float = float(ship.get(\"\", 1.0 - beta))`. The `1.0 - beta` IS a live computation of 1 - beta, but only as a fallback when the sim's `one_minus_beta` field is missing. The reason explicitly says \"(follow-up: drop the fallback)\". Display-only, not physics.",
+      "suggestion": "Track the follow-up (drop the fallback default, raise instead) on a sprint; not a regression risk for this round."
+    },
+    {
+      "severity": "info",
+      "title": "Multi-line strings cause false-positive lines (known per-line sed limitation)",
+      "evidence": "Adversarial case 9 placed `computed as 1 - beta` inside a triple-quoted block in bridge/ai_bridge.gd; the sed `\"...\"` stripper only sees per-line strings, so the inner line is flagged. The live `1.0 - beta` on the line AFTER the closing quote IS correctly flagged too. The lint fails (rc=2), which is the safer outcome — false-positive over false-negative.",
+      "suggestion": "Document the per-line sed limitation in the recipe comment if multi-line strings containing `1 - beta` ever become common in the codebase. None exist today."
+    },
+    {
+      "severity": "info",
+      "title": "Merge conflict resolution is correct (union, not destructive)",
+      "evidence": "Token-by-token comparison of git show f8159e5^2:Makefile (origin/main 3100301) vs git show f8159e5:Makefile (merged) on the .PHONY and test: lines: every token from origin/main is preserved in the merged file; every token from c87ab19 is preserved; no duplicates, no losses. The lint-precision recipe (lines 56-70) is byte-identical to c87ab19; lint runs green with `4 allowlisted non-computations`.",
+      "suggestion": "none — clean three-way merge."
+    }
+  ],
+  "score_breakdown": {
+    "adversarial_drill": 60,
+    "conflict_check": 20,
+    "findings_quality": 20,
+    "max": 100,
+    "notes": "8 adversarial cases (>= 5 required), 7 PASS + 1 PASS-with-known-limitation. Conflict check token-by-token on .PHONY (57 tokens, exact union of the 55 from each side plus the 2 uniquely from ours and the 2 uniquely from theirs) and on test: prereq list (51 tokens, every theirs token preserved, every ours token preserved, plus the sprint's lint-precision). Findings: 1 medium carried from round 1 closed, 2 low (regex false positives, ship_geometry_demo fallback) with explicit follow-ups, 2 info."
+  },
+  "notes": [
+    "Read-only review of `git show c87ab19` and `git show f8159e5 -- Makefile` per the task. No git writes.",
+    "All touched files restored cmp byte-identical to git HEAD. Final `git status` shows only the .eval_review/ scratch directory as untracked.",
+    "The pinned AILANG at runtime/bin/ailang (v0.52.0) was used for every lint invocation per the task. AILANG=runtime/bin/ailang is passed explicitly on every make call.",
+    "lint-precision-m5 (mk/m5.mk) was also exercised as a transitive prerequisite (Makefile's `lint-precision: lint-precision-m5`) and printed `clean (no hand-computed gamma or 1 - beta)`; rc=0 for both.",
+    "Round 1 (bf11a12, this evaluator) scored 91 PASS with the medium finding on path:line allowlist keying. c87ab19 implements the fix; f8159e5 cleanly merges origin/main on top. The Round-1 medium is RESOLVED in this round."
+  ]
+}

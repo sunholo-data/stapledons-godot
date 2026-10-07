@@ -2,6 +2,12 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-06: iteration 17, M4.4 news/return trip/legacy BUILT and judged (draft PR #131, head `ee98858`); minimax-m3 eval 97 PASS, 0 blocking; merge waits on pause point S4 (copy review, D-45 OPEN); clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved (M4.4 verified, an M4.5 dependency); one open decision.
+
+- **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended); 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan); 4 UNMET → R1-M4-JOURNEY: M4.0, M4.1 (both steps), M4.2, M4.3a, M4.6a, M4.7 ✅; **M4.4 built, PASS, held for S4 (this iteration)**; open: M4.3b (routable), then M4.5 (needs M4.3b + M4.4 merged) and M4.6; 5 ongoing (strict + parity green).
+- **Done**: executor (Sonnet 5.5, Agent tool) built M4.4 (news panel at the Archive terminal, three `body_source` renderings, digit-free reason table, `make news-lint`/`news-test`, return trip via `GalaxyMap.plan_home`, legacy screen with "Begin again" on a new seed). It wrote ~890 LOC against a 350 estimate, with no waiver. The evaluator (minimax-m3, pi recipe, cross-vendor) hit `tool_hang` on attempt 1 (a foreground `make sim`; ticket filed) and scored **97/100 PASS** on attempt 2. Its one survivor (M6) mutated the test, not the code. The controller's code mutant at `sim/consequence.ail:109` went RED 30/33. The controller merged main (#130; CHANGELOG conflict only) and ran `make -k test`: rc=0.
+- **Next**: Mark's D-45 (S4 copy). Until then the next pick is M4.3b (HUD in the interior). Follow-ups: the D-23 4.32 ly regen; news copy against the D-42 canon; the Sol return "0.00 years old" line.
+
 ## STATUS 2026-10-06: iteration 16, M4.7 Archive codex LANDED (PR #123, merge `8b8930f`; iteration 15's orphan, verified and finished); minimax-m3 eval 88 PASS, 0 blocking, survivor M6 killed; clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved (M4.7, an M4.5 dependency); no open decisions.
 
 - **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended); 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan); 4 UNMET → R1-M4-JOURNEY: M4.0 ✅, M4.1 step 1 ✅, M4.2 ✅, M4.3a ✅, M4.6a + M4.1 step 2 ✅ (attended PR #113), **M4.7 ✅ (this iteration)**; open: M4.3b, M4.4 (routable, wave 3), then M4.5 and M4.6; 5 ongoing (strict + parity green).
