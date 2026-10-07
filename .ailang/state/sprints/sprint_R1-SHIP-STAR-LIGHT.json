@@ -1,20 +1,113 @@
 {
   "sprint_id": "R1-SHIP-STAR-LIGHT",
-  "status": "in_progress",
+  "status": "completed",
   "approved_by": "Mark Edmondson, 2026-10-07 (dev.20 selection: 'Ship lit by the real star')",
   "design_doc": "design_docs/planned/r1/ship-star-light.md",
   "sprint_plan": "design_docs/planned/r1/ship-star-light-sprint.md",
   "branch": "sprint/ship-star-light",
   "registry_reuse": [
-    {"milestone": "SL1", "package": "sunholo/relativity", "action": "depend", "reason": "apparentDisc, doppler, pointFluxRatio already mirrored (physics/planets.gd, sky/sky_meter.gd)"}
+    {
+      "milestone": "SL1",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "apparentDisc, doppler, pointFluxRatio already mirrored (physics/planets.gd, sky/sky_meter.gd)"
+    }
   ],
-  "velocity": {"target_loc_per_day": 400, "estimated_total_loc": 600, "estimated_days": 1.5},
+  "velocity": {
+    "target_loc_per_day": 400,
+    "estimated_total_loc": 600,
+    "estimated_days": 1.5
+  },
   "features": [
-    {"id": "SL0", "description": "Tests first: tests/test_ship_star_light.gd wired as make ship-star-light-test in ship-demo-ci", "estimated_loc": 250, "dependencies": [], "acceptance_criteria": ["A1-A7: make ship-star-light-test"], "passes": true, "started": "2026-10-07", "completed": "2026-10-07", "notes": "42 checks; negative control for a mirrored interior axis"},
-    {"id": "SL1", "description": "demos/ship_star_light.gd: direction, colour, compressed energy, easing, hysteresis, key cross-fade, labels", "estimated_loc": 190, "dependencies": ["SL0"], "acceptance_criteria": ["A1-A7: make ship-star-light-test"], "passes": true, "started": "2026-10-07", "completed": "2026-10-07", "notes": null},
-    {"id": "SL2", "description": "Wiring into ship_lighting.gd and ship_geometry_demo.gd (install, per-frame update, HUD)", "estimated_loc": 20, "dependencies": ["SL1"], "acceptance_criteria": ["A7: make ship-star-light-test"], "passes": true, "started": "2026-10-07", "completed": "2026-10-07", "notes": null},
-    {"id": "SL3", "description": "tools/ship_star_light_capture.gd renders along the guided tour; inspected", "estimated_loc": 110, "dependencies": ["SL2"], "acceptance_criteria": ["A8: make ship-star-light-capture"], "passes": null, "started": "2026-10-07", "completed": null, "notes": null},
-    {"id": "SL4", "description": "tools/ship_star_light_bench.gd paired frame times", "estimated_loc": 70, "dependencies": ["SL2"], "acceptance_criteria": ["A9: make ship-star-light-bench"], "passes": null, "started": null, "completed": null, "notes": null},
-    {"id": "SL5", "description": "Docs, CHANGELOG, art README, full make test, PR", "estimated_loc": 0, "dependencies": ["SL3", "SL4"], "acceptance_criteria": ["A10: make test AILANG=runtime/bin/ailang"], "passes": null, "started": null, "completed": null, "notes": null}
-  ]
+    {
+      "id": "SL0",
+      "description": "Tests first: tests/test_ship_star_light.gd wired as make ship-star-light-test in ship-demo-ci",
+      "estimated_loc": 250,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "A1-A7: make ship-star-light-test"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "42 checks; negative control for a mirrored interior axis"
+    },
+    {
+      "id": "SL1",
+      "description": "demos/ship_star_light.gd: direction, colour, compressed energy, easing, hysteresis, key cross-fade, labels",
+      "estimated_loc": 190,
+      "dependencies": [
+        "SL0"
+      ],
+      "acceptance_criteria": [
+        "A1-A7: make ship-star-light-test"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": null
+    },
+    {
+      "id": "SL2",
+      "description": "Wiring into ship_lighting.gd and ship_geometry_demo.gd (install, per-frame update, HUD)",
+      "estimated_loc": 20,
+      "dependencies": [
+        "SL1"
+      ],
+      "acceptance_criteria": [
+        "A7: make ship-star-light-test"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": null
+    },
+    {
+      "id": "SL3",
+      "description": "tools/ship_star_light_capture.gd renders along the guided tour; inspected",
+      "estimated_loc": 110,
+      "dependencies": [
+        "SL2"
+      ],
+      "acceptance_criteria": [
+        "A8: make ship-star-light-capture"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "22 renders in renders/ship_star_light/ (small/ at 560 px), inspected: Earth start (Sun 15 deg below the deck, bridge shaded), departure turn sweeps Sun shadows across the bridge, 0.999c outbound cruise lit from the forward-aberrated blue Sun, dark leg back to the moody key, TRAPPIST-1 pink-red and Aldebaran orange grazing light"
+    },
+    {
+      "id": "SL4",
+      "description": "tools/ship_star_light_bench.gd paired frame times",
+      "estimated_loc": 70,
+      "dependencies": [
+        "SL2"
+      ],
+      "acceptance_criteria": [
+        "A9: make ship-star-light-bench"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "1920x1080 p95 ms ship/star+key/star: bridge 9.55/9.57/9.69, overlook 9.62/9.49/9.56, commons 9.61/9.35/9.51 (Studio M4 Max, vsync-bound; deltas within noise)"
+    },
+    {
+      "id": "SL5",
+      "description": "Docs, CHANGELOG, art README, full make test, PR",
+      "estimated_loc": 0,
+      "dependencies": [
+        "SL3",
+        "SL4"
+      ],
+      "acceptance_criteria": [
+        "A10: make test AILANG=runtime/bin/ailang"
+      ],
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "make test AILANG=runtime/bin/ailang EXIT 0 (ship-star-light: 42 passed, 0 failures)"
+    }
+  ],
+  "completed": "2026-10-07"
 }
