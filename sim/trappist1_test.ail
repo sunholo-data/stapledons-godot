@@ -1,0 +1,243 @@
+module stapledons/sim/trappist1_test
+-- TB2-TB5 (trappist1-planets-sprint.md): the seven planets' data, orbits,
+-- feed and the HZ stop's clearance. The orbit-position oracle in a second
+-- language is tools/check_trappist1.py (make trappist1-test).
+import std/option (Option, Some, None)
+import std/result (Ok, Err)
+import std/string (concat, join, contains)
+import std/math (sqrt, floor, asin, sin)
+import pkg/sunholo/celestial/kepler (Vec3, sub, add, scale, norm, dot, absf, twoPi)
+import pkg/sunholo/celestial/ephemeris (auKm, j2000)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta)
+import ./data/trappist1 (Exoplanet, Field, trappistPlanets, trappistStarMassSun, earthRadiusKm, jwstTransits)
+import ./trappist1 (isTrappistPlanet, planetValue, planetRadiusKm, trappistPlanetIds, lightDays, localAu, localState, skyToGalactic, trappistPlanetAt, trappistBodies, hostE1Lux, nearTrappist)
+import ./destination_stars (destinationLy, destinationStopKm, destinationRadiusKm)
+import ./celestial (BodyView, lyKm, jdAt)
+import ./core (World, Target, Planned, Arrived, ICommit, newWorld, defaultParams, position, tick)
+import ./solar_departure (initialize, intentForLeg)
+import ./navigation (safetyMinKm)
+import ./protocol (finiteSystemOf, encodeSystemRings, num)
+import ./navigation (trappistFacts)
+import ./celestial (solSystem)
+import pkg/sunholo/celestial/reflect (discIlluminance)
+
+pure func near(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
+pure func rel(a: float, b: float, tol: float) -> bool = absf(a / b - 1.0) <= tol
+pure func allOf(xs: [string], g: string -> bool) -> bool = match xs { [] => true, x :: rest => g(x) && allOf(rest, g) }
+pure func fold(g: (b, a) -> b, z: b, xs: [a]) -> b = match xs { [] => z, x :: r => fold(g, g(z, x), r) }
+pure func len(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + len(r) }
+
+-- ------------------------------------------------------------ TB2 data
+pure func provOf(p: Exoplanet, key: string) -> string = match fold(\acc kv. match kv { (k, f) => if k == key then f.prov else acc }, "", p.fields) { s => s }
+pure func citeOf(p: Exoplanet, key: string) -> string = match fold(\acc kv. match kv { (k, f) => if k == key then f.cite else acc }, "", p.fields) { s => s }
+pure func rowsOk(p: Exoplanet) -> bool =
+  allOf(["period_d", "a_au", "radius_earth", "mass_earth", "incl_deg"], \k. provOf(p, k) == "measured" && citeOf(p, k) == "agol2021")
+  && allOf(["t0_bjd", "ephem_period_d"], \k. provOf(p, k) == "measured" && citeOf(p, k) == "ducrot2020")
+  && allOf(["e", "node_deg", "p_v", "minnaert_k"], \k. provOf(p, k) == "assumed" && citeOf(p, k) == "assumption")
+export pure func checkRows() -> bool =
+  len(trappistPlanets()) == 7 && fold(\acc p. acc && rowsOk(p), true, trappistPlanets())
+  && trappistPlanetIds() == ["trappist-1b", "trappist-1c", "trappist-1d", "trappist-1e", "trappist-1f", "trappist-1g", "trappist-1h"]
+test "seven planets b..h; measured rows cite Agol 2021 (size, orbit) and Ducrot 2020 (ephemeris); e, node, albedo and k are marked assumed" { checkRows() }
+
+-- Transcription spot checks against the pinned archive snapshot (the oracle checks every row).
+export pure func checkTranscription() -> bool =
+  planetValue("trappist-1e", "radius_earth") == 0.92 && planetValue("trappist-1e", "a_au") == 0.02925 && planetValue("trappist-1f", "period_d") == 9.20754
+  && planetValue("trappist-1h", "t0_bjd") == 2457662.5741486 && planetValue("trappist-1b", "incl_deg") == 89.728
+  && near(planetRadiusKm("trappist-1e"), 0.92 * 6378.1, 0.0000001)
+test "spot transcriptions of the archive rows; radius in km from the IAU nominal Earth radius" { checkTranscription() }
+
+-- Kepler III with Agol's stellar mass recomputes every a from its period (planet masses negligible): within 0.5 %.
+pure func keplerA(id: string) -> float { let py = planetValue(id, "period_d") / 365.25; let x = (trappistStarMassSun()).value * py * py; cubeRoot(x) }
+pure func cubeRoot(x: float) -> float = newtonCube(x, 0.02, 40)
+pure func newtonCube(x: float, y: float, n: int) -> float = if n <= 0 then y else newtonCube(x, y - (y * y * y - x) / (3.0 * y * y), n - 1)
+export pure func checkKepler() -> bool = allOf(trappistPlanetIds(), \id. rel(keplerA(id), planetValue(id, "a_au"), 0.005))
+test "a recomputes from P and the stellar mass (Kepler III) within 0.5 % for all seven" { checkKepler() }
+
+-- Cross-checks: Agol's osculating P agrees with Ducrot's mean P to 5e-4; the
+-- mean ephemeris predicts JWST's 2024 transits of b and c within 0.5 h.
+export pure func checkEphemeris() -> bool =
+  allOf(trappistPlanetIds(), \id. rel(planetValue(id, "ephem_period_d"), planetValue(id, "period_d"), 0.0005))
+  && fold(\acc tr. match tr { (id, f) => acc && {
+      let p = planetValue(id, "ephem_period_d");
+      let k = floor((f.value - planetValue(id, "t0_bjd")) / p + 0.5);
+      absf(planetValue(id, "t0_bjd") + k * p - f.value) * 24.0 < 0.5 } }, true, jwstTransits())
+test "Agol's periods agree with Ducrot's ephemeris; the ephemeris predicts JWST 2024 transits of b and c within 0.5 h" { checkEphemeris() }
+
+-- ------------------------------------------------------------ TB2 orbits
+-- At a transit (local time T0 - D/c) the planet is a sin i toward Earth from the
+-- star and off the line of sight by a cos i; half a period later it is behind.
+pure func towardEarth() -> Vec3 = scale(0.0 - 1.0 / norm(destinationLy("trappist-1")), destinationLy("trappist-1"))
+pure func transitOk(id: string) -> bool {
+  let a = planetValue(id, "a_au");
+  let i = planetValue(id, "incl_deg") * twoPi() / 360.0;
+  let t = planetValue(id, "t0_bjd") - lightDays();
+  let p = localAu(id, t);
+  let q = localAu(id, t + planetValue(id, "ephem_period_d") / 2.0);
+  let later = localAu(id, t + 1000.0 * planetValue(id, "ephem_period_d"));
+  near(norm(p), a, 0.000000000001) && near(dot(p, towardEarth()), a * sin(i), 0.000000000001)
+  && near(dot(q, towardEarth()), 0.0 - a * sin(i), 0.000000000001)
+  && near(dot(later, towardEarth()), a * sin(i), 0.000000001)
+}
+export pure func checkTransitGeometry() -> bool = allOf(trappistPlanetIds(), transitOk) && near(lightDays() / 365.25, norm(destinationLy("trappist-1")), 0.000000001)
+test "each planet transits (a sin i toward Earth) at its ephemeris epoch less the light time, is behind the star half a period later, and again 1000 periods on" { checkTransitGeometry() }
+
+-- The navigation state is the star's catalogue position plus the orbit, in km and km/s.
+export pure func checkStateKm() -> bool =
+  match trappistPlanetAt("trappist-1e", j2000()) {
+    Some(s) => near(norm(sub(s.pos, scale(lyKm(), destinationLy("trappist-1")))) / auKm(), 0.02925, 0.0000001)
+      && rel(norm(s.vel), twoPi() * 0.02925 * auKm() / (6.09956479 * 86400.0), 0.000000001)
+      && (match trappistPlanetAt("aldebaran", j2000()) { None => true, _ => false }),
+    None => false
+  }
+test "navigation state: on the orbit about the catalogue position, circular speed 2 pi a / P; unknown ids give None" { checkStateKm() }
+
+-- ------------------------------------------------------------ the voyage to the HZ stop
+pure func guided() -> World {
+  let w = newWorld(42, false, defaultParams());
+  {w | params: {w.params | boostG: 3000000.0, mEffKg: 10.0, capOneMinusBeta: 0.000000002, standoffAu: 1000.0}}
+}
+pure func started() -> World = match initialize(guided()) { Ok(w) => w, Err(_) => guided() }
+pure func fixtureTarget() -> Target = { index: 0, id: "CNS5:3627", pos: {x: 3.094521, y: 0.0 - 3.015404, z: 0.0 - 0.051608} }
+pure func trappistTarget() -> Target = { index: 1, id: "Gaia DR3 2635476908753563008", pos: {x: 7.742, y: 20.946483, z: 0.0 - 33.930598} }
+pure func targetFor(n: int) -> Target = if n == 6 then trappistTarget() else fixtureTarget()
+pure func finishLeg(w: World, n: int) -> World =
+  match intentForLeg(w, n, targetFor(n)) {
+    None => w,
+    Some(intent) => {
+      let planned = (tick(w, {dtau: 0.0, intents: [intent]})).world;
+      match planned.journey {
+        Planned(p) => {
+          let committed = (tick(planned, {dtau: 0.0, intents: [ICommit(p.id)]})).world;
+          (tick(committed, {dtau: p.trip.tauTotal, intents: []})).world
+        },
+        _ => planned
+      }
+    }
+  }
+pure func chainTo(w: World, n: int, stop: int) -> World = if n >= stop then w else chainTo(finishLeg(w, n), n + 1, stop)
+-- The ship at the TRAPPIST-1 habitable-zone stop (leg 7 arrived).
+export pure func atStop() -> World = chainTo(started(), 0, 8)
+pure func arrivedAtTrappist(w: World) -> bool = match w.journey { Arrived(c) => c.plan.target.id == "trappist-1", _ => false }
+pure func jdOf(w: World) -> float = jdAt(w.params.epochJd, w.ship.motion.t)
+
+pure func degAcross(b: BodyView) -> float = 2.0 * asin(b.radiusKm / norm(b.relKm)) * 360.0 / twoPi()
+pure func viewOf(bs: [BodyView], id: string) -> Option[BodyView] = match bs { [] => None, b :: rest => if b.id == id then Some(b) else viewOf(rest, id) }
+pure func indexOf(bs: [BodyView], id: string, i: int) -> int = match bs { [] => 0 - 1, b :: rest => if b.id == id then i else indexOf(rest, id, i + 1) }
+
+-- Probe (not a test): the stop's geometry, one line per planet.
+pure func line(w: World, b: BodyView) -> string {
+  let star = scale(lyKm(), sub(destinationLy("trappist-1"), position(w.ship)));
+  let cosSep = dot(b.relKm, star) / (norm(b.relKm) * norm(star));
+  concat([b.id, " d_AU=", num(norm(b.relKm) / auKm()), " deg=", num(degAcross(b)), " phase=", num(b.phaseDeg), " sepFromStar_deg=", num(asin(sqrt(1.0 - cosSep * cosSep)) * 360.0 / twoPi()), " cosSep=", num(cosSep), " lux=", num(b.eVLux)])
+}
+export pure func stopProbe(n: int) -> string {
+  let w = atStop();
+  let sys = finiteSystemOf(w);
+  let planets = trappistBodies(sys.jd, position(w.ship));
+  let hold = match w.journey { Arrived(c) => match c.plan.nav { Some(nv) => concat([nv.bodyId, " idx=", num(intToFloat(nv.index)), " s=", num(nv.standoffKm)]), None => "none" }, _ => "none" };
+  concat(["hold=", hold, " arrived=", if arrivedAtTrappist(w) then "yes" else "no", " jd=", num(sys.jd), " starDistAU=", num(norm(sub(destinationLy("trappist-1"), position(w.ship))) * lyKm() / auKm()), "\n",
+    join("\n", fold(\acc b. acc ++ [line(w, b)], [], planets))])
+}
+
+-- ------------------------------------------------------------ TB3 feed (at the stop)
+-- Lazily shared: the stop world and its system section.
+pure func stopFeed() -> { w: World, bodies: [BodyView] } { let w = atStop(); { w: w, bodies: (finiteSystemOf(w)).bodies } }
+pure func factIndex(id: string) -> int = fold(\acc f. if f.id == id then f.index else acc, 0 - 1, trappistFacts(solSystem()))
+pure func feedOk(w: World, bs: [BodyView], id: string) -> bool =
+  match viewOf(bs, id) {
+    Some(b) => {
+      let star = scale(lyKm(), sub(destinationLy("trappist-1"), position(w.ship)));
+      let rAu = norm(sub(b.relKm, star)) / auKm();
+      b.kind == "planet" && b.host == "trappist-1" && b.status == "confirmed" && !b.visitable && b.radiusKm == planetRadiusKm(id)
+      && indexOf(bs, id, 0) == factIndex(id)
+      && near(norm(b.sunDir), 1.0, 0.000000000001)
+      && rel(b.eVLux, discIlluminance(hostE1Lux(), planetValue(id, "p_v"), b.radiusKm, b.rAu, norm(b.relKm), b.phaseDeg * twoPi() / 360.0, 1.0), 0.000000001)
+      && near(b.rAu, rAu, 0.00001) && b.lightAgeS > 0.0 && b.lightAgeS < 100.0
+    },
+    None => false
+  }
+export pure func checkFeed() -> bool = feedAt(stopFeed())
+pure func feedAt(fd: { w: World, bodies: [BodyView] }) -> bool {
+  let bs = fd.bodies;
+  arrivedAtTrappist(fd.w)
+  && indexOf(bs, "trappist-1b", 0) == indexOf(bs, "trappist-1", 0) + 1
+  && indexOf(bs, "trappist-1h", 0) == len(bs) - 1
+  && allOf(trappistPlanetIds(), \id. feedOk(fd.w, bs, id))
+  -- far from TRAPPIST-1 (at Sol) the planets are not fed and no other index moves
+  && len(trappistBodies(jdOf(fd.w), { x: 0.0, y: 0.0, z: 0.0 })) == 0
+}
+test "at the HZ stop the seven planets follow TRAPPIST-1 in the feed, b..h, at navigation's indices; reflected light is discIlluminance of the star's V; none fed at Sol" { checkFeed() }
+
+-- The wire: a planet of TRAPPIST-1 carries its light's colour temperature (the host's
+-- Teff) and the host's V illuminance at 1 AU; the star keeps its catalogue identity.
+export pure func checkWire() -> bool = wireAt(atStop())
+pure func wireAt(w: World) -> bool {
+  let js = encodeSystemRings(finiteSystemOf(w));
+  contains(js, "\"id\":\"trappist-1e\"") && contains(js, concat(["\"teff_k\":2566,\"e1_au_lux\":", num(hostE1Lux())]))
+  && contains(js, "\"catalogue_id\":\"Gaia DR3 2635476908753563008\"")
+}
+test "the system section carries each planet with teff_k 2566 and e1_au_lux; the star keeps its catalogue id" { checkWire() }
+
+-- ------------------------------------------------------------ TB5 the stop
+-- The HZ stop (D-47) is kept: the ship rests sqrt(L) AU from the star (within 1 km of
+-- 3.5 million), reported as the stop at TRAPPIST-1 with that stand-off; it is placed
+-- beside planet e, which is more than half lit and at least 0.6 degrees across, with
+-- at least four planets resolved (>= 0.25 deg: 2 px at the capture's 0.108 deg/px).
+pure func countBig(bs: [BodyView], ids: [string]) -> int = fold(\acc id. match viewOf(bs, id) { Some(b) => if degAcross(b) >= 0.25 then acc + 1 else acc, None => acc }, 0, ids)
+export pure func checkStop() -> bool = stopAt(stopFeed())
+pure func stopAt(fd: { w: World, bodies: [BodyView] }) -> bool {
+  let w = fd.w;
+  let starKm = norm(sub(destinationLy("trappist-1"), position(w.ship))) * lyKm();
+  (match w.journey { Arrived(c) => match c.plan.nav { Some(nv) => nv.bodyId == "trappist-1" && nv.standoffKm == destinationStopKm("trappist-1") && nv.index == indexOf(fd.bodies, "trappist-1", 0), None => false }, _ => false })
+  && near(starKm, destinationStopKm("trappist-1"), 1.0)
+  && (match viewOf(fd.bodies, "trappist-1e") { Some(e) => degAcross(e) > 0.6 && e.phaseDeg < 90.0, None => false })
+  && countBig(fd.bodies, trappistPlanetIds()) >= 4
+}
+test "the TRAPPIST-1 stop keeps the HZ rule (sqrt L AU from the star, within 1 km) and is placed beside e: e > 0.6 deg and more than half lit, four planets resolved" { checkStop() }
+
+-- Clearance over the stop: every planet's whole orbit (720 samples over one period from
+-- the arrival) stays more than 30 radii (and the planner's safety minimum) from the
+-- resting ship. The HZ sphere (0.0235 AU) lies just outside d's orbit (0.0223 AU), so d
+-- is the nearest: about 192,000 km (38 radii) at its closest; the others stay beyond 140
+-- radii. The star is at the HZ distance, 42 stellar radii.
+pure func minOrbitKm(id: string, here: Vec3, jd: float, k: int, acc: float) -> float =
+  if k >= 720 then acc else match trappistPlanetAt(id, jd + planetValue(id, "ephem_period_d") * intToFloat(k) / 720.0) {
+    Some(s) => { let d = norm(sub(s.pos, here)); minOrbitKm(id, here, jd, k + 1, if d < acc then d else acc) },
+    None => 0.0
+  }
+pure func clearanceKm(w: World, id: string) -> float = minOrbitKm(id, scale(lyKm(), position(w.ship)), jdOf(w), 0, 1000000000000.0)
+export pure func checkClearance() -> bool = clearanceAt(atStop())
+pure func clearanceAt(w: World) -> bool {
+  let bubble = w.params.bubbleRadiusM / 1000.0;
+  allOf(trappistPlanetIds(), \id. { let c = clearanceKm(w, id); c > 30.0 * planetRadiusKm(id) && c > safetyMinKm(planetRadiusKm(id), bubble) })
+  && destinationStopKm("trappist-1") > 40.0 * destinationRadiusKm("trappist-1")
+}
+test "clearance: no planet's orbit comes within 30 radii (d, just inside the HZ, passes at 38) of the resting ship (720 samples per orbit); the star is 42 radii away" { checkClearance() }
+
+-- ------------------------------------------------------------ VM parity and the oracle
+pure func stopChecks(fd: { w: World, bodies: [BodyView] }) -> bool = feedAt(fd) && wireAt(fd.w) && stopAt(fd) && clearanceAt(fd.w)
+export pure func trappistVm(n: int) -> string =
+  if checkRows() && checkTranscription() && checkKepler() && checkEphemeris() && checkTransitGeometry() && checkStateKm() && stopChecks(stopFeed())
+  then concat(["trappist1: OK\n", oracleDump(n)]) else "trappist1: FAIL"
+-- For tools/check_trappist1.py: each planet's data rows and its position about the star
+-- (galactic AU) at two local epochs, J2000 and the voyage's arrival.
+pure func vecStr(v: Vec3) -> string = concat([num(v.x), " ", num(v.y), " ", num(v.z)])
+pure func dumpAt(jd: float) -> [string] =
+  fold(\acc id. acc ++ [concat(["pos ", id, " ", num(jd), " ", vecStr(localAu(id, jd))])], [], trappistPlanetIds())
+pure func rowLine(id: string) -> string =
+  concat(["row ", id, " ", join(" ", fold(\acc k. acc ++ [num(planetValue(id, k))], [], ["period_d", "a_au", "radius_earth", "mass_earth", "incl_deg", "t0_bjd", "ephem_period_d"]))])
+export pure func oracleDump(n: int) -> string =
+  join("\n", fold(\acc id. acc ++ [rowLine(id)], [], trappistPlanetIds()) ++ dumpAt(j2000()) ++ dumpAt(2468377.8052610587) ++ [concat(["lightdays ", num(lightDays())])])
+export pure func clearanceProbe(n: int) -> string { let w = atStop(); join("\n", fold(\acc id. acc ++ [concat([id, " minKm=", num(clearanceKm(w, id)), " radii=", num(clearanceKm(w, id) / planetRadiusKm(id))])], [], trappistPlanetIds())) }
+-- Probe (not a test): the final leg's closest approach to the star, in stellar radii.
+export pure func passProbe(n: int) -> string {
+  let before = chainTo(started(), 0, 7);
+  let after = finishLeg(before, 7);
+  let star = scale(lyKm(), destinationLy("trappist-1"));
+  let h = scale(lyKm(), position(before.ship));
+  let q = scale(lyKm(), position(after.ship));
+  let w = scale(1.0 / norm(sub(q, h)), sub(q, h));
+  let along = dot(sub(star, h), w);
+  let perp = norm(sub(sub(star, h), scale(along, w)));
+  concat(["closest km=", num(perp), " AU=", num(perp / auKm()), " starRadii=", num(perp / destinationRadiusKm("trappist-1")), " beforeStopKm=", num(norm(sub(q, h)) - along)])
+}

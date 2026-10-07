@@ -21,6 +21,7 @@ import ./data/sol (Ring, rings)
 import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
 import ./alpha_centauri (alphaBodies, catalogueId as alphaCatalogueId, stellarValue as alphaStellarValue)
 import ./destination_stars (destinationBodies, destinationCatalogueId, destinationValue)
+import ./trappist1 (trappistBodies, hostE1Lux, hostId as trappistHostId)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
@@ -252,7 +253,15 @@ pure func bodyObj(b: BodyView) -> string =
 pure func finiteBodyObj(b:BodyView)->string =
   if alphaCatalogueId(b.id)!="" then starBodyObj(b, alphaCatalogueId(b.id), alphaStellarValue(b.id,"teff_k"))
   else if destinationCatalogueId(b.id)!="" then starBodyObj(b, destinationCatalogueId(b.id), destinationValue(b.id,"teff_k"))
+  else if b.host==trappistHostId() then hostLitBodyObj(b, destinationValue(b.host,"teff_k"), hostE1Lux())
   else bodyObj(b)
+-- A planet of another star (TRAPPIST-1): the body plus the colour temperature of
+-- its light (teff_k, the host's measured Teff) and the host's V illuminance at
+-- 1 AU (e1_au_lux), so the renderer lights it by its own star, not the Sun.
+pure func hostLitBodyObj(b: BodyView, teff: float, e1: float) -> string {
+    let old=bodyObj(b);
+    concat([substring(old,0,length(old)-1),",",f("teff_k",num(teff)),",",f("e1_au_lux",num(e1)),"}"])
+}
 -- A finite catalogue star: the body plus its catalogue identity (the renderer
 -- suppresses that point) and measured Teff; uniform photosphere (limb_u 0).
 pure func starBodyObj(b: BodyView, catId: string, teff: float) -> string {
@@ -284,7 +293,7 @@ pure func solarTour(p: Params) -> string =
 pure func systemOf(w: World) -> SystemView = systemAt(solSystem(), jdAt(w.params.epochJd, w.ship.motion.t), position(w.ship))
 export pure func finiteSystemOf(w:World)->SystemView {
   let v=systemOf(w);
-  {v | bodies:v.bodies ++ alphaBodies(v.jd,position(w.ship)) ++ destinationBodies(position(w.ship))}
+  {v | bodies:v.bodies ++ alphaBodies(v.jd,position(w.ship)) ++ destinationBodies(position(w.ship)) ++ trappistBodies(v.jd,position(w.ship))}
 }
 pure func systemFull(s: Session, w: World) -> [string] =
   if s.minor >= departureMinor() then [f("system", encodeSystemRings(finiteSystemOf(w)))]

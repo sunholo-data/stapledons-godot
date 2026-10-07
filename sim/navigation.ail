@@ -29,6 +29,7 @@ import ./celestial (System, BodyState, bodyAt, jdAt, lyKm)
 import ./data/sol (Planet, Moon, Ring, rings)
 import ./alpha_centauri (alphaBodyAt, stellarRadiusKm, catalogueA)
 import ./destination_stars (isDestinationStar, destinationBodyAt, destinationRadiusKm, destinationLy, destinationIds)
+import ./trappist1 (isTrappistPlanet, trappistPlanetAt, trappistPlanetIds, planetRadiusKm, hostId as trappistHostId)
 
 -- ------------------------------------------------------------ intent and result
 -- The plan intent's body form. mode is "stop" or "flyby". standoffKm: None
@@ -103,7 +104,11 @@ pure func alphaFacts(sys:System)->[Facts] = [
 pure func destinationFacts(sys: System) -> [Facts] = destFactsOf(destinationIds(), 3 + navLen(sys.planets) + navLen(sys.moons))
 pure func destFactsOf(ids: [string], i: int) -> [Facts] = match ids { [] => [], d :: rest => { id: d, index: i, radiusKm: destinationRadiusKm(d), ringKm: 0.0, visitable: true } :: destFactsOf(rest, i + 1) }
 pure func nearDestination(c: NavCtx, id: string) -> bool = isDestinationStar(id) && norm(sub(c.hereLy, destinationLy(id))) < 0.1
-pure func nearDestinationFacts(c: NavCtx) -> [Facts] = navFilterNear(c, destinationFacts(c.sys))
+pure func nearDestinationFacts(c: NavCtx) -> [Facts] = navFilterNear(c, destinationFacts(c.sys)) ++ (if nearDestination(c, trappistHostId()) then trappistFacts(c.sys) else [])
+-- TRAPPIST-1's planets (trappist1-planets-sprint.md) follow the destination stars in
+-- system.bodies order, b..h, fed within 0.1 ly; collision bodies, not plan targets.
+export pure func trappistFacts(sys: System) -> [Facts] = tFactsOf(trappistPlanetIds(), 3 + navLen(sys.planets) + navLen(sys.moons) + navLen(destinationIds()))
+pure func tFactsOf(ids: [string], i: int) -> [Facts] = match ids { [] => [], d :: rest => { id: d, index: i, radiusKm: planetRadiusKm(d), ringKm: 0.0, visitable: false } :: tFactsOf(rest, i + 1) }
 pure func navFilterNear(c: NavCtx, fs: [Facts]) -> [Facts] = match fs { [] => [], f :: rest => if nearDestination(c, f.id) then f :: navFilterNear(c, rest) else navFilterNear(c, rest) }
 pure func navLen(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + navLen(r) }
 pure func factsOf(fs: [Facts], id: string) -> Option[Facts] = match fs { [] => None, f :: r => if f.id == id then Some(f) else factsOf(r, id) }
@@ -114,7 +119,7 @@ export pure func targetFacts(sys: System, id: string) -> Result[Facts, string] =
 pure func navZero() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
 pure func navUnit(v: Vec3) -> Vec3 { let n = norm(v); if n > 0.0 then scale(1.0 / n, v) else navZero() }
 pure func navStateAt(c: NavCtx, id: string, t: float) -> BodyState =
-  match (if id=="acen-a" || id=="acen-b" then alphaBodyAt(id,jdAt(c.epochJd,t)) else if isDestinationStar(id) then destinationBodyAt(id) else bodyAt(c.sys, id, jdAt(c.epochJd, t))) { Some(b) => b, None => { pos: navZero(), vel: navZero(), pole: navZero(), wDeg: 0.0 } }
+  match (if id=="acen-a" || id=="acen-b" then alphaBodyAt(id,jdAt(c.epochJd,t)) else if isDestinationStar(id) then destinationBodyAt(id) else if isTrappistPlanet(id) then trappistPlanetAt(id, jdAt(c.epochJd, t)) else bodyAt(c.sys, id, jdAt(c.epochJd, t))) { Some(b) => b, None => { pos: navZero(), vel: navZero(), pole: navZero(), wDeg: 0.0 } }
 pure func navPosAt(c: NavCtx, id: string, t: float) -> Vec3 = (navStateAt(c, id, t)).pos
 pure func navHereKm(c: NavCtx) -> Vec3 = scale(lyKm(), c.hereLy)
 pure func navIterate(g: float -> float, t: float, n: int) -> float = if n <= 0 then t else navIterate(g, g(t), n - 1)
@@ -299,6 +304,59 @@ pure func planTimedStop(c: NavCtx, rq: BodyReq, tm: Timing, f: Facts, n: int) ->
   else planStop({c | accel: phi / tB, approach: ap}, {rq | cruisePhi: phi}, f, n)
 }
 
+-- ------------------------------------------------------------ a stop beside a planet
+-- trappist1-planets-sprint.md (TB5): a stop at TRAPPIST-1 keeps its stand-off r from
+-- the star (D-47: the habitable zone, sqrt(L) AU) but is placed on that sphere beside
+-- the planet that looks largest there while more than half lit. The planner's own
+-- stop geometry places it: a stop s short of planet P on the line from the ship lands
+-- at P - s u, on the sphere when s^2 - 2 s (p.u) + |p|^2 - r^2 = 0 (p: P about the
+-- star; u: the leg's direction). The nearer root above the planet's safety minimum is
+-- taken; P is more than half lit from there when p.u > 0. The arrival time comes from
+-- the planner itself: the plain star stop's, then three planner rounds (each moves the
+-- arrival by about v_planet / c of the last). It is reported as the stop at the star
+-- with stand-off r. With no planet reachable it is the plain star stop.
+type Anchor = { id: string, s: float, score: float }
+pure func anchorAt(c: NavCtx, id: string, r: float, t: float) -> Option[Anchor] {
+  let star = navPosAt(c, trappistHostId(), t);
+  let p = sub(navPosAt(c, id, t), star);
+  let h = sub(navHereKm(c), star);
+  let u = navUnit(sub(p, h));
+  let pu = dot(p, u);
+  let disc = pu * pu - dot(p, p) + r * r;
+  let minS = safetyMinKm(planetRadiusKm(id), c.bubbleKm);
+  if disc < 0.0 || !(pu > 0.0) then None else {
+    let lo = pu - sqrt(disc);
+    let s = if lo >= minS then lo else pu + sqrt(disc);
+    if s >= minS && s < norm(sub(p, h)) then Some({ id: id, s: s, score: planetRadiusKm(id) / s }) else None
+  }
+}
+pure func betterAnchor(acc: Option[Anchor], a: Option[Anchor]) -> Option[Anchor] =
+  match a { None => acc, Some(x) => match acc { None => a, Some(y) => if x.score > y.score then a else acc } }
+export pure func bestAnchorId(c: NavCtx, r: float, t: float) -> string =
+  match navFold(\acc id. betterAnchor(acc, anchorAt(c, id, r, t)), None, trappistPlanetIds()) { Some(a) => a.id, None => "" }
+pure func planStopKind(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, string] =
+  match rq.timing { Some(tm) => planTimedStop(c, rq, tm, f, n), None => if navPhiOk(rq.cruisePhi) then planStop(c, rq, f, n) else Err("out_of_range") }
+pure func anchoredRound(c: NavCtx, rq: BodyReq, id: string, r: float, t: float, n: int, k: int) -> Result[Leg, string] =
+  match (anchorAt(c, id, r, t), factsOf(trappistFacts(c.sys), id)) {
+    (Some(a), Some(fa)) => match planStopKind(c, {rq | id: id, standoffKm: Some(a.s)}, fa, n) {
+      Err(why) => Err(why),
+      Ok(l) => if k <= 1 then Ok(l) else anchoredRound(c, rq, id, r, l.nav.interceptT, n, k - 1)
+    },
+    _ => Err("no_converge")
+  }
+pure func planBesidePlanet(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, string] =
+  match planStopKind(c, rq, f, n) {
+    Err(why) => Err(why),
+    Ok(base) => {
+      let r = navStandoff(c, rq, f);
+      let id = bestAnchorId(c, r, base.nav.interceptT);
+      if id == "" then Ok(base) else match anchoredRound(c, rq, id, r, base.nav.interceptT, n, 3) {
+        Err(why) => Err(why),
+        Ok(l) => Ok({l | nav: {l.nav | bodyId: rq.id, index: f.index, standoffKm: r, interceptLy: navToLy(navPosAt(c, rq.id, l.nav.interceptT))}})
+      }
+    }
+  }
+
 -- A body plan with n intercept iterations (tests vary n; the game uses 12).
 -- Refusals, in order: not_visitable, out_of_range (cruise speed, mode,
 -- run-out, already inside the stand-off), too_close, no_converge, collision,
@@ -313,6 +371,7 @@ export pure func planBodyN(c: NavCtx, rq: BodyReq, n: int) -> Result[Leg, string
     else targetFacts(c.sys, rq.id)) {
     Err(why) => Err(why),
     Ok(f) =>
+      if rq.mode == "stop" && rq.id == trappistHostId() && nearDestination(c, rq.id) then planBesidePlanet(c, rq, f, n) else
       match rq.timing {
         Some(tm) => if rq.mode == "stop" then planTimedStop(c, rq, tm, f, n) else Err("out_of_range"),
         None =>

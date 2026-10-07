@@ -1,0 +1,109 @@
+module stapledons/sim/trappist1
+-- TRAPPIST-1's seven planets (design trappist1-planets-sprint.md, TB2-TB5).
+-- Composition only: the orbit is sunholo/celestial kepler's stateFromElements,
+-- light time its lighttime.retarded, reflected light its reflect.discIlluminance,
+-- the star's V illuminance relativity's photometry, as for alpha Cen and Sol.
+--
+-- Frame. The orbit's reference plane is the sky as seen from Sol, as for the
+-- alpha Cen visual orbit: X north, Y east, Z toward Earth, turned into the
+-- galactic frame about TRAPPIST-1's catalogue position (the star is static, as
+-- in destination_stars.ail; reflex motion, about 30 km, is ignored).
+-- With e = 0 and argPeri 0 a planet transits (crosses in front of the star as
+-- seen from Earth, z maximal) at mean anomaly 90 degrees.
+--
+-- Time. A transit epoch is a BJD at which the transit's LIGHT reached the Solar
+-- System. The game's clock is Sol-frame coordinate time and the star is at rest
+-- there, so the transit happened at the star one light-travel time earlier:
+-- the phase at local coordinate time jd is the ephemeris's at jd + D/c (D the
+-- catalogue distance; 1 ly of light is 365.25 days). Mean anomaly
+-- M = 90 deg + 2 pi (jd + D/c - T0) / P with Ducrot's mean ephemeris (T0, P);
+-- a from Agol; gm = n^2 a^3 so the orbit keeps that period exactly.
+import std/math (atan2)
+import std/option (Option, Some, None)
+import pkg/sunholo/celestial/kepler (Vec3, State, Orbit, add, sub, scale, norm, dot, cross, stateFromElements, orbitNormal, twoPi)
+import pkg/sunholo/celestial/frames (equatorialToGalactic)
+import pkg/sunholo/celestial/ephemeris (auKm)
+import pkg/sunholo/celestial/lighttime (retarded, secondsPerDay)
+import pkg/sunholo/celestial/reflect (discIlluminance)
+import pkg/sunholo/relativity/photometry (illuminanceFromV)
+import ./data/trappist1 (Exoplanet, Field, trappistPlanets, earthRadiusKm)
+import ./destination_stars (destinationLy, destinationValue)
+import ./celestial (BodyView, BodyState, lyKm)
+
+export pure func hostId() -> string = "trappist-1"
+pure func field(xs: [(string, Field)], key: string) -> float = match xs { [] => 0.0, (k, f) :: rest => if key == k then f.value else field(rest, key) }
+pure func planetOf(xs: [Exoplanet], id: string) -> Option[Exoplanet] = match xs { [] => None, p :: rest => if p.id == id then Some(p) else planetOf(rest, id) }
+export pure func isTrappistPlanet(id: string) -> bool = match planetOf(trappistPlanets(), id) { Some(_) => true, None => false }
+export pure func planetValue(id: string, key: string) -> float = match planetOf(trappistPlanets(), id) { Some(p) => field(p.fields, key), None => 0.0 }
+export pure func planetName(id: string) -> string = match planetOf(trappistPlanets(), id) { Some(p) => p.name, None => "" }
+export pure func planetRadiusKm(id: string) -> float = planetValue(id, "radius_earth") * (earthRadiusKm()).value
+export pure func trappistPlanetIds() -> [string] = idsOf(trappistPlanets())
+pure func idsOf(xs: [Exoplanet]) -> [string] = match xs { [] => [], p :: rest => p.id :: idsOf(rest) }
+
+-- Light-travel time from TRAPPIST-1 to the Solar System, days.
+export pure func lightDays() -> float = norm(destinationLy(hostId())) * 365.25
+pure func unit(v: Vec3) -> Vec3 = scale(1.0 / norm(v), v)
+pure func npole() -> Vec3 = equatorialToGalactic({ x: 0.0, y: 0.0, z: 1.0 })
+-- Sky-plane basis at TRAPPIST-1 (X north, Y east, Z toward Earth) -> galactic.
+export pure func skyToGalactic(v: Vec3) -> Vec3 {
+  let radial = unit(destinationLy(hostId()));
+  let east = unit(cross(npole(), radial));
+  let north = unit(cross(radial, east));
+  add(scale(v.x, north), add(scale(v.y, east), scale(0.0 - v.z, radial)))
+}
+pure func rad(d: float) -> float = d * twoPi() / 360.0
+pure func elements(id: string, jd: float) -> Orbit {
+  let p = planetValue(id, "ephem_period_d");
+  let n = twoPi() / p;
+  let a = planetValue(id, "a_au");
+  { a: a, e: planetValue(id, "e"), incl: rad(planetValue(id, "incl_deg")), node: rad(planetValue(id, "node_deg")), argPeri: 0.0,
+    meanAnom: twoPi() / 4.0 + n * (jd + lightDays() - planetValue(id, "t0_bjd")), gm: n * n * a * a * a }
+}
+-- The planet's state about the star, galactic AU and AU/day, at local coordinate time jd.
+export pure func localState(id: string, jd: float) -> State {
+  let s = stateFromElements(elements(id, jd));
+  { pos: skyToGalactic(s.pos), vel: skyToGalactic(s.vel) }
+}
+export pure func localAu(id: string, jd: float) -> Vec3 = (localState(id, jd)).pos
+-- Tidally locked (assumed): the spin pole is the orbit normal.
+export pure func poleOf(id: string) -> Vec3 = skyToGalactic(orbitNormal(elements(id, 0.0)))
+
+-- Geometric (simultaneous) state for navigation, galactic km and km/s about Sol.
+export pure func trappistPlanetAt(id: string, jd: float) -> Option[BodyState] =
+  if !isTrappistPlanet(id) then None else {
+    let s = localState(id, jd);
+    Some({ pos: add(scale(lyKm(), destinationLy(hostId())), scale(auKm(), s.pos)), vel: scale(auKm() / secondsPerDay(), s.vel), pole: poleOf(id), wDeg: 0.0 })
+  }
+
+-- The star's V illuminance at 1 AU (lux): V at Earth scaled by the catalogue distance.
+export pure func hostE1Lux() -> float {
+  let earthAu = norm(destinationLy(hostId())) * lyKm() / auKm();
+  illuminanceFromV(destinationValue(hostId(), "v_earth")) * earthAu * earthAu
+}
+pure func angle(a: Vec3, b: Vec3) -> float = atan2(norm(cross(a, b)), dot(a, b))
+pure func view(id: string, jd: float, shipLy: Vec3) -> BodyView {
+  let shipAu = scale(lyKm() / auKm(), sub(shipLy, destinationLy(hostId())));
+  let ret = retarded(\t. localAu(id, t), shipAu, jd);
+  let rel = scale(auKm(), sub(ret.pos, shipAu));
+  let radius = planetRadiusKm(id);
+  let d = norm(rel);
+  let dEff = if d > radius then d else radius;
+  let rAu = norm(ret.pos);
+  let toStar = scale(0.0 - 1.0, ret.pos);
+  let alpha = angle(toStar, scale(0.0 - 1.0, rel));
+  let pV = planetValue(id, "p_v");
+  let k = planetValue(id, "minnaert_k");
+  { id: id, name: planetName(id), kind: "planet", host: hostId(), status: "confirmed", relKm: rel, radiusKm: radius, flattening: 0.0,
+    pole: poleOf(id), wDeg: 0.0, sunDir: unit(toStar), rAu: rAu, phaseDeg: alpha * 360.0 / twoPi(),
+    eVLux: discIlluminance(hostE1Lux(), pV, radius, rAu, dEff, alpha, k), pV: pV, minnaertK: k, ringId: "",
+    lightAgeS: ret.lagDays * secondsPerDay(), visitable: false,
+    source: "data/trappist1.ail: Agol 2021 radius/a/inclination (archive default); Ducrot 2020 mean transit ephemeris for phase; circular orbits; sky-plane node and albedo assumed" }
+}
+-- Within 0.1 ly of TRAPPIST-1 (navigation's nearDestination rule) the seven
+-- planets follow the destination stars in system.bodies, b..h; elsewhere they
+-- are below any display threshold and are not fed (they come last, so no
+-- other body's index moves).
+export pure func nearTrappist(shipLy: Vec3) -> bool = norm(sub(shipLy, destinationLy(hostId()))) < 0.1
+export pure func trappistBodies(jd: float, shipLy: Vec3) -> [BodyView] =
+  if nearTrappist(shipLy) then viewsOf(trappistPlanetIds(), jd, shipLy) else []
+pure func viewsOf(ids: [string], jd: float, shipLy: Vec3) -> [BodyView] = match ids { [] => [], i :: rest => view(i, jd, shipLy) :: viewsOf(rest, jd, shipLy) }

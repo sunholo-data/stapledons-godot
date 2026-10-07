@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### TRAPPIST-1's seven planets, 2026-10-07
+
+- TRAPPIST-1 b–h are real bodies at the voyage's habitable-zone stop (Sprint B part 2, D-41). They come from a pinned NASA Exoplanet Archive snapshot (`data/planets/trappist1_ps.csv`, sha256 in `EXOPLANETS.SHA256`, fetched by `tools/fetch_trappist1.sh`), transcribed with citations into `sim/data/trappist1.ail`.
+  - Size and orbit are from Agol et al. 2021. Orbital phase is from Ducrot et al. 2020's mean transit ephemeris, which predicts JWST's 2024 transits of b and c within 15 minutes.
+  - Circular orbits, the sky-plane node and the albedos are stated assumptions.
+- Each planet is where it really is when the ship arrives: Kepler orbits from `sunholo/celestial`, phased by the transit epochs less the 40.6-year light-time. Each is lit by TRAPPIST-1's own light: the wire carries the host's `teff_k` and `e1_au_lux`, so `SystemView` no longer lights every planet with the Sun.
+- The stop keeps D-47 (√L = 0.0235 AU from the star) but now sits on that sphere beside the best-lit planet. At the voyage's arrival that is e, 0.72° across. c (crescent), d (half lit) and f are resolved discs too. Every orbit stays more than 30 radii from the resting ship; d, just inside the HZ, comes nearest at 192,000 km. The voyage keeps its 10 stops.
+- `make trappist1-test` (in `make test`) checks the pin, runs the sim checks with the strict VM equal to the interpreter, and runs a Python oracle that recomputes every row and position (worst 2e-12 AU). `make trappist1-capture` renders the stop to `renders/trappist1/`.
+
 ### Finite destination stars, 2026-10-07
 
 - Every star the voyage visits has its real size (D-47/D-48). Aldebaran (45 R☉, 3,927 K; Richichi & Roccatagliata 2005, Heiter 2015) and TRAPPIST-1 (0.119 R☉, 2,566 K; Agol 2021) become cited finite stars, replacing their catalogue points.
