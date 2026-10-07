@@ -1,7 +1,4 @@
-demos/ship_geometry_demo.gd:606	fallback default of ship.get("one_minus_beta", ...): live only when the sim omits the field; display-only (speed readout), not physics
-tools/alpha_centauri_golden.gd:22	golden harness gamma = 1/sqrt(1-beta^2) at moderate beta (0.9), CPU reference not near c; a different gate (gamma), not a 1-beta near c
-tools/interior_capture.gd:97	text inside a caption string, not a computation
-tools/planet_bounds_golden.gd:21	golden harness gamma = 1/sqrt(1-beta^2) at moderate beta, CPU reference not near c
-tools/planet_transition_golden.gd:33	golden harness gamma = 1/sqrt(1-beta^2) at beta <= 0.9, CPU reference not near c
-ui/galaxy_map.gd:66	row label string "Cruise 1 - beta" (the value comes from the sim field cruise_one_minus_beta)
-ui/galaxy_map.gd:97	row label string "1 - beta" (the value comes from the sim field one_minus_beta)
+demos/ship_geometry_demo.gd	var omb: float = float(ship.get("", 1.0 - beta))	fallback default of ship.get("one_minus_beta", ...): live only when the sim omits the field; display-only speed readout, not physics (follow-up: drop the fallback)
+tools/alpha_centauri_golden.gd	var heading:=Vector3.RIGHT;var gamma:=1./sqrt(1.-beta*beta)	golden harness gamma = 1/sqrt(1-beta^2) at beta 0.9, a CPU reference not near c
+tools/planet_bounds_golden.gd	var beta:float=c[1];var gamma:=1./sqrt(1.-beta*beta);var theta:=deg_to_rad(c[2]);var alpha:=deg_to_rad(c[3]);var distance:float=b.radius_km/sin(alpha)	golden harness gamma = 1/sqrt(1-beta^2) at moderate beta, a CPU reference not near c
+tools/planet_transition_golden.gd	var beta:float=0. if j<43 else .9;var gamma:float=1./sqrt(1.-beta*beta);var heading:=Vector3.RIGHT	golden harness gamma = 1/sqrt(1-beta^2) at beta <= 0.9, a CPU reference not near c

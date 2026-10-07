@@ -51,19 +51,21 @@ physics:           ## CPU physics reference vs known values; fails unless the ru
 	  grep -qE '^[0-9]+ passed, 0 failed$$' $(SCRATCH)/physics.txt || { echo "physics: no '<n> passed, 0 failed' summary line (parse error or early exit?)"; exit 1; }
 
 # Gate 5: never compute 1 - beta near c. A hand-written 1 - beta (also 1.0-beta, 1 -beta) in code of a
-# .gd or .gdshader outside physics/ and tests/ fails (comments are stripped first). Hits that are not
-# a live computation are listed with a reason in tests/fixtures/lint_precision/allowlist.txt
-# (path:line<TAB>reason). The fixture bad_one_minus_beta.gd MUST match all 4 planted lines (else the
-# pattern matches nothing) and good_one_minus_beta.gd must match none. Plain shell, no Python.
+# .gd or .gdshader outside physics/ and tests/ fails. String literals and comments are stripped first,
+# so labels such as "1 - beta" never match. Hits that are not a live computation are listed in
+# tests/fixtures/lint_precision/allowlist.txt as path<TAB>stripped code<TAB>reason, keyed on the code
+# text and not the line number: edits that move lines keep the entry, and any other line in that file
+# that matches is still reported. The fixture bad_one_minus_beta.gd MUST match all 4 planted lines (else
+# the pattern matches nothing) and good_one_minus_beta.gd must match none. Plain shell, no Python.
 LINT_OMB_DIR := tests/fixtures/lint_precision
 LINT_OMB_RE := (^|[^A-Za-z0-9_.])1(\.0*)?[[:space:]]*-[[:space:]]*beta([^A-Za-z0-9_]|$$)
 lint-precision:    ## no hand-computed 1 - beta in *.gd / *.gdshader outside physics/ and tests/ (positive control: tests/fixtures/lint_precision/bad_one_minus_beta.gd must fail)
-	@hits_in() { sed -E 's#(//|\#).*$$##' "$$1" | grep -n -E '$(LINT_OMB_RE)' | sed "s|^|$$1:|"; }; \
+	@hits_in() { sed -E -e 's/"[^"]*"/""/g' -e "s/'[^']*'/''/g" -e 's#(//|\#).*$$##' -e 's/^[[:space:]]+//' -e 's/[[:space:]]+$$//' "$$1" | grep -n -E '$(LINT_OMB_RE)' | sed "s|^|$$1:|"; }; \
 	  bad=$$(hits_in $(LINT_OMB_DIR)/bad_one_minus_beta.gd | wc -l | tr -d ' '); \
 	  [ "$$bad" -eq 4 ] || { echo "lint-precision: positive control matched $$bad of 4 planted lines; the pattern is broken"; exit 1; }; \
 	  [ -z "$$(hits_in $(LINT_OMB_DIR)/good_one_minus_beta.gd)" ] || { echo "lint-precision: the clean control file matched; the pattern is too broad"; exit 1; }; \
 	  hits=$$(git ls-files -co --exclude-standard -- '*.gd' '*.gdshader' | grep -v -E '^(physics|tests|runtime|addons)/' | while read -r f; do hits_in "$$f"; done \
-	    | awk -F'\t' 'NR==FNR { allow[$$1] = 1; next } { split($$0, a, ":"); if (!((a[1] ":" a[2]) in allow)) print }' $(LINT_OMB_DIR)/allowlist.txt -); \
+	    | awk -F'\t' 'FILENAME == ARGV[1] { allow[$$1 "\t" $$2] = 1; next } { i = index($$0, ":"); p = substr($$0, 1, i - 1); r = substr($$0, i + 1); c = substr(r, index(r, ":") + 1); if (!((p "\t" c) in allow)) print }' $(LINT_OMB_DIR)/allowlist.txt -); \
 	  if [ -n "$$hits" ]; then echo "$$hits"; echo "lint-precision: hand-computed 1 - beta outside physics/ and tests/ (take 1 - beta from the sim or sunholo/relativity, or allowlist it with a reason)"; exit 1; fi; \
 	  echo "lint-precision: ok (positive control matched $$bad lines; $$(grep -c . $(LINT_OMB_DIR)/allowlist.txt) allowlisted non-computations; no live hand-computed 1 - beta)"
 
