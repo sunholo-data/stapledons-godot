@@ -10,13 +10,15 @@ A=$1; TIER=$2; OUT=$3; RUNS=${4:-5}
 entry=gcnsMain hip= tool=sim/tools/bright_main.ail
 # every tier applies the committed companion table (make companions)
 COMP=data/starmap/companions/companions.csv
+# ... and the star-truth table (make starmap-truth), except the bright tier, which is its own truth
+TRUTH=data/starmap/truth/positions.csv
 case $TIER in
   quick) src=data/raw/cns5.csv raw=data/raw/cns5.dat entry=mainFill hip=',"hip":"data/raw/hip_main.dat"' ;;
   medium|large) src=data/raw/gcns.csv raw=data/raw/table1c.dat.gz ;;
   bright) src=data/raw/hip_main.dat raw=data/raw/hip2.dat.gz entry=brightMain ;;
   *) echo "catalogue-parity: TIER must be quick, medium, large or bright (got '$TIER')" >&2; exit 2 ;;
 esac
-for f in "$src" "$raw" "$COMP"; do [ -f "$f" ] || { echo "catalogue-parity: missing $f (make sky-assets / starmap-manager)" >&2; exit 2; }; done
+for f in "$src" "$raw" "$COMP" "$TRUTH"; do [ -f "$f" ] || { echo "catalogue-parity: missing $f (make sky-assets / starmap-manager)" >&2; exit 2; }; done
 ver=$("$A" --version | head -1 | cut -d' ' -f2)
 case $(uname) in Darwin) TIMEFLAG=-l ;; *) TIMEFLAG=-v ;; esac
 rm -rf "$OUT"; mkdir -p "$OUT"
@@ -24,7 +26,7 @@ rm -rf "$OUT"; mkdir -p "$OUT"
 # one <label> <engine flag or ""> : run the writer into $OUT/<label>, append "<label> <secs> <rss>"
 one() {
   d=$OUT/$1; mkdir -p "$d"
-  args="{\"tier\":\"$TIER\",\"csv\":\"$src\",\"raw\":\"$raw\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\",\"companions\":\"$COMP\"$hip}"
+  args="{\"tier\":\"$TIER\",\"csv\":\"$src\",\"raw\":\"$raw\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\",\"companions\":\"$COMP\",\"truth\":\"$TRUTH\"$hip}"
   [ "$TIER" != bright ] || args="{\"hip2\":\"$raw\",\"hipMain\":\"$src\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$COMP\",\"lock\":\"sim/ailang.lock\",\"out\":\"$d\",\"ailang\":\"$ver\"}"
   t0=$(date +%s)
   # shellcheck disable=SC2086

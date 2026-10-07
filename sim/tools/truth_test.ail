@@ -1,0 +1,170 @@
+module stapledons/sim/tools/truth_test
+-- The star-truth table (sim/tools/truth.ail). `make truth-test`: named checks strict VM = interpreter;
+-- real-byte fixtures (tools/fixtures/cns5_truth.dat, table1c_truth.dat) VM = interpreter.
+import ./truth (Ast, Pos, CrossId, Truth, Index, truthRows, disagrees, resolve, sepArcsec, parseCnsAst, parseGcnsAst, parsePos, parseSame,
+  csvText, parseTruth, index, applyById, applyGcns, byKey, refName, sigmaLy, unresolved, dropped, gaiaGood)
+import ./catalogue (Row)
+import ./companions (Link, linkIndex, applyRows)
+import std/string (concat, join, startsWith, split, floatToStr)
+import std/list (map, filter, flatMap, length as size, nth_or)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/math (sqrt)
+import std/array (fromList as toArray)
+import std/fs (readFile)
+
+pure func failedChecks(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func verdictOf(tag: string, bad: [string]) -> string =
+  match bad { [] => concat([tag, "-ok"]), _ => concat([tag, "-BAD: ", join(",", bad)]) }
+
+pure func ast(id: string, plx: float, e: float, ref: string, ruwe: float, ps: string) -> Ast =
+  {id: id, plx: plx, eplx: e, ref: ref, ruwe: ruwe, plxS: ps, eplxS: floatToStr(e), ruweS: floatToStr(ruwe)}
+pure func edr3() -> string = "2020yCat.1350....0G"
+pure func vl07() -> string = "2007A&A...474..653V"
+pure func dr2() -> string = "2018A&A...616A...1G"
+pure func pos(id: string, x: string, y: string, z: string) -> Pos = {id: id, x: x, y: y, z: z}
+
+-- GJ 332 AB: CNS5 adopted Hipparcos 62.23 +- 0.68 over EDR3 53.362 +- 0.809 with RUWE 8.01.
+pure func checkBetterParallax() -> bool {
+  let c = ast("816649002967779584", 62.23, 0.68, vl07(), 0.0, "62.23");
+  let g = ast("816649002967779584", 53.362, 0.809, "GCNS EDR3", 8.01, "53.362");
+  disagrees(c, g) && startsWith(resolve(c, g, 0.0, true), "better parallax: Hipparcos (van Leeuwen 2007; CNS5)")
+}
+-- TRAPPIST-1: the zero-point correction (+0.083 mas) is far inside 3 sigma: no disagreement.
+pure func checkZeroPoint() -> bool {
+  let c = ast("2635476908753563008", 80.29465612841742, 0.075341724, edr3(), 0.0, "80.29");
+  let g = ast("2635476908753563008", 80.212, 0.07161, "GCNS EDR3", 1.0, "80.212");
+  !disagrees(c, g) && resolve(c, g, 0.0, false) == ""
+}
+-- The 1% floor: a 0.02 mas error does not make a 0.6 mas (1.2%) gap at 50 mas significant on its own...
+-- but it is over 1%, so it counts; 0.4 mas (0.8%) does not.
+pure func checkThreshold() -> bool =
+  disagrees(ast("a", 50.0, 0.01, edr3(), 0.0, ""), ast("a", 50.6, 0.01, "", 1.0, "")) &&
+  !disagrees(ast("a", 50.0, 0.01, edr3(), 0.0, ""), ast("a", 50.4, 0.01, "", 1.0, "")) &&
+  !disagrees(ast("a", 50.0, 1.0, edr3(), 0.0, ""), ast("a", 54.0, 1.0, "", 1.0, ""))
+-- A disagreement with good EDR3 astrometry is uncertain (labelled), not resolved for either side.
+pure func checkUncertain() -> bool {
+  let c = ast("x", 43.69, 0.2, dr2(), 0.0, "43.69");
+  let g = ast("x", 44.865, 0.2, "GCNS EDR3", 1.13, "44.865");
+  disagrees(c, g) && startsWith(resolve(c, g, 0.0, true), "uncertain: Gaia DR2 (CNS5)")
+}
+-- Two directions 2 arcsec apart are a cross-match error whatever the parallaxes say.
+pure func checkCrossMatch() -> bool {
+  let s = sepArcsec(pos("a", "10.0", "0.0", "0.0"), pos("a", "20.0", "0.000193925", "0.0"));
+  s > 1.99 && s < 2.01 && startsWith(resolve(ast("a", 1.0, 0.1, edr3(), 0.0, ""), ast("a", 1.0, 0.1, "", 1.0, ""), s, false), "cross-match error")
+}
+pure func refNames() -> bool = refName(edr3()) == "Gaia EDR3 (zero-point corrected; CNS5)" && refName("x") == "CNS5 (x)"
+
+-- A small table: two shared Gaia stars, a CNS5-only cross-id (relabel), a bright cross-id (drop),
+-- a GCNS-only star (no row).
+pure func table() -> Result[[Truth], string] = truthRows(
+  [ast("2", 100.0, 0.1, edr3(), 0.0, "100.0"), ast("1", 50.0, 0.1, vl07(), 0.0, "50.0"), ast("CNS5:7", 20.0, 2.0, "ref", 0.0, "20.0")],
+  [ast("2", 99.97, 0.1, "GCNS EDR3", 1.0, "99.97"), ast("1", 40.0, 0.5, "GCNS EDR3", 9.0, "40.0"), ast("9", 18.0, 0.5, "GCNS EDR3", 1.0, "18.0"),
+   ast("8", 5.0, 0.1, "GCNS EDR3", 1.0, "5.0"), ast("5", 10.0, 0.1, "GCNS EDR3", 1.0, "10.0")],
+  [pos("2", "32.6", "0.0", "0.0"), pos("1", "0.0", "65.2", "0.0"), pos("CNS5:7", "0.0", "0.0", "163.1")],
+  [pos("2", "32.61", "0.0", "0.0"), pos("1", "0.0", "81.5", "0.0"), pos("9", "0.0", "0.0", "181.2"), pos("8", "652.3", "0.0", "0.0"), pos("5", "1.0", "1.0", "1.0")],
+  [{id: "CNS5:7", gaia: "9"}, {id: "HIP 4", gaia: "8"}],
+  [pos("HIP 4", "652.0", "0.1", "0.0")])
+pure func rowsOf(r: Result[[Truth], string]) -> [Truth] = match r { Ok(ts) => ts, Err(_) => [] }
+pure func checkTable() -> bool {
+  let ts = rowsOf(table());
+  map(\t. t.gaia, ts) == ["1", "2", "8", "9"] && map(\t. t.id, ts) == ["1", "2", "HIP 4", "CNS5:7"] &&
+  map(\t. t.action, ts) == ["position", "position", "drop", "relabel"] &&
+  map(\t. t.disagree, ts) == [true, false, false, false] &&
+  startsWith(nth_or(map(\t. t.resolution, ts), 0, ""), "better parallax") && nth_or(map(\t. t.x, ts), 3, "") == "0.0" &&
+  nth_or(map(\t. t.z, ts), 3, "") == "181.2" && nth_or(map(\t. t.adopted, ts), 3, "") == "gcns" &&
+  nth_or(map(\t. t.adopted, ts), 0, "") == "cns5" && size(unresolved(ts)) == 0
+}
+-- A repeated identity is refused.
+pure func checkRepeat() -> bool = match truthRows([ast("2", 1.0, 0.1, edr3(), 0.0, "1"), ast("2", 1.0, 0.1, edr3(), 0.0, "1")], [ast("2", 1.0, 0.1, "", 1.0, "1")],
+    [pos("2", "1", "0", "0"), pos("2", "1", "0", "0")], [pos("2", "1", "0", "0")], [], []) {
+  Err(e) => startsWith(e, "star truth: repeated id"), Ok(_) => false }
+-- The CSV reads back to the same rows (every field the consumers and the audit use).
+pure func checkRoundTrip() -> bool {
+  let ts = rowsOf(table());
+  match parseTruth(csvText(["rule"], ts)) {
+    Ok(back) => map(\t. concat([t.id, t.gaia, t.action, t.x, t.y, t.z, t.resolution, if t.disagree then "1" else "0"]), back) ==
+      map(\t. concat([t.id, t.gaia, t.action, t.x, t.y, t.z, t.resolution, if t.disagree then "1" else "0"]), ts),
+    Err(_) => false
+  }
+}
+pure func checkRefusals() -> bool =
+  (match parseTruth("id,gaia\n") { Err(e) => e == "star truth: wrong header", Ok(_) => false }) &&
+  (match parseTruth(concat([csvText([], []), "a,b,elsewhere,1,2,3,0,0,s,cns5,1,1,1,1,1,0,0,\n"])) { Err(_) => true, Ok(_) => false })
+-- sigma = dist * e_plx / plx.
+pure func checkSigma() -> bool = match rowsOf(table()) {
+  [one, _, _, _] => { let s = sigmaLy(one); s > 65.2 * 0.1 / 50.0 - 0.000001 && s < 65.2 * 0.1 / 50.0 + 0.000001 },
+  _ => false
+}
+
+pure func r(id: string, x: float, y: float, z: float) -> Row = {id: id, x: x, y: y, z: z, teff: 3000.0, v: 12.0, flags: 0}
+pure func keyOf(x: Row) -> string = concat([x.id, " ", floatToStr(x.x), " ", floatToStr(x.y), " ", floatToStr(x.z)])
+pure func keys(rs: [Row]) -> [string] = map(keyOf, rs)
+pure func ix() -> Index = index(rowsOf(table()))
+-- GCNS tier: position -> truth, relabel -> CNS5 identity at the truth position, drop -> gone, others untouched, order kept.
+pure func checkGcns() -> bool {
+  let out = applyGcns([r("5", 1.0, 1.0, 1.0), r("1", 0.0, 81.5, 0.0), r("8", 652.3, 0.0, 0.0), r("9", 0.0, 0.0, 181.2), r("2", 32.61, 0.0, 0.0)], ix(), linkIndex([]));
+  map(\x. x.id, out) == ["5", "1", "CNS5:7", "2"] && map(\x. x.y, out) == [1.0, 65.2, 0.0, 0.0] && map(\x. x.z, out) == [1.0, 0.0, 181.2, 0.0] &&
+  map(\x. x.x, out) == [1.0, 0.0, 0.0, 32.6] && dropped([r("8", 0.0, 0.0, 0.0)], ix()) == 1
+}
+-- Quick tier: a CNS5 row already at its own CSV digits is unchanged; the CNS5-only cross-id with a good
+-- EDR3 solution moves to it; bright and table-less rows are untouched.
+pure func checkQuick() -> bool {
+  let rows = [r("1", 0.0, 65.2, 0.0), r("CNS5:7", 0.0, 0.0, 163.1), r("HIP 4", 652.0, 0.1, 0.0), r("3", 1.0, 2.0, 3.0)];
+  keys(applyById(rows, ix())) == keys([r("1", 0.0, 65.2, 0.0), r("CNS5:7", 0.0, 0.0, 181.2), r("HIP 4", 652.0, 0.1, 0.0), r("3", 1.0, 2.0, 3.0)])
+}
+-- Gaia first only when it is good: RUWE 1.63 (or plx/e < 10) keeps CNS5's value.
+pure func checkGaiaGood() -> bool =
+  gaiaGood(ast("g", 31.124, 0.53349, "", 1.17, "")) && !gaiaGood(ast("g", 49.346, 1.62769, "", 1.63, "")) &&
+  !gaiaGood(ast("g", 10.0, 1.5, "", 1.0, "")) && !gaiaGood(ast("g", 10.0, 0.0, "", 1.0, ""))
+-- A companion in the table moves in the GCNS tier exactly as in the quick tier (same row, same link).
+pure func link() -> Link = {id: "1", parent: "2", root: "2", rootCat: "cns5", plx: 100.0, epoch: 2016.0, ownPlx: 50.0, sep: 10.0, au: 100.0}
+pure func checkCompanion() -> bool {
+  let ls = linkIndex([link()]);
+  let quick = applyRows(applyById([r("1", 0.0, 65.2, 0.0)], ix()), ls);
+  let gcns = applyGcns([r("1", 0.0, 81.5, 0.0)], ix(), ls);
+  keys(quick) == keys(gcns) && map(\x. x.y, gcns) != [65.2]
+}
+
+pure func checks() -> [(string, bool)] = [("BetterParallax", checkBetterParallax()), ("ZeroPoint", checkZeroPoint()), ("Threshold", checkThreshold()),
+  ("Uncertain", checkUncertain()), ("CrossMatch", checkCrossMatch()), ("RefNames", refNames()), ("Table", checkTable()), ("Repeat", checkRepeat()),
+  ("RoundTrip", checkRoundTrip()), ("Refusals", checkRefusals()), ("Sigma", checkSigma()), ("Gcns", checkGcns()), ("Quick", checkQuick()),
+  ("Companion", checkCompanion()), ("GaiaGood", checkGaiaGood())]
+
+test "truth BetterParallax" { checkBetterParallax() }
+test "truth ZeroPoint" { checkZeroPoint() }
+test "truth Threshold" { checkThreshold() }
+test "truth Uncertain" { checkUncertain() }
+test "truth CrossMatch" { checkCrossMatch() }
+test "truth Table" { checkTable() }
+test "truth RoundTrip" { checkRoundTrip() }
+test "truth Gcns" { checkGcns() }
+test "truth Companion" { checkCompanion() }
+
+export func truthVm(_: int) -> string = verdictOf("truth", failedChecks(checks()))
+
+-- Real bytes: TRAPPIST-1 (EDR3, zero-point corrected), GJ 332 AB (Hipparcos over EDR3 RUWE 8.01),
+-- CNS5 252 = GJ 10136 (Kirkpatrick+2021 parallax; GCNS Gaia 2371519626175864960). Positions are the
+-- cns5.csv / gcns.csv rows extract.ail writes from these lines.
+export func truthFixtures(dir: string) -> string ! {FS} {
+  let cns = parseCnsAst(readFile(concat([dir, "/cns5_truth.dat"])));
+  let keep = byKey(\s. s, ["2635476908753563008", "816649002967779584", "2371519626175864960"]);
+  let gcns = parseGcnsAst(keep, readFile(concat([dir, "/table1c_truth.dat"])));
+  let cp = parsePos(byKey(\s. s, []), "id,x,y,z,G,BPRP,wd\n816649002967779584,-39.447104,0.133974,34.508940,3.959608,0.613851,0\n2635476908753563008,7.742000,20.946483,-33.930598,15.622554,4.901851,0\nCNS5:252,-10.212295,15.956749,-94.039028,,,0\n");
+  let gp = parsePos(keep, "id,x,y,z,G,BPRP,wd\n2371519626175864960,-11.646512,18.197776,-107.246063,,,0\n816649002967779584,-46.002647,0.156238,40.243831,3.959600,0.613900,0\n2635476908753563008,7.749978,20.968068,-33.965562,15.622600,4.901800,0\n1,2,3,4,,,0\n");
+  let ts = rowsOf(truthRows(cns, gcns, cp, gp, parseSame("# same: CNS5:252 = 2371519626175864960, 0.02447023560351634\n# same: HIP 27890 = 4756622820871136640, 1.03\n"), []));
+  let one = \g. filter(\t. t.gaia == g, ts);
+  let checks = [
+    ("cns5 rows", map(\a. a.id, cns) == ["816649002967779584", "2635476908753563008", "CNS5:252"]),
+    ("gcns rows", size(gcns) == 3 && map(\a. a.ruweS, filter(\a. a.id == "816649002967779584", gcns)) == ["8.01"]),
+    ("cns5 refs", map(\a. a.ref, cns) == ["2007A&A...474..653V", "2020yCat.1350....0G", "2021ApJS..253....7K"]),
+    ("positions", size(cp) == 3 && size(gp) == 3),
+    ("trappist", map(\t. concat([t.action, " ", t.source, " ", t.x, " ", if t.disagree then "1" else "0", t.resolution]), one("2635476908753563008")) ==
+      ["position Gaia EDR3 (zero-point corrected; CNS5) 7.742000 0"]),
+    ("gj332", map(\t. t.disagree && startsWith(t.resolution, "better parallax: Hipparcos (van Leeuwen 2007; CNS5) 62.22999954223633") , one("816649002967779584")) == [true]),
+    ("gj10136", map(\t. concat([t.id, " ", t.action, " ", t.z, " ", if t.disagree then "1" else "0"]), one("2371519626175864960")) == ["CNS5:252 relabel -107.246063 0"]),
+    ("same lines", map(\x. x.id, parseSame("# same: CNS5:252 = 2371519626175864960, 0.024\n# same: HIP 27890 = 4756622820871136640, 1.03\nid,root\n")) ==
+      ["CNS5:252", "HIP 27890"])];
+  verdictOf("truth-fixtures", failedChecks(checks))
+}

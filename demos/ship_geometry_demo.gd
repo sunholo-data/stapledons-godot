@@ -6,6 +6,7 @@ const Benchmark := preload("res://demos/ship_demo_benchmark.gd")
 const Commons := preload("res://demos/ship_commons.gd")
 const Identification := preload("res://ui/ship_star_identification.gd")
 const Lighting := preload("res://demos/ship_lighting.gd")
+const StarLight := preload("res://demos/ship_star_light.gd")
 const SolarDeparture := preload("res://demos/solar_departure.gd")
 const Attitude:=preload("res://demos/ship_attitude.gd")
 var tour_attitude:=Attitude.new()
@@ -18,6 +19,7 @@ var _tour_view_elapsed:=0.
 var _tour_view_active:=false
 const WALK_SPEED_MPS := 3.5
 var lighting:Dictionary={}
+var star_light:=StarLight.new() # R1-SHIP-STAR-LIGHT: the real star's light on the geometry
 var star_identification: Control
 var benchmark := Benchmark.new()
 var audit_link:=LinkButton.new()
@@ -85,7 +87,7 @@ func setup(opts := {}) -> bool:
 	add_child(geometry_view);geometry_view.add_child(geometry);geometry.add_child(visual)
 	_collision(visual)
 	geometry_view.add_child(camera);camera.current=true
-	lighting=Lighting.install(geometry)
+	lighting=Lighting.install(geometry);star_light.install(lighting)
 	set_lighting(opts.get("lighting","moody"))
 	for file in ["walk_bridge.glb","walk_lower.glb"]:
 		var n:=AreaBundle.load_glb(asset(file));_walk_nodes.append(n)
@@ -289,8 +291,9 @@ func _process(delta: float) -> void:
 	avatar_shadow.global_position=avatar.global_position
 	_sync_observer()
 	sky.finish_exposure_frame(delta)
+	star_light.update(lighting,sky,delta)
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	var details:String="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	var details:String="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 	label.text=hud_text(view_name,details)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return

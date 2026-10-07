@@ -1,0 +1,234 @@
+module stapledons/sim/tools/truth
+-- One position per star (design_docs/planned/r1/starmap-single-truth.md): the star-truth table
+-- data/starmap/truth/positions.csv. Navigation (stars.json) and every sky tier take a star's position
+-- from it when a row exists; nothing else decides positions for a star more than one catalogue lists.
+--
+-- Rows: every star that CNS5 and GCNS both list (by Gaia id), plus the companion table's
+-- cross-identifications (a GCNS record that is a CNS5 row without a Gaia id, or a bright HIP row).
+-- Rule truth-1 (sprint plan, "What the data says"): a star CNS5 lists takes CNS5's adopted parallax and
+-- position everywhere: Gaia EDR3 with the Lindegren+2021 zero-point correction, or Hipparcos (van
+-- Leeuwen 2007) or Gaia DR2 where CNS5's evaluation rejected EDR3. Every distance is 1/plx (extract.ail;
+-- no posterior anywhere). Companions keep their system's distance (companions.ail, applied after).
+-- Disagreement: |plx_CNS5 - plx_GCNS| > max(3 sqrt(e1^2 + e2^2), 1% plx_CNS5); each is resolved as
+--   cross-match error  the two directions differ by more than 1 arcsec;
+--   better parallax    CNS5 adopted a non-EDR3 parallax and the EDR3 solution is poor (RUWE >= 1.4);
+--   uncertain          neither: the CNS5 value stays, labelled (inspection shows the uncertainty).
+-- action: "position" (the GCNS row takes the truth position), "relabel" (the GCNS row becomes the
+-- CNS5 identity at the truth position), "drop" (the bright tier renders this star; the GCNS duplicate
+-- is removed). x, y, z are the source CSV's own digits, so a consumer parses exactly the same double.
+import ./catalogue (Row)
+import ./extract (number, fmt6)
+import ./companions (Link, findId, cnsRoots, gcnsMove, linkMove)
+import std/string (substring, trim, length, split, concat, compare, startsWith, join, intToStr, stringToFloat)
+import std/list (map, filter, flatMap, sortBy, zipWith, drop, length as size, concat as append)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/math (sqrt)
+import std/array (fromList as toArray, get, length as alen)
+
+export pure func ruleVersion() -> string = "truth-1"
+export pure func ruleText() -> string =
+  "truth-1 (design_docs/planned/r1/starmap-single-truth-sprint.md): Gaia EDR3 first, distance 1/plx everywhere; where CNS5 evaluated a star's EDR3 solution its adopted value stands (EDR3 zero-point corrected, or Hipparcos vL07 / Gaia DR2 where CNS5 rejected EDR3); a CNS5 star without a Gaia id that GCNS identifies takes EDR3 when plx/e >= 10 and RUWE < 1.4; companions at their system's distance; disagreement over max(3 sigma, 1%) is resolved in the audit"
+export pure func ruweLimit() -> float = 1.4
+export pure func sepLimitArcsec() -> float = 1.0
+
+-- One catalogue's astrometry for a star: parallax and error (mas), the parallax source, RUWE (0 when
+-- the catalogue has none) and the verbatim fields for the table.
+export type Ast = {id: string, plx: float, eplx: float, ref: string, ruwe: float, plxS: string, eplxS: string, ruweS: string}
+-- A CSV row's id and verbatim x, y, z fields (cns5.csv / gcns.csv, extract.ail output).
+export type Pos = {id: string, x: string, y: string, z: string}
+-- A companion-table cross-identification: id (CNS5:n or HIP n) is GCNS record gaia. Not named Same:
+-- bright_main imports companions.Same, and v0.52.0 then resolves this module's signatures against it
+-- (reported upstream 2026-10-07, ailang messages to user).
+export type CrossId = {id: string, gaia: string}
+export type Truth = {id: string, gaia: string, action: string, x: string, y: string, z: string, source: string, adopted: string,
+  plx: string, eplx: string, gplx: string, geplx: string, ruwe: string, sep: float, disagree: bool, resolution: string}
+
+pure func colAt(line: string, lo: int, hi: int) -> string =
+  if length(line) < lo then "" else substring(line, lo - 1, if hi < length(line) then hi else length(line))
+pure func f0(s: string) -> float = match number(s) { Some(v) => v, None => 0.0 }
+
+-- Sorted string index (binary search); the companion module's findId over it.
+export pure func byKey[a](key: a -> string, xs: [a]) -> Array[a] = toArray(sortBy(\p q. compare(key(p), key(q)), xs))
+pure func has(arr: Array[string], k: string) -> bool = match findId(arr, \s. s, k) { Some(_) => true, None => false }
+
+-- J/A+A/670/A19 cns5.dat: CNS5 1-4, GaiaDR3 28-46, plx 130-148, e_plx 150-162, r_plx 164-182; the id as
+-- extract.ail writes it. Rows without a positive parallax are not stars of any tier.
+pure func cnsAst(line: string) -> [Ast] {
+  let gaia = trim(colAt(line, 28, 46));
+  let id = if gaia != "" && gaia != "-" then gaia else concat(["CNS5:", trim(colAt(line, 1, 4))]);
+  let p = trim(colAt(line, 130, 148));
+  let e = trim(colAt(line, 150, 162));
+  match number(p) { Some(v) => if v > 0.0 then [{id: id, plx: v, eplx: f0(e), ref: trim(colAt(line, 164, 182)), ruwe: 0.0, plxS: p, eplxS: e, ruweS: ""}] else [], None => [] }
+}
+export pure func parseCnsAst(text: string) -> [Ast] = flatMap(cnsAst, split(text, "\n"))
+-- J/A+A/649/A6 table1c.dat: GaiaEDR3 3-21, Plx 69-77, e_Plx 79-85, RUWE 189-193; only ids in `keep`
+-- (the id is cut and looked up before any number is parsed: 331,312 lines).
+pure func gcnsAst(keep: Array[string], line: string) -> [Ast] {
+  let id = trim(colAt(line, 3, 21));
+  if id == "" || !has(keep, id) then [] else {
+    let p = trim(colAt(line, 69, 77));
+    let e = trim(colAt(line, 79, 85));
+    let r = trim(colAt(line, 189, 193));
+    match number(p) { Some(v) => if v > 0.0 then [{id: id, plx: v, eplx: f0(e), ref: "GCNS EDR3", ruwe: f0(r), plxS: p, eplxS: e, ruweS: r}] else [], None => [] }
+  }
+}
+export pure func parseGcnsAst(keep: Array[string], text: string) -> [Ast] = flatMap(\l. gcnsAst(keep, l), split(text, "\n"))
+-- extract.ail CSV rows (header skipped), only ids in `keep` when keep is non-empty.
+pure func posLine(keep: Array[string], line: string) -> [Pos] = match split(line, ",") {
+  [id, x, y, z, _, _, _] => if id == "id" || (alen(keep) > 0 && !has(keep, id)) then [] else [{id: id, x: x, y: y, z: z}],
+  _ => []
+}
+export pure func parsePos(keep: Array[string], text: string) -> [Pos] = flatMap(\l. posLine(keep, l), split(text, "\n"))
+-- companions.csv comment lines "# same: CNS5:252 = 2371519626175864960, 0.024" and "# same: HIP 27890 = 4756..., 1.03".
+pure func sameLine(line: string) -> [CrossId] = match split(line, " ") {
+  ["#", "same:", id, "=", g, _] => [{id: id, gaia: trimComma(g)}],
+  ["#", "same:", "HIP", n, "=", g, _] => [{id: concat(["HIP ", n]), gaia: trimComma(g)}],
+  _ => []
+}
+pure func trimComma(s: string) -> string = if length(s) > 0 && substring(s, length(s) - 1, length(s)) == "," then substring(s, 0, length(s) - 1) else s
+export pure func parseSame(text: string) -> [CrossId] = flatMap(sameLine, split(text, "\n"))
+
+-- The parallax sources CNS5 cites (r_plx).
+export pure func refName(ref: string) -> string =
+  if ref == "2020yCat.1350....0G" then "Gaia EDR3 (zero-point corrected; CNS5)"
+  else if ref == "2007A&A...474..653V" then "Hipparcos (van Leeuwen 2007; CNS5)"
+  else if ref == "2018A&A...616A...1G" then "Gaia DR2 (CNS5)"
+  else if ref == "HIP2 bright tier" then ref
+  else concat(["CNS5 (", ref, ")"])
+pure func absF(x: float) -> float = if x < 0.0 then 0.0 - x else x
+pure func maxF(a: float, b: float) -> float = if a > b then a else b
+export pure func disagrees(c: Ast, g: Ast) -> bool =
+  absF(c.plx - g.plx) > maxF(3.0 * sqrt(c.eplx * c.eplx + g.eplx * g.eplx), 0.01 * c.plx)
+pure func vec(p: Pos) -> (float, float, float) = (f0(p.x), f0(p.y), f0(p.z))
+-- The angle between two positions' directions, arcsec (chord of the unit vectors; exact to 1e-8 here).
+export pure func sepArcsec(p: Pos, q: Pos) -> float = match vec(p) { (ax, ay, az) => match vec(q) { (bx, by, bz) => {
+  let ra = sqrt(ax * ax + ay * ay + az * az);
+  let rb = sqrt(bx * bx + by * by + bz * bz);
+  if ra == 0.0 || rb == 0.0 then 0.0 else {
+    let dx = ax / ra - bx / rb; let dy = ay / ra - by / rb; let dz = az / ra - bz / rb;
+    sqrt(dx * dx + dy * dy + dz * dz) * 206264.80624709636
+  } } } }
+export pure func resolve(c: Ast, g: Ast, sep: float, disagree: bool) -> string =
+  if sep > sepLimitArcsec() then concat(["cross-match error: directions differ by ", fmt6(sep), " arcsec; CNS5 position kept"])
+  else if !disagree then ""
+  else if c.ref != "2020yCat.1350....0G" && g.ruwe >= ruweLimit() then
+    concat(["better parallax: ", refName(c.ref), " ", c.plxS, " +- ", c.eplxS, " mas over Gaia EDR3 ", g.plxS, " +- ", g.eplxS, " mas with RUWE ", g.ruweS, " (poor astrometry)"])
+  else concat(["uncertain: ", refName(c.ref), " ", c.plxS, " and Gaia EDR3 ", g.plxS, " mas (RUWE ", g.ruweS, ") both plausible; CNS5 kept, distance labelled"])
+
+pure func row(id: string, gaia: string, action: string, p: Pos, c: Ast, g: Ast) -> Truth = row2(id, gaia, action, p, c, g, 0.0)
+pure func row2(id: string, gaia: string, action: string, p: Pos, c: Ast, g: Ast, sep: float) -> Truth {
+  let d = c.plxS != "" && disagrees(c, g);
+  {id: id, gaia: gaia, action: action, x: p.x, y: p.y, z: p.z, source: refName(c.ref), adopted: if c.plxS == "" then "hip2" else "cns5",
+    plx: c.plxS, eplx: c.eplxS, gplx: g.plxS, geplx: g.eplxS, ruwe: g.ruweS, sep: sep, disagree: d, resolution: if c.plxS == "" then "" else resolve(c, g, sep, d)}
+}
+-- A CNS5 star without a Gaia id that GCNS lists (a cross-identification): CNS5 never evaluated the EDR3
+-- solution, so Gaia comes first (the design's precedence) when it is good: plx/e >= 10 and RUWE < 1.4.
+export pure func gaiaGood(g: Ast) -> bool = g.eplx > 0.0 && g.plx / g.eplx >= 10.0 && g.ruwe < ruweLimit()
+pure func crossRow(id: string, gaia: string, p: Pos, q: Pos, c: Ast, g: Ast) -> Truth {
+  let t = row2(id, gaia, "relabel", p, c, g, sepArcsec(p, q));
+  if !gaiaGood(g) then t else {id: id, gaia: gaia, action: "relabel", x: q.x, y: q.y, z: q.z, source: "Gaia EDR3 (GCNS; CNS5 lists no Gaia id)",
+    adopted: "gcns", plx: t.plx, eplx: t.eplx, gplx: t.gplx, geplx: t.geplx, ruwe: t.ruwe, sep: t.sep, disagree: t.disagree,
+    resolution: if t.disagree then concat(["better parallax: Gaia EDR3 ", g.plxS, " +- ", g.eplxS, " mas (RUWE ", g.ruweS, ") over ", refName(c.ref), " ", c.plxS, " +- ", c.eplxS, " mas"]) else ""}
+}
+-- The table: cns (CNS5 astrometry), gcns (GCNS astrometry for CNS5's Gaia ids and the cross-ids),
+-- cnsPos / gcnsPos (CSV positions), same (cross-ids), bright (bright-tier positions, "HIP n" ids, after the
+-- companion rule). Sorted by gaia id, the GCNS key; refused on a repeated id or gaia key.
+export pure func truthRows(cns: [Ast], gcns: [Ast], cnsPos: [Pos], gcnsPos: [Pos], same: [CrossId], bright: [Pos]) -> Result[[Truth], string] {
+  let ca = byKey(\a. a.id, cns);
+  let ga = byKey(\a. a.id, gcns);
+  let cp = byKey(\p. p.id, cnsPos);
+  let gp = byKey(\p. p.id, gcnsPos);
+  let bp = byKey(\p. p.id, bright);
+  let shared = flatMap(\p. match findId(ga, \a. a.id, p.id) {
+    Some(g) => match findId(ca, \a. a.id, p.id) {
+      Some(c) => match findId(gp, \q. q.id, p.id) { Some(q) => [row2(p.id, p.id, "position", p, c, g, sepArcsec(p, q))], None => [] },
+      None => [] },
+    None => [] }, cnsPos);
+  let crossIds = flatMap(\s. match findId(ga, \a. a.id, s.gaia) {
+    Some(g) => if startsWith(s.id, "HIP ") then match findId(bp, \q. q.id, s.id) {
+        Some(p) => [row(s.id, s.gaia, "drop", p, {id: s.id, plx: 0.0, eplx: 0.0, ref: "HIP2 bright tier", ruwe: 0.0, plxS: "", eplxS: "", ruweS: ""}, g)],
+        None => [] }
+      else match findId(cp, \q. q.id, s.id) {
+        Some(p) => match findId(ca, \a. a.id, s.id) {
+          Some(c) => match findId(gp, \q. q.id, s.gaia) { Some(q) => [crossRow(s.id, s.gaia, p, q, c, g)], None => [row(s.id, s.gaia, "relabel", p, c, g)] },
+          None => [] },
+        None => [] },
+    None => [] }, same);
+  let rows = sortBy(\a b. compare(a.gaia, b.gaia), append(shared, crossIds));
+  match append(repeats(map(\t. t.gaia, rows)), repeats(map(\t. t.id, rows))) {
+    [] => Ok(rows),
+    ds => Err(concat(["star truth: repeated id ", join(" ", ds)]))
+  }
+}
+pure func repeats(ids: [string]) -> [string] {
+  let s = sortBy(compare, ids);
+  flatMap(\d. d, zipWith(\a b. if a == b then [a] else [], s, drop(1, s)))
+}
+
+-- The CSV. dist_ly is |x, y, z|; sigma_ly = dist * e_plx / plx of the adopted parallax.
+export pure func header() -> string =
+  "id,gaia,action,x,y,z,dist_ly,sigma_ly,source,adopted,cns5_plx_mas,cns5_e_plx_mas,gcns_plx_mas,gcns_e_plx_mas,gcns_ruwe,sep_arcsec,disagree,resolution"
+pure func distOf(t: Truth) -> float = { let x = f0(t.x); let y = f0(t.y); let z = f0(t.z); sqrt(x * x + y * y + z * z) }
+export pure func sigmaLy(t: Truth) -> float =
+  if t.adopted == "gcns" then (if f0(t.gplx) > 0.0 then distOf(t) * f0(t.geplx) / f0(t.gplx) else 0.0)
+  else if f0(t.plx) > 0.0 then distOf(t) * f0(t.eplx) / f0(t.plx) else 0.0
+export pure func line(t: Truth) -> string = join(",", [t.id, t.gaia, t.action, t.x, t.y, t.z, fmt6(distOf(t)), fmt6(sigmaLy(t)), t.source, t.adopted,
+  t.plx, t.eplx, t.gplx, t.geplx, t.ruwe, fmt6(t.sep), if t.disagree then "1" else "0", t.resolution])
+export pure func csvText(comments: [string], rows: [Truth]) -> string =
+  concat([join("\n", flatMap(\x. x, [map(\c. concat(["# ", c]), comments), [header()], map(line, rows)])), "\n"])
+
+-- Reading the committed table back (consumers and the audit).
+pure func parseLine(l: string) -> Result[Truth, string] = match split(l, ",") {
+  [id, gaia, action, x, y, z, _, _, source, adopted, plx, eplx, gplx, geplx, ruwe, sep, dis, res] =>
+    if id == "" || gaia == "" || (action != "position" && action != "relabel" && action != "drop") then Err(concat(["star truth: bad row ", l]))
+    else match number(x) { None => Err(concat(["star truth: bad x in ", l])), Some(_) => match number(y) { None => Err(concat(["star truth: bad y in ", l])),
+      Some(_) => match number(z) { None => Err(concat(["star truth: bad z in ", l])),
+        Some(_) => Ok({id: id, gaia: gaia, action: action, x: x, y: y, z: z, source: source, adopted: adopted, plx: plx, eplx: eplx, gplx: gplx, geplx: geplx,
+          ruwe: ruwe, sep: f0(sep), disagree: dis == "1", resolution: res}) } } },
+  _ => Err(concat(["star truth: expected 18 fields in ", l]))
+}
+export pure func parseTruth(text: string) -> Result[[Truth], string] = match filter(\l. l != "" && !startsWith(l, "#"), split(text, "\n")) {
+  h :: ls => if h != header() then Err("star truth: wrong header") else {
+    let parsed = map(parseLine, ls);
+    match flatMap(\r. match r { Err(e) => [e], Ok(_) => [] }, parsed) {
+      e :: _ => Err(e),
+      [] => Ok(flatMap(\r. match r { Ok(t) => [t], Err(_) => [] }, parsed))
+    }
+  },
+  [] => Err("star truth: empty")
+}
+-- The two lookups: by the GCNS record (gaia) and by the star's own identity (id).
+export type Index = {byGaia: Array[Truth], byId: Array[Truth]}
+export pure func index(rows: [Truth]) -> Index = {byGaia: byKey(\t. t.gaia, rows), byId: byKey(\t. t.id, rows)}
+
+pure func placed(r: Row, id: string, t: Truth) -> Row = {id: id, x: f0(t.x), y: f0(t.y), z: f0(t.z), teff: r.teff, v: r.v, flags: r.flags}
+-- Quick tier and the map (CNS5 identities): a row with a truth row takes its position; the companion
+-- rule runs after, as before (bright_main). Bright rows are never in the table under their own id with
+-- action position, so this is the identity on them.
+export pure func applyById(rows: [Row], ix: Index) -> [Row] =
+  map(\r. match findId(ix.byId, \t. t.id, r.id) { Some(t) => if t.action == "drop" then r else placed(r, r.id, t), None => r }, rows)
+-- GCNS tiers (medium, large): position -> truth position; relabel -> the CNS5 identity at the truth
+-- position; drop -> removed (the bright tier renders it). Then the companion rule: a truth row is its
+-- CNS5 row, so it moves exactly as the quick tier moves it (a companion only; a CNS5 root already sits
+-- at its own parallax); other rows as companions.applyGcnsRows.
+export pure func applyGcns(rows: [Row], ix: Index, links: Array[Link]) -> [Row] {
+  let roots = cnsRoots(links);
+  flatMap(\r. match findId(ix.byGaia, \t. t.gaia, r.id) {
+    Some(t) => if t.action == "drop" then [] else [linkMove(links, placed(r, t.id, t))],
+    None => [gcnsMove(roots, links, r)] }, rows)
+}
+export pure func dropped(rows: [Row], ix: Index) -> int =
+  size(filter(\r. match findId(ix.byGaia, \t. t.gaia, r.id) { Some(t) => t.action == "drop", None => false }, rows))
+export pure func placedCount(rows: [Row], ix: Index) -> int =
+  size(filter(\r. match findId(ix.byId, \t. t.id, r.id) { Some(t) => t.action != "drop", None => false }, rows))
+
+-- Counts for the sidecar and the audit.
+export pure func countWhere(rows: [Truth], p: Truth -> bool) -> int = size(filter(p, rows))
+export pure func disagreements(rows: [Truth]) -> [Truth] = filter(\t. t.disagree || t.resolution != "", rows)
+export pure func unresolved(rows: [Truth]) -> [Truth] = filter(\t. t.disagree && t.resolution == "", rows)
+export pure func uncertain(rows: [Truth]) -> [Truth] = filter(\t. startsWith(t.resolution, "uncertain"), rows)
+export pure func countLine(rows: [Truth]) -> string = concat([intToStr(size(rows)), " rows: ",
+  intToStr(countWhere(rows, \t. t.action == "position")), " position, ", intToStr(countWhere(rows, \t. t.action == "relabel")), " relabel, ",
+  intToStr(countWhere(rows, \t. t.action == "drop")), " drop; ", intToStr(size(filter(\t. t.disagree, rows))), " disagreements over max(3 sigma, 1%), ",
+  intToStr(size(uncertain(rows))), " uncertain"])

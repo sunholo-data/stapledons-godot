@@ -1,0 +1,7 @@
+# Starmap tier pins (D-18; design_docs/planned/r1/starmap-large-tier-and-reach.md L1). make starmap-assets fetches them from
+# https://storage.googleapis.com/stapledons-voyage-assets/starmap/<sha256>.<ext> (public read; make starmap-publish uploads).
+# Built by make catalogue TIER=large on ailang v0.52.0 from the inputs pinned in data/sky/SHA256SUMS and the committed
+# data/starmap/truth/positions.csv + companions.csv (VM = interpreter: make catalogue-parity PARITY_TIER=large).
+# Format: <sha256> tier <path>.
+0c706d9bc1a83d5fadeb8eab0f221e3c6b1effeafe5d5bea3002b7d58fb704b2 tier data/starmap/stars_large.bin
+d82b01d39b2771b1ab71d7f4db437bcf2da309dd0861c9e3904fa0d274b5c104 tier data/starmap/stars_large.json

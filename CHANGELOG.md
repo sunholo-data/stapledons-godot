@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### The ship lit by the real star, 2026-10-07
+
+- The ship's geometry is lit by the star the player sees (dev.20). A new `StarLight` comes from the dominant finite star's apparent direction, the same aberrated disc centre the sky draws, turned into ship axes by the sky camera's attitude, so the light comes from where the Sun is seen through the bubble. Turning the ship sweeps the Sun's shadows across the bridge; when the star is below the deck, the floors shade it.
+- Its colour is the star's blackbody at T × D (the renderer's lookup, Doppler at the apparent angle): TRAPPIST-1's light is red, Aldebaran's orange, the Sun's white.
+- Its brightness is **log-compressed, not physical**: each decade of the illuminance at the ship (sim `e_v_lux`, Doppler flux ratio, eclipses) is an equal step from 1 lx (off) to 10⁵ lx (full). Earth is full, Jupiter about 73%, interstellar cruise off. The HUD details (Tab) and the lighting manifest say so.
+- The moody ambient, cool fill and Commons practical stay; the ship-fixed broad key dims as the star takes over, never below a 25% readability floor (ship light, not physical, shadowless), and is fully back between the stars. Exactly one light casts shadows at a time; the handover fades through zero opacity. Changes ease over 0.5 s; a second star must be 1.5× brighter to take over.
+- `make ship-star-light-test` (in `make test`), `make ship-star-light-capture`, `make ship-star-light-bench`.
 ### TRAPPIST-1's seven planets, 2026-10-07
 
 - TRAPPIST-1 b–h are real bodies at the voyage's habitable-zone stop (Sprint B part 2, D-41). They come from a pinned NASA Exoplanet Archive snapshot (`data/planets/trappist1_ps.csv`, sha256 in `EXOPLANETS.SHA256`, fetched by `tools/fetch_trappist1.sh`), transcribed with citations into `sim/data/trappist1.ail`.
@@ -15,6 +22,25 @@
 - In Auto view a star is dimmed just enough to keep its hue and its own blackbody colour is lifted: Aldebaran is golden orange, TRAPPIST-1 red-orange, the Sun a warm white. Realistic view is unchanged; the HUD says "star colours enhanced".
 - Aldebaran's final approach lasts 90 s from where it is 25° across, so the giant grows from the starbow into a 40° disc instead of appearing in the last seconds. Other stops keep 25 s.
 - The voyage capture takes approach frames at the start, middle and 85% of each leg's own approach.
+### The full 100 pc sky (large tier), 2026-10-07
+
+- The ship's sky draws every GCNS star within 100 pc. The large tier has 331,311 rows: all of GCNS minus HIP 27890's duplicate. Of these, 324,306 have photometry and are drawn. With 170 CNS5-only stars and 10,713 bright Hipparcos stars added, the sky draws 335,189 stars, against 60,883 on the medium stack. All are at truth positions.
+- `make starmap-assets` fetches the pinned tier (`data/starmap/SHA256SUMS`) from `gs://stapledons-voyage-assets/starmap/` in under a second. `make test` (and so CI) and `make export-macos` run it. `make starmap-consistency-large` fails if the file is missing or not 331,311 rows. The game falls back to medium with a warning naming the missing file, and the galaxy map's coverage tooltip shows the active sky tier.
+- Benchmarked first on the M4 Max, 3 runs per tier.
+  - GPU timestamps (Vulkan): the star pass costs +0.25 to 0.30 ms at p50 (0.32 ms against 0.02 to 0.07 ms).
+  - Wall time (Metal): frame p99 is 10.6 to 10.8 ms on both tiers.
+  - Loading takes +0.45 s.
+  - Exported app: +15.2 MB, and about +240 MB peak RSS at the sky scene (`make starmap-export-smoke`).
+  - M2 Air: an estimate of about +1.3 to 1.8 ms, not measured.
+  - Destinations to 100 pc wait for the galaxy map's level-of-detail design (the design's default: sky first).
+- `tools/starmap_sky_capture.gd` renders medium and large side by side. At rest and 50 ly out, the large tier adds about 20 % more visible faint stars. These are GCNS stars that the destarred panorama had already removed. At γ 707 the boosted CMB fills the forward cone; with the CMB off the starbow gains 3 % in light.
+
+### One position per star, 2026-10-07
+
+- A new star-truth table, `data/starmap/truth/positions.csv`, gives one position for each of the 5,212 stars that more than one catalogue lists. It is built in AILANG by `make starmap-truth` (VM = interpreter). Navigation and every sky tier take positions from it, so a map journey to a Gaia-only star arrives with the star 1,000 AU ahead. TRAPPIST-1 was 3,650 AU away on arrival, 10 UMa 8.7 ly beyond its stop, and GJ 10940 6 ly *behind* the ship.
+- Rule `truth-1`: CNS5's adopted parallax wherever CNS5 evaluated the star. That is Gaia EDR3 with the Lindegren zero-point correction, or Hipparcos/DR2 for the 69 stars whose EDR3 solution is poor. Gaia EDR3 is used for CNS5 stars without a Gaia id, when its solution is good. The design's "posterior vs 1/ϖ" diagnosis was wrong: every catalogue already uses 1/ϖ, and the offsets were the zero-point correction plus CNS5's per-star source choices. The 14 disagreements over max(3σ, 1 %) are all "better parallax" cases, each one documented in `design_docs/implemented/r1/starmap-truth-audit.md` (`make starmap-truth-audit`).
+- The sky stack now adds every CNS5 star that GCNS lacks (26 destinations were missing from the sky). It restores destinations to their float64 navigation positions and draws no star twice. `make starmap-consistency` checks all 5,685 destinations. `pin_destination` is now an assertion, and a no-op for every destination.
+- Navigation is unchanged apart from CNS5:138, which has no photometry. The medium tier moves about 5,100 stars onto the navigation positions.
 
 ### Finite destination stars, 2026-10-07
 

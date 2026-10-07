@@ -13,6 +13,8 @@ extends RefCounted
 ##      Godot 4.7's Metal driver reports 0, so make bench also runs Vulkan).
 ##   4. AC8 (M1.5a): the V 5.0-8.5 limiting-magnitude ladder (tools/exposure_golden.gd).
 ## Prints one `bench:` summary line and writes the numbers to .godot/tmp/bench.json.
+## -- --bench-size=WxH renders at another size (make bench BENCH_SIZE=1920x1080; starmap large tier
+## sprint LT0). The report adds the tier stack's load time (a fresh load_tiers, timed) and memory.
 
 const SIZE := Vector2i(2560, 1440)
 const WARMUP := 60
@@ -23,20 +25,33 @@ const P99_TARGET_MS := 16.7
 var _rebases0 := 0
 
 
+var bench_size := SIZE
+var load_ms := 0.0
+
+
 func run(main: Node, seconds: float) -> int:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--bench-size="):
+			var wh := a.trim_prefix("--bench-size=").split("x")
+			if wh.size() == 2 and wh[0].is_valid_int() and wh[1].is_valid_int(): bench_size = Vector2i(int(wh[0]), int(wh[1]))
 	var tree := main.get_tree()
 	var win: Window = main.get_window()
-	win.size = SIZE
+	win.size = bench_size
 	# a window can be clamped by the screen (2560x1288 here), so render the
 	# 3D viewport at exactly SIZE and scale it into the window
 	win.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 	win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
-	win.content_scale_size = SIZE
+	win.content_scale_size = bench_size
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
 	var vp: RID = main.get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var sf: Starfield = main.starfield
+	var t0 := Time.get_ticks_usec()
+	var probe := Starfield.new()
+	probe.load_tiers(sf.tiers[0].split(":")[0])
+	load_ms = (Time.get_ticks_usec() - t0) / 1000.0
+	probe.free()
 	for i in WARMUP:
 		await tree.process_frame
 	main._configure_exposure({}) # the pixel solid angle at SIZE (M1.5a)
@@ -151,6 +166,9 @@ func _report(main: Node, frames: Array, off: Array, rebase_ms: float, mode: Star
 		"star_pass_gpu_ms_p99": pct(gpu_delta, 0.99) if has_gpu else null,
 		"star_pass_wall_ms_p50": pct(wall_delta, 0.5), "cpu_rebase_ms": rebase_ms, "rebase_mode": Starfield.Rebase.keys()[mode],
 		"rebases_in_flight": sf.rebases - _rebases0, "beta_end": frames.back()["beta"],
+		"load_tiers_ms": load_ms, "static_memory_mb": Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0,
+		"video_memory_mb": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0,
+		"buffer_memory_mb": Performance.get_monitor(Performance.RENDER_BUFFER_MEM_USED) / 1048576.0,
 	}
 	var per_frame := []
 	for i in frames.size():
@@ -172,6 +190,7 @@ func _report(main: Node, frames: Array, off: Array, rebase_ms: float, mode: Star
 			r["star_pass_gpu_ms_p50"], r["star_pass_gpu_ms_p90"], r["star_pass_gpu_ms_p99"], STAR_PASS_TARGET_MS, "ok" if r["star_pass_gpu_ms_p50"] < STAR_PASS_TARGET_MS else "MISS"])
 	else:
 		print("bench: viewport GPU time not reported by the %s driver (Godot 4.7); star pass wall-time delta p50 %.3f ms (proxy)" % [driver, r["star_pass_wall_ms_p50"]])
+	print("bench: load_tiers %.0f ms (fresh stack); memory static %.0f MB, video %.0f MB (buffers %.0f MB)" % [load_ms, r["static_memory_mb"], r["video_memory_mb"], r["buffer_memory_mb"]])
 	print("bench: CPU rebase of %d instances %.2f ms (target < %.1f) -> rebase mode %s%s; %d rebases in flight" % [
 		sf.count, rebase_ms, REBASE_TARGET_MS, r["rebase_mode"], " (plan B: direction and 1/r^2 in the vertex shader)" if mode == Starfield.Rebase.GPU else "", r["rebases_in_flight"]])
 	return 0

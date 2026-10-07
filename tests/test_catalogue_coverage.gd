@@ -13,4 +13,6 @@ func _initialize()->void:
 	check("coverage is anchored to Sol rather than current ship",Coverage.summary(data)==Coverage.summary(data.merged({"ship_position":[10,0,0]})))
 	check("missing metadata is explicit",Coverage.summary({}).contains("unavailable"))
 	check("planet knowledge and distant background limits disclosed",Coverage.details(data).contains("may be unknown") and Coverage.details(data).contains("50 light-years"))
+	check("no sky line before a sky is loaded",Coverage.sky_line({})=="")
+	check("the active sky tier is shown",Coverage.sky_line({"tier":"large","count":335189}).contains("large tier, 335189 stars drawn") and Coverage.sky_line({"tier":"medium","count":60883}).contains("50,000 nearest"))
 	print("catalogue-coverage: %d passed, %d failures" %[passed,failures]);quit(1 if failures else 0)

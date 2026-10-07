@@ -11,7 +11,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -23,7 +23,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard deps import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm trappist1-test catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test   ## everything that runs without a GPU window
+test: python-guard deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -223,9 +223,10 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
 BENCH_SECONDS ?= 30
 BENCH_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),large)
-bench:             ## M1.3 AC7 (stars part): scripted flight at 2560x1440, vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default)
+BENCH_SIZE ?=
+bench:             ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default)
 	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
-	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
+	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
 	  grep -E '^(bench|starfield):' $(SCRATCH)/bench_$$drv.log; \
 	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log && grep -q '^bench: limiting magnitude .*: ok$$' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
 
@@ -251,7 +252,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime sky-bundle areas-stage import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
+export-macos: runtime sky-bundle areas-stage starmap-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
@@ -302,11 +303,11 @@ CAT_RUN = $(AILANG) run --quiet --caps IO,FS --package-dir sim
 CAT_AILANG = $$($(AILANG) --version | head -1 | cut -d' ' -f2)
 cat_args = "{\"tier\":\"$(1)\",\"csv\":\"$(2)\",\"raw\":\"$(3)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(4)\",\"ailang\":\"$(CAT_AILANG)\"}"
 bright_args = "{\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
-fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\"}"
+fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\"}"
 # The companion rule (design_docs/planned/r1/m1-companion-parallax.md): `make companions` writes the table, every
 # tier and the map apply it (COMPANIONS picks the file; catalogue-verify uses its own rebuilt copy).
 COMPANIONS ?= data/starmap/companions/companions.csv
-gcns_args = "{\"tier\":\"$(1)\",\"csv\":\"data/raw/gcns.csv\",\"raw\":\"data/raw/table1c.dat.gz\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(2)\",\"ailang\":\"$(CAT_AILANG)\",\"companions\":\"$(COMPANIONS)\"}"
+gcns_args = "{\"tier\":\"$(1)\",\"csv\":\"data/raw/gcns.csv\",\"raw\":\"data/raw/table1c.dat.gz\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(2)\",\"ailang\":\"$(CAT_AILANG)\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\"}"
 .PHONY: catalogue catalogue-scan catalogue-main bright-test test-bright-audit companions companions-test
 catalogue:        ## M1.2b-T3/M1.2d: data/raw -> $(CATALOGUE_OUT)/stars_$(TIER).bin + sidecar on the VM (TIER=quick|medium|large|bright; quick carries the HIP photometry fill)
 	@case "$(TIER)" in \
@@ -318,7 +319,7 @@ catalogue:        ## M1.2b-T3/M1.2d: data/raw -> $(CATALOGUE_OUT)/stars_$(TIER).
 # M1.7 (F6, Q7): the galaxy map catalogue, from the quick + bright tier rows within 25 pc (float64; ids
 # "Gaia DR3 n" / "CNS5:n" / "HIP n"). STARMAP_OUT picks the file (catalogue-verify writes a scratch copy).
 STARMAP_OUT ?= data/starmap/stars.json
-map_args = "{\"csv\":\"data/raw/cns5.csv\",\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+map_args = "{\"csv\":\"data/raw/cns5.csv\",\"cns5\":\"data/raw/cns5.dat\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
 .PHONY: starmap starmap-test
 starmap:          ## M1.7: data/raw -> $(STARMAP_OUT), the galaxy map catalogue (quick + bright within 25 pc) on the VM
 	$(CAT_RUN) --bytecode --entry mapMain --args-json $(call map_args,$(STARMAP_OUT)) sim/tools/bright_main.ail
@@ -329,6 +330,45 @@ starmap-test:     ## M1.7 map catalogue (sim/tools/starmap.ail): named checks, s
 	@$(AILANG) run --quiet --package-dir sim --entry starmapVm --args-json 0 sim/tools/starmap_test.ail > $(SCRATCH)/starmap-interp.txt
 	@cmp $(SCRATCH)/starmap-vm.txt $(SCRATCH)/starmap-interp.txt && test "$$(cat $(SCRATCH)/starmap-vm.txt)" = "starmap-ok"
 	@echo "starmap-test: $$(cat $(SCRATCH)/starmap-vm.txt) (strict VM = interpreter)"
+
+# One position per star (design_docs/planned/r1/starmap-single-truth.md): the star-truth table that every
+# tier and the map take positions from. TRUTH picks the table (catalogue-verify uses its own rebuilt copy).
+TRUTH ?= data/starmap/truth/positions.csv
+TRUTH_OUT ?= data/starmap/truth
+truth_args = "{\"cns5\":\"data/raw/cns5.dat\",\"cns5Csv\":\"data/raw/cns5.csv\",\"gcnsRaw\":\"data/raw/table1c.dat.gz\",\"gcnsDat\":\"$(SCRATCH)/table1c.dat\",\"gcns\":\"data/raw/gcns.csv\",\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
+.PHONY: starmap-truth starmap-truth-parity starmap-truth-audit starmap-consistency starmap-consistency-large truth-test
+starmap-truth:    ## star truth: CNS5 x GCNS x cross-ids -> $(TRUTH_OUT)/positions.csv + positions.json on the VM (rule truth-1)
+	@mkdir -p $(SCRATCH) $(TRUTH_OUT); test -f $(SCRATCH)/table1c.dat || gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
+	$(CAT_RUN) --bytecode --entry truthMain --args-json $(call truth_args,$(TRUTH_OUT)) sim/tools/bright_main.ail
+
+starmap-truth-parity: ## star truth on the VM and the interpreter into scratch: byte-identical to each other and to the committed table
+	@mkdir -p $(SCRATCH)/truth-vm $(SCRATCH)/truth-interp; test -f $(SCRATCH)/table1c.dat || gunzip -c data/raw/table1c.dat.gz > $(SCRATCH)/table1c.dat
+	@$(CAT_RUN) --bytecode --entry truthMain --args-json $(call truth_args,$(SCRATCH)/truth-vm) sim/tools/bright_main.ail
+	@$(CAT_RUN) --entry truthMain --args-json $(call truth_args,$(SCRATCH)/truth-interp) sim/tools/bright_main.ail
+	@for f in positions.csv positions.json; do cmp $(SCRATCH)/truth-vm/$$f $(SCRATCH)/truth-interp/$$f && cmp $(SCRATCH)/truth-vm/$$f $(TRUTH_OUT)/$$f || exit 1; done
+	@echo "starmap-truth-parity: VM = interpreter = committed ($$(shasum -a 256 $(TRUTH_OUT)/positions.csv | cut -c1-16))"
+
+starmap-truth-audit: ## AC4: every truth disagreement over max(3 sigma, 1%) has a resolution and is listed in the audit doc
+	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry auditMain --args-json '{"truth":"$(TRUTH)","doc":"design_docs/implemented/r1/starmap-truth-audit.md"}' sim/tools/bright_main.ail
+
+starmap-consistency: ## AC3 (headless): every stars.json destination in the sky stack once, at the navigation position (<= 1e-9 ly); pins are no-ops (TIER=medium|large)
+	@mkdir -p $(SCRATCH); $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) $(CONSISTENCY_ARGS) > $(SCRATCH)/starmap-consistency.log 2>&1; rc=$$?; \
+	  grep -E '^(starmap-consistency|  )' $(SCRATCH)/starmap-consistency.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/starmap-consistency.log && grep -q '^starmap-consistency: PASS$$' $(SCRATCH)/starmap-consistency.log
+
+# The large tier is a gate too (eval R1-STARMAP-LARGE round 1): make test fetches it (starmap-assets, pinned)
+# and checks the large stack; a missing or short file FAILS here (the game's runtime fallback is only a warning).
+starmap-consistency-large: ## the consistency gate on the large stack: stars_large.bin present with 331,311 rows, every destination once, no identity twice
+	@$(MAKE) --no-print-directory starmap-consistency TIER=large CONSISTENCY_ARGS="--expect-rows 331311"
+
+truth-test:       ## star truth (sim/tools/truth.ail): named checks strict VM = interpreter; real-byte fixtures VM = interpreter
+	@mkdir -p $(SCRATCH)
+	@$(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry truthVm --args-json 0 sim/tools/truth_test.ail > $(SCRATCH)/truth-vm.txt
+	@$(AILANG) run --quiet --package-dir sim --entry truthVm --args-json 0 sim/tools/truth_test.ail > $(SCRATCH)/truth-interp.txt
+	@cmp $(SCRATCH)/truth-vm.txt $(SCRATCH)/truth-interp.txt && test "$$(cat $(SCRATCH)/truth-vm.txt)" = "truth-ok"
+	@$(AILANG) run --quiet --bytecode --caps FS --package-dir sim --entry truthFixtures --args-json '"tools/fixtures"' sim/tools/truth_test.ail > $(SCRATCH)/truth-fx-vm.txt
+	@$(AILANG) run --quiet --caps FS --package-dir sim --entry truthFixtures --args-json '"tools/fixtures"' sim/tools/truth_test.ail > $(SCRATCH)/truth-fx-interp.txt
+	@cmp $(SCRATCH)/truth-fx-vm.txt $(SCRATCH)/truth-fx-interp.txt && test "$$(cat $(SCRATCH)/truth-fx-vm.txt)" = "truth-fixtures-ok"
+	@echo "truth-test: $$(cat $(SCRATCH)/truth-vm.txt), $$(cat $(SCRATCH)/truth-fx-vm.txt) (VM = interpreter)"
 
 companions-test:  ## the companion rule (sim/tools/companions.ail): thresholds, Sirius B, alpha Cen B, Luyten 726-8 B, Wolf 424 B, false pairs; strict VM = interpreter, real-line fixtures VM = interpreter
 	@mkdir -p $(SCRATCH)
@@ -372,11 +412,14 @@ star-catalogue-test: ## M1.2c binary tier loader: 2-record LE fixture (stride, e
 	$(GODOT) --headless --path . --script tests/test_star_catalogue.gd
 
 VERIFY_OUT := $(SCRATCH)/verify
-catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild companions.csv, quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files; then the Python companion oracle
+catalogue-verify: catalogue-inputs ## M1.2c/M1.2d/M1.7 determinism: rebuild companions.csv, the star-truth table, quick, medium, bright and stars.json into .godot/tmp/verify and cmp with the committed files; then the Python companion oracle
 	@rm -rf $(VERIFY_OUT); mkdir -p $(VERIFY_OUT); \
 	$(MAKE) --no-print-directory companions COMPANIONS=$(VERIFY_OUT)/companions.csv AILANG=$(AILANG) >/dev/null || exit 1; \
 	cmp data/starmap/companions/companions.csv $(VERIFY_OUT)/companions.csv || { echo "catalogue-verify: companions.csv DIFFERS from the committed table"; exit 1; }; \
 	echo "companions.csv identical"; \
+	$(MAKE) --no-print-directory starmap-truth TRUTH_OUT=$(VERIFY_OUT)/truth AILANG=$(AILANG) >/dev/null || exit 1; \
+	for f in positions.csv positions.json; do cmp data/starmap/truth/$$f $(VERIFY_OUT)/truth/$$f || { echo "catalogue-verify: truth/$$f DIFFERS from the committed table"; exit 1; }; done; \
+	echo "truth/positions.csv identical"; \
 	for t in quick medium bright; do \
 	  $(MAKE) --no-print-directory catalogue TIER=$$t CATALOGUE_OUT=$(VERIFY_OUT) AILANG=$(AILANG) >/dev/null || exit 1; \
 	  cmp data/starmap/stars_$$t.bin $(VERIFY_OUT)/stars_$$t.bin && cmp data/starmap/stars_$$t.json $(VERIFY_OUT)/stars_$$t.json \
@@ -476,6 +519,17 @@ sky-assets:       ## M1.4d/D-18: pinned sky textures: from the public bucket in 
 
 sky-regen: sky-inputs destar sky-model   ## M1.4d: full regeneration; outputs must match data/sky/SHA256SUMS
 	@$(MAKE) --no-print-directory sky-verify SKY_VERIFY=all
+
+# Starmap tiers too large for git (D-18; starmap-large-tier-and-reach.md L1): the large tier, pinned in
+# data/starmap/SHA256SUMS, fetched from gs://stapledons-voyage-assets/starmap/<sha256>.<ext>.
+.PHONY: starmap-assets starmap-publish
+starmap-assets:   ## L1: the pinned large tier (331,311 GCNS stars, truth positions) from the public bucket in seconds, else rebuilt from the pinned inputs; sha256-checked
+	@if sh tools/starmap_assets.sh fetch; then sh tools/starmap_assets.sh verify; \
+	else echo "starmap-assets: not in the bucket; rebuilding (make catalogue-inputs + catalogue TIER=large)"; \
+	  $(MAKE) --no-print-directory catalogue-inputs catalogue TIER=large AILANG=$(AILANG) && sh tools/starmap_assets.sh verify; fi
+
+starmap-publish:  ## D-18 maintainers (gcloud auth): upload the pinned tiers to gs://stapledons-voyage-assets/starmap/<sha256>.<ext> (never overwrites)
+	sh tools/starmap_assets.sh publish
 
 sky-publish:      ## D-18 maintainers (gcloud auth): upload pinned sky inputs + textures to gs://stapledons-voyage-assets/sky/<sha256>.<ext> (never overwrites)
 	sh tools/sky_assets.sh publish
@@ -639,6 +693,15 @@ ship-lighting-bench:
 	$(GODOT_SIM) --path . --script tools/ship_lighting_bench.gd
 ship-demo-ci: ship-movement-test map-origin-test ship-planets-test
 
+# R1-SHIP-STAR-LIGHT: the real star's light on the ship (direction, colour, compressed energy).
+.PHONY: ship-star-light-test ship-star-light-capture ship-star-light-bench
+ship-star-light-test: import
+	@$(GODOT) --headless --path . --script tests/test_ship_star_light.gd > $(SCRATCH)/ship-star-light.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light.log; test $$rc = 0 && grep -q '^ship-star-light: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-star-light.log
+ship-star-light-capture:
+	@$(GODOT_SIM) --path . --script tools/ship_star_light_capture.gd > $(SCRATCH)/ship-star-light-capture.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-star-light-capture.log && grep -q '^ship-star-light-capture: OK$$' $(SCRATCH)/ship-star-light-capture.log
+ship-star-light-bench:
+	@$(GODOT) --path . --script tools/ship_star_light_bench.gd > $(SCRATCH)/ship-star-light-bench.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-star-light-bench.log; test $$rc = 0 && grep -q '^ship-star-light-bench: OK$$' $(SCRATCH)/ship-star-light-bench.log
+ship-demo-ci: ship-star-light-test
 .PHONY: trappist1-test
 trappist1-test:    ## TRAPPIST-1 planets (trappist1-planets-sprint.md): snapshot pin, sim checks strict VM = interpreter, and the Python orbit/transcription oracle
 	@mkdir -p $(SCRATCH)
@@ -678,6 +741,16 @@ solar-departure-export-smoke:
 	@mkdir -p $(SCRATCH)/solar-export-home
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/solar-export-home" "$(APP)/Contents/MacOS/$$exe" -- --solar-departure-smoke > $(SCRATCH)/solar-export.log 2>&1; rc=$$?; cat $(SCRATCH)/solar-export.log; test $$rc = 0 && grep -q '^solar-departure-smoke: OK$$' $(SCRATCH)/solar-export.log
 publish-dev: solar-departure-export-smoke
+
+# Large tier in the exported app (eval R1-STARMAP-LARGE round 1): the .app's default sky is the large tier
+# (331,311 rows, bundled from data/starmap/ by export-macos -> starmap-assets); prints its peak RSS at the sky scene.
+.PHONY: starmap-export-smoke
+starmap-export-smoke:
+	@mkdir -p $(SCRATCH)/starmap-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/starmap-export-home" /usr/bin/time -l "$(APP)/Contents/MacOS/$$exe" -- --starmap-smoke > $(SCRATCH)/starmap-export.log 2>&1; rc=$$?; \
+	  grep -E '^starmap-smoke:' $(SCRATCH)/starmap-export.log; echo "starmap-export-smoke: peak RSS $$(awk '/maximum resident set size/{printf "%.0f MB", $$1/1048576}' $(SCRATCH)/starmap-export.log), app $$(du -sh "$(APP)" | cut -f1)"; \
+	  test $$rc = 0 && grep -q '^starmap-smoke: OK$$' $(SCRATCH)/starmap-export.log
+export-smoke: starmap-export-smoke
 
 .PHONY: ship-attitude-test
 ship-attitude-test: import

@@ -23,15 +23,17 @@ import ./catalogue_bytes (encodeRows)
 import ./catalogue (Row, selectTier, transform)
 import ./catalogue_main (Pkg, Plan, sidecarWith, planAdjusted, applyFill, lockPackage, outputName, fail, writeFail, rawDigest, commit)
 import ./starmap (mapRows, mapJson, mapRadiusLy)
+import ./truth (Truth, Pos, Index, ruleVersion, ruleText, parseCnsAst, parseGcnsAst, parsePos, parseSame, byKey, truthRows, csvText, countWhere, countLine, uncertain, parseTruth, index, applyById, applyGcns, dropped, placedCount)
+import ./extract (fmt6)
 import ./bright (Astro, Phot, Cns, Bright, parseHip2, parseHipMain, parseCnsHip, gcnsIndex, fill, bright)
 import ./companions (Link, Same, cnsStars, gcnsStars, hipStars, hipErrors, candidates, systems, linkIndex, applyRows, applyGcnsRows, applyHip, movedIn, rootsIn, checkTier, checkPinned, linksText, parseLinks)
 import std/result (Result, Ok, Err)
 import std/option (Some, None)
-import std/string (concat, join, intToStr, floatToStr)
-import std/list (map, nth, length as size, concat as append)
+import std/string (concat, join, intToStr, floatToStr, contains)
+import std/list (map, nth, filter, flatMap, length as size, concat as append)
 import std/crypto (sha256Hex, sha256Bytes)
 import std/bytes (fromBase64, toString as utf8)
-import std/json (Json, kv, js, jint, jo, ja, asString)
+import std/json (Json, encode, kv, js, jint, jo, ja, asString)
 import std/gzip (decompressFile)
 import std/fs (readFileResult, writeFileResult, renameFileResult)
 import std/io (println)
@@ -95,32 +97,40 @@ func readTable(path: string) -> Result[{links: Array[Link], sha: string},string]
   Err(e) => Err(e),
   Ok(t) => match readLinks(t) { Err(e) => Err(concat([path, ": ", e])), Ok(ix) => Ok({links: ix, sha: sha256Hex(t)}) }
 }
+-- The star-truth table (sim/tools/truth.ail): parsed, indexed, with its digest.
+func readTruth(path: string) -> Result[{ix: Index, sha: string}, string] ! {FS} = match readText(path) {
+  Err(e) => Err(e),
+  Ok(t) => match parseTruth(t) { Err(e) => Err(concat([path, ": ", e])), Ok(rows) => Ok({ix: index(rows), sha: sha256Hex(t)}) }
+}
+pure func truthKeys(rows: [Row], ix: Index) -> [{key: string, value: Json}] = [kv("truth_rule", js(ruleVersion())), kv("truth_rows", jint(placedCount(rows, ix)))]
 -- The quick tier with the M1.2d rule (b) fill and the companion table.
-export func mainFill(a: {tier: string, csv: string, raw: string, lock: string, out: string, ailang: string, hip: string, companions: string}) -> () ! {FS, IO} =
+export func mainFill(a: {tier: string, csv: string, raw: string, lock: string, out: string, ailang: string, hip: string, companions: string, truth: string}) -> () ! {FS, IO} =
   match readText(a.csv) { Err(e) => fail(e), Ok(csv) => match readText(a.raw) { Err(e) => fail(e), Ok(rawText) =>
   match readText(a.hip) { Err(e) => fail(e), Ok(hipText) => match rawDigest(a.raw) { Err(e) => fail(e), Ok(rawSha) =>
   match rawDigest(a.hip) { Err(e) => fail(e), Ok(hipSha) => match readText(a.lock) { Err(e) => fail(e), Ok(lock) =>
-  match readTable(a.companions) { Err(e) => fail(e), Ok(tab) =>
+  match readTable(a.companions) { Err(e) => fail(e), Ok(tab) => match readTruth(a.truth) { Err(e) => fail(e), Ok(tr) =>
   match lockPackage(lock,"sunholo/relativity") { Err(e) => fail(e), Ok(pkg) => {
     let f = fill(parseCnsHip(rawText),parseHipMain(hipText));
     match planAdjusted({tier: a.tier, csv: csv, rawSha: rawSha, ailang: a.ailang, pkg: pkg},f.rows,hipSha,
-        \rs. checkTier(applyRows(rs,tab.links),tab.links), \rs. ruleKeys(movedIn(rs,tab.links)), [kv("companions",js(tab.sha))]) {
+        \rs. checkTier(applyRows(applyById(rs,tr.ix),tab.links),tab.links), \rs. append(ruleKeys(movedIn(rs,tab.links)), truthKeys(rs,tr.ix)),
+        [kv("companions",js(tab.sha)), kv("truth",js(tr.sha))]) {
       Err(e) => fail(e),
       Ok(p) => installed(p,a.out,a.tier,concat(["; HIP photometry filled ",intToStr(size(f.rows)),", left missing: ",
         intToStr(size(f.ambiguous))," sharing a HIP id (",join(" ",f.ambiguous),"), ",intToStr(size(f.noPhot))," without HIP V and B-V (",join(" ",f.noPhot),")"]))
     }
-  } } } } } } } } }
+  } } } } } } } } } }
 -- The medium and large tiers (GCNS: csv gcns.csv, raw table1c.dat.gz) with the companion table.
-export func gcnsMain(a: {tier: string, csv: string, raw: string, lock: string, out: string, ailang: string, companions: string}) -> () ! {FS, IO} =
+-- The star-truth table first (position, relabel, drop), then the companion rule (truth.applyGcns).
+export func gcnsMain(a: {tier: string, csv: string, raw: string, lock: string, out: string, ailang: string, companions: string, truth: string}) -> () ! {FS, IO} =
   match readText(a.csv) { Err(e) => fail(e), Ok(csv) => match rawDigest(a.raw) { Err(e) => fail(e), Ok(rawSha) =>
   match readText(a.lock) { Err(e) => fail(e), Ok(lock) => match lockPackage(lock,"sunholo/relativity") { Err(e) => fail(e), Ok(pkg) =>
-  match readTable(a.companions) { Err(e) => fail(e), Ok(tab) =>
+  match readTable(a.companions) { Err(e) => fail(e), Ok(tab) => match readTruth(a.truth) { Err(e) => fail(e), Ok(tr) =>
     match planAdjusted({tier: a.tier, csv: csv, rawSha: rawSha, ailang: a.ailang, pkg: pkg},[],"",
-        \rs. checkTier(applyGcnsRows(rs,tab.links),tab.links), \rs. append(ruleKeys(movedIn(rs,tab.links)), [kv("companion_roots",jint(rootsIn(rs,tab.links)))]),
-        [kv("companions",js(tab.sha))]) {
+        \rs. checkTier(applyGcns(rs,tr.ix,tab.links),tab.links), \rs. flatten([ruleKeys(movedIn(rs,tab.links)), [kv("companion_roots",jint(rootsIn(rs,tab.links)))], truthKeys(rs,tr.ix)]),
+        [kv("companions",js(tab.sha)), kv("truth",js(tr.sha))]) {
       Err(e) => fail(e),
       Ok(p) => installed(p,a.out,a.tier,"")
-    } } } } } }
+    } } } } } } }
 func brightInputs(hip2: string, hipMain: string, cns5: string, gcns: string) -> Result[{i: BrightIn, shas: [{key: string, value: Json}]},string] ! {FS} =
   match readGz(hip2) { Err(e) => Err(e), Ok(h2) => match readText(hipMain) { Err(e) => Err(e), Ok(hm) =>
   match readText(cns5) { Err(e) => Err(e), Ok(c5) => match readText(gcns) { Err(e) => Err(e), Ok(gc) =>
@@ -142,10 +152,10 @@ export func brightMain(a: {hip2: string, hipMain: string, cns5: string, gcns: st
 
 -- M1.7: the map rows are exactly the tiers' rows (quick with rule b, bright with rule a, both with the
 -- companion table), before the float32 encoding; Ok carries the file text and the row count.
-export pure func mapPlan(csv: string, t: Tier, links: Array[Link], shas: [{key: string, value: Json}], ailang: string, pkg: Pkg) -> Result[{text: string, count: int}, string] =
+export pure func mapPlan(csv: string, t: Tier, links: Array[Link], ix: Index, shas: [{key: string, value: Json}], ailang: string, pkg: Pkg) -> Result[{text: string, count: int}, string] =
   match transform(csv) {
     Err(e) => Err(e),
-    Ok(s) => match selectTier(applyRows(applyFill(s.rows, fill(t.cns, t.phot).rows), links), "quick") {
+    Ok(s) => match selectTier(applyRows(applyById(applyFill(s.rows, fill(t.cns, t.phot).rows), ix), links), "quick") {
       Err(e) => Err(e),
       Ok(q) => {
         let b = applyHip(t.b.rows, t.hips, links);
@@ -156,6 +166,7 @@ export pure func mapPlan(csv: string, t: Tier, links: Array[Link], shas: [{key: 
             kv("package", jo([kv("name", js(pkg.name)), kv("version", js(pkg.version)), kv("content_hash", js(pkg.hash))])),
             kv("producer", js("stapledons/sim/tools/bright_main mapMain (sim/tools/starmap.ail)")),
             kv("companions", jint(movedIn(rows, links))), kv("companion_rule", js(companionRule())),
+            kv("truth_rule", js(ruleVersion())), kv("truth_rows", jint(placedCount(rows0, ix))),
             kv("sha256", jo(shas))])}) }
         }
       }
@@ -172,15 +183,15 @@ func install(out: string, text: string, msg: string) -> () ! {FS, IO} = {
     }
   }
 }
-export func mapMain(a: {csv: string, cns5: string, hip2: string, hipMain: string, gcns: string, companions: string, lock: string, out: string, ailang: string}) -> () ! {FS, IO} =
+export func mapMain(a: {csv: string, cns5: string, hip2: string, hipMain: string, gcns: string, companions: string, truth: string, lock: string, out: string, ailang: string}) -> () ! {FS, IO} =
   match readText(a.csv) { Err(e) => fail(e), Ok(csv) => match brightInputs(a.hip2, a.hipMain, a.cns5, a.gcns) { Err(e) => fail(e), Ok(bi) =>
   match readText(a.lock) { Err(e) => fail(e), Ok(lock) => match lockPackage(lock,"sunholo/relativity") { Err(e) => fail(e), Ok(pkg) =>
-  match readTable(a.companions) { Err(e) => fail(e), Ok(tab) =>
+  match readTable(a.companions) { Err(e) => fail(e), Ok(tab) => match readTruth(a.truth) { Err(e) => fail(e), Ok(tr) =>
   match brightTier(bi.i) { Err(e) => fail(e), Ok(t) =>
-  match mapPlan(csv, t, tab.links, flatten([[kv("cns5_csv",js(sha256Hex(csv)))], reorder(bi.shas), [kv("companions",js(tab.sha))]]), a.ailang, pkg) {
+  match mapPlan(csv, t, tab.links, tr.ix, flatten([[kv("cns5_csv",js(sha256Hex(csv)))], reorder(bi.shas), [kv("companions",js(tab.sha)), kv("truth",js(tr.sha))]]), a.ailang, pkg) {
     Err(e) => fail(e),
     Ok(m) => install(a.out, m.text, concat(["starmap: ", intToStr(m.count), " stars within 25 pc"]))
-  } } } } } } }
+  } } } } } } } }
 -- the M1.7 header order: cns5, hip_main, hip2, gcns
 pure func reorder(shas: [{key: string, value: Json}]) -> [{key: string, value: Json}] = match shas {
   [h2, hm, c5, gc] => [c5, hm, h2, gc], _ => shas }
@@ -201,3 +212,60 @@ export func companionsMain(a: {cns5: string, hip2: string, hipMain: string, gcns
   } } } }
 pure func shaOf(shas: [{key: string, value: Json}], i: int) -> string = match nth(shas, i) {
   Some(e) => match asString(e.value) { Some(t) => t, None => "" }, None => "" }
+
+-- The star-truth table (sim/tools/truth.ail, design_docs/planned/r1/starmap-single-truth.md):
+-- CNS5 (dat + csv) x GCNS (table1c.dat uncompressed, gcnsDat; the pinned .gz, gcnsRaw, for its digest;
+-- gcns.csv) x the companion table's cross-identifications, with the bright rows (after the companion
+-- rule) for the HIP cross-ids. Writes <out>/positions.csv and <out>/positions.json.
+pure func posOf(r: Row) -> Pos = {id: r.id, x: fmt6(r.x), y: fmt6(r.y), z: fmt6(r.z)}
+export pure func truthPlan(cnsDat: string, cnsCsv: string, gcnsDat: string, gcnsCsv: string, companions: string, t: Tier, links: Array[Link]) -> Result[[Truth], string] {
+  let cns = parseCnsAst(cnsDat);
+  let same = parseSame(companions);
+  let keep = byKey(\s. s, append(map(\a. a.id, cns), map(\s. s.gaia, same)));
+  truthRows(cns, parseGcnsAst(keep, gcnsDat), parsePos(byKey(\s. s, []), cnsCsv), parsePos(keep, gcnsCsv), same,
+    map(posOf, applyHip(t.b.rows, t.hips, links)))
+}
+export pure func truthSidecar(rows: [Truth], csvSha: string, shas: [{key: string, value: Json}], ailang: string) -> string =
+  concat([encode(jo([kv("rule", js(ruleVersion())), kv("rule_text", js(ruleText())), kv("rows", jint(size(rows))),
+    kv("position", jint(countWhere(rows, \x. x.action == "position"))), kv("relabel", jint(countWhere(rows, \x. x.action == "relabel"))),
+    kv("drop", jint(countWhere(rows, \x. x.action == "drop"))), kv("disagreements", jint(countWhere(rows, \x. x.disagree))),
+    kv("resolved", jint(countWhere(rows, \x. x.disagree && x.resolution != ""))), kv("uncertain", jint(size(uncertain(rows)))),
+    kv("ailang", js(ailang)), kv("producer", js("stapledons/sim/tools/bright_main truthMain (sim/tools/truth.ail)")),
+    kv("sha256", jo(append(shas, [kv("positions_csv", js(csvSha))])))])), "\n"])
+export func truthMain(a: {cns5: string, cns5Csv: string, gcnsRaw: string, gcnsDat: string, gcns: string, hip2: string, hipMain: string, companions: string, out: string, ailang: string}) -> () ! {FS, IO} =
+  match brightInputs(a.hip2, a.hipMain, a.cns5, a.gcns) { Err(e) => fail(e), Ok(bi) =>
+  match readText(a.cns5Csv) { Err(e) => fail(e), Ok(cc) => match readText(a.gcnsDat) { Err(e) => fail(e), Ok(gd) =>
+  match rawDigest(a.gcnsRaw) { Err(e) => fail(e), Ok(sg) => match readText(a.companions) { Err(e) => fail(e), Ok(ct) =>
+  match readLinks(ct) { Err(e) => fail(e), Ok(links) => match brightTier(bi.i) { Err(e) => fail(e), Ok(t) =>
+  match truthPlan(bi.i.cns5, cc, gd, bi.i.gcns, ct, t, links) {
+    Err(e) => fail(e),
+    Ok(rows) => {
+      let shas = [kv("cns5", js(shaOf(bi.shas, 2))), kv("cns5_csv", js(sha256Hex(cc))), kv("table1c", js(sg)), kv("gcns", js(shaOf(bi.shas, 3))),
+        kv("hip2", js(shaOf(bi.shas, 0))), kv("hip_main", js(shaOf(bi.shas, 1))), kv("companions", js(sha256Hex(ct)))];
+      let text = csvText([ruleText(), concat(["inputs sha256: ", join(", ", map(\s. concat([s.key, " ", match asString(s.value) { Some(v) => v, None => "" }]), shas))]),
+        "x, y, z: galactic light-years, the adopted source CSV's own digits; dist_ly = |x, y, z|; sigma_ly = dist_ly * e_plx / plx (adopted)",
+        "action: position = GCNS row takes this position; relabel = GCNS row becomes this CNS5 identity here; drop = the bright tier renders it"], rows);
+      install(concat([a.out, "/positions.csv"]), text, concat(["star truth: ", countLine(rows)]));
+      install(concat([a.out, "/positions.json"]), truthSidecar(rows, sha256Hex(text), shas, a.ailang), "star truth sidecar")
+    }
+  } } } } } } } }
+
+-- AC4 audit (make starmap-truth-audit): every row the truth table marks (a disagreement over max(3 sigma,
+-- 1%), or any resolution) has a resolution, and its Gaia id appears in the committed audit document.
+export pure func auditLines(rows: [Truth], doc: string) -> {lines: [string], bad: [string]} {
+  let marked = disagreementsOf(rows);
+  {lines: map(\t. concat([t.id, " (", t.source, "; ", t.action, "): ", if t.resolution == "" then "UNRESOLVED" else t.resolution]), marked),
+   bad: flatMap(\t. if t.resolution == "" then [concat([t.id, ": no resolution"])] else if !contains(doc, t.gaia) then [concat([t.id, ": not in the audit document"])] else [], marked)}
+}
+pure func disagreementsOf(rows: [Truth]) -> [Truth] = filter(\t. t.disagree || t.resolution != "", rows)
+export func auditMain(a: {truth: string, doc: string}) -> () ! {FS, IO} =
+  match readText(a.truth) { Err(e) => fail(e), Ok(text) => match readText(a.doc) { Err(e) => fail(e), Ok(doc) =>
+  match parseTruth(text) { Err(e) => fail(e), Ok(rows) => {
+    let r = auditLines(rows, doc);
+    println(concat(["starmap-truth-audit: ", countLine(rows)]));
+    println(join("\n", map(\l. concat(["  ", l]), r.lines)));
+    match r.bad {
+      [] => println(concat(["starmap-truth-audit: PASS (", intToStr(size(r.lines)), " marked rows, all resolved and in ", a.doc, ")"])),
+      bad => fail(concat(["star truth audit: ", join("; ", bad)]))
+    }
+  } } } }
