@@ -1,0 +1,8 @@
+{"sprint_id":"R1-STARMAP-TRUTH","pr":145,"round":1,"score":88,"result":"pass","breakdown":{"tests":20,"lint":10,"acceptance":26,"code_quality":11,"documentation":13,"design_fidelity":8},
+"checks":"truth-test, starmap-truth-audit (14 marked, all resolved), starmap-consistency (0 drawn twice, 0 aliases, offset 0 ly, f32 max 4.17e-6 ly), catalogue-verify (all byte-identical), python-guard ok. Full make test not run by evaluator.",
+"findings":[
+{"severity":"medium","where":"design_docs/planned/r1/starmap-single-truth-sprint.md:24","issue":"truth-1 deviation (CNS5 choice kept, Gaia only for unmatched) is justified (RUWE data in audit) and documented, but open question 1 remains with Mark; ruling not recorded in ledger."},
+{"severity":"low","where":"data/starmap/stars.json","issue":"Navigation moves for exactly one star (CNS5:138, no photometry, 78.78 to 76.05 ly): confirmed. Replay goldens unaffected."},
+{"severity":"low","where":"sim/tools/truth_test.ail:135-143","issue":"9 named checks plus real-byte fixtures on VM and interpreter; end-to-end byte rebuild covered by catalogue-verify. Fixtures are tiny (3 lines); mismatch cases in rule precedence only lightly covered."},
+{"severity":"low","where":"sky/starfield.gd pin_destination","issue":"Now an assertion with pin_noops; fallback kept and warns; consistency test shows 0 fallbacks over 5,685 destinations. Safe."},
+{"severity":"low","where":"data/starmap/*.bin","issue":"Rebuilt tier bins same size, no large binaries added (positions.csv 5217 lines only)."}]}
