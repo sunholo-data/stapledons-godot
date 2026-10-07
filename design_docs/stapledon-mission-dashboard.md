@@ -1,22 +1,19 @@
-# Stapledon mission dashboard (snapshot)
+# Stapledon mission dashboard
 
-- Updated 2026-10-06, iteration 17; bookkeeping issue #119.
-- Pins: AILANG v0.52.0, relativity 0.8.0, Godot 4.7.2.
-- Bar: clause 2 MET; clauses 1, 3, 4 UNMET; 5 ongoing.
-- Clause 1: R1-M1-SKY-2, attended.
-- Clause 4: R1-M4-JOURNEY. M4.0, M4.1 (both steps), M4.2, M4.3a, M4.6a and
-  M4.7 are in. M4.4 (news from home, return trip, legacy screen) is BUILT
-  and judged 97 PASS (minimax-m3), held in draft PR #131 for pause point S4
-  (Mark's copy review, D-45). Next: M4.3b, then M4.5 once M4.4 merges.
-- Clause 3: M3 design drafted; no quorum or plan yet.
-- Parked on Mark: D-45 (S4 copy: A merge as is / B Sol no-age fix then
-  merge / C hold for a D-42 canon rewrite; recommend B).
-- Attended in flight: #129 (starmap single source of truth, design).
-- Follow-ups outside the loop: D-23 4.32 ly regen in the design repo; news
-  copy against the D-42 canon voice.
-- Loop: every 6 h. Routing this fire: controller Opus 5.5, executor Sonnet
-  5.5 (Agent tool), evaluator minimax-m3 (pi recipe, cross-vendor; attempt
-  1 tool_hang, ticket filed). codex and ollama over daily ration.
-- Metered this iteration: ~0.63 USD (the minimax evaluator, two attempts).
-- Harness share 0/17; last 3 landings moved 4/4/4; no drift alarm.
-- Full memory: stapledon-mission-log.md, stapledon-mission.md.
+Updated 2026-10-07, iteration 18.
+
+- Latest review tag: v0.4.0-dev.18-even-legs; origin main 6422522, CI green.
+- Bar: clause 2 MET; clauses 1/3/4 UNMET; clause 5 ongoing.
+- Pick: M4.4 D-45(B), approved home no-age fix, PR #131 remains draft.
+- Outcome: PARKED-ON-LANE; goal unmoved; no code/tests/acceptance/merge.
+- D-45(B) is RESOLVED. No new copy approval required.
+- Native planner opus and required evaluator sonnet rejected Unknown model.
+- Driver role env absent; no configured fallback chain or quota posture.
+- Read-only native Sol designer/executor assessments completed; no judge verdict.
+- Fleet ticket: agent-tool:mission-role-pins-unavailable, blocking all product work.
+- Resume: valid driver role pins + prescribed native planner/judge accepted, or attended supported routing ruling preserving independence.
+- Banked: D-45(B) finish #131; M4.3b interior HUD; M4.5 after both.
+- Human decisions: none OPEN; remaining visual gates apply when reached.
+- Loop cadence: six hours; this API invocation cannot honor current native pins.
+- Harness share: 1/18 indexed iterations; last 3 product landings moved clause 4.
+- Detail: stapledon-iteration-18-routing.md and mission log iteration 18.
