@@ -13,6 +13,7 @@ const TIERS := 5
 const MAX_CHARS := 280 # D-21, sim/ai.ail maxCharsFor("news")
 const SLOT_FMT := "%.2f"
 const WORST_SLOT := 99999.99 # the widest slot the lint expects (digits only; width, not meaning)
+const NO_AGE_BELOW := 0.005 # a value that renders as "0.00" with SLOT_FMT; the Sol return is exactly 0
 
 
 static func load_json(path: String) -> Dictionary:
@@ -53,6 +54,25 @@ static func slot_names(text: String) -> Array:
 
 static func without_slots(text: String) -> String:
 	return RegEx.create_from_string("\\{[a-z_]*\\}").sub(text, "", true)
+
+
+## D-45(B): true when the bound news age would render as "0.00" (the home arrival: light-time from
+## Sol is nil). The panel then composes the header without the age clause and shows the no-age body
+## phrase for a template paragraph; the sim's field is unchanged and merely formatted.
+static func is_no_age(slots: Variant) -> bool:
+	if not (slots is Dictionary) or not slots.has("news_age_years"):
+		return false
+	var v: Variant = slots["news_age_years"]
+	return (v is float or v is int) and absf(float(v)) < NO_AGE_BELOW
+
+
+## The header's parts for ComposedBinding: the lead, the epoch slot, and either the age clause or,
+## when the age renders "0.00", the no-age tail. Labels carry no numeral (the lint enforces it).
+static func header_parts(copy: Dictionary, no_age: bool) -> Array:
+	var labels: Dictionary = copy.get("labels", {})
+	if no_age:
+		return [labels["header_lead"], ["consequence.news.slots.news_epoch", "+%.2f"], labels["header_no_age_tail"]]
+	return [labels["header_lead"], ["consequence.news.slots.news_epoch", "+%.2f"], labels["header_mid"], ["consequence.news.slots.news_age_years", "%.2f"], labels["header_tail"]]
 
 
 static func has_digit(s: String) -> bool:

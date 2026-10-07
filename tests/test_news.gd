@@ -148,6 +148,48 @@ func test_renderings() -> void:
 		p.queue_free()
 
 
+## D-45(B): at the Sol return the news age is zero (light-time from home is nil). The header must
+## drop the age clause and a template paragraph must use the no-age body phrase, on all three
+## body_source paths, so the panel never reads "0.00 years old".
+func no_age_world(src: String, reason: Variant = null, req: Variant = null) -> Dictionary:
+	var v := world(src, reason, req, 0, 1, "Sol")
+	v["consequence"]["news"]["slots"]["news_epoch"] = 8.70
+	v["consequence"]["news"]["slots"]["news_age_years"] = 0.0
+	return v
+
+
+func test_no_age() -> void:
+	var want_header := "Latest news from Earth: Earth-year +8.70, just arrived."
+	var want_body := "Home is close enough now that this message has not aged at all: it reaches you exactly as it was written, with no years of travel between the telling and the hearing."
+	var tpl := panel_with(no_age_world("template"))
+	var snap := tpl.snapshot()
+	print("    Sol return: %s" % JSON.stringify(snap))
+	ok("Sol return: the header drops the age clause (no 'years old', no 0.00)", snap["header"] == want_header and not snap["header"].contains("years old") and not snap["header"].contains("0.00"))
+	ok("Sol return: the body is the no-age phrase, never '0.00 years old'", snap["body"] == want_body and not snap["body"].contains("years old") and not snap["body"].contains("0.00") and snap["body"].length() <= NewsCopy.MAX_CHARS)
+	ok("Sol return: no tag, no notice", snap["tag"] == "" and snap["notice"] == "")
+	ok("Sol return: audit: every number on the panel is still a binding", DisplayBinding.audit(tpl).is_empty())
+	ok("the no-age copy is data (copy.json labels)", copy["labels"]["header_no_age_tail"] == ", just arrived." and copy["labels"]["body_no_age"] == want_body and not NewsCopy.has_digit(copy["labels"]["header_no_age_tail"]) and not NewsCopy.has_digit(copy["labels"]["body_no_age"]))
+	# the fallback path composes the same no-age header and body under its notice and reason
+	var fb := panel_with(no_age_world("fallback", "ai_numeral", "1"))
+	var fsnap := fb.snapshot()
+	ok("Sol return fallback: the same no-age header and body, the notice and reason stand", fsnap["header"] == want_header and fsnap["body"] == want_body and fsnap["notice"] == copy["labels"]["fallback_notice"] and fsnap["reason"] == "Reason: the generated text contained a numeral")
+	# the AI path: the header drops the age; the accepted text stands as the body
+	var ai := panel_with(no_age_world("ai", null, "1"), [{"k": "ai_accepted", "kind": "text", "req": "1", "text": "The world turned on without you."}])
+	ok("Sol return ai: the header drops the age, the accepted text stands", ai.snapshot()["header"] == want_header and ai.snapshot()["body"] == "The world turned on without you." and ai.tag.text == "generated")
+	# off-world preservation: a real age keeps the age clause and the template paragraph
+	var away := panel_with(world("template"))
+	ok("off-world: the age clause and the template paragraph are unchanged", away.snapshot()["header"].contains("already 4.35 years old") and away.snapshot()["body"] == NewsCopy.paragraph(templates, 1, {"elapsed_years": 0.04398, "news_epoch": 0.04398, "news_age_years": 4.35}))
+	# the threshold: a value that would render "0.00" is no-age; 0.01 keeps the age
+	var tiny := world("template")
+	tiny["consequence"]["news"]["slots"]["news_age_years"] = 0.004
+	ok("a news age that renders 0.00 is no-age", panel_with(tiny).snapshot()["header"] == "Latest news from Earth: Earth-year +0.04, just arrived.")
+	var small := world("template")
+	small["consequence"]["news"]["slots"]["news_age_years"] = 0.01
+	ok("a news age of 0.01 keeps the age clause", panel_with(small).snapshot()["header"].contains("already 0.01 years old"))
+	for p in [tpl, fb, ai, away]:
+		p.queue_free()
+
+
 class FakeRelay extends AiRelay:
 	var opened: Array = []
 
@@ -324,6 +366,7 @@ func _init() -> void:
 	test_templates()
 	test_reasons()
 	test_renderings()
+	test_no_age()
 	test_request_policy()
 	test_legacy_line()
 	test_session()

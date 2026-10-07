@@ -62,13 +62,18 @@ class TemplateText extends DisplayBinding:
 	var templates: Dictionary = {}
 	var failed := false
 	var suppressed := false # the sim says `ai`: the accepted text is shown instead
+	var no_age := false # the age renders "0.00": the no-age body phrase stands in
+	var no_age_text := "" # data/news/copy.json labels.body_no_age
 
 	func update_from(view: Dictionary) -> void:
 		var n: Variant = GalaxyMap.field_value(view, field)
 		_shown = ""
 		failed = false
 		if not suppressed and n is Dictionary and n.get("slots") is Dictionary and n.get("template_id") != null:
-			_shown = NewsCopy.paragraph(templates, int(n["template_id"]), n["slots"])
+			if no_age:
+				_shown = no_age_text
+			else:
+				_shown = NewsCopy.paragraph(templates, int(n["template_id"]), n["slots"])
 			failed = _shown == ""
 		text = _shown
 		visible = _shown != ""
@@ -98,14 +103,14 @@ func build() -> void:
 	title.text = labels["title"]
 	title.add_theme_font_size_override("font_size", 20)
 	box.add_child(title)
-	header.compose([labels["header_lead"], ["consequence.news.slots.news_epoch", "+%.2f"], labels["header_mid"],
-		["consequence.news.slots.news_age_years", "%.2f"], labels["header_tail"]])
+	header.compose(NewsCopy.header_parts(copy, false))
 	header.name = "Header"
 	_wrap(header)
 	box.add_child(header)
 	bindings.append(header)
 	body.bind("consequence.news", "%s")
 	body.templates = templates
+	body.no_age_text = labels["body_no_age"]
 	body.name = "Body"
 	_wrap(body)
 	box.add_child(body)
@@ -178,8 +183,13 @@ func show_world(view: Dictionary) -> void:
 	build()
 	var n: Variant = GalaxyMap.field_value(view, "consequence.news")
 	var src := ""
+	var no_age := false
 	if n is Dictionary:
 		src = str(n.get("body_source", ""))
+		if n.get("slots") is Dictionary:
+			no_age = NewsCopy.is_no_age(n["slots"])
+	header.compose(NewsCopy.header_parts(copy, no_age))
+	body.no_age = no_age
 	body.suppressed = src == "ai"
 	for b in bindings:
 		b.update_from(view)

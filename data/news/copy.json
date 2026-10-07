@@ -5,6 +5,8 @@
     "header_lead": "Latest news from Earth: Earth-year ",
     "header_mid": ", already ",
     "header_tail": " years old.",
+    "header_no_age_tail": ", just arrived.",
+    "body_no_age": "Home is close enough now that this message has not aged at all: it reaches you exactly as it was written, with no years of travel between the telling and the hearing.",
     "ai_tag": "generated",
     "fallback_notice": "Live transmission unavailable: archived text shown",
     "reason_lead": "Reason:",
