@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-STARMAP-LARGE",
-  "status": "planned",
+  "status": "completed",
   "approved_by": "Mark Edmondson, attended 2026-10-07 (selected for dev.20)",
   "requested_by": "Mark (attended 2026-10-06/07)",
   "design_doc": "design_docs/planned/r1/starmap-large-tier-and-reach.md",
@@ -21,10 +21,10 @@
       "acceptance_criteria": [
         "AC3: make bench TIER=large"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "VIABLE. M4 Max 40c, vsync off, 30 s flight, host load 3-7. medium/large: 1920x1080 frame p50 8.31/8.43, p99 10.07/10.99 ms; star pass GPU p50 0.08/0.34, p99 0.35/0.76 ms; 2560x1440 p99 11.23/11.48 ms, star pass p50 0.10/0.35, p99 0.56/0.99 ms; load_tiers 0.11/0.64 s; static mem 97/248 MB, video 1014/1132 MB. M2 Air estimate (x5-6 GPU): +1.4 ms p50 star pass, ~1 s load. No flux cull needed."
     },
     {
       "id": "LT1",
@@ -36,10 +36,10 @@
       "acceptance_criteria": [
         "AC1: make catalogue TIER=large + catalogue-parity PARITY_TIER=large"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "make catalogue TIER=large: 331,311 rows (HIP 27890's GCNS twin dropped), truth_rule truth-1, sha256.truth in the sidecar. catalogue-parity large: 5/5 VM = interpreter = pinned (interp 1197 s, VM ~60 s, 2.2 GB RSS). BENCH_SIZE + load/memory in tools/bench.gd."
     },
     {
       "id": "LT2",
@@ -51,10 +51,10 @@
       "acceptance_criteria": [
         "AC2: make starmap-assets"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "data/starmap/SHA256SUMS + tools/starmap_assets.sh; make starmap-publish uploaded starmap/0c706d9b...bin and d82b01d3...json (public bucket, standing approval); make starmap-assets fetch+verify in 0.65 s from a clean state."
     },
     {
       "id": "LT3",
@@ -66,10 +66,10 @@
       "acceptance_criteria": [
         "AC4: make starmap-consistency TIER=large"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "make starmap-consistency TIER=large PASS (335,189 rows, 5,159 destinations drawn, 0 missing, 0 duplicates, f32 restore <= 4.2e-6 ly, pins no-ops); catalogue-stats covers large (M-dwarf 73.4%)."
     },
     {
       "id": "LT4",
@@ -82,10 +82,13 @@
       "acceptance_criteria": [
         "AC6, AC7: make test"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-07",
+      "completed": "2026-10-07",
+      "notes": "tools/starmap_sky_capture.gd, opened: rest +21% lit pixels (GCNS stars the destarred panorama lacked), 50 ly +18%; gamma 707 forward is the boosted CMB in both; stars-only +3% light. make test with the large tier present. make test AILANG=runtime/bin/ailang green locally with stars_large present (28:33)."
     }
+  ],
+  "deferred": [
+    "L3 destinations to 100 pc + make bench-map (design open question 1 default: sky first; needs galaxy-map LOD design)"
   ]
 }
