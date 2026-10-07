@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Star colours in Auto view, and a longer approach to a giant (D-49), 2026-10-07
+
+- In Auto view a star is dimmed just enough to keep its hue and its own blackbody colour is lifted: Aldebaran is golden orange, TRAPPIST-1 red-orange, the Sun a warm white. Realistic view is unchanged; the HUD says "star colours enhanced".
+- Aldebaran's final approach lasts 90 s from where it is 25° across, so the giant grows from the starbow into a 40° disc instead of appearing in the last seconds. Other stops keep 25 s.
+- The voyage capture takes approach frames at the start, middle and 85% of each leg's own approach.
+
 ### Finite destination stars, 2026-10-07
 
 - Every star the voyage visits has its real size (D-47/D-48). Aldebaran (45 R☉, 3,927 K; Richichi & Roccatagliata 2005, Heiter 2015) and TRAPPIST-1 (0.119 R☉, 2,566 K; Agol 2021) become cited finite stars, replacing their catalogue points.

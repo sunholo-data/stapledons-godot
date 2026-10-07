@@ -226,8 +226,14 @@ export pure func checkDestinationFeed() -> bool {
 }
 pure func chainTo(w: World, n: int, stop: int) -> World = if n >= stop then w else chainTo(finishLeg(w, n), n + 1, stop)
 test "destination stars are fed after alpha Cen in order; the planner's index is the feed's; illuminance is V at Earth scaled by distance" { checkDestinationFeed() }
+export pure func checkGiantApproach() -> bool =
+  match planned(chainTo(started(), 0, 9), 9) {
+    Some(p) => absf(secs(p.trip.tauApproach) - 90.0) < 0.000001 && absf(secs(p.trip.tauBurn) - 30.0) < 0.000001 && p.trip.phiApproach < p.trip.phiPeak,
+    None => false
+  }
+test "the giant (Aldebaran) gets a 90 s final approach; main-sequence stars and planets keep 25 s" { checkGiantApproach() }
 export pure func solarDepartureVm(n: int) -> string =
-  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() && checkTimedLegs() && checkApproachPhase() && checkTimedDrag() && checkStarStops() && checkDestinationFeed() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
+  if checkInitial() && checkUnsafe() && checkConfiguredStart() && checkSunBoundary() && checkNoReinitialize() && checkSequence() && checkDirectJupiterCollision() && checkBounds() && checkSpeeds() && checkGuidedDriveValid() && checkTimedLegs() && checkApproachPhase() && checkTimedDrag() && checkStarStops() && checkDestinationFeed() && checkGiantApproach() then "solar-departure-pure: OK" else "solar-departure-pure: FAIL"
 
 pure func clearance(w: World, id: string) -> string {
   let pl = (tick(w, {dtau: 0.0, intents: [IPlanBody({id: id, cruisePhi: rapidityOfBeta(0.002), mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: None})]}));

@@ -21,6 +21,10 @@ export type TourLeg = { id: string, name: string, kind: string, cruisePhi: float
 -- 30 s of boost, about 60 s of cruise, then a 25 s final approach that begins
 -- where the body is 4 degrees across. The sim solves each leg's thrust and speed.
 export pure func tourTiming() -> Timing = { boostS: 30.0, cruiseS: 60.0, approachS: 25.0, approachDeg: 4.0 }
+-- A giant gets a longer approach (Mark, 2026-10-07): 90 s from where it is 25 degrees
+-- across, so Aldebaran grows smoothly (0.8 -> 7 -> 18 -> 40 degrees apparent) instead of
+-- appearing in the last 6 s; the 4 degree point is 6 AU out, too far for a gentle 25 s.
+export pure func giantTiming() -> Timing = { boostS: 30.0, cruiseS: 60.0, approachS: 90.0, approachDeg: 25.0 }
 export pure func approximation() -> string = "Earth position is the Earth-Moon barycentre approximation; inertial geometric-clearance demo, not gravity-bound orbits. Gravity and thermal hazards are not simulated."
 pure func radiusKm(id: string) -> float = match targetFacts(solSystem(), id) { Ok(f) => f.radiusKm, Err(_) => 0.0 }
 export pure func earthStandoffKm() -> float = 2.0 * radiusKm("earth")
@@ -67,7 +71,7 @@ export pure func legs(p: Params) -> [TourLeg] = [
   {id: "Gaia DR3 2635476908753563008", name: "TRAPPIST-1 system", kind: "star", cruisePhi: rapidityOfOneMinusBeta(trappistOneMinusBeta()), standoffKm: None, timing: None},
   {id: "trappist-1", name: "TRAPPIST-1", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(destinationStopKm("trappist-1")), timing: Some(tourTiming())},
   {id: "CNS5:1142", name: "Aldebaran system", kind: "star", cruisePhi: rapidityOfOneMinusBeta(aldebaranOneMinusBeta()), standoffKm: None, timing: None},
-  {id: "aldebaran", name: "Aldebaran", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(destinationStopKm("aldebaran")), timing: Some(tourTiming())}
+  {id: "aldebaran", name: "Aldebaran", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(destinationStopKm("aldebaran")), timing: Some(giantTiming())}
 ]
 export pure func legCount() -> int = 10
 pure func legAt(xs: [TourLeg], n: int) -> Option[TourLeg] =

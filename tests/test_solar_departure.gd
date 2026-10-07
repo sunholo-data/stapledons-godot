@@ -121,7 +121,8 @@ func _run()->void:
 		if id=="jupiter":check("braking starts while Jupiter is small and it grows through the approach",brake_first_diameter<1. and brake_last_diameter>30.)
 		if id in ["sun","jupiter","callisto","saturn","acen-a","trappist-1","aldebaran"]:
 			check("timed leg (D-46): 30 s boost (%s)"%id,absi(counts.boosting-600)<=2)
-			check("timed leg (D-46): 25 s final approach in real time (%s, %d ticks)"%[id,counts.approaching],absi(counts.approaching-500)<=40)
+			var approach_ticks:int=1800 if id=="aldebaran" else 500 # a giant gets 90 s (2026-10-07)
+			check("timed leg (D-46): final approach in real time (%s, %d ticks, want %d)"%[id,counts.approaching,approach_ticks],absi(counts.approaching-approach_ticks)<=40)
 		if id=="jupiter":check("Jupiter's approach begins with it about 4 degrees across (%.2f)"%approach_start_deg,absf(approach_start_deg-4.)<=0.5)
 		check("arrival rests",sim.world.journey.state=="arrived" and sim.world.ship.beta==0.)
 		if id in ["sun","jupiter","callisto","saturn","acen-a","trappist-1","aldebaran"]:
