@@ -44,7 +44,7 @@ session-audit-test:
 	@grep -q '^session-audit-ok$$' $(SCRATCH)/m45-pure.txt
 	@$(AILANG) run $(M45_FLAGS) --bytecode --entry auditTests --args-json 0 sim/tools/session_audit_test.ail > $(SCRATCH)/m45-fixtures.txt
 	@grep -q '^session-audit-ok$$' $(SCRATCH)/m45-fixtures.txt
-	@set -e; for spec in 'playthroughTime proxy' 'playthroughTime over_limit' 'playthroughTime bad_leg' 'codexUnlocks codex' 'codexUnlocks swapped' 'codexUnlocks missing'; do \
+	@set -e; for spec in 'playthroughTime proxy' 'playthroughTime over_limit' 'playthroughTime bad_leg' 'codexUnlocks codex' 'codexUnlocks swapped' 'codexUnlocks missing' 'codexUnlocks early' 'codexUnlocks shrink' 'codexUnlocks wrong_hint' 'codexUnlocks right_hint'; do \
 	  set -- $$spec; entry=$$1; fixture=$$2; \
 	  $(AILANG) run $(M45_FLAGS) --bytecode --entry $$entry --args-json "\"$(M45_FIX)/$$fixture.ndjson\"" $(M45_TOOL) > $(SCRATCH)/m45-$$fixture-vm.txt; \
 	  $(AILANG) run $(M45_FLAGS) --entry $$entry --args-json "\"$(M45_FIX)/$$fixture.ndjson\"" $(M45_TOOL) > $(SCRATCH)/m45-$$fixture-interp.txt; \

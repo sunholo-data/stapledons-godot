@@ -427,7 +427,7 @@ def main():
         fails += len(f)
     print("replay: %d cases, %s (%.1f s wall)" % (len(cases), "all identical" if fails == 0 else "%d failures" % fails, time.monotonic() - t))
     if ctx.sim_only:
-        print("replay sim-only: AI service launches=0; only sim/ship.ail allowed")
+        print("replay sim-only: only sim/ship.ail is launched (by construction: the replay path builds no AI-service command; no process count is measured)")
     sys.exit(1 if fails else 0)
 
 
