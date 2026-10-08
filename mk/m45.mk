@@ -46,8 +46,8 @@ session-audit-test:
 	@grep -q '^session-audit-ok$$' $(SCRATCH)/m45-fixtures.txt
 	@set -e; for spec in 'playthroughTime proxy' 'playthroughTime over_limit' 'playthroughTime bad_leg' 'codexUnlocks codex' 'codexUnlocks swapped' 'codexUnlocks missing' 'codexUnlocks early' 'codexUnlocks shrink' 'codexUnlocks wrong_hint' 'codexUnlocks right_hint'; do \
 	  set -- $$spec; entry=$$1; fixture=$$2; \
-	  $(AILANG) run $(M45_FLAGS) --bytecode --entry $$entry --args-json "\"$(M45_FIX)/$$fixture.ndjson\"" $(M45_TOOL) > $(SCRATCH)/m45-$$fixture-vm.txt; \
-	  $(AILANG) run $(M45_FLAGS) --entry $$entry --args-json "\"$(M45_FIX)/$$fixture.ndjson\"" $(M45_TOOL) > $(SCRATCH)/m45-$$fixture-interp.txt; \
+	  $(AILANG) run --quiet --package-dir sim --caps FS --bytecode --entry $$entry --args-json "\"$(M45_FIX)/$$fixture.ndjson\"" sim/tools/session_audit.ail > $(SCRATCH)/m45-$$fixture-vm.txt; \
+	  $(AILANG) run --quiet --package-dir sim --caps FS --entry $$entry --args-json "\"$(M45_FIX)/$$fixture.ndjson\"" sim/tools/session_audit.ail > $(SCRATCH)/m45-$$fixture-interp.txt; \
 	  cmp $(SCRATCH)/m45-$$fixture-vm.txt $(SCRATCH)/m45-$$fixture-interp.txt; cat $(SCRATCH)/m45-$$fixture-vm.txt; \
 	done
 
