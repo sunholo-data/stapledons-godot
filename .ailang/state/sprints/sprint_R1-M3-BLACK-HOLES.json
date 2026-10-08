@@ -1,0 +1,346 @@
+{
+  "sprint_id": "R1-M3-BLACK-HOLES",
+  "status": "approved",
+  "approved_by": "Mark Edmondson, attended 2026-10-08 (ledger D-53)",
+  "requested_by": "Mark 2026-10-08: start M3 next",
+  "design_doc": "design_docs/planned/r1/m3-black-holes.md",
+  "sprint_plan": "design_docs/planned/r1/m3-black-holes-sprint.md",
+  "github_issues": [
+    1
+  ],
+  "bar_clause": 3,
+  "package": {
+    "name": "sunholo/relativity",
+    "from": "0.9.0",
+    "to": "0.10.0",
+    "kind": "feature",
+    "publish_gate": "M3.1p: after M3.1b evaluation PASS, clean pkg quality, dry run, and Mark's explicit go (Q6)"
+  },
+  "velocity": {
+    "target_loc_per_session": 350,
+    "estimated_total_loc": 3720,
+    "contingency_percent": 25,
+    "estimated_sessions": [
+      12,
+      16
+    ],
+    "estimated_days": [
+      6,
+      8
+    ],
+    "basis": "PR #151 +263 in 1h20m incl eval; PR #92 +873 one session; PR #146 +1052 ~2h; GPU-golden milestones at half rate"
+  },
+  "registry_reuse": [
+    {
+      "milestone": "M3.1a_PKG_CLOSED_FORMS",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "extends schwarzschild; hover power reuses medium.hoverPower; pkg search geodesic/black hole/lensing/elliptic/carlson/ode rk4/integrator: none"
+    },
+    {
+      "milestone": "M3.1b_PKG_GEODESIC",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "bar clause 3 requires the integrator in this package; no ODE/elliptic package in the registry"
+    },
+    {
+      "milestone": "M3.1p_PKG_RELEASE_PUBLISH",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "release and publish 0.10.0 of the existing package"
+    },
+    {
+      "milestone": "M3.1c_PIN_0_10_0",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "pin 0.10.0"
+    },
+    {
+      "milestone": "M3.2_LENS_TABLES",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "generator calls geodesic; F32 writer reuses sim/tools/catalogue_bytes.ail"
+    },
+    {
+      "milestone": "M3.3_CPU_MIRROR",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "GDScript mirror pinned to package test values"
+    },
+    {
+      "milestone": "M3.4a_SIM_GR_CORE",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "sim composes package clock/orbit/tide/hover forms"
+    },
+    {
+      "milestone": "M3.4b_PROTOCOL_2_6",
+      "package": "none",
+      "action": "none",
+      "reason": "game-specific protocol codec in sim/protocol.ail; no protocol package in registry"
+    },
+    {
+      "milestone": "M3.5a_GPU_LENSED_SKY",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot shader mirroring M3.3"
+    },
+    {
+      "milestone": "M3.5b_GPU_STAR_IMAGES",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot star shader mirroring M3.3"
+    },
+    {
+      "milestone": "M3.6_SHIP_DEMO_HUD_RENDERS",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot scene/HUD wiring and Godot render diff"
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "Q1",
+      "q": "Approve the plan as drafted?",
+      "recommended": "approve"
+    },
+    {
+      "id": "Q2",
+      "q": "Lens tables (~8 MB): git or public bucket with sha256 pin (D-18)?",
+      "recommended": "public bucket + make lens-assets"
+    },
+    {
+      "id": "Q3",
+      "q": "Canon opens at the rogue spinning stellar-mass hole; keep Sgr A* Schwarzschild for M3?",
+      "recommended": "keep Sgr A* per D-13; mass-parametric scenario; Kerr later"
+    },
+    {
+      "id": "Q4",
+      "q": "60 fps at large tier required with GR on?",
+      "recommended": "GR off holds the M1.3 baseline; GR on measured; restrict secondary images if needed"
+    },
+    {
+      "id": "Q5",
+      "q": "Design OQ5 demo sky: Sol-viewpoint Milky Way with caption?",
+      "recommended": "yes (doc default)"
+    },
+    {
+      "id": "Q6",
+      "q": "May M3.1p publish sunholo/relativity 0.10.0 once M3.1b's eval passes?",
+      "recommended": "grant with plan approval, conditional on eval PASS + clean pkg quality + dry run"
+    }
+  ],
+  "features": [
+    {
+      "id": "M3.1a_PKG_CLOSED_FORMS",
+      "description": "sunholo/relativity schwarzschild additions (impact, turning radius, weak 2nd order + finite observer, Bozza bbar, orbit speed/clock/angular velocity, moving clock, radial rate, hover accel, rs per Msun, tides radial/transverse/orbit, SI tide/hover, hoverPowerPerKg via medium.hoverPower); oracle tools/geodesic_ref.py (role oracle, allowlisted) reproducing design V9-V16",
+      "estimated_loc": 390,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "cd $PKG && $A test --package . passes (new schwarzschild_ext_test.ail: check49, check51, check52, check53 labels; all earlier tests)",
+        "new smoke entry: strict VM output == interpreter output (cmp)",
+        "make geodesic-oracle (in this repo, in make test) runs tools/geodesic_ref.py --check and digest 16; tools/python-allowlist.txt lists it as oracle; make python-guard green; package tests pin its values as literals"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.1b_PKG_GEODESIC",
+      "description": "sunholo/relativity geodesic module (binetStep, escapeAzimuth tail-recursive RK4 with analytic capture assertion, lensDeflection, deflectionFromInfinity, carlsonRF, deflectionExact, escapeAzimuthExact, lensRegular, imageAngle, einsteinAngle, imageMagnification, inverseRow) + _smoke lensDigest; one ailang-packages PR",
+      "estimated_loc": 570,
+      "dependencies": [
+        "M3.1a_PKG_CLOSED_FORMS"
+      ],
+      "acceptance_criteria": [
+        "AC-1: cd $PKG && $A test --package . (geodesic_test.ail: check41-48, check50 labels) passes",
+        "AC-3: lensDigest 16 strict VM == interpreter (cmp) and within 1e-9 of tools/geodesic_ref.py digest 16",
+        "AC-8 package half: check42 (|alpha(1000)/(2/b)-1| <= 1%) and check43 (|alpha(100)/series-1| <= 3e-4)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.1p_PKG_RELEASE_PUBLISH",
+      "description": "CHANGELOG 0.10.0, AGENT.md, [release] kind feature, [exports] geodesic, ai_summary; dry run; publish sunholo/relativity 0.10.0 only after M3.1b eval PASS and Mark's explicit go (Q6)",
+      "estimated_loc": 130,
+      "dependencies": [
+        "M3.1b_PKG_GEODESIC"
+      ],
+      "acceptance_criteria": [
+        "AC-2: $A pkg quality . exit 0 no gates; $A publish --dry-run; $A publish; ailang pkg info sunholo/relativity | grep -E '0.10.0|geodesic'",
+        "Mark's go recorded (Q6) before publish"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.1c_PIN_0_10_0",
+      "description": "Pin sunholo/relativity 0.10.0 in sim/ailang.toml, ailang install + ailang lock, make runtime cache; split the hello pin: a constant keeps 0.9.0 for minors 4-5, relativityPin() returns 0.10.0 only at minor >= 6; make hello-pin ties the highest minor to sim/ailang.toml; minor-4/5 literals (sim/navigation_test.ail:290, tests/test_sim_bridge.gd:392) unchanged",
+      "estimated_loc": 50,
+      "dependencies": [
+        "M3.1p_PKG_RELEASE_PUBLISH"
+      ],
+      "acceptance_criteria": [
+        "AC-4: grep '\"0.10.0\"' sim/ailang.toml && make deps",
+        "make hello-pin green",
+        "make replay parity parity-v2 green with no golden changed",
+        "make test green"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.2_LENS_TABLES",
+      "description": "sim/tools/lens_lut.ail (pure, strict) forward 2048x256 + inverse tables; sim/tools/lens_lut_main.ail F32 LE writer via catalogue_bytes + JSON header (layout, ranges, pkg version, h, sha256); rows tail-recursive/array-built (ailang#1576); make lens-lut, lens-lut-check (in make test), lens-assets per Q2; task 1 re-measure 400-ray VM timing on v0.52.0, swap generator/checker if full run > 60 min; data/lens/SHA256SUMS pins; make lens-assets (bucket fetch, else VM regenerate + pin check, else fail loudly) as prerequisite of test and physics; make lens-publish (maintainers); wiring: sim/ailang.toml exports lens_lut + lens_lut_main, .PHONY/test gain lens-lut-check",
+      "estimated_loc": 310,
+      "dependencies": [
+        "M3.1c_PIN_0_10_0"
+      ],
+      "acceptance_criteria": [
+        "AC-6: make lens-lut-check (sampled regeneration bit-identical on strict VM; row 128 cols 0-63 VM == interpreter)",
+        "clean checkout: rm -f data/lens/*.bin && make lens-assets && make physics passes",
+        "full make lens-lut wall time recorded in the report",
+        "make strict green"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.3_CPU_MIRROR",
+      "description": "physics/schwarzschild.gd (float64: shadow_angle, static_blueshift, load_tables, deflection with Catmull-Rom y + analytic singular part + weak branch, lens_direction, star_images, compose) + tests/test_physics.gd section 'Schwarzschild (spec 3)'",
+      "estimated_loc": 460,
+      "dependencies": [
+        "M3.2_LENS_TABLES"
+      ],
+      "acceptance_criteria": [
+        "AC-5: make physics: 10k probe |delta_table - delta_exact| <= 1.2e-4 rad (r<=100), <= 1e-3 rel above; r=1e6 row vs weakDeflectionFinite 1e-3 rel; every texel finite; lens_inv strictly monotone; header sha256",
+        "AC-8 mirror half and AC-9 CPU half (psi_E at 10/5/3 within 1e-7 rad of check46) in make physics",
+        "RS-9..RS-21 asserted in tests/test_physics.gd; round trip 1000 pairs within 2e-4 rad",
+        "make lint-precision green"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.4a_SIM_GR_CORE",
+      "description": "sim/gr.ail pure GrState; proper-time steps for hover/orbit/approach; tau and t accumulate; scriptedApproach(n) strict entry vs closed form; tide and hover readouts compose package functions only",
+      "estimated_loc": 310,
+      "dependencies": [
+        "M3.1c_PIN_0_10_0"
+      ],
+      "acceptance_criteria": [
+        "make strict: scriptedApproach strict VM == interpreter and within 1e-9 of t=[r1-r2+ln((r1-1)/(r2-1))]/beta",
+        "gr_test.ail: static_clock 0.948683298050514/0.894427190999916/0.816496580927726 (+-1e-15); Sgr A* tidal_radial_g 5.691e-6/4.553e-5/2.108e-4 and hover_power_w_per_kg 1.1190e13/4.7477e13/1.4447e14 (+-1e-3 rel); orbit at 3: tide 3.162e-4 g, power 0",
+        "! grep -nE '1\\.5 \\* u \\* u|acos\\(-3' sim/*.ail"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "May be developed against a local path dependency on the M3.1a forms while M3.1b/M3.1p are evaluated; pinned and merged only after M3.1c. Wiring: stapledons/sim/gr + gr_test in sim/ailang.toml exports; scriptedApproach row in make strict."
+    },
+    {
+      "id": "M3.4b_PROTOCOL_2_6",
+      "description": "Protocol 2.6 (grMinor=6): new_game scenario sgr_a (4.297e6 Msun, r=1e6), intents gr_approach/gr_hover/gr_orbit, reason codes bad_radius/bad_gr/not_in_gr/moving (state unchanged), gr state section, archive events bh_enter/bh_hover/bh_ring, tests/fixtures/gr.ndjson, make parity-gr, SimBridge GR_MINOR + parse_gr",
+      "estimated_loc": 330,
+      "dependencies": [
+        "M3.4a_SIM_GR_CORE"
+      ],
+      "acceptance_criteria": [
+        "AC-11 + AC-15 (sim half): make sim strict parity parity-offaxis parity-gr replay green; GR fixture VM == interpreter byte-identical",
+        "lower-minor replay goldens unchanged",
+        "archive events bh_enter, bh_hover, bh_ring in order in the parity-gr output (grep -c '\"archive\"'); sgr_a game reports mass 4.297e6",
+        "wiring: parity-gr in make test and .PHONY"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.5a_GPU_LENSED_SKY",
+      "description": "sky/schwarzschild.gdshaderinc + gr_on branch in sky/background.gdshader (static-frame deaberration from sim gamma/1-beta, analytic capture, table lens, debug grid, D = D_g D_SR); SkyBackground/InteriorSky set_gr from sim gr fields only; tools/gr_golden.gd run by main.gd --golden through InteriorSky sky-only, linear tonemap, glow off; alpha_sh passed as float32 hi/lo pair formed in float64 (no float64 shader uniforms); make capture-bh-sky subset",
+      "estimated_loc": 410,
+      "dependencies": [
+        "M3.3_CPU_MIRROR"
+      ],
+      "acceptance_criteria": [
+        "AC-7: make golden: GR1/GR2/GR3 shadow radius within 0.5 px of 98.066/202.398/189.056 px; GR7 peak luminance inside shadow < 0.01",
+        "AC-10 part: GR4 orbit mask (yaw/pitch + rolled orientations), GR8 chromaticity within 0.01",
+        "Makefile golden grep asserts exact GR case counts; all pre-existing golden counts unchanged with gr_on=false",
+        "renders opened: jq -r '.features[]|select(.id==\"M3.5a_GPU_LENSED_SKY\")|.notes' .ailang/state/sprints/sprint_R1-M3-BLACK-HOLES.json | grep 'opened by'",
+        "CPU test: hi/lo pair reconstructs alpha_sh to 1e-12"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.5b_GPU_STAR_IMAGES",
+      "description": "starfield.gdshader include + image_order branch (lens_inv, re-aberrate, flux mu Y(DT)/Y(T)/D_SR^2); second MultiMeshInstance3D only while GR active; ring-star path (stretch > 8, <= 64 source-plane Gaussians in the sky pass, overflow count on HUD debug line); CPU test of mu=1, D_g=1 limit == point_flux_ratio",
+      "estimated_loc": 390,
+      "dependencies": [
+        "M3.5a_GPU_LENSED_SKY"
+      ],
+      "acceptance_criteria": [
+        "AC-9 GPU half: make golden GR6 ring radius within 0.5 px of 221.088/57.769/17.539 px at r=10/100/1000",
+        "AC-10: GR5 two-image centroids within 0.75 px; GR9 weak hand-off within 0.75 px",
+        "make bench TIER=large with GR off within 5% of the M1.3 baseline; GR on measured and recorded",
+        "ring renders opened: jq notes for M3.5b_GPU_STAR_IMAGES | grep 'opened by'"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "M3.6_SHIP_DEMO_HUD_RENDERS",
+      "description": "3D ship (D-52): navigation entry 'Sgr A* (black hole)' + make run-bh; keys approach/hover/orbit; HUD lines formatted only from sim.state['gr'] replacing 'GR not implemented'; Sol-sky caption (OQ5); no-star lighting fallback; archive events to codex; make capture-bh (sky-only toward/side/away x hover/orbit at 10/5/3 + bridge views, debug grid + Milky Way contact sheets); tools/render_diff.gd; design_docs/implemented/r1/m3-report.md; render baseline: first capture writes renders/bh_manifest.sha256, pinned by a reviewed commit; wiring: run-bh, capture-bh targets + .PHONY, --scenario=sgr_a user arg parsed by ship_geometry_demo.gd, golden grep GR counts",
+      "estimated_loc": 370,
+      "dependencies": [
+        "M3.4b_PROTOCOL_2_6",
+        "M3.5b_GPU_STAR_IMAGES"
+      ],
+      "acceptance_criteria": [
+        "AC-12: HUD sentinel-injection test passes under make sim; ! grep -rnE 'sqrt\\(1(\\.0)? *- *1(\\.0)? */ *r' demos ui sky bridge interior",
+        "AC-13: make capture-bh && godot --headless --script tools/render_diff.gd renders/bh_* (mean <= 1/255); grep -n 'opened by' design_docs/implemented/r1/m3-report.md",
+        "AC-14: make test green locally and in CI; make strict green",
+        "AC-15 (client half): tests/test_bh_hud.gd asserts the three black-hole Archive entries unlock in the codex after the scripted demo"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "plan_review": {
+    "round": 1,
+    "evaluation": ".ailang/state/evaluations/eval_R1-M3-plan_round_1.json",
+    "score": 84,
+    "pass": true,
+    "blocking": 0,
+    "addressed": [
+      "B-1",
+      "N-1",
+      "N-2",
+      "N-3",
+      "N-4",
+      "N-5",
+      "N-6",
+      "N-7",
+      "N-8"
+    ]
+  }
+}
