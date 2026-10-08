@@ -1,0 +1,5 @@
+{"v":2,"type":"new_game","seed":0,"scenario":"sol","diag":false,"archive":[{"id":"archive.two-clocks","unlock":"first_commit"}]}
+{"v":2,"type":"state","status":"ok","changes":{"consequence":{"archive":{"unlocked":["archive.bubble","archive.one-g","archive.nothing-crosses"]}}}}
+{"v":2,"type":"state","status":"ok","changes":{"journey":{"state":"committed"},"consequence":{"archive":{"unlocked":["archive.bubble","archive.one-g","archive.nothing-crosses","archive.two-clocks"]}}}}
+{"v":2,"type":"state","status":"ok","changes":{"ship":{"phase":"boosting","beta":0.2},"consequence":{"archive":{"unlocked":["archive.bubble","archive.one-g","archive.nothing-crosses","archive.two-clocks","archive.photon-drive"]}}}}
+{"v":2,"type":"state","status":"ok","changes":{"ship":{"phase":"cruising","beta":0.99},"consequence":{"archive":{"unlocked":["archive.bubble","archive.one-g","archive.nothing-crosses","archive.two-clocks","archive.photon-drive","archive.ism-glow","archive.starbow"]}}}}
