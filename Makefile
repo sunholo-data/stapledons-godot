@@ -264,7 +264,7 @@ splash:            ## compose the boot splash ui/splash/splash.png (Milky Way cr
 capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window); M1.5a: + camera auto / fixed-EV starboard pairs, exposure_sheet.png; M1.8: gamma 275/707 CMB views, cmb_sheet.png
 	$(GODOT_SIM) --path . -- --capture=renders
 
-run:               ## interactive galaxy map (the default launch): click a star, set the speed, hold Commit 1.5 s
+run:               ## the default launch: the title screen (board the ship, guided voyage, galaxy map, settings, credits)
 	$(GODOT_SIM) --path .
 
 voyage:            ## the M0/M1 sky flight: W/S thrust, arrows look, 1-4 views, +/- warp

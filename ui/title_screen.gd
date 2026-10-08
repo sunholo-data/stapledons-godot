@@ -356,7 +356,7 @@ static func cited_papers() -> Array:
 
 static func credits_text() -> String:
 	var lines := PackedStringArray([
-		"Made by Sunholo. Code: Apache License 2.0. AI-generated art (the captain, crew portraits, bridge): no copyright claimed.",
+		"Made by Sunholo. Code: Apache License 2.0. AI-generated art (the captain, the bridge and concept art): no copyright claimed.",
 		"",
 		"IMAGERY",
 		"Milky Way panorama: NOIRLab noirlab2430b (E. Slawik / NOIRLab / NSF / AURA), CC BY 4.0; used with the catalogue stars removed and a fitted colour-temperature model.",
