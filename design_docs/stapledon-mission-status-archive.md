@@ -2,6 +2,8 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-07: iteration 18, D-45(B) M4.4 resume PARKED-ON-LANE; native planner opus / required judge sonnet rejected Unknown model; missing driver role env; fleet ticket filed; no product changes or acceptance; clause 2 MET, 1/3/4 UNMET, 5 ongoing; zero OPEN decisions.
+
 ## STATUS 2026-10-06: iteration 17, M4.4 news/return trip/legacy BUILT and judged (draft PR #131, head `ee98858`); minimax-m3 eval 97 PASS, 0 blocking; merge waits on pause point S4 (copy review, D-45 OPEN); clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved (M4.4 verified, an M4.5 dependency); one open decision.
 
 - **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended); 2 MET; 3 UNMET → M3 (design drafted, no quorum or plan); 4 UNMET → R1-M4-JOURNEY: M4.0, M4.1 (both steps), M4.2, M4.3a, M4.6a, M4.7 ✅; **M4.4 built, PASS, held for S4 (this iteration)**; open: M4.3b (routable), then M4.5 (needs M4.3b + M4.4 merged) and M4.6; 5 ongoing (strict + parity green).

@@ -1,0 +1,31 @@
+{
+ "sprint": "R1-M4-JOURNEY", "milestone": "M4.5s", "round": 3,
+ "evaluated_commit": "8628e288a merged with origin/main 6ea0a94 as d27f4af",
+ "evaluator": "sonnet (Agent tool)",
+ "score": 91, "pass": true,
+ "findings": [
+  {"severity":"low","blocking":false,"evidence":"Changelog line 5 and inventory lines 97/139/172 say UI events are fixtures 'until D-52 is resolved' / 'Resolve D-52'. D-52 was resolved to A on 2026-10-08, so the wording is stale (not contradictory: still no scene work, passes stays null).","proposed_fix":"When M4.5/M4.6 are re-planned against the unified painted ship, reword to 'D-52(A): bot/display/walking half targets the unified 3D painted ship'."},
+  {"severity":"low","blocking":false,"evidence":"playthrough-time is not a prerequisite of `test` (only parity-m4, session-audit-test, codex-unlocks are); changelog states exactly that, so honest. It defaults to the synthetic fixture.","proposed_fix":"Wire to the real session once the D-52(A) bot exists."},
+  {"severity":"info","blocking":false,"evidence":"worktree lacks runtime/bin/ailang (untracked); used the main checkout's v0.52.0 binary. x86_64 golden provenance (CI run 37742569263) not re-measurable on arm64 (carried from round 2).","proposed_fix":"none"}
+ ],
+ "gates": [
+  {"name":"ai-live-guard rule scan","command":"sh tools/ai_live_guard.sh .","exit":0,"note":"'make ai-live-guard' itself not run: needs GODOT_SIM import and runs the full mutant list; the script it invokes first is what CI failed on"},
+  {"name":"deps","command":"make AILANG=<v0.52.0> deps","exit":0},
+  {"name":"session-audit-test","command":"make AILANG=<v0.52.0> session-audit-test","exit":0,"note":"FAIL lines in output are the negative fixtures, VM/interp cmp equal"},
+  {"name":"parity-m4","command":"make AILANG=<v0.52.0> parity-m4","exit":0},
+  {"name":"replay-positive-control","command":"make AILANG=<v0.52.0> replay-positive-control","exit":0},
+  {"name":"codex-unlocks","command":"make AILANG=<v0.52.0> codex-unlocks","exit":0},
+  {"name":"playthrough-time","command":"make AILANG=<v0.52.0> playthrough-time","exit":0},
+  {"name":"python-guard","command":"make AILANG=<v0.52.0> python-guard","exit":0},
+  {"name":"tools-test","command":"make AILANG=<v0.52.0> tools-test","exit":0},
+  {"name":"strict","command":"make AILANG=<v0.52.0> strict","exit":0},
+  {"name":"make-wiring","command":"grep m45/parity-m4 Makefile","exit":0,"note":"Makefile:614 include mk/m45.mk; test prereqs line 26 contains parity-m4 session-audit-test codex-unlocks; replay-positive-control runs via parity-m4's recursive $(MAKE)"}
+ ],
+ "mutations": [
+  {"what":"mk/m45.mk replaced by aa06145 version (variable $(M45_FLAGS)/$(M45_TOOL) on --entry $$entry lines)","expected_exit":1,"actual_exit":1,"restored":true,"note":"guard reported rule A on mk/m45.mk:49 and :50; the new 8628e288a version exits 0"}
+ ],
+ "behaviour_unchanged": "8628e288a diff vs aa06145 is only the two lines, replacing $(M45_FLAGS) with '--quiet --package-dir sim --caps FS' and $(M45_TOOL) with sim/tools/session_audit.ail: textually identical expansion. session-audit-test still exit 0 with VM==interp cmp on all 10 fixtures.",
+ "merge_interaction": "Makefile diff vs main is only the test-prereq addition and the include; sim/ailang.toml only appends three export modules. No conflict, no other interaction found; strict and tools-test green on the merged tree.",
+ "d52_consistency": "No --interior use anywhere in the PR (grep clean in inventory, m45_session.gd, mk/m45.mk, sim/tools). m45_session.gd is scene-less (no nodes/scenes/bot). Changelog and inventory explicitly say no scene bot, walking or display audit was built. M4.5 passes in sprint_R1-M4-JOURNEY.json is null. Only stale wording 'until D-52 is resolved' (low finding).",
+ "tree": "git status --porcelain clean after all runs, apart from this untracked eval file"
+}

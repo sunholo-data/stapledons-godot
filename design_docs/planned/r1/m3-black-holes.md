@@ -102,7 +102,7 @@ rsPerSolarMassMetres() -> float            -- 2 GM_sun / c^2 = 2953.25008 (IAU 2
 tidalRadial(r) -> float                    -- 1/r^3: radial stretch per unit separation, in c^2/r_s^2 (= 2GM/r^3)
 tidalTransverse(r) -> float                -- 1/(2 r^3): transverse squeeze, same units (= GM/r^3)
 tidalRadialOrbit(r) -> float               -- (1/(2 r^3))(2 + 3/(2r - 3)): radial eigenvalue in a circular orbit, requires r > 1.5
-tidalAccelSI(mSun, r, lenM) -> float       -- c^2 lenM tidalRadial(r) / r_s(mSun)^2, m/s^2; r_s from rsPerSolarMassMetres
+tidalAccelSI(mSun, r, lenM) -> float       -- c^2 lenM tidalRadial(r) / r_s(mSun)^2, m/s^2 (corrected 2026-10-08: the package and row V14 use r_s^2); r_s from rsPerSolarMassMetres
 hoverAccelSI(mSun, r) -> float             -- hoverAcceleration(r) c^2 / r_s(mSun), m/s^2 (proper acceleration of the pocket)
 hoverPowerPerKg(mSun, r) -> float          -- hoverAccelSI(mSun, r) c: photon-drive power P = m_eff a c per kg of m_eff, W/kg
 ```

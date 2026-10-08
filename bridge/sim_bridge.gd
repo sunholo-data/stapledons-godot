@@ -19,6 +19,12 @@ const SYSTEM_MINOR := 3
 const NAV_MINOR := 4
 ## 2.5: exact recorded journey departure for map route framing.
 const DEPARTURE_MINOR := 5
+## 2.6 (M3.4b): the black-hole mode. new_game(seed, "sgr_a", diag, {"bh_mass_msun": m,
+## "bh_r": r}) (both optional: Sgr A*, 10^6 r_s); the intents gr_approach(),
+## {"k": "gr_hover"}, {"k": "gr_orbit"} and {"k": "gr_ring"} (the first ring star);
+## the `gr` section (parse_gr(), kept in `gr`) and `archive` events. Asked for by
+## setting `want_minor = GR_MINOR`.
+const GR_MINOR := 6
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -62,6 +68,8 @@ var system: Dictionary = {}
 ## The body planner's fields of the current plan, as parsed by parse_plan_nav();
 ## {} for a star plan or no plan.
 var plan_nav: Dictionary = {}
+## The last `gr` section, as parsed by parse_gr(); {} outside a black-hole scenario.
+var gr: Dictionary = {}
 var _line_bytes := PackedByteArray()
 
 
@@ -147,7 +155,8 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 		return _fail("bad_response")
 	system = {}
 	plan_nav = {}
-	if not _take_system(state["changes"]):
+	gr = {}
+	if not _take_system(state["changes"]) or not _take_gr(state["changes"]):
 		return _fail("bad_response")
 	world = state["changes"].duplicate(true)
 	world["tick"] = 0
@@ -182,7 +191,7 @@ func send(intents: Array, dtau: float) -> bool:
 	if state.get("tick") != tick:
 		return _fail("bad_response")
 	var changes: Dictionary = state["changes"]
-	if not _take_system(changes) or not _take_plan_nav(changes):
+	if not _take_system(changes) or not _take_plan_nav(changes) or not _take_gr(changes):
 		return _fail("bad_response")
 	for section in changes:
 		world[section] = changes[section].duplicate(true) if changes[section] is Dictionary else changes[section]
@@ -445,6 +454,33 @@ func _take_plan_nav(changes: Dictionary) -> bool:
 	if parsed.get("ok", true) == false:
 		return false
 	plan_nav = parsed
+	return true
+
+# ------------------------------------------------------------ 2.6 GR (M3.4b)
+# Parse-only, like the system section: every number (clocks, blueshift, shadow,
+# local beta/gamma/1-beta, tides, hover acceleration and power) is the sim's,
+# computed from sunholo/relativity. The HUD formats these fields; it never derives them.
+const _GR_NUMBERS := ["mass_msun", "rs_m", "r", "to_r", "phase", "static_clock", "ship_clock", "home_per_ship", "blueshift", "shadow",
+	"beta_local", "gamma_local", "one_minus_beta_local", "hover_accel_g", "hover_power_w_per_kg", "hover_power_w", "tidal_radial_g", "tidal_transverse_g"]
+
+## The approach intent: radially to `to_r` (r_s, [2, 10^6]) at local speed `beta_local` (0, 0.99].
+static func gr_approach(to_r: float, beta_local: float) -> Dictionary:
+	return {"k": "gr_approach", "to_r": to_r, "beta_local": beta_local}
+
+## A `gr` section checked field by field: `{}` if anything is missing or mistyped.
+static func parse_gr(v: Variant) -> Dictionary:
+	if typeof(v) != TYPE_DICTIONARY or typeof(v.get("hole_id")) != TYPE_STRING or not v.get("mode") in ["hover", "orbit", "approach"] \
+			or typeof(v.get("orbit_stable")) != TYPE_BOOL or not _floats(v, _GR_NUMBERS) or not _is_vec(v.get("dir_local")) or not _is_vec(v.get("hole_dir")):
+		return {}
+	return v.duplicate(true)
+
+func _take_gr(changes: Dictionary) -> bool:
+	if not changes.has("gr"):
+		return true
+	var parsed := parse_gr(changes["gr"])
+	if parsed.is_empty():
+		return false
+	gr = parsed
 	return true
 
 func _fail(code: String) -> bool:

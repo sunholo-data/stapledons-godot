@@ -17,6 +17,7 @@ import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, 
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
 import ./celestial (defaultEpochJd, solSystem)
 import ./navigation (BodyReq, NavPlan, Leg, planBody, staleAt)
+import ./gr (GrState, GrResult, grOff, grStep, grShipPos, grApproach, grHover, grOrbit, grRing, grHoverEvent)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
@@ -87,18 +88,23 @@ export type Intent =
   | IDraw(Stream) | IEcho(PlanReq)
   | IAiOpen(AiOpen) | IAiCancel(AiCancel)
   | IWarp(float)
+  | IGrApproach(GrApproachReq) | IGrHover | IGrOrbit | IGrRing
+-- M3.4b (protocol 2.6): the GR intents; sim/gr.ail holds their rules.
+export type GrApproachReq = { toR: float, betaLocal: float }
 export type Refusal = { i: int, reason: string }
 -- A `phase` event carries the crossing (from/to are phaseName strings, tau
 -- the ship's proper time at the boundary); an `arrived` event carries the
 -- residuals of the stepped flight against the closed form, taken before the
 -- snap (design §M2.3). A `draw` event (diag, M2.4) carries the stream's
 -- wire name, the counter drawn at and the value's top 53 bits. The AI
--- events (ai_request, ai_accepted, ai_fallback; AI.2) carry `ai`.
+-- events (ai_request, ai_accepted, ai_fallback; AI.2) carry `ai`. An `archive`
+-- event (M3.4b) carries the name of a lore event: bh_enter, bh_hover, bh_ring.
 export type Crossing = { from: string, to: string, tau: float }
 export type Residuals = { x: float, t: float, phi: float }
 export type Drawn = { stream: string, n: int, value: int }
-export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent] }
-export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None }
+export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent], archive: Option[string] }
+export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None, archive: None }
+export pure func archiveEvent(name: string) -> Event = {event("archive") | archive: Some(name)}
 
 -- standoffAu: the arrival stand-off (M4.1, D-14); 0 plans to the star itself (M2),
 -- the M4 client sets 1000. Sol (star index 0) never has one.
@@ -120,7 +126,8 @@ export pure func availableKgStart() -> float = 20000.0
 -- ids increase monotonically from 1 and are never reused.
 -- ai: open AI requests and their ids (sim/ai.ail, AI.2).
 -- cq: the consequence state (sim/consequence.ail, M4.1): news, legacy log, archive.
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq }
+-- gr: the GR mode (sim/gr.ail, M3.4); grOff() outside a black-hole scenario.
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -145,7 +152,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq() }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff() }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -177,7 +184,7 @@ pure func ledgerAfter(l: Ledger, p: Params, before: Motion, after: Motion, thrus
   else {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), absf(after.phi), p.bubbleRadiusM) * dtau * julianYearS()}
 
 -- at: the number of the tick being computed (AI request open/expiry ticks).
-type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, seed: int, rng: Rng, ai: AiState, at: int, refused: [Refusal], events: [Event], i: int }
+type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, seed: int, rng: Rng, ai: AiState, gr: GrState, at: int, refused: [Refusal], events: [Event], i: int }
 pure func refuseIntent(a: Pending, why: string) -> Pending = {a | refused: {i: a.i, reason: why} :: a.refused}
 pure func noteEvent(a: Pending, k: string) -> Pending = {a | events: event(k) :: a.events}
 
@@ -199,7 +206,12 @@ pure func refuseWhileCommitted(diag: bool, p: Params, a: Pending, it: Intent) ->
     IRecord(r) => aiStep(a, recordResult(a.rng, a.ai, r)),
     IAiOpen(o) => aiOpenIntent(diag, p, a, o),
     IAiCancel(c) => aiStep(a, cancelRequest(a.rng, a.ai, c)),
-    IWarp(_) => a
+    IWarp(_) => a,
+    -- a committed journey is never in a GR world
+    IGrApproach(_) => refuseIntent(a, "not_in_gr"),
+    IGrHover => refuseIntent(a, "not_in_gr"),
+    IGrOrbit => refuseIntent(a, "not_in_gr"),
+    IGrRing => refuseIntent(a, "not_in_gr")
   }
 
 -- AI intents (sim/ai.ail): the step's ai state, its `ai` stream counter,
@@ -298,7 +310,30 @@ pure func commitIntent(a: Pending, id: int) -> Pending =
 -- the strict VM, ailang#1473.)
 pure func cancelPlan(j: Journey) -> Journey = match j { Planned(_) => Idle, _ => j }
 
+-- In a GR world (M3.4b) the flat journey and diag-flight intents are refused `in_gr`
+-- (the ship moves only by the GR intents); the rest behave as in flat space.
 pure func applyFree(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
+  if a.gr.active then applyGr(diag, p, a, it) else applyFlat(diag, p, a, it)
+pure func applyGr(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
+  match it {
+    IPlan(_) => refuseIntent(a, "in_gr"),
+    IPlanBody(_) => refuseIntent(a, "in_gr"),
+    ICommit(_) => refuseIntent(a, "in_gr"),
+    IThrust(_) => refuseIntent(a, "in_gr"),
+    IHeading(_) => refuseIntent(a, "in_gr"),
+    IGrApproach(q) => grApply(a, grApproach(a.gr, q.toR, q.betaLocal)),
+    IGrHover => grApply(a, grHover(a.gr)),
+    IGrOrbit => grApply(a, grOrbit(a.gr)),
+    IGrRing => grApply(a, grRing(a.gr)),
+    _ => applyFlat(diag, p, a, it)
+  }
+-- A refused GR intent changes nothing; an accepted one may carry an archive event.
+pure func grApply(a: Pending, r: GrResult) -> Pending =
+  match r.refusal {
+    Some(why) => refuseIntent(a, why),
+    None => match r.archive { Some(n) => {a | gr: r.gr, events: archiveEvent(n) :: a.events}, None => {a | gr: r.gr} }
+  }
+pure func applyFlat(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
   match it {
     IPlan(rq) => planIntent(diag, p, a, rq),
     IPlanBody(rq) => planBodyIntent(p, a, rq),
@@ -314,7 +349,11 @@ pure func applyFree(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
     IRecord(r) => aiStep(a, recordResult(a.rng, a.ai, r)),
     IAiOpen(o) => aiOpenIntent(diag, p, a, o),
     IAiCancel(c) => aiStep(a, cancelRequest(a.rng, a.ai, c)),
-    IWarp(_) => refuseIntent(a, "not_committed")
+    IWarp(_) => refuseIntent(a, "not_committed"),
+    IGrApproach(_) => refuseIntent(a, "not_in_gr"),
+    IGrHover => refuseIntent(a, "not_in_gr"),
+    IGrOrbit => refuseIntent(a, "not_in_gr"),
+    IGrRing => refuseIntent(a, "not_in_gr")
   }
 -- Draw (diag, M2.4): the stream's next value; its counter advances and
 -- the value is reported in a `draw` event.
@@ -413,7 +452,7 @@ pure func tickBase(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
-  let applied = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, seed: w.seed, rng: w.rng, ai: w.ai, at: w.tick + 1, refused: [], events: [], i: 0}, input.intents);
+  let applied = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, seed: w.seed, rng: w.rng, ai: w.ai, gr: w.gr, at: w.tick + 1, refused: [], events: [], i: 0}, input.intents);
   let ex = expire(w.tick + 1, applied.ai);
   let a = {applied | ai: ex.ai, events: aiEvents(ex.events, applied.events)};
   match a.journey {
@@ -422,13 +461,36 @@ pure func tickBase(w: World, input: TickInput) -> Ticked
       { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger, rng: a.rng, ai: a.ai},
         refused: reversed(a.refused, []), events: reversed(f.events, []) }
     },
-    _ => {
+    _ => if a.gr.active then grTick(w, a, input.dtau) else {
       let moved = step(a.ship, a.thrust, input.dtau);
       let next = {moved | phase: derivePhase(moved.motion.phi, a.thrust)};
       { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau), rng: a.rng, ai: a.ai},
         refused: reversed(a.refused, []), events: reversed(a.events, []) }
     }
   }
+}
+
+-- ------------------------------------------------------------ GR tick (M3.4b)
+-- The ship moves only by sim/gr.ail's step: proper time dtau, home time dt = dtau / rate
+-- (motion.tau and motion.t accumulate both), the position at hole - r r_s holeDir, phi 0
+-- (the local motion is reported in the gr section, relative to the static observer). The
+-- ledger is unchanged (hover power is a readout, D-11; the budget is a later milestone).
+-- bh_hover fires after the step, the first time the ship hovers at r <= 10.
+pure func grTick(w: World, a: Pending, dtau: float) -> Ticked {
+  let s = grStep(a.gr, dtau);
+  let h = grHoverEvent(s.gr);
+  let m = a.ship.motion;
+  let motion = { phi: 0.0, tau: m.tau + dtau, t: m.t + s.dtYears, x: m.x };
+  let ship = { motion: motion, heading: a.ship.heading, origin: grShipPos(h.gr), x0: motion.x, phase: AtRest };
+  let evs = match h.archive { Some(n) => archiveEvent(n) :: a.events, None => a.events };
+  { world: {w | tick: w.tick + 1, ship: ship, journey: a.journey, lastPlanId: a.lastPlanId, rng: a.rng, ai: a.ai, gr: h.gr},
+    refused: reversed(a.refused, []), events: reversed(evs, []) }
+}
+-- A black-hole scenario's world (M3.4b): the ship hovering in g, facing the hole, and the
+-- archive event bh_enter in the legacy log at tick 0 (new_game reports it as an event).
+export pure func withHole(w: World, g: GrState) -> World {
+  let m = w.ship.motion;
+  {w | gr: g, ship: {w.ship | heading: g.holeDir, origin: grShipPos(g), x0: m.x}, cq: append(w.cq, entry(w.tick, "bh_enter", g.holeId, m.tau, m.t))}
 }
 
 -- ------------------------------------------------------------ consequence (M4.1)
@@ -474,6 +536,8 @@ pure func arrive(w: World, o: Obs) -> Obs =
   }
 
 pure func observeEvent(before: World, w: World, o: Obs, e: Event) -> Obs =
+  match e.archive { Some(n) => { cq: logAt(o.cq, w, n, w.gr.holeId), rng: o.rng }, None => observeFlat(before, w, o, e) }
+pure func observeFlat(before: World, w: World, o: Obs, e: Event) -> Obs =
   if e.kind == "committed" then
     { cq: {logAt(o.cq, w, "commit", starOf(w.journey)) | depT: match o.cq.depT { None => Some(before.ship.motion.t), Some(_) => o.cq.depT }, dragJ0: before.ledger.dragJ}, rng: o.rng }
   else if e.kind == "arrived" then arrive(w, o)

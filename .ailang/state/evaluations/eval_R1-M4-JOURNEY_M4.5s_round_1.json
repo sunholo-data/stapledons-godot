@@ -1,0 +1,166 @@
+{
+ "sprint": "R1-M4-JOURNEY",
+ "milestone": "M4.5s",
+ "round": 1,
+ "score": 84,
+ "pass_": true,
+ "scope_note": "make sim (13 min) and full make test skipped per instructions; x86_64 goldens absent by design; D-52 half out of scope.",
+ "findings": [
+  {
+   "severity": "medium",
+   "blocking": false,
+   "title": "'AI process never spawned' assertion is tautological",
+   "evidence": "tools/replay.py run(): the sim_only asserts check an args list built two lines earlier from constants (always ends in sim/ship.ail); 'AI service launches=0' is a hard-coded print. Nothing observes real child processes; run() has no other launch site.",
+   "proposed_fix": "Count actual spawned argv via a wrapper/popen hook (or inspect the child's ai_request replies being unanswered) and print the measured count; or soften the claim to 'by construction'."
+  },
+  {
+   "severity": "medium",
+   "blocking": false,
+   "title": "codexUnlocks prefix, table-hint and hints-equality branches have no failing test",
+   "evidence": "Mutations removing the prefix() check and removing 'c.hints == hints' left session-audit-test green (exit 0); removing tableOk left codex-unlocks green on the real stream. Only ids order/completeness and one hint inference are covered by fixtures. holds(h,c1) is true by construction since hs derive from the same flags, so it adds no check.",
+   "proposed_fix": "Add fixtures: early unlock (I confirmed by hand that two-clocks unlocked before commit yields FAIL, but it is not a committed test), a shrinking cumulative list, and a new_game archive table with a wrong 'unlock' hint."
+  },
+  {
+   "severity": "low",
+   "blocking": false,
+   "title": "playthrough-time and the real-session numbers are not in make test; default target audits a hand-made fixture",
+   "evidence": "playthrough-time defaults to proxy.ndjson (synthetic 223 s); the real 134.70 s run needs SESSION=. Disclosed in inventory; design AC7 needs the UI half (D-52).",
+   "proposed_fix": "Once D-52 lands, wire playthrough-time on the bot's session.ndjson into test/landing."
+  },
+  {
+   "severity": "low",
+   "blocking": false,
+   "title": "Stray untracked tools/m45_session.gd.uid after Godot run",
+   "evidence": "git status shows it after running targets.",
+   "proposed_fix": "Commit it (Godot convention) or gitignore."
+  },
+  {
+   "severity": "info",
+   "blocking": false,
+   "title": "Verified claims",
+   "evidence": "Reproduced: parity-m4, replay-positive-control, session-audit-test, codex-unlocks, playthrough-time, python-guard, tools-test, strict all exit 0; real stream measures 67.35 s/leg, 134.70 s total, matching the design band (design 62.04 s cruise + burns is consistent); refusals plan/cancel/commit=2 each and an injected state mutation in ICancel (ship.x0) makes the checker print FAIL. Mutations of cost, limit, band, wpm, ordering and hint inference are killed.",
+   "proposed_fix": "none"
+  }
+ ],
+ "mutations": [
+  {
+   "m": "actions 1.5->1.0",
+   "target": "session-audit-test",
+   "exit": 2,
+   "killed": true
+  },
+  {
+   "m": "limit 360->600",
+   "target": "session-audit-test",
+   "exit": 2,
+   "killed": true
+  },
+  {
+   "m": "min leg 45->5",
+   "target": "session-audit-test",
+   "exit": 2,
+   "killed": true
+  },
+  {
+   "m": "wpm 200->300",
+   "target": "session-audit-test",
+   "exit": 2,
+   "killed": true
+  },
+  {
+   "m": "first_boost inference->first_commit",
+   "target": "session-audit-test",
+   "exit": 2,
+   "killed": true
+  },
+  {
+   "m": "remove tableOk",
+   "target": "codex-unlocks (real stream)",
+   "exit": 0,
+   "killed": false
+  },
+  {
+   "m": "remove prefix check",
+   "target": "session-audit-test",
+   "exit": 0,
+   "killed": false
+  },
+  {
+   "m": "remove c.hints==hints",
+   "target": "session-audit-test",
+   "exit": 0,
+   "killed": false
+  },
+  {
+   "m": "refusal comparator ->true",
+   "target": "parity-m4",
+   "exit": 0,
+   "killed": false,
+   "note": "no sim defect present, expected; not a test gap by itself"
+  },
+  {
+   "m": "ICancel refusal mutates ship.x0",
+   "target": "parity-m4 / session_refusals direct",
+   "exit": 2,
+   "killed": true,
+   "note": "direct run prints state-unchanged=FAIL"
+  },
+  {
+   "m": "ICancel mutates thrust",
+   "target": "parity-m4",
+   "exit": 0,
+   "killed": false,
+   "note": "thrust reset per tick, not observable; equivalent"
+  },
+  {
+   "m": "positive control without bit flip",
+   "target": "replay-positive-control",
+   "exit": 2,
+   "killed": true
+  }
+ ],
+ "restoration": "shasum -c of session_audit.ail, tests, core.ail, replay.py all OK after restore",
+ "gates": [
+  {
+   "g": "deps import",
+   "exit": 0
+  },
+  {
+   "g": "python-guard",
+   "exit": 0
+  },
+  {
+   "g": "parity-m4",
+   "exit": 0
+  },
+  {
+   "g": "replay-positive-control",
+   "exit": 0
+  },
+  {
+   "g": "session-audit-test",
+   "exit": 0
+  },
+  {
+   "g": "codex-unlocks",
+   "exit": 0
+  },
+  {
+   "g": "playthrough-time",
+   "exit": 0
+  },
+  {
+   "g": "tools-test",
+   "exit": 0
+  },
+  {
+   "g": "strict",
+   "exit": 0
+  },
+  {
+   "g": "sim / full make test",
+   "exit": null,
+   "note": "skipped"
+  }
+ ]
+}

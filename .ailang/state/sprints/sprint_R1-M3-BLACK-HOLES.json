@@ -248,10 +248,10 @@
         "gr_test.ail: static_clock 0.948683298050514/0.894427190999916/0.816496580927726 (+-1e-15); Sgr A* tidal_radial_g 5.691e-6/4.553e-5/2.108e-4 and hover_power_w_per_kg 1.1190e13/4.7477e13/1.4447e14 (+-1e-3 rel); orbit at 3: tide 3.162e-4 g, power 0",
         "! grep -nE '1\\.5 \\* u \\* u|acos\\(-3' sim/*.ail"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "May be developed against a local path dependency on the M3.1a forms while M3.1b/M3.1p are evaluated; pinned and merged only after M3.1c. Wiring: stapledons/sim/gr + gr_test in sim/ailang.toml exports; scriptedApproach row in make strict."
+      "passes": true,
+      "started": "2026-10-08T12:00:00Z",
+      "completed": "2026-10-08T16:30:00Z",
+      "notes": "sim/gr.ail (pure, strict VM): GrState (active, holeId, mass, r, mode, betaLocal, toR, phase, holeDir, hole, axisU/V, bubbleRadiusM, mEffKg, hoverSeen, ringSeen); ship-proper-time steps dt = dtau/rate (staticClockRate hover; circularOrbitClockRate orbit, phase += orbitalAngularVelocity*dt; approach RK4 on radialCoordinateRate/movingClockRate with 1%-of-(r-1) substeps, landing exactly at toR by Simpson in r, remainder hovered). motion.tau/t accumulate (core grTick). Readouts (grView) compose sunholo/relativity 0.10.0 only: clocks, blueshift, shadow, local beta/gamma/1-beta (rapidity forms), tidalAccelSI/tidalOrbitAccelSI, hoverAccelSI, hoverPowerPerKg, medium.hoverPower x m_eff; the design's tidalAccelSI /r_s typo not used (doc line corrected). Only literal constants: ISCO 3 r_s (no package isco()), hover range [2,1e6], beta max 0.99, bh_hover radius 10. scriptedApproach(100) = 1.0000016182849817e7 t_s vs closed form 1.0000016182849806e7 (1.1e-15 rel), strict VM = interpreter; make strict rows scriptedApproach + grVm. gr_test: AC-11 values (static clock 1e-15; blueshift at full-precision literals since the doc's 14-digit 1.11803398874989 is 5e-15 off; tides/power 1e-3 rel; orbit at 3: 3.162e-4 g, power 0). AC grep clean. Eval round 1 (Sonnet): 88/100 PASS, 0 blocking; N1 (rogue hole id), N2 (literal provenance comments), N3 (parity-gr archive count) fixed."
     },
     {
       "id": "M3.4b_PROTOCOL_2_6",
@@ -266,10 +266,10 @@
         "archive events bh_enter, bh_hover, bh_ring in order in the parity-gr output (grep -c '\"archive\"'); sgr_a game reports mass 4.297e6",
         "wiring: parity-gr in make test and .PHONY"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-08T13:00:00Z",
+      "completed": "2026-10-08T16:30:00Z",
+      "notes": "Protocol 2.6 (grMinor()=6, free on main at commit time; hello reports relativity 0.10.0). new_game scenario sgr_a (Sgr A* 4.297e6 Msun at 8,277 pc, l 359.944 b -0.046; ship at 1e6 r_s = 1.341 ly on the Sol side; params bh_mass_msun, bh_r for other holes, bad_params on other scenarios; bubble_radius_m and m_eff_kg from Params). Intents gr_approach{to_r,beta_local}, gr_hover, gr_orbit, gr_ring; refusals bad_radius, bad_gr, not_in_gr, moving, plus in_gr (flat plan/commit/thrust/heading refused near the hole) - each leaves state unchanged; malformed GR intent = line status bad_gr. gr section (encodeGr/decodeGr pair) in full state and on change; no system section at a hole. Archive events {k:archive,event} bh_enter (new_game), bh_hover (first hover r<=10), bh_ring (client gr_ring, once) into the legacy log; first_black_hole hint holds after bh_hover (unlocks archive.tides, archive.shadow-ring). tests/fixtures/gr.ndjson + make parity-gr (in test, .PHONY): VM = interpreter byte for byte, events in order, mass 4297000. SimBridge GR_MINOR, gr, parse_gr(), gr_approach(); test_gr_live in make sim. make replay/parity/parity-offaxis/parity-v2 unchanged (no golden re-recorded); navigation_test checkHello24 updated: the highest minor is now 6."
     },
     {
       "id": "M3.5a_GPU_LENSED_SKY",

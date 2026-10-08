@@ -89,12 +89,14 @@ Dependency graph: **M3.1a → M3.1b → M3.1p (publish) → M3.1c → {M3.2, M3.
 - **AC:** AC-5 and AC-8 (mirror half) and AC-9 (CPU half) via `make physics`. `make lint-precision` stays clean.
 - **As built:** ✅ AC-5 (worst 1.14e-5 rad at r ≤ 100; 1.7e-4 relative above, absolute 1.2e-9 rad near the antipode where δ → 0). ✅ AC-8 mirror half (0.1475 % at b = 1000; 2.690e-4 at b = 100 on the r = 10⁶ row). ✅ AC-9 CPU half (ψ_E at 10, 5, 3, 100, 1000 within 1e-7 rad, exact mirror; within 1.2e-4 rad from `lens_inv`). ✅ RS-9…RS-21, check41–47 pinned. ✅ Round trip (source plane for the 1,531 images with dψ/dF ≥ 1e-3, image plane for all 2,000). ✅ `make lint-precision` clean. The mirror also carries the exact form (Carlson R_F, Gauss–Legendre), pinned to the package's check values, as the oracle for the table.
 
-### M3.4a: pure GR core (`sim/gr.ail`)
+### M3.4a: pure GR core (`sim/gr.ail`) ✅ (done 2026-10-08, wave 2B; eval 88/100 PASS)
+- **Done:** `scriptedApproach(100)` within 1.1e-15 relative of the closed form, strict VM = interpreter; `grVm` in `make strict`; AC grep clean. Eval: `.ailang/state/evaluations/eval_R1-M3-BLACK-HOLES_M3.4_round_1.json`.
 - **What:** `GrState` (active, mass, r, mode, betaLocal, phase, holeDir, bubbleRadiusM, mEffKg). Ship-proper-time steps for hover (rate `staticClockRate`), orbit (`circularOrbitClockRate`, phase by `orbitalAngularVelocity`) and approach (RK4 on `radialCoordinateRate`, stopping exactly at the target). `motion.tau` and `motion.t` accumulate. A strict entry `scriptedApproach(n)` checks against the closed form t = [r₁−r₂+ln((r₁−1)/(r₂−1))]/β. The tide and hover readouts compose package functions only. Wiring: `stapledons/sim/gr` and `gr_test` go in `sim/ailang.toml [exports]`, and the `scriptedApproach` row goes in the `strict` target.
 - **LOC:** 170 + 140 = **310**. **Depends on:** M3.1c (parallel with M3.2/M3.3).
 - **AC:** `make strict` (new `scriptedApproach` row within 1e-9, VM = interpreter). `gr_test.ail` asserts AC-11's numbers (static clock to ±1e-15; tide and power to ±1e-3 relative). `! grep -nE "1\.5 \* u \* u|acos\(-3" sim/*.ail`.
 
-### M3.4b: protocol 2.6, scenario `sgr_a`, archive events, parity
+### M3.4b: protocol 2.6, scenario `sgr_a`, archive events, parity ✅ (done 2026-10-08, wave 2B; eval 88/100 PASS)
+- **Done:** minor 6; `make parity-gr` (VM = interpreter, bh_enter → bh_hover → bh_ring, mass 4297000); replay goldens unchanged. Added refusal `in_gr` and the client intent `gr_ring`; `bh_mass_msun`/`bh_r` params (D-53).
 - **What:** `grMinor() = 6`. The `new_game` scenario `sgr_a` (Sgr A*: 4.297e6 M☉, r = 10⁶, the galactic position of Sgr A*, params `bubble_radius_m` and `m_eff_kg` reused from `Params`). Intents `gr_approach {to_r, beta_local}`, `gr_hover`, `gr_orbit`. Reason codes `bad_radius` (outside [2, 10⁶]), `bad_gr`, `not_in_gr`, `moving`. Each refusal leaves the state unchanged. A `gr` section in the state at ≥ 2.6. Archive events `bh_enter`, `bh_hover` (r ≤ 10) and `bh_ring` (a client-reported intent the first time the ring-star path fires, echoed by the sim so the replay holds it). `tests/fixtures/gr.ndjson` covers every intent and reject. Make target `parity-gr`. `SimBridge.GR_MINOR`, `parse_gr()`.
 - **LOC:** 170 + 160 = **330**. **Depends on:** M3.4a.
 - **Wiring:** `parity-gr` goes in `test` and `.PHONY`.
