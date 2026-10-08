@@ -2,6 +2,9 @@ extends Control
 const Info = preload("res://ui/star_info.gd")
 const StarProjection = preload("res://sky/star_projection.gd")
 const Occlusion = preload("res://ui/star_occlusion.gd")
+const BodyInfo = preload("res://ui/body_info.gd")
+const StarLight = preload("res://demos/ship_star_light.gd")
+const BODY_PREFIX := "body:"
 signal open_map(id: String)
 var info := Info.new()
 var occlusion := Occlusion.new()
@@ -79,7 +82,32 @@ func update_candidates() -> void:
 		var ray: Vector3 = demo.camera.project_ray_normal(point)
 		if not demo.sky_only and occlusion.blocked(demo.camera.global_position,ray):continue
 		candidates.append({id=field.ids[k],point=canvas_to_pixel.affine_inverse()*point,pixel=point,index=k})
+	_add_body_candidates(sky,view,focal,px,canvas_to_pixel)
 	queue_redraw()
+
+## Finite bodies the sky renderer draws (Sun, planets, moons, finite stars, exoplanets):
+## at the drawn, aberrated centre, sized by their apparent disc, hidden by the ship and
+## by nearer bodies exactly as catalogue stars are.
+func _add_body_candidates(sky: InteriorSky, view: Basis, focal: float, px: Vector2, canvas_to_pixel: Transform2D) -> void:
+	var sv: SystemView = sky.system_view
+	if sv == null or not sv.visible:return
+	for b: Dictionary in sv.last_system.get("bodies", []):
+		var dir := StarLight.apparent_direction(sv, b.rel_km, b.radius_km)
+		var observed := Vector3(dir[0], dir[1], dir[2])
+		var local: Vector3 = view*observed
+		if local.z >= 0.:continue
+		var point := Vector2(px.x*.5-focal*local.x/local.z,px.y*.5+focal*local.y/local.z)
+		var dist := Planets.length64(Planets.world_of(b.rel_km))
+		var radius_px := focal*tan(Planets.angular_radius(b.radius_km, dist))
+		if not Rect2(-Vector2.ONE*radius_px,px+Vector2.ONE*2.*radius_px).has_point(point):continue
+		# A planet or moon of a distant system is an unresolved, invisible speck; offer
+		# only stars there (Mark at TRAPPIST-1 should not get 21 Solar System bodies).
+		if b.get("kind","") != "star" and radius_px < .5 and dist > 1000.*BodyInfo.AU_KM:continue
+		if sv.occludes_direction(dir, b.id, dist):continue
+		var ray: Vector3 = demo.camera.project_ray_normal(point.clamp(Vector2.ZERO, px))
+		if not demo.sky_only and occlusion.blocked(demo.camera.global_position,ray):continue
+		var scale := (canvas_to_pixel.affine_inverse().basis_xform(Vector2(1,0))).length()
+		candidates.append({id=BODY_PREFIX+b.id,body=b,point=canvas_to_pixel.affine_inverse()*point,pixel=point,radius=radius_px*scale,radius_px=radius_px,distance_km=dist})
 func _process(_delta: float) -> void:
 	if demo == null:return
 	suppressed = demo.benchmark.running or (demo.navigation_window != null and demo.navigation_window.visible) or demo.controls.visible
@@ -89,8 +117,17 @@ func _process(_delta: float) -> void:
 		hovered = at_point(get_local_mouse_position())
 		queue_redraw()
 func at_point(point: Vector2) -> Array:
-	return candidates.filter(func(candidate):return candidate.point.distance_to(point) <= 12.)
+	var hits := candidates.filter(func(candidate):return candidate.point.distance_to(point) <= maxf(12., candidate.get("radius", 0.)+4.))
+	# A click on a body's disc means that body (the nearest drawn one if several overlap),
+	# not the catalogue stars that happen to lie behind or around it.
+	var bodies := hits.filter(func(c):return c.has("body"))
+	if not bodies.is_empty():
+		bodies.sort_custom(func(a,b):return a.distance_km < b.distance_km)
+		var inside := bodies.filter(func(c):return c.point.distance_to(point) <= maxf(12., c.radius))
+		if not inside.is_empty():return [inside[0]]
+	return hits
 func inspect(id: String) -> bool:
+	if id.begins_with(BODY_PREFIX):return inspect_body(id.trim_prefix(BODY_PREFIX))
 	if not info.records.has(id):return false
 	selected_id = id
 	_clear_card()
@@ -102,6 +139,29 @@ func inspect(id: String) -> bool:
 	var close := Button.new();close.text = "Close";close.pressed.connect(close_card);row.add_child(close)
 	_show_card()
 	return true
+func _body_of(body_id: String) -> Dictionary:
+	var sv: SystemView = demo.sky.system_view
+	if sv == null:return {}
+	for b: Dictionary in sv.last_system.get("bodies", []):
+		if b.id == body_id:return b
+	return {}
+func inspect_body(body_id: String) -> bool:
+	var b := _body_of(body_id)
+	if b.is_empty():return false
+	selected_id = BODY_PREFIX+body_id
+	_clear_card()
+	var facts := Label.new(); facts.text = BodyInfo.text(b, info)
+	facts.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; facts.custom_minimum_size.x = 310
+	content.add_child(facts)
+	var row := HBoxContainer.new();content.add_child(row)
+	var cat := str(b.get("catalogue_id",""))
+	if not cat.is_empty() and info.records.has(cat):
+		var map := Button.new();map.text = "Open in map";map.pressed.connect(func():open_map.emit(cat));row.add_child(map)
+	var close := Button.new();close.text = "Close";close.pressed.connect(close_card);row.add_child(close)
+	_show_card()
+	return true
+func _label_of(c: Dictionary) -> String:
+	return str(c.body.get("name", c.body.id)) if c.has("body") else info.display_name(c.id)
 func _clear_card() -> void:
 	for child in content.get_children():content.remove_child(child);child.queue_free()
 func _show_card() -> void:
@@ -119,7 +179,7 @@ func click_at(point: Vector2) -> bool:
 		var scroll := ScrollContainer.new();scroll.custom_minimum_size = Vector2(310,130);scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED;content.add_child(scroll)
 		var list := VBoxContainer.new();list.size_flags_horizontal = Control.SIZE_EXPAND_FILL;scroll.add_child(list)
 		for hit in hits:
-			var button := Button.new();button.text = "%s · %s" % [info.display_name(hit.id),hit.id]
+			var button := Button.new();button.text = _label_of(hit) if hit.has("body") else "%s · %s" % [info.display_name(hit.id),hit.id]
 			button.tooltip_text = button.text;button.clip_text = true;button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			button.pressed.connect(inspect.bind(hit.id));list.add_child(button)
 		var close := Button.new();close.text = "Close";close.pressed.connect(close_card);content.add_child(close)
@@ -140,10 +200,13 @@ func _draw() -> void:
 	if not held or suppressed:return
 	var cells := {}
 	for candidate in candidates:
+		if candidate.has("body"):
+			draw_arc(candidate.point,maxf(7.,candidate.radius+3.),0.,TAU,48,Color(1.,.78,.45,.9),1.5,true)
+			continue
 		var cell := Vector2i(candidate.point/10.)
 		if cells.has(cell):continue
 		cells[cell] = true
 		draw_arc(candidate.point,5.,0.,TAU,16,Color(.55,.85,.9,.85),1.2,true)
 	if not hovered.is_empty():
-		var title := info.display_name(hovered[0].id) if hovered.size() == 1 else "%d overlapping known sources" % hovered.size()
+		var title := _label_of(hovered[0]) if hovered.size() == 1 else "%d overlapping known sources" % hovered.size()
 		draw_string(ThemeDB.fallback_font,Vector2(clampf(get_local_mouse_position().x+15,10,size.x-260),clampf(get_local_mouse_position().y-12,20,size.y-20)),title,HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color.WHITE)
