@@ -77,6 +77,8 @@ var _fader_peak := {} # id -> brightest displayed radiance before exposure (cd/m
 var _fader_star := {} # id -> true for emitters (stars)
 var _points_physical := [] # visible point sources at physical lux, before any fader gain
 var _points_key := []
+## The system section last drawn (sim bodies), for the I-key inspector.
+var last_system := {}
 
 
 func setup(sf: Starfield, load_textures := true) -> void:
@@ -161,6 +163,7 @@ func set_view(pixel_rad: float, height_px: float) -> void:
 
 ## One `system` section -> points and discs. k: Exposure.k() (linear pixel per cd/m^2).
 func update(system: Dictionary, k: float) -> void:
+	last_system = system
 	if starfield != null:
 		var replaced: Array[String] = []
 		var replacements := {}

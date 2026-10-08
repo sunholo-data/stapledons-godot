@@ -21,6 +21,15 @@ func _run() -> void:
 	var info := Info.new(); info.set_records([{id="b"}, {id="a",teff=5000.,vmag=2.,dist_ly=3.}])
 	check(info.text("a").contains("3.000 ly") and info.text("b").contains("unavailable"), "factual fields and absent labels")
 	info.set_records([{id="a"},{id="a"}]); check(not info.records.has("a"), "duplicate metadata is not eligible")
+	var BodyInfo = load("res://ui/body_info.gd")
+	var star_rel:Vector3=SkyFrame.to_galactic(Vector3(0,0,-1)*0.6148*149597870.7)
+	var ald:={id="aldebaran",name="Aldebaran",kind="star",host="",radius_km=45.212*695700.,teff_k=3927.,rel_km={"x":star_rel.x,"y":star_rel.y,"z":star_rel.z},light_age_s=307.,catalogue_id="CNS5:1142",source="data/stars.ail (cited radius and Teff)"}
+	var at:String=BodyInfo.text(ald)
+	check(at.contains("Aldebaran") and at.contains("Star") and at.contains("0.615 AU") and at.contains("45.2 R☉") and at.contains("40.00° across") and at.contains("3927 K") and at.contains("5.1 min") and at.contains("CNS5:1142") and at.contains("cited radius"),"body card: star facts, distance, apparent size, light age, catalogue and source")
+	var pl:={id="trappist-1e",name="TRAPPIST-1 e",kind="planet",host="TRAPPIST-1",radius_km=0.920*6371.,rel_km={"x":0.,"y":0.,"z":0.01*149597870.7}}
+	var pt:String=BodyInfo.text(pl)
+	check(pt.contains("Planet of TRAPPIST-1") and pt.contains("0.92 R⊕") and not pt.contains("temperature") and not pt.contains("Catalogue:"),"body card: planet of its host, Earth radii, no star-only lines")
+	check(BodyInfo.distance_text(5.*9460730472580.8)=="5.00 ly" and BodyInfo.distance_text(12345.)=="12,345 km","body card: distance units")
 	info.load_files()
 	var field := Starfield.new(); check(field.load_tiers("medium"), "real active stack loads")
 	check(field.ids.size() == field.count, "real IDs match every rendered row")
@@ -79,18 +88,69 @@ func _run() -> void:
 	demo.sky.system_view.set_velocity(Vector3.UP,0.,1.,1.)
 	demo.sky.system_view.update({"bodies":[earth]},demo.sky.exposure.k())
 	identify.update_candidates()
-	check(identify.candidates.is_empty(),"opaque astronomical globe masks I rings and clicks")
+	var stars_only:=func()->Array:return identify.candidates.filter(func(c):return not c.has("body"))
+	var bodies_only:=func()->Array:return identify.candidates.filter(func(c):return c.has("body"))
+	check(stars_only.call().is_empty(),"opaque astronomical globe masks I rings and clicks")
+	# The body itself is inspectable (Mark, 2026-10-08: "info for the systems we are close by to").
+	var eb:Array=bodies_only.call()
+	var want_r:float=.5*demo.geometry_view.size.y/tan(deg_to_rad(demo.sky.camera.fov)*.5)*tan(asin(earth.radius_km/50000.))
+	check(eb.size()==1 and eb[0].id=="body:earth" and eb[0].point.distance_to(point)<2. and absf(eb[0].radius_px-want_r)<.01 and eb[0].radius_px>1.,"the planet ahead is a candidate at its drawn centre, sized by its disc")
+	check(identify.at_point(point+Vector2(eb[0].radius*.7,0.) if not eb.is_empty() else point).size()==1,"a click anywhere on the disc hits the planet")
+	var click_body := InputEventMouseButton.new();click_body.button_index=MOUSE_BUTTON_LEFT;click_body.pressed=true;click_body.position=point
+	var card_text:String=""
+	if identify.handle_input(click_body) and identify.content.get_child_count()>0:card_text=identify.content.get_child(0).text
+	await process_frame
+	check(identify.card.position.y+identify.card.get_combined_minimum_size().y<=identify.size.y+.5 or identify.card.position.y<=12.5,"the body card fits on screen")
+	check(identify.selected_id=="body:earth" and card_text.contains("Earth") and card_text.contains("Distance from the ship: 50,000 km") and card_text.contains("across") and card_text.contains("Source:"),"clicking the disc opens the body's card")
+	var moon:Dictionary={}
+	for body:Dictionary in planet_sim.world.system.bodies:
+		if body.id=="moon":moon=body.duplicate(true)
+	var mrel:Vector3=SkyFrame.to_galactic(n*400000.)
+	moon.rel_km={"x":mrel.x,"y":mrel.y,"z":mrel.z}
+	demo.sky.system_view.update({"bodies":[earth,moon]},demo.sky.exposure.k());identify.update_candidates()
+	check(bodies_only.call().size()==1 and bodies_only.call()[0].id=="body:earth","a body behind a nearer body is not offered")
+	# At speed the ring sits on the disc the renderer draws (aberrated), not the rest direction.
+	var rest_px:Vector2=eb[0].pixel if not eb.is_empty() else Vector2.ZERO
+	var head:Vector3=(n+demo.sky.camera.screen_right()*.35).normalized()
+	demo.sky.system_view.set_velocity(head,.9,1./sqrt(1.-.81),.1)
+	demo.sky.system_view.update({"bodies":[earth]},demo.sky.exposure.k());identify.update_candidates()
+	var moving:Array=bodies_only.call()
+	var drawn:Vector3=(demo.sky.system_view.discs["earth"].material_override as ShaderMaterial).get_shader_parameter("apparent_centre_w")
+	var vp:Vector2=Vector2(demo.geometry_view.size)
+	var vlocal:Vector3=demo.sky.camera.global_basis.transposed()*drawn.normalized()
+	var vfocal:float=.5*vp.y/tan(deg_to_rad(demo.sky.camera.fov)*.5)
+	var drawn_px:=Vector2(vp.x*.5-vfocal*vlocal.x/vlocal.z,vp.y*.5+vfocal*vlocal.y/vlocal.z)
+	check(moving.size()==1 and moving[0].pixel.distance_to(drawn_px)<.05 and moving[0].pixel.distance_to(rest_px)>2.,"at 0.9c the ring sits on the drawn, aberrated disc (%s vs drawn %s, rest %s)"%[moving[0].pixel if not moving.is_empty() else "none",drawn_px,rest_px])
+	demo.sky.system_view.set_velocity(Vector3.UP,0.,1.,1.)
+	# A planet of a distant system is an invisible speck and is not offered; a star there is.
+	var far:Dictionary=earth.duplicate(true);far.id="far-planet";far.name="Far planet"
+	var frel:Vector3=SkyFrame.to_galactic(n*2000.*149597870.7);far.rel_km={"x":frel.x,"y":frel.y,"z":frel.z}
+	demo.sky.system_view.update({"bodies":[far]},demo.sky.exposure.k());identify.update_candidates()
+	check(bodies_only.call().is_empty(),"an unresolved planet 2,000 AU away is not offered")
+	far.kind="star";far.teff_k=3000.;far.e_v_lux=1e-6
+	demo.sky.system_view.update({"bodies":[far]},demo.sky.exposure.k());identify.update_candidates()
+	check(bodies_only.call().size()==1,"a star at the same place is offered")
+	demo.sky.system_view.update({"bodies":[earth]},demo.sky.exposure.k());identify.update_candidates()
+	identify.close_card()
 	rel=SkyFrame.to_galactic(n*50000.+demo.sky.camera.screen_right()*15000.)
 	earth.rel_km={"x":rel.x,"y":rel.y,"z":rel.z}
 	demo.sky.system_view.update({"bodies":[earth]},demo.sky.exposure.k());identify.update_candidates()
-	check(identify.candidates.size()==1,"clear sky beside planet retains known star")
-	demo.sky.system_view.update({},demo.sky.exposure.k());planet_sim.stop()
+	check(stars_only.call().size()==1,"clear sky beside planet retains known star")
+	check(identify.at_point(point).size()==1 and identify.at_point(point)[0].id=="a","the star beside the planet is still the one clicked")
+	demo.sky.system_view.update({},demo.sky.exposure.k());identify.update_candidates()
+	check(bodies_only.call().is_empty(),"no bodies once the system section is empty")
+	planet_sim.stop()
 	var blocker := MeshInstance3D.new();var box := BoxMesh.new();box.size=Vector3(2,2,.2);blocker.mesh=box
 	demo.geometry.add_child(blocker);blocker.position=demo.camera.position-demo.camera.basis.z*10.;blocker.basis=demo.camera.basis
 	for child in demo.geometry.get_children():
 		if child is Node3D and child != blocker:child.visible=false
 	identify.occlusion.build(demo.geometry);demo.sky_only=false;identify.update_candidates()
 	check(identify.candidates.is_empty(),"opaque visual without collider blocks apparent star")
+	var hidden_earth:Dictionary=earth.duplicate(true)
+	var hrel:Vector3=SkyFrame.to_galactic(n*50000.);hidden_earth.rel_km={"x":hrel.x,"y":hrel.y,"z":hrel.z}
+	demo.sky.system_view.update({"bodies":[hidden_earth]},demo.sky.exposure.k());identify.update_candidates()
+	check(identify.candidates.filter(func(c):return c.has("body")).is_empty(),"the ship's hull hides a body as it hides a star")
+	demo.sky.system_view.update({},demo.sky.exposure.k());identify.update_candidates()
 	blocker.position+=demo.camera.basis.x*10.;identify.update_candidates()
 	check(identify.candidates.size()==1,"moving mesh transform is refreshed")
 	blocker.position-=demo.camera.basis.x*10.;blocker.visible=false;identify.update_candidates()

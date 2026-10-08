@@ -88,5 +88,24 @@ func _initialize() -> void:
 	check(b.count == dark, "a destination without photometry is never pinned (nothing to draw)")
 	b.clear()
 	check(b.count == 0 and b.pinned_ids.is_empty() and b.pin_fallbacks == 0, "clear() drops pins")
+	# Per-frame cost must not scale with the stack (dev.20 regression: a linear `in ids` scan
+	# per emitter took 13.7 ms a frame with the 335,189-row large tier). Unchanged requests
+	# against 300,000 rows must cost about what they cost against 3,000.
+	var per_call := func(rows: int) -> float:
+		var big := Starfield.new()
+		var list := []
+		for k in rows: list.append({"id": "S%d" % k, "pos": Vector3(1, 0, 0) * (10.0 + k), "t": 5000.0, "flux": 1.0})
+		big.set_custom_stars(list)
+		var req: Array[String] = ["CNS5:3627", "Gaia DR3 2635476908753563008", "CNS5:1142", "S7"]
+		big.set_catalogue_replacements(req)
+		var t0 := Time.get_ticks_usec()
+		for i in 20: big.set_catalogue_replacements(req)
+		var ms := (Time.get_ticks_usec() - t0) / 1000.0 / 20.0
+		big.free()
+		return ms
+	var small_ms: float = per_call.call(3000)
+	var big_ms: float = per_call.call(300000)
+	print("replacement per frame: %.3f ms at 3,000 rows, %.3f ms at 300,000" % [small_ms, big_ms])
+	check(big_ms < 0.5 and big_ms < small_ms * 10.0 + 0.05, "unchanged replacements cost does not scale with the star count")
 	print("destination-pin: %d failures" % failures)
 	quit(1 if failures else 0)
