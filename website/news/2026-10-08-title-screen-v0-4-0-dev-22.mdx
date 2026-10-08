@@ -1,0 +1,34 @@
+---
+title: "A title screen, and a first look at a black hole: v0.4.0-dev.22"
+date: 2026-10-08
+authors: [sunholo]
+tags: [release, sky]
+release_tag: "v0.4.0-dev.22-title-screen"
+release_url: "https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.22-title-screen"
+---
+
+The game now opens on a menu. Meanwhile the black-hole milestone is two-thirds built: the first renders of Sgr A*'s lensed sky are in, checked against general relativity to a fraction of a pixel.
+
+{/* truncate */}
+
+![The title screen](https://storage.googleapis.com/stapledons-voyage-assets/refs/dev22/title.png)
+
+## The title screen
+
+A double-click opens a menu over the real Milky Way: **Board the ship**, the **Guided voyage**, the **Galaxy map**, **Settings** (Realistic or Auto view, text-only AI) and **Credits**, read from the repository's own citations. Esc in the ship returns to it.
+
+## Black holes (in progress)
+
+![Sgr A* at 5 Schwarzschild radii](https://storage.googleapis.com/stapledons-voyage-assets/refs/m3_bh/mw_r5_toward_hover.png)
+
+M3 brings general relativity:
+
+- **The maths is in the package first.** `sunholo/relativity` 0.10.0 adds a geodesic integrator, cross-checked against the exact solution to 3e-13.
+- **The sim reports what you would feel.** Clock rates, tides across the bubble, and the thrust to hover, all at Sgr A*.
+- **A GPU shader bends the sky.** It reads lens tables generated on the AILANG VM.
+
+The shadow matches Synge's formula to within 0.01 px at 10, 5 and 3 r_s. A star directly behind the hole becomes an Einstein ring at the predicted angle; just off-axis, it splits into two images.
+
+The playable trip is next: hover at 10, 5 and 3 r_s, then orbit, from the bridge. The HUD reads the sim, so "1 ship-hour = 1.41 home hours" in orbit at 3 r_s.
+
+**Release:** [v0.4.0-dev.22-title-screen](https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.22-title-screen) · [Gallery](/gallery).
