@@ -28,3 +28,5 @@ Regenerated from full mission log headings; one line per entry. No log archive y
 | 18 | 2026-10-07 | HARNESS | D-45(B) M4.4 resume PARKED-ON-LANE; native planner/judge unavailable; fleet ticket filed; no product acceptance [HARNESS] |
 | 19 | 2026-10-07 | PRODUCT | iteration 19, M4.4 D-45(B) no-age variant LANDED (PR #131, merge 93d01c5, CI green); eval round 2 minimax-m3 100/100 PASS; iteration 18 record landed (PR #137) [PRODUCT] |
 | 20 | 2026-10-07 | PRODUCT | iteration 20, M4.6 ungated half LANDED (PR #151, merge 1d127ca, CI green): check values + lint-precision + physics summary guard; eval minimax-m3 91 → 100 PASS; D-52 opened (which ship scene clause 4 runs in) [PRODUCT] |
+| 21 | 2026-10-08 | PRODUCT | iteration 21, M4.5s scene-independent session audits BUILT and judged (PR #154; Sonnet eval 84 → 90 PASS); died at Gate 3b with PR CI in flight; landed and recorded by iteration 22 [PRODUCT] |
+| 22 | 2026-10-08 | PRODUCT | iteration 22, iteration 21's orphan M4.5s VERIFIED and LANDED (PR #154, merge 029e44b); eval round 3 Sonnet 91 PASS; D-52 = A and D-53 (M3 attended-only) acknowledged [PRODUCT] |

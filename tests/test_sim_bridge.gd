@@ -433,6 +433,42 @@ func test_nav_fixture() -> bool:
 		SimBridge.parse_plan_nav(bad).get("ok") == false and SimBridge.parse_plan_nav(star).is_empty())
 	return true
 
+## 2.6 (M3.4b) live: sgr_a at 100 r_s (bh_r), an approach to 10 r_s at beta 0.5 that
+## arrives within the tick (bh_hover), then an orbit. Every number shown is the sim's
+## gr section; here it is compared with the design's AC-11 values. Below 2.6 sgr_a is bad_game.
+func test_gr_live() -> bool:
+	var s := SimBridge.new()
+	s.want_minor = SimBridge.GR_MINOR
+	var ok: bool = s.start() and s.hello_reply.get("proto", {}).get("minor") == float(SimBridge.GR_MINOR) \
+		and s.hello_reply.get("relativity") == "0.10.0" and s.new_game(7, "sgr_a", false, {"bh_r": 100.0})
+	assert_bool("2.6 session starts with sgr_a (%s)" % s.last_error, ok)
+	if not ok:
+		return true
+	assert_bool("sgr_a: Sgr A* 4.297e6 Msun hovering at 100 r_s, bh_enter, no system section",
+		s.gr.get("hole_id") == "Sgr A*" and s.gr.get("mass_msun") == 4297000.0 and s.gr.get("r") == 100.0 and s.gr.get("mode") == "hover"
+		and s.state.get("events", []) == [{"k": "archive", "event": "bh_enter"}] and s.system.is_empty() and not s.world.has("system"))
+	ok = s.send([{"k": "thrust", "thrust": 1.0}, SimBridge.gr_approach(10.0, 0.5)], 0.001)
+	assert_bool("flat thrust refused in_gr; the approach arrives at 10 r_s and fires bh_hover",
+		ok and s.last_refused == [{"i": 0.0, "reason": "in_gr"}] and s.gr.get("r") == 10.0 and s.gr.get("mode") == "hover"
+		and s.last_events == [{"k": "archive", "event": "bh_hover"}])
+	check("static clock at 10 r_s (sim)", s.gr.get("static_clock", 0.0), 0.948683298050514, 1e-15)
+	check("blueshift at 10 r_s (sim)", s.gr.get("blueshift", 0.0), 1.0540925533894598, 1e-15)
+	check("tide across 100 m, g (sim)", s.gr.get("tidal_radial_g", 0.0) / 5.691e-6, 1.0, 1e-3)
+	check("hover power W/kg (sim)", s.gr.get("hover_power_w_per_kg", 0.0) / 1.1190e13, 1.0, 1e-3)
+	ok = s.send([{"k": "gr_orbit"}, {"k": "gr_ring"}], 0.0)
+	assert_bool("orbit at 10 r_s: free fall (no hover power), local beta from the sim; bh_ring echoed",
+		ok and s.gr.get("mode") == "orbit" and s.gr.get("hover_power_w") == 0.0 and absf(float(s.gr.get("beta_local", 0.0)) - 0.23570226039551584) < 1e-15
+		and s.gr.get("gamma_local", 0.0) > 1.0 and s.last_events == [{"k": "archive", "event": "bh_ring"}])
+	assert_bool("a malformed approach is a bad_gr line; the tick does not advance", not s.send([{"k": "gr_approach", "to_r": 5.0}], 0.0) and s.last_error == "bad_gr")
+	s.stop()
+	var d := SimBridge.new()
+	d.want_minor = SimBridge.DEPARTURE_MINOR
+	assert_bool("below 2.6 sgr_a is bad_game", d.start() and not d.new_game(7, "sgr_a") and d.last_error == "bad_game")
+	d.stop()
+	var bad := {"hole_id": "Sgr A*", "mode": "hover", "orbit_stable": true}
+	assert_bool("a gr section missing fields is refused", SimBridge.parse_gr(bad).is_empty() and SimBridge.parse_gr(null).is_empty())
+	return true
+
 
 func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(scratch)
@@ -465,6 +501,7 @@ func _init() -> void:
 		test_system_fixture,
 		test_nav_plan_live,
 		test_nav_fixture,
+		test_gr_live,
 	]
 	for t in tests:
 		# a GDScript runtime error aborts the function and returns null: count it

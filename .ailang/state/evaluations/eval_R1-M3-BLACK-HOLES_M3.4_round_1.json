@@ -1,0 +1,25 @@
+{
+  "sprint_id": "R1-M3-BLACK-HOLES",
+  "milestones": ["M3.4a", "M3.4b"],
+  "commit": "809e057",
+  "round": 1,
+  "score": 88,
+  "result": "pass",
+  "breakdown": {"tests": 18, "lint": 8, "acceptance_criteria": 28, "code_quality": 12, "documentation": 13, "design_fidelity": 9},
+  "verified": [
+    "gr_test.ail: 0 failures; grVm = gr-ok under --strict-bytecode and the interpreter",
+    "scriptedApproach(100) VM = interpreter = 1.0000016182849817e7 vs closed form 1.0000016182849806e7 (1.1e-15 relative); n=1000 also agrees",
+    "gr.ndjson: VM and interpreter outputs byte-identical (25 lines)",
+    "refusals bad_radius/bad_gr/moving/not_in_gr/in_gr leave state unchanged (probed)",
+    "minor 5: sgr_a is bad_game, GR intents bad_intent, hello reports 0.9.0; bh params only on sgr_a",
+    "grep for 1.5*u*u / acos(-3 is clean; no new formulas in sim (package composition only)"
+  ],
+  "not_run": ["make replay/parity/parity-offaxis goldens (lower-minor byte identity checked only by code reading and the changelog claim)", "make test (running concurrently)"],
+  "findings": [
+    {"blocking": false, "file": "sim/gr.ail:68", "issue": "sgrAWith labels any bh_mass_msun override 'Sgr A*' in hole_id; a 10 Msun hole is reported as Sgr A*.", "fix": "give sgrAWith an id parameter, or use 'Black hole' when mass != sgrAMassMsun()."},
+    {"blocking": false, "file": "sim/gr.ail:56-66,88,121,127", "issue": "Literal constants in the sim: 648000.0 (arcsec per rad), 15.0 (hours to degrees), 3.0 ISCO, 0.99 max beta, 2.0/1e6 range. Geometry and policy, not physics formulas, but ISCO and the parsec could come from the package.", "fix": "use a package ISCO / parsec constant if one exists, else comment the source of each literal."},
+    {"blocking": false, "file": "Makefile (parity-gr)", "issue": "Design AC-15 uses grep -c '\"archive\"', which counts the archive unlock section on every state line (22), not the events. The target's own ordered-event check is the real test and is fine.", "fix": "none needed; consider dropping the count from the echo to avoid misreading."},
+    {"blocking": false, "file": ".ailang/state/sprints/sprint_R1-M3-BLACK-HOLES.json", "issue": "M3.4a/b not marked complete; plan markdown not ticked (known).", "fix": "update features M3.4a_SIM_GR_CORE and M3.4b_PROTOCOL_2_6 and the plan after merge."},
+    {"blocking": false, "file": "design_docs/planned/r1/m3-black-holes.md", "issue": "tidalAccelSI formula in the doc divides by r_s, not r_s^2 (known); the sim uses the package.", "fix": "correct the doc."}
+  ]
+}

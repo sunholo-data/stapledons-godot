@@ -62,7 +62,8 @@ export pure func append(c: Cq, e: Entry) -> Cq = {c | log: c.log ++ [e]}
 export pure func hasKind(xs: [Entry], k: string) -> bool = match xs { [] => false, e :: r => e.kind == k || hasKind(r, k) }
 
 -- The README's hint vocabulary (design repo lore/README, V16). first_black_hole
--- has no sim state before M3 and never holds.
+-- ("the first arrival near a black hole") holds once the legacy log has bh_hover
+-- (M3.4b: the ship hovering at r <= 10 r_s).
 export pure func knownHints() -> [string] = ["always", "first_commit", "first_boost", "cruise_above_0.9c", "cruise_above_gamma_275", "first_black_hole"]
 export pure func isHint(h: string) -> bool = inHints(h, knownHints())
 pure func inHints(h: string, xs: [string]) -> bool = match xs { [] => false, x :: r => h == x || inHints(h, r) }
@@ -72,6 +73,7 @@ export pure func hintHolds(h: string, log: [Entry], cruising: bool, beta: float,
   else if h == "first_boost" then hasKind(log, "boost")
   else if h == "cruise_above_0.9c" then cruising && beta > 0.9
   else if h == "cruise_above_gamma_275" then cruising && gamma > 275.0
+  else if h == "first_black_hole" then hasKind(log, "bh_hover")
   else false
 
 pure func isIn(id: string, xs: [string]) -> bool = match xs { [] => false, x :: r => id == x || isIn(id, r) }
