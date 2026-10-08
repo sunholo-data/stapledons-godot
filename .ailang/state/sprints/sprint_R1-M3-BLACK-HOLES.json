@@ -1,10 +1,10 @@
 {
   "sprint_id": "R1-M3-BLACK-HOLES",
-  "status": "completed",
+  "status": "landed",
   "approved_by": "Mark Edmondson, attended 2026-10-08 (ledger D-53)",
   "requested_by": "Mark 2026-10-08: start M3 next",
-  "design_doc": "design_docs/planned/r1/m3-black-holes.md",
-  "sprint_plan": "design_docs/planned/r1/m3-black-holes-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m3-black-holes.md",
+  "sprint_plan": "design_docs/implemented/r1/m3-black-holes-sprint.md",
   "github_issues": [
     1
   ],
@@ -345,5 +345,11 @@
       "N-7",
       "N-8"
     ]
+  },
+  "landed": {
+    "date": "2026-10-08",
+    "render_signoff": "Mark Edmondson, attended 2026-10-08: lensed sky (M3.5) 'they look great'; ship demo (M3.6) 'the BHs look super cool'",
+    "shipped_in": "v0.4.0-dev.23-black-hole",
+    "bar_clause_3": "MET"
   }
 }

@@ -2,8 +2,8 @@
 
 **Status:** M3.1–M3.6 built and evaluated (2026-10-08). Sprint `R1-M3-BLACK-HOLES`, 11 milestones, approved by Mark
 (ledger D-53; D-52: the unified 3D painted ship is the playable). **Bar clause 3 of the R1 charter is met** (table
-below). Design: [`../../planned/r1/m3-black-holes.md`](../../planned/r1/m3-black-holes.md). Plan:
-[`../../planned/r1/m3-black-holes-sprint.md`](../../planned/r1/m3-black-holes-sprint.md) (both stay in `planned/`
+below). Design: [`../../implemented/r1/m3-black-holes.md`](../../implemented/r1/m3-black-holes.md). Plan:
+[`../../implemented/r1/m3-black-holes-sprint.md`](../../implemented/r1/m3-black-holes-sprint.md) (both stay in `planned/`
 until landing moves them here). Progress file: `.ailang/state/sprints/sprint_R1-M3-BLACK-HOLES.json`. Evaluations:
 `.ailang/state/evaluations/eval_R1-M3-*`.
 

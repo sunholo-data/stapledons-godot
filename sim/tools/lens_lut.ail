@@ -9,7 +9,7 @@
 --             16384 exact-form forward samples)
 -- Rows: y = ln(r - 1.5) uniform on [ln 0.5, ln(1e6 - 1.5)]; the end rows are pinned to r = 2 and
 -- r = 1e6 exactly (exp(log v) need not return v, and the exact form requires r >= 2).
--- Design: design_docs/planned/r1/m3-black-holes.md section M3.2. All maths is the package's; this
+-- Design: design_docs/implemented/r1/m3-black-holes.md section M3.2. All maths is the package's; this
 -- module only lays it out. Lists are built tail-recursively or through std/array, never by
 -- non-tail recursion (ailang#1576: the VM drops a request whose handler builds ~1100+ elements
 -- that way).
