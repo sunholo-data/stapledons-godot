@@ -230,6 +230,10 @@ rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stre
 
 geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 geodesics, tides and hover (design V9-V16) passes --check, and its digests equal the values the package pins
 	python3 tools/geodesic_ref.py --check
+	@smoke=runtime/cache/registry/sunholo/relativity/$$(sed -n 's/^"sunholo\/relativity" = "\(.*\)"/\1/p' sim/ailang.toml)/_smoke.ail; \
+	  if [ -f "$$smoke" ]; then v=$$(AILANG_RELAX_MODULES=1 $(AILANG) run --quiet --bytecode --strict-bytecode --entry lensDigest --args-json 16 $$smoke 2>/dev/null); \
+	  test "$$v" = "$(GEODESIC_LENS_DIGEST)" && echo "geodesic-oracle: pinned package lensDigest 16 on the strict VM = $$v" || { echo "geodesic-oracle: package lensDigest 16 = '$$v', pin $(GEODESIC_LENS_DIGEST)"; exit 1; }; \
+	  else echo "geodesic-oracle: $$smoke not in the runtime cache (make runtime); package digest not rerun"; fi
 	@d=$$(python3 tools/geodesic_ref.py digest 16); s=$$(python3 tools/geodesic_ref.py sdigest 64); echo "lensDigest 16 = $$d, schwarzschildDigest 64 = $$s"; \
 	  python3 -c "import sys; d, s = float(sys.argv[1]), float(sys.argv[2]); ok = abs(d - $(GEODESIC_LENS_DIGEST)) <= 1e-9 and abs(s - $(GEODESIC_SCHW_DIGEST)) <= 1e-9 * abs(s); print('geodesic-oracle: digests ' + ('match' if ok else 'DIFFER from') + ' the package pins'); sys.exit(0 if ok else 1)" "$$d" "$$s"
 

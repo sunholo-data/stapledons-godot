@@ -20,7 +20,7 @@ import ./data/acen (bodies)
 import ./navigation (NavCtx, BodyReq, Leg, NavPlan, Pass, planBody, planBodyN, interceptIterations, residualMax, safetyMinKm, defaultStandoffKm,
   standoffMaxKm, bodyPhiMin, bodyPhiMax, allFacts, stopArrivalT, runOutMarginKm, staleAt)
 import ./core (World, Ticked, Intent, IPlan, IPlanBody, ICommit, Plan, Journey, Planned, Committed, Arrived, newWorld, defaultParams, tick, initShip, position, navOf)
-import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, departureMinor, relativityPin, decodeHello, helloMsg)
+import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, departureMinor, relativityPin, relativityPinNav, decodeHello, helloMsg)
 
 -- ------------------------------------------------------------ fixtures
 pure func ntAllTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
@@ -282,13 +282,14 @@ pure func ntStatusOf(r: string) -> string = if contains(r, "\"status\":\"ok\"") 
 pure func ntNth(xs: [string], n: int) -> string = match xs { [] => "", x :: r => if n <= 0 then x else ntNth(r, n - 1) }
 export pure func navLines() -> [string] = ntRunLines(newSession(), ntSession(navMinor(), ntFlyIntent("")))
 
--- The hello: minor 4 reports the pinned relativity release; 3 and below keep their bytes.
+-- The hello: minors 4 and 5 report the release they shipped with (0.9.0, frozen); 3 and
+-- below keep their bytes. relativityPin() (the current pin) is for minor >= 6.
 export pure func checkHello24() -> bool =
-  (match decodeHello(serve(newSession(), ntHelloW(navMinor())).reply) { Ok(h) => h.minor == navMinor() && h.relativity == relativityPin(), Err(_) => false })
+  (match decodeHello(serve(newSession(), ntHelloW(navMinor())).reply) { Ok(h) => h.minor == navMinor() && h.relativity == relativityPinNav(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == departureMinor(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(systemMinor())).reply) { Ok(h) => h.minor == systemMinor() && h.relativity == helloMsg().relativity, Err(_) => false })
-  && navMinor() == systemMinor() + 1 && relativityPin() == "0.9.0"
-test "2.4 hello: minor 4 with relativity = the pinned release; 3 keeps the 2.3 hello" { checkHello24() }
+  && navMinor() == systemMinor() + 1 && relativityPinNav() == "0.9.0" && relativityPin() != relativityPinNav()
+test "2.4 hello: minor 4 with relativity 0.9.0 (frozen at minors 4-5); 3 keeps the 2.3 hello" { checkHello24() }
 
 -- At minor 4 a body plan is accepted and its journey carries target_kind, intercept and pass
 -- (flyby) or hold (stop); below minor 4 the same line is bad_intent and changes nothing.

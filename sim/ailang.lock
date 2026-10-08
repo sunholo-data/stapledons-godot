@@ -1,6 +1,6 @@
 {
   "ailang_version": "v0.52.0",
-  "generated_at": "2026-10-06T17:58:10.319841Z",
+  "generated_at": "2026-10-08T09:16:19.921273Z",
   "generator": "ailang lock v0.52.0",
   "packages": [
     {
@@ -25,7 +25,7 @@
     },
     {
       "ailang": ">=0.45.0",
-      "content_hash": "sha256:a9317b814887692e751f138a432a0b08b9450d3d4df43bd6b2380c82179ce859",
+      "content_hash": "sha256:f94f46941690058a78c2c4050355da8c76bcb0ad5b4971805c1788bfa34d51c3",
       "effects": [
         "IO"
       ],
@@ -33,6 +33,7 @@
         "sunholo/relativity/blackbody",
         "sunholo/relativity/blackbody_photometry",
         "sunholo/relativity/blackbody_photometry_table",
+        "sunholo/relativity/geodesic",
         "sunholo/relativity/hyper",
         "sunholo/relativity/journey",
         "sunholo/relativity/kinematics",
@@ -42,10 +43,10 @@
         "sunholo/relativity/photometry_table",
         "sunholo/relativity/schwarzschild"
       ],
-      "interface_hash": "sha256:c747d1b1e1ebd1480f06fb1609393ebf801cf5d6455ee7e51bab1fd7521acced",
+      "interface_hash": "sha256:78cfccf7bc0cf9537c0ad9b0a398f17d2689797a4e476037c330c49597edd0c3",
       "name": "sunholo/relativity",
       "source": "registry",
-      "version": "0.9.0"
+      "version": "0.10.0"
     }
   ],
   "schema": "ailang.lock/v1",
