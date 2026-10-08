@@ -6,6 +6,9 @@
 --   data/lens/lens_T.bin   little-endian float32, 256 rows x 2048 texels x (R, G), row-major
 --   data/lens/lens_T.json  the header: layout, ranges, generator, package version, h, sha256 of the bin
 -- No timestamps: a regeneration from the same pins is byte-identical (data/lens/SHA256SUMS).
+-- Run with --bytecode but not --strict-bytecode: the std/fs builtins are evaluator-only on the strict VM
+-- (v0.52.0, "not yet wired (Phase 2E)"; reported upstream via ailang messages 2026-10-08, no issue number
+-- yet). The pure generator in lens_lut.ail is strict-checked by make lens-lut-check.
 module stapledons/sim/tools/lens_lut_main
 
 import ./lens_lut (nCols, nRows, stepH, invFwdSamples, xMin, yMin, yMax, rowRadius, fwdRow, invRow, fwdSlice, allFinite)
