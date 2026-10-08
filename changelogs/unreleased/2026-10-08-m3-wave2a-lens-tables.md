@@ -1,0 +1,9 @@
+### Added
+
+- **Schwarzschild lens tables** (R1-M3-BLACK-HOLES M3.2). `sim/tools/lens_lut.ail` lays out two 2048 × 256 float32 RG tables from `sunholo/relativity` 0.10.0: `lens_fwd` (the regular part of the deflection, by the Binet integrator at h = 0.0025, and dδ/dx) and `lens_inv` (image angle and dψ/dF by Fritsch–Carlson inversion of the exact form). `sim/tools/lens_lut_main.ail` writes them in parallel VM shards (436 s wall with 14 jobs; the bytes never depend on the sharding) with a JSON header (layout, ranges, generator, package version, sha256). The headers are committed. The 4 MiB bins are pinned in `data/lens/SHA256SUMS` and live in `gs://stapledons-voyage-assets/lens/`.
+- `make lens-assets` (in `make test` and before `make physics`) fetches them in under a second, or regenerates them on the VM and requires the pinned bytes. `make lens-lut` regenerates them, `make lens-publish` uploads them (maintainers), and `make lens-lut-check` (in `make test`) regenerates a sample bit for bit and compares row 128 on the strict VM and the interpreter.
+- **CPU mirror `physics/schwarzschild.gd`** (M3.3): Synge's shadow, the static blueshift, the exact form (Carlson R_F) as an oracle, the table lookup the shader will mirror, `lens_direction`, `star_images` and `compose`. The new "Schwarzschild (spec §3)" section of `make physics` checks RS-9 to RS-21, the package's check41–47, table accuracy on 10,000 probes (worst 1.1 × 10⁻⁵ rad at r ≤ 100), the weak-field pair on the r = 10⁶ row, finite and monotone tables, and a 1,000-pair round trip.
+
+### Changed
+
+- Design doc corrections from wave 1, recorded as dated notes in the doc: `tidalAccelSI` divides by r_s², the exact form's outgoing branch uses 20-point Gauss–Legendre, and check44 at ε = 10⁻⁸ is held to 3 × 10⁻⁹ of the 50-digit truth.
