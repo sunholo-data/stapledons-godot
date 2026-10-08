@@ -29,7 +29,7 @@ Checked against `df7c041` while planning the sprint. Where this doc and this sec
 7. **AILANG v0.52.0.** The WD-2 rules in M3.1 are mostly obsolete, because the pattern bugs are fixed. One new rule: **ailang#1576** (the VM silently drops a request that builds a list of 1100+ elements by non-tail recursion). Table rows must be built tail-recursively or with `std/array`.
 8. **Large assets (D-18).** The ~8 MB of lens tables may belong in the public bucket with a sha256 pin, not in git (sprint Q2).
 9. **Premise (canon 2026-10-06).** Every run now opens at the rogue *spinning* stellar-mass hole. M3 remains Schwarzschild at Sgr A* (D-13; Kerr is a non-goal). Everything is mass-parametric, so a rogue-hole view at a tidally safe radius is scenario data (sprint Q3).
-10. **Estimate.** About 3,720 LOC in 10 milestones (sprint plan). The rise from about 2,700 comes from the AILANG packer, the protocol-minor plumbing, the 3D-ship integration and the oracle.
+10. **Estimate.** About 3,720 LOC in 11 milestones (sprint plan; 2,060 code + 1,660 tests). The rise from about 2,700 comes from the AILANG packer, the protocol-minor plumbing, the 3D-ship integration and the oracle.
 
 ## Game vision alignment
 
