@@ -1,0 +1,48 @@
+module stapledons/sim/stops
+
+-- D-54 (Mark, attended 2026-10-08): stop distances that show relative size.
+-- A design rule, not physics: how large a body looks from where the ship stops.
+-- The apparent diameter grows with radius on a smooth curve with no cap,
+--   theta = 2 atan(tan(ref) x sqrt(R / R_ref)),
+-- with ref = 5 deg and R_ref = R_sun for free-navigation stars (0.1 R_sun 3.2 deg,
+-- 1 R_sun 10 deg, 40 R_sun 58 deg, 700 R_sun 133 deg) and ref = 15 deg, R_ref = R_earth
+-- for planets and moons (Moon 16, Earth 30, Neptune 55, Jupiter 84 deg). The stop is
+-- where a sphere of radius R fills theta: d = R / sin(theta / 2), always outside it
+-- (theta < 180 deg for every finite R). Planets and moons also stay above the
+-- atmosphere (the navigation safety minimum) and outside dense rings.
+-- Composition of std/math only; pure, no I/O, strict-VM clean.
+import std/math (tan, atan, sin, sqrt)
+
+pure func degRad(d: float) -> float = d * 3.141592653589793 / 180.0
+pure func radDeg(r: float) -> float = r * 180.0 / 3.141592653589793
+pure func maxf(a: float, b: float) -> float = if a > b then a else b
+
+export pure func starRefDeg() -> float = 5.0
+export pure func planetRefDeg() -> float = 15.0
+-- Rings count as "dense" (the stop must clear them) at optical depth >= 0.1: Saturn's
+-- main rings and F ring, Uranus' nine main rings. Jupiter's (tau <= 5e-6) and
+-- Neptune's (tau <= 0.055) dusty rings are not (Mark's Jupiter 84 deg and Neptune ~55 deg
+-- lie inside them, as the tour's Jupiter stop always has).
+export pure func denseRingTau() -> float = 0.1
+-- The margin beyond a dense ring's outer edge.
+export pure func ringMargin() -> float = 1.1
+
+-- Half the apparent diameter (radians) for radius ratio R / R_ref.
+export pure func viewHalfRad(refDeg: float, ratio: float) -> float = atan(tan(degRad(refDeg)) * sqrt(ratio))
+-- The full apparent diameter in degrees.
+export pure func viewDeg(refDeg: float, ratio: float) -> float = 2.0 * radDeg(viewHalfRad(refDeg, ratio))
+-- Where a sphere of radius r has apparent half-angle h: r / sin(h).
+export pure func sphereViewKm(radiusKm: float, halfRad: float) -> float = radiusKm / sin(halfRad)
+
+export pure func starViewDeg(radiusKm: float, sunKm: float) -> float = viewDeg(starRefDeg(), radiusKm / sunKm)
+export pure func starStopKm(radiusKm: float, sunKm: float) -> float = sphereViewKm(radiusKm, viewHalfRad(starRefDeg(), radiusKm / sunKm))
+
+export pure func planetViewDeg(radiusKm: float, earthKm: float) -> float = viewDeg(planetRefDeg(), radiusKm / earthKm)
+-- The planet or moon stop: the D-54 view distance, but never inside the safety
+-- minimum (above the atmosphere, plus the bubble) nor within ringMargin of the
+-- outer edge of a dense ring (denseRingKm 0 when it has none).
+export pure func planetStopKm(radiusKm: float, earthKm: float, denseRingKm: float, safetyKm: float) -> float {
+  let view = sphereViewKm(radiusKm, viewHalfRad(planetRefDeg(), radiusKm / earthKm));
+  let ring = if denseRingKm > 0.0 then ringMargin() * denseRingKm else 0.0;
+  maxf(view, maxf(ring, safetyKm))
+}

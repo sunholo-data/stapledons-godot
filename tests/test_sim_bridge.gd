@@ -401,7 +401,9 @@ func test_nav_plan_live() -> bool:
 		ok and p.get("target", {}).get("id") == "saturn" and int(p["target"]["index"]) == 6 and s.plan_nav.get("pass", {}).get("b_km") == 180804.0
 		and absf(float(s.plan_nav["pass"]["beta"]) - 0.5) < 1e-12 and s.plan_nav.has("intercept"))
 	var stop := SimBridge.body_plan("mars", 0.1003353477310756)
-	assert_bool("Mars stop (default stand-off 10 R): hold, no pass", s.send([stop], 0.0) and s.plan_nav.get("hold", {}).get("offset_km") == 33961.9 and not s.plan_nav.has("pass"))
+	# D-54: the default stop shows Mars 2 atan(tan 15 deg sqrt(R/R_earth)) across: R / sin(atan(tan 15 deg sqrt(3396.19/6378.1366))).
+	var mars_d54 := 3396.19 / sin(atan(tan(deg_to_rad(15.0)) * sqrt(3396.19 / 6378.1366)))
+	assert_bool("Mars stop (D-54 default stand-off, 17,698.5 km): hold, no pass", s.send([stop], 0.0) and absf(float(s.plan_nav.get("hold", {}).get("offset_km", 0.0)) - mars_d54) < 1e-6 and not s.plan_nav.has("pass"))
 	assert_bool("a star plan clears plan_nav", s.send([{"k": "cancel"}], 0.0) and s.plan_nav.is_empty())
 	s.stop()
 	var d := SimBridge.new()

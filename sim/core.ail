@@ -16,7 +16,7 @@ import ./tripphase (tripPhaseIndex)
 import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeId, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
 import ./celestial (defaultEpochJd, solSystem)
-import ./navigation (BodyReq, NavPlan, Leg, planBody, staleAt)
+import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop)
 import ./gr (GrState, GrResult, grOff, grStep, grShipPos, grApproach, grHover, grOrbit, grRing, grHoverEvent)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
@@ -112,10 +112,14 @@ export pure func archiveEvent(name: string) -> Event = {event("archive") | archi
 -- (a1)); echoed as the last two params keys since protocol 2.1 (AI.3).
 -- epochJd: the scenario epoch as a Julian Date (M5.1b, D-12); system.jd = epochJd + t
 -- (sim/celestial.ail). Like standoffAu it is set by `epoch_jd` and not in the params echo.
-export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float, epochJd: float }
+-- stopRule: 0 keeps every star stop at standoffAu; 54 (free navigation, D-54) plans a
+-- star with a cited finite body (alpha Cen A/B, Aldebaran, TRAPPIST-1) as a stop where it
+-- looks 2 atan(tan 5 deg sqrt(R / R_sun)) across, and Sol (home) as Earth's D-54 stop.
+-- Set by `stop_rule`, not in the params echo (the guided tour keeps 0: D-47 unchanged).
+export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float, epochJd: float, stopRule: float }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
 export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.0000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
-  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0, epochJd: defaultEpochJd() }
+  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0, epochJd: defaultEpochJd(), stopRule: 0.0 }
 
 -- Radiated energy = boostJ + dragJ. The mass budget is closed (higgs-bubble
 -- §8): availableKg is carried unchanged; nothing is deducted or enforced.
@@ -231,7 +235,24 @@ pure func aiOpenIntent(diag: bool, p: Params, a: Pending, o: AiOpen) -> Pending 
 -- [rapidityOfBeta(cruise_min_beta), rapidityOfOneMinusBeta(cap)], both ends
 -- included; a target at the ship's own position (no heading) or a flip_g
 -- that is not a positive finite number is out of range too.
-pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending {
+pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending =
+  if p.stopRule == 54.0 && finiteStopBody(rq.target.id) != "" && (match rq.flipG { Some(_) => false, None => true })
+  then planFiniteIntent(p, a, rq) else planStarIntent(diag, p, a, rq)
+-- D-54 free navigation: the star's cited finite body (or, for Sol, Earth), planned by
+-- sim/navigation.ail's stop solver at the body's position on arrival, at the plan's
+-- cruise speed. The target keeps its catalogue index and id (the map, news and the
+-- M4.4 return log read them); its pos is the arrival point, as for any body plan.
+pure func planFiniteIntent(p: Params, a: Pending, rq: PlanReq) -> Pending {
+  let here = position(a.ship);
+  if !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < cruisePhiMin(p) || rq.cruisePhi > cruisePhiMax(p) then refuseIntent(a, "out_of_range")
+  else match planFiniteStop(navCtx(p, a), rq.target.id, rq.cruisePhi) {
+    Ok(l) => storePlan(a, { index: rq.target.index, id: rq.target.id, pos: l.arrivalLy }, here, l.heading, false, l.trip, Some(l.nav)),
+    Err(why) => refuseIntent(a, why)
+  }
+}
+pure func navCtx(p: Params, a: Pending) -> NavCtx =
+  { sys: solSystem(), epochJd: p.epochJd, t0: a.ship.motion.t, hereLy: position(a.ship), accel: p.boostG * standardGravity(), bubbleKm: p.bubbleRadiusM / 1000.0, capPhi: cruisePhiMax(p), approach: None }
+pure func planStarIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending {
   let here = position(a.ship);
   let dv = { x: rq.target.pos.x - here.x, y: rq.target.pos.y - here.y, z: rq.target.pos.z - here.z };
   let d = norm(dv);
@@ -255,7 +276,7 @@ pure func planIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pending 
 -- body's place in system.bodies and its pos the arrival point.
 pure func planBodyIntent(p: Params, a: Pending, rq: BodyReq) -> Pending {
   let here = position(a.ship);
-  match planBody({ sys: solSystem(), epochJd: p.epochJd, t0: a.ship.motion.t, hereLy: here, accel: p.boostG * standardGravity(), bubbleKm: p.bubbleRadiusM / 1000.0, capPhi: cruisePhiMax(p), approach: None }, rq) {
+  match planBody(navCtx(p, a), rq) {
     Ok(l) =>
       -- A timed leg (D-46) sets its own thrust: the brake must hold against the
       -- ISM drag at this leg's peak, and the approach at its own (m_eff_too_small).

@@ -475,7 +475,8 @@ func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
 		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
-		var params:Dictionary={"standoff_au":1000.}
+		# D-54: free navigation stops at a finite star where it shows its size, and Sol at Earth.
+		var params:Dictionary={"standoff_au":1000.,"stop_rule":54.}
 		if scenario=="solar_departure":params=SolarDeparture.guided_params()
 		if not journey_sim.start() or not journey_sim.new_game(424242,scenario,false,params):
 			caption="Navigation unavailable: "+journey_sim.last_error
@@ -543,6 +544,10 @@ func stop_name() -> String:
 	var id:=""
 	var plan=journey_sim.world.get("journey",{}).get("plan") if journey_sim!=null else null
 	if plan is Dictionary and plan.get("target") is Dictionary:id=str(plan.target.get("id",""))
+	if star_identification!=null and star_identification.info.names.has(id):return star_identification.info.display_name(id)
+	if plan is Dictionary and plan.get("hold") is Dictionary:
+		for b:Dictionary in journey_sim.world.get("system",{}).get("bodies",[]):
+			if b.get("id","")==str(plan.hold.get("body","")):return body_name(b,star_identification.info.names if star_identification!=null else {})
 	return star_identification.info.display_name(id) if star_identification!=null and not id.is_empty() else (id if not id.is_empty() else "last stop")
 ## D-41: the cruise interlude's card, shown over the live cruise sky while active.
 func _show_interlude() -> void:
@@ -669,10 +674,13 @@ static func distances_text(world: Dictionary, tour, names: Dictionary = {}, from
 		if from_dep >= 0.0: parts.append("from %s %s" % [dep_name, distance_text(from_dep)])
 	elif state == "arrived" and not target.is_empty():
 		var at_ly := -1.0
+		# A body plan (D-54 stop at a finite star, Earth for Sol, an in-system body) names
+		# the body it holds beside (plan.hold.body).
+		var hold_id: String = str(plan.get("hold", {}).get("body", "")) if plan.get("hold") is Dictionary else ""
 		for b: Dictionary in world.get("system", {}).get("bodies", []):
-			if b.get("id", "") == target_id or (not str(b.get("catalogue_id", "")).is_empty() and str(b.get("catalogue_id", "")) == target_id):
+			if (not hold_id.is_empty() and b.get("id", "") == hold_id) or (hold_id.is_empty() and (b.get("id", "") == target_id or (not str(b.get("catalogue_id", "")).is_empty() and str(b.get("catalogue_id", "")) == target_id))):
 				at_ly = Planets.length64(Planets.world_of(b.rel_km)) / 9460730472580.8
-				if tour == null and not names.has(target_id): target_name = str(b.get("name", target_name))
+				if tour == null and not names.has(target_id): target_name = body_name(b, names)
 				break
 		var tp = target.get("pos")
 		if at_ly < 0.0 and tp is Dictionary and not pos.is_empty():
@@ -683,8 +691,14 @@ static func distances_text(world: Dictionary, tour, names: Dictionary = {}, from
 	for b: Dictionary in world.get("system", {}).get("bodies", []):
 		if b.get("id", "") == "earth": earth_ly = Planets.length64(Planets.world_of(b.rel_km)) / 9460730472580.8
 	if earth_ly < 0.0 and not pos.is_empty(): earth_ly = sqrt(pow(float(pos.x), 2.0) + pow(float(pos.y), 2.0) + pow(float(pos.z), 2.0))
-	if earth_ly >= 0.0: parts.append("from Earth %s" % distance_text(earth_ly))
+	var at_earth: bool = state == "arrived" and plan.get("hold") is Dictionary and str(plan.hold.get("body", "")) == "earth"
+	if earth_ly >= 0.0 and not at_earth: parts.append("from Earth %s" % distance_text(earth_ly))
 	return " · ".join(parts)
+
+## A finite body's display name: the catalogue name of the star it is ("Alpha Centauri B"),
+## else the sim's name.
+static func body_name(b: Dictionary, names: Dictionary) -> String:
+	return str(names.get(str(b.get("catalogue_id", "")), b.get("name", b.get("id", ""))))
 
 ## A distance in light-years, shown in km, AU or ly as it reads best.
 static func distance_text(ly: float) -> String:

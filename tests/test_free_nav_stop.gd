@@ -19,6 +19,19 @@ func fly(demo: Node, id: String, from_name: String) -> void:
 	for i in 3000:
 		if not demo.journey_tick() or not demo.live_journey: break
 	check(map.journey_state() == "arrived" and demo.sky.beta == 0.0, "arrived at " + id)
+func body_of(demo: Node, id: String) -> Dictionary:
+	for b: Dictionary in demo.sky_world.get("system", {}).get("bodies", []):
+		if b.id == id: return b
+	return {"radius_km": 0.0, "rel_km": {"x": 0.0, "y": 0.0, "z": 0.0}}
+func fly_body(demo: Node, id: String, from_name: String) -> void:
+	var map = demo.journey_map
+	map.plan_body(id); demo.journey_tick()
+	check(map.journey_state() == "planned" and map.target_name() != "" and map.status_text().find("refused") < 0, "plans the in-system stop at %s: %s" % [id, map.status_text()])
+	check(map.open_commit_dialog() and map.hold_commit(GalaxyMap.HOLD_S) and demo.journey_tick() and demo.live_journey, "the hold commits the body plan to %s (%s)" % [id, map.status_text()])
+	check(demo.leg_from == from_name, "the leg leaves from %s (%s)" % [from_name, demo.leg_from])
+	for i in 4000:
+		if not demo.journey_tick() or not demo.live_journey: break
+	check(map.journey_state() == "arrived", "arrived at " + id)
 func _run() -> void:
 	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options = {"background": false}
@@ -45,16 +58,59 @@ func _run() -> void:
 		var text: String = ident.content.get_child(0).text if ident.content.get_child_count() > 0 else ""
 		check(ident.selected_id == barnard and ident.card.visible and text.contains("Barnard's Star") and text.contains("5.96"), "its card opens: " + text.replace("\n", " | "))
 	ident.set_held(false); ident.close_card()
-	# A second leg from the stop: the HUD names the stop it left.
+	# A second leg from the stop: D-54 (Mark, 2026-10-08) stops at alpha Cen A where it looks
+	# 2 atan(tan 5 deg sqrt(1.22)) = 11 deg across (0.059 AU), not 1,000 AU; the HUD names the stop it left.
 	fly(demo, "CNS5:3627", "Barnard's Star")
 	hud = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
-	check(hud.begins_with("At Alpha Centauri A 1000 AU · from Barnard's Star 6.") and hud.contains("· from Earth 4.3"), "HUD at the second stop: " + hud)
+	check(hud.begins_with("At Alpha Centauri A 0.059 AU · from Barnard's Star 6.") and hud.contains("· from Earth 4.3"), "HUD at the D-54 alpha Cen A stop: " + hud)
+	var a_body := body_of(demo, "acen-a")
+	var a_deg := rad_to_deg(2.0 * Planets.angular_radius(a_body.radius_km, Planets.length64(Planets.world_of(a_body.rel_km))))
+	check(absf(a_deg - 11.05) < 0.1, "alpha Cen A fills %.2f deg (D-54: 11.05)" % a_deg)
 	demo.look_direction("forward"); await process_frame
 	ident.set_held(true); ident.update_candidates()
-	check(not ident.candidates.filter(func(c): return c.id == "body:acen-a" or c.id == "CNS5:3627").is_empty(), "alpha Cen A is inspectable at its stop")
-	var a: Array = ident.candidates.filter(func(c): return c.id == "body:acen-a")
-	if not a.is_empty():
-		var at: Array = ident.at_point(a[0].point)
-		check(at.size() >= 1 and at[0].id == "body:acen-a", "a click on A's centre picks A, not the nearer B beside it (%s)" % [at.map(func(c): return c.id)])
+	check(not ident.candidates.filter(func(c): return c.id == "body:acen-a").is_empty(), "alpha Cen A is inspectable at its stop")
+	ident.set_held(false)
+	# Part 3: the map lists this system's bodies; pick B and fly there with the body planner.
+	var map = demo.journey_map
+	map.refresh()
+	check(map.system_ids.has("acen-a") and map.system_ids.has("acen-b") and not map.system_ids.has("earth"), "the map lists alpha Cen's stars, not Sol's planets: %s" % [map.system_ids])
+	fly_body(demo, "acen-b", "Alpha Centauri A")
+	hud = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
+	check(hud.begins_with("At Alpha Centauri B 0.0") and hud.contains("from Alpha Centauri A"), "HUD at the in-system B stop: " + hud)
+	# Return to Sol: the M4.4 home plan now stops beside Earth (D-54: 30 deg across).
+	# Sol is clickable on the map (drawn at the origin; not a catalogue row).
+	map.centre_on_ship(); map.pivot = Vector3.ZERO; map.dist = 30.0; map._update_camera()
+	var sol_px: Vector2 = map.camera.unproject_position(Vector3.ZERO)
+	check(map.pick(sol_px) == GalaxyMap.SOL_PICK, "a click on Sol picks home (pick %d)" % map.pick(sol_px))
+	for pressed in [true, false]:
+		var click := InputEventMouseButton.new(); click.button_index = MOUSE_BUTTON_LEFT; click.pressed = pressed; click.position = sol_px
+		map._unhandled_input(click)
+	demo.journey_tick()
+	check(map.target_name() == "Sol" and map.home_highlight and map.selected_index == -1, "clicking Sol plans home: " + map.title_text())
+	map.plan_home(); demo.journey_tick()
+	check(map.target_name() == "Sol" and map.home_highlight and not map.home_button.disabled, "Return to Sol plans home")
+	check(map.open_commit_dialog() and map.hold_commit(GalaxyMap.HOLD_S) and demo.journey_tick() and demo.live_journey, "the hold commits the trip home: " + map.status_text())
+	for i in 3000:
+		if not demo.journey_tick() or not demo.live_journey: break
+	check(map.journey_state() == "arrived", "arrived home")
+	var earth := body_of(demo, "earth")
+	var e_km := Planets.length64(Planets.world_of(earth.rel_km))
+	check(absf(e_km - 24643.2) < 200.0, "home is Earth's D-54 stop: %.0f km (24,643)" % e_km)
+	hud = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
+	check(hud.begins_with("At Earth 24,") and hud.contains("from Alpha Centauri B 4.") and not hud.contains("from Earth"), "HUD at home: " + hud)
+	check(demo.journey_sim.world.consequence.get("news_age_years", -1.0) < 0.001, "news at Earth is fresh")
+	map.refresh()
+	check(map.system_ids.has("jupiter") and map.system_ids.has("moon") and map.system_ids.has("sun") and map.system_ids.has("saturn"), "the Solar System is around the ship: %d bodies" % map.system_ids.size())
+	fly_body(demo, "saturn", "Earth")
+	var sat := body_of(demo, "saturn")
+	var s_km := Planets.length64(Planets.world_of(sat.rel_km))
+	check(absf(s_km - 1.1 * 140612.0) < 200.0 and s_km > 140612.0, "Saturn's stop clears its rings: %.0f km (F ring edge 140,612)" % s_km)
+	fly_body(demo, "jupiter", "Saturn")
+	var j := body_of(demo, "jupiter")
+	var j_km := Planets.length64(Planets.world_of(j.rel_km))
+	var j_deg := rad_to_deg(2.0 * Planets.angular_radius(j.radius_km, j_km))
+	check(absf(j_deg - 83.8) < 0.3, "Jupiter fills %.1f deg from %.0f km (D-54: 84)" % [j_deg, j_km])
+	hud = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
+	check(hud.begins_with("At Jupiter 10") and hud.contains("from Saturn"), "HUD at Jupiter: " + hud)
 	demo.queue_free(); await process_frame
 	print("free-nav-stop: %d passed, %d failures" % [passed, failures]); quit(1 if failures else 0)

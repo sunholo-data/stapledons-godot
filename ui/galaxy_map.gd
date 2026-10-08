@@ -136,6 +136,11 @@ var commit_button := Button.new()
 var cancel_button := Button.new()
 var centre_button := Button.new()
 var fit_button := Button.new()
+var home_button := Button.new()
+## In-system destinations (Mark, 2026-10-08): the bodies of the system the ship is in.
+var system_box := VBoxContainer.new()
+var system_ids: Array = []
+var selected_body := ""
 var progress_bar := ProgressBar.new()
 var dialog := PanelContainer.new()
 var dialog_title := Label.new()
@@ -224,7 +229,12 @@ func _build() -> void:
 	fit_button.text = "Fit journey"
 	fit_button.pressed.connect(fit_journey)
 	framing.add_child(centre_button);framing.add_child(fit_button)
+	home_button.text = "Return to Sol"
+	home_button.tooltip_text = "Plan the trip home: it stops beside Earth, with the Solar System around the ship"
+	home_button.pressed.connect(plan_home)
+	framing.add_child(home_button)
 	box.add_child(framing)
+	box.add_child(system_box)
 	_coverage.add_theme_font_size_override("font_size",12)
 	_coverage.add_theme_color_override("font_color",Color(.6,.65,.75))
 	box.add_child(_coverage)
@@ -456,6 +466,7 @@ func preselect(i: int) -> bool:
 	if i < 0 or i >= catalogue.size():
 		return false
 	selected_index = i
+	home_highlight = false;selected_body = ""
 	if not guided_read_only:_pending = plan_intent(i)
 	_overlay.queue_redraw()
 	return true
@@ -469,12 +480,58 @@ func plan_target(target: Dictionary) -> void:
 
 ## M4.4 the return trip: Sol is home, not a catalogue star. Plan it (the sim plans from where the ship
 ## is, and the commit ritual is the same hold as ever) and keep it highlighted on the map.
+## The system the ship is in: every body of the sim's system section within
+## SYSTEM_RANGE_AU of the ship that the body planner can stop at (visitable, or the Sun),
+## nearest first. Empty in interstellar space.
+const SYSTEM_RANGE_AU := 2000.0
+const AU_KM := 149597870.7
+func system_bodies() -> Array:
+	var out: Array = []
+	if sim == null:return out
+	for b in sim.world.get("system", {}).get("bodies", []):
+		var r: Dictionary = b.get("rel_km", {})
+		if r.is_empty():continue
+		var d := sqrt(float(r.x) * float(r.x) + float(r.y) * float(r.y) + float(r.z) * float(r.z))
+		if d <= SYSTEM_RANGE_AU * AU_KM and (b.get("visitable", false) or b.get("id", "") == "sun"):
+			out.append({"id": b.id, "name": str(b.get("name", b.id)), "kind": str(b.get("kind", "")), "host": str(b.get("host", "")), "distance_km": d})
+	out.sort_custom(func(a, c): return a.distance_km < c.distance_km)
+	return out
+
+## Plan a stop at an in-system body with the guided tour's body planner
+## (sim/navigation.ail; D-54 stop distance by default). In-system legs cruise at most
+## 0.99c (navigation.bodyPhiMax, the value the params echo's cruise_phi_default holds).
+func plan_body(id: String) -> void:
+	if guided_read_only:return
+	selected_index = -1;home_highlight = false;selected_body = id
+	_pending = SimBridge.body_plan(id, minf(cruise_phi, phi_default), {"mode": "stop"})
+	_overlay.queue_redraw()
+
+func _refresh_system_list() -> void:
+	var bodies := system_bodies()
+	var ids: Array = bodies.map(func(b): return b.id)
+	if ids == system_ids:return
+	system_ids = ids
+	for child in system_box.get_children():system_box.remove_child(child);child.queue_free()
+	if bodies.is_empty():return
+	var title := Label.new();title.text = "In this system";title.add_theme_color_override("font_color", Color(0.85, 0.75, 0.4))
+	system_box.add_child(title)
+	var flow := HFlowContainer.new();flow.custom_minimum_size.x = PANEL_WIDTH - 40
+	system_box.add_child(flow)
+	for b in bodies:
+		var button := Button.new()
+		button.text = b.name
+		button.tooltip_text = "%s · %s away" % [b.kind.capitalize(), BodyInfo.distance_text(b.distance_km)]
+		button.pressed.connect(plan_body.bind(b.id))
+		flow.add_child(button)
+
+const BodyInfo := preload("res://ui/body_info.gd")
 const HOME := {"index": 0, "id": "Sol", "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}
 var home_highlight := false
 
 
 func plan_home() -> void:
-	selected_index = -1
+	if guided_read_only:return
+	selected_index = -1;selected_body = ""
 	home_highlight = true
 	plan_target(HOME)
 	_overlay.queue_redraw()
@@ -552,6 +609,9 @@ func tick() -> bool:
 	var intents := [] if guided_read_only else ([] if _pending.is_empty() else [_pending]) + _queue
 	_pending = {}
 	_queue = []
+	for intent in intents:
+		if intent.get("k", "") == "plan": _last_plan = intent.duplicate(true)
+	_replan_body_commit(intents)
 	var state := journey_state()
 	var dtau := TRANSIT_DTAU if state == "committed" else HOST_DTAU
 	if live_pacing:
@@ -565,6 +625,25 @@ func tick() -> bool:
 	if live_pacing and journey_state() != "committed":pacing.rate = HOST_RATE
 	refresh()
 	return sent
+
+
+## A body plan (target_kind "body": an in-system body, or a D-54 free-navigation stop at
+## a finite star or at Earth for Sol) is epoch-sensitive: the sim refuses a commit once
+## galaxy time has moved on (stale_plan). Like the guided tour, recreate the plan from the
+## same position with zero elapsed time, then commit that plan's id in the same tick.
+var _last_plan := {}
+func _replan_body_commit(intents: Array) -> void:
+	if _last_plan.is_empty() or field_value(sim.world, "journey.plan.target_kind") != "body" or journey_state() != "planned":return
+	if intents.any(func(i): return i.get("k", "") == "plan"):return
+	for intent in intents.duplicate():
+		if intent.get("k", "") != "commit":continue
+		var ok := sim.send([_last_plan], 0.0)
+		if ok and sim.last_refused.is_empty():intent["plan_id"] = int(sim.world["journey"]["plan_id"])
+		else:
+			# The body moved on and the same plan is now refused (a leg that grazes a planet):
+			# say why, and do not send a commit the sim would refuse as stale.
+			intents.erase(intent)
+			_refusal_note = "refused: %s" % ", ".join(sim.last_refused.map(func(r): return str(r["reason"]))) if ok else "replan failed"
 
 
 func _process(delta: float) -> void:
@@ -664,6 +743,8 @@ func target_name() -> String:
 	var i := int(t["index"])
 	if i >= 0 and i < catalogue.size() and catalogue[i]["id"] == t["id"]:
 		return display_name(i)
+	for b in sim.world.get("system", {}).get("bodies", []): # an in-system body plan
+		if b.get("id", "") == t["id"]:return str(b.get("name", t["id"]))
 	return String(t["id"])
 
 
@@ -727,6 +808,8 @@ func refresh() -> void:
 		return
 	_title.text = title_text()
 	_subtitle.text = subtitle_text()
+	_refresh_system_list()
+	home_button.disabled = guided_read_only
 	_status.text = status_text()
 	commit_button.disabled = guided_read_only or journey_state() != "planned"
 	cancel_button.disabled = guided_read_only
@@ -865,13 +948,18 @@ func ship_world_pos() -> Variant:
 	return null if p == null else Starfield.galactic_to_world(Vector3(p["x"], p["y"], p["z"]))
 
 
+## The catalogue index under the click, SOL_PICK for Sol (drawn at the origin; it is
+## home, not a catalogue row), or -1.
+const SOL_PICK := -2
 func pick(click: Vector2) -> int:
 	var pts := PackedVector2Array()
-	pts.resize(catalogue.size())
+	pts.resize(catalogue.size() + 1)
 	for i in catalogue.size():
 		var p := world_pos(i)
 		pts[i] = Vector2(INF, INF) if camera.is_position_behind(p) else camera.unproject_position(p)
-	return nearest_index(pts, click, PICK_RADIUS_PX)
+	pts[catalogue.size()] = Vector2(INF, INF) if camera.is_position_behind(Vector3.ZERO) else camera.unproject_position(Vector3.ZERO)
+	var hit := nearest_index(pts, click, PICK_RADIUS_PX)
+	return SOL_PICK if hit == catalogue.size() else hit
 
 
 static func nearest_index(pts: PackedVector2Array, click: Vector2, radius: float) -> int:
@@ -939,7 +1027,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				_dragging = false
 			elif not _dragging:
 				var hit := pick(mb.position)
-				if hit >= 0:
+				if hit == SOL_PICK:
+					plan_home()
+				elif hit >= 0:
 					select(hit)
 		_update_camera()
 	elif event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT):

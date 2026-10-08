@@ -235,6 +235,10 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry grVm --args-json 0 sim/gr_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry grVm --args-json 0 sim/gr_test.ail); \
 	echo "strict grVm (M3.4): VM $$got | interpreter $$interp"; [ "$$got" = "gr-ok" ] && [ "$$interp" = "gr-ok" ]
+	@# stopsVm (D-54): the stop rules' check values and free-navigation legs (alpha Cen A, Aldebaran, TRAPPIST-1, home at Earth); strict VM = interpreter byte for byte
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry stopsVm --args-json 0 sim/stops_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry stopsVm --args-json 0 sim/stops_test.ail); \
+	echo "strict stopsVm (D-54): VM $$got | interpreter $$interp"; [ "$$got" = "$$interp" ] && case "$$got" in "stops-ok "*) true;; *) false;; esac
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	echo "strict consequenceVm: VM $$got | interpreter $$interp"; [ "$$got" = "consequence-ok" ] && [ "$$interp" = "consequence-ok" ]

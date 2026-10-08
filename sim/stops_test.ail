@@ -1,0 +1,133 @@
+module stapledons/sim/stops_test
+
+-- D-54 check values (Mark, attended 2026-10-08, ledger D-54): the apparent sizes the
+-- ruling names, the stop always outside the body, ring and atmosphere clearance, and
+-- the Sol stops the guided tour and free navigation now use.
+import std/math (sin, asin)
+import std/result (Ok, Err)
+import pkg/sunholo/celestial/kepler (absf)
+import ./stops (starViewDeg, starStopKm, planetViewDeg, planetStopKm, sphereViewKm, viewHalfRad)
+import ./navigation (defaultStopKm, earthRefKm, sunRefKm, denseRingKm, safetyMinKm, isStarStop, targetFacts)
+import ./celestial (solSystem)
+import ./solar_departure (earthStandoffKm, jupiterStandoffKm, saturnStandoffKm, callistoStandoffKm, sunStandoffKm)
+import std/option (Option, Some, None)
+import std/string (concat)
+import pkg/sunholo/celestial/kepler (norm, sub)
+import ./core (World, Target, Plan, Planned, Arrived, newWorld, defaultParams, scriptedLeg, position, tick, IPlan)
+import ./consequence (standoffLy)
+import ./celestial (BodyView, lyKm)
+import ./protocol (finiteSystemOf)
+import ./alpha_centauri (stellarRadiusKm)
+import ./destination_stars (destinationRadiusKm)
+
+pure func near(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
+pure func rSun() -> float = 695700.0
+pure func rEarth() -> float = 6378.1366
+pure func radiusOf(id: string) -> float = match targetFacts(solSystem(), id) { Ok(f) => f.radiusKm, Err(_) => 0.0 }
+-- The apparent diameter seen from distance d: 2 asin(R / d), degrees, by the same
+-- sphere relation the renderer's Planets.angular_radius uses.
+pure func seenDeg(radiusKm: float, d: float) -> float = 2.0 * asin(radiusKm / d) * 180.0 / 3.141592653589793
+
+-- The star curve: 0.1 R_sun 3.2 deg, 1 R_sun 10 deg, 40 R_sun 58 deg, 700 R_sun 133 deg.
+export pure func checkStarCurve() -> bool =
+  near(starViewDeg(0.1 * rSun(), rSun()), 3.163, 0.01) && near(starViewDeg(rSun(), rSun()), 10.0, 0.0000000001)
+  && near(starViewDeg(40.0 * rSun(), rSun()), 57.9, 0.1) && near(starViewDeg(700.0 * rSun(), rSun()), 133.2, 0.1)
+test "D-54 star curve: 0.1 R_sun 3.2 deg, 1 R_sun 10 deg, 40 R_sun 58 deg, 700 R_sun 133 deg" { checkStarCurve() }
+
+-- The planet curve: Moon 16, Earth 30, Neptune ~55, Jupiter 84 deg (the sim's radii).
+export pure func checkPlanetCurve() -> bool =
+  near(planetViewDeg(radiusOf("moon"), earthRefKm()), 15.9, 0.1) && near(planetViewDeg(earthRefKm(), earthRefKm()), 30.0, 0.0000000001)
+  && near(planetViewDeg(radiusOf("neptune"), earthRefKm()), 55.6, 0.2) && near(planetViewDeg(radiusOf("jupiter"), earthRefKm()), 83.8, 0.2)
+  && earthRefKm() == rEarth() && sunRefKm() == rSun()
+test "D-54 planet curve: Moon 16, Earth 30, Neptune 55.6, Jupiter 84 deg" { checkPlanetCurve() }
+
+-- From the stop, the body subtends exactly the curve's angle, and the stop is outside it,
+-- however large the star (a 1,500 R_sun hypergiant is still 140 deg, not inside).
+export pure func checkStopSubtends() -> bool =
+  near(seenDeg(rSun(), starStopKm(rSun(), rSun())), 10.0, 0.000001)
+  && near(seenDeg(40.0 * rSun(), starStopKm(40.0 * rSun(), rSun())), starViewDeg(40.0 * rSun(), rSun()), 0.000001)
+  && starStopKm(700.0 * rSun(), rSun()) > 700.0 * rSun() && starStopKm(1500.0 * rSun(), rSun()) > 1500.0 * rSun()
+  && starViewDeg(1500.0 * rSun(), rSun()) < 180.0
+  && near(seenDeg(earthRefKm(), defaultStopKm("earth", earthRefKm(), 0.0)), 30.0, 0.000001)
+  && near(sphereViewKm(1.0, viewHalfRad(15.0, 1.0)), 1.0 / sin(15.0 * 3.141592653589793 / 180.0), 0.0000000001)
+test "D-54 the stop subtends the curve's angle and is outside the body for any radius" { checkStopSubtends() }
+
+-- Saturn: the view distance lies inside the A and F rings, so the stop clears the
+-- dense rings (1.1 x the F ring's 140,612 km edge); Jupiter's gossamer rings
+-- (tau <= 5e-6) and Neptune's (<= 0.055) are not dense, so their stops keep the view.
+export pure func checkRings() -> bool =
+  denseRingKm("saturn") == 140612.0 && denseRingKm("jupiter") == 0.0 && denseRingKm("neptune") == 0.0 && denseRingKm("uranus") == 51178.0
+  && near(defaultStopKm("saturn", radiusOf("saturn"), 0.0), 1.1 * 140612.0, 0.000001)
+  && sphereViewKm(radiusOf("saturn"), viewHalfRad(15.0, radiusOf("saturn") / earthRefKm())) < 140612.0
+  && near(seenDeg(radiusOf("jupiter"), defaultStopKm("jupiter", radiusOf("jupiter"), 0.0)), planetViewDeg(radiusOf("jupiter"), earthRefKm()), 0.000001)
+  && defaultStopKm("uranus", radiusOf("uranus"), 0.0) >= 1.1 * 51178.0
+test "D-54 Saturn's stop clears its dense rings; Jupiter and Neptune keep the curve" { checkRings() }
+
+-- Above the atmosphere: never inside the navigation safety minimum (1.1 R + bubble).
+export pure func checkSafety() -> bool =
+  planetStopKm(70000.0, rEarth(), 0.0, safetyMinKm(70000.0, 1000000.0)) == safetyMinKm(70000.0, 1000000.0)
+  && defaultStopKm("jupiter", radiusOf("jupiter"), 0.0) > safetyMinKm(radiusOf("jupiter"), 0.0)
+test "D-54 a planet stop is never below the safety minimum" { checkSafety() }
+
+-- The guided tour's Sol stops are D-54's; the Sun keeps its 3 R stop, and stars use the
+-- star curve (isStarStop).
+export pure func checkTourStops() -> bool =
+  earthStandoffKm() == defaultStopKm("earth", radiusOf("earth"), 0.0)
+  && jupiterStandoffKm() == defaultStopKm("jupiter", radiusOf("jupiter"), 0.0)
+  && saturnStandoffKm() == defaultStopKm("saturn", radiusOf("saturn"), 0.0)
+  && callistoStandoffKm() == defaultStopKm("callisto", radiusOf("callisto"), 0.0)
+  && near(planetViewDeg(radiusOf("callisto"), earthRefKm()), 18.7, 0.1)
+  && sunStandoffKm() == 3.0 * rSun()
+  && isStarStop("sun") && isStarStop("acen-a") && isStarStop("aldebaran") && !isStarStop("jupiter")
+  && near(defaultStopKm("sun", rSun(), 0.0), rSun() / sin(5.0 * 3.141592653589793 / 180.0), 0.000001)
+test "D-54 the tour's Earth, Jupiter, Callisto and Saturn stops; the Sun keeps 3 R" { checkTourStops() }
+
+-- ------------------------------------------------------------ free navigation (stop_rule 54)
+pure func freeNav() -> World = newWorld(7, false, {defaultParams() | standoffAu: 1000.0, stopRule: 54.0})
+pure func fixedNav() -> World = newWorld(7, false, {defaultParams() | standoffAu: 1000.0})
+pure func acenA() -> Target = { index: 1, id: "CNS5:3627", pos: {x: 3.094521, y: 0.0 - 3.015404, z: 0.0 - 0.051608} }
+pure func aldebaran() -> Target = { index: 2, id: "CNS5:1142", pos: {x: 0.0 - 62.516711, y: 0.0 - 1.060038, z: 0.0 - 23.064639} }
+pure func trappist() -> Target = { index: 3, id: "Gaia DR3 2635476908753563008", pos: {x: 7.742, y: 20.946483, z: 0.0 - 33.930598} }
+-- Barnard's Star: no cited radius in the sim, so it keeps standoff_au (pending the package release).
+pure func barnard() -> Target = { index: 4, id: "Gaia DR3 4472832130942575872", pos: {x: 2.879, y: 5.181, z: 0.6} }
+pure func sol() -> Target = { index: 0, id: "Sol", pos: {x: 0.0, y: 0.0, z: 0.0} }
+pure func phi99() -> float = 2.6466524123622457
+pure func bodyKm(w: World, id: string) -> float = bodyIn((finiteSystemOf(w)).bodies, id)
+pure func bodyIn(bs: [BodyView], id: string) -> float = match bs { [] => 0.0 - 1.0, b :: r => if b.id == id then norm(b.relKm) else bodyIn(r, id) }
+pure func arrivedAt(w: World) -> bool = match w.journey { Arrived(_) => true, _ => false }
+
+-- A free-navigation leg to alpha Cen A stops where A looks 2 atan(tan 5 deg sqrt(R/R_sun))
+-- across (1.22 R_sun: 11.0 deg, 0.059 AU); with stop_rule 0 the 1,000 AU stand-off is unchanged.
+export pure func checkFreeNavStars() -> bool {
+  let a = scriptedLeg(freeNav(), acenA(), phi99());
+  let ald = scriptedLeg(freeNav(), aldebaran(), phi99());
+  let t1 = scriptedLeg(freeNav(), trappist(), phi99());
+  let fixed = scriptedLeg(fixedNav(), acenA(), phi99());
+  let rA = stellarRadiusKm("acen-a");
+  arrivedAt(a) && near(bodyKm(a, "acen-a"), starStopKm(rA, rSun()), 100.0) && near(starViewDeg(rA, rSun()), 11.0, 0.1)
+  && arrivedAt(ald) && near(bodyKm(ald, "aldebaran"), starStopKm(destinationRadiusKm("aldebaran"), rSun()), 100.0) && near(starViewDeg(destinationRadiusKm("aldebaran"), rSun()), 60.9, 0.1)
+  && arrivedAt(t1) && near(bodyKm(t1, "trappist-1"), starStopKm(destinationRadiusKm("trappist-1"), rSun()), 100.0) && near(starViewDeg(destinationRadiusKm("trappist-1"), rSun()), 3.45, 0.05)
+  && arrivedAt(fixed) && bodyKm(fixed, "acen-a") > 900.0 * 149597870.7
+}
+test "D-54 free navigation stops at alpha Cen A (11 deg), Aldebaran (61 deg) and TRAPPIST-1 (3.5 deg); stop_rule 0 keeps 1,000 AU" { checkFreeNavStars() }
+
+-- Home: Sol plans to Earth's D-54 stop (30 deg across), so the Solar System is around
+-- the ship; the plan keeps the catalogue id "Sol" (the M4.4 return log reads it).
+-- A star without a cited radius keeps standoff_au.
+export pure func checkFreeNavHome() -> bool {
+  let out = scriptedLeg(freeNav(), acenA(), phi99());
+  let back = scriptedLeg(out, sol(), phi99());
+  let b = scriptedLeg(freeNav(), barnard(), phi99());
+  let bd = norm(sub(position(b.ship), barnard().pos));
+  arrivedAt(back) && near(bodyKm(back, "earth"), earthStandoffKm(), 100.0)
+  && (match back.journey { Arrived(c) => c.plan.target.id == "Sol", _ => false })
+  && arrivedAt(b) && near(bd, standoffLy(1000.0), 0.000000001)
+}
+test "D-54 free navigation home arrives at Earth's 30 deg stop; an uncited star keeps 1,000 AU" { checkFreeNavHome() }
+-- make strict: every check on the strict bytecode VM and on the interpreter, plus the
+-- stop distances themselves (printed, so the two engines' bytes are compared too).
+export pure func stopsVm(k: int) -> string =
+  if checkStarCurve() && checkPlanetCurve() && checkStopSubtends() && checkRings() && checkSafety() && checkTourStops() && checkFreeNavStars() && checkFreeNavHome()
+  then concat(["stops-ok ", show(earthStandoffKm()), " ", show(jupiterStandoffKm()), " ", show(saturnStandoffKm()), " ", show(callistoStandoffKm()), " ",
+    show(starStopKm(stellarRadiusKm("acen-a"), rSun())), " ", show(starStopKm(destinationRadiusKm("aldebaran"), rSun())), " ", show(bodyKm(scriptedLeg(freeNav(), acenA(), phi99()), "acen-a"))])
+  else "stops-FAIL"

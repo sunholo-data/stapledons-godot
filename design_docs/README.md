@@ -52,3 +52,4 @@ design_docs/
 | [r1/m4-real-time-tour.md](planned/r1/m4-real-time-tour.md) | **Approved** 2026-10-06 (Mark, attended; D-39 to D-41): real-time voyage Earth → Aldebaran with cruise interludes ([sprint A](planned/r1/m4-real-time-tour-sprint.md)); TRAPPIST-1 stop ([sprint B](planned/r1/m5-trappist1-sprint.md)) |
 | [r1/m4-ship-geometry-demo.md](planned/r1/m4-ship-geometry-demo.md) | Approved, implementation in progress: correct bridge overlook, whole-ship pullback and one-tier lift; [sprint](planned/r1/m4-ship-geometry-demo-sprint.md) |
 | [r1/title-screen.md](planned/r1/title-screen.md) | Implemented on `feat/title-screen` 2026-10-08 (charter queue row 5b): title screen and launch menu; awaiting review |
+| [r1/relative-size-stops.md](planned/r1/relative-size-stops.md) | Implemented on `feat/free-nav-stops` 2026-10-08 (D-54, Sol in the map, in-system destinations); inferred stellar radii and the synchronous-orbit line wait on a package release |
