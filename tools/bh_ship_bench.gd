@@ -78,7 +78,8 @@ func _views(tag: String) -> void:
 		var s := _stats(sky_gpu)
 		var g := _stats(ship_gpu)
 		var over := wall.filter(func(x: float) -> bool: return x > 1000.0 / 60.0).size()
-		print("bench-bh: %-16s wall p50 %6.2f p99 %6.2f ms (%d of %d frames over 16.7 ms) · GPU sky p50 %5.2f p99 %5.2f ms · GPU ship p50 %5.2f p99 %5.2f ms" % [tag + "_" + view, w[0], w[1], over, SAMPLES, s[0], s[1], g[0], g[1]])
+		var gpu := "GPU sky p50 %5.2f p99 %5.2f ms · GPU ship p50 %5.2f p99 %5.2f ms" % [s[0], s[1], g[0], g[1]] if s[1] > 0.0 or g[1] > 0.0 else "GPU time n/a (this driver reports no measured GPU time; use --rendering-driver vulkan)"
+		print("bench-bh: %-16s wall p50 %6.2f p99 %6.2f ms (%d of %d frames over 16.7 ms) · %s" % [tag + "_" + view, w[0], w[1], over, SAMPLES, gpu])
 
 
 static func _stats(v: Array) -> Array:
