@@ -52,13 +52,17 @@ Non-goals (blocked, see Open questions): radii inferred from catalogue luminosit
 | 4 | Tour: Earth start, Jupiter, Callisto, Saturn stops are D-54; the Sun 3 R; D-47 star stops and D-46 timing unchanged | `make solar-departure-test tour-pacing-test`, `cd sim && ailang test solar_departure_test.ail` |
 | 5 | Real flow: Barnard's Star, alpha Cen A (11.05 deg), the map lists A and B, fly to B, click Sol / Return to Sol, arrive at Earth (24,643 km, HUD "At Earth"), the list shows the Solar System, fly to Saturn (clears rings), Jupiter (83.8 deg) | `make free-nav-stop-test` |
 | 6 | Everything else still passes (replays, parity, M4.4 news) | `make test` |
-| 7 | Renders at every stop, opened | `godot --path . --script tools/stops_capture.gd` then `renders/stops/small/*_700.png` |
+| 7 | Renders at every stop (REALISTIC, sky only, AUTO), opened | `godot --path . --script tools/stops_capture.gd` then `renders/stops/small/*_700.png` |
 
 ## Risks and mitigations
 
 - A free-navigation leg can be refused where the tour's is not (Jupiter to Callisto collides through Jupiter; Saturn from Jupiter crosses the rings at some epochs). The refusal is shown in the panel; a re-plan never sends a stale commit.
 - Saturn at 1.1 x the F ring is 46 deg across, not the curve's 78 deg: the ring rule wins, as D-54 says.
-- Planet stops inside Jupiter's gossamer rings (tau 1e-7) show a faint ring sheet (0.01 of white on the night side in `9_jupiter_sky.png`).
+- Jupiter's stop lies inside its gossamer rings (tau 1e-7): in the REALISTIC view a faint ring sheet (0.01 of white over the night side) gives a second straight edge in `9_jupiter_sky.png`; the AUTO view (`9_jupiter_sky_auto.png`) does not show it. The straight terminator is real: from this stop the ship is nearly in Jupiter's terminator plane (quarter phase), which projects to a line.
+- REALISTIC exposure is set for the dark sky, so Earth, Saturn and Aldebaran are white discs in it; the capture also saves the AUTO view (D-38, `*_sky_auto.png`), where Earth, Saturn's bands and rings and Aldebaran's colour show.
+- `defaultStopKm` gives every default star body plan the D-54 star curve, whatever `stop_rule` is (the Sun, alpha Cen A/B, Aldebaran, TRAPPIST-1; `checkDefaultStarStops`); the tour's star stops are unchanged because they pass explicit D-47 standoffs.
+- `stop_rule`, like `standoff_au`, is a `new_game` override and not in the params echo: a replay carries it in its recorded `new_game` line (the session log), as standoff_au always has.
+- The start-inside exemption is the Sun's alone (`f.id == "sun"`, `planFiniteStop` only); `checkStartInside` shows a finite stop from inside the Earth is still refused.
 
 ## Open questions for the user
 

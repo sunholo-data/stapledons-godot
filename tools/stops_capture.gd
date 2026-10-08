@@ -53,7 +53,10 @@ func shots(name: String) -> void:
 	log_rows.append(row); print("stop ", JSON.stringify(row))
 	demo.look_direction("forward")
 	await shot(name)
-	demo.toggle_sky_only(); await shot(name + "_sky"); demo.toggle_sky_only()
+	demo.toggle_sky_only(); await shot(name + "_sky")
+	# AUTO view (D-38): the body-aware exposure, so a bright disc shows its surface.
+	demo.set_auto_view(true); await shot(name + "_sky_auto"); demo.set_auto_view(false)
+	demo.toggle_sky_only()
 func shot(name: String) -> void:
 	for i in 8: await process_frame
 	demo.sky.update_exposure()

@@ -68,12 +68,24 @@ func _run() -> void:
 	check(absf(a_deg - 11.05) < 0.1, "alpha Cen A fills %.2f deg (D-54: 11.05)" % a_deg)
 	demo.look_direction("forward"); await process_frame
 	ident.set_held(true); ident.update_candidates()
-	check(not ident.candidates.filter(func(c): return c.id == "body:acen-a").is_empty(), "alpha Cen A is inspectable at its stop")
+	var a_c: Array = ident.candidates.filter(func(c): return c.id == "body:acen-a")
+	check(not a_c.is_empty(), "alpha Cen A is inspectable at its stop")
+	if not a_c.is_empty():
+		var at: Array = ident.at_point(a_c[0].point)
+		check(at.size() == 1 and at[0].id == "body:acen-a", "a click on A's centre picks A, not B (%s)" % [at.map(func(c): return c.id)])
 	ident.set_held(false)
 	# Part 3: the map lists this system's bodies; pick B and fly there with the body planner.
 	var map = demo.journey_map
 	map.refresh()
 	check(map.system_ids.has("acen-a") and map.system_ids.has("acen-b") and not map.system_ids.has("earth"), "the map lists alpha Cen's stars, not Sol's planets: %s" % [map.system_ids])
+	# A body plan the sim refuses when it is recreated at commit is reported, never sent stale.
+	map.plan_body("acen-b"); demo.journey_tick()
+	var good_plan: Dictionary = map._last_plan.duplicate(true)
+	map._last_plan["cruise_phi"] = 0.0 # below every bound: the recreated plan is refused
+	var before_id := int(demo.journey_sim.world.journey.plan_id)
+	check(map.open_commit_dialog() and map.hold_commit(GalaxyMap.HOLD_S) and demo.journey_tick(), "the refused re-plan tick runs")
+	check(map.journey_state() == "planned" and not demo.live_journey and map.status_text().contains("refused: out_of_range") and not map.status_text().contains("stale_plan"), "a refused re-plan is reported, no stale commit: " + map.status_text())
+	map._last_plan = good_plan
 	fly_body(demo, "acen-b", "Alpha Centauri A")
 	hud = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
 	check(hud.begins_with("At Alpha Centauri B 0.0") and hud.contains("from Alpha Centauri A"), "HUD at the in-system B stop: " + hud)

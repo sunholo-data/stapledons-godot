@@ -214,13 +214,13 @@ pure func nearestAt(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, id: string, t
 -- collision: the leg passes within R + bubble of any body (the target included:
 -- its stand-off and pass distance already clear 1.1 R).
 pure func collides(c: NavCtx, p: TripPlan, w: Vec3, legKm: float) -> bool = collidesFrom(c, p, w, legKm, false)
--- startInside true: a body the ship starts inside does not count. Only a D-54
+-- startInside true: the Sun does not count when the ship starts inside it. Only a D-54
 -- free-navigation leg (planFiniteStop) uses it: the "sol" scenario starts at Sol's
 -- origin, the Sun's centre (M2's convention). Every other plan still refuses a start
 -- inside a body (AC15).
 pure func collidesFrom(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, startInside: bool) -> bool =
   navFold(\acc f. acc || ((nearestAt(c, p, w, legKm, f.id, c.t0, 2)).distKm < f.radiusKm + c.bubbleKm
-    && !(startInside && norm(sub(navPosAt(c, f.id, c.t0), navHereKm(c))) < f.radiusKm + c.bubbleKm)), false, allFacts(c.sys) ++ (if norm(sub(c.hereLy,catalogueA()))<0.1 then alphaFacts(c.sys) else []) ++ nearDestinationFacts(c))
+    && !(startInside && f.id == "sun" && norm(sub(navPosAt(c, f.id, c.t0), navHereKm(c))) < f.radiusKm + c.bubbleKm)), false, allFacts(c.sys) ++ (if norm(sub(c.hereLy,catalogueA()))<0.1 then alphaFacts(c.sys) else []) ++ nearDestinationFacts(c))
 -- ring_crossing: the leg crosses a ring host's equatorial plane inside its outer
 -- ring radius (host and pole taken at the ship's nearest approach to it).
 pure func crossesRing(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, f: Facts) -> bool {

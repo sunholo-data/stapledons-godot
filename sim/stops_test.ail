@@ -7,13 +7,15 @@ import std/math (sin, asin)
 import std/result (Ok, Err)
 import pkg/sunholo/celestial/kepler (absf)
 import ./stops (starViewDeg, starStopKm, planetViewDeg, planetStopKm, sphereViewKm, viewHalfRad)
-import ./navigation (defaultStopKm, earthRefKm, sunRefKm, denseRingKm, safetyMinKm, isStarStop, targetFacts)
-import ./celestial (solSystem)
+import ./navigation (NavCtx, planFiniteStop, defaultStopKm, earthRefKm, sunRefKm, denseRingKm, safetyMinKm, isStarStop, targetFacts)
+import ./celestial (solSystem, bodyAt, defaultEpochJd)
+import pkg/sunholo/celestial/kepler (scale)
 import ./solar_departure (earthStandoffKm, jupiterStandoffKm, saturnStandoffKm, callistoStandoffKm, sunStandoffKm)
 import std/option (Option, Some, None)
 import std/string (concat)
 import pkg/sunholo/celestial/kepler (norm, sub)
-import ./core (World, Target, Plan, Planned, Arrived, newWorld, defaultParams, scriptedLeg, position, tick, IPlan)
+import ./core (World, Target, Plan, Planned, Arrived, newWorld, defaultParams, scriptedLeg, position, tick, IPlan, cruisePhiMax)
+import pkg/sunholo/relativity/kinematics (standardGravity)
 import ./consequence (standoffLy)
 import ./celestial (BodyView, lyKm)
 import ./protocol (finiteSystemOf)
@@ -124,10 +126,31 @@ export pure func checkFreeNavHome() -> bool {
   && arrivedAt(b) && near(bd, standoffLy(1000.0), 0.000000001)
 }
 test "D-54 free navigation home arrives at Earth's 30 deg stop; an uncited star keeps 1,000 AU" { checkFreeNavHome() }
+-- The start-inside exemption is the Sun's alone (the "sol" scenario starts at its centre):
+-- a finite-stop leg that starts inside the Earth is still refused as a collision.
+pure func ctxFrom(hereKm: {x: float, y: float, z: float}) -> NavCtx =
+  { sys: solSystem(), epochJd: defaultEpochJd(), t0: 0.0, hereLy: scale(1.0 / lyKm(), hereKm), accel: (defaultParams()).boostG * standardGravity(), bubbleKm: 0.1, capPhi: cruisePhiMax(defaultParams()), approach: None }
+pure func refusal(r: Result[a, string]) -> string = match r { Ok(_) => "ok", Err(w) => w }
+export pure func checkStartInside() -> bool =
+  match bodyAt(solSystem(), "earth", defaultEpochJd()) {
+    Some(e) => refusal(planFiniteStop(ctxFrom(e.pos), "CNS5:3627", phi99())) == "collision"
+      && refusal(planFiniteStop(ctxFrom({x: 0.0, y: 0.0, z: 0.0}), "CNS5:3627", phi99())) == "ok",
+    None => false
+  }
+test "D-54 a finite stop may start inside the Sun (Sol's origin) but not inside the Earth" { checkStartInside() }
+
+-- Default body-plan stops for stars follow the D-54 star curve with any stop_rule (the
+-- guided tour's star stops pass explicit D-47 standoffs, so they are unchanged).
+export pure func checkDefaultStarStops() -> bool =
+  defaultStopKm("acen-a", stellarRadiusKm("acen-a"), 0.0) == starStopKm(stellarRadiusKm("acen-a"), rSun())
+  && defaultStopKm("aldebaran", destinationRadiusKm("aldebaran"), 0.0) == starStopKm(destinationRadiusKm("aldebaran"), rSun())
+  && defaultStopKm("trappist-1", destinationRadiusKm("trappist-1"), 0.0) == starStopKm(destinationRadiusKm("trappist-1"), rSun())
+test "D-54 default stops for stars (alpha Cen A, Aldebaran, TRAPPIST-1) are the star curve" { checkDefaultStarStops() }
+
 -- make strict: every check on the strict bytecode VM and on the interpreter, plus the
 -- stop distances themselves (printed, so the two engines' bytes are compared too).
 export pure func stopsVm(k: int) -> string =
-  if checkStarCurve() && checkPlanetCurve() && checkStopSubtends() && checkRings() && checkSafety() && checkTourStops() && checkFreeNavStars() && checkFreeNavHome()
+  if checkStarCurve() && checkPlanetCurve() && checkStopSubtends() && checkRings() && checkSafety() && checkTourStops() && checkFreeNavStars() && checkFreeNavHome() && checkStartInside() && checkDefaultStarStops()
   then concat(["stops-ok ", show(earthStandoffKm()), " ", show(jupiterStandoffKm()), " ", show(saturnStandoffKm()), " ", show(callistoStandoffKm()), " ",
     show(starStopKm(stellarRadiusKm("acen-a"), rSun())), " ", show(starStopKm(destinationRadiusKm("aldebaran"), rSun())), " ", show(bodyKm(scriptedLeg(freeNav(), acenA(), phi99()), "acen-a"))])
   else "stops-FAIL"
