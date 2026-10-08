@@ -166,6 +166,13 @@ func _clear_card() -> void:
 	for child in content.get_children():content.remove_child(child);child.queue_free()
 func _show_card() -> void:
 	card.position = Vector2(maxf(12.,size.x-350.),maxf(160.,size.y-235.));card.size = Vector2(330,0);card.show()
+	_place_card.call_deferred()
+## Keep the whole card on screen once its wrapped text has a height (body cards are
+## longer than catalogue cards).
+func _place_card() -> void:
+	card.reset_size()
+	var h := card.get_combined_minimum_size().y
+	card.position.y = clampf(size.y-h-12.,12.,maxf(12.,size.y-235.))
 func close_card() -> void:
 	selected_id = "";card.hide()
 func click_at(point: Vector2) -> bool:

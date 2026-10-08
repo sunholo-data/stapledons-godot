@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Inspect the system you are in (I key), 2026-10-08
+
+- Holding I now rings the Sun, planets, moons, finite stars and exoplanets as well as catalogue stars, at the size they are drawn. Clicking one opens its card: distance from the ship, size and apparent size, temperature for stars, how long ago its light left, its catalogue identity ("Open in map") and its data source.
+- Planets and moons of a distant system are not offered (they are invisible from there), and a body behind a nearer one is hidden, as stars are.
+
 ### The ship lit by the real star, 2026-10-07
 
 - The ship's geometry is lit by the star the player sees (dev.20). A new `StarLight` comes from the dominant finite star's apparent direction, the same aberrated disc centre the sky draws, turned into ship axes by the sky camera's attitude, so the light comes from where the Sun is seen through the bubble. Turning the ship sweeps the Sun's shadows across the bridge; when the star is below the deck, the floors shade it.

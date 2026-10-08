@@ -99,6 +99,8 @@ func _run() -> void:
 	var click_body := InputEventMouseButton.new();click_body.button_index=MOUSE_BUTTON_LEFT;click_body.pressed=true;click_body.position=point
 	var card_text:String=""
 	if identify.handle_input(click_body) and identify.content.get_child_count()>0:card_text=identify.content.get_child(0).text
+	await process_frame
+	check(identify.card.position.y+identify.card.get_combined_minimum_size().y<=identify.size.y+.5 or identify.card.position.y<=12.5,"the body card fits on screen")
 	check(identify.selected_id=="body:earth" and card_text.contains("Earth") and card_text.contains("Distance from the ship: 50,000 km") and card_text.contains("across") and card_text.contains("Source:"),"clicking the disc opens the body's card")
 	var moon:Dictionary={}
 	for body:Dictionary in planet_sim.world.system.bodies:
