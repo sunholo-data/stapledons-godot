@@ -52,8 +52,8 @@ at the predicted angle; the geodesic integrator ships in `sunholo/relativity`.*
 | AC-10 star images, orbit mask, colour | `make golden` GR4, GR5, GR8, GR9 | GR4 0 mismatches at 3 orientations; GR5 0.083 px; GR8 chromaticity 0.0001; GR9 0.158 px | M3.5a/b |
 | AC-11 sim values | `make sim strict parity parity-offaxis parity-gr` | static clock and blueshift to 1e-15; tides and hover power to 1e-3; `scriptedApproach` 1.1e-15 of the closed form; GR fixture VM = interpreter | M3.4a/b |
 | AC-12 HUD shows the sim's values | `make bh-hud-test` (in `make sim`); `! grep -rnE "sqrt\(1(\.0)? *- *1(\.0)? */ *r" demos ui sky bridge interior` | sentinels: every shown number moves with its gr field; the HUD equals `hud_lines(sim.gr)` at each stop; grep clean (the M3.5 weak factor moved into the mirror as `Schwarzschild.weak_k`) | M3.6 |
-| AC-13 renders | `make capture-bh && make bh-render-diff` | 40 renders, diffed against the pinned baseline: worst **0.000/255** (two captures in a row are byte-identical); opened (below) | M3.6 |
-| AC-14 `make test`, strict, no GR maths outside the package and mirrors | `make test`; CI; `! grep -rn "1.5 \* u \* u\|acos(-3" sim/*.ail tools/` | green locally (2026-10-08) and in CI on the PR; grep clean | all |
+| AC-13 renders | `make capture-bh && make bh-render-diff`; `grep -n "opened by" design_docs/implemented/r1/m3-report.md` | 40 renders, **pinned by sha256** in the committed `data/refs/bh_manifest.sha256` and served from the public bucket (the PNGs are not in git, D-18); a new capture diffed against them: worst **0.000/255** (two captures in a row are byte-identical). This is a regression pin made by the same code on the same machine, not an independent check: the independent checks of the picture are the goldens (AC-7..AC-10) and the people who open the renders (below) | M3.6 |
+| AC-14 `make test`, strict, no GR maths outside the package and mirrors | `make test`; CI; `! grep -rn "1.5 \* u \* u\|acos(-3" sim/*.ail tools/ \| grep -v tools/geodesic_ref.py` | green locally (2026-10-08) and in CI on the PR; grep clean outside the Python oracle `tools/geodesic_ref.py` (an allowed second-language reference, role `oracle`, which the literal design command also matches) | all |
 | AC-15 Archive | `make parity-gr` (sim half); `make bh-hud-test` (client half) | bh_enter → bh_hover → bh_ring in order, VM = interpreter; Sgr A* mass 4297000; aboard: the codex opens *Tides* and *The Shadow and the Ring* at the first hover, and the real ring path reports `bh_ring` (`make capture-bh` log) | M3.4b/M3.6 |
 
 AC-15's design wording ("`sim/scenarios/bh_demo.json`") predates protocol 2.6: the scenario is `sgr_a` in the sim
@@ -100,7 +100,7 @@ matching the photograph (and avoiding a 335k-star CPU rebase to the Galactic Cen
 `data/refs/bh_manifest.sha256` and served from `gs://stapledons-voyage-assets/refs/m3_bh_ship/` (`make bh-refs`);
 `make bh-render-diff` diffs a new capture against it with `tools/render_diff.gd` (mean |d| ≤ 1/255 per render).
 
-**Opened by Claude (sprint executor, Opus 5.5) 2026-10-08**, downscaled with `sips -Z 700` into `renders/bh_small/`:
+**Renders opened by Claude (sprint executor, Opus 5.5) 2026-10-08; also opened by the evaluator (Sonnet, round 1)**, downscaled with `sips -Z 700` into `renders/bh_small/`:
 toward the hole the shadow is black and centred, 28.5° across at 10 r_s and 90° at 3 r_s (it fills the frame), ringed
 by the photon ring with the Milky Way's bulge (which lies behind Sgr A* as seen from Sol) wrapped into arcs; in orbit
 the shadow is aberrated toward the motion and the side view shows the shadow's edge and a stretched band; away from
@@ -136,4 +136,7 @@ the demo uses the sim through the bridge only, and the VM and interpreter stayed
 
 The design-repo edits listed in the design doc's Deliverables (roadmap status, `black-hole-mechanics.md:82`, the
 `black-holes.md` tidal row, the queue-row note), moving the design and plan to `implemented/r1/`, Mark's render
-sign-off, and the title-screen entry if wanted.
+sign-off, and the title-screen entry if wanted. Follow-ups: the true Galactic-Centre sky (OQ5: the demo's stars and
+photograph are Sol's, so their parallax and ring stars are not those seen from Sgr A*; labelled on the HUD), a laptop
+run of `make bench-bh` before any minimum-spec claim (and a look at the one Metal orbit frame over 16.7 ms), the
+~0.6 s ring-star latency on a new hole, and an auto-exposure meter that sees the shadow.

@@ -11,6 +11,13 @@ extends SceneTree
 const Visit := preload("res://demos/black_hole_visit.gd")
 const Main := preload("res://main.gd")
 const RenderDiff := preload("res://tools/render_diff.gd")
+## Expected HUD text at stops 1 (hover 10) and 4 (orbit 3), from the design's check values
+## (AC-11: static clock 0.948683298050514 / 0.816496580927726, blueshift 1.05409 / 1.22474,
+## shadow 14.269° / 45°, orbit tide 3.162e-4 g, hover power 1.1190e13 W/kg at 10 r_s).
+const LITERALS := {
+	0: ["HOVERING at r = 10.00 r_s", "static clock 0.948683", "1 ship-hour = 1.0541 home hours", "shadow half-angle 14.27°", "×1.0541", "5.69×10⁻⁶ g radial", "1.12×10¹³ W per kg of m_eff", "not felt (bubble)"],
+	3: ["ORBITING at r = 3.00 r_s", "β_local 0.5000", "static clock 0.816497", "1 ship-hour = 1.4142 home hours", "shadow half-angle 45.00°", "×1.2247", "3.16×10⁻⁴ g radial", "free fall: 0 W"],
+}
 var passed := 0
 var failures := 0
 
@@ -135,6 +142,11 @@ func test_demo() -> void:
 		for i in 3: demo.bh_tick()
 		check("stop %d: %s at r = %s" % [s + 1, stops[s][1], stops[s][0]], float(v.sim.gr.r) == stops[s][0] and v.sim.gr.mode == stops[s][1])
 		check("stop %d: HUD equals the sim's gr" % (s + 1), hud_has(demo, v.sim.gr) and demo.sky.gr_lens.state == v.sim.gr)
+		# literal readings from the real sim (design AC-11 values), not the formatter's own output
+		var lit: Array = LITERALS.get(s, [])
+		var missing := lit.filter(func(x: String) -> bool: return not demo.label.text.contains(x))
+		if not lit.is_empty():
+			check("stop %d: the HUD reads %s" % [s + 1, lit], missing.is_empty())
 	check("approach 10^6 -> 10 r_s paced in 200..800 ticks at 20 Hz (%d)" % ticks_to_10, ticks_to_10 >= 200 and ticks_to_10 <= 800)
 	check("past the last stop, next stop is refused", not demo.bh_next_stop())
 	var unlocked: Array = GalaxyMap.field_value(v.sim.world, "consequence.archive.unlocked")

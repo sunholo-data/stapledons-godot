@@ -1,0 +1,24 @@
+{
+  "sprint_id": "R1-M3-BLACK-HOLES",
+  "milestone": "M3.6",
+  "round": 1,
+  "evaluator_model": "sonnet",
+  "score": 88,
+  "verdict": "PASS",
+  "rubric": {
+    "tests_pass": {"max": 20, "score": 19, "note": "bh-hud-test 62/0, physics, lint-precision, parity-gr re-run green; capture-bh 40 renders OK; bh-render-diff 0.000/255 x40. Full make test not rerun (executor green)."},
+    "lint_clean": {"max": 10, "score": 10},
+    "acceptance_criteria": {"max": 30, "score": 26, "note": "AC-12, 14, 15 verified by command; AC-13 met in spirit (renders pinned by hash and bucket, not committed; diff is self-referential; sign-off pending)."},
+    "code_quality": {"max": 15, "score": 13, "note": "HUD built only from sim.gr (sentinel test moves every number); weak_k moved to physics mirror; Makefile .PHONY and make sim wiring correct. Only client-side derivations are approach pacing (not displayed)."},
+    "documentation": {"max": 15, "score": 12, "note": "Report, changelog fragment and sprint JSON present and mostly accurate; overstatements below."},
+    "design_fidelity": {"max": 10, "score": 8, "note": "Title-screen entry skipped (optional); true Galactic-Centre sky deferred and captioned; ring latency and auto-exposure labelled rather than fixed."}
+  },
+  "findings": [
+    {"id": "F1", "severity": "minor", "file": "design_docs/implemented/r1/m3-report.md", "description": "AC-13 says renders are 'committed'. Only the sha256 manifest is committed; PNGs are in the gitignored renders/ dir and the public bucket. The diff compares a capture to a baseline produced by the same code on the same machine (0.000/255 is guaranteed by determinism), so it is a regression pin, not independent validation. Only the executor (Opus) opened the renders; Mark's sign-off is pending (the report says so).", "suggested_fix": "Word AC-13 as 'pinned by hash, served from the bucket'; keep sign-off pending until Mark opens them."},
+    {"id": "F2", "severity": "minor", "file": "design_docs/implemented/r1/m3-report.md", "description": "The AC-13 command greps 'opened by' (case-sensitive), but the report writes 'Opened by', so the design's grep returns nothing. The AC-14 grep over tools/ also matches the Python oracle tools/geodesic_ref.py (lines 50, 195), which is allowed as an oracle but makes the literal command fail.", "suggested_fix": "Use lower-case 'opened by' or grep -i; narrow the AC-14 grep to exclude the oracle (or allowlist it)."},
+    {"id": "F3", "severity": "minor", "file": "design_docs/implemented/r1/m3-report.md", "description": "Performance table is honest about the Metal GPU timer reading 0 and host load ~3.5, but it only shows a +2 ms Vulkan GPU cost hidden under a ~8.4 ms wall frame at a vsync-off cap. 'Laptop numbers unmeasured' is stated. Headroom claim is fine for this machine only; the 1-in-300 spike on Metal during orbit is not investigated.", "suggested_fix": "Keep the caveat; add a laptop run before any minimum-spec claim."},
+    {"id": "F4", "severity": "minor", "file": "interior/interior_sky.gd", "description": "Stars are drawn as seen from Sol while the ship sits at Sgr A* (OQ5). This is labelled by the HUD caption and the report, but the sky is physically inconsistent with the ship position by design; star parallax or ring stars are not those of the Galactic Centre.", "suggested_fix": "Track the true Galactic-Centre sky as a follow-up item in the roadmap."},
+    {"id": "F5", "severity": "minor", "file": "tests/test_bh_hud.gd", "description": "Several checks compare the HUD text with hud_lines(sim.gr) from the same function (hud_has), which is tautological on its own. The sentinel checks with literal expected strings and the 'every number moves with its field' check cover this adequately.", "suggested_fix": "Optional: add a literal-string check at the 3 r_s orbit stop from the real sim (the report quotes values such as static clock 0.816497)."},
+    {"id": "F6", "severity": "minor", "file": "design_docs/implemented/r1/m3-report.md", "description": "M3.5 gaps: ring-star latency (~0.6 s) is left unfixed and auto-exposure is bypassed (fixed manual exposure) rather than fixed. Both are labelled, which meets the 'fixed or labelled' scope.", "suggested_fix": "None required; carry as known limits."}
+  ]
+}
