@@ -104,6 +104,7 @@ class Ctx:
         self.arch = a.arch or arch()
         self.ailang = shlex.split(os.environ.get("AILANG", "ailang"))
         self.ticks = a.ticks
+        self.sim_only = a.sim_only
         os.makedirs(self.scratch, exist_ok=True)
 
 
@@ -157,6 +158,11 @@ def all_cases(ctx):
 def run(ctx, case, vm):
     args = ctx.ailang + ["run", "--quiet"] + (["--bytecode"] if vm else ["--max-recursion-depth", INTERP_DEPTH]) + \
         ["--package-dir", os.path.join(ctx.root, "sim"), "--caps", "IO", "--entry", "main", os.path.join(ctx.root, "sim", "ship.ail")]
+    if ctx.sim_only:
+        # This is the sole service-launch site for sim-only replay. Recorded
+        # ai_request/record exchanges are bytes, never dispatched to a provider.
+        assert args[-1] == os.path.join(ctx.root, "sim", "ship.ail")
+        assert "ai/service.ail" not in " ".join(args)
     t = time.monotonic()
     with open(case.log, "rb") as f:
         r = subprocess.run(args, stdin=f, capture_output=True)
@@ -364,6 +370,8 @@ def main():
     p.add_argument("--session")
     p.add_argument("--record")
     p.add_argument("--compat", action="store_true")
+    p.add_argument("--sim-only", action="store_true")
+    p.add_argument("--positive-control", action="store_true")
     p.add_argument("--ticks", type=int, default=int(os.environ.get("REPLAY_TICKS", "10000")))
     p.add_argument("--arch")
     p.add_argument("--root", default=ROOT)
@@ -384,6 +392,28 @@ def main():
         cases = [case_of(ctx, n) for n in a.case]
     else:
         cases = all_cases(ctx)
+    if a.positive_control:
+        # Real verify path, isolated full golden copy even for digest cases.
+        case = cases[0]
+        out, _, _, _ = both(ctx, case)
+        control_dir = os.path.join(ctx.scratch, "positive-control")
+        os.makedirs(control_dir, exist_ok=True)
+        control = Case(case.name, case.log, control_dir)
+        copy = control.golden(ctx, "ndjson")
+        with open(copy, "wb") as f:
+            f.write(out)
+        _, clean = verify(ctx, control)
+        if clean:
+            sys.exit("positive control: clean copy failed")
+        with open(copy, "r+b") as f:
+            byte = f.read(1)
+            f.seek(0)
+            f.write(bytes([byte[0] ^ 1]))
+        _, mutated = verify(ctx, control)
+        if len(mutated) != 1 or not mutated[0].startswith("golden "):
+            sys.exit("positive control: one-bit divergence was not detected")
+        print("replay positive control: one-bit golden-copy divergence detected")
+        return
     if a.compat:
         compat_main(ctx, cases)
     t = time.monotonic()
@@ -396,6 +426,8 @@ def main():
         sys.stdout.write(text)
         fails += len(f)
     print("replay: %d cases, %s (%.1f s wall)" % (len(cases), "all identical" if fails == 0 else "%d failures" % fails, time.monotonic() - t))
+    if ctx.sim_only:
+        print("replay sim-only: only sim/ship.ail is launched (by construction: the replay path builds no AI-service command; no process count is measured)")
     sys.exit(1 if fails else 0)
 
 
