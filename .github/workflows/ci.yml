@@ -35,20 +35,14 @@ jobs:
           sudo install /tmp/godot/Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
           godot --headless --version
 
-      - name: Check transit replay before full suite
+      - name: record x86_64 goldens (throwaway branch only, iteration 21)
         run: |
           make deps
-          AILANG=ailang python3 tools/replay.py --case m4_transit_harness
-
-      - name: Check vendored lore against the design repo (M4.7 AC17, both halves)
-        # stapledons-design is public (ledger D-24), so the cross-repo half needs no credential:
-        # the design repo at the manifest's sha (read as git objects) must equal data/lore.
-        run: |
-          git clone --quiet https://github.com/sunholo-data/stapledons-design /tmp/stapledons-design
-          make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang
-
-      - name: Check offline presentation and bootstrap before full suite
-        run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test exposure-frames-test manual-exposure-test tour-attitude-test tour-pacing-test alpha-centauri-test
-
-      - name: make test
-        run: make test
+          AILANG=ailang python3 tools/replay.py --record m4_min_path
+          AILANG=ailang python3 tools/replay.py --record m4_adversarial
+          AILANG=ailang python3 tools/replay.py --case m4_transit_harness m4_min_path m4_adversarial
+          cat tests/replays/m4_min_path.state.*.sha256 tests/replays/m4_adversarial.state.*.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: x86-goldens-iter21
+          path: tests/replays/m4_*.x86_64.*
