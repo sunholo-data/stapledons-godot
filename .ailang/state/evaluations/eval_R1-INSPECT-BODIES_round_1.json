@@ -1,0 +1,13 @@
+{"sprint_id":"R1-INSPECT-BODIES","round":1,"result":"pass","score":84,
+"breakdown":{"tests":18,"lint":9,"acceptance":25,"code_quality":11,"documentation":12,"design_fidelity":9},
+"checks":{"make ship-star-identification-test":"53 passed, 0 failures","full make test":"not run (instructed)"},
+"findings":[
+{"sev":"medium","where":"tests/test_ship_star_identification.gd (set_velocity(Vector3.UP,0.,1.,1.))","issue":"Body-candidate position is only tested at beta=0; the aberrated-position claim (StarLight.apparent_direction at speed) has no test, so dropping the call would still pass."},
+{"sev":"medium","where":"ui/ship_star_identification.gd:~95 (occludes_direction(dir,b.id,dist)) and ship-occlusion ray","issue":"Ship occlusion ray uses projected point clamped to the viewport; a body whose centre is off-screen but disc visible is tested at a clamped point. Minor. Occlusion by ship is untested for bodies (only catalogue stars)."},
+{"sev":"low","where":"ui/ship_star_identification.gd:~92","issue":"Distant filter (kind!=star, radius_px<.5, dist>1000 AU) is sensible: own-system planets (<1000 AU, e.g. Neptune ~30 AU) stay offered, stars always offered. Nothing visible hidden as far as read; no test asserts the filter (TRAPPIST-1 only checked via an inspected render)."},
+{"sev":"low","where":"tools/inspect_bodies_capture.gd","issue":"Capture calls inspect_body() directly, not a click, so I3 renders do not prove click path at tour stops; Earth stop inspects the Sun, not Earth."},
+{"sev":"low","where":"ui/body_info.gd","issue":"Card facts and units correct and tested (AU/ly/km, R-sun/Jupiter/Earth, apparent size, light age). Open in map only when info.records has the catalogue id (correct, but untested)."},
+{"sev":"low","where":"ui/ship_star_identification.gd:50 update_candidates","issue":"Perf: body loop is O(bodies) with per-body StarLight/occlusion calls; star loop is pre-existing O(eligible) with signature-cached samples. Not a regression; body work is uncached per update."},
+{"sev":"info","where":"renders/inspect_bodies","issue":"Opened Earth/Jupiter/TRAPPIST-1: warm rings on discs, card fits, facts plausible (Jupiter 142,984 km, 1.02 R-jup, 0.48 s light age)."}],
+"click_precedence":"Correct: a click inside a body disc returns only the nearest such body; stars beside it still resolve (tested).",
+"notes":"Evaluator did not run full make test or golden."}

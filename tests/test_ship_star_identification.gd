@@ -109,6 +109,28 @@ func _run() -> void:
 	moon.rel_km={"x":mrel.x,"y":mrel.y,"z":mrel.z}
 	demo.sky.system_view.update({"bodies":[earth,moon]},demo.sky.exposure.k());identify.update_candidates()
 	check(bodies_only.call().size()==1 and bodies_only.call()[0].id=="body:earth","a body behind a nearer body is not offered")
+	# At speed the ring sits on the disc the renderer draws (aberrated), not the rest direction.
+	var rest_px:Vector2=eb[0].pixel if not eb.is_empty() else Vector2.ZERO
+	var head:Vector3=(n+demo.sky.camera.screen_right()*.35).normalized()
+	demo.sky.system_view.set_velocity(head,.9,1./sqrt(1.-.81),.1)
+	demo.sky.system_view.update({"bodies":[earth]},demo.sky.exposure.k());identify.update_candidates()
+	var moving:Array=bodies_only.call()
+	var drawn:Vector3=(demo.sky.system_view.discs["earth"].material_override as ShaderMaterial).get_shader_parameter("apparent_centre_w")
+	var vp:Vector2=Vector2(demo.geometry_view.size)
+	var vlocal:Vector3=demo.sky.camera.global_basis.transposed()*drawn.normalized()
+	var vfocal:float=.5*vp.y/tan(deg_to_rad(demo.sky.camera.fov)*.5)
+	var drawn_px:=Vector2(vp.x*.5-vfocal*vlocal.x/vlocal.z,vp.y*.5+vfocal*vlocal.y/vlocal.z)
+	check(moving.size()==1 and moving[0].pixel.distance_to(drawn_px)<.05 and moving[0].pixel.distance_to(rest_px)>2.,"at 0.9c the ring sits on the drawn, aberrated disc (%s vs drawn %s, rest %s)"%[moving[0].pixel if not moving.is_empty() else "none",drawn_px,rest_px])
+	demo.sky.system_view.set_velocity(Vector3.UP,0.,1.,1.)
+	# A planet of a distant system is an invisible speck and is not offered; a star there is.
+	var far:Dictionary=earth.duplicate(true);far.id="far-planet";far.name="Far planet"
+	var frel:Vector3=SkyFrame.to_galactic(n*2000.*149597870.7);far.rel_km={"x":frel.x,"y":frel.y,"z":frel.z}
+	demo.sky.system_view.update({"bodies":[far]},demo.sky.exposure.k());identify.update_candidates()
+	check(bodies_only.call().is_empty(),"an unresolved planet 2,000 AU away is not offered")
+	far.kind="star";far.teff_k=3000.;far.e_v_lux=1e-6
+	demo.sky.system_view.update({"bodies":[far]},demo.sky.exposure.k());identify.update_candidates()
+	check(bodies_only.call().size()==1,"a star at the same place is offered")
+	demo.sky.system_view.update({"bodies":[earth]},demo.sky.exposure.k());identify.update_candidates()
 	identify.close_card()
 	rel=SkyFrame.to_galactic(n*50000.+demo.sky.camera.screen_right()*15000.)
 	earth.rel_km={"x":rel.x,"y":rel.y,"z":rel.z}
@@ -124,6 +146,11 @@ func _run() -> void:
 		if child is Node3D and child != blocker:child.visible=false
 	identify.occlusion.build(demo.geometry);demo.sky_only=false;identify.update_candidates()
 	check(identify.candidates.is_empty(),"opaque visual without collider blocks apparent star")
+	var hidden_earth:Dictionary=earth.duplicate(true)
+	var hrel:Vector3=SkyFrame.to_galactic(n*50000.);hidden_earth.rel_km={"x":hrel.x,"y":hrel.y,"z":hrel.z}
+	demo.sky.system_view.update({"bodies":[hidden_earth]},demo.sky.exposure.k());identify.update_candidates()
+	check(identify.candidates.filter(func(c):return c.has("body")).is_empty(),"the ship's hull hides a body as it hides a star")
+	demo.sky.system_view.update({},demo.sky.exposure.k());identify.update_candidates()
 	blocker.position+=demo.camera.basis.x*10.;identify.update_candidates()
 	check(identify.candidates.size()==1,"moving mesh transform is refreshed")
 	blocker.position-=demo.camera.basis.x*10.;blocker.visible=false;identify.update_candidates()
