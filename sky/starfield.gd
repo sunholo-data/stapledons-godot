@@ -391,10 +391,13 @@ var _point_custom := PackedFloat32Array()
 var _point_buf := PackedFloat32Array()
 var point_overlay := false # only planet point flux; catalogue stars stay below opaque bodies
 var point_material:ShaderMaterial
+## Further materials on this uniform set (M3.5b: GrLens's order-1 image instance).
+var extra_materials: Array[ShaderMaterial] = []
 
 func _parameter(name:StringName,value:Variant)->void:
 	material.set_shader_parameter(name,value)
 	if point_material!=null:point_material.set_shader_parameter(name,value)
+	for m in extra_materials: m.set_shader_parameter(name,value)
 
 func replace_point_sources(list:Array)->void:
 	point_count=0;_point_pos.clear();_point_custom.clear()

@@ -12,6 +12,9 @@ extends RefCounted
 ##      pass is the per-frame difference (GPU time when the driver reports it;
 ##      Godot 4.7's Metal driver reports 0, so make bench also runs Vulkan).
 ##   4. AC8 (M1.5a): the V 5.0-8.5 limiting-magnitude ladder (tools/exposure_golden.gd).
+##   (M3.5b, Q4) GR: a static sweep (same yaw/pitch path, ship at Sol, at rest) with GR off, then
+##      on at r = 10 r_s toward the galactic centre (lensed sky, both star images on the whole
+##      tier, the ring-star path): `bench: GR` lines; GR off must hold the M1.3 numbers.
 ## Prints one `bench:` summary line and writes the numbers to .godot/tmp/bench.json.
 ## -- --bench-size=WxH renders at another size (make bench BENCH_SIZE=1920x1080; starmap large tier
 ## sprint LT0). The report adds the tier stack's load time (a fresh load_tiers, timed) and memory.
@@ -64,6 +67,7 @@ func run(main: Node, seconds: float) -> int:
 		return 2
 	var off := await _replay(main, frames)
 	var rc := _report(main, frames, off, rebase_ms, mode, seconds)
+	await _gr_sweeps(main, minf(seconds, 10.0))
 	# AC8 (M1.5a): the limiting-magnitude ladder at this render size, after the
 	# flight (it swaps in a uniform 23.5 mag/arcsec^2 sky)
 	var lim: Dictionary = await load("res://tools/exposure_golden.gd").new().limiting_magnitude(main)
@@ -194,3 +198,43 @@ func _report(main: Node, frames: Array, off: Array, rebase_ms: float, mode: Star
 	print("bench: CPU rebase of %d instances %.2f ms (target < %.1f) -> rebase mode %s%s; %d rebases in flight" % [
 		sf.count, rebase_ms, REBASE_TARGET_MS, r["rebase_mode"], " (plan B: direction and 1/r^2 in the vertex shader)" if mode == Starfield.Rebase.GPU else "", r["rebases_in_flight"]])
 	return 0
+
+
+## M3.5b (Q4): the same camera sweep at rest with GR off and on (r = 10, hole toward the
+## galactic centre), each `seconds` long; prints one `bench: GR` line per state.
+func _gr_sweeps(main: Node, seconds: float) -> void:
+	var sf: Starfield = main.starfield
+	sf.set_ship_position(0.0, 0.0, 0.0)
+	sf.set_velocity(Vector3(0, 0, -1), 0.0, 1.0)
+	if main.has_background:
+		main.background.set_velocity(Vector3(0, 0, -1), 0.0, 1.0)
+	var gr := GrLens.new(sf, main.background if main.has_background else null)
+	for on in [false, true]:
+		if on:
+			gr.set_gr(GrLens.reference_state(10.0, PackedFloat64Array([1.0, 0.0, 0.0])))
+			var t0 := Time.get_ticks_usec()
+			gr.refresh_now()
+			var ms := (Time.get_ticks_usec() - t0) / 1000.0
+			print("bench: GR ring-star sweep of %d stars %.1f ms at once (in play %d-star slices, ~%.2f ms per frame); %s" % [sf.count, ms, GrLens.CHUNK, ms * GrLens.CHUNK / maxf(sf.count, 1.0), gr.debug_line()])
+			gr.set_exposure(sf.material.get_shader_parameter("exposure"), 0.0005) # the flight's star exposure; ring PSF ~1 px at 2560x1440
+		var ft := []
+		var gpu := []
+		var vp: RID = main.get_viewport().get_viewport_rid()
+		var t_start := Time.get_ticks_usec()
+		var last := t_start
+		for i in WARMUP:
+			await main.get_tree().process_frame
+		last = Time.get_ticks_usec()
+		t_start = last
+		while (last - t_start) / 1e6 < seconds:
+			var now_s := (last - t_start) / 1e6
+			main.camera.look(TAU * now_s / seconds, 0.35 * sin(TAU * now_s / (seconds * 0.5)), 0.0)
+			await main.get_tree().process_frame
+			var now := Time.get_ticks_usec()
+			ft.append((now - last) / 1000.0)
+			gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(vp))
+			last = now
+		print("bench: GR %s (%d stars, static sweep at rest): %d frames, frame ms p50 %.3f  p95 %.3f  p99 %.3f; %d over %.1f ms; viewport GPU ms p50 %.3f  p99 %.3f" % [
+			"on  (r = 10 r_s, both images + ring path)" if on else "off", sf.count, ft.size(), pct(ft, 0.5), pct(ft, 0.95), pct(ft, 0.99),
+			ft.filter(func(x: float) -> bool: return x > P99_TARGET_MS).size(), P99_TARGET_MS, pct(gpu, 0.5), pct(gpu, 0.99)])
+	gr.clear()

@@ -770,6 +770,11 @@ func _save_sheet(tiles: Array, cols: int, path: String) -> void:
 ## Render single synthetic stars and check the GPU puts them where the CPU
 ## reference (Relativity.aberrate + camera projection) says they should be.
 func _run_golden() -> void:
+	if _user_args().get("golden", "") == "gr": # M3.5 only (development; make golden runs everything)
+		var f: int = await load("res://tools/gr_golden.gd").new().run(self)
+		print("golden: %d failures" % f)
+		get_tree().quit(1 if f > 0 else 0)
+		return
 	starfield.set_custom_stars([])
 	starfield.build()
 	starfield.set_exposure(GOLDEN_PEAK)
@@ -825,6 +830,7 @@ func _run_golden() -> void:
 	failures += await load("res://tools/cmb_golden.gd").new().run(self)
 	failures += await load("res://tools/interior_golden.gd").new().run(self) # M4.2: G-M4-1..4
 	failures += await load("res://tools/m5_golden.gd").new().run(self)
+	failures += await load("res://tools/gr_golden.gd").new().run(self) # M3.5: GR1-GR9
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 

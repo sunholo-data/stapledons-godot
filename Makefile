@@ -14,7 +14,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: geodesic-oracle capture-bh-sky news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -245,7 +245,7 @@ wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ai
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 
-golden:            ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10)
+golden: lens-assets ## GPU shader vs CPU reference star positions (needs a GPU window); M1.6b: 144 off-axis/rolled star cases + 16 background markers; M1.3: stand-off rebasing, 60 kK WD, cull; M1.5a: exposure (star lux, sky cd/m^2, display floor, AC8 ladder); M1.8: forward CMB (sharp, PSF, zeros); M4.2: interior G-M4-1..6 (composite position, one tonemap, forward pole, glow, plate6, spectral colour10); M3.5: GR1-GR11 (shadow, orbit mask, star images, Einstein ring, black inside, blueshift colour, weak hand-off, exact table mirror)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . -- --golden > $(SCRATCH)/golden.log 2>&1; rc=$$?; cat $(SCRATCH)/golden.log; \
 	  test $$rc = 0 && grep -q '^off-axis golden: 144 cases .* 0 failures$$' $(SCRATCH)/golden.log && \
@@ -257,19 +257,29 @@ golden:            ## GPU shader vs CPU reference star positions (needs a GPU wi
 	  grep -q '^ok    G-M4-1 composite position: 72 cases' $(SCRATCH)/golden.log && grep -q '^ok    G-M4-2 one tonemap' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    G-M4-3 forward pole' $(SCRATCH)/golden.log)" = 6 && test "$$(grep -c '^ok    G-M4-4 glow' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-M4-6 colour' $(SCRATCH)/golden.log)" = 10 && \
 	  test "$$(grep -c '^ok    G-M4-5 plate' $(SCRATCH)/golden.log)" = 6 && \
-	  grep -q '^interior golden: 0 failures$$' $(SCRATCH)/golden.log && grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
-	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10)"; exit 1; }
+	  grep -q '^interior golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -cE '^ok    GR[123] shadow' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR4 orbit mask' $(SCRATCH)/golden.log)" = 3 && \
+	  test "$$(grep -c '^ok    GR5 two images' $(SCRATCH)/golden.log)" = 3 && test "$$(grep -c '^ok    GR6 Einstein ring' $(SCRATCH)/golden.log)" = 3 && \
+	  grep -q '^ok    GR7 inside the shadow' $(SCRATCH)/golden.log && grep -q '^ok    GR8 colour' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    GR9 weak-field' $(SCRATCH)/golden.log)" = 2 && test "$$(grep -c '^ok    GR10 lens_fwd mirror' $(SCRATCH)/golden.log)" = 5 && \
+	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
+	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4)"; exit 1; }
 
 # M1.3 bench: the default Metal driver gives the frame times the player gets; Godot 4.7's Metal
 # driver reports no GPU timestamps, so a second run on Vulkan (MoltenVK) measures the star pass.
 BENCH_SECONDS ?= 30
 BENCH_TIER = $(if $(filter command line environment,$(origin TIER)),$(TIER),large)
 BENCH_SIZE ?=
-bench:             ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default)
+bench: lens-assets  ## M1.3 AC7 (stars part): scripted flight at 2560x1440 (BENCH_SIZE=WxH), vsync off: p50/p99 frame ms, star-pass GPU ms, CPU rebase ms (GPU window; TIER=large default)
 	@mkdir -p $(SCRATCH); for drv in metal vulkan; do echo "bench: host load $$(uptime | sed 's/.*load/load/')"; \
 	  $(GODOT_SIM) --path . --rendering-driver $$drv -- --bench=$(BENCH_SECONDS) --tier=$(BENCH_TIER) $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench_$$drv.log 2>&1; rc=$$?; \
 	  grep -E '^(bench|starfield):' $(SCRATCH)/bench_$$drv.log; \
 	  test $$rc = 0 && grep -q '^bench: frame ms' $(SCRATCH)/bench_$$drv.log && grep -q '^bench: limiting magnitude .*: ok$$' $(SCRATCH)/bench_$$drv.log || { echo "bench: $$drv run FAILED (exit $$rc; log $(SCRATCH)/bench_$$drv.log)"; exit 1; }; done
+
+capture-bh-sky: lens-assets ## M3.5a/b: the lensed sky through InteriorSky (debug grid, Milky Way + large tier, rings, two images) -> renders/bh_sky/*.png (GPU window; open them)
+	@mkdir -p $(SCRATCH); $(GODOT) --path . --script tools/gr_capture.gd > $(SCRATCH)/capture-bh-sky.log 2>&1; rc=$$?; cat $(SCRATCH)/capture-bh-sky.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/capture-bh-sky.log && grep -q '^capture-bh-sky: OK$$' $(SCRATCH)/capture-bh-sky.log
 
 splash:            ## compose the boot splash ui/splash/splash.png (Milky Way crop + wordmark + AILANG, like the site hero); needs a GPU window and data/raw/background/noirlab_10k_destarred.png
 	$(GODOT) --path . --script tools/splash_compose.gd
