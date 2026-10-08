@@ -33,6 +33,7 @@ var view_fov := 78.0
 var heading_gal := PackedFloat64Array([0.0, 0.0, -1.0])
 var heading_world := Vector3(0.0, -1.0, 0.0)
 var beta := 0.0
+var gamma := 1.0 # the sim's (float64), kept to restore the ship's own velocity after GR
 var glow_pole := -1.0 # the sim's W/m^2; -1 = the state carries none (glow off)
 var glow_t_pole := -1.0 # the sim's K (glow_pole_k); -1 = none
 var temporal_exposure := false
@@ -52,6 +53,7 @@ var _anticipated_ev := -INF
 var _meter_samples := PackedFloat64Array([Exposure.dark_sky_luminance(),Exposure.dark_sky_luminance(),0.0])
 var radius_m := 100.0
 var basis := PackedFloat64Array() # ship basis, galactic columns
+var gr_lens: GrLens # M3.5: the sim's gr section on the sky and the stars (sky/gr_lens.gd)
 
 
 ## cam: the bundle's camera dictionary; fov_deg: the view region's vertical fov.
@@ -92,7 +94,8 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 	if opts.get("planet_preload",true):system_view.preload_textures()
 	add_child(system_view)
 	if opts.get("background", true):
-		has_background = background.attach(env, px.y, view_fov)
+		has_background = background.attach(env, px.y, view_fov, opts.get("photo"), opts.get("model"))
+	gr_lens = GrLens.new(starfield, background if has_background else null)
 	var quad := QuadMesh.new()
 	quad.size = Vector2(2.0, 2.0)
 	glow.mesh = quad
@@ -169,6 +172,7 @@ func apply(world: Dictionary) -> void:
 	orient(PackedFloat64Array([h["x"], h["y"], h["z"]]))
 	heading_world = _vec(_to_world(heading_gal))
 	beta = s["beta"]
+	gamma = s["gamma"]
 	starfield.set_velocity(heading_world, beta, s["gamma"])
 	if has_background:
 		background.set_velocity(heading_world, beta, s["gamma"])
@@ -182,6 +186,30 @@ func apply(world: Dictionary) -> void:
 	system_view.set_velocity(heading_world, beta, s["gamma"], s.get("one_minus_beta", 1.0 / (s["gamma"] * s["gamma"] * (1.0 + beta))))
 	resolved_bodies_supported = beta == 0.0 or system_view.relativistic_enabled
 	set_glow(ForwardGlow.pole_of(world), ForwardGlow.temperature_of(world))
+	var gr: Variant = world.get("gr")
+	if gr is Dictionary and not gr.is_empty():
+		set_gr(gr)
+	elif gr_lens != null and gr_lens.active:
+		set_gr({})
+
+
+## M3.5: the sim's gr section (protocol 2.6) -> the lensed sky and star images; {} = GR off.
+## Under GR the sky and the stars take the motion relative to the local static observer.
+func set_gr(gr: Dictionary) -> void:
+	if gr_lens == null:
+		return
+	var was := gr_lens.active
+	gr_lens.set_gr(gr)
+	if was and not gr_lens.active: # back to the ship's own velocity
+		starfield.set_velocity(heading_world, beta, gamma)
+		if has_background:
+			background.set_velocity(heading_world, beta, gamma)
+	gr_lens.set_exposure(exposure.star_scale(), exposure.psf_sigma_rad())
+
+
+func _process(_delta: float) -> void:
+	if gr_lens != null:
+		gr_lens.tick()
 
 
 ## The glow's pole emittance (W/m^2; < 0 = off), its pole temperature (K) and the shared exposure.
@@ -266,6 +294,8 @@ func _upload_exposure() -> void:
 	starfield.set_exposure(exposure.star_scale())
 	starfield.set_psf(exposure.psf_sigma_px())
 	starfield.set_floor(exposure.floor_params())
+	if gr_lens != null and gr_lens.active:
+		gr_lens.set_exposure(exposure.star_scale(), exposure.psf_sigma_rad())
 	if has_background:
 		background.set_scene_exposure(exposure.k())
 	system_view.set_exposure(exposure.k())

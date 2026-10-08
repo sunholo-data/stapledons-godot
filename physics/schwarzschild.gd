@@ -404,3 +404,61 @@ static func compose(n_ship_view: Vector3, h: Vector3, r: float, bh: Vector3, b: 
 	var d_sr := Relativity.doppler_apparent(n_ship_view, bh, b) if b > 0.0 else 1.0
 	var ld := lens_direction(n_s, h, r)
 	return {"captured": ld["captured"], "n_inf": ld["n_inf"], "n_static": n_s, "D": static_blueshift(r) * d_sr}
+
+
+# ---------------------------------------------------------------- GPU hand-off (M3.5)
+
+## The table's first column, x = ln 1e-8 (lens_fwd header).
+static func x_min() -> float:
+	return _x_min
+
+
+## A float64 angle as a float32 pair [hi, lo], hi = f32(a), lo = f32(a - hi): the shader forms
+## (theta - hi) - lo, which keeps psi - alpha_sh to ~1e-7 rad at the shadow edge (plan review N-2;
+## Godot has no float64 uniforms). hi + lo reconstructs a to ~1e-15 relative.
+static func hi_lo(a: float) -> PackedFloat64Array:
+	var hi := PackedFloat32Array([a])[0]
+	var lo := PackedFloat32Array([a - hi])[0]
+	return PackedFloat64Array([hi, lo])
+
+
+## Tangential stretch sin psi / |sin F| of the order-k image of a source at beta (the ring-star
+## test: above RING_STRETCH the star leaves the splat path, design M3.5).
+const RING_STRETCH := 8.0
+
+
+static func image_stretch(r: float, beta: float, order: int) -> float:
+	var f := beta if order == 0 else -beta
+	var sf := absf(sin(f))
+	return INF if sf == 0.0 else sin(image(r, beta, order)["psi"]) / sf
+
+
+## The ring-star cones at r: [beta_near, beta_far]. A star at beta < beta_near (either order near
+## the Einstein ring) or beta > pi - beta_far (the order-1 image of a star astern, at the photon
+## ring) has an image stretched over RING_STRETCH. Stretch > 8 needs |sin F| < 1/8, so both lie
+## inside asin(1/8) = 7.18 deg; each is found by 50 bisections of the monotone stretch.
+static func ring_cones(r: float) -> PackedFloat64Array:
+	var cap := asin(1.0 / RING_STRETCH)
+	var out := PackedFloat64Array()
+	for far in [false, true]:
+		var best := 0.0
+		for order in ([1] if far else [0, 1]):
+			var lo := 0.0
+			var hi := cap
+			for i in 50:
+				var mid := 0.5 * (lo + hi)
+				var beta: float = PI - mid if far else mid
+				if image_stretch(r, beta, order) > RING_STRETCH:
+					lo = mid
+				else:
+					hi = mid
+			best = maxf(best, lo)
+		out.append(best)
+	return out
+
+
+## Seen flux of an image over the star's rest flux at the ship (the starfield shader's
+## band_ratio): mu Y(D T)/Y(T) / D_SR^2 with D = D_g D_SR. With mu = 1 and D_g = 1 it is
+## Relativity.point_flux_ratio(T, D_SR) exactly (M3.5b CPU test).
+static func image_flux_ratio(mu: float, t_kelvin: float, d_g: float, d_sr: float) -> float:
+	return mu * Relativity.surface_brightness_ratio(t_kelvin, d_g * d_sr) / (d_sr * d_sr)

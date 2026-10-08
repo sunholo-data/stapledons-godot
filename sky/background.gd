@@ -100,6 +100,7 @@ func attach(env: Environment, viewport_height: float, fov_deg: float, photo: Ima
 	material.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
 	material.set_shader_parameter("pano_px_per_screen_px", photo.get_height() / 180.0 * fov_deg / viewport_height)
 	material.set_shader_parameter("cmb_size", CmbGlow.PROFILE_SIZE)
+	material.set_shader_parameter("screen_px_rad", deg_to_rad(fov_deg) / viewport_height)
 	var sky := Sky.new()
 	sky.sky_material = material
 	sky.radiance_size = Sky.RADIANCE_SIZE_32
@@ -122,6 +123,33 @@ func set_velocity(direction: Vector3, beta: float, gamma: float) -> void:
 		cmb.build(omb, psf_sigma)
 		material.set_shader_parameter("cmb_profile", cmb.texture)
 		material.set_shader_parameter("cmb_theta_max", cmb.theta_max)
+
+
+## M3.5a: the sim's gr section (sky/gr_lens.gd) -> the lensed sky; empty switches GR off.
+## Under GR the SR uniforms carry the motion relative to the local static observer
+## (gr.dir_local, beta_local, gamma_local, one_minus_beta_local), all from the sim, and the
+## forward CMB is not drawn (the shader skips it under gr_on).
+func set_gr(gr: Dictionary) -> void:
+	if gr.is_empty() or not gr.has("r") or GrLens.textures().is_empty():
+		material.set_shader_parameter("gr_on", false)
+		return
+	var u := GrLens.uniforms(gr)
+	for k: String in u:
+		material.set_shader_parameter(k, u[k])
+	set_local_motion(gr)
+
+
+## The SR uniforms under GR: the motion relative to the local static observer (the sim's).
+func set_local_motion(gr: Dictionary) -> void:
+	material.set_shader_parameter("beta_dir", GrLens._world(gr["dir_local"]))
+	material.set_shader_parameter("beta_mag", gr["beta_local"])
+	material.set_shader_parameter("gamma_f", gr["gamma_local"])
+	material.set_shader_parameter("one_minus_beta", gr["one_minus_beta_local"])
+
+
+## The debug grid in place of the panorama (golden background, design M3.5 step 4).
+func set_grid(on: bool) -> void:
+	material.set_shader_parameter("grid_on", on)
 
 
 ## The angular PSF (rad) the CMB disc is drawn through; 0 draws it sharp.

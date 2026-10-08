@@ -6,8 +6,23 @@
 // The ship's offset from O arrives as the same hi/lo pair; rel = (hi - ship_hi)
 // + (lo - ship_lo) keeps a nearby star's direction to float32 precision of r.
 // Mirrors physics/relativity.gd and physics/blackbody.gd; keep them in sync.
+// M3.5b (gr_on, sky/schwarzschild.gdshaderinc, mirrors Schwarzschild.star_images): the star's
+// direction n_src at infinity gives beta = angle(n_src, h); image_order k (0: F = beta, this
+// instance; 1: F = -beta, a second MultiMeshInstance3D on the same multimesh that exists only
+// while GR is on) takes psi_k from lens_inv, n_s,k = cos psi_k h +- sin psi_k e_perp, then the
+// SR step below with the motion relative to the local static observer, and flux
+//   mu_k Y(D_k T)/Y(T) / D_SR,k^2,  D_k = D_g D_SR,k,  mu_k = (sin psi / |sin F|) |d psi/dF|.
+// A star whose tangential stretch sin psi / |sin F| exceeds 8 belongs to the ring-star path
+// (sky/background.gdshader): the CPU flags up to 64 of them (flags bit RING_FLAG) and they draw
+// no splat here; the overflow keeps its splat with mu capped at 8.
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, depth_test_disabled, cull_disabled, fog_disabled;
+
+#include "res://sky/schwarzschild.gdshaderinc"
+
+uniform int image_order = 0;
+const float RING_FLAG = 64.0;
+const float RING_STRETCH = 8.0;
 
 uniform vec3 beta_dir = vec3(0.0, 0.0, -1.0); // unit direction of ship velocity, galaxy frame
 uniform float beta_mag = 0.0;                   // |beta|
@@ -53,6 +68,23 @@ void vertex() {
 	// E_v at Sol rescaled by inverse square to the ship
 	float flux = INSTANCE_CUSTOM.y * INSTANCE_CUSTOM.w / max(dot(rel, rel), min_r2);
 
+	float mu = 1.0;
+	bool hide = image_order == 1 && !gr_on;
+	if (gr_on) {
+		float beta_s = gr_angle(n, gr_h);
+		float f = image_order == 0 ? beta_s : -beta_s;
+		vec2 im = gr_image(f);
+		float stretch = sin(im.x) / max(abs(sin(f)), 1e-30);
+		mu = stretch * abs(im.y);
+		if (mod(floor(INSTANCE_CUSTOM.z / RING_FLAG), 2.0) > 0.5) {
+			hide = true; // drawn by the sky pass's ring-star path
+		} else if (stretch > RING_STRETCH) {
+			mu = min(mu, RING_STRETCH);
+		}
+		vec3 e = gr_perp(n, gr_h);
+		n = normalize(gr_h * cos(im.x) + (image_order == 0 ? e : -e) * sin(im.x));
+	}
+
 	float b = beta_mag;
 	vec3 n_app = n;
 	float d = 1.0;
@@ -71,8 +103,8 @@ void vertex() {
 	// Blackbody at T is seen as a blackbody at D*T with solid angle / D^2:
 	// splat energy = E_v x pointFluxRatio(T, D).
 	vec4 rest = lut(t_eff);
-	vec4 seen = lut(t_eff * d);
-	float band_ratio = pow(10.0, seen.a - rest.a) / (d * d);
+	vec4 seen = lut(t_eff * d * (gr_on ? gr_dg : 1.0));
+	float band_ratio = mu * pow(10.0, seen.a - rest.a) / (d * d);
 	// Project the apparent direction (rotation only: stars are at infinity),
 	// then expand the quad to a fixed pixel footprint around it.
 	vec3 view_dir = mat3(VIEW_MATRIX) * n_app;
@@ -89,7 +121,7 @@ void vertex() {
 	// energy (less, as the square quad also keeps its corners): <= 1% once
 	// p >= 100 cull_peak, and the 4-sigma cap loses 3.4e-4 for bright stars.
 	v_extent = clamp(sqrt(2.0 * log(max(peak, cull_peak) / cull_peak)), 1.0, 4.0);
-	if (view_dir.z >= 0.0 || peak < cull_peak) {
+	if (view_dir.z >= 0.0 || peak < cull_peak || hide) {
 		// Behind the camera (which looks down -Z): with clip.w <= 0 the
 		// projection would mirror the star back into view. Discard it, and
 		// any star too faint to reach the display (cull_peak).

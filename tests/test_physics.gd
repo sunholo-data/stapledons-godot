@@ -1387,6 +1387,57 @@ func _schwarzschild_maps() -> void:
 	var c1 := Schwarzschild.compose(n, h, 5.0, Vector3.RIGHT, bo)
 	check("compose in orbit: D = D_g x D_SR", c1["D"], Schwarzschild.static_blueshift(5.0) * Relativity.doppler_apparent(n, Vector3.RIGHT, bo), 1e-12)
 	check("compose in orbit: the static view is the de-aberrated ray", (c1["n_static"] as Vector3).distance_to(Relativity.deaberrate(n, Vector3.RIGHT, bo)), 0.0, 1e-7)
+	_schwarzschild_gpu_handoff()
+
+
+## M3.5a/b: what the CPU hands the shaders (sky/gr_lens.gd), and the CPU halves of the GPU paths.
+func _schwarzschild_gpu_handoff() -> void:
+	print("Schwarzschild GPU hand-off (M3.5a/b)")
+	var f32 := func(v: float) -> float: return PackedFloat32Array([v])[0]
+	var worst := 0.0
+	var hi_exact := true
+	for r in [2.0, 2.05, 3.0, 5.0, 10.0, 1000.0, 1e6, 2e6]:
+		var a := Schwarzschild.shadow_angle(r)
+		var p := Schwarzschild.hi_lo(a)
+		worst = maxf(worst, absf((p[0] + p[1]) - a))
+		hi_exact = hi_exact and p[0] == f32.call(p[0]) and p[1] == f32.call(p[1])
+	check("alpha_sh as a float32 hi/lo pair reconstructs to 1e-12 (r 2 .. 2e6; plan review N-2)", worst, 0.0, 1e-12)
+	check("both halves of the pair are float32 values (what a uniform holds)", 1.0 if hi_exact else 0.0, 1.0, 0.0)
+	var lim := 0.0
+	for t in [3000.0, 5700.0, 20000.0]:
+		for d in [0.5, 1.0, 2.0]:
+			lim = maxf(lim, absf(Schwarzschild.image_flux_ratio(1.0, t, 1.0, d) / Relativity.point_flux_ratio(t, d) - 1.0))
+	check("star image flux: mu = 1, D_g = 1 is point_flux_ratio(T, D_SR) exactly (M3.5b)", lim, 0.0, 1e-15)
+	check("star image flux scales with mu and colours at D_g D_SR", Schwarzschild.image_flux_ratio(2.0, 5700.0, 1.22474487139159, 1.0), 2.0 * Relativity.surface_brightness_ratio(5700.0, 1.22474487139159), 1e-12)
+	for r in [3.0, 10.0, 1000.0]:
+		var cones := Schwarzschild.ring_cones(r)
+		var bn := cones[0]
+		var bf := cones[1]
+		var inside := maxf(Schwarzschild.image_stretch(r, 0.99 * bn, 0), Schwarzschild.image_stretch(r, 0.99 * bn, 1))
+		var outside := maxf(Schwarzschild.image_stretch(r, 1.01 * bn, 0), Schwarzschild.image_stretch(r, 1.01 * bn, 1))
+		check("ring cone at r = %s: stretch > 8 just inside beta_near = %.4f deg, < 8 just outside" % [r, rad_to_deg(bn)], 1.0 if inside > 8.0 and outside < 8.0 else 0.0, 1.0, 0.0)
+		check("ring cone at r = %s: the order-1 photon-ring cone beta > 180 - %.4f deg holds stretch > 8" % [r, rad_to_deg(bf)], 1.0 if Schwarzschild.image_stretch(r, PI - 0.99 * bf, 1) > 8.0 and Schwarzschild.image_stretch(r, PI - 1.01 * bf, 1) < 8.0 else 0.0, 1.0, 0.0)
+		check("ring cones lie inside asin(1/8) (GrLens.CONE is a superset)", 1.0 if maxf(bn, bf) < asin(0.125) and asin(0.125) < GrLens.CONE else 0.0, 1.0, 0.0)
+	# the uniforms: only the sim's numbers and the mirror's per-r scalars
+	var st := GrLens.reference_state(10.0, PackedFloat64Array([1.0, 0.0, 0.0]))
+	var u := GrLens.uniforms(st)
+	check("uniforms: gr_x_max is the row's last column ln((pi - alpha)/alpha)", u["gr_x_max"], Schwarzschild.row_x_max(10.0), 1e-15)
+	check("uniforms: gr_row is the mirror's fractional row", u["gr_row"], Schwarzschild.row_coordinate(10.0), 0.0)
+	check("uniforms: gr_dg is the state's blueshift", u["gr_dg"], 1.05409255338946, 1e-12)
+	check("uniforms: gr_h, the hole at galactic +x, is world -Z", (u["gr_h"] as Vector3).distance_to(Vector3(0, 0, -1)), 0.0, 1e-7)
+	var uw := GrLens.uniforms(GrLens.reference_state(2e6, PackedFloat64Array([1.0, 0.0, 0.0])))
+	check("uniforms: beyond r = 1e6 the weak branch, k = sqrt(1 - 1/r)/r", (1.0 if uw["gr_weak"] and not u["gr_weak"] else 0.0) + uw["gr_weak_k"] * 2e6, 1.0 + sqrt(1.0 - 0.5e-6), 1e-15)
+	# derivation check (not a shader check; GR10/GR12 test the shader): rule 2's sine-ratio form
+	# used in sky/schwarzschild.gdshaderinc equals the cot-difference weight
+	var wmax := 0.0
+	for psi in [0.3, 1.0, 2.0, 3.0, 3.14]:
+		var p0: float = psi - 0.004
+		var p1: float = psi + 0.003
+		var cot := func(x: float) -> float: return 1.0 / tan(0.5 * x)
+		var w_cot: float = (cot.call(psi) - cot.call(p0)) / (cot.call(p1) - cot.call(p0))
+		var w_sin: float = (sin(0.5 * (psi - p0)) / sin(0.5 * psi)) / (sin(0.5 * (p1 - p0)) / sin(0.5 * p1))
+		wmax = maxf(wmax, absf(w_cot - w_sin))
+	check("derivation: sin((psi - psi0)/2)/sin(psi/2) over sin((psi1 - psi0)/2)/sin(psi1/2) = the cot(psi/2) weight", wmax, 0.0, 1e-9)
 
 
 func _initialize() -> void:
