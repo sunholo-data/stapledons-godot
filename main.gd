@@ -9,6 +9,7 @@ extends Node3D
 ## Title screen: godot --path .   (a plain launch, no user args: ui/title_screen.gd; Board the ship /
 ##              Guided voyage / Galaxy map / Settings / Credits / Quit; Esc in the ship or map returns to it)
 ## Current ship: godot --path . -- --ship-demo (live navigation, expanded painted 3D ship, captain eye)
+## Sgr A* aboard: godot --path . -- --ship-demo --scenario=sgr_a (make run-bh; M3.6)
 ## Interior reference: godot --path . -- --interior [--bundle=DIR] (M4.2: original fixed-view bridge with
 ##              the live sky; WASD walk, E use, M galaxy map, L log, K codex; --interior-capture=DIR the S1 review
 ##              captures (tools/interior_capture.gd); --m4-smoke [--bundle=DIR] the scripted slice (make m4-smoke))
@@ -180,6 +181,9 @@ func _ready() -> void:
 		_show_title()
 		return
 	if current_ship_entry(args):
+		if args.get("scenario", "") == "sgr_a": # make run-bh (M3.6): the Sgr A* demo aboard the ship
+			_start_current_ship.call_deferred(false, {"sky_state": "rest", "scenario": "sgr_a"})
+			return
 		_start_current_ship.call_deferred(not (args.has("ship-demo-smoke") or args.has("ship-identification-smoke") or args.has("solar-departure-smoke")))
 		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel

@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-M3-BLACK-HOLES",
-  "status": "in_progress",
+  "status": "completed",
   "approved_by": "Mark Edmondson, attended 2026-10-08 (ledger D-53)",
   "requested_by": "Mark 2026-10-08: start M3 next",
   "design_doc": "design_docs/planned/r1/m3-black-holes.md",
@@ -322,10 +322,10 @@
         "AC-14: make test green locally and in CI; make strict green",
         "AC-15 (client half): tests/test_bh_hud.gd asserts the three black-hole Archive entries unlock in the codex after the scripted demo"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-08T15:42:00Z",
+      "completed": "2026-10-08T17:30:00Z",
+      "notes": "Executed 2026-10-08 (branch sprint/m3-6-demo, Godot 4.7.2, M4 Max). demos/black_hole_visit.gd: own sgr_a session at protocol 2.6, stops N: approach 1e6->10 (beta 0.1, 5% of remaining ship time per 20 Hz tick: 292 ticks ~15 s), 5, 3, orbit at 3, hover; K finishes an approach (<=1 yr ticks); hud_lines formats gr fields only. ship_geometry_demo: navigation entry 'Sgr A* (black hole) · demo', HUD button, make run-bh (--ship-demo --scenario=sgr_a, parsed in demo and main), keys N/K/C/L in the controls hint, codex (C), details line 'GR on/off' replaces 'GR not implemented' (and the ship benchmark report). InteriorSky places stars from Sol under GR (OQ5); no-star lighting: moody key returns (tested). AC-12: make bh-hud-test 64 passed (sentinels, menu entry, scenario arg, scripted stops vs sim.gr, codex tides+shadow-ring, events bh_enter->bh_hover->bh_ring, GR off after leaving and in normal navigation, render_diff self-check); grep clean after moving sqrt(1-1/r)/r from sky/gr_lens.gd to Schwarzschild.weak_k (make physics check). AC-13: make capture-bh 40 renders, opened by Claude (sprint executor, Opus 5.5) 2026-10-08 (report design_docs/implemented/r1/m3-report.md); baseline pinned data/refs/bh_manifest.sha256 + gs://stapledons-voyage-assets/refs/m3_bh_ship/; make bh-render-diff worst 0.000/255 (byte-identical reruns). AC-15 client: real ring path reported bh_ring in capture. bench-bh 1920x1080 large tier: Vulkan sky GPU p50 2.05 -> 3.85-4.23 ms with GR, wall p50 8.3-9.1 ms either way, live orbit p99 ~14 ms; Metal reports no GPU time. Title screen untouched (six-button test). make golden green. Mark's sign-off on the M3.6 renders pending. Eval round 1 (Sonnet, sprint-evaluator): 88/100 PASS, 6 minor findings: F1 AC-13 wording (pinned by sha256, not committed; a regression pin, not independent) and F2 (lower-case 'opened by'; AC-14 grep excludes the Python oracle) fixed in the report; F5 literal HUD checks at hover 10 and orbit 3 from the real sim (AC-11 values) added; F3, F4, F6 recorded as follow-ups in the report (laptop bench, Galactic-Centre sky, ring latency, auto-exposure)."
     }
   ],
   "plan_review": {

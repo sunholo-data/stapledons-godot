@@ -55,6 +55,13 @@ static func weak_deflection_finite(r: float, psi: float) -> float:
 	return (1.0 + cos(psi)) / b if b > 0.0 else 0.0
 
 
+## The r-only factor of weak_deflection_finite: delta = weak_k(r) cot(psi / 2), since
+## (1 + cos psi) / b = cot(psi / 2) / impact(r, pi / 2). The shader's gr_weak_k (M3.6: moved
+## here from sky/gr_lens.gd so no client file holds a Schwarzschild formula).
+static func weak_k(r: float) -> float:
+	return 1.0 / impact(r, PI / 2.0)
+
+
 static func weak_deflection2(b: float) -> float:
 	return 2.0 / b + 15.0 * PI / (16.0 * b * b)
 

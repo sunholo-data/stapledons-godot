@@ -121,7 +121,7 @@ static func uniforms(gr: Dictionary) -> Dictionary:
 		"gr_alpha_hi": pair[0], "gr_alpha_lo": pair[1], "gr_cols": column_image(a),
 		"gr_row": Schwarzschild.row_coordinate(minf(r, Schwarzschild.R_WEAK)),
 		"gr_x_min": Schwarzschild.x_min(), "gr_x_max": log((PI - a) / a),
-		"gr_weak": r > Schwarzschild.R_WEAK, "gr_weak_k": sqrt(1.0 - 1.0 / r) / r,
+		"gr_weak": r > Schwarzschild.R_WEAK, "gr_weak_k": Schwarzschild.weak_k(r),
 		"gr_dg": gr["blueshift"],
 	}
 
