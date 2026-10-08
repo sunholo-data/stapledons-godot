@@ -100,6 +100,39 @@ func _show() -> void:
 
 ## The sprite as a mipmapped texture: imported (editor and export) or the raw PNG.
 static func _texture(path: String) -> Texture2D:
+	if _offered.has(path): # made moments ago by the loading jump (ui/loading_jump.gd), one a frame
+		var t: Texture2D = _offered[path]
+		_offered.erase(path)
+		return t
+	return make_texture(path)
+
+
+## Textures make_texture() built ahead of a load_dir, taken once each; main thread only.
+static var _offered := {}
+
+
+static func offer_texture(path: String) -> void:
+	var t := make_texture(path)
+	if t != null:
+		_offered[path] = t
+
+
+static func clear_offered() -> void:
+	_offered.clear()
+
+
+## The sprite files load_dir(dir) reads, in its order.
+static func sprite_paths(dir: String) -> Array[String]:
+	var out: Array[String] = []
+	var m: Variant = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("manifest.json")))
+	if m is Dictionary and m.get("files") is Array:
+		for f: Variant in m["files"]:
+			if f is Dictionary and f.get("kind") == "avatar":
+				out.append(dir.path_join(str(f.get("file", ""))))
+	return out
+
+
+static func make_texture(path: String) -> Texture2D:
 	var img: Image = null
 	if ResourceLoader.exists(path):
 		var t := load(path) as Texture2D

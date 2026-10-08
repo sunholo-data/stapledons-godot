@@ -792,6 +792,18 @@ ship-demo-ci: title-screen-test
 title-capture:     ## title screen, settings and credits at 1280x720 -> renders/title_screen/ (needs a GPU window)
 	$(GODOT) --path . --resolution 1280x720 --script tools/title_screen_capture.gd
 	@for f in title settings credits; do sips -Z 700 renders/title_screen/$$f.png --out renders/title_screen/$${f}_700.png > /dev/null; done
+# Lightspeed loading view (design_docs/planned/r1/lightspeed-loading.md): each title route through the jump, real monotone
+# progress reaching 1.0 exactly at the destination, beta 0.99999 at 100%, the prefetched sim taken, shared loads = fresh loads.
+.PHONY: loading-jump-test loading-jump-capture loading-profile
+test: loading-jump-test
+loading-jump-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_loading_jump.gd > $(SCRATCH)/loading-jump.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/loading-jump.log | grep -E '^(FAIL|loading-jump)' ; test $$rc = 0 && grep -q '^loading-jump: [0-9]* passed, 0 failures$$' $(SCRATCH)/loading-jump.log
+loading-jump-capture: ## the jump at 0/50/90/99/100 %, the white-out and its fade at 1280x720 -> renders/loading_jump/ (needs a GPU window)
+	$(GODOT) --path . --resolution 1280x720 --script tools/loading_jump_capture.gd
+	@for f in p000 p050 p090 p099 p100 whiteout fade; do sips -Z 700 renders/loading_jump/$$f.png --out renders/loading_jump/$${f}_700.png > /dev/null; done
+loading-profile:   ## where each title route's load time goes: pieces, then each route through the jump (needs a GPU window)
+	$(GODOT_SIM) --path . --resolution 1280x720 --script tools/loading_profile.gd -- --pieces 2>&1 | grep '^loading-profile'
+	@for r in ship guided map; do LOADING_ROUTE=$$r $(GODOT_SIM) --path . --resolution 1280x720 --script tools/loading_profile.gd 2>&1 | grep -E '^loading-(jump|profile): (route|title|[a-z]+ ready)'; done
 # The exported .app on a plain double-click opens the title screen over the bundled sky, with its build id.
 title-export-smoke:
 	@mkdir -p $(SCRATCH)/title-export-home
