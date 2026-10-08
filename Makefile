@@ -282,6 +282,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 
 export-macos: runtime sky-bundle areas-stage starmap-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
+	@git describe --tags --always --dirty > runtime/build_version.txt # bundled (runtime/*): the audit's "build" field
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
 
@@ -704,8 +705,22 @@ ship-demo-ci: ship-demo-consolidation-test
 .PHONY: current-ship-export-smoke
 current-ship-export-smoke:
 	@mkdir -p $(SCRATCH)/current-ship-export-home
-	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/current-ship-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 180 > $(SCRATCH)/current-ship-export.log 2>&1; rc=$$?; cat $(SCRATCH)/current-ship-export.log; test $$rc = 0 && grep -q '^current-ship-startup: OK live-rest captain-eye single-navigation$$' $(SCRATCH)/current-ship-export.log
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/current-ship-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 180 -- --ship-demo > $(SCRATCH)/current-ship-export.log 2>&1; rc=$$?; cat $(SCRATCH)/current-ship-export.log; test $$rc = 0 && grep -q '^current-ship-startup: OK live-rest captain-eye single-navigation$$' $(SCRATCH)/current-ship-export.log
 publish-dev: current-ship-export-smoke
+
+# Title screen (design_docs/planned/r1/title-screen.md): a plain launch shows the menu; every CLI mode bypasses it.
+.PHONY: title-screen-test title-capture title-export-smoke
+title-screen-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_title_screen.gd > $(SCRATCH)/title-screen.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/title-screen.log | grep -v '^title-screen: OK' ; test $$rc = 0 && grep -q '^title-screen: [0-9]* passed, 0 failures$$' $(SCRATCH)/title-screen.log
+ship-demo-ci: title-screen-test
+title-capture:     ## title screen, settings and credits at 1280x720 -> renders/title_screen/ (needs a GPU window)
+	$(GODOT) --path . --resolution 1280x720 --script tools/title_screen_capture.gd
+	@for f in title settings credits; do sips -Z 700 renders/title_screen/$$f.png --out renders/title_screen/$${f}_700.png > /dev/null; done
+# The exported .app on a plain double-click opens the title screen over the bundled sky, with its build id.
+title-export-smoke:
+	@mkdir -p $(SCRATCH)/title-export-home
+	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/title-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 120 > $(SCRATCH)/title-export.log 2>&1; rc=$$?; grep '^title-screen' $(SCRATCH)/title-export.log; test $$rc = 0 && grep -q '^title-screen: OK 6 buttons, sky on, build ' $(SCRATCH)/title-export.log && ! grep -q '^title-screen: OK .*build source checkout$$' $(SCRATCH)/title-export.log
+publish-dev: title-export-smoke
 
 .PHONY: ship-movement-test map-origin-test ship-planets-test ship-lighting-capture ship-lighting-test ship-lighting-bench
 ship-movement-test: import

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Title screen, 2026-10-08
+
+- A plain launch (a double-click on the app) now opens a title screen over the real sky: the NOIRLab panorama and the catalogue stars, rendered at rest by the game's own sky stack with a slow pan along the Milky Way. Buttons: **Board the ship** (the 3D ship at live rest, as before), **Guided voyage** (the ship, straight into the solar-departure tour), **Galaxy map**, **Settings**, **Credits**, **Quit**. Mouse or keyboard (Up/Down wrap, Enter, Esc closes a panel, PageUp/PageDown scroll the credits). The footer shows the build id and "dev build".
+- Esc aboard the ship, or the new "Main menu [Esc]" HUD button, returns to the menu when the ship was opened from it; Esc on the map does too. Every command-line launch (`--ship-demo`, `--voyage`, `--interior`, `--map`, captures, goldens, benches, smokes) is unchanged and keeps Esc = quit.
+- Settings: the ship's view, Realistic (default) or Auto (D-38), saved in `user://settings.cfg`; text-only AI (D-8), saved as the AI settings' own `text_only` in `user://ai_settings.cfg`, so the AI tick and ceiling are kept.
+- Credits: the NOIRLab CC BY 4.0 panorama, Solar System Scope textures, CNS5, Gaia/DPAC, Hipparcos, the NASA Exoplanet Archive, Godot and AILANG, plus every paper and table the simulation cites, read at runtime from the citation lists in `sim/data/*.ail`.
+- `make export-macos` stamps `runtime/build_version.txt` (`git describe`). `make title-screen-test` (in `make test`), `make title-capture` (renders to `renders/title_screen/`), `make title-export-smoke` (in `publish-dev`); `current-ship-export-smoke` now launches with `-- --ship-demo`. Design: `design_docs/planned/r1/title-screen.md`.
+
 ### The ship lit by the real star, 2026-10-07
 
 - The ship's geometry is lit by the star the player sees (dev.20). A new `StarLight` comes from the dominant finite star's apparent direction, the same aberrated disc centre the sky draws, turned into ship axes by the sky camera's attitude, so the light comes from where the Sun is seen through the bubble. Turning the ship sweeps the Sun's shadows across the bridge; when the star is below the deck, the floors shade it.
