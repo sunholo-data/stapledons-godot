@@ -3,8 +3,9 @@ extends RefCounted
 ## Title-screen settings (design_docs/planned/r1/title-screen.md): the ship's
 ## view (D-38 Realistic / Auto) and text-only AI (D-8).
 ##
-## - The view lives in `<dir>/settings.cfg` ([display] auto_view). Default
-##   Realistic (false), the ship's own default.
+## - The view lives in `<dir>/settings.cfg` ([display] auto_view). Default Auto
+##   (Mark, attended 2026-10-08, D-55: "I always turn it on"); Realistic stays one
+##   key (V) away, and the ship remembers the last choice.
 ## - Text-only is NOT duplicated: it is AiSettings' `text_only` in
 ##   `<dir>/ai_settings.cfg`, the file the AI session already reads, so the
 ##   opt-in tick and ceiling saved there are kept on every save.
@@ -14,7 +15,8 @@ extends RefCounted
 const FILE := "settings.cfg"
 
 var dir := "user://"
-var auto_view := false
+const DEFAULT_AUTO_VIEW := true
+var auto_view := DEFAULT_AUTO_VIEW
 var text_only := false
 
 
@@ -30,11 +32,11 @@ func _ai() -> AiSettings:
 
 
 func load_settings() -> void:
-	auto_view = false
+	auto_view = DEFAULT_AUTO_VIEW
 	var cf := ConfigFile.new()
 	if cf.load(cfg_path()) == OK:
-		var v: Variant = cf.get_value("display", "auto_view", false)
-		auto_view = v is bool and v
+		var v: Variant = cf.get_value("display", "auto_view", DEFAULT_AUTO_VIEW)
+		auto_view = v if v is bool else DEFAULT_AUTO_VIEW
 	text_only = _ai().text_only
 
 

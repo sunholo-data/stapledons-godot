@@ -146,7 +146,7 @@ func _on_title_route(route: String) -> void:
 ## The route itself. The ship's view setting goes to the ship; text-only
 ## is already in ai_settings.cfg, which the AI session reads.
 func _route_now(route: String) -> void:
-	var extra := {"from_menu": true, "auto_view": title.settings.auto_view}
+	var extra := {"from_menu": true, "auto_view": title.settings.auto_view, "settings_dir": title.settings.dir}
 	extra.merge(demo_overrides, true)
 	match route:
 		"ship":
