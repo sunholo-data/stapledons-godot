@@ -1,0 +1,26 @@
+{
+ "sprint": "R1-M4-JOURNEY", "milestone": "M4.5s", "round": 2, "score": 90, "pass": true,
+ "findings": [
+  {"severity":"low","blocking":false,"evidence":"x86_64 goldens are byte-equal to arm64 and well-formed (one line, sha256 + filename, same convention as the 3 existing pairs), but provenance (CI run 37742569263 on throwaway PR #153) cannot be re-measured from this arm64 worktree; only the changelog/inventory assert it.","proposed_fix":"Accept on the record; the first real x86_64 CI run of parity-m4 confirms."},
+  {"severity":"low","blocking":false,"evidence":"Removing the `all(holds(h,c1),hs)` clause leaves session-audit-test green (exit 0). Equivalent mutant: hints are inferred from the same flags, so holds is true by construction; the real work is done by c.hints==hints.","proposed_fix":"Delete the redundant clause or document it as defensive."},
+  {"severity":"info","blocking":false,"evidence":"playthrough-time still defaults to the synthetic fixture (round-1 finding 3, deferred to D-52 with disclosure). tools/replay.py message now reads 'by construction ... no process count is measured': honest, no overclaim. m45_session.gd.uid committed; git status clean after runs.","proposed_fix":"none"}
+ ],
+ "round1_findings_resolved": {"tautological_spawn_claim":"resolved by relabel","untested_codex_branches":"resolved (prefix, table, hints-equality each killed by exactly the intended fixture)","playthrough_default":"deferred, disclosed","stray_uid":"resolved"},
+ "fixture_checks": {
+  "early": "two-clocks present in first state before commit; no table; fails via hint-sequence equality (removal => exit 2); prefix/table irrelevant to it",
+  "shrink": "cumulative list drops entries after commit; hints and final ids otherwise valid; only the prefix check can fail it",
+  "wrong_hint": "new_game table says two-clocks=first_boost while stream unlocks it at commit; no other fixture has a table, so tableOk removal killing the suite is attributable to it",
+  "right_hint": "same line with first_commit passes, proving wrong_hint fails on the hint value, not on table presence"},
+ "mutations": [
+  {"m":"remove prefix check","target":"session-audit-test","exit":2,"killed":true},
+  {"m":"remove tableOk","target":"session-audit-test","exit":2,"killed":true},
+  {"m":"remove c.hints==hints","target":"session-audit-test","exit":2,"killed":true},
+  {"m":"remove c.seen==ids","target":"session-audit-test","exit":2,"killed":true},
+  {"m":"remove holds clause","target":"session-audit-test","exit":0,"killed":false,"note":"equivalent mutant"}
+ ],
+ "restoration": "shasum -c on session_audit.ail, session_audit_test.ail, replay.py all OK; git status clean",
+ "gates": [
+  {"g":"deps import","exit":0},{"g":"session-audit-test","exit":0},{"g":"python-guard","exit":0},
+  {"g":"tools-test","exit":0},{"g":"parity-m4","exit":0},{"g":"replay-positive-control","exit":0},{"g":"codex-unlocks","exit":0},
+  {"g":"sim","exit":null,"note":"skipped per instructions"}]
+}
