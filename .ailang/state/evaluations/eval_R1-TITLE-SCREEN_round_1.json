@@ -1,0 +1,19 @@
+{
+ "sprint_id": "R1-TITLE-SCREEN", "round": 1, "result": "pass", "score": 86,
+ "breakdown": {"tests_pass": 19, "lint_clean": 9, "acceptance_criteria": 26, "code_quality": 12, "documentation": 12, "design_fidelity": 8},
+ "checks": {
+  "make title-screen-test": "79 passed, 0 failures",
+  "make ship-demo-launch-test": "OK"
+ },
+ "findings": [
+  {"severity": "low", "where": "Makefile:267-268", "issue": "`make run` is still described as 'interactive galaxy map (the default launch)' but now opens the title screen."},
+  {"severity": "low", "where": "tests/test_title_screen.gd:55-60", "issue": "Bypass test asserts only the pure Main.launch_route() for ~20 flags; _ready() wiring (main.gd _ready: launch_route=='title' before current_ship_entry) is not exercised per mode. A broken _ready that ignored launch_route would still pass. Code read confirms it is correct."},
+  {"severity": "low", "where": "ui/game_settings.gd:42-47", "issue": "save_settings reloads AiSettings then rewrites the whole file; opt-in/ceiling are preserved (tested), but a corrupt ai_settings.cfg would be overwritten with defaults."},
+  {"severity": "low", "where": "ui/title_screen.gd:357-382", "issue": "Credits mention 'crew portraits' under AI art; README names captain, bridge, concept art only. Spot-checked 5 entries (Apache/README, NOIRLab CC BY, Solar System Scope CC BY via data/planets/CREDITS, NASA Exoplanet Archive in sim/data/acen.ail, Montserrat OFL file) all factual; imagery licences complete."}
+ ],
+ "verified": {
+  "bypass": "launch_route: empty args -> title; ship-demo/smoke flags -> ship (unchanged current_ship_entry); every other flag -> reference path untouched. No Makefile target launches main.tscn with empty user args except `run`.",
+  "export_smoke": "current-ship-export-smoke now passes --ship-demo, equivalent to the old empty-args route, same marker asserted; title-export-smoke runs plain launch and rejects 'build source checkout'.",
+  "esc": "Ship: menu only if menu_return; CLI launches still quit. Card (handle_input in _input) and nav window Esc consume first; title panels and Credits panel consume Esc as children before main.gd. Map Esc only when _from_menu."
+ }
+}
