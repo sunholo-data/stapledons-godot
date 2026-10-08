@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fix: the dev.20 lag with the 100 pc sky, 2026-10-08
+
+- Every frame, the sky checked each finite star against all 335,189 star identities with a linear scan: 13.7 ms a frame on an M4 Max at the Aldebaran stop, enough to drop Mark's M2 Air from 60 to about 53 fps (30 fps in the overview). It now uses the starfield's hash index: 0.01 ms. With the large sky, Studio frames went from 16.1–30.3 ms to 8.3–8.5 ms, the same as the medium sky.
+- A regression test checks that the unchanged per-frame call costs no more at 300,000 stars than at 3,000; it fails on the old scan (3.3 ms against 0.03 ms).
+- Performance audits record the exported build's real version (written into the bundle at export) instead of a stale "dev.14" constant.
+
 ### The ship lit by the real star, 2026-10-07
 
 - The ship's geometry is lit by the star the player sees (dev.20). A new `StarLight` comes from the dominant finite star's apparent direction, the same aberrated disc centre the sky draws, turned into ship axes by the sky camera's attitude, so the light comes from where the Sun is seen through the bubble. Turning the ship sweeps the Sun's shadows across the bridge; when the star is below the deck, the floors shade it.
