@@ -7,7 +7,7 @@ module stapledons/sim/consequence_test
 -- predicates and the protocol 2.2 section.
 import ./core (World, Params, Intent, IPlan, ICommit, IRecord, IAiOpen, Target, Event, Ticked, TickInput, Journey, Idle, Planned, Committed, Arrived,
   defaultParams, newWorld, tick, position, ismNow, dragEnergyJ, cqView, CqView, withArchive, scriptedLeg, scriptedRoundTrip)
-import ./consequence (IsmNow, Cq, News, Entry, ArchiveRow, newsTier, tierName, templatesPerTier, standoffLy, standoffFor, clocks, hintHolds, knownHints)
+import ./consequence (IsmNow, Cq, News, Entry, ArchiveRow, newsTier, tierName, templatesPerTier, standoffLy, standoffFor, clocks, hintHolds, knownHints, entry)
 import ./ai (AiOpen, AiEvent, ERequest, EFallback, EAcceptedText)
 import ./rng (Rng)
 import ./protocol (Session, newSession, serve)
@@ -343,7 +343,9 @@ pure func inList2(x: string, xs: [string]) -> bool = match xs { [] => false, y :
 pure func checkHints() -> bool =
   hintHolds("always", [], false, 0.0, 1.0) && !hintHolds("first_commit", [], false, 0.0, 1.0) && hintHolds("cruise_above_0.9c", [], true, 0.91, 2.4) &&
   !hintHolds("cruise_above_0.9c", [], true, 0.9, 2.3) && !hintHolds("cruise_above_0.9c", [], false, 0.99, 7.0) && hintHolds("cruise_above_gamma_275", [], true, 0.99999, 300.0) &&
-  !hintHolds("first_black_hole", [], true, 0.99, 300.0) && !hintHolds("no_such_hint", [], true, 0.99, 300.0) && countHints(knownHints()) == 6
+  !hintHolds("first_black_hole", [], true, 0.99, 300.0) && !hintHolds("no_such_hint", [], true, 0.99, 300.0) && countHints(knownHints()) == 6 &&
+  -- M3.4b: the first hover at r <= 10 r_s (log kind bh_hover) is the first arrival near a black hole; bh_enter alone is not
+  hintHolds("first_black_hole", [entry(3, "bh_hover", "Sgr A*", 1.0, 1.1)], false, 0.0, 1.0) && !hintHolds("first_black_hole", [entry(0, "bh_enter", "Sgr A*", 0.0, 0.0)], false, 0.0, 1.0)
 pure func countHints(xs: [string]) -> int = match xs { [] => 0, _ :: r => 1 + countHints(r) }
 
 -- ------------------------------------------------------------ protocol 2.2
@@ -426,7 +428,7 @@ test "expired news request closes the item as a fallback with reason expired" { 
 test "legacy log is append-only across ticks, replans and cancels" { checkLegacyAppendOnly() }
 test "legacy log kinds in order for a round trip, gap_years = t - tau" { checkLegacyKinds() }
 test "archive hints fire once, in table order, as their predicates hold" { checkArchive() }
-test "cruise_above_gamma_275 fires at gamma 316; first_black_hole never" { checkArchiveGamma() }
+test "cruise_above_gamma_275 fires at gamma 316; first_black_hole never in flat space" { checkArchiveGamma() }
 test "hint predicates and the six-hint vocabulary" { checkHints() }
 test "protocol 2.2: consequence section and ship.ism only for minor 2; 2.0/2.1 streams unchanged" { checkWire22() }
 test "legacy log on the wire is a delta; count is the running total" { checkWireLegacyDelta() }

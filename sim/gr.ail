@@ -1,0 +1,265 @@
+module stapledons/sim/gr
+
+-- M3.4a (R1-M3-BLACK-HOLES, design m3-black-holes §M3.4): the GR mode. Pure: no
+-- effects, runs on the strict VM (`make strict`). A non-spinning hole (D-13,
+-- D-53: Sgr A* by default, the mass a scenario parameter); the ship hovers,
+-- orbits or approaches radially. Every rate, tide and power is a
+-- sunholo/relativity 0.10.0 function (schwarzschild, medium, kinematics); this
+-- module composes them and does no physics of its own.
+--
+-- Units: r in r_s = 2GM/c^2; the step works in t_s = r_s/c (tsYears converts),
+-- positions in light years in the game's galactic frame (Sol at the origin).
+-- Steps are ship-proper-time driven: for dtau of proper time the coordinate
+-- (home) time is dt = dtau / rate, rate = staticClockRate (hover),
+-- circularOrbitClockRate (orbit) or movingClockRate (approach).
+import std/math (floor, sin, cos, intToFloat)
+import std/option (Option, Some, None)
+import pkg/sunholo/relativity/optics (Vec3, normalize)
+import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/relativity/kinematics (rapidityOfBeta, gammaOf, oneMinusBeta, standardGravity)
+import pkg/sunholo/relativity/medium (cSI, julianYearS, lightYearM, astronomicalUnitM, accelSI, hoverPower)
+import pkg/sunholo/relativity/schwarzschild (pi, staticClockRate, staticObserverBlueshift, shadowAngularRadius, circularOrbitSpeed,
+  circularOrbitClockRate, orbitalAngularVelocity, movingClockRate, radialCoordinateRate, rsPerSolarMassMetres,
+  tidalRadial, tidalTransverse, tidalAccelSI, tidalOrbitAccelSI, hoverAccelSI, hoverPowerPerKg)
+import pkg/sunholo/celestial/frames (equatorialToGalactic, unitFromAngles)
+
+-- ------------------------------------------------------------ state
+-- mode: "hover" | "orbit" | "approach". betaLocal: the ship's speed relative to the
+-- local static observer (0 hovering, circularOrbitSpeed in orbit, the commanded speed
+-- in an approach). toR: an approach's target radius (= r otherwise). phase: the
+-- angle (rad, [0, 2 pi)) of the ship about the hole in the plane (axisU, axisV);
+-- holeDir = axisU cos(phase) - axisV sin(phase) is the unit vector from the ship to
+-- the hole, and the ship sits at hole - r r_s holeDir. hoverSeen, ringSeen: the
+-- archive events bh_hover and bh_ring have fired (each fires once).
+export type GrState = { active: bool, holeId: string, mass: float, r: float, mode: string, betaLocal: float, toR: float, phase: float,
+  holeDir: Vec3, hole: Vec3, axisU: Vec3, axisV: Vec3, bubbleRadiusM: float, mEffKg: float, hoverSeen: bool, ringSeen: bool }
+
+export pure func grOff() -> GrState =
+  { active: false, holeId: "", mass: 0.0, r: 0.0, mode: "", betaLocal: 0.0, toR: 0.0, phase: 0.0,
+    holeDir: {x: 0.0, y: 0.0, z: 0.0}, hole: {x: 0.0, y: 0.0, z: 0.0}, axisU: {x: 0.0, y: 0.0, z: 0.0}, axisV: {x: 0.0, y: 0.0, z: 0.0},
+    bubbleRadiusM: 0.0, mEffKg: 0.0, hoverSeen: false, ringSeen: false }
+
+-- Hovering at r r_s from a hole of `mass` Msun at `hole` (ly), the ship on the -axisU side.
+-- The orbit plane holds axisU and axisV = z x axisU (normalised): the galactic plane
+-- for a hole near it.
+export pure func grAt(id: string, mass: float, r: float, hole: Vec3, axisU: Vec3, bubbleRadiusM: float, mEffKg: float) -> GrState =
+  { active: true, holeId: id, mass: mass, r: r, mode: "hover", betaLocal: 0.0, toR: r, phase: 0.0,
+    holeDir: axisU, hole: hole, axisU: axisU, axisV: normalize({x: 0.0 - axisU.y, y: axisU.x, z: 0.0}),
+    bubbleRadiusM: bubbleRadiusM, mEffKg: mEffKg, hoverSeen: false, ringSeen: false }
+
+-- ------------------------------------------------------------ Sgr A* (D-13, D-53)
+-- Mass 4.297e6 Msun and distance R0 = 8,277 pc: GRAVITY Collaboration 2021, A&A 647, A59.
+-- ICRS position 17h45m40.0409s, -29d00m28.118s: Reid & Brunthaler 2004, ApJ 616, 872
+-- (galactic l 359.944 deg, b -0.046 deg through the package's Hipparcos rotation).
+export pure func sgrAMassMsun() -> float = 4297000.0
+pure func sgrADistancePc() -> float = 8277.0
+pure func deg() -> float = pi() / 180.0
+-- Normalised: the package's 10-digit rotation is orthonormal only to ~1e-10.
+export pure func sgrAAxis() -> Vec3 = normalize(equatorialToGalactic(unitFromAngles((17.0 + 45.0 / 60.0 + 40.0409 / 3600.0) * 15.0 * deg(), 0.0 - (29.0 + 28.118 / 3600.0) * deg())))
+pure func parsecLy() -> float = astronomicalUnitM() * 648000.0 / pi() / lightYearM()
+export pure func sgrAHole() -> Vec3 {
+  let u = sgrAAxis();
+  let d = sgrADistancePc() * parsecLy();
+  { x: u.x * d, y: u.y * d, z: u.z * d }
+}
+-- The scenario's hole: Sgr A* by default; `mass` and `r` are scenario parameters
+-- (bh_mass_msun, bh_r), so another hole (the canon's rogue hole) is data, not code.
+export pure func sgrAWith(mass: float, r: float, bubbleRadiusM: float, mEffKg: float) -> GrState = grAt("Sgr A*", mass, r, sgrAHole(), sgrAAxis(), bubbleRadiusM, mEffKg)
+export pure func sgrA(r: float, bubbleRadiusM: float, mEffKg: float) -> GrState = sgrAWith(sgrAMassMsun(), r, bubbleRadiusM, mEffKg)
+
+-- ------------------------------------------------------------ units
+-- r_s in metres from the package's r_s per solar mass; t_s = r_s / c in Julian years; r_s in ly.
+export pure func rsMetres(mass: float) -> float = mass * rsPerSolarMassMetres()
+export pure func tsYears(mass: float) -> float = rsMetres(mass) / cSI() / julianYearS()
+export pure func rsLy(mass: float) -> float = rsMetres(mass) / lightYearM()
+-- 1 g = 9.80665 m/s^2 through the package (accelSI of standardGravity).
+pure func g0() -> float = accelSI(standardGravity())
+
+-- The D-13 hover range (bad_radius outside it), the largest commanded local speed, and the
+-- radius at or within which a hover fires bh_hover (design §M3.6).
+export pure func grMinR() -> float = 2.0
+export pure func grMaxR() -> float = 1000000.0
+export pure func grMaxBeta() -> float = 0.99
+export pure func bhHoverR() -> float = 10.0
+
+-- ------------------------------------------------------------ geometry
+pure func twoPi() -> float = 2.0 * pi()
+pure func wrap(a: float) -> float = a - twoPi() * floor(a / twoPi())
+pure func dirAt(g: GrState, phase: float) -> Vec3 {
+  let c = cos(phase);
+  let s = sin(phase);
+  { x: g.axisU.x * c - g.axisV.x * s, y: g.axisU.y * c - g.axisV.y * s, z: g.axisU.z * c - g.axisV.z * s }
+}
+-- The ship's galactic position (ly): hole - r r_s holeDir.
+export pure func grShipPos(g: GrState) -> Vec3 {
+  let d = g.r * rsLy(g.mass);
+  { x: g.hole.x - g.holeDir.x * d, y: g.hole.y - g.holeDir.y * d, z: g.hole.z - g.holeDir.z * d }
+}
+-- Unit direction of the ship's local motion (galactic): toward or away from the hole in an
+-- approach, along the orbit (d/dphase of the position) in orbit, zero hovering.
+pure func dirLocal(g: GrState) -> Vec3 =
+  if g.mode == "approach" then (if g.toR < g.r then g.holeDir else {x: 0.0 - g.holeDir.x, y: 0.0 - g.holeDir.y, z: 0.0 - g.holeDir.z})
+  else if g.mode == "orbit" then {
+    let c = cos(g.phase);
+    let s = sin(g.phase);
+    { x: g.axisU.x * s + g.axisV.x * c, y: g.axisU.y * s + g.axisV.y * c, z: g.axisU.z * s + g.axisV.z * c }
+  }
+  else {x: 0.0, y: 0.0, z: 0.0}
+
+-- ------------------------------------------------------------ steps
+-- A radial mover at signed local speed b (positive outward): dr/dtau and dt/dtau from the
+-- package's coordinate rate and moving-clock rate.
+pure func signedBeta(g: GrState) -> float = if g.toR < g.r then 0.0 - g.betaLocal else g.betaLocal
+pure func drDtau(r: float, b: float) -> float = radialCoordinateRate(r, b) / movingClockRate(r, b)
+pure func dtDtau(r: float, b: float) -> float = 1.0 / movingClockRate(r, b)
+-- One RK4 step of proper time h (t_s) for (r, t): r and the coordinate time it took.
+type RT = { r: float, t: float }
+pure func rk4Tau(r: float, b: float, h: float) -> RT {
+  let k1 = drDtau(r, b);
+  let k2 = drDtau(r + 0.5 * h * k1, b);
+  let k3 = drDtau(r + 0.5 * h * k2, b);
+  let k4 = drDtau(r + h * k3, b);
+  let j1 = dtDtau(r, b);
+  let j2 = dtDtau(r + 0.5 * h * k1, b);
+  let j3 = dtDtau(r + 0.5 * h * k2, b);
+  let j4 = dtDtau(r + h * k3, b);
+  { r: r + h * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0, t: h * (j1 + 2.0 * j2 + 2.0 * j3 + j4) / 6.0 }
+}
+-- The last piece, from r to the target exactly: RK4 in r (the integrands depend on r only,
+-- so each step is Simpson's rule) for the proper time dtau/dr = 1/(dr/dtau) and the
+-- coordinate time dt/dr = 1/radialCoordinateRate. Returns {r: proper time, t: coordinate time}.
+pure func landingSteps() -> int = 8
+pure func landAcc(r: float, h: float, b: float, n: int, acc: RT) -> RT =
+  if n <= 0 then acc else {
+    let m = r + 0.5 * h;
+    let e = r + h;
+    let tau = h * (1.0 / drDtau(r, b) + 4.0 / drDtau(m, b) + 1.0 / drDtau(e, b)) / 6.0;
+    let t = h * (1.0 / radialCoordinateRate(r, b) + 4.0 / radialCoordinateRate(m, b) + 1.0 / radialCoordinateRate(e, b)) / 6.0;
+    landAcc(e, h, b, n - 1, { r: acc.r + tau, t: acc.t + t })
+  }
+pure func landing(r: float, toR: float, b: float) -> RT = landAcc(r, (toR - r) / intToFloat(landingSteps()), b, landingSteps(), { r: 0.0, t: 0.0 })
+
+-- Proper-time substep: at most 1% of (r - 1) in r, so the RK4 error stays far below the
+-- 1e-9 the closed-form check asks for.
+pure func stepFrac() -> float = 0.01
+-- An approach piece of at most `rem` t_s of proper time: the radius, the coordinate time
+-- (dtS) and proper time (usedS) it took, and whether it reached toR (r is then toR exactly).
+export type Piece = { gr: GrState, dtS: float, usedS: float, arrived: bool }
+export pure func approachPiece(g: GrState, rem: float) -> Piece = approachAcc(g, rem, { gr: g, dtS: 0.0, usedS: 0.0, arrived: false })
+pure func approachAcc(g: GrState, rem: float, acc: Piece) -> Piece =
+  if rem <= 0.0 then {acc | gr: g} else {
+    let b = signedBeta(g);
+    let hMax = stepFrac() * (g.r - 1.0) / absf(drDtau(g.r, b));
+    let h = if rem < hMax then rem else hMax;
+    let s = rk4Tau(g.r, b, h);
+    let crossed = if b < 0.0 then s.r <= g.toR else s.r >= g.toR;
+    if crossed then {
+      let l = landing(g.r, g.toR, b);
+      let used = if l.r < rem then l.r else rem;
+      { gr: {g | r: g.toR, mode: "hover", betaLocal: 0.0}, dtS: acc.dtS + l.t, usedS: acc.usedS + used, arrived: true }
+    } else approachAcc({g | r: s.r}, rem - h, { gr: g, dtS: acc.dtS + s.t, usedS: acc.usedS + h, arrived: false })
+  }
+
+-- One tick of dtau ship-years: the new state and the home (coordinate) time it took, in years.
+export type GrStep = { gr: GrState, dtYears: float }
+export pure func grStep(g: GrState, dtau: float) -> GrStep {
+  let ts = tsYears(g.mass);
+  let dtauS = dtau / ts;
+  let s = advanceS(g, dtauS);
+  { gr: {s.gr | holeDir: dirAt(s.gr, s.gr.phase)}, dtYears: s.dtS * ts }
+}
+-- In t_s: hover and orbit in closed form; an approach by pieces, then a hover for what is left.
+pure func advanceS(g: GrState, dtauS: float) -> Piece =
+  if g.mode == "orbit" then {
+    let dt = dtauS / circularOrbitClockRate(g.r);
+    { gr: {g | phase: wrap(g.phase + orbitalAngularVelocity(g.r) * dt)}, dtS: dt, usedS: dtauS, arrived: false }
+  }
+  else if g.mode == "approach" then {
+    let p = approachPiece(g, dtauS);
+    if p.arrived then { gr: p.gr, dtS: p.dtS + (dtauS - p.usedS) / staticClockRate(p.gr.r), usedS: dtauS, arrived: true } else p
+  }
+  else { gr: g, dtS: dtauS / staticClockRate(g.r), usedS: dtauS, arrived: false }
+
+-- One orbit's coordinate time (t_s): 2 pi / orbitalAngularVelocity.
+export pure func orbitPeriodTs(r: float) -> float = twoPi() / orbitalAngularVelocity(r)
+
+-- ------------------------------------------------------------ intents
+-- Each returns the new state, or the old one with a refusal (bad_radius: target outside
+-- [2, 1e6]; bad_gr: speed outside (0, 0.99] or a zero-length approach; not_in_gr: no
+-- hole; moving: an approach or orbit is under way, or an orbit is left other than by
+-- hovering), and an archive event to emit.
+export type GrResult = { gr: GrState, refusal: Option[string], archive: Option[string] }
+pure func ok(g: GrState) -> GrResult = { gr: g, refusal: None, archive: None }
+pure func no(g: GrState, why: string) -> GrResult = { gr: g, refusal: Some(why), archive: None }
+export pure func grApproach(g: GrState, toR: float, beta: float) -> GrResult =
+  if !g.active then no(g, "not_in_gr")
+  else if g.mode != "hover" then no(g, "moving")
+  else if !(toR >= grMinR() && toR <= grMaxR()) then no(g, "bad_radius")
+  else if !(beta > 0.0 && beta <= grMaxBeta()) || toR == g.r then no(g, "bad_gr")
+  else ok({g | mode: "approach", toR: toR, betaLocal: beta})
+-- Hover: halts an approach where it is, or leaves an orbit (the drive takes the pocket
+-- off its geodesic); a no-op while hovering.
+export pure func grHover(g: GrState) -> GrResult =
+  if !g.active then no(g, "not_in_gr") else ok({g | mode: "hover", toR: g.r, betaLocal: 0.0})
+export pure func grOrbit(g: GrState) -> GrResult =
+  if !g.active then no(g, "not_in_gr")
+  else if g.mode == "approach" then no(g, "moving")
+  else ok({g | mode: "orbit", toR: g.r, betaLocal: circularOrbitSpeed(g.r)})
+-- The client reports the first ring star (the ring-star path fired); the sim echoes it once.
+export pure func grRing(g: GrState) -> GrResult =
+  if !g.active then no(g, "not_in_gr")
+  else if g.ringSeen then ok(g)
+  else { gr: {g | ringSeen: true}, refusal: None, archive: Some("bh_ring") }
+-- After a tick: bh_hover fires the first time the ship hovers at r <= 10.
+export pure func grHoverEvent(g: GrState) -> GrResult =
+  if g.active && !g.hoverSeen && g.mode == "hover" && g.r <= bhHoverR() then { gr: {g | hoverSeen: true}, refusal: None, archive: Some("bh_hover") }
+  else ok(g)
+
+-- ------------------------------------------------------------ readouts
+-- Everything the HUD shows is a field here (design §M3.4): the client formats, never derives.
+-- static_clock = staticClockRate(r); ship_clock includes the local motion; home_per_ship =
+-- 1 / ship_clock ("1 ship-hour = ... home hours"). gamma and 1 - beta of the local motion
+-- come from the package's rapidity forms (never 1 - beta). Tides across the bubble radius:
+-- radial (static or radial mover: tidalAccelSI; orbit: tidalOrbitAccelSI) and the static
+-- transverse squeeze (tidalTransverse/tidalRadial of it; in orbit this is the squeeze along
+-- the motion). Hover acceleration and power only while hovering (orbit is free fall; the
+-- approach is kinematic, design non-goal). orbit_stable: r >= 3 (the ISCO).
+export type GrView = { holeId: string, mass: float, rsM: float, r: float, mode: string, toR: float, phase: float,
+  staticClock: float, shipClock: float, homePerShip: float, blueshift: float, shadow: float,
+  betaLocal: float, gammaLocal: float, oneMinusBetaLocal: float, dirLocal: Vec3, holeDir: Vec3,
+  hoverAccelG: float, hoverPowerWPerKg: float, hoverPowerW: float, tidalRadialG: float, tidalTransverseG: float, orbitStable: bool }
+pure func shipClockOf(g: GrState) -> float =
+  if g.mode == "orbit" then circularOrbitClockRate(g.r)
+  else if g.mode == "approach" then movingClockRate(g.r, g.betaLocal)
+  else staticClockRate(g.r)
+pure func isco() -> float = 3.0
+export pure func grView(g: GrState) -> GrView {
+  let hovering = g.mode == "hover";
+  let phi = rapidityOfBeta(g.betaLocal);
+  let ship = shipClockOf(g);
+  let staticTide = tidalAccelSI(g.mass, g.r, g.bubbleRadiusM);
+  let aHover = hoverAccelSI(g.mass, g.r);
+  { holeId: g.holeId, mass: g.mass, rsM: rsMetres(g.mass), r: g.r, mode: g.mode, toR: g.toR, phase: g.phase,
+    staticClock: staticClockRate(g.r), shipClock: ship, homePerShip: 1.0 / ship, blueshift: staticObserverBlueshift(g.r), shadow: shadowAngularRadius(g.r),
+    betaLocal: g.betaLocal, gammaLocal: gammaOf(phi), oneMinusBetaLocal: oneMinusBeta(phi), dirLocal: dirLocal(g), holeDir: g.holeDir,
+    hoverAccelG: if hovering then aHover / g0() else 0.0,
+    hoverPowerWPerKg: if hovering then hoverPowerPerKg(g.mass, g.r) else 0.0,
+    hoverPowerW: if hovering then hoverPower(g.mEffKg, aHover) else 0.0,
+    tidalRadialG: (if g.mode == "orbit" then tidalOrbitAccelSI(g.mass, g.r, g.bubbleRadiusM) else staticTide) / g0(),
+    tidalTransverseG: staticTide * tidalTransverse(g.r) / tidalRadial(g.r) / g0(),
+    orbitStable: g.r >= isco() }
+}
+
+-- ------------------------------------------------------------ strict check (make strict)
+-- Sgr A*, approach 1e6 -> 10 r_s at beta_local 0.1 in n ticks of 14 / n ship-years, through
+-- the same pieces the tick uses; returns the approach's coordinate time in t_s. The closed
+-- form at constant local speed is t = [r1 - r2 + ln((r1 - 1)/(r2 - 1))]/beta.
+pure func scriptedAcc(g: GrState, dtauS: float, n: int, t: float) -> float =
+  if n <= 0 then 0.0 - 1.0 else {
+    let p = approachPiece(g, dtauS);
+    if p.arrived then t + p.dtS else scriptedAcc(p.gr, dtauS, n - 1, t + p.dtS)
+  }
+export pure func scriptedApproach(n: int) -> float {
+  let g = (grApproach(sgrA(1000000.0, 100.0, 1.0), 10.0, 0.1)).gr;
+  scriptedAcc(g, 14.0 / intToFloat(n) / tsYears(sgrAMassMsun()), n, 0.0)
+}

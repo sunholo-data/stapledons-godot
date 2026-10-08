@@ -1,0 +1,205 @@
+module stapledons/sim/gr_test
+
+-- M3.4a (R1-M3-BLACK-HOLES): the pure GR mode, sim/gr.ail.
+--   * AC-11's numbers: static clock and blueshift at 10/5/3 r_s (+-1e-15); with Sgr A*
+--     (4.297e6 Msun) and L = 100 m, tidal_radial_g and hover_power_w_per_kg (+-1e-3
+--     relative, design check51/check53); orbit at 3 r_s: tide 3.162e-4 g, power 0.
+--   * Ship-proper-time steps: hover and orbit dt = dtau / rate, the orbit phase advances
+--     by orbitalAngularVelocity * dt; an approach integrates r (RK4) and stops exactly
+--     at the target, then hovers for the rest of the tick.
+--   * scriptedApproach matches t = [r1 - r2 + ln((r1 - 1)/(r2 - 1))]/beta (make strict).
+import ./gr (GrState, GrView, GrStep, grOff, grAt, sgrA, sgrAMassMsun, sgrAHole, sgrAAxis, grView, grStep, approachPiece, grShipPos,
+  tsYears, rsLy, grApproach, grHover, grOrbit, grRing, GrResult, scriptedApproach, orbitPeriodTs)
+import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/relativity/optics (Vec3, norm)
+import pkg/sunholo/celestial/frames (lonLat)
+import std/math (log)
+import std/option (Option, Some, None)
+import std/string (concat, join, contains, intToStr)
+import std/list (foldl)
+import std/result (Result, Ok, Err)
+import ./protocol (Session, newSession, serve, encodeGr, decodeGr, decodeState, grMinor)
+
+pure func near(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
+pure func relNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol * absf(b)
+pure func hoverAt(r: float) -> GrState = sgrA(r, 100.0, 1.0)
+pure func viewAt(r: float) -> GrView = grView(hoverAt(r))
+pure func refusal(x: GrResult) -> string = match x.refusal { Some(c) => c, None => "" }
+pure func same(a: GrState, b: GrState) -> bool =
+  a.active == b.active && a.mass == b.mass && a.r == b.r && a.mode == b.mode && a.betaLocal == b.betaLocal && a.toR == b.toR && a.phase == b.phase && a.hoverSeen == b.hoverSeen && a.ringSeen == b.ringSeen
+pure func archived(x: GrResult) -> string = match x.archive { Some(c) => c, None => "" }
+
+-- AC-11: static clock and blueshift (staticClockRate / staticObserverBlueshift), exact to 1e-15.
+pure func checkClocks() -> bool =
+  near((viewAt(10.0)).staticClock, 0.948683298050514, 0.000000000000001) &&
+  near((viewAt(5.0)).staticClock, 0.894427190999916, 0.000000000000001) &&
+  near((viewAt(3.0)).staticClock, 0.816496580927726, 0.000000000000001) &&
+  near((viewAt(10.0)).blueshift, 1.0540925533894598, 0.000000000000001) &&
+  near((viewAt(5.0)).blueshift, 1.118033988749895, 0.000000000000001) &&
+  near((viewAt(3.0)).blueshift, 1.224744871391589, 0.000000000000001) &&
+  (viewAt(3.0)).shipClock == (viewAt(3.0)).staticClock && (viewAt(3.0)).betaLocal == 0.0 && (viewAt(3.0)).gammaLocal == 1.0 && (viewAt(3.0)).oneMinusBetaLocal == 1.0 &&
+  near((viewAt(3.0)).homePerShip, 1.224744871391589, 0.000000000000001)
+
+-- AC-11 (design check51, check53): Sgr A*, L = 100 m, hovering.
+pure func checkTidesAndPower() -> bool =
+  relNear((viewAt(10.0)).tidalRadialG, 0.000005691, 0.001) && relNear((viewAt(5.0)).tidalRadialG, 0.00004553, 0.001) && relNear((viewAt(3.0)).tidalRadialG, 0.0002108, 0.001) &&
+  relNear((viewAt(10.0)).hoverPowerWPerKg, 11190000000000.0, 0.001) && relNear((viewAt(5.0)).hoverPowerWPerKg, 47477000000000.0, 0.001) && relNear((viewAt(3.0)).hoverPowerWPerKg, 144470000000000.0, 0.001) &&
+  relNear((viewAt(10.0)).hoverAccelG, 3806.3, 0.001) && relNear((viewAt(3.0)).hoverAccelG, 49139.0, 0.001) &&
+  -- transverse squeeze is half the radial stretch (static frame)
+  relNear((viewAt(10.0)).tidalTransverseG, 0.0000028455, 0.001) &&
+  -- m_eff = 1 kg: the power in W equals the power per kg
+  (viewAt(3.0)).hoverPowerW == (viewAt(3.0)).hoverPowerWPerKg &&
+  (grView(sgrA(3.0, 100.0, 2.5))).hoverPowerW == 2.5 * (viewAt(3.0)).hoverPowerWPerKg
+
+-- AC-11: orbit at 3 r_s (the ISCO) is free fall: tide 1.5 x static (3.162e-4 g), no hover acceleration or power.
+pure func orbitAt(r: float) -> GrState = (grOrbit(hoverAt(r))).gr
+pure func checkOrbitReadouts() -> bool {
+  let v = grView(orbitAt(3.0));
+  v.mode == "orbit" && relNear(v.tidalRadialG, 0.0003162, 0.001) && relNear(v.tidalRadialG / (viewAt(3.0)).tidalRadialG, 1.5, 0.000000000000001) &&
+  v.hoverPowerW == 0.0 && v.hoverPowerWPerKg == 0.0 && v.hoverAccelG == 0.0 && v.betaLocal == 0.5 && v.orbitStable &&
+  near(v.shipClock, 0.7071067811865476, 0.000000000000001) && !(grView(orbitAt(2.5))).orbitStable
+}
+
+-- Hover step: tau and t accumulate dtau and dtau / staticClockRate (years); r unchanged.
+pure func checkHoverStep() -> bool {
+  let s = grStep(hoverAt(10.0), 0.001);
+  s.gr.r == 10.0 && s.gr.mode == "hover" && relNear(s.dtYears, 0.001 / 0.948683298050514, 0.000000000000001)
+}
+
+-- Orbit step: one orbit period in t_s is 2 pi / Omega; a step of that coordinate time returns the phase to 0.
+pure func checkOrbitStep() -> bool {
+  let g = orbitAt(10.0);
+  let period = orbitPeriodTs(10.0);
+  let dtau = period * 0.9219544457292887 * tsYears(sgrAMassMsun());
+  let s = grStep(g, dtau);
+  let half = grStep(g, dtau * 0.5);
+  relNear(period, 2.0 * 3.141592653589793 * 44.721359549995796, 0.000000000000001) &&
+  relNear(s.dtYears, period * tsYears(sgrAMassMsun()), 0.000000000001) &&
+  (near(s.gr.phase, 0.0, 0.000000001) || near(s.gr.phase, 2.0 * 3.141592653589793, 0.000000001)) &&
+  near(half.gr.phase, 3.141592653589793, 0.000000001) &&
+  -- the ship is on the far side of the hole after half an orbit
+  near((half.gr.holeDir).x, 0.0 - (g.holeDir).x, 0.000000001)
+}
+
+-- Approach: stops exactly at the target, the rest of the tick is a hover there.
+pure func approachTo(r: float, toR: float, beta: float) -> GrState = (grApproach(hoverAt(r), toR, beta)).gr
+pure func checkApproachStops() -> bool {
+  let g = approachTo(100.0, 10.0, 0.5);
+  let long = grStep(g, 1.0);
+  let short = grStep(g, 0.000001);
+  long.gr.r == 10.0 && long.gr.mode == "hover" && short.gr.mode == "approach" && short.gr.r < 100.0 && short.gr.r > 10.0 &&
+  (approachPiece(g, 1000000.0)).arrived && (approachPiece(g, 1000000.0)).gr.r == 10.0
+}
+-- Outward too, and the coordinate time of the piece matches the closed form.
+pure func checkApproachOutward() -> bool {
+  let p = approachPiece(approachTo(3.0, 50.0, 0.3), 1000000.0);
+  let want = (50.0 - 3.0 + log(49.0 / 2.0)) / 0.3;
+  p.arrived && p.gr.r == 50.0 && relNear(p.dtS, want, 0.000000001)
+}
+
+-- AC: scriptedApproach (Sgr A*, 1e6 -> 10 r_s at beta 0.1) within 1e-9 of the closed form.
+pure func closedForm() -> float = (1000000.0 - 10.0 + log(999999.0 / 9.0)) / 0.1
+pure func checkScripted() -> bool = relNear(scriptedApproach(100), closedForm(), 0.000000001) && relNear(scriptedApproach(1000), closedForm(), 0.000000001)
+
+-- Refusals (each leaves the state unchanged) and the archive events.
+pure func checkIntents() -> bool {
+  let h = hoverAt(10.0);
+  let a = approachTo(100.0, 10.0, 0.5);
+  let o = orbitAt(10.0);
+  refusal(grApproach(grOff(), 5.0, 0.1)) == "not_in_gr" && refusal(grHover(grOff())) == "not_in_gr" && refusal(grOrbit(grOff())) == "not_in_gr" && refusal(grRing(grOff())) == "not_in_gr" &&
+  refusal(grApproach(h, 1.5, 0.1)) == "bad_radius" && refusal(grApproach(h, 1000001.0, 0.1)) == "bad_radius" && refusal(grApproach(h, 0.0 / 0.0, 0.1)) == "bad_radius" &&
+  refusal(grApproach(h, 5.0, 0.0)) == "bad_gr" && refusal(grApproach(h, 5.0, 1.0)) == "bad_gr" && refusal(grApproach(h, 10.0, 0.1)) == "bad_gr" &&
+  refusal(grApproach(a, 5.0, 0.1)) == "moving" && refusal(grOrbit(a)) == "moving" && refusal(grApproach(o, 5.0, 0.1)) == "moving" &&
+  same((grApproach(h, 1.5, 0.1)).gr, h) && same((grApproach(a, 5.0, 0.1)).gr, a) && same((grOrbit(a)).gr, a) && same((grApproach(h, 10.0, 0.1)).gr, h) &&
+  refusal(grApproach(h, 2.0, 0.99)) == "" && refusal(grApproach(h, 1000000.0, 0.1)) == "" &&
+  -- hover halts an approach where it is, and leaves an orbit
+  (grHover(a)).gr.mode == "hover" && (grHover(a)).gr.r == 100.0 && (grHover(o)).gr.mode == "hover" && (grHover(o)).gr.betaLocal == 0.0 &&
+  -- the ring is reported once
+  archived(grRing(h)) == "bh_ring" && archived(grRing((grRing(h)).gr)) == "" && refusal(grRing((grRing(h)).gr)) == ""
+}
+
+-- Geometry: the hole at the galactic position of Sgr A* (l 359.944 deg, b -0.046 deg, 8,277 pc),
+-- the ship r r_s from it on the Sol side; 1e6 r_s = 1.341 ly.
+pure func checkGeometry() -> bool {
+  let ll = lonLat(sgrAAxis());
+  let g = hoverAt(1000000.0);
+  let p = grShipPos(g);
+  let d = { x: (sgrAHole()).x - p.x, y: (sgrAHole()).y - p.y, z: (sgrAHole()).z - p.z };
+  near(ll.lon * 180.0 / 3.141592653589793, 359.944, 0.001) && near(ll.lat * 180.0 / 3.141592653589793, 0.0 - 0.046, 0.001) &&
+  relNear(norm(sgrAHole()), 26996.0, 0.0001) && relNear(norm(d), 1.341, 0.001) && relNear(rsLy(sgrAMassMsun()) * 1000000.0, 1.3413, 0.0001) &&
+  relNear(tsYears(sgrAMassMsun()) * 31557600.0, 42.33, 0.001) && near(norm(g.holeDir), 1.0, 0.000000000000001)
+}
+
+-- ------------------------------------------------------------ protocol 2.6 (M3.4b)
+pure func helloLine(minor: int) -> string = concat(["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", intToStr(minor), "}}"])
+pure func gameLine(sc: string, params: string) -> string = concat(["{\"v\":2,\"type\":\"new_game\",\"seed\":7,\"scenario\":\"", sc, "\",\"diag\":false", params, "}"])
+pure func tickLine(t: int, dtau: string, intents: string) -> string =
+  join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(t), ",\"dtau\":", dtau, ",\"intents\":[", intents, "]}"])
+pure func feed(s: Session, lines: [string]) -> Session = foldl(\acc line. serve(acc, line).session, s, lines)
+pure func reply(s: Session, line: string) -> string = serve(s, line).reply
+pure func at(minor: int, sc: string, params: string) -> Session = feed(newSession(), [helloLine(minor), gameLine(sc, params)])
+pure func checkWireGating() -> bool =
+  contains(reply(newSession(), helloLine(6)), "\"proto\":{\"major\":2,\"minor\":6},\"sim\":\"stapledons/sim 0.1.0\",\"relativity\":\"0.10.0\"") &&
+  contains(reply(newSession(), helloLine(9)), "\"minor\":6") && grMinor() == 6 &&
+  -- below 2.6: no sgr_a, and a GR intent makes the line bad_intent
+  contains(reply(feed(newSession(), [helloLine(5)]), gameLine("sgr_a", "")), "\"status\":\"bad_game\"") &&
+  contains(reply(at(5, "sol", ""), tickLine(1, "0", "{\"k\":\"gr_hover\"}")), "\"status\":\"bad_intent\"") &&
+  -- at 2.6 without a hole: refused not_in_gr; bh_* params only for sgr_a
+  contains(reply(at(6, "sol", ""), tickLine(1, "0", "{\"k\":\"gr_hover\"},{\"k\":\"gr_ring\"}")), "\"refused\":[{\"i\":0,\"reason\":\"not_in_gr\"},{\"i\":1,\"reason\":\"not_in_gr\"}]") &&
+  contains(reply(feed(newSession(), [helloLine(6)]), gameLine("sol", ",\"params\":{\"bh_mass_msun\":10}")), "\"status\":\"bad_params\"") &&
+  contains(reply(feed(newSession(), [helloLine(6)]), gameLine("sgr_a", ",\"params\":{\"bh_r\":1.5}")), "\"status\":\"bad_params\"") &&
+  -- a malformed GR intent is a bad_gr line
+  contains(reply(at(6, "sgr_a", ""), tickLine(1, "0", "{\"k\":\"gr_approach\",\"to_r\":5}")), "\"status\":\"bad_gr\"") &&
+  -- a sol game at 2.6 has no gr section and keeps its system section
+  !contains(reply(feed(newSession(), [helloLine(6)]), gameLine("sol", "")), "\"gr\":") && contains(reply(feed(newSession(), [helloLine(6)]), gameLine("sol", "")), "\"system\":")
+pure func checkWireScenario() -> bool {
+  let g = reply(feed(newSession(), [helloLine(6)]), gameLine("sgr_a", ""));
+  let rogue = reply(feed(newSession(), [helloLine(6)]), gameLine("sgr_a", ",\"params\":{\"bh_mass_msun\":10,\"bh_r\":2500}"));
+  contains(g, "\"gr\":{\"hole_id\":\"Sgr A*\",\"mass_msun\":4297000,") && contains(g, "\"r\":1000000,\"mode\":\"hover\"") &&
+  contains(g, "\"events\":[{\"k\":\"archive\",\"event\":\"bh_enter\"}]") && contains(g, "\"kind\":\"bh_enter\",\"star_id\":\"Sgr A*\"") && !contains(g, "\"system\":") &&
+  contains(rogue, "\"mass_msun\":10,") && contains(rogue, "\"r\":2500,") && !contains(rogue, "bh_mass_msun")
+}
+-- The gr section's codec pair, and the archive event through decodeState.
+pure func checkWireCodec() -> bool {
+  let v = grView(orbitAt(3.0));
+  let back = decodeGr(encodeGr(v));
+  let st = decodeState(reply(feed(newSession(), [helloLine(6)]), gameLine("sgr_a", "")));
+  (match back { Ok(b) => b.mass == v.mass && b.r == v.r && b.mode == v.mode && b.shipClock == v.shipClock && b.tidalRadialG == v.tidalRadialG && b.oneMinusBetaLocal == v.oneMinusBetaLocal &&
+      b.dirLocal.x == v.dirLocal.x && b.holeDir.z == v.holeDir.z && b.orbitStable == v.orbitStable && b.phase == v.phase && encodeGr(b) == encodeGr(v), Err(_) => false }) &&
+  (match decodeGr("{\"hole_id\":\"x\"}") { Ok(_) => false, Err(c) => c == "bad_state" }) &&
+  (match st { Ok(m) => (match m.events { [e] => e.kind == "archive" && e.archive == Some("bh_enter"), _ => false }), Err(_) => false })
+}
+-- The tick: an approach accepted, flat intents refused in_gr, the hover event on arrival at r <= 10, the ring once.
+pure func checkWireTicks() -> bool {
+  let s0 = at(6, "sgr_a", ",\"params\":{\"bh_r\":100}");
+  let t1 = serve(s0, tickLine(1, "0", "{\"k\":\"thrust\",\"thrust\":1},{\"k\":\"gr_approach\",\"to_r\":10,\"beta_local\":0.5}"));
+  let t2 = serve(t1.session, tickLine(2, "0.001", ""));
+  let t3 = serve(t2.session, tickLine(3, "0", "{\"k\":\"gr_ring\"},{\"k\":\"gr_ring\"}"));
+  contains(t1.reply, "\"refused\":[{\"i\":0,\"reason\":\"in_gr\"}]") && contains(t1.reply, "\"mode\":\"approach\"") &&
+  contains(t2.reply, "\"events\":[{\"k\":\"archive\",\"event\":\"bh_hover\"}]") && contains(t2.reply, "\"r\":10,\"mode\":\"hover\"") &&
+  contains(t3.reply, "\"events\":[{\"k\":\"archive\",\"event\":\"bh_ring\"}]") && contains(t3.reply, "\"kind\":\"bh_ring\"")
+}
+
+test "AC-11: static clock and blueshift at 10/5/3 r_s (+-1e-15); hover ship clock = static clock" { checkClocks() }
+test "AC-11: Sgr A* tides (check51) and hover power (check53) at 10/5/3 r_s, +-1e-3 relative" { checkTidesAndPower() }
+test "AC-11: orbit at 3 r_s: tide 3.162e-4 g (1.5 x static), power 0, free fall" { checkOrbitReadouts() }
+test "hover step: dt = dtau / staticClockRate" { checkHoverStep() }
+test "orbit step: one period of coordinate time returns the phase" { checkOrbitStep() }
+test "approach stops exactly at the target, then hovers" { checkApproachStops() }
+test "outward approach matches the closed form" { checkApproachOutward() }
+test "scriptedApproach: 1e6 -> 10 r_s at beta 0.1 within 1e-9 of the closed form" { checkScripted() }
+test "GR intents: not_in_gr, bad_radius, bad_gr, moving leave the state unchanged; ring once" { checkIntents() }
+test "Sgr A* geometry: galactic position, 1e6 r_s = 1.341 ly, t_s = 42.33 s" { checkGeometry() }
+test "protocol 2.6 gating: hello 2.6 reports 0.10.0; sgr_a and GR intents only at 2.6; not_in_gr; bh params; bad_gr line" { checkWireGating() }
+test "protocol 2.6 sgr_a: gr section (mass 4.297e6, r 1e6, hover), bh_enter event and log, no system; rogue-hole params" { checkWireScenario() }
+test "protocol 2.6: gr codec pair; the archive event decodes" { checkWireCodec() }
+test "protocol 2.6 ticks: in_gr, approach, bh_hover on arrival at 10, bh_ring once" { checkWireTicks() }
+
+pure func failed(xs: [(string, bool)]) -> [string] = match xs { [] => [], (k, v) :: r => if v then failed(r) else k :: failed(r) }
+export pure func grVm(n: int) -> string {
+  let bad = failed([("clocks", checkClocks()), ("tides", checkTidesAndPower()), ("orbitReadouts", checkOrbitReadouts()), ("hoverStep", checkHoverStep()),
+    ("orbitStep", checkOrbitStep()), ("approachStops", checkApproachStops()), ("approachOutward", checkApproachOutward()), ("scripted", checkScripted()),
+    ("intents", checkIntents()), ("geometry", checkGeometry()),
+    ("wireGating", checkWireGating()), ("wireScenario", checkWireScenario()), ("wireCodec", checkWireCodec()), ("wireTicks", checkWireTicks())]);
+  match bad { [] => "gr-ok", _ => concat(["gr-BAD ", join(",", bad)]) }
+}

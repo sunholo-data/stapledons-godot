@@ -25,7 +25,9 @@ import ./trappist1 (trappistBodies, hostE1Lux, hostId as trappistHostId)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
   Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
-  CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf)
+  CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf,
+  IGrApproach, IGrHover, IGrOrbit, IGrRing, withHole, archiveEvent)
+import ./gr (GrView, grView, sgrAWith, sgrAMassMsun)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
@@ -63,7 +65,8 @@ export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= departureMinor() then {helloMsg() | minor: departureMinor(), relativity: relativityPinNav()}
+  if want >= grMinor() then {helloMsg() | minor: grMinor(), relativity: relativityPin()}
+  else if want >= departureMinor() then {helloMsg() | minor: departureMinor(), relativity: relativityPinNav()}
   else if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPinNav()}
   else if want >= systemMinor() then {helloMsg() | minor: systemMinor()} else if want >= 2 then {helloMsg() | minor: 2} else helloMsg()
 -- Protocol 2.3 (M5.1b): a client that asks for minor >= 3 also gets the `system` section
@@ -75,7 +78,12 @@ export pure func systemMinor() -> int = 3
 export pure func navMinor() -> int = 4
 -- 2.5 adds the exact recorded plan departure; older replay bytes are unchanged.
 export pure func departureMinor() -> int = 5
-pure func sessionMinor(want: int) -> int = if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- Protocol 2.6 (M3.4b, R1-M3-BLACK-HOLES): the new_game scenario `sgr_a` (params bh_mass_msun,
+-- bh_r), the intents gr_approach {to_r, beta_local}, gr_hover, gr_orbit and gr_ring, the `gr`
+-- section and `archive` events. Below 6 they are bad_game / bad_intent; the hello reports
+-- relativityPin(). A sol stream at 2.6 is the 2.5 stream except the hello's minor and pin.
+export pure func grMinor() -> int = 6
+pure func sessionMinor(want: int) -> int = if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -137,7 +145,11 @@ pure func encodeIntent(i: Intent) -> string =
       opt("emotion", q, o.emotion) ++ opt("age_stage", num, o.ageStage) ++ opt("line_req", q, o.lineReq) ++ opt("emotions", strArr, o.emotions) ++
       (match o.context { [] => [], _ => [f("context", ctxObj(o.context))] })),
     IAiCancel(c) => obj([f("k", q("ai_cancel")), f("req", q(c.req)), f("reason", q(c.reason))]),
-    IWarp(l) => obj([f("k", q("warp")), f("level", num(l))])
+    IWarp(l) => obj([f("k", q("warp")), f("level", num(l))]),
+    IGrApproach(a) => obj([f("k", q("gr_approach")), f("to_r", num(a.toR)), f("beta_local", num(a.betaLocal))]),
+    IGrHover => obj([f("k", q("gr_hover"))]),
+    IGrOrbit => obj([f("k", q("gr_orbit"))]),
+    IGrRing => obj([f("k", q("gr_ring"))])
   }
 -- 2.4 body plan: approach {mode: "stop", standoff_km?} or {mode: "flyby", b_km, clock_deg, run_out_km?}.
 pure func approachObj(b: BodyReq) -> string =
@@ -207,7 +219,7 @@ pure func encodeEvent(e: Event) -> string =
     opt("from", \c. q(c.from), e.phase) ++ opt("to", \c. q(c.to), e.phase) ++ opt("tau", \c. num(c.tau), e.phase) ++
     opt("residual_x", \r. num(r.x), e.arrived) ++ opt("residual_t", \r. num(r.t), e.arrived) ++ opt("residual_phi", \r. num(r.phi), e.arrived) ++
     opt("stream", \d. q(d.stream), e.drew) ++ opt("n", \d. intToStr(d.n), e.drew) ++ opt("value", \d. intToStr(d.value), e.drew) ++
-    (match e.ai { Some(x) => aiFields(x), None => [] }))
+    (match e.ai { Some(x) => aiFields(x), None => [] }) ++ opt("event", q, e.archive))
 pure func encodeJourney(j: JourneyView) -> string = obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", encodePlanView, j.plan))
 pure func encodeRng(r: Rng) -> string =
   obj([f("journey", intToStr(r.journey)), f("crew", intToStr(r.crew)), f("events", intToStr(r.events)), f("galaxy", intToStr(r.galaxy)), f("ai", intToStr(r.ai)), f("news", intToStr(r.news))])
@@ -298,14 +310,35 @@ export pure func finiteSystemOf(w:World)->SystemView {
   let v=systemOf(w);
   {v | bodies:v.bodies ++ alphaBodies(v.jd,position(w.ship)) ++ destinationBodies(position(w.ship)) ++ trappistBodies(v.jd,position(w.ship))}
 }
+-- No system section at a black hole (M3.4b): Sol's bodies are 27,000 ly away.
 pure func systemFull(s: Session, w: World) -> [string] =
-  if s.minor >= departureMinor() then [f("system", encodeSystemRings(finiteSystemOf(w)))]
+  if w.gr.active then []
+  else if s.minor >= departureMinor() then [f("system", encodeSystemRings(finiteSystemOf(w)))]
   else if s.minor >= systemMinor() then [f("system", encodeSystem(systemOf(w)))] else []
 -- Sent on a tick only when it can have changed: the clock (jd) or the ship's position moved.
 pure func withSystem(s: Session, before: World, after: World, x: Extras) -> Extras =
-  if s.minor < systemMinor() || (before.ship.motion.t == after.ship.motion.t && encodeVec(position(before.ship)) == encodeVec(position(after.ship)) && before.params.epochJd == after.params.epochJd) then x
+  if s.minor < systemMinor() || after.gr.active || (before.ship.motion.t == after.ship.motion.t && encodeVec(position(before.ship)) == encodeVec(position(after.ship)) && before.params.epochJd == after.params.epochJd) then x
   else {x | tail: x.tail ++ systemFull(s, after)}
 pure func encodeVec(v: Vec3) -> string = vec(v)
+
+-- 2.6 gr section (M3.4b, design §M3.4): every number the black-hole HUD and the lensed sky
+-- use, computed by sim/gr.ail from sunholo/relativity. Units: mass_msun solar masses, rs_m
+-- metres, r and to_r in r_s, phase and shadow in radians, the clocks and blueshift ratios,
+-- home_per_ship home hours per ship hour, beta_local / gamma_local / one_minus_beta_local of
+-- the motion relative to the static observer, dir_local / hole_dir galactic unit vectors,
+-- hover_accel_g and the tides in g (9.80665 m/s^2) across bubble_radius_m, the powers in
+-- W/kg and W (m_eff_kg). Sent whole in the new_game reply and on each tick it changed.
+pure func grFields(v: GrView) -> [string] =
+  [f("hole_id", q(v.holeId)), f("mass_msun", num(v.mass)), f("rs_m", num(v.rsM)), f("r", num(v.r)), f("mode", q(v.mode)), f("to_r", num(v.toR)), f("phase", num(v.phase)),
+   f("static_clock", num(v.staticClock)), f("ship_clock", num(v.shipClock)), f("home_per_ship", num(v.homePerShip)), f("blueshift", num(v.blueshift)), f("shadow", num(v.shadow)),
+   f("beta_local", num(v.betaLocal)), f("gamma_local", num(v.gammaLocal)), f("one_minus_beta_local", num(v.oneMinusBetaLocal)), f("dir_local", vec(v.dirLocal)), f("hole_dir", vec(v.holeDir)),
+   f("hover_accel_g", num(v.hoverAccelG)), f("hover_power_w_per_kg", num(v.hoverPowerWPerKg)), f("hover_power_w", num(v.hoverPowerW)),
+   f("tidal_radial_g", num(v.tidalRadialG)), f("tidal_transverse_g", num(v.tidalTransverseG)), f("orbit_stable", bool(v.orbitStable))]
+export pure func encodeGr(v: GrView) -> string = obj(grFields(v))
+pure func grFull(s: Session, w: World) -> [string] = if s.minor >= grMinor() && w.gr.active then [f("gr", encodeGr(grView(w.gr)))] else []
+pure func withGr(s: Session, before: World, after: World, x: Extras) -> Extras =
+  if s.minor < grMinor() || !after.gr.active then x
+  else { let a = encodeGr(grView(after.gr)); if before.gr.active && encodeGr(grView(before.gr)) == a then x else {x | tail: x.tail ++ [f("gr", a)]} }
 
 -- ------------------------------------------------------------ reading
 pure func bind(r: Result[a, string], g: a -> Result[b, string]) -> Result[b, string] = match r { Ok(x) => g(x), Err(c) => Err(c) }
@@ -368,6 +401,10 @@ pure func intentOf(k: string, j: Json) -> Result[Intent, string] =
       bind(optStr(j, "emotion", "bad_intent"), \em. bind(optIf(j, "age_stage", \x. req(numF(x, "age_stage"), "bad_intent")), \ag.
       bind(optStr(j, "line_req", "bad_intent"), \lr. bind(optIf(j, "emotions", \x. strsAt(x, "emotions", "bad_intent")), \ems. bind(ctxOf(j, "bad_intent"), \cx.
       Ok(IAiOpen({kind: kd, purpose: pu, entityId: eid, emotion: em, ageStage: ag, lineReq: lr, emotions: ems, context: cx}))))))))))
+    else if k == "gr_approach" then bind(req(numF(j, "to_r"), "bad_gr"), \r. bind(req(numF(j, "beta_local"), "bad_gr"), \b. Ok(IGrApproach({toR: r, betaLocal: b}))))
+    else if k == "gr_hover" then Ok(IGrHover)
+    else if k == "gr_orbit" then Ok(IGrOrbit)
+    else if k == "gr_ring" then Ok(IGrRing)
     else if k == "warp" then bind(req(numF(j, "level"), "bad_intent"), \l. check(isWarpLevel(l), IWarp(l), "bad_intent"))
     else if k == "ai_cancel" then bind(str(j, "req"), \r. bind(str(j, "reason"), \why. check(isCancelReason(why), IAiCancel({req: r, reason: why}), "bad_intent")))
     else Err("bad_intent")
@@ -401,6 +438,8 @@ pure func inRange(n: string, v: float) -> bool =
   else if n == "cruise_min_beta" || n == "cap_one_minus_beta" then v > 0.0 && v < 1.0
   else if n == "ai_max_open" then v >= 1.0 && v <= 64.0 && floor(v) == v
   else if n == "ai_ttl_ticks" then v >= 1.0 && v <= 1000000.0 && floor(v) == v
+  else if n == "bh_mass_msun" then v > 0.0 && v <= 1.0e12
+  else if n == "bh_r" then v >= 2.0 && v <= 1000000.0
   else false
 pure func decodeOverride(e: {key: string, value: Json}) -> Result[Override, string] =
   match e.value { JNumber(v) => check(finite(v) && inRange(e.key, v), {name: e.key, value: v}, "bad_params"), _ => Err("bad_params") }
@@ -427,7 +466,7 @@ export pure func decodeInput(line: string) -> Result[Input, string] =
 pure func inputOf(t: string, j: Json) -> Result[Input, string] =
     if t == "hello" then bind(req(get(j, "want"), "bad_cmd"), \w. bind(req(natF(w, "major"), "bad_cmd"), \ma. bind(req(natF(w, "minor"), "bad_cmd"), \mi. Ok(GHello({major: ma, minor: mi})))))
     else if t == "new_game" then bind(req(natF(j, "seed"), "bad_game"), \seed. bind(req(getString(j, "scenario"), "bad_game"), \sc.
-      bind(check(sc == "sol" || sc == "solar_departure", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
+      bind(check(sc == "sol" || sc == "solar_departure" || sc == "sgr_a", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
       bind(optStr(j, "ai_core", "bad_game"), \core. bind(check(match core { Some(h) => isSha256Hex(h), None => true }, core, "bad_game"), \_c.
       Ok(GNewGame({seed: seed, scenario: sc, diag: diag, params: ps, aiCore: core})))))))))
     -- ailang#1467: `\tick.` would be captured by the imported core.tick, hence `\tk.`
@@ -504,8 +543,8 @@ pure func optIf(e: Json, k: string, g: Json -> Result[a, string]) -> Result[Opti
 pure func decodeEvent(e: Json) -> Result[Event, string] =
   bind(req(getString(e, "k"), bad()), \k. bind(optIf(e, "target", \x. planOf(x, bad())), \echo.
   bind(optIf(e, "from", decodeCrossing), \ph. bind(optIf(e, "residual_x", decodeResiduals), \ar. bind(optIf(e, "stream", decodeDrawn), \dr.
-  bind(aiEventOf(k, e), \ae.
-  Ok({kind: k, echo: echo, phase: ph, arrived: ar, drew: dr, ai: ae})))))))
+  bind(aiEventOf(k, e), \ae. bind(optIf(e, "event", \x. sOf(x, "event")), \arc.
+  Ok({kind: k, echo: echo, phase: ph, arrived: ar, drew: dr, ai: ae, archive: arc}))))))))
 pure func sOf(j: Json, k: string) -> Result[string, string] = req(getString(j, k), bad())
 pure func nat(j: Json, k: string) -> Result[int, string] = req(natF(j, k), bad())
 pure func decodeKey(j: Json) -> Result[CacheKey, string] =
@@ -548,6 +587,18 @@ export pure func decodeSystem(text: string) -> Result[SystemView, string] =
       bind(all(decodeBody, bs), \bodies. Ok({jd: jd, ephemeris: ep, frame: fr, bodies: bodies})))))),
     Err(_) => Err(bad())
   }
+
+-- 2.6: the inverse of encodeGr (bad_state on any missing or mistyped field).
+pure func decodeGrJ(j: Json) -> Result[GrView, string] =
+  bind(sOf(j, "hole_id"), \id. bind(n(j, "mass_msun"), \m. bind(n(j, "rs_m"), \rs. bind(n(j, "r"), \r. bind(sOf(j, "mode"), \md. bind(n(j, "to_r"), \tr. bind(n(j, "phase"), \ph.
+  bind(n(j, "static_clock"), \sc. bind(n(j, "ship_clock"), \shc. bind(n(j, "home_per_ship"), \hps. bind(n(j, "blueshift"), \bs. bind(n(j, "shadow"), \sh.
+  bind(n(j, "beta_local"), \bl. bind(n(j, "gamma_local"), \gl. bind(n(j, "one_minus_beta_local"), \omb. bind(req(vecF(j, "dir_local"), bad()), \dl. bind(req(vecF(j, "hole_dir"), bad()), \hd.
+  bind(n(j, "hover_accel_g"), \ha. bind(n(j, "hover_power_w_per_kg"), \hpk. bind(n(j, "hover_power_w"), \hpw. bind(n(j, "tidal_radial_g"), \tdr. bind(n(j, "tidal_transverse_g"), \tdt.
+  bind(req(getBool(j, "orbit_stable"), bad()), \os.
+  Ok({holeId: id, mass: m, rsM: rs, r: r, mode: md, toR: tr, phase: ph, staticClock: sc, shipClock: shc, homePerShip: hps, blueshift: bs, shadow: sh,
+      betaLocal: bl, gammaLocal: gl, oneMinusBetaLocal: omb, dirLocal: dl, holeDir: hd, hoverAccelG: ha, hoverPowerWPerKg: hpk, hoverPowerW: hpw,
+      tidalRadialG: tdr, tidalTransverseG: tdt, orbitStable: os}))))))))))))))))))))))))
+export pure func decodeGr(text: string) -> Result[GrView, string] = match decode(text) { Ok(j) => decodeGrJ(j), Err(_) => Err(bad()) }
 
 export pure func decodeState(line: string) -> Result[StateMsg, string] =
   bind(envelopeOf(line, "state"), \j. bind(check(getString(j, "type") == Some("state"), j, bad()), \_j.
@@ -605,6 +656,16 @@ pure func navJourney(before: World, after: World) -> Option[string] =
     Some(n) => { let ja = encodeJourneyNav(journeyView(after), Some(n)); if encodeJourneyNav(journeyView(before), navOf(before)) == ja then None else Some(ja) }
   }
 pure func hasBodyPlan(xs: [Intent]) -> bool = match xs { [] => false, x :: r => (match x { IPlanBody(_) => true, _ => false }) || hasBodyPlan(r) }
+pure func isGrIntent(x: Intent) -> bool = match x { IGrApproach(_) => true, IGrHover => true, IGrOrbit => true, IGrRing => true, _ => false }
+pure func hasGrIntent(xs: [Intent]) -> bool = match xs { [] => false, x :: r => isGrIntent(x) || hasGrIntent(r) }
+-- 2.6 scenario params of a black hole: bh_mass_msun (default Sgr A*'s 4.297e6) and bh_r (the
+-- starting radius in r_s, default 1e6). They are not Params: only sgr_a takes them (bad_params
+-- otherwise), and the gr section reports them.
+pure func isBh(o: Override) -> bool = o.name == "bh_mass_msun" || o.name == "bh_r"
+pure func hasBh(os: [Override]) -> bool = match os { [] => false, o :: r => isBh(o) || hasBh(r) }
+pure func flatParams(os: [Override]) -> [Override] = match os { [] => [], o :: r => if isBh(o) then flatParams(r) else o :: flatParams(r) }
+pure func bhParam(os: [Override], k: string, d: float) -> float = match os { [] => d, o :: r => if o.name == k then bhParam(r, k, o.value) else bhParam(r, k, d) }
+pure func sgrAStart() -> float = 1000000.0
 
 export pure func serve(s: Session, line: string) -> Served =
   match decodeInput(line) {
@@ -612,23 +673,28 @@ export pure func serve(s: Session, line: string) -> Served =
     Ok(m) => match m {
       GHello(h) => { session: {s | hello: true, minor: sessionMinor(h.minor)}, reply: encodeHello(helloFor(h.minor)) },
       GQuit => { session: s, reply: "" },
-      GNewGame(g) => if !s.hello then malformed(s, "no_hello") else if g.scenario == "solar_departure" && s.minor < departureMinor() then malformed(s, "bad_game") else {
-        let p = applyAll(defaultParams(), g.params);
+      GNewGame(g) => if !s.hello then malformed(s, "no_hello") else if g.scenario == "solar_departure" && s.minor < departureMinor() then malformed(s, "bad_game")
+        else if g.scenario == "sgr_a" && s.minor < grMinor() then malformed(s, "bad_game")
+        else if g.scenario != "sgr_a" && hasBh(g.params) then malformed(s, "bad_params") else {
+        let p = applyAll(defaultParams(), flatParams(g.params));
         match scenarioError(p) {
           Some(c) => malformed(s, c),
           None => match (if s.minor >= 2 then archiveRows(line) else Ok([])) {
             Err(c) => malformed(s, c),
             Ok(rows) => {
               let initial = newWorld(g.seed, g.diag, p);
-              match (if g.scenario == "solar_departure" then solarInitialize(initial) else Ok(initial)) {
+              match (if g.scenario == "solar_departure" then solarInitialize(initial)
+                     else if g.scenario == "sgr_a" then Ok(withHole(initial, sgrAWith(bhParam(g.params, "bh_mass_msun", sgrAMassMsun()), bhParam(g.params, "bh_r", sgrAStart()), p.bubbleRadiusM, p.mEffKg)))
+                     else Ok(initial)) {
               Err(c) => malformed(s, c),
               Ok(w0) => {
               let w1 = {w0 | ai: {w0.ai | core: match g.aiCore { Some(h) => h, None => "" }}};
               -- below minor 2 the consequence tracking is off: the stream is exactly M2's
               let w = if s.minor >= 2 then withArchive(w1, rows) else {w1 | cq: {w1.cq | on: false}};
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
-                journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)), events: [], refused: [], full: true};
-              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSection(w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []), journey: None }) else encodeState(st) }
+                journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)),
+                events: if w.gr.active then [archiveEvent("bh_enter")] else [], refused: [], full: true};
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSection(w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
               }
               }
             }
@@ -637,14 +703,15 @@ export pure func serve(s: Session, line: string) -> Served =
       },
       GInput(i) => if !s.hello then malformed(s, "no_hello") else match s.game {
         None => malformed(s, "no_game"),
-        Some(w) => if i.tick != w.tick + 1 then malformed(s, "bad_tick") else if s.minor < navMinor() && hasBodyPlan(i.intents) then malformed(s, "bad_intent") else {
+        Some(w) => if i.tick != w.tick + 1 then malformed(s, "bad_tick") else if s.minor < navMinor() && hasBodyPlan(i.intents) then malformed(s, "bad_intent")
+          else if s.minor < grMinor() && hasGrIntent(i.intents) then malformed(s, "bad_intent") else {
           let t = tick(w, {dtau: i.dtau, intents: i.intents});
           let next = t.world;
           let state = { tick: next.tick, status: "ok", clock: changed(encodeClock, clockOf(w.params, w.ship), clockOf(next.params, next.ship)),
             ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
             ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), rng: changed(encodeRng, w.rng, next.rng), params: None,
             ai: changed(encodeAiView, aiView(w.ai), aiView(next.ai)), events: t.events, refused: t.refused, full: false };
-          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(w, next)))) else encodeState(state) }
+          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(w, next))))) else encodeState(state) }
         }
       }
     }
