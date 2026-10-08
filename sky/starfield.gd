@@ -109,8 +109,11 @@ func set_catalogue_replacements(requested: Array[String]) -> void:
 		var bare:=id.trim_prefix("Gaia DR3 ")
 		if bare!=id and not bare in replacements: replacements.append(bare)
 	# A pinned destination replaced by a physical emitter is suppressed with its identity.
+	# index_of is a hash lookup rebuilt only when identities change: a linear `in ids`
+	# here scanned all 335,189 large-tier rows per emitter every frame (13.7 ms on an
+	# M4 Max at the Aldebaran stop; the dev.20 lag on the M2 Air).
 	for id in requested:
-		if ("pin:" + id) in ids and not ("pin:" + id) in replacements: replacements.append("pin:" + id)
+		if index_of("pin:" + id) >= 0 and not ("pin:" + id) in replacements: replacements.append("pin:" + id)
 	for id in pinned_ids:
 		if not id in replacements: replacements.append(id)
 	if replacements == _replacement_ids and _replacement_revision == identity_revision:

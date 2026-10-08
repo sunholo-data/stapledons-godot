@@ -3,7 +3,13 @@ extends RefCounted
 const OUTPUT := "user://ship_demo_benchmark.json"
 var running := false
 var upload:=preload("res://demos/benchmark_upload.gd").new()
-const BUILD:="v0.4.0-dev.14-manual-sky"
+## The exported build's own tag (make export-macos writes git describe into the bundle);
+## a run from the editor or a checkout says so instead of claiming a release.
+const BUILD_FILE:="res://runtime/build_version.txt"
+static func build_label()->String:
+	var f:=FileAccess.open(BUILD_FILE,FileAccess.READ)
+	if f==null:return "unexported (source checkout)"
+	return f.get_as_text().strip_edges()
 static func summarize(values: Array) -> Dictionary:
 	var sorted:=values.duplicate();sorted.sort()
 	var n:=sorted.size()
@@ -28,7 +34,7 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 	var model_output:=[]
 	var model_status:=OS.execute("/usr/sbin/sysctl",PackedStringArray(["-n","hw.model"]),model_output) if OS.get_name()=="macOS" else -1
 	var hardware:={"model":str(model_output[0]).strip_edges() if model_status==0 and not model_output.is_empty() else "unavailable","os":OS.get_name(),"cpu":OS.get_processor_name(),"gpu":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"renderer":RenderingServer.get_current_rendering_method(),"memory":OS.get_memory_info()}
-	var report:={"version":2,"build":BUILD,"measured_hardware":hardware,"user_target":"MacBook Air M2 (2022),24GB","target_measurement_pending":true,"target_confirmation":"Confirm report came from the specified MacBook Air; GPU substring alone cannot identify the laptop","resolution":[1920,1080],"warmup_frames":warmup,"sample_frames":samples,"timer":"wall time between process frames, includes presentation/vsync; not GPU-only time","views":[],"GR":"not implemented"}
+	var report:={"version":2,"build":build_label(),"measured_hardware":hardware,"user_target":"MacBook Air M2 (2022),24GB","target_measurement_pending":true,"target_confirmation":"Confirm report came from the specified MacBook Air; GPU substring alone cannot identify the laptop","resolution":[1920,1080],"warmup_frames":warmup,"sample_frames":samples,"timer":"wall time between process frames, includes presentation/vsync; not GPU-only time","views":[],"GR":"not implemented"}
 	report["sky_review"]={"state":demo.sky_state,"beta":demo.sky.beta,"gamma":demo.sky_world.ship.gamma,"heading":Array(demo.camera.heading),"snapshot_tick":demo.sky_world.tick,"sky_only":false}
 	report["commons_enabled"]=not demo.commons.is_empty()
 	report["sky_exposure_trial"]={"stops":demo.brightness_stops,"label":demo.brightness_label(),"bias_ev":demo.sky.exposure.bias}

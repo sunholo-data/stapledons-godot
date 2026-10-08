@@ -1,0 +1,78 @@
+{
+  "sprint_id": "R1-M3-BLACK-HOLES",
+  "round": 1,
+  "evaluator_model": "sonnet",
+  "date": "2026-10-08",
+  "review_type": "plan review (pre-approval)",
+  "score": 84,
+  "pass": true,
+  "rubric": {
+    "feasibility_and_estimates": {"score": 16, "max": 20, "notes": "Dependency graph is sound and M3.4a/b really can run parallel to M3.2/M3.3 (both need only the pin). Velocity basis cites real PRs. M3.1b (700 LOC: RK4 with Hermite root, Carlson R_F, Fritsch-Carlson inversion, release docs, two PRs on another repo, an evaluator gate before an irreversible publish) is optimistic as one session. M3.2 depends on an unmeasured VM run time (handled by task 1). LOC arithmetic slip: the per-milestone code column sums to 2,060, not the stated 2,070 (tests 1,660 and total 3,720 are right)."},
+    "acceptance_testability": {"score": 16, "max": 20, "notes": "Most ACs are concrete commands. Weak spots: M3.5a 'reference renders opened by a person' has no command (only M3.6 has the 'opened by' grep); AC-13 render_diff against a 'pinned set' has no baseline on the first run; M3.4b 'archive events in order in the parity-gr output' needs the fixture to say which file/grep; AC-15 means different things in the md (archive grep) and the JSON (mass asserted in fixture); M3.1a Python oracle path/repo is ambiguous (see N-5)."},
+    "physics_gate_coverage": {"score": 18, "max": 20, "notes": "Covers every CLAUDE.md gate: check values in tests/test_physics.gd (M3.3), GPU-vs-CPU golden GR1-9 with exact-count Makefile grep (M3.5a/b), inspected renders (M3.6), maths in the package first, make strict on sim/gr.ail and the lens generator, parity-gr, lint-precision, finite-table and monotone tests, determinism by bit-identical regeneration and replay. Bar clause 3: shadow 0.5 px at 10/5/3 (GR1-3; 98.066/202.398/189.056, with 189.056 explained by the doc's FOV-110 harness row V13), D-13 weak-field pair (check42/43 plus the r to infinity column), Einstein ring (GR6 and check46), integrator in package (pkg info grep). One technical error: 'float64 uniform alpha_sh' is not possible in Godot shaders (see N-2)."},
+    "package_first_order": {"score": 9, "max": 10, "notes": "Order is right: oracle and tests first, CHANGELOG, [release] kind=feature, pkg quality, dry-run, evaluator pass, publish, then pin (M3.1c). 0.10.0 is correct: pin is 0.9.0 (registry cache holds up to 0.9.0), kind=feature gives a minor bump, and 0.10.0 sorts above 0.9.0 under semver. hoverPowerPerKg correctly reuses medium.hoverPower (verified signature hoverPower(mEffKg, gMs2) = m*|g|*c). Deduction: the 'standing grant' for the package publish is not backed by the recorded standing approval, which covers the public GCS bucket only (see N-4)."},
+    "risk_coverage_and_D52": {"score": 13, "max": 15, "notes": "Risk table is thorough (#1576, table error budget, float32 edge, second star pass cost, existing-golden regression, no-star lighting, protocol-minor race, publish irreversibility, Kerr canon drift). D-52 is handled correctly: the player view is demos/ship_geometry_demo.gd through InteriorSky and background.gdshader, 'GR not implemented' is at demos/ship_geometry_demo.gd:296 as claimed, main.gd keeps only --golden, --interior is excluded. Gaps: lens tables must exist in CI/make test but no fetch dependency is specified (B-1); M3.1c's pin bump touches hello-pin tests (N-1)."},
+    "consistency_md_json": {"score": 12, "max": 15, "notes": "Milestone sets, dependencies, per-milestone LOC (sum 3,720), ACs, reuse audit and open questions all match between the md and the JSON. Faults: the code-LOC subtotal (2,070 vs 2,060); AC-15 meaning differs on M3.4b/M3.6; M3.6 AC lists 'make test green in CI' but also needs the Makefile .PHONY/test wiring for new targets (lens-lut-check, parity-gr, run-bh, capture-bh, lens-assets), and sim/ailang.toml [exports] must list the new sim/gr.ail and sim/tools/lens_lut*.ail modules, neither of which is mentioned."}
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    {
+      "id": "B-1 (fix before M3.2 starts; near-blocking)",
+      "finding": "Lens tables are ~8 MB, put in the bucket under Q2, yet tests/test_physics.gd (M3.3, part of make test) and CI need them. The plan defines make lens-assets and lens-lut-check but never adds a lens-assets prerequisite to the `test` target (the way starmap-assets is) nor a publish step (lens-publish, pinned sha256 file such as data/lens/SHA256SUMS). Without it make test fails on a clean machine or CI, or silently skips.",
+      "fix": "Add to M3.2: `lens-assets` as a dependency of `test` and `physics`, a `lens-publish` maintainers target and pinned SHA256SUMS, an AC that `make lens-assets && make physics` passes on a clean checkout, and say what CI does if the bucket lacks the file (regenerate in ~7 min, or fail loudly)."
+    },
+    {
+      "id": "N-1",
+      "finding": "M3.1c says relativityPin() is reported 'only at 2.6' and 'no golden changed', but sim/protocol.ail:59 hardcodes relativityPin()=\"0.9.0\", it is used for the minor 4 and 5 hello (lines 63-64), `make hello-pin` ties it to sim/ailang.toml, and literals \"0.9.0\" are asserted at sim/navigation_test.ail:290 and tests/test_sim_bridge.gd:392. Bumping the toml to 0.10.0 either fails hello-pin or changes the 2.4/2.5 hello and those tests. The plan lists none of this.",
+      "fix": "Specify in M3.1c: keep a separate constant for minors 4-5 (0.9.0, as the 0.4.0 split already does), return 0.10.0 only at minor 6, update hello-pin to check the highest minor, and edit the two test literals; add `make hello-pin` to the AC."
+    },
+    {
+      "id": "N-2",
+      "finding": "Risk row says 'delta-psi uses atan2 against a float64 uniform alpha_sh'. Godot 4 shader uniforms and arithmetic are float32; there is no float64 uniform. CLAUDE.md precision rule (float64 only in scalars on the CPU side) is not satisfiable that way.",
+      "fix": "State the real mechanism: compute (psi - alpha_sh) in float32 from a hi/lo pair of uniforms or precompute the offset on the CPU in float64 and pass the already-subtracted value, and keep GR1-3 as the check that the edge is within 0.5 px."
+    },
+    {
+      "id": "N-3",
+      "finding": "M3.5a's 'reference renders opened by a person' and M3.6 AC-13 (`render_diff.gd` against a 'pinned set') are not self-contained: on the first run there is no pinned set, and the inspection requirement outside M3.6 has no command.",
+      "fix": "Define the baseline step explicitly (first `make capture-bh` writes renders/bh_* and a sha/hash manifest, a human-reviewed commit pins them), and add a per-milestone `opened by <name> <date>` line in the sprint JSON notes with a grep, also for M3.5a and M3.5b."
+    },
+    {
+      "id": "N-4",
+      "finding": "The plan and JSON say the package publish happens 'under the standing grant'. The recorded standing approval (memory: public-bucket-standing-approval) covers publishing assets to gs://stapledons-voyage-assets, not publishing to the ailang-packages registry, which is irreversible.",
+      "fix": "Add the package publish as an explicit approval point for Mark in 'Questions' (or cite the ledger row that grants it), keep the 'evaluator passes first' gate."
+    },
+    {
+      "id": "N-5",
+      "finding": "tools/geodesic_ref.py is allowlisted in this repo (role oracle, python-guard), yet M3.1a's AC runs it from `cd $PKG` and the package CI cannot call the game repo's Python. Also `python3 -I tools/geodesic_ref.py --check` must be added to a Makefile target or the oracle never runs in make test.",
+      "fix": "Say the oracle lives in the game repo, the package tests pin its printed values as literals, and a `make geodesic-oracle` target (added to `test`) runs `--check` and `digest 16`; add the allowlist row to the M3.1a task list."
+    },
+    {
+      "id": "N-6",
+      "finding": "LOC subtotal wrong: the code column sums to 2,060 (190+380+20+200+230+170+170+240+220+240), not 2,070; 2,070+1,660 would be 3,730. Total 3,720 and test column are correct. M3.1b at 700 LOC with a cross-repo two-PR flow and a gated publish is unlikely to fit one session; the 12-16 session range already absorbs it but the milestone should be split (geodesic module / release).",
+      "fix": "Correct to 2,060 + 1,660 = 3,720 in the md (and design doc item 10), and optionally split M3.1b into module+tests and release/publish."
+    },
+    {
+      "id": "N-7",
+      "finding": "AC-15 is defined inconsistently (md M3.6: the archive grep; JSON M3.6: demo mass asserted in the GR fixture; both M3.4b and M3.6 cite it). M3.4a reads as depending on the whole 0.10.0 publish although it needs only the 3.1a closed forms, so it is blocked behind the geodesic module's evaluation.",
+      "fix": "Align the AC text between md and JSON; optionally note M3.4a can be developed against a local path dependency of the unpublished package while M3.1b is under evaluation, pinning only after publish."
+    },
+    {
+      "id": "N-8",
+      "finding": "New modules and targets are not wired: sim/ailang.toml [exports] modules must list stapledons/sim/gr and the new sim/tools/lens_lut modules (the file enumerates every module), the Makefile .PHONY and `test` lists need lens-lut-check, parity-gr, the golden grep needs the GR counts, and run-bh/capture-bh must be added; `--scenario=sgr_a` is a new launch argument (today `_create_navigation(scenario)` exists but main.gd/demo have no --scenario parsing).",
+      "fix": "Add a one-line 'wiring' task to M3.2, M3.4b, M3.6 listing these files so the executor and evaluator check them."
+    }
+  ],
+  "verified_claims": [
+    "sim/protocol.ail: departureMinor()=5 is the highest minor; helloFor/sessionMinor cascade on it, so grMinor()=6 needs both cascades extended (grep -n Minor sim/protocol.ail)",
+    "sim/ailang.toml pins sunholo/relativity 0.9.0; registry cache ~/.ailang/cache/registry/sunholo/relativity/ holds 0.1.0..0.9.0; package ailang.toml version 0.9.0, [release] kind=feature, so 0.10.0 feature release is the right next version",
+    "medium.hoverPower(mEffKg, gMs2) exists at medium.ail:196 and equals m*|g|*c, matching the plan's reuse and the 1.44e14 W/kg figure comment",
+    "demos/ship_geometry_demo.gd:296 contains 'GR not implemented' in the HUD string; _create_navigation(scenario) exists at line 456; main.gd line 71/88 routes default launch and --ship-demo to the ship demo; interior/interior_sky.gd, sky/background.gdshader, sky/starfield.gdshader, sim/tools/catalogue_bytes.ail, catalogue_main.ail all exist",
+    "Makefile golden target (line 235-248) uses exact-count greps, so the plan's 'Makefile golden grep gains exact counts' fits the existing pattern; strict/parity/parity-offaxis/parity-v2/physics/lint-precision/bench targets exist; run-bh, capture-bh, lens-*, parity-gr do not yet (planned new)",
+    "tools/python-allowlist.txt exists with role column incl. oracle; python3 -I oracle fits CLAUDE.md Python policy",
+    "Per-milestone LOC in md and JSON agree and sum to 3,720; test column 1,660 correct; code column sums to 2,060 (stated 2,070)",
+    "Design-doc V13 row explains GR3 (FOV 110, f=189.056) and 98.066/202.398 px (f=385.6 at 70 deg vertical FOV, 960x540); independent arithmetic with sin(alpha)=(3*sqrt3/2)/r*sqrt(1-1/r) reproduces 14.27, 27.7 and 45 degree half-angles and 98.1 / 202.6 px",
+    "Ledger D-13 (weak-field pair 1% at 1000 r_s, 3e-4 vs series at 100 r_s, hover range [2,1e6], Sgr A* demo) and D-52 (option A, unified 3D ship, --interior a reference mode) match the plan's use; D-11 bubble facts (tides not shielded, unfelt acceleration) match the HUD content",
+    "hello-pin ties relativityPin() to sim/ailang.toml (eval_R1-M5-PLANETS-M5.5a_round_1.json) and literals '0.9.0' exist at sim/navigation_test.ail:290 and tests/test_sim_bridge.gd:392 (git grep)",
+    "tests/test_ship_demo_live.gd exists; no tests/test_bh_hud.gd yet (planned alternative)"
+  ]
+}

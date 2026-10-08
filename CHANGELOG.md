@@ -9,6 +9,15 @@
 - Settings: the ship's view, Realistic (default) or Auto (D-38), saved in `user://settings.cfg`; text-only AI (D-8), saved as the AI settings' own `text_only` in `user://ai_settings.cfg`, so the AI tick and ceiling are kept.
 - Credits: the NOIRLab CC BY 4.0 panorama, Solar System Scope textures, CNS5, Gaia/DPAC, Hipparcos, the NASA Exoplanet Archive, Godot and AILANG, plus every paper and table the simulation cites, read at runtime from the citation lists in `sim/data/*.ail`.
 - `make export-macos` stamps `runtime/build_version.txt` (`git describe`). `make title-screen-test` (in `make test`), `make title-capture` (renders to `renders/title_screen/`), `make title-export-smoke` (in `publish-dev`); `current-ship-export-smoke` now launches with `-- --ship-demo`. Design: `design_docs/planned/r1/title-screen.md`.
+### Inspect the system you are in (I key), 2026-10-08
+
+- Holding I now rings the Sun, planets, moons, finite stars and exoplanets as well as catalogue stars, at the size they are drawn. Clicking one opens its card: distance from the ship, size and apparent size, temperature for stars, how long ago its light left, its catalogue identity ("Open in map") and its data source.
+- Planets and moons of a distant system are not offered (they are invisible from there), and a body behind a nearer one is hidden, as stars are.
+### Fix: the dev.20 lag with the 100 pc sky, 2026-10-08
+
+- Every frame, the sky checked each finite star against all 335,189 star identities with a linear scan: 13.7 ms a frame on an M4 Max at the Aldebaran stop, enough to drop Mark's M2 Air from 60 to about 53 fps (30 fps in the overview). It now uses the starfield's hash index: 0.01 ms. With the large sky, Studio frames went from 16.1–30.3 ms to 8.3–8.5 ms, the same as the medium sky.
+- A regression test checks that the unchanged per-frame call costs no more at 300,000 stars than at 3,000; it fails on the old scan (3.3 ms against 0.03 ms).
+- Performance audits record the exported build's real version (written into the bundle at export) instead of a stale "dev.14" constant.
 
 ### The ship lit by the real star, 2026-10-07
 
