@@ -1,0 +1,8 @@
+{"type":"sim_ticks","leg":1,"ticks":1200}
+{"type":"click","action":"commit_hold"}
+{"type":"text_shown","words":100}
+{"type":"interactable_visit","id":"map"}
+{"type":"sim_ticks","leg":2,"ticks":1200}
+{"type":"key","action":"commit_hold"}
+{"type":"text_shown","words":100}
+{"type":"interactable_visit","id":"relay"}

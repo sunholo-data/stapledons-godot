@@ -1,0 +1,187 @@
+-- M3.2 (R1-M3-BLACK-HOLES): the Schwarzschild lens tables, pure and strict-VM clean.
+--
+-- Two 2048 x 256 float32 RG tables, one row per observer radius r (in r_s):
+--   lens_fwd  column x = ln((psi - alpha_sh)/alpha_sh), uniform on [ln 1e-8, ln((pi - alpha_sh)/alpha_sh)]
+--             R = geodesic.lensRegular (Binet RK4, h = 0.0025) = delta + ln tanh((psi - alpha_sh)/alpha_sh)
+--             G = d delta/dx (central difference of R plus the analytic singular slope; for mip selection)
+--   lens_inv  column F = psi - delta, uniform on [-pi, pi] (F = beta: order 0, F = -beta: order 1)
+--             R = psi - alpha_sh, G = dpsi/dF (geodesic.inverseRow: Fritsch-Carlson inversion of
+--             16384 exact-form forward samples)
+-- Rows: y = ln(r - 1.5) uniform on [ln 0.5, ln(1e6 - 1.5)]; the end rows are pinned to r = 2 and
+-- r = 1e6 exactly (exp(log v) need not return v, and the exact form requires r >= 2).
+-- Design: design_docs/planned/r1/m3-black-holes.md section M3.2. All maths is the package's; this
+-- module only lays it out. Lists are built tail-recursively or through std/array, never by
+-- non-tail recursion (ailang#1576: the VM drops a request whose handler builds ~1100+ elements
+-- that way).
+module stapledons/sim/tools/lens_lut
+
+import std/math (exp, log, intToFloat)
+import pkg/sunholo/relativity/hyper (sinhc)
+import std/string (join, floatToStr, concat)
+import std/bytes (toInts)
+import std/embedding (encodeF32LE)
+import std/array (fromList, get)
+import pkg/sunholo/relativity/schwarzschild (pi, shadowAngularRadius)
+import pkg/sunholo/relativity/geodesic (InvSample, lensRegular, inverseRow)
+
+export pure func nCols() -> int = 2048
+export pure func nRows() -> int = 256
+-- h = 0.0025, not the design's 0.005: at the shadow edge (x = ln 1e-8) the RK4 error is h^4-like and
+-- h = 0.005 leaves 1.3e-4 rad in the stored R (measured against the exact form, rows 20-255), above
+-- AC-5's 1.2e-4 budget; 0.0025 leaves 8e-6, at twice the cost (0.001: 2.6e-7, at five times).
+export pure func stepH() -> float = 0.0025
+export pure func invFwdSamples() -> int = 16384
+export pure func xMin() -> float = log(0.00000001)
+export pure func yMin() -> float = log(0.5)
+export pure func yMax() -> float = log(1000000.0 - 1.5)
+
+-- Observer radius of row j (end rows exact).
+export pure func rowRadius(j: int) -> float =
+  if j <= 0 then 2.0
+  else if j >= nRows() - 1 then 1000000.0
+  else 1.5 + exp(yMin() + (yMax() - yMin()) * intToFloat(j) / intToFloat(nRows() - 1))
+
+export pure func xMax(r: float) -> float {
+  let a = shadowAngularRadius(r);
+  log((pi() - a) / a)
+}
+
+-- Column coordinate of column i at radius r.
+export pure func colX(r: float, i: int) -> float =
+  xMin() + (xMax(r) - xMin()) * intToFloat(i) / intToFloat(nCols() - 1)
+
+-- psi - alpha_sh of column i (the last column is the antipode exactly, as in geodesic.inverseRow).
+export pure func colDpsi(r: float, i: int) -> float {
+  let a = shadowAngularRadius(r);
+  if i >= nCols() - 1 then pi() - a else a * exp(colX(r, i))
+}
+
+-- The regular part stored in R at (r, column i).
+export pure func fwdR(r: float, i: int) -> float = lensRegular(r, shadowAngularRadius(r) + colDpsi(r, i), stepH())
+
+-- d/dx of -ln tanh(e^x) = -2t/sinh(2t) = -1/sinhc(2t), t = e^x (-1 as t -> 0; 0 beyond t = 20, where it is below 1e-16).
+export pure func singularSlope(x: float) -> float {
+  let t = exp(x);
+  if t > 20.0 then 0.0 else 0.0 - 1.0 / sinhc(2.0 * t)
+}
+
+-- G at column i from R at i-1, i, i+1 (one-sided at the ends): d delta/dx.
+export pure func fwdG(r: float, i: int, rm: float, r0: float, rp: float) -> float {
+  let n = nCols();
+  let dx = (xMax(r) - xMin()) / intToFloat(n - 1);
+  let dr = if i <= 0 then (rp - r0) / dx else if i >= n - 1 then (r0 - rm) / dx else (rp - rm) / (2.0 * dx);
+  dr + singularSlope(colX(r, i))
+}
+
+-- R for columns lo..hi of row r, in order (built from hi down, tail-recursive).
+pure func rList(r: float, i: int, lo: int, acc: [float]) -> [float] =
+  if i < lo then acc else rList(r, i - 1, lo, fwdR(r, i) :: acc)
+
+-- Interleave (R, G) for columns k..0 of a full row held in an array (tail-recursive, built from the end).
+pure func fwdPairs(r: float, ra: Array[float], k: int, acc: [float]) -> [float] =
+  if k < 0 then acc
+  else {
+    let n = nCols();
+    let rm = if k > 0 then get(ra, k - 1) else get(ra, k);
+    let rp = if k < n - 1 then get(ra, k + 1) else get(ra, k);
+    fwdPairs(r, ra, k - 1, get(ra, k) :: fwdG(r, k, rm, get(ra, k), rp) :: acc)
+  }
+
+-- One forward row: 2 x nCols floats, R and G interleaved.
+export pure func fwdRow(j: int) -> [float] {
+  let r = rowRadius(j);
+  let ra = fromList(rList(r, nCols() - 1, 0, []));
+  fwdPairs(r, ra, nCols() - 1, [])
+}
+
+pure func invPairs(xs: [InvSample], acc: [float]) -> [float] =
+  match xs {
+    [] => acc,
+    s :: rest => invPairs(rest, s.slope :: s.dpsi :: acc)
+  }
+
+pure func revF(xs: [float], acc: [float]) -> [float] =
+  match xs {
+    [] => acc,
+    x :: rest => revF(rest, x :: acc)
+  }
+
+-- One inverse row: 2 x nCols floats, (psi - alpha_sh, dpsi/dF) interleaved.
+export pure func invRow(j: int) -> [float] = revF(invPairs(inverseRow(rowRadius(j), invFwdSamples(), nCols()), []), [])
+
+-- Columns lo..hi of forward row j as interleaved (R, G); G at the ends of the slice uses the
+-- true neighbours, so every value equals the full row's bit for bit.
+export pure func fwdSlice(j: int, lo: int, hi: int) -> [float] {
+  let r = rowRadius(j);
+  let a0 = if lo > 0 then lo - 1 else lo;
+  let a1 = if hi < nCols() - 1 then hi + 1 else hi;
+  let ra = fromList(rList(r, a1, a0, []));
+  sliceLoop(r, ra, a0, a1, hi, lo, [])
+}
+
+pure func sliceLoop(r: float, ra: Array[float], a0: int, a1: int, k: int, lo: int, acc: [float]) -> [float] =
+  if k < lo then acc
+  else {
+    let r0 = get(ra, k - a0);
+    let rm = if k > a0 then get(ra, k - 1 - a0) else r0;
+    let rp = if k < a1 then get(ra, k + 1 - a0) else r0;
+    sliceLoop(r, ra, a0, a1, k - 1, lo, r0 :: fwdG(r, k, rm, r0, rp) :: acc)
+  }
+
+pure func finiteAll(xs: [float]) -> bool =
+  match xs {
+    [] => true,
+    x :: rest => if x == x && x < 1.0e300 && x > -1.0e300 then finiteAll(rest) else false
+  }
+
+export pure func allFinite(xs: [float]) -> bool = finiteAll(xs)
+
+pure func strsLoop(xs: [float], acc: [string]) -> [string] =
+  match xs {
+    [] => acc,
+    x :: rest => strsLoop(rest, floatToStr(x) :: acc)
+  }
+
+-- Text of a list of floats, one per line (for the VM = interpreter cmp).
+export pure func floatsText(xs: [float]) -> string = join("\n", revStr(strsLoop(xs, []), []))
+
+pure func revStr(xs: [string], acc: [string]) -> [string] =
+  match xs {
+    [] => acc,
+    x :: rest => revStr(rest, x :: acc)
+  }
+
+-- Strict-VM entries. rowSlice128: row 128, columns 0..n-1, the VM = interpreter parity probe (AC-6).
+export pure func rowSlice128(n: int) -> string = floatsText(fwdSlice(128, 0, n - 1))
+
+-- bench(n): n forward rays spread over row 128 (task 1 timing); returns their sum.
+export pure func bench(n: int) -> float = benchLoop(0, n, 0.0)
+
+pure func benchLoop(k: int, n: int, acc: float) -> float =
+  if k >= n then acc
+  else benchLoop(k + 1, n, acc + fwdR(rowRadius(128), k * (nCols() / n)))
+
+-- invBench(j): the sum of inverse row j (timing and smoke).
+export pure func invBench(j: int) -> float = sumLoop(invRow(j), 0.0)
+
+pure func sumLoop(xs: [float], acc: float) -> float =
+  match xs {
+    [] => acc,
+    x :: rest => sumLoop(rest, acc + x)
+  }
+
+pure func hexDigit(d: int) -> string =
+  if d == 0 then "0" else if d == 1 then "1" else if d == 2 then "2" else if d == 3 then "3"
+  else if d == 4 then "4" else if d == 5 then "5" else if d == 6 then "6" else if d == 7 then "7"
+  else if d == 8 then "8" else if d == 9 then "9" else if d == 10 then "a" else if d == 11 then "b"
+  else if d == 12 then "c" else if d == 13 then "d" else if d == 14 then "e" else "f"
+
+pure func hexLoop(xs: [int], acc: [string]) -> [string] =
+  match xs {
+    [] => acc,
+    x :: rest => hexLoop(rest, hexDigit(x % 16) :: hexDigit(x / 16) :: acc)
+  }
+
+-- Lowercase hex of the little-endian float32 bytes of row 128, columns 0..n-1: what the bin holds
+-- there (make lens-lut-check compares it with od of the pinned bin, on the strict VM).
+export pure func rowSlice128Hex(n: int) -> string = concat(revStr(hexLoop(toInts(encodeF32LE(fwdSlice(128, 0, n - 1))), []), []))

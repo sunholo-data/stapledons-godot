@@ -1,0 +1,8 @@
+# Lens table pins (M3.2 of R1-M3-BLACK-HOLES; D-18, D-53). make lens-assets fetches the bins from
+# https://storage.googleapis.com/stapledons-voyage-assets/lens/<sha256>.<ext> (public read; make lens-publish uploads),
+# else regenerates them on the VM (make lens-lut: sim/tools/lens_lut_main.ail, ailang v0.52.0, sunholo/relativity 0.10.0)
+# and requires these exact bytes. The headers are committed. Format: <sha256> table <path>.
+69cf728d8ba1e452fa7660e42f5b005f514952720d7afdec3d75bcc2ac56ed12 table data/lens/lens_fwd.bin
+5c3e24de985f422ca3bbedce489d383d669ddda30d09a203b57311d766d7bf5b table data/lens/lens_fwd.json
+419c0fd53fb92aa078e46c02714be95219fb03e523ac2d5ce2839651c1cadbd0 table data/lens/lens_inv.bin
+cb682fc668180c1acde07f5144b1efff3ef58ccaa44414c369eb9377de8f286f table data/lens/lens_inv.json

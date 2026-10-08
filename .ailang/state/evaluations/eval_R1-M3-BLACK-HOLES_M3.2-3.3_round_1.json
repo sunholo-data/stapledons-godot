@@ -1,0 +1,39 @@
+{
+  "sprint_id": "R1-M3-BLACK-HOLES",
+  "milestones": ["M3.2_LENS_TABLES", "M3.3_CPU_MIRROR"],
+  "round": 1,
+  "evaluator_model": "claude-sonnet-5-5",
+  "date": "2026-10-08",
+  "commit": "c4d9c31",
+  "score": 91,
+  "pass": true,
+  "rubric": {
+    "tests_pass": {"max": 20, "score": 19, "note": "physics 726 passed 0 failed (Schwarzschild sections all ok); lens-lut-check, test_lens_assets, python-guard, lint-precision green. Full make test not run by evaluator (executor running it)."},
+    "lint_clean": {"max": 10, "score": 10, "note": "lint-precision ok, python-guard ok, no Python added."},
+    "acceptance_criteria": {"max": 30, "score": 27, "note": "AC-5, AC-6, AC-8 mirror half, AC-9 CPU half, RS-9..21, check41-47 met. -3: AC-5 and the M3.3 round-trip criterion were met in a narrowed form (absolute bound near antipode; source-plane round trip only for 1531 of 2000 images) without amending the AC table rows."},
+    "code_quality": {"max": 15, "score": 14, "note": "Pure, tail-recursive generator; all maths from sunholo/relativity 0.10.0; mirror is not the only copy; shard/assemble verify with temp+readback+rename. Minor: stray untracked .uid files in tree (not from this commit)."},
+    "documentation": {"max": 15, "score": 14, "note": "Changelog fragment, dated As-built and corrections notes, sprint plan ticks, sprint JSON notes populated. Deviations recorded honestly."},
+    "design_fidelity": {"max": 10, "score": 7, "note": "Deviations are justified and measured but two relax the AC text as written."}
+  },
+  "findings": [
+    {"id": "F1", "severity": "minor", "file": "design_docs/planned/r1/m3-black-holes.md", "description": "AC-5 table row (line 282) still reads '<= 1e-3 relative above r=100' with no antipode carve-out; the absolute bound (<= 1e-8 rad where delta < 1e-5; 102 of 10k probes, measured 1.2e-9) exists only in the dated As-built note and the test. Justified (relative error is meaningless as delta -> 0, and 1e-8 rad is far tighter than the 1.2e-4 budget), but the contract row was not amended.", "suggestion": "Edit the AC-5 row (dated) to state the split bound so the contract and the test agree."},
+    {"id": "F2", "severity": "minor", "file": "tests/test_physics.gd", "description": "Round trip: sprint criterion says '1000 pairs within 2e-4 rad'. The source-plane bound is asserted only for the 1531 images with dpsi/dF >= 1e-3 (worst 8.5e-5); 469 deep-edge images (demagnified > 1000x) are checked in the image plane only (worst 1.9e-5). The reasoning (dF/dpsi amplifies 1e-10 rad image error) is sound and the image-plane check holds for all 2000, so the AC is not hollowed, but the shader golden (M3.4) must not assume source-plane 2e-4 at the edge.", "suggestion": "Amend the sprint/design criterion wording to the split; note in M3.4 that the edge images are image-plane accurate."},
+    {"id": "F3", "severity": "minor", "file": "sim/tools/lens_lut_main.ail", "description": "The FS writer runs under --bytecode without --strict-bytecode (std/fs evaluator-only on strict VM). Honest and mitigated: the generator lens_lut.ail is pure and strict-checked, lens-lut-check compares row 128 strict VM = interpreter = bin bytes, and the sampled regeneration is bit-identical. Upstream DX report claimed in notes but not verified by me.", "suggestion": "Cite the upstream issue number at the site and in CLAUDE.md workaround list once filed."},
+    {"id": "F4", "severity": "minor", "file": "sim/tools/lens_lut.ail", "description": "h = 0.0025 instead of 0.005 is justified: measured 1.3e-4 rad at shadow edge with h=0.005 exceeds the 1.2e-4 AC-5 budget; 8e-6 at 0.0025. Cost doubled (436 s wall on 14 jobs, ~40 CPU-min), within the plan's 60-min threshold. Not a weakening; it tightens against the design's V10 estimate. Design text elsewhere still mentions 0.005 in the plan lines (only the As-built note corrects it).", "suggestion": "Optionally edit the plan line to h=0.0025 with a dated marker."},
+    {"id": "F5", "severity": "minor", "file": "Makefile", "description": "lens-lut-check (~97 s, 2 test runs on VM) is added to make test and lens-assets to test/physics: acceptable, but make test wall time grows ~2 min and physics now needs network or a ~7-min regeneration on a cold machine.", "suggestion": "None required; consider noting in CLAUDE.md commands section."}
+  ],
+  "judged": {
+    "check_values": "RS-9..RS-21 asserted with spec rounding and exact values; check41/42 (1e-12), check44 (50-digit truth, 3e-9 at eps 1e-8, documented correction), check45 (rel 1e-12), check46 (1e-7 rad exact, 1.2e-4 table), check47 images and mu all match the package geodesic_test.ail values (mu 1.118821/0.276451/1.847367/0.856138). Traceable.",
+    "determinism_pin_flow": "Pins in data/lens/SHA256SUMS; fetch refuses corrupt/absent then regenerates and requires identical bytes, else exit 1 with 'do NOT match'; verify fails on missing; test_lens_assets.sh covers corrupt, absent and missing; header sha256 asserted in physics; shard-count independence by construction and sampled bit-compare.",
+    "ailang_1576": "Compliant: rList/fwdPairs/invPairs/revF/hexLoop all tail-recursive with accumulators or std/array; comment cites #1576. Row lists of 4096 floats built by tail recursion; check ran on VM correctly.",
+    "claude_md_gates": "No Python added; maths from package, mirror and tables derived from it; all texels finite and lens_inv strictly monotone tested; make strict reported green by executor (not rerun by me)."
+  },
+  "commands_run": [
+    {"cmd": "make lens-assets AILANG=runtime/bin/ailang", "result": "all four files ok, tables match SHA256SUMS"},
+    {"cmd": "make physics AILANG=runtime/bin/ailang", "result": "Schwarzschild (spec 3), lens tables and lens maps sections all ok, 0 FAIL lines (Godot exit leak warnings only, pre-existing)"},
+    {"cmd": "make lens-lut-check AILANG=runtime/bin/ailang", "result": "297 fwd texels + 9 inv rows bit-identical; row 128 cols 0-63 strict VM = interpreter = pinned bin bytes; 97 s"},
+    {"cmd": "sh tools/test_lens_assets.sh", "result": "pass"},
+    {"cmd": "make python-guard lint-precision", "result": "ok"},
+    {"cmd": "clean-checkout AC (rm bins)", "result": "not run; the bins were fetched/verified via lens-assets 'have' path, executor reports 726 passed after rm"}
+  ]
+}

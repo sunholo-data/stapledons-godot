@@ -28,3 +28,7 @@ planet_bundle/
 
 ship_demo_bundle/
 ship_commons_bundle/
+# M3.2: the lens tables are fetched by make lens-assets (pins in data/lens/SHA256SUMS); the headers are committed
+data/lens/*.bin
+data/lens/*.part*
+data/lens/*.tmp
