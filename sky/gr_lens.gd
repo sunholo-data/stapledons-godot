@@ -48,6 +48,9 @@ var _cand_key := []
 var _cand_h := Vector3.ZERO
 var _cones_r := -1.0
 var _flag_rev := -1 # starfield.identity_revision the ring flags were written for
+var _sel_h := Vector3.ZERO # h and cones of the last _select
+var _sel_cones := PackedFloat64Array()
+var _exp_key := []
 
 
 func _init(sf: Starfield, bg: SkyBackground = null) -> void:
@@ -138,7 +141,15 @@ func set_gr(gr: Dictionary) -> void:
 	if gr.is_empty() or not gr.has("r") or textures().is_empty():
 		clear()
 		return
-	state = gr
+	var a: Variant = gr.get("shadow")
+	if not (gr["r"] is float or gr["r"] is int) or float(gr["r"]) < 2.0 or not (a is float) or not is_finite(a) or a <= 0.0 or a >= PI:
+		push_warning("gr lens: state outside the M3 domain (r >= 2 r_s, finite shadow); GR off")
+		clear()
+		return
+	if active and gr == state:
+		_apply_motion(gr) # the caller may have just set the ship's own velocity (InteriorSky.apply)
+		return # apply() runs every frame: an unchanged state costs nothing more
+	state = gr.duplicate(true)
 	active = true
 	h = _world(gr["hole_dir"])
 	var u := uniforms(gr)
@@ -149,7 +160,7 @@ func set_gr(gr: Dictionary) -> void:
 		background.set_gr(gr)
 	_ensure_order1()
 	var r: float = gr["r"]
-	if absf(r - _cones_r) > 1e-4 * r:
+	if absf(r - _cones_r) > 1e-2 * r: # the cones move slowly with r; 200 image lookups each
 		cones = Schwarzschild.ring_cones(r)
 		_cones_r = r
 	if _cand_key.is_empty() or acos(clampf(h.dot(_cand_h), -1.0, 1.0)) > REFRESH_RAD or _cand_key != _key():
@@ -157,7 +168,16 @@ func set_gr(gr: Dictionary) -> void:
 			_scan_pos = 0
 			_scan = PackedInt32Array()
 			_scan_h = h
-	_select()
+	# the ring set only changes with h, r (the cones) or the candidates (_finish_sweep reselects)
+	if acos(clampf(h.dot(_sel_h), -1.0, 1.0)) > 1e-4 or cones != _sel_cones or _flag_rev != starfield.identity_revision:
+		_select()
+
+
+## Under GR the SR uniforms hold the motion relative to the local static observer.
+func _apply_motion(gr: Dictionary) -> void:
+	starfield.set_velocity(_world(gr["dir_local"]), gr["beta_local"], gr["gamma_local"])
+	if background != null:
+		background.set_local_motion(gr)
 
 
 ## GR off: SR uniforms go back to the caller's next set_velocity; the order-1 instance is freed.
@@ -178,6 +198,8 @@ func clear() -> void:
 		order1 = null
 	_scan_pos = -1
 	_cand_key = []
+	_exp_key = []
+	_sel_cones = PackedFloat64Array()
 
 
 func _ensure_order1() -> void:
@@ -246,6 +268,8 @@ func _finish_sweep() -> void:
 
 ## The ring set: candidates inside the cones, brightest (flux at the ship) first, at most RING_MAX.
 func _select() -> void:
+	_sel_h = h
+	_sel_cones = cones.duplicate()
 	var inside := []
 	for k in _cand:
 		if k >= starfield.count:
@@ -266,7 +290,7 @@ func _select() -> void:
 		ring = next
 		for k in ring:
 			_set_flag(k, true)
-		_flag_rev = starfield.identity_revision
+	_flag_rev = starfield.identity_revision
 	_upload_ring()
 
 
@@ -286,6 +310,9 @@ func _unflag(list: PackedInt32Array) -> void:
 
 ## Linear splat peak per lux (Exposure.star_scale) and the PSF sigma (rad) of the ring Gaussians.
 func set_exposure(e: float, sigma_rad: float) -> void:
+	if _exp_key == [e, sigma_rad, ring]:
+		return
+	_exp_key = [e, sigma_rad, ring.duplicate()]
 	star_exposure = e
 	if background != null:
 		background.material.set_shader_parameter("gr_ring_sigma", sigma_rad)

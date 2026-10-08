@@ -1423,10 +1423,12 @@ func _schwarzschild_gpu_handoff() -> void:
 	var u := GrLens.uniforms(st)
 	check("uniforms: gr_x_max is the row's last column ln((pi - alpha)/alpha)", u["gr_x_max"], Schwarzschild.row_x_max(10.0), 1e-15)
 	check("uniforms: gr_row is the mirror's fractional row", u["gr_row"], Schwarzschild.row_coordinate(10.0), 0.0)
-	check("uniforms: gr_dg is the state's blueshift; the hole is galactic +x = world -Z", u["gr_dg"] + (u["gr_h"] as Vector3).distance_to(Vector3(0, 0, -1)), 1.05409255338946, 1e-12)
+	check("uniforms: gr_dg is the state's blueshift", u["gr_dg"], 1.05409255338946, 1e-12)
+	check("uniforms: gr_h, the hole at galactic +x, is world -Z", (u["gr_h"] as Vector3).distance_to(Vector3(0, 0, -1)), 0.0, 1e-7)
 	var uw := GrLens.uniforms(GrLens.reference_state(2e6, PackedFloat64Array([1.0, 0.0, 0.0])))
 	check("uniforms: beyond r = 1e6 the weak branch, k = sqrt(1 - 1/r)/r", (1.0 if uw["gr_weak"] and not u["gr_weak"] else 0.0) + uw["gr_weak_k"] * 2e6, 1.0 + sqrt(1.0 - 0.5e-6), 1e-15)
-	# rule 2 as the shader forms it: the sine-ratio weight equals the cot-difference weight
+	# derivation check (not a shader check; GR10/GR12 test the shader): rule 2's sine-ratio form
+	# used in sky/schwarzschild.gdshaderinc equals the cot-difference weight
 	var wmax := 0.0
 	for psi in [0.3, 1.0, 2.0, 3.0, 3.14]:
 		var p0: float = psi - 0.004
@@ -1435,7 +1437,7 @@ func _schwarzschild_gpu_handoff() -> void:
 		var w_cot: float = (cot.call(psi) - cot.call(p0)) / (cot.call(p1) - cot.call(p0))
 		var w_sin: float = (sin(0.5 * (psi - p0)) / sin(0.5 * psi)) / (sin(0.5 * (p1 - p0)) / sin(0.5 * p1))
 		wmax = maxf(wmax, absf(w_cot - w_sin))
-	check("shader weight form: sin((psi - psi0)/2)/sin(psi/2) over sin((psi1 - psi0)/2)/sin(psi1/2) = the cot(psi/2) weight", wmax, 0.0, 1e-9)
+	check("derivation: sin((psi - psi0)/2)/sin(psi/2) over sin((psi1 - psi0)/2)/sin(psi1/2) = the cot(psi/2) weight", wmax, 0.0, 1e-9)
 
 
 func _initialize() -> void:

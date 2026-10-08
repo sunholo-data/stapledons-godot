@@ -25,6 +25,8 @@ extends RefCounted
 ##          9.9e5 (the last row interval): rules 1-3 of the M3.2 as-built note
 ##   GR11   the lens_inv mirror, exactly: the shader's image psi for F across [-pi, pi] (both
 ##          orders) against Schwarzschild.image at r = 2.01, 10, 9.9e5 and 2e6 (the weak branch)
+##   GR12   sensitivity: each interpolation rule broken in turn (gr_mutant 1-3: x-linear weight,
+##          repeated first row, repeated last row) makes GR10 fail where the rule acts
 
 const SIZE := Vector2i(960, 540)
 const HOLE_GAL := [1.0, 0.0, 0.0] # galactic centre: world -Z, straight ahead at yaw 0
@@ -46,7 +48,7 @@ func run(m: Node) -> int:
 	_build()
 	var f := 0
 	var only := OS.get_environment("GR_ONLY") # development: e.g. GR_ONLY=9 runs GR9 alone
-	for c: Array in [["1", _gr1_3], ["4", _gr4], ["5", _gr5], ["6", _gr6], ["7", _gr7], ["8", _gr8], ["9", _gr9], ["10", _gr10], ["11", _gr11]]:
+	for c: Array in [["1", _gr1_3], ["4", _gr4], ["5", _gr5], ["6", _gr6], ["7", _gr7], ["8", _gr8], ["9", _gr9], ["10", _gr10], ["11", _gr11], ["12", _gr12]]:
 		if only == "" or only == c[0]:
 			f += await (c[1] as Callable).call()
 	sky.set_gr({})
@@ -404,35 +406,56 @@ func _probe(mode: int) -> Image:
 	return img
 
 
+## [worst ratio, pixels, where] of the lens_fwd mirror at r, toward and away from the hole.
+func _fwd_worst(r: float) -> Array:
+	var worst := 0.0
+	var at := ""
+	var n := 0
+	for yaw in [0.0, PI]:
+		_view(110.0, yaw, 0.0)
+		_gr_state(r)
+		var dimg := await _probe(1)
+		var pimg := await _probe(2)
+		var a := Schwarzschild.shadow_angle(r)
+		for y in range(2, SIZE.y, 5):
+			for x in range(2, SIZE.x, 5):
+				var pc := pimg.get_pixel(x, y)
+				if pc.r == 0.0 and pc.g == 0.0 and pc.b == 0.0:
+					continue # captured
+				var dpsi := _bits(pc)
+				var dg := _bits(dimg.get_pixel(x, y))
+				var dc := Schwarzschild.deflection(r, a + dpsi)
+				var e := absf(dg - dc) / (MIRROR_REL * (MIRROR_ABS + absf(dc)))
+				if e > worst:
+					worst = e
+					at = "psi - alpha %s, delta GPU %s CPU %s" % [dpsi, dg, dc]
+				n += 1
+	return [worst, n, at]
+
+
 func _gr10() -> int:
 	var fails := 0
 	_stars([])
 	for r in [2.01, 2.05, 10.0, 3e5, 9.9e5]:
-		var worst := 0.0
-		var at := ""
-		var n := 0
-		for yaw in [0.0, PI]:
-			_view(110.0, yaw, 0.0)
-			_gr_state(r)
-			var dimg := await _probe(1)
-			var pimg := await _probe(2)
-			var a := Schwarzschild.shadow_angle(r)
-			for y in range(2, SIZE.y, 5):
-				for x in range(2, SIZE.x, 5):
-					var pc := pimg.get_pixel(x, y)
-					if pc.r == 0.0 and pc.g == 0.0 and pc.b == 0.0:
-						continue # captured
-					var dpsi := _bits(pc)
-					var dg := _bits(dimg.get_pixel(x, y))
-					var dc := Schwarzschild.deflection(r, a + dpsi)
-					var e := absf(dg - dc) / (MIRROR_REL * (MIRROR_ABS + absf(dc)))
-					if e > worst:
-						worst = e
-						at = "psi - alpha %s, delta GPU %s CPU %s" % [dpsi, dg, dc]
-					n += 1
-		var ok := worst <= 1.0 and n > 10000
+		var w: Array = await _fwd_worst(r)
+		var ok: bool = w[0] <= 1.0 and w[1] > 10000
 		fails += 0 if ok else 1
-		print("%s  GR10 lens_fwd mirror at r = %s: %d pixels toward and away, worst |delta_GPU - delta_CPU| / (%s (|delta| + %s rad)) = %.3f (limit 1) at %s" % ["ok  " if ok else "FAIL", r, n, MIRROR_REL, MIRROR_ABS, worst, at])
+		print("%s  GR10 lens_fwd mirror at r = %s: %d pixels toward and away, worst |delta_GPU - delta_CPU| / (%s (|delta| + %s rad)) = %.3f (limit 1) at %s" % ["ok  " if ok else "FAIL", r, w[1], MIRROR_REL, MIRROR_ABS, w[0], w[2]])
+	return fails
+
+
+## GR12: each interpolation rule broken in turn (gr_mutant) must fail the mirror at the radius
+## where that rule acts: the table goldens can tell a faithful mirror from a near one.
+func _gr12() -> int:
+	var fails := 0
+	_stars([])
+	for c in [[1, "x-linear column weight (rule 2)", 10.0], [2, "repeated first row, no linear ghost (rule 3)", 2.01], [3, "repeated last row, no linear ghost (rule 3)", 9.9e5]]:
+		sky.background.material.set_shader_parameter("gr_mutant", c[0])
+		var w: Array = await _fwd_worst(c[2])
+		sky.background.material.set_shader_parameter("gr_mutant", 0)
+		var ok: bool = w[0] > 1.0
+		fails += 0 if ok else 1
+		print("%s  GR12 mutant %d, %s: GR10 at r = %s reads %.3f of its limit (must exceed 1)" % ["ok  " if ok else "FAIL", c[0], c[1], c[2], w[0]])
 	return fails
 
 

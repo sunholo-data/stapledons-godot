@@ -136,6 +136,11 @@ func set_gr(gr: Dictionary) -> void:
 	var u := GrLens.uniforms(gr)
 	for k: String in u:
 		material.set_shader_parameter(k, u[k])
+	set_local_motion(gr)
+
+
+## The SR uniforms under GR: the motion relative to the local static observer (the sim's).
+func set_local_motion(gr: Dictionary) -> void:
 	material.set_shader_parameter("beta_dir", GrLens._world(gr["dir_local"]))
 	material.set_shader_parameter("beta_mag", gr["beta_local"])
 	material.set_shader_parameter("gamma_f", gr["gamma_local"])

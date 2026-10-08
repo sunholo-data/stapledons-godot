@@ -200,8 +200,10 @@ func _report(main: Node, frames: Array, off: Array, rebase_ms: float, mode: Star
 	return 0
 
 
-## M3.5b (Q4): the same camera sweep at rest with GR off and on (r = 10, hole toward the
-## galactic centre), each `seconds` long; prints one `bench: GR` line per state.
+## M3.5b (Q4): the same camera sweep at rest with GR off, on (r = 10, hole toward the galactic
+## centre, the same state every frame) and approaching (GrLens.set_gr every frame with r falling from 10
+## to 3 r_s, as InteriorSky.apply does in play), each `seconds` long; one `bench: GR` line each,
+## with the CPU cost of set_gr per frame in the approach.
 func _gr_sweeps(main: Node, seconds: float) -> void:
 	var sf: Starfield = main.starfield
 	sf.set_ship_position(0.0, 0.0, 0.0)
@@ -209,9 +211,10 @@ func _gr_sweeps(main: Node, seconds: float) -> void:
 	if main.has_background:
 		main.background.set_velocity(Vector3(0, 0, -1), 0.0, 1.0)
 	var gr := GrLens.new(sf, main.background if main.has_background else null)
-	for on in [false, true]:
-		if on:
-			gr.set_gr(GrLens.reference_state(10.0, PackedFloat64Array([1.0, 0.0, 0.0])))
+	var hole := PackedFloat64Array([1.0, 0.0, 0.0])
+	for mode in ["off", "on", "approach"]:
+		if mode == "on":
+			gr.set_gr(GrLens.reference_state(10.0, hole))
 			var t0 := Time.get_ticks_usec()
 			gr.refresh_now()
 			var ms := (Time.get_ticks_usec() - t0) / 1000.0
@@ -219,22 +222,28 @@ func _gr_sweeps(main: Node, seconds: float) -> void:
 			gr.set_exposure(sf.material.get_shader_parameter("exposure"), 0.0005) # the flight's star exposure; ring PSF ~1 px at 2560x1440
 		var ft := []
 		var gpu := []
+		var set_us := []
 		var vp: RID = main.get_viewport().get_viewport_rid()
-		var t_start := Time.get_ticks_usec()
-		var last := t_start
 		for i in WARMUP:
 			await main.get_tree().process_frame
-		last = Time.get_ticks_usec()
-		t_start = last
+		var last := Time.get_ticks_usec()
+		var t_start := last
 		while (last - t_start) / 1e6 < seconds:
 			var now_s := (last - t_start) / 1e6
+			if mode != "off": # as InteriorSky.apply: the state every frame (unchanged when "on")
+				var t1 := Time.get_ticks_usec()
+				gr.set_gr(GrLens.reference_state(10.0 - 7.0 * now_s / seconds if mode == "approach" else 10.0, hole))
+				gr.tick()
+				set_us.append((Time.get_ticks_usec() - t1) / 1000.0)
 			main.camera.look(TAU * now_s / seconds, 0.35 * sin(TAU * now_s / (seconds * 0.5)), 0.0)
 			await main.get_tree().process_frame
 			var now := Time.get_ticks_usec()
 			ft.append((now - last) / 1000.0)
 			gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(vp))
 			last = now
-		print("bench: GR %s (%d stars, static sweep at rest): %d frames, frame ms p50 %.3f  p95 %.3f  p99 %.3f; %d over %.1f ms; viewport GPU ms p50 %.3f  p99 %.3f" % [
-			"on  (r = 10 r_s, both images + ring path)" if on else "off", sf.count, ft.size(), pct(ft, 0.5), pct(ft, 0.95), pct(ft, 0.99),
-			ft.filter(func(x: float) -> bool: return x > P99_TARGET_MS).size(), P99_TARGET_MS, pct(gpu, 0.5), pct(gpu, 0.99)])
+		var label: String = {"off": "off", "on": "on  (r = 10 r_s, both images + ring path)", "approach": "approach (set_gr every frame, r 10 -> 3 r_s)"}[mode]
+		print("bench: GR %s (%d stars, static sweep): %d frames, frame ms p50 %.3f  p95 %.3f  p99 %.3f; %d over %.1f ms; viewport GPU ms p50 %.3f  p99 %.3f%s" % [
+			label, sf.count, ft.size(), pct(ft, 0.5), pct(ft, 0.95), pct(ft, 0.99),
+			ft.filter(func(x: float) -> bool: return x > P99_TARGET_MS).size(), P99_TARGET_MS, pct(gpu, 0.5), pct(gpu, 0.99),
+			"; set_gr + tick CPU ms p50 %.3f  p99 %.3f  max %.3f" % [pct(set_us, 0.5), pct(set_us, 0.99), pct(set_us, 1.0)] if mode != "off" else ""])
 	gr.clear()

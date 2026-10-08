@@ -30,6 +30,9 @@ uniform float gr_x_max = 1.0;    // ln((pi - alpha) / alpha), the row's last col
 uniform bool gr_weak = false;    // r > 1e6: first-order weakDeflectionFinite, no table
 uniform float gr_weak_k = 0.0;   // sqrt(1 - 1/r) / r: delta = k cot(psi / 2) when gr_weak
 uniform float gr_dg = 1.0;       // D_g, the static blueshift (the sim's gr.blueshift)
+// Golden only (tools/gr_golden.gd GR12; 0 in play): break one interpolation rule so the mirror
+// goldens can show they notice. 1 x-linear column weight, 2 repeated first row, 3 repeated last row.
+uniform int gr_mutant = 0;
 
 const int GR_COLS = 2048;
 const int GR_ROWS = 256;
@@ -76,8 +79,8 @@ vec2 gr_rows(bool inv, int i0, float f) {
 	float t = fy - float(j1);
 	vec2 p1 = gr_texel_lerp(inv, j1, i0, f);
 	vec2 p2 = gr_texel_lerp(inv, j1 + 1, i0, f);
-	vec2 p0 = j1 > 0 ? gr_texel_lerp(inv, j1 - 1, i0, f) : 2.0 * p1 - p2;
-	vec2 p3 = j1 + 2 < GR_ROWS ? gr_texel_lerp(inv, j1 + 2, i0, f) : 2.0 * p2 - p1;
+	vec2 p0 = j1 > 0 ? gr_texel_lerp(inv, j1 - 1, i0, f) : (gr_mutant == 2 ? p1 : 2.0 * p1 - p2);
+	vec2 p3 = j1 + 2 < GR_ROWS ? gr_texel_lerp(inv, j1 + 2, i0, f) : (gr_mutant == 3 ? p2 : 2.0 * p2 - p1);
 	return gr_catmull_rom(p0, p1, p2, p3, t);
 }
 
@@ -118,7 +121,8 @@ vec2 gr_deflection(float psi, float dpsi) {
 	float psi1 = i0 + 1 == GR_COLS - 1 ? GR_PI : a + e1;
 	float num = sin(0.5 * max(dpsi - e0, 0.0)) / sin(0.5 * ps);
 	float den = sin(0.5 * (e1 - e0)) / sin(0.5 * psi1);
-	vec2 rg = gr_rows(false, i0, clamp(num / den, 0.0, 1.0));
+	float w = gr_mutant == 1 ? log(max(dpsi, 1e-30) / e0) / log(e1 / e0) : num / den;
+	vec2 rg = gr_rows(false, i0, clamp(w, 0.0, 1.0));
 	return vec2(rg.x - gr_log_tanh(tt), rg.y);
 }
 

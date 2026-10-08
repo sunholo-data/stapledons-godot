@@ -1,0 +1,82 @@
+{
+  "sprint_id": "R1-M3-BLACK-HOLES",
+  "milestones": ["M3.5a_GPU_LENSED_SKY", "M3.5b_GPU_STAR_IMAGES"],
+  "round": 1,
+  "evaluator_model": "claude-sonnet-5-5 (independent of the Opus 5.5 executor)",
+  "date": "2026-10-08",
+  "branch": "sprint/m3-wave3",
+  "commit": "3450c5a",
+  "score": 90,
+  "pass": true,
+  "hard_fails": [],
+  "rubric": {
+    "tests_pass": {"max": 20, "score": 18, "note": "make physics 747/0 and the GR golden (GR1-GR11) re-run and green by me. Full make test NOT run by me (executor's run in progress); the executor reports one known-flaky ai-godot timing check that passed alone twice. 2 points held back until a full green run is seen."},
+    "lint_clean": {"max": 10, "score": 10, "note": "make lint-precision ok (positive control matched, no hand-computed 1-beta)."},
+    "acceptance_criteria": {"max": 30, "score": 27, "note": "Bar clause 3 met: shadow 98.065/202.408/189.050 px vs Synge 98.066/202.398/189.056 (limit 0.5); Einstein ring 221.091/57.773/17.572 vs 221.088/57.769/17.539. -3: in-play (per-frame) CPU cost of GR on is not measured or reported accurately (F1); render sign-off is by the generating agent only (F2)."},
+    "code_quality": {"max": 15, "score": 13, "note": "Faithful shader mirror; careful float32 conditioning. Deductions for F1, F3, F4."},
+    "documentation": {"max": 15, "score": 14, "note": "Changelog, design as-built note, sprint as-built and JSON notes present and honest about the pending attended inspection. Small claims to tighten (F1, F2)."},
+    "design_fidelity": {"max": 10, "score": 8, "note": "Matches M3.5: the three interpolation rules, hi/lo alpha, InteriorSky not --interior, second MultiMesh only under GR, ring path with counted overflow. Mutation kill is asserted but not reproducible in-tree (F3)."}
+  },
+  "verified_independently": [
+    "Read sky/schwarzschild.gdshaderinc line by line against physics/schwarzschild.gd (regular_part, _texel_lerp, _rows_cr, catmull_rom, row_coordinate, fwd_column): rule 1 (one fractional column for all rows, carried as (i0,f)), rule 2 (sine-ratio form is algebraically the cot(psi/2) weight; checked by hand), rule 3 (ghost points 2p1-p2 / 2p2-p1, j1 clamped to N_ROWS-2) are all mirrored. The weak branch (small-angle root, rationalised for F<0, Newton on the first-order map, dF/dpsi = 1 + k/(2 sin^2(psi/2))) is correct.",
+    "lens_fwd header: G = central difference of R + d/dx of the ln-tanh singular part, so the shader's radial mip term |1 - G/dpsi| is the full d delta/dx; no missing singular term.",
+    "Order-1 material receives every later uniform: all starfield setters go through _parameter(), which loops extra_materials. Ring flag is bit 64 and catalogue flag bits are 1..16 (no collision).",
+    "Renders read (renders/bh_sky/small): mw_r5_toward_hover (black centred shadow, nested lensed Milky Way, thin photon ring), ring_r10 (thin uniform white Einstein ring around the shadow, no blobs), grid_r3_toward_hover (nested grid arcs, Einstein-cross lobes on the horizon, black shadow). Physically plausible."
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "minor",
+      "file": "sky/gr_lens.gd (set_gr, _select, _upload_ring); design_docs/planned/r1/m3-black-holes-sprint.md (As built, M3.5b); tools/bench.gd",
+      "detail": "InteriorSky.apply() runs every sim frame and GrLens.set_gr() then runs the whole of _select() (a GDScript loop over every cone candidate: direction_to allocation, angle, flux, sort_custom) plus _upload_ring() twice (set_gr, then set_exposure), plus a ring_cones() recompute (about 200 table-based image() calls) and a column-texture rebuild whenever r changes. I measured it at the large tier (335,189 stars, r=10 toward the galactic centre, 3698 candidates, 64 ring stars, 418 overflow): set_gr takes a median 2.4 ms with r static and 3.1 ms (max 3.4) with r changing, on the M4 Max, on top of the 8 ms frame. The bench's GR-on sweep calls set_gr once and then only moves the camera, so it never exercises this per-frame path. The as-built text 'the sweep ... ~1 ms per frame' and 'holds 60 fps with margin' omit it. Still inside 16.7 ms on this machine, but it is unmeasured on slower hardware, and it grows with the candidate count (hole toward the dense bulge).",
+      "suggestion": "Skip _select()/_upload_ring() in set_gr unless the cones, the candidate set, the exposure or the ring membership inputs actually changed (h moved > REFRESH_RAD, r changed > 1e-4 r, catalogue/ship key changed); drop the duplicate _upload_ring on the set_exposure path when the exposure is unchanged. Add a bench variant that calls InteriorSky.set_gr every frame with a decreasing r, and report that p50/p99. Correct the as-built sentence to include the measured per-frame set_gr cost."
+    },
+    {
+      "id": "F2",
+      "severity": "minor",
+      "file": ".ailang/state/sprints/sprint_R1-M3-BLACK-HOLES.json (M3.5a/M3.5b notes)",
+      "detail": "The 'opened by' acceptance clause is satisfied by the executor agent itself ('opened by Claude (sprint executor, Opus 5.5)'). The notes say plainly that Mark has not opened the renders and that attended inspection is pending, so this is honest, but the jq/grep AC passes on a self-attestation. I opened three of the renders myself and they look right, but this is not Mark's sign-off. Also, the grep can only be considered fully met when a person records it.",
+      "suggestion": "Keep the pending-inspection wording; before landing (moving the design doc to implemented/) have Mark open renders/bh_sky/*.png and append 'opened by Mark <date>' to both notes. Do not let the milestone be counted as human-inspected until then."
+    },
+    {
+      "id": "F3",
+      "severity": "minor",
+      "file": "tools/gr_golden.gd (GR10/GR11), Makefile (golden)",
+      "detail": "The mutation kills (x-linear weight, repeated end row p0, p3) are claimed in the commit, JSON and design notes, but no mutation switch exists in the tree, so a reviewer cannot reproduce them and nothing in CI would notice if GR10/GR11 were later weakened (for example the 2e-5 tolerance or the radii set). The GR10/GR11 goldens themselves are real (per-pixel shader float32 vs CPU, worst 0.33 of the limit) and I re-ran them green.",
+      "suggestion": "Add a debug uniform (gr_mutant, 0 in play, like gr_probe) selecting the three mutants and a make target or GR_ONLY mode that asserts GR10/GR11 FAIL for each, or record the mutant diffs and observed worst ratios in the as-built note so the claim can be re-checked."
+    },
+    {
+      "id": "F4",
+      "severity": "nit",
+      "file": "tests/test_physics.gd (_schwarzschild_gpu_handoff)",
+      "detail": "Two checks are weak. (a) 'shader weight form ... = the cot weight' only proves a trigonometric identity in GDScript; it does not touch the shader. The real guard is GR10. (b) 'uniforms: gr_dg is the state's blueshift; the hole is galactic +x = world -Z' adds the value and a distance into one number, so a compensating pair of errors could pass.",
+      "suggestion": "Check gr_dg and the gr_h distance as two separate assertions; keep the identity test but label it as a derivation check, not a shader check."
+    },
+    {
+      "id": "F5",
+      "severity": "nit",
+      "file": "sky/gr_lens.gd (uniforms, set_gr)",
+      "detail": "No guard for r < 2 (row clamps to the r=2 row) or for a state whose shadow is missing or non-finite; the shader would then divide by a bad alpha. The sim keeps r >= 2 at present, but the M3.4 contract is not asserted here. The ring-star candidate sweep also lags a new state by up to count/CHUNK frames (about 34 at the large tier), during which newly in-cone stars draw as splats with mu capped at 8; this is documented only implicitly.",
+      "suggestion": "Clamp or reject r < 2 and non-finite shadow in GrLens.set_gr (treating it as GR off, with a push_warning). State the sweep latency in the as-built note, or run refresh_now() on the first frame of a new hole."
+    }
+  ],
+  "gates": {
+    "physics_check_values_in_test_physics": "pass (new section 'Schwarzschild GPU hand-off', 747 passed)",
+    "gpu_vs_cpu_golden": "pass (GR1-GR11 re-run by evaluator)",
+    "renders_opened": "partial: executor recorded 'opened by'; evaluator opened 3; Mark's attended inspection pending, and stated as pending",
+    "maths_in_package_gdscript_mirrors": "pass (no new formulas in shader/GDScript beyond mirrors; CPU additions are mirror helpers: hi_lo, ring_cones, image_flux_ratio)",
+    "precision": "pass (alpha as float32 hi/lo from float64; per-r column texture formed in float64; (i0,f) carry; no 1-beta near c; lint clean)",
+    "determinism": "pass (no hidden state in sim; GPU-side state fully derived from the gr section)",
+    "player_view_via_InteriorSky": "pass",
+    "gr_off_regression": "no evidence of one: gr_on false default; hide only for order-1; velocity restored in InteriorSky.set_gr on was-and-not-active; order-1 instance freed and its material removed from extra_materials. Executor bench: GR-off p50 8.471/8.410 vs 8.481/8.450 ms. Full make golden not re-run by evaluator."
+  },
+  "verified_commands": [
+    {"cmd": "make physics AILANG=runtime/bin/ailang", "result": "747 passed, 0 failed"},
+    {"cmd": "make lint-precision", "result": "ok (positive control matched 4 lines; no live hand-computed 1 - beta)"},
+    {"cmd": "rungr.sh 300 -- --golden=gr", "result": "rc=0; GR1 98.065, GR2 202.408, GR3 189.050 px; GR4 0 mismatches x3; GR5 0.083 px x3; GR6 221.091/57.773/17.572 px; GR7 0.00000; GR8 0.0001; GR9 0.158 px x2; GR10 x5 worst 0.335 of limit; GR11 x4 worst 0.020; gr golden: 0 failures"},
+    {"cmd": "scratch timing script (not in repo): InteriorSky large tier, set_gr x30", "result": "335189 stars; 3698 candidates; 64 ring, 418 overflow; set_gr median 2.43 ms static r, 3.09 ms moving r (max 3.43)"},
+    {"cmd": "make test", "result": "not run by evaluator (executor's run in progress); executor reports green except a known-flaky ai-godot timing check"},
+    {"cmd": "make bench / make golden (full)", "result": "not run by evaluator, per instruction; executor figures taken as claims"}
+  ],
+  "verdict": "PASS (90/100). No blocking or major defects found. The shader is a faithful mirror of the CPU reference on all three interpolation rules, and bar clause 3 is met and reproduced. Follow-ups: F1 (per-frame CPU cost and the accuracy of the performance claim), F2 (Mark's attended render sign-off before landing), F3 (make the mutation kill reproducible)."
+}
