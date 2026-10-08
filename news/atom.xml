@@ -2,12 +2,88 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://www.sunholo.com/stapledons-godot/news</id>
     <title>Stapledon's Voyage news</title>
-    <updated>2026-10-07T00:00:00.000Z</updated>
+    <updated>2026-10-08T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://www.sunholo.com/stapledons-godot/news"/>
     <subtitle>Releases and progress on Stapledon's Voyage, a hard-SF game in Godot 4 and AILANG.</subtitle>
     <icon>https://www.sunholo.com/stapledons-godot/https://ailang.sunholo.com/img/favicon.ico</icon>
     <rights>Copyright © 2026 Sunholo / Mark Edmondson</rights>
+    <entry>
+        <title type="html"><![CDATA[Back to 60 fps, and inspect what you orbit: v0.4.0-dev.21]]></title>
+        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/08/perf-inspect-v0-4-0-dev-21</id>
+        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/08/perf-inspect-v0-4-0-dev-21"/>
+        <updated>2026-10-08T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[dev.20's full sky made the laptop stutter at Aldebaran. One line was scanning all 335,189 stars every frame. Fixed, measured on the MacBook Air, and the I key now shows the bodies around you.]]></summary>
+        <content type="html"><![CDATA[<p>dev.20's full sky made the laptop stutter at Aldebaran. One line was scanning all 335,189 stars every frame. Fixed, measured on the MacBook Air, and the I key now shows the bodies around you.</p>
+<!-- -->
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/dev22/inspect_trappist-1_held.png" alt="Holding I at TRAPPIST-1" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-lag">The lag<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/08/perf-inspect-v0-4-0-dev-21#the-lag" class="hash-link" aria-label="Direct link to The lag" title="Direct link to The lag" translate="no">​</a></h2>
+<p>A performance audit on the M2 Air at the Aldebaran stop showed 53 fps, and 30 fps in the overview. Switching suspects off one at a time on the Studio cleared the new ship lighting and pointed at the 100 pc sky. Timing the per-frame calls found it: a check that ran every frame compared each nearby star against all 335,189 star identities, one by one, before deciding nothing had changed. That took 13.7 ms of a 16.7 ms frame. With a hash lookup it takes 0.01 ms.</p>
+<p>On the Air, the same stop now runs at 60 fps at the median in every view, the overview included, with no frame over 25 ms. A regression test fails if this cost ever grows with the number of stars again.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="hold-i">Hold I<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/08/perf-inspect-v0-4-0-dev-21#hold-i" class="hash-link" aria-label="Direct link to Hold I" title="Direct link to Hold I" translate="no">​</a></h2>
+<p>Holding I used to ring only background stars. Now it also rings the Sun, planets, moons, finite stars and exoplanets, at the size they are drawn, aberration included. Click one for its card: distance, size and apparent size, temperature, how long ago its light left, and its data source.</p>
+<p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.21-perf-inspect" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.21-perf-inspect</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a> · PRs #155, #156.</p>]]></content>
+        <author>
+            <name>Sunholo</name>
+            <uri>https://www.sunholo.com</uri>
+        </author>
+        <category label="Release" term="Release"/>
+        <category label="Sky" term="Sky"/>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[A title screen, and a first look at a black hole: v0.4.0-dev.22]]></title>
+        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/08/title-screen-v0-4-0-dev-22</id>
+        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/08/title-screen-v0-4-0-dev-22"/>
+        <updated>2026-10-08T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[The game now opens on a menu. Meanwhile the black-hole milestone is two-thirds built: the first renders of Sgr A*'s lensed sky are in, checked against general relativity to a fraction of a pixel.]]></summary>
+        <content type="html"><![CDATA[<p>The game now opens on a menu. Meanwhile the black-hole milestone is two-thirds built: the first renders of Sgr A*'s lensed sky are in, checked against general relativity to a fraction of a pixel.</p>
+<!-- -->
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/dev22/title.png" alt="The title screen" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-title-screen">The title screen<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/08/title-screen-v0-4-0-dev-22#the-title-screen" class="hash-link" aria-label="Direct link to The title screen" title="Direct link to The title screen" translate="no">​</a></h2>
+<p>A double-click opens a menu over the real Milky Way: <strong>Board the ship</strong>, the <strong>Guided voyage</strong>, the <strong>Galaxy map</strong>, <strong>Settings</strong> (Realistic or Auto view, text-only AI) and <strong>Credits</strong>, read from the repository's own citations. Esc in the ship returns to it.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="black-holes-in-progress">Black holes (in progress)<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/08/title-screen-v0-4-0-dev-22#black-holes-in-progress" class="hash-link" aria-label="Direct link to Black holes (in progress)" title="Direct link to Black holes (in progress)" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/m3_bh/mw_r5_toward_hover.png" alt="Sgr A* at 5 Schwarzschild radii" class="img_ev3q"></p>
+<p>M3 brings general relativity:</p>
+<ul>
+<li class=""><strong>The maths is in the package first.</strong> <code>sunholo/relativity</code> 0.10.0 adds a geodesic integrator, cross-checked against the exact solution to 3e-13.</li>
+<li class=""><strong>The sim reports what you would feel.</strong> Clock rates, tides across the bubble, and the thrust to hover, all at Sgr A*.</li>
+<li class=""><strong>A GPU shader bends the sky.</strong> It reads lens tables generated on the AILANG VM.</li>
+</ul>
+<p>The shadow matches Synge's formula to within 0.01 px at 10, 5 and 3 r_s. A star directly behind the hole becomes an Einstein ring at the predicted angle; just off-axis, it splits into two images.</p>
+<p>The playable trip is next: hover at 10, 5 and 3 r_s, then orbit, from the bridge. The HUD reads the sim, so "1 ship-hour = 1.41 home hours" in orbit at 3 r_s.</p>
+<p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.22-title-screen" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.22-title-screen</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a>.</p>]]></content>
+        <author>
+            <name>Sunholo</name>
+            <uri>https://www.sunholo.com</uri>
+        </author>
+        <category label="Release" term="Release"/>
+        <category label="Sky" term="Sky"/>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Stars with real size: v0.4.0-dev.19]]></title>
+        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/07/finite-stars-v0-4-0-dev-19</id>
+        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/finite-stars-v0-4-0-dev-19"/>
+        <updated>2026-10-07T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Until now only the Sun and α Centauri had a size; every other star you visited was a point seen from 1,000 AU away. Now each star in the voyage is a real disc with its measured radius and temperature, and you arrive where its size means something.]]></summary>
+        <content type="html"><![CDATA[<p>Until now only the Sun and α Centauri had a size; every other star you visited was a point seen from 1,000 AU away. Now each star in the voyage is a real disc with its measured radius and temperature, and you arrive where its size means something.</p>
+<!-- -->
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/finite_stars_v19/9_aldebaran_arrived.png" alt="Aldebaran filling 40 degrees of sky" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/finite-stars-v0-4-0-dev-19#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>Aldebaran</strong> (45 solar radii, 3,927 K) and <strong>TRAPPIST-1</strong> (0.119 solar radii, 2,566 K) are finite stars with cited measurements, in place of catalogue points.</li>
+<li class=""><strong>One stop rule.</strong> Main-sequence stars stop in their habitable zone, where they look like the Sun from Earth: α Cen A at 1.233 AU, about half a degree; TRAPPIST-1 at 0.0235 AU, a deep-orange disc 2.7° across beside where its planets orbit. Giants stop where they fill 40° of sky: Aldebaran from 0.615 AU.</li>
+<li class=""><strong>The same rhythm everywhere.</strong> Each star's final hop is 30 s accelerating, about a minute cruising, then the 25 s final approach, like the planets.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/finite-stars-v0-4-0-dev-19#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p>Aldebaran is so bright at 40° that it reads white; dimmed, it is pale orange. Its approach is still relativistic, since it is already 4° across six AU out. Both are open questions. TRAPPIST-1's seven planets are next.</p>
+<p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.19-finite-stars" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.19-finite-stars</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a> · Integration <a href="https://github.com/sunholo-data/stapledons-godot/pull/139" target="_blank" rel="noopener noreferrer" class="">PR #139</a>.</p>]]></content>
+        <author>
+            <name>Sunholo</name>
+            <uri>https://www.sunholo.com</uri>
+        </author>
+        <category label="Release" term="Release"/>
+        <category label="Journey" term="Journey"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Real exoplanets, real starlight: v0.4.0-dev.20]]></title>
         <id>https://www.sunholo.com/stapledons-godot/news/2026/10/07/trappist-planets-v0-4-0-dev-20</id>
@@ -29,6 +105,32 @@
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/07/trappist-planets-v0-4-0-dev-20#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
 <p>You can't fly to a TRAPPIST-1 planet yet, because its surface would have to be invented. The 100 pc sky's cost on a MacBook Air is an estimate (+1.3–1.8 ms) until measured.</p>
 <p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.20-trappist-planets" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.20-trappist-planets</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a> · PRs #143, #146, #149.</p>]]></content>
+        <author>
+            <name>Sunholo</name>
+            <uri>https://www.sunholo.com</uri>
+        </author>
+        <category label="Release" term="Release"/>
+        <category label="Journey" term="Journey"/>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Even legs and a gentle arrival: v0.4.0-dev.18]]></title>
+        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/06/even-legs-v0-4-0-dev-18</id>
+        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/06/even-legs-v0-4-0-dev-18"/>
+        <updated>2026-10-06T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Every Solar System leg now has the same rhythm, about 2¼ minutes in real time: 30 seconds accelerating, about a minute cruising, then braking into a 25-second final approach. The longer legs simply go faster, above 0.999c to Jupiter and Saturn, so the planets now ease into view instead of appearing in the last few seconds.]]></summary>
+        <content type="html"><![CDATA[<p>Every Solar System leg now has the same rhythm, about 2¼ minutes in real time: 30 seconds accelerating, about a minute cruising, then braking into a 25-second final approach. The longer legs simply go faster, above 0.999c to Jupiter and Saturn, so the planets now ease into view instead of appearing in the last few seconds.</p>
+<!-- -->
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/refs/even_legs_v18/hud_jupiter_final_approach.png" alt="The HUD during the final approach to Jupiter" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/06/even-legs-v0-4-0-dev-18#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>Even legs.</strong> The simulation solves each leg's thrust and cruise speed so the boost lasts 30 s and the cruise about 60 s: 0.07c for the short Callisto hop, 0.99943c (γ 30) to Jupiter, 0.99963c (γ 37) to Saturn. Sun → Jupiter takes about 2¼ minutes instead of 6½.</li>
+<li class=""><strong>A gentle final approach.</strong> A new trip profile brakes hard, then eases in for 25 s from where the planet is 4° across, so Jupiter grows smoothly instead of exploding in the last 8 s. It's built from the same exact constant-acceleration physics, in <code>sunholo/relativity</code> 0.9.0. The HUD says FINAL APPROACH.</li>
+<li class=""><strong>Skip stage [K].</strong> Jump to the next stage of the leg: accelerating → cruise → braking → final approach → arrival. It lands exactly on each stage, and the HUD counts how many you skipped.</li>
+<li class=""><strong>Distances on the HUD:</strong> to the destination, from the last stop, and from Earth, plus this leg's thrust.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/06/even-legs-v0-4-0-dev-18#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p>At the faster in-system speeds, the bubble wall's glow tints the forward view; how to present it is open. Stars beyond the Sun still appear as points: giving every visited star its real size (TRAPPIST-1, Aldebaran) is the next sprint.</p>
+<p><strong>Release:</strong> <a href="https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.18-even-legs" target="_blank" rel="noopener noreferrer" class="">v0.4.0-dev.18-even-legs</a> · <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">Gallery</a> · Integration <a href="https://github.com/sunholo-data/stapledons-godot/pull/134" target="_blank" rel="noopener noreferrer" class="">PR #134</a>.</p>]]></content>
         <author>
             <name>Sunholo</name>
             <uri>https://www.sunholo.com</uri>
