@@ -218,11 +218,29 @@ func test_routes() -> void:
 		await frames(6)
 	var maps := m3.find_children("*", "GalaxyMap", true, false) if m3 != null else []
 	check(m3 != null and maps.size() == 1 and m3._map_mode and m3.title == null, "Galaxy map opens the standalone map")
+	check(m3 != null and m3.menu_button != null and m3.menu_button.is_visible_in_tree() and m3.menu_button.text.contains("Main menu"), "the map (opened from the menu) shows a visible Main menu button")
 	if m3 != null:
-		m3._unhandled_key_input(key(KEY_ESCAPE))
-		await frames(4)
+		# A real key event through the input pipeline (not a direct handler call), after a
+		# star is selected and a map button holds focus, as a player would have it.
+		var gm = m3.find_children("*", "GalaxyMap", true, false)[0]
+		gm.select(3)
+		for b in gm.find_children("*", "Button", true, false):
+			if b.is_visible_in_tree(): b.grab_focus(); break
+		await frames(3)
+		var ev := key(KEY_ESCAPE)
+		Input.parse_input_event(ev)
+		await frames(6)
 	var m4 := current_main()
-	check(m4 != null and m4 != m3 and m4.title != null, "Esc on the map (opened from the menu) returns to the title screen")
+	check(m4 != null and m4 != m3 and m4.title != null, "Esc on the map (a real key event, star selected, a button focused) returns to the title screen")
+	if m4 != null:
+		m4.title.buttons["map"].pressed.emit()
+		await frames(6)
+	var m5 := current_main()
+	if m5 != null and m5.menu_button != null:
+		m5.menu_button.pressed.emit()
+		await frames(6)
+	var m6 := current_main()
+	check(m6 != null and m6 != m5 and m6.title != null, "the map's Main menu button returns to the title screen")
 	Main.title_overrides = {}
 	Main.demo_overrides = {}
 	if current_scene != null:
