@@ -1328,6 +1328,8 @@ func _schwarzschild_tables(deg: Callable) -> void:
 	for psi: float in [0.01, 0.1, 0.5, 1.0, 2.0, 3.0]:
 		worst_w = maxf(worst_w, absf(Schwarzschild.deflection(1e6, psi) / Schwarzschild.weak_deflection_finite(1e6, psi) - 1.0))
 	check("AC-5 r = 1e6 row vs weakDeflectionFinite (psi 0.01..3): relative", worst_w, 0.0, 1e-3)
+	for wk: Array in [[2e6, 0.5], [3e6, 0.01], [1.5e6, 3.0]]:
+		check("M3.6 weak_k(r) cot(psi/2) == weakDeflectionFinite (r %d, psi %s), the shader gr_weak_k" % [int(wk[0]), wk[1]], Schwarzschild.weak_k(wk[0]) / tan(wk[1] / 2.0), Schwarzschild.weak_deflection_finite(wk[0], wk[1]), 1e-12 * Schwarzschild.weak_deflection_finite(wk[0], wk[1]))
 	check("beyond r = 1e6 the weak branch is used (r = 2e6, psi 0.5)", Schwarzschild.deflection(2e6, 0.5), Schwarzschild.weak_deflection_finite(2e6, 0.5), 0.0)
 	# AC-8 mirror half: the weak-field pair on the r -> infinity row (r = 1e6)
 	for row: Array in [[1000.0, "RS-14 / AC-8: r = 1e6 row, b = 1000: |delta/(2/b) - 1| <= 1 %", 0.01, 2.0 / 1000.0], [100.0, "RS-15 / AC-8: r = 1e6 row, b = 100: |delta/(2/b + 15 pi/16 b^2) - 1| <= 3e-4", 3e-4, Schwarzschild.weak_deflection2(100.0)]]:

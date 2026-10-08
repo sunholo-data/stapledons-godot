@@ -28,7 +28,7 @@ uniform sampler2D gr_cols : filter_nearest, repeat_disable;
 uniform float gr_x_min = -18.420680743952367;
 uniform float gr_x_max = 1.0;    // ln((pi - alpha) / alpha), the row's last column
 uniform bool gr_weak = false;    // r > 1e6: first-order weakDeflectionFinite, no table
-uniform float gr_weak_k = 0.0;   // sqrt(1 - 1/r) / r: delta = k cot(psi / 2) when gr_weak
+uniform float gr_weak_k = 0.0;   // Schwarzschild.weak_k(r): delta = k cot(psi / 2) when gr_weak
 uniform float gr_dg = 1.0;       // D_g, the static blueshift (the sim's gr.blueshift)
 // Golden only (tools/gr_golden.gd GR12; 0 in play): break one interpolation rule so the mirror
 // goldens can show they notice. 1 x-linear column weight, 2 repeated first row, 3 repeated last row.

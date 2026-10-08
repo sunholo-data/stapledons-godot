@@ -54,6 +54,8 @@ var _meter_samples := PackedFloat64Array([Exposure.dark_sky_luminance(),Exposure
 var radius_m := 100.0
 var basis := PackedFloat64Array() # ship basis, galactic columns
 var gr_lens: GrLens # M3.5: the sim's gr section on the sky and the stars (sky/gr_lens.gd)
+## M3.6, design OQ5: with a gr section the stars are placed as seen from Sol (see apply()).
+var gr_stars_from_sol := true
 
 
 ## cam: the bundle's camera dictionary; fov_deg: the view region's vertical fov.
@@ -177,7 +179,11 @@ func apply(world: Dictionary) -> void:
 	if has_background:
 		background.set_velocity(heading_world, beta, s["gamma"])
 	var p: Dictionary = s["pos"]
-	var pw := SkyFrame.to_world64([p["x"], p["y"], p["z"]])
+	var gr: Variant = world.get("gr")
+	var gr_on: bool = gr is Dictionary and not gr.is_empty()
+	# Design OQ5 (D-53): under GR the catalogue is drawn as seen from Sol, matching the Milky Way
+	# photograph (also taken from Sol); the true Galactic-Centre sky is later work. The HUD says so.
+	var pw: Array = [0.0, 0.0, 0.0] if gr_on and gr_stars_from_sol else Array(SkyFrame.to_world64([p["x"], p["y"], p["z"]]))
 	starfield.set_ship_position(pw[0], pw[1], pw[2])
 	var params: Variant = world.get("params")
 	if params is Dictionary and params.has("bubble_radius_m"):
@@ -186,8 +192,7 @@ func apply(world: Dictionary) -> void:
 	system_view.set_velocity(heading_world, beta, s["gamma"], s.get("one_minus_beta", 1.0 / (s["gamma"] * s["gamma"] * (1.0 + beta))))
 	resolved_bodies_supported = beta == 0.0 or system_view.relativistic_enabled
 	set_glow(ForwardGlow.pole_of(world), ForwardGlow.temperature_of(world))
-	var gr: Variant = world.get("gr")
-	if gr is Dictionary and not gr.is_empty():
+	if gr_on:
 		set_gr(gr)
 	elif gr_lens != null and gr_lens.active:
 		set_gr({})
