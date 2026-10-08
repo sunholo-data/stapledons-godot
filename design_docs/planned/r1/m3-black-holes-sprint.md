@@ -1,6 +1,6 @@
 # Sprint plan: R1-M3-BLACK-HOLES (M3, black holes, bar clause 3)
 
-**Status:** Proposed 2026-10-08, waiting for Mark's approval. Nothing here is implemented. Plan review round 1 (Sonnet, `sprint-evaluator`): **84/100 PASS**, 0 blocking. All nine findings are folded in below; see [Review round 1](#review-round-1-what-changed).
+**Status:** **Approved by Mark, attended 2026-10-08 (ledger D-53)**: as drafted; Sgr A* non-spinning with mass a scenario parameter (spin later); standing go to publish sunholo/relativity 0.10.0 once M3.1b passes its evaluation, a clean `pkg quality` and a dry run; lens tables in the public bucket with sha256 pins. Execution starts with wave 1. Plan review round 1 (Sonnet, `sprint-evaluator`): **84/100 PASS**, 0 blocking. All nine findings are folded in below; see [Review round 1](#review-round-1-what-changed).
 **Design doc:** [`m3-black-holes.md`](m3-black-holes.md) (drafted and attended 2026-10-01; open questions ruled by ledger D-13 and D-11; reality-checked against `df7c041` for this plan, see its § "Reality check 2026-10-08").
 **Sprint JSON:** `.ailang/state/sprints/sprint_R1-M3-BLACK-HOLES.json`
 **Bar clause 3:** the shadow is within 0.5 px of Synge's formula at 10, 5 and 3 r_s. The weak field is within 1 % of 2r_s/b at b = 1000 r_s and within 3e-4 of the second-order series at b = 100 r_s. The Einstein ring is at the predicted angle. The geodesic integrator ships in `sunholo/relativity`.
