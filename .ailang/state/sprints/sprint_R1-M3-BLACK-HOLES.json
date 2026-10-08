@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-M3-BLACK-HOLES",
-  "status": "approved",
+  "status": "in_progress",
   "approved_by": "Mark Edmondson, attended 2026-10-08 (ledger D-53)",
   "requested_by": "Mark 2026-10-08: start M3 next",
   "design_doc": "design_docs/planned/r1/m3-black-holes.md",
@@ -141,10 +141,10 @@
         "new smoke entry: strict VM output == interpreter output (cmp)",
         "make geodesic-oracle (in this repo, in make test) runs tools/geodesic_ref.py --check and digest 16; tools/python-allowlist.txt lists it as oracle; make python-guard green; package tests pin its values as literals"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-08T07:10:00Z",
+      "completed": "2026-10-08T09:30:00Z",
+      "notes": "Done (ailang-packages PR #103). schwarzschild.ail gains impactFromStaticAngle, turningRadius, weakDeflection2, weakDeflectionFinite, strongDeflectionBbar, circularOrbitSpeed, circularOrbitClockRate, orbitalAngularVelocity, movingClockRate, radialCoordinateRate, hoverAcceleration, rsPerSolarMassMetres, tidalRadial, tidalTransverse, tidalRadialOrbit, tidalAccelSI, plus tidalOrbitAccelSI, tidalSafeRadius, tidalMinMass (inversions for check52), hoverAccelSI, hoverPowerPerKg (via medium.hoverPower). schwarzschild_ext_test.ail 23/23 (interpreter and --strict-bytecode). _smoke schwarzschildDigest 64 = 92833.6848137945, strict VM = interpreter (cmp); oracle sdigest within 1e-15 rel. tools/geodesic_ref.py (oracle, allowlisted), make geodesic-oracle in make test; python-guard green. Design typo found: tidalAccelSI is c^2 L tidalRadial/r_s^2 (doc says /r_s); V14 values match the corrected form."
     },
     {
       "id": "M3.1b_PKG_GEODESIC",
@@ -158,10 +158,10 @@
         "AC-3: lensDigest 16 strict VM == interpreter (cmp) and within 1e-9 of tools/geodesic_ref.py digest 16",
         "AC-8 package half: check42 (|alpha(1000)/(2/b)-1| <= 1%) and check43 (|alpha(100)/series-1| <= 3e-4)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-08T07:10:00Z",
+      "completed": "2026-10-08T09:30:00Z",
+      "notes": "Done (PR #103). geodesic.ail: Ray, Binet, InvSample; binetStep, escapes, integrateRay, escapeAzimuth, lensDeflection, deflectionFromInfinity, carlsonRF, deflectionExact, escapeAzimuthExact, deflectionExactAt, lensRegular, imageAngle, einsteinAngle, imageMagnification, inverseRow, inverseRowLogMin. geodesic_test.ail 19/19 both engines. AC-3: lensDigest 16 = 8.612720147193743 strict VM = interpreter (cmp), oracle 8.612720147193725 (1.8e-14). AC-8: check42 0.14753 % <= 1 %, check43 2.68e-4 <= 3e-4. Integrator vs exact (check45): <= 3.0e-13 at h=0.001, <= 1.3e-11 at h=0.005. Deviations: 20-point GL (16-32 agree with 96 at 1e-15); check44 eps=1e-8 at 3e-9/4e-9 (float64 conditioning; design row has 2.8e-9 prototype error); exact-form functions require r >= 2 (eval N1); hyper.tanh fixed for |u|>355. Eval round 1 (Sonnet): 91/100 PASS, 0 blocking (.ailang/state/evaluations/eval_R1-M3-BLACK-HOLES_M3.1ab_round_1.json); N1/N3/N4 fixed before publish, N2 (pre-existing property-test failures in unchanged package code) left as follow-up."
     },
     {
       "id": "M3.1p_PKG_RELEASE_PUBLISH",
@@ -174,10 +174,10 @@
         "AC-2: $A pkg quality . exit 0 no gates; $A publish --dry-run; $A publish; ailang pkg info sunholo/relativity | grep -E '0.10.0|geodesic'",
         "Mark's go recorded (Q6) before publish"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-08T07:10:00Z",
+      "completed": "2026-10-08T09:30:00Z",
+      "notes": "Published sunholo/relativity@0.10.0 on 2026-10-08 under D-53 (Mark's go conditional on eval PASS + clean quality + dry run): eval 91/100 PASS 0 blocking; ailang pkg quality: no gates (compile 25 files, contracts 4/94 verified 0 refuted, 219/219 tests attested, smoke passed); publish --dry-run clean; publish OK (content hash sha256:f94f4694...). ailang pkg info sunholo/relativity lists v0.10.0 (latest) and sunholo/relativity/geodesic. CHANGELOG ## 0.10.0, AGENT.md, [release] kind feature, [exports] geodesic, ai_summary. Package PR #103 not merged (repo has no CI)."
     },
     {
       "id": "M3.1c_PIN_0_10_0",
@@ -192,10 +192,10 @@
         "make replay parity parity-v2 green with no golden changed",
         "make test green"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-08T07:10:00Z",
+      "completed": "2026-10-08T09:30:00Z",
+      "notes": "sim/ailang.toml pins 0.10.0; ailang install + lock (lock adds geodesic, new hashes); make runtime cache holds 0.10.0. Hello pin split: relativityPin() = 0.10.0 (reported from minor >= 6, M3.4b); relativityPinNav() = 0.9.0 frozen for minors 4-5, so every 2.4/2.5 stream is byte-identical; navigation_test and test_sim_bridge.gd literals stay 0.9.0. make hello-pin ties relativityPin() to the toml and asserts minors 4-5 stay 0.9.0. make deps and hello-pin green; geodesic-oracle now also reruns the pinned package's lensDigest on the strict VM. make test AILANG=runtime/bin/ailang green locally (EXIT=0), replay/parity goldens unchanged (no tracked file churn)."
     },
     {
       "id": "M3.2_LENS_TABLES",

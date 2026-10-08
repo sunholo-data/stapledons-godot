@@ -55,23 +55,23 @@ Dependency graph: **M3.1a → M3.1b → M3.1p (publish) → M3.1c → {M3.2, M3.
 
 `$A` = `runtime/bin/ailang` (v0.52.0). `$PKG` = a fresh `ailang-packages` clone at `packages/relativity`, in the clone's ignored scratch dir.
 
-### M3.1a: package closed forms (schwarzschild additions, tides, hover)
+### M3.1a: package closed forms (schwarzschild additions, tides, hover) ✅ (done 2026-10-08, ailang-packages #103)
 - **What:** add to `schwarzschild.ail`: `impactFromStaticAngle`, `turningRadius`, `weakDeflection2`, `weakDeflectionFinite`, `strongDeflectionBbar`, `circularOrbitSpeed`, `circularOrbitClockRate`, `orbitalAngularVelocity`, `movingClockRate`, `radialCoordinateRate`, `hoverAcceleration`, `rsPerSolarMassMetres`, `tidalRadial`, `tidalTransverse`, `tidalRadialOrbit`, `tidalAccelSI`, `hoverAccelSI` and `hoverPowerPerKg` (via `medium.hoverPower`). Each gets `requires` where the domain is restricted. Also `tools/geodesic_ref.py`, written first. It lives in **this game repo**, with role `oracle` in `tools/python-allowlist.txt`, and reproduces design rows V9–V16. The package tests pin its printed values as literals, so the package's own CI never calls Python. Wiring: a `make geodesic-oracle` target runs `--check` and `digest 16`, and is added to `test` and `.PHONY`.
 - **Tests first** (`schwarzschild_ext_test.ail`): check49 (clock and orbit), check51 (tides, HB-72…86), check52 (inversions, HB-75, HB-87), check53 (hover, HB-88…90), weakDeflection2 at b = 100.
 - **LOC:** 190 + 200 = **390**. **Depends on:** nothing.
 - **AC:** `cd $PKG && $A test --package .` passes, including every earlier test. `$A run --bytecode --strict-bytecode` of the new smoke entry equals the interpreter (`cmp`). `make geodesic-oracle` passes (in this repo) and `make python-guard` is green.
 
-### M3.1b: package `geodesic` module and digest
+### M3.1b: package `geodesic` module and digest ✅ (done 2026-10-08, #103; eval 91/100 PASS)
 - **What:** `geodesic.ail`: `binetStep`, `escapeAzimuth` (tail-recursive RK4 with a cubic-Hermite end root; capture decided analytically and asserted), `lensDeflection`, `deflectionFromInfinity`, `carlsonRF` (fixed iteration cap, NaN-guarded), `deflectionExact`, `escapeAzimuthExact`, `lensRegular`, `imageAngle`, `einsteinAngle`, `imageMagnification`, and `inverseRow` (Fritsch–Carlson monotone inversion of a 16k-sample forward row, built as an array). `_smoke.ail` gets `lensDigest(n)`. *(The release work moved to M3.1p.)* The release adds `CHANGELOG ## 0.10.0` (methods, oracle, accuracy, the 1.5 % weak-field fact), `AGENT.md` (the integrator for tools, the exact form for checks, never per frame), `[release] kind = "feature"`, the `[exports]` row and the ai_summary.
 - **Tests first** (`geodesic_test.ail`): check41–48 and check50 from the design doc. Python oracle values are pinned to 1e-12, or as tabulated.
 - **LOC:** 310 + 260 = **570**. One PR on `ailang-packages` (module + tests + digest). **Depends on:** M3.1a.
 - **AC:** AC-1. AC-3: `lensDigest 16` is bit-identical between strict VM and interpreter (`cmp`) and within 1e-9 of `tools/geodesic_ref.py digest 16`. AC-8 (package half): check42 and check43.
-### M3.1p: release and publish 0.10.0
+### M3.1p: release and publish 0.10.0 ✅ (published 2026-10-08 under D-53)
 - **What:** `CHANGELOG ## 0.10.0`, `AGENT.md`, `[release] kind = "feature"`, `[exports]` adds `sunholo/relativity/geodesic`, ai_summary, then the dry run, then the publish.
 - **LOC:** 70 + 60 = **130**. **Depends on:** M3.1b evaluated PASS **and Mark's explicit go (Q6)**. The recorded standing approval covers only the public asset bucket, not the package registry, and a publish is irreversible.
 - **AC:** AC-2: `$A pkg quality .` exits 0 with no gates; `$A publish --dry-run`; `$A publish`; `ailang pkg info sunholo/relativity | grep -E "0.10.0|geodesic"`.
 
-### M3.1c: pin 0.10.0 in the game
+### M3.1c: pin 0.10.0 in the game ✅ (done 2026-10-08)
 - **What:** `sim/ailang.toml` → 0.10.0; `ailang install` then `ailang lock` (the CLAUDE.md workaround); the `make runtime` cache. `relativityPin()` is hardcoded to "0.9.0" today (`sim/protocol.ail:59`) and used in the minor 4 and 5 hellos (`:63–64`). Split it the way the 0.4.0 string already is. A new constant keeps "0.9.0" for minors 4–5. `relativityPin()` returns "0.10.0" only at minor ≥ 6. `make hello-pin` is updated to tie the **highest** minor's string to `sim/ailang.toml`. The literals at `sim/navigation_test.ail:290` and `tests/test_sim_bridge.gd:392` stay "0.9.0", because they test minor 4/5, and the test names say so.
 - **LOC:** 20 + 30 = **50**. **Depends on:** M3.1p published.
 - **AC:** AC-4: `grep '"0.10.0"' sim/ailang.toml && make deps`. `make hello-pin` passes. `make test` is green with no replay golden changed (`make replay parity parity-v2`).

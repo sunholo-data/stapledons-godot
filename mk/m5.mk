@@ -28,12 +28,14 @@ strict-m5:         ## sim/data/{sol,acen}.ail checks (celestial_test dataVm): st
 	@cmp $(SCRATCH)/m5-nav-vm.txt $(SCRATCH)/m5-nav-interp.txt && test "$$(tail -1 $(SCRATCH)/m5-nav-vm.txt)" = "navigation-ok" && \
 	  echo "strict-m5 navigationVm: $$(tail -1 $(SCRATCH)/m5-nav-vm.txt), $$(wc -l < $(SCRATCH)/m5-nav-vm.txt | tr -d ' ') lines, digest $$(shasum -a 256 $(SCRATCH)/m5-nav-vm.txt | cut -c1-16) (strict VM = interpreter)"
 
-# M5.5a: from protocol 2.4 the hello reports relativityPin(); it must be the pin in sim/ailang.toml.
-hello-pin:         ## protocol.ail relativityPin() == the sunholo/relativity pin in sim/ailang.toml
+# M5.5a, split by M3.1c: minors 4-5 report the frozen "0.9.0" (relativityPinNav); the highest
+# minor (>= 6, GR) reports relativityPin(), which must be the pin in sim/ailang.toml.
+hello-pin:         ## protocol.ail relativityPin() (highest minor) == the sunholo/relativity pin in sim/ailang.toml; minors 4-5 stay 0.9.0
 	@pin=$$(sed -n 's/^"sunholo\/relativity" = "\(.*\)"/\1/p' sim/ailang.toml); \
 	said=$$(sed -n 's/^export pure func relativityPin() -> string = "\(.*\)"/\1/p' sim/protocol.ail); \
-	test -n "$$pin" && test "$$pin" = "$$said" && echo "hello-pin: 2.4 hello reports relativity $$said = sim/ailang.toml pin" || \
-	  { echo "hello-pin FAILED: sim/ailang.toml pins relativity '$$pin', protocol.ail relativityPin() says '$$said'"; exit 1; }
+	nav=$$(sed -n 's/^export pure func relativityPinNav() -> string = "\(.*\)"/\1/p' sim/protocol.ail); \
+	test -n "$$pin" && test "$$pin" = "$$said" && test "$$nav" = "0.9.0" && echo "hello-pin: highest-minor hello reports relativity $$said = sim/ailang.toml pin; minors 4-5 keep $$nav" || \
+	  { echo "hello-pin FAILED: sim/ailang.toml pins relativity '$$pin', protocol.ail relativityPin() says '$$said', relativityPinNav() '$$nav' (must stay 0.9.0)"; exit 1; }
 
 # M5.1b (AC4 system half): the protocol 2.3 tail of tests/fixtures/v2_session.ndjson.
 # parity-v2 has already compared the whole session VM = interpreter byte for byte;

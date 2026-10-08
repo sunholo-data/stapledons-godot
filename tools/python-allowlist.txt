@@ -23,3 +23,4 @@ tools/rng_ref.py	oracle
 tools/test_catalogue_bytes.py	oracle
 tools/test_replay.py	harness
 tools/check_trappist1.py	oracle
+tools/geodesic_ref.py	oracle

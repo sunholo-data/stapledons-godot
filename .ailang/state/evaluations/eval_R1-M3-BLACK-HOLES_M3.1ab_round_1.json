@@ -1,0 +1,86 @@
+{
+  "sprint_id": "R1-M3-BLACK-HOLES",
+  "milestones": ["M3.1a_PKG_CLOSED_FORMS", "M3.1b_PKG_GEODESIC"],
+  "round": 1,
+  "evaluator": "independent (generator != judge)",
+  "score": 91,
+  "pass": true,
+  "verdict": "PASS: safe to publish sunholo/relativity 0.10.0 (no blocking findings)",
+  "scores": {
+    "tests_pass": {"max": 20, "score": 19, "note": "42/42 new tests pass interpreter and strict-bytecode; full-suite property-test failures (7) are pre-existing/unchanged code (-1)"},
+    "lint_quality_gates": {"max": 10, "score": 10, "note": "ailang pkg quality: no gates, compile 25 files, tests attested 219 passed"},
+    "acceptance_criteria": {"max": 30, "score": 28, "note": "AC-1/AC-3/AC-8 and V9-V16 reproduced; two documented tolerance deviations accepted; near-photon-sphere GL accuracy gap"},
+    "code_quality": {"max": 15, "score": 13, "note": "tail recursion, fixed iteration counts, NaN guards, analytic capture; 20-pt GL weakness near r->1.5"},
+    "documentation": {"max": 15, "score": 14, "note": "CHANGELOG 0.10.0, release kind feature, AGENT/README updated; changelog says 'bit-identical except tanh >355' while tanh now short-circuits at 20 (equal in value)"},
+    "design_fidelity": {"max": 10, "score": 7, "note": "64-pt GL -> 20-pt, check44 tolerances loosened, tidalAccelSI /r_s^2 (correct, design typo); several unplanned but sensible additions"}
+  },
+  "commands_run": [
+    {"cmd": "ailang test geodesic_test.ail schwarzschild_ext_test.ail", "result": "42 tests: 42 passed, 0 failed (59.5s)"},
+    {"cmd": "ailang test --strict-bytecode geodesic_test.ail schwarzschild_ext_test.ail", "result": "42 passed, 0 failed (4.6s)"},
+    {"cmd": "run --bytecode --strict-bytecode vs interpreter, lensDigest 16", "result": "VM == interpreter byte-identical (cmp); 8.612720147193743 vs oracle 8.612720147193725 (diff 1.8e-14 < 1e-9)"},
+    {"cmd": "same, schwarzschildDigest 64", "result": "VM == interpreter byte-identical; 92833.6848137945 vs oracle 92833.68481379442 (rel 1e-15)"},
+    {"cmd": "python3 -I tools/geodesic_ref.py --check", "result": "geodesic oracle: 0 failures (V9-V16 rows, check41-53)"},
+    {"cmd": "make geodesic-oracle python-guard (game worktree)", "result": "digests match the package pins; python-guard ok (16 allowlisted)"},
+    {"cmd": "ailang pkg quality .", "result": "no gates; contracts 4/94 verified 0 refuted; PUB011/PUB016 warnings only; 219 tests attested"},
+    {"cmd": "ailang test . (whole package, interpreter)", "result": "351 tests: 260 passed, 7 failed, 84 skipped. All 7 are auto-generated *_property_* tests (expm1, sinhc, accelerate, doppler, dopplerApparent, cmbSeenTemperature, cmbSeenTemperatureApparent) in unchanged code; hyper.ail on origin/main also fails 3 (expm1, tanh, sinhc), branch fails 2 (tanh property now fixed)"},
+    {"cmd": "independent python Simpson vs the package's 20-pt GL nodes for outgoingNoRoot", "result": "agree 1e-15 at r=1.6/1.51 for generic psi; diverges near the photon sphere: r=1.51 psi=1.6 err 8.5e-6; r=1.5001 psi~pi/2 err 0.93; r=1.6 psi=1.6 is b>bc so uses Carlson (n/a)"}
+  ],
+  "spot_checks": [
+    "Carlson 1988 formula 2 sqrt(u2-y) R_F((y-u1)(u3-u2),(u2-u1)(u3-u2),(u3-y)(u2-u1)) and root order u1<0<u2<=2/3<=u3 correct; matches 50-digit Decimal truth in oracle (check41 1e-15)",
+    "capture is analytic (escapes()); integrator disagreement returns NaN, not a fallback",
+    "all loops tail-recursive; list builders (fwdSamples, secants, outputs) accumulate and use arrays; no non-tail 1100+ element builds (ailang#1576 avoided); inverseRow strict-VM tested",
+    "rfLoop fixed 40 iterations (no tolerance loop, NaN in -> NaN out); endRoot fixed 60 bisections; maxSteps cap",
+    "tidal: c^2 L /(r r_s)^3 * r_s => c^2 L tidalRadial(r)/r_s^2 is dimensionally correct; the design '/ r_s' is a typo; V12-V14 numbers match",
+    "tidalRadialOrbit (1/2r^3)(2+3/(2r-3)) = (GM/R^3)(2+3 gamma^2 beta^2), 1.5x static at 3 r_s: correct",
+    "hoverAcceleration, orbit speed/clock, angular velocity correct; hoverPower = a c per kg",
+    "hyper.tanh: |u|>20 gives exactly 1 (previously rounds to 1; NaN beyond ~355): value-identical for all previously finite results, strictly a fix",
+    "inverseRow: Fritsch-Carlson with monotonic limiter, exact-form forward samples (D-13 allows either method to generate if the other cross-checks; integrator cross-checked in check45)",
+    "oracle is honest about its independence: the digest mirrors the integrator algorithm by design; independent references are the Decimal truth, Carlson exact form, and closed forms from the design doc"
+  ],
+  "deviation_assessment": {
+    "gl_20_vs_64": "Accepted for r>=~1.6 (1e-15 vs Simpson). NOT adequate near the photon sphere (see finding N1).",
+    "check44_tolerances": "Accepted: at eps=1e-8 one input ulp moves deflection ~1e-9; documented in CHANGELOG; truth from 50-digit Decimal agrees to 3.7e-11 anyway (exact 18.020450769569493 vs truth ...53216: 3.7e-11 relative to value, tolerance loosened is conservative)",
+    "tidal_r_s_squared": "Accepted: the implementation is dimensionally correct, design formula was a typo",
+    "extra_functions": "Accepted: small, pure, tested, documented; additive API only",
+    "hyper_tanh": "Accepted: strictly a fix; needed by lensRegular at r=1e6",
+    "inverseRow_exact_forward": "Accepted under D-13 given check45 cross-check"
+  },
+  "findings": [
+    {
+      "severity": "non-blocking",
+      "id": "N1",
+      "file": "packages/relativity/geodesic.ail (glNodes / outgoingNoRoot / escapeAzimuthExact)",
+      "issue": "For outgoing rays with b <= b_c at r close to the photon sphere the integrand has a near-double root at u = 2/3 just beyond/at the endpoint 1/r, so it is no longer smooth and 20-point GL is inaccurate (my Simpson check: 8.5e-6 error at r=1.51, 0.93 at r=1.5001). The contract only requires r > 1.5. Not exercised by tests (check45 uses r>=3) and the inverse/lens tables the game plans start at r>=2.",
+      "suggested_fix": "Document the validity range (r >= ~1.6 / 2) in the comment and AGENT.md, or tighten requires, or fall back to the integrator (escapeAzimuth, which does not have this issue) for r < 1.7; add a test at r=1.55 comparing integrator and exact form."
+    },
+    {
+      "severity": "non-blocking",
+      "id": "N2",
+      "file": "packages/relativity/hyper.ail / whole-package test run",
+      "issue": "`ailang test .` reports 7 failing auto-generated property tests (expm1, sinhc, accelerate, doppler, dopplerApparent, cmbSeenTemperature, cmbSeenTemperatureApparent). Pre-existing on origin/main in unchanged code (hyper.ail base fails 3 incl. tanh; branch fails 2), and pkg quality does not count them. Not caused by this PR.",
+      "suggested_fix": "Separate follow-up: tighten generators/ensures for those functions; do not block 0.10.0."
+    },
+    {
+      "severity": "non-blocking",
+      "id": "N3",
+      "file": "packages/relativity/CHANGELOG.md",
+      "issue": "Header says every function is bit-identical to 0.9.0 except tanh beyond |u|~355, but tanh now short-circuits at |u|>20; values are identical, only the implementation path differs. Also the near-critical (check44) tolerance deviation is mentioned but 'within 1e-9' in test titles reads as 3e-9/4e-9 for eps=1e-8.",
+      "suggested_fix": "Reword to 'value-identical'; keep as-is otherwise."
+    },
+    {
+      "severity": "non-blocking",
+      "id": "N4",
+      "file": "packages/relativity/geodesic.ail",
+      "issue": "maxSteps = 4,000,000 with h=0.001 is a very long loop for pathological requests; imageAngle/imageMagnification require only r>1.5 and imageMagnification divides by |sin F| and fp-fm (inf/NaN at psi on the edges, documented as 'strictly inside').",
+      "suggested_fix": "Optional: note cost in AGENT.md; no code change needed for publish."
+    },
+    {
+      "severity": "non-blocking",
+      "id": "N5",
+      "file": "tools/geodesic_ref.py (game worktree)",
+      "issue": "The digest oracle mirrors the integrator step for step, so it cannot catch a shared algorithmic error in the RK4/Hermite; independence comes from the Decimal truth and the Carlson exact form, which the package tests pin (check41/45). Stated honestly in the docstring.",
+      "suggested_fix": "None required."
+    }
+  ],
+  "blocking_findings": []
+}

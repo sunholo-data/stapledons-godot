@@ -7,11 +7,14 @@ GODOT_SIM = AILANG_BIN="$$(command -v $(AILANG))" $(GODOT)
 SIM := sim/ship.ail
 SIMFLAGS := --quiet --package-dir sim --caps IO --entry main
 SCRATCH := .godot/tmp
+# sunholo/relativity 0.10.0 _smoke digests, strict VM = interpreter (pinned from the package; the oracle must agree to 1e-9)
+GEODESIC_LENS_DIGEST := 8.612720147193743
+GEODESIC_SCHW_DIGEST := 92833.6848137945
 AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -23,7 +26,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks ## everything that runs without a GPU window
+test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -224,6 +227,15 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 
 rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stream, first 1,000 values per stream (3 seeds) from strict VM and interpreter vs tools/rng_ref.py
 	AILANG=$(AILANG) python3 tools/rng_ref.py --check
+
+geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 geodesics, tides and hover (design V9-V16) passes --check, and its digests equal the values the package pins
+	python3 tools/geodesic_ref.py --check
+	@smoke=runtime/cache/registry/sunholo/relativity/$$(sed -n 's/^"sunholo\/relativity" = "\(.*\)"/\1/p' sim/ailang.toml)/_smoke.ail; \
+	  if [ -f "$$smoke" ]; then v=$$(AILANG_RELAX_MODULES=1 $(AILANG) run --quiet --bytecode --strict-bytecode --entry lensDigest --args-json 16 $$smoke 2>/dev/null); \
+	  test "$$v" = "$(GEODESIC_LENS_DIGEST)" && echo "geodesic-oracle: pinned package lensDigest 16 on the strict VM = $$v" || { echo "geodesic-oracle: package lensDigest 16 = '$$v', pin $(GEODESIC_LENS_DIGEST)"; exit 1; }; \
+	  else echo "geodesic-oracle: $$smoke not in the runtime cache (make runtime); package digest not rerun"; fi
+	@d=$$(python3 tools/geodesic_ref.py digest 16); s=$$(python3 tools/geodesic_ref.py sdigest 64); echo "lensDigest 16 = $$d, schwarzschildDigest 64 = $$s"; \
+	  python3 -c "import sys; d, s = float(sys.argv[1]), float(sys.argv[2]); ok = abs(d - $(GEODESIC_LENS_DIGEST)) <= 1e-9 and abs(s - $(GEODESIC_SCHW_DIGEST)) <= 1e-9 * abs(s); print('geodesic-oracle: digests ' + ('match' if ok else 'DIFFER from') + ' the package pins'); sys.exit(0 if ok else 1)" "$$d" "$$s"
 
 journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM == interpreter == golden (replay case alpha_cen)
 	AILANG="$(AILANG)" python3 tools/replay.py --case alpha_cen

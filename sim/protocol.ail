@@ -53,15 +53,18 @@ export type StateMsg = { tick: int, status: string, clock: Option[Clock], ship: 
 export type HelloMsg = { major: int, minor: int, sim: string, relativity: string, rng: string }
 
 -- relativity: below minor 4 the hello keeps the string every recorded stream and golden
--- carries ("0.4.0", stale since the 0.5 pins); from 2.4 it is the pinned release,
--- relativityPin(), which `make hello-pin` checks against sim/ailang.toml.
+-- carries ("0.4.0", stale since the 0.5 pins); minors 4 and 5 keep "0.9.0", the release
+-- they shipped with (relativityPinNav, frozen like "0.4.0"); relativityPin() is the
+-- current pin, reported from minor 6 (GR, M3.4b), which `make hello-pin` checks
+-- against sim/ailang.toml.
 export pure func helloMsg() -> HelloMsg = { major: 2, minor: 1, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
-export pure func relativityPin() -> string = "0.9.0"
+export pure func relativityPin() -> string = "0.10.0"
+export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= departureMinor() then {helloMsg() | minor: departureMinor(), relativity: relativityPin()}
-  else if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPin()}
+  if want >= departureMinor() then {helloMsg() | minor: departureMinor(), relativity: relativityPinNav()}
+  else if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPinNav()}
   else if want >= systemMinor() then {helloMsg() | minor: systemMinor()} else if want >= 2 then {helloMsg() | minor: 2} else helloMsg()
 -- Protocol 2.3 (M5.1b): a client that asks for minor >= 3 also gets the `system` section
 -- (Sol's bodies as seen from the ship). Tests read the minor from here, never a literal (F4).
