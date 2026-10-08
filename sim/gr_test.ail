@@ -157,7 +157,7 @@ pure func checkWireScenario() -> bool {
   let rogue = reply(feed(newSession(), [helloLine(6)]), gameLine("sgr_a", ",\"params\":{\"bh_mass_msun\":10,\"bh_r\":2500}"));
   contains(g, "\"gr\":{\"hole_id\":\"Sgr A*\",\"mass_msun\":4297000,") && contains(g, "\"r\":1000000,\"mode\":\"hover\"") &&
   contains(g, "\"events\":[{\"k\":\"archive\",\"event\":\"bh_enter\"}]") && contains(g, "\"kind\":\"bh_enter\",\"star_id\":\"Sgr A*\"") && !contains(g, "\"system\":") &&
-  contains(rogue, "\"mass_msun\":10,") && contains(rogue, "\"r\":2500,") && !contains(rogue, "bh_mass_msun")
+  contains(rogue, "\"hole_id\":\"black hole\",\"mass_msun\":10,") && contains(rogue, "\"r\":2500,") && !contains(rogue, "bh_mass_msun")
 }
 -- The gr section's codec pair, and the archive event through decodeState.
 pure func checkWireCodec() -> bool {

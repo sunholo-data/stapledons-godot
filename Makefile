@@ -172,7 +172,7 @@ parity-gr:          ## M3.4b protocol 2.6: tests/fixtures/gr.ndjson (sgr_a, ever
 	@mkdir -p $(SCRATCH)
 	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/gr.ndjson > $(SCRATCH)/gr.out
 	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/gr.ndjson > $(SCRATCH)/gr_interp.out
-	@cmp $(SCRATCH)/gr.out $(SCRATCH)/gr_interp.out && echo "parity-gr: VM = interpreter ($$(wc -l < $(SCRATCH)/gr.out | tr -d ' ') lines, $$(grep -c '"archive"' $(SCRATCH)/gr.out) with an archive member)"
+	@cmp $(SCRATCH)/gr.out $(SCRATCH)/gr_interp.out && echo "parity-gr: VM = interpreter ($$(wc -l < $(SCRATCH)/gr.out | tr -d ' ') lines, $$(grep -o '"k":"archive"' $(SCRATCH)/gr.out | wc -l | tr -d ' ') archive events)"
 	@test "$$(wc -l < $(SCRATCH)/gr.out | tr -d ' ')" = "$$(grep -vc '"type":"quit"' tests/fixtures/gr.ndjson)" || { echo "parity-gr: not one reply per input line"; exit 1; }
 	@test "$$(grep -o '"k":"archive","event":"[a-z_]*"' $(SCRATCH)/gr.out | cut -d'"' -f8 | tr '\n' ' ')" = "bh_enter bh_hover bh_ring " && echo "parity-gr: archive events in order: bh_enter bh_hover bh_ring" || { echo "parity-gr: archive events out of order"; exit 1; }
 	@head -1 $(SCRATCH)/gr.out | grep -q '"proto":{"major":2,"minor":6},"sim":"stapledons/sim 0.1.0","relativity":"0.10.0"' && \

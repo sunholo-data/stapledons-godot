@@ -56,6 +56,7 @@ pure func sgrADistancePc() -> float = 8277.0
 pure func deg() -> float = pi() / 180.0
 -- Normalised: the package's 10-digit rotation is orthonormal only to ~1e-10.
 export pure func sgrAAxis() -> Vec3 = normalize(equatorialToGalactic(unitFromAngles((17.0 + 45.0 / 60.0 + 40.0409 / 3600.0) * 15.0 * deg(), 0.0 - (29.0 + 28.118 / 3600.0) * deg())))
+-- The parsec: 1 AU at one arcsecond, 648000/pi AU (IAU 2015 B2), in ly; RA hours are 15 degrees.
 pure func parsecLy() -> float = astronomicalUnitM() * 648000.0 / pi() / lightYearM()
 export pure func sgrAHole() -> Vec3 {
   let u = sgrAAxis();
@@ -64,7 +65,9 @@ export pure func sgrAHole() -> Vec3 {
 }
 -- The scenario's hole: Sgr A* by default; `mass` and `r` are scenario parameters
 -- (bh_mass_msun, bh_r), so another hole (the canon's rogue hole) is data, not code.
-export pure func sgrAWith(mass: float, r: float, bubbleRadiusM: float, mEffKg: float) -> GrState = grAt("Sgr A*", mass, r, sgrAHole(), sgrAAxis(), bubbleRadiusM, mEffKg)
+-- A hole of another mass at the same place is not Sgr A*: its id is the generic "black hole".
+export pure func sgrAWith(mass: float, r: float, bubbleRadiusM: float, mEffKg: float) -> GrState =
+  grAt(if mass == sgrAMassMsun() then "Sgr A*" else "black hole", mass, r, sgrAHole(), sgrAAxis(), bubbleRadiusM, mEffKg)
 export pure func sgrA(r: float, bubbleRadiusM: float, mEffKg: float) -> GrState = sgrAWith(sgrAMassMsun(), r, bubbleRadiusM, mEffKg)
 
 -- ------------------------------------------------------------ units
@@ -232,6 +235,8 @@ pure func shipClockOf(g: GrState) -> float =
   if g.mode == "orbit" then circularOrbitClockRate(g.r)
   else if g.mode == "approach" then movingClockRate(g.r, g.betaLocal)
   else staticClockRate(g.r)
+-- The innermost stable circular orbit, 3 r_s (6GM/c^2). sunholo/relativity 0.10.0 has no
+-- isco(); the constant (no formula) lives here until the package gains one.
 pure func isco() -> float = 3.0
 export pure func grView(g: GrState) -> GrView {
   let hovering = g.mode == "hover";
