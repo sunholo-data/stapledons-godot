@@ -773,6 +773,7 @@ ship-demo-benchmark-test:
 ship-demo-geometry-negative-test:
 	@for mutation in wrong-tier wrong-tip; do $(GODOT) --headless --path . --script tools/validate_ship_demo.gd -- assets/ship_demo/manifest.json $$mutation > $(SCRATCH)/ship-demo-$$mutation.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-demo: FAIL$$' $(SCRATCH)/ship-demo-$$mutation.log || exit 1; done
 export-macos: ship-demo-stage ship-commons-stage
+publish-dev: ship-demo-export-smoke # the exported ship, incl. the GR lens tables (dev.23 shipped without them)
 ship-demo-export-smoke:
 	@mkdir -p $(SCRATCH)
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); "$(APP)/Contents/MacOS/$$exe" --headless -- --ship-demo-smoke > $(SCRATCH)/ship-demo-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-export.log; test $$rc = 0 && grep -q '^ship-demo-export-smoke: OK$$' $(SCRATCH)/ship-demo-export.log
