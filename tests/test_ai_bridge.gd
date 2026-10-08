@@ -83,7 +83,8 @@ func load_per_core() -> float:
 	return float(FileAccess.get_file_as_string("/proc/loadavg").split(" ")[0]) / OS.get_processor_count()
 
 
-## Frame never blocked: every poll since the last check returned within 2 ms.
+## Frame never blocked: polls are fast (p99 under 2 ms) and no slower than the same
+## loop's control steps beyond a small allowance.
 ## A poll that waited on the child would sit for a whole timeout (300 ms or
 ## more here); the child's spawn and reaping run on the worker pool. On a
 ## busy machine (1-minute load above 0.25 per core) preemption alone breaks
@@ -110,10 +111,14 @@ func frame_check(label: String) -> void:
 	var allowed := ctrl_slow + maxi(4, n / 100)
 	var lpc := load_per_core()
 	var detail := "%d polls, worst %d us, p99 %d us, %d over 2 ms, %d over 5 ms vs control %d, load %.1f/core" % [n, worst, p99, over, slow, ctrl_slow, lpc]
-	if lpc <= 0.25:
-		assert_bool("%s: frame never blocked, every poll < 2 ms (%s)" % [label, detail], n > 0 and worst < FRAME_BUDGET_USEC)
-	else:
-		assert_bool("%s: frame never blocked, busy machine: over 5 ms <= control + %d, none >= 50 ms (%s)" % [label, allowed - ctrl_slow, detail], n > 0 and slow <= allowed and worst < 50000)
+	# One rule at any load (2026-10-08): the 1-minute load average lags and a many-core
+	# machine reads "quiet" (0.2/core) while other jobs burst, which preempted single
+	# polls to 2.4-7.7 ms and failed whole make test runs. Polls are judged against
+	# control steps timed in the same loop: p99 under 2 ms, no more polls at 5 ms than
+	# control samples plus max(4, n/100), none at 50 ms. A poll that waited on the child
+	# would sit a whole timeout (300 ms+); intermittent blocking (10 ms in 1 poll of 25)
+	# still fails the 5 ms count.
+	assert_bool("%s: frame never blocked: p99 < 2 ms, over 5 ms <= control + %d, none >= 50 ms (%s)" % [label, allowed - ctrl_slow, detail], n > 0 and p99 < FRAME_BUDGET_USEC and slow <= allowed and worst < 50000)
 
 
 ## Source lines of each function in bridge/ai_bridge.gd, by name.
