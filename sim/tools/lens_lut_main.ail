@@ -1,0 +1,215 @@
+-- M3.2 (R1-M3-BLACK-HOLES): writes and checks the lens tables of sim/tools/lens_lut.ail.
+--
+-- Run on the strict VM (make lens-lut). The rows are generated in shards so the Makefile can run
+-- them in parallel; `assemble` joins the shards in row order, so the bytes never depend on the
+-- shard count. Output, per table T in {fwd, inv}:
+--   data/lens/lens_T.bin   little-endian float32, 256 rows x 2048 texels x (R, G), row-major
+--   data/lens/lens_T.json  the header: layout, ranges, generator, package version, h, sha256 of the bin
+-- No timestamps: a regeneration from the same pins is byte-identical (data/lens/SHA256SUMS).
+module stapledons/sim/tools/lens_lut_main
+
+import ./lens_lut (nCols, nRows, stepH, invFwdSamples, xMin, yMin, yMax, rowRadius, fwdRow, invRow, fwdSlice, allFinite)
+import ./catalogue_main (Pkg, lockPackage)
+import std/embedding (encodeF32LE)
+import std/bytes (concatList, slice, toBase64, fromBase64, length as blen)
+import std/crypto (sha256Bytes)
+import std/json (Json, encode, decode, jo, kv, js, jint, jnum, ja, get, asString)
+import std/fs (readFileResult, readFileBytes, writeFileBytes, writeFileResult, renameFileResult, removeFileResult, mkdirAllResult, fileExists)
+import std/io (println, eprintln, exit)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (concat, intToStr, floatToStr)
+
+export pure func shardLo(k: int, shards: int) -> int = k * nRows() / shards
+export pure func shardHi(k: int, shards: int) -> int = (k + 1) * nRows() / shards - 1
+
+export pure func binPath(out: string, table: string) -> string = concat([out, "/lens_", table, ".bin"])
+export pure func headerPath(out: string, table: string) -> string = concat([out, "/lens_", table, ".json"])
+export pure func partPath(out: string, table: string, k: int, shards: int) -> string =
+  concat([out, "/lens_", table, ".part", intToStr(k), "of", intToStr(shards)])
+
+pure func row(table: string, j: int) -> [float] = if table == "fwd" then fwdRow(j) else invRow(j)
+
+-- Rows hi down to lo as bytes, in row order; Err names the first row with a non-finite value
+-- (spec: every table finite over its whole range; nothing is written then).
+pure func rowsBytes(table: string, j: int, lo: int, acc: [bytes]) -> Result[[bytes], string] =
+  if j < lo then Ok(acc)
+  else {
+    let xs = row(table, j);
+    if allFinite(xs) then rowsBytes(table, j - 1, lo, encodeF32LE(xs) :: acc)
+    else Err(concat(["lens_", table, " row ", intToStr(j), " has a non-finite value"]))
+  }
+
+export func fail(msg: string) -> () ! {IO} { eprintln(concat(["lens-lut: ", msg])); exit(1) }
+
+-- writeFileBytes has no Result form: probe with writeFileResult, write, read back and compare.
+func writeChecked(path: string, b: bytes) -> Result[(), string] ! {FS} = match writeFileResult(path, "") {
+  Err(e) => Err(e),
+  Ok(_) => {
+    writeFileBytes(path, b);
+    match readFileBytes(path) {
+      Err(e) => Err(e),
+      Ok(b64) => if b64 == toBase64(b) then Ok(()) else Err(concat(["bytes read back from ", path, " differ"]))
+    }
+  }
+}
+
+func readBytes(path: string) -> Result[bytes, string] ! {FS} = match readFileBytes(path) {
+  Err(e) => Err(concat(["cannot read ", path, ": ", e])),
+  Ok(b64) => match fromBase64(b64) { Some(b) => Ok(b), None => Err(concat([path, ": bytes did not decode"])) }
+}
+
+-- One shard: rows shardLo..shardHi of table T to its part file.
+export func shard(a: {table: string, k: int, shards: int, out: string}) -> () ! {FS, IO} =
+  if a.table != "fwd" && a.table != "inv" then fail("table must be fwd or inv")
+  else if a.shards < 1 || a.k < 0 || a.k >= a.shards then fail("bad shard")
+  else match mkdirAllResult(a.out) {
+    Err(e) => fail(e),
+    Ok(_) => match rowsBytes(a.table, shardHi(a.k, a.shards), shardLo(a.k, a.shards), []) {
+      Err(e) => fail(e),
+      Ok(bs) => match writeChecked(partPath(a.out, a.table, a.k, a.shards), concatList(bs)) {
+        Err(e) => fail(e),
+        Ok(_) => println(concat(["lens-lut: lens_", a.table, " rows ", intToStr(shardLo(a.k, a.shards)), "..",
+          intToStr(shardHi(a.k, a.shards)), " written"]))
+      }
+    }
+  }
+
+func readParts(out: string, table: string, k: int, shards: int, acc: [bytes]) -> Result[[bytes], string] ! {FS} =
+  if k < 0 then Ok(acc)
+  else match readBytes(partPath(out, table, k, shards)) {
+    Err(e) => Err(e),
+    Ok(b) => if blen(b) == (shardHi(k, shards) - shardLo(k, shards) + 1) * nCols() * 8
+      then readParts(out, table, k - 1, shards, b :: acc)
+      else Err(concat(["part ", intToStr(k), " has the wrong size"]))
+  }
+
+func removeParts(out: string, table: string, k: int, shards: int) -> () ! {FS} =
+  if k < 0 then ()
+  else { let _ = removeFileResult(partPath(out, table, k, shards)); removeParts(out, table, k - 1, shards) }
+
+export pure func header(table: string, binSha: string, ailang: string, p: Pkg) -> string {
+  let chans = if table == "fwd"
+    then [kv("R", js("lensRegular = delta + ln tanh((psi - alpha_sh)/alpha_sh), rad")), kv("G", js("d delta/dx"))]
+    else [kv("R", js("psi - alpha_sh, rad")), kv("G", js("d psi/dF"))];
+  let col = if table == "fwd"
+    then jo([kv("coordinate", js("x = ln((psi - alpha_sh)/alpha_sh)")), kv("min", jnum(xMin())),
+             kv("max", js("ln((pi - alpha_sh)/alpha_sh) of the row; the last column is psi = pi exactly"))])
+    else jo([kv("coordinate", js("F = psi - delta (order 0: F = beta, order 1: F = -beta)")), kv("min", js("-pi")), kv("max", js("pi"))]);
+  let gen = if table == "fwd"
+    then jo([kv("function", js("sunholo/relativity/geodesic.lensRegular (Binet RK4, analytic capture)")), kv("h", jnum(stepH())),
+             kv("G", js("central difference of R in x (one-sided at the ends) + d/dx ln-tanh singular part"))])
+    else jo([kv("function", js("sunholo/relativity/geodesic.inverseRow (Fritsch-Carlson inversion of the exact form)")),
+             kv("forward_samples", jint(invFwdSamples()))]);
+  concat([encode(jo([
+    kv("table", js(concat(["lens_", table]))), kv("format_version", jint(1)),
+    kv("width", jint(nCols())), kv("height", jint(nRows())), kv("channels", jint(2)),
+    kv("dtype", js("float32 little-endian")), kv("layout", js("row-major; row = observer radius; texel = (R, G) interleaved")),
+    kv("channel", jo(chans)), kv("column", col),
+    kv("row", jo([kv("coordinate", js("y = ln(r - 1.5), r in r_s")), kv("min", jnum(yMin())), kv("max", jnum(yMax())),
+                  kv("r_first", jnum(rowRadius(0))), kv("r_last", jnum(rowRadius(nRows() - 1)))])),
+    kv("generator", gen), kv("ailang", js(ailang)),
+    kv("package", jo([kv("name", js(p.name)), kv("version", js(p.version)), kv("content_hash", js(p.hash))])),
+    kv("producer", js("stapledons/sim/tools/lens_lut_main")),
+    kv("sha256", jo([kv("bin", js(binSha))]))])), "\n"])
+}
+
+-- Join the shards in row order, write the bin and header (temp + read-back + rename), remove the parts.
+export func assemble(a: {table: string, shards: int, out: string, lock: string, ailang: string}) -> () ! {FS, IO} =
+  match readFileResult(a.lock) {
+    Err(e) => fail(concat(["cannot read ", a.lock, ": ", e])),
+    Ok(lock) => match lockPackage(lock, "sunholo/relativity") {
+      Err(e) => fail(e),
+      Ok(p) => match readParts(a.out, a.table, a.shards - 1, a.shards, []) {
+        Err(e) => fail(e),
+        Ok(parts) => {
+          let b = concatList(parts);
+          let bin = binPath(a.out, a.table);
+          let hdr = headerPath(a.out, a.table);
+          let sha = sha256Bytes(b);
+          match writeChecked(concat([bin, ".tmp"]), b) {
+            Err(e) => fail(e),
+            Ok(_) => match writeFileResult(concat([hdr, ".tmp"]), header(a.table, sha, a.ailang, p)) {
+              Err(e) => fail(e),
+              Ok(_) => match renameFileResult(concat([bin, ".tmp"]), bin) {
+                Err(e) => fail(e),
+                Ok(_) => match renameFileResult(concat([hdr, ".tmp"]), hdr) {
+                  Err(e) => fail(e),
+                  Ok(_) => {
+                    removeParts(a.out, a.table, a.shards - 1, a.shards);
+                    println(concat(["lens-lut: ", bin, " (", intToStr(blen(b)), " B, sha256 ", sha, ") + header"]))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+-- ---------------------------------------------------------------- lens-lut-check (AC-6)
+
+-- Sampled rows and columns: every 32nd row and every 64th column, plus the last of each.
+export pure func sampleRow(k: int) -> int = if k >= nRows() / 32 then nRows() - 1 else k * 32
+export pure func sampleCol(k: int) -> int = if k >= nCols() / 64 then nCols() - 1 else k * 64
+
+pure func same(file: bytes, off: int, want: bytes) -> bool = match slice(file, off, blen(want)) {
+  Some(got) => toBase64(got) == toBase64(want),
+  None => false
+}
+
+-- Forward samples of row j, columns k..0 of the sample set; returns the number that differ.
+pure func fwdCols(file: bytes, j: int, k: int, bad: int) -> int =
+  if k < 0 then bad
+  else {
+    let i = sampleCol(k);
+    let ok = same(file, (j * nCols() + i) * 8, encodeF32LE(fwdSlice(j, i, i)));
+    fwdCols(file, j, k - 1, if ok then bad else bad + 1)
+  }
+
+pure func fwdRows(file: bytes, k: int, bad: int) -> int =
+  if k < 0 then bad else fwdRows(file, k - 1, fwdCols(file, sampleRow(k), nCols() / 64, bad))
+
+-- Inverse: the whole sampled row is regenerated and compared.
+pure func invRows(file: bytes, k: int, bad: int) -> int =
+  if k < 0 then bad
+  else {
+    let j = sampleRow(k);
+    invRows(file, k - 1, if same(file, j * nCols() * 8, encodeF32LE(invRow(j))) then bad else bad + 1)
+  }
+
+pure func headerSha(h: string) -> string = match decode(h) {
+  Err(_) => "",
+  Ok(j) => match get(j, "sha256") {
+    None => "",
+    Some(s) => match get(s, "bin") { Some(v) => match asString(v) { Some(x) => x, None => "" }, None => "" }
+  }
+}
+
+func checkTable(dir: string, table: string) -> Result[string, string] ! {FS} =
+  match readBytes(binPath(dir, table)) {
+    Err(e) => Err(e),
+    Ok(file) => match readFileResult(headerPath(dir, table)) {
+      Err(e) => Err(concat(["cannot read the header: ", e])),
+      Ok(h) =>
+        if blen(file) != nRows() * nCols() * 8 then Err(concat(["lens_", table, ".bin has ", intToStr(blen(file)), " B"]))
+        else if headerSha(h) != sha256Bytes(file) then Err(concat(["lens_", table, ".bin sha256 differs from its header"]))
+        else {
+          let bad = if table == "fwd" then fwdRows(file, nRows() / 32, 0) else invRows(file, nRows() / 32, 0);
+          let n = if table == "fwd" then (nRows() / 32 + 1) * (nCols() / 64 + 1) else nRows() / 32 + 1;
+          let what = if table == "fwd" then " sampled texels" else " sampled whole rows";
+          if bad == 0 then Ok(concat(["lens_", table, ": ", intToStr(n), what, " regenerated bit-identically; header sha256 ok"]))
+          else Err(concat(["lens_", table, ": ", intToStr(bad), " of ", intToStr(n), what, " differ from the committed bytes"]))
+        }
+    }
+  }
+
+export func check(dir: string) -> () ! {FS, IO} =
+  match checkTable(dir, "fwd") {
+    Err(e) => fail(e),
+    Ok(m1) => match checkTable(dir, "inv") {
+      Err(e) => fail(e),
+      Ok(m2) => { println(concat(["lens-lut-check: ", m1])); println(concat(["lens-lut-check: ", m2])) }
+    }
+  }

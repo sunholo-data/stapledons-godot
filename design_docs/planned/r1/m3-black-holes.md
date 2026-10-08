@@ -102,7 +102,7 @@ rsPerSolarMassMetres() -> float            -- 2 GM_sun / c^2 = 2953.25008 (IAU 2
 tidalRadial(r) -> float                    -- 1/r^3: radial stretch per unit separation, in c^2/r_s^2 (= 2GM/r^3)
 tidalTransverse(r) -> float                -- 1/(2 r^3): transverse squeeze, same units (= GM/r^3)
 tidalRadialOrbit(r) -> float               -- (1/(2 r^3))(2 + 3/(2r - 3)): radial eigenvalue in a circular orbit, requires r > 1.5
-tidalAccelSI(mSun, r, lenM) -> float       -- c^2 lenM tidalRadial(r) / r_s(mSun), m/s^2; r_s from rsPerSolarMassMetres
+tidalAccelSI(mSun, r, lenM) -> float       -- c^2 lenM tidalRadial(r) / r_s(mSun)^2, m/s^2; r_s from rsPerSolarMassMetres
 hoverAccelSI(mSun, r) -> float             -- hoverAcceleration(r) c^2 / r_s(mSun), m/s^2 (proper acceleration of the pocket)
 hoverPowerPerKg(mSun, r) -> float          -- hoverAccelSI(mSun, r) c: photon-drive power P = m_eff a c per kg of m_eff, W/kg
 ```
@@ -122,12 +122,14 @@ deflectionFromInfinity(b, h) -> float        -- observer at infinity: alpha(b), 
 carlsonRF(x, y, z) -> float                  -- duplication algorithm, fixed iteration cap, no tolerance loop on NaN
 deflectionExact(b) -> float                  -- oracle: Darwin's elliptic form, 2 I(0, u0) - pi, via carlsonRF
 escapeAzimuthExact(r, psi) -> Ray            -- oracle: 2I(0,u0) - I(0,1/r) (ingoing), I(0,1/r) (outgoing, Carlson when
-                                             --   three real roots, else 64-point Gauss-Legendre: no singularity there)
+                                             --   three real roots, else 20-point Gauss-Legendre: no singularity there)
 lensRegular(r, psi, h) -> float              -- delta + ln(tanh((psi - alpha_sh)/alpha_sh)): the quantity the table stores
 imageAngle(r, beta, order) -> float          -- solve psi - delta(psi) = beta (order 0) or -beta (order 1); bisection
 einsteinAngle(r) -> float                    -- imageAngle(r, 0, 0)
 imageMagnification(r, psi) -> float          -- (sin psi / |sin F|) |dpsi/dF|, F = psi - delta, central difference
 ```
+
+*(Corrections 2026-10-08, found in wave 1 against the published 0.10.0 package and row V14; the lines above are edited in place:* *(1) `tidalAccelSI` divides by r_s(mSun)², not r_s: tidalRadial is in c²/r_s² per unit separation, so a = c² L tidalRadial(r)/r_s², as row V14 and the package compute (a = c² L r_s/R³ with R = r r_s). (2) `escapeAzimuthExact`'s outgoing no-root branch uses 20-point Gauss–Legendre, not 64: 16 to 32 points all agree with 96 to 1e-15 on that smooth integrand. (3) check44 at ε = 10⁻⁸: the design value 18.0204507723 carries the prototype's own 2.8 × 10⁻⁹ root error, and float64 holds the exact form only to about 10⁻⁹ there (one ulp of the acos argument moves the deflection by ~1.4 × 10⁻⁹), so the package holds it to 3 × 10⁻⁹ of the 50-digit truth 18.02045076953216 and to 4 × 10⁻⁹ of the design value; ε = 10⁻⁴ and 10⁻⁶ keep 10⁻⁹. The check44 row below is read with these tolerances.)*
 
 **Capture is decided analytically. The integrator never decides it.** A ray escapes iff it is outgoing, or it is ingoing with b > b_c (for r ≥ 2, which is the M3 domain). `escapeAzimuth` asserts that the integration agrees. A disagreement is a test failure, not a fallback.
 
@@ -142,7 +144,7 @@ imageMagnification(r, psi) -> float          -- (sin psi / |sin F|) |dpsi/dF|, F
 | `check41` | `deflectionExact(100)` = 0.0202999662395031 (±1e-12); `deflectionFromInfinity(100, 0.001)` within 1e-11 of it | wrong roots, a wrong R_F argument order, an RK4 coefficient |
 | `check42` | `deflectionExact(1000)` = 0.00200295058718769; ratio to `weakDeflection(1000)` − 1 = 0.0014753 (±1e-6) | a first-order-only implementation |
 | `check43` | At b = 100: \|exact/`weakDeflection2` − 1\| ≤ 3e-4 (measured 2.68e-4) | a second-order series typo |
-| `check44` | Near-critical: at b = b_c(1+ε) for ε = 1e-4, 1e-6, 1e-8, exact = 8.8104863550, 13.4152855579, 18.0204507723 (±1e-9); within 4e-4, 6e-6, 1e-7 of −ln ε + b̄ | log-divergence handling, b̄ |
+| `check44` | Near-critical: at b = b_c(1+ε) for ε = 1e-4, 1e-6, 1e-8, exact = 8.8104863550, 13.4152855579, 18.0204507723 (±1e-9, 1e-9, 4e-9; *2026-10-08:* ±3e-9 of the 50-digit truth 18.02045076953216 at 1e-8, see the corrections note above); within 4e-4, 6e-6, 1e-7 of −ln ε + b̄ | log-divergence handling, b̄ |
 | `check45` | `escapeAzimuth` vs `escapeAzimuthExact` at (r, ψ) = (10, 0.5), (3, 1.0), (5, 2.0), (10, 0.26): \|Δ\| ≤ 1e-9 at h = 0.001, ≤ 1e-5 at h = 0.005 near the edge | ingoing/outgoing sign, the end-root interpolation |
 | `check46` | `einsteinAngle` at r = 10, 5, 3, 100, 1000 = 29.828317906°, 44.874561077°, 61.888756430°, 8.520443413°, 2.604361342° (±1e-7 rad) | the finite-observer geometry (an infinity-only table gives 25.6° at r = 10) |
 | `check47` | Images: r = 10, β = 20°: 39.837659068° / 23.543122070°, μ = 1.118821 / 0.276451; r = 1000, β = 1°: 3.144406661° / 2.160968686°, μ = 1.847367 / 0.856138 (positions ±1e-7 rad, μ ±1e-4 relative) | image order, parity, magnification |
@@ -170,6 +172,12 @@ imageMagnification(r, psi) -> float          -- (sin psi / |sin F|) |dpsi/dF|, F
 - **Inverse table.** It is built in the package by monotone (Fritsch–Carlson) inversion of a 16k-sample forward row. F(ψ) is strictly increasing on (α_sh, π], and the test asserts that per row. Orders 0 and 1 use F = +β and −β.
 - **Cost (row V11).** On the strict VM, 400 rays take 0.30 s against 37.7 s on the interpreter, with bit-identical output. That is ~0.6 µs per RK4 step. The full forward table (524k rays) is estimated at **~7 min on the strict VM** and ~15 h on the interpreter. So: `make lens-lut` regenerates everything (manual, recorded in the report). `make lens-lut-check` (in `make test`) regenerates every 64th column of every 32nd row on the strict VM and compares it to the committed binary bit for bit. It also runs row 128, columns 0–63, on both engines and compares them with `cmp`. That is the M3 VM stress test; divergences go upstream. **Fallback** if the full run exceeds 60 min on the VM: generate with `escapeAzimuthExact` and keep `make lens-lut-check` on the integrator (spec §3 as amended by D-13 allows either generator if the other cross-checks).
 - **Finite-range test (CLAUDE.md precision rule).** `tests/test_physics.gd` loads both binaries and asserts that every texel is finite, that F is strictly monotone in every row of `lens_inv`, and that the header sha256 matches.
+- **As built (2026-10-08, M3.2/M3.3; dated note, the text above is the plan).**
+  - **Step h = 0.0025, not 0.005.** At the shadow edge (x = ln 10⁻⁸) the RK4 error is h⁴-like: h = 0.005 left 1.3 × 10⁻⁴ rad in the stored R (measured against the exact form on rows 20–255), above AC-5's budget. Row V10's 5.3 × 10⁻⁷ did not probe the first columns. h = 0.0025 leaves 8 × 10⁻⁶; 0.001 would leave 2.6 × 10⁻⁷ at 5× the cost. The integrator stays the generator; the exact form cross-checks it in AC-5.
+  - **Cost (task 1).** On the v0.52.0 VM a 2,048-ray row costs about 5 s at h = 0.005 (row 128) and an inverse row about 2 s, so the full run is about 40 CPU-minutes at h = 0.0025, under the 60-minute swap threshold. `make lens-lut` shards the rows over parallel VM processes (the bytes do not depend on the sharding): **436 s wall with 14 jobs** on the Studio under heavy load (load average ~ 90). The F32 writer must run under `--bytecode` without `--strict-bytecode`, because the `std/fs` builtins are evaluator-only on the strict VM (reported upstream); the pure generator is strict-checked (`rowSlice128`, `rowSlice128Hex`).
+  - **Interpolation.** Rows are read at the observer's *fractional column* (the texture coordinate), not at the same x: the edge and the antipode then fall on the first and last column of every row (reading the same x left 1.4 × 10⁻³ rad at ψ = π). Within a column the weight is linear in cot(ψ/2), exact for the weak-field δ = (1 + cos ψ)/b (an x-linear weight gave 0.5 % relative near the antipode; a ψ-linear one 6 × 10⁻⁵ at b = 100). Catmull-Rom across rows uses the linear ghost point 2p₁ − p₂ beyond the end rows (repeating the end row left 5 × 10⁻⁴ rad near r = 2). The end rows are pinned to r = 2 and r = 10⁶ exactly. M3.5a's shader mirrors these three choices.
+  - **Measured (AC-5).** 10k probes: worst 1.14 × 10⁻⁵ rad at r ≤ 100; worst 1.7 × 10⁻⁴ relative above, where δ ≥ 10⁻⁵. Within about 10⁻³ rad of the antipode δ → 0 and a relative error is meaningless, so there the bound is absolute (≤ 10⁻⁸ rad; measured 1.2 × 10⁻⁹). The r = 10⁶ row matches `weakDeflectionFinite` to 1.5 × 10⁻⁴ relative. AC-8 on that row: 0.1475 % at b = 1000 and 2.690 × 10⁻⁴ at b = 100 (exact: 2.681 × 10⁻⁴).
+  - **Round trip.** 2,000 images of 1,000 (r, β): 469 are deep-edge images with dψ/dF < 10⁻³ (demagnified more than 1000×), where dF/dψ multiplies a 10⁻¹⁰ rad image error into 2 × 10⁻⁴ rad in the source plane. The source-plane bound (2 × 10⁻⁴ rad; worst 8.5 × 10⁻⁵) applies to the other 1,531; all 2,000 also hold it in the image plane (worst 1.9 × 10⁻⁵ rad).
 
 ### M3.3 CPU reference `physics/schwarzschild.gd`
 

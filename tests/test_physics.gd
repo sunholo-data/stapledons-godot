@@ -1218,6 +1218,177 @@ func _limb_mean() -> float:
 		s += 2.0 * r * Planets.limb_darkened(1.0, sqrt(1.0 - r * r)) / n
 	return s
 
+## M3.3 (R1-M3-BLACK-HOLES): Schwarzschild (spec §3). The CPU mirror physics/schwarzschild.gd
+## against the spec's RS check values, the package's pinned check41-47 values (sunholo/relativity
+## 0.10.0 geodesic_test.ail), and the lens tables (AC-5, AC-8 mirror half, AC-9 CPU half).
+func test_schwarzschild() -> void:
+	print("Schwarzschild (spec §3)")
+	var deg := func(x: float) -> float: return x * PI / 180.0
+	# RS-9, RS-21: b_c = 3 sqrt3 / 2, and the tangent ray at the photon sphere has exactly b_c
+	check("RS-9 b_c = 3 sqrt(3)/2 (package literal)", Schwarzschild.B_C, 1.5 * sqrt(3.0), 1e-15)
+	check("RS-9 b_c = 2.598 r_s", Schwarzschild.B_C, 2.598, 5e-4)
+	check("RS-21 photon sphere r = 1.5 r_s", Schwarzschild.PHOTON_SPHERE, 1.5, 0.0)
+	check("RS-21 tangent ray at r = 1.5 has b = b_c", Schwarzschild.impact(1.5, PI * 0.5), Schwarzschild.B_C, 1e-14)
+	# RS-10..RS-13: Synge's shadow
+	for row: Array in [[10.0, 14.269027328, 14.27, "RS-10"], [5.0, 27.694561451, 27.69, "RS-11"], [3.0, 45.0, 45.00, "RS-12"], [1.5, 90.0, 90.0, "RS-13"]]:
+		var a := rad_to_deg(Schwarzschild.shadow_angle(row[0]))
+		check("%s shadow at %s r_s = %.9f deg" % [row[3], row[0], row[1]], a, row[1], 1e-8)
+		check("%s shadow at %s r_s = %s deg (spec rounding)" % [row[3], row[0], row[2]], a, row[2], 0.005)
+	# RS-16..RS-20: static observer factor 1/sqrt(1 - 1/r)
+	for row: Array in [[10.0, 1.05409255338946, 1.054, "RS-16"], [5.0, 1.11803398874989, 1.118, "RS-17"], [3.0, 1.22474487139159, 1.225, "RS-18"],
+			[2.0, sqrt(2.0), 1.414, "RS-19"], [1.5, sqrt(3.0), 1.732, "RS-20"]]:
+		check("%s static factor at %s r_s" % [row[3], row[0]], Schwarzschild.static_blueshift(row[0]), row[1], 1e-14)
+		check("%s static factor at %s r_s = %s (spec rounding)" % [row[3], row[0], row[2]], Schwarzschild.static_blueshift(row[0]), row[2], 5e-4)
+	# The exact form (the mirror's oracle) against the package's pinned values
+	check("check41 exact alpha(100) = 0.0202999662395031", Schwarzschild.deflection_from_infinity_exact(100.0), 0.0202999662395031, 1e-12)
+	check("check42 exact alpha(1000) = 0.00200295058718769", Schwarzschild.deflection_from_infinity_exact(1000.0), 0.00200295058718769, 1e-12)
+	check("RS-14 |alpha(1000)/(2/b) - 1| <= 1 % (measured 0.148 %)", Schwarzschild.deflection_from_infinity_exact(1000.0) / (2.0 / 1000.0) - 1.0, 0.0014753, 1e-6)
+	check("RS-15 |alpha(100)/(2/b + 15 pi/16b^2) - 1| <= 3e-4 (measured 2.68e-4)", Schwarzschild.deflection_from_infinity_exact(100.0) / Schwarzschild.weak_deflection2(100.0) - 1.0, 0.0, 3e-4)
+	# check44 (50-digit truth; at eps = 1e-8 float64 holds ~1e-9, so 3e-9 there: design doc dated note 2026-10-08)
+	for row: Array in [[1e-4, 8.810486354996266, 1e-9], [1e-6, 13.4152855578804, 1e-9], [1e-8, 18.02045076953216, 3e-9]]:
+		check("check44 near-critical eps = %s vs the 50-digit truth" % row[0], Schwarzschild.deflection_from_infinity_exact(Schwarzschild.B_C * (1.0 + row[0])), row[1], row[2])
+	for row: Array in [[10.0, 0.5, 3.1947588798162605], [3.0, 1.0, 3.4453145251885964], [5.0, 2.0, 1.2969414231071164], [10.0, 0.26, 5.701107605230479]]:
+		check("check45 exact azimuth at (r %s, psi %s)" % [row[0], row[1]], Schwarzschild.escape_azimuth_exact(row[0], row[1]), row[2], 1e-12 * row[2])
+	# check46 / AC-9 CPU half: Einstein angles to 1e-7 rad
+	for row: Array in [[10.0, 29.828317906], [5.0, 44.874561077], [3.0, 61.888756430], [100.0, 8.520443413], [1000.0, 2.604361342]]:
+		check("check46 AC-9 Einstein angle at r = %s: %.9f deg (rad, 1e-7)" % row, Schwarzschild.einstein_angle(row[0]), deg.call(row[1]), 1e-7)
+	check("check46 Einstein angle at r = 10 = 0.5206023577867371 (package, 1e-12)", Schwarzschild.einstein_angle(10.0), 0.5206023577867371, 1e-12)
+	# check47: images and magnifications, exact form
+	for row: Array in [[10.0, 20.0, 39.837659068, 23.543122070, 1.118821, 0.276451], [1000.0, 1.0, 3.144406661, 2.160968686, 1.847367, 0.856138]]:
+		for order in 2:
+			var psi := Schwarzschild.image_angle_exact(row[0], deg.call(row[1]), order)
+			check("check47 r %s beta %s deg: order-%d image (exact, rad)" % [row[0], row[1], order], psi, deg.call(row[2 + order]), 1e-7)
+			check("check47 r %s beta %s deg: order-%d mu (exact, rel)" % [row[0], row[1], order], Schwarzschild.image_magnification_exact(row[0], psi) / row[4 + order], 1.0, 1e-4)
+	_schwarzschild_tables(deg)
+
+
+func _schwarzschild_tables(deg: Callable) -> void:
+	print("Schwarzschild lens tables (data/lens, M3.2; AC-5)")
+	var ok := Schwarzschild.load_tables()
+	check("lens tables load, sizes and header sha256 match (%s)" % Schwarzschild.load_error, 1.0 if ok else 0.0, 1.0, 0.0)
+	if not ok:
+		return
+	for t in ["fwd", "inv"]:
+		var hdr: Dictionary = Schwarzschild.headers[t]
+		var bin := "res://data/lens/lens_%s.bin" % t
+		check("lens_%s header sha256 = sha256 of the bin" % t, 1.0 if FileAccess.get_sha256(bin) == hdr["sha256"]["bin"] else 0.0, 1.0, 0.0)
+		check("lens_%s header: package sunholo/relativity 0.10.0" % t, 1.0 if hdr["package"]["version"] == "0.10.0" else 0.0, 1.0, 0.0)
+		check("lens_%s header row y range = [ln 0.5, ln(1e6 - 1.5)]" % t, absf(float(hdr["row"]["min"]) - log(0.5)) + absf(float(hdr["row"]["max"]) - log(1e6 - 1.5)), 0.0, 1e-15)
+	check("lens_fwd header column x_min = ln 1e-8, h = 0.0025", absf(float(Schwarzschild.headers["fwd"]["column"]["min"]) - log(1e-8)) + absf(float(Schwarzschild.headers["fwd"]["generator"]["h"]) - 0.0025), 0.0, 1e-15)
+	check("row 0 is r = 2, row 255 is r = 1e6", absf(Schwarzschild.row_radius(0) - 2.0) + absf(Schwarzschild.row_radius(255) - 1e6), 0.0, 0.0)
+	# every texel finite (both tables); lens_inv strictly monotone in F in every row, slope > 0
+	var nonfinite := 0
+	for tab: PackedFloat32Array in [Schwarzschild.fwd_table(), Schwarzschild.inv_table()]:
+		for v in tab:
+			if is_nan(v) or is_inf(v):
+				nonfinite += 1
+	check("every texel of lens_fwd and lens_inv is finite (2 x 1,048,576)", nonfinite, 0.0, 0.0)
+	var inv := Schwarzschild.inv_table()
+	var bad_rows := 0
+	for j in Schwarzschild.N_ROWS:
+		var prev := -INF
+		for i in Schwarzschild.N_COLS:
+			var k := (j * Schwarzschild.N_COLS + i) * 2
+			if not (inv[k] > prev) or not (inv[k + 1] > 0.0):
+				bad_rows += 1
+				break
+			prev = inv[k]
+	check("lens_inv: psi - alpha_sh strictly increasing in F, dpsi/dF > 0, in all 256 rows", bad_rows, 0.0, 0.0)
+	# AC-5: 10k deterministic probes (Weyl sequences), table vs exact form
+	var worst_lo := 0.0
+	var worst_hi := 0.0
+	var worst_abs_tiny := 0.0
+	var n_lo := 0
+	var n_tiny := 0
+	for k in 10000:
+		var u := fmod(0.5 + k * 0.6180339887498949, 1.0)
+		var v := fmod(0.5 + k * 0.7548776662466927, 1.0)
+		var r := 1.5 + exp(log(0.5) + (log(1e6 - 1.5) - log(0.5)) * u)
+		var a := Schwarzschild.shadow_angle(r)
+		var x := log(1e-8) + (Schwarzschild.row_x_max(r) - log(1e-8)) * v
+		var psi := minf(a + a * exp(x), PI)
+		var exact := Schwarzschild.deflection_exact(r, psi)
+		var err := absf(Schwarzschild.deflection(r, psi) - exact)
+		if r <= 100.0:
+			n_lo += 1
+			worst_lo = maxf(worst_lo, err)
+		elif absf(exact) >= 1e-5:
+			worst_hi = maxf(worst_hi, err / absf(exact))
+		else:
+			# within ~1e-3 rad of the antipode delta -> 0, and a relative error of a vanishing
+			# delta is meaningless: there the bound is absolute (design AC-5 note, 2026-10-08)
+			n_tiny += 1
+			worst_abs_tiny = maxf(worst_abs_tiny, err)
+	print("        10k probes: %d at r <= 100, worst %s rad; %d above with delta >= 1e-5, worst %s relative; %d with delta < 1e-5, worst %s rad" % [n_lo, String.num_scientific(worst_lo), 10000 - n_lo - n_tiny, String.num_scientific(worst_hi), n_tiny, String.num_scientific(worst_abs_tiny)])
+	check("AC-5 table vs exact, r <= 100: worst |delta error| <= 1.2e-4 rad", worst_lo, 0.0, 1.2e-4)
+	check("AC-5 table vs exact, r > 100, delta >= 1e-5: worst relative error <= 1e-3", worst_hi, 0.0, 1e-3)
+	check("AC-5 table vs exact, r > 100, delta < 1e-5 (near the antipode): worst error <= 1e-8 rad", worst_abs_tiny, 0.0, 1e-8)
+	# AC-5: the r = 1e6 row hands off to weakDeflectionFinite to 1e-3 relative
+	var worst_w := 0.0
+	for psi: float in [0.01, 0.1, 0.5, 1.0, 2.0, 3.0]:
+		worst_w = maxf(worst_w, absf(Schwarzschild.deflection(1e6, psi) / Schwarzschild.weak_deflection_finite(1e6, psi) - 1.0))
+	check("AC-5 r = 1e6 row vs weakDeflectionFinite (psi 0.01..3): relative", worst_w, 0.0, 1e-3)
+	check("beyond r = 1e6 the weak branch is used (r = 2e6, psi 0.5)", Schwarzschild.deflection(2e6, 0.5), Schwarzschild.weak_deflection_finite(2e6, 0.5), 0.0)
+	# AC-8 mirror half: the weak-field pair on the r -> infinity row (r = 1e6)
+	for row: Array in [[1000.0, "RS-14 / AC-8: r = 1e6 row, b = 1000: |delta/(2/b) - 1| <= 1 %", 0.01, 2.0 / 1000.0], [100.0, "RS-15 / AC-8: r = 1e6 row, b = 100: |delta/(2/b + 15 pi/16 b^2) - 1| <= 3e-4", 3e-4, Schwarzschild.weak_deflection2(100.0)]]:
+		var psi := asin(row[0] * sqrt(1.0 - 1e-6) / 1e6)
+		check(row[1], Schwarzschild.deflection(1e6, psi) / row[3] - 1.0, 0.0, row[2])
+	# AC-9 / check46 from the tables: a star exactly behind the hole images at psi_E
+	for row: Array in [[10.0, 29.828317906], [5.0, 44.874561077], [3.0, 61.888756430], [100.0, 8.520443413], [1000.0, 2.604361342]]:
+		check("check46 table Einstein angle at r = %s (lens_inv, rad, 1.2e-4)" % row[0], Schwarzschild.image(row[0], 0.0, 0)["psi"], deg.call(row[1]), 1.2e-4)
+	for row: Array in [[10.0, 20.0, 39.837659068, 23.543122070, 1.118821, 0.276451], [1000.0, 1.0, 3.144406661, 2.160968686, 1.847367, 0.856138]]:
+		for order in 2:
+			var im := Schwarzschild.image(row[0], deg.call(row[1]), order)
+			check("check47 table r %s beta %s: order-%d image (rad, 1.2e-4)" % [row[0], row[1], order], im["psi"], deg.call(row[2 + order]), 1.2e-4)
+			check("check47 table r %s beta %s: order-%d mu (1 %%)" % [row[0], row[1], order], im["mu"] / row[4 + order], 1.0, 0.01)
+	_schwarzschild_maps()
+
+
+func _schwarzschild_maps() -> void:
+	print("Schwarzschild lens maps (lens_direction, star_images, compose)")
+	var h := Vector3(0, 0, -1)
+	# captured inside the shadow, straight through at the antipode
+	check("a ray at psi < alpha_sh is captured (r 5)", 1.0 if Schwarzschild.lens_direction(Vector3(sin(0.4), 0, -cos(0.4)), h, 5.0)["captured"] else 0.0, 1.0, 0.0)
+	var out: Vector3 = Schwarzschild.lens_direction(-h, h, 5.0)["n_inf"]
+	check("the outward radial ray (psi = pi) is undeflected", out.distance_to(-h), 0.0, 1e-6)
+	# round trip: 1,000 deterministic (r, beta), both images map back onto the source
+	var worst := 0.0
+	var worst_img := 0.0
+	var tested := 0
+	var faint := 0
+	for k in 1000:
+		var u := fmod(0.5 + k * 0.6180339887498949, 1.0)
+		var v := fmod(0.5 + k * 0.7548776662466927, 1.0)
+		var w := fmod(0.5 + k * 0.5698402909980532, 1.0)
+		var r := 1.5 + exp(log(0.5) + (log(1e6 - 1.5) - log(0.5)) * u)
+		var beta := 0.01 + (PI - 0.02) * v
+		var az := TAU * w
+		var n_src := (h * cos(beta) + (Vector3(cos(az), sin(az), 0.0)) * sin(beta)).normalized()
+		for im: Dictionary in Schwarzschild.star_images(n_src, h, r):
+			var back: Dictionary = Schwarzschild.lens_direction(im["dir_static"], h, r)
+			var err := INF if back["captured"] else Schwarzschild.angle(back["n_inf"], n_src)
+			# the same miss seen in the image plane: source-plane error x dpsi/dF at the image
+			var psi := Schwarzschild.angle(im["dir_static"], h)
+			var slope: float = Schwarzschild.image(r, beta, im["order"])["slope"]
+			worst_img = maxf(worst_img, err * absf(slope))
+			if absf(slope) >= 1e-3:
+				worst = maxf(worst, err)
+			else:
+				faint += 1 # deep edge images, demagnified > 1000x: dF/dpsi amplifies a 1e-10 rad image error
+			tested += 1
+	check("round trip in the source plane: lens_direction(star_images(n)) = n, %d images with dpsi/dF >= 1e-3 (rad, 2e-4)" % (tested - faint), worst, 0.0, 2e-4)
+	check("round trip in the image plane: all %d images of 1,000 (r, beta) incl. %d deep-edge ones (rad, 2e-4)" % [tested, faint], worst_img, 0.0, 2e-4)
+	# compose: at rest it is the lens map with D = static blueshift; moving, D = D_g D_SR
+	var n := Vector3(0.3, 0.2, -0.9).normalized()
+	var c0 := Schwarzschild.compose(n, h, 10.0, Vector3.RIGHT, 0.0)
+	check("compose at rest: n_inf = lens_direction", (c0["n_inf"] as Vector3).distance_to(Schwarzschild.lens_direction(n, h, 10.0)["n_inf"]), 0.0, 1e-7)
+	check("compose at rest: D = 1/sqrt(1 - 1/r) at r = 10", c0["D"], 1.05409255338946, 1e-12)
+	var bo := 0.35355339059327373 # circular orbit speed at r = 5 (check49)
+	var c1 := Schwarzschild.compose(n, h, 5.0, Vector3.RIGHT, bo)
+	check("compose in orbit: D = D_g x D_SR", c1["D"], Schwarzschild.static_blueshift(5.0) * Relativity.doppler_apparent(n, Vector3.RIGHT, bo), 1e-12)
+	check("compose in orbit: the static view is the de-aberrated ray", (c1["n_static"] as Vector3).distance_to(Relativity.deaberrate(n, Vector3.RIGHT, bo)), 0.0, 1e-7)
+
+
 func _initialize() -> void:
 	var vp := SubViewport.new()
 	vp.size = Vector2i(960, 540)
@@ -1249,6 +1420,7 @@ func _init() -> void:
 	test_ship_frame()
 	test_sky_frame()
 	_m5_photometry()
+	test_schwarzschild()
 
 	print("Aberration (sources crowd toward the direction of motion)")
 	check("90 deg source at 0.9c appears at acos(0.9) = 25.842 deg", angle_deg(Relativity.aberrate(side, fwd, 0.9), fwd), rad_to_deg(acos(0.9)), 1e-4)
