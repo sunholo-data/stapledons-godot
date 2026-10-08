@@ -358,7 +358,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime sky-bundle areas-stage starmap-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
+export-macos: runtime sky-bundle areas-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
 	@git describe --tags --always --dirty > runtime/build_version.txt # bundled (runtime/*): the audit's "build" field
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
