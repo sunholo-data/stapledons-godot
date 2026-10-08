@@ -127,6 +127,7 @@ func _on_title_route(route: String) -> void:
 		loading_jump = LoadingJump.new()
 		loading_jump.enabled_prefetch = loading_overrides.get("prefetch", true)
 		get_tree().root.add_child(loading_jump)
+		loading_jump.finished.connect(func(_r: String) -> void: loading_jump = null)
 		var s := title.sky
 		title.sky = null
 		title.process_mode = Node.PROCESS_MODE_DISABLED # no second press while it loads

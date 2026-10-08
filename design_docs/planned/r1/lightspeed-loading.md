@@ -15,7 +15,7 @@ Net +4: aligned, go.
 **Release:** R1.
 **Implements:** the title screen's routes (`design_docs/planned/r1/title-screen.md`). Physics: `stapledons-design/physics/relativity-spec.md` §1 (rapidity φ = atanh β, γ = 1/√(1−β²)) and §2 (aberration, Doppler) at β up to 0.99999, through the existing starfield and background shaders. Formulas: `sunholo/relativity` 0.10.0 `kinematics` (`rapidityOfBeta`, `betaOf`, `gammaOf`, `oneMinusBeta`), mirrored in `physics/relativity.gd`; no new formula.
 **Depends on:** `TitleScreen` (its `InteriorSky`), `main.gd` `_on_title_route`, `SimBridge`, `GalaxyMap`, `CaptainAvatar`, `SkyBackground`, `Starfield`, `Blackbody`.
-**Estimated LOC:** about 1,000 (view 560, prefetch and sharing hooks 230, tests 330, tools 170).
+**Estimated LOC:** about 1,000 estimated; about 1,550 added (view 570, prefetch and sharing hooks 300, tests 400, tools 170, doc and changelog).
 
 ## Problem
 
@@ -31,7 +31,7 @@ Measured on the Mac Studio (M2 Ultra) at 1280×720 (`make loading-profile`, befo
 
 Goals:
 1. Board the ship, Guided voyage and Galaxy map go through a loading view: the title's real sky accelerates along the galactic centre (the title camera turns to face it over the first quarter) with rapidity φ = p · atanh(0.99999), where p is the real load progress; 100% is β = 0.99999 (γ 223.6, 1−β = 10⁻⁵).
-2. Progress is real: weighted by measured stage times; monotone; 1.0 exactly when the destination is built and has drawn its first frames.
+2. Progress is real: weighted by measured stage times, finished stages count exactly (a running worker stage is estimated by elapsed over measured time, at most 95%); monotone; 1.0 exactly when the destination is built and has drawn its first frames.
 3. As much loading as possible off the main thread or shared, without changing what the routes build; whatever still blocks is measured and reported.
 4. A minimal overlay in the title's style: `LOADING · BOARD THE SHIP`, β (as many digits as the approach to c needs), γ, 1−β, the range "β 0.000c → 0.99999c", a progress line with the percentage, the stage being loaded, and the note that the speed is illustrative while the optics are the renderer.
 5. At 100% only: the white-out (transition effect): the forward point blooms to full white, then fades to the destination.

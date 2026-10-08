@@ -314,8 +314,8 @@ func _weights() -> Dictionary:
 	return w
 
 
-## The real fraction: finished phases count fully; a running prefetch counts each
-## finished task fully and a running one by elapsed / measured (at most 95%).
+## The real fraction: finished phases and stages count exactly; a running prefetch
+## stage is estimated as elapsed / its measured time (at most 95%) until it finishes.
 func _real_progress() -> float:
 	var w := _weights()
 	var total: float = w["prefetch"] + w["build"] + w["frames"]
@@ -584,3 +584,18 @@ func _build_ui() -> void:
 
 var _black_bg: ColorRect
 
+
+## Freed early (quit during the prefetch): reap the workers, stop an unused warm sim.
+func _exit_tree() -> void:
+	for id in _tasks:
+		if _groups.has(id):
+			WorkerThreadPool.wait_for_group_task_completion(_tasks[id])
+		elif not _thread_done.has(id):
+			WorkerThreadPool.wait_for_task_completion(_tasks[id])
+	_tasks.clear()
+	if not done:
+		var holder: Dictionary = _results.get("sim", {})
+		if holder.get("value") != null and not _thread_done.has("sim"):
+			holder["value"].stop()
+		SimBridge.discard_warm()
+		CaptainAvatar.clear_offered()
