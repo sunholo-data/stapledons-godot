@@ -68,6 +68,10 @@ var solar_pause := Button.new()
 var solar_next := Button.new()
 var solar_skip := Button.new()
 var navigation_button := Button.new()
+## Launched from the title screen (main.gd): Esc and the HUD's menu button return
+## there. Every command-line launch keeps Esc = quit.
+var menu_return := false
+var menu_button := Button.new()
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
@@ -78,6 +82,7 @@ func asset(file: String) -> String:
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
 func setup(opts := {}) -> bool:
 	if ready_ok:return true
+	menu_return=opts.get("from_menu",false)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
 	var px: Vector2i=opts.get("size",get_window().size)
 	var visual := AreaBundle.load_glb(asset("ship.glb"))
@@ -141,6 +146,9 @@ func _hud() -> void:
 	navigation_button.text="Navigation [M] · select destination and hold to commit"
 	navigation_button.add_theme_font_size_override("font_size",12)
 	navigation_button.pressed.connect(open_navigation);hud.add_child(navigation_button)
+	menu_button.text="Main menu [Esc]";menu_button.visible=menu_return
+	menu_button.add_theme_font_size_override("font_size",12)
+	menu_button.pressed.connect(return_to_menu);hud.add_child(menu_button)
 	var tour_row:=HBoxContainer.new();hud.add_child(tour_row)
 	var solar_start:=Button.new();solar_start.text="New voyage · Earth → outer planets → α Cen → TRAPPIST-1 → Aldebaran (real time)"
 	solar_start.tooltip_text="Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
@@ -178,7 +186,7 @@ func _hud() -> void:
 	for stops in BRIGHTNESS_STOPS:
 		var button:=Button.new();button.text="Reference sky" if stops==0 else ("Dim %d stops"%(-stops) if stops<0 else "%d× brighter"%int(pow(2.,stops)))
 		button.pressed.connect(set_brightness_trial.bind(stops));brightness_row.add_child(button)
-	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · scroll to zoom · E lift · hold I + click known star · G guides · Esc close";controls.add_child(hint)
+	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · scroll to zoom · E lift · hold I + click known star · G guides · "+("Esc main menu" if menu_return else "Esc close");controls.add_child(hint)
 func toggle_controls() -> void:
 	if not benchmark.running:controls.visible=not controls.visible
 func set_brightness_trial(stops: int) -> bool:
@@ -338,7 +346,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_M:open_navigation()
 			KEY_E:
 				if lift!=null:lift.board()
-			KEY_ESCAPE:get_tree().quit()
+			KEY_ESCAPE:
+				if menu_return:return_to_menu()
+				else:get_tree().quit()
+## Back to the title screen (main.tscn on a plain launch); _exit_tree stops the voyage's sim.
+func return_to_menu() -> void:
+	if not menu_return or benchmark.running:return
+	menu_return=false # once: the scene change is deferred
+	get_tree().change_scene_to_file("res://main.tscn")
 func _zoom(amount: float) -> void:
 	if amount==0. or benchmark.running or (lift!=null and lift.travelling()):return
 	if camera_mode=="external review":

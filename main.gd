@@ -6,7 +6,9 @@ extends Node3D
 ##               +/- time warp. The HUD shows the view-to-velocity angle.
 ##               Exposure (M1.5a): F fixed EV at the rest value, M eye / camera
 ##               metering, [ ] exposure bias (aid), G magnitude floor (aid).
-## Current ship: godot --path . (default: live navigation, expanded painted 3D ship, captain eye)
+## Title screen: godot --path .   (a plain launch, no user args: ui/title_screen.gd; Board the ship /
+##              Guided voyage / Galaxy map / Settings / Credits / Quit; Esc in the ship or map returns to it)
+## Current ship: godot --path . -- --ship-demo (live navigation, expanded painted 3D ship, captain eye)
 ## Interior reference: godot --path . -- --interior [--bundle=DIR] (M4.2: original fixed-view bridge with
 ##              the live sky; WASD walk, E use, M galaxy map, L log, K codex; --interior-capture=DIR the S1 review
 ##              captures (tools/interior_capture.gd); --m4-smoke [--bundle=DIR] the scripted slice (make m4-smoke))
@@ -69,21 +71,82 @@ const SKY_NOTE := "sky background not bundled in this build"
 ## One player entry; explicit legacy/capture modes remain reference tools.
 static func current_ship_entry(args: Dictionary) -> bool:
 	return args.is_empty() or args.has("ship-demo") or args.has("ship-demo-smoke") or args.has("ship-identification-smoke") or args.has("solar-departure-smoke")
-func _start_current_ship(live_start: bool) -> void:
-	UiScale.configure(get_window(),not live_start)
+## What a launch opens: "title" (a plain launch, no user args), "ship" (an explicit
+## current-ship flag or smoke) or "reference" (every other developer, capture,
+## golden or smoke mode, unchanged). The menu is for a normal double-click only.
+static func launch_route(args: Dictionary) -> String:
+	if args.is_empty():return "title"
+	return "ship" if current_ship_entry(args) else "reference"
+## Tests only: extra TitleScreen options (settings_dir, sky) and ship setup options.
+static var title_overrides := {}
+static var demo_overrides := {}
+var title: TitleScreen
+var _from_menu := false # the galaxy map was opened from the title screen: Esc returns there
+## guided: start the solar-departure tour as soon as the ship is ready (title screen).
+func _start_current_ship(live_start: bool, extra := {}, guided := false) -> void:
+	UiScale.configure(get_window(),not live_start and not guided)
 	var demo: Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
 	if live_start:demo.setup_options={"live_start":true,"sky_state":"rest"}
+	elif guided:demo.setup_options={"sky_state":"rest"}
+	demo.setup_options.merge(extra,true)
 	get_tree().root.add_child(demo)
 	get_tree().current_scene=demo
 	if live_start:
 		var ok:bool=demo.ready_ok and demo.journey_map!=null and demo.sky_state=="live" and demo.sky.beta==0. and demo.camera.pullback==0.
 		print("current-ship-startup: %s live-rest captain-eye single-navigation" % ("OK" if ok else "FAIL"))
 		if not ok:get_tree().quit(1)
+	if guided:
+		var ok:bool=demo.ready_ok and demo.start_solar_departure()
+		print("guided-voyage-startup: %s" % ("OK" if ok else "FAIL"))
 	queue_free()
+
+
+func _show_title() -> void:
+	UiScale.configure(get_window(), false)
+	var opts := {"sky": DisplayServer.get_name() != "headless"}
+	opts.merge(title_overrides, true)
+	var layer := CanvasLayer.new()
+	add_child(layer)
+	title = TitleScreen.new(opts)
+	layer.add_child(title)
+	title.chosen.connect(_on_title_route)
+
+
+## The title screen's choice. The ship's view setting goes to the ship; text-only
+## is already in ai_settings.cfg, which the AI session reads.
+func _on_title_route(route: String) -> void:
+	var extra := {"from_menu": true, "auto_view": title.settings.auto_view}
+	extra.merge(demo_overrides, true)
+	match route:
+		"ship":
+			_start_current_ship(true, extra)
+		"guided":
+			_start_current_ship(false, extra, true)
+		"map":
+			title.get_parent().queue_free()
+			title = null
+			_map_mode = true
+			_from_menu = true
+			var esc := Label.new()
+			esc.text = "Esc  main menu"
+			esc.add_theme_font_size_override("font_size", 12)
+			esc.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75, 0.7))
+			esc.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE, 12)
+			esc.grow_vertical = Control.GROW_DIRECTION_BEGIN
+			var layer := CanvasLayer.new()
+			layer.layer = 5
+			layer.add_child(esc)
+			add_child(layer)
+			await _run_map({})
+		"quit":
+			get_tree().quit()
 
 
 func _ready() -> void:
 	var args := _user_args()
+	if launch_route(args) == "title":
+		_show_title()
+		return
 	if current_ship_entry(args):
 		_start_current_ship.call_deferred(not (args.has("ship-demo-smoke") or args.has("ship-identification-smoke") or args.has("solar-departure-smoke")))
 		return
@@ -536,6 +599,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if not _fixed_scale:
 			UiScale.handle(get_window(), event)
 		get_viewport().set_input_as_handled()
+		return
+	if _from_menu and event.keycode == KEY_ESCAPE: # the map opened from the title screen
+		_from_menu = false
+		get_viewport().set_input_as_handled()
+		get_tree().change_scene_to_file("res://main.tscn")
 		return
 	if _map_mode:
 		return

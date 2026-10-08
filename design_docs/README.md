@@ -51,3 +51,4 @@ design_docs/
 | [r1/m5-planets.md](planned/r1/m5-planets.md) | **Approved** 2026-10-03 (Mark, attended; D-26, queue row 6c): flyby player-facing, new package `sunholo/celestial`, 2k textures, light confirm for short in-system legs; awaiting sprint plan |
 | [r1/m4-real-time-tour.md](planned/r1/m4-real-time-tour.md) | **Approved** 2026-10-06 (Mark, attended; D-39 to D-41): real-time voyage Earth → Aldebaran with cruise interludes ([sprint A](planned/r1/m4-real-time-tour-sprint.md)); TRAPPIST-1 stop ([sprint B](planned/r1/m5-trappist1-sprint.md)) |
 | [r1/m4-ship-geometry-demo.md](planned/r1/m4-ship-geometry-demo.md) | Approved, implementation in progress: correct bridge overlook, whole-ship pullback and one-tier lift; [sprint](planned/r1/m4-ship-geometry-demo-sprint.md) |
+| [r1/title-screen.md](planned/r1/title-screen.md) | Implemented on `feat/title-screen` 2026-10-08 (charter queue row 5b): title screen and launch menu; awaiting review |
