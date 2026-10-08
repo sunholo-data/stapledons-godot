@@ -204,6 +204,9 @@ func pin_destination(row: Dictionary) -> void:
 ## replace their float32 tier copies (restore_navigation_positions).
 ## A refused tier (sidecar, size or sha256) loads nothing: false.
 func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
+	if _take_shared_load(tier, dir):
+		return true
+	var revision0 := identity_revision
 	clear()
 	var stack := [[tier, false]]
 	if tier != "quick":
@@ -222,6 +225,51 @@ func load_tiers(tier: String, dir := "res://data/starmap") -> bool:
 		tiers.append(t + (":rest" if entry[1] else ""))
 	restore_navigation_positions("%s/stars.json" % dir)
 	last_loaded = {"tier": tier, "count": count, "tiers": tiers.duplicate()}
+	# The just-loaded rows, for a second sky loading the same stack while this one lives
+	# (ship's sky after the title's, lightspeed-loading). Packed arrays are copy-on-write,
+	# so this costs nothing unless this field later changes its rows.
+	_load_snapshot = {"key": [tier, dir], "count": count, "pos": pos, "custom": custom, "ids": ids.duplicate(),
+		"tiers": tiers.duplicate(), "skipped_missing": skipped_missing, "nav_restored": nav_restored,
+		"nav_max_shift": nav_max_shift, "nav_refused": nav_refused.duplicate(), "revisions": identity_revision - revision0}
+	_last_loader = weakref(self)
+	return true
+
+
+## The rows of the last load_tiers, kept by the field that loaded them; see load_tiers.
+var _load_snapshot := {}
+static var _last_loader: WeakRef = null
+var shared_load := false # this load_tiers copied a live field's identical load (tests)
+
+
+## load_tiers(tier, dir) from the snapshot of a live field that loaded the same stack:
+## the same rows, positions, identities and counters a fresh load produces (~0.5 s of
+## GDScript row loops for the large tier). False when there is no such field.
+func _take_shared_load(tier: String, dir: String) -> bool:
+	if _last_loader == null:
+		return false
+	var donor: Variant = _last_loader.get_ref()
+	if donor == null or donor == self or not is_instance_valid(donor):
+		return false
+	var snap: Dictionary = donor._load_snapshot
+	if snap.is_empty() or snap["key"] != [tier, dir]:
+		return false
+	var revision0 := identity_revision
+	clear()
+	count = snap["count"]
+	pos = snap["pos"]
+	custom = snap["custom"]
+	ids.assign(snap["ids"])
+	tiers.assign(snap["tiers"])
+	skipped_missing = snap["skipped_missing"]
+	nav_restored = snap["nav_restored"]
+	nav_max_shift = snap["nav_max_shift"]
+	nav_refused.assign(snap["nav_refused"])
+	identity_revision = revision0 + int(snap["revisions"])
+	if multimesh != null: _fill()
+	last_loaded = {"tier": tier, "count": count, "tiers": tiers.duplicate()}
+	_load_snapshot = snap
+	_last_loader = weakref(self)
+	shared_load = true
 	return true
 
 

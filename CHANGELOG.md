@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Lightspeed loading view, 2026-10-08
+
+- Board the ship, Guided voyage and Galaxy map no longer freeze the title while they load. The title's own sky accelerates toward the galactic centre as the load progresses, through the game's real relativistic optics (aberration, Doppler colour, the starbow), to 0.99999c at 100% (γ 223.6): the whole sky collapses into one blinding blue-white point. Then a white-out (a transition effect, not physics) blooms from that point and fades into the destination.
+- The overlay shows β, γ and 1 − β (from the `sunholo/relativity` mirror; never 1.0 − β), the percentage, the stage being loaded, and says the speed is illustrative while the optics are the renderer's. Progress is real: stages weighted by measured time, monotone, 100% only when the destination is built and drawn.
+- Faster: press to ready, Board the ship 7.9 s → 2.0 s, Guided voyage 7.3 s → 2.0 s, Galaxy map 3.0 s → 0.7 s (Mac Studio). The simulation starts on a worker thread; the galaxy map's star colours are computed on workers and ten times faster (a table form of the colour integral, bit-identical); the ship reuses the title's decoded sky panorama and loaded star tiers; the captain's sprites are built one a frame. The ship's scene build still holds the jump for about 1.3 s.
+- Command-line, capture, golden, smoke and export modes are unchanged. `make loading-jump-test` (in `make test`), `make loading-jump-capture` (renders to `renders/loading_jump/`), `make loading-profile`; two golden cases at the jump's 50% and 100% speeds. Design: `design_docs/planned/r1/lightspeed-loading.md`.
+
 ### Title screen, 2026-10-08
 
 - A plain launch (a double-click on the app) now opens a title screen over the real sky: the NOIRLab panorama and the catalogue stars, rendered at rest by the game's own sky stack with a slow pan along the Milky Way. Buttons: **Board the ship** (the 3D ship at live rest, as before), **Guided voyage** (the ship, straight into the solar-departure tour), **Galaxy map**, **Settings**, **Credits**, **Quit**. Mouse or keyboard (Up/Down wrap, Enter, Esc closes a panel, PageUp/PageDown scroll the credits). The footer shows the build id and "dev build".

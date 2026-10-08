@@ -87,6 +87,8 @@ static func find_ailang() -> String:
 ## Launch the sim and complete the handshake. The sim prints nothing before
 ## its hello reply.
 func start() -> bool:
+	if _adopt_warm():
+		return true
 	var launch := launch_override if not launch_override.is_empty() else _launch_plan()
 	if launch.is_empty():
 		return false
@@ -106,6 +108,63 @@ func start() -> bool:
 		if _record == null:
 			push_error("cannot record to %s" % record_path)
 	return hello(started + bootstrap_budget_ms(OS.has_feature("template"), not launch_override.is_empty()))
+
+
+## The loading jump (ui/loading_jump.gd) starts the sim a title route will ask for on a
+## worker thread: warm() spawns it and completes the same hello handshake there; the
+## main thread then offer_warm()s it, and the next default start() (no launch_override,
+## no record_path, the same want_minor) takes it over instead of spawning. Unused, it is
+## stopped by discard_warm(). Every other start() is unchanged.
+static var _warm: SimBridge = null
+var _warming := false
+
+
+## Worker thread: a started bridge, or null (the reason is pushed as an error).
+static func warm(minor: int) -> SimBridge:
+	var b := SimBridge.new()
+	b.want_minor = minor
+	b._warming = true # never adopts (it must not read _warm off the main thread)
+	return b if b.start() else null
+
+
+## Main thread only.
+static func offer_warm(b: SimBridge) -> void:
+	discard_warm()
+	_warm = b
+
+
+static func discard_warm() -> void:
+	if _warm != null:
+		_warm.stop()
+	_warm = null
+
+
+static func has_warm() -> bool:
+	return _warm != null
+
+
+func _adopt_warm() -> bool:
+	if _warming:
+		return false
+	var w := _warm
+	if w == null or not launch_override.is_empty() or record_path != "" or w.want_minor != want_minor:
+		return false
+	_warm = null
+	if w._pid < 0 or not OS.is_process_running(w._pid):
+		w.stop()
+		return false
+	_pipe = w._pipe
+	_stderr = w._stderr
+	_pid = w._pid
+	child_pid = w.child_pid
+	hello_reply = w.hello_reply
+	state = w.state
+	last_line = w.last_line
+	_line_bytes = w._line_bytes
+	w._pid = -1 # the child is this bridge's now
+	w._pipe = null
+	w._stderr = null
+	return true
 
 
 ## Normal source has no compiled cache on first launch. A measured cold compile

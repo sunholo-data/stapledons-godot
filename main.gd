@@ -112,9 +112,33 @@ func _show_title() -> void:
 	title.chosen.connect(_on_title_route)
 
 
-## The title screen's choice. The ship's view setting goes to the ship; text-only
-## is already in ai_settings.cfg, which the AI session reads.
+## Tests only: {"enabled": true} runs the loading jump on a title without a sky,
+## {"prefetch": false} without its worker-thread prefetch.
+static var loading_overrides := {}
+var loading_jump: LoadingJump = null
+
+
+## The title screen's choice. Ship, guided and map go through the lightspeed loading
+## view (ui/loading_jump.gd) when the title shows the sky; it takes the title's sky,
+## prefetches on worker threads and then runs _route_now unchanged. A title without
+## a sky (headless) routes at once, as before.
 func _on_title_route(route: String) -> void:
+	if route in LoadingJump.ROUTES and loading_jump == null and (title.sky != null or loading_overrides.get("enabled", false)):
+		loading_jump = LoadingJump.new()
+		loading_jump.enabled_prefetch = loading_overrides.get("prefetch", true)
+		get_tree().root.add_child(loading_jump)
+		var s := title.sky
+		title.sky = null
+		title.process_mode = Node.PROCESS_MODE_DISABLED # no second press while it loads
+		get_viewport().gui_release_focus()
+		loading_jump.start(route, s, _route_now.bind(route))
+		return
+	await _route_now(route)
+
+
+## The route itself. The ship's view setting goes to the ship; text-only
+## is already in ai_settings.cfg, which the AI session reads.
+func _route_now(route: String) -> void:
 	var extra := {"from_menu": true, "auto_view": title.settings.auto_view}
 	extra.merge(demo_overrides, true)
 	match route:
@@ -789,6 +813,9 @@ func _run_golden() -> void:
 		{"label": "astern at 0.5c stays astern, not drawn", "theta": 170.0, "beta": 0.5, "hidden": true},
 		{"label": "looking astern at 0.99c: K star 178.5 deg is redshifted to ~330 K, invisible", "theta": 178.5, "beta": 0.99, "hidden": true, "yaw": PI, "t": 4500.0},
 		{"label": "looking astern at 0.99c: 50,000 K star at 178.5 deg is dim red", "theta": 178.5, "beta": 0.99, "yaw": PI, "t": 50000.0},
+		# the loading jump (ui/loading_jump.gd): beta, gamma from the rapidity mirror at its 50% and 100% speeds
+		{"label": "loading jump 50%: 150 deg starboard at 0.9955c", "theta": 150.0, "phi": 0.5 * LoadingJump.phi_max()},
+		{"label": "loading jump 100%: 90 deg at 0.99999c -> 0.256 deg", "theta": 90.0, "phi": LoadingJump.phi_max()},
 	]
 	var failures := 0
 	for c in cases:
@@ -797,8 +824,8 @@ func _run_golden() -> void:
 		camera.look(c.get("yaw", 0.0), 0.0, 0.0)
 		starfield.set_custom_stars([{"name": "test", "pos": n * 1000.0, "t": c.get("t", 5700.0), "flux": 1.0}])
 		starfield.set_ship_position(0.0, 0.0, 0.0)
-		var b: float = c["beta"]
-		starfield.set_velocity(HEADING, b, 1.0 / sqrt(1.0 - b * b))
+		var b: float = c["beta"] if c.has("beta") else Relativity.beta_of_rapidity(c["phi"])
+		starfield.set_velocity(HEADING, b, 1.0 / sqrt(1.0 - b * b) if c.has("beta") else Relativity.gamma_of_rapidity(c["phi"]))
 		var img := await _grab()
 		if c.get("hidden", false):
 			var peak := _peak(img)
