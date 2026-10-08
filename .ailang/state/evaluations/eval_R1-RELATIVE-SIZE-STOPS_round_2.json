@@ -1,0 +1,8 @@
+{"sprint_id":"R1-RELATIVE-SIZE-STOPS","round":2,"commit":"87d84c5","score":92,"pass":true,
+ "criteria":{"tests_pass":20,"lint_clean":9,"acceptance_criteria":28,"code_quality":13,"documentation":13,"design_fidelity":9},
+ "verified":["stops_test.ail 10 passed 0 failed","make free-nav-stop-test 45 passed 0 failures","maketest_p2b.log exit 0","5_earth_sky_auto and 7_saturn_sky_auto show a recognisable Earth (30 deg) and Saturn with bands and rings"],
+ "round1_findings":"all six addressed (A-vs-B pick restored; auto renders; Sun-only exemption with Earth negative test; default star stops test; replay note; refused re-plan test)",
+ "remaining":[
+  {"severity":"low","issue":"D-54 part 2 (inferred radii, synchronous-orbit I-card line) still blocked on package release; ledger D-54 should be tracked as partially satisfied until then."},
+  {"severity":"low","issue":"The Sun-only exemption is keyed on the string id sun, and the refused re-plan test pokes the private _last_plan; acceptable."},
+  {"severity":"info","issue":"I did not rerun strict stopsVm for the two new checks; stops_test passes and they are wired into stopsVm."}]}
