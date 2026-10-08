@@ -65,7 +65,7 @@ func test_settings() -> void:
 	var s := GameSettings.new()
 	s.dir = d
 	s.load_settings()
-	check(not s.auto_view and not s.text_only, "defaults: Realistic view, text-only off")
+	check(s.auto_view and not s.text_only, "defaults: Auto view (D-55), text-only off")
 	var ai := AiSettings.new() # an AI tick and ceiling saved elsewhere must survive
 	ai.dir = d
 	ai.opt_in = true
@@ -88,11 +88,11 @@ func test_settings() -> void:
 	var u := GameSettings.new()
 	u.dir = d
 	u.load_settings()
-	check(not u.auto_view, "a corrupt settings.cfg falls back to the defaults")
+	check(u.auto_view, "a corrupt settings.cfg falls back to the defaults (Auto)")
 	var bad := GameSettings.new()
 	bad.dir = d.path_join("missing/dir")
 	bad.load_settings()
-	check(not bad.save_settings() and not bad.auto_view, "an unwritable settings dir reports failure, never throws")
+	check(not bad.save_settings() and bad.auto_view == GameSettings.DEFAULT_AUTO_VIEW, "an unwritable settings dir reports failure, never throws")
 
 
 func test_credits() -> void:
@@ -193,6 +193,14 @@ func test_routes() -> void:
 		check(demo.ready_ok and demo.sky_state == "live" and demo.sky.beta == 0. and demo.camera.pullback == 0., "it is today's default: live rest, captain eye")
 		check(demo.menu_return and demo.menu_button.visible, "launched from the menu: a Main menu button in the HUD")
 		check(demo.sky.system_view.body_fader, "the saved view (Auto) reaches the ship")
+		# V aboard is remembered (D-55): toggled to Realistic and saved where the title keeps
+		# settings (the test's own dir, never the real user://), then back to Auto.
+		demo.toggle_auto_view()
+		var after := GameSettings.new(); after.dir = demo.settings_dir; after.load_settings()
+		check(not demo.sky.system_view.body_fader and not after.auto_view and demo.settings_dir != "user://", "V aboard saves the view choice in the title's settings dir")
+		demo.toggle_auto_view()
+		after.load_settings()
+		check(demo.sky.system_view.body_fader and after.auto_view, "V again restores and saves Auto")
 		demo._unhandled_input(key(KEY_ESCAPE))
 		await frames(4)
 	var m2 := current_main()

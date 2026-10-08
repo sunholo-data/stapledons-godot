@@ -78,6 +78,7 @@ var navigation_button := Button.new()
 ## Launched from the title screen (main.gd): Esc and the HUD's menu button return
 ## there. Every command-line launch keeps Esc = quit.
 var menu_return := false
+var settings_dir := "user://" # where the title screen keeps settings.cfg (tests redirect it)
 var menu_button := Button.new()
 func _ready() -> void:
 	setup(setup_options)
@@ -96,6 +97,7 @@ func asset(file: String) -> String:
 func setup(opts := {}) -> bool:
 	if ready_ok:return true
 	menu_return=opts.get("from_menu",false)
+	settings_dir=opts.get("settings_dir",settings_dir)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
 	var px: Vector2i=opts.get("size",get_window().size)
 	var visual := AreaBundle.load_glb(asset("ship.glb"))
@@ -201,7 +203,7 @@ func _hud() -> void:
 	for pair in [["Look forward/up [7]","forward"],["Look side [8]","side"],["Look aft/down [9]","aft"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));sky_row.add_child(button)
 	var sky_button:=Button.new();sky_button.text="Sky only diagnostic [H]";sky_button.pressed.connect(toggle_sky_only);controls.add_child(sky_button)
-	view_button.pressed.connect(func():set_auto_view(not sky.system_view.body_fader));controls.add_child(view_button)
+	view_button.pressed.connect(toggle_auto_view);controls.add_child(view_button)
 	var brightness_row:=GridContainer.new();brightness_row.columns=4;controls.add_child(brightness_row)
 	for stops in BRIGHTNESS_STOPS:
 		var button:=Button.new();button.text="Reference sky" if stops==0 else ("Dim %d stops"%(-stops) if stops<0 else "%d× brighter"%int(pow(2.,stops)))
@@ -223,6 +225,12 @@ func set_brightness_trial(stops: int) -> bool:
 ## D-38: Realistic = one physical exposure for sky and bodies (sunlit bodies
 ## clip at a star-friendly setting); Auto = the same manual sky exposure, with
 ## each resolved body faded on its own so planets and stars show together.
+## The player's toggle (V or the button): in a ship launched from the title screen the
+## choice is saved, so the next session starts the same way (D-55).
+func toggle_auto_view() -> void:
+	set_auto_view(not sky.system_view.body_fader)
+	if menu_return:
+		var gs:=GameSettings.new();gs.dir=settings_dir;gs.load_settings();gs.auto_view=sky.system_view.body_fader;gs.save_settings()
 func set_auto_view(on: bool) -> void:
 	sky.system_view.body_fader=on
 	view_button.text="View: Auto, bodies faded to fit [V]" if on else "View: Realistic, one exposure [V]"
@@ -360,7 +368,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_8:look_direction("side")
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
-			KEY_V:set_auto_view(not sky.system_view.body_fader)
+			KEY_V:toggle_auto_view()
 			KEY_ENTER:continue_interlude()
 			KEY_K:
 				if black_hole!=null:bh_finish_approach()
