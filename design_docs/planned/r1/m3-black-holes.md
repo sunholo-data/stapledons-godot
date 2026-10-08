@@ -1,6 +1,6 @@
 # M3: Black holes (GR foundation)
 
-**Status:** Planned (design, awaiting sprint plan). Revised 2026-10-01 for Mark's attended rulings D-11 and D-13: the demo hole is Sgr A*, the sim reports tidal acceleration and hover power, and all four open questions are resolved.
+**Status:** Planned; sprint plan proposed 2026-10-08 ([`m3-black-holes-sprint.md`](m3-black-holes-sprint.md), awaiting Mark's approval); see [Reality check 2026-10-08](#reality-check-2026-10-08) for what changed since this draft. Revised 2026-10-01 for Mark's attended rulings D-11 and D-13: the demo hole is Sgr A*, the sim reports tidal acceleration and hover power, and all four open questions are resolved.
 **Release:** r1 · **Milestone:** M3 of [R1 foundations](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md) (queue row 4, bar clause 3)
 **Priority:** P1. New Game+ begins at a black hole, and this is where the hard-SF promise is most visible. It does not block M2 or M4.
 **Implements:**
@@ -12,9 +12,24 @@
 - [black-holes](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/black-holes.md) §"Time Dilation Formula" and [black-hole-mechanics](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/black-hole-mechanics.md) §"Near-BH Time Skip": the sim computes the clock rate. Crew psychology, the time-skip choice and New Game+ are not in M3.
 - [open-questions](https://github.com/sunholo-data/stapledons-design/blob/main/vision/open-questions.md) "How should GR lensing near black holes interact with SR effects?" M3 answers it with physics rather than a style choice: SR is applied in the local static frame, then the GR lens map (Option 2, "unified", in one shader pass).
 
-**Depends on:** `sunholo/relativity@0.3.0` (published). M1.6b (free camera and the off-axis golden harness) and M1.4c (the Milky Way sky shader, `sky/background.gdshader`, landed 2026-10-01 in PR #16) are needed only for parts of M3.5 and M3.6. See [What can start now](#what-can-start-now).
+**Depends on:** *(edited 2026-10-08)* `sunholo/relativity@0.9.0` (the current pin); M3 publishes **0.10.0**. M1.6b, M1.3, M1.4c and M1.5a have all landed, so nothing waits on M1. *(Original:* `sunholo/relativity@0.3.0` (published).*)* M1.6b (free camera and the off-axis golden harness) and M1.4c (the Milky Way sky shader, `sky/background.gdshader`, landed 2026-10-01 in PR #16) are needed only for parts of M3.5 and M3.6. See [What can start now](#what-can-start-now).
 **Estimated:** ~2,700 LOC (≈1,510 code + 1,190 tests and tools), 6 sub-milestones (the D-11/D-13 tide, hover-power and lore-event work adds ~100). The mission queue's ~1,800 was a guess made before the finite-observer lens map, the ring-star path and the sim GR mode were scoped.
 **Evidence:** every codebase claim has a row in the [Verification log](#verification-log), pinned to `e9d35c5`. Every lensing number comes from the prototype run in row V9, which uses two independent methods that agree to 3 × 10⁻¹³. Tidal, hover and Sgr A* numbers come from rows V14–V16.
+
+## Reality check 2026-10-08
+
+Checked against `df7c041` while planning the sprint. Where this doc and this section disagree, this section wins. The sprint plan carries the details.
+
+1. **Package version.** The game pins `sunholo/relativity@0.9.0` (0.4.0 to 0.9.0 have shipped). M3 publishes **0.10.0**, so `$V` = 0.10.0 everywhere below. Since 0.6.0 the package names its checks (`checkXxx()` in per-module test files). The check41 to check53 below stay as labels in test titles, so lore front matter can still cite them.
+2. **Hover power already exists.** `medium.hoverPower(mEffKg, gMs2)` (HB-90) is in the package. `hoverPowerPerKg` composes it and does not repeat the formula.
+3. **Protocol.** M2 landed protocol v2 with minors (currently 2.5, `departureMinor`). M3.4's commands become **protocol 2.6**: the `new_game` scenario `sgr_a` plus the intents `gr_approach`, `gr_hover` and `gr_orbit`, with the reason codes and the `gr` section unchanged. "Additive to v1.1", `bh_enter`/`bh_leave` and `sim/scenarios/bh_demo.json` are superseded. The M2-coordination paragraph is moot.
+4. **Player view (D-52, 2026-10-08).** The default launch is the unified 3D ship (`demos/ship_geometry_demo.gd`, sky through `interior/interior_sky.gd`, `sky/background.gdshader`, `sky/starfield.gdshader`). M3.6's demo and HUD go there, behind a navigation-menu entry and `make run-bh`. `main.gd` keeps only the `--golden` hook. The ship HUD currently says "GR not implemented".
+5. **M1 has landed.** `background.gdshader` is the per-pixel sky (M1.4c). M1.6b's rolled/off-axis harness, M1.3's star shader and M1.5a's exposure are on `main`. The debug grid remains, but only as the golden background.
+6. **Python.** CLAUDE.md now forbids Python pipeline steps. The table packer is AILANG, and the render diff is Godot. Python appears only as the oracle `tools/geodesic_ref.py`, allowlisted with role `oracle`, which reproduces V9 to V16.
+7. **AILANG v0.52.0.** The WD-2 rules in M3.1 are mostly obsolete, because the pattern bugs are fixed. One new rule: **ailang#1576** (the VM silently drops a request that builds a list of 1100+ elements by non-tail recursion). Table rows must be built tail-recursively or with `std/array`.
+8. **Large assets (D-18).** The ~8 MB of lens tables may belong in the public bucket with a sha256 pin, not in git (sprint Q2).
+9. **Premise (canon 2026-10-06).** Every run now opens at the rogue *spinning* stellar-mass hole. M3 remains Schwarzschild at Sgr A* (D-13; Kerr is a non-goal). Everything is mass-parametric, so a rogue-hole view at a tidally safe radius is scenario data (sprint Q3).
+10. **Estimate.** About 3,720 LOC in 10 milestones (sprint plan). The rise from about 2,700 comes from the AILANG packer, the protocol-minor plumbing, the 3D-ship integration and the oracle.
 
 ## Game vision alignment
 
@@ -23,11 +38,11 @@
 | Choices Are Final | 0 | 0 | M3 has no choices. The time-skip choice near the hole comes later; M3 supplies its numbers |
 | The Game Doesn't Judge | 0 | 0 | |
 | Time Has Emotional Weight | + | +1 | The HUD shows the sim's √(1 − r_s/r): at 3 r_s, a ship-year is 1.2247 years at home. That is the first time-skip lever |
-| The Ship Is Home | 0 | 0 | No interior yet. The windows (M4) will show this sky |
+| The Ship Is Home | + | +1 | *(edited 2026-10-08, D-52)* The lensed sky is seen from inside the unified 3D ship, from the bridge and the decks, not from a free camera |
 | Grounded Strangeness | ++ | +2 | The shadow is 2.6 r_s, not r_s. Einstein rings and a photon ring appear. At 3 r_s the shadow spans 90° of sky: strange, and exactly right |
 | We Are Not Built For This | + | +1 | The HUD states honestly why the demo is at Sgr A*: across the 100 m bubble a stellar hole's tides at 3 r_s are 4.2 × 10⁷ g, and Sgr A*'s are 2.1 × 10⁻⁴ g. Hovering is not felt but costs 1.4 × 10¹⁴ W per kg of m_eff at 3 r_s |
 | Hard sci-fi authenticity (spec) | ++ | +2 | Exact null geodesics, a normative spec, closed-form check values, two independent integrators; the bubble is the one admitted hand-wave (D-11) and tides are not waved away |
-| **Net** | | **+6** | **Go** |
+| **Net** | | **+7** | **Go** |
 
 ## Problem
 
@@ -142,7 +157,7 @@ imageMagnification(r, psi) -> float          -- (sin psi / |sin F|) |dpsi/dF|, F
 
 ### M3.2 The deflection table (offline, strict VM, committed)
 
-**Two tables, one header.** `sim/tools/lens_lut.ail` (AILANG, pure, `--strict-bytecode`) calls the package and prints `%.17g` rows. `tools/pack_lens_lut.py` only packs them: little-endian float32, a JSON header with layout, ranges, package version, the generator's h and a sha256, written to `data/lens/lens_fwd.bin` and `lens_inv.bin`. Python does no physics, as in M1.2.
+**Two tables, one header.** `sim/tools/lens_lut.ail` (AILANG, pure, `--strict-bytecode`) calls the package. *(edited 2026-10-08: CLAUDE.md now bans Python pipeline steps, so `sim/tools/lens_lut_main.ail` packs the rows itself through the `catalogue_bytes` F32 encoder and `writeFileBytes`; `tools/pack_lens_lut.py` is dropped.)* The packer writes: little-endian float32, a JSON header with layout, ranges, package version, the generator's h and a sha256, written to `data/lens/lens_fwd.bin` and `lens_inv.bin`. Python does no physics, as in M1.2.
 
 | Table | Size | Column coordinate | Row coordinate | Channels |
 |---|---|---|---|---|
@@ -230,7 +245,7 @@ GR1–GR3, GR6 and GR7 are the [Acceptance](#acceptance-criteria) shadow and rin
 - **The hole: Sgr A\*** (D-13). M = 4.297 × 10⁶ M☉ and R₀ = 8.277 kpc ≈ 27,000 ly (GRAVITY Collaboration 2022, A&A 657, L12, from the S2 orbit and flares); the EHT's independent ring-based value, 4.0 (+1.1/−0.6) × 10⁶ M☉ (EHT Collaboration 2022, ApJL 930, L12), agrees. The ruling's "4.3 × 10⁶ M☉, ~26,000 ly" rounds the older 8.0 kpc distance; the scenario uses the GRAVITY values (row V15). r_s = 1.269 × 10¹⁰ m (0.085 AU), so 10⁶ r_s is 1.34 ly. The ship is placed there without a journey. The mass is a scenario parameter; the golden cases are in r_s and do not depend on it.
 - **`make run -- --bh`**: `bh_enter` (Sgr A\*) at r = 10⁶, then `bh_approach` to 10 r_s at β_loc 0.1, `bh_hover`, then on keys `bh_approach` 5 → 3 and `bh_orbit`. The HUD shows mode, r/r_s, **static clock √(1 − r_s/r) = 0.948683 (sim)**, "1 ship-hour = 1.0541 home hours", shadow half-angle, local blueshift, local β, **tidal acceleration across the bubble** ("tide 5.69 × 10⁻⁶ g", radial), and when hovering the pocket's acceleration with "not felt (bubble)" plus the drive power per kg of m_eff (and in W when m_eff is set). In orbit the power line reads "free fall: 0 W".
 - **Archive lore hook.** The demo emits archive events through the legacy-event channel: `bh_enter` (unlocks the time-dilation entry), `bh_hover` at r ≤ 10 (tides; shadow), and `bh_ring` when a star first takes the ring-star path (Einstein ring). The entries are the design repo's `lore/archive/` black-hole files; their front matter lists the check values they quote (check46, check49, check51–check53, the shadow values in M3.3, and the HB rows on tides). M4.7's codex shows them and its `make lore-check` asserts the numbers. If M3 lands first, the events and a fixture of them land with M3 and the entries become readable when M4.7 lands. The HUD formats *only* fields from `sim.state["gr"]`. A unit test injects a sentinel state and checks that the text shows it.
-- **`make capture-bh`** writes `renders/bh_r{10,5,3}_{toward,side,away}_{hover,orbit}.png` and a contact sheet with the debug grid. With M1.4c in place it adds the same set with the Milky Way and catalogue stars. Spec §4 says these are "diffed in CI", but CI has no GPU (as in M1). They are diffed locally by `tools/render_diff.py` against the committed set (mean absolute difference ≤ 1/255), and a person opens them.
+- **`make capture-bh`** writes `renders/bh_r{10,5,3}_{toward,side,away}_{hover,orbit}.png` and a contact sheet with the debug grid. With M1.4c in place it adds the same set with the Milky Way and catalogue stars. Spec §4 says these are "diffed in CI", but CI has no GPU (as in M1). They are diffed locally by `tools/render_diff.gd` (Godot; *edited 2026-10-08*, was `tools/render_diff.py`) against the committed set (mean absolute difference ≤ 1/255), and a person opens them.
 - **Report** `design_docs/implemented/r1/m3-report.md`: the renders (with who opened them and when), golden output, the table generation time on the VM, parity results, and upstream AILANG reports.
 
 ### What can start now
@@ -248,7 +263,7 @@ GR1–GR3, GR6 and GR7 are the [Acceptance](#acceptance-criteria) shadow and rin
 
 ## Acceptance criteria
 
-`$A` is the pinned v0.50.0 `ailang` (`runtime/bin/ailang` after `make runtime`; PR #18 bumped the pin). `$PKG` is a fresh clone of `ailang-packages` at `packages/relativity`.
+`$A` is the pinned v0.52.0 `ailang` *(edited 2026-10-08; was v0.50.0)* (`runtime/bin/ailang` after `make runtime`; PR #18 bumped the pin). `$PKG` is a fresh clone of `ailang-packages` at `packages/relativity`.
 
 | # | Criterion | Command |
 |---|---|---|
