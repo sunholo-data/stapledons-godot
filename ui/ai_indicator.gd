@@ -18,13 +18,19 @@ var button := Button.new()
 var panel: Control
 
 
+## Top right by default; top left where a screen's own panel owns the top right
+## (the galaxy map's star panel).
+func place_left(left: bool) -> void:
+	button.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT if left else Control.PRESET_TOP_RIGHT)
+	button.grow_horizontal = Control.GROW_DIRECTION_END if left else Control.GROW_DIRECTION_BEGIN
+	button.position += Vector2(12, 12) if left else Vector2(-12, 12)
+
+
 func _ready() -> void:
 	layer = 20
 	button.flat = false
 	button.focus_mode = Control.FOCUS_NONE
-	button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	button.position += Vector2(-12, 12)
+	place_left(false)
 	button.pressed.connect(toggle_panel)
 	add_child(button)
 	if session != null:

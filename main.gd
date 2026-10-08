@@ -82,6 +82,11 @@ static var title_overrides := {}
 static var demo_overrides := {}
 var title: TitleScreen
 var _from_menu := false # the galaxy map was opened from the title screen: Esc returns there
+var menu_button: Button # the map's "Main menu [Esc]" button, when opened from the title screen
+func _return_to_menu() -> void:
+	if not _from_menu: return
+	_from_menu = false
+	get_tree().change_scene_to_file("res://main.tscn")
 ## guided: start the solar-departure tour as soon as the ship is ready (title screen).
 func _start_current_ship(live_start: bool, extra := {}, guided := false) -> void:
 	UiScale.configure(get_window(),not live_start and not guided)
@@ -127,15 +132,17 @@ func _on_title_route(route: String) -> void:
 			title = null
 			_map_mode = true
 			_from_menu = true
-			var esc := Label.new()
-			esc.text = "Esc  main menu"
-			esc.add_theme_font_size_override("font_size", 12)
-			esc.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75, 0.7))
-			esc.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE, 12)
-			esc.grow_vertical = Control.GROW_DIRECTION_BEGIN
+			# A visible way back, as in the ship's HUD (Mark, 2026-10-08: the faint
+			# "Esc main menu" hint went unnoticed). Esc does the same.
+			menu_button = Button.new()
+			menu_button.text = "Main menu [Esc]"
+			menu_button.add_theme_font_size_override("font_size", 14)
+			menu_button.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE, 14)
+			menu_button.grow_vertical = Control.GROW_DIRECTION_BEGIN
+			menu_button.pressed.connect(_return_to_menu)
 			var layer := CanvasLayer.new()
 			layer.layer = 5
-			layer.add_child(esc)
+			layer.add_child(menu_button)
 			add_child(layer)
 			await _run_map({})
 		"quit":
@@ -250,6 +257,7 @@ func _run_map(args: Dictionary) -> void:
 		push_error("sim session failed: %s" % sim.last_error)
 		get_tree().quit(2)
 		return
+	if ai.indicator != null: ai.indicator.place_left(true) # the map's star panel owns the top right
 	var map: GalaxyMap = load("res://ui/galaxy_map.tscn").instantiate()
 	map.auto_tick = not capture
 	map.live_pacing = not capture
@@ -601,9 +609,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if _from_menu and event.keycode == KEY_ESCAPE: # the map opened from the title screen
-		_from_menu = false
 		get_viewport().set_input_as_handled()
-		get_tree().change_scene_to_file("res://main.tscn")
+		_return_to_menu()
 		return
 	if _map_mode:
 		return
