@@ -1,0 +1,36 @@
+module stapledons/sim/tools/session_refusals
+-- AC3 checks the actual replay inputs, not just a golden. Zero dtau isolates
+-- refused intent effects from the scheduled tick advance (tick number excluded).
+import stapledons/sim/protocol (Session, newSession, serve)
+import std/option (Some, None)
+import std/json (decode, get, getString, asArray, JNull, Json)
+import std/result (Ok, Err)
+import std/string (split, trim, contains, concat, intToStr)
+import std/list (filter, foldl)
+import std/fs (readFile)
+pure func field(j: Json, k: string) -> Json = match get(j, k) { Some(x) => x, None => JNull }
+pure func str(j: Json, k: string) -> string = match getString(j, k) { Some(x) => x, None => "" }
+pure func targeted(line: string) -> string = match decode(line) {
+  Err(_) => "", Ok(j) => match asArray(field(j, "intents")) {
+    Some([i]) => { let k = str(i, "k"); if k == "plan" || k == "cancel" || k == "commit" then k else "" }, _ => ""
+  }
+}
+type Check = {session: Session, plan: int, cancel: int, commit: int, ok: bool}
+pure func checkStep(c: Check, line: string) -> Check {
+  let r = serve(c.session, line);
+  let k = targeted(line);
+  let refusing = k != "" && contains(r.reply, "\"reason\":\"committed\"");
+  let same = match c.session.game { None => false, Some(before) => match r.session.game {
+    None => false, Some(after) => show({after | tick: before.tick}) == show(before)
+  } };
+  {c | session: r.session, ok: c.ok && (!refusing || same),
+    plan: c.plan + (if refusing && k == "plan" then 1 else 0),
+    cancel: c.cancel + (if refusing && k == "cancel" then 1 else 0),
+    commit: c.commit + (if refusing && k == "commit" then 1 else 0)}
+}
+export pure func refusalReport(text: string, count: int) -> string {
+  let c = foldl(checkStep, {session: newSession(), plan: 0, cancel: 0, commit: 0, ok: true}, filter(\s. trim(s) != "", split(text, "\n")));
+  concat(["refusals plan=", intToStr(c.plan), " cancel=", intToStr(c.cancel), " commit=", intToStr(c.commit),
+    "\nstate-unchanged=", if c.ok && c.plan == count && c.cancel == count && c.commit == count then "PASS" else "FAIL"])
+}
+export func adversarial(path: string) -> string ! {FS} = refusalReport(readFile(path), 2)

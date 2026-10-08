@@ -43,6 +43,12 @@ class Base(unittest.TestCase):
 
 
 class Replay(Base):
+    def test_positive_control(self):
+        self.write("c1.state.testarch.ndjson", GOOD)
+        rc, out = self.replay("--case", "c1", "--positive-control", "--sim-only")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("one-bit golden-copy divergence detected", out)
+
     def test_identical_passes(self):
         self.write("c1.state.testarch.ndjson", GOOD)
         rc, out = self.replay("--case", "c1")
@@ -212,6 +218,10 @@ def plan_index_mismatches(log_texts, stars):
                     continue
                 t = it.get("target")
                 if it.get("k") != "plan" or not isinstance(t, dict) or t.get("id") == DESIGN_ROW:
+                    continue
+                # GalaxyMap.HOME (galaxy_map.gd): Sol is a fixed origin,
+                # separate from stars.json, now exercised by M4's return leg.
+                if t == {"index": 0, "id": "Sol", "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}:
                     continue
                 if index.get(t.get("id")) != t.get("index"):
                     bad.append("%s:%d plan %s index %s, stars.json %s" % (name, n, t.get("id"), t.get("index"), index.get(t.get("id"))))

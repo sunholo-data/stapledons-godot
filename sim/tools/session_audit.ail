@@ -1,0 +1,108 @@
+module stapledons/sim/tools/session_audit
+-- Scene-independent NDJSON audit. No physics formulas or provider process.
+import std/json (Json, JNull, decode, get, getString, getNumber, asArray, asString)
+import std/option (Some, None)
+import std/result (Ok, Err)
+import std/string (split, join, intToStr, floatToStr, trim, concat)
+import std/list (map, filter, foldl, length)
+import std/fs (readFile)
+import std/math (intToFloat)
+
+pure func field(j: Json, k: string) -> Json = match get(j, k) { Some(x) => x, None => JNull }
+pure func str(j: Json, k: string) -> string = match getString(j, k) { Some(x) => x, None => "" }
+pure func number(j: Json, k: string) -> float = match getNumber(j, k) { Some(x) => x, None => -1.0 }
+pure func array(j: Json) -> [Json] = match asArray(j) { Some(xs) => xs, None => [] }
+pure func strings(j: Json) -> [string] = map(\x. match asString(x) { Some(s) => s, None => "" }, array(j))
+pure func lines(text: string) -> [Json] = map(\s. match decode(s) { Ok(j) => j, Err(_) => JNull }, filter(\s. trim(s) != "", split(text, "\n")))
+pure func verdict(ok: bool) -> string = if ok then "PASS" else "FAIL"
+pure func prefix(a: [string], b: [string]) -> bool = match a { [] => true, x :: xs => match b { [] => false, y :: ys => x == y && prefix(xs, ys) } }
+pure func member(s: string, xs: [string]) -> bool = match xs { [] => false, x :: rest => x == s || member(s, rest) }
+
+-- Integral tick counts, summed before conversion: no accumulation drift.
+type Time = {ticks: float, actions: float, words: float, visits: float, legs: [float], active: float, tau: float, journey: string, ok: bool}
+pure func emptyTime() -> Time = {ticks: 0.0, actions: 0.0, words: 0.0, visits: 0.0, legs: [], active: 0.0, tau: 0.0, journey: "", ok: true}
+pure func stateTime(t: Time, j: Json) -> Time {
+  let ch = field(j, "changes");
+  let state = str(field(ch, "journey"), "state");
+  let next = if state == "" then t.journey else state;
+  let tau = number(field(ch, "clock"), "tau");
+  let moving = tau > t.tau && (t.journey == "committed" || next == "committed" || next == "arrived");
+  let n = if moving then 1.0 else 0.0;
+  let start = next == "committed" && t.journey != "committed";
+  let active = (if start then 0.0 else t.active) + n;
+  let finish = next == "arrived" && t.journey == "committed";
+  {t | ticks: t.ticks + n, active: if finish then 0.0 else active,
+    legs: if finish then t.legs ++ [active] else t.legs,
+    tau: if tau >= 0.0 then tau else t.tau, journey: next,
+    ok: t.ok && str(j, "status") == "ok"}
+}
+pure func addTime(t: Time, j: Json) -> Time {
+  let k = str(j, "type");
+  if k == "sim_ticks" then {
+    let n = number(j, "ticks");
+    {t | ticks: t.ticks + n, legs: t.legs ++ [n], ok: t.ok && n > 0.0 && number(j, "leg") == intToFloat(length(t.legs) + 1)}
+  } else if k == "click" || k == "key" then {t | actions: t.actions + 1.0}
+  else if k == "text_shown" then {t | words: t.words + number(j, "words"), ok: t.ok && number(j, "words") >= 0.0}
+  else if k == "interactable_visit" then {t | visits: t.visits + 1.0}
+  else if k == "state" then stateTime(t, j)
+  else if k == "hello" || k == "new_game" || k == "input" || k == "quit" then t
+  else {t | ok: false}
+}
+export pure func timeReport(text: string) -> string {
+  let t = foldl(addTime, emptyTime(), lines(text));
+  let transit = t.ticks * 0.05;
+  let clicks = t.actions * 1.5;
+  let reading = t.words * 60.0 / 200.0;
+  let walking = t.visits * 20.0;
+  let total = transit + clicks + reading + walking;
+  let band = length(t.legs) > 0 && all(\n. n * 0.05 >= 45.0 && n * 0.05 <= 120.0, t.legs);
+  join("\n", [concat(["transit_seconds=", floatToStr(transit)]), concat(["click_key_seconds=", floatToStr(clicks)]),
+    concat(["reading_seconds=", floatToStr(reading)]), concat(["walking_seconds=", floatToStr(walking)])] ++
+    map(\p. match p { (i, n) => concat(["leg_", intToStr(i), "_seconds=", floatToStr(n * 0.05)]) }, indexed(t.legs, 1)) ++
+    [concat(["total_seconds=", floatToStr(total)]), concat(["limit_360=", verdict(total <= 360.0)]), concat(["legs_45_120=", verdict(band)]),
+    concat(["playthrough-time=", verdict(t.ok && t.active == 0.0 && band && total <= 360.0)])])
+}
+pure func indexed(xs: [float], n: int) -> [(int, float)] = match xs { [] => [], x :: rest => (n, x) :: indexed(rest, n + 1) }
+
+-- Trigger evidence is accumulated BEFORE checking this state's new unlocks.
+-- First appearance is compared, not just the final cumulative snapshot.
+type Codex = {seen: [string], hints: [string], commit: bool, boost: bool, cruise: bool, ok: bool}
+pure func hintOf(id: string, rows: [Json]) -> string = match rows { [] => "", r :: rest => if str(r, "id") == id then str(r, "hint") else hintOf(id, rest) }
+pure func holds(hint: string, c: Codex) -> bool =
+  hint == "always" || (hint == "first_commit" && c.commit) || (hint == "first_boost" && c.boost) || (hint == "cruise_above_0.9c" && c.cruise)
+pure func observe(c: Codex, j: Json, rows: [Json]) -> Codex {
+  let ch = field(j, "changes");
+  let phase = str(field(ch, "ship"), "phase");
+  let entries = array(field(field(field(ch, "consequence"), "legacy"), "appended"));
+  let kinds = map(\e. str(e, "kind"), entries);
+  let unlocked = field(field(field(ch, "consequence"), "archive"), "unlocked");
+  let ids = strings(unlocked);
+  let c1 = {c | commit: c.commit || str(field(ch, "journey"), "state") == "committed" || member("commit", kinds),
+    boost: c.boost || phase == "boosting" || member("boost", kinds),
+    cruise: c.cruise || (phase == "cruising" && number(field(ch, "ship"), "beta") > 0.9)};
+  let fresh = filter(\id. !member(id, c.seen), ids);
+  -- State streams do not carry hint strings. Infer the trigger at FIRST
+  -- appearance independently of expected_unlocks (never copy expected hints).
+  let fired = if !c.commit && c1.commit then "first_commit"
+    else if !c.boost && c1.boost then "first_boost"
+    else if !c.cruise && c1.cruise then "cruise_above_0.9c"
+    else if !c1.commit then "always" else "";
+  let hs = map(\id. fired, fresh);
+  let table = array(field(j, "archive"));
+  let tableOk = str(j, "type") != "new_game" || all(\r.
+    all(\a. str(a, "id") != str(r, "id") || str(a, "unlock") == str(r, "hint"), table), rows);
+  {c1 | seen: c.seen ++ fresh, hints: c.hints ++ hs,
+    ok: c.ok && tableOk && (unlocked == JNull || prefix(c.seen, ids)) && all(\h. holds(h, c1), hs)}
+}
+export pure func codexReport(text: string, expected: string) -> string {
+  let want = match decode(expected) { Ok(j) => array(field(j, "unlocks")), Err(_) => [] };
+  let js = lines(text);
+  let c = foldl(\acc j. observe(acc, j, want), {seen: [], hints: [], commit: false, boost: false, cruise: false, ok: true}, js);
+  let ids = map(\r. str(r, "id"), want);
+  let hints = map(\r. str(r, "hint"), want);
+  let valid = length(js) > 0 && all(\j. str(j, "type") != "", js);
+  concat(["codex_ids=", join(",", c.seen), "\ncodex_hints=", join(",", c.hints), "\ncodex-unlocks=", verdict(valid && length(want) > 0 && c.ok && c.seen == ids && c.hints == hints)])
+}
+export func playthroughTime(path: string) -> string ! {FS} = timeReport(readFile(path))
+export func codexUnlocks(path: string) -> string ! {FS} = codexReport(readFile(path), readFile("tests/expected_unlocks.json"))
+pure func all(f: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: rest => f(x) && all(f, rest) }

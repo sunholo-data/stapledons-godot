@@ -467,9 +467,9 @@
         "replay harness proves cmp detects an injected one-bit divergence"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-08",
       "completed": null,
-      "notes": null
+      "notes": "Iteration 21: scene-independent M4.5s implemented; see design_docs/planned/r1/m4.5s-inventory.md for inventory, schema, gate exits and mutations. Sol round trip measures 67.35 s per leg, 134.70 s transit. UI bot/display/walking remain blocked by D-52; passes and completed remain null. Controller records x86_64 goldens and evaluates/commits."
     },
     {
       "id": "M4.6_PHYSICS_GATES",
