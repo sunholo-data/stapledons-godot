@@ -430,6 +430,11 @@ func _export_smoke() -> void:
 	print("ship-demo-smoke-stage manual exposure: ",ok," EV=",sky.exposure.ev)
 	ok=ok and not commons.is_empty() and commons.visual.get_parent()==geometry
 	print("ship-demo-smoke-stage assets: ",ok)
+	# The exported app must carry the GR lens tables (dev.23 shipped without them: Sgr A*
+	# drew nothing). Load and check them from the bundle, as the lensed sky does.
+	var lens_ok:=Schwarzschild.load_tables()
+	ok=ok and lens_ok
+	print("ship-demo-smoke-stage lens tables: ",lens_ok," ",Schwarzschild.load_error)
 	if ok:
 		for direction in 2:
 			ok=ok and lift.board()
