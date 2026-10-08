@@ -61,6 +61,9 @@ var journey_sim: SimBridge
 var journey_map: GalaxyMap
 var navigation_window: Window
 var live_journey := false
+## Free navigation: where the committed leg left from and the last stop reached (HUD names).
+var leg_from := "Earth"
+var last_stop := "Earth"
 var journey_auto_tick := true
 var _journey_accum := 0.
 var solar_tour: RefCounted
@@ -532,8 +535,15 @@ func journey_tick() -> bool:
 	if solar_tour!=null:journey_map.refresh()
 	_apply_journey_world()
 	_show_interlude()
-	if live_journey and not was_committed:close_navigation()
+	if live_journey and not was_committed:leg_from=last_stop;close_navigation()
+	if was_committed and not live_journey and solar_tour==null:last_stop=stop_name()
 	return true
+## The free-navigation stop's display name: the catalogue name of the plan's target.
+func stop_name() -> String:
+	var id:=""
+	var plan=journey_sim.world.get("journey",{}).get("plan") if journey_sim!=null else null
+	if plan is Dictionary and plan.get("target") is Dictionary:id=str(plan.target.get("id",""))
+	return star_identification.info.display_name(id) if star_identification!=null and not id.is_empty() else (id if not id.is_empty() else "last stop")
 ## D-41: the cruise interlude's card, shown over the live cruise sky while active.
 func _show_interlude() -> void:
 	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
@@ -606,7 +616,7 @@ func hud_text(view_name: String, details: String) -> String:
 	if solar_tour != null and sky_world is Dictionary and sky_world.get("journey", {}).get("state", "") == "committed":
 		speed += " · %.2f M g this leg" % (solar_tour.leg_thrust_g() / 1.0e6)
 	var lines := [where, speed]
-	var dist := distances_text(sky_world if sky_world is Dictionary else {}, solar_tour)
+	var dist := distances_text(sky_world if sky_world is Dictionary else {}, solar_tour, star_identification.info.names if star_identification != null else {}, leg_from)
 	if not dist.is_empty(): lines.append(dist)
 	if not clock.is_empty():
 		lines.append("Ship +%s · Earth +%s since departure" % [duration_text(float(clock.get("tau", 0.0))), duration_text(float(clock.get("year", 0.0)))])
@@ -634,25 +644,45 @@ static func speed_text(ship: Dictionary) -> String:
 ## Distances (Mark, 2026-10-06): to the destination (the sim's distance_remaining), from
 ## the last stop where the leg was committed (plan.departure), and from Earth (the
 ## system section's Earth, else Sol). Only vector lengths of sim positions, in float64.
-static func distances_text(world: Dictionary, tour) -> String:
+## Stopped after a leg (Mark, 2026-10-08: free navigation showed only "from Earth"): at
+## the plan's target (the system body standing for it, else its catalogue position), from
+## the stop the leg left (when that is not Earth) and from Earth. `names` maps catalogue
+## ids to display names; `from_name` names the free-navigation departure ("" = last stop).
+static func distances_text(world: Dictionary, tour, names: Dictionary = {}, from_name: String = "") -> String:
 	var parts := PackedStringArray()
 	var journey: Dictionary = world.get("journey", {})
 	var ship: Dictionary = world.get("ship", {})
-	var committed: bool = journey.get("state", "") == "committed"
-	if committed:
-		var name: String = tour.leg_name() if tour != null else str(journey.get("plan", {}).get("target", {}).get("id", "destination"))
-		parts.append("To %s %s" % [name, distance_text(float(world.get("consequence", {}).get("distance_remaining", 0.0)))])
-		var dep: Dictionary = journey.get("plan", {}).get("departure", {})
-		var pos: Dictionary = ship.get("pos", {})
-		if not dep.is_empty() and not pos.is_empty():
-			var from_name: String = "last stop"
-			if tour != null: from_name = "Earth" if tour.leg_index <= 0 else str(tour.itinerary[tour.leg_index - 1].get("name", "last stop"))
-			parts.append("from %s %s" % [from_name, distance_text(sqrt(pow(float(pos.x) - float(dep.x), 2.0) + pow(float(pos.y) - float(dep.y), 2.0) + pow(float(pos.z) - float(dep.z), 2.0)))])
+	var plan: Dictionary = journey.get("plan", {}) if journey.get("plan") is Dictionary else {}
+	var state: String = journey.get("state", "")
+	var target: Dictionary = plan.get("target", {}) if plan.get("target") is Dictionary else {}
+	var target_id: String = str(target.get("id", "destination"))
+	var target_name: String = tour.leg_name() if tour != null and tour.leg_index >= 0 else str(names.get(target_id, target_id))
+	var pos: Dictionary = ship.get("pos", {})
+	var dep: Dictionary = plan.get("departure", {}) if plan.get("departure") is Dictionary else {}
+	var dep_name: String = from_name if not from_name.is_empty() else "last stop"
+	if tour != null: dep_name = "Earth" if tour.leg_index <= 0 else str(tour.itinerary[tour.leg_index - 1].get("name", "last stop"))
+	var from_dep := -1.0
+	if not dep.is_empty() and not pos.is_empty():
+		from_dep = sqrt(pow(float(pos.x) - float(dep.x), 2.0) + pow(float(pos.y) - float(dep.y), 2.0) + pow(float(pos.z) - float(dep.z), 2.0))
+	if state == "committed":
+		parts.append("To %s %s" % [target_name, distance_text(float(world.get("consequence", {}).get("distance_remaining", 0.0)))])
+		if from_dep >= 0.0: parts.append("from %s %s" % [dep_name, distance_text(from_dep)])
+	elif state == "arrived" and not target.is_empty():
+		var at_ly := -1.0
+		for b: Dictionary in world.get("system", {}).get("bodies", []):
+			if b.get("id", "") == target_id or (not str(b.get("catalogue_id", "")).is_empty() and str(b.get("catalogue_id", "")) == target_id):
+				at_ly = Planets.length64(Planets.world_of(b.rel_km)) / 9460730472580.8
+				if tour == null and not names.has(target_id): target_name = str(b.get("name", target_name))
+				break
+		var tp = target.get("pos")
+		if at_ly < 0.0 and tp is Dictionary and not pos.is_empty():
+			at_ly = sqrt(pow(float(pos.x) - float(tp.x), 2.0) + pow(float(pos.y) - float(tp.y), 2.0) + pow(float(pos.z) - float(tp.z), 2.0))
+		parts.append("At %s %s" % [target_name, distance_text(at_ly)] if at_ly >= 0.0 else "At %s" % target_name)
+		if from_dep >= 0.0 and dep_name != "Earth": parts.append("from %s %s" % [dep_name, distance_text(from_dep)])
 	var earth_ly := -1.0
 	for b: Dictionary in world.get("system", {}).get("bodies", []):
 		if b.get("id", "") == "earth": earth_ly = Planets.length64(Planets.world_of(b.rel_km)) / 9460730472580.8
-	var pos2: Dictionary = ship.get("pos", {})
-	if earth_ly < 0.0 and not pos2.is_empty(): earth_ly = sqrt(pow(float(pos2.x), 2.0) + pow(float(pos2.y), 2.0) + pow(float(pos2.z), 2.0))
+	if earth_ly < 0.0 and not pos.is_empty(): earth_ly = sqrt(pow(float(pos.x), 2.0) + pow(float(pos.y), 2.0) + pow(float(pos.z), 2.0))
 	if earth_ly >= 0.0: parts.append("from Earth %s" % distance_text(earth_ly))
 	return " · ".join(parts)
 

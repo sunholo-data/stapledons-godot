@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fix: free-navigation stops (HUD distances, I at the destination), 2026-10-08
+
+- Stopped after a free-navigation leg, the HUD now says where the ship is: "At Barnard's Star 1000 AU · from Earth 5.95 ly", and after a second leg "At Alpha Centauri A 1000 AU · from Barnard's Star 6.43 ly · from Earth 4.31 ly". It used to show only "from Earth". Destinations use catalogue names, not raw ids, while cruising too.
+- I now offers the free-navigation destination with its card. The sky tiers key Gaia sources by the bare source number while the catalogue keys them "Gaia DR3 n", so no Gaia-identified star (Barnard's Star, most of the map) was ever offered; sky rows now map to their catalogue record. A click between alpha Cen A and the nearer B now picks the disc it is on (or the closer centre) instead of always the nearer body.
+- `make free-nav-stop-test` (in `make test`) flies the real flow: open navigation, commit, fly to Barnard's Star and then alpha Cen A, check the HUD line, then I and the card.
+
 ### Title screen, 2026-10-08
 
 - A plain launch (a double-click on the app) now opens a title screen over the real sky: the NOIRLab panorama and the catalogue stars, rendered at rest by the game's own sky stack with a slow pan along the Milky Way. Buttons: **Board the ship** (the 3D ship at live rest, as before), **Guided voyage** (the ship, straight into the solar-departure tour), **Galaxy map**, **Settings**, **Credits**, **Quit**. Mouse or keyboard (Up/Down wrap, Enter, Esc closes a panel, PageUp/PageDown scroll the credits). The footer shows the build id and "dev build".
