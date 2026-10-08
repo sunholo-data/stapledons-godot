@@ -1,0 +1,26 @@
+{"v":2,"type":"hello","want":{"major":2,"minor":6}}
+{"v":2,"type":"new_game","seed":7,"scenario":"sgr_a","diag":false,"archive":[{"id":"archive.two-clocks","unlock":"always"},{"id":"archive.tides","unlock":"first_black_hole"},{"id":"archive.shadow-ring","unlock":"first_black_hole"}]}
+{"v":2,"type":"input","tick":1,"dtau":1.0,"intents":[{"k":"gr_approach","to_r":1.5,"beta_local":0.1},{"k":"gr_approach","to_r":1000001,"beta_local":0.1},{"k":"gr_approach","to_r":1000000,"beta_local":0.1},{"k":"gr_approach","to_r":10,"beta_local":0},{"k":"gr_approach","to_r":10,"beta_local":1.5},{"k":"plan","target":{"index":1,"id":"alpha Cen","pos":{"x":0,"y":0,"z":-4.37}},"cruise_phi":2.6466524123622457},{"k":"commit","plan_id":1},{"k":"thrust","thrust":1},{"k":"heading","heading":{"x":1,"y":0,"z":0}},{"k":"gr_approach","to_r":10,"beta_local":0.1},{"k":"gr_orbit"},{"k":"gr_approach","to_r":5,"beta_local":0.1}]}
+{"v":2,"type":"input","tick":2,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":3,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":4,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":5,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":6,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":7,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":8,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":9,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":10,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":11,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":12,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":13,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":14,"dtau":1.0,"intents":[]}
+{"v":2,"type":"input","tick":15,"dtau":0.001,"intents":[{"k":"gr_approach","to_r":5}]}
+{"v":2,"type":"input","tick":15,"dtau":0.0,"intents":[{"k":"gr_ring"},{"k":"gr_ring"}]}
+{"v":2,"type":"input","tick":16,"dtau":0.0001,"intents":[{"k":"gr_approach","to_r":5,"beta_local":0.1}]}
+{"v":2,"type":"input","tick":17,"dtau":0.0001,"intents":[{"k":"gr_approach","to_r":3,"beta_local":0.1}]}
+{"v":2,"type":"input","tick":18,"dtau":1e-05,"intents":[{"k":"gr_orbit"}]}
+{"v":2,"type":"input","tick":19,"dtau":1e-05,"intents":[{"k":"gr_approach","to_r":5,"beta_local":0.1},{"k":"gr_hover"}]}
+{"v":2,"type":"input","tick":20,"dtau":0.0001,"intents":[{"k":"gr_orbit"},{"k":"gr_ring"}]}
+{"v":2,"type":"input","tick":21,"dtau":0.0,"intents":[{"k":"gr_hover"},{"k":"gr_approach","to_r":2,"beta_local":0.99}]}
+{"v":2,"type":"input","tick":22,"dtau":0.001,"intents":[]}
+{"v":2,"type":"quit"}

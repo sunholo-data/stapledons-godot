@@ -14,7 +14,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
+.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify
 
 all: test
 
@@ -26,7 +26,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check ## everything that runs without a GPU window
+test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -169,6 +169,21 @@ parity-v2:          ## protocol v2 session through ship.ail (hello first, malfor
 	  grep -q '"tick":9,"status":"ok".*"heading":{"x":0,"y":1,"z":0}.*"refused":\[{"i":1,"reason":"moving"}\]' $(SCRATCH)/v2_vm.txt && \
 	  echo "parity-v2: rest tolerance edge (turn at phi 0.9e-9 accepted, 1.1e-9 refused moving)" || { echo "parity-v2: rest tolerance edge FAILED"; exit 1; }
 
+parity-gr:          ## M3.4b protocol 2.6: tests/fixtures/gr.ndjson (sgr_a, every GR intent and refusal) VM == interpreter byte for byte; archive events bh_enter, bh_hover, bh_ring in order; Sgr A* mass 4.297e6
+	@mkdir -p $(SCRATCH)
+	$(AILANG) run --bytecode $(SIMFLAGS) $(SIM) < tests/fixtures/gr.ndjson > $(SCRATCH)/gr.out
+	$(AILANG) run $(SIMFLAGS) $(SIM) < tests/fixtures/gr.ndjson > $(SCRATCH)/gr_interp.out
+	@cmp $(SCRATCH)/gr.out $(SCRATCH)/gr_interp.out && echo "parity-gr: VM = interpreter ($$(wc -l < $(SCRATCH)/gr.out | tr -d ' ') lines, $$(grep -o '"k":"archive"' $(SCRATCH)/gr.out | wc -l | tr -d ' ') archive events)"
+	@test "$$(wc -l < $(SCRATCH)/gr.out | tr -d ' ')" = "$$(grep -vc '"type":"quit"' tests/fixtures/gr.ndjson)" || { echo "parity-gr: not one reply per input line"; exit 1; }
+	@test "$$(grep -o '"k":"archive","event":"[a-z_]*"' $(SCRATCH)/gr.out | cut -d'"' -f8 | tr '\n' ' ')" = "bh_enter bh_hover bh_ring " && echo "parity-gr: archive events in order: bh_enter bh_hover bh_ring" || { echo "parity-gr: archive events out of order"; exit 1; }
+	@head -1 $(SCRATCH)/gr.out | grep -q '"proto":{"major":2,"minor":6},"sim":"stapledons/sim 0.1.0","relativity":"0.10.0"' && \
+	  sed -n 2p $(SCRATCH)/gr.out | grep -q '"gr":{"hole_id":"Sgr A\*","mass_msun":4297000,' && echo "parity-gr: hello 2.6 (relativity 0.10.0); sgr_a reports mass_msun 4297000 (4.297e6)" || { echo "parity-gr: hello or Sgr A* mass wrong"; exit 1; }
+	@# not_in_gr needs a flat world: grVm's wire tests (make strict) cover it
+	@for r in bad_radius bad_gr moving in_gr; do grep -q "\"reason\":\"$$r\"" $(SCRATCH)/gr.out || { echo "parity-gr: no $$r refusal"; exit 1; }; done; \
+	  grep -q '"status":"bad_gr"' $(SCRATCH)/gr.out && grep -q '"r":10,"mode":"hover"' $(SCRATCH)/gr.out && grep -q '"r":3,"mode":"orbit"' $(SCRATCH)/gr.out && \
+	  grep -q '"unlocked":\["archive.two-clocks","archive.tides","archive.shadow-ring"\]' $(SCRATCH)/gr.out && \
+	  echo "parity-gr: refusals bad_radius, bad_gr, moving, in_gr; a bad_gr line; hover at 10, orbit at 3; first_black_hole unlocks the tides and shadow entries"
+
 offaxis-v11-equiv:  ## AC13: v2 off-axis log reproduces v1.1 (e9d35c5) beta, gamma, tau, t, x, pos bit for bit (replay case offaxis_v11_equiv)
 	AILANG="$(AILANG)" python3 tools/replay.py --case offaxis_v11_equiv
 
@@ -211,6 +226,15 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	  echo "strict scriptedRoundTrip($$k): VM $$got | interpreter $$interp | closed form $$want"; \
 	  [ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) < 1e-9 else 1)" || exit 1; \
 	done
+	@# scriptedApproach (M3.4a): Sgr A*, 1e6 -> 10 r_s at beta_local 0.1 in 100 ticks; coordinate time (t_s) vs t = [r1 - r2 + ln((r1 - 1)/(r2 - 1))]/beta, 1e-9 relative
+	@want=$$(python3 -c "import math; print(repr((1e6 - 10 + math.log((1e6 - 1)/(10 - 1)))/0.1))"); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry scriptedApproach --args-json 100 sim/gr.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry scriptedApproach --args-json 100 sim/gr.ail); \
+	echo "strict scriptedApproach VM $$got | interpreter $$interp | closed form $$want"; \
+	[ "$$got" = "$$interp" ] && python3 -c "import sys; sys.exit(0 if abs($$got - $$want) <= 1e-9 * $$want else 1)"
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry grVm --args-json 0 sim/gr_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry grVm --args-json 0 sim/gr_test.ail); \
+	echo "strict grVm (M3.4): VM $$got | interpreter $$interp"; [ "$$got" = "gr-ok" ] && [ "$$interp" = "gr-ok" ]
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	echo "strict consequenceVm: VM $$got | interpreter $$interp"; [ "$$got" = "consequence-ok" ] && [ "$$interp" = "consequence-ok" ]
