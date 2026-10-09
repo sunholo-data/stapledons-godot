@@ -963,6 +963,15 @@ ship-demo-ci: tour-pacing-test
 ship-ui-test: import ## AC1-3, 7, 11: status strip in every scene state, contextual cards, control table <-> key handler, dev gating
 	@$(GODOT_SIM) --headless --path . --script tests/test_ship_ui.gd > $(SCRATCH)/ship-ui.log 2>&1; rc=$$?; grep -E '^(FAIL|ship-ui)' $(SCRATCH)/ship-ui.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui.log && grep -q '^ship-ui: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-ui.log
 ship-demo-ci: ship-ui-test
+.PHONY: ship-console-test no-twitch-test ship-ui-window-check
+ship-console-test: import ## AC6, 8, 9, 10, 14a: stations from ship.glb, reach and facing, dolly, confirms, helm/chart, Voyage, Archive, Sgr A*, Walk to
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_consoles.gd > $(SCRATCH)/ship-consoles.log 2>&1; rc=$$?; grep -E '^(FAIL|path|ship-consoles)' $(SCRATCH)/ship-consoles.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-consoles.log && grep -q '^ship-consoles: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-consoles.log
+no-twitch-test: import ## AC4, 5 (NT1, NT2): no decision from any key, click or gesture in four states; no deadlines over 600 s of fake time
+	@$(GODOT_SIM) --headless --path . --script tests/test_no_twitch.gd > $(SCRATCH)/no-twitch.log 2>&1; rc=$$?; grep -E '^(FAIL|no-twitch)' $(SCRATCH)/no-twitch.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/no-twitch.log && grep -q '^no-twitch: [0-9]* passed, 0 failures$$' $(SCRATCH)/no-twitch.log
+ship-demo-ci: ship-console-test no-twitch-test
+ship-ui-window-check: ## AC15: the helm (GalaxyMap embedded over the navigation station) in a real GPU window: open, click-select, hold-commit -> renders/ship_ui/window_check_*.png
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/ship_ui_window_check.gd > $(SCRATCH)/ship-ui-window-check.log 2>&1; rc=$$?; grep -E '^(host|click|held|ship-ui-window-check)' $(SCRATCH)/ship-ui-window-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-window-check.log && grep -q '^ship-ui-window-check: OK$$' $(SCRATCH)/ship-ui-window-check.log
 .PHONY: ship-ui-capture
 ship-ui-capture: ## AC14: the ship UI's review frames at 1280x720 and 2560x1440 + contact sheet -> renders/ship_ui/ (GPU window; open every frame)
 	@mkdir -p $(SCRATCH)

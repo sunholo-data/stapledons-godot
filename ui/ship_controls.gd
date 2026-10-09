@@ -27,12 +27,10 @@ const KEYS := [
 	{"key": "KEY_TAB", "via": "match", "kind": "display", "group": "Display", "help": "Tab details, help and Walk to"},
 	{"key": "KEY_ESCAPE", "via": "match", "kind": "display", "group": "Display", "help": "Esc close the top panel or card, else the main menu"},
 	{"key": "KEY_ENTER", "via": "match", "kind": "display", "group": "Display", "help": "Enter continue an interlude or dismiss the arrival card"},
-	{"key": "KEY_M", "via": "match", "kind": "console", "group": "Decisions", "help": "M navigation map (moves to the navigation station, R1-SHIP-UI U4)"},
+	{"key": "KEY_M", "via": "match", "kind": "display", "group": "Display", "help": "M star chart (read only; plot and commit at the navigation station)"},
 	{"key": "KEY_I", "via": "identify", "kind": "display", "group": "Display", "help": "hold I and click a star or body: what it is"},
 	{"key": "KEY_P", "via": "match", "kind": "pacing", "group": "Pacing", "help": "P pause or resume the guided voyage"},
-	{"key": "KEY_N", "via": "match", "kind": "console", "group": "Decisions", "help": "N Sgr A* next stop (moves to the navigation station, U5)"},
-	{"key": "KEY_L", "via": "match", "kind": "console", "group": "Decisions", "help": "L leave Sgr A* (moves to the navigation station, U5)"},
-	{"key": "KEY_C", "via": "match", "kind": "console", "group": "Decisions", "help": "C Archive (moves to the Archive terminal, U5)"},
+	{"key": "KEY_N", "via": "match", "kind": "pacing", "group": "Pacing", "help": "N skip a guided-voyage stop's dwell"},
 	{"key": "KEY_K", "via": "match", "kind": "pacing", "group": "Pacing", "help": "K skip to the next stage (at Sgr A*: finish the approach)"},
 	{"key": "KEY_W", "via": "poll", "kind": "move", "group": "Move", "help": "WASD walk"},
 	{"key": "KEY_A", "via": "poll", "kind": "move", "group": "Move", "help": ""},
@@ -68,7 +66,7 @@ const CONSOLE := [
 	{"decision": "open the Archive", "station": "archive", "action": "open", "confirm": false},
 ]
 
-const GROUP_ORDER := ["Move", "Camera", "Display", "Pacing", "Decisions", "Developer"]
+const GROUP_ORDER := ["Move", "Camera", "Display", "Pacing", "Developer"]
 
 
 ## The key rows the demo's _unhandled_input must match (NT5).

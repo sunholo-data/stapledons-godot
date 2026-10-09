@@ -113,10 +113,10 @@
         "make ship-ui-test, make ship-console-test, make no-twitch-test exist and are wired into ship-demo-ci",
         "AC13 determinism: make no-twitch-test run twice gives identical logs"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-09",
-      "completed": null,
-      "notes": "PR 1 part: tests/test_ship_ui.gd written first; red run against main (ShipHud absent) failed for that reason: \"Parse Error: Could not find type ShipHud\" (log kept in the executor scratch). SimBridge source-tagged record seam (record_sent, sent_log, intent_source: player/tour/tick; SolarDeparture tags tour, BlackHoleVisit tick) and the fake clock (ShipHud.advance(dt), no wall-clock reads) landed. ui/ship_controls.gd holds the section F table. make ship-ui-test in ship-demo-ci. test_ship_consoles.gd and test_no_twitch.gd land red-first with PR 2."
+      "completed": "2026-10-09",
+      "notes": "PR 1 part: tests/test_ship_ui.gd written first; red run against main (ShipHud absent) failed for that reason: \"Parse Error: Could not find type ShipHud\" (log kept in the executor scratch). SimBridge source-tagged record seam (record_sent, sent_log, intent_source: player/tour/tick; SolarDeparture tags tour, BlackHoleVisit tick) and the fake clock (ShipHud.advance(dt), no wall-clock reads) landed. ui/ship_controls.gd holds the section F table. make ship-ui-test in ship-demo-ci. test_ship_consoles.gd and test_no_twitch.gd land red-first with PR 2. PR 2: tests/test_ship_consoles.gd and tests/test_no_twitch.gd written before demos/ship_consoles.gd; red run on the PR 1 tree failed with \"Could not find type ShipConsoles\". make ship-console-test and make no-twitch-test in ship-demo-ci. NT1 mutation-checked: binding N back to bh_next_stop, or C to a home plan, fails the sweep."
     },
     {
       "id": "U1_SHIP_HUD_STRIP",
@@ -148,7 +148,7 @@
       "passes": true,
       "started": "2026-10-09",
       "completed": "2026-10-09",
-      "notes": "Cards: transit (JourneyHud.ROWS compact 7 rows; warp = live pacing rate, sci format), brake/final-approach notices 8 s, arrival (ArrivalCard.ROWS; Enter/Esc/Dismiss or next commit), gravity (BlackHoleVisit.hud_lines as bindings), tour (leg, stage, dwell left, PAUSED; Pause [P], Skip dwell, Skip stage [K]), interlude chip (D-41 InterludeCard unchanged in content, placed left of the column), unlock (codex toast moved into the stack, 10 s; baseline per sim session), refusal 8 s. Dwell label: deferred to PR 2 with the consoles (needs the reach/facing raycast work); the I card is unchanged. Renders renders/ship_ui/{strip_rest,transit_cruise,arrival,tour_interlude,sgr_a_gravity,lower_deck}_{1280x720,2560x1440}.png opened: strip legible over the bright Auto cruise sky; cards clear of the centre; found and fixed: strip overflow at cruise (now two rows), duplicate from-Earth, codex toasts still drawing, unlock baseline a frame late, interlude card colliding with the column."
+      "notes": "Cards: transit (JourneyHud.ROWS compact 7 rows; warp = live pacing rate, sci format), brake/final-approach notices 8 s, arrival (ArrivalCard.ROWS; Enter/Esc/Dismiss or next commit), gravity (BlackHoleVisit.hud_lines as bindings), tour (leg, stage, dwell left, PAUSED; Pause [P], Skip dwell, Skip stage [K]), interlude chip (D-41 InterludeCard unchanged in content, placed left of the column), unlock (codex toast moved into the stack, 10 s; baseline per sim session), refusal 8 s. Dwell label: deferred to PR 2 with the consoles (needs the reach/facing raycast work); the I card is unchanged. Renders renders/ship_ui/{strip_rest,transit_cruise,arrival,tour_interlude,sgr_a_gravity,lower_deck}_{1280x720,2560x1440}.png opened: strip legible over the bright Auto cruise sky; cards clear of the centre; found and fixed: strip overflow at cruise (now two rows), duplicate from-Earth, codex toasts still drawing, unlock baseline a frame late, interlude card colliding with the column. Dwell label landed in PR 2 (probe() on the I pick, 0.5 s rest, Tab toggle; tested in test_ship_ui)."
     },
     {
       "id": "U3_CONSOLE_FRAMEWORK",
@@ -162,10 +162,10 @@
         "AC8: make ship-console-test (all stations load; every active station has a non-empty WalkArea.path from the bridge spawn; prompt only in reach and facing)",
         "AC14a: make ship-console-test (keyboard Walk-to list reaches every station; lower-deck prompt names the lift)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "demos/ship_consoles.gd: 6 stations from ship.glb names; use points a step back from each console edge, within 2.5 m; walked paths from spawn: navigation 19.6 m, voyage 15.2 m, archive 17.1 m (40 m ceiling). E priority incl. the lift; reach 2.5 m + facing 60 deg prompt; 0.6 s dolly to a pose framing the station idle screen, back on E/Esc; panels (helm full width, voyage compact left, archive with codex over); click-to-walk + Tab Walk to (keyboard focus ring), 3.5 m/s, WASD cancels; confirm hold 1.5 s / press twice (GameSettings.confirm_mode), no deadlines; idle screens (SubViewport labels on the console faces, display only); onboarding glow + hint on menu launches until the first use. use(station, action) is the single entry. make ship-console-test 80 checks green."
     },
     {
       "id": "U4a_MAP_HOST_SPIKE",
@@ -177,10 +177,10 @@
       "acceptance_criteria": [
         "AC15: make ship-ui-window-check green in a GPU window"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "Chosen host: GalaxyMap in an embedded borderless Window (force_native false, own_world_3d, own input) laid over the navigation panel; content_scale_factor fits the map panel to the host. tools/ship_ui_window_check.gd + make ship-ui-window-check: green in a GPU window (embedded=true; real OS-level click selects Barnard's Star; click Commit opens the dialog; 1.65 s real hold commits). Viewport.push_input into an embedded window does not reach its GUI; the check uses Input.parse_input_event at screen pixels, the real path. The check found a real bug: a star plan made before the hold went stale_plan (the ship at rest moves with Earth); GalaxyMap now re-plans in the commit tick when the ship has moved since the plan."
     },
     {
       "id": "U4_NAVIGATION_STATION",
@@ -194,10 +194,10 @@
         "AC9 (helm part): make ship-console-test (helm commit sends the same intent as today's map commit; Approach/Leave equal bh_next_stop()/leave_black_hole())",
         "AC10: make ship-console-test"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "GalaxyMap.mode chart/helm; planning() gate (helm and not guided). Chart: banner, no slider/commit/cancel/home/in-system/Sgr A* entry, never plans (so no plan preview: NT1 over §D), never pauses the tour; selection carries to the helm (planned there unless already the plan). Outside the helm the map rests in chart mode. Helm: commit (hold or press twice: GalaxyMap.confirm_twice/armed/confirm_press), cancel, Return to Sol, In this system, Sgr A* entry; at Sgr A* the stop ladder with Approach and Leave (confirm). M = chart; I-card Open in map = chart."
     },
     {
       "id": "U5_VOYAGE_AND_ARCHIVE",
@@ -210,10 +210,10 @@
         "AC9 (voyage, archive): make ship-console-test",
         "AC4 and AC5: make no-twitch-test green (no player-sourced decision intent from any key; tour-sourced intents match the itinerary's next leg)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "Voyage console: itinerary + Begin guided voyage (confirm) -> start_solar_departure(). Archive terminal: codex (raised over the console panel) + legacy count and news line; the free-navigation session now carries the Archive table. N = skip dwell (pacing), L and C removed, interim Tab decisions removed; reserved consoles offline. make no-twitch-test: NT1 in 4 states x 56 keys x 2 + 5 mouse buttons x 4 points x 2 + pan, flushing a tick after each; NT2 600 s fake time for the helm dialog, an armed press-twice confirm and an unpressed hold panel. 20 checks green."
     },
     {
       "id": "U6_MIGRATION",

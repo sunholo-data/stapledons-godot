@@ -119,6 +119,14 @@ var sim: SimBridge
 var auto_tick := true
 var live_pacing := false # explicit opt-in; golden/replay capture inputs stay fixed
 var guided_read_only := false # guided itinerary owns planning/commit/cancel
+## R1-SHIP-UI §D: "helm" (the navigation station: plot, speed, commit, cancel, Return to Sol,
+## In this system) or "chart" (M, anywhere: browse and read only; it never plans, so a chart
+## selection sends nothing, and it carries over when the helm opens).
+var mode := "helm"
+var chart_banner := Label.new()
+## §C4 accessibility: the commit dialog's button confirms by pressing twice, not holding.
+var confirm_twice := false
+var armed := false
 var pacing := preload("res://ui/journey_pacing.gd").new()
 var catalogue: Array = [] # parsed stars.json dictionaries (float64 x, y, z)
 var index_by_id: Dictionary = {} # catalogue id -> index (ids are unique, M1.7)
@@ -220,6 +228,12 @@ func _build() -> void:
 	_title.text = "Select a star"
 	_subtitle.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
 	_subtitle.add_theme_font_size_override("font_size", 13)
+	chart_banner.text = "Star chart · read only. Plot and commit at the navigation station (Tab · Walk to)."
+	chart_banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	chart_banner.custom_minimum_size.x = PANEL_WIDTH - 40
+	chart_banner.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
+	chart_banner.visible = false
+	box.add_child(chart_banner)
 	for l in [_title, _subtitle, _status, _clock]:
 		box.add_child(l)
 	# Keep explicit framing reachable even in short windows with long plans.
@@ -335,7 +349,7 @@ func _build_dialog(layer: CanvasLayer) -> void:
 		dialog_grid.add_child(l)
 	box.add_child(dialog_grid)
 	var warn := Label.new()
-	warn.text = "A commitment cannot be undone. Hold for %.1f s to commit." % HOLD_S
+	warn.text = "A commitment cannot be undone. Hold for %.1f s, or press twice (Settings), to commit." % HOLD_S
 	warn.add_theme_color_override("font_color", Color(0.95, 0.6, 0.4))
 	box.add_child(warn)
 	hold_bar.show_percentage = false
@@ -347,8 +361,11 @@ func _build_dialog(layer: CanvasLayer) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	hold_button.text = "Hold to commit"
-	hold_button.button_down.connect(func() -> void: _holding = true)
-	hold_button.button_up.connect(func() -> void: release_commit())
+	hold_button.button_down.connect(func() -> void:
+		if confirm_twice: confirm_press()
+		else: _holding = true)
+	hold_button.button_up.connect(func() -> void:
+		if not confirm_twice: release_commit())
 	back_button.text = "Back"
 	back_button.pressed.connect(func() -> void: close_commit_dialog())
 	row.add_child(hold_button)
@@ -467,14 +484,14 @@ func preselect(i: int) -> bool:
 		return false
 	selected_index = i
 	home_highlight = false;selected_body = ""
-	if not guided_read_only:_pending = plan_intent(i)
+	if planning():_pending = plan_intent(i)
 	_overlay.queue_redraw()
 	return true
 
 
 ## Plan an arbitrary target (design check rows; not a catalogue selection).
 func plan_target(target: Dictionary) -> void:
-	if guided_read_only:return
+	if not planning():return
 	_pending = {"k": "plan", "target": target, "cruise_phi": cruise_phi}
 
 
@@ -501,7 +518,7 @@ func system_bodies() -> Array:
 ## (sim/navigation.ail; D-54 stop distance by default). In-system legs cruise at most
 ## 0.99c (navigation.bodyPhiMax, the value the params echo's cruise_phi_default holds).
 func plan_body(id: String) -> void:
-	if guided_read_only:return
+	if not planning():return
 	selected_index = -1;home_highlight = false;selected_body = id
 	_pending = SimBridge.body_plan(id, minf(cruise_phi, phi_default), {"mode": "stop"})
 	_overlay.queue_redraw()
@@ -530,7 +547,7 @@ var home_highlight := false
 
 
 func plan_home() -> void:
-	if guided_read_only:return
+	if not planning():return
 	selected_index = -1;selected_body = ""
 	home_highlight = true
 	plan_target(HOME)
@@ -541,7 +558,7 @@ func plan_home() -> void:
 func set_cruise_phi(phi: float, clamp: bool = true) -> void:
 	cruise_phi = clampf(phi, phi_min, phi_max) if clamp else phi
 	slider.set_value_no_signal(cruise_phi)
-	if selected_index >= 0 and not guided_read_only:
+	if selected_index >= 0 and planning():
 		_pending = plan_intent(selected_index)
 
 
@@ -556,7 +573,7 @@ func in_transit() -> bool:
 
 ## Open the commit dialog on the sim's current plan. Nothing is sent.
 func open_commit_dialog() -> bool:
-	if guided_read_only:return false
+	if not planning():return false
 	if journey_state() != "planned" or field_value(sim.world, "journey.plan") == null:
 		return false
 	dialog_plan_id = int(sim.world["journey"]["plan_id"])
@@ -569,21 +586,70 @@ func open_commit_dialog() -> bool:
 func close_commit_dialog() -> void:
 	dialog.visible = false
 	release_commit()
+	disarm()
 
 
 ## Accumulate hold time (real or fake clock). At HOLD_S the commit for the
 ## plan shown is queued for the next tick and the dialog closes; true then.
 func hold_commit(delta: float) -> bool:
-	if guided_read_only:return false
+	if not planning():return false
 	if not dialog.visible:
 		return false
 	hold_s += delta
 	hold_bar.value = minf(hold_s, HOLD_S)
 	if hold_s < HOLD_S:
 		return false
+	_commit_now()
+	return true
+
+
+## The confirmed commit for the plan the dialog shows: queued for the next tick.
+func _commit_now() -> void:
 	_queue.append({"k": "commit", "plan_id": dialog_plan_id})
 	close_commit_dialog()
+
+
+## Press-twice confirm (§C4): the first press arms and relabels, the second commits. Any
+## interval between them, no deadline; Back, Esc or closing the dialog disarms.
+func confirm_press() -> bool:
+	if not planning() or not dialog.visible:
+		return false
+	if not armed:
+		armed = true
+		hold_button.text = "Confirm: commit to %s" % target_name()
+		return false
+	_commit_now()
 	return true
+
+
+func disarm() -> void:
+	armed = false
+	hold_button.text = "Press twice to commit" if confirm_twice else "Hold to commit"
+
+
+func set_confirm_twice(on: bool) -> void:
+	confirm_twice = on
+	release_commit()
+	disarm()
+
+
+## True where planning is allowed: the helm, outside a guided voyage.
+func planning() -> bool:
+	return mode == "helm" and not guided_read_only
+
+
+func set_mode(m: String) -> void:
+	mode = "chart" if m == "chart" else "helm"
+	var helm := mode == "helm"
+	for c: Control in [slider, commit_button, cancel_button, home_button, system_box, _speed]:
+		c.visible = helm
+	chart_banner.visible = not helm
+	if not helm:
+		close_commit_dialog()
+		_pending = {}
+	elif selected_index >= 0 and planning() and str(field_value(sim.world, "journey.plan.target.id") if sim != null else "") != str(catalogue[selected_index]["id"]):
+		_pending = plan_intent(selected_index) # the chart's selection carries over (unless already the plan)
+	refresh()
 
 
 ## Releasing the button before HOLD_S starts the hold over.
@@ -596,7 +662,7 @@ func release_commit() -> void:
 ## Cancel is always available. Before a commit the sim clears the plan; after
 ## it the sim refuses (`committed`) and the panel shows that refusal.
 func press_cancel() -> void:
-	if guided_read_only:return
+	if not planning():return
 	close_commit_dialog()
 	_queue.append({"k": "cancel"})
 
@@ -606,7 +672,8 @@ func press_cancel() -> void:
 func tick() -> bool:
 	if sim == null:
 		return false
-	var intents := [] if guided_read_only else ([] if _pending.is_empty() else [_pending]) + _queue
+	# A commit confirmed at the helm goes out even if the helm closed before this tick.
+	var intents := ([] if guided_read_only else _queue.duplicate()) if not planning() else ([] if _pending.is_empty() else [_pending]) + _queue
 	_pending = {}
 	_queue = []
 	for intent in intents:
@@ -633,7 +700,14 @@ func tick() -> bool:
 ## same position with zero elapsed time, then commit that plan's id in the same tick.
 var _last_plan := {}
 func _replan_body_commit(intents: Array) -> void:
-	if _last_plan.is_empty() or field_value(sim.world, "journey.plan.target_kind") != "body" or journey_state() != "planned":return
+	# R1-SHIP-UI: any plan, not only body plans. A hold takes 1.5 s of host ticks, and a ship
+	# at rest moves with its body (D-54 stop), so the sim refuses a star plan made before the
+	# hold as stale_plan (core.ail: the plan must be made from where the ship is now).
+	if _last_plan.is_empty() or journey_state() != "planned":return
+	var dep: Variant = field_value(sim.world, "journey.plan.departure")
+	var pos: Variant = field_value(sim.world, "ship.pos")
+	var moved: bool = dep is Dictionary and pos is Dictionary and not (float(dep.x) == float(pos.x) and float(dep.y) == float(pos.y) and float(dep.z) == float(pos.z))
+	if field_value(sim.world, "journey.plan.target_kind") != "body" and not moved:return # still made from here
 	if intents.any(func(i): return i.get("k", "") == "plan"):return
 	for intent in intents.duplicate():
 		if intent.get("k", "") != "commit":continue

@@ -12,6 +12,7 @@ func check(ok: bool, label: String) -> void:
 	else: failures += 1
 func _initialize() -> void: _run.call_deferred()
 func fly(demo: Node, id: String, from_name: String) -> void:
+	demo.open_navigation() # the helm (R1-SHIP-UI: outside it the map plans nothing)
 	var map = demo.journey_map
 	check(map.preselect(map.index_of(id)) and demo.journey_tick(), "navigation preselects " + id)
 	check(map.open_commit_dialog() and map.hold_commit(GalaxyMap.HOLD_S) and demo.journey_tick() and demo.live_journey, "the hold commits the leg to " + id)
@@ -24,6 +25,7 @@ func body_of(demo: Node, id: String) -> Dictionary:
 		if b.id == id: return b
 	return {"radius_km": 0.0, "rel_km": {"x": 0.0, "y": 0.0, "z": 0.0}}
 func fly_body(demo: Node, id: String, from_name: String) -> void:
+	demo.open_navigation() # the helm
 	var map = demo.journey_map
 	map.plan_body(id); demo.journey_tick()
 	check(map.journey_state() == "planned" and map.target_name() != "" and map.status_text().find("refused") < 0, "plans the in-system stop at %s: %s" % [id, map.status_text()])
@@ -76,6 +78,7 @@ func _run() -> void:
 		check(at.size() == 1 and at[0].id == "body:acen-a", "a click on A's centre picks A, not B (%s)" % [at.map(func(c): return c.id)])
 	ident.set_held(false)
 	# Part 3: the map lists this system's bodies; pick B and fly there with the body planner.
+	demo.open_navigation() # the helm (R1-SHIP-UI)
 	var map = demo.journey_map
 	map.refresh()
 	check(map.system_ids.has("acen-a") and map.system_ids.has("acen-b") and not map.system_ids.has("earth"), "the map lists alpha Cen's stars, not Sol's planets: %s" % [map.system_ids])
@@ -92,6 +95,7 @@ func _run() -> void:
 	check(hud.begins_with("At Alpha Centauri B 0.0") and hud.contains("from Alpha Centauri A"), "HUD at the in-system B stop: " + hud)
 	# Return to Sol: the M4.4 home plan now stops beside Earth (D-54: 30 deg across).
 	# Sol is clickable on the map (drawn at the origin; not a catalogue row).
+	demo.open_navigation() # the helm
 	map.centre_on_ship(); map.pivot = Vector3.ZERO; map.dist = 30.0; map._update_camera()
 	var sol_px: Vector2 = map.camera.unproject_position(Vector3.ZERO)
 	check(map.pick(sol_px) == GalaxyMap.SOL_PICK, "a click on Sol picks home (pick %d)" % map.pick(sol_px))

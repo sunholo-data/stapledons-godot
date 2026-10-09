@@ -10,6 +10,7 @@ const StarLight := preload("res://demos/ship_star_light.gd")
 const SolarDeparture := preload("res://demos/solar_departure.gd")
 const Attitude:=preload("res://demos/ship_attitude.gd")
 const BlackHoleVisit:=preload("res://demos/black_hole_visit.gd")
+const BodyInfo:=preload("res://ui/body_info.gd")
 ## M3.6 (R1-M3-BLACK-HOLES): the Sgr A* demo, its own sgr_a session (null = flat space, GR off).
 var black_hole:RefCounted=null
 var codex:Codex # the Archive codex (M4.7), built on first use; unlocks only from the sim
@@ -50,6 +51,16 @@ var confirm_button := Button.new()
 ## R1-SHIP-UI §C4: every irreversible decision confirms by a 1.5 s hold, or (accessibility
 ## setting, title Settings and Tab) by pressing twice. Neither has a deadline.
 var confirm_mode := "hold"
+## R1-SHIP-UI U3: the bridge consoles (demos/ship_consoles.gd); every captain decision goes
+## through consoles.use(station, action).
+var consoles: ShipConsoles
+## Tests: Esc's last resort (main menu or quit) can be switched off.
+var escape_exits := true
+var _mouse := Vector2(-1, -1)
+var _aim_t := 0.0
+var _dwell_pose := Transform3D()
+var _dwell_still := 0.0
+var _dwell_done := false
 var auto := true
 var ready_ok := false
 var caption := ""
@@ -136,6 +147,9 @@ func setup(opts := {}) -> bool:
 	set_auto_view(opts.get("auto_view",false))
 	confirm_mode=opts.get("confirm_mode","hold") if opts.get("confirm_mode","hold") in GameSettings.CONFIRM_MODES else "hold"
 	confirm_button.text="Confirm decisions: "+("press twice" if confirm_mode=="twice" else "hold")
+	consoles.set_confirm_mode(confirm_mode)
+	if menu_return:
+		consoles.set_glow(true);ship_hud.show_hint(ShipConsoles.HINT)
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
 	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
 	interlude_card = InterludeCard.new();interlude_card.visible = false;interlude_canvas.add_child(interlude_card)
@@ -308,7 +322,11 @@ func _process(delta: float) -> void:
 			bh_tick()
 	if auto and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()):
 		var move:=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_W))-float(Input.is_physical_key_pressed(KEY_S)))
+		if move!=Vector2.ZERO:consoles.cancel_walk() # WASD takes over an auto-walk
 		walk_motion(move,delta)
+	consoles.advance(delta)
+	_aim_t+=delta
+	if _aim_t>=.1 and _mouse.x>=0.:_aim_t=0.;consoles.aim(_mouse)
 	if lift!=null:lift.advance(delta if auto else 0.)
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
@@ -320,12 +338,14 @@ func _process(delta: float) -> void:
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
 	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption]
 	_update_hud(delta,details)
+	_update_dwell(delta)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
 	if UiScale.handle(get_window(),event):
 		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
-	if event is InputEventMouseMotion and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
+	if camera_mode=="console" and (event is InputEventPanGesture or (event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN])):return
+	if event is InputEventMouseMotion and camera_mode!="console" and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
 		_tour_view_active=false
 		if camera_mode=="external review":
 			var offset:=camera.position-Vector3(0,5,0)
@@ -339,7 +359,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP:_zoom(2.*event.factor)
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:_zoom(-2.*event.factor)
+	if event is InputEventMouseMotion:_mouse=event.position
+	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT and not event.alt_pressed:
+		if consoles.click(event.position):get_viewport().set_input_as_handled();return
+		if ship_hud.has_card("arrival"):dismiss_arrival()
 	if event is InputEventKey and event.pressed and not event.echo:
+		if camera_mode=="console" and event.physical_keycode in [KEY_1,KEY_2,KEY_3,KEY_4,KEY_R,KEY_7,KEY_8,KEY_9]:return
 		match event.physical_keycode:
 			KEY_1:set_preset("bridge")
 			KEY_2:set_preset("overlook")
@@ -360,9 +385,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if black_hole!=null:bh_finish_approach()
 				else:skip_stage()
 			KEY_P:toggle_tour_pause()
-			KEY_N:bh_next_stop()
-			KEY_C:toggle_codex()
-			KEY_L:leave_black_hole()
+			KEY_N:skip_dwell()
 			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
@@ -370,7 +393,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if dev_controls():guides.visible=not guides.visible
 			KEY_B:
 				if dev_controls() and not live_journey:await benchmark.run(self)
-			KEY_M:open_navigation()
+			KEY_M:open_chart()
 			KEY_E:use_nearest()
 			KEY_ESCAPE:escape()
 ## Developer review controls (B, G, 5, 6, the audit buttons): command-line launches only (AC11).
@@ -378,14 +401,18 @@ func dev_controls() -> bool:
 	return not menu_return
 ## Esc closes the top panel or card; otherwise the main menu (menu launch) or quit.
 func escape() -> void:
+	if consoles.escape():return
 	if codex!=null and codex.panel.visible:codex.close()
 	elif ship_hud.tab_panel.visible:ship_hud.toggle_tab()
+	elif star_identification!=null and star_identification.card.visible:star_identification.close_card()
 	elif ship_hud.has_card("arrival"):dismiss_arrival()
+	elif not escape_exits:return
 	elif menu_return:return_to_menu()
 	else:get_tree().quit()
-## E: the lift when the captain stands at its landing (the consoles join in R1-SHIP-UI U3).
+## E: the console or the lift in reach and facing (the nearest wins; the prompt names it),
+## or, at a console, step back.
 func use_nearest() -> bool:
-	return lift!=null and lift.board()
+	return consoles.press_e()
 ## Back to the title screen (main.tscn on a plain launch); _exit_tree stops the voyage's sim.
 func return_to_menu() -> void:
 	if not menu_return or benchmark.running:return
@@ -447,11 +474,12 @@ func _export_smoke() -> void:
 		ok=ok and lift.state=="bridge_ready" and walk==walk_bridge and avatar_pos.distance_to(Vector3(8,82,-4.8))<.01
 	print("ship-demo-smoke-stage lift: ",ok)
 	if ok:
-		journey_auto_tick=false;open_navigation()
-		ok=ok and journey_map!=null
+		journey_auto_tick=false
+		consoles.go_to("navigation")
+		ok=consoles.use("navigation","open") and journey_map!=null and journey_map.mode=="helm"
 		print("ship-demo-smoke-stage navigation: ",ok," ",caption)
 		if ok:
-			ok=journey_map.open_commit_dialog() and journey_map.hold_commit(GalaxyMap.HOLD_S) and journey_tick()
+			ok=consoles.use("navigation","commit") and journey_tick()
 			ok=ok and live_journey and not navigation_window.visible and sky.beta>0.
 			print("ship-demo-smoke-stage commit: ",ok," refused=",journey_sim.last_refused)
 			for i in 1220:
@@ -505,30 +533,64 @@ func _identification_smoke() -> void:
 	tree.create_timer(.1).timeout.connect(tree.quit.bind(0 if ok else 1),CONNECT_ONE_SHOT)
 	queue_free()
 
-## Separate session: this demo never touches main.gd's active voyage.
+## The helm (R1-SHIP-UI §D): the full map in helm mode, the navigation station's panel.
+## consoles.use("navigation", "open") calls it; tests and tools call it directly as the
+## console action's target. Separate session: this demo never touches main.gd's voyage.
 func open_navigation() -> void:
 	if black_hole!=null:
 		refuse("Navigation is for flat space: leave Sgr A* first.");return
-	if solar_tour!=null:
-		solar_tour.paused=true
 	_create_navigation("sol")
-	if DisplayServer.get_name()!="headless" and navigation_window!=null:navigation_window.popup_centered()
+	if navigation_window==null:return
+	journey_map.set_confirm_twice(confirm_mode=="twice")
+	journey_map.set_mode("helm")
+	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
+	if entry!=null:entry.visible=solar_tour==null
+	navigation_window.borderless=true;navigation_window.title="Navigation station · E / Esc steps back"
+	_place_navigation(consoles.panel_rect().grow_individual(-8.,-80.,-8.,-8.) if consoles!=null and consoles.focused=="navigation" else Rect2())
+## M (anywhere, instant): the read-only star chart. It never plans, commits or pauses the
+## voyage (D-57 Q2); plotting and commit are at the navigation station.
+func open_chart() -> void:
+	if black_hole!=null:
+		note("The star chart is for flat space; at Sgr A* the stop ladder is at the navigation station.");return
+	_create_navigation("sol")
+	if navigation_window==null:return
+	journey_map.set_mode("chart")
+	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
+	if entry!=null:entry.visible=false
+	navigation_window.borderless=false;navigation_window.title="Star chart (read only) · M / Esc close"
+	_place_navigation(Rect2())
+## The map host (R1-SHIP-UI U4a): an embedded window over the console panel (helm), or
+## centred (the chart, and direct calls).
+func _place_navigation(rect: Rect2) -> void:
+	var vis:=get_viewport().get_visible_rect().size
+	if rect.size==Vector2.ZERO: # centred below the status strip (the title bar sits above the rect)
+		var top:float=(ship_hud.strip_bottom() if ship_hud!=null else 0.)+40.
+		var sz:=Vector2(minf(1280.,vis.x*.86),minf(800.,vis.y-top-56.))
+		rect=Rect2(Vector2((vis.x-sz.x)*.5,top),sz)
+	navigation_window.position=Vector2i(rect.position);navigation_window.size=Vector2i(rect.size)
+	# The map's own panel needs about 640 units of height: scale its content to the host.
+	navigation_window.content_scale_factor=clampf(rect.size.y/640.,.5,1.)
+	navigation_window.show();navigation_window.grab_focus()
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
 		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
+		# R1-SHIP-UI: the Archive terminal shows what this session has unlocked (protocol 2.2 table).
+		journey_sim.archive_rows=LoreLoader.archive_rows(LoreLoader.load_entries()["entries"])
 		# D-54: free navigation stops at a finite star where it shows its size, and Sol at Earth.
 		var params:Dictionary={"standoff_au":1000.,"stop_rule":54.}
 		if scenario=="solar_departure":params=SolarDeparture.guided_params()
 		if not journey_sim.start() or not journey_sim.new_game(424242,scenario,false,params):
 			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
-		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation · M / Esc return aboard"
-		navigation_window.size=Vector2i(1280,800);navigation_window.min_size=Vector2i(900,600)
-		navigation_window.force_native=true;navigation_window.own_world_3d=true
-		navigation_window.close_requested.connect(close_navigation)
+		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation"
+		navigation_window.size=Vector2i(1280,800);navigation_window.min_size=Vector2i(320,200)
+		# R1-SHIP-UI U4a: embedded in the ship's window (its own 3D world and input), laid
+		# over the navigation station's panel at the helm.
+		navigation_window.force_native=false;navigation_window.own_world_3d=true;navigation_window.transient=true
+		navigation_window.close_requested.connect(_navigation_key.bind(KEY_ESCAPE))
 		navigation_window.window_input.connect(func(event:InputEvent)->void:
-			if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_M,KEY_ESCAPE]:close_navigation())
+			if event is InputEventKey and event.pressed and not event.echo:_navigation_key(event.physical_keycode))
 		add_child(navigation_window)
 		journey_map=load("res://ui/galaxy_map.tscn").instantiate()
 		journey_map.auto_tick=false;journey_map.live_pacing=true
@@ -539,7 +601,7 @@ func _create_navigation(scenario:String) -> void:
 		bh_entry.tooltip_text="Leave the Solar System for the black hole at the Galactic Centre (a separate demo session; GR on)"
 		bh_entry.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT,Control.PRESET_MODE_MINSIZE,12)
 		bh_entry.grow_horizontal=Control.GROW_DIRECTION_BEGIN;bh_entry.grow_vertical=Control.GROW_DIRECTION_BEGIN
-		bh_entry.pressed.connect(start_black_hole,CONNECT_DEFERRED) # the window is freed by the switch
+		bh_entry.pressed.connect(func()->void:consoles.use("navigation","sgr_a"),CONNECT_DEFERRED) # helm only; the window is freed by the switch
 		navigation_window.add_child(bh_entry)
 		var acen:=journey_map.index_of("CNS5:3627")
 		if journey_map.preselect(acen):journey_map.frame_star(acen)
@@ -574,8 +636,22 @@ func _drop_navigation() -> void:
 func close_navigation() -> void:
 	if navigation_window==null:return
 	journey_map.close_commit_dialog();navigation_window.hide()
+	# Outside the helm the map plans nothing (NT1): it rests in chart mode; any commit the
+	# helm already queued still goes out on the next tick.
+	if journey_map.mode=="helm":journey_map.set_mode("chart")
+## Keys inside the map window: M / Esc close the chart; at the helm E / Esc step back (an
+## armed press-twice confirm backs out first). V, J, H stay instant.
+func _navigation_key(key: int) -> void:
+	if journey_map==null:return
+	if key==KEY_ESCAPE and journey_map.armed:journey_map.disarm();return
+	if journey_map.mode=="chart":
+		if key in [KEY_M,KEY_ESCAPE]:close_navigation()
+	elif key in [KEY_E,KEY_ESCAPE]:
+		if consoles.focused=="navigation":consoles.leave()
+		else:close_navigation()
+	if key==KEY_V:toggle_auto_view()
 func open_identified_star(id: String) -> void:
-	open_navigation()
+	open_chart()
 	if journey_map != null:
 		var index := journey_map.index_of(id)
 		if index >= 0 and journey_map.preselect(index):journey_map.frame_star(index)
@@ -588,7 +664,10 @@ func journey_tick() -> bool:
 	if solar_tour!=null:journey_map.refresh()
 	_apply_journey_world()
 	_show_interlude()
-	if live_journey and not was_committed:leg_from=last_stop;close_navigation()
+	if live_journey and not was_committed:
+		leg_from=last_stop
+		if consoles!=null and consoles.focused=="navigation":consoles.leave() # watch the departure
+		else:close_navigation()
 	if was_committed and not live_journey and solar_tour==null:last_stop=stop_name()
 	return true
 ## The free-navigation stop's display name: the catalogue name of the plan's target.
@@ -719,7 +798,7 @@ func _update_hud(delta: float, details: String) -> void:
 	ship_hud.set_view_tag(view_tag_text())
 	_update_cards(view)
 	_place_interlude()
-	ship_hud.set_prompt(prompt_text())
+	ship_hud.set_prompt(consoles.prompt_text())
 	ship_hud.advance(delta)
 	ship_hud.update(view)
 ## A new sim session (navigation, the guided voyage, Sgr A*): its cards start clean, and
@@ -837,15 +916,6 @@ func tour_line() -> String:
 	if solar_tour.skips > 0: parts.append("skipped %d stage%s" % [solar_tour.skips, "" if solar_tour.skips == 1 else "s"])
 	if solar_tour.paused: parts.append("PAUSED")
 	return " · ".join(parts)
-## The prompt line: what E will use, or what a lower-deck captain needs.
-func prompt_text() -> String:
-	if lift == null: return ""
-	if lift.travelling(): return "Lift in motion"
-	var point: Vector3 = lift.BOARD_POINT
-	point.y = 82.0 if active_level == 0 else 57.0
-	if avatar_pos.distance_to(point) <= 1.5: return "Lift · E " + ("to the lower deck" if active_level == 0 else "to the bridge")
-	if active_level == 1: return "Decisions are made on the bridge · take the lift (E at the landing)"
-	return ""
 func refuse(text: String) -> void:
 	caption = text
 	if ship_hud == null: return
@@ -872,17 +942,37 @@ func toggle_confirm_mode() -> void:
 	confirm_button.text = "Confirm decisions: " + ("press twice" if confirm_mode == "twice" else "hold")
 	if menu_return:
 		var gs := GameSettings.new(); gs.dir = settings_dir; gs.load_settings(); gs.confirm_mode = confirm_mode; gs.save_settings()
-## Walk to a station (Tab "Walk to"); the consoles land in R1-SHIP-UI U3.
-func walk_to(_station: String) -> bool:
-	return false
-## Until the bridge consoles land (R1-SHIP-UI U3-U5) the voyage decisions sit in the Tab
-## panel, not on the HUD.
+## Tab "Walk to": walk to a station along the walk mesh (3.5 m/s; WASD takes over).
+func walk_to(station: String) -> bool:
+	return consoles.walk_to(station)
+## The bridge consoles (R1-SHIP-UI U3): stations from ship.glb, use points, prompt, panels.
 func _consoles_setup() -> void:
-	ship_hud.walk_box.visible = false
-	var box := VBoxContainer.new(); ship_hud.display_box.add_sibling(box)
-	var title := Label.new(); title.text = "Decisions (move to the bridge consoles)"; box.add_child(title)
-	for pair in [["Navigation map [M]", open_navigation], ["Begin guided voyage", start_solar_departure], ["Visit Sgr A* (black hole)", start_black_hole], ["Sgr A* next stop [N]", bh_next_stop], ["Leave Sgr A* [L]", leave_black_hole], ["Archive [C]", toggle_codex]]:
-		var b := Button.new(); b.text = pair[0]; b.pressed.connect(pair[1]); box.add_child(b)
+	consoles = ShipConsoles.new(); add_child(consoles); consoles.setup(self)
+	consoles.used.connect(func(_s:String,_a:String)->void:ship_hud.hint.visible=false)
+## The dwell label (§A3): when the view rests 0.5 s, name the star or body at the screen
+## centre (the I card's own pick, read only) with its distance and "I · details".
+func _update_dwell(delta: float) -> void:
+	if not dwell_on or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible:
+		_dwell_done=false;ship_hud.set_dwell("",Vector2.ZERO);return
+	var pose:Transform3D=camera.global_transform
+	if not pose.is_equal_approx(_dwell_pose):
+		_dwell_pose=pose;_dwell_still=0.;_dwell_done=false;ship_hud.set_dwell("",Vector2.ZERO);return
+	_dwell_still+=delta
+	if _dwell_still>=.5 and not _dwell_done:
+		_dwell_done=true
+		var centre:=ship_hud.size*.5
+		ship_hud.set_dwell(dwell_text_at(centre),centre)
+func dwell_text_at(point: Vector2) -> String:
+	var hits:Array=star_identification.probe(point)
+	if hits.is_empty():return ""
+	var c:Dictionary=hits[0]
+	if c.has("body"):return "%s · %s · I details" % [str(c.body.get("name",c.body.get("id",""))),BodyInfo.distance_text(float(c.distance_km))]
+	var row:Dictionary=star_identification.info.records.get(c.id,{})
+	var pos:Dictionary=sky_world.get("ship",{}).get("pos",{}) if sky_world is Dictionary else {}
+	var d:=""
+	if row.has("x") and not pos.is_empty():
+		d=" · "+distance_text(sqrt(pow(float(row.x)-float(pos.x),2.)+pow(float(row.y)-float(pos.y),2.)+pow(float(row.z)-float(pos.z),2.)))
+	return star_identification.info.display_name(c.id)+d+" · I details"
 
 ## Speed from the sim's exact fields: beta with as many nines as 1 - beta needs, gamma, km/s.
 static func speed_text(ship: Dictionary) -> String:
@@ -987,9 +1077,9 @@ func _solar_departure_smoke()->void:
 		ok=solar_tour.advance() and journey_tick() and live_journey
 		var before:Dictionary=journey_sim.world.duplicate(true)
 		ok=not start_solar_departure() and journey_sim.world==before and ok
-		open_navigation()
-		ok=solar_tour.paused and journey_map.guided_read_only and not journey_map.open_commit_dialog() and ok
-		close_navigation();solar_tour.paused=false
+		open_chart()
+		ok=not solar_tour.paused and journey_map.mode=="chart" and journey_map.guided_read_only and not journey_map.open_commit_dialog() and ok
+		close_navigation()
 		for tick in 20:ok=journey_tick() and ok
 		ok=sky.system_view.drawn_points.has("saturn") and sky_world.ship.phase=="boosting" and sky_world.clock.tau>before.clock.tau and ok
 		for frame in 12:await get_tree().process_frame

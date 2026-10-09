@@ -101,7 +101,9 @@ func test_demo() -> void:
 	check("ready, flat sky, GR off", demo.ready_ok and not demo.sky.gr_lens.active)
 	check("the HUD says GR is off, not 'not implemented'", not demo.ship_hud.all_text().contains("not implemented"))
 	# the navigation menu entry
-	demo.open_navigation()
+	# R1-SHIP-UI: the entry is at the navigation station's helm.
+	demo.consoles.go_to("navigation")
+	demo.consoles.use("navigation", "open")
 	var entry: Button = demo.navigation_window.find_child("SgrAEntry", true, false) if demo.navigation_window != null else null
 	check("navigation menu has 'Sgr A* (black hole)'", entry != null and entry.text.begins_with("Sgr A* (black hole)"))
 	check("a normal navigation session has no gr (protocol 2.5)", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.DEPARTURE_MINOR and not demo.journey_sim.world.has("gr"))

@@ -31,6 +31,7 @@ func _run() -> void:
 	test_control_table()
 	await test_strip_and_cards()
 	await test_dev_gating()
+	await test_dwell()
 	print("ship-ui: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
@@ -59,7 +60,9 @@ func test_control_table() -> void:
 	check("AC7 every matched table row is matched by the demo %s" % [missing_in_code], missing_in_code.is_empty())
 	var kinds := ["display", "pacing", "camera", "move", "dev", "console"]
 	check("AC7 every row has a §F kind", ShipControls.KEYS.all(func(r: Dictionary) -> bool: return r.kind in kinds))
-	check("AC7 every console row names a station", ShipControls.CONSOLE.all(func(r: Dictionary) -> bool: return r.station in ["navigation", "voyage", "archive"]))
+	check("AC7 every console row names a station action use() accepts", ShipControls.CONSOLE.all(func(r: Dictionary) -> bool: return ShipConsoles.ACTIONS.has(r.station) and ShipConsoles.ACTIONS[r.station].has(r.action)))
+	check("AC7 NT5 no key row has kind console", ShipControls.KEYS.all(func(r: Dictionary) -> bool: return r.kind != "console"))
+	check("AC7 N, L and C no longer decide (N is the tour's skip dwell)", ShipControls.row("KEY_N").kind == "pacing" and ShipControls.row("KEY_L").is_empty() and ShipControls.row("KEY_C").is_empty() and ShipControls.row("KEY_M").kind == "display")
 	check("AC7 display controls (V J I Tab H Esc M-chart and the camera keys) are never console", ["KEY_V", "KEY_J", "KEY_I", "KEY_TAB", "KEY_H", "KEY_ESCAPE", "KEY_1", "KEY_R", "KEY_7"].all(func(k: String) -> bool: return ShipControls.row(k).kind != "console"))
 	# F4: near c the digits follow one_minus_beta (never 1 - beta), up to 15 places.
 	check("speed near c: 1 - beta = 1e-12 shows twelve nines (%s)" % Demo.speed_text({"beta": 1.0 - 1e-12, "one_minus_beta": 1e-12, "gamma": 707106.8}), Demo.speed_text({"beta": 1.0 - 1e-12, "one_minus_beta": 1e-12, "gamma": 707106.8}).begins_with("0.999999999999c"))
@@ -290,4 +293,38 @@ func test_dev_gating() -> void:
 	cli._unhandled_input(e2)
 	check("AC11 command-line launch: G toggles guides", cli.guides.visible)
 	cli.queue_free()
+	await process_frame
+
+
+## §A3 the dwell label: the I card's own pick, read only, named with its distance.
+func test_dwell() -> void:
+	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
+	demo.setup_options = {"background": false, "live_start": true, "sky_state": "rest"}
+	root.add_child(demo)
+	await process_frame
+	demo.auto = false
+	demo.journey_auto_tick = false
+	demo.look_direction("forward")
+	await process_frame
+	var ident = demo.star_identification
+	ident.set_held(true)
+	ident.update_candidates()
+	var stars: Array = ident.candidates.filter(func(c): return not c.has("body") and ident.at_point(c.point).size() == 1)
+	ident.set_held(false)
+	check("dwell: the forward view has identifiable stars (%d)" % stars.size(), not stars.is_empty())
+	if not stars.is_empty():
+		var c: Dictionary = stars[0]
+		var t: String = demo.dwell_text_at(c.point)
+		check("dwell label names the star with its distance and I details (%s)" % t, t.begins_with(ident.info.display_name(c.id)) and (t.contains(" ly") or t.contains(" AU")) and t.ends_with("I details"))
+		check("dwell probe leaves no I hold behind", not ident.held and ident.candidates.is_empty() and not ident.card.visible)
+	demo._process(0.3)
+	demo._process(0.3)
+	check("dwell: the view at rest 0.5 s runs the pick once", demo._dwell_done)
+	demo.camera.yaw += 0.4
+	demo._process(0.016)
+	check("dwell: moving the view clears the label", not demo._dwell_done and not demo.ship_hud.dwell.visible)
+	demo.dwell_on = false
+	demo._process(0.6)
+	check("dwell: the Tab toggle turns it off", not demo.ship_hud.dwell.visible)
+	demo.queue_free()
 	await process_frame

@@ -8,7 +8,7 @@ extends SceneTree
 
 const OUT := "res://renders/ship_ui"
 const STD_FLOOR := 0.02
-const FRAMES := ["strip_rest", "transit_cruise", "tour_interlude", "arrival", "tour_dwell", "sgr_a_gravity", "lower_deck"]
+const FRAMES := ["strip_rest", "prompt_navigation", "helm_focused", "chart", "voyage_console", "archive_terminal", "transit_cruise", "tour_interlude", "arrival", "tour_dwell", "sgr_a_gravity", "lower_deck"]
 var demo: Node
 var sizes: Array = [Vector2i(1280, 720), Vector2i(2560, 1440)]
 var only: PackedStringArray = []
@@ -155,9 +155,37 @@ func capture_size(sz: Vector2i) -> void:
 	await process_frame
 
 
-## Frames the later milestones add (consoles, helm, chart, Voyage, Archive).
-func more_frames(_sz: Vector2i) -> void:
-	pass
+## The bridge consoles (U3-U5): the prompt in reach, the helm, the chart, Voyage, Archive.
+func more_frames(sz: Vector2i) -> void:
+	var c: ShipConsoles = demo.consoles
+	c.go_to("navigation")
+	await shot("prompt_navigation", sz)
+	c.use("navigation", "open")
+	for i in 14:
+		demo._process(0.05)
+	await shot("helm_focused", sz)
+	c.leave()
+	for i in 14:
+		demo._process(0.05)
+	demo.open_chart()
+	await shot("chart", sz)
+	demo.close_navigation()
+	c.go_to("voyage")
+	c.use("voyage", "open")
+	for i in 14:
+		demo._process(0.05)
+	await shot("voyage_console", sz)
+	c.leave()
+	c.go_to("archive")
+	c.use("archive", "open")
+	for i in 14:
+		demo._process(0.05)
+	await shot("archive_terminal", sz)
+	c.leave()
+	for i in 14:
+		demo._process(0.05)
+	demo.set_preset("reset")
+	demo.look_direction("forward")
 
 
 func contact_sheet() -> void:
