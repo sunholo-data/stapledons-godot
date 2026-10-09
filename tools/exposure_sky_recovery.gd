@@ -22,6 +22,7 @@ func run()->void:
  DirAccess.make_dir_recursive_absolute(output)
  for phase:String in ["rest","cruise"]:
   if phase=="cruise":
+   demo.open_navigation() # the helm (R1-SHIP-UI: outside it the map plans nothing)
    demo.journey_map.preselect(demo.journey_map.index_of("CNS5:3627"));demo.journey_map.tick()
    demo.journey_map.open_commit_dialog();demo.journey_map.hold_commit(GalaxyMap.HOLD_S);demo.journey_map.tick()
    var plan:Dictionary=demo.journey_sim.world.journey.plan

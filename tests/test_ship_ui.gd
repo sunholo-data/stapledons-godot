@@ -309,9 +309,12 @@ func test_dwell() -> void:
 	var ident = demo.star_identification
 	ident.set_held(true)
 	ident.update_candidates()
-	var stars: Array = ident.candidates.filter(func(c): return not c.has("body") and ident.at_point(c.point).size() == 1)
+	var stars: Array = ident.candidates.filter(func(c): return not c.has("body") and ident.at_point(c.point).size() == 1 and ident.info.names.has(c.id))
 	ident.set_held(false)
-	check("dwell: the forward view has identifiable stars (%d)" % stars.size(), not stars.is_empty())
+	check("dwell: the forward view has named stars (%d)" % stars.size(), not stars.is_empty())
+	var unnamed: Array = ident.candidates.filter(func(c): return not c.has("body") and ident.at_point(c.point).size() == 1 and not ident.info.names.has(c.id))
+	if not unnamed.is_empty():
+		check("dwell: an unnamed catalogue row gets no label (the I card's job)", demo.dwell_text_at(unnamed[0].point) == "")
 	if not stars.is_empty():
 		var c: Dictionary = stars[0]
 		var t: String = demo.dwell_text_at(c.point)

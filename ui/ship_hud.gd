@@ -461,7 +461,9 @@ func set_dwell(text: String, at: Vector2) -> void:
 	dwell_value = text
 	dwell.visible = not text.is_empty()
 	if dwell.visible:
-		dwell.position = at + Vector2(14, -8)
+		dwell.reset_size()
+		var x := minf(at.x + 14.0, column.position.x - MARGIN - dwell.get_combined_minimum_size().x)
+		dwell.position = Vector2(maxf(MARGIN, x), at.y - 8.0)
 
 
 ## Everything the HUD shows as text (tests): strip, cards, prompt, and Tab details when open.

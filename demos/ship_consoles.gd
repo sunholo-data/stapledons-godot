@@ -787,7 +787,7 @@ func _navigation_panel() -> void:
 			panel_body.add_child(_label("Approach under way · K finishes it (pacing).", 13))
 		row.add_child(confirm_button("navigation", "leave", "Leave Sgr A*"))
 		return
-	panel_body.add_child(_label("Plot on the map (a star, Sol, a body here), set the speed, then commit. M is the read-only chart.", 13, Color(0.7, 0.75, 0.85)))
+	panel_title.text = "Navigation station · plot, set speed, commit"
 	demo.open_navigation()
 
 
