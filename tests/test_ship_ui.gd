@@ -61,6 +61,8 @@ func test_control_table() -> void:
 	check("AC7 every row has a §F kind", ShipControls.KEYS.all(func(r: Dictionary) -> bool: return r.kind in kinds))
 	check("AC7 every console row names a station", ShipControls.CONSOLE.all(func(r: Dictionary) -> bool: return r.station in ["navigation", "voyage", "archive"]))
 	check("AC7 display controls (V J I Tab H Esc M-chart and the camera keys) are never console", ["KEY_V", "KEY_J", "KEY_I", "KEY_TAB", "KEY_H", "KEY_ESCAPE", "KEY_1", "KEY_R", "KEY_7"].all(func(k: String) -> bool: return ShipControls.row(k).kind != "console"))
+	# F4: near c the digits follow one_minus_beta (never 1 - beta), up to 15 places.
+	check("speed near c: 1 - beta = 1e-12 shows twelve nines (%s)" % Demo.speed_text({"beta": 1.0 - 1e-12, "one_minus_beta": 1e-12, "gamma": 707106.8}), Demo.speed_text({"beta": 1.0 - 1e-12, "one_minus_beta": 1e-12, "gamma": 707106.8}).begins_with("0.999999999999c"))
 	check("Tab help groups the controls", ShipControls.help_text(false).contains("Display:") and not ShipControls.help_text(false).contains("Developer:") and ShipControls.help_text(true).contains("Developer:"))
 
 
@@ -145,9 +147,14 @@ func test_strip_and_cards() -> void:
 	strip_ok(demo, "rest")
 	check("rest: no cards", hud.cards.is_empty())
 	# A free-navigation commit (the navigation map; the helm in R1-SHIP-UI U4).
+	demo.journey_sim.record_sent = true
 	demo.open_navigation()
 	var committed: bool = demo.journey_map.open_commit_dialog() and demo.journey_map.hold_commit(GalaxyMap.HOLD_S) and demo.journey_tick()
 	check("a journey commits", committed and demo.live_journey)
+	var log: Array = demo.journey_sim.sent_log
+	check("U0 seam: the commit line is recorded with source player", log.any(func(e: Dictionary) -> bool: return e.source == "player" and e.intents.any(func(i: Dictionary) -> bool: return i.get("k", "") == "commit")))
+	demo.journey_tick()
+	check("U0 seam: an empty tick is recorded with source tick", demo.journey_sim.sent_log.back().source == "tick" and demo.journey_sim.sent_log.back().intents.is_empty())
 	demo.close_navigation()
 	demo._process(0.016)
 	strip_ok(demo, "boost")
@@ -184,7 +191,9 @@ func test_strip_and_cards() -> void:
 	demo.toggle_tour_pause()
 	for i in 80:
 		demo._process(0.05) # the arrival attitude turn (3 s) holds the tour
+	demo.journey_sim.record_sent = true
 	check("Skip dwell brings the itinerary's next leg forward", demo.skip_dwell() and demo.solar_tour.pending_index == 0)
+	check("U0 seam: the itinerary's own plan is recorded with source tour", demo.journey_sim.sent_log.size() == 1 and demo.journey_sim.sent_log[0].source == "tour" and demo.journey_sim.sent_log[0].intents[0].k == "plan")
 	for i in 100:
 		if demo.live_journey:
 			break
@@ -202,6 +211,14 @@ func test_strip_and_cards() -> void:
 	check("AC3 interlude chip in the stack while the D-41 card shows", demo.ship_hud.has_card("interlude"))
 	check("AC3 at most two cards expanded %s" % [hud.expanded()], hud.expanded().size() <= ShipHud.MAX_EXPANDED)
 	cards_clear_centre(hud, "tour + transit + interlude")
+	# The D-41 interlude card is the one exemption from the centre third (AC3 note): it keeps
+	# clear of the status strip and of the card column.
+	for sz in [Vector2(960, 540), Vector2(1280, 720), Vector2(2560, 1440)]:
+		hud.size = sz
+		hud._layout()
+		demo._place_interlude()
+		var r := Rect2(demo.interlude_card.position, demo.interlude_card.get_combined_minimum_size().max(demo.interlude_card.size))
+		check("AC3 interlude card clear of the strip and the column at %s (%s)" % [sz, r], r.position.y >= hud.strip_bottom() and r.end.x <= hud.column.position.x)
 	demo.solar_tour.interlude = null
 	demo._show_interlude()
 	demo._process(0.7)

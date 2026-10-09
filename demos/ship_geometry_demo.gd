@@ -855,7 +855,7 @@ func refuse(text: String) -> void:
 func note(text: String) -> void:
 	caption = text
 	if ship_hud == null: return
-	ship_hud.show_card("notice", "Ship", 8.0)
+	ship_hud.show_card("notice", "Ship's log", 8.0)
 	_notice_text(text)
 func dismiss_arrival() -> void:
 	ship_hud.hide_card("arrival")
@@ -892,7 +892,7 @@ static func speed_text(ship: Dictionary) -> String:
 	if not ship.has("one_minus_beta"): return "β %s c" % str(beta)
 	var omb: float = float(ship.one_minus_beta)
 	var n := -log(maxf(omb, 1e-15)) / log(10.0)
-	var digits := clampi(int(round(n)) if absf(n - round(n)) < 1e-9 else int(ceil(n)), 4, 9)
+	var digits := clampi(int(round(n)) if absf(n - round(n)) < 1e-9 else int(ceil(n)), 4, 15)
 	var km_s := String.num_int64(int(round(beta * 299792.458)))
 	var grouped := ""
 	for i in km_s.length():

@@ -1,0 +1,26 @@
+{
+  "sprint_id": "R1-SHIP-UI",
+  "pr": "1 of 3 (U0 HUD half, U1, U2) commit 545887f vs origin/main",
+  "round": 1,
+  "score": 84,
+  "pass": true,
+  "evaluated_from": "committed diff and executor-reported evidence (make test exit 0, ship-ui 149/0, red-first parse error on main); nothing re-run",
+  "rubric": {
+    "tests_pass": {"max": 20, "score": 19, "note": "executor-reported full make test green; red-first shown; not re-run"},
+    "lint_clean": {"max": 10, "score": 9, "note": "lint-precision allowlist row removed with the 1.0-beta fallback; not re-run"},
+    "acceptance_criteria": {"max": 30, "score": 25, "note": "AC1, AC2, AC3, AC7 table parity, AC11 covered by real assertions; AC3 centre-third rule is checked for the card column only, and the D-41 interlude card (acknowledged deviation) covers the centre"},
+    "code_quality": {"max": 15, "score": 12, "note": "ShipHud is clean, fake-clock (advance(dt) only, no wall-clock read); demo is dense one-line style; source-tag seam untested in PR 1"},
+    "documentation": {"max": 15, "score": 14, "note": "changelog, execution notes, sprint Progress, JSON all updated; Progress and JSON honest about deferrals"},
+    "design_fidelity": {"max": 10, "score": 8, "note": "HUD informs, display controls instant, D-12 clocks same size (CLOCK_SIZE shared), no 1.0 - beta; interim Decisions block in Tab and live N/L/C/M keys are the declared PR 1 to PR 2 staging"}
+  },
+  "findings": [
+    {"id": "F1", "severity": "major", "file": "tests/test_ship_ui.gd", "line": 0, "issue": "AC3 'never over the centre third' is asserted only for the card column geometry (cards_clear_centre). The D-41 interlude card (about 825 px wide at 1280x720, x 25..850) does cover the centre third; Execution note 2 accepts this but no test or design-doc AC edit records the exemption.", "suggestion": "Amend AC3 in the design doc to name the interlude exemption, and add a test that the interlude card never overlaps the status strip or the column."},
+    {"id": "F2", "severity": "major", "file": "tools/ship_ui_capture.gd / renders tour_interlude", "line": 0, "issue": "The tour_interlude frame is internally inconsistent: strip shows 0.0042c, ship +0 s, 'Phase boosting', while the interlude card reads 0.986466c, gamma 6.1. The test injects a CardInterlude over a fresh leg, so it is not a real cruise state. The frame is evidence of the layout only, not of the strip in cruise.", "suggestion": "Capture the interlude from a real cruise (drive journey_tick to the cruise phase) so strip and card agree, or label the frame as layout-only."},
+    {"id": "F3", "severity": "minor", "file": "bridge/sim_bridge.gd", "line": 74, "issue": "The source-tagged record seam (record_sent, sent_log, intent_source) has no test in PR 1, although the plan lists it under U0. Its default rule (intents present means player) and one-shot reset are unverified until test_no_twitch lands.", "suggestion": "Add a small unit check now (default tagging, one-shot reset, tour and tick tags) or confirm it is the first test in PR 2."},
+    {"id": "F4", "severity": "minor", "file": "demos/ship_geometry_demo.gd", "line": 888, "issue": "speed_text clamps digits to 9 and formats float64 beta with %.9f, so one_minus_beta below 1e-9 shows 1.000000000c. When one_minus_beta is absent the fallback prints raw beta.", "suggestion": "Cover a near-c case with a test (omb 1e-12) and state the intended display."},
+    {"id": "F5", "severity": "minor", "file": "demos/ship_geometry_demo.gd", "line": 880, "issue": "The interim 'Decisions' block in Tab and live M/N/L/C keys mean decisions are still available from display controls through PR 1. Declared in Execution notes and the plan, so not a failure, but the HUD is not 'information only' until PR 2.", "suggestion": "Keep PR 2 blocking on removal; ensure ship-ui-test table rows for N/L/C/M are updated in the same PR."},
+    {"id": "F6", "severity": "minor", "file": "ui/ship_hud.gd", "line": 0, "issue": "Notice cards are titled just 'Ship' in the renders; chips collapse to a bare title with no one-line summary.", "suggestion": "Use a descriptive title or put the first line of the body in the chip."}
+  ],
+  "deferred_ok": ["consoles, test_ship_consoles, test_no_twitch, dwell label, N/L/C/M removal (PR 2)", "migration, renders sign-off, docs (PR 3)"],
+  "summary": "PR 1 delivers a real ShipHud with strong, specific tests: strip checked in nine scene states against formatted sim fields, digit-free captions, DisplayBinding audit, equal clock sizes, speed from one_minus_beta, card triggers and expiry on a fake clock, priority and two-expanded, and control table parity both ways. Dev gating is tested through key events. The 1.0 - beta fallback is removed. Weak spots: the centre-third rule is tested only for the column (interlude exempt but undocumented in the ACs), the interlude render is a staged inconsistent state, and the record seam has no test yet. Deferrals are legitimate and honestly recorded."
+}

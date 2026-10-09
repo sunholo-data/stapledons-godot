@@ -8,7 +8,7 @@ extends SceneTree
 
 const OUT := "res://renders/ship_ui"
 const STD_FLOOR := 0.02
-const FRAMES := ["strip_rest", "transit_cruise", "arrival", "tour_interlude", "sgr_a_gravity", "lower_deck"]
+const FRAMES := ["strip_rest", "transit_cruise", "tour_interlude", "arrival", "tour_dwell", "sgr_a_gravity", "lower_deck"]
 var demo: Node
 var sizes: Array = [Vector2i(1280, 720), Vector2i(2560, 1440)]
 var only: PackedStringArray = []
@@ -111,25 +111,28 @@ func capture_size(sz: Vector2i) -> void:
 			cruised = true
 			demo.look_direction("forward")
 			await shot("transit_cruise", sz)
+			# The D-41 interlude card over this real cruise (strip and card read the same
+			# state); the guided voyage shows it on its long legs.
+			var card := CardInterlude.new()
+			card.begin(CruiseInterlude.facts_from(demo.journey_sim.world, demo.stop_name()))
+			card.observe(demo.journey_sim.world, demo.stop_name())
+			demo.interlude_card.show_interlude(card)
+			demo.interlude_card.visible = true
+			await shot("tour_interlude", sz)
+			demo.interlude_card.visible = false
 	demo.look_direction("side")
 	await shot("arrival", sz)
 	demo.dismiss_arrival()
-	# The guided voyage's cruise interlude (D-41) with the tour and transit cards.
+	# The guided voyage: the tour card at a stop's dwell, then its first leg under way.
 	demo.start_solar_departure()
 	for i in 80:
 		demo._process(0.05)
+	await shot("tour_dwell", sz)
 	demo.skip_dwell()
 	for i in 100:
 		if demo.live_journey:
 			break
 		demo._process(0.05)
-	var card := CardInterlude.new()
-	card.begin(CruiseInterlude.facts_from(demo.journey_sim.world, demo.solar_tour.leg_name()))
-	demo.solar_tour.interlude = card
-	demo._show_interlude()
-	await shot("tour_interlude", sz)
-	demo.solar_tour.interlude = null
-	demo._show_interlude()
 	for i in 200:
 		if not demo.live_journey:
 			break

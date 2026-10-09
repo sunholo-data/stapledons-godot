@@ -188,7 +188,7 @@ Each row is a command. `make ship-ui-test`, `make ship-console-test` and `make n
 |---|---|---|
 | 1 | The strip shows ship clock, home clock and distance in every scene state (rest, boost, cruise, brake, arrived, tour dwell, interlude, Sgr A*, lower deck); each number equals the sim field formatted (DisplayBinding); captions are digit-free | `make ship-ui-test` |
 | 2 | Clocks are the same font size (D-12); speed shows only while moving, from `ship.one_minus_beta`, which the sim emits in every phase (asserted per state); the fallback and its row in `tests/fixtures/lint_precision/allowlist.txt` are removed (`grep -n "1.0 - beta" demos/ship_geometry_demo.gd ui/ship_hud.gd tests/fixtures/lint_precision/allowlist.txt` is empty) | `make ship-ui-test && make lint-precision` |
-| 3 | Contextual cards appear and leave on their triggers (§A2 table, one case per row); at most two expanded; none overlaps the centre third at 1280×720 or 2560×1440 | `make ship-ui-test` |
+| 3 | Contextual cards appear and leave on their triggers (§A2 table, one case per row); at most two expanded; none overlaps the centre third at 1280×720 or 2560×1440. Exemption (execution note 2): the D-41 cruise interlude card, which instead keeps clear of the status strip and the card column | `make ship-ui-test` |
 | 4 | NT1: the key/mouse sweep sends no decision intent and starts no session in any of the four states | `make no-twitch-test` |
 | 5 | NT2: dialog, panel and confirm survive 600 s of fake time unchanged | `make no-twitch-test` |
 | 6 | NT3/NT4: hold and press-twice confirms; release restarts with no penalty; the intent payload is independent of delay | `make ship-console-test` |

@@ -265,5 +265,16 @@
     }
   ],
   "revision_round_1": "Plan review round 1 (Sonnet, 82/100 PASS, 0 blocking): F1 NT1 split player vs tour intents; F2 no new warp keys; F3 M4.3b/M4.5 row amendments in Q1; F4 7 days; F5 U4a spike + GPU window check AC15; F6 E priority, pan gesture, map keys; F7 concrete conflicts; F8 use point max_r 2.5 m, path lengths; F9 allowlist + one_minus_beta per phase; F11 AC14a + uniform-frame check; F12 seams costed, determinism AC13. F10 (confirm on cancel/leave) kept by design.",
-  "started": "2026-10-09"
+  "started": "2026-10-09",
+  "evaluations": [
+    {
+      "pr": 1,
+      "group": "pr1-hud",
+      "round": 1,
+      "score": 84,
+      "pass": true,
+      "file": ".ailang/state/evaluations/eval_R1-SHIP-UI_pr1-hud_round_1.json",
+      "fixed": "F1 AC3 interlude exemption written into the AC and tested (clear of strip and column); F2 the interlude render now overlays a real cruise (tour_interlude) plus a real tour_dwell frame; F3 SimBridge seam tests (player/tick/tour); F4 speed digits up to 15 nines with a near-c test; F6 notice card titled Ship's log. F5 is the declared staging, closed by PR 2."
+    }
+  ]
 }
