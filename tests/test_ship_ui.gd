@@ -326,6 +326,12 @@ func test_dwell() -> void:
 	demo.camera.yaw += 0.4
 	demo._process(0.016)
 	check("dwell: moving the view clears the label", not demo._dwell_done and not demo.ship_hud.dwell.visible)
+	var hud: ShipHud = demo.ship_hud
+	hud.size = Vector2(960, 540)
+	hud.set_dwell("Alpha Centauri A · 4.32 ly · I details and a long tail of text", Vector2(700, 300))
+	hud.update(demo.hud_view())
+	check("dwell label stays clear of the card column (%s)" % [hud.dwell.get_rect()], hud.dwell.position.x + hud.dwell.get_combined_minimum_size().x <= hud.column.position.x)
+	hud.set_dwell("", Vector2.ZERO)
 	demo.dwell_on = false
 	demo._process(0.6)
 	check("dwell: the Tab toggle turns it off", not demo.ship_hud.dwell.visible)

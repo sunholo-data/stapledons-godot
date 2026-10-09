@@ -569,7 +569,7 @@ func _place_navigation(rect: Rect2) -> void:
 		rect=Rect2(Vector2((vis.x-sz.x)*.5,top),sz)
 	navigation_window.position=Vector2i(rect.position);navigation_window.size=Vector2i(rect.size)
 	# The map's own panel needs about 700 units of height: scale its content to the host.
-	navigation_window.content_scale_factor=clampf(rect.size.y/560.,.62,1.)
+	navigation_window.content_scale_factor=clampf(rect.size.y/600.,.56,1.)
 	navigation_window.show();navigation_window.grab_focus()
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
@@ -952,7 +952,8 @@ func _consoles_setup() -> void:
 ## The dwell label (§A3): when the view rests 0.5 s, name the star or body at the screen
 ## centre (the I card's own pick, read only) with its distance and "I · details".
 func _update_dwell(delta: float) -> void:
-	if not dwell_on or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible or (interlude_card!=null and interlude_card.visible):
+	# Not at Sgr A*: its stars are the Sol sky lensed (design OQ5), so a name and distance mislead.
+	if not dwell_on or black_hole!=null or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible or (interlude_card!=null and interlude_card.visible):
 		_dwell_done=false;ship_hud.set_dwell("",Vector2.ZERO);return
 	var pose:Transform3D=camera.global_transform
 	if not pose.is_equal_approx(_dwell_pose):

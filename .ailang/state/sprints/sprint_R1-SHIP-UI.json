@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-SHIP-UI",
-  "status": "completed",
+  "status": "in_progress",
   "approved": true,
   "approved_by": "Mark Edmondson, attended 2026-10-09 (ledger D-57)",
   "created": "2026-10-08",
@@ -231,7 +231,7 @@
       "passes": true,
       "started": "2026-10-09",
       "completed": "2026-10-09",
-      "notes": "Migrated: test_bh_hud (label -> ShipHud.all_text; Sgr A* entry via the helm at the navigation station), test_free_nav_stop (status strip; fly() opens the helm), test_ship_demo_consolidation (view tag), tools/stops_capture.gd and tools/exposure_sky_recovery.gd (open the helm before planning), tools/ship_demo_optics.gd (hide ShipHud), the export smokes (_export_smoke commits through consoles.use; _solar_departure_smoke checks M is the chart and does not pause). Most callers already used the kept methods. Tab help text = ShipControls.help_text grouped as section F; title Settings confirm mode landed in PR 1. make test green at PR 1 and PR 2 heads; PR 3 full run recorded in the PR."
+      "notes": "Migrated: test_bh_hud (label -> ShipHud.all_text; Sgr A* entry via the helm at the navigation station), test_free_nav_stop (status strip; fly() opens the helm), test_ship_demo_consolidation (view tag), tools/stops_capture.gd and tools/exposure_sky_recovery.gd (open the helm before planning), tools/ship_demo_optics.gd (hide ShipHud), the export smokes (_export_smoke commits through consoles.use; _solar_departure_smoke checks M is the chart and does not pause). Most callers already used the kept methods. Tab help text = ShipControls.help_text grouped as section F; title Settings confirm mode landed in PR 1. make test green at PR 1 and PR 2 heads; PR 3 full run green at 72c5ea6."
     },
     {
       "id": "U7_RENDERS",
@@ -284,8 +284,16 @@
       "pass": true,
       "file": ".ailang/state/evaluations/eval_R1-SHIP-UI_pr2-consoles_round_1.json",
       "fixed": "F1 leave() restores the third-person pullback; F2 use(open) on another station closes the first panel; F3 map hold via the button path, Esc backs out of an armed console confirm; F4 the no-twitch sweep presses every visible HUD button; F5 a commit refused stale_plan is re-planned and committed in the same frame, tested after 2 s of host ticks. F6 render polish -> PR 3; F7 cancel single-click flagged for Mark."
+    },
+    {
+      "pr": 3,
+      "group": "pr3-land",
+      "round": 1,
+      "score": 82,
+      "pass": true,
+      "file": ".ailang/state/evaluations/eval_R1-SHIP-UI_pr3-land_round_1.json",
+      "fixed": "F1 the dwell label is placed after its binding has text, never into the column (tested); F2 helm map scale 0.56+ so Commit/Cancel show in full at 1280x720; F3 no dwell label at Sgr A*; F4 status in_progress until P2. F5: renders are gitignored; the contact sheet path is in the PR body."
     }
   ],
-  "resume_note": "2026-10-09: all milestones done. PR 1 #193 (sprint/ship-ui), PR 2 #195 (sprint/ship-ui-consoles), PR 3 on sprint/ship-ui-land. Remaining: P2 blocking pause (Mark walks the dev build), merge order 193 -> 195 -> PR 3, then move the design doc to implemented/ and update the design repo roadmap.",
-  "completed": "2026-10-09"
+  "resume_note": "2026-10-09: all milestones U0-U8 executed; full make test green at the PR 1, PR 2 and PR 3 heads (PR 3 at 72c5ea6). PRs: #193 (sprint/ship-ui), #195 (sprint/ship-ui-consoles), PR 3 (sprint/ship-ui-land). Status stays in_progress until P2 (blocking): Mark walks a dev build (make publish-dev, not run by the executor), then merge 193 -> 195 -> PR 3, move the design doc to implemented/ and update the design repo roadmap."
 }

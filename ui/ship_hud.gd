@@ -437,6 +437,7 @@ func update(view: Dictionary) -> void:
 	for b: DisplayBinding in _bindings:
 		if is_instance_valid(b):
 			b.update_from(view)
+	_place_dwell()
 	speed.visible = not speed.text.is_empty()
 	distance.visible = not distance.text.is_empty()
 	_layout()
@@ -460,10 +461,20 @@ func show_hint(text: String) -> void:
 func set_dwell(text: String, at: Vector2) -> void:
 	dwell_value = text
 	dwell.visible = not text.is_empty()
-	if dwell.visible:
-		dwell.reset_size()
-		var x := minf(at.x + 14.0, column.position.x - MARGIN - dwell.get_combined_minimum_size().x)
-		dwell.position = Vector2(maxf(MARGIN, x), at.y - 8.0)
+	_dwell_at = at
+	_place_dwell()
+
+
+var _dwell_at := Vector2.ZERO
+
+
+## Beside its point, but never into the card column (placed after the binding has its text).
+func _place_dwell() -> void:
+	if not dwell.visible:
+		return
+	dwell.reset_size()
+	var x := minf(_dwell_at.x + 14.0, column.position.x - MARGIN - dwell.get_combined_minimum_size().x)
+	dwell.position = Vector2(maxf(MARGIN, x), _dwell_at.y - 8.0)
 
 
 ## Everything the HUD shows as text (tests): strip, cards, prompt, and Tab details when open.
