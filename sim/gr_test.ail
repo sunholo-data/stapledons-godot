@@ -140,7 +140,7 @@ pure func reply(s: Session, line: string) -> string = serve(s, line).reply
 pure func at(minor: int, sc: string, params: string) -> Session = feed(newSession(), [helloLine(minor), gameLine(sc, params)])
 pure func checkWireGating() -> bool =
   contains(reply(newSession(), helloLine(6)), "\"proto\":{\"major\":2,\"minor\":6},\"sim\":\"stapledons/sim 0.1.0\",\"relativity\":\"0.10.0\"") &&
-  contains(reply(newSession(), helloLine(9)), "\"minor\":6") && grMinor() == 6 &&
+  contains(reply(newSession(), helloLine(9)), "\"minor\":7") && grMinor() == 6 &&
   -- below 2.6: no sgr_a, and a GR intent makes the line bad_intent
   contains(reply(feed(newSession(), [helloLine(5)]), gameLine("sgr_a", "")), "\"status\":\"bad_game\"") &&
   contains(reply(at(5, "sol", ""), tickLine(1, "0", "{\"k\":\"gr_hover\"}")), "\"status\":\"bad_intent\"") &&

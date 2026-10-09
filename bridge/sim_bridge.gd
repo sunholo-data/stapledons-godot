@@ -25,6 +25,9 @@ const DEPARTURE_MINOR := 5
 ## the `gr` section (parse_gr(), kept in `gr`) and `archive` events. Asked for by
 ## setting `want_minor = GR_MINOR`.
 const GR_MINOR := 6
+## Protocol 2.7 (R1-ISM-DUST): new games fly the measured interstellar medium (lism-1): ship.ism
+## names the medium and carries the dust impacts; journey.plan the media crossed and the hold limit.
+const ISM_MINOR := 7
 
 var _pipe: FileAccess
 var _stderr: FileAccess

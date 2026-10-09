@@ -276,7 +276,7 @@ func _run_transit(args: Dictionary) -> void:
 ## galaxy_map_arrived.png, adding their readouts to the panel dump.
 func _run_map(args: Dictionary) -> void:
 	var capture: bool = args.has("map-capture") or args.has("movie")
-	if not capture:sim.want_minor=SimBridge.DEPARTURE_MINOR
+	if not capture:sim.want_minor=SimBridge.ISM_MINOR # R1-ISM-DUST: new games fly lism-1 (D-61)
 	if capture:
 		get_window().size = Vector2i(1600, 900)
 	sim.record_path = args.get("record", "")
@@ -370,7 +370,7 @@ func _run_interior(args: Dictionary) -> void:
 		get_tree().quit(2)
 		return
 	sim.record_path = args.get("record", "")
-	sim.want_minor = 2 if capture or smoke else SimBridge.DEPARTURE_MINOR
+	sim.want_minor = 2 if capture or smoke else SimBridge.ISM_MINOR # R1-ISM-DUST: lism-1 (D-61)
 	var ai := AiSession.new(args)
 	add_child(ai)
 	sim.archive_rows = LoreLoader.archive_rows(LoreLoader.load_entries()["entries"]) # M4.7: the codex table; the sim decides every unlock
@@ -868,6 +868,7 @@ func _run_golden() -> void:
 	failures += await load("res://tools/exposure_golden.gd").new().run(self)
 	failures += await load("res://tools/cmb_golden.gd").new().run(self)
 	failures += await load("res://tools/interior_golden.gd").new().run(self) # M4.2: G-M4-1..4
+	failures += await load("res://tools/ism_golden.gd").new().run(self) # R1-ISM-DUST: G-ISM-1..3
 	failures += await load("res://tools/m5_golden.gd").new().run(self)
 	failures += await load("res://tools/gr_golden.gd").new().run(self) # M3.5: GR1-GR9
 	print("golden: %d failures" % failures)

@@ -1,0 +1,296 @@
+-- R1-ISM-DUST I4: the interstellar medium the ship flies through (model lism-1,
+-- stapledons-design physics/ism-structure.md; ledger D-60, D-61) and the dust grains
+-- that hit the wall (higgs-bubble.md section 6b).
+--
+-- Pure (runs on the strict VM). The geometry and the physics are sunholo/celestial
+-- (ism) and sunholo/relativity (medium, dust) calls; the cloud tables are the generated
+-- sim/data/ism.ail. Lengths in light years, heliocentric galactic Cartesian.
+--
+-- Media, first match wins: the 14 Redfield & Linsky clouds (cone shells, table order),
+-- the LIC (a star-shaped harmonic surface), then the Local Bubble's hot gas. Route
+-- resolution is exact, never sampled: the boundaries of a straight segment are the
+-- cone and sphere roots (closed form) and the LIC crossings (64-step bracket, 60
+-- bisections); each piece between consecutive boundaries is classified by its midpoint.
+-- The same `profile` serves the plan, the per-tick ledger and the map.
+module stapledons/sim/ism
+
+import std/list (sortBy, length, map, foldl, filter, reverse)
+import std/math (sqrt, cos, log, exp, floor, intToFloat, floatToInt, pow)
+import std/array (fromList as toArray, get, length as alen)
+import pkg/sunholo/celestial/ism (Interval, starSurfaceCrossings, insideStarSurface, coneShellChord, insideConeShell, GrainDist, grainDist, grainsAbove, grainRadiusAt, poissonDraw)
+import pkg/sunholo/relativity/optics (Vec3)
+import pkg/sunholo/relativity/medium (lightYearM, massEquivalentDensity, glowEmittanceAt, glowTemperatureAt, driveHoldMaxPhi)
+import pkg/sunholo/relativity/dust (grainKinetic, grainMassOf, grainRate)
+import ./data/ism (Cloud, clouds, licCentre, licCoeffs, nHWarm, nHHot, deltaLocal, muH, hydrogenMassKg, grainRho, grainAMin, grainABreak, grainAMax, grainQ, efficacyLog10TMin, efficacyStep, efficacyLut)
+import ./rng (splitmix64, mix64, top53)
+
+-- ---------- media ----------
+
+-- id: -1 the uniform scenario medium, 0 hot gas, 1 the LIC, 2 + k the k-th cloud of
+-- data/ism clouds(). nH in cm^-3; nEff the mass-equivalent density n_H (mu_H + delta)
+-- in m^-3 (the uniform medium's n is HB-3's proton density as is).
+export type Medium = { id: int, name: string, nH: float, delta: float, nEff: float }
+
+export pure func warmOrHot(id: int, name: string, nH: float) -> Medium =
+  { id: id, name: name, nH: nH, delta: deltaLocal(), nEff: massEquivalentDensity(nH * 1000000.0, muH(), deltaLocal()) }
+export pure func hotMedium() -> Medium = warmOrHot(0, "hot", nHHot())
+export pure func licMedium() -> Medium = warmOrHot(1, "LIC", nHWarm())
+export pure func cloudMedium(k: int, c: Cloud) -> Medium = warmOrHot(2 + k, c.name, c.nH)
+export pure func uniformMedium(nCm3: float) -> Medium = { id: -1, name: "uniform", nH: nCm3, delta: 0.0, nEff: nCm3 * 1000000.0 }
+
+pure func v3(x: float, y: float, z: float) -> Vec3 = { x: x, y: y, z: z }
+pure func cv(c: Cloud) -> Vec3 = v3(c.axis.x, c.axis.y, c.axis.z)
+pure func licC() -> Vec3 = { let c = licCentre(); v3(c.x, c.y, c.z) }
+
+pure func inCloud(c: Cloud, p: Vec3) -> bool = insideConeShell(cv(c), c.cosHalf, c.rIn, c.rOut, p)
+
+pure func firstCloud(cs: [Cloud], k: int, p: Vec3) -> Medium = match cs {
+  [] => if insideStarSurface(licC(), licCoeffs(), p) then licMedium() else hotMedium(),
+  c :: rest => if inCloud(c, p) then cloudMedium(k, c) else firstCloud(rest, k + 1, p)
+}
+
+-- The medium at a point (lism-1).
+export pure func mediumAt(p: Vec3) -> Medium = firstCloud(clouds(), 0, p)
+
+-- ---------- route profiles ----------
+
+-- A piece of a straight leg a -> b: s0 < s1 in light years from a, in one medium.
+export type Seg = { s0: float, s1: float, medium: Medium }
+
+pure func lerp(a: Vec3, b: Vec3, t: float) -> Vec3 = v3(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t)
+pure func dist(a: Vec3, b: Vec3) -> float { let dx = b.x - a.x; let dy = b.y - a.y; let dz = b.z - a.z; sqrt(dx * dx + dy * dy + dz * dz) }
+
+pure func ends(is: [Interval], acc: [float]) -> [float] = match is { [] => acc, i :: rest => ends(rest, i.t0 :: i.t1 :: acc) }
+
+pure func cloudTs(cs: [Cloud], a: Vec3, b: Vec3, acc: [float]) -> [float] = match cs {
+  [] => acc,
+  c :: rest => cloudTs(rest, a, b, ends(coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b), acc))
+}
+
+pure func cmpF(x: float, y: float) -> int = if x < y then -1 else if x > y then 1 else 0
+
+pure func uniq(ts: [float], acc: [float]) -> [float] = match ts {
+  [] => reverse(acc),
+  t :: rest => match acc { p :: _ => if p == t then uniq(rest, acc) else uniq(rest, t :: acc), [] => uniq(rest, [t]) }
+}
+
+pure func clamp01(ts: [float], acc: [float]) -> [float] = match ts {
+  [] => acc,
+  t :: rest => if t > 0.0 && t < 1.0 then clamp01(rest, t :: acc) else clamp01(rest, acc)
+}
+
+pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, acc: [Seg]) -> [Seg] = match ts {
+  t0 :: rest => match rest {
+    t1 :: _ => {
+      let m = mediumAt(lerp(a, b, 0.5 * (t0 + t1)));
+      let s0 = t0 * len;
+      let s1 = t1 * len;
+      match acc {
+        g :: more => if g.medium.id == m.id then segsOf(rest, a, b, len, { s0: g.s0, s1: s1, medium: m } :: more) else segsOf(rest, a, b, len, { s0: s0, s1: s1, medium: m } :: acc),
+        [] => segsOf(rest, a, b, len, [{ s0: s0, s1: s1, medium: m }])
+      }
+    },
+    [] => reverse(acc)
+  },
+  [] => reverse(acc)
+}
+
+-- The ordered, gap-free, merged pieces of a -> b (lism-1). A zero-length leg is one
+-- empty piece in the medium at a.
+export pure func profile(a: Vec3, b: Vec3) -> [Seg] {
+  let len = dist(a, b);
+  if !(len > 0.0) then [{ s0: 0.0, s1: 0.0, medium: mediumAt(a) }]
+  else {
+    let ts = uniq(sortBy(cmpF, 0.0 :: 1.0 :: clamp01(cloudTs(clouds(), a, b, starSurfaceCrossings(licC(), licCoeffs(), a, b)), [])), []);
+    segsOf(ts, a, b, len, [])
+  }
+}
+
+-- Sub-profile of the leg between s = lo and s = hi (light years from a), for the
+-- coast of a plan or the piece a tick flew.
+export pure func window(segs: [Seg], lo: float, hi: float) -> [Seg] =
+  filter(\g. g.s1 > g.s0, map(\g. { s0: if g.s0 > lo then g.s0 else lo, s1: if g.s1 < hi then g.s1 else hi, medium: g.medium }, filter(\g. g.s1 > lo && g.s0 < hi, segs)))
+
+-- Mass-equivalent column (m^-2) and H column (cm^-3 ly) of a list of pieces.
+export pure func columnEff(segs: [Seg]) -> float = foldl(\acc g. acc + g.medium.nEff * (g.s1 - g.s0) * lightYearM(), 0.0, segs)
+export pure func columnNH(segs: [Seg]) -> float = foldl(\acc g. acc + g.medium.nH * (g.s1 - g.s0), 0.0, segs)
+
+-- The densest medium on a list of pieces (the first one if they tie); the hot gas if empty.
+export pure func peakMedium(segs: [Seg]) -> Medium = foldl(\m g. if g.medium.nEff > m.nEff then g.medium else m, (match segs { g :: _ => g.medium, [] => hotMedium() }), segs)
+
+-- One line of the plan's media list: the length of each medium on the leg, in the
+-- order first met.
+export type MediaRow = { name: string, nH: float, lengthLy: float }
+
+pure func addLen(rows: [MediaRow], g: Seg, acc: [MediaRow], found: bool) -> [MediaRow] = match rows {
+  [] => if found then reverse(acc) else reverse({ name: g.medium.name, nH: g.medium.nH, lengthLy: g.s1 - g.s0 } :: acc),
+  r :: rest => if r.name == g.medium.name then addLen(rest, g, { name: r.name, nH: r.nH, lengthLy: r.lengthLy + g.s1 - g.s0 } :: acc, true) else addLen(rest, g, r :: acc, found)
+}
+
+export pure func mediaRows(segs: [Seg]) -> [MediaRow] = foldl(\rows g. addLen(rows, g, [], false), [], segs)
+
+-- ---------- the drive-hold limit ----------
+
+-- The highest cruise rapidity the drive (mEff kg, a m/s^2) can hold and brake from on
+-- these pieces: driveHoldMaxPhi at their peak mass-equivalent density (D-61: a plan
+-- above it is refused and the limit shown, never capped).
+export pure func holdMaxPhi(segs: [Seg], mEff: float, a: float, r: float) -> float = driveHoldMaxPhi(mEff, a, (peakMedium(segs)).nEff, r)
+
+-- ---------- dust grains ----------
+
+-- The scenario's grain and afterglow settings (G-AG, a labelled game approximation).
+-- wRtS: the real-time display window, ship seconds (what one 20 Hz tick holds).
+export type DustCfg = { eps: float, fIn: float, rSpot: float, tau: float, r: float, darkSky: float, wRtS: float, aMax: float, q: float, hotDelta: float }
+export pure func defaultDustCfg(eps: float, fIn: float, r: float) -> DustCfg =
+  { eps: eps, fIn: fIn, rSpot: 0.5, tau: 0.2, r: r, darkSky: 0.00004327, wRtS: 0.05, aMax: grainAMax(), q: grainQ(), hotDelta: deltaLocal() }
+
+export pure func distOf(m: Medium, c: DustCfg) -> GrainDist {
+  let delta = if m.id == 0 then c.hotDelta else m.delta;
+  grainDist(m.nH * 1000000.0 * hydrogenMassKg() * delta, grainAMin(), grainABreak(), c.aMax, c.q, grainRho())
+}
+
+-- The luminous efficacy of blackbody light at T from the generated table (log-linear
+-- interpolation; 0 below 10 K, the last bin's slope above 1e7 K).
+export pure func efficacyAt(lut: Array[float], t: float) -> float =
+  if !(t > 10.0) then 0.0
+  else {
+    let x = (log(t) / log(10.0) - efficacyLog10TMin()) / efficacyStep();
+    let n = alen(lut);
+    let i0 = floatToInt(floor(x));
+    let i = if i0 > n - 2 then n - 2 else if i0 < 0 then 0 else i0;
+    let f = x - intToFloat(i);
+    let e0 = get(lut, i);
+    let e1 = get(lut, i + 1);
+    if e0 > 0.0 && e1 > 0.0 then exp(log(e0) + f * (log(e1) - log(e0))) else e0 + f * (e1 - e0)
+  }
+
+-- Peak luminance (cd/m^2) of a grain's afterglow: E0 / pi x efficacy(T0), with the
+-- package's G-AG temperature and emittance at t = 0 written out (the same formulas).
+pure func peakLuminance(lut: Array[float], ke: float, c: DustCfg) -> float {
+  let x = ke / (0.00000005670374419 * 3.141592653589793 * c.rSpot * c.rSpot * c.tau);
+  let t0 = if x > 0.0 then sqrt(sqrt(x)) else 0.0;
+  let e0 = c.eps * c.fIn * ke / (3.141592653589793 * c.rSpot * c.rSpot * c.tau);
+  e0 / 3.141592653589793 * efficacyAt(lut, t0)
+}
+
+pure func okAt(lut: Array[float], a: float, phi: float, need: float, c: DustCfg) -> bool =
+  peakLuminance(lut, grainKinetic(grainMassOf(a, grainRho()), phi), c) >= need
+
+pure func bisectA(lut: Array[float], lo: float, hi: float, n: int, phi: float, need: float, c: DustCfg) -> float =
+  if n <= 0 then exp(hi)
+  else {
+    let mid = 0.5 * (lo + hi);
+    if okAt(lut, exp(mid), phi, need, c) then bisectA(lut, lo, mid, n - 1, phi, need, c) else bisectA(lut, mid, hi, n - 1, phi, need, c)
+  }
+
+-- The smallest grain whose peak afterglow is at least contrast x the background
+-- (dust.visibleRadius with the tabulated efficacy; checked against it in ism_test).
+-- aMax x 1.000001 when none.
+export pure func thresholdRadius(lut: Array[float], phi: float, bg: float, contrast: float, c: DustCfg) -> float {
+  let need = contrast * bg;
+  if !okAt(lut, c.aMax, phi, need, c) then c.aMax * 1.000001
+  else if okAt(lut, grainAMin(), phi, need, c) then grainAMin()
+  else bisectA(lut, log(grainAMin()), log(c.aMax), 60, phi, need, c)
+}
+
+-- The background a flash competes with at the forward pole: the glow there and the dark
+-- sky (cd/m^2).
+export pure func backgroundAt(lut: Array[float], m: Medium, phi: float, c: DustCfg) -> float =
+  glowEmittanceAt(m.nEff, phi, c.eps, c.fIn, 1.0) / 3.141592653589793 * efficacyAt(lut, glowTemperatureAt(m.nEff, phi, 1.0)) + c.darkSky
+
+-- Visible (>= 5 % of the background) and bright (>= the background) thresholds of a
+-- medium at a speed.
+export type Thresh = { mediumId: int, phi: float, aVis: float, aBright: float }
+export pure func thresholds(lut: Array[float], m: Medium, phi: float, c: DustCfg) -> Thresh {
+  let bg = backgroundAt(lut, m, phi, c);
+  { mediumId: m.id, phi: phi, aVis: thresholdRadius(lut, phi, bg, 0.05, c), aBright: thresholdRadius(lut, phi, bg, 1.0, c) }
+}
+
+pure func cached(ts: [Thresh], m: Medium, phi: float) -> [Thresh] = filter(\t. t.mediumId == m.id && t.phi == phi, ts)
+
+pure func threshFor(lut: Array[float], cache: [Thresh], m: Medium, phi: float, c: DustCfg) -> Thresh =
+  match cached(cache, m, phi) { t :: _ => t, [] => thresholds(lut, m, phi, c) }
+
+export pure func lutArray() -> Array[float] = toArray(efficacyLut())
+
+-- ---------- the stateless dust stream ----------
+
+-- Uniform [0, 1) number j of tick k: splitmix64(key, k * 1024 + j), top 53 bits. The
+-- key mixes the game seed with a dust salt, so no existing Rng stream is consumed.
+export pure func dustSalt() -> int = 1146442580
+export pure func dustKey(seed: int) -> int = mix64(mix64(seed) ^ dustSalt())
+export pure func slotsPerTick() -> int = 1024
+export pure func dustU(key: int, k: int, j: int) -> float = intToFloat(top53(splitmix64(key, k * slotsPerTick() + j))) / 9007199254740992.0
+
+-- One bright impact: grain radius (m), its kinetic energy (J), the point on the
+-- forward wall's projected unit disc (x, y; cos theta-weighted on the wall), the
+-- time in the display window (ship seconds) and the medium.
+export type Impact = { a: float, ke: float, x: float, y: float, t: float, medium: string }
+
+-- What one tick's dust adds up to. expected/drawn: bright grains (>= the background)
+-- over the whole piece flown (exact at any pacing); events: those in the display
+-- window (at most 32; dropped counts the rest); glitter: the faint flashes
+-- (5 % <= contrast < 1) the renderer draws itself from its rate per ship second, the
+-- size range and a seed.
+export type Glitter = { rate: float, aLo: float, aHi: float, q: float, seed: int }
+export type DustTick = { expected: float, drawn: int, events: [Impact], dropped: int, window: float, glitter: Glitter, cache: [Thresh] }
+
+export pure func maxEvents() -> int = 32
+export pure func noGlitter() -> Glitter = { rate: 0.0, aLo: 0.0, aHi: 0.0, q: 0.0, seed: 0 }
+export pure func noDust(cache: [Thresh]) -> DustTick = { expected: 0.0, drawn: 0, events: [], dropped: 0, window: 0.0, glitter: noGlitter(), cache: cache }
+
+pure func addCache(cache: [Thresh], t: Thresh) -> [Thresh] = match cached(cache, { id: t.mediumId, name: "", nH: 0.0, delta: 0.0, nEff: 0.0 }, t.phi) { [] => t :: take8(cache, 7, []), _ => cache }
+pure func take8(xs: [Thresh], n: int, acc: [Thresh]) -> [Thresh] = if n <= 0 then reverse(acc) else match xs { [] => reverse(acc), x :: rest => take8(rest, n - 1, x :: acc) }
+
+pure func mkEvents(key: int, k: int, i: int, n: int, d: GrainDist, aB: float, phi: float, w: float, name: string, acc: [Impact]) -> [Impact] =
+  if i >= n then reverse(acc)
+  else {
+    let a = grainRadiusAt(d, aB, dustU(key, k, 2 + 4 * i));
+    let r = sqrt(dustU(key, k, 3 + 4 * i));
+    let psi = 2.0 * 3.141592653589793 * dustU(key, k, 4 + 4 * i);
+    mkEvents(key, k, i + 1, n, d, aB, phi, w, name,
+      { a: a, ke: grainKinetic(grainMassOf(a, grainRho()), phi), x: r * cos(psi), y: r * cos(psi - 1.5707963267948966), t: dustU(key, k, 5 + 4 * i) * w, medium: name } :: acc)
+  }
+
+pure func brightAlong(lut: Array[float], segs: [Seg], phi: float, c: DustCfg, cache: [Thresh], mu: float) -> (float, [Thresh]) = match segs {
+  [] => (mu, cache),
+  g :: rest => {
+    let t = threshFor(lut, cache, g.medium, phi, c);
+    let nb = grainsAbove(distOf(g.medium, c), t.aBright);
+    brightAlong(lut, rest, phi, c, addCache(cache, t), mu + 3.141592653589793 * c.r * c.r * nb * (g.s1 - g.s0) * lightYearM())
+  }
+}
+
+-- The dust of one tick: the pieces flown (segs), the rapidity, the ship seconds flown
+-- (dtauS) and the medium at the end (whose grains the display window shows).
+-- Stream layout per tick (key, k): slots 0-1 the window's Poisson draw, 2 + 4 i .. 5 + 4 i
+-- the i-th event (size, disc radius, disc angle, time), i < 32 (130 slots); slots
+-- 1022-1023 the rest of the tick's bright total under time compression.
+export pure func dustTick(key: int, k: int, segs: [Seg], phi: float, dtauS: float, here: Medium, c: DustCfg, cache: [Thresh], lut: Array[float]) -> DustTick =
+  if !(phi > 0.0) || !(dtauS > 0.0) then noDust(cache)
+  else match brightAlong(lut, segs, phi, c, cache, 0.0) {
+    (mu, cache1) => {
+      let th = threshFor(lut, cache1, here, phi, c);
+      let cache2 = addCache(cache1, th);
+      let w = if dtauS < c.wRtS then dtauS else c.wRtS;
+      let muW = mu * w / dtauS;
+      let kW = poissonDraw(muW, dustU(key, k, 0), dustU(key, k, 1));
+      let kept = if kW > maxEvents() then maxEvents() else kW;
+      let rest = if mu > muW then poissonDraw(mu - muW, dustU(key, k, 1022), dustU(key, k, 1023)) else 0;
+      let d = distOf(here, c);
+      let rateVis = grainRate(grainsAbove(d, th.aVis), phi, c.r);
+      let rateBright = grainRate(grainsAbove(d, th.aBright), phi, c.r);
+      { expected: mu, drawn: kW + rest, events: mkEvents(key, k, 0, kept, d, th.aBright, phi, w, here.name, []), dropped: kW - kept, window: w,
+        glitter: { rate: if rateVis > rateBright then rateVis - rateBright else 0.0, aLo: th.aVis, aHi: th.aBright, q: c.q, seed: top53(splitmix64(key, k * slotsPerTick() + 1021)) },
+        cache: cache2 }
+    }
+  }
+
+-- Expected grains swept (radius >= aLo) along pieces: pi R^2 sum n_gr(>= aLo) ds.
+export pure func grainsSwept(segs: [Seg], aLo: float, c: DustCfg) -> float =
+  foldl(\acc g. acc + 3.141592653589793 * c.r * c.r * grainsAbove(distOf(g.medium, c), aLo) * (g.s1 - g.s0) * lightYearM(), 0.0, segs)
+
+-- Expected visible flashes (>= 5 % of the background) along pieces at a cruise rapidity.
+export pure func visibleAlong(lut: Array[float], segs: [Seg], phi: float, c: DustCfg) -> float =
+  if !(phi > 0.0) then 0.0
+  else foldl(\acc g. acc + 3.141592653589793 * c.r * c.r * grainsAbove(distOf(g.medium, c), (thresholds(lut, g.medium, phi, c)).aVis) * (g.s1 - g.s0) * lightYearM(), 0.0, segs)

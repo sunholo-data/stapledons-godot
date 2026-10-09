@@ -26,7 +26,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ## everything that runs without a GPU window
+test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-determinism dust-flash-test map-ism-test ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -298,6 +298,7 @@ golden: lens-assets ## GPU shader vs CPU reference star positions (needs a GPU w
 	  grep -q '^ok    GR7 inside the shadow' $(SCRATCH)/golden.log && grep -q '^ok    GR8 colour' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    GR9 weak-field' $(SCRATCH)/golden.log)" = 2 && test "$$(grep -c '^ok    GR10 lens_fwd mirror' $(SCRATCH)/golden.log)" = 5 && \
 	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && test "$$(grep -c '^ok    GR12 mutant' $(SCRATCH)/golden.log)" = 3 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
 	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3)"; exit 1; }
 
@@ -722,6 +723,7 @@ include mk/ai.mk
 include mk/site.mk
 include mk/m5.mk
 include mk/m45.mk
+include mk/ism.mk
 
 # Isolated seven-tier perspective/lift smoke test. Does not replace production rendering.
 run-ship-demo:
