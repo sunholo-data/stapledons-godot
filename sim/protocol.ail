@@ -56,16 +56,17 @@ export type HelloMsg = { major: int, minor: int, sim: string, relativity: string
 
 -- relativity: below minor 4 the hello keeps the string every recorded stream and golden
 -- carries ("0.4.0", stale since the 0.5 pins); minors 4 and 5 keep "0.9.0", the release
--- they shipped with (relativityPinNav, frozen like "0.4.0"); relativityPin() is the
--- current pin, reported from minor 6 (GR, M3.4b), which `make hello-pin` checks
--- against sim/ailang.toml.
+-- they shipped with (relativityPinNav, frozen like "0.4.0"); minor 6 (GR, M3.4b) keeps
+-- "0.10.0" (relativityPinGr, frozen); relativityPin() is the current pin, which
+-- `make hello-pin` checks against sim/ailang.toml, reported from the next minor.
 export pure func helloMsg() -> HelloMsg = { major: 2, minor: 1, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
-export pure func relativityPin() -> string = "0.10.0"
+export pure func relativityPin() -> string = "0.11.0"
+export pure func relativityPinGr() -> string = "0.10.0"
 export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= grMinor() then {helloMsg() | minor: grMinor(), relativity: relativityPin()}
+  if want >= grMinor() then {helloMsg() | minor: grMinor(), relativity: relativityPinGr()}
   else if want >= departureMinor() then {helloMsg() | minor: departureMinor(), relativity: relativityPinNav()}
   else if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPinNav()}
   else if want >= systemMinor() then {helloMsg() | minor: systemMinor()} else if want >= 2 then {helloMsg() | minor: 2} else helloMsg()
@@ -81,7 +82,7 @@ export pure func departureMinor() -> int = 5
 -- Protocol 2.6 (M3.4b, R1-M3-BLACK-HOLES): the new_game scenario `sgr_a` (params bh_mass_msun,
 -- bh_r), the intents gr_approach {to_r, beta_local}, gr_hover, gr_orbit and gr_ring, the `gr`
 -- section and `archive` events. Below 6 they are bad_game / bad_intent; the hello reports
--- relativityPin(). A sol stream at 2.6 is the 2.5 stream except the hello's minor and pin.
+-- relativityPinGr(). A sol stream at 2.6 is the 2.5 stream except the hello's minor and pin.
 export pure func grMinor() -> int = 6
 pure func sessionMinor(want: int) -> int = if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
