@@ -45,21 +45,24 @@ func _run() -> void:
 	var barnard := "Gaia DR3 4472832130942575872"
 	fly(demo, barnard, "Earth")
 	var hud: String = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
-	check(hud.begins_with("At Barnard's Star 1000") and hud.contains(" AU · from Earth 5.9"), "HUD at the stop: " + hud)
+	# D-58: Barnard's Star has no measured radius; the sim infers one from its catalogue row
+	# (V, distance, Teff; sunholo/relativity 0.11.0) and stops where it looks 4.4 deg across.
+	var bb := body_of(demo, "cat:" + barnard)
+	var b_km := Planets.length64(Planets.world_of(bb.rel_km))
+	var b_deg := rad_to_deg(2.0 * Planets.angular_radius(bb.radius_km, b_km))
+	check(bb.get("status", "") == "inferred" and bb.get("catalogue_id", "") == barnard and absf(bb.radius_km / 695700.0 - 0.19) < 0.02 and absf(b_deg - 4.37) < 0.05, "Barnard's Star is a finite star with an inferred radius %.3f R_sun, %.2f deg across" % [bb.radius_km / 695700.0, b_deg])
+	check(hud.begins_with("At Barnard's Star 0.02") and hud.contains(" AU · from Earth 5.9"), "HUD at the stop: " + hud)
 	demo._process(0.0)
 	check(demo.ship_hud.distance.text.contains("At Barnard's Star") and demo.ship_hud.where.text.contains("Barnard's Star"), "the status strip carries the stop line (R1-SHIP-UI)")
 	demo.look_direction("forward"); await process_frame
 	var ident = demo.star_identification
 	ident.set_held(true); ident.update_candidates()
-	var hit: Array = ident.candidates.filter(func(c): return c.id == barnard)
-	check(hit.size() == 1, "I offers the destination star by its catalogue id (%d candidates)" % ident.candidates.size())
+	var hit: Array = ident.candidates.filter(func(c): return c.id == "body:cat:" + barnard)
+	check(hit.size() == 1 and ident.candidates.filter(func(c): return c.id == barnard).is_empty(), "I offers the destination as its finite body, not the hidden catalogue point (%d candidates)" % ident.candidates.size())
 	if hit.size() == 1:
-		var click := InputEventMouseButton.new(); click.button_index = MOUSE_BUTTON_LEFT; click.pressed = true; click.position = hit[0].point
-		var picked: Array = ident.at_point(hit[0].point)
-		if picked.size() > 1: ident.inspect(barnard)
-		else: ident.handle_input(click)
+		ident.inspect(hit[0].id)
 		var text: String = ident.content.get_child(0).text if ident.content.get_child_count() > 0 else ""
-		check(ident.selected_id == barnard and ident.card.visible and text.contains("Barnard's Star") and text.contains("5.96"), "its card opens: " + text.replace("\n", " | "))
+		check(ident.card.visible and text.contains("Barnard's Star") and text.contains("Radius inferred, not measured") and text.contains("inferred radius: R = sqrt(L)") and text.contains("Catalogue: Barnard's Star"), "its card says the radius is inferred: " + text.replace("\n", " | "))
 	ident.set_held(false); ident.close_card()
 	# A second leg from the stop: D-54 (Mark, 2026-10-08) stops at alpha Cen A where it looks
 	# 2 atan(tan 5 deg sqrt(1.22)) = 11 deg across (0.059 AU), not 1,000 AU; the HUD names the stop it left.
@@ -116,6 +119,12 @@ func _run() -> void:
 	hud = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
 	check(hud.begins_with("At Earth 24,") and hud.contains("from Alpha Centauri B 4.") and not hud.contains("from Earth"), "HUD at home: " + hud)
 	check(demo.journey_sim.world.consequence.get("news_age_years", -1.0) < 0.001, "news at Earth is fresh")
+	var earth_card: String = load("res://ui/body_info.gd").text(earth)
+	check(earth_card.contains("Synchronous orbit: 35,786 km above the surface"), "Earth's card has its geostationary orbit: " + earth_card.replace("\n", " | "))
+	var moon_card: String = load("res://ui/body_info.gd").text(body_of(demo, "moon"))
+	check(moon_card.contains("Synchronous orbit: none. Moon is tidally locked to Earth"), "the Moon's card says none, tidally locked")
+	var venus_card: String = load("res://ui/body_info.gd").text(body_of(demo, "venus"))
+	check(venus_card.contains("Synchronous orbit: none. It turns once in 243.02 days") and venus_card.contains("Hill sphere"), "Venus's card says none, too slow: " + venus_card.replace("\n", " | "))
 	map.refresh()
 	check(map.system_ids.has("jupiter") and map.system_ids.has("moon") and map.system_ids.has("sun") and map.system_ids.has("saturn"), "the Solar System is around the ship: %d bodies" % map.system_ids.size())
 	fly_body(demo, "saturn", "Earth")

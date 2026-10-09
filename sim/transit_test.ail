@@ -21,7 +21,7 @@ pure func relNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol *
 pure func acen() -> Target = {index: 1, id: "alpha Cen", pos: {x: 0.0, y: 0.0, z: -4.37}}
 pure func world0() -> World = newWorld(3, false, {defaultParams() | standoffAu: 1000.0})
 pure func run(w: World, dtau: float, xs: [Intent]) -> Ticked = tick(w, {dtau: dtau, intents: xs})
-pure func planned() -> World = (run(world0(), 0.0, [IPlan({target: acen(), cruisePhi: rapidityOfBeta(0.99), flipG: None})])).world
+pure func planned() -> World = (run(world0(), 0.0, [IPlan({target: acen(), cruisePhi: rapidityOfBeta(0.99), flipG: None, star: None})])).world
 pure func committed() -> World = (run(planned(), 0.0, [ICommit(1)])).world
 pure func reasons(t: Ticked) -> [string] = match t.refused { [] => [], r :: _ => [r.reason] }
 pure func isCommitted(j: Journey) -> bool = match j { Committed(_) => true, _ => false }

@@ -66,10 +66,26 @@ Non-goals (blocked, see Open questions): radii inferred from catalogue luminosit
 
 ## Open questions for the user
 
-1. **Package release needed (CLAUDE.md gate 3), not written in game code:** radii for uncited catalogue stars need (a) a bolometric correction BC_V(Teff) table (e.g. Pecaut & Mamajek), (b) luminosity from V, distance and BC (M_bol, L/L_sun), (c) R from L and Teff (Stefan-Boltzmann). A blackbody bolometric correction composed from existing functions (`illuminanceFromV`, `luminousEfficacy`, `stefanBoltzmannSI`) is within 10% for FGK stars but gives M dwarfs a third of their radius (Proxima 0.05 vs 0.154 R_sun), so it was not used. Proposed `sunholo/relativity` (photometry) exports: `bolometricCorrectionV(teffK)`, `luminositySunFromV(v, distancePc, bc)`, `radiusSunFromLuminosity(lSun, teffK)`.
-2. **Synchronous orbit** on the I card needs `sunholo/celestial` `semiMajorAxisFromPeriod(gm, periodDays)` (or `synchronousOrbitKm(gm, siderealDays)`); not written.
-3. The ring rule (dense = tau >= 0.1) keeps Mark's Jupiter 84 and Neptune 55 deg. Is that the intended reading of "outside rings"?
+All three are resolved (D-58, Mark attended 2026-10-09): the package release was approved and done, and the ring rule as built (dense rings, tau >= 0.1) is what Mark chose. See "D-58 completion" below.
+
+## D-58 completion: inferred radii, synchronous orbits, the ISCO (2026-10-09)
+
+Packages first (CLAUDE.md gate 3), ailang-packages PR #105, both published:
+- `sunholo/relativity` 0.11.0: `bolometricCorrectionV(teffK)` (Pecaut & Mamajek 2022.04.16 BCv, clamped), `luminositySunFromV(v, distancePc, bc)` (M_bol,sun 4.74, IAU 2015 B2), `radiusSunFromLuminosity(lSun, teffK)` (Stefan-Boltzmann, 5772 K); `schwarzschild.isco()` = 3 r_s; the geodesic step-size note corrected. Validated there against measured radii: Sun -0.3 %, alpha Cen A -0.3 %, B -1.6 %, Aldebaran -4.5 %, Arcturus +3.7 %, Barnard's +0.3 %, TRAPPIST-1 about +10 %, Proxima -31 % with Segransan's 3042 K (the M-dwarf limit). Torres 2010 was measured and rejected for M dwarfs.
+- `sunholo/celestial` 0.3.0: `semiMajorAxisFromPeriod(gm, periodDays)`.
+
+Game (`feat/inferred-radii`):
+- `sim/inferred_stars.ail`: a free-navigation star plan (stop_rule 54) may carry the map's catalogue row `{star: {name, v, teff}}` (protocol 2.7, `stopsMinor`). A star with no cited radius becomes a finite star (status `inferred`, its catalogue id, Teff colour, the inferred `{r_sun, l_sun, bc_v, distance_pc, v}`) and the leg stops at its D-54 distance; the world keeps it (`World.catStars`) while the ship is within 0.1 ly or it is the journey's target. Rows without photometry keep 1,000 AU. The I card says "Radius inferred, not measured" with L, V, distance and BC_V.
+- `sim/sync_orbit.ail`: each Sol body's stationary orbit from its WGCCRE rotation rate and GM (Kepler's third law), "none" when tidally locked (rotation within 2 % of the orbital period) or when it lies beyond the Hill sphere (the same law with GM/3 and the orbital period). Earth 35,786 km, Mars 17,031 km, Jupiter 88,517 km, the Sun 24.6 million km; the Moon and every moon here locked; Mercury and Venus too slow. On the wire as `sync_orbit` (2.7); `ui/body_info.gd` formats the line.
+- `sim/gr.ail` takes `isco()` from the package. The hello reports relativity 0.11.0 at 2.7; 2.6 keeps 0.10.0.
+- Stops at inferred stars (`tools/stops_capture.gd -- --inferred`, `renders/stops/inferred/`): Barnard's Star 0.189 R_sun (measured 0.178-0.187), 4.36 deg at 0.023 AU; Proxima Centauri 0.156 R_sun with the catalogue's 2905 K (measured 0.154), 3.96 deg; 61 Cygni A 0.655 R_sun (measured 0.665), 8.1 deg; Vega 2.62 R_sun (polar 2.36, equatorial 2.82: a fast rotator), 16.1 deg.
+
+| # | Criterion | Command |
+|---|---|---|
+| 8 | Inferred star stop (Barnard's) and sync orbits on the 2.7 wire; stop_rule 0 or no row keeps 1,000 AU | `cd sim && ailang test stops_test.ail`, `make strict` (stopsVm) |
+| 9 | Sync orbits: Earth 35,786, Mars 17,032, Jupiter 88,517 km; locked moons; Mercury and Venus slow | `cd sim && ailang test sync_orbit_test.ail` |
+| 10 | Real flow: Barnard's Star arrives finite (0.189 R_sun, 4.37 deg), the I card says inferred; Earth's card 35,786 km, the Moon's none (locked), Venus's none (slow) | `make free-nav-stop-test` |
 
 ## Deliverables
 
-`sim/stops.ail`, `sim/stops_test.ail`, the navigation/core/protocol/solar_departure changes, `ui/galaxy_map.gd`, `demos/ship_geometry_demo.gd`, `tests/test_free_nav_stop.gd` (`make free-nav-stop-test`), `tools/stops_capture.gd`, CHANGELOG.
+`sim/stops.ail`, `sim/stops_test.ail`, the navigation/core/protocol/solar_departure changes, `ui/galaxy_map.gd`, `demos/ship_geometry_demo.gd`, `tests/test_free_nav_stop.gd` (`make free-nav-stop-test`), `tools/stops_capture.gd`, CHANGELOG; D-58: `sim/inferred_stars.ail`, `sim/sync_orbit.ail` (+ tests), `ui/body_info.gd`, protocol 2.7.

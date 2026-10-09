@@ -12,13 +12,15 @@ import ./celestial (solSystem, bodyAt, defaultEpochJd)
 import pkg/sunholo/celestial/kepler (scale)
 import ./solar_departure (earthStandoffKm, jupiterStandoffKm, saturnStandoffKm, callistoStandoffKm, sunStandoffKm)
 import std/option (Option, Some, None)
-import std/string (concat)
+import std/string (concat, contains)
 import pkg/sunholo/celestial/kepler (norm, sub)
-import ./core (World, Target, Plan, Planned, Arrived, newWorld, defaultParams, scriptedLeg, position, tick, IPlan, cruisePhiMax)
+import ./core (World, Target, Plan, Planned, Arrived, newWorld, defaultParams, scriptedLeg, position, tick, IPlan, ICommit, cruisePhiMax, StarInfo, tauTotalOf, settle)
 import pkg/sunholo/relativity/kinematics (standardGravity)
 import ./consequence (standoffLy)
 import ./celestial (BodyView, lyKm)
-import ./protocol (finiteSystemOf)
+import ./protocol (finiteSystemOf, encodeSystemStops)
+import ./inferred_stars (catOf)
+import pkg/sunholo/relativity/photometry (bolometricCorrectionV, luminositySunFromV, radiusSunFromLuminosity)
 import ./alpha_centauri (stellarRadiusKm)
 import ./destination_stars (destinationRadiusKm)
 
@@ -147,10 +149,51 @@ export pure func checkDefaultStarStops() -> bool =
   && defaultStopKm("trappist-1", destinationRadiusKm("trappist-1"), 0.0) == starStopKm(destinationRadiusKm("trappist-1"), rSun())
 test "D-54 default stops for stars (alpha Cen A, Aldebaran, TRAPPIST-1) are the star curve" { checkDefaultStarStops() }
 
+-- D-58: a free-navigation star with no measured radius arrives as a finite star whose radius
+-- is inferred from its catalogue row (stars.json: Barnard's Star V 9.514, Teff 3250 K, at
+-- 5.962 ly): R = sqrt(L) (5772/Teff)^2 with L from V, distance and BC_V (sunholo/relativity
+-- 0.11.0; 0.19 R_sun against a measured 0.178-0.187), the stop where it looks
+-- 2 atan(tan 5 deg sqrt(R/R_sun)) across, and the system section (2.7) carries it as a star
+-- with status "inferred", its catalogue id and the inferred values. stop_rule 0, or a plan
+-- without the row, keeps 1,000 AU.
+pure func barnardRow() -> Target = { index: 4, id: "Gaia DR3 4472832130942575872", pos: {x: 4.954497, y: 2.982781, z: 1.451172} }
+pure func barnardInfo() -> StarInfo = { name: "Barnard's Star", v: 9.514246750000002, teff: 3249.863625 }
+pure func legWith(w: World, t: Target, info: Option[StarInfo]) -> World {
+  let planned = tick(w, {dtau: 0.0, intents: [IPlan({target: t, cruisePhi: phi99(), flipG: None, star: info})]}).world;
+  let c = tick(planned, {dtau: 0.0, intents: [ICommit(planned.lastPlanId)]}).world;
+  settle(tick(c, {dtau: tauTotalOf(c), intents: []}).world)
+}
+export pure func checkInferredStop() -> bool {
+  let w = legWith(freeNav(), barnardRow(), Some(barnardInfo()));
+  let fixed = legWith(fixedNav(), barnardRow(), Some(barnardInfo()));
+  let plain = legWith(freeNav(), barnardRow(), None);
+  let pc = norm(barnardRow().pos) / (648000.0 / 3.141592653589793 * 149597870.7 / 9460730472580.8);
+  let r = radiusSunFromLuminosity(luminositySunFromV(9.514246750000002, pc, bolometricCorrectionV(3249.863625)), 3249.863625);
+  let stopLy = starStopKm(r * rSun(), rSun()) / lyKm();
+  let sys = encodeSystemStops(w);
+  arrivedAt(w) && r > 0.17 && r < 0.21
+  && absf(norm(sub(position(w.ship), barnardRow().pos)) - stopLy) < 0.0000000001
+  && near(starViewDeg(r * rSun(), rSun()), 4.36, 0.05)
+  && (match catOf(w.catStars, barnardRow().id) { Some(c) => near(c.radiusKm, r * rSun(), 0.001) && c.name == "Barnard's Star", None => false })
+  && contains(sys, "\"id\":\"cat:Gaia DR3 4472832130942575872\",\"name\":\"Barnard's Star\",\"kind\":\"star\"") && contains(sys, "\"status\":\"inferred\"")
+  && contains(sys, "\"catalogue_id\":\"Gaia DR3 4472832130942575872\"") && contains(sys, "\"inferred\":{\"r_sun\":0.1")
+  && near(bodyKm(w, "earth") / 9460730472580.8, 5.96, 0.01)
+  && arrivedAt(fixed) && near(norm(sub(position(fixed.ship), barnardRow().pos)), standoffLy(1000.0), 0.000000001) && (match fixed.catStars { [] => true, _ => false })
+  && arrivedAt(plain) && near(norm(sub(position(plain.ship), barnardRow().pos)), standoffLy(1000.0), 0.000000001)
+}
+test "D-58 an uncited star (Barnard's) arrives as a finite star with an inferred radius at its D-54 stop; stop_rule 0 or no row keeps 1,000 AU" { checkInferredStop() }
+
+-- The 2.7 system section carries each Sol body's synchronous orbit (sync_orbit.ail).
+export pure func checkSyncOnWire() -> bool {
+  let sys = encodeSystemStops(freeNav());
+  contains(sys, "\"id\":\"earth\"") && contains(sys, "\"sync_orbit\":{\"altitude_km\":35786.0") && contains(sys, "\"none\":\"locked\"") && contains(sys, "\"none\":\"slow\"")
+}
+test "D-58 the 2.7 system section carries the synchronous orbits (Earth 35,786 km; locked and slow ones none)" { checkSyncOnWire() }
+
 -- make strict: every check on the strict bytecode VM and on the interpreter, plus the
 -- stop distances themselves (printed, so the two engines' bytes are compared too).
 export pure func stopsVm(k: int) -> string =
-  if checkStarCurve() && checkPlanetCurve() && checkStopSubtends() && checkRings() && checkSafety() && checkTourStops() && checkFreeNavStars() && checkFreeNavHome() && checkStartInside() && checkDefaultStarStops()
+  if checkStarCurve() && checkPlanetCurve() && checkStopSubtends() && checkRings() && checkSafety() && checkTourStops() && checkFreeNavStars() && checkFreeNavHome() && checkStartInside() && checkDefaultStarStops() && checkInferredStop() && checkSyncOnWire()
   then concat(["stops-ok ", show(earthStandoffKm()), " ", show(jupiterStandoffKm()), " ", show(saturnStandoffKm()), " ", show(callistoStandoffKm()), " ",
     show(starStopKm(stellarRadiusKm("acen-a"), rSun())), " ", show(starStopKm(destinationRadiusKm("aldebaran"), rSun())), " ", show(bodyKm(scriptedLeg(freeNav(), acenA(), phi99()), "acen-a"))])
   else "stops-FAIL"

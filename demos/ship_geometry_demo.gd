@@ -574,7 +574,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.STOPS_MINOR
 		# R1-SHIP-UI: the Archive terminal shows what this session has unlocked (protocol 2.2 table).
 		journey_sim.archive_rows=LoreLoader.archive_rows(LoreLoader.load_entries()["entries"])
 		# D-54: free navigation stops at a finite star where it shows its size, and Sol at Earth.
