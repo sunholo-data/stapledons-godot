@@ -178,8 +178,8 @@ pure func plAcen() -> Target = {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z:
 pure func plAt(d: float) -> Target = {index: 9, id: "probe", pos: {x: d, y: 0.0, z: 0.0}}
 -- M1.7: alpha Cen A as data/starmap/stars.json carries it (CNS5:3627, the CNS5 system parallax, D-19).
 pure func plAcenA() -> Target = {index: 2, id: "CNS5:3627", pos: {x: 3.094521, y: -3.015404, z: -0.051608}}
-pure func plCruise(t: Target, phi: float) -> Intent = IPlan({target: t, cruisePhi: phi, flipG: None})
-pure func plFlip(t: Target, g: float) -> Intent = IPlan({target: t, cruisePhi: 2.0, flipG: Some(g)})
+pure func plCruise(t: Target, phi: float) -> Intent = IPlan({target: t, cruisePhi: phi, flipG: None, star: None})
+pure func plFlip(t: Target, g: float) -> Intent = IPlan({target: t, cruisePhi: 2.0, flipG: Some(g), star: None})
 pure func plDo(w: World, xs: [Intent]) -> Ticked = tick(w, {dtau: 0.0, intents: xs})
 pure func plWorld(diag: bool, p: Params) -> World = newWorld(3, diag, p)
 pure func phi09() -> float = 1.4722194895832204
@@ -333,7 +333,7 @@ pure func plCommittedWorld() -> World = plDo(plDo(plWorld(true, defaultParams())
 -- One of every Intent constructor (IPlan twice: cruise and diag flip).
 pure func plEveryIntent() -> [Intent] = [plCruise(plAcen(), phi09()), plFlip(plAcen(), 1.0), ICommit(1), ICommit(2), ICancel, IThrust(1.0),
   IHeading({x: 0.0, y: 1.0, z: 0.0}), IRecord({source: "ai", req: "r", kind: "line", sha256: "00", body: "x"}), IDraw(SNews),
-  IEcho({target: plAcen(), cruisePhi: 1.0, flipG: None})]
+  IEcho({target: plAcen(), cruisePhi: 1.0, flipG: None, star: None})]
 pure func plSameCommit(a: World, b: World) -> bool =
   match a.journey { Committed(x) => (match b.journey { Committed(y) => x.plan.id == y.plan.id && x.tau0 == y.tau0 && x.t0 == y.t0 && x.plan.trip.tauTotal == y.plan.trip.tauTotal, _ => false }), _ => false }
 -- Since M2.3b the committed ship flies: a refused intent leaves the world
@@ -361,7 +361,7 @@ pure func checkCommittedRefusesAll() -> bool {
   let aiOpen = IAiOpen({kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: []});
   let aiIntents = [aiOpen, IAiCancel({req: "1", reason: "offline"})];
   let journeyIntents = [plCruise(plAcen(), phi09()), plFlip(plAcen(), 1.0), ICommit(1), ICommit(2), ICancel, IThrust(1.0),
-    IHeading({x: 0.0, y: 1.0, z: 0.0}), IDraw(SNews), IEcho({target: plAcen(), cruisePhi: 1.0, flipG: None})];
+    IHeading({x: 0.0, y: 1.0, z: 0.0}), IDraw(SNews), IEcho({target: plAcen(), cruisePhi: 1.0, flipG: None, star: None})];
   let all = tick(c, {dtau: 0.25, intents: plEveryIntent() ++ aiIntents});
   let alone = tick(c, {dtau: 0.25, intents: []}).world;
   let opened = tick(c, {dtau: 0.25, intents: [aiOpen]});

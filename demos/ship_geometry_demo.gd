@@ -546,7 +546,7 @@ func open_navigation() -> void:
 	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
 	if entry!=null:entry.visible=solar_tour==null
 	navigation_window.borderless=true;navigation_window.title="Navigation station · E / Esc steps back"
-	_place_navigation(consoles.panel_rect().grow_individual(-8.,-80.,-8.,-8.) if consoles!=null and consoles.focused=="navigation" else Rect2())
+	_place_navigation(consoles.panel_rect().grow_individual(-8.,-46.,-8.,-8.) if consoles!=null and consoles.focused=="navigation" else Rect2())
 ## M (anywhere, instant): the read-only star chart. It never plans, commits or pauses the
 ## voyage (D-57 Q2); plotting and commit are at the navigation station.
 func open_chart() -> void:
@@ -568,13 +568,13 @@ func _place_navigation(rect: Rect2) -> void:
 		var sz:=Vector2(minf(1280.,vis.x*.86),minf(800.,vis.y-top-56.))
 		rect=Rect2(Vector2((vis.x-sz.x)*.5,top),sz)
 	navigation_window.position=Vector2i(rect.position);navigation_window.size=Vector2i(rect.size)
-	# The map's own panel needs about 640 units of height: scale its content to the host.
-	navigation_window.content_scale_factor=clampf(rect.size.y/640.,.5,1.)
+	# The map's own panel needs about 700 units of height: scale its content to the host.
+	navigation_window.content_scale_factor=clampf(rect.size.y/600.,.56,1.)
 	navigation_window.show();navigation_window.grab_focus()
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.STOPS_MINOR
 		# R1-SHIP-UI: the Archive terminal shows what this session has unlocked (protocol 2.2 table).
 		journey_sim.archive_rows=LoreLoader.archive_rows(LoreLoader.load_entries()["entries"])
 		# D-54: free navigation stops at a finite star where it shows its size, and Sol at Earth.
@@ -952,7 +952,8 @@ func _consoles_setup() -> void:
 ## The dwell label (§A3): when the view rests 0.5 s, name the star or body at the screen
 ## centre (the I card's own pick, read only) with its distance and "I · details".
 func _update_dwell(delta: float) -> void:
-	if not dwell_on or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible:
+	# Not at Sgr A*: its stars are the Sol sky lensed (design OQ5), so a name and distance mislead.
+	if not dwell_on or black_hole!=null or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible or (interlude_card!=null and interlude_card.visible):
 		_dwell_done=false;ship_hud.set_dwell("",Vector2.ZERO);return
 	var pose:Transform3D=camera.global_transform
 	if not pose.is_equal_approx(_dwell_pose):
@@ -963,7 +964,8 @@ func _update_dwell(delta: float) -> void:
 		var centre:=ship_hud.size*.5
 		ship_hud.set_dwell(dwell_text_at(centre),centre)
 func dwell_text_at(point: Vector2) -> String:
-	var hits:Array=star_identification.probe(point)
+	# Named stars and resolved bodies only: an unnamed catalogue row is the I card's job.
+	var hits:Array=star_identification.probe(point).filter(func(h:Dictionary)->bool:return h.has("body") or star_identification.info.names.has(h.id))
 	if hits.is_empty():return ""
 	var c:Dictionary=hits[0]
 	if c.has("body"):return "%s · %s · I details" % [str(c.body.get("name",c.body.get("id",""))),BodyInfo.distance_text(float(c.distance_km))]

@@ -1,0 +1,37 @@
+---
+title: "Visit Sgr A*: v0.4.0-dev.23 and dev.24"
+date: 2026-10-09
+authors: [sunholo]
+tags: [release, sky]
+release_tag: "v0.4.0-dev.24-lens-fix"
+release_url: "https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.24-lens-fix"
+---
+
+The black-hole milestone is done: you can fly to the supermassive black hole at the centre of the Galaxy, hover above it and orbit it, with general relativity in the physics and in the picture.
+
+{/* truncate */}
+
+![Sgr A* from the bridge at 10 Schwarzschild radii](https://storage.googleapis.com/stapledons-voyage-assets/refs/m3_bh_ship/bh_bridge_r10_hover.png)
+
+## Sgr A* aboard the ship
+
+Choose "Sgr A* (black hole)" in navigation. The ship approaches from 1.3 light years, then hovers at 10, 5 and 3 Schwarzschild radii and orbits at 3. The HUD reads the simulation:
+
+- **Clocks.** At 10 r_s, 1 ship-hour is 1.054 home hours; in orbit at 3 r_s it is 1.41. The time you spend near the hole really accumulates on both clocks.
+- **Light.** It shows the shadow's size and the blueshift of incoming light.
+- **Forces.** It shows the tide across the bubble, and the hover thrust, which the crew never feels.
+
+## Built package-first
+
+- **The maths.** `sunholo/relativity` 0.10.0 adds a geodesic integrator, cross-checked against the exact solution to 3e-13.
+- **The lens tables.** They are generated on the AILANG VM and pinned.
+- **The shader.** A GPU shader mirrors the CPU reference pixel for pixel.
+- **The checks.** The shadow matches Synge's formula to within 0.01 px at 10, 5 and 3 r_s, and a star directly behind the hole makes an Einstein ring at the predicted angle. R1's black-hole requirements are met.
+
+## Also
+
+- **A light-speed loading screen.** Picking a menu option accelerates the real sky to 0.99999c, where it collapses into a point, then a white-out into the ship. Loading itself is 3 to 4 times faster.
+- **A Main menu button** on the galaxy map.
+- **dev.24 fixes dev.23.** The exported app was missing the lens tables, so the hole was invisible. Publishing now checks them inside the exported app.
+
+**Releases:** [v0.4.0-dev.23-black-hole](https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.23-black-hole), [v0.4.0-dev.24-lens-fix](https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.24-lens-fix) · [Gallery](/gallery).

@@ -6,7 +6,7 @@ extends SceneTree
 ## Each stop: the forward view and the sky alone -> renders/stops/<n>_<stop>[_sky].png,
 ## plus the map with the in-system list at Sol. Needs a GPU window. Open the PNGs.
 var demo: Node
-const OUT := "res://renders/stops"
+var OUT := "res://renders/stops"
 var log_rows: Array = []
 func _initialize() -> void: _run.call_deferred()
 func _run() -> void:
@@ -18,7 +18,12 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	demo.open_navigation(); await process_frame
 	var n := 0
-	for stop in [["trappist1", "Gaia DR3 2635476908753563008"], ["aldebaran", "CNS5:1142"], ["acen_a", "CNS5:3627"], ["barnard", "Gaia DR3 4472832130942575872"], ["earth", "Sol"]]:
+	# --inferred (D-58): stars with no measured radius, made finite with an inferred one:
+	# Barnard's Star, Proxima, a K dwarf (61 Cygni A), a hot star (Vega), then home.
+	var inferred := OS.get_cmdline_user_args().has("--inferred")
+	if inferred: OUT = "res://renders/stops/inferred"; DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	var list: Array = [["barnard", "Gaia DR3 4472832130942575872"], ["proxima", "Gaia DR3 5853498713190525696"], ["61cyg_a", "Gaia DR3 1872046609345556480"], ["vega", "CNS5:4607"]] if inferred else [["trappist1", "Gaia DR3 2635476908753563008"], ["aldebaran", "CNS5:1142"], ["acen_a", "CNS5:3627"], ["barnard", "Gaia DR3 4472832130942575872"], ["earth", "Sol"]]
+	for stop in list:
 		n += 1
 		demo.open_navigation() # the helm (R1-SHIP-UI)
 		if stop[1] == "Sol": demo.journey_map.plan_home()
@@ -26,7 +31,7 @@ func _run() -> void:
 		if not await leg(): quit(1); return
 		await shots("%d_%s" % [n, stop[0]])
 		if stop[0] == "earth": await map_shot("%d_map_in_system" % n)
-	for body in ["moon", "saturn", "callisto", "jupiter"]:
+	for body in ([] if inferred else ["moon", "saturn", "callisto", "jupiter"]):
 		n += 1
 		demo.open_navigation() # the helm
 		demo.journey_map.plan_body(body)
@@ -46,12 +51,13 @@ func leg() -> bool:
 	return map.journey_state() == "arrived"
 func shots(name: String) -> void:
 	var plan: Dictionary = demo.sky_world.journey.plan
-	var hold: String = str(plan.get("hold", {}).get("body", "")) if plan.get("hold") is Dictionary else ""
+	var hold: String = str(plan.get("hold", {}).get("body", "")) if plan.get("hold") is Dictionary else ("cat:" + str(plan.get("target", {}).get("id", "")))
 	var row := {"name": name, "hud": demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)}
 	for b: Dictionary in demo.sky_world.get("system", {}).get("bodies", []):
 		if b.id == hold:
 			var d := Planets.length64(Planets.world_of(b.rel_km))
 			row.merge({"body": b.id, "radius_km": b.radius_km, "distance_km": d, "apparent_deg": rad_to_deg(2.0 * Planets.angular_radius(b.radius_km, d)), "source": b.get("source", "")})
+			if b.has("inferred"): row["inferred"] = b.inferred
 	log_rows.append(row); print("stop ", JSON.stringify(row))
 	demo.look_direction("forward")
 	await shot(name)

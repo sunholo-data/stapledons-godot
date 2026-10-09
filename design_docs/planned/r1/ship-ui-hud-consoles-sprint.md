@@ -50,7 +50,10 @@ Delivered as three stacked PRs: **PR 1** U0 (the HUD half) + U1 + U2; **PR 2** U
 - [x] **U4a** map host: embedded borderless window over the panel; `make ship-ui-window-check` green in a GPU window
 - [x] **U4** navigation station: chart / helm modes, M = chart, the Sgr A* ladder
 - [x] **U5** Voyage console and Archive terminal; N / L / C decision keys and the interim Tab decisions removed
-- [ ] **U6** migration · [ ] **U7** renders (tool started in PR 1) · [ ] **U8** docs
+- [x] **U6** migration (tests and tools to the helm and `ShipConsoles.use`; export smokes through the consoles)
+- [x] **U7** renders: `make ship-ui-capture`, 24 frames + contact sheet, opened and iterated
+- [x] **U8** docs: CHANGELOG fragments, design-doc index row, M4.5 bot hook in `m4.5s-inventory.md`
+- [ ] **P2** (blocking, Mark): a dev review build; walk to the consoles and commit a voyage
 
 ## Order and days
 

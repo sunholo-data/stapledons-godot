@@ -228,10 +228,10 @@
         "AC12: make test green",
         "AC13: make parity && make strict green (no sim or protocol change)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "Migrated: test_bh_hud (label -> ShipHud.all_text; Sgr A* entry via the helm at the navigation station), test_free_nav_stop (status strip; fly() opens the helm), test_ship_demo_consolidation (view tag), tools/stops_capture.gd and tools/exposure_sky_recovery.gd (open the helm before planning), tools/ship_demo_optics.gd (hide ShipHud), the export smokes (_export_smoke commits through consoles.use; _solar_departure_smoke checks M is the chart and does not pause). Most callers already used the kept methods. Tab help text = ShipControls.help_text grouped as section F; title Settings confirm mode landed in PR 1. make test green at PR 1 and PR 2 heads; PR 3 full run green at 72c5ea6."
     },
     {
       "id": "U7_RENDERS",
@@ -243,10 +243,10 @@
       "acceptance_criteria": [
         "AC14: make ship-ui-capture writes 24 PNGs and a contact sheet; inspection notes recorded in this row; the tool fails on a missing or uniform frame"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "tools/ship_ui_capture.gd and make ship-ui-capture started in PR 1 (6 frames x 2 sizes); PR 2 adds the console frames."
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "make ship-ui-capture: 24 PNGs (12 states x 1280x720, 2560x1440) + contact_sheet.png, per-frame luminance sd 0.048-0.28 (floor 0.02). Opened and iterated across the sprint: strip legible over the bright Auto cruise sky (two rows, width capped); no card over the centre third; the interlude card sits left of the column; the prompt at the navigation station with its idle screen (\"Course plotted · commit here\"); focus poses frame the station screens; helm text readable at 1280x720 after the scale fix (about 12 px), commit row reachable (window check clicks it); chart below the strip; Voyage panel compact beside its console; Archive codex above the console panel; dwell label only for named stars and bodies. Known: at 1280x720 the helm map side panel is tight (its footer help scrolls off); the Sgr A* gravity card is tall (8 wrapped lines)."
     },
     {
       "id": "U8_DOCS",
@@ -258,10 +258,10 @@
       "acceptance_criteria": [
         "CHANGELOG entry present; README index row present"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "CHANGELOG fragments 2026-10-09-ship-ui-{hud,consoles,land}.md; design_docs/README.md index row; m4.5s-inventory.md: the ShipConsoles.walk_to / use hook for the M4.5 bot. The design doc moves to implemented/ on landing (after merge, not here)."
     }
   ],
   "revision_round_1": "Plan review round 1 (Sonnet, 82/100 PASS, 0 blocking): F1 NT1 split player vs tour intents; F2 no new warp keys; F3 M4.3b/M4.5 row amendments in Q1; F4 7 days; F5 U4a spike + GPU window check AC15; F6 E priority, pan gesture, map keys; F7 concrete conflicts; F8 use point max_r 2.5 m, path lengths; F9 allowlist + one_minus_beta per phase; F11 AC14a + uniform-frame check; F12 seams costed, determinism AC13. F10 (confirm on cancel/leave) kept by design.",
@@ -284,7 +284,16 @@
       "pass": true,
       "file": ".ailang/state/evaluations/eval_R1-SHIP-UI_pr2-consoles_round_1.json",
       "fixed": "F1 leave() restores the third-person pullback; F2 use(open) on another station closes the first panel; F3 map hold via the button path, Esc backs out of an armed console confirm; F4 the no-twitch sweep presses every visible HUD button; F5 a commit refused stale_plan is re-planned and committed in the same frame, tested after 2 s of host ticks. F6 render polish -> PR 3; F7 cancel single-click flagged for Mark."
+    },
+    {
+      "pr": 3,
+      "group": "pr3-land",
+      "round": 1,
+      "score": 82,
+      "pass": true,
+      "file": ".ailang/state/evaluations/eval_R1-SHIP-UI_pr3-land_round_1.json",
+      "fixed": "F1 the dwell label is placed after its binding has text, never into the column (tested); F2 helm map scale 0.56+ so Commit/Cancel show in full at 1280x720; F3 no dwell label at Sgr A*; F4 status in_progress until P2. F5: renders are gitignored; the contact sheet path is in the PR body."
     }
   ],
-  "resume_note": "2026-10-09: PR 1 open (#193, branch sprint/ship-ui, eval 84 pass, findings fixed). PR 2 on branch sprint/ship-ui-consoles (stacked on sprint/ship-ui): code complete, full make test green at 05653d5, eval round 1 = 84 PASS (eval_R1-SHIP-UI_pr2-consoles_round_1.json); round-1 fixes (F1 pullback restore, F2 station switch closes panel, F3 button-path/Esc tests, F4 HUD-button sweep, F5 stale_plan retry in GalaxyMap.tick) committed with suites green (ship-consoles 84/0, no-twitch 24/0, galaxy map, free-nav). NEXT: open PR 2 (gh pr create --base sprint/ship-ui); then PR 3 on sprint/ship-ui-land: fix tools/exposure_sky_recovery.gd (open_navigation before preselect), full ship-ui-capture at both sizes + inspection notes, U8 docs (CHANGELOG, design_docs/README.md row, m4.5s-inventory note), make test, eval, export smokes (make export-macos export-smoke ship-demo-export-smoke title-export-smoke)."
+  "resume_note": "2026-10-09: all milestones U0-U8 executed; full make test green at the PR 1, PR 2 and PR 3 heads (PR 3 at 72c5ea6). PRs: #193 (sprint/ship-ui), #195 (sprint/ship-ui-consoles), PR 3 (sprint/ship-ui-land). Status stays in_progress until P2 (blocking): Mark walks a dev build (make publish-dev, not run by the executor), then merge 193 -> 195 -> PR 3, move the design doc to implemented/ and update the design repo roadmap."
 }

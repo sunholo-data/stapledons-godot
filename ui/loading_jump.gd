@@ -249,9 +249,9 @@ func _work_xyz(i: int, chunks: Array) -> void:
 			rows[t] = Blackbody.xyz_uncached(t)
 
 
-## Worker: the simulation every title route starts (protocol 2.5), spawned and greeted.
+## Worker: the simulation every title route starts (protocol 2.7), spawned and greeted.
 func _work_sim(holder: Dictionary) -> void:
-	holder["value"] = SimBridge.warm(SimBridge.DEPARTURE_MINOR)
+	holder["value"] = SimBridge.warm(SimBridge.STOPS_MINOR) # the ship's navigation session minor (D-58)
 
 
 ## Main thread: the CMB lookup (CmbGlow.lut) before the sky moves.

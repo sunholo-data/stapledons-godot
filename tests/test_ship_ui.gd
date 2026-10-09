@@ -309,9 +309,12 @@ func test_dwell() -> void:
 	var ident = demo.star_identification
 	ident.set_held(true)
 	ident.update_candidates()
-	var stars: Array = ident.candidates.filter(func(c): return not c.has("body") and ident.at_point(c.point).size() == 1)
+	var stars: Array = ident.candidates.filter(func(c): return not c.has("body") and ident.at_point(c.point).size() == 1 and ident.info.names.has(c.id))
 	ident.set_held(false)
-	check("dwell: the forward view has identifiable stars (%d)" % stars.size(), not stars.is_empty())
+	check("dwell: the forward view has named stars (%d)" % stars.size(), not stars.is_empty())
+	var unnamed: Array = ident.candidates.filter(func(c): return not c.has("body") and ident.at_point(c.point).size() == 1 and not ident.info.names.has(c.id))
+	if not unnamed.is_empty():
+		check("dwell: an unnamed catalogue row gets no label (the I card's job)", demo.dwell_text_at(unnamed[0].point) == "")
 	if not stars.is_empty():
 		var c: Dictionary = stars[0]
 		var t: String = demo.dwell_text_at(c.point)
@@ -323,6 +326,12 @@ func test_dwell() -> void:
 	demo.camera.yaw += 0.4
 	demo._process(0.016)
 	check("dwell: moving the view clears the label", not demo._dwell_done and not demo.ship_hud.dwell.visible)
+	var hud: ShipHud = demo.ship_hud
+	hud.size = Vector2(960, 540)
+	hud.set_dwell("Alpha Centauri A · 4.32 ly · I details and a long tail of text", Vector2(700, 300))
+	hud.update(demo.hud_view())
+	check("dwell label stays clear of the card column (%s)" % [hud.dwell.get_rect()], hud.dwell.position.x + hud.dwell.get_combined_minimum_size().x <= hud.column.position.x)
+	hud.set_dwell("", Vector2.ZERO)
 	demo.dwell_on = false
 	demo._process(0.6)
 	check("dwell: the Tab toggle turns it off", not demo.ship_hud.dwell.visible)
