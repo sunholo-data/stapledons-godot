@@ -1,6 +1,7 @@
 {
   "sprint_id": "R1-M5-TRAPPIST-1",
   "status": "approved",
+  "superseded_by": "R1-TRAPPIST1-PLANETS (sprint_R1-TRAPPIST1-PLANETS.json): the same TB1-TB6 scope was executed and completed 2026-10-07 on branch sprint/trappist1-planets and landed via PR #146 merge 3541bf1; its evaluation is still pending. This D-41 plan (approved attended 2026-10-06) was never executed, so its TB1-TB6 passes stay null by design. File kept for the approval record. Reconciled iter 25 (L1).",
   "approved_by": "Mark Edmondson, attended 2026-10-06 (\"yes lets go ahead with this demo expansion\")",
   "requested_by": "Mark (attended 2026-10-06; D-41)",
   "design_doc": "design_docs/planned/r1/m4-real-time-tour.md",

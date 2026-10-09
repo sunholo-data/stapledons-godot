@@ -27,8 +27,9 @@
         "ship-movement-test and existing input/lift gates",
         "map-origin-test real A-to-B-to-C route and UI recenter without reset"
       ],
-      "passes": null,
-      "external_prerequisites": []
+      "passes": true,
+      "external_prerequisites": [],
+      "notes": "LANDED (reconciled iter 25, L1): tests/test_ship_movement.gd + tests/test_map_origin.gd in tree; make ship-movement-test/map-origin-test live (Makefile:854-856, in ship-demo-ci:865); added by 0dc4f8c inside PR #149 (merge 3100301)."
     },
     {
       "id": "SD2",
@@ -41,8 +42,9 @@
         "ship-lighting-test and opened same-pose captures",
         "recorded camera/light/sky manifest and shadow profiling"
       ],
-      "passes": null,
-      "external_prerequisites": []
+      "passes": true,
+      "external_prerequisites": [],
+      "notes": "LANDED (reconciled iter 25, L1): ship-lighting-test/ship-lighting-capture/ship-lighting-bench live (Makefile:853,862); art/ship-lighting-v1 manifest in tree; commits 0dc4f8c, 4692df2, d8ccee6 inside PR #149 (3100301); same-pose captures delivered in the dev11 build (d245f4b; this file's previous_review_delivery, eval 94 pass)."
     },
     {
       "id": "SD3",
@@ -55,9 +57,10 @@
         "recorded art/camera decision",
         "shared-observer and native star-inspection gates pass"
       ],
-      "passes": null,
+      "passes": true,
       "external_prerequisites": [],
-      "note": "Mark delegated camera selection; A selected. Finish feedback remains open without blocking the approved first pass."
+      "note": "Mark delegated camera selection; A selected. Finish feedback remains open without blocking the approved first pass.",
+      "notes": "LANDED (reconciled iter 25, L1): art/camera decision recorded in this file's camera_decision + approved_by (Mark, attended 2026-10-05); painted finish landed (fe522e9, 0979265) and shared-observer gate verified (7035891) — all inside PR #149 (3100301)."
     },
     {
       "id": "SD4",
@@ -70,10 +73,11 @@
         "ship-planets-test and package angular-size references",
         "golden-m5 and opened near-Earth captures"
       ],
-      "passes": null,
+      "passes": true,
       "external_prerequisites": [
         "completed M5 foundations"
-      ]
+      ],
+      "notes": "LANDED (reconciled iter 25, L1): tests/test_ship_planets.gd + make ship-planets-test (Makefile:858) via 0dc4f8c inside PR #149 (3100301); golden-m5 gate live (mk/m5.mk:104-109, G-M5-4/G-M5-6); planet renderer planets/system_view.gd landed with M5.2a (PR #109); near-Earth captures delivered in dev11/dev12 (d245f4b; evals 94/89 recorded in this file)."
     },
     {
       "id": "SD5",
@@ -93,7 +97,8 @@
       "passes": null,
       "external_prerequisites": [
         "approved M5.2b and M5.4 work"
-      ]
+      ],
+      "notes": "OPEN (reconciled iter 25, L1): blocked on M5.2b/M5.4 (open in R1-M5-PLANETS); \"simulation-driven external sunlight on ship geometry\" is in review_delivery.remaining."
     },
     {
       "id": "SD6",
@@ -106,10 +111,11 @@
         "solar-departure-test deterministic target/intercept/turn behavior",
         "safe encounter route, both clocks and no planetary scale/position cheats"
       ],
-      "passes": null,
+      "passes": true,
       "external_prerequisites": [
         "approved M5.5b and required M5 navigation work"
-      ]
+      ],
+      "notes": "LANDED (reconciled iter 25, L1): sim/solar_departure module (sim/ailang.toml), tests/test_solar_departure.gd, make solar-departure-test (Makefile:892, in ship-demo-ci:894); guided Solar departure demo + module landed via 0dc4f8c inside PR #149 (3100301); timed itinerary legs EL2-EL3 d70334d also inside 3100301."
     },
     {
       "id": "SD7",
@@ -125,7 +131,8 @@
       "passes": null,
       "external_prerequisites": [
         "approved M5.3/M5.6b readiness"
-      ]
+      ],
+      "notes": "OPEN (reconciled iter 25, L1): make solar-departure-capture landed (0dc4f8c, a759f83, 0e91c71; PR #149) but the AC's \"golden and golden-m5 actual high-speed cases before high-beta encounters\" is not in the golden suite (case list Makefile:283; mk/m5.mk has G-M5-4/G-M5-6 only)."
     },
     {
       "id": "SD8",
@@ -140,7 +147,8 @@
         "actual M2 Air status explicitly measured or pending"
       ],
       "passes": null,
-      "external_prerequisites": []
+      "external_prerequisites": [],
+      "notes": "OPEN (reconciled iter 25, L1): catalogue-coverage-test landed (0dc4f8c, PR #149) and dev11 (94 pass) / dev12 (89 conditional technical pass, checksum + site verified) are recorded in this file; remaining per review_delivery: CI and production landing, native full-tour art review, new M2 Air measurement (followup.target_new_build_measurement_pending)."
     }
   ],
   "camera_decision": "A: painted 3D geometry with real lighting; retain free camera and shared observer. Mood remains art review.",
