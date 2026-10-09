@@ -275,6 +275,16 @@
       "pass": true,
       "file": ".ailang/state/evaluations/eval_R1-SHIP-UI_pr1-hud_round_1.json",
       "fixed": "F1 AC3 interlude exemption written into the AC and tested (clear of strip and column); F2 the interlude render now overlays a real cruise (tour_interlude) plus a real tour_dwell frame; F3 SimBridge seam tests (player/tick/tour); F4 speed digits up to 15 nines with a near-c test; F6 notice card titled Ship's log. F5 is the declared staging, closed by PR 2."
+    },
+    {
+      "pr": 2,
+      "group": "pr2-consoles",
+      "round": 1,
+      "score": 84,
+      "pass": true,
+      "file": ".ailang/state/evaluations/eval_R1-SHIP-UI_pr2-consoles_round_1.json",
+      "fixed": "F1 leave() restores the third-person pullback; F2 use(open) on another station closes the first panel; F3 map hold via the button path, Esc backs out of an armed console confirm; F4 the no-twitch sweep presses every visible HUD button; F5 a commit refused stale_plan is re-planned and committed in the same frame, tested after 2 s of host ticks. F6 render polish -> PR 3; F7 cancel single-click flagged for Mark."
     }
-  ]
+  ],
+  "resume_note": "2026-10-09: PR 1 open (#193, branch sprint/ship-ui, eval 84 pass, findings fixed). PR 2 on branch sprint/ship-ui-consoles (stacked on sprint/ship-ui): code complete, full make test green at 05653d5, eval round 1 = 84 PASS (eval_R1-SHIP-UI_pr2-consoles_round_1.json); round-1 fixes (F1 pullback restore, F2 station switch closes panel, F3 button-path/Esc tests, F4 HUD-button sweep, F5 stale_plan retry in GalaxyMap.tick) committed with suites green (ship-consoles 84/0, no-twitch 24/0, galaxy map, free-nav). NEXT: open PR 2 (gh pr create --base sprint/ship-ui); then PR 3 on sprint/ship-ui-land: fix tools/exposure_sky_recovery.gd (open_navigation before preselect), full ship-ui-capture at both sizes + inspection notes, U8 docs (CHANGELOG, design_docs/README.md row, m4.5s-inventory note), make test, eval, export smokes (make export-macos export-smoke ship-demo-export-smoke title-export-smoke)."
 }

@@ -685,6 +685,13 @@ func tick() -> bool:
 		var committing := intents.any(func(i): return i.get("k", "") == "commit")
 		dtau = pacing.step(sim.world, committing, HOST_DTAU, TICK_HZ)
 	var sent := sim.send(intents, dtau)
+	if sent and _stale_commit(intents):
+		# R1-SHIP-UI: a hold takes 1.5 s of host ticks, and the sim refuses a commit whose plan
+		# was not made from the ship's present state (core.ail stale_plan). Recreate the same
+		# plan now and commit that, in the same frame, as the guided tour does.
+		var replanned := sim.send([_last_plan], 0.0) and sim.last_refused.is_empty()
+		if replanned:
+			sent = sim.send([{"k": "commit", "plan_id": int(sim.world["journey"]["plan_id"])}], pacing.step(sim.world, true, HOST_DTAU, TICK_HZ) if live_pacing else dtau)
 	if sent and not intents.is_empty():
 		_refusal_note = "" if sim.last_refused.is_empty() else "refused: %s" % ", ".join(sim.last_refused.map(func(r): return str(r["reason"])))
 	elif sent and journey_state() != state:
@@ -694,20 +701,17 @@ func tick() -> bool:
 	return sent
 
 
+func _stale_commit(intents: Array) -> bool:
+	return not _last_plan.is_empty() and journey_state() == "planned" and intents.any(func(i): return i.get("k", "") == "commit") and sim.last_refused.any(func(r): return str(r.get("reason", "")) == "stale_plan")
+
+
 ## A body plan (target_kind "body": an in-system body, or a D-54 free-navigation stop at
 ## a finite star or at Earth for Sol) is epoch-sensitive: the sim refuses a commit once
 ## galaxy time has moved on (stale_plan). Like the guided tour, recreate the plan from the
 ## same position with zero elapsed time, then commit that plan's id in the same tick.
 var _last_plan := {}
 func _replan_body_commit(intents: Array) -> void:
-	# R1-SHIP-UI: any plan, not only body plans. A hold takes 1.5 s of host ticks, and a ship
-	# at rest moves with its body (D-54 stop), so the sim refuses a star plan made before the
-	# hold as stale_plan (core.ail: the plan must be made from where the ship is now).
-	if _last_plan.is_empty() or journey_state() != "planned":return
-	var dep: Variant = field_value(sim.world, "journey.plan.departure")
-	var pos: Variant = field_value(sim.world, "ship.pos")
-	var moved: bool = dep is Dictionary and pos is Dictionary and not (float(dep.x) == float(pos.x) and float(dep.y) == float(pos.y) and float(dep.z) == float(pos.z))
-	if field_value(sim.world, "journey.plan.target_kind") != "body" and not moved:return # still made from here
+	if _last_plan.is_empty() or field_value(sim.world, "journey.plan.target_kind") != "body" or journey_state() != "planned":return
 	if intents.any(func(i): return i.get("k", "") == "plan"):return
 	for intent in intents.duplicate():
 		if intent.get("k", "") != "commit":continue

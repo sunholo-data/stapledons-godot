@@ -203,6 +203,11 @@ func use(id: String, action: String, arg: Variant = null) -> bool:
 	if action == "open":
 		if focused == id:
 			return true
+		if not focused.is_empty(): # another station's panel closes first (the bot can switch)
+			var was := focused
+			focused = ""
+			_cancel_confirm()
+			_close_panel(was)
 		if demo.active_level != 0:
 			demo.refuse("Decisions are made on the bridge: take the lift.")
 			return false
@@ -336,7 +341,7 @@ func leave() -> void:
 	_cancel_confirm()
 	_close_panel(id)
 	var from: Transform3D = demo.camera.global_transform
-	demo.camera.follow(demo.avatar_pos, _eye.get("tilt", -18.0), _eye.get("yaw", demo.camera.yaw), 0.0)
+	demo.camera.follow(demo.avatar_pos, _eye.get("tilt", -18.0), _eye.get("yaw", demo.camera.yaw), _eye.get("pullback", 0.0))
 	var to: Transform3D = demo.camera.global_transform
 	demo.camera.global_transform = from
 	_dolly = {"from": from, "to": to, "t": 0.0, "back": true}

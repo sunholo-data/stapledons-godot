@@ -144,7 +144,36 @@ func sweep_state(state: String) -> void:
 					if i.get("k", "") == "plan" and not _is_next_leg(tour, i):
 						tour_bad.append(i)
 		sim.sent_log.clear()
-	check("NT1 %s: no player decision intent from any key, click or gesture %s" % [state, bad.slice(0, 3)], bad.is_empty())
+	# Every button the HUD shows (strip, Tab panel open, cards) pressed once: none decides.
+	demo.consoles.walk_to("voyage")
+	demo.consoles.cancel_walk()
+	if not demo.ship_hud.tab_panel.visible:
+		demo.toggle_controls()
+	var pressed := 0
+	var buttons: Array = demo.ship_hud.find_children("*", "BaseButton", true, false).filter(func(b): return b.is_visible_in_tree() and b != demo.menu_button and b != demo.ship_hud.help_button)
+	for b in buttons:
+		if not is_instance_valid(b) or b.disabled:
+			continue
+		if not demo.ship_hud.tab_panel.visible:
+			demo.toggle_controls()
+		b.pressed.emit()
+		if b is BaseButton and b.toggle_mode:
+			b.toggled.emit(not b.button_pressed)
+		pressed += 1
+		demo._process(0.05)
+		demo.consoles.cancel_walk()
+		if demo.consoles.focused != "":
+			demo.consoles.leave()
+		if demo.black_hole != null:
+			demo.bh_tick()
+		elif demo.journey_map != null:
+			demo.journey_tick()
+		for entry: Dictionary in sim.sent_log:
+			if entry.source == "player":
+				bad.append([b.name, entry.intents])
+		sim.sent_log.clear()
+	check("NT1 %s: %d HUD buttons pressed" % [state, pressed], pressed >= 5)
+	check("NT1 %s: no player decision intent from any key, click, gesture or HUD button %s" % [state, bad.slice(0, 3)], bad.is_empty())
 	check("NT1 %s: every tour intent is the itinerary's own next leg" % state, tour_bad.is_empty())
 	check("NT1 %s: no session started or dropped" % state, demo.solar_tour == tour and demo.black_hole == bh and session(demo) == sim)
 	if tour == null and bh == null:

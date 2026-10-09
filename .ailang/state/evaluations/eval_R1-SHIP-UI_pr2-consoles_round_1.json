@@ -1,0 +1,32 @@
+{
+  "sprint_id": "R1-SHIP-UI",
+  "pr": "2 of 3 (sprint/ship-ui-consoles, commit 05653d5, base sprint/ship-ui)",
+  "round": 1,
+  "evaluator_note": "Static review only (tests not run by instruction); test results are executor-reported.",
+  "score": 84,
+  "pass": true,
+  "rubric": {
+    "tests_pass": {"max": 20, "score": 17, "note": "executor-reported green; full make test unconfirmed; static review only"},
+    "lint_clean": {"max": 10, "score": 9, "note": "not run"},
+    "acceptance_criteria": {"max": 30, "score": 26, "note": "AC4, AC5, AC6, AC8, AC9, AC10, AC14a, AC15 and console parts of AC7 met; AC6/NT3 hold test sets map._holding directly; no direct test of the consoles' armed-confirm Esc"},
+    "code_quality": {"max": 15, "score": 12, "note": "see findings; focus() does not restore pullback or close a previously focused station"},
+    "documentation": {"max": 15, "score": 12, "note": "execution notes 7-14, changelog and sprint progress accurate; note 10 departs from design C4 (cancel not confirmed) and is disclosed"},
+    "design_fidelity": {"max": 10, "score": 8, "note": "D-56/D-57 Q2-Q6 honoured; helm panel hides the 3D console; map side panel clipped"}
+  },
+  "findings": [
+    {"id": "F1", "severity": "low", "file": "demos/ship_consoles.gd", "line": 355, "issue": "focus() sets camera.pullback = 0 and records _eye.pullback but leave() never restores it, so a player in third-person pullback loses it after any console use.", "suggestion": "Pass _eye.pullback to camera.follow() in leave()."},
+    {"id": "F2", "severity": "low", "file": "demos/ship_consoles.gd", "line": 154, "issue": "use(other, 'open') while a station is already focused calls focus() without closing the old panel (_close_panel not called), leaving the helm window or codex open. The player path (click/E) is blocked while focused, but the M4.5 bot calls use() directly.", "suggestion": "In use('open'), if focused != '' and focused != id, call leave() or _close_panel(focused) first; add a test."},
+    {"id": "F3", "severity": "low", "file": "tests/test_ship_consoles.gd", "line": 152, "issue": "NT3 hold-release test drives map._holding/hold_commit directly, not the commit_button or hold_button path; the consoles' confirm Esc back-out in twice mode is also only tested for the map, not for confirm_button (Approach/Leave/Begin).", "suggestion": "Add button_down/up emit cases for the map hold button and an escape() case on an armed ShipConsoles confirm."},
+    {"id": "F4", "severity": "low", "file": "tests/test_no_twitch.gd", "line": 118, "issue": "The sweep closes any console right after each event, so no keys are tried with a console focused (fine for NT1) but also no HUD buttons (Tab panel, card buttons) are clicked; 'HUD element' coverage rests on the mouse positions at 4 fixed points. Sgr A* approach intents tagged 'tick' are not asserted.", "suggestion": "Also emit pressed on every visible Button under ship_hud (Tab panel, tour card) and assert no player decision."},
+    {"id": "F5", "severity": "info", "file": "ui/galaxy_map.gd", "line": 703, "issue": "_replan_body_commit now re-plans on 'moved' for star plans too; correct and found by the GPU check, but there is no headless test pinning stale_plan on a star plan held >1.5 s.", "suggestion": "Add a test: plan a star, advance host ticks, commit; assert no stale_plan refusal."},
+    {"id": "F6", "severity": "info", "file": "renders/ship_ui/helm_focused_1280x720.png", "line": 0, "issue": "At 1280x720 the helm panel hides the 3D console entirely (the dolly is not visible) and the map side panel's footer text is clipped. Voyage render shows the idle-screen slab floating over the console top.", "suggestion": "PR 3 U7: leave a visible console margin or check the 2560x1440 render; tidy panel footer."},
+    {"id": "F7", "severity": "info", "file": "design_docs/planned/r1/ship-ui-hud-consoles.md", "line": 260, "issue": "Execution note 10: cancel is a single click, but design C4 and Q6 listed cancel-transit as a confirmed action. Reasoned (sim refuses cancel once committed) and disclosed, but Mark has not ruled.", "suggestion": "Record in the PR description as a decision for Mark."}
+  ],
+  "checks": {
+    "no_decision_without_console": "Verified by reading: N/L/C keys removed; map plan/commit/cancel/speed paths all gated by planning() (helm and not guided); tick() drops pending when not planning; Sgr A* entry, Approach, Leave, Begin, Archive reachable only via use() with focus; main.gd:105 is the title-screen route (outside NT1 scope).",
+    "chart_never_plans": "Yes: preselect, plan_target, plan_body, plan_home, set_cruise_phi, open_commit_dialog, hold_commit, press_cancel all guard on planning(); set_mode('chart') clears _pending and closes the dialog; test_chart asserts an empty player intent log.",
+    "esc_order": "armed confirm, console, codex, Tab panel, I card, arrival, menu/quit: matches note 14.",
+    "mutation": "NT1 mutation (N/C rebind) reported by executor; plausible against the sweep."
+  },
+  "summary": "Solid PR. All console ACs are implemented and the gating of decisions behind planning()/focus is consistent; chart mode never plans; confirm, Walk to, click-to-walk and the dolly are sound, with deterministic fake-clock tests. Weaknesses are minor: pullback not restored after leaving a console, use('open') not closing a previously focused station (bot path), a few thin test paths (direct _holding poke, HUD buttons not swept), and the 720p helm render hides the console. Score 84, pass."
+}

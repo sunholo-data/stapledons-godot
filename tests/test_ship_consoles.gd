@@ -137,9 +137,10 @@ func test_confirm_and_helm() -> void:
 	check("helm opens at the navigation station", c.use("navigation", "open") and demo.journey_map.mode == "helm" and demo.navigation_window.visible)
 	check("helm has commit, cancel, slider, Return to Sol and the Sgr A* entry", demo.journey_map.commit_button.visible and demo.journey_map.cancel_button.visible and demo.journey_map.slider.visible and demo.journey_map.home_button.visible and demo.navigation_window.find_child("SgrAEntry", true, false).visible)
 	check("the commit dialog opens on the plan", demo.journey_map.open_commit_dialog())
-	demo.journey_map._holding = true
-	demo.journey_map.hold_commit(1.0)
-	demo.journey_map.release_commit()
+	demo.journey_map.hold_button.button_down.emit() # the button path, fake clock via the map's _process
+	for i in 10:
+		demo.journey_map._process(0.1)
+	demo.journey_map.hold_button.button_up.emit()
 	step(demo, 5.0, 0.5)
 	check("NT3 hold released at 1.0 s: no commit, the hold restarts at 0", demo.journey_map.hold_s == 0.0 and demo.journey_map.dialog.visible and demo.journey_map.journey_state() == "planned" and player_intents(demo.journey_sim).is_empty())
 	demo.journey_map.hold_commit(GalaxyMap.HOLD_S)
@@ -147,6 +148,20 @@ func test_confirm_and_helm() -> void:
 	var got: Array = player_intents(demo.journey_sim)
 	check("AC9 helm commit sends the same intent as today's map commit (%s)" % [got], got == want)
 	check("committed: the ship is under way", demo.live_journey)
+	# F5: a star plan made, then the host ticks on (the ship at rest moves with Earth), then
+	# the commit: the map re-plans in the commit tick, so the sim never refuses it stale.
+	var s: Node = await new_demo()
+	s.consoles.go_to("navigation")
+	s.consoles.use("navigation", "open")
+	s.consoles.use("navigation", "select", "Gaia DR3 4472832130942575872")
+	s.journey_tick()
+	var plan_id: int = s.journey_sim.world.journey.plan_id
+	s.journey_auto_tick = true
+	step(s, 2.0) # the host ticks on while the captain reads the plan and holds
+	check("a commit after 2 s of host ticks is not refused stale_plan (%s)" % s.journey_map.status_text(), s.consoles.use("navigation", "commit") and s.journey_tick() and s.live_journey and not s.journey_map.status_text().contains("stale"))
+	check("the committed plan is the plotted star", str(GalaxyMap.field_value(s.journey_sim.world, "journey.plan.target.id")) == "Gaia DR3 4472832130942575872" and int(s.journey_sim.world.journey.plan_id) >= plan_id)
+	s.queue_free()
+	await process_frame
 	demo.queue_free()
 	await process_frame
 	# NT4: the same plan commits the same way after 1 s or after 60 s at the helm.
@@ -238,6 +253,13 @@ func test_voyage_archive_sgr() -> void:
 	check("AC9 Begin held 1.5 s = start_solar_departure(): the guided voyage runs", demo.solar_tour != null and demo.journey_map.guided_read_only)
 	c.leave()
 	step(demo, 0.7)
+	# The bot may switch stations: the old panel closes.
+	c.go_to("archive")
+	c.use("archive", "open")
+	c.go_to("voyage")
+	check("use(open) on another station closes the first panel", c.use("voyage", "open") and c.focused == "voyage" and not demo.codex.panel.visible)
+	c.leave()
+	step(demo, 0.7)
 	# The Archive terminal.
 	c.go_to("archive")
 	check("AC9 the Archive terminal opens the codex", c.use("archive", "open") and demo.codex != null and demo.codex.panel.visible)
@@ -263,6 +285,9 @@ func test_voyage_archive_sgr() -> void:
 	check("press-twice: Leave relabels to Confirm", d.black_hole != null and leave.text.begins_with("Confirm"))
 	step(d, 600.0, 5.0)
 	check("NT2 an armed confirm survives 600 s of fake time unchanged", d.black_hole != null and c.confirm_armed() and c.focused == "navigation")
+	check("Esc backs out of an armed console confirm, keeping the station", c.escape() and not c.confirm_armed() and c.focused == "navigation" and d.black_hole != null)
+	leave = c.panel_body.find_child("Confirm_leave", true, false)
+	leave.button_down.emit()
 	leave.button_down.emit()
 	check("AC9 Leave = leave_black_hole(): back at Sol, GR off", d.black_hole == null and not d.sky.gr_lens.active)
 	d.queue_free()
