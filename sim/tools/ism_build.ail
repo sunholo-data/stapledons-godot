@@ -1,0 +1,370 @@
+-- R1-ISM-DUST I3a: the local interstellar medium model lism-1 from the cited tables.
+--
+-- Reads the transcribed source tables data/ism/sources/*.tsv (each file's header cites
+-- its paper and table; stapledons-design physics/ism-structure.md section 6 is the
+-- source-verification list) and writes, into the directory given as the argument:
+--   ism.ail   the module stapledons/sim/data/ism (pure data the sim reads; every
+--             scalar is a Field with its provenance), lengths in light years;
+--   ism.json  the same model for the galaxy map (ui/ism_layer.gd), with labels and
+--             the legend's source line.
+-- make ism-data runs it twice and requires byte-identical outputs, then installs them;
+-- make ism-data-verify regenerates into scratch and compares with the committed files.
+--
+-- The model (ism-structure.md section 2): the LIC is a star-shaped surface about the
+-- Linsky et al. 2019 Table 3 centre whose 9 real-harmonic coefficients are REFIT here
+-- by sigma-weighted linear least squares to the Table 2 edge distances (Table 3's
+-- printed coefficients do not reproduce Table 2; section 3); the 14 other Redfield &
+-- Linsky 2008 clouds are cone shells (Table 18 centre and area; depth from the median
+-- sight-line column of members within 15 pc at n_HI 0.2; capped at the nearest member;
+-- starting at the LIC edge along the axis, except G, which starts at the Sun).
+-- Pure maths in sunholo/celestial 0.4.0 (ism, frames); I/O only in main.
+-- Run on the interpreter or --bytecode (std/fs is evaluator-only on the strict VM,
+-- v0.52.0); the pure parts are strict-checked by ism_build_test.ail.
+module stapledons/sim/tools/ism_build
+
+import std/string (split, trim, startsWith, stringToFloat, concat, join, floatToStr, contains, intToStr, length as slen)
+import std/list (sortBy, length, nth_or, map, filter, foldl, reverse)
+import std/math (pow, sqrt, cos, acos, intToFloat)
+import std/fs (readFileResult, writeFileResult)
+import std/io (println, eprintln, exit)
+import std/result (Result, Ok, Err)
+import pkg/sunholo/celestial/kepler (Vec3)
+import pkg/sunholo/celestial/frames (unitFromAngles, equatorialToGalactic)
+import pkg/sunholo/celestial/ism (realSphericalHarmonicAt, rayExitDistance)
+import pkg/sunholo/relativity/blackbody (luminousEfficacy)
+
+-- ---------- constants ----------
+
+export pure func pcCm() -> float = 3085677581491367300.0
+export pure func lyPerPc() -> float = 3.0856775814913673e16 / 9460730472580800.0
+export pure func nHiEdge() -> float = 0.2                   -- cm^-3, the papers' path-length density (IS-15)
+export pure func medianReachPc() -> float = 15.0
+export pure func licCentrePc() -> Vec3 = { x: -0.8, y: 0.7, z: -0.4 }   -- Linsky et al. 2019 Table 3
+export pure func startsAtSun(name: string) -> bool = name == "G"
+
+-- ---------- parsing ----------
+
+export type T2Row = { star: string, l: float, b: float, dObs: float, sig: float, used: bool }
+export type CloudRow = { name: string, l: float, b: float, closest: float, area: float, tK: float, v0: float, l0: float, b0: float }
+export type MemberRow = { cloud: string, star: string, hd: string, d: float, logN: float, hasN: bool, ra: float, dec: float, hasPos: bool }
+
+pure func num(s: string) -> float = match stringToFloat(trim(s)) { Some(x) => x, None => 0.0 }
+pure func has(s: string) -> bool = match stringToFloat(trim(s)) { Some(_) => true, None => false }
+pure func col(fs: [string], i: int) -> string = nth_or(fs, i, "")
+
+export pure func dataLines(text: string) -> [[string]] =
+  map(\l. split(l, "\t"), filter(\l. slen(trim(l)) > 0 && !startsWith(l, "#"), split(text, "\n")))
+
+export pure func parseT2(text: string) -> [T2Row] =
+  map(\f. { star: col(f, 0), l: num(col(f, 2)), b: num(col(f, 3)), dObs: num(col(f, 5)), sig: num(col(f, 6)), used: trim(col(f, 8)) == "1" }, dataLines(text))
+
+export pure func parseClouds(text: string) -> [CloudRow] =
+  map(\f. { name: col(f, 0), l: num(col(f, 1)), b: num(col(f, 2)), closest: num(col(f, 3)), area: num(col(f, 4)), tK: num(col(f, 5)), v0: num(col(f, 7)), l0: num(col(f, 8)), b0: num(col(f, 9)) }, dataLines(text))
+
+export pure func parseMembers(text: string) -> [MemberRow] =
+  map(\f. { cloud: col(f, 0), star: col(f, 1), hd: col(f, 2), d: num(col(f, 3)), logN: num(col(f, 4)), hasN: has(col(f, 4)),
+            ra: num(col(f, 5)), dec: num(col(f, 6)), hasPos: has(col(f, 5)) }, dataLines(text))
+
+-- ---------- geometry helpers ----------
+
+export pure func rad(d: float) -> float = d * 3.141592653589793 / 180.0
+export pure func unitLb(l: float, b: float) -> Vec3 = unitFromAngles(rad(l), rad(b))
+pure func scale(v: Vec3, s: float) -> Vec3 = { x: v.x * s, y: v.y * s, z: v.z * s }
+pure func sub(a: Vec3, b: Vec3) -> Vec3 = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }
+pure func len3(v: Vec3) -> float = sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+
+export pure func memberDir(m: MemberRow) -> Vec3 = equatorialToGalactic(unitFromAngles(rad(m.ra), rad(m.dec)))
+
+-- ---------- the LIC refit: sigma-weighted linear least squares ----------
+
+pure func lmOf(i: int) -> (int, int) =
+  if i == 0 then (0, 0) else if i == 1 then (1, -1) else if i == 2 then (1, 0) else if i == 3 then (1, 1)
+  else if i == 4 then (2, -2) else if i == 5 then (2, -1) else if i == 6 then (2, 0) else if i == 7 then (2, 1) else (2, 2)
+
+pure func basisRow(u: Vec3, i: int, acc: [float]) -> [float] =
+  if i < 0 then acc else match lmOf(i) { (l, m) => basisRow(u, i - 1, realSphericalHarmonicAt(l, m, u) :: acc) }
+
+-- One Table 2 row as (weight^2, basis, |p - c|) with p = d_obs u.
+type Obs = { w2: float, y: [float], d: float }
+
+pure func obsOf(r: T2Row) -> Obs {
+  let p = sub(scale(unitLb(r.l, r.b), r.dObs), licCentrePc());
+  let d = len3(p);
+  let w = 1.0 / r.sig;
+  { w2: w * w, y: basisRow(scale(p, 1.0 / d), 8, []), d: d }
+}
+
+pure func dotL(a: [float], b: [float], acc: float) -> float = match a {
+  [] => acc,
+  x :: xs => match b { [] => acc, y :: ys => dotL(xs, ys, acc + x * y) }
+}
+
+pure func addRow(o: Obs, i: int, acc: [float]) -> [float] =
+  map(\pair. match pair { (j, v) => v + o.w2 * nth_or(o.y, i, 0.0) * (if j < 9 then nth_or(o.y, j, 0.0) else o.d) }, zipIdx(acc, 0, []))
+
+pure func zipIdx(xs: [float], i: int, acc: [(int, float)]) -> [(int, float)] = match xs {
+  [] => reverse(acc),
+  x :: rest => zipIdx(rest, i + 1, (i, x) :: acc)
+}
+
+pure func zeros(n: int, acc: [float]) -> [float] = if n <= 0 then acc else zeros(n - 1, 0.0 :: acc)
+
+pure func zeroRows(n: int, acc: [[float]]) -> [[float]] = if n <= 0 then acc else zeroRows(n - 1, zeros(10, []) :: acc)
+
+-- Augmented normal equations [A^T W A | A^T W d], 9 x 10, accumulated row by row in
+-- Table 2 order.
+export pure func normalEquations(rows: [T2Row]) -> [[float]] =
+  foldl(\acc r. if r.used then addObs(obsOf(r), acc) else acc, zeroRows(9, []), rows)
+
+pure func addObs(o: Obs, m: [[float]]) -> [[float]] = map(\pair. match pair { (i, row) => addRow(o, i, row) }, zipRows(m, 0, []))
+
+pure func zipRows(xs: [[float]], i: int, acc: [(int, [float])]) -> [(int, [float])] = match xs {
+  [] => reverse(acc),
+  x :: rest => zipRows(rest, i + 1, (i, x) :: acc)
+}
+
+pure func absf(x: float) -> float = if x < 0.0 then 0.0 - x else x
+
+pure func headOr(xs: [float]) -> float = match xs { [] => 0.0, x :: _ => x }
+
+pure func tailOf(xs: [float]) -> [float] = match xs { [] => [], _ :: t => t }
+
+pure func pickPivot(rows: [[float]], best: [float], rest: [[float]]) -> ([float], [[float]]) = match rows {
+  [] => (best, reverseRows(rest, [])),
+  r :: more => if absf(headOr(r)) > absf(headOr(best)) then pickPivot(more, r, best :: rest) else pickPivot(more, best, r :: rest)
+}
+
+pure func reverseRows(xs: [[float]], acc: [[float]]) -> [[float]] = match xs { [] => acc, x :: rest => reverseRows(rest, x :: acc) }
+
+pure func eliminate(p: [float], r: [float]) -> [float] {
+  let f = headOr(r) / headOr(p);
+  zipSub(tailOf(r), tailOf(p), f, [])
+}
+
+pure func zipSub(r: [float], p: [float], f: float, acc: [float]) -> [float] = match r {
+  [] => reverse(acc),
+  x :: xs => match p { [] => reverse(acc), y :: ys => zipSub(xs, ys, f, (x - f * y) :: acc) }
+}
+
+pure func lastOf(xs: [float]) -> float = match xs { [] => 0.0, [x] => x, _ :: t => lastOf(t) }
+
+-- Gaussian elimination with partial pivoting on an augmented system; the solution in
+-- column order.
+export pure func gauss(rows: [[float]]) -> [float] = match rows {
+  [] => [],
+  first :: others => match pickPivot(others, first, []) {
+    (p, rest) => {
+      let sol = gauss(map(\r. eliminate(p, r), rest));
+      let coeffs = tailOf(p);
+      let rhs = lastOf(p);
+      ((rhs - dotL(coeffs, sol, 0.0)) / headOr(p)) :: sol
+    }
+  }
+}
+
+export pure func fitLic(rows: [T2Row]) -> [float] = gauss(normalEquations(rows))
+
+pure func cmpF(a: float, b: float) -> int = if a < b then -1 else if a > b then 1 else 0
+
+export pure func median(xs: [float]) -> float {
+  let s = sortBy(cmpF, xs);
+  let n = length(s);
+  if n == 0 then 0.0
+  else if n % 2 == 1 then nth_or(s, n / 2, 0.0) else 0.5 * (nth_or(s, n / 2 - 1, 0.0) + nth_or(s, n / 2, 0.0))
+}
+
+-- Median |d_obs - d_model| over the used rows (AC1, IS-13).
+export pure func licMedianResidual(coeffs: [float], rows: [T2Row]) -> float =
+  median(map(\r. absf(rayExitDistance(licCentrePc(), coeffs, unitLb(r.l, r.b), 10.0) - r.dObs), filter(\r. r.used, rows)))
+
+-- ---------- cloud shells ----------
+
+export type Shell = { name: string, l: float, b: float, axis: Vec3, cosHalf: float, rIn: float, rOut: float, logN: float, closest: float, tK: float, v0: float, l0: float, b0: float, members: int }
+
+export pure func medianLogN(name: string, ms: [MemberRow]) -> float {
+  let near = map(\m. m.logN, filter(\m. m.cloud == name && m.hasN && m.d <= medianReachPc(), ms));
+  if length(near) > 0 then median(near) else median(map(\m. m.logN, filter(\m. m.cloud == name && m.hasN, ms)))
+}
+
+export pure func shellOf(c: CloudRow, ms: [MemberRow], coeffs: [float]) -> Shell {
+  let axis = unitLb(c.l, c.b);
+  let logN = medianLogN(c.name, ms);
+  let path = pow(10.0, logN) / (nHiEdge() * pcCm());
+  let omega = c.area * rad(1.0) * rad(1.0);
+  let rIn = if startsAtSun(c.name) then 0.0 else rayExitDistance(licCentrePc(), coeffs, axis, 10.0);
+  let rOut = if rIn + path < c.closest then rIn + path else c.closest;
+  { name: c.name, l: c.l, b: c.b, axis: axis, cosHalf: 1.0 - omega / (2.0 * 3.141592653589793), rIn: rIn, rOut: rOut, logN: logN,
+    closest: c.closest, tK: c.tK, v0: c.v0, l0: c.l0, b0: c.b0, members: length(filter(\m. m.cloud == c.name, ms)) }
+}
+
+export pure func shells(cs: [CloudRow], ms: [MemberRow], coeffs: [float]) -> [Shell] =
+  map(\c. shellOf(c, ms, coeffs), filter(\c. c.name != "LIC", cs))
+
+-- ---------- the luminous-efficacy table ----------
+
+-- blackbody.luminousEfficacy at log10 T = 1 + 0.01 i, i = 0..600 (10 K .. 1e7 K): the sim
+-- interpolates it (log efficacy, linear in log T) to find the bright and visible grain
+-- thresholds each time the medium or speed changes (the exact package function costs
+-- ~75 ms a call on the VM). sim/ism_test.ail checks the interpolated thresholds against
+-- dust.visibleRadius.
+export pure func lutSize() -> int = 601
+export pure func lutRow(i: int, acc: [float]) -> [float] =
+  if i < 0 then acc else lutRow(i - 1, luminousEfficacy(pow(10.0, 1.0 + 0.01 * intToFloat(i))) :: acc)
+
+pure func lutChunkCount() -> int = (lutSize() + 99) / 100
+pure func range0(n: int) -> [int] = rangeAcc(n - 1, [])
+pure func rangeAcc(i: int, acc: [int]) -> [int] = if i < 0 then acc else rangeAcc(i - 1, i :: acc)
+pure func takeS(xs: [string], n: int, acc: [string]) -> [string] = if n <= 0 then reverse(acc) else match xs { [] => reverse(acc), x :: r => takeS(r, n - 1, x :: acc) }
+pure func dropS(xs: [string], n: int) -> [string] = if n <= 0 then xs else match xs { [] => [], _ :: r => dropS(r, n - 1) }
+pure func lutChunks(xs: [string], k: int, acc: [string]) -> string = match xs {
+  [] => join("\n", reverse(acc)),
+  _ => lutChunks(dropS(xs, 100), k + 1, concat(["export pure func efficacyLut", intToStr(k), "() -> [float] = [", join(", ", takeS(xs, 100, [])), "]"]) :: acc)
+}
+
+-- ---------- output ----------
+
+-- A float as an AILANG/JSON literal that round-trips (floatToStr is the shortest
+-- round-trip form; a whole number gets ".0" so AILANG reads it as a float).
+export pure func fl(x: float) -> string {
+  let s = floatToStr(x);
+  if contains(s, ".") || contains(s, "e") || contains(s, "n") || contains(s, "N") then s else concat([s, ".0"])
+}
+
+pure func v3(v: Vec3) -> string = concat(["{ x: ", fl(v.x), ", y: ", fl(v.y), ", z: ", fl(v.z), " }"])
+
+pure func q(s: string) -> string = concat(["\"", s, "\""])
+
+pure func ly(x: float) -> float = x * lyPerPc()
+
+export type Model = { coeffs: [float], medianPc: float, shells: [Shell], usedRows: int, members: [MemberRow] }
+
+export pure func buildModel(t2: string, clouds: string, members: string) -> Model {
+  let rows = parseT2(t2);
+  let coeffs = fitLic(rows);
+  { coeffs: coeffs, medianPc: licMedianResidual(coeffs, rows), shells: shells(parseClouds(clouds), parseMembers(members), coeffs),
+    usedRows: length(filter(\r. r.used, rows)), members: filter(\m. m.hasPos, parseMembers(members)) }
+}
+
+pure func memberLine(m: MemberRow) -> string =
+  concat(["  { cloud: ", q(m.cloud), ", star: ", q(m.star), ", pos: ", v3(scale(memberDir(m), ly(m.d))), " }"])
+
+pure func cloudLine(s: Shell) -> string =
+  concat(["  { name: ", q(s.name), ", axis: ", v3(s.axis), ", cosHalf: ", fl(s.cosHalf), ", rIn: ", fl(ly(s.rIn)), ", rOut: ", fl(ly(s.rOut)),
+          ", nH: nHWarm(), delta: deltaLocal(), cite: ", q(concat(["Redfield & Linsky 2008 Table 18 (l ", fl(s.l), ", b ", fl(s.b), ", area, closest star ", fl(s.closest), " pc), Tables 2-15 median log N(H I) ", fl(s.logN), if startsAtSun(s.name) then "; starts at the Sun (Linsky et al. 2019 section 5, Table 4)" else "; starts at the LIC edge"])), " }"])
+
+export pure func renderAil(m: Model) -> string = join("\n", [
+  "module stapledons/sim/data/ism",
+  "",
+  "-- GENERATED by sim/tools/ism_build.ail from data/ism/sources/*.tsv (make ism-data). Do not edit.",
+  "-- The lism-1 interstellar medium (stapledons-design physics/ism-structure.md, ledger D-60/D-61).",
+  "-- Lengths in light years, heliocentric galactic Cartesian (x to the Galactic centre, z north).",
+  "-- Every scalar is a Field with its provenance; the plain accessors are the Fields' values.",
+  "",
+  "export type Field = { value: float, prov: string, cite: string }",
+  "export type V3 = { x: float, y: float, z: float }",
+  "-- A Redfield & Linsky 2008 cloud as a cone shell, apex at the Sun (a game approximation, labelled).",
+  "export type Cloud = { name: string, axis: V3, cosHalf: float, rIn: float, rOut: float, nH: float, delta: float, cite: string }",
+  "-- A Redfield & Linsky 2008 Tables 1-15 member within 15 pc (SIMBAD ICRS -> galactic), with its assigned cloud (AC6a).",
+  "export type Member = { cloud: string, star: string, pos: V3 }",
+  "",
+  "export pure func ismModelName() -> string = \"lism-1\"",
+  "",
+  "export pure func ismFields() -> [(string, Field)] = [",
+  concat(["  (\"n_hi_warm\", { value: 0.192, prov: \"measured\", cite: \"Slavin & Frisch 2008 model 26, solar location (IS-16)\" }),"]),
+  concat(["  (\"n_p_warm\", { value: 0.0554, prov: \"measured\", cite: \"Slavin & Frisch 2008 model 26 (IS-17)\" }),"]),
+  concat(["  (\"n_h_warm\", { value: 0.2474, prov: \"inferred\", cite: \"n_HI + n_p (IS-18)\" }),"]),
+  concat(["  (\"n_e_hot\", { value: 0.00468, prov: \"measured\", cite: \"Snowden et al. 2014 ApJ 791 L14 (IS-19)\" }),"]),
+  concat(["  (\"n_h_hot\", { value: ", fl(0.00468 / 1.2), ", prov: \"inferred\", cite: \"n_e / 1.2, fully ionised H and He (IS-20)\" }),"]),
+  concat(["  (\"rho_dust_lic\", { value: 2.1e-24, prov: \"measured\", cite: \"Krueger et al. 2015 ApJ 812 139 section 5.3, kg m^-3 (IS-21)\" }),"]),
+  concat(["  (\"m_h\", { value: 1.6735575e-27, prov: \"constant\", cite: \"hydrogen atom mass, CODATA 2018, kg\" }),"]),
+  concat(["  (\"delta_local\", { value: ", fl(2.1e-24 / (0.2474e6 * 1.6735575e-27)), ", prov: \"inferred\", cite: \"rho_d / (n_H m_H), dust mass per H nucleon (IS-22)\" }),"]),
+  concat(["  (\"delta_dense\", { value: 0.01, prov: \"measured\", cite: \"Draine 2011, M_dust / M_H (IS-23)\" }),"]),
+  concat(["  (\"mu_h\", { value: 1.4, prov: \"measured\", cite: \"Draine 2011 Table 1.4, gas mass per H nucleon (IS-24)\" }),"]),
+  concat(["  (\"n_hi_edge\", { value: 0.2, prov: \"measured\", cite: \"Linsky et al. 2019 section 4; RL08: n_HI for path lengths (IS-15)\" }),"]),
+  concat(["  (\"grain_rho\", { value: 3300.0, prov: \"measured\", cite: \"Krueger et al. 2015 section 6, kg m^-3 (HB-113)\" }),"]),
+  concat(["  (\"grain_a_min\", { value: 5e-9, prov: \"measured\", cite: \"Mathis, Rumpl & Nordsieck 1977, m (HB-114)\" }),"]),
+  concat(["  (\"grain_a_break\", { value: 2.5e-7, prov: \"measured\", cite: \"Mathis, Rumpl & Nordsieck 1977, m (HB-115)\" }),"]),
+  concat(["  (\"grain_a_max\", { value: ", fl(pow(3.0 * 1e-11 / (4.0 * 3.141592653589793 * 3300.0), 1.0 / 3.0)), ", prov: \"inferred\", cite: \"radius of 1e-11 kg (Krueger 2015 detector limit) at 3,300 kg m^-3, m (HB-116; scenario parameter)\" }),"]),
+  concat(["  (\"grain_q\", { value: 3.1, prov: \"inferred\", cite: \"tail slope maximising the >= 1e-13 kg flux under the mass constraint (HB-117)\" }),"]),
+  concat(["  (\"lic_median_residual_pc\", { value: ", fl(m.medianPc), ", prov: \"inferred\", cite: \"refit vs Linsky et al. 2019 Table 2, ", fl(intToFloat(m.usedRows)), " rows (IS-13)\" })"]),
+  "]",
+  "",
+  "export pure func nHWarm() -> float = 0.2474",
+  concat(["export pure func nHHot() -> float = ", fl(0.00468 / 1.2)]),
+  concat(["export pure func deltaLocal() -> float = ", fl(2.1e-24 / (0.2474e6 * 1.6735575e-27))]),
+  "export pure func deltaDense() -> float = 0.01",
+  "export pure func muH() -> float = 1.4",
+  "export pure func rhoDustLic() -> float = 2.1e-24",
+  "export pure func hydrogenMassKg() -> float = 1.6735575e-27",
+  "export pure func grainRho() -> float = 3300.0",
+  "export pure func grainAMin() -> float = 5e-9",
+  "export pure func grainABreak() -> float = 2.5e-7",
+  concat(["export pure func grainAMax() -> float = ", fl(pow(3.0 * 1e-11 / (4.0 * 3.141592653589793 * 3300.0), 1.0 / 3.0))]),
+  "export pure func grainQ() -> float = 3.1",
+  "",
+  "-- blackbody.luminousEfficacy (lm/W) at log10 T = efficacyLog10TMin() + efficacyStep() i (generated from the package).",
+  "export pure func efficacyLog10TMin() -> float = 1.0",
+  "export pure func efficacyStep() -> float = 0.01",
+  "-- In chunks of 100: the strict VM's register allocator takes at most 256 elements in one list literal (v0.52.0).",
+  lutChunks(map(fl, lutRow(lutSize() - 1, [])), 0, []),
+  concat(["export pure func efficacyLut() -> [float] = ", join(" ++ ", map(\k. concat(["efficacyLut", intToStr(k), "()"]), range0(lutChunkCount())))]),
+  "",
+  "-- The LIC: a star-shaped surface about its centre (Linsky et al. 2019 Table 3), r = sum a_lm Y_lm,",
+  "-- coefficients refit to their Table 2 (ism-structure.md section 3), order (0,0) (1,-1) (1,0) (1,1) (2,-2) (2,-1) (2,0) (2,1) (2,2).",
+  concat(["export pure func licCentre() -> V3 = ", v3(scale(licCentrePc(), lyPerPc()))]),
+  concat(["export pure func licCoeffs() -> [float] = [", join(", ", map(\c. fl(ly(c)), m.coeffs)), "]"]),
+  "",
+  "export pure func members() -> [Member] = [",
+  join(",\n", map(memberLine, m.members)),
+  "]",
+  "",
+  "-- In precedence order (first match wins; the LIC and then the hot gas come after).",
+  "export pure func clouds() -> [Cloud] = [",
+  join(",\n", map(cloudLine, m.shells)),
+  "]",
+  ""
+])
+
+pure func shellJson(s: Shell) -> string =
+  concat(["    {\"name\": ", q(s.name), ", \"l_deg\": ", fl(s.l), ", \"b_deg\": ", fl(s.b), ", \"axis\": [", fl(s.axis.x), ", ", fl(s.axis.y), ", ", fl(s.axis.z),
+          "], \"half_angle_deg\": ", fl(acos(s.cosHalf) * 180.0 / 3.141592653589793), ", \"cos_half\": ", fl(s.cosHalf),
+          ", \"r_in_ly\": ", fl(ly(s.rIn)), ", \"r_out_ly\": ", fl(ly(s.rOut)), ", \"n_h_cm3\": 0.2474, \"log_n_hi\": ", fl(s.logN),
+          ", \"t_k\": ", fl(s.tK), ", \"v0_kms\": ", fl(s.v0), ", \"flow_l_deg\": ", fl(s.l0), ", \"flow_b_deg\": ", fl(s.b0),
+          ", \"members\": ", fl(intToFloat(s.members)), ", \"kind\": \"warm\", \"starts_at_sun\": ", if startsAtSun(s.name) then "true" else "false", "}"])
+
+export pure func renderJson(m: Model) -> string = join("\n", [
+  "{",
+  "  \"model\": \"lism-1\",",
+  "  \"generator\": \"stapledons/sim/tools/ism_build (make ism-data)\",",
+  "  \"units\": {\"lengths\": \"light years, heliocentric galactic Cartesian (x to the Galactic centre, z north)\", \"density\": \"n_H, cm^-3\"},",
+  concat(["  \"lic\": {\"centre_ly\": [", fl(ly(-0.8)), ", ", fl(ly(0.7)), ", ", fl(ly(-0.4)), "], \"coeffs_ly\": [", join(", ", map(\c. fl(ly(c)), m.coeffs)),
+          "], \"order\": \"(0,0) (1,-1) (1,0) (1,1) (2,-2) (2,-1) (2,0) (2,1) (2,2); orthonormal real Y_lm, no Condon-Shortley phase\", \"n_h_cm3\": 0.2474, \"median_residual_pc\": ", fl(m.medianPc), "},"]),
+  "  \"clouds\": [",
+  join(",\n", map(shellJson, m.shells)),
+  "  ],",
+  concat(["  \"hot\": {\"name\": \"Local Bubble hot gas\", \"n_h_cm3\": ", fl(0.00468 / 1.2), ", \"t_k\": 1000000.0},"]),
+  "  \"legend\": \"Everything else: the Local Bubble's hot gas, n_H about 0.004 cm^-3 (Snowden 2014). Clouds: cone shells (a game approximation). Sources: Redfield & Linsky 2008; Linsky et al. 2019 (LIC refit); Slavin & Frisch 2008; Krueger et al. 2015.\",",
+  "  \"assumptions\": [\"cloud shapes are cone shells (game approximation)\", \"LIC coefficients refit to Linsky et al. 2019 Table 2\", \"dust survives in the hot gas (delta as the LIC)\", \"one grain-size shape everywhere\"]",
+  "}",
+  ""
+])
+
+-- ---------- main ----------
+
+func readOr(path: string) -> string ! {IO, FS} = match readFileResult(path) {
+  Ok(s) => s,
+  Err(e) => { eprintln(concat(["ism-build: cannot read ", path, ": ", e])); exit(1); "" }
+}
+
+export func main(out: string) -> () ! {IO, FS} {
+  let src = "data/ism/sources";
+  let m = buildModel(readOr(concat([src, "/linsky2019_table2.tsv"])), readOr(concat([src, "/rl08_clouds.tsv"])), readOr(concat([src, "/rl08_members.tsv"])));
+  if m.medianPc > 0.40 then { eprintln(concat(["ism-build: LIC median residual ", fl(m.medianPc), " pc > 0.40 (AC1)"])); exit(1) }
+  else match writeFileResult(concat([out, "/ism.ail"]), renderAil(m)) {
+    Err(e) => { eprintln(concat(["ism-build: ", e])); exit(1) },
+    Ok(_) => match writeFileResult(concat([out, "/ism.json"]), renderJson(m)) {
+      Err(e) => { eprintln(concat(["ism-build: ", e])); exit(1) },
+      Ok(_) => println(concat(["ism-build: lism-1, LIC refit median ", fl(m.medianPc), " pc over ", fl(intToFloat(m.usedRows)), " rows, ", fl(intToFloat(length(m.shells))), " cloud shells -> ", out]))
+    }
+  }
+}
