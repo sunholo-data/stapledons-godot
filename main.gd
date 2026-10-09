@@ -354,7 +354,7 @@ func _run_map(args: Dictionary) -> void:
 ## galaxy map is the navigation console's screen: built here, attached to the same sim, and
 ## shown by the interior on demand. --interior-capture and --m4-smoke drive it by script.
 func _run_interior(args: Dictionary) -> void:
-	var capture := args.has("interior-capture") or args.has("glow-eps-sheet")
+	var capture := args.has("interior-capture") or args.has("glow-eps-sheet") or args.has("ism-capture")
 	var smoke := args.has("m4-smoke")
 	_map_mode = true # the interior and its map own the clock; no voyage ticks
 	if capture:
@@ -370,7 +370,7 @@ func _run_interior(args: Dictionary) -> void:
 		get_tree().quit(2)
 		return
 	sim.record_path = args.get("record", "")
-	sim.want_minor = 2 if capture or smoke else SimBridge.ISM_MINOR # R1-ISM-DUST: lism-1 (D-61)
+	sim.want_minor = SimBridge.ISM_MINOR if args.has("ism-capture") else (2 if capture or smoke else SimBridge.ISM_MINOR) # R1-ISM-DUST: lism-1 (D-61)
 	var ai := AiSession.new(args)
 	add_child(ai)
 	sim.archive_rows = LoreLoader.archive_rows(LoreLoader.load_entries()["entries"]) # M4.7: the codex table; the sim decides every unlock
@@ -406,7 +406,9 @@ func _run_interior(args: Dictionary) -> void:
 		review_button.position = Vector2(18, 110); review_layer.add_child(review_button)
 		review_button.pressed.connect(_open_ship_demo_review)
 	if capture: # loaded by path: tools/ is excluded from exports
-		if args.has("glow-eps-sheet"):
+		if args.has("ism-capture"):
+			get_tree().quit(await load("res://tools/ism_capture.gd").new().run(self, it, map, _out_dir(args["ism-capture"])))
+		elif args.has("glow-eps-sheet"):
 			get_tree().quit(await load("res://tools/glow_eps_sheet.gd").new().run(self, it, map, _out_dir(args["glow-eps-sheet"])))
 		else:
 			get_tree().quit(await load("res://tools/interior_capture.gd").new().run(self, it, map, _out_dir(args["interior-capture"])))

@@ -1,0 +1,44 @@
+-- R1-ISM-DUST I8: the sensitivity sheet's numbers (plan review F4; design section 6.1). The
+-- smallest visible (>= 5 % of the background) and bright (>= the background) grains and their
+-- rates over the wall per ship second, for the default population and its labelled
+-- alternatives: a_max 5 / 10 / 20 um, the hot gas's dust delta 0.0051 vs 0.002, and MRN only (no
+-- big-grain tail). Computed by sim/ism.ail (the same code the sim flies); printed as JSON for
+-- tools/ism_capture.gd, which renders the sheet. Pure; run with make ism-capture.
+module stapledons/sim/tools/ism_sensitivity
+
+import std/string (concat, join, floatToStr)
+import std/list (map)
+import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/dust (grainRate)
+import pkg/sunholo/celestial/ism (grainsAbove)
+import stapledons/sim/ism (Medium, DustCfg, defaultDustCfg, hotMedium, licMedium, thresholds, distOf, lutArray)
+import stapledons/sim/data/ism (grainABreak)
+
+type Variant = { name: string, cfg: DustCfg }
+
+pure func base() -> DustCfg = defaultDustCfg(0.0000000001, 0.5, 100.0)
+pure func variants() -> [Variant] = [
+  { name: "default (a_max 8.98 um, hot delta 0.0051)", cfg: base() },
+  { name: "a_max 5 um", cfg: {base() | aMax: 0.000005} },
+  { name: "a_max 10 um", cfg: {base() | aMax: 0.00001} },
+  { name: "a_max 20 um", cfg: {base() | aMax: 0.00002} },
+  { name: "hot-gas delta 0.002", cfg: {base() | hotDelta: 0.002} },
+  { name: "MRN only (no big-grain tail)", cfg: {base() | aMax: grainABreak()} }
+]
+
+pure func cell(v: Variant, m: Medium, label: string, oneMinusBeta: float) -> string {
+  let phi = rapidityOfOneMinusBeta(oneMinusBeta);
+  let t = thresholds(lutArray(), m, phi, v.cfg);
+  let d = distOf(m, v.cfg);
+  concat(["{\"variant\":\"", v.name, "\",\"medium\":\"", m.name, "\",\"speed\":\"", label, "\",\"a_visible_um\":", floatToStr(t.aVis * 1000000.0),
+          ",\"a_bright_um\":", floatToStr(t.aBright * 1000000.0), ",\"rate_visible\":", floatToStr(grainRate(grainsAbove(d, t.aVis), phi, 100.0)),
+          ",\"rate_bright\":", floatToStr(grainRate(grainsAbove(d, t.aBright), phi, 100.0)), "}"])
+}
+
+pure func rowsOf(v: Variant) -> [string] =
+  [cell(v, hotMedium(), "0.999c", 0.001), cell(v, licMedium(), "0.999c", 0.001), cell(v, hotMedium(), "0.999999c", 0.000001), cell(v, licMedium(), "0.999999c", 0.000001)]
+
+pure func flat(xs: [[string]], acc: [string]) -> [string] = match xs { [] => acc, x :: r => flat(r, app(acc, x)) }
+pure func app(a: [string], b: [string]) -> [string] = match a { [] => b, x :: r => x :: app(r, b) }
+
+export pure func main() -> string = concat(["[", join(",\n", flat(map(rowsOf, variants()), [])), "]"])

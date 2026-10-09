@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-ISM-DUST",
-  "status": "approved",
+  "status": "in_progress",
   "approved": false,
   "approved_by": "Mark Edmondson, attended 2026-10-09 (ledger D-61)",
   "created": "2026-10-09",
@@ -152,10 +152,10 @@
         "make parity green"
       ],
       "pr": "A",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "relativity 0.11.0 / celestial 0.3.0 pinned (039df8d, 0322f1a); minor 6 keeps relativity 0.10.0 in its hello (relativityPinGr). make test EXIT 0, make parity 0."
     },
     {
       "id": "I0_SPEC_AND_ORACLE",
@@ -171,10 +171,10 @@
         "Source-verification list in the spec PR with table and page per number"
       ],
       "pr": "A",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "tools/ism_dust_ref.py (stdlib oracle, --check passes); sources transcribed from arXiv LaTeX into data/ism/sources/*.tsv; spec PR sunholo-data/stapledons-design#11 MERGED (IS-1..36, HB-113..149, source-verification list). Flags: LIC coefficients refit (Table 3 does not reproduce Table 2; refit median 0.378 pc, in-sample); grain density 3,300 (not 2,500); AC6a membership 0.712 < 0.80 (cone approximation limit); Bohlin 606.3 not 606.1; Snowden n_e verified only via Liu 2017."
     },
     {
       "id": "I1_CELESTIAL_ISM",
@@ -189,10 +189,10 @@
         "grainDist recovers rho_d to 1e-12; LIC flux of >=1e-13 kg grains at 26 km/s within a factor 2 of 1e-7 m^-2 s^-1",
         "ailang test and ailang pkg quality (no gates) pass; version published"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "sunholo/celestial 0.4.0 PUBLISHED (ism module, 24 tests, ismProbe VM=interpreter). ailang-packages PR #106 merged. Independent Sonnet eval 86/100 PASS (.ailang/state/evaluations/eval_R1-ISM-DUST_packages_round_1.json), quality no gates, dry run clean.",
       "pr": "A"
     },
     {
@@ -209,10 +209,10 @@
         "Afterglow emittance integrated over time and spot equals eps f_in KE to 1e-12",
         "ailang pkg quality no gates; version published"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "sunholo/relativity 0.12.0 PUBLISHED (medium column/hold limit + dust module, 18 tests, dustDigest VM=interpreter). Same eval and gates as I1.",
       "pr": "A"
     },
     {
@@ -227,10 +227,10 @@
         "Every table value carries its source, table and page"
       ],
       "pr": "A",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "sim/tools/ism_build.ail -> sim/data/ism.ail + data/ism/ism.json; make ism-data (interp == VM) and ism-data-verify green. Efficacy LUT chunked (strict VM 256-register limit)."
     },
     {
       "id": "I4_SIM",
@@ -251,10 +251,10 @@
         "Bright totals within 3 sigma at real-time and compressed pacing; KS cos-theta; none at rest; 0 dropped in real-time streams; window <=32 in compressed; <=130 of 1024 slots (AC12)",
         "make strict and make parity green (AC13)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "sim/ism.ail + core/protocol 2.7: lism-1 default for new 2.7 games, uniform below (replay/parity/parity-m4/parity-gr unchanged). Ledger by column (AC9 1e-9 at 1/7/60 ticks), hold-limit refusal + hold_limit event (AC10), guided tour all 10 legs accepted under lism-1 (AC10b; no Q8), RNG untouched (AC11), make ism-determinism (strict VM = interpreter = rerun), make strict green, make sim 389/389. AC6a pinned at 42/59 (below 0.80, flagged).",
       "pr": "A"
     },
     {
@@ -269,10 +269,10 @@
         "Every lookup finite over its range, tested in tests/test_dust_flash.gd (AC15)",
         "Samplers match package values on fixed seeds"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "interior/dust_flash.gd + .gdshader wired in InteriorSky; make golden green incl. G-ISM-1..3; make dust-flash-test 26/26 (AC15).",
       "pr": "A"
     },
     {
@@ -287,10 +287,10 @@
         "make map-ism-test: every medium in ism.json drawn; route segmented; plan rows equal sim fields (AC16)",
         "make no-twitch-test: the layer key sends no intent"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "ui/ism_layer.gd + hook lines in galaxy_map.gd (D toggle, plan rows, hold-limit note); make map-ism-test 12/12.",
       "pr": "A"
     },
     {
@@ -304,10 +304,10 @@
         "make ship-ui-test new cases green (AC17)",
         "Deferred to a follow-up PR if R1-SHIP-UI U2 has not merged by day 11"
       ],
-      "passes": null,
-      "started": null,
+      "passes": false,
+      "started": "2026-10-09",
       "completed": null,
-      "notes": null,
+      "notes": "DEFERRED to a follow-up PR: R1-SHIP-UI PR #193 (strip/cards) not merged yet.",
       "pr": "A (or follow-up)"
     },
     {
@@ -323,9 +323,9 @@
         "make ism-bench within the design's budgets (AC19)"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-09",
       "completed": null,
-      "notes": null,
+      "notes": "IN PROGRESS: tools/ism_capture.gd + sim/tools/ism_sensitivity.ail; make ism-capture running -> renders/ism/. Next: inspect every frame (sips -Z 700), ism-bench.",
       "pr": "A"
     },
     {
@@ -364,7 +364,8 @@
       "notes": null
     }
   ],
-  "spec_pr": null,
+  "spec_pr": 11,
   "rerecorded": [],
-  "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump."
+  "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump.",
+  "next_step": "Finish I8 (inspect renders/ism, ism-bench), I9 docs (Archive drafts, CHANGELOG fragment, lore vendoring of ism-structure.md, design-doc index row, roadmap status), full make test + golden, open PR A, independent eval; then PR B (Edenhofer FITS already downloaded to data/raw/edenhofer2024, md5 verified)."
 }

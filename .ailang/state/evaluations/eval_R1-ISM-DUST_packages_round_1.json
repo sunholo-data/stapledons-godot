@@ -1,0 +1,32 @@
+{
+  "sprint_id": "R1-ISM-DUST", "scope": "packages (I0, I1, I2)", "round": 1,
+  "score": 86, "result": "pass",
+  "scores": {"tests_pass": 17, "lint_quality": 10, "acceptance_criteria": 26, "code_quality": 12, "documentation": 14, "design_fidelity": 7},
+  "gate_source": "local",
+  "checks": {
+    "celestial_quality": "no gates (0.4.0)", "relativity_quality": "no gates (0.12.0)",
+    "dry_run": "both clean, tarballs built, nothing uploaded",
+    "versions_free": "registry has celestial 0.3.0, relativity 0.11.0; 0.4.0 and 0.12.0 are next",
+    "per_file_tests": "ism_test 24/24, dust_test 10/10, medium_column_test 8/8, medium_test 28/28, reflect_test 13/13",
+    "vm_vs_interpreter": "ismProbe 64 and dustDigest 64 byte-identical (strict bytecode vs interpreter)",
+    "oracle_check": "python3 tools/ism_dust_ref.py --check exit 0",
+    "spec_pr": "HB-113..129,130..137,138..149 unique, no collisions; IS-1..36 unique; source table honest (Snowden secondary only, Bohlin/Draine not reopened, flagged)"
+  },
+  "findings": [
+    {"severity": "major", "where": "packages/celestial, packages/relativity: `ailang test .` (whole directory)", "issue": "Directory-level run reports failures: celestial 3 (starIlluminanceAt_property_2, discIlluminance_property_2, ringUnlitIF_property_2), relativity 7 (expm1_property_1, sinhc_property_1, accelerate/doppler/dopplerApparent/cmbSeenTemperature*_property_2). All are auto-generated property tests on modules this PR does not touch (reflect, rings, hyper, optics, blackbody); every per-file run is green and pkg quality attests 0 failed. Probably pre-existing on 0.52.0 but not verified against the base commit.", "fix": "Run `ailang test .` on origin/main to confirm they fail there too; if so, note it in the PR body (and report upstream). Do not claim `ailang test .` green."},
+    {"severity": "minor", "where": "packages/celestial/ism_test.ail:102-112", "issue": "HEALPix is checked against 14 hand-picked oracle rows plus a unit-vector sweep at 1e-14, not the design's 10^4 pixels at 1e-15. The 11,433-pixel healpy agreement (8.2e-15) lives only in the oracle run, not in the test.", "fix": "Say so in the CHANGELOG, or add a few hundred rows (or a checksum over a pixel stride) to the test."},
+    {"severity": "minor", "where": "packages/relativity/dust.ail:56-62 vs :70", "issue": "afterglowTemperature omits fIn and eps (greybody, both cancel by design) while luminance uses fIn; the emitter radiates from one face but T is set from the full KE. Labelled game approximation, energy identity eps*fIn*KE holds, but the T-vs-emittance inconsistency is not stated.", "fix": "One doc-comment line stating T is the whole-spot greybody temperature and fIn only splits the emitted light."},
+    {"severity": "minor", "where": "dust.ail docs / HB-124,125 vs HB-113", "issue": "Examples quote 2,500 kg/m^3 while the population uses 3,300. Labelled 'the package check', so honest, but easy to misread.", "fix": "Keep the label; consider a 3,300 check row beside it."},
+    {"severity": "minor", "where": "design 4.1 / IS-4..14 (deviation 1)", "issue": "AC1 is tested against a refit made on the same 63 rows (median 0.378), so it is in-sample and the 0.40 bound is nearly guaranteed. The refit and the failed reproduction (0.648) are reported openly; that is sound.", "fix": "Say 'in-sample' next to IS-13."},
+    {"severity": "minor", "where": "HB-117 (deviation 4)", "issue": "q = 3.1 is tuned to maximise the >=1e-13 kg flux under the mass constraint; flux 5.52e-8 is 0.55 of Krueger's 1e-7, so the 'within a factor of 2' check is partly circular. Disclosed.", "fix": "State in the spec that HB-120 is a fitted, not independent, check."},
+    {"severity": "minor", "where": "dust.visibleRadius signature", "issue": "Takes (aMin, aMax, rhoGrain, ...) instead of the design's GrainDist, avoiding a celestial dependency from relativity. Sound; the spec table already shows the real signature. [release] kind is 'feature', not 'minor' as the design text says; it matches the 0.11.0 convention."}
+  ],
+  "deviations_judged": {
+    "1_refit": "honest and sound; disclosed in spec, CHANGELOG, source table",
+    "2_density_3300": "correct per Krueger section 6; disclosed",
+    "3_membership_0.712": "honest; sim AC, stated in spec section 6 for Mark; alpha Cen column 17.70 vs 17.6+-0.15 is within error",
+    "4_q": "disclosed; see minor finding",
+    "5_healpix_tolerance": "acceptable (healpy 8.2e-15), but test coverage is thin; see minor finding"
+  },
+  "verdict": "PASS, 86/100. Publish gate conditions (quality no gates, dry-run clean, independent pass) are met; confirm the whole-directory property failures are pre-existing."
+}
