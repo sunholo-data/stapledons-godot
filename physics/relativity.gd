@@ -22,6 +22,55 @@ static func gamma_of_one_minus_beta(omb: float) -> float:
 	return 1.0 / sqrt(omb * (2.0 - omb))
 
 
+## Rapidity mirrors of sunholo/relativity kinematics (0.10.0): betaOf, gammaOf,
+## oneMinusBeta, rapidityOfBeta, with the package's hyper.tanh / cosh / atanh
+## (Kahan expm1 / log1p forms, so they agree with the package to rounding).
+## 1 - beta comes from phi directly (2 e^{-2|phi|} / (1 + e^{-2|phi|})), never as
+## 1.0 - beta_of_rapidity(phi): exact even where beta rounds to 1.
+
+static func _expm1(u: float) -> float:
+	var y := exp(u)
+	if y == 1.0:
+		return u
+	if y - 1.0 == -1.0:
+		return -1.0
+	return (y - 1.0) * u / log(y)
+
+
+static func _log1p(x: float) -> float:
+	var y := 1.0 + x
+	return x if y == 1.0 else log(y) * x / (y - 1.0)
+
+
+## beta = tanh(phi) (kinematics.betaOf; hyper.tanh is exactly +-1 beyond |phi| = 20).
+static func beta_of_rapidity(phi: float) -> float:
+	var a := absf(phi)
+	var t := 1.0
+	if a <= 20.0:
+		var e := _expm1(2.0 * a)
+		t = e / (e + 2.0)
+	return -t if phi < 0.0 else t
+
+
+## gamma = cosh(phi) (kinematics.gammaOf).
+static func gamma_of_rapidity(phi: float) -> float:
+	var e := exp(absf(phi))
+	return (e + 1.0 / e) / 2.0
+
+
+## 1 - |beta| from phi (kinematics.oneMinusBeta).
+static func one_minus_beta_of_rapidity(phi: float) -> float:
+	var e := exp(-2.0 * absf(phi))
+	return 2.0 * e / (1.0 + e)
+
+
+## phi = atanh(beta), |beta| < 1 (kinematics.rapidityOfBeta via hyper.atanh).
+static func rapidity_of_beta(b: float) -> float:
+	var a := absf(b)
+	var r := 0.5 * _log1p(2.0 * a / (1.0 - a))
+	return -r if b < 0.0 else r
+
+
 ## CMB temperature, K (higgs-bubble HB-5; the package's medium.cmbTemperatureK).
 const CMB_T0 := 2.725
 

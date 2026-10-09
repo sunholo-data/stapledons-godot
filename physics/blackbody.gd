@@ -25,6 +25,7 @@ const PHOTOPIC_K := 683.0 * 119104.29723971884
 static var _cache := {}
 static var _lut_img: Image = null
 static var _lut_logy := PackedFloat64Array()
+static var _wl_table: Array = []
 
 
 static func _g(x: float, mu: float, s1: float, s2: float) -> float:
@@ -56,6 +57,55 @@ static func planck(lam_nm: float, t_kelvin: float) -> float:
 static func xyz(t_kelvin: float) -> PackedFloat64Array:
 	if _cache.has(t_kelvin):
 		return _cache[t_kelvin]
+	var out := xyz_uncached(t_kelvin)
+	_cache[t_kelvin] = out
+	return out
+
+
+## The same integral without touching the shared cache. The per-wavelength factors
+## that do not depend on T (the CMF as float32 Vector3, as cmf() returns it, and
+## lambda_um^-5) come from a table built once, so the loop is bit-identical to
+## summing c = cmf(lam) and planck(lam, T) step by step (tests/test_physics.gd
+## test_blackbody_table checks it) at a tenth of the cost (lightspeed-loading:
+## the galaxy map's 5,098 star colours took 2.4 s).
+static func xyz_uncached(t_kelvin: float) -> PackedFloat64Array:
+	var tab := wavelength_table()
+	var lams: PackedFloat64Array = tab[0]
+	var cmfs: PackedVector3Array = tab[1]
+	var pows: PackedFloat64Array = tab[2]
+	var x := 0.0
+	var y := 0.0
+	var z := 0.0
+	for k in lams.size():
+		var e := C2 / (lams[k] * t_kelvin)
+		var p := 0.0 if e > 700.0 else pows[k] / (exp(e) - 1.0)
+		var c := cmfs[k]
+		x += c.x * p
+		y += c.y * p
+		z += c.z * p
+	return PackedFloat64Array([x * LAMBDA_STEP, y * LAMBDA_STEP, z * LAMBDA_STEP])
+
+
+## [lambda (nm), cmf(lambda), (lambda um)^-5] at the integration's wavelengths, the
+## same accumulation (lam += LAMBDA_STEP from LAMBDA_MIN) as the reference loop.
+## Built on first use; call it once on the main thread before workers use xyz_uncached.
+static func wavelength_table() -> Array:
+	if _wl_table.is_empty():
+		var lams := PackedFloat64Array()
+		var cmfs := PackedVector3Array()
+		var pows := PackedFloat64Array()
+		var lam := LAMBDA_MIN
+		while lam <= LAMBDA_MAX:
+			lams.append(lam)
+			cmfs.append(cmf(lam))
+			pows.append(pow(lam * 1e-3, -5.0))
+			lam += LAMBDA_STEP
+		_wl_table = [lams, cmfs, pows]
+	return _wl_table
+
+
+## The original step-by-step integral (reference for the table form; tests only).
+static func xyz_reference(t_kelvin: float) -> PackedFloat64Array:
 	var x := 0.0
 	var y := 0.0
 	var z := 0.0
@@ -67,9 +117,14 @@ static func xyz(t_kelvin: float) -> PackedFloat64Array:
 		y += c.y * p
 		z += c.z * p
 		lam += LAMBDA_STEP
-	var out := PackedFloat64Array([x * LAMBDA_STEP, y * LAMBDA_STEP, z * LAMBDA_STEP])
-	_cache[t_kelvin] = out
-	return out
+	return PackedFloat64Array([x * LAMBDA_STEP, y * LAMBDA_STEP, z * LAMBDA_STEP])
+
+
+## Main thread only: adds precomputed {T: xyz_uncached(T)} rows the cache lacks.
+static func seed_cache(rows: Dictionary) -> void:
+	for t in rows:
+		if not _cache.has(t):
+			_cache[t] = rows[t]
 
 
 static func luminance(t_kelvin: float) -> float:

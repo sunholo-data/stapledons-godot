@@ -9,6 +9,13 @@ const Lighting := preload("res://demos/ship_lighting.gd")
 const StarLight := preload("res://demos/ship_star_light.gd")
 const SolarDeparture := preload("res://demos/solar_departure.gd")
 const Attitude:=preload("res://demos/ship_attitude.gd")
+const BlackHoleVisit:=preload("res://demos/black_hole_visit.gd")
+## M3.6 (R1-M3-BLACK-HOLES): the Sgr A* demo, its own sgr_a session (null = flat space, GR off).
+var black_hole:RefCounted=null
+var codex:Codex # the Archive codex (M4.7), built on first use; unlocks only from the sim
+var bh_row:=HBoxContainer.new()
+var bh_next:=Button.new()
+var _bh_accum:=0.
 var tour_attitude:=Attitude.new()
 var _attitude_stop:=-99
 var _attitude_pending:=-99
@@ -74,18 +81,26 @@ var navigation_button := Button.new()
 ## Launched from the title screen (main.gd): Esc and the HUD's menu button return
 ## there. Every command-line launch keeps Esc = quit.
 var menu_return := false
+var settings_dir := "user://" # where the title screen keeps settings.cfg (tests redirect it)
 var menu_button := Button.new()
 func _ready() -> void:
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
 	if OS.get_cmdline_user_args().has("--ship-identification-smoke"):_identification_smoke.call_deferred()
 	if OS.get_cmdline_user_args().has("--solar-departure-smoke"):_solar_departure_smoke.call_deferred()
+	if ready_ok and setup_options.get("scenario",scenario_arg(OS.get_cmdline_user_args()))==BlackHoleVisit.SCENARIO:start_black_hole.call_deferred()
+## make run-bh: --scenario=sgr_a starts the Sgr A* demo aboard (the only scenario this launch takes).
+static func scenario_arg(args:PackedStringArray)->String:
+	for a in args:
+		if a.begins_with("--scenario="):return a.trim_prefix("--scenario=")
+	return ""
 func asset(file: String) -> String:
 	var source := "res://assets/ship_demo/"+file
 	return source if FileAccess.file_exists(source) else "res://ship_demo_bundle/"+file+".bin"
 func setup(opts := {}) -> bool:
 	if ready_ok:return true
 	menu_return=opts.get("from_menu",false)
+	settings_dir=opts.get("settings_dir",settings_dir)
 	manifest=JSON.parse_string(FileAccess.get_file_as_string(asset("manifest.json")))
 	var px: Vector2i=opts.get("size",get_window().size)
 	var visual := AreaBundle.load_glb(asset("ship.glb"))
@@ -170,6 +185,13 @@ func _hud() -> void:
 	solar_skip.tooltip_text="Jump to the next stage of this leg: accelerating → cruise → braking → final approach → arrival"
 	solar_skip.pressed.connect(skip_stage)
 	tour_row.add_child(solar_skip)
+	var bh_start:=Button.new();bh_start.text="Visit Sgr A* (black hole)";bh_start.add_theme_font_size_override("font_size",12)
+	bh_start.tooltip_text="The supermassive black hole at the Galactic Centre: approach from 10⁶ r_s, hover at 10, 5 and 3 r_s, orbit at 3 r_s"
+	bh_start.pressed.connect(start_black_hole);tour_row.add_child(bh_start)
+	hud.add_child(bh_row);bh_row.visible=false
+	bh_next.add_theme_font_size_override("font_size",12);bh_next.pressed.connect(bh_next_stop);bh_row.add_child(bh_next)
+	for pair in [["Finish approach [K]",bh_finish_approach],["Archive [C]",toggle_codex],["Leave Sgr A* [L]",leave_black_hole]]:
+		var b:=Button.new();b.text=pair[0];b.add_theme_font_size_override("font_size",12);b.pressed.connect(pair[1]);bh_row.add_child(b)
 	hud.add_child(controls);controls.visible=false
 	var row:=HBoxContainer.new();controls.add_child(row)
 	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Reference rim [4]","rim"],["Reset [R]","reset"]]:
@@ -184,12 +206,12 @@ func _hud() -> void:
 	for pair in [["Look forward/up [7]","forward"],["Look side [8]","side"],["Look aft/down [9]","aft"]]:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));sky_row.add_child(button)
 	var sky_button:=Button.new();sky_button.text="Sky only diagnostic [H]";sky_button.pressed.connect(toggle_sky_only);controls.add_child(sky_button)
-	view_button.pressed.connect(func():set_auto_view(not sky.system_view.body_fader));controls.add_child(view_button)
+	view_button.pressed.connect(toggle_auto_view);controls.add_child(view_button)
 	var brightness_row:=GridContainer.new();brightness_row.columns=4;controls.add_child(brightness_row)
 	for stops in BRIGHTNESS_STOPS:
 		var button:=Button.new();button.text="Reference sky" if stops==0 else ("Dim %d stops"%(-stops) if stops<0 else "%d× brighter"%int(pow(2.,stops)))
 		button.pressed.connect(set_brightness_trial.bind(stops));brightness_row.add_child(button)
-	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · scroll to zoom · E lift · hold I + click known star · G guides · "+("Esc main menu" if menu_return else "Esc close");controls.add_child(hint)
+	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · scroll to zoom · E lift · hold I + click known star · G guides · "+("Esc main menu" if menu_return else "Esc close")+"\nSgr A* demo: N next stop · K finish approach · C Archive (codex) · L leave";controls.add_child(hint)
 func toggle_controls() -> void:
 	if not benchmark.running:controls.visible=not controls.visible
 func set_brightness_trial(stops: int) -> bool:
@@ -206,6 +228,12 @@ func set_brightness_trial(stops: int) -> bool:
 ## D-38: Realistic = one physical exposure for sky and bodies (sunlit bodies
 ## clip at a star-friendly setting); Auto = the same manual sky exposure, with
 ## each resolved body faded on its own so planets and stars show together.
+## The player's toggle (V or the button): in a ship launched from the title screen the
+## choice is saved, so the next session starts the same way (D-55).
+func toggle_auto_view() -> void:
+	set_auto_view(not sky.system_view.body_fader)
+	if menu_return:
+		var gs:=GameSettings.new();gs.dir=settings_dir;gs.load_settings();gs.auto_view=sky.system_view.body_fader;gs.save_settings()
 func set_auto_view(on: bool) -> void:
 	sky.system_view.body_fader=on
 	view_button.text="View: Auto, bodies faded to fit [V]" if on else "View: Realistic, one exposure [V]"
@@ -239,7 +267,7 @@ func reference_view(radius: float, tilt: float) -> void:
 	camera.follow(Vector3(radius*2/sqrt(5.),82,radius/sqrt(5.)),-tilt,.463648,0.)
 	_sync_observer()
 func set_sky_state(name: String) -> bool:
-	if benchmark.running or live_journey or solar_tour!=null or not sky_states.has(name):return false
+	if benchmark.running or live_journey or solar_tour!=null or black_hole!=null or not sky_states.has(name):return false
 	sky_state=name;sky_world=sky_states[name].duplicate(true)
 	var h:Dictionary=sky_world.ship.heading
 	camera.heading=PackedFloat64Array([h.x,h.y,h.z])
@@ -292,6 +320,11 @@ func _process(delta: float) -> void:
 		while _journey_accum>=1./GalaxyMap.TICK_HZ:
 			_journey_accum-=1./GalaxyMap.TICK_HZ
 			journey_tick()
+	if black_hole!=null and journey_auto_tick and not benchmark.running:
+		_bh_accum=minf(_bh_accum+delta,4./BlackHoleVisit.TICK_HZ)
+		while _bh_accum>=1./BlackHoleVisit.TICK_HZ and black_hole!=null:
+			_bh_accum-=1./BlackHoleVisit.TICK_HZ
+			bh_tick()
 	if auto and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()):
 		var move:=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_W))-float(Input.is_physical_key_pressed(KEY_S)))
 		walk_motion(move,delta)
@@ -304,7 +337,8 @@ func _process(delta: float) -> void:
 	sky.finish_exposure_frame(delta)
 	star_light.update(lighting,sky,delta)
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	var details:String="CURRENT SHIP · seven tiers · GR not implemented\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
+	if black_hole!=null:bh_next.text="Next stop [N] · "+black_hole.next_label() if not black_hole.next_label().is_empty() else "Last stop reached · L leaves"
+	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
 	label.text=hud_text(view_name,details)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
@@ -337,9 +371,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_8:look_direction("side")
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
-			KEY_V:set_auto_view(not sky.system_view.body_fader)
+			KEY_V:toggle_auto_view()
 			KEY_ENTER:continue_interlude()
-			KEY_K:skip_stage()
+			KEY_K:
+				if black_hole!=null:bh_finish_approach()
+				else:skip_stage()
+			KEY_N:bh_next_stop()
+			KEY_C:toggle_codex()
+			KEY_L:leave_black_hole()
 			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
@@ -350,7 +389,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_E:
 				if lift!=null:lift.board()
 			KEY_ESCAPE:
-				if menu_return:return_to_menu()
+				if codex!=null and codex.panel.visible:codex.close()
+				elif menu_return:return_to_menu()
 				else:get_tree().quit()
 ## Back to the title screen (main.tscn on a plain launch); _exit_tree stops the voyage's sim.
 func return_to_menu() -> void:
@@ -376,6 +416,7 @@ func _collision(n: Node) -> void:
 		if not child is StaticBody3D:_collision(child)
 func _exit_tree() -> void:
 	if journey_sim!=null:journey_sim.stop()
+	if black_hole!=null:black_hole.stop()
 	for n in _walk_nodes:if is_instance_valid(n):n.free()
 
 func _guides() -> void:
@@ -400,6 +441,11 @@ func _export_smoke() -> void:
 	print("ship-demo-smoke-stage manual exposure: ",ok," EV=",sky.exposure.ev)
 	ok=ok and not commons.is_empty() and commons.visual.get_parent()==geometry
 	print("ship-demo-smoke-stage assets: ",ok)
+	# The exported app must carry the GR lens tables (dev.23 shipped without them: Sgr A*
+	# drew nothing). Load and check them from the bundle, as the lensed sky does.
+	var lens_ok:=Schwarzschild.load_tables()
+	ok=ok and lens_ok
+	print("ship-demo-smoke-stage lens tables: ",lens_ok," ",Schwarzschild.load_error)
 	if ok:
 		for direction in 2:
 			ok=ok and lift.board()
@@ -467,6 +513,8 @@ func _identification_smoke() -> void:
 
 ## Separate session: this demo never touches main.gd's active voyage.
 func open_navigation() -> void:
+	if black_hole!=null:
+		caption="Navigation is for flat space: leave Sgr A* first (L).";return
 	if solar_tour!=null:
 		solar_tour.paused=true;solar_pause.text="Resume tour"
 	_create_navigation("sol")
@@ -493,16 +541,20 @@ func _create_navigation(scenario:String) -> void:
 		navigation_window.add_child(journey_map)
 		journey_map.load_catalogue("res://data/starmap/stars.json");journey_map.load_names("res://data/starmap/names.json")
 		journey_map.attach(journey_sim)
+		var bh_entry:=Button.new();bh_entry.name="SgrAEntry";bh_entry.text="Sgr A* (black hole) · demo"
+		bh_entry.tooltip_text="Leave the Solar System for the black hole at the Galactic Centre (a separate demo session; GR on)"
+		bh_entry.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT,Control.PRESET_MODE_MINSIZE,12)
+		bh_entry.grow_horizontal=Control.GROW_DIRECTION_BEGIN;bh_entry.grow_vertical=Control.GROW_DIRECTION_BEGIN
+		bh_entry.pressed.connect(start_black_hole,CONNECT_DEFERRED) # the window is freed by the switch
+		navigation_window.add_child(bh_entry)
 		var acen:=journey_map.index_of("CNS5:3627")
 		if journey_map.preselect(acen):journey_map.frame_star(acen)
 		if scenario=="sol":journey_tick()
 func start_solar_departure() -> bool:
 	if benchmark.running or live_journey or (journey_sim!=null and journey_sim.world.get("journey",{}).get("state","")=="committed"):
 		caption="Finish the committed journey before starting a new Solar demo.";return false
-	if journey_sim!=null:journey_sim.stop()
-	if navigation_window!=null:
-		remove_child(navigation_window);navigation_window.queue_free()
-	journey_sim=null;journey_map=null;navigation_window=null;solar_tour=null
+	if black_hole!=null:leave_black_hole()
+	_drop_navigation()
 	_create_navigation("solar_departure")
 	if journey_map==null:return false
 	solar_tour=SolarDeparture.new()
@@ -519,6 +571,13 @@ func start_solar_departure() -> bool:
 	sky_state="live";caption="Guided tour: 12-second stops; Next stop skips a dwell. M pauses for navigation."
 	_apply_journey_world();look_direction("forward");close_navigation()
 	return true
+## The normal navigation session and its window, gone (a guided tour or the Sgr A* demo replaces them).
+func _drop_navigation() -> void:
+	if journey_sim!=null:journey_sim.stop()
+	if navigation_window!=null:
+		remove_child(navigation_window);navigation_window.queue_free()
+	journey_sim=null;journey_map=null;navigation_window=null;solar_tour=null
+	solar_pause.visible=false;solar_next.visible=false;solar_skip.visible=false
 func close_navigation() -> void:
 	if navigation_window==null:return
 	journey_map.close_commit_dialog();navigation_window.hide()
@@ -613,6 +672,14 @@ const PHASE_WORDS := {"at_rest":"STOPPED","boosting":"ACCELERATING","cruising":"
 func hud_text(view_name: String, details: String) -> String:
 	var ship: Dictionary = sky_world.get("ship", {}) if sky_world is Dictionary else {}
 	var clock: Dictionary = sky_world.get("clock", {}) if sky_world is Dictionary else {}
+	if black_hole != null:
+		# M3.6: every black-hole number is the sim's gr section, formatted (BlackHoleVisit.hud_lines)
+		var bh := Array(BlackHoleVisit.hud_lines(black_hole.gr()))
+		if not clock.is_empty():
+			bh.append("Ship +%s · far-away (home) clock +%s since arriving" % [duration_text(float(clock.get("tau", 0.0))), duration_text(float(clock.get("year", 0.0)))])
+		bh.append(("AUTO" if sky.system_view.body_fader else "REALISTIC") + " view · N next stop · K finish approach · C Archive · L leave · Tab details")
+		if not caption.is_empty(): bh.append(caption)
+		return "\n".join(bh) + ("\n\n" + details if controls.visible else "")
 	var where := "Ship · %s" % view_name
 	if solar_tour != null:
 		var state: String = "CRUISE INTERLUDE" if solar_tour.interlude != null else PHASE_WORDS.get(str(ship.get("phase", "")), str(ship.get("phase", "")).to_upper())
@@ -725,6 +792,7 @@ static func duration_text(years: float) -> String:
 	return "%.2f yr" % years
 
 func journey_label() -> String:
+	if black_hole!=null:return "SGR A* DEMO · stop %d of %d · %s" % [black_hole.stops_taken,BlackHoleVisit.STOPS.size(),"next: "+black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop"]
 	if solar_tour!=null:return solar_tour.status_text()+ (" · PAUSED" if solar_tour.paused else "")
 	if sky_state!="live":return "FROZEN MID-JOURNEY SNAPSHOT %.4fc" % sky.beta if sky_state=="cruise" else "AT REST SNAPSHOT"
 	return "LIVE %s · %.6fc\nEarth +%.8f yr / ship +%.8f yr · Variable time compression · %s ship-yr/real-s \nM navigation · 7 look forward" % [sky_world.ship.phase,sky.beta,sky_world.clock.year,sky_world.clock.tau,GalaxyMap.sci(journey_map.pacing.rate)]
@@ -747,3 +815,82 @@ func _solar_departure_smoke()->void:
 	solar_tour=null
 	tree.create_timer(.1).timeout.connect(tree.quit.bind(0 if ok else 1),CONNECT_ONE_SHOT)
 	queue_free()
+
+# ------------------------------------------------------------ M3.6: Sgr A* aboard the ship
+## "GR on" with the sim's radius, or "GR off": the details line and the benchmark report.
+func gr_status() -> String:
+	if black_hole != null and sky.gr_lens != null and sky.gr_lens.active:
+		return "GR on: Schwarzschild sky from the sim's gr section (r = %s r_s) · exposure fixed (manual; an auto meter would not see the shadow)" % BlackHoleVisit.r_text(float(sky.gr_lens.state.r))
+	return "GR off (flat space; GR in the Sgr A* demo)"
+## The navigation entry, the HUD button and --scenario=sgr_a: a new sgr_a session replaces the
+## normal navigation session (refused while a committed journey is under way).
+func start_black_hole() -> bool:
+	if benchmark.running:return false
+	if black_hole != null:return true
+	if live_journey or (journey_sim!=null and journey_sim.world.get("journey",{}).get("state","")=="committed"):
+		caption="Finish the committed journey before visiting Sgr A*.";return false
+	_drop_navigation()
+	var v:=BlackHoleVisit.new()
+	if not v.start(LoreLoader.archive_rows(LoreLoader.load_entries()["entries"])):
+		caption="Sgr A* unavailable: "+v.last_error;return false
+	black_hole=v;_bh_accum=0.
+	_ensure_codex()
+	bh_row.visible=true
+	sky_state="black_hole"
+	_apply_bh_world();look_direction("forward")
+	caption="Sgr A*, 10⁶ r_s out (1.34 ly). N: next stop (approach to 10 r_s at β 0.1)."
+	return true
+## The sim's world on the sky. The ship holds its nose on the hole (client attitude, like the
+## guided tour's turns), so look forward / side / aft are toward, across and away from it.
+func _apply_bh_world() -> void:
+	var g:Dictionary=black_hole.gr()
+	sky_world=black_hole.sim.world.duplicate(true)
+	var h:Dictionary=g.hole_dir
+	sky_world.ship.heading={"x":h.x,"y":h.y,"z":h.z}
+	camera.heading=PackedFloat64Array([h.x,h.y,h.z])
+	sky.apply(sky_world);_sync_observer()
+	if codex!=null:codex.show_world(sky_world)
+## One live tick of the visit; the first ring star (the sky's ring path) is reported to the sim.
+func bh_tick() -> bool:
+	if black_hole==null:return false
+	if sky.gr_lens!=null and sky.gr_lens.active and not sky.gr_lens.ring.is_empty():black_hole.report_ring()
+	var was:bool=black_hole.approaching()
+	if not black_hole.step():
+		caption="Sgr A* step failed: "+black_hole.last_error;return false
+	if was and not black_hole.approaching():_arrived()
+	_apply_bh_world()
+	return true
+func bh_next_stop() -> bool:
+	if black_hole==null:return false
+	var label:String=black_hole.next_label()
+	if not black_hole.next_stop():
+		caption="Approach under way (K finishes it)." if black_hole.approaching() else ("Last stop reached; L leaves." if label.is_empty() else "Refused by the sim: "+black_hole.last_error)
+		return false
+	caption=label+"."
+	_apply_bh_world()
+	return true
+func bh_finish_approach() -> bool:
+	if black_hole==null or not black_hole.finish_approach():return false
+	_arrived()
+	_apply_bh_world()
+	return true
+func _arrived() -> void:
+	caption="Arrived: hovering at r = %s r_s. N: %s." % [BlackHoleVisit.r_text(float(black_hole.gr().r)),black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop reached"]
+## Back to Sol at rest: the sgr_a session ends and the sky is flat again (GR off).
+func leave_black_hole() -> void:
+	if black_hole==null:return
+	black_hole.stop();black_hole=null
+	bh_row.visible=false
+	if codex!=null:codex.close()
+	sky_state="rest";set_sky_state("rest")
+	caption="Back at Sol (rest snapshot). M opens navigation."
+func _ensure_codex() -> void:
+	if codex!=null:return
+	var layer:=CanvasLayer.new();layer.layer=13;add_child(layer)
+	codex=load("res://ui/archive/codex.tscn").instantiate();layer.add_child(codex)
+	codex.load_lore()
+## C: the Archive codex (what the sim has unlocked this session).
+func toggle_codex() -> void:
+	_ensure_codex()
+	if codex.panel.visible:codex.close()
+	else:codex.open()

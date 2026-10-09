@@ -1328,6 +1328,8 @@ func _schwarzschild_tables(deg: Callable) -> void:
 	for psi: float in [0.01, 0.1, 0.5, 1.0, 2.0, 3.0]:
 		worst_w = maxf(worst_w, absf(Schwarzschild.deflection(1e6, psi) / Schwarzschild.weak_deflection_finite(1e6, psi) - 1.0))
 	check("AC-5 r = 1e6 row vs weakDeflectionFinite (psi 0.01..3): relative", worst_w, 0.0, 1e-3)
+	for wk: Array in [[2e6, 0.5], [3e6, 0.01], [1.5e6, 3.0]]:
+		check("M3.6 weak_k(r) cot(psi/2) == weakDeflectionFinite (r %d, psi %s), the shader gr_weak_k" % [int(wk[0]), wk[1]], Schwarzschild.weak_k(wk[0]) / tan(wk[1] / 2.0), Schwarzschild.weak_deflection_finite(wk[0], wk[1]), 1e-12 * Schwarzschild.weak_deflection_finite(wk[0], wk[1]))
 	check("beyond r = 1e6 the weak branch is used (r = 2e6, psi 0.5)", Schwarzschild.deflection(2e6, 0.5), Schwarzschild.weak_deflection_finite(2e6, 0.5), 0.0)
 	# AC-8 mirror half: the weak-field pair on the r -> infinity row (r = 1e6)
 	for row: Array in [[1000.0, "RS-14 / AC-8: r = 1e6 row, b = 1000: |delta/(2/b) - 1| <= 1 %", 0.01, 2.0 / 1000.0], [100.0, "RS-15 / AC-8: r = 1e6 row, b = 100: |delta/(2/b + 15 pi/16 b^2) - 1| <= 3e-4", 3e-4, Schwarzschild.weak_deflection2(100.0)]]:
@@ -1440,6 +1442,55 @@ func _schwarzschild_gpu_handoff() -> void:
 	check("derivation: sin((psi - psi0)/2)/sin(psi/2) over sin((psi1 - psi0)/2)/sin(psi1/2) = the cot(psi/2) weight", wmax, 0.0, 1e-9)
 
 
+## Lightspeed loading (design_docs/planned/r1/lightspeed-loading.md): the rapidity mirrors
+## against sunholo/relativity 0.10.0 kinematics (values printed by the package's
+## rapidityOfBeta / betaOf / gammaOf / oneMinusBeta on v0.52.0), and the spec §1-2
+## conventions at the loading jump's top speed, beta = 0.99999.
+func test_rapidity() -> void:
+	print("Rapidity mirror (sunholo/relativity kinematics)")
+	var phi := Relativity.rapidity_of_beta(0.99999)
+	check("phi = atanh(0.99999) (package rapidityOfBeta)", phi, 6.1030338227611125, 1e-12)
+	check("betaOf(phi) = 0.99999", Relativity.beta_of_rapidity(phi), 0.99999, 1e-15)
+	check("gammaOf(phi) = 223.60735676957853 (package)", Relativity.gamma_of_rapidity(phi), 223.60735676957853, 1e-9)
+	check("oneMinusBeta(phi) = 9.999999999954488e-6 (package; never 1.0 - beta)", Relativity.one_minus_beta_of_rapidity(phi) * 1e6, 9.999999999954488, 1e-9)
+	check("betaOf(phi/2) (package)", Relativity.beta_of_rapidity(0.5 * phi), 0.9955378306036704, 1e-15)
+	check("gammaOf(phi/2) (package)", Relativity.gamma_of_rapidity(0.5 * phi), 10.597342987031668, 1e-11)
+	check("oneMinusBeta(phi/2) (package)", Relativity.one_minus_beta_of_rapidity(0.5 * phi), 0.0044621693963295475, 1e-15)
+	check("spec §1: gamma = 1/sqrt(1 - beta^2) at 0.99999c (via 1 - beta)", Relativity.gamma_of_rapidity(phi), Relativity.gamma_of_one_minus_beta(Relativity.one_minus_beta_of_rapidity(phi)), 1e-8)
+	check("rest: beta 0, gamma 1, 1 - beta 1", Relativity.beta_of_rapidity(0.0) + Relativity.gamma_of_rapidity(0.0) + Relativity.one_minus_beta_of_rapidity(0.0), 2.0, 0.0)
+	check("odd: betaOf(-phi) = -betaOf(phi)", Relativity.beta_of_rapidity(-phi), -0.99999, 1e-15)
+	check("beyond |phi| 20 beta is exactly 1 (hyper.tanh), 1 - beta still positive", Relativity.beta_of_rapidity(25.0) + (1.0 if Relativity.one_minus_beta_of_rapidity(25.0) > 0.0 else 0.0), 2.0, 0.0)
+	var b := Relativity.beta_of_rapidity(phi)
+	var fwd := Vector3(0, 0, -1)
+	check("spec §2 aberration: 90 deg source at 0.99999c appears at acos(beta) = 0.25623 deg (atan2 angle, float32 vector)", rad_to_deg(Relativity.angle_between(Relativity.aberrate(Vector3(1, 0, 0), fwd, b), fwd)), rad_to_deg(acos(0.99999)), 1e-4)
+	check("spec §2 Doppler: appearing at 90 deg is 1/gamma", Relativity.doppler_apparent(Vector3(1, 0, 0), fwd, b) * Relativity.gamma_of_rapidity(phi), 1.0, 1e-6)
+	check("spec §2 Doppler ahead = gamma (1 + beta) = 447.21", Relativity.doppler(fwd, fwd, b), Relativity.gamma_of_rapidity(phi) * (1.0 + b), 1e-9)
+	for i in 101: # monotone over the jump's 0..1 progress, all finite
+		var p := i / 100.0
+		var q := (i + 1) / 100.0
+		if not (Relativity.beta_of_rapidity(q * phi) > Relativity.beta_of_rapidity(p * phi) and Relativity.one_minus_beta_of_rapidity(q * phi) < Relativity.one_minus_beta_of_rapidity(p * phi) and is_finite(Relativity.gamma_of_rapidity(p * phi))):
+			check("beta rises, 1 - beta falls monotonically over the jump (p = %.2f)" % p, 0.0, 1.0, 0.0)
+			return
+	check("beta rises, 1 - beta falls monotonically over the jump (101 steps)", 1.0, 1.0, 0.0)
+
+
+## The table form of the colour integral (Blackbody.xyz_uncached, lightspeed-loading)
+## is bit-identical to the step-by-step reference at every temperature the game asks for.
+func test_blackbody_table() -> void:
+	print("Blackbody table integral = reference (bit-identical)")
+	var temps := PackedFloat64Array([0.5, 1.0, 2.725, 300.0, 1000.0, 2856.0, 5772.0, 6500.0, 1e5, 1e7, 4e7, 1e9])
+	var cat := LoadingJump.catalogue_temperatures()
+	for i in range(0, cat.size(), 7):
+		temps.append(cat[i])
+	for i in range(0, CmbGlow.LUT_SIZE, 16):
+		temps.append(CmbGlow.T_MAX * i / (CmbGlow.LUT_SIZE - 1.0))
+	var bad := 0
+	for t in temps:
+		if Blackbody.xyz_uncached(t) != Blackbody.xyz_reference(t):
+			bad += 1
+	check("table xyz differs from the reference at %d of %d temperatures" % [bad, temps.size()], bad, 0.0, 0.0)
+
+
 func _initialize() -> void:
 	var vp := SubViewport.new()
 	vp.size = Vector2i(960, 540)
@@ -1472,6 +1523,8 @@ func _init() -> void:
 	test_sky_frame()
 	_m5_photometry()
 	test_schwarzschild()
+	test_rapidity()
+	test_blackbody_table()
 
 	print("Aberration (sources crowd toward the direction of motion)")
 	check("90 deg source at 0.9c appears at acos(0.9) = 25.842 deg", angle_deg(Relativity.aberrate(side, fwd, 0.9), fwd), rad_to_deg(acos(0.9)), 1e-4)

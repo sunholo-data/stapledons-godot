@@ -54,6 +54,30 @@ var _t := PackedFloat32Array() # T_c per CPU texel
 var _logy := PackedFloat32Array() # log10 Y on the shader's LUT grid
 
 
+## The default panorama pair, decoded once per live use: a second sky attached while
+## another still holds the pair's textures (the title screen's sky during the
+## loading jump, ui/loading_jump.gd) shares them and their CPU calibration copy
+## instead of decoding 2 x 10k PNGs again (~2 s). Weak references: once no sky holds
+## the textures they are freed and the next attach decodes as before.
+static var _shared := {}
+var shared_hit := false # this attach reused a live pair (tests)
+
+
+static func _live_shared(key: String) -> Dictionary:
+	var e: Dictionary = _shared.get(key, {})
+	if e.is_empty():
+		return {}
+	var p: Variant = e["photo"].get_ref()
+	var m: Variant = e["model"].get_ref()
+	if p == null or m == null:
+		_shared.erase(key)
+		return {}
+	var out := e.duplicate()
+	out["photo"] = p
+	out["model"] = m
+	return out
+
+
 static func available() -> bool:
 	return not _paths().is_empty()
 
@@ -74,23 +98,41 @@ static func _load_png(path: String) -> Image:
 
 ## Attach to env using the given panorama pair (defaults: the NOIRLab model).
 func attach(env: Environment, viewport_height: float, fov_deg: float, photo: Image = null, model: Image = null) -> bool:
+	var lut := Blackbody.build_lut()
+	var key := ""
+	var photo_tex: ImageTexture = null
+	var model_tex: ImageTexture = null
 	if photo == null:
 		var paths := _paths()
 		if paths.is_empty():
 			return false
-		# res:// paths read through FileAccess, so the same code reads the .pck
-		photo = _load_png(paths[0])
-		model = _load_png(paths[1])
-		if photo == null or model == null:
-			push_error("sky background: failed to decode %s / %s" % paths)
-			return false
-	photo.generate_mipmaps()
-	model.generate_mipmaps()
-	var lut := Blackbody.build_lut()
-	_cpu_copy(photo, model, lut.get_image())
+		key = "%s|%s" % paths
+		var live := _live_shared(key)
+		if not live.is_empty(): # another sky still holds this pair: the same textures and calibration
+			photo_tex = live["photo"]
+			model_tex = live["model"]
+			_w = live["w"]; _h = live["h"]; _y = live["y"]; _t = live["t"]; _logy = live["logy"]
+			dark_patch_y = live["dark_patch_y"]; peak_y = live["peak_y"]; stretch = live["stretch"]; cdm2_per_unit = live["cdm2_per_unit"]
+			shared_hit = true
+		else:
+			# res:// paths read through FileAccess, so the same code reads the .pck
+			photo = _load_png(paths[0])
+			model = _load_png(paths[1])
+			if photo == null or model == null:
+				push_error("sky background: failed to decode %s / %s" % paths)
+				return false
+	if photo_tex == null:
+		photo.generate_mipmaps()
+		model.generate_mipmaps()
+		_cpu_copy(photo, model, lut.get_image())
+		photo_tex = ImageTexture.create_from_image(photo)
+		model_tex = ImageTexture.create_from_image(model)
+		if key != "":
+			_shared[key] = {"photo": weakref(photo_tex), "model": weakref(model_tex), "w": _w, "h": _h, "y": _y, "t": _t, "logy": _logy,
+				"dark_patch_y": dark_patch_y, "peak_y": peak_y, "stretch": stretch, "cdm2_per_unit": cdm2_per_unit}
 	material.shader = SHADER
-	material.set_shader_parameter("photo", ImageTexture.create_from_image(photo))
-	material.set_shader_parameter("model", ImageTexture.create_from_image(model))
+	material.set_shader_parameter("photo", photo_tex)
+	material.set_shader_parameter("model", model_tex)
 	material.set_shader_parameter("t_lo", SkyModel.T_LO)
 	material.set_shader_parameter("t_hi", SkyModel.T_HI)
 	material.set_shader_parameter("bb_lut", lut)
@@ -98,7 +140,7 @@ func attach(env: Environment, viewport_height: float, fov_deg: float, photo: Ima
 	material.set_shader_parameter("stretch", stretch)
 	material.set_shader_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
 	material.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
-	material.set_shader_parameter("pano_px_per_screen_px", photo.get_height() / 180.0 * fov_deg / viewport_height)
+	material.set_shader_parameter("pano_px_per_screen_px", photo_tex.get_height() / 180.0 * fov_deg / viewport_height)
 	material.set_shader_parameter("cmb_size", CmbGlow.PROFILE_SIZE)
 	material.set_shader_parameter("screen_px_rad", deg_to_rad(fov_deg) / viewport_height)
 	var sky := Sky.new()

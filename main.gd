@@ -9,6 +9,7 @@ extends Node3D
 ## Title screen: godot --path .   (a plain launch, no user args: ui/title_screen.gd; Board the ship /
 ##              Guided voyage / Galaxy map / Settings / Credits / Quit; Esc in the ship or map returns to it)
 ## Current ship: godot --path . -- --ship-demo (live navigation, expanded painted 3D ship, captain eye)
+## Sgr A* aboard: godot --path . -- --ship-demo --scenario=sgr_a (make run-bh; M3.6)
 ## Interior reference: godot --path . -- --interior [--bundle=DIR] (M4.2: original fixed-view bridge with
 ##              the live sky; WASD walk, E use, M galaxy map, L log, K codex; --interior-capture=DIR the S1 review
 ##              captures (tools/interior_capture.gd); --m4-smoke [--bundle=DIR] the scripted slice (make m4-smoke))
@@ -82,6 +83,11 @@ static var title_overrides := {}
 static var demo_overrides := {}
 var title: TitleScreen
 var _from_menu := false # the galaxy map was opened from the title screen: Esc returns there
+var menu_button: Button # the map's "Main menu [Esc]" button, when opened from the title screen
+func _return_to_menu() -> void:
+	if not _from_menu: return
+	_from_menu = false
+	get_tree().change_scene_to_file("res://main.tscn")
 ## guided: start the solar-departure tour as soon as the ship is ready (title screen).
 func _start_current_ship(live_start: bool, extra := {}, guided := false) -> void:
 	UiScale.configure(get_window(),not live_start and not guided)
@@ -112,10 +118,35 @@ func _show_title() -> void:
 	title.chosen.connect(_on_title_route)
 
 
-## The title screen's choice. The ship's view setting goes to the ship; text-only
-## is already in ai_settings.cfg, which the AI session reads.
+## Tests only: {"enabled": true} runs the loading jump on a title without a sky,
+## {"prefetch": false} without its worker-thread prefetch.
+static var loading_overrides := {}
+var loading_jump: LoadingJump = null
+
+
+## The title screen's choice. Ship, guided and map go through the lightspeed loading
+## view (ui/loading_jump.gd) when the title shows the sky; it takes the title's sky,
+## prefetches on worker threads and then runs _route_now unchanged. A title without
+## a sky (headless) routes at once, as before.
 func _on_title_route(route: String) -> void:
-	var extra := {"from_menu": true, "auto_view": title.settings.auto_view}
+	if route in LoadingJump.ROUTES and loading_jump == null and (title.sky != null or loading_overrides.get("enabled", false)):
+		loading_jump = LoadingJump.new()
+		loading_jump.enabled_prefetch = loading_overrides.get("prefetch", true)
+		get_tree().root.add_child(loading_jump)
+		loading_jump.finished.connect(func(_r: String) -> void: loading_jump = null)
+		var s := title.sky
+		title.sky = null
+		title.process_mode = Node.PROCESS_MODE_DISABLED # no second press while it loads
+		get_viewport().gui_release_focus()
+		loading_jump.start(route, s, _route_now.bind(route))
+		return
+	await _route_now(route)
+
+
+## The route itself. The ship's view setting goes to the ship; text-only
+## is already in ai_settings.cfg, which the AI session reads.
+func _route_now(route: String) -> void:
+	var extra := {"from_menu": true, "auto_view": title.settings.auto_view, "settings_dir": title.settings.dir}
 	extra.merge(demo_overrides, true)
 	match route:
 		"ship":
@@ -127,15 +158,17 @@ func _on_title_route(route: String) -> void:
 			title = null
 			_map_mode = true
 			_from_menu = true
-			var esc := Label.new()
-			esc.text = "Esc  main menu"
-			esc.add_theme_font_size_override("font_size", 12)
-			esc.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75, 0.7))
-			esc.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE, 12)
-			esc.grow_vertical = Control.GROW_DIRECTION_BEGIN
+			# A visible way back, as in the ship's HUD (Mark, 2026-10-08: the faint
+			# "Esc main menu" hint went unnoticed). Esc does the same.
+			menu_button = Button.new()
+			menu_button.text = "Main menu [Esc]"
+			menu_button.add_theme_font_size_override("font_size", 14)
+			menu_button.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_KEEP_SIZE, 14)
+			menu_button.grow_vertical = Control.GROW_DIRECTION_BEGIN
+			menu_button.pressed.connect(_return_to_menu)
 			var layer := CanvasLayer.new()
 			layer.layer = 5
-			layer.add_child(esc)
+			layer.add_child(menu_button)
 			add_child(layer)
 			await _run_map({})
 		"quit":
@@ -148,6 +181,9 @@ func _ready() -> void:
 		_show_title()
 		return
 	if current_ship_entry(args):
+		if args.get("scenario", "") == "sgr_a": # make run-bh (M3.6): the Sgr A* demo aboard the ship
+			_start_current_ship.call_deferred(false, {"sky_state": "rest", "scenario": "sgr_a"})
+			return
 		_start_current_ship.call_deferred(not (args.has("ship-demo-smoke") or args.has("ship-identification-smoke") or args.has("solar-departure-smoke")))
 		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
@@ -250,6 +286,7 @@ func _run_map(args: Dictionary) -> void:
 		push_error("sim session failed: %s" % sim.last_error)
 		get_tree().quit(2)
 		return
+	if ai.indicator != null: ai.indicator.place_left(true) # the map's star panel owns the top right
 	var map: GalaxyMap = load("res://ui/galaxy_map.tscn").instantiate()
 	map.auto_tick = not capture
 	map.live_pacing = not capture
@@ -601,9 +638,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if _from_menu and event.keycode == KEY_ESCAPE: # the map opened from the title screen
-		_from_menu = false
 		get_viewport().set_input_as_handled()
-		get_tree().change_scene_to_file("res://main.tscn")
+		_return_to_menu()
 		return
 	if _map_mode:
 		return
@@ -789,6 +825,9 @@ func _run_golden() -> void:
 		{"label": "astern at 0.5c stays astern, not drawn", "theta": 170.0, "beta": 0.5, "hidden": true},
 		{"label": "looking astern at 0.99c: K star 178.5 deg is redshifted to ~330 K, invisible", "theta": 178.5, "beta": 0.99, "hidden": true, "yaw": PI, "t": 4500.0},
 		{"label": "looking astern at 0.99c: 50,000 K star at 178.5 deg is dim red", "theta": 178.5, "beta": 0.99, "yaw": PI, "t": 50000.0},
+		# the loading jump (ui/loading_jump.gd): beta, gamma from the rapidity mirror at its 50% and 100% speeds
+		{"label": "loading jump 50%: 150 deg starboard at 0.9955c", "theta": 150.0, "phi": 0.5 * LoadingJump.phi_max()},
+		{"label": "loading jump 100%: 90 deg at 0.99999c -> 0.256 deg", "theta": 90.0, "phi": LoadingJump.phi_max()},
 	]
 	var failures := 0
 	for c in cases:
@@ -797,8 +836,8 @@ func _run_golden() -> void:
 		camera.look(c.get("yaw", 0.0), 0.0, 0.0)
 		starfield.set_custom_stars([{"name": "test", "pos": n * 1000.0, "t": c.get("t", 5700.0), "flux": 1.0}])
 		starfield.set_ship_position(0.0, 0.0, 0.0)
-		var b: float = c["beta"]
-		starfield.set_velocity(HEADING, b, 1.0 / sqrt(1.0 - b * b))
+		var b: float = c["beta"] if c.has("beta") else Relativity.beta_of_rapidity(c["phi"])
+		starfield.set_velocity(HEADING, b, 1.0 / sqrt(1.0 - b * b) if c.has("beta") else Relativity.gamma_of_rapidity(c["phi"]))
 		var img := await _grab()
 		if c.get("hidden", false):
 			var peak := _peak(img)

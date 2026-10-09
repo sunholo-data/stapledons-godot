@@ -65,7 +65,7 @@ func test_settings() -> void:
 	var s := GameSettings.new()
 	s.dir = d
 	s.load_settings()
-	check(not s.auto_view and not s.text_only, "defaults: Realistic view, text-only off")
+	check(s.auto_view and not s.text_only, "defaults: Auto view (D-55), text-only off")
 	var ai := AiSettings.new() # an AI tick and ceiling saved elsewhere must survive
 	ai.dir = d
 	ai.opt_in = true
@@ -88,11 +88,11 @@ func test_settings() -> void:
 	var u := GameSettings.new()
 	u.dir = d
 	u.load_settings()
-	check(not u.auto_view, "a corrupt settings.cfg falls back to the defaults")
+	check(u.auto_view, "a corrupt settings.cfg falls back to the defaults (Auto)")
 	var bad := GameSettings.new()
 	bad.dir = d.path_join("missing/dir")
 	bad.load_settings()
-	check(not bad.save_settings() and not bad.auto_view, "an unwritable settings dir reports failure, never throws")
+	check(not bad.save_settings() and bad.auto_view == GameSettings.DEFAULT_AUTO_VIEW, "an unwritable settings dir reports failure, never throws")
 
 
 func test_credits() -> void:
@@ -193,6 +193,14 @@ func test_routes() -> void:
 		check(demo.ready_ok and demo.sky_state == "live" and demo.sky.beta == 0. and demo.camera.pullback == 0., "it is today's default: live rest, captain eye")
 		check(demo.menu_return and demo.menu_button.visible, "launched from the menu: a Main menu button in the HUD")
 		check(demo.sky.system_view.body_fader, "the saved view (Auto) reaches the ship")
+		# V aboard is remembered (D-55): toggled to Realistic and saved where the title keeps
+		# settings (the test's own dir, never the real user://), then back to Auto.
+		demo.toggle_auto_view()
+		var after := GameSettings.new(); after.dir = demo.settings_dir; after.load_settings()
+		check(not demo.sky.system_view.body_fader and not after.auto_view and demo.settings_dir != "user://", "V aboard saves the view choice in the title's settings dir")
+		demo.toggle_auto_view()
+		after.load_settings()
+		check(demo.sky.system_view.body_fader and after.auto_view, "V again restores and saves Auto")
 		demo._unhandled_input(key(KEY_ESCAPE))
 		await frames(4)
 	var m2 := current_main()
@@ -218,11 +226,29 @@ func test_routes() -> void:
 		await frames(6)
 	var maps := m3.find_children("*", "GalaxyMap", true, false) if m3 != null else []
 	check(m3 != null and maps.size() == 1 and m3._map_mode and m3.title == null, "Galaxy map opens the standalone map")
+	check(m3 != null and m3.menu_button != null and m3.menu_button.is_visible_in_tree() and m3.menu_button.text.contains("Main menu"), "the map (opened from the menu) shows a visible Main menu button")
 	if m3 != null:
-		m3._unhandled_key_input(key(KEY_ESCAPE))
-		await frames(4)
+		# A real key event through the input pipeline (not a direct handler call), after a
+		# star is selected and a map button holds focus, as a player would have it.
+		var gm = m3.find_children("*", "GalaxyMap", true, false)[0]
+		gm.select(3)
+		for b in gm.find_children("*", "Button", true, false):
+			if b.is_visible_in_tree(): b.grab_focus(); break
+		await frames(3)
+		var ev := key(KEY_ESCAPE)
+		Input.parse_input_event(ev)
+		await frames(6)
 	var m4 := current_main()
-	check(m4 != null and m4 != m3 and m4.title != null, "Esc on the map (opened from the menu) returns to the title screen")
+	check(m4 != null and m4 != m3 and m4.title != null, "Esc on the map (a real key event, star selected, a button focused) returns to the title screen")
+	if m4 != null:
+		m4.title.buttons["map"].pressed.emit()
+		await frames(6)
+	var m5 := current_main()
+	if m5 != null and m5.menu_button != null:
+		m5.menu_button.pressed.emit()
+		await frames(6)
+	var m6 := current_main()
+	check(m6 != null and m6 != m5 and m6.title != null, "the map's Main menu button returns to the title screen")
 	Main.title_overrides = {}
 	Main.demo_overrides = {}
 	if current_scene != null:

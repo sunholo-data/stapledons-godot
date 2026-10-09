@@ -14,7 +14,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky
+.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh
 
 all: test
 
@@ -128,10 +128,17 @@ areas-stage:       ## M4.2: stage assets/areas/<area>/ into areas_bundle/<area>/
 	  cp "$$f" "areas_bundle/$$a/$$(basename $$f).bin"; done; done
 	@echo "areas-stage: staged $$(ls areas_bundle | tr '\n' ' ')($$(du -sh areas_bundle | cut -f1))"
 
-sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics
+sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics; M3.6: + the black-hole HUD sentinels and the Sgr A* demo aboard the ship (bh-hud-test)
 	$(AILANG) check --package sim
 	cd sim && $(AILANG) test --package .
 	$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
+	@$(MAKE) --no-print-directory bh-hud-test AILANG=$(AILANG) GODOT=$(GODOT)
+
+bh-hud-test: lens-assets ## M3.6 AC-12/AC-15: HUD lines only from sim.state["gr"] (sentinels), the navigation entry and --scenario=sgr_a, the scripted Sgr A* demo, codex unlocks, no-star key, GR off elsewhere (headless, real sim)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_bh_hud.gd > $(SCRATCH)/bh-hud.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/bh-hud.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/bh-hud.log && grep -q '^bh-hud: [0-9]* passed, 0 failures$$' $(SCRATCH)/bh-hud.log || { echo "bh-hud-test: FAILED (log $(SCRATCH)/bh-hud.log)"; exit 1; }
+	@! grep -rnE "sqrt\(1(\.0)? *- *1(\.0)? */ *r" demos ui sky bridge interior && echo "bh-hud-test: no hand-written sqrt(1 - 1/r) in demos ui sky bridge interior"
 
 ui:                ## galaxy map + plan panel against the real sim (headless, fake 800x600 viewport; AC15 part)
 	$(GODOT_SIM) --headless --path . --script tests/test_galaxy_map.gd
@@ -309,11 +316,35 @@ capture-bh-sky: lens-assets ## M3.5a/b: the lensed sky through InteriorSky (debu
 	@mkdir -p $(SCRATCH); $(GODOT) --path . --script tools/gr_capture.gd > $(SCRATCH)/capture-bh-sky.log 2>&1; rc=$$?; cat $(SCRATCH)/capture-bh-sky.log; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/capture-bh-sky.log && grep -q '^capture-bh-sky: OK$$' $(SCRATCH)/capture-bh-sky.log
 
+capture-bh: lens-assets ## M3.6: the Sgr A* demo aboard the 3D ship, sim-driven -> renders/bh_r{10,5,3}_{toward,side,away}_{hover,orbit}.png (+ bh_grid_*), two bridge views, contact sheets, renders/bh_manifest.sha256 (GPU window; open them)
+	@mkdir -p $(SCRATCH); $(GODOT_SIM) --path . --script tools/bh_ship_capture.gd > $(SCRATCH)/capture-bh.log 2>&1; rc=$$?; grep '^capture-bh' $(SCRATCH)/capture-bh.log; \
+	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/capture-bh.log && grep -q '^capture-bh: OK$$' $(SCRATCH)/capture-bh.log || { echo "capture-bh: FAILED (log $(SCRATCH)/capture-bh.log)"; exit 1; }
+
+bench-bh: lens-assets ## M3.6: the 3D ship with GR on (hover 10 r_s; live orbit 3 r_s) vs GR off at the large tier, vsync off: wall p50/p99 and GPU ms of the sky and ship viewports (GPU window; BENCH_SIZE=WxH)
+	@mkdir -p $(SCRATCH); for drv in metal vulkan; do $(GODOT_SIM) --path . --rendering-driver $$drv --script tools/bh_ship_bench.gd -- $(if $(BENCH_SIZE),--bench-size=$(BENCH_SIZE)) > $(SCRATCH)/bench-bh_$$drv.log 2>&1; rc=$$?; \
+	  echo "bench-bh ($$drv, host $$(uptime | sed 's/.*load/load/')):"; grep '^bench-bh' $(SCRATCH)/bench-bh_$$drv.log; test $$rc = 0 && grep -q '^bench-bh: OK$$' $(SCRATCH)/bench-bh_$$drv.log || { echo "bench-bh: $$drv FAILED (log $(SCRATCH)/bench-bh_$$drv.log)"; exit 1; }; done
+
+BH_REFS_URL ?= https://storage.googleapis.com/stapledons-voyage-assets/refs/m3_bh_ship
+bh-refs:           ## M3.6: fetch the reviewed baseline renders pinned in data/refs/bh_manifest.sha256 to renders/bh_baseline (public bucket, sha256-checked)
+	@mkdir -p renders/bh_baseline; n=0; while read -r sum name; do f=renders/bh_baseline/$$name; \
+	  if [ "$$(shasum -a 256 "$$f" 2>/dev/null | cut -d' ' -f1)" != "$$sum" ]; then curl -fsSL -o "$$f" "$(BH_REFS_URL)/$$name" || { echo "bh-refs: cannot fetch $$name"; exit 1; }; fi; \
+	  [ "$$(shasum -a 256 "$$f" | cut -d' ' -f1)" = "$$sum" ] || { echo "bh-refs: $$name differs from its pin"; exit 1; }; n=$$((n+1)); done < data/refs/bh_manifest.sha256; \
+	  echo "bh-refs: $$n baseline renders match data/refs/bh_manifest.sha256"
+bh-refs-publish:   ## maintainers (gcloud): upload renders/bh_*.png pinned in data/refs/bh_manifest.sha256 as the baseline (immutable names checked by sha256)
+	@while read -r sum name; do [ "$$(shasum -a 256 "renders/$$name" | cut -d' ' -f1)" = "$$sum" ] || { echo "bh-refs-publish: renders/$$name is not the pinned render"; exit 1; }; \
+	  gcloud storage cp --cache-control="public, max-age=300" "renders/$$name" "gs://stapledons-voyage-assets/refs/m3_bh_ship/$$name" > /dev/null && echo "  uploaded $$name"; done < data/refs/bh_manifest.sha256
+bh-render-diff: bh-refs ## M3.6 AC-13: the current renders/bh_*.png against the pinned baseline, mean |d| <= 1/255 each (run after make capture-bh)
+	@$(GODOT) --headless --path . --script tools/render_diff.gd -- $$(cd . && ls renders/bh_*.png) > $(SCRATCH)/bh-render-diff.log 2>&1; rc=$$?; grep '^render-diff' $(SCRATCH)/bh-render-diff.log | tail -45; \
+	  test $$rc = 0 && grep -q '^render-diff: OK$$' $(SCRATCH)/bh-render-diff.log
+
 splash:            ## compose the boot splash ui/splash/splash.png (Milky Way crop + wordmark + AILANG, like the site hero); needs a GPU window and data/raw/background/noirlab_10k_destarred.png
 	$(GODOT) --path . --script tools/splash_compose.gd
 
 capture:           ## 1 g voyage through the AILANG sim, PNGs to renders/ (needs a GPU window); M1.5a: + camera auto / fixed-EV starboard pairs, exposure_sheet.png; M1.8: gamma 275/707 CMB views, cmb_sheet.png
 	$(GODOT_SIM) --path . -- --capture=renders
+
+run-bh:            ## M3.6: the Sgr A* demo aboard the 3D ship (approach 10^6 -> 10 r_s, hover 10/5/3, orbit 3; N next stop, K finish approach, C Archive, L leave)
+	$(GODOT_SIM) --path . -- --ship-demo --scenario=sgr_a
 
 run:               ## the default launch: the title screen (board the ship, guided voyage, galaxy map, settings, credits)
 	$(GODOT_SIM) --path .
@@ -331,7 +362,7 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 	@echo "$(AILANG_RELEASE)" > $(RUNTIME)/VERSION
 	@find $(RUNTIME) -type f | sed 's/^/  staged /'
 
-export-macos: runtime sky-bundle areas-stage starmap-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
+export-macos: runtime sky-bundle areas-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
 	@git describe --tags --always --dirty > runtime/build_version.txt # bundled (runtime/*): the audit's "build" field
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
@@ -746,6 +777,7 @@ ship-demo-benchmark-test:
 ship-demo-geometry-negative-test:
 	@for mutation in wrong-tier wrong-tip; do $(GODOT) --headless --path . --script tools/validate_ship_demo.gd -- assets/ship_demo/manifest.json $$mutation > $(SCRATCH)/ship-demo-$$mutation.log 2>&1; rc=$$?; test $$rc = 1 && grep -q '^validate-ship-demo: FAIL$$' $(SCRATCH)/ship-demo-$$mutation.log || exit 1; done
 export-macos: ship-demo-stage ship-commons-stage
+publish-dev: ship-demo-export-smoke # the exported ship, incl. the GR lens tables (dev.23 shipped without them)
 ship-demo-export-smoke:
 	@mkdir -p $(SCRATCH)
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); "$(APP)/Contents/MacOS/$$exe" --headless -- --ship-demo-smoke > $(SCRATCH)/ship-demo-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-demo-export.log; test $$rc = 0 && grep -q '^ship-demo-export-smoke: OK$$' $(SCRATCH)/ship-demo-export.log
@@ -800,6 +832,18 @@ ship-demo-ci: title-screen-test
 title-capture:     ## title screen, settings and credits at 1280x720 -> renders/title_screen/ (needs a GPU window)
 	$(GODOT) --path . --resolution 1280x720 --script tools/title_screen_capture.gd
 	@for f in title settings credits; do sips -Z 700 renders/title_screen/$$f.png --out renders/title_screen/$${f}_700.png > /dev/null; done
+# Lightspeed loading view (design_docs/planned/r1/lightspeed-loading.md): each title route through the jump, real monotone
+# progress reaching 1.0 exactly at the destination, beta 0.99999 at 100%, the prefetched sim taken, shared loads = fresh loads.
+.PHONY: loading-jump-test loading-jump-capture loading-profile
+test: loading-jump-test
+loading-jump-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_loading_jump.gd > $(SCRATCH)/loading-jump.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/loading-jump.log | grep -E '^(FAIL|loading-jump)' ; test $$rc = 0 && grep -q '^loading-jump: [0-9]* passed, 0 failures$$' $(SCRATCH)/loading-jump.log
+loading-jump-capture: ## the jump at 0/50/90/99/100 %, the white-out and its fade at 1280x720 -> renders/loading_jump/ (needs a GPU window)
+	$(GODOT) --path . --resolution 1280x720 --script tools/loading_jump_capture.gd
+	@for f in p000 p050 p090 p099 p100 whiteout fade; do sips -Z 700 renders/loading_jump/$$f.png --out renders/loading_jump/$${f}_700.png > /dev/null; done
+loading-profile:   ## where each title route's load time goes: pieces, then each route through the jump (needs a GPU window)
+	$(GODOT_SIM) --path . --resolution 1280x720 --script tools/loading_profile.gd -- --pieces 2>&1 | grep '^loading-profile'
+	@for r in ship guided map; do LOADING_ROUTE=$$r $(GODOT_SIM) --path . --resolution 1280x720 --script tools/loading_profile.gd 2>&1 | grep -E '^loading-(jump|profile): (route|title|[a-z]+ ready)'; done
 # The exported .app on a plain double-click opens the title screen over the bundled sky, with its build id.
 title-export-smoke:
 	@mkdir -p $(SCRATCH)/title-export-home
