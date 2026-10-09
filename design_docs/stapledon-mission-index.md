@@ -1,6 +1,6 @@
 # Stapledon mission index
 
-Regenerated from full mission log headings; one line per entry. No log archive yet.
+Regenerated from full mission log headings; one line per entry. No log archive yet. Three orphan rows retain their credited historical evidence.
 
 | Iter | Date | Class | Headline |
 |---|---|---|---|
@@ -25,8 +25,9 @@ Regenerated from full mission log headings; one line per entry. No log archive y
 | 15 | 2026-10-05 | PRODUCT | iteration 15 (orphan), M4.7 Archive codex built on sprint/m4.7-archive-codex (unpushed); killed by the stall watchdog at gate 3; credited in iteration 16 |
 | 16 | 2026-10-06 | PRODUCT | iteration 16, M4.7 Archive codex LANDED (iteration 15's orphan verified and finished); independent eval 88/100 [PRODUCT] |
 | 17 | 2026-10-06 | PRODUCT | iteration 17, M4.4 news from home, return trip and legacy screen BUILT and judged; held for pause point S4 (D-45); independent eval 97/100 [PRODUCT] |
-| 18 | 2026-10-07 | HARNESS | D-45(B) M4.4 resume PARKED-ON-LANE; native planner/judge unavailable; fleet ticket filed; no product acceptance [HARNESS] |
-| 19 | 2026-10-07 | PRODUCT | iteration 19, M4.4 D-45(B) no-age variant LANDED (PR #131, merge 93d01c5, CI green); eval round 2 minimax-m3 100/100 PASS; iteration 18 record landed (PR #137) [PRODUCT] |
-| 20 | 2026-10-07 | PRODUCT | iteration 20, M4.6 ungated half LANDED (PR #151, merge 1d127ca, CI green): check values + lint-precision + physics summary guard; eval minimax-m3 91 → 100 PASS; D-52 opened (which ship scene clause 4 runs in) [PRODUCT] |
-| 21 | 2026-10-08 | PRODUCT | iteration 21, M4.5s scene-independent session audits BUILT and judged (PR #154; Sonnet eval 84 → 90 PASS); died at Gate 3b with PR CI in flight; landed and recorded by iteration 22 [PRODUCT] |
-| 22 | 2026-10-08 | PRODUCT | iteration 22, iteration 21's orphan M4.5s VERIFIED and LANDED (PR #154, merge 029e44b); eval round 3 Sonnet 91 PASS; D-52 = A and D-53 (M3 attended-only) acknowledged [PRODUCT] |
+| 18 | 2026-10-07 | HARNESS | iteration 18, D-45(B) M4.4 resume PARKED-ON-LANE; native planner/judge unavailable [HARNESS] |
+| 19 | 2026-10-07 | PRODUCT | iteration 19, M4.4 D-45(B) no-age variant LANDED (PR #131, merge `93d01c5`); independent eval round 2 minimax-m3 100/100 PASS [PRODUCT] |
+| 20 | 2026-10-07 | PRODUCT | iteration 20, M4.6 ungated half (CPU check values + lint-precision) LANDED (PR #151, merge `1d127ca`, CI green); independent eval minimax-m3 91 → 100/100 PASS; D-52 opened (which ship scene clause 4 runs in) [PRODUCT] |
+| 21 | 2026-10-08 | PRODUCT | iteration 21, M4.5s scene-independent session audits BUILT and judged (PR #154; Sonnet eval 84 → 90/100 PASS); died at Gate 3b with PR CI in flight; landed and recorded by iteration 22 [PRODUCT] |
+| 22 | 2026-10-08 | PRODUCT | iteration 22, iteration 21's orphan M4.5s VERIFIED and LANDED (PR #154, merge `029e44b`, merge CI green); independent eval round 3 Sonnet 91/100 PASS [PRODUCT] |
+| 23 | 2026-10-08 | HARNESS | iteration 23, D-52(A) M4 scene re-plan PARKED-ON-LANE; required native evaluator unavailable [HARNESS] |

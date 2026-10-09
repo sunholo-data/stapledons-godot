@@ -1,15 +1,17 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-08, iteration 22.
+Updated 2026-10-08, iteration 23.
 
-- origin main `029e44b` (PR #154 merged: M4.5s scene-independent session audits); merge CI green (run `37757332873`).
-- Bar: clause 2 MET; clauses 1/3/4 UNMET; clause 5 ongoing. Clause 4 moved: M4.5s landed.
-- M4 in: M4.0, M4.1 (both steps), M4.2, M4.3a, M4.4, M4.6a, M4.7, M4.6 ungated, M4.5s. Open: M4.3b, the M4.5 scene half, the M4.6 gated half (S1).
-- Ledger: zero OPEN. D-52 = A (unified 3D painted ship; re-plan the remaining M4 rows against it). D-53: M3 plan approved, **attended only**.
-- Banked next for the loop: the D-52(A) re-plan of `R1-M4-JOURNEY` (planner, then stop for Mark's approval).
-- Follow-ups (queue 7d): the `1.0 - beta` demo fallback; `ForwardGlow.temperature` shape; fold the m5 lint; the `ai-godot` 2 ms flake; the `holds` equivalent mutant; stale "until D-52" wording in the M4.5s docs.
-- New in `make test`: `parity-m4` (with replay positive control), `session-audit-test`, `codex-unlocks`.
-- Loop cadence: 6 h launchd. This fire: verify-and-land of iteration 21's orphan; evaluator Sonnet (Agent tool), metered $0.
-- Rig: the GUI session was lost at 08:52Z, so GPU gates (golden/capture) are unavailable until someone logs in.
-- Harness share: 1/20 indexed iterations; the last 3 landings moved clause 4, so no drift.
-- Detail: mission log iterations 21 and 22; evals `.ailang/state/evaluations/eval_R1-M4-JOURNEY_M4.5s_round_{1,2,3}.json`.
+- Origin main c31721e; CI run 37823940639 in progress: UNVERIFIED at recording.
+- Bar: clause 2 MET; clauses 1/3/4 UNMET; clause 5 ongoing; goal unmoved.
+- Pick: D-52(A) amendment of M4.3b, M4.5 scene half, M4.6 gated half for the unified painted 3D ship.
+- PARKED-ON-LANE: evaluator resolver refuses over-ration:anthropic; native Sonnet/Opus unavailable. No independent verdict or product landing.
+- Fleet ticket: agent-tool:sonnet-unavailable, inbox_1791484114698_70705e85; no reset time exposed.
+- Resume: evaluator resolver admits an in-budget lane and named native judge completes independently; then amend plan, stop for Mark's approval.
+- Current launch is title screen → Board the ship. Existing M4 plan still names the interior composite; do not execute unchanged.
+- Preserve M4.5s and M4.6 CPU evidence already landed. S1 human render gate remains required.
+- Ledger: 54 RESOLVED, zero OPEN; D-52 A, D-53 M3 attended only, D-54 relative-size stops acknowledged.
+- M1/M3 attended; open attended PRs #170/#171 untouched.
+- Cadence 6 h; designer/planner/executor native GPT-6.1 Sol read-only preflights completed.
+- Metered $0; provider quota tokens unreported. Harness share 2/20, last three landings moved clause 4.
+- Full detail: mission log iteration23 and stapledon-iteration-23-routing.md; record is draft, unmerged.
