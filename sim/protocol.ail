@@ -506,7 +506,7 @@ pure func applyOverride(p: Params, o: Override) -> Params =
   else if o.name == "cruise_min_beta" then {p | cruiseMinBeta: o.value}
   else if o.name == "standoff_au" then {p | standoffAu: o.value}
   else applyOverride2(p, o)
--- Split in two (v0.52.0 strict VM: one if-chain this long exceeds the register allocator's 256).
+-- Split in two (v0.52.0 strict VM: one if-chain this long exceeds the register allocator's 256; ailang#1736).
 pure func applyOverride2(p: Params, o: Override) -> Params =
   if o.name == "stop_rule" then {p | stopRule: o.value}
   else if o.name == "ism_model" then {p | ismModel: o.value}

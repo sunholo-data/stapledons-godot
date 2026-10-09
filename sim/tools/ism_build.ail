@@ -305,7 +305,7 @@ export pure func renderAil(m: Model) -> string = join("\n", [
   "-- blackbody.luminousEfficacy (lm/W) at log10 T = efficacyLog10TMin() + efficacyStep() i (generated from the package).",
   "export pure func efficacyLog10TMin() -> float = 1.0",
   "export pure func efficacyStep() -> float = 0.01",
-  "-- In chunks of 100: the strict VM's register allocator takes at most 256 elements in one list literal (v0.52.0).",
+  "-- In chunks of 100: the strict VM's register allocator takes at most 256 elements in one list literal (v0.52.0, ailang#1736).",
   lutChunks(map(fl, lutRow(lutSize() - 1, [])), 0, []),
   concat(["export pure func efficacyLut() -> [float] = ", join(" ++ ", map(\k. concat(["efficacyLut", intToStr(k), "()"]), range0(lutChunkCount())))]),
   "",

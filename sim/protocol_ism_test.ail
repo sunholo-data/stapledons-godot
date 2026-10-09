@@ -1,7 +1,8 @@
 -- R1-ISM-DUST I4: protocol 2.7 on the wire. New games default to lism-1 at 2.7 and stay
 -- uniform below (ism_model is bad_params there); ship.ism carries the medium, the impacts,
 -- the dust totals and the glitter; journey.plan carries the media, the hold limit, the grains
--- and the visible flashes; a refused plan is followed by a hold_limit event.
+-- and the visible flashes; a refused plan is followed by a hold_limit event. Test bodies are
+-- named check functions: escaped quotes inside a test block break the v0.52.0 runner (ailang#1737).
 module stapledons/sim/protocol_ism_test
 
 import std/string (concat, join, contains, intToStr)
