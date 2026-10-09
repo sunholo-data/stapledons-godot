@@ -522,7 +522,7 @@ func open_navigation() -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.DEPARTURE_MINOR
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.STOPS_MINOR
 		# D-54: free navigation stops at a finite star where it shows its size, and Sol at Earth.
 		var params:Dictionary={"standoff_au":1000.,"stop_rule":54.}
 		if scenario=="solar_departure":params=SolarDeparture.guided_params()

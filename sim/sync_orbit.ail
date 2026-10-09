@@ -1,0 +1,63 @@
+module stapledons/sim/sync_orbit
+
+-- D-54/D-58 (Mark, attended 2026-10-08/09): the synchronous (stationary) orbit on a body's
+-- I card. A body turning once per sidereal rotation period P_rot (its IAU WGCCRE W rate,
+-- data/sol.ail) has a stationary orbit at a = semiMajorAxisFromPeriod(GM, P_rot)
+-- (sunholo/celestial 0.3.0, Kepler's third law). It exists only inside the body's Hill
+-- sphere, r_H = a_orbit (m / 3M)^(1/3), which is the same law again: the radius whose
+-- period about a body of GM/3 is the body's own orbital period,
+-- semiMajorAxisFromPeriod(GM / 3, P_orbit) (exactly a_orbit (GM / 3 GM_primary)^(1/3)).
+--   locked: the body turns once per orbit (|P_rot - P_orbit| < 2 %): tidally locked, so the
+--           stationary orbit is its own orbit's distance, far outside its Hill sphere;
+--   slow:   a > r_H (Mercury, Venus): it rotates too slowly;
+--   else:   the altitude a - R (Earth 35,786 km). The Sun has no primary: always a value.
+-- Composition of package functions and cited data only; pure, strict-VM clean.
+import std/math (sqrt)
+import std/option (Option, Some, None)
+import pkg/sunholo/celestial/kepler (period, semiMajorAxisFromPeriod, absf)
+import pkg/sunholo/celestial/ephemeris (auKm)
+import ./data/sol (Planet, Moon, planets, moons, sun)
+
+-- altitudeKm: a - R, or -1 when there is none; none: "" | "locked" | "slow";
+-- radiusKm: a from the body's centre; hillKm: r_H (-1 for the Sun); rotationDays: P_rot.
+export type SyncOrbit = { altitudeKm: float, none: string, radiusKm: float, hillKm: float, rotationDays: float }
+
+pure func daySq() -> float = 86400.0 * 86400.0
+pure func twoPi() -> float = 6.283185307179586
+-- The sidereal rotation period (days) from the W rate (rad/day; retrograde rates negative).
+pure func rotationDays(w1: float) -> float = if absf(w1) > 0.0 then twoPi() / absf(w1) else 0.0
+
+-- gmKm3s2: the body's GM (km^3/s^2); orbitDays: its orbital period about its primary
+-- (0 for the Sun); radiusKm: its radius.
+export pure func syncOrbit(gmKm3s2: float, w1: float, orbitDays: float, radiusKm: float) -> SyncOrbit {
+  let p = rotationDays(w1);
+  if !(p > 0.0) || !(gmKm3s2 > 0.0) then { altitudeKm: 0.0 - 1.0, none: "slow", radiusKm: 0.0 - 1.0, hillKm: 0.0 - 1.0, rotationDays: p }
+  else {
+    let a = semiMajorAxisFromPeriod(gmKm3s2 * daySq(), p);
+    let hill = if orbitDays > 0.0 then semiMajorAxisFromPeriod(gmKm3s2 * daySq() / 3.0, orbitDays) else 0.0 - 1.0;
+    let locked = orbitDays > 0.0 && absf(p - orbitDays) < 0.02 * orbitDays;
+    if locked then { altitudeKm: 0.0 - 1.0, none: "locked", radiusKm: a, hillKm: hill, rotationDays: p }
+    else if hill > 0.0 && a > hill then { altitudeKm: 0.0 - 1.0, none: "slow", radiusKm: a, hillKm: hill, rotationDays: p }
+    else { altitudeKm: a - radiusKm, none: "", radiusKm: a, hillKm: hill, rotationDays: p }
+  }
+}
+
+pure func planetOf(ps: [Planet], id: string) -> Option[Planet] = match ps { [] => None, x :: r => if x.id == id then Some(x) else planetOf(r, id) }
+pure func moonOf(ms: [Moon], id: string) -> Option[Moon] = match ms { [] => None, x :: r => if x.id == id then Some(x) else moonOf(r, id) }
+
+-- A Sol body by id (the Sun, a planet or a moon); None for anything else.
+export pure func syncOrbitOf(id: string) -> Option[SyncOrbit] =
+  if id == "sun" then Some(syncOrbit((sun()).gm, (sun()).pole.w1, 0.0, (sun()).radiusKm))
+  else match planetOf(planets(), id) {
+    Some(pl) => Some(syncOrbit(pl.gm, pl.pole.w1, period((sun()).gm * daySq(), pl.el.a * auKm()), pl.radiusKm)),
+    None => match moonOf(moons(), id) {
+      -- The orbital period about the host from Kepler's third law (the JPL mean elements'
+      -- semi-major axis, km, and the host's GM): the mean-anomaly rate is anomalistic and
+      -- for some moons (Tethys) far from the sidereal period.
+      Some(m) => match planetOf(planets(), m.host) {
+        Some(h) => Some(syncOrbit(m.gm, m.pole.w1, period(h.gm * daySq(), m.sat.a), m.radiusKm)),
+        None => None
+      },
+      None => None
+    }
+  }

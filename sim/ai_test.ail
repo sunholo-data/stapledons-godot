@@ -382,7 +382,7 @@ pure func checkAiRecordWhileCommitted() -> bool {
 
 -- ------------------------------------------------------------ AC5: AI never touches the journey
 -- alpha Cen 0.99c, committed in a play world at tick 2.
-pure func acen() -> Intent = IPlan({target: {index: 1, id: "alpha Cen", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None})
+pure func acen() -> Intent = IPlan({target: {index: 1, id: "alpha Cen", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None, star: None})
 pure func committed() -> World = run(run(play(), [acen()]).world, [ICommit(1)]).world
 
 -- Over the wire: the same tick with and without an AI intent gives the same

@@ -104,7 +104,7 @@ func test_demo() -> void:
 	demo.open_navigation()
 	var entry: Button = demo.navigation_window.find_child("SgrAEntry", true, false) if demo.navigation_window != null else null
 	check("navigation menu has 'Sgr A* (black hole)'", entry != null and entry.text.begins_with("Sgr A* (black hole)"))
-	check("a normal navigation session has no gr (protocol 2.5)", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.DEPARTURE_MINOR and not demo.journey_sim.world.has("gr"))
+	check("a normal navigation session has no gr (protocol 2.7, D-58)", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.STOPS_MINOR and not demo.journey_sim.world.has("gr"))
 	if entry == null:
 		return
 	entry.pressed.emit()
@@ -169,7 +169,7 @@ func test_demo() -> void:
 	demo._process(0.0)
 	check("the HUD drops the black-hole lines, GR off", not demo.label.text.contains("Sgr A*") and not demo.label.text.contains("HOVERING"))
 	demo.open_navigation()
-	check("navigation after the visit is a normal 2.5 session without gr", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.DEPARTURE_MINOR and not demo.journey_sim.world.has("gr") and not demo.sky.gr_lens.active)
+	check("navigation after the visit is a normal 2.7 session without gr", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.STOPS_MINOR and not demo.journey_sim.world.has("gr") and not demo.sky.gr_lens.active)
 	demo.close_navigation()
 	# --scenario through setup options (make run-bh)
 	demo.queue_free()
