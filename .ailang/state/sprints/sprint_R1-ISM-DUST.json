@@ -1,8 +1,8 @@
 {
   "sprint_id": "R1-ISM-DUST",
-  "status": "planned",
+  "status": "approved",
   "approved": false,
-  "approved_by": null,
+  "approved_by": "Mark Edmondson, attended 2026-10-09 (ledger D-61)",
   "created": "2026-10-09",
   "design_doc": "design_docs/planned/r1/ism-structure-and-dust.md",
   "sprint_plan": "design_docs/planned/r1/ism-structure-and-dust-sprint.md",
