@@ -1,0 +1,140 @@
+{
+ "sprint_id": "R1-SHIP-UI",
+ "kind": "plan_review",
+ "round": 1,
+ "evaluator_model": "claude-sonnet-5-5",
+ "date": "2026-10-08",
+ "score": 82,
+ "pass": true,
+ "rubric": {
+  "fidelity_to_D56": {
+   "points": 22,
+   "max": 25,
+   "notes": "Strong: HUD info only, every decision at a console, display controls instant, M read-only chart (Q2), no timers. Deductions: N/K tour controls send plan intents (F1); warp as 'speed' edge (F2)."
+  },
+  "acceptance_criteria_checkable": {
+   "points": 17,
+   "max": 20,
+   "notes": "All 14 ACs name a make target; targets are consistent with ship-demo-ci wiring and exist-by-plan (tests not yet present, expected). AC14 weak machine check; Walk-to/lower-deck ACs missing (F11); NT1 internally inconsistent (F1)."
+  },
+  "migration_completeness": {
+   "points": 12,
+   "max": 15,
+   "notes": "Table covers nearly all keys in _unhandled_input and HUD buttons; gaps in F6."
+  },
+  "factual_accuracy": {
+   "points": 11,
+   "max": 15,
+   "notes": "Geometry, lines, key list, M pausing the tour, 1.0-beta fallback, walk speed 3.5 all verified. Errors: buffer claim, distances_text dependency, closest_walkable radius (F4,F7,F8)."
+  },
+  "estimates_deps_risks": {
+   "points": 8,
+   "max": 12,
+   "notes": "Risks well identified, spike planned, pause points sensible; velocity arithmetic and day-1 load optimistic (F4,F5)."
+  },
+  "coordination_questions": {
+   "points": 8,
+   "max": 8,
+   "notes": "Q1-Q6 are explicit, with recommendations and consequences for M4.3b/M4.5/free-nav-stops; F3 asks for sharper text on invalidated rows."
+  },
+  "claude_md_gates": {
+   "points": 4,
+   "max": 5,
+   "notes": "Physics/package/sim purity and parity handled; determinism seam missing (F12)."
+  }
+ },
+ "findings": [
+  {
+   "id": "F1",
+   "severity": "major",
+   "location": "design doc \u00a7E NT1 vs \u00a7F (tour N / K); demos/solar_departure.gd prepare_next, skip_stage",
+   "issue": "NT1 asserts no plan/commit/cancel intent is sent by any key, but the kept 'Next stop' N during the tour calls SolarDeparture.prepare_next(), which sends a plan intent (and advance() sends plan+commit), and the tour itself auto-plans and commits each leg. The 'tour' sweep state cannot satisfy NT1 as written, and the allow-list ('tick, warp, pacing kinds') omits plan.",
+   "fix": "Define NT1 per intent source: host-tour intents (tour-owned legs) vs player-keyed intents. Either re-scope N to a pure dwell-skip that sends no plan (set dwell_left=0 and let the tour step), or allow-list plan/commit only when issued by SolarDeparture on a tour already begun at the Voyage console. Say so in the table."
+  },
+  {
+   "id": "F2",
+   "severity": "major",
+   "location": "design doc \u00a7F and \u00a7E; D-56",
+   "issue": "D-56 lists 'set speed' as a captain decision. The plan has a cruise-speed slider at the helm (good) but also instant transit 'warp chips' and keys , and . that change the time-compression rate. The doc rules warp pacing (Q3) but does not say whether warp rate is 'speed'. Warp does not exist in the 3D ship today (no 'warp' in ship_geometry_demo.gd except in the plan), so this adds a new instant control and a new key.",
+   "fix": "State plainly in Q3 that warp level is the one D-56 'set speed' edge case, with the reasoning (host pacing, outcome-neutral), and make it a Mark call not a recommendation baked into U2. Mark ',' '.' as new keys in \u00a7F."
+  },
+  {
+   "id": "F3",
+   "severity": "major",
+   "location": "M4.3b row in .ailang/state/sprints/sprint_R1-M4-JOURNEY.json; design doc \u00a7G",
+   "issue": "The M4.3b row says 'shortcuts M, L and K keep the minimum path independent of pathing' and M4.5's bot uses keys through Godot's input layer. This plan removes L and makes M read-only, so both rows are contradicted, and M4.5 AC (1.5 s per click/key, 20 s walk) and playthrough_min.json need rewriting. The doc mentions the bot hook but not that the row's stated shortcut design is superseded.",
+   "fix": "List in \u00a7G the exact M4.3b and M4.5 row text that is invalidated (shortcuts M/L/K, 'interior' target, art_gated true) and the re-plan edits, as an explicit Q1 consequence. Note the unattended loop must be stopped from starting M4.3b/M4.5 before an attended charter edit."
+  },
+  {
+   "id": "F4",
+   "severity": "major",
+   "location": "sprint plan header (Estimate)",
+   "issue": "'about 20% buffer' is wrong: 2,230 LOC at 400 LOC/day is 5.6 days, so 6 days is about 7% buffer. The 400 LOC/day comes from asset/test-heavy sprints; this is UI plumbing with an embedding spike, camera dolly, walk integration, 14-test migration and 24 renders. Test LOC (600) is also listed under U0 as red before the code, but U3/U4 tests need harness seams (sent-intent log) not costed.",
+   "fix": "Restate honestly (about 7% buffer) or move to 7-8 days; give U4 a fallback cost, and flag that the 150-LOC migration (U6) is the thinnest line."
+  },
+  {
+   "id": "F5",
+   "severity": "major",
+   "location": "design doc \u00a7D, U4; demos/ship_geometry_demo.gd _create_navigation (lines ~520)",
+   "issue": "Embedding GalaxyMap is described as medium risk but the code makes it harder than the doc says: it lives in a native Window with force_native=true and own_world_3d=true (own 3D world, its own input, M/Esc handled by window_input), plus galaxy_map.gd has its own _unhandled_input keys (+/-). The plan's day-1 spike is good, but day 1 also carries all of U0 (600 LOC); and AC9/AC10 run headless (the window is not popped up in headless) so they will not exercise the real fallback path.",
+   "fix": "Split day 1 (spike alone, or U0 on day 1 and spike day 2). State which of embed/borderless-window the ACs test, and add a GPU-window check (make capture-style) for the chosen path."
+  },
+  {
+   "id": "F6",
+   "severity": "minor",
+   "location": "design doc \u00a7F control-migration table",
+   "issue": "Mostly complete against _unhandled_input (1-9, H, V, Enter, K, N, C, L, J, Tab, R, G, B, M, E, Esc, UI scale, drag-look, wheel/pan zoom). Missing or unclear rows: (a) the pan gesture zoom; (b) the galaxy_map window's own keys (+/-, M/Esc close) and the 'Sgr A* demo' hint label text; (c) E semantics when both lift and console are in reach; (d) 'I + hold' modifier is listed but the key is handled elsewhere (ship_star_identification), not in _unhandled_input; (e) the title-screen routes that start the tour/Sgr A* directly (noted as mode choices, but the same start_solar_departure()/start_black_hole() path then has non-console callers, which NT1 does not cover); (f) the brightness 8-button grid is in the Tab panel, fine.",
+   "fix": "Add the rows or a footnote; add an E-priority rule (console in reach beats lift, or vice versa); state that NT1 excludes title-launched sessions."
+  },
+  {
+   "id": "F7",
+   "severity": "minor",
+   "location": "design doc Depends on / Coordination; demos/ship_geometry_demo.gd:696",
+   "issue": "The doc says U1 reuses the free-nav-stops 'distances_text' and PR #171 'fixes the stopped case', but distances_text already exists on this branch (static func at line 696, used by hud_text at 668). The dependency and merge-first ordering may be overstated, which also delays the sprint start.",
+   "fix": "Verify what #171/#177/free-nav-stops add beyond the current distances_text and state precisely which hunks conflict; if only Sol-pick/Return-to-Sol/In-this-system, say start can overlap U0."
+  },
+  {
+   "id": "F8",
+   "severity": "minor",
+   "location": "design doc \u00a7B/\u00a7C3 geometry claims",
+   "issue": "Console node positions, y=82, rotations and archive/chair positions match ship.glb (verified: navigation_0..2, decision_0..3, archive_terminal, captain_chair). Claim 'walk_bridge.glb has only WALK_bridge' and 'captain spawn (8,-4.8)' not re-verified; 'farthest console about 21 m from spawn' is straight-line about 19 m to navigation_0 and path length around the spire is longer. 'use point = closest_walkable(origin + 1.2 m ...)' is vague: closest_walkable default max_r is 6.0 m, not the stated 2.5 m.",
+   "fix": "Compute path lengths in a test and print them; reconcile the 2.5 m mitigation with closest_walkable's max_r; make the use-point rule exact."
+  },
+  {
+   "id": "F9",
+   "severity": "minor",
+   "location": "design doc \u00a7A1/AC2; Makefile lint-precision",
+   "issue": "AC2 grep for '1.0 - beta' in the demo/hud will pass, but lint-precision has an allowlist (tests/fixtures/lint_precision/allowlist.txt) that must be edited when the fallback at line 683 is removed; the plan does not say so. Also the doc says charter row 7d(a) closes in U1, fine. Strip also shows 'beta, gamma' digits: the sim must provide gamma; confirm the sim exposes ship.gamma and one_minus_beta in every phase (the fallback exists because it sometimes omits it).",
+   "fix": "Add the allowlist edit to U1 and a test that one_minus_beta is present in all phases (or fix the sim omission, which would be a sim change contradicting 'no sim change')."
+  },
+  {
+   "id": "F10",
+   "severity": "minor",
+   "location": "design doc \u00a7C4 and D-56; accessibility Q6",
+   "issue": "Press-twice mode and hold are both fine. 'A hold of 1.5 s' and 'never timed' are consistent. But 'leave Sgr A* (confirm)' and 'cancel a transit' as confirmed decisions add friction not requested; D-56 asks heavy decisions be weighty, fine. No finding on fidelity except that dev review build P2 relies on make publish-dev which chains export smokes.",
+   "fix": "None required; optional."
+  },
+  {
+   "id": "F11",
+   "severity": "minor",
+   "location": "sprint JSON R1-SHIP-UI",
+   "issue": "Sprint JSON features U0-U7 carry acceptance criteria, but the U8 docs milestone and 'github_issues' are empty; no acceptance row for the Tab/Walk-to keyboard reachability (Q6) or lower-deck prompt (C6) in the ACs. AC14 renders are not machine-checkable (only count of PNGs).",
+   "fix": "Add an AC for Walk-to list reachability and lower-deck prompt text; AC14: also assert 24 PNGs exist and are non-uniform."
+  },
+  {
+   "id": "F12",
+   "severity": "minor",
+   "location": "CLAUDE.md gates",
+   "issue": "Gates handled adequately: no physics/package change, sim untouched, parity/strict in AC13, precision via one_minus_beta. Not addressed: gate 6 determinism of the new fake-clock/click-to-walk tests, and NT2's '600 s fake time' needs an injectable clock in GalaxyMap/consoles that the plan does not cost.",
+   "fix": "Name the fake-clock seam in U0."
+  }
+ ],
+ "strengths": [
+  "Faithful to D-56 including the later clarification: display/info controls stay instant, a read-only chart keeps M easy",
+  "NT1-NT5 make 'no twitch' testable, including a table-vs-code parity test",
+  "Console names and positions match ship.glb exactly",
+  "Uses existing WalkArea.path/closest_walkable and keeps action methods as targets, limiting migration",
+  "Explicit Q1-Q6 with recommendations; pause points P0-P2; sequencing after in-flight branches",
+  "No sim/protocol/package change; parity and strict kept as gates"
+ ]
+}
