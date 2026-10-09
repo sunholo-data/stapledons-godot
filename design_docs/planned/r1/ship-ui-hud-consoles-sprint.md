@@ -1,7 +1,7 @@
 # Sprint R1-SHIP-UI: the HUD informs, the bridge consoles decide
 
 **Design doc:** [ship-ui-hud-consoles.md](ship-ui-hud-consoles.md) (D-56).
-**Status:** Proposed 2026-10-08. **Stop for Mark's approval before executing**, including his answers to Q1–Q6. Q1 decides whether this sprint carries M4.3b.
+**Status:** **Approved by Mark, attended 2026-10-09 (ledger D-57)**: as drafted; Q1 = A (this plan absorbs M4.3b's 3D-ship half); Q2 yes (M read-only chart); Q3 instant pacing; Q4 camera dolly to a framed panel; Q5 station layout yes; Q6 accessibility yes. Executes after the free-navigation PRs (#171, #182) merge.
 **Branch (on approval):** `sprint/ship-ui`, from `origin/main` after `feat/free-nav-stops`, #171 and #177 have merged.
 **Estimate:** about 2,330 LOC (code 1,480, tests and seams 640, spike 60, capture 150), **7 working days**. At the observed pace of about 400 LOC/day (R1-SHIP-STAR-LIGHT: 600 LOC in 1.5 days; free-nav-stops: about 600 LOC in a day) the work is 5.8 days; 7 days is about 20% buffer for the map-embedding spike and test migration.
 **Risk:** medium. There are no physics, sim, protocol or package changes. The risks are the UI plumbing (embedding `GalaxyMap`'s native window), walk-mesh reachability, and migrating about 14 tests and tools that drive decision keys.

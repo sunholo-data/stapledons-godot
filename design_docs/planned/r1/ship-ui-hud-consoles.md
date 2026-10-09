@@ -1,6 +1,6 @@
 # Ship UI: the HUD informs, the bridge consoles decide (D-56)
 
-**Status:** Planned 2026-10-08, awaiting Mark's approval (plan only; nothing implemented).
+**Status:** **Approved by Mark, attended 2026-10-09 (ledger D-57)**: as drafted; Q1 = A (this plan absorbs M4.3b's 3D-ship half); Q2 yes (M read-only chart); Q3 instant pacing; Q4 camera dolly to a framed panel; Q5 station layout yes; Q6 accessibility yes. Executes after the free-navigation PRs (#171, #182) merge.
 **Release / milestone:** R1, ship UI (`R1-SHIP-UI`). Carries the 3D-ship half of M4.3b if Mark accepts Q1.
 **Priority:** high. Every later UI (M4.3b, M4.5's scene half, M3, M6 crew decisions) lands on this framework.
 **Implements:** ledger **D-56** (Mark, attended 2026-10-08; `design_docs/stapledon-mission.md`), with D-52 (the 3D painted ship is the playable), D-55 (Auto view is the player default), D-54 (stop distances), D-46 / D-49 (tour pacing, giant approach), D-38 (exposure views), D-12 (both clocks, same size, no pause). Mockups Mark reviewed: <https://claude.ai/artifact/8Ds2EL6oNhfeoZRqwcUpKg> (A: status strip and action bar; B: diegetic consoles; C: hybrid at Sgr A*). Design repo: `vision/core-pillars.md`; `art/ship-interior-blender-brief.md` §3 (the bridge is "the decision hub"), §6 (`INTERACT_` interactables); `features/next/bubble-ship-hud-view.md` (HUD shows galaxy time and ship time). Physics spec: no section changes. No SR or GR visual changes; the HUD shows sim values only.

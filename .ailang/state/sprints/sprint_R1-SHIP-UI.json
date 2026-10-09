@@ -1,268 +1,268 @@
 {
- "sprint_id": "R1-SHIP-UI",
- "status": "proposed",
- "approved": false,
- "approved_by": null,
- "created": "2026-10-08",
- "design_doc": "design_docs/planned/r1/ship-ui-hud-consoles.md",
- "sprint_plan": "design_docs/planned/r1/ship-ui-hud-consoles-sprint.md",
- "branch": "sprint/ship-ui (on approval, from origin/main after feat/free-nav-stops, #171, #177 merge)",
- "implements": [
-  "D-56",
-  "D-52",
-  "D-55",
-  "D-54",
-  "D-46",
-  "D-49",
-  "D-38",
-  "D-12"
- ],
- "registry_reuse": [
-  {
-   "milestone": "U0-U8",
-   "package": "none",
-   "action": "none",
-   "reason": "Godot UI and input only; every number is a sim field; sunholo/relativity untouched"
-  }
- ],
- "velocity": {
-  "target_loc_per_day": 400,
-  "estimated_total_loc": 2330,
-  "estimated_days": 7
- },
- "critical_path": [
-  "U0_TESTS_FIRST",
-  "U4a_MAP_HOST_SPIKE",
-  "U3_CONSOLE_FRAMEWORK",
-  "U4_NAVIGATION_STATION",
-  "U6_MIGRATION",
-  "U7_RENDERS"
- ],
- "external_dependencies": [
-  "feat/free-nav-stops merged",
-  "PR #171 merged",
-  "PR #177 merged",
-  "Mark's answers to Q1-Q6"
- ],
- "pause_points": [
-  {
-   "id": "P0",
-   "when": "before execution",
-   "blocking": true,
-   "what": "Mark approves the plan and answers Q1-Q6; if Q1 = A, an attended session records it and re-points M4.3b in the charter"
+  "sprint_id": "R1-SHIP-UI",
+  "status": "approved",
+  "approved": false,
+  "approved_by": "Mark Edmondson, attended 2026-10-09 (ledger D-57)",
+  "created": "2026-10-08",
+  "design_doc": "design_docs/planned/r1/ship-ui-hud-consoles.md",
+  "sprint_plan": "design_docs/planned/r1/ship-ui-hud-consoles-sprint.md",
+  "branch": "sprint/ship-ui (on approval, from origin/main after feat/free-nav-stops, #171, #177 merge)",
+  "implements": [
+    "D-56",
+    "D-52",
+    "D-55",
+    "D-54",
+    "D-46",
+    "D-49",
+    "D-38",
+    "D-12"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "U0-U8",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot UI and input only; every number is a sim field; sunholo/relativity untouched"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 400,
+    "estimated_total_loc": 2330,
+    "estimated_days": 7
   },
-  {
-   "id": "P1",
-   "when": "end of day 4",
-   "blocking": false,
-   "what": "strip and card renders posted for a look"
-  },
-  {
-   "id": "P2",
-   "when": "before merge",
-   "blocking": true,
-   "what": "dev review build (make publish-dev); Mark walks to the consoles and commits a voyage"
-  }
- ],
- "questions_for_mark": [
-  {
-   "id": "Q1",
-   "question": "How do this plan and M4.3b fit: (A) absorb M4.3b's 3D half (U2), loop re-pointed via charter; (B) framework only, loop builds the cards; (C) loop builds M4.3b in today's HUD, migrate later; under every option the M4.3b 'shortcuts M, L and K' and M4.5 'bot through Godot's input layer' rows are amended in the same attended charter edit before the loop starts either",
-   "recommendation": "A"
-  },
-  {
-   "id": "Q2",
-   "question": "M stays an instant read-only star chart (no commit, no pause); plotting and commit only at the navigation station",
-   "recommendation": "yes"
-  },
-  {
-   "id": "Q3",
-   "question": "Pacing controls (tour pause, skip dwell, skip stage K, Sgr A* finish approach K, warp level) instant or console (edge: time warp is pacing but has no 3D-ship control; cruise speed is a helm decision)",
-   "recommendation": "instant"
-  },
-  {
-   "id": "Q4",
-   "question": "Console presentation: camera dolly and framed panel vs fully in-world interactive screens",
-   "recommendation": "dolly"
-  },
-  {
-   "id": "Q5",
-   "question": "Layout: navigation station for all where-the-ship-goes decisions, Voyage console for the guided voyage, Archive terminal, decision_1..3 reserved for M6",
-   "recommendation": "yes"
-  },
-  {
-   "id": "Q6",
-   "question": "Accessibility: press-twice confirm setting, click-to-walk, keyboard Walk-to list",
-   "recommendation": "yes to all three"
-  }
- ],
- "coordination": {
-  "M4.3b": "see Q1; under A, M4.3b's 3D-ship deliverable is U2 and M4.5's scene half starts after U6 using ShipConsoles.use",
-  "free_nav_stops": "merge first; U1 reuses distances_text; U4 makes Sol pick, Return to Sol and In this system helm-only",
-  "charter_7d_a": "closed by U1"
- },
- "github_issues": [],
- "features": [
-  {
-   "id": "U0_TESTS_FIRST",
-   "description": "Tests first (red): tests/test_ship_ui.gd, tests/test_ship_consoles.gd, tests/test_no_twitch.gd; ui/ship_controls.gd (the design's section F control table as data); Makefile ship-ui-test, ship-console-test, no-twitch-test in ship-demo-ci; SimBridge sent-intent record seam (record only). SimBridge seam tags each intent with its source (player/tour/tick); fake-clock now() seam for ShipHud, ShipConsoles and the confirm (no wall-clock reads).",
-   "estimated_loc": 640,
-   "dependencies": [],
-   "acceptance_criteria": [
-    "Each of AC1-AC11 has at least one failing case before implementation, failing for the documented reason (log kept in the sprint notes)",
-    "make ship-ui-test, make ship-console-test, make no-twitch-test exist and are wired into ship-demo-ci",
-    "AC13 determinism: make no-twitch-test run twice gives identical logs"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U1_SHIP_HUD_STRIP",
-   "description": "ui/ship_hud.gd: always-on status strip (ship clock, home clock same size, distance via distances_text, where/phase, speed while moving from ship.one_minus_beta, view tag); card stack (priority, max two expanded, 0.4/0.6 s fades, centre-third exclusion); prompt line; Tab details/help/Walk-to panel; hud_text() and the HUD button column retired; developer controls gated to command-line launches; the 1.0 - beta fallback removed (charter 7d(a)).",
-   "estimated_loc": 330,
-   "dependencies": [
-    "U0_TESTS_FIRST"
-   ],
-   "acceptance_criteria": [
-    "AC1: make ship-ui-test (strip in 9 scene states, DisplayBinding equality, digit-free captions)",
-    "AC2: make ship-ui-test && make lint-precision; one_minus_beta asserted present in every phase; grep -n '1.0 - beta' demos/ship_geometry_demo.gd ui/ship_hud.gd tests/fixtures/lint_precision/allowlist.txt is empty",
-    "AC7 and AC11: make ship-ui-test"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U2_CONTEXT_CARDS",
-   "description": "Contextual cards (M4.3b's 3D-ship half under Q1(A)): transit (JourneyHud.ROWS compact, full in Tab), brake and final-approach notices, arrival, gravity (BlackHoleVisit.hud_lines), tour card with pacing buttons (P pause, N skip dwell, K skip stage; warp level shown only, no new warp control), Archive unlock, refusal; dwell label on stars and bodies (read-only identification pick).",
-   "estimated_loc": 260,
-   "dependencies": [
-    "U1_SHIP_HUD_STRIP"
-   ],
-   "acceptance_criteria": [
-    "AC3: make ship-ui-test (one case per card row: appear trigger, leave trigger, priority, no overlap of the centre third at 1280x720 and 2560x1440)"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U3_CONSOLE_FRAMEWORK",
-   "description": "demos/ship_consoles.gd (ShipConsoles): stations from ship.glb node names (console_navigation_0..2, console_decision_0..3, archive_terminal); use points via WalkArea.closest_walkable(origin, 2.5) with walked path lengths printed (40 m ceiling); E priority = nearest interactable in reach and facing, lift included, named by the prompt; reach (2.5 m) and facing (60 deg) prompt; E or click to use; 0.6 s camera dolly focus and back; panel host aligned to the console rect; click-to-walk and Tab Walk-to (WalkArea.path, 3.5 m/s, WASD cancels); confirm modes hold 1.5 s / press twice (setting in ui/game_settings.gd); idle screens (display only); onboarding glow and hint; use(station, action) as the single decision entry.",
-   "estimated_loc": 380,
-   "dependencies": [
-    "U0_TESTS_FIRST"
-   ],
-   "acceptance_criteria": [
-    "AC6: make ship-console-test (hold and press-twice confirms; release restarts with no penalty; intent payload independent of delay)",
-    "AC8: make ship-console-test (all stations load; every active station has a non-empty WalkArea.path from the bridge spawn; prompt only in reach and facing)",
-    "AC14a: make ship-console-test (keyboard Walk-to list reaches every station; lower-deck prompt names the lift)"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U4a_MAP_HOST_SPIKE",
-   "description": "Own-day spike: embed GalaxyMap (native Window, force_native, own_world_3d, own window_input) in the console panel, or fall back to a borderless window over the console rect; make ship-ui-window-check runs the chosen host in a real GPU window (open, click-select, hold-commit).",
-   "estimated_loc": 60,
-   "dependencies": [
-    "U0_TESTS_FIRST"
-   ],
-   "acceptance_criteria": [
-    "AC15: make ship-ui-window-check green in a GPU window"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U4_NAVIGATION_STATION",
-   "description": "On the host U4a chose. GalaxyMap.mode chart/helm: chart (M, I-card Open in map) has no slider, commit, cancel, Return to Sol, in-system list or Sgr A* entry and never pauses the tour; selection carries to the helm. Helm hosts commit, cancel, Sgr A* entry; at Sgr A* the stop ladder with Approach and Leave (confirm).",
-   "estimated_loc": 220,
-   "dependencies": [
+  "critical_path": [
+    "U0_TESTS_FIRST",
+    "U4a_MAP_HOST_SPIKE",
     "U3_CONSOLE_FRAMEWORK",
-    "U4a_MAP_HOST_SPIKE"
-   ],
-   "acceptance_criteria": [
-    "AC9 (helm part): make ship-console-test (helm commit sends the same intent as today's map commit; Approach/Leave equal bh_next_stop()/leave_black_hole())",
-    "AC10: make ship-console-test"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U5_VOYAGE_AND_ARCHIVE",
-   "description": "Voyage console (itinerary, Begin guided voyage with confirm -> start_solar_departure()); Archive terminal (Codex, news, legacy log); remove HUD New voyage and Visit Sgr A* buttons and the N/L/C decision keys; reserved consoles dark and offline.",
-   "estimated_loc": 140,
-   "dependencies": [
-    "U3_CONSOLE_FRAMEWORK"
-   ],
-   "acceptance_criteria": [
-    "AC9 (voyage, archive): make ship-console-test",
-    "AC4 and AC5: make no-twitch-test green (no player-sourced decision intent from any key; tour-sourced intents match the itinerary's next leg)"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U6_MIGRATION",
-   "description": "Migrate key-driven cases in test_bh_hud, test_ship_demo_live, test_ship_demo_consolidation, test_tour_attitude and the capture/bench tools to ShipConsoles.use or the kept methods; Tab help text; confirm-mode option on title Settings; full make test.",
-   "estimated_loc": 150,
-   "dependencies": [
-    "U2_CONTEXT_CARDS",
     "U4_NAVIGATION_STATION",
-    "U5_VOYAGE_AND_ARCHIVE"
-   ],
-   "acceptance_criteria": [
-    "AC12: make test green",
-    "AC13: make parity && make strict green (no sim or protocol change)"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U7_RENDERS",
-   "description": "tools/ship_ui_capture.gd and make ship-ui-capture -> renders/ship_ui/ (12 frames at 1280x720 and 2560x1440, contact sheet); every frame opened and inspected; pause P2 dev review build (make publish-dev) for Mark.",
-   "estimated_loc": 150,
-   "dependencies": [
-    "U6_MIGRATION"
-   ],
-   "acceptance_criteria": [
-    "AC14: make ship-ui-capture writes 24 PNGs and a contact sheet; inspection notes recorded in this row; the tool fails on a missing or uniform frame"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  },
-  {
-   "id": "U8_DOCS",
-   "description": "CHANGELOG; design_docs/README.md index row; m4.5s-inventory.md note on ShipConsoles.use for the M4.5 bot.",
-   "estimated_loc": 0,
-   "dependencies": [
+    "U6_MIGRATION",
     "U7_RENDERS"
-   ],
-   "acceptance_criteria": [
-    "CHANGELOG entry present; README index row present"
-   ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
-  }
- ],
- "revision_round_1": "Plan review round 1 (Sonnet, 82/100 PASS, 0 blocking): F1 NT1 split player vs tour intents; F2 no new warp keys; F3 M4.3b/M4.5 row amendments in Q1; F4 7 days; F5 U4a spike + GPU window check AC15; F6 E priority, pan gesture, map keys; F7 concrete conflicts; F8 use point max_r 2.5 m, path lengths; F9 allowlist + one_minus_beta per phase; F11 AC14a + uniform-frame check; F12 seams costed, determinism AC13. F10 (confirm on cancel/leave) kept by design."
+  ],
+  "external_dependencies": [
+    "feat/free-nav-stops merged",
+    "PR #171 merged",
+    "PR #177 merged",
+    "Mark's answers to Q1-Q6"
+  ],
+  "pause_points": [
+    {
+      "id": "P0",
+      "when": "before execution",
+      "blocking": true,
+      "what": "Mark approves the plan and answers Q1-Q6; if Q1 = A, an attended session records it and re-points M4.3b in the charter"
+    },
+    {
+      "id": "P1",
+      "when": "end of day 4",
+      "blocking": false,
+      "what": "strip and card renders posted for a look"
+    },
+    {
+      "id": "P2",
+      "when": "before merge",
+      "blocking": true,
+      "what": "dev review build (make publish-dev); Mark walks to the consoles and commits a voyage"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "Q1",
+      "question": "How do this plan and M4.3b fit: (A) absorb M4.3b's 3D half (U2), loop re-pointed via charter; (B) framework only, loop builds the cards; (C) loop builds M4.3b in today's HUD, migrate later; under every option the M4.3b 'shortcuts M, L and K' and M4.5 'bot through Godot's input layer' rows are amended in the same attended charter edit before the loop starts either",
+      "recommendation": "A"
+    },
+    {
+      "id": "Q2",
+      "question": "M stays an instant read-only star chart (no commit, no pause); plotting and commit only at the navigation station",
+      "recommendation": "yes"
+    },
+    {
+      "id": "Q3",
+      "question": "Pacing controls (tour pause, skip dwell, skip stage K, Sgr A* finish approach K, warp level) instant or console (edge: time warp is pacing but has no 3D-ship control; cruise speed is a helm decision)",
+      "recommendation": "instant"
+    },
+    {
+      "id": "Q4",
+      "question": "Console presentation: camera dolly and framed panel vs fully in-world interactive screens",
+      "recommendation": "dolly"
+    },
+    {
+      "id": "Q5",
+      "question": "Layout: navigation station for all where-the-ship-goes decisions, Voyage console for the guided voyage, Archive terminal, decision_1..3 reserved for M6",
+      "recommendation": "yes"
+    },
+    {
+      "id": "Q6",
+      "question": "Accessibility: press-twice confirm setting, click-to-walk, keyboard Walk-to list",
+      "recommendation": "yes to all three"
+    }
+  ],
+  "coordination": {
+    "M4.3b": "see Q1; under A, M4.3b's 3D-ship deliverable is U2 and M4.5's scene half starts after U6 using ShipConsoles.use",
+    "free_nav_stops": "merge first; U1 reuses distances_text; U4 makes Sol pick, Return to Sol and In this system helm-only",
+    "charter_7d_a": "closed by U1"
+  },
+  "github_issues": [],
+  "features": [
+    {
+      "id": "U0_TESTS_FIRST",
+      "description": "Tests first (red): tests/test_ship_ui.gd, tests/test_ship_consoles.gd, tests/test_no_twitch.gd; ui/ship_controls.gd (the design's section F control table as data); Makefile ship-ui-test, ship-console-test, no-twitch-test in ship-demo-ci; SimBridge sent-intent record seam (record only). SimBridge seam tags each intent with its source (player/tour/tick); fake-clock now() seam for ShipHud, ShipConsoles and the confirm (no wall-clock reads).",
+      "estimated_loc": 640,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Each of AC1-AC11 has at least one failing case before implementation, failing for the documented reason (log kept in the sprint notes)",
+        "make ship-ui-test, make ship-console-test, make no-twitch-test exist and are wired into ship-demo-ci",
+        "AC13 determinism: make no-twitch-test run twice gives identical logs"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U1_SHIP_HUD_STRIP",
+      "description": "ui/ship_hud.gd: always-on status strip (ship clock, home clock same size, distance via distances_text, where/phase, speed while moving from ship.one_minus_beta, view tag); card stack (priority, max two expanded, 0.4/0.6 s fades, centre-third exclusion); prompt line; Tab details/help/Walk-to panel; hud_text() and the HUD button column retired; developer controls gated to command-line launches; the 1.0 - beta fallback removed (charter 7d(a)).",
+      "estimated_loc": 330,
+      "dependencies": [
+        "U0_TESTS_FIRST"
+      ],
+      "acceptance_criteria": [
+        "AC1: make ship-ui-test (strip in 9 scene states, DisplayBinding equality, digit-free captions)",
+        "AC2: make ship-ui-test && make lint-precision; one_minus_beta asserted present in every phase; grep -n '1.0 - beta' demos/ship_geometry_demo.gd ui/ship_hud.gd tests/fixtures/lint_precision/allowlist.txt is empty",
+        "AC7 and AC11: make ship-ui-test"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U2_CONTEXT_CARDS",
+      "description": "Contextual cards (M4.3b's 3D-ship half under Q1(A)): transit (JourneyHud.ROWS compact, full in Tab), brake and final-approach notices, arrival, gravity (BlackHoleVisit.hud_lines), tour card with pacing buttons (P pause, N skip dwell, K skip stage; warp level shown only, no new warp control), Archive unlock, refusal; dwell label on stars and bodies (read-only identification pick).",
+      "estimated_loc": 260,
+      "dependencies": [
+        "U1_SHIP_HUD_STRIP"
+      ],
+      "acceptance_criteria": [
+        "AC3: make ship-ui-test (one case per card row: appear trigger, leave trigger, priority, no overlap of the centre third at 1280x720 and 2560x1440)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U3_CONSOLE_FRAMEWORK",
+      "description": "demos/ship_consoles.gd (ShipConsoles): stations from ship.glb node names (console_navigation_0..2, console_decision_0..3, archive_terminal); use points via WalkArea.closest_walkable(origin, 2.5) with walked path lengths printed (40 m ceiling); E priority = nearest interactable in reach and facing, lift included, named by the prompt; reach (2.5 m) and facing (60 deg) prompt; E or click to use; 0.6 s camera dolly focus and back; panel host aligned to the console rect; click-to-walk and Tab Walk-to (WalkArea.path, 3.5 m/s, WASD cancels); confirm modes hold 1.5 s / press twice (setting in ui/game_settings.gd); idle screens (display only); onboarding glow and hint; use(station, action) as the single decision entry.",
+      "estimated_loc": 380,
+      "dependencies": [
+        "U0_TESTS_FIRST"
+      ],
+      "acceptance_criteria": [
+        "AC6: make ship-console-test (hold and press-twice confirms; release restarts with no penalty; intent payload independent of delay)",
+        "AC8: make ship-console-test (all stations load; every active station has a non-empty WalkArea.path from the bridge spawn; prompt only in reach and facing)",
+        "AC14a: make ship-console-test (keyboard Walk-to list reaches every station; lower-deck prompt names the lift)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U4a_MAP_HOST_SPIKE",
+      "description": "Own-day spike: embed GalaxyMap (native Window, force_native, own_world_3d, own window_input) in the console panel, or fall back to a borderless window over the console rect; make ship-ui-window-check runs the chosen host in a real GPU window (open, click-select, hold-commit).",
+      "estimated_loc": 60,
+      "dependencies": [
+        "U0_TESTS_FIRST"
+      ],
+      "acceptance_criteria": [
+        "AC15: make ship-ui-window-check green in a GPU window"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U4_NAVIGATION_STATION",
+      "description": "On the host U4a chose. GalaxyMap.mode chart/helm: chart (M, I-card Open in map) has no slider, commit, cancel, Return to Sol, in-system list or Sgr A* entry and never pauses the tour; selection carries to the helm. Helm hosts commit, cancel, Sgr A* entry; at Sgr A* the stop ladder with Approach and Leave (confirm).",
+      "estimated_loc": 220,
+      "dependencies": [
+        "U3_CONSOLE_FRAMEWORK",
+        "U4a_MAP_HOST_SPIKE"
+      ],
+      "acceptance_criteria": [
+        "AC9 (helm part): make ship-console-test (helm commit sends the same intent as today's map commit; Approach/Leave equal bh_next_stop()/leave_black_hole())",
+        "AC10: make ship-console-test"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U5_VOYAGE_AND_ARCHIVE",
+      "description": "Voyage console (itinerary, Begin guided voyage with confirm -> start_solar_departure()); Archive terminal (Codex, news, legacy log); remove HUD New voyage and Visit Sgr A* buttons and the N/L/C decision keys; reserved consoles dark and offline.",
+      "estimated_loc": 140,
+      "dependencies": [
+        "U3_CONSOLE_FRAMEWORK"
+      ],
+      "acceptance_criteria": [
+        "AC9 (voyage, archive): make ship-console-test",
+        "AC4 and AC5: make no-twitch-test green (no player-sourced decision intent from any key; tour-sourced intents match the itinerary's next leg)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U6_MIGRATION",
+      "description": "Migrate key-driven cases in test_bh_hud, test_ship_demo_live, test_ship_demo_consolidation, test_tour_attitude and the capture/bench tools to ShipConsoles.use or the kept methods; Tab help text; confirm-mode option on title Settings; full make test.",
+      "estimated_loc": 150,
+      "dependencies": [
+        "U2_CONTEXT_CARDS",
+        "U4_NAVIGATION_STATION",
+        "U5_VOYAGE_AND_ARCHIVE"
+      ],
+      "acceptance_criteria": [
+        "AC12: make test green",
+        "AC13: make parity && make strict green (no sim or protocol change)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U7_RENDERS",
+      "description": "tools/ship_ui_capture.gd and make ship-ui-capture -> renders/ship_ui/ (12 frames at 1280x720 and 2560x1440, contact sheet); every frame opened and inspected; pause P2 dev review build (make publish-dev) for Mark.",
+      "estimated_loc": 150,
+      "dependencies": [
+        "U6_MIGRATION"
+      ],
+      "acceptance_criteria": [
+        "AC14: make ship-ui-capture writes 24 PNGs and a contact sheet; inspection notes recorded in this row; the tool fails on a missing or uniform frame"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "U8_DOCS",
+      "description": "CHANGELOG; design_docs/README.md index row; m4.5s-inventory.md note on ShipConsoles.use for the M4.5 bot.",
+      "estimated_loc": 0,
+      "dependencies": [
+        "U7_RENDERS"
+      ],
+      "acceptance_criteria": [
+        "CHANGELOG entry present; README index row present"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "revision_round_1": "Plan review round 1 (Sonnet, 82/100 PASS, 0 blocking): F1 NT1 split player vs tour intents; F2 no new warp keys; F3 M4.3b/M4.5 row amendments in Q1; F4 7 days; F5 U4a spike + GPU window check AC15; F6 E priority, pan gesture, map keys; F7 concrete conflicts; F8 use point max_r 2.5 m, path lengths; F9 allowlist + one_minus_beta per phase; F11 AC14a + uniform-frame check; F12 seams costed, determinism AC13. F10 (confirm on cancel/leave) kept by design."
 }
