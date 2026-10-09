@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Stops that show relative size (D-54), Sol in the map, in-system destinations, 2026-10-08
+
+- Free navigation stops at a star with a cited radius where it shows its size (D-54: 2 atan(tan 5° √(R/R☉)) across): TRAPPIST-1 3.5° at 0.018 AU, alpha Cen A 11° at 0.059 AU, Aldebaran 61° at 0.415 AU. Stars without a cited radius (Barnard's Star, most of the map) still stop at 1,000 AU until a package release adds a bolometric correction (inferring their radius is blocked, see the design doc).
+- Planet and moon stops (free navigation and the guided tour) show the body 2 atan(tan 15° √(R/R⊕)) across: Moon 16°, Earth 30° (24,643 km, also the tour's start), Callisto 18.7°, Jupiter 84°; Saturn clears its rings (154,673 km, 46°). The Sun keeps 3 R, the tour's star stops keep D-47 and the legs keep D-46's timing.
+- Sol is clickable on the map, and a Return to Sol button plans home. Home now arrives beside Earth (30° across) with the Solar System around the ship, not at the Sun's centre; the M4.4 return log is unchanged.
+- In a system the map lists its bodies ("In this system": planets, moons, the stars) as destinations, planned with the tour's body planner and stopping at D-54 distances; the commit hold is the same. A refused leg says why (collision, ring_crossing).
+- `make free-nav-stop-test` flies it all; `sim/stops_test.ail` and `make strict` (stopsVm) check the rule's values on both engines; `tools/stops_capture.gd` renders every stop to `renders/stops/`.
+
+### Fix: free-navigation stops (HUD distances, I at the destination), 2026-10-08
+
+- Stopped after a free-navigation leg, the HUD now says where the ship is: "At Barnard's Star 1000 AU · from Earth 5.95 ly", and after a second leg "At Alpha Centauri A 1000 AU · from Barnard's Star 6.43 ly · from Earth 4.31 ly". It used to show only "from Earth". Destinations use catalogue names, not raw ids, while cruising too.
+- I now offers the free-navigation destination with its card. The sky tiers key Gaia sources by the bare source number while the catalogue keys them "Gaia DR3 n", so no Gaia-identified star (Barnard's Star, most of the map) was ever offered; sky rows now map to their catalogue record. A click between alpha Cen A and the nearer B now picks the disc it is on (or the closer centre) instead of always the nearer body.
+- `make free-nav-stop-test` (in `make test`) flies the real flow: open navigation, commit, fly to Barnard's Star and then alpha Cen A, check the HUD line, then I and the card.
 ### Lightspeed loading view, 2026-10-08
 
 - Board the ship, Guided voyage and Galaxy map no longer freeze the title while they load. The title's own sky accelerates toward the galactic centre as the load progresses, through the game's real relativistic optics (aberration, Doppler colour, the starbow), to 0.99999c at 100% (γ 223.6): the whole sky collapses into one blinding blue-white point. Then a white-out (a transition effect, not physics) blooms from that point and fades into the destination.

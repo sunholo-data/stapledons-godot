@@ -242,6 +242,10 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry grVm --args-json 0 sim/gr_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry grVm --args-json 0 sim/gr_test.ail); \
 	echo "strict grVm (M3.4): VM $$got | interpreter $$interp"; [ "$$got" = "gr-ok" ] && [ "$$interp" = "gr-ok" ]
+	@# stopsVm (D-54): the stop rules' check values and free-navigation legs (alpha Cen A, Aldebaran, TRAPPIST-1, home at Earth); strict VM = interpreter byte for byte
+	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry stopsVm --args-json 0 sim/stops_test.ail); \
+	interp=$$($(AILANG) run --quiet --package-dir sim --entry stopsVm --args-json 0 sim/stops_test.ail); \
+	echo "strict stopsVm (D-54): VM $$got | interpreter $$interp"; [ "$$got" = "$$interp" ] && case "$$got" in "stops-ok "*) true;; *) false;; esac
 	@got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	interp=$$($(AILANG) run --quiet --package-dir sim --entry consequenceVm --args-json 0 sim/consequence_test.ail); \
 	echo "strict consequenceVm: VM $$got | interpreter $$interp"; [ "$$got" = "consequence-ok" ] && [ "$$interp" = "consequence-ok" ]
@@ -802,6 +806,10 @@ ship-star-identification-capture:
 ship-star-identification-bench:
 	$(GODOT_SIM) --path . --script tools/ship_star_identification_bench.gd
 ship-demo-ci: ship-star-identification-test
+.PHONY: free-nav-stop-test
+free-nav-stop-test: import ## free navigation, the real flow: commit, fly to Barnard's Star then alpha Cen A, HUD stop line, I offers the destination with its card
+	@$(GODOT_SIM) --headless --path . --script tests/test_free_nav_stop.gd > $(SCRATCH)/free-nav-stop.log 2>&1; rc=$$?; cat $(SCRATCH)/free-nav-stop.log | grep -E '^(ok|FAIL|free-nav)'; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/free-nav-stop.log && grep -q '^free-nav-stop: [0-9]* passed, 0 failures$$' $(SCRATCH)/free-nav-stop.log
+ship-demo-ci: free-nav-stop-test
 ship-star-identification-export-smoke:
 	@mkdir -p $(SCRATCH)/identify-export-home
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/identify-export-home" "$(APP)/Contents/MacOS/$$exe" -- --ship-identification-smoke > $(SCRATCH)/ship-identification-export.log 2>&1; rc=$$?; cat $(SCRATCH)/ship-identification-export.log; test $$rc = 0 && grep -q '^ship-star-identification-export-smoke: OK$$' $(SCRATCH)/ship-identification-export.log

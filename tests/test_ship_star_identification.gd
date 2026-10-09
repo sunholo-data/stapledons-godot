@@ -194,6 +194,12 @@ func _run() -> void:
 	check(identify.candidates.size()==1,"transparent billboard padding keeps star visible")
 	sprite.queue_free();await process_frame;identify.update_candidates()
 	check(identify.candidates.size()==1,"freed sprite references are ignored")
+	# Tiers key Gaia sources by the bare number; the catalogue says "Gaia DR3 n" (free-nav I fix).
+	identify.info.records["Gaia DR3 123"]={id="Gaia DR3 123"}
+	check(identify.record_id("123")=="Gaia DR3 123" and identify.record_id("pin:b")=="b" and identify.record_id("999")=="","sky rows map to their catalogue record id")
+	demo.sky.starfield.set_custom_stars([{id="123",pos=n*100.,t=5700.,flux=1.}]);identify.update_candidates()
+	check(identify.candidates.size()==1 and identify.candidates[0].id=="Gaia DR3 123","a bare Gaia row is offered as its catalogue id")
+	demo.sky.starfield.set_custom_stars([{id="b",pos=n*100.,t=5700.,flux=1.}]);identify.update_candidates()
 	identify.info.records.erase("b");identify.reindex();identify.update_candidates();check(identify.candidates.is_empty(),"absent metadata fails closed")
 	demo.queue_free();await process_frame
 	print("ship-star-identification: %d passed, %d failures" % [passed, failed]); quit(1 if failed else 0)

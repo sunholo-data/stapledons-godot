@@ -26,9 +26,10 @@ import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planBurnCoas
 import pkg/sunholo/relativity/kinematics (betaOf, rapidityOfBeta)
 import pkg/sunholo/relativity/optics (doppler)
 import ./celestial (System, BodyState, bodyAt, jdAt, lyKm)
-import ./data/sol (Planet, Moon, Ring, rings)
-import ./alpha_centauri (alphaBodyAt, stellarRadiusKm, catalogueA)
-import ./destination_stars (isDestinationStar, destinationBodyAt, destinationRadiusKm, destinationLy, destinationIds)
+import ./data/sol (Planet, Moon, Ring, rings, planets, sun)
+import ./stops (starStopKm, planetStopKm, denseRingTau)
+import ./alpha_centauri (alphaBodyAt, stellarRadiusKm, catalogueA, catalogueId as alphaCatalogueId)
+import ./destination_stars (isDestinationStar, destinationBodyAt, destinationRadiusKm, destinationLy, destinationIds, destinationCatalogueId)
 import ./trappist1 (isTrappistPlanet, trappistPlanetAt, trappistPlanetIds, planetRadiusKm, hostId as trappistHostId)
 
 -- ------------------------------------------------------------ intent and result
@@ -78,9 +79,19 @@ export pure func runOutMarginKm() -> float = 1000000.0
 -- with a 10 % margin (above every atmosphere in Sol: Jupiter's 1 mbar level is
 -- about 0.4 % of its radius) plus the bubble. Below it the plan is too_close.
 export pure func safetyMinKm(radiusKm: float, bubbleKm: float) -> float = 1.1 * radiusKm + bubbleKm
--- The default stand-off: the larger of 10 radii and 1.5 x the outer ring.
-export pure func defaultStandoffKm(radiusKm: float, ringKm: float) -> float =
-  if 10.0 * radiusKm > 1.5 * ringKm then 10.0 * radiusKm else 1.5 * ringKm
+-- The default stand-off (D-54, sim/stops.ail): a star where it looks
+-- 2 atan(tan 5 deg sqrt(R / R_sun)) across, a planet or moon where it looks
+-- 2 atan(tan 15 deg sqrt(R / R_earth)) across, above the atmosphere and outside
+-- dense rings. R_sun and R_earth are this data's Sun and Earth radii.
+export pure func earthRefKm() -> float = navFold(\acc p. if p.id == "earth" then p.radiusKm else acc, 0.0, planets())
+export pure func sunRefKm() -> float = (sun()).radiusKm
+export pure func isStarStop(id: string) -> bool = id == "sun" || id == "acen-a" || id == "acen-b" || isDestinationStar(id)
+-- The outer edge of a host's dense rings (optical depth >= denseRingTau), 0 if none.
+export pure func denseRingKm(host: string) -> float =
+  navFold(\acc r. if r.host == host then navFold(\m b. if b.tau >= denseRingTau() && b.rOut > m then b.rOut else m, acc, r.bands) else acc, 0.0, rings())
+export pure func defaultStopKm(id: string, radiusKm: float, bubbleKm: float) -> float =
+  if isStarStop(id) then starStopKm(radiusKm, sunRefKm())
+  else planetStopKm(radiusKm, earthRefKm(), denseRingKm(id), safetyMinKm(radiusKm, bubbleKm))
 
 -- ------------------------------------------------------------ bodies
 -- What the checks need about a body: its place in system.bodies, radius,
@@ -202,8 +213,14 @@ pure func nearestAt(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, id: string, t
 }
 -- collision: the leg passes within R + bubble of any body (the target included:
 -- its stand-off and pass distance already clear 1.1 R).
-pure func collides(c: NavCtx, p: TripPlan, w: Vec3, legKm: float) -> bool =
-  navFold(\acc f. acc || (nearestAt(c, p, w, legKm, f.id, c.t0, 2)).distKm < f.radiusKm + c.bubbleKm, false, allFacts(c.sys) ++ (if norm(sub(c.hereLy,catalogueA()))<0.1 then alphaFacts(c.sys) else []) ++ nearDestinationFacts(c))
+pure func collides(c: NavCtx, p: TripPlan, w: Vec3, legKm: float) -> bool = collidesFrom(c, p, w, legKm, false)
+-- startInside true: the Sun does not count when the ship starts inside it. Only a D-54
+-- free-navigation leg (planFiniteStop) uses it: the "sol" scenario starts at Sol's
+-- origin, the Sun's centre (M2's convention). Every other plan still refuses a start
+-- inside a body (AC15).
+pure func collidesFrom(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, startInside: bool) -> bool =
+  navFold(\acc f. acc || ((nearestAt(c, p, w, legKm, f.id, c.t0, 2)).distKm < f.radiusKm + c.bubbleKm
+    && !(startInside && f.id == "sun" && norm(sub(navPosAt(c, f.id, c.t0), navHereKm(c))) < f.radiusKm + c.bubbleKm)), false, allFacts(c.sys) ++ (if norm(sub(c.hereLy,catalogueA()))<0.1 then alphaFacts(c.sys) else []) ++ nearDestinationFacts(c))
 -- ring_crossing: the leg crosses a ring host's equatorial plane inside its outer
 -- ring radius (host and pole taken at the ship's nearest approach to it).
 pure func crossesRing(c: NavCtx, p: TripPlan, w: Vec3, legKm: float, f: Facts) -> bool {
@@ -221,7 +238,8 @@ pure func navFinite(x: float) -> bool = x - x == 0.0
 pure func navPhiOk(phi: float) -> bool = phi == phi && phi >= bodyPhiMin() && phi <= bodyPhiMax()
 -- The leg from the ship to endKm, its trip, and the checks every plan shares
 -- (no_converge, then collision, then ring_crossing).
-pure func navFinish(c: NavCtx, endKm: Vec3, phi: float, residual: float, nav: NavPlan) -> Result[Leg, string] {
+pure func navFinish(c: NavCtx, endKm: Vec3, phi: float, residual: float, nav: NavPlan) -> Result[Leg, string] = navFinishFrom(c, endKm, phi, residual, nav, false)
+pure func navFinishFrom(c: NavCtx, endKm: Vec3, phi: float, residual: float, nav: NavPlan, startInside: bool) -> Result[Leg, string] {
   let endLy = scale(1.0 / lyKm(), endKm);
   let dLy = sub(endLy, c.hereLy);
   let legLy = norm(dLy);
@@ -229,15 +247,16 @@ pure func navFinish(c: NavCtx, endKm: Vec3, phi: float, residual: float, nav: Na
   let w = navUnit(sub(endKm, navHereKm(c)));
   let legKm = legLy * lyKm();
   if !(residual < residualMax()) || !navFinite(legLy) then Err("no_converge")
-  else if collides(c, trip, w, legKm) then Err("collision")
+  else if collidesFrom(c, trip, w, legKm, startInside) then Err("collision")
   else if ringCrossing(c, trip, w, legKm) then Err("ring_crossing")
   else Ok({ arrivalLy: endLy, heading: scale(1.0 / legLy, dLy), trip: trip, nav: {nav | residual: residual} })
 }
 pure func navToLy(v: Vec3) -> Vec3 = scale(1.0 / lyKm(), v)
 
 -- Stop: arrive standoffKm from the body's centre at the arrival time.
-pure func planStop(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, string] {
-  let asked = match rq.standoffKm { Some(x) => x, None => defaultStandoffKm(f.radiusKm, f.ringKm) };
+pure func planStop(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, string] = planStopFrom(c, rq, f, n, false)
+pure func planStopFrom(c: NavCtx, rq: BodyReq, f: Facts, n: int, startInside: bool) -> Result[Leg, string] {
+  let asked = match rq.standoffKm { Some(x) => x, None => defaultStopKm(rq.id, f.radiusKm, c.bubbleKm) };
   let maxS = if rq.id=="acen-a" || rq.id=="acen-b" || isDestinationStar(rq.id) then 10.0 * auKm() else standoffMaxKm();
   let s = if asked > maxS then maxS else asked;
   if !(s >= safetyMinKm(f.radiusKm, c.bubbleKm)) then Err("too_close")
@@ -248,8 +267,8 @@ pure func planStop(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, stri
     let tNext = c.t0 + (navTripOf(c, aim.legKm, rq.cruisePhi)).trip.galaxyTime;
     let res = norm(sub((stopAim(c, rq.id, s, tNext)).pointKm, aim.pointKm)) / aim.legKm;
     let arrive = c.t0 + (navTripLy(c, norm(sub(navToLy(aim.pointKm), c.hereLy)), rq.cruisePhi)).trip.galaxyTime;
-    navFinish(c, aim.pointKm, rq.cruisePhi, res,
-      { bodyId: rq.id, index: f.index, mode: "stop", t0: c.t0, interceptT: arrive, interceptLy: navToLy(navPosAt(c, rq.id, arrive)), standoffKm: s, pass: None, residual: res })
+    navFinishFrom(c, aim.pointKm, rq.cruisePhi, res,
+      { bodyId: rq.id, index: f.index, mode: "stop", t0: c.t0, interceptT: arrive, interceptLy: navToLy(navPosAt(c, rq.id, arrive)), standoffKm: s, pass: None, residual: res }, startInside)
   }
 }
 
@@ -282,7 +301,7 @@ pure func planFlyby(c: NavCtx, rq: BodyReq, f: Facts, n: int) -> Result[Leg, str
 -- If the approachDeg point lies before the brake (approach rapidity >= cruise),
 -- the approach starts at half the cruise rapidity instead.
 pure func navStandoff(c: NavCtx, rq: BodyReq, f: Facts) -> float {
-  let asked = match rq.standoffKm { Some(x) => x, None => defaultStandoffKm(f.radiusKm, f.ringKm) };
+  let asked = match rq.standoffKm { Some(x) => x, None => defaultStopKm(rq.id, f.radiusKm, c.bubbleKm) };
   let maxS = if rq.id=="acen-a" || rq.id=="acen-b" || isDestinationStar(rq.id) then 10.0 * auKm() else standoffMaxKm();
   if asked > maxS then maxS else asked
 }
@@ -386,3 +405,26 @@ export pure func planBody(c: NavCtx, rq: BodyReq) -> Result[Leg, string] = planB
 -- A body plan made at galaxy time t0 is stale at any other time (the body has
 -- moved); a star plan never is (M2's rule: position only).
 export pure func staleAt(nav: Option[NavPlan], t: float) -> bool = match nav { Some(n) => n.t0 != t, None => false }
+
+-- ------------------------------------------------------------ D-54 free-navigation stops
+-- A free-navigation star leg to a star with a cited finite body (sim/data/acen.ail,
+-- sim/data/stars.ail) stops at that body, where it looks 2 atan(tan 5 deg sqrt(R / R_sun))
+-- across (defaultStopKm); Sol, home, stops at Earth's D-54 stop (30 degrees across), so the
+-- Solar System is around the ship. Other catalogue stars have no radius here yet (their
+-- inference needs a bolometric correction the packages do not have) and keep standoff_au.
+export pure func finiteStopBody(catalogueId: string) -> string =
+  if catalogueId == "Sol" then "earth"
+  else if catalogueId == alphaCatalogueId("acen-a") then "acen-a"
+  else if catalogueId == alphaCatalogueId("acen-b") then "acen-b"
+  else navFold(\acc d. if acc == "" && destinationCatalogueId(d) == catalogueId then d else acc, "", destinationIds())
+-- The leg is an ordinary stop (planStop: intercept, collision and ring checks) at the
+-- star plan's cruise rapidity, up to the session cap (interstellar, so not bodyPhiMax).
+export pure func planFiniteStop(c: NavCtx, catalogueId: string, phi: float) -> Result[Leg, string] {
+  let id = finiteStopBody(catalogueId);
+  match factsOf(allFacts(c.sys) ++ alphaFacts(c.sys) ++ destinationFacts(c.sys), id) {
+    None => Err("not_visitable"),
+    Some(f) =>
+      if !(phi == phi) || phi < bodyPhiMin() || phi > c.capPhi then Err("out_of_range")
+      else planStopFrom(c, { id: id, cruisePhi: phi, mode: "stop", standoffKm: None, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: None }, f, interceptIterations(), true)
+  }
+}

@@ -60,7 +60,18 @@ func _initialize() -> void:
 	var w := {"journey": {"state": "committed", "plan": {"target": {"id": "jupiter"}, "departure": {"x": 0.0, "y": 0.0, "z": 0.0}}}, "ship": {"pos": {"x": 3.0 / 63241.077, "y": 4.0 / 63241.077, "z": 0.0}}, "consequence": {"distance_remaining": 2.0 / 63241.077}, "system": {"bodies": []}}
 	var d: String = D.distances_text(w, null)
 	check(d == "To jupiter 2.000 AU · from last stop 5.000 AU · from Earth 5.000 AU", "HUD: distances line from fields: " + d)
+	check(D.distances_text(w, null, {"jupiter": "Jupiter"}, "Mars") == "To Jupiter 2.000 AU · from Mars 5.000 AU · from Earth 5.000 AU", "HUD: committed leg uses catalogue names")
+	# Stopped (Mark, 2026-10-08): at the target, from the stop the leg left, from Earth.
 	w.journey.state = "arrived"
-	check(D.distances_text(w, null) == "from Earth 5.000 AU", "HUD: at rest shows only the distance from Earth")
+	w.journey.plan.target["pos"] = {"x": 3.0 / 63241.077, "y": 4.0 / 63241.077 + 1000.0 / 63241.077, "z": 0.0}
+	w.journey.plan.departure = {"x": 3.0 / 63241.077, "y": 0.0, "z": 0.0}
+	var a: String = D.distances_text(w, null, {"jupiter": "Alpha Centauri A"}, "Sirius A")
+	check(a == "At Alpha Centauri A 1000 AU · from Sirius A 4.000 AU · from Earth 5.000 AU", "HUD: stopped shows at/from-last-stop/from-Earth: " + a)
+	check(D.distances_text(w, null, {}, "Earth") == "At jupiter 1000 AU · from Earth 5.000 AU", "HUD: a leg that left Earth says from Earth once")
+	var star_body := {"id": "acen-a", "name": "Alpha Centauri A", "catalogue_id": "jupiter", "rel_km": {"x": 0.0, "y": 0.0, "z": 2.0 * 149597870.7}}
+	w["system"] = {"bodies": [star_body]}
+	check(D.distances_text(w, null, {}, "Earth").begins_with("At Alpha Centauri A 2.000 AU"), "HUD: a finite star standing for the target gives the distance and its name: " + D.distances_text(w, null, {}, "Earth"))
+	w.journey.erase("plan")
+	check(D.distances_text(w, null) == "from Earth 5.000 AU", "HUD: no plan shows only the distance from Earth")
 	print("cruise-interlude: %d failures" % failures)
 	quit(1 if failures else 0)

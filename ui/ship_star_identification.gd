@@ -13,6 +13,8 @@ var held := false
 var suppressed := false
 var candidates: Array = []
 var eligible: Array = []
+## Sky row -> the catalogue record id it is inspected as (record_id).
+var record_ids := {}
 var selected_id := ""
 var card := PanelContainer.new()
 var content := VBoxContainer.new()
@@ -37,14 +39,27 @@ func set_held(value: bool) -> void:
 	held = value and not suppressed
 	if not held:candidates.clear(); hovered.clear()
 	queue_redraw()
+## The catalogue record a sky row stands for. Tiers store Gaia sources as the bare
+## source number while the catalogue (and navigation) key them "Gaia DR3 n", and a
+## fallback pin is "pin:<id>": without this every Gaia-identified star, among them most
+## free-navigation destinations (Barnard's Star), was never offered to I.
+func record_id(row_id: String) -> String:
+	var id := row_id.trim_prefix("pin:")
+	if info.records.has(id):return id
+	if not id.is_empty() and id.is_valid_int() and info.records.has("Gaia DR3 "+id):return "Gaia DR3 "+id
+	return ""
 func reindex() -> void:
-	eligible.clear()
+	eligible.clear();record_ids.clear()
 	var field: Starfield = demo.sky.starfield
 	var counts := {}
-	for id in field.ids:
-		if not id.is_empty():counts[id] = counts.get(id,0)+1
+	var rows := {}
 	for i in field.count:
-		if i < field.ids.size() and counts.get(field.ids[i],0) == 1 and info.records.has(field.ids[i]):eligible.append(i)
+		if i >= field.ids.size() or field.ids[i] in field.pinned_ids:continue
+		var id := record_id(field.ids[i])
+		if id.is_empty():continue
+		counts[id] = counts.get(id,0)+1;rows[i] = id
+	for i in rows:
+		if counts[rows[i]] == 1:eligible.append(i);record_ids[i] = rows[i]
 	_field_count = field.count
 	_identity_revision = field.identity_revision
 func update_candidates() -> void:
@@ -81,7 +96,7 @@ func update_candidates() -> void:
 		if sky.system_view!=null and sky.system_view.visible and sky.system_view.occludes_direction(PackedFloat64Array([observed.x,observed.y,observed.z]),replacement.get("body_id",""),replacement.get("distance",INF)):continue
 		var ray: Vector3 = demo.camera.project_ray_normal(point)
 		if not demo.sky_only and occlusion.blocked(demo.camera.global_position,ray):continue
-		candidates.append({id=field.ids[k],point=canvas_to_pixel.affine_inverse()*point,pixel=point,index=k})
+		candidates.append({id=record_ids[k],point=canvas_to_pixel.affine_inverse()*point,pixel=point,index=k})
 	_add_body_candidates(sky,view,focal,px,canvas_to_pixel)
 	queue_redraw()
 
@@ -124,7 +139,13 @@ func at_point(point: Vector2) -> Array:
 	if not bodies.is_empty():
 		bodies.sort_custom(func(a,b):return a.distance_km < b.distance_km)
 		var inside := bodies.filter(func(c):return c.point.distance_to(point) <= maxf(12., c.radius))
-		if not inside.is_empty():return [inside[0]]
+		# On a drawn disc, the nearest body whose disc it is; otherwise (two small discs
+		# inside the 12 px pick radius, alpha Cen A beside the nearer B) the closest centre.
+		var on_disc := inside.filter(func(c):return c.point.distance_to(point) <= c.radius)
+		if not on_disc.is_empty():return [on_disc[0]]
+		if not inside.is_empty():
+			inside.sort_custom(func(a,b):return a.point.distance_to(point) < b.point.distance_to(point))
+			return [inside[0]]
 	return hits
 func inspect(id: String) -> bool:
 	if id.begins_with(BODY_PREFIX):return inspect_body(id.trim_prefix(BODY_PREFIX))

@@ -3,6 +3,9 @@ extends SceneTree
 var passed:=0
 var failures:=0
 const RECORD:="user://solar_departure_test.ndjson"
+## D-54 planet/moon stop, an independent GDScript mirror of sim/stops.ail: R / sin(atan(tan 15 deg sqrt(R / R_earth))).
+static func d54(r: float) -> float:
+	return r/sin(atan(tan(deg_to_rad(15.))*sqrt(r/6378.1366)))
 func check(name:String,condition:bool)->void:
 	if condition:passed+=1
 	else:failures+=1
@@ -17,8 +20,9 @@ func _run()->void:
 		if body.id=="earth":earth=body
 	var rel:Dictionary=earth.rel_km
 	var separation:=sqrt(rel.x*rel.x+rel.y*rel.y+rel.z*rel.z)
-	check("new scenario is near Earth at two radii",absf(separation-2.*earth.radius_km)<20.)
-	check("close-view metadata carries exact per-leg standoffs",sim.world.solar_departure.legs[0].id=="sun" and sim.world.solar_departure.legs[0].get("standoff_km",0.)==2087100. and sim.world.solar_departure.legs[1].get("standoff_km",0.)==142984. and sim.world.solar_departure.legs[3].get("standoff_km",0.)==210918.)
+	# D-54 (Mark, 2026-10-08): planets and moons stop where they look 2 atan(tan 15 deg sqrt(R/R_earth)) across.
+	check("new scenario is at Earth's D-54 stop (30 deg across)",absf(separation-d54(6378.1366))<20.)
+	check("close-view metadata carries exact per-leg standoffs",sim.world.solar_departure.legs[0].id=="sun" and sim.world.solar_departure.legs[0].get("standoff_km",0.)==2087100. and absf(sim.world.solar_departure.legs[1].get("standoff_km",0.)-d54(71492.))<1e-6 and absf(sim.world.solar_departure.legs[3].get("standoff_km",0.)-1.1*140612.)<1e-6)
 	check("scenario carries itinerary and EMB approximation",sim.world.has("solar_departure") and sim.world.solar_departure.approximation.contains("barycentre"))
 	if not sim.world.has("solar_departure"):
 		sim.stop();print("solar-departure: %d passed, %d failures" %[passed,failures]);quit(1);return
@@ -128,7 +132,7 @@ func _run()->void:
 		if id in ["sun","jupiter","callisto","saturn","acen-a","trappist-1","aldebaran"]:
 			check("body arrival at exact planner endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
 			# D-47: alpha Cen A and TRAPPIST-1 stop in their habitable zone (sqrt L AU); Aldebaran where it fills 40 degrees.
-			var required:float={"sun":2087100.,"jupiter":142984.,"callisto":24103.,"saturn":210918.,"acen-a":sqrt(1.521)*149597870.7,"trappist-1":sqrt(0.000553)*149597870.7,"aldebaran":45.212*695700./sin(deg_to_rad(20.))}[id]
+			var required:float={"sun":2087100.,"jupiter":d54(71492.),"callisto":d54(2410.3),"saturn":1.1*140612.,"acen-a":sqrt(1.521)*149597870.7,"trappist-1":sqrt(0.000553)*149597870.7,"aldebaran":45.212*695700./sin(deg_to_rad(20.))}[id]
 			check("body stop uses exact close standoff via package planner",sim.world.journey.plan.hold.body==id and absf(sim.world.journey.plan.hold.offset_km-required)<1e-6)
 			if id=="acen-a":
 				var a:Dictionary={};var b:Dictionary={}

@@ -435,6 +435,7 @@ pure func inRange(n: string, v: float) -> bool =
   else if n == "bubble_radius_m" then v > 0.0 && v <= 1000000.0
   else if n == "glow_eps" || n == "glow_f_in" then v >= 0.0 && v <= 1.0
   else if n == "standoff_au" then v >= 0.0 && v <= 1000000.0
+  else if n == "stop_rule" then v == 0.0 || v == 54.0
   else if n == "cruise_min_beta" || n == "cap_one_minus_beta" then v > 0.0 && v < 1.0
   else if n == "ai_max_open" then v >= 1.0 && v <= 64.0 && floor(v) == v
   else if n == "ai_ttl_ticks" then v >= 1.0 && v <= 1000000.0 && floor(v) == v
@@ -455,6 +456,7 @@ pure func applyOverride(p: Params, o: Override) -> Params =
   else if o.name == "glow_eps" then {p | glowEps: o.value} else if o.name == "glow_f_in" then {p | glowFIn: o.value}
   else if o.name == "cruise_min_beta" then {p | cruiseMinBeta: o.value}
   else if o.name == "standoff_au" then {p | standoffAu: o.value}
+  else if o.name == "stop_rule" then {p | stopRule: o.value}
   else if o.name == "ai_max_open" then {p | aiMaxOpen: floatToInt(o.value)} else if o.name == "ai_ttl_ticks" then {p | aiTtlTicks: floatToInt(o.value)}
   else {p | capOneMinusBeta: o.value}
 pure func applyAll(p: Params, os: [Override]) -> Params = match os { [] => p, o :: r => applyAll(applyOverride(p, o), r) }
@@ -531,7 +533,7 @@ pure func decodeFullParams(j: Json) -> Result[Params, string] =
   bind(n(j, "epoch"), \e. bind(n(j, "start_age"), \sa. bind(n(j, "boost_g"), \bg. bind(n(j, "m_eff_kg"), \m. bind(n(j, "ism_n_cm3"), \ism.
   bind(n(j, "bubble_radius_m"), \r. bind(n(j, "glow_eps"), \ge. bind(n(j, "glow_f_in"), \gf. bind(n(j, "cruise_min_beta"), \cb. bind(n(j, "cap_one_minus_beta"), \cap.
   bind(natOr(j, "ai_max_open", defaultAiMaxOpen()), \mo. bind(natOr(j, "ai_ttl_ticks", defaultAiTtlTicks()), \tt.
-  Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap, aiMaxOpen: mo, aiTtlTicks: tt, standoffAu: 0.0, epochJd: defaultEpochJd()})))))))))))))
+  Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap, aiMaxOpen: mo, aiTtlTicks: tt, standoffAu: 0.0, epochJd: defaultEpochJd(), stopRule: 0.0})))))))))))))
 -- The AI params are echoed since 2.1 (AI.3); a 2.0 echo lacks them and reads as the defaults.
 pure func natOr(j: Json, k: string, d: int) -> Result[int, string] = if has(j, k) then req(natF(j, k), bad()) else Ok(d)
 pure func decodeCrossing(e: Json) -> Result[Crossing, string] =

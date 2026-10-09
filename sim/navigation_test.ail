@@ -10,14 +10,14 @@ import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/list (map, foldl)
 import std/string (join, contains)
-import std/math (sqrt)
+import std/math (sqrt, sin, atan, tan)
 import pkg/sunholo/celestial/kepler (Vec3, add, sub, scale, norm, dot, cross, absf)
 import pkg/sunholo/celestial/ephemeris (auKm)
 import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn, motionAt)
 import pkg/sunholo/relativity/kinematics (rapidityOfBeta, standardGravity, betaOf, gammaOf)
 import ./celestial (solSystem, bodyAt, jdAt, lyKm, defaultEpochJd)
 import ./data/acen (bodies)
-import ./navigation (NavCtx, BodyReq, Leg, NavPlan, Pass, planBody, planBodyN, interceptIterations, residualMax, safetyMinKm, defaultStandoffKm,
+import ./navigation (NavCtx, BodyReq, Leg, NavPlan, Pass, planBody, planBodyN, interceptIterations, residualMax, safetyMinKm, defaultStopKm,
   standoffMaxKm, bodyPhiMin, bodyPhiMax, allFacts, stopArrivalT, runOutMarginKm, staleAt)
 import ./core (World, Ticked, Intent, IPlan, IPlanBody, ICommit, Plan, Journey, Planned, Committed, Arrived, newWorld, defaultParams, tick, initShip, position, navOf)
 import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, departureMinor, grMinor, relativityPin, relativityPinNav, decodeHello, helloMsg)
@@ -89,12 +89,12 @@ export pure func ownStopT(here: Vec3, id: string, s: float, phi: float, t: float
 export pure func checkStopIsPackage() -> bool {
   let here = ntEarthUpKm();
   let rq = stopReq("jupiter", 0.1, None);
-  let s = defaultStandoffKm(71492.0, 221900.0);
+  let s = defaultStopKm("jupiter", 71492.0, defaultParams().bubbleRadiusM / 1000.0);
   let tA = ownStopT(here, "jupiter", s, rq.cruisePhi, 0.0, 12);
   let len = stopLegKm(here, "jupiter", s, tA);
   ntLegOk(planBody(ctxAt(here), rq), \l. ntRelNear(l.trip.trip.distance * lyKm(), len, 0.000000001)
     && ntTripNear(l.trip, planBurnCoastBurn(len / lyKm(), ntAccel(), rq.cruisePhi), 0.000000001) && !l.trip.fellBack
-    && l.nav.standoffKm == s && s == 10.0 * 71492.0
+    && l.nav.standoffKm == s && s == 71492.0 / sin(atan(tan(15.0 * 3.141592653589793 / 180.0) * sqrt(71492.0 / 6378.1366)))
     && absf(norm(sub(scale(lyKm(), l.arrivalLy), ntBodyKm("jupiter", l.nav.interceptT))) - s) < 1.0
     && l.nav.interceptT == l.trip.trip.galaxyTime && ntNoPass(l.nav))
 }
@@ -164,7 +164,7 @@ test "AC17 the intercept residual is < 1e-9 of the leg: Saturn flyby at 0.5c, Io
 export pure func checkTwelveSteps() -> bool {
   let here = chaseKm();
   let rq = chaseStop();
-  let s = defaultStandoffKm(2440.53, 0.0);
+  let s = defaultStopKm("mercury", 2440.53, defaultParams().bubbleRadiusM / 1000.0);
   let t12 = ownStopT(here, "mercury", s, rq.cruisePhi, 0.0, 12);
   let t11 = ownStopT(here, "mercury", s, rq.cruisePhi, 0.0, 11);
   interceptIterations() == 12 && stopArrivalT(ctxAt(here), "mercury", s, rq.cruisePhi, 12) == t12 && t12 != t11
@@ -241,7 +241,7 @@ export pure func checkOutOfRange() -> bool {
   && ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | cruisePhi: bodyPhiMax() * 1.001})) == "out_of_range"
   && ntRefusalOf(planBody(c, {stopReq("mars", 0.1, None) | mode: "orbit"})) == "out_of_range"
   && ntRefusalOf(planBody(c, {ntFlyReq("mars", 0.1, 10000.0, 0.0) | runOutKm: Some(0.0), timing: None})) == "out_of_range"
-  && ntRefusalOf(planBody(c, stopReq("earth", 0.1, None))) == "out_of_range"
+  && ntRefusalOf(planBody(c, stopReq("earth", 0.1, Some(60000.0)))) == "out_of_range"
   && bodyPhiMin() == rapidityOfBeta(0.001) && bodyPhiMax() == rapidityOfBeta(0.99)
 }
 test "out_of_range: cruise speed outside 0.001c..0.99c, an unknown mode, run-out 0, a ship already inside the stand-off" { checkOutOfRange() }
@@ -301,7 +301,7 @@ export pure func checkBodyPlanOnWire() -> bool {
   map(ntStatusOf, r4) == ["other", "ok", "ok", "ok", "ok", "ok", "ok"]
   && contains(fly, "\"target\":{\"index\":6,\"id\":\"saturn\",\"pos\":{") && contains(fly, "\"target_kind\":\"body\",\"intercept\":{\"t\":")
   && contains(fly, "\"pass\":{\"t\":") && contains(fly, "\"b_km\":180804,\"beta\":0.49999999999999994,\"d_at_pass\":1.15470053") && !contains(fly, "\"hold\":")
-  && contains(stop, "\"hold\":{\"body\":\"mars\",\"offset_km\":33961.9}") && !contains(stop, "\"pass\":")
+  && contains(stop, "\"hold\":{\"body\":\"mars\",\"offset_km\":17698.53") && !contains(stop, "\"pass\":")
   && contains(ntNth(r4, 6), "\"refused\":[]") && contains(ntNth(r4, 6), "\"state\":\"committed\"")
   && ntStatusOf(ntNth(r3, 4)) == "bad_intent" && contains(ntNth(r3, 4), "\"tick\":2,") && map(ntStatusOf, [ntNth(r3, 1), ntNth(r3, 2), ntNth(r3, 3)]) == ["ok", "ok", "ok"]
 }
