@@ -1,0 +1,139 @@
+{
+  "sprint_id": "R1-ISM-DUST",
+  "round": 1,
+  "type": "plan_review",
+  "reviewer": "sonnet, independent",
+  "date": "2026-10-09",
+  "score": 78,
+  "pass": true,
+  "rubric": {
+    "d60_fidelity": {
+      "score": 18,
+      "max": 20,
+      "notes": "All D-60 clauses covered: cited maps, glow/drag/wall load from one field, flight + map visualisation, route choice at the nav station (D-56), MRN plus tail grains, local dust-to-gas, package energies, D-59 respected, no magnetic shaping, afterglow labelled G-AG. Gap: the HUD naming the medium is deferred if R1-SHIP-UI is late."
+    },
+    "physics_correctness": {
+      "score": 14,
+      "max": 20,
+      "notes": "Spot checks pass: grain KE 2.011e4 J and 6.65e5 J for 1 um; rate 2,270/s at 0.999c LIC for 1 um (n*sinh(phi)*c*pi R^2); mass-equivalent density 3.476e5 m-3; hold gammas 16.8k/2.1k/19 match canon m_eff and boost; swept count frame-independent. Deductions: rho_d 2.1e-24 vs 3.0e-24 inconsistency (F3), guided-demo parameter conflict (F1), a_max cutoff sensitivity (F4)."
+    },
+    "data_sources_licences": {
+      "score": 8,
+      "max": 10,
+      "notes": "Well chosen, cited, CC BY 4.0 credited, raw data not in git with sha256 pins, derived products small. Numbers not independently verified in the plan (F7); LLCC digitised from figures."
+    },
+    "determinism": {
+      "score": 7,
+      "max": 10,
+      "notes": "Stateless splitmix stream and existing Rng untouched are good; counter-stride collision and compressed-tick drops are open (F2); renderer glitter tier mirrored and golden-tested."
+    },
+    "package_first": {
+      "score": 9,
+      "max": 10,
+      "notes": "Spec PR then oracle then celestial/relativity then pin; strict core, float64, rapidity forms, NaN guards. Pin jump risk (F11)."
+    },
+    "acceptance_criteria": {
+      "score": 7,
+      "max": 10,
+      "notes": "Most are command-checkable. Circular/weak ones and missing LLCC and guided-demo ACs (F1, F5, F9)."
+    },
+    "estimate_risk": {
+      "score": 5,
+      "max": 10,
+      "notes": "Risk table is good; 11 days is optimistic (F6)."
+    },
+    "dependencies_open_questions": {
+      "score": 10,
+      "max": 10,
+      "notes": "R1-SHIP-UI and free-nav dependencies handled with deferral of I7 and new-file map code; Q1-Q7 with sensible recommendations. Missing question: guided-tour behaviour under hold limit (F1)."
+    }
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "major",
+      "area": "physics/consistency",
+      "finding": "The drive-hold table (sec 5) uses canon m_eff 1 kg and boost 7.5e5 g, but the guided demos (solar_departure_test, trappist1_test, finite-destination-stars.md) run m_eff 10 kg, boost 3e6 g and cap 1-beta 2e-9 (gamma ~15,800). finite-destination-stars.md says drag ~1e8 N against 2.9e8 N of brake at n=0.1. In the LIC/G/Hyades (mass-equivalent n 0.35 cm-3, 3.5x) drag is ~3.5e8 N, above the 2.9e8 N brake, so the guided final hops (Aldebaran through the Hyades cloud) and the 1,000 AU Sol departure (inside the LIC) would be refused under the new peak-density rule. The plan never mentions this, and AC8 covers only uniform streams.",
+      "recommendation": "Compute the hold limit for the demo parameter set and state the outcome. Decide (and put to Mark as an OQ) whether the guided cap is lowered per medium, the demo m_eff/boost changed, or the guided tour exempted. Add an AC that every guided demo plan (Sol, a Cen, TRAPPIST-1, Aldebaran) is accepted under lism-1 or has a recorded, approved change."
+    },
+    {
+      "id": "F2",
+      "severity": "major",
+      "area": "determinism",
+      "finding": "Bright tier RNG index is tick*64 + k, but each event needs several uniforms (size, 2 for the wall point, time) plus Poisson (2): 32 events x 4 = 128 > 64 slots per tick, so streams collide across ticks. Also 'at most 32 events per tick, 0 dropped in every scenario' conflicts with time-compressed pieces (one tick can cover 3.5 ly), where bright counts are far larger.",
+      "recommendation": "Use a stride of 256 (or tick*1024 + k) and document the draw layout in the spec. State how compressed ticks are handled (cap per piece, or events only emitted in real-time ticks with totals otherwise) and make AC12's 'dropped = 0' scoped to real-time-paced streams, with a separate assertion for compressed ones."
+    },
+    {
+      "id": "F3",
+      "severity": "major",
+      "area": "physics/dust normalisation",
+      "finding": "sec 6.1 states rho_d = 1.4 n_H m_H / R_gd and also rho_d = 2.1e-24 kg/m3 at n_H = 0.247. These are different: 1.4*0.247e6*1.6735e-27/193 = 3.0e-24 (43% higher than Krueger's 2.1e-24). The q = 3.1 and the 5.5e-8 m-2 s-1 flux were fitted to one while the package normalises to the other; the AC 'rho_d recovered' and the 'factor 2 of 1e-7' check can pass or fail depending on which is used.",
+      "recommendation": "Decide the normalisation (gas-to-dust as a ratio to 1.4 n_H m_H, or an absolute LIC dust density scaled by n_H) and re-derive q and the flux consistently; record which Krueger definition of gas-to-dust 193 (which gas density) applies. Put the exact numbers in I0 before package work."
+    },
+    {
+      "id": "F4",
+      "severity": "major",
+      "area": "physics/sensitivity",
+      "finding": "The brightest flashes depend on a hard cutoff at a_max = 9.85 um, which is Ulysses's detector limit, not a physical edge (N(>a) falls ~10x between 9.3 and 9.8 um purely from truncation; hot gas 0.999999c 'brilliant' 1.3/s rests on it). Dust-to-gas 193 is also carried into the hot bubble, where sputtering/depletion would plausibly lower it, and the hot-gas flash rates scale linearly with it.",
+      "recommendation": "Report sensitivity in I8 (a_max 5/10/20 um, R_gd 193 vs 500 in hot gas) in the P2 sheet, and label both as assumptions in the legend and Archive. Add them as scenario parameters with a test."
+    },
+    {
+      "id": "F5",
+      "severity": "major",
+      "area": "acceptance criteria",
+      "finding": "Several ACs are circular or non-checkable: AC6 tests the cone shells against columns they are constructed to preserve; AC5's oracle integrates the same raw shells with the same unit assumption, so it cannot catch a wrong Edenhofer unit (differential extinction per bin vs per pc) or the conversion; the LLCC (the showcase refusal) has no AC at all (hand-digitised); AC3 has a placeholder PR number; AC1/2 use a relative ailang-packages path with no stated clone; the sprint JSON/doc cites 'revision notes below' that do not exist.",
+      "recommendation": "Add an independent anchor for the Edenhofer conversion (e.g. total column to a known cloud vs published N_H or Lallement/Vergely), an LLCC AC (Regulus-direction column within the digitisation tolerance, refusal at n_H 3000), pin the package repo path or use ailang pkg commands, and remove or fill the revision-notes stub."
+    },
+    {
+      "id": "F6",
+      "severity": "major",
+      "area": "scope/estimate",
+      "finding": "11 days and 3,780 LOC at 400 LOC/day understates the work: two package releases with oracles and a spec PR gate (P1 blocks publish), transcription of ~100 table values and the LLCC digitisation from figures, a 3.25 GB FITS pipeline with a new Godot tool, a protocol bump, map layer, goldens and a re-recorded replay set. Day 1 is both oracle and spec PR drafted. Realistic is 15-18 days, with I7 deferred.",
+      "recommendation": "Re-estimate at ~16 days or cut scope: LLCC and Edenhofer clumps as a second PR (LIC + RL08 clouds + hot gas + grains first), and label I3's LLCC/clump work as optional for the first merge."
+    },
+    {
+      "id": "F7",
+      "severity": "minor",
+      "area": "data",
+      "finding": "Quoted source numbers (Linsky 2019 median |delta| 0.40 pc, Table 3 centre, RL08 table counts, Zenodo DOI and 3.25 GB size, Peek 2011 distances) are asserted with no step that fetches and verifies them against the papers; the 380 MB slice estimate also assumes shell-major layout.",
+      "recommendation": "Add to I0 a 'source verification' task that records page/table for each number and flags any not reproduced. fits_slice.gd should handle either axis order."
+    },
+    {
+      "id": "F8",
+      "severity": "minor",
+      "area": "presentation/physics",
+      "finding": "The mean glow already includes the 0.5% dust mass (n_eff = 1.4 n_H (1+1/R)) and the bright flashes add light on top; sec 4.1 says resolved grains are not counted twice but the mechanism (subtracting resolved grains from the mean) is not specified. Visibility thresholds are computed in the sim against physical background, ignoring the player's Auto/Realistic exposure (D-56 display controls).",
+      "recommendation": "Specify subtraction or accept and state the <0.5% double count; document that the flash threshold is physical, with the renderer scaling by Exposure.k()."
+    },
+    {
+      "id": "F9",
+      "severity": "minor",
+      "area": "default change",
+      "finding": "Making lism-1 the default re-freezes replays and goldens, changes the glow near Sol by 3.5x and the tour's arrival ledger; AC8 only guards uniform. No AC pins the new lism-1 baselines or lists which replays are re-recorded with Mark's approval.",
+      "recommendation": "Add an AC naming the re-recorded replay set and have the ledger-closes test (AC9) run on the guided tour under lism-1."
+    },
+    {
+      "id": "F10",
+      "severity": "minor",
+      "area": "route planning",
+      "finding": "Hold-limit refusal at the route's peak density is conservative: a route that crosses a dense cloud early but brakes in hot gas is refused though the brake only needs to beat drag at braking time. Also the plan has no way to suggest a speed that works beyond the number shown.",
+      "recommendation": "State the rule (peak density along the braking phase vs whole route) and test both; show the highest accepted speed per route (already roughly in plan rows)."
+    },
+    {
+      "id": "F11",
+      "severity": "minor",
+      "area": "registry pins",
+      "finding": "Sim pins celestial 0.1.0 (0.3.0 on main) and relativity 0.10.0 (0.11.0); jumping to 0.4.0/0.12.0 skips changes untested in this sim. Packaging order is otherwise correct (spec, oracle, package, publish, pin).",
+      "recommendation": "Add an early step: bump pins to latest and run make test/parity before I4, separate commit."
+    }
+  ],
+  "strengths": [
+    "Faithful to every clause of D-60 and respects D-59 and D-56",
+    "Physics numbers largely reproduce on independent recomputation",
+    "Honest about the afterglow being a game approximation and about what flashes are actually visible",
+    "Uniform model kept as a byte-identical fallback; analytic piecewise integration so the ledger closes",
+    "Package-first ordering with spec PR gate and independent oracle",
+    "Data licensing and large-file handling follow project rules"
+  ],
+  "summary": "A strong, well-sourced plan that passes (78/100). Main gaps: it does not reconcile the new drive-hold refusal with the guided demos (m_eff 10 kg, boost 3e6 g, cap 1-beta 2e-9), which would be refused in the LIC/Hyades; RNG stride collides (64 slots for ~128 draws) and the per-tick event cap conflicts with time-compressed ticks; the dust normalisation (2.1e-24 vs 3.0e-24) is internally inconsistent; and the 11-day estimate and a few circular ACs need tightening. Fix F1-F5 before approval."
+}

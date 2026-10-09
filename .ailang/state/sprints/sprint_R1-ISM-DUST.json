@@ -1,0 +1,370 @@
+{
+  "sprint_id": "R1-ISM-DUST",
+  "status": "planned",
+  "approved": false,
+  "approved_by": null,
+  "created": "2026-10-09",
+  "design_doc": "design_docs/planned/r1/ism-structure-and-dust.md",
+  "sprint_plan": "design_docs/planned/r1/ism-structure-and-dust-sprint.md",
+  "branch": "sprint/ism-dust (on approval, from origin/main)",
+  "implements": [
+    "D-60",
+    "D-11",
+    "D-15",
+    "D-29",
+    "D-30",
+    "D-48",
+    "D-59",
+    "D-56",
+    "D-57"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "I1",
+      "package": "sunholo/celestial",
+      "action": "contribute",
+      "reason": "new ism module: medium geometry, HEALPix, grain size distribution, Poisson draw"
+    },
+    {
+      "milestone": "I2",
+      "package": "sunholo/relativity",
+      "action": "contribute",
+      "reason": "medium additions (column drag, mass-equivalent density, drive-hold limit) and new dust module (grain energetics, wall afterglow)"
+    },
+    {
+      "milestone": "I3",
+      "package": "none",
+      "action": "none",
+      "reason": "one-off data tooling in the game repo"
+    },
+    {
+      "milestone": "I4-I9",
+      "package": "sunholo/relativity, sunholo/celestial",
+      "action": "depend",
+      "reason": "consume the released functions; GDScript mirrors shapes only"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 400,
+    "estimated_total_loc": 3840,
+    "estimated_days": 16,
+    "pr_a_days": 13,
+    "pr_b_days": 3
+  },
+  "critical_path": [
+    "I-1_PIN_BUMP",
+    "I0_SPEC_AND_ORACLE",
+    "I1_CELESTIAL_ISM",
+    "I3a_LISM_TABLES",
+    "I4_SIM",
+    "I5_RENDERER",
+    "I8_RENDERS"
+  ],
+  "external_dependencies": [
+    "Mark's approval and answers to Q1-Q7",
+    "design-repo spec PR merged (P1)",
+    "R1-SHIP-UI U2 merged (I7 only)",
+    "free-navigation PRs #171/#182 (rebase point for I4)",
+    "Edenhofer et al. 2024 Zenodo 8187943 reachable"
+  ],
+  "pause_points": [
+    {
+      "id": "P0",
+      "when": "before execution",
+      "blocking": true,
+      "what": "Mark approves the plan and answers Q1-Q7 (Q8 only if AC10b fails)"
+    },
+    {
+      "id": "P1",
+      "when": "day 2",
+      "blocking": true,
+      "what": "spec PR merged before any package publish"
+    },
+    {
+      "id": "P2",
+      "when": "before PR A merges",
+      "blocking": true,
+      "what": "Mark reviews renders/ism and a dev build: afterglow shape (Q2), sensitivity sheet (Q3, hot-gas delta), per-medium glow and re-recorded baselines (Q4), Archive drafts (Q7)"
+    },
+    {
+      "id": "P3",
+      "when": "before PR B merges",
+      "blocking": false,
+      "what": "dense-cloud renders and a refused route"
+    }
+  ],
+  "questions_for_mark": [
+    {
+      "id": "Q1",
+      "question": "Grain flashes share the glow's eps = 1e-10, or a separate eps_g tuned for more flashes?",
+      "recommendation": "same eps"
+    },
+    {
+      "id": "Q2",
+      "question": "Pick the wall-afterglow shape (r_s, tau; default 0.5 m, 0.2 s) from a comparison sheet, labelled a game approximation",
+      "recommendation": "yes, at P2"
+    },
+    {
+      "id": "Q3",
+      "question": "Include the disputed radar-meteor tail (grains to ~40 um, Baggaley 2000)?",
+      "recommendation": "no by default; scenario parameter"
+    },
+    {
+      "id": "Q4",
+      "question": "lism-1 the default for new games (glow near Sol 3.5x today's, much dimmer in the hot bubble), uniform kept for scenarios and old replays, eps unchanged",
+      "recommendation": "yes"
+    },
+    {
+      "id": "Q5",
+      "question": "Drive-hold limit through dense clouds: refuse the plan and show the limit (today's rule), not auto-cap",
+      "recommendation": "refusal plus limit shown"
+    },
+    {
+      "id": "Q6",
+      "question": "Detours via a star now; free-space waypoints later",
+      "recommendation": "via a star now"
+    },
+    {
+      "id": "Q7",
+      "question": "Approve the Archive drafts at P2",
+      "recommendation": "yes"
+    },
+    {
+      "id": "Q8",
+      "question": "Only if AC10b fails: a guided leg crossing a cloud above its hold limit - change the guided drive, lower that leg's speed, or route around?",
+      "recommendation": "lower that leg's speed"
+    }
+  ],
+  "coordination": {
+    "R1-SHIP-UI": "I7 builds on ShipHud; I6 keeps map code in ui/ism_layer.gd",
+    "free_nav": "I4 rebases onto #171/#182",
+    "pins": "take the next free minor of each package at execution"
+  },
+  "github_issues": [],
+  "features": [
+    {
+      "id": "I-1_PIN_BUMP",
+      "description": "Bump sim/ailang.toml to the latest published sunholo/relativity and sunholo/celestial (no new functions), ailang lock, own commit.",
+      "estimated_loc": 20,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make test green",
+        "make parity green"
+      ],
+      "pr": "A",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "I0_SPEC_AND_ORACLE",
+      "description": "Spec PR in stapledons-design: physics/ism-structure.md (lism-1 model, sources with table/page, IS-n check values) and higgs-bubble.md amendments (HB-3 = uniform value; column drag; drive-hold limit; section 6b grain impacts and the wall afterglow G-AG labelled a game approximation; HB-113+). Values from tools/ism_dust_ref.py (role oracle). Source verification: every quoted number checked against its paper with table and page, unreproduced ones flagged. Fix the dust calibration delta (dust mass per H nucleon: 0.0051 local warm clouds and hot gas from Krueger 2015 density / Slavin & Frisch n_H; 0.010 elsewhere) and the fitted tail slope q before package work. Record the spec PR number in spec_pr.",
+      "estimated_loc": 180,
+      "dependencies": [
+        "I-1_PIN_BUMP"
+      ],
+      "acceptance_criteria": [
+        "Spec PR open with every value the package tests cite (IS-n, HB-113+), each one number per row",
+        "tools/ism_dust_ref.py listed as oracle in tools/python-allowlist.txt; make python-guard green",
+        "Spec PR merged before any package publish (AC3)",
+        "Source-verification list in the spec PR with table and page per number"
+      ],
+      "pr": "A",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "I1_CELESTIAL_ISM",
+      "description": "sunholo/celestial next minor: module celestial/ism - realSphericalHarmonic, starSurfaceRadius, starSurfaceChords, ellipsoidChord, coneShellChord, slabChord, nHFromExtinction, healpixRingVec, grainDist, grainsAbove, grainRadiusAt, poissonDraw; tests first; oracle rows; CHANGELOG; publish.",
+      "estimated_loc": 520,
+      "dependencies": [
+        "I0_SPEC_AND_ORACLE"
+      ],
+      "acceptance_criteria": [
+        "LIC harmonic model reproduces Linsky et al. 2019 Table 2 edge distances with median |delta| <= 0.40 pc (AC1)",
+        "Chords match the NumPy oracle to 1e-12; healpixRingVec matches healpy on 1e4 pixels to 1e-15",
+        "grainDist recovers rho_d to 1e-12; LIC flux of >=1e-13 kg grains at 26 km/s within a factor 2 of 1e-7 m^-2 s^-1",
+        "ailang test and ailang pkg quality (no gates) pass; version published"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pr": "A"
+    },
+    {
+      "id": "I2_RELATIVITY_DUST",
+      "description": "sunholo/relativity next minor: medium.massEquivalentDensity(nH, muH, deltaDust), columnDragEnergy, tripEnergyColumn, driveHoldMaxPhi; new module relativity/dust: grainKinetic, sweptCount, grainRate, afterglowTemperature, afterglowEmittance, afterglowLuminance, visibleRadius; tests first; NaN guards; CHANGELOG; publish.",
+      "estimated_loc": 440,
+      "dependencies": [
+        "I0_SPEC_AND_ORACLE"
+      ],
+      "acceptance_criteria": [
+        "columnDragEnergy equals cruiseDragEnergy for N = n d and tripEnergyColumn equals tripEnergy for a uniform medium, to 1e-12 (AC2)",
+        "grainKinetic: 2.011e4 J (1 um, 0.999c) and 6.646e5 J (0.999999c)",
+        "brakeHoldsAgainstDrag true just below driveHoldMaxPhi and false just above",
+        "Afterglow emittance integrated over time and spot equals eps f_in KE to 1e-12",
+        "ailang pkg quality no gates; version published"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pr": "A"
+    },
+    {
+      "id": "I3a_LISM_TABLES",
+      "description": "sim/tools/ism_build.ail: cited LISM tables (RL08 Tables 16/18 and medians of Tables 1-15, Linsky 2019 Table 3, Slavin & Frisch, Snowden, delta values) as provenance Fields -> sim/data/ism.ail, data/ism/ism.json; make ism-data, ism-data-verify.",
+      "estimated_loc": 220,
+      "dependencies": [
+        "I1_CELESTIAL_ISM"
+      ],
+      "acceptance_criteria": [
+        "Two runs of make ism-data give byte-identical outputs matching the pins (AC4)",
+        "Every table value carries its source, table and page"
+      ],
+      "pr": "A",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "I4_SIM",
+      "description": "sim/ism.ail (pure: mediumAt, profile, column); Params.ismModel uniform|lism-1; ledger by column per flown piece; plan profile, medium list, peak n, driveHoldMaxPhi over the whole cruise, refusal, highest accepted speed; scenarioError against the hot-gas floor under lism-1; impacts: exact totals per piece, bright events in a real-time display window (w_rt 0.05 ship s) from a stateless splitmix64 stream with stride 1024 and a fixed draw layout (<=130 slots), <=32 per window with dropped count, glitter descriptor; ship.ism and journey.plan fields; next free protocol minor; strict, parity, determinism; lism-1 baselines re-recorded and listed in rerecorded; guided itinerary checked (AC10b).",
+      "estimated_loc": 720,
+      "dependencies": [
+        "I2_RELATIVITY_DUST",
+        "I3a_LISM_TABLES"
+      ],
+      "acceptance_criteria": [
+        "Cloud membership for >=80% of RL08 Table 1-15 stars within 15 pc; alpha Cen H I column 10^(17.6+-0.15) vs Linsky 2019 Table 4 (AC6 a,b)",
+        "Sol in the LIC; Sol->alpha Cen crosses G; Sol->Aldebaran crosses Hyades; profiles gap-free (AC7)",
+        "uniform reproduces every recorded stream and HB value byte for byte; lism-1 baselines named in rerecorded (AC8)",
+        "Arrival drag_j equals the plan's column drag energy to 1e-9 relative at every pacing, including the guided tour under lism-1 (AC9)",
+        "Plan above driveHoldMaxPhi at the route's peak refused m_eff_too_small; just below accepted (AC10)",
+        "Every guided-itinerary plan accepted under lism-1, else stop for Q8 (AC10b)",
+        "Same seed and intents give byte-identical streams; existing Rng streams unchanged (AC11)",
+        "Bright totals within 3 sigma at real-time and compressed pacing; KS cos-theta; none at rest; 0 dropped in real-time streams; window <=32 in compressed; <=130 of 1024 slots (AC12)",
+        "make strict and make parity green (AC13)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pr": "A"
+    },
+    {
+      "id": "I5_RENDERER",
+      "description": "interior/dust_flash.gd CPU reference (afterglow decay, blackbody colour, glitter and disc samplers mirroring the package) and interior/dust_flash.gdshader (additive in the sky SubViewport before the tonemap, <=64 sprites plus hashed glitter, Blackbody LUT, Exposure.k()); goldens G-ISM-1..3.",
+      "estimated_loc": 400,
+      "dependencies": [
+        "I4_SIM"
+      ],
+      "acceptance_criteria": [
+        "make golden G-ISM-1 (peak and decay), G-ISM-2 (colour ramp), G-ISM-3 (glitter count) sub-pixel (AC14)",
+        "Every lookup finite over its range, tested in tests/test_dust_flash.gd (AC15)",
+        "Samplers match package values on fixed seeds"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pr": "A"
+    },
+    {
+      "id": "I6_MAP_LAYER",
+      "description": "ui/ism_layer.gd: LIC mesh (mirror tested vs starSurfaceRadius), cloud cone shells, log colour scale, labels, legend with sources; route segments by medium; plan rows from sim fields; D toggles the layer (display control); hook lines only in galaxy_map.gd. (LLCC sheets and clump ellipsoids come in I3b.)",
+      "estimated_loc": 360,
+      "dependencies": [
+        "I3a_LISM_TABLES",
+        "I4_SIM"
+      ],
+      "acceptance_criteria": [
+        "make map-ism-test: every medium in ism.json drawn; route segmented; plan rows equal sim fields (AC16)",
+        "make no-twitch-test: the layer key sends no intent"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pr": "A"
+    },
+    {
+      "id": "I7_HUD",
+      "description": "On R1-SHIP-UI ShipHud: transit-card rows (medium, density, dust impacts), medium notice card on each boundary, interlude-card media summary, Tab details, I card on empty sky.",
+      "estimated_loc": 180,
+      "dependencies": [
+        "I4_SIM"
+      ],
+      "acceptance_criteria": [
+        "make ship-ui-test new cases green (AC17)",
+        "Deferred to a follow-up PR if R1-SHIP-UI U2 has not merged by day 11"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pr": "A (or follow-up)"
+    },
+    {
+      "id": "I8_RENDERS",
+      "description": "tools/ism_capture.gd and make ism-capture -> renders/ism/: flight frames in hot gas, LIC/G, an n_H 10 cloud and the Hyades leg at 0.99c..0.999999c; flash close-up; afterglow sheet (r_s x tau, plus MRN-only); per-medium eps sheet; map views; make ism-bench. Sensitivity sheet: a_max 5/10/20 um, hot-gas delta 0.0051/0.002, MRN-only.",
+      "estimated_loc": 220,
+      "dependencies": [
+        "I5_RENDERER",
+        "I6_MAP_LAYER"
+      ],
+      "acceptance_criteria": [
+        "Renders exist, no uniform or NaN frame, contact sheet; every frame opened and noted (AC18)",
+        "make ism-bench within the design's budgets (AC19)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pr": "A"
+    },
+    {
+      "id": "I9_DOCS",
+      "description": "Archive drafts (corrected ism-glow; 'Weather between the stars') for Mark; CHANGELOG; design-doc index row; design-repo roadmap status; python allowlist.",
+      "estimated_loc": 60,
+      "dependencies": [
+        "I8_RENDERS"
+      ],
+      "acceptance_criteria": [
+        "make lore-check green (AC21)",
+        "make python-guard green (AC20)",
+        "make test green locally and in CI (AC22)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null,
+      "pr": "A"
+    },
+    {
+      "id": "I3b_DENSE_CLOUDS",
+      "description": "PR B: make ism-raw (Edenhofer 2024 mean_and_std_healpix.fits, Zenodo 8187943, CC BY 4.0, sha256 pin), tools/fits_slice.gd (Godot headless, either axis order, shells < 160 pc), HEALPix -> 2 pc grid -> Bohlin n_H -> threshold -> sparse union-find clumps -> ellipsoids; LLCC digitised from Peek 2011 / Meyer 2012; their map shapes, tests, renders; credits line.",
+      "estimated_loc": 520,
+      "dependencies": [
+        "I9_DOCS"
+      ],
+      "acceptance_criteria": [
+        "Independent anchors: Taurus and Oph/Lupus near-side distances within +-15 pc of Zucker 2019/2020; integrated E(B-V) to 150 pc along 20 directions within a factor 2 of Leike et al. 2020; synthetic FITS in both axis orders (AC5)",
+        "LLCC outline contains the Peek 2011 / Meyer 2012 absorption stars and excludes their non-detections; a route through it refused at 0.999999c and accepted at 0.998c (AC6c)"
+      ],
+      "pr": "B",
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "spec_pr": null,
+  "rerecorded": [],
+  "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump."
+}
