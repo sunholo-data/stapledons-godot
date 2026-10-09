@@ -75,6 +75,13 @@ const ROWS := [
 	["Glow, inward", "journey.plan.ism.glow_w_m2", "sci W/m2"],
 	["Drag force", "journey.plan.ism.drag_n", "sci N"],
 	["Hold power", "journey.plan.ism.hold_w", "sci W"],
+	# R1-ISM-DUST (protocol 2.7, lism-1): the route's media and what they cost; absent under uniform
+	["Media crossed", "journey.plan.media", "media"],
+	["Peak density", "journey.plan.peak_n_h_cm3", "sci H/cm3"],
+	["Top speed the drive holds", "journey.plan.hold_beta", "%.9fc"],
+	["  its 1 - beta", "journey.plan.hold_one_minus_beta", "sci"],
+	["Grains swept (>= 1 um)", "journey.plan.grains_swept", "sci"],
+	["Expected visible flashes", "journey.plan.visible_flashes", "sci"],
 	["Forward CMB", "journey.plan.cmb_forward_k", "%.2f K"],
 	["Profile", "journey.plan.profile", "%s"],
 ]
@@ -159,6 +166,7 @@ var dist := 18.0
 var show_hint := true
 var hint := Label.new()
 var credits := Credits.new() # M5.2a: attribution panel (C)
+var ism_layer := IsmLayer.new() # R1-ISM-DUST I6: the medium layer (D), a display control
 
 var _points := MultiMeshInstance3D.new()
 var _overlay := Control.new()
@@ -187,6 +195,7 @@ func _build() -> void:
 	if _built:
 		return
 	_built = true
+	ism_layer.load_model()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.01, 0.012, 0.02)
@@ -620,6 +629,7 @@ func tick() -> bool:
 	var sent := sim.send(intents, dtau)
 	if sent and not intents.is_empty():
 		_refusal_note = "" if sim.last_refused.is_empty() else "refused: %s" % ", ".join(sim.last_refused.map(func(r): return str(r["reason"])))
+		_refusal_note += hold_note(sim.last_events)
 	elif sent and journey_state() != state:
 		_refusal_note = "" # a new journey state (arrival) supersedes the old refusal
 	if live_pacing and journey_state() != "committed":pacing.rate = HOST_RATE
@@ -685,6 +695,8 @@ static func format_row(field: String, raw: Variant) -> String:
 static func format_value(f: String, raw: Variant) -> String:
 	if raw == null:
 		return "-"
+	if f == "media": # journey.plan.media: [{name, n_h_cm3, length_ly}]
+		return ", ".join((raw as Array).map(func(m): return "%s %.2f ly" % [IsmLayer.label_of(str(m.name)), float(m.length_ly)])) if raw is Array else "-"
 	if f.begins_with("sci"):
 		return (sci(raw) + f.substr(3)).strip_edges()
 	return f % raw
@@ -1001,7 +1013,22 @@ static func zoom_key(event: InputEvent) -> int:
 	return 0
 
 
+## R1-ISM-DUST (D-61): a plan refused at the drive-hold limit is followed by a hold_limit event:
+## the fastest cruise the drive holds on that route and the medium that sets it. Never capped.
+static func hold_note(events: Array) -> String:
+	for e: Variant in events:
+		if e is Dictionary and e.get("k", "") == "hold_limit":
+			return " (the drive holds at most %.9fc, 1 - beta %s, through the %s at %s H/cm3)" % [float(e.hold_beta), sci(float(e.hold_one_minus_beta)), IsmLayer.label_of(str(e.medium)), sci(float(e.n_h_cm3))]
+	return ""
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_D \
+			and not (event as InputEventKey).is_command_or_control_pressed():
+		ism_layer.toggle() # a display control: no intent (D-56)
+		_overlay.queue_redraw()
+		_accept()
+		return
 	if event is InputEventMagnifyGesture: # pinch: factor > 1 (fingers apart) zooms in
 		zoom_by(1.0 / (event as InputEventMagnifyGesture).factor)
 		_accept()
@@ -1108,6 +1135,8 @@ func _draw_overlay() -> void:
 		taken.append(p)
 		boxes.append(box)
 	var route := route_points()
+	var plan_media: Variant = field_value(sim.world, "journey.plan.media") if sim != null else null
+	ism_layer.draw(_overlay, camera, func(v: Vector3) -> Vector3: return Starfield.galactic_to_world(v), IsmLayer.route_pieces(Starfield.world_to_galactic(route[0]), Starfield.world_to_galactic(route[1]), plan_media) if route.size() == 2 and plan_media is Array else [])
 	if route.size()==2 and not camera.is_position_behind(route[0]) and not camera.is_position_behind(route[1]):
 		_overlay.draw_dashed_line(camera.unproject_position(route[0]),camera.unproject_position(route[1]),Color(0.5,0.85,1.,.7),1.5,6.)
 		_overlay.draw_string(font,camera.unproject_position(route[0])+Vector2(8,16),departure_label(),HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(.65,.8,1.))
