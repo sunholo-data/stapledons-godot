@@ -37,6 +37,18 @@
 
 **Total:** 2,330 LOC.
 
+## Progress (executor, 2026-10-09)
+
+Delivered as three stacked PRs: **PR 1** U0 (the HUD half) + U1 + U2; **PR 2** U0 (consoles and no-twitch suites, red first) + U3 + U4a + U4 + U5; **PR 3** U6 + U7 + U8.
+
+- [x] **U0** (PR 1 half): `tests/test_ship_ui.gd` red first (ShipHud absent), `ui/ship_controls.gd`, the `SimBridge` source-tagged record seam, the HUD's fake clock, `make ship-ui-test` in `ship-demo-ci`
+- [ ] **U0** (PR 2 half): `tests/test_ship_consoles.gd`, `tests/test_no_twitch.gd` red first; `make ship-console-test`, `make no-twitch-test`
+- [x] **U1** status strip, card frame, prompt line, Tab panel; `hud_text()` and the button column retired; dev controls gated; the `1.0 - beta` fallback removed
+- [x] **U2** contextual cards (transit, notices, arrival, gravity, tour with pacing buttons, interlude chip, unlock, refusal); renders opened
+- [ ] **U2** dwell label (lands in PR 2 with the consoles' raycast and aim work)
+- [ ] **U3** consoles · [ ] **U4a** map host spike · [ ] **U4** navigation station · [ ] **U5** Voyage console and Archive terminal
+- [ ] **U6** migration · [ ] **U7** renders (tool started in PR 1) · [ ] **U8** docs
+
 ## Order and days
 
 ```

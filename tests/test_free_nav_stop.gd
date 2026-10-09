@@ -44,7 +44,8 @@ func _run() -> void:
 	fly(demo, barnard, "Earth")
 	var hud: String = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
 	check(hud.begins_with("At Barnard's Star 1000") and hud.contains(" AU · from Earth 5.9"), "HUD at the stop: " + hud)
-	check(demo.hud_text("bridge", "").contains("At Barnard's Star"), "the live HUD carries the stop line")
+	demo._process(0.0)
+	check(demo.ship_hud.distance.text.contains("At Barnard's Star") and demo.ship_hud.where.text.contains("Barnard's Star"), "the status strip carries the stop line (R1-SHIP-UI)")
 	demo.look_direction("forward"); await process_frame
 	var ident = demo.star_identification
 	ident.set_held(true); ident.update_candidates()

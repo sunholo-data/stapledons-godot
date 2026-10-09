@@ -1,12 +1,12 @@
 {
   "sprint_id": "R1-SHIP-UI",
-  "status": "approved",
-  "approved": false,
+  "status": "in_progress",
+  "approved": true,
   "approved_by": "Mark Edmondson, attended 2026-10-09 (ledger D-57)",
   "created": "2026-10-08",
   "design_doc": "design_docs/planned/r1/ship-ui-hud-consoles.md",
   "sprint_plan": "design_docs/planned/r1/ship-ui-hud-consoles-sprint.md",
-  "branch": "sprint/ship-ui (on approval, from origin/main after feat/free-nav-stops, #171, #177 merge)",
+  "branch": "sprint/ship-ui (PR 1: U0-U2), sprint/ship-ui-consoles (PR 2: U3-U5), sprint/ship-ui-land (PR 3: U6-U8); stacked",
   "implements": [
     "D-56",
     "D-52",
@@ -114,9 +114,9 @@
         "AC13 determinism: make no-twitch-test run twice gives identical logs"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-09",
       "completed": null,
-      "notes": null
+      "notes": "PR 1 part: tests/test_ship_ui.gd written first; red run against main (ShipHud absent) failed for that reason: \"Parse Error: Could not find type ShipHud\" (log kept in the executor scratch). SimBridge source-tagged record seam (record_sent, sent_log, intent_source: player/tour/tick; SolarDeparture tags tour, BlackHoleVisit tick) and the fake clock (ShipHud.advance(dt), no wall-clock reads) landed. ui/ship_controls.gd holds the section F table. make ship-ui-test in ship-demo-ci. test_ship_consoles.gd and test_no_twitch.gd land red-first with PR 2."
     },
     {
       "id": "U1_SHIP_HUD_STRIP",
@@ -130,10 +130,10 @@
         "AC2: make ship-ui-test && make lint-precision; one_minus_beta asserted present in every phase; grep -n '1.0 - beta' demos/ship_geometry_demo.gd ui/ship_hud.gd tests/fixtures/lint_precision/allowlist.txt is empty",
         "AC7 and AC11: make ship-ui-test"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "ui/ship_hud.gd ShipHud: two-row status strip (clocks same size CLOCK_SIZE 17, speed while moving, view tag click-to-toggle; where and distance second row, width capped clear of the corner), card stack (priority, MAX_EXPANDED 2, fades 0.4/0.6 s, column width min(280, w/3 - 24) so it stays right of the centre third), prompt line, onboarding hint slot, Tab panel (Walk to, display, journey rows, details, grouped help, dev box). hud_text() and the button column retired; dev controls (B, G, 5, 6, audit) gated on menu_return. 1.0 - beta fallback and its allowlist row removed; speed digits from ship.beta. make ship-ui-test: 149 checks green."
     },
     {
       "id": "U2_CONTEXT_CARDS",
@@ -145,10 +145,10 @@
       "acceptance_criteria": [
         "AC3: make ship-ui-test (one case per card row: appear trigger, leave trigger, priority, no overlap of the centre third at 1280x720 and 2560x1440)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "Cards: transit (JourneyHud.ROWS compact 7 rows; warp = live pacing rate, sci format), brake/final-approach notices 8 s, arrival (ArrivalCard.ROWS; Enter/Esc/Dismiss or next commit), gravity (BlackHoleVisit.hud_lines as bindings), tour (leg, stage, dwell left, PAUSED; Pause [P], Skip dwell, Skip stage [K]), interlude chip (D-41 InterludeCard unchanged in content, placed left of the column), unlock (codex toast moved into the stack, 10 s; baseline per sim session), refusal 8 s. Dwell label: deferred to PR 2 with the consoles (needs the reach/facing raycast work); the I card is unchanged. Renders renders/ship_ui/{strip_rest,transit_cruise,arrival,tour_interlude,sgr_a_gravity,lower_deck}_{1280x720,2560x1440}.png opened: strip legible over the bright Auto cruise sky; cards clear of the centre; found and fixed: strip overflow at cruise (now two rows), duplicate from-Earth, codex toasts still drawing, unlock baseline a frame late, interlude card colliding with the column."
     },
     {
       "id": "U3_CONSOLE_FRAMEWORK",
@@ -246,7 +246,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "tools/ship_ui_capture.gd and make ship-ui-capture started in PR 1 (6 frames x 2 sizes); PR 2 adds the console frames."
     },
     {
       "id": "U8_DOCS",
@@ -264,5 +264,6 @@
       "notes": null
     }
   ],
-  "revision_round_1": "Plan review round 1 (Sonnet, 82/100 PASS, 0 blocking): F1 NT1 split player vs tour intents; F2 no new warp keys; F3 M4.3b/M4.5 row amendments in Q1; F4 7 days; F5 U4a spike + GPU window check AC15; F6 E priority, pan gesture, map keys; F7 concrete conflicts; F8 use point max_r 2.5 m, path lengths; F9 allowlist + one_minus_beta per phase; F11 AC14a + uniform-frame check; F12 seams costed, determinism AC13. F10 (confirm on cancel/leave) kept by design."
+  "revision_round_1": "Plan review round 1 (Sonnet, 82/100 PASS, 0 blocking): F1 NT1 split player vs tour intents; F2 no new warp keys; F3 M4.3b/M4.5 row amendments in Q1; F4 7 days; F5 U4a spike + GPU window check AC15; F6 E priority, pan gesture, map keys; F7 concrete conflicts; F8 use point max_r 2.5 m, path lengths; F9 allowlist + one_minus_beta per phase; F11 AC14a + uniform-frame check; F12 seams costed, determinism AC13. F10 (confirm on cancel/leave) kept by design.",
+  "started": "2026-10-09"
 }

@@ -99,7 +99,7 @@ func test_demo() -> void:
 	demo.journey_auto_tick = false
 	await process_frame
 	check("ready, flat sky, GR off", demo.ready_ok and not demo.sky.gr_lens.active)
-	check("the HUD says GR is off, not 'not implemented'", not demo.label.text.contains("not implemented"))
+	check("the HUD says GR is off, not 'not implemented'", not demo.ship_hud.all_text().contains("not implemented"))
 	# the navigation menu entry
 	demo.open_navigation()
 	var entry: Button = demo.navigation_window.find_child("SgrAEntry", true, false) if demo.navigation_window != null else null
@@ -144,7 +144,7 @@ func test_demo() -> void:
 		check("stop %d: HUD equals the sim's gr" % (s + 1), hud_has(demo, v.sim.gr) and demo.sky.gr_lens.state == v.sim.gr)
 		# literal readings from the real sim (design AC-11 values), not the formatter's own output
 		var lit: Array = LITERALS.get(s, [])
-		var missing := lit.filter(func(x: String) -> bool: return not demo.label.text.contains(x))
+		var missing := lit.filter(func(x: String) -> bool: return not demo.ship_hud.all_text().contains(x))
 		if not lit.is_empty():
 			check("stop %d: the HUD reads %s" % [s + 1, lit], missing.is_empty())
 	check("approach 10^6 -> 10 r_s paced in 200..800 ticks at 20 Hz (%d)" % ticks_to_10, ticks_to_10 >= 200 and ticks_to_10 <= 800)
@@ -166,8 +166,8 @@ func test_demo() -> void:
 	var sim_ref: SimBridge = v.sim
 	demo.leave_black_hole()
 	check("leaving stops the sim, GR off, flat rest sky", demo.black_hole == null and sim_ref._pid < 0 and not demo.sky.gr_lens.active and demo.sky_state == "rest" and not demo.sky_world.has("gr"))
-	demo._process(0.0)
-	check("the HUD drops the black-hole lines, GR off", not demo.label.text.contains("Sgr A*") and not demo.label.text.contains("HOVERING"))
+	demo._process(0.7) # the gravity card's 0.6 s fade
+	check("the HUD drops the black-hole lines, GR off", not demo.ship_hud.all_text().contains("Sgr A*") and not demo.ship_hud.all_text().contains("HOVERING"))
 	demo.open_navigation()
 	check("navigation after the visit is a normal 2.5 session without gr", demo.journey_sim != null and demo.journey_sim.want_minor == SimBridge.DEPARTURE_MINOR and not demo.journey_sim.world.has("gr") and not demo.sky.gr_lens.active)
 	demo.close_navigation()
@@ -182,7 +182,7 @@ func test_demo() -> void:
 	for i in 3: await process_frame
 	check("scenario sgr_a from the launch starts the visit", d2.black_hole != null and d2.black_hole.sim.gr.get("hole_id", "") == "Sgr A*" and d2.journey_sim == null)
 	d2._process(0.016)
-	check("HUD at launch: GR on, the sim's lines", d2.label.text.contains("Sgr A*") and hud_has(d2, d2.black_hole.sim.gr))
+	check("HUD at launch: GR on, the sim's lines", d2.ship_hud.all_text().contains("Sgr A*") and hud_has(d2, d2.black_hole.sim.gr))
 	var tick0: int = d2.black_hole.sim.world.tick
 	check("K: an approach finishes in one tick (lands exactly, hovers the rest)", d2.bh_next_stop() and d2.bh_finish_approach() and d2.black_hole.sim.world.tick > tick0 + 1 and d2.black_hole.sim.world.tick <= tick0 + 16 and float(d2.black_hole.sim.gr.r) == 10.0 and d2.black_hole.sim.gr.mode == "hover")
 	d2.queue_free()
@@ -190,7 +190,7 @@ func test_demo() -> void:
 
 func hud_has(demo: Node, gr: Dictionary) -> bool:
 	demo._process(0.0)
-	var text: String = demo.label.text
+	var text: String = demo.ship_hud.all_text()
 	for line: String in Visit.hud_lines(gr):
 		if not text.contains(line):
 			print("    HUD lacks: %s" % line)

@@ -958,6 +958,17 @@ tour-pacing-test: import
 	@$(GODOT) --headless --path . --script tests/test_cruise_interlude.gd > $(SCRATCH)/cruise-interlude.log 2>&1; rc=$$?; cat $(SCRATCH)/cruise-interlude.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/cruise-interlude.log && grep -q "^cruise-interlude: 0 failures$$" $(SCRATCH)/cruise-interlude.log
 ship-demo-ci: tour-pacing-test
 
+# R1-SHIP-UI (D-56, design_docs/planned/r1/ship-ui-hud-consoles.md): the HUD informs, the bridge consoles decide.
+.PHONY: ship-ui-test
+ship-ui-test: import ## AC1-3, 7, 11: status strip in every scene state, contextual cards, control table <-> key handler, dev gating
+	@$(GODOT_SIM) --headless --path . --script tests/test_ship_ui.gd > $(SCRATCH)/ship-ui.log 2>&1; rc=$$?; grep -E '^(FAIL|ship-ui)' $(SCRATCH)/ship-ui.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui.log && grep -q '^ship-ui: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-ui.log
+ship-demo-ci: ship-ui-test
+.PHONY: ship-ui-capture
+ship-ui-capture: ## AC14: the ship UI's review frames at 1280x720 and 2560x1440 + contact sheet -> renders/ship_ui/ (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/ship_ui_capture.gd > $(SCRATCH)/ship-ui-capture.log 2>&1; rc=$$?; grep -E '^(frame|ship-ui-capture)' $(SCRATCH)/ship-ui-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-capture.log && grep -q '^ship-ui-capture: OK' $(SCRATCH)/ship-ui-capture.log
+	@for f in renders/ship_ui/*_1280x720.png renders/ship_ui/contact_sheet.png; do sips -Z 700 $$f --out $${f%.png}_700.png > /dev/null; done
+
 # ---- M4.7: the Archive codex's lore (design m4-first-journey.md "M4.7")
 D ?= ../stapledons-design
 LORE_DATA ?= data/lore

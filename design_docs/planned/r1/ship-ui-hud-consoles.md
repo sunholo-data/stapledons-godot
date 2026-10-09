@@ -248,3 +248,14 @@ Total about 2,330 including tests. See the sprint plan for order and pause point
 - `tests/test_ship_ui.gd`, `tests/test_ship_consoles.gd`, `tests/test_no_twitch.gd`; Makefile targets `ship-ui-test`, `ship-console-test`, `no-twitch-test` (in `ship-demo-ci`), `ship-ui-capture`.
 - `tools/ship_ui_capture.gd`, `renders/ship_ui/` (inspected).
 - CHANGELOG entry; design-doc index row; on landing, this doc moves to `design_docs/implemented/r1/`.
+
+## Execution notes (decisions made while building, for Mark)
+
+Choices the design left open, taken as the option most consistent with D-56 / D-57:
+
+1. **Staging.** Three stacked PRs. Between PR 1 and PR 2 the voyage decisions (navigation map, Begin guided voyage, Visit Sgr A*, and N / L / C at Sgr A*) sit in the Tab panel under "Decisions (move to the bridge consoles)", not on the HUD; PR 2 moves them to the consoles and removes the keys.
+2. **The cruise interlude card** (D-41) keeps its content and look but sits in the space left of the card column (it was centred, 620 wide, and covered the column). It still covers the centre of the screen: it is the designed "moment of scale", and the tour and transit cards stay readable beside it. The stack carries an "interlude" chip while it shows.
+3. **Session-scoped cards.** When the sim session changes (navigation, the guided voyage, Sgr A*), the arrival, refusal and unlock cards of the old session go, and the new session's opening unlocks are not announced (only growth is news).
+4. **Review snapshots** (the rest / cruise sky snapshots, developer-only, and the rest state after leaving Sgr A*) show where the ship is ("from Earth …"), not the snapshot's frozen plan.
+5. **Speed digits** are formatted from `ship.beta` itself; the number of nines comes from `ship.one_minus_beta`. Nothing computes 1 − β.
+6. **Warp** on the transit card is the live pacing rate (ship-years per real second), shown only.

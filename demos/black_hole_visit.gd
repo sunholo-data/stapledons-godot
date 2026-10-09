@@ -138,6 +138,7 @@ func _send(dtau: float) -> bool:
 	if sim == null:
 		return false
 	var intents := [{"k": "gr_ring"}] if ring_pending else []
+	sim.intent_source = "tick" # R1-SHIP-UI NT1: a client observation, never a decision
 	if not sim.send(intents, dtau):
 		last_error = sim.last_error
 		return false

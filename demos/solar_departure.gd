@@ -105,6 +105,7 @@ func _star_intent(spec: Dictionary) -> Dictionary:
 	return {"k":"plan","target":{"index":int(row.index),"id":row.id,"pos":{"x":row.x,"y":row.y,"z":row.z}},"cruise_phi":spec.cruise_phi}
 
 func _send(intents: Array, dtau: float) -> bool:
+	sim.intent_source="tour" if not intents.is_empty() else "tick" # R1-SHIP-UI NT1: the itinerary's own legs
 	if not sim.send(intents,dtau):failed=sim.last_error;return false
 	if not sim.last_refused.is_empty():failed=str(sim.last_refused);return false
 	world_updated.emit(sim.world)
