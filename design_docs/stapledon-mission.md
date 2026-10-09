@@ -230,6 +230,64 @@ Inherits the shared defaults (generator ≠ judge). Proposal for arming: the
 executor on the default Anthropic model, and the evaluator from a different
 provider. Physics code gets the strongest available evaluator.
 
+## How to use the loop (attended triage, Mark 2026-10-09)
+
+Mark asked for the loop roadmap to be triaged for loop-suitable work, with a note on
+how to use the loop in future. Evidence for the split: iterations 0–23 landed about 15
+narrow sim, protocol, catalogue and test milestones (evals 84–100) and parked 6 times
+(AILANG VM bugs, weekly limit, role routing, evaluator capacity), while the attended
+sessions delivered every visible feature, M2, M3, and all 58 rulings.
+
+**The loop is for** work that is fully specified and verifiable headless: sim and
+protocol changes, package maths with spec check values (stop before any publish:
+Mark's go per release), VM/interpreter parity and replays, test and toolchain hygiene,
+porting pipeline steps to AILANG, bookkeeping reconciliation, and upstream AILANG repros.
+
+**Attended only:** anything that needs a visual or feel judgement, a design decision or
+new player-facing UI (D-56/D-57), API spend, a package publish, canon or lore text, or a
+measurement on Mark's laptop.
+
+**Mixed items** (`[LOOP+RENDER]`): the loop builds the headless half, uploads renders to
+`gs://stapledons-voyage-assets/refs/<set>/`, links them on issue #1 and PARKS for Mark's
+render sign-off. It never lands a visual change without it.
+
+**Before arming:** confirm model routing and an evaluator from a different model are
+available (iterations 18 and 23 parked on exactly that). Give the loop its own clone,
+never a worktree and never the attended clone. List the files any attended sprint has in
+flight on a `Do-not-touch` line below, and the loop must not edit them.
+Arm it overnight or whenever no attended sprint shares its files.
+
+**Do-not-touch (attended, in flight 2026-10-09):** `demos/ship_geometry_demo.gd`,
+`ui/*` (R1-SHIP-UI, D-57); `sim/navigation.ail`, `sim/destination_stars.ail`,
+`ui/galaxy_map.gd`, `ui/body_info.gd` (free-navigation D-54/D-58 follow-up); the
+`sunholo/relativity` and `sunholo/celestial` packages until 0.11.0 and the celestial
+minor publish.
+
+**Triage of the queue.** `[LOOP]` = route now; `[LOOP+RENDER]` = route, park for
+render review; `[ATTENDED]` = not loop work; `[STALE]` = reconcile (L1).
+
+| Id | Item | Route |
+|---|---|---|
+| L1 | Reconcile sprint JSONs and queue rows with landed work. Rows 3 (M1: T3/T4, M1.2c/d, M1.3, M1.5 vs the starmap truth and large tier, PRs #145/#147), 4 (AI foundation 10/11), 6c (M5 vs the real-time voyage, planets and stops), 5b (title screen, landed #160), `sprint_R1-M4-SOLAR-DEPARTURE` 0/8 and `sprint_R1-M5-TRAPPIST-1` vs `R1-TRAPPIST1-PLANETS`. Mark each milestone landed (with PR), superseded (by what) or still open; no product code. | `[LOOP]` |
+| L2 | Row 7d M4.6 follow-ups (a), (b), (c), (e). Item (d), the AI-bridge poll flake, is fixed by #165: mark it. | `[LOOP]` |
+| L3 | Row 6, toolchain gate hygiene. | `[LOOP]` |
+| L4 | Test-suite speed: `make test` about 40 min locally, CI about 1.5 h since M3 (lens-lut-check, parity-gr, goldens). Profile and parallelise without losing coverage, and report before/after. | `[LOOP]` |
+| L5 | Remove the in-tree AILANG workarounds for issues fixed in v0.52.0 (CLAUDE.md list), with parity, and report anything still broken upstream. | `[LOOP]` |
+| L6 | Export completeness: every `res://` asset path the code loads is in the export filter and checked by an exported-app smoke wired into `publish-dev`. dev.23 shipped without the lens tables, and `ship-demo-export-smoke` ran nowhere. | `[LOOP]` |
+| L7 | `sunholo/relativity` N2: 7 generated property tests fail at extreme rapidities (contracts). Fix in the package and stop before publish. | `[LOOP]` |
+| L8 | M4.5 sim-side remainder (scene-independent audit halves), if L1 finds any. | `[LOOP]` |
+| R1 | Row 6a, forward CMB disc: package function, spec check, GPU golden, then park for render review. | `[LOOP+RENDER]` |
+| R2 | Kerr (spinning) black holes, design doc and sprint plan only (the canon's rogue hole spins); execution needs Mark's approval. | `[LOOP+RENDER]` (plan) |
+| A1 | R1-SHIP-UI (D-57) incl. M4.3b; M4.5's scene audit and M4.6's gated half build on it. | `[ATTENDED]` |
+| A2 | Row 6b, forward glare and glazing (visual design). | `[ATTENDED]` |
+| A3 | Row 4b, AI model bake-off (API spend). | `[ATTENDED]` |
+| A4 | AI.10b live line (voice and spend; stop for Mark). | `[ATTENDED]` |
+| A5 | Free-navigation finish: D-58 package release and inferred radii (in progress). | `[ATTENDED]` |
+| A6 | Lore: the third black-hole Archive entry (canon text). | `[ATTENDED]` |
+| A7 | Frame-time p95 on Mark's Air; splitting the ship setup so the loading jump never pauses. | `[ATTENDED]` (needs the laptop) |
+
+Order for the next armed run: L1 → L6 → L2 → L4 → L3 → L5 → L7 → R1 → R2 (L8 if L1 finds it).
+
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
 1. [LANDED] **M2** journey core · clause 2 **MET** · sprint `R1-M2-JOURNEY` landed 2026-10-02 · PRs #22–#35 (+ catalogue fix #37) · 10 milestones, independent evals 89–96 · relativity 0.4.0, protocol v2, planner + commit rule, autopilot, SplitMix64 (ailang#1450 fixed in v0.51.0), replay with 10k-tick VM/interpreter parity (per-arch goldens, ailang#1465), galaxy map + commit dialog (R1 accepted, D-17; P5 approved) · design `design_docs/implemented/r1/m2-journey-core.md` · report `design_docs/implemented/r1/m2-report.md` · follow-ups in the report (D-10 destar rerun, CNS5 distances, transit/hold polish)
@@ -238,14 +296,14 @@ provider. Physics code gets the strongest available evaluator.
 4. [QUEUED] **AI service foundation** (D-9) · feeds clause 4 · design doc needed (routable: designer), written in `design_docs/planned/r1/` from `stapledons-design/features/ai-showcase.md` §5 and §8 plus `art/characters-blender-brief.md` §6 · runs after M1, or earlier in any iteration where M1 is parked or waiting on Mark (e.g. the M1.4a pause) · three milestones: (a) AI service skeleton: a separate AILANG process, an NDJSON request/result protocol relayed by Godot, every result recorded so replays stay byte-identical, a cache index keyed (kind, entity_id, emotion, age_stage, variant), tested headless with a stubbed provider (no key, no spend); (b) emotion-marker grammar for the 8 emotions, shared by text, TTS and the portrait switcher, with a parser and tests; (c) ⏸ Medic style frame: a TTS voice for the accepted Medic, one generated line whose markers swap the existing portraits in a conversation UI; stop for Mark (voice and swap timing) · constraints: D-8 (player's own key, opt-in live generation, model-neutral with Gemini default, no live voice, text-only always available); the sim never calls AI · ~1,200 LOC (estimate)
 5. [LANDED] **M3** black holes · clause 3 **MET** 2026-10-08 · sprint `R1-M3-BLACK-HOLES` (D-53, executed attended) · PRs #158 (plan), #161 (relativity 0.10.0 pin), #163 (lens tables, CPU reference), #164 (sim GR mode, protocol 2.6, scenario sgr_a), #166 (lensed sky, goldens GR1–GR12), #170 (Sgr A* aboard the 3D ship) · package PRs ailang-packages #103 (0.10.0) and #104 (0.10.1) · design `design_docs/implemented/r1/m3-black-holes.md`, report `design_docs/implemented/r1/m3-report.md` · shipped in dev.23 · follow-ups: the true Galactic-Centre sky (demo shows Sol's sky, captioned), a third black-hole Archive entry (lore has two), auto-exposure aware of lensing, spin (Kerr) as a later milestone, package isco() and the integrator step-size doc
 4b. [NEW] **AI model bake-off** (Mark, attended 2026-10-02: "we may actually run with models and compare their runs, like an elaborate eval test") · AI follow-up · after AI.10b. Replay one recorded voyage's `ai_req` stream once per text model (OpenRouter ids via `std/net`, Gemini via `std/ai`), each with its own cache directory. Score: screen and validation pass rate, latency, cost per voyage, marker use, blind quality (a judge model that isn't a contestant, plus a blind sample for Mark). Output: a side-by-side report. **Attended and live only**, under per-model and total spending ceilings; outputs never enter goldens or the shipped cache; changing the default model is Mark's ledger decision. Starting models (Mark, attended 2026-10-02): Gemini 3.5 Flash-Lite (speed), Gemini 3.8 Flash (smarts), OpenAI Sol 6.1 and GLM Flash; they also replace AI.5's mistral-nemo proposal as defaults, with ids and prices verified at AI.10b. Shape in `design_docs/planned/r1/ai-service-foundation.md` § "Follow-up: the AI model bake-off" · ~350 LOC (estimate)
-5b. [NEW] **Main menu / title screen** · UX · the review build now opens straight into the galaxy map (2026-10-02, after Mark couldn't find the new features on a double-click); a proper launch menu is needed eventually (Mark, attended 2026-10-02: "I guess we need some kind of menu eventually"): new game / continue, galaxy map, the sky flight (`--voyage` today), settings (exposure, text-only AI mode per D-8), credits/attributions (NOIRLab CC BY 4.0). Fold into M4's front end or its own small item · ~300 LOC (estimate)
+5b. [LANDED] (attended, PR #160, dev.22; see triage L1) **Main menu / title screen** · UX · the review build now opens straight into the galaxy map (2026-10-02, after Mark couldn't find the new features on a double-click); a proper launch menu is needed eventually (Mark, attended 2026-10-02: "I guess we need some kind of menu eventually"): new game / continue, galaxy map, the sky flight (`--voyage` today), settings (exposure, text-only AI mode per D-8), credits/attributions (NOIRLab CC BY 4.0). Fold into M4's front end or its own small item · ~300 LOC (estimate)
 6a. [NEW] **Forward CMB disc** (D-11) · clause 1 follow-up · at γ ≳ 275 the CMB blueshifted by γ(1+β) is a visible disc at the forward pole (≈3,850 K at γ 707); M1's sky does not render it. Package function, spec check value, GPU golden, render review · routable after M2.0 · ~250 LOC (estimate)
 6c. [NEW] **M5 Planets and flybys** (D-26) · new R1 milestone · AILANG-driven solar-system data (orbits, rings, moons; package maths first), Godot planet rendering with rings and relativistic flyby views, Sol's planets plus the α Cen arrival scene for M4; design doc first (routable: designer), from stapledons-design features/future/*planet* and the legacy Go solar-system demo · ~2,000 LOC (estimate)
 6b. [NEW] **Forward glare and auto-dimming glazing** (D-27) · clause 1 follow-up to M1.8 · physically motivated glare/saturation around the ~2e8 cd/m² forward CMB disc at high γ, plus ship glazing that auto-dims (labelled on the HUD); also the M1.8 eval P3s (zoom PSF scaled by magnification, label the camera-frame glow halo) · ~300 LOC (estimate)
 6b. [LANDED] **AILANG ports of the Python pipeline** (attended 2026-10-01, CLAUDE.md "Python") · clause 5 · `tools/python-allowlist.txt` role `port`: (a) `tools/extract.py` → `sim/tools/extract.ail` ✅ (PR #36; byte-identical on 331,312 GCNS rows); (b) star removal → `sim/tools/destar.ail` + `tools/destar_io.gd` ✅ (PR, attended 2026-10-02; all three Python spikes deleted, `make python-guard` 0 awaiting port). Purpose: surface strict-VM gaps (`std/array`, `std/list.range` evaluator-only) and report them upstream. In progress attended; `make python-guard` blocks any new Python pipeline step
 6. [NEW] **Toolchain gate hygiene** · clause 5 · `make deps` fails whenever the PATH `ailang` differs from the pin (now v0.50.0, bumped attended 2026-10-01; `runtime/` restaged) (it rewrites the lockfile version line), so every local gate needs `AILANG=runtime/bin/ailang`: default the Makefile to the pinned runtime when present, or make `deps` ignore the version lines · ~20 LOC
 7e. [HARNESS] **PARKED-ON-LANE evaluator** · iteration 23 · ticket:agent-tool:sonnet-unavailable · resolver `refuse over-ration:anthropic` (rc 0 protocol refusal; driver Anthropic and OpenRouter probes rc 75); native `sonnet` and `opus` rejected Unknown model · blocks product work under this invocation's required native role routing; no fallback judge · resume predicate: evaluator resolver admits an in-budget lane AND the named native judge spawn succeeds with an independent deliverable; reset time unreported · fleet `inbox_1791484114698_70705e85` · not a human decision
-7d. [NEW] **M4.6 follow-ups** (iteration 20 evals) · clause 4/5 hygiene · (a) `demos/ship_geometry_demo.gd` falls back to a hand-computed `1.0 - beta` when the sim omits `one_minus_beta` (allowlisted; drop the fallback); (b) `ForwardGlow.temperature` shape only checked for finiteness at the stops; (c) fold `mk/m5.mk` `lint-precision-m5` into `lint-precision`; (d) `ai-godot` `hang portrait` 2 ms poll budget fails about 1 run in 2 on the rig (iterations 17, 19, 20; 0 code changes): measure and fix the bound (rule 3m) · (e) from the M4.5s evals: the `holds` clause in `codexUnlocks` is an equivalent mutant (delete it or mark it defensive); the M4.5s changelog and `m4.5s-inventory.md` still say "until D-52 is resolved" (reword in the D-52(A) re-plan) · ~90 LOC
+7d. [NEW] [LOOP: triage L2; item (d) fixed by #165] **M4.6 follow-ups** (iteration 20 evals) · clause 4/5 hygiene · (a) `demos/ship_geometry_demo.gd` falls back to a hand-computed `1.0 - beta` when the sim omits `one_minus_beta` (allowlisted; drop the fallback); (b) `ForwardGlow.temperature` shape only checked for finiteness at the stops; (c) fold `mk/m5.mk` `lint-precision-m5` into `lint-precision`; (d) `ai-godot` `hang portrait` 2 ms poll budget fails about 1 run in 2 on the rig (iterations 17, 19, 20; 0 code changes): measure and fix the bound (rule 3m) · (e) from the M4.5s evals: the `holds` clause in `codexUnlocks` is an equivalent mutant (delete it or mark it defensive); the M4.5s changelog and `m4.5s-inventory.md` still say "until D-52 is resolved" (reword in the D-52(A) re-plan) · ~90 LOC
 7c. [HARNESS] ticket:agent-tool:mission-role-pins-unavailable · blocking all product work, iteration 18 · PARKED-ON-LANE: missing driver role pins; native planner opus and evaluator sonnet rejected Unknown model · resume when valid role exports and required native pins are accepted (or attended supported routing ruling preserving generator ≠ judge) · no reset time known; no new human decision · fleet message inbox_1791327071299_10855501
 7b. [TRIAGED] **Weekly issue sweep 2026-10-05** (iteration 14) · 2 open issues enumerated (= `gh issue list` count), 1 with no charter mention: #93 "Art: questions and approvals" is the attended art-thread channel (Mark, 2026-10-03), not loop work; no action · negative control fired
 7a. [HARNESS] ticket:agent-tool:workspace-routing-discovery-timeout · non-blocking, iter9 · transport Agent failed workspace routing discovery; original independent judge recovered, fleet ticket inbox_1790932698097_c8efbed6; no harness repair.
