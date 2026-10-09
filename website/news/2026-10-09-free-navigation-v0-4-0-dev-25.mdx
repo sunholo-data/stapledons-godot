@@ -1,0 +1,31 @@
+---
+title: "Stops that show scale, and the way home: v0.4.0-dev.25"
+date: 2026-10-09
+authors: [sunholo]
+tags: [release, journey]
+release_tag: "v0.4.0-dev.25-free-nav"
+release_url: "https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.25-free-nav"
+---
+
+Wherever you stop, the size of what you see now tells you how big it really is. Sol is back on the map, and you can hop between the bodies of a system yourself.
+
+{/* truncate */}
+
+![Saturn at its new stop, rings sweeping past](https://storage.googleapis.com/stapledons-voyage-assets/refs/dev25/stop_7_saturn_sky_auto.png)
+
+## Stops that show relative size
+
+Every stop used to show a planet at the same 60°, and every star from 1,000 AU as a point. Now apparent size grows with true size, on smooth curves that never put the ship inside anything:
+
+- **Planets and moons.** The Moon is 16°, Earth 30° and Jupiter 84°; Saturn's stop clears its main rings.
+- **Stars, in free navigation.** TRAPPIST-1 is 3.5°, α Centauri A 11° and Aldebaran 61°. Stars with a measured radius get the rule now, and every other star will follow once the package can infer sizes from catalogue data.
+
+## Home, and in-system
+
+- **Sol.** It is clickable on the map, and **Return to Sol** arrives beside Earth.
+- **In this system.** A list offers every planet, moon and star of the system you are in, and refuses legs that are physically impossible (through Jupiter), saying why.
+- **When stopped.** The HUD shows where you are, where you came from and how far from Earth.
+- **The I key.** It now works on the star you have stopped at.
+- **Auto view.** It is the default, and the game remembers your choice.
+
+**Release:** [v0.4.0-dev.25-free-nav](https://github.com/sunholo-data/stapledons-godot/releases/tag/v0.4.0-dev.25-free-nav) · [Gallery](/gallery).
