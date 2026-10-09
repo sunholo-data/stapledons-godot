@@ -18,7 +18,7 @@ import pkg/sunholo/relativity/optics (Vec3, normalize)
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/kinematics (rapidityOfBeta, gammaOf, oneMinusBeta, standardGravity)
 import pkg/sunholo/relativity/medium (cSI, julianYearS, lightYearM, astronomicalUnitM, accelSI, hoverPower)
-import pkg/sunholo/relativity/schwarzschild (pi, staticClockRate, staticObserverBlueshift, shadowAngularRadius, circularOrbitSpeed,
+import pkg/sunholo/relativity/schwarzschild (isco, pi, staticClockRate, staticObserverBlueshift, shadowAngularRadius, circularOrbitSpeed,
   circularOrbitClockRate, orbitalAngularVelocity, movingClockRate, radialCoordinateRate, rsPerSolarMassMetres,
   tidalRadial, tidalTransverse, tidalAccelSI, tidalOrbitAccelSI, hoverAccelSI, hoverPowerPerKg)
 import pkg/sunholo/celestial/frames (equatorialToGalactic, unitFromAngles)
@@ -235,9 +235,7 @@ pure func shipClockOf(g: GrState) -> float =
   if g.mode == "orbit" then circularOrbitClockRate(g.r)
   else if g.mode == "approach" then movingClockRate(g.r, g.betaLocal)
   else staticClockRate(g.r)
--- The innermost stable circular orbit, 3 r_s (6GM/c^2). sunholo/relativity 0.10.0 has no
--- isco(); the constant (no formula) lives here until the package gains one.
-pure func isco() -> float = 3.0
+-- The innermost stable circular orbit, 3 r_s (6GM/c^2): sunholo/relativity 0.11.0's isco().
 export pure func grView(g: GrState) -> GrView {
   let hovering = g.mode == "hover";
   let phi = rapidityOfBeta(g.betaLocal);

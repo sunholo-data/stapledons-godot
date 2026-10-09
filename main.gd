@@ -276,7 +276,7 @@ func _run_transit(args: Dictionary) -> void:
 ## galaxy_map_arrived.png, adding their readouts to the panel dump.
 func _run_map(args: Dictionary) -> void:
 	var capture: bool = args.has("map-capture") or args.has("movie")
-	if not capture:sim.want_minor=SimBridge.DEPARTURE_MINOR
+	if not capture:sim.want_minor=SimBridge.STOPS_MINOR
 	if capture:
 		get_window().size = Vector2i(1600, 900)
 	sim.record_path = args.get("record", "")
@@ -370,7 +370,7 @@ func _run_interior(args: Dictionary) -> void:
 		get_tree().quit(2)
 		return
 	sim.record_path = args.get("record", "")
-	sim.want_minor = 2 if capture or smoke else SimBridge.DEPARTURE_MINOR
+	sim.want_minor = 2 if capture or smoke else SimBridge.STOPS_MINOR
 	var ai := AiSession.new(args)
 	add_child(ai)
 	sim.archive_rows = LoreLoader.archive_rows(LoreLoader.load_entries()["entries"]) # M4.7: the codex table; the sim decides every unlock

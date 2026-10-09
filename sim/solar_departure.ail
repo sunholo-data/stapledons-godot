@@ -83,5 +83,5 @@ export pure func intentForLeg(w: World, n: int, outbound: Target) -> Option[Inte
   match legAt(legs(w.params), n) {
     None => None,
     Some(leg) => if leg.kind == "body" then Some(IPlanBody({id: leg.id, cruisePhi: leg.cruisePhi, mode: "stop", standoffKm: leg.standoffKm, bKm: 0.0, clockDeg: 0.0, runOutKm: None, timing: leg.timing}))
-      else if outbound.id == leg.id then Some(IPlan({target: outbound, cruisePhi: leg.cruisePhi, flipG: None})) else None
+      else if outbound.id == leg.id then Some(IPlan({target: outbound, cruisePhi: leg.cruisePhi, flipG: None, star: None})) else None
   }

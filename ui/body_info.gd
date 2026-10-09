@@ -50,6 +50,11 @@ static func text(b: Dictionary, catalogue = null) -> String:
 	lines.append("Size: %s · %s" % [size_text(b), apparent_text(b.radius_km, dist)])
 	if b.get("kind","") == "star" and b.get("teff_k",0.) > 0.:
 		lines.append("Surface temperature: %.0f K" % b.teff_k)
+	var inferred: Dictionary = b.get("inferred", {}) if b.get("inferred") is Dictionary else {}
+	if not inferred.is_empty():
+		lines.append(inferred_text(b, inferred))
+	var sync := sync_orbit_text(b)
+	if not sync.is_empty():lines.append(sync)
 	var age := light_age_text(b.get("light_age_s", 0.))
 	if not age.is_empty():lines.append("The light you see left it %s ago" % age)
 	var cat := str(b.get("catalogue_id",""))
@@ -60,6 +65,37 @@ static func text(b: Dictionary, catalogue = null) -> String:
 	var source := str(b.get("source",""))
 	if not source.is_empty():lines.append("Source: %s" % source)
 	return "\n".join(lines)
+
+## D-58: a star made finite with an inferred radius (no measurement): the sim's inputs and
+## its luminosity, from sunholo/relativity 0.11.0 (the card only formats them).
+static func inferred_text(b: Dictionary, inf: Dictionary) -> String:
+	return "Radius inferred, not measured: L = %s L☉ from V %.2f at %.2f pc with BC_V %.2f (Teff %.0f K)" % [
+		_sig(float(inf.get("l_sun", 0.))), float(inf.get("v", 0.)), float(inf.get("distance_pc", 0.)), float(inf.get("bc_v", 0.)), float(b.get("teff_k", 0.))]
+
+## D-58: the synchronous (stationary) orbit from the sim's sync_orbit record (Kepler's third
+## law, sunholo/celestial 0.3.0); "none" with the reason for locked or slow rotators.
+static func sync_orbit_text(b: Dictionary) -> String:
+	var so = b.get("sync_orbit")
+	if not (so is Dictionary):return ""
+	var turn := duration_days_text(float(so.get("rotation_days", 0.)))
+	match str(so.get("none", "")):
+		"locked":
+			var host := str(b.get("host", ""))
+			return "Synchronous orbit: none. %s is tidally locked%s (it turns once per orbit), so a stationary orbit would lie beyond its Hill sphere" % [str(b.get("name", b.id)), (" to " + host.capitalize()) if not host.is_empty() else ""]
+		"slow":
+			return "Synchronous orbit: none. It turns once in %s, so a stationary orbit would be %s from its centre, beyond its Hill sphere (%s)" % [turn, distance_text(float(so.get("radius_km", 0.))), distance_text(float(so.get("hill_km", 0.)))]
+	return "Synchronous orbit: %s above the surface (%s from the centre; one turn in %s)" % [distance_text(float(so.get("altitude_km", 0.))), distance_text(float(so.get("radius_km", 0.))), turn]
+
+static func duration_days_text(days: float) -> String:
+	if days <= 0.:return "unknown"
+	if days < 2.:return "%.2f h" % (days * 24.)
+	return "%.2f days" % days
+
+static func _sig(x: float) -> String:
+	if x >= 100.:return "%.0f" % x
+	if x >= 1.:return "%.2f" % x
+	var digits := clampi(int(ceil(-log(x) / log(10.))) + 2, 2, 12)
+	return ("%." + str(digits) + "f") % x
 
 static func _grouped(x: float) -> String:
 	var s := "%d" % int(round(x))
