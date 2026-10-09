@@ -72,8 +72,11 @@ pure func rtTicks(s: Session, k: int, last: int, dtau: string, acc: [string]) ->
     rtTicks(r.session, k + 1, last, dtau, r.reply :: acc)
   }
 pure func revS(xs: [string], acc: [string]) -> [string] = match xs { [] => acc, x :: r => revS(r, x :: acc) }
-export pure func ismStream(n: int) -> string {
-  let s0 = at(7, "");
+export pure func ismStream(n: int) -> string = streamWith(n, "")
+-- The same session under uniform (ism_model 0): make ism-bench subtracts it to isolate the ISM cost.
+export pure func uniformStream(n: int) -> string = streamWith(n, ",\"params\":{\"ism_model\":0}")
+pure func streamWith(n: int, params: string) -> string {
+  let s0 = at(7, params);
   let p = serve(s0, tickLine(1, "0", planAld()));
   let c = serve(p.session, tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}"));
   let boost = serve(c.session, tickLine(3, "0.00001", ""));

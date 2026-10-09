@@ -21,11 +21,13 @@ files_json() { # dir -> JSON array of the files under dir (relative), manifest.j
   (cd "$1" && find archive physics -type f | sort) | awk 'BEGIN{printf "["} {printf "%s\"%s\"", (NR>1?",":""), $0} END{printf "]"}'
 }
 
-# The design-repo files that make up the lore: lore/archive/*.md -> archive/, plus two physics docs.
+# The design-repo files that make up the lore: lore/archive/*.md -> archive/, plus three physics docs.
 list_at() { # sha -> "<design path> <vendored path>" lines
   git -C "$D" ls-tree -r --name-only "$1" -- lore/archive | grep '\.md$' | sed 's#^lore/archive/\(.*\)$#lore/archive/\1 archive/\1#'
   echo "physics/higgs-bubble.md physics/higgs-bubble.md"
   echo "physics/relativity-spec.md physics/relativity-spec.md"
+  echo "physics/ism-structure.md physics/ism-structure.md"
+  echo "physics/ism-structure.md physics/ism-structure.md"
 }
 export_at() { # sha dest-dir
   list_at "$1" | while read -r src dst; do

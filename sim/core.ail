@@ -553,7 +553,7 @@ pure func dustAfter(w: World, before: Ship, after: Ship, dtau: float, fresh: boo
   else {
     let d0 = if fresh then {emptyDust() | cache: w.dust.cache} else w.dust;
     let here = position(after);
-    let d = dustTick(dustKey(w.seed), w.tick + 1, profile(position(before), here), absf(after.motion.phi), dtau * julianYearS(), mediumAt(here), dustCfg(w.params), d0.cache, lutArray());
+    let d = dustTick(dustKey(w.seed), w.tick + 1, profile(position(before), here), absf(after.motion.phi), dtau * julianYearS(), mediumAt(here), dustCfg(w.params), d0.cache);
     let big = largestOf(d.events, { a: d0.largestA, ke: d0.largestKe, x: 0.0, y: 0.0, t: 0.0, medium: "" });
     { last: d, legExpected: d0.legExpected + d.expected, legDrawn: d0.legDrawn + d.drawn, largestA: big.a, largestKe: big.ke, cache: d.cache }
   }

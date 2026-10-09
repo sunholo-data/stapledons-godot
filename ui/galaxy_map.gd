@@ -69,12 +69,6 @@ const ROWS := [
 	["Boost energy", "journey.plan.energy.boost_j", "sci J"],
 	["Brake energy", "journey.plan.energy.brake_j", "sci J"],
 	["Drag energy", "journey.plan.energy.drag_j", "sci J"],
-	["Total radiated", "journey.plan.energy.total_j", "sci J"],
-	["Total as mass", "journey.plan.energy.total_kg", "%.3f kg"],
-	["ISM load", "journey.plan.ism.load_w_m2", "sci W/m2"],
-	["Glow, inward", "journey.plan.ism.glow_w_m2", "sci W/m2"],
-	["Drag force", "journey.plan.ism.drag_n", "sci N"],
-	["Hold power", "journey.plan.ism.hold_w", "sci W"],
 	# R1-ISM-DUST (protocol 2.7, lism-1): the route's media and what they cost; absent under uniform
 	["Media crossed", "journey.plan.media", "media"],
 	["Peak density", "journey.plan.peak_n_h_cm3", "sci H/cm3"],
@@ -82,6 +76,12 @@ const ROWS := [
 	["  its 1 - beta", "journey.plan.hold_one_minus_beta", "sci"],
 	["Grains swept (>= 1 um)", "journey.plan.grains_swept", "sci"],
 	["Expected visible flashes", "journey.plan.visible_flashes", "sci"],
+	["Total radiated", "journey.plan.energy.total_j", "sci J"],
+	["Total as mass", "journey.plan.energy.total_kg", "%.3f kg"],
+	["ISM load", "journey.plan.ism.load_w_m2", "sci W/m2"],
+	["Glow, inward", "journey.plan.ism.glow_w_m2", "sci W/m2"],
+	["Drag force", "journey.plan.ism.drag_n", "sci N"],
+	["Hold power", "journey.plan.ism.hold_w", "sci W"],
 	["Forward CMB", "journey.plan.cmb_forward_k", "%.2f K"],
 	["Profile", "journey.plan.profile", "%s"],
 ]
@@ -696,7 +696,7 @@ static func format_value(f: String, raw: Variant) -> String:
 	if raw == null:
 		return "-"
 	if f == "media": # journey.plan.media: [{name, n_h_cm3, length_ly}]
-		return ", ".join((raw as Array).map(func(m): return "%s %.2f ly" % [IsmLayer.label_of(str(m.name)), float(m.length_ly)])) if raw is Array else "-"
+		return ", ".join((raw as Array).map(func(m): return "%s %.1f" % ["hot gas" if str(m.name) == "hot" else str(m.name), float(m.length_ly)])) + " ly" if raw is Array else "-"
 	if f.begins_with("sci"):
 		return (sci(raw) + f.substr(3)).strip_edges()
 	return f % raw

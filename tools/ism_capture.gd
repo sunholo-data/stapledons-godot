@@ -6,7 +6,7 @@ extends RefCounted
 ##   flight/<speed>_<medium>_{interior,forward}.png  LIC (2 ly), Hyades cloud (7 ly), hot gas (15 ly)
 ##           at 0.99c, 0.999c, 0.9999c, 0.999999c; and a synthetic n_H 10 cloud (uniform medium at the
 ##           mass-equivalent density, cap 0.9999c: glow only, its dust comes with PR B's real clouds)
-##   flash_closeup.png        the brightest live flash, forward view 8 deg wide (hot gas, 0.999c)
+##   flash_closeup.png        the brightest live flash, forward view 8 deg wide (LIC, 0.999c)
 ##   afterglow_sheet.png      r_s 0.25 / 0.5 / 1 m x tau 0.1 / 0.2 / 0.4 s on the same impacts (Q2)
 ##   eps_sheet.png            the glow at eps 1e-11 / 1e-10 / 3e-10 in the LIC and the hot gas (0.999c)
 ##   sensitivity_sheet.png    a_max 5 / 10 / 20 um, hot-gas delta 0.0051 / 0.002, MRN only (Q3, F4)
@@ -36,6 +36,7 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	out = dir
 	DirAccess.make_dir_recursive_absolute(out.path_join("flight"))
 	var sim: SimBridge = main.sim
+	printerr("ism capture: start, sim minor %d" % sim.want_minor)
 	for sp: Array in SPEEDS:
 		if not await _voyage(sp[0], sp[1], {"standoff_au": 1000.0}, STOPS):
 			return 2
@@ -43,7 +44,7 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 		if not await _voyage("cloud10_" + sp[0], sp[1], {"standoff_au": 1000.0, "ism_model": 0, "ism_n_cm3": 14.1, "cap_one_minus_beta": 1e-4}, [["synthetic n_H 10 cloud", 2.0]]):
 			return 2
 	# the flash close-up, the afterglow and eps sheets: hot gas and LIC at 0.999c
-	if not await _voyage("closeup", 0.001, {"standoff_au": 1000.0}, [["hot", 15.0]], false):
+	if not await _voyage("closeup", 0.001, {"standoff_au": 1000.0}, [["LIC", 2.0]], false):
 		return 2
 	await _closeup()
 	await _afterglow_sheet()
@@ -56,7 +57,7 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	f.close()
 	sim.stop()
 	var bad := log_rows.filter(func(r: Dictionary) -> bool: return not r.get("ok", false))
-	print("ism capture: %d frames, %d uniform or NaN" % [log_rows.size(), bad.size()])
+	printerr("ism capture: %d frames, %d uniform or NaN" % [log_rows.size(), bad.size()])
 	return 1 if not bad.is_empty() else 0
 
 
@@ -68,9 +69,11 @@ func _phi(omb: float) -> float:
 ## `flown` ly, real-time ticks, two frames. Returns false when the plan or a stop fails.
 func _voyage(tag: String, omb: float, params: Dictionary, stops: Array, frames := true) -> bool:
 	var sim: SimBridge = main.sim
+	printerr("ism capture: %s new game %s" % [tag, params])
 	if not sim.new_game(7, "sol", false, params):
 		push_error("ism capture: new_game %s" % sim.last_error)
 		return false
+	printerr("ism capture: %s game ok" % tag)
 	map.refresh()
 	it.open_map()
 	map.preselect(map.index_of(ALDEBARAN))
@@ -80,6 +83,7 @@ func _voyage(tag: String, omb: float, params: Dictionary, stops: Array, frames :
 		push_error("ism capture: no plan at %s (%s)" % [tag, sim.last_refused])
 		return false
 	var id := map.dialog_plan_id
+	printerr("ism capture: %s planned (plan %d), committing" % [tag, id])
 	map.close_commit_dialog()
 	sim.send([{"k": "commit", "plan_id": id}], FINE_DTAU)
 	map.refresh()
@@ -90,8 +94,13 @@ func _voyage(tag: String, omb: float, params: Dictionary, stops: Array, frames :
 		var s: Dictionary = sim.world["ship"]
 		var gb: float = float(s["gamma"]) * float(s["beta"])
 		var left: float = float(st[1]) - float(s["flown"])
-		if left > 0.0:
-			sim.send([], left / gb)
+		printerr("ism capture: %s -> %s at %.1f ly (flown %.3f, gamma beta %.3f)" % [tag, st[0], st[1], float(s["flown"]), gb])
+		var dt_left := left / gb # ship-yr; one tick takes at most 1 yr (the sim's bad_step)
+		while dt_left > 0.0:
+			var step := minf(dt_left, 0.9)
+			if not sim.send([], step):
+				break
+			dt_left -= step
 		for k in 8: # real-time ticks: the sim draws this tick's dust
 			sim.send([], RT_DTAU)
 			it.apply_state(sim.world)
@@ -172,16 +181,23 @@ func _save(img: Image, rel: String, label: String) -> void:
 	tiles.append(t)
 
 
+## The sky's world direction from the panorama camera to the wall point R n (n: ship frame, unit).
+func _aim(n: Vector3) -> Vector3:
+	var sky := it.sky
+	var c: Array = sky.cam["position_m"]
+	var d := Vector3(n.x * sky.radius_m - c[0], n.y * sky.radius_m - c[1], n.z * sky.radius_m - c[2]).normalized()
+	if sky.basis.size() != 9:
+		return sky.heading_world
+	var w := SkyFrame.to_world64(ShipFrame.to_galactic(sky.basis, PackedFloat64Array([d.x, d.y, d.z])))
+	return Vector3(w[0], w[1], w[2]).normalized()
+
+
 func _closeup() -> void:
 	var sky := it.sky
 	var live := sky.dust.live(sky.dust_clock)
-	var dir := sky.heading_world
-	if not live.is_empty():
-		var d: Vector3 = live[0].dir # ship frame -> the sky's world frame through the ship basis
-		var g := ShipFrame.to_galactic(sky.basis, PackedFloat64Array([d.x, d.y, d.z])) if sky.basis.size() == 9 else PackedFloat64Array([0, 0, 1])
-		var w := SkyFrame.to_world64(g)
-		dir = Vector3(w[0], w[1], w[2]).normalized()
-	it.caption = "flash close-up: the brightest live flash, hot gas, 0.999c (8 deg view)"
+	printerr("ism capture: close-up: %d live flashes" % live.size())
+	var dir := sky.heading_world if live.is_empty() else _aim(live[0].dir)
+	it.caption = "flash close-up: the brightest live flash, LIC, 0.999c (8 deg view)"
 	_save(await _forward(8.0, dir), "flash_closeup.png", "flash close-up")
 
 
@@ -191,18 +207,22 @@ func _afterglow_sheet() -> void:
 	var world := (main.sim as SimBridge).world
 	var cells: Array[Image] = []
 	sky.dust_auto = false
+	var r0 := sky.dust.r_spot
 	for rs: float in [0.25, 0.5, 1.0]:
 		for tau: float in [0.1, 0.2, 0.4]:
 			var df := DustFlash.new()
 			df.r_spot = rs
 			df.tau = tau
 			df.ingest(world, 0.0)
-			sky.dust_mat.set_shader_parameter("r_spot", rs)
-			sky.upload_dust(df.live(0.08))
-			cells.append(await _forward(20.0))
-	sky.dust_mat.set_shader_parameter("r_spot", DustFlash.R_SPOT)
+			sky.dust.r_spot = rs # _upload_exposure sends sky.dust.r_spot
+			var live := df.live(0.08)
+			sky.upload_dust(live)
+			var dir := sky.heading_world if live.is_empty() else _aim(live[0].dir)
+			cells.append(await _forward(6.0, dir))
+			sky.upload_dust(live) # _forward re-applies the state; keep this cell's flashes for the record
+	sky.dust.r_spot = r0
 	sky.dust_auto = true
-	_save(_grid(cells, 3), "afterglow_sheet.png", "afterglow sheet: rows r_s 0.25/0.5/1 m, columns tau 0.1/0.2/0.4 s, t = 0.08 s")
+	_save(_grid(cells, 3), "afterglow_sheet.png", "afterglow sheet (G-AG, a game approximation): rows r_s 0.25/0.5/1 m, columns tau 0.1/0.2/0.4 s; the brightest flash at t = 0.08 s, 6 deg view")
 
 
 func _eps_sheet() -> void:

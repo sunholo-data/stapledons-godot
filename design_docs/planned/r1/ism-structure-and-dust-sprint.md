@@ -128,3 +128,18 @@ Round 1 (independent Sonnet reviewer, `sprint-evaluator` plan review): **78/100,
 | F9 re-recorded baselines | AC8 names them (`rerecorded` in the JSON), approved at P2; AC9 runs on the whole guided tour under `lism-1` |
 | F10 hold-limit rule | Stated: the whole-cruise peak, because holding cruise speed needs thrust equal to drag everywhere; the plan shows the highest accepted speed (design §5) |
 | F11 pin jump | New I-1 pin bump with `make test` and `make parity` as its own commit |
+
+## Progress (execution, 2026-10-09)
+
+- [x] **I-1** pin bump: relativity 0.11.0, celestial 0.3.0; make test and parity green.
+- [x] **I0** oracle `tools/ism_dust_ref.py`, sources `data/ism/sources/*.tsv`, spec PR stapledons-design#11 merged (P1). Flags: LIC refit, grain density 3,300, AC6(a) 0.712 < 0.80, Bohlin 606.3.
+- [x] **I1** `sunholo/celestial` 0.4.0 published (ailang-packages#106).
+- [x] **I2** `sunholo/relativity` 0.12.0 published (independent evaluation 86/100, quality no gates, dry runs clean).
+- [x] **I3a** `make ism-data`, `ism-data-verify`.
+- [x] **I4** sim, protocol 2.7, AC6b/AC7/AC8/AC9/AC10/AC10b/AC11/AC12/AC13 green; AC6a pinned at 0.712 (below 0.80, flagged).
+- [x] **I5** renderer, goldens G-ISM-1..3, `dust-flash-test` (AC14, AC15).
+- [x] **I6** map layer, `map-ism-test` (AC16).
+- [ ] **I7** HUD: deferred to a follow-up PR (R1-SHIP-UI PR #193 not merged).
+- [x] **I8** `make ism-capture` (AC18); `make ism-bench` (AC19): plan 7 ms within budget, the per-tick ISM 0.9 ms over its 0.5 ms budget.
+- [x] **I9** Archive drafts, CHANGELOG, index row, roadmap PR stapledons-design#12, allowlist (AC20, AC21).
+- [ ] **I3b** PR B.

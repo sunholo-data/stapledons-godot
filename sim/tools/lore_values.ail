@@ -106,17 +106,20 @@ export pure func allProblems(rows: [Row]) -> [string] = disagreements(packageVal
 pure func q(s: string) -> string = concat(["\"", s, "\""])
 pure func rowJson(r: Row, src: string) -> string = concat(["    {\"id\": ", q(r.id), ", \"value\": ", q(r.printed), ", \"unit\": ", q(r.unit), ", \"source\": ", q(src), "}"])
 pure func valJson(v: Val) -> string = concat(["    {\"id\": ", q(v.id), ", \"value\": ", q(floatToStr(v.value)), ", \"unit\": ", q(v.unit), ", \"source\": ", q(v.source), ", \"equals\": ", q(v.hb), "}"])
-export pure func registryText(hb: [Row], rs: [Row]) -> string =
-  concat(["{\n  \"values\": [\n", join(",\n", map(\r. rowJson(r, "hb"), hb) ++ map(\r. rowJson(r, "rs"), rs) ++ map(valJson, packageVals() ++ m4Vals())), "\n  ]\n}\n"])
+export pure func registryText(hb: [Row], rs: [Row]) -> string = registryTextIs(hb, rs, [])
+-- R1-ISM-DUST: the IS-n rows of physics/ism-structure.md join the registry (source "is").
+export pure func registryTextIs(hb: [Row], rs: [Row], is: [Row]) -> string =
+  concat(["{\n  \"values\": [\n", join(",\n", map(\r. rowJson(r, "hb"), hb) ++ map(\r. rowJson(r, "rs"), rs) ++ map(\r. rowJson(r, "is"), is) ++ map(valJson, packageVals() ++ m4Vals())), "\n  ]\n}\n"])
 
 export func values(a: {dir: string, out: string}) -> () ! {IO, FS} {
   let hb = parseRows(readFile(concat([a.dir, "/physics/higgs-bubble.md"])));
   let rs = parseRows(readFile(concat([a.dir, "/physics/relativity-spec.md"])));
+  let is = parseRows(readFile(concat([a.dir, "/physics/ism-structure.md"])));
   let ps = allProblems(hb ++ rs);
   match ps {
     [] => {
-      writeFile(a.out, registryText(hb, rs));
-      println(concat(["lore-values: ", intToStr(size(hb)), " HB rows, ", intToStr(size(rs)), " RS rows, ", intToStr(size(packageVals())), " package values, ", intToStr(size(m4Vals())), " m4 values -> ", a.out, "; every package value equals its HB row at printed s.f.; m4:glow_eps <= HB-61"]))
+      writeFile(a.out, registryTextIs(hb, rs, is));
+      println(concat(["lore-values: ", intToStr(size(hb)), " HB rows, ", intToStr(size(rs)), " RS rows, ", intToStr(size(is)), " IS rows, ", intToStr(size(packageVals())), " package values, ", intToStr(size(m4Vals())), " m4 values -> ", a.out, "; every package value equals its HB row at printed s.f.; m4:glow_eps <= HB-61"]))
     },
     _ => { println(concat(["lore-values: FAILED (", intToStr(size(ps)), " problems)"])); println(join("\n", ps)); exit(1) }
   }

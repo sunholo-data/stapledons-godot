@@ -188,13 +188,13 @@ func _ready() -> void:
 		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5") or args.has("planet-smoke") or args.has("glow-eps-sheet")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5") or args.has("planet-smoke") or args.has("glow-eps-sheet") or args.has("ism-capture")
 	UiScale.configure(get_window(), _fixed_scale)
 	# Explicit --interior keeps the original painted reference/capture mode;
 	# --map and --voyage remain dedicated developer modes.
 	if args.is_empty() or (args.size() == 1 and args.has("record")):
 		args["interior"] = ""
-	if args.has("interior") or args.has("interior-capture") or args.has("glow-eps-sheet") or args.has("m4-smoke"):
+	if args.has("interior") or args.has("interior-capture") or args.has("glow-eps-sheet") or args.has("ism-capture") or args.has("m4-smoke"):
 		await _run_interior(args)
 		return
 	if args.has("transit"):

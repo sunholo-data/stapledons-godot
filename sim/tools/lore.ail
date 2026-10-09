@@ -179,7 +179,7 @@ pure func firstN(cs: [string], n: int) -> [string] = if n <= 0 then [] else matc
 export pure func parseRow(line: string) -> Option[Row] {
   let cells = map(trim, split(line, "|"));
   match cells {
-    _ :: id :: _ => if (startsWith(id, "HB-") || startsWith(id, "RS-")) && size(cells) >= 5 then rowFrom(id, nth_(cells, size(cells) - 3), nth_(cells, size(cells) - 2)) else None,
+    _ :: id :: _ => if (startsWith(id, "HB-") || startsWith(id, "RS-") || startsWith(id, "IS-")) && size(cells) >= 5 then rowFrom(id, nth_(cells, size(cells) - 3), nth_(cells, size(cells) - 2)) else None,
     _ => None
   }
 }

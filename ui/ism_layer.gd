@@ -204,8 +204,12 @@ func draw(overlay: Control, camera: Camera3D, to_world: Callable, route: Array =
 			continue
 		overlay.draw_line(camera.unproject_position(a), camera.unproject_position(b), colour_for(p.n_h, 0.95), 4.0, true)
 		n += 1
-	var y := overlay.size.y - 40.0
-	overlay.draw_string(font, Vector2(12, y), "Medium layer (D): " + legend(), HORIZONTAL_ALIGNMENT_LEFT, overlay.size.x - 480.0, 12, Color(0.75, 0.8, 0.9, 0.9))
+	var parts := legend().split(" Sources: ")
+	var lines := ["Medium layer (D): " + parts[0]] + (["Sources: " + parts[1]] if parts.size() > 1 else [])
+	var y := overlay.size.y - 22.0 - 16.0 * lines.size()
+	for ln: String in lines:
+		overlay.draw_string(font, Vector2(12, y), ln, HORIZONTAL_ALIGNMENT_LEFT, overlay.size.x - 480.0, 12, Color(0.75, 0.8, 0.9, 0.9))
+		y += 16.0
 	return n
 
 

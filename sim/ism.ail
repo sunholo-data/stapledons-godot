@@ -95,11 +95,19 @@ pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, acc: [Seg]) -> [Seg]
   [] => reverse(acc)
 }
 
+-- The thinnest medium feature (ly): every region is at least this thick along any line through
+-- it (the cone shells and the LIC are tenths of a parsec; PR B's LLCC sheets about 200 AU =
+-- 3e-3 ly). A piece shorter than this whose two ends are in the same medium lies wholly in it.
+export pure func minFeatureLy() -> float = 0.001
+
 -- The ordered, gap-free, merged pieces of a -> b (lism-1). A zero-length leg is one
--- empty piece in the medium at a.
+-- empty piece in the medium at a. A short piece with both ends in one medium is that medium
+-- without the bracket (the per-tick fast path; exact by minFeatureLy).
 export pure func profile(a: Vec3, b: Vec3) -> [Seg] {
   let len = dist(a, b);
-  if !(len > 0.0) then [{ s0: 0.0, s1: 0.0, medium: mediumAt(a) }]
+  let ma = mediumAt(a);
+  if !(len > 0.0) then [{ s0: 0.0, s1: 0.0, medium: ma }]
+  else if len < minFeatureLy() && (mediumAt(b)).id == ma.id then [{ s0: 0.0, s1: len, medium: ma }]
   else {
     let ts = uniq(sortBy(cmpF, 0.0 :: 1.0 :: clamp01(cloudTs(clouds(), a, b, starSurfaceCrossings(licC(), licCoeffs(), a, b)), [])), []);
     segsOf(ts, a, b, len, [])
@@ -200,16 +208,18 @@ export pure func backgroundAt(lut: Array[float], m: Medium, phi: float, c: DustC
 
 -- Visible (>= 5 % of the background) and bright (>= the background) thresholds of a
 -- medium at a speed.
-export type Thresh = { mediumId: int, phi: float, aVis: float, aBright: float }
+-- With the medium's grain distribution, kept with them so a cruising tick renormalises nothing.
+export type Thresh = { mediumId: int, phi: float, aVis: float, aBright: float, dist: GrainDist }
 export pure func thresholds(lut: Array[float], m: Medium, phi: float, c: DustCfg) -> Thresh {
   let bg = backgroundAt(lut, m, phi, c);
-  { mediumId: m.id, phi: phi, aVis: thresholdRadius(lut, phi, bg, 0.05, c), aBright: thresholdRadius(lut, phi, bg, 1.0, c) }
+  { mediumId: m.id, phi: phi, aVis: thresholdRadius(lut, phi, bg, 0.05, c), aBright: thresholdRadius(lut, phi, bg, 1.0, c), dist: distOf(m, c) }
 }
 
 pure func cached(ts: [Thresh], m: Medium, phi: float) -> [Thresh] = filter(\t. t.mediumId == m.id && t.phi == phi, ts)
 
-pure func threshFor(lut: Array[float], cache: [Thresh], m: Medium, phi: float, c: DustCfg) -> Thresh =
-  match cached(cache, m, phi) { t :: _ => t, [] => thresholds(lut, m, phi, c) }
+-- The thresholds from the cache, else computed (the efficacy table is built only then).
+pure func threshFor(cache: [Thresh], m: Medium, phi: float, c: DustCfg) -> Thresh =
+  match cached(cache, m, phi) { t :: _ => t, [] => thresholds(lutArray(), m, phi, c) }
 
 export pure func lutArray() -> Array[float] = toArray(efficacyLut())
 
@@ -239,7 +249,8 @@ export pure func maxEvents() -> int = 32
 export pure func noGlitter() -> Glitter = { rate: 0.0, aLo: 0.0, aHi: 0.0, q: 0.0, seed: 0 }
 export pure func noDust(cache: [Thresh]) -> DustTick = { expected: 0.0, drawn: 0, events: [], dropped: 0, window: 0.0, glitter: noGlitter(), cache: cache }
 
-pure func addCache(cache: [Thresh], t: Thresh) -> [Thresh] = match cached(cache, { id: t.mediumId, name: "", nH: 0.0, delta: 0.0, nEff: 0.0 }, t.phi) { [] => t :: take8(cache, 7, []), _ => cache }
+pure func addCache(cache: [Thresh], t: Thresh) -> [Thresh] = match cache { h :: _ => if h.mediumId == t.mediumId && h.phi == t.phi then cache else addNew(cache, t), [] => [t] }
+pure func addNew(cache: [Thresh], t: Thresh) -> [Thresh] = match cached(cache, { id: t.mediumId, name: "", nH: 0.0, delta: 0.0, nEff: 0.0 }, t.phi) { [] => t :: take8(cache, 7, []), _ => cache }
 pure func take8(xs: [Thresh], n: int, acc: [Thresh]) -> [Thresh] = if n <= 0 then reverse(acc) else match xs { [] => reverse(acc), x :: rest => take8(rest, n - 1, x :: acc) }
 
 pure func mkEvents(key: int, k: int, i: int, n: int, d: GrainDist, aB: float, phi: float, w: float, name: string, acc: [Impact]) -> [Impact] =
@@ -252,12 +263,12 @@ pure func mkEvents(key: int, k: int, i: int, n: int, d: GrainDist, aB: float, ph
       { a: a, ke: grainKinetic(grainMassOf(a, grainRho()), phi), x: r * cos(psi), y: r * cos(psi - 1.5707963267948966), t: dustU(key, k, 5 + 4 * i) * w, medium: name } :: acc)
   }
 
-pure func brightAlong(lut: Array[float], segs: [Seg], phi: float, c: DustCfg, cache: [Thresh], mu: float) -> (float, [Thresh]) = match segs {
+pure func brightAlong(segs: [Seg], phi: float, c: DustCfg, cache: [Thresh], mu: float) -> (float, [Thresh]) = match segs {
   [] => (mu, cache),
   g :: rest => {
-    let t = threshFor(lut, cache, g.medium, phi, c);
-    let nb = grainsAbove(distOf(g.medium, c), t.aBright);
-    brightAlong(lut, rest, phi, c, addCache(cache, t), mu + 3.141592653589793 * c.r * c.r * nb * (g.s1 - g.s0) * lightYearM())
+    let t = threshFor(cache, g.medium, phi, c);
+    let nb = grainsAbove(t.dist, t.aBright);
+    brightAlong(rest, phi, c, addCache(cache, t), mu + 3.141592653589793 * c.r * c.r * nb * (g.s1 - g.s0) * lightYearM())
   }
 }
 
@@ -266,18 +277,18 @@ pure func brightAlong(lut: Array[float], segs: [Seg], phi: float, c: DustCfg, ca
 -- Stream layout per tick (key, k): slots 0-1 the window's Poisson draw, 2 + 4 i .. 5 + 4 i
 -- the i-th event (size, disc radius, disc angle, time), i < 32 (130 slots); slots
 -- 1022-1023 the rest of the tick's bright total under time compression.
-export pure func dustTick(key: int, k: int, segs: [Seg], phi: float, dtauS: float, here: Medium, c: DustCfg, cache: [Thresh], lut: Array[float]) -> DustTick =
+export pure func dustTick(key: int, k: int, segs: [Seg], phi: float, dtauS: float, here: Medium, c: DustCfg, cache: [Thresh]) -> DustTick =
   if !(phi > 0.0) || !(dtauS > 0.0) then noDust(cache)
-  else match brightAlong(lut, segs, phi, c, cache, 0.0) {
+  else match brightAlong(segs, phi, c, cache, 0.0) {
     (mu, cache1) => {
-      let th = threshFor(lut, cache1, here, phi, c);
+      let th = threshFor(cache1, here, phi, c);
       let cache2 = addCache(cache1, th);
       let w = if dtauS < c.wRtS then dtauS else c.wRtS;
       let muW = mu * w / dtauS;
       let kW = poissonDraw(muW, dustU(key, k, 0), dustU(key, k, 1));
       let kept = if kW > maxEvents() then maxEvents() else kW;
       let rest = if mu > muW then poissonDraw(mu - muW, dustU(key, k, 1022), dustU(key, k, 1023)) else 0;
-      let d = distOf(here, c);
+      let d = th.dist;
       let rateVis = grainRate(grainsAbove(d, th.aVis), phi, c.r);
       let rateBright = grainRate(grainsAbove(d, th.aBright), phi, c.r);
       { expected: mu, drawn: kW + rest, events: mkEvents(key, k, 0, kept, d, th.aBright, phi, w, here.name, []), dropped: kW - kept, window: w,

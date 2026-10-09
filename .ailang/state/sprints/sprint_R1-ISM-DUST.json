@@ -322,10 +322,10 @@
         "Renders exist, no uniform or NaN frame, contact sheet; every frame opened and noted (AC18)",
         "make ism-bench within the design's budgets (AC19)"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-10-09",
-      "completed": null,
-      "notes": "IN PROGRESS: tools/ism_capture.gd + sim/tools/ism_sensitivity.ail; make ism-capture running -> renders/ism/. Next: inspect every frame (sips -Z 700), ism-bench.",
+      "completed": "2026-10-09",
+      "notes": "make ism-capture: 36 frames, none uniform or NaN (capture_log.json); every frame opened (sips -Z 700, renders/ism/small) and public at https://storage.googleapis.com/stapledons-voyage-assets/review/ism-dust/pr-a/. Afterglow r_s x tau sheet, eps sheet per medium, sensitivity table (a_max 5/10/20, hot delta 0.002, MRN only), flash close-up, map views. n_H 10 cloud is synthetic (uniform at the mass-equivalent density; glow only) until PR B. make ism-bench: the ISM costs ~0.9 ms per real-time tick on the strict VM incl. the 2.7 encoding (budget 0.5 ms: NOT met, after a short-piece fast path and caches cut it from 3 ms); a lism-1 plan ~7 ms (budget 20 ms: met).",
       "pr": "A"
     },
     {
@@ -340,10 +340,10 @@
         "make python-guard green (AC20)",
         "make test green locally and in CI (AC22)"
       ],
-      "passes": null,
+      "passes": true,
       "started": null,
-      "completed": null,
-      "notes": null,
+      "completed": "2026-10-09",
+      "notes": "Archive drafts for Mark (Q7) in design_docs/planned/r1/ism-archive-drafts (corrected ism-glow, Weather Between the Stars), checked by make ism-lore-drafts (IS-n now in the lore registry; ism-structure.md vendored). CHANGELOG fragment changelogs/unreleased/2026-10-09-ism-dust.md; index row; design roadmap status PR sunholo-data/stapledons-design#12; python allowlist (tools/ism_dust_ref.py oracle).",
       "pr": "A"
     },
     {
@@ -367,5 +367,5 @@
   "spec_pr": 11,
   "rerecorded": [],
   "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump.",
-  "next_step": "Finish I8 (inspect renders/ism, ism-bench), I9 docs (Archive drafts, CHANGELOG fragment, lore vendoring of ism-structure.md, design-doc index row, roadmap status), full make test + golden, open PR A, independent eval; then PR B (Edenhofer FITS already downloaded to data/raw/edenhofer2024, md5 verified)."
+  "next_step": "Full make test + make golden, then the independent PR A evaluation, then PR B (I3b; Edenhofer FITS downloaded, md5 verified)."
 }

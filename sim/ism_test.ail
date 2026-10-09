@@ -140,7 +140,7 @@ pure func runTicks(key: int, k: int, n: int, m: Medium, phi: float, dtauS: float
   else {
     let lenLy = dtauS * 299792458.0 * sinh(phi) / lightYearM();   -- galaxy-frame distance per ship second is gamma beta c
     let segs = [{ s0: 0.0, s1: lenLy, medium: m }];
-    let d = dustTick(key, k, segs, phi, dtauS, m, cfg(), r.cache, lut());
+    let d = dustTick(key, k, segs, phi, dtauS, m, cfg(), r.cache);
     runTicks(key, k + 1, n, m, phi, dtauS,
       { expected: r.expected + d.expected, drawn: r.drawn + d.drawn, events: if k < 400 then appendI(d.events, r.events) else r.events,
         maxDropped: if d.dropped > r.maxDropped then d.dropped else r.maxDropped,
@@ -189,8 +189,8 @@ test "AC12: wall points pass a KS test against cos theta weighting (alpha 0.05)"
 }
 
 test "AC12: no impacts at rest (phi 0) or in a zero-length tick" {
-  let a = dustTick(dustKey(3), 5, [{ s0: 0.0, s1: 1.0, medium: licMedium() }], 0.0, 0.05, licMedium(), cfg(), [], lut());
-  let b = dustTick(dustKey(3), 5, [{ s0: 0.0, s1: 0.0, medium: licMedium() }], phi0999(), 0.0, licMedium(), cfg(), [], lut());
+  let a = dustTick(dustKey(3), 5, [{ s0: 0.0, s1: 1.0, medium: licMedium() }], 0.0, 0.05, licMedium(), cfg(), []);
+  let b = dustTick(dustKey(3), 5, [{ s0: 0.0, s1: 0.0, medium: licMedium() }], phi0999(), 0.0, licMedium(), cfg(), []);
   a.drawn == 0 && length(a.events) == 0 && b.drawn == 0 && length(b.events) == 0
 }
 
