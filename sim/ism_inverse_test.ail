@@ -1,0 +1,114 @@
+-- Pinned v0.52.0 / prompt v0.16.6. Frozen efadd45 60-step radius oracle,
+-- independent of the production cell inverse. This verifies the SAME LUT model.
+module stapledons/sim/ism_inverse_test
+import ./ism (DustCfg, defaultDustCfg, efficacyAt, lutArray, thresholdRadius)
+import ./data/ism (grainAMin, grainRho, efficacyStep)
+import pkg/sunholo/relativity/dust (grainMassOf, grainKinetic)
+import std/math (log, exp, sqrt, pow, intToFloat)
+import std/list (nth_or)
+import std/array (get, length as alen, fromList)
+
+pure func referencePeak(lut: Array[float], ke: float, c: DustCfg) -> float {
+  let x = ke / (0.00000005670374419 * 3.141592653589793 * c.rSpot * c.rSpot * c.tau);
+  let t = if x > 0.0 then sqrt(sqrt(x)) else 0.0;
+  let e = c.eps * c.fIn * ke / (3.141592653589793 * c.rSpot * c.rSpot * c.tau);
+  e / 3.141592653589793 * efficacyAt(lut, t)
+}
+pure func referenceOk(lut: Array[float], a: float, phi: float, need: float, c: DustCfg) -> bool =
+  referencePeak(lut, grainKinetic(grainMassOf(a, grainRho()), phi), c) >= need
+pure func referenceBisect(lut: Array[float], lo: float, hi: float, k: int, phi: float, need: float, c: DustCfg) -> float =
+  if k <= 0 then exp(hi) else {
+    let mid = 0.5 * (lo + hi);
+    if referenceOk(lut, exp(mid), phi, need, c) then referenceBisect(lut, lo, mid, k - 1, phi, need, c)
+    else referenceBisect(lut, mid, hi, k - 1, phi, need, c)
+  }
+pure func reference(lut: Array[float], phi: float, bg: float, contrast: float, c: DustCfg) -> float {
+  let need = contrast * bg;
+  if !referenceOk(lut, c.aMax, phi, need, c) then c.aMax * 1.000001
+  else if referenceOk(lut, grainAMin(), phi, need, c) then grainAMin()
+  else referenceBisect(lut, log(grainAMin()), log(c.aMax), 60, phi, need, c)
+}
+pure func abs(x: float) -> float = if x < 0.0 then 0.0 - x else x
+pure func check(lut: Array[float], phi: float, bg: float, contrast: float, c: DustCfg) -> bool {
+  let expected = reference(lut, phi, bg, contrast, c);
+  let actual = thresholdRadius(lut, phi, bg, contrast, c);
+  let interior = expected > grainAMin() && expected <= c.aMax;
+  abs(actual - expected) <= 2e-12 * expected
+  && (!interior || referenceOk(lut, actual, phi, bg * contrast, c))
+  && (!interior || !referenceOk(lut, actual * (1.0 - 4e-12), phi, bg * contrast, c))
+}
+pure func cfgAt(i: int) -> DustCfg {
+  let c = defaultDustCfg(nth_or([1e-14, 1e-10, 1e-5], (i / 8) % 3, 1e-10), nth_or([0.01, 0.5, 0.99], (i / 24) % 3, 0.5), 100.0);
+  {c | rSpot: nth_or([0.05, 0.5, 5.0], (i / 72) % 3, 0.5), tau: nth_or([0.002, 0.2, 20.0], (i / 216) % 3, 0.2),
+       aMax: nth_or([2e-8, 9e-6, 1e-4], (i / 17) % 3, 9e-6)}
+}
+pure func grid(lut: Array[float], i: int, n: int) -> bool =
+  if i >= n then true else {
+    let phi = nth_or([0.0, 1e-10, 0.1, 1.0, 3.8002011672502, 7.254, 12.0, 18.0], i % 8, 1.0);
+    let bg = pow(10.0, -16.0 + intToFloat((i / 3) % 9) * 3.0);
+    check(lut, phi, bg, 0.05, cfgAt(i)) && check(lut, phi, bg, 1.0, cfgAt(i)) && grid(lut, i + 1, n)
+  }
+pure func certify(lut: Array[float], i: int) -> bool =
+  if i >= alen(lut) - 1 then true else {
+    let a = get(lut, i); let b = get(lut, i + 1);
+    a >= 0.0 && b >= 0.0 && a == a && b == b && a < 1e300 && b < 1e300
+    && (a <= 0.0 || b <= 0.0 || 4.0 + (log(b) - log(a)) / (efficacyStep() * log(10.0)) > 0.0)
+    && !(a > 0.0 && b <= 0.0) && certify(lut, i + 1)
+  }
+test "every adopted LUT cell has monotone nonnegative luminance; positive log cells are invertible" { certify(lutArray(), 0) }
+test "same-LUT cell inverse matches frozen60-step radius and crossing within2e-12 over1296 varied cases" { grid(lutArray(), 0, 648) }
+
+-- Set the cooling duration so this prescribed radius has temperature T. This
+-- makes each positive knot an actual interior inverse, rather than a sentinel.
+pure func cfgAtT(t: float, a: float, phi: float) -> DustCfg {
+  let c = defaultDustCfg(1e-10, 0.5, 100.0);
+  let ke = grainKinetic(grainMassOf(a, grainRho()), phi);
+  {c | tau: ke / (0.00000005670374419 * 3.141592653589793 * c.rSpot * c.rSpot * t * t * t * t)}
+}
+pure func interiorAt(lut: Array[float], t: float) -> bool {
+  let phi = 7.254;
+  let c = cfgAtT(t, 1e-6, phi);
+  let need = referencePeak(lut, grainKinetic(grainMassOf(1e-6, grainRho()), phi), c);
+  let expected = reference(lut, phi, need, 1.0, c);
+  expected > grainAMin() && expected < c.aMax
+  && check(lut, phi, need, 1.0, c)
+  && check(lut, phi, need * (1.0 - 2e-12), 1.0, c)
+  && check(lut, phi, need * (1.0 + 2e-12), 1.0, c)
+}
+
+pure func knotGrid(lut: Array[float], i: int) -> bool =
+  if i >= alen(lut) then true else {
+    let t = pow(10.0, 1.0 + intToFloat(i) * 0.01);
+    (get(lut, i) <= 0.0 || interiorAt(lut, t)) && knotGrid(lut, i + 1)
+  }
+test "all positive LUT knots and near-knot targets solve genuine interior crossings" { knotGrid(lutArray(), 1) }
+test "last log cell extrapolation at1e7,1e8,1e9K matches legacy interior solves" {
+  interiorAt(lutArray(), 1e7) && interiorAt(lutArray(), 1e8) && interiorAt(lutArray(), 1e9)
+}
+pure func edgeChecks(lut: Array[float], a: float) -> bool {
+  let phi = 7.254;
+  let c = cfgAtT(10000.0, a, phi);
+  let need = referencePeak(lut, grainKinetic(grainMassOf(a, grainRho()), phi), c);
+  check(lut, phi, need, 1.0, c)
+  && check(lut, phi, need * (1.0 - 2e-12), 1.0, c)
+  && check(lut, phi, need * (1.0 + 2e-12), 1.0, c)
+}
+test "grain aMin and aMax near-boundary needs preserve endpoint and sentinel guards" {
+  edgeChecks(lutArray(), grainAMin()) && edgeChecks(lutArray(), (defaultDustCfg(1e-10, 0.5, 100.0)).aMax)
+}
+test "zero-endpoint and decreasing exceptional tables retain legacy radius solver" {
+  let c = cfgAt(150);
+  interiorAt(fromList([0.0, 1.0]), 10.1)
+  && check(fromList([1.0, 0.0]), 1.0, 1e-8, 1.0, c)
+}
+test "underflowing log-scale product retains the exact interior legacy solve" {
+  let phi = 7.254;
+  let c = {cfgAtT(10000.0, 1e-6, phi) | eps: 1e-310};
+  let lut = lutArray();
+  let need = referencePeak(lut, grainKinetic(grainMassOf(1e-6, grainRho()), phi), c);
+  let expected = reference(lut, phi, need, 1.0, c);
+  -- Subnormal luminance has rounding plateaus, so the lower-radius crossing
+  -- check is inappropriate here; require the identical fallback result.
+  expected > grainAMin() && expected < c.aMax
+  && thresholdRadius(lut, phi, need, 1.0, c) == expected
+}
