@@ -9,6 +9,8 @@ extends RefCounted
 ##            (1 / eta_exact(T)) equals ForwardGlow.colour(T) within 1 % of its largest channel.
 ##   G-ISM-3  glitter count: a fixed glitter descriptor's sprites (DustFlash.glitter_events, seed
 ##            fixed) all light their own wall point, and the number lit equals the CPU count.
+##   G-ISM-4  projected spots from oblique/off-centre/near-wall observers; overlaps preserve
+##            dim energy before the HDR write; isolated sprite63 is lit, rear spots culled.
 
 const BUNDLE := "res://assets/areas/bridge"
 const KE5 := 3318048.4379902543 # J: 5 um at 3,300 kg/m^3, 0.999c (HB-139..141 oracle)
@@ -33,6 +35,7 @@ func run(m: Node) -> int:
 	f += await _g1()
 	f += await _g2()
 	f += await _g3()
+	f += await _g4()
 	it.queue_free()
 	await main.get_tree().process_frame
 	print("ism golden: %d failures" % f)
@@ -65,9 +68,7 @@ func _one(mat: ShaderMaterial, dir: Vector3, e: float, t: float) -> void:
 	ts.resize(64)
 	fl[0] = Vector4(dir.x, dir.y, dir.z, e)
 	ts[0] = t
-	mat.set_shader_parameter("flash", fl)
-	mat.set_shader_parameter("flash_t", ts)
-	mat.set_shader_parameter("count", 1)
+	it.sky.set_dust_flashes(fl, ts, 1)
 
 
 ## Look along ship-frame unit d (the sky frame = the ship frame here).
@@ -161,9 +162,7 @@ func _g3() -> int:
 		var d := DustFlash.wall_dir(evs[i].x, evs[i].y)
 		fl[i] = Vector4(d.x, d.y, d.z, 1.0)
 		ts[i] = 5000.0
-	mat.set_shader_parameter("flash", fl)
-	mat.set_shader_parameter("flash_t", ts)
-	mat.set_shader_parameter("count", evs.size())
+	sky.set_dust_flashes(fl, ts, evs.size())
 	var lit := 0
 	for e: Dictionary in evs:
 		_look(DustFlash.wall_dir(e.x, e.y))
@@ -176,3 +175,83 @@ func _g3() -> int:
 	mat.set_shader_parameter("debug_unit", false)
 	sky.set_debug_unit(false)
 	return 0 if ok else 1
+
+
+## G-ISM-4: projected quads retain the physical spot from oblique, off-centre and
+## near-wall observers, including overlapping spots. Sample the ray/sphere/disc
+## definition independently of the quad's conservative projection bounds.
+func _g4() -> int:
+	var sky := it.sky
+	var mat := _mat()
+	sky.set_debug_unit(true)
+	mat.set_shader_parameter("debug_unit", true)
+	mat.set_shader_parameter("debug_colour", false)
+	mat.set_shader_parameter("r_spot", 2.0)
+	var fails := 0
+	var cases := [[Vector3.ZERO, DustFlash.wall_dir(0.6, 0.2)], [Vector3(80, 5, -10), DustFlash.wall_dir(-0.3, 0.4)], [Vector3(0, 0, 99.9), Vector3(0, 0, 1)]]
+	for c: Array in cases:
+		var observer: Vector3 = c[0]
+		var normal: Vector3 = c[1]
+		mat.set_shader_parameter("cam_ship", observer)
+		_one(mat, normal, 1.0, 5000.0)
+		_look((100.0 * normal - observer).normalized())
+		if observer.length() < 99.0: sky.camera.look(sky.camera.yaw + 0.13, sky.camera.pitch - 0.07, 0.1)
+		var img := await _sky_image()
+		var centre := sky.camera.unproject_position(100.0 * normal - observer)
+		var mismatches := 0
+		var checked := 0
+		var lit := 0
+		for dy in range(-32, 33, 2):
+			for dx in range(-32, 33, 2):
+				var pixel := Vector2i(centre) + Vector2i(dx, dy)
+				if pixel.x < 0 or pixel.y < 0 or pixel.x >= size.x or pixel.y >= size.y: continue
+				var ray := sky.camera.project_ray_normal(Vector2(pixel) + Vector2(0.5, 0.5))
+				var b := observer.dot(ray)
+				var t := -b + sqrt(maxf(b * b + 10000.0 - observer.length_squared(), 0.0))
+				var distance := (observer + t * ray - 100.0 * normal).length()
+				if absf(distance - 2.0) < 0.02: continue # float32 edge below one pixel
+				var expected := distance < 2.0
+				var actual := img.get_pixelv(pixel).r > 0.5
+				checked += 1
+				lit += 1 if expected else 0
+				mismatches += 1 if expected != actual else 0
+		var ok := checked > 100 and lit > 0 and mismatches == 0
+		fails += 0 if ok else 1
+		print("%s  G-ISM-4 projected spot observer %s: %d rays, %d lit, %d mismatches" % ["ok  " if ok else "FAIL", observer, checked, lit, mismatches])
+	mat.set_shader_parameter("cam_ship", Vector3.ZERO)
+	mat.set_shader_parameter("r_spot", DustFlash.R_SPOT)
+	var flashes := PackedVector4Array()
+	flashes.resize(64)
+	flashes[0] = Vector4(0, 0, 1, 1)
+	flashes[1] = Vector4(0, 0, 1, 2)
+	var temperatures := PackedFloat32Array()
+	temperatures.resize(64)
+	temperatures.fill(5000.0)
+	sky.set_dust_flashes(flashes, temperatures, 2)
+	_look(Vector3(0, 0, 1))
+	var overlap := await _sky_image()
+	var got := overlap.get_pixel(size.x / 2, size.y / 2).r
+	var added := absf(got - 3.0) < 0.03
+	fails += 0 if added else 1
+	print("%s  G-ISM-4 overlapping spots add E: %.5f (want 3)" % ["ok  " if added else "FAIL", got])
+	# A bright flash plus many dim ones must be summed before the half-float target.
+	# Per-sprite blending would repeatedly round away contributions below one ulp.
+	for i in 64: flashes[i] = Vector4(0, 0, 1, 1.0 if i == 0 else 0.00049)
+	sky.set_dust_flashes(flashes, temperatures, 64)
+	var crowded := await _sky_image()
+	var total := crowded.get_pixel(size.x / 2, size.y / 2).r
+	var expected := 1.0 + 63.0 * 0.00049
+	var retained := absf(total - expected) < 0.01 * expected
+	fails += 0 if retained else 1
+	print("%s  G-ISM-4 bright and dim overlap: %.6f (want %.6f, limit1%%)" % ["ok  " if retained else "FAIL", total, expected])
+	for i in 64: flashes[i] = Vector4(0, 0, -1, 1)
+	flashes[63] = Vector4(0, 0, 1, 1)
+	sky.set_dust_flashes(flashes, temperatures, 64)
+	var high := await _sky_image()
+	var high_lit := absf(high.get_pixel(size.x / 2, size.y / 2).r - 1.0) < 0.01
+	fails += 0 if high_lit else 1
+	print("%s  G-ISM-4 isolated sprite63 and behind-camera culling" % ["ok  " if high_lit else "FAIL"])
+	mat.set_shader_parameter("count", 0)
+	mat.set_shader_parameter("debug_unit", false)
+	sky.set_debug_unit(false)
+	return fails

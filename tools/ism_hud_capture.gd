@@ -93,6 +93,10 @@ func capture_size(sz: Vector2i) -> void:
 	demo._process(0.05)
 	await shot("transit", sz)
 	demo.ship_hud.toggle_tab()
+	await settle()
+	# Review the ISM details themselves, rather than the controls above them.
+	var tab_scroll: ScrollContainer = demo.ship_hud.tab_panel.get_child(0)
+	tab_scroll.scroll_vertical = int(demo.ship_hud.ism_details.position.y)
 	await shot("tab_medium", sz)
 	demo.ship_hud.toggle_tab()
 	var first_medium: String = demo.sky_world.ship.ism.medium

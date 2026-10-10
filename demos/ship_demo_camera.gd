@@ -32,6 +32,7 @@ func sync_sky(sky: InteriorSky, px: Vector2i) -> void:
 		if photo!=null:
 			sky.background.material.set_shader_parameter("pano_px_per_screen_px",photo.get_height()/180.0*fov/maxi(px.y,1))
 	sky.glow_mat.set_shader_parameter("cam_ship",Vector3(position.x,-position.z,position.y))
+	sky.dust_mat.set_shader_parameter("cam_ship",Vector3(position.x,-position.z,position.y))
 	if attitude_basis.is_empty():sky.orient(heading)
 	else:sky.orient_basis(attitude_basis)
 	if projection_changed:sky.update_exposure()

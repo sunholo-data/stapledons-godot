@@ -3,7 +3,7 @@ extends SceneTree
 ## values, every lookup finite over its range (AC15), and the glitter sampler's mirrors of the
 ## sim's stateless stream and the package's Poisson draw. Headless:
 ##   godot --headless --path . --script tests/test_dust_flash.gd      (make dust-flash-test)
-## The GPU half (G-ISM-1..3) is tools/ism_golden.gd (make golden).
+## The GPU half (G-ISM-1..4) is tools/ism_golden.gd (make golden).
 
 ## tools/ism_dust_ref.py --emit-relativity (= sunholo/relativity 0.12.0 dust_test.ail): a 5 um
 ## grain (3,300 kg/m^3) at 0.999c, r_s 0.5 m, tau 0.2 s, eps 1e-10, f_in 0.5:
@@ -39,8 +39,24 @@ func _init() -> void:
 	_stream()
 	_glitter()
 	_live()
+	_overlap_masks()
 	print("dust-flash: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures > 0 else 0)
+
+
+func _overlap_masks() -> void:
+	var flashes := PackedVector4Array()
+	flashes.resize(64)
+	flashes[0] = Vector4(0, 0, 1, 1)
+	var close := DustFlash.wall_dir(0.009, 0)
+	var far := DustFlash.wall_dir(0.011, 0)
+	flashes[31] = Vector4(close.x, close.y, close.z, 1)
+	flashes[32] = Vector4(far.x, far.y, far.z, 1)
+	flashes[63] = flashes[0]
+	var masks := DustFlash.overlap_masks(flashes, 64, 100.0, 0.5)
+	check("spot masks retain nearby and coincident caps across bit31/63", (masks[0][0] & (1 << 31)) != 0 and (masks[1][0] & (1 << 31)) != 0)
+	check("spot masks reject physically disjoint caps", (masks[1][0] & 1) == 0)
+	check("spot masks are symmetric and preserve self", (masks[0][31] & 1) != 0 and (masks[0][63] & 1) != 0 and (masks[1][63] & (1 << 31)) != 0)
 
 
 func _afterglow() -> void:
