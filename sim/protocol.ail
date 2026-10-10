@@ -22,7 +22,7 @@ import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarL
 import ./alpha_centauri (alphaBodies, catalogueId as alphaCatalogueId, stellarValue as alphaStellarValue)
 import ./destination_stars (destinationBodies, destinationCatalogueId, destinationValue)
 import ./trappist1 (trappistBodies, hostE1Lux, hostId as trappistHostId)
-import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger, isLism, mediumHere, Plan, PlanIsm, HoldInfo,
+import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger, isLism, mediumHere, currentMedium, Plan, PlanIsm, HoldInfo,
   Target, PlanReq, StarInfo, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
   CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf,
@@ -282,7 +282,7 @@ export pure func encodeCq(v: CqView, from: int) -> string =
 pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string =
   obj(shipFields(s) ++ [f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("glow_pole_w_m2", num(i.glowPoleWM2)), f("glow_pole_k", num(i.glowPoleK)), f("drag_energy_j", num(dragEnergy))]))])
 
--- 2.7 (R1-ISM-DUST): ship.ism also carries the medium here (model, name, n_H in cm^-3, the
+-- 2.8 (R1-ISM-DUST): ship.ism also carries the medium here (model, name, n_H in cm^-3, the
 -- mass-equivalent density in m^-3), this tick's bright dust impacts (radius um, energy J, the
 -- point on the forward wall's projected unit disc, the time in the display window s, medium),
 -- the tick's and the leg's bright totals (expected and drawn, dropped beyond 32 events, the
@@ -291,18 +291,19 @@ pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string =
 pure func impactObj(e: Impact) -> string =
   obj([f("a_um", num(e.a * 1000000.0)), f("ke_j", num(e.ke)), f("x", num(e.x)), f("y", num(e.y)), f("t_s", num(e.t)), f("medium", q(e.medium))])
 pure func ismModelName(p: Params) -> string = if isLism(p) then "lism-1" else "uniform"
-pure func shipWithIsm27(s: ShipView, i: IsmNow, dragEnergy: float, w: World) -> string {
-  let m = mediumHere(w.params, position(w.ship));
+pure func shipWithIsm28(s: ShipView, i: IsmNow, dragEnergy: float, w: World) -> string {
+  let m = currentMedium(w);
   let d = w.dust;
   let g = d.last.glitter;
   obj(shipFields(s) ++ [f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("glow_pole_w_m2", num(i.glowPoleWM2)), f("glow_pole_k", num(i.glowPoleK)), f("drag_energy_j", num(dragEnergy)),
     f("model", q(ismModelName(w.params))), f("medium", q(m.name)), f("n_h_cm3", num(m.nH)), f("n_eff_m3", num(m.nEff)),
     f("impacts", arr(each(impactObj, d.last.events))),
     f("dust", obj([f("expected", num(d.last.expected)), f("drawn", intToStr(d.last.drawn)), f("dropped", intToStr(d.last.dropped)), f("window_s", num(d.last.window)),
+      f("visible_rate", num(d.last.visibleRate)), f("bright_rate", num(d.last.brightRate)), f("leg_grains", num(d.legGrains)),
       f("leg_expected", num(d.legExpected)), f("leg_drawn", intToStr(d.legDrawn)), f("largest_um", num(d.largestA * 1000000.0)), f("largest_j", num(d.largestKe))])),
     f("glitter", obj([f("rate", num(g.rate)), f("a_lo_um", num(g.aLo * 1000000.0)), f("a_hi_um", num(g.aHi * 1000000.0)), f("q", num(g.q)), f("seed", intToStr(g.seed))]))]))])
 }
--- 2.7 journey.plan members under lism-1 (none under uniform): the media crossed (name, n_H
+-- 2.8 journey.plan members under lism-1 (none under uniform): the media crossed (name, n_H
 -- cm^-3, length ly, in the order met), the peak, the highest cruise the drive holds on this
 -- route (rapidity, beta, 1 - beta), the grains of >= 1 um swept and the expected visible flashes.
 pure func currentPlan(w: World) -> Option[Plan] = match w.journey { Planned(p) => Some(p), Committed(c) => Some(c.plan), Arrived(c) => Some(c.plan), Idle => None }
@@ -732,7 +733,7 @@ pure func malformed(s: Session, c: string) -> Served =
 pure func changed(enc: a -> string, before: a, after: a) -> Option[a] = if enc(before) == enc(after) then None else Some(after)
 
 pure func shipSection(w: World) -> string = shipWithIsm(shipOf(w.ship), ismNow(w), dragEnergyJ(w))
-pure func shipSectionM(minor: int, w: World) -> string = if minor >= ismMinor() then shipWithIsm27(shipOf(w.ship), ismNow(w), dragEnergyJ(w), w) else shipSection(w)
+pure func shipSectionM(minor: int, w: World) -> string = if minor >= ismMinor() then shipWithIsm28(shipOf(w.ship), ismNow(w), dragEnergyJ(w), w) else shipSection(w)
 -- 2.2 members for a tick: ship (with ism) and consequence, each only when changed.
 pure func cqExtras(minor: int, before: World, after: World) -> Extras {
   let n0 = countOf(before.cq.log);

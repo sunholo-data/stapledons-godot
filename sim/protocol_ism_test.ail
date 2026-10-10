@@ -84,3 +84,14 @@ pure func streamWith(n: int, params: string) -> string {
   let rt = rtTicks(boost.session, 4, 3 + n, "0.0000000015844043907", []);
   join("\n", [p.reply, c.reply, boost.reply] ++ revS(rt, [])) 
 }
+
+pure func frozenSeven() -> bool {
+  let s = feed(newSession(), [helloLine(7)]);
+  let hello = reply(newSession(), helloLine(7));
+  let game = reply(s, gameLine(""));
+  let invalid = reply(s, gameLine(",\"params\":{\"ism_model\":1}"));
+  contains(hello, "\"minor\":7") && contains(hello, "\"relativity\":\"0.11.0\"")
+  && !contains(game, "\"model\":") && !contains(game, "\"medium\":")
+  && contains(invalid, "\"status\":\"bad_params\"")
+}
+test "minor 7 stays frozen: inferred-star pin 0.11.0, uniform default, no ISM params" { frozenSeven() }

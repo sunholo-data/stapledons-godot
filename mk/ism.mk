@@ -20,10 +20,10 @@ ism-data-verify:   ## AC4: a fresh regeneration equals the committed sim/data/is
 ism-oracle-check:  ## the stdlib oracle (tools/ism_dust_ref.py) passes its relations and the design's acceptance numbers
 	@mkdir -p $(ISM_TMP); python3 tools/ism_dust_ref.py --check > $(ISM_TMP)/oracle.log; rc=$$?; tail -1 $(ISM_TMP)/oracle.log; exit $$rc
 
-ism-test:          ## AC6, AC7, AC9-AC12: the medium, the dust stream, the ledger by column, the hold limit and protocol 2.7 (also in make sim)
+ism-test:          ## AC6, AC7, AC9-AC12: the medium, the dust stream, the ledger by column, the hold limit and protocol 2.8 (also in make sim)
 	cd sim && $(AILANG) test ism_test.ail && $(AILANG) test core_ism_test.ail && $(AILANG) test protocol_ism_test.ail
 
-ism-determinism:   ## AC11, AC13: a 2.7 lism-1 session (plan, commit, 40 real-time ticks of dust): two runs and the strict VM vs the interpreter print the same bytes
+ism-determinism:   ## AC11, AC13: a 2.8 lism-1 session (plan, commit, 40 real-time ticks of dust): two runs and the strict VM vs the interpreter print the same bytes
 	@mkdir -p $(ISM_TMP)
 	@$(ISM_RUN) --bytecode --strict-bytecode --entry ismStream --args-json 40 sim/protocol_ism_test.ail > $(ISM_TMP)/det-vm1.txt
 	@$(ISM_RUN) --bytecode --strict-bytecode --entry ismStream --args-json 40 sim/protocol_ism_test.ail > $(ISM_TMP)/det-vm2.txt
@@ -55,3 +55,11 @@ ism-capture:       ## AC18: renders/ism/ (flight frames per medium and speed, fl
 
 ism-lore-drafts: lore-values  ## AC21: the Archive drafts for Mark (design_docs/planned/r1/ism-archive-drafts) cite registered ids only (HB-, RS-, IS-) and every number binds
 	@$(MAKE) --no-print-directory lore-check LORE=design_docs/planned/r1/ism-archive-drafts AILANG=$(AILANG)
+
+.PHONY: ism-compat
+ism-compat: ## frozen 2.7 inferred-star session from main 70c445c, interpreter and VM byte-identical
+	@mkdir -p $(ISM_TMP)
+	@$(ISM_RUN) --caps IO --bytecode --entry main sim/ship.ail < tests/fixtures/protocol_27_inferred.input.ndjson > $(ISM_TMP)/compat-vm.ndjson
+	@$(ISM_RUN) --caps IO --entry main sim/ship.ail < tests/fixtures/protocol_27_inferred.input.ndjson > $(ISM_TMP)/compat-int.ndjson
+	@cmp tests/fixtures/protocol_27_inferred.expected.ndjson $(ISM_TMP)/compat-vm.ndjson && cmp $(ISM_TMP)/compat-vm.ndjson $(ISM_TMP)/compat-int.ndjson
+	@echo 'ism-compat: frozen 2.7 inferred-star plan, commit and flight = VM = interpreter'

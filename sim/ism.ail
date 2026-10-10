@@ -22,6 +22,8 @@ import pkg/sunholo/relativity/optics (Vec3)
 import pkg/sunholo/relativity/medium (lightYearM, massEquivalentDensity, glowEmittanceAt, glowTemperatureAt, driveHoldMaxPhi)
 import pkg/sunholo/relativity/dust (grainKinetic, grainMassOf, grainRate)
 import ./data/ism (Cloud, clouds, licCentre, licCoeffs, nHWarm, nHHot, deltaLocal, muH, hydrogenMassKg, grainRho, grainAMin, grainABreak, grainAMax, grainQ, efficacyLog10TMin, efficacyStep, efficacyLut)
+import pkg/sunholo/relativity/journey (TripPlan)
+import pkg/sunholo/relativity/hyper (acosh1p, cosh, absf)
 import ./rng (splitmix64, mix64, top53)
 
 -- ---------- media ----------
@@ -95,19 +97,11 @@ pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, acc: [Seg]) -> [Seg]
   [] => reverse(acc)
 }
 
--- The thinnest medium feature (ly): every region is at least this thick along any line through
--- it (the cone shells and the LIC are tenths of a parsec; PR B's LLCC sheets about 200 AU =
--- 3e-3 ly). A piece shorter than this whose two ends are in the same medium lies wholly in it.
-export pure func minFeatureLy() -> float = 0.001
-
--- The ordered, gap-free, merged pieces of a -> b (lism-1). A zero-length leg is one
--- empty piece in the medium at a. A short piece with both ends in one medium is that medium
--- without the bracket (the per-tick fast path; exact by minFeatureLy).
+-- Exact ordered route boundaries, including arbitrarily short grazing chords.
 export pure func profile(a: Vec3, b: Vec3) -> [Seg] {
   let len = dist(a, b);
   let ma = mediumAt(a);
   if !(len > 0.0) then [{ s0: 0.0, s1: 0.0, medium: ma }]
-  else if len < minFeatureLy() && (mediumAt(b)).id == ma.id then [{ s0: 0.0, s1: len, medium: ma }]
   else {
     let ts = uniq(sortBy(cmpF, 0.0 :: 1.0 :: clamp01(cloudTs(clouds(), a, b, starSurfaceCrossings(licC(), licCoeffs(), a, b)), [])), []);
     segsOf(ts, a, b, len, [])
@@ -243,11 +237,11 @@ export type Impact = { a: float, ke: float, x: float, y: float, t: float, medium
 -- (5 % <= contrast < 1) the renderer draws itself from its rate per ship second, the
 -- size range and a seed.
 export type Glitter = { rate: float, aLo: float, aHi: float, q: float, seed: int }
-export type DustTick = { expected: float, drawn: int, events: [Impact], dropped: int, window: float, glitter: Glitter, cache: [Thresh] }
+export type DustTick = { expected: float, drawn: int, events: [Impact], dropped: int, window: float, visibleRate: float, brightRate: float, glitter: Glitter, cache: [Thresh] }
 
 export pure func maxEvents() -> int = 32
 export pure func noGlitter() -> Glitter = { rate: 0.0, aLo: 0.0, aHi: 0.0, q: 0.0, seed: 0 }
-export pure func noDust(cache: [Thresh]) -> DustTick = { expected: 0.0, drawn: 0, events: [], dropped: 0, window: 0.0, glitter: noGlitter(), cache: cache }
+export pure func noDust(cache: [Thresh]) -> DustTick = { expected: 0.0, drawn: 0, events: [], dropped: 0, window: 0.0, visibleRate: 0.0, brightRate: 0.0, glitter: noGlitter(), cache: cache }
 
 pure func addCache(cache: [Thresh], t: Thresh) -> [Thresh] = match cache { h :: _ => if h.mediumId == t.mediumId && h.phi == t.phi then cache else addNew(cache, t), [] => [t] }
 pure func addNew(cache: [Thresh], t: Thresh) -> [Thresh] = match cached(cache, { id: t.mediumId, name: "", nH: 0.0, delta: 0.0, nEff: 0.0 }, t.phi) { [] => t :: take8(cache, 7, []), _ => cache }
@@ -280,22 +274,78 @@ pure func brightAlong(segs: [Seg], phi: float, c: DustCfg, cache: [Thresh], mu: 
 export pure func dustTick(key: int, k: int, segs: [Seg], phi: float, dtauS: float, here: Medium, c: DustCfg, cache: [Thresh]) -> DustTick =
   if !(phi > 0.0) || !(dtauS > 0.0) then noDust(cache)
   else match brightAlong(segs, phi, c, cache, 0.0) {
-    (mu, cache1) => {
-      let th = threshFor(cache1, here, phi, c);
-      let cache2 = addCache(cache1, th);
-      let w = if dtauS < c.wRtS then dtauS else c.wRtS;
-      let muW = mu * w / dtauS;
-      let kW = poissonDraw(muW, dustU(key, k, 0), dustU(key, k, 1));
-      let kept = if kW > maxEvents() then maxEvents() else kW;
-      let rest = if mu > muW then poissonDraw(mu - muW, dustU(key, k, 1022), dustU(key, k, 1023)) else 0;
-      let d = th.dist;
-      let rateVis = grainRate(grainsAbove(d, th.aVis), phi, c.r);
-      let rateBright = grainRate(grainsAbove(d, th.aBright), phi, c.r);
-      { expected: mu, drawn: kW + rest, events: mkEvents(key, k, 0, kept, d, th.aBright, phi, w, here.name, []), dropped: kW - kept, window: w,
-        glitter: { rate: if rateVis > rateBright then rateVis - rateBright else 0.0, aLo: th.aVis, aHi: th.aBright, q: c.q, seed: top53(splitmix64(key, k * slotsPerTick() + 1021)) },
-        cache: cache2 }
-    }
+    (mu, cs) => dustWithTotal(key, k, mu, phi, dtauS, here, c, cs)
   }
+
+-- The full flown expectation and the final display window are separate: a compressed
+-- arrival still records its bright total, but emits no at-rest flashes. At a boundary
+-- the display window uses the endpoint medium's local rate, never the leg-average rate.
+export pure func dustWithTotal(key: int, k: int, mu: float, phi: float, dtauS: float, here: Medium, c: DustCfg, cache: [Thresh]) -> DustTick =
+  if !(dtauS > 0.0) then noDust(cache)
+  else {
+    let th = threshFor(cache, here, phi, c);
+    let cache2 = addCache(cache, th);
+    let w = if phi <= 0.0 then 0.0 else if dtauS < c.wRtS then dtauS else c.wRtS;
+    let d = th.dist;
+    let rateVis = if phi > 0.0 then grainRate(grainsAbove(d, th.aVis), phi, c.r) else 0.0;
+    let rateBright = if phi > 0.0 then grainRate(grainsAbove(d, th.aBright), phi, c.r) else 0.0;
+    let localMu = rateBright * w;
+    let muW = if localMu < mu then localMu else mu;
+    let kW = poissonDraw(muW, dustU(key, k, 0), dustU(key, k, 1));
+    let kept = if kW > maxEvents() then maxEvents() else kW;
+    let rest = if mu > muW then poissonDraw(mu - muW, dustU(key, k, 1022), dustU(key, k, 1023)) else 0;
+    { expected: mu, drawn: kW + rest, events: mkEvents(key, k, 0, kept, d, th.aBright, phi, w, here.name, []), dropped: kW - kept, window: w, visibleRate: rateVis, brightRate: rateBright,
+      glitter: { rate: if rateVis > rateBright then rateVis - rateBright else 0.0, aLo: th.aVis, aHi: th.aBright, q: c.q, seed: top53(splitmix64(key, k * slotsPerTick() + 1021)) }, cache: cache2 }
+  }
+
+-- Compressed changing-speed pieces: adaptive Simpson quadrature in distance, split
+-- at every medium and acceleration-phase boundary. Relative tolerance 1e-6, depth
+-- limit 14; real-time (<0.1 s) pieces retain endpoint evaluation (speed change tiny).
+pure func routePhi(tp: TripPlan, x: float) -> float =
+  if x < tp.dBurn then acosh1p(tp.a * x)
+  else if x < tp.dBurn + tp.dCoast then tp.phiPeak
+  else {
+    let left = tp.trip.distance - x;
+    if left <= 0.0 then 0.0
+    else if tp.dApproach > 0.0 && left < tp.dApproach then acosh1p(tp.aApproach * left)
+    else acosh1p(tp.a * (left - tp.dApproach) + (cosh(tp.phiApproach) - 1.0))
+  }
+pure func brightDensity(lut: Array[float], m: Medium, gd: GrainDist, tp: TripPlan, x: float, c: DustCfg) -> float =
+  grainsAbove(gd, (thresholds(lut, m, routePhi(tp, x), c)).aBright)
+pure func simpson(a: float, b: float, fa: float, fm: float, fb: float) -> float = (b - a) / 6.0 * (fa + 4.0 * fm + fb)
+pure func integrateBright(lut: Array[float], m: Medium, gd: GrainDist, tp: TripPlan, a: float, b: float, fa: float, fm: float, fb: float, whole: float, tol: float, depth: int, c: DustCfg) -> float {
+  let mid = 0.5 * (a + b);
+  let fl = brightDensity(lut, m, gd, tp, 0.5 * (a + mid), c);
+  let fr = brightDensity(lut, m, gd, tp, 0.5 * (mid + b), c);
+  let l = simpson(a, mid, fa, fl, fm);
+  let r = simpson(mid, b, fm, fr, fb);
+  let diff = l + r - whole;
+  if depth <= 0 || absf(diff) <= 15.0 * tol then l + r + diff / 15.0
+  else integrateBright(lut, m, gd, tp, a, mid, fa, fl, fm, l, tol * 0.5, depth - 1, c)
+       + integrateBright(lut, m, gd, tp, mid, b, fm, fr, fb, r, tol * 0.5, depth - 1, c)
+}
+pure func brightPiece(lut: Array[float], g: Seg, tp: TripPlan, c: DustCfg) -> float {
+  let gd = distOf(g.medium, c);
+  let fa = brightDensity(lut, g.medium, gd, tp, g.s0, c);
+  let fm = brightDensity(lut, g.medium, gd, tp, 0.5 * (g.s0 + g.s1), c);
+  let fb = brightDensity(lut, g.medium, gd, tp, g.s1, c);
+  let whole = simpson(g.s0, g.s1, fa, fm, fb);
+  let tol = 0.000001 * (if whole > 0.0 then whole else (g.s1 - g.s0) * grainsAbove(gd, grainAMin()) * 0.000000000001);
+  if whole <= 0.0 then 0.0 else integrateBright(lut, g.medium, gd, tp, g.s0, g.s1, fa, fm, fb, whole, tol, 14, c)
+}
+pure func sumBright(lut: Array[float], gs: [Seg], tp: TripPlan, c: DustCfg) -> float =
+  foldl(\acc g. acc + brightPiece(lut, g, tp, c), 0.0, gs)
+export pure func tripBright(segs: [Seg], tp: TripPlan, c: DustCfg) -> float {
+  let lut = lutArray();
+  let b0 = tp.dBurn;
+  let b1 = tp.dBurn + tp.dCoast;
+  let b2 = tp.trip.distance - tp.dApproach;
+  3.141592653589793 * c.r * c.r * lightYearM() *
+    (sumBright(lut, window(segs, 0.0, b0), tp, c)
+     + sumBright(lut, window(segs, b0, b1), tp, c)
+     + sumBright(lut, window(segs, b1, b2), tp, c)
+     + sumBright(lut, window(segs, b2, tp.trip.distance), tp, c))
+}
 
 -- Expected grains swept (radius >= aLo) along pieces: pi R^2 sum n_gr(>= aLo) ds.
 export pure func grainsSwept(segs: [Seg], aLo: float, c: DustCfg) -> float =

@@ -13,7 +13,7 @@ import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/medium (mirrorDragForce, accelSI)
 import pkg/sunholo/celestial/frames (unitFromAngles)
 import ./core (Refusal, World, Params, Target, Intent, IPlan, ICommit, Planned, Committed, Arrived, Plan, Event, newWorld, defaultParams, tick, position, scenarioError, planView, isLism, mediumHere)
-import ./ism (profile, holdMaxPhi, peakMedium)
+import ./ism (profile, holdMaxPhi, peakMedium, tripBright)
 import ./solar_departure (initialize, intentForLeg, legCount)
 import ./rng (Rng)
 
@@ -25,7 +25,7 @@ pure func lism(p: Params) -> Params = {p | ismModel: 1.0}
 pure func aldebaran() -> Target = { index: 2, id: "CNS5:1142", pos: at(180.97, -20.25, 20.43) }
 pure func phi0999() -> float = rapidityOfOneMinusBeta(0.001)
 
-pure func planned(w: World, t: Target, phi: float) -> World = (tick(w, {dtau: 0.0, intents: [IPlan({target: t, cruisePhi: phi, flipG: None})]})).world
+pure func planned(w: World, t: Target, phi: float) -> World = (tick(w, {dtau: 0.0, intents: [IPlan({target: t, cruisePhi: phi, flipG: None, star: None})]})).world
 pure func planOf(w: World) -> Option[Plan] = match w.journey { Planned(p) => Some(p), Committed(c) => Some(c.plan), Arrived(c) => Some(c.plan), _ => None }
 
 -- ---------- AC8: uniform keeps its bytes; lism-1 is opt-in ----------
@@ -37,7 +37,7 @@ test "AC8: defaultParams is uniform; a uniform plan carries no ISM summary" {
 
 test "under lism-1 a plan carries its route's media (LIC, hot, Hyades) and its hold limit" {
   match planOf(planned(newWorld(1, false, lism(defaultParams())), aldebaran(), phi0999())) {
-    Some(p) => (match p.ism { Some(pi) => length(pi.media) == 3 && pi.peak.name == "LIC" && pi.holdPhi > phi0999(), None => false }),
+    Some(p) => (match p.ism { Some(pi) => (match pi.media { a :: b :: c :: d :: [] => a.name == "LIC" && b.name == "hot" && c.name == "Hyades" && d.name == "hot", _ => false }) && pi.peak.name == "LIC" && pi.holdPhi > phi0999(), None => false }),
     None => false
   }
 }
@@ -85,8 +85,8 @@ test "AC10: above the route's hold limit the plan is refused m_eff_too_small wit
   let p = weakParams();
   let h = holdOf(p);
   let w = newWorld(5, false, p);
-  let over = tick(w, {dtau: 0.0, intents: [IPlan({target: aldebaran(), cruisePhi: h + 0.000001, flipG: None})]});
-  let under = tick(w, {dtau: 0.0, intents: [IPlan({target: aldebaran(), cruisePhi: h - 0.000000001, flipG: None})]});
+  let over = tick(w, {dtau: 0.0, intents: [IPlan({target: aldebaran(), cruisePhi: h + 0.000001, flipG: None, star: None})]});
+  let under = tick(w, {dtau: 0.0, intents: [IPlan({target: aldebaran(), cruisePhi: h - 0.000000001, flipG: None, star: None})]});
   rel(h, phi0999(), 0.000001)
   && refusedWith(over.refused, "m_eff_too_small")
   && (match holdEvents(over.events) { e :: _ => (match e.hold { Some(x) => rel(x.phi, h, 0.000000000001) && x.medium == "LIC", None => false }), [] => false })
@@ -155,4 +155,48 @@ test "AC11: two lism-1 flights with the same seed draw the same dust" {
   let a = flown(lism(defaultParams()));
   let b = flown(lism(defaultParams()));
   a.dust.legDrawn == b.dust.legDrawn && a.dust.largestA == b.dust.largestA && a.ledger.dragJ == b.ledger.dragJ
+}
+
+pure func grainsClose(n: int) -> bool {
+  let w0 = planned(newWorld(13, false, lism(defaultParams())), aldebaran(), phi0999());
+  match planOf(w0) {
+    Some(pl) => match pl.ism {
+      Some(pi) => {
+        let c = (tick(w0, {dtau: 0.0, intents: [ICommit(pl.id)]})).world;
+        let done = settle(fly(c, n, pl.trip.tauTotal / intToF(n)), 1000);
+        let rested = (tick(done, {dtau: 1.0, intents: []})).world;
+        rel(done.dust.legGrains, pi.grains, 0.000000001)
+        && rested.dust.legGrains == done.dust.legGrains
+        && done.dust.legGrains > 0.0
+        && (match done.journey { Arrived(_) => true, _ => false })
+      },
+      None => false
+    },
+    None => false
+  }
+}
+test "swept grains survive a compressed arrival and stay fixed at rest, in 1, 7 and 60 ticks" { grainsClose(1) && grainsClose(7) && grainsClose(60) }
+
+pure func refusedStarClean() -> bool {
+  let p = {weakParams() | stopRule: 54.0, standoffAu: 1000.0};
+  let w = newWorld(1, false, p);
+  let result = tick(w, {dtau: 0.0, intents: [IPlan({target: aldebaran(), cruisePhi: phi0999() + 0.000001, flipG: None,
+    star: Some({name: "Aldebaran", v: 0.86, teff: 3900.0})})]});
+  refusedWith(result.refused, "m_eff_too_small") && length(result.world.catStars) == 0 && result.world.lastPlanId == 0
+}
+test "a refused inferred-star plan stores neither a plan nor a celestial body" { refusedStarClean() }
+
+pure func brightAtPacing(n: int) -> float {
+  let w0 = planned(newWorld(17, false, lism(defaultParams())), aldebaran(), phi0999());
+  match planOf(w0) {
+    Some(pl) => {
+      let c = (tick(w0, {dtau: 0.0, intents: [ICommit(pl.id)]})).world;
+      let done = settle(fly(c, n, pl.trip.tauTotal / intToF(n)), 1000);
+      done.dust.legExpected
+    }, None => 0.0
+  }
+}
+test "compressed bright totals include boost and braking through arrival: 1, 7 and 60 ticks agree within quadrature tolerance" {
+  let one = brightAtPacing(1);
+  one > 0.0 && rel(brightAtPacing(7), one, 0.00001) && rel(brightAtPacing(60), one, 0.00001)
 }
