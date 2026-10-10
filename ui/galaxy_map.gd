@@ -779,7 +779,7 @@ static func format_value(f: String, raw: Variant) -> String:
 	if raw == null:
 		return "-"
 	if f == "media": # journey.plan.media: [{name, n_h_cm3, length_ly}]
-		return ", ".join((raw as Array).map(func(m): return "%s %.1f" % ["hot gas" if str(m.name) == "hot" else str(m.name), float(m.length_ly)])) + " ly" if raw is Array else "-"
+		return "\n".join((raw as Array).map(func(m): return "%s %.1f ly" % ["hot gas" if str(m.name) == "hot" else str(m.name), float(m.length_ly)])) if raw is Array else "-"
 	if f.begins_with("sci"):
 		return (sci(raw) + f.substr(3)).strip_edges()
 	return f % raw
