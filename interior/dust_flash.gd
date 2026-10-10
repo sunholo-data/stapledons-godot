@@ -35,6 +35,41 @@ const MAX_SPRITES := 64
 const LIFE_TAUS := 6.0 # a flash is dropped after 6 tau (e^-6: 0.25 % of its peak emittance)
 
 
+## One small projected quad per possible flash; the vertex shader bounds its wall
+## spot conservatively. VERTEX.z is the exact sprite index, not a physical position.
+static func sprite_mesh() -> ArrayMesh:
+	var vertices := PackedVector3Array()
+	var corners := [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(1, 1)]
+	for i in MAX_SPRITES:
+		for corner: Vector2 in corners:
+			vertices.append(Vector3(corner.x, corner.y, float(i)))
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+## Two 32-bit masks per spot. Only spots whose enclosing balls intersect can
+## contribute to the same pixel (triangle inequality); this is geometry only.
+static func overlap_masks(flashes: PackedVector4Array, count: int, radius: float, r_spot: float) -> Array:
+	var lo := PackedInt32Array()
+	var hi := PackedInt32Array()
+	lo.resize(MAX_SPRITES)
+	hi.resize(MAX_SPRITES)
+	var extent := 2.0 * r_spot + absf(radius) * 1e-6 # conservative float32 projection guard
+	var limit2 := extent * extent
+	for i in count:
+		var a := Vector3(flashes[i].x, flashes[i].y, flashes[i].z) * radius
+		for j in count:
+			var b := Vector3(flashes[j].x, flashes[j].y, flashes[j].z) * radius
+			if a.distance_squared_to(b) <= limit2:
+				if j < 32: lo[i] = lo[i] | (1 << j)
+				else: hi[i] = hi[i] | (1 << (j - 32))
+	return [lo, hi]
+
+
 ## dust.afterglowTemperature: 0 before the impact (t < 0) and for KE <= 0; NaN stays NaN.
 static func temperature(ke: float, r_spot: float, tau: float, t: float) -> float:
 	if is_nan(ke) or is_nan(t):

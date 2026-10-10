@@ -114,9 +114,7 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 	glow.extra_cull_margin = 16384.0
 	glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(glow)
-	var dquad := QuadMesh.new()
-	dquad.size = Vector2(2.0, 2.0)
-	dust_mesh.mesh = dquad
+	dust_mesh.mesh = DustFlash.sprite_mesh()
 	dust_mat.shader = DUST_SHADER
 	dust_mat.render_priority = 126
 	dust_mesh.material_override = dust_mat
@@ -257,9 +255,20 @@ func upload_dust(live: Array) -> void:
 		var d: Vector3 = live[i].dir
 		fl[i] = Vector4(d.x, d.y, d.z, live[i].e)
 		ts[i] = live[i].t
+	set_dust_flashes(fl, ts, mini(live.size(), DustFlash.MAX_SPRITES))
+
+
+## Flash geometry and radiance share one upload (also the GPU-golden seam).
+func set_dust_flashes(fl: PackedVector4Array, ts: PackedFloat32Array, count: int) -> void:
+	var r: Variant = dust_mat.get_shader_parameter("radius")
+	var spot: Variant = dust_mat.get_shader_parameter("r_spot")
+	# Unset ShaderMaterial parameters return null, even with shader defaults.
+	var masks := DustFlash.overlap_masks(fl, count, float(r) if r != null else radius_m, float(spot) if spot != null else dust.r_spot)
 	dust_mat.set_shader_parameter("flash", fl)
 	dust_mat.set_shader_parameter("flash_t", ts)
-	dust_mat.set_shader_parameter("count", mini(live.size(), DustFlash.MAX_SPRITES))
+	dust_mat.set_shader_parameter("count", count)
+	dust_mat.set_shader_parameter("neighbour_lo", masks[0])
+	dust_mat.set_shader_parameter("neighbour_hi", masks[1])
 
 
 ## The glow's pole emittance (W/m^2; < 0 = off), its pole temperature (K) and the shared exposure.
