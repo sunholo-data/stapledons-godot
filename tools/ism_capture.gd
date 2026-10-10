@@ -222,7 +222,7 @@ func _afterglow_sheet() -> void:
 			sky.upload_dust(live) # _forward re-applies the state; keep this cell's flashes for the record
 	sky.dust.r_spot = r0
 	sky.dust_auto = true
-	_save(_grid(cells, 3), "afterglow_sheet.png", "afterglow sheet (G-AG, a game approximation): rows r_s 0.25/0.5/1 m, columns tau 0.1/0.2/0.4 s; the brightest flash at t = 0.08 s, 6 deg view")
+	_save(await _labelled_grid(cells, 3, ["r = 0.25 m", "r = 0.5 m (default)", "r = 1 m"], ["tau = 0.1 s", "tau = 0.2 s (default)", "tau = 0.4 s"]), "afterglow_sheet.png", "afterglow sheet (G-AG, a game approximation): rows r_s 0.25/0.5/1 m, columns tau 0.1/0.2/0.4 s; the brightest flash at t = 0.08 s, 6 deg view")
 
 
 func _eps_sheet() -> void:
@@ -234,7 +234,7 @@ func _eps_sheet() -> void:
 			it.apply_state((main.sim as SimBridge).world)
 			cells.append(await _forward(FWD_FOV))
 	it.glow_eps_scale = 1.0
-	_save(_grid(cells, 3), "eps_sheet.png", "eps sheet: rows LIC, hot gas (0.999c); columns eps 1e-11, 1e-10 (canon), 3e-10")
+	_save(await _labelled_grid(cells, 3, ["LIC at 0.999c", "hot gas at 0.999c"], ["eps = 1e-11", "eps = 1e-10 (canon)", "eps = 3e-10"]), "eps_sheet.png", "eps sheet: rows LIC, hot gas (0.999c); columns eps 1e-11, 1e-10 (canon), 3e-10")
 
 
 func _sensitivity_sheet() -> void:
@@ -249,7 +249,7 @@ func _sensitivity_sheet() -> void:
 	bg.color = Color(0.03, 0.035, 0.05)
 	bg.size = Vector2(vp.size)
 	vp.add_child(bg)
-	var lines := ["Sensitivity (labelled assumptions; sim/tools/ism_sensitivity.ail): smallest visible (>= 5 %) and bright (>= 1x background) grain, flashes per ship second over the wall",
+	var lines := ["Sensitivity: labelled grain-size and hot-gas dust assumptions (sim/tools/ism_sensitivity.ail)", "Visible >= 5% of background; bright >= background. Rates per ship second over the wall.",
 		"%-44s %-7s %-10s %10s %10s %12s %12s" % ["variant", "medium", "speed", "a_vis um", "a_bright um", "visible /s", "bright /s"]]
 	for r: Dictionary in rows:
 		lines.append("%-44s %-7s %-10s %10.3f %10.3f %12s %12s" % [r.variant, r.medium, r.speed, float(r.a_visible_um), float(r.a_bright_um), GalaxyMap.sci(float(r.rate_visible)), GalaxyMap.sci(float(r.rate_bright))])
@@ -305,6 +305,43 @@ func _grid(cells: Array[Image], cols: int) -> Image:
 			c.convert(img.get_format())
 		img.blit_rect(c, Rect2i(0, 0, w, h), Vector2i((i % cols) * (w + 6), (i / cols) * (h + 6)))
 	return img
+
+
+## Native Godot labels beside the actual GPU captures, so the review sheet
+## remains interpretable when opened independently of its capture log.
+func _labelled_grid(cells: Array[Image], cols: int, rows: Array, headers: Array) -> Image:
+	var grid := _grid(cells, cols)
+	var vp := SubViewport.new()
+	vp.size = Vector2i(grid.get_width() + 190, grid.get_height() + 48)
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var bg := ColorRect.new()
+	bg.color = Color(0.035, 0.04, 0.055)
+	bg.size = Vector2(vp.size)
+	vp.add_child(bg)
+	var picture := TextureRect.new()
+	picture.texture = ImageTexture.create_from_image(grid)
+	picture.position = Vector2(190, 48)
+	picture.size = Vector2(grid.get_size())
+	vp.add_child(picture)
+	for i in headers.size():
+		var label := Label.new()
+		label.text = headers[i]
+		label.position = Vector2(202 + i * (cells[0].get_width() + 6), 12)
+		label.add_theme_font_size_override("font_size", 22)
+		vp.add_child(label)
+	for i in rows.size():
+		var label := Label.new()
+		label.text = rows[i]
+		label.position = Vector2(10, 60 + i * (cells[0].get_height() + 6))
+		label.add_theme_font_size_override("font_size", 18)
+		vp.add_child(label)
+	main.add_child(vp)
+	for i in 3:
+		await main.get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var result := vp.get_texture().get_image()
+	vp.queue_free()
+	return result
 
 
 func _contact() -> void:

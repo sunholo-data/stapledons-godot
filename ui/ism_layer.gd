@@ -3,7 +3,7 @@ extends RefCounted
 ## R1-ISM-DUST I6: the interstellar medium on the galaxy map (design ism-structure-and-dust.md
 ## section 7.2). A display layer (key D, D-56: an instant display control, never an intent):
 ## the Local Interstellar Cloud's surface as a wire mesh from its harmonic model, the 14
-## Redfield & Linsky clouds as cone shells (a labelled game approximation), labelled and
+## Redfield & Linsky clouds as digitised angular outlines with approximate depths, labelled and
 ## coloured by n_H on one logarithmic scale, the planned route coloured by the medium of each
 ## piece, and a legend with the sources and the assumptions.
 ##
@@ -102,6 +102,8 @@ func lic_lines() -> Array:
 
 ## A cone shell's outline (galactic ly): the cap circles at r_in and r_out and 6 generators.
 static func cloud_lines(cl: Dictionary) -> Array:
+	if not cl.get("outline", []).is_empty():
+		return _outline_lines(cl)
 	var ax: Array = cl.get("axis", [0.0, 0.0, 1.0])
 	var a := Vector3(ax[0], ax[1], ax[2]).normalized()
 	var e1 := a.cross(Vector3(0, 0, 1) if absf(a.z) < 0.9 else Vector3(1, 0, 0)).normalized()
@@ -122,6 +124,38 @@ static func cloud_lines(cl: Dictionary) -> Array:
 		var p := TAU * j / 6.0
 		var g := a * cos(half) + (e1 * cos(p) + e2 * sin(p)) * sin(half)
 		out.append(PackedVector3Array([g * r_in, g * r_out]))
+	return out
+
+
+## Draw only the boundary of the triangulated source outline. Shared triangle
+## edges are internal seams; great-circle arcs use the same unit vertices as the sim.
+static func _outline_lines(cl: Dictionary) -> Array:
+	var edges: Dictionary = {}
+	for tri: Array in cl.outline:
+		for i in 3:
+			var a: Array = tri[i]
+			var b: Array = tri[(i + 1) % 3]
+			var ka := str(a)
+			var kb := str(b)
+			var key := ka + "|" + kb if ka < kb else kb + "|" + ka
+			if edges.has(key):
+				edges[key].count += 1
+			else:
+				edges[key] = {"count": 1, "a": Vector3(a[0], a[1], a[2]), "b": Vector3(b[0], b[1], b[2])}
+	var out: Array = []
+	var rin := float(cl.get("r_in_ly", 0.0))
+	var rout := float(cl.get("r_out_ly", 0.0))
+	for edge: Dictionary in edges.values():
+		if edge.count != 1:
+			continue
+		for r: float in [rin, rout]:
+			if r <= 0.0:
+				continue
+			var arc := PackedVector3Array()
+			for j in 17:
+				arc.append((edge.a as Vector3).lerp(edge.b, j / 16.0).normalized() * r)
+			out.append(arc)
+		out.append(PackedVector3Array([edge.a * rin, edge.a * rout]))
 	return out
 
 
