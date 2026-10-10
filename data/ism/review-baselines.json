@@ -4,7 +4,169 @@
   "runtime": "AILANG 0.52.0",
   "previous_lism_baselines": [],
   "previous_baselines_note": "This is the first lism-1 implementation. No previous lism baseline was replaced. Frozen uniform protocol 2.7 and earlier replay fixtures remain unchanged and are checked separately.",
-  "review_status": "P2 review pending; these artifacts are review baselines, not evidence of acceptance by Mark.",
+  "review_status": "P2 choices accepted by Mark on 2026-10-10 (D-62); technical landing remains subject to full local/CI verification and independent evaluation.",
+  "p2_review": {
+    "accepted": true,
+    "date": "2026-10-10",
+    "decision": "D-62",
+    "answer": "Accept the current P2 choices",
+    "build_commit": "efadd4599337045ea3a0016d0f8090f263bde8af",
+    "spot_radius_m": 0.5,
+    "decay_s": 0.2,
+    "eps": 1e-10,
+    "radar_meteor_tail": false,
+    "scope": "Afterglow, sensitivity/default dust assumptions, per-medium glow, new lism baselines and Archive drafts; no technical or scientific waiver"
+  },
+  "performance": {
+    "boost": {
+      "delta_median_ms": 0.401265000000016,
+      "delta_ms": [
+        0.351590000000005,
+        0.15724500000001,
+        0.237345000000001,
+        0.48696000000001,
+        1.24294,
+        1.42551999999999,
+        0.401265000000016
+      ],
+      "lism_ms": [
+        19.15454,
+        19.06084,
+        19.13139,
+        19.25619,
+        19.98431,
+        20.13122,
+        19.037615
+      ],
+      "uniform_ms": [
+        18.80295,
+        18.903595,
+        18.894045,
+        18.76923,
+        18.74137,
+        18.7057,
+        18.63635
+      ]
+    },
+    "brake": {
+      "delta_median_ms": 0.220180000000003,
+      "delta_ms": [
+        0.496194999999993,
+        0.271654999999996,
+        0.220180000000003,
+        0.228525000000008,
+        0.176389999999998,
+        0.0337149999999937,
+        0.026744999999984
+      ],
+      "lism_ms": [
+        19.1919,
+        18.96272,
+        18.918235,
+        19.02333,
+        18.872605,
+        18.80408,
+        18.78908
+      ],
+      "uniform_ms": [
+        18.695705,
+        18.691065,
+        18.698055,
+        18.794805,
+        18.696215,
+        18.770365,
+        18.762335
+      ]
+    },
+    "method": "Warm bytecode service as shipped (I/O interop); alternate paired order; bootstrap excluded; includes bridge/JSON overhead",
+    "passes": true,
+    "plan_delta_median_ms": 3.098,
+    "plan_delta_ms": [
+      3.076,
+      2.79,
+      3.032,
+      2.38,
+      4.054,
+      5.791,
+      3.11,
+      3.765,
+      3.049,
+      3.055,
+      3.134,
+      3.767,
+      4.022,
+      2.842,
+      3.898,
+      2.115,
+      3.061,
+      3.108,
+      3.044,
+      2.433,
+      4.053,
+      3.061,
+      3.137,
+      3.098,
+      3.254,
+      2.082,
+      4.033,
+      3.061,
+      3.915,
+      3.098,
+      3.409,
+      3.094,
+      3.069,
+      3.782,
+      3.962,
+      2.965,
+      4.023,
+      3.79,
+      3.102,
+      3.035,
+      4.038,
+      2.816,
+      3.432,
+      3.067,
+      3.047,
+      3.826,
+      3.07,
+      3.726,
+      3.059,
+      2.079
+    ],
+    "plan_lism_median_ms": 6.156,
+    "plan_pairs": 50,
+    "plan_uniform_median_ms": 3.089,
+    "tick_delta_median_ms": 0.205989999999993,
+    "tick_delta_ms": [
+      0.0739350000000023,
+      0.238199999999999,
+      0.205989999999993,
+      0.244344999999999,
+      0.158839999999994,
+      0.390185000000006,
+      0.124055000000016
+    ],
+    "tick_lism_ms": [
+      19.1095,
+      19.12106,
+      19.131525,
+      18.930865,
+      18.89822,
+      19.092165,
+      18.90687
+    ],
+    "tick_pairs": 7,
+    "tick_uniform_ms": [
+      19.035565,
+      18.88286,
+      18.925535,
+      18.68652,
+      18.73938,
+      18.70198,
+      18.782815
+    ],
+    "ticks_per_pair": 200
+  },
   "generation_commands": [
     "make ism-determinism",
     "make ism-capture",
@@ -12,7 +174,7 @@
   ],
   "source_sha256": {
     "sim/core.ail": "7ebfbb1ddb7c01aee74aba558e5e9986df7bffe50bc002e786be118669dfb1e5",
-    "sim/ism.ail": "b4c45ef81470dc45c6152744eade11ab90988e394b5e38360680e593cce4d1e2",
+    "sim/ism.ail": "82147a8450d06e5823c29c01d562a69fad333501fa56969f233a2f0e8c0aaeea",
     "sim/data/ism.ail": "303ae505cdf61fd0babc40b80026aa2e7317362bcc0a37e385f9a8491afbedce",
     "data/ism/ism.json": "9124f31c9784f506b381cf799811985b6dc48547207427fd5130abf0cfe394c0",
     "interior/dust_flash.gd": "ed56812723c8275039f3940c8148d47f2f1dc4cce0d3b518fa6d065007b232f2",
@@ -24,7 +186,7 @@
   "stream": {
     "name": "protocol28_lism_seed7_plan_commit_40_realtime_ticks",
     "file": ".godot/tmp/ism/det-vm1.txt",
-    "sha256": "9ad02e610fbfea9b529fe5129fcaeecf752d264ca1b62861572fa2514cdd27ea",
+    "sha256": "7349a893b8dfeb7ceb5dfe7e762c92717d052cabd85f288173c8653fcb4cc8a4",
     "lines": 43,
     "checks": "strict VM run 1 = run 2 = interpreter, with impacts"
   },
@@ -73,7 +235,7 @@
     },
     {
       "file": "renders/ism/flight/0p999c_LIC_interior.png",
-      "sha256": "3e55bc48a98d3d27c3a8ae5e6ae584035798f674f592a95da4c281b0ed150427",
+      "sha256": "7a5fe6a3a81a2925e919091fedd137f3244786c3720dc965979e096e4a53a5cf",
       "label": "0p999c_LIC interior",
       "medium": "LIC",
       "ok": true
@@ -87,7 +249,7 @@
     },
     {
       "file": "renders/ism/flight/0p999c_Hyades_interior.png",
-      "sha256": "d93f1f07fc78019719c32ee351cb1415863bd877d7cf630f7d99616ceddc2736",
+      "sha256": "5ad1d03aab29589587a92f27254a594db778c7d4e9aa6e0a6a3d437dd62e124c",
       "label": "0p999c_Hyades interior",
       "medium": "Hyades",
       "ok": true
@@ -101,7 +263,7 @@
     },
     {
       "file": "renders/ism/flight/0p999c_hot_interior.png",
-      "sha256": "30cbfeb0a489caaaf43c1a0caab2bb2819e363b5293c0330fbb4d123c8ffd9a2",
+      "sha256": "e81825b88a42be6c275e438dfee1c3780e2e0652579d0921f9abd45b41b9e38a",
       "label": "0p999c_hot interior",
       "medium": "hot",
       "ok": true
@@ -115,7 +277,7 @@
     },
     {
       "file": "renders/ism/flight/0p9999c_LIC_interior.png",
-      "sha256": "83322853076bd368dade0d65a3adacd83fed798bbce2472a765127df5f9147d7",
+      "sha256": "208ac419270b2c03e78d13e975df7f7c4a866e04b1abe89c0fe996f0685b32ae",
       "label": "0p9999c_LIC interior",
       "medium": "LIC",
       "ok": true
@@ -129,7 +291,7 @@
     },
     {
       "file": "renders/ism/flight/0p9999c_Hyades_interior.png",
-      "sha256": "2b4a41b4d1dc4043c446d4c780ae64b97b817fd862baf8d5e3533ecde559e2b3",
+      "sha256": "57ef634f87368f720d05b006f194ea4967154f9d8baf8acfb0df7135b2cbe44c",
       "label": "0p9999c_Hyades interior",
       "medium": "Hyades",
       "ok": true
@@ -143,7 +305,7 @@
     },
     {
       "file": "renders/ism/flight/0p9999c_hot_interior.png",
-      "sha256": "7b15e66eb0a4170777d750d74656c89ded50aef6f40b9d26bf7ae7197d058b0b",
+      "sha256": "51a1877c3a846d9ff81cfdc9ec7277f9ab622bf164695d49199002437431d575",
       "label": "0p9999c_hot interior",
       "medium": "hot",
       "ok": true
@@ -171,7 +333,7 @@
     },
     {
       "file": "renders/ism/flight/0p999999c_Hyades_interior.png",
-      "sha256": "852580c776e27c710becaa2fcd042e685007044eaf266a4e1b9f2b7b04e82833",
+      "sha256": "cb4d5d06ce6eb737ac9c75b11df8a268c36b1187aa8d04728fac5e465c26c866",
       "label": "0p999999c_Hyades interior",
       "medium": "Hyades",
       "ok": true
@@ -185,7 +347,7 @@
     },
     {
       "file": "renders/ism/flight/0p999999c_hot_interior.png",
-      "sha256": "e2811efad06933601eb20f4fdb319adc99149b7e7e66bf4009877effa68f6e1d",
+      "sha256": "8892e0e72b8de7c4933c40b2b2bb57b629bdd43dbab60750d409a1bcac741683",
       "label": "0p999999c_hot interior",
       "medium": "hot",
       "ok": true
@@ -227,7 +389,7 @@
     },
     {
       "file": "renders/ism/flight/cloud10_0p9999c_synthetic_n_H_10_cloud_interior.png",
-      "sha256": "4eefa77151ad12963c2f3dc1f837f015f21c3919311c2d270d139dd8b4333edf",
+      "sha256": "654a59e7ef73268afe7e62673154957de2651689844d95a528e1f97144e32f7a",
       "label": "cloud10_0p9999c_synthetic_n_H_10_cloud interior",
       "medium": "uniform",
       "ok": true
@@ -241,7 +403,7 @@
     },
     {
       "file": "renders/ism/flash_closeup.png",
-      "sha256": "405e48af12ad44e5a94ec784e119933da764c4163c1726cf1e1fc2af458769c6",
+      "sha256": "3c65f974eadc9866ff9647756889b4667c94f0bf572815a0f782ed5a10288453",
       "label": "flash close-up",
       "medium": "LIC",
       "ok": true
@@ -256,8 +418,8 @@
     },
     {
       "file": "renders/ism/eps_sheet.png",
-      "sha256": "719f0f38cfcef142c0af7bc44820331d813504cfa32a87c4964da8a973de5e4b",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/719f0f38cfcef142c0af7bc44820331d813504cfa32a87c4964da8a973de5e4b.png",
+      "sha256": "9c070cc0c6e0ae8107ecdd01f0eebf81e5920202366e56ab500b217f7b7a1007",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/9c070cc0c6e0ae8107ecdd01f0eebf81e5920202366e56ab500b217f7b7a1007.png",
       "label": "eps sheet: rows LIC, hot gas (0.999c); columns eps 1e-11, 1e-10 (canon), 3e-10",
       "medium": "hot",
       "ok": true
@@ -279,8 +441,8 @@
     },
     {
       "file": "renders/ism/map_route.png",
-      "sha256": "9f6240c7c5a9917e2b527dc49cd92ea4f48bd99684959cd48ec97bf830d5a24a",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/9f6240c7c5a9917e2b527dc49cd92ea4f48bd99684959cd48ec97bf830d5a24a.png",
+      "sha256": "674ca03c73c3a07c5fe6058144cbfcf5b5b44f95ed0d0d16b465fd1fc6e69725",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/674ca03c73c3a07c5fe6058144cbfcf5b5b44f95ed0d0d16b465fd1fc6e69725.png",
       "label": "map: Sol -> Aldebaran coloured by medium, plan rows",
       "medium": "LIC",
       "ok": true
@@ -288,26 +450,26 @@
   ],
   "contact_sheet": {
     "file": "renders/ism/contact_sheet.png",
-    "sha256": "f0425142c6aed468c59ad4b4b891baa5afda61a34cd33858c5fe936ea7fc92b3",
-    "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/f0425142c6aed468c59ad4b4b891baa5afda61a34cd33858c5fe936ea7fc92b3.png"
+    "sha256": "84c311838822e4155024f6ec62a420f443928a509af29a151014e8b6d7a142d6",
+    "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/84c311838822e4155024f6ec62a420f443928a509af29a151014e8b6d7a142d6.png"
   },
   "hud_captures": [
     {
       "file": "renders/ism_hud/interlude_media_1280x720.png",
-      "sha256": "78cf9c1c5be65d25f78a1891862cdecfc2020a4ed542166d5e96e4691bfa6953",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/78cf9c1c5be65d25f78a1891862cdecfc2020a4ed542166d5e96e4691bfa6953.png"
+      "sha256": "5620680a07602331f97d39b10a6c1e599c8a2bebe2fdafd6e140de53327ed7d4",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/5620680a07602331f97d39b10a6c1e599c8a2bebe2fdafd6e140de53327ed7d4.png"
     },
     {
       "file": "renders/ism_hud/interlude_media_2560x1440.png",
-      "sha256": "b918c5b5007d0e14f954379867eefa33c1ec2358261d54f176c74b03314a28ab"
+      "sha256": "1f78210ed481663b53e4784909198f3fb5bf0452d6a833517480ea545a4986ba"
     },
     {
       "file": "renders/ism_hud/medium_boundary_1280x720.png",
-      "sha256": "6837924fc122bd2e570f206d9455e830eb0b55f6415f3a2e26f7daac99c82363"
+      "sha256": "3d333b9566507a28dc0e8623496492ec544e2bce153a703f91e7afc73a21039e"
     },
     {
       "file": "renders/ism_hud/medium_boundary_2560x1440.png",
-      "sha256": "8ea479ec9a3164f50d5599ecdbaba7fd2c0341271fa40400e95962bf06db358c"
+      "sha256": "1942325b7de2500ec20ae3bdcb21f09280e10e301c1878b12197490c9bec57e3"
     },
     {
       "file": "renders/ism_hud/medium_here_sky_only_1280x720.png",
@@ -319,20 +481,20 @@
     },
     {
       "file": "renders/ism_hud/tab_medium_1280x720.png",
-      "sha256": "734efe280b38d80fbf5e7508c13f46325d06fa4f8e6800c62d1f6ee34f3188f8",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/734efe280b38d80fbf5e7508c13f46325d06fa4f8e6800c62d1f6ee34f3188f8.png"
+      "sha256": "61aaa3d3bebab2ff2291c3621fee741eb72512a6ded90e57c00263aa23f0f057",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/61aaa3d3bebab2ff2291c3621fee741eb72512a6ded90e57c00263aa23f0f057.png"
     },
     {
       "file": "renders/ism_hud/tab_medium_2560x1440.png",
-      "sha256": "bfda5a2199ac921e83c781c699749cb5c221945b00b9f985ec7761f10d179e35"
+      "sha256": "caf0cf2ce368267218697c4e33d332bbf2883e2e5d5c1f90f701b87b28a689d2"
     },
     {
       "file": "renders/ism_hud/transit_1280x720.png",
-      "sha256": "9ab72bdd059ae7379810fb0e1127166d4764831619695711cc98a00243fd8f97"
+      "sha256": "671f4b8edd5d2f99eedc3054bcddf209640425505392a2b1f5d00dd1083e20a4"
     },
     {
       "file": "renders/ism_hud/transit_2560x1440.png",
-      "sha256": "b6aa4e0a1074b08c7b5eb47205b871b4b70a652e9f801de429bddaa7be9928f5"
+      "sha256": "7cab6fdba700ed47efce3217d7c4166e30f3161eda259d2a31d1d0083c240a3e"
     }
   ],
   "movies": {

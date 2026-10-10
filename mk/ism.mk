@@ -21,7 +21,7 @@ ism-oracle-check:  ## the stdlib oracle (tools/ism_dust_ref.py) passes its relat
 	@mkdir -p $(ISM_TMP); python3 tools/ism_dust_ref.py --check > $(ISM_TMP)/oracle.log; rc=$$?; tail -1 $(ISM_TMP)/oracle.log; exit $$rc
 
 ism-test:          ## AC6, AC7, AC9-AC12: the medium, the dust stream, the ledger by column, the hold limit and protocol 2.8 (also in make sim)
-	cd sim && $(AILANG) test ism_test.ail && $(AILANG) test core_ism_test.ail && $(AILANG) test protocol_ism_test.ail
+	cd sim && $(AILANG) test ism_test.ail && $(AILANG) test ism_inverse_test.ail && $(AILANG) test core_ism_test.ail && $(AILANG) test protocol_ism_test.ail
 
 ism-determinism:   ## AC11, AC13: a 2.8 lism-1 session (plan, commit, 40 real-time ticks of dust): two runs and the strict VM vs the interpreter print the same bytes
 	@mkdir -p $(ISM_TMP)

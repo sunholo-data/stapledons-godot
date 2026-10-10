@@ -322,10 +322,10 @@
         "Renders exist, no uniform or NaN frame, contact sheet; every frame opened and noted (AC18)",
         "make ism-bench within the design's budgets (AC19)"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-10-09",
-      "completed": null,
-      "notes": "36 actual frames,0uniform/NaN, plus contact/afterglow/efficiency/sensitivity/maps opened and10native HUD frames. Quiet coast CPU plan delta6.239ms/20ms,tickdelta0.469985ms/0.5ms; GPUdelta0.023ms/0.3ms. Representative boost/brake timing pending; P2 remains blocking. Exact hashes and URLs in data/ism/review-baselines.json.",
+      "completed": "2026-10-10",
+      "notes": "36 final optimized-source renders with zero uniform/NaN, contact/afterglow/efficiency/sensitivity/maps opened; 10 native HUD renders refreshed. Warm paired median CPU overhead: plan3.098ms/20,coast0.205990ms/0.5,boost0.401265ms/0.5,brake0.220180ms/0.5; GPU0.023ms/0.3. M4 Max medians, not worst-case bounds. P2 accepted D-62. Review inventory contains hashes/URLs.",
       "pr": "A"
     },
     {
@@ -343,7 +343,7 @@
       "passes": false,
       "started": null,
       "completed": null,
-      "notes": "Archive drafts and changelog prepared; finallocal/CI fullsuite, independentjudge, P2androadmaplanding remain.",
+      "notes": "P2 accepted D-62; Archive/source specification merged design PR12. Final local/CI suite and independent evaluator pending. Legacy/current Archive expectation scope corrected without changing frozen replay bytes.",
       "pr": "A"
     },
     {
@@ -367,7 +367,7 @@
   "spec_pr": 11,
   "rerecorded": [],
   "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump.",
-  "next_step": "Finish final local/CI suite, acceleration/braking CPU measurements, independent evaluation and concrete P2 dev-build/render/Archive review before merging PR A into main. PR B is deferred with scientific failures.",
+  "next_step": "Finish final local/CI suite and independent evaluation, then merge PR A into main and publish gallery/news. P2 accepted D-62; all CPU/GPU measured median budgets pass; PR B remains deferred. Address attended navigation/mouse/arrival regressions in a separate milestone.",
   "execution_2026_10_10": {
     "ailang_prompt": "v0.16.6 teaching prompt loaded from pinned runtime v0.52.0",
     "protocol": "2.8, preserving frozen 2.7 inferred-star session byte for byte on both engines",
@@ -376,12 +376,32 @@
     "headless": "Prior fullsim410/410; old make exit2 only outdated10-entry Archive smoke, since corrected11/8. Final full make test rerun running. Final coreISM16/16 strict includes short-trip1/2/7/60 pacing; final frozen uniform compatibility and lism determinism pass.",
     "benchmark_first": "Quiet warm-service coast: plan delta6.239ms/20ms; total lism9.367ms; tick delta0.469985ms/0.5ms. Boost/brake measurements pending after correcting high-acceleration short-trip pacing. Shipped I/O interop, pure strict core checked separately.",
     "open_gates": [
-      "AC19: representative boost/braking CPU measurement",
-      "P2: Mark render/dev-build/Archive review",
-      "local and CI full-suite final revision",
-      "PR B: LLCC all-tracer discrepancy and independent anchors"
-    ]
+      "final local and matching CI full suite",
+      "independent evaluation",
+      "PR B deferred: scientific anchors fail"
+    ],
+    "numerical_solver": "Same adopted log-linear LUT inversion with guarded original60-step fallback; independent4183case oraclemaxrelative2.97e-14,0fail; strict42/42,ordinaryinverse7/7; uniformcompatibility and VM/interpreter lism determinism pass.",
+    "benchmark_final": {
+      "plan_delta_ms": 3.098,
+      "coast_delta_ms": 0.20599,
+      "boost_delta_ms": 0.401265,
+      "brake_delta_ms": 0.22018,
+      "gpu_delta_ms": 0.023,
+      "scope": "Warm paired medians on M4 Max; not worst-case latency bound"
+    }
   },
   "rerecorded_note": "No previous lism-1 baseline exists. No uniform fixture was rerecorded. New named lism stream, 36 renders, contact sheet and 10 native HUD captures are listed with SHA256 and review URLs in data/ism/review-baselines.json.",
-  "new_lism_baselines": "data/ism/review-baselines.json"
+  "new_lism_baselines": "data/ism/review-baselines.json",
+  "p2_review": {
+    "accepted": true,
+    "date": "2026-10-10",
+    "decision": "D-62",
+    "answer": "Accept the current P2 choices",
+    "build_commit": "efadd4599337045ea3a0016d0f8090f263bde8af",
+    "spot_radius_m": 0.5,
+    "decay_s": 0.2,
+    "eps": 1e-10,
+    "radar_meteor_tail": false,
+    "scope": "Afterglow, sensitivity/default dust assumptions, per-medium glow, new lism baselines and Archive drafts; no technical or scientific waiver"
+  }
 }

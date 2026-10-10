@@ -104,5 +104,7 @@ export pure func codexReport(text: string, expected: string) -> string {
   concat(["codex_ids=", join(",", c.seen), "\ncodex_hints=", join(",", c.hints), "\ncodex-unlocks=", verdict(valid && length(want) > 0 && c.ok && c.seen == ids && c.hints == hints)])
 }
 export func playthroughTime(path: string) -> string ! {FS} = timeReport(readFile(path))
+-- Current protocol sessions include the weather entry; legacy uniform replays do not.
+export func codexUnlocksLegacy(path: string) -> string ! {FS} = codexReport(readFile(path), readFile("tests/expected_unlocks.legacy-2.7.json"))
 export func codexUnlocks(path: string) -> string ! {FS} = codexReport(readFile(path), readFile("tests/expected_unlocks.json"))
 pure func all(f: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: rest => f(x) && all(f, rest) }
