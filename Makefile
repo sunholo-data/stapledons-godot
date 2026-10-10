@@ -26,7 +26,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ## everything that runs without a GPU window
+test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -298,6 +298,7 @@ golden: lens-assets ## GPU shader vs CPU reference star positions (needs a GPU w
 	  grep -q '^ok    GR7 inside the shadow' $(SCRATCH)/golden.log && grep -q '^ok    GR8 colour' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    GR9 weak-field' $(SCRATCH)/golden.log)" = 2 && test "$$(grep -c '^ok    GR10 lens_fwd mirror' $(SCRATCH)/golden.log)" = 5 && \
 	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && test "$$(grep -c '^ok    GR12 mutant' $(SCRATCH)/golden.log)" = 3 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
 	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3)"; exit 1; }
 
@@ -364,7 +365,9 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 
 export-macos: runtime sky-bundle areas-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
+	@git diff --quiet && git diff --cached --quiet || { echo 'export-macos: commit tracked source changes before building a review artifact'; exit 1; }
 	@git describe --tags --always --dirty > runtime/build_version.txt # bundled (runtime/*): the audit's "build" field
+	@git rev-parse HEAD > runtime/build_commit.txt
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
 
@@ -381,12 +384,14 @@ export-smoke:      ## run the exported .app's capture with NO ailang on PATH; mu
 DEV_BUCKET ?= stapledons-voyage-dev-builds
 
 publish-dev: export-macos export-smoke   ## upload this build to the private dev bucket (needs gcloud auth); install with tools/install_review_build.sh --dev
-	@ver=$$(git describe --tags --always --dirty); zip="$(SCRATCH)/StapledonsVoyage-$$ver-macos.zip"; \
+	@ver=$$(cat runtime/build_version.txt); commit=$$(cat runtime/build_commit.txt); \
+	git diff --quiet && git diff --cached --quiet && test "$$commit" = "$$(git rev-parse HEAD)" && test "$$ver" = "$$(git describe --tags --always --dirty)" || { echo 'publish-dev: checkout changed since export; rebuild before publishing'; exit 1; }; \
+	zip="$(SCRATCH)/StapledonsVoyage-$$ver-macos.zip"; \
 	rm -f "$$zip"; (cd build/macos && ditto -c -k --keepParent "Stapledons Voyage.app" "$(CURDIR)/$$zip"); \
 	sum=$$(shasum -a 256 "$$zip" | cut -d' ' -f1); name=$$(basename "$$zip"); \
 	gcloud storage cp "$$zip" "gs://$(DEV_BUCKET)/macos/builds/$$name" && \
 	printf '%s  %s\n' "$$sum" "$$name" | gcloud storage cp - "gs://$(DEV_BUCKET)/macos/builds/$$name.sha256" && \
-	printf '{"version":"%s","zip":"macos/builds/%s","sha256":"%s","commit":"%s","built":"%s"}\n' "$$ver" "$$name" "$$sum" "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+	printf '{"version":"%s","zip":"macos/builds/%s","sha256":"%s","commit":"%s","built":"%s"}\n' "$$ver" "$$name" "$$sum" "$$commit" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 	  | gcloud storage cp --cache-control="no-cache" - "gs://$(DEV_BUCKET)/macos/latest.json" && \
 	echo "publish-dev: $$name ($$sum) -> gs://$(DEV_BUCKET)/macos/latest.json"
 
@@ -463,8 +468,8 @@ starmap-truth-audit: ## AC4: every truth disagreement over max(3 sigma, 1%) has 
 	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry auditMain --args-json '{"truth":"$(TRUTH)","doc":"design_docs/implemented/r1/starmap-truth-audit.md"}' sim/tools/bright_main.ail
 
 starmap-consistency: ## AC3 (headless): every stars.json destination in the sky stack once, at the navigation position (<= 1e-9 ly); pins are no-ops (TIER=medium|large)
-	@mkdir -p $(SCRATCH); $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) $(CONSISTENCY_ARGS) > $(SCRATCH)/starmap-consistency.log 2>&1; rc=$$?; \
-	  grep -E '^(starmap-consistency|  )' $(SCRATCH)/starmap-consistency.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/starmap-consistency.log && grep -q '^starmap-consistency: PASS$$' $(SCRATCH)/starmap-consistency.log
+	@mkdir -p $(SCRATCH); log=$(SCRATCH)/starmap-consistency-$(if $(filter command line environment,$(origin TIER)),$(TIER),medium)-$$$$.log; $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) $(CONSISTENCY_ARGS) > "$$log" 2>&1; rc=$$?; \
+	  grep -E '^(starmap-consistency|  )' "$$log"; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' "$$log" && grep -q '^starmap-consistency: PASS$$' "$$log"
 
 # The large tier is a gate too (eval R1-STARMAP-LARGE round 1): make test fetches it (starmap-assets, pinned)
 # and checks the large stack; a missing or short file FAILS here (the game's runtime fallback is only a warning).
@@ -722,6 +727,7 @@ include mk/ai.mk
 include mk/site.mk
 include mk/m5.mk
 include mk/m45.mk
+include mk/ism.mk
 
 # Isolated seven-tier perspective/lift smoke test. Does not replace production rendering.
 run-ship-demo:
@@ -1031,3 +1037,13 @@ codex-test:        ## M4.7 the Archive codex: lore loader + manifest refusal, Ma
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_codex.gd > $(SCRATCH)/codex-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/codex-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/codex-test.log && grep -q '^codex: [0-9]* passed, 0 failures$$' $(SCRATCH)/codex-test.log || { echo "codex-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/codex-test.log)"; exit 1; }
+
+# D-63 attended navigation recovery: genuine body clearance, stable controls and scoped parity.
+.PHONY: free-nav-recovery-test
+ship-demo-ci: free-nav-recovery-test
+free-nav-recovery-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_free_nav_recovery.gd > $(SCRATCH)/free-nav-recovery.log 2>&1; rc=$$?; grep -E '^(FAIL|free-nav-recovery)' $(SCRATCH)/free-nav-recovery.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/free-nav-recovery.log && grep -q '^free-nav-recovery: [0-9]* passed, 0 failures$$' $(SCRATCH)/free-nav-recovery.log
+	@$(AILANG) test --strict-bytecode sim/free_nav_test.ail
+	@$(AILANG) run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/free_nav_recovery.ndjson > $(SCRATCH)/free-nav-recovery.vm.ndjson
+	@$(AILANG) run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/free_nav_recovery.ndjson > $(SCRATCH)/free-nav-recovery.interp.ndjson
+	@cmp $(SCRATCH)/free-nav-recovery.vm.ndjson $(SCRATCH)/free-nav-recovery.interp.ndjson

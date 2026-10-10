@@ -1,0 +1,10 @@
+# Free-navigation recovery: focused implementation evidence
+
+Source: `fix/free-nav-arrival-20261010`, based on `4626008`. Runtime: pinned AILANG v0.52.0 / prompt v0.16.6. User's attended defect request is this milestone's approval.
+
+- Pure regressions first failed 2/4 on the old source: no explicit playable free-nav start and no safe Sun/Earth/Mars plans. With the new scenario, ordinary and strict tests pass 4/4. New starts are validated on both protocol 2.7 and 2.8; older clients receive `bad_game`; existing `sol` still begins at the origin.
+- Real bridge/map/renderer checks pass 24/24: fixed Solar parent/moon order, retained button identities and ID bindings, refreshed distances, legitimate zero velocity, Sun/Earth/Mars plans, Earth arrival, exactly 60 seconds of live idle with evolving ephemeris, Earth outside its surface and rendered near 30 degrees, subsequent Mars plan, paused planning, automatic resume on commit and committed presentation pause.
+- Actual maps default to visible ISM, with synchronized checkbox/D/legend and explicit Local ISM framing at 30 ly. These display actions change no navigation intent. Standalone `IsmLayer` keeps its caller-controlled default: existing checks pass 14/14, including all 15 model surfaces drawn.
+- The new six-request NDJSON fixture is byte-identical on VM/interpreter. All replies are valid and unrefused; the Earth leg arrives at rest and Mars replans successfully. Pure tests run strictly; the existing service loop's `readLine` uses the normal I/O bridge.
+
+Stops remain inertial geometric clearance. Retaining Earth for a real minute is not indefinite orbital attachment: no hidden ephemeris-following translation, velocity or energy change was added. Host integration must apply the new world immediately, label Earth standoff accurately, wire presentation pause and test mouse capture lifecycle. Root owns those files and the final full-suite/evaluator checks. The optional native map capture needs desktop access; it was stopped without claiming visual evidence. Root will perform native review.

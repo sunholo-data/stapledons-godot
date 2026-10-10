@@ -29,7 +29,7 @@ const KEYS := [
 	{"key": "KEY_ENTER", "via": "match", "kind": "display", "group": "Display", "help": "Enter continue an interlude or dismiss the arrival card"},
 	{"key": "KEY_M", "via": "match", "kind": "display", "group": "Display", "help": "M star chart (read only; plot and commit at the navigation station)"},
 	{"key": "KEY_I", "via": "identify", "kind": "display", "group": "Display", "help": "hold I and click a star or body: what it is"},
-	{"key": "KEY_P", "via": "match", "kind": "pacing", "group": "Pacing", "help": "P pause or resume the guided voyage"},
+	{"key": "KEY_P", "via": "match", "kind": "pacing", "group": "Pacing", "help": "P pause or resume time (course unchanged)"},
 	{"key": "KEY_N", "via": "match", "kind": "pacing", "group": "Pacing", "help": "N skip a guided-voyage stop's dwell"},
 	{"key": "KEY_K", "via": "match", "kind": "pacing", "group": "Pacing", "help": "K skip to the next stage (at Sgr A*: finish the approach)"},
 	{"key": "KEY_W", "via": "poll", "kind": "move", "group": "Move", "help": "WASD walk"},
@@ -45,7 +45,7 @@ const KEYS := [
 
 ## Pointer and gesture controls (instant).
 const POINTER := [
-	{"input": "option-drag / right-drag", "kind": "camera", "group": "Camera", "help": "Option + drag or right-drag to look"},
+	{"input": "mouse look", "kind": "camera", "group": "Camera", "help": "Mouse to look · Tab for pointer and buttons"},
 	{"input": "scroll / pinch", "kind": "camera", "group": "Camera", "help": "scroll or pinch to zoom"},
 	{"input": "click a console", "kind": "move", "group": "Move", "help": "click a console to walk there (E or click uses it in reach)"},
 	{"input": "cmd/ctrl +/-/0", "kind": "display", "group": "Display", "help": "UI size"},

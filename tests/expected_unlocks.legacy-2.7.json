@@ -1,0 +1,39 @@
+{
+  "comment": "Frozen protocol 2.7 uniform minimum-path Archive expectation. Current 2.8 unlocks use tests/expected_unlocks.json; frozen replay bytes are preserved.",
+  "scenario": "alpha_cen_0.99c",
+  "unlocks": [
+    {
+      "id": "archive.bubble",
+      "hint": "always"
+    },
+    {
+      "id": "archive.one-g",
+      "hint": "always"
+    },
+    {
+      "id": "archive.nothing-crosses",
+      "hint": "always"
+    },
+    {
+      "id": "archive.two-clocks",
+      "hint": "first_commit"
+    },
+    {
+      "id": "archive.photon-drive",
+      "hint": "first_boost"
+    },
+    {
+      "id": "archive.ism-glow",
+      "hint": "cruise_above_0.9c"
+    },
+    {
+      "id": "archive.starbow",
+      "hint": "cruise_above_0.9c"
+    }
+  ],
+  "not_unlocked": [
+    "archive.cmb-forward",
+    "archive.tides",
+    "archive.shadow-ring"
+  ]
+}

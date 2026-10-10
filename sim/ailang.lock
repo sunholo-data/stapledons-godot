@@ -1,11 +1,11 @@
 {
   "ailang_version": "v0.52.0",
-  "generated_at": "2026-10-09T06:57:26.509103Z",
+  "generated_at": "2026-10-10T17:49:17.058463Z",
   "generator": "ailang lock v0.52.0",
   "packages": [
     {
       "ailang": ">=0.52.0",
-      "content_hash": "sha256:dd562595fcc79e03d718efec3bf89e1cd9aebed8e9ad3df7d7dff8d2ffa44493",
+      "content_hash": "sha256:57769dd8547c2ffb3dc4e6380bd3106ace22c4f11e10033054c2adef46d40860",
       "effects": [
         "IO"
       ],
@@ -13,19 +13,20 @@
         "sunholo/celestial/ephemeris",
         "sunholo/celestial/frames",
         "sunholo/celestial/gravity",
+        "sunholo/celestial/ism",
         "sunholo/celestial/kepler",
         "sunholo/celestial/lighttime",
         "sunholo/celestial/reflect",
         "sunholo/celestial/rings"
       ],
-      "interface_hash": "sha256:059817dc4966efd61dcbdf5d6184ebbaf3e03b471b9df51ac22729eaa7e5ebf5",
+      "interface_hash": "sha256:fa91ecdb88c32ad5d88956945c5647ab7a0c7123a8bada9f9783209fea8727e5",
       "name": "sunholo/celestial",
       "source": "registry",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "ailang": ">=0.45.0",
-      "content_hash": "sha256:f32a7edd1dc7716465551292dc01f3c751da5f3a977d9a95aeb2b2e0fb2fbbe8",
+      "content_hash": "sha256:6c95490ba9100ea4772d245fda4eab3d7a8a3a753c127dd39b0d3a1c64fd5ba3",
       "effects": [
         "IO"
       ],
@@ -33,6 +34,7 @@
         "sunholo/relativity/blackbody",
         "sunholo/relativity/blackbody_photometry",
         "sunholo/relativity/blackbody_photometry_table",
+        "sunholo/relativity/dust",
         "sunholo/relativity/geodesic",
         "sunholo/relativity/hyper",
         "sunholo/relativity/journey",
@@ -43,10 +45,10 @@
         "sunholo/relativity/photometry_table",
         "sunholo/relativity/schwarzschild"
       ],
-      "interface_hash": "sha256:78cfccf7bc0cf9537c0ad9b0a398f17d2689797a4e476037c330c49597edd0c3",
+      "interface_hash": "sha256:f9f7bcac75db5bfb773e049b4d31869a60741628b26abacdefb309a8c27ac6c5",
       "name": "sunholo/relativity",
       "source": "registry",
-      "version": "0.11.0"
+      "version": "0.12.0"
     }
   ],
   "schema": "ailang.lock/v1",

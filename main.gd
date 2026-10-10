@@ -188,13 +188,13 @@ func _ready() -> void:
 		return
 	# Captures and goldens keep the 1:1 unstretched window (their PNGs and pixel
 	# maths are pinned); interactive runs scale the UI for HiDPI (UiScale).
-	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5") or args.has("planet-smoke") or args.has("glow-eps-sheet")
+	_fixed_scale = args.has("capture") or args.has("map-capture") or args.has("golden") or args.has("bench") or args.has("movie") or args.has("interior-capture") or args.has("golden-m5") or args.has("capture-m5") or args.has("planet-smoke") or args.has("glow-eps-sheet") or args.has("ism-capture")
 	UiScale.configure(get_window(), _fixed_scale)
 	# Explicit --interior keeps the original painted reference/capture mode;
 	# --map and --voyage remain dedicated developer modes.
 	if args.is_empty() or (args.size() == 1 and args.has("record")):
 		args["interior"] = ""
-	if args.has("interior") or args.has("interior-capture") or args.has("glow-eps-sheet") or args.has("m4-smoke"):
+	if args.has("interior") or args.has("interior-capture") or args.has("glow-eps-sheet") or args.has("ism-capture") or args.has("m4-smoke"):
 		await _run_interior(args)
 		return
 	if args.has("transit"):
@@ -276,7 +276,7 @@ func _run_transit(args: Dictionary) -> void:
 ## galaxy_map_arrived.png, adding their readouts to the panel dump.
 func _run_map(args: Dictionary) -> void:
 	var capture: bool = args.has("map-capture") or args.has("movie")
-	if not capture:sim.want_minor=SimBridge.STOPS_MINOR
+	if not capture:sim.want_minor=SimBridge.ISM_MINOR # R1-ISM-DUST: new games fly lism-1 (D-61)
 	if capture:
 		get_window().size = Vector2i(1600, 900)
 	sim.record_path = args.get("record", "")
@@ -354,7 +354,7 @@ func _run_map(args: Dictionary) -> void:
 ## galaxy map is the navigation console's screen: built here, attached to the same sim, and
 ## shown by the interior on demand. --interior-capture and --m4-smoke drive it by script.
 func _run_interior(args: Dictionary) -> void:
-	var capture := args.has("interior-capture") or args.has("glow-eps-sheet")
+	var capture := args.has("interior-capture") or args.has("glow-eps-sheet") or args.has("ism-capture")
 	var smoke := args.has("m4-smoke")
 	_map_mode = true # the interior and its map own the clock; no voyage ticks
 	if capture:
@@ -370,7 +370,7 @@ func _run_interior(args: Dictionary) -> void:
 		get_tree().quit(2)
 		return
 	sim.record_path = args.get("record", "")
-	sim.want_minor = 2 if capture or smoke else SimBridge.STOPS_MINOR
+	sim.want_minor = SimBridge.ISM_MINOR if args.has("ism-capture") else (2 if capture or smoke else SimBridge.ISM_MINOR) # R1-ISM-DUST: lism-1 (D-61)
 	var ai := AiSession.new(args)
 	add_child(ai)
 	sim.archive_rows = LoreLoader.archive_rows(LoreLoader.load_entries()["entries"]) # M4.7: the codex table; the sim decides every unlock
@@ -406,7 +406,9 @@ func _run_interior(args: Dictionary) -> void:
 		review_button.position = Vector2(18, 110); review_layer.add_child(review_button)
 		review_button.pressed.connect(_open_ship_demo_review)
 	if capture: # loaded by path: tools/ is excluded from exports
-		if args.has("glow-eps-sheet"):
+		if args.has("ism-capture"):
+			get_tree().quit(await load("res://tools/ism_capture.gd").new().run(self, it, map, _out_dir(args["ism-capture"])))
+		elif args.has("glow-eps-sheet"):
 			get_tree().quit(await load("res://tools/glow_eps_sheet.gd").new().run(self, it, map, _out_dir(args["glow-eps-sheet"])))
 		else:
 			get_tree().quit(await load("res://tools/interior_capture.gd").new().run(self, it, map, _out_dir(args["interior-capture"])))
@@ -868,6 +870,7 @@ func _run_golden() -> void:
 	failures += await load("res://tools/exposure_golden.gd").new().run(self)
 	failures += await load("res://tools/cmb_golden.gd").new().run(self)
 	failures += await load("res://tools/interior_golden.gd").new().run(self) # M4.2: G-M4-1..4
+	failures += await load("res://tools/ism_golden.gd").new().run(self) # R1-ISM-DUST: G-ISM-1..3
 	failures += await load("res://tools/m5_golden.gd").new().run(self)
 	failures += await load("res://tools/gr_golden.gd").new().run(self) # M3.5: GR1-GR9
 	print("golden: %d failures" % failures)

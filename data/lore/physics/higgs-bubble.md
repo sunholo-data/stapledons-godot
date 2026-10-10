@@ -38,7 +38,7 @@ Inputs (scenario and canon values that the numbers below are computed from):
 |---|---|---|---|
 | HB-1 | Bubble radius R; also the tidal lever arm L (centre to wall) | 100 | m |
 | HB-2 | Projected area A = πR² | 31,416 | m² |
-| HB-3 | ISM proton density n (Local Bubble; constant in R1) | 0.1 | cm⁻³ |
+| HB-3 | ISM proton density n of the `uniform` scenario model (every HB value below uses it unless stated; `lism-1`, the default for new games since D-61, takes n from [ism-structure.md](ism-structure.md)) | 0.1 | cm⁻³ |
 | HB-4 | Distance Sol → α Centauri, d | 4.37 | ly |
 | HB-5 | CMB temperature T_CMB (2.7255 K would raise every CMB temperature by 0.02%) | 2.725 | K |
 | HB-6 | Interior gravity held by the generator | 1 | g |
@@ -221,8 +221,48 @@ for the sphere, which is canon (design-decisions 2026-09-28).
 | HB-57 | Galaxy-frame energy carried by the plume, α Cen at 0.99c | 9.62 × 10¹⁷ | J |
 | HB-58 | Galaxy-frame energy carried by the plume, α Cen at 0.999999c | 9.76 × 10²¹ | J |
 
-**R1 scope:** the simulation computes E_drag and the glow (§6) from the
-constant density n, as a *readout*. An enforced energy budget comes later.
+**R1 scope:** the simulation computes E_drag and the glow (§6) as a
+*readout*. An enforced energy budget comes later.
+
+**A structured medium (D-60, D-61).** Under `lism-1` the density varies along
+the route ([ism-structure.md](ism-structure.md)), and n everywhere above is
+the **mass-equivalent density** n = n_H (μ_H + δ) (IS-24, IS-22): the wall
+reflects every massive particle, dust included. The drag energy of a flown
+piece is then a **column**:
+
+  **E_drag = N sinh φ m_p c² A**, with N = ∫ n ds over the piece (m⁻²).
+
+For a uniform medium N = n d and this is exactly E_drag above (a tested
+identity), so the ledger still closes at arrival.
+
+**The drive-hold limit.** Holding a cruise speed needs thrust equal to the
+drag, and the photon drive's force is capped at m_eff a. The highest rapidity
+whose drag at density n the drive can still overcome is
+
+  **φ_hold = asinh √(m_eff a / (n m_p c² A))**.
+
+A plan uses the **peak** n over its whole cruise (not only the braking
+stretch: in a denser patch the ship could neither hold its speed nor, on the
+far side, brake). A plan above φ_hold is refused (`m_eff_too_small`) and the
+plan shows the limit; it is never silently capped (D-61). Under `lism-1` the
+scenario-level check of the cap uses the hot-gas floor, and each plan is
+checked against its own route. Canon drive m_eff = 1 kg, a = 7.5 × 10⁵ g;
+guided drive m_eff = 10 kg, a = 3 × 10⁶ g (`GUIDED_DRIVE`).
+
+| ID | Quantity | Value | Unit |
+|---|---|---|---|
+| HB-130 | γ_hold, canon drive, hot gas (n = IS-26) | 16,858 | — |
+| HB-131 | γ_hold, canon drive, warm clouds (n = IS-25) | 2,117 | — |
+| HB-132 | γ_hold, canon drive, a cloud of n_H 10 cm⁻³ (δ = 0.010) | 332 | — |
+| HB-133 | γ_hold, canon drive, n_H 100 cm⁻³ | 105 | — |
+| HB-134 | γ_hold, canon drive, the LLCC (n_H 3,000 cm⁻³) | 19.2 | — |
+| HB-135 | γ_hold, guided drive, warm clouds | 13,387 | — |
+| HB-136 | γ_hold, guided drive, hot gas | 1.066 × 10⁵ | — |
+| HB-137 | γ_hold, canon drive, at n = 4,200 cm⁻³ (the package check) | 19.28 | — |
+
+So the slider's top (0.999999c, γ 707) holds through the warm clouds and the
+hot gas, and is refused through any cloud denser than about 2 cm⁻³. The
+guided voyage's fastest legs peak near γ 7,500, under HB-135.
 
 ## 6. The glow and the plume
 
@@ -371,6 +411,86 @@ Glow spectrum and brightness (D-29 and its follow-up, D-30). n = 0.1 cm⁻³, f_
 
 HB-59 is also why no proton may cross: at γ 707 the ISM would arrive inside as
 a 660 GeV proton beam. The old "trace hydrogen crosses" canon is removed.
+
+## 6b. Dust-grain impacts and the wall afterglow (D-60, D-61)
+
+**The grains.** Dust is part of the mass flux (δ in n, §5), and its biggest
+grains are seen one by one. The population is a broken power law in radius
+normalised to the medium's dust mass density ρ_d = δ n_H m_H: dn/da ∝ a⁻³·⁵
+from 5 nm to 0.25 µm (Mathis, Rumpl & Nordsieck 1977), then ∝ a⁻q up to a_max
+(the big-grain tail Ulysses measured; Krüger et al. 2015, Landgraf et al.
+2000), continuous at 0.25 µm. a_max is the radius of Krüger's
+detector-limited upper mass, 10⁻¹¹ kg, at their grain density (HB-113): a
+scenario parameter, not a physical edge. q is fitted once: it is the slope
+that maximises the flux of ≥ 10⁻¹³ kg grains at 26 km/s under the mass
+constraint, the closest the shape gets to Krüger's measured "order of
+10⁻⁷ m⁻² s⁻¹" (HB-120 is 0.55 of it). The same shape is assumed in every
+medium (labelled: only the LIC is measured in situ). The disputed radar
+tail to about 40 µm (Baggaley 2000) is left out (D-61).
+
+**Count and energy.** The grains swept are A ∫ n_gr ds: the number of
+impacts on a route does not depend on speed; their energy and their rate per
+ship second do (rate = n_gr sinh φ c A). A grain of mass m arrives with
+kinetic energy (γ − 1) m c² = 2 sinh²(φ/2) m c², is reflected like every
+massive particle (D-11), and an ε fraction (HB-111) becomes light, as for the
+gas.
+
+**The wall afterglow (game approximation G-AG, labelled).** Applied
+literally, the glow's own rule makes a grain impact a femtosecond hot spot the
+size of the grain at about 10⁸ K: X-rays and no visible light. G-AG: the
+ε fraction of a grain's kinetic energy is released as light from a disc of
+radius r_s around the impact point, decaying as e^(−t/τ). Each instant the
+disc is a greybody of emissivity ε, as the glow is (D-30), so ε cancels in
+its temperature:
+
+  **T(t) = (KE / (σ π r_s² τ))^¼ e^(−t/4τ)**,
+  **E_in(t) = ε f_in KE e^(−t/τ) / (π r_s² τ)**,
+
+and the total light is ε f_in KE, set by physics and the canon ε; r_s and τ
+only shape it (picked from a comparison sheet, D-61). Luminance is
+(E_in/π) η(T), through the same exposure as the glow. A flash is drawn when
+its peak luminance is at least 5 % of the local background (the glow there
+plus the dark sky); "bright" is at least the background.
+
+Grains (LIC unless stated; R = 100 m; ε = 10⁻¹⁰; f_in = ½; r_s = 0.5 m;
+τ = 0.2 s; visibility thresholds against the forward pole's background, rates over the whole wall). Oracle: `tools/ism_dust_ref.py` (stapledons-godot).
+
+| ID | Quantity | Value | Unit |
+|---|---|---|---|
+| HB-113 | Grain bulk density [cite: Krüger et al. 2015 §6, astronomical silicates] | 3,300 | kg m⁻³ |
+| HB-114 | Smallest grain radius a_min (MRN) | 5 | nm |
+| HB-115 | Break radius a_b (MRN upper end) | 0.25 | µm |
+| HB-116 | Largest grain radius a_max (10⁻¹¹ kg at HB-113) | 8.98 | µm |
+| HB-117 | Tail slope q | 3.1 | — |
+| HB-118 | Share of the dust mass in the tail | 0.940 | — |
+| HB-119 | Wall afterglow spot radius r_s (default; G-AG) | 0.5 | m |
+| HB-120 | Flux of ≥ 10⁻¹³ kg grains at 26 km/s in the LIC (fitted: q maximises it; not an independent check) | 5.52 × 10⁻⁸ | m⁻² s⁻¹ |
+| HB-121 | Grains of ≥ 1 µm swept per light year of LIC | 2.60 × 10⁹ | — |
+| HB-122 | Grains of ≥ 0.1 µm swept per light year of LIC | 4.09 × 10¹¹ | — |
+| HB-123 | Grains of ≥ 3 µm swept per light year of LIC | 2.35 × 10⁸ | — |
+| HB-124 | Kinetic energy of a 1 µm grain at 0.999c (a function check at 2,500 kg m⁻³; the population uses HB-113's 3,300) | 2.011 × 10⁴ | J |
+| HB-125 | The same (2,500 kg m⁻³) at 0.999999c | 6.646 × 10⁵ | J |
+| HB-126 | Impacts of ≥ 1 µm grains per ship second, LIC, 0.999c | 1,842 | s⁻¹ |
+| HB-127 | The same, hot gas, 0.999c | 29.0 | s⁻¹ |
+| HB-128 | The same, LIC, 0.999999c | 5.83 × 10⁴ | s⁻¹ |
+| HB-129 | The same, hot gas, 0.999999c | 919 | s⁻¹ |
+| HB-138 | Wall afterglow decay time τ (default; G-AG) | 0.2 | s |
+| HB-139 | Peak afterglow temperature of a 5 µm grain at 0.999c | 4,393 | K |
+| HB-140 | Its peak inward emittance | 1.056 × 10⁻³ | W/m² |
+| HB-141 | Its peak luminance | 0.0225 | cd/m² |
+| HB-142 | Smallest visible grain (5 % of the background), hot gas, 0.999c | 1.38 | µm |
+| HB-143 | Smallest visible grain, LIC, 0.999c | 2.26 | µm |
+| HB-144 | Smallest visible grain, hot gas, 0.999999c | 1.29 | µm |
+| HB-145 | Smallest visible grain, LIC, 0.999999c | 2.58 | µm |
+| HB-146 | Visible flashes per ship second over the wall, LIC, 0.999c | 318 | s⁻¹ |
+| HB-147 | Bright flashes (≥ the background) per ship second, LIC, 0.999c | 112 | s⁻¹ |
+| HB-148 | Bright flashes per ship second, hot gas, 0.999999c | 97.1 | s⁻¹ |
+| HB-149 | Bright flashes per ship second, LIC, 0.999999c (the glow swallows them) | 0 | s⁻¹ |
+
+Without the measured big-grain tail no flash is ever visible: the MRN grains
+stop at 0.25 µm. The LIC's background (the glow) is brighter than the hot
+gas's, so a cloud at the top speed is a white glow with a faint glitter
+(D-59), while the hot bubble still shows bright flashes.
 
 ## 7. Light and neutrinos cross: what the crew sees
 
@@ -523,6 +643,14 @@ it.
 | `medium.glowRadianceAt(n, phi, eps, fIn, cosθ)` (0.8.0) | E/π | HB-104, HB-106 |
 | `medium.glowEfficacyAt(n, phi, cosθ)` (0.8.0), `blackbody.luminousEfficacy(T)` | π K_m ∫B_λ ȳ dλ / σT⁴ | HB-100, HB-101 |
 | `medium.glowLuminanceAt(n, phi, eps, fIn, cosθ)` (0.8.0) | (E/π) η(T) | HB-104 … HB-108, HB-112 |
+| `medium.massEquivalentDensity(nH, muH, deltaDust)` (0.12.0) | n_H (μ_H + δ) | IS-25, IS-26 |
+| `medium.columnDragEnergy(nCol, phi, r)` (0.12.0) | N sinh φ m_p c² πR² | equals `cruiseDragEnergy` for N = n d |
+| `medium.tripEnergyColumn(p, mEff, nColCoast, r)` (0.12.0) | as `tripEnergy`, drag by column | equals `tripEnergy` for a uniform medium |
+| `medium.driveHoldMaxPhi(mEff, a, n, r)` (0.12.0) | asinh √(m_eff a / (n m_p c² πR²)) | HB-130 … HB-137 |
+| `dust.grainKinetic(m, phi)` (0.12.0) | 2 sinh²(φ/2) m c² | HB-124, HB-125 |
+| `dust.sweptCount(nGrainCol, r)`, `dust.grainRate(nGrain, phi, r)` (0.12.0) | πR² N_gr; n_gr sinh φ c πR² | HB-121 … HB-123, HB-126 … HB-129 |
+| `dust.afterglowTemperature`, `afterglowEmittance`, `afterglowLuminance` (0.12.0) | G-AG (§6b) | HB-139 … HB-141 |
+| `dust.visibleRadius(aMin, aMax, rhoGrain, phi, eps, fIn, rSpot, tau, bg, contrast)` (0.12.0) | bisection on the peak luminance | HB-142 … HB-149 |
 | `tidal_accel(m, r, lever)` | 2GmL/r³ | HB-72 … HB-74, HB-78 … HB-80, HB-84 … HB-86 |
 | `tidal_safe_radius(m, lever, a_max)` | (2GmL/a_max)^(1/3) | HB-75, HB-76, HB-81 |
 | `tidal_min_mass(lever, k, a_max)` | √(L c⁶/(4G²k³a_max)) | HB-87 |

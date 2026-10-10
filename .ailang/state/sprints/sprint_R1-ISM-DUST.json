@@ -1,12 +1,12 @@
 {
   "sprint_id": "R1-ISM-DUST",
-  "status": "approved",
-  "approved": false,
+  "status": "in_progress",
+  "approved": true,
   "approved_by": "Mark Edmondson, attended 2026-10-09 (ledger D-61)",
   "created": "2026-10-09",
   "design_doc": "design_docs/planned/r1/ism-structure-and-dust.md",
   "sprint_plan": "design_docs/planned/r1/ism-structure-and-dust-sprint.md",
-  "branch": "sprint/ism-dust (on approval, from origin/main)",
+  "branch": "finish/ism-dust-20261010",
   "implements": [
     "D-60",
     "D-11",
@@ -152,10 +152,10 @@
         "make parity green"
       ],
       "pr": "A",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "relativity 0.11.0 / celestial 0.3.0 pinned (039df8d, 0322f1a); minor 6 keeps relativity 0.10.0 in its hello (relativityPinGr). make test EXIT 0, make parity 0."
     },
     {
       "id": "I0_SPEC_AND_ORACLE",
@@ -171,10 +171,10 @@
         "Source-verification list in the spec PR with table and page per number"
       ],
       "pr": "A",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "tools/ism_dust_ref.py (stdlib oracle, --check passes); sources transcribed from arXiv LaTeX into data/ism/sources/*.tsv; spec PR sunholo-data/stapledons-design#11 MERGED (IS-1..36, HB-113..149, source-verification list). Flags: LIC coefficients refit (Table 3 does not reproduce Table 2; refit median 0.378 pc, in-sample); grain density 3,300 (not 2,500); AC6a membership 0.712 < 0.80 (cone approximation limit); Bohlin 606.3 not 606.1; Snowden n_e verified only via Liu 2017."
     },
     {
       "id": "I1_CELESTIAL_ISM",
@@ -189,10 +189,10 @@
         "grainDist recovers rho_d to 1e-12; LIC flux of >=1e-13 kg grains at 26 km/s within a factor 2 of 1e-7 m^-2 s^-1",
         "ailang test and ailang pkg quality (no gates) pass; version published"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "sunholo/celestial 0.4.0 PUBLISHED (ism module, 24 tests, ismProbe VM=interpreter). ailang-packages PR #106 merged. Independent Sonnet eval 86/100 PASS (.ailang/state/evaluations/eval_R1-ISM-DUST_packages_round_1.json), quality no gates, dry run clean.",
       "pr": "A"
     },
     {
@@ -209,10 +209,10 @@
         "Afterglow emittance integrated over time and spot equals eps f_in KE to 1e-12",
         "ailang pkg quality no gates; version published"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "sunholo/relativity 0.12.0 PUBLISHED (medium column/hold limit + dust module, 18 tests, dustDigest VM=interpreter). Same eval and gates as I1.",
       "pr": "A"
     },
     {
@@ -227,10 +227,10 @@
         "Every table value carries its source, table and page"
       ],
       "pr": "A",
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "sim/tools/ism_build.ail -> sim/data/ism.ail + data/ism/ism.json; make ism-data (interp == VM) and ism-data-verify green. Efficacy LUT chunked (strict VM 256-register limit)."
     },
     {
       "id": "I4_SIM",
@@ -251,10 +251,10 @@
         "Bright totals within 3 sigma at real-time and compressed pacing; KS cos-theta; none at rest; 0 dropped in real-time streams; window <=32 in compressed; <=130 of 1024 slots (AC12)",
         "make strict and make parity green (AC13)"
       ],
-      "passes": null,
-      "started": null,
+      "passes": false,
+      "started": "2026-10-09",
       "completed": null,
-      "notes": null,
+      "notes": "Protocol 2.8 preserves frozen uniform2.7 bytes. Published RL08 angular outlines recover56/59 (94.9%) sight lines; alphaCen logNHI17.70. All405 source vertices pass independent reprojection. Bounded numerical LIC bracket, cached ordered route, cumulative grains, adaptive compressed bright totals, every crossed boundary and endpoint display rates. Short whole-trip arrival regression red-to-green; final integrated local/CI suite pending. Shorttrip1/2/7/60 pacing is independently verified; every changing-speed piece integrates regardless of wall duration.",
       "pr": "A"
     },
     {
@@ -269,10 +269,10 @@
         "Every lookup finite over its range, tested in tests/test_dust_flash.gd (AC15)",
         "Samplers match package values on fixed seeds"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "Indexed projected quads sum overlapping impacts in FP32 before one HDR write. Final integrated make golden0failures incl.G-ISM-1..4; dust-flash29/29. Vulkan1440p64live flashes GPUmedian0.023ms/0.3ms with mandatory positive pixel control. Mask refresh covers bubble/spot radius changes.",
       "pr": "A"
     },
     {
@@ -287,10 +287,10 @@
         "make map-ism-test: every medium in ism.json drawn; route segmented; plan rows equal sim fields (AC16)",
         "make no-twitch-test: the layer key sends no intent"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-09",
+      "notes": "Published outline shell edges replace equal-area circular boundaries; internal triangulation seams removed. Map14/14. D sends no intent. Ordered route rows include re-entry and fit the scrollable plan panel.",
       "pr": "A"
     },
     {
@@ -304,10 +304,10 @@
         "make ship-ui-test new cases green (AC17)",
         "Deferred to a follow-up PR if R1-SHIP-UI U2 has not merged by day 11"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-10",
+      "notes": "Built on merged ShipHud:199ship-ui/24no-twitch/59identification assertions pass. Compressed hot-cloud-hot notices consume ordered wire crossings once per tick. Largest grain/impact labels explicitly describe displayed samples. Actual protocol2.8 HUD captures at1280x720 and2560x1440.",
       "pr": "A (or follow-up)"
     },
     {
@@ -322,10 +322,10 @@
         "Renders exist, no uniform or NaN frame, contact sheet; every frame opened and noted (AC18)",
         "make ism-bench within the design's budgets (AC19)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null,
+      "passes": true,
+      "started": "2026-10-09",
+      "completed": "2026-10-10",
+      "notes": "36 final optimized-source renders with zero uniform/NaN, contact/afterglow/efficiency/sensitivity/maps opened; 10 native HUD renders refreshed. Warm paired median CPU overhead: plan3.098ms/20,coast0.205990ms/0.5,boost0.401265ms/0.5,brake0.220180ms/0.5; GPU0.023ms/0.3. M4 Max medians, not worst-case bounds. P2 accepted D-62. Review inventory contains hashes/URLs.",
       "pr": "A"
     },
     {
@@ -340,10 +340,10 @@
         "make python-guard green (AC20)",
         "make test green locally and in CI (AC22)"
       ],
-      "passes": null,
+      "passes": false,
       "started": null,
       "completed": null,
-      "notes": null,
+      "notes": "P2 accepted D-62; Archive/source specification merged design PR12. Final local/CI suite and independent evaluator pending. Legacy/current Archive expectation scope corrected without changing frozen replay bytes.",
       "pr": "A"
     },
     {
@@ -358,13 +358,50 @@
         "LLCC outline contains the Peek 2011 / Meyer 2012 absorption stars and excludes their non-detections; a route through it refused at 0.999999c and accepted at 0.998c (AC6c)"
       ],
       "pr": "B",
-      "passes": null,
-      "started": null,
+      "passes": false,
+      "started": "2026-10-10",
       "completed": null,
-      "notes": null
+      "notes": "Deferred: FITS synthetic60assertions and realNESTcrop151shells pass, but threshold-clump extinction model passes only1/20 independent directions; Taurus/Ophiuchus distances fail. LLCCNaI-onlyHD84937 lies outside21cm outline. No runtime integration or scientific waiver. PR B may defer without blocking PR A under the approved sprint."
     }
   ],
-  "spec_pr": null,
+  "spec_pr": 11,
   "rerecorded": [],
-  "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump."
+  "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump.",
+  "next_step": "Finish final local/CI suite and independent evaluation, then merge PR A into main and publish gallery/news. P2 accepted D-62; all CPU/GPU measured median budgets pass; PR B remains deferred. Address attended navigation/mouse/arrival regressions in a separate milestone.",
+  "execution_2026_10_10": {
+    "ailang_prompt": "v0.16.6 teaching prompt loaded from pinned runtime v0.52.0",
+    "protocol": "2.8, preserving frozen 2.7 inferred-star session byte for byte on both engines",
+    "integration_branch": "finish/ism-dust-20261010",
+    "gpu_golden": "0 failures; 36 ISM captures, 0 uniform/NaN, contact/afterglow/eps/sensitivity/map opened",
+    "headless": "Prior fullsim410/410; old make exit2 only outdated10-entry Archive smoke, since corrected11/8. Final full make test rerun running. Final coreISM16/16 strict includes short-trip1/2/7/60 pacing; final frozen uniform compatibility and lism determinism pass.",
+    "benchmark_first": "Quiet warm-service coast: plan delta6.239ms/20ms; total lism9.367ms; tick delta0.469985ms/0.5ms. Boost/brake measurements pending after correcting high-acceleration short-trip pacing. Shipped I/O interop, pure strict core checked separately.",
+    "open_gates": [
+      "final local and matching CI full suite",
+      "independent evaluation",
+      "PR B deferred: scientific anchors fail"
+    ],
+    "numerical_solver": "Same adopted log-linear LUT inversion with guarded original60-step fallback; independent4183case oraclemaxrelative2.97e-14,0fail; strict42/42,ordinaryinverse7/7; uniformcompatibility and VM/interpreter lism determinism pass.",
+    "benchmark_final": {
+      "plan_delta_ms": 3.098,
+      "coast_delta_ms": 0.20599,
+      "boost_delta_ms": 0.401265,
+      "brake_delta_ms": 0.22018,
+      "gpu_delta_ms": 0.023,
+      "scope": "Warm paired medians on M4 Max; not worst-case latency bound"
+    }
+  },
+  "rerecorded_note": "No previous lism-1 baseline exists. No uniform fixture was rerecorded. New named lism stream, 36 renders, contact sheet and 10 native HUD captures are listed with SHA256 and review URLs in data/ism/review-baselines.json.",
+  "new_lism_baselines": "data/ism/review-baselines.json",
+  "p2_review": {
+    "accepted": true,
+    "date": "2026-10-10",
+    "decision": "D-62",
+    "answer": "Accept the current P2 choices",
+    "build_commit": "efadd4599337045ea3a0016d0f8090f263bde8af",
+    "spot_radius_m": 0.5,
+    "decay_s": 0.2,
+    "eps": 1e-10,
+    "radar_meteor_tail": false,
+    "scope": "Afterglow, sensitivity/default dust assumptions, per-medium glow, new lism baselines and Archive drafts; no technical or scientific waiver"
+  }
 }

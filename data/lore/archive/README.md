@@ -90,6 +90,7 @@ Prose may use the readable form; the checker treats each pair as the same unit.
 | `archive.photon-drive` | The photon drive and the cost of speed | `first_boost` |
 | `archive.ism-glow` | The interstellar medium and the glow | `cruise_above_0.9c` |
 | `archive.starbow` | Why the sky crowds forward | `cruise_above_0.9c` |
+| `archive.weather-between-the-stars` | Clouds, dust and the drive-hold limit | `cruise_above_0.9c` |
 | `archive.cmb-forward` | The blueshifted cosmic background | `cruise_above_gamma_275` |
 | `archive.tides` | Tides near black holes, and why Sgr A* is safe | `first_black_hole` |
 | `archive.shadow-ring` | The black hole's shadow and the Einstein ring | `first_black_hole` |

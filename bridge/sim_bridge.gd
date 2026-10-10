@@ -28,6 +28,9 @@ const GR_MINOR := 6
 ## 2.7 (D-54/D-58): a star plan may carry its catalogue row {"star": {name, v, teff}}; the
 ## system section adds inferred finite stars and each Sol body's sync_orbit.
 const STOPS_MINOR := 7
+## Protocol 2.8 (R1-ISM-DUST): new games fly the measured interstellar medium (lism-1): ship.ism
+## names the medium and carries the dust impacts; journey.plan the media crossed and the hold limit.
+const ISM_MINOR := 8
 
 var _pipe: FileAccess
 var _stderr: FileAccess

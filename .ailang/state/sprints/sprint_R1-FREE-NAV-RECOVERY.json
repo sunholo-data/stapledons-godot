@@ -1,0 +1,43 @@
+{
+  "sprint_id": "R1-FREE-NAV-RECOVERY",
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark, attended urgent free-navigation defect request, 2026-10-10",
+  "design_doc": "design_docs/planned/r1/free-navigation-recovery.md",
+  "sprint_plan": "design_docs/planned/r1/free-navigation-recovery-sprint.md",
+  "branch": "finish/ism-dust-20261010",
+  "milestones": [
+    {
+      "id": "F1-F2",
+      "status": "focused_checks_passed"
+    },
+    {
+      "id": "F3-F4-F6",
+      "status": "focused_checks_passed"
+    },
+    {
+      "id": "F5",
+      "status": "focused_checks_passed"
+    }
+  ],
+  "validation": {
+    "ordinary_ailang": "4/4",
+    "strict_ailang": "4/4",
+    "real_bridge_map_renderer": "24/24",
+    "generic_ism_layer": "14/14",
+    "new_scenario_parity": "6 valid NDJSON replies byte-identical",
+    "root_integrated": {
+      "recovery": "28/28",
+      "ship_input_hud": "210/210",
+      "ism_layer": "16/16",
+      "no_twitch": "24/24",
+      "strict": "4/4",
+      "native_earth_map": "Actual native Earth arrival/+60s and discoverable map frames rendered and opened",
+      "native_pointer": "Unsupported by unattended desktop: OS window focus=false; native capture assertions fail under that condition. Focus guard retained; headless lifecycle and input tests pass."
+    }
+  },
+  "limitations": [
+    "Stops remain inertial geometric clearance, not gravity-bound orbits",
+    "Root host integration, full suite and independent final evaluation remain required"
+  ]
+}

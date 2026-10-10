@@ -27,9 +27,16 @@ $(M45_STATE): tests/replays/m4_min_path.ndjson sim/*.ail
 	@$(AILANG) run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < $< > $@
 
 codex-unlocks: $(M45_STATE)
-	@$(AILANG) run $(M45_FLAGS) --bytecode --entry codexUnlocks --args-json '"$(if $(SESSION),$(SESSION),$(M45_STATE))"' $(M45_TOOL) > $(SCRATCH)/m45-codex.txt
+	@env -u AI_LIVE $(AILANG) run $(M45_FLAGS) --bytecode --entry $(if $(SESSION),codexUnlocks,codexUnlocksLegacy) --args-json '"$(if $(SESSION),$(SESSION),$(M45_STATE))"' $(M45_TOOL) > $(SCRATCH)/m45-codex.txt
 	@cat $(SCRATCH)/m45-codex.txt
 	@grep -q '^codex-unlocks=PASS$$' $(SCRATCH)/m45-codex.txt
+	@# Scope controls: the frozen stream must fail the current expectation and vice versa.
+	@$(AILANG) run $(M45_FLAGS) --bytecode --entry codexUnlocks --args-json '"$(M45_STATE)"' $(M45_TOOL) > $(SCRATCH)/m45-legacy-current.txt
+	@grep -q '^codex-unlocks=FAIL$$' $(SCRATCH)/m45-legacy-current.txt
+	@$(AILANG) run $(M45_FLAGS) --bytecode --entry codexUnlocks --args-json '"$(M45_FIX)/codex.ndjson"' $(M45_TOOL) > $(SCRATCH)/m45-current.txt
+	@grep -q '^codex-unlocks=PASS$$' $(SCRATCH)/m45-current.txt
+	@$(AILANG) run $(M45_FLAGS) --bytecode --entry codexUnlocksLegacy --args-json '"$(M45_FIX)/codex.ndjson"' $(M45_TOOL) > $(SCRATCH)/m45-current-legacy.txt
+	@grep -q '^codex-unlocks=FAIL$$' $(SCRATCH)/m45-current-legacy.txt
 
 playthrough-time:
 	@mkdir -p $(SCRATCH)

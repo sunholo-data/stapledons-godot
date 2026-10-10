@@ -28,12 +28,122 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	await test_mouse_look()
+	await test_ism_hud()
+	await test_ism_body_pick_guard()
+	if failures:
+		print("ship-ui: %d passed, %d failures" % [passes, failures])
+		quit(1)
+		return
 	test_control_table()
 	await test_strip_and_cards()
 	await test_dev_gating()
 	await test_dwell()
 	print("ship-ui: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
+
+
+func ism_view(medium := "LIC", density := 0.2474) -> Dictionary:
+	return {"clock": {"tau": 1.0, "year": 3.0}, "ship": {"phase": "cruising", "ism": {"model": "lism-1", "medium": medium, "n_h_cm3": density, "n_eff_m3": 347000.0, "dust": {"visible_rate": 17.5, "bright_rate": 4.5, "leg_grains": 1200000.0, "leg_drawn": 42, "leg_expected": 43.2, "largest_um": 3.2, "largest_j": 12345.0}}}, "journey": {"state": "committed", "plan": {"ism_model": "lism-1", "distance": 4.0, "media": [{"name": "LIC", "length_ly": 1.0}, {"name": "G", "length_ly": 2.0}, {"name": "hot", "length_ly": 1.0}]}}, "consequence": {"distance_remaining": 3.5}, "hud": {}}
+
+
+func test_ism_hud() -> void:
+	var hud := ShipHud.new()
+	root.add_child(hud)
+	hud.setup(false)
+	check("ISM HUD has the session-reset seam", hud.has_method("reset_medium"))
+	if not hud.has_method("reset_medium"):
+		hud.queue_free()
+		return
+	var view := ism_view()
+	hud.call("reset_medium", view)
+	hud.show_card("transit", "Transit")
+	hud.update(view)
+	check("ISM initial world is not a boundary notice", not hud.has_card("medium_notice"))
+	var fields: Array = hud.card_body("transit").find_children("*", "DisplayBinding", true, false).map(func(b): return b.field)
+	check("ISM compact medium/density/impact rows come from bindings", fields.has("ship.ism.medium") and fields.has("ship.ism.n_h_cm3") and fields.has("hud.ism.impacts"))
+	check("ISM density formats atoms per litre", hud.all_text().contains("247.4 H atoms/L"))
+	check("ISM flashes explicitly per ship second", hud.all_text().contains("17.50/ship-s") and hud.all_text().contains("3.20 µm"))
+	check("ISM all numbers use clean bindings", DisplayBinding.audit(hud).is_empty())
+	view = ism_view("G")
+	hud.update(view)
+	check("ISM real medium change emits one notice", hud.has_card("medium_notice") and hud.all_text().contains("Leaving the Local Interstellar Cloud") and hud.all_text().contains("Entering G cloud"))
+	var expires: float = hud.cards.medium_notice.expires
+	hud.advance(2.0)
+	hud.update(view)
+	check("ISM repeated world/refusal cannot refresh boundary notice", hud.cards.medium_notice.expires == expires)
+	hud.advance(6.1)
+	check("ISM boundary notice expires after eight fake seconds", not hud.has_card("medium_notice"))
+	hud.advance(0.7)
+	hud.update(ism_view("hot", 0.004))
+	check("ISM entering bubble has hot-gas wording", hud.all_text().contains("Local Bubble"))
+	var compressed := ism_view("hot", 0.004)
+	compressed.tick = 42
+	compressed.ship.ism.crossed_media = [{"name": "hot", "n_h_cm3": 0.004}, {"name": "Hyades", "n_h_cm3": 0.2474}, {"name": "hot", "n_h_cm3": 0.004}]
+	hud.update(compressed)
+	check("ISM compressed same-endpoint tick reports both actual boundaries", hud.all_text().contains("Entering Hyades cloud") and hud.all_text().contains("Leaving Hyades cloud"))
+	var compressed_expires: float = hud.cards.medium_notice.expires
+	hud.advance(1.0)
+	hud.update(compressed)
+	check("ISM compressed boundary list is consumed once per simulation tick", hud.cards.medium_notice.expires == compressed_expires)
+	var uniform := ism_view()
+	uniform.ship.ism.model = "uniform"
+	hud.update(uniform)
+	check("ISM uniform stream hides medium rows and notices", not hud.has_card("medium_notice") and not hud.card_body("transit").get_node("IsmTransit").visible and not hud.ism_details.visible)
+	hud.update({"ship": {"ism": {"glow_w_m2": 0.0}}, "hud": {}})
+	check("ISM old stream stays hidden", not hud.ism_details.visible)
+	hud.update(ism_view("Hyades"))
+	check("ISM first enriched world after old stream is quiet", not hud.has_card("medium_notice"))
+	hud.toggle_tab()
+	check("ISM Tab has route media and full dust totals", hud.ism_details.visible and hud.ism_details.find_children("*", "DisplayBinding", true, false).any(func(b): return b.field == "ship.ism.dust.leg_grains"))
+	cards_clear_centre(hud, "ISM medium rows")
+	# The skipped interval is 0.5..3 ly: 0.5 LIC + 2 G, not the whole planned leg.
+	var before := CruiseInterlude.facts_from(ism_view(), "alpha Cen")
+	var after_world := ism_view("G")
+	after_world.consequence.distance_remaining = 1.0
+	after_world.ship.ism.dust.leg_grains = 3200000.0
+	var interlude := CardInterlude.new()
+	interlude.begin(before)
+	interlude.observe(after_world)
+	var lines := interlude.lines()
+	check("ISM interlude exposes skipped-media summary", lines.has("ism"))
+	if lines.has("ism"):
+		check("ISM interlude clips route to skipped interval", str(lines.ism).contains("0.500 ly") and str(lines.ism).contains("G cloud · 2.000 ly") and not str(lines.ism).contains("Local Bubble"))
+		check("ISM interlude grains are the sim-total delta", str(lines.ism).contains("2.000e6") and str(lines.ism).contains("Largest displayed impact this leg"))
+	var reentry_before := before.duplicate(true)
+	reentry_before.ism_media = [{"name": "LIC", "length_ly": 0.5}, {"name": "G", "length_ly": 1.0}, {"name": "LIC", "length_ly": 1.0}, {"name": "hot", "length_ly": 1.5}]
+	reentry_before.distance_remaining_ly = 3.75
+	var reentry_after := reentry_before.duplicate(true)
+	reentry_after.distance_remaining_ly = 1.75
+	var reentry := IsmHud.skipped_media(reentry_before, reentry_after)
+	check("ISM interlude retains ordered cloud re-entry", reentry.size() == 3 and reentry.map(func(m): return m.name) == ["LIC", "G", "LIC"] and is_equal_approx(float(reentry[0].length_ly), 0.25) and is_equal_approx(float(reentry[2].length_ly), 0.75))
+	var panel := InterludeCard.new()
+	root.add_child(panel)
+	panel.show_interlude(interlude)
+	await process_frame
+	panel.fit_height(360.0)
+	await process_frame
+	check("ISM long interlude fits reduced canvas height", panel.get_combined_minimum_size().y <= 360.0)
+	check("ISM interlude Continue stays outside scrolling content", panel._button.get_global_rect().end.y <= panel.get_global_rect().end.y and not panel._scroll.is_ancestor_of(panel._button))
+	panel.queue_free()
+	hud.queue_free()
+	await process_frame
+
+
+func test_ism_body_pick_guard() -> void:
+	var demo: Node = await new_demo({"live_start": true, "sky_state": "rest"})
+	var sv: SystemView = demo.sky.system_view
+	var saved: Dictionary = sv.last_system
+	var visible := sv.visible
+	sv.visible = true
+	sv.last_system = {"bodies": [{"id": "observer-coincident", "kind": "star", "radius_km": 1.0, "rel_km": {"x": 0.0, "y": 0.0, "z": 0.0}}]}
+	demo.star_identification.candidates.clear()
+	demo.star_identification._add_body_candidates(demo.sky, Basis.IDENTITY, 100.0, Vector2(1280, 720), Transform2D.IDENTITY)
+	check("ISM I fallback never offers an observer-coincident body", demo.star_identification.candidates.is_empty())
+	sv.last_system = saved
+	sv.visible = visible
+	demo.queue_free()
+	await process_frame
 
 
 ## The keys _unhandled_input matches (the match on event.physical_keycode).
@@ -149,6 +259,34 @@ func test_strip_and_cards() -> void:
 	check("HUD built, the button column retired", hud != null and demo.hud == hud.strip and not demo.has_method("hud_text"))
 	strip_ok(demo, "rest")
 	check("rest: no cards", hud.cards.is_empty())
+	# The medium I card uses exactly the star inspector's empty-sky fallback.
+	demo.journey_sim.record_sent = true
+	var before_intents: int = demo.journey_sim.sent_log.size()
+	demo.toggle_sky_only()
+	demo.look_direction("forward")
+	var centre: Vector2 = hud.size * 0.5
+	demo.star_identification.set_held(true)
+	demo.star_identification.update_candidates()
+	var empty_open:=false
+	# The playable start is now beside Earth: the centre ray can hit a body.
+	for y:float in [.1,.25,.4,.55,.7,.85,.95]:
+		for x:float in [.05,.2,.35,.5,.65,.8,.95]:
+			var point:Vector2=hud.size*Vector2(x,y)
+			if not empty_open and demo.show_medium_at(point):centre=point;empty_open=true
+	check("AC17 actual empty forward sky opens the medium I card", empty_open and hud.has_card("medium_here"))
+	demo._process(0.5)
+	check("AC17 I card uses the actual sim medium/density", hud.all_text().contains("Local Interstellar Cloud") and hud.all_text().contains(IsmHud.density_text(float(demo.sky_world.ship.ism.n_h_cm3))))
+	check("AC17 medium display sends no simulation intent", demo.journey_sim.sent_log.size() == before_intents)
+	demo.star_identification.candidates = [{"id": "existing-star", "point": centre}]
+	check("AC17 star pick wins over medium I fallback", not demo.show_medium_at(centre))
+	demo.star_identification.set_held(false)
+	demo.look_direction("aft")
+	check("AC17 aft sky does not open medium card", not demo.show_medium_at(centre))
+	demo.escape()
+	demo._process(0.7)
+	check("AC17 Esc closes medium I card", not hud.has_card("medium_here"))
+	demo.toggle_sky_only()
+	demo.set_preset("reset")
 	# A free-navigation commit (the navigation map; the helm in R1-SHIP-UI U4).
 	demo.journey_sim.record_sent = true
 	demo.open_navigation()
@@ -163,7 +301,8 @@ func test_strip_and_cards() -> void:
 	strip_ok(demo, "boost")
 	check("AC3 transit card appears on commit", hud.has_card("transit"))
 	var transit_fields: Array = hud.card_body("transit").find_children("*", "DisplayBinding", true, false).map(func(b): return b.field)
-	check("AC3 transit card: compact JourneyHud rows %s" % [transit_fields], transit_fields.has("ship.phase") and transit_fields.has("consequence.gap_years") and transit_fields.has("client.warp") and transit_fields.size() == ShipHud.TRANSIT_COMPACT.size())
+	check("AC3 transit card: compact JourneyHud rows %s" % [transit_fields], transit_fields.has("ship.phase") and transit_fields.has("consequence.gap_years") and transit_fields.has("client.warp") and transit_fields.filter(func(f): return f in ShipHud.TRANSIT_COMPACT).size() == ShipHud.TRANSIT_COMPACT.size())
+	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.ISM_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
 	check("Tab holds every JourneyHud row", hud.transit_rows.find_children("*", "DisplayBinding", true, false).size() == JourneyHud.ROWS.size())
 	var phases := {}
 	await arrive(demo, phases)
@@ -337,3 +476,32 @@ func test_dwell() -> void:
 	check("dwell: the Tab toggle turns it off", not demo.ship_hud.dwell.visible)
 	demo.queue_free()
 	await process_frame
+
+## Attended Oct10: free mouse look, UI owns the pointer, no modifier required.
+func test_mouse_look() -> void:
+	var demo: Node = await new_demo({})
+	check("mouse look default exposes its UI ownership seam", demo.has_method("pointer_required"))
+	if not demo.has_method("pointer_required"):
+		demo.queue_free();await process_frame;return
+	check("mouse look enabled by default", demo.mouse_look_enabled)
+	check("closed bridge view needs no visible cursor", not demo.pointer_required())
+	var motion := InputEventMouseMotion.new();motion.relative=Vector2(10,5)
+	Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+	var yaw:float=demo.camera.yaw;var tilt:float=demo.camera.tilt
+	demo._unhandled_input(motion)
+	check("unmodified mouse turns view", not is_equal_approx(yaw,demo.camera.yaw) and not is_equal_approx(tilt,demo.camera.tilt))
+	demo.toggle_controls()
+	check("Tab releases pointer to buttons", demo.pointer_required() and Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
+	yaw=demo.camera.yaw;demo._unhandled_input(motion)
+	check("UI pointer motion never turns view", is_equal_approx(yaw,demo.camera.yaw))
+	demo.escape()
+	check("Esc closes Tab and returns look ownership", not demo.pointer_required())
+	demo.star_identification.set_held(true)
+	check("I inspection releases pointer", demo.pointer_required())
+	demo.star_identification.set_held(false)
+	demo.ship_hud.show_card("arrival","Arrived")
+	check("arrival buttons release pointer", demo.pointer_required())
+	demo.dismiss_arrival()
+	check("dismissed arrival restores look", not demo.pointer_required())
+	demo.queue_free();await process_frame
+	check("leaving ship releases pointer", Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)

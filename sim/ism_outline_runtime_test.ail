@@ -1,0 +1,16 @@
+module stapledons/sim/ism_outline_runtime_test
+import stapledons/sim/ism (profile)
+import pkg/sunholo/celestial/frames (unitFromAngles)
+import std/list (filter, length)
+
+-- Primary author's RL08 calculator: fixed l=227,b=-9 sight line crosses LIC and Blue.
+-- This direction is independent of the game's member-star fixture.
+-- Named-body interpreter panic workaround: inbox_1791657712041_685a564d.
+-- Wrapping the same body in a pure function passes both engines.
+pure func publishedBlue() -> bool {
+  let u = unitFromAngles(227.0 * 3.141592653589793 / 180.0, -9.0 * 3.141592653589793 / 180.0);
+  let p = {x: u.x * 10.0, y: u.y * 10.0, z: u.z * 10.0};
+  length(filter(\s. s.medium.name == "Blue", profile({x: 0.0, y: 0.0, z: 0.0}, p))) > 0
+}
+
+test "published non-circular Blue footprint includes l227 b-9" { publishedBlue() }

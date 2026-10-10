@@ -107,13 +107,17 @@ func _add_body_candidates(sky: InteriorSky, view: Basis, focal: float, px: Vecto
 	var sv: SystemView = sky.system_view
 	if sv == null or not sv.visible:return
 	for b: Dictionary in sv.last_system.get("bodies", []):
+		var dist := Planets.length64(Planets.world_of(b.rel_km))
+		# The initial Sol snapshot can put the observer at the Sun's catalogue origin.
+		# There is no direction or projected disc at zero distance; never offer an I ring.
+		if not is_finite(dist) or dist <= 0.0:continue
 		var dir := StarLight.apparent_direction(sv, b.rel_km, b.radius_km)
 		var observed := Vector3(dir[0], dir[1], dir[2])
 		var local: Vector3 = view*observed
-		if local.z >= 0.:continue
+		if not local.is_finite() or local.z >= 0.:continue
 		var point := Vector2(px.x*.5-focal*local.x/local.z,px.y*.5+focal*local.y/local.z)
-		var dist := Planets.length64(Planets.world_of(b.rel_km))
 		var radius_px := focal*tan(Planets.angular_radius(b.radius_km, dist))
+		if not point.is_finite() or not is_finite(radius_px):continue
 		if not Rect2(-Vector2.ONE*radius_px,px+Vector2.ONE*2.*radius_px).has_point(point):continue
 		# A planet or moon of a distant system is an unresolved, invisible speck; offer
 		# only stars there (Mark at TRAPPIST-1 should not get 21 Solar System bodies).
@@ -161,6 +165,7 @@ func at_point(point: Vector2) -> Array:
 func inspect(id: String) -> bool:
 	if id.begins_with(BODY_PREFIX):return inspect_body(id.trim_prefix(BODY_PREFIX))
 	if not info.records.has(id):return false
+	if demo.ship_hud != null: demo.ship_hud.hide_card("medium_here")
 	selected_id = id
 	_clear_card()
 	var facts := Label.new(); facts.text = info.text(id)
@@ -178,6 +183,7 @@ func _body_of(body_id: String) -> Dictionary:
 		if b.id == body_id:return b
 	return {}
 func inspect_body(body_id: String) -> bool:
+	if demo.ship_hud != null: demo.ship_hud.hide_card("medium_here")
 	var b := _body_of(body_id)
 	if b.is_empty():return false
 	selected_id = BODY_PREFIX+body_id
@@ -210,6 +216,7 @@ func close_card() -> void:
 func click_at(point: Vector2) -> bool:
 	if not held or suppressed:return false
 	var hits := at_point(point)
+	if hits.is_empty(): demo.show_medium_at(point)
 	if hits.size() == 1:return inspect(hits[0].id)
 	if hits.size() > 1:
 		selected_id = ""
@@ -226,7 +233,11 @@ func click_at(point: Vector2) -> bool:
 	return true # I-click never propagates to walking, even on empty sky
 func handle_input(event: InputEvent) -> bool:
 	if event is InputEventKey and event.physical_keycode == KEY_I:
-		set_held(event.pressed);return true
+		set_held(event.pressed)
+		if held and not event.echo:
+			update_candidates()
+			demo.show_medium_at(get_local_mouse_position())
+		return true
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE and card.visible:
 		close_card();return true
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not event.alt_pressed:

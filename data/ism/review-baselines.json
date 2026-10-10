@@ -1,0 +1,536 @@
+{
+  "model": "lism-1",
+  "protocol": "2.8",
+  "runtime": "AILANG 0.52.0",
+  "previous_lism_baselines": [],
+  "previous_baselines_note": "This is the first lism-1 implementation. No previous lism baseline was replaced. Frozen uniform protocol 2.7 and earlier replay fixtures remain unchanged and are checked separately.",
+  "review_status": "P2 choices accepted by Mark on 2026-10-10 (D-62); technical landing remains subject to full local/CI verification and independent evaluation.",
+  "p2_review": {
+    "accepted": true,
+    "date": "2026-10-10",
+    "decision": "D-62",
+    "answer": "Accept the current P2 choices",
+    "build_commit": "efadd4599337045ea3a0016d0f8090f263bde8af",
+    "spot_radius_m": 0.5,
+    "decay_s": 0.2,
+    "eps": 1e-10,
+    "radar_meteor_tail": false,
+    "scope": "Afterglow, sensitivity/default dust assumptions, per-medium glow, new lism baselines and Archive drafts; no technical or scientific waiver"
+  },
+  "performance": {
+    "boost": {
+      "delta_median_ms": 0.401265000000016,
+      "delta_ms": [
+        0.351590000000005,
+        0.15724500000001,
+        0.237345000000001,
+        0.48696000000001,
+        1.24294,
+        1.42551999999999,
+        0.401265000000016
+      ],
+      "lism_ms": [
+        19.15454,
+        19.06084,
+        19.13139,
+        19.25619,
+        19.98431,
+        20.13122,
+        19.037615
+      ],
+      "uniform_ms": [
+        18.80295,
+        18.903595,
+        18.894045,
+        18.76923,
+        18.74137,
+        18.7057,
+        18.63635
+      ]
+    },
+    "brake": {
+      "delta_median_ms": 0.220180000000003,
+      "delta_ms": [
+        0.496194999999993,
+        0.271654999999996,
+        0.220180000000003,
+        0.228525000000008,
+        0.176389999999998,
+        0.0337149999999937,
+        0.026744999999984
+      ],
+      "lism_ms": [
+        19.1919,
+        18.96272,
+        18.918235,
+        19.02333,
+        18.872605,
+        18.80408,
+        18.78908
+      ],
+      "uniform_ms": [
+        18.695705,
+        18.691065,
+        18.698055,
+        18.794805,
+        18.696215,
+        18.770365,
+        18.762335
+      ]
+    },
+    "method": "Warm bytecode service as shipped (I/O interop); alternate paired order; bootstrap excluded; includes bridge/JSON overhead",
+    "passes": true,
+    "plan_delta_median_ms": 3.098,
+    "plan_delta_ms": [
+      3.076,
+      2.79,
+      3.032,
+      2.38,
+      4.054,
+      5.791,
+      3.11,
+      3.765,
+      3.049,
+      3.055,
+      3.134,
+      3.767,
+      4.022,
+      2.842,
+      3.898,
+      2.115,
+      3.061,
+      3.108,
+      3.044,
+      2.433,
+      4.053,
+      3.061,
+      3.137,
+      3.098,
+      3.254,
+      2.082,
+      4.033,
+      3.061,
+      3.915,
+      3.098,
+      3.409,
+      3.094,
+      3.069,
+      3.782,
+      3.962,
+      2.965,
+      4.023,
+      3.79,
+      3.102,
+      3.035,
+      4.038,
+      2.816,
+      3.432,
+      3.067,
+      3.047,
+      3.826,
+      3.07,
+      3.726,
+      3.059,
+      2.079
+    ],
+    "plan_lism_median_ms": 6.156,
+    "plan_pairs": 50,
+    "plan_uniform_median_ms": 3.089,
+    "tick_delta_median_ms": 0.205989999999993,
+    "tick_delta_ms": [
+      0.0739350000000023,
+      0.238199999999999,
+      0.205989999999993,
+      0.244344999999999,
+      0.158839999999994,
+      0.390185000000006,
+      0.124055000000016
+    ],
+    "tick_lism_ms": [
+      19.1095,
+      19.12106,
+      19.131525,
+      18.930865,
+      18.89822,
+      19.092165,
+      18.90687
+    ],
+    "tick_pairs": 7,
+    "tick_uniform_ms": [
+      19.035565,
+      18.88286,
+      18.925535,
+      18.68652,
+      18.73938,
+      18.70198,
+      18.782815
+    ],
+    "ticks_per_pair": 200
+  },
+  "generation_commands": [
+    "make ism-determinism",
+    "make ism-capture",
+    "AILANG_BIN=runtime/bin/ailang godot --path . --script tools/ism_hud_capture.gd"
+  ],
+  "source_sha256": {
+    "sim/core.ail": "7ebfbb1ddb7c01aee74aba558e5e9986df7bffe50bc002e786be118669dfb1e5",
+    "sim/ism.ail": "82147a8450d06e5823c29c01d562a69fad333501fa56969f233a2f0e8c0aaeea",
+    "sim/data/ism.ail": "303ae505cdf61fd0babc40b80026aa2e7317362bcc0a37e385f9a8491afbedce",
+    "data/ism/ism.json": "9124f31c9784f506b381cf799811985b6dc48547207427fd5130abf0cfe394c0",
+    "interior/dust_flash.gd": "ed56812723c8275039f3940c8148d47f2f1dc4cce0d3b518fa6d065007b232f2",
+    "interior/dust_flash.gdshader": "6d516ebdae1dff6a82f99b0e89387939eb98797d82ee87413cec64f2e1b2ddd7",
+    "ui/ism_layer.gd": "735d2948265b166181ca226cd3a3235203302bca10da1a586f165b334d5d621b",
+    "tools/ism_capture.gd": "69d5d661dbb73e92963e1b0e4358c75ddb6fdc8f7cd4d52ba0a406ec4ca98274",
+    "tools/ism_hud_capture.gd": "43a468ce52f1553f442ec49cdb537aa70e5f61099d7f013724d7b8eb7002270b"
+  },
+  "stream": {
+    "name": "protocol28_lism_seed7_plan_commit_40_realtime_ticks",
+    "file": ".godot/tmp/ism/det-vm1.txt",
+    "sha256": "7349a893b8dfeb7ceb5dfe7e762c92717d052cabd85f288173c8653fcb4cc8a4",
+    "lines": 43,
+    "checks": "strict VM run 1 = run 2 = interpreter, with impacts"
+  },
+  "captures": [
+    {
+      "file": "renders/ism/flight/0p99c_LIC_interior.png",
+      "sha256": "e2902fdfdee314879e300f682608b6f393c4e2429b4343f48a741a808243516f",
+      "label": "0p99c_LIC interior",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p99c_LIC_forward.png",
+      "sha256": "c8f8aa7dce8cadadd023e517f4bfb39d5f68f831f36563fa774dd971fd32db7f",
+      "label": "0p99c_LIC forward",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p99c_Hyades_interior.png",
+      "sha256": "dc688720c9a4cd9de7a06a17e61bafea9d8f05d8433bfa6e35f396b6b7473499",
+      "label": "0p99c_Hyades interior",
+      "medium": "Hyades",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p99c_Hyades_forward.png",
+      "sha256": "edebf80cfad79dcba73c7687333e5884ea31dce0f05abd687600dd697f1324e1",
+      "label": "0p99c_Hyades forward",
+      "medium": "Hyades",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p99c_hot_interior.png",
+      "sha256": "570cfeb86b97422775feb6ea59756d0a8fb98d518d2bdf8a5e3a7a52286d4fc4",
+      "label": "0p99c_hot interior",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p99c_hot_forward.png",
+      "sha256": "f883eaf2ce6c83a90d6edfa772ba9c8506fb5b9af6131aac34e9d95d5c8c3f65",
+      "label": "0p99c_hot forward",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999c_LIC_interior.png",
+      "sha256": "63dd64727ccbb71ab318bafae1e707b42895a1f9a7307f7d5dd4e74adf655139",
+      "label": "0p999c_LIC interior",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999c_LIC_forward.png",
+      "sha256": "d6651a9997efe056984e0293a8264adb9f560d71bc55151533dcd67c6fe0bc8a",
+      "label": "0p999c_LIC forward",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999c_Hyades_interior.png",
+      "sha256": "9e5bb0b77051e4cf73ccd94e408bf91d0766cc46130b1bb46ee2929c1df8e0fc",
+      "label": "0p999c_Hyades interior",
+      "medium": "Hyades",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999c_Hyades_forward.png",
+      "sha256": "d6fbbf9cea1e979011ff4810808c4c95dd6df22fd6bac5a4dcb3f643a40ec65a",
+      "label": "0p999c_Hyades forward",
+      "medium": "Hyades",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999c_hot_interior.png",
+      "sha256": "30cbfeb0a489caaaf43c1a0caab2bb2819e363b5293c0330fbb4d123c8ffd9a2",
+      "label": "0p999c_hot interior",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999c_hot_forward.png",
+      "sha256": "fcf34d4764d72155e1fe6f731c8d6076670bb776260c9045348b60d220607098",
+      "label": "0p999c_hot forward",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p9999c_LIC_interior.png",
+      "sha256": "1e2d134bd60f5e8d04ba7a25d54f0d46a2571f074b4301e349c3b75bc45c7660",
+      "label": "0p9999c_LIC interior",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p9999c_LIC_forward.png",
+      "sha256": "3a8d7ce57cb1fda8b6ac4b7e96f1b53ec6662a72deb7db56867e3ad3235d9d4a",
+      "label": "0p9999c_LIC forward",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p9999c_Hyades_interior.png",
+      "sha256": "b4cbd0c79a0e047737e6442ffef1a7e4972c9f55c646ddea2f6f0dc5d4558a7c",
+      "label": "0p9999c_Hyades interior",
+      "medium": "Hyades",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p9999c_Hyades_forward.png",
+      "sha256": "657584c18c51ecb1a9a7a6ae38fb6662559580bf247b95e8f74557187b66b0e4",
+      "label": "0p9999c_Hyades forward",
+      "medium": "Hyades",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p9999c_hot_interior.png",
+      "sha256": "b384a2ff299d75a6cdc1e03164887b8b1c2ccc789bf99adf781d41c535f88e2b",
+      "label": "0p9999c_hot interior",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p9999c_hot_forward.png",
+      "sha256": "070a3c51c2dba67966f7e9bd44ce892e77695b80eb314a9065711550a43aa64f",
+      "label": "0p9999c_hot forward",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999999c_LIC_interior.png",
+      "sha256": "2bdd3d4033104c88fc33254e23b8aa382db462c91c5c6b7cd5f71145ddee475f",
+      "label": "0p999999c_LIC interior",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999999c_LIC_forward.png",
+      "sha256": "ee1dddcffb2b61a0c6e9c4cfe7a3aa581f1c0cb57faf2c13b781d5ca3dc5be58",
+      "label": "0p999999c_LIC forward",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999999c_Hyades_interior.png",
+      "sha256": "f1bdbd4645acf1a9f6cdcc11ba844ee2e6dc5737a455641532995d40c60f332e",
+      "label": "0p999999c_Hyades interior",
+      "medium": "Hyades",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999999c_Hyades_forward.png",
+      "sha256": "3730927667104798fe4cb0b69af7e531bdfd15bc9e00ad70b522abcb564eda42",
+      "label": "0p999999c_Hyades forward",
+      "medium": "Hyades",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999999c_hot_interior.png",
+      "sha256": "c2123d54c4e0a279674f6c7fe676336b4e585729318ec4bdb1331e1b548a6d99",
+      "label": "0p999999c_hot interior",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/0p999999c_hot_forward.png",
+      "sha256": "3c2d1d1aaf1425bb2ec8ded09c7f9a45e3205582f18d76e20ae5e0ef131215ea",
+      "label": "0p999999c_hot forward",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/cloud10_0p99c_synthetic_n_H_10_cloud_interior.png",
+      "sha256": "29df0268549f3049a2f57a0372ab8b1e7caa0e45a89540d386199c40ae3a6d93",
+      "label": "cloud10_0p99c_synthetic_n_H_10_cloud interior",
+      "medium": "uniform",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/cloud10_0p99c_synthetic_n_H_10_cloud_forward.png",
+      "sha256": "e83f4e8d85c028a0e731b53c97a12749b74130b189a2a2f5468883cb484d3276",
+      "label": "cloud10_0p99c_synthetic_n_H_10_cloud forward",
+      "medium": "uniform",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/cloud10_0p999c_synthetic_n_H_10_cloud_interior.png",
+      "sha256": "75f8411d024d5fc9c27eda71f9465bd9de1324ee3ac4cbc59c0eae9b0d4254a0",
+      "label": "cloud10_0p999c_synthetic_n_H_10_cloud interior",
+      "medium": "uniform",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/cloud10_0p999c_synthetic_n_H_10_cloud_forward.png",
+      "sha256": "b14182cf9be09a66e87086a3a0d71f1af9c23ded8de188d669c8afdb094c7fdb",
+      "label": "cloud10_0p999c_synthetic_n_H_10_cloud forward",
+      "medium": "uniform",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/cloud10_0p9999c_synthetic_n_H_10_cloud_interior.png",
+      "sha256": "654a59e7ef73268afe7e62673154957de2651689844d95a528e1f97144e32f7a",
+      "label": "cloud10_0p9999c_synthetic_n_H_10_cloud interior",
+      "medium": "uniform",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flight/cloud10_0p9999c_synthetic_n_H_10_cloud_forward.png",
+      "sha256": "ca080c43187b5ac2b33cf5ab42e648c4c1059d1a61fc5d1eaadeece93bdabf20",
+      "label": "cloud10_0p9999c_synthetic_n_H_10_cloud forward",
+      "medium": "uniform",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/flash_closeup.png",
+      "sha256": "841c6375ca154f936eb8d4c7250ee523d5cf81fc97429568a669703d9962d830",
+      "label": "flash close-up",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/afterglow_sheet.png",
+      "sha256": "90275c75e83dfcea48195e5dc3ce0293ad971a1af3a15ff41dd846c061bc772b",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/90275c75e83dfcea48195e5dc3ce0293ad971a1af3a15ff41dd846c061bc772b.png",
+      "label": "afterglow sheet (G-AG, a game approximation): rows r_s 0.25/0.5/1 m, columns tau 0.1/0.2/0.4 s; the brightest flash at t = 0.08 s, 6 deg view",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/eps_sheet.png",
+      "sha256": "8ecf366037421ecfc7eedad65ce0f03a3d30f2e8c8bfff8d4d94478ab7082526",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/8ecf366037421ecfc7eedad65ce0f03a3d30f2e8c8bfff8d4d94478ab7082526.png",
+      "label": "eps sheet: rows LIC, hot gas (0.999c); columns eps 1e-11, 1e-10 (canon), 3e-10",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/sensitivity_sheet.png",
+      "sha256": "1044e062381d6ed92671a46f53e302ba448460f9885bd46670a4275576e79ae0",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/1044e062381d6ed92671a46f53e302ba448460f9885bd46670a4275576e79ae0.png",
+      "label": "sensitivity sheet",
+      "medium": "hot",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/map_local.png",
+      "sha256": "26d752f3a51836d4471f683237b60deed12e97a9292d0ff8dadf03bc86470c9e",
+      "label": "map: the medium layer around Sol (LIC, 14 cloud shells; D)",
+      "medium": "LIC",
+      "ok": true
+    },
+    {
+      "file": "renders/ism/map_route.png",
+      "sha256": "3d7743e3637b92df936a330d71562335c9a36c42b32307fdf00a9980e17c6cc8",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/3d7743e3637b92df936a330d71562335c9a36c42b32307fdf00a9980e17c6cc8.png",
+      "label": "map: Sol -> Aldebaran coloured by medium, plan rows",
+      "medium": "LIC",
+      "ok": true
+    }
+  ],
+  "contact_sheet": {
+    "file": "renders/ism/contact_sheet.png",
+    "sha256": "30169fa082b72389386502b486d0c80a1c654a5c9b0ef0196ceb4c67f97666dd",
+    "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/30169fa082b72389386502b486d0c80a1c654a5c9b0ef0196ceb4c67f97666dd.png"
+  },
+  "hud_captures": [
+    {
+      "file": "renders/ism_hud/interlude_media_1280x720.png",
+      "sha256": "b961e8a28697086b57990df78b2275b872ab2ff6a20a894c975e3378d6a62d42"
+    },
+    {
+      "file": "renders/ism_hud/interlude_media_2560x1440.png",
+      "sha256": "d0d8b21483ae728248f58e553418513b200d29770e1fba070a1cf9d05da13653",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/d0d8b21483ae728248f58e553418513b200d29770e1fba070a1cf9d05da13653.png"
+    },
+    {
+      "file": "renders/ism_hud/medium_boundary_1280x720.png",
+      "sha256": "8578ecba31236b3cd170d18808d150ab9ccabeb789014fc3772211e612dc5611"
+    },
+    {
+      "file": "renders/ism_hud/medium_boundary_2560x1440.png",
+      "sha256": "4ccfd5546455e92ad91e6d7e8736cebbdfaf3bb2d7e397231c87959e75f54024"
+    },
+    {
+      "file": "renders/ism_hud/medium_here_sky_only_1280x720.png",
+      "sha256": "51baf641c7e410b3686c6ca799a8c3bd85bdc13807fc3b01ed73497e755fdeaa"
+    },
+    {
+      "file": "renders/ism_hud/medium_here_sky_only_2560x1440.png",
+      "sha256": "c5a801c6dea47543d544c3f486eeca4dec1b6682bdb8d02047e6c00f494ff6e6"
+    },
+    {
+      "file": "renders/ism_hud/tab_medium_1280x720.png",
+      "sha256": "75689117dbdd6bb0ccb96c1449ca1e7a669e7f2535776cba8a534362d6bfc19d"
+    },
+    {
+      "file": "renders/ism_hud/tab_medium_2560x1440.png",
+      "sha256": "98db206c87856240a3a4d0e34d0c4e4efb1d51bb25db36d2b28e92fdd107a237",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/98db206c87856240a3a4d0e34d0c4e4efb1d51bb25db36d2b28e92fdd107a237.png"
+    },
+    {
+      "file": "renders/ism_hud/transit_1280x720.png",
+      "sha256": "674812842dc42d71e8a8a021173d0ecbec74969f7513d671df12b105123545a6"
+    },
+    {
+      "file": "renders/ism_hud/transit_2560x1440.png",
+      "sha256": "26a219a0b8735bfa911d68496789bf9e1840af83ef5970b770b9f4c774604613"
+    }
+  ],
+  "movies": {
+    "black_hole_orbit": {
+      "mp4": {
+        "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/9d945c4ba748a2e47c1177c7fc45253077c116287863b1842483cbdd5c46c32c.mp4",
+        "bytes": 5661866
+      },
+      "webm": {
+        "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/fbc26ae8589c127b7c010b83c603ced10d8da6af57340ff22e0e0f69eec45da8.webm",
+        "bytes": 3260235
+      },
+      "audit": "Captured native 1280x720 at 30 fps; exact frame counts, finite state, monotonic clocks and full decode checked."
+    },
+    "saturn_arrival": {
+      "mp4": {
+        "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/7973e215cf0be1097a934e5e642e0d34e09cd5c0e935d2af2eeb2b84e2334920.mp4",
+        "bytes": 6144818
+      },
+      "webm": {
+        "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/7b3890c3e5d5be52691bb75a3ecdf47ebb21e4e0465669c4219da445afb85491.webm",
+        "bytes": 2869655
+      },
+      "audit": "Captured native 1280x720 at 30 fps; exact frame counts, finite state, monotonic clocks and full decode checked."
+    },
+    "ism_transit": {
+      "mp4": {
+        "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/26489f0b47a968ed0e8b4296338b3ddb59f3efbc962a259e5f0fc637fe14c931.mp4",
+        "bytes": 640017
+      },
+      "webm": {
+        "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/adee165dab041151bbfd3cbeeb7686d7f529826e97e1cf12cd221cc8fb768e37.webm",
+        "bytes": 629458
+      },
+      "audit": "Captured native 1280x720 at 30 fps; exact frame counts, finite state, monotonic clocks and full decode checked."
+    }
+  },
+  "limitation": "The captured dense n_H=10 cloud is explicitly synthetic. Dense-cloud tomography and LLCC integration are deferred; the runtime uses local warm-cloud outlines and hot gas only."
+}

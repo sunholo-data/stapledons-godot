@@ -1,0 +1,508 @@
+-- R1-ISM-DUST I4: the interstellar medium the ship flies through (model lism-1,
+-- stapledons-design physics/ism-structure.md; ledger D-60, D-61) and the dust grains
+-- that hit the wall (higgs-bubble.md section 6b).
+--
+-- Pure (runs on the strict VM). The geometry and the physics are sunholo/celestial
+-- (ism) and sunholo/relativity (medium, dust) calls; the cloud tables are the generated
+-- sim/data/ism.ail. Lengths in light years, heliocentric galactic Cartesian.
+--
+-- Media, first match wins: the 14 Redfield & Linsky clouds (digitised angular shells, table order),
+-- the LIC (a star-shaped harmonic surface), then the Local Bubble's hot gas. Route
+-- resolution uses analytic cloud boundaries and bounded numerical LIC roots: the
+-- angular planes and sphere roots (closed form) and the LIC crossings (64-step bracket, 60
+-- bisections); each piece between consecutive boundaries is classified by its midpoint.
+-- The same `profile` serves the plan, the per-tick ledger and the map.
+module stapledons/sim/ism
+
+import std/list (sortBy, length, map, foldl, filter, reverse)
+import std/math (sqrt, cos, log, exp, floor, intToFloat, floatToInt, pow)
+import std/array (fromList as toArray, get, length as alen)
+import pkg/sunholo/celestial/ism (Interval, starSurfaceCrossings, insideStarSurface, coneShellChord, insideConeShell, ellipsoidChord, slabChord, GrainDist, grainDist, grainsAbove, grainRadiusAt, poissonDraw)
+import pkg/sunholo/relativity/optics (Vec3)
+import pkg/sunholo/celestial/kepler (dot)
+import pkg/sunholo/relativity/medium (lightYearM, massEquivalentDensity, glowEmittanceAt, glowTemperatureAt, driveHoldMaxPhi)
+import pkg/sunholo/relativity/dust (grainKinetic, grainMassOf, grainRate)
+import ./data/ism (Cloud, cloudMetas, cloudPlanesFor, hasOutline, licCentre, licCoeffs, nHWarm, nHHot, deltaLocal, muH, hydrogenMassKg, grainRho, grainAMin, grainABreak, grainAMax, grainQ, efficacyLog10TMin, efficacyStep, efficacyLut)
+import pkg/sunholo/relativity/journey (TripPlan)
+import pkg/sunholo/relativity/hyper (acosh1p, cosh, absf)
+import ./rng (splitmix64, mix64, top53)
+
+-- ---------- media ----------
+
+-- id: -1 the uniform scenario medium, 0 hot gas, 1 the LIC, 2 + k the k-th cloud of
+-- data/ism clouds(). nH in cm^-3; nEff the mass-equivalent density n_H (mu_H + delta)
+-- in m^-3 (the uniform medium's n is HB-3's proton density as is).
+export type Medium = { id: int, name: string, nH: float, delta: float, nEff: float }
+
+export pure func warmOrHot(id: int, name: string, nH: float) -> Medium =
+  { id: id, name: name, nH: nH, delta: deltaLocal(), nEff: massEquivalentDensity(nH * 1000000.0, muH(), deltaLocal()) }
+export pure func hotMedium() -> Medium = warmOrHot(0, "hot", nHHot())
+export pure func licMedium() -> Medium = warmOrHot(1, "LIC", nHWarm())
+export pure func cloudMedium(k: int, c: Cloud) -> Medium = warmOrHot(2 + k, c.name, c.nH)
+export pure func uniformMedium(nCm3: float) -> Medium = { id: -1, name: "uniform", nH: nCm3, delta: 0.0, nEff: nCm3 * 1000000.0 }
+
+pure func v3(x: float, y: float, z: float) -> Vec3 = { x: x, y: y, z: z }
+pure func cv(c: Cloud) -> Vec3 = v3(c.axis.x, c.axis.y, c.axis.z)
+pure func licC() -> Vec3 = { let c = licCentre(); v3(c.x, c.y, c.z) }
+
+pure func inPlanes(ns: [Vec3], p: Vec3) -> bool = match ns {
+  [] => true,
+  n :: rest => dot(n, p) >= 0.0 && inPlanes(rest, p)
+}
+pure func inTriangles(triangles: [[Vec3]], p: Vec3) -> bool = match triangles {
+  [] => false,
+  ns :: rest => inPlanes(ns, p) || inTriangles(rest, p)
+}
+pure func outlinePlanes(c: Cloud) -> [[Vec3]] = match c.planes {
+  [] => cloudPlanesFor(c.name), _ => c.planes
+}
+pure func isOutline(c: Cloud) -> bool = match c.planes { [] => hasOutline(c.name), _ => true }
+pure func inCloud(c: Cloud, p: Vec3) -> bool =
+  if !isOutline(c) then insideConeShell(cv(c), c.cosHalf, c.rIn, c.rOut, p)
+  else let r2 = dot(p, p) in
+    r2 > 0.0 && r2 >= c.rIn * c.rIn && r2 < c.rOut * c.rOut
+    && (c.cosHalf < 0.0 || insideConeShell(cv(c), c.cosHalf, c.rIn, c.rOut, p))
+    && inTriangles(outlinePlanes(c), p)
+
+pure func firstCloud(cs: [Cloud], k: int, p: Vec3) -> Medium = match cs {
+  [] => if insideStarSurface(licC(), licCoeffs(), p) then licMedium() else hotMedium(),
+  c :: rest => if inCloud(c, p) then cloudMedium(k, c) else firstCloud(rest, k + 1, p)
+}
+
+-- The medium at a point (lism-1).
+export pure func mediumAt(p: Vec3) -> Medium = firstCloud(cloudMetas(), 0, p)
+
+-- ---------- route profiles ----------
+
+-- A piece of a straight leg a -> b: s0 < s1 in light years from a, in one medium.
+export type Seg = { s0: float, s1: float, medium: Medium }
+
+pure func lerp(a: Vec3, b: Vec3, t: float) -> Vec3 = v3(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t)
+pure func dist(a: Vec3, b: Vec3) -> float { let dx = b.x - a.x; let dy = b.y - a.y; let dz = b.z - a.z; sqrt(dx * dx + dy * dy + dz * dz) }
+
+pure func ends(is: [Interval], acc: [float]) -> [float] = match is { [] => acc, i :: rest => ends(rest, i.t0 :: i.t1 :: acc) }
+
+-- Every real l<=2 spherical harmonic has |Y|<1: sum |coeffs| encloses
+-- the LIC. Restrict the package's 64-step bracket to this finite sphere,
+-- so a long off-Sol route cannot dilute the entire LIC into one grid cell.
+-- Root refinement is numerical; arbitrarily tangent double roots may remain
+-- unresolved by the upstream bracket (no 'exact, never sampled' claim).
+pure func licCrossings(a: Vec3, b: Vec3) -> [float] {
+  -- v0.52.0 interpreter loses a transitive package resolver in fold callbacks;
+  -- canonical report inbox_1791657061847_c02abfea (strict VM passes).
+  let r = foldl(\acc c. acc + (if c < 0.0 then 0.0 - c else c), 0.0, licCoeffs());
+  let bound = ellipsoidChord(licC(), v3(1.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), v3(0.0, 0.0, 1.0), r, r, r, a, b);
+  match bound {
+    g :: _ => map(\t. g.t0 + (g.t1 - g.t0) * t, starSurfaceCrossings(licC(), licCoeffs(), lerp(a, b, g.t0), lerp(a, b, g.t1))),
+    [] => []
+  }
+}
+
+pure func intersectOne(i: Interval, js: [Interval]) -> [Interval] =
+  filter(\k. k.t1 > k.t0, map(\j. {t0: if i.t0 > j.t0 then i.t0 else j.t0, t1: if i.t1 < j.t1 then i.t1 else j.t1}, js))
+pure func intersections(is: [Interval], js: [Interval]) -> [Interval] = match is {
+  [] => [],
+  i :: rest => intersectOne(i, js) ++ intersections(rest, js)
+}
+pure func withoutOne(i: Interval, j: Interval) -> [Interval] =
+  if j.t1 <= i.t0 || j.t0 >= i.t1 then [i]
+  else filter(\k. k.t1 > k.t0, [
+    {t0: i.t0, t1: if j.t0 < i.t1 then j.t0 else i.t1},
+    {t0: if j.t1 > i.t0 then j.t1 else i.t0, t1: i.t1}
+  ])
+pure func withoutInner(is: [Interval], inner: [Interval]) -> [Interval] = match inner {
+  [] => is,
+  j :: _ => foldl(\acc i. withoutOne(i, j) ++ acc, [], is)
+}
+pure func sphereChord(r: float, a: Vec3, b: Vec3) -> [Interval] =
+  if !(r > 0.0) then [] else ellipsoidChord(v3(0.0, 0.0, 0.0), v3(1.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), v3(0.0, 0.0, 1.0), r, r, r, a, b)
+pure func clipPlanes(ns: [Vec3], bound: [Interval], r: float, a: Vec3, b: Vec3) -> [Interval] =
+  if length(bound) == 0 then [] else match ns {
+    [] => bound,
+    n :: rest => {
+      let da = dot(n, a); let db = dot(n, b);
+      -- Dot is affine on the leg. A same-side leg needs no slab intersection;
+      -- its sphere-clipped points already satisfy the slab's upper radius bound.
+      if da <= 0.0 && db <= 0.0 && (da < 0.0 || db < 0.0) then []
+      else if da >= 0.0 && db >= 0.0 then clipPlanes(rest, bound, r, a, b)
+      else clipPlanes(rest, intersections(bound, slabChord(n, 0.0, r, a, b)), r, a, b)
+    }
+  }
+pure func triangleChords(triangles: [[Vec3]], shell: [Interval], r: float, a: Vec3, b: Vec3, acc: [Interval]) -> [Interval] = match triangles {
+  [] => acc,
+  ns :: rest => triangleChords(rest, shell, r, a, b, clipPlanes(ns, shell, r, a, b) ++ acc)
+}
+-- Exact angular-halfspace and radial-shell intersections via published package
+-- slab/ellipsoid primitives. Empty outlines retain the circular-cone fallback.
+pure func outlineBound(c: Cloud, a: Vec3, b: Vec3) -> [Interval] =
+  if c.cosHalf >= 0.0 then coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b)
+  else withoutInner(sphereChord(c.rOut, a, b), sphereChord(c.rIn, a, b))
+export pure func cloudChords(c: Cloud, a: Vec3, b: Vec3) -> [Interval] =
+  if !isOutline(c) then coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b)
+  else let shell = outlineBound(c, a, b) in
+    if length(shell) == 0 then [] else triangleChords(outlinePlanes(c), shell, c.rOut, a, b, [])
+pure func prepareCloud(c: Cloud, a: Vec3, b: Vec3) -> Cloud =
+  if isOutline(c) && length(outlineBound(c, a, b)) > 0 then {c | planes: outlinePlanes(c)} else c
+pure func cloudTs(cs: [Cloud], a: Vec3, b: Vec3, acc: [float]) -> [float] = match cs {
+  [] => acc,
+  c :: rest => cloudTs(rest, a, b, ends(cloudChords(c, a, b), acc))
+}
+
+pure func cmpF(x: float, y: float) -> int = if x < y then -1 else if x > y then 1 else 0
+
+pure func uniq(ts: [float], acc: [float]) -> [float] = match ts {
+  [] => reverse(acc),
+  t :: rest => match acc { p :: _ => if p == t then uniq(rest, acc) else uniq(rest, t :: acc), [] => uniq(rest, [t]) }
+}
+
+pure func clamp01(ts: [float], acc: [float]) -> [float] = match ts {
+  [] => acc,
+  t :: rest => if t > 0.0 && t < 1.0 then clamp01(rest, t :: acc) else clamp01(rest, acc)
+}
+
+pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, cs: [Cloud], acc: [Seg]) -> [Seg] = match ts {
+  t0 :: rest => match rest {
+    t1 :: _ => {
+      let m = firstCloud(cs, 0, lerp(a, b, 0.5 * (t0 + t1)));
+      let s0 = t0 * len;
+      let s1 = t1 * len;
+      match acc {
+        g :: more => if g.medium.id == m.id then segsOf(rest, a, b, len, cs, { s0: g.s0, s1: s1, medium: m } :: more) else segsOf(rest, a, b, len, cs, { s0: s0, s1: s1, medium: m } :: acc),
+        [] => segsOf(rest, a, b, len, cs, [{ s0: s0, s1: s1, medium: m }])
+      }
+    },
+    [] => reverse(acc)
+  },
+  [] => reverse(acc)
+}
+
+-- Ordered analytic cloud boundaries, including arbitrarily short grazing chords;
+-- the LIC uses the bounded numerical bracket described above.
+export pure func profile(a: Vec3, b: Vec3) -> [Seg] {
+  let len = dist(a, b);
+  let cs = map(\c. prepareCloud(c, a, b), cloudMetas());
+  let ma = firstCloud(cs, 0, a);
+  if !(len > 0.0) then [{ s0: 0.0, s1: 0.0, medium: ma }]
+  else {
+    let ts = uniq(sortBy(cmpF, 0.0 :: 1.0 :: clamp01(cloudTs(cs, a, b, licCrossings(a, b)), [])), []);
+    segsOf(ts, a, b, len, cs, [])
+  }
+}
+
+-- Sub-profile of the leg between s = lo and s = hi (light years from a), for the
+-- coast of a plan or the piece a tick flew.
+export pure func window(segs: [Seg], lo: float, hi: float) -> [Seg] =
+  filter(\g. g.s1 > g.s0, map(\g. { s0: if g.s0 > lo then g.s0 else lo, s1: if g.s1 < hi then g.s1 else hi, medium: g.medium }, filter(\g. g.s1 > lo && g.s0 < hi, segs)))
+
+-- Mass-equivalent column (m^-2) and H column (cm^-3 ly) of a list of pieces.
+export pure func columnEff(segs: [Seg]) -> float = foldl(\acc g. acc + g.medium.nEff * (g.s1 - g.s0) * lightYearM(), 0.0, segs)
+export pure func columnNH(segs: [Seg]) -> float = foldl(\acc g. acc + g.medium.nH * (g.s1 - g.s0), 0.0, segs)
+
+-- The densest medium on a list of pieces (the first one if they tie); the hot gas if empty.
+export pure func peakMedium(segs: [Seg]) -> Medium = foldl(\m g. if g.medium.nEff > m.nEff then g.medium else m, (match segs { g :: _ => g.medium, [] => hotMedium() }), segs)
+
+-- One line of the plan's media list: the length of each medium on the leg, in the
+-- order first met.
+export type MediaRow = { name: string, nH: float, lengthLy: float }
+
+pure func addLen(rows: [MediaRow], g: Seg, acc: [MediaRow], found: bool) -> [MediaRow] = match rows {
+  [] => if found then reverse(acc) else reverse({ name: g.medium.name, nH: g.medium.nH, lengthLy: g.s1 - g.s0 } :: acc),
+  r :: rest => if r.name == g.medium.name then addLen(rest, g, { name: r.name, nH: r.nH, lengthLy: r.lengthLy + g.s1 - g.s0 } :: acc, true) else addLen(rest, g, r :: acc, found)
+}
+
+export pure func mediaRows(segs: [Seg]) -> [MediaRow] = foldl(\rows g. addLen(rows, g, [], false), [], segs)
+
+-- ---------- the drive-hold limit ----------
+
+-- The highest cruise rapidity the drive (mEff kg, a m/s^2) can hold and brake from on
+-- these pieces: driveHoldMaxPhi at their peak mass-equivalent density (D-61: a plan
+-- above it is refused and the limit shown, never capped).
+export pure func holdMaxPhi(segs: [Seg], mEff: float, a: float, r: float) -> float = driveHoldMaxPhi(mEff, a, (peakMedium(segs)).nEff, r)
+
+-- ---------- dust grains ----------
+
+-- The scenario's grain and afterglow settings (G-AG, a labelled game approximation).
+-- wRtS: the real-time display window, ship seconds (what one 20 Hz tick holds).
+export type DustCfg = { eps: float, fIn: float, rSpot: float, tau: float, r: float, darkSky: float, wRtS: float, aMax: float, q: float, hotDelta: float }
+export pure func defaultDustCfg(eps: float, fIn: float, r: float) -> DustCfg =
+  { eps: eps, fIn: fIn, rSpot: 0.5, tau: 0.2, r: r, darkSky: 0.00004327, wRtS: 0.05, aMax: grainAMax(), q: grainQ(), hotDelta: deltaLocal() }
+
+export pure func distOf(m: Medium, c: DustCfg) -> GrainDist {
+  let delta = if m.id == 0 then c.hotDelta else m.delta;
+  grainDist(m.nH * 1000000.0 * hydrogenMassKg() * delta, grainAMin(), grainABreak(), c.aMax, c.q, grainRho())
+}
+
+-- The luminous efficacy of blackbody light at T from the generated table (log-linear
+-- interpolation; 0 below 10 K, the last bin's slope above 1e7 K).
+export pure func efficacyAt(lut: Array[float], t: float) -> float =
+  if !(t > 10.0) then 0.0
+  else {
+    let x = (log(t) / log(10.0) - efficacyLog10TMin()) / efficacyStep();
+    let n = alen(lut);
+    let i0 = floatToInt(floor(x));
+    let i = if i0 > n - 2 then n - 2 else if i0 < 0 then 0 else i0;
+    let f = x - intToFloat(i);
+    let e0 = get(lut, i);
+    let e1 = get(lut, i + 1);
+    if e0 > 0.0 && e1 > 0.0 then exp(log(e0) + f * (log(e1) - log(e0))) else e0 + f * (e1 - e0)
+  }
+
+-- Peak luminance (cd/m^2) of a grain's afterglow: E0 / pi x efficacy(T0), with the
+-- package's G-AG temperature and emittance at t = 0 written out (the same formulas).
+pure func peakLuminance(lut: Array[float], ke: float, c: DustCfg) -> float {
+  let x = ke / (0.00000005670374419 * 3.141592653589793 * c.rSpot * c.rSpot * c.tau);
+  let t0 = if x > 0.0 then sqrt(sqrt(x)) else 0.0;
+  let e0 = c.eps * c.fIn * ke / (3.141592653589793 * c.rSpot * c.rSpot * c.tau);
+  e0 / 3.141592653589793 * efficacyAt(lut, t0)
+}
+
+pure func okAt(lut: Array[float], a: float, phi: float, need: float, c: DustCfg) -> bool =
+  peakLuminance(lut, grainKinetic(grainMassOf(a, grainRho()), phi), c) >= need
+
+pure func bisectA(lut: Array[float], lo: float, hi: float, n: int, phi: float, need: float, c: DustCfg) -> float =
+  if n <= 0 then exp(hi)
+  else {
+    let mid = 0.5 * (lo + hi);
+    if okAt(lut, exp(mid), phi, need, c) then bisectA(lut, lo, mid, n - 1, phi, need, c) else bisectA(lut, mid, hi, n - 1, phi, need, c)
+  }
+
+pure func finite(x: float) -> bool = x == x && x < 1e300 && x > 0.0 - 1e300
+pure func logTAt(i: int) -> float = (efficacyLog10TMin() + efficacyStep() * intToFloat(i)) * log(10.0)
+pure func logLAt(lut: Array[float], i: int, scale: float) -> float =
+  let e = get(lut, i) in if e > 0.0 then scale + 4.0 * logTAt(i) + log(e) else 0.0 - 1e300
+pure func inverseCell(lut: Array[float], lo: int, hi: int, ll: float, lh: float, target: float, scale: float) -> int =
+  if hi - lo <= 1 then lo else {
+    let mid = (lo + hi) / 2;
+    let lm = logLAt(lut, mid, scale);
+    if lm != lm || lm < ll || lm > lh then -1
+    else if target < lm then inverseCell(lut, lo, mid, ll, lm, target, scale)
+    else inverseCell(lut, mid, hi, lm, lh, target, scale)
+  }
+-- Numerical inverse of the SAME adopted efficacyAt table, whose positive-cell
+-- luminance slopes are certified in ism_inverse_test. No new physical model:
+-- in one log-linear cell log L = log(sigma eps fIn/pi) + 4 log T + log efficacy.
+-- Zero/linear cells, invalid search brackets and nonpositive/nonfinite cell
+-- slopes retain the old solver. The shipped table's global monotonicity is
+-- certified by the regression above; this solver does not scan it at each node.
+pure func invertThreshold(lut: Array[float], phi: float, need: float, c: DustCfg) -> float {
+  let fallback = \u. bisectA(lut, log(grainAMin()), log(c.aMax), 60, phi, need, c);
+  let scale0 = 0.00000005670374419 * c.eps * c.fIn / 3.141592653589793;
+  let cooling = 0.00000005670374419 * 3.141592653589793 * c.rSpot * c.rSpot * c.tau;
+  let ke1 = grainKinetic(grainMassOf(1.0, grainRho()), phi);
+  let n = alen(lut);
+  if n < 2 || !(scale0 > 0.0) || !(cooling > 0.0) || !(ke1 > 0.0) || !(need > 0.0)
+      -- Subnormal products can be nonzero but have lost relative precision.
+      || scale0 < 2.2250738585072014e-308 || cooling < 2.2250738585072014e-308
+      || ke1 < 2.2250738585072014e-308 || need < 2.2250738585072014e-308
+      || !finite(scale0) || !finite(cooling) || !finite(ke1) || !finite(need) then fallback(0)
+  else {
+    let scale = log(scale0);
+    let target = log(need);
+    let first = logLAt(lut, 0, scale);
+    let last = logLAt(lut, n - 1, scale);
+    let i = if first != first || last != last || first > last || first >= 1e300 || last >= 1e300 then -1
+      else if target <= first then 0 else if target >= last then n - 2 else inverseCell(lut, 0, n - 1, first, last, target, scale);
+    if i < 0 then fallback(0) else {
+      let e0 = get(lut, i); let e1 = get(lut, i + 1);
+      let slope = 4.0 + (log(e1) - log(e0)) / (efficacyStep() * log(10.0));
+      if !(e0 > 0.0) || !(e1 > 0.0) || !(slope > 0.0) || !finite(slope) then fallback(0)
+      else {
+        let t = logTAt(i) + (target - logLAt(lut, i, scale)) / slope;
+        let a = exp((log(cooling) + 4.0 * t - log(ke1)) / 3.0);
+        -- Preserve the upper-crossing convention despite final exp/log rounding.
+        let crossed = okAt(lut, a, phi, need, c);
+        let upper = if crossed then a else a * 1.00000000000002;
+        if !finite(a) || a < grainAMin() || upper > c.aMax || (!crossed && !okAt(lut, upper, phi, need, c)) then fallback(0) else upper
+      }
+    }
+  }
+}
+
+-- The smallest grain whose peak afterglow is at least contrast x the background
+-- (dust.visibleRadius with the tabulated efficacy; checked against it in ism_test).
+-- aMax x 1.000001 when none.
+export pure func thresholdRadius(lut: Array[float], phi: float, bg: float, contrast: float, c: DustCfg) -> float {
+  let need = contrast * bg;
+  if !okAt(lut, c.aMax, phi, need, c) then c.aMax * 1.000001
+  else if okAt(lut, grainAMin(), phi, need, c) then grainAMin()
+  else invertThreshold(lut, phi, need, c)
+}
+
+-- The background a flash competes with at the forward pole: the glow there and the dark
+-- sky (cd/m^2).
+export pure func backgroundAt(lut: Array[float], m: Medium, phi: float, c: DustCfg) -> float =
+  glowEmittanceAt(m.nEff, phi, c.eps, c.fIn, 1.0) / 3.141592653589793 * efficacyAt(lut, glowTemperatureAt(m.nEff, phi, 1.0)) + c.darkSky
+
+-- Visible (>= 5 % of the background) and bright (>= the background) thresholds of a
+-- medium at a speed.
+-- With the medium's grain distribution, kept with them so a cruising tick renormalises nothing.
+export type Thresh = { mediumId: int, phi: float, aVis: float, aBright: float, dist: GrainDist }
+export pure func thresholds(lut: Array[float], m: Medium, phi: float, c: DustCfg) -> Thresh {
+  let bg = backgroundAt(lut, m, phi, c);
+  { mediumId: m.id, phi: phi, aVis: thresholdRadius(lut, phi, bg, 0.05, c), aBright: thresholdRadius(lut, phi, bg, 1.0, c), dist: distOf(m, c) }
+}
+
+pure func cached(ts: [Thresh], m: Medium, phi: float) -> [Thresh] = filter(\t. t.mediumId == m.id && t.phi == phi, ts)
+
+-- The thresholds from the cache, else computed (the efficacy table is built only then).
+pure func threshFor(cache: [Thresh], m: Medium, phi: float, c: DustCfg) -> Thresh =
+  match cached(cache, m, phi) { t :: _ => t, [] => thresholds(lutArray(), m, phi, c) }
+
+export pure func lutArray() -> Array[float] = toArray(efficacyLut())
+
+-- ---------- the stateless dust stream ----------
+
+-- Uniform [0, 1) number j of tick k: splitmix64(key, k * 1024 + j), top 53 bits. The
+-- key mixes the game seed with a dust salt, so no existing Rng stream is consumed.
+export pure func dustSalt() -> int = 1146442580
+export pure func dustKey(seed: int) -> int = mix64(mix64(seed) ^ dustSalt())
+export pure func slotsPerTick() -> int = 1024
+export pure func dustU(key: int, k: int, j: int) -> float = intToFloat(top53(splitmix64(key, k * slotsPerTick() + j))) / 9007199254740992.0
+
+-- One bright impact: grain radius (m), its kinetic energy (J), the point on the
+-- forward wall's projected unit disc (x, y; cos theta-weighted on the wall), the
+-- time in the display window (ship seconds) and the medium.
+export type Impact = { a: float, ke: float, x: float, y: float, t: float, medium: string }
+
+-- What one tick's dust adds up to. expected/drawn: bright grains (>= the background)
+-- over the whole piece flown (exact at any pacing); events: those in the display
+-- window (at most 32; dropped counts the rest); glitter: the faint flashes
+-- (5 % <= contrast < 1) the renderer draws itself from its rate per ship second, the
+-- size range and a seed.
+export type Glitter = { rate: float, aLo: float, aHi: float, q: float, seed: int }
+export type DustTick = { expected: float, drawn: int, events: [Impact], dropped: int, window: float, visibleRate: float, brightRate: float, glitter: Glitter, cache: [Thresh] }
+
+export pure func maxEvents() -> int = 32
+export pure func noGlitter() -> Glitter = { rate: 0.0, aLo: 0.0, aHi: 0.0, q: 0.0, seed: 0 }
+export pure func noDust(cache: [Thresh]) -> DustTick = { expected: 0.0, drawn: 0, events: [], dropped: 0, window: 0.0, visibleRate: 0.0, brightRate: 0.0, glitter: noGlitter(), cache: cache }
+
+pure func addCache(cache: [Thresh], t: Thresh) -> [Thresh] = match cache { h :: _ => if h.mediumId == t.mediumId && h.phi == t.phi then cache else addNew(cache, t), [] => [t] }
+pure func addNew(cache: [Thresh], t: Thresh) -> [Thresh] = match cached(cache, { id: t.mediumId, name: "", nH: 0.0, delta: 0.0, nEff: 0.0 }, t.phi) { [] => t :: take8(cache, 7, []), _ => cache }
+pure func take8(xs: [Thresh], n: int, acc: [Thresh]) -> [Thresh] = if n <= 0 then reverse(acc) else match xs { [] => reverse(acc), x :: rest => take8(rest, n - 1, x :: acc) }
+
+pure func mkEvents(key: int, k: int, i: int, n: int, d: GrainDist, aB: float, phi: float, w: float, name: string, acc: [Impact]) -> [Impact] =
+  if i >= n then reverse(acc)
+  else {
+    let a = grainRadiusAt(d, aB, dustU(key, k, 2 + 4 * i));
+    let r = sqrt(dustU(key, k, 3 + 4 * i));
+    let psi = 2.0 * 3.141592653589793 * dustU(key, k, 4 + 4 * i);
+    mkEvents(key, k, i + 1, n, d, aB, phi, w, name,
+      { a: a, ke: grainKinetic(grainMassOf(a, grainRho()), phi), x: r * cos(psi), y: r * cos(psi - 1.5707963267948966), t: dustU(key, k, 5 + 4 * i) * w, medium: name } :: acc)
+  }
+
+pure func brightAlong(segs: [Seg], phi: float, c: DustCfg, cache: [Thresh], mu: float) -> (float, [Thresh]) = match segs {
+  [] => (mu, cache),
+  g :: rest => {
+    let t = threshFor(cache, g.medium, phi, c);
+    let nb = grainsAbove(t.dist, t.aBright);
+    brightAlong(rest, phi, c, addCache(cache, t), mu + 3.141592653589793 * c.r * c.r * nb * (g.s1 - g.s0) * lightYearM())
+  }
+}
+
+-- The dust of one tick: the pieces flown (segs), the rapidity, the ship seconds flown
+-- (dtauS) and the medium at the end (whose grains the display window shows).
+-- Stream layout per tick (key, k): slots 0-1 the window's Poisson draw, 2 + 4 i .. 5 + 4 i
+-- the i-th event (size, disc radius, disc angle, time), i < 32 (130 slots); slots
+-- 1022-1023 the rest of the tick's bright total under time compression.
+export pure func dustTick(key: int, k: int, segs: [Seg], phi: float, dtauS: float, here: Medium, c: DustCfg, cache: [Thresh]) -> DustTick =
+  if !(phi > 0.0) || !(dtauS > 0.0) then noDust(cache)
+  else match brightAlong(segs, phi, c, cache, 0.0) {
+    (mu, cs) => dustWithTotal(key, k, mu, phi, dtauS, here, c, cs)
+  }
+
+-- The full flown expectation and the final display window are separate: a compressed
+-- arrival still records its bright total, but emits no at-rest flashes. At a boundary
+-- the display window uses the endpoint medium's local rate, never the leg-average rate.
+export pure func dustWithTotal(key: int, k: int, mu: float, phi: float, dtauS: float, here: Medium, c: DustCfg, cache: [Thresh]) -> DustTick =
+  if !(dtauS > 0.0) then noDust(cache)
+  else {
+    let th = threshFor(cache, here, phi, c);
+    let cache2 = addCache(cache, th);
+    let w = if phi <= 0.0 then 0.0 else if dtauS < c.wRtS then dtauS else c.wRtS;
+    let d = th.dist;
+    let rateVis = if phi > 0.0 then grainRate(grainsAbove(d, th.aVis), phi, c.r) else 0.0;
+    let rateBright = if phi > 0.0 then grainRate(grainsAbove(d, th.aBright), phi, c.r) else 0.0;
+    let localMu = rateBright * w;
+    let muW = if localMu < mu then localMu else mu;
+    let kW = poissonDraw(muW, dustU(key, k, 0), dustU(key, k, 1));
+    let kept = if kW > maxEvents() then maxEvents() else kW;
+    let rest = if mu > muW then poissonDraw(mu - muW, dustU(key, k, 1022), dustU(key, k, 1023)) else 0;
+    { expected: mu, drawn: kW + rest, events: mkEvents(key, k, 0, kept, d, th.aBright, phi, w, here.name, []), dropped: kW - kept, window: w, visibleRate: rateVis, brightRate: rateBright,
+      glitter: { rate: if rateVis > rateBright then rateVis - rateBright else 0.0, aLo: th.aVis, aHi: th.aBright, q: c.q, seed: top53(splitmix64(key, k * slotsPerTick() + 1021)) }, cache: cache2 }
+  }
+
+-- Changing-speed pieces: adaptive Simpson quadrature in distance, split
+-- at every medium and acceleration-phase boundary. Relative tolerance 1e-6, depth
+-- limit 14. Coast uses the constant-speed fast path; short boost/brake intervals
+-- still require integration at the scenario's allowed high accelerations.
+pure func routePhi(tp: TripPlan, x: float) -> float =
+  if x < tp.dBurn then acosh1p(tp.a * x)
+  else if x < tp.dBurn + tp.dCoast then tp.phiPeak
+  else {
+    let left = tp.trip.distance - x;
+    if left <= 0.0 then 0.0
+    else if tp.dApproach > 0.0 && left < tp.dApproach then acosh1p(tp.aApproach * left)
+    else acosh1p(tp.a * (left - tp.dApproach) + (cosh(tp.phiApproach) - 1.0))
+  }
+pure func brightDensity(lut: Array[float], m: Medium, gd: GrainDist, tp: TripPlan, x: float, c: DustCfg) -> float =
+  let phi = routePhi(tp, x) in grainsAbove(gd, thresholdRadius(lut, phi, backgroundAt(lut, m, phi, c), 1.0, c))
+pure func simpson(a: float, b: float, fa: float, fm: float, fb: float) -> float = (b - a) / 6.0 * (fa + 4.0 * fm + fb)
+pure func integrateBright(lut: Array[float], m: Medium, gd: GrainDist, tp: TripPlan, a: float, b: float, fa: float, fm: float, fb: float, whole: float, tol: float, depth: int, c: DustCfg) -> float {
+  let mid = 0.5 * (a + b);
+  let fl = brightDensity(lut, m, gd, tp, 0.5 * (a + mid), c);
+  let fr = brightDensity(lut, m, gd, tp, 0.5 * (mid + b), c);
+  let l = simpson(a, mid, fa, fl, fm);
+  let r = simpson(mid, b, fm, fr, fb);
+  let diff = l + r - whole;
+  if depth <= 0 || absf(diff) <= 15.0 * tol then l + r + diff / 15.0
+  else integrateBright(lut, m, gd, tp, a, mid, fa, fl, fm, l, tol * 0.5, depth - 1, c)
+       + integrateBright(lut, m, gd, tp, mid, b, fm, fr, fb, r, tol * 0.5, depth - 1, c)
+}
+pure func brightPiece(lut: Array[float], g: Seg, tp: TripPlan, c: DustCfg) -> float {
+  let gd = distOf(g.medium, c);
+  let fa = brightDensity(lut, g.medium, gd, tp, g.s0, c);
+  let fm = brightDensity(lut, g.medium, gd, tp, 0.5 * (g.s0 + g.s1), c);
+  let fb = brightDensity(lut, g.medium, gd, tp, g.s1, c);
+  let whole = simpson(g.s0, g.s1, fa, fm, fb);
+  let tol = 0.000001 * (if whole > 0.0 then whole else (g.s1 - g.s0) * grainsAbove(gd, grainAMin()) * 0.000000000001);
+  if whole <= 0.0 then 0.0 else integrateBright(lut, g.medium, gd, tp, g.s0, g.s1, fa, fm, fb, whole, tol, 14, c)
+}
+-- Split a monotonic acceleration piece into <=0.25-rapidity intervals before
+-- adaptive refinement. This finds the bright-density lobe even when it vanishes
+-- at the broad interval's endpoints and midpoint at very high gamma.
+pure func boostX(tp: TripPlan, phi: float) -> float = (cosh(phi) - 1.0) / tp.a
+pure func brakeX(tp: TripPlan, phi: float) -> float = tp.trip.distance - tp.dApproach - (cosh(phi) - cosh(tp.phiApproach)) / tp.a
+pure func approachX(tp: TripPlan, phi: float) -> float = tp.trip.distance - (cosh(phi) - 1.0) / tp.aApproach
+pure func phiKnots(tp: TripPlan, k: int, acc: [float]) -> [float] {
+  let phi = intToFloat(k) * 0.25;
+  if phi >= tp.phiPeak then acc
+  else phiKnots(tp, k + 1, boostX(tp, phi) :: brakeX(tp, phi) :: (if tp.tauApproach > 0.0 && phi < tp.phiApproach then approachX(tp, phi) :: acc else acc))
+}
+pure func splitBright(lut: Array[float], g: Seg, tp: TripPlan, cuts: [float], c: DustCfg, acc: float) -> float = match cuts {
+  [] => acc + brightPiece(lut, g, tp, c),
+  x :: rest => if x <= g.s0 || x >= g.s1 then splitBright(lut, g, tp, rest, c, acc)
+    else splitBright(lut, {g | s0: x}, tp, rest, c, acc + brightPiece(lut, {g | s1: x}, tp, c))
+}
+pure func sumBright(lut: Array[float], gs: [Seg], tp: TripPlan, cuts: [float], c: DustCfg) -> float =
+  foldl(\acc g. acc + splitBright(lut, g, tp, cuts, c, 0.0), 0.0, gs)
+export pure func tripBright(segs: [Seg], tp: TripPlan, c: DustCfg) -> float {
+  let lut = lutArray();
+  let cuts = uniq(sortBy(cmpF, phiKnots(tp, 1, [])), []);
+  let b0 = tp.dBurn;
+  let b1 = tp.dBurn + tp.dCoast;
+  let b2 = tp.trip.distance - tp.dApproach;
+  3.141592653589793 * c.r * c.r * lightYearM() *
+    (sumBright(lut, window(segs, 0.0, b0), tp, cuts, c)
+     + sumBright(lut, window(segs, b0, b1), tp, cuts, c)
+     + sumBright(lut, window(segs, b1, b2), tp, cuts, c)
+     + sumBright(lut, window(segs, b2, tp.trip.distance), tp, cuts, c))
+}
+
+-- Expected grains swept (radius >= aLo) along pieces: pi R^2 sum n_gr(>= aLo) ds.
+export pure func grainsSwept(segs: [Seg], aLo: float, c: DustCfg) -> float =
+  foldl(\acc g. acc + 3.141592653589793 * c.r * c.r * grainsAbove(distOf(g.medium, c), aLo) * (g.s1 - g.s0) * lightYearM(), 0.0, segs)
+
+-- Expected visible flashes (>= 5 % of the background) along pieces at a cruise rapidity.
+export pure func visibleAlong(lut: Array[float], segs: [Seg], phi: float, c: DustCfg) -> float =
+  if !(phi > 0.0) then 0.0
+  else foldl(\acc g. acc + 3.141592653589793 * c.r * c.r * grainsAbove(distOf(g.medium, c), (thresholds(lut, g.medium, phi, c)).aVis) * (g.s1 - g.s0) * lightYearM(), 0.0, segs)

@@ -30,7 +30,7 @@ strict-m5:         ## sim/data/{sol,acen}.ail checks (celestial_test dataVm): st
 
 # M5.5a, split by M3.1c: minors 4-5 report the frozen "0.9.0" (relativityPinNav); the highest
 # minor (>= 6, GR) reports relativityPin(), which must be the pin in sim/ailang.toml.
-hello-pin:         ## protocol.ail relativityPin() (highest minor) == the sunholo/relativity pin in sim/ailang.toml; minors 4-5 stay 0.9.0
+hello-pin:         ## protocol.ail relativityPin() (the current pin, reported from the newest minor) == the sunholo/relativity pin in sim/ailang.toml; minors 4-5 stay 0.9.0, minor 6 stays 0.10.0
 	@pin=$$(sed -n 's/^"sunholo\/relativity" = "\(.*\)"/\1/p' sim/ailang.toml); \
 	said=$$(sed -n 's/^export pure func relativityPin() -> string = "\(.*\)"/\1/p' sim/protocol.ail); \
 	nav=$$(sed -n 's/^export pure func relativityPinNav() -> string = "\(.*\)"/\1/p' sim/protocol.ail); \

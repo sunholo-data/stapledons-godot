@@ -1,0 +1,248 @@
+-- R1-ISM-DUST I4: the sim under lism-1 (design ism-structure-and-dust.md AC8-AC11, AC10b).
+-- AC9 the drag ledger closes against the plan's column at every pacing; AC10 the drive-hold
+-- limit refuses a plan just above it (m_eff_too_small plus a hold_limit event) and accepts
+-- one just below; AC10b every guided-itinerary leg plans and flies under lism-1; AC11 the
+-- dust never touches the Rng streams; AC8 uniform worlds carry no ISM state.
+module stapledons/sim/core_ism_test
+
+import std/option (Option, Some, None)
+import std/list (length, filter)
+import pkg/sunholo/relativity/optics (Vec3)
+import pkg/sunholo/relativity/hyper (absf, cosh)
+import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/medium (mirrorDragForce, accelSI)
+import pkg/sunholo/celestial/frames (unitFromAngles)
+import ./core (dustCfg, Refusal, World, Params, Target, Intent, IPlan, ICommit, Planned, Committed, Arrived, Plan, Event, newWorld, defaultParams, tick, position, scenarioError, planView, isLism, mediumHere, crossedMedia, withHole)
+import ./ism (profile, holdMaxPhi, peakMedium, tripBright, window, hotMedium, licMedium)
+import ./solar_departure (initialize, intentForLeg, legCount)
+import ./rng (Rng)
+import ./gr (sgrA)
+
+pure func lyPerPc() -> float = 3.0856775814913673e16 / 9460730472580800.0
+pure func rad(d: float) -> float = d * 3.141592653589793 / 180.0
+pure func at(l: float, b: float, dPc: float) -> Vec3 { let u = unitFromAngles(rad(l), rad(b)); let s = dPc * lyPerPc(); { x: u.x * s, y: u.y * s, z: u.z * s } }
+pure func rel(got: float, want: float, tol: float) -> bool = absf(got - want) <= tol * absf(want)
+pure func lism(p: Params) -> Params = {p | ismModel: 1.0}
+pure func aldebaran() -> Target = { index: 2, id: "CNS5:1142", pos: at(180.97, -20.25, 20.43) }
+pure func phi0999() -> float = rapidityOfOneMinusBeta(0.001)
+
+pure func planned(w: World, t: Target, phi: float) -> World = (tick(w, {dtau: 0.0, intents: [IPlan({target: t, cruisePhi: phi, flipG: None, star: None})]})).world
+pure func planOf(w: World) -> Option[Plan] = match w.journey { Planned(p) => Some(p), Committed(c) => Some(c.plan), Arrived(c) => Some(c.plan), _ => None }
+
+-- ---------- AC8: uniform keeps its bytes; lism-1 is opt-in ----------
+
+test "AC8: defaultParams is uniform; a uniform plan carries no ISM summary" {
+  !isLism(defaultParams())
+  && (match planOf(planned(newWorld(1, false, defaultParams()), aldebaran(), phi0999())) { Some(p) => (match p.ism { None => true, Some(_) => false }), None => false })
+}
+
+test "under lism-1 a plan carries the published-outline route (LIC, Aur, LIC, hot, Hyades, hot) and its hold limit" {
+  match planOf(planned(newWorld(1, false, lism(defaultParams())), aldebaran(), phi0999())) {
+    Some(p) => (match p.ism { Some(pi) => (match pi.media { a :: b :: c :: d :: e :: f :: [] => a.name == "LIC" && b.name == "Aur" && c.name == "LIC" && d.name == "hot" && e.name == "Hyades" && f.name == "hot", _ => false }) && pi.peak.name == "LIC" && pi.holdPhi > phi0999(), None => false }),
+    None => false
+  }
+}
+
+-- ---------- AC9: the ledger closes against the plan's column ----------
+
+pure func fly(w: World, n: int, dtau: float) -> World = if n <= 0 then w else fly((tick(w, {dtau: dtau, intents: []})).world, n - 1, dtau)
+pure func settle(w: World, k: int) -> World = match w.journey { Committed(_) => if k > 0 then settle((tick(w, {dtau: 0.000000000001, intents: []})).world, k - 1) else w, _ => w }
+
+pure func closes(n: int) -> bool {
+  let p = lism(defaultParams());
+  let w0 = planned(newWorld(3, false, p), aldebaran(), phi0999());
+  match planOf(w0) {
+    Some(pl) => {
+      let c = (tick(w0, {dtau: 0.0, intents: [ICommit(pl.id)]})).world;
+      let done = settle(fly(c, n, pl.trip.tauTotal / intToF(n)), 1000);
+      let want = (planView(p, pl, 0.0, 0.0)).energy.dragJ;
+      (match done.journey { Arrived(_) => true, _ => false }) && rel(done.ledger.dragJ, want, 0.000000001) && want > 0.0
+    },
+    None => false
+  }
+}
+pure func intToF(n: int) -> float = if n <= 0 then 0.0 else 1.0 + intToF(n - 1)
+
+test "AC9: Sol -> Aldebaran at 0.999c under lism-1: arrival drag_j = the plan's column drag (1e-9) in 1, 7 and 60 ticks" { closes(1) && closes(7) && closes(60) }
+
+-- ---------- AC10: the drive-hold limit ----------
+
+-- A drive just strong enough for 0.999c at the route's peak (the warm clouds): m_eff a = drag(phi).
+pure func weakParams() -> Params {
+  let p = lism(defaultParams());
+  let n = (mediumHere(p, { x: 0.0, y: 0.0, z: 0.0 })).nEff;
+  {p | mEffKg: mirrorDragForce(n, phi0999(), p.bubbleRadiusM) / accelSI(p.boostG * 9.80665 / 299792458.0 * 31557600.0)}
+}
+
+pure func holdOf(p: Params) -> float {
+  let dest = (aldebaran()).pos;
+  holdMaxPhi(profile({ x: 0.0, y: 0.0, z: 0.0 }, dest), p.mEffKg, accelSI(p.boostG * 9.80665 / 299792458.0 * 31557600.0), p.bubbleRadiusM)
+}
+
+pure func refusedWith(r: [Refusal], why: string) -> bool = length(filter(\x. x.reason == why, r)) > 0
+pure func holdEvents(es: [Event]) -> [Event] = filter(\e. e.kind == "hold_limit", es)
+
+test "AC10: above the route's hold limit the plan is refused m_eff_too_small with a hold_limit event; 1e-9 below it is accepted" {
+  let p = weakParams();
+  let h = holdOf(p);
+  let w = newWorld(5, false, p);
+  let over = tick(w, {dtau: 0.0, intents: [IPlan({target: aldebaran(), cruisePhi: h + 0.000001, flipG: None, star: None})]});
+  let under = tick(w, {dtau: 0.0, intents: [IPlan({target: aldebaran(), cruisePhi: h - 0.000000001, flipG: None, star: None})]});
+  rel(h, phi0999(), 0.000001)
+  && refusedWith(over.refused, "m_eff_too_small")
+  && (match holdEvents(over.events) { e :: _ => (match e.hold { Some(x) => rel(x.phi, h, 0.000000000001) && x.medium == "LIC", None => false }), [] => false })
+  && (match under.world.journey { Planned(_) => true, _ => false }) && length(under.refused) == 0
+}
+
+test "scenarioError under lism-1 checks the cap against the hot-gas floor (the guided drive passes)" {
+  let g = {defaultParams() | boostG: 3000000.0, mEffKg: 10.0, capOneMinusBeta: 0.000000002, standoffAu: 1000.0, ismModel: 1.0};
+  match scenarioError(g) { None => true, Some(_) => false }
+}
+
+-- ---------- AC10b: the guided itinerary under lism-1 ----------
+
+pure func guidedLism() -> World {
+  let w = newWorld(42, false, defaultParams());
+  let g = {w | params: {w.params | boostG: 3000000.0, mEffKg: 10.0, capOneMinusBeta: 0.000000002, standoffAu: 1000.0, ismModel: 1.0}};
+  match initialize(g) { Ok(x) => x, Err(_) => g }
+}
+
+pure func fixtureTarget() -> Target = { index: 0, id: "CNS5:3627", pos: {x: 3.094521, y: 0.0 - 3.015404, z: 0.0 - 0.051608} }
+pure func trappistTarget() -> Target = { index: 1, id: "Gaia DR3 2635476908753563008", pos: {x: 7.742, y: 20.946483, z: 0.0 - 33.930598} }
+pure func aldebaranCat() -> Target = { index: 2, id: "CNS5:1142", pos: {x: 0.0 - 62.516711, y: 0.0 - 1.060038, z: 0.0 - 23.064639} }
+pure func targetFor(n: int) -> Target = if n == 6 then trappistTarget() else if n == 8 then aldebaranCat() else fixtureTarget()
+
+-- Each leg plans (no refusal), flies to arrival in one tick of its tauTotal, and its drag
+-- ledger increment equals its plan's column drag (AC9 over the whole guided tour).
+pure func legOk(w: World, n: int) -> Option[World] =
+  match intentForLeg(w, n, targetFor(n)) {
+    None => None,
+    Some(intent) => {
+      let pt = tick(w, {dtau: 0.0, intents: [intent]});
+      match pt.world.journey {
+        Planned(p) => {
+          let c = (tick(pt.world, {dtau: 0.0, intents: [ICommit(p.id)]})).world;
+          let done = (tick(c, {dtau: p.trip.tauTotal, intents: []})).world;
+          let want = (planView(done.params, p, 0.0, 0.0)).energy.dragJ;
+          let got = done.ledger.dragJ - w.ledger.dragJ;
+          if (match done.journey { Arrived(_) => true, _ => false }) && (want == 0.0 && got == 0.0 || rel(got, want, 0.000000001)) && length(pt.refused) == 0
+          then Some(done) else None
+        },
+        _ => None
+      }
+    }
+  }
+
+pure func tour(w: World, n: int) -> int = if n >= legCount() then n else match legOk(w, n) { Some(next) => tour(next, n + 1), None => n }
+
+test "AC10b: every guided-itinerary leg (Sun .. Aldebaran, 10 legs) plans, flies and closes its ledger under lism-1" { tour(guidedLism(), 0) == legCount() }
+
+-- ---------- AC11: the dust never consumes an Rng stream ----------
+
+pure func flown(p: Params) -> World {
+  let w0 = planned(newWorld(9, false, p), aldebaran(), phi0999());
+  match planOf(w0) { Some(pl) => fly((tick(w0, {dtau: 0.0, intents: [ICommit(pl.id)]})).world, 20, pl.trip.tauTotal / 20.0), None => w0 }
+}
+
+pure func sameRng(a: Rng, b: Rng) -> bool = a.journey == b.journey && a.crew == b.crew && a.events == b.events && a.galaxy == b.galaxy && a.ai == b.ai && a.news == b.news
+
+test "AC11: a lism-1 flight leaves every Rng counter where the uniform flight leaves it; dust was drawn" {
+  let a = flown(defaultParams());
+  let b = flown(lism(defaultParams()));
+  sameRng(a.rng, b.rng) && b.dust.legDrawn > 0 && a.dust.legDrawn == 0
+}
+
+test "AC11: two lism-1 flights with the same seed draw the same dust" {
+  let a = flown(lism(defaultParams()));
+  let b = flown(lism(defaultParams()));
+  a.dust.legDrawn == b.dust.legDrawn && a.dust.largestA == b.dust.largestA && a.ledger.dragJ == b.ledger.dragJ
+}
+
+pure func grainsClose(n: int) -> bool {
+  let w0 = planned(newWorld(13, false, lism(defaultParams())), aldebaran(), phi0999());
+  match planOf(w0) {
+    Some(pl) => match pl.ism {
+      Some(pi) => {
+        let c = (tick(w0, {dtau: 0.0, intents: [ICommit(pl.id)]})).world;
+        let done = settle(fly(c, n, pl.trip.tauTotal / intToF(n)), 1000);
+        let rested = (tick(done, {dtau: 1.0, intents: []})).world;
+        rel(done.dust.legGrains, pi.grains, 0.000000001)
+        && rested.dust.legGrains == done.dust.legGrains
+        && done.dust.legGrains > 0.0
+        && (match done.journey { Arrived(_) => true, _ => false })
+      },
+      None => false
+    },
+    None => false
+  }
+}
+test "swept grains survive a compressed arrival and stay fixed at rest, in 1, 7 and 60 ticks" { grainsClose(1) && grainsClose(7) && grainsClose(60) }
+
+pure func refusedStarClean() -> bool {
+  let p = {weakParams() | stopRule: 54.0, standoffAu: 1000.0};
+  let w = newWorld(1, false, p);
+  let result = tick(w, {dtau: 0.0, intents: [IPlan({target: aldebaran(), cruisePhi: phi0999() + 0.000001, flipG: None,
+    star: Some({name: "Aldebaran", v: 0.86, teff: 3900.0})})]});
+  refusedWith(result.refused, "m_eff_too_small") && length(result.world.catStars) == 0 && result.world.lastPlanId == 0
+}
+test "a refused inferred-star plan stores neither a plan nor a celestial body" { refusedStarClean() }
+
+export pure func brightAtPacing(n: int) -> float {
+  let w0 = planned(newWorld(17, false, lism(defaultParams())), aldebaran(), phi0999());
+  match planOf(w0) {
+    Some(pl) => {
+      let c = (tick(w0, {dtau: 0.0, intents: [ICommit(pl.id)]})).world;
+      let done = settle(fly(c, n, pl.trip.tauTotal / intToF(n)), 1000);
+      done.dust.legExpected
+    }, None => 0.0
+  }
+}
+test "compressed bright totals include boost and braking through arrival: 1, 7 and 60 ticks agree within quadrature tolerance" {
+  let one = brightAtPacing(1);
+  rel(one, 1961369584.1362152, 0.001) && rel(brightAtPacing(7), one, 0.00001) && rel(brightAtPacing(60), one, 0.00001)
+}
+
+pure func brightBurnOracle() -> bool {
+  let params = lism(defaultParams());
+  let w = planned(newWorld(17, false, params), aldebaran(), phi0999());
+  match planOf(w) { Some(pl) => match pl.ism { Some(pi) =>
+    rel(tripBright(window(pi.segs, 0.0, pl.trip.dBurn), pl.trip, dustCfg(params)), 5442.792150843, 0.001)
+    && rel(tripBright(window(pi.segs, pl.trip.dBurn + pl.trip.dCoast, pl.trip.trip.distance), pl.trip, dustCfg(params)), 168.265854664, 0.001), None => false }, None => false }
+}
+test "boost and brake bright totals separately match independent rapidity quadrature, within efficacy LUT tolerance" { brightBurnOracle() }
+
+pure func shortArrivalBright(n: int) -> bool {
+  let p = {defaultParams() | ismModel: 1.0, boostG: 1000000000.0, bubbleRadiusM: 10000.0};
+  let a = p.boostG * 9.80665 / 299792458.0 * 31557600.0;
+  let distance = 2.0 * (cosh(1.5) - 1.0) / a;
+  let w = planned(newWorld(1, false, p), {index: 77, id: "probe", pos: {x: distance, y: 0.0, z: 0.0}}, 1.5);
+  match planOf(w) { Some(pl) => match pl.ism { Some(pi) => {
+    let c = (tick(w, {dtau: 0.0, intents: [ICommit(pl.id)]})).world;
+    let done = settle(fly(c, n, pl.trip.tauTotal / intToF(n)), 1000);
+    let want = tripBright(pi.segs, pl.trip, dustCfg(p));
+    pl.trip.tauTotal * 31557600.0 < 0.1 && want > 900.0
+    && (match done.journey { Arrived(_) => true, _ => false })
+    && rel(done.dust.legExpected, want, 0.000001)
+    && done.dust.last.brightRate == 0.0 && length(done.dust.last.events) == 0
+  }, None => false }, None => false }
+}
+test "a sub-0.1-second trip retains bright totals at 1, 2, 7 and 60 ticks and shows no at-rest impacts" {
+  shortArrivalBright(1) && shortArrivalBright(2) && shortArrivalBright(7) && shortArrivalBright(60)
+}
+
+
+test "compressed hot-cloud-hot travel reports both boundaries in order" {
+  let hot = hotMedium(); let lic = licMedium();
+  let crossed = crossedMedia([{s0: 0.0, s1: 1.0, medium: hot}, {s0: 1.0, s1: 2.0, medium: lic}, {s0: 2.0, s1: 3.0, medium: hot}], hot, hot);
+  match crossed { a :: b :: c :: [] => a.id == 0 && b.id == 1 && c.id == 0, _ => false }
+}
+test "no flown boundary is quiet; an exact endpoint entry is reported" {
+  let hot = hotMedium(); let lic = licMedium();
+  length(crossedMedia([], hot, hot)) == 0 && length(crossedMedia([{s0: 0.0, s1: 1.0, medium: hot}], hot, lic)) == 2
+}
+
+test "GR scenario placement refreshes the medium at its new position" {
+  let w = newWorld(11, false, lism(defaultParams()));
+  let placed = withHole(w, sgrA(1000000.0, 100.0, 1.0));
+  w.dust.medium.id != placed.dust.medium.id && placed.dust.medium.id == (mediumHere(w.params, position(placed.ship))).id
+}

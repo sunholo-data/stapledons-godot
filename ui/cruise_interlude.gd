@@ -37,6 +37,8 @@ static func facts_from(world: Dictionary, leg_name: String) -> Dictionary:
 	var plan: Dictionary = world.get("journey", {}).get("plan", {})
 	var cq: Dictionary = world.get("consequence", {})
 	var clock: Dictionary = world.get("clock", {})
+	var ism: Dictionary = world.get("ship", {}).get("ism", {})
+	var dust: Dictionary = ism.get("dust", {})
 	return {
 		"leg": leg_name,
 		"target_id": str(plan.get("target", {}).get("id", "")),
@@ -49,4 +51,9 @@ static func facts_from(world: Dictionary, leg_name: String) -> Dictionary:
 		"ship_tau": float(clock.get("tau", 0.0)),
 		"age": float(clock.get("age", 0.0)),
 		"news_age_years": float(cq.get("news_age_years", 0.0)),
+		"ism_model": str(ism.get("model", "")),
+		"ism_media": plan.get("media", []).duplicate(true),
+		"ism_grains": float(dust.get("leg_grains", 0.0)),
+		"ism_largest_um": float(dust.get("largest_um", 0.0)),
+		"ism_largest_j": float(dust.get("largest_j", 0.0)),
 	}

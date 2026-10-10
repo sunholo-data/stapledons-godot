@@ -18,11 +18,11 @@ import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/celestial/rings (RingBand)
 import ./data/sol (Ring, rings)
-import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
+import ./solar_departure (TourLeg, initialize as solarInitialize, initializeAtStandoff as earthInitializeAt, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
 import ./alpha_centauri (alphaBodies, catalogueId as alphaCatalogueId, stellarValue as alphaStellarValue)
 import ./destination_stars (destinationBodies, destinationCatalogueId, destinationValue)
 import ./trappist1 (trappistBodies, hostE1Lux, hostId as trappistHostId)
-import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger,
+import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger, isLism, mediumHere, currentMedium, Plan, PlanIsm, HoldInfo,
   Target, PlanReq, StarInfo, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
   CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf,
@@ -36,6 +36,7 @@ import ./celestial (SystemView, BodyView, solSystem, systemAt, jdAt, defaultEpoc
 import ./inferred_stars (CatStar, catBodies, catOf)
 import ./sync_orbit (syncOrbitOf)
 import ./navigation (BodyReq, NavPlan, Pass, Timing)
+import ./ism (Impact)
 
 export type Override = { name: string, value: float }
 export type Input =
@@ -58,17 +59,19 @@ export type HelloMsg = { major: int, minor: int, sim: string, relativity: string
 
 -- relativity: below minor 4 the hello keeps the string every recorded stream and golden
 -- carries ("0.4.0", stale since the 0.5 pins); minors 4 and 5 keep "0.9.0", the release
--- they shipped with (relativityPinNav, frozen like "0.4.0"); relativityPin() is the
--- current pin, reported from minor 6 (GR, M3.4b), which `make hello-pin` checks
--- against sim/ailang.toml.
+-- they shipped with (relativityPinNav, frozen like "0.4.0"); minor 6 (GR, M3.4b) keeps
+-- "0.10.0" (relativityPinGr, frozen); relativityPin() is the current pin, which
+-- `make hello-pin` checks against sim/ailang.toml, reported from the next minor.
 export pure func helloMsg() -> HelloMsg = { major: 2, minor: 1, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
-export pure func relativityPin() -> string = "0.11.0"
+export pure func relativityPin() -> string = "0.12.0"
+export pure func relativityPinStops() -> string = "0.11.0"
 export pure func relativityPinGr() -> string = "0.10.0"
 export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= stopsMinor() then {helloMsg() | minor: stopsMinor(), relativity: relativityPin()}
+  if want >= ismMinor() then {helloMsg() | minor: ismMinor(), relativity: relativityPin()}
+  else if want >= stopsMinor() then {helloMsg() | minor: stopsMinor(), relativity: relativityPinStops()}
   else if want >= grMinor() then {helloMsg() | minor: grMinor(), relativity: relativityPinGr()}
   else if want >= departureMinor() then {helloMsg() | minor: departureMinor(), relativity: relativityPinNav()}
   else if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPinNav()}
@@ -85,16 +88,23 @@ export pure func departureMinor() -> int = 5
 -- Protocol 2.6 (M3.4b, R1-M3-BLACK-HOLES): the new_game scenario `sgr_a` (params bh_mass_msun,
 -- bh_r), the intents gr_approach {to_r, beta_local}, gr_hover, gr_orbit and gr_ring, the `gr`
 -- section and `archive` events. Below 6 they are bad_game / bad_intent; the hello reports
--- relativityPin(). A sol stream at 2.6 is the 2.5 stream except the hello's minor and pin.
+-- relativityPinGr(). A sol stream at 2.6 is the 2.5 stream except the hello's minor and pin.
 export pure func grMinor() -> int = 6
 -- Protocol 2.7 (D-54/D-58): a star plan may carry the catalogue row {star: {name, v, teff}}
 -- (below 7 it is ignored by the decoder's caller: only stop_rule 54 uses it); the system
 -- section adds the inferred finite stars (status "inferred", catalogue_id, teff_k,
 -- inferred {r_sun, l_sun, bc_v, distance_pc}) and each Sol body's synchronous orbit
 -- (sync_orbit {altitude_km, none, radius_km, hill_km, rotation_days}). The hello reports
--- relativityPin() (0.11.0); minor 6 keeps the 0.10.0 it shipped with.
+-- relativityPinStops() (0.11.0); minor 6 keeps the 0.10.0 it shipped with.
 export pure func stopsMinor() -> int = 7
-pure func sessionMinor(want: int) -> int = if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- Protocol 2.8 (R1-ISM-DUST, D-60/D-61): new games default to the lism-1 medium (`ism_model` 1;
+-- 0 keeps uniform, and the param is bad_params below 2.8); ship.ism gains the medium, its density,
+-- the dust impacts, the leg's dust totals and the glitter descriptor; journey.plan gains the media
+-- crossed, the peak density, the drive-hold limit, the grains swept and the expected visible
+-- flashes; an m_eff_too_small refusal under lism-1 is followed by a `hold_limit` event. Every
+-- 2.7-and-older stream keeps its bytes (uniform). The hello reports relativityPin().
+export pure func ismMinor() -> int = 8
+pure func sessionMinor(want: int) -> int = if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -215,14 +225,16 @@ pure func navFields(n: NavPlan) -> [string] =
                   None => [f("hold", obj([f("body", q(n.bodyId)), f("offset_km", num(n.standoffKm))]))] })
 pure func encodeJourneyNav(j: JourneyView, nav: Option[NavPlan]) -> string =
   match nav { None => encodeJourney(j), Some(n) => obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", \v. obj(planViewFields(v) ++ navFields(n)), j.plan)) }
-pure func encodeJourneyDeparture(w: World) -> string {
+pure func encodeJourneyDeparture(w: World) -> string = encodeJourneyDepartureM(departureMinor(), w)
+pure func encodeJourneyDepartureM(minor: int, w: World) -> string {
   let j = journeyView(w);
-  let extra = (match navOf(w) { Some(n) => navFields(n), None => [] }) ++ opt("departure", vec, departureOf(w)) ++ opt("heading", vec, journeyHeadingOf(w));
+  let extra = (match navOf(w) { Some(n) => navFields(n), None => [] }) ++ opt("departure", vec, departureOf(w)) ++ opt("heading", vec, journeyHeadingOf(w))
+    ++ (if minor >= ismMinor() then planIsmFields(w) else []);
   obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", \v. obj(planViewFields(v) ++ extra), j.plan))
 }
 pure func withDeparture(s: Session, before: World, after: World, x: Extras) -> Extras =
   if s.minor < departureMinor() then x
-  else { let ja = encodeJourneyDeparture(after); {x | journey: if encodeJourneyDeparture(before) == ja then None else Some(ja)} }
+  else { let ja = encodeJourneyDepartureM(s.minor, after); {x | journey: if encodeJourneyDepartureM(s.minor, before) == ja then None else Some(ja)} }
 -- Events: {k} plus the echo's plan fields, a phase crossing {from, to, tau}
 -- the arrival residuals {residual_x, residual_t, residual_phi} or a draw
 -- {stream, n, value} (value: the top 53 bits, an exact JSON integer).
@@ -231,7 +243,8 @@ pure func encodeEvent(e: Event) -> string =
     opt("from", \c. q(c.from), e.phase) ++ opt("to", \c. q(c.to), e.phase) ++ opt("tau", \c. num(c.tau), e.phase) ++
     opt("residual_x", \r. num(r.x), e.arrived) ++ opt("residual_t", \r. num(r.t), e.arrived) ++ opt("residual_phi", \r. num(r.phi), e.arrived) ++
     opt("stream", \d. q(d.stream), e.drew) ++ opt("n", \d. intToStr(d.n), e.drew) ++ opt("value", \d. intToStr(d.value), e.drew) ++
-    (match e.ai { Some(x) => aiFields(x), None => [] }) ++ opt("event", q, e.archive))
+    (match e.ai { Some(x) => aiFields(x), None => [] }) ++ opt("event", q, e.archive) ++
+    (match e.hold { Some(h) => [f("hold_max_phi", num(h.phi)), f("hold_beta", num(betaOf(h.phi))), f("hold_one_minus_beta", num(oneMinusBeta(h.phi))), f("medium", q(h.medium)), f("n_h_cm3", num(h.nH))], None => [] }))
 pure func encodeJourney(j: JourneyView) -> string = obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", encodePlanView, j.plan))
 pure func encodeRng(r: Rng) -> string =
   obj([f("journey", intToStr(r.journey)), f("crew", intToStr(r.crew)), f("events", intToStr(r.events)), f("galaxy", intToStr(r.galaxy)), f("ai", intToStr(r.ai)), f("news", intToStr(r.news))])
@@ -268,6 +281,43 @@ export pure func encodeCq(v: CqView, from: int) -> string =
     [f("archive", obj([f("unlocked", strArr(v.cq.unlocked))])), f("legacy", obj([f("count", intToStr(countOf(v.cq.log))), f("appended", arr(each(entryObj, dropN(v.cq.log, from))))]))])
 pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string =
   obj(shipFields(s) ++ [f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("glow_pole_w_m2", num(i.glowPoleWM2)), f("glow_pole_k", num(i.glowPoleK)), f("drag_energy_j", num(dragEnergy))]))])
+
+-- 2.8 (R1-ISM-DUST): ship.ism also carries the medium here (model, name, n_H in cm^-3, the
+-- mass-equivalent density in m^-3), this tick's bright dust impacts (radius um, energy J, the
+-- point on the forward wall's projected unit disc, the time in the display window s, medium),
+-- the tick's and the leg's bright totals (expected and drawn, dropped beyond 32 events, the
+-- display window in ship seconds, the largest displayed grain of the leg) and the glitter descriptor (faint
+-- flashes per ship second over the wall, their radius range um, the tail slope q and a seed).
+pure func impactObj(e: Impact) -> string =
+  obj([f("a_um", num(e.a * 1000000.0)), f("ke_j", num(e.ke)), f("x", num(e.x)), f("y", num(e.y)), f("t_s", num(e.t)), f("medium", q(e.medium))])
+pure func ismModelName(p: Params) -> string = if isLism(p) then "lism-1" else "uniform"
+pure func shipWithIsm28(s: ShipView, i: IsmNow, dragEnergy: float, w: World) -> string {
+  let m = currentMedium(w);
+  let d = w.dust;
+  let g = d.last.glitter;
+  obj(shipFields(s) ++ [f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("glow_pole_w_m2", num(i.glowPoleWM2)), f("glow_pole_k", num(i.glowPoleK)), f("drag_energy_j", num(dragEnergy)),
+    f("model", q(ismModelName(w.params))), f("medium", q(m.name)), f("n_h_cm3", num(m.nH)), f("n_eff_m3", num(m.nEff)),
+    f("crossed_media", arr(each(\crossed. obj([f("name", q(crossed.name)), f("n_h_cm3", num(crossed.nH))]), d.crossed))),
+    f("impacts", arr(each(impactObj, d.last.events))),
+    f("dust", obj([f("expected", num(d.last.expected)), f("drawn", intToStr(d.last.drawn)), f("dropped", intToStr(d.last.dropped)), f("window_s", num(d.last.window)),
+      f("visible_rate", num(d.last.visibleRate)), f("bright_rate", num(d.last.brightRate)), f("leg_grains", num(d.legGrains)),
+      f("leg_expected", num(d.legExpected)), f("leg_drawn", intToStr(d.legDrawn)), f("largest_um", num(d.largestA * 1000000.0)), f("largest_j", num(d.largestKe))])),
+    f("glitter", obj([f("rate", num(g.rate)), f("a_lo_um", num(g.aLo * 1000000.0)), f("a_hi_um", num(g.aHi * 1000000.0)), f("q", num(g.q)), f("seed", intToStr(g.seed))]))]))])
+}
+-- 2.8 journey.plan members under lism-1 (none under uniform): the media crossed (name, n_H
+-- cm^-3, length ly, in the order met), the peak, the highest cruise the drive holds on this
+-- route (rapidity, beta, 1 - beta), the grains of >= 1 um swept and the expected visible flashes.
+pure func currentPlan(w: World) -> Option[Plan] = match w.journey { Planned(p) => Some(p), Committed(c) => Some(c.plan), Arrived(c) => Some(c.plan), Idle => None }
+pure func planIsmFields(w: World) -> [string] =
+  match currentPlan(w) {
+    None => [],
+    Some(pl) => match pl.ism {
+      None => [f("ism_model", q(ismModelName(w.params)))],
+      Some(pis) => [f("ism_model", q("lism-1")), f("media", arr(each(\r. obj([f("name", q(r.name)), f("n_h_cm3", num(r.nH)), f("length_ly", num(r.lengthLy))]), pis.media))),
+        f("peak_medium", q(pis.peak.name)), f("peak_n_h_cm3", num(pis.peak.nH)), f("hold_max_phi", num(pis.holdPhi)), f("hold_beta", num(betaOf(pis.holdPhi))),
+        f("hold_one_minus_beta", num(oneMinusBeta(pis.holdPhi))), f("grains_swept", num(pis.grains)), f("visible_flashes", num(pis.visible))]
+    }
+  }
 
 -- 2.3 system section (M5.1b, design m5-planets §M5.1): the bodies as seen from the
 -- ship, at the retarded time, galactic frame. Culling is Godot's (the sim stays presentation-free).
@@ -473,6 +523,7 @@ pure func inRange(n: string, v: float) -> bool =
   else if n == "glow_eps" || n == "glow_f_in" then v >= 0.0 && v <= 1.0
   else if n == "standoff_au" then v >= 0.0 && v <= 1000000.0
   else if n == "stop_rule" then v == 0.0 || v == 54.0
+  else if n == "ism_model" then v == 0.0 || v == 1.0
   else if n == "cruise_min_beta" || n == "cap_one_minus_beta" then v > 0.0 && v < 1.0
   else if n == "ai_max_open" then v >= 1.0 && v <= 64.0 && floor(v) == v
   else if n == "ai_ttl_ticks" then v >= 1.0 && v <= 1000000.0 && floor(v) == v
@@ -493,7 +544,11 @@ pure func applyOverride(p: Params, o: Override) -> Params =
   else if o.name == "glow_eps" then {p | glowEps: o.value} else if o.name == "glow_f_in" then {p | glowFIn: o.value}
   else if o.name == "cruise_min_beta" then {p | cruiseMinBeta: o.value}
   else if o.name == "standoff_au" then {p | standoffAu: o.value}
-  else if o.name == "stop_rule" then {p | stopRule: o.value}
+  else applyOverride2(p, o)
+-- Split in two (v0.52.0 strict VM: one if-chain this long exceeds the register allocator's 256; ailang#1736).
+pure func applyOverride2(p: Params, o: Override) -> Params =
+  if o.name == "stop_rule" then {p | stopRule: o.value}
+  else if o.name == "ism_model" then {p | ismModel: o.value}
   else if o.name == "ai_max_open" then {p | aiMaxOpen: floatToInt(o.value)} else if o.name == "ai_ttl_ticks" then {p | aiTtlTicks: floatToInt(o.value)}
   else {p | capOneMinusBeta: o.value}
 pure func applyAll(p: Params, os: [Override]) -> Params = match os { [] => p, o :: r => applyAll(applyOverride(p, o), r) }
@@ -505,7 +560,7 @@ export pure func decodeInput(line: string) -> Result[Input, string] =
 pure func inputOf(t: string, j: Json) -> Result[Input, string] =
     if t == "hello" then bind(req(get(j, "want"), "bad_cmd"), \w. bind(req(natF(w, "major"), "bad_cmd"), \ma. bind(req(natF(w, "minor"), "bad_cmd"), \mi. Ok(GHello({major: ma, minor: mi})))))
     else if t == "new_game" then bind(req(natF(j, "seed"), "bad_game"), \seed. bind(req(getString(j, "scenario"), "bad_game"), \sc.
-      bind(check(sc == "sol" || sc == "solar_departure" || sc == "sgr_a", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
+      bind(check(sc == "sol" || sc == "solar_departure" || sc == "free_nav" || sc == "sgr_a", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
       bind(optStr(j, "ai_core", "bad_game"), \core. bind(check(match core { Some(h) => isSha256Hex(h), None => true }, core, "bad_game"), \_c.
       Ok(GNewGame({seed: seed, scenario: sc, diag: diag, params: ps, aiCore: core})))))))))
     -- ailang#1467: `\tick.` would be captured by the imported core.tick, hence `\tk.`
@@ -570,7 +625,7 @@ pure func decodeFullParams(j: Json) -> Result[Params, string] =
   bind(n(j, "epoch"), \e. bind(n(j, "start_age"), \sa. bind(n(j, "boost_g"), \bg. bind(n(j, "m_eff_kg"), \m. bind(n(j, "ism_n_cm3"), \ism.
   bind(n(j, "bubble_radius_m"), \r. bind(n(j, "glow_eps"), \ge. bind(n(j, "glow_f_in"), \gf. bind(n(j, "cruise_min_beta"), \cb. bind(n(j, "cap_one_minus_beta"), \cap.
   bind(natOr(j, "ai_max_open", defaultAiMaxOpen()), \mo. bind(natOr(j, "ai_ttl_ticks", defaultAiTtlTicks()), \tt.
-  Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap, aiMaxOpen: mo, aiTtlTicks: tt, standoffAu: 0.0, epochJd: defaultEpochJd(), stopRule: 0.0})))))))))))))
+  Ok({epoch: e, startAge: sa, boostG: bg, mEffKg: m, ismNCm3: ism, bubbleRadiusM: r, glowEps: ge, glowFIn: gf, cruiseMinBeta: cb, capOneMinusBeta: cap, aiMaxOpen: mo, aiTtlTicks: tt, standoffAu: 0.0, epochJd: defaultEpochJd(), stopRule: 0.0, ismModel: 0.0})))))))))))))
 -- The AI params are echoed since 2.1 (AI.3); a 2.0 echo lacks them and reads as the defaults.
 pure func natOr(j: Json, k: string, d: int) -> Result[int, string] = if has(j, k) then req(natF(j, k), bad()) else Ok(d)
 pure func decodeCrossing(e: Json) -> Result[Crossing, string] =
@@ -583,7 +638,7 @@ pure func decodeEvent(e: Json) -> Result[Event, string] =
   bind(req(getString(e, "k"), bad()), \k. bind(optIf(e, "target", \x. planOf(x, bad())), \echo.
   bind(optIf(e, "from", decodeCrossing), \ph. bind(optIf(e, "residual_x", decodeResiduals), \ar. bind(optIf(e, "stream", decodeDrawn), \dr.
   bind(aiEventOf(k, e), \ae. bind(optIf(e, "event", \x. sOf(x, "event")), \arc.
-  Ok({kind: k, echo: echo, phase: ph, arrived: ar, drew: dr, ai: ae, archive: arc}))))))))
+  Ok({kind: k, echo: echo, phase: ph, arrived: ar, drew: dr, ai: ae, archive: arc, hold: None}))))))))
 pure func sOf(j: Json, k: string) -> Result[string, string] = req(getString(j, k), bad())
 pure func nat(j: Json, k: string) -> Result[int, string] = req(natF(j, k), bad())
 pure func decodeKey(j: Json) -> Result[CacheKey, string] =
@@ -679,11 +734,12 @@ pure func malformed(s: Session, c: string) -> Served =
 pure func changed(enc: a -> string, before: a, after: a) -> Option[a] = if enc(before) == enc(after) then None else Some(after)
 
 pure func shipSection(w: World) -> string = shipWithIsm(shipOf(w.ship), ismNow(w), dragEnergyJ(w))
+pure func shipSectionM(minor: int, w: World) -> string = if minor >= ismMinor() then shipWithIsm28(shipOf(w.ship), ismNow(w), dragEnergyJ(w), w) else shipSection(w)
 -- 2.2 members for a tick: ship (with ism) and consequence, each only when changed.
-pure func cqExtras(before: World, after: World) -> Extras {
+pure func cqExtras(minor: int, before: World, after: World) -> Extras {
   let n0 = countOf(before.cq.log);
-  let sb = shipSection(before);
-  let sa = shipSection(after);
+  let sb = shipSectionM(minor, before);
+  let sa = shipSectionM(minor, after);
   { ship: if sb == sa then None else Some(sa),
     tail: if encodeCq(cqView(before), n0) == encodeCq(cqView(after), n0) then [] else [f("consequence", encodeCq(cqView(after), n0))],
     journey: navJourney(before, after) }
@@ -705,6 +761,7 @@ pure func hasBh(os: [Override]) -> bool = match os { [] => false, o :: r => isBh
 pure func flatParams(os: [Override]) -> [Override] = match os { [] => [], o :: r => if isBh(o) then flatParams(r) else o :: flatParams(r) }
 pure func bhParam(os: [Override], k: string, d: float) -> float = match os { [] => d, o :: r => if o.name == k then bhParam(r, k, o.value) else bhParam(r, k, d) }
 pure func sgrAStart() -> float = 1000000.0
+pure func hasIsmModel(os: [Override]) -> bool = match os { [] => false, o :: r => o.name == "ism_model" || hasIsmModel(r) }
 
 export pure func serve(s: Session, line: string) -> Served =
   match decodeInput(line) {
@@ -713,9 +770,11 @@ export pure func serve(s: Session, line: string) -> Served =
       GHello(h) => { session: {s | hello: true, minor: sessionMinor(h.minor)}, reply: encodeHello(helloFor(h.minor)) },
       GQuit => { session: s, reply: "" },
       GNewGame(g) => if !s.hello then malformed(s, "no_hello") else if g.scenario == "solar_departure" && s.minor < departureMinor() then malformed(s, "bad_game")
+        else if g.scenario == "free_nav" && s.minor < stopsMinor() then malformed(s, "bad_game")
         else if g.scenario == "sgr_a" && s.minor < grMinor() then malformed(s, "bad_game")
-        else if g.scenario != "sgr_a" && hasBh(g.params) then malformed(s, "bad_params") else {
-        let p = applyAll(defaultParams(), flatParams(g.params));
+        else if g.scenario != "sgr_a" && hasBh(g.params) then malformed(s, "bad_params")
+        else if s.minor < ismMinor() && hasIsmModel(g.params) then malformed(s, "bad_params") else {
+        let p = applyAll(if s.minor >= ismMinor() && g.scenario != "sgr_a" then {defaultParams() | ismModel: 1.0} else defaultParams(), flatParams(g.params));
         match scenarioError(p) {
           Some(c) => malformed(s, c),
           None => match (if s.minor >= 2 then archiveRows(line) else Ok([])) {
@@ -723,6 +782,9 @@ export pure func serve(s: Session, line: string) -> Served =
             Ok(rows) => {
               let initial = newWorld(g.seed, g.diag, p);
               match (if g.scenario == "solar_departure" then solarInitialize(initial)
+                     -- Explicit playable start; legacy sol and its recordings retain
+                     -- the origin convention. Reuse the checked Earth initializer.
+                     else if g.scenario == "free_nav" then earthInitializeAt(initial, 50000.0)
                      else if g.scenario == "sgr_a" then Ok(withHole(initial, sgrAWith(bhParam(g.params, "bh_mass_msun", sgrAMassMsun()), bhParam(g.params, "bh_r", sgrAStart()), p.bubbleRadiusM, p.mEffKg)))
                      else Ok(initial)) {
               Err(c) => malformed(s, c),
@@ -733,7 +795,7 @@ export pure func serve(s: Session, line: string) -> Served =
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
                 journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)),
                 events: if w.gr.active then [archiveEvent("bh_enter")] else [], refused: [], full: true};
-              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSection(w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
               }
               }
             }
@@ -750,7 +812,7 @@ export pure func serve(s: Session, line: string) -> Served =
             ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
             ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), rng: changed(encodeRng, w.rng, next.rng), params: None,
             ai: changed(encodeAiView, aiView(w.ai), aiView(next.ai)), events: t.events, refused: t.refused, full: false };
-          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(w, next))))) else encodeState(state) }
+          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(s.minor, w, next))))) else encodeState(state) }
         }
       }
     }

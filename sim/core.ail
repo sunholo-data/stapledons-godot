@@ -7,11 +7,13 @@ module stapledons/sim/core
 import std/option (Option, Some, None)
 import std/result (Ok, Err)
 import std/math (intToFloat)
+import std/list (map, reverse)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn)
-import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag)
+import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag, columnDragEnergy, tripEnergyColumn, driveHoldMaxPhi)
+import ./ism (Medium, Seg, Thresh, DustTick, DustCfg, MediaRow, Impact, mediumAt, profile, window, columnEff, peakMedium, mediaRows, holdMaxPhi, hotMedium, uniformMedium, defaultDustCfg, dustTick, dustKey, dustWithTotal, tripBright, noDust, lutArray, grainsSwept, visibleAlong)
 import ./tripphase (tripPhaseIndex)
 import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeId, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
@@ -107,8 +109,10 @@ export type Refusal = { i: int, reason: string }
 export type Crossing = { from: string, to: string, tau: float }
 export type Residuals = { x: float, t: float, phi: float }
 export type Drawn = { stream: string, n: int, value: int }
-export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent], archive: Option[string] }
-export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None, archive: None }
+-- A `hold_limit` event (R1-ISM-DUST, protocol 2.7) follows an m_eff_too_small refusal under lism-1:
+-- the highest cruise rapidity the drive can hold on that route and the medium that sets it.
+export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent], archive: Option[string], hold: Option[HoldInfo] }
+export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None, archive: None, hold: None }
 export pure func archiveEvent(name: string) -> Event = {event("archive") | archive: Some(name)}
 
 -- standoffAu: the arrival stand-off (M4.1, D-14); 0 plans to the star itself (M2),
@@ -121,10 +125,13 @@ export pure func archiveEvent(name: string) -> Event = {event("archive") | archi
 -- star with a cited finite body (alpha Cen A/B, Aldebaran, TRAPPIST-1) as a stop where it
 -- looks 2 atan(tan 5 deg sqrt(R / R_sun)) across, and Sol (home) as Earth's D-54 stop.
 -- Set by `stop_rule`, not in the params echo (the guided tour keeps 0: D-47 unchanged).
-export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float, epochJd: float, stopRule: float }
+-- ismModel (R1-ISM-DUST, D-60/D-61): 0 `uniform` (n = ismNCm3 everywhere, HB-3: every recorded
+-- stream), 1 `lism-1` (sim/ism.ail: the measured clouds and the hot gas; the default for new
+-- games from protocol 2.7). Set by `ism_model`, not in the params echo.
+export type Params = { epoch: float, startAge: float, boostG: float, mEffKg: float, ismNCm3: float, bubbleRadiusM: float, glowEps: float, glowFIn: float, cruiseMinBeta: float, capOneMinusBeta: float, aiMaxOpen: int, aiTtlTicks: int, standoffAu: float, epochJd: float, stopRule: float, ismModel: float }
 -- Scenario "sol" (design §M2.1, D-12, D-15).
 export pure func defaultParams() -> Params = { epoch: 0.0, startAge: 30.0, boostG: 750000.0, mEffKg: 1.0, ismNCm3: 0.1, bubbleRadiusM: 100.0, glowEps: 0.0000000001, glowFIn: 0.5, cruiseMinBeta: 0.9, capOneMinusBeta: 0.000001,
-  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0, epochJd: defaultEpochJd(), stopRule: 0.0 }
+  aiMaxOpen: defaultAiMaxOpen(), aiTtlTicks: defaultAiTtlTicks(), standoffAu: 0.0, epochJd: defaultEpochJd(), stopRule: 0.0, ismModel: 0.0 }
 
 -- Radiated energy = boostJ + dragJ. The mass budget is closed (higgs-bubble
 -- §8): availableKg is carried unchanged; nothing is deducted or enforced.
@@ -136,7 +143,11 @@ export pure func availableKgStart() -> float = 20000.0
 -- ai: open AI requests and their ids (sim/ai.ail, AI.2).
 -- cq: the consequence state (sim/consequence.ail, M4.1): news, legacy log, archive.
 -- gr: the GR mode (sim/gr.ail, M3.4); grOff() outside a black-hole scenario.
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, catStars: [CatStar] }
+-- dust: the grain impacts (R1-ISM-DUST; lism-1 only): the last tick's draw, this leg's totals and
+-- the threshold cache (a pure function of the medium and the rapidity, kept to skip recomputing).
+export type DustState = { last: DustTick, legExpected: float, legGrains: float, medium: Medium, crossed: [Medium], legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
+export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legGrains: 0.0, medium: hotMedium(), crossed: [], legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar] }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -154,22 +165,33 @@ export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- proper time flown since the commit, kept exactly so that a boundary is
 -- reached at el = tauBurn, tauBurn + tauCoast, tauTotal bit for bit (the
 -- ship's own tau is tau0 + the pieces, which can be an ulp off).
-export type Plan = { id: int, target: Target, from: Vec3, heading: Vec3, flip: bool, trip: TripPlan, nav: Option[NavPlan] }
+-- ism: the route's media under lism-1 (None under uniform): the media crossed with their lengths,
+-- the peak medium, the drive-hold limit, the coast's mass-equivalent column (m^-2, the drag
+-- ledger's), the grains of >= 1 um swept and the expected visible flashes.
+export type PlanIsm = { segs: [Seg], media: [MediaRow], peak: Medium, holdPhi: float, coastCol: float, grains: float, visible: float }
+export type Plan = { id: int, target: Target, from: Vec3, heading: Vec3, flip: bool, trip: TripPlan, nav: Option[NavPlan], ism: Option[PlanIsm] }
 export type Commitment = { plan: Plan, tau0: float, t0: float, el: float }
 export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Commitment)
 
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), catStars: [] }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [] }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
 
+-- R1-ISM-DUST: the medium at a point. Under uniform it is HB-3's n everywhere (nEff = ismPerM3,
+-- bit for bit); under lism-1 it is sim/ism.ail's.
+export pure func isLism(p: Params) -> bool = p.ismModel == 1.0
+export pure func mediumHere(p: Params, pos: Vec3) -> Medium = if isLism(p) then mediumAt(pos) else uniformMedium(p.ismNCm3)
+export pure func dustCfg(p: Params) -> DustCfg = defaultDustCfg(p.glowEps, p.glowFIn, p.bubbleRadiusM)
+pure func posAt(s: Ship, m: Motion) -> Vec3 = position({s | motion: m})
+
 -- Scenario validation beyond the per-field ranges: the brake's photon thrust
 -- at boost_g must hold against the drag at the cap.
 export pure func scenarioError(p: Params) -> Option[string] =
-  if brakeHoldsAgainstDrag(p.mEffKg, accelSI(p.boostG * standardGravity()), ismPerM3(p), rapidityOfOneMinusBeta(p.capOneMinusBeta), p.bubbleRadiusM)
+  if brakeHoldsAgainstDrag(p.mEffKg, accelSI(p.boostG * standardGravity()), if isLism(p) then (hotMedium()).nEff else ismPerM3(p), rapidityOfOneMinusBeta(p.capOneMinusBeta), p.bubbleRadiusM)
   then None else Some("m_eff_too_small")
 
 -- Phase for manual (diag) flight, from the rapidity after the tick and the
@@ -187,9 +209,10 @@ export pure func phaseName(p: ShipPhase) -> string =
 -- rest) adds m_eff c^2 |dphi|; cruise adds the
 -- drag-holding power over dtau (seconds). Boost/brake drag terms cancel over
 -- the pair (package tripEnergy), so they are omitted.
-pure func ledgerAfter(l: Ledger, p: Params, before: Motion, after: Motion, thrust: float, dtau: float) -> Ledger =
+pure func ledgerAfter(l: Ledger, p: Params, ship: Ship, before: Motion, after: Motion, thrust: float, dtau: float) -> Ledger =
   if thrust != 0.0 then {l | boostJ: l.boostJ + photonDriveEnergy(l.mEffKg, absf(after.phi - before.phi))}
   else if absf(after.phi) < restTolerance() then l
+  else if isLism(p) then {l | dragJ: l.dragJ + columnDragEnergy(columnEff(profile(posAt(ship, before), posAt(ship, after))), absf(after.phi), p.bubbleRadiusM)}
   else {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), absf(after.phi), p.bubbleRadiusM) * dtau * julianYearS()}
 
 -- at: the number of the tick being computed (AI request open/expiry ticks).
@@ -251,7 +274,7 @@ pure func planFiniteIntent(p: Params, a: Pending, rq: PlanReq) -> Pending {
   let here = position(a.ship);
   if !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < cruisePhiMin(p) || rq.cruisePhi > cruisePhiMax(p) then refuseIntent(a, "out_of_range")
   else match planFiniteStop(navCtx(p, a), rq.target.id, rq.cruisePhi) {
-    Ok(l) => storePlan(a, { index: rq.target.index, id: rq.target.id, pos: l.arrivalLy }, here, l.heading, false, l.trip, Some(l.nav)),
+    Ok(l) => storeChecked(p, a, { index: rq.target.index, id: rq.target.id, pos: l.arrivalLy }, here, l.heading, false, l.trip, Some(l.nav)),
     Err(why) => refuseIntent(a, why)
   }
 }
@@ -277,7 +300,10 @@ pure func planStarIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pend
       -- `phi == phi` first: a NaN fails every comparison, so it is refused here
       -- on both runtimes (ailang#1419) rather than reaching the package's `requires`.
       if !reachable || !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < cruisePhiMin(p) || rq.cruisePhi > cruisePhiMax(p) then refuseIntent(a, "out_of_range")
-      else keep(storePlan(a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi), None))
+      else {
+        let checked = storeChecked(p, a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi), None);
+        if checked.lastPlanId == a.lastPlanId then checked else keep(checked)
+      }
   }
 }
 -- M5.5a: a body target. sim/navigation.ail computes the arrival point (the client
@@ -289,11 +315,11 @@ pure func planBodyIntent(p: Params, a: Pending, rq: BodyReq) -> Pending {
     Ok(l) =>
       -- A timed leg (D-46) sets its own thrust: the brake must hold against the
       -- ISM drag at this leg's peak, and the approach at its own (m_eff_too_small).
-      if (match rq.timing { Some(_) => true, None => false })
+      if !isLism(p) && (match rq.timing { Some(_) => true, None => false })
          && !(brakeHoldsAgainstDrag(p.mEffKg, accelSI(l.trip.a), ismPerM3(p), l.trip.phiPeak, p.bubbleRadiusM)
               && (l.trip.tauApproach == 0.0 || brakeHoldsAgainstDrag(p.mEffKg, accelSI(l.trip.aApproach), ismPerM3(p), l.trip.phiApproach, p.bubbleRadiusM)))
       then refuseIntent(a, "m_eff_too_small")
-      else storePlan(a, { index: l.nav.index, id: rq.id, pos: l.arrivalLy }, here, l.heading, false, l.trip, Some(l.nav)),
+      else storeChecked(p, a, { index: l.nav.index, id: rq.id, pos: l.arrivalLy }, here, l.heading, false, l.trip, Some(l.nav)),
     Err(why) => refuseIntent(a, why)
   }
 }
@@ -308,10 +334,34 @@ export pure func cruisePhiDefault(p: Params) -> float {
   if d < cruisePhiMin(p) then cruisePhiMin(p) else if d > cruisePhiMax(p) then cruisePhiMax(p) else d
 }
 -- A new plan replaces any uncommitted one and takes the next id.
-pure func storePlan(a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan, nav: Option[NavPlan]) -> Pending {
+pure func storePlan(a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan, nav: Option[NavPlan]) -> Pending = storePlanIsm(a, t, here, h, flip, tp, nav, None)
+pure func storePlanIsm(a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan, nav: Option[NavPlan], ism: Option[PlanIsm]) -> Pending {
   let id = a.lastPlanId + 1;
-  {a | journey: Planned({ id: id, target: t, from: here, heading: h, flip: flip, trip: tp, nav: nav }), lastPlanId: id}
+  {a | journey: Planned({ id: id, target: t, from: here, heading: h, flip: flip, trip: tp, nav: nav, ism: ism }), lastPlanId: id}
 }
+
+-- R1-ISM-DUST: a plan under lism-1. The route from here along h for the trip's distance is
+-- profiled once; the drive (m_eff at the leg's own thrust) must hold the peak cruise rapidity
+-- against the drag at the route's peak density, and the approach at its own (D-61: refused
+-- `m_eff_too_small` with a `hold_limit` event naming the limit and the medium; never capped).
+-- Under uniform the plan is stored exactly as before.
+pure func endOf(here: Vec3, h: Vec3, d: float) -> Vec3 = { x: here.x + h.x * d, y: here.y + h.y * d, z: here.z + h.z * d }
+export type HoldInfo = { phi: float, medium: string, nH: float }
+pure func holdEvent(phi: float, m: Medium) -> Event = {event("hold_limit") | hold: Some({ phi: phi, medium: m.name, nH: m.nH })}
+export pure func planIsmOf(p: Params, here: Vec3, h: Vec3, tp: TripPlan) -> PlanIsm {
+  let segs = profile(here, endOf(here, h, tp.trip.distance));
+  let coast = window(segs, tp.dBurn, tp.dBurn + tp.dCoast);
+  { segs: segs, media: map(\g. {name: g.medium.name, nH: g.medium.nH, lengthLy: g.s1 - g.s0}, segs), peak: peakMedium(segs), holdPhi: holdMaxPhi(segs, p.mEffKg, accelSI(tp.a), p.bubbleRadiusM), coastCol: columnEff(coast),
+    grains: grainsSwept(segs, 0.000001, dustCfg(p)), visible: visibleAlong(lutArray(), coast, tp.phiPeak, dustCfg(p)) }
+}
+pure func storeChecked(p: Params, a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan, nav: Option[NavPlan]) -> Pending =
+  if !isLism(p) then storePlan(a, t, here, h, flip, tp, nav)
+  else {
+    let pis = planIsmOf(p, here, h, tp);
+    let approachOk = tp.tauApproach == 0.0 || brakeHoldsAgainstDrag(p.mEffKg, accelSI(tp.aApproach), pis.peak.nEff, tp.phiApproach, p.bubbleRadiusM);
+    if brakeHoldsAgainstDrag(p.mEffKg, accelSI(tp.a), pis.peak.nEff, tp.phiPeak, p.bubbleRadiusM) && approachOk then storePlanIsm(a, t, here, h, flip, tp, nav, Some(pis))
+    else {refuseIntent(a, "m_eff_too_small") | events: holdEvent(pis.holdPhi, pis.peak) :: a.events}
+  }
 
 -- Commit: the ship must be at rest (else `moving`) and the id must name the
 -- current plan, made from where the ship is now (else `stale_plan`). It
@@ -430,9 +480,15 @@ pure func crossing(from: ShipPhase, to: ShipPhase, tau: float) -> Event = {event
 export pure func arrivalResiduals(m: Motion, x0: float, c: Commitment) -> Residuals =
   { x: absf((m.x - x0) - c.plan.trip.trip.distance), t: absf(m.t - (c.t0 + c.plan.trip.trip.galaxyTime)), phi: absf(m.phi) }
 
-pure func pieceLedger(l: Ledger, p: Params, tp: TripPlan, i: int, before: Motion, after: Motion, piece: float) -> Ledger =
-  if i == 1 then {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), tp.phiPeak, p.bubbleRadiusM) * piece * julianYearS()}
+-- Under lism-1 the cruise piece's drag is the package's columnDragEnergy over the medium the
+-- piece actually flew (sim/ism.ail profile between its end positions): at arrival the sum is
+-- the plan's coast column (AC9).
+pure func pieceLedger(l: Ledger, p: Params, s: Ship, pl: Plan, i: int, before: Motion, after: Motion, piece: float) -> Ledger {
+  let tp = pl.trip;
+  if i == 1 && isLism(p) then {l | dragJ: l.dragJ + columnDragEnergy(columnEff(match pl.ism { Some(pi) => window(pi.segs, before.x - s.x0, after.x - s.x0), None => profile(posAt(s, before), posAt(s, after)) }), tp.phiPeak, p.bubbleRadiusM)}
+  else if i == 1 then {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), tp.phiPeak, p.bubbleRadiusM) * piece * julianYearS()}
   else {l | boostJ: l.boostJ + photonDriveEnergy(l.mEffKg, absf(after.phi - before.phi))}
+}
 
 -- Where the autopilot lands: the target itself (a body plan's target is its arrival point),
 -- or (stand-off) the planned distance along the heading.
@@ -456,7 +512,7 @@ pure func fly(p: Params, f: Flight, rem: float) -> Flight {
     let before = f.ship.motion;
     let after = accelerate(before, phaseAccel(tp, i), piece);
     if whole then
-      {f | ship: {f.ship | motion: after, phase: phaseOfIndex(i)}, c: {f.c | el: el + rem}, ledger: pieceLedger(f.ledger, p, tp, i, before, after, piece), events: started}
+      {f | ship: {f.ship | motion: after, phase: phaseOfIndex(i)}, c: {f.c | el: el + rem}, ledger: pieceLedger(f.ledger, p, f.ship, f.c.plan, i, before, after, piece), events: started}
     else {
       let j = tripPhaseIndex(tp, b);
       let crossed = crossing(phaseOfIndex(i), phaseOfIndex(j), after.tau) :: started;
@@ -465,10 +521,10 @@ pure func fly(p: Params, f: Flight, rem: float) -> Flight {
         let snapped = {after | phi: 0.0};
         let res = arrivalResiduals(after, f.ship.x0, f.c);
         let landed = { motion: snapped, heading: f.ship.heading, origin: arrivalPoint(p, f.c.plan), x0: snapped.x, phase: AtRest };
-        fly(p, {ship: landed, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, tp, i, before, snapped, piece),
+        fly(p, {ship: landed, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, f.ship, f.c.plan, i, before, snapped, piece),
           events: {event("arrived") | arrived: Some(res)} :: crossed, arrived: true}, left)
       } else
-        fly(p, {f | ship: {f.ship | motion: after, phase: phaseOfIndex(j)}, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, tp, i, before, after, piece), events: crossed}, left)
+        fly(p, {f | ship: {f.ship | motion: after, phase: phaseOfIndex(j)}, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, f.ship, f.c.plan, i, before, after, piece), events: crossed}, left)
     }
   }
 }
@@ -488,17 +544,69 @@ pure func tickBase(w: World, input: TickInput) -> Ticked
   match a.journey {
     Committed(c) => {
       let f = fly(w.params, {ship: a.ship, c: c, ledger: w.ledger, events: a.events, arrived: false}, input.dtau);
-      { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger, rng: a.rng, ai: a.ai, catStars: a.catStars},
+      { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger, rng: a.rng, ai: a.ai,
+                catStars: a.catStars, dust: dustAfter(w, a.ship, f.ship, input.dtau, Some(c.plan), match w.journey { Committed(_) => false, _ => true })},
         refused: reversed(a.refused, []), events: reversed(f.events, []) }
     },
     _ => if a.gr.active then grTick(w, a, input.dtau) else {
       let moved = step(a.ship, a.thrust, input.dtau);
       let next = {moved | phase: derivePhase(moved.motion.phi, a.thrust)};
-      { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship.motion, next.motion, a.thrust, input.dtau), rng: a.rng, ai: a.ai, catStars: a.catStars},
+      { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship, a.ship.motion, next.motion, a.thrust, input.dtau), rng: a.rng, ai: a.ai,
+                catStars: a.catStars, dust: dustAfter(w, a.ship, next, input.dtau, None, false)},
         refused: reversed(a.refused, []), events: reversed(a.events, []) }
     }
   }
 }
+
+-- R1-ISM-DUST: the grains hit during this tick (lism-1 only; under uniform the state is untouched,
+-- so every recorded stream keeps its bytes). The pieces flown are profiled between the ship's
+-- positions before and after; the draw is sim/ism.ail dustTick on the stateless dust stream
+-- (seed, tick). A new commit starts the leg's totals afresh.
+pure func largestOf(es: [Impact], m: Impact) -> Impact = match es { [] => m, e :: rest => largestOf(rest, if e.a > m.a then e else m) }
+-- End-point lookup on the cached exact route (choose the next medium at a boundary).
+pure func segmentMedium(gs: [Seg], x: float) -> Medium = match gs {
+  [] => hotMedium(),
+  g :: rest => if x < g.s1 then g.medium else match rest { [] => g.medium, _ => segmentMedium(rest, x) }
+}
+export pure func currentMedium(w: World) -> Medium =
+  if !isLism(w.params) then uniformMedium(w.params.ismNCm3)
+  else if w.dust.medium.id == -1 then mediumAt(position(w.ship)) else w.dust.medium
+
+-- Every boundary crossed this tick, even when compressed travel returns to the
+-- initial medium. The sequence includes its starting medium and every entry;
+-- an unchanged medium returns []. This is route data, never client geometry.
+export pure func crossedMedia(gs: [Seg], before: Medium, here: Medium) -> [Medium] = crossedGo(gs, before, here, [before])
+pure func crossedGo(gs: [Seg], prev: Medium, here: Medium, acc: [Medium]) -> [Medium] = match gs {
+  g :: rest => crossedGo(rest, g.medium, here, if g.medium.id == prev.id then acc else g.medium :: acc),
+  [] => {
+    let all = if here.id == prev.id then acc else here :: acc;
+    match all { _ :: _ :: _ => reverse(all), _ => [] }
+  }
+}
+
+pure func dustAfter(w: World, before: Ship, after: Ship, dtau: float, pl: Option[Plan], fresh: bool) -> DustState =
+  if !isLism(w.params) then w.dust
+  else {
+    let d0 = if fresh then {emptyDust() | cache: w.dust.cache} else w.dust;
+    let lo = before.motion.x - before.x0;
+    let hi = after.motion.x - before.x0;
+    let segs = if hi == lo then [] else match pl { Some(p) => match p.ism { Some(pi) => window(pi.segs, lo, hi), None => profile(position(before), position(after)) }, None => profile(position(before), position(after)) };
+    let here = match pl { Some(p) => match p.ism { Some(pi) => segmentMedium(pi.segs, hi), None => mediumAt(position(after)) }, None => if hi == lo then currentMedium(w) else mediumAt(position(after)) };
+    let cfg = dustCfg(w.params);
+    let d = match pl {
+      Some(p) => if after.phase == AtRest && hi > lo
+        then dustWithTotal(dustKey(w.seed), w.tick + 1, tripBright(segs, p.trip, cfg), 0.0, dtau * julianYearS(), here, cfg, d0.cache)
+        -- A short wall-clock interval can still span a large rapidity change
+        -- for an allowed high-acceleration scenario. Only coast has constant
+        -- speed; integrate every flown boost/brake piece, at any pacing.
+        else if hi > lo && !(lo >= p.trip.dBurn && hi <= p.trip.dBurn + p.trip.dCoast)
+        then dustWithTotal(dustKey(w.seed), w.tick + 1, tripBright(segs, p.trip, cfg), absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache)
+        else dustTick(dustKey(w.seed), w.tick + 1, segs, absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache),
+      None => dustTick(dustKey(w.seed), w.tick + 1, segs, absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache)
+    };
+    let big = largestOf(d.events, { a: d0.largestA, ke: d0.largestKe, x: 0.0, y: 0.0, t: 0.0, medium: "" });
+    { last: d, legExpected: d0.legExpected + d.expected, legGrains: d0.legGrains + grainsSwept(segs, 0.000001, cfg), medium: here, crossed: crossedMedia(segs, currentMedium(w), here), legDrawn: d0.legDrawn + d.drawn, largestA: big.a, largestKe: big.ke, cache: d.cache }
+  }
 
 -- ------------------------------------------------------------ GR tick (M3.4b)
 -- The ship moves only by sim/gr.ail's step: proper time dtau, home time dt = dtau / rate
@@ -520,7 +628,9 @@ pure func grTick(w: World, a: Pending, dtau: float) -> Ticked {
 -- archive event bh_enter in the legacy log at tick 0 (new_game reports it as an event).
 export pure func withHole(w: World, g: GrState) -> World {
   let m = w.ship.motion;
-  {w | gr: g, ship: {w.ship | heading: g.holeDir, origin: grShipPos(g), x0: m.x}, cq: append(w.cq, entry(w.tick, "bh_enter", g.holeId, m.tau, m.t))}
+  {w | gr: g, ship: {w.ship | heading: g.holeDir, origin: grShipPos(g), x0: m.x},
+    dust: {emptyDust() | medium: mediumHere(w.params, grShipPos(g))},
+    cq: append(w.cq, entry(w.tick, "bh_enter", g.holeId, m.tau, m.t))}
 }
 
 -- ------------------------------------------------------------ consequence (M4.1)
@@ -595,7 +705,7 @@ export pure func tick(w: World, input: TickInput) -> Ticked
 
 -- ------------------------------------------------------------ consequence readouts (M4.1)
 -- The live ISM at the ship's current rapidity (package calls; zero at rest).
-export pure func ismNow(w: World) -> IsmNow = ismAt(ismPerM3(w.params), w.ship.motion.phi, w.params.bubbleRadiusM, w.params.glowEps, w.params.glowFIn)
+export pure func ismNow(w: World) -> IsmNow = ismAt((currentMedium(w)).nEff, w.ship.motion.phi, w.params.bubbleRadiusM, w.params.glowEps, w.params.glowFIn)
 -- The ledger's drag_j since the latest commit (M2 semantics F*c); 0 before the first commit.
 export pure func isWarpLevel(x: float) -> bool = x == 0.002 || x == 0.01 || x == 0.05
 export pure func dragEnergyJ(w: World) -> float = match w.cq.depT { None => 0.0, Some(_) => w.ledger.dragJ - w.cq.dragJ0 }
@@ -689,8 +799,8 @@ export pure func crewSpanYears() -> float = 100.0
 export pure func planView(p: Params, pl: Plan, tau: float, t: float) -> PlanView {
   let tp = pl.trip;
   let phi = tp.phiPeak;
-  let n = ismPerM3(p);
-  let e = tripEnergy(tp, p.mEffKg, n, p.bubbleRadiusM);
+  let n = match pl.ism { Some(pis) => pis.peak.nEff, None => ismPerM3(p) };
+  let e = match pl.ism { Some(pis) => tripEnergyColumn(tp, p.mEffKg, pis.coastCol, p.bubbleRadiusM), None => tripEnergy(tp, p.mEffKg, n, p.bubbleRadiusM) };
   { target: pl.target, distance: tp.trip.distance, profile: if pl.flip then "flip_and_burn" else "burn_coast_burn", fellBack: tp.fellBack,
     cruisePhi: phi, cruiseBeta: betaOf(phi), cruiseOneMinusBeta: oneMinusBeta(phi), cruiseGamma: gammaOf(phi),
     boostMinutes: tp.tauBurn * minutesPerYear(), shipYears: tp.trip.shipTime, earthYears: tp.trip.galaxyTime,

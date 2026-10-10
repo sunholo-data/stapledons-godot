@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Free-navigation and mouse controls (D-63), 2026-10-10
+
+- Mouse motion looks around by default. Tab, inspection cards and console panels release the pointer for their buttons; stepping back returns to looking, and leaving the window releases capture.
+- Board the ship starts at rest near Earth. The in-system list keeps a stable Sun/planet/moon order, and refused plans explain the current journey or clearance constraint. P and the Pause/Resume buttons freeze time without changing the ship’s course.
+- Idle free navigation now advances at one real second per second, so ephemerides do not race away after arrival. Earth remains visible at its inertial standoff; this is not a gravity-bound orbit.
+- The map exposes Interstellar medium, Local ISM and optional Depth guides. Cloud boundaries show by themselves; radial construction guides are off by default and the legend labels the approximate depths.
+
+### Local clouds, dust impacts and weather along the route (D-60–D-62), 2026-10-10
+
+- New games use `lism-1`: the Local Interstellar Cloud, fourteen published local-cloud outlines and the Local Bubble's hot gas drive the route's column drag, wall glow and drive-hold limit. The chart lists every medium in order, including re-entry; a route above the limit is refused with the supported speed shown. Existing uniform scenarios and frozen protocol 2.7 replays keep their previous bytes; the new fields use protocol 2.8.
+- Individual grains flash on the wall with a seeded, capped display sample and a labelled afterglow approximation. Cumulative grain and bright-impact totals survive compressed flight and arrival; every changing-speed piece is integrated, including short high-acceleration trips. At rest the display emits no impacts. The numerical threshold solver inverts the same adopted efficacy table directly, checked against the original solver and package oracle.
+- The ship HUD names the medium, announces every crossed boundary, shows local rates per ship second and cumulative counts, and distinguishes the largest displayed grain from the unobserved population. The Archive adds “Weather Between the Stars” and corrects the old single-density description. Mark accepted the rendered afterglow/defaults/Archive choices at P2 (D-62).
+- The published angular outlines recover 56 of 59 nearby sight lines; their shell depths and the numerical LIC surface remain explicit model approximations. Dense-cloud tomography and the Local Leo Cold Cloud are deferred while independent scientific comparisons fail.
+- New native videos show a stable Sgr A* orbit, the guided Saturn arrival and six cloud intervals toward Aldebaran. Gallery/news captions disclose time compression, omitted journey stretches and the black-hole demo's Sol-sky background.
+
 ### Inferred radii, synchronous orbits (D-58), 2026-10-09
 
 - Every catalogue star now shows its size in free navigation: a star with no measured radius gets one inferred from its catalogue V, distance and Teff (sunholo/relativity 0.11.0: Pecaut & Mamajek bolometric correction, M_bol,sun 4.74, Stefan-Boltzmann) and becomes a finite star coloured by its Teff, stopping where it looks 2 atan(tan 5° √(R/R☉)) across: Barnard's Star 0.19 R☉, 4.4° at 0.023 AU; Proxima 0.16 R☉, 4.0°; 61 Cygni A 0.66 R☉, 8.1°; Vega 2.6 R☉, 16°. Its I card says the radius is inferred, with the luminosity and the inputs.

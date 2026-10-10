@@ -14,6 +14,7 @@ extends SubViewport
 ## session's frame) and ship.ism.glow_pole_w_m2 / glow_pole_k for the glow.
 
 const GLOW_SHADER := preload("res://interior/glow_overlay.gdshader")
+const DUST_SHADER := preload("res://interior/dust_flash.gdshader") # R1-ISM-DUST: grain flashes
 
 var env := Environment.new()
 var camera := FreeLookCamera.new()
@@ -27,6 +28,15 @@ var _debug_unit := false
 var eye_meter := SkyMeter.new()
 var glow := MeshInstance3D.new()
 var glow_mat := ShaderMaterial.new()
+var dust_mesh := MeshInstance3D.new() # R1-ISM-DUST I5: the wall afterglow of grain impacts (G-AG)
+var dust_mat := ShaderMaterial.new()
+var dust := DustFlash.new()
+var dust_clock := 0.0 # seconds since setup: the flashes' clock (real-time ship seconds)
+var dust_auto := true # upload DustFlash.live() each frame (the goldens set their own flashes)
+var _dust_input := PackedVector4Array()
+var _dust_count := 0
+var _dust_mask_radius := -1.0
+var _dust_mask_spot := -1.0
 var has_background := false
 var cam := {} # cam_<area>.json (ship frame)
 var view_fov := 78.0
@@ -108,7 +118,19 @@ func setup(cam_json: Dictionary, fov_deg: float, px: Vector2i, opts := {}) -> vo
 	glow.extra_cull_margin = 16384.0
 	glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(glow)
+	dust_mesh.mesh = DustFlash.sprite_mesh()
+	dust_mat.shader = DUST_SHADER
+	dust_mat.render_priority = 126
+	dust_mesh.material_override = dust_mat
+	dust_mesh.extra_cull_margin = 16384.0
+	dust_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(dust_mesh)
 	var p: Array = cam["position_m"]
+	dust_mat.set_shader_parameter("cam_ship", Vector3(p[0], p[1], p[2]))
+	dust_mat.set_shader_parameter("bb_lut", Blackbody.build_lut())
+	dust_mat.set_shader_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
+	dust_mat.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
+	dust_mat.set_shader_parameter("log10_eff_k", log(ForwardGlow.EFF_K) / log(10.0))
 	glow_mat.set_shader_parameter("cam_ship", Vector3(p[0], p[1], p[2]))
 	glow_mat.set_shader_parameter("bb_lut", Blackbody.build_lut())
 	glow_mat.set_shader_parameter("lut_log_tmin", log(Blackbody.LUT_T_MIN))
@@ -153,6 +175,9 @@ func orient_basis(attitude:PackedFloat64Array)->void:
 	glow_mat.set_shader_parameter("ship_x", axes[0])
 	glow_mat.set_shader_parameter("ship_y", axes[1])
 	glow_mat.set_shader_parameter("ship_z", axes[2])
+	dust_mat.set_shader_parameter("ship_x", axes[0])
+	dust_mat.set_shader_parameter("ship_y", axes[1])
+	dust_mat.set_shader_parameter("ship_z", axes[2])
 
 
 ## FreeLookCamera angles [yaw, pitch, roll] (YXZ, camera looks -Z) for a unit forward f and up
@@ -192,6 +217,10 @@ func apply(world: Dictionary) -> void:
 	system_view.set_velocity(heading_world, beta, s["gamma"], s.get("one_minus_beta", 1.0 / (s["gamma"] * s["gamma"] * (1.0 + beta))))
 	resolved_bodies_supported = beta == 0.0 or system_view.relativistic_enabled
 	set_glow(ForwardGlow.pole_of(world), ForwardGlow.temperature_of(world))
+	if params is Dictionary:
+		dust.eps = float(params.get("glow_eps", dust.eps))
+		dust.f_in = float(params.get("glow_f_in", dust.f_in))
+	dust.ingest(world, dust_clock)
 	if gr_on:
 		set_gr(gr)
 	elif gr_lens != null and gr_lens.active:
@@ -212,9 +241,50 @@ func set_gr(gr: Dictionary) -> void:
 	gr_lens.set_exposure(exposure.star_scale(), exposure.psf_sigma_rad())
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if gr_lens != null:
 		gr_lens.tick()
+	dust_clock += delta
+	if dust_auto:
+		upload_dust(dust.live(dust_clock))
+
+
+## The live flashes (DustFlash.live: {dir, e W/m^2, t K}, at most 64) -> the flash shader.
+func upload_dust(live: Array) -> void:
+	var fl := PackedVector4Array()
+	fl.resize(DustFlash.MAX_SPRITES)
+	var ts := PackedFloat32Array()
+	ts.resize(DustFlash.MAX_SPRITES)
+	for i in mini(live.size(), DustFlash.MAX_SPRITES):
+		var d: Vector3 = live[i].dir
+		fl[i] = Vector4(d.x, d.y, d.z, live[i].e)
+		ts[i] = live[i].t
+	set_dust_flashes(fl, ts, mini(live.size(), DustFlash.MAX_SPRITES))
+
+
+## Flash geometry and radiance share one upload (also the GPU-golden seam).
+func set_dust_flashes(fl: PackedVector4Array, ts: PackedFloat32Array, count: int) -> void:
+	_dust_input = fl
+	_dust_count = count
+	dust_mat.set_shader_parameter("flash", fl)
+	dust_mat.set_shader_parameter("flash_t", ts)
+	dust_mat.set_shader_parameter("count", count)
+	_refresh_dust_masks(true)
+
+
+func _refresh_dust_masks(force: bool = false) -> void:
+	var r: Variant = dust_mat.get_shader_parameter("radius")
+	var spot: Variant = dust_mat.get_shader_parameter("r_spot")
+	# Unset ShaderMaterial parameters return null, even with shader defaults.
+	var radius := float(r) if r != null else radius_m
+	var spot_radius := float(spot) if spot != null else dust.r_spot
+	if not force and radius == _dust_mask_radius and spot_radius == _dust_mask_spot:
+		return
+	var masks := DustFlash.overlap_masks(_dust_input, _dust_count, radius, spot_radius)
+	_dust_mask_radius = radius
+	_dust_mask_spot = spot_radius
+	dust_mat.set_shader_parameter("neighbour_lo", masks[0])
+	dust_mat.set_shader_parameter("neighbour_hi", masks[1])
 
 
 ## The glow's pole emittance (W/m^2; < 0 = off), its pole temperature (K) and the shared exposure.
@@ -311,6 +381,10 @@ func _upload_exposure() -> void:
 	glow_mat.set_shader_parameter("pole", maxf(glow_pole, 0.0))
 	glow_mat.set_shader_parameter("t_pole", maxf(glow_t_pole, 0.0))
 	glow_mat.set_shader_parameter("scale", exposure.k() / PI)
+	dust_mat.set_shader_parameter("radius", radius_m)
+	dust_mat.set_shader_parameter("r_spot", dust.r_spot)
+	_refresh_dust_masks() # comparison sheets can change the physical spot radius
+	dust_mat.set_shader_parameter("scale", exposure.k() / PI)
 
 
 ## The glow's luminance (cd/m^2) seen along a world (sky-frame) direction.

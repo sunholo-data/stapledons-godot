@@ -1,0 +1,247 @@
+-- R1-ISM-DUST I4: the lism-1 medium and the dust stream (design ism-structure-and-dust.md
+-- AC6(a,b), AC7, AC12; the drive-hold limit and the ledger by column are in core_ism_test).
+-- Expected numbers come from tools/ism_dust_ref.py (the oracle), never from the code
+-- under test.
+module stapledons/sim/ism_test
+
+import std/list (length, map, foldl, filter, sortBy)
+import std/math (sqrt, log, intToFloat)
+import pkg/sunholo/relativity/optics (Vec3)
+import pkg/sunholo/relativity/hyper (absf, sinh)
+import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/medium (lightYearM, glowLuminanceAt)
+import pkg/sunholo/relativity/dust (visibleRadius)
+import pkg/sunholo/celestial/frames (unitFromAngles)
+import ./ism (Medium, Seg, DustCfg, DustTick, Impact, Thresh, mediumAt, profile, cloudChords, window, columnEff, columnNH, peakMedium, mediaRows, holdMaxPhi, hotMedium, licMedium, defaultDustCfg, thresholds, thresholdRadius, backgroundAt, lutArray, dustTick, dustKey, dustU, maxEvents, grainsSwept)
+import ./data/ism (Member, members, grainAMin, grainAMax, grainRho)
+
+pure func lyPerPc() -> float = 3.0856775814913673e16 / 9460730472580800.0
+pure func rad(d: float) -> float = d * 3.141592653589793 / 180.0
+pure func at(l: float, b: float, dPc: float) -> Vec3 { let u = unitFromAngles(rad(l), rad(b)); let s = dPc * lyPerPc(); { x: u.x * s, y: u.y * s, z: u.z * s } }
+pure func origin() -> Vec3 = { x: 0.0, y: 0.0, z: 0.0 }
+pure func rel(got: float, want: float, tol: float) -> bool = absf(got - want) <= tol * absf(want)
+pure func names(segs: [Seg]) -> [string] = map(\g. g.medium.name, segs)
+pure func strsEq(a: [string], b: [string]) -> bool = match a { [] => (match b { [] => true, _ => false }), x :: xs => match b { [] => false, y :: ys => x == y && strsEq(xs, ys) } }
+pure func lenOf(a: Vec3, b: Vec3) -> float { let dx = b.x - a.x; let dy = b.y - a.y; let dz = b.z - a.z; sqrt(dx * dx + dy * dy + dz * dz) }
+
+pure func acen() -> Vec3 = at(315.73, -0.68, 1.3384)
+pure func aldebaran() -> Vec3 = at(180.97, -20.25, 20.43)
+pure func trappist() -> Vec3 = at(69.71, -56.64, 12.47)
+
+-- ---------- AC7: media along the routes ----------
+
+test "AC7: Sol is in the LIC" { (mediumAt(origin())).name == "LIC" }
+
+pure func checkAcenRoute() -> bool {
+  let segs = profile(origin(), acen());
+  strsEq(names(segs), ["G", "hot"])
+  && (match segs { g :: _ => rel(g.s1 / lenOf(origin(), acen()), 0.6067831765067202, 0.000000001), [] => false })
+}
+
+test "AC7: Sol -> alpha Cen is the G cloud for 0.607 of the way, then hot gas (oracle)" { checkAcenRoute() }
+
+pure func checkAldebaranRoute() -> bool {
+  let segs = profile(origin(), aldebaran());
+  let len = lenOf(origin(), aldebaran());
+  strsEq(names(segs), ["LIC", "Aur", "LIC", "hot", "Hyades", "hot"])
+  && (match segs {
+        a :: b :: c :: d :: e :: _ => rel(a.s1 / len, 0.020534962917716018, 0.000000001) && rel(b.s1 / len, 0.052110525162186734, 0.000000001) && rel(c.s1 / len, 0.08273949758908711, 0.000000001) && rel(d.s1 / len, 0.08684131504223995, 0.000000001) && rel(e.s1 / len, 0.13144298220512743, 0.000000001),
+        _ => false })
+}
+
+test "AC7: Sol -> Aldebaran crosses the Hyades cloud (1.77 .. 2.69 pc; IS-33, IS-34, oracle)" { checkAldebaranRoute() }
+
+test "Sol -> TRAPPIST-1 leaves the LIC into the hot gas and meets no named cloud" { strsEq(names(profile(origin(), trappist())), ["LIC", "hot"]) }
+
+-- Profiles are ordered, gap-free and cover the leg exactly.
+pure func covers(segs: [Seg], s: float, len: float) -> bool = match segs {
+  [] => s == len,
+  g :: rest => g.s0 == s && g.s1 > g.s0 && covers(rest, g.s1, len)
+}
+
+pure func coversLeg(a: Vec3, b: Vec3) -> bool = covers(profile(a, b), 0.0, (match profile(a, b) { [] => 0.0, _ => lastS1(profile(a, b)) })) && rel(lastS1(profile(a, b)), lenOf(a, b), 0.000000000001)
+pure func lastS1(segs: [Seg]) -> float = foldl(\acc g. g.s1, 0.0, segs)
+
+test "AC7: profiles are ordered, gap-free and end at the leg's length (8 legs)" {
+  coversLeg(origin(), acen()) && coversLeg(origin(), aldebaran()) && coversLeg(origin(), trappist())
+  && coversLeg(acen(), trappist()) && coversLeg(trappist(), aldebaran()) && coversLeg(at(250.0, -30.0, 3.0), at(40.0, 15.0, 4.0))
+  && coversLeg(at(300.0, 40.0, 0.5), at(5.0, 75.0, 2.0)) && coversLeg(at(180.0, -20.0, 1.0), at(180.0, -20.0, 30.0))
+}
+
+-- A grazing chord can be arbitrarily short even when the region itself is wide.
+-- The independent Python oracle gives a synthetic circular shell occupying
+-- 0.146446652..0.853553348 of this 0.0008 ly piece. Endpoint classification alone
+-- must not erase the cloud (or, later, a thin LLCC crossing).
+pure func checkGrazingProfile() -> bool {
+  let half = 0.0004;
+  let radius = 2.0;
+  let r = radius - half * half / (4.0 * radius);
+  let c = {name: "synthetic", axis: {x: 1.0, y: 0.0, z: 0.0}, cosHalf: 0.99,
+           rIn: 1.0, rOut: radius, planes: [], nH: 0.2474, delta: 0.0051, cite: "grazing oracle"};
+  let a = {x: r, y: half, z: 0.0};
+  let b = {x: r, y: 0.0 - half, z: 0.0};
+  match cloudChords(c, a, b) {
+    g :: [] => absf(g.t0 - 0.14644661) < 0.000001 && absf(g.t1 - 0.85355339) < 0.000001,
+    _ => false
+  }
+}
+
+test "AC7: a short grazing chord retains the synthetic circular fallback" { checkGrazingProfile() }
+
+-- ---------- AC6: membership (a) and the alpha Cen column (b) ----------
+
+pure func crosses(m: Member) -> bool = length(filter(\g. g.medium.name == m.cloud, profile(origin(), { x: m.pos.x, y: m.pos.y, z: m.pos.z }))) > 0
+
+pure func hits() -> int = length(filter(crosses, members()))
+
+-- Independent published outlines replace the equal-area circular approximation.
+test "AC6(a): at least 80% of the 59 RL08 members cross their assigned cloud" {
+  length(members()) == 59 && hits() >= 48
+}
+
+pure func logNHiAcen() -> float {
+  let neutral = filter(\g. g.medium.name != "hot", profile(origin(), acen()));
+  log(foldl(\acc g. acc + (g.s1 - g.s0) / lyPerPc() * 3.0856775814913673e18 * 0.2, 0.0, neutral)) / log(10.0)
+}
+
+test "AC6(b): the model's H I column toward alpha Cen is 10^17.70, within 10^(17.6 +- 0.15) of Linsky 2019 Table 4 (IS-30)" {
+  rel(logNHiAcen(), 17.7, 0.0000000001) && absf(logNHiAcen() - 17.6) <= 0.15
+}
+
+-- ---------- columns and the hold limit ----------
+
+pure func checkColumns() -> bool {
+  let segs = profile(origin(), aldebaran());
+  let hy = filter(\g. g.medium.name == "Hyades", segs);
+  rel(columnNH(hy), 0.2474 * (2.6853801264507533 - 1.7741680663129622) * lyPerPc(), 0.000000001)
+  && rel(columnEff(window(segs, 0.0, 0.1)), (licMedium()).nEff * 0.1 * lightYearM(), 0.000000000001)
+  && (peakMedium(segs)).nEff == (licMedium()).nEff
+}
+
+test "columns: the Hyades piece's H column, the mass-equivalent column of the first 0.1 ly, the peak medium" { checkColumns() }
+
+pure func checkMediaRows() -> bool {
+  let rows = mediaRows(profile(origin(), aldebaran()));
+  length(rows) == 4 && (match rows { r :: _ => r.name == "LIC", [] => false })
+  && rel(foldl(\acc r. acc + r.lengthLy, 0.0, rows), lenOf(origin(), aldebaran()), 0.000000000001)
+}
+
+test "the plan's media list: one row per medium in the order met, lengths summing to the leg" { checkMediaRows() }
+
+pure func checkHold() -> bool =
+  rel(holdMaxPhi(profile(origin(), aldebaran()), 1.0, 7354987.5, 100.0), 8.35073313605109 + 0.0, 0.00001)
+
+test "holdMaxPhi on Sol -> Aldebaran is the warm-cloud limit (gamma 2,117; HB-131)" { checkHold() }
+
+-- ---------- grain thresholds: the efficacy table vs the package ----------
+
+pure func cfg() -> DustCfg = defaultDustCfg(0.0000000001, 0.5, 100.0)
+pure func lut() -> Array[float] = lutArray()
+
+pure func thrOk(m: Medium, phi: float, contrast: float) -> bool {
+  let bgPkg = glowLuminanceAt(m.nEff, phi, 0.0000000001, 0.5, 1.0) + 0.00004327;
+  let exact = visibleRadius(grainAMin(), grainAMax(), grainRho(), phi, 0.0000000001, 0.5, 0.5, 0.2, bgPkg, contrast);
+  rel(backgroundAt(lut(), m, phi, cfg()), bgPkg, 0.001) && rel(thresholdRadius(lut(), phi, backgroundAt(lut(), m, phi, cfg()), contrast, cfg()), exact, 0.001)
+}
+
+test "the sim's visible and bright thresholds match dust.visibleRadius within 0.1 % (hot gas and LIC, 0.999c and 0.999999c)" {
+  thrOk(hotMedium(), rapidityOfOneMinusBeta(0.001), 0.05) && thrOk(hotMedium(), rapidityOfOneMinusBeta(0.001), 1.0)
+  && thrOk(licMedium(), rapidityOfOneMinusBeta(0.001), 1.0) && thrOk(hotMedium(), rapidityOfOneMinusBeta(0.000001), 1.0)
+}
+
+-- ---------- AC12: the dust stream ----------
+
+-- A run of ticks through a constant medium at a constant speed: sum of expected and
+-- drawn bright grains, events, the most dropped in one tick and the largest window.
+type Run = { expected: float, drawn: int, events: [Impact], maxDropped: int, maxWindow: int, cache: [Thresh] }
+
+pure func runTicks(key: int, k: int, n: int, m: Medium, phi: float, dtauS: float, r: Run) -> Run =
+  if k >= n then r
+  else {
+    let lenLy = dtauS * 299792458.0 * sinh(phi) / lightYearM();   -- galaxy-frame distance per ship second is gamma beta c
+    let segs = [{ s0: 0.0, s1: lenLy, medium: m }];
+    let d = dustTick(key, k, segs, phi, dtauS, m, cfg(), r.cache);
+    runTicks(key, k + 1, n, m, phi, dtauS,
+      { expected: r.expected + d.expected, drawn: r.drawn + d.drawn, events: if k < 400 then appendI(d.events, r.events) else r.events,
+        maxDropped: if d.dropped > r.maxDropped then d.dropped else r.maxDropped,
+        maxWindow: if length(d.events) > r.maxWindow then length(d.events) else r.maxWindow, cache: d.cache })
+  }
+
+pure func appendI(xs: [Impact], ys: [Impact]) -> [Impact] = match xs { [] => ys, x :: rest => x :: appendI(rest, ys) }
+pure func emptyRun() -> Run = { expected: 0.0, drawn: 0, events: [], maxDropped: 0, maxWindow: 0, cache: [] }
+pure func phi0999() -> float = rapidityOfOneMinusBeta(0.001)
+
+pure func within3Sigma(r: Run) -> bool = absf(intToFloat(r.drawn) - r.expected) <= 3.0 * sqrt(r.expected)
+
+test "AC12: real-time pacing (0.05 s ticks), LIC at 0.999c: bright totals within 3 sigma, 0 dropped, events = totals" {
+  let r = runTicks(dustKey(7), 0, 1500, licMedium(), phi0999(), 0.05, emptyRun());
+  within3Sigma(r) && r.maxDropped == 0 && r.expected > 1000.0
+}
+
+test "AC12: compressed pacing (1 h ticks): totals within 3 sigma, every window at or under 32 events" {
+  let r = runTicks(dustKey(7), 0, 300, licMedium(), phi0999(), 3600.0, emptyRun());
+  within3Sigma(r) && r.maxWindow <= maxEvents() && r.expected > 1000000.0
+}
+
+-- Wall points: uniform on the projected disc, so on the wall cos theta = sqrt(1 - r^2)
+-- has CDF c^2. Kolmogorov-Smirnov at alpha = 0.05.
+pure func cosOf(e: Impact) -> float { let r2 = e.x * e.x + e.y * e.y; if r2 < 1.0 then sqrt(1.0 - r2) else 0.0 }
+pure func cmpF(a: float, b: float) -> int = if a < b then -1 else if a > b then 1 else 0
+
+pure func ksD(cs: [float], i: int, n: int, d: float) -> float = match cs {
+  [] => d,
+  c :: rest => {
+    let f = c * c;
+    let hi = intToFloat(i + 1) / intToFloat(n) - f;
+    let lo = f - intToFloat(i) / intToFloat(n);
+    let m = if hi > lo then hi else lo;
+    ksD(rest, i + 1, n, if m > d then m else d)
+  }
+}
+
+pure func sortF(xs: [float]) -> [float] = sortBy(cmpF, xs)
+
+test "AC12: wall points pass a KS test against cos theta weighting (alpha 0.05)" {
+  let r = runTicks(dustKey(11), 0, 400, licMedium(), phi0999(), 0.05, emptyRun());
+  let cs = sortF(map(cosOf, r.events));
+  let n = length(cs);
+  n > 500 && ksD(cs, 0, n, 0.0) <= 1.36 / sqrt(intToFloat(n))
+}
+
+test "AC12: no impacts at rest (phi 0) or in a zero-length tick" {
+  let a = dustTick(dustKey(3), 5, [{ s0: 0.0, s1: 1.0, medium: licMedium() }], 0.0, 0.05, licMedium(), cfg(), []);
+  let b = dustTick(dustKey(3), 5, [{ s0: 0.0, s1: 0.0, medium: licMedium() }], phi0999(), 0.0, licMedium(), cfg(), []);
+  a.drawn == 0 && length(a.events) == 0 && b.drawn == 0 && length(b.events) == 0
+}
+
+-- The stream is stateless: slot j of tick k is a pure function of (seed, k, j); the
+-- layout reads slots 0..129 (window draw and up to 32 events of 4) and 1022..1023.
+test "AC11/AC12: the dust stream is stateless and keyed off the seed; slots stay inside 1,024 per tick" {
+  dustU(dustKey(7), 3, 0) == dustU(dustKey(7), 3, 0) && dustU(dustKey(7), 3, 0) != dustU(dustKey(8), 3, 0)
+  && dustU(dustKey(7), 3, 1023) != dustU(dustKey(7), 4, 0) && 2 + 4 * maxEvents() == 130
+}
+
+pure func checkSwept() -> bool {
+  let segs = [{ s0: 0.0, s1: 1.0, medium: licMedium() }];
+  rel(grainsSwept(segs, 0.000001, cfg()), 2601416584.167773, 0.00001)
+}
+
+test "grains of >= 1 um swept per light year of LIC: 2.60e9 (HB-121)" { checkSwept() }
+
+-- Independent oracle: lic_ts with 65,536 brackets rather than the package's 64.
+-- A 1,990 ly outside-to-outside line through the LIC centre at l=0, b=60 deg
+-- currently truncates the LIC to 7.797981109 ly; the original cones gave 8.050592373 ly; published outlines
+-- assign a small piece to Hyades, leaving 7.80081481235106 ly of LIC.
+-- Cloud priority remains unchanged: this asserts the actual assigned LIC pieces.
+pure func checkLongLicCrossing() -> bool {
+  let centre = { x: 0.0 - 2.6092510217339466, y: 2.2830946440172033, z: 0.0 - 1.3046255108669733 };
+  let u = unitFromAngles(0.0, rad(60.0));
+  let a = { x: centre.x - 1000.0 * u.x, y: centre.y - 1000.0 * u.y, z: centre.z - 1000.0 * u.z };
+  let b = { x: centre.x + 990.0 * u.x, y: centre.y + 990.0 * u.y, z: centre.z + 990.0 * u.z };
+  let lic = filter(\g. g.medium.name == "LIC", profile(a, b));
+  let licLength = foldl(\acc g. acc + g.s1 - g.s0, 0.0, lic);
+  (mediumAt(a)).name == "hot" && (mediumAt(b)).name == "hot"
+  && rel(licLength, 7.80081481235106, 0.000000001) && coversLeg(a, b)
+}
+
+test "AC7: a long free-nav leg resolves both LIC crossings between coarse brackets" { checkLongLicCrossing() }

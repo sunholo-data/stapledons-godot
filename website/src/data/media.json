@@ -58,5 +58,35 @@
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/6ac363a3577c552126cadb24c54b419a0b6bc83e68e3bd7e3ddb373c48b920a4.webm",
       "bytes": 334331
     }
+  },
+  "black_hole_orbit": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/9d945c4ba748a2e47c1177c7fc45253077c116287863b1842483cbdd5c46c32c.mp4",
+      "bytes": 5661866
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/fbc26ae8589c127b7c010b83c603ced10d8da6af57340ff22e0e0f69eec45da8.webm",
+      "bytes": 3260235
+    }
+  },
+  "saturn_arrival": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/7973e215cf0be1097a934e5e642e0d34e09cd5c0e935d2af2eeb2b84e2334920.mp4",
+      "bytes": 6144818
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/7b3890c3e5d5be52691bb75a3ecdf47ebb21e4e0465669c4219da445afb85491.webm",
+      "bytes": 2869655
+    }
+  },
+  "ism_transit": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/26489f0b47a968ed0e8b4296338b3ddb59f3efbc962a259e5f0fc637fe14c931.mp4",
+      "bytes": 640017
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/adee165dab041151bbfd3cbeeb7686d7f529826e97e1cf12cd221cc8fb768e37.webm",
+      "bytes": 629458
+    }
   }
 }
