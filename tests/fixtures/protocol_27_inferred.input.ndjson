@@ -1,0 +1,6 @@
+{"v":2,"type":"hello","want":{"major":2,"minor":7}}
+{"v":2,"type":"new_game","seed":7,"scenario":"sol","diag":false,"params":{"standoff_au":1000,"stop_rule":54}}
+{"v":2,"type":"input","tick":1,"dtau":0,"intents":[{"k":"plan","target":{"index":1,"id":"Gaia DR3 4472832130942575872","pos":{"x":-0.819651364569034,"y":5.88400417630009,"z":1.024796621933369}},"star":{"name":"Barnard's Star","v":9.511,"teff":3278},"cruise_phi":2.6466524123622457}]}
+{"v":2,"type":"input","tick":2,"dtau":0,"intents":[{"k":"commit","plan_id":1}]}
+{"v":2,"type":"input","tick":3,"dtau":0.001,"intents":[]}
+{"v":2,"type":"input","tick":4,"dtau":1,"intents":[]}

@@ -158,8 +158,7 @@ static func label_of(name: String) -> String:
 
 
 ## The route a -> b (galactic ly) cut into the plan's media pieces (journey.plan.media: name,
-## n_h_cm3, length_ly in the order met; the sim's profile merges each medium's pieces, so a
-## medium met twice is drawn where it was first met; the lengths sum to the leg).
+## n_h_cm3, length_ly in exact travel order, retaining repeated media; lengths sum to the leg).
 static func route_pieces(a: Vector3, b: Vector3, media: Array) -> Array:
 	var out: Array = []
 	var total := 0.0

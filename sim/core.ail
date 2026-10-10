@@ -7,12 +7,13 @@ module stapledons/sim/core
 import std/option (Option, Some, None)
 import std/result (Ok, Err)
 import std/math (intToFloat)
+import std/list (map)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/journey (TripPlan, planBurnCoastBurn, planFlipAndBurn)
 import pkg/sunholo/relativity/medium (accelSI, julianYearS, cSI, photonDriveEnergy, mirrorDragForce, mirrorDragPower, loadScale, glowInwardFlux, tripEnergy, brakeHoldsAgainstDrag, columnDragEnergy, tripEnergyColumn, driveHoldMaxPhi)
-import ./ism (Medium, Seg, Thresh, DustTick, DustCfg, MediaRow, Impact, mediumAt, profile, window, columnEff, peakMedium, mediaRows, holdMaxPhi, hotMedium, uniformMedium, defaultDustCfg, dustTick, dustKey, noDust, lutArray, grainsSwept, visibleAlong)
+import ./ism (Medium, Seg, Thresh, DustTick, DustCfg, MediaRow, Impact, mediumAt, profile, window, columnEff, peakMedium, mediaRows, holdMaxPhi, hotMedium, uniformMedium, defaultDustCfg, dustTick, dustKey, dustWithTotal, tripBright, noDust, lutArray, grainsSwept, visibleAlong)
 import ./tripphase (tripPhaseIndex)
 import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeId, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
@@ -144,8 +145,8 @@ export pure func availableKgStart() -> float = 20000.0
 -- gr: the GR mode (sim/gr.ail, M3.4); grOff() outside a black-hole scenario.
 -- dust: the grain impacts (R1-ISM-DUST; lism-1 only): the last tick's draw, this leg's totals and
 -- the threshold cache (a pure function of the medium and the rapidity, kept to skip recomputing).
-export type DustState = { last: DustTick, legExpected: float, legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
-export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
+export type DustState = { last: DustTick, legExpected: float, legGrains: float, medium: Medium, legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
+export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legGrains: 0.0, medium: hotMedium(), legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
 export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar] }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
@@ -167,7 +168,7 @@ export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- ism: the route's media under lism-1 (None under uniform): the media crossed with their lengths,
 -- the peak medium, the drive-hold limit, the coast's mass-equivalent column (m^-2, the drag
 -- ledger's), the grains of >= 1 um swept and the expected visible flashes.
-export type PlanIsm = { media: [MediaRow], peak: Medium, holdPhi: float, coastCol: float, grains: float, visible: float }
+export type PlanIsm = { segs: [Seg], media: [MediaRow], peak: Medium, holdPhi: float, coastCol: float, grains: float, visible: float }
 export type Plan = { id: int, target: Target, from: Vec3, heading: Vec3, flip: bool, trip: TripPlan, nav: Option[NavPlan], ism: Option[PlanIsm] }
 export type Commitment = { plan: Plan, tau0: float, t0: float, el: float }
 export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Commitment)
@@ -175,7 +176,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: emptyDust(), catStars: [] }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [] }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -299,7 +300,10 @@ pure func planStarIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pend
       -- `phi == phi` first: a NaN fails every comparison, so it is refused here
       -- on both runtimes (ailang#1419) rather than reaching the package's `requires`.
       if !reachable || !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < cruisePhiMin(p) || rq.cruisePhi > cruisePhiMax(p) then refuseIntent(a, "out_of_range")
-      else keep(storeChecked(p, a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi), None))
+      else {
+        let checked = storeChecked(p, a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi), None);
+        if checked.lastPlanId == a.lastPlanId then checked else keep(checked)
+      }
   }
 }
 -- M5.5a: a body target. sim/navigation.ail computes the arrival point (the client
@@ -347,7 +351,7 @@ pure func holdEvent(phi: float, m: Medium) -> Event = {event("hold_limit") | hol
 export pure func planIsmOf(p: Params, here: Vec3, h: Vec3, tp: TripPlan) -> PlanIsm {
   let segs = profile(here, endOf(here, h, tp.trip.distance));
   let coast = window(segs, tp.dBurn, tp.dBurn + tp.dCoast);
-  { media: mediaRows(segs), peak: peakMedium(segs), holdPhi: holdMaxPhi(segs, p.mEffKg, accelSI(tp.a), p.bubbleRadiusM), coastCol: columnEff(coast),
+  { segs: segs, media: map(\g. {name: g.medium.name, nH: g.medium.nH, lengthLy: g.s1 - g.s0}, segs), peak: peakMedium(segs), holdPhi: holdMaxPhi(segs, p.mEffKg, accelSI(tp.a), p.bubbleRadiusM), coastCol: columnEff(coast),
     grains: grainsSwept(segs, 0.000001, dustCfg(p)), visible: visibleAlong(lutArray(), coast, tp.phiPeak, dustCfg(p)) }
 }
 pure func storeChecked(p: Params, a: Pending, t: Target, here: Vec3, h: Vec3, flip: bool, tp: TripPlan, nav: Option[NavPlan]) -> Pending =
@@ -479,10 +483,12 @@ export pure func arrivalResiduals(m: Motion, x0: float, c: Commitment) -> Residu
 -- Under lism-1 the cruise piece's drag is the package's columnDragEnergy over the medium the
 -- piece actually flew (sim/ism.ail profile between its end positions): at arrival the sum is
 -- the plan's coast column (AC9).
-pure func pieceLedger(l: Ledger, p: Params, s: Ship, tp: TripPlan, i: int, before: Motion, after: Motion, piece: float) -> Ledger =
-  if i == 1 && isLism(p) then {l | dragJ: l.dragJ + columnDragEnergy(columnEff(profile(posAt(s, before), posAt(s, after))), tp.phiPeak, p.bubbleRadiusM)}
+pure func pieceLedger(l: Ledger, p: Params, s: Ship, pl: Plan, i: int, before: Motion, after: Motion, piece: float) -> Ledger {
+  let tp = pl.trip;
+  if i == 1 && isLism(p) then {l | dragJ: l.dragJ + columnDragEnergy(columnEff(match pl.ism { Some(pi) => window(pi.segs, before.x - s.x0, after.x - s.x0), None => profile(posAt(s, before), posAt(s, after)) }), tp.phiPeak, p.bubbleRadiusM)}
   else if i == 1 then {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), tp.phiPeak, p.bubbleRadiusM) * piece * julianYearS()}
   else {l | boostJ: l.boostJ + photonDriveEnergy(l.mEffKg, absf(after.phi - before.phi))}
+}
 
 -- Where the autopilot lands: the target itself (a body plan's target is its arrival point),
 -- or (stand-off) the planned distance along the heading.
@@ -506,7 +512,7 @@ pure func fly(p: Params, f: Flight, rem: float) -> Flight {
     let before = f.ship.motion;
     let after = accelerate(before, phaseAccel(tp, i), piece);
     if whole then
-      {f | ship: {f.ship | motion: after, phase: phaseOfIndex(i)}, c: {f.c | el: el + rem}, ledger: pieceLedger(f.ledger, p, f.ship, tp, i, before, after, piece), events: started}
+      {f | ship: {f.ship | motion: after, phase: phaseOfIndex(i)}, c: {f.c | el: el + rem}, ledger: pieceLedger(f.ledger, p, f.ship, f.c.plan, i, before, after, piece), events: started}
     else {
       let j = tripPhaseIndex(tp, b);
       let crossed = crossing(phaseOfIndex(i), phaseOfIndex(j), after.tau) :: started;
@@ -515,10 +521,10 @@ pure func fly(p: Params, f: Flight, rem: float) -> Flight {
         let snapped = {after | phi: 0.0};
         let res = arrivalResiduals(after, f.ship.x0, f.c);
         let landed = { motion: snapped, heading: f.ship.heading, origin: arrivalPoint(p, f.c.plan), x0: snapped.x, phase: AtRest };
-        fly(p, {ship: landed, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, f.ship, tp, i, before, snapped, piece),
+        fly(p, {ship: landed, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, f.ship, f.c.plan, i, before, snapped, piece),
           events: {event("arrived") | arrived: Some(res)} :: crossed, arrived: true}, left)
       } else
-        fly(p, {f | ship: {f.ship | motion: after, phase: phaseOfIndex(j)}, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, f.ship, tp, i, before, after, piece), events: crossed}, left)
+        fly(p, {f | ship: {f.ship | motion: after, phase: phaseOfIndex(j)}, c: {f.c | el: b}, ledger: pieceLedger(f.ledger, p, f.ship, f.c.plan, i, before, after, piece), events: crossed}, left)
     }
   }
 }
@@ -539,14 +545,14 @@ pure func tickBase(w: World, input: TickInput) -> Ticked
     Committed(c) => {
       let f = fly(w.params, {ship: a.ship, c: c, ledger: w.ledger, events: a.events, arrived: false}, input.dtau);
       { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger, rng: a.rng, ai: a.ai,
-                catStars: a.catStars, dust: dustAfter(w, a.ship, f.ship, input.dtau, match w.journey { Committed(_) => false, _ => true })},
+                catStars: a.catStars, dust: dustAfter(w, a.ship, f.ship, input.dtau, Some(c.plan), match w.journey { Committed(_) => false, _ => true })},
         refused: reversed(a.refused, []), events: reversed(f.events, []) }
     },
     _ => if a.gr.active then grTick(w, a, input.dtau) else {
       let moved = step(a.ship, a.thrust, input.dtau);
       let next = {moved | phase: derivePhase(moved.motion.phi, a.thrust)};
       { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship, a.ship.motion, next.motion, a.thrust, input.dtau), rng: a.rng, ai: a.ai,
-                catStars: a.catStars, dust: dustAfter(w, a.ship, next, input.dtau, false)},
+                catStars: a.catStars, dust: dustAfter(w, a.ship, next, input.dtau, None, false)},
         refused: reversed(a.refused, []), events: reversed(a.events, []) }
     }
   }
@@ -557,14 +563,34 @@ pure func tickBase(w: World, input: TickInput) -> Ticked
 -- positions before and after; the draw is sim/ism.ail dustTick on the stateless dust stream
 -- (seed, tick). A new commit starts the leg's totals afresh.
 pure func largestOf(es: [Impact], m: Impact) -> Impact = match es { [] => m, e :: rest => largestOf(rest, if e.a > m.a then e else m) }
-pure func dustAfter(w: World, before: Ship, after: Ship, dtau: float, fresh: bool) -> DustState =
+-- End-point lookup on the cached exact route (choose the next medium at a boundary).
+pure func segmentMedium(gs: [Seg], x: float) -> Medium = match gs {
+  [] => hotMedium(),
+  g :: rest => if x < g.s1 then g.medium else match rest { [] => g.medium, _ => segmentMedium(rest, x) }
+}
+export pure func currentMedium(w: World) -> Medium =
+  if !isLism(w.params) then uniformMedium(w.params.ismNCm3)
+  else if w.dust.medium.id == -1 then mediumAt(position(w.ship)) else w.dust.medium
+
+pure func dustAfter(w: World, before: Ship, after: Ship, dtau: float, pl: Option[Plan], fresh: bool) -> DustState =
   if !isLism(w.params) then w.dust
   else {
     let d0 = if fresh then {emptyDust() | cache: w.dust.cache} else w.dust;
-    let here = position(after);
-    let d = dustTick(dustKey(w.seed), w.tick + 1, profile(position(before), here), absf(after.motion.phi), dtau * julianYearS(), mediumAt(here), dustCfg(w.params), d0.cache);
+    let lo = before.motion.x - before.x0;
+    let hi = after.motion.x - before.x0;
+    let segs = if hi == lo then [] else match pl { Some(p) => match p.ism { Some(pi) => window(pi.segs, lo, hi), None => profile(position(before), position(after)) }, None => profile(position(before), position(after)) };
+    let here = match pl { Some(p) => match p.ism { Some(pi) => segmentMedium(pi.segs, hi), None => mediumAt(position(after)) }, None => if hi == lo then currentMedium(w) else mediumAt(position(after)) };
+    let cfg = dustCfg(w.params);
+    let d = match pl {
+      Some(p) => if dtau * julianYearS() > 0.1 && hi > lo && !(lo >= p.trip.dBurn && hi <= p.trip.dBurn + p.trip.dCoast)
+        then dustWithTotal(dustKey(w.seed), w.tick + 1, tripBright(segs, p.trip, cfg), absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache)
+        else if dtau * julianYearS() > 0.1 && after.phase == AtRest && hi > lo
+        then dustWithTotal(dustKey(w.seed), w.tick + 1, tripBright(segs, p.trip, cfg), 0.0, dtau * julianYearS(), here, cfg, d0.cache)
+        else dustTick(dustKey(w.seed), w.tick + 1, segs, absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache),
+      None => dustTick(dustKey(w.seed), w.tick + 1, segs, absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache)
+    };
     let big = largestOf(d.events, { a: d0.largestA, ke: d0.largestKe, x: 0.0, y: 0.0, t: 0.0, medium: "" });
-    { last: d, legExpected: d0.legExpected + d.expected, legDrawn: d0.legDrawn + d.drawn, largestA: big.a, largestKe: big.ke, cache: d.cache }
+    { last: d, legExpected: d0.legExpected + d.expected, legGrains: d0.legGrains + grainsSwept(segs, 0.000001, cfg), medium: here, legDrawn: d0.legDrawn + d.drawn, largestA: big.a, largestKe: big.ke, cache: d.cache }
   }
 
 -- ------------------------------------------------------------ GR tick (M3.4b)
@@ -662,7 +688,7 @@ export pure func tick(w: World, input: TickInput) -> Ticked
 
 -- ------------------------------------------------------------ consequence readouts (M4.1)
 -- The live ISM at the ship's current rapidity (package calls; zero at rest).
-export pure func ismNow(w: World) -> IsmNow = ismAt((mediumHere(w.params, position(w.ship))).nEff, w.ship.motion.phi, w.params.bubbleRadiusM, w.params.glowEps, w.params.glowFIn)
+export pure func ismNow(w: World) -> IsmNow = ismAt((currentMedium(w)).nEff, w.ship.motion.phi, w.params.bubbleRadiusM, w.params.glowEps, w.params.glowFIn)
 -- The ledger's drag_j since the latest commit (M2 semantics F*c); 0 before the first commit.
 export pure func isWarpLevel(x: float) -> bool = x == 0.002 || x == 0.01 || x == 0.05
 export pure func dragEnergyJ(w: World) -> float = match w.cq.depT { None => 0.0, Some(_) => w.ledger.dragJ - w.cq.dragJ0 }

@@ -1,6 +1,6 @@
 extends RefCounted
 ## R1-ISM-DUST I8 review captures (make ism-capture -> renders/ism/; needs a GPU window). Sim-driven:
-## protocol 2.7 (lism-1), the galaxy map plans and commits Sol -> Aldebaran (the route crosses the
+## protocol 2.8 (lism-1), the galaxy map plans and commits Sol -> Aldebaran (the route crosses the
 ## LIC, the hot gas and the Hyades cloud); the frames are taken mid-cruise from the sim's state after
 ## real-time ticks (0.05 ship s each, so the dust flashes are the sim's own draw). 1600 x 900.
 ##   flight/<speed>_<medium>_{interior,forward}.png  LIC (2 ly), Hyades cloud (7 ly), hot gas (15 ly)
