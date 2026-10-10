@@ -4,6 +4,7 @@ extends SceneTree
 ## Screens are renders/ism_hud/*_{1280x720,2560x1440}.png; open them before P2.
 
 var demo: Node
+var frame_view: SubViewport
 var failed := false
 var written := 0
 const OUT := "res://renders/ism_hud"
@@ -22,7 +23,7 @@ func settle() -> void:
 
 func shot(name: String, sz: Vector2i) -> void:
 	await settle()
-	var img := root.get_texture().get_image()
+	var img := frame_view.get_texture().get_image()
 	var path := "%s/%s_%dx%d.png" % [OUT, name, sz.x, sz.y]
 	if img.get_size() != sz or img.save_png(path) != OK:
 		push_error("ISM HUD frame dimensions %s, expected %s" % [img.get_size(), sz])
@@ -41,14 +42,19 @@ func _run() -> void:
 
 
 func capture_size(sz: Vector2i) -> void:
-	# macOS clamps ordinary windows to the usable area; the 1440p case must include
-	# the menu/dock area too. Fullscreen preserves actual pixels without resizing PNGs.
-	root.mode = Window.MODE_FULLSCREEN if sz.y >= 1440 else Window.MODE_WINDOWED
-	root.size = sz
-	await process_frame
+	# Native macOS windows are clamped by the usable screen area. Render the full
+	# scene at the requested resolution rather than resizing a smaller screenshot.
+	frame_view = SubViewport.new()
+	frame_view.size = sz
+	frame_view.size_2d_override = Vector2i(960, 540)
+	frame_view.size_2d_override_stretch = true
+	frame_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	frame_view.own_world_3d = true
+	frame_view.gui_embed_subwindows = true
+	root.add_child(frame_view)
 	demo = load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options = {"live_start": true, "sky_state": "rest", "auto_view": true, "size": sz}
-	root.add_child(demo)
+	frame_view.add_child(demo)
 	await process_frame
 	demo.auto = false
 	demo.journey_auto_tick = false
@@ -66,7 +72,9 @@ func capture_size(sz: Vector2i) -> void:
 	for y in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
 		for x in [0.1, 0.2, 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65]:
 			if not picked: picked = demo.show_medium_at(demo.ship_hud.size * Vector2(x, y))
-	if picked: await shot("medium_here_sky_only", sz)
+	if picked:
+		demo.star_identification.set_held(false) # the card survives releasing I; rings hide
+		await shot("medium_here_sky_only", sz)
 	else:
 		push_error("no empty forward ray for medium I card")
 		failed = true
@@ -118,4 +126,6 @@ func capture_size(sz: Vector2i) -> void:
 	demo.interlude_card.visible = true
 	await shot("interlude_media", sz)
 	demo.queue_free()
+	await process_frame
+	frame_view.queue_free()
 	await process_frame
