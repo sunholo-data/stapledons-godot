@@ -1,0 +1,35 @@
+# Peek et al. 2011 ApJ735129 arXiv1104.5232v1 Figure2, p5 (PDF page5).
+# Independent manual trace of the connected 21cm-emission envelope on the labelled RA/Dec axes.
+# About0.25deg digitisation precision; not an optical-absorption envelope. Two components.
+# Figure3 (p6) shows a stricter 1e19cm^-2 contour; it is NOT the contour traced here.
+# Sky-outline positions are measured; 17.8pc sheet distance and200AU thickness are
+# adopted approximations: distance constrained11.3..24.3pc (Peek section4.1),
+# representative17.8pc (Meyer2012 Figure14 p38); thickness about200AU (Meyer abstract).
+# component<TAB>ra_deg<TAB>dec_deg
+north	144.96	15.54
+north	143.64	15.65
+north	142.88	14.92
+north	143.83	13.81
+north	144.77	13.00
+north	145.76	12.77
+north	146.36	11.38
+north	147.05	10.69
+north	147.46	9.77
+north	148.30	8.54
+north	149.09	8.38
+north	149.66	8.81
+north	150.53	9.27
+north	149.28	10.19
+north	148.56	10.81
+north	147.80	11.50
+north	147.80	12.50
+north	147.27	13.42
+north	146.48	14.31
+south	154.80	4.50
+south	154.20	6.00
+south	153.30	6.65
+south	152.40	6.25
+south	151.25	5.75
+south	151.65	4.35
+south	152.65	4.15
+south	153.75	4.25

@@ -1,0 +1,13 @@
+# Stellar coordinates: CDS/SIMBAD query2026-10-10, ICRS decimal degrees.
+# Tracer detections independently from Peek2011 section2.3/4.1 (PDF pp3/6),
+# Meyer2012 section3/Table1 (PDF pp5-6/39). Distance is used for foreground control.
+# HD84937: NaI detected; 21cm emission NOT detected. Must not equate tracer thresholds.
+# Regulus: NaI NOT detected; weak CaII IS detected. Must not call it a gas nondetection.
+# HIP47513 lies angularly on the 21cm cloud but is a foreground NaI nondetection.
+# name<TAB>ra_deg<TAB>dec_deg<TAB>distance_pc<TAB>nai<TAB>hi21<TAB>cite
+HD83023	143.97034864932	14.37959393077	209	1	1	Meyer2012 Table1
+HD85259	147.70528152274	11.84240995817	239	1	1	Meyer2012 Table1
+HD84722	146.8581863917	11.5681659286	84.8	1	1	Peek2011 section4.1.2; Meyer2012 Table1
+HD84937	147.2337470383321	13.7442574194203	72.7	1	0	Meyer2012 section3/Table1
+HIP47513	145.2931680658796	13.2095622681858	11.26	0	1	Peek2011 section4.1.1
+Regulus	152.09296244	11.96720878	24.3	0	0	Peek2011 section2.3/4.1.2; CaII detection excluded

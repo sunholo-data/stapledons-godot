@@ -1,0 +1,92 @@
+-- I3b: render both consumers from the same derived geometry; no hand-edited game data.
+module stapledons/sim/tools/ism_dense_pack
+import std/list (map, filter, length, nth_or, range, reverse, foldl)
+import std/string (concat, join, split, trim, startsWith, stringToFloat, floatToStr, intToStr)
+import std/math (sqrt)
+import std/fs (readFileResult, writeFileResult)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, getArray, getNumber, getString, asNumber, jo, kv, js, jnum, ja, encode)
+import std/io (eprintln, println, exit)
+import pkg/sunholo/celestial/kepler (Vec3)
+import pkg/sunholo/celestial/frames (unitFromAngles, equatorialToGalactic)
+
+export type Point = {x:float,y:float}
+export type Triangle = {a:Point,b:Point,c:Point}
+export type Plane = {normal:Vec3,d0:float,d1:float}
+export type Sheet = {name:string,planes:[Plane],vertices:[Vec3],nH:float,delta:float,cite:string}
+export type Clump = {name:string,centre:Vec3,radii:Vec3,nH:float,delta:float,cite:string}
+pure func ly() -> float = 3.0856775814913673e16/9460730472580800.0
+pure func zero() -> Vec3 = {x:0.0,y:0.0,z:0.0}
+pure func dot(a:Vec3,b:Vec3) -> float = a.x*b.x+a.y*b.y+a.z*b.z
+pure func cross(a:Vec3,b:Vec3) -> Vec3 = {x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x}
+pure func scale(a:Vec3,s:float) -> Vec3 = {x:a.x*s,y:a.y*s,z:a.z*s}
+pure func unit(a:Vec3) -> Vec3 = scale(a,1.0/sqrt(dot(a,a)))
+pure func sky(p:Point) -> Vec3 = equatorialToGalactic(unitFromAngles(p.x*0.017453292519943295,p.y*0.017453292519943295))
+pure func turn(a:Point,b:Point,c:Point) -> float = (b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)
+pure func area(ps:[Point]) -> float = foldl(\a i. let p=nth_or(ps,i,{x:0.0,y:0.0}) in let q=nth_or(ps,(i+1)%length(ps),p) in a+p.x*q.y-q.x*p.y,0.0,range(0,length(ps)))
+export pure func inTriangle(t:Triangle,p:Point) -> bool = turn(t.a,t.b,p)>=-1e-12 && turn(t.b,t.c,p)>=-1e-12 && turn(t.c,t.a,p)>=-1e-12
+pure func at(ps:[Point],i:int) -> Point = nth_or(ps,(i+length(ps))%length(ps),{x:0.0,y:0.0})
+pure func ear(ps:[Point],i:int) -> bool {
+  let t={a:at(ps,i-1),b:at(ps,i),c:at(ps,i+1)};
+  let others=filter(\j. j!=i && j!=(i+length(ps)-1)%length(ps) && j!=(i+1)%length(ps),range(0,length(ps)));
+  turn(t.a,t.b,t.c)>0.0 && not foldl(\a j. a || inTriangle(t,at(ps,j)),false,others)
+}
+pure func firstEar(ps:[Point],i:int) -> int = if i>=length(ps) then -1 else if ear(ps,i) then i else firstEar(ps,i+1)
+pure func cut(ps:[Point],i:int) -> [Point] = map(\j. at(ps,j),filter(\j. j!=i,range(0,length(ps))))
+pure func triangulateLoop(ps:[Point],acc:[Triangle]) -> [Triangle] =
+  if length(ps)==3 then reverse({a:at(ps,0),b:at(ps,1),c:at(ps,2)} :: acc)
+  else if length(ps)<3 then [] else {
+    let i=firstEar(ps,0);
+    if i<0 then [] else triangulateLoop(cut(ps,i),{a:at(ps,i-1),b:at(ps,i),c:at(ps,i+1)} :: acc)
+  }
+export pure func triangulate(ps:[Point]) -> [Triangle] = triangulateLoop(if area(ps)<0.0 then reverse(ps) else ps,[])
+pure func angularPlane(a:Vec3,b:Vec3,inside:Vec3) -> Plane {
+  let n=unit(cross(a,b));
+  {normal:if dot(n,inside)>=0.0 then n else scale(n,-1.0),d0:0.0,d1:1e9}
+}
+pure func sheet(t:Triangle,i:int) -> Sheet {
+  let a=sky(t.a); let b=sky(t.b); let c=sky(t.c);
+  let norm=sky({x:148.5,y:11.0});
+  let pc=17.8; let half=100.0/206264.80624709636;
+  {name:"LLCC",planes:[angularPlane(a,b,c),angularPlane(b,c,a),angularPlane(c,a,b),{normal:norm,d0:(pc-half)*ly(),d1:(pc+half)*ly()}],
+   vertices:map(\u. scale(u,pc*ly()/dot(norm,u)),[a,b,c]),nH:3000.0,delta:0.01,
+   cite:"Peek2011 Figure2 p5 (21cm outline, coarse digitisation); Meyer2012 abstract/Figure14, 17.8pc and200AU adopted sheet approximation"}
+}
+pure func number(s:string) -> float = match stringToFloat(s) {Some(x)=>x,None=>0.0}
+pure func rows(text:string) -> [[string]] = map(\l. split(l,"\t"),filter(\l. length(split(trim(l),""))>0 && not startsWith(l,"#"),split(text,"\n")))
+pure func outline(text:string,name:string) -> [Point] = map(\r. {x:number(nth_or(r,1,"0")),y:number(nth_or(r,2,"0"))},filter(\r. nth_or(r,0,"")==name,rows(text)))
+pure func vec(j:Json,key:string) -> Vec3 = match getArray(j,key) {Some(v)=>{x:match asNumber(nth_or(v,0,jnum(0.0))) {Some(x)=>x,None=>0.0},y:match asNumber(nth_or(v,1,jnum(0.0))) {Some(x)=>x,None=>0.0},z:match asNumber(nth_or(v,2,jnum(0.0))) {Some(x)=>x,None=>0.0}},None=>zero()}
+pure func parseClump(j:Json) -> Clump = {
+ name:match getString(j,"name") {Some(s)=>s,None=>""},centre:scale(vec(j,"centre_pc"),ly()),radii:scale(vec(j,"radii_pc"),ly()),
+ nH:match getNumber(j,"n_h_cm3") {Some(n)=>n,None=>0.0},delta:0.01,cite:"Edenhofer2024 A&A685A82; Zenodo8187943 v1.0 CC BY4.0; 2pc grid >1cm^-3, fixed8pc decomposition, bounding ellipsoid approximation"}
+pure func vj(v:Vec3) -> Json = ja([jnum(v.x),jnum(v.y),jnum(v.z)])
+pure func pj(p:Plane) -> Json = jo([kv("normal",vj(p.normal)),kv("d0_ly",jnum(p.d0)),kv("d1_ly",jnum(p.d1))])
+pure func sj(s:Sheet) -> Json = jo([kv("name",js(s.name)),kv("planes",ja(map(pj,s.planes))),kv("vertices_ly",ja(map(vj,s.vertices))),kv("n_h_cm3",jnum(s.nH)),kv("delta",jnum(s.delta)),kv("cite",js(s.cite))])
+pure func cj(c:Clump) -> Json = jo([kv("name",js(c.name)),kv("centre_ly",vj(c.centre)),kv("radii_ly",vj(c.radii)),kv("n_h_cm3",jnum(c.nH)),kv("delta",jnum(c.delta)),kv("cite",js(c.cite))])
+pure func vstr(v:Vec3) -> string = concat(["{x:",floatToStr(v.x),",y:",floatToStr(v.y),",z:",floatToStr(v.z),"}"])
+pure func pstr(p:Plane) -> string = concat(["{normal:",vstr(p.normal),",d0:",floatToStr(p.d0),",d1:",floatToStr(p.d1),"}"])
+pure func quote(s:string) -> string = encode(js(s))
+pure func sstr(s:Sheet) -> string = concat(["{name:",quote(s.name),",planes:[",join(",",map(pstr,s.planes)),"],vertices:[",join(",",map(vstr,s.vertices)),"],nH:",floatToStr(s.nH),",delta:",floatToStr(s.delta),",cite:",quote(s.cite),"}"])
+pure func cstr(c:Clump) -> string = concat(["{name:",quote(c.name),",centre:",vstr(c.centre),",radii:",vstr(c.radii),",nH:",floatToStr(c.nH),",delta:",floatToStr(c.delta),",cite:",quote(c.cite),"}"])
+pure func chunks(cs:[Clump],start:int) -> [string] = if start>=length(cs) then [] else {
+ let ns=filter(\j. j<length(cs),range(start,start+100));
+ concat(["pure func clumps",intToStr(start/100),"() -> [DenseClump] = [\n",join(",\n",map(\j. cstr(nth_or(cs,j,{name:"",centre:zero(),radii:zero(),nH:0.0,delta:0.0,cite:""})),ns)),"\n]\n"]) :: chunks(cs,start+100)
+}
+pure func ail(cs:[Clump],ss:[Sheet]) -> string = concat([
+ "-- GENERATED by sim/tools/ism_dense_pack (make ism-dense-data).\nmodule stapledons/sim/data/ism_dense\n",
+ "export type V3 = {x:float,y:float,z:float}\nexport type DenseClump = {name:string,centre:V3,radii:V3,nH:float,delta:float,cite:string}\nexport type Plane = {normal:V3,d0:float,d1:float}\nexport type DenseSheet = {name:string,planes:[Plane],vertices:[V3],nH:float,delta:float,cite:string}\n",
+ concat(chunks(cs,0)),
+ "export pure func denseClumps() -> [DenseClump] = ",if length(cs)==0 then "[]" else join(" ++ ",map(\i. concat(["clumps",intToStr(i),"()"]),range(0,(length(cs)+99)/100))),"\n",
+ "export pure func denseSheets() -> [DenseSheet] = [\n",join(",\n",map(sstr,ss)),"\n]\n"])
+func read(path:string) -> string ! {IO,FS} = match readFileResult(path) {Ok(s)=>s,Err(e)=>{eprintln(e);exit(1);""}}
+export func main(args:{clumps:string,outline:string,out:string}) -> () ! {IO,FS} {
+ let text=read(args.clumps);
+ let cl=match decode(text) {Ok(j)=>match getArray(j,"clumps") {Some(cs)=>map(parseClump,cs),None=>[]},Err(_)=>[]};
+ let shape=read(args.outline);
+ let ts=triangulate(outline(shape,"north")) ++ triangulate(outline(shape,"south"));
+ let ss=map(\i. sheet(nth_or(ts,i,{a:{x:0.0,y:0.0},b:{x:0.0,y:0.0},c:{x:0.0,y:0.0}}),i),range(0,length(ts)));
+ let json=encode(jo([kv("source",js("Edenhofer2024; Peek2011; Meyer2012. See data/ism/sources and dense-verification.md; approximations labelled.")),kv("clumps",ja(map(cj,cl))),kv("sheets",ja(map(sj,ss)))]));
+ match writeFileResult(concat([args.out,"/ism_dense.ail"]),ail(cl,ss)) {Err(e)=>{eprintln(e);exit(1)},Ok(_)=>()};
+ match writeFileResult(concat([args.out,"/dense.json"]),concat([json,"\n"])) {Err(e)=>{eprintln(e);exit(1)},Ok(_)=>()};
+ println(concat(["ism-dense-pack: ",intToStr(length(cl))," clumps, ",intToStr(length(ss))," finite sheet triangles"]))
+}
