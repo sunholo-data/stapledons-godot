@@ -22,13 +22,13 @@
 -- v0.52.0); the pure parts are strict-checked by ism_build_test.ail.
 module stapledons/sim/tools/ism_build
 
-import std/string (split, trim, startsWith, stringToFloat, concat, join, floatToStr, contains, intToStr, length as slen)
+import std/string (split, trim, startsWith, stringToFloat, concat, join, floatToStr, contains, intToStr, stringToInt, length as slen)
 import std/list (sortBy, length, nth_or, map, filter, foldl, reverse)
 import std/math (pow, sqrt, cos, acos, intToFloat)
 import std/fs (readFileResult, writeFileResult)
 import std/io (println, eprintln, exit)
 import std/result (Result, Ok, Err)
-import pkg/sunholo/celestial/kepler (Vec3)
+import pkg/sunholo/celestial/kepler (Vec3, cross, dot, norm)
 import pkg/sunholo/celestial/frames (unitFromAngles, equatorialToGalactic)
 import pkg/sunholo/celestial/ism (realSphericalHarmonicAt, rayExitDistance)
 import pkg/sunholo/relativity/blackbody (luminousEfficacy)
@@ -64,6 +64,33 @@ export pure func parseClouds(text: string) -> [CloudRow] =
 export pure func parseMembers(text: string) -> [MemberRow] =
   map(\f. { cloud: col(f, 0), star: col(f, 1), hd: col(f, 2), d: num(col(f, 3)), logN: num(col(f, 4)), hasN: has(col(f, 4)),
             ra: num(col(f, 5)), dec: num(col(f, 6)), hasPos: has(col(f, 5)) }, dataLines(text))
+
+-- Independently digitised RL08 Figures 2-15 angular boundaries. Integer indices
+-- are transcription data; triangle normals use the published celestial vectors.
+export type OutlineVertex = { cloud: string, index: int, l: float, b: float }
+export type OutlineTriangle = { cloud: string, a: int, b: int, c: int }
+pure func idx(s: string) -> int = match stringToInt(trim(s)) { Some(x) => x, None => -1 }
+export pure func parseOutlineVertices(text: string) -> [OutlineVertex] =
+  map(\f. {cloud: col(f, 0), index: idx(col(f, 1)), l: num(col(f, 2)), b: num(col(f, 3))}, dataLines(text))
+export pure func parseOutlineTriangles(text: string) -> [OutlineTriangle] =
+  map(\f. {cloud: col(f, 0), a: idx(col(f, 1)), b: idx(col(f, 2)), c: idx(col(f, 3))}, dataLines(text))
+pure func outlineVertex(vs: [OutlineVertex], cloud: string, i: int) -> Vec3 =
+  match filter(\v. v.cloud == cloud && v.index == i, vs) {
+    v :: _ => unitLb(v.l, v.b),
+    [] => {x: 0.0, y: 0.0, z: 0.0}
+  }
+export pure func outlineFor(name: string, vs: [OutlineVertex], ts: [OutlineTriangle]) -> [[Vec3]] =
+  map(\t. [outlineVertex(vs, name, t.a), outlineVertex(vs, name, t.b), outlineVertex(vs, name, t.c)], filter(\t. t.cloud == name, ts))
+pure func inward(a: Vec3, b: Vec3, c: Vec3) -> Vec3 {
+  let n = cross(a, b);
+  let sign = if dot(n, c) >= 0.0 then 1.0 else -1.0;
+  scale(n, sign / norm(n))
+}
+export pure func planesFor(outline: [[Vec3]]) -> [[Vec3]] =
+  map(\t. match t {
+    [a, b, c] => [inward(a, b, c), inward(b, c, a), inward(c, a, b)],
+    _ => []
+  }, outline)
 
 -- ---------- geometry helpers ----------
 
@@ -179,7 +206,7 @@ export pure func licMedianResidual(coeffs: [float], rows: [T2Row]) -> float =
 
 -- ---------- cloud shells ----------
 
-export type Shell = { name: string, l: float, b: float, axis: Vec3, cosHalf: float, rIn: float, rOut: float, logN: float, closest: float, tK: float, v0: float, l0: float, b0: float, members: int }
+export type Shell = { name: string, l: float, b: float, axis: Vec3, cosHalf: float, rIn: float, rOut: float, logN: float, closest: float, tK: float, v0: float, l0: float, b0: float, members: int, outline: [[Vec3]], planes: [[Vec3]] }
 
 export pure func medianLogN(name: string, ms: [MemberRow]) -> float {
   let near = map(\m. m.logN, filter(\m. m.cloud == name && m.hasN && m.d <= medianReachPc(), ms));
@@ -194,7 +221,7 @@ export pure func shellOf(c: CloudRow, ms: [MemberRow], coeffs: [float]) -> Shell
   let rIn = if startsAtSun(c.name) then 0.0 else rayExitDistance(licCentrePc(), coeffs, axis, 10.0);
   let rOut = if rIn + path < c.closest then rIn + path else c.closest;
   { name: c.name, l: c.l, b: c.b, axis: axis, cosHalf: 1.0 - omega / (2.0 * 3.141592653589793), rIn: rIn, rOut: rOut, logN: logN,
-    closest: c.closest, tK: c.tK, v0: c.v0, l0: c.l0, b0: c.b0, members: length(filter(\m. m.cloud == c.name, ms)) }
+    closest: c.closest, tK: c.tK, v0: c.v0, l0: c.l0, b0: c.b0, members: length(filter(\m. m.cloud == c.name, ms)), outline: [], planes: [] }
 }
 
 export pure func shells(cs: [CloudRow], ms: [MemberRow], coeffs: [float]) -> [Shell] =
@@ -230,7 +257,7 @@ export pure func fl(x: float) -> string {
   if contains(s, ".") || contains(s, "e") || contains(s, "n") || contains(s, "N") then s else concat([s, ".0"])
 }
 
-pure func v3(v: Vec3) -> string = concat(["{ x: ", fl(v.x), ", y: ", fl(v.y), ", z: ", fl(v.z), " }"])
+pure func v3(v: Vec3) -> string = concat(["dataV3(", fl(v.x), ", ", fl(v.y), ", ", fl(v.z), ")"])
 
 pure func q(s: string) -> string = concat(["\"", s, "\""])
 
@@ -245,13 +272,55 @@ export pure func buildModel(t2: string, clouds: string, members: string) -> Mode
     usedRows: length(filter(\r. r.used, rows)), members: filter(\m. m.hasPos, parseMembers(members)) }
 }
 
+export pure func addOutlines(m: Model, vertices: string, triangles: string) -> Model {
+  let vs = parseOutlineVertices(vertices);
+  let ts = parseOutlineTriangles(triangles);
+  {m | shells: map(\s. let outline = outlineFor(s.name, vs, ts) in {s | outline: outline, planes: planesFor(outline)}, m.shells)}
+}
+-- Keep literal list calls below the v0.52.0 256-slot register block limit (#1737).
+pure func scalarChunks(xs: [string], acc: [string]) -> [string] = match xs {
+  [] => reverse(acc),
+  _ => scalarChunks(dropS(xs, 90), concat(["[", join(", ", takeS(xs, 90, [])), "]"]) :: acc)
+}
+pure func scalarFns(chunks: [string], name: string, k: int, acc: [string]) -> string = match chunks {
+  [] => join("\n", reverse(acc)),
+  c :: rest => scalarFns(rest, name, k + 1, concat(["pure func ", name, intToStr(k), "() -> [float] = ", c]) :: acc)
+}
+pure func scalarCalls(chunks: [string], name: string, k: int, acc: [string]) -> [string] = match chunks {
+  [] => reverse(acc),
+  _ :: rest => scalarCalls(rest, name, k + 1, concat([name, intToStr(k), "()"]) :: acc)
+}
+pure func cloudFunctions(s: Shell) -> string {
+  let scalars = foldl(\acc vs. acc ++ foldl(\ys v. ys ++ [fl(v.x), fl(v.y), fl(v.z)], [], vs), [], s.planes);
+  let chunks = scalarChunks(scalars, []);
+  let name = concat(["cloudScalars", s.name]);
+  concat([scalarFns(chunks, name, 0, []), "\n", "pure func cloudPlanes", s.name, "() -> [[V3]] = planeVectors(", join(" ++ ", scalarCalls(chunks, name, 0, [])), ")\n", "pure func cloud", s.name, "() -> Cloud = ", cloudLine(s)])
+}
+pure func vectorJson(v: Vec3) -> string = concat(["[", fl(v.x), ", ", fl(v.y), ", ", fl(v.z), "]"])
+pure func listsJson(xs: [[Vec3]]) -> string =
+  concat(["[", join(", ", map(\vs. concat(["[", join(", ", map(vectorJson, vs)), "]"]), xs)), "]"])
+
 pure func memberLine(m: MemberRow) -> string =
   concat(["  { cloud: ", q(m.cloud), ", star: ", q(m.star), ", pos: ", v3(scale(memberDir(m), ly(m.d))), " }"])
 
+pure func takeMembers(xs: [MemberRow], n: int) -> [MemberRow] =
+  if n <= 0 then [] else match xs { [] => [], x :: rest => x :: takeMembers(rest, n - 1) }
+pure func dropMembers(xs: [MemberRow], n: int) -> [MemberRow] =
+  if n <= 0 then xs else match xs { [] => [], _ :: rest => dropMembers(rest, n - 1) }
+pure func memberFunctions(xs: [MemberRow], k: int, acc: [string]) -> string = match xs {
+  [] => join("\n", reverse(acc)),
+  _ => memberFunctions(dropMembers(xs, 10), k + 1, concat(["pure func members", intToStr(k), "() -> [Member] = [\n", join(",\n", map(memberLine, takeMembers(xs, 10))), "\n]"]) :: acc)
+}
+pure func memberCalls(xs: [MemberRow], k: int, acc: [string]) -> string = match xs {
+  [] => join(" ++ ", reverse(acc)),
+  _ => memberCalls(dropMembers(xs, 10), k + 1, concat(["members", intToStr(k), "()"]) :: acc)
+}
+
 pure func cloudLine(s: Shell) -> string =
   concat(["  { name: ", q(s.name), ", axis: ", v3(s.axis), ", cosHalf: ", fl(s.cosHalf), ", rIn: ", fl(ly(s.rIn)), ", rOut: ", fl(ly(s.rOut)),
-          ", nH: nHWarm(), delta: deltaLocal(), cite: ", q(concat(["Redfield & Linsky 2008 Table 18 (l ", fl(s.l), ", b ", fl(s.b), ", area, closest star ", fl(s.closest), " pc), Tables 2-15 median log N(H I) ", fl(s.logN), if startsAtSun(s.name) then "; starts at the Sun (Linsky et al. 2019 section 5, Table 4)" else "; starts at the LIC edge"])), " }"])
+          ", planes: cloudPlanes", s.name, "()", ", nH: nHWarm(), delta: deltaLocal(), cite: ", q(concat(["Redfield & Linsky 2008 Figures 2-15 digitised outline; Table 18 (l ", fl(s.l), ", b ", fl(s.b), ", area, closest star ", fl(s.closest), " pc), Tables 2-15 median log N(H I) ", fl(s.logN), if startsAtSun(s.name) then "; starts at the Sun (Linsky et al. 2019 section 5, Table 4)" else "; starts at the LIC edge"])), " }"])
 
+-- Compact generated representation: canonical cache report inbox_1791657712992_10fd0486.
 export pure func renderAil(m: Model) -> string = join("\n", [
   "module stapledons/sim/data/ism",
   "",
@@ -262,8 +331,14 @@ export pure func renderAil(m: Model) -> string = join("\n", [
   "",
   "export type Field = { value: float, prov: string, cite: string }",
   "export type V3 = { x: float, y: float, z: float }",
-  "-- A Redfield & Linsky 2008 cloud as a cone shell, apex at the Sun (a game approximation, labelled).",
-  "export type Cloud = { name: string, axis: V3, cosHalf: float, rIn: float, rOut: float, nH: float, delta: float, cite: string }",
+  "pure func dataV3(x: float, y: float, z: float) -> V3 = {x: x, y: y, z: z}",
+  "-- Compact scalar literals avoid v0.52.0 coretypeinfo cache overflow on thousands of nested record literals.",
+  "pure func planeVectors(xs: [float]) -> [[V3]] = match xs {",
+  "  ax :: ay :: az :: bx :: by :: bz :: cx :: cy :: cz :: rest => [dataV3(ax, ay, az), dataV3(bx, by, bz), dataV3(cx, cy, cz)] :: planeVectors(rest),",
+  "  _ => []",
+  "}",
+  "-- A Redfield & Linsky 2008 cloud as a digitised angular shell, apex at the Sun (depth is a labelled game approximation).",
+  "export type Cloud = { name: string, axis: V3, cosHalf: float, rIn: float, rOut: float, planes: [[V3]], nH: float, delta: float, cite: string }",
   "-- A Redfield & Linsky 2008 Tables 1-15 member within 15 pc (SIMBAD ICRS -> galactic), with its assigned cloud (AC6a).",
   "export type Member = { cloud: string, star: string, pos: V3 }",
   "",
@@ -314,14 +389,14 @@ export pure func renderAil(m: Model) -> string = join("\n", [
   concat(["export pure func licCentre() -> V3 = ", v3(scale(licCentrePc(), lyPerPc()))]),
   concat(["export pure func licCoeffs() -> [float] = [", join(", ", map(\c. fl(ly(c)), m.coeffs)), "]"]),
   "",
-  "export pure func members() -> [Member] = [",
-  join(",\n", map(memberLine, m.members)),
-  "]",
+  concat(["export pure func members() -> [Member] = ", memberCalls(m.members, 0, [])]),
+  memberFunctions(m.members, 0, []),
   "",
   "-- In precedence order (first match wins; the LIC and then the hot gas come after).",
   "export pure func clouds() -> [Cloud] = [",
-  join(",\n", map(cloudLine, m.shells)),
+  join(",\n", map(\s. concat(["cloud", s.name, "()"]), m.shells)),
   "]",
+  join("\n", map(cloudFunctions, m.shells)),
   ""
 ])
 
@@ -330,7 +405,7 @@ pure func shellJson(s: Shell) -> string =
           "], \"half_angle_deg\": ", fl(acos(s.cosHalf) * 180.0 / 3.141592653589793), ", \"cos_half\": ", fl(s.cosHalf),
           ", \"r_in_ly\": ", fl(ly(s.rIn)), ", \"r_out_ly\": ", fl(ly(s.rOut)), ", \"n_h_cm3\": 0.2474, \"log_n_hi\": ", fl(s.logN),
           ", \"t_k\": ", fl(s.tK), ", \"v0_kms\": ", fl(s.v0), ", \"flow_l_deg\": ", fl(s.l0), ", \"flow_b_deg\": ", fl(s.b0),
-          ", \"members\": ", fl(intToFloat(s.members)), ", \"kind\": \"warm\", \"starts_at_sun\": ", if startsAtSun(s.name) then "true" else "false", "}"])
+          ", \"members\": ", fl(intToFloat(s.members)), ", \"kind\": \"warm\", \"outline\": ", listsJson(s.outline), ", \"planes\": ", listsJson(s.planes), ", \"starts_at_sun\": ", if startsAtSun(s.name) then "true" else "false", "}"])
 
 export pure func renderJson(m: Model) -> string = join("\n", [
   "{",
@@ -343,8 +418,8 @@ export pure func renderJson(m: Model) -> string = join("\n", [
   join(",\n", map(shellJson, m.shells)),
   "  ],",
   concat(["  \"hot\": {\"name\": \"Local Bubble hot gas\", \"n_h_cm3\": ", fl(0.00468 / 1.2), ", \"t_k\": 1000000.0},"]),
-  "  \"legend\": \"Everything else: the Local Bubble's hot gas, n_H about 0.004 cm^-3 (Snowden 2014). Clouds: cone shells (a game approximation). Sources: Redfield & Linsky 2008; Linsky et al. 2019 (LIC refit); Slavin & Frisch 2008; Krueger et al. 2015.\",",
-  "  \"assumptions\": [\"cloud shapes are cone shells (game approximation)\", \"LIC coefficients refit to Linsky et al. 2019 Table 2\", \"dust survives in the hot gas (delta as the LIC)\", \"one grain-size shape everywhere\"]",
+  "  \"legend\": \"Everything else: the Local Bubble's hot gas, n_H about 0.004 cm^-3 (Snowden 2014). Clouds: digitised RL08 angular outlines with approximate shell depths. Sources: Redfield & Linsky 2008; Linsky et al. 2019 (LIC refit); Slavin & Frisch 2008; Krueger et al. 2015.\",",
+  "  \"assumptions\": [\"cloud depths are radial shells (game approximation); angular outlines digitised from RL08 Figures 2-15\", \"LIC coefficients refit to Linsky et al. 2019 Table 2\", \"dust survives in the hot gas (delta as the LIC)\", \"one grain-size shape everywhere\"]",
   "}",
   ""
 ])
@@ -358,7 +433,8 @@ func readOr(path: string) -> string ! {IO, FS} = match readFileResult(path) {
 
 export func main(out: string) -> () ! {IO, FS} {
   let src = "data/ism/sources";
-  let m = buildModel(readOr(concat([src, "/linsky2019_table2.tsv"])), readOr(concat([src, "/rl08_clouds.tsv"])), readOr(concat([src, "/rl08_members.tsv"])));
+  let base = buildModel(readOr(concat([src, "/linsky2019_table2.tsv"])), readOr(concat([src, "/rl08_clouds.tsv"])), readOr(concat([src, "/rl08_members.tsv"])));
+  let m = addOutlines(base, readOr(concat([src, "/rl08_outline_vertices.tsv"])), readOr(concat([src, "/rl08_outline_triangles.tsv"])));
   if m.medianPc > 0.40 then { eprintln(concat(["ism-build: LIC median residual ", fl(m.medianPc), " pc > 0.40 (AC1)"])); exit(1) }
   else match writeFileResult(concat([out, "/ism.ail"]), renderAil(m)) {
     Err(e) => { eprintln(concat(["ism-build: ", e])); exit(1) },

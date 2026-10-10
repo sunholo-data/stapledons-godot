@@ -1,0 +1,24 @@
+module stapledons/sim/tools/ism_outline_test
+import stapledons/sim/tools/ism_build (parseOutlineVertices, parseOutlineTriangles, outlineFor, planesFor)
+import std/list (length, nth_or)
+import pkg/sunholo/celestial/kepler (dot)
+
+pure func triangle() = outlineFor("Example", parseOutlineVertices("Example\t0\t0\t0\nExample\t1\t10\t0\nExample\t2\t0\t10\n"), parseOutlineTriangles("Example\t0\t1\t2\n"))
+
+test "outline parsing ignores headers and attaches three independently transcribed vertices" {
+  length(parseOutlineVertices("# source\nExample\t0\t0\t0\n")) == 1 && length(triangle()) == 1
+}
+
+test "all cached normals point into their spherical triangle" {
+  let zero = {x: 0.0, y: 0.0, z: 0.0};
+  let vertices = nth_or(triangle(), 0, []);
+  let normals = nth_or(planesFor(triangle()), 0, []);
+  length(normals) == 3
+  && dot(nth_or(normals, 0, zero), nth_or(vertices, 2, zero)) > 0.0
+  && dot(nth_or(normals, 1, zero), nth_or(vertices, 0, zero)) > 0.0
+  && dot(nth_or(normals, 2, zero), nth_or(vertices, 1, zero)) > 0.0
+}
+
+test "an absent outline preserves the explicit circular fallback" {
+  length(outlineFor("Missing", parseOutlineVertices("Example\t0\t0\t0\n"), [])) == 0
+}

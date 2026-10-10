@@ -19,7 +19,7 @@ everything else itself:
     squares to the 62 used edge distances of Linsky et al. 2019 Table 2, about
     their Table 3 centre (Table 3's printed coefficients do not reproduce
     Table 2 in any standard convention: flagged, see `lic_published`);
-  * the 14 Redfield & Linsky 2008 clouds as cone shells (design section 4.1);
+  * the 14 Redfield & Linsky 2008 digitised angular outlines with shell depths;
   * route profiles by bracketing (64 steps) and bisection (60), as the
     package does, and closed-form cone and sphere chords;
   * the broken power-law grain population normalised to the dust mass
@@ -290,14 +290,41 @@ def cloud_shells():
     return out
 
 
+def cross(a, b):
+    return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
+
+
+def outline_data():
+    """Published figure transcriptions, independent of MEMBERS and their coordinates."""
+    if not os.path.exists(os.path.join(SRC, "rl08_outline_vertices.tsv")):
+        return {}  # Published packages' older vendored oracle fixtures.
+    vs = {}
+    for r in rows("rl08_outline_vertices.tsv"):
+        vs[(r[0], int(r[1]))] = unit_lb(float(r[2]), float(r[3]))
+    out = {}
+    for name, a, b, c in rows("rl08_outline_triangles.tsv"):
+        v = [vs[(name, int(i))] for i in (a, b, c)]
+        ns = []
+        for i in range(3):
+            n = cross(v[i], v[(i+1)%3])
+            ns.append(mul(n, (1.0 if dot(n, v[(i+2)%3]) > 0.0 else -1.0) / norm(n)))
+        out.setdefault(name, []).append((v, ns))
+    return out
+
+
+OUTLINES = outline_data()
 SHELLS = cloud_shells()
+for _shell in SHELLS:
+    _shell["triangles"] = OUTLINES.get(_shell["name"], [])
 
 
 def in_cone_shell(s, p):
     r = norm(p)
     if r <= 0.0:
         return False
-    return s["r_in"] <= r < s["r_out"] and dot(p, s["axis"]) >= s["cos_half"] * r
+    angular = (any(all(dot(p, n) >= 0.0 for n in ns) for _, ns in s["triangles"])
+               if s["triangles"] else dot(p, s["axis"]) >= s["cos_half"] * r)
+    return s["r_in"] <= r < s["r_out"] and angular
 
 
 def in_lic(p):
@@ -329,6 +356,13 @@ def cone_shell_ts(s, a, b):
         if disc >= 0.0:
             sq = math.sqrt(disc)
             ts += [(-B - sq) / (2.0 * A), (-B + sq) / (2.0 * A)]
+    if s["triangles"]:
+        for _, ns in s["triangles"]:
+            for n in ns:
+                den = dot(n, d)
+                if den != 0.0:
+                    ts.append(-dot(n, a) / den)
+        return [t for t in ts if 0.0 < t < 1.0]
     k = s["cos_half"]
     ax = s["axis"]
     ad, aa, dd = dot(a, ax), dot(a, a), dot(d, d)
@@ -794,6 +828,22 @@ def check(V):
     def ok(cond, what):
         if not cond:
             fails.append(what)
+    if OUTLINES:
+        # Figure outlines are independent of the member fixture; Table18 areas
+        # check the projection calibration and reject enlarged/overlapping ears.
+        expected = {c[0]: float(c[4]) for c in CLOUDS if c[0] != "LIC"}
+        ok(set(OUTLINES) == set(expected), "all 14 published angular outlines present")
+        for name, triangles in OUTLINES.items():
+            area = 0.0
+            for v, ns in triangles:
+                a, b, c = v
+                area += 2.0 * math.atan2(abs(dot(a, cross(b, c))),
+                                        1.0 + dot(a, b) + dot(b, c) + dot(c, a))
+                ok(all(abs(norm(n)-1.0) < 1e-12 for n in ns), name + " unit plane normals")
+                ok(all(dot(ns[i], v[(i+2)%3]) > 0.0 for i in range(3)), name + " inward plane orientation")
+            sqdeg = area * (180.0 / math.pi)**2
+            ok(0.80 * expected[name] <= sqdeg <= 1.20 * expected[name],
+               name + " digitised angular area within 20% of independent Table18")
     # harmonics: orthonormality by quadrature (Gauss-Legendre-free: fine grid)
     nth, nph = 200, 400
     for i, (l1, m1) in enumerate(ORDER):
@@ -811,10 +861,9 @@ def check(V):
     ok(V["sun_in_lic"] and any(m == "G" for _, _, m in V["acen_profile"]), "Sol -> alpha Cen crosses G")
     ok(abs(V["acen_log_nhi"] - 17.6) <= 0.15, "AC6b alpha Cen log N(H I) %.3f vs 17.6 +- 0.15" % V["acen_log_nhi"])
     ok("Hyades" in V["aldebaran_media"], "AC7 Sol -> Aldebaran crosses Hyades")
-    # AC6a (>= 80 %) is not reachable with Table 18's cone centres and areas
-    # (best 0.75 over every start rule; flagged in the spec PR). The oracle
-    # pins the model's value so the sim's test reproduces it.
-    ok(abs(V["membership"]["fraction"] - 42.0 / 59.0) < 1e-12, "membership %d/%d" % (V["membership"]["hits"], V["membership"]["total"]))
+    # The published outlines satisfy the original >=80% requirement; older
+    # vendored package fixtures retain their original circular-model pin.
+    ok(V["membership"]["fraction"] >= 0.80 if OUTLINES else abs(V["membership"]["fraction"] - 42.0 / 59.0) < 1e-12, "membership %d/%d" % (V["membership"]["hits"], V["membership"]["total"]))
     ok(abs(V["n_eff_check"] - 3.4706e5) / 3.4706e5 < 5e-5, "massEquivalentDensity 3.4706e5")
     ok(abs(V["nh_from_ext_bohlin"] - 606.34) < 0.01, "Bohlin 606.34 cm^-3 per mag/pc")
     ok(abs(V["ke_1um_2500_0999"] - 2.011e4) / 2.011e4 < 5e-4, "KE 1 um 0.999c 2.011e4")

@@ -6,10 +6,10 @@
 -- (ism) and sunholo/relativity (medium, dust) calls; the cloud tables are the generated
 -- sim/data/ism.ail. Lengths in light years, heliocentric galactic Cartesian.
 --
--- Media, first match wins: the 14 Redfield & Linsky clouds (cone shells, table order),
+-- Media, first match wins: the 14 Redfield & Linsky clouds (digitised angular shells, table order),
 -- the LIC (a star-shaped harmonic surface), then the Local Bubble's hot gas. Route
 -- resolution uses analytic cloud boundaries and bounded numerical LIC roots: the
--- cone and sphere roots (closed form) and the LIC crossings (64-step bracket, 60
+-- angular planes and sphere roots (closed form) and the LIC crossings (64-step bracket, 60
 -- bisections); each piece between consecutive boundaries is classified by its midpoint.
 -- The same `profile` serves the plan, the per-tick ledger and the map.
 module stapledons/sim/ism
@@ -17,8 +17,9 @@ module stapledons/sim/ism
 import std/list (sortBy, length, map, foldl, filter, reverse)
 import std/math (sqrt, cos, log, exp, floor, intToFloat, floatToInt, pow)
 import std/array (fromList as toArray, get, length as alen)
-import pkg/sunholo/celestial/ism (Interval, starSurfaceCrossings, insideStarSurface, coneShellChord, insideConeShell, ellipsoidChord, GrainDist, grainDist, grainsAbove, grainRadiusAt, poissonDraw)
+import pkg/sunholo/celestial/ism (Interval, starSurfaceCrossings, insideStarSurface, coneShellChord, insideConeShell, ellipsoidChord, slabChord, GrainDist, grainDist, grainsAbove, grainRadiusAt, poissonDraw)
 import pkg/sunholo/relativity/optics (Vec3)
+import pkg/sunholo/celestial/kepler (dot)
 import pkg/sunholo/relativity/medium (lightYearM, massEquivalentDensity, glowEmittanceAt, glowTemperatureAt, driveHoldMaxPhi)
 import pkg/sunholo/relativity/dust (grainKinetic, grainMassOf, grainRate)
 import ./data/ism (Cloud, clouds, licCentre, licCoeffs, nHWarm, nHHot, deltaLocal, muH, hydrogenMassKg, grainRho, grainAMin, grainABreak, grainAMax, grainQ, efficacyLog10TMin, efficacyStep, efficacyLut)
@@ -44,7 +45,18 @@ pure func v3(x: float, y: float, z: float) -> Vec3 = { x: x, y: y, z: z }
 pure func cv(c: Cloud) -> Vec3 = v3(c.axis.x, c.axis.y, c.axis.z)
 pure func licC() -> Vec3 = { let c = licCentre(); v3(c.x, c.y, c.z) }
 
-pure func inCloud(c: Cloud, p: Vec3) -> bool = insideConeShell(cv(c), c.cosHalf, c.rIn, c.rOut, p)
+pure func inPlanes(ns: [Vec3], p: Vec3) -> bool = match ns {
+  [] => true,
+  n :: rest => dot(n, p) >= 0.0 && inPlanes(rest, p)
+}
+pure func inTriangles(triangles: [[Vec3]], p: Vec3) -> bool = match triangles {
+  [] => false,
+  ns :: rest => inPlanes(ns, p) || inTriangles(rest, p)
+}
+pure func inCloud(c: Cloud, p: Vec3) -> bool =
+  if length(c.planes) == 0 then insideConeShell(cv(c), c.cosHalf, c.rIn, c.rOut, p)
+  else let r2 = dot(p, p) in
+    r2 > 0.0 && r2 >= c.rIn * c.rIn && r2 < c.rOut * c.rOut && inTriangles(c.planes, p)
 
 pure func firstCloud(cs: [Cloud], k: int, p: Vec3) -> Medium = match cs {
   [] => if insideStarSurface(licC(), licCoeffs(), p) then licMedium() else hotMedium(),
@@ -70,7 +82,9 @@ pure func ends(is: [Interval], acc: [float]) -> [float] = match is { [] => acc, 
 -- Root refinement is numerical; arbitrarily tangent double roots may remain
 -- unresolved by the upstream bracket (no 'exact, never sampled' claim).
 pure func licCrossings(a: Vec3, b: Vec3) -> [float] {
-  let r = foldl(\acc c. acc + absf(c), 0.0, licCoeffs());
+  -- v0.52.0 interpreter loses a transitive package resolver in fold callbacks;
+  -- canonical report inbox_1791657061847_c02abfea (strict VM passes).
+  let r = foldl(\acc c. acc + (if c < 0.0 then 0.0 - c else c), 0.0, licCoeffs());
   let bound = ellipsoidChord(licC(), v3(1.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), v3(0.0, 0.0, 1.0), r, r, r, a, b);
   match bound {
     g :: _ => map(\t. g.t0 + (g.t1 - g.t0) * t, starSurfaceCrossings(licC(), licCoeffs(), lerp(a, b, g.t0), lerp(a, b, g.t1))),
@@ -78,9 +92,42 @@ pure func licCrossings(a: Vec3, b: Vec3) -> [float] {
   }
 }
 
+pure func intersectOne(i: Interval, js: [Interval]) -> [Interval] =
+  filter(\k. k.t1 > k.t0, map(\j. {t0: if i.t0 > j.t0 then i.t0 else j.t0, t1: if i.t1 < j.t1 then i.t1 else j.t1}, js))
+pure func intersections(is: [Interval], js: [Interval]) -> [Interval] = match is {
+  [] => [],
+  i :: rest => intersectOne(i, js) ++ intersections(rest, js)
+}
+pure func withoutOne(i: Interval, j: Interval) -> [Interval] =
+  if j.t1 <= i.t0 || j.t0 >= i.t1 then [i]
+  else filter(\k. k.t1 > k.t0, [
+    {t0: i.t0, t1: if j.t0 < i.t1 then j.t0 else i.t1},
+    {t0: if j.t1 > i.t0 then j.t1 else i.t0, t1: i.t1}
+  ])
+pure func withoutInner(is: [Interval], inner: [Interval]) -> [Interval] = match inner {
+  [] => is,
+  j :: _ => foldl(\acc i. withoutOne(i, j) ++ acc, [], is)
+}
+pure func sphereChord(r: float, a: Vec3, b: Vec3) -> [Interval] =
+  if !(r > 0.0) then [] else ellipsoidChord(v3(0.0, 0.0, 0.0), v3(1.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), v3(0.0, 0.0, 1.0), r, r, r, a, b)
+pure func clipPlanes(ns: [Vec3], bound: [Interval], r: float, a: Vec3, b: Vec3) -> [Interval] =
+  if length(bound) == 0 then [] else match ns {
+    [] => bound,
+    n :: rest => clipPlanes(rest, intersections(bound, slabChord(n, 0.0, r, a, b)), r, a, b)
+  }
+pure func triangleChords(triangles: [[Vec3]], shell: [Interval], r: float, a: Vec3, b: Vec3, acc: [Interval]) -> [Interval] = match triangles {
+  [] => acc,
+  ns :: rest => triangleChords(rest, shell, r, a, b, clipPlanes(ns, shell, r, a, b) ++ acc)
+}
+-- Exact angular-halfspace and radial-shell intersections via published package
+-- slab/ellipsoid primitives. Empty outlines retain the circular-cone fallback.
+export pure func cloudChords(c: Cloud, a: Vec3, b: Vec3) -> [Interval] =
+  if length(c.planes) == 0 then coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b)
+  else let shell = withoutInner(sphereChord(c.rOut, a, b), sphereChord(c.rIn, a, b)) in
+    if length(shell) == 0 then [] else triangleChords(c.planes, shell, c.rOut, a, b, [])
 pure func cloudTs(cs: [Cloud], a: Vec3, b: Vec3, acc: [float]) -> [float] = match cs {
   [] => acc,
-  c :: rest => cloudTs(rest, a, b, ends(coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b), acc))
+  c :: rest => cloudTs(rest, a, b, ends(cloudChords(c, a, b), acc))
 }
 
 pure func cmpF(x: float, y: float) -> int = if x < y then -1 else if x > y then 1 else 0
@@ -95,15 +142,15 @@ pure func clamp01(ts: [float], acc: [float]) -> [float] = match ts {
   t :: rest => if t > 0.0 && t < 1.0 then clamp01(rest, t :: acc) else clamp01(rest, acc)
 }
 
-pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, acc: [Seg]) -> [Seg] = match ts {
+pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, cs: [Cloud], acc: [Seg]) -> [Seg] = match ts {
   t0 :: rest => match rest {
     t1 :: _ => {
-      let m = mediumAt(lerp(a, b, 0.5 * (t0 + t1)));
+      let m = firstCloud(cs, 0, lerp(a, b, 0.5 * (t0 + t1)));
       let s0 = t0 * len;
       let s1 = t1 * len;
       match acc {
-        g :: more => if g.medium.id == m.id then segsOf(rest, a, b, len, { s0: g.s0, s1: s1, medium: m } :: more) else segsOf(rest, a, b, len, { s0: s0, s1: s1, medium: m } :: acc),
-        [] => segsOf(rest, a, b, len, [{ s0: s0, s1: s1, medium: m }])
+        g :: more => if g.medium.id == m.id then segsOf(rest, a, b, len, cs, { s0: g.s0, s1: s1, medium: m } :: more) else segsOf(rest, a, b, len, cs, { s0: s0, s1: s1, medium: m } :: acc),
+        [] => segsOf(rest, a, b, len, cs, [{ s0: s0, s1: s1, medium: m }])
       }
     },
     [] => reverse(acc)
@@ -115,11 +162,12 @@ pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, acc: [Seg]) -> [Seg]
 -- the LIC uses the bounded numerical bracket described above.
 export pure func profile(a: Vec3, b: Vec3) -> [Seg] {
   let len = dist(a, b);
-  let ma = mediumAt(a);
+  let cs = clouds();
+  let ma = firstCloud(cs, 0, a);
   if !(len > 0.0) then [{ s0: 0.0, s1: 0.0, medium: ma }]
   else {
-    let ts = uniq(sortBy(cmpF, 0.0 :: 1.0 :: clamp01(cloudTs(clouds(), a, b, licCrossings(a, b)), [])), []);
-    segsOf(ts, a, b, len, [])
+    let ts = uniq(sortBy(cmpF, 0.0 :: 1.0 :: clamp01(cloudTs(cs, a, b, licCrossings(a, b)), [])), []);
+    segsOf(ts, a, b, len, cs, [])
   }
 }
 
