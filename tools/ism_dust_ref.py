@@ -312,6 +312,32 @@ def outline_data():
     return out
 
 
+def outline_reprojection_errors():
+    """Forward-check recorded chart pixels, independent of triangulation/membership."""
+    out = []
+    for row in rows("rl08_outline_vertices.tsv"):
+        name, index, lon, lat, figure, kind, px, py, cx, cy, rx, ry = row
+        l, b = math.radians(float(lon)), math.radians(float(lat))
+        px, py, cx, cy, rx, ry = map(float, (px, py, cx, cy, rx, ry))
+        if kind in ("H", "A"):
+            if kind == "A":
+                l -= math.pi
+            l = (l + math.pi) % (2.0 * math.pi) - math.pi
+            d = math.sqrt(1.0 + math.cos(b) * math.cos(l / 2.0))
+            x = cx - rx * math.cos(b) * math.sin(l / 2.0) / d
+            y = cy - ry * math.sin(b) / d
+            valid = ((px-cx)/rx)**2 + ((py-cy)/ry)**2 <= 1.0 + 1e-12
+        elif kind in ("N", "S"):
+            r = math.sqrt((1.0 - math.sin(b) if kind == "N" else 1.0 + math.sin(b)) / 2.0)
+            x = cx + rx * r * math.sin(l) * (-1.0 if kind == "N" else 1.0)
+            y = cy + ry * r * math.cos(l)
+            valid = ((px-cx)/rx)**2 + ((py-cy)/ry)**2 <= 1.0 + 1e-12
+        else:
+            valid, x, y = False, float("inf"), float("inf")
+        out.append((name, index, valid, math.hypot(x-px, y-py)))
+    return out
+
+
 OUTLINES = outline_data()
 SHELLS = cloud_shells()
 for _shell in SHELLS:
@@ -831,6 +857,8 @@ def check(V):
     if OUTLINES:
         # Figure outlines are independent of the member fixture; Table18 areas
         # check the projection calibration and reject enlarged/overlapping ears.
+        for name, index, valid, residual in outline_reprojection_errors():
+            ok(valid and residual <= 1e-8, "%s vertex%s source reprojection %.6g px" % (name, index, residual))
         expected = {c[0]: float(c[4]) for c in CLOUDS if c[0] != "LIC"}
         ok(set(OUTLINES) == set(expected), "all 14 published angular outlines present")
         for name, triangles in OUTLINES.items():
