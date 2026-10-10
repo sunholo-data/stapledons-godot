@@ -405,6 +405,7 @@ func escape() -> void:
 	if codex!=null and codex.panel.visible:codex.close()
 	elif ship_hud.tab_panel.visible:ship_hud.toggle_tab()
 	elif star_identification!=null and star_identification.card.visible:star_identification.close_card()
+	elif ship_hud.has_card("medium_here"):ship_hud.hide_card("medium_here")
 	elif ship_hud.has_card("arrival"):dismiss_arrival()
 	elif not escape_exits:return
 	elif menu_return:return_to_menu()
@@ -812,6 +813,23 @@ func _reset_hud_session() -> void:
 	_unlocked_seen = u.duplicate() if u is Array else []
 	_hud_phase = str(GalaxyMap.field_value(w, "ship.phase"))
 	_hud_state = str(GalaxyMap.field_value(w, "journey.state"))
+	ship_hud.reset_medium(w)
+
+## I on empty forward sky is information only: no intent, hold or deadline.
+func show_medium_at(point: Vector2) -> bool:
+	if not IsmHud.supported(hud_view()) or star_identification.suppressed: return false
+	if not Rect2(Vector2.ZERO, ship_hud.size).has_point(point): return false
+	if ship_hud.strip.get_global_rect().has_point(point) or ship_hud.column.get_global_rect().has_point(point) or ship_hud.corner.get_global_rect().has_point(point) or ship_hud.tab_panel.visible: return false
+	if not star_identification.at_point(point).is_empty(): return false
+	var pixel: Vector2 = (get_viewport().get_stretch_transform() * ship_hud.get_global_transform_with_canvas()) * point
+	var ray := camera.project_ray_normal(pixel)
+	var observed: Vector3 = camera.to_sky_direction(ray, camera.heading)
+	if observed.dot(sky.heading_world) <= 0.0: return false
+	if not sky_only:
+		star_identification.occlusion.refresh(camera)
+		if star_identification.occlusion.blocked(camera.global_position, ray): return false
+	if sky.system_view != null and sky.system_view.visible and sky.system_view.occludes_direction(PackedFloat64Array([observed.x, observed.y, observed.z])): return false
+	return ship_hud.show_medium_here(hud_view())
 ## Cards by their §A2 triggers. Every card here only shows; none changes game state.
 func _update_cards(view: Dictionary) -> void:
 	if (black_hole if black_hole != null else journey_sim) != _hud_session: _reset_hud_session()
@@ -896,6 +914,7 @@ func _update_cards(view: Dictionary) -> void:
 ## so the stack (tour, transit) stays readable beside it.
 func _place_interlude() -> void:
 	if interlude_card == null or not interlude_card.visible: return
+	interlude_card.fit_height(ship_hud.size.y - ship_hud.strip_bottom() - 64.0)
 	var left: float = ship_hud.column.position.x - ShipHud.MARGIN
 	interlude_card.custom_minimum_size.x = minf(620.0, left - 2.0 * ShipHud.MARGIN)
 	interlude_card.reset_size()

@@ -65,4 +65,5 @@ func lines() -> Dictionary:
 		"news": "News from home is %.1f years old when it reaches you." % float(after.news_age_years),
 		"tier": tier_text(float(after.earth_year)),
 		"cut": "Cutting to arrival braking.",
+		"ism": IsmHud.interlude_text(before, after),
 	}

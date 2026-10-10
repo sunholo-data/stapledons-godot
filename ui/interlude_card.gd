@@ -15,7 +15,10 @@ var _lived := Label.new()
 var _news := Label.new()
 var _tier := Label.new()
 var _cut := Label.new()
+var _ism := Label.new()
 var _button := Button.new()
+var _scroll := ScrollContainer.new()
+var _box := VBoxContainer.new()
 
 func _ready() -> void:
 	var style := StyleBoxFlat.new()
@@ -30,10 +33,15 @@ func _ready() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	add_child(box)
-	for l: Label in [_title, _speed, _distance, _clocks, _lived, _news, _tier, _cut]:
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	box.add_child(_scroll)
+	_box.add_theme_constant_override("separation", 10)
+	_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(_box)
+	for l: Label in [_title, _speed, _distance, _clocks, _ism, _lived, _news, _tier, _cut]:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		box.add_child(l)
+		_box.add_child(l)
 	_title.add_theme_font_size_override("font_size", 15)
 	_title.add_theme_color_override("font_color", Color(0.6, 0.7, 0.9))
 	_speed.add_theme_font_size_override("font_size", 30)
@@ -45,6 +53,14 @@ func _ready() -> void:
 	_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_button.pressed.connect(func() -> void: continue_pressed.emit())
 	box.add_child(_button)
+	fit_height(620.0)
+
+## Long media lists can scroll; Continue stays outside the scroll area and on screen.
+func fit_height(available: float) -> void:
+	var wanted := _box.get_combined_minimum_size().y
+	var budget := maxf(80.0, available - 56.0 - 10.0 - _button.get_combined_minimum_size().y)
+	_scroll.custom_minimum_size.y = minf(wanted, budget)
+	reset_size()
 
 ## Refresh from the interlude; t in [0, 1] animates the clocks from the cut to braking.
 func show_interlude(card: CardInterlude) -> void:
@@ -64,4 +80,7 @@ func show_interlude(card: CardInterlude) -> void:
 	_tier.text = l.tier
 	_tier.modulate.a = t
 	_cut.text = l.cut
+	_ism.text = l.get("ism", "")
+	_ism.visible = not _ism.text.is_empty()
+	_ism.add_theme_font_size_override("font_size", 12)
 	position = (get_viewport_rect().size - size) * 0.5

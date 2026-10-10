@@ -25,6 +25,10 @@ func update_from(view: Dictionary) -> void:
 
 static func format_field(view: Dictionary, f: String, format: String) -> String:
 	var raw: Variant = GalaxyMap.field_value(view, f)
+	if format == "ism_density":
+		return "—" if raw == null else IsmHud.density_text(float(raw))
+	if format == "ism_medium":
+		return "—" if raw == null else IsmHud.medium_name(str(raw)).trim_prefix("the ")
 	if format == "onoff":
 		return "-" if raw == null else ("on" if raw > 0.0 else "off")
 	if format == "dur_yr": # R1-SHIP-UI strip clocks: years as s, min, h, days or yr (ShipHud.duration_text)
