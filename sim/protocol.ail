@@ -18,7 +18,7 @@ import pkg/sunholo/relativity/kinematics (betaOf, gammaOf, oneMinusBeta)
 import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/celestial/rings (RingBand)
 import ./data/sol (Ring, rings)
-import ./solar_departure (TourLeg, initialize as solarInitialize, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
+import ./solar_departure (TourLeg, initialize as solarInitialize, initializeAtStandoff as earthInitializeAt, legs as solarLegs, approximation as solarApproximation, earthStandoffKm)
 import ./alpha_centauri (alphaBodies, catalogueId as alphaCatalogueId, stellarValue as alphaStellarValue)
 import ./destination_stars (destinationBodies, destinationCatalogueId, destinationValue)
 import ./trappist1 (trappistBodies, hostE1Lux, hostId as trappistHostId)
@@ -560,7 +560,7 @@ export pure func decodeInput(line: string) -> Result[Input, string] =
 pure func inputOf(t: string, j: Json) -> Result[Input, string] =
     if t == "hello" then bind(req(get(j, "want"), "bad_cmd"), \w. bind(req(natF(w, "major"), "bad_cmd"), \ma. bind(req(natF(w, "minor"), "bad_cmd"), \mi. Ok(GHello({major: ma, minor: mi})))))
     else if t == "new_game" then bind(req(natF(j, "seed"), "bad_game"), \seed. bind(req(getString(j, "scenario"), "bad_game"), \sc.
-      bind(check(sc == "sol" || sc == "solar_departure" || sc == "sgr_a", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
+      bind(check(sc == "sol" || sc == "solar_departure" || sc == "free_nav" || sc == "sgr_a", sc, "bad_game"), \_s. bind(req(getBool(j, "diag"), "bad_game"), \diag. bind(decodeParams(j), \ps.
       bind(optStr(j, "ai_core", "bad_game"), \core. bind(check(match core { Some(h) => isSha256Hex(h), None => true }, core, "bad_game"), \_c.
       Ok(GNewGame({seed: seed, scenario: sc, diag: diag, params: ps, aiCore: core})))))))))
     -- ailang#1467: `\tick.` would be captured by the imported core.tick, hence `\tk.`
@@ -770,6 +770,7 @@ export pure func serve(s: Session, line: string) -> Served =
       GHello(h) => { session: {s | hello: true, minor: sessionMinor(h.minor)}, reply: encodeHello(helloFor(h.minor)) },
       GQuit => { session: s, reply: "" },
       GNewGame(g) => if !s.hello then malformed(s, "no_hello") else if g.scenario == "solar_departure" && s.minor < departureMinor() then malformed(s, "bad_game")
+        else if g.scenario == "free_nav" && s.minor < stopsMinor() then malformed(s, "bad_game")
         else if g.scenario == "sgr_a" && s.minor < grMinor() then malformed(s, "bad_game")
         else if g.scenario != "sgr_a" && hasBh(g.params) then malformed(s, "bad_params")
         else if s.minor < ismMinor() && hasIsmModel(g.params) then malformed(s, "bad_params") else {
@@ -781,6 +782,9 @@ export pure func serve(s: Session, line: string) -> Served =
             Ok(rows) => {
               let initial = newWorld(g.seed, g.diag, p);
               match (if g.scenario == "solar_departure" then solarInitialize(initial)
+                     -- Explicit playable start; legacy sol and its recordings retain
+                     -- the origin convention. Reuse the checked Earth initializer.
+                     else if g.scenario == "free_nav" then earthInitializeAt(initial, 50000.0)
                      else if g.scenario == "sgr_a" then Ok(withHole(initial, sgrAWith(bhParam(g.params, "bh_mass_msun", sgrAMassMsun()), bhParam(g.params, "bh_r", sgrAStart()), p.bubbleRadiusM, p.mEffKg)))
                      else Ok(initial)) {
               Err(c) => malformed(s, c),

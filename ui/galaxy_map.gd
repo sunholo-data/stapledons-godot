@@ -152,10 +152,16 @@ var cancel_button := Button.new()
 var centre_button := Button.new()
 var fit_button := Button.new()
 var home_button := Button.new()
+var ism_toggle := CheckButton.new()
+var local_ism_button := Button.new()
+var ism_legend := Label.new()
 ## In-system destinations (Mark, 2026-10-08): the bodies of the system the ship is in.
 var system_box := VBoxContainer.new()
 var system_ids: Array = []
+var _system_buttons := {}
 var selected_body := ""
+## Presentation pause: zero simulation time, while planning intents still flow.
+var paused := false
 var progress_bar := ProgressBar.new()
 var dialog := PanelContainer.new()
 var dialog_title := Label.new()
@@ -204,6 +210,7 @@ func _build() -> void:
 		return
 	_built = true
 	ism_layer.load_model()
+	ism_layer.visible = true
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.01, 0.012, 0.02)
@@ -257,6 +264,21 @@ func _build() -> void:
 	home_button.pressed.connect(plan_home)
 	framing.add_child(home_button)
 	box.add_child(framing)
+	var medium_controls := HBoxContainer.new()
+	ism_toggle.text = "Interstellar medium [D]"
+	ism_toggle.tooltip_text = "Local warm-cloud model. Cloud distances are in light years. Display only."
+	ism_toggle.button_pressed = ism_layer.visible
+	ism_toggle.toggled.connect(set_ism_visible)
+	local_ism_button.text = "Local ISM"
+	local_ism_button.tooltip_text = "Show the LIC and nearby warm clouds around Sol at a light-year scale."
+	local_ism_button.pressed.connect(frame_local_ism)
+	medium_controls.add_child(ism_toggle); medium_controls.add_child(local_ism_button)
+	box.add_child(medium_controls)
+	ism_legend.text = "Local warm clouds · light-year scales"
+	ism_legend.add_theme_font_size_override("font_size",12)
+	ism_legend.add_theme_color_override("font_color",Color(.6,.75,.8))
+	ism_legend.visible = ism_layer.visible
+	box.add_child(ism_legend)
 	box.add_child(system_box)
 	_coverage.add_theme_font_size_override("font_size",12)
 	_coverage.add_theme_color_override("font_color",Color(.6,.65,.75))
@@ -513,7 +535,7 @@ func plan_target(target: Dictionary) -> void:
 ## is, and the commit ritual is the same hold as ever) and keep it highlighted on the map.
 ## The system the ship is in: every body of the sim's system section within
 ## SYSTEM_RANGE_AU of the ship that the body planner can stop at (visitable, or the Sun),
-## nearest first. Empty in interstellar space.
+## stable inventory order, with each moon beside its host. Empty in interstellar space.
 const SYSTEM_RANGE_AU := 2000.0
 const AU_KM := 149597870.7
 func system_bodies() -> Array:
@@ -525,8 +547,15 @@ func system_bodies() -> Array:
 		var d := sqrt(float(r.x) * float(r.x) + float(r.y) * float(r.y) + float(r.z) * float(r.z))
 		if d <= SYSTEM_RANGE_AU * AU_KM and (b.get("visitable", false) or b.get("id", "") == "sun"):
 			out.append({"id": b.id, "name": str(b.get("name", b.id)), "kind": str(b.get("kind", "")), "host": str(b.get("host", "")), "distance_km": d})
-	out.sort_custom(func(a, c): return a.distance_km < c.distance_km)
-	return out
+	var ordered: Array = []
+	for body in out:
+		if body.kind == "moon": continue
+		ordered.append(body)
+		for moon in out:
+			if moon.kind == "moon" and moon.host == body.id: ordered.append(moon)
+	for body in out:
+		if body.kind == "moon" and not ordered.any(func(b): return b.id == body.id): ordered.append(body)
+	return ordered
 
 ## Plan a stop at an in-system body with the guided tour's body planner
 ## (sim/navigation.ail; D-54 stop distance by default). In-system legs cruise at most
@@ -540,8 +569,11 @@ func plan_body(id: String) -> void:
 func _refresh_system_list() -> void:
 	var bodies := system_bodies()
 	var ids: Array = bodies.map(func(b): return b.id)
-	if ids == system_ids:return
+	if ids == system_ids:
+		_update_system_buttons(bodies)
+		return
 	system_ids = ids
+	_system_buttons.clear()
 	for child in system_box.get_children():system_box.remove_child(child);child.queue_free()
 	if bodies.is_empty():return
 	var title := Label.new();title.text = "In this system";title.add_theme_color_override("font_color", Color(0.85, 0.75, 0.4))
@@ -554,6 +586,15 @@ func _refresh_system_list() -> void:
 		button.tooltip_text = "%s · %s away" % [b.kind.capitalize(), BodyInfo.distance_text(b.distance_km)]
 		button.pressed.connect(plan_body.bind(b.id))
 		flow.add_child(button)
+		_system_buttons[b.id] = button
+	_update_system_buttons(bodies)
+
+func _update_system_buttons(bodies: Array) -> void:
+	for b in bodies:
+		var button: Button = _system_buttons.get(b.id)
+		if button == null: continue
+		button.text = b.name
+		button.tooltip_text = "%s · %s away" % [b.kind.capitalize(), BodyInfo.distance_text(b.distance_km)]
 
 const BodyInfo := preload("res://ui/body_info.gd")
 const HOME := {"index": 0, "id": "Sol", "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}
@@ -697,7 +738,11 @@ func tick() -> bool:
 	var dtau := TRANSIT_DTAU if state == "committed" else HOST_DTAU
 	if live_pacing:
 		var committing := intents.any(func(i): return i.get("k", "") == "commit")
-		dtau = pacing.step(sim.world, committing, HOST_DTAU, TICK_HZ)
+		# A playable idle observer advances real seconds, so a nearby body does
+		# not cross days of ephemeris while the captain inspects its stop.
+		dtau = pacing.step(sim.world, committing, 1.0 / (31557600.0 * TICK_HZ), TICK_HZ)
+	if intents.any(func(i): return i.get("k", "") == "commit"): paused = false
+	if paused: dtau = 0.0
 	var sent := sim.send(intents, dtau)
 	if sent and _stale_commit(intents):
 		# R1-SHIP-UI: a hold takes 1.5 s of host ticks, and the sim refuses a commit whose plan
@@ -707,7 +752,7 @@ func tick() -> bool:
 		if replanned:
 			sent = sim.send([{"k": "commit", "plan_id": int(sim.world["journey"]["plan_id"])}], pacing.step(sim.world, true, HOST_DTAU, TICK_HZ) if live_pacing else dtau)
 	if sent and not intents.is_empty():
-		_refusal_note = "" if sim.last_refused.is_empty() else "refused: %s" % ", ".join(sim.last_refused.map(func(r): return str(r["reason"])))
+		_refusal_note = "" if sim.last_refused.is_empty() else "refused: %s" % ", ".join(sim.last_refused.map(func(r): return refusal_text(str(r["reason"]))))
 		_refusal_note += hold_note(sim.last_events)
 	elif sent and journey_state() != state:
 		_refusal_note = "" # a new journey state (arrival) supersedes the old refusal
@@ -736,7 +781,20 @@ func _replan_body_commit(intents: Array) -> void:
 			# The body moved on and the same plan is now refused (a leg that grazes a planet):
 			# say why, and do not send a commit the sim would refuse as stale.
 			intents.erase(intent)
-			_refusal_note = "refused: %s" % ", ".join(sim.last_refused.map(func(r): return str(r["reason"]))) if ok else "replan failed"
+			_refusal_note = "refused: %s" % ", ".join(sim.last_refused.map(func(r): return refusal_text(str(r["reason"])))) if ok else "replan failed"
+
+static func refusal_text(reason: String) -> String:
+	match reason:
+		"committed": return "The autopilot owns this committed journey. Wait for arrival; P pauses simulation time, without stopping or cancelling the ship."
+		"moving": return "The ship must finish braking before committing another journey."
+		"out_of_range": return "Already inside this stop's distance, or the requested speed/distance is outside the allowed range. Choose another destination or speed."
+		"collision": return "This straight route intersects a body. Choose a different destination or wait for the bodies to move."
+		"ring_crossing": return "This straight route crosses planetary rings. Choose another destination or departure time."
+		"too_close": return "The requested stop is below the body's surface and bubble clearance. Increase its distance."
+		"not_visitable": return "This body has no supported stop with measured radius and brightness."
+		"stale_plan": return "The ship or destination moved since planning. Select the destination again."
+		"no_converge": return "The moving-body intercept did not converge. Try another destination or speed."
+	return reason
 
 
 func _process(delta: float) -> void:
@@ -1012,6 +1070,18 @@ func fit_journey() -> void:
 	if ship != null:points.append(ship)
 	if not points.is_empty():_frame_points(points)
 
+## Display controls share one state; neither mode nor framing sends a plan.
+func set_ism_visible(on: bool) -> void:
+	ism_layer.visible = on
+	ism_toggle.set_pressed_no_signal(on)
+	ism_legend.visible = on
+	_overlay.queue_redraw()
+
+func frame_local_ism() -> void:
+	set_ism_visible(true)
+	dist = 30.0
+	_frame_points(PackedVector3Array([Vector3.ZERO]),false)
+
 
 ## Keep both endpoints inside the map area left of the information panel.
 ## Framing is requested explicitly; refresh/ticks never overwrite orbit/zoom.
@@ -1108,8 +1178,7 @@ static func hold_note(events: Array) -> String:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_D \
 			and not (event as InputEventKey).is_command_or_control_pressed():
-		ism_layer.toggle() # a display control: no intent (D-56)
-		_overlay.queue_redraw()
+		set_ism_visible(not ism_layer.visible) # a display control: no intent (D-56)
 		_accept()
 		return
 	if event is InputEventMagnifyGesture: # pinch: factor > 1 (fingers apart) zooms in

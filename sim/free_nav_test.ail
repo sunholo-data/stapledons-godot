@@ -1,0 +1,31 @@
+module stapledons/sim/free_nav_test
+import std/option (Some, None)
+import std/string (contains)
+import pkg/sunholo/celestial/kepler (sub, norm, scale, absf)
+import ./celestial (solSystem, bodyAt, lyKm)
+import ./core (World, position, tick, IPlanBody, Planned)
+import ./navigation (bodyPhiMax)
+import ./protocol (newSession, serve, Served)
+
+pure func start(scenario: string, minor: int) -> Served {
+  let h = serve(newSession(), "{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":${minor}}}");
+  serve(h.session, "{\"v\":2,\"type\":\"new_game\",\"seed\":42,\"scenario\":\"${scenario}\",\"diag\":false,\"params\":{\"stop_rule\":54,\"standoff_au\":1000}}")
+}
+pure func checkStart(minor: int) -> bool = match (start("free_nav",minor)).session.game {
+  None => false,
+  Some(w) => match bodyAt(solSystem(), "earth", w.params.epochJd) {
+    None => false,
+    Some(e) => absf(norm(sub(scale(lyKm(),position(w.ship)),e.pos))-50000.0) < 1e-6
+      && w.tick == 0 && w.ship.motion.phi == 0.0 && w.ship.motion.t == 0.0 && w.ship.motion.tau == 0.0
+  }
+}
+pure func planned(w: World, id: string) -> bool {
+  let r = tick(w, {dtau:0.0,intents:[IPlanBody({id:id,cruisePhi:bodyPhiMax(),mode:"stop",standoffKm:None,bKm:0.0,clockDeg:0.0,runOutKm:None,timing:None})]});
+  match (r.refused,r.world.journey) { ([], Planned(p)) => p.trip.trip.distance > 0.0, _ => false }
+}
+pure func checkBodies() -> bool = match (start("free_nav",8)).session.game {None=>false,Some(w)=>planned(w,"sun") && planned(w,"earth") && planned(w,"mars")}
+pure func checkLegacy() -> bool = match (start("sol",7)).session.game {None=>false,Some(w)=>norm(position(w.ship))==0.0}
+test "free_nav protocol2.7/2.8 starts genuinely at rest50,000km from Earth using the published ephemeris" {checkStart(7) && checkStart(8)}
+test "free_nav Sun Earth Mars stops pass ordinary geometric clearance checks" {checkBodies()}
+test "legacy sol initial position and protocol2.7 remain unchanged" {checkLegacy()}
+test "free_nav requires protocol2.7; older clients receive bad_game" {contains((start("free_nav",6)).reply,"bad_game")}

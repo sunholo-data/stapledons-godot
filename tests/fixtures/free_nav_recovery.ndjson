@@ -1,0 +1,6 @@
+{"v":2,"type":"hello","want":{"major":2,"minor":8}}
+{"v":2,"type":"new_game","seed":42,"scenario":"free_nav","diag":false,"params":{"stop_rule":54,"standoff_au":1000}}
+{"v":2,"type":"input","tick":1,"dtau":0,"intents":[{"k":"plan","target":{"kind":"body","id":"earth"},"cruise_phi":2.6466524123622457,"approach":{"mode":"stop"}}]}
+{"v":2,"type":"input","tick":2,"dtau":0.000001,"intents":[{"k":"commit","plan_id":1}]}
+{"v":2,"type":"input","tick":3,"dtau":0.0000000015844043907014474,"intents":[]}
+{"v":2,"type":"input","tick":4,"dtau":0,"intents":[{"k":"plan","target":{"kind":"body","id":"mars"},"cruise_phi":2.6466524123622457,"approach":{"mode":"stop"}}]}
