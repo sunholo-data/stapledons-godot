@@ -29,6 +29,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await test_ism_hud()
+	await test_ism_body_pick_guard()
 	if failures:
 		print("ship-ui: %d passed, %d failures" % [passes, failures])
 		quit(1)
@@ -99,6 +100,13 @@ func test_ism_hud() -> void:
 	if lines.has("ism"):
 		check("ISM interlude clips route to skipped interval", str(lines.ism).contains("0.500 ly") and str(lines.ism).contains("G cloud · 2.000 ly") and not str(lines.ism).contains("Local Bubble"))
 		check("ISM interlude grains are the sim-total delta", str(lines.ism).contains("2.000e6") and str(lines.ism).contains("Largest this leg"))
+	var reentry_before := before.duplicate(true)
+	reentry_before.ism_media = [{"name": "LIC", "length_ly": 0.5}, {"name": "G", "length_ly": 1.0}, {"name": "LIC", "length_ly": 1.0}, {"name": "hot", "length_ly": 1.5}]
+	reentry_before.distance_remaining_ly = 3.75
+	var reentry_after := reentry_before.duplicate(true)
+	reentry_after.distance_remaining_ly = 1.75
+	var reentry := IsmHud.skipped_media(reentry_before, reentry_after)
+	check("ISM interlude retains ordered cloud re-entry", reentry.size() == 3 and reentry.map(func(m): return m.name) == ["LIC", "G", "LIC"] and is_equal_approx(float(reentry[0].length_ly), 0.25) and is_equal_approx(float(reentry[2].length_ly), 0.75))
 	var panel := InterludeCard.new()
 	root.add_child(panel)
 	panel.show_interlude(interlude)
@@ -109,6 +117,22 @@ func test_ism_hud() -> void:
 	check("ISM interlude Continue stays outside scrolling content", panel._button.get_global_rect().end.y <= panel.get_global_rect().end.y and not panel._scroll.is_ancestor_of(panel._button))
 	panel.queue_free()
 	hud.queue_free()
+	await process_frame
+
+
+func test_ism_body_pick_guard() -> void:
+	var demo: Node = await new_demo({"live_start": true, "sky_state": "rest"})
+	var sv: SystemView = demo.sky.system_view
+	var saved: Dictionary = sv.last_system
+	var visible := sv.visible
+	sv.visible = true
+	sv.last_system = {"bodies": [{"id": "observer-coincident", "kind": "star", "radius_km": 1.0, "rel_km": {"x": 0.0, "y": 0.0, "z": 0.0}}]}
+	demo.star_identification.candidates.clear()
+	demo.star_identification._add_body_candidates(demo.sky, Basis.IDENTITY, 100.0, Vector2(1280, 720), Transform2D.IDENTITY)
+	check("ISM I fallback never offers an observer-coincident body", demo.star_identification.candidates.is_empty())
+	sv.last_system = saved
+	sv.visible = visible
+	demo.queue_free()
 	await process_frame
 
 

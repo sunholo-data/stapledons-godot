@@ -107,13 +107,17 @@ func _add_body_candidates(sky: InteriorSky, view: Basis, focal: float, px: Vecto
 	var sv: SystemView = sky.system_view
 	if sv == null or not sv.visible:return
 	for b: Dictionary in sv.last_system.get("bodies", []):
+		var dist := Planets.length64(Planets.world_of(b.rel_km))
+		# The initial Sol snapshot can put the observer at the Sun's catalogue origin.
+		# There is no direction or projected disc at zero distance; never offer an I ring.
+		if not is_finite(dist) or dist <= 0.0:continue
 		var dir := StarLight.apparent_direction(sv, b.rel_km, b.radius_km)
 		var observed := Vector3(dir[0], dir[1], dir[2])
 		var local: Vector3 = view*observed
-		if local.z >= 0.:continue
+		if not local.is_finite() or local.z >= 0.:continue
 		var point := Vector2(px.x*.5-focal*local.x/local.z,px.y*.5+focal*local.y/local.z)
-		var dist := Planets.length64(Planets.world_of(b.rel_km))
 		var radius_px := focal*tan(Planets.angular_radius(b.radius_km, dist))
+		if not point.is_finite() or not is_finite(radius_px):continue
 		if not Rect2(-Vector2.ONE*radius_px,px+Vector2.ONE*2.*radius_px).has_point(point):continue
 		# A planet or moon of a distant system is an unresolved, invisible speck; offer
 		# only stars there (Mark at TRAPPIST-1 should not get 21 Solar System bodies).
