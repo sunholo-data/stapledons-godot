@@ -863,7 +863,15 @@ def check(V):
         ok(set(OUTLINES) == set(expected), "all 14 published angular outlines present")
         for name, triangles in OUTLINES.items():
             area = 0.0
+            axis = next(c["axis"] for c in SHELLS if c["name"] == name)
+            cap = min(dot(axis, v) for vs, _ in triangles for v in vs) - 1e-12
             for v, ns in triangles:
+                if cap > 0.0:
+                    # Positive spherical caps are geodesically convex. Check
+                    # vertices, edge midpoints and a triangle-interior witness.
+                    samples = v + [add(v[i], v[(i+1)%3]) for i in range(3)] + [add(add(v[0], v[1]), v[2])]
+                    ok(all(dot(axis, mul(p, 1.0 / norm(p))) >= cap for p in samples),
+                       name + " enclosing cap contains triangle interiors")
                 a, b, c = v
                 area += 2.0 * math.atan2(abs(dot(a, cross(b, c))),
                                         1.0 + dot(a, b) + dot(b, c) + dot(c, a))

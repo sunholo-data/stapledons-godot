@@ -22,7 +22,7 @@ import pkg/sunholo/relativity/optics (Vec3)
 import pkg/sunholo/celestial/kepler (dot)
 import pkg/sunholo/relativity/medium (lightYearM, massEquivalentDensity, glowEmittanceAt, glowTemperatureAt, driveHoldMaxPhi)
 import pkg/sunholo/relativity/dust (grainKinetic, grainMassOf, grainRate)
-import ./data/ism (Cloud, clouds, licCentre, licCoeffs, nHWarm, nHHot, deltaLocal, muH, hydrogenMassKg, grainRho, grainAMin, grainABreak, grainAMax, grainQ, efficacyLog10TMin, efficacyStep, efficacyLut)
+import ./data/ism (Cloud, cloudMetas, cloudPlanesFor, hasOutline, licCentre, licCoeffs, nHWarm, nHHot, deltaLocal, muH, hydrogenMassKg, grainRho, grainAMin, grainABreak, grainAMax, grainQ, efficacyLog10TMin, efficacyStep, efficacyLut)
 import pkg/sunholo/relativity/journey (TripPlan)
 import pkg/sunholo/relativity/hyper (acosh1p, cosh, absf)
 import ./rng (splitmix64, mix64, top53)
@@ -53,10 +53,16 @@ pure func inTriangles(triangles: [[Vec3]], p: Vec3) -> bool = match triangles {
   [] => false,
   ns :: rest => inPlanes(ns, p) || inTriangles(rest, p)
 }
+pure func outlinePlanes(c: Cloud) -> [[Vec3]] = match c.planes {
+  [] => cloudPlanesFor(c.name), _ => c.planes
+}
+pure func isOutline(c: Cloud) -> bool = match c.planes { [] => hasOutline(c.name), _ => true }
 pure func inCloud(c: Cloud, p: Vec3) -> bool =
-  if length(c.planes) == 0 then insideConeShell(cv(c), c.cosHalf, c.rIn, c.rOut, p)
+  if !isOutline(c) then insideConeShell(cv(c), c.cosHalf, c.rIn, c.rOut, p)
   else let r2 = dot(p, p) in
-    r2 > 0.0 && r2 >= c.rIn * c.rIn && r2 < c.rOut * c.rOut && inTriangles(c.planes, p)
+    r2 > 0.0 && r2 >= c.rIn * c.rIn && r2 < c.rOut * c.rOut
+    && (c.cosHalf < 0.0 || insideConeShell(cv(c), c.cosHalf, c.rIn, c.rOut, p))
+    && inTriangles(outlinePlanes(c), p)
 
 pure func firstCloud(cs: [Cloud], k: int, p: Vec3) -> Medium = match cs {
   [] => if insideStarSurface(licC(), licCoeffs(), p) then licMedium() else hotMedium(),
@@ -64,7 +70,7 @@ pure func firstCloud(cs: [Cloud], k: int, p: Vec3) -> Medium = match cs {
 }
 
 -- The medium at a point (lism-1).
-export pure func mediumAt(p: Vec3) -> Medium = firstCloud(clouds(), 0, p)
+export pure func mediumAt(p: Vec3) -> Medium = firstCloud(cloudMetas(), 0, p)
 
 -- ---------- route profiles ----------
 
@@ -113,7 +119,14 @@ pure func sphereChord(r: float, a: Vec3, b: Vec3) -> [Interval] =
 pure func clipPlanes(ns: [Vec3], bound: [Interval], r: float, a: Vec3, b: Vec3) -> [Interval] =
   if length(bound) == 0 then [] else match ns {
     [] => bound,
-    n :: rest => clipPlanes(rest, intersections(bound, slabChord(n, 0.0, r, a, b)), r, a, b)
+    n :: rest => {
+      let da = dot(n, a); let db = dot(n, b);
+      -- Dot is affine on the leg. A same-side leg needs no slab intersection;
+      -- its sphere-clipped points already satisfy the slab's upper radius bound.
+      if da <= 0.0 && db <= 0.0 && (da < 0.0 || db < 0.0) then []
+      else if da >= 0.0 && db >= 0.0 then clipPlanes(rest, bound, r, a, b)
+      else clipPlanes(rest, intersections(bound, slabChord(n, 0.0, r, a, b)), r, a, b)
+    }
   }
 pure func triangleChords(triangles: [[Vec3]], shell: [Interval], r: float, a: Vec3, b: Vec3, acc: [Interval]) -> [Interval] = match triangles {
   [] => acc,
@@ -121,10 +134,15 @@ pure func triangleChords(triangles: [[Vec3]], shell: [Interval], r: float, a: Ve
 }
 -- Exact angular-halfspace and radial-shell intersections via published package
 -- slab/ellipsoid primitives. Empty outlines retain the circular-cone fallback.
+pure func outlineBound(c: Cloud, a: Vec3, b: Vec3) -> [Interval] =
+  if c.cosHalf >= 0.0 then coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b)
+  else withoutInner(sphereChord(c.rOut, a, b), sphereChord(c.rIn, a, b))
 export pure func cloudChords(c: Cloud, a: Vec3, b: Vec3) -> [Interval] =
-  if length(c.planes) == 0 then coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b)
-  else let shell = withoutInner(sphereChord(c.rOut, a, b), sphereChord(c.rIn, a, b)) in
-    if length(shell) == 0 then [] else triangleChords(c.planes, shell, c.rOut, a, b, [])
+  if !isOutline(c) then coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b)
+  else let shell = outlineBound(c, a, b) in
+    if length(shell) == 0 then [] else triangleChords(outlinePlanes(c), shell, c.rOut, a, b, [])
+pure func prepareCloud(c: Cloud, a: Vec3, b: Vec3) -> Cloud =
+  if isOutline(c) && length(outlineBound(c, a, b)) > 0 then {c | planes: outlinePlanes(c)} else c
 pure func cloudTs(cs: [Cloud], a: Vec3, b: Vec3, acc: [float]) -> [float] = match cs {
   [] => acc,
   c :: rest => cloudTs(rest, a, b, ends(cloudChords(c, a, b), acc))
@@ -162,7 +180,7 @@ pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, cs: [Cloud], acc: [S
 -- the LIC uses the bounded numerical bracket described above.
 export pure func profile(a: Vec3, b: Vec3) -> [Seg] {
   let len = dist(a, b);
-  let cs = clouds();
+  let cs = map(\c. prepareCloud(c, a, b), cloudMetas());
   let ma = firstCloud(cs, 0, a);
   if !(len > 0.0) then [{ s0: 0.0, s1: 0.0, medium: ma }]
   else {
