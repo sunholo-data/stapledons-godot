@@ -10,7 +10,11 @@
 #   tools/site_media.sh publish [CLIP...]  upload to gs://stapledons-voyage-assets/site/<sha256>.<ext>
 #                                          (--no-clobber, immutable) and rewrite website/src/data/media.json
 #
-# Clips: hero voyage lookaround map cmb (default: all). The cmb clip needs a build
+# Clips: hero voyage lookaround map cmb (default: these legacy clips), plus
+# black_hole_orbit saturn_arrival ism_transit (real-sim recent feature clips).
+# The new clips capture an exact 1280x720 offscreen viewport and write a state/
+# frame manifest. They explicitly label compressed presentation time.
+# The cmb clip needs a build
 # with the forward CMB disc (M1.8, PR #79); on a tree without it the clip shows
 # the starfield alone, so check its frames before publishing.
 # Env: GODOT (godot), AILANG (ailang), FFMPEG (ffmpeg; `npx ffmpeg-static` works too).
@@ -32,10 +36,23 @@ alarm() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 render() {
     for c in $clips; do
         rm -rf "$OUT/frames/$c"
-        if [ "$c" = map ]; then set -- --map --movie=map; else set -- --movie="$c"; fi
-        AILANG_BIN="$(command -v "$AILANG")" alarm 900 "$GODOT" --path . -- "$@" --movie-out="$PWD/$OUT/frames/$c"
-        n=$(ls "$OUT/frames/$c" | wc -l | tr -d ' ')
+        case "$c" in
+            black_hole_orbit|saturn_arrival|ism_transit)
+                AILANG_BIN="$(command -v "$AILANG")" alarm 900 "$GODOT" --path . --script tools/recent_feature_movies.gd -- \
+                    --clip="$c" --out="$PWD/$OUT/frames/$c"
+                jq -e '.width == 1280 and .height == 720 and .fps == 30 and .preview == false and .saved_frames == .source_frames and .source_frames == .seconds * .fps' \
+                    "$OUT/frames/$c/manifest.json" >/dev/null
+                ;;
+            *)
+                if [ "$c" = map ]; then set -- --map --movie=map; else set -- --movie="$c"; fi
+                AILANG_BIN="$(command -v "$AILANG")" alarm 900 "$GODOT" --path . -- "$@" --movie-out="$PWD/$OUT/frames/$c"
+                ;;
+        esac
+        n=$(for frame in "$OUT/frames/$c"/f*.png; do [ ! -f "$frame" ] || echo "$frame"; done | wc -l | tr -d ' ')
         [ "$n" -gt 0 ] || { echo "site-media: $c rendered no frames" >&2; exit 1; }
+        if [ -f "$OUT/frames/$c/manifest.json" ]; then
+            [ "$n" -eq "$(jq -r .source_frames "$OUT/frames/$c/manifest.json")" ] || { echo "site-media: $c frame count mismatch" >&2; exit 1; }
+        fi
         echo "site-media: $c: $n frames"
     done
 }
