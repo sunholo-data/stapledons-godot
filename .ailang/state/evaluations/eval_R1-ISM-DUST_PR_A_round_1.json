@@ -187,7 +187,7 @@
       "feature_id": "AC22",
       "criterion": "Full local/CI gates",
       "status": "pending",
-      "evidence": "Canonical final local suite is active: /private/tmp/stapledon-ism-navigation-final-full-test.log. Final committed source5092a7687a3f3c3ea36e087cf0ef23c92502a970 pushed to PR199; matching CI run38083075225 pending. Superseded run38081490839 canceled. Evaluator verified recorded source hashes still match. No unconditional pass until local completion and matching CI success.",
+      "evidence": "Canonical final local suite is active: /private/tmp/stapledon-ism-navigation-canonical-test.log. Final committed source5092a7687a3f3c3ea36e087cf0ef23c92502a970 pushed to PR199; matching CI run38083075225 pending. Superseded run38081490839 canceled. Evaluator verified recorded source hashes still match. No unconditional pass until local completion and matching CI success. Earlier local run canceled after3 legacy displayed-text expectations; targeted actionable-refusal regression now0failures, raw reason/unchangedcourse checks preserved. Fresh COMPLETE make-j4-k test running; no gates skipped. Final matching pushedCI remains pending.",
       "met": false
     }
   ],
@@ -229,9 +229,10 @@
     "last_observed_head": "5092a7687a3f3c3ea36e087cf0ef23c92502a970",
     "status": "IN_PROGRESS",
     "run_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38083075225",
-    "matching_final_source": true,
+    "matching_final_source": false,
     "superseded_run": "38081490839 canceled; not final evidence",
-    "started_at": "2026-10-10T20:16:10Z"
+    "started_at": "2026-10-10T20:16:10Z",
+    "note": "Reviewed production hashes unchanged; final test/assertion and report-doc push/CI still pending."
   },
   "landing_gates": [
     "Canonical final local suite green",
@@ -252,10 +253,11 @@
     "gpu_benchmark": "/private/tmp/stapledon-dust-gpu-benchmark.json",
     "gpu_golden": "/private/tmp/stapledon-ism-integration-golden-final.log",
     "parity": "/private/tmp/stapledon-ism-inverse-parity.log",
-    "current_local_suite": "/private/tmp/stapledon-ism-navigation-final-full-test.log",
+    "current_local_suite": "/private/tmp/stapledon-ism-navigation-canonical-test.log",
     "review_inventory": "data/ism/review-baselines.json",
     "current_public_review_urls": "/private/tmp/stapledon-ism-final-review-urls.txt",
-    "independent_inventory_audit": "/private/tmp/ism-evaluation/final-inventory-audit.json"
+    "independent_inventory_audit": "/private/tmp/ism-evaluation/final-inventory-audit.json",
+    "refusal_ui_regression": "/private/tmp/stapledon-navigation-refusal-regression.log"
   },
   "notes": "Generator and judge are separate agents. Evaluator independently reproduced and rechecked short arrival/pacing failures and corrected polar transcription; reviewed targeted author/root logs and source without duplicating whole suite. No unconditional pass marker while CI pending.",
   "inventory_audit": {
@@ -264,5 +266,13 @@
     "failures": [],
     "inventory_sha256": "4ef91842bae0d0c3fa6b8a3776b42bdba63f84853bed9f4283f4d92b92b4f2ee"
   },
-  "reviewed_commit": "5092a7687a3f3c3ea36e087cf0ef23c92502a970"
+  "reviewed_commit": "5092a7687a3f3c3ea36e087cf0ef23c92502a970",
+  "historical_local_failure": {
+    "log": "/private/tmp/stapledon-ism-navigation-final-full-test.log",
+    "status": "failed3 legacy displayed-text assertions, then canceled; not passing evidence",
+    "resolution": "tests/test_galaxy_map.gd now asserts actionable speed/range and committed-autopilot/pause text. Raw sim out_of_range/committed reasons, unchanged committed journey, persistence and sent intent checks remain unchanged. Focused makeui exited0; galaxy map0failures."
+  },
+  "reviewed_test_sha256": {
+    "tests/test_galaxy_map.gd": "a75f482430a7795fd224e40f9af82380b543b71061918742829f51f35d75a8cf"
+  }
 }

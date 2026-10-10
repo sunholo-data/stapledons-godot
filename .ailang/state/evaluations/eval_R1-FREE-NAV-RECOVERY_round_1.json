@@ -62,7 +62,7 @@
       "feature_id": "F5",
       "criterion": "New-scenario parity, frozen compatibility and canonical gates",
       "met": false,
-      "evidence": "Six valid new replies VM/interpreter byte-identical, frozen2.7 compatPASS. Final integrated local/CI gates pending."
+      "evidence": "Six valid new replies VM/interpreter byte-identical, frozen2.7 compatPASS. Final integrated local/CI gates pending. Earlier local run canceled after3 legacy displayed-text expectations; targeted actionable-refusal regression now0failures, raw reason/unchangedcourse checks preserved. Fresh COMPLETE make-j4-k test running; no gates skipped. Final matching pushedCI remains pending."
     },
     {
       "feature_id": "F6",
@@ -123,9 +123,10 @@
     "last_observed_head": "5092a7687a3f3c3ea36e087cf0ef23c92502a970",
     "status": "IN_PROGRESS",
     "run_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38083075225",
-    "matching_final_source": true,
+    "matching_final_source": false,
     "superseded_run": "38081490839 canceled; not final evidence",
-    "started_at": "2026-10-10T20:16:10Z"
+    "started_at": "2026-10-10T20:16:10Z",
+    "note": "Reviewed production hashes unchanged; final test/assertion and report-doc push/CI still pending."
   },
   "landing_gates": [
     "Final integrated local suite green",
@@ -142,13 +143,14 @@
     "isolated_strict": "/private/tmp/stapledon-free-nav-strict.log",
     "isolated_ordinary": "/private/tmp/stapledon-free-nav-ordinary.log",
     "compatibility": "/private/tmp/stapledon-free-nav-compat.log",
-    "current_local_suite": "/private/tmp/stapledon-ism-navigation-final-full-test.log",
+    "current_local_suite": "/private/tmp/stapledon-ism-navigation-canonical-test.log",
     "opened_frames": [
       "renders/free_nav/earth_arrived.png",
       "renders/free_nav/earth_after_60s.png",
       "renders/free_nav/local_ism_boundaries.png"
     ],
-    "independent_inventory_audit": "/private/tmp/ism-evaluation/final-inventory-audit.json"
+    "independent_inventory_audit": "/private/tmp/ism-evaluation/final-inventory-audit.json",
+    "refusal_ui_regression": "/private/tmp/stapledon-navigation-refusal-regression.log"
   },
   "notes": "Separate appendix and score from ISM PR A; independent read-only source/fixture/native-image review. No unmodified package physics or frozen historical recording changes.",
   "inventory_audit": {
@@ -158,5 +160,13 @@
     "inventory_sha256": "4ef91842bae0d0c3fa6b8a3776b42bdba63f84853bed9f4283f4d92b92b4f2ee"
   },
   "native_review_status": "GPU Earth/map reviewed. OS focus unavailable on unattended desktop; CUA cgWindowNotFound and root.has_focus=false. No native capture success claimed; focus guard preserved. Source and headless lifecycle verified.",
-  "reviewed_commit": "5092a7687a3f3c3ea36e087cf0ef23c92502a970"
+  "reviewed_commit": "5092a7687a3f3c3ea36e087cf0ef23c92502a970",
+  "historical_local_failure": {
+    "log": "/private/tmp/stapledon-ism-navigation-final-full-test.log",
+    "status": "failed3 legacy displayed-text assertions, then canceled; not passing evidence",
+    "resolution": "tests/test_galaxy_map.gd now asserts actionable speed/range and committed-autopilot/pause text. Raw sim out_of_range/committed reasons, unchanged committed journey, persistence and sent intent checks remain unchanged. Focused makeui exited0; galaxy map0failures."
+  },
+  "reviewed_test_sha256": {
+    "tests/test_galaxy_map.gd": "a75f482430a7795fd224e40f9af82380b543b71061918742829f51f35d75a8cf"
+  }
 }
