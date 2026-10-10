@@ -179,7 +179,7 @@
     "data/ism/ism.json": "9124f31c9784f506b381cf799811985b6dc48547207427fd5130abf0cfe394c0",
     "interior/dust_flash.gd": "ed56812723c8275039f3940c8148d47f2f1dc4cce0d3b518fa6d065007b232f2",
     "interior/dust_flash.gdshader": "6d516ebdae1dff6a82f99b0e89387939eb98797d82ee87413cec64f2e1b2ddd7",
-    "ui/ism_layer.gd": "8844a9d92a4c2811cb548777a8e75e3a41bfff600fdc17ace8a8365fb18d9e55",
+    "ui/ism_layer.gd": "735d2948265b166181ca226cd3a3235203302bca10da1a586f165b334d5d621b",
     "tools/ism_capture.gd": "69d5d661dbb73e92963e1b0e4358c75ddb6fdc8f7cd4d52ba0a406ec4ca98274",
     "tools/ism_hud_capture.gd": "43a468ce52f1553f442ec49cdb537aa70e5f61099d7f013724d7b8eb7002270b"
   },
@@ -235,7 +235,7 @@
     },
     {
       "file": "renders/ism/flight/0p999c_LIC_interior.png",
-      "sha256": "7a5fe6a3a81a2925e919091fedd137f3244786c3720dc965979e096e4a53a5cf",
+      "sha256": "63dd64727ccbb71ab318bafae1e707b42895a1f9a7307f7d5dd4e74adf655139",
       "label": "0p999c_LIC interior",
       "medium": "LIC",
       "ok": true
@@ -249,7 +249,7 @@
     },
     {
       "file": "renders/ism/flight/0p999c_Hyades_interior.png",
-      "sha256": "5ad1d03aab29589587a92f27254a594db778c7d4e9aa6e0a6a3d437dd62e124c",
+      "sha256": "9e5bb0b77051e4cf73ccd94e408bf91d0766cc46130b1bb46ee2929c1df8e0fc",
       "label": "0p999c_Hyades interior",
       "medium": "Hyades",
       "ok": true
@@ -263,7 +263,7 @@
     },
     {
       "file": "renders/ism/flight/0p999c_hot_interior.png",
-      "sha256": "e81825b88a42be6c275e438dfee1c3780e2e0652579d0921f9abd45b41b9e38a",
+      "sha256": "30cbfeb0a489caaaf43c1a0caab2bb2819e363b5293c0330fbb4d123c8ffd9a2",
       "label": "0p999c_hot interior",
       "medium": "hot",
       "ok": true
@@ -277,7 +277,7 @@
     },
     {
       "file": "renders/ism/flight/0p9999c_LIC_interior.png",
-      "sha256": "208ac419270b2c03e78d13e975df7f7c4a866e04b1abe89c0fe996f0685b32ae",
+      "sha256": "1e2d134bd60f5e8d04ba7a25d54f0d46a2571f074b4301e349c3b75bc45c7660",
       "label": "0p9999c_LIC interior",
       "medium": "LIC",
       "ok": true
@@ -291,7 +291,7 @@
     },
     {
       "file": "renders/ism/flight/0p9999c_Hyades_interior.png",
-      "sha256": "57ef634f87368f720d05b006f194ea4967154f9d8baf8acfb0df7135b2cbe44c",
+      "sha256": "b4cbd0c79a0e047737e6442ffef1a7e4972c9f55c646ddea2f6f0dc5d4558a7c",
       "label": "0p9999c_Hyades interior",
       "medium": "Hyades",
       "ok": true
@@ -305,7 +305,7 @@
     },
     {
       "file": "renders/ism/flight/0p9999c_hot_interior.png",
-      "sha256": "51a1877c3a846d9ff81cfdc9ec7277f9ab622bf164695d49199002437431d575",
+      "sha256": "b384a2ff299d75a6cdc1e03164887b8b1c2ccc789bf99adf781d41c535f88e2b",
       "label": "0p9999c_hot interior",
       "medium": "hot",
       "ok": true
@@ -319,7 +319,7 @@
     },
     {
       "file": "renders/ism/flight/0p999999c_LIC_interior.png",
-      "sha256": "3d7265abbccc744ed527658e16add70bcc99982d3ca9161f24c7768526d67d2a",
+      "sha256": "2bdd3d4033104c88fc33254e23b8aa382db462c91c5c6b7cd5f71145ddee475f",
       "label": "0p999999c_LIC interior",
       "medium": "LIC",
       "ok": true
@@ -333,7 +333,7 @@
     },
     {
       "file": "renders/ism/flight/0p999999c_Hyades_interior.png",
-      "sha256": "cb4d5d06ce6eb737ac9c75b11df8a268c36b1187aa8d04728fac5e465c26c866",
+      "sha256": "f1bdbd4645acf1a9f6cdcc11ba844ee2e6dc5737a455641532995d40c60f332e",
       "label": "0p999999c_Hyades interior",
       "medium": "Hyades",
       "ok": true
@@ -347,7 +347,7 @@
     },
     {
       "file": "renders/ism/flight/0p999999c_hot_interior.png",
-      "sha256": "8892e0e72b8de7c4933c40b2b2bb57b629bdd43dbab60750d409a1bcac741683",
+      "sha256": "c2123d54c4e0a279674f6c7fe676336b4e585729318ec4bdb1331e1b548a6d99",
       "label": "0p999999c_hot interior",
       "medium": "hot",
       "ok": true
@@ -403,7 +403,7 @@
     },
     {
       "file": "renders/ism/flash_closeup.png",
-      "sha256": "3c65f974eadc9866ff9647756889b4667c94f0bf572815a0f782ed5a10288453",
+      "sha256": "841c6375ca154f936eb8d4c7250ee523d5cf81fc97429568a669703d9962d830",
       "label": "flash close-up",
       "medium": "LIC",
       "ok": true
@@ -418,8 +418,8 @@
     },
     {
       "file": "renders/ism/eps_sheet.png",
-      "sha256": "9c070cc0c6e0ae8107ecdd01f0eebf81e5920202366e56ab500b217f7b7a1007",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/9c070cc0c6e0ae8107ecdd01f0eebf81e5920202366e56ab500b217f7b7a1007.png",
+      "sha256": "8ecf366037421ecfc7eedad65ce0f03a3d30f2e8c8bfff8d4d94478ab7082526",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/8ecf366037421ecfc7eedad65ce0f03a3d30f2e8c8bfff8d4d94478ab7082526.png",
       "label": "eps sheet: rows LIC, hot gas (0.999c); columns eps 1e-11, 1e-10 (canon), 3e-10",
       "medium": "hot",
       "ok": true
@@ -434,15 +434,15 @@
     },
     {
       "file": "renders/ism/map_local.png",
-      "sha256": "c603c1c09094f2df88a6454fe83703d00cdcec4684df19cc66dc41ed2f19bdc7",
+      "sha256": "26d752f3a51836d4471f683237b60deed12e97a9292d0ff8dadf03bc86470c9e",
       "label": "map: the medium layer around Sol (LIC, 14 cloud shells; D)",
       "medium": "LIC",
       "ok": true
     },
     {
       "file": "renders/ism/map_route.png",
-      "sha256": "674ca03c73c3a07c5fe6058144cbfcf5b5b44f95ed0d0d16b465fd1fc6e69725",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/674ca03c73c3a07c5fe6058144cbfcf5b5b44f95ed0d0d16b465fd1fc6e69725.png",
+      "sha256": "3d7743e3637b92df936a330d71562335c9a36c42b32307fdf00a9980e17c6cc8",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/3d7743e3637b92df936a330d71562335c9a36c42b32307fdf00a9980e17c6cc8.png",
       "label": "map: Sol -> Aldebaran coloured by medium, plan rows",
       "medium": "LIC",
       "ok": true
@@ -450,51 +450,51 @@
   ],
   "contact_sheet": {
     "file": "renders/ism/contact_sheet.png",
-    "sha256": "84c311838822e4155024f6ec62a420f443928a509af29a151014e8b6d7a142d6",
-    "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/84c311838822e4155024f6ec62a420f443928a509af29a151014e8b6d7a142d6.png"
+    "sha256": "30169fa082b72389386502b486d0c80a1c654a5c9b0ef0196ceb4c67f97666dd",
+    "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/30169fa082b72389386502b486d0c80a1c654a5c9b0ef0196ceb4c67f97666dd.png"
   },
   "hud_captures": [
     {
       "file": "renders/ism_hud/interlude_media_1280x720.png",
-      "sha256": "5620680a07602331f97d39b10a6c1e599c8a2bebe2fdafd6e140de53327ed7d4",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/5620680a07602331f97d39b10a6c1e599c8a2bebe2fdafd6e140de53327ed7d4.png"
+      "sha256": "b961e8a28697086b57990df78b2275b872ab2ff6a20a894c975e3378d6a62d42"
     },
     {
       "file": "renders/ism_hud/interlude_media_2560x1440.png",
-      "sha256": "1f78210ed481663b53e4784909198f3fb5bf0452d6a833517480ea545a4986ba"
+      "sha256": "d0d8b21483ae728248f58e553418513b200d29770e1fba070a1cf9d05da13653",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/d0d8b21483ae728248f58e553418513b200d29770e1fba070a1cf9d05da13653.png"
     },
     {
       "file": "renders/ism_hud/medium_boundary_1280x720.png",
-      "sha256": "3d333b9566507a28dc0e8623496492ec544e2bce153a703f91e7afc73a21039e"
+      "sha256": "8578ecba31236b3cd170d18808d150ab9ccabeb789014fc3772211e612dc5611"
     },
     {
       "file": "renders/ism_hud/medium_boundary_2560x1440.png",
-      "sha256": "1942325b7de2500ec20ae3bdcb21f09280e10e301c1878b12197490c9bec57e3"
+      "sha256": "4ccfd5546455e92ad91e6d7e8736cebbdfaf3bb2d7e397231c87959e75f54024"
     },
     {
       "file": "renders/ism_hud/medium_here_sky_only_1280x720.png",
-      "sha256": "392edba2ece5a72abc7f7743fa4e1e84c91268ab04cd8a428b2ffb2a31fe502d"
+      "sha256": "51baf641c7e410b3686c6ca799a8c3bd85bdc13807fc3b01ed73497e755fdeaa"
     },
     {
       "file": "renders/ism_hud/medium_here_sky_only_2560x1440.png",
-      "sha256": "c10e2864f9305f0cdf12d7af84bbc21f3c3f3868512c56eff044781181f1a1c5"
+      "sha256": "c5a801c6dea47543d544c3f486eeca4dec1b6682bdb8d02047e6c00f494ff6e6"
     },
     {
       "file": "renders/ism_hud/tab_medium_1280x720.png",
-      "sha256": "61aaa3d3bebab2ff2291c3621fee741eb72512a6ded90e57c00263aa23f0f057",
-      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/61aaa3d3bebab2ff2291c3621fee741eb72512a6ded90e57c00263aa23f0f057.png"
+      "sha256": "75689117dbdd6bb0ccb96c1449ca1e7a669e7f2535776cba8a534362d6bfc19d"
     },
     {
       "file": "renders/ism_hud/tab_medium_2560x1440.png",
-      "sha256": "caf0cf2ce368267218697c4e33d332bbf2883e2e5d5c1f90f701b87b28a689d2"
+      "sha256": "98db206c87856240a3a4d0e34d0c4e4efb1d51bb25db36d2b28e92fdd107a237",
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/98db206c87856240a3a4d0e34d0c4e4efb1d51bb25db36d2b28e92fdd107a237.png"
     },
     {
       "file": "renders/ism_hud/transit_1280x720.png",
-      "sha256": "671f4b8edd5d2f99eedc3054bcddf209640425505392a2b1f5d00dd1083e20a4"
+      "sha256": "674812842dc42d71e8a8a021173d0ecbec74969f7513d671df12b105123545a6"
     },
     {
       "file": "renders/ism_hud/transit_2560x1440.png",
-      "sha256": "7cab6fdba700ed47efce3217d7c4166e30f3161eda259d2a31d1d0083c240a3e"
+      "sha256": "26a219a0b8735bfa911d68496789bf9e1840af83ef5970b770b9f4c774604613"
     }
   ],
   "movies": {

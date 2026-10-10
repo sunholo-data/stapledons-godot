@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Free-navigation and mouse controls (D-63), 2026-10-10
+
+- Mouse motion looks around by default. Tab, inspection cards and console panels release the pointer for their buttons; stepping back returns to looking, and leaving the window releases capture.
+- Board the ship starts at rest near Earth. The in-system list keeps a stable Sun/planet/moon order, and refused plans explain the current journey or clearance constraint. P and the Pause/Resume buttons freeze time without changing the ship’s course.
+- Idle free navigation now advances at one real second per second, so ephemerides do not race away after arrival. Earth remains visible at its inertial standoff; this is not a gravity-bound orbit.
+- The map exposes Interstellar medium, Local ISM and optional Depth guides. Cloud boundaries show by themselves; radial construction guides are off by default and the legend labels the approximate depths.
+
 ### Local clouds, dust impacts and weather along the route (D-60–D-62), 2026-10-10
 
 - New games use `lism-1`: the Local Interstellar Cloud, fourteen published local-cloud outlines and the Local Bubble's hot gas drive the route's column drag, wall glow and drive-hold limit. The chart lists every medium in order, including re-entry; a route above the limit is refused with the supported speed shown. Existing uniform scenarios and frozen protocol 2.7 replays keep their previous bytes; the new fields use protocol 2.8.

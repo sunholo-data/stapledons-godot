@@ -10,7 +10,7 @@ design_docs/
   planned/<release>/<id>-sprint.md   sprint plan (sprint-planner), approved before execution
   implemented/<release>/<id>.md      moved here when the sprint passes evaluation
   implemented/<release>/<id>-report.md  what shipped: measurements, renders, upstream reports
-  stapledon-mission.md               R1 mission charter (DRAFT, not ratified, not armed)
+  stapledon-mission.md               R1 mission charter (ratified D-1; armed, see live loop status)
   stapledon-mission-log.md           append-only mission log
 .ailang/state/sprints/sprint_<id>.json          sprint progress (sprint-executor)
 .ailang/state/evaluations/eval_<id>_round_<n>.json  evaluation (sprint-evaluator)
@@ -50,7 +50,7 @@ design_docs/
 | [r1/sky-frame-d28.md](implemented/r1/sky-frame-d28.md) | Implemented 2026-10-03 (D-28, PR `fix/sky-mirror`, awaiting Mark's render review): one right-handed galactic → world map (`SkyFrame`), the M1 sky un-mirrored, the interior flip removed, starboard = l 270 |
 | [r1/m5-planets.md](planned/r1/m5-planets.md) | **Approved** 2026-10-03 (Mark, attended; D-26, queue row 6c): flyby player-facing, new package `sunholo/celestial`, 2k textures, light confirm for short in-system legs; awaiting sprint plan |
 | [r1/m4-real-time-tour.md](planned/r1/m4-real-time-tour.md) | **Approved** 2026-10-06 (Mark, attended; D-39 to D-41): real-time voyage Earth → Aldebaran with cruise interludes ([sprint A](planned/r1/m4-real-time-tour-sprint.md)); TRAPPIST-1 stop ([sprint B](planned/r1/m5-trappist1-sprint.md)) |
-| [r1/ism-structure-and-dust.md](planned/r1/ism-structure-and-dust.md) | **Approved** 2026-10-09 (Mark, attended; D-60, D-61): [PR A #199](https://github.com/sunholo-data/stapledons-godot/pull/199) includes the ship HUD and is in final scientific, performance and P2 review. PR B (Edenhofer clouds, LLCC) is deferred with unresolved scientific comparisons; [sprint](planned/r1/ism-structure-and-dust-sprint.md) |
+| [r1/ism-structure-and-dust.md](planned/r1/ism-structure-and-dust.md) | **Approved** 2026-10-09 (Mark, attended; D-60, D-61): [PR A #199](https://github.com/sunholo-data/stapledons-godot/pull/199) includes the ship HUD and has passed source/visual and measured median performance checks, with P2 accepted D-62; final full-suite and independent landing checks remain. PR B (Edenhofer clouds, LLCC) is deferred with unresolved scientific comparisons; [sprint](planned/r1/ism-structure-and-dust-sprint.md) |
 | [r1/m4-ship-geometry-demo.md](planned/r1/m4-ship-geometry-demo.md) | Approved, implementation in progress: correct bridge overlook, whole-ship pullback and one-tier lift; [sprint](planned/r1/m4-ship-geometry-demo-sprint.md) |
 | [r1/title-screen.md](planned/r1/title-screen.md) | Implemented on `feat/title-screen` 2026-10-08 (charter queue row 5b): title screen and launch menu; awaiting review |
 | [r1/relative-size-stops.md](planned/r1/relative-size-stops.md) | Implemented on `feat/free-nav-stops` 2026-10-08 (D-54, Sol in the map, in-system destinations); inferred stellar radii and the synchronous-orbit line wait on a package release |

@@ -46,6 +46,13 @@ func _init() -> void:
 		[[1, -0.1, -0.1], [1, 0.1, 0.1], [1, -0.1, 0.1]]]}
 	var boundary := IsmLayer.cloud_lines(traced)
 	check("triangulated source outline: four boundary edges, no internal diagonal", boundary.size() == 12)
+	var clean_boundary := IsmLayer.cloud_lines(traced, false)
+	check("normal cloud view omits radial construction spokes", clean_boundary.size()==8 and clean_boundary.all(func(line):return line.size()==17))
+	var g_cloud:Dictionary=clouds.filter(func(cl):return cl.name=="G")[0]
+	var no_origin := true
+	for line:PackedVector3Array in IsmLayer.cloud_lines(g_cloud,false):
+		for v:Vector3 in line:no_origin=no_origin and v.length()>0.
+	check("zero inner radius draws no apparent gas rays from Sol",no_origin)
 	var radial_ok := true
 	for line: PackedVector3Array in boundary:
 		if line.size() == 17:

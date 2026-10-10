@@ -16,6 +16,10 @@ func run() -> void:
 	map.auto_tick = false
 	root.add_child(map)
 	check("map loads visible ISM with a checked discoverable control", map.ism_layer.visible and map.ism_toggle.button_pressed and map.ism_toggle.visible and map.ism_legend.visible)
+	check("cloud depth construction guides hidden by default", not map.ism_layer.show_depth_guides and not map.ism_depth_guides.button_pressed)
+	map.ism_depth_guides.button_pressed=true
+	check("depth construction guides explicitly optional", map.ism_layer.show_depth_guides)
+	map.ism_depth_guides.button_pressed=false
 	var pending: Dictionary = map._pending.duplicate(true)
 	map.ism_toggle.button_pressed = false
 	check("visible control synchronizes layer and legend", not map.ism_layer.visible and not map.ism_legend.visible)
@@ -71,6 +75,7 @@ func run() -> void:
 			var d := Planets.length64(Planets.world_of(e.rel_km))
 			sv.update(sim.world.system,1.)
 			retained = retained and d > e.radius_km * 1.1 and sv.drawn_discs.has("earth")
+	check("idle display reports real-time pacing",absf(map.pacing.rate*31557600.-1.)<1e-9)
 	var last := earth(sim.world)
 	sv.update(sim.world.system,1.)
 	var d1 := Planets.length64(Planets.world_of(last.rel_km))
@@ -84,6 +89,7 @@ func run() -> void:
 	var paused_tau: float = sim.world.clock.tau
 	map.plan_body("sun")
 	check("paused planning still sends intents without moving simulation time", map.tick() and sim.last_refused.is_empty() and sim.world.clock.tau == paused_tau and map.journey_state() == "planned")
+	check("pause display reports zero pacing",map.pacing.rate==0.)
 	check("paused commit resumes automatically", map.open_commit_dialog() and map.hold_commit(GalaxyMap.HOLD_S) and map.tick() and not map.paused and map.journey_state() == "committed")
 	map.paused = true
 	paused_tau = sim.world.clock.tau

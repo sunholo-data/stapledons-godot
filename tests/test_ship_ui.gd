@@ -28,6 +28,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	await test_mouse_look()
 	await test_ism_hud()
 	await test_ism_body_pick_guard()
 	if failures:
@@ -266,7 +267,13 @@ func test_strip_and_cards() -> void:
 	var centre: Vector2 = hud.size * 0.5
 	demo.star_identification.set_held(true)
 	demo.star_identification.update_candidates()
-	check("AC17 empty forward sky opens the medium I card", demo.show_medium_at(centre) and hud.has_card("medium_here"))
+	var empty_open:=false
+	# The playable start is now beside Earth: the centre ray can hit a body.
+	for y:float in [.1,.25,.4,.55,.7,.85,.95]:
+		for x:float in [.05,.2,.35,.5,.65,.8,.95]:
+			var point:Vector2=hud.size*Vector2(x,y)
+			if not empty_open and demo.show_medium_at(point):centre=point;empty_open=true
+	check("AC17 actual empty forward sky opens the medium I card", empty_open and hud.has_card("medium_here"))
 	demo._process(0.5)
 	check("AC17 I card uses the actual sim medium/density", hud.all_text().contains("Local Interstellar Cloud") and hud.all_text().contains(IsmHud.density_text(float(demo.sky_world.ship.ism.n_h_cm3))))
 	check("AC17 medium display sends no simulation intent", demo.journey_sim.sent_log.size() == before_intents)
@@ -469,3 +476,32 @@ func test_dwell() -> void:
 	check("dwell: the Tab toggle turns it off", not demo.ship_hud.dwell.visible)
 	demo.queue_free()
 	await process_frame
+
+## Attended Oct10: free mouse look, UI owns the pointer, no modifier required.
+func test_mouse_look() -> void:
+	var demo: Node = await new_demo({})
+	check("mouse look default exposes its UI ownership seam", demo.has_method("pointer_required"))
+	if not demo.has_method("pointer_required"):
+		demo.queue_free();await process_frame;return
+	check("mouse look enabled by default", demo.mouse_look_enabled)
+	check("closed bridge view needs no visible cursor", not demo.pointer_required())
+	var motion := InputEventMouseMotion.new();motion.relative=Vector2(10,5)
+	Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+	var yaw:float=demo.camera.yaw;var tilt:float=demo.camera.tilt
+	demo._unhandled_input(motion)
+	check("unmodified mouse turns view", not is_equal_approx(yaw,demo.camera.yaw) and not is_equal_approx(tilt,demo.camera.tilt))
+	demo.toggle_controls()
+	check("Tab releases pointer to buttons", demo.pointer_required() and Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
+	yaw=demo.camera.yaw;demo._unhandled_input(motion)
+	check("UI pointer motion never turns view", is_equal_approx(yaw,demo.camera.yaw))
+	demo.escape()
+	check("Esc closes Tab and returns look ownership", not demo.pointer_required())
+	demo.star_identification.set_held(true)
+	check("I inspection releases pointer", demo.pointer_required())
+	demo.star_identification.set_held(false)
+	demo.ship_hud.show_card("arrival","Arrived")
+	check("arrival buttons release pointer", demo.pointer_required())
+	demo.dismiss_arrival()
+	check("dismissed arrival restores look", not demo.pointer_required())
+	demo.queue_free();await process_frame
+	check("leaving ship releases pointer", Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)

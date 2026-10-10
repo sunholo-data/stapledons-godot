@@ -19,6 +19,7 @@ const HOT_NAME := "hot"
 
 var model: Dictionary = {}
 var visible := false
+var show_depth_guides := false
 var last_drawn: Array = [] # names drawn by the last draw() (tests)
 
 
@@ -101,9 +102,9 @@ func lic_lines() -> Array:
 
 
 ## A cone shell's outline (galactic ly): the cap circles at r_in and r_out and 6 generators.
-static func cloud_lines(cl: Dictionary) -> Array:
+static func cloud_lines(cl: Dictionary, depth_guides: bool = true) -> Array:
 	if not cl.get("outline", []).is_empty():
-		return _outline_lines(cl)
+		return _outline_lines(cl, depth_guides)
 	var ax: Array = cl.get("axis", [0.0, 0.0, 1.0])
 	var a := Vector3(ax[0], ax[1], ax[2]).normalized()
 	var e1 := a.cross(Vector3(0, 0, 1) if absf(a.z) < 0.9 else Vector3(1, 0, 0)).normalized()
@@ -120,7 +121,7 @@ static func cloud_lines(cl: Dictionary) -> Array:
 			var p := TAU * j / 32.0
 			ring.append((a * cos(half) + (e1 * cos(p) + e2 * sin(p)) * sin(half)) * r)
 		out.append(ring)
-	for j in 6:
+	for j in (6 if depth_guides else 0):
 		var p := TAU * j / 6.0
 		var g := a * cos(half) + (e1 * cos(p) + e2 * sin(p)) * sin(half)
 		out.append(PackedVector3Array([g * r_in, g * r_out]))
@@ -129,7 +130,7 @@ static func cloud_lines(cl: Dictionary) -> Array:
 
 ## Draw only the boundary of the triangulated source outline. Shared triangle
 ## edges are internal seams; great-circle arcs use the same unit vertices as the sim.
-static func _outline_lines(cl: Dictionary) -> Array:
+static func _outline_lines(cl: Dictionary, depth_guides: bool = true) -> Array:
 	var edges: Dictionary = {}
 	for tri: Array in cl.outline:
 		for i in 3:
@@ -155,7 +156,7 @@ static func _outline_lines(cl: Dictionary) -> Array:
 			for j in 17:
 				arc.append((edge.a as Vector3).lerp(edge.b, j / 16.0).normalized() * r)
 			out.append(arc)
-		out.append(PackedVector3Array([edge.a * rin, edge.a * rout]))
+		if depth_guides:out.append(PackedVector3Array([edge.a * rin, edge.a * rout]))
 	return out
 
 
@@ -225,7 +226,7 @@ func draw(overlay: Control, camera: Camera3D, to_world: Callable, route: Array =
 	last_drawn.append("LIC")
 	for cl: Dictionary in model.get("clouds", []):
 		var col := colour_for(float(cl.get("n_h_cm3", 0.0)), 0.45)
-		n += _lines(overlay, camera, to_world, cloud_lines(cl), col)
+		n += _lines(overlay, camera, to_world, cloud_lines(cl, show_depth_guides), col)
 		var ax: Array = cl.axis
 		var mid := Vector3(ax[0], ax[1], ax[2]) * 0.5 * (float(cl.r_in_ly) + float(cl.r_out_ly))
 		_label(overlay, camera, to_world, mid, label_of(str(cl.name)), colour_for(float(cl.get("n_h_cm3", 0.0))), font)

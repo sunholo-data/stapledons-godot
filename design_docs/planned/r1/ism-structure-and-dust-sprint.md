@@ -139,7 +139,7 @@ Round 1 (independent Sonnet reviewer, `sprint-evaluator` plan review): **78/100,
 - [x] **I4** sim, protocol 2.7, AC6b/AC7/AC8/AC9/AC10/AC10b/AC11/AC12/AC13 green; AC6a pinned at 0.712 (below 0.80, flagged).
 - [x] **I5** renderer, goldens G-ISM-1..3, `dust-flash-test` (AC14, AC15).
 - [x] **I6** map layer, `map-ism-test` (AC16).
-- [ ] **I7** HUD: deferred to a follow-up PR (R1-SHIP-UI PR #193 not merged).
-- [x] **I8** `make ism-capture` (AC18); `make ism-bench` (AC19): plan 7 ms within budget, the per-tick ISM 0.9 ms over its 0.5 ms budget.
+- [x] **I7** HUD integrated after R1-SHIP-UI PR #193 merged: transit, boundary, medium, Tab and interlude cards; native two-resolution captures inspected. Final integrated checks: ship UI 210/210, no-twitch 24/24.
+- [x] **I8** `make ism-capture` (AC18), opened contact and review sheets; synthetic dense frames cover three speeds because the fourth exceeds the drive hold limit. After the exact LUT inverse optimization, warm paired medians are plan 3.098 ms, coast 0.206 ms, boost 0.401 ms and brake 0.220 ms (budgets 20/0.5 ms); GPU median 0.023 ms (budget 0.3 ms). These are representative medians, not worst-case latency guarantees. Earlier 0.9 ms over-budget tick measurements are historical.
 - [x] **I9** Archive drafts, CHANGELOG, index row, roadmap PR stapledons-design#12, allowlist (AC20, AC21).
 - [ ] **I3b** PR B.

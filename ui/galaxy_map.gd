@@ -152,6 +152,7 @@ var cancel_button := Button.new()
 var centre_button := Button.new()
 var fit_button := Button.new()
 var home_button := Button.new()
+var ism_depth_guides := CheckButton.new()
 var ism_toggle := CheckButton.new()
 var local_ism_button := Button.new()
 var ism_legend := Label.new()
@@ -264,7 +265,8 @@ func _build() -> void:
 	home_button.pressed.connect(plan_home)
 	framing.add_child(home_button)
 	box.add_child(framing)
-	var medium_controls := HBoxContainer.new()
+	var medium_controls := HFlowContainer.new()
+	medium_controls.custom_minimum_size.x=PANEL_WIDTH-40
 	ism_toggle.text = "Interstellar medium [D]"
 	ism_toggle.tooltip_text = "Local warm-cloud model. Cloud distances are in light years. Display only."
 	ism_toggle.button_pressed = ism_layer.visible
@@ -272,9 +274,14 @@ func _build() -> void:
 	local_ism_button.text = "Local ISM"
 	local_ism_button.tooltip_text = "Show the LIC and nearby warm clouds around Sol at a light-year scale."
 	local_ism_button.pressed.connect(frame_local_ism)
-	medium_controls.add_child(ism_toggle); medium_controls.add_child(local_ism_button)
+	ism_depth_guides.text="Depth guides"
+	ism_depth_guides.tooltip_text="Construction lines connect approximate near/far cloud boundaries measured from Sol. They are model guides, not gas flowing from the Sun."
+	ism_depth_guides.toggled.connect(func(on:bool)->void:ism_layer.show_depth_guides=on;_overlay.queue_redraw())
+	medium_controls.add_child(ism_toggle); medium_controls.add_child(local_ism_button);medium_controls.add_child(ism_depth_guides)
 	box.add_child(medium_controls)
-	ism_legend.text = "Local warm clouds · light-year scales"
+	ism_legend.text = "Sky outlines from near Sol · approximate near/far depths · light years"
+	ism_legend.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	ism_legend.custom_minimum_size.x=PANEL_WIDTH-40
 	ism_legend.add_theme_font_size_override("font_size",12)
 	ism_legend.add_theme_color_override("font_color",Color(.6,.75,.8))
 	ism_legend.visible = ism_layer.visible
@@ -742,7 +749,9 @@ func tick() -> bool:
 		# not cross days of ephemeris while the captain inspects its stop.
 		dtau = pacing.step(sim.world, committing, 1.0 / (31557600.0 * TICK_HZ), TICK_HZ)
 	if intents.any(func(i): return i.get("k", "") == "commit"): paused = false
-	if paused: dtau = 0.0
+	if paused:
+		dtau = 0.0
+		pacing.rate=0.0
 	var sent := sim.send(intents, dtau)
 	if sent and _stale_commit(intents):
 		# R1-SHIP-UI: a hold takes 1.5 s of host ticks, and the sim refuses a commit whose plan
@@ -756,7 +765,7 @@ func tick() -> bool:
 		_refusal_note += hold_note(sim.last_events)
 	elif sent and journey_state() != state:
 		_refusal_note = "" # a new journey state (arrival) supersedes the old refusal
-	if live_pacing and journey_state() != "committed":pacing.rate = HOST_RATE
+	if live_pacing and journey_state() != "committed":pacing.rate=0.0 if paused else 1.0/31557600.0
 	refresh()
 	return sent
 
@@ -1075,6 +1084,7 @@ func set_ism_visible(on: bool) -> void:
 	ism_layer.visible = on
 	ism_toggle.set_pressed_no_signal(on)
 	ism_legend.visible = on
+	ism_depth_guides.disabled=not on
 	_overlay.queue_redraw()
 
 func frame_local_ism() -> void:

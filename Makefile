@@ -1037,3 +1037,13 @@ codex-test:        ## M4.7 the Archive codex: lore loader + manifest refusal, Ma
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_codex.gd > $(SCRATCH)/codex-test.log 2>&1; rc=$$?; grep -v '^  ok' $(SCRATCH)/codex-test.log | grep -v '^ERROR: .*leaked\|^   at: \|^Godot Engine\|^$$'; \
 	  test $$rc = 0 && ! grep -q 'SCRIPT ERROR' $(SCRATCH)/codex-test.log && grep -q '^codex: [0-9]* passed, 0 failures$$' $(SCRATCH)/codex-test.log || { echo "codex-test: FAILED (a parse error exits 0, so the summary line is required; log $(SCRATCH)/codex-test.log)"; exit 1; }
+
+# D-63 attended navigation recovery: genuine body clearance, stable controls and scoped parity.
+.PHONY: free-nav-recovery-test
+ship-demo-ci: free-nav-recovery-test
+free-nav-recovery-test: import
+	@$(GODOT_SIM) --headless --path . --script tests/test_free_nav_recovery.gd > $(SCRATCH)/free-nav-recovery.log 2>&1; rc=$$?; grep -E '^(FAIL|free-nav-recovery)' $(SCRATCH)/free-nav-recovery.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/free-nav-recovery.log && grep -q '^free-nav-recovery: [0-9]* passed, 0 failures$$' $(SCRATCH)/free-nav-recovery.log
+	@$(AILANG) test --strict-bytecode sim/free_nav_test.ail
+	@$(AILANG) run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/free_nav_recovery.ndjson > $(SCRATCH)/free-nav-recovery.vm.ndjson
+	@$(AILANG) run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/free_nav_recovery.ndjson > $(SCRATCH)/free-nav-recovery.interp.ndjson
+	@cmp $(SCRATCH)/free-nav-recovery.vm.ndjson $(SCRATCH)/free-nav-recovery.interp.ndjson

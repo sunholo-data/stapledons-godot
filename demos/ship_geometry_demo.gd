@@ -56,6 +56,7 @@ var confirm_mode := "hold"
 var consoles: ShipConsoles
 ## Tests: Esc's last resort (main menu or quit) can be switched off.
 var escape_exits := true
+var mouse_look_enabled := true
 var _mouse := Vector2(-1, -1)
 var _aim_t := 0.0
 var _dwell_pose := Transform3D()
@@ -143,6 +144,8 @@ func setup(opts := {}) -> bool:
 	if not set_sky_state(opts.get("sky_state","cruise")):
 		push_error("ship demo missing simulation sky review states");return false
 	ready_ok=true
+	mouse_look_enabled=opts.get("mouse_look",true)
+	get_window().focus_exited.connect(func()->void:Input.mouse_mode=Input.MOUSE_MODE_VISIBLE)
 	set_brightness_trial(opts.get("brightness_stops",2))
 	set_auto_view(opts.get("auto_view",false))
 	confirm_mode=opts.get("confirm_mode","hold") if opts.get("confirm_mode","hold") in GameSettings.CONFIRM_MODES else "hold"
@@ -189,6 +192,7 @@ func _hud() -> void:
 	for stops in BRIGHTNESS_STOPS:
 		var button:=Button.new();button.text="Reference sky" if stops==0 else ("Dim %d stops"%(-stops) if stops<0 else "%d× brighter"%int(pow(2.,stops)))
 		button.pressed.connect(set_brightness_trial.bind(stops));brightness_row.add_child(button)
+	var pause_button:=Button.new();pause_button.text="Pause / resume time [P]";pause_button.pressed.connect(toggle_tour_pause);display.add_child(pause_button)
 	var sky_button:=Button.new();sky_button.text="Sky only [H]";sky_button.pressed.connect(toggle_sky_only);display.add_child(sky_button)
 	var dwell_button:=CheckButton.new();dwell_button.text="Name what I look at (dwell label)";dwell_button.button_pressed=true
 	dwell_button.toggled.connect(func(on:bool)->void:dwell_on=on;ship_hud.set_dwell("",Vector2.ZERO));display.add_child(dwell_button)
@@ -211,7 +215,9 @@ func _hud() -> void:
 	var guides_button:=Button.new();guides_button.text="Orbit guides [G]";guides_button.pressed.connect(func()->void:guides.visible=not guides.visible);dev.add_child(guides_button)
 	_consoles_setup()
 func toggle_controls() -> void:
-	if not benchmark.running:ship_hud.toggle_tab()
+	if not benchmark.running:
+		ship_hud.toggle_tab()
+		_sync_pointer()
 func set_brightness_trial(stops: int) -> bool:
 	if benchmark.running or not stops in BRIGHTNESS_STOPS:return false
 	brightness_stops=stops
@@ -308,6 +314,7 @@ func _process(delta: float) -> void:
 			audit_link.uri=uploaded.url
 			if audit_link.get_parent()==null:ship_hud.dev_box.add_child(audit_link)
 	if not ready_ok:return
+	_sync_pointer()
 	sky.set_temporal_exposure(false)
 	_update_tour_attitude(delta)
 	if journey_map!=null and journey_auto_tick and not benchmark.running:
@@ -320,12 +327,13 @@ func _process(delta: float) -> void:
 		while _bh_accum>=1./BlackHoleVisit.TICK_HZ and black_hole!=null:
 			_bh_accum-=1./BlackHoleVisit.TICK_HZ
 			bh_tick()
-	if auto and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()):
+	if auto and not pointer_required() and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()):
 		var move:=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_W))-float(Input.is_physical_key_pressed(KEY_S)))
 		if move!=Vector2.ZERO:consoles.cancel_walk() # WASD takes over an auto-walk
 		walk_motion(move,delta)
 	consoles.advance(delta)
 	_aim_t+=delta
+	if Input.mouse_mode==Input.MOUSE_MODE_CAPTURED:_mouse=get_viewport().get_visible_rect().size*.5
 	if _aim_t>=.1 and _mouse.x>=0.:_aim_t=0.;consoles.aim(_mouse)
 	if lift!=null:lift.advance(delta if auto else 0.)
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
@@ -345,7 +353,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
 	if camera_mode=="console" and (event is InputEventPanGesture or (event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN])):return
-	if event is InputEventMouseMotion and camera_mode!="console" and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
+	if event is InputEventMouseMotion and camera_mode!="console" and (not pointer_required() and (mouse_look_enabled or event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT)):
 		_tour_view_active=false
 		if camera_mode=="external review":
 			var offset:=camera.position-Vector3(0,5,0)
@@ -361,7 +369,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:_zoom(-2.*event.factor)
 	if event is InputEventMouseMotion:_mouse=event.position
 	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT and not event.alt_pressed:
-		if consoles.click(event.position):get_viewport().set_input_as_handled();return
+		var aim:Vector2=get_viewport().get_visible_rect().size*.5 if Input.mouse_mode==Input.MOUSE_MODE_CAPTURED else event.position
+		if consoles.click(aim):get_viewport().set_input_as_handled();return
 		if ship_hud.has_card("arrival"):dismiss_arrival()
 	if event is InputEventKey and event.pressed and not event.echo:
 		if camera_mode=="console" and event.physical_keycode in [KEY_1,KEY_2,KEY_3,KEY_4,KEY_R,KEY_7,KEY_8,KEY_9]:return
@@ -401,6 +410,9 @@ func dev_controls() -> bool:
 	return not menu_return
 ## Esc closes the top panel or card; otherwise the main menu (menu launch) or quit.
 func escape() -> void:
+	_escape_top()
+	_sync_pointer()
+func _escape_top() -> void:
 	if consoles.escape():return
 	if codex!=null and codex.panel.visible:codex.close()
 	elif ship_hud.tab_panel.visible:ship_hud.toggle_tab()
@@ -437,6 +449,7 @@ func _collision(n: Node) -> void:
 	for child in n.get_children():
 		if not child is StaticBody3D:_collision(child)
 func _exit_tree() -> void:
+	Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
 	if journey_sim!=null:journey_sim.stop()
 	if black_hole!=null:black_hole.stop()
 	for n in _walk_nodes:if is_instance_valid(n):n.free()
@@ -581,7 +594,8 @@ func _create_navigation(scenario:String) -> void:
 		# D-54: free navigation stops at a finite star where it shows its size, and Sol at Earth.
 		var params:Dictionary={"standoff_au":1000.,"stop_rule":54.}
 		if scenario=="solar_departure":params=SolarDeparture.guided_params()
-		if not journey_sim.start() or not journey_sim.new_game(424242,scenario,false,params):
+		var live_scenario:String="free_nav" if scenario=="sol" else scenario
+		if not journey_sim.start() or not journey_sim.new_game(424242,live_scenario,false,params):
 			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
 		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation"
@@ -606,7 +620,10 @@ func _create_navigation(scenario:String) -> void:
 		navigation_window.add_child(bh_entry)
 		var acen:=journey_map.index_of("CNS5:3627")
 		if journey_map.preselect(acen):journey_map.frame_star(acen)
-		if scenario=="sol":journey_tick()
+		if scenario=="sol":
+			sky_state="live"
+			_apply_journey_world()
+			journey_tick()
 		_reset_hud_session()
 func start_solar_departure() -> bool:
 	if benchmark.running or live_journey or (journey_sim!=null and journey_sim.world.get("journey",{}).get("state","")=="committed"):
@@ -637,6 +654,7 @@ func _drop_navigation() -> void:
 func close_navigation() -> void:
 	if navigation_window==null:return
 	journey_map.close_commit_dialog();navigation_window.hide()
+	get_window().grab_focus()
 	# Outside the helm the map plans nothing (NT1): it rests in chart mode; any commit the
 	# helm already queued still goes out on the next tick.
 	if journey_map.mode=="helm":journey_map.set_mode("chart")
@@ -651,6 +669,7 @@ func _navigation_key(key: int) -> void:
 		if consoles.focused=="navigation":consoles.leave()
 		else:close_navigation()
 	if key==KEY_V:toggle_auto_view()
+	if key==KEY_P:toggle_tour_pause()
 func open_identified_star(id: String) -> void:
 	open_chart()
 	if journey_map != null:
@@ -780,13 +799,13 @@ func where_text() -> String:
 		return "Sgr A* · " + {"hover": "hovering", "orbit": "orbiting", "approach": "approaching"}.get(str(g.get("mode", "")), str(g.get("mode", "")))
 	if solar_tour != null:
 		if solar_tour.interlude != null: word = "CRUISE INTERLUDE"
-		if not live_journey and solar_tour.leg_index < 0: return "Earth orbit · guided voyage ready"
+		if not live_journey and solar_tour.leg_index < 0: return "Earth standoff · guided voyage ready"
 		return ("→ %s · %s" if live_journey else "%s · %s") % [solar_tour.leg_name(), word]
 	if sky_state != "live":
 		return "Review snapshot · " + ("cruise" if sky_state == "cruise" else "at rest")
 	if live_journey:
-		return "→ %s · %s" % [stop_name(), word]
-	return ("Earth orbit" if last_stop == "Earth" else last_stop) + " · at rest"
+		return "→ %s · %s%s" % [stop_name(), word, " · PAUSED" if journey_map!=null and journey_map.paused else ""]
+	return ("Near Earth" if last_stop == "Earth" else last_stop) + " · at rest" + (" · PAUSED" if journey_map!=null and journey_map.paused else "")
 ## The view tag: one word (details in Tab), plus the camera when it is not the captain's eye.
 func view_tag_text() -> String:
 	var t := "AUTO" if sky.system_view.body_fader else "REALISTIC"
@@ -948,9 +967,13 @@ func note(text: String) -> void:
 	_notice_text(text)
 func dismiss_arrival() -> void:
 	ship_hud.hide_card("arrival")
-## P and the tour card: pause or resume the guided voyage (pacing; D-57 Q3).
+	_sync_pointer()
+## P and the details button: pause or resume presentation time (pacing; D-57 Q3).
 func toggle_tour_pause() -> void:
 	if solar_tour != null: solar_tour.paused = not solar_tour.paused
+	elif journey_map!=null:
+		journey_map.paused=not journey_map.paused
+		note("Time paused [P]. The ship keeps its course; resume to reach the stop before changing destination." if journey_map.paused else "Time resumed [P].")
 ## The tour card's Skip dwell: the itinerary's own next leg comes forward (pacing).
 func skip_dwell() -> bool:
 	if solar_tour == null or live_journey or not solar_tour.prepare_next(): return false
@@ -1188,3 +1211,11 @@ func toggle_codex() -> void:
 	_ensure_codex()
 	if codex.panel.visible:codex.close()
 	else:codex.open()
+
+## Pointer belongs to an open interactive surface; otherwise mouse motion looks around.
+func pointer_required() -> bool:
+	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and (ship_hud.tab_panel.visible or ship_hud.has_card("arrival") or ship_hud.has_card("medium_here"))) or (codex!=null and codex.panel.visible) or (interlude_card!=null and interlude_card.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
+func _sync_pointer() -> void:
+	var capture:bool=mouse_look_enabled and not pointer_required() and get_window().has_focus()
+	var desired:int=Input.MOUSE_MODE_CAPTURED if capture else Input.MOUSE_MODE_VISIBLE
+	if Input.mouse_mode!=desired:Input.mouse_mode=desired
