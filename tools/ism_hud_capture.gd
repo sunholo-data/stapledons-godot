@@ -41,6 +41,9 @@ func _run() -> void:
 
 
 func capture_size(sz: Vector2i) -> void:
+	# macOS clamps ordinary windows to the usable area; the 1440p case must include
+	# the menu/dock area too. Fullscreen preserves actual pixels without resizing PNGs.
+	root.mode = Window.MODE_FULLSCREEN if sz.y >= 1440 else Window.MODE_WINDOWED
 	root.size = sz
 	await process_frame
 	demo = load("res://demos/ship_geometry_demo.tscn").instantiate()
@@ -53,6 +56,7 @@ func capture_size(sz: Vector2i) -> void:
 		failed = true
 		return
 	demo.look_direction("forward")
+	await settle()
 	# At rest the forward sky has empty rays; at relativistic cruise the identified
 	# sources can fill the entire forward opening. Preserve that star-pick precedence.
 	demo.toggle_sky_only()
