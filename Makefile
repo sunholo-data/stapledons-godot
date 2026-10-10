@@ -468,8 +468,8 @@ starmap-truth-audit: ## AC4: every truth disagreement over max(3 sigma, 1%) has 
 	@$(AILANG) run --quiet --bytecode --caps IO,FS --package-dir sim --entry auditMain --args-json '{"truth":"$(TRUTH)","doc":"design_docs/implemented/r1/starmap-truth-audit.md"}' sim/tools/bright_main.ail
 
 starmap-consistency: ## AC3 (headless): every stars.json destination in the sky stack once, at the navigation position (<= 1e-9 ly); pins are no-ops (TIER=medium|large)
-	@mkdir -p $(SCRATCH); $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) $(CONSISTENCY_ARGS) > $(SCRATCH)/starmap-consistency.log 2>&1; rc=$$?; \
-	  grep -E '^(starmap-consistency|  )' $(SCRATCH)/starmap-consistency.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/starmap-consistency.log && grep -q '^starmap-consistency: PASS$$' $(SCRATCH)/starmap-consistency.log
+	@mkdir -p $(SCRATCH); log=$(SCRATCH)/starmap-consistency-$(if $(filter command line environment,$(origin TIER)),$(TIER),medium)-$$$$.log; $(GODOT) --headless --path . --script tools/starmap_consistency.gd -- --tier $(if $(filter command line environment,$(origin TIER)),$(TIER),medium) $(CONSISTENCY_ARGS) > "$$log" 2>&1; rc=$$?; \
+	  grep -E '^(starmap-consistency|  )' "$$log"; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' "$$log" && grep -q '^starmap-consistency: PASS$$' "$$log"
 
 # The large tier is a gate too (eval R1-STARMAP-LARGE round 1): make test fetches it (starmap-assets, pinned)
 # and checks the large stack; a missing or short file FAILS here (the game's runtime fallback is only a warning).

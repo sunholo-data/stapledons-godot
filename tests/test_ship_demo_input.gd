@@ -14,7 +14,7 @@ func _run() -> void:
 	demo.camera.pullback=3.
 	var motion:=InputEventMouseMotion.new();motion.relative=Vector2(20,10)
 	var yaw: float=demo.camera.yaw
-	demo._unhandled_input(motion);check("plain pointer motion does not look",demo.camera.yaw==yaw)
+	demo._unhandled_input(motion);check("plain pointer motion looks by default",demo.camera.yaw!=yaw)
 	motion.alt_pressed=true;demo._unhandled_input(motion)
 	check("Option motion looks without a held click",demo.camera.yaw!=yaw and demo.camera.tilt<-18.)
 	yaw=demo.camera.yaw;motion.alt_pressed=false;motion.button_mask=MOUSE_BUTTON_MASK_RIGHT;demo._unhandled_input(motion)

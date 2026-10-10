@@ -116,17 +116,18 @@
     "ui/ship_controls.gd": "53d682b635c6c2f6e62d10b393b74601389cf518cc2bdbff6cac3812c7ec5850",
     "tests/test_ship_ui.gd": "62290560be4d213f72e26a8113c8667e638ce62257c1ab58bbef8980de2bce38",
     "tests/test_free_nav_recovery.gd": "026e8e3de8e714fd5ecbaacd269b2c3aeb3a80ae3f27465e3c0d52e3b9a2e761",
-    "Makefile": "697ede0bbfd0116ffb93645edd2f05b81ffff5f1d06884a240fe8905d99a4f9e"
+    "Makefile": "b90edd6e267a220ed40b811e67921b526f4f9c98f26e541491f6d0bde0105726",
+    "mk/m45.mk": "8162a1d669c7264187a22557d87f5d5f206e8bc07021dbccc1646dff5252547c"
   },
   "ci": {
     "pr": 199,
-    "last_observed_head": "5092a7687a3f3c3ea36e087cf0ef23c92502a970",
-    "status": "IN_PROGRESS",
-    "run_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38083075225",
+    "last_observed_head": "6c6af7dc807b7f226dab902ae8cb0b78c82a81b6",
+    "status": "COMPLETED",
+    "conclusion": "FAILURE",
+    "run_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38083630505",
+    "completed_at": "2026-10-10T20:25:22Z",
     "matching_final_source": false,
-    "superseded_run": "38081490839 canceled; not final evidence",
-    "started_at": "2026-10-10T20:16:10Z",
-    "note": "Reviewed production hashes unchanged; final test/assertion and report-doc push/CI still pending."
+    "note": "FailedfreshcloneearlyUI gate before fullsuite. Newimport/assets prerequisite fix and final gate/test repairs are reviewed but not yet pushed. Formal verdict awaits matching finalhead success; no waiver from failedCI."
   },
   "landing_gates": [
     "Final integrated local suite green",
@@ -150,7 +151,9 @@
       "renders/free_nav/local_ism_boundaries.png"
     ],
     "independent_inventory_audit": "/private/tmp/ism-evaluation/final-inventory-audit.json",
-    "refusal_ui_regression": "/private/tmp/stapledon-navigation-refusal-regression.log"
+    "refusal_ui_regression": "/private/tmp/stapledon-navigation-refusal-regression.log",
+    "parallel_override_regression": "/private/tmp/stapledon-starmap-parallel-override-check.log",
+    "legacy_input_and_guard_regression": "/private/tmp/stapledon-navigation-input-audit-guard-check.log"
   },
   "notes": "Separate appendix and score from ISM PR A; independent read-only source/fixture/native-image review. No unmodified package physics or frozen historical recording changes.",
   "inventory_audit": {
@@ -167,6 +170,23 @@
     "resolution": "tests/test_galaxy_map.gd now asserts actionable speed/range and committed-autopilot/pause text. Raw sim out_of_range/committed reasons, unchanged committed journey, persistence and sent intent checks remain unchanged. Focused makeui exited0; galaxy map0failures."
   },
   "reviewed_test_sha256": {
-    "tests/test_galaxy_map.gd": "a75f482430a7795fd224e40f9af82380b543b71061918742829f51f35d75a8cf"
-  }
+    "tests/test_galaxy_map.gd": "a75f482430a7795fd224e40f9af82380b543b71061918742829f51f35d75a8cf",
+    "tests/test_ship_demo_input.gd": "aada577f0a6cd393d41aa2f82567461795428db1012ebd4f9766fa21ddb94c35",
+    ".github/workflows/ci.yml": "df4793c7bc3add818d76e076b6bda5f5bbcb7c1440a4a89d5e3f9c0b2fdf894b"
+  },
+  "historical_local_failures": [
+    {
+      "log": "/private/tmp/stapledon-ism-navigation-canonical-test.log",
+      "status": "complete-k run exposed shared starmap-consistency scratch-log race; not a passing suite",
+      "finding": "Both underlying consistency checks passed; shared logfile caused grep failure. Final recipe now includes effectiveTIER and per-invocation shellPID, including explicitTIER=large case. Evaluator checked escaping and single-shell log/rc/grep wiring. Focused parallel default+override logs record bothchecksPASS with unchanged success/error assertions.",
+      "focused_log": "/private/tmp/stapledon-starmap-parallel-check.log"
+    },
+    {
+      "log": "/private/tmp/stapledon-ism-navigation-canonical-test.log",
+      "status": "-k continued to expose stale defaultmouse-look assertion and ai-live-guard rejection of dynamic offline codexentry; not a passing suite",
+      "resolution": "Only old plain-motion expectation updated to approvedD63 defaultlook; remainingOption/RMB/gesture/benchmark tests unchanged. capsFS-only codex-unlocks recipe explicitly removesAI_LIVE; all guardrules preserved. Focused input9/0 and all10 guardmutants caught. Freshclone CI earlygate now importsGodotclasses and fetches pinnedstarmap assets before running focused gates.",
+      "focused_log": "/private/tmp/stapledon-navigation-input-audit-guard-check.log"
+    }
+  ],
+  "local_gate_status": "Prior complete run failed scratch-log concurrency; fresh complete suite will restart after focused race fix. No physics/gameplay or safety assertion changes; no gates skipped."
 }
