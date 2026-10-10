@@ -35,10 +35,12 @@ belongs to exactly one medium, first match wins:
 1. **Dense clouds (PR B):** the Local Leo Cold Cloud sheets and the
    Edenhofer et al. 2024 clumps beyond 69 pc, δ = IS-23.
 2. **The 14 Redfield & Linsky 2008 clouds** (G, Blue, Aql, Eri, Aur, Hyades,
-   Mic, Oph, Gem, NGP, Leo, Dor, Vel, Cet), each a **cone shell** (game
-   approximation, labelled): apex at the Sun, axis the cloud's centre (l, b)
-   from RL08 Table 18, half-angle θ with cos θ = 1 − Ω/2π for the cloud's
-   projected area Ω (Table 18). The shell runs from r_in to
+   Mic, Oph, Gem, NGP, Leo, Dor, Vel, Cet), each a **digitised angular outline with an approximate radial shell**
+   (labelled game approximation): spherical triangles follow the published
+   boundaries in RL08 Figures 2–15. Cached inward plane normals define the
+   same triangles in the simulation and map. Table 18 centres and areas are
+   independent calibration checks, not circular replacements for those
+   non-circular outlines. The shell runs from r_in to
    r_out = min(r_in + L, d_near): L = N_med / n_HI,edge is the neutral path of
    the cloud's median sight-line column (RL08 Tables 2–15, members within
    15 pc, n_HI,edge = IS-15), d_near the cloud's nearest member star (Table 18,
@@ -60,14 +62,18 @@ n = n_H (μ_H + δ) (IS-24, δ in hydrogen masses per H nucleon). The wall
 reflects every massive particle (D-11), so drag and the mean glow follow the
 whole mass flux, dust included.
 
-**Resolution along a route** is exact, never sampled: cone shells and spheres
-have closed-form chords; the LIC's crossings are bracketed on 64 steps along
-the segment and refined by 60 bisections. `profile(a, b)` returns the ordered,
-gap-free segments [(s₀, s₁, medium)]; the column is Σ n_H Δs.
+**Resolution along a route:** angular triangle half-planes and radial
+spheres have closed-form parameter intervals, composed from the published
+`slabChord` and `ellipsoidChord` package functions. The LIC crossings use a
+64-step bracket restricted to a sphere enclosing the harmonic surface,
+refined by 60 bisections. This is numerical root finding; arbitrarily tangent
+double roots may remain unresolved by the bracket. `profile(a, b)` returns
+ordered, gap-free segments [(s₀, s₁, medium)]; the column is Σ n_H Δs.
 
 ### Labelled approximations
-- The cone shells (Redfield & Linsky give each cloud's outline on the sky and
-  an upper limit on its distance, not a 3D shape).
+- The radial shell depths: Redfield & Linsky give angular outlines and
+  upper limits on distances, not measured three-dimensional volumes. The
+  digitisation also has finite tracing and projection error.
 - The LIC coefficients are a refit (§3).
 - One dust calibration δ per medium; the same grain-size shape everywhere
   (only the LIC is measured in situ).
@@ -141,8 +147,8 @@ printed values.
 | IS-32 | Distance from the Sun to the nearest point of the LIC surface (HEALPix Nside 8 directions) | 0.20 | pc |
 | IS-33 | Sol → Aldebaran: start of the Hyades shell along the leg | 1.77 | pc |
 | IS-34 | Sol → Aldebaran: end of the Hyades shell along the leg | 2.69 | pc |
-| IS-35 | RL08 members within 15 pc whose model sight line crosses their assigned cloud | 42 | of 59 |
-| IS-36 | The same, as a fraction (the design's target is 0.80; see §6) | 0.712 | — |
+| IS-35 | RL08 members within 15 pc whose model sight line crosses their assigned cloud | 56 | of 59 |
+| IS-36 | The same, as a fraction (the design's target is 0.80; see §6) | 0.94915 | — |
 
 Sol → TRAPPIST-1 leaves the LIC into the hot gas and meets no named cloud
 (the Eri cap ends about 12° away). Sol → α Cen is G for its first 0.81 pc,
@@ -179,13 +185,15 @@ so the table or section is given instead.
 | μ_H 1.4; M_dust/M_H 0.010 | Draine 2011 | Table 1.4 | not reopened (textbook) | |
 
 **Not reproduced, and what was done:** the LIC coefficients (refit, §3); the
-grain density (3,300 used); AC6(a) membership is 0.712, below the design's
-0.80: no start rule for the cone shells reaches 0.80 with Table 18's centres
-and areas (the best, every cloud starting at the LIC edge, is 0.746 but puts
-0.28 pc of LIC gas on α Cen's line, giving 17.83 against the measured
-17.6 ± 0.15). The G start rule keeps the α Cen column right and the route
-media the papers describe; the membership shortfall is a property of the cone
-approximation and is listed for Mark.
+grain density (3,300 used). The earlier circular-cone approximation
+recovered only 42/59 nearby assigned-cloud sight lines (71.2%), below the
+80% criterion. It has been replaced by source-figure outlines; the updated
+independent recovery is 56/59 (94.9%), while the alpha-Centauri H I
+column remains log N = 17.70. All fourteen traced solid angles are within
+20% of the separate Table 18 areas (largest discrepancy: Hyades, 17.8%).
+The source-figure projection and calibration audit is committed as
+`data/ism/sources/rl08-outlines.md` in the game repo.
+The G depth rule and the alpha-Centauri neutral column remain unchanged.
 
 ## 7. `sunholo/celestial` module `ism` (0.4.0)
 

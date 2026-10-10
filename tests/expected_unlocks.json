@@ -2,13 +2,42 @@
   "comment": "M4.7 AC16 input: the Archive entries the minimum path unlocks, in the order the sim fires them (sprint R1-M4-JOURNEY M4.7; the design repo owns the list, lore/archive/README.md). Scenario: Sol to alpha Cen A at the 0.99c default (gamma 7.0888), commit, boost, cruise, brake, arrive. cmb-forward needs gamma >= 275 and tides and shadow-ring need a black hole, so none of them unlock.",
   "scenario": "alpha_cen_0.99c",
   "unlocks": [
-    {"id": "archive.bubble", "hint": "always"},
-    {"id": "archive.one-g", "hint": "always"},
-    {"id": "archive.nothing-crosses", "hint": "always"},
-    {"id": "archive.two-clocks", "hint": "first_commit"},
-    {"id": "archive.photon-drive", "hint": "first_boost"},
-    {"id": "archive.ism-glow", "hint": "cruise_above_0.9c"},
-    {"id": "archive.starbow", "hint": "cruise_above_0.9c"}
+    {
+      "id": "archive.bubble",
+      "hint": "always"
+    },
+    {
+      "id": "archive.one-g",
+      "hint": "always"
+    },
+    {
+      "id": "archive.nothing-crosses",
+      "hint": "always"
+    },
+    {
+      "id": "archive.two-clocks",
+      "hint": "first_commit"
+    },
+    {
+      "id": "archive.photon-drive",
+      "hint": "first_boost"
+    },
+    {
+      "id": "archive.ism-glow",
+      "hint": "cruise_above_0.9c"
+    },
+    {
+      "id": "archive.starbow",
+      "hint": "cruise_above_0.9c"
+    },
+    {
+      "id": "archive.weather-between-the-stars",
+      "hint": "cruise_above_0.9c"
+    }
   ],
-  "not_unlocked": ["archive.cmb-forward", "archive.tides", "archive.shadow-ring"]
+  "not_unlocked": [
+    "archive.cmb-forward",
+    "archive.tides",
+    "archive.shadow-ring"
+  ]
 }

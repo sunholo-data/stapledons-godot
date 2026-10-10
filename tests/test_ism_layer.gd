@@ -40,7 +40,19 @@ func _init() -> void:
 	for cl: Dictionary in clouds:
 		var lines := IsmLayer.cloud_lines(cl)
 		all_ok = all_ok and lines.size() >= 7
-	check("every cloud has an outline (cap circles and generators)", all_ok)
+	check("every cloud has an angular outline and radial generators", all_ok)
+	var traced := {"r_in_ly": 1.0, "r_out_ly": 2.0, "outline": [
+		[[1, -0.1, -0.1], [1, 0.1, -0.1], [1, 0.1, 0.1]],
+		[[1, -0.1, -0.1], [1, 0.1, 0.1], [1, -0.1, 0.1]]]}
+	var boundary := IsmLayer.cloud_lines(traced)
+	check("triangulated source outline: four boundary edges, no internal diagonal", boundary.size() == 12)
+	var radial_ok := true
+	for line: PackedVector3Array in boundary:
+		if line.size() == 17:
+			var radius := line[0].length()
+			for v: Vector3 in line:
+				radial_ok = radial_ok and v.is_finite() and absf(v.length() - radius) < 0.000001
+	check("outline arcs follow the shell radius", radial_ok)
 	check("one log colour scale: hot gas, warm clouds and a dense cloud differ",
 		IsmLayer.colour_for(0.0039) != IsmLayer.colour_for(0.2474) and IsmLayer.colour_for(0.2474) != IsmLayer.colour_for(3000.0))
 	var media := [{"name": "LIC", "n_h_cm3": 0.2474, "length_ly": 2.0}, {"name": "hot", "n_h_cm3": 0.0039, "length_ly": 6.0}]

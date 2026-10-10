@@ -38,9 +38,9 @@ func test_loader() -> Array:
 	var r := LoreLoader.load_entries()
 	var es: Array = r["entries"]
 	ok("the vendored lore loads with no manifest errors (%s)" % str(r["errors"]), r["errors"].is_empty())
-	ok("ten entries, in the README's order: bubble, one-g, nothing-crosses first", es.size() == 10 and es[0]["id"] == "archive.bubble" and es[1]["id"] == "archive.one-g" and es[2]["id"] == "archive.nothing-crosses" and es[9]["id"] == "archive.shadow-ring")
+	ok("eleven entries, in the README's order: bubble, one-g, nothing-crosses first", es.size() == 11 and es[0]["id"] == "archive.bubble" and es[1]["id"] == "archive.one-g" and es[2]["id"] == "archive.nothing-crosses" and es[10]["id"] == "archive.shadow-ring")
 	ok("every entry has id, title, a known unlock hint, checks and a body", es.all(func(e): return e["id"].begins_with("archive.") and e["title"] != "" and HINTS.has(e["unlock"]) and e["checks"].size() > 0 and e["body"].length() > 200))
-	ok("archive_rows are {id, unlock} in the same order, for new_game", LoreLoader.archive_rows(es) == es.map(func(e): return {"id": e["id"], "unlock": e["unlock"]}) and LoreLoader.archive_rows(es).size() == 10)
+	ok("archive_rows are {id, unlock} in the same order, for new_game", LoreLoader.archive_rows(es) == es.map(func(e): return {"id": e["id"], "unlock": e["unlock"]}) and LoreLoader.archive_rows(es).size() == 11)
 	ok("a front-matter comment is not part of the value", es[0]["unlock"] == "always")
 	# positive control: one byte changed in a vendored file -> that entry is refused, with a message
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(TMP + "/archive"))
@@ -52,7 +52,7 @@ func test_loader() -> Array:
 	f.store_string("x")
 	f.close()
 	var bad := LoreLoader.load_entries(TMP)
-	ok("a tampered file is refused and reported, the others still load", bad["entries"].size() == 9 and bad["errors"].size() == 1 and str(bad["errors"][0]).contains("one-g"))
+	ok("a tampered file is refused and reported, the others still load", bad["entries"].size() == 10 and bad["errors"].size() == 1 and str(bad["errors"][0]).contains("one-g"))
 	return es
 
 
@@ -92,16 +92,16 @@ func test_binding(es: Array) -> void:
 func test_panel(es: Array) -> void:
 	var cx: Codex = load("res://ui/archive/codex.tscn").instantiate()
 	root.add_child(cx)
-	ok("the codex loads the lore", cx.load_lore() and cx.entries.size() == 10)
+	ok("the codex loads the lore", cx.load_lore() and cx.entries.size() == 11)
 	cx.show_world(world_with([]))
 	cx.open()
 	var rows := cx.entry_rows()
-	ok("nothing unlocked: ten rows, all disabled and greyed", rows.size() == 10 and rows.values().all(func(b): return b.disabled and b.modulate.a < 0.6))
+	ok("nothing unlocked: eleven rows, all disabled and greyed", rows.size() == 11 and rows.values().all(func(b): return b.disabled and b.modulate.a < 0.6))
 	ok("nothing unlocked: no toast", cx.toast_log.is_empty())
 	ok("a locked entry shows its title and no body", rows["archive.bubble"].text == es[0]["title"] and cx.shown_body_source() == "")
 	cx.show_world(world_with(["archive.bubble", "archive.one-g", "archive.nothing-crosses"]))
 	rows = cx.entry_rows()
-	ok("three unlocked: those rows enabled at full strength, the other seven still greyed", ["archive.bubble", "archive.one-g", "archive.nothing-crosses"].all(func(i): return not rows[i].disabled and rows[i].modulate.a == 1.0) and rows.values().filter(func(b): return b.disabled).size() == 7)
+	ok("three unlocked: those rows enabled at full strength, the other eight still greyed", ["archive.bubble", "archive.one-g", "archive.nothing-crosses"].all(func(i): return not rows[i].disabled and rows[i].modulate.a == 1.0) and rows.values().filter(func(b): return b.disabled).size() == 8)
 	ok("one toast per new unlock, in order", cx.toast_log == ["archive.bubble", "archive.one-g", "archive.nothing-crosses"])
 	cx.show_world(world_with(["archive.bubble", "archive.one-g", "archive.nothing-crosses"]))
 	ok("the same world again: no new toast", cx.toast_log.size() == 3)
@@ -163,7 +163,7 @@ func test_minimum_path() -> void:
 	ok("the scripted minimum path ran to arrival", res["ok"] and sim.world["journey"]["state"] == "arrived")
 	var ids: Array = seen.map(func(s): return s[0])
 	var want: Array = expected["unlocks"].map(func(u): return u["id"])
-	ok("the sim unlocked exactly the seven expected entries, in order (%s)" % str(ids), ids == want)
+	ok("the sim unlocked exactly the eight expected entries, in order (%s)" % str(ids), ids == want)
 	var hints_ok := true
 	var rows: Array = sim.archive_rows
 	for u in expected["unlocks"]:
@@ -175,8 +175,8 @@ func test_minimum_path() -> void:
 		by[s[0]] = s
 	ok("the three always entries open before any commit", ["archive.bubble", "archive.one-g", "archive.nothing-crosses"].all(func(i): return by[i][2] != "committed"))
 	ok("two-clocks opens at the commit and photon-drive at the boost", by["archive.two-clocks"][2] == "committed" and by["archive.photon-drive"][1] == "boosting")
-	ok("ism-glow and starbow open when the ship reaches cruise above 0.9c", by["archive.ism-glow"][1] == "cruising" and by["archive.starbow"][1] == "cruising")
-	ok("the codex shows exactly the unlocked entries after arrival", cx.entry_rows().values().filter(func(b): return not b.disabled).size() == 7 and cx.toast_log == want)
+	ok("ism-glow, starbow and weather-between-the-stars open when the ship reaches cruise above 0.9c", by["archive.ism-glow"][1] == "cruising" and by["archive.starbow"][1] == "cruising" and by["archive.weather-between-the-stars"][1] == "cruising")
+	ok("the codex shows exactly the unlocked entries after arrival", cx.entry_rows().values().filter(func(b): return not b.disabled).size() == 8 and cx.toast_log == want)
 	ok("the sim answers the new_game with the codex table (protocol 2.2, no refusal)", sim.last_error == "")
 	sim.stop()
 	cx.queue_free()
