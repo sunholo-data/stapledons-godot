@@ -68,7 +68,13 @@ encode() {
             -pix_fmt yuv420p -movflags +faststart -an "$OUT/$c.mp4"
         "$FFMPEG" -hide_banner -loglevel error -y -framerate 30 -i "$f" -c:v libvpx-vp9 -crf $vcrf -b:v 0 \
             -row-mt 1 -deadline good -cpu-used 2 -pix_fmt yuv420p -an "$OUT/$c.webm"
-        "$FFMPEG" -hide_banner -loglevel error -y -i "$OUT/frames/$c/f00000.png" -vf "scale='min(1600,iw)':-2" -q:v 3 "$POSTERS/$c.jpg"
+        poster_number=0
+        case "$c" in
+            black_hole_orbit|ism_transit) poster_number=$(jq -r '.source_frames / 2 | floor' "$OUT/frames/$c/manifest.json") ;;
+            saturn_arrival) poster_number=$(jq -r '[.arrival_frame + 60, .source_frames - 1] | min' "$OUT/frames/$c/manifest.json") ;;
+        esac
+        poster_frame=$(printf 'f%05d.png' "$poster_number")
+        "$FFMPEG" -hide_banner -loglevel error -y -i "$OUT/frames/$c/$poster_frame" -vf "scale='min(1600,iw)':-2" -q:v 3 "$POSTERS/$c.jpg"
         ls -l "$OUT/$c.mp4" "$OUT/$c.webm" "$POSTERS/$c.jpg"
     done
 }

@@ -237,7 +237,7 @@ func _saturn() -> bool:
 			if not tour._send([], 1.0 / (FPS * YEAR_S)): return false
 		demo._apply_journey_world()
 		# Widen late in the physical approach so the actual ring system remains
-		# wholly framed at this close stop; changing a lens never changes a body.
+		# visible at this close stop; changing a lens never changes a body.
 		demo.camera.fov = lerpf(55.0, 110.0, smoothstep(0.65, 1.0, i / float(approach_frames)))
 		caption.text = "Saturn · %s · real intercept, moons and rings\nFinal approach compressed to 16 screen seconds; earlier guided stops omitted · diagnostic sky view" % ("ARRIVED · at rest" if _world().journey.state == "arrived" else "FINAL APPROACH")
 		if not await _frame(i): return false
