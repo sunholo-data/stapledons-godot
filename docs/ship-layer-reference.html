@@ -14,8 +14,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Montserrat:wght@600;700;800&amp;display=swap">
 <link rel="icon" type="image/svg+xml" href="/stapledons-godot/img/ailang-logo.svg">
 <link rel="preconnect" href="https://storage.googleapis.com"><link rel="stylesheet" href="/stapledons-godot/assets/css/styles.09c33afb.css">
-<script src="/stapledons-godot/assets/js/runtime~main.3b8751e2.js" defer="defer"></script>
-<script src="/stapledons-godot/assets/js/main.7f7a10cb.js" defer="defer"></script>
+<script src="/stapledons-godot/assets/js/runtime~main.e5a1a54f.js" defer="defer"></script>
+<script src="/stapledons-godot/assets/js/main.d737fdf9.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -69,18 +69,21 @@ Geometry retains prototype lighting.</p><section class="review_DmRi" aria-label=
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="play-the-latest-mac-review">Play the latest Mac review<a href="#play-the-latest-mac-review" class="hash-link" aria-label="Direct link to Play the latest Mac review" title="Direct link to Play the latest Mac review" translate="no">​</a></h2>
 <p>With GitHub CLI and Google Cloud CLI authenticated:</p>
 <div class="language-sh codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#F8F8F2;--prism-background-color:#282A36"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-sh codeBlock_bY9V thin-scrollbar" style="color:#F8F8F2;background-color:#282A36"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#F8F8F2"><span class="token plain">gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.sh </span><span class="token parameter variable" style="color:rgb(189, 147, 249);font-style:italic">--jq</span><span class="token plain"> .content </span><span class="token operator">|</span><span class="token plain"> base64 </span><span class="token parameter variable" style="color:rgb(189, 147, 249);font-style:italic">-d</span><span class="token plain"> </span><span class="token operator">|</span><span class="token plain"> </span><span class="token function" style="color:rgb(80, 250, 123)">bash</span><span class="token plain"> </span><span class="token parameter variable" style="color:rgb(189, 147, 249);font-style:italic">-s</span><span class="token plain"> -- </span><span class="token parameter variable" style="color:rgb(189, 147, 249);font-style:italic">--dev</span><br></div></code></pre></div></div>
-<p>The app opens directly into the current ship, at the captain’s measured eye.
-<strong>WASD</strong> walks, <strong>Option + drag</strong> looks, scrolling zooms out to a labelled
-third-person view,
-and <strong>E</strong> uses the lift. Hold <strong>I</strong> to highlight known, visible stars; hover for a name
-and click for catalogue details. Releasing <strong>I</strong> clears the rings; <strong>Esc</strong> closes
-the card. <strong>Open in map</strong> selects the same star for planning. <strong>M</strong> opens navigation: select a star and hold <strong>Commit</strong>;
-the map closes and you can watch acceleration, cruise and braking aboard ship.
-<strong>7</strong> looks forward/up to see the star field change; pan around to compare directions.
-<strong>New Solar tour</strong> starts the guided journey. <strong>Pause tour</strong> holds the view; <strong>Next stop</strong> skips a stationary dwell. <strong>M</strong> pauses guidance for map browsing; resume with the ship button.</p>
-<p>The ship starts at rest in a live navigation session, at <strong>4× exposure</strong>. <strong>J</strong> cycles exposure; <strong>5/6</strong> compare frozen rest/cruise snapshots outside committed travel and
-<strong>7/8/9</strong> look forward/side/aft. <strong>Tab</strong> shows all controls. <strong>B</strong> measures performance
-on your laptop outside committed travel, saves the full report locally and uploads a public timing summary using your authenticated Cloud CLI. A link appears after upload succeeds; the local report remains available if it fails.</p>
+<p>The app opens the title menu. Choose <strong>Board the ship</strong> to begin at rest near Earth.
+<strong>Mouse movement</strong> looks around by default and <strong>WASD</strong> walks. <strong>Tab</strong> opens help,
+details and <strong>Walk to</strong> buttons, releasing the pointer for interaction. Consoles,
+inspection and arrival panels also own the pointer; <strong>Esc</strong> closes the top panel.</p>
+<p>Use <strong>Tab → Walk to → Navigation station</strong>, then <strong>E</strong>, to plan and commit.
+<strong>M</strong> opens a read-only chart. Hold <strong>I</strong> to identify and click visible stars or bodies.
+<strong>P</strong> pauses or resumes time while preserving the course. <strong>7/8/9</strong> look
+forward/side/aft, and <strong>J</strong> adjusts sky brightness. The <strong>Voyage console</strong> starts
+the guided voyage; the <strong>Archive terminal</strong> holds physics entries and news.</p>
+<p>The chart shows local clouds by default. <strong>Interstellar medium [D]</strong> toggles them,
+<strong>Local ISM</strong> frames the nearby clouds, and <strong>Depth guides</strong> adds optional radial
+construction lines. Approximate depths are labelled in the legend.</p>
+<p>Developer launches retain frozen snapshots and the benchmark; packaged menu
+launches expose the player controls. <a class="" href="/stapledons-godot/docs/try-it">Try it</a> distinguishes the latest
+authenticated review from the earlier public download.</p>
 <details class="details_lb9f alert alert--info details_b_Ee" data-collapsed="true"><summary>Build plans and verification</summary><div><div class="collapsibleContent_i85q"><p><a href="https://github.com/sunholo-data/stapledons-godot/blob/demo/ship-geometry-seven/design_docs/planned/r1/m4-ship-commons-build-sprint.md" target="_blank" rel="noopener noreferrer" class="">Commons build plan</a>
 · <a href="https://github.com/sunholo-data/stapledons-godot/blob/demo/ship-geometry-seven/design_docs/planned/r1/m4-ship-geometry-demo.md" target="_blank" rel="noopener noreferrer" class="">Shared-observer design</a>
 · <a href="https://storage.googleapis.com/stapledons-voyage-assets/refs/ship_demo_journey_v1/optics_audit.json" target="_blank" rel="noopener noreferrer" class="">GPU projection audit</a>.</p><p>This remains a draft art/geometry review, with an internal lighting study and pending laptop
