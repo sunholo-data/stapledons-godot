@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Inferred radii, synchronous orbits (D-58), 2026-10-09
+
+- Every catalogue star now shows its size in free navigation: a star with no measured radius gets one inferred from its catalogue V, distance and Teff (sunholo/relativity 0.11.0: Pecaut & Mamajek bolometric correction, M_bol,sun 4.74, Stefan-Boltzmann) and becomes a finite star coloured by its Teff, stopping where it looks 2 atan(tan 5° √(R/R☉)) across: Barnard's Star 0.19 R☉, 4.4° at 0.023 AU; Proxima 0.16 R☉, 4.0°; 61 Cygni A 0.66 R☉, 8.1°; Vega 2.6 R☉, 16°. Its I card says the radius is inferred, with the luminosity and the inputs.
+- Planet, moon and Sun cards show the synchronous orbit (sunholo/celestial 0.3.0, Kepler's third law): Earth 35,786 km above the surface, Mars 17,031 km, Jupiter 88,517 km; "none" for tidally locked moons and for Mercury and Venus, which turn too slowly (the orbit would lie beyond their Hill spheres).
+- The black-hole ISCO comes from the package (`isco()`). Protocol 2.7; the hello reports relativity 0.11.0.
+
 ### Stops that show relative size (D-54), Sol in the map, in-system destinations, 2026-10-08
 
 - Free navigation stops at a star with a cited radius where it shows its size (D-54: 2 atan(tan 5° √(R/R☉)) across): TRAPPIST-1 3.5° at 0.018 AU, alpha Cen A 11° at 0.059 AU, Aldebaran 61° at 0.415 AU. Stars without a cited radius (Barnard's Star, most of the map) still stop at 1,000 AU until a package release adds a bolometric correction (inferring their radius is blocked, see the design doc).

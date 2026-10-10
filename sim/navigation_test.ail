@@ -20,7 +20,7 @@ import ./data/acen (bodies)
 import ./navigation (NavCtx, BodyReq, Leg, NavPlan, Pass, planBody, planBodyN, interceptIterations, residualMax, safetyMinKm, defaultStopKm,
   standoffMaxKm, bodyPhiMin, bodyPhiMax, allFacts, stopArrivalT, runOutMarginKm, staleAt)
 import ./core (World, Ticked, Intent, IPlan, IPlanBody, ICommit, Plan, Journey, Planned, Committed, Arrived, newWorld, defaultParams, tick, initShip, position, navOf)
-import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, departureMinor, grMinor, ismMinor, relativityPin, relativityPinNav, relativityPinGr, decodeHello, helloMsg)
+import ./protocol (newSession, serve, Session, Served, decodeInput, encodeInput, Input, GInput, navMinor, systemMinor, departureMinor, grMinor, stopsMinor, ismMinor, relativityPinStops, relativityPin, relativityPinNav, relativityPinGr, decodeHello, helloMsg)
 
 -- ------------------------------------------------------------ fixtures
 pure func ntAllTrue(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
@@ -288,6 +288,7 @@ export pure func checkHello24() -> bool =
   (match decodeHello(serve(newSession(), ntHelloW(navMinor())).reply) { Ok(h) => h.minor == navMinor() && h.relativity == relativityPinNav(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(grMinor())).reply) { Ok(h) => h.minor == grMinor() && h.relativity == relativityPinGr(), Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(navMinor() + 5)).reply) { Ok(h) => h.minor == ismMinor() && h.relativity == relativityPin(), Err(_) => false })
+  && (match decodeHello(serve(newSession(), ntHelloW(stopsMinor())).reply) { Ok(h) => h.minor == stopsMinor() && h.relativity == relativityPinStops() && relativityPinStops() == "0.11.0", Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(systemMinor())).reply) { Ok(h) => h.minor == systemMinor() && h.relativity == helloMsg().relativity, Err(_) => false })
   && navMinor() == systemMinor() + 1 && grMinor() == departureMinor() + 1 && relativityPinNav() == "0.9.0" && relativityPinGr() == "0.10.0" && relativityPin() != relativityPinNav()
 test "2.4 hello: minor 4 with relativity 0.9.0 (frozen at minors 4-5); 3 keeps the 2.3 hello" { checkHello24() }

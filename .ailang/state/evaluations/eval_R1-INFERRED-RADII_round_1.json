@@ -1,0 +1,11 @@
+{"sprint_id":"R1-INFERRED-RADII","round":1,"result":"pass","score":88,
+"breakdown":{"tests":18,"lint":9,"acceptance":26,"code_quality":13,"documentation":13,"design_fidelity":9},
+"verified":["make free-nav-stop-test: 49 passed, 0 failures","make parity-gr: VM = interpreter, hello 2.6 pins relativity 0.10.0","no tests/replays or tests/fixtures changes in diff (goldens untouched)","package-only physics: bolometricCorrectionV/luminositySunFromV/radiusSunFromLuminosity, semiMajorAxisFromPeriod","Earth card 35,786 km, Moon none/locked, Venus none/slow with Hill 0.007 AU","I card says 'Radius inferred, not measured' with provenance","stop_rule 0 / no row keep 1,000 AU (checkInferredStop)","Barnard render 0.023 AU, 4.37 deg"],
+"not_verified":["make replay (timed out under load, 70+ ailang procs)","sim test modules individually (ailang test --package takes one dir; covered via free-nav-stop-test only)"],
+"findings":[
+{"sev":"low","where":"sim/inferred_stars.ail:parsecLy","issue":"648000/pi AU constant re-derived in game code (also in sim/gr.ail); not a physics formula but a duplicate constant"},
+{"sev":"low","where":"sim/sync_orbit_test.ail:checkNone","issue":"Mercury/Venus 'slow' margin is thin for Mercury (stationary ~243k km vs Hill ~220k km); test does not pin the numbers, so a Hill-factor change would pass unnoticed"},
+{"sev":"low","where":"sim/sync_orbit.ail locked rule","issue":"2% rotation vs orbit period heuristic; Mercury 3:2 resonance not locked, only correct via Hill check"},
+{"sev":"low","where":"sim/stops_test.ail:checkInferredStop","issue":"radius asserted only 0.17<r<0.21 plus self-recomputation with the same package calls; a wrong package pin would still pass unless the bounds trip"},
+{"sev":"info","where":"bridge/sim_bridge.gd:28, demos/ship_geometry_demo.gd:525, main.gd:279, ui/loading_jump.gd:254","issue":"one-line STOPS_MINOR swaps are minimal and safe; capture paths keep older minors"}],
+"physics_gate":"pass: no formulas reimplemented"}

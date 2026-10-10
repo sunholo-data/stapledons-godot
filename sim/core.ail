@@ -16,8 +16,10 @@ import ./ism (Medium, Seg, Thresh, DustTick, DustCfg, MediaRow, Impact, mediumAt
 import ./tripphase (tripPhaseIndex)
 import ./consequence (Cq, News, ArchiveRow, emptyCq, entry, append, standoffLy, standoffFor, homeId, clocks, newsTier, templateId, unlock, ismAt, IsmNow, newsRequested, newsAccepted, newsFellBack)
 import ./rng (Rng, Stream, SNews, zeroRng, draw, streamName, top53)
-import ./celestial (defaultEpochJd, solSystem)
-import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop)
+import ./celestial (defaultEpochJd, solSystem, lyKm)
+import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
+import ./inferred_stars (CatStar, inferStar, remember)
+import ./stops (starStopKm)
 import ./gr (GrState, GrResult, grOff, grStep, grShipPos, grApproach, grHover, grOrbit, grRing, grHoverEvent)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
@@ -78,7 +80,10 @@ export pure func scriptedOffAxis(ticks: int) -> float {
 -- ------------------------------------------------------------ world (M2.2)
 -- Intents are domain commands; protocol.ail owns their wire codec.
 export type Target = { index: int, id: string, pos: Vec3 }
-export type PlanReq = { target: Target, cruisePhi: float, flipG: Option[float] }
+-- D-58: the catalogue row a free-navigation star plan may carry (the map's stars.json V and
+-- Teff, and its display name), from which a star without a measured radius is made finite.
+export type StarInfo = { name: string, v: float, teff: float }
+export type PlanReq = { target: Target, cruisePhi: float, flipG: Option[float], star: Option[StarInfo] }
 -- IEcho: diag-only test hook (M2.1b, AC9). It carries a plan payload and the
 -- sim echoes it back in an `echo` event, so the Godot bridge can check the
 -- float64 round trip of `target.pos` and `cruise_phi` before M2.3a's planner.
@@ -141,7 +146,7 @@ export pure func availableKgStart() -> float = 20000.0
 -- the threshold cache (a pure function of the medium and the rapidity, kept to skip recomputing).
 export type DustState = { last: DustTick, legExpected: float, legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
 export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState }
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar] }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -170,7 +175,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: emptyDust() }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: emptyDust(), catStars: [] }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -210,7 +215,7 @@ pure func ledgerAfter(l: Ledger, p: Params, ship: Ship, before: Motion, after: M
   else {l | dragJ: l.dragJ + mirrorDragPower(ismPerM3(p), absf(after.phi), p.bubbleRadiusM) * dtau * julianYearS()}
 
 -- at: the number of the tick being computed (AI request open/expiry ticks).
-type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, seed: int, rng: Rng, ai: AiState, gr: GrState, at: int, refused: [Refusal], events: [Event], i: int }
+type Pending = { ship: Ship, thrust: float, journey: Journey, lastPlanId: int, seed: int, rng: Rng, ai: AiState, gr: GrState, at: int, refused: [Refusal], events: [Event], i: int, catStars: [CatStar] }
 pure func refuseIntent(a: Pending, why: string) -> Pending = {a | refused: {i: a.i, reason: why} :: a.refused}
 pure func noteEvent(a: Pending, k: string) -> Pending = {a | events: event(k) :: a.events}
 
@@ -279,7 +284,11 @@ pure func planStarIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pend
   let dv = { x: rq.target.pos.x - here.x, y: rq.target.pos.y - here.y, z: rq.target.pos.z - here.z };
   let d = norm(dv);
   -- M4.1: plan to the stand-off point, 1,000 AU short on the same heading (0 for Sol and by default).
-  let dist = d - standoffFor(p.standoffAu, rq.target.id);
+  -- D-58: in free navigation (stop_rule 54, standoff_au > 0) a star whose catalogue row came with
+  -- the plan is made finite with an inferred radius and stops at its D-54 distance instead.
+  let cat = if p.stopRule == 54.0 && p.standoffAu > 0.0 && rq.target.id != homeId() then (match rq.star { Some(si) => inferStar(rq.target.id, si.name, rq.target.pos, si.v, si.teff), None => None }) else None;
+  let dist = d - (match cat { Some(c) => starStopKm(c.radiusKm, sunRefKm()) / lyKm(), None => standoffFor(p.standoffAu, rq.target.id) });
+  let keep = \x. match cat { Some(c) => {x | catStars: remember(c, x.catStars)}, None => x };
   let reachable = d > 0.0 && d - d == 0.0 && dist > 0.0;
   match rq.flipG {
     Some(g) =>
@@ -290,7 +299,7 @@ pure func planStarIntent(diag: bool, p: Params, a: Pending, rq: PlanReq) -> Pend
       -- `phi == phi` first: a NaN fails every comparison, so it is refused here
       -- on both runtimes (ailang#1419) rather than reaching the package's `requires`.
       if !reachable || !(rq.cruisePhi == rq.cruisePhi) || rq.cruisePhi < cruisePhiMin(p) || rq.cruisePhi > cruisePhiMax(p) then refuseIntent(a, "out_of_range")
-      else storeChecked(p, a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi), None)
+      else keep(storeChecked(p, a, rq.target, here, normalize(dv), false, planBurnCoastBurn(dist, p.boostG * standardGravity(), rq.cruisePhi), None))
   }
 }
 -- M5.5a: a body target. sim/navigation.ail computes the arrival point (the client
@@ -523,21 +532,21 @@ pure func tickBase(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
-  let applied = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, seed: w.seed, rng: w.rng, ai: w.ai, gr: w.gr, at: w.tick + 1, refused: [], events: [], i: 0}, input.intents);
+  let applied = applyIntents(w.diag, w.params, {ship: w.ship, thrust: 0.0, journey: w.journey, lastPlanId: w.lastPlanId, seed: w.seed, rng: w.rng, ai: w.ai, gr: w.gr, at: w.tick + 1, refused: [], events: [], i: 0, catStars: w.catStars}, input.intents);
   let ex = expire(w.tick + 1, applied.ai);
   let a = {applied | ai: ex.ai, events: aiEvents(ex.events, applied.events)};
   match a.journey {
     Committed(c) => {
       let f = fly(w.params, {ship: a.ship, c: c, ledger: w.ledger, events: a.events, arrived: false}, input.dtau);
       { world: {w | tick: w.tick + 1, ship: f.ship, journey: if f.arrived then Arrived(f.c) else Committed(f.c), lastPlanId: a.lastPlanId, ledger: f.ledger, rng: a.rng, ai: a.ai,
-                dust: dustAfter(w, a.ship, f.ship, input.dtau, match w.journey { Committed(_) => false, _ => true })},
+                catStars: a.catStars, dust: dustAfter(w, a.ship, f.ship, input.dtau, match w.journey { Committed(_) => false, _ => true })},
         refused: reversed(a.refused, []), events: reversed(f.events, []) }
     },
     _ => if a.gr.active then grTick(w, a, input.dtau) else {
       let moved = step(a.ship, a.thrust, input.dtau);
       let next = {moved | phase: derivePhase(moved.motion.phi, a.thrust)};
       { world: {w | tick: w.tick + 1, ship: next, journey: a.journey, lastPlanId: a.lastPlanId, ledger: ledgerAfter(w.ledger, w.params, a.ship, a.ship.motion, next.motion, a.thrust, input.dtau), rng: a.rng, ai: a.ai,
-                dust: dustAfter(w, a.ship, next, input.dtau, false)},
+                catStars: a.catStars, dust: dustAfter(w, a.ship, next, input.dtau, false)},
         refused: reversed(a.refused, []), events: reversed(a.events, []) }
     }
   }
@@ -571,7 +580,7 @@ pure func grTick(w: World, a: Pending, dtau: float) -> Ticked {
   let motion = { phi: 0.0, tau: m.tau + dtau, t: m.t + s.dtYears, x: m.x };
   let ship = { motion: motion, heading: a.ship.heading, origin: grShipPos(h.gr), x0: motion.x, phase: AtRest };
   let evs = match h.archive { Some(n) => archiveEvent(n) :: a.events, None => a.events };
-  { world: {w | tick: w.tick + 1, ship: ship, journey: a.journey, lastPlanId: a.lastPlanId, rng: a.rng, ai: a.ai, gr: h.gr},
+  { world: {w | tick: w.tick + 1, ship: ship, journey: a.journey, lastPlanId: a.lastPlanId, rng: a.rng, ai: a.ai, gr: h.gr, catStars: a.catStars},
     refused: reversed(a.refused, []), events: reversed(evs, []) }
 }
 -- A black-hole scenario's world (M3.4b): the ship hovering in g, facing the hole, and the
@@ -699,7 +708,7 @@ export pure func cqView(w: World) -> CqView {
 -- rests, so the closed form is galaxyTime + (ticks * 0.01 - tauTotal).
 pure func flyTicks(w: World, n: int) -> World = if n <= 0 then w else flyTicks(tick(w, {dtau: 0.01, intents: []}).world, n - 1)
 export pure func journeyVm(ticks: int) -> float {
-  let rq = { target: { index: 1, id: "alpha Cen", pos: { x: 0.0, y: 0.0, z: -4.37 } }, cruisePhi: 2.6466524123622457, flipG: None };
+  let rq = { target: { index: 1, id: "alpha Cen", pos: { x: 0.0, y: 0.0, z: -4.37 } }, cruisePhi: 2.6466524123622457, flipG: None, star: None};
   let planned = tick(newWorld(0, false, defaultParams()), {dtau: 0.0, intents: [IPlan(rq)]}).world;
   let committed = tick(planned, {dtau: 0.0, intents: [ICommit(1)]}).world;
   let out = flyTicks(committed, ticks);
@@ -786,12 +795,12 @@ export pure func withArchive(w: World, rows: [ArchiveRow]) -> World {
 -- ------------------------------------------------------------ scripted round trip (M4.1, AC1)
 -- A leg flown exactly to arrival with zero dwell: plan, commit, one tick of
 -- tauTotal, then 1e-12 ticks while a last-ulp shortfall leaves it Committed.
-pure func tauTotalOf(w: World) -> float =
+export pure func tauTotalOf(w: World) -> float =
   match w.journey { Planned(p) => p.trip.tauTotal, Committed(c) => c.plan.trip.tauTotal, Arrived(c) => c.plan.trip.tauTotal, Idle => 0.0 }
-pure func settle(w: World) -> World =
+export pure func settle(w: World) -> World =
   match w.journey { Committed(_) => settle(tick(w, {dtau: 0.000000000001, intents: []}).world), _ => w }
 export pure func scriptedLeg(w: World, t: Target, phi: float) -> World {
-  let planned = tick(w, {dtau: 0.0, intents: [IPlan({target: t, cruisePhi: phi, flipG: None})]}).world;
+  let planned = tick(w, {dtau: 0.0, intents: [IPlan({target: t, cruisePhi: phi, flipG: None, star: None})]}).world;
   let c = tick(planned, {dtau: 0.0, intents: [ICommit(planned.lastPlanId)]}).world;
   settle(tick(c, {dtau: tauTotalOf(c), intents: []}).world)
 }

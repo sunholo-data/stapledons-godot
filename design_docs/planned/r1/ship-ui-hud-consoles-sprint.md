@@ -37,6 +37,24 @@
 
 **Total:** 2,330 LOC.
 
+## Progress (executor, 2026-10-09)
+
+Delivered as three stacked PRs: **PR 1** U0 (the HUD half) + U1 + U2; **PR 2** U0 (consoles and no-twitch suites, red first) + U3 + U4a + U4 + U5; **PR 3** U6 + U7 + U8.
+
+- [x] **U0** (PR 1 half): `tests/test_ship_ui.gd` red first (ShipHud absent), `ui/ship_controls.gd`, the `SimBridge` source-tagged record seam, the HUD's fake clock, `make ship-ui-test` in `ship-demo-ci`
+- [x] **U0** (PR 2 half): `tests/test_ship_consoles.gd`, `tests/test_no_twitch.gd` red first (ShipConsoles absent); `make ship-console-test`, `make no-twitch-test`; NT1 mutation-checked (a decision bound to N or C fails the sweep)
+- [x] **U1** status strip, card frame, prompt line, Tab panel; `hud_text()` and the button column retired; dev controls gated; the `1.0 - beta` fallback removed
+- [x] **U2** contextual cards (transit, notices, arrival, gravity, tour with pacing buttons, interlude chip, unlock, refusal); renders opened
+- [x] **U2** dwell label (PR 2)
+- [x] **U3** consoles (stations, use points, E priority, prompt, dolly, panels, confirms, Walk to, idle screens, onboarding)
+- [x] **U4a** map host: embedded borderless window over the panel; `make ship-ui-window-check` green in a GPU window
+- [x] **U4** navigation station: chart / helm modes, M = chart, the Sgr A* ladder
+- [x] **U5** Voyage console and Archive terminal; N / L / C decision keys and the interim Tab decisions removed
+- [x] **U6** migration (tests and tools to the helm and `ShipConsoles.use`; export smokes through the consoles)
+- [x] **U7** renders: `make ship-ui-capture`, 24 frames + contact sheet, opened and iterated
+- [x] **U8** docs: CHANGELOG fragments, design-doc index row, M4.5 bot hook in `m4.5s-inventory.md`
+- [ ] **P2** (blocking, Mark): a dev review build; walk to the consoles and commit a voyage
+
 ## Order and days
 
 ```

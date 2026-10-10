@@ -32,7 +32,7 @@ pure func accel() -> float = 750000.0 * standardGravity()
 pure func withStandoff(au: float) -> Params = {defaultParams() | standoffAu: au}
 pure func acenAt(d: float) -> Target = {index: 1, id: "alpha Cen", pos: {x: 0.0, y: 0.0, z: 0.0 - d}}
 pure func solT() -> Target = {index: 0, id: "Sol", pos: {x: 0.0, y: 0.0, z: 0.0}}
-pure func planI(t: Target, phi: float) -> Intent = IPlan({target: t, cruisePhi: phi, flipG: None})
+pure func planI(t: Target, phi: float) -> Intent = IPlan({target: t, cruisePhi: phi, flipG: None, star: None})
 pure func run(w: World, dtau: float, xs: [Intent]) -> Ticked = tick(w, {dtau: dtau, intents: xs})
 pure func tauTotalOf(w: World) -> float =
   match w.journey { Planned(p) => p.trip.tauTotal, Committed(c) => c.plan.trip.tauTotal, Arrived(c) => c.plan.trip.tauTotal, Idle => 0.0 }

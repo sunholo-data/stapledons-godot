@@ -27,6 +27,10 @@ static func format_field(view: Dictionary, f: String, format: String) -> String:
 	var raw: Variant = GalaxyMap.field_value(view, f)
 	if format == "onoff":
 		return "-" if raw == null else ("on" if raw > 0.0 else "off")
+	if format == "dur_yr": # R1-SHIP-UI strip clocks: years as s, min, h, days or yr (ShipHud.duration_text)
+		return "-" if raw == null else "+" + ShipHud.duration_text(float(raw))
+	if format == "text": # a sim-derived line formatted upstream (the strip's distance, where and speed)
+		return "" if raw == null else str(raw)
 	return GalaxyMap.format_value(format, raw)
 
 

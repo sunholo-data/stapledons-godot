@@ -1,0 +1,30 @@
+{
+  "sprint_id": "R1-SHIP-UI",
+  "pr": "3 of 3 (sprint/ship-ui-land, commit 72c5ea6, base sprint/ship-ui-consoles); whole-sprint completeness",
+  "round": 1,
+  "evaluator_note": "Static review only (no tests run, by instruction); test results are executor-reported. Renders opened: contact_sheet, helm_focused_1280x720, transit_cruise_2560x1440, sgr_a_gravity_1280x720.",
+  "score": 82,
+  "pass": true,
+  "rubric": {
+    "tests_pass": {"max": 20, "score": 16, "note": "green claimed at PR1 and PR2 heads only; PR 3 full make test not yet reported; sprint JSON note scopes this honestly but status is already 'completed'"},
+    "lint_clean": {"max": 10, "score": 9, "note": "not run; allowlist row removal in PR 1 reported clean"},
+    "acceptance_criteria": {"max": 30, "score": 25, "note": "AC1-AC13, AC15 covered by named make targets; AC14 met (24 frames + sheet, uniform-frame guard) but renders are gitignored so evidence lives only in local files and notes; two visible render defects below"},
+    "code_quality": {"max": 15, "score": 12, "note": "PR 2 findings F1-F5 addressed per sprint JSON revision note; PR 1 findings recorded fixed; dwell clamp does not hold in the Sgr A* frame"},
+    "documentation": {"max": 15, "score": 13, "note": "changelog fragments, index row, m4.5s-inventory hook, sprint progress all accurate; P2 left open for Mark; design README says Implemented while P2 pending (disclosed in the row)"},
+    "design_fidelity": {"max": 10, "score": 7, "note": "helm commit row clipped at 1280x720 contradicts the 'commit row reachable' claim in the U7 note; dwell label overlaps a card"}
+  },
+  "findings": [
+    {"id": "F1", "severity": "medium", "file": "ui/ship_hud.gd", "line": 464, "issue": "set_dwell clamps against column.position.x, but in renders/ship_ui/sgr_a_gravity_1280x720.png the label 'Ross 154 · 26986.6 ly · I details' still runs into the Gravity card (x 890-907) and the card text collides with it. The U7 note and changelog claim it 'stays clear of the card column'; test_dwell does not assert non-overlap with the card rects.", "suggestion": "Clamp against the left edge of the widest visible card (or the column's real rect when cards are expanded), and add a test_ship_ui case asserting the dwell rect does not intersect any visible card or the centre-third rules at 1280x720 in the Sgr A* state."},
+    {"id": "F2", "severity": "medium", "file": "demos/ship_geometry_demo.gd", "line": 571, "issue": "In helm_focused_1280x720.png the Commit and Cancel buttons are cut off at the panel's bottom edge (only their tops show) and the map side panel's lower part is scrolled. The U7 note says the commit row is 'reachable (window check clicks it)', which is true by click but not legible in the render.", "suggestion": "Give the side panel the remaining height (scroll the info block, pin the commit row), or raise content_scale min below 0.62 only for height; re-capture and check the commit row is fully visible at 720p."},
+    {"id": "F3", "severity": "low", "file": "ui/ship_hud.gd", "line": 0, "issue": "The dwell label at Sgr A* names a catalogue star as seen from Sol with a distance of 26986.6 ly while the ship hovers at the black hole; the 'Sol sky' caveat is on the gravity card but the label gives no such hint, which could mislead.", "suggestion": "Suppress the dwell label in the gravity/BlackHoleVisit view or tag it as the Sol-sky approximation."},
+    {"id": "F4", "severity": "low", "file": ".ailang/state/sprints/sprint_R1-SHIP-UI.json", "line": 0, "issue": "status is 'completed' and U6 notes say 'PR 3 full run recorded in the PR' while the PR 3 make test run was still in progress; P2 (blocking, Mark) is only in resume_note, not as a pause_point status field.", "suggestion": "Keep status 'in_progress' (or 'awaiting_p2') until the PR 3 make test result and Mark's P2 walk are recorded; add the PR 3 result to U6 notes."},
+    {"id": "F5", "severity": "info", "file": "renders/ship_ui/", "line": 0, "issue": "renders/ is gitignored, so AC14 evidence (frames, inspection) is not in the PR; reviewers cannot see what the notes describe unless they run make ship-ui-capture.", "suggestion": "Attach contact_sheet.png to the PR description or the dev build review."},
+    {"id": "F6", "severity": "info", "file": "renders/ship_ui/transit_cruise_2560x1440.png", "line": 0, "issue": "Positive: strip two rows, legible over the bright sky; cards stay in the right column clear of the centre third at both sizes; prompt line centred below; contact sheet shows 12 states x 2 sizes with all consoles framed.", "suggestion": "None."}
+  ],
+  "checks": {
+    "previous_findings": "PR 1 F1-F6 and PR 2 F1-F5 recorded as fixed in the sprint JSON revision rounds; PR 2 F6 (helm render) partly addressed (scale/title) but commit row still clipped; PR 2 F7 (cancel single click) carried in notes for Mark.",
+    "ac_coverage": "Every AC maps to a make target (ship-ui-test, ship-console-test, no-twitch-test, ship-ui-window-check, ship-ui-capture, test, parity, strict); AC14 command exists.",
+    "p2_pause": "Left open for Mark in the sprint plan checklist and resume_note; merge order stated."
+  },
+  "summary": "Landing PR is complete and honest on docs and bookkeeping: migration, 24 renders plus contact sheet, changelog, index row and M4.5 hook all present, P2 left open. Renders show a clear strip and cards clear of the centre third, but the Sgr A* dwell label overlaps the Gravity card despite the claim, and the helm's Commit/Cancel row is clipped at 720p. Sprint status is marked completed ahead of the PR 3 full test run. Score 82, pass."
+}

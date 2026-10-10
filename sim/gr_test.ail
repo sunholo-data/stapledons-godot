@@ -140,7 +140,7 @@ pure func reply(s: Session, line: string) -> string = serve(s, line).reply
 pure func at(minor: int, sc: string, params: string) -> Session = feed(newSession(), [helloLine(minor), gameLine(sc, params)])
 pure func checkWireGating() -> bool =
   contains(reply(newSession(), helloLine(6)), "\"proto\":{\"major\":2,\"minor\":6},\"sim\":\"stapledons/sim 0.1.0\",\"relativity\":\"0.10.0\"") &&
-  contains(reply(newSession(), helloLine(9)), "\"minor\":7") && grMinor() == 6 &&
+  contains(reply(newSession(), helloLine(9)), "\"minor\":8") && grMinor() == 6 &&
   -- below 2.6: no sgr_a, and a GR intent makes the line bad_intent
   contains(reply(feed(newSession(), [helloLine(5)]), gameLine("sgr_a", "")), "\"status\":\"bad_game\"") &&
   contains(reply(at(5, "sol", ""), tickLine(1, "0", "{\"k\":\"gr_hover\"}")), "\"status\":\"bad_intent\"") &&
@@ -190,7 +190,7 @@ test "outward approach matches the closed form" { checkApproachOutward() }
 test "scriptedApproach: 1e6 -> 10 r_s at beta 0.1 within 1e-9 of the closed form" { checkScripted() }
 test "GR intents: not_in_gr, bad_radius, bad_gr, moving leave the state unchanged; ring once" { checkIntents() }
 test "Sgr A* geometry: galactic position, 1e6 r_s = 1.341 ly, t_s = 42.33 s" { checkGeometry() }
-test "protocol 2.6 gating: hello 2.6 reports 0.10.0; sgr_a and GR intents only at 2.6; not_in_gr; bh params; bad_gr line" { checkWireGating() }
+test "protocol 2.6 gating: hello 2.6 reports 0.10.0 (2.7 and up 0.11.0); sgr_a and GR intents only at 2.6; not_in_gr; bh params; bad_gr line" { checkWireGating() }
 test "protocol 2.6 sgr_a: gr section (mass 4.297e6, r 1e6, hover), bh_enter event and log, no system; rogue-hole params" { checkWireScenario() }
 test "protocol 2.6: gr codec pair; the archive event decodes" { checkWireCodec() }
 test "protocol 2.6 ticks: in_gr, approach, bh_hover on arrival at 10, bh_ring once" { checkWireTicks() }

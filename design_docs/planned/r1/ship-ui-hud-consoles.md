@@ -188,7 +188,7 @@ Each row is a command. `make ship-ui-test`, `make ship-console-test` and `make n
 |---|---|---|
 | 1 | The strip shows ship clock, home clock and distance in every scene state (rest, boost, cruise, brake, arrived, tour dwell, interlude, Sgr A*, lower deck); each number equals the sim field formatted (DisplayBinding); captions are digit-free | `make ship-ui-test` |
 | 2 | Clocks are the same font size (D-12); speed shows only while moving, from `ship.one_minus_beta`, which the sim emits in every phase (asserted per state); the fallback and its row in `tests/fixtures/lint_precision/allowlist.txt` are removed (`grep -n "1.0 - beta" demos/ship_geometry_demo.gd ui/ship_hud.gd tests/fixtures/lint_precision/allowlist.txt` is empty) | `make ship-ui-test && make lint-precision` |
-| 3 | Contextual cards appear and leave on their triggers (§A2 table, one case per row); at most two expanded; none overlaps the centre third at 1280×720 or 2560×1440 | `make ship-ui-test` |
+| 3 | Contextual cards appear and leave on their triggers (§A2 table, one case per row); at most two expanded; none overlaps the centre third at 1280×720 or 2560×1440. Exemption (execution note 2): the D-41 cruise interlude card, which instead keeps clear of the status strip and the card column | `make ship-ui-test` |
 | 4 | NT1: the key/mouse sweep sends no decision intent and starts no session in any of the four states | `make no-twitch-test` |
 | 5 | NT2: dialog, panel and confirm survive 600 s of fake time unchanged | `make no-twitch-test` |
 | 6 | NT3/NT4: hold and press-twice confirms; release restarts with no penalty; the intent payload is independent of delay | `make ship-console-test` |
@@ -248,3 +248,22 @@ Total about 2,330 including tests. See the sprint plan for order and pause point
 - `tests/test_ship_ui.gd`, `tests/test_ship_consoles.gd`, `tests/test_no_twitch.gd`; Makefile targets `ship-ui-test`, `ship-console-test`, `no-twitch-test` (in `ship-demo-ci`), `ship-ui-capture`.
 - `tools/ship_ui_capture.gd`, `renders/ship_ui/` (inspected).
 - CHANGELOG entry; design-doc index row; on landing, this doc moves to `design_docs/implemented/r1/`.
+
+## Execution notes (decisions made while building, for Mark)
+
+Choices the design left open, taken as the option most consistent with D-56 / D-57:
+
+1. **Staging.** Three stacked PRs. Between PR 1 and PR 2 the voyage decisions (navigation map, Begin guided voyage, Visit Sgr A*, and N / L / C at Sgr A*) sit in the Tab panel under "Decisions (move to the bridge consoles)", not on the HUD; PR 2 moves them to the consoles and removes the keys.
+2. **The cruise interlude card** (D-41) keeps its content and look but sits in the space left of the card column (it was centred, 620 wide, and covered the column). It still covers the centre of the screen: it is the designed "moment of scale", and the tour and transit cards stay readable beside it. The stack carries an "interlude" chip while it shows.
+3. **Session-scoped cards.** When the sim session changes (navigation, the guided voyage, Sgr A*), the arrival, refusal and unlock cards of the old session go, and the new session's opening unlocks are not announced (only growth is news).
+4. **Review snapshots** (the rest / cruise sky snapshots, developer-only, and the rest state after leaving Sgr A*) show where the ship is ("from Earth …"), not the snapshot's frozen plan.
+5. **Speed digits** are formatted from `ship.beta` itself; the number of nines comes from `ship.one_minus_beta`. Nothing computes 1 − β.
+6. **Warp** on the transit card is the live pacing rate (ship-years per real second), shown only.
+7. **The chart never plans** (NT1 wins over §D's "plan preview"). A chart selection sends no `plan` intent, so the chart shows the catalogue stats of a selected star but not the sim's plan preview (time cost, gap); those appear at the helm, where the selection carries over and is planned.
+8. **The map host (U4a)** is `GalaxyMap` in an *embedded* borderless `Window` laid over the navigation station's panel (`force_native` off; its own 3D world and input kept). It is the design's fallback shape, but inside the ship's window, so no native window can stray. Its content is scaled to the panel (`content_scale_factor`). The navigation panel takes the full width; the cards wait under it.
+9. **Outside the helm the map rests in chart mode**, so no key or stray input can plan or commit. A commit confirmed at the helm still goes out on the next tick.
+10. **Cancel stays a single click.** Before a commit it clears a plan (reversible); after a commit the sim refuses it (`committed`), so R1 has no irreversible cancel to confirm. Commit, Begin guided voyage, Approach and Leave confirm.
+11. **Stale plans.** A ship at rest moves with its body, so a plan made before a 1.5 s hold went stale and the sim refused the commit. The map now re-plans any plan (not only body plans) in the commit's tick.
+12. **The free-navigation session carries the Archive table** (protocol 2.2 `archive`), so the Archive terminal shows what that session has unlocked. Before this, the codex worked only at Sgr A*.
+13. **Use points** stand about a metre back from each console's edge (still within 2.5 m), so the console is in view. Walk to from the lower deck walks to the lift landing and says decisions need the bridge.
+14. **Escape order:** an armed press-twice confirm, then the focused console, then the codex, the Tab panel, the I card and the arrival card, then the main menu (menu launch) or quit.

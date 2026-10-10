@@ -1,0 +1,68 @@
+module stapledons/sim/inferred_stars
+
+-- D-54/D-58 (Mark, attended 2026-10-08/09): a catalogue star with no measured radius
+-- becomes a finite star when free navigation plans to it. Its radius is INFERRED from the
+-- catalogue row the map sends with the plan (V, Teff) and the catalogue position:
+--   d = |pos| (ly -> pc), BC_V(Teff) (Pecaut & Mamajek 2022.04.16),
+--   L / L_sun from V, d and BC_V (M_bol,sun 4.74), R from L and Teff (Stefan-Boltzmann),
+-- all sunholo/relativity 0.11.0 photometry (composition only, CLAUDE.md gate 3). Validated
+-- there against measured radii: FGK dwarfs and K giants within a few percent, M dwarfs
+-- within about 30 percent. Extinction is ignored. Pure, strict-VM clean.
+import std/math (sqrt)
+import std/option (Option, Some, None)
+import std/string (concat)
+import pkg/sunholo/celestial/kepler (Vec3, sub, scale, norm)
+import pkg/sunholo/celestial/frames (equatorialToGalactic)
+import pkg/sunholo/celestial/ephemeris (auKm)
+import pkg/sunholo/celestial/reflect (starIlluminanceAt)
+import pkg/sunholo/relativity/photometry (illuminanceFromV, bolometricCorrectionV, luminositySunFromV, radiusSunFromLuminosity)
+import ./data/sol (sun)
+import ./celestial (BodyView, lyKm)
+
+-- A catalogue star made finite: catalogue id, name, position (ly, galactic), V, Teff, and
+-- the inferred values (distance pc, BC_V, L / L_sun, radius km).
+export type CatStar = { id: string, name: string, pos: Vec3, v: float, teff: float, distancePc: float, bcV: float, lSun: float, radiusKm: float }
+
+-- The parsec in light-years: 648000/pi AU (IAU 2015 B2), as sim/gr.ail.
+export pure func parsecLy() -> float = auKm() * 648000.0 / 3.141592653589793 / lyKm()
+pure func finite(x: float) -> bool = x - x == 0.0
+
+-- None when the row has no photometry (V >= 99, the catalogue's "missing"), no Teff, or
+-- sits at Sol: such a star keeps the fixed stand-off.
+export pure func inferStar(id: string, name: string, pos: Vec3, v: float, teff: float) -> Option[CatStar] {
+  let dLy = norm(pos);
+  if !(finite(v) && v > -30.0 && v < 99.0) || !(finite(teff) && teff > 0.0) || !(finite(dLy) && dLy > 0.0) then None
+  else {
+    let pc = dLy / parsecLy();
+    let bc = bolometricCorrectionV(teff);
+    let l = luminositySunFromV(v, pc, bc);
+    Some({ id: id, name: name, pos: pos, v: v, teff: teff, distancePc: pc, bcV: bc, lSun: l, radiusKm: radiusSunFromLuminosity(l, teff) * (sun()).radiusKm })
+  }
+}
+
+-- The list of inferred stars this game, newest first, one per catalogue id.
+export pure func remember(c: CatStar, cs: [CatStar]) -> [CatStar] = c :: dropId(cs, c.id)
+pure func dropId(cs: [CatStar], id: string) -> [CatStar] = match cs { [] => [], x :: r => if x.id == id then dropId(r, id) else x :: dropId(r, id) }
+export pure func catOf(cs: [CatStar], id: string) -> Option[CatStar] = match cs { [] => None, x :: r => if x.id == id then Some(x) else catOf(r, id) }
+
+export pure func bodyIdOf(c: CatStar) -> string = concat(["cat:", c.id])
+export pure func inferredSource(c: CatStar) -> string =
+  "inferred radius: R = sqrt(L) (5772 K / Teff)^2 (Stefan-Boltzmann), L from V, distance and BC_V(Teff) (Pecaut & Mamajek 2022.04.16, M_bol,sun 4.74; sunholo/relativity 0.11.0); catalogue position, V and Teff; static; uniform photosphere"
+
+-- The star as a finite body seen from the ship (static at its catalogue position; its
+-- illuminance from V at Earth and the inverse square, like sim/destination_stars.ail).
+export pure func catView(c: CatStar, shipLy: Vec3) -> BodyView {
+  let rel = scale(lyKm(), sub(c.pos, shipLy));
+  let d = norm(rel);
+  let distance = if d > c.radiusKm then d else c.radiusKm;
+  let earthAu = norm(c.pos) * lyKm() / auKm();
+  let e1 = illuminanceFromV(c.v) * earthAu * earthAu;
+  { id: bodyIdOf(c), name: c.name, kind: "star", host: "", status: "inferred", relKm: rel, radiusKm: c.radiusKm, flattening: 0.0,
+    pole: equatorialToGalactic({ x: 0.0, y: 0.0, z: 1.0 }), wDeg: 0.0,
+    sunDir: { x: 0.0, y: 0.0, z: 0.0 }, rAu: 0.0, phaseDeg: 0.0, eVLux: starIlluminanceAt(e1, distance / auKm()), pV: 0.0, minnaertK: 1.0, ringId: "",
+    lightAgeS: 0.0, visitable: false, source: inferredSource(c) }
+}
+-- Inferred stars the system section carries: within 0.1 ly of the ship (as the body planner's
+-- destination stars) or the current journey's target (targetId; "" for none).
+export pure func catBodies(cs: [CatStar], shipLy: Vec3, targetId: string) -> [BodyView] =
+  match cs { [] => [], c :: r => if c.id == targetId || norm(sub(c.pos, shipLy)) < 0.1 then catView(c, shipLy) :: catBodies(r, shipLy, targetId) else catBodies(r, shipLy, targetId) }

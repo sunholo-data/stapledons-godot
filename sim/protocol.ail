@@ -23,7 +23,7 @@ import ./alpha_centauri (alphaBodies, catalogueId as alphaCatalogueId, stellarVa
 import ./destination_stars (destinationBodies, destinationCatalogueId, destinationValue)
 import ./trappist1 (trappistBodies, hostE1Lux, hostId as trappistHostId)
 import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, Ledger, isLism, mediumHere, Plan, PlanIsm, HoldInfo,
-  Target, PlanReq, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
+  Target, PlanReq, StarInfo, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
   CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf,
   IGrApproach, IGrHover, IGrOrbit, IGrRing, withHole, archiveEvent)
@@ -33,6 +33,8 @@ import ./rng (Rng, streamName, streamOf, rngId)
 import ./ai (AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiRequest, AiSeg, CacheKey, Constraints, CtxVal, CStr, CList, CtxField,
   AiView, OpenView, aiView, isCancelReason, isSha256Hex, defaultAiMaxOpen, defaultAiTtlTicks)
 import ./celestial (SystemView, BodyView, solSystem, systemAt, jdAt, defaultEpochJd, lyKm)
+import ./inferred_stars (CatStar, catBodies, catOf)
+import ./sync_orbit (syncOrbitOf)
 import ./navigation (BodyReq, NavPlan, Pass, Timing)
 import ./ism (Impact)
 
@@ -62,12 +64,14 @@ export type HelloMsg = { major: int, minor: int, sim: string, relativity: string
 -- `make hello-pin` checks against sim/ailang.toml, reported from the next minor.
 export pure func helloMsg() -> HelloMsg = { major: 2, minor: 1, sim: "stapledons/sim 0.1.0", relativity: "0.4.0", rng: rngId() }
 export pure func relativityPin() -> string = "0.12.0"
+export pure func relativityPinStops() -> string = "0.11.0"
 export pure func relativityPinGr() -> string = "0.10.0"
 export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
   if want >= ismMinor() then {helloMsg() | minor: ismMinor(), relativity: relativityPin()}
+  else if want >= stopsMinor() then {helloMsg() | minor: stopsMinor(), relativity: relativityPinStops()}
   else if want >= grMinor() then {helloMsg() | minor: grMinor(), relativity: relativityPinGr()}
   else if want >= departureMinor() then {helloMsg() | minor: departureMinor(), relativity: relativityPinNav()}
   else if want >= navMinor() then {helloMsg() | minor: navMinor(), relativity: relativityPinNav()}
@@ -86,14 +90,21 @@ export pure func departureMinor() -> int = 5
 -- section and `archive` events. Below 6 they are bad_game / bad_intent; the hello reports
 -- relativityPinGr(). A sol stream at 2.6 is the 2.5 stream except the hello's minor and pin.
 export pure func grMinor() -> int = 6
--- Protocol 2.7 (R1-ISM-DUST, D-60/D-61): new games default to the lism-1 medium (`ism_model` 1;
--- 0 keeps uniform, and the param is bad_params below 2.7); ship.ism gains the medium, its density,
+-- Protocol 2.7 (D-54/D-58): a star plan may carry the catalogue row {star: {name, v, teff}}
+-- (below 7 it is ignored by the decoder's caller: only stop_rule 54 uses it); the system
+-- section adds the inferred finite stars (status "inferred", catalogue_id, teff_k,
+-- inferred {r_sun, l_sun, bc_v, distance_pc}) and each Sol body's synchronous orbit
+-- (sync_orbit {altitude_km, none, radius_km, hill_km, rotation_days}). The hello reports
+-- relativityPinStops() (0.11.0); minor 6 keeps the 0.10.0 it shipped with.
+export pure func stopsMinor() -> int = 7
+-- Protocol 2.8 (R1-ISM-DUST, D-60/D-61): new games default to the lism-1 medium (`ism_model` 1;
+-- 0 keeps uniform, and the param is bad_params below 2.8); ship.ism gains the medium, its density,
 -- the dust impacts, the leg's dust totals and the glitter descriptor; journey.plan gains the media
 -- crossed, the peak density, the drive-hold limit, the grains swept and the expected visible
 -- flashes; an m_eff_too_small refusal under lism-1 is followed by a `hold_limit` event. Every
--- 2.6-and-older stream keeps its bytes (uniform). The hello reports relativityPin().
-export pure func ismMinor() -> int = 7
-pure func sessionMinor(want: int) -> int = if want >= ismMinor() then ismMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- 2.7-and-older stream keeps its bytes (uniform). The hello reports relativityPin().
+export pure func ismMinor() -> int = 8
+pure func sessionMinor(want: int) -> int = if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -139,7 +150,8 @@ pure func overrides(os: [Override]) -> string = obj(each(\o. f(o.name, num(o.val
 
 pure func targetObj(t: Target) -> string = obj([f("index", intToStr(t.index)), f("id", q(t.id)), f("pos", vec(t.pos))])
 pure func planFields(p: PlanReq) -> [string] =
-  [f("target", targetObj(p.target)), f("cruise_phi", num(p.cruisePhi))] ++ opt("flip_g", num, p.flipG)
+  [f("target", targetObj(p.target)), f("cruise_phi", num(p.cruisePhi))] ++ opt("flip_g", num, p.flipG) ++ opt("star", starInfoObj, p.star)
+pure func starInfoObj(si: StarInfo) -> string = obj([f("name", q(si.name)), f("v", num(si.v)), f("teff", num(si.teff))])
 pure func encodeIntent(i: Intent) -> string =
   match i {
     IPlan(p) => obj([f("k", q("plan"))] ++ planFields(p)),
@@ -343,6 +355,25 @@ pure func ringObj(r: Ring) -> string =
   obj([f("host", q(r.host)), f("names", strArr(r.names)), f("bands", arr(each(bandObj, r.bands))),
     f("tint", obj([f("r", num(r.tint.r)), f("g", num(r.tint.g)), f("b", num(r.tint.b))])),
     f("cite", q(r.cite)), f("tau_cite", q(r.tauCite)), f("w0_cite", q(r.w0Cite)), f("tint_cite", q(r.tintCite))])
+-- 2.7: the 2.5 section plus each Sol body's synchronous orbit and the inferred finite stars
+-- (the catalogue stars free navigation has made finite, sim/inferred_stars.ail).
+export pure func encodeSystemStops(w: World) -> string {
+  let v = finiteSystemOf(w);
+  let target = match journeyView(w).plan { Some(pv) => pv.target.id, None => "" };
+  let cats = catBodies(w.catStars, position(w.ship), target);
+  obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)),
+    f("bodies", arr(each(stopsBodyObj, v.bodies) ++ catObjs(w.catStars, cats))), f("rings", arr(each(ringObj, rings())))])
+}
+pure func withField(o: string, field: string) -> string = concat([substring(o, 0, length(o) - 1), ",", field, "}"])
+pure func stopsBodyObj(b: BodyView) -> string =
+  match syncOrbitOf(b.id) {
+    Some(so) => withField(finiteBodyObj(b), f("sync_orbit", obj([f("altitude_km", num(so.altitudeKm)), f("none", q(so.none)), f("radius_km", num(so.radiusKm)), f("hill_km", num(so.hillKm)), f("rotation_days", num(so.rotationDays))]))),
+    None => finiteBodyObj(b)
+  }
+pure func catObjs(cs: [CatStar], bs: [BodyView]) -> [string] =
+  match bs { [] => [], b :: r => (match catOf(cs, substring(b.id, 4, length(b.id))) {
+    Some(c) => withField(starBodyObj(b, c.id, c.teff), f("inferred", obj([f("r_sun", num(c.radiusKm / 695700.0)), f("l_sun", num(c.lSun)), f("bc_v", num(c.bcV)), f("distance_pc", num(c.distancePc)), f("v", num(c.v))]))),
+    None => bodyObj(b) }) :: catObjs(cs, r) }
 export pure func encodeSystemRings(v: SystemView) -> string =
   obj([f("jd", num(v.jd)), f("ephemeris", q(v.ephemeris)), f("frame", q(v.frame)),
     f("bodies", arr(each(finiteBodyObj, v.bodies))), f("rings", arr(each(ringObj, rings())))])
@@ -361,6 +392,7 @@ export pure func finiteSystemOf(w:World)->SystemView {
 -- No system section at a black hole (M3.4b): Sol's bodies are 27,000 ly away.
 pure func systemFull(s: Session, w: World) -> [string] =
   if w.gr.active then []
+  else if s.minor >= stopsMinor() then [f("system", encodeSystemStops(w))]
   else if s.minor >= departureMinor() then [f("system", encodeSystemRings(finiteSystemOf(w)))]
   else if s.minor >= systemMinor() then [f("system", encodeSystem(systemOf(w)))] else []
 -- Sent on a tick only when it can have changed: the clock (jd) or the ship's position moved.
@@ -413,7 +445,12 @@ pure func planOf(j: Json, c: string) -> Result[PlanReq, string] =
   bind(targetOf(j, c), \tg.
   bind(req(numF(j, "cruise_phi"), c), \phi.
   bind(if has(j, "flip_g") then bind(req(numF(j, "flip_g"), c), \g. Ok(Some(g))) else Ok(None), \flip.
-  Ok({target: tg, cruisePhi: phi, flipG: flip}))))
+  bind(if has(j, "star") then starInfoOf(j, c) else Ok(None), \star.
+  Ok({target: tg, cruisePhi: phi, flipG: flip, star: star})))))
+-- 2.7: the catalogue row {name, v, teff} of a star plan's target (all three required).
+pure func starInfoOf(j: Json, c: string) -> Result[Option[StarInfo], string] =
+  bind(req(get(j, "star"), c), \st. bind(req(getString(st, "name"), c), \nm. bind(req(numF(st, "v"), c), \v. bind(req(numF(st, "teff"), c), \t.
+    Ok(Some({name: nm, v: v, teff: t}))))))
 -- 2.4: a target {kind: "body", id} is the body form; any index or pos it carries is ignored.
 pure func isBodyTarget(j: Json) -> bool = match get(j, "target") { Some(t) => getString(t, "kind") == Some("body"), None => false }
 pure func bodyPlanOf(j: Json, c: string) -> Result[BodyReq, string] =

@@ -22,7 +22,7 @@ const ENTRIES := [
 	["ship", "Board the ship", "The painted 3D ship at rest in the Solar System. Walk the decks, open navigation (M) and fly anywhere."],
 	["guided", "Guided voyage", "Board and start the guided tour: Earth, the outer planets, alpha Centauri, TRAPPIST-1, Aldebaran, in real time."],
 	["map", "Galaxy map", "The 3D map of the nearby catalogued stars; plan and commit a journey."],
-	["settings", "Settings", "Ship view (Realistic / Auto) and text-only AI."],
+	["settings", "Settings", "Ship view (Realistic / Auto), how decisions confirm, and text-only AI."],
 	["credits", "Credits", "Data, imagery, papers and software behind the game."],
 	["quit", "Quit", "Close the game."],
 ]
@@ -46,6 +46,7 @@ var col := VBoxContainer.new() # title, tagline, menu, hint
 var settings_panel := PanelContainer.new()
 var credits_panel := PanelContainer.new()
 var view_option := OptionButton.new()
+var confirm_option := OptionButton.new() # R1-SHIP-UI §C4: hold or press twice
 var text_only_box := CheckBox.new()
 var settings_status := Label.new()
 var credits_body := Label.new()
@@ -298,6 +299,15 @@ func _build_settings() -> void:
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.custom_minimum_size = Vector2(430, 0)
 	box.add_child(note)
+	var crow := HBoxContainer.new()
+	crow.add_child(_label("Confirm decisions", 15, Color(0.86, 0.9, 0.98)))
+	confirm_option.add_item("Hold (1.5 s)", 0)
+	confirm_option.add_item("Press twice", 1)
+	confirm_option.select(1 if settings.confirm_mode == "twice" else 0)
+	confirm_option.item_selected.connect(func(i: int) -> void: set_confirm_mode("twice" if i == 1 else "hold"))
+	confirm_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	crow.add_child(confirm_option)
+	box.add_child(crow)
 	text_only_box.text = "Text-only AI (no voices or new portraits)"
 	text_only_box.button_pressed = settings.text_only
 	text_only_box.toggled.connect(set_text_only)
@@ -314,6 +324,11 @@ func _build_settings() -> void:
 
 func set_auto_view(on: bool) -> void:
 	settings.auto_view = on
+	_save()
+
+
+func set_confirm_mode(mode: String) -> void:
+	settings.confirm_mode = mode if mode in GameSettings.CONFIRM_MODES else "hold"
 	_save()
 
 

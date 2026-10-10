@@ -1,4 +1,4 @@
--- R1-ISM-DUST I4: protocol 2.7 on the wire. New games default to lism-1 at 2.7 and stay
+-- R1-ISM-DUST I4: protocol 2.8 on the wire. New games default to lism-1 at 2.8 and stay
 -- uniform below (ism_model is bad_params there); ship.ism carries the medium, the impacts,
 -- the dust totals and the glitter; journey.plan carries the media, the hold limit, the grains
 -- and the visible flashes; a refused plan is followed by a hold_limit event. Test bodies are
@@ -21,50 +21,50 @@ pure func planAld099() -> string = "{\"k\":\"plan\",\"target\":{\"index\":2,\"id
 pure func planAld() -> string = "{\"k\":\"plan\",\"target\":{\"index\":2,\"id\":\"CNS5:1142\",\"pos\":{\"x\":-62.516711,\"y\":-1.060038,\"z\":-23.064639}},\"cruise_phi\":3.8002011672502}"
 
 pure func check1() -> bool =
-  ismMinor() == 7 && relativityPin() == "0.12.0"
-  && contains(reply(newSession(), helloLine(7)), concat(["\"minor\":7},\"sim\":\"stapledons/sim 0.1.0\",\"relativity\":\"", relativityPin(), "\""]))
+  ismMinor() == 8 && relativityPin() == "0.12.0"
+  && contains(reply(newSession(), helloLine(8)), concat(["\"minor\":8},\"sim\":\"stapledons/sim 0.1.0\",\"relativity\":\"", relativityPin(), "\""]))
 
-test "2.7 hello: minor 7 reports the current relativity pin (0.12.0)" { check1() }
+test "2.8 hello: minor 8 reports the current relativity pin (0.12.0)" { check1() }
 
 pure func check2() -> bool {
-  let r7 = reply(feed(newSession(), [helloLine(7)]), gameLine(""));
+  let r7 = reply(feed(newSession(), [helloLine(8)]), gameLine(""));
   let r6 = reply(feed(newSession(), [helloLine(6)]), gameLine(""));
   contains(r7, "\"model\":\"lism-1\",\"medium\":\"LIC\",\"n_h_cm3\":0.2474") && !contains(r6, "\"model\":") && !contains(r6, "\"medium\":")
 }
 
-test "a new 2.7 game is lism-1: Sol in the LIC (n_H 0.2474); a 2.6 game has no medium members" { check2() }
+test "a new 2.8 game is lism-1: Sol in the LIC (n_H 0.2474); a 2.6 game has no medium members" { check2() }
 
 pure func check3() -> bool =
-  contains(reply(feed(newSession(), [helloLine(7)]), gameLine(",\"params\":{\"ism_model\":0}")), "\"model\":\"uniform\",\"medium\":\"uniform\",\"n_h_cm3\":0.1")
+  contains(reply(feed(newSession(), [helloLine(8)]), gameLine(",\"params\":{\"ism_model\":0}")), "\"model\":\"uniform\",\"medium\":\"uniform\",\"n_h_cm3\":0.1")
   && contains(reply(feed(newSession(), [helloLine(6)]), gameLine(",\"params\":{\"ism_model\":1}")), "\"status\":\"bad_params\"")
-  && contains(reply(feed(newSession(), [helloLine(7)]), gameLine(",\"params\":{\"ism_model\":2}")), "\"status\":\"bad_params\"")
+  && contains(reply(feed(newSession(), [helloLine(8)]), gameLine(",\"params\":{\"ism_model\":2}")), "\"status\":\"bad_params\"")
 
-test "ism_model: 0 keeps uniform at 2.7; the param is bad_params below 2.7; only 0 and 1 are valid" { check3() }
+test "ism_model: 0 keeps uniform at 2.8; the param is bad_params below 2.8; only 0 and 1 are valid" { check3() }
 
 pure func check4() -> bool {
-  let r = reply(at(7, ""), tickLine(1, "0", planAld()));
+  let r = reply(at(8, ""), tickLine(1, "0", planAld()));
   contains(r, "\"ism_model\":\"lism-1\",\"media\":[{\"name\":\"LIC\"") && contains(r, "{\"name\":\"Hyades\",\"n_h_cm3\":0.2474")
   && contains(r, "\"peak_medium\":\"LIC\"") && contains(r, "\"hold_max_phi\":") && contains(r, "\"grains_swept\":") && contains(r, "\"visible_flashes\":")
 }
 
-test "a 2.7 plan carries the media crossed, the peak, the hold limit, the grains and the visible flashes" { check4() }
+test "a 2.8 plan carries the media crossed, the peak, the hold limit, the grains and the visible flashes" { check4() }
 
 pure func check5() -> bool {
-  let r = reply(at(7, ",\"params\":{\"boost_g\":1,\"cap_one_minus_beta\":0.005}"), tickLine(1, "0", planAld099()));
+  let r = reply(at(8, ",\"params\":{\"boost_g\":1,\"cap_one_minus_beta\":0.005}"), tickLine(1, "0", planAld099()));
   contains(r, "\"reason\":\"m_eff_too_small\"") && contains(r, "{\"k\":\"hold_limit\",\"hold_max_phi\":") && contains(r, "\"medium\":\"LIC\",\"n_h_cm3\":0.2474")
 }
 
-test "a 2.7 plan above the drive-hold limit (a 1 g drive at 0.99c through the LIC) is refused with a hold_limit event naming the limit and the medium" { check5() }
+test "a 2.8 plan above the drive-hold limit (a 1 g drive at 0.99c through the LIC) is refused with a hold_limit event naming the limit and the medium" { check5() }
 
 pure func check6() -> bool {
-  let s = feed(at(7, ""), [tickLine(1, "0", planAld()), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}"), tickLine(3, "0.2", "")]);
+  let s = feed(at(8, ""), [tickLine(1, "0", planAld()), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}"), tickLine(3, "0.2", "")]);
   let r = reply(s, tickLine(4, "0.0000000015844043907", ""));
   contains(r, "\"impacts\":[") && contains(r, "\"dust\":{\"expected\":") && contains(r, "\"glitter\":{\"rate\":") && contains(r, "\"leg_drawn\":")
 }
 
-test "a committed 2.7 flight reports dust: impacts, totals and glitter in ship.ism" { check6() }
+test "a committed 2.8 flight reports dust: impacts, totals and glitter in ship.ism" { check6() }
 
--- make ism-determinism / strict (AC11, AC13): a 2.7 lism-1 session, Sol -> Aldebaran at 0.999c,
+-- make ism-determinism / strict (AC11, AC13): a 2.8 lism-1 session, Sol -> Aldebaran at 0.999c,
 -- committed and flown n ticks at real-time pacing (0.05 ship s) then n at 1 h: every reply line.
 -- Two runs and the strict VM vs the interpreter must print the same bytes.
 pure func rtTicks(s: Session, k: int, last: int, dtau: string, acc: [string]) -> [string] =
@@ -77,7 +77,7 @@ export pure func ismStream(n: int) -> string = streamWith(n, "")
 -- The same session under uniform (ism_model 0): make ism-bench subtracts it to isolate the ISM cost.
 export pure func uniformStream(n: int) -> string = streamWith(n, ",\"params\":{\"ism_model\":0}")
 pure func streamWith(n: int, params: string) -> string {
-  let s0 = at(7, params);
+  let s0 = at(8, params);
   let p = serve(s0, tickLine(1, "0", planAld()));
   let c = serve(p.session, tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}"));
   let boost = serve(c.session, tickLine(3, "0.00001", ""));

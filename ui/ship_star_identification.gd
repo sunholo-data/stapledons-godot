@@ -125,12 +125,23 @@ func _add_body_candidates(sky: InteriorSky, view: Basis, focal: float, px: Vecto
 		candidates.append({id=BODY_PREFIX+b.id,body=b,point=canvas_to_pixel.affine_inverse()*point,pixel=point,radius=radius_px*scale,radius_px=radius_px,distance_km=dist})
 func _process(_delta: float) -> void:
 	if demo == null:return
-	suppressed = demo.benchmark.running or (demo.navigation_window != null and demo.navigation_window.visible) or demo.controls.visible
+	suppressed = demo.benchmark.running or (demo.navigation_window != null and demo.navigation_window.visible) or demo.controls.visible or demo.camera_mode == "console"
 	if suppressed:set_held(false)
 	if held:
 		update_candidates()
 		hovered = at_point(get_local_mouse_position())
 		queue_redraw()
+## R1-SHIP-UI dwell label: the same pick as I + click, read only, at one point (no card,
+## no hold left behind).
+func probe(point: Vector2) -> Array:
+	if suppressed:return []
+	var was := held
+	held = true
+	update_candidates()
+	var hits := at_point(point)
+	held = was
+	if not was:candidates.clear()
+	return hits
 func at_point(point: Vector2) -> Array:
 	var hits := candidates.filter(func(candidate):return candidate.point.distance_to(point) <= maxf(12., candidate.get("radius", 0.)+4.))
 	# A click on a body's disc means that body (the nearest drawn one if several overlap),
