@@ -10,8 +10,10 @@ samples="$SCRATCH/ism/bench-samples.tsv"
 measure() {
     perl -MTime::HiRes=time -e '
       my $output=shift; my $start=time; my $rc;
-      { local *STDOUT; open STDOUT, ">", $output or die $!;
-        system @ARGV; $rc=$?; }
+      open my $saved, ">&", \*STDOUT or die $!;
+      open STDOUT, ">", $output or die $!;
+      system @ARGV; $rc=$?;
+      open STDOUT, ">&", $saved or die $!;
       printf "%.9f\n", time-$start;
       exit($rc == -1 || ($rc & 127) ? 1 : $rc >> 8);
     ' "$@"
