@@ -27,10 +27,10 @@ Stops are inertial geometric clearance, not gravity-bound orbits. No attachment 
 | F4 | Earth arrival remains resolved and outside its surface through 60 seconds of live idle; replan remains possible | same |
 | F5 | New scenario stream matches strict VM/interpreter; existing protocol recordings remain compatible | focused protocol parity, followed by root `make test` |
 | F6 | Actual map defaults to visible ISM; explicit checkbox and D stay synchronized; Local ISM frames Sol without intents | `godot --headless --path . --script tests/test_free_nav_recovery.gd` |
+| F7 | Default unmodified mouse look; Tab, I, console, arrival, focus loss and exit release pointer; UI motion never turns view | `make ship-ui-test`; native `godot --path . --script tools/free_nav_review.gd` |
+| F8 | Cloud depth construction guides off by default, optional in a visible control; shell outlines retained, no apparent rays from Sol | `make map-ism-test free-nav-recovery-test` |
+| F9 | P and visible Pause/Resume freeze elapsed simulation time and preserve the committed course; pending intents still work and commitment resumes time | `make free-nav-recovery-test ship-ui-test` |
 
 Mark's attended follow-up also requests the ISM map be visible and discoverable. The actual map enables the existing layer at load, labels its warm-cloud scope and light-year units, offers a checked **Interstellar medium [D]** control, and offers **Local ISM** to frame Sol at about 30 ly. The underlying generic helper still starts hidden for standalone callers. The existing source/assumption legend remains on the overlay. Only the LIC and Redfield–Linsky local warm clouds ship here; dense-cloud PR B remains deferred.
 
 Implementation milestones and review are recorded in [the sprint](free-navigation-recovery-sprint.md). Root owns host input, pause/finish controls and initial live-view application; this independent milestone owns scenario, list, pacing and navigation regressions. Root integration and independent evaluator review precede landing.
-
-| F7 | Default unmodified mouse look; Tab, I, console, arrival, focus loss and exit release pointer; UI motion never turns view | `make ship-ui-test`; native `godot --path . --script tools/free_nav_review.gd` |
-| F8 | Cloud depth construction guides off by default, optional in a visible control; shell outlines retained, no apparent rays from Sol | `make map-ism-test free-nav-recovery-test` |

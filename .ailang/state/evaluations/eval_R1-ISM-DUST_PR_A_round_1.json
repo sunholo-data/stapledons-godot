@@ -1,0 +1,268 @@
+{
+  "sprint_id": "R1-ISM-DUST_PR_A",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-10T20:17:49.402512+00:00",
+  "design_doc": "design_docs/planned/r1/ism-structure-and-dust.md",
+  "sprint_plan": "design_docs/planned/r1/ism-structure-and-dust-sprint.md",
+  "scope": "PR A only; AC5 and AC6(c) deferred PR B, not accepted or integrated",
+  "total_score": 97,
+  "pass_threshold": 70,
+  "result": "pending",
+  "provisional_score": true,
+  "substantive_decision": "Independent science, implementation, rendering and representative performance review is satisfactory. Formal PASS and merge approval await final local suite and matching PR CI.",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 28,
+    "code_quality": 14,
+    "documentation": 15,
+    "design_fidelity": 10
+  },
+  "score_notes": {
+    "tests_pass": "Provisional credit for reviewed targeted strict/ordinary/parity/golden evidence; the canonical suite is not yet complete.",
+    "acceptance_criteria": "AC22 pending and AC18 synthetic fourth-speed exception reduce current provisional credit.",
+    "code_quality": "Guarded numerical integration, caches and exact LUT inversion are tested and correct, with maintenance complexity in the expanded simulation module."
+  },
+  "gate_source": "ci",
+  "merge_ready": false,
+  "hard_fails": [],
+  "automated_checks": {
+    "tests_pass": null,
+    "tests_output": "Final local suite active; no duplicate run by evaluator. Matching integrated PR CI pending. Targeted strict42/42, ordinary inverse7/7, GPU goldens0 failures, root ship-ui210/0, ISM16/0 verified.",
+    "lint_clean": true,
+    "lint_output": "Project precision/python guards and AILANG checks reviewed; no standalone make lint/check-file-sizes targets in this repository.",
+    "file_sizes_ok": null,
+    "coverage_pct": null,
+    "todo_hack_count": null
+  },
+  "acceptance_criteria": [
+    {
+      "feature_id": "AC1",
+      "criterion": "Published celestial/ism quality and new tests",
+      "status": "verified with historical baseline limitation",
+      "evidence": "Published celestial 0.4.0: 24 ISM tests and package quality no gates, independent package evaluation86/100. Six whole-directory runs pinned0.52/masterseed0 reproduce identical 3 celestial and 7 relativity failures in PR106 base/head/registry release; source hashes, seeds and counterexamples equal. New modules pass; whole directories retain exit1. /private/tmp/stapledon-package-audit-evidence/summary.json.",
+      "met": true
+    },
+    {
+      "feature_id": "AC2",
+      "criterion": "Published dust/medium identities and quality",
+      "status": "verified with historical baseline limitation",
+      "evidence": "Published relativity0.12.0:10 dust+8 column+28 medium targeted tests, strict VM/interpreter digests. Whole-directory historical failures independently confirmed unchanged against PR106 base and registry release. /private/tmp/stapledon-package-audit-evidence/summary.json.",
+      "met": true
+    },
+    {
+      "feature_id": "AC3",
+      "criterion": "Public specification merged before pins",
+      "status": "verified",
+      "evidence": "DesignPR11 merged before package publication; final Archive import pins publicdesign346443d/PR12.",
+      "met": true
+    },
+    {
+      "feature_id": "AC4",
+      "criterion": "Reproducible generated data",
+      "status": "targeted reproducibility verified; final integrated gate pending",
+      "evidence": "AILANG production generation and committed-byte verification passed previously with the current unchanged generated geometry. Canonical integrated gate remains part of AC22; no production Python pipeline.",
+      "met": true
+    },
+    {
+      "feature_id": "AC6(a,b)",
+      "criterion": "Independent membership\u226580%; alpha-Cen column",
+      "status": "verified",
+      "evidence": "Independent outline topology/projection audit405/0; membership56/59=94.9%, logNHI17.70 within17.6\u00b1.15. All14 areaswithin20%; depths labelledapproximation.",
+      "met": true
+    },
+    {
+      "feature_id": "AC7",
+      "criterion": "Correct ordered route coverage",
+      "status": "verified",
+      "evidence": "AldebaranLIC/Aur/LIC/hot/Hyades/hot; exact planar/radial intersections; bounded numericalLIC roots; longfree-nav regression and shortgrazing fallback.",
+      "met": true
+    },
+    {
+      "feature_id": "AC8",
+      "criterion": "Uniform bytes; named new lism baselines approved atP2",
+      "status": "verified targeted; final integrated gate pending",
+      "evidence": "Frozen protocol2.7 replay bytes verified in current full-suite log (three M4 cases identical); final local/CI completion pending. New first lism1 stream/capture source hashes named in data/ism/review-baselines.json,57 hashes independently matched efadd45. P2 approved via D-62; solver optimization may require new lism hashes. Final solver stream SHA7349a893b8dfeb7ceb5dfe7e762c92717d052cabd85f288173c8653fcb4cc8a4; refreshed actual1280px Tab/interlude opened2026-10-10. New inventory refresh remains pending. FINAL UPDATE: all57 refreshed source/stream/capture hashes independently match current files; fresh default map, contact, Tab and interlude reopened. InventorySHA4ef91842bae0d0c3fa6b8a3776b42bdba63f84853bed9f4283f4d92b92b4f2ee.",
+      "met": true
+    },
+    {
+      "feature_id": "AC9",
+      "criterion": "Column-drag ledger closure all pacing/guided",
+      "status": "verified",
+      "evidence": "Core namedtests validate1/7/60ticks and full guided itinerary with1e-9closure; finalheadfullsuitepending.",
+      "met": true
+    },
+    {
+      "feature_id": "AC10",
+      "criterion": "Whole-route peak density hold/refusal boundary",
+      "status": "verified",
+      "evidence": "Pure core test abovehold refusedm_eff_too_small andbelow\u03c6\u22121e-9accepted withlimitfields.",
+      "met": true
+    },
+    {
+      "feature_id": "AC10b",
+      "criterion": "Every guided leg accepted",
+      "status": "verified",
+      "evidence": "Wholeguided itinerary underlism1 test; noQ8required.",
+      "met": true
+    },
+    {
+      "feature_id": "AC11",
+      "criterion": "Deterministic dust and legacyRNG",
+      "status": "verified targeted; final integrated gate pending",
+      "evidence": "At4626008,43-line lism stream with impacts VM1=VM2=interpreter, SHA7349a893b8dfeb7c...; frozen2.7 uniform bytes unchanged. Stateless SplitMix1024 slots, existing RNG unchanged. Fresh hash inventory update pending. Final solver stream SHA7349a893b8dfeb7ceb5dfe7e762c92717d052cabd85f288173c8653fcb4cc8a4; refreshed actual1280px Tab/interlude opened2026-10-10. New inventory refresh remains pending. FINAL UPDATE: all57 refreshed source/stream/capture hashes independently match current files; fresh default map, contact, Tab and interlude reopened. InventorySHA4ef91842bae0d0c3fa6b8a3776b42bdba63f84853bed9f4283f4d92b92b4f2ee.",
+      "met": true
+    },
+    {
+      "feature_id": "AC12",
+      "criterion": "Bright stats/pacing/window/rest/layout",
+      "status": "verified correctness; final head gate pending",
+      "evidence": "KS/statistics plus separateboost/brake independentrapidityoracle. Arrivalanydtau retains totals; independentvalid.09171stripactual921.597==tripBright. Endpointdisplayrate separated;\u226432window,\u2264130slots. Valid <0.1s whole arrival and two-step pacing independently reproduced old failures; all noncoast positive pieces now integrate. Two-step actual921.5971441317461 vs whole921.5971344960752 (1.05e-8 relative), strict 1/2/7/60 regression16/0.",
+      "met": true
+    },
+    {
+      "feature_id": "AC13",
+      "criterion": "Pure strict VM and parity",
+      "status": "verified",
+      "evidence": "Final strict42/0 (35 existing ISM/core+7 new inverse), ordinary inverse7/0; strict stream VM/interpreter byte equality7349... and frozen2.7 unchanged. Core remains pure.",
+      "met": true
+    },
+    {
+      "feature_id": "AC14",
+      "criterion": "GPU/CPU golden",
+      "status": "verified",
+      "evidence": "FinalintegrationGPU all suites0fail inclG-ISM1..4, mixedbright/dim overlap/offcentre/nearwall/sprite63.",
+      "met": true
+    },
+    {
+      "feature_id": "AC15",
+      "criterion": "Finite lookup/sampler",
+      "status": "verified",
+      "evidence": "CPUdust29/0; fullrangefiniteguards and endpoints.",
+      "met": true
+    },
+    {
+      "feature_id": "AC16",
+      "criterion": "Map matches generated medium shapes/ordered route;D display",
+      "status": "verified",
+      "evidence": "Samegeneratedangularoutline data; internaltriangulation seams removed; map14/0 andno-twitch24/0.",
+      "met": true
+    },
+    {
+      "feature_id": "AC17",
+      "criterion": "HUD current/boundary/interlude from sim",
+      "status": "verified targeted; final integrated gate pending",
+      "evidence": "Every crossed_media boundary consumed once per tick; hot-to-cloud-to-hot regression red25/2 to green199/0. Opened fresh efadd45 Tab/interlude panels: readable ISM density/rates/counts and honest Largest displayed labels. All10 HUD capture hashes match named inventory. Final solver stream SHA7349a893b8dfeb7ceb5dfe7e762c92717d052cabd85f288173c8653fcb4cc8a4; refreshed actual1280px Tab/interlude opened2026-10-10. New inventory refresh remains pending. FINAL UPDATE: all57 refreshed source/stream/capture hashes independently match current files; fresh default map, contact, Tab and interlude reopened. InventorySHA4ef91842bae0d0c3fa6b8a3776b42bdba63f84853bed9f4283f4d92b92b4f2ee.",
+      "met": true
+    },
+    {
+      "feature_id": "AC18",
+      "criterion": "Generated/opened render sheets/flight/maps",
+      "status": "partially verified with documented hold-limit exception",
+      "evidence": "Fresh36 frames/0 uniform-or-NaN; actual medium captions asserted. Final contact/map/Tab/interlude re-opened independently. All four speeds for warm/hot, three synthetic nH10 speeds; fourth dense speed exceeds physical hold and is not represented as a completed flight. Actual dense clouds deferred B. D62 accepted P2 choices. Final inventory refresh pending. FINAL UPDATE: all57 refreshed source/stream/capture hashes independently match current files; fresh default map, contact, Tab and interlude reopened. InventorySHA4ef91842bae0d0c3fa6b8a3776b42bdba63f84853bed9f4283f4d92b92b4f2ee.",
+      "met": false
+    },
+    {
+      "feature_id": "AC19",
+      "criterion": "CPU/GPU budgets",
+      "status": "verified representative paired median budgets",
+      "evidence": "After exact same-LUT root inversion, warm shipped-service50 plan pairs+7x200 real-time tick pairs per phase: plan delta3.098ms<20ms,total lism6.156ms; coast0.205990,boost0.401265,brake0.220180ms<0.5ms. GPU64 live flashes1440p median0.023ms<0.3ms. M4 Max, ordinary I/O interop; pure strict checked separately. Boost averages have1.243/1.426ms outliers, so this is a representative median result, not worst-case bound. /private/tmp/stapledon-ism-inverse-all-phase-bench.log.",
+      "met": true
+    },
+    {
+      "feature_id": "AC20",
+      "criterion": "Python role allowlist",
+      "status": "verified",
+      "evidence": "Current canonical log python-guard: ok (18 allowlisted, 0 awaiting AILANG port). Two new files registered as independent oracles; production AILANG/Godot only.",
+      "met": true
+    },
+    {
+      "feature_id": "AC21",
+      "criterion": "Archive registered IDs and number bindings",
+      "status": "verified targeted; final integrated gate pending",
+      "evidence": "Public design346443d imported11 entries; current canonical strict/interpreter lore tests and number oracle pass (149HB/23RS/36IS/17 package/3m4 values). Package registry binding review208 IDs, two unchanged allowlisted. LLCC dense claim removed; text accepted D62.",
+      "met": true
+    },
+    {
+      "feature_id": "AC22",
+      "criterion": "Full local/CI gates",
+      "status": "pending",
+      "evidence": "Canonical final local suite is active: /private/tmp/stapledon-ism-navigation-final-full-test.log. Final committed source5092a7687a3f3c3ea36e087cf0ef23c92502a970 pushed to PR199; matching CI run38083075225 pending. Superseded run38081490839 canceled. Evaluator verified recorded source hashes still match. No unconditional pass until local completion and matching CI success.",
+      "met": false
+    }
+  ],
+  "documentation_check": {
+    "changelog_updated": true,
+    "examples_created": true,
+    "examples_notes": "Reproducible capture/benchmark tools, source and stream inventory, independent oracles and fixtures serve as project examples.",
+    "design_doc_status": "PR A in progress pending landing; combined A/B remains planned. Stale HUD/performance checklist rows corrected."
+  },
+  "design_fidelity": {
+    "score": 10,
+    "notes": "Public package physics remains authoritative. Actual published angular outlines improve the intended membership check; exact LUT inversion changes numerical solve only. B is explicitly deferred and its failed science anchors are not runtime data."
+  },
+  "feedback": [],
+  "p2": {
+    "status": "accepted",
+    "decision": "D-62",
+    "notes": "Attended acceptance of current model/afterglow/defaults/baselines/Archive; no technical gates waived."
+  },
+  "reviewed_base_commit": "c3fbd0cba1be39348e5ff6f278efce362471d958",
+  "reviewed_source_sha256": {
+    "sim/core.ail": "7ebfbb1ddb7c01aee74aba558e5e9986df7bffe50bc002e786be118669dfb1e5",
+    "sim/ism.ail": "82147a8450d06e5823c29c01d562a69fad333501fa56969f233a2f0e8c0aaeea",
+    "sim/protocol.ail": "1377fb68f030cc8734593f5f9a5608bd419a7e598bce9d4c5c8e300bf32ae081",
+    "sim/data/ism.ail": "303ae505cdf61fd0babc40b80026aa2e7317362bcc0a37e385f9a8491afbedce",
+    "data/ism/ism.json": "9124f31c9784f506b381cf799811985b6dc48547207427fd5130abf0cfe394c0",
+    "interior/dust_flash.gd": "ed56812723c8275039f3940c8148d47f2f1dc4cce0d3b518fa6d065007b232f2",
+    "interior/dust_flash.gdshader": "6d516ebdae1dff6a82f99b0e89387939eb98797d82ee87413cec64f2e1b2ddd7",
+    "ui/ism_layer.gd": "735d2948265b166181ca226cd3a3235203302bca10da1a586f165b334d5d621b",
+    "ui/galaxy_map.gd": "e3bbfe859d4645e75378e081543d393c8938f20fec10f9c4749c404115c13cba",
+    "demos/ship_geometry_demo.gd": "c552c0a5e1f10993ecbd65bc6266bc30c56d1c6345485577e7f2a17326764b13",
+    "ui/ship_controls.gd": "53d682b635c6c2f6e62d10b393b74601389cf518cc2bdbff6cac3812c7ec5850",
+    "tests/test_ship_ui.gd": "62290560be4d213f72e26a8113c8667e638ce62257c1ab58bbef8980de2bce38",
+    "tests/test_free_nav_recovery.gd": "026e8e3de8e714fd5ecbaacd269b2c3aeb3a80ae3f27465e3c0d52e3b9a2e761",
+    "Makefile": "697ede0bbfd0116ffb93645edd2f05b81ffff5f1d06884a240fe8905d99a4f9e"
+  },
+  "ci": {
+    "pr": 199,
+    "last_observed_head": "5092a7687a3f3c3ea36e087cf0ef23c92502a970",
+    "status": "IN_PROGRESS",
+    "run_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38083075225",
+    "matching_final_source": true,
+    "superseded_run": "38081490839 canceled; not final evidence",
+    "started_at": "2026-10-10T20:16:10Z"
+  },
+  "landing_gates": [
+    "Canonical final local suite green",
+    "Final integrated PR199 head CI green"
+  ],
+  "limitations": [
+    "Whole celestial and relativity directory tests retain exactly baseline-confirmed3+7 legacy property failures; new modules pass. Six pinned0.52/masterseed0 runs/source hashes/seeds/counterexamples independently match base/head/release.",
+    "LIC intersections remain bounded numerical roots; non-LIC depths are approximate shells.",
+    "Performance evidence is warm paired medians on M4 Max, not worst-case latency or universal hardware guarantees.",
+    "Dense fourth-speed synthetic flight exceeds hold and is omitted; true dense clouds/clumps are deferred B."
+  ],
+  "evidence": {
+    "package_baseline": "/private/tmp/stapledon-package-audit-evidence/summary.json",
+    "independent_quad": "/private/tmp/ism-evaluation/bright_dense_oracle.json",
+    "independent_inverse": "/private/tmp/ism-evaluation/inverse_cell_oracle.json",
+    "independent_outline": "/private/tmp/ism-evaluation/outline_reprojection_corrected.json",
+    "cpu_benchmark": "/private/tmp/stapledon-ism-inverse-all-phase-bench.log",
+    "gpu_benchmark": "/private/tmp/stapledon-dust-gpu-benchmark.json",
+    "gpu_golden": "/private/tmp/stapledon-ism-integration-golden-final.log",
+    "parity": "/private/tmp/stapledon-ism-inverse-parity.log",
+    "current_local_suite": "/private/tmp/stapledon-ism-navigation-final-full-test.log",
+    "review_inventory": "data/ism/review-baselines.json",
+    "current_public_review_urls": "/private/tmp/stapledon-ism-final-review-urls.txt",
+    "independent_inventory_audit": "/private/tmp/ism-evaluation/final-inventory-audit.json"
+  },
+  "notes": "Generator and judge are separate agents. Evaluator independently reproduced and rechecked short arrival/pacing failures and corrected polar transcription; reviewed targeted author/root logs and source without duplicating whole suite. No unconditional pass marker while CI pending.",
+  "inventory_audit": {
+    "checked": 57,
+    "failed": 0,
+    "failures": [],
+    "inventory_sha256": "4ef91842bae0d0c3fa6b8a3776b42bdba63f84853bed9f4283f4d92b92b4f2ee"
+  },
+  "reviewed_commit": "5092a7687a3f3c3ea36e087cf0ef23c92502a970"
+}

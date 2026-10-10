@@ -6,7 +6,7 @@ Approved: Mark's attended urgent defect request, 2026-10-10. Design: [free-navig
 2. Add explicit safe free-nav start, stable parent/moon destination list, live idle pacing and actionable refusal text.
 3. Verify strict/ordinary pure tests, 60-second post-arrival renderer and replan, focused VM/interpreter equality. Root runs final complete checks and independent evaluation after integration.
 
-Acceptance: F1–F8 in the design; no full duplicate suite while root's suite is running. Record command outputs and genuine limitations. No new package physics or assumption of orbit-following is authorized by this defect fix.
+Acceptance: F1–F9 in the design; no full duplicate suite while root's suite is running. Record command outputs and genuine limitations. No new package physics or assumption of orbit-following is authorized by this defect fix.
 
 ## Parallel host milestone (root-owned, approved attended)
 
