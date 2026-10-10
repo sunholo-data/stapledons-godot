@@ -1,0 +1,418 @@
+{
+  "clumps": 5601,
+  "sheet_triangles": 23,
+  "llcc": [
+    {
+      "name": "HD83023",
+      "nai": true,
+      "hi21": true,
+      "angular_intersection": true,
+      "finite_intersection": true,
+      "chord_pc": [
+        [
+          17.88373106576257,
+          17.884705280779013
+        ]
+      ],
+      "cite": "Meyer2012 Table1"
+    },
+    {
+      "name": "HD85259",
+      "nai": true,
+      "hi21": true,
+      "angular_intersection": true,
+      "finite_intersection": true,
+      "chord_pc": [
+        [
+          17.803084717016198,
+          17.804054538828357
+        ]
+      ],
+      "cite": "Meyer2012 Table1"
+    },
+    {
+      "name": "HD84722",
+      "nai": true,
+      "hi21": true,
+      "angular_intersection": true,
+      "finite_intersection": true,
+      "chord_pc": [
+        [
+          17.807421079638218,
+          17.80839113767343
+        ]
+      ],
+      "cite": "Peek2011 section4.1.2; Meyer2012 Table1"
+    },
+    {
+      "name": "HD84937",
+      "nai": true,
+      "hi21": false,
+      "angular_intersection": false,
+      "finite_intersection": false,
+      "chord_pc": [],
+      "cite": "Meyer2012 section3/Table1"
+    },
+    {
+      "name": "HIP47513",
+      "nai": false,
+      "hi21": true,
+      "angular_intersection": true,
+      "finite_intersection": false,
+      "chord_pc": [],
+      "cite": "Peek2011 section4.1.1"
+    },
+    {
+      "name": "Regulus",
+      "nai": false,
+      "hi21": false,
+      "angular_intersection": false,
+      "finite_intersection": false,
+      "chord_pc": [],
+      "cite": "Peek2011 section2.3/4.1.2; CaII detection excluded"
+    }
+  ],
+  "sol_inside_clump": false,
+  "llcc_21cm_controls_pass": true,
+  "llcc_all_nai_detections_pass": false,
+  "raw_validation": {
+    "crop_samples": 120,
+    "cloud_distances": [
+      {
+        "cloud": "Taurus",
+        "l_deg": 173.5,
+        "b_deg": -14.2,
+        "published_pc": 147.0,
+        "raw_first_pc": 119.71533203125,
+        "ellipsoid_first_pc": 114.79297952794167,
+        "within_15pc": false,
+        "cite": "Zucker2020 Table A.1, arXiv:2001.00591"
+      },
+      {
+        "cloud": "Ophiuchus",
+        "l_deg": 352.7,
+        "b_deg": 15.4,
+        "published_pc": 139.0,
+        "raw_first_pc": 107.58743286132812,
+        "ellipsoid_first_pc": 105.0294417514389,
+        "within_15pc": false,
+        "cite": "Zucker2020 Table A.1, arXiv:2001.00591"
+      },
+      {
+        "cloud": "Lupus",
+        "l_deg": 339.0,
+        "b_deg": 16.3,
+        "published_pc": 151.0,
+        "raw_first_pc": 144.11819458007812,
+        "ellipsoid_first_pc": 138.14747923565838,
+        "within_15pc": true,
+        "cite": "Zucker2020 Table A.1, arXiv:2001.00591"
+      }
+    ],
+    "columns": [
+      {
+        "i": 0,
+        "direction": [
+          0.31224989991991997,
+          0.0,
+          0.95
+        ],
+        "edenhofer_ebv": 0.010733911391209707,
+        "leike_ebv": 0.00887190208514425,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 1.2098771253554905,
+        "envelope_ratio": 0.03508016905989922,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 1,
+        "direction": [
+          -0.3884331593781332,
+          0.35583659268760126,
+          0.85
+        ],
+        "edenhofer_ebv": 0.006933216592402133,
+        "leike_ebv": 0.0035992801044835623,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 1.9262786977222315,
+        "envelope_ratio": 0.08646946500274916,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 2,
+        "direction": [
+          0.057826681447667144,
+          -0.658905209353174,
+          0.75
+        ],
+        "edenhofer_ebv": 0.009389846741040868,
+        "leike_ebv": 0.01174759229783487,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.7992996780090381,
+        "envelope_ratio": 0.026492903153192783,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 3,
+        "direction": [
+          0.4623735037388011,
+          0.6030843581459436,
+          0.65
+        ],
+        "edenhofer_ebv": 0.008407604424658294,
+        "leike_ebv": 0.011642388638137132,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.7221545926681565,
+        "envelope_ratio": 0.026732299934588977,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 4,
+        "direction": [
+          -0.8223978976706082,
+          -0.14547060839552378,
+          0.55
+        ],
+        "edenhofer_ebv": 0.011034039921903804,
+        "leike_ebv": 0.009795409212338745,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 1.1264501240034794,
+        "envelope_ratio": 0.03177282523712189,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 5,
+        "direction": [
+          0.7534975716784714,
+          -0.4793134772512107,
+          0.44999999999999996
+        ],
+        "edenhofer_ebv": 0.032724710735182974,
+        "leike_ebv": 0.04495750953740551,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.7279031038842441,
+        "envelope_ratio": 0.006922710537842075,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 6,
+        "direction": [
+          -0.24318425467281055,
+          0.9046333059749844,
+          0.35
+        ],
+        "edenhofer_ebv": 0.006502496613049908,
+        "leike_ebv": 0.009501599928063376,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.6843580725646541,
+        "envelope_ratio": 0.03275530725204586,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 7,
+        "direction": [
+          -0.44627130771622536,
+          -0.859268246771199,
+          0.25
+        ],
+        "edenhofer_ebv": 0.009430191972487848,
+        "leike_ebv": 0.010181301167603803,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.9262266008291816,
+        "envelope_ratio": 0.030568570746147668,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 8,
+        "direction": [
+          0.9286938120441748,
+          0.3391574906601046,
+          0.15000000000000002
+        ],
+        "edenhofer_ebv": 0.1245740478350901,
+        "leike_ebv": 0.14795900628302633,
+        "dense_envelope_hot_background_ebv": 0.16549086058058055,
+        "raw_ratio": 0.8419497465182765,
+        "envelope_ratio": 1.1184912952444277,
+        "raw_factor2": true,
+        "envelope_factor2": true
+      },
+      {
+        "i": 9,
+        "direction": [
+          -0.9231894011435726,
+          0.3810791645002016,
+          0.050000000000000044
+        ],
+        "edenhofer_ebv": 0.03085096075632169,
+        "leike_ebv": 0.030869602330811353,
+        "dense_envelope_hot_background_ebv": 0.1635484949028778,
+        "raw_ratio": 0.9993961187355155,
+        "envelope_ratio": 5.298043465225915,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 10,
+        "direction": [
+          0.423315856009854,
+          -0.9046013962241296,
+          -0.050000000000000044
+        ],
+        "edenhofer_ebv": 0.03856809499853229,
+        "leike_ebv": 0.06041493521781761,
+        "dense_envelope_hot_background_ebv": 0.027324999966336687,
+        "raw_ratio": 0.6383867641251358,
+        "envelope_ratio": 0.45228882341461124,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 11,
+        "direction": [
+          0.2958977658042137,
+          0.9433687042678884,
+          -0.1499999999999999
+        ],
+        "edenhofer_ebv": 0.011217443109595823,
+        "leike_ebv": 0.018075001460151466,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.6206053777824603,
+        "envelope_ratio": 0.017218688790475188,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 12,
+        "direction": [
+          -0.837737151581558,
+          -0.4854858029438327,
+          -0.25
+        ],
+        "edenhofer_ebv": 0.009178305504367887,
+        "leike_ebv": 0.011999201000218682,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.7649097222557248,
+        "envelope_ratio": 0.025937379082495632,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 13,
+        "direction": [
+          0.914900737708825,
+          -0.2011383606869853,
+          -0.3500000000000001
+        ],
+        "edenhofer_ebv": 0.0075911846779348115,
+        "leike_ebv": 0.017718839939754087,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.4284244738225321,
+        "envelope_ratio": 0.017564796910403836,
+        "raw_factor2": false,
+        "envelope_factor2": false
+      },
+      {
+        "i": 14,
+        "direction": [
+          -0.5136070030280158,
+          0.7305531099383398,
+          -0.44999999999999996
+        ],
+        "edenhofer_ebv": 0.01535312691163828,
+        "leike_ebv": 0.012055761707462028,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 1.2735094873462303,
+        "envelope_ratio": 0.025815691499367917,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 15,
+        "direction": [
+          -0.10732758583583073,
+          -0.8282395724176986,
+          -0.55
+        ],
+        "edenhofer_ebv": 0.005977944261836072,
+        "leike_ebv": 0.00932814890041352,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.6408500041815443,
+        "envelope_ratio": 0.03336437146880619,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 16,
+        "direction": [
+          0.5810829285140745,
+          0.4897373073286403,
+          -0.6499999999999999
+        ],
+        "edenhofer_ebv": 0.013543077859202893,
+        "leike_ebv": 0.011951923433774346,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 1.1331295698341057,
+        "envelope_ratio": 0.02603997814696917,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 17,
+        "direction": [
+          -0.660872995583695,
+          0.02732917320801117,
+          -0.75
+        ],
+        "edenhofer_ebv": 0.007669098275512321,
+        "leike_ebv": 0.014050442934769338,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 0.5458260861324385,
+        "envelope_ratio": 0.02215074830556166,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 18,
+        "direction": [
+          0.37339906394690914,
+          -0.37158194122369825,
+          -0.8500000000000001
+        ],
+        "edenhofer_ebv": 0.00659217170759278,
+        "leike_ebv": 0.0041969219963872845,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 1.5707158039313882,
+        "envelope_ratio": 0.07415620907361109,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      },
+      {
+        "i": 19,
+        "direction": [
+          -0.01442327437203262,
+          0.31191660609270083,
+          -0.95
+        ],
+        "edenhofer_ebv": 0.008424332055009962,
+        "leike_ebv": 0.007770971615243698,
+        "dense_envelope_hot_background_ebv": 0.0003112278250297327,
+        "raw_ratio": 1.0840770591009004,
+        "envelope_ratio": 0.04005005299713382,
+        "raw_factor2": true,
+        "envelope_factor2": false
+      }
+    ],
+    "column_conversion": "Edenhofer A_V=2.8 E_ZGR23 (\u00a77.1); Leike tau_G/pc (Zenodo3993082 README), A_G/A_V=.789 (WangChen2019 Table3); both R_V=3.1",
+    "raw_factor2_count": 19,
+    "envelope_factor2_count": 1
+  }
+}

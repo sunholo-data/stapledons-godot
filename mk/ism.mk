@@ -55,3 +55,40 @@ ism-capture:       ## AC18: renders/ism/ (flight frames per medium and speed, fl
 
 ism-lore-drafts: lore-values  ## AC21: the Archive drafts for Mark (design_docs/planned/r1/ism-archive-drafts) cite registered ids only (HB-, RS-, IS-) and every number binds
 	@$(MAKE) --no-print-directory lore-check LORE=design_docs/planned/r1/ism-archive-drafts AILANG=$(AILANG)
+
+.PHONY: ism-raw fits-slice-test ism-crop ism-dense-data ism-dense-test ism-dense-oracle
+ism-raw:           ## I3b: fetch the pinned CC BY4.0 Edenhofer source (3.25 GB, ignored)
+	@sh tools/ism_raw.sh
+
+fits-slice-test:   ## AC5c: synthetic FITS axis-order, HDU layout, endian and malformed-input cases
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_fits_slice.gd > $(SCRATCH)/fits-slice-test.log 2>&1; rc=$$?; cat $(SCRATCH)/fits-slice-test.log; \
+	  test $$rc = 0 && grep -q '^fits-slice: [1-9][0-9]* passed, 0 failures$$' $(SCRATCH)/fits-slice-test.log
+
+ism-crop: ism-raw  ## I3b: shell-major float32 crop <160 pc; preserves source NEST/RING order
+	@mkdir -p $(ISM_TMP)
+	$(GODOT) --headless --path . --script tools/fits_slice.gd -- data/raw/edenhofer2024/mean_and_std_healpix.fits $(ISM_TMP)/edenhofer
+
+ism-dense-data: ism-crop ## I3b: full pinned source ->2pc grid ->six-connected/tiled clumps +finite LLCC; raw intermediates ignored
+	@mkdir -p $(ISM_TMP)/dense
+	$(ISM_RUN) --caps IO,FS --bytecode --entry main --args-json '{"mode":"requests","input":"$(ISM_TMP)/edenhofer.json","output":"$(ISM_TMP)/dense/requests.csv"}' sim/tools/ism_dense_build.ail
+	$(GODOT) --headless --path . --script tools/ism_fits_sample.gd -- $(ISM_TMP)/edenhofer.f32 $(ISM_TMP)/dense/requests.csv $(ISM_TMP)/dense/grid.f64
+	$(ISM_RUN) --caps IO,FS --bytecode --entry main --args-json '{"mode":"clumps","input":"$(ISM_TMP)/dense/grid.f64","output":"$(ISM_TMP)/dense/clumps.json"}' sim/tools/ism_dense_build.ail
+	$(ISM_RUN) --caps IO,FS --bytecode --entry main --args-json '{"clumps":"$(ISM_TMP)/dense/clumps.json","outline":"data/ism/sources/llcc_outline.tsv","out":"$(ISM_TMP)/dense"}' sim/tools/ism_dense_pack.ail
+	cp $(ISM_TMP)/dense/ism_dense.ail sim/data/ism_dense.ail
+	cp $(ISM_TMP)/dense/dense.json data/ism/dense.json
+
+ism-dense-test: fits-slice-test ## I3b: independent NEST anchors and real interpreter/strictVM component parity
+	@mkdir -p $(ISM_TMP)/dense
+	$(AILANG) test sim/tools/ism_dense_build_test.ail
+	$(AILANG) test --bytecode sim/tools/ism_dense_build_test.ail
+	@$(ISM_RUN) --caps IO --entry componentProbe sim/tools/ism_dense_build_test.ail > $(ISM_TMP)/dense/components-int.txt
+	@$(ISM_RUN) --caps IO --bytecode --strict-bytecode --entry componentProbe sim/tools/ism_dense_build_test.ail > $(ISM_TMP)/dense/components-vm.txt
+	@cmp $(ISM_TMP)/dense/components-int.txt $(ISM_TMP)/dense/components-vm.txt
+	@grep -q 'density PASS$$' $(ISM_TMP)/dense/components-vm.txt
+	@cat $(ISM_TMP)/dense/components-vm.txt
+
+ism-dense-oracle: ## I3b functional geometry oracle; science acceptance failures are recorded, never waived
+	@mkdir -p $(ISM_TMP)/dense
+	@python3 tools/ism_dense_ref.py > $(ISM_TMP)/dense/oracle.json
+	@echo "ism-dense-oracle: independent21cm/foreground controls and solar cavity PASS; science gates: data/ism/dense-verification.md"

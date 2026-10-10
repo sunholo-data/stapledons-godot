@@ -1,0 +1,34 @@
+module stapledons/sim/tools/ism_dense_build_test
+
+import ./ism_dense_build (nestPixel, clumps, Voxel)
+import pkg/sunholo/celestial/kepler (Vec3)
+import std/list (length, nth_or)
+
+-- Independently generated with healpy 1.18.1 pix2vec(nside=2, nest=True).
+test "NEST pixel conversion respects polar/equatorial faces and bit order" {
+  nestPixel(2, {x:0.6666666666666667,y:0.6666666666666666,z:0.3333333333333333}) == 0 &&
+  nestPixel(2, {x:0.2852353895437613,y:0.6886191459053214,z:0.6666666666666666}) == 1 &&
+  nestPixel(2, {x:0.6886191459053214,y:0.28523538954376126,z:0.6666666666666666}) == 2 &&
+  nestPixel(2, {x:0.2825970826302196,y:0.28259708263021954,z:0.9166666666666666}) == 3 &&
+  nestPixel(2, {x:-0.6666666666666666,y:0.6666666666666667,z:0.3333333333333333}) == 4 &&
+  nestPixel(2, {x:0.28259708263021954,y:-0.28259708263021965,z:0.9166666666666666}) == 15 &&
+  nestPixel(2, {x:0.9428090415820634,y:0.0,z:-0.3333333333333333}) == 16 &&
+  nestPixel(2, {x:-1.7319121124709866e-16,y:-0.9428090415820634,z:0.3333333333333333}) == 31 &&
+  nestPixel(2, {x:0.2825970826302196,y:0.28259708263021954,z:-0.9166666666666666}) == 32 &&
+  nestPixel(2, {x:0.6666666666666665,y:-0.6666666666666669,z:-0.3333333333333333}) == 47
+}
+
+-- Grid ids use side=161, x-major; adjacency is six-connected, not diagonal/wrapped.
+-- Imported native callbacks lose their resolver in the v0.52.0 named-test
+-- interpreter (inbox_1791655250615_88f6e234). Run this entry in both real
+-- interpreters through make ism-dense-test; never skip the component check.
+export pure func componentCheck() -> bool {
+  let xs: [Voxel] = [{id:0,nH:2.0},{id:1,nH:4.0},{id:161,nH:6.0},{id:2*161+2,nH:3.0},{id:160,nH:5.0}];
+  let cs = clumps(xs);
+  let first = nth_or(cs,0,{id:-1,cells:0,centre:{x:0.0,y:0.0,z:0.0},radii:{x:0.0,y:0.0,z:0.0},nH:0.0});
+  length(cs) == 3 && first.cells == 3 && first.nH == 4.0 &&
+    first.centre.x == -160.0 && first.centre.y == -159.0 && first.centre.z == -159.0
+}
+
+export pure func componentProbe() -> string = if componentCheck() then "ism-dense-components: connectivity, no wrapping/diagonals, centre and mean density PASS"
+  else "ism-dense-components: FAIL"

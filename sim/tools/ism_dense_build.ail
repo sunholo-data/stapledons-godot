@@ -1,0 +1,157 @@
+-- I3b offline dense-data reduction. Geometry is in parsecs until rendered to ly.
+-- Native HEALPix NEST lookup for the Edenhofer source (not the package's RING order):
+-- Gorski et al. 2005, HEALPix C++ ang2pix_z_phi, polar/equatorial face + interleaved xy.
+-- https://healpix.sourceforge.io/html/Healpix_cxx/healpix__base_8cc_source.html
+module stapledons/sim/tools/ism_dense_build
+
+import std/math (sqrt, atan2, floor, abs_Float, intToFloat, floatToInt)
+import std/list (map, filter, foldl, sortBy, length, reverse, nth_or, range)
+import std/array (fromList as arr, get, length as alen, decodeF64LE, make, updateMany)
+import std/fs (readFileResult, readFileRaw, writeFileResult, appendFile, mkdirAll)
+import std/result (Result, Ok, Err)
+import std/json (decode, getArray, getNumber, getString, encode, jo, kv, js, jnum, ja)
+import std/string (concat, join, intToStr, floatToStr)
+import std/io (println, eprintln, exit)
+import pkg/sunholo/celestial/kepler (Vec3)
+import pkg/sunholo/celestial/ism (nHFromExtinction)
+
+export type Voxel = {id: int, nH: float}
+export type Clump = {id: int, cells: int, centre: Vec3, radii: Vec3, nH: float}
+pure func minI(a: int, b: int) -> int = if a < b then a else b
+pure func maxI(a: int, b: int) -> int = if a > b then a else b
+pure func minF(a: float, b: float) -> float = if a < b then a else b
+pure func maxF(a: float, b: float) -> float = if a > b then a else b
+
+pure func spread(x: int, scale: int, acc: int) -> int =
+  if x == 0 then acc else spread(x / 2, scale * 4, acc + (x % 2) * scale)
+
+export pure func nestPixel(nside: int, v: Vec3) -> int {
+  let z = v.z / sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+  let p0 = atan2(v.y,v.x);
+  let p = if p0 < 0.0 then p0 + 6.283185307179586 else p0;
+  let tt = p / 1.5707963267948966;
+  let n = intToFloat(nside);
+  let coords = if abs_Float(z) <= 2.0/3.0 then {
+    let jp = floatToInt(floor(n*(0.5+tt-0.75*z)));
+    let jm = floatToInt(floor(n*(0.5+tt+0.75*z)));
+    let fp = jp/nside;
+    let fm = jm/nside;
+    let face = if fp == fm then (fp % 4) + 4 else if fp < fm then fp else fm + 8;
+    {face:face, x:jm % nside, y:nside - (jp % nside) - 1}
+  } else {
+    let nt = minI(3,floatToInt(floor(tt)));
+    let tp = tt-intToFloat(nt);
+    let tmp = n*sqrt(3.0*(1.0-abs_Float(z)));
+    let jp = minI(nside-1,floatToInt(floor(tp*tmp)));
+    let jm = minI(nside-1,floatToInt(floor((1.0-tp)*tmp)));
+    if z >= 0.0 then {face:nt,x:nside-jm-1,y:nside-jp-1}
+    else {face:nt+8,x:jp,y:jm}
+  };
+  coords.face*nside*nside + spread(coords.x,1,0) + spread(coords.y,2,0)
+}
+
+export pure func gridPos(id: int) -> Vec3 =
+  {x:2.0*intToFloat(id/(161*161))-160.0, y:2.0*intToFloat((id/161)%161)-160.0, z:2.0*intToFloat(id%161)-160.0}
+
+pure func shellAt(bounds: Array[float], r: float, lo: int, hi: int) -> int =
+  if hi-lo <= 1 then lo else {
+    let mid = (hi+lo)/2;
+    if get(bounds,mid) <= r then shellAt(bounds,r,mid,hi) else shellAt(bounds,r,lo,mid)
+  }
+
+pure func requestRows(x: int, yz: int, nside: int, bounds: Array[float], acc: [string]) -> [string] =
+  if yz < 0 then acc else {
+    let id = x*161*161+yz;
+    let p = gridPos(id);
+    let r = sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
+    let next = if r >= get(bounds,0) && r < 160.0 then {
+      let s = shellAt(bounds,r,0,alen(bounds)-1);
+      concat([intToStr(id),",",intToStr(s*12*nside*nside+nestPixel(nside,p)),"\n"]) :: acc
+    } else acc;
+    requestRows(x,yz-1,nside,bounds,next)
+  }
+
+func requestsLoop(path: string, nside: int, bounds: Array[float], x: int) -> () ! {FS} =
+  if x > 160 then () else {
+    appendFile(path,concat(requestRows(x,161*161-1,nside,bounds,[])));
+    requestsLoop(path,nside,bounds,x+1)
+  }
+
+-- Sparse six-connected component union: deterministic parallel root relaxation.
+-- Each round batches array writes once (a scalar update per voxel would be quadratic).
+-- Pointer jumping compresses previously merged roots; neighbours never wrap grid axes.
+pure func neigh(id: int) -> [int] =
+  filter(\j. j >= 0, [if id/(161*161)>0 then id-161*161 else -1,
+  if id/(161*161)<160 then id+161*161 else -1,
+  if (id/161)%161>0 then id-161 else -1,
+  if (id/161)%161<160 then id+161 else -1,
+  if id%161>0 then id-1 else -1, if id%161<160 then id+1 else -1])
+
+pure func labelOf(m: Array[int], id: int, fallback: int) -> int = let v = get(m,id) in if v < 0 then fallback else v
+pure func nextLabel(m: Array[int], v: Voxel) -> (int,int) {
+  let cur = labelOf(m,v.id,v.id);
+  let root = labelOf(m,cur,cur);
+  (v.id,foldl(\a j. minI(a,labelOf(m,j,a)),root,neigh(v.id)))
+}
+pure func labels(xs: [Voxel], m: Array[int], rounds: int) -> Array[int] {
+  let pairs = map(\v. nextLabel(m,v),xs);
+  let next = updateMany(m,pairs);
+  let changed = foldl(\a pair. match pair {(id,root)=>a || labelOf(m,id,id) != root},false,pairs);
+  -- Labels decrease monotonically and have a finite lower bound. Do not silently
+  -- stop after an arbitrary number of rounds and return split components.
+  if not changed then next else labels(xs,next,rounds+1)
+}
+
+-- A connected wall is nonconvex and often wraps the Bubble. Never replace it with
+-- one cavity-filling ellipsoid: partition each component into fixed 8 pc cells
+-- before fitting. The grid origin, partition size and threshold are model inputs,
+-- fixed independently of the validation directions (no fixture-dependent tuning).
+pure func tileOf(id: int) -> int = ((id/(161*161))/4)*41*41 + (((id/161)%161)/4)*41 + (id%161)/4
+type Tagged = {root:int, v:Voxel}
+pure func cmpTagged(a: Tagged,b: Tagged) -> int = if a.root<b.root then -1 else if a.root>b.root then 1 else a.v.id-b.v.id
+pure func moments(xs: [Voxel]) -> Clump {
+  let lo = foldl(\a v. {x:minF(a.x,gridPos(v.id).x), y:minF(a.y,gridPos(v.id).y), z:minF(a.z,gridPos(v.id).z)},gridPos(nth_or(xs,0,{id:0,nH:0.0}).id),xs);
+  let hi = foldl(\a v. {x:maxF(a.x,gridPos(v.id).x), y:maxF(a.y,gridPos(v.id).y), z:maxF(a.z,gridPos(v.id).z)},lo,xs);
+  -- Bounding ellipsoid contains the entire cell boxes (sqrt(3) expansion), a labelled approximation.
+  let rt3 = 1.7320508075688772;
+  {id:nth_or(xs,0,{id:0,nH:0.0}).id,cells:length(xs),centre:{x:(lo.x+hi.x)/2.0,y:(lo.y+hi.y)/2.0,z:(lo.z+hi.z)/2.0},
+   radii:{x:rt3*((hi.x-lo.x)/2.0+1.0),y:rt3*((hi.y-lo.y)/2.0+1.0),z:rt3*((hi.z-lo.z)/2.0+1.0)},
+   nH:foldl(\a v. a+v.nH,0.0,xs)/intToFloat(length(xs))}
+}
+pure func groups(xs: [Tagged], root: int, group: [Voxel], acc: [Clump]) -> [Clump] = match xs {
+  [] => reverse(if length(group)>0 then moments(reverse(group)) :: acc else acc),
+  x :: rest => if x.root == root then groups(rest,root,x.v :: group,acc)
+    else groups(rest,x.root,[x.v],if length(group)>0 then moments(reverse(group)) :: acc else acc)
+}
+export pure func clumps(xs: [Voxel]) -> [Clump] {
+  let m = labels(xs,updateMany(make(161*161*161,-1),map(\v. (v.id,v.id),xs)),0);
+  let tagged = sortBy(cmpTagged,map(\v. {root:labelOf(m,v.id,v.id)*41*41*41+tileOf(v.id),v:v},xs));
+  groups(tagged,-1,[],[])
+}
+
+pure func readVoxels(vals: Array[float]) -> [Voxel] =
+  filter(\v. v.nH > 1.0, map(\k. {id:floatToInt(get(vals,2*k)),nH:nHFromExtinction(2.8*get(vals,2*k+1),5.8e21,3.1)},range(0,alen(vals)/2)))
+
+pure func vecJson(v: Vec3) = ja([jnum(v.x),jnum(v.y),jnum(v.z)])
+pure func clumpJson(c: Clump) = jo([kv("name",js(concat(["Edenhofer-",intToStr(c.id)]))),kv("centre_pc",vecJson(c.centre)),kv("radii_pc",vecJson(c.radii)),kv("n_h_cm3",jnum(c.nH)),kv("cells",jnum(intToFloat(c.cells))),kv("kind",js("dense"))])
+
+func fail(s: string) -> () ! {IO} = {eprintln(concat(["ism-dense: ",s]));exit(1)}
+export func main(args: {mode:string, input:string, output:string}) -> () ! {IO,FS} =
+  if args.mode == "requests" then match readFileResult(args.input) {
+    Err(e)=>fail(e), Ok(text)=>match decode(text) {Err(e)=>fail(e),Ok(j)=>{
+      let order = match getString(j,"ordering") {Some(s)=>s,None=>""};
+      let nside = match getNumber(j,"nside") {Some(n)=>floatToInt(n),None=>0};
+      let bounds = match getArray(j,"boundaries_pc") {Some(xs)=>map(\v. match v { _ => match getNumber(jo([kv("v",v)]),"v") {Some(n)=>n,None=>0.0}},xs),None=>[]};
+      if order != "NEST" || nside<=0 || length(bounds)<2 then fail("NEST crop metadata required")
+      else match writeFileResult(args.output,"") {Err(e)=>fail(e),Ok(_)=>{requestsLoop(args.output,nside,arr(bounds),0);println("ism-dense: grid requests generated")}}
+    }}
+  } else if args.mode == "clumps" then match readFileRaw(args.input) {
+    Err(e)=>fail(e), Ok(b)=>match decodeF64LE(b) {Err(e)=>fail(e),Ok(vals)=>{
+      let vs=readVoxels(vals);
+      let cs=clumps(vs);
+      let text=encode(jo([kv("source",js("Edenhofer et al. 2024 A&A 685 A82; Zenodo 8187943; CC BY 4.0")),kv("grid_pc",jnum(2.0)),kv("threshold_n_h_cm3",jnum(1.0)),kv("conversion",js("A_V=2.8 E_ZGR23; Bohlin1978 N_H/E(B-V)=5.8e21; R_V=3.1")),kv("shape_assumption",js("connected components partitioned in fixed8pc tiles; axis-aligned cell-bounding ellipsoids, conservative geometric expansion, mean voxel density")),kv("clumps",ja(map(clumpJson,cs)))]));
+      match writeFileResult(args.output,concat([text,"\n"])) {Err(e)=>fail(e),Ok(_)=>println(concat(["ism-dense: ",intToStr(length(vs))," dense voxels -> ",intToStr(length(cs))," clumps"]))}
+    }}
+  } else fail("mode must be requests or clumps")
+
+export func probe() -> () ! {IO} = println(show(clumps([{id:0,nH:2.0},{id:1,nH:4.0},{id:161,nH:6.0},{id:324,nH:3.0},{id:160,nH:5.0}])))
