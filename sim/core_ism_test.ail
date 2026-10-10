@@ -12,8 +12,8 @@ import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/medium (mirrorDragForce, accelSI)
 import pkg/sunholo/celestial/frames (unitFromAngles)
-import ./core (Refusal, World, Params, Target, Intent, IPlan, ICommit, Planned, Committed, Arrived, Plan, Event, newWorld, defaultParams, tick, position, scenarioError, planView, isLism, mediumHere)
-import ./ism (profile, holdMaxPhi, peakMedium, tripBright)
+import ./core (dustCfg, Refusal, World, Params, Target, Intent, IPlan, ICommit, Planned, Committed, Arrived, Plan, Event, newWorld, defaultParams, tick, position, scenarioError, planView, isLism, mediumHere)
+import ./ism (profile, holdMaxPhi, peakMedium, tripBright, window)
 import ./solar_departure (initialize, intentForLeg, legCount)
 import ./rng (Rng)
 
@@ -200,3 +200,12 @@ test "compressed bright totals include boost and braking through arrival: 1, 7 a
   let one = brightAtPacing(1);
   rel(one, 1961369584.1362152, 0.001) && rel(brightAtPacing(7), one, 0.00001) && rel(brightAtPacing(60), one, 0.00001)
 }
+
+pure func brightBurnOracle() -> bool {
+  let params = lism(defaultParams());
+  let w = planned(newWorld(17, false, params), aldebaran(), phi0999());
+  match planOf(w) { Some(pl) => match pl.ism { Some(pi) =>
+    rel(tripBright(window(pi.segs, 0.0, pl.trip.dBurn), pl.trip, dustCfg(params)), 5442.792150843, 0.001)
+    && rel(tripBright(window(pi.segs, pl.trip.dBurn + pl.trip.dCoast, pl.trip.trip.distance), pl.trip, dustCfg(params)), 168.265854664, 0.001), None => false }, None => false }
+}
+test "boost and brake bright totals separately match independent rapidity quadrature, within efficacy LUT tolerance" { brightBurnOracle() }
