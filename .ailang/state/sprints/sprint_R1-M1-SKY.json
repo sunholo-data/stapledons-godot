@@ -82,10 +82,10 @@
         "make capture AILANG=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang AILANG_BIN=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang: reference renders opened and human-reviewed before SR visual merge"
       ],
       "session": 2,
-      "passes": null,
+      "passes": true,
       "started": null,
       "completed": null,
-      "notes": "SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md)."
+      "notes": "SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md). Reconciled iter 25 (L1): the work LANDED via PR #50 merge ffd52cc (eval 97), executed under R1-M1-SKY-2 whose row is already true."
     },
     {
       "id": "M1.2a_ACQUIRE_PARSE",
@@ -122,10 +122,10 @@
         "if the fallback fired: tools/catalogue_fallback.py exists, its 1,000-row package cross-check passes within 1e-6, and header producer + notes name the shipped path"
       ],
       "session": 2,
-      "passes": null,
+      "passes": true,
       "started": null,
       "completed": null,
-      "notes": "Iteration 4 at 06311aa: routable M1.2b-preflight ONLY, estimated 200 changed code/test LOC (hard cap 250). CSV + published 0.2.0 main-sequence photometry, fixture assertions, real 5k timing and interpreter/5 VM exact diagnostic parity. Count missing/WD without fitting. No new physics, binary production, fallback, tier commits or completion claim. Runtime v0.47.2 supersedes old v0.45 premises. Production tiers blocked on package-first D-4 WD transform with calibrated BP/RP zero-point convention; then bounded pure-tier, float32-writer and complete integration tasks. Preserve all original acceptance criteria and passes=null. See M1.2b sprint section and planner artifact.\nExecutor iteration4: preflight implemented only; 19/19 AILANG, 15/15 parser, simulation gates green. Real5000 rows (4580 normal,324 WD,96 missing), 5 strict pure VM outputs equal interpreter; mean0.719015s, peakRSS143458304B. FS shell normal VM/interpreter parity green; strict boundary excludes FS. Evidence .ailang/state/probe_M1.2b_iter4.json; execution notes in sprint. Code218LOC/production187. Independent evaluation pending; full passes remains null. Iteration 4 preflight LANDED PR #9 merge 01fe9ef, independent Sonnet5.5 PASS85 no blockers; full M1.2b stays null. F1-F3/F5 production test/integration obligations banked; F4 production test-table reference restored in record commit. Next package-first WD calibration/publication under D-4, then bounded transform/writer/integration.\nIteration 5 (planner): production of this feature is BLOCKED on the package-first WD chain M1.2b-WD1_GENERATOR -> M1.2b-WD2_MODULE_PUBLISH -> M1.2b-WD3_GAME_PIN (design_docs/implemented/r1/m1.2b-wd-photometry.md + m1.2b-wd-photometry-sprint.md). The transform/writer/integration tasks follow WD-3.\nIteration8: historical hand-rolled codec/runtime assumptions superseded by v0.50.0 std/embedding.encodeF32LE reuse. T2_F32_RECORDS pure child only, then bounded T3 writer/sidecars and T4 full integration; original parent acceptance unchanged and passes=null. SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md)."
+      "notes": "Iteration 4 at 06311aa: routable M1.2b-preflight ONLY, estimated 200 changed code/test LOC (hard cap 250). CSV + published 0.2.0 main-sequence photometry, fixture assertions, real 5k timing and interpreter/5 VM exact diagnostic parity. Count missing/WD without fitting. No new physics, binary production, fallback, tier commits or completion claim. Runtime v0.47.2 supersedes old v0.45 premises. Production tiers blocked on package-first D-4 WD transform with calibrated BP/RP zero-point convention; then bounded pure-tier, float32-writer and complete integration tasks. Preserve all original acceptance criteria and passes=null. See M1.2b sprint section and planner artifact.\nExecutor iteration4: preflight implemented only; 19/19 AILANG, 15/15 parser, simulation gates green. Real5000 rows (4580 normal,324 WD,96 missing), 5 strict pure VM outputs equal interpreter; mean0.719015s, peakRSS143458304B. FS shell normal VM/interpreter parity green; strict boundary excludes FS. Evidence .ailang/state/probe_M1.2b_iter4.json; execution notes in sprint. Code218LOC/production187. Independent evaluation pending; full passes remains null. Iteration 4 preflight LANDED PR #9 merge 01fe9ef, independent Sonnet5.5 PASS85 no blockers; full M1.2b stays null. F1-F3/F5 production test/integration obligations banked; F4 production test-table reference restored in record commit. Next package-first WD calibration/publication under D-4, then bounded transform/writer/integration.\nIteration 5 (planner): production of this feature is BLOCKED on the package-first WD chain M1.2b-WD1_GENERATOR -> M1.2b-WD2_MODULE_PUBLISH -> M1.2b-WD3_GAME_PIN (design_docs/implemented/r1/m1.2b-wd-photometry.md + m1.2b-wd-photometry-sprint.md). The transform/writer/integration tasks follow WD-3.\nIteration8: historical hand-rolled codec/runtime assumptions superseded by v0.50.0 std/embedding.encodeF32LE reuse. T2_F32_RECORDS pure child only, then bounded T3 writer/sidecars and T4 full integration; original parent acceptance unchanged and passes=null. SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md). Reconciled iter 25 (L1): full M1.2b LANDED \u2014 WD chain (pkg PR #83; PR #12 68575d9), T1 (PR #14 f4dd9bc), T2 (PR #19 6efcf53), T3 (e45f269/1755793), T4 (PR #62 merge 669774b); tier position source superseded by the star-truth table (PR #145 via PR #149 merge 3100301), work not reopened."
     },
     {
       "id": "M1.2b-WD1_GENERATOR",
@@ -237,10 +237,10 @@
         "git ls-files data/starmap lists stars.json, stars_quick.bin, stars_medium.bin plus sidecars and NOT stars_large.bin"
       ],
       "session": 3,
-      "passes": null,
+      "passes": true,
       "started": null,
       "completed": null,
-      "notes": "SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md)."
+      "notes": "SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md). Reconciled iter 25 (L1): LANDED via PR #66 merge d85acf9 (+c3caac9), eval 83f2aa0 94/100."
     },
     {
       "id": "M1.2d_BRIGHT_TIER",
@@ -257,10 +257,10 @@
         "python3 tools/test_bright_star_audit.py passes; AC11 render gate (make capture && tools/bright_star_audit.py renders/) listed in M1.5's checks"
       ],
       "session": 3,
-      "passes": null,
+      "passes": true,
       "started": null,
       "completed": null,
-      "notes": "Version renumbering per the approved WD design (m1.2b-wd-photometry.md, iteration 5): teffFromBV ships in sunholo/relativity 0.4.0, NOT 0.3.0 - 0.3.0 is now the WD blackbody photometry release (M1.2b-WD1_GENERATOR/M1.2b-WD2_MODULE_PUBLISH/M1.2b-WD3_GAME_PIN). Description updated; this feature's acceptance_criteria still say v0.3.0 and must be renumbered to v0.4.0 when the feature executes (WD-3 renumbers the M1 doc lines 224/464/502 and sprint M1.2d lines 589-701; the RESOLVED D-5 ledger text is not edited). SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md)."
+      "notes": "Version renumbering per the approved WD design (m1.2b-wd-photometry.md, iteration 5): teffFromBV ships in sunholo/relativity 0.4.0, NOT 0.3.0 - 0.3.0 is now the WD blackbody photometry release (M1.2b-WD1_GENERATOR/M1.2b-WD2_MODULE_PUBLISH/M1.2b-WD3_GAME_PIN). Description updated; this feature's acceptance_criteria still say v0.3.0 and must be renumbered to v0.4.0 when the feature executes (WD-3 renumbers the M1 doc lines 224/464/502 and sprint M1.2d lines 589-701; the RESOLVED D-5 ledger text is not edited). SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md). Reconciled iter 25 (L1): LANDED via PR #69 merge 9bf55ce (+c0cf426); data/starmap/stars_bright.bin in tree; teffFromBV shipped per the renumbering recorded above."
     },
     {
       "id": "M1.3_STAR_RENDERING_V2",
@@ -276,10 +276,10 @@
         "make bench: large tier stars-only p99 frame < 16.7 ms at 2560x1440"
       ],
       "session": 3,
-      "passes": null,
+      "passes": true,
       "started": null,
       "completed": null,
-      "notes": "SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md)."
+      "notes": "SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md). Reconciled iter 25 (L1): LANDED via PR #67 merge 0a9c2a8 (+bca47fc), eval 7b28b66 92/100."
     },
     {
       "id": "M1.4a_BACKGROUND_SPIKE",
@@ -335,7 +335,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": "SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md)."
+      "notes": "SUPERSEDED 2026-10-02 by sprint R1-M1-SKY-2 (design_docs/planned/r1/m1-remaining-sprint.md). Reconciled iter 25 (L1): SPLIT \u2014 M1.5a landed via PR #75 merge d801543 (+f16442c); M1.5b (renders/report/landing) still open in R1-M1-SKY-2 (null there; no m1-report.md in design_docs/implemented/r1/), so this parent row stays null."
     }
   ],
   "approved": "2026-09-27",
