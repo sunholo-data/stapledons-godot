@@ -25,7 +25,7 @@ func _run() -> void:
 	check(demo.journey_tick() and demo.sky_world.clock.tau>before,"live rest clock advances while aboard")
 	var scroll:=InputEventPanGesture.new();scroll.delta=Vector2(0,-1)
 	demo._unhandled_input(scroll);demo._process(0.)
-	check(demo.camera.pullback>0. and demo.label.text.contains("third-person camera"),"optional third person is explicitly labelled")
+	check(demo.camera.pullback>0. and demo.ship_hud.view_tag.text.contains("third-person camera"),"optional third person is explicitly labelled")
 	demo.set_preset("reset");check(demo.camera.pullback==0.,"reset returns to captain eye")
 	demo.open_navigation();check(demo.journey_map!=null,"one navigation is shared with current ship")
 	demo.close_navigation();demo.queue_free();await process_frame

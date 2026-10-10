@@ -74,6 +74,15 @@ var plan_nav: Dictionary = {}
 ## The last `gr` section, as parsed by parse_gr(); {} outside a black-hole scenario.
 var gr: Dictionary = {}
 var _line_bytes := PackedByteArray()
+## R1-SHIP-UI record seam (record only; nothing sent changes): with record_sent on, every
+## send() appends {tick, source, intents} to sent_log. `source` says who originated the
+## line: "player" (a captain's console choice), "tour" (the guided itinerary's own legs,
+## SolarDeparture) or "tick" (no intents, or client observations such as gr_ring). A caller
+## sets intent_source just before send(); it is one-shot. Unset, a line with intents is
+## "player" and an empty one is "tick". tests/test_no_twitch.gd reads it (NT1).
+var record_sent := false
+var sent_log: Array = []
+var intent_source := ""
 
 
 static func find_ailang() -> String:
@@ -242,6 +251,10 @@ func send(intents: Array, dtau: float) -> bool:
 	var tick := int(world["tick"]) + 1
 	if ai_relay != null:
 		intents = intents + ai_relay.take_intents()
+	var source := intent_source if not intent_source.is_empty() else ("tick" if intents.is_empty() else "player")
+	intent_source = ""
+	if record_sent:
+		sent_log.append({"tick": tick, "source": source, "intents": intents.duplicate(true)})
 	_write(encode({"v": 2, "type": "input", "tick": tick, "dtau": dtau, "intents": intents}))
 	if not _read_state(Time.get_ticks_msec() + 2000, "step_timeout"):
 		return false

@@ -2,6 +2,13 @@
 # id	date	title	reason
 D-7	2026-09-28	Characters are generated portraits with voices and emotion markers	keyword "mystery"
 D-13	2026-10-01	Black-hole check values and the demo hole	deny map
+D-41	2026-10-06	Voyage extension beyond α Cen, and what the cut is.	deny map
+D-42	2026-10-06	Premise, loop and play area (canon).	keyword "Year 1,000,000"
+D-43	2026-10-06	Opening and run boundary (refines D-42).	keyword "salvation"
+D-44	2026-10-06	Captain's death and the run boundary (refines D-43).	keyword "death"
+D-45	2026-10-06	M4.4 pause point S4: approve the news-from-home copy so PR #131 can merge? It is	deny map
+D-53	2026-10-08	Approve the M3 black-holes sprint plan (PR #158, design_docs/implemented/r1/m3-b	deny map
+D-56	2026-10-08	Ship UI direction: what is HUD, what is a bridge console, and the pace of play.	keyword "plot"
 DD-2025-11-30-player-ocean-is-emergent	2025-11-30	Player OCEAN Is Emergent	keyword "legacy report"
 DD-2025-11-30-ocean-values-drift-over-time	2025-11-30	OCEAN Values Drift Over Time	deny map
 DD-2025-11-30-ocean-drift-hidden-until-end-screen	2025-11-30	OCEAN Drift Hidden Until End Screen	keyword "Drift Hidden"

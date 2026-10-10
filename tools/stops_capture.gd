@@ -25,6 +25,7 @@ func _run() -> void:
 	var list: Array = [["barnard", "Gaia DR3 4472832130942575872"], ["proxima", "Gaia DR3 5853498713190525696"], ["61cyg_a", "Gaia DR3 1872046609345556480"], ["vega", "CNS5:4607"]] if inferred else [["trappist1", "Gaia DR3 2635476908753563008"], ["aldebaran", "CNS5:1142"], ["acen_a", "CNS5:3627"], ["barnard", "Gaia DR3 4472832130942575872"], ["earth", "Sol"]]
 	for stop in list:
 		n += 1
+		demo.open_navigation() # the helm (R1-SHIP-UI)
 		if stop[1] == "Sol": demo.journey_map.plan_home()
 		else: demo.journey_map.preselect(demo.journey_map.index_of(stop[1]))
 		if not await leg(): quit(1); return
@@ -32,6 +33,7 @@ func _run() -> void:
 		if stop[0] == "earth": await map_shot("%d_map_in_system" % n)
 	for body in ([] if inferred else ["moon", "saturn", "callisto", "jupiter"]):
 		n += 1
+		demo.open_navigation() # the helm
 		demo.journey_map.plan_body(body)
 		if not await leg(): quit(1); return
 		await shots("%d_%s" % [n, body])

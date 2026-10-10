@@ -10,11 +10,10 @@ const StarLight := preload("res://demos/ship_star_light.gd")
 const SolarDeparture := preload("res://demos/solar_departure.gd")
 const Attitude:=preload("res://demos/ship_attitude.gd")
 const BlackHoleVisit:=preload("res://demos/black_hole_visit.gd")
+const BodyInfo:=preload("res://ui/body_info.gd")
 ## M3.6 (R1-M3-BLACK-HOLES): the Sgr A* demo, its own sgr_a session (null = flat space, GR off).
 var black_hole:RefCounted=null
 var codex:Codex # the Archive codex (M4.7), built on first use; unlocks only from the sim
-var bh_row:=HBoxContainer.new()
-var bh_next:=Button.new()
 var _bh_accum:=0.
 var tour_attitude:=Attitude.new()
 var _attitude_stop:=-99
@@ -43,8 +42,25 @@ var avatar := CaptainAvatar.new()
 var avatar_shadow:Node3D
 var avatar_pos := Vector3(8,82,-4.8)
 var active_level := 0
-var label := Label.new()
-var hud := VBoxContainer.new()
+var label := Label.new() # retired (R1-SHIP-UI U1); never shown
+var hud: Control # the status strip (ShipHud.strip)
+var ship_hud: ShipHud
+var dwell_on := true
+var hint_dismissed := false
+var confirm_button := Button.new()
+## R1-SHIP-UI §C4: every irreversible decision confirms by a 1.5 s hold, or (accessibility
+## setting, title Settings and Tab) by pressing twice. Neither has a deadline.
+var confirm_mode := "hold"
+## R1-SHIP-UI U3: the bridge consoles (demos/ship_consoles.gd); every captain decision goes
+## through consoles.use(station, action).
+var consoles: ShipConsoles
+## Tests: Esc's last resort (main menu or quit) can be switched off.
+var escape_exits := true
+var _mouse := Vector2(-1, -1)
+var _aim_t := 0.0
+var _dwell_pose := Transform3D()
+var _dwell_still := 0.0
+var _dwell_done := false
 var auto := true
 var ready_ok := false
 var caption := ""
@@ -58,7 +74,7 @@ var sky_states: Dictionary = {}
 var sky_world: Dictionary = {}
 var sky_state := "rest"
 var sky_only := false
-var controls := VBoxContainer.new()
+var controls: Control # the Tab panel (ShipHud.tab_panel)
 var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
@@ -74,10 +90,6 @@ var last_stop := "Earth"
 var journey_auto_tick := true
 var _journey_accum := 0.
 var solar_tour: RefCounted
-var solar_pause := Button.new()
-var solar_next := Button.new()
-var solar_skip := Button.new()
-var navigation_button := Button.new()
 ## Launched from the title screen (main.gd): Esc and the HUD's menu button return
 ## there. Every command-line launch keeps Esc = quit.
 var menu_return := false
@@ -133,6 +145,11 @@ func setup(opts := {}) -> bool:
 	ready_ok=true
 	set_brightness_trial(opts.get("brightness_stops",2))
 	set_auto_view(opts.get("auto_view",false))
+	confirm_mode=opts.get("confirm_mode","hold") if opts.get("confirm_mode","hold") in GameSettings.CONFIRM_MODES else "hold"
+	confirm_button.text="Confirm decisions: "+("press twice" if confirm_mode=="twice" else "hold")
+	consoles.set_confirm_mode(confirm_mode)
+	if menu_return:
+		consoles.set_glow(true);ship_hud.show_hint(ShipConsoles.HINT)
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
 	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
 	interlude_card = InterludeCard.new();interlude_card.visible = false;interlude_canvas.add_child(interlude_card)
@@ -153,67 +170,48 @@ func _resize() -> void:
 	var px:=get_window().size
 	geometry_view.size=px;_sync_observer()
 	for rect in _rects:rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+## R1-SHIP-UI (D-56): the HUD informs (ui/ship_hud.gd); display controls stay instant in
+## the Tab panel; developer controls only on command-line launches (menu_return false).
 func _hud() -> void:
 	var canvas:=CanvasLayer.new();canvas.layer=10;add_child(canvas)
-	hud.position=Vector2(18,14);canvas.add_child(hud)
-	label.add_theme_font_size_override("font_size",12)
-	label.add_theme_color_override("font_shadow_color",Color.BLACK);label.add_theme_constant_override("shadow_offset_x",2);label.add_theme_constant_override("shadow_offset_y",2);hud.add_child(label)
-	var control_button:=Button.new();control_button.text="Controls [Tab] · 5 rest / 6 cruise · 7 forward / 8 side / 9 aft · H sky only"
-	control_button.add_theme_font_size_override("font_size",12)
-	control_button.pressed.connect(toggle_controls);hud.add_child(control_button)
-	navigation_button.text="Navigation [M] · select destination and hold to commit"
-	navigation_button.add_theme_font_size_override("font_size",12)
-	navigation_button.pressed.connect(open_navigation);hud.add_child(navigation_button)
-	menu_button.text="Main menu [Esc]";menu_button.visible=menu_return
+	ship_hud=ShipHud.new();canvas.add_child(ship_hud);ship_hud.setup(not menu_return)
+	hud=ship_hud.strip
+	ship_hud.view_tag_pressed.connect(toggle_auto_view)
+	ship_hud.walk_to_requested.connect(walk_to)
+	ship_hud.hint_dismissed.connect(func()->void:hint_dismissed=true)
+	controls=ship_hud.tab_panel
+	menu_button.text="Main menu [Esc]";menu_button.visible=menu_return;menu_button.focus_mode=Control.FOCUS_NONE
 	menu_button.add_theme_font_size_override("font_size",12)
-	menu_button.pressed.connect(return_to_menu);hud.add_child(menu_button)
-	var tour_row:=HBoxContainer.new();hud.add_child(tour_row)
-	var solar_start:=Button.new();solar_start.text="New voyage · Earth → outer planets → α Cen → TRAPPIST-1 → Aldebaran (real time)"
-	solar_start.tooltip_text="Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
-	solar_start.add_theme_font_size_override("font_size",12)
-	solar_start.pressed.connect(start_solar_departure);tour_row.add_child(solar_start)
-	solar_pause.text="Pause tour";solar_pause.visible=false
-	solar_pause.pressed.connect(func()->void:
-		if solar_tour!=null:solar_tour.paused=not solar_tour.paused
-		solar_pause.text="Resume tour" if solar_tour!=null and solar_tour.paused else "Pause tour")
-	tour_row.add_child(solar_pause)
-	solar_next.text="Next stop";solar_next.visible=false
-	solar_next.pressed.connect(func()->void:
-		if solar_tour!=null:solar_tour.prepare_next();_apply_journey_world())
-	tour_row.add_child(solar_next)
-	solar_skip.text="Skip stage [K]";solar_skip.visible=false
-	solar_skip.tooltip_text="Jump to the next stage of this leg: accelerating → cruise → braking → final approach → arrival"
-	solar_skip.pressed.connect(skip_stage)
-	tour_row.add_child(solar_skip)
-	var bh_start:=Button.new();bh_start.text="Visit Sgr A* (black hole)";bh_start.add_theme_font_size_override("font_size",12)
-	bh_start.tooltip_text="The supermassive black hole at the Galactic Centre: approach from 10⁶ r_s, hover at 10, 5 and 3 r_s, orbit at 3 r_s"
-	bh_start.pressed.connect(start_black_hole);tour_row.add_child(bh_start)
-	hud.add_child(bh_row);bh_row.visible=false
-	bh_next.add_theme_font_size_override("font_size",12);bh_next.pressed.connect(bh_next_stop);bh_row.add_child(bh_next)
-	for pair in [["Finish approach [K]",bh_finish_approach],["Archive [C]",toggle_codex],["Leave Sgr A* [L]",leave_black_hole]]:
-		var b:=Button.new();b.text=pair[0];b.add_theme_font_size_override("font_size",12);b.pressed.connect(pair[1]);bh_row.add_child(b)
-	hud.add_child(controls);controls.visible=false
-	var row:=HBoxContainer.new();controls.add_child(row)
-	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Reference rim [4]","rim"],["Reset [R]","reset"]]:
-		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_preset.bind(pair[1]));row.add_child(button)
-	var benchmark_button:=Button.new();benchmark_button.text="Benchmark at1920×1080 [B] (uploads public summary)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));controls.add_child(benchmark_button)
-	audit_local.text="Show local audit in Finder"
-	audit_local.pressed.connect(func()->void:OS.shell_show_in_file_manager(ProjectSettings.globalize_path(Benchmark.OUTPUT)))
-	controls.add_child(audit_local)
-	var sky_row:=HBoxContainer.new();controls.add_child(sky_row)
-	for pair in [["Rest [5]","rest"],["Mid-journey 0.99c [6]","cruise"]]:
-		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_sky_state.bind(pair[1]));sky_row.add_child(button)
-	for pair in [["Look forward/up [7]","forward"],["Look side [8]","side"],["Look aft/down [9]","aft"]]:
-		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));sky_row.add_child(button)
-	var sky_button:=Button.new();sky_button.text="Sky only diagnostic [H]";sky_button.pressed.connect(toggle_sky_only);controls.add_child(sky_button)
-	view_button.pressed.connect(toggle_auto_view);controls.add_child(view_button)
-	var brightness_row:=GridContainer.new();brightness_row.columns=4;controls.add_child(brightness_row)
+	menu_button.pressed.connect(return_to_menu);ship_hud.corner.add_child(menu_button)
+	var display:=ship_hud.display_box
+	view_button.pressed.connect(toggle_auto_view);display.add_child(view_button)
+	var brightness_row:=GridContainer.new();brightness_row.columns=4;display.add_child(brightness_row)
 	for stops in BRIGHTNESS_STOPS:
 		var button:=Button.new();button.text="Reference sky" if stops==0 else ("Dim %d stops"%(-stops) if stops<0 else "%d× brighter"%int(pow(2.,stops)))
 		button.pressed.connect(set_brightness_trial.bind(stops));brightness_row.add_child(button)
-	var hint:=Label.new();hint.text="WASD walk · Option + finger drag (or right-drag) to look · scroll to zoom · E lift · hold I + click known star · G guides · "+("Esc main menu" if menu_return else "Esc close")+"\nSgr A* demo: N next stop · K finish approach · C Archive (codex) · L leave";controls.add_child(hint)
+	var sky_button:=Button.new();sky_button.text="Sky only [H]";sky_button.pressed.connect(toggle_sky_only);display.add_child(sky_button)
+	var dwell_button:=CheckButton.new();dwell_button.text="Name what I look at (dwell label)";dwell_button.button_pressed=true
+	dwell_button.toggled.connect(func(on:bool)->void:dwell_on=on;ship_hud.set_dwell("",Vector2.ZERO));display.add_child(dwell_button)
+	confirm_button.text="Confirm decisions: hold";confirm_button.pressed.connect(toggle_confirm_mode);display.add_child(confirm_button)
+	var row:=HBoxContainer.new();display.add_child(row)
+	for pair in [["Bridge [1]","bridge"],["Overlook [2]","overlook"],["Whole ship [3]","overview"],["Rim [4]","rim"],["Reset [R]","reset"]]:
+		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_preset.bind(pair[1]));row.add_child(button)
+	var look_row:=HBoxContainer.new();display.add_child(look_row)
+	for pair in [["Look forward [7]","forward"],["Look side [8]","side"],["Look aft [9]","aft"]]:
+		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));look_row.add_child(button)
+	var dev:=ship_hud.dev_box
+	var dev_title:=Label.new();dev_title.text="Developer (command-line launches only)";dev.add_child(dev_title)
+	var benchmark_button:=Button.new();benchmark_button.text="Benchmark at 1920×1080 [B] (uploads public summary)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));dev.add_child(benchmark_button)
+	audit_local.text="Show local audit in Finder"
+	audit_local.pressed.connect(func()->void:OS.shell_show_in_file_manager(ProjectSettings.globalize_path(Benchmark.OUTPUT)))
+	dev.add_child(audit_local)
+	var sky_row:=HBoxContainer.new();dev.add_child(sky_row)
+	for pair in [["Rest sky [5]","rest"],["Mid-journey 0.99c sky [6]","cruise"]]:
+		var button:=Button.new();button.text=pair[0];button.pressed.connect(set_sky_state.bind(pair[1]));sky_row.add_child(button)
+	var guides_button:=Button.new();guides_button.text="Orbit guides [G]";guides_button.pressed.connect(func()->void:guides.visible=not guides.visible);dev.add_child(guides_button)
+	_consoles_setup()
 func toggle_controls() -> void:
-	if not benchmark.running:controls.visible=not controls.visible
+	if not benchmark.running:ship_hud.toggle_tab()
 func set_brightness_trial(stops: int) -> bool:
 	if benchmark.running or not stops in BRIGHTNESS_STOPS:return false
 	brightness_stops=stops
@@ -308,10 +306,7 @@ func _process(delta: float) -> void:
 		if uploaded.ok:
 			audit_link.text="Open public performance audit"
 			audit_link.uri=uploaded.url
-			if audit_link.get_parent()==null:hud.add_child(audit_link)
-	if solar_tour!=null:solar_skip.disabled=not live_journey or solar_tour.paused or solar_tour.attitude_hold
-	if solar_tour!=null:solar_next.disabled=live_journey or solar_tour.complete or solar_tour.attitude_hold or solar_tour.pending_index>=0 or not solar_tour.failed.is_empty()
-	navigation_button.text="Navigation [M] · pauses tour for browsing" if solar_tour!=null else "Navigation [M] · select destination and hold to commit"
+			if audit_link.get_parent()==null:ship_hud.dev_box.add_child(audit_link)
 	if not ready_ok:return
 	sky.set_temporal_exposure(false)
 	_update_tour_attitude(delta)
@@ -327,7 +322,11 @@ func _process(delta: float) -> void:
 			bh_tick()
 	if auto and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()):
 		var move:=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_W))-float(Input.is_physical_key_pressed(KEY_S)))
+		if move!=Vector2.ZERO:consoles.cancel_walk() # WASD takes over an auto-walk
 		walk_motion(move,delta)
+	consoles.advance(delta)
+	_aim_t+=delta
+	if _aim_t>=.1 and _mouse.x>=0.:_aim_t=0.;consoles.aim(_mouse)
 	if lift!=null:lift.advance(delta if auto else 0.)
 	if avatar.get_parent()==geometry:avatar.position=avatar_pos
 	if camera_mode=="player":camera.follow(avatar_pos,camera.tilt,camera.yaw,camera.pullback)
@@ -337,15 +336,16 @@ func _process(delta: float) -> void:
 	sky.finish_exposure_frame(delta)
 	star_light.update(lighting,sky,delta)
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
-	if black_hole!=null:bh_next.text="Next stop [N] · "+black_hole.next_label() if not black_hole.next_label().is_empty() else "Last stop reached · L leaves"
-	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption + (" · E: descend/return at landing" if lift!=null and not lift.travelling() else " · Lift in motion" )]
-	label.text=hud_text(view_name,details)
+	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption]
+	_update_hud(delta,details)
+	_update_dwell(delta)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
 	if UiScale.handle(get_window(),event):
 		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
-	if event is InputEventMouseMotion and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
+	if camera_mode=="console" and (event is InputEventPanGesture or (event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN])):return
+	if event is InputEventMouseMotion and camera_mode!="console" and (event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
 		_tour_view_active=false
 		if camera_mode=="external review":
 			var offset:=camera.position-Vector3(0,5,0)
@@ -359,39 +359,60 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP:_zoom(2.*event.factor)
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:_zoom(-2.*event.factor)
+	if event is InputEventMouseMotion:_mouse=event.position
+	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT and not event.alt_pressed:
+		if consoles.click(event.position):get_viewport().set_input_as_handled();return
+		if ship_hud.has_card("arrival"):dismiss_arrival()
 	if event is InputEventKey and event.pressed and not event.echo:
+		if camera_mode=="console" and event.physical_keycode in [KEY_1,KEY_2,KEY_3,KEY_4,KEY_R,KEY_7,KEY_8,KEY_9]:return
 		match event.physical_keycode:
 			KEY_1:set_preset("bridge")
 			KEY_2:set_preset("overlook")
 			KEY_3:set_preset("overview")
 			KEY_4:set_preset("rim")
-			KEY_5:set_sky_state("rest")
-			KEY_6:set_sky_state("cruise")
+			KEY_5:
+				if dev_controls():set_sky_state("rest")
+			KEY_6:
+				if dev_controls():set_sky_state("cruise")
 			KEY_7:look_direction("forward")
 			KEY_8:look_direction("side")
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
 			KEY_V:toggle_auto_view()
-			KEY_ENTER:continue_interlude()
+			KEY_ENTER:
+				if not continue_interlude():dismiss_arrival()
 			KEY_K:
 				if black_hole!=null:bh_finish_approach()
 				else:skip_stage()
-			KEY_N:bh_next_stop()
-			KEY_C:toggle_codex()
-			KEY_L:leave_black_hole()
+			KEY_P:toggle_tour_pause()
+			KEY_N:skip_dwell()
 			KEY_J:set_brightness_trial(BRIGHTNESS_STOPS[(BRIGHTNESS_STOPS.find(brightness_stops)+1)%BRIGHTNESS_STOPS.size()])
 			KEY_TAB:toggle_controls()
 			KEY_R:set_preset("reset")
-			KEY_G:guides.visible=not guides.visible
+			KEY_G:
+				if dev_controls():guides.visible=not guides.visible
 			KEY_B:
-				if not live_journey:await benchmark.run(self)
-			KEY_M:open_navigation()
-			KEY_E:
-				if lift!=null:lift.board()
-			KEY_ESCAPE:
-				if codex!=null and codex.panel.visible:codex.close()
-				elif menu_return:return_to_menu()
-				else:get_tree().quit()
+				if dev_controls() and not live_journey:await benchmark.run(self)
+			KEY_M:open_chart()
+			KEY_E:use_nearest()
+			KEY_ESCAPE:escape()
+## Developer review controls (B, G, 5, 6, the audit buttons): command-line launches only (AC11).
+func dev_controls() -> bool:
+	return not menu_return
+## Esc closes the top panel or card; otherwise the main menu (menu launch) or quit.
+func escape() -> void:
+	if consoles.escape():return
+	if codex!=null and codex.panel.visible:codex.close()
+	elif ship_hud.tab_panel.visible:ship_hud.toggle_tab()
+	elif star_identification!=null and star_identification.card.visible:star_identification.close_card()
+	elif ship_hud.has_card("arrival"):dismiss_arrival()
+	elif not escape_exits:return
+	elif menu_return:return_to_menu()
+	else:get_tree().quit()
+## E: the console or the lift in reach and facing (the nearest wins; the prompt names it),
+## or, at a console, step back.
+func use_nearest() -> bool:
+	return consoles.press_e()
 ## Back to the title screen (main.tscn on a plain launch); _exit_tree stops the voyage's sim.
 func return_to_menu() -> void:
 	if not menu_return or benchmark.running:return
@@ -453,11 +474,12 @@ func _export_smoke() -> void:
 		ok=ok and lift.state=="bridge_ready" and walk==walk_bridge and avatar_pos.distance_to(Vector3(8,82,-4.8))<.01
 	print("ship-demo-smoke-stage lift: ",ok)
 	if ok:
-		journey_auto_tick=false;open_navigation()
-		ok=ok and journey_map!=null
+		journey_auto_tick=false
+		consoles.go_to("navigation")
+		ok=consoles.use("navigation","open") and journey_map!=null and journey_map.mode=="helm"
 		print("ship-demo-smoke-stage navigation: ",ok," ",caption)
 		if ok:
-			ok=journey_map.open_commit_dialog() and journey_map.hold_commit(GalaxyMap.HOLD_S) and journey_tick()
+			ok=consoles.use("navigation","commit") and journey_tick()
 			ok=ok and live_journey and not navigation_window.visible and sky.beta>0.
 			print("ship-demo-smoke-stage commit: ",ok," refused=",journey_sim.last_refused)
 			for i in 1220:
@@ -478,7 +500,7 @@ func _identification_smoke() -> void:
 	if ok:
 		var candidate: Dictionary = star_identification.candidates[0]
 		for option in star_identification.candidates:
-			if star_identification.at_point(option.point).size()==1 and not hud.get_global_rect().has_point(option.point):
+			if star_identification.at_point(option.point).size()==1 and not hud.get_global_rect().has_point(option.point) and not ship_hud.column.get_global_rect().has_point(option.point) and not ship_hud.corner.get_global_rect().has_point(option.point):
 				candidate=option;break
 		var click := InputEventMouseButton.new();click.button_index=MOUSE_BUTTON_LEFT;click.pressed=true;click.position=candidate.pixel;click.global_position=candidate.pixel
 		print("identify-smoke-pixel: ",candidate.pixel," UI=",candidate.point," transform=",get_viewport().get_stretch_transform()," window=",get_window().position)
@@ -511,30 +533,64 @@ func _identification_smoke() -> void:
 	tree.create_timer(.1).timeout.connect(tree.quit.bind(0 if ok else 1),CONNECT_ONE_SHOT)
 	queue_free()
 
-## Separate session: this demo never touches main.gd's active voyage.
+## The helm (R1-SHIP-UI §D): the full map in helm mode, the navigation station's panel.
+## consoles.use("navigation", "open") calls it; tests and tools call it directly as the
+## console action's target. Separate session: this demo never touches main.gd's voyage.
 func open_navigation() -> void:
 	if black_hole!=null:
-		caption="Navigation is for flat space: leave Sgr A* first (L).";return
-	if solar_tour!=null:
-		solar_tour.paused=true;solar_pause.text="Resume tour"
+		refuse("Navigation is for flat space: leave Sgr A* first.");return
 	_create_navigation("sol")
-	if DisplayServer.get_name()!="headless" and navigation_window!=null:navigation_window.popup_centered()
+	if navigation_window==null:return
+	journey_map.set_confirm_twice(confirm_mode=="twice")
+	journey_map.set_mode("helm")
+	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
+	if entry!=null:entry.visible=solar_tour==null
+	navigation_window.borderless=true;navigation_window.title="Navigation station · E / Esc steps back"
+	_place_navigation(consoles.panel_rect().grow_individual(-8.,-46.,-8.,-8.) if consoles!=null and consoles.focused=="navigation" else Rect2())
+## M (anywhere, instant): the read-only star chart. It never plans, commits or pauses the
+## voyage (D-57 Q2); plotting and commit are at the navigation station.
+func open_chart() -> void:
+	if black_hole!=null:
+		note("The star chart is for flat space; at Sgr A* the stop ladder is at the navigation station.");return
+	_create_navigation("sol")
+	if navigation_window==null:return
+	journey_map.set_mode("chart")
+	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
+	if entry!=null:entry.visible=false
+	navigation_window.borderless=false;navigation_window.title="Star chart (read only) · M / Esc close"
+	_place_navigation(Rect2())
+## The map host (R1-SHIP-UI U4a): an embedded window over the console panel (helm), or
+## centred (the chart, and direct calls).
+func _place_navigation(rect: Rect2) -> void:
+	var vis:=get_viewport().get_visible_rect().size
+	if rect.size==Vector2.ZERO: # centred below the status strip (the title bar sits above the rect)
+		var top:float=(ship_hud.strip_bottom() if ship_hud!=null else 0.)+40.
+		var sz:=Vector2(minf(1280.,vis.x*.86),minf(800.,vis.y-top-56.))
+		rect=Rect2(Vector2((vis.x-sz.x)*.5,top),sz)
+	navigation_window.position=Vector2i(rect.position);navigation_window.size=Vector2i(rect.size)
+	# The map's own panel needs about 700 units of height: scale its content to the host.
+	navigation_window.content_scale_factor=clampf(rect.size.y/600.,.56,1.)
+	navigation_window.show();navigation_window.grab_focus()
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
 		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.STOPS_MINOR
+		# R1-SHIP-UI: the Archive terminal shows what this session has unlocked (protocol 2.2 table).
+		journey_sim.archive_rows=LoreLoader.archive_rows(LoreLoader.load_entries()["entries"])
 		# D-54: free navigation stops at a finite star where it shows its size, and Sol at Earth.
 		var params:Dictionary={"standoff_au":1000.,"stop_rule":54.}
 		if scenario=="solar_departure":params=SolarDeparture.guided_params()
 		if not journey_sim.start() or not journey_sim.new_game(424242,scenario,false,params):
-			caption="Navigation unavailable: "+journey_sim.last_error
+			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
-		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation · M / Esc return aboard"
-		navigation_window.size=Vector2i(1280,800);navigation_window.min_size=Vector2i(900,600)
-		navigation_window.force_native=true;navigation_window.own_world_3d=true
-		navigation_window.close_requested.connect(close_navigation)
+		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation"
+		navigation_window.size=Vector2i(1280,800);navigation_window.min_size=Vector2i(320,200)
+		# R1-SHIP-UI U4a: embedded in the ship's window (its own 3D world and input), laid
+		# over the navigation station's panel at the helm.
+		navigation_window.force_native=false;navigation_window.own_world_3d=true;navigation_window.transient=true
+		navigation_window.close_requested.connect(_navigation_key.bind(KEY_ESCAPE))
 		navigation_window.window_input.connect(func(event:InputEvent)->void:
-			if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_M,KEY_ESCAPE]:close_navigation())
+			if event is InputEventKey and event.pressed and not event.echo:_navigation_key(event.physical_keycode))
 		add_child(navigation_window)
 		journey_map=load("res://ui/galaxy_map.tscn").instantiate()
 		journey_map.auto_tick=false;journey_map.live_pacing=true
@@ -545,14 +601,15 @@ func _create_navigation(scenario:String) -> void:
 		bh_entry.tooltip_text="Leave the Solar System for the black hole at the Galactic Centre (a separate demo session; GR on)"
 		bh_entry.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT,Control.PRESET_MODE_MINSIZE,12)
 		bh_entry.grow_horizontal=Control.GROW_DIRECTION_BEGIN;bh_entry.grow_vertical=Control.GROW_DIRECTION_BEGIN
-		bh_entry.pressed.connect(start_black_hole,CONNECT_DEFERRED) # the window is freed by the switch
+		bh_entry.pressed.connect(func()->void:consoles.use("navigation","sgr_a"),CONNECT_DEFERRED) # helm only; the window is freed by the switch
 		navigation_window.add_child(bh_entry)
 		var acen:=journey_map.index_of("CNS5:3627")
 		if journey_map.preselect(acen):journey_map.frame_star(acen)
 		if scenario=="sol":journey_tick()
+		_reset_hud_session()
 func start_solar_departure() -> bool:
 	if benchmark.running or live_journey or (journey_sim!=null and journey_sim.world.get("journey",{}).get("state","")=="committed"):
-		caption="Finish the committed journey before starting a new Solar demo.";return false
+		refuse("Finish the committed journey first.");return false
 	if black_hole!=null:leave_black_hole()
 	_drop_navigation()
 	_create_navigation("solar_departure")
@@ -564,11 +621,10 @@ func start_solar_departure() -> bool:
 	tour_attitude.reset(ShipFrame.ship_basis(PackedFloat64Array([initial_heading.x,initial_heading.y,initial_heading.z])))
 	camera.attitude_basis=tour_attitude.current.duplicate()
 	if not solar_tour.attach(journey_sim,journey_map.catalogue):
-		caption="Solar departure could not attach to the new session.";solar_tour=null;return false
+		refuse("The guided voyage could not attach to the new session.");solar_tour=null;return false
 	solar_tour.pin_destinations(sky.starfield)
 	journey_map.guided_read_only=true
-	solar_pause.visible=true;solar_next.visible=true;solar_skip.visible=true;solar_pause.text="Pause tour"
-	sky_state="live";caption="Guided tour: 12-second stops; Next stop skips a dwell. M pauses for navigation."
+	sky_state="live";note("Guided voyage: Earth to Aldebaran. P pauses, N skips a dwell, K skips a stage.")
 	_apply_journey_world();look_direction("forward");close_navigation()
 	return true
 ## The normal navigation session and its window, gone (a guided tour or the Sgr A* demo replaces them).
@@ -577,12 +633,25 @@ func _drop_navigation() -> void:
 	if navigation_window!=null:
 		remove_child(navigation_window);navigation_window.queue_free()
 	journey_sim=null;journey_map=null;navigation_window=null;solar_tour=null
-	solar_pause.visible=false;solar_next.visible=false;solar_skip.visible=false
 func close_navigation() -> void:
 	if navigation_window==null:return
 	journey_map.close_commit_dialog();navigation_window.hide()
+	# Outside the helm the map plans nothing (NT1): it rests in chart mode; any commit the
+	# helm already queued still goes out on the next tick.
+	if journey_map.mode=="helm":journey_map.set_mode("chart")
+## Keys inside the map window: M / Esc close the chart; at the helm E / Esc step back (an
+## armed press-twice confirm backs out first). V, J, H stay instant.
+func _navigation_key(key: int) -> void:
+	if journey_map==null:return
+	if key==KEY_ESCAPE and journey_map.armed:journey_map.disarm();return
+	if journey_map.mode=="chart":
+		if key in [KEY_M,KEY_ESCAPE]:close_navigation()
+	elif key in [KEY_E,KEY_ESCAPE]:
+		if consoles.focused=="navigation":consoles.leave()
+		else:close_navigation()
+	if key==KEY_V:toggle_auto_view()
 func open_identified_star(id: String) -> void:
-	open_navigation()
+	open_chart()
 	if journey_map != null:
 		var index := journey_map.index_of(id)
 		if index >= 0 and journey_map.preselect(index):journey_map.frame_star(index)
@@ -591,11 +660,14 @@ func journey_tick() -> bool:
 	var was_committed:=live_journey
 	var ok:bool=solar_tour.step() if solar_tour!=null else journey_map.tick()
 	if not ok:
-		caption="Navigation step failed: "+journey_sim.last_error;return false
+		refuse("Navigation step failed: "+journey_sim.last_error);return false
 	if solar_tour!=null:journey_map.refresh()
 	_apply_journey_world()
 	_show_interlude()
-	if live_journey and not was_committed:leg_from=last_stop;close_navigation()
+	if live_journey and not was_committed:
+		leg_from=last_stop
+		if consoles!=null and consoles.focused=="navigation":consoles.leave() # watch the departure
+		else:close_navigation()
 	if was_committed and not live_journey and solar_tour==null:last_stop=stop_name()
 	return true
 ## The free-navigation stop's display name: the catalogue name of the plan's target.
@@ -616,8 +688,10 @@ func _show_interlude() -> void:
 ## Skip to the next stage of the leg (labelled; the sim is stepped exactly to the boundary).
 func skip_stage() -> void:
 	if solar_tour!=null and solar_tour.skip_stage():_apply_journey_world();_show_interlude()
-func continue_interlude() -> void:
-	if solar_tour!=null and solar_tour.interlude is CardInterlude:(solar_tour.interlude as CardInterlude).finish()
+func continue_interlude() -> bool:
+	if solar_tour!=null and solar_tour.interlude is CardInterlude:
+		(solar_tour.interlude as CardInterlude).finish();return true
+	return false
 func _apply_journey_world()->void:
 	var was_committed:=live_journey
 	live_journey=journey_map.journey_state()=="committed"
@@ -665,53 +739,258 @@ func _update_tour_attitude(delta:float)->void:
 		solar_tour.attitude_hold=false
 		if finished=="departure":
 			if solar_tour.commit_prepared():_apply_journey_world()
-			else:caption="Tour departure failed: "+solar_tour.failed
-## Compact HUD (Mark, 2026-10-06): where, how fast and both clocks, read from the sim;
-## the review/debug block shows with the controls panel (Tab).
-const PHASE_WORDS := {"at_rest":"STOPPED","boosting":"ACCELERATING","cruising":"CRUISING","braking":"BRAKING","approaching":"FINAL APPROACH"}
-func hud_text(view_name: String, details: String) -> String:
-	var ship: Dictionary = sky_world.get("ship", {}) if sky_world is Dictionary else {}
-	var clock: Dictionary = sky_world.get("clock", {}) if sky_world is Dictionary else {}
+			else:refuse("Tour departure failed: "+solar_tour.failed)
+## R1-SHIP-UI (D-56) U1/U2: the HUD's view and its contextual cards. Every value the strip and
+## the cards show is a DisplayBinding on this view: the sim's world, plus a "hud" section of
+## lines formatted from sim fields (where, distance, speed, the gravity lines) and "client"
+## (the live pacing rate, shown as the transit card's warp; there is no warp control).
+const PHASE_WORDS := {"at_rest":"at rest","boosting":"ACCELERATING","cruising":"CRUISE","braking":"BRAKING","approaching":"FINAL APPROACH"}
+var _hud_phase := ""
+var _hud_state := ""
+var _hud_session: Object = null
+var _unlocked_seen: Array = []
+func hud_view() -> Dictionary:
+	var world: Dictionary = sky_world if sky_world is Dictionary else {}
+	var view := world.duplicate(false)
+	var ship: Dictionary = world.get("ship", {})
+	var hud := {"where": where_text(), "speed": speed_text(ship) if float(ship.get("beta", 0.0)) > 0.0 else "", "home_caption": "home (far-away)" if black_hole != null else "Earth"}
 	if black_hole != null:
-		# M3.6: every black-hole number is the sim's gr section, formatted (BlackHoleVisit.hud_lines)
-		var bh := Array(BlackHoleVisit.hud_lines(black_hole.gr()))
-		if not clock.is_empty():
-			bh.append("Ship +%s · far-away (home) clock +%s since arriving" % [duration_text(float(clock.get("tau", 0.0))), duration_text(float(clock.get("year", 0.0)))])
-		bh.append(("AUTO" if sky.system_view.body_fader else "REALISTIC") + " view · N next stop · K finish approach · C Archive · L leave · Tab details")
-		if not caption.is_empty(): bh.append(caption)
-		return "\n".join(bh) + ("\n\n" + details if controls.visible else "")
-	var where := "Ship · %s" % view_name
+		var g: Dictionary = black_hole.gr()
+		hud["distance"] = "r = %s r_s" % BlackHoleVisit.r_text(float(g.get("r", 0.0)))
+		var lines := BlackHoleVisit.hud_lines(g)
+		var gravity := {}
+		for i in lines.size(): gravity[str(i)] = lines[i]
+		hud["gravity"] = gravity
+	else:
+		var dworld := world
+		if sky_state != "live": # a review snapshot: where the ship is, not its frozen plan
+			dworld = world.duplicate(false); dworld.erase("journey")
+		hud["distance"] = distances_text(dworld, solar_tour, star_identification.info.names if star_identification != null else {}, leg_from)
+	view["hud"] = hud
+	view["client"] = {"warp": journey_map.pacing.rate if journey_map != null else 0.0}
+	return view
+## The strip's where / phase slot.
+func where_text() -> String:
+	var ship: Dictionary = sky_world.get("ship", {}) if sky_world is Dictionary else {}
+	var phase := str(ship.get("phase", ""))
+	var word: String = PHASE_WORDS.get(phase, phase.to_upper())
+	if black_hole != null:
+		var g: Dictionary = black_hole.gr()
+		return "Sgr A* · " + {"hover": "hovering", "orbit": "orbiting", "approach": "approaching"}.get(str(g.get("mode", "")), str(g.get("mode", "")))
 	if solar_tour != null:
-		var state: String = "CRUISE INTERLUDE" if solar_tour.interlude != null else PHASE_WORDS.get(str(ship.get("phase", "")), str(ship.get("phase", "")).to_upper())
-		where = "→ %s · %s" % [solar_tour.leg_name() if solar_tour.leg_index >= 0 else "Earth", state]
-	var speed := speed_text(ship)
-	if solar_tour != null and sky_world is Dictionary and sky_world.get("journey", {}).get("state", "") == "committed":
-		speed += " · %.2f M g this leg" % (solar_tour.leg_thrust_g() / 1.0e6)
-	var lines := [where, speed]
-	var dist := distances_text(sky_world if sky_world is Dictionary else {}, solar_tour, star_identification.info.names if star_identification != null else {}, leg_from)
-	if not dist.is_empty(): lines.append(dist)
-	if not clock.is_empty():
-		lines.append("Ship +%s · Earth +%s since departure" % [duration_text(float(clock.get("tau", 0.0))), duration_text(float(clock.get("year", 0.0)))])
-	var view := ("AUTO" if sky.system_view.body_fader else "REALISTIC") + " view · V view · J brightness · K skip stage · Tab details"
-	if solar_tour != null and solar_tour.skips > 0: view += " · skipped %d stage%s" % [solar_tour.skips, "" if solar_tour.skips == 1 else "s"]
-	if camera_mode == "player" and camera.pullback > 0.01: view += " · third-person camera"
-	lines.append(view)
-	if not caption.is_empty(): lines.append(caption)
-	return "\n".join(lines) + ("\n\n" + details if controls.visible else "")
+		if solar_tour.interlude != null: word = "CRUISE INTERLUDE"
+		if not live_journey and solar_tour.leg_index < 0: return "Earth orbit · guided voyage ready"
+		return ("→ %s · %s" if live_journey else "%s · %s") % [solar_tour.leg_name(), word]
+	if sky_state != "live":
+		return "Review snapshot · " + ("cruise" if sky_state == "cruise" else "at rest")
+	if live_journey:
+		return "→ %s · %s" % [stop_name(), word]
+	return ("Earth orbit" if last_stop == "Earth" else last_stop) + " · at rest"
+## The view tag: one word (details in Tab), plus the camera when it is not the captain's eye.
+func view_tag_text() -> String:
+	var t := "AUTO" if sky.system_view.body_fader else "REALISTIC"
+	if camera_mode == "player" and camera.pullback > 0.01: t += " · third-person camera"
+	if active_level == 1: t += " · lower deck"
+	return t
+func _update_hud(delta: float, details: String) -> void:
+	var view := hud_view()
+	ship_hud.details.text = details
+	ship_hud.set_view_tag(view_tag_text())
+	_update_cards(view)
+	_place_interlude()
+	ship_hud.set_prompt(consoles.prompt_text())
+	ship_hud.advance(delta)
+	ship_hud.update(view)
+## A new sim session (navigation, the guided voyage, Sgr A*): its cards start clean, and
+## what it opens with (its own world's unlocks, phase, journey state) is not news.
+func _reset_hud_session() -> void:
+	if ship_hud == null: return
+	_hud_session = black_hole if black_hole != null else journey_sim
+	var w: Dictionary = black_hole.sim.world if black_hole != null else (journey_sim.world if journey_sim != null else {})
+	for id in ["arrival", "refusal", "unlock"]: ship_hud.hide_card(id) # about the session that ended
+	var u: Variant = GalaxyMap.field_value(w, "consequence.archive.unlocked")
+	_unlocked_seen = u.duplicate() if u is Array else []
+	_hud_phase = str(GalaxyMap.field_value(w, "ship.phase"))
+	_hud_state = str(GalaxyMap.field_value(w, "journey.state"))
+## Cards by their §A2 triggers. Every card here only shows; none changes game state.
+func _update_cards(view: Dictionary) -> void:
+	if (black_hole if black_hole != null else journey_sim) != _hud_session: _reset_hud_session()
+	var phase := str(GalaxyMap.field_value(view, "ship.phase"))
+	var state := str(GalaxyMap.field_value(view, "journey.state"))
+	# Transit (M4.3b's readouts in the 3D ship): committed, until arrival.
+	if live_journey and black_hole == null:
+		if not ship_hud.has_card("transit"):
+			ship_hud.show_card("transit", "Transit")
+			for r in JourneyHud.ROWS:
+				if r[1] in ShipHud.TRANSIT_COMPACT:
+					# The 3D ship's warp is the live pacing rate (shown only; no warp control, D-57 Q3).
+					ship_hud.card_line("transit", r[0], r[1], "sci ship-yr/real-s" if r[1] == "client.warp" else r[2])
+	else:
+		ship_hud.hide_card("transit")
+	# Brake and final-approach notices (D-46, D-49).
+	if phase != _hud_phase:
+		if phase == "braking":
+			ship_hud.show_card("notice", "Braking", 8.0)
+			_notice_text(JourneyHud.BRAKE_NOTICE)
+		elif phase == "approaching":
+			ship_hud.show_card("notice", "Final approach", 8.0)
+			_notice_text("Final approach to %s" % (solar_tour.leg_name() if solar_tour != null else stop_name()))
+	# Arrival: the M4.3a arrival card; dismissed (Enter, Esc, click) or by the next commit.
+	if state == "arrived" and _hud_state == "committed":
+		ship_hud.hide_card("arrival")
+		ship_hud.show_card("arrival", "Arrived")
+		var body := ship_hud.card_body("arrival")
+		if body.get_child_count() == 0:
+			for r in ArrivalCard.ROWS: ship_hud.card_line("arrival", r[0], r[1], r[2])
+			ship_hud.card_button("arrival", "Dismiss [Enter]", dismiss_arrival)
+	elif state == "committed":
+		ship_hud.hide_card("arrival")
+	_hud_phase = phase
+	_hud_state = state
+	# Gravity (mockup C): the Sgr A* session's sim lines.
+	if black_hole != null:
+		if not ship_hud.has_card("gravity"):
+			ship_hud.show_card("gravity", "Gravity · Sgr A*")
+			for i in BlackHoleVisit.hud_lines(black_hole.gr()).size():
+				var b := DisplayBinding.new().bind("hud.gravity.%d" % i, "text")
+				b.add_theme_font_size_override("font_size", 12);b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				b.custom_minimum_size.x = ship_hud.card_width() - 20.0
+				ship_hud.card_body("gravity").add_child(b)
+			ship_hud._bindings_dirty = true
+	else:
+		ship_hud.hide_card("gravity")
+	# Tour: leg, stage, dwell left, PAUSED, and the instant pacing buttons (D-57 Q3).
+	if solar_tour != null:
+		if not ship_hud.has_card("tour"):
+			ship_hud.show_card("tour", "Guided voyage")
+			ship_hud.card_text("tour", "tour", "")
+			ship_hud.card_button("tour", "Pause [P]", toggle_tour_pause).name = "Pause"
+			ship_hud.card_button("tour", "Skip dwell", skip_dwell).name = "SkipDwell"
+			ship_hud.card_button("tour", "Skip stage [K]", skip_stage).name = "SkipStage"
+		ship_hud.set_card_value("tour", tour_line())
+		var row: Node = ship_hud.card_body("tour").get_node_or_null("Buttons")
+		if row != null:
+			(row.get_node("Pause") as Button).text = "Resume [P]" if solar_tour.paused else "Pause [P]"
+			(row.get_node("SkipDwell") as Button).disabled = live_journey or solar_tour.complete or solar_tour.attitude_hold or solar_tour.pending_index >= 0
+			(row.get_node("SkipStage") as Button).disabled = not live_journey or solar_tour.paused or solar_tour.attitude_hold
+	else:
+		ship_hud.hide_card("tour")
+	if interlude_card != null and interlude_card.visible:
+		if not ship_hud.has_card("interlude"):
+			ship_hud.show_card("interlude", "Cruise interlude")
+			ship_hud.card_button("interlude", "Continue [Enter]", continue_interlude)
+	else:
+		ship_hud.hide_card("interlude")
+	# Archive unlocks (the codex's toast, moved into the stack).
+	var u: Variant = GalaxyMap.field_value(view, "consequence.archive.unlocked")
+	if u is Array and u.size() > _unlocked_seen.size():
+		var titles := PackedStringArray()
+		_ensure_codex()
+		for id in u:
+			if not _unlocked_seen.has(id): titles.append(codex._title_of(id))
+		_unlocked_seen = u.duplicate()
+		ship_hud.show_card("unlock", "New in the Archive", 10.0)
+		if ship_hud.card_body("unlock").get_child_count() == 0: ship_hud.card_text("unlock", "unlock", "")
+		ship_hud.set_card_value("unlock", "%s, at the Archive terminal" % ", ".join(titles))
+## The D-41 interlude card keeps its content; it sits in the space left of the card column
+## so the stack (tour, transit) stays readable beside it.
+func _place_interlude() -> void:
+	if interlude_card == null or not interlude_card.visible: return
+	var left: float = ship_hud.column.position.x - ShipHud.MARGIN
+	interlude_card.custom_minimum_size.x = minf(620.0, left - 2.0 * ShipHud.MARGIN)
+	interlude_card.reset_size()
+	interlude_card.position = Vector2(maxf(ShipHud.MARGIN, (left - interlude_card.size.x) * 0.5), maxf(ship_hud.strip_bottom() + 8.0, (ship_hud.size.y - interlude_card.size.y) * 0.5))
+func _notice_text(text: String) -> void:
+	if ship_hud.card_body("notice").get_child_count() == 0: ship_hud.card_text("notice", "notice", "")
+	ship_hud.set_card_value("notice", text)
+## The tour card's line: leg, stage, dwell left, PAUSED.
+func tour_line() -> String:
+	var ship: Dictionary = sky_world.get("ship", {}) if sky_world is Dictionary else {}
+	var stage: String = "cruise interlude" if solar_tour.interlude != null else str(PHASE_WORDS.get(str(ship.get("phase", "")), "")).to_lower()
+	var parts := PackedStringArray()
+	if solar_tour.pending_index >= 0 or solar_tour.attitude_hold: parts.append("turning to " + solar_tour.pending_name if solar_tour.pending_index >= 0 else "attitude turn")
+	elif live_journey: parts.append("→ %s · %s" % [solar_tour.leg_name(), stage])
+	elif solar_tour.complete: parts.append("At %s · voyage complete" % solar_tour.leg_name())
+	else: parts.append("At %s · next stop in %.0f s" % [solar_tour.leg_name(), solar_tour.dwell_left])
+	if solar_tour.leg_index >= 0: parts.append("Leg %d of %d" % [solar_tour.leg_index + 1, solar_tour.itinerary.size()])
+	if solar_tour.skips > 0: parts.append("skipped %d stage%s" % [solar_tour.skips, "" if solar_tour.skips == 1 else "s"])
+	if solar_tour.paused: parts.append("PAUSED")
+	return " · ".join(parts)
+func refuse(text: String) -> void:
+	caption = text
+	if ship_hud == null: return
+	ship_hud.show_card("refusal", "Not now", 8.0)
+	if ship_hud.card_body("refusal").get_child_count() == 0: ship_hud.card_text("refusal", "refusal", "")
+	ship_hud.set_card_value("refusal", text)
+func note(text: String) -> void:
+	caption = text
+	if ship_hud == null: return
+	ship_hud.show_card("notice", "Ship's log", 8.0)
+	_notice_text(text)
+func dismiss_arrival() -> void:
+	ship_hud.hide_card("arrival")
+## P and the tour card: pause or resume the guided voyage (pacing; D-57 Q3).
+func toggle_tour_pause() -> void:
+	if solar_tour != null: solar_tour.paused = not solar_tour.paused
+## The tour card's Skip dwell: the itinerary's own next leg comes forward (pacing).
+func skip_dwell() -> bool:
+	if solar_tour == null or live_journey or not solar_tour.prepare_next(): return false
+	_apply_journey_world()
+	return true
+func toggle_confirm_mode() -> void:
+	confirm_mode = "twice" if confirm_mode == "hold" else "hold"
+	confirm_button.text = "Confirm decisions: " + ("press twice" if confirm_mode == "twice" else "hold")
+	if menu_return:
+		var gs := GameSettings.new(); gs.dir = settings_dir; gs.load_settings(); gs.confirm_mode = confirm_mode; gs.save_settings()
+## Tab "Walk to": walk to a station along the walk mesh (3.5 m/s; WASD takes over).
+func walk_to(station: String) -> bool:
+	return consoles.walk_to(station)
+## The bridge consoles (R1-SHIP-UI U3): stations from ship.glb, use points, prompt, panels.
+func _consoles_setup() -> void:
+	consoles = ShipConsoles.new(); add_child(consoles); consoles.setup(self)
+	consoles.used.connect(func(_s:String,_a:String)->void:ship_hud.hint.visible=false)
+## The dwell label (§A3): when the view rests 0.5 s, name the star or body at the screen
+## centre (the I card's own pick, read only) with its distance and "I · details".
+func _update_dwell(delta: float) -> void:
+	# Not at Sgr A*: its stars are the Sol sky lensed (design OQ5), so a name and distance mislead.
+	if not dwell_on or black_hole!=null or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible or (interlude_card!=null and interlude_card.visible):
+		_dwell_done=false;ship_hud.set_dwell("",Vector2.ZERO);return
+	var pose:Transform3D=camera.global_transform
+	if not pose.is_equal_approx(_dwell_pose):
+		_dwell_pose=pose;_dwell_still=0.;_dwell_done=false;ship_hud.set_dwell("",Vector2.ZERO);return
+	_dwell_still+=delta
+	if _dwell_still>=.5 and not _dwell_done:
+		_dwell_done=true
+		var centre:=ship_hud.size*.5
+		ship_hud.set_dwell(dwell_text_at(centre),centre)
+func dwell_text_at(point: Vector2) -> String:
+	# Named stars and resolved bodies only: an unnamed catalogue row is the I card's job.
+	var hits:Array=star_identification.probe(point).filter(func(h:Dictionary)->bool:return h.has("body") or star_identification.info.names.has(h.id))
+	if hits.is_empty():return ""
+	var c:Dictionary=hits[0]
+	if c.has("body"):return "%s · %s · I details" % [str(c.body.get("name",c.body.get("id",""))),BodyInfo.distance_text(float(c.distance_km))]
+	var row:Dictionary=star_identification.info.records.get(c.id,{})
+	var pos:Dictionary=sky_world.get("ship",{}).get("pos",{}) if sky_world is Dictionary else {}
+	var d:=""
+	if row.has("x") and not pos.is_empty():
+		d=" · "+distance_text(sqrt(pow(float(row.x)-float(pos.x),2.)+pow(float(row.y)-float(pos.y),2.)+pow(float(row.z)-float(pos.z),2.)))
+	return star_identification.info.display_name(c.id)+d+" · I details"
 
 ## Speed from the sim's exact fields: beta with as many nines as 1 - beta needs, gamma, km/s.
 static func speed_text(ship: Dictionary) -> String:
 	var beta: float = float(ship.get("beta", 0.0))
 	if beta <= 0.0: return "At rest"
-	var omb: float = float(ship.get("one_minus_beta", 1.0 - beta))
+	# The sim emits one_minus_beta in every phase (R1-SHIP-UI AC2); never computed here.
+	if not ship.has("one_minus_beta"): return "β %s c" % str(beta)
+	var omb: float = float(ship.one_minus_beta)
 	var n := -log(maxf(omb, 1e-15)) / log(10.0)
-	var digits := clampi(int(round(n)) if absf(n - round(n)) < 1e-9 else int(ceil(n)), 4, 9)
+	var digits := clampi(int(round(n)) if absf(n - round(n)) < 1e-9 else int(ceil(n)), 4, 15)
 	var km_s := String.num_int64(int(round(beta * 299792.458)))
 	var grouped := ""
 	for i in km_s.length():
 		if i > 0 and (km_s.length() - i) % 3 == 0: grouped += ","
 		grouped += km_s[i]
-	return ("%." + str(digits) + "fc · γ %s · %s km/s") % [1.0 - omb, ("%.2f" % float(ship.get("gamma", 1.0))) if float(ship.get("gamma", 1.0)) < 1000.0 else "%.0f" % float(ship.get("gamma", 1.0)), grouped]
+	return ("%." + str(digits) + "fc · γ %s · %s km/s") % [beta, ("%.2f" % float(ship.get("gamma", 1.0))) if float(ship.get("gamma", 1.0)) < 1000.0 else "%.0f" % float(ship.get("gamma", 1.0)), grouped]
 
 ## Distances (Mark, 2026-10-06): to the destination (the sim's distance_remaining), from
 ## the last stop where the leg was committed (plan.departure), and from Earth (the
@@ -759,7 +1038,8 @@ static func distances_text(world: Dictionary, tour, names: Dictionary = {}, from
 		if b.get("id", "") == "earth": earth_ly = Planets.length64(Planets.world_of(b.rel_km)) / 9460730472580.8
 	if earth_ly < 0.0 and not pos.is_empty(): earth_ly = sqrt(pow(float(pos.x), 2.0) + pow(float(pos.y), 2.0) + pow(float(pos.z), 2.0))
 	var at_earth: bool = state == "arrived" and plan.get("hold") is Dictionary and str(plan.hold.get("body", "")) == "earth"
-	if earth_ly >= 0.0 and not at_earth: parts.append("from Earth %s" % distance_text(earth_ly))
+	var from_earth_shown: bool = state == "committed" and from_dep >= 0.0 and dep_name == "Earth"
+	if earth_ly >= 0.0 and not at_earth and not from_earth_shown: parts.append("from Earth %s" % distance_text(earth_ly))
 	return " · ".join(parts)
 
 ## A finite body's display name: the catalogue name of the star it is ("Alpha Centauri B"),
@@ -784,12 +1064,7 @@ static func _grouped(n: int) -> String:
 
 ## Years as a readable duration: seconds through years.
 static func duration_text(years: float) -> String:
-	var s := years * 31557600.0
-	if s < 120.0: return "%.0f s" % s
-	if s < 7200.0: return "%.1f min" % (s / 60.0)
-	if s < 172800.0: return "%.1f h" % (s / 3600.0)
-	if years < 2.0: return "%.1f days" % (s / 86400.0)
-	return "%.2f yr" % years
+	return ShipHud.duration_text(years)
 
 func journey_label() -> String:
 	if black_hole!=null:return "SGR A* DEMO · stop %d of %d · %s" % [black_hole.stops_taken,BlackHoleVisit.STOPS.size(),"next: "+black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop"]
@@ -804,9 +1079,9 @@ func _solar_departure_smoke()->void:
 		ok=solar_tour.advance() and journey_tick() and live_journey
 		var before:Dictionary=journey_sim.world.duplicate(true)
 		ok=not start_solar_departure() and journey_sim.world==before and ok
-		open_navigation()
-		ok=solar_tour.paused and journey_map.guided_read_only and not journey_map.open_commit_dialog() and ok
-		close_navigation();solar_tour.paused=false
+		open_chart()
+		ok=not solar_tour.paused and journey_map.mode=="chart" and journey_map.guided_read_only and not journey_map.open_commit_dialog() and ok
+		close_navigation()
 		for tick in 20:ok=journey_tick() and ok
 		ok=sky.system_view.drawn_points.has("saturn") and sky_world.ship.phase=="boosting" and sky_world.clock.tau>before.clock.tau and ok
 		for frame in 12:await get_tree().process_frame
@@ -828,17 +1103,17 @@ func start_black_hole() -> bool:
 	if benchmark.running:return false
 	if black_hole != null:return true
 	if live_journey or (journey_sim!=null and journey_sim.world.get("journey",{}).get("state","")=="committed"):
-		caption="Finish the committed journey before visiting Sgr A*.";return false
+		refuse("Finish the committed journey before visiting Sgr A*.");return false
 	_drop_navigation()
 	var v:=BlackHoleVisit.new()
 	if not v.start(LoreLoader.archive_rows(LoreLoader.load_entries()["entries"])):
-		caption="Sgr A* unavailable: "+v.last_error;return false
+		refuse("Sgr A* unavailable: "+v.last_error);return false
 	black_hole=v;_bh_accum=0.
 	_ensure_codex()
-	bh_row.visible=true
 	sky_state="black_hole"
 	_apply_bh_world();look_direction("forward")
-	caption="Sgr A*, 10⁶ r_s out (1.34 ly). N: next stop (approach to 10 r_s at β 0.1)."
+	_reset_hud_session()
+	note("Sgr A*, 10⁶ r_s out (1.34 ly). The next stop is an approach to 10 r_s at β 0.1.")
 	return true
 ## The sim's world on the sky. The ship holds its nose on the hole (client attitude, like the
 ## guided tour's turns), so look forward / side / aft are toward, across and away from it.
@@ -856,7 +1131,7 @@ func bh_tick() -> bool:
 	if sky.gr_lens!=null and sky.gr_lens.active and not sky.gr_lens.ring.is_empty():black_hole.report_ring()
 	var was:bool=black_hole.approaching()
 	if not black_hole.step():
-		caption="Sgr A* step failed: "+black_hole.last_error;return false
+		refuse("Sgr A* step failed: "+black_hole.last_error);return false
 	if was and not black_hole.approaching():_arrived()
 	_apply_bh_world()
 	return true
@@ -864,9 +1139,9 @@ func bh_next_stop() -> bool:
 	if black_hole==null:return false
 	var label:String=black_hole.next_label()
 	if not black_hole.next_stop():
-		caption="Approach under way (K finishes it)." if black_hole.approaching() else ("Last stop reached; L leaves." if label.is_empty() else "Refused by the sim: "+black_hole.last_error)
+		refuse("Approach under way (K finishes it)." if black_hole.approaching() else ("Last stop reached; leave Sgr A* when ready." if label.is_empty() else "Refused by the sim: "+black_hole.last_error))
 		return false
-	caption=label+"."
+	note(label+".")
 	_apply_bh_world()
 	return true
 func bh_finish_approach() -> bool:
@@ -875,20 +1150,20 @@ func bh_finish_approach() -> bool:
 	_apply_bh_world()
 	return true
 func _arrived() -> void:
-	caption="Arrived: hovering at r = %s r_s. N: %s." % [BlackHoleVisit.r_text(float(black_hole.gr().r)),black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop reached"]
+	note("Arrived: hovering at r = %s r_s. Next: %s." % [BlackHoleVisit.r_text(float(black_hole.gr().r)),black_hole.next_label() if not black_hole.next_label().is_empty() else "last stop reached"])
 ## Back to Sol at rest: the sgr_a session ends and the sky is flat again (GR off).
 func leave_black_hole() -> void:
 	if black_hole==null:return
 	black_hole.stop();black_hole=null
-	bh_row.visible=false
 	if codex!=null:codex.close()
 	sky_state="rest";set_sky_state("rest")
-	caption="Back at Sol (rest snapshot). M opens navigation."
+	note("Back at Sol (rest snapshot).")
 func _ensure_codex() -> void:
 	if codex!=null:return
 	var layer:=CanvasLayer.new();layer.layer=13;add_child(layer)
 	codex=load("res://ui/archive/codex.tscn").instantiate();layer.add_child(codex)
 	codex.load_lore()
+	codex.toast_box.visible=false # R1-SHIP-UI: unlocks are announced in the HUD's card stack
 ## C: the Archive codex (what the sim has unlocked this session).
 func toggle_codex() -> void:
 	_ensure_codex()

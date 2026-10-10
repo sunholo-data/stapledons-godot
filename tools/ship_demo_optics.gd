@@ -32,7 +32,7 @@ func _run() -> void:
 	root.size=Vector2i(1280,720)
 	var demo: Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options={"stars":false,"background":false,"size":root.size}
-	root.add_child(demo);demo.set_process(false);demo.hud.visible=false
+	root.add_child(demo);demo.set_process(false);demo.ship_hud.visible=false
 	cam=demo.camera;sky=demo.sky;finite=demo.geometry_view
 	for child in demo.geometry.get_children():
 		if child is Node3D:child.visible=false

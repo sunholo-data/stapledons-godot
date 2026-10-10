@@ -224,6 +224,9 @@ const SPOILER = /\b(end[- ]?screen|endgame|ending|legacy (report|screen)|year 1,
 // deny wins over allow
 const DENY = new Set([
   'D-13', // physics, but the ruling names where near-horizon dives lead (endgame mechanics)
+  'D-41', // journey consequences include story-specific relationships
+  'D-45', // character and world backstory in the question
+  'D-53', // physics ruling identifies a story location
   'DD-2026-10-01-demo-black-hole-sgr-a-because-of-tides',
   'DD-2026-09-28-generation-ship-casting-direction', // cast ages, families and succession
   'DD-2025-12-02-game-starts-post-black-hole', // the game's premise and backstory
