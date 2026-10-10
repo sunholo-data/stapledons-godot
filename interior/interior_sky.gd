@@ -33,6 +33,10 @@ var dust_mat := ShaderMaterial.new()
 var dust := DustFlash.new()
 var dust_clock := 0.0 # seconds since setup: the flashes' clock (real-time ship seconds)
 var dust_auto := true # upload DustFlash.live() each frame (the goldens set their own flashes)
+var _dust_input := PackedVector4Array()
+var _dust_count := 0
+var _dust_mask_radius := -1.0
+var _dust_mask_spot := -1.0
 var has_background := false
 var cam := {} # cam_<area>.json (ship frame)
 var view_fov := 78.0
@@ -260,13 +264,25 @@ func upload_dust(live: Array) -> void:
 
 ## Flash geometry and radiance share one upload (also the GPU-golden seam).
 func set_dust_flashes(fl: PackedVector4Array, ts: PackedFloat32Array, count: int) -> void:
-	var r: Variant = dust_mat.get_shader_parameter("radius")
-	var spot: Variant = dust_mat.get_shader_parameter("r_spot")
-	# Unset ShaderMaterial parameters return null, even with shader defaults.
-	var masks := DustFlash.overlap_masks(fl, count, float(r) if r != null else radius_m, float(spot) if spot != null else dust.r_spot)
+	_dust_input = fl
+	_dust_count = count
 	dust_mat.set_shader_parameter("flash", fl)
 	dust_mat.set_shader_parameter("flash_t", ts)
 	dust_mat.set_shader_parameter("count", count)
+	_refresh_dust_masks(true)
+
+
+func _refresh_dust_masks(force: bool = false) -> void:
+	var r: Variant = dust_mat.get_shader_parameter("radius")
+	var spot: Variant = dust_mat.get_shader_parameter("r_spot")
+	# Unset ShaderMaterial parameters return null, even with shader defaults.
+	var radius := float(r) if r != null else radius_m
+	var spot_radius := float(spot) if spot != null else dust.r_spot
+	if not force and radius == _dust_mask_radius and spot_radius == _dust_mask_spot:
+		return
+	var masks := DustFlash.overlap_masks(_dust_input, _dust_count, radius, spot_radius)
+	_dust_mask_radius = radius
+	_dust_mask_spot = spot_radius
 	dust_mat.set_shader_parameter("neighbour_lo", masks[0])
 	dust_mat.set_shader_parameter("neighbour_hi", masks[1])
 
@@ -367,6 +383,7 @@ func _upload_exposure() -> void:
 	glow_mat.set_shader_parameter("scale", exposure.k() / PI)
 	dust_mat.set_shader_parameter("radius", radius_m)
 	dust_mat.set_shader_parameter("r_spot", dust.r_spot)
+	_refresh_dust_masks() # comparison sheets can change the physical spot radius
 	dust_mat.set_shader_parameter("scale", exposure.k() / PI)
 
 

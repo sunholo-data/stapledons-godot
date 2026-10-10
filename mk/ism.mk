@@ -32,11 +32,7 @@ ism-determinism:   ## AC11, AC13: a 2.8 lism-1 session (plan, commit, 40 real-ti
 	  echo "ism-determinism: $$(wc -l < $(ISM_TMP)/det-vm1.txt | tr -d ' ') lines with impacts, digest $$(shasum -a 256 $(ISM_TMP)/det-vm1.txt | cut -c1-16): run 1 = run 2 = interpreter"
 
 ism-bench:         ## AC19: strict-VM cost of the ISM per real-time tick (a lism-1 session minus the same session under uniform) and of a lism-1 plan, vs the design's 0.5 ms and 20 ms
-	@now() { perl -MTime::HiRes=time -e 'printf "%.6f\n", time'; }; \
-	run() { env -u AI_LIVE $(ISM_RUN) --bytecode --strict-bytecode --entry $$1 --args-json $$2 sim/protocol_ism_test.ail > /dev/null; }; \
-	run ismStream 2; run uniformStream 2; \
-	a=$$(now); run ismStream 0; b=$$(now); run ismStream 400; c=$$(now); run uniformStream 0; d=$$(now); run uniformStream 400; e=$$(now); \
-	perl -e 'my ($$a,$$b,$$c,$$d,$$e)=@ARGV; my $$l=(($$c-$$b)-($$b-$$a))/400*1000; my $$u=(($$e-$$d)-($$d-$$c))/400*1000; printf "ism-bench: lism-1 tick %.3f ms, uniform tick %.3f ms: the ISM costs %.3f ms per real-time tick (budget 0.5 ms); setup + plan + commit lism-1 %.0f ms vs uniform %.0f ms (plan budget 20 ms)\n", $$l, $$u, $$l-$$u, ($$b-$$a)*1000, ($$d-$$c)*1000' $$a $$b $$c $$d $$e
+	@AILANG=$(AILANG) SCRATCH=$(SCRATCH) sh tools/ism_bench.sh
 
 dust-flash-test:   ## AC15: the dust-flash CPU mirror vs the package values, lookups finite, the glitter sampler mirrors (headless)
 	@mkdir -p $(SCRATCH)
