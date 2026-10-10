@@ -37,8 +37,15 @@ func _phase_batch(sims: Array[SimBridge], phase: String) -> Dictionary:
 		var p: Dictionary = s.world.journey.plan
 		var burn: float = p.boost_minutes * 60.0 / 31557600.0
 		_request(s, [{"k": "commit", "plan_id": s.world.journey.plan_id}], 0.0)
-		_request(s, [], burn * 0.5 if phase == "boosting" else p.ship_years - burn * 0.5)
-		for warmup in 40: _request(s, [], REALTIME)
+		var remaining: float = burn * 0.5 if phase == "boosting" else p.ship_years - burn * 0.5
+		while remaining > 0.0:
+			var step: float = minf(remaining, 1.0)
+			_request(s, [], step)
+			if failed: return {}
+			remaining -= step
+		for warmup in 40:
+			_request(s, [], REALTIME)
+			if failed: return {}
 	var times := [[], []]
 	var deltas: Array = []
 	for round in 7:
@@ -105,11 +112,13 @@ func _run() -> void:
 		"tick_uniform_ms": ticks[0], "tick_lism_ms": ticks[1],
 		"tick_delta_ms": tick_delta, "tick_delta_median_ms": _median(tick_delta)}
 	report.boost = _phase_batch(sims, "boosting")
+	print("ism-boost-bench: ", JSON.stringify(report.boost))
 	if failed:
 		for s in sims: s.stop()
 		quit(1)
 		return
 	report.brake = _phase_batch(sims, "braking")
+	print("ism-brake-bench: ", JSON.stringify(report.brake))
 	if failed:
 		for s in sims: s.stop()
 		quit(1)
