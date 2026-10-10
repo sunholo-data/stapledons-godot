@@ -90,8 +90,15 @@ func _run() -> void:
 	var good_plan: Dictionary = map._last_plan.duplicate(true)
 	map._last_plan["cruise_phi"] = 0.0 # below every bound: the recreated plan is refused
 	var before_id := int(demo.journey_sim.world.journey.plan_id)
+	# The host's final empty tick clears last_refused; inspect the invalid plan's
+	# raw response before exercising the normal confirmed-commit flow.
+	check(map.sim.send([map._last_plan], 0.0) and map.sim.last_refused.size() == 1 and map.sim.last_refused[0]["reason"] == "out_of_range", "the simulation preserves the raw out_of_range refusal")
+	map.sim.record_sent = true; map.sim.sent_log.clear()
 	check(map.open_commit_dialog() and map.hold_commit(GalaxyMap.HOLD_S) and demo.journey_tick(), "the refused re-plan tick runs")
-	check(map.journey_state() == "planned" and not demo.live_journey and map.status_text().contains("refused: out_of_range") and not map.status_text().contains("stale_plan"), "a refused re-plan is reported, no stale commit: " + map.status_text())
+	check(map.sim.sent_log.any(func(line): return line.intents.any(func(intent): return intent.get("k", "") == "plan" and intent.get("cruise_phi", -1.0) == 0.0)) and not map.sim.sent_log.any(func(line): return line.intents.any(func(intent): return intent.get("k", "") == "commit")), "the confirmed flow attempts the refused re-plan and sends no commit intent")
+	map.sim.record_sent = false
+	check(map.journey_state() == "planned" and int(demo.journey_sim.world.journey.plan_id) == before_id and not demo.live_journey, "the refused re-plan preserves the original plan and sends no stale commit")
+	check(map.status_text().contains("outside the allowed range") and map.status_text().contains("Choose another destination or speed") and not map.status_text().contains("stale_plan"), "a refused re-plan offers a next action: " + map.status_text())
 	map._last_plan = good_plan
 	fly_body(demo, "acen-b", "Alpha Centauri A")
 	hud = demo.distances_text(demo.sky_world, null, demo.star_identification.info.names, demo.leg_from)
