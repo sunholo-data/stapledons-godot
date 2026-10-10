@@ -198,5 +198,5 @@ export pure func brightAtPacing(n: int) -> float {
 }
 test "compressed bright totals include boost and braking through arrival: 1, 7 and 60 ticks agree within quadrature tolerance" {
   let one = brightAtPacing(1);
-  one > 0.0 && rel(brightAtPacing(7), one, 0.00001) && rel(brightAtPacing(60), one, 0.00001)
+  rel(one, 1961369584.1362152, 0.001) && rel(brightAtPacing(7), one, 0.00001) && rel(brightAtPacing(60), one, 0.00001)
 }

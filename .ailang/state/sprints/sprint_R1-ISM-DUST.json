@@ -1,12 +1,12 @@
 {
   "sprint_id": "R1-ISM-DUST",
   "status": "in_progress",
-  "approved": false,
+  "approved": true,
   "approved_by": "Mark Edmondson, attended 2026-10-09 (ledger D-61)",
   "created": "2026-10-09",
   "design_doc": "design_docs/planned/r1/ism-structure-and-dust.md",
   "sprint_plan": "design_docs/planned/r1/ism-structure-and-dust-sprint.md",
-  "branch": "sprint/ism-dust (on approval, from origin/main)",
+  "branch": "finish/ism-dust-20261010",
   "implements": [
     "D-60",
     "D-11",
@@ -251,10 +251,10 @@
         "Bright totals within 3 sigma at real-time and compressed pacing; KS cos-theta; none at rest; 0 dropped in real-time streams; window <=32 in compressed; <=130 of 1024 slots (AC12)",
         "make strict and make parity green (AC13)"
       ],
-      "passes": true,
+      "passes": false,
       "started": "2026-10-09",
-      "completed": "2026-10-09",
-      "notes": "sim/ism.ail + core/protocol 2.7: lism-1 default for new 2.7 games, uniform below (replay/parity/parity-m4/parity-gr unchanged). Ledger by column (AC9 1e-9 at 1/7/60 ticks), hold-limit refusal + hold_limit event (AC10), guided tour all 10 legs accepted under lism-1 (AC10b; no Q8), RNG untouched (AC11), make ism-determinism (strict VM = interpreter = rerun), make strict green, make sim 389/389. AC6a pinned at 42/59 (below 0.80, flagged).",
+      "completed": null,
+      "notes": "Protocol 2.8 takes next free minor after inferred stars2.7. Exact cloud roots, bounded numerical LIC bracket, cached contiguous route segments, cumulative grains, adaptive compressed bright totals and endpoint display rates. Uniform2.7 fixture retained byte for byte. AC6a still42/59 below80%; no waiver inferred.",
       "pr": "A"
     },
     {
@@ -304,10 +304,10 @@
         "make ship-ui-test new cases green (AC17)",
         "Deferred to a follow-up PR if R1-SHIP-UI U2 has not merged by day 11"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-10-09",
-      "completed": null,
-      "notes": "DEFERRED to a follow-up PR: R1-SHIP-UI PR #193 (strip/cards) not merged yet.",
+      "completed": "2026-10-10",
+      "notes": "Built on merged ShipHud:197ship-ui/24no-twitch/59identification assertions pass, orderedre-entry and coincidentSun red regression fixed. Integrated two-resolution captures pendingfinalrenderer.",
       "pr": "A (or follow-up)"
     },
     {
@@ -322,10 +322,10 @@
         "Renders exist, no uniform or NaN frame, contact sheet; every frame opened and noted (AC18)",
         "make ism-bench within the design's budgets (AC19)"
       ],
-      "passes": true,
+      "passes": false,
       "started": "2026-10-09",
-      "completed": "2026-10-09",
-      "notes": "make ism-capture: 36 frames, none uniform or NaN (capture_log.json); every frame opened (sips -Z 700, renders/ism/small) and public at https://storage.googleapis.com/stapledons-voyage-assets/review/ism-dust/pr-a/. Afterglow r_s x tau sheet, eps sheet per medium, sensitivity table (a_max 5/10/20, hot delta 0.002, MRN only), flash close-up, map views. n_H 10 cloud is synthetic (uniform at the mass-equivalent density; glow only) until PR B. make ism-bench: the ISM costs ~0.9 ms per real-time tick on the strict VM incl. the 2.7 encoding (budget 0.5 ms: NOT met, after a short-piece fast path and caches cut it from 3 ms); a lism-1 plan ~7 ms (budget 20 ms: met).",
+      "completed": null,
+      "notes": "36actualframes generated/opened via contact sheet; comparison sheets and map opened. FirstoptimizedVMdelta0.449ms/plan16ms withinbudgets, repeatabilitypending. IndependentVulkanGPU64sprites1440p4.869ms vs0.3msbudget: rendereroptimizationinprogress. P2reviewpending.",
       "pr": "A"
     },
     {
@@ -340,10 +340,10 @@
         "make python-guard green (AC20)",
         "make test green locally and in CI (AC22)"
       ],
-      "passes": true,
+      "passes": false,
       "started": null,
-      "completed": "2026-10-09",
-      "notes": "Archive drafts for Mark (Q7) in design_docs/planned/r1/ism-archive-drafts (corrected ism-glow, Weather Between the Stars), checked by make ism-lore-drafts (IS-n now in the lore registry; ism-structure.md vendored). CHANGELOG fragment changelogs/unreleased/2026-10-09-ism-dust.md; index row; design roadmap status PR sunholo-data/stapledons-design#12; python allowlist (tools/ism_dust_ref.py oracle).",
+      "completed": null,
+      "notes": "Archive drafts and changelog prepared; finallocal/CI fullsuite, independentjudge, P2androadmaplanding remain.",
       "pr": "A"
     },
     {
@@ -358,14 +358,29 @@
         "LLCC outline contains the Peek 2011 / Meyer 2012 absorption stars and excludes their non-detections; a route through it refused at 0.999999c and accepted at 0.998c (AC6c)"
       ],
       "pr": "B",
-      "passes": null,
-      "started": null,
+      "passes": false,
+      "started": "2026-10-10",
       "completed": null,
-      "notes": null
+      "notes": "FITS synthetic60assertions;realNESTcrop151shells. Globalcomponentellipsoidfalsecavityfillrejected;8pcsubdivision5601clumps,23LLCCtriangles, spatialindexandindependentanchorsinprogress. LLCCNaI-onlyHD84937outside21cmoutline:cross-tracercriterionneedsresolution."
     }
   ],
   "spec_pr": 11,
   "rerecorded": [],
   "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump.",
-  "next_step": "Full make test + make golden, then the independent PR A evaluation, then PR B (I3b; Edenhofer FITS downloaded, md5 verified)."
+  "next_step": "Complete independent evaluation, local/CI checks and P2 review; resolve AC6a membership and AC19 GPU budget before landing. PR B dense-cloud scientific anchors in progress.",
+  "execution_2026_10_10": {
+    "ailang_prompt": "v0.16.6 teaching prompt loaded from pinned runtime v0.52.0",
+    "protocol": "2.8, preserving frozen 2.7 inferred-star session byte for byte on both engines",
+    "integration_branch": "finish/ism-dust-20261010",
+    "gpu_golden": "0 failures; 36 ISM captures, 0 uniform/NaN, contact/afterglow/eps/sensitivity/map opened",
+    "headless": "full suite running; targeted ISM18/18 and core11/11 before final LIC bracket/quad-knot refinements",
+    "benchmark_first": "0.449ms ISM delta/tick;16ms planning, repeatability pending",
+    "open_gates": [
+      "AC6a:42/59=71.2%, requirement80%",
+      "AC19:dust GPU4.869ms at1440p64sprites, budget0.3ms, optimization in progress",
+      "P2:Mark render/dev-build/Archive review",
+      "local and CI full-suite final revision",
+      "PR B:LLCC all-tracer discrepancy and independent anchors"
+    ]
+  }
 }

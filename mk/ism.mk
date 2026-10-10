@@ -63,3 +63,11 @@ ism-compat: ## frozen 2.7 inferred-star session from main 70c445c, interpreter a
 	@$(ISM_RUN) --caps IO --entry main sim/ship.ail < tests/fixtures/protocol_27_inferred.input.ndjson > $(ISM_TMP)/compat-int.ndjson
 	@cmp tests/fixtures/protocol_27_inferred.expected.ndjson $(ISM_TMP)/compat-vm.ndjson && cmp $(ISM_TMP)/compat-vm.ndjson $(ISM_TMP)/compat-int.ndjson
 	@echo 'ism-compat: frozen 2.7 inferred-star plan, commit and flight = VM = interpreter'
+
+.PHONY: ism-bright-oracle
+ism-bright-oracle: ## independent dense midpoint integration in rapidity, 0.001-dex Planck efficacy
+	@mkdir -p $(ISM_TMP)
+	@python3 tools/ism_bright_ref.py > $(ISM_TMP)/bright-oracle.log
+	@echo "ism-bright-oracle: four resolutions converge; core_ism_test binds the independent result"
+
+test: ism-bright-oracle
