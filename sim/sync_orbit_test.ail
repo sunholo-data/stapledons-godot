@@ -1,0 +1,22 @@
+module stapledons/sim/sync_orbit_test
+import std/option (Some, None)
+import ./sync_orbit (SyncOrbit, syncOrbitOf)
+
+pure func absf(x: float) -> float = if x < 0.0 then 0.0 - x else x
+pure func alt(id: string) -> float = match syncOrbitOf(id) { Some(s) => s.altitudeKm, None => 0.0 - 99.0 }
+pure func noneOf(id: string) -> string = match syncOrbitOf(id) { Some(s) => s.none, None => "missing" }
+-- Earth's geostationary altitude 35,786 km; Mars's areostationary 17,032 km; Jupiter about
+-- 88,500 km above the 1-bar equatorial radius (160,000 km from the centre).
+export pure func checkStationary() -> bool =
+  absf(alt("earth") - 35786.0) < 1.0 && absf(alt("mars") - 17032.0) < 5.0 && absf(alt("jupiter") - 88517.0) < 100.0
+  && alt("saturn") > 0.0 && alt("uranus") > 0.0 && alt("neptune") > 0.0 && alt("sun") > 24000000.0 && alt("sun") < 25000000.0
+test "stationary orbits: Earth 35,786 km, Mars 17,032 km, Jupiter 88,500 km above the surface; the Sun 24.6 million km" { checkStationary() }
+-- None: every moon here is tidally locked; Mercury (58.6 d) and Venus (243 d) rotate too slowly,
+-- their stationary radius lies beyond their Hill spheres. Unknown ids have no record.
+export pure func checkNone() -> bool =
+  noneOf("moon") == "locked" && noneOf("io") == "locked" && noneOf("tethys") == "locked" && noneOf("titan") == "locked" && noneOf("triton") == "locked"
+  && noneOf("mercury") == "slow" && noneOf("venus") == "slow" && alt("venus") == 0.0 - 1.0 && noneOf("earth") == "" && noneOf("acen-a") == "missing"
+test "none: tidally locked moons (Moon, Io, Tethys, Titan, Triton); Mercury and Venus too slow; no record for other ids" { checkNone() }
+-- The Hill radius by the same law equals a (m / 3M)^(1/3): Earth about 1.5 million km.
+export pure func checkHill() -> bool = match syncOrbitOf("earth") { Some(s) => absf(s.hillKm / 1496558.0 - 1.0) < 0.001, None => false }
+test "the Hill radius from Kepler's law: Earth 1.50 million km" { checkHill() }

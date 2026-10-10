@@ -449,7 +449,12 @@ func world_pos(i: int) -> Vector3:
 
 func plan_intent(i: int) -> Dictionary:
 	var s: Dictionary = catalogue[i]
-	return {"k": "plan", "target": {"index": i, "id": s["id"], "pos": {"x": s["x"], "y": s["y"], "z": s["z"]}}, "cruise_phi": cruise_phi}
+	var intent := {"k": "plan", "target": {"index": i, "id": s["id"], "pos": {"x": s["x"], "y": s["y"], "z": s["z"]}}, "cruise_phi": cruise_phi}
+	# D-58: the catalogue row, from which the sim infers a radius for a star without a
+	# measured one (free navigation, stop_rule 54); rows without photometry send none.
+	if float(s.get("vmag", 99.0)) < 99.0 and float(s.get("teff", 0.0)) > 0.0:
+		intent["star"] = {"name": display_name(i), "v": float(s["vmag"]), "teff": float(s["teff"])}
+	return intent
 
 
 ## The player picked star i: plan it on the next tick and tell listeners.

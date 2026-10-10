@@ -118,15 +118,15 @@ pure func negZero() -> float = -1.0 * 0.0
 pure func phiCap() -> float = 7.254328619262047
 
 pure func edgeVec() -> Vec3 = {x: 1.0e308, y: negZero(), z: almostOne()}
-pure func edgePlan() -> PlanReq = {target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: None}
+pure func edgePlan() -> PlanReq = {target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: None, star: None}
 pure func allIntents() -> [Intent] = [
-  IPlan({target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: Some(1.0)}),
-  IPlan({target: {index: 0, id: "Sol \"quoted\" \\ star", pos: {x: 0.1, y: tiny(), z: -4.09}}, cruisePhi: 0.1, flipG: None}),
+  IPlan({target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: Some(1.0), star: None}),
+  IPlan({target: {index: 0, id: "Sol \"quoted\" \\ star", pos: {x: 0.1, y: tiny(), z: -4.09}}, cruisePhi: 0.1, flipG: None, star: None}),
   ICommit(maxInt()), ICancel, IThrust(negZero()), IThrust(-1.0),
   IHeading({x: 0.6, y: 0.8, z: negZero()}),
   IRecord({source: "ai", req: "r-1", kind: "line", sha256: "e3b0c442", body: "{\"text\":\"hi\"}"}),
   IDraw(SNews),
-  IEcho({target: {index: 3, id: "echo", pos: edgeVec()}, cruisePhi: negZero(), flipG: Some(tiny())})
+  IEcho({target: {index: 3, id: "echo", pos: edgeVec()}, cruisePhi: negZero(), flipG: Some(tiny()), star: None})
 ]
 pure func inputFixtures() -> [Input] = [
   GHello({major: 2, minor: 0}),
@@ -352,7 +352,7 @@ pure func relW(a: float, b: float, tol: float) -> bool = (if a > b then a - b el
 pure func checkJourneyOnWire() -> bool {
   let g = feed(newSession(), [hello(), playGame()]);
   let p = feed(g.session, [tickLine(1, "0", gl559Plan("2.6466524123622457"))]);
-  let w = tick(newWorld(7, false, defaultParams()), {dtau: 0.0, intents: [IPlan({target: {index: 1, id: "Gl 559", pos: {x: 1.5, y: -4.09, z: -0.05}}, cruisePhi: 2.6466524123622457, flipG: None})]}).world;
+  let w = tick(newWorld(7, false, defaultParams()), {dtau: 0.0, intents: [IPlan({target: {index: 1, id: "Gl 559", pos: {x: 1.5, y: -4.09, z: -0.05}}, cruisePhi: 2.6466524123622457, flipG: None, star: None})]}).world;
   let wait = feed(p.session, [tickLine(2, "0.5", "")]);
   let c = feed(wait.session, [tickLine(3, "0", "{\"k\":\"commit\",\"plan_id\":1}")]);
   let after = feed(c.session, [tickLine(4, "0.5", "{\"k\":\"cancel\"}")]);
@@ -407,7 +407,7 @@ pure func checkArrivalOnWire() -> bool {
   let g = feed(newSession(), [hello(), playGame(), tickLine(1, "0", acenPlan("2.6466524123622457")), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}")]);
   let a = feed(g.session, [tickLine(3, "1", "")]);
   let m = stateOf(a.reply);
-  let rq = {target: {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None};
+  let rq = {target: {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None, star: None};
   let w = tick(tick(newWorld(7, false, defaultParams()), {dtau: 0.0, intents: [IPlan(rq)]}).world, {dtau: 0.0, intents: [ICommit(1)]}).world;
   let t = tick(w, {dtau: 1.0, intents: []});
   m.status == "ok" && jstate(m) == "arrived:1" && allEq(eventEq, m.events, t.events) &&
@@ -466,7 +466,7 @@ pure func checkFlownOnWire() -> bool {
   let g = feed(newSession(), [hello(), playGame(), tickLine(1, "0", acenPlan("2.6466524123622457")), tickLine(2, "0", "{\"k\":\"commit\",\"plan_id\":1}")]);
   let mid = feed(g.session, [tickLine(3, "0.3", "")]);
   let end = feed(mid.session, [tickLine(4, "1", "")]);
-  let rq = {target: {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None};
+  let rq = {target: {index: 1, id: "Gl 559", pos: {x: 0.0, y: 0.0, z: -4.37}}, cruisePhi: 2.6466524123622457, flipG: None, star: None};
   let w = tick(tick(newWorld(7, false, defaultParams()), {dtau: 0.0, intents: [IPlan(rq)]}).world, {dtau: 0.0, intents: [ICommit(1)]}).world;
   let wm = tick(w, {dtau: 0.3, intents: []}).world;
   let fm = shipFlown(stateOf(mid.reply));

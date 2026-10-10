@@ -25,6 +25,9 @@ const DEPARTURE_MINOR := 5
 ## the `gr` section (parse_gr(), kept in `gr`) and `archive` events. Asked for by
 ## setting `want_minor = GR_MINOR`.
 const GR_MINOR := 6
+## 2.7 (D-54/D-58): a star plan may carry its catalogue row {"star": {name, v, teff}}; the
+## system section adds inferred finite stars and each Sol body's sync_orbit.
+const STOPS_MINOR := 7
 
 var _pipe: FileAccess
 var _stderr: FileAccess
