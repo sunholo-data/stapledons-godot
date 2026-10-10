@@ -21,7 +21,7 @@ static func density_text(n: float) -> String:
 static func impact_text(ism: Dictionary) -> String:
 	var dust: Dictionary = ism.get("dust", {})
 	var rate := "—" if not dust.has("visible_rate") else GalaxyMap.sci(float(dust.visible_rate))
-	return "%s/ship-s\nLargest this leg: %.2f µm · %s J" % [rate, float(dust.get("largest_um", 0.0)), GalaxyMap.sci(float(dust.get("largest_j", 0.0)))]
+	return "%s/ship-s\nLargest displayed impact this leg: %.2f µm · %s J" % [rate, float(dust.get("largest_um", 0.0)), GalaxyMap.sci(float(dust.get("largest_j", 0.0)))]
 
 
 static func route_text(media: Array) -> String:
@@ -48,4 +48,4 @@ static func interlude_text(before: Dictionary, after: Dictionary) -> String:
 	var rows := skipped_media(before, after)
 	if rows.is_empty(): return ""
 	var grains := maxf(0.0, float(after.get("ism_grains", 0.0)) - float(before.get("ism_grains", 0.0)))
-	return "Media crossed during cruise:\n%s\nGrains swept (≥ 1 µm): %s\nLargest this leg: %.2f µm · %s J" % [route_text(rows), GalaxyMap.sci(grains), float(after.get("ism_largest_um", 0.0)), GalaxyMap.sci(float(after.get("ism_largest_j", 0.0)))]
+	return "Media crossed during cruise:\n%s\nGrains swept (≥ 1 µm): %s\nLargest displayed impact this leg: %.2f µm · %s J" % [route_text(rows), GalaxyMap.sci(grains), float(after.get("ism_largest_um", 0.0)), GalaxyMap.sci(float(after.get("ism_largest_j", 0.0)))]

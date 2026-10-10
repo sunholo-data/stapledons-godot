@@ -7,7 +7,7 @@ module stapledons/sim/core
 import std/option (Option, Some, None)
 import std/result (Ok, Err)
 import std/math (intToFloat)
-import std/list (map)
+import std/list (map, reverse)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
 import pkg/sunholo/relativity/hyper (absf)
@@ -145,8 +145,8 @@ export pure func availableKgStart() -> float = 20000.0
 -- gr: the GR mode (sim/gr.ail, M3.4); grOff() outside a black-hole scenario.
 -- dust: the grain impacts (R1-ISM-DUST; lism-1 only): the last tick's draw, this leg's totals and
 -- the threshold cache (a pure function of the medium and the rapidity, kept to skip recomputing).
-export type DustState = { last: DustTick, legExpected: float, legGrains: float, medium: Medium, legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
-export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legGrains: 0.0, medium: hotMedium(), legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
+export type DustState = { last: DustTick, legExpected: float, legGrains: float, medium: Medium, crossed: [Medium], legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
+export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legGrains: 0.0, medium: hotMedium(), crossed: [], legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
 export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar] }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
@@ -572,6 +572,18 @@ export pure func currentMedium(w: World) -> Medium =
   if !isLism(w.params) then uniformMedium(w.params.ismNCm3)
   else if w.dust.medium.id == -1 then mediumAt(position(w.ship)) else w.dust.medium
 
+-- Every boundary crossed this tick, even when compressed travel returns to the
+-- initial medium. The sequence includes its starting medium and every entry;
+-- an unchanged medium returns []. This is route data, never client geometry.
+export pure func crossedMedia(gs: [Seg], before: Medium, here: Medium) -> [Medium] = crossedGo(gs, before, here, [before])
+pure func crossedGo(gs: [Seg], prev: Medium, here: Medium, acc: [Medium]) -> [Medium] = match gs {
+  g :: rest => crossedGo(rest, g.medium, here, if g.medium.id == prev.id then acc else g.medium :: acc),
+  [] => {
+    let all = if here.id == prev.id then acc else here :: acc;
+    match all { _ :: _ :: _ => reverse(all), _ => [] }
+  }
+}
+
 pure func dustAfter(w: World, before: Ship, after: Ship, dtau: float, pl: Option[Plan], fresh: bool) -> DustState =
   if !isLism(w.params) then w.dust
   else {
@@ -590,7 +602,7 @@ pure func dustAfter(w: World, before: Ship, after: Ship, dtau: float, pl: Option
       None => dustTick(dustKey(w.seed), w.tick + 1, segs, absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache)
     };
     let big = largestOf(d.events, { a: d0.largestA, ke: d0.largestKe, x: 0.0, y: 0.0, t: 0.0, medium: "" });
-    { last: d, legExpected: d0.legExpected + d.expected, legGrains: d0.legGrains + grainsSwept(segs, 0.000001, cfg), medium: here, legDrawn: d0.legDrawn + d.drawn, largestA: big.a, largestKe: big.ke, cache: d.cache }
+    { last: d, legExpected: d0.legExpected + d.expected, legGrains: d0.legGrains + grainsSwept(segs, 0.000001, cfg), medium: here, crossed: crossedMedia(segs, currentMedium(w), here), legDrawn: d0.legDrawn + d.drawn, largestA: big.a, largestKe: big.ke, cache: d.cache }
   }
 
 -- ------------------------------------------------------------ GR tick (M3.4b)
@@ -613,7 +625,9 @@ pure func grTick(w: World, a: Pending, dtau: float) -> Ticked {
 -- archive event bh_enter in the legacy log at tick 0 (new_game reports it as an event).
 export pure func withHole(w: World, g: GrState) -> World {
   let m = w.ship.motion;
-  {w | gr: g, ship: {w.ship | heading: g.holeDir, origin: grShipPos(g), x0: m.x}, cq: append(w.cq, entry(w.tick, "bh_enter", g.holeId, m.tau, m.t))}
+  {w | gr: g, ship: {w.ship | heading: g.holeDir, origin: grShipPos(g), x0: m.x},
+    dust: {emptyDust() | medium: mediumHere(w.params, grShipPos(g))},
+    cq: append(w.cq, entry(w.tick, "bh_enter", g.holeId, m.tau, m.t))}
 }
 
 -- ------------------------------------------------------------ consequence (M4.1)

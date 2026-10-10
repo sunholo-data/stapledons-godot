@@ -12,10 +12,11 @@ import pkg/sunholo/relativity/hyper (absf)
 import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/medium (mirrorDragForce, accelSI)
 import pkg/sunholo/celestial/frames (unitFromAngles)
-import ./core (dustCfg, Refusal, World, Params, Target, Intent, IPlan, ICommit, Planned, Committed, Arrived, Plan, Event, newWorld, defaultParams, tick, position, scenarioError, planView, isLism, mediumHere)
-import ./ism (profile, holdMaxPhi, peakMedium, tripBright, window)
+import ./core (dustCfg, Refusal, World, Params, Target, Intent, IPlan, ICommit, Planned, Committed, Arrived, Plan, Event, newWorld, defaultParams, tick, position, scenarioError, planView, isLism, mediumHere, crossedMedia, withHole)
+import ./ism (profile, holdMaxPhi, peakMedium, tripBright, window, hotMedium, licMedium)
 import ./solar_departure (initialize, intentForLeg, legCount)
 import ./rng (Rng)
+import ./gr (sgrA)
 
 pure func lyPerPc() -> float = 3.0856775814913673e16 / 9460730472580800.0
 pure func rad(d: float) -> float = d * 3.141592653589793 / 180.0
@@ -209,3 +210,20 @@ pure func brightBurnOracle() -> bool {
     && rel(tripBright(window(pi.segs, pl.trip.dBurn + pl.trip.dCoast, pl.trip.trip.distance), pl.trip, dustCfg(params)), 168.265854664, 0.001), None => false }, None => false }
 }
 test "boost and brake bright totals separately match independent rapidity quadrature, within efficacy LUT tolerance" { brightBurnOracle() }
+
+
+test "compressed hot-cloud-hot travel reports both boundaries in order" {
+  let hot = hotMedium(); let lic = licMedium();
+  let crossed = crossedMedia([{s0: 0.0, s1: 1.0, medium: hot}, {s0: 1.0, s1: 2.0, medium: lic}, {s0: 2.0, s1: 3.0, medium: hot}], hot, hot);
+  match crossed { a :: b :: c :: [] => a.id == 0 && b.id == 1 && c.id == 0, _ => false }
+}
+test "no flown boundary is quiet; an exact endpoint entry is reported" {
+  let hot = hotMedium(); let lic = licMedium();
+  length(crossedMedia([], hot, hot)) == 0 && length(crossedMedia([{s0: 0.0, s1: 1.0, medium: hot}], hot, lic)) == 2
+}
+
+test "GR scenario placement refreshes the medium at its new position" {
+  let w = newWorld(11, false, lism(defaultParams()));
+  let placed = withHole(w, sgrA(1000000.0, 100.0, 1.0));
+  w.dust.medium.id != placed.dust.medium.id && placed.dust.medium.id == (mediumHere(w.params, position(placed.ship))).id
+}

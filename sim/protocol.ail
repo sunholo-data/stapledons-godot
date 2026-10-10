@@ -286,7 +286,7 @@ pure func shipWithIsm(s: ShipView, i: IsmNow, dragEnergy: float) -> string =
 -- mass-equivalent density in m^-3), this tick's bright dust impacts (radius um, energy J, the
 -- point on the forward wall's projected unit disc, the time in the display window s, medium),
 -- the tick's and the leg's bright totals (expected and drawn, dropped beyond 32 events, the
--- display window in ship seconds, the leg's largest grain) and the glitter descriptor (faint
+-- display window in ship seconds, the largest displayed grain of the leg) and the glitter descriptor (faint
 -- flashes per ship second over the wall, their radius range um, the tail slope q and a seed).
 pure func impactObj(e: Impact) -> string =
   obj([f("a_um", num(e.a * 1000000.0)), f("ke_j", num(e.ke)), f("x", num(e.x)), f("y", num(e.y)), f("t_s", num(e.t)), f("medium", q(e.medium))])
@@ -297,6 +297,7 @@ pure func shipWithIsm28(s: ShipView, i: IsmNow, dragEnergy: float, w: World) -> 
   let g = d.last.glitter;
   obj(shipFields(s) ++ [f("ism", obj([f("load_w_m2", num(i.loadWM2)), f("drag_n", num(i.dragN)), f("glow_w_m2", num(i.glowWM2)), f("glow_pole_w_m2", num(i.glowPoleWM2)), f("glow_pole_k", num(i.glowPoleK)), f("drag_energy_j", num(dragEnergy)),
     f("model", q(ismModelName(w.params))), f("medium", q(m.name)), f("n_h_cm3", num(m.nH)), f("n_eff_m3", num(m.nEff)),
+    f("crossed_media", arr(each(\crossed. obj([f("name", q(crossed.name)), f("n_h_cm3", num(crossed.nH))]), d.crossed))),
     f("impacts", arr(each(impactObj, d.last.events))),
     f("dust", obj([f("expected", num(d.last.expected)), f("drawn", intToStr(d.last.drawn)), f("dropped", intToStr(d.last.dropped)), f("window_s", num(d.last.window)),
       f("visible_rate", num(d.last.visibleRate)), f("bright_rate", num(d.last.brightRate)), f("leg_grains", num(d.legGrains)),

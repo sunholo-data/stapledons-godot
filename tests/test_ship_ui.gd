@@ -76,6 +76,15 @@ func test_ism_hud() -> void:
 	hud.advance(0.7)
 	hud.update(ism_view("hot", 0.004))
 	check("ISM entering bubble has hot-gas wording", hud.all_text().contains("Local Bubble"))
+	var compressed := ism_view("hot", 0.004)
+	compressed.tick = 42
+	compressed.ship.ism.crossed_media = [{"name": "hot", "n_h_cm3": 0.004}, {"name": "Hyades", "n_h_cm3": 0.2474}, {"name": "hot", "n_h_cm3": 0.004}]
+	hud.update(compressed)
+	check("ISM compressed same-endpoint tick reports both actual boundaries", hud.all_text().contains("Entering Hyades cloud") and hud.all_text().contains("Leaving Hyades cloud"))
+	var compressed_expires: float = hud.cards.medium_notice.expires
+	hud.advance(1.0)
+	hud.update(compressed)
+	check("ISM compressed boundary list is consumed once per simulation tick", hud.cards.medium_notice.expires == compressed_expires)
 	var uniform := ism_view()
 	uniform.ship.ism.model = "uniform"
 	hud.update(uniform)
@@ -99,7 +108,7 @@ func test_ism_hud() -> void:
 	check("ISM interlude exposes skipped-media summary", lines.has("ism"))
 	if lines.has("ism"):
 		check("ISM interlude clips route to skipped interval", str(lines.ism).contains("0.500 ly") and str(lines.ism).contains("G cloud · 2.000 ly") and not str(lines.ism).contains("Local Bubble"))
-		check("ISM interlude grains are the sim-total delta", str(lines.ism).contains("2.000e6") and str(lines.ism).contains("Largest this leg"))
+		check("ISM interlude grains are the sim-total delta", str(lines.ism).contains("2.000e6") and str(lines.ism).contains("Largest displayed impact this leg"))
 	var reentry_before := before.duplicate(true)
 	reentry_before.ism_media = [{"name": "LIC", "length_ly": 0.5}, {"name": "G", "length_ly": 1.0}, {"name": "LIC", "length_ly": 1.0}, {"name": "hot", "length_ly": 1.5}]
 	reentry_before.distance_remaining_ly = 3.75

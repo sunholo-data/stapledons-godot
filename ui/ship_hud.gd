@@ -61,6 +61,7 @@ var details := RichTextLabel.new()
 var transit_rows := VBoxContainer.new()
 var ism_details := VBoxContainer.new()
 var _medium_seen := ""
+var _medium_tick := -1
 var help := RichTextLabel.new()
 var walk_box := VBoxContainer.new()
 var walk_buttons := {} # station -> Button
@@ -218,7 +219,7 @@ func _build_tab() -> void:
 		_binding_row(transit_rows, r[0], r[1], r[2])
 	tab_box.add_child(ism_details)
 	ism_details.add_child(_caption(Label.new(), "Medium here"))
-	for r in [["Medium", "ship.ism.medium", "ism_medium"], ["Density", "ship.ism.n_h_cm3", "ism_density"], ["Mass-equivalent", "ship.ism.n_eff_m3", "sci m⁻³"], ["Visible flashes", "ship.ism.dust.visible_rate", "sci /ship-s"], ["Bright flashes", "ship.ism.dust.bright_rate", "sci /ship-s"], ["Grains swept", "ship.ism.dust.leg_grains", "sci (≥ 1 µm)"], ["Bright flashes this leg", "ship.ism.dust.leg_drawn", "%s"], ["Expected bright", "ship.ism.dust.leg_expected", "sci"], ["Largest grain", "ship.ism.dust.largest_um", "%.2f µm"], ["Largest impact", "ship.ism.dust.largest_j", "sci J"]]:
+	for r in [["Medium", "ship.ism.medium", "ism_medium"], ["Density", "ship.ism.n_h_cm3", "ism_density"], ["Mass-equivalent", "ship.ism.n_eff_m3", "sci m⁻³"], ["Visible flashes", "ship.ism.dust.visible_rate", "sci /ship-s"], ["Bright flashes", "ship.ism.dust.bright_rate", "sci /ship-s"], ["Grains swept", "ship.ism.dust.leg_grains", "sci (≥ 1 µm)"], ["Bright flashes this leg", "ship.ism.dust.leg_drawn", "%s"], ["Expected bright", "ship.ism.dust.leg_expected", "sci"], ["Largest displayed grain", "ship.ism.dust.largest_um", "%.2f µm"], ["Largest displayed impact", "ship.ism.dust.largest_j", "sci J"]]:
 		_binding_row(ism_details, r[0], r[1], r[2])
 	ism_details.add_child(_caption(Label.new(), "Planned route media"))
 	var route := DisplayBinding.new().bind("hud.ism.route", "text")
@@ -459,6 +460,7 @@ func update(view: Dictionary) -> void:
 ## New sessions are snapshots, not boundary events; never announce their initial medium.
 func reset_medium(view: Dictionary) -> void:
 	_medium_seen = str(GalaxyMap.field_value(view, "ship.ism.medium")) if IsmHud.supported(view) else ""
+	_medium_tick = int(view.get("tick", -1))
 	hide_card("medium_notice")
 	hide_card("medium_here")
 
@@ -474,11 +476,22 @@ func _update_medium(view: Dictionary) -> void:
 		var hud: Dictionary = view.get("hud", {})
 		hud["ism"] = {"impacts": IsmHud.impact_text(ism), "route": IsmHud.route_text(view.get("journey", {}).get("plan", {}).get("media", []))}
 		view["hud"] = hud
-		if not _medium_seen.is_empty() and current != _medium_seen:
+		var crossed: Array = ism.get("crossed_media", [])
+		var tick := int(view.get("tick", -1))
+		var notice := ""
+		if crossed.size() > 1 and tick >= 0 and tick != _medium_tick:
+			var lines := PackedStringArray()
+			for i in range(1, crossed.size()):
+				lines.append("Leaving %s\nEntering %s · n_H %s" % [IsmHud.medium_name(str(crossed[i - 1].name)), IsmHud.medium_name(str(crossed[i].name)), IsmHud.density_text(float(crossed[i].n_h_cm3))])
+			notice = "\n".join(lines)
+		elif not _medium_seen.is_empty() and current != _medium_seen:
+			notice = "Leaving %s\nEntering %s · n_H %s" % [IsmHud.medium_name(_medium_seen), IsmHud.medium_name(current), IsmHud.density_text(float(ism.n_h_cm3))]
+		if not notice.is_empty():
 			show_card("medium_notice", "Medium boundary", 8.0)
 			if card_body("medium_notice").get_child_count() == 0: card_text("medium_notice", "medium_notice", "")
-			set_card_value("medium_notice", "Leaving %s\nEntering %s · n_H %s" % [IsmHud.medium_name(_medium_seen), IsmHud.medium_name(current), IsmHud.density_text(float(ism.n_h_cm3))])
+			set_card_value("medium_notice", notice)
 		_medium_seen = current
+		_medium_tick = tick
 		if has_card("medium_here"): set_card_value("medium_here", medium_here_text(view))
 	if not cards.has("transit"): return
 	var body := card_body("transit")
