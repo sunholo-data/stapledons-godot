@@ -48,7 +48,7 @@ jobs:
           make lore-import CHECK=1 D=/tmp/stapledons-design AILANG=ailang
 
       - name: Check navigation, input and ISM controls before full suite
-        run: make import starmap-assets ui free-nav-recovery-test ship-ui-test map-ism-test no-twitch-test
+        run: make import starmap-assets ui free-nav-recovery-test ship-ui-test ship-demo-input-test ai-live-guard map-ism-test no-twitch-test
 
       - name: Check offline presentation and bootstrap before full suite
         run: make planet-presentation-test moon-lifecycle-test sim-bootstrap-test exposure-frames-test manual-exposure-test tour-attitude-test tour-pacing-test alpha-centauri-test
