@@ -161,6 +161,7 @@ func at_point(point: Vector2) -> Array:
 func inspect(id: String) -> bool:
 	if id.begins_with(BODY_PREFIX):return inspect_body(id.trim_prefix(BODY_PREFIX))
 	if not info.records.has(id):return false
+	if demo.ship_hud != null: demo.ship_hud.hide_card("medium_here")
 	selected_id = id
 	_clear_card()
 	var facts := Label.new(); facts.text = info.text(id)
@@ -178,6 +179,7 @@ func _body_of(body_id: String) -> Dictionary:
 		if b.id == body_id:return b
 	return {}
 func inspect_body(body_id: String) -> bool:
+	if demo.ship_hud != null: demo.ship_hud.hide_card("medium_here")
 	var b := _body_of(body_id)
 	if b.is_empty():return false
 	selected_id = BODY_PREFIX+body_id
@@ -210,6 +212,7 @@ func close_card() -> void:
 func click_at(point: Vector2) -> bool:
 	if not held or suppressed:return false
 	var hits := at_point(point)
+	if hits.is_empty(): demo.show_medium_at(point)
 	if hits.size() == 1:return inspect(hits[0].id)
 	if hits.size() > 1:
 		selected_id = ""
@@ -226,7 +229,11 @@ func click_at(point: Vector2) -> bool:
 	return true # I-click never propagates to walking, even on empty sky
 func handle_input(event: InputEvent) -> bool:
 	if event is InputEventKey and event.physical_keycode == KEY_I:
-		set_held(event.pressed);return true
+		set_held(event.pressed)
+		if held and not event.echo:
+			update_candidates()
+			demo.show_medium_at(get_local_mouse_position())
+		return true
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE and card.visible:
 		close_card();return true
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not event.alt_pressed:

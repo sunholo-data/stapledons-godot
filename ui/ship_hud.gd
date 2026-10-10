@@ -29,7 +29,7 @@ const MAX_EXPANDED := 2
 const CLOCK_SIZE := 17
 ## §A2 priority, high to low (the I card is ShipStarIdentification's own panel and the
 ## cruise interlude keeps its D-41 InterludeCard; both are listed so the order is complete).
-const PRIORITY := ["identify", "arrival", "refusal", "gravity", "transit", "tour", "interlude", "notice", "unlock"]
+const PRIORITY := ["identify", "medium_here", "arrival", "refusal", "gravity", "notice", "medium_notice", "transit", "tour", "interlude", "unlock"]
 ## The transit card's compact rows (M4.3a JourneyHud.ROWS by field); the full set is in Tab.
 const TRANSIT_COMPACT := ["ship.phase", "consequence.gap_years", "consequence.distance_remaining", "consequence.earth_years_remaining", "consequence.load_suns", "ship.ism.glow_w_m2", "client.warp"]
 const WALK_TO := [["navigation", "Navigation station"], ["voyage", "Voyage console"], ["archive", "Archive terminal"]]
@@ -59,6 +59,8 @@ var tab_panel := PanelContainer.new()
 var tab_box := VBoxContainer.new()
 var details := RichTextLabel.new()
 var transit_rows := VBoxContainer.new()
+var ism_details := VBoxContainer.new()
+var _medium_seen := ""
 var help := RichTextLabel.new()
 var walk_box := VBoxContainer.new()
 var walk_buttons := {} # station -> Button
@@ -214,6 +216,16 @@ func _build_tab() -> void:
 	tab_box.add_child(transit_rows)
 	for r in JourneyHud.ROWS:
 		_binding_row(transit_rows, r[0], r[1], r[2])
+	tab_box.add_child(ism_details)
+	ism_details.add_child(_caption(Label.new(), "Medium here"))
+	for r in [["Medium", "ship.ism.medium", "ism_medium"], ["Density", "ship.ism.n_h_cm3", "ism_density"], ["Mass-equivalent", "ship.ism.n_eff_m3", "sci m⁻³"], ["Visible flashes", "ship.ism.dust.visible_rate", "sci /ship-s"], ["Bright flashes", "ship.ism.dust.bright_rate", "sci /ship-s"], ["Grains swept", "ship.ism.dust.leg_grains", "sci (≥ 1 µm)"], ["Bright flashes this leg", "ship.ism.dust.leg_drawn", "%s"], ["Expected bright", "ship.ism.dust.leg_expected", "sci"], ["Largest grain", "ship.ism.dust.largest_um", "%.2f µm"], ["Largest impact", "ship.ism.dust.largest_j", "sci J"]]:
+		_binding_row(ism_details, r[0], r[1], r[2])
+	ism_details.add_child(_caption(Label.new(), "Planned route media"))
+	var route := DisplayBinding.new().bind("hud.ism.route", "text")
+	route.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	route.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ism_details.add_child(route)
+	ism_details.visible = false
 	tab_box.add_child(_caption(Label.new(), "Details"))
 	for rt: RichTextLabel in [details, help]:
 		rt.fit_content = true
@@ -425,6 +437,7 @@ func advance(dt: float) -> void:
 ## Show a view: the sim's world plus "hud" (where, distance, speed, home_caption, dwell)
 ## and "client" (warp) sections the demo builds from sim fields.
 func update(view: Dictionary) -> void:
+	_update_medium(view)
 	var hud: Dictionary = view.get("hud", {})
 	hud["cardtext"] = card_values
 	hud["dwell"] = dwell_value
@@ -441,6 +454,64 @@ func update(view: Dictionary) -> void:
 	speed.visible = not speed.text.is_empty()
 	distance.visible = not distance.text.is_empty()
 	_layout()
+
+
+## New sessions are snapshots, not boundary events; never announce their initial medium.
+func reset_medium(view: Dictionary) -> void:
+	_medium_seen = str(GalaxyMap.field_value(view, "ship.ism.medium")) if IsmHud.supported(view) else ""
+	hide_card("medium_notice")
+	hide_card("medium_here")
+
+
+func _update_medium(view: Dictionary) -> void:
+	var supported := IsmHud.supported(view)
+	ism_details.visible = supported
+	if not supported:
+		reset_medium(view)
+	else:
+		var ism: Dictionary = view.ship.ism
+		var current := str(ism.medium)
+		var hud: Dictionary = view.get("hud", {})
+		hud["ism"] = {"impacts": IsmHud.impact_text(ism), "route": IsmHud.route_text(view.get("journey", {}).get("plan", {}).get("media", []))}
+		view["hud"] = hud
+		if not _medium_seen.is_empty() and current != _medium_seen:
+			show_card("medium_notice", "Medium boundary", 8.0)
+			if card_body("medium_notice").get_child_count() == 0: card_text("medium_notice", "medium_notice", "")
+			set_card_value("medium_notice", "Leaving %s\nEntering %s · n_H %s" % [IsmHud.medium_name(_medium_seen), IsmHud.medium_name(current), IsmHud.density_text(float(ism.n_h_cm3))])
+		_medium_seen = current
+		if has_card("medium_here"): set_card_value("medium_here", medium_here_text(view))
+	if not cards.has("transit"): return
+	var body := card_body("transit")
+	var rows: VBoxContainer = body.get_node_or_null("IsmTransit")
+	if rows == null and supported:
+		rows = VBoxContainer.new()
+		rows.name = "IsmTransit"
+		body.add_child(rows)
+		body.move_child(rows, mini(5, body.get_child_count() - 1)) # after ISM load
+		for r in [["Medium", "ship.ism.medium", "ism_medium"], ["Density", "ship.ism.n_h_cm3", "ism_density"], ["Dust impacts", "hud.ism.impacts", "text"]]:
+			# Long medium names/density/impact descriptions wrap within the right column.
+			rows.add_child(_caption(Label.new(), r[0]))
+			var b := DisplayBinding.new().bind(r[1], r[2])
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			b.custom_minimum_size.x = card_width() - 20.0
+			b.add_theme_font_size_override("font_size", 12)
+			rows.add_child(b)
+		_bindings_dirty = true
+	if rows != null: rows.visible = supported
+
+
+func show_medium_here(view: Dictionary) -> bool:
+	if not IsmHud.supported(view): return false
+	show_card("medium_here", "Medium here")
+	if card_body("medium_here").get_child_count() == 0:
+		card_text("medium_here", "medium_here", "")
+	set_card_value("medium_here", medium_here_text(view))
+	update(view)
+	return true
+
+
+static func medium_here_text(view: Dictionary) -> String:
+	return "%s\nn_H %s\n%s" % [IsmHud.medium_name(str(view.ship.ism.medium)), IsmHud.density_text(float(view.ship.ism.n_h_cm3)), IsmHud.impact_text(view.ship.ism)]
 
 
 func set_view_tag(text: String) -> void:
