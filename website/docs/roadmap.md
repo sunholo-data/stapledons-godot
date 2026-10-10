@@ -1,124 +1,51 @@
 ---
 title: Roadmap
 sidebar_position: 5
-description: Release 1 of Stapledon's Voyage - what is done, what is in progress and what is planned.
+description: What is built, being validated and planned for Stapledon's Voyage.
 ---
 
 # Roadmap
 
-Release 1, **Foundations**, goes from the architecture spike to one complete, playable journey:
-plan it, commit to it, live through it, and arrive. The source of truth is
-[`roadmap/r1-foundations.md`](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md)
-in the design repo, plus the sprint plans in this repo. This page is a snapshot as of
-**3 October 2026**. For the rulings behind it, see [Decisions](/decisions); for what changed
-when, see [News](/news).
+Release 1, **Foundations**, aims for one complete, playable journey: plan it,
+commit to it, live through it, and arrive to find home older. This snapshot is
+current to **10 October 2026**. The [design roadmap](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md)
+and the game's sprint records hold the detailed acceptance criteria.
 
-<span className="sv-status sv-status--done">Done</span> merged on `main` ·
-<span className="sv-status sv-status--review">In review</span> an open pull request ·
-<span className="sv-status sv-status--progress">In progress</span> partly merged ·
-<span className="sv-status sv-status--planned">Planned</span> designed, not built
+## What you can see today
 
-## At a glance
-
-| Milestone | State |
+| Work | State and remaining work |
 |---|---|
-| M0 Spike | <span className="sv-status sv-status--done">Done</span> |
-| M1 The relativistic sky | <span className="sv-status sv-status--progress">In progress</span>: everything visible is merged; the final acceptance step (M1.5b) is open |
-| M2 The journey core | <span className="sv-status sv-status--done">Done</span> |
-| AI foundation (AI.1–AI.10a) | <span className="sv-status sv-status--done">Done</span> on the stub; the first live run (AI.10b) is pending |
-| M3 Black holes | <span className="sv-status sv-status--planned">Planned</span> |
-| M4 First playable journey | <span className="sv-status sv-status--progress">In progress</span>: M4.0, M4.1 step 1, bridge v1 and the walkable bridge (M4.2) merged |
-| M5 Planets and flybys | <span className="sv-status sv-status--progress">In progress</span>: design and sprint approved, packages published, M5.1a and M5.1b merged |
+| **The relativistic sky (M1)** | Catalogue stars, the Milky Way, aberration, Doppler colour and the forward CMB are built. The final sky acceptance report and performance review remain open. |
+| **The journey core (M2)** | Landed: the simulation plans, commits and flies irreversible journeys, tracks both clocks and energy, and replays deterministically on the VM and interpreter. |
+| **Black holes (M3)** | Landed: the Sgr A* demo has a physical shadow, gravitational lensing, Einstein rings, hover and orbit modes, with clocks and tides supplied by the simulation. Kerr rotation and the true Galactic-Centre background remain future work; the demo labels its Sol sky. |
+| **The painted ship and bridge** | Walkable bridge and Commons, lifts, persistent clocks and contextual HUD cards. Navigation, Voyage and Archive decisions live at the consoles. M opens a read-only chart. Art and external lighting continue to develop. |
+| **First complete journey (M4)** | Transit, cruise interludes, arrival, news from home, the legacy record and the physics Archive exist. The remaining console-based playthrough audit and visual acceptance gates still prevent calling the whole slice complete. |
+| **Planets and flybys (M5)** | Ephemerides, body navigation and planetary rendering are built, with guided Earth, Sun, Jupiter and Saturn stops. Close Saturn rings are visible. The full system-map/flyby experience, remaining ring and lighting acceptance, and complete M5 gates are still in progress. |
+| **Interstellar clouds and dust** | The `lism-1` flight, route planning, wall glow, dust impacts and HUD integration are in final review in [PR #199](https://github.com/sunholo-data/stapledons-godot/pull/199). New source-figure cloud outlines pass the nearby sight-line recovery target. Dense-cloud and Local Leo Cold Cloud work is separate and has unresolved scientific checks. |
+| **Optional crew AI** | The foundation and Medic conversation work against a deterministic offline stub. The first attended live run and voice review remain pending; live AI is off by default. |
 
-## M0: Spike <span className="sv-status sv-status--done">Done</span>
+[See the actual captures and clips in the gallery](/gallery). Progress reports
+appear in [News](/news); availability is described in [Try it](/docs/try-it).
 
-Finished 27 September 2026. The AILANG simulation as a child process over NDJSON (about 50 µs per
-tick round trip), a Godot starfield with per-star aberration, blackbody Doppler colour and
-point-source beaming, 27 physics reference checks and 9 GPU-against-CPU golden cases under 0.1 px.
+## Next to do
 
-## M1: The relativistic sky <span className="sv-status sv-status--progress">In progress</span>
+1. Finish the ISM review: check the cloud transitions, dust assumptions,
+   afterglow comparison and Archive text in the dev build, alongside local and CI gates.
+2. Complete the end-to-end journey audit through the bridge consoles, including
+   the displayed numbers, commitment refusals, return trip and consequence screens.
+3. Close the remaining sky and ship visual/performance acceptance gates.
+4. Resolve the dense-cloud scientific mismatches before shipping that dataset,
+   and continue the full planet/flyby controls and their acceptance work.
+5. Run the first attended crew-AI check and voice auditions when scheduled.
 
-Goal: what the player sees out of any window is correct in every direction, at any speed and
-orientation.
-
-| Item | State |
-|---|---|
-| Full 3D motion: arbitrary heading and a free camera (M1.6b) | <span className="sv-status sv-status--done">Done</span> |
-| Real star colours and catalogue tiers from CNS5, Gaia GCNS and Hipparcos, built in AILANG (M1.2b–M1.2d) | <span className="sv-status sv-status--done">Done</span> |
-| Starfield v2: 335,157 stars instanced on the GPU, float64 rebasing (M1.3, [#67](https://github.com/sunholo-data/stapledons-godot/pull/67)) | <span className="sv-status sv-status--done">Done</span> |
-| Milky Way background: NOIRLab panorama, destarred in AILANG, Doppler shifted per texel (M1.4) | <span className="sv-status sv-status--done">Done</span> |
-| Photometric naked-eye exposure: stars in lux, sky in cd/m², honest HUD, labelled aids (M1.5a, [#75](https://github.com/sunholo-data/stapledons-godot/pull/75), [#80](https://github.com/sunholo-data/stapledons-godot/pull/80)) | <span className="sv-status sv-status--done">Done</span> |
-| Galaxy map on the catalogue tiers: 5,687 stars within 25 pc, α Cen A and B separately selectable (M1.7, [#81](https://github.com/sunholo-data/stapledons-godot/pull/81)) | <span className="sv-status sv-status--done">Done</span> |
-| Companion stars at their system's distance: 20,524 companions; Sirius B now sits with Sirius A ([#89](https://github.com/sunholo-data/stapledons-godot/pull/89)) | <span className="sv-status sv-status--done">Done</span> |
-| Forward CMB glow, 3,853.7 K at γ 707 (M1.8, [#79](https://github.com/sunholo-data/stapledons-godot/pull/79); ring fix [#88](https://github.com/sunholo-data/stapledons-godot/pull/88)) | <span className="sv-status sv-status--done">Done</span> |
-| Acceptance (M1.5b): reference renders at 0, 0.5, 0.9, 0.99 and 0.999c, the 60 fps at 1440p bench with the full catalogue and background, the M1 report | <span className="sv-status sv-status--progress">Open</span> |
-
-## M2: The journey core <span className="sv-status sv-status--done">Done</span>
-
-Landed 2 October 2026 ([report](https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/implemented/r1/m2-report.md)).
-Ten milestones, each independently evaluated at 89–96 out of 100: protocol v2 with hand-written
-AILANG codecs; the world clock and ship phases (boost, cruise, brake) with a closed energy ledger;
-the journey planner, equal to the closed form to 1e-9; the commit rule, enforced by the
-simulation; SplitMix64 named random streams; `make replay` (a 10,000-tick session byte-identical
-on the VM and the interpreter); and the galaxy map with the commit ritual.
-
-## AI foundation <span className="sv-status sv-status--done">Done on the stub</span>
-
-Optional, opt-in runtime AI for the crew: portraits, voice and text, using the player's own API
-keys, off by default and capped by a cost ceiling the player sets (US$0.50 by default). Every
-piece runs end to end against a deterministic stub, so tests and replays never spend money.
-
-| Step | What it delivers | State |
-|---|---|---|
-| AI.1–AI.3 | `{emotion}` markers in lines, protocol 2.1, validated AI records | <span className="sv-status sv-status--done">Done</span> |
-| AI.4–AI.7 | The AI service (provider routing, cache, stub), adapters, a non-blocking bridge, the relay, key hygiene | <span className="sv-status sv-status--done">Done</span> |
-| AI.8 | The accepted Medic portrait set, pinned and content-addressed | <span className="sv-status sv-status--done">Done</span> |
-| AI.9 | Key settings, the cost ceiling and indicator, a guard so automation never goes live | <span className="sv-status sv-status--done">Done</span> |
-| AI.10a | The Medic conversation scene: portrait cross-fades on emotion markers, subtitles, voice ([#91](https://github.com/sunholo-data/stapledons-godot/pull/91)) | <span className="sv-status sv-status--done">Done</span> |
-| AI.10b | The first live run, attended: one real Medic line and voice auditions under a US$1 ceiling | <span className="sv-status sv-status--planned">Pending</span> |
-
-## M3: Black holes <span className="sv-status sv-status--planned">Planned</span>
-
-General relativity: the shadow at its true 2.6 r_s, gravitational lensing and Einstein rings,
-checked against the spec's Schwarzschild check values. The design is
-drafted; it has no sprint plan yet.
-
-## M4: First playable journey <span className="sv-status sv-status--progress">In progress</span>
-
-One complete journey with the ship's interior: the ship-years against Earth-years gap made felt.
-
-| Step | What | State |
-|---|---|---|
-| M4.0 | Area bundles: the interior loader, the art contract checks (`make validate-areas`), the ship frame; art swaps become data drops ([#95](https://github.com/sunholo-data/stapledons-godot/pull/95)) | <span className="sv-status sv-status--done">Done</span> |
-| M4.1 step 1 | Consequence in the simulation: the Earth clock running on while you travel, the years gap, the 1,000 AU arrival stand-off, light-delayed news from home, live interstellar-medium readouts (protocol 2.2, [#92](https://github.com/sunholo-data/stapledons-godot/pull/92)) | <span className="sv-status sv-status--done">Done</span> |
-| Bridge v1 interior art | Demo art, replacing the blockout ([#97](https://github.com/sunholo-data/stapledons-godot/pull/97)) | <span className="sv-status sv-status--done">Done</span> |
-| Bridge v2 final art | A quality study is done; the final art is being made ([concept art](/concept-art)) | <span className="sv-status sv-status--progress">In progress</span> |
-| M4.2 | The walkable interior: the bridge, the captain and the live sky in one image, the nav console to the galaxy map ([#102](https://github.com/sunholo-data/stapledons-godot/pull/102); in the [v0.4.0-dev.1 download](/docs/try-it)) | <span className="sv-status sv-status--done">Done</span> |
-| M4.3a, M4.3b | Transit, time warp and the HUD | <span className="sv-status sv-status--planned">Planned</span> |
-| M4.4 | The news-from-home and journey-record screens | <span className="sv-status sv-status--planned">Planned</span> |
-| M4.5–M4.7 | A full playthrough audit, the physics gates, the in-game Archive of physics explainers | <span className="sv-status sv-status--planned">Planned</span> |
-
-## M5: Planets and flybys <span className="sv-status sv-status--progress">In progress</span>
-
-A new milestone: player-facing flight inside a star system. The design
-([#84](https://github.com/sunholo-data/stapledons-godot/pull/84)) and the sprint plan
-([#86](https://github.com/sunholo-data/stapledons-godot/pull/86)) are approved. The planned loop:
-start held above Earth, pick a body on a system map (the Sun, the 8 planets, 11 moons, 4 ring
-systems), choose to stop or fly by at anywhere from 0.001c to 0.99c, commit, and ride the leg with
-exactly relativistic views: light-time delay, aberration, and the Terrell rotation that makes a
-passing sphere look turned. Planets are lit physically and rings cast shadows. At α Centauri the
-known and candidate planets show as points only, with badges that say how sure the astronomy is.
-
-| Step | State |
-|---|---|
-| Package work: [`sunholo/celestial`](https://github.com/sunholo-data/ailang-packages/tree/main/packages/celestial) 0.1.0 (Kepler solver, JPL planetary ephemerides for 3000 BC–3000 AD and moons, IAU frames, light-time, gravity, reflectance, rings) and `sunholo/relativity` 0.6 and 0.7 (the bubble's forward glow, the aberrated outline of a nearby sphere) | <span className="sv-status sv-status--done">Published</span> |
-| M5.1a: Sol and α Cen data, and the game pinning the new packages ([#99](https://github.com/sunholo-data/stapledons-godot/pull/99)) | <span className="sv-status sv-status--done">Done</span> |
-| M5.1b: the simulation can place every body of a system at any time, in protocol 2.3 ([#101](https://github.com/sunholo-data/stapledons-godot/pull/101)) | <span className="sv-status sv-status--done">Done</span> |
-| M5.2–M5.8: the system map, lighting, rings, flyby flight and views | <span className="sv-status sv-status--planned">Planned</span> |
+The scheduled mission loop works the approved R1 queue. Its latest attempt is
+currently parked because controller lanes were unavailable or out of quota;
+its next product work is the remaining first-journey audit. The attended
+ISM, bridge and demo work has continued independently.
 
 ## After Release 1
 
-The wider game from the [vision](https://github.com/sunholo-data/stapledons-design/blob/main/vision/game-vision.md):
-a galaxy that changes while you travel, a finite crew, trade in technology and ideas, and a contact
-network you shape. None of that is built yet, and the site will not describe how it plays out.
-Music is planned for Release 2 or later.
+The wider [game vision](https://github.com/sunholo-data/stapledons-design/blob/main/vision/game-vision.md)
+includes a galaxy that changes while you travel, a finite crew, trade in technology
+and ideas, and a contact network you shape. These remain planned. Music is planned
+for Release 2 or later.
