@@ -1,0 +1,34 @@
+---
+title: "Around a black hole, beside Saturn"
+date: 2026-10-10T20:00:00
+authors: [sunholo]
+tags: [progress, journey]
+---
+
+Two new videos show recent work in motion: a stable orbit around Sagittarius A* and the guided voyage arriving beside Saturn. Both are captures of the game, with the AILANG simulation supplying the motion, clocks and arrival state.
+
+{/* truncate */}
+
+import Clip from '@site/src/components/Clip';
+
+## Around Sagittarius A*
+
+<Clip name="black_hole_orbit" label="Orbiting Sagittarius A*" controls />
+
+The ship completes more than one orbit at **three horizon radii**. Gravitational lensing bends the background around the shadow while the native HUD shows the orbit count, clock rates and tidal load. This 20-second clip advances 1,800 seconds on the ship's clock, explicitly labelled as 90× presentation speed.
+
+The background is the labelled **Sol sky**. A true Galactic-Centre background and a rotating black hole remain future work.
+
+## Arriving beside Saturn
+
+<Clip name="saturn_arrival" label="Arriving beside Saturn" controls />
+
+Saturn and its rings grow through the final approach, followed by six seconds at a genuine, stationary arrival. The video's 16-second approach compresses 25 seconds of simulation time; earlier guided stops are omitted. The camera widens its lens near arrival to keep the close planet and rings readable.
+
+## The space between stars
+
+Interstellar clouds and dust are in final review in [PR #199](https://github.com/sunholo-data/stapledons-godot/pull/199). Routes cross source-based local cloud boundaries, the bubble wall responds to the medium, and individual grain impacts have an afterglow. The HUD and Archive explain the densities, assumptions and displayed impact statistics.
+
+This work still needs its final performance, scientific and attended render checks before landing. The separate dense-cloud dataset has unresolved scientific comparisons and is deferred. The remaining first-journey audit also stays on the roadmap.
+
+[Watch the videos and browse the captures in the gallery](/gallery), or [see the current roadmap](/docs/roadmap).
