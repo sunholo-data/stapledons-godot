@@ -186,7 +186,7 @@ pure func refusedStarClean() -> bool {
 }
 test "a refused inferred-star plan stores neither a plan nor a celestial body" { refusedStarClean() }
 
-pure func brightAtPacing(n: int) -> float {
+export pure func brightAtPacing(n: int) -> float {
   let w0 = planned(newWorld(17, false, lism(defaultParams())), aldebaran(), phi0999());
   match planOf(w0) {
     Some(pl) => {

@@ -8,7 +8,7 @@
 --
 -- Media, first match wins: the 14 Redfield & Linsky clouds (cone shells, table order),
 -- the LIC (a star-shaped harmonic surface), then the Local Bubble's hot gas. Route
--- resolution is exact, never sampled: the boundaries of a straight segment are the
+-- resolution uses analytic cloud boundaries and bounded numerical LIC roots: the
 -- cone and sphere roots (closed form) and the LIC crossings (64-step bracket, 60
 -- bisections); each piece between consecutive boundaries is classified by its midpoint.
 -- The same `profile` serves the plan, the per-tick ledger and the map.
@@ -17,7 +17,7 @@ module stapledons/sim/ism
 import std/list (sortBy, length, map, foldl, filter, reverse)
 import std/math (sqrt, cos, log, exp, floor, intToFloat, floatToInt, pow)
 import std/array (fromList as toArray, get, length as alen)
-import pkg/sunholo/celestial/ism (Interval, starSurfaceCrossings, insideStarSurface, coneShellChord, insideConeShell, GrainDist, grainDist, grainsAbove, grainRadiusAt, poissonDraw)
+import pkg/sunholo/celestial/ism (Interval, starSurfaceCrossings, insideStarSurface, coneShellChord, insideConeShell, ellipsoidChord, GrainDist, grainDist, grainsAbove, grainRadiusAt, poissonDraw)
 import pkg/sunholo/relativity/optics (Vec3)
 import pkg/sunholo/relativity/medium (lightYearM, massEquivalentDensity, glowEmittanceAt, glowTemperatureAt, driveHoldMaxPhi)
 import pkg/sunholo/relativity/dust (grainKinetic, grainMassOf, grainRate)
@@ -64,6 +64,20 @@ pure func dist(a: Vec3, b: Vec3) -> float { let dx = b.x - a.x; let dy = b.y - a
 
 pure func ends(is: [Interval], acc: [float]) -> [float] = match is { [] => acc, i :: rest => ends(rest, i.t0 :: i.t1 :: acc) }
 
+-- Every real l<=2 spherical harmonic has |Y|<1: sum |coeffs| encloses
+-- the LIC. Restrict the package's 64-step bracket to this finite sphere,
+-- so a long off-Sol route cannot dilute the entire LIC into one grid cell.
+-- Root refinement is numerical; arbitrarily tangent double roots may remain
+-- unresolved by the upstream bracket (no 'exact, never sampled' claim).
+pure func licCrossings(a: Vec3, b: Vec3) -> [float] {
+  let r = foldl(\acc c. acc + absf(c), 0.0, licCoeffs());
+  let bound = ellipsoidChord(licC(), v3(1.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), v3(0.0, 0.0, 1.0), r, r, r, a, b);
+  match bound {
+    g :: _ => map(\t. g.t0 + (g.t1 - g.t0) * t, starSurfaceCrossings(licC(), licCoeffs(), lerp(a, b, g.t0), lerp(a, b, g.t1))),
+    [] => []
+  }
+}
+
 pure func cloudTs(cs: [Cloud], a: Vec3, b: Vec3, acc: [float]) -> [float] = match cs {
   [] => acc,
   c :: rest => cloudTs(rest, a, b, ends(coneShellChord(cv(c), c.cosHalf, c.rIn, c.rOut, a, b), acc))
@@ -97,13 +111,14 @@ pure func segsOf(ts: [float], a: Vec3, b: Vec3, len: float, acc: [Seg]) -> [Seg]
   [] => reverse(acc)
 }
 
--- Exact ordered route boundaries, including arbitrarily short grazing chords.
+-- Ordered analytic cloud boundaries, including arbitrarily short grazing chords;
+-- the LIC uses the bounded numerical bracket described above.
 export pure func profile(a: Vec3, b: Vec3) -> [Seg] {
   let len = dist(a, b);
   let ma = mediumAt(a);
   if !(len > 0.0) then [{ s0: 0.0, s1: 0.0, medium: ma }]
   else {
-    let ts = uniq(sortBy(cmpF, 0.0 :: 1.0 :: clamp01(cloudTs(clouds(), a, b, starSurfaceCrossings(licC(), licCoeffs(), a, b)), [])), []);
+    let ts = uniq(sortBy(cmpF, 0.0 :: 1.0 :: clamp01(cloudTs(clouds(), a, b, licCrossings(a, b)), [])), []);
     segsOf(ts, a, b, len, [])
   }
 }
@@ -333,8 +348,24 @@ pure func brightPiece(lut: Array[float], g: Seg, tp: TripPlan, c: DustCfg) -> fl
   let tol = 0.000001 * (if whole > 0.0 then whole else (g.s1 - g.s0) * grainsAbove(gd, grainAMin()) * 0.000000000001);
   if whole <= 0.0 then 0.0 else integrateBright(lut, g.medium, gd, tp, g.s0, g.s1, fa, fm, fb, whole, tol, 14, c)
 }
+-- Split a monotonic acceleration piece into <=0.25-rapidity intervals before
+-- adaptive refinement. This finds the bright-density lobe even when it vanishes
+-- at the broad interval's endpoints and midpoint at very high gamma.
+pure func boostX(tp: TripPlan, phi: float) -> float = (cosh(phi) - 1.0) / tp.a
+pure func brakeX(tp: TripPlan, phi: float) -> float = tp.trip.distance - tp.dApproach - (cosh(phi) - cosh(tp.phiApproach)) / tp.a
+pure func approachX(tp: TripPlan, phi: float) -> float = tp.trip.distance - (cosh(phi) - 1.0) / tp.aApproach
+pure func phiKnots(tp: TripPlan, k: int, acc: [float]) -> [float] {
+  let phi = intToFloat(k) * 0.25;
+  if phi >= tp.phiPeak then acc
+  else phiKnots(tp, k + 1, boostX(tp, phi) :: brakeX(tp, phi) :: (if tp.tauApproach > 0.0 && phi < tp.phiApproach then approachX(tp, phi) :: acc else acc))
+}
+pure func splitBright(lut: Array[float], g: Seg, tp: TripPlan, cuts: [float], c: DustCfg, acc: float) -> float = match cuts {
+  [] => acc + brightPiece(lut, g, tp, c),
+  x :: rest => if x <= g.s0 || x >= g.s1 then splitBright(lut, g, tp, rest, c, acc)
+    else splitBright(lut, {g | s0: x}, tp, rest, c, acc + brightPiece(lut, {g | s1: x}, tp, c))
+}
 pure func sumBright(lut: Array[float], gs: [Seg], tp: TripPlan, c: DustCfg) -> float =
-  foldl(\acc g. acc + brightPiece(lut, g, tp, c), 0.0, gs)
+  foldl(\acc g. acc + splitBright(lut, g, tp, uniq(sortBy(cmpF, phiKnots(tp, 1, [])), []), c, 0.0), 0.0, gs)
 export pure func tripBright(segs: [Seg], tp: TripPlan, c: DustCfg) -> float {
   let lut = lutArray();
   let b0 = tp.dBurn;
