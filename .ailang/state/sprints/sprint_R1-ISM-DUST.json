@@ -254,7 +254,7 @@
       "passes": false,
       "started": "2026-10-09",
       "completed": null,
-      "notes": "Protocol 2.8 takes next free minor after inferred stars2.7. Exact cloud roots, bounded numerical LIC bracket, cached contiguous route segments, cumulative grains, adaptive compressed bright totals and endpoint display rates. Uniform2.7 fixture retained byte for byte. AC6a still42/59 below80%; no waiver inferred.",
+      "notes": "Protocol 2.8 preserves frozen uniform2.7 bytes. Published RL08 angular outlines recover56/59 (94.9%) sight lines; alphaCen logNHI17.70. All405 source vertices pass independent reprojection. Bounded numerical LIC bracket, cached ordered route, cumulative grains, adaptive compressed bright totals, every crossed boundary and endpoint display rates. Short whole-trip arrival regression red-to-green; final integrated local/CI suite pending. Shorttrip1/2/7/60 pacing is independently verified; every changing-speed piece integrates regardless of wall duration.",
       "pr": "A"
     },
     {
@@ -272,7 +272,7 @@
       "passes": true,
       "started": "2026-10-09",
       "completed": "2026-10-09",
-      "notes": "interior/dust_flash.gd + .gdshader wired in InteriorSky; make golden green incl. G-ISM-1..3; make dust-flash-test 26/26 (AC15).",
+      "notes": "Indexed projected quads sum overlapping impacts in FP32 before one HDR write. Final integrated make golden0failures incl.G-ISM-1..4; dust-flash29/29. Vulkan1440p64live flashes GPUmedian0.023ms/0.3ms with mandatory positive pixel control. Mask refresh covers bubble/spot radius changes.",
       "pr": "A"
     },
     {
@@ -290,7 +290,7 @@
       "passes": true,
       "started": "2026-10-09",
       "completed": "2026-10-09",
-      "notes": "ui/ism_layer.gd + hook lines in galaxy_map.gd (D toggle, plan rows, hold-limit note); make map-ism-test 12/12.",
+      "notes": "Published outline shell edges replace equal-area circular boundaries; internal triangulation seams removed. Map14/14. D sends no intent. Ordered route rows include re-entry and fit the scrollable plan panel.",
       "pr": "A"
     },
     {
@@ -307,7 +307,7 @@
       "passes": true,
       "started": "2026-10-09",
       "completed": "2026-10-10",
-      "notes": "Built on merged ShipHud:197ship-ui/24no-twitch/59identification assertions pass, orderedre-entry and coincidentSun red regression fixed. Integrated two-resolution captures pendingfinalrenderer.",
+      "notes": "Built on merged ShipHud:199ship-ui/24no-twitch/59identification assertions pass. Compressed hot-cloud-hot notices consume ordered wire crossings once per tick. Largest grain/impact labels explicitly describe displayed samples. Actual protocol2.8 HUD captures at1280x720 and2560x1440.",
       "pr": "A (or follow-up)"
     },
     {
@@ -325,7 +325,7 @@
       "passes": false,
       "started": "2026-10-09",
       "completed": null,
-      "notes": "36actualframes generated/opened via contact sheet; comparison sheets and map opened. FirstoptimizedVMdelta0.449ms/plan16ms withinbudgets, repeatabilitypending. IndependentVulkanGPU64sprites1440p4.869ms vs0.3msbudget: rendereroptimizationinprogress. P2reviewpending.",
+      "notes": "36 actual frames,0uniform/NaN, plus contact/afterglow/efficiency/sensitivity/maps opened and10native HUD frames. Quiet coast CPU plan delta6.239ms/20ms,tickdelta0.469985ms/0.5ms; GPUdelta0.023ms/0.3ms. Representative boost/brake timing pending; P2 remains blocking. Exact hashes and URLs in data/ism/review-baselines.json.",
       "pr": "A"
     },
     {
@@ -361,26 +361,27 @@
       "passes": false,
       "started": "2026-10-10",
       "completed": null,
-      "notes": "FITS synthetic60assertions;realNESTcrop151shells. Globalcomponentellipsoidfalsecavityfillrejected;8pcsubdivision5601clumps,23LLCCtriangles, spatialindexandindependentanchorsinprogress. LLCCNaI-onlyHD84937outside21cmoutline:cross-tracercriterionneedsresolution."
+      "notes": "Deferred: FITS synthetic60assertions and realNESTcrop151shells pass, but threshold-clump extinction model passes only1/20 independent directions; Taurus/Ophiuchus distances fail. LLCCNaI-onlyHD84937 lies outside21cm outline. No runtime integration or scientific waiver. PR B may defer without blocking PR A under the approved sprint."
     }
   ],
   "spec_pr": 11,
   "rerecorded": [],
   "revision_round_1": "Plan review round 1 (Sonnet, independent): 78/100 PASS, 0 blocking, 6 major, 5 minor. F1 guided-drive hold computed (gamma ~13,300 in warm clouds vs hops ~7,500), scenarioError on the hot-gas floor, AC10b + Q8; F2 stride 1024, fixed draw layout, display window, AC12 split; F3 one dust calibration delta per H nucleon; F4 a_max and hot-gas delta as scenario parameters + sensitivity sheet; F5 AC5 independent anchors, AC6 membership + second paper, LLCC AC6c, spec_pr field, package clone path; F6 16 days in two PRs; F7 I0 source verification; F8 double count stated, thresholds physical; F9 rerecorded list + AC9 on the guided tour; F10 whole-cruise rule stated; F11 I-1 pin bump.",
-  "next_step": "Complete independent evaluation, local/CI checks and P2 review; resolve AC6a membership and AC19 GPU budget before landing. PR B dense-cloud scientific anchors in progress.",
+  "next_step": "Finish final local/CI suite, acceleration/braking CPU measurements, independent evaluation and concrete P2 dev-build/render/Archive review before merging PR A into main. PR B is deferred with scientific failures.",
   "execution_2026_10_10": {
     "ailang_prompt": "v0.16.6 teaching prompt loaded from pinned runtime v0.52.0",
     "protocol": "2.8, preserving frozen 2.7 inferred-star session byte for byte on both engines",
     "integration_branch": "finish/ism-dust-20261010",
     "gpu_golden": "0 failures; 36 ISM captures, 0 uniform/NaN, contact/afterglow/eps/sensitivity/map opened",
-    "headless": "full suite running; targeted ISM18/18 and core11/11 before final LIC bracket/quad-knot refinements",
-    "benchmark_first": "0.449ms ISM delta/tick;16ms planning, repeatability pending",
+    "headless": "Prior fullsim410/410; old make exit2 only outdated10-entry Archive smoke, since corrected11/8. Final full make test rerun running. Final coreISM16/16 strict includes short-trip1/2/7/60 pacing; final frozen uniform compatibility and lism determinism pass.",
+    "benchmark_first": "Quiet warm-service coast: plan delta6.239ms/20ms; total lism9.367ms; tick delta0.469985ms/0.5ms. Boost/brake measurements pending after correcting high-acceleration short-trip pacing. Shipped I/O interop, pure strict core checked separately.",
     "open_gates": [
-      "AC6a:42/59=71.2%, requirement80%",
-      "AC19:dust GPU4.869ms at1440p64sprites, budget0.3ms, optimization in progress",
-      "P2:Mark render/dev-build/Archive review",
+      "AC19: representative boost/braking CPU measurement",
+      "P2: Mark render/dev-build/Archive review",
       "local and CI full-suite final revision",
-      "PR B:LLCC all-tracer discrepancy and independent anchors"
+      "PR B: LLCC all-tracer discrepancy and independent anchors"
     ]
-  }
+  },
+  "rerecorded_note": "No previous lism-1 baseline exists. No uniform fixture was rerecorded. New named lism stream, 36 renders, contact sheet and 10 native HUD captures are listed with SHA256 and review URLs in data/ism/review-baselines.json.",
+  "new_lism_baselines": "data/ism/review-baselines.json"
 }

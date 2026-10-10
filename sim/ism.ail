@@ -379,9 +379,10 @@ export pure func dustWithTotal(key: int, k: int, mu: float, phi: float, dtauS: f
       glitter: { rate: if rateVis > rateBright then rateVis - rateBright else 0.0, aLo: th.aVis, aHi: th.aBright, q: c.q, seed: top53(splitmix64(key, k * slotsPerTick() + 1021)) }, cache: cache2 }
   }
 
--- Compressed changing-speed pieces: adaptive Simpson quadrature in distance, split
+-- Changing-speed pieces: adaptive Simpson quadrature in distance, split
 -- at every medium and acceleration-phase boundary. Relative tolerance 1e-6, depth
--- limit 14; real-time (<0.1 s) pieces retain endpoint evaluation (speed change tiny).
+-- limit 14. Coast uses the constant-speed fast path; short boost/brake intervals
+-- still require integration at the scenario's allowed high accelerations.
 pure func routePhi(tp: TripPlan, x: float) -> float =
   if x < tp.dBurn then acosh1p(tp.a * x)
   else if x < tp.dBurn + tp.dCoast then tp.phiPeak

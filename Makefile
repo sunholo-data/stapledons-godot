@@ -365,7 +365,9 @@ runtime:           ## stage the bundled sim runtime: pinned ailang release + fet
 
 export-macos: runtime sky-bundle areas-stage starmap-assets lens-assets import   ## build the macOS .app (arm64, ad-hoc signed) with the sim runtime, the pinned sky textures and the area bundles
 	@mkdir -p build/macos
+	@git diff --quiet && git diff --cached --quiet || { echo 'export-macos: commit tracked source changes before building a review artifact'; exit 1; }
 	@git describe --tags --always --dirty > runtime/build_version.txt # bundled (runtime/*): the audit's "build" field
+	@git rev-parse HEAD > runtime/build_commit.txt
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
 
@@ -382,12 +384,14 @@ export-smoke:      ## run the exported .app's capture with NO ailang on PATH; mu
 DEV_BUCKET ?= stapledons-voyage-dev-builds
 
 publish-dev: export-macos export-smoke   ## upload this build to the private dev bucket (needs gcloud auth); install with tools/install_review_build.sh --dev
-	@ver=$$(git describe --tags --always --dirty); zip="$(SCRATCH)/StapledonsVoyage-$$ver-macos.zip"; \
+	@ver=$$(cat runtime/build_version.txt); commit=$$(cat runtime/build_commit.txt); \
+	git diff --quiet && git diff --cached --quiet && test "$$commit" = "$$(git rev-parse HEAD)" && test "$$ver" = "$$(git describe --tags --always --dirty)" || { echo 'publish-dev: checkout changed since export; rebuild before publishing'; exit 1; }; \
+	zip="$(SCRATCH)/StapledonsVoyage-$$ver-macos.zip"; \
 	rm -f "$$zip"; (cd build/macos && ditto -c -k --keepParent "Stapledons Voyage.app" "$(CURDIR)/$$zip"); \
 	sum=$$(shasum -a 256 "$$zip" | cut -d' ' -f1); name=$$(basename "$$zip"); \
 	gcloud storage cp "$$zip" "gs://$(DEV_BUCKET)/macos/builds/$$name" && \
 	printf '%s  %s\n' "$$sum" "$$name" | gcloud storage cp - "gs://$(DEV_BUCKET)/macos/builds/$$name.sha256" && \
-	printf '{"version":"%s","zip":"macos/builds/%s","sha256":"%s","commit":"%s","built":"%s"}\n' "$$ver" "$$name" "$$sum" "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+	printf '{"version":"%s","zip":"macos/builds/%s","sha256":"%s","commit":"%s","built":"%s"}\n' "$$ver" "$$name" "$$sum" "$$commit" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 	  | gcloud storage cp --cache-control="no-cache" - "gs://$(DEV_BUCKET)/macos/latest.json" && \
 	echo "publish-dev: $$name ($$sum) -> gs://$(DEV_BUCKET)/macos/latest.json"
 

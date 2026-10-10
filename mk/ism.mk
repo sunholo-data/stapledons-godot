@@ -31,8 +31,11 @@ ism-determinism:   ## AC11, AC13: a 2.8 lism-1 session (plan, commit, 40 real-ti
 	@cmp $(ISM_TMP)/det-vm1.txt $(ISM_TMP)/det-vm2.txt && cmp $(ISM_TMP)/det-vm1.txt $(ISM_TMP)/det-int.txt && grep -q '"impacts":\[{' $(ISM_TMP)/det-vm1.txt && \
 	  echo "ism-determinism: $$(wc -l < $(ISM_TMP)/det-vm1.txt | tr -d ' ') lines with impacts, digest $$(shasum -a 256 $(ISM_TMP)/det-vm1.txt | cut -c1-16): run 1 = run 2 = interpreter"
 
-ism-bench:         ## AC19: strict-VM cost of the ISM per real-time tick (a lism-1 session minus the same session under uniform) and of a lism-1 plan, vs the design's 0.5 ms and 20 ms
-	@AILANG=$(AILANG) SCRATCH=$(SCRATCH) sh tools/ism_bench.sh
+ism-bench:         ## AC19: warm bytecode-service ISM plan/tick delta vs uniform, excluding bootstrap; pure core strictness is checked by make strict
+	@mkdir -p $(ISM_TMP); rm -f $(ISM_TMP)/service-benchmark.json
+	@env -u AI_LIVE $(GODOT_SIM) --headless --path . --quit-after 3 --script tools/ism_service_bench.gd > $(ISM_TMP)/service-benchmark.log 2>&1; rc=$$?; \
+	  cat $(ISM_TMP)/service-benchmark.log; test $$rc = 0 && grep -q '^ism-service-bench:' $(ISM_TMP)/service-benchmark.log && \
+	  jq -e '.passes == true' $(ISM_TMP)/service-benchmark.json >/dev/null
 
 dust-flash-test:   ## AC15: the dust-flash CPU mirror vs the package values, lookups finite, the glitter sampler mirrors (headless)
 	@mkdir -p $(SCRATCH)

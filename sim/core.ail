@@ -594,10 +594,13 @@ pure func dustAfter(w: World, before: Ship, after: Ship, dtau: float, pl: Option
     let here = match pl { Some(p) => match p.ism { Some(pi) => segmentMedium(pi.segs, hi), None => mediumAt(position(after)) }, None => if hi == lo then currentMedium(w) else mediumAt(position(after)) };
     let cfg = dustCfg(w.params);
     let d = match pl {
-      Some(p) => if dtau * julianYearS() > 0.1 && hi > lo && !(lo >= p.trip.dBurn && hi <= p.trip.dBurn + p.trip.dCoast)
-        then dustWithTotal(dustKey(w.seed), w.tick + 1, tripBright(segs, p.trip, cfg), absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache)
-        else if dtau * julianYearS() > 0.1 && after.phase == AtRest && hi > lo
+      Some(p) => if after.phase == AtRest && hi > lo
         then dustWithTotal(dustKey(w.seed), w.tick + 1, tripBright(segs, p.trip, cfg), 0.0, dtau * julianYearS(), here, cfg, d0.cache)
+        -- A short wall-clock interval can still span a large rapidity change
+        -- for an allowed high-acceleration scenario. Only coast has constant
+        -- speed; integrate every flown boost/brake piece, at any pacing.
+        else if hi > lo && !(lo >= p.trip.dBurn && hi <= p.trip.dBurn + p.trip.dCoast)
+        then dustWithTotal(dustKey(w.seed), w.tick + 1, tripBright(segs, p.trip, cfg), absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache)
         else dustTick(dustKey(w.seed), w.tick + 1, segs, absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache),
       None => dustTick(dustKey(w.seed), w.tick + 1, segs, absf(after.motion.phi), dtau * julianYearS(), here, cfg, d0.cache)
     };

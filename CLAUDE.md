@@ -53,8 +53,10 @@ infrastructure is recorded in `infra/gcp/setup.sh` (Terraform-portable).
    update the design repo's roadmap status, and add a changelog entry.
 
 The R1 roadmap is also drafted as a `mission-control` charter
-(`design_docs/stapledon-mission.md`). It is **not ratified and not armed**:
-ratifying it and arming the launchd loop are the user's decisions.
+(`design_docs/stapledon-mission.md`). Mark armed the loop on 2026-09-27 and
+ratified the charter on 2026-09-28 (ledger D-1). Inspect the current launchd
+and issue status before reporting what it is doing; scheduling does not mean
+an iteration is running.
 
 ## Recording Mark's decisions
 

@@ -3,7 +3,7 @@ extends RefCounted
 ## protocol 2.8 (lism-1), the galaxy map plans and commits Sol -> Aldebaran (the route crosses the
 ## LIC, the hot gas and the Hyades cloud); the frames are taken mid-cruise from the sim's state after
 ## real-time ticks (0.05 ship s each, so the dust flashes are the sim's own draw). 1600 x 900.
-##   flight/<speed>_<medium>_{interior,forward}.png  LIC (2 ly), Hyades cloud (7 ly), hot gas (15 ly)
+##   flight/<speed>_<medium>_{interior,forward}.png  LIC (0.5 ly), Hyades cloud (7 ly), hot gas (15 ly)
 ##           at 0.99c, 0.999c, 0.9999c, 0.999999c; and a synthetic n_H 10 cloud (uniform medium at the
 ##           mass-equivalent density, cap 0.9999c: glow only, its dust comes with PR B's real clouds)
 ##   flash_closeup.png        the brightest live flash, forward view 8 deg wide (LIC, 0.999c)
@@ -18,7 +18,7 @@ const RT_DTAU := 0.05 / 31557600.0 # one real-time tick of ship time, yr
 const FINE_DTAU := 2e-7
 const FWD_FOV := 60.0
 const SPEEDS := [["0p99c", 0.01], ["0p999c", 0.001], ["0p9999c", 1e-4], ["0p999999c", 1e-6]]
-const STOPS := [["LIC", 2.0], ["Hyades", 7.0], ["hot", 15.0]]
+const STOPS := [["LIC", 0.5], ["Hyades", 7.0], ["hot", 15.0]]
 const SENS := "res://.godot/tmp/ism/sensitivity.json"
 
 var main: Node
@@ -44,11 +44,11 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 		if not await _voyage("cloud10_" + sp[0], sp[1], {"standoff_au": 1000.0, "ism_model": 0, "ism_n_cm3": 14.1, "cap_one_minus_beta": 1e-4}, [["synthetic n_H 10 cloud", 2.0]]):
 			return 2
 	# the flash close-up, the afterglow and eps sheets: hot gas and LIC at 0.999c
-	if not await _voyage("closeup", 0.001, {"standoff_au": 1000.0}, [["LIC", 2.0]], false):
+	if not await _voyage("closeup", 0.001, {"standoff_au": 1000.0}, [["LIC", 0.5]], false):
 		return 2
 	await _closeup()
 	await _afterglow_sheet()
-	await _eps_sheet()
+	if not await _eps_sheet(): return 2
 	await _sensitivity_sheet()
 	await _maps()
 	_contact()
@@ -58,7 +58,7 @@ func run(m: Node, interior: Interior, galaxy_map: GalaxyMap, dir: String) -> int
 	sim.stop()
 	var bad := log_rows.filter(func(r: Dictionary) -> bool: return not r.get("ok", false))
 	printerr("ism capture: %d frames, %d uniform or NaN" % [log_rows.size(), bad.size()])
-	return 1 if not bad.is_empty() else 0
+	return 1 if not bad.is_empty() or log_rows.size() != 36 else 0
 
 
 func _phi(omb: float) -> float:
@@ -85,11 +85,12 @@ func _voyage(tag: String, omb: float, params: Dictionary, stops: Array, frames :
 	var id := map.dialog_plan_id
 	printerr("ism capture: %s planned (plan %d), committing" % [tag, id])
 	map.close_commit_dialog()
-	sim.send([{"k": "commit", "plan_id": id}], FINE_DTAU)
+	if not sim.send([{"k": "commit", "plan_id": id}], FINE_DTAU): return false
 	map.refresh()
 	it.close_map()
 	while sim.world["ship"]["phase"] != "cruising" and sim.send([], FINE_DTAU):
 		pass
+	if sim.world["ship"]["phase"] != "cruising": return false
 	for st: Array in stops:
 		var s: Dictionary = sim.world["ship"]
 		var gb: float = float(s["gamma"]) * float(s["beta"])
@@ -99,12 +100,15 @@ func _voyage(tag: String, omb: float, params: Dictionary, stops: Array, frames :
 		while dt_left > 0.0:
 			var step := minf(dt_left, 0.9)
 			if not sim.send([], step):
-				break
+				return false
 			dt_left -= step
 		for k in 8: # real-time ticks: the sim draws this tick's dust
-			sim.send([], RT_DTAU)
+			if not sim.send([], RT_DTAU): return false
 			it.apply_state(sim.world)
 			await main.get_tree().process_frame
+		if params.get("ism_model", 1) != 0 and str(_ism().get("medium", "")) != str(st[0]):
+			push_error("ism capture: expected %s at %s ly, actual %s" % [st[0], st[1], _ism().get("medium", "missing")])
+			return false
 		if frames:
 			await _frames("%s_%s" % [tag, str(st[0]).replace(" ", "_")])
 	return true
@@ -225,16 +229,17 @@ func _afterglow_sheet() -> void:
 	_save(await _labelled_grid(cells, 3, ["r = 0.25 m", "r = 0.5 m (default)", "r = 1 m"], ["tau = 0.1 s", "tau = 0.2 s (default)", "tau = 0.4 s"]), "afterglow_sheet.png", "afterglow sheet (G-AG, a game approximation): rows r_s 0.25/0.5/1 m, columns tau 0.1/0.2/0.4 s; the brightest flash at t = 0.08 s, 6 deg view")
 
 
-func _eps_sheet() -> void:
+func _eps_sheet() -> bool:
 	var cells: Array[Image] = []
-	for med: Array in [["LIC", 2.0], ["hot", 15.0]]:
-		await _voyage("eps", 0.001, {"standoff_au": 1000.0}, [med], false)
+	for med: Array in [["LIC", 0.5], ["hot", 15.0]]:
+		if not await _voyage("eps", 0.001, {"standoff_au": 1000.0}, [med], false): return false
 		for e: float in [1e-11, 1e-10, 3e-10]:
 			it.glow_eps_scale = e / 1e-10
 			it.apply_state((main.sim as SimBridge).world)
 			cells.append(await _forward(FWD_FOV))
 	it.glow_eps_scale = 1.0
 	_save(await _labelled_grid(cells, 3, ["LIC at 0.999c", "hot gas at 0.999c"], ["eps = 1e-11", "eps = 1e-10 (canon)", "eps = 3e-10"]), "eps_sheet.png", "eps sheet: rows LIC, hot gas (0.999c); columns eps 1e-11, 1e-10 (canon), 3e-10")
+	return true
 
 
 func _sensitivity_sheet() -> void:
@@ -288,6 +293,10 @@ func _maps() -> void:
 	map.call("_update_camera")
 	map.fit_journey()
 	map.get("_overlay").queue_redraw()
+	await main.get_tree().process_frame
+	var plan_scroll := map.get("_grid").get_parent() as ScrollContainer
+	plan_scroll.scroll_vertical = int(map.get("_grid").size.y)
+	await main.get_tree().process_frame
 	_save(await _grab(), "map_route.png", "map: Sol -> Aldebaran coloured by medium, plan rows")
 	map.ism_layer.visible = false
 	it.close_map()

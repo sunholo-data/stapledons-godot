@@ -8,7 +8,7 @@ module stapledons/sim/core_ism_test
 import std/option (Option, Some, None)
 import std/list (length, filter)
 import pkg/sunholo/relativity/optics (Vec3)
-import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/relativity/hyper (absf, cosh)
 import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/medium (mirrorDragForce, accelSI)
 import pkg/sunholo/celestial/frames (unitFromAngles)
@@ -210,6 +210,25 @@ pure func brightBurnOracle() -> bool {
     && rel(tripBright(window(pi.segs, pl.trip.dBurn + pl.trip.dCoast, pl.trip.trip.distance), pl.trip, dustCfg(params)), 168.265854664, 0.001), None => false }, None => false }
 }
 test "boost and brake bright totals separately match independent rapidity quadrature, within efficacy LUT tolerance" { brightBurnOracle() }
+
+pure func shortArrivalBright(n: int) -> bool {
+  let p = {defaultParams() | ismModel: 1.0, boostG: 1000000000.0, bubbleRadiusM: 10000.0};
+  let a = p.boostG * 9.80665 / 299792458.0 * 31557600.0;
+  let distance = 2.0 * (cosh(1.5) - 1.0) / a;
+  let w = planned(newWorld(1, false, p), {index: 77, id: "probe", pos: {x: distance, y: 0.0, z: 0.0}}, 1.5);
+  match planOf(w) { Some(pl) => match pl.ism { Some(pi) => {
+    let c = (tick(w, {dtau: 0.0, intents: [ICommit(pl.id)]})).world;
+    let done = settle(fly(c, n, pl.trip.tauTotal / intToF(n)), 1000);
+    let want = tripBright(pi.segs, pl.trip, dustCfg(p));
+    pl.trip.tauTotal * 31557600.0 < 0.1 && want > 900.0
+    && (match done.journey { Arrived(_) => true, _ => false })
+    && rel(done.dust.legExpected, want, 0.000001)
+    && done.dust.last.brightRate == 0.0 && length(done.dust.last.events) == 0
+  }, None => false }, None => false }
+}
+test "a sub-0.1-second trip retains bright totals at 1, 2, 7 and 60 ticks and shows no at-rest impacts" {
+  shortArrivalBright(1) && shortArrivalBright(2) && shortArrivalBright(7) && shortArrivalBright(60)
+}
 
 
 test "compressed hot-cloud-hot travel reports both boundaries in order" {

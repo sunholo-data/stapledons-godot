@@ -78,5 +78,15 @@
       "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/7b3890c3e5d5be52691bb75a3ecdf47ebb21e4e0465669c4219da445afb85491.webm",
       "bytes": 2869655
     }
+  },
+  "ism_transit": {
+    "mp4": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/26489f0b47a968ed0e8b4296338b3ddb59f3efbc962a259e5f0fc637fe14c931.mp4",
+      "bytes": 640017
+    },
+    "webm": {
+      "url": "https://storage.googleapis.com/stapledons-voyage-assets/site/adee165dab041151bbfd3cbeeb7686d7f529826e97e1cf12cd221cc8fb768e37.webm",
+      "bytes": 629458
+    }
   }
 }

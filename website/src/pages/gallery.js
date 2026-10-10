@@ -9,6 +9,7 @@ import GALLERY from '@site/src/data/gallery';
 import styles from './gallery.module.css';
 
 const CLIPS = [
+  {name: 'ism_transit', title: 'Weather between the stars — in review', text: 'At 0.999c the actual Aldebaran route crosses LIC, Aur, LIC again, hot gas, Hyades and hot gas again. This 24-second capture cuts between the real route intervals; each displayed dust tick advances 1/30 ship second. The wall glow, grain impacts and medium notices come from the simulation.'},
   {name: 'black_hole_orbit', title: 'Orbiting Sagittarius A*', text: 'A stable orbit at three horizon radii: the real simulation advances 1,800 ship seconds in 20 seconds of video. The lensed background is the labelled Sol sky; the clocks and orbit count come from the simulation.'},
   {name: 'saturn_arrival', title: 'Arriving beside Saturn', text: 'The guided voyage\'s final approach reaches a real at-rest stop, with Saturn and its rings in the same physical view. The approach is compressed to 16 screen seconds, followed by six seconds beside the planet; earlier stops are omitted.'},
   {name: 'voyage', title: 'Rest to 0.99c, looking forward', text: 'A 1 g burn through the AILANG simulation, rapidity eased over 18 s. 24 s loop.'},
@@ -18,6 +19,7 @@ const CLIPS = [
 ];
 
 const GROUPS = [
+  ['ism', 'Weather between the stars — in review'],
   ['ship', 'The painted ship'],
   ['sky', 'The relativistic sky'],
   ['cmb', 'The forward CMB'],
