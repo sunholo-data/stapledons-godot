@@ -36,9 +36,9 @@ test "AC8: defaultParams is uniform; a uniform plan carries no ISM summary" {
   && (match planOf(planned(newWorld(1, false, defaultParams()), aldebaran(), phi0999())) { Some(p) => (match p.ism { None => true, Some(_) => false }), None => false })
 }
 
-test "under lism-1 a plan carries its route's media (LIC, hot, Hyades) and its hold limit" {
+test "under lism-1 a plan carries the published-outline route (LIC, Aur, LIC, hot, Hyades, hot) and its hold limit" {
   match planOf(planned(newWorld(1, false, lism(defaultParams())), aldebaran(), phi0999())) {
-    Some(p) => (match p.ism { Some(pi) => (match pi.media { a :: b :: c :: d :: [] => a.name == "LIC" && b.name == "hot" && c.name == "Hyades" && d.name == "hot", _ => false }) && pi.peak.name == "LIC" && pi.holdPhi > phi0999(), None => false }),
+    Some(p) => (match p.ism { Some(pi) => (match pi.media { a :: b :: c :: d :: e :: f :: [] => a.name == "LIC" && b.name == "Aur" && c.name == "LIC" && d.name == "hot" && e.name == "Hyades" && f.name == "hot", _ => false }) && pi.peak.name == "LIC" && pi.holdPhi > phi0999(), None => false }),
     None => false
   }
 }

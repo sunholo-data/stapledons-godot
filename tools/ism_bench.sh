@@ -9,15 +9,19 @@ mkdir -p "$SCRATCH/ism"
 samples="$SCRATCH/ism/bench-samples.tsv"
 measure() {
     perl -MTime::HiRes=time -e '
-      my $start=time; my $rc;
-      { local *STDOUT; open STDOUT, ">", "/dev/null" or die $!;
+      my $output=shift; my $start=time; my $rc;
+      { local *STDOUT; open STDOUT, ">", $output or die $!;
         system @ARGV; $rc=$?; }
       printf "%.9f\n", time-$start;
-      exit($rc == -1 ? 1 : $rc >> 8);
+      exit($rc == -1 || ($rc & 127) ? 1 : $rc >> 8);
     ' "$@"
 }
 run() {
-    measure env -u AI_LIVE "$AILANG" run --quiet --package-dir sim --bytecode --strict-bytecode --entry "$1" --args-json "$2" sim/protocol_ism_test.ail
+    output="$SCRATCH/ism/bench-run.txt"
+    elapsed=$(measure "$output" env -u AI_LIVE "$AILANG" run --quiet --package-dir sim --bytecode --strict-bytecode --entry "$1" --args-json "$2" sim/protocol_ism_test.ail)
+    lines=$(wc -l < "$output" | tr -d ' ')
+    [ "$lines" = "$((3 + $2))" ] || { echo "ism-bench: incomplete $1 response ($lines lines)" >&2; exit 1; }
+    printf '%s\n' "$elapsed"
 }
 run ismStream 2 >/dev/null
 run uniformStream 2 >/dev/null
