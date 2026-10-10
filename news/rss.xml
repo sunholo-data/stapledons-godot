@@ -4,11 +4,33 @@
         <title>Stapledon's Voyage news</title>
         <link>https://www.sunholo.com/stapledons-godot/news</link>
         <description>Releases and progress on Stapledon's Voyage, a hard-SF game in Godot 4 and AILANG.</description>
-        <lastBuildDate>Fri, 09 Oct 2026 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Sat, 10 Oct 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
         <copyright>Copyright © 2026 Sunholo / Mark Edmondson</copyright>
+        <item>
+            <title><![CDATA[The bridge is where you decide]]></title>
+            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/10/bridge-consoles-and-stellar-radii</link>
+            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/10/bridge-consoles-and-stellar-radii</guid>
+            <pubDate>Sat, 10 Oct 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[Clocks, speed and distance stay visible as you travel. Course plotting and journey commitments now live at the bridge consoles, while M opens a read-only star chart wherever you are.]]></description>
+            <content:encoded><![CDATA[<p>Clocks, speed and distance stay visible as you travel. Course plotting and journey commitments now live at the bridge consoles, while <strong>M</strong> opens a read-only star chart wherever you are.</p>
+<!-- -->
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/1ad5b1d2fb59ef335b0726753876f617796227095adeaee0e40f3a15f4832cb0.png" alt="The navigation station, with the two clocks above the helm" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/10/bridge-consoles-and-stellar-radii#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>A quieter HUD.</strong> Both clocks share the status strip with your speed, phase and distance. Transit, arrival and gravity cards appear when relevant and keep the central outlook clear. <a href="https://github.com/sunholo-data/stapledons-godot/pull/193" target="_blank" rel="noopener noreferrer" class="">PR #193</a>.</li>
+<li class=""><strong>Decisions at the consoles.</strong> Plot and commit at the navigation station, start a guided voyage at the Voyage console, and read the physics codex at the Archive terminal. Walk there, click to walk, or use the keyboard's Walk-to list; a press-twice confirmation option accompanies the hold. <a href="https://github.com/sunholo-data/stapledons-godot/pull/195" target="_blank" rel="noopener noreferrer" class="">PR #195</a>.</li>
+<li class=""><strong>A chart you can open anywhere.</strong> M shows the neighbourhood without planning, committing or pausing. Tour pause and skip controls stay instant; the decisions have no countdown. <a href="https://github.com/sunholo-data/stapledons-godot/pull/195" target="_blank" rel="noopener noreferrer" class="">PR #195</a>.</li>
+<li class=""><strong>Sizes for more stars.</strong> Catalogue stars without measured radii now get estimates from their brightness, distance and temperature, labelled as inferred. Barnard's Star becomes a visible disc at its stop. Body cards also explain synchronous orbits, including when no such orbit is possible. <a href="https://github.com/sunholo-data/stapledons-godot/pull/194" target="_blank" rel="noopener noreferrer" class="">PR #194</a>.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/10/bridge-consoles-and-stellar-radii#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<p>The first-journey slice still needs its complete console-based playthrough audit and remaining visual acceptance gates. Real interstellar clouds and individual dust impacts are being built on a separate branch and still await validation and render review.</p>
+<p>This is a progress update between releases. <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">See the new captures in the gallery</a>.</p>]]></content:encoded>
+            <category>Progress</category>
+            <category>Journey</category>
+        </item>
         <item>
             <title><![CDATA[Visit Sgr A*: v0.4.0-dev.23 and dev.24]]></title>
             <link>https://www.sunholo.com/stapledons-godot/news/2026/10/09/black-hole-v0-4-0-dev-23</link>
