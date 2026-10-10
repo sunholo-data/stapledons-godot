@@ -1,30 +1,53 @@
 {
   "sprint_id": "R1-FREE-NAV-RECOVERY",
-  "status": "in_progress",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark, attended urgent free-navigation defect request, 2026-10-10",
-  "design_doc": "design_docs/planned/r1/free-navigation-recovery.md",
-  "sprint_plan": "design_docs/planned/r1/free-navigation-recovery-sprint.md",
+  "design_doc": "design_docs/implemented/r1/free-navigation-recovery.md",
+  "sprint_plan": "design_docs/implemented/r1/free-navigation-recovery-sprint.md",
   "branch": "finish/ism-dust-20261010",
   "milestones": [
     {
       "id": "F1-F2",
-      "status": "focused_checks_passed"
+      "status": "completed",
+      "passes": true,
+      "completed": "2026-10-10T23:05:52.955Z",
+      "notes": "Complete local and matching CI gates passed."
     },
     {
       "id": "F3-F4-F6",
-      "status": "focused_checks_passed"
+      "status": "completed",
+      "passes": true,
+      "completed": "2026-10-10T23:05:52.955Z",
+      "notes": "Complete local and matching CI gates passed."
     },
     {
       "id": "F5",
-      "status": "focused_checks_passed"
+      "status": "completed",
+      "passes": true,
+      "completed": "2026-10-10T23:05:52.955Z",
+      "notes": "Complete local and matching CI gates passed."
+    },
+    {
+      "id": "F7-F8-F9",
+      "status": "completed",
+      "passes": true,
+      "completed": "2026-10-10T23:05:52.955Z",
+      "notes": "Source/headless pointer lifecycle and native motion/UI guards checked; native OS capture remains unverified as documented."
+    },
+    {
+      "id": "loading-prefetch",
+      "status": "completed",
+      "passes": true,
+      "completed": "2026-10-10T23:05:52.955Z",
+      "notes": "Complete local and matching CI gates passed."
     }
   ],
   "validation": {
     "ordinary_ailang": "4/4",
     "strict_ailang": "4/4",
-    "real_bridge_map_renderer": "24/24",
-    "generic_ism_layer": "14/14",
+    "real_bridge_map_renderer": "28/28",
+    "generic_ism_layer": "16/16",
     "new_scenario_parity": "6 valid NDJSON replies byte-identical",
     "root_integrated": {
       "recovery": "28/28",
@@ -34,10 +57,29 @@
       "strict": "4/4",
       "native_earth_map": "Actual native Earth arrival/+60s and discoverable map frames rendered and opened",
       "native_pointer": "Unsupported by unattended desktop: OS window focus=false; native capture assertions fail under that condition. Focus guard retained; headless lifecycle and input tests pass."
-    }
+    },
+    "final_local_gate": {
+      "source_commit": "c5f0f6d76763dde6b0faef0e7c7944ba4babf569",
+      "session": 8122,
+      "command": "make -j4 -k test AILANG=<pinned v0.52.0> AILANG_BIN=<same>",
+      "started_at": "2026-10-10T20:56:08Z",
+      "completed_at": "2026-10-10T21:20:44Z",
+      "exit_code": 0,
+      "log": "/private/tmp/stapledon-ism-final-complete-test.log",
+      "skipped_targets": 0,
+      "ordinary_tests": 422,
+      "ordinary_skipped": 0
+    },
+    "final_ci": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38085243443",
+    "final_local": "Complete make -j4 -k test exited0; no skipped targets"
   },
   "limitations": [
-    "Stops remain inertial geometric clearance, not gravity-bound orbits",
-    "Root host integration, full suite and independent final evaluation remain required"
-  ]
+    "Stops remain inertial geometric clearance, not gravity-bound orbits"
+  ],
+  "completed": "2026-10-10T23:05:52.955Z",
+  "landing": {
+    "pr": 199,
+    "merge_commit": "5b54b6e7a275a53dbab0b4959c0c84288a0f7781",
+    "evaluation_score": 97
+  }
 }

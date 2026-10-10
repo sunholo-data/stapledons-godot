@@ -1,28 +1,59 @@
-# Independent navigation recovery appendix — 96/100 provisional, verdict pending
+# Independent evaluation: Free navigation recovery
 
-This is a separate recovery milestone, authorized by Mark's attended D-63 request and integrated at `c3fbd0c`. It does not change the ISM PR A science score. Final host changes, the canonical suite and matching CI are still pending, so this draft issues no final verdict.
+**PASS — 97/100.** merge_ready=true for reviewed feature head `c5f0f6d76763dde6b0faef0e7c7944ba4babf569`. Evaluation round1; threshold70. Generator and judge are separate agents.
 
-The new explicit `free_nav` scenario, allowed from protocol 2.7, reuses the checked Solar initializer at 50,000 km from Earth's centre on the dayside and begins at rest. Legacy `sol` retains its Sun-centre initial state, older minors refuse the new scenario, and package physics remains unchanged. The host immediately applies the authoritative live world instead of showing a moving review snapshot.
+PASS: scenario, navigation, list, pacing, refusals, Earth visibility, map presentation, pause and source/headless pointer lifecycle are satisfactory, with complete local and matching CI gates passed. Native pointer capture/resume remains explicitly unverified because unattended OS focus was unavailable.
 
-The Solar inventory now keeps a fixed hierarchy with moons beside their hosts. Buttons retain stable IDs and instances while their current distance tooltips refresh. Sun, Earth and Mars planning succeeds from the safe start without exemptions from collision, speed or clearance checks. Refusals explain autopilot ownership and relevant constraints.
+## Completed landing gates
 
-Live idle pacing advances 0.05 ship seconds per 20 Hz wall tick. A presentation pause sends pending intents at zero simulation time; committing resumes. The real bridge/map/renderer test advances 1,200 ticks and proves 60 seconds rather than 60 days, checks Earth clearance and an approximately 30-degree visible disc, and replans after arrival. Native Earth arrival and +60-second frames were opened independently: the rendered Earth remains centred and resolved, while the HUD advances +4 s to +64 s and distance 24,643 km to 24,714 km. This is an inertial standoff, not indefinite gravity-bound orbital attachment.
+Complete final local make -j4 -k test session8122 passed exit0 at2026-10-10T21:20:44Z on exact stamped c5f0f6d76763dde6b0faef0e7c7944ba4babf569, no skipped targets. Independently inspected ordinary422/422 with0skipped, stop52/0 including the final positive recorded invalid-plan/no-commit assertion, loading82/0 and BH HUD64/0. Independently queried matching CI38085243443: COMPLETED/SUCCESS on exact c5f; full make test succeeded at2026-10-10T23:01:35Z and job completed23:01:38Z. All formal landing gates pass.
 
-Default mouse motion now turns the camera without a modifier. Interactive panels, arrival, inspection and lost window focus own a visible pointer. Closing them resumes capture; exiting restores the pointer. The host and navigation window have separate P handling, so pause is not double-toggled. Focused input/HUD checks pass 210/210. The native review's unmodified-motion and UI-look guard checks passed, but capture/resume assertions failed because the window did not receive desktop focus. That run is not claimed as a native pointer-capture pass.
+[Matching CI run](https://github.com/sunholo-data/stapledons-godot/actions/runs/38085243443). Detailed source/test hashes, complete-log checksum and evidence paths are retained in the JSON artifact.
 
-The actual map starts with a visible checked Interstellar medium [D] control. D, checkbox and legend remain synchronized, and Local ISM frames approximately 30 ly without sending navigation intents. Depth guides are explicitly optional and off by default: near/far angular boundary arcs remain, while the radial construction spokes are hidden. The legend labels approximate depths and cites the source. A fresh native map frame was opened; the controls and units are readable. Classifier geometry and physical medium data are unchanged.
+## Acceptance review
 
-Evidence reviewed: ordinary and strict new-scenario tests 4/4 each; six valid new-scenario NDJSON replies byte-identical on VM/interpreter; frozen protocol 2.7 compatibility; root-integrated recovery 28/28, generic ISM layer 16/16, input/HUD 210/210 and no-twitch 24/24. The isolated author correctly left its failed desktop-access capture unclaimed. The root's final integrated full suite remain required before the final recovery verdict. Native pointer capture is explicitly unsupported on this unattended desktop: root exhausted foreground/window routing (CUA `cgWindowNotFound`, OS focus false), retained the production focus guard and preserved the strict native harness. No native capture pass or product pointer defect is claimed.
+**F1: Explicit safe free start at rest; legacy and old-minor behavior — verified.** Strict/ordinary4/4; existing checked50,000km Solar initializer; current root native actualrestworld passed.
 
+**F2: Sun/Earth/Mars ordinary plans from safe start — verified.** Strict4/4 and real bridge/map recovery28/0; no clearance exemption.
 
-Score: tests20 + precision/lint10 + acceptance27 + quality14 + documentation15 + fidelity10 =96/100 provisional. Result remains pending, gate source CI, merge_ready=false. Final F5/F7 evidence determines the formal verdict.
+**F3: Stable hierarchy/buttons and real-time idle pacing — verified.** Root recovery28/0 checks retainedButton identities/IDs, refreshed tooltips, 1200 ticks=60s not60days.
 
-Final reviewed source: `5092a7687a3f3c3ea36e087cf0ef23c92502a970`. Recorded source hashes independently still match. Matching PR 199 CI: [run38083075225](https://github.com/sunholo-data/stapledons-godot/actions/runs/38083075225), pending. The prior run was superseded and cancelled; it is not final evidence.
+**F4: Earth arrival resolved, safe60s dwell and legitimate replan — verified.** Real renderer clearance/angular-radius checks and opened actual Earth arrival/+60s native frames; inertial standoff explicitly labelled.
 
-Explicit depth-guides F8 and pause/resume F9 are included in the scored JSON. P and the panel invoke the same pause toggle; the map sends zero elapsed time while preserving the committed course, still processes pending intents and resumes on commit. Physical position/time/course are the intended invariant; protocol tick metadata is not claimed byte-identical. The updated design maps F8 to depth guides and F9 to pause/resume; the scored JSON follows all nine criteria.
+**F5: New-scenario parity, frozen compatibility and canonical gates — verified.** Complete final local make -j4 -k test session8122 passed exit0 at2026-10-10T21:20:44Z on exact stamped c5f0f6d76763dde6b0faef0e7c7944ba4babf569, no skipped targets. Independently inspected ordinary422/422 with0skipped, stop52/0 including the final positive recorded invalid-plan/no-commit assertion, loading82/0 and BH HUD64/0. Independently queried matching CI38085243443: COMPLETED/SUCCESS on exact c5f; full make test succeeded at2026-10-10T23:01:35Z and job completed23:01:38Z. All formal landing gates pass.
 
-Canonical-suite update: the prior integrated run failed only three legacy UI displayed-text assertions and was cancelled. Independent source review confirms the correction now checks actionable range/autopilot/pause wording while preserving exact raw simulation refusal reasons, unchanged committed journey and intent/persistence checks. Focused `make ui` exited0 (`/private/tmp/stapledon-navigation-refusal-regression.log`, galaxy map0 failures). Fresh complete `make -j4 -k test` runs at `/private/tmp/stapledon-ism-navigation-canonical-test.log`, with no skipped gates. Production source is unchanged; final test/docs push and matching CI remain pending.
+**F6: Visible discoverable synchronized ISM/map controls — verified.** Recovery28/0, layer16/0; fresh native map opened; D/checkbox/legend/30lyframing unchanged intents; depthguides defaultoff.
 
-Parallel gate update: the complete `-k` run exposed a shared starmap-consistency scratch-log collision; the direct medium and recursive large checks both reported PASS, but their shared log caused a grep failure. Effective-tier filenames separate the default jobs, and the focused parallel run reports both PASS. The evaluator noted that explicit `TIER=large` still produces the same filename for both jobs; root was notified. No physics/gameplay or success assertions changed. The failed suite remains historical evidence, not a green gate; a fresh complete suite is pending after race-fix validation.
+**F7: Default unmodified mouse look and pointer lifecycle — partially verified; native environment limitation explicitly retained.** Headless host input/HUD210/0 and source review pass. Native unmodified motion/UI guard passed, capture/resume remain unverified because review window has_focus=false; focus guard correctly preserved. Root exhausted native foreground/window routing without weakening guard; this is documented unavailable evidence, not an observed pointer defect.
 
-Final narrow gate repairs reviewed: per-invocation shell-PID log names resolve the explicit `TIER=large` case as well as default medium/large concurrency; return/error/PASS assertions are unchanged. The stale legacy input assertion now expects D-63 default mouse look, while Option/RMB/gesture/benchmark tests remain. The dynamic offline codex entry now explicitly removes `AI_LIVE` (capsFS-only); guard rules are unchanged and all10 mutation controls are caught. Focused legacy input9/0 passes. Fresh-clone CI now imports the Godot class registry and retrieves pinned starmap assets before the new early UI gate. Previous failed local/CI runs are not final success evidence. Production physics/gameplay is unchanged; a fresh complete local suite and matching final CI remain necessary.
+**F8: Cloud depth construction guides off by default, optional visible control; shell outlines retained without apparent rays from Sol — verified.** Exact current design F8. Integrated recovery28/0 + layer16/0 checks optional guides/defaultfalse and preserved boundaries. Fresh native map frame independently opened; geometry/classifier unchanged.
+
+**F9: P and visible panel pause/resume; zero elapsed time while paused; unchanged physical course; pending intents still work and commit resumes — verified.** Approved design F9 pause/resume. Source: hostKEY_P outside map, mapcallbackKEY_P inside window (no doubletoggle), detailsbutton invokes same toggle. GalaxyMap.tick sendsdtau0 and rate0 whilepaused, pending intents retained; commit clears paused. Real bridge recovery tests verify exact unchangedclock in planned+committed states, retainedcommittedcourse, pausedplanning and commitauto-resume. Existing tour host pause/resume and HUD tests pass in ship-ui210/0. Metadata/tick counters may advance; no byte-identical wholeworld claim.
+
+## Score and limits
+
+Tests20/20; lint10/10; acceptance28/30; code quality14/15; documentation15/15; fidelity10/10.
+
+28/30: F5 complete local/CI gates now met. F7 source/headless lifecycle and native motion/UI guards are supported; native OS pointer capture/resume remains unverified, with no observed product defect.
+
+Small isolated scenario and stable UI changes preserve existing physics; host pointer ownership spans several panel states and requires careful maintenance.
+
+Attended D-63 authorizes recovery controls. Native Earth arrival/+60s and map captures were opened independently. Native pointer capture/resume remains unverified because unattended OS focus was unavailable; production focus guards remain intact. Source/headless lifecycle and native motion/UI guard evidence are satisfactory. This is an explicit evidence limitation, not a new approval gate or an observed product defect.
+
+- Inertial geometric standoff is retained for60 seconds; it is not indefinite orbital attachment.
+- Native GPU frames verified Earth/map but did not verify pointer capture without window focus.
+- Native pointer capture is an explicit unattended desktop limitation, not an additional permission/approval gate or observed product defect.
+
+## Historical failure audit
+
+Earlier complete55320 exited2 for stale free-nav-stop displayed text and loading-jump prefetch mismatch. Both repairs pass in final complete8122: stop52/0 includes a positive recorded invalid-plan attempt and no commit, raw refusal before the empty tick, unchanged plan identity and actionable text; loading82/0 verifies reuse under matched ISM_MINOR8 with adoption/mismatch guards intact. The failed historical run was not used as a green full-suite result.
+
+Earlier catalogue scratch-log collision was repaired with effective tier and per-invocation shell PID. Default-look test measures fresh yaw before Option motion. Pure offline codex entry unsets AI_LIVE; all existing guard mutation controls pass. Fresh-clone CI imports Godot classes and pinned assets before early controls. These historical failures were not waived.
+
+## Published review build
+
+Exact c5f build `StapledonsVoyage-v0.4.0-dev.25-free-nav-76-gc5f0f6d7-macos.zip`; SHA`398b710d0ddc3e54f04855f54a2e58872684ab64f02a8817394725e047d307f1`. Publish success independently observed in log; root independently verified GCS manifest exact source/SHA and bundled runtime smoke checks.
+
+## Artifact handling
+
+Final independent JSON and Markdown written only under /private/tmp/ism-evaluation. Root will persist them with landing metadata after actual feature merge. No production source or tracked evaluation files were edited by this finalization.

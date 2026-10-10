@@ -1,5 +1,7 @@
 # Sprint R1-ISM-DUST: the real interstellar medium and dust-grain impacts
 
+**Landing status:** PR A implemented in [game PR #199](https://github.com/sunholo-data/stapledons-godot/pull/199) on 2026-10-11; PR B deferred and unimplemented. Local complete suite and matching CI passed; independent PR A evaluation 98/100. See [completion report](ism-local-clouds-report.md) and [planned dense-cloud follow-up](../../planned/r1/ism-dense-clouds.md).
+
 **Design doc:** [ism-structure-and-dust.md](ism-structure-and-dust.md) (ledger D-60).
 **Status:** **Approved by Mark, attended 2026-10-09 (ledger D-61)**: as drafted with its defaults (Q1 ε 1e-10, Q2 afterglow from a comparison sheet, Q3 no radar-meteor tail, Q6 detours via a star, Q7 Archive drafts at review, Q8 lower only a failing guided leg); Q4 real medium is the default; Q5 refuse and show the drive-hold limit; standing go to publish the package modules on the usual conditions. Sequenced after the D-58 package releases.
 **Branch (on approval):** `sprint/ism-dust`, from `origin/main`. Package work happens in `sunholo-data/ailang-packages` on its own branches; the spec in `sunholo-data/stapledons-design`.
@@ -15,7 +17,7 @@
 | I3a, I3b | none | none | One-off data tooling in the game repo (AILANG tool plus Godot headless file reading); no reusable package capability |
 | I4–I9 | `sunholo/relativity`, `sunholo/celestial` | depend | The sim, renderer, map and HUD consume the released functions; GDScript mirrors only shapes, tested against package values |
 
-## Current status (evidence)
+## Planning baseline (retained from approval)
 
 - `sim/core.ail`: `Params.ismNCm3 = 0.1` (HB-3) is the only density; `ismPerM3` feeds `ledgerAfter`, `pieceLedger`, `brakeHoldsAgainstDrag` and `journeyView`'s `Ism` rows; `ismNow` → `consequence.ismAt` gives `ship.ism` (protocol 2.2 and up).
 - `interior/glow_overlay.gdshader` and `interior/forward_glow.gd` draw the sim's `glow_pole_w_m2` and `glow_pole_k`; they need no change for the density field to show in the glow.
@@ -23,6 +25,18 @@
 - Positions are heliocentric galactic Cartesian light years (`data/starmap/stars.json`), the frame of Linsky 2019 and Edenhofer 2024.
 - Pins: `sunholo/relativity` 0.10.0 (0.11.0 on main), `sunholo/celestial` 0.1.0 (0.3.0 on main). Protocol: highest minor 6 (`grMinor`).
 - `data/lore/archive/ism-glow.md` states one density everywhere.
+
+## PR A completion checklist
+
+- [x] I-1/I0: pins, independent oracle and public source specification.
+- [x] I1/I2: packages published with targeted tests, quality and independent review.
+- [x] I3a/I4: reproducible local-cloud data, ordered routes, drag/hold/dust, strict core, compatibility and determinism.
+- [x] I5/I6/I7: renderer, default-visible map, ordered boundary notices and HUD.
+- [x] I8: opened reference matrix, representative CPU/GPU budgets and P2 accepted D-62.
+- [x] I9: Archive, changelog, index, complete local/matching CI gates and independent evaluator PASS.
+- [ ] I3b: PR B deferred; scientific comparisons fail and runtime integration is unimplemented.
+
+The milestone definitions below retain the original approved combined scope.
 
 ## Milestones
 

@@ -116,19 +116,24 @@ With GitHub CLI and Google Cloud CLI authenticated:
 gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.sh --jq .content | base64 -d | bash -s -- --dev
 ```
 
-The app opens directly into the current ship, at the captain’s measured eye.
-**WASD** walks, **Option + drag** looks, scrolling zooms out to a labelled
-third-person view,
-and **E** uses the lift. Hold **I** to highlight known, visible stars; hover for a name
-and click for catalogue details. Releasing **I** clears the rings; **Esc** closes
-the card. **Open in map** selects the same star for planning. **M** opens navigation: select a star and hold **Commit**;
-the map closes and you can watch acceleration, cruise and braking aboard ship.
-**7** looks forward/up to see the star field change; pan around to compare directions.
-**New Solar tour** starts the guided journey. **Pause tour** holds the view; **Next stop** skips a stationary dwell. **M** pauses guidance for map browsing; resume with the ship button.
+The app opens the title menu. Choose **Board the ship** to begin at rest near Earth.
+**Mouse movement** looks around by default and **WASD** walks. **Tab** opens help,
+details and **Walk to** buttons, releasing the pointer for interaction. Consoles,
+inspection and arrival panels also own the pointer; **Esc** closes the top panel.
 
-The ship starts at rest in a live navigation session, at **4× exposure**. **J** cycles exposure; **5/6** compare frozen rest/cruise snapshots outside committed travel and
-**7/8/9** look forward/side/aft. **Tab** shows all controls. **B** measures performance
-on your laptop outside committed travel, saves the full report locally and uploads a public timing summary using your authenticated Cloud CLI. A link appears after upload succeeds; the local report remains available if it fails.
+Use **Tab → Walk to → Navigation station**, then **E**, to plan and commit.
+**M** opens a read-only chart. Hold **I** to identify and click visible stars or bodies.
+**P** pauses or resumes time while preserving the course. **7/8/9** look
+forward/side/aft, and **J** adjusts sky brightness. The **Voyage console** starts
+the guided voyage; the **Archive terminal** holds physics entries and news.
+
+The chart shows local clouds by default. **Interstellar medium [D]** toggles them,
+**Local ISM** frames the nearby clouds, and **Depth guides** adds optional radial
+construction lines. Approximate depths are labelled in the legend.
+
+Developer launches retain frozen snapshots and the benchmark; packaged menu
+launches expose the player controls. [Try it](/docs/try-it) distinguishes the latest
+authenticated review from the earlier public download.
 
 <details>
 <summary>Build plans and verification</summary>

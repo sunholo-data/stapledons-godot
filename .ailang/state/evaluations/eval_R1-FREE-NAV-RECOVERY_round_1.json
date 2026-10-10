@@ -1,32 +1,33 @@
 {
   "sprint_id": "R1-FREE-NAV-RECOVERY",
   "evaluation_round": 1,
-  "timestamp": "2026-10-10T20:17:49.403783+00:00",
-  "design_doc": "design_docs/planned/r1/free-navigation-recovery.md",
-  "sprint_plan": "design_docs/planned/r1/free-navigation-recovery-sprint.md",
-  "total_score": 96,
+  "timestamp": "2026-10-10T23:02:47.550925+00:00",
+  "design_doc": "design_docs/implemented/r1/free-navigation-recovery.md",
+  "sprint_plan": "design_docs/implemented/r1/free-navigation-recovery-sprint.md",
+  "total_score": 97,
   "pass_threshold": 70,
-  "result": "pending",
-  "provisional_score": true,
+  "result": "pass",
+  "provisional_score": false,
   "score_breakdown": {
     "tests_pass": 20,
     "lint_clean": 10,
-    "acceptance_criteria": 27,
+    "acceptance_criteria": 28,
     "code_quality": 14,
     "documentation": 15,
     "design_fidelity": 10
   },
   "score_notes": {
-    "acceptance_criteria": "F1-F4/F6/F8/F9 supported; F5/F7 partially supported with canonicalCI and nativeenvironment limitation. Provisional27/30.",
-    "code_quality": "Small isolated scenario and stable UI changes preserve existing physics; host pointer ownership spans several panel states and requires careful maintenance."
+    "acceptance_criteria": "28/30: F5 complete local/CI gates now met. F7 source/headless lifecycle and native motion/UI guards are supported; native OS pointer capture/resume remains unverified, with no observed product defect.",
+    "code_quality": "Small isolated scenario and stable UI changes preserve existing physics; host pointer ownership spans several panel states and requires careful maintenance.",
+    "tests_pass": "Complete final-source local suite and independently queried matching-head CI both PASS."
   },
-  "substantive_decision": "Scenario, list, pacing, refusals, Earth visibility and map presentation are independently satisfactory. Default mouse source/unit checks pass, with native focus limitation recorded.",
+  "substantive_decision": "PASS: scenario, navigation, list, pacing, refusals, Earth visibility, map presentation, pause and source/headless pointer lifecycle are satisfactory, with complete local and matching CI gates passed. Native pointer capture/resume remains explicitly unverified because unattended OS focus was unavailable.",
   "gate_source": "ci",
-  "merge_ready": false,
+  "merge_ready": true,
   "hard_fails": [],
   "automated_checks": {
-    "tests_pass": null,
-    "tests_output": "Root focused UI210/0, recovery28/0, layer16/0, strict4/0, no-twitch24/0; canonical final local/CI pending. Native focus assertions2failed because window lackedfocus, not claimedPASS.",
+    "tests_pass": true,
+    "tests_output": "Complete final local make -j4 -k test session8122 passed exit0 at2026-10-10T21:20:44Z on exact stamped c5f0f6d76763dde6b0faef0e7c7944ba4babf569, no skipped targets. Independently inspected ordinary422/422 with0skipped, stop52/0 including the final positive recorded invalid-plan/no-commit assertion, loading82/0 and BH HUD64/0. Independently queried matching CI38085243443: COMPLETED/SUCCESS on exact c5f; full make test succeeded at2026-10-10T23:01:35Z and job completed23:01:38Z. All formal landing gates pass.",
     "lint_clean": true,
     "lint_output": "Focused scripts compile/import and project precision guard reviewed.",
     "file_sizes_ok": null,
@@ -61,8 +62,9 @@
     {
       "feature_id": "F5",
       "criterion": "New-scenario parity, frozen compatibility and canonical gates",
-      "met": false,
-      "evidence": "Six valid new replies VM/interpreter byte-identical, frozen2.7 compatPASS. Final integrated local/CI gates pending. Earlier local run canceled after3 legacy displayed-text expectations; targeted actionable-refusal regression now0failures, raw reason/unchangedcourse checks preserved. Fresh COMPLETE make-j4-k test running; no gates skipped. Final matching pushedCI remains pending."
+      "met": true,
+      "evidence": "Complete final local make -j4 -k test session8122 passed exit0 at2026-10-10T21:20:44Z on exact stamped c5f0f6d76763dde6b0faef0e7c7944ba4babf569, no skipped targets. Independently inspected ordinary422/422 with0skipped, stop52/0 including the final positive recorded invalid-plan/no-commit assertion, loading82/0 and BH HUD64/0. Independently queried matching CI38085243443: COMPLETED/SUCCESS on exact c5f; full make test succeeded at2026-10-10T23:01:35Z and job completed23:01:38Z. All formal landing gates pass.",
+      "status": "verified"
     },
     {
       "feature_id": "F6",
@@ -93,7 +95,7 @@
   "documentation_check": {
     "changelog_updated": true,
     "examples_created": true,
-    "design_doc_status": "ApprovedD63; exactF1-F9 mapped. In progress pending integratedlocal/CI; nativefocusenvironment limitation documented."
+    "design_doc_status": "D-63 approved F1-F9; independent PASS with explicit partial native-focus evidence. Landing documentation prepared for actual merge; no additional approval gate."
   },
   "design_fidelity": {
     "score": 10,
@@ -117,22 +119,24 @@
     "tests/test_ship_ui.gd": "62290560be4d213f72e26a8113c8667e638ce62257c1ab58bbef8980de2bce38",
     "tests/test_free_nav_recovery.gd": "026e8e3de8e714fd5ecbaacd269b2c3aeb3a80ae3f27465e3c0d52e3b9a2e761",
     "Makefile": "b90edd6e267a220ed40b811e67921b526f4f9c98f26e541491f6d0bde0105726",
-    "mk/m45.mk": "8162a1d669c7264187a22557d87f5d5f206e8bc07021dbccc1646dff5252547c"
+    "mk/m45.mk": "8162a1d669c7264187a22557d87f5d5f206e8bc07021dbccc1646dff5252547c",
+    "ui/loading_jump.gd": "b98a0ab0f6a46fef60e8baa2ce1b475e7c8903d7e58f054cc1d38a1526184f04"
   },
   "ci": {
     "pr": 199,
-    "last_observed_head": "6c6af7dc807b7f226dab902ae8cb0b78c82a81b6",
+    "last_observed_head": "c5f0f6d76763dde6b0faef0e7c7944ba4babf569",
     "status": "COMPLETED",
-    "conclusion": "FAILURE",
-    "run_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38083630505",
-    "completed_at": "2026-10-10T20:25:22Z",
-    "matching_final_source": false,
-    "note": "FailedfreshcloneearlyUI gate before fullsuite. Newimport/assets prerequisite fix and final gate/test repairs are reviewed but not yet pushed. Formal verdict awaits matching finalhead success; no waiver from failedCI."
+    "conclusion": "SUCCESS",
+    "run_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38085243443",
+    "matching_head": true,
+    "matching_final_source": true,
+    "started_at": "2026-10-10T20:49:27Z",
+    "completed_at": "2026-10-10T23:01:38Z",
+    "full_make_test_completed_at": "2026-10-10T23:01:35Z",
+    "independently_queried": true,
+    "all_early_gates": "SUCCESS"
   },
-  "landing_gates": [
-    "Final integrated local suite green",
-    "Matching PR199 CI green"
-  ],
+  "landing_gates": [],
   "limitations": [
     "Inertial geometric standoff is retained for60 seconds; it is not indefinite orbital attachment.",
     "Native GPU frames verified Earth/map but did not verify pointer capture without window focus.",
@@ -144,7 +148,7 @@
     "isolated_strict": "/private/tmp/stapledon-free-nav-strict.log",
     "isolated_ordinary": "/private/tmp/stapledon-free-nav-ordinary.log",
     "compatibility": "/private/tmp/stapledon-free-nav-compat.log",
-    "current_local_suite": "/private/tmp/stapledon-ism-navigation-canonical-test.log",
+    "current_local_suite": "/private/tmp/stapledon-ism-final-complete-test.log",
     "opened_frames": [
       "renders/free_nav/earth_arrived.png",
       "renders/free_nav/earth_after_60s.png",
@@ -153,9 +157,12 @@
     "independent_inventory_audit": "/private/tmp/ism-evaluation/final-inventory-audit.json",
     "refusal_ui_regression": "/private/tmp/stapledon-navigation-refusal-regression.log",
     "parallel_override_regression": "/private/tmp/stapledon-starmap-parallel-override-check.log",
-    "legacy_input_and_guard_regression": "/private/tmp/stapledon-navigation-input-audit-guard-check.log"
+    "legacy_input_and_guard_regression": "/private/tmp/stapledon-navigation-input-audit-guard-check.log",
+    "free_nav_stop_refusal_regression": "/private/tmp/stapledon-free-nav-stop-refusal-final.log",
+    "prefetch_refusal_regression": "/private/tmp/stapledon-prefetch-refusal-regression.log",
+    "current_local_source_stamp": "/private/tmp/stapledon-ism-final-complete-test-source.sha"
   },
-  "notes": "Separate appendix and score from ISM PR A; independent read-only source/fixture/native-image review. No unmodified package physics or frozen historical recording changes.",
+  "notes": "Separate recovery score and independent source/fixture/native-image review. Complete final local and matching CI gates pass. No package physics or frozen historical recordings changed; native OS focus limitation remains explicit.",
   "inventory_audit": {
     "checked": 57,
     "failed": 0,
@@ -163,7 +170,7 @@
     "inventory_sha256": "4ef91842bae0d0c3fa6b8a3776b42bdba63f84853bed9f4283f4d92b92b4f2ee"
   },
   "native_review_status": "GPU Earth/map reviewed. OS focus unavailable on unattended desktop; CUA cgWindowNotFound and root.has_focus=false. No native capture success claimed; focus guard preserved. Source and headless lifecycle verified.",
-  "reviewed_commit": "5092a7687a3f3c3ea36e087cf0ef23c92502a970",
+  "reviewed_commit": "c5f0f6d76763dde6b0faef0e7c7944ba4babf569",
   "historical_local_failure": {
     "log": "/private/tmp/stapledon-ism-navigation-final-full-test.log",
     "status": "failed3 legacy displayed-text assertions, then canceled; not passing evidence",
@@ -171,22 +178,105 @@
   },
   "reviewed_test_sha256": {
     "tests/test_galaxy_map.gd": "a75f482430a7795fd224e40f9af82380b543b71061918742829f51f35d75a8cf",
-    "tests/test_ship_demo_input.gd": "aada577f0a6cd393d41aa2f82567461795428db1012ebd4f9766fa21ddb94c35",
-    ".github/workflows/ci.yml": "df4793c7bc3add818d76e076b6bda5f5bbcb7c1440a4a89d5e3f9c0b2fdf894b"
+    "tests/test_ship_demo_input.gd": "824b6a52df8b4b0121205a2c48049f8256c2585ed011935976fb83c0d93c875b",
+    ".github/workflows/ci.yml": "20cb7db4d54100b164d0ab25e4555e109a597948f5344a89d9fd218bd5904e94",
+    "tests/test_free_nav_stop.gd": "536d79827930570377f4ead07c1be4794ed7d946d857ddf93e54f5baa2155a32"
   },
   "historical_local_failures": [
     {
       "log": "/private/tmp/stapledon-ism-navigation-canonical-test.log",
       "status": "complete-k run exposed shared starmap-consistency scratch-log race; not a passing suite",
       "finding": "Both underlying consistency checks passed; shared logfile caused grep failure. Final recipe now includes effectiveTIER and per-invocation shellPID, including explicitTIER=large case. Evaluator checked escaping and single-shell log/rc/grep wiring. Focused parallel default+override logs record bothchecksPASS with unchanged success/error assertions.",
-      "focused_log": "/private/tmp/stapledon-starmap-parallel-check.log"
+      "focused_log": "/private/tmp/stapledon-starmap-parallel-check.log",
+      "resolution": ""
     },
     {
       "log": "/private/tmp/stapledon-ism-navigation-canonical-test.log",
       "status": "-k continued to expose stale defaultmouse-look assertion and ai-live-guard rejection of dynamic offline codexentry; not a passing suite",
-      "resolution": "Only old plain-motion expectation updated to approvedD63 defaultlook; remainingOption/RMB/gesture/benchmark tests unchanged. capsFS-only codex-unlocks recipe explicitly removesAI_LIVE; all guardrules preserved. Focused input9/0 and all10 guardmutants caught. Freshclone CI earlygate now importsGodotclasses and fetches pinnedstarmap assets before running focused gates.",
+      "resolution": "Only old plain-motion expectation updated to approvedD63 defaultlook; remainingOption/RMB/gesture/benchmark tests unchanged. capsFS-only codex-unlocks recipe explicitly removesAI_LIVE; all guardrules preserved. Focused input9/0 and all existing guardmutants caught. Freshclone CI earlygate now importsGodotclasses and fetches pinnedstarmap assets before running focused gates.",
       "focused_log": "/private/tmp/stapledon-navigation-input-audit-guard-check.log"
+    },
+    {
+      "log": "/private/tmp/stapledon-ism-navigation-all-gates.log",
+      "status": "Full55320 historical stale displayed-text failure; not passing suite evidence. The initial isolated replacement also exposed empty-tick clearing of last_refused; final source separates raw response from confirmed host flow.",
+      "resolution": "c5f records the confirmed host flow after the raw dt0 refusal probe, positively requires an invalid plan attempt, forbids commit intent, preserves original plan ID/planned/nonlive state, and checks actionable next-action text. This strengthens the old combined assertion and avoids a vacuous no-send pass. Raw response is checked before the later empty tick legitimately clears last_refused.",
+      "focused_log": "/private/tmp/stapledon-free-nav-stop-refusal-final.log"
+    },
+    {
+      "log": "/private/tmp/stapledon-ism-navigation-all-gates.log",
+      "status": "loading-jump79/3 failedprefetchedPID reuse; plus stalefree-nav-stop assertion. Not accepted as fullgreen.",
+      "resolution": "Warm worker uses ISM_MINOR8, matching ship and map consumer sessions. Existing warm adoption/mismatch guards remain unchanged; focused82/0 verifies actual prefetched PID reuse for ship, guided and map. Only this two-line warm integration changed production since published5092; core physics and renderer unchanged. Final complete8122 subsequently verified stop52/0 including the final positive recorded-plan assertion; matching final-source CI also SUCCESS.",
+      "focused_log": "/private/tmp/stapledon-prefetch-refusal-regression.log"
     }
   ],
-  "local_gate_status": "Prior complete run failed scratch-log concurrency; fresh complete suite will restart after focused race fix. No physics/gameplay or safety assertion changes; no gates skipped."
+  "local_gate_status": "Complete final local make -j4 -k test session8122 passed exit0 at2026-10-10T21:20:44Z on exact stamped c5f0f6d76763dde6b0faef0e7c7944ba4babf569, no skipped targets. Independently inspected ordinary422/422 with0skipped, stop52/0 including the final positive recorded invalid-plan/no-commit assertion, loading82/0 and BH HUD64/0. Independently queried matching CI38085243443: COMPLETED/SUCCESS on exact c5f; full make test succeeded at2026-10-10T23:01:35Z and job completed23:01:38Z. All formal landing gates pass.",
+  "runtime_source_commit": "c5f0f6d76763dde6b0faef0e7c7944ba4babf569",
+  "ai_guard_evidence": "All existing guardmutationcontrols caught in focusedlog. Earlier report mistakenly counted the initial10 printedcases instead of entirelog; corrected with no rule/test change.",
+  "input_strengthening_review": "710bdae resetsyaw immediatelybefore Optionmotion, so Optioncheck independently requires a newrotation instead of relyingon prior plain-motion rotation. ExistingRMB/gesture/benchmark coverage retained; focused9/9.",
+  "parallel_ci_review": "Serialized complete CI passed. Parallel complete local run passed after per-invocation catalogue-log repair; no acceptance gates skipped. Static nested lore-values shared-write concern is a future parallel-CI optimization consideration, not an active serialized-CI landing blocker.",
+  "prefetch_refusal_regression": {
+    "log": "/private/tmp/stapledon-prefetch-refusal-regression.log",
+    "free_nav_stop": "Final complete8122 log:52 passed,0 failures, including latest positive recorded invalid-plan/no-commit assertion",
+    "loading_jump": "82 passed, 0 failures",
+    "independently_reviewed": true
+  },
+  "published_build_observation": {
+    "source_commit": "c5f0f6d76763dde6b0faef0e7c7944ba4babf569",
+    "log": "/private/tmp/stapledon-ism-navigation-prefetch-review-build.log",
+    "status": "publish-dev success independently observed in log; root independently verified GCS latest manifest exact source/SHA",
+    "archive": "StapledonsVoyage-v0.4.0-dev.25-free-nav-76-gc5f0f6d7-macos.zip",
+    "sha256": "398b710d0ddc3e54f04855f54a2e58872684ab64f02a8817394725e047d307f1",
+    "built_at": "2026-10-10T20:52:07Z",
+    "native_smokes": "root reports all bundled native runtime smoke checks passed"
+  },
+  "final_refusal_review": "c5f records the confirmed host flow after the raw dt0 refusal probe, positively requires an invalid plan attempt, forbids commit intent, preserves original plan ID/planned/nonlive state, and checks actionable next-action text. This strengthens the old combined assertion and avoids a vacuous no-send pass. Raw response is checked before the later empty tick legitimately clears last_refused.",
+  "prefetch_source_review": "Warm worker uses ISM_MINOR8, matching ship and map consumer sessions. Existing warm adoption/mismatch guards remain unchanged; focused82/0 verifies actual prefetched PID reuse for ship, guided and map. Only this two-line warm integration changed production since published5092; core physics and renderer unchanged.",
+  "historical_complete_run": {
+    "session": 55320,
+    "log": "/private/tmp/stapledon-ism-navigation-all-gates.log",
+    "exit_code": 2,
+    "completed_at": "2026-10-10T20:56:00Z (root reported approximate)",
+    "failed_targets": [
+      "free-nav-stop-test",
+      "loading-jump-test"
+    ],
+    "ordinary_package": "422 tests: 422 passed, 0 failed, 0 skipped (22m57.602326248s)",
+    "bh_hud": "64 passed, 0 failures",
+    "sim_bridge": "root reports zero failures",
+    "independently_verified": [
+      "exact two make target errors",
+      "ordinary422/422 log line",
+      "bh-hud64/0 log line"
+    ]
+  },
+  "final_repairs_current_full_coverage": {
+    "log": "/private/tmp/stapledon-ism-final-complete-test.log",
+    "source_stamp": "/private/tmp/stapledon-ism-final-complete-test-source.sha",
+    "free_nav_stop": "52/0",
+    "loading_jump": "82/0",
+    "latest_positive_recorded_plan_assertion_covered": true,
+    "independently_verified": true
+  },
+  "local_gate": {
+    "source_commit": "c5f0f6d76763dde6b0faef0e7c7944ba4babf569",
+    "session": 8122,
+    "command": "make -j4 -k test AILANG=<pinned v0.52.0> AILANG_BIN=<same>",
+    "started_at": "2026-10-10T20:56:08Z",
+    "completed_at": "2026-10-10T21:20:44Z",
+    "exit_code": 0,
+    "log": "/private/tmp/stapledon-ism-final-complete-test.log",
+    "skipped_targets": 0,
+    "ordinary_tests": 422,
+    "ordinary_skipped": 0,
+    "status": "PASS",
+    "independently_verified": [
+      "source stamp exact reviewed head",
+      "completion record exit0/no skipped targets",
+      "ordinary422/422 log line",
+      "stop52/0/loading82/0/BH HUD64/0",
+      "no make target error lines"
+    ],
+    "log_sha256": "26c5d77fcc009236283cee7e85366cb3a6e010938ddad57d9cee79ed16c3109b"
+  },
+  "formal_gate_summary": "Complete exact-source local and matching CI gates satisfied; independently merge-ready for reviewed feature head."
 }

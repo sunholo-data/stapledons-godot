@@ -1,72 +1,99 @@
 ---
 title: Try it
 sidebar_position: 6
-description: Download the current development build of Stapledon's Voyage (macOS, Apple Silicon), or build it from source.
+description: Install the latest Mac development review of Stapledon's Voyage, download the earlier public build, or build from source.
 ---
 
 import DownloadCard from '@site/src/components/DownloadCard';
 
 # Try it
 
-Stapledon's Voyage is **pre-alpha**. The current download is a **development build** of the
-walkable bridge demo, for Macs with Apple Silicon only. There is no Windows or Linux build yet.
+Stapledon's Voyage is **pre-alpha**. Packaged builds currently support Macs with
+Apple Silicon. Windows and Linux downloads are not available yet.
+
+## Latest development review
+
+The latest review includes local interstellar clouds and dust, bridge consoles,
+black-hole hover/orbit and guided planetary stops. Free navigation starts at rest
+near Earth, mouse movement looks around by default, and panels release the pointer.
+
+With GitHub CLI and Google Cloud CLI authenticated for the development bucket:
+
+```sh
+gh api repos/sunholo-data/stapledons-godot/contents/tools/install_review_build.sh --jq .content | base64 -d | bash -s -- --dev
+```
+
+The installer verifies the download against the development manifest. This review
+uses the authenticated development bucket; the earlier public download below
+has a different feature set and controls. [Gallery](/gallery) and [News](/news)
+show the new work.
+
+## Ship controls in the latest review
+
+| Control | Action |
+|---|---|
+| **Mouse movement** | Look around; the pointer is captured during ordinary ship viewing |
+| **Tab** | Open details, help and **Walk to** buttons; release the pointer for buttons |
+| **W A S D** | Walk when a panel is not using the pointer |
+| **E** | Use the console or lift in reach; step back from a console |
+| **M** | Open the read-only star chart |
+| **Hold I** | Release the pointer to identify and click a visible star or body |
+| **P** | Pause or resume simulation time, preserving the course |
+| **Esc** | Close the top panel or card; otherwise return to the main menu |
+| **7 / 8 / 9** | Look forward, to the side or aft |
+| **J** | Adjust sky brightness |
+| **Enter** | Continue an interlude or dismiss the arrival card |
+
+To plan a destination, use **Tab → Walk to → Navigation station**, then **E**.
+Select a star or a body from the stable **In this system** list, inspect the plan
+and confirm **Commit**. A committed journey continues to its planned arrival;
+pause holds time and does not cancel that course. Stops are inertial standoffs.
+
+Use the **Voyage console** to start the guided voyage and the **Archive terminal**
+to read unlocked physics entries and news from home.
+
+The chart shows local clouds by default. **Interstellar medium [D]** toggles the
+layer while the chart is open; **Local ISM** frames the nearby clouds. Their
+angular outlines come from published source figures, while near/far depths are
+approximate. **Depth guides** adds the optional radial construction lines.
+
+## Earlier public download
+
+This public build is **v0.4.0-dev.14**, from before the new ISM and navigation work.
+Its release notes describe its contents; use the authenticated installer above
+for the latest development review.
 
 <DownloadCard />
 
-## What's in it
+## Review limitations
 
-![The captain on the bridge at 0.99c, under the live relativistic sky](/img/news/bridge-demo-cruise.jpg)
+The bridge art and lighting continue to develop; see [concept art](/concept-art).
+Local warm clouds and hot gas ship in this review. Dense-cloud tomography and the
+Local Leo Cold Cloud remain deferred pending scientific checks. Black-hole
+rotation and the true Galactic-Centre background remain future work.
 
-- **The walkable bridge** (M4.2): the captain walks the bridge disc at the top of the ship's
-  spire, under the live relativistic sky. The captain ages with ship time.
-- **Navigation:** a nav console opens the galaxy map, built from the real catalogues (5,685 stars
-  within 25 pc, companion stars at their system's distance). Commit a journey to α Centauri A and
-  watch the boost, the 0.99c cruise, the brake and the arrival through the bubble.
-- **The relativistic sky:** 335k real stars with aberration and Doppler colour, the naked-eye
-  photometric exposure, and the forward glow of the cosmic background at extreme speed.
-
-## Controls
-
-| Key | Action |
-|---|---|
-| **W A S D** | Walk |
-| **E** | Use (consoles) |
-| **M** | Galaxy map |
-| **L** | Log |
-| **K** | Codex |
-
-## Known issues
-
-- **The forward bubble-wall glow is off for now.** It returns with the next simulation step. (The
-  forward cosmic-background glow is unaffected.)
-- The standalone sky flight (`-- --voyage`) in this build shows a mirrored sky. **Fixed on main**
-  ([#107](https://github.com/sunholo-data/stapledons-godot/pull/107)); the next build carries the
-  fix. The view from the bridge was always correct.
-- **The bridge is demo art** (v1). The final art is in progress; see [concept art](/concept-art).
-- The build is unsigned. If macOS still refuses to open it, use System Settings → Privacy &
-  Security → Open Anyway.
-
-Older review builds are on the [releases page](https://github.com/sunholo-data/stapledons-godot/releases).
+The app is unsigned. If macOS refuses to open it, use System Settings → Privacy &
+Security → Open Anyway. [The roadmap](/docs/roadmap) records the remaining acceptance
+work for the complete journey, sky, ship and planetary experience.
 
 ## From source
 
-You need Godot 4.7 or later and AILANG on your `PATH` (the version the repo pins; see its
+You need Godot 4.7 or later and the pinned AILANG version (see the repository's
 `CLAUDE.md`).
 
-```bash
+```sh
 git clone https://github.com/sunholo-data/stapledons-godot.git
 cd stapledons-godot
-make import                      # register the scripts once after cloning
-make sky-assets                  # the Milky Way textures (~164 MB, from the public bucket)
-make catalogue-inputs            # the star catalogues
-make catalogue TIER=large        # build the 331k-row tier on the AILANG VM (about a minute)
-godot --path .                   # the bridge (the default launch)
-make run                         # the galaxy map on its own
-make voyage                      # the sky flight
+make import
+make sky-assets
+make catalogue-inputs
+make catalogue TIER=large
+godot --path .
 ```
 
-In the sky flight: **W**/**S** thrust at 1 g, arrows look around, **Q**/**E** roll, **1**–**4**
-look forward, starboard, astern and up, **+**/**−** time warp. **F** fixes the exposure and **M**
-switches eye and camera metering.
+The default launch opens the title menu. Choose **Board the ship** for free
+navigation. `make run` opens the standalone map; `make voyage` opens the diagnostic
+sky flight with its separate developer controls.
 
-`make test` runs the headless test suite; `make capture` renders the reference images.
+`make test` runs the headless suite; `make golden` checks shaders against CPU
+references; `make capture` renders reference images for visual inspection.
