@@ -367,7 +367,7 @@ func _build() -> void:
 	help.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
 	help.add_theme_font_size_override("font_size", 13)
 	box.add_child(help)
-	hint.text = "%s+/− changes UI size" % ("⌘" if OS.get_name() == "macOS" else "Ctrl ")
+	hint.text = "Pinch or scroll to zoom · %s+/− UI size" % ("⌘" if OS.get_name() == "macOS" else "Ctrl ")
 	hint.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.visible = show_hint

@@ -20,8 +20,8 @@ and the game's sprint records hold the detailed acceptance criteria.
 | **Black holes (M3)** | Landed: the Sgr A* demo has a physical shadow, gravitational lensing, Einstein rings, hover and orbit modes, with clocks and tides supplied by the simulation. Kerr rotation and the true Galactic-Centre background remain future work; the demo labels its Sol sky. |
 | **The painted ship and bridge** | Walkable bridge and Commons, lifts, persistent clocks and contextual HUD cards. Navigation, Voyage and Archive decisions live at the consoles. M opens a read-only chart. Art and external lighting continue to develop. |
 | **First complete journey (M4)** | Transit, cruise interludes, arrival, news from home, the legacy record and the physics Archive exist. The remaining console-based playthrough audit and visual acceptance gates still prevent calling the whole slice complete. |
-| **Planets and flybys (M5)** | Ephemerides, body navigation and planetary rendering are built, with guided Earth, Sun, Jupiter and Saturn stops. Close Saturn rings are visible. Callisto and nine other moons now have their own pinned source mosaics; Titan surface radar/IR imagery remains excluded. The full system-map/flyby experience, remaining ring and lighting acceptance, and complete M5 gates are still in progress. |
-| **Interstellar clouds and dust** | The `lism-1` flight, route planning, wall glow, dust impacts and HUD integration have landed in [PR #199](https://github.com/sunholo-data/stapledons-godot/pull/199). An approved follow-up adds equal-area curved wall marks and false-colour density shading, currently passing focused/native checks while full build acceptance runs. New source-figure cloud outlines pass the nearby sight-line recovery target. Dense-cloud and Local Leo Cold Cloud work is separate and has unresolved scientific checks. |
+| **Planets and flybys (M5)** | Ephemerides, body navigation and planetary rendering are built, with a seven-leg guided trip: Earth → Sun → Jupiter → Callisto → Saturn → close Alpha Centauri A → TRAPPIST-1 → Aldebaran. Sgr A* remains a separately labelled optional demo. Close Saturn rings are visible. Callisto and nine other moons now have their own pinned source mosaics; Titan surface radar/IR imagery remains excluded. The full system-map/flyby experience, remaining ring and lighting acceptance, and complete M5 gates are still in progress. |
+| **Interstellar clouds and dust** | The `lism-1` flight, route planning, wall glow, dust impacts and HUD integration have landed in [PR #199](https://github.com/sunholo-data/stapledons-godot/pull/199). The follow-up adds equal-area curved wall marks and false-colour density shading, plus clearer manual controls and direct guided arrivals. Focused/native checks pass; complete matching local/CI and exported-build acceptance are running in [PR #201](https://github.com/sunholo-data/stapledons-godot/pull/201). New source-figure cloud outlines pass the nearby sight-line recovery target. Dense-cloud and Local Leo Cold Cloud work is separate and has unresolved scientific checks. |
 | **Optional crew AI** | The foundation and Medic conversation work against a deterministic offline stub. The first attended live run and voice review remain pending; live AI is off by default. |
 
 [See the actual captures and clips in the gallery](/gallery). Progress reports
@@ -37,8 +37,8 @@ appear in [News](/news); availability is described in [Try it](/docs/try-it).
    and continue the full planet/flyby controls and their acceptance work.
 4. Run the first attended crew-AI check and voice auditions when scheduled.
 
-The scheduled mission loop works the approved R1 queue. Its latest attempt is
-currently parked because controller lanes were unavailable or out of quota;
+The scheduled mission loop works the approved R1 queue. Its latest reported [attempt at 14:09 UTC on 11 October](https://github.com/sunholo-data/stapledons-godot/issues/119#issuecomment-6109886921)
+parked because controller lanes were unavailable or out of quota;
 its next product work is the remaining first-journey audit. The attended
 ISM, bridge and demo work has continued independently.
 

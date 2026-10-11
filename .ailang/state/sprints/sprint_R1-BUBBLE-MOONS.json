@@ -14,7 +14,7 @@
         "S1",
         "S2"
       ],
-      "passes": null
+      "passes": true
     },
     {
       "id": "M",
@@ -25,7 +25,7 @@
         "M1",
         "M2"
       ],
-      "passes": null
+      "passes": true
     },
     {
       "id": "C",
@@ -35,7 +35,7 @@
       "acceptance_criteria": [
         "C1"
       ],
-      "passes": null
+      "passes": true
     },
     {
       "id": "N",
@@ -47,7 +47,7 @@
       "acceptance_criteria": [
         "N1"
       ],
-      "passes": null
+      "passes": true
     },
     {
       "id": "T",
@@ -57,7 +57,7 @@
       "acceptance_criteria": [
         "T1"
       ],
-      "passes": null
+      "passes": true
     },
     {
       "id": "Q",
@@ -118,5 +118,16 @@
     "actual_total_loc": 0,
     "estimated_days": 1,
     "actual_days": 0
+  },
+  "validation": {
+    "status": "running",
+    "source_baseline": "62eae17",
+    "navigation_checks": 17,
+    "guided_controller_checks": 134,
+    "surface_checks": 16,
+    "cloud_checks": 18,
+    "moon_checks": 121,
+    "golden_log": "/private/tmp/stapledon-bubble-full-golden.log",
+    "ci_note": "Final full source CI required; earlier local integration run caught restored footer hint and AI timing gates. No gate waived."
   }
 }

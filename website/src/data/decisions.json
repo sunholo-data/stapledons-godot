@@ -3,6 +3,28 @@
  "designPin": "f4d876caf98f33691fb165c8a73be5c76abd313c",
  "decisions": [
   {
+   "id": "D-65",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-11",
+   "title": "",
+   "question": "",
+   "ruling": "APPROVED (Mark, attended 2026-10-11): fix manual-map local travel, discoverable commitment/zoom and black-hole access; keep guided highlights Earth → Sun → Jupiter → Callisto → Saturn → one close Alpha Centauri → one TRAPPIST-1 → Aldebaran, with a clearly labelled optional Sgr A* separate demo afterward. Remove redundant outer-system/inward-hop arrivals using existing finite-star stops, with actual distances/clocks and no teleportation. Supersedes the guided 1,000 AU outer stops for this attended itinerary, preserving explicit legacy sessions.",
+   "words": [],
+   "provenance": "Attended request and explicit reply: Yes, keep those highlights.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L179",
+   "sourceLabel": "stapledon-mission.md, line 179",
+   "refs": [],
+   "groups": [
+    "gameplay"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
+  {
    "id": "D-64",
    "source": "ledger",
    "status": "resolved",

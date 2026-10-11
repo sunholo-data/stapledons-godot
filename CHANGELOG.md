@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Manual journeys and seven guided highlights (D-65), 2026-10-11
+
+- Interactive Galaxy map starts in the same stationary free-navigation session as Board the ship; historical capture/movie Sol sessions remain unchanged. Variable map details scroll, keeping zoom and journey review reachable. Enter reviews, Space retains the existing hold/press-twice confirmation, and Esc backs out.
+- The guided route keeps Earth → Sun → Jupiter → Callisto → Saturn → Alpha Centauri A → TRAPPIST-1 → Aldebaran. The three distant arrivals use existing D-54 finite-star stops directly, removing redundant outer stops and inward hops while preserving real three-dimensional distances, speeds, safety and both clocks. Legacy rule-zero ten-leg replays remain frozen. TRAPPIST no longer uses the specially placed beside-e/HZ stop.
+- Navigation exposes Sgr A* as a separate GR demo, including after the guided trip finishes; committed journeys disable that entry. The stellar stop attitude follows the actual held body, including catalogue-identified stars.
+
 ### Bubble surfaces, moon detail and the gas chart (D-64), 2026-10-11
 
 - Dust afterglow uses short, incidence-oriented, curved surface marks on the spherical wall. Their area remains π r_s²; package event rates, energy, temperature and decay are unchanged. The shape is a labelled G-AG presentation approximation, with the original circles retained for comparison.
