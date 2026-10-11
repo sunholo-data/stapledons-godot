@@ -153,6 +153,7 @@ var centre_button := Button.new()
 var fit_button := Button.new()
 var home_button := Button.new()
 var ism_depth_guides := CheckButton.new()
+var ism_shading := CheckButton.new()
 var ism_toggle := CheckButton.new()
 var local_ism_button := Button.new()
 var ism_legend := Label.new()
@@ -277,9 +278,14 @@ func _build() -> void:
 	ism_depth_guides.text="Depth guides"
 	ism_depth_guides.tooltip_text="Construction lines connect approximate near/far cloud boundaries measured from Sol. They are model guides, not gas flowing from the Sun."
 	ism_depth_guides.toggled.connect(func(on:bool)->void:ism_layer.show_depth_guides=on;_overlay.queue_redraw())
+	ism_shading.text="Density shading"
+	ism_shading.tooltip_text="False-colour gas-density instrument view. These tenuous clouds are not naked-eye fog; the near/far depths are approximate."
+	ism_shading.button_pressed=ism_layer.show_surfaces
+	ism_shading.toggled.connect(func(on:bool)->void:ism_layer.show_surfaces=on;_overlay.queue_redraw())
+	medium_controls.add_child(ism_shading)
 	medium_controls.add_child(ism_toggle); medium_controls.add_child(local_ism_button);medium_controls.add_child(ism_depth_guides)
 	box.add_child(medium_controls)
-	ism_legend.text = "Sky outlines from near Sol · approximate near/far depths · light years"
+	ism_legend.text = "False-colour density · sky outlines from near Sol · approximate depths · light years"
 	ism_legend.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	ism_legend.custom_minimum_size.x=PANEL_WIDTH-40
 	ism_legend.add_theme_font_size_override("font_size",12)
@@ -1085,6 +1091,7 @@ func set_ism_visible(on: bool) -> void:
 	ism_toggle.set_pressed_no_signal(on)
 	ism_legend.visible = on
 	ism_depth_guides.disabled=not on
+	ism_shading.disabled=not on
 	_overlay.queue_redraw()
 
 func frame_local_ism() -> void:

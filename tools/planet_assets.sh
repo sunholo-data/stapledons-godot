@@ -22,6 +22,12 @@ pins() { grep -E '^[0-9a-f]{64} +texture ' "$SUMS"; }
 sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
 object() { echo "planets/$1.${2##*.}"; }
 
+source_url() {
+    file=$(basename "$1")
+    url=$(awk -v file="$file" '$1 == file { print $2 }' data/planets/SOURCES)
+    printf '%s\n' "${url:-$SOURCE$file}"
+}
+
 verify() {
     pins | while read -r sum kind path; do
         if [ -f "$path" ] && [ "$(sha "$path")" = "$sum" ]; then echo "  ok       $path"
@@ -44,7 +50,7 @@ fetch() {
     while read -r sum kind path; do
         if [ -f "$path" ] && [ "$(sha "$path")" = "$sum" ]; then echo "  have     $path"; continue; fi
         if get "$BASE/$(object "$sum" "$path")" "$path" "$sum"; then echo "  fetched  $path  <- bucket"
-        elif get "$SOURCE$(basename "$path")" "$path" "$sum"; then echo "  fetched  $path  <- $SOURCE (not in the bucket yet: make planet-publish)"
+        elif get "$(source_url "$path")" "$path" "$sum"; then echo "  fetched  $path  <- original source (not in the bucket yet: make planet-publish)"
         else echo "  absent   $path (bucket and source)"; missing=$((missing + 1)); fi
     done <<PINS
 $(pins)

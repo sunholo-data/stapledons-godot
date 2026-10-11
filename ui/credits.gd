@@ -8,8 +8,10 @@ extends Control
 ## (tests/test_planets.gd checks they match, so the two never drift apart).
 
 const PLANET_LINE := "Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0"
+const MOON_LINE := "Moon mosaics: NASA / USGS; Triton: NASA/JPL, P. Schenk/LPI (public domain; enhanced Io/Triton colour)"
 const LINES := [
 	PLANET_LINE,
+	MOON_LINE,
 	"Milky Way panorama: NOIRLab noirlab2430b (E. Slawik / NOIRLab / NSF / AURA), CC BY 4.0",
 	"Stars: CNS5 (VizieR), Gaia GCNS (ESA/Gaia/DPAC), Hipparcos (ESA)",
 	"Godot Engine (MIT) · AILANG and sunholo/relativity, sunholo/celestial (Sunholo)",

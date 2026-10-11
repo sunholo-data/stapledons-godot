@@ -100,6 +100,33 @@ static func wall_dir(x: float, y: float) -> Vector3:
 	return Vector3(x, y, sqrt(maxf(0.0, 1.0 - r2)))
 
 
+## G-AG surface shape: renderer geometry only. Lambert azimuthal equal-area
+## coordinates preserve the circular patch's exact spherical area pi*r_spot^2.
+## The incidence-aligned stretch and bent shear both have unit area determinant.
+## Temperature, emitted energy, seed and decay remain package-owned and unchanged.
+static func surface_axis(normal: Vector3) -> Vector3:
+	var along := normal * normal.z - Vector3(0, 0, 1)
+	return along.normalized() if along.length_squared() > 1e-8 else Vector3(1, 0, 0)
+
+
+static func surface_extent(r_spot: float) -> float:
+	return 3.2 * r_spot # max aspect 2.8 + shear .18, with antialias/projection guard
+
+
+static func footprint_uv(point: Vector3, normal: Vector3, radius: float, r_spot: float, surface: bool) -> Vector2:
+	if not surface:
+		return Vector2((point - radius * normal).length() / r_spot, 0)
+	var cosine := point.dot(normal) / radius
+	if cosine < -0.9: return Vector2(1e10, 1e10)
+	var axis := surface_axis(normal)
+	var factor := sqrt(2.0 / maxf(1.0 + cosine, 1e-7)) / r_spot
+	var delta := point - radius * normal
+	var xy := Vector2(delta.dot(axis), delta.dot(normal.cross(axis))) * factor
+	var aspect := 1.2 + 1.6 * sqrt(maxf(0.0, 1.0 - normal.z * normal.z))
+	var v := xy.y * aspect
+	return Vector2((xy.x - 0.18 * v * v) / aspect, v)
+
+
 ## Kinetic energy of a grain of radius a (m) at Lorentz factor gamma: (gamma - 1) m c^2
 ## (the sim sends ke_j for bright grains; glitter grains take the ship's gamma, >= 7 whenever
 ## they exist, so gamma - 1 loses nothing).

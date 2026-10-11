@@ -1,7 +1,30 @@
 {
- "generated": "2026-10-10",
+ "generated": "2026-10-11",
  "designPin": "f4d876caf98f33691fb165c8a73be5c76abd313c",
  "decisions": [
+  {
+   "id": "D-64",
+   "source": "ledger",
+   "status": "resolved",
+   "date": "2026-10-11",
+   "title": "",
+   "question": "",
+   "ruling": "APPROVED (Mark, attended 2026-10-11): 'ok yes please do' to restrained bubble-wall surface smears; fix reported textureless Callisto and audit other moon maps; improve gas-cloud presentation while distinguishing instrument shading from naked-eye light. Preserve impact rates/intensity and package emission; shape remains labelled G-AG. Standing main merge, review-build and gallery/news instructions apply after technical gates.",
+   "words": [],
+   "provenance": "Attended session, recorded directly; user also reported Callisto as a textureless grey ball.",
+   "link": "https://github.com/sunholo-data/stapledons-godot/blob/main/design_docs/stapledon-mission.md#L178",
+   "sourceLabel": "stapledon-mission.md, line 178",
+   "refs": [],
+   "groups": [
+    "physics",
+    "infra"
+   ],
+   "subtopic": "",
+   "revisit": "",
+   "assets": [],
+   "relations": {},
+   "superseded": false
+  },
   {
    "id": "D-63",
    "source": "ledger",

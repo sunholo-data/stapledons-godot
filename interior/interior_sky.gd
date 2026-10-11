@@ -278,6 +278,8 @@ func _refresh_dust_masks(force: bool = false) -> void:
 	# Unset ShaderMaterial parameters return null, even with shader defaults.
 	var radius := float(r) if r != null else radius_m
 	var spot_radius := float(spot) if spot != null else dust.r_spot
+	var surface: Variant = dust_mat.get_shader_parameter("surface_marks")
+	if surface == null or bool(surface): spot_radius = DustFlash.surface_extent(spot_radius)
 	if not force and radius == _dust_mask_radius and spot_radius == _dust_mask_spot:
 		return
 	var masks := DustFlash.overlap_masks(_dust_input, _dust_count, radius, spot_radius)

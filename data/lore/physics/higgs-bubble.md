@@ -438,9 +438,9 @@ gas.
 **The wall afterglow (game approximation G-AG, labelled).** Applied
 literally, the glow's own rule makes a grain impact a femtosecond hot spot the
 size of the grain at about 10⁸ K: X-rays and no visible light. G-AG: the
-ε fraction of a grain's kinetic energy is released as light from a disc of
-radius r_s around the impact point, decaying as e^(−t/τ). Each instant the
-disc is a greybody of emissivity ε, as the glow is (D-30), so ε cancels in
+ε fraction of a grain's kinetic energy is released as light from a wall patch
+of area π r_s² around the impact point, decaying as e^(−t/τ). Here r_s is
+the area-equivalent radius. Each instant the patch is a greybody of emissivity ε, as the glow is (D-30), so ε cancels in
 its temperature:
 
   **T(t) = (KE / (σ π r_s² τ))^¼ e^(−t/4τ)**,
@@ -451,6 +451,17 @@ only shape it (picked from a comparison sheet, D-61). Luminance is
 (E_in/π) η(T), through the same exposure as the glow. A flash is drawn when
 its peak luminance is at least 5 % of the local background (the glow there
 plus the dark sky); "bright" is at least the background.
+
+**Surface footprint (D-64, attended 2026-10-11).** The default renderer uses
+a short incidence-oriented curved mark, with an antialiased edge. A Lambert
+azimuthal equal-area mapping of the spherical wall, followed by a stretch
+and curved shear of unit determinant, preserves area π r_s². The stretch
+varies from 1.2 at normal incidence to 2.8 at grazing incidence; the transverse
+shear is 0.18 in units of the area-equivalent radius. These choices are G-AG
+presentation parameters, not measured lateral transport or particle trails.
+They do not change event rates, emitted energy, temperature or decay. Original
+circular patches remain a comparison mode; native CPU/GPU mask and integrated
+radiance checks accompany the new footprint. No eye-visible gas fog is implied.
 
 Grains (LIC unless stated; R = 100 m; ε = 10⁻¹⁰; f_in = ½; r_s = 0.5 m;
 τ = 0.2 s; visibility thresholds against the forward pole's background, rates over the whole wall). Oracle: `tools/ism_dust_ref.py` (stapledons-godot).

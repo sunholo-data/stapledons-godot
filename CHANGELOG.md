@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bubble surfaces, moon detail and the gas chart (D-64), 2026-10-11
+
+- Dust afterglow uses short, incidence-oriented, curved surface marks on the spherical wall. Their area remains π r_s²; package event rates, energy, temperature and decay are unchanged. The shape is a labelled G-AG presentation approximation, with the original circles retained for comparison.
+- Callisto and nine other moons gain their own pinned USGS/NASA mosaics. Bundle, albedo and exported-app checks now cover all nineteen declared textured bodies. Source monochrome/enhanced colours and missing coverage are disclosed; Titan's radar/infrared surface is not presented as visible imagery.
+- The D layer adds translucent false-colour density shading, a LIC silhouette and separated cloud labels. Source outlines and approximate depths remain explicit; construction guides are optional. These are instrument surfaces, not naked-eye nebular fog.
+
 ### Free-navigation and mouse controls (D-63), 2026-10-10
 
 - Mouse motion looks around by default. Tab, inspection cards and console panels release the pointer for their buttons; stepping back returns to looking, and leaving the window releases capture.

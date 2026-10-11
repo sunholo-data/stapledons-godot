@@ -1,0 +1,86 @@
+{
+  "id": "R1-BUBBLE-MOONS",
+  "status": "in_progress",
+  "approval": "Mark attended 2026-10-11: ok yes please do; Callisto textureless grey ball",
+  "design_doc": "design_docs/planned/r1/bubble-surface-and-moon-textures.md",
+  "sprint_plan": "design_docs/planned/r1/bubble-surface-and-moon-textures-sprint.md",
+  "features": [
+    {
+      "id": "S",
+      "description": "Equal-area wall footprint comparison",
+      "estimated_loc": 260,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "S1",
+        "S2"
+      ],
+      "passes": null
+    },
+    {
+      "id": "M",
+      "description": "Real pinned moon maps and bundle coverage",
+      "estimated_loc": 180,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "M1",
+        "M2"
+      ],
+      "passes": null
+    },
+    {
+      "id": "C",
+      "description": "Filled source cloud instrument map",
+      "estimated_loc": 140,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "C1"
+      ],
+      "passes": null
+    },
+    {
+      "id": "Q",
+      "description": "Complete technical gates and landing",
+      "estimated_loc": 120,
+      "dependencies": [
+        "S",
+        "M",
+        "C"
+      ],
+      "acceptance_criteria": [
+        "Q1"
+      ],
+      "passes": null
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "S",
+      "action": "depend",
+      "package": "sunholo/relativity@0.12.0",
+      "reason": "Existing emission unchanged; new geometry renderer-only"
+    },
+    {
+      "milestone": "M",
+      "action": "depend",
+      "package": "sunholo/celestial@0.4.0",
+      "reason": "Existing physical bodies/photometry unchanged"
+    },
+    {
+      "milestone": "C",
+      "action": "depend",
+      "package": "sunholo/celestial@0.4.0",
+      "reason": "Existing measured angular outlines/adopted depths"
+    },
+    {
+      "milestone": "Q",
+      "action": "none",
+      "reason": "Testing/docs only"
+    }
+  ],
+  "velocity": {
+    "estimated_total_loc": 700,
+    "actual_total_loc": 0,
+    "estimated_days": 1,
+    "actual_days": 0
+  }
+}
