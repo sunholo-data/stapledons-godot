@@ -1,6 +1,6 @@
 {
   "design_repo": "sunholo-data/stapledons-design",
-  "design_sha": "346443d338fdf36a833016b5faa28f97e040bf7d",
+  "design_sha": "8895503d9c1cde3a6378cf7ecf78a96455f51a83",
   "files": [
     {"path": "archive/README.md", "sha256": "768ddc213f1cd07d9a399cbfb2fc78e8bd338ef7bf7142a7e067a7397c3fa8fd"},
     {"path": "archive/bubble.md", "sha256": "4892ad8905e3d4c3f097a5b25f9881624964b871306019dfd5680f46c39a5714"},
@@ -14,7 +14,7 @@
     {"path": "archive/tides.md", "sha256": "f2fd63517a32e76b4b46bae6cd31257c24a05ca74146baf6d2555bbf8db8fc22"},
     {"path": "archive/two-clocks.md", "sha256": "6411d815a6257c4d19441baf7bd29e018a19c29eb6d1e68b821bd2ee5652a15e"},
     {"path": "archive/weather-between-the-stars.md", "sha256": "3936d5a6cd1136f4ffb58afe6f5300c95c43e3c226ac090aafdb0fb1132cd01b"},
-    {"path": "physics/higgs-bubble.md", "sha256": "9d59a7e79f0e1efea8f743a043bf248bbd5bec1685e130bd0c1b7a2b265e7138"},
+    {"path": "physics/higgs-bubble.md", "sha256": "03f1366eee350ee208d3458360e8c2178e5a6fb8a9fdd0c4180f8a48dce38aa4"},
     {"path": "physics/ism-structure.md", "sha256": "c048834d304a758abd03f9004b8a99f5f5dead37d847d86951db2e86c6a80ca7"},
     {"path": "physics/relativity-spec.md", "sha256": "e306b4e9cbbf17e0cfd47646e1d5fe1267f55a6c5ae7bc4c0ca71a9a2f1a8c50"}
   ]

@@ -69,7 +69,7 @@ acen-snapshot-verify: ## the local snapshot matches data/planets/EXOPLANETS.SHA2
 	else echo "acen-snapshot-verify: $(ACEN_SNAPSHOT) not fetched (make acen-snapshot); pin present, check skipped"; fi
 
 # ------------------------------------------------------------ M5.2a globes, photometry, textures
-planets-test:      ## M5.2a: SystemView on the recorded system section, point/disc switch, placement, albedo table (headless)
+planets-test: planet-assets ## M5.2a: SystemView on the recorded system section, point/disc switch, placement, albedo table (headless)
 	$(GODOT) --headless --path . --script tests/test_planets.gd
 
 # The precision lint for the planet renderer (gate 5: gamma and 1 - beta come from the sim or the
@@ -96,7 +96,7 @@ planet-publish:    ## M5.2a maintainers (gcloud auth): upload the pinned texture
 planet-textures:   ## M5.2a: rewrite data/planets/ALBEDO from the fetched textures (a reviewed diff)
 	$(GODOT) --headless --path . --script tools/planet_textures.gd -- --write
 
-planet-textures-check: ## M5.2a: every texture's disc-integrated albedo with its ALBEDO mean = p_V within 1% (skipped if not fetched)
+planet-textures-check: planet-assets ## every declared texture's disc-integrated albedo = p_V within 1% (missing maps fail)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tools/planet_textures.gd -- --check > $(SCRATCH)/planet-textures.log 2>&1; rc=$$?; \
 	  grep -E '^(ok|FAIL|planet-textures)' $(SCRATCH)/planet-textures.log; test $$rc = 0
@@ -126,13 +126,14 @@ planet-bundle:     ## M5.2a: fetch + verify the pinned planet textures and stage
 	  test "$$n" -eq "$$(awk '$$2 == "texture"' data/planets/SHA256SUMS | wc -l | tr -d ' ')" && test "$$n" -gt 0 || { echo "planet-bundle: FAILED, staged $$n textures"; exit 1; }; \
 	  echo "planet-bundle: staged $$n pinned textures ($$(du -sh planet_bundle | cut -f1))"
 
-export-smoke-planets: export-macos   ## the exported .app loads all nine textures from its bundle and draws a textured Jupiter (GPU window)
+export-smoke-planets: export-macos   ## the exported .app loads every declared texture from its bundle and draws a textured Jupiter (GPU window)
 	@mkdir -p $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
 	  env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/export-smoke-home" perl -e 'alarm 300; exec @ARGV' "$(APP)/Contents/MacOS/$$exe" -- --planet-smoke="$(CURDIR)/$(SCRATCH)/export-smoke/planet_smoke.png" > $(SCRATCH)/export-smoke/planet-smoke.log 2>&1; rc=$$?; \
 	  grep '^planet-smoke:' $(SCRATCH)/export-smoke/planet-smoke.log; \
-	  test $$rc = 0 && grep -q '^planet-smoke: 9/9 textured bodies (res://planet_bundle)$$' $(SCRATCH)/export-smoke/planet-smoke.log && \
-	  grep -q '^planet-smoke: Jupiter disc textured$$' $(SCRATCH)/export-smoke/planet-smoke.log && test -s $(SCRATCH)/export-smoke/planet_smoke.png || \
+	  test $$rc = 0 && grep -q "^planet-smoke: $$(awk 'NF == 2 && $$1 !~ /^#/ {n++} END {print n}' data/planets/TEXTURES)/$$(awk 'NF == 2 && $$1 !~ /^#/ {n++} END {print n}' data/planets/TEXTURES) textured bodies (res://planet_bundle)$$" $(SCRATCH)/export-smoke/planet-smoke.log && \
+	  grep -q '^planet-smoke: Jupiter disc textured$$' $(SCRATCH)/export-smoke/planet-smoke.log && \
+	  grep -q '^planet-smoke: Callisto disc textured$$' $(SCRATCH)/export-smoke/planet-smoke.log && test -s $(SCRATCH)/export-smoke/planet_smoke.png && test -s $(SCRATCH)/export-smoke/planet_smoke_callisto.png || \
 	  { echo "export-smoke-planets: FAILED (exit $$rc)"; exit 1; }
 	@echo "export-smoke-planets: OK, the exported app draws textured globes from its bundle ($(SCRATCH)/export-smoke/planet_smoke.png)"
 

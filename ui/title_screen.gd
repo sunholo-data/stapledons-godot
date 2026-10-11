@@ -376,6 +376,7 @@ static func credits_text() -> String:
 		"IMAGERY",
 		"Milky Way panorama: NOIRLab noirlab2430b (E. Slawik / NOIRLab / NSF / AURA), CC BY 4.0; used with the catalogue stars removed and a fitted colour-temperature model.",
 		Credits.PLANET_LINE + "; based on NASA imagery, brightness rescaled to each body's measured albedo.",
+		Credits.MOON_LINE + "; global source mosaics, normalized to measured body albedo; some coverage gaps remain.",
 		"",
 		"STARS",
 		"CNS5, the fifth Catalogue of Nearby Stars (Golovin et al. 2023), via CDS VizieR.",

@@ -170,7 +170,7 @@ func _route_now(route: String) -> void:
 			layer.layer = 5
 			layer.add_child(menu_button)
 			add_child(layer)
-			await _run_map({})
+			await _run_map(extra)
 		"quit":
 			get_tree().quit()
 
@@ -282,7 +282,11 @@ func _run_map(args: Dictionary) -> void:
 	sim.record_path = args.get("record", "")
 	var ai := AiSession.new(args) # AI.9: settings, relay, service, indicator; live only by the player's tick
 	add_child(ai)
-	if not sim.start() or not sim.new_game(SEED, "sol", false, {}, AiSession.ai_core()) or not ai.attach(sim):
+	# Interactive map has the same real, stationary start as Board the ship.
+	# Frozen capture/movie sessions retain their historical Sol configuration.
+	var map_scenario:="sol" if capture else "free_nav"
+	var map_params:Dictionary={} if capture else {"standoff_au":1000.,"stop_rule":54.}
+	if not sim.start() or not sim.new_game(SEED, map_scenario, false, map_params, AiSession.ai_core()) or not ai.attach(sim):
 		push_error("sim session failed: %s" % sim.last_error)
 		get_tree().quit(2)
 		return
@@ -295,6 +299,18 @@ func _run_map(args: Dictionary) -> void:
 	map.load_catalogue("res://data/starmap/stars.json")
 	map.load_names("res://data/starmap/names.json")
 	map.attach(sim)
+	if not capture:
+		var bh_entry:=Button.new()
+		bh_entry.text="Sgr A* · separate black-hole demo"
+		bh_entry.tooltip_text="Start the existing GR demo. Sgr A* is beyond this nearby-star chart; this does not fly the current journey."
+		bh_entry.pressed.connect(func()->void:
+			if map.journey_state()=="committed":return
+			var opts:Dictionary={"scenario":"sgr_a","sky_state":"rest","from_menu":_from_menu}
+			for setting:String in ["auto_view","confirm_mode","settings_dir"]:
+				if args.has(setting):opts[setting]=args[setting]
+			opts.merge(demo_overrides,true)
+			_start_current_ship.call_deferred(false,opts),CONNECT_DEFERRED)
+		map.special_destinations.add_child(bh_entry)
 	if args.has("movie"): # website clip; loaded by path (tools/ is not exported)
 		get_tree().quit(await load("res://tools/site_movie.gd").new().run_map(self, map, args))
 		return

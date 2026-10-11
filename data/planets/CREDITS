@@ -21,3 +21,45 @@ terrain matching the surroundings, and colours are slightly more saturated than 
 
 In-game credit line:
   Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0
+
+Moon surface mosaics (added 2026-10-11)
+======================================
+NASA spacecraft imagery, assembled and served by USGS Astrogeology Science Center;
+public domain (USGS products' access constraints), with attribution retained.
+Triton colour mosaic: NASA/JPL/USGS, Dr. Paul Schenk / Lunar and Planetary Institute.
+Exact per-file WMS source URLs: data/planets/SOURCES. Exact downloaded-file SHA256:
+data/planets/SHA256SUMS. Files are unmodified service-rendered JPEGs, Callisto at
+2048 x 1024 and other moons at 1024 x 512; no fabricated terrain or borrowed maps.
+Request extent -180..180 east longitude, -90..90 planetocentric latitude, north up,
+EPSG:4326 as exposed by the planetary service: this matches the shader's
+u=0.5+east_longitude/360, v=0.5-latitude/180. The service supplies the requested east-longitude -180..180 extent; source
+longitude conventions vary by mosaic. We do not assert sub-pixel geodetic precision.
+
+Callisto: Galileo SSI + Voyager global mosaic, monochrome; source selection
+resolution varies from ~400 m to ~60 km/pixel gap-fill. Black polar coverage gaps
+and mosaic seams remain as in the source; they do not represent dark terrain.
+https://astrogeology.usgs.gov/search/map/callisto_galileo_voyager_global_mosaic_1km
+Io: Galileo SSI/Voyager merged colour mosaic, enhanced/filter-composite colour;
+the eye-visible colours are more muted, and surface activity changed between
+Voyager and Galileo epochs. We preserve the source composite and disclose it.
+https://astrogeology.usgs.gov/search/map/io_galileo_ssi_voyager_color_merged_global_mosaic_1km
+Europa: Voyager/Galileo SSI 500 m mosaic, monochrome, mixed camera filters.
+https://astrogeology.usgs.gov/search/map/europa_voyager_galileo_ssi_global_mosaic_500m
+Ganymede: Voyager/Galileo SSI global mosaic, monochrome service layer.
+https://astrogeology.usgs.gov/search/map/ganymede_voyager_galileo_ssi_global_mosaic_1km
+Mimas, Enceladus, Tethys, Dione, Rhea: Cassini/Voyager visible-light monochrome
+service mosaics, mixed image resolutions and residual lighting/seams.
+https://planetarymaps.usgs.gov/ (each per-body layer named in SOURCES)
+Triton: Voyager 2 colour mosaic, orange/violet/UV mapped to RGB; enhanced colour,
+large unmapped north-polar region and repaired source grid lines, not a complete
+natural-colour map of the entire surface.
+https://astrogeology.usgs.gov/search/map/triton_voyager_2_global_color_mosaic_600m
+
+Not textured: Titan. Available global surface maps are radar/near-IR views
+through an opaque visible-light haze. They are not presented as the naked-eye
+surface; a dedicated validated visible-light atmosphere remains follow-up work.
+All moons use the existing normalized albedo shader; the sim's p_V and Minnaert
+k still determine integrated brightness. The maps provide surface pattern only.
+
+Additional in-game credit line:
+  Moon mosaics: NASA / USGS; Triton: NASA/JPL, P. Schenk/LPI (public domain; enhanced Io/Triton colour)

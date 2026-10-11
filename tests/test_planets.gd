@@ -146,7 +146,17 @@ func test_albedo_table() -> void:
 	var t := SystemView.read_albedo_table(SystemView.ALBEDO_TABLE)
 	var sys := _system()
 	var sums := FileAccess.get_file_as_string("res://data/planets/SHA256SUMS")
-	check("nine textured bodies", t.size() == 9, str(t.keys()))
+	check("Callisto and all Galilean moons have their own surface maps", ["io", "europa", "ganymede", "callisto"].all(func(id): return t.has(id)), str(t.keys()))
+	var files := {}
+	for id: String in t:
+		check("%s owns a distinct map" % id, not files.has(t[id]["file"]))
+		files[t[id]["file"]] = id
+	var required := {}
+	for line in FileAccess.get_file_as_string("res://data/planets/TEXTURES").split("\n"):
+		var fields := line.strip_edges().split(" ", false)
+		if fields.size() == 2 and not fields[0].begins_with("#"):
+			required[fields[0]] = fields[1]
+	check("every required body has exactly its declared map", required.size() == t.size() and required.keys().all(func(id): return t.has(id) and t[id].file == required[id]))
 	for id: String in t:
 		var b := _body(sys, id)
 		var row: Dictionary = t[id]
@@ -156,6 +166,7 @@ func test_albedo_table() -> void:
 		check("%s: k = the sim's minnaert_k, files pinned, mean in (0, 1]" % id, not b.is_empty() and is_equal_approx(row["k"], b["minnaert_k"]) and pinned and row["mean"] > 0.0 and row["mean"] <= 1.0)
 	var credits := FileAccess.get_file_as_string("res://data/planets/CREDITS")
 	check("CREDITS carries the CC BY 4.0 attribution and the licence URL", credits.contains("CC BY 4.0") and credits.contains("https://creativecommons.org/licenses/by/4.0/") and credits.contains("Solar System Scope"))
+	check("moon source credits identify public-domain imagery and enhanced colour", credits.contains("USGS") and credits.contains("public domain") and credits.contains("enhanced") and credits.contains("Triton"))
 
 
 ## L-tex (Mark 2026-10-03): the CC BY credit is displayed in game, and says what CREDITS says.
@@ -169,6 +180,7 @@ func test_credits_displayed() -> void:
 	root.add_child(c)
 	check("panel lists the planet line and the CC BY 4.0 licence URL", c.body.text.contains(Credits.PLANET_LINE) and c.body.text.contains("https://creativecommons.org/licenses/by/4.0/"))
 	check("corner hint names the key; panel starts closed", c.hint.text.contains("C") and c.hint.text.contains("credits") and not c.panel.visible)
+	check("moon source attribution is displayed in the runtime panel", c.body.text.contains(Credits.MOON_LINE))
 	var ev := InputEventKey.new()
 	ev.keycode = KEY_C
 	ev.pressed = true
@@ -198,20 +210,31 @@ func test_export_bundle() -> void:
 			inc = line
 			break
 	check("export include_filter carries planet_bundle/* and data/planets/*", inc.contains("planet_bundle/*") and inc.contains("data/planets/*"), inc.left(60))
-	var src := "res://assets/planets/2k_jupiter.jpg"
-	if not FileAccess.file_exists(src):
-		print("  skip  bundled-texture decode: textures not fetched (make planet-assets)")
+	var bundle_dir := "res://.godot/tmp/planet-bundle-test-%d" % OS.get_process_id()
+	var mkdir := DirAccess.make_dir_recursive_absolute(bundle_dir)
+	check("create isolated bundle harness directory", mkdir == OK)
+	if mkdir != OK:
 		return
-	DirAccess.make_dir_recursive_absolute("user://m52a_bundle_test")
-	var f := FileAccess.open("user://m52a_bundle_test/2k_jupiter.jpg.bin", FileAccess.WRITE)
-	f.store_buffer(FileAccess.get_file_as_bytes(src))
-	f.close()
-	var a := SystemView.load_texture_image("2k_jupiter.jpg")
-	var b := SystemView.load_texture_image("2k_jupiter.jpg", "user://no_such_dir", "user://m52a_bundle_test")
-	var none := SystemView.load_texture_image("2k_jupiter.jpg", "user://no_such_dir", "user://no_such_dir")
-	check("a bundled .bin decodes to the same image as the source (size and texels)", a != null and b != null and a.get_size() == b.get_size() and a.get_pixel(700, 300) == b.get_pixel(700, 300))
-	check("no source and no bundle: null (SystemView falls back to uniform albedo)", none == null)
-	DirAccess.remove_absolute("user://m52a_bundle_test/2k_jupiter.jpg.bin")
+	for id: String in SystemView.read_texture_declarations():
+		for name: String in SystemView.read_texture_declarations()[id].split("+"):
+			var source := SystemView.TEX_DIR.path_join(name)
+			if not FileAccess.file_exists(source):
+				check("required source texture exists: " + id, false, name)
+				continue
+			var bundle := bundle_dir.path_join(name + ".bin")
+			var dest := FileAccess.open(bundle, FileAccess.WRITE)
+			check("write isolated bundle " + name, dest != null)
+			if dest == null:
+				continue
+			dest.store_buffer(FileAccess.get_file_as_bytes(source))
+			dest.close()
+			var source_image := SystemView.load_texture_image(name)
+			var bundle_image := SystemView.load_texture_image(name, "res://missing_source", bundle_dir)
+			check("%s bundle decodes the required map" % id, source_image != null and bundle_image != null and source_image.get_size() == bundle_image.get_size() and source_image.get_data() == bundle_image.get_data(), name)
+			DirAccess.remove_absolute(bundle)
+	var none := SystemView.load_texture_image("2k_jupiter.jpg", "res://missing_source", bundle_dir)
+	check("missing required bundle returns null (export smoke must refuse it)", none == null)
+	DirAccess.remove_absolute(bundle_dir)
 
 
 func _initialize() -> void:

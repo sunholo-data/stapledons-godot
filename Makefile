@@ -298,7 +298,7 @@ golden: lens-assets ## GPU shader vs CPU reference star positions (needs a GPU w
 	  grep -q '^ok    GR7 inside the shadow' $(SCRATCH)/golden.log && grep -q '^ok    GR8 colour' $(SCRATCH)/golden.log && \
 	  test "$$(grep -c '^ok    GR9 weak-field' $(SCRATCH)/golden.log)" = 2 && test "$$(grep -c '^ok    GR10 lens_fwd mirror' $(SCRATCH)/golden.log)" = 5 && \
 	  test "$$(grep -c '^ok    GR11 lens_inv mirror' $(SCRATCH)/golden.log)" = 4 && test "$$(grep -c '^ok    GR12 mutant' $(SCRATCH)/golden.log)" = 3 && grep -q '^gr golden: 0 failures$$' $(SCRATCH)/golden.log && \
-	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
+	  test "$$(grep -c '^ok    G-ISM-1' $(SCRATCH)/golden.log)" = 5 && grep -q '^ok    G-ISM-3 glitter count' $(SCRATCH)/golden.log && test "$$(grep -c '^ok    G-ISM-2 colour' $(SCRATCH)/golden.log)" = 8 && test "$$(grep -c '^ok    G-ISM-5 surface wall observer' $(SCRATCH)/golden.log)" = 3 && grep -q '^ok    G-ISM-5 integrated radiance' $(SCRATCH)/golden.log && grep -q '^ok    G-ISM-5 surface dim overlaps' $(SCRATCH)/golden.log && grep -q '^ism golden: 0 failures$$' $(SCRATCH)/golden.log && \
 	  grep -q '^golden: 0 failures$$' $(SCRATCH)/golden.log || \
 	  { echo "golden: FAILED (exit $$rc, or the case counts changed: want 144 off-axis + 16 background markers + 8 stand-off + hot WD + cull + M1.5a display floor, star lux, sky cd/m^2, AC8 ladder + M1.8 10 CMB cases + M4.2 G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8, G-M4-5 plate6, G-M4-6 colour10 + M3.5 GR1-3, GR4 3, GR5 3, GR6 3, GR7, GR8, GR9 2, GR10 5, GR11 4, GR12 3)"; exit 1; }
 
@@ -728,6 +728,7 @@ include mk/site.mk
 include mk/m5.mk
 include mk/m45.mk
 include mk/ism.mk
+include mk/navigation-usability.mk
 
 # Isolated seven-tier perspective/lift smoke test. Does not replace production rendering.
 run-ship-demo:
@@ -833,7 +834,7 @@ publish-dev: current-ship-export-smoke
 # Title screen (design_docs/planned/r1/title-screen.md): a plain launch shows the menu; every CLI mode bypasses it.
 .PHONY: title-screen-test title-capture title-export-smoke
 title-screen-test: import
-	@$(GODOT_SIM) --headless --path . --script tests/test_title_screen.gd > $(SCRATCH)/title-screen.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/title-screen.log | grep -v '^title-screen: OK' ; test $$rc = 0 && grep -q '^title-screen: [0-9]* passed, 0 failures$$' $(SCRATCH)/title-screen.log
+	@$(GODOT_SIM) --headless --path . --script tests/test_title_screen.gd > $(SCRATCH)/title-screen.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/title-screen.log | grep -v '^title-screen: OK' ; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/title-screen.log && grep -q '^title-screen: [0-9]* passed, 0 failures$$' $(SCRATCH)/title-screen.log
 ship-demo-ci: title-screen-test
 title-capture:     ## title screen, settings and credits at 1280x720 -> renders/title_screen/ (needs a GPU window)
 	$(GODOT) --path . --resolution 1280x720 --script tools/title_screen_capture.gd

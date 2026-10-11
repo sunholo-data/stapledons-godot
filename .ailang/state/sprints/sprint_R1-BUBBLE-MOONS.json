@@ -1,0 +1,133 @@
+{
+  "id": "R1-BUBBLE-MOONS",
+  "status": "in_progress",
+  "approval": "Mark attended 2026-10-11: ok yes please do; Callisto textureless grey ball; D-65 accepted guided highlights and requested manual controls",
+  "design_doc": "design_docs/planned/r1/bubble-surface-and-moon-textures.md",
+  "sprint_plan": "design_docs/planned/r1/bubble-surface-and-moon-textures-sprint.md",
+  "features": [
+    {
+      "id": "S",
+      "description": "Equal-area wall footprint comparison",
+      "estimated_loc": 260,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "S1",
+        "S2"
+      ],
+      "passes": true
+    },
+    {
+      "id": "M",
+      "description": "Real pinned moon maps and bundle coverage",
+      "estimated_loc": 180,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "M1",
+        "M2"
+      ],
+      "passes": true
+    },
+    {
+      "id": "C",
+      "description": "Filled source cloud instrument map",
+      "estimated_loc": 140,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "C1"
+      ],
+      "passes": true
+    },
+    {
+      "id": "N",
+      "description": "Reachable manual journey controls and stationary standalone map",
+      "estimated_loc": 220,
+      "dependencies": [
+        "C"
+      ],
+      "acceptance_criteria": [
+        "N1"
+      ],
+      "passes": true
+    },
+    {
+      "id": "T",
+      "description": "Seven guided highlight legs using actual finite-star arrivals",
+      "estimated_loc": 180,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "T1"
+      ],
+      "passes": true
+    },
+    {
+      "id": "Q",
+      "description": "Complete technical gates and landing",
+      "estimated_loc": 120,
+      "dependencies": [
+        "S",
+        "M",
+        "C",
+        "N",
+        "T"
+      ],
+      "acceptance_criteria": [
+        "Q1"
+      ],
+      "passes": null
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "S",
+      "action": "depend",
+      "package": "sunholo/relativity@0.12.0",
+      "reason": "Existing emission unchanged; new geometry renderer-only"
+    },
+    {
+      "milestone": "M",
+      "action": "depend",
+      "package": "sunholo/celestial@0.4.0",
+      "reason": "Existing physical bodies/photometry unchanged"
+    },
+    {
+      "milestone": "C",
+      "action": "depend",
+      "package": "sunholo/celestial@0.4.0",
+      "reason": "Existing measured angular outlines/adopted depths"
+    },
+    {
+      "milestone": "Q",
+      "action": "none",
+      "reason": "Testing/docs only"
+    },
+    {
+      "milestone": "N",
+      "action": "depend",
+      "package": "sunholo/relativity@0.12.0",
+      "reason": "Existing free_nav planner; UI input/presentation only"
+    },
+    {
+      "milestone": "T",
+      "action": "depend",
+      "package": "sunholo/relativity@0.12.0 + sunholo/celestial@0.4.0",
+      "reason": "Existing finite-star stop/intercept composition; no new math"
+    }
+  ],
+  "velocity": {
+    "estimated_total_loc": 1100,
+    "actual_total_loc": 0,
+    "estimated_days": 1,
+    "actual_days": 0
+  },
+  "validation": {
+    "status": "running",
+    "source_baseline": "62eae17",
+    "navigation_checks": 17,
+    "guided_controller_checks": 134,
+    "surface_checks": 16,
+    "cloud_checks": 18,
+    "moon_checks": 121,
+    "golden_log": "/private/tmp/stapledon-bubble-full-golden.log",
+    "ci_note": "Final full source CI required; earlier local integration run caught restored footer hint and AI timing gates. No gate waived."
+  }
+}

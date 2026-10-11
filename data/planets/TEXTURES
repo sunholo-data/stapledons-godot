@@ -1,0 +1,20 @@
+# Required per-body maps: id files (+ joins Earth clouds). ALBEDO is derived from this declaration.
+mercury 2k_mercury.jpg
+venus 2k_venus_atmosphere.jpg
+earth 2k_earth_daymap.jpg+2k_earth_clouds.jpg
+moon 2k_moon.jpg
+mars 2k_mars.jpg
+jupiter 2k_jupiter.jpg
+saturn 2k_saturn.jpg
+uranus 2k_uranus.jpg
+neptune 2k_neptune.jpg
+callisto usgs_callisto.jpg
+io usgs_io.jpg
+europa usgs_europa.jpg
+ganymede usgs_ganymede.jpg
+mimas usgs_mimas.jpg
+enceladus usgs_enceladus.jpg
+tethys usgs_tethys.jpg
+dione usgs_dione.jpg
+rhea usgs_rhea.jpg
+triton usgs_triton.jpg

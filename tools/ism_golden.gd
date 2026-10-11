@@ -36,6 +36,7 @@ func run(m: Node) -> int:
 	f += await _g2()
 	f += await _g3()
 	f += await _g4()
+	f += await _g5()
 	it.queue_free()
 	await main.get_tree().process_frame
 	print("ism golden: %d failures" % f)
@@ -57,6 +58,7 @@ func _mat() -> ShaderMaterial:
 	mat.set_shader_parameter("ship_z", Vector3(0, 0, 1))
 	mat.set_shader_parameter("cam_ship", Vector3.ZERO)
 	mat.set_shader_parameter("radius", 100.0)
+	mat.set_shader_parameter("surface_marks", false)
 	mat.set_shader_parameter("r_spot", DustFlash.R_SPOT)
 	return mat
 
@@ -254,4 +256,68 @@ func _g4() -> int:
 	mat.set_shader_parameter("count", 0)
 	mat.set_shader_parameter("debug_unit", false)
 	sky.set_debug_unit(false)
+	return fails
+
+
+## G-ISM-5: actual surface marks vs independently sampled wall geometry, including
+## an off-centre camera and dim overlaps. Pole solid-angle integrals must retain
+## the same light as the equal-area original circular patch.
+func _g5() -> int:
+	var sky:=it.sky;var mat:=_mat();var fails:=0
+	var old_fov:=sky.camera.fov;sky.camera.fov=6.0
+	sky.set_debug_unit(true);mat.set_shader_parameter("debug_unit",true)
+	mat.set_shader_parameter("surface_marks",true)
+	for c:Array in [[Vector3.ZERO,Vector3(0,0,1)],[Vector3.ZERO,DustFlash.wall_dir(0.95,0.0)],[Vector3(40,5,-10),DustFlash.wall_dir(0.6,0.2)]]:
+		var observer:Vector3=c[0];var normal:Vector3=c[1]
+		mat.set_shader_parameter("cam_ship",observer);_one(mat,normal,1.0,5000.0)
+		_look((100.0*normal-observer).normalized())
+		var img:=await _sky_image();var bad:=0;var lit:=0;var checked:=0
+		var centre:=sky.camera.unproject_position(100.0*normal-observer)
+		for dy in range(-120,121,3):
+			for dx in range(-160,161,3):
+				var px:=Vector2i(centre)+Vector2i(dx,dy)
+				if px.x<0 or px.y<0 or px.x>=size.x or px.y>=size.y:continue
+				var ray:=sky.camera.project_ray_normal(Vector2(px)+Vector2(0.5,0.5))
+				var b:=observer.dot(ray);var t:float=-b+sqrt(maxf(b*b+10000.0-observer.length_squared(),0.0))
+				var p:=observer+t*ray
+				# Independent construction: equal-area tangent coords, unit determinant shear/stretch.
+				var axis:Vector3=(normal*normal.z-Vector3(0,0,1)).normalized() if absf(normal.z)<0.999999 else Vector3(1,0,0)
+				var factor:=sqrt(2.0/(1.0+p.dot(normal)/100.0))/0.5
+				var aspect:=1.2+1.6*sqrt(maxf(0.0,1.0-normal.z*normal.z))
+				var q:=p-100.0*normal;var y:=q.dot(normal.cross(axis))*factor*aspect
+				var x:float=(q.dot(axis)*factor-0.18*y*y)/aspect
+				var distance:=sqrt(x*x+y*y)
+				if absf(distance-1.0)<0.12:continue # AA band; core and outside tested strictly
+				var expected:=distance<1.0;var got:=img.get_pixelv(px).r>0.5
+				checked+=1;lit+=1 if expected else 0;bad+=1 if got!=expected else 0
+		var ok:=checked>200 and lit>20 and bad==0
+		fails+=0 if ok else 1
+		print("%s  G-ISM-5 surface wall observer %s: %d rays, %d lit, %d mismatches"%["ok  " if ok else "FAIL",observer,checked,lit,bad])
+	# Camera at sphere centre: radiance integral over solid angle is area / R^2.
+	mat.set_shader_parameter("cam_ship",Vector3.ZERO);_look(Vector3(0,0,1))
+	var energies:=[]
+	for shape:bool in [false,true]:
+		mat.set_shader_parameter("surface_marks",shape);_one(mat,Vector3(0,0,1),1.0,5000.0)
+		var img:=await _sky_image();var sum:=0.0;var step:=2.0*tan(deg_to_rad(sky.camera.fov)*0.5)/size.y
+		for py in size.y:
+			for px in size.x:
+				var value:=img.get_pixel(px,py).r
+				if value>0.0:
+					var x:float=(px+0.5-size.x*0.5)*step;var y:float=(py+0.5-size.y*0.5)*step
+					sum+=value*step*step/pow(1.0+x*x+y*y,1.5)
+		energies.append(sum)
+	var want:=PI*0.25/10000.0
+	var conserved:=absf(energies[1]/want-1.0)<0.015 and absf(energies[1]/energies[0]-1.0)<0.015
+	fails+=0 if conserved else 1
+	print("%s  G-ISM-5 integrated radiance circle %.9f surface %.9f area/R2 %.9f (limit1.5%%)"%["ok  " if conserved else "FAIL",energies[0],energies[1],want])
+	mat.set_shader_parameter("surface_marks",true)
+	var flashes:=PackedVector4Array();flashes.resize(64)
+	for i in 64:flashes[i]=Vector4(0,0,1,1.0 if i==0 else 0.00049)
+	var ts:=PackedFloat32Array();ts.resize(64);ts.fill(5000.0)
+	sky.set_dust_flashes(flashes,ts,64);var img:=await _sky_image()
+	var got:=img.get_pixel(size.x/2,size.y/2).r;var expected:=1.0+63*0.00049
+	var overlap:=absf(got/expected-1.0)<0.01;fails+=0 if overlap else 1
+	print("%s  G-ISM-5 surface dim overlaps preserved %.6f vs %.6f"%["ok  " if overlap else "FAIL",got,expected])
+	mat.set_shader_parameter("count",0);mat.set_shader_parameter("debug_unit",false)
+	sky.set_debug_unit(false);sky.camera.fov=old_fov
 	return fails

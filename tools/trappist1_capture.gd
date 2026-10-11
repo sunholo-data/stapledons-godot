@@ -1,6 +1,6 @@
 extends SceneTree
 ## TB6 evidence (trappist1-planets-sprint.md): the guided voyage to the TRAPPIST-1
-## habitable-zone stop, driven through demos/solar_departure.gd with its Skip
+## direct D54 finite-star stop (D65), driven through demos/solar_departure.gd with its Skip
 ## (skip_stage: the sim stepped exactly to each phase boundary, as the player's
 ## Skip does), then frames at the stop: the red star with its planets, the
 ## nearest planets, and narrow-field views. Open every PNG in
@@ -8,7 +8,6 @@ extends SceneTree
 ##   godot --path . --script tools/trappist1_capture.gd   (GPU window)
 const SolarDeparture := preload("res://demos/solar_departure.gd")
 const OUT := "res://renders/trappist1"
-const STOP_LEG := 7 # "trappist-1" in solar_departure.legs
 var sky: InteriorSky
 var tour
 var records := []
@@ -26,14 +25,18 @@ func run() -> void:
 	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; rect.stretch_mode = TextureRect.STRETCH_SCALE
 	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.add_child(rect)
 	sky.exposure.fixed = true; sky.exposure.fixed_ev = sky.exposure.ev_dark() - 2.; sky.set_temporal_exposure(false)
-	var sim := SimBridge.new(); sim.want_minor = 5
+	var sim := SimBridge.new(); sim.want_minor = SimBridge.ISM_MINOR
 	if not sim.start() or not sim.new_game(424242, "solar_departure", false, SolarDeparture.guided_params()):
 		print("trappist1-capture: start FAIL ", sim.last_error); quit(1); return
 	var catalogue: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json")).get("stars", [])
 	tour = SolarDeparture.new()
 	if not tour.attach(sim, catalogue): print("trappist1-capture: attach FAIL"); quit(1); return
 	tour.pin_destinations(sky.starfield)
-	for leg in STOP_LEG + 1:
+	var stop_leg := -1
+	for leg in tour.itinerary.size():
+		if tour.itinerary[leg].id == "Gaia DR3 2635476908753563008": stop_leg = leg
+	if stop_leg < 0: print("trappist1-capture: missing target leg"); sim.stop(); quit(1); return
+	for leg in stop_leg + 1:
 		if not tour.advance(): print("leg ", leg, " FAIL ", tour.failed); failures += 1; break
 		for i in 200:
 			if sim.world.journey.state == "arrived": break

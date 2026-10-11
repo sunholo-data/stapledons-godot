@@ -70,3 +70,15 @@ ism-bright-oracle: ## independent dense midpoint integration in rapidity, 0.001-
 	@echo "ism-bright-oracle: four resolutions converge; core_ism_test binds the independent result"
 
 test: ism-bright-oracle
+
+.PHONY: bubble-surface-test
+bubble-surface-test:
+	@$(GODOT) --headless --path . --script tests/test_bubble_surface.gd > $(SCRATCH)/bubble-surface.log 2>&1; rc=$$?; cat $(SCRATCH)/bubble-surface.log; test $$rc = 0 && grep -q '^bubble-surface: [1-9][0-9]* checks 0 failures$$' $(SCRATCH)/bubble-surface.log
+
+test: bubble-surface-test
+
+.PHONY: ism-surfaces-test
+ism-surfaces-test:
+	@$(GODOT) --headless --path . --script tests/test_ism_surfaces.gd > $(SCRATCH)/ism-surfaces.log 2>&1; rc=$$?; cat $(SCRATCH)/ism-surfaces.log; test $$rc = 0 && grep -q '^ism-surfaces: [1-9][0-9]* checks 0 failures$$' $(SCRATCH)/ism-surfaces.log
+
+test: ism-surfaces-test

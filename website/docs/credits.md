@@ -22,6 +22,7 @@ Stapledon's Voyage is made by [Sunholo](https://www.sunholo.com).
 |---|---|
 | Milky Way panorama, NOIRLab `noirlab2430b` (E. Slawik / NOIRLab / NSF / AURA), and the sky textures derived from it | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | Planet textures, [Solar System Scope](https://www.solarsystemscope.com/textures/) 2k (shown in game as "Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0") | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Moon mosaics, NASA / USGS; Triton NASA/JPL, P. Schenk/LPI | Public domain; enhanced/filter-composite Io and Triton colours, incomplete source coverage |
 | Star catalogues: CNS5 (via CDS VizieR), Gaia GCNS (ESA/Gaia/DPAC), Hipparcos (ESA) | The providers' terms; cite the sources listed below |
 | Godot Engine | [MIT](https://godotengine.org/license/) |
 | Fonts on this site (Montserrat, Inter, JetBrains Mono, via Google Fonts) and Montserrat Bold on the game's boot splash (`ui/splash/`, licence alongside) | [SIL Open Font License 1.1](https://openfontlicense.org) |
@@ -41,6 +42,7 @@ with image models and Blender under Sunholo's art direction. **No copyright is c
   (based on NASA imagery; unmapped regions filled in, colours slightly saturated), licensed
   [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The game keeps the files unchanged and
   rescales their brightness to each body's measured albedo. In game, press **C** for the credits.
+- **Moon mosaics:** [USGS planetary maps](https://planetarymaps.usgs.gov/) from NASA Galileo, Voyager and Cassini imagery. Callisto, Ganymede, Europa and the five small Saturn moons use monochrome mosaics; Io and Triton use labelled enhanced/filter-composite colour. Brightness is normalized to measured albedo. Some source coverage gaps remain. Titan’s infrared/radar surface maps are not presented as a visible-light surface.
 - **CNS5**, the fifth Catalogue of Nearby Stars (Golovin et al. 2023), via VizieR.
 - **GCNS**, the Gaia Catalogue of Nearby Stars (Gaia Collaboration, Smart et al. 2021). This
   work uses data from the European Space Agency mission

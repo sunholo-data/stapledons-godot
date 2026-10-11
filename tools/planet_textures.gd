@@ -14,7 +14,7 @@ extends SceneTree
 ##       256 x 256 grid at 12 sub-observer longitudes, weights each sample by its radiance mu^(2k-1), and
 ##       requires the disc-integrated albedo the renderer produces with the
 ##       table's mean, p_V x <Y>_disc / mean averaged over longitude, to equal
-##       p_V within 1% for every texture. Skips (exit 0) without the textures.
+##       p_V within 1% for every texture. Fails without every declared texture (make planet-assets).
 ## Body k and p_V come from the sim's recorded system section
 ## (tests/fixtures/system_sol.ndjson), never typed in here. Earth composites
 ## its cloud map over the day map as planets/planet.gdshader does:
@@ -23,25 +23,29 @@ extends SceneTree
 const DIR := "res://assets/planets"
 const TABLE := "res://data/planets/ALBEDO"
 const FIXTURE := "res://tests/fixtures/system_sol.ndjson"
-const MAP := {"mercury": "2k_mercury.jpg", "venus": "2k_venus_atmosphere.jpg",
-	"earth": "2k_earth_daymap.jpg+2k_earth_clouds.jpg", "moon": "2k_moon.jpg", "mars": "2k_mars.jpg",
-	"jupiter": "2k_jupiter.jpg", "saturn": "2k_saturn.jpg", "uranus": "2k_uranus.jpg", "neptune": "2k_neptune.jpg"}
+const DECLARATIONS := "res://data/planets/TEXTURES"
+var maps := {}
 
 
 func _init() -> void:
 	var args := OS.get_cmdline_user_args()
+	maps = SystemView.read_texture_declarations(DECLARATIONS)
+	if maps.is_empty():
+		printerr("planet-textures: required TEXTURES declaration is empty")
+		quit(1)
+		return
 	var bodies := _bodies()
 	if bodies.is_empty():
 		printerr("planet_textures: no system section in %s" % FIXTURE)
 		quit(2)
 		return
 	var missing := false
-	for f: String in MAP.values():
+	for f: String in maps.values():
 		for x in f.split("+"):
 			missing = missing or not FileAccess.file_exists(DIR.path_join(x))
 	if missing:
-		print("planet-textures: textures not fetched (make planet-assets); check skipped")
-		quit(0 if args.has("--check") else 1)
+		print("planet-textures: textures not fetched (make planet-assets); check FAILED")
+		quit(1)
 		return
 	if args.has("--write"):
 		quit(_write(bodies))
@@ -118,31 +122,31 @@ func _write(bodies: Dictionary) -> int:
 		"# id file k mean: the texture's disc-integrated mean linear luminance (Rec. 709 Y of the sRGB-decoded",
 		"# texels) for the body's Minnaert k, rotationally averaged at an equatorial view. planet.gdshader divides",
 		"# the texel colour by mean, so the disc-integrated albedo is the sim's p_V. Textures: data/planets/SHA256SUMS."])
-	for id: String in MAP:
+	for id: String in maps:
 		var k: float = bodies[id]["minnaert_k"]
-		var mean := weighted_mean(luminance(MAP[id]), k)
-		lines.append("%s %s %s %.9f" % [id, MAP[id], str(k), mean])
-		print("  %-8s k %.3f  mean %.6f  (%s)" % [id, k, mean, MAP[id]])
+		var mean := weighted_mean(luminance(maps[id]), k)
+		lines.append("%s %s %s %.9f" % [id, maps[id], str(k), mean])
+		print("  %-8s k %.3f  mean %.6f  (%s)" % [id, k, mean, maps[id]])
 	var f := FileAccess.open(TABLE, FileAccess.WRITE)
 	f.store_string("\n".join(lines) + "\n")
 	f.close()
-	print("planet-textures: wrote %s (%d bodies)" % [TABLE, MAP.size()])
+	print("planet-textures: wrote %s (%d bodies)" % [TABLE, maps.size()])
 	return 0
 
 
 func _check(bodies: Dictionary) -> int:
 	var table := SystemView.read_albedo_table(TABLE)
 	var failures := 0
-	for id: String in MAP:
+	for id: String in maps:
 		var b: Dictionary = bodies[id]
 		var k: float = b["minnaert_k"]
 		var p_v: float = b["p_v"]
 		var row: Dictionary = table.get(id, {})
-		if row.is_empty() or row["file"] != MAP[id] or not is_equal_approx(row["k"], k):
+		if row.is_empty() or row["file"] != maps[id] or not is_equal_approx(row["k"], k):
 			print("FAIL  %-8s ALBEDO row missing or stale (file/k): %s" % [id, row])
 			failures += 1
 			continue
-		var lum := luminance(MAP[id])
+		var lum := luminance(maps[id])
 		var acc := 0.0
 		for lon0 in 12:
 			acc += _disc_mean(lum, k, TAU * lon0 / 12.0)
@@ -151,7 +155,7 @@ func _check(bodies: Dictionary) -> int:
 		if not ok:
 			failures += 1
 		print("%s  %-8s disc-integrated albedo %.4f, p_V %.4f (ratio %.4f, limit 1%%)" % ["ok  " if ok else "FAIL", id, p, p_v, p / p_v])
-	print("planet-textures check: %d textures, %d failures" % [MAP.size(), failures])
+	print("planet-textures check: %d textures, %d failures" % [maps.size(), failures])
 	return 1 if failures > 0 else 0
 
 

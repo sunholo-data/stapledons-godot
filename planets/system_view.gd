@@ -100,6 +100,16 @@ static func read_albedo_table(path: String) -> Dictionary:
 	return out
 
 
+## Required body/file declarations drive authoring and exported-build smoke coverage.
+static func read_texture_declarations(path := "res://data/planets/TEXTURES") -> Dictionary:
+	var out := {}
+	for line in FileAccess.get_file_as_string(path).split("\n"):
+		var fields := line.strip_edges().split(" ", false)
+		if fields.size() == 2 and not fields[0].begins_with("#"):
+			out[fields[0]] = fields[1]
+	return out
+
+
 ## [albedo, clouds or null], or [] without a texture (the file field may be "day.jpg+clouds.jpg").
 func _textures(id: String) -> Array:
 	if not use_textures or not albedo_table.has(id):

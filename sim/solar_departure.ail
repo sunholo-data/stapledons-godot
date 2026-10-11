@@ -62,9 +62,19 @@ export pure func solCruisePhi() -> float = bodyPhiMax()
 export pure func acenOneMinusBeta() -> float = 0.001      -- 0.999c: Saturn -> alpha Cen
 export pure func trappistOneMinusBeta() -> float = 0.0001 -- 0.9999c: alpha Cen -> TRAPPIST-1
 export pure func aldebaranOneMinusBeta() -> float = 0.000001 -- 0.999999c: TRAPPIST-1 -> Aldebaran
--- Genuine stop intercepts with explicit standoffs checked by the unchanged
--- collision/ring/intercept math; star legs arrive at the catalogue stand-off.
-export pure func legs(p: Params) -> [TourLeg] = [
+-- Legacy D-47 itinerary is retained for explicitly old stop_rule 0 sessions.
+-- D-65 attended highlights select D-54 finite star arrivals and omit the three
+-- duplicate inward legs; core.planFiniteIntent retains the interstellar cap,
+-- collision/intercept checks and authoritative clocks. No new motion formula.
+export pure func legs(p: Params) -> [TourLeg] =
+  if p.stopRule == 54.0 then directHighlights(legacyLegs()) else legacyLegs()
+pure func directHighlights(xs: [TourLeg]) -> [TourLeg] = match xs {
+  [] => [],
+  leg :: rest =>
+    if leg.kind == "body" && (leg.id == "acen-a" || leg.id == "trappist-1" || leg.id == "aldebaran") then directHighlights(rest)
+    else {leg | name: if leg.id == "CNS5:3627" then "Alpha Centauri A" else if leg.id == "Gaia DR3 2635476908753563008" then "TRAPPIST-1" else if leg.id == "CNS5:1142" then "Aldebaran" else leg.name} :: directHighlights(rest)
+}
+pure func legacyLegs() -> [TourLeg] = [
   {id: "sun", name: "Sun", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(sunStandoffKm()), timing: Some(tourTiming())},
   {id: "jupiter", name: "Jupiter", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(jupiterStandoffKm()), timing: Some(tourTiming())},
   {id: "callisto", name: "Callisto clearance", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(callistoStandoffKm()), timing: Some(tourTiming())},
@@ -76,6 +86,7 @@ export pure func legs(p: Params) -> [TourLeg] = [
   {id: "CNS5:1142", name: "Aldebaran system", kind: "star", cruisePhi: rapidityOfOneMinusBeta(aldebaranOneMinusBeta()), standoffKm: None, timing: None},
   {id: "aldebaran", name: "Aldebaran", kind: "body", cruisePhi: solCruisePhi(), standoffKm: Some(destinationStopKm("aldebaran")), timing: Some(giantTiming())}
 ]
+-- Frozen legacy test API; current runtime uses the exact emitted legs array.
 export pure func legCount() -> int = 10
 pure func legAt(xs: [TourLeg], n: int) -> Option[TourLeg] =
   if n < 0 then None else match xs { [] => None, x :: rest => if n == 0 then Some(x) else legAt(rest, n - 1) }

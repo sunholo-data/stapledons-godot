@@ -558,7 +558,7 @@ func open_navigation() -> void:
 	journey_map.set_confirm_twice(confirm_mode=="twice")
 	journey_map.set_mode("helm")
 	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
-	if entry!=null:entry.visible=solar_tour==null
+	if entry!=null:entry.visible=solar_tour==null or solar_tour.complete
 	navigation_window.borderless=true;navigation_window.title="Navigation station · E / Esc steps back"
 	_place_navigation(consoles.panel_rect().grow_individual(-8.,-46.,-8.,-8.) if consoles!=null and consoles.focused=="navigation" else Rect2())
 ## M (anywhere, instant): the read-only star chart. It never plans, commits or pauses the
@@ -613,11 +613,9 @@ func _create_navigation(scenario:String) -> void:
 		journey_map.load_catalogue("res://data/starmap/stars.json");journey_map.load_names("res://data/starmap/names.json")
 		journey_map.attach(journey_sim)
 		var bh_entry:=Button.new();bh_entry.name="SgrAEntry";bh_entry.text="Sgr A* (black hole) · demo"
-		bh_entry.tooltip_text="Leave the Solar System for the black hole at the Galactic Centre (a separate demo session; GR on)"
-		bh_entry.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT,Control.PRESET_MODE_MINSIZE,12)
-		bh_entry.grow_horizontal=Control.GROW_DIRECTION_BEGIN;bh_entry.grow_vertical=Control.GROW_DIRECTION_BEGIN
+		bh_entry.tooltip_text="Start a separate GR demo at the Galactic Centre; this is not a journey on the nearby-star chart. Unavailable during a committed journey."
 		bh_entry.pressed.connect(func()->void:consoles.use("navigation","sgr_a"),CONNECT_DEFERRED) # helm only; the window is freed by the switch
-		navigation_window.add_child(bh_entry)
+		journey_map.special_destinations.add_child(bh_entry)
 		var acen:=journey_map.index_of("CNS5:3627")
 		if journey_map.preselect(acen):journey_map.frame_star(acen)
 		if scenario=="sol":
@@ -663,6 +661,7 @@ func close_navigation() -> void:
 func _navigation_key(key: int) -> void:
 	if journey_map==null:return
 	if key==KEY_ESCAPE and journey_map.armed:journey_map.disarm();return
+	if key==KEY_ESCAPE and journey_map.dialog.visible:journey_map.close_commit_dialog();return
 	if journey_map.mode=="chart":
 		if key in [KEY_M,KEY_ESCAPE]:close_navigation()
 	elif key in [KEY_E,KEY_ESCAPE]:
@@ -741,8 +740,9 @@ func _update_tour_attitude(delta:float)->void:
 	elif not live_journey and _attitude_stop!=solar_tour.leg_index:
 		_attitude_stop=solar_tour.leg_index
 		var id:String="earth" if solar_tour.leg_index<0 else solar_tour.itinerary[solar_tour.leg_index].id
+		var held_body:String=str(sky_world.get("journey",{}).get("plan",{}).get("hold",{}).get("body",""))
 		for body:Dictionary in sky_world.get("system",{}).get("bodies",[]):
-			if body.id==id:
+			if body.id==id or body.id==held_body or str(body.get("catalogue_id",""))==id:
 				var v:Dictionary=body.rel_km
 				_begin_tour_turn(Attitude.side_basis(PackedFloat64Array([v.x,v.y,v.z])),15.,"stop")
 				break
@@ -948,7 +948,7 @@ func tour_line() -> String:
 	var parts := PackedStringArray()
 	if solar_tour.pending_index >= 0 or solar_tour.attitude_hold: parts.append("turning to " + solar_tour.pending_name if solar_tour.pending_index >= 0 else "attitude turn")
 	elif live_journey: parts.append("→ %s · %s" % [solar_tour.leg_name(), stage])
-	elif solar_tour.complete: parts.append("At %s · voyage complete" % solar_tour.leg_name())
+	elif solar_tour.complete: parts.append("At %s · voyage complete · optional Sgr A* demo at Navigation" % solar_tour.leg_name())
 	else: parts.append("At %s · next stop in %.0f s" % [solar_tour.leg_name(), solar_tour.dwell_left])
 	if solar_tour.leg_index >= 0: parts.append("Leg %d of %d" % [solar_tour.leg_index + 1, solar_tour.itinerary.size()])
 	if solar_tour.skips > 0: parts.append("skipped %d stage%s" % [solar_tour.skips, "" if solar_tour.skips == 1 else "s"])
@@ -1216,6 +1216,8 @@ func toggle_codex() -> void:
 func pointer_required() -> bool:
 	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and (ship_hud.tab_panel.visible or ship_hud.has_card("arrival") or ship_hud.has_card("medium_here"))) or (codex!=null and codex.panel.visible) or (interlude_card!=null and interlude_card.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
 func _sync_pointer() -> void:
-	var capture:bool=mouse_look_enabled and not pointer_required() and get_window().has_focus()
+	# Returning to the title detaches this scene during the same Esc event.
+	var window:Window=get_window() if is_inside_tree() else null
+	var capture:bool=is_instance_valid(window) and window.has_focus() and mouse_look_enabled and not pointer_required()
 	var desired:int=Input.MOUSE_MODE_CAPTURED if capture else Input.MOUSE_MODE_VISIBLE
 	if Input.mouse_mode!=desired:Input.mouse_mode=desired
