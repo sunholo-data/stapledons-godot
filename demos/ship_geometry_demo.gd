@@ -1216,6 +1216,8 @@ func toggle_codex() -> void:
 func pointer_required() -> bool:
 	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and (ship_hud.tab_panel.visible or ship_hud.has_card("arrival") or ship_hud.has_card("medium_here"))) or (codex!=null and codex.panel.visible) or (interlude_card!=null and interlude_card.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
 func _sync_pointer() -> void:
-	var capture:bool=mouse_look_enabled and not pointer_required() and get_window().has_focus()
+	# Returning to the title detaches this scene during the same Esc event.
+	var window:Window=get_window() if is_inside_tree() else null
+	var capture:bool=is_instance_valid(window) and window.has_focus() and mouse_look_enabled and not pointer_required()
 	var desired:int=Input.MOUSE_MODE_CAPTURED if capture else Input.MOUSE_MODE_VISIBLE
 	if Input.mouse_mode!=desired:Input.mouse_mode=desired

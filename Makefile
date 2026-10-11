@@ -833,7 +833,7 @@ publish-dev: current-ship-export-smoke
 # Title screen (design_docs/planned/r1/title-screen.md): a plain launch shows the menu; every CLI mode bypasses it.
 .PHONY: title-screen-test title-capture title-export-smoke
 title-screen-test: import
-	@$(GODOT_SIM) --headless --path . --script tests/test_title_screen.gd > $(SCRATCH)/title-screen.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/title-screen.log | grep -v '^title-screen: OK' ; test $$rc = 0 && grep -q '^title-screen: [0-9]* passed, 0 failures$$' $(SCRATCH)/title-screen.log
+	@$(GODOT_SIM) --headless --path . --script tests/test_title_screen.gd > $(SCRATCH)/title-screen.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/title-screen.log | grep -v '^title-screen: OK' ; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/title-screen.log && grep -q '^title-screen: [0-9]* passed, 0 failures$$' $(SCRATCH)/title-screen.log
 ship-demo-ci: title-screen-test
 title-capture:     ## title screen, settings and credits at 1280x720 -> renders/title_screen/ (needs a GPU window)
 	$(GODOT) --path . --resolution 1280x720 --script tools/title_screen_capture.gd
