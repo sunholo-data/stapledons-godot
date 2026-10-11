@@ -29,3 +29,12 @@
 ## Research evidence
 
 NASA APOD (https://apod.nasa.gov/apod/ap020210.html) describes the local ISM as tenuous with little emitted light and absorption in nearby stars. Gry & Jenkins (https://arxiv.org/abs/1609.02518) use UV absorption toward Regulus; surrounding hot gas emits soft X-rays. These are instrument visualizations, not a claim of eye-visible local nebulae. Published game afterglow is already explicitly G-AG; a new spatial footprint requires that label and equal-area evidence.
+
+## Attended navigation and tour expansion (D-65)
+
+Mark reported the standalone manual map cannot start Mars travel, inaccessible commitment and zoom, missing black-hole discovery, and redundant guided system/inward arrivals. He accepted Earth → Sun → Jupiter → Callisto → Saturn → one close Alpha Centauri arrival → one TRAPPIST-1 arrival → Aldebaran, with an optional labelled Sgr A* separate demo afterward.
+
+- N1: Interactive standalone map uses the actual stationary free_nav scenario, preserving frozen capture/movie Sol sessions. Real Mars selection/commit works; Enter reviews, Space uses the existing hold or press-twice ritual, Esc backs out. Explicit zoom controls and the review footer are reachable at 450/600px heights. All variable content scrolls. Hidden/chart maps must not issue journey intents. Existing separate Sgr A* demo is discoverable, disabled while committed, and available after the guided tour. `make navigation-usability-test title-screen-test free-nav-recovery-test ship-ui-test ship-demo-input-test` plus an opened native navigation capture.
+- T1: Guided D-54 finite-star arrivals eliminate the three outer-system/inward-hop duplicates without teleporting or changing formulas. Seven flying legs plus initial Earth remain; legacy stop_rule0 retains its ten-leg metadata/replays. Catalogue identity, physical distances/clocks, beta-zero endpoints, actual clearance, target-looking attitude and approach presentation are checked. No claim of a TRAPPIST habitable-zone planet stop. `make solar-departure-test tour-attitude-test tour-pacing-test strict parity` and opened native arrivals; source and exported native gates must use the same itinerary.
+
+Audit evidence: current outer arrivals are about1,000AU from each star; inward hops are about0.0158ly (~5.77Earth light-days), not coordinate errors. The existing finite-stop planner accepts the interstellar speeds under the session cap; it is distinct from the body-intent0.99c cap. This is authoring and composition of published package math. New design formulas are unnecessary.

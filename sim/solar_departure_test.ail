@@ -8,7 +8,7 @@ import ./core (World, Target, Intent, ICommit, IPlanBody, Planned, Arrived, Plan
 import pkg/sunholo/relativity/kinematics (rapidityOfBeta, rapidityOfOneMinusBeta)
 import std/string (concat)
 import ./solar_departure (TourLeg, initialize, initializeAtStandoff, earthStandoffKm, intentForLeg, legs, legCount, solCruisePhi, acenOneMinusBeta, trappistOneMinusBeta, aldebaranOneMinusBeta)
-import ./navigation (safetyMinKm, bodyPhiMax)
+import ./navigation (safetyMinKm, bodyPhiMax, defaultStopKm)
 import ./destination_stars (destinationStopKm, habitableZoneKm, destinationRadiusKm, destinationValue, destinationLy)
 import ./protocol (finiteSystemOf)
 import ./celestial (BodyView)
@@ -104,6 +104,55 @@ pure func atStop(w: World, p: Plan) -> bool =
   }
 export pure func checkSequence() -> bool = chain(started(), 0)
 test "Earth to Aldebaran: every leg is a true successive commit without resetting clocks or endpoints" { checkSequence() }
+-- D65 changes the attended guided itinerary only. Rule zero remains the frozen
+-- ten-leg D47 replay; the live rule54 tour commits seven genuine finite stops.
+pure func directStarted() -> World {
+  let w = started();
+  {w | params: {w.params | stopRule: 54.0}}
+}
+pure func directTarget(n: int) -> Target = if n == 5 then trappistTarget() else if n == 6 then aldebaranTarget() else fixtureTarget()
+pure func directBody(n: int) -> string = if n == 4 then "acen-a" else if n == 5 then "trappist-1" else "aldebaran"
+pure func directChain(w: World, n: int) -> bool =
+  if n >= 7 then (match intentForLeg(w, n, fixtureTarget()) { None => true, _ => false }) else
+  match intentForLeg(w, n, directTarget(n)) {
+    None => false,
+    Some(intent) => {
+      let planned = (tick(w, {dtau: 0.0, intents: [intent]})).world;
+      match planned.journey {
+        Planned(p) => {
+          let committed = (tick(planned, {dtau: 0.0, intents: [ICommit(p.id)]})).world;
+          let landed = (tick(committed, {dtau: p.trip.tauTotal, intents: []})).world;
+          (match landed.journey { Arrived(_) => true, _ => false })
+          && norm(sub(p.from, position(w.ship))) == 0.0 && norm(sub(position(landed.ship), p.target.pos)) == 0.0
+          && landed.tick == w.tick + 3 && landed.ship.motion.phi == 0.0
+          && landed.ship.motion.tau > w.ship.motion.tau && landed.ship.motion.t > w.ship.motion.t
+          && (if n < 4 then true else match p.nav {
+            None => false,
+            Some(nav) => nav.bodyId == directBody(n) && p.trip.phiPeak > bodyPhiMax()
+              && p.trip.tauApproach == 0.0
+              && (match viewOf((finiteSystemOf(landed)).bodies, directBody(n)) {
+                Some(body) => absf(nav.standoffKm - defaultStopKm(directBody(n), body.radiusKm, w.params.bubbleRadiusM / 1000.0)) < 0.001,
+                None => false
+              })
+          })
+          && directChain(landed, n + 1)
+        },
+        _ => false
+      }
+    }
+  }
+export pure func checkDirectHighlights() -> bool {
+  let w = directStarted();
+  (match legs(w.params) {
+    [a, b, c, d, e, f, g] => a.id == "sun" && b.id == "jupiter" && c.id == "callisto" && d.id == "saturn"
+      && e.id == "CNS5:3627" && e.cruisePhi == rapidityOfOneMinusBeta(0.001)
+      && f.id == "Gaia DR3 2635476908753563008" && f.cruisePhi == rapidityOfOneMinusBeta(0.0001)
+      && g.id == "CNS5:1142" && g.cruisePhi == rapidityOfOneMinusBeta(0.000001),
+    _ => false
+  }) && directChain(w, 0)
+}
+test "D65 has seven finite highlight arrivals, exact high speeds, continuous clocks and unchanged D54 stops" { checkDirectHighlights() }
+export pure func directHighlightsVm(n: int) -> string = if checkDirectHighlights() then "guided-highlights: OK" else "guided-highlights: FAIL"
 -- D-39/D-40/D-41 cruise speeds, as exact 1 - beta (never 1 - beta computed near c).
 pure func phiOf(n: int) -> float = match legs((guided()).params) { xs => phiAt(xs, n) }
 pure func phiAt(xs: [TourLeg], n: int) -> float = match xs { [] => 0.0 - 1.0, x :: rest => if n == 0 then x.cruisePhi else phiAt(rest, n - 1) }

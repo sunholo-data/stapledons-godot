@@ -27,7 +27,7 @@ func run() -> void:
 	var layer := CanvasLayer.new(); layer.layer = 12; root.add_child(layer)
 	card_view = InterludeCard.new(); card_view.visible = false; layer.add_child(card_view)
 	sky.exposure.fixed = true; sky.exposure.fixed_ev = sky.exposure.ev_dark() - 2.; sky.set_temporal_exposure(false)
-	var sim := SimBridge.new(); sim.want_minor = 5
+	var sim := SimBridge.new(); sim.want_minor = SimBridge.ISM_MINOR
 	if not sim.start() or not sim.new_game(424242, "solar_departure", false, SolarDeparture.guided_params()):
 		print("real-time-tour-capture: start FAIL ", sim.last_error); quit(1); return
 	var catalogue: Array = JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json")).get("stars", [])
@@ -79,7 +79,7 @@ func fly_leg(leg: int, sim: SimBridge) -> void:
 		if phase == "braking" and not braking_taken and float(sim.world.ship.get("beta", 0.0)) < 0.5 * float(sim.world.journey.plan.cruise_beta):
 			braking_taken = true
 			await shot("%d_%s_braking" % [leg, slug], sim, "forward", false, spec.id == "jupiter")
-	await shot("%d_%s_arrived" % [leg, slug], sim, "target", false, spec.kind == "body" and spec.id != "acen-a")
+	await shot("%d_%s_arrived" % [leg, slug], sim, "target", false, true)
 
 func shot(name: String, sim: SimBridge, look: String, with_card: bool, auto_view := false) -> void:
 	sky.system_view.body_fader = auto_view
@@ -120,8 +120,9 @@ func shot(name: String, sim: SimBridge, look: String, with_card: bool, auto_view
 ## position, or the catalogue star's position relative to the ship (galactic -> SkyFrame).
 func target_dir(world: Dictionary) -> Vector3:
 	var target: Dictionary = world.journey.plan.target
+	var hold_id: String = world.journey.plan.get("hold", {}).get("body", "")
 	for b: Dictionary in world.get("system", {}).get("bodies", []):
-		if b.id == target.get("id", ""):
+		if b.id == hold_id or b.id == target.get("id", "") or b.get("catalogue_id", "") == target.get("id", ""):
 			var w := Planets.world_of(b.rel_km); return Vector3(w[0], w[1], w[2]).normalized()
 	var p: Dictionary = world.ship.pos
 	var tp: Dictionary = world.journey.plan.get("target", {}).get("pos", p)

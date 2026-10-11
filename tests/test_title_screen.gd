@@ -226,6 +226,13 @@ func test_routes() -> void:
 		await frames(6)
 	var maps := m3.find_children("*", "GalaxyMap", true, false) if m3 != null else []
 	check(m3 != null and maps.size() == 1 and m3._map_mode and m3.title == null, "Galaxy map opens the standalone map")
+	if m3!=null and maps.size()==1:
+		check(m3.sim.world.ship.beta==0. and m3.sim.world.ship.phase=="at_rest", "standalone manual map starts at rest, like Board the ship")
+		var manual_map:GalaxyMap=maps[0]
+		manual_map.auto_tick=false
+		manual_map.plan_body("mars")
+		check(manual_map.tick() and m3.sim.last_refused.is_empty() and manual_map.journey_state()=="planned", "standalone manual map accepts an actual Mars journey")
+		check(manual_map.special_destinations.get_child_count()==1 and manual_map.special_destinations.get_child(0).text.contains("separate"), "manual map exposes the separate black-hole demo")
 	check(m3 != null and m3.menu_button != null and m3.menu_button.is_visible_in_tree() and m3.menu_button.text.contains("Main menu"), "the map (opened from the menu) shows a visible Main menu button")
 	if m3 != null:
 		# A real key event through the input pipeline (not a direct handler call), after a

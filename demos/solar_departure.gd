@@ -7,7 +7,8 @@ const TICK_HZ := 20.
 const JULIAN_YEAR_SECONDS := 31557600.
 const DWELL_SECONDS := 12.
 ## D-39/D-40/D-41 guided drive, one definition for the whole voyage: 3,000,000 g,
-## cap 1 - beta = 2e-9 (the 1,000 AU timed hops into each star reach gamma ~7,500), m_eff 10 kg. The sim's
+## cap 1 - beta = 2e-9, m_eff 10 kg. D65 removes the old 1,000 AU inward
+## hops; the three stellar legs retain their 0.999 / 0.9999 / 0.999999 speeds. The sim's
 ## unchanged scenarioError (brake vs ISM drag at the cap) accepts it (RT0).
 ## sim/solar_departure_test.ail's guided() mirrors these values.
 const GUIDED_DRIVE := {"boost_g":3000000.0,"m_eff_kg":10.0,"cap_one_minus_beta":0.000000002}
@@ -33,9 +34,10 @@ var interlude_factory: Callable = func() -> CruiseInterlude: return CardInterlud
 var interludes_done := 0
 var last_boundary_error := -1.0
 
-## new_game params for a guided voyage: the catalogue stand-off plus GUIDED_DRIVE.
+## D65 guided highlights use existing D54 finite-star stops. The catalogue
+## stand-off remains a fallback for uncited stars; these three are cited bodies.
 static func guided_params() -> Dictionary:
-	var p:Dictionary={"standoff_au":STANDOFF_AU};p.merge(GUIDED_DRIVE);return p
+	var p:Dictionary={"standoff_au":STANDOFF_AU,"stop_rule":54.0};p.merge(GUIDED_DRIVE);return p
 
 ## catalogue: the star rows in catalogue order (GalaxyMap.catalogue or stars.json's
 ## "stars"); every star leg is resolved by exact id, failing closed if one is missing.

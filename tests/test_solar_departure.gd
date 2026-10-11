@@ -2,7 +2,6 @@ extends SceneTree
 ## Normal negotiated sidecar, an Earth start and successive irreversible legs.
 var passed:=0
 var failures:=0
-const RECORD:="user://solar_departure_test.ndjson"
 ## D-54 planet/moon stop, an independent GDScript mirror of sim/stops.ail: R / sin(atan(tan 15 deg sqrt(R / R_earth))).
 static func d54(r: float) -> float:
 	return r/sin(atan(tan(deg_to_rad(15.))*sqrt(r/6378.1366)))
@@ -12,9 +11,12 @@ func check(name:String,condition:bool)->void:
 	print("  %s %s" % ["ok" if condition else "FAIL",name])
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
-	var sim:=SimBridge.new();sim.want_minor=5;sim.record_path=RECORD
+	var sim:=SimBridge.new();sim.want_minor=SimBridge.ISM_MINOR;sim.record_path="res://.godot/tmp/solar_departure_test-%d.ndjson" % OS.get_process_id()
 	if not sim.start() or not sim.new_game(42,"solar_departure",false,load("res://demos/solar_departure.gd").guided_params()):
 		check("scenario starts (%s)" % sim.last_error,false);sim.stop();quit(1);return
+	check("D65 guided highlights have seven actual legs and no duplicate inward hops", sim.world.solar_departure.legs.size()==7 and sim.world.solar_departure.legs[4].id=="CNS5:3627" and sim.world.solar_departure.legs[5].id=="Gaia DR3 2635476908753563008" and sim.world.solar_departure.legs[6].id=="CNS5:1142")
+	if sim.world.solar_departure.legs.size()!=7:
+		sim.stop();print("solar-departure: %d passed, %d failures" %[passed,failures]);quit(1);return
 	var earth:Dictionary={}
 	for body:Dictionary in sim.world.system.bodies:
 		if body.id=="earth":earth=body
@@ -51,7 +53,7 @@ func _run()->void:
 	controller.attitude_hold=false
 	var previous:Dictionary=sim.world.ship.pos.duplicate()
 	var completed:=0
-	var ids:=["sun","jupiter","callisto","saturn","CNS5:3627","acen-a","Gaia DR3 2635476908753563008","trappist-1","CNS5:1142","aldebaran"]
+	var ids:=["sun","jupiter","callisto","saturn","CNS5:3627","Gaia DR3 2635476908753563008","CNS5:1142"]
 	for id in ids:
 		var start:Dictionary=sim.world.duplicate(true)
 		controller.attitude_hold=true
@@ -123,50 +125,47 @@ func _run()->void:
 			check("short cruise plays entirely in real time, no interlude (%s)"%id,controller.interludes_done==interludes_before and absi(counts.cruising-int(round(coast_s*20.)))<=20)
 		print("    phase counts ",id," ",counts," coast ",snappedf(coast_s,0.1)," s, interlude ticks ",interlude_ticks," Earth year ",sim.world.clock.year)
 		if id=="jupiter":check("braking starts while Jupiter is small and it grows through the approach",brake_first_diameter<1. and brake_last_diameter>30.)
-		if id in ["sun","jupiter","callisto","saturn","acen-a","trappist-1","aldebaran"]:
+		if id in ["sun","jupiter","callisto","saturn"]:
 			check("timed leg (D-46): 30 s boost (%s)"%id,absi(counts.boosting-600)<=2)
 			var approach_ticks:int=1800 if id=="aldebaran" else 500 # a giant gets 90 s (2026-10-07)
 			check("timed leg (D-46): final approach in real time (%s, %d ticks, want %d)"%[id,counts.approaching,approach_ticks],absi(counts.approaching-approach_ticks)<=40)
 		if id=="jupiter":check("Jupiter's approach begins with it about 4 degrees across (%.2f)"%approach_start_deg,absf(approach_start_deg-4.)<=0.5)
 		check("arrival rests",sim.world.journey.state=="arrived" and sim.world.ship.beta==0.)
-		if id in ["sun","jupiter","callisto","saturn","acen-a","trappist-1","aldebaran"]:
+		if id in ["sun","jupiter","callisto","saturn"]:
 			check("body arrival at exact planner endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
-			# D-47: alpha Cen A and TRAPPIST-1 stop in their habitable zone (sqrt L AU); Aldebaran where it fills 40 degrees.
-			var required:float={"sun":2087100.,"jupiter":d54(71492.),"callisto":d54(2410.3),"saturn":1.1*140612.,"acen-a":sqrt(1.521)*149597870.7,"trappist-1":sqrt(0.000553)*149597870.7,"aldebaran":45.212*695700./sin(deg_to_rad(20.))}[id]
+			var required:float={"sun":2087100.,"jupiter":d54(71492.),"callisto":d54(2410.3),"saturn":1.1*140612.}[id]
 			check("body stop uses exact close standoff via package planner",sim.world.journey.plan.hold.body==id and absf(sim.world.journey.plan.hold.offset_km-required)<1e-6)
-			if id=="acen-a":
-				var a:Dictionary={};var b:Dictionary={}
-				for body:Dictionary in sim.world.system.bodies:
-					if body.id=="acen-a":a=body
-					if body.id=="acen-b":b=body
-				# Rendered coordinates are retarded, so allow orbital light-time
-				# displacement; exact simultaneous intercept is checked in AILANG.
-				check("actual finite A is at its habitable zone (1.233 AU), B has stellar clearance",absf(Planets.length64(Planets.world_of(a.rel_km))-required)<20000. and Planets.length64(Planets.world_of(b.rel_km))>1.1*b.radius_km+.1)
-			if id in ["trappist-1","aldebaran"]:
-				var st:Dictionary={}
-				for body:Dictionary in sim.world.system.bodies:
-					if body.id==id:st=body
-				var deg:float=rad_to_deg(2.*Planets.angular_radius(st.get("radius_km",0.),Planets.length64(Planets.world_of(st.get("rel_km",{"x":0.,"y":0.,"z":0.})))))
-				check("%s is a finite star at its stop: %.2f degrees across (catalogue point replaced: %s)"%[id,deg,st.get("catalogue_id","")],not st.is_empty() and (absf(deg-40.)<0.5 if id=="aldebaran" else absf(deg-2.70)<0.05) and not str(st.get("catalogue_id","")).is_empty())
-			if id=="trappist-1":_check_trappist_planets(sim.world)
 		else:
-			var p:Dictionary=sim.world.ship.pos;var q:Dictionary=sim.world.journey.plan.target.pos
-			var gap:=sqrt(pow(p.x-q.x,2.)+pow(p.y-q.y,2.)+pow(p.z-q.z,2.))
-			check("outbound stops at package stellar standoff",absf(gap-sim.world.consequence.standoff_ly)<1e-10 and gap>0.01)
+			var finite_id:String={"CNS5:3627":"acen-a","Gaia DR3 2635476908753563008":"trappist-1","CNS5:1142":"aldebaran"}[id]
+			var star:Dictionary={}
+			for body:Dictionary in sim.world.system.bodies:
+				if body.id==finite_id:star=body
+			check("interstellar plan retains high cruise speed and finite intercept",sim.world.journey.plan.cruise_phi>2.6466524123622457 and sim.world.journey.plan.get("target_kind", "")=="body" and sim.world.journey.plan.hold.body==finite_id)
+			check("stellar arrival is exactly the checked finite endpoint",sim.world.ship.pos==sim.world.journey.plan.target.pos)
+			var required:float=star.radius_km/sin(atan(tan(deg_to_rad(5.))*sqrt(star.radius_km/695700.)))
+			check("D54 finite stop replaces distant catalogue system arrival",absf(sim.world.journey.plan.hold.offset_km-required)<0.001 and absf(Planets.length64(Planets.world_of(star.rel_km))-required)<20000. and required<149597870.7)
+			var deg:float=rad_to_deg(2.*Planets.angular_radius(star.radius_km,Planets.length64(Planets.world_of(star.rel_km))))
+			var wanted:float=rad_to_deg(2.*atan(tan(deg_to_rad(5.))*sqrt(star.radius_km/695700.)))
+			check("finite stellar view has D54 angular size and exact catalogue replacement",absf(deg-wanted)<0.01 and star.get("catalogue_id", "")==id)
+			check("direct stellar arrival needs no timed inward boost",not sim.world.journey.plan.has("drive") and counts.approaching==0)
+			if finite_id=="acen-a":
+				for body:Dictionary in sim.world.system.bodies:
+					if body.id=="acen-b":check("Alpha B retains stellar geometric clearance",Planets.length64(Planets.world_of(body.rel_km))>1.1*body.radius_km+.1)
+			if finite_id=="trappist-1":_check_trappist_planets(sim.world)
 		previous=sim.world.ship.pos.duplicate();completed+=1
 	check("completed itinerary cannot start extra leg",completed==ids.size() and controller.complete and not controller.advance())
 	# D-41: about 11 months lived while ~120 years pass on Earth (design goal 3).
 	var year:float=sim.world.clock.year;var tau:float=sim.world.clock.tau
 	print("    voyage: Earth +%.2f yr, ship +%.3f yr"%[year,tau])
 	check("cumulative Earth time at Aldebaran within 1%% of 120.5 yr (%.2f)"%year,absf(year-120.5)<=0.01*120.5)
-	check("all %d stops reached"%ids.size(),ids.size()==10)
+	check("all %d stops reached"%ids.size(),ids.size()==7)
 	check("ship time lived is under a year",tau>0.8 and tau<1.0)
 	check("HUD exposes both clocks and honest approximation",controller.status_text().contains("Earth +") and controller.status_text().contains("ship +") and controller.status_text().contains("barycentre"))
-	var log:=FileAccess.get_file_as_string(RECORD)
+	var log:=FileAccess.get_file_as_string(sim.record_path)
 	check("one initialization only, no resets between legs",log.count('"type":"new_game"')==1)
 	sim.stop()
 	# Skip to next stage (D-46): each skip lands exactly on the next phase of the leg.
-	var s2:=SimBridge.new();s2.want_minor=5
+	var s2:=SimBridge.new();s2.want_minor=SimBridge.ISM_MINOR
 	if s2.start() and s2.new_game(42,"solar_departure",false,load("res://demos/solar_departure.gd").guided_params()):
 		var c2=load("res://demos/solar_departure.gd").new();c2.attach(s2,catalogue.stars)
 		check("skip is unavailable before a leg is committed",not c2.skip_stage())
@@ -189,9 +188,9 @@ func _run()->void:
 	else:check("second session for the skip test",false)
 	print("solar-departure: %d passed, %d failures" %[passed,failures]);quit(1 if failures else 0)
 
-## TRAPPIST-1's planets at the habitable-zone stop (trappist1-planets-sprint.md TB3/TB5):
+## TRAPPIST-1's planets at the direct D54 finite-star stop:
 ## seven planets after the star, b..h, lit by their own star (teff_k, e1_au_lux); the
-## stop keeps sqrt(L) AU from the star and is placed beside e, so planets are discs.
+## stop has no engineered beside-e placement; check actual planet clearance and sizes.
 func _check_trappist_planets(world:Dictionary)->void:
 	var bodies:Array=world.system.bodies
 	var star_index:=-1;var letters:=[];var sizes:={};var star_km:=0.
@@ -203,11 +202,13 @@ func _check_trappist_planets(world:Dictionary)->void:
 			sizes[b.id]=rad_to_deg(2.*Planets.angular_radius(b.radius_km,Planets.length64(Planets.world_of(b.rel_km))))
 			check("%s is lit by TRAPPIST-1 (teff_k 2566, e1_au_lux %s) and is not a plan target"%[b.id,str(b.get("e1_au_lux",0.))],b.get("teff_k",0.)==2566. and b.get("e1_au_lux",0.)>0. and b.kind=="planet" and not b.visitable and b.e_v_lux>0.)
 	check("seven planets b..h follow the star in the feed (%s)"%"".join(letters),letters==["b","c","d","e","f","g","h"] and bodies[star_index+1].id=="trappist-1b")
-	check("the stop keeps the HZ rule: %.1f km from the star (sqrt(L) AU = %.1f)"%[star_km,sqrt(0.000553)*149597870.7],absf(star_km-sqrt(0.000553)*149597870.7)<20.)
+	check("TRAPPIST-1 direct stop is the D54 finite-star distance",absf(star_km-0.018360350558332487*149597870.7)<20.)
 	var big:=0
 	for k in sizes:if sizes[k]>=0.25:big+=1
 	print("    TRAPPIST-1 planets across (deg): ",sizes)
-	check("placed beside e: e %.2f degrees across, %d planets at least 0.25 degrees"%[sizes.get("trappist-1e",0.),big],sizes.get("trappist-1e",0.)>0.6 and big>=4)
+	check("direct stop retains resolved planets without a claimed beside-e placement", big>=1)
+	for body:Dictionary in bodies:
+		if body.get("host", "")=="trappist-1":check("direct arrival clears actual planet "+body.id, Planets.length64(Planets.world_of(body.rel_km))>1.1*body.radius_km+.1)
 
 func _held_ticks(controller:RefCounted,count:int)->bool:
 	for i in count:

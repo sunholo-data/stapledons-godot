@@ -151,6 +151,8 @@ var commit_button := Button.new()
 var cancel_button := Button.new()
 var centre_button := Button.new()
 var fit_button := Button.new()
+var zoom_in_button := Button.new()
+var zoom_out_button := Button.new()
 var home_button := Button.new()
 var ism_depth_guides := CheckButton.new()
 var ism_shading := CheckButton.new()
@@ -159,6 +161,7 @@ var local_ism_button := Button.new()
 var ism_legend := Label.new()
 ## In-system destinations (Mark, 2026-10-08): the bodies of the system the ship is in.
 var system_box := VBoxContainer.new()
+var special_destinations := VBoxContainer.new()
 var system_ids: Array = []
 var _system_buttons := {}
 var selected_body := ""
@@ -252,7 +255,9 @@ func _build() -> void:
 	chart_banner.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
 	chart_banner.visible = false
 	box.add_child(chart_banner)
-	for l in [_title, _subtitle, _status, _clock]:
+	for l in [_title, _status]:
+		l.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size.x=PANEL_WIDTH-40
 		box.add_child(l)
 	# Keep explicit framing reachable even in short windows with long plans.
 	var framing := HBoxContainer.new()
@@ -266,6 +271,29 @@ func _build() -> void:
 	home_button.pressed.connect(plan_home)
 	framing.add_child(home_button)
 	box.add_child(framing)
+	var zoom_controls:=HBoxContainer.new()
+	zoom_in_button.text="Zoom in [+]"
+	zoom_out_button.text="Zoom out [−]"
+	zoom_in_button.pressed.connect(zoom_notch.bind(true))
+	zoom_out_button.pressed.connect(zoom_notch.bind(false))
+	zoom_controls.add_child(zoom_in_button);zoom_controls.add_child(zoom_out_button)
+	box.add_child(zoom_controls)
+	# All variable-height content scrolls. Start/review actions stay below it.
+	var scroll:=ScrollContainer.new()
+	scroll.name="MapDetails"
+	scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size.y=80
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	var details:=VBoxContainer.new()
+	details.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	details.add_theme_constant_override("separation",6)
+	box.add_child(scroll);scroll.add_child(details)
+	for label:Label in [_subtitle,_clock]:
+		label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+		label.custom_minimum_size.x=PANEL_WIDTH-40
+		details.add_child(label)
+	details.add_child(special_destinations)
+	details.add_child(system_box)
 	var medium_controls := HFlowContainer.new()
 	medium_controls.custom_minimum_size.x=PANEL_WIDTH-40
 	ism_toggle.text = "Interstellar medium [D]"
@@ -284,36 +312,31 @@ func _build() -> void:
 	ism_shading.toggled.connect(func(on:bool)->void:ism_layer.show_surfaces=on;_overlay.queue_redraw())
 	medium_controls.add_child(ism_shading)
 	medium_controls.add_child(ism_toggle); medium_controls.add_child(local_ism_button);medium_controls.add_child(ism_depth_guides)
-	box.add_child(medium_controls)
+	details.add_child(medium_controls)
 	ism_legend.text = "False-colour density · sky outlines from near Sol · approximate depths · light years"
 	ism_legend.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	ism_legend.custom_minimum_size.x=PANEL_WIDTH-40
 	ism_legend.add_theme_font_size_override("font_size",12)
 	ism_legend.add_theme_color_override("font_color",Color(.6,.75,.8))
 	ism_legend.visible = ism_layer.visible
-	box.add_child(ism_legend)
-	box.add_child(system_box)
+	details.add_child(ism_legend)
 	_coverage.add_theme_font_size_override("font_size",12)
 	_coverage.add_theme_color_override("font_color",Color(.6,.65,.75))
-	box.add_child(_coverage)
+	details.add_child(_coverage)
 	progress_bar.show_percentage = false
 	progress_bar.step = 0.0
 	_bar_style(progress_bar, Color(1.0, 0.6, 0.35))
 	progress_bar.custom_minimum_size = Vector2(PANEL_WIDTH - 40, 10)
 	progress_bar.visible = false
-	box.add_child(progress_bar)
+	details.add_child(progress_bar)
 	_grid.columns = 2
 	_grid.add_theme_constant_override("h_separation", 14)
-	# Fixed actions remain reachable in every map mode, including reference
-	# views and smaller native windows. Only the long readout scrolls.
-	var scroll:=ScrollContainer.new()
-	scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
-	scroll.custom_minimum_size.y=80
-	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
 	_grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	box.add_child(scroll);scroll.add_child(_grid)
+	details.add_child(_grid)
 	box.add_child(HSeparator.new())
 	box.add_child(_speed)
+	_speed.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_speed.custom_minimum_size.x=PANEL_WIDTH-40
 	slider.step = 0.0
 	slider.custom_minimum_size = Vector2(PANEL_WIDTH - 40, 24)
 	slider.value_changed.connect(func(v: float) -> void: set_cruise_phi(v))
@@ -329,7 +352,7 @@ func _build() -> void:
 	box.add_child(slider)
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 10)
-	commit_button.text = "Commit..."
+	commit_button.text = "Review journey [Enter]"
 	commit_button.disabled = true
 	commit_button.pressed.connect(func() -> void: open_commit_dialog())
 	cancel_button.text = "Cancel"
@@ -338,11 +361,13 @@ func _build() -> void:
 	buttons.add_child(cancel_button)
 	box.add_child(buttons)
 	var help := Label.new()
-	help.text = "Slider: cruise speed, 0.9c to the cap (uniform in rapidity)\nDrag: orbit · Shift-drag: pan · wheel: zoom · click: select"
+	help.text = "Select a destination → Review journey → confirm\nDrag chart: orbit · Shift-drag: pan · wheel or +/−: zoom"
+	help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	help.custom_minimum_size.x=PANEL_WIDTH-40
 	help.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
 	help.add_theme_font_size_override("font_size", 13)
 	box.add_child(help)
-	hint.text = "Pinch or scroll to zoom · drag to orbit · %s+/− UI size" % ("⌘" if OS.get_name() == "macOS" else "Ctrl ")
+	hint.text = "%s+/− changes UI size" % ("⌘" if OS.get_name() == "macOS" else "Ctrl ")
 	hint.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.visible = show_hint
@@ -393,7 +418,7 @@ func _build_dialog(layer: CanvasLayer) -> void:
 		dialog_grid.add_child(l)
 	box.add_child(dialog_grid)
 	var warn := Label.new()
-	warn.text = "A commitment cannot be undone. Hold for %.1f s, or press twice (Settings), to commit." % HOLD_S
+	warn.text = "A commitment cannot be undone. Hold Space or the button for %.1f s.\nPress-twice mode: Space twice. Esc backs out." % HOLD_S
 	warn.add_theme_color_override("font_color", Color(0.95, 0.6, 0.4))
 	box.add_child(warn)
 	hold_bar.show_percentage = false
@@ -404,7 +429,7 @@ func _build_dialog(layer: CanvasLayer) -> void:
 	box.add_child(hold_bar)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	hold_button.text = "Hold to commit"
+	hold_button.text = "Hold to commit [Space]"
 	hold_button.button_down.connect(func() -> void:
 		if confirm_twice: confirm_press()
 		else: _holding = true)
@@ -692,7 +717,7 @@ func confirm_press() -> bool:
 
 func disarm() -> void:
 	armed = false
-	hold_button.text = "Press twice to commit" if confirm_twice else "Hold to commit"
+	hold_button.text = "Press twice to commit [Space]" if confirm_twice else "Hold to commit [Space]"
 
 
 func set_confirm_twice(on: bool) -> void:
@@ -712,6 +737,7 @@ func set_mode(m: String) -> void:
 	for c: Control in [slider, commit_button, cancel_button, home_button, system_box, _speed]:
 		c.visible = helm
 	chart_banner.visible = not helm
+	special_destinations.visible=helm
 	if not helm:
 		close_commit_dialog()
 		_pending = {}
@@ -980,6 +1006,8 @@ func refresh() -> void:
 	home_button.disabled = guided_read_only
 	_status.text = status_text()
 	commit_button.disabled = guided_read_only or journey_state() != "planned"
+	for button:Node in special_destinations.get_children():
+		if button is Button:button.disabled=journey_state()=="committed"
 	cancel_button.disabled = guided_read_only
 	slider.editable = not guided_read_only
 	var pv := progress_values()
@@ -1239,6 +1267,26 @@ func _unhandled_input(event: InputEvent) -> void:
 			yaw -= mm.relative.x * 0.006
 			pitch = clampf(pitch + mm.relative.y * 0.006, -1.5, 1.5)
 		_update_camera()
+
+
+## Review/confirmation keys precede focused buttons, so Enter never accidentally
+## activates a retained zoom or destination button. The original ritual still applies.
+func _input(event:InputEvent)->void:
+	if not event is InputEventKey or not planning() or not is_visible_in_tree() or not get_window().visible:return
+	var key:=event as InputEventKey
+	if key.is_command_or_control_pressed() or key.alt_pressed:return
+	if key.keycode in [KEY_ENTER,KEY_KP_ENTER] and key.pressed and not key.echo:
+		if not dialog.visible:open_commit_dialog()
+		_accept()
+	elif key.keycode==KEY_SPACE and dialog.visible:
+		if key.pressed and not key.echo:
+			if confirm_twice:confirm_press()
+			else:_holding=true
+		elif not key.pressed:release_commit()
+		_accept()
+	elif key.keycode==KEY_ESCAPE and key.pressed and dialog.visible:
+		close_commit_dialog();_accept()
+
 
 
 func _accept() -> void:
