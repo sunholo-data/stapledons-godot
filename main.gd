@@ -170,7 +170,7 @@ func _route_now(route: String) -> void:
 			layer.layer = 5
 			layer.add_child(menu_button)
 			add_child(layer)
-			await _run_map({})
+			await _run_map(extra)
 		"quit":
 			get_tree().quit()
 
@@ -305,7 +305,11 @@ func _run_map(args: Dictionary) -> void:
 		bh_entry.tooltip_text="Start the existing GR demo. Sgr A* is beyond this nearby-star chart; this does not fly the current journey."
 		bh_entry.pressed.connect(func()->void:
 			if map.journey_state()=="committed":return
-			_start_current_ship.call_deferred(false,{"scenario":"sgr_a","sky_state":"rest","menu_return":_from_menu}),CONNECT_DEFERRED)
+			var opts:Dictionary={"scenario":"sgr_a","sky_state":"rest","from_menu":_from_menu}
+			for setting:String in ["auto_view","confirm_mode","settings_dir"]:
+				if args.has(setting):opts[setting]=args[setting]
+			opts.merge(demo_overrides,true)
+			_start_current_ship.call_deferred(false,opts),CONNECT_DEFERRED)
 		map.special_destinations.add_child(bh_entry)
 	if args.has("movie"): # website clip; loaded by path (tools/ is not exported)
 		get_tree().quit(await load("res://tools/site_movie.gd").new().run_map(self, map, args))

@@ -256,6 +256,17 @@ func test_routes() -> void:
 		await frames(6)
 	var m6 := current_main()
 	check(m6 != null and m6 != m5 and m6.title != null, "the map's Main menu button returns to the title screen")
+	if m6!=null:
+		m6.title.buttons["map"].pressed.emit();await frames(6)
+		var bh_map:GalaxyMap=m6.find_children("*","GalaxyMap",true,false)[0]
+		bh_map.special_destinations.get_child(0).pressed.emit();await frames(12)
+		demo=current_scene
+		check(demo!=null and demo.has_method("return_to_menu") and demo.menu_return and demo.menu_button.visible,"map black-hole entry preserves Main menu access")
+		if demo!=null and demo.has_method("return_to_menu"):
+			check(demo.setup_options.scenario=="sgr_a" and demo.ready_ok,"map black-hole entry opens the actual separate Sgr A demo")
+			if demo.menu_return:
+				demo.menu_button.pressed.emit();await frames(4)
+				check(current_main()!=null,"black-hole demo returns to title through its menu button")
 	Main.title_overrides = {}
 	Main.demo_overrides = {}
 	if current_scene != null:
