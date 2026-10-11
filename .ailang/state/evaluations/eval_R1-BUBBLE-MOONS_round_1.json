@@ -1,0 +1,317 @@
+{
+  "sprint_id": "R1-BUBBLE-MOONS",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-11T20:49:14.911061+00:00",
+  "design_doc": "design_docs/implemented/r1/bubble-surface-and-moon-textures.md",
+  "sprint_plan": "design_docs/implemented/r1/bubble-surface-and-moon-textures-sprint.md",
+  "reviewed_base_commit": "62eae178",
+  "reviewed_commit": "56ea60cb3953daae7ae9bcc5cf053e81162ecc8a",
+  "working_tree_review": false,
+  "reviewed_source_sha256": {
+    "CHANGELOG.md": "d3e60843ccffee4abd650b811dcf4f19ffcfbba7d85283b8b6087511e861dde4",
+    "Makefile": "a5f82527880d92f041bcd5b2411de752aeb662f515778e12b2395c0e0298e331",
+    "data/lore/manifest.json": "448d770989ce777613fbb8f8cdd13537be2ca0e8fa76b2e225c21497bc9c21d5",
+    "data/lore/physics/higgs-bubble.md": "03f1366eee350ee208d3458360e8c2178e5a6fb8a9fdd0c4180f8a48dce38aa4",
+    "data/planets/ALBEDO": "73ed826ac88af3aa6055b33520a869c1b762e60ba77ac6a57640dcf13a7d7491",
+    "data/planets/CREDITS": "2b7df92bbacfd06b361c78d4befbb07cae2672e53c5c8df3f7dc91cc0ca9c65c",
+    "data/planets/SHA256SUMS": "be5190a154e41eed444c9de1c648fe1e82fd6adc110cd436f9ffcb809240083b",
+    "data/planets/SOURCES": "94377e7609ffc52fa98fa922eb6fcb2826ae44da8f8c6b24c14916bcad12ef08",
+    "data/planets/TEXTURES": "8baa1abb688c97cdbdde8b8029b2b4c16bb2e8e9b392c138c74e72429470d96a",
+    "interior/dust_flash.gd": "a3c0204eaabfb95b496c3afdcd39634dd6c2dacecc8af56759f1b127647ed321",
+    "interior/dust_flash.gdshader": "eac5483797a407b799f58159e3b474769f6013a2705ce317b9dd7e8e4d3871a2",
+    "interior/interior_sky.gd": "1f3b9f071ec2344f096d87f761791fd08a23b5d3468727de2ab6aebde164ec98",
+    "mk/ism.mk": "5db19628a4a8d250885fc7a3fc60d42db5c6cb2975d220b2f08d5f5007d09018",
+    "mk/m5.mk": "efc0754adfb9953e00d2daa4d6e9dbcf1ed36b926a858aff7cac89bbf30cf74a",
+    "planets/planet_smoke.gd": "b7b328579e1b4629dc2bca6f3011c1e647b082f2829f3a3d805fc2d6879b2ab8",
+    "planets/system_view.gd": "891ba4492c375f58495e1ba3324b3319583187f49d71641e401311fbf934ed34",
+    "tests/test_bubble_surface.gd": "0dd6c61d68970966be8ed27cf9b0f4d09f8af166e327a88cbdf329c44946016c",
+    "tests/test_ism_surfaces.gd": "eb4917f0aa3bc68a9021ef9329ae302ead7bed267ae2b813ba6b8007ce4a2668",
+    "tests/test_planets.gd": "d49d5b2337b4215d959dce3dc5ca4dd245dfc50e6996209e37e2cc9539662356",
+    "tools/bubble_surface_capture.gd": "806f09de40b1f3d29d984c341e8ef83276ffde7004fb69bb3bde93ed08a48fc6",
+    "tools/ism_golden.gd": "e3300913fe3dab740f7753f923351f8f887873245975ed46adf506a36682e4b2",
+    "tools/ism_map_surface_capture.gd": "e1b0a90135af1b5a711bf3cbfffcb72370a93931ceb3cceeb5155e5a5b28f85a",
+    "tools/moon_capture.gd": "9e9bb83eda6ad137db4093cb6ffa214655f68d26c4f07a183c237ef661df5589",
+    "tools/planet_assets.sh": "f22b99a296ffc5aec574ee15df71947f292de4f2b99166fdf33172d881d7384e",
+    "tools/planet_textures.gd": "702be0857d469cd20cf3d22214a83de2a6fa10f9958cdefa2502993b6375d206",
+    "ui/credits.gd": "48940ccf6f946a84cecead814761171b5cc2d90fddc4c2853384870ac12632d3",
+    "ui/galaxy_map.gd": "142bf565317b5885f6d4ee6a826055811aa263e79c293d57565c6e248f151caa",
+    "ui/ism_layer.gd": "29a1721d947197cae00a9977f11af370c4d4ec8f9602808a711d3c5f71d3467b",
+    "ui/title_screen.gd": "c0d1c679d767fa44355536e41ef692de1b5efadc24c3030ecb7ef2952203b7f2",
+    "website/docs/credits.md": "aeea1dcc491a92583f854aaa7c1d64c6292fd6e5313671a62118645b0d0c47c2",
+    "tools/bubble_surface_bench.gd": "87e93427eefc0eead972c5c33fc841c51dae7fec4c055807f2beca13acee0146",
+    "main.gd": "09edd82d44318ca59817023c32d9511f9ec1833290d72e96cae8bc037bffbcfc",
+    "demos/ship_geometry_demo.gd": "020c5fc563a407056473650eac2dbe2d61b599425665f2bb3d60498bd458db1d",
+    "demos/solar_departure.gd": "d926f397424094771feaf9dbb18f56ee6b215930fe8305b6100933bcb06e900f",
+    "sim/solar_departure.ail": "aba261af9b88ab1d157513de7e54d466f24d557c4626b218c6a3f4f9d003fb02",
+    "tests/test_solar_departure.gd": "4ec60ca44ad7945c2aaf271af39c6245fac2192a2941bd02c36f6fd18d20c6b2",
+    "tests/test_title_screen.gd": "231f9b5eaed143310fca6cd3594e57dd635e54d4c38bc5a23316c3d6b72a1611",
+    "tests/test_navigation_usability.gd": "e2239aca2a02da8295f10996f55e3c5db644f8129018b516d5b9b41487edfb13",
+    "mk/navigation-usability.mk": "5d7d9a9bfab03bb8b246a40e08c122cb596d7ed9381bee23b41bddb407c01ecf",
+    "sim/solar_departure_test.ail": "5d54311f8b266c313299abfe2fb82514af1580d2730fcac942c7ebea23b6fb99",
+    "tools/guided_highlights_capture.gd": "08eda8e189c0ddab94c07de8840e82e8971bf08ec2b418a81012f9a684634261",
+    "tools/navigation_usability_capture.gd": "16bb5064e5cc062664656fa030b7f844015ee145645938ee5d79e46ba50b0bfd",
+    "tools/trappist1_capture.gd": "27d6f9108309f81ab2eafef51a443801ce856e9ccf31725055dc08494c201608",
+    "tools/real_time_tour_capture.gd": "b2a3b13e1d16f69053686dd43b0d8b95d0e4a2ac8e30d9e256d2e0a4edeb5097",
+    ".ailang/state/sprints/sprint_R1-BUBBLE-MOONS.json": "8360dc7db950d83ffe507b5d53de2f221a95bf5981fce1a7b0f8184656d0981d",
+    "design_docs/planned/r1/bubble-surface-and-moon-textures.md": "124e5748c18c34d3fef592d26fb7f7aa32f9d2d14616411797ef57220f757e90",
+    "design_docs/planned/r1/bubble-surface-and-moon-textures-sprint.md": "206811d7e36c3275b8a7432184639da0997783b05e386268113e2b86efeab809",
+    "website/news/2026-10-11-callisto-and-the-bubble-wall.mdx": "5843f12414891e7d75f7a7f1df1740edaea184cfed878f73494abf9ca047fb25",
+    "website/docs/roadmap.md": "234d17247278bd8411ea3d78f01f8133b92422d651124eb4d0ab5993f1cbcec6",
+    "website/src/data/gallery.js": "8b41a11902399ce270d1e3665cd0d38069834550e9d52bf630cfdbf9f318bda5",
+    "design_docs/stapledon-mission.md": "06d6a9bc88cc09e6195b38e23b954dd7fec4e4e347b91bd1769c15aa16c60d80"
+  },
+  "result": "pass",
+  "provisional_score": false,
+  "total_score": 98,
+  "pass_threshold": 70,
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 30,
+    "code_quality": 14,
+    "documentation": 14,
+    "design_fidelity": 10
+  },
+  "gate_source": "ci",
+  "merge_ready": true,
+  "hard_fails": [],
+  "substantive_decision": "PASS. Complete final local and matching CI gates succeed on exact 56ea60cb3953daae7ae9bcc5cf053e81162ecc8a. Independent source, science, asset, performance and opened-native-image review satisfies all eight acceptance criteria. All identified defects and historical gate failures are resolved. The sprint is technically ready for the authorized main landing; final landing bookkeeping and website publication are owned by the implementing agent.",
+  "automated_checks": {
+    "tests_pass": true,
+    "tests_output": "Complete final serial make test exited 0 on exact 56ea60cb. Independently inspected its complete 5,201-line log and SHA256; no make target errors or script errors. Ordinary tests 423/423, zero failed/skipped. Navigation 17/0, title/Sgr A* routes 89/0, guided controller 134/0, strict guided OK, bubble 16/0, presentation 806/0, free-nav recovery 28/0, loading jump 77/0. All five original AI fault timing budgets pass. Physics lint, pure/strict VM and parity/frozen 2.7 checks pass. Final exported 19/19 textures and actual Callisto verified separately. No duplicate whole-suite run.",
+    "lint_clean": true,
+    "file_sizes_ok": null,
+    "coverage_pct": null,
+    "todo_hack_count": null,
+    "local": {
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "log": "/private/tmp/stapledon-bubble-final-serial-test.log",
+      "matching_reviewed_source": true,
+      "ai_fault_gate": "PASS unchanged thresholds",
+      "ai_p99_us": {
+        "hang_text": 256,
+        "hang_voice": 1014,
+        "hang_portrait": 922,
+        "crash_loop": 113,
+        "garbage": 152
+      },
+      "exit_code": 0,
+      "exit_evidence": "Root execution-monitor completion returned exit 0; evaluator independently inspected the completed log, exact SHA256, final targets and clean reviewed runtime source.",
+      "log_sha256": "b7a2e5f83e51789eadf52caddd2488e9120ff8c2406da9509476c8e8ccf882bc",
+      "ordinary_tests": {
+        "passed": 423,
+        "failed": 0,
+        "skipped": 0
+      },
+      "final_target": "loading-jump: 77 passed, 0 failures"
+    }
+  },
+  "acceptance_criteria": [
+    {
+      "feature_id": "S1",
+      "met": true,
+      "status": "verified",
+      "evidence": "Opened seeded 60-degree and 3-degree magnified comparisons, normal/glancing and off-centre pairs. Eleven native frames use identical events/energy/camera, fixed exposure and 13 actual events/27 live sprites; repeated seeded PNG hashes independently match. Three GPU observer cases cover 8,557/8,550/8,545 rays with zero mask mismatches; integrated light and 64 dim-overlap checks pass.",
+      "criterion": "Native identical-event circle/surface comparison, repeated seeded captures and CPU/GPU checks."
+    },
+    {
+      "feature_id": "S2",
+      "met": true,
+      "status": "verified",
+      "evidence": "Independent algebra verifies unit determinant for X=s*u+0.18*v², Y=v/s and area-preserving Lambert mapping. For 1.2≤s≤2.8, support radius is bounded by 2.98r, enclosed by 3.2r masks/projection. CPU quadrature 16/0, old circle G1–G4 and new G5 goldens pass; emitting area and package energy/temperature/decay remain unchanged. Normative public specification is vendored at 8895503d9c1cde3a6378cf7ecf78a96455f51a83. Final complete strict/parity gates pass.",
+      "criterion": "Equal-area mapping, conservative bounds and overlap handling with unchanged circle, strict VM and parity gates."
+    },
+    {
+      "feature_id": "M1",
+      "met": true,
+      "status": "verified",
+      "evidence": "Independent hashes verify all 20 pinned images; 19 declared bodies exactly match ALBEDO/file tables. Ten distinct supported moon maps include Callisto. Opened native moon sheet, Callisto and Triton; exported Callisto also opened. Primary USGS/NASA sources confirm spacecraft provenance and public-domain attribution. Enhanced Io/Triton colours, mosaic gaps and varying longitude conventions are disclosed. Titan radar/IR is excluded.",
+      "criterion": "Attributed, pinned real Callisto and supported moon maps render in source and exported app."
+    },
+    {
+      "feature_id": "M2",
+      "met": true,
+      "status": "verified",
+      "evidence": "Final 56ea60cb export/publish log requires 19/19 textured bodies from res://planet_bundle and reports both Jupiter and Callisto discs textured. Independently reopened the final exported Callisto image. Declaration-driven exact body/file matching and all-map decoding remain required; all 20 pinned files and 19 ALBEDO rows match. Final native app, identification, interior, sky, AI stub, title and guided startup smoke checks passed. Published artifact identity is recorded separately in dev_build.",
+      "criterion": "Cold fetch and exported bundles contain every declared texture; declaration-derived smoke coverage."
+    },
+    {
+      "feature_id": "C1",
+      "met": true,
+      "status": "verified",
+      "evidence": "LIC surface uses unchanged nine harmonic coefficients; warm-cloud filled caps use actual source outlines at adopted approximate depths. No filled radial Sol fans or inferred filaments. Optional construction guides and low-alpha shading preserve stars/routes. Cloud-label collision handling skips unplaceable labels; stellar labels remain a separate layer. Controls leave native tick 19 unchanged, all 15 media present. Opened shaded/boundary views and uncertainty/source legend; focused geometry 18/0.",
+      "criterion": "Source-derived LIC/warm-cloud surfaces with read-only controls and explicit instrument/approximate-depth legend."
+    },
+    {
+      "feature_id": "Q1",
+      "met": true,
+      "status": "verified",
+      "evidence": "Complete serial local make test exits 0 on exact 56ea60cb: 423 ordinary tests, no failures or skips, strict VM, parity, frozen 2.7 compatibility and all unchanged AI timing budgets pass. Independent gh run view confirms CI 38164128167 COMPLETED/SUCCESS on the same exact head, completed 20:45:59 UTC. Downloaded CI log independently shows 423/423 tests, navigation 17/0, title 89/0, guided 134/0, presentation 806/0 and all five original AI timing budgets green. Final exported/published app smoke checks and opened reference images pass. Prepared changelog, moved design/sprint, completion report, roadmap and built website provide landing documentation; actual merge/publication is the implementing agent’s next authorized action.",
+      "criterion": "Complete local and exact-head CI, independent judge, opened references, changelog/roadmap/completion report and website build before landing."
+    },
+    {
+      "feature_id": "N1",
+      "met": true,
+      "status": "verified",
+      "criterion": "Stationary manual map, reachable review/zoom and actual Mars commitment through existing keyboard confirmation; separate BH entry.",
+      "evidence": "Interactive main._run_map starts the stationary protocol 2.8 free_nav scenario while captures retain Sol. All variable content scrolls and the review footer/zoom remain reachable at 450/600px bounds in matching viewport coordinates. Actual focused Enter, Space hold, release, Esc and wheel input passed 17 checks; Mars was planned and committed through the original irreversible ritual. Hidden/chart maps are guarded. Separate BH entry is labelled and disabled while committed. Opened the Mars plan, review and committed native images; metrics report zero failures and no refusals. Expanded design and sprint JSON contain N1. Root subsequently found a real return-route defect missed by the initial independent review: the Sgr A* callback sent menu_return, while demo.setup consumes from_menu. Final main.gd now passes from_menu plus saved auto_view/confirm_mode/settings_dir and preserves the normal route overrides. The actual title→map→Sgr A*→menu test fails 87/1 on the old source and passes 89/0 after repair. Source confirms the intended settings propagation."
+    },
+    {
+      "feature_id": "T1",
+      "met": true,
+      "status": "verified",
+      "criterion": "Seven genuine finite highlight arrivals with exact identities, clocks, endpoints, clearance and preserved legacy ten-leg rule zero.",
+      "evidence": "stop_rule54 selects seven actual flying legs: Sun, Jupiter, Callisto, Saturn, Alpha Cen A, TRAPPIST-1 and Aldebaran. Explicit rule zero retains the old ten-leg list/API. Existing finite-star planner preserves high cruise rapidities, physical endpoints, zero-beta arrival, clearance and continuous clocks. Current controller tests pass 134/0 and use the actual per-process record file for the one-initialization assertion. Opened native finite stellar arrivals: approximately 11.05, 3.46 and 60.93 degrees across. Native manifest has 18 samples and zero failures. Samples use actual sim ticks without position or clock edits; no claim of a TRAPPIST habitable-zone/planet-side stop. Arrival attitude lookup now resolves held-body/catalogue identity. Independently read and compared strict VM and interpreter outputs: both are byte-identical guided-highlights: OK. Required guided-highlights-strict is included in make test. Final complete local and matching CI strict/parity gates pass."
+    }
+  ],
+  "findings": [
+    {
+      "id": "E1",
+      "severity": "evidence_gap",
+      "criterion": "S1",
+      "detail": "Current native8frame manifest lacks requested off-centre A/B and explicit repeatedseeded capture comparison. GPUoff-centre golden is satisfactory separateevidence.",
+      "action": "Add native off-centre pairedcapture and repeat/digest evidence, or explicitly reconcile approvedS1scope before acceptance.",
+      "status": "resolved",
+      "resolution": "Native off-centre pair opened; repeated seeded PNG hashes independently equal;11frame0failuremanifest."
+    },
+    {
+      "id": "E2",
+      "severity": "validation_followup",
+      "detail": "Default new footprint increases projectedextent3.2x andadds AA/tangentmath. PreviousISMrepresentative GPUbudget was measuredforcircle shader, notthisnewdefault.",
+      "action": "Recheck64actual live sprites1440p incremental GPUmedian withpositivepixelcontrol before claiming retained performance.",
+      "status": "resolved",
+      "resolution": "Independently read quietVulkan report/log:64sprites/2560x1440, positivepixelprecondition, allGPUtimingspositive. Pairedincrements-.029/-.025/+.146ms; medianwithinmeasurementnoise, allpairsbelow.3ms. No negativephysicalcostclaim."
+    },
+    {
+      "id": "D1",
+      "severity": "minor_documentation",
+      "detail": "CREDITS universal positive-west0..360 sourcestatement overgeneralizes: USGSIoispositive-west-180..180 andTritonalreadypositive-east-180..180.",
+      "action": "Describe requested WMS east-longitude extent and varying source conventions accurately; retainperbodyprojectionuncertainty.",
+      "status": "resolved",
+      "resolution": "Credits now accurately say source conventions vary and describe requested WMS east-longitude extent."
+    },
+    {
+      "id": "T-test-record",
+      "severity": "test_defect",
+      "status": "resolved",
+      "detail": "The per-process output path originally left an assertion reading the old shared user:// record; stale evidence could mask missing current initialization.",
+      "resolution": "Independent review identified the mismatch; source now reads sim.record_path and removes the old constant. Current controller run passes all 134 checks, including the one-initialization assertion."
+    },
+    {
+      "id": "Q-local-ui",
+      "severity": "gate_failure",
+      "status": "resolved",
+      "detail": "The in-progress complete local run reports ui failed because the legacy assertion expects the old footer hint text. Requested UI now places explicit zoom in reachable controls and changes the hint to UI sizing.",
+      "action": "Retain complete final local/CI verification.",
+      "resolution": "The original pinch/scroll hint prefix is restored. Unchanged actual UI target now reports galaxy map: 0 failures in the final focused gate. Historical red remains preserved."
+    },
+    {
+      "id": "Q-local-ai",
+      "severity": "gate_failure",
+      "status": "resolved",
+      "detail": "The complete parallel run failed AI fault-harness timing budgets; the second unchanged focused run still reports hang-text p99 2.510ms and garbage p99 2.839ms against the 2ms threshold while other CPU jobs remained active. This is not accepted as proven flakiness.",
+      "action": "Require completion of the full final local and matching CI gates before formal PASS.",
+      "resolution": "Final serial complete run on exact 56ea60cb passes every AI fault-harness timing check: p99 text 256us, voice 1014us, portrait 922us, crash 113us, garbage 152us. Independently inspected log and confirmed no sprint diff to test_ai_bridge.gd or bridge implementation. Historical red logs are retained; complete final run remains in progress."
+    },
+    {
+      "id": "N-sgr-menu-return",
+      "severity": "production_defect",
+      "status": "resolved",
+      "detail": "New standalone-map Sgr A* handoff used menu_return instead of the from_menu option consumed by demo.setup, so the separate demo lost access to the Main menu. Root discovered this defect after the initial independent review missed it.",
+      "resolution": "Final source passes from_menu and saved route settings. Actual title→map→special destination→Sgr A*→menu test gives old source 87 passed/1 failure and final repaired source 89 passed/0 failures. Independently reviewed source and both logs."
+    }
+  ],
+  "limitations": [
+    "Surface marks are a labelled equal-area G-AG presentation approximation, not simulated lateral transport/diffusion,particle trails or new emissive physics. Packagefrequency/energy/temperature/decay remain unchanged.",
+    "Moon colourmaps may be enhanced/filter composites and have true source coverage gaps/mosaicseams. Existing normalization reproduces rotationally averagedalbedo, not calibratedpertexelcolour or newly inferred terrain.",
+    "Density shading is an instrument projection of adoptedsourcegeometry/approximatedepths, not naked-eye fog orsmall-scale gasstructure."
+  ],
+  "primary_sources": [
+    "https://astrogeology.usgs.gov/search/map/callisto_galileo_voyager_global_mosaic_1km",
+    "https://astrogeology.usgs.gov/search/map/io_galileo_ssi_voyager_color_merged_global_mosaic_1km",
+    "https://astrogeology.usgs.gov/search/map/triton_voyager_2_global_color_mosaic_600m",
+    "https://science.nasa.gov/resource/global-color-mosaic-of-triton/"
+  ],
+  "evidence": {
+    "gpu": "/private/tmp/stapledon-bubble-full-golden.log",
+    "focused": "/private/tmp/stapledon-bubble-focused.log",
+    "mapfocused": "/private/tmp/stapledon-bubble-map-focused.log",
+    "moonsfocused": "/private/tmp/stapledon-moons-focused.log",
+    "sourcesmoke": "/private/tmp/stapledon-moons-source-smoke.log",
+    "publicassetupload": "/private/tmp/stapledon-moon-assets-publish.log",
+    "nativebubble": "renders/bubble_surface/capture_log.json",
+    "nativemap": "renders/bubble_surface/map_capture.json",
+    "nativemoons": "renders/moons/capture.json",
+    "new_default_gpu_benchmark": "renders/bubble_surface/gpu_benchmark.json",
+    "new_default_gpu_log": "/private/tmp/stapledon-bubble-gpu-bench.log",
+    "prior_export_smoke": ".godot/tmp/export-smoke/planet-smoke.log",
+    "quiet_gpu_log": "/private/tmp/stapledon-bubble-gpu-bench-quiet.log",
+    "navigation_focused": "/private/tmp/stapledon-navigation-usability.log",
+    "guided_focused": "/private/tmp/stapledon-guided-highlights-test.log",
+    "native_navigation": "renders/navigation_usability/metrics.json",
+    "native_guided": "renders/guided_highlights/metrics.json",
+    "complete_local": "/private/tmp/stapledon-bubble-final-serial-test.log",
+    "direct_strict_vm": "/private/tmp/stapledon-guided-pure-vm.log",
+    "direct_interpreter": "/private/tmp/stapledon-guided-pure-interp.log",
+    "sgr_return_red": "/private/tmp/stapledon-sgr-map-route-red.log",
+    "sgr_return_green": "/private/tmp/stapledon-sgr-map-route-green.log",
+    "final_navigation_gate": "/private/tmp/stapledon-navigation-footer-final.log",
+    "final_publish": "/private/tmp/stapledon-bubble-publish-dev-final-source.log",
+    "ai_unchanged_budget_repeat": "/private/tmp/stapledon-bubble-ai-quiet-check.log",
+    "matching_ci_log": "/private/tmp/stapledon-bubble-ci-final-green.log"
+  },
+  "notes": "Independent evaluator is separate from the implementing agent. Reviewed source and existing logs; inspected actual native images; independently compared focused strict/interpreter outputs, verified asset hashes and CI identity. No production edits or duplicate whole-suite tests. Historical red evidence is retained, all affected gates pass on final source. No claim that negative GPU measurement noise is a physical speedup.",
+  "public_spec_pin": "8895503d9c1cde3a6378cf7ecf78a96455f51a83",
+  "remaining_gates": [],
+  "scope": "Completed follow-up S/M/C/N/T sprint only. Does not complete all M5, R1, the end-to-end first-journey audit or deferred dense-cloud PR B.",
+  "historical_build": "v0.4.0-dev.25-free-nav-80-g37280faf; S/M/C gates passed, superseded by expanded N/T source",
+  "ci": {
+    "status": "COMPLETED",
+    "conclusion": "SUCCESS",
+    "run_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38164128167",
+    "matching_head": true,
+    "head_sha": "56ea60cb3953daae7ae9bcc5cf053e81162ecc8a",
+    "independently_queried": true,
+    "completed_at": "2026-10-11T20:45:59Z",
+    "log": "/private/tmp/stapledon-bubble-ci-final-green.log",
+    "log_sha256": "2e9e0358dc2b2b7744db1cece95ab089db7b49ebbc48678769db096b7fd2db1d"
+  },
+  "criteria_progress": {
+    "met": 8,
+    "total": 8,
+    "points": 30
+  },
+  "dev_build": {
+    "version": "v0.4.0-dev.25-free-nav-83-g56ea60cb",
+    "commit": "56ea60cb3953daae7ae9bcc5cf053e81162ecc8a",
+    "sha256": "11bcf7776bd4c893e684cc531e7657f0a5178e135e25809ba4efab3194362521",
+    "status": "published_per_actual_log",
+    "log": "/private/tmp/stapledon-bubble-publish-dev-final-source.log",
+    "export_smoke": "19/19 bodies, Jupiter and Callisto textured; final Callisto image opened",
+    "bucket_manifest": "gs://stapledons-voyage-dev-builds/macos/latest.json"
+  },
+  "public_navigation_design_commit": "a77d53f8",
+  "score_notes": {
+    "code_quality": "One point retained for the modest cross-layer map-label limitation: cloud collision handling does not coordinate with independent stellar labels. No blocking defect.",
+    "documentation": "One point retained for final landing bookkeeping still being recorded: sprint completion/Q state, design status and report wording must be finalized alongside the authorized main landing. Prepared design, companion sprint, report, changelog, roadmap and website evidence exist."
+  },
+  "landing_actions": [
+    "Record completed Q/sprint/design status and final independent score in the prepared landing documents",
+    "Merge the authorized feature and landing documentation, then publish the website",
+    "Record actual merge/publication identifiers after they occur"
+  ],
+  "documentation_check": {
+    "changelog_updated": true,
+    "examples_created": true,
+    "examples_note": "Runnable native capture, GPU benchmark, navigation and guided-highlight tools provide task-appropriate examples; no new package API requires a separate AILANG example.",
+    "design_doc_status": "Prepared under implemented/r1 together with companion sprint and completion report; final completed metadata belongs to authorized landing.",
+    "roadmap_updated": true,
+    "website_build": "Final Docusaurus build success per root evidence; publication follows landing."
+  },
+  "design_fidelity": {
+    "score": 10,
+    "notes": "Implements attended D64/D65 scope and public normative geometry/navigation designs. Uses existing package emission and existing finite-star planner; no new transport physics, eye-visible fog, fake terrain or position/clock edits. Legacy rule-zero itinerary and frozen 2.7 protocol remain compatible."
+  },
+  "feedback": []
+}

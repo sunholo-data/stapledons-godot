@@ -7,7 +7,7 @@ Approved: Mark's attended 2026-10-11 follow-up; design [bubble-surface-and-moon-
 - [x] C: Subtle source-based filled gas surfaces and uncertainty/instrument legend; map interaction checks and capture. Registry reuse: depend on celestial0.4 geometry; no new cloud inference.
 - [x] N: Stationary standalone map, scrollable details, visible zoom/review and Enter/Space/Esc through actual Mars journey; 17 checks and native captures.
 - [x] T: Seven true guided legs at existing D-54 finite-star stops; 134 controller checks, strict/interpreter parity and 18 native references.
-- [ ] Q: Full local/CI, independent judge, dev build, docs/changelog and main/gallery landing.
+- [x] Q: Complete serial local and exact-source CI pass; independent PASS 98/100; final review build published; docs/changelog and main/gallery/news landing verified.
 
 S and M are independent file scopes and run in parallel per sprint-executor; root owns S/C and integration. M owns planet texture inputs/tools/tests/smoke only. First write failing meaningful tests for missing maps/footprint bounds; do not alter old scientific check values to fit images. Inspect actual native output before selecting default. Templates/math are not new production AILANG code; syntax gate applies if .ail changes become necessary.
 

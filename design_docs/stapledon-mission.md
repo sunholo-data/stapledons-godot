@@ -49,7 +49,7 @@ Dense-cloud PR B remains deferred; see the [completion report](implemented/r1/is
 and [dense follow-up](planned/r1/ism-dense-clouds.md).
 
 This is attended work, not a new mission iteration. The loop remains scheduled at
-six-hour intervals; its latest reported [14:09 UTC, 11 October attempt](https://github.com/sunholo-data/stapledons-godot/issues/119#issuecomment-6109886921)
+six-hour intervals; its latest reported [20:10 UTC, 11 October attempt](https://github.com/sunholo-data/stapledons-godot/issues/119#issuecomment-6113222904)
 parked because controller lanes were unavailable or out of quota. Its next product
 target is the M4 console-based complete-journey audit. D-52/D-56 still requires the
 amended scene plan and its existing approval checkpoint before that execution.

@@ -1,9 +1,9 @@
 {
   "id": "R1-BUBBLE-MOONS",
-  "status": "in_progress",
+  "status": "completed",
   "approval": "Mark attended 2026-10-11: ok yes please do; Callisto textureless grey ball; D-65 accepted guided highlights and requested manual controls",
-  "design_doc": "design_docs/planned/r1/bubble-surface-and-moon-textures.md",
-  "sprint_plan": "design_docs/planned/r1/bubble-surface-and-moon-textures-sprint.md",
+  "design_doc": "design_docs/implemented/r1/bubble-surface-and-moon-textures.md",
+  "sprint_plan": "design_docs/implemented/r1/bubble-surface-and-moon-textures-sprint.md",
   "features": [
     {
       "id": "S",
@@ -73,7 +73,7 @@
       "acceptance_criteria": [
         "Q1"
       ],
-      "passes": null
+      "passes": true
     }
   ],
   "registry_reuse": [
@@ -115,12 +115,31 @@
   ],
   "velocity": {
     "estimated_total_loc": 1100,
-    "actual_total_loc": 0,
+    "actual_total_loc": 1118,
     "estimated_days": 1,
-    "actual_days": 0
+    "actual_days": 1
+  },
+  "landing": {
+    "game_pr": "https://github.com/sunholo-data/stapledons-godot/pull/201",
+    "game_merge": "6c956c0bb83eeee539a166bafa4b489d76302732",
+    "public_design_status_pr": "https://github.com/sunholo-data/stapledons-design/pull/16",
+    "gallery": "https://www.sunholo.com/stapledons-godot/gallery",
+    "news": "https://www.sunholo.com/stapledons-godot/news/2026/10/11/callisto-and-the-bubble-wall",
+    "pages_run": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38173974688",
+    "public_routes_verified": true,
+    "dev_build": "v0.4.0-dev.25-free-nav-83-g56ea60cb",
+    "dev_build_sha256": "11bcf7776bd4c893e684cc531e7657f0a5178e135e25809ba4efab3194362521",
+    "evaluation": ".ailang/state/evaluations/eval_R1-BUBBLE-MOONS_round_1.json",
+    "evaluation_score": 98,
+    "completion_report": "design_docs/implemented/r1/bubble-surface-and-moon-textures-report.md"
   },
   "validation": {
-    "status": "running",
+    "status": "passed",
+    "runtime_source": "56ea60cb3953daae7ae9bcc5cf053e81162ecc8a",
+    "local_exit_code": 0,
+    "local_log_sha256": "b7a2e5f83e51789eadf52caddd2488e9120ff8c2406da9509476c8e8ccf882bc",
+    "ci_url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/38164128167",
+    "ci_conclusion": "success",
     "source_baseline": "62eae17",
     "navigation_checks": 17,
     "guided_controller_checks": 134,
@@ -128,6 +147,6 @@
     "cloud_checks": 18,
     "moon_checks": 121,
     "golden_log": "/private/tmp/stapledon-bubble-full-golden.log",
-    "ci_note": "Final full source CI required; earlier local integration run caught restored footer hint and AI timing gates. No gate waived."
+    "ci_note": "Complete final serial local and exact-source CI pass. Earlier integration runs caught the footer hint and AI timing failures; all unchanged budgets pass in the final run. No gate waived."
   }
 }
