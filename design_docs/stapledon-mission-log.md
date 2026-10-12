@@ -1128,3 +1128,44 @@ DECISIONS FOR MARK: none (generated from zero OPEN rows). No approval request ma
 - **Next:** Mark's D-66. Then H1/H2 (attended) → M4.5aR3 ∥ M4.6gR3. Meanwhile triage L1 → L6 → L2.
 
 DECISIONS FOR MARK: D-66 (approve M4 revision round 3).
+
+## 2026-10-12: iteration 26, L6 export completeness LANDED (PR #211): static `res://` audit in `make test` and strict pack oracle in `publish-dev`; independent eval Sonnet 84/100 PASS; credits iteration 25's orphan L1 (PR #192) [PRODUCT]
+
+- **Pick:** triage L6 (export completeness). There was no routable UNMET-clause row. Clause 4's M4.5aR3 and M4.6gR3 waited on the D-66 hooks H1/H2: PR #208 was OPEN at pick (re-measured with `gh pr view 208`), and the Do-not-touch line covered both files. Clause 1's M1.5b is renders, so it is attended. L1, the groom head, had already landed (see Orphan below), so per the groom order the pick moved to L6. PR #208 then merged at 19:03Z, mid-iteration. The sprint branch was merged with it, and the audit stayed green.
+- **Progress:** clauses 2 and 3 MET; 1 and 4 UNMET; 5 ongoing. Goal unmoved: L6 is clause-5 hygiene.
+- **Orphan (iteration 25, 2026-10-09):** a fire with a glm-5.3 controller ran L1 through all four roles: designer glm-5.3, planner kimi-k3, executor deepseek-v4.1-flash, evaluator minimax-m3 96 PASS. It opened PR #192 "(iteration 25)" and paused at Gate 3b (slot verdict `PAUSED-NO-CAPACITY_at=gate-3b`, 08:05Z). It never wrote a log entry. Mark merged PR #192 at 2026-10-09T12:26Z (merge `42f498a`). Iteration 24 did not notice and still listed L1 as next. The traces were the worktrees `.wt-stapledon-iter25-{l1,designer,planner,eval}` and the merged PR. Credited here; the index gets a row for 25.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing CLEAN. Issue #203: 0 allowlisted directives since 2026-10-08T18:31:59Z (2 comments). Self-notices rc 0 (control 4:5). Inbox: no directives to this mission. Ledger valid: 67 rows, 0 OPEN. No rotation: #203 was created 2026-10-12T08:39Z, after Monday 07:00 local.
+- **Gate 1:** origin/main `98ec78be1b957547e70d061b0c105646d94f7192`; CI `success`, check set 1/1. Skill and 12 resources: 26 of 26 files match origin/dev (resolved symlink and pin, both checked). The main checkout is 498 behind and dirty, so it was untouched. Work happened in fresh clones `.stapledon-loop-iter26` and `.stapledon-eval-iter26` (siblings of the repo, no worktrees).
+- **Reality check:** L6's smoke half had already landed (`93cda65`, plus `01af4c5` for the lens filter). Its static half was missing: no export-filter audit existed beyond `tests/test_planets.gd:206-212` (2 of 24 entries).
+- **Design:** claude-opus-5-5 via `claude-sub`, one revision.
+  - Quorum round 1 BLOCKED. kimi-k3 and gemini rejected; both objections were unverified premises. The controller measured both: `physics/schwarzschild.gd:221-222` reads `.json` and `.bin`, and the pack suffix counts are gdc 81, scn 10, remap 91, and no `.tres` in the repo. The measurements went to the designer as V20 to V23.
+  - Round 2 BLOCKED. kimi-k3, gemini and glm-5.3 rejected on three surfaces: a silent skip in the oracle, an inconsistent captain-PNG claim, and a single-quote regex blind spot. Each came with a reviewer-authored `proposed_fix` and none disputed the direction, so the controller applied them verbatim under the narrow-refinement carve-out (V24 to V26, quorum log). The one controller consistency note is labelled as such.
+  - gpt6-1-sol was unreachable in both rounds: PROCEED-path N−1, recorded.
+- **Plan:** kimi-k3 (pi), 2 milestones. 12 plan findings fixed the choices the design had left open.
+- **Execution:** claude-haiku-5-5, test-first.
+  - Red runs: T1 (missing preload) and T2 (the real arm caught G1, `hip_v7.tsv`).
+  - L6a: 461 LOC, 16/16 mutants killed. L6b: 124 LOC. LOC came in at about twice the estimate, because of the 22 DYNAMIC rows with reasons.
+  - The executor could not run `make runtime` (its recipe runs `git checkout`), so the controller staged it and measured `make STRICT=1 export-pack-check-strict` at 648 checked, 0 skips, 0 failures.
+  - Commits were rebuilt from the `.snap/` snapshots by plumbing (bad3c3e L6a, d7762cd L6b); the tree was byte-identical to HEAD.
+- **Evaluation:** Sonnet (Agent tool, its own clone, on merge head `e65e02d`): r1 **84 PASS**, 0 blocking, 22 real-edit mutations including the L6b non-vacuity revert. Six non-blocking findings carried to the queue (row 7f).
+- **Local `make test`** (AILANG v0.52.0 pinned, on `d7762cd`, rig load ≈ 22 on 16 cores from a concurrent attended suite): every prerequisite before `ship-demo-ci` passed, including `export-filter-audit: 90 literals, 44R 10F 22D 14X, 0 failures`. `ship-demo-ci` stopped at `benchmark-upload-test` (1 failure, `link only appears after confirmed upload success`), which then passed on two re-runs. The 15 remaining sub-targets plus `loading-jump-test` passed with `-k` (rc 0). Attribution: the test is load-sensitive (child `sleep 1`) and pre-existing, not from L6; filed as row 7f(e).
+- **Landing / Gate 3b:** PR #211, opened on `6a50c4d` (sprint commits plus the merge with #208). Mark merged it at 19:52Z (merge `e2a013f`), before PR CI finished. The poll was pinned to the merge SHA: push run 38300552694 run 38300552694 `success` (check set 1/1); PR run 38299679581 `success`.
+- **Upstream:** none new.
+- **Routing evidence:** base=e2a013ff459b1d1144e1ecddb3e1593ab7a9da35@2026-10-12T22:13:04Z.
+  - Controller claude:claude-opus-5-5 (tok: not reported).
+  - Designer `recipe claude:claude-opus-5-5 declared:provider-pin` via `claude-sub` (create 68,747 cache-create + 1,454,282 cache-read + 28,901 out; revision run reported separately; subscription, metered $0). Rotation pointer was `claude:claude-opus-5-5`; the resolver was followed verbatim.
+  - Quorum metered: $0.2170 (r1) + $0.2167 (r2) = $0.43.
+  - Planner: resolver `fail-closed:no-doc` before the doc existed; with the doc, `recipe pi:ollama/kimi-k3:cloud declared:planner-lane-default-pin` via `mission_pi_run.sh` (verdict ok, 640 s, 40 tools; 95,750 in / 53,961 out / 1,252,953 cache-read; flat-rate).
+  - Executor `recipe claude:claude-haiku-5-5 declared:provider-pin` via `claude-sub` (59 turns; 227,006 cache-create + 8,857,079 cache-read + 137,012 out; subscription).
+  - Evaluator `agent-tool sonnet declared:alias-pin` (85,331 tok, 26 tools, 512 s). judge-independence: cross-model (Sonnet vs a Haiku executor and an Opus designer).
+  - Routing note: `$MISSION_ROUTING_NOTE`, codex over the daily ration for planner and executor. Metered $0.43.
+- **Ruled out:**
+  - Taking M4.5aR3 or M4.6gR3 while PR #208 was open (Do-not-touch).
+  - Re-running L1 (orphan, landed).
+  - Treating `data/news/copy.json` as a gap (JSON auto-packs, V9).
+  - Hand-staging the export bundles in the eval clone to make strict green there (strict failing loudly without `export-macos` staging is correct).
+  - A third quorum round (the carve-out applied instead).
+- **Retro:** one friction: a fire that dies at Gate 3b after its PR merged leaves no log entry, and the next iteration's pick check misses it unless it reads `git worktree list`. Second instance after iteration 21; recorded, no skill edit (the mission may not edit the shared skill). The attended Do-not-touch line was refreshed mid-iteration for D-68 (PR #210).
+- **Next:** M4.5aR3 ∥ M4.6gR3 once the attended D-68 change lands (D-68 was resolved attended 2026-10-12 during this iteration, PR #210; it holds the Do-not-touch line). Until then, L2 → L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: none.
