@@ -1045,9 +1045,13 @@ expected, limit 360 s** (D-14).
 
 **Acceptance — every row a command (round-3 forms):**
 - **AC3** — `make playthrough SCRIPT=tests/adversarial.json`;
-  `! grep -rniE "save_game\|load_game\|ResourceSaver" interior ui demos`
+  `! grep -rniE "save_game|load_game|ResourceSaver" interior ui demos`
   (extended to `demos`; **verified zero matches at `cda0cc7`** in all
-  three trees).
+  three trees). Plain `|` alternation, as in the live `transit-test`
+  recipe (`Makefile:101`): under `-E` an escaped `\|` is a literal pipe
+  and the check could never fail (evaluator round 1, blocking 1). Positive
+  control: the same pattern must match a fixture line containing
+  `save_game` before the negative check counts.
 - **AC4** — `make playthrough display-audit` — 0 mismatches, 0 unbound
   numerals, ≥ 500 samples, both clocks and the ISM readout on every
   transit sample, codex hash-equal. No area-bundle gate applies (the

@@ -1,0 +1,28 @@
+{
+ "sprint_id": "R1-M4-JOURNEY (revision round 3, plan evaluation)",
+ "evaluator_model": "claude-sonnet (Agent tool)",
+ "round": 2,
+ "date": "2026-10-12",
+ "score": 90,
+ "pass": true,
+ "rubric": {
+  "fidelity_to_rulings": "18/20: unchanged from round 1.",
+  "factual_accuracy_at_HEAD": "19/20: AC3 grep defect fixed; remaining citations unchanged and confirmed.",
+  "acceptance_executability": "18/20: AC3 now uses plain | alternation (git diff verified in sprint md and JSON M4.5 row), positive control required; AC5 sim-only caveat remains non-blocking.",
+  "physics_gates": "13/15: unchanged.",
+  "sizing_deps_waves": "10/10: unchanged.",
+  "json_and_ask_hygiene": "12/15: JSON valid (jq); passes values unchanged."
+ },
+ "spot_checks": [
+  {"claim": "Round-3 AC3 command in sprint md uses plain | with positive control", "verdict": "CONFIRMED", "evidence": "git diff hunk at ~line 1045"},
+  {"claim": "JSON M4.5 AC3 string fixed and file valid", "verdict": "CONFIRMED", "evidence": "git diff + jq . ok"},
+  {"claim": "Plain-| pattern actually matches (positive) and finds nothing in interior ui demos", "verdict": "CONFIRMED", "evidence": "echo 'x save_game' | grep -niE matched; tree grep empty"},
+  {"claim": "Design doc m4-first-journey.md:662 \\| inside a table is acceptable", "verdict": "CONFIRMED", "evidence": "GFM treats \\| as the cell-pipe escape, including inside code spans, so it renders as |; the amendment section already routes AC3 to the round-3 form. Non-blocking, but copy-pasting from raw source would reintroduce the literal pipe."}
+ ],
+ "blocking": [],
+ "non_blocking": [
+  "Optionally rewrite the design doc AC3 cell without a pipe (e.g. three -e flags: grep -rniE -e save_game -e load_game -e ResourceSaver) so raw-source copy is safe.",
+  "Round-1 non-blocking items (AC5 sim-only, playthrough CI time, S2-S4 spec check values, who opens H1/H2) remain open."
+ ],
+ "summary": "The blocking AC3 grep fix is applied correctly in the round-3 section and the sprint JSON; the JSON is valid. The design-doc table escape is acceptable under GFM rendering. No blocking items remain."
+}

@@ -1,0 +1,45 @@
+{
+ "sprint_id": "R1-M4-JOURNEY (revision round 3, plan evaluation)",
+ "evaluator_model": "claude-sonnet (Agent tool)",
+ "round": 1,
+ "date": "2026-10-12",
+ "score": 84,
+ "pass": true,
+ "adaptation": "Rubric adapted to a plan: code/tests/lint categories become fidelity to D-52/56/57/14, factual accuracy of inventory (spot-checked at HEAD), command-checkable acceptance, physics-gate coverage, sizing/deps/waves, and JSON/ask hygiene. No code run (per instructions).",
+ "rubric": {
+  "fidelity_to_rulings": "18/20: D-52 A, D-56 console decisions, D-57 absorption, D-14 360 s all honoured; bot uses walk_to/use, never keys.",
+  "factual_accuracy_at_HEAD": "18/20: 10+ citations confirmed; only defect is the grep alternation (below) and one stale count caveat.",
+  "acceptance_executability": "14/20: every AC is a command, but AC3's grep is vacuous (literal pipe under -E) and AC5's byte-replay is --sim-only so it proves sim determinism, not that the 3D ship was exercised (covered indirectly by AC4/pole assertion).",
+  "physics_gates": "13/15: S2/S3/S4 goldens + S1 renders + existing spec check values satisfy gate gets; dropping G-M4-1 is justified (no pan composite in the 3D ship). Spec check values for the 3D-ship goldens are asserted only by reference to existing rows, not enumerated.",
+  "sizing_deps_waves": "10/10: 300/180/280/200 LOC all under 350, dependencies acyclic, S1 park before merge.",
+  "json_and_ask_hygiene": "11/15: JSON valid, passes true only on evidenced rows (M4.6a true; M4.3b/M4.5/M4.6 null). Q-r3-1 has options, recommendation, default. Minor: M4.6a true rests on static verification."
+ },
+ "spot_checks": [
+  {"claim": "M4.3b closed by absorption: R1-SHIP-UI consoles/HUD exist (demos/ship_consoles.gd use :194, walk_to :358, WALK_SPEED_MPS 3.5 :22; ui/ship_hud.gd TRANSIT_COMPACT :34, bindings :42-46)", "verdict": "CONFIRMED", "evidence": "sed/grep at HEAD; Makefile ship-ui-test/ship-console-test/no-twitch-test:970-976; tests/test_ship_ui.gd, test_ship_consoles.gd, test_no_twitch.gd exist; merges 70c445c, 3e011a9, 91cdde3 in git log"},
+  {"claim": "Residue forward-pole invariant untested in the 3D ship", "verdict": "CONFIRMED", "evidence": "grep pole in test_ship_ui/consoles/no_twitch/ship_demo_live finds only unrelated 'forward' look-direction hits; G-M4-3 is only in tools/interior_golden.gd:10 and Makefile:294"},
+  {"claim": "playthrough, display-audit targets and tests/playthrough_min.json, adversarial.json, display_audit.gd absent", "verdict": "CONFIRMED", "evidence": "grep of Makefile/mk/*.mk; ls: No such file"},
+  {"claim": "replay (Makefile:150), parity-m4/codex-unlocks/playthrough-time (mk/m45.mk:9,29,41) exist", "verdict": "CONFIRMED", "evidence": "grep -nE targets"},
+  {"claim": "capture-m4 (:115) and m4-smoke (:85) drive --interior; bench has no SCENE", "verdict": "CONFIRMED", "evidence": "capture-m4 runs -- --interior-capture=renders/m4; m4-smoke runs -- --m4-smoke; grep SCENE Makefile empty; bench recipe uses --bench"},
+  {"claim": "golden (Makefile:283) includes interior G-M4-1..6 with counts at :293-296", "verdict": "CONFIRMED", "evidence": "sed 293,296 shows G-M4-3 =6, G-M4-4 =8, G-M4-6 =10, G-M4-5 =6"},
+  {"claim": "Walking 3.5 m/s along WalkArea.path real", "verdict": "CONFIRMED", "evidence": "demos/ship_consoles.gd:22 const WALK_SPEED_MPS := 3.5; comment :356 'along WalkArea.path (3.5 m/s, the WASD speed)'"},
+  {"claim": "~225 s estimate plausible (134.70 + ~30 walks + ~14 console + ~45 reading)", "verdict": "CONFIRMED", "evidence": "sum = ~224 s; 360 s limit leaves 135 s margin; 67.35 s/leg consistent with ui/journey_pacing.gd:4 PHASE_SECONDS 20 (UNVERIFIED: 67.35 s measurement lives in m4.5s-inventory.md, not re-run)"},
+  {"claim": "H1 required: record seam missing; SimBridge.record_path opens tee inside start() (bridge/sim_bridge.gd:121-124)", "verdict": "CONFIRMED", "evidence": "sed shows FileAccess.open in start path; grep record_path demos/*.gd empty; ship_geometry_demo.gd:591 creates journey_sim; main.gd:195 plain launch+--record routes to title; main.gd:97/150 demo_overrides merge"},
+  {"claim": "H2: _archive_panel at ~:804 (actual :805); NewsPanel.open :156 / show_world :182; LegacyScreen.show_world :77", "verdict": "CONFIRMED", "evidence": "sed on ui/news_panel.gd, ui/legacy_screen.gd, grep ship_consoles.gd"},
+  {"claim": "PR merges f0420c3, 029e44b, 1d127ca, 93d01c5, 8b8930f, f52a2cf, 81f48a7, 28979e2 exist; m4-track-b branch absent; relativity pin 0.12.0 with glowEmittanceAt", "verdict": "CONFIRMED", "evidence": "git log grep; git branch -a | grep track-b empty; sim/ailang.toml:19; sim/consequence.ail:12,93"},
+  {"claim": "main.gd:9-10 and ui/title_screen.gd:22 route 'ship' / Board the ship; demo_overrides merge main.gd:150", "verdict": "CONFIRMED", "evidence": "sed outputs"},
+  {"claim": "AC3 grep `! grep -rniE \"save_game\\|load_game\\|ResourceSaver\" interior ui demos` is a meaningful check ('verified zero matches')", "verdict": "WRONG", "evidence": "Under -E, \\| is a literal pipe: `echo save_game | grep -niE 'save_game\\|load_game\\|ResourceSaver'` returns rc=1 (no match). The check passes vacuously regardless of tree contents. A correct unescaped alternation also finds zero matches today, so the claim of zero matches is true but the command proves nothing."},
+  {"claim": "ShipHud/ DisplayBinding.audit at ui/display_binding.gd:47, ForwardGlow.profile interior/forward_glow.gd:44, set_glow demos/ship_geometry_demo.gd:286, interior_golden TOL_PX 0.75", "verdict": "CONFIRMED", "evidence": "sed outputs on each line"}
+ ],
+ "blocking": [
+  {"issue": "AC3's no-save/load grep (R3-3 Acceptance, and inherited in design doc AC3) uses `-E` with `\\|`, which is a literal pipe, so it passes vacuously.", "proposed_fix": "Change to `! grep -rniE 'save_game|load_game|ResourceSaver' interior ui demos` in the round-3 section, the design doc AC3 row, and the sprint JSON acceptance, and add a positive control (e.g. grep -c against a fixture line containing save_game must be 1)."}
+ ],
+ "non_blocking": [
+  "AC5 replay uses --sim-only, so it proves byte-identical sim output, not that the scene produced the session; tie it to AC4 (sample count, both clocks on every transit sample) as already done, and have playthrough assert the recorded session contains intents issued via console use() (count of commit intents == 2).",
+  "M4.6a passes:true rests on static planner verification; acceptable since PR #113 eval 89 PASS and merge f0420c3 exist, but note the row cites eval_glow-blackbody-080, not a M4.6a-scoped eval.",
+  "Goldens S2/S3/S4: list the spec check values (relativity-spec sections) asserted in tests/test_physics.gd for the ship forms, not only 'reuse existing rows'.",
+  "H1/H2 are attended and block the first wave; plan says so, but default-if-unanswered leaves them idle: state who opens the micro-PRs once Mark approves.",
+  "playthrough is wired into make test: running real sim plus full 134 s of transit headless at 20 Hz wall-time may dominate CI; confirm a fake-clock or tick-accelerated path (journey_tick) keeps it short.",
+  "Stale 'Milestone table' and 'Review checkpoints' sections remain with only a supersession banner; acceptable."
+ ],
+ "summary": "Faithful, well-verified implementation of D-52(A)/D-56/D-57. 14 of 15 spot-checks CONFIRMED against HEAD; the M4.3b absorption claim, the forward-pole residue, the make-target inventory, the 3.5 m/s walking model, and the H1 requirement are all true. One real defect: AC3's grep alternation is a literal pipe under -E, so that criterion passes vacuously (cheap fix). Physics gating via G-M4-S2/S3/S4 plus S1 renders is adequate and the G-M4-1 drop is justified. Sizing, deps, JSON and the Mark question are sound. Passes at 84; recommend approval after the grep fix, which can be applied as a small edit rather than a re-plan."
+}
