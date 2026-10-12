@@ -1,0 +1,173 @@
+{
+  "sprint_id": "R1-M1-SKY",
+  "milestone": "M1.2b-T1_TRANSFORM",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-01T11:04:13.804634+00:00",
+  "reviewed_sha": "e5908ce7fa7041db407f1e36af44316fc8806936",
+  "base_sha": "d26cacfca50c69ca0c2c46faf3c91afa954b28f5",
+  "evaluator_model": "Anthropic claude-sonnet-5-5 (Sonnet 5.5)",
+  "generator": "Codex GPT6.1 Sol",
+  "design_doc": "design_docs/planned/r1/m1-relativistic-sky.md (unchanged in diff)",
+  "sprint_plan": "design_docs/planned/r1/m1-relativistic-sky-sprint.md",
+  "total_score": 88,
+  "pass_threshold": 70,
+  "result": "pass",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 27,
+    "code_quality": 12,
+    "documentation": 13,
+    "design_fidelity": 6
+  },
+  "hard_fails": [],
+  "parent_passes": "M1.2b_AILANG_CATALOGUE passes remains null (verified); child M1.2b-T1_TRANSFORM passes null awaiting this verdict (controller sets)",
+  "commands": {
+    "ailang": "/Users/voightkampff/dev/sunholo-data/.stapledon-wt-iter4/runtime/bin/ailang (v0.47.2)",
+    "make test (AILANG=AILANG_BIN=that binary)": "rc=0; physics 42/42, AILANG 30/30 (incl. 10 T1 named tests), parity 601 lines, parity-offaxis 17, strict, wd-vm, catalogue-vm printed transform-ok/selection-ok, extraction 15/15",
+    "ailang check --package sim": "rc=0",
+    "ailang test --package . (cd sim)": "rc=0, 30/30",
+    "CI": "ci.yml runs `make test`; `make -n test` shows catalogue-vm in prerequisites (transformVm count 2 in dry run)",
+    "reverse repro": "strict VM rc=1 'std/list.reverse is evaluator-only'; interpreter rc=0 [3,2,1] - reproduced independently",
+    "platform": "darwin/arm64 only; no GPU/renderer files changed, human gate N/A"
+  },
+  "mutation_method": "Python structural str.replace with count==1 assert, sha256 of mutant differs, ailang check rc recorded (all 68 landed mutants built rc=0), then named `ailang test` failures AND strict-VM and interpreter entry outputs; file restored from copy, sha256 asserted identical (147e2454f91c...). Raw: eval_R1-M1-SKY_M1.2b-T1_iter7_round1_mutants.json. Reproduced independently, not copied from executor mutations.json. Non-vacuity measured against this milestone's production diff only (sole new files + Makefile/toml hunks).",
+  "mutation_summary": "68 mutants attempted, all 68 landed uniquely and built (ailang check rc=0); 60 killed by >=1 named T1 test AND strict-VM BAD AND interpreter BAD; 8 survived (2 real test gaps, 1 measured residual, 5 equivalent/unreachable/redundant).",
+  "survivors": [
+    {
+      "name": "flag-dwarf-uses-wd-table",
+      "kind": "REAL GAP (nonblocking)",
+      "detail": "dwarf rows use bbBpRpInvertible instead of bpRpInTable -> all 10 tests, strict VM, interpreter green. Fixtures use dwarf BPRP 0.823 and -9 where both predicates agree. Probed: BPRP 2.5-5.0 dwarfIn=T wdInv=F, BPRP -0.5 dwarfIn=F wdInv=T. A dwarf at BP-RP 2.5 would discriminate."
+    },
+    {
+      "name": "trailing-blank-strip-two",
+      "kind": "REAL GAP (nonblocking)",
+      "detail": "accepting two trailing blank lines survives; production correctly rejects 'row\\n\\n' (probed: err blank CSV row) but no test pins double-trailing-newline refusal; internal blank is pinned only by a\\n\\nb."
+    },
+    {
+      "name": "tier-limit 50000->49999",
+      "kind": "MEASURED RESIDUAL",
+      "detail": "production constant only pinned via small-limit helper; ->1 is killed, ->49999 not. Plan states full-medium integration owns this."
+    },
+    {
+      "name": "finite-nan (v == v removed)",
+      "kind": "equivalent/redundant",
+      "detail": "NaN fails both range comparisons anyway"
+    },
+    {
+      "name": "number-none (None=>7.0)",
+      "kind": "unreachable",
+      "detail": "guarded by prior finite()/optional() and missing short-circuit; not declared in code"
+    },
+    {
+      "name": "blank-row-branch",
+      "kind": "redundant",
+      "detail": "split('')=[''] falls to 'expected seven fields' Err; outcome both Err"
+    },
+    {
+      "name": "empty-input-branch",
+      "kind": "unreachable",
+      "detail": "split never returns []; undeclared dead branch"
+    },
+    {
+      "name": "nearer-tie-nonstable (tie->1)",
+      "kind": "equivalent given sortBy impl",
+      "detail": "tie->-1 is killed (stable equal distance order); tie->1 behaves identically under this stable sortBy"
+    }
+  ],
+  "refusal_branch_coverage": {
+    "killed_by_T1 field rejection before missing shortcut": [
+      "finite upper/lower/None, optional finite, blank id (trim), x,y,z,g,c checks, wd check, wrong field count, error propagation, trailing-blank-always-strip"
+    ],
+    "killed_by_T1 exact header": [
+      "header check"
+    ],
+    "killed_by_other_tests": [
+      "blank internal row accepted only via 'blank-row-branch' redundancy"
+    ],
+    "note": "each refusal predicate has its own killer; sole-killer claims not made (all rejections share one named test checkReject; splitting is advisable)."
+  },
+  "makefile_guard": {
+    "reached": "make test and CI `make test` -> catalogue-vm (make -n shows it; real run printed transform-ok/selection-ok)",
+    "strictVM-only defect": "mutating reverseRows to std/list.reverse: ailang check rc=0, `ailang test` named tests all pass (interpreter), `make catalogue-vm` rc=2 with strict VM error -> guard is non-redundant to named tests",
+    "equality guard": "input-counter defect: intact guard rc=2; `test \"$(cat..)\"=want` neutered -> rc=0 and prints selection-BAD -> the equality check is load-bearing",
+    "toml export removal": "`ailang check --package sim` rc=1 (catalogue_test.ail fails) and catalogue-vm rc=2",
+    "not pinned": "removing catalogue-vm from the test prerequisite list has no meta-test (same as existing wd-vm wiring)"
+  },
+  "named_targets": [
+    {
+      "target": "foldl-cons reversal replaces std/list.reverse",
+      "verdict": "MEASURED RESIDUAL, not a blocker",
+      "evidence": "upstream bug independently reproduced (VM rc=1 vs interp rc=0); replacement is pure, O(n), proven order-preserving by row-order/reverse-identity mutants (7 and 6 named tests red); the guard that catches regression to std/list.reverse is catalogue-vm. Perf at full catalogue (3+ reversals of full row list) belongs to integration milestone."
+    },
+    {
+      "target": "selectTier non-medium pass-through / unknown tier",
+      "verdict": "MEASURED RESIDUAL, nonblocking",
+      "evidence": "probe: tier 'bogus' and 'Medium' return all rows, excluded 0 silently (strict VM). Contract in design/plan covers quick/medium/large only and executor documented; the writer/caller must validate. Not an AC of this child. Recommend sum type or Result when the writer lands."
+    },
+    {
+      "target": "float64 squared-distance overflow",
+      "verdict": "MEASURED RESIDUAL, nonblocking",
+      "evidence": "probe: rows (2e200,0,0) listed before (1e200,0,0), limit 1 selects the farther 'far' (both inf; tie keeps source order); 1e150 vs 1e140 orders correctly. GCNS is <=~1e3 pc so range is ~147 orders away. Finite() admits all binary64 by comment; transform does not refuse. Acceptable, document in writer."
+    },
+    {
+      "target": "planner claim Sept27 approval covers split",
+      "verdict": "CONFIRMED",
+      "evidence": "git diff: m1-relativistic-sky.md has no changes; plan refinement adds a section and sprint JSON adds a child with parent passes null; child ACs restate design lines 180-203 (missing sentinel, extends past missing rows, 50,000 nearest incl. WD) without changing thresholds. No design AC edited."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "criterion": "Pinned v0.47.2 check/test --package sim passes with package-only transforms, anchors, missing WD flags=3, counters, clamp flags",
+      "met": true,
+      "evidence": "checkNormal/WD/Clamp/Missing/Selection; check rc=0; 30/30; anchors 5770/0.165, 3229.05/17.1398, 5202.556030832587/20.89920219434688, 8941.61808557/0.064716662329, 3000K flags 21. Dwarf out-of-table flag branch only partially discriminated (flag-dwarf-uses-wd-table survives)."
+    },
+    {
+      "criterion": "Exact fixture membership/order: quick/large input order, medium nearest complete incl WD, excluded=2, stable ties, small-input exhaustion",
+      "met": true,
+      "evidence": "checkSelection asserts [nearwd,second] / [nearwd,second,far], excluded 2; ties; limit 0; killed by quota/skip/excluded/sort/order mutants"
+    },
+    {
+      "criterion": "F1-F3/F5 parser tests reject partial invalid/nonfinite, blank ID, malformed y/z, field count, invalid WD; partial blanks become sentinel rows",
+      "met": true,
+      "evidence": "checkReject 18 cases (x,y,z,g,c individually, NaN/Inf/1e309, wd=2, 6 and 8 fields), partial blanks in fixture; all predicates killed"
+    },
+    {
+      "criterion": "make test green; independent evaluation passes; LOC<=250; parent null",
+      "met": true,
+      "evidence": "make test rc=0; diff numstat Makefile +12/-1, toml +1/-1, catalogue.ail 63, catalogue_test.ail 62 = 138 changed code/test/config lines; parent M1.2b_AILANG_CATALOGUE passes None"
+    }
+  ],
+  "blocking_findings": [],
+  "nonblocking_findings": [
+    "N1 test gap: dwarf bit-16 flag is not discriminated from WD invertibility; add dwarf BP-RP 2.5 (T for table, F for WD) expecting flags 0, and dwarf -0.5 expecting 16.",
+    "N2 test gap: add 'row\\n\\n' (double trailing newline) rejection to checkReject.",
+    "N3 production limit 50000 only unit-pinned for small limits; integration milestone must assert 50,000 at boundary (plan assigns).",
+    "N4 dead/redundant branches (empty input [] arm, blank-row arm, number None arm, v==v) undeclared in code; declare or remove.",
+    "N5 one named refusal test aggregates 18 refusals: failures cannot localise which refusal regressed.",
+    "N6 sprint JSON reserialisation converted section sign and ellipsis to \\u escapes in two existing note/criteria strings (cosmetic churn).",
+    "N7 sim/ailang.toml still warns that catalogue_test and other *_test modules are not listed in [exports] (pre-existing class; warning only, check rc=0).",
+    "N8 selectTier is stringly typed with silent pass-through for unknown tiers (see named targets).",
+    "N9 code density: very long lines hamper review; style only.",
+    "N10 plan checkbox 'Independent evaluator verdict' remains unchecked as expected; controller records."
+  ],
+  "documentation_check": {
+    "changelog": "changelogs/unreleased/2026-10-01-catalogue-transform.md present (correct unreleased location, not root index)",
+    "design_doc_status": "unchanged, Planned, appropriate because M1.2b incomplete",
+    "example_files": "n/a"
+  },
+  "design_fidelity": {
+    "score": 6,
+    "notes": "Matches M1 missing-photometry, medium=50,000 nearest incl WD, flags bit semantics and package-only physics; deductions for dwarf-flag branch and boundary constant unpinned relative to what the plan advertised as exact checks."
+  },
+  "restoration": {
+    "catalogue.ail": "sha256 147e2454f91c12d8807419e367a08e4daba3a84c6aea8f61ab9a6e195ad818bf restored identical (drill script assertion + shasum re-check)",
+    "Makefile": "77655165a825e83d... restored identical",
+    "sim/ailang.toml": "4f0535896b8f1d09... restored identical",
+    "package cache": "not edited",
+    "stray": "sim/tools/.ailang cache dir created by ailang in evaluator worktree was removed; git status clean of tracked changes except these report files"
+  },
+  "notes": "Pass: 60/68 mutants killed by a named test and both runtimes; survivors are 2 real test gaps + 1 residual + 5 equivalent/unreachable. Verdict is PASS with no blockers; remediation items N1/N2 are cheap and recommended before writer milestone.",
+  "reported_timestamp": "2026-10-01T13:10:00Z",
+  "timestamp_correction": "Controller corrected the evaluator hand-written future timestamp from the observed terminal artifact mtime; verdict and findings unchanged."
+}

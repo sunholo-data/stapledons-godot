@@ -1,0 +1,37 @@
+module stapledons/ai/tools/playback_verify_test
+
+-- The WAV playback copy is checked against the Ogg blob (AI.10a): a stub
+-- clip's WAV passes; a WAV other than the one named, a changed sample, a wrong header, a wrong duration or
+-- another clip's sha fails.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/bytes (fromInts, concatList, slice)
+import std/bytes as B
+import std/crypto (sha256Bytes)
+import stapledons/ai/voice (Clip, stubPcm, assemble)
+import ./playback_verify (playbackError)
+
+pure func pvtClip(text: string) -> Option[Clip] =
+  match assemble([stubPcm({ emotion: "neutral", text: "Hi there." }), stubPcm({ emotion: "grieving", text: text })]) { Ok(c) => Some(c), Err(_) => None }
+pure func pvtFlip(b: bytes, at: int) -> bytes =
+  match slice(b, 0, at) { Some(a) => (match slice(b, at + 1, B.length(b) - at - 1) { Some(z) => concatList([a, fromInts([7]), z]), None => b }), None => b }
+
+export pure func checkPlayback() -> bool =
+  match pvtClip("Sleep now.") {
+    None => false,
+    Some(c) => {
+      let sha = sha256Bytes(c.ogg);
+      let w = sha256Bytes(c.wav);
+      let f = pvtFlip(c.wav, 1000);
+      let hd = pvtFlip(c.wav, 22);
+      playbackError(c.wav, w, sha, c.durationMs) == None &&
+      playbackError(f, w, sha, c.durationMs) == Some("not the WAV the index line names (wav_sha256)") &&
+      playbackError(f, sha256Bytes(f), sha, c.durationMs) == Some("PCM does not re-encode to the Ogg blob") &&
+      playbackError(hd, sha256Bytes(hd), sha, c.durationMs) == Some("not the canonical 24 kHz mono 16-bit header") &&
+      playbackError(c.wav, w, sha, c.durationMs + 1) == Some("length does not give duration_ms") &&
+      (match pvtClip("Sleep now, love.") { Some(d) => playbackError(d.wav, sha256Bytes(d.wav), sha, d.durationMs) == Some("PCM does not re-encode to the Ogg blob"), None => false }) &&
+      playbackError(fromInts([1, 2, 3]), sha256Bytes(fromInts([1, 2, 3])), sha, 0) == Some("shorter than a WAV header")
+    }
+  }
+
+test "AI.10a the WAV playback copy re-encodes to its Ogg blob" { checkPlayback() }

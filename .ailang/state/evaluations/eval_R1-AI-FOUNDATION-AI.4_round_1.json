@@ -1,0 +1,112 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.4",
+  "pr": 60,
+  "branch": "sprint/ai4-service",
+  "evaluated_commit": "e65beed",
+  "evaluation_round": 1,
+  "evaluator": "independent agent (not the executor); ailang v0.51.0 (runtime/bin/ailang, commit b99dd25), arm64; fresh worktree from origin/sprint/ai4-service; no network calls, no real keys, stub paths only",
+  "result": "pass",
+  "score": 90,
+  "max_score": 100,
+  "breakdown": {
+    "tests_pass": {
+      "score": 20,
+      "max": 20,
+      "notes": "make test AILANG=$A exit 0 in the fresh worktree (sim 118/118, ai 12/12; strict aiWireVm ai-wire-ok, 34 lines, digest 3f37195d4bf2e5f6, strict VM = interpreter; ai-stub: four key sets each 19 lines == golden, VM = interpreter, cache 34 files == tests/ai/cache.SHA256SUMS with no extra file, 27 text blobs sha256 == shasum -a 256 incl. non-ASCII; deps-ai green). make ai-stub and make ai-mutants (6/6 killed, each by its named test) re-run green. CI on the PR green (run 37041996512, 12m49s). The 'FAIL Alpha Centauri' lines in the log are the catalogue check's pre-existing informative output, not this PR."
+    },
+    "lint_clean": {
+      "score": 9,
+      "max": 10,
+      "notes": "No make lint target in this repo; the equivalent ailang check --package ai (inside ai-pkg-test) passes 11 files. -1: one real warning, 'module stapledons/ai/vm_test compiled but not listed in [exports].modules' (ai/ailang.toml:8 lists the other four test modules but not vm_test). No Python added; python-guard green."
+    },
+    "acceptance_criteria": {
+      "score": 30,
+      "max": 30,
+      "notes": "All 7 criteria in the sprint JSON verified by command: AC8 make ai-stub (both/gemini/none/textonly goldens, cache sums, VM == interpreter); AC8b cd ai && ailang test --package . 12/12 (route_test: text -> OpenRouter, else Gemini, else no_key; media never OpenRouter; text_only; 13 config refusals); AC6 part (27 text blobs vs shasum -a 256, incl. the non-ASCII line); AC7 part make strict-ai aiWireVm; deps-ai lock unchanged except generated_at; grep 'Amendment 2026-10-02: both providers' present at design doc :558; make test green."
+    },
+    "code_quality": {
+      "score": 11,
+      "max": 15,
+      "notes": "Clean module split (key/route/wire pure; cache FS; service IO+FS), hand-written inverse codecs, routing refused at start with a named fault for each of 13 bad configs, defence in depth in pick() (serves checked again at resolve time). Sprint JSON milestone complete (passes, dates, actual_loc, notes); sprint plan status updated. No TODO/FIXME; largest file 161 lines; no long functions. -2: ai/service.ail:39 treats an empty line as end of input, so a blank line mid-stream ends the service silently (probe: request after the blank line never answered) — Godot's relay must never emit one. -1: the two cache invariants the design states (temp+rename, index appended before the result is printed; ai/cache.ail:36-38, ai/service.ail:45-46) have no test: my mutants removing the rename and swapping say/writeBlob survive both the package tests and make ai-stub. -1: wire.errorCodes 'text_only' (ai/wire.ail:43) is not covered by any decoder test (dropping it survives everything; wire_test outLines has no text_only result line)."
+    },
+    "documentation": {
+      "score": 11,
+      "max": 15,
+      "notes": "Design doc carries the dated amendment with the full before/now table (providers, routing, keys, text-only, wire, config, cost, build keys, allowlist) plus an 'AI.4 as built' paragraph; it cites the sprint plan's 'Plan change: both providers' section (exists, sprint :71). Module headers explain each deviation and cite ailang#1516/#1517 at the workaround sites (provider.ail:81, wire_test.ail:41-42). PR body accurate. -3: CHANGELOG untouched (landing step per CLAUDE.md; same small deduction as AI.1/AI.2). -1: design doc :3 Status still reads 'awaiting Mark's answers to the open questions' although D-20 resolved them on 2026-10-02."
+    },
+    "design_fidelity": {
+      "score": 9,
+      "max": 10,
+      "notes": "Matches (a2) and (a4) and Mark's both-providers ruling: text -> OpenRouter then Gemini then no_key; portrait/avatar/voice -> Gemini only, and OpenRouter for a media kind is refused at start AND skipped at resolve time; text-only mode answers media text_only while text still routes; both keys optional; stub cannot spend (--caps IO,FS, verified at the runtime level). Cache layout blobs/ab/<sha>.<ext> + append-only index.ndjson with origin 'library', provider/route/model/input_sha256/seed and width/height for images, per (a4). Every deviation is documented in the amendment and judged acceptable below. -1: hello hardcodes provider 'stub' and live false (ai/service.ail:33) rather than deriving them from the Provider value — fine for AI.4 but AI.5 must change it; and a routed voice request is answered provider_error, which the sim will read as a real provider failure (placeholder until AI.5's stub voice)."
+    }
+  },
+  "hard_fails": [],
+  "automated_checks": {
+    "make_test": "exit 0 (fresh worktree, arm64, v0.51.0)",
+    "make_ai_stub": "exit 0: both 7 gemini/4 none/11 openrouter; gemini 18/4; none 22 none; textonly 11 none/11 openrouter; cache 34 == SHA256SUMS; 27 text blobs == shasum; silent until first input; provider gemini refused at start",
+    "make_ai_mutants": "exit 0: 6/6 killed (route guard, key presence, text_only, entity-id length, spelled numbers, meta.route), each by its named test",
+    "ailang_check_package_ai": "11 files passed; 1 warning (vm_test not in [exports].modules)",
+    "ci": "PR #60 'headless tests' pass, run 37041996512, 12m49s"
+  },
+  "evaluator_verifications": {
+    "routing": "Verified from goldens, route_test and an extra openrouter-only run: text -> openrouter (both keys), gemini (Gemini only), openrouter (OpenRouter only), no_key (none); portrait/avatar/voice -> gemini or no_key, never openrouter (openrouter-only set: req 9/11/12 all no_key, route none); text_only: media answer text_only, text still routes to openrouter. Bad configs each refused with exactly one fatal line and nothing else, even when two hellos are sent: unknown key, live provider, unreadable routing file, OpenRouter for portrait, a kind with no route (ai/route.ail parseRouting, ai/service.ail start).",
+    "isolation": "grep over ai/*.ail: imports are std/* and ./key|route|wire|provider|cache only; no stapledons/sim, no ../sim; no std/env, std/net, std/ai, getEnv, httpRequest anywhere in ai/.",
+    "capabilities": "Runtime-level check: a probe program calling std/env.getEnv under --caps IO,FS dies with \"effect 'Env' requires capability, but none provided\"; the same program with --caps IO,FS,Env prints the fake value. The service run with GOOGLE_API_KEY=AIzaFAKE… and OPENROUTER_API_KEY=sk-or-FAKE… in the environment and keys_present [] answers no_key for everything; with --caps IO,FS,Env,Net granted the output is byte-identical, and no FAKE text appears in any output: the service never consults the environment.",
+    "key_hygiene": "git ls-files | xargs grep -E 'AIza|sk-or-': only the grep rules themselves (mk/ai.mk:44-45, sprint JSON AI.7 text, sprint plan risk row); binary PNG fixtures also clean. The pattern 'sk-or-' in error output is impossible: keys are never read.",
+    "cache": "ai/cache.ail:36-38 writes <path>.tmp then renameFile; the index line is appended (ai/cache.ail:40) inside writeBlob, which service.ail:45 calls before say(h.out) at :46. No .tmp files left after a run. Every .txt blob's name equals shasum -a 256 of its bytes, including the non-ASCII line (8baeec50…, 'Élise, ça va? … 星 … —'). Index lines carry no clock and no request id; the same key set yields the same index sha in SHA256SUMS. Dedup: the same PNG for req 10 and 11 is written once with two index lines.",
+    "d21": "Only one ok text body in all four goldens contains a digit: the deliberate 'digits' negative fixture (req 4). Stub lines spell the request number ('one', 'two', 'three', 'two-zero'); the news/archive/probe phrases carry no digits. stubText uses digits only when the request says no_numerals false (ai/provider.ail:88); the sim always sends true (sim/ai.ail:139).",
+    "silence": "Valid config + empty stdin prints nothing (make ai-stub check and my probe). Exception noted below: a BAD config + empty stdin prints the fatal line after readLine returns '' (ai/service.ail:98-99).",
+    "determinism": "make ai-stub: every key set cmp-identical on VM and interpreter (stdout and cache dir via diff -r); goldens unchanged across my three re-runs; strict aiWireVm digest 3f37195d4bf2e5f6 identical on both runtimes."
+  },
+  "adversarial_probes": {
+    "blank_line_mid_stream": "FOUND: hello, request 1, an empty line, request 3 -> the service answered hello and request 1 and then exited; request 3 was never answered (ai/service.ail:39 `if line == \"\" then ()`). A blank line is indistinguishable from EOF.",
+    "bad_config_empty_stdin": "prints {\"v\":1,\"type\":\"fatal\",...,\"detail\":\"config: unknown key openai\"} even though no input arrived (ai/service.ail:96-100). Harmless, but the 'nothing before the first input' statement does not hold on the fatal path.",
+    "openrouter_only_key_set": "text -> openrouter; portrait/avatar/voice -> no_key (route none). Correct; not one of the four shipped sets."
+  },
+  "own_mutations": {
+    "killed_by_package_tests": [
+      "key.ail isMedia drops avatar -> route_test media/text_only",
+      "provider.ail marker always {neutral} -> stub_test",
+      "provider.ail key-kind mismatch not refused -> stub_test refusals",
+      "route.ail text_only also blocks text -> route_test text",
+      "provider.ail avatar uses key emotion '-' -> stub_test image"
+    ],
+    "killed_by_make_ai_stub_only": [
+      "cache.ail blob shard substring(sha,0,3): survives package tests, fails ai-stub goldens/SHA256SUMS"
+    ],
+    "survived_everything": [
+      "cache.ail write blob directly without temp+rename (design invariant, untested)",
+      "service.ail say(h.out) before writeBlob (design invariant 'index before result', untested)",
+      "wire.ail errorCodes without text_only (decoder untested for text_only)",
+      "route.ail pick() without the serves() guard (defence in depth; parseRouting already refuses; acceptable)"
+    ]
+  },
+  "deviation_verdicts": {
+    "config_via_args_json": "ACCEPTED. argv needs Env; with Env the stub could read a key. Verified: under --caps IO,FS Env is refused at runtime, and the service never consults the environment even when Env is granted. The deviation is what makes the 'cannot spend' claim true.",
+    "hello_routes_per_kind": "ACCEPTED. routes {kind: {route, model} | {route: none, reason}} is strictly more informative than models {text,image,tts} and the goldens show the routing per key set. Design amendment documents the replacement; Godot (AI.6) consumes the new shape.",
+    "error_meta_provider_route_and_text_only": "ACCEPTED. meta {provider, route} on errors lets the relay tell no_key from a routed failure; text_only maps 1:1 to the sim's ai_cancel reason. Minor inconsistency noted: a bad_request detected after routing stamps the route (req 16 -> openrouter) while pre-routing ones stamp none.",
+    "one_fatal_line_on_bad_config": "ACCEPTED. Verified for five fault classes: exactly one fatal line, then exit; a second hello is not answered. Caveat: also printed when stdin is empty.",
+    "spelled_out_numbers": "ACCEPTED and required by D-21: the stub line must itself pass ai_numeral. Verified: no digit in any stub line across all goldens; 'two-zero' for 20.",
+    "txt_text_blobs": "ACCEPTED. It is what makes AC6's independent shasum check possible; design (a4) layout unchanged (ext per blob). Index lines mark origin library, no clock, so cache sums are reproducible.",
+    "voice_provider_error_until_ai5": "ACCEPTED WITH A FLAG. A routed voice request answering provider_error is a placeholder; it must not leak into AI.5/AI.6 goldens as 'expected' behaviour, and the relay will read it as a real provider failure (template fallback), which is the right conservative outcome meanwhile.",
+    "fourth_key_set_text_only": "ACCEPTED, adds value: it is the only automated proof that text_only blocks media while text still routes.",
+    "loc_850_vs_cap_650": "ACCEPTED WITH A NOTE. Counted myself: 469 code + 278 tests = 747 (plus 66 non-comment lines of mk/ai.mk and ~37 of config) against an estimate of 550 and a cap of 650. route.ail (71) was planned here, so the overrun is real (about 15% over the cap on code+tests, 30% with config), as with AI.2. The planning estimate for codec-heavy milestones runs low; AI.5's estimate should be revisited rather than this code trimmed.",
+    "workarounds_1516_1517": "ACCEPTED. Both cited at the site (provider.ail:81 avoids the name `words`; stub_test.ail:39-40 avoids `isErr`; wire_test.ail:41-43 replaces `_ :: x :: _` with two matches). The two-match form is equivalent. I did not verify the upstream filings (no network use beyond the PR view allowed to this evaluation)."
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    {"file": "ai/service.ail", "line": 39, "severity": "medium", "issue": "`if line == \"\" then ()` treats an empty line as end of input; a blank line mid-stream ends the service silently and every later request goes unanswered (probe).", "suggestion": "Distinguish EOF from a blank line (skip blank lines, or answer bad_request with req \"\" and continue); add the case to tests/ai/requests.ndjson so the goldens pin it."},
+    {"file": "ai/cache.ail", "line": 36, "severity": "low", "issue": "temp+rename and index-before-print (service.ail:45-46) are stated design invariants with no test: mutants removing the rename or swapping the order survive make test and make ai-stub.", "suggestion": "At least assert in ai-stub that no *.tmp remains and that index.ndjson line count == ok results; a crash-between-steps test is harder and may stay a documented risk."},
+    {"file": "ai/wire.ail", "line": 43, "severity": "low", "issue": "errorCodes includes text_only but no decoder test covers it (dropping it survives all tests).", "suggestion": "Add a text_only error result line to wire_test.outLines."},
+    {"file": "ai/ailang.toml", "line": 8, "severity": "low", "issue": "ailang check warns: stapledons/ai/vm_test compiled but not listed in [exports].modules (the other test modules are listed).", "suggestion": "Add vm_test, or drop the test modules from exports and list only the six service modules."},
+    {"file": "tests/ai/requests.ndjson", "line": 3, "severity": "low", "issue": "news requests use max_chars 200 (mirrors sim/ai.ail:71 on main), but D-21 raised news to 280; the news over_length fixture (ai/fixtures/stub_text.json:14) is 219 chars, so once the sim adopts 280 it is no longer over length.", "suggestion": "When sim/ai.ail moves to 280 (not this PR), update the news fixture to exceed 280 and re-record the goldens."},
+    {"file": "ai/service.ail", "line": 98, "severity": "low", "issue": "A bad config with empty stdin still prints the fatal line (readLine returns \"\" and the fatal is printed anyway).", "suggestion": "Only print the fatal when a line actually arrived, or document that the fatal path is exempt from the silence rule."},
+    {"file": "tests/ai/results.both.golden.ndjson", "line": 1, "severity": "low", "issue": "The hello's cache_dir embeds .godot/tmp/ai/cache/<set>, so make ai-stub is coupled to SCRATCH := .godot/tmp (Makefile:7).", "suggestion": "Acceptable; note it in mk/ai.mk, or compare the hello with cache_dir normalised."},
+    {"file": "design_docs/planned/r1/ai-service-foundation.md", "line": 3, "severity": "low", "issue": "Status still says 'awaiting Mark's answers to the open questions'; D-20 answered them on 2026-10-02.", "suggestion": "Update the status line at the next doc touch."},
+    {"file": "ai/provider.ail", "line": 115, "severity": "info", "issue": "bad_request for an unknown stub_case is stamped with the resolved route (req 16 -> openrouter) while pre-routing bad_request stamps none.", "suggestion": "Either is defensible; pick one and say so in the wire.ail header."},
+    {"file": "ai/service.ail", "line": 33, "severity": "info", "issue": "hello hardcodes provider 'stub' and live false instead of deriving them from the Provider value.", "suggestion": "Derive from providerName when AI.5 wires the live providers."},
+    {"file": "CHANGELOG.md", "line": 1, "severity": "info", "issue": "No entry for AI.4 (landing step per CLAUDE.md).", "suggestion": "Add at landing."}
+  ],
+  "evaluator_notes": "Merge-ready from the evaluator's side. The blank-line termination (service.ail:39) is the one finding I would fix before Godot drives the service in AI.6; it is not blocking for AI.4 because the harness and the sim never emit a blank line. Probe programs, mutant copies and cache dirs were written to the session scratchpad only; the worktree's ai/ was restored with git checkout after each in-tree mutation and is clean."
+}

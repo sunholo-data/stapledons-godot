@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "units": "metres",
+  "frame": "ship Blender +Z up; glTF (x,z,-y)",
+  "deck_heights_ship_m": [
+    82,
+    57,
+    32,
+    7,
+    -18,
+    -43,
+    -68
+  ],
+  "lower_inner_envelope_m": 95,
+  "bubble_radius_m": 100,
+  "assets": {
+    "visual": "ship.glb",
+    "walk_bridge": "walk_bridge.glb",
+    "walk_lower": "walk_lower.glb"
+  },
+  "lift_route": {
+    "clear": true,
+    "ship_xy_m": [
+      8,
+      8
+    ],
+    "bridge_z_m": 82,
+    "lower_z_m": 57,
+    "opening_width_m": 4,
+    "platform_width_m": 3.6,
+    "captain_radius_m": 0.35,
+    "captain_height_m": 1.8,
+    "survey": [
+      {
+        "xy": [
+          6.2,
+          6.2
+        ],
+        "clear": true,
+        "first_hit": null
+      },
+      {
+        "xy": [
+          6.2,
+          8
+        ],
+        "clear": true,
+        "first_hit": null
+      },
+      {
+        "xy": [
+          6.2,
+          9.8
+        ],
+        "clear": true,
+        "first_hit": null
+      },
+      {
+        "xy": [
+          8,
+          6.2
+        ],
+        "clear": true,
+        "first_hit": null
+      },
+      {
+        "xy": [
+          8,
+          8
+        ],
+        "clear": true,
+        "first_hit": null
+      },
+      {
+        "xy": [
+          8,
+          9.8
+        ],
+        "clear": true,
+        "first_hit": null
+      },
+      {
+        "xy": [
+          9.8,
+          6.2
+        ],
+        "clear": true,
+        "first_hit": null
+      },
+      {
+        "xy": [
+          9.8,
+          8
+        ],
+        "clear": true,
+        "first_hit": null
+      },
+      {
+        "xy": [
+          9.8,
+          9.8
+        ],
+        "clear": true,
+        "first_hit": null
+      }
+    ],
+    "cut_meshes": [
+      "deck_body_00",
+      "deck_body_01",
+      "deck_body_02",
+      "deck_body_03",
+      "deck_body_15",
+      "deck_floor_fill",
+      "deck_seam_02",
+      "Spire below bridge",
+      "Deck 01 top 57m",
+      "Deck 01 edge"
+    ]
+  },
+  "walk": {
+    "bridge_spawn_gltf_m": [
+      8,
+      82,
+      -4.8
+    ],
+    "lower_spawn_gltf_m": [
+      8,
+      57,
+      -4.8
+    ],
+    "rim_radius_m": 20.7
+  },
+  "master_blend": "ship_geometry_demo_v1.blend",
+  "render_floor_restore": {
+    "node": "bridge_floor_top82",
+    "top_ship_z_m": 82,
+    "render_only": true,
+    "source": "original WALK_bridge_deck top triangles, shaft-clipped",
+    "master": "art/ship-demo-v1/grounded-bridge-v2/stapledon_bridge_mesh_grounded_v2.blend",
+    "walk_files_unchanged": true
+  },
+  "limitations": [
+    "Lower landing only; no buildings/forests",
+    "Demo bridge cut distinct from production",
+    "Shaft surveyed at nine rays with 0.2m edge clearance; gameplay capsule additionally constrained",
+    "Existing bridge needle accepted exception to lower 95m envelope"
+  ]
+}

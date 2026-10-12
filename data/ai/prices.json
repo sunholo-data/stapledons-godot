@@ -1,0 +1,15 @@
+{
+  "v": 1,
+  "_note": "US dollars, keyed by provider and model: in_per_mtok and out_per_mtok per million reported tokens, per_call for calls that report no usage (images). UNVERIFIED: list prices as recalled on 2026-10-02 without network access; check them against the provider pages at the style-frame stop before any live session. OpenRouter bills prepaid credit outside the GCP budget (plan Q8). The ceiling (default 0.50, player-set) applies to the sum over providers.",
+  "prices": {
+    "gemini": {
+      "gemini-2.5-flash": {"in_per_mtok": 0.30, "out_per_mtok": 2.50},
+      "gemini-2.5-flash-image": {"per_call": 0.039},
+      "gemini-2.5-flash-preview-tts": {"in_per_mtok": 0.50, "out_per_mtok": 10.00}
+    },
+    "openrouter": {
+      "openrouter:mistralai/mistral-nemo": {"in_per_mtok": 0.02, "out_per_mtok": 0.04},
+      "openrouter:google/gemini-2.5-flash-lite": {"in_per_mtok": 0.10, "out_per_mtok": 0.40}
+    }
+  }
+}

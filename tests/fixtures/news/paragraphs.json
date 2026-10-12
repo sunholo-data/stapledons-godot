@@ -1,0 +1,58 @@
+{
+ "version": 1,
+ "note": "Expected paragraphs: each tier's four templates filled with these slots (elapsed_years per tier, news_age_years 4.35, news_epoch 0.04), SLOT_FMT %.2f. Generated once from the copy; the copy itself awaits the S4 review.",
+ "news_age_years": 4.35,
+ "news_epoch": 0.04,
+ "tiers": [
+  {
+   "tier": 0,
+   "elapsed_years": 0.04,
+   "paragraphs": [
+    "Your family sent word within days of your leaving. Everyone is well and the house is quiet. Only 0.04 years have passed there since you left, and the message is already 4.35 years old.",
+    "A short message from home: the family gathered to watch you go and are all in good health. They have started a list of things to tell you. At home, 0.04 years have gone by since you left.",
+    "Home writes that nothing has changed yet. The kitchen is as you left it, and your family keeps your place at the table. This news is 4.35 years old; 0.04 years have passed on Earth since your departure.",
+    "Your family sends greetings. The first weeks without you were hard but ordinary, and they are well. 0.04 years of Earth time lie between your departure and the day this message was sent."
+   ]
+  },
+  {
+   "tier": 1,
+   "elapsed_years": 2.5,
+   "paragraphs": [
+    "Earth sends word after 2.50 years. There has been an election and the new government has taken office. A niece has started school. The news is 4.35 years old.",
+    "Home reports 2.50 years of ordinary change: a new head of the space agency, a town fair revived, and a niece learning to read. This message is 4.35 years old.",
+    "After 2.50 years on Earth, the family writes of small changes: a house repainted, a new school year begun, a vote held and counted. The transmission is 4.35 years old.",
+    "A letter from Earth, 2.50 years after your departure: prices have shifted, a children's choir has formed in the old neighbourhood, and the family still talks about you. It left home 4.35 years ago."
+   ]
+  },
+  {
+   "tier": 2,
+   "elapsed_years": 8.8,
+   "paragraphs": [
+    "Earth writes after 8.80 years. An older relative has died, and the family marked the day without you. A new kind of battery now powers the cities. The message is 4.35 years old.",
+    "Much has changed in 8.80 years. A parent fell ill and has since been laid to rest. New machines do work that people once did by hand. This news is 4.35 years old.",
+    "In the 8.80 years since you left, home has grown older. Friends have moved away, a parent has grown frail, and a new communications network now covers the planet. The message is 4.35 years old.",
+    "Earth reports 8.80 years of change: a new technology in every pocket, a sibling's children almost grown, and a parent's long illness. This transmission is 4.35 years old."
+   ]
+  },
+  {
+   "tier": 3,
+   "elapsed_years": 20.5,
+   "paragraphs": [
+    "20.50 years have passed on Earth. The children you knew are adults with children of their own, and the old offices are held by people who never met you. The message is 4.35 years old.",
+    "A generation has turned over at home in 20.50 years. Your friends are old or gone, and their grandchildren run the schools. Your voyage is now a family story. The message is 4.35 years old.",
+    "After 20.50 years, Earth is run by people born after you left. The speech of your childhood has shifted, and your name is kept in a family archive. This message is 4.35 years old.",
+    "Earth sends word across 20.50 years. Those who saw you leave are very old or have died; their descendants wrote this. The message is 4.35 years old."
+   ]
+  },
+  {
+   "tier": 4,
+   "elapsed_years": 75.25,
+   "paragraphs": [
+    "75.25 years have passed on Earth. The names of the people who saw you leave are known only to historians. Whoever wrote this found your voyage in an old record. The message is 4.35 years old.",
+    "Home answers after 75.25 years, in a language that has drifted from the one you spoke. No one now living remembers your departure. The message is 4.35 years old.",
+    "Across 75.25 years, Earth has been remade. The cities, the nations and the names you knew belong to history books. The message is 4.35 years old.",
+    "Whoever keeps the archive at home has found your name after 75.25 years. The people you left are only names in it. This message is 4.35 years old."
+   ]
+  }
+ ]
+}

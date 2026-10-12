@@ -1,0 +1,34 @@
+module stapledons/sim/tools/planets_probe
+
+-- M5.2a check values for tests/test_physics.gd (_m5_photometry): the pinned
+-- sunholo/celestial 0.1.0 reflect functions and relativity's illuminanceFromV,
+-- printed at 17 significant digits. Run:
+--   ailang run --quiet --package-dir sim --entry main sim/tools/planets_probe.ail
+import pkg/sunholo/celestial/reflect (starIlluminanceAt, lambertPhase, minnaertRadiance, minnaertPhase, discIlluminance, rhoFromGeometricAlbedo)
+import pkg/sunholo/relativity/photometry (illuminanceFromV)
+import std/io (println)
+import std/math (cos)
+
+pure func d2r(d: float) -> float = d * 3.141592653589793 / 180.0
+
+export func main() -> () ! {IO} {
+  let e1 = illuminanceFromV(0.0 - 26.74);
+  println("e1AU  ${show(e1)}");
+  println("starIlluminanceAt(e1, 5.2)  ${show(starIlluminanceAt(e1, 5.2))}");
+  println("starIlluminanceAt(e1, 0.3871)  ${show(starIlluminanceAt(e1, 0.3871))}");
+  println("lambertPhase(0)  ${show(lambertPhase(0.0))}");
+  println("lambertPhase(30deg)  ${show(lambertPhase(d2r(30.0)))}");
+  println("lambertPhase(90deg)  ${show(lambertPhase(d2r(90.0)))}");
+  println("lambertPhase(150deg)  ${show(lambertPhase(d2r(150.0)))}");
+  println("minnaertRadiance(0.75, 1, 1000, 0.6, 0.8)  ${show(minnaertRadiance(0.75, 1.0, 1000.0, 0.6, 0.8))}");
+  println("minnaertRadiance(0.7071, 0.825, 1305, 0.6, 0.8)  ${show(minnaertRadiance(0.7071, 0.825, 1305.0, 0.6, 0.8))}");
+  println("minnaertRadiance(0.7071, 1.2, 1305, 0.3, 0.5)  ${show(minnaertRadiance(0.7071, 1.2, 1305.0, 0.3, 0.5))}");
+  println("minnaertRadiance(0.7071, 0.825, 1305, -0.1, 0.5)  ${show(minnaertRadiance(0.7071, 0.825, 1305.0, 0.0 - 0.1, 0.5))}");
+  println("minnaertPhase(30deg, 0.825)  ${show(minnaertPhase(d2r(30.0), 0.825))}");
+  println("minnaertPhase(90deg, 0.825)  ${show(minnaertPhase(d2r(90.0), 0.825))}");
+  println("rhoFromGeometricAlbedo(0.538, 1)  ${show(rhoFromGeometricAlbedo(0.538, 1.0))}");
+  println("rhoFromGeometricAlbedo(0.499, 0.825)  ${show(rhoFromGeometricAlbedo(0.499, 0.825))}");
+  println("discIlluminance(jupiter opp, d 4.2 AU)  ${show(discIlluminance(e1, 0.538, 71492.0, 5.2, 4.2 * 149597870.7, 0.0, 1.0))}");
+  println("discIlluminance(saturn 6deg, d 8.6 AU)  ${show(discIlluminance(e1, 0.499, 60268.0, 9.6, 8.6 * 149597870.7, d2r(6.0), 0.825))}");
+  println("discIlluminance(moon 90deg, 384400 km)  ${show(discIlluminance(e1, 0.12, 1737.4, 1.0, 384400.0, d2r(90.0), 1.0))}")
+}

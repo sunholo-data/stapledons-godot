@@ -1,0 +1,197 @@
+{
+  "GR": "not implemented",
+  "observer": "inside physical eye except explicitly external diagnostic",
+  "shots": [
+    {
+      "centre_hit": "deck_floor_fill_col:<StaticBody3D#73417099078>",
+      "centre_hit_m": "(20.27272, 82.0, -7.818181)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        19.0,
+        83.6999969482422,
+        -7.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "bridge_ready",
+      "name": "bridge_overlook",
+      "walkable": true
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#70246205795>",
+      "centre_hit_m": "(46.96429, 57.0, 11.79253)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        8.0,
+        71.1999969482422,
+        -8.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "descending",
+      "name": "mid_lift",
+      "walkable": false
+    },
+    {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#89489672875>",
+      "centre_hit_m": "(54.64748, 60.54135, -7.500643)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        8.0,
+        58.7000007629395,
+        -4.80000019073486
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "lower_ready",
+      "name": "arrival",
+      "walkable": true
+    },
+    {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#89489672875>",
+      "centre_hit_m": "(42.78139, 59.8921, -5.703813)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        23.0,
+        58.7249984741211,
+        3.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "lower_ready",
+      "name": "courtyard",
+      "walkable": true
+    },
+    {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#89489672875>",
+      "centre_hit_m": "(42.88973, 58.79806, -5.0777)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        49.0,
+        58.7249984741211,
+        -8.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "lower_ready",
+      "name": "arcade_inside",
+      "walkable": true
+    },
+    {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#89489672875>",
+      "centre_hit_m": "(45.52638, 61.15, -11.93154)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        49.5,
+        58.7249984741211,
+        -14.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "lower_ready",
+      "name": "reverse_to_bridge",
+      "walkable": true
+    },
+    {
+      "centre_hit": "COMMONS_batch_Commons limestone_col:<StaticBody3D#89489672875>",
+      "centre_hit_m": "(52.0981, 59.05033, -16.92826)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        45.0,
+        58.7249984741211,
+        2.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "lower_ready",
+      "name": "arcade_along",
+      "walkable": true
+    },
+    {
+      "centre_hit": "COMMONS_batch_Commons teal_col:<StaticBody3D#89556781338>",
+      "centre_hit_m": "(42.32358, 59.91375, -5.865275)",
+      "coarse_visible": false,
+      "diagnostic": false,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        18.75,
+        58.7249984741211,
+        3.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": true,
+      "lift_state": "lower_ready",
+      "name": "planted_plaza",
+      "walkable": true
+    },
+    {
+      "centre_hit": "Deck 02 top 32m_col:<StaticBody3D#70380423515>",
+      "centre_hit_m": "(46.05883, 32.0, 46.05883)",
+      "coarse_visible": true,
+      "diagnostic": true,
+      "display_aid": {
+        "brightness_multiplier": 4.0,
+        "brightness_stops": 2,
+        "physical_simulation_change": false
+      },
+      "eye_gltf_m": [
+        145.0,
+        90.0,
+        145.0
+      ],
+      "fov": 78.0,
+      "inside_bubble": false,
+      "lift_state": "lower_ready",
+      "name": "external_diagnostic",
+      "walkable": true
+    }
+  ],
+  "sky": "frozen simulation-derived cruise; shared observer",
+  "stage": "UV painted modular proof"
+}

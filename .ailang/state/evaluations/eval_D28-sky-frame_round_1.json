@@ -1,0 +1,77 @@
+{
+  "sprint_id": "D28-sky-frame",
+  "milestone": "D-28 sky frame fix (one right-handed galactic -> world map)",
+  "title": "fix(sky): un-mirror the M1 sky at the source (D-28)",
+  "pr": 107,
+  "branch": "fix/sky-mirror",
+  "commits_evaluated": ["ca880b3"],
+  "diff_base": "81f48a7 (merge-base with main at the time of the PR; main is now d4be649 after #103 and #104)",
+  "round": 1,
+  "result": "pass",
+  "score": 96,
+  "pass_threshold": 70,
+  "evaluator": "Claude Fable 5.1, independent of the executor (generator != judge); fresh clone under the session scratchpad, not a worktree; make runtime sky-assets catalogue-inputs; make catalogue TIER=large (331312 rows)",
+  "judged_against": [
+    "design_docs/implemented/r1/sky-frame-d28.md (the design and its Tests table, 12 rows)",
+    "PR #107 body and changelogs/unreleased/2026-10-03-sky-mirror-fix.md",
+    "CLAUDE.md definition of done gates 1, 2, 5, 6 and the Python/AILANG rules",
+    "design_docs/stapledon-mission.md D-28 (RESOLVED on main via PR #103)",
+    "stapledons-design/physics/relativity-spec.md section 2 (angles unchanged; the spec does not state a frame)"
+  ],
+  "breakdown": {
+    "tests_pass": {"score": 20, "max": 20, "hard_fail": false, "evidence": "make test exit 0 in the evaluator's clone: physics 523 passed / 0 failed, sim 236/236 (8m56s), galaxy map 0 failures, sim bridge 0 failures, interior 104/0, m4-smoke OK, strict VM = interpreter on every parity line, python-guard ok (14 allowlisted). No CI run exists for the PR because GitHub cannot build a merge ref for a CONFLICTING pull request (ci.yml triggers on pull_request); CI will run once the branch is rebased."},
+    "lint_clean": {"score": 10, "max": 10, "evidence": "ailang check --package sim: 39 files checked, all passed; no GDScript parse errors in any make target; no new Python."},
+    "acceptance_criteria": {"score": 30, "max": 30, "criteria_met": 12, "criteria_total": 12, "evidence": "Every row of the design doc's Tests table verified by the evaluator's own runs: det +1 / det R +1 / cross product / round trips (Vector3 and float64); shader include evaluated against SkyFrame; hand-copy guard 0 found; oracle Antares and alpha Cen right, Vega and Scutum left, Antares above the plane; catalogue path (stars.json -> append_catalogue) alpha Cen right / Vega left; VIEW_YAW starboard l 270, port l 90, astern l 180; Orion's belt Alnitak-Alnilam-Mintaka left to right; LMC right of and below Acrux facing l 290; panorama (u,v) = (l,b) for all 10 oracle objects, LMC 9.36x and SMC 6.86x their mirror positions; galaxy map test_handedness 3/3; interior unflipped, det +1, no SKY_FLIP_H constant; make golden exit 0."},
+    "code_quality": {"score": 13, "max": 15, "deductions": "-2: the PR carries its own copy of the want_minor duplicate fix instead of rebasing onto main, where #104 already fixed it by deleting the OTHER declaration; the result is a content conflict in bridge/sim_bridge.gd (verified with git merge-tree against d4be649) that blocks the merge and suppresses CI. Otherwise clean: one definition (sky/sky_frame.gd + sky_frame.gdshaderinc), float64 forms for the ship position and the goldens (gate 5), Starfield.galactic_to_world kept as the public name, a guard test with backreference regexes that walks every .gd/.gdshader/.gdshaderinc under res://. Sprint artifacts: none (a ruling fix, not a sprint), not penalised."},
+    "documentation": {"score": 13, "max": 15, "deductions": "-2: design_docs/implemented/r1/sky-frame-d28.md has no pillar-alignment table (CLAUDE.md step 1, design_docs/README.md item 2). Present and correct: changelog fragment, README row, M1 and M4 planned-doc cross-references, before/after sheets in docs/d28-sky-frame/, regenerated docs/ renders, the website media list, and a proposed (not applied) design-repo frame note. D-28 itself is recorded on main's ledger via PR #103 (RESOLVED), so the ruling is on record."},
+    "design_fidelity": {"score": 10, "max": 10, "evidence": "Matches the ruling exactly: fix at the source, one map, no local flips. The galactic centre stays at -Z and the NGP at +Y; only the sign of world X changes, so SkyModel.equirect_uv o SkyFrame.to_world is the identity in (l, b) and the destar/registration pipeline is untouched, as the doc claims."}
+  },
+  "hard_fails": [],
+  "physics_gate_2": {
+    "check_values_in_tests": "tests/test_physics.gd test_sky_frame (D-28 block, ~210 lines): SIMBAD l, b of 10 real objects through the real FreeLookCamera; spec angles unchanged (no spec check value moves because the spec does not state a frame).",
+    "gpu_vs_cpu_golden": "make golden exit 0: off-axis 144 cases worst 0.102 px; 16 background markers; 8 stand-off lines (0.4 AU: float32-from-Sol 8.17 / 1.90 px, >= 1.5 required); WD, cull, display floor, exposure star 0.9966 / sky 0.9939; 10 CMB cases; G-M4-1 72 cases worst 0.159 px; G-M4-2 worst 0.0000; G-M4-3 x6; G-M4-4 x7; interior golden 0 failures.",
+    "renders_opened": "Evaluator's own make capture (renders/sky_b00_{forward,starboard,port,astern}.png, sky_b099_starboard.png, exposure_sheet.png, cmb_sheet.png) plus the committed docs/m1.3 renders and the four docs/d28-sky-frame sheets, gain-lifted with a Godot headless script and inspected."
+  },
+  "independent_check_values": {
+    "det_new": 1, "det_old": -1,
+    "inverse": "R^T = (x,y,z) -> (-z,-x,y); R R^T = I (verified in plain Python, no numpy)",
+    "axes": "gal +x (GC) -> world (0,0,-1); gal +z (NGP) -> (0,1,0); gal +y (l 90) -> (-1,0,0); gal -y (l 270) -> (1,0,0)",
+    "godot_camera": "forward -Z, up +Y, right = forward x up = +X; l 90 . right = -1 => LEFT",
+    "yaw_minus_90": "Godot Ry(-90 deg) takes forward -Z to +X -> galactic (0,-1,0) = l 270 (starboard)",
+    "oracle_right_components_facing_GC": {"Antares": 0.135, "alpha Cen A": 0.698, "Vega": -0.872, "Scutum": -0.454},
+    "orion_facing_alnilam_NGP_up": {"Mintaka(W)": "right 0.0225", "Alnitak(E)": "left -0.0207", "Betelgeuse": "right 0.093, up 0.143", "Rigel": "left -0.064, down -0.140", "note": "with the NGP up (roll 0) Orion is rotated ~65 deg from its celestial-north-up aspect, so Betelgeuse is up/upper-right and Rigel down/lower-left; the handedness proof is the belt order and Barnard's Loop on the east = LEFT of the belt, which the astern render shows"},
+    "lmc_vs_crux_facing_l290": {"LMC": "right 0.139, down -0.294", "Acrux": "left -0.176, up 0.265"},
+    "standoff_mirror": "new ship offset = world-x mirror of the old (-u.z/sn and +u.x/sn are the x-mirrored images of +u.z/sn and -u.x/sn; the 8 deg look-aside flips sign with it); IEEE rounding is sign-symmetric, so the float32-from-Sol power is unchanged (8.17 / 1.90 px reproduced). Legitimate, not a weakening."
+  },
+  "mutations": [
+    {"mutation": "old map (y, z, -x) restored in SkyFrame (all four forms and R)", "result": "20 physics checks fail in an asset-less clone (the 2 panorama LMC/SMC checks are skipped there and would also fail): det, handedness, l 270/l 90 axes, shader include vs SkyFrame, the four oracle sides, the catalogue path, starboard/port longitudes, Orion, LMC/Acrux, the two SkyModel u checks, and two pre-existing starfield checks"},
+    {"mutation": "a (v.y, v.z, -v.x) hand copy planted in tools/interior_golden.gd", "result": "guard names it: 'hand copy: res://tools/interior_golden.gd: v.y, v.z, -v.x', 1 failure"},
+    {"mutation": "PR #106's physics/planets.gd dropped into the tree", "result": "guard names physics/planets_probe.gd: v[\"y\"], v[\"z\"], -v[\"x\"] (Planets.world_of hand-copies the OLD mirror map), 1 failure"}
+  ],
+  "loc": {"files_changed": 71, "insertions": 541, "deletions": 63, "code": "sky/sky_frame.gd 56 new, sky_frame.gdshaderinc 6 new, starfield.gd, sky_model.gd, background.gdshader, interior.gd, interior_sky.gd, interior_smoke.gd, interior_golden.gd, main.gd, test_physics.gd +222, test_galaxy_map.gd +22, test_interior.gd"},
+  "findings": [
+    {"severity": "blocker-for-merge", "file": "bridge/sim_bridge.gd:20", "issue": "Content conflict with main: #104 (789fe4e) removed the FIRST want_minor declaration and kept the one near line 48; this branch removed the SECOND and kept line 20. git merge-tree origin/main fix/sky-mirror reports CONFLICT; GitHub shows CONFLICTING/DIRTY and has created no CI run for the PR.", "suggestion": "Rebase onto main (or merge main) and resolve by taking main's bridge/sim_bridge.gd verbatim; the PR's only change to that file then disappears. CI will run on the rebased head."},
+    {"severity": "coordination", "file": "origin/sprint/m5.2a-globes:physics/planets.gd:95-98 (PR #106)", "issue": "Planets.world_of hand-copies the old map [v[\"y\"], v[\"z\"], -v[\"x\"]], with a comment saying so, so planets will NOT inherit the fix through Starfield.galactic_to_world; after both PRs land, planet directions are mirrored relative to the stars and the D-28 guard turns make physics red (verified by mutation 3). #106 also edits sky/starfield.gd lines 31-32 and 96-99 that this PR rewrote, so it will conflict textually as well.", "suggestion": "Whichever lands second rebases; #106 must replace world_of with SkyFrame.to_world64 (float64, no km through a Vector3) and re-run its G-M5 goldens. body_basis already goes through galactic_to_world and needs nothing."},
+    {"severity": "minor", "file": "design_docs/implemented/r1/sky-frame-d28.md:1", "issue": "No pillar-alignment table (CLAUDE.md step 1).", "suggestion": "Add the table (a one-row 'physics truth' entry suffices for a correctness fix) or note the exemption in design_docs/README.md."},
+    {"severity": "note", "file": "docs/d28-sky-frame/exposure_starboard_before_after.jpg", "issue": "The sheet text implies the bow-side entry of the 0.99c sky is new; it is not: starboard yaw was already -90 deg, so the bow (-Z) was on the left of that view before D-28 too, and aberration is symmetric about the velocity. What changed is which stars are there. Not a regression; the exposure goldens (star 0.9966, sky 0.9939) are unchanged.", "suggestion": "None required."},
+    {"severity": "note", "file": "docs/m1.8/*", "issue": "CMB disc unchanged, as expected: it is centred on the forward pole and axisymmetric; the 10 CMB goldens pass and the regenerated PNGs differ by a few bytes only.", "suggestion": "None."},
+    {"severity": "note", "file": "design_docs/implemented/r1/sky-frame-d28.md (Design-repo note)", "issue": "The proposed 'Frames' note for physics/relativity-spec.md is not applied; without it the spec still cannot catch a future mirror.", "suggestion": "Open the design-repo change as a follow-up (the proposed text is sound)."}
+  ],
+  "deviations": [],
+  "evidence": {
+    "make_test": "exit 0 (scratchpad/test.log): physics 523/0, sim 236/236, ui galaxy map 0 failures incl. test_handedness 3/3, interior 104/0, m4-smoke OK, parity/strict identical",
+    "make_golden": "exit 0 (scratchpad/d28_golden.log): the Makefile's full case-count gate satisfied; numbers match the PR body exactly",
+    "make_capture": "exit 0 (scratchpad/d28_capture.log): renders/ regenerated; starboard shows Vela/Carina with the LMC ~10 deg left of centre and below the plane (l 280.5, b -33) and Crux left of it on the plane; port shows Cygnus with M31 lower-left; forward has Sh 2-27 (zeta Oph, l 6 b +24) upper-LEFT; astern has Orion lower-left with Barnard's Loop on the belt's east/left side, the lambda Ori ring right of it, the Pleiades lower-right and Heart-and-Soul far right (the real anticentre sky rotated NGP-up, not mirrored); stars sit on their nebulae (belt inside the Loop, Carina clusters inside the nebula), no doubling",
+    "galaxy_map": "docs/d28-sky-frame/galaxy_map_before_after.jpg: alpha Cen (l 316) now right of Sol with Barnard's/Altair/61 Cyg (l 31-82) above and Kruger 60/Groombridge 34/Ross 248 (l 104-116) left: longitude turns counter-clockwise seen from the NGP side; test_handedness passes",
+    "interior": "docs/d28-sky-frame/interior_before_after.jpg visually identical, as expected (the old SKY_FLIP_H already produced the true view); G-M4-1..4 pass without the flip",
+    "no_hand_copies": "git grep on the branch for (\\w)\\.y, \\1\\.z, -\\1\\.x / [1],[2],-[0] / -z, x, y forms across *.gd *.gdshader *.gdshaderinc *.ail *.py *.sh Makefile: only comments and the test's own strings; sky/starfield.gdshader and the four interior shaders carry no frame swizzle",
+    "merge": "git merge-tree --write-tree d4be649 fix/sky-mirror: CONFLICT (content) bridge/sim_bridge.gd; gh pr view 107: mergeable CONFLICTING, no statusCheckRollup"
+  },
+  "next_steps": [
+    "Rebase fix/sky-mirror onto main, taking main's bridge/sim_bridge.gd; push; let CI run (this is a prerequisite for GitHub to merge at all).",
+    "Mark reviews the regenerated renders and docs/d28-sky-frame sheets (gate 2); the merge waits for that.",
+    "Tell the M5.2a executor (PR #106) to replace Planets.world_of with SkyFrame.to_world64 and rebase; otherwise make physics goes red on the guard and planets render mirrored relative to the stars.",
+    "Follow-ups: re-render website media (make site-media); propose the 'Frames' note to stapledons-design physics/relativity-spec.md; add the pillar table to the design doc."
+  ],
+  "merge_verdict": "APPROVE on content (96/100, no hard fails). NOT mergeable as-is: rebase to clear the bridge/sim_bridge.gd conflict and get CI, then Mark's render review."
+}

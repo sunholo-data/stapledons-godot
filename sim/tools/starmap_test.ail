@@ -1,0 +1,84 @@
+module stapledons/sim/tools/starmap_test
+-- M1.7 map catalogue (sim/tools/starmap.ail). `make starmap-test`: strict VM = interpreter.
+import ./catalogue (Row)
+import ./starmap (mapId, mapRows, mapJson, mapRadiusLy, distLy, duplicateIds, starJson)
+import std/string (concat, join, split, startsWith)
+import std/list (map, filter, length as size, nth_or)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, encode, get, asArray, asNumber, asString, jo)
+
+pure func failedChecks(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func row(id: string, x: float, y: float, z: float, v: float) -> Row = {id: id, x: x, y: y, z: z, teff: 5000.0, v: v, flags: 0}
+pure func ids(r: Result[[Row], string]) -> [string] = match r { Ok(rs) => map(\x. x.id, rs), Err(e) => [concat(["ERR ", e])] }
+
+-- Gaia source ids are labelled; CNS5:n and HIP n stay as they are.
+pure func checkMapId() -> bool =
+  mapId("4472832130942575872") == "Gaia DR3 4472832130942575872" && mapId("CNS5:3627") == "CNS5:3627" &&
+  mapId("HIP 71681") == "HIP 71681" && mapId("") == "" && mapId("12a") == "12a"
+
+-- 25 pc = 81.539094425 ly, plus the 1e-5 ly CSV-rounding margin, inclusive; a row just past it is cut;
+-- a CNS5 row at exactly 40 mas whose 1e-6 ly digits round up (81.539095) is kept.
+pure func checkRadius() -> bool {
+  let r = mapRadiusLy();
+  r == 25.0 * 3.261563777 + 0.00001 &&
+  ids(mapRows([row("CNS5:59", 81.539095, 0.0, 0.0, 99.0)], [], r)) == ["CNS5:59"] &&
+  ids(mapRows([row("CNS5:1", r, 0.0, 0.0, 5.0), row("CNS5:2", 0.0, 0.0, r + 0.000001, 5.0)], [], r)) == ["CNS5:1"] &&
+  ids(mapRows([], [row("HIP 3", 0.0, r + 1.0, 0.0, 5.0)], r)) == []
+}
+
+-- Nearest first; equal distances keep input order (quick before bright).
+pure func checkOrder() -> bool =
+  ids(mapRows([row("CNS5:9", 10.0, 0.0, 0.0, 5.0), row("CNS5:8", 0.0, 3.0, 4.0, 5.0)], [row("HIP 7", 0.0, 0.0, 5.0, 5.0), row("HIP 6", 1.0, 0.0, 0.0, 5.0)], 80.0))
+    == ["HIP 6", "CNS5:8", "HIP 7", "CNS5:9"]
+
+-- A repeated id is refused, after relabelling (a bare Gaia id equals its labelled form).
+pure func checkDuplicates() -> bool =
+  duplicateIds(["b", "a", "b", "c", "b"]) == ["b", "b"] && duplicateIds(["a", "b"]) == [] &&
+  (match mapRows([row("123", 1.0, 0.0, 0.0, 5.0)], [row("Gaia DR3 123", 2.0, 0.0, 0.0, 5.0)], 80.0) { Err(e) => e == "duplicate map id: Gaia DR3 123", Ok(_) => false }) &&
+  (match mapRows([row("CNS5:1", 1.0, 0.0, 0.0, 5.0)], [row("CNS5:1", 90.0, 0.0, 0.0, 5.0)], 80.0) { Ok(rs) => size(rs) == 1, Err(_) => false })
+
+-- alpha Cen (M1.2d rules b and c, D-19): A is the CNS5 system row with HIP photometry, B the
+-- bright tier's HIP 71681 at the system parallax; two rows, two ids, both at 4.321 ly.
+pure func acenA() -> Row = {id: "CNS5:3627", x: 3.094521, y: -3.015404, z: -0.051608, teff: 5790.0, v: -0.01, flags: 8}
+pure func acenB() -> Row = {id: "HIP 71681", x: 3.0944, y: -3.0155, z: -0.0517, teff: 5260.0, v: 1.35, flags: 8}
+pure func checkAlphaCen() -> bool = match mapRows([acenA()], [acenB()], mapRadiusLy()) {
+  Ok([a, b]) => a.id != b.id && distLy(acenA()) > 4.3210 && distLy(acenA()) < 4.3211,
+  _ => false
+}
+
+pure func num(j: Json, k: string) -> float = match get(j, k) { Some(v) => match asNumber(v) { Some(x) => x, None => 0.0 - 1.0 }, None => 0.0 - 1.0 }
+pure func str(j: Json, k: string) -> string = match get(j, k) { Some(v) => match asString(v) { Some(s) => s, None => "" }, None => "" }
+pure func stars(j: Json) -> [Json] = match get(j, "stars") { Some(a) => match asArray(a) { Some(xs) => xs, None => [] }, None => [] }
+
+-- The file decodes; header counts; every float reads back bit for bit (one row per line).
+pure func checkJson() -> bool {
+  let rows = match mapRows([acenA(), row("4472832130942575872", 4.97, 2.99, 1.45, 9.51)], [acenB()], mapRadiusLy()) { Ok(rs) => rs, Err(_) => [] };
+  let text = mapJson(rows, 5908, 10713, []);
+  match decode(text) {
+    Ok(j) => {
+      let ss = stars(j);
+      num(j, "count") == 3.0 && num(j, "count_quick") == 2.0 && num(j, "count_bright") == 1.0 && num(j, "version") == 2.0 &&
+      size(ss) == 3 && str(nth_or(ss, 2, jo([])), "id") == "Gaia DR3 4472832130942575872" &&
+      str(nth_or(ss, 0, jo([])), "id") == "HIP 71681" && str(nth_or(ss, 1, jo([])), "id") == "CNS5:3627" &&
+      num(nth_or(ss, 1, jo([])), "x") == 3.094521 && num(nth_or(ss, 1, jo([])), "z") == 0.0 - 0.051608 &&
+      num(nth_or(ss, 1, jo([])), "dist_ly") == distLy(acenA()) && num(nth_or(ss, 1, jo([])), "vmag") == 0.0 - 0.01 &&
+      num(nth_or(ss, 1, jo([])), "flags") == 8.0 &&
+      size(split(text, "\n")) == 3 + 3 + 1 && startsWith(nth_or(split(text, "\n"), 2, ""), "{\"id\":")
+    },
+    Err(_) => false
+  }
+}
+
+pure func checks() -> [(string, bool)] = [("MapId", checkMapId()), ("Radius", checkRadius()), ("Order", checkOrder()),
+  ("Duplicates", checkDuplicates()), ("AlphaCen", checkAlphaCen()), ("Json", checkJson())]
+
+test "M1.7 checkMapId" { checkMapId() }
+test "M1.7 checkRadius" { checkRadius() }
+test "M1.7 checkOrder" { checkOrder() }
+test "M1.7 checkDuplicates" { checkDuplicates() }
+test "M1.7 checkAlphaCen" { checkAlphaCen() }
+test "M1.7 checkJson" { checkJson() }
+
+export func starmapVm(_: int) -> string = match failedChecks(checks()) { [] => "starmap-ok", bad => concat(["starmap-BAD: ", join(",", bad)]) }

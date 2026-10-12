@@ -1,0 +1,26 @@
+{
+  "shot": "bridge",
+  "frame": "glTF: +Y up (= ship +Z), metres, origin = play_origin_ship_m [0.0, 0.0, 82.0]",
+  "projection": "orthographic",
+  "pitch_deg": -14,
+  "yaw_deg": 45,
+  "size_m": 16,
+  "size_axis": "vertical",
+  "rotation_order": "YXZ",
+  "focus_m": [
+    -8.0,
+    1.0,
+    9.0
+  ],
+  "v_offset_m": 6.08,
+  "forward": [
+    -0.686102688,
+    -0.241921902,
+    -0.686102688
+  ],
+  "up": [
+    -0.171064615,
+    0.970295727,
+    -0.171064615
+  ]
+}

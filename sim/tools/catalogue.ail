@@ -1,0 +1,98 @@
+module stapledons/sim/tools/catalogue
+import std/string (split, trim, stringToFloat, concat)
+import std/list (foldl, sortBy, map, filter, flatMap, head, length, take, nth_or)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import pkg/sunholo/relativity/photometry (teffFromBpRp, vFromG, bpRpInTable)
+import pkg/sunholo/relativity/blackbody_photometry (bbTeffFromBpRp, bbVFromG, bbBpRpInvertible)
+
+export type Row = {id: string, x: float, y: float, z: float, teff: float, v: float, flags: int}
+export type Summary = {rows: [Row], input: int, wd: int, missing: int}
+export type Selection = {rows: [Row], excluded: int}
+-- M1.2d rule (b): Hipparcos photometry for a CNS5 row Gaia could not measure, by row id (bright.ail).
+export type Fill = {id: string, teff: float, v: float, flags: int}
+type Tally = {excluded: int, count: int}
+-- T4 (ailang#1501): lists are flat arrays, so `x :: acc` copies and a consing foldl is O(n^2)
+-- (331,312 GCNS rows took minutes). Every list here is built by map/filter/flatMap/take, which
+-- are linear builtins; foldl is kept only for scalar accumulators. No findIndex or any: both
+-- recurse (quadratic on the VM, past the interpreter's depth limit at 80k).
+-- Bounds cover all finite IEEE binary64 values, rather than excluding large finite coordinates.
+pure func finite(s: string) -> bool = match stringToFloat(s) {
+  Some(v) => v == v && v >= -1.7976931348623157e308 && v <= 1.7976931348623157e308, None => false
+}
+pure func optional(s: string) -> bool = s == "" || finite(s)
+-- toFloat0, not number: extract.ail exports a number and the test runner mixes same-named
+-- functions across modules (ailang#1461)
+pure func toFloat0(s: string) -> float = match stringToFloat(s) { Some(v) => v, None => 0.0 }
+pure func convert(id: string, x: string, y: string, z: string, g: string, c: string, wd: string) -> Row {
+  let white = wd == "1";
+  let missing = g == "" || c == "";
+  let colour = toFloat0(c);
+  {id: id, x: toFloat0(x), y: toFloat0(y), z: toFloat0(z),
+    teff: if missing then 0.0 else if white then bbTeffFromBpRp(colour) else teffFromBpRp(colour),
+    v: if missing then 99.0 else if white then bbVFromG(toFloat0(g),colour) else vFromG(toFloat0(g),colour),
+    flags: (if white then 1 else 0) + (if missing then 2 else
+      (if white then 4 else 0) + (if (if white then bbBpRpInvertible(colour) else bpRpInTable(colour)) then 0 else 16))}
+}
+-- One CSV line, independently of every other line (so the whole file is one map).
+pure func parseLine(line: string) -> Result[Row,string] =
+  if line == "" then Err("blank CSV row") else match split(line,",") {
+    [id,x,y,z,g,c,wd] => if trim(id) == "" || !finite(x) || !finite(y) || !finite(z) ||
+      !optional(g) || !optional(c) || (wd != "0" && wd != "1") then Err("invalid CSV fields")
+      else Ok(convert(id,x,y,z,g,c,wd)),
+    _ => Err("expected seven fields")
+  }
+-- The first Err in list order, if any, and the Ok values in order: two linear passes.
+export pure func firstError[a](xs: [Result[a,string]]) -> Option[string] =
+  head(flatMap(\r. match r { Err(e) => [e], Ok(_) => [] },xs))
+export pure func okValues[a](xs: [Result[a,string]]) -> [a] =
+  flatMap(\r. match r { Ok(v) => [v], Err(_) => [] },xs)
+-- Remove exactly one final empty CSV line; blanks inside the catalogue are malformed.
+pure func withoutTrailingBlank(lines: [string]) -> [string] =
+  if length(lines) > 0 && nth_or(lines,length(lines)-1,"x") == "" then take(length(lines)-1,lines) else lines
+-- WD rows carry flags 3 (missing), 5 or 21 (colour outside the invertible range); never 1 alone.
+-- whiteDwarf and missingRow list whole flag values, so they depend on convert's encoding above: a new
+-- bit must be added here too. tools/catalogue_stats.gd (make test) fails any tier holding a flags value
+-- outside {0,2,3,5,16,21}, so an encoding change cannot silently drop WDs from these counts.
+pure func whiteDwarf(r: Row) -> bool = r.flags == 3 || r.flags == 5 || r.flags == 21
+-- flags 2 (missing) and 3 (missing + WD) are the only flags a missing-photometry row can carry.
+pure func missingRow(r: Row) -> bool = r.flags == 2 || r.flags == 3
+@allow_empty_ok("header-only catalogue is valid; rows are built by map/flatMap")
+export pure func transform(csv: string) -> Result[Summary,string] = match split(csv,"\n") {
+  header :: lines => if header != "id,x,y,z,G,BPRP,wd" then Err("invalid CSV header") else {
+    let parsed = map(parseLine,withoutTrailingBlank(lines));
+    match firstError(parsed) {
+      Some(e) => Err(e),
+      None => {
+        let rows = okValues(parsed);
+        Ok({rows: rows, input: length(rows), wd: length(filter(whiteDwarf,rows)), missing: length(filter(missingRow,rows))})
+      }
+    }
+  },
+  [] => Err("empty input")
+}
+pure func distance(r: Row) -> float = r.x*r.x+r.y*r.y+r.z*r.z
+pure func nearer(a: Row,b: Row) -> int = if distance(a) < distance(b) then -1 else if distance(a) > distance(b) then 1 else 0
+-- Scalar fold: count only missing rows encountered before the complete-row quota fills.
+pure func tally(a: Tally,r: Row,limit: int) -> Tally = if a.count >= limit then a
+  else if missingRow(r) then {excluded: a.excluded+1,count: a.count}
+  else {excluded: a.excluded,count: a.count+1}
+-- sortBy is stable; the selection is the first `limit` complete rows in distance order.
+export pure func selectMedium(rows: [Row],limit: int) -> Selection {
+  let sorted = sortBy(nearer,rows);
+  {rows: take(limit,filter(\r. !missingRow(r),sorted)),
+    excluded: foldl(\a r. tally(a,r,limit),{excluded: 0,count: 0},sorted).excluded}
+}
+-- T3: the only tier names; anything else (case, blanks, unknown) is refused, never treated as "all rows".
+export pure func validTier(t: string) -> bool = t == "quick" || t == "medium" || t == "large"
+-- |x|,|y|,|z| <= 1e6 ly keeps x^2+y^2+z^2 <= 3e12, exact-order safe and far from binary64 overflow.
+pure func inRange(v: float) -> bool = v >= -1000000.0 && v <= 1000000.0
+pure func rowInRange(r: Row) -> bool = inRange(r.x) && inRange(r.y) && inRange(r.z)
+-- Every row is validated before any sort or quota, so rows the medium quota would drop are checked too.
+-- The first out-of-range row in input order is named.
+export pure func selectTier(rows: [Row],tier: string) -> Result[Selection,string] =
+  if !validTier(tier) then Err(concat(["unknown tier (quick, medium, large): ",tier])) else
+  match head(filter(\r. !rowInRange(r),rows)) {
+    Some(r) => Err(concat(["coordinate beyond 1e6 ly: ",r.id])),
+    None => Ok(if tier == "medium" then selectMedium(rows,50000) else {rows: rows,excluded: 0})
+  }

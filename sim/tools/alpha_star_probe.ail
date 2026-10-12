@@ -1,0 +1,14 @@
+module stapledons/sim/tools/alpha_star_probe
+import pkg/stapledons/sim/alpha_centauri (alphaBodies, catalogueA, stellarRadiusKm, localPositionAu)
+import pkg/stapledons/sim/celestial (lyKm)
+import pkg/stapledons/sim/protocol (encodeSystemRings)
+import pkg/sunholo/celestial/kepler (add, scale)
+import pkg/sunholo/celestial/ephemeris (auKm, j2000)
+import std/string (concat)
+export pure func alphaFixtures(n:int)->string {
+ let jd=j2000()+26.0*365.25;
+ let near=add(catalogueA(),{x:1000.0*auKm()/lyKm(),y:0.0,z:0.0});
+ -- This third observer is a radius diagnostic, NOT a navigation endpoint.
+ let close=add(catalogueA(),scale(auKm()/lyKm(),add(localPositionAu("acen-a",jd),{x:3.0*stellarRadiusKm("acen-a")/auKm(),y:0.0,z:0.0})));
+ concat(["{\"sol\":",encodeSystemRings({jd:jd,ephemeris:"Akeson2021; stationary barycentre",frame:"galactic",bodies:alphaBodies(jd,{x:0.0,y:0.0,z:0.0})}),",\"arrival_1000au\":",encodeSystemRings({jd:jd,ephemeris:"Akeson2021; stationary barycentre",frame:"galactic",bodies:alphaBodies(jd,near)}),",\"diagnostic_3ra\":",encodeSystemRings({jd:jd,ephemeris:"diagnostic observer only; no navigation safety",frame:"galactic",bodies:alphaBodies(jd,close)}),"}"])
+}

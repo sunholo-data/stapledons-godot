@@ -1,0 +1,72 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "report_id": "eval_stapledon_iter9_m2_landing_round1",
+  "evaluation_round": 1,
+  "mission_iteration": 9,
+  "timestamp": "2026-10-02T11:30:00+02:00",
+  "judge": "Anthropic claude-sonnet-5-5 (independent; controller supplied no verdict)",
+  "game_sha": "25f3bf2458646ff7be3bab5075e26eb3baef9cfb",
+  "design_sha": "1ef3bc96ace4aa7645a277825f0c81c75b5022a9",
+  "design_doc": "design_docs/implemented/r1/m2-journey-core.md",
+  "sprint_plan": "design_docs/implemented/r1/m2-journey-core-sprint.md",
+  "total_score": 91,
+  "pass_threshold": 70,
+  "result": "pass",
+  "p5_verdict": "SATISFIED",
+  "score_breakdown": {"tests_pass": 19, "lint_clean": 9, "acceptance_criteria": 28, "code_quality": 14, "documentation": 12, "design_fidelity": 9},
+  "hard_fails": [],
+  "blockers": [],
+  "findings": [
+    {"severity": "minor", "file": ".ailang/state/sprints/sprint_R1-M2-JOURNEY.json", "issue": "ailang.pin still v0.50.0 (current toolchain is v0.51.0; the landing plan asked for the current pin with history preserved)", "suggestion": "set pin v0.51.0, note v0.50.0 as the historical pin"},
+    {"severity": "minor", "file": ".ailang/state/sprints/sprint_R1-M2-JOURNEY.json", "issue": "approved is null although ca511a9 records the attended 2026-10-01 plan approval; questions_for_mark Q2/Q3 not annotated as answered", "suggestion": "set approved with ca511a9 provenance; annotate Q2/Q3"},
+    {"severity": "minor", "file": "PR #35 comment / m2-report.md §P5", "issue": "The P5 'yep approved' comment was posted by the bot account sunholo-voight-kampff quoting Mark; the quote cannot be verified from the repo alone. Treated as source evidence per controller instruction; the technical P5 verdict does not depend on it.", "suggestion": "none required"},
+    {"severity": "info", "issue": "No full local make test by this judge. /tmp/stapledon-iter9-baseline3.log has no rc and ran in a different worktree (superseded draft); NOT used. Gate evidence is CI on the exact SHA plus an empty production diff 6da03f8..25f3bf2, plus the replay gate run here."}
+  ],
+  "p5_supplement": {
+    "scope": "final goldens after b6efa8f (arm64) and 1567f84 (x86_64) regenerated for M2.6b additive fields",
+    "ndjson_goldens_diff": "For alpha_cen, godot_map_voyage and offaxis_v11_equiv on both archs, a field-level diff against the pre-regeneration goldens (b6efa8f^1 / 1567f84^1) shows ONLY added keys: changes.params.cruise_phi_{min,max,default} and changes.ship.flown. Zero changed or removed values, line counts unchanged (66/73/17).",
+    "sha_goldens": "diag_thrust600, session2k, session10k are digest-only; digests changed as expected, and are proven by running the replay (below), not by diff.",
+    "six_families_both_archs": {
+      "arm64_local": "tools/replay.py: alpha_cen, diag_thrust600, godot_map_voyage, offaxis_v11_equiv, session10k (10,000 ticks) all OK, VM==interpreter==golden, rc=0; tools/replay.py --ticks 2000: all five incl. session2k OK",
+      "x86_64_ci": "CI run 36984203991 on 25f3bf2 (REPLAY_TICKS=10000): five cases incl. session10k identical (67.1 s); CI run 36981203047 on 80c29ae (PR, 2000 ticks): session2k sha 04e8bf68e806a3b0 identical"
+    },
+    "arch_exception": "arm64 vs x86_64 ndjson goldens are byte-identical for alpha_cen and godot_map_voyage; offaxis_v11_equiv differs only at tick 6 ship.beta, 0.1028644010192098 vs 0.10286440101920982 (1 ulp, ailang#1465). The sha256 files differ per arch as documented.",
+    "arrival_residuals": {"alpha_cen": {"tick": 64, "residual_x": 1.7763568394002505e-15, "residual_t": 7.993605777301127e-15, "residual_phi": 4.843059286940843e-11}, "godot_map_voyage": {"tick": 68, "residual_x": 8.881784197001252e-16, "residual_t": 7.993605777301127e-15, "residual_phi": 4.843059286940843e-11}, "both_archs_identical": true, "bound": "AC5 1e-9*max(1,d)", "within_bound": true},
+    "design_check_rows": {
+      "row2_alpha_cen_0.99c": "golden plan ship_years 0.6226958707592057, earth_years 4.414143655383168, cruise_phi 2.6466524123622457 equal design row 2 exactly (distance 4.37, normative)",
+      "row1_row3_bounds": "golden params cruise_phi_min 1.4722194895832204 equals row 1 (0.9c) and cruise_phi_max 7.254328619262047 equals row 3 (cap 1e-6); also matches my independent 0.5*ln((2-1e-6)/1e-6)",
+      "default": "cruise_phi_default 2.6466524123622457 = atanh(0.99) (math.atanh, independent)",
+      "catalogue_distinct": "godot_map_voyage plans Gl 559 at catalogue distance 4.35667304258651, not 4.37: ship 0.6207968821769395, earth 4.400682082238228. Independent check: earth - d/0.99 = 2.2412417539641183e-06 for BOTH 4.37 and 4.35667 (same boost correction), and ship differs from (d/0.99)/gamma(0.99) by the same 4.6e-6 offset. Consistent with the closed form."
+    },
+    "not_independently_rederived": "energy/ledger/ISM numbers (package conventions); the goldens only gained fields and these did not change"
+  },
+  "mutations": [
+    {"target": "tests/replays/alpha_cen.state.arm64.ndjson residual_x last digit 5->6", "result": "replay --case alpha_cen FAIL rc=1 (got/want mismatch)", "restored": "byte-identical (cmp vs backup)"},
+    {"target": "tests/replays/diag_thrust600.state.arm64.sha256 87cd->87ce", "result": "replay --case diag_thrust600 FAIL rc=1 (digest mismatch)", "restored": "byte-identical"},
+    {"note": "first sed on alpha_cen used the wrong whitespace pattern and changed nothing (replay stayed green); redone correctly. Scoped to the M2.5 replay production diff (goldens + tools/replay.py harness), not the whole sprint."}
+  ],
+  "production_scope": {
+    "diff_6da03f8_to_25f3bf2_outside_docs_state_changelog": "empty (git diff --stat). Landing is docs/state/changelog only: 12 files, +517/-249",
+    "m2_6b_additive_production_change": "b6efa8f^1..b6efa8f in sim/core.ail and sim/protocol.ail: cruisePhiMin/Max/Default exports, params echo, ShipView.flown, decoder. Purely additive, matching the golden diff",
+    "pin": "runtime/bin/ailang = AILANG v0.51.0 (b99dd25); Makefile AILANG_RELEASE v0.51.0; CI AILANG_VERSION v0.51.0; sim/ailang.lock ailang_version v0.51.0, relativity 0.4.0"
+  },
+  "documentation_consistency": {
+    "moves": "m2-journey-core.md, m2-journey-core-sprint.md and m2-report.md are under implemented/r1; no planned/r1/m2* files remain; the only 'planned/r1/m2' strings are historical (sprint JSON notes, plan finding, report provenance line)",
+    "links": "all relative .md links resolve; all 11 design-repo targets exist in the design worktree at 1ef3bc9",
+    "design_repo": "PR #3 (1ef3bc9): roadmap §M2 status Landed with game links; journey-system.md superseded-maths note. Diff is 20 insertions in 2 docs",
+    "sprint_json": "valid; status completed; 10/10 features passes true with completed stamps; design_doc/sprint_plan point to implemented paths; landing block present",
+    "git_diff_check": "clean over 6da03f8..25f3bf2"
+  },
+  "prior_evidence_vs_new": {
+    "prior": "evals R1-M2-JOURNEY-M2.5 and M2.6b (93 each); CI runs 36982239622 on 6da03f8 and 36984203991 on 25f3bf2 (success)",
+    "new_this_round": "field-level golden diff since regeneration, local arm64 replay at 10k and 2k, two golden mutations, independent closed-form and check-row comparison, docs/state/link/roadmap audit, CI log inspection"
+  },
+  "gates": [
+    {"gate": "CI on 25f3bf2 (headless tests, REPLAY_TICKS=10000)", "subject": "exact candidate SHA", "result": "success"},
+    {"gate": "tools/replay.py (arm64, 10k)", "subject": "candidate tree", "result": "5 cases identical, rc=0, 931 s on busy rig"},
+    {"gate": "tools/replay.py --ticks 2000 (arm64)", "subject": "candidate tree", "result": "5 cases identical"},
+    {"gate": "make golden / GPU", "subject": "n/a", "result": "not rerun: no shader or visual change since the M2.6b evaluation (docs-only landing)"},
+    {"gate": "local full make test", "subject": "n/a", "result": "not run by this judge (see findings)"}
+  ],
+  "worktree_state": "git status clean apart from this report pair; mutations restored"
+}

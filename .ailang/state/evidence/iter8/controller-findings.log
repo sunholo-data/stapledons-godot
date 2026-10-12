@@ -1,0 +1,6 @@
+float flags31.5 ->31, test transport only, vm=False
+conservative bound refuses3.4028235e38; Python packs finite max ffff7f7f vm=False
+float flags31.5 ->31, test transport only, vm=True
+conservative bound refuses3.4028235e38; Python packs finite max ffff7f7f vm=True
+NaN guard removed: compiling, oracle including every-field NaN/Inf still passes; redundant mutant reproduced
+Strict native gap already independently reproduced in controller-design-check.md; no new production finding.

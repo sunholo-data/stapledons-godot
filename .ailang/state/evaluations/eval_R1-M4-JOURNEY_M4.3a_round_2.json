@@ -1,0 +1,75 @@
+{
+  "schema": "stapledon-eval/v1",
+  "run": "iter14-eval-round2-delta",
+  "evaluator": "claude-sonnet-4-6",
+  "milestone": "M4.3a_TRANSIT_WARP_HUD",
+  "sprint": "R1-M4-JOURNEY",
+  "base_sha": "4b92429",
+  "head_sha": "00a3cad",
+  "round1_sha": "4b92429",
+  "round1_score": 95,
+  "round1_json": "/tmp/stap14_eval_M4.3a.json",
+  "worktree_used": "/Users/voightkampff/dev/sunholo-data/.wt-stapledon-iter13-m4.3a",
+  "reason_for_worktree": "rc file /tmp/stap14_ctl_maketest_011302f.rc absent → used iter13 worktree per evaluation protocol",
+  "delta_files_changed": [
+    ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json",
+    "tests/replays/m4_transit_harness.state.x86_64.sha256",
+    "tests/test_transit.gd",
+    "ui/arrival_card.gd"
+  ],
+  "checks": {
+    "D1_render_visual": {
+      "status": "PASS",
+      "detail": "Before (stap14_hud/f00001099.png): ArrivalCard text ('Arrived', 'Distance 4.305 ly', 'Ship years 0.613 yr', 'Earth years 4.349 yr', 'Gap 3.735 yr') drawn over JourneyHud at top-left — unreadable overlap. After (stap14_hud2/f00001099.png): JourneyHud clean at top-left; ArrivalCard centred on opaque dark panel (~395–570 px x, ~205–345 px y), no overlap, fully readable. No other visible regressions in either frame."
+    },
+    "D1_render_nothing_else_broken": {
+      "status": "PASS",
+      "detail": "After render shows the same HUD fields (Ship/Earth clock, Gap, Phase, Speed, Gamma, Distance-left, Arrives-in, ISM-load, Drag-energy, Glow, Warp) with identical values to before, only the ArrivalCard position changed."
+    },
+    "D1_fix_code": {
+      "status": "PASS",
+      "detail": "ui/arrival_card.gd: PRESET_CENTER anchor, GROW_DIRECTION_BOTH, StyleBoxFlat bg_color alpha 0.96, 16 px content margin. Minimal, correct, no over-engineering."
+    },
+    "D1_test_card_layout_meaningful": {
+      "status": "PASS",
+      "detail": "test_card_layout checks (a) card.visible and c.size.x>0 and not c.intersects(hud_rect) — on old code card was at (0,0,153x131) which intersects hud (0,0,387x390) → would fail; (b) card is inside viewport and StyleBoxFlat bg_color.a >= 0.9 — old code had no StyleBoxFlat → would throw null deref / fail. Controller measured RED 41/2 on old arrival_card.gd, consistent with 2 new checks. Threshold 0.9 < 0.96 (correct: tests a minimum opacity, not the exact value)."
+    },
+    "F1_test_settle_meaningful": {
+      "status": "PASS",
+      "detail": "Mutation 'for r in refused' → 'for r in []' applied to bridge/transit.gd; make transit-test run. Result: 42 passed, 1 failure ('settle: a refusal at the pending intent's index keeps the old warp level'). Warp incorrectly advanced to 0.05 instead of remaining at WARP_DEFAULT. Restored via git checkout -- bridge/transit.gd; line confirmed restored. The test is meaningful and catches the refusal-ignored bug."
+    },
+    "F1_mutation_count_discrepancy": {
+      "status": "INFO",
+      "severity": "low",
+      "detail": "Executor notes claim '3 failures' for this mutation; actual result is 1. The second test_settle check (positive path) passes even with the mutation because an empty refused list still yields not turned_down → warp = _pending = 0.05, which is what that case expects. No transit-harness replay checks were affected (no warp intents appear to be refused by the sim in that run). The discrepancy is in the sprint notes only; the test code is correct and catches the fault."
+    },
+    "sim_stream_goldens_untouched": {
+      "status": "PASS",
+      "detail": "No existing golden files modified. Only new file: tests/replays/m4_transit_harness.state.x86_64.sha256 (resolves OPEN item 1 from R1: x86_64 digest e1a8a7818d5278d5... now committed, matching the arm64 golden, verified by CI run 37299202095 rc=0)."
+    },
+    "expected_checks_count": {
+      "status": "PASS",
+      "detail": "EXPECTED_CHECKS updated 39 → 43: +2 from test_card_layout, +2 from test_settle = +4. Arithmetic correct."
+    },
+    "regression_risk": {
+      "status": "PASS",
+      "detail": "Delta touches only: (1) UI positioning in arrival_card.gd — additive, no existing logic removed; (2) test additions — additive only; (3) new x86_64 golden — additive. No changes to sim, protocol, bridge/transit.gd, journey_hud, or any M2/M3 paths. Risk: very low."
+    }
+  },
+  "findings": [
+    {
+      "id": "F-DELTA-01",
+      "severity": "info",
+      "blocking": false,
+      "title": "Executor notes overstate mutation failure count (3 vs actual 1)",
+      "file": ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json",
+      "description": "Sprint notes for iter14 claim 'mutation for r in refused → for r in [] → 3 failures incl. the new settle check'. Independent mutation run produced 1 failure (the first settle ok-check only). The second settle check and transit-harness replay checks are unaffected. The test is still meaningful and catches the fault; the note inaccuracy is cosmetic.",
+      "recommendation": "Update the sprint note to '1 failure'; no code change required."
+    }
+  ],
+  "blocking_count": 0,
+  "score": 96,
+  "verdict": "PASS",
+  "score_rationale": "Round 1 scored 95/100 with OPEN item: missing x86_64 golden (now resolved by commit 011302f, closing that gap). D1 visual fix confirmed by render comparison and test. F1 test confirmed meaningful by mutation (catches the bug). No sim/golden regressions. One info-only finding (note discrepancy on mutation failure count; code is correct). +1 for resolving the R1 open item. −0 blocking issues.",
+  "evaluated_at": "2026-10-05"
+}

@@ -1,0 +1,76 @@
+module stapledons/ai/key
+
+-- The cache key (design ai-service-foundation (a4)) and the small pure list
+-- and string helpers the service's modules share. The entity-id regex and
+-- the emotion set duplicate sim/ai.ail and sim/markers.ail on purpose: the
+-- service imports nothing from sim/ (gap G5, ailang#1498).
+--
+-- Canonical form: kind/entity_id/emotion/age_stage/variant.
+--   kind       text | voice | portrait | avatar
+--   entity_id  ^[a-z][a-z0-9_]{0,31}$
+--   emotion    one of the 8; "-" for voice and avatar; text may use either
+--   age_stage  whole years in [0, 1000]
+--   variant    images: a decimal index ("0", "1", ...); text and voice: "-"
+--              or the first 16 lowercase hex characters of a sha256
+-- Pure; runs on the strict VM (aiWireVm, `make strict-ai`).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (length, substring, contains, intToStr, join, split, stringToInt)
+
+export type CacheKey = { kind: string, entityId: string, emotion: string, ageStage: int, variant: string }
+
+export pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
+export pure func aiKinds() -> [string] = ["text", "voice", "portrait", "avatar"]
+export pure func isMedia(kind: string) -> bool = kind == "voice" || kind == "portrait" || kind == "avatar"
+
+export pure func member(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || member(x, r) }
+export pure func allIn(xs: [string], set: [string]) -> bool = match xs { [] => true, x :: r => member(x, set) && allIn(r, set) }
+export pure func size(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + size(r) }
+
+-- Every character of s (from i) is in the alphabet.
+pure func allChars(alpha: string, s: string, i: int, n: int) -> bool =
+  if i >= n then true else contains(alpha, substring(s, i, i + 1)) && allChars(alpha, s, i + 1, n)
+export pure func isLowerHex(s: string, n: int) -> bool = length(s) == n && allChars("0123456789abcdef", s, 0, n)
+export pure func isDecimal(s: string) -> bool {
+  let n = length(s);
+  n >= 1 && n <= 15 && allChars("0123456789", s, 0, n) && (n == 1 || substring(s, 0, 1) != "0")
+}
+pure func lowerAlpha() -> string = "abcdefghijklmnopqrstuvwxyz"
+-- `^[a-z][a-z0-9_]{0,31}$`, by hand (no regex on the strict VM).
+export pure func validEntityId(s: string) -> bool {
+  let n = length(s);
+  n >= 1 && n <= 32 && contains(lowerAlpha(), substring(s, 0, 1)) && allChars("abcdefghijklmnopqrstuvwxyz0123456789_", s, 1, n)
+}
+
+pure func emotionOk(k: CacheKey) -> bool =
+  if k.kind == "portrait" then member(k.emotion, emotions8())
+  else if k.kind == "text" then k.emotion == "-" || member(k.emotion, emotions8())
+  else k.emotion == "-"
+pure func variantOk(k: CacheKey) -> bool =
+  if k.kind == "portrait" || k.kind == "avatar" then isDecimal(k.variant)
+  else k.variant == "-" || isLowerHex(k.variant, 16)
+
+-- The first failing field, as "bad_key:<field>", or None.
+export pure func keyError(k: CacheKey) -> Option[string] =
+  if !member(k.kind, aiKinds()) then Some("bad_key:kind")
+  else if !validEntityId(k.entityId) then Some("bad_key:entity_id")
+  else if !emotionOk(k) then Some("bad_key:emotion")
+  else if k.ageStage < 0 || k.ageStage > 1000 then Some("bad_key:age_stage")
+  else if !variantOk(k) then Some("bad_key:variant")
+  else None
+
+export pure func canonical(k: CacheKey) -> string = join("/", [k.kind, k.entityId, k.emotion, intToStr(k.ageStage), k.variant])
+
+-- Inverse of canonical for every valid key: exactly five fields, a decimal
+-- age, then keyError must pass.
+export pure func parseCanonical(s: string) -> Result[CacheKey, string] =
+  match split(s, "/") {
+    [kd, eid, em, ag, va] => if !isDecimal(ag) then Err("bad_key:age_stage") else match stringToInt(ag) {
+      Some(a) => {
+        let k = { kind: kd, entityId: eid, emotion: em, ageStage: a, variant: va };
+        match keyError(k) { Some(e) => Err(e), None => Ok(k) }
+      },
+      None => Err("bad_key:age_stage")
+    },
+    _ => Err("bad_key:shape")
+  }

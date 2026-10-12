@@ -1,0 +1,48 @@
+{
+  "review": "Combined approved glow/ship/transit integration",
+  "timestamp": "2026-10-05T13:42:51.117901+00:00",
+  "result": "source_pass_final_delivery_pending",
+  "delivery": "pending combined final tests/goldens/native package",
+  "user_authority": "Root records user authorization to merge all open PRs/branches, including game113/117, website116 and linked canon7; evaluator performs no merge.",
+  "independent_evidence": {
+    "replay_leaf_audit": "/private/tmp/combined-replay-diff-results.json:16 changed NDJSON references,48 leaves, only glow_eps/glow_w_m2 scaling0.1; clocks/motion/target/ledger/events unchanged. SHA-only references require actual final replay/parity generators.",
+    "actual_snapshot_audit": "/private/tmp/combined-sky-snapshot-diff.json:0.8 provenance, epsilon/glow changes, actual pole/T fields and5new transit metrics perstate; all clocks/position/velocity/heading/ledger unchanged.",
+    "glow_probe": "Interpreter and VM pinned0.8 actualexit0; /private/tmp/combined-judge-glow-{interp,vm}.log byte-identical. Strict-bytecode IO probe is not a supported strict pure harness; not claimed.",
+    "package_preservation": "Actual0.8 optics/kinematics/journey/hyper/photometry source modules byte-identical with bundled0.7; new spectral APIs additive inmedium/blackbody. Package old\u03b51e-11 changelog ishistorical; caller usesapproved1e-10.",
+    "canon": "Primary PR7 diff /private/tmp/glow-canon-pr7.diff independently read. HB-96/98/100/101/102/103/104/105/106/107/109/110 agree with0.8 actualprobe atprintedprecision; approximation isexplicit real GeV cascades are notPlanck spectrum. Canon landing pending.",
+    "controlled_transit_digest": {
+      "scratch": "/private/tmp/transit-refreeze-judge-thwlfbf2",
+      "source_before": "1879d66",
+      "source_current": "16948a40df2653617d6c3f7793c25a8efcdbfc50",
+      "input_sha256": "32815e01810e910b85e740401b9ab352272ca22b4ffcb307ae5dc9bab2e96575",
+      "old_sha256": "e1a8a7818d5278d546526da8c27013444df1c966d3e8fe954dfb0e5f44f150c1",
+      "committed_arm64_reference": "e1a8a7818d5278d546526da8c27013444df1c966d3e8fe954dfb0e5f44f150c1",
+      "old_reference_matches": true,
+      "current_sha256": "e8cabac62833d388f3646ff2df79dbf5199aebd3f273cef0209824dc019851bd",
+      "reply_count": 428,
+      "vm_interpreter_identical_before": true,
+      "vm_interpreter_identical_after": true,
+      "changed_leaves": {
+        "glow_pole_w_m2": 417,
+        "glow_pole_k": 417,
+        "glow_eps": 1,
+        "glow_w_m2": 420
+      },
+      "unexpected_changes": []
+    },
+    "canon_landing": "Root attests linkedcanonPR7 merged ebe46f9 after independently matched primary PRdiff; game explicitly labels spectrum stand-in approximation."
+  },
+  "finding": {
+    "issue": "Glow bubble wall default transparent priority0 is drawn before resolved body blend_mix materials1+rank, so night/globe/ring coverage can erase foreground wall emission.",
+    "requested_resolution": "Place additive wall emission after resolved bodies and add native wall+opaque/night-body composition fixture. No evaluator implementation edits.",
+    "resolution": "Closed in16948a4: wall priority126 after opaque body composition; native seven-check fixture actualexit0, including old priority0 negative control. Both diagnostic output PNGs independently opened. Physics golden actualexit0 shared by root."
+  },
+  "documentation_followup": [],
+  "delivery_followup": [
+    "Final resolved full suite and final remoteCI success.",
+    "Actual0.8 cache staging and clean-home packaged startup/fulltour/identification/legacy proof.",
+    "Air/furtherart/externalsimulationSun/GR limits remain explicit; no full-ship completion claim."
+  ],
+  "primary_diff_sha256": "a75f754c856e351ed33fa91da5fead3ffe56214b7a17f0403adb0c26b73888b3",
+  "shared_linux_evidence": "Root attests actualLinuxrun37320061545: x86_64 VM/interpreter match e8cabac62833d388f3646ff2df79dbf5199aebd3f273cef0209824dc019851bd; onlyfailurewasoldexpectedhash.7f8d3eeupdatescandidatefromactualrun,finalCIpending."
+}

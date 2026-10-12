@@ -1,0 +1,20 @@
+extends SceneTree
+func _initialize() -> void:_run.call_deferred()
+func _run() -> void:
+	var main: Node=load("res://main.gd").new()
+	main.sim.world={"ship":{"journey_sentinel":"preserve"}}
+	var expected: Dictionary=main.sim.world.duplicate(true)
+	var pid: int=main._open_ship_demo_review(true)
+	# Protocol2.5 now computes real system ephemerides during every voyage tick.
+	# The complete native launch/voyage smoke measures about21s on the Studio;
+	# retain a finite guard with headroom for the CI machine and cold startup.
+	var deadline:=Time.get_ticks_msec()+90000
+	while pid>0 and OS.is_process_running(pid) and Time.get_ticks_msec()<deadline:
+		await create_timer(.1).timeout
+	var ok: bool=pid>0 and not OS.is_process_running(pid) and main.sim.world==expected and is_instance_valid(main)
+	if pid>0 and OS.is_process_running(pid):OS.kill(pid)
+	for field in ["starfield","camera","hud","sky_note","credits","system_view"]:
+		var node: Variant=main.get(field)
+		if node is Node and is_instance_valid(node) and node.get_parent()==null:node.free()
+	main.free()
+	print("ship-demo-launch: %s" % ("OK" if ok else "FAIL"));quit(0 if ok else 1)

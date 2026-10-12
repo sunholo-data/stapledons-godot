@@ -1,0 +1,54 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "milestone": "M4.0_AREA_BUNDLES",
+  "round": 1,
+  "result": "pass",
+  "score": 86,
+  "pass_threshold": 70,
+  "branch": "sprint/m4.0-areas",
+  "pr": 95,
+  "commits": ["dea6c2b", "f808cab"],
+  "evaluator": "independent evaluator (generator != judge), fresh clone, runtime/bin/ailang v0.52.0",
+  "breakdown": {
+    "tests_pass": {"max": 20, "got": 20, "note": "make test AILANG=runtime/bin/ailang exit 0 (includes area-test 56/56, validate-areas 14+14, physics ship_frame). GitHub CI job 'headless tests' was still pending at evaluation time. Plain `make test` with the PATH ailang (dev build v0.52.0-17-dirty) fails in `deps` on the lockfile version string, unrelated to the sprint."},
+    "lint_clean": {"max": 10, "got": 10, "note": "no lint gate; python-guard ok; validator is GDScript, no new Python"},
+    "acceptance_criteria": {"max": 30, "got": 27, "note": "AC13, AC14 (validation half), AC18 met; real bridge v1 bundle (/Users/voightkampff/dev/blender/exports/stapledon/areas/bridge) passes 16/16 read-only. Deduction: several validator checks lack a positive control (see mutations)."},
+    "code_quality": {"max": 15, "got": 10, "note": "LOC 837 code lines (545 impl + 292 tests; 1224 added lines incl. fixture builder) vs 400 est / 650 cap, no entry in loc_cap_exceptions; weak tolerance control; test-first unverifiable from history (impl, tests, sprint JSON in 2 commits, 40 min wall clock)."},
+    "documentation": {"max": 15, "got": 11, "note": "changelog fragment good, sprint status line present. The assets/areas/.gdignore export follow-up for M4.2 is recorded nowhere (grep of design docs, sprint plan, sprint JSON, changelog: no hit)."},
+    "design_fidelity": {"max": 10, "got": 8, "note": "V17 schema field for field; ship_frame matches D-14; brief 9 round trip implemented but the image check is 3 px against the brief's 1 px."}
+  },
+  "verified": {
+    "v17_schema": "area, camera, sky_visible, focus_m[3], layers.panorama{file,parallax}, layers.play{file,iso_pitch_deg,iso_yaw_deg,iso_size_m}, layers.foreground{file,parallax} all required, typed and positive-controlled one by one (tests/test_area_bundle.gd:97-114); brief file names enforced; placeholder optional bool; unknown keys kept (test :83). interior/area_bundle.gd:check_manifest.",
+    "ship_frame": "interior/ship_frame.gd:26-40. Orthonormal to 1e-12 over 73 headings, det +1 (right-handed), no phase argument (D-14), PackedFloat64Array throughout, zero/inf/NaN heading refused (empty). Pole fallback within POLE_EPS=1e-6 to galactic +X, tested at 0, 4e-7 (fallback) and 1e-5 (no fallback) rad, SGP too.",
+    "projection": "float64 (GDScript float); project/unproject re-orthonormalise the float32 camera basis; tests: centre ray to frame centre, round trip to 1e-6 px, and an INDEPENDENT value, needle tip at 4K = (1920, 1437.4249) from Blender's validation.json (test_area_bundle.gd:147). The analytic round trip alone is self-inverse by construction; the independent anchors are the 4K value, declared needle_tip_pixel and the image check.",
+    "round_trip_1px": "re-projection 0.000000 px on all three bundles; declared needle_tip_pixel agrees to 0.0000 px on the Blender bundle.",
+    "gates": "make validate-areas passes on fixture and assets/areas/bridge; BUNDLE=real bridge v1 passes 16/16 (read only)."
+  },
+  "mutations": {
+    "killed": ["ROUND_TRIP_PX 1->1000", "HAZE_MAX 16->0", "Y_UP_FRACTION 0.5->0", "MIN_SPACE_FRACTION->0", "centre-box check dropped", "speck check dropped", "WALK_EXTENT widened", "resolution check dropped", "camera frame check dropped", "UNIT_TOL 1e-4->10", "brief file names check dropped", "missing-layer check dropped", "project depth/aspect swapped", "project y sign flipped", "ship_basis left-handed", "pole fallback removed (NaN)", "POLE_EPS 1e-9", "POLE_EPS 1e-4", "POLE_FALLBACK -> +Y", "NGP sign flipped", "heading z negated (flip)", "to_ship transpose wrong"],
+    "survived": [
+      {"mutant": "NEEDLE_IMAGE_TOL_PX 3 -> 30", "where": "tools/validate_area.gd:32", "meaning": "the only needle-image control is a 3.7 m camera move (>> 3 px); nothing pins the tolerance between ~3 and ~30 px"},
+      {"mutant": "FG_MIN_CLEAR_FRACTION 0.5 -> 0", "where": "tools/validate_area.gd:35,106", "meaning": "no positive control for 'foreground mostly clear'"},
+      {"mutant": "camera.panorama != layers.panorama.file check disabled", "where": "interior/area_bundle.gd:57", "meaning": "no control for camera/manifest panorama mismatch"},
+      {"mutant": "METRES_EXTENT widened to [0, 2e5]", "where": "tools/validate_area.gd:38", "meaning": "metres check alone is uncontrolled; the cm control passes via the walk-extent check ('or' in test line 227)"},
+      {"mutant": "_has_alpha_format disabled", "where": "tools/validate_area.gd:71", "meaning": "equivalent: an RGB plate still fails via the 0-alpha fraction"},
+      {"mutant": "ship_basis y = _unit(y) instead of cross(z, x) (reorthogonalisation removed)", "where": "interior/ship_frame.gd:38", "meaning": "the comment claims the cross-product re-derivation is needed near the poles, but no test headings need it at 1e-12; harmless, the claim is unproven"}
+    ]
+  },
+  "findings": [
+    {"sev": "medium", "file": "tools/validate_area.gd:32,145", "issue": "Needle image tolerance 3 px is symmetric (absf) and loose against the brief's 1 px. Measured offsets are 1.425 px (4K Blender bundle) and 1.712 px (fixture): the solid top sits ABOVE the projected tip by the ink outline, always. Justified as 1 px + ink, but better: make it one-sided (top solid row in [tip-2.5, tip+0.5]) or measure the ink-free anchor from alpha>0/ink colour, and add a 4-5 px camera-shift control so the number is pinned.", "suggestion": "follow-up in M4.2 or the next touch of validate_area.gd; not blocking"},
+    {"sev": "medium", "file": "design_docs/planned/r1/m4-first-journey-sprint.md (M4.2 section)", "issue": "assets/areas/.gdignore and tests/fixtures/areas/.gdignore keep Godot from importing the PNGs/GLB (runtime load, no import step), but an exported build will not contain them (cf. sky_bundle staging at Makefile:421). That follow-up is recorded nowhere.", "suggestion": "add an M4.2 task: stage assets/areas into the export (as sky-bundle does) or an export-preset include filter for json/png/glb, plus export-smoke check"},
+    {"sev": "low", "file": "tests/test_area_bundle.gd", "issue": "missing positive controls for foreground clear fraction, camera.panorama mismatch, and the metres check on its own (see survivors).", "suggestion": "three small cases"},
+    {"sev": "low", "file": ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json", "issue": "LOC cap overrun is only in the feature notes; loc_cap_exceptions has no M4.0 waiver entry.", "suggestion": "add the waiver entry"},
+    {"sev": "low", "file": "interior/ship_frame.gd:26", "issue": "ship_basis indexes heading[0..2] without a size check; a short array errors instead of returning empty (only zero/inf/NaN are handled).", "suggestion": "guard heading.size() != 3"}
+  ],
+  "deviations": {
+    "loc_837_vs_400_est_650_cap": "ACCEPT with a note. Over the cap by 29% (545 impl + 292 tests code lines; the 306-line validator is most of it, plus 68 for the fixture builder). The sprint's own 1.5x actual/estimate history applies, the work is cohesive and not splittable after the fact, and notes disclose it, but no waiver entry was recorded. Not a fail.",
+    "not_test_first": "ACCEPT, minor deduction. Tests are strong (56 + 15 checks, 22 of 28 of my mutants killed), but commit history cannot show the red phase; one commit holds impl and tests.",
+    "gdignore_export_followup": "ACCEPT the .gdignore (runtime loading is the stated design, AC14 data drop), REQUIRE the follow-up to be written into the M4.2 plan; currently nowhere.",
+    "declared_extras_play_origin_needle_tip": "KEEP as unknown keys for now. needle_tip_ship_m and needle_tip_pixel are already consumed (and type-checked by _vec3) by the validator under an optional 'validation' block; promoting them to required V17 fields would break the brief's field-for-field contract and Blender's own hand-off. play_origin_ship_m is read by nothing yet: add it as an OPTIONAL typed field (3 numbers) in M4.2 when the loader first places the GLB, with a control. Do not make any of them required.",
+    "sprint_json_conflict_with_m4_1": "NO CONFLICT. M4.1 (PR #92) has since merged to origin/main; `git merge-tree` of the branch with origin/main is clean, and the merged sprint JSON has status in-progress with M4.0 and M4.1 both passes true. Re-run make test after merge as normal."
+  },
+  "ci": "gh pr checks 95: 'headless tests (physics, sim, parity, strict VM)' pending at evaluation time (run 37128599377)",
+  "hard_fails": []
+}

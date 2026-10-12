@@ -1,0 +1,5 @@
+sticky_err_dropped: KILLED killer=['sticky_error_teff_-1e+39', 'sticky_error_teff_1e+39', 'sticky_error_v_-1e+39'] restored_sha_ok=True t=1s
+N1_dwarf_uses_wd_pred: KILLED killer=['make: *** [catalogue-vm] Error 1'] restored_sha_ok=True t=0s
+N1_dwarf_never_clamped: KILLED killer=['make: *** [catalogue-vm] Error 1'] restored_sha_ok=True t=0s
+N2_strip_all_blanks: KILLED killer=['make: *** [catalogue-vm] Error 1'] restored_sha_ok=True t=0s
+N2_never_strip: KILLED killer=['make: *** [catalogue-vm] Error 1'] restored_sha_ok=True t=1s

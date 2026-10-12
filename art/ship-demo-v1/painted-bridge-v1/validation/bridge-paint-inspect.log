@@ -1,0 +1,6 @@
+./blender.sh --background "scenes/stapledon_bridge_mesh_painted_v1.blend" --python-exit-code 1 --python scripts/inspect.py
+00:00.242  blend            | Read blend: "/Users/voightkampff/dev/blender/scenes/stapledon_bridge_mesh_painted_v1.blend"
+BLENDER_SCENE_REPORT={"animated_objects": [], "blend_file": "/Users/voightkampff/dev/blender/scenes/stapledon_bridge_mesh_painted_v1.blend", "camera": "Paint review \u2014 actual captain eye", "cycles_device": "GPU", "frames": [1, 250, 24], "mesh_triangles": 200485, "mesh_vertices": 215854, "missing_external_files": [], "objects": {"CAMERA": 13, "EMPTY": 13, "LIGHT": 1, "MESH": 154}, "render_engine": "CYCLES", "render_output": "/tmp/", "resolution": [1280, 720, 100], "scene": "Scene"}
+Blender 5.2.1 LTS (hash 9e2066aef7ef built 2026-08-25 01:35:57)
+
+Blender quit

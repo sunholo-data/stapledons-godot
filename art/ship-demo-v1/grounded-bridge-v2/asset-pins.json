@@ -1,0 +1,47 @@
+{
+  "authoring_base_commit": "e4da963029beb9acff09c4baaa577426d8be11a6",
+  "authoring_script": "/Users/voightkampff/dev/blender/scripts/stapledon_bridge_floor_restore_v2.py",
+  "authoring_script_sha256": "b60d9aa00d70776e2f6e8cbbf1253fe24ce2a34e8928a6b128963bea77c44fe3",
+  "pins": {
+    "assets/ship_demo/ship.glb": {
+      "bytes": 9124916,
+      "sha256": "9da74077d72d8132970063dbf7c27eb14bdb52286fecbd02f4ae0149fc0344fa",
+      "materials": 14,
+      "images": 10,
+      "all_materials_opaque": true
+    },
+    "assets/ship_demo/walk_bridge.glb": {
+      "bytes": 325488,
+      "sha256": "9775c88d9f4d7ba7cb041ceedc61b22d6fca631092a73d051b0efdbad58f319b",
+      "materials": 0,
+      "images": 0,
+      "all_materials_opaque": true
+    },
+    "assets/ship_demo/walk_lower.glb": {
+      "bytes": 1208,
+      "sha256": "dc06abfcc0a3485db6eb443ae76b9d4beb12cdb658cbed877d5f15517e330213",
+      "materials": 0,
+      "images": 0,
+      "all_materials_opaque": true
+    },
+    "assets/ship_demo/manifest.json": {
+      "bytes": 2789,
+      "sha256": "77678a4a57de9c4aa40e74a1fe0066f724ae7e06ff5d147e2fa7d594cd8caf12"
+    },
+    "assets/ship_commons/full_assembly.glb": {
+      "bytes": 13521596,
+      "sha256": "766987c38c8560b5aaf2a1b1256d9747aff25d1de0a948d8581df53499999a37",
+      "materials": 15,
+      "images": 11,
+      "all_materials_opaque": true
+    },
+    "art/ship-demo-v1/grounded-bridge-v2/stapledon_bridge_mesh_grounded_v2.blend": {
+      "bytes": 7994672,
+      "sha256": "d1189dd8da752b971c31a19254a39794c8d3a89b67fbe34bd0c392d3e15dd9b5"
+    },
+    "art/ship-demo-v1/grounded-bridge-v2/stapledon_unified_ship_grounded_v2.blend": {
+      "bytes": 11285278,
+      "sha256": "50ab3b73bc896e2dfdec3d6e08848a000a029de813cebc65a7e15ed12669050c"
+    }
+  }
+}

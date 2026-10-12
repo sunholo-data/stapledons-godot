@@ -1,0 +1,123 @@
+{
+  "sprint_id": "R1-M4-JOURNEY",
+  "milestone": "M4.4",
+  "subfeature": "D-45(B) Sol-return no-age variant",
+  "pr": 131,
+  "branch": "sprint/m4.4-news-legacy",
+  "commits_under_review": ["2ce00d0"],
+  "preceding_merge": "f60b524 (origin/main)",
+  "round": 2,
+  "evaluator": "independent agent (generator != judge); AILANG runtime/bin v0.52.0 (pinned); Godot v4.7.2.stable; minimax-m3 as the model; session_protocol_ack() confirmed acked=true before any read/write; no network, no live AI, no keys",
+  "score": 100,
+  "verdict": "PASS",
+  "blocking": [],
+  "pass_threshold": 70,
+  "score_breakdown": {
+    "verified_mechanics_both_gates_plus_five_mutations": 60,
+    "explicit_questions_with_evidence": 20,
+    "independent_findings": 20
+  },
+  "automated": {
+    "make news-lint AILANG=runtime/bin/ailang": "PASS (RC=0; prints 'news-lint: ok' AND 'news-lint: the stray-digit fixture fails as it must'; the new labels header_no_age_tail and body_no_age are digit-free and within the 280-char cap, so the lint accepts them; the stray_digit.json fixture is still rejected)",
+    "make news-test AILANG=runtime/bin/ailang": "PASS (RC=0; final summary 'news: 81 passed, 0 failures'; the 10 new Sol/no-age assertions in test_no_age are all GREEN, the 71 pre-existing assertions are still GREEN; the printed Sol return snapshot on the template path reads header='Latest news from Earth: Earth-year +8.70, just arrived.' and body='Home is close enough now that this message has not aged at all: it reaches you exactly as it was written, with no years of travel between the telling and the hearing.'; the printed Sol-return fallback snapshot shows the same no-age header and body under the 'Live transmission unavailable: archived text shown' notice and the 'Reason: the generated text contained a numeral' phrase)",
+    "make sim": "FORBIDDEN to this evaluator per the controller's tool_hang contract; not re-run (the fix touches no file under sim/, verified by git diff f60b524..2ce00d0 --name-only)",
+    "make test": "FORBIDDEN to this evaluator per the controller's tool_hang contract; not re-run",
+    "ailang --version": "v0.52.0 (Commit bf2436a, Built 2026-10-02T20:16:32Z) — matches the worktree pin"
+  },
+  "scope_check": {
+    "files_changed": ["data/news/copy.json", "tests/test_news.gd", "ui/news_copy.gd", "ui/news_panel.gd"],
+    "lines": "4 files changed, 78 insertions(+), 3 deletions(-)",
+    "outside_scope": [],
+    "sim_touched": false,
+    "wire_protocol_touched": false,
+    "tests_replays_touched": false,
+    "scope_matches_D-45B": "YES. D-45(B) records: 'add a no-age variant so the Sol return no longer reads 0.00 years old, then merge #131.' The diff delivers exactly that: a no-age path through the news header (NewsCopy.header_parts) and the news body (TemplateText.no_age / no_age_text), driven by is_no_age(slots) and two data-driven labels in copy.json. No other file is touched."
+  },
+  "red_first_claim": {
+    "claim": "5 new Sol assertions failed at f60b524 with the existing 71 green; GREEN: news-test 81 passed / 0 failures; the stray-digit control still failing as designed",
+    "pre_fix_test_no_age_existence_check": "git show f60b524:tests/test_news.gd | grep -c 'test_no_age' = 0 — test_no_age did NOT exist at f60b524, confirming the 5 RED-first assertions could only have been added in this commit",
+    "pre_fix_copy_json_labels_check": "git show f60b524:data/news/copy.json | python3 -c ... — neither 'header_no_age_tail' nor 'body_no_age' existed at f60b524, so the data-driven copy assertion also must have been RED at the pre-fix state",
+    "mechanism_re_derivation": "Each of the five mutations below was applied ONE AT A TIME to the post-fix tree and observably turned the named assertion RED (then was restored byte-identically). The mutations collectively re-derive the mechanism the RED-first claim rests on without rewriting history."
+  },
+  "mutations": [
+    {
+      "name": "M1: neuter is_no_age in ui/news_copy.gd (return false)",
+      "red": true,
+      "restored": true,
+      "restore_method": "cp .eval-backups/news_copy.gd.bak ui/news_copy.gd; cmp confirmed byte-identical",
+      "command": "make news-test AILANG=runtime/bin/ailang",
+      "result": "news: 76 passed, 5 failures; failures: 'Sol return: the header drops the age clause (no years old, no 0.00)', 'Sol return: the body is the no-age phrase, never 0.00 years old', 'Sol return fallback: the same no-age header and body, the notice and reason stand', 'Sol return ai: the header drops the age, the accepted text stands', 'a news age that renders 0.00 is no-age'",
+      "evidence": "Printed Sol return snapshot literally reads 'header: Latest news from Earth: Earth-year +8.70, already 0.00 years old.' — the original D-45 bug visible again; the session fallback body falls back to 'This transmission is 0.00 years old.' as well"
+    },
+    {
+      "name": "M2: put a numeral inside the new body_no_age label in data/news/copy.json (append ' 2')",
+      "red": true,
+      "restored": true,
+      "restore_method": "cp .eval-backups/copy.json.bak data/news/copy.json; cmp confirmed byte-identical",
+      "command": "make news-lint AILANG=runtime/bin/ailang",
+      "result": "news-lint: label body_no_age contains a numeral; news-lint: FAILED, 1 problems; make exit 1",
+      "evidence": "The new label is part of the data, not the code, and the lint enforces the same digit-free rule on labels that it enforces on templates outside slots"
+    },
+    {
+      "name": "M3: raise NO_AGE_BELOW in ui/news_copy.gd from 0.005 to 0.05",
+      "red": true,
+      "restored": true,
+      "restore_method": "cp .eval-backups/news_copy.gd.bak ui/news_copy.gd; cmp confirmed byte-identical",
+      "command": "make news-test AILANG=runtime/bin/ailang",
+      "result": "news: 80 passed, 1 failure; failure: 'a news age of 0.01 keeps the age clause' (the 0.01 fixture is no longer >= 0.05, so it crosses into the no-age path and the header reads 'just arrived.' instead of 'already 0.01 years old.')",
+      "evidence": "The threshold is a real gate, not decorative; it lives in NewsCopy and is documented as 'a value that renders as 0.00 with SLOT_FMT; the Sol return is exactly 0'"
+    },
+    {
+      "name": "M4: delete the line 'body.no_age = no_age' in ui/news_panel.gd:show_world",
+      "red": true,
+      "restored": true,
+      "restore_method": "cp .eval-backups/news_panel.gd.bak ui/news_panel.gd; cmp confirmed byte-identical",
+      "command": "make news-test AILANG=runtime/bin/ailang",
+      "result": "news: 79 passed, 2 failures; failures: 'Sol return: the body is the no-age phrase, never 0.00 years old', 'Sol return fallback: the same no-age header and body, the notice and reason stand' (the header still no-ages because header.compose is preserved; only the body falls back to the template paragraph that contains '0.00 years old.')",
+      "evidence": "The show_world plumbing that turns the no-age flag on for the body binding is the load-bearing step; without it the header disarms the bug but the body does not"
+    },
+    {
+      "name": "M5 (own choice): delete the line 'body.no_age_text = labels[\"body_no_age\"]' in ui/news_panel.gd:build (separate the no-age mode from the no-age phrase)",
+      "red": true,
+      "restored": true,
+      "restore_method": "cp .eval-backups/news_panel.gd.bak ui/news_panel.gd; cmp confirmed byte-identical",
+      "command": "make news-test AILANG=runtime/bin/ailang",
+      "result": "news: 78 passed, 3 failures; failures: 'Sol return: the body is the no-age phrase, never 0.00 years old' (body is empty), 'Sol return fallback: the same no-age header and body, the notice and reason stand', plus the pre-existing 'fallback rendering: ai_numeral, the notice, the reason in words, the template text, a diagnostics entry' which now sees body=''",
+      "evidence": "Targets the claim that the fix is data-driven, not just code-driven: removing the data binding for the no-age phrase still leaves the no-age mode wired, but the body goes empty. Both halves (mode + phrase) are required"
+    }
+  ],
+  "answers": {
+    "1_sol_return_0_00_years_old": "No, it does not. The Sol return (news_age_years = 0.0, news_epoch = 8.70) renders header='Latest news from Earth: Earth-year +8.70, just arrived.' and body='Home is close enough now that this message has not aged at all: it reaches you exactly as it was written, with no years of travel between the telling and the hearing.' on the template body_source; the fallback body_source shows the same no-age header and body under the notice and the reason; the AI body_source shows the same no-age header and the AI-accepted text as the body. grep '0.00 years old' on .godot/tmp/news-test.log returns only the negative-assertion test name, never any rendered string. The away case (news_age_years 4.35 in the unit test fixture, 4.31 in the live-sim session) still renders 'already 4.35 years old.' / 'already 4.31 years old.' with the original template paragraph. Command: `make news-test AILANG=runtime/bin/ailang`; observed: 'news: 81 passed, 0 failures' and the printed Sol return / session template / session fallback snapshots above.",
+    "2_scope_exactly_D-45B": "Yes. git diff f60b524..2ce00d0 --stat shows 4 files: data/news/copy.json (2 insertions), tests/test_news.gd (43 insertions), ui/news_copy.gd (20 insertions), ui/news_panel.gd (16 insertions, 3 deletions). Nothing under sim/ (the sim is untouched), nothing under tools/wire/ or sim/wire.ail, no file under tests/replays/. The change is data-driven copy (two new digit-free labels in copy.json) plus a small UI seam (is_no_age + header_parts in NewsCopy; no_age + no_age_text in TemplateText; show_world recompose). Command: `git diff f60b524..2ce00d0 --name-only` and `git diff f60b524..2ce00d0 -- sim/ tools/wire/ tests/replays/` (the last is empty).",
+    "3_labels_digit_free_and_under_280": "Yes. 'header_no_age_tail' = ', just arrived.' (15 chars, 0 digits). 'body_no_age' = 'Home is close enough now that this message has not aged at all: it reaches you exactly as it was written, with no years of travel between the telling and the hearing.' (166 chars, 0 digits). Both are well under the 280-char cap and NewsCopy.has_digit returns false on each. The numerals on the panel (news_epoch 8.70, news_age_years 0.0) remain only inside {slots} in the composed header (the +%.2f and %.2f format specs bind the same way they did before, just gated by is_no_age). news-lint accepts the new labels; mutation M2 confirms a stray digit is rejected.",
+    "4_away_case_preserved": "Yes. The away-case rendering (news_age_years = 4.35 from the unit-test world() fixture; 4.31 from the live-sim session) reads header='Latest news from Earth: Earth-year +0.04, already 4.35 years old.' / 'Latest news from Earth: Earth-year +0.04, already 4.31 years old.' and body=NewsCopy.paragraph(templates, 1, ...) — exactly the same template paragraph the fix did not touch. The off-world test_no_age assertion (panel_with(world('template')).snapshot()...) and the live-sim session template/fallback renderings both still pass. The threshold (NO_AGE_BELOW = 0.005) puts 4.35 and 4.31 firmly in the age-clause path.",
+    "5_blockers_for_PR_131_merge": "None. The fix is exactly D-45(B), the gates are green, the mechanism is verified by five independent mutations each targeting a distinct load-bearing piece, the away case is preserved, the data is digit-free and under the cap, the audit assertion still passes on the Sol return (every number on the panel is still a binding), and nothing outside ui/ + data/news/ + tests/ was touched. The two minor observations below are non-blocking and the same code is already on draft PR #131 ready to merge per Mark's attended 2026-10-06 ruling."
+  },
+  "minor_observations_non_blocking": [
+    {
+      "severity": "info",
+      "file": "ui/news_panel.gd:106 (build)",
+      "note": "build() still calls header.compose(NewsCopy.header_parts(copy, false)) with a hardcoded false. This is safe because show_world() recomposes with the correct flag immediately after, but it duplicates the (header_lead, epoch slot, header_mid, age slot, header_tail) intent literally in NewsCopy and then in the false-branch header_parts call. A future caller that uses build() without show_world() would render a stale 'already 0.00 years old.' header. Not blocking for this PR; a follow-up could have build() call header.compose(NewsCopy.header_parts(copy, false)) AND raise a one-line comment that show_world is the authoritative recompose."
+    },
+    {
+      "severity": "info",
+      "file": "ui/news_panel.gd:113 (build)",
+      "note": "body.no_age_text = labels[\"body_no_age\"] runs in build() but the lint only verifies that the label is digit-free; it does not verify that the label is present. If the label is ever deleted from copy.json, the no-age body would be empty (mutation M5 demonstrates this). The mutation also shows the gate catches it, so the safety net is the test, not the lint. Not blocking for this PR; a follow-up lint check for label presence would be a tighter guarantee."
+    }
+  ],
+  "evidence_anchors": {
+    "worktree": "/Users/voightkampff/dev/sunholo-data/.stapledon-eval-iter19 (DETACHED at 2ce00d0, clean, runtime/bin/ailang v0.52.0)",
+    "design_doc": "design_docs/planned/r1/m4-first-journey.md, section 'M4.4 News from home and the legacy log'",
+    "sprint_plan": "design_docs/planned/r1/m4-first-journey-sprint.md and .ailang/state/sprints/sprint_R1-M4-JOURNEY.json (feature M4.4_NEWS_LEGACY)",
+    "decision_ledger": "design_docs/stapledon-mission.md D-45 row, ATTENDED 2026-10-06 by Mark, ruling (B) approve with the home-arrival fix",
+    "review_commit": "2ce00d0c8d9943f9d376df9def47aad087c79566 (4 files, 78 insertions, 3 deletions)",
+    "preceding_merge": "f60b524 (origin/main into sprint/m4.4-news-legacy)",
+    "test_no_age_pre_existence": "git show f60b524:tests/test_news.gd | grep -c test_no_age -> 0",
+    "copy_json_pre_existence": "git show f60b524:data/news/copy.json -> no header_no_age_tail or body_no_age keys",
+    "news_test_summary_line": "news: 81 passed, 0 failures",
+    "news_lint_summary": "news-lint: ok AND news-lint: the stray-digit fixture fails as it must",
+    "backups_dir": ".eval-backups/ (untracked; contains byte-identical copies of the three mutated files for the restore check; outside the repo)"
+  },
+  "hard_fails": [],
+  "notes": "All five mutations turned the named check RED, all five restores were byte-identical (cmp), and the post-restore gates are still green (re-confirmed: news-lint ok, news: 81 passed 0 failures). The fix is a clean, data-driven, well-scoped implementation of D-45(B) that meets every stated requirement and the no-block verdict stands."
+}

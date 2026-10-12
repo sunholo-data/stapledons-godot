@@ -1,0 +1,32 @@
+---
+title: "The relativistic sky"
+date: 2026-10-03T09:00
+authors: [sunholo]
+tags: [progress, sky]
+---
+
+import {ClipFigure} from '@site/src/components/Clip';
+
+The sky out of the window is now the real one: 335,157 stars over the Milky Way, exposed for a
+dark-adapted human eye, with the cosmic background glowing ahead at extreme speeds.
+
+{/* truncate */}
+
+## What's new
+
+- **Starfield v2** ([#67](https://github.com/sunholo-data/stapledons-godot/pull/67)): 335,157 stars from CNS5, Gaia GCNS and Hipparcos,
+  instanced on the GPU, with float64 positions rebased around the ship.
+- **The Milky Way** behind them: the NOIRLab panorama with the catalogue's own stars removed, so
+  stars are not counted twice, Doppler shifted texel by texel.
+- **A naked-eye exposure** ([#75](https://github.com/sunholo-data/stapledons-godot/pull/75), [#80](https://github.com/sunholo-data/stapledons-godot/pull/80)): stars in lux and the sky in
+  cd/m², calibrated so the faintest visible star lands at V 6.9 (Crumey's model says 6.897). The
+  HUD always says how it is exposing; the readability aids are off by default and labelled.
+- **The forward CMB glow** ([#79](https://github.com/sunholo-data/stapledons-godot/pull/79), fixed in [#88](https://github.com/sunholo-data/stapledons-godot/pull/88)): above γ ≈ 150 the 2.7 K
+  microwave background, blueshifted, shows up dead ahead; at γ 707 it is a 3,853.7 K blackbody.
+
+<ClipFigure name="cmb" caption="γ 20 to 707 through a 20° lens: the stars crowd into a shrinking ball, then the forward CMB warms from deep red to near white." />
+
+## Not yet
+
+M1's acceptance step (M1.5b) is still open: the reference renders at five speeds and the 60 fps
+bench at 1440p with everything on. See the [roadmap](/docs/roadmap).

@@ -1,0 +1,33 @@
+---
+title: "The ship's AI foundation"
+date: 2026-10-03T15:00
+authors: [sunholo]
+tags: [progress, ai]
+---
+
+import {ClipFigure} from '@site/src/components/Clip';
+
+The crew's optional AI layer runs end to end, so far on a deterministic test stub: lines with
+emotion markers, portraits that change with them, a voice, and a hard cost ceiling.
+
+{/* truncate */}
+
+## What's new
+
+- **Emotion markers** (AI.1–AI.3): a line carries markers like `{loving}`, validated before the
+  game uses it.
+- **A service the game never waits on** (AI.4–AI.7): provider routing, a cache, a supervised
+  background process, and key hygiene: a key never appears on a command line.
+- **The Medic's accepted portraits**, pinned and content-addressed (AI.8).
+- **Opt-in and capped** (AI.9): live AI stays off until the player adds a key *and* ticks the box.
+  A ceiling the player sets (US$0.50 by default) stops spending, and automated runs can never go
+  live.
+- **The conversation scene** (AI.10a, [#91](https://github.com/sunholo-data/stapledons-godot/pull/91)): the portrait cross-fades as each emotion
+  marker arrives, the subtitles build segment by segment, and the voice plays.
+
+<ClipFigure name="medic" sound caption="The Medic scene on the stub. Placeholder voice: the stub's test tones, not a performance." />
+
+## Not yet
+
+No live model has been called. The first live run (AI.10b) is attended: one real line and a few
+voice auditions under a US$1 ceiling. The voice in the clip is a placeholder.

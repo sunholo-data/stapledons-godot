@@ -1,0 +1,131 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "milestone": "M2.3a Planner, readouts, journey state machine, commit rule",
+  "evaluation_round": 1,
+  "evaluator_model": "claude-fable-5-1 (independent judge; generator != judge)",
+  "generator": "sprint-executor agent, PR #27, branch sprint/m2.3a-planner",
+  "evaluated_commit": "e4a9f47",
+  "toolchain": "AILANG v0.50.0 (runtime/bin/ailang, commit 6abe1a5); sunholo/relativity 0.4.0 from the registry cache; Godot headless; python3 for the independent panel",
+  "date": "2026-10-01",
+  "score": 95,
+  "pass": true,
+  "threshold": 70,
+  "hard_fail": false,
+  "rubric": {
+    "tests_pass": {
+      "points": 20,
+      "max": 20,
+      "evidence": "make test AILANG=$A in a fresh worktree of origin/sprint/m2.3a-planner (git worktree add, branch eval-m23a): exit 0. ailang test --package . 67/67; tests/test_physics.gd 62 passed; sim bridge 0 failures; parity 602 lines identical, parity-offaxis 17, parity-v2 13; offaxis-v11-equiv bit-identical; strict scripted/scriptedOffAxis VM == interpreter within 1e-9 of closed form; strict protocolVm protocol-ok (13 lines, digest aa8b6a3ce8338143); strict worldVm world-ok; strict planVm plan-ok on the strict VM and the interpreter; wd-vm, catalogue-vm, catalogue-bytes, sky-vm green. My own 7-line NDJSON session (plan, wait, commit, nine intents while committed, wait) is byte-identical on --bytecode and the interpreter."
+    },
+    "lint_clean": {
+      "points": 10,
+      "max": 10,
+      "evidence": "ailang check --package sim passes inside make sim (no separate lint target). core.ail (298 lines) and protocol.ail (297) are entirely `pure func`; no effects; ship.ail unchanged. No file over 800 lines. No TODO/HACK added."
+    },
+    "acceptance_criteria": {
+      "points": 30,
+      "max": 30,
+      "met": 6,
+      "total": 6,
+      "detail": {
+        "AC2_trip_rows": "PASS: cd sim && $A test --package . -> checkPlanCruise09/099/Cap, checkPlanAlphaCen, checkPlanGl559, checkPlanCoast100, checkPlanFallback all green (rows 1-4, 6-9 to 1e-9). Independently recomputed in python from the package formulas: alpha Cen 0.99c ship 0.6226958707592057 yr, Earth 4.414143655383168 yr (bit-equal to the design row 2 and the sim); 1 g flip 3.5823937227478337 / 6.00250277725247 (row 6).",
+        "AC3_readouts": "PASS: checkPlanReadouts green (0.9c, 0.99c, cap rows to 1e-9; derived fields after a 1.5 yr rest; m_eff 0.5; 1-beta at a 1e-17 cap; committed view frozen). Independent python: boost 2.3786925619268595e17 J, drag 1.3702577394591198e17 J, total 6.127642863312838e17 J = 6.817922175341585 kg, drag force 23.25982143207345 N, hold 6973119039.76238 W, load 221961.27278927868 W/m2, glow 2.407194217926631e-05 W/m2, T_fwd 38.44085554458952 K, boost 1.7979782022600483 min, 1-beta (rapidity form) 0.01000000000000001 -- every one bit-equal to what the sim emits on the wire. Canon: HB-35 2.379e17 J/kg, HB-40 2.22e5 W/m2, HB-49 23.3 N, HB-53 1.37e17 J, HB-62 38.44 K reproduced.",
+        "AC4_bounds_and_diag": "PASS: checkCruiseRange (both ends inclusive, 1 ulp outside refused, custom cruise_min_beta/cap, zero-distance target and flip_g 0 out_of_range) and checkDiagOnly green.",
+        "AC7_commit_irreversible": "PASS: checkCommittedRefusesAll green (all 8 Intent constructors, singly and in one tick); `grep -nE \"Committed.*=> *(Idle|Planned)\" sim/core.ail` -> no match (exit 1). Code audit: Pending.journey is written only in storePlan (core.ail:188), cancelPlan (core.ail:213) and commitIntent (core.ail:203), all reached only through applyFree, which applyIntent (core.ail:230-233) never calls while the journey is Committed; tick copies a.journey (core.ail:251). No path from Committed to Planned/Idle exists. On the wire, my session shows cancel, plan, commit x2, thrust, heading, echo, draw, record all refused `committed` with the journey section unchanged and the clock still running.",
+        "AC18_no_maths_outside_package": "PASS: `grep -rnE \"acosh|sinh|cosh|exp\\(|tanh|2\\.0 \\* phi\" sim/core.ail sim/protocol.ail bridge` -> no match (exit 1). The only `1 - beta` text in core.ail is a comment saying never to do it (core.ail:273-274); cruise_one_minus_beta is kinematics.oneMinusBeta(phi) (core.ail:282). d is norm() of float64 scalar differences (core.ail:171-173); no Vector3 anywhere in sim/.",
+        "gate_make_test": "PASS (see tests_pass)."
+      }
+    },
+    "code_quality": {
+      "points": 12,
+      "max": 15,
+      "deductions": [
+        "-2: evaluator mutation M1 survived (planVm + protocolVm + 67 tests): `let dv = target.pos - here` -> `let dv = target.pos` (core.ail:172). Every plan test plans from the origin, so the design's defining formula d = |target.pos - position(ship)| is never checked with position(ship) != 0 (checkCommitMoving plans while moving but asserts no distance). I verified the implementation by hand: in diag, thrust +1/-1 for 0.1 yr each leaves the ship at rest at z = -0.010332123082940035 and a plan to alpha Cen reports distance 4.35966787691706 = 4.37 - 0.010332123082940035. Correct today; the gap bites at M2.3b when a plan is made from Arrived at alpha Cen.",
+        "-1: evaluator mutation M7 survived: commit's `moving` guard `>= restTolerance()` -> `>` (core.ail:196). The design states |phi| >= 1e-9 explicitly; the boundary is untested (checkCommitMoving uses a phi far above it)."
+      ],
+      "evidence": "17 of 19 evaluator mutations killed (M16 'plan heading not normalised' is equivalent because turn() normalises; not counted as a gap). Killed: stale_plan without the position check, cancel accepted while committed (Committed->Idle), echo accepted while committed, commit keeps same-tick thrust, committed view not frozen, plan id not incremented, arrive_year drops elapsed t, 1-beta by subtraction, zero-distance accepted, profile names swapped, commit skips the turn, commit from Idle/Arrived accepted, lower bound used as rapidity, total_kg over c not c^2, committed ship thrusting. Sprint artifacts consistent: sprint JSON M2.3a passes=true with started/completed/notes; sprint plan status block filled; sprint status in_progress is correct for a multi-milestone sprint."
+    },
+    "documentation": {
+      "points": 13,
+      "max": 15,
+      "deductions": [
+        "-1: CHANGELOG.md / changelogs/unreleased has no M2 entry (same as M2.0-M2.2; the repo convention is an entry at landing). Flag for the landing step.",
+        "-1: design doc section M2.3 'Tests' (m2-journey-core.md ~line 473-476) still says the exhaustive match means 'adding an intent without a rule fails to compile the match'. The PR itself found that ailang check does not check match exhaustiveness (DX report filed) and enforces coverage with checkCommittedRefusesAll instead; the sentence was not amended, and the M2.3 'Plan' paragraph still gives the Planned shape as {id, target, heading, tripPlan} while the change-set note describes the implemented one."
+      ],
+      "evidence": "Design doc reason-code table gained committed/out_of_range/stale_plan rows and the 'As implemented in M2.3a' change-set note (an improvement over M2.2's deduction); every declared deviation is in the design doc, the sprint plan status and the PR body; core.ail:211-212 and protocol_test.ail cite ailang#1473 / #1467 by number at the workaround sites; the Makefile planVm line has a help comment."
+    },
+    "design_fidelity": {
+      "points": 10,
+      "max": 10,
+      "deductions": [],
+      "evidence": "Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Commitment) as section M2.3; plan = planBurnCoastBurn(d, boost_g*standardGravity(), cruise_phi) or planFlipAndBurn in diag (core.ail:179,182); checkPlanIsPackage pins the stored TripPlan bit-for-bit to a direct package call; ids monotonic from 1 and never reused (lastPlanId); commit does the at-rest turn to the plan heading (D-14, up = direction of travel) and records tau0/t0; years_left = 100 - tau - shipTime, arrive_year = epoch + t + galaxyTime, age_on_arrival = start_age + tau + shipTime, boost_minutes = tauBurn * 525960 (minutesPerYear = julianYearS()/60, exact); energy = tripEnergy at the scenario m_eff; ISM and CMB at phiPeak; the planned panel is live because the clock runs while planning (D-12) and the committed one is frozen; D-15 defaults (m_eff 1 kg, 7.5e5 g, eps 1e-9) flow through Params unchanged. Pillar 1: the commit rule is in the sim, has one arm per constructor and no wildcard (core.ail:152-162), and no code path leads back. Protocol: journey and ledger sections exactly as the change-set list, in the full state and whenever they change; codecs round-trip them with edge floats (protocol_test edgeView). AC18 holds: Godot will only format."
+    }
+  },
+  "physics_review": {
+    "independent_panel_alpha_cen_099c": {
+      "method": "python3 from the package definitions (journey.planBurnCoastBurn, medium.photonDriveEnergy/cruiseDragEnergy/mirrorDragForce/loadScale/kineticFlux/glowInwardFlux, optics.cmbForwardTemperature, kinematics.oneMinusBeta), constants c = 299792458, m_p = 1.67262192369e-27, ly = 9460730472580800, yr = 31557600, g0 = 1.032295275553596 c/yr, T_CMB = 2.725, n = 1e5 m^-3, R = 100 m, m_eff = 1 kg, d = 4.37 ly, phi = atanh 0.99",
+      "ship_years": {"python": 0.6226958707592057, "sim": 0.6226958707592057, "equal": true},
+      "earth_years": {"python": 4.414143655383168, "sim": 4.414143655383168, "equal": true},
+      "boost_minutes": {"python": 1.7979782022600483, "sim": 1.7979782022600483, "equal": true},
+      "boost_j": {"python": 2.3786925619268595e17, "sim": 2.37869256192685952e17, "equal": true},
+      "drag_j": {"python": 1.3702577394591198e17, "sim": 1.37025773945911984e17, "equal": true},
+      "total_j": {"python": 6.127642863312838e17, "sim": 6.1276428633128384e17, "equal": true},
+      "total_kg": {"python": 6.817922175341585, "sim": 6.817922175341585, "equal": true},
+      "drag_n": {"python": 23.25982143207345, "sim": 23.25982143207345, "equal": true},
+      "hold_w": {"python": 6973119039.76238, "sim": 6973119039.76238, "equal": true},
+      "load_w_m2": {"python": 221961.27278927868, "sim": 221961.2727892787, "equal": true, "note": "same double, shortest round-trip text"},
+      "glow_w_m2": {"python": 2.407194217926631e-05, "sim": 0.00002407194217926631, "equal": true},
+      "cmb_forward_k": {"python": 38.44085554458952, "sim": 38.44085554458952, "equal": true},
+      "cruise_one_minus_beta": {"python_rapidity_form": 0.01000000000000001, "python_naive_1_minus_tanh": 0.010000000000000009, "sim": 0.01000000000000001, "note": "the sim's value is the rapidity form, so it is not formed by subtraction"},
+      "cap_row": {"phi_cap": 7.254328619262047, "boost_minutes": 4.928159311189213, "matches_design_row_3": true}
+    },
+    "canon_check": "higgs-bubble.md HB-35 (2.379e17 J/kg), HB-40 (2.22e5 W/m2), HB-49 (23.3 N), HB-53 (1.37e17 J), HB-54 (1.52 kg of drag), HB-62 (38.44 K) all reproduced to printed digits by the sim panel.",
+    "precision": "d is norm() of float64 scalar differences (core.ail:171-173), no Vector3 in sim/; gamma/beta/1-beta from the peak rapidity via the package; nothing forms 1 - beta by subtraction (grep of core.ail, protocol.ail, bridge/*.gd); the cap and floor are rapidityOfOneMinusBeta / rapidityOfBeta from the package. Mutation M4 (1 - betaOf) is killed by checkOneMinusBetaReadout at a 1e-17 cap.",
+    "determinism": "No hidden state: the plan is a pure function of (World, PlanReq); plan ids come from World.lastPlanId. VM == interpreter on every parity target and on my own session."
+  },
+  "automated_checks": {
+    "make_test": "exit 0",
+    "ailang_tests": "67 passed, 0 failed",
+    "godot_physics": "62 passed, 0 failed",
+    "bridge": "0 failures",
+    "parity": "602 / 17 / 13 lines identical; offaxis-v11-equiv bit-identical",
+    "strict": "scripted, scriptedOffAxis, protocolVm (digest aa8b6a3ce8338143), worldVm, planVm: VM == interpreter",
+    "ac7_grep": "clean (exit 1)",
+    "ac18_grep": "clean (exit 1)",
+    "file_sizes_ok": true
+  },
+  "mutations": {
+    "applied": 19,
+    "killed": 16,
+    "equivalent": 1,
+    "survived": 2,
+    "survivors": [
+      {"id": "M1", "file": "sim/core.ail", "line": 172, "mutation": "dv = target.pos (ship position ignored)", "why_survived": "no plan test from a non-origin position asserts distance", "severity": "low (implementation verified correct by hand; matters for M2.3b replans from Arrived)"},
+      {"id": "M7", "file": "sim/core.ail", "line": 196, "mutation": "moving guard >= -> >", "why_survived": "boundary |phi| == 1e-9 not tested", "severity": "low"}
+    ],
+    "equivalent_note": "M16 (plan heading stored unnormalised) is masked by turn() normalising; plan.heading is not on the wire."
+  },
+  "deviations": {
+    "1_World_lastPlanId_and_Plan_shape": "ACCEPTED. ids that never repeat need a counter outside the journey (a cancelled plan would otherwise let id 1 recur); Plan {id, target, from, heading, flip, trip: TripPlan} keeps the package's TripPlan whole, which is what makes checkPlanIsPackage a bit-for-bit check; Committed/Arrived carrying {plan, tau0, t0} is what freezes the committed panel.",
+    "2_stale_plan_covers_another_position": "ACCEPTED. A plan's d and heading are from where it was made; committing it from elsewhere would fly the wrong trip. Exact position equality is right here: in play the ship cannot move between plan and commit, and in diag any move changes position() by far more than an ulp.",
+    "3_out_of_range_for_zero_distance_and_non_positive_flip_g": "ACCEPTED. No heading exists for a target at the ship's position and planFlipAndBurn requires a > 0; refusing with the existing range code is better than a new reason or a crash in the package's `requires`.",
+    "4_cancel_without_a_plan_is_a_no_op": "ACCEPTED. The design says cancel 'clears an uncommitted plan'; with nothing to clear there is nothing to refuse. The design's reason-code row was updated to say so.",
+    "5_echo_draw_record_refused_committed": "ACCEPTED (stricter than the design's list). It makes the rule one line per constructor with no wildcard, which is the whole point of Pillar 1 in code.",
+    "6_planned_panel_is_live": "ACCEPTED. D-12 says the clock runs while planning, so arrive_year/age_on_arrival/years_left must move; re-sending the section each tick follows the change-set rule literally. Cost is ~1 KB per tick while a plan is open; acceptable at the bridge's rate, worth a glance when M2.6a wires the panel.",
+    "7_exhaustiveness_enforced_by_test": "ACCEPTED with a note. ailang check does not reject a non-exhaustive match (DX report filed), so the design's 'fails to compile' is unavailable. The test enumerates today's eight constructors; a ninth added without an arm would be a runtime match error in refuseWhileCommitted rather than an accepted intent, so the failure mode is fail-safe (the sim stops, it never accepts). The design text should be amended (see documentation deduction).",
+    "8_underscore_arm_workaround_ailang_1473": "ACCEPTED. `_ => j` in cancelPlan (core.ail:213) is semantically identical to `other => other`; the comment cites the issue so it can be reverted when fixed.",
+    "9_updated_checkTickRefusals_checkRefusedProceeds_checkWorldPhases": "ACCEPTED. The expected refusal lists changed because cancel is now a no-op and plan/commit are real; checkRefusedProceeds now also asserts the journey section nets to no change after plan+commit(moving)+cancel in one tick, which is a stronger test than before."
+  },
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      {"file": "sim/core_test.ail", "line": 341, "issue": "No plan test from a non-origin position asserts plan.trip.trip.distance (mutation M1 survives).", "suggestion": "In checkStalePlan's `moved` world (at rest at z < 0) also plan to plAcen() and assert p.trip.trip.distance == 4.37 - absf(position(moved.ship).z) and p.heading.z == -1.0; or add checkPlanFromMovedShip. Do it before M2.3b, whose Arrived -> plan path needs it.", "severity": "low"},
+      {"file": "sim/core.ail", "line": 196, "issue": "Commit `moving` guard boundary (|phi| == restTolerance()) untested (mutation M7 survives).", "suggestion": "One assertion with phi = 1e-9 refused and phi = 5e-10 accepted, as checkPhaseDerivedDiag does for derivePhase.", "severity": "low"},
+      {"file": "sim/core.ail", "line": 181, "issue": "The core's cruise range guard `phi < lo || phi > hi` lets a NaN cruise_phi through to planBurnCoastBurn's `requires`. Unreachable from the wire (protocol.ail:121 numF drops non-finite numbers and JSON cannot carry NaN), so hardening only.", "suggestion": "Add `rq.cruisePhi == rq.cruisePhi` to the guard (NaN-safe on both runtimes, cf. ailang#1419) so core.tick refuses it as out_of_range on its own.", "severity": "info"},
+      {"file": "design_docs/planned/r1/m2-journey-core.md", "line": 473, "issue": "Section M2.3 still says the exhaustive match 'fails to compile'; the PR established AILANG does not check exhaustiveness and the rule is test-enforced. The 'Plan' paragraph still names Planned {id, target, heading, tripPlan}.", "suggestion": "Amend both sentences at the landing step (the change-set 'As implemented' note already has the facts).", "severity": "low"},
+      {"file": "CHANGELOG.md", "line": 1, "issue": "No M2 entry yet (M2.0-M2.3a).", "suggestion": "Add at the landing of the design doc, per CLAUDE.md step 5.", "severity": "low"},
+      {"file": "sim/protocol.ail", "line": 274, "issue": "Observation for the UI milestones, not this one: `new_game` while committed builds a fresh World. That is a host-level restart, not a journey transition, and the sim is right to allow it; Pillar 1 then rests on Godot not exposing it as an escape from a commit (M2.6b commit ritual).", "suggestion": "Note it in the M2.6b task list.", "severity": "info"}
+    ]
+  },
+  "verdict": "PASS 95/100. All six M2.3a acceptance commands re-run green in a fresh worktree on v0.50.0 with relativity 0.4.0; make test exits 0 (67 AILANG tests, bridge 0 failures, three parity targets, strict protocolVm/worldVm/planVm VM == interpreter). The alpha Cen 0.99c panel the sim emits is bit-equal to my independent python from the package formulas (ship 0.6226958707592057 yr, Earth 4.414143655383168 yr, boost 1.7979782022600483 min, total 6.1276428633128384e17 J = 6.817922175341585 kg, drag 23.25982143207345 N, T_fwd 38.44085554458952 K) and reproduces HB-35/40/49/53/62. d is float64 scalars, 1-beta is the rapidity form, every readout is a package output. The commit rule lives in the sim with one arm per constructor and no wildcard; by code audit and by a wire session, nothing leads from Committed back to Planned or Idle and every intent kind is refused `committed`. All nine declared deviations are accepted. Non-blocking: two low-severity test gaps (plan distance from a moved ship, the moving-guard boundary), two doc sentences in section M2.3 to amend, and the changelog at landing."
+}

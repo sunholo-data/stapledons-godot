@@ -1,0 +1,176 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "milestone": "M2.3b Autopilot, phase splitting, residuals, ledger at arrival",
+  "evaluation_round": 1,
+  "evaluator_model": "claude-fable-5-1 (independent judge; generator != judge)",
+  "generator": "sprint-executor agent, PR #29, branch sprint/m2.3b-autopilot",
+  "evaluated_commit": "ca26e3d",
+  "toolchain": "AILANG v0.50.0 (runtime/bin/ailang, commit 6abe1a5); sunholo/relativity 0.4.0 from the registry cache; Godot headless; python3 for the independent voyage",
+  "date": "2026-10-02",
+  "score": 96,
+  "pass": true,
+  "threshold": 70,
+  "hard_fail": false,
+  "rubric": {
+    "tests_pass": {
+      "points": 20,
+      "max": 20,
+      "evidence": "make test AILANG=$A in a fresh worktree of origin/sprint/m2.3b-autopilot (branch eval-m23b): exit 0 in 4m44s. ailang test --package . 76/76; tests/test_physics.gd 62 passed; sim bridge 0 failures; parity 602 / 17 / 13 lines identical; offaxis-v11-equiv bit-identical; strict protocolVm protocol-ok (13 lines, digest bf000aa6a34d3a95), planVm plan-ok, journeyVm VM 4.491447784623953 == interpreter, closed form 4.491447784623963 (|diff| 1e-14), voyageVm voyage-ok on the strict VM and the interpreter; journey-replay identical (66 lines), last line arrived. CI on ca26e3d: headless job pass (5m9s)."
+    },
+    "lint_clean": {
+      "points": 10,
+      "max": 10,
+      "evidence": "ailang check --package sim passes inside make sim (9 exported modules). core.ail 398 lines, core_test.ail 652, protocol.ail 313, protocol_test.ail 407, tripphase.ail 11: no file over 800 lines. Everything in core/protocol/tripphase is `pure func`; ship.ail unchanged. Worktree clean after make test (lockfile churn restored by the deps target)."
+    },
+    "acceptance_criteria": {
+      "points": 30,
+      "max": 30,
+      "met": 5,
+      "total": 5,
+      "detail": {
+        "AC5_boundaries_and_residuals": "PASS: cd sim && $A test --package . -> checkVoyageBoundaries (0.99c, cap, diag 1 g flip) and checkArrivalResidual green. Independent python (formulas transcribed from relativity 0.4.0 hyper/kinematics/journey/medium, stepping per design section M2.3): every 0.01-yr tick end vs motionAt(el) worst error 7.99e-15 (0.99c) and 0.0 (cap, arrives in tick 1); boundary taus 3.418469469655579e-06, 0.622692452289736, 0.6226958707592057 bit-equal to the sim's phase events; arrival residuals x 1.7763568394002505e-15 ly, t 7.993605777301127e-15 yr, phi 4.843059286940843e-11, bit-equal to the sim's `arrived` event on the wire. Cap trip (Gl 559, 4.35667304258651 ly): residuals x 4.4e-15, t 5.3e-15, phi 4.6e-13.",
+        "AC6_ledger_at_arrival": "PASS: checkLedgerAtArrival (m_eff 3 kg at 0.99c and the cap; m_eff 0.5 kg, n 1 cm^-3 at 10 ly 0.9c) and checkMassClosed green. Independent python: ledger boostJ 4.757385123853719e+17, dragJ 1.3702577394591184e+17, total 6.127642863312837e+17 (= the wire's radiated_j 6.127642863312837e17, i.e. the claimed 6.12764286331283712e17) vs tripEnergy total 6.127642863312838e+17: relative 2.1e-16. m_eff 3 kg: ledger 1.5642413111020275e+18 vs tripEnergy 1.5642413111020278e+18, relative 1.6e-16. The closure is exact in principle: mirrorDragPower * tauCoast * yr_s equals cruiseDragEnergy because c * julianYearS == lightYearM (9460730472580800 m).",
+        "AC10_journeyVm": "PASS: make strict AILANG=$A -> journeyVm VM == interpreter 4.491447784623953; voyageVm voyage-ok on both. My own probe module (six edge cases) is byte-identical on --bytecode --strict-bytecode and the interpreter.",
+        "AC14_headless_replay": "PASS: $A run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/replays/alpha_cen.ndjson | tail -1 | grep '\"arrived\"' -> 1 match; the same on --bytecode; the two 66-line outputs are byte-identical (cmp). Tick 2 (commit, dtau 0.01) carries committed + at_rest>boosting@0 + boosting>cruising@3.418469469655579e-06; tick 64 carries cruising>braking@0.622692452289736, braking>at_rest@0.6226958707592057 and arrived; journey state arrived, ship pos (0,0,-4.37) exact, clock t 4.421447784623955 (python closed form galaxyTime + 0.63 - tauTotal = 4.421447784623963).",
+        "make_test": "PASS: exit 0 locally and in CI (see tests_pass). AC18 grep (acosh|sinh|cosh|exp\\(|tanh|2\\.0 \\* phi over sim/core.ail sim/protocol.ail sim/tripphase.ail sim/ship.ail bridge/ main.gd) clean, exit 1; ui/ does not exist yet (M2.6a not landed)."
+      }
+    },
+    "code_quality": {
+      "points": 13,
+      "max": 15,
+      "evidence": "fly() is a clean recursion: one piece per phase, el set exactly to the boundary on a crossing, residuals taken before the snap, leftover spent at rest, Committed -> Arrived only in the j == 3 branch. Formulas are all package calls (accelerate, phaseAt via tripphase, motionAt in tests, photonDriveEnergy, mirrorDragPower, tripEnergy); the sim's own arithmetic is unit conversion and boundary sums. Sprint JSON milestone complete (passes true, timestamps, notes); sprint plan [x] status. Deductions: (-1) phaseEnd duplicates the package's boundary expression tp.tauBurn + tp.tauCoast and must stay bit-identical to journey.phaseAt's (my mutation M-d, a rounding-different form, produced a cruising>cruising crossing and four test failures; the coupling is correct today but implicit); (-1) the int-indexed phaseOfIndex/phaseEnd/phaseAccel trio, forced by the ailang#1478 workaround, is a parallel encoding of ShipPhase that should fold back when #1478 is fixed."
+    },
+    "documentation": {
+      "points": 13,
+      "max": 15,
+      "evidence": "Design doc section M2.3 and the change-set section gained 'As implemented in M2.3b' notes (el, phaseAt via tripphase, rebase, brake's last dphi, phase/arrived wire shapes, residual_phi); both M2.3a follow-up sentences amended (exhaustiveness is test-enforced; Planned {id, target, from, heading, flip, trip}). Sprint plan M2.3b has a status block with the numbers. tests/replays/alpha_cen.ndjson serves as the runnable example. PR body complete with the AC table and the mutation list. Deduction (-2): CHANGELOG still has no M2 entry (deferred to the design-doc landing, as in M2.3a)."
+    },
+    "design_fidelity": {
+      "points": 10,
+      "max": 10,
+      "evidence": "Matches section M2.3 Autopilot sentence by sentence: dtau cut at tauBurn, tauBurn + tauCoast, tauTotal; accelerate at +a, 0, -a; a phase event per crossing; one tick can hold the whole boost (checkWholeBoostTick; replay tick 2); drag only in the ledger; final piece ends at tauTotal, phi snapped to 0, position to target.pos; arrived carries |x_stepped - d| and |t_stepped - (t0 + galaxyTime)|; leftover at rest. Journey state machine unchanged: Committed -> Arrived only via the sim; Arrived -> plan works (checkArrivedThenReplan; my probe P5 replans home from the target with a turn and lands at (0,0,0) exactly). Pillar 1 holds: refused intents mid-flight leave the flight bit-identical to the autopilot alone (plSameFlight; probe P6)."
+    }
+  },
+  "physics_review": {
+    "method": "python3 (scratchpad indep.py) with hyper.sinh/cosh/tanh/sinhc/expm1/log1p, kinematics.accelerate, journey.planBurnCoastBurn/motionAt and medium.photonDriveEnergy/mirrorDragPower/cruiseDragEnergy/tripEnergy transcribed from the relativity 0.4.0 sources in ~/.ailang/cache/registry, stepping 0.01-yr ticks cut at the three boundaries as the design prescribes; compared with the sim's wire output of tests/replays/alpha_cen.ndjson and with the claims in the PR",
+    "alpha_cen_099c": {
+      "tauBurn": 3.418469469655579e-06,
+      "tauCoast": 0.6226890338202664,
+      "tauTotal": 0.6226958707592057,
+      "galaxyTime": 4.414143655383168,
+      "ticks_to_arrival": 63,
+      "worst_tick_end_err_vs_motionAt": 7.993605777301127e-15,
+      "boundary_taus_python": [3.418469469655579e-06, 0.622692452289736, 0.6226958707592057],
+      "boundary_taus_sim_wire": [3.418469469655579e-06, 0.622692452289736, 0.6226958707592057],
+      "residual_x": {"python": 1.7763568394002505e-15, "sim": 1.7763568394002505e-15, "claimed": "1.78e-15", "equal": true},
+      "residual_t": {"python": 7.993605777301127e-15, "sim": 7.993605777301127e-15, "claimed": "7.99e-15", "equal": true},
+      "residual_phi": {"python": 4.843059286940843e-11, "sim": 4.843059286940843e-11, "claimed": "4.84e-11", "equal": true},
+      "ledger_boost_j": {"python": 4.757385123853719e+17, "sim": 4.757385123853719e+17, "equal": true},
+      "ledger_drag_j": {"python": 1.3702577394591184e+17, "sim": 1.3702577394591184e+17, "equal": true},
+      "ledger_radiated_j": {"python": 6.127642863312837e+17, "sim": 6.127642863312837e+17, "claimed": "6.12764286331283712e17", "equal": true},
+      "tripEnergy_total": {"python": 6.127642863312838e+17, "claimed": "6.1276428633128384e17", "equal": true},
+      "ledger_vs_tripEnergy_relative": 2.0888945856547242e-16,
+      "final_clock_t_after_63_ticks": {"sim": 4.421447784623955, "python_stepped": 4.421447784623955, "closed_form": 4.421447784623963}
+    },
+    "cap_trip_gl559": {"tauTotal": 0.006177430808467491, "residual_x": 4.440892098500626e-15, "residual_t": 5.329070518200751e-15, "residual_phi": 4.565237077258644e-13, "ledger_relative": 1.3596692712081932e-16},
+    "m_eff_3kg": {"ledger_total": 1.5642413111020275e+18, "tripEnergy_total": 1.5642413111020278e+18, "relative": 1.6365761355557396e-16},
+    "precision_gates": "gamma and 1 - beta come from the rapidity (betaOf/gammaOf/oneMinusBeta); no `1.0 - beta` anywhere; d is float64 scalars; the ledger's cruise term is mirrorDragPower(n, phiPeak, R) * piece * julianYearS, which closes on cruiseDragEnergy exactly because c * julianYearS == lightYearM. Determinism: core stays pure (make strict), VM == interpreter on every path I ran (make test parity targets, the replay, my probe)."
+  },
+  "edge_case_probes": {
+    "method": "sim/eval_probe.ail (not committed) run with --entry probe on the interpreter and on --bytecode --strict-bytecode: byte-identical output",
+    "P1_single_100yr_tick_after_commit": "4 phase events + arrived in one tick; residuals x 8.9e-16, t 0.0, phi 4.8e-11; pos (0,0,-4.37) exact; t 103.79144778462395 vs closed 103.79144778462397; ship tau 99.99999999999999 (one ulp under the dtau sum, as the design notes)",
+    "P2_fallback_flip_trip": "1e-5 ly at the 0.99c cruise rapidity -> fellBack true, tauCoast 0; crossings at_rest>boosting, boosting>braking@2.9265e-06, braking>at_rest@5.853e-06; arrived, pos (1e-5,0,0) exact; residuals x 1.7e-21, t 0, phi 1.3e-15; leftover of the arrival tick spent at rest (t = motionAt(tauTotal).t + leftover)",
+    "P3_off_axis_target_with_turn": "(3,0,-4), d = 5, 0.05-yr ticks: arrives at (3,0,-4) exactly; residuals as the on-axis case",
+    "P4_ticks_exactly_on_boundaries": "dtau = tauBurn -> el == tauBurn, cruising, crossing taus exact; dtau = tauCoast -> el == tauBurn + tauCoast, braking; dtau = tauBurn -> el 0.6226958707592056, one ulp short of tauTotal 0.6226958707592057: the ship is at phi 0.0, 1e-15 ly from the target, still Committed in `braking`; a following dtau 0 tick leaves it there; any dtau > 0 tick arrives (the test's own 1e-12 fallback). Design acknowledges the ulp; benign.",
+    "P5_arrived_then_replan_home": "plan home from the target (heading flips to +z) accepted as plan 2, commit accepted, one 1-yr tick: 4 crossings with taus continuing from tau0 99.99999999999999, arrived at (0,0,0) exactly, ledger exactly doubled",
+    "P6_dtau_0_mid_flight_with_cancel": "refused 0:committed, el 0.3 and the flight unchanged"
+  },
+  "mutations": {
+    "pr_claim": "18 applied, 17 killed, 1 equivalent",
+    "evaluator_applied": 4,
+    "evaluator_killed": 3,
+    "evaluator_survived_equivalent": 1,
+    "detail": [
+      {"id": "M-a", "file": "sim/core.ail", "line": 296, "mutation": "whole = el + rem <= b (a tick ending exactly on a boundary does not cross)", "result": "KILLED by AC5 checkVoyageBoundaries (checkBoundaryTicks)"},
+      {"id": "M-b", "file": "sim/core.ail", "line": 310, "mutation": "arrival ledger piece uses the stepped `after` instead of `snapped`", "result": "SURVIVED (equivalent at the tested tolerance): differs by m_eff c^2 * 4.8e-11 = 4.4e6 J, relative 7e-12 < 1e-9"},
+      {"id": "M-d", "file": "sim/core.ail", "line": 271, "mutation": "coast end as tp.tauTotal - tp.tauBurn (rounding-different from tauBurn + tauCoast)", "result": "KILLED: 4 failures (AC5 boundaries, AC5 residuals, AC6 ledger, Arrived-then-replan); shows the boundary expression must match journey.phaseAt bit for bit"},
+      {"id": "M-k", "file": "sim/core.ail", "line": 304, "mutation": "crossing tau taken at the tick end (f.ship.motion.tau + rem)", "result": "KILLED by AC5 crossingTaus and checkWholeBoostTick"}
+    ]
+  },
+  "deviations": {
+    "1_Event_phase_arrived_and_residual_phi": "ACCEPTED. The design's events list already names phase (from, to, tau) and arrived (residuals); residual_phi is additive, encoded and decoded symmetrically (protocol_test state fixtures round-trip it with -0.0 and 1e308).",
+    "2_Commitment_el": "ACCEPTED. Setting el to the boundary value exactly is what makes phaseAt(trip, el) hit Coasting at tauBurn and Arrived at tauTotal without an ulp of drift; the ship's own tau is the sum of pieces and is allowed to differ by an ulp (probe P1 shows it).",
+    "3_commit_always_rebases": "ACCEPTED. Without it a commit along the current heading would measure x - x0 from the last turn, not from the commit; checkPlanFromMovedShip and probes P3/P5 land exactly on the target either way.",
+    "4_tripphase_module_for_ailang_1478": "ACCEPTED. ailang#1478 is filed and OPEN (2026-10-01, 'Aliased constructor import never matches; unknown constructor in a pattern is not an error'); the 11-line module is the smallest workaround and every voyage test exercises the 0-3 mapping. Fold the indices back into ShipPhase when the fix lands in a pinned release.",
+    "5_journey_replay_target": "ACCEPTED. Part of make test; checks VM == interpreter on the replay and the last line's arrived; CI runs it.",
+    "6_replay_64_inputs": "ACCEPTED. AC14 reads the last output line, so the replay must end on the arrival tick (63 x 0.01 = 0.63 >= tauTotal 0.6227); the plan's 'about 70' was an estimate.",
+    "7_M23a_tests_adapted": "ACCEPTED. plAllRefused/checkCommittedRefusesAll now compare the refused tick with an autopilot-only tick (plSameFlight: ship, el, ledger, lastPlanId), which keeps 'nothing else changes' meaningful for a flying ship; checkCommitTurns at dtau 0 isolates the turn; checkCommitDropsThrust equals the commit-only tick."
+  },
+  "automated_checks": {
+    "make_test": "exit 0 (4m44s)",
+    "ci": "pass on ca26e3d (headless job 5m9s)",
+    "ailang_tests": "76 passed, 0 failed",
+    "godot_physics": "62 passed, 0 failed",
+    "bridge": "0 failures",
+    "parity": "602 / 17 / 13 lines identical; offaxis-v11-equiv bit-identical; journey-replay 66 lines identical",
+    "strict": "protocolVm (digest bf000aa6a34d3a95), planVm, journeyVm, voyageVm, scripted, scriptedOffAxis: VM == interpreter",
+    "ac18_grep": "clean (exit 1)",
+    "file_sizes_ok": true,
+    "worktree_clean_after_tests": true
+  },
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      {
+        "file": "sim/core.ail",
+        "line": 271,
+        "issue": "phaseEnd(tp, 1) = tp.tauBurn + tp.tauCoast duplicates journey.phaseAt's boundary expression and must stay bit-identical to it (mutation M-d shows a rounding-different form misroutes the crossing).",
+        "suggestion": "Add a one-line comment naming the coupling now; ask the package (next minor) to expose the boundaries (e.g. tauCoastEnd) so the sim reads them instead of recomputing.",
+        "severity": "low"
+      },
+      {
+        "file": "sim/core.ail",
+        "line": 296,
+        "issue": "When the dtau sum lands el one ulp short of tauTotal (probe P4: 0.6226958707592056 vs 0.6226958707592057) the ship sits Committed in `braking` at phi 0.0 for a tick; it arrives on the next dtau > 0 tick. Design acknowledges the ulp; the UI (M2.6b transit readout) should not assume `braking` implies phi > 0.",
+        "suggestion": "No change needed; note it for M2.6b. If it ever matters, treat tauTotal - el <= ulp as arrival.",
+        "severity": "info"
+      },
+      {
+        "file": "sim/core.ail",
+        "line": 310,
+        "issue": "The 'brake's last dphi to the snapped 0' rule is not test-enforced: a mutant that uses the stepped phi instead changes the ledger by 7e-12 relative, inside the 1e-9 tolerance (my M-b).",
+        "suggestion": "Optional: assert boostJ == photonDriveEnergy(mEff, 2 phiPeak) to 1e-12 relative in checkLedgerAtArrival.",
+        "severity": "info"
+      },
+      {
+        "file": "Makefile",
+        "line": 88,
+        "issue": "The journeyVm closed form uses python math.sinh/tanh, not the package's expm1-based sinh; it prints 4.491447784623963 where the package form gives 4.491447784623962. Within the 1e-9 gate, but the two references differ in the last place.",
+        "suggestion": "Leave as is; the existing scripted targets use the same convention.",
+        "severity": "info"
+      },
+      {
+        "file": ".ailang/state/sprints/sprint_R1-M2-JOURNEY.json",
+        "line": 1,
+        "issue": "M2.3b (plan iteration 7) was executed before M2.6a (iteration 6, followed by the R1 review checkpoint for Mark). M2.3b depends only on M2.3a, so nothing is broken, but the R1 checkpoint has not happened yet.",
+        "suggestion": "The controller runs M2.6a next and holds the R1 checkpoint before M2.6b, as the plan says.",
+        "severity": "low"
+      },
+      {
+        "file": "CHANGELOG.md",
+        "line": 1,
+        "issue": "Still no M2 entry (M2.0-M2.3b).",
+        "suggestion": "Add at the landing of the design doc, per CLAUDE.md step 5.",
+        "severity": "low"
+      },
+      {
+        "file": "sim/protocol.ail",
+        "line": 95,
+        "issue": "After arrival the wire's ship.x is the stepped value (4.370000000000002) while ship.pos is the snapped target; harmless, but a reader comparing them sees a 2e-15 gap.",
+        "suggestion": "None required; the residuals already report it. Godot should use pos.",
+        "severity": "info"
+      }
+    ]
+  },
+  "verdict": "PASS 96/100. All five M2.3b acceptance commands re-run green in a fresh worktree on v0.50.0 with relativity 0.4.0; make test exits 0 locally (76 AILANG tests, 62 physics checks, bridge 0 failures, parity 602/17/13, strict journeyVm/voyageVm VM == interpreter, journey-replay identical) and CI is green on ca26e3d. My independent python voyage from the package formulas reproduces the sim bit for bit: boundary taus 3.418469469655579e-06 / 0.622692452289736 / 0.6226958707592057, arrival residuals x 1.7763568394002505e-15 ly, t 7.993605777301127e-15 yr, phi 4.843059286940843e-11, ledger 6.127642863312837e17 J against tripEnergy 6.127642863312838e17 J (2.1e-16 relative), and every 0.01-yr tick end within 8e-15 of motionAt. Edge probes (a 100-yr single tick, the fallback flip trip, an off-axis target with a turn, ticks exactly on each boundary, Arrived -> replan home -> arrival at the origin, a refused intent mid-flight) behave as designed and are byte-identical on the strict VM. Three of my four mutations were killed; the survivor is equivalent at the tested tolerance. All seven declared deviations are accepted; ailang#1478 is filed and open. Non-blocking: the duplicated boundary expression in phaseEnd, the one-ulp-short `braking` edge, the changelog at landing, and the plan-order note (M2.6a and the R1 checkpoint still ahead)."
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "bridge",
+    "title": "Bridge — the decision balcony",
+    "z": 82,
+    "r": 22,
+    "index": 0,
+    "area_m2": 1520.5308443374597,
+    "concept_height_m": 2
+  },
+  {
+    "id": "commons",
+    "title": "Level 1 — the Commons & high terraces",
+    "z": 57,
+    "r": 75.92,
+    "index": 1,
+    "area_m2": 18107.657506659976,
+    "concept_height_m": 10
+  },
+  {
+    "id": "homes",
+    "title": "Level 2 — homes & neighbourhoods",
+    "z": 32,
+    "r": 89.36830909525345,
+    "index": 2,
+    "area_m2": 25090.941303448173,
+    "concept_height_m": 10
+  },
+  {
+    "id": "garden",
+    "title": "Level 3 — the Garden Cathedral",
+    "z": 7,
+    "r": 94.66175425861609,
+    "index": 3,
+    "area_m2": 28151.33336494823,
+    "concept_height_m": 20
+  },
+  {
+    "id": "workshops",
+    "title": "Level 4 — the making quarter & academy",
+    "z": -18,
+    "r": 93.00061022576077,
+    "index": 4,
+    "area_m2": 27171.991439090645,
+    "concept_height_m": 10
+  },
+  {
+    "id": "farms",
+    "title": "Level 5 — cultivation & environmental systems",
+    "z": -43,
+    "r": 84.11619943916709,
+    "index": 5,
+    "area_m2": 22228.448801632105,
+    "concept_height_m": 18
+  },
+  {
+    "id": "engineering",
+    "title": "Level 6 — engineering & stewardship",
+    "z": -68,
+    "r": 65.21931086925804,
+    "index": 6,
+    "area_m2": 13362.94816745005,
+    "concept_height_m": 12
+  }
+]

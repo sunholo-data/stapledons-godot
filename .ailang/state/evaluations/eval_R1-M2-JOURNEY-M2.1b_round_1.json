@@ -1,0 +1,65 @@
+{
+ "sprint_id": "R1-M2-JOURNEY",
+ "milestone": "M2.1b_BRIDGE_V2",
+ "evaluation_round": 1,
+ "evaluator_model": "claude-sonnet-5-5",
+ "generator": "executor (PR #25, branch sprint/m2.1b-bridge)",
+ "evaluated_commit": "a3f0318",
+ "toolchain": "AILANG v0.50.0 (6abe1a5) via runtime/bin/ailang; Godot 4.7.2, Apple M4 Max (Metal)",
+ "score": 93,
+ "pass": true,
+ "threshold": 70,
+ "hard_fail": false,
+ "rubric": {
+  "tests_pass": {"points": 20, "max": 20, "notes": "make test AILANG=$A rc=0: bridge 0 failures, parity 602 lines (601 ok), parity-offaxis 17, parity-v2 13 + silent-until-input check, offaxis-v11-equiv 16 requests bit-identical, strict protocolVm, wd-vm, sky-vm, tools 15/15. CI check 'headless tests' (x86_64) green on the PR."},
+  "lint_clean": {"points": 10, "max": 10, "notes": "No lint target in repo."},
+  "acceptance_criteria": {"points": 29, "max": 30, "notes": "AC9, AC13 (interim), AC16, AC17 (capture + golden) all re-run green. make capture: 13/13 PNGs byte-identical to a capture from origin/main (same machine); contact sheet opened, HUD and star fields as expected. make golden: 0 failures (GPU window available). Deduction 1: two bridge mutants survive (below), and the x86_64 golden cannot be reproduced on this arm64 machine (relied on green CI)."},
+  "code_quality": {"points": 13, "max": 15, "notes": "ship.ail is now 25 lines, I/O only; protocol.ail stays pure and strict-VM clean. Bridge is clear, 300 lines. LOC 660 vs cap 650 (-1). Surviving mutants (-1). Sprint JSON complete."},
+  "documentation": {"points": 12, "max": 15, "notes": "Reason-code and param-range tables, echo hook, per-arch golden headers with generation commands, thorough sprint JSON notes. No CHANGELOG entry (landing-time per plan), -3."},
+  "design_fidelity": {"points": 9, "max": 10, "notes": "Bridge API matches the plan (hello/new_game/send, integer-major, mirrored world, record_path tee, full_precision with -0.0 repair, main.gd diag session, v1.1 deleted). Deviation from the single v11_offaxis.golden file to per-arch goldens (justified). Param ranges still unratified by Mark (carried over)."}
+ },
+ "automated_checks": {
+  "make_test": "pass",
+  "make_capture": "pass, 13/13 PNG cmp-identical to origin/main capture",
+  "make_golden": "pass, 0 failures",
+  "ci": "pass (headless tests, x86_64)"
+ },
+ "mutations": {
+  "bridge_killed": [
+   "major check loosened to < (2 fail)",
+   "change-set replace instead of merge (3 fail)",
+   "no full_precision (3 fail)",
+   "no -0.0 repair (3 fail)",
+   "tee drops input lines (2)",
+   "tee alters line bytes (2)",
+   "tick check removed (2)",
+   "send allowed before new_game (1)"
+  ],
+  "bridge_survived": ["new_game 'full != true' check removed (no test sends a non-full first state)"],
+  "protocol_killed": ["echo diag gate removed (sim + bridge tests)", "echoed target id replaced (sim + bridge tests)"],
+  "protocol_survived": [
+   "echo event list not reversed (events: a.events): only single-echo inputs tested",
+   "flip_g dropped from planFields encoding: bridge test echo does not carry flip_g (sim round-trip tests were not re-run for this mutant; treat as bridge-level gap)"
+  ]
+ },
+ "deviations": {
+  "1_diag_echo_intent": "Accepted. Keeps AC9 in M2.1b as the plan allowed; diag-only, refused diag_only otherwise, documented in the design reason-code table; pure and strict-VM clean.",
+  "2_godot_dbl_min": "Accepted. Real Godot 4.7.2 parser bug; sim side is exact and asserted; no game value is that small; test marks it known-divergent rather than hiding it. Recommend filing a Godot issue.",
+  "3_per_arch_goldens": "Accepted. Verified arm64 golden passes locally, CI x86_64 passes. Important M2.5 finding (committed replay digests must be per-arch or avoid exp/log). ailang#1465 filed per the brief. Weakness: x86_64 golden not independently reproducible here.",
+  "4_loc_660_vs_650": "Accepted, immaterial (1.5% over, tests-heavy).",
+  "5_throwaway_ci_branches": "Accepted; used to generate the x86_64 golden, deleted.",
+  "6_no_changelog": "Accepted; landing-time per plan, carry to landing checklist."
+ },
+ "findings": {
+  "blocking": [],
+  "non_blocking": [
+   "bridge/sim_bridge.gd:104: new_game's `state.get(\"full\") != true` branch is untested (mutant survives); add a fake-sim case replying with full:false.",
+   "sim/protocol.ail:269 (events: rev(a.events, [])) ordering of multiple echo events untested; add a two-echo input to protocol_test.ail.",
+   "tests/test_sim_bridge.gd echo cases never carry flip_g through the bridge; add one.",
+   "Param range table still pending Mark's ratification (carried from M2.1a).",
+   "M2.5: replay digests committed from arm64 will not match CI x86_64 unless made per-arch (ailang#1465).",
+   "CHANGELOG entry due at landing."
+  ]
+ },
+ "verdict": "PASS 93/100. Do not merge on the evaluator's authority; merge is the controller's decision."
+}

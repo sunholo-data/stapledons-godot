@@ -1,0 +1,14 @@
+{
+  "area": "bridge",
+  "placeholder": true,
+  "layers": {
+    "panorama": {"file": "pano_bridge.png", "parallax": 0.15},
+    "play": {"file": "play_bridge.glb", "iso_pitch_deg": -14, "iso_yaw_deg": 45, "iso_size_m": 16},
+    "foreground": {"file": "fg_bridge.png", "parallax": 1.6}
+  },
+  "camera": "cam_bridge.json",
+  "focus_m": [-8.0, 1.0, 9.0],
+  "sky_visible": true,
+  "source": "TEST FIXTURE, not shipping art: spike blockout from origin/spike/iso-bridge 4eda978 (spike/v2 bridge_slice.glb + walk disc, spawns, two INTERACT_ stand-ins via tools/build_blockout_fixture.gd; spike/v2 cam_bridge.json and stapledon_pano_bridge.png; spike/v3 stapledon_fg_bridge.png)",
+  "validation": {"needle_tip_ship_m": [0.0, 0.0, 98.0]}
+}
