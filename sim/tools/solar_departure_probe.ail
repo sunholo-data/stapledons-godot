@@ -1,0 +1,36 @@
+module stapledons/sim/tools/solar_departure_probe
+-- Deterministic trace oracle/harness: native VM and interpreter must emit
+-- identical snapshots for genuine successive stop/turn/commit journeys.
+import std/result (Ok, Err)
+import std/option (Some, None)
+import std/string (concat)
+import pkg/stapledons/sim/core (World, Target, ICommit, Planned, position, newWorld, defaultParams, tick)
+import pkg/stapledons/sim/solar_departure (initialize, intentForLeg)
+import pkg/sunholo/celestial/kepler (Vec3)
+import pkg/stapledons/sim/protocol (num)
+pure func outbound() -> Target = { index: 0, id: "CNS5:3627", pos: {x: 3.094521, y: 0.0 - 3.015404, z: 0.0 - 0.051608} }
+pure func vector(v: Vec3) -> string = concat(["{\"x\":",num(v.x),",\"y\":",num(v.y),",\"z\":",num(v.z),"}"])
+pure func snapshot(w: World) -> string =
+  concat(["{\"tick\":",num(intToFloat(w.tick)),",\"pos\":",vector(position(w.ship)),",\"tau\":",num(w.ship.motion.tau),",\"t\":",num(w.ship.motion.t),",\"phi\":",num(w.ship.motion.phi),"}"])
+pure func trace(w: World, i: int) -> string =
+  if i >= 5 then snapshot(w) else {
+    let start = snapshot(w);
+    match intentForLeg(w, i, outbound()) {
+      None => "invalid itinerary",
+      Some(intent) => {
+        let planned = (tick(w, {dtau: 0.0, intents: [intent]})).world;
+        match planned.journey {
+          Planned(p) => {
+            let committed = (tick(planned, {dtau: 0.0, intents: [ICommit(p.id)]})).world;
+            let arrived = (tick(committed, {dtau: p.trip.tauTotal, intents: []})).world;
+            concat([start,"\n",trace(arrived, i + 1)])
+          },
+          _ => "planner refused"
+        }
+      }
+    }
+  }
+export pure func solarTrace(n: int) -> string {
+  let p = defaultParams();
+  match initialize(newWorld(42, false, {p | standoffAu: 1000.0})) { Err(e) => e, Ok(w) => trace(w, 0) }
+}

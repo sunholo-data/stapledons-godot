@@ -1,0 +1,136 @@
+{
+  "sprint_id": "R1-M5-PLANETS-M5.0a",
+  "milestones": ["M5.0a1", "M5.0a2"],
+  "subject": "sunholo/celestial 0.1.0 (ailang-packages PR #91, branch celestial-0.1.0-orbits, commits 9508eec + 172c924)",
+  "evaluation_round": 1,
+  "evaluator": "independent (Claude Fable 5.1, session 01Dvti2W94QfXDcYLoyzr7n3); generator != judge",
+  "evaluated_at": "2026-10-03",
+  "toolchain": "ailang v0.52.0 (bf2436a), runtime/bin/ailang; python3 oracle; fresh clone in evaluator scratchpad",
+  "score": 89,
+  "max_score": 100,
+  "pass_threshold": 70,
+  "result": "pass",
+  "publish_verdict": "SAFE TO PUBLISH AS 0.1.0 AFTER FIXING B1 (one-line change in rings.ail ringUnlitIF, plus a test); no other blocker",
+  "hard_fails": [],
+  "automated_checks": {
+    "ailang_test_package_celestial": {"tests": 91, "passed": 91, "failed": 0, "seconds": 16.9},
+    "pkg_quality": {"gates": 0, "warnings": ["PUB011: 40 exported functions carry no contract", "PUB016: 23 contracts skipped by Z3"], "contracts_verified": "1/29", "exports_pure": "69/69", "smoke": "attested passed"},
+    "publish_dry_run": {"clean": true, "tarball_bytes": 43039, "exports": 7},
+    "strict_vm_vs_interpreter": {
+      "keplerProbe(64)": "byte-identical, 4810 values, no NaN/Inf",
+      "orbitsProbe(96)": "byte-identical, 1843 values, no NaN/Inf",
+      "lightProbe(48)": "byte-identical, 1127 values, no NaN/Inf",
+      "note": "AGENT.md's command fails as written (MOD010); needs --relax-modules, and main needs --caps IO"
+    },
+    "smoke_main": "OK: ... (interpreter, --caps IO). Under --bytecode the IO println is evaluator-only (upstream VM limitation, not the package's)",
+    "python_oracle": {"command": "python3 tools/orbits_ref.py --check", "result": "all PASS, output byte-identical to tools/orbits_ref.out", "seconds": 6.2}
+  },
+  "scores": {
+    "tests_pass": {"points": 20, "max": 20, "notes": "91/91; VM parity on all three probes; smoke OK"},
+    "lint_clean": {"points": 9, "max": 10, "notes": "pkg quality: no gates; -1 for the AGENT.md validation commands that do not run as written (MOD010 without --relax-modules; main needs --caps IO)"},
+    "acceptance_criteria": {"points": 29, "max": 30, "met": 26, "total": 27, "notes": "Every checkable M5.0a1/M5.0a2 criterion is met by a command (see acceptance_criteria). The E_sun row (1.261e5 lux) is met only by correcting the design's number to 1.2706e5, which is right for relativity's zero point; the publish criterion is deferred by design to P-pkg-a"},
+    "code_quality": {"points": 10, "max": 15, "notes": "-3 ringUnlitIF returns Inf in a reachable window (B1); -1 planetAt discards the meanOrbit flag; -1 naming (p = phase-function value in rings vs p = geometric albedo in reflect; `e` = illuminance)"},
+    "documentation": {"points": 12, "max": 15, "notes": "CHANGELOG 5/5 with [release] kind; AGENT.md quick start + _smoke stand in for examples 4/5 (probe commands wrong); README cites physics/planets-spec.md which does not exist yet in stapledons-design 3/5"},
+    "design_fidelity": {"points": 9, "max": 10, "notes": "Every row of the design's M5.0a table implemented, same formulas and sources; two deliberate, labelled deviations where the design's numbers were wrong (E_sun 1.261e5 -> 1.2706e5; Jupiter lag 2094 -> 2095.8 s)"}
+  },
+  "acceptance_criteria": [
+    {"id": "M5.0a1-kepler-residual", "criterion": "Kepler residual < 1e-14 for e <= 0.97", "passes": true, "evidence": "kepler_test grid + corners; my probe: e 0.97 M 1e-9 residual 4.3e-24, e 0.98 M 0.05 6.9e-17 (e 0.999 M 0.01 is 7e-5, outside the documented contract)"},
+    {"id": "M5.0a1-kepler-e0", "criterion": "e = 0 gives E = M exactly", "passes": true, "evidence": "kepler_test.ail:54"},
+    {"id": "M5.0a1-circular-radius", "criterion": "circular orbit radius = a exactly", "passes": true, "evidence": "kepler_test.ail:86"},
+    {"id": "M5.0a1-vis-viva", "criterion": "vis-viva to 1e-12", "passes": true, "evidence": "kepler_test.ail:100 (6 orbits incl. e 0.97)"},
+    {"id": "M5.0a1-jupiter-opposition", "criterion": "Jupiter opposition 2023-11-03 +-2 d", "passes": true, "evidence": "ephemeris_test.ail:67; oracle +0.16 d; my independent Standish Table 1 (1800-2050) run: +0.13 d"},
+    {"id": "M5.0a1-mars-opposition", "criterion": "Mars opposition 2020-10-13 +-2 d", "passes": true, "evidence": "ephemeris_test.ail:74; oracle +0.91 d; my Table 1 run: +0.98 d"},
+    {"id": "M5.0a1-moon-range", "criterion": "Moon distance inside 356,375-406,720 km", "passes": true, "evidence": "ephemeris_test.ail:202; a(1-e)..a(1+e) = 363,104..405,696 km (the mean elements have fixed e, so the range is necessarily narrower than the published extremes)"},
+    {"id": "M5.0a1-io-period", "criterion": "Io's period 1.769 d within 1e-4 d", "passes": true, "evidence": "ephemeris_test.ail:237; my check: 1/(1/1.762732 - 1/486.88 d) = 1.7691371 d vs NSSDC 1.769137786; a prograde apse would give 1.75637 d"},
+    {"id": "M5.0a1-nep-galactic", "criterion": "north ecliptic pole -> galactic (96.38, 29.81) within 1e-4 deg", "passes": true, "evidence": "frames_test.ail:36; my check with the package matrix: l 96.383986, b 29.811439; the matrix rebuilt from the Hipparcos angles (192.85948, 27.12825, 32.93192) agrees to 5e-11 and is orthogonal to 1e-10"},
+    {"id": "M5.0a1-saturn-equinoxes", "criterion": "Saturn ring-plane crossings 2009-08-11 and 2025-05-06 within +-10 d (pole + elements)", "passes": true, "evidence": "ephemeris_test.ail:97; oracle -1.3 d and +3.2 d; dates are the real equinoxes; my check of Saturn's obliquity from the IAU pole and Table 2a normal: 26.727 deg (NSSDC 26.73)"},
+    {"id": "M5.0a1-mean-orbit-flag", "criterion": "elementsAt at 3000 AD + 1 yr returns the mean-orbit flag", "passes": true, "evidence": "ephemeris_test.ail:122 (both edges, inside/outside)"},
+    {"id": "M5.0a1-vm-parity", "criterion": "strict VM == interpreter on solveKepler / stateFromElements probes (cmp)", "passes": true, "evidence": "keplerProbe, orbitsProbe, lightProbe byte-identical (re-run by evaluator)"},
+    {"id": "M5.0a1-pkg-quality", "criterion": "pkg quality lists no gates", "passes": true, "evidence": "re-run: no gates"},
+    {"id": "M5.0a2-jupiter-lag", "criterion": "Jupiter lag at opposition ~2,094 s, 27,400 km displacement", "passes": true, "evidence": "lighttime_test.ail:105: 4.2 au/c = 2095.82 s (design rounded wrongly to 2,094), 27,374 km = 0.383 R_J; my check identical"},
+    {"id": "M5.0a2-gravity-values", "criterion": "0.1254 m/s^2 at 50,000 km above Earth; 11.0 m/s^2 at 1.5 R_J; inside within R", "passes": true, "evidence": "gravity_test.ail:66,75,89; my check 0.125406 and 11.0162 m/s^2 from IAU 2015 B3 nominal GM"},
+    {"id": "M5.0a2-esun", "criterion": "E_sun(1 AU) = 1.261e5 lux from illuminanceFromV(-26.74) passed as a literal", "passes": true, "evidence": "reflect_test.ail:42 uses 127,057.41 lux = 10^(-0.4(-26.74+13.98)), relativity photometry.ail:65's zero point. The design's 1.261e5 corresponds to the textbook 2.54e-6 lux zero point, not relativity's; the package is right and the design doc needs the fix", "deviation": "design typo corrected"},
+    {"id": "M5.0a2-lambert-phase", "criterion": "Phi(0) = 1, Phi(pi/2) = 1/pi, Phi(pi) = 0", "passes": true, "evidence": "reflect_test.ail:51; q = 3/2 also checked (reflect_test.ail:66; my midpoint integral 1.5000000)"},
+    {"id": "M5.0a2-minnaert-k1", "criterion": "Minnaert k = 1 equals Lambert to 1e-15", "passes": true, "evidence": "reflect_test.ail:82 (bit-identical by construction, including the limb)"},
+    {"id": "M5.0a2-rho-roundtrip", "criterion": "rho <-> p round trip to 1e-12", "passes": true, "evidence": "reflect_test.ail:103; the normalisations p = 2 rho/(2k+1) and A_B = 4 rho/(k+1)^2 confirmed by my own 2-D numerical disc and sphere integrals at k = 0.9, 1.0, 1.3"},
+    {"id": "M5.0a2-jupiter-v", "criterion": "Jupiter at opposition V ~ -2.77 (r 5.20, delta 4.20, p_V 0.538)", "passes": true, "evidence": "reflect_test.ail:167; my check -2.767; Mallama & Hilton V(1,0) -9.395 gives -2.699"},
+    {"id": "M5.0a2-ring-ls-limit", "criterion": "ring lit face at tau -> inf equals Lommel-Seeliger", "passes": true, "evidence": "rings_test.ail:36"},
+    {"id": "M5.0a2-ring-thin", "criterion": "tau -> 0 both faces -> 0", "passes": true, "evidence": "rings_test.ail:45,80"},
+    {"id": "M5.0a2-ring-unlit-finite", "criterion": "unlit face finite at mu -> mu0", "passes": true, "evidence": "rings_test.ail:66 (limit w0 P tau e^(-tau/mu0)/(4 mu0), my value 0.0533543333); BUT see B1: finite at mu = mu0 only, Inf in a window elsewhere"},
+    {"id": "M5.0a2-transmission", "criterion": "transmission(0, mu) = 1, transmission(tau, 1) = e^(-tau)", "passes": true, "evidence": "rings_test.ail:107"},
+    {"id": "M5.0a2-release-hygiene", "criterion": "pkg quality no gates; CHANGELOG has [release] kind; publish --dry-run clean", "passes": true, "evidence": "re-run: all three clean; [release] kind = feature"},
+    {"id": "M5.0a2-AC1-independent-eval", "criterion": "independent evaluation >= 70 saved before publishing", "passes": true, "evidence": "this report, 89/100"},
+    {"id": "M5.0a2-published", "criterion": "ailang search celestial lists sunholo/celestial@0.1.0", "passes": null, "evidence": "not yet published (correct: it waits on this evaluation and P-pkg-a)"}
+  ],
+  "physics_verification": {
+    "oppositions": "Jupiter 2023-11-03 and Mars 2020-10-13 are the true dates; independently reproduced with Standish Table 1 (a different table from the package's 2a) to +0.13 d and +0.98 d",
+    "saturn_equinoxes": "2009-08-11 and 2025-05-06 are the published Sun ring-plane crossings; package finds them at -1.3 d / +3.2 d",
+    "moon": "mean elements give 363,104-405,696 km, inside Meeus's extremes 356,375-406,720 km; perigee period 3232.6 d = 8.85 yr correct",
+    "ecliptic_to_galactic": "Hipparcos A_G^T (ESA SP-1200 eq. 1.5.11) copied correctly; rebuilt from alpha_G, delta_G, l_Omega to 5e-11; obliquity 84381.406 arcsec (IAU 2006) correct; NEP (96.383986, 29.811439)",
+    "iau_poles": "Saturn (40.589 - 0.036T, 83.537 - 0.004T, W 38.90 + 810.7939024 d), Jupiter (268.056595 - 0.006499T, 64.495303 + 0.002413T, W 284.95 + 870.536 d, Ja..Je terms), Earth (0 - 0.641T, 90 - 0.557T, W 190.147 + 360.9856235 d) all match Archinal et al. 2018; rotation periods 9.925 h / 10.656 h correct; per-century rates converted to per-day correctly",
+    "io_and_signed_rates": "JPL's P column for Io (JUP365) is the anomalistic period 1.762732 d; with the apse regressing at 1.333 yr the sidereal period is 1.769137 d (NSSDC 1.769137786); the prograde reading gives 1.75637 d and is pinned as wrong. The trap is documented in AGENT.md and ephemeris.ail. The Laplace-plane rotation Rz(RA+90) Rx(90-Dec) is the JPL convention",
+    "light_time": "c = 299,792.458 km/s over the IAU 2012 au: 499.004784 s per au. Horizons Jupiter 2023-11-03 1987.32 s (3.98256 au) and Saturn 2023-08-27 4372.80 s (8.76305 au) are self-consistent; package gets 1986.4 s and 4375.8 s (0.9 s and 3.0 s, i.e. 2e-3 and 6e-3 au, consistent with Standish accuracy and EMB-vs-geocentre). Contraction factor (v/c)^k per step is right; 4 steps are pinned by the (v/c)^4 test",
+    "gravity_constants": "IAU 2015 B3 nominal: GM_Sun 1.3271244e20, GM_E 3.986004e14, GM_J 1.2668653e17 m^3/s^2; R_Sun 6.957e8, R_E eq 6.3781e6, R_J eq 7.1492e7 m: all correct in km units. Surface g 9.798 / 24.79 m/s^2 correct",
+    "reflect": "Lambert Phi(alpha) = (sin a + (pi - a) cos a)/pi correct; q = 3/2 correct; Minnaert sphere p = 2 rho/(2k+1) and A_B = 4 rho/(k+1)^2 both verified by my own 2-D integrals (the tempting alternative 4 rho/((k+1)(k+2)) is wrong, and the test suite's sphere integral would catch it). Jupiter V -2.767 at r 5.20, delta 4.20 with p_V 0.538 and R_eq 71,492 km; E_sun = 127,057 lux for relativity's zero point",
+    "jupiter_bond_albedo": "The model's A_B = 3p/2 = 0.807 for Jupiter versus the measured 0.34 (Li et al. 2018) is NOT a bug: it is the Lambert sphere's necessary consequence (q = 3/2) and real giants have q ~ 0.6-0.7 because of forward scattering and the opposition surge. The package labels it correctly in reflect.ail:15-17 and AGENT.md ('do not feed the model's A_B into an energy balance'). Suggest the name make it unmistakable (modelBondAlbedo) in a later minor",
+    "rings": "Lit face w0 P mu0/(4(mu+mu0))[1 - e^(-tau(1/mu+1/mu0))], unlit face w0 P mu0/(4(mu-mu0))[e^(-tau/mu) - e^(-tau/mu0)], limit w0 P tau e^(-tau/mu0)/(4 mu0), transmission e^(-tau/|mu|): all correct classical single-scattering forms; Lommel-Seeliger limit correct; shadow geometry (s = -p.pole/(dir.pole), hit if s > 0, mu0 = |sunDir.pole|) correct; NSSDC ring radii and tau ranges correct"
+  },
+  "findings_blocking": [
+    {
+      "id": "B1",
+      "file": "packages/celestial/rings.ail:46-56",
+      "issue": "ringUnlitIF returns Inf in a reachable window. The 'stable' form a * tau/(mu mu0) * (e^x - 1)/x with a = e^(-tau/mu0) and x = tau(mu - mu0)/(mu mu0) overflows when tau/mu0 is in ~(709.8, 745): a is a nonzero subnormal (the a == 0.0 guard does not fire) while e^x overflows. Evaluator probe: ringUnlitIF(0.5, 1.3, 7.2, 0.01, 1.0) = Inf (true value ~1.2e-6); (0.5, 1.3, 5.1, 0.007, 1.0) = Inf; (0.5, 1.3, 2.5, 0.0035, 0.9) = Inf. Physically: the unlit face of Saturn's B ring (tau 1.8-5) with the Sun 0.14-0.40 deg above the ring plane, i.e. a day or two either side of each equinox, per band. An Inf pixel poisons any tonemapper. Violates gate 5 (finite across the whole range, with a test).",
+      "suggestion": "Use the series branch only for |x| < 1e-3 and otherwise the direct, bounded difference mu0/(4(mu - mu0)) * (e^(-tau/mu) - e^(-tau/mu0)) (both exponentials <= 1, so no overflow; cancellation is only an issue near x = 0, which the series already covers). Add a test sweeping mu0 down to 1e-4 and tau up to 10 asserting finiteness and monotonic decay. Re-run the 91 tests, the lightProbe parity and the oracle's unlit-face check; then publish."
+    }
+  ],
+  "findings_non_blocking": [
+    {"id": "N1", "file": "packages/celestial/ephemeris.ail:92-97; AGENT.md 'Planets'", "issue": "planetAt (the convenience entry used in the quick start) returns a bare State and silently drops Ephem.meanOrbit; a caller must know to call elementsAt separately to learn the result is a mean orbit outside 3000 BC-3000 AD. The flag exists and is tested, but the ergonomic path hides it.", "suggestion": "Either return the flag from planetAt (a record) or state in planetAt's doc comment, in capitals, that it does not carry the flag, and show the pairing in the quick start (it does, but only as a comment)."},
+    {"id": "N2", "file": "packages/celestial/AGENT.md:280-285 and _smoke.ail:10-11", "issue": "The documented validation commands do not run as written: `ailang run ... _smoke.ail` fails with MOD010 (module 'sunholo/celestial/_smoke' vs path) without --relax-modules, and `main` needs --caps IO. pkg quality's smoke attestation passes, so the package is fine; the doc is not.", "suggestion": "Add --relax-modules (or AILANG_RELAX_MODULES=1) and --caps IO to the commands in AGENT.md and the _smoke.ail header."},
+    {"id": "N3", "file": "packages/celestial/README.md:38-40", "issue": "Cites the design repo's physics/planets-spec.md as the normative source; that file does not exist yet (stapledons-design/physics has only relativity-spec.md and higgs-bubble.md; m5-planets.md lists the spec as a design-repo change still to be made).", "suggestion": "Either write planets-spec.md before publishing or phrase the README as 'will be' / cite m5-planets.md until then."},
+    {"id": "N4", "file": "packages/celestial/reflect.ail:69-74, AGENT.md 'Reflected light'", "issue": "bondAlbedo(rho, k) is the Minnaert-sphere model's Bond albedo (Jupiter: 0.81 vs measured 0.34). Correctly labelled in prose, but the bare name invites misuse in an energy balance.", "suggestion": "Consider modelBondAlbedo / minnaertBondAlbedo in 0.2.0, or add a one-line warning in the doc comment above the function itself (the warning now sits in the module header)."},
+    {"id": "N5", "file": "packages/celestial/rings.ail:36,46 vs reflect.ail:57,117", "issue": "Parameter name collision: `p` is the phase-function value in rings and the geometric albedo in reflect; `e` is illuminance in reflect/rings and eccentricity in kepler.", "suggestion": "Rename rings' `p` to `phaseP` and illuminance to `lux`/`illum` before the API hardens (cheap now, breaking later)."},
+    {"id": "N6", "file": "packages/celestial/reflect.ail:49-53", "issue": "For k < 1 minnaertRadiance is 0 at cosE == 0 exactly but unbounded just inside the limb (cosE = 1e-300 gives 1e32 cd/m^2). Inherent to the Minnaert law; for k = 0.9 the brightening is 2x at cosE 1e-3 and only runs away at sub-pixel cosE, so benign in practice.", "suggestion": "Say so in AGENT.md and have the renderer clamp cosE (e.g. >= 1e-3) when k < 1."},
+    {"id": "N7", "file": "design_docs/planned/r1/m5-planets.md:240 and :244 (game repo)", "issue": "Design typos the package exposed: E_sun(1 AU) should read 1.271e5 lux (relativity's V = -13.98 at 1 lux zero point), not 1.261e5; the Jupiter lag is 2095.8 s (4.20 au / c), not 'about 2,094 s'.", "suggestion": "Fix the design table at landing; the sprint plan's M5.0a2 acceptance line inherits the same number."},
+    {"id": "N8", "file": "packages/celestial/kepler.ail:78-84", "issue": "Contract `requires e < 1.0` admits e up to 1 - ulp while the accuracy claim is for e <= 0.97 (at e 0.999, M 0.01 the residual is 7e-5). Documented in AGENT.md ('e >= 1 is outside the contract'), but the 0.97-0.999 band is silently less accurate.", "suggestion": "Say 'accuracy documented for e <= 0.97; beyond that more iterations are needed' in the function doc, or tighten the contract."},
+    {"id": "N9", "file": "packages/celestial/ailang.toml:19", "issue": "[effects] max = [\"IO\"] on a package whose 69 exports are all pure, solely for _smoke.ail's println.", "suggestion": "Harmless; leave as is unless the registry can exclude the smoke from the ceiling."},
+    {"id": "N10", "file": "packages/celestial/kepler.ail:82", "issue": "Equivalent mutant: starting Newton from E0 = M instead of M + e sin M still passes all 91 tests (8 steps converge either way for e <= 0.97). The doc presents E0 = M + e sin M as load-bearing; it is a nicety.", "suggestion": "None required; note it in the comment or drop the claim."}
+  ],
+  "mutations": {
+    "method": "evaluator's own hand mutations applied with sed to a copy of the package, full `ailang test --package celestial` per mutant (19 mutants, ~16 s each)",
+    "killed": 18,
+    "survived": 1,
+    "results": [
+      {"mutant": "kepler: 8 -> 2 Newton steps", "killed": true, "by": 3},
+      {"mutant": "kepler: 8 -> 4 Newton steps", "killed": true, "by": 2},
+      {"mutant": "kepler: E0 = M instead of M + e sin M", "killed": false, "note": "equivalent mutant: 8 steps still converge below 1e-14 for e <= 0.97 (N10)"},
+      {"mutant": "kepler: Newton denominator 1 + e cos E", "killed": true, "by": 3},
+      {"mutant": "frames: sign flip of one Hipparcos matrix entry", "killed": true, "by": 4},
+      {"mutant": "frames: first row replaced by A_G's row (transpose error)", "killed": true, "by": 4},
+      {"mutant": "frames: obliquity rotation sense reversed", "killed": true, "by": 3},
+      {"mutant": "lighttime: 4 -> 1 iteration", "killed": true, "by": 2},
+      {"mutant": "lighttime: 4 -> 3 iterations", "killed": true, "by": 1, "note": "the (v/c)^4 band test pins the count exactly"},
+      {"mutant": "lighttime: srcFn(t + s) (advanced instead of retarded)", "killed": true, "by": 2},
+      {"mutant": "reflect: Minnaert cos^k e instead of cos^(k-1) e", "killed": true, "by": 3},
+      {"mutant": "reflect: rho = p (k + 1)/2", "killed": true, "by": 3},
+      {"mutant": "reflect: Bond 4 rho/((k+1)(k+2))", "killed": true, "by": 1, "note": "killed only by the numerical sphere integral; good that it exists"},
+      {"mutant": "rings: transmission without |mu|", "killed": true, "by": 1},
+      {"mutant": "rings: transmission e^(-tau mu)", "killed": true, "by": 3},
+      {"mutant": "rings: unlit face denominator mu^2 instead of mu mu0", "killed": true, "by": 2},
+      {"mutant": "rings: lit face 1/(4 mu) instead of 1/(4(mu + mu0))", "killed": true, "by": 4},
+      {"mutant": "ephemeris: mean longitude evaluated at clamped T outside the window", "killed": true, "by": 1},
+      {"mutant": "gravity: m/s^2 factor 1000 dropped", "killed": true, "by": 1}
+    ],
+    "gap_found_by_probing_not_mutation": "B1 (ringUnlitIF Inf window) is untested: no test sweeps small mu0 with large tau"
+  },
+  "api_soundness": {
+    "verdict": "Sound for an experimental 0.1.0: names are descriptive, units are stated at every boundary (AU, days TDB, km for satellite a and radii, radians, lux -> cd/m^2, m/s^2 out of gravity), the mixed-unit gravity call is called out explicitly, every export is pure, no dependency on relativity, the mean-orbit fallback is flagged by Ephem.meanOrbit and documented ('it is not an ephemeris any more: label it'). Weak spots: planetAt drops the flag (N1), p/e name collisions (N5), bondAlbedo naming (N4), and the AGENT.md probe commands (N2).",
+    "agent_md_quality": "High: when-to-use and do-NOT-use lists, units table, a runnable quick start with real Table 2a numbers, the exported surface per module, the JPL signed-rates trap, the EMB-vs-geocentre caveat, the Bond-albedo caveat, the removable-singularity caveat for shaders, and a validation section. Only the two command-line defects (N2) and the dangling spec citation (N3)."
+  },
+  "feedback_for_executor": [
+    "Fix B1 in rings.ail: direct bounded difference for |x| >= 1e-3, series below; add a finiteness sweep test (mu0 1e-4..1, tau 0..10, mu 0.01..1) to rings_test.ail; re-run tests, lightProbe parity and the oracle.",
+    "Fix the AGENT.md / _smoke.ail command lines (N2).",
+    "Decide the README citation (N3) before publish.",
+    "Then: pkg quality, publish --dry-run, publish 0.1.0 under P-pkg-a; tell Mark the version.",
+    "At landing, correct the design doc's E_sun and Jupiter-lag numbers (N7)."
+  ]
+}

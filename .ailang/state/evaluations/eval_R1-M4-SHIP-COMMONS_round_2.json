@@ -1,0 +1,145 @@
+{
+  "sprint_id": "R1-M4-SHIP-COMMONS",
+  "evaluation_round": 2,
+  "timestamp": "2026-10-04T18:06:48.124Z",
+  "evaluator": "Independent judge, separate from generator/integrator",
+  "asset_commit": "11b4009",
+  "authoring_commit": "26cfc9a",
+  "design_doc": "design_docs/planned/r1/m4-ship-commons-build.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-commons-build-sprint.md",
+  "total_score": 88,
+  "pass_threshold": 70,
+  "result": "fail",
+  "review_build_result": "pass",
+  "production_landing_result": "pending",
+  "result_reason": "Approved continuation is suitable for draft delivery. Final v2 paired Studio profile and exported-app smokes pass; actual M2 Air evidence remains mandatory for full sprint/performance signoff.",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 20,
+    "code_quality": 14,
+    "documentation": 15,
+    "design_fidelity": 9
+  },
+  "hard_fails": [
+    {
+      "condition": "mandatory_target_hardware_performance_evidence_pending",
+      "details": "MacBook Air M2 (2022),24GB,1920x1080 has not been measured. No laptop performance or full-sprint completion claim."
+    }
+  ],
+  "scope": {
+    "architecture": "Existing bounded Commons court expanded with reusable opaque canopy, four interior seating modules, two reading tables and four planted boxes; no additional tier or extended court.",
+    "sky": "Whole-sky existing Exposure.bias display aids: calibrated1x and2x/4x/16x/64x. Labelled2x default; J/buttons switch. No simulation, heading, SR mathematics, GR or glow-pole fabrication.",
+    "lighting": "Sky exposure affects sky pipeline. Geometry keeps diagnostic native lighting; this is not a physically coupled cabin illumination/adaptation model."
+  },
+  "automated_checks": {
+    "journey": "Fresh final tests/test_ship_demo_journey.gd:47passed,0failures, actualexit0; /private/tmp/brightness-independent-final-journey.log. Covers default label, all gains, immutable simulation/heading/beta, invalid settings, benchmark lock, metered EV preservation, sky-only benchmark restoration and saved report.",
+    "camera": "Shared-camera244passed,0failures, actualexit0; /private/tmp/brightness-independent-camera.log.",
+    "commons": "Current Commons25passed,0failures, actualexit0; /private/tmp/commons-v2-independent-runtime.log. Includes nonempty paths and actual capsule clearance under new canopy and at reading interior.",
+    "judge_routes": "Independent27passed,0failures, actualexit0; /private/tmp/commons-v2-independent-routes.log. Reachable review-eye routes and collision/WALK identity across distance LOD.",
+    "assets": "Current asset source check OK and independent tighter9decimal coarse triangle-subset/UV/material checks OK, actualexit0. Logs /private/tmp/commons-v2-independent-assets-source.log and /private/tmp/commons-v2-independent-assets.log; canopy remains opaque in coarse.",
+    "geometry": "Validator OK actualexit0; bad-envelope control correctly returns1+FAIL; /private/tmp/commons-v2-independent-geometry.log and /private/tmp/commons-v2-independent-negative.log.",
+    "provenance": "All9 entries of art/ship-commons-v1/asset-pins.txt independently verified. Current master retains embedded generators; supplied Blender inspect has no missing external files, clean GLB reimport.",
+    "lint": "git diff --check clean.",
+    "golden": "Root reports final make golden actualexit0; inspected /private/tmp/commons-brightness-golden-final.log: all physics/optics goldens0failures. Five unclipped known-flux exposure fixtures ratios0.9953,1.0004,1.0003,0.9962,1.0011, each within1%.",
+    "full_suite": "Final fullmake test session17518 still running against unchanged simulation core; no completed-suite claim yet.",
+    "final_export": "Root attestation: packaged ship-demo-export-smoke and normal export-smoke49captures plus AIstub andbridgeinterior actualexit0."
+  },
+  "acceptance_criteria": [
+    {
+      "id": "continuation_architecture",
+      "met": true,
+      "evidence": "13,976 detail/7,224 coarse triangles,1opaque material,1254atlas; original court/envelope and shaft preserved. New canopy headclearance and capsule checks green. Material/native diagnostic structure remain draft."
+    },
+    {
+      "id": "continuation_sky",
+      "met": true,
+      "evidence": "Existing exposure bias scales whole sky; all five CPU controller ratios and unclipped GPU integrated flux agree. Fixed journey state/heading retained, same observer/FOV. Review aids explicitly labelled."
+    },
+    {
+      "id": "continuation_capture",
+      "met": true,
+      "evidence": "Final eleven Commons captures refreshed after meter fix at01a9be7; final planted terrace/reading views inspected. Audit records physical eye, centre hit, coarse state and2x display aid separately from simulation. Brightness61captures supplied by root;64x forward saturates while side remains dark."
+    },
+    {
+      "id": "CB4_revision2_cost",
+      "met": true,
+      "evidence": "Fresh paired v2 Studio profile actualexit0, aggregate data recorded in performance.studio_v2; current13,976/7,224triangle resource cost measured independently of v1."
+    },
+    {
+      "id": "CB5",
+      "met": false,
+      "evidence": "Actual target Air performance unmeasured."
+    },
+    {
+      "id": "CB6",
+      "met": null,
+      "evidence": "Root reports final packaged ship-demo-export-smoke and normal export-smoke actualexit0 (49captures,AIstub,bridge interior). Final fullmake test still running; website99c4656 deployed but live page/hash verification in progress."
+    }
+  ],
+  "resolved_review_findings": [
+    {
+      "issue": "Camera attitude sync reset metered CPU EV every frame while GPU uniforms remetered every250ms.",
+      "resolution": "Root configures pixel exposure only when projection changes, then remeters/uploads; ordinary attitude sync preserves adaptation. Added meaningful synthetic high-meter preservation regression.",
+      "verified": "47-check journey suite and244-camera suite actualexit0."
+    }
+  ],
+  "visual_review": {
+    "commons": "Human-eye terrace canopy and civic seating/reading interior read consistently with opaque metre-scale geometry. Brush texture is view-independent; detailed local kit, not full ship art/habitability/structural certification.",
+    "sky": "64x aid makes forward cruise field bright and partly saturated; side remains sparse/dark. Directional attenuation is preserved. Strong gains are optional review aids, not a calibrated appearance claim.",
+    "bridge": "Existing bridge floor continues to obstruct direct look-down toward nearby Commons. Retained physical obstruction is correctly documented."
+  },
+  "performance": {
+    "target_measurement_pending": true,
+    "revision2_studio_measurement_pending": false,
+    "prior_round_warning": "Round1 Studio timings apply to8,708/3,036triangle kit only. Do not reuse them as new13,976/7,224triangle evidence.",
+    "publication_policy": "Publish aggregate timing/counter evidence only. Raw Studio diagnostic metadata stays local.",
+    "studio_v2": {
+      "evidence": "Root reports paired native run actualexit0; heavy CPU suite suspended for profiling and resumed afterward. Aggregate data only.",
+      "configuration": "1920x1080, five matching views,120warmup/300samples each, frozen cruise beta0.99,2x whole-sky exposure (+1stop), Commons disabled versus enabled. Wall-frame timings include presentation.",
+      "p95_ms": [
+        {
+          "view": "bridge",
+          "baseline": 9.569,
+          "commons": 9.575,
+          "delta": 0.006,
+          "primitive_delta": 13976
+        },
+        {
+          "view": "overlook",
+          "baseline": 9.554,
+          "commons": 9.578,
+          "delta": 0.024,
+          "primitive_delta": 13976
+        },
+        {
+          "view": "mid_lift",
+          "baseline": 9.576,
+          "commons": 9.642,
+          "delta": 0.066,
+          "primitive_delta": 13976
+        },
+        {
+          "view": "commons_courtyard",
+          "baseline": 9.643,
+          "commons": 9.66,
+          "delta": 0.017,
+          "primitive_delta": 13964
+        },
+        {
+          "view": "overview",
+          "baseline": 9.548,
+          "commons": 9.611,
+          "delta": 0.063,
+          "primitive_delta": 7212
+        }
+      ],
+      "video_memory_delta_bytes": 7782400,
+      "interpretation": "Enabled Studio p95 range9.575-9.660ms; deltas0.006-0.094ms are small and not a causal precision claim. Courtyard/overview subtract12removed guard triangles. No extrapolation to target Air."
+    }
+  },
+  "delivery_gate": "Draft source/capture/resource/export review passes. Root must finish full suite and live publication/hash verification before claiming verified delivery. Full sprint remains pending actual target Air.",
+  "notes": "No implementation changes by evaluator. No production merge authorized or performed. Evaluation distinguishes draft readiness from full sprint completion.",
+  "latest_capture_commit": "01a9be7",
+  "publication": "Root reports website99c4656 deployed; final live Pages/ZIP hash verification pending."
+}

@@ -1,0 +1,119 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "milestone": "M2.2 World, scenario params, clock, phases, energy ledger; game pins relativity 0.4.0",
+  "evaluation_round": 1,
+  "evaluator_model": "claude-fable-5-1 (independent judge; generator != judge)",
+  "generator": "sprint-executor agent, PR #26, branch sprint/m2.2-world",
+  "evaluated_commit": "d4aa0b1",
+  "toolchain": "AILANG v0.50.0 (runtime/bin/ailang, commit 6abe1a5); sunholo/relativity 0.4.0 from the registry cache; Godot headless",
+  "date": "2026-10-01",
+  "score": 94,
+  "pass": true,
+  "threshold": 70,
+  "hard_fail": false,
+  "rubric": {
+    "tests_pass": {
+      "points": 20, "max": 20,
+      "evidence": "make test AILANG=$A in a fresh worktree of origin/sprint/m2.2-world: exit 0. ailang test --package . 55/55; parity 601 lines identical, parity-offaxis 17, parity-v2 14; strict scripted/scriptedOffAxis VM == interpreter and within 1e-9 of the closed form; strict protocolVm protocol-ok (13 lines, digest 4a4ba6dbfdc97c84); strict worldVm world-ok on VM and interpreter; wd-vm, catalogue-vm, sky-vm green."
+    },
+    "lint_clean": {
+      "points": 10, "max": 10,
+      "evidence": "ailang check --package sim passes inside make sim (no separate lint target in this repo). core.ail and protocol.ail are entirely `pure func`; no effects; I/O stays in ship.ail (unchanged in this PR)."
+    },
+    "acceptance_criteria": {
+      "points": 30, "max": 30,
+      "met": 5, "total": 5,
+      "detail": {
+        "AC1_game": "PASS: `grep relativity sim/ailang.toml` -> \"sunholo/relativity\" = \"0.4.0\"; `make deps AILANG=$A` relocks to 0.4.0 with no diff (generated_at ignored). Pin is load-bearing: core.ail and core_test.ail import pkg/sunholo/relativity/medium, which 0.3.0 lacks.",
+        "AC6_part": "PASS: `cd sim && $A test --package .` 55/55 incl. checkMassClosed (availableKg 20000 after boost/cruise/brake/turn/cancel/draw sequences in diag and non-diag worlds).",
+        "AC10_part": "PASS: `make strict AILANG=$A`: scripted, scriptedOffAxis, protocolVm (cmp of VM vs interpreter output) and the new worldVm all equal on the strict VM and the interpreter.",
+        "AC18": "PASS: grep -rnE 'acosh|sinh|cosh|exp\\(|tanh|2\\.0 \\* phi' sim/core.ail sim/protocol.ail bridge -> no match (exit 1). core.ail:48 comment reworded. ui/ does not exist yet.",
+        "gate_make_test": "PASS (see tests_pass)."
+      }
+    },
+    "code_quality": {
+      "points": 12, "max": 15,
+      "deductions": [
+        "-2: two evaluator mutations survived the whole suite (worldVm + protocolVm + 55 tests): newWorld ledger `mEffKg: p.mEffKg` -> `1.0` (sim/core.ail:96) and `photonDriveEnergy(l.mEffKg, ...)` -> `photonDriveEnergy(1.0, ...)` (sim/core.ail:126). The ledger is never exercised with a non-default scenario m_eff. Harmless today (ledger is not on the wire) but AC6 checkLedgerAtArrival in M2.3a/b will depend on it.",
+        "-1: World.tick and Ship.tick are two counters for the same thing, both incremented in tick(); checkWorldPhases pins they agree, but it is duplicated state in a core that is meant to have no hidden/redundant state."
+      ],
+      "sprint_artifacts": "complete: sprint JSON M2.2 passes=true, started/completed timestamps, detailed notes; sprint plan ### M2.2 has a Status block with every task ticked and deviations listed; no placeholder text."
+    },
+    "documentation": {
+      "points": 13, "max": 15,
+      "deductions": [
+        "-1: CHANGELOG.md has no M2 entry (none for M2.0/M2.1a either; the repo convention is an entry at landing). Flag for the landing step.",
+        "-1: the deviations (Ticked return type, types moved to core, ledger off the wire, phase strings) are recorded in the sprint plan status and PR body but not in the design doc; the AILANG workarounds in core.ail (`| Idle deriving (Eq)`) and protocol.ail (`\\tk.` rename) carry no ailang#1466/#1467 reference in a comment, so a future reader cannot tell they are workarounds to be removed."
+      ]
+    },
+    "design_fidelity": {
+      "points": 9, "max": 10,
+      "deductions": [
+        "-1: `make runtime` was not run, so the bundled runtime/cache the macOS export uses was patched by hand (additive copy of 0.4.0). runtime/ is gitignored and CI fills its cache via `make deps`, so nothing in the PR or CI is wrong, but the app must be restaged before the next export."
+      ],
+      "evidence": "World {tick, seed, params, ship, journey, ledger, rng, diag}, Ship.phase: ShipPhase (AtRest|Boosting|Cruising|Braking), Params with the sol defaults exactly as the sprint plan lists them (epoch 0, start_age 30, boost_g 7.5e5, m_eff 1, n 0.1 cm^-3, R 100 m, eps 1e-9, f_in 0.5, cruise_min_beta 0.9, cap 1e-6), Ledger {mEffKg, availableKg 20000, boostJ, dragJ}, Rng counters all 0, Journey = Idle, year = epoch + t, age = startAge + tau, phase derived in diag with |phi| < 1e-9 -> AtRest (the turn threshold), scenario refusal m_eff_too_small via brakeHoldsAgainstDrag at the cap."
+    }
+  },
+  "physics_review": {
+    "units": "ismPerM3 = ismNCm3 * 1e6 (cm^-3 -> m^-3, package wants m^-3): correct. brakeHoldsAgainstDrag(mEff, accelSI(boostG * standardGravity()), n_m3, rapidityOfOneMinusBeta(cap), R): boost_g in g -> c/yr via kinematics.standardGravity -> m/s^2 via medium.accelSI: correct. Cruise drag: mirrorDragPower(n_m3, |phi|, R) [W] * dtau [yr] * julianYearS() [s/yr] = J: correct. Boost/brake: photonDriveEnergy(mEff, |phi_after - phi_before|) per tick, telescopes to m_eff c^2 |phi| over a monotone burn and counts the final piece that lands at rest; a swing through zero counts brake + reverse boost, which is physically right.",
+    "threshold_check": "Independently recomputed: drag at the cap (HB-50) 2.36e5 N; photon thrust m_eff * 750000 * 9.80665 m/s^2 -> m_eff_min = 0.0321 kg (V12). Tests pin 0.03/0.032 refused, 0.033 accepted at both the core (checkScenarioMEff) and wire (checkMEffTooSmall) level.",
+    "closed_mass_budget": "availableKg is written once in newWorld (availableKgStart() = 20000) and never touched again; checkMassClosed covers diag boost/cruise/brake/turn/cancel/draw and a non-diag world; evaluator mutation 20001 killed. mass-budget.md Starting Mass: ~20,000 kg total internal mass.",
+    "precision": "gamma, beta and oneMinusBeta come from kinematics (betaOf, gammaOf, oneMinusBeta); no `1.0 - beta` anywhere; rapidityOfOneMinusBeta used for the cap. No trip or bubble formula outside the package (AC18 clean; the only arithmetic in core is unit conversion and |dphi|).",
+    "determinism": "No hidden state: World carries everything; Rng counters zero; tick is pure with requires/ensures contracts; VM == interpreter on strict worldVm and protocolVm.",
+    "note": "A same-tick heading turn at rest snaps |beta| < 1e-9 to 0 before the ledger's `before` motion is read, so up to m_eff c^2 * 1e-9 ~ 9e7 J can be dropped from boostJ per turn. Negligible against boosts of ~1e16 J; note only."
+  },
+  "automated_checks": {
+    "make_deps": "ok (0.4.0, lock unchanged modulo generated_at)",
+    "ailang_test": "55 passed, 0 failed",
+    "make_strict": "scripted 21.392852753780428 = interp (closed form 21.392852753780602); off-axis 27.637939595105987 = interp; protocolVm protocol-ok 13 lines digest 4a4ba6dbfdc97c84; worldVm world-ok = world-ok",
+    "parity": "601 / 17 / 14 lines identical",
+    "ac18_grep": "no match",
+    "make_test": "exit 0"
+  },
+  "mutations": {
+    "method": "evaluator-chosen sed mutations on a scratch copy, judged by `ailang run --entry worldVm` (core_test) and `--entry protocolVm` (protocol_test); executor's own 11 were different mutations and are not re-counted here",
+    "killed": [
+      "ismPerM3 factor 1e6 -> 1 (cm^-3 passed as m^-3): worldVm BAD, protocolVm BAD",
+      "cruise dtau not multiplied by julianYearS: worldVm BAD",
+      "cruise adds power not energy (dtau dropped): worldVm BAD",
+      "boost charges |phi_after| instead of |dphi|: worldVm BAD",
+      "boost charges signed dphi: worldVm BAD",
+      "scenario thrust uses boostG without standardGravity: worldVm BAD, protocolVm BAD",
+      "scenario threshold evaluated at cruiseMinBeta instead of the cap: both BAD",
+      "brakeHoldsAgainstDrag given cm^-3: both BAD",
+      "scenarioError never refuses: both BAD",
+      "non-diag thrust accepted: both BAD",
+      "refusal list not reversed (order): both BAD",
+      "derivePhase ignores thrust sign: worldVm BAD",
+      "availableKgStart 20001: worldVm BAD",
+      "protocol keeps the pre-tick world in the session: protocolVm BAD",
+      "clock year drops epoch: protocolVm BAD"
+    ],
+    "survived": [
+      "newWorld ledger mEffKg hardcoded 1.0 (sim/core.ail:96): worldVm ok, protocolVm ok",
+      "ledgerAfter photonDriveEnergy(1.0, ...) ignoring l.mEffKg (sim/core.ail:126): worldVm ok, protocolVm ok"
+    ],
+    "score": "15 killed / 17"
+  },
+  "deviations": {
+    "1_tick_returns_Ticked": "ACCEPTED. `tick(world, {dtau, intents}) -> Ticked{world, refused, events}` with protocol.serve building the StateMsg keeps the core free of the codec and avoids a core -> protocol import cycle; change-sets need encodeClock/encodeShip to compare text. Better layering than the plan's `(World, StateMsg)`.",
+    "2_domain_types_moved_to_core": "ACCEPTED. Intent/Target/Params/defaultParams/Refusal/Event are domain types; core owns them, protocol imports them; protocol_test import line updated; AC18 still clean.",
+    "3_ledger_not_on_wire": "ACCEPTED, with a due date. The M2.2 protocol task list has no ledger section; the design puts the energy readouts in M2.3a. The ledger must be on the wire by M2.3a/b for AC6 checkLedgerAtArrival, and that is also when the surviving m_eff mutations (code_quality) must be killed.",
+    "4_phase_wire_strings": "ACCEPTED. `at_rest|boosting|cruising|braking` mirrors ShipPhase; the design doc does not pin strings and `rest|diag` was M2.1a's placeholder. bridge/ on main does not branch on phase strings. Re-check PR #25's bridge/tests after rebase.",
+    "5_make_runtime_not_run": "ACCEPTED with condition. runtime/ is untracked; CI fetches the toolchain and runs `make deps`, so CI is unaffected. Run `make runtime` before any export (release.yml) so the bundled cache is rebuilt, not hand-patched.",
+    "6_ailang_workarounds": "ACCEPTED. ailang#1466 (leading-pipe single nullary ctor hides the next export) and ailang#1467 (imported `tick` shadows a lambda parameter) are both filed on sunholo-data/ailang (OPEN, 2026-10-01, sunholo-voight-kampff) with repros. Add the issue numbers as comments beside the two workarounds so they can be removed when fixed."
+  },
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      "sim/core.ail:96 and :126 — ledger m_eff is untested against a non-default scenario; add a `{d | mEffKg: 0.5}` world to checkLedgerDiag asserting ledger.mEffKg == 0.5 and boostJ == photonDriveEnergy(0.5, phi) (kills the two surviving mutations).",
+      "Makefile:70-72 — strict worldVm compares each run to the literal \"world-ok\" rather than cmp'ing a multi-line dump as protocolVm does; have worldVm print ledger/clock digits so VM vs interpreter numeric divergence inside tick is visible (M2.5 replay will also cover this).",
+      "sim/core.ail:17/95 — World.tick and Ship.tick are duplicated counters; consider dropping Ship.tick once v1.1 is removed (M2.1b).",
+      "sim/core.ail:91 (`export type Journey = | Idle deriving (Eq)`) and sim/protocol.ail serve() lambda `\\tk.` — annotate with ailang#1466 / ailang#1467.",
+      "Rebase: `git merge-tree origin/sprint/m2.1b-bridge origin/sprint/m2.2-world` conflicts in sim/protocol.ail and sim/protocol_test.ail (serve()/session code and the protocol_test import line). Whichever of PR #25 / #26 merges second must rebase and re-run make test + make strict.",
+      "CHANGELOG.md has no M2 entries; add at landing per repo convention.",
+      "Run `make runtime` before the next macOS export so the bundled cache carries 0.4.0 by construction."
+    ]
+  },
+  "verdict": "PASS 94/100. All five M2.2 acceptance commands re-run green in a fresh worktree on v0.50.0; the physics is the package's with correct units (cm^-3 -> m^-3, g -> m/s^2 via standardGravity/accelSI, dtau yr -> s, |dphi| per tick) and the independently recomputed V12 threshold (0.0321 kg); the mass budget is closed and pinned; core stays pure and strict-VM identical; all six declared deviations are accepted. Non-blocking: the ledger's m_eff is untested off the default (two surviving mutations) and must be covered when the ledger goes on the wire in M2.3a/b; PR #25/#26 need a rebase against each other."
+}

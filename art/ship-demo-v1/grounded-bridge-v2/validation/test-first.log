@@ -1,0 +1,14 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  FAIL distinct render-only top exists
+  FAIL actual visible support82 at (8.0, 82.0, -4.8)
+  FAIL original floor material region retained at (8.0, 82.0, -4.8)
+  FAIL actual visible support82 at (0.0, 82.0, -10.0)
+  FAIL original floor material region retained at (0.0, 82.0, -10.0)
+  FAIL actual visible support82 at (14.0, 82.0, 0.0)
+  FAIL original floor material region retained at (14.0, 82.0, 0.0)
+  FAIL actual visible support82 at (18.0, 82.0, 9.0)
+  ok original floor material region retained at (18.0, 82.0, 9.0)
+  ok existing walk remains byte-identical walk_bridge.glb
+  ok existing walk remains byte-identical walk_lower.glb
+bridge-floor: 3 passed, 8 failures

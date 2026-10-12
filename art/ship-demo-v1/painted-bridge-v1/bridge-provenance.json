@@ -1,0 +1,180 @@
+{
+  "source_master": "/private/tmp/stapledon-ship-demo/art/ship-demo-v1/ship_geometry_demo_v1.blend",
+  "painted_master": "/Users/voightkampff/dev/blender/scenes/stapledon_bridge_mesh_painted_v1.blend",
+  "geometry_before": {
+    "sha256": "4f5cb7e2ed603eb11b917be32f7e6a3cced384f46da8a629bb324f9ddada690c",
+    "objects": 152,
+    "instance_vertices": 203513,
+    "instance_triangles": 196182
+  },
+  "geometry_after": {
+    "sha256": "4f5cb7e2ed603eb11b917be32f7e6a3cced384f46da8a629bb324f9ddada690c",
+    "objects": 152,
+    "instance_vertices": 203513,
+    "instance_triangles": 196182
+  },
+  "painted_objects": [
+    "archive_terminal",
+    "captain_chair",
+    "console_decision_0",
+    "console_navigation_0",
+    "ramp_down",
+    "archive_shrine_ribs",
+    "deck_body_00",
+    "deck_body_01",
+    "deck_body_02",
+    "deck_body_03",
+    "deck_body_04",
+    "deck_body_15",
+    "deck_floor_fill",
+    "deck_seam_00",
+    "deck_seam_02",
+    "rim_frond_0",
+    "rim_rail_00",
+    "spire_needle",
+    "v2_archive_detail_00",
+    "v2_bench_detail_00",
+    "v2_chair_detail_00",
+    "v2_conduit_00",
+    "v2_conduit_01",
+    "v2_conduit_02",
+    "v2_conduit_03",
+    "v2_conduit_04",
+    "v2_conduit_05",
+    "v2_conduit_06",
+    "v2_desk_props_00",
+    "v2_nav_detail_00",
+    "v2_rail_lamp_00",
+    "v2_spire_vents_00",
+    "watch_bench_0"
+  ],
+  "painted_mesh_datablocks": 33,
+  "textures": {
+    "teal": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/teal.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.48,
+        0.63,
+        0.63
+      ]
+    },
+    "cream": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/cream.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.8,
+        0.76,
+        0.69
+      ]
+    },
+    "violet": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/violet.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.33,
+        0.27,
+        0.36
+      ]
+    },
+    "ochre": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/ochre.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.65,
+        0.55,
+        0.34
+      ]
+    },
+    "coral": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/coral.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.66,
+        0.46,
+        0.4
+      ]
+    },
+    "mint": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/mint.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.6,
+        0.72,
+        0.65
+      ]
+    },
+    "leaf": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/leaf.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.39,
+        0.5,
+        0.35
+      ]
+    },
+    "spire": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/spire.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.78,
+        0.77,
+        0.8
+      ]
+    },
+    "glow": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/glow.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.72,
+        0.82,
+        0.72
+      ]
+    },
+    "floor_ash": {
+      "file": "/Users/voightkampff/dev/blender/assets/stapledon/bridge_mesh_paint_v1/floor_ash.png",
+      "size": [
+        627,
+        627
+      ],
+      "authoring_linear_rgb": [
+        0.245,
+        0.24,
+        0.245
+      ]
+    }
+  },
+  "uv": "continuous object-local dominant-plane metres /4m, on all opaque faces",
+  "lighting_baked": false,
+  "projection_baked": false,
+  "plate_reference_only": "assets/areas/bridge/plate_bridge.png",
+  "paint_source": "existing Commons brush atlas, provenance art/ship-commons-v1/README.md",
+  "status": "First actual-3D painted material draft; independent art review required"
+}

@@ -1,0 +1,126 @@
+{
+  "sprint_id": "M4-SHIP-LIVE-JOURNEY-REVIEW",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-04T19:52:49.604Z",
+  "evaluator": "Independent judge, separate from generator/integrator",
+  "source_commit": "20300d6",
+  "design_doc": "design_docs/planned/r1/m4-ship-live-journey-review.md",
+  "sprint_plan": "design_docs/planned/r1/m4-ship-live-journey-review-sprint.md",
+  "total_score": 96,
+  "pass_threshold": 70,
+  "result": "pass",
+  "review_build_result": "pass",
+  "production_landing_result": "pending",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 30,
+    "code_quality": 14,
+    "documentation": 12,
+    "design_fidelity": 10
+  },
+  "hard_fails": [],
+  "result_reason": "Bounded live journey implementation and native draft delivery gates pass. No new physics equations or fabricated intermediate velocities; all phases/clocks/heading/position are actual normal AILANG outputs. Overall ship sprint and target Air performance remain unsigned.",
+  "acceptance_criteria": [
+    {
+      "id": "LJ1",
+      "met": true,
+      "evidence": "Independent normal test17assertions over two catalogue-selected legs: multiple continuous burn/coast/brake samples, monotonic beta, unchanged heading, committed cancellation refusal, plan endpoints/both clocks and second leg rebased at its own commit."
+    },
+    {
+      "id": "LJ2",
+      "met": true,
+      "evidence": "Expanded independent actual demo20checks: separate owned SimBridge, parent world unchanged, navigation auto closes on commit, all AILANG beta/gamma states mirror shader parameters, camera attitude stable, frozen snapshot/benchmark locks."
+    },
+    {
+      "id": "LJ3",
+      "met": true,
+      "evidence": "Six sequential actual-world captain-eye native captures and metadata, identical physical eye and heading across boost/coast/brake/rest. Native navigation default/minimum/dialog images inspected, UI controls reachable."
+    },
+    {
+      "id": "LJ4",
+      "met": true,
+      "evidence": "Frozen capture/replay keep pacing disabled by default; root reports final make ui ship-demo-ci actualexit0 including journey47/input9 and all Commons gates. Main interactive paths explicitly opt in."
+    },
+    {
+      "id": "LJ5",
+      "met": true,
+      "evidence": "Root reports final ordinary installed-HOME bundled ship-demo-export-smoke actualexit0, allassets/lift/navigation/commit/arrival true; additional freshHOME emptyPATH/AILANG_BIN live smoke actualexit0. Normal clean-HOME export49files,AIstub,bridgeinterior smoke actualexit0."
+    },
+    {
+      "id": "LJ6",
+      "met": true,
+      "evidence": "Root reports full make golden actualexit0 all0failures, comprehensive remaining make test -o sim actualexit0 after initially passed sim/parity; isolated AI timing-outlier rerun actualexit0. No shader/physics formula changes."
+    }
+  ],
+  "automated_checks": {
+    "normal": "/private/tmp/live-independent-0.log:17positive checks,actualexit0. Two legs selected through normal GalaxyMap and existing hold ritual. Source pacing unchanged between8505229 and20300d6.",
+    "judge_demo": "/private/tmp/live-final-judge-demo.log:20positive checks,0failures,actualexit0; evaluator-only script /private/tmp/test_ship_demo_live_judge.gd. Additional checks are behavior regressions, not duplicated implementation assertions.",
+    "cache": "/private/tmp/live-final-judge-cache.log:6positive checks,actualexit0. Sorting stability, source/pin/runtime mutation, actual nested relative module collection/mutation. Makefile final positive nested marker inspected.",
+    "lint": "git diff --check clean.",
+    "package": "Inspected /private/tmp/commons-live-final-package-smoke.log success stage markers and normalexport49files/AIstub/bridgeinterior markers. Root separately confirms /private/tmp/commons-live-clean-package-smoke.log freshHOME emptyPATH live smoke actualexit0.",
+    "ci": "Root final make ui ship-demo-ci actualexit0. New pacing/cache/live tests wired into ordinary CI via pinned GODOT_SIM.",
+    "test_harness_note": "Initial judge cache shell check used wrong expected marker string; rerun with exact6positive count and actualexit0 passed. This was evaluator harness, not implementation defect."
+  },
+  "implementation_review": {
+    "pacing": "Existing AILANG plan.boost_minutes/ship_years determine proper-time step rate. Positive phases receive nominal20wallseconds at20Hz; boundary caps and tiny positive float64-clock nudge prevent phase skipping/stalling. New leg start_tau is current commit clock; no beta interpolation or local kinematics.",
+    "presentation": "20Hz host accumulator caps catchup to4ticks. Display labels variable time compression and both clocks. Nominal60s burn/coast/brake pacing can take longer on slow/stalled render frames; no exact wall-time/performance guarantee.",
+    "heading": "Travel heading remains sim-owned through braking. Camera basis stays stable while sky beta/gamma/float64 astronomical position update from each actual world; looking changes camera attitude only.",
+    "isolation": "Demo instantiates a separate normal SimBridge and GalaxyMap in child native Window with own World3D. Ship look/movement input gated while navigation visible. Demo exit stops owned child; independent parent simulator remained unchanged and usable afterward.",
+    "arrival": "Rest arrival beta0 retains positive HOST_DTAU and HOST_RATE; snapshots become available after committed travel completes. Subsequent legs rebase rather than using prior zero clock.",
+    "cache": "Bundled cache identity hashes runtimeVERSION plus sorted recursive sim.ail,ailang.toml andailang.lock content. New app source/pins no longer reuse stale same-version sim. Old caches retained; no destructive migration. Actual ordinary-HOME andfreshHOME packaged checks cover both upgrade/fresh paths.",
+    "ui": "Live map detailed plan rows scroll; speed/commit/cancel/footer fixed and accessible at1280x800 and900x600. Hold dialog fully within minimum viewport. Frozen non-live capture layout unchanged."
+  },
+  "visual_evidence": {
+    "path": "renders/ship_demo/live/manifest.json",
+    "source": "One normal seeded424242 committed journey, staged ticks pause presentation for captures, no interpolation.",
+    "beta_sequence": [
+      0.4848691416,
+      0.9629515726,
+      0.99,
+      0.9718138142,
+      0.5838471557,
+      0
+    ],
+    "phases": [
+      "boosting",
+      "boosting",
+      "cruising",
+      "braking",
+      "braking",
+      "at_rest"
+    ],
+    "captain_eye_ship_m": [
+      8,
+      4.8,
+      83.7
+    ],
+    "view_travel_deg": 0.5,
+    "sky_only": false,
+    "exposure": "4x labelled existing whole-sky display aid; no physical input change.",
+    "inspection": "Boost images show increasing concentration/distortion; braking and rest show nearby target stars without travel-axis/camera flip. Proper reachable forward view retains physical needle obstruction. Compact HUD leaves forward sky visible.",
+    "navigation": "navigation.png1280x800,navigation_minimum.png900x600,commit_minimum.png900x600. Capture harness opens minimum dialog with mouse viewport event; independent rect checks confirm commit/cancel/hold/dialog bounds."
+  },
+  "runtime_provenance": {
+    "runtime_version": "v0.52.0",
+    "locked_relativity": "sunholo/relativity0.7.0",
+    "hello_warning": "Capture protocol hello retains static relativity0.4.0 label; not used as package-version proof. Actual lock/runtime pins distinguish code provenance."
+  },
+  "resolved_findings": [
+    {
+      "issue": "Native default navigation clipped commit controls; programmatic tests did not prove usability.",
+      "resolution": "Live-only scrolling row region preserves action controls; refreshed actual native default/minimum/hold captures and independent viewport rectangle checks pass."
+    },
+    {
+      "issue": "Installed app reused older sim source under same runtimeVERSION cache directory.",
+      "resolution": "Content fingerprint includes recursive simulation source and dependency pins; six regressions plus ordinary installed-HOME/freshHOME exported live smoke pass."
+    }
+  ],
+  "limitations": [
+    "This is a draft isolated journey review, not full ship completion or a production merge.",
+    "Actual MacBook Air M2(2022),24GB,1920x1080 performance remains pending in the overall ship sprint.",
+    "Moving Solar System flyby, GR and coupled realistic interior illumination remain outside this approved scope.",
+    "Root owns final source/tag/ZIP checksum/live website publication verification; this report does not claim those completed."
+  ],
+  "notes": "No evaluator implementation edits. Draft live journey source/native delivery review passes; root may publish approved draft after checksum/site verification. Do not infer Air suitability from Studio or headless checks."
+}

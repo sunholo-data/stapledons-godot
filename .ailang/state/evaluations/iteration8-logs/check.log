@@ -1,0 +1,22 @@
+→ Checking package stapledons/sim (7 exported modules)...
+
+  ✓ core.ail
+  ✓ core_test.ail
+  ✓ protocol_test.ail
+  ✓ ship.ail
+  ✓ tools/catalogue.ail
+  ✓ tools/catalogue_bytes.ail
+  ✓ tools/catalogue_bytes_test.ail
+  ✓ tools/catalogue_probe.ail
+  ✓ tools/catalogue_probe_test.ail
+  ✓ tools/catalogue_test.ail
+  ✓ tools/sky_model.ail
+  ✓ tools/sky_model_test.ail
+
+  ! module "stapledons/sim/tools/catalogue_test" compiled but not listed in [exports].modules
+  ! module "stapledons/sim/core_test" compiled but not listed in [exports].modules
+  ! module "stapledons/sim/tools/catalogue_bytes_test" compiled but not listed in [exports].modules
+  ! module "stapledons/sim/tools/catalogue_probe_test" compiled but not listed in [exports].modules
+  ! module "stapledons/sim/protocol_test" compiled but not listed in [exports].modules
+
+✓ 12 files checked, all passed!

@@ -1,0 +1,108 @@
+bypass_z compiling KILLED rc=1
+============================================
+FAIL: test_nonfinite_each_field (__main__.BytesOracle.test_nonfinite_each_field) (vm=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/voightkampff/dev/sunholo-data/.stapledon-wt-iter8/tools/test_catalogue_bytes.py", line 71, in test_nonfinite_each_field
+    self.assertEqual(run("nonfinite", 0, vm), [[-1]] * 15)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [[-1], [-1], [0, 0, 128, 63, 0, 0, 0, 64, 0, 0, 192, 12[276 chars][-1]] != [[-1], [-1], [-1], [-1], [-1], [-1], [-1], [-1], [-1], [30 chars][-1]]
+
+First differing element 2:
+[0, 0, 128, 63, 0, 0, 0, 64, 0, 0, 192, 12[39 chars]0, 0]
+[-1]
+
+Diff is 693 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_nonfinite_each_field (__main__.BytesOracle.test_nonfinite_each_field) (vm=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/voightkampff/dev/sunholo-data/.stapledon-wt-iter8/tools/test_catalogue_bytes.py", line 71, in test_nonfinite_each_field
+    self.assertEqual(run("nonfinite", 0, vm), [[-1]] * 15)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [[-1], [-1], [0, 0, 128, 63, 0, 0, 0, 64, 0, 0, 192, 12[276 chars][-1]] != [[-1], [-1], [-1], [-1], [-1], [-1], [-1], [-1], [-1], [30 chars][-1]]
+
+First differing element 2:
+[0, 0, 128, 63, 0, 0, 0, 64, 0, 0, 192, 12[39 chars]0, 0]
+[-1]
+
+Diff is 693 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.320s
+
+FAILED (failures=38)
+
+valid_prefix compiling KILLED rc=1
+te_each_field) (vm=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/voightkampff/dev/sunholo-data/.stapledon-wt-iter8/tools/test_catalogue_bytes.py", line 71, in test_nonfinite_each_field
+    self.assertEqual(run("nonfinite", 0, vm), [[-1]] * 15)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []] != [[-1], [-1], [-1], [-1], [-1], [-1], [-1], [42 chars][-1]]
+
+First differing element 0:
+[]
+[-1]
+
+- [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []]
++ [[-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1]]
+
+======================================================================
+FAIL: test_nonfinite_each_field (__main__.BytesOracle.test_nonfinite_each_field) (vm=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/voightkampff/dev/sunholo-data/.stapledon-wt-iter8/tools/test_catalogue_bytes.py", line 71, in test_nonfinite_each_field
+    self.assertEqual(run("nonfinite", 0, vm), [[-1]] * 15)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []] != [[-1], [-1], [-1], [-1], [-1], [-1], [-1], [42 chars][-1]]
+
+First differing element 0:
+[]
+[-1]
+
+- [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []]
++ [[-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1],
++  [-1]]
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.331s
+
+FAILED (failures=206)
+
+N1 compiling KILLED rc=2
+make: *** [catalogue-vm] Error 1
+
+N2 compiling KILLED rc=2
+make: *** [catalogue-vm] Error 1
+
+Restored exact byte copies.

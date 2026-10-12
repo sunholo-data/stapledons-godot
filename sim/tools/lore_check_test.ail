@@ -1,0 +1,30 @@
+module stapledons/sim/tools/lore_check_test
+-- M4.7: the lore-check shell's pure parts (registry JSON, the allowlist). The fixtures that must fail
+-- (tests/fixtures/lore/*.md) are driven by tests/test_lore_check.sh. `make lore-test`: strict VM = interpreter.
+import ./lore_check (Allow, parseAllow, applyAllow, registryRows)
+import ./lore (Row)
+import std/string (concat, join, contains)
+import std/list (map, filter, length as size)
+import std/result (Result, Ok, Err)
+
+pure func failedChecks(checks: [(string, bool)]) -> [string] =
+  map(\c. match c { (n, _) => n }, filter(\c. match c { (_, ok) => !ok }, checks))
+pure func verdictOf(tag: string, bad: [string]) -> string =
+  match bad { [] => concat([tag, "-ok"]), _ => concat([tag, "-BAD: ", join(",", bad)]) }
+
+pure func allowText() -> string = join("\n", ["# a comment", "", "archive.a | 2.379 × 10¹⁷ J | per kilogram | and a second bar", "archive.b | 7 yr | stale"])
+pure func fail(entry: string, n: string) -> string = concat(["f.md (", entry, "): number '", n, "' binds to none of [HB-1]"])
+
+pure func json() -> string = "{\"values\": [{\"id\": \"HB-1\", \"value\": \"100\", \"unit\": \"m\", \"source\": \"hb\"}, {\"id\": \"RS-3\", \"value\": \"4.3589\", \"unit\": \"\", \"source\": \"rs\"}, {\"id\": \"pkg:x(1)\", \"value\": \"1.0\", \"unit\": \"\", \"source\": \"package\", \"equals\": \"HB-1\"}]}"
+
+pure func checks() -> [(string, bool)] = [
+  ("allowlist: comments and blanks skipped, reasons keep their bars", match parseAllow(allowText()) { [a, b] => a.entry == "archive.a" && a.number == "2.379 × 10¹⁷ J" && a.reason == "per kilogram | and a second bar" && b.entry == "archive.b", _ => false }),
+  ("an allowed failure is removed and an unrelated one is kept", match applyAllow([fail("archive.a", "2.379 × 10¹⁷ J"), fail("archive.a", "5 m")], parseAllow(allowText())) { (rem, _) => rem == [fail("archive.a", "5 m")], }),
+  ("the same number in another entry is not excused", match applyAllow([fail("archive.c", "2.379 × 10¹⁷ J")], parseAllow(allowText())) { (rem, _) => size(rem) == 1 }),
+  ("an allowance that matches nothing is reported stale", match applyAllow([fail("archive.a", "2.379 × 10¹⁷ J")], parseAllow(allowText())) { (_, stale) => size(stale) == 1 && contains(join("", stale), "archive.b '7 yr'") }),
+  ("registry: hb and rs rows only, units kept", match registryRows(json()) { Ok(rs) => size(rs) == 2, Err(_) => false }),
+  ("registry: not JSON is refused", match registryRows("nope") { Err(_) => true, Ok(_) => false }),
+  ("registry: no values array is refused", match registryRows("{}") { Err(_) => true, Ok(_) => false })
+]
+test "M4.7 lore-check: allowlist and registry parsing" { size(failedChecks(checks())) == 0 }
+export func loreCheckVm(_: int) -> string = verdictOf("lore-check", failedChecks(checks()))

@@ -1,0 +1,1 @@
+fixture prompt prompt_loving.txt

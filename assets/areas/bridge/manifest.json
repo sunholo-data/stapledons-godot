@@ -1,0 +1,156 @@
+{
+  "area": "bridge",
+  "version": "bridge_v2",
+  "status": "bridge_v2_for_review",
+  "placeholder": false,
+  "layers": {
+    "panorama": {
+      "file": "pano_bridge.png",
+      "visible": false,
+      "parallax": 0.15,
+      "overscan_px": [
+        128,
+        64
+      ],
+      "facing": "pano_bridge_facing.png"
+    },
+    "play": {
+      "file": "play_bridge.glb",
+      "iso_pitch_deg": -14,
+      "iso_yaw_deg": 45,
+      "iso_size_m": 16,
+      "camera": "isocam_bridge.json",
+      "plate": {
+        "file": "plate_bridge.png",
+        "projection": "isocam",
+        "resolution": [
+          10920,
+          5940
+        ],
+        "size_m": 22.0,
+        "size_axis": "vertical",
+        "px_per_m": 270,
+        "centre": "isocam pan-0 view centre (focus_m, v_offset_m, pitch, yaw)",
+        "covers_pan_range_m": [
+          6,
+          3
+        ],
+        "baked_light": true,
+        "status": "Codex refine full run, merged and locked: 22 of 47 tiles refined, 25 Blender paint pass (retry pending)"
+      }
+    },
+    "foreground": {
+      "file": "fg_bridge.png",
+      "parallax": 1.6,
+      "overscan_px": [
+        1296,
+        656
+      ]
+    }
+  },
+  "camera": "cam_bridge.json",
+  "focus_m": [
+    -8.0,
+    1.0,
+    9.0
+  ],
+  "sky_visible": true,
+  "pan_range_m": [
+    6,
+    3
+  ],
+  "view_px": [
+    3840,
+    2160
+  ],
+  "palette_note": "Bridge v2 palette (Mark, 2026-10-03): pulled toward the captain sheet. Cream #F2E3C7, ochre #D9A340 and violet #3B2959 as the sheet; teal, coral, mint and leaf desaturated and warmed as gouache pigments; a warm pale spire. No authored sky or membrane.",
+  "play_origin_ship_m": [
+    0.0,
+    0.0,
+    82.0
+  ],
+  "interactables": [
+    "archive_terminal",
+    "captain_chair",
+    "console_decision_0",
+    "console_decision_1",
+    "console_decision_2",
+    "console_decision_3",
+    "console_navigation_0",
+    "console_navigation_1",
+    "console_navigation_2",
+    "lift_arrival_pad",
+    "ramp_down"
+  ],
+  "spawns": [
+    "SPAWN_captain_0",
+    "SPAWN_archive_0",
+    "SPAWN_navigator_0",
+    "SPAWN_navigator_1",
+    "SPAWN_officer_0",
+    "SPAWN_officer_1",
+    "SPAWN_watch_0",
+    "SPAWN_watch_1",
+    "SPAWN_arrival_0",
+    "SPAWN_ramp_0"
+  ],
+  "walk": "WALK_bridge",
+  "walk_rules": {
+    "walk_outer_r_m": 20.7,
+    "obstacle_slab_m": [
+      0.05,
+      1.8
+    ],
+    "flat_tol_m": 0.03,
+    "max_slope_deg": 10.0,
+    "max_step_m": 0.05,
+    "rim_clearance_m": 0.5,
+    "agent_radius_m": 0.35,
+    "agent_height_m": 1.8,
+    "reach_m": 1.5,
+    "spawn_tol_m": 0.05,
+    "ramp": "ramp_down",
+    "min_region_m2": 0.25,
+    "rail_gaps_deg": [
+      [
+        204,
+        212
+      ]
+    ],
+    "ramp_axis_deg": 208.125002803398,
+    "ramp_walk_half_width_m": 1.3,
+    "ramp_head_m": 3.0,
+    "ramp_start_r_m": 21.9
+  },
+  "source_scene": "stapledon_bridge_v2.blend",
+  "source_layout": "assets/stapledon/bridge_layout_v2.json",
+  "validation": {
+    "needle_tip_ship_m": [
+      0.0,
+      0.0,
+      98.0
+    ],
+    "needle_tip_pixel": [
+      2048.0000672898127,
+      1501.4248846812618
+    ],
+    "camera_roundtrip_error_px": 0.0003205394388915749
+  },
+  "panorama_excluded_near_camera": [
+    "rim_frond_9",
+    "rim_rail_28",
+    "rim_rail_29",
+    "rim_rail_30",
+    "rim_rail_31",
+    "v2_rail_lamp_14",
+    "v2_rail_lamp_15"
+  ],
+  "baked_light": {
+    "plate": true,
+    "panorama": true,
+    "glb": false,
+    "note": "static light and shadow of ship geometry only (Mark, 2026-10-03); characters are never baked; space alpha 0"
+  },
+  "live_glow_hint": "pano_bridge_facing.png: max(n . ship +Z, 0), 8-bit grey, half resolution, linear. The play layer uses the GLB's own normals.",
+  "panorama_content": "Hidden after attended playtest (Mark, 2026-10-04): the needle duplicates the play-layer spire and drifts behind the rail under parallax. The live sky still uses this camera; near ship geometry is drawn only by the play layer."
+}

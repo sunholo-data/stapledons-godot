@@ -1,0 +1,23 @@
+module stapledons/sim/tools/flyby_probe
+-- Normative renderer probe: pinned relativity0.7, not an independent formula.
+import pkg/sunholo/relativity/optics (apparentDisc, deaberrate, dopplerApparent)
+import pkg/sunholo/relativity/kinematics (rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/hyper (cosh)
+import std/math (cos, sin)
+import std/io (println)
+pure func speed(i: int) -> float = if i == 0 then 0.0 else if i == 1 then 0.5 else if i == 2 then 0.9 else 0.99
+func rows(i: int) -> () ! {IO} {
+ if i >= 12 then () else {
+  let b = speed(i / 3);
+  let theta = (30.0 + 60.0 * intToFloat(i % 3)) * 3.141592653589793 / 180.0;
+  let omb = 1.0 - b;
+  let phi = rapidityOfOneMinusBeta(omb);
+  let a = apparentDisc(cos(theta), 0.08726646259971647, phi);
+  let n = {x: sin(theta), y: 0.0, z: cos(theta)};
+  let bh = {x: 0.0, y: 0.0, z: 1.0};
+  let r = deaberrate(n, bh, phi);
+  println("[${show(b)},${show(theta)},${show(cosh(phi))},${show(omb)},${show(a.centre)},${show(a.radius)},${show(r.x)},${show(r.y)},${show(r.z)},${show(dopplerApparent(n,bh,phi))}]");
+  rows(i+1)
+ }
+}
+export func main() -> () ! {IO} { rows(0) }

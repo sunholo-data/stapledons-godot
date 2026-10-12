@@ -1,0 +1,34 @@
+ERROR: Failed to open 'user://logs/godot2026-10-04T21.24.33.log'.
+   at: copy (core/io/dir_access.cpp:429)
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+  ok opaque material
+  FAIL actual new vertices inside95m envelope
+  ok actual Commons finished floor
+  ok actual architectural height
+  ok actual triangles under30000
+  ok actual material count at most4
+  FAIL opaque curved terrace (49.0, 58.725, -8.0)
+  FAIL opaque curved terrace (48.0, 58.725, -3.0)
+  FAIL opaque curved terrace (49.5, 58.725, -14.0)
+  ok real open arcade/plaza open_plaza_ray_ship_m
+  ok real open arcade/plaza open_arch_ray_ship_m
+  ok door clear at human eye
+  ok door clear for capsule width
+  ok 4m landing guard opening
+  FAIL opaque terrace canopy
+  ok canopy standing head clearance
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+  ok new mesh leaves lift shaft clear
+validate-ship-commons: FAIL

@@ -1,0 +1,4 @@
+before {'instances': 499, 'triangles': 220698, 'materials': 14, 'images': 1, 'textures': 1} after {'instances': 499, 'triangles': 220698, 'materials': 15, 'images': 11, 'textures': 11} oriented_world_triangle_multiset_equal_10um True missing 0 extra 0
+Blender 5.2.1 LTS (hash 9e2066aef7ef built 2026-08-25 01:35:57)
+
+Blender quit

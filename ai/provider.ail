@@ -1,0 +1,267 @@
+module stapledons/ai/provider
+
+-- Providers and the request handler (design (a2); plan change 2026-10-02;
+-- AI.5). `Provider = Stub | Live(required)`: the stub answers every route
+-- the routing table resolves, as `meta.provider: "stub"` with `meta.route`
+-- the provider the table chose; Live calls the adapters (ai/adapters.ail).
+-- Both share this module's pure steps:
+--
+--   prepare: refuse before routing (bad_request), route (no_key, text_only),
+--     build the prompt (bad_request for unknown canon), estimate the worst
+--     case and admit it against the ceiling (budget), or hand back a Job;
+--   okText / okImage / okVoice / failed: the result, the blob, the usage line
+--     and the new ledger, as an ordered list of acts (blob, usage, print).
+--
+-- Stub text: "{e} Stub <purpose> <req> for <entity_id>." (AI.4), or a
+-- fixture case named by context.stub_case. Stub images: the committed 64x64
+-- PNG per emotion. Stub voice: tones per segment (ai/voice.ail). The stub
+-- prices what it answers as the routed model would have (4 characters a
+-- token for text, one call per image, 25 audio tokens a second), so the
+-- ledger, usage lines and `budget` are exercised without a key; meta.provider
+-- "stub" says the price is simulated. Pure.
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, asObject, getString, get)
+import std/string (concat, join, length, substring, trim, intToStr, chars)
+import std/crypto (sha256Hex, sha256Bytes)
+import std/bytes (fromString, fromBase64)
+import std/bytes as B
+import ./key (CacheKey, member, aiKinds, isDecimal, keyError, size)
+import ./route (Routing, Route, Via, NoRoute, Hop, resolve)
+import ./wire (Request, In, WRequest, Out, OOk, OErr, CtxField, CStr, CList, Meta, Seg, encodeIn, keyObj)
+import ./cache (Blob, Origin, Timing, indexLine, blobPath)
+import ./spend (Price, Units, Ledger, Usage, priceFor, cost, admit, charge, usageLine, usdOf)
+import ./prompt (Lore, Prompt, buildPrompt, imagePrompt)
+import ./reply (Image, pngSize)
+import ./voice (Clip, stubPcm, assemble, voiceVariant, voiceDescriptor, markedLine)
+
+-- Live(required): the providers whose key must be present ([]: at least one).
+export type Provider = Stub | Live([string]) deriving (Eq)
+@allow_empty_ok("Stub is a provider, not an empty value")
+export pure func providerOf(name: string) -> Result[Provider, string] =
+  if name == "stub" then Ok(Stub)
+  else if name == "gemini" || name == "openrouter" then Ok(Live([name]))
+  else if name == "live" then Ok(Live([]))
+  else Err(concat(["config: unknown provider ", name]))
+export pure func providerName(p: Provider) -> string = match p { Stub => "stub", Live(rs) => match rs { [x] => x, _ => "live" } }
+
+export type Case = { purpose: string, name: string, body: string }
+export type Png = { emotion: string, b64: string }
+export type Style = { emotion: string, style: string }
+export type Ctx = { routing: Routing, keys: [string], textOnly: bool, cases: [Case], portraits: [Png], lore: [Lore], prices: [Price], styles: [Style] }
+export type Act = WriteBlob(Blob) | AppendUsage(string) | Say(Out)
+export type Step = { acts: [Act], ledger: Ledger }
+export type Job = { r: Request, hop: Hop, input: string, price: Price, prompt: Prompt, est: int }
+export type Prep = Done(Step) | Run(Job)
+
+export pure func purposes() -> [string] = ["line", "news", "archive", "probe"]
+
+-- ai/fixtures/stub_text.json: {<purpose>: {<case>: <body>}}.
+@allow_empty_ok("a purpose with no cases is legal")
+pure func casesOf(purpose: string, kvs: [{key: string, value: Json}]) -> Result[[Case], string] =
+  match kvs {
+    [] => Ok([]),
+    e :: r => match e.value {
+      JString(b) => match casesOf(purpose, r) { Ok(cs) => Ok({ purpose: purpose, name: e.key, body: b } :: cs), Err(x) => Err(x) },
+      _ => Err(concat(["config: stub_text ", purpose, ".", e.key, " is not a string"]))
+    }
+  }
+@allow_empty_ok("an empty table has no negative cases; the stub line still answers")
+pure func purposesOf(kvs: [{key: string, value: Json}]) -> Result[[Case], string] =
+  match kvs {
+    [] => Ok([]),
+    e :: r => if !member(e.key, purposes()) then Err(concat(["config: stub_text: unknown purpose ", e.key])) else match asObject(e.value) {
+      Some(inner) => (match casesOf(e.key, inner) { Ok(a) => (match purposesOf(r) { Ok(b) => Ok(a ++ b), Err(x) => Err(x) }), Err(x) => Err(x) }),
+      None => Err(concat(["config: stub_text ", e.key, " is not an object"]))
+    }
+  }
+export pure func parseStubText(text: string) -> Result[[Case], string] =
+  match decode(text) { Ok(j) => (match asObject(j) { Some(kvs) => purposesOf(kvs), None => Err("config: stub_text is not an object") }), Err(_) => Err("config: stub_text is not JSON") }
+
+-- data/ai/emotion_styles.json: {<emotion>: <style sentence>} (AI.1).
+@allow_empty_ok("the recursion base")
+pure func stylesOf(kvs: [{key: string, value: Json}]) -> Result[[Style], string] =
+  match kvs { [] => Ok([]), e :: r => match e.value { JString(s) => (match stylesOf(r) { Ok(ss) => Ok({ emotion: e.key, style: s } :: ss), Err(x) => Err(x) }), _ => Err(concat(["config: emotion_styles ", e.key, " is not a string"])) } }
+export pure func parseStyles(text: string) -> Result[[Style], string] =
+  match decode(text) { Ok(j) => (match asObject(j) { Some(kvs) => stylesOf(kvs), None => Err("config: emotion_styles is not an object") }), Err(_) => Err("config: emotion_styles is not JSON") }
+export pure func styleFor(ss: [Style], e: string) -> string = match ss { [] => "", s :: r => if s.emotion == e then s.style else styleFor(r, e) }
+
+-- data/ai/models.json names one model per provider and slot (text, image,
+-- tts); every routed model must be that model and have a price, or the
+-- service refuses to start.
+pure func slot(kind: string) -> string = if kind == "text" then "text" else if kind == "voice" then "tts" else "image"
+pure func hopOk(models: Json, ps: [Price], kind: string, h: Hop) -> Option[string] =
+  match get(models, h.provider) {
+    None => Some(concat(["config: models.json has no ", h.provider])),
+    Some(m) => if getString(m, slot(kind)) != Some(h.model) then Some(concat(["config: ", kind, ": ", h.model, " is not the ", h.provider, " ", slot(kind), " model in models.json"]))
+      else match priceFor(ps, h.provider, h.model) { None => Some(concat(["config: no price for ", h.provider, " ", h.model])), Some(_) => None }
+  }
+pure func hopsOk(models: Json, ps: [Price], kind: string, hs: [Hop]) -> Option[string] =
+  match hs { [] => None, h :: r => match hopOk(models, ps, kind, h) { Some(e) => Some(e), None => hopsOk(models, ps, kind, r) } }
+pure func routesOk(models: Json, ps: [Price], rs: [{kind: string, hops: [Hop]}]) -> Option[string] =
+  match rs { [] => None, x :: r => match hopsOk(models, ps, x.kind, x.hops) { Some(e) => Some(e), None => routesOk(models, ps, r) } }
+export pure func catalogueError(rt: Routing, modelsText: string, ps: [Price]) -> Option[string] =
+  match decode(modelsText) {
+    Err(_) => Some("config: models is not JSON"),
+    Ok(j) => match get(j, "models") { Some(m) => routesOk(m, ps, rt.routes), None => Some("config: models has no models") }
+  }
+
+-- ------------------------------------------------------------ stub text
+pure func digitWord(c: string) -> string =
+  match c { "0" => "zero", "1" => "one", "2" => "two", "3" => "three", "4" => "four", "5" => "five", "6" => "six", "7" => "seven", "8" => "eight", _ => "nine" }
+-- Not `words` (std/string.words replaces it under `ailang test`, ailang#1516).
+pure func digitWords(cs: [string]) -> [string] = match cs { [] => [], c :: r => digitWord(c) :: digitWords(r) }
+export pure func spelled(req: string) -> string = join("-", digitWords(chars(req)))
+pure func phrase(purpose: string) -> string =
+  if purpose == "news" then "Stub news" else if purpose == "archive" then "Stub archive entry" else if purpose == "probe" then "Stub probe" else "Stub line"
+pure func firstOr(xs: [string], d: string) -> string = match xs { [] => d, x :: _ => x }
+export pure func stubText(r: Request) -> string {
+  let n = if r.constraints.noNumerals then spelled(r.req) else r.req;
+  let display = concat([phrase(r.purpose), " ", n, " for ", r.key.entityId, "."]);
+  let cut = if length(display) > r.constraints.maxChars then trim(substring(display, 0, r.constraints.maxChars)) else display;
+  concat(["{", firstOr(r.constraints.emotions, "neutral"), "} ", cut])
+}
+pure func ctxStr(cs: [CtxField], name: string) -> Option[string] =
+  match cs { [] => None, c :: r => if c.name == name then (match c.value { CStr(v) => Some(v), CList(_) => None }) else ctxStr(r, name) }
+pure func caseBody(cs: [Case], purpose: string, name: string) -> Option[string] =
+  match cs { [] => None, c :: r => if c.purpose == purpose && c.name == name then Some(c.body) else caseBody(r, purpose, name) }
+-- The text body: a fixture case when the request names one (None when it
+-- names a case the table lacks), else the stub line.
+export pure func textBody(cases: [Case], r: Request) -> Option[string] =
+  match ctxStr(r.context, "stub_case") { Some(name) => caseBody(cases, r.purpose, name), None => Some(stubText(r)) }
+
+-- ------------------------------------------------------------ prepare
+-- Refused before routing: a non-decimal id, an unknown kind or purpose, a
+-- bad key, a key of another kind, or a voice request without segments.
+export pure func requestError(r: Request) -> bool =
+  !isDecimal(r.req) || !member(r.kind, aiKinds()) || !member(r.purpose, purposes()) || keyError(r.key) != None || r.key.kind != r.kind ||
+  (r.kind == "voice" && (match r.segments { Some(ss) => size(ss) == 0 || size(ss) > 16, None => true }))
+pure func errOut(r: Request, code: string, prov: string, route: string) -> Out = OErr({ req: r.req, code: code, provider: prov, route: route })
+pure func refuse(l: Ledger, r: Request, code: string, prov: string, route: string) -> Step = { acts: [Say(errOut(r, code, prov, route))], ledger: l }
+
+pure func ceilDiv(a: int, b: int) -> int = (a + b - 1) / b
+-- Output token caps: text about half the character cap plus room for
+-- markers; speech 2 tokens a character plus 50 a segment (25 tokens a
+-- second of audio, gemini_live; completeOk wants 10 to spare).
+export pure func textCap(r: Request) -> int = r.constraints.maxChars / 2 + 32
+pure func voiceSegs(r: Request) -> [Seg] = match r.segments { Some(ss) => ss, None => [] }
+export pure func ttsCap(s: Seg) -> int = 2 * length(s.text) + 50
+pure func ttsCaps(ss: [Seg]) -> int = match ss { [] => 0, s :: rest => ttsCap(s) + ttsCaps(rest) }
+pure func chars4(s: string) -> int = ceilDiv(length(s), 4)
+-- One call at its cap (AI.9 hardening): what a call that was sent but never
+-- answered (a transport error, a dropped connection) may have been billed:
+-- the prompt's tokens in and the output cap out.
+export pure func textCallCap(j: Job) -> Units = { tokensIn: chars4(j.prompt.system) + chars4(j.prompt.user), tokensOut: textCap(j.r), calls: 1 }
+export pure func ttsCallCap(s: Seg) -> Units = { tokensIn: chars4(s.text), tokensOut: ttsCap(s), calls: 1 }
+-- Worst case of one request: text up to three attempts at the cap (two
+-- retries on bad_output), one image call, speech at the caps.
+export pure func estimate(r: Request, p: Price, pr: Prompt) -> int =
+  if r.kind == "text" then 3 * cost(p, { tokensIn: chars4(pr.system) + chars4(pr.user), tokensOut: textCap(r), calls: 1 })
+  else if r.kind == "voice" then cost(p, { tokensIn: chars4(pr.user), tokensOut: ttsCaps(voiceSegs(r)), calls: size(voiceSegs(r)) })
+  else cost(p, { tokensIn: chars4(pr.user), tokensOut: 0, calls: 1 })
+
+pure func promptFor(c: Ctx, r: Request) -> Result[Prompt, string] =
+  if r.kind == "text" then buildPrompt(r, c.lore)
+  else if r.kind == "voice" then Ok({ system: "", user: markedLine(voiceSegs(r)) })
+  else Ok({ system: "", user: imagePrompt(r) })
+
+-- prov: "stub" in stub mode; live mode stamps the real provider on refusals after routing.
+export pure func prepare(c: Ctx, l: Ledger, r: Request, prov: string) -> Prep =
+  if requestError(r) then Done(refuse(l, r, "bad_request", prov, "none"))
+  else match resolve(c.routing, r.kind, c.keys, c.textOnly) {
+    NoRoute(why) => Done(refuse(l, r, why, prov, "none")),
+    Via(h) => match priceFor(c.prices, h.provider, h.model) {
+      None => Done(refuse(l, r, "provider_error", prov, h.provider)),
+      Some(p) => match promptFor(c, r) {
+        Err(_) => Done(refuse(l, r, "bad_request", prov, h.provider)),
+        Ok(pr) => {
+          let est = estimate(r, p, pr);
+          if !admit(l, est) then Done(refuse(l, r, "budget", prov, h.provider))
+          else Run({ r: r, hop: h, input: sha256Hex(encodeIn(WRequest(r))), price: p, prompt: pr, est: est })
+        }
+      }
+    }
+  }
+
+-- ------------------------------------------------------------ answers
+pure func resultMeta(j: Job, prov: string, n: int, ms: int) -> Meta = { provider: prov, route: j.hop.provider, model: j.hop.model, inputSha256: j.input, ms: ms, usd: usdOf(n) }
+pure func originOf(j: Job, prov: string, sz: Option[{w: int, h: int}], tm: Option[Timing]) -> Origin =
+  { provider: prov, route: j.hop.provider, model: j.hop.model, inputSha256: j.input, seed: j.r.seed, size: sz, timing: tm }
+-- The acts of an ok result, in order: the blob (and its index line), the
+-- usage line, then the result. A reader that sees the result sees both.
+pure func okStep(l: Ledger, j: Job, prov: string, u: Units, ms: int, out: Meta -> Out, b: Blob) -> Step {
+  let n = cost(j.price, u);
+  let after = charge(l, j.hop.provider, n);
+  let blob = WriteBlob(b);
+  let usage = AppendUsage(usageLine({ req: j.r.req, provider: prov, route: j.hop.provider, model: j.hop.model, kind: j.r.kind, units: u, nusd: n, ms: ms }, after));
+  let result = Say(out(resultMeta(j, prov, n, ms)));
+  { acts: [blob, usage, result], ledger: after }
+}
+export pure func okText(l: Ledger, j: Job, prov: string, u: Units, ms: int, body: string) -> Step {
+  let sha = sha256Hex(body);
+  let data = fromString(body);
+  let n = B.length(data);
+  okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: body, asset: Some({ path: blobPath(sha, "txt"), mime: "text/plain", bytes: n }), meta: m }),
+    { sha256: sha, ext: "txt", mime: "text/plain", data: data, index: indexLine(j.r.key, sha, "text/plain", n, "txt", originOf(j, prov, None, None)), side: None })
+}
+pure func descriptor(k: CacheKey, n: int, w: int, ht: int) -> string =
+  concat(["{\"key\":", keyObj(k), ",\"mime\":\"image/png\",\"bytes\":", intToStr(n), ",\"width\":", intToStr(w), ",\"height\":", intToStr(ht), "}"])
+export pure func okImage(l: Ledger, j: Job, prov: string, u: Units, ms: int, img: Image) -> Step {
+  let sha = sha256Bytes(img.data);
+  let n = B.length(img.data);
+  okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: descriptor(j.r.key, n, img.w, img.h), asset: Some({ path: blobPath(sha, "png"), mime: "image/png", bytes: n }), meta: m }),
+    { sha256: sha, ext: "png", mime: "image/png", data: img.data, index: indexLine(j.r.key, sha, "image/png", n, "png", originOf(j, prov, Some({ w: img.w, h: img.h }), None)), side: None })
+}
+-- The voice key's variant is what is said and by whom (design (a4)).
+export pure func castVoice(r: Request) -> string = match r.cast { Some(c) => (match getString(c, "voice") { Some(v) => v, None => "Aoede" }), None => "Aoede" }
+export pure func voiceKey(r: Request) -> CacheKey = {r.key | variant: voiceVariant(castVoice(r), voiceSegs(r))}
+export pure func okVoice(l: Ledger, j: Job, prov: string, u: Units, ms: int, c: Clip) -> Step {
+  let sha = sha256Bytes(c.ogg);
+  let n = B.length(c.ogg);
+  let k = voiceKey(j.r);
+  okStep(l, j, prov, u, ms, \m. OOk({ req: j.r.req, kind: j.r.kind, sha256: sha, body: voiceDescriptor(k, n, c), asset: Some({ path: blobPath(sha, "ogg"), mime: "audio/ogg", bytes: n }), meta: m }),
+    { sha256: sha, ext: "ogg", mime: "audio/ogg", data: c.ogg, index: indexLine(k, sha, "audio/ogg", n, "ogg", originOf(j, prov, None, Some({ durationMs: c.durationMs, segmentsMs: c.segmentsMs, wavSha256: sha256Bytes(c.wav) }))),
+      side: Some({ ext: "wav", data: c.wav }) })
+}
+-- A failed call still costs what it used: charged, logged, then the error.
+export pure func failed(l: Ledger, j: Job, prov: string, u: Units, code: string) -> Step {
+  let n = cost(j.price, u);
+  let after = charge(l, j.hop.provider, n);
+  let used = if u.tokensIn + u.tokensOut + u.calls > 0 then [AppendUsage(usageLine({ req: j.r.req, provider: prov, route: j.hop.provider, model: j.hop.model, kind: j.r.kind, units: u, nusd: n, ms: 0 }, after))] else [];
+  { acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: after }
+}
+
+-- The reservation (AI.9 hardening): before a live call the service writes
+-- this provisional usage line, the request's worst case (`est`), to
+-- <cache_dir>/inflight.json (cache.reserveUsage). If the bridge kills the
+-- service mid-call (its per-kind timeout) it appends the line to usage.ndjson,
+-- so the indicator and the next launch's ledger count the call.
+export pure func reservation(l: Ledger, j: Job, prov: string) -> string {
+  let u = usageLine({ req: j.r.req, provider: prov, route: j.hop.provider, model: j.hop.model, kind: j.r.kind, units: { tokensIn: 0, tokensOut: 0, calls: 0 }, nusd: j.est, ms: 0 }, charge(l, j.hop.provider, j.est));
+  concat([substring(u, 0, length(u) - 1), ",\"provisional\":true}"])
+}
+
+-- ------------------------------------------------------------ the stub
+pure func pngFor(ps: [Png], e: string) -> Option[string] = match ps { [] => None, p :: r => if p.emotion == e then Some(p.b64) else pngFor(r, e) }
+pure func stubPcms(ss: [Seg]) -> [bytes] = match ss { [] => [], s :: r => stubPcm(s) :: stubPcms(r) }
+pure func stubImage(ps: [Png], r: Request) -> Option[Image] =
+  match pngFor(ps, if r.kind == "avatar" then "neutral" else r.key.emotion) {
+    None => None,
+    Some(b64) => match fromBase64(b64) { None => None, Some(d) => match pngSize(d) { Some(s) => Some({ data: d, w: s.w, h: s.h }), None => None } }
+  }
+export pure func stubRun(c: Ctx, l: Ledger, j: Job) -> Step =
+  if j.r.kind == "text" then (match textBody(c.cases, j.r) {
+    None => refuse(l, j.r, "bad_request", "stub", j.hop.provider),
+    Some(body) => okText(l, j, "stub", { tokensIn: chars4(j.prompt.system) + chars4(j.prompt.user), tokensOut: chars4(body), calls: 1 }, 0, body)
+  })
+  else if j.r.kind == "voice" then (match assemble(stubPcms(voiceSegs(j.r))) {
+    Err(_) => refuse(l, j.r, "provider_error", "stub", j.hop.provider),
+    Ok(clip) => okVoice(l, j, "stub", { tokensIn: chars4(j.prompt.user), tokensOut: ceilDiv(clip.durationMs * 25, 1000), calls: size(voiceSegs(j.r)) }, 0, clip)
+  })
+  else match stubImage(c.portraits, j.r) {
+    None => refuse(l, j.r, "provider_error", "stub", j.hop.provider),
+    Some(img) => okImage(l, j, "stub", { tokensIn: chars4(j.prompt.user), tokensOut: 0, calls: 1 }, 0, img)
+  }
+-- One request -> the acts to run, in order, and the new ledger.
+export pure func handle(c: Ctx, l: Ledger, r: Request) -> Step =
+  match prepare(c, l, r, "stub") { Done(s) => s, Run(j) => stubRun(c, l, j) }

@@ -1,0 +1,62 @@
+{
+  "sprint_id": "R1-AI-FOUNDATION",
+  "milestone": "AI.1",
+  "pr": 54,
+  "branch": "sprint/ai1-markers",
+  "evaluated_commit": "2365c1e",
+  "evaluation_round": 1,
+  "evaluator": "independent agent (not the executor); ailang v0.51.0",
+  "result": "pass",
+  "score": 96,
+  "max_score": 100,
+  "breakdown": {
+    "tests_pass": {"score": 20, "max": 20, "notes": "make test exit 0; ailang test --package . green (98/98 per PR, re-run clean); CI on the PR green"},
+    "lint_clean": {"score": 10, "max": 10, "notes": "No separate lint target; no warnings from ailang check/run. No Python added."},
+    "acceptance_criteria": {"score": 30, "max": 30, "notes": "AC16 (markers_test), AC7-part (make strict-ai: digest 96e6505d77f95e50, strict VM == interpreter, emotion list == emotion_styles.json keys in order), make test, one-line Makefile diff all verified. make markers-mutants: 3/3 killed by the named tests."},
+    "code_quality": {"score": 14, "max": 15, "notes": "markers.ail is pure and runs on the strict VM; deterministic; cites ailang#1503 (confirmed OPEN) at the workaround site. -1: zero-width space accepted as visible text; token recursion is unbounded on the strict VM (see findings)."},
+    "documentation": {"score": 12, "max": 15, "notes": "Sprint JSON, sprint-plan status and PR body are accurate. CHANGELOG.md not touched (landing step per CLAUDE.md, so only a small deduction); design doc stays in planned/ until the sprint lands."},
+    "design_fidelity": {"score": 10, "max": 10, "notes": "8 emotions in D-7 order, {emotion} syntax (D-20), all six ai_markup sub-reasons, leading neutral, merge, trim, 16 after merge, fallback table exactly as planned."}
+  },
+  "hard_fails": [],
+  "automated_checks": {
+    "make_test": "exit 0",
+    "make_strict_ai": "markers-ok, 36 lines, strict VM = interpreter",
+    "make_markers_mutants": "all 3 killed",
+    "ci": "success (run 37026300156)"
+  },
+  "adversarial_probes": {
+    "errors": "}{ -> unbalanced_brace; {{ -> nested_brace; {} , {HAPPY}, {Neutral}, {happy }, { neutral} -> unknown_emotion; {happy}{happy}x, trailing marker, whitespace-only segment, empty and blank line -> empty_segment; {h{a}p}, {happy}{{sad}}x -> nested_brace; 'a}b' and stray '{' -> unbalanced_brace; brackets win over everything else",
+    "unicode": "CJK, emoji, accented text parse; idempotent; NBSP and ideographic space trimmed; U+200B alone is NOT trimmed (accepted as a segment); tab/newline/CR inside text kept or trimmed at ends only",
+    "segments": "16 segments pass, 17 refused; 16 doubled (32 markers) merge to 16 and pass; 17 doubled refused; 300 equal markers merge to one segment",
+    "idempotence": "printLine(parseLine(x)) re-parsed and re-printed is identical on all ~25 accepted probes; printLine of a parsed line is a fixed point",
+    "display_text": "never contained { or } on any accepted probe (braces inside text are refused by the lexer)",
+    "long_lines": "200000 chars OK on the interpreter (needs raised recursion depth beyond ~10000 chars? no: 9000 passes at default); strict VM handles 4000 chars and 400 markers",
+    "casing": "case-sensitive; any capitalised or padded name is unknown_emotion"
+  },
+  "own_mutations": {
+    "run": 20,
+    "killed": 18,
+    "survived": [
+      "TText(_) => Err(\"unbalanced_brace\") -> Err(\"empty_segment\") in segText: equivalent, unreachable because the lexer never emits two texts in a row",
+      "merge guard '&& p.text != \"\"': equivalent, segment text is never empty after the trim check"
+    ],
+    "killed_examples": "trim removal, lex(trim(line)), merge separator, >= vs >, 16->15, fallback chain edits, display separator, printLine marker, nested/unbalanced swaps, leading-text default, isEmotion check, pickPortrait membership"
+  },
+  "deviation_verdicts": {
+    "sim_ailang_toml_exports": "ACCEPT. Required for ./markers import (the build fails otherwise); one-line change. Nit: no space before the next entry, harmless. Expect a trivial conflict with AI.2.",
+    "markers_mutants_target": "ACCEPT. Makes the plan's mutation AC a command; fails on anchor drift; correctly kept out of ai-test. Good design.",
+    "error_precedence": "ACCEPT. bracket first, then lexer faults left to right, then unknown_emotion/empty_segment in token order, then too_many. Documented in the header; matches D-20's list.",
+    "empty_trimmed_segment_is_empty_segment": "ACCEPT. Sensible and tested ({happy}   {sad}Hi). Only gap is U+200B (see non-blocking 1).",
+    "case_sensitive_names": "ACCEPT. Strict is right for a machine-emitted grammar; tested ({Happy}, {HAPPY}).",
+    "fallbackChain_includes_self": "ACCEPT. pickPortrait needs the emotion itself first; the plan's table lists the successors, and the chain for angry/fearful/curious is [e, neutral]. Unknown names yield [neutral] (tested by mutation).",
+    "ailang_1503_workaround": "ACCEPT. Issue is filed and open, workaround is small and cited at the site."
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "sim/markers.ail segText/segments: U+200B (zero-width space) and similar invisible characters survive trim, so '{happy}<U+200B>' is a valid segment with no visible text. If the AI service can emit them, AI.2 ai_markup validation may want an invisible-only check. Not in AC16.",
+    "sim/markers.ail (lexChar, segText, afterMark, mergeOnto, count): all recursion is per character or per token and unbounded. Fine for real lines; the strict VM overflowed in my probes only for 1000+ repetitions of the generating helper, and the parser itself handled 400 merging markers and 4000 characters. AI.2's ai_length cap should bound the body before parseLine runs.",
+    "CHANGELOG.md has no AI.1 entry; add at landing.",
+    "The mutants for the two equivalent survivors suggest tiny dead branches (TText after TText); could be collapsed, not required."
+  ],
+  "evaluator_notes": "Merge-ready from the evaluator's side. The probe files I wrote were deleted and are not part of the branch."
+}

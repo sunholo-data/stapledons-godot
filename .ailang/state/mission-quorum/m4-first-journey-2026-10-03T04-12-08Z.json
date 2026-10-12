@@ -1,0 +1,79 @@
+{
+  "doc": "design_docs/planned/r1/m4-first-journey.md",
+  "iso_ts": "2026-10-03T04:12:08Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.23383199999999998,
+      "tokens_in": 23409,
+      "tokens_out": 10907,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "AC8 and the Interfaces-assumed table commit the sim to emitting `ship.ism.glow_pole_w_m2` = 9.62878e-5 W/m² 'within 1e-3 relative of the package value (V12)', but no such package value exists: V15 verifies that `sunholo/relativity` 0.5.1 (the version `sim/ailang.toml` and the lockfile pin) exports only the mean `glowInwardFlux` — 'No angular glow function exists' — and V12's observed probe output contains only `glow099`/`glow999999`/`epsmax`, never a pole value. The 9.62878e-5 figure is 4 × glow_w_m2 computed by hand (M4.2), not by the package, so the '(V12)' citation in AC8 is unverified provenance for a number inside an acceptance criterion. Worse, the dependency structure is contradictory: M4.1 adds live `ship.ism{..., glow_pole_w_m2}` and its sub-milestone row lists only 'M2 protocol and planner' as dependencies, while the package function `glowEmittanceAt` that must produce it lands in M4.6 'before the M4.2 glow merges' — i.e., gated on the art track (Track B, which also schedules the pin bump), not on M4.1 which runs earlier on Track A. This forces one of two violations the doc elsewhere forbids: either the sim hand-computes 4 × glowInwardFlux (breaching gate 3 'package first', the 'every readout is one named function of medium 0.5.1' claim, and the precision-gate precedent set by Problem 2), or M4.1 silently depends on an unreleased package version that contradicts the stated 0.5.1 pin.",
+        "catch": "Fix the provenance and sequencing of `glow_pole_w_m2`: (1) AC8's pole row cites '(V12)' but the pole value appears nowhere in V12's observed output — either add a probe row that derives it from the package, or relabel it as a hand-derived interim value pending the `glowEmittanceAt` release; (2) M4.1's dependency list omits the package release while promising `glow_pole_w_m2` in sim state at pin 0.5.1. State explicitly which release of `sunholo/relativity` carries `glowEmittanceAt`, when the `ailang.toml`/lockfile/bundled-cache pin moves, and which sub-milestone is blocked until it does.",
+        "proposed_fix": "Split M4.6: add row 'M4.6a: `medium.glowEmittanceAt` in `sunholo/relativity`, with tests/CHANGELOG/release; sim pin + lockfile + bundled cache bumped together — Depends on: — ; Art-gated: no'. Change M4.1's 'Depends on' to 'M2 protocol and planner; M4.6a (for glow_pole_w_m2)' and state in M4.1: 'ship.ism ships in two steps: load/drag/glow_w_m2 at pin 0.5.1; glow_pole_w_m2 is added only after M4.6a lands — the sim never computes 4 × glowInwardFlux itself.' Rewrite the AC8 pole row: 'glow_pole_w_m2 = glowEmittanceAt(n, φ, ε, f_in, 1.0) from the package release carrying M4.6a; interim expectation 9.62878e-5 (= 4 × V12's glowInwardFlux, hand-derived, not a package value until M4.6a)'. Add verification-log row V23 pinning the new package version and re-running the V12 probe extended with `glowEmittanceAt(n, phi, 1e-9, 0.5, 1.0)`, asserting it equals 4 × `glowInwardFlux(n, phi, 1e-9, 0.5)` and that its sphere mean equals `glowInwardFlux`; update V15's note once the function exists."
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-3-1-pro",
+      "cost_usd": 0.055594000000000005,
+      "tokens_in": 26045,
+      "tokens_out": 292,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "PREMISE VERIFICATION violation: The document asserts factual claims about existing M2 codebase logic that are missing from the Verification Log commands. It claims 'M2's ledger accumulates drag_j from mirrorDragPower per tick' (M4.1) and 'M2's core_test.ail already does (planBurnCoastBurn(4.37, …))' (M4.1), but V18 only inspects sim/core.ail for defaultParams and planIntent, completely ignoring the ledger and the test file. Additionally, V12 asserts a match against 'sim/protocol_test.ail:143' without any command that actually reads that file.",
+        "catch": "Unverified premises regarding M2's ledger accumulation behavior, core_test.ail target values, and protocol_test.ail fixture values.",
+        "proposed_fix": "Add a verification log row with commands to explicitly verify these codebase claims (e.g., `grep -n drag_j sim/core.ail` and `grep -n 'planBurnCoastBurn(4.37' sim/core_test.ail`), and add a command to V12 that legitimately extracts the value from `sim/protocol_test.ail:143`."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0.21069800000000002,
+      "tokens_in": 23744,
+      "tokens_out": 40331,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "AC8 pins drag_energy_j at arrival to the package closed form 1.36530e17 within 1e-3 relative, but defines the field as 'the ledger's drag_j since commit' - machinery whose existence and semantics no verification row observes. V18's Observed column shows M2's defaultParams, planIntent, planView.ism and params echo, and no drag_j accumulator; V15 confirms only that mirrorDragPower is exported, not its formula. The 1e-3 gate is only satisfiable if mirrorDragPower = mirrorDragForce * c (= loadScale * pi * R^2), the unique definition whose integral over cruise ship time equals cruiseDragEnergy exactly; if mirrorDragPower is the equally natural F * v, the per-tick ledger integrates to beta * cruiseDragEnergy (about 1.352e17), a 1 percent gap that fails AC8 by roughly 10x its tolerance, and nothing in the log distinguishes the two. Worse, the non-goal text ('the budget comes later with M2's m_eff + energy ledger') implies the ledger may not be landed at all, yet no sub-milestone scope owns the accumulator if M2 lacks it - M4.1's own scope list (Earth clock, news, display fields, live ship.ism, body_source, legacy log, hint predicates, record, stand-off) does not include it. So the machinery producing an acceptance-pinned number is unaccounted for in both the codebase evidence and the plan: the exact 'asserted, not verified' defect class this quorum round was opened for, surviving the revision.",
+        "catch": "Before pinning AC8, verify at 15cde03: (1) grep M2's core.ail and protocol.ail for the drag_j accumulator that M4.1 asserts exists ('M2's ledger accumulates drag_j from mirrorDragPower per tick'); (2) extend the V12 probe to print mirrorDragPower(1e5, phi, 100.0) beside mirrorDragForce(1e5, phi, 100.0) * cSI() and that times 0.99, so the power definition is on the record; (3) state the integration window and error budget - 'since commit' includes boost and brake (contribution order 1e-6 relative) plus per-tick discretization error during the varying-rapidity phases, all of which must be shown to sit inside the 1e-3 tolerance.",
+        "proposed_fix": "Add verification row V23 (game 15cde03): commands grep -n drag sim/core.ail sim/protocol.ail, plus a probe extension printing mirrorDragPower(1e5, phi, 100.0), mirrorDragForce(1e5, phi, 100.0) * cSI(), that value times 0.99, and cruiseDragEnergy(1e5, phi, 100.0, dCoast) / (mirrorDragPower(1e5, phi, 100.0) * cruiseShipTime). Then amend the doc: if M2 has no drag_j ledger, add the accumulator to M4.1's scope list and LOC estimate (~20 code + 40 test) and say who owns it; state drag_energy_j's window explicitly (since commit, with the burn-phase contribution ~1.2e-6 relative and a tick-discretization bound declared inside the 1e-3 budget). Re-pin AC8 to the verified semantics: if mirrorDragPower = loadScale * pi * R^2, keep 1.36530e17 within 1e-3 and add the clause 'ledger integral equals cruiseDragEnergy within [stated bound]'; if mirrorDragPower = F * v, redefine drag_energy_j as the closed-form cruiseDragEnergy field emitted by the sim (or re-pin the expected value to the ledger's own semantics, 0.99 * 1.36530e17 = about 1.352e17) so the gate matches the machinery. While re-pinning, fix two adjacent pins: M4.1's news-epoch prose must use the planBurnCoastBurn arrival t = 4.398171 (t_e = 0.043984), not the coastAt limit 4.398169 it currently quotes as the arrival time; and confirm the rel:check51-style package check registry actually exists, since V15's observed export list shows none and lore_values source (a) depends on it."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Round 2 (one re-quorum). Controller reproduced the V12 AILANG probe first-party (identical output, sha 8e56e48f). Every round-1 objection is answered in-doc with a V row; direction unchanged (D-6/D-11/D-14/D-15/D-16 obeyed). New OQ4 (alpha Cen 4.37 vs 4.32 ly) and OQ5 (CI access to design repo) carry defaults."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-kimi-k3: AC8 and the Interfaces-assumed table commit the sim to emitting `ship.ism.glow_pole_w_m2` = 9.62878e-5 W/m² 'within 1e-3 relative of the package value (V12)', but no such package value exists: V15 verifies that `sunholo/relativity` 0.5.1 (the version `sim/ailang.toml` and the lockfile pin) exports only the mean `glowInwardFlux` — 'No angular glow function exists' — and V12's observed probe output contains only `glow099`/`glow999999`/`epsmax`, never a pole value. The 9.62878e-5 figure is 4 × glow_w_m2 computed by hand (M4.2), not by the package, so the '(V12)' citation in AC8 is unverified provenance for a number inside an acceptance criterion. Worse, the dependency structure is contradictory: M4.1 adds live `ship.ism{..., glow_pole_w_m2}` and its sub-milestone row lists only 'M2 protocol and planner' as dependencies, while the package function `glowEmittanceAt` that must produce it lands in M4.6 'before the M4.2 glow merges' — i.e., gated on the art track (Track B, which also schedules the pin bump), not on M4.1 which runs earlier on Track A. This forces one of two violations the doc elsewhere forbids: either the sim hand-computes 4 × glowInwardFlux (breaching gate 3 'package first', the 'every readout is one named function of medium 0.5.1' claim, and the precision-gate precedent set by Problem 2), or M4.1 silently depends on an unreleased package version that contradicts the stated 0.5.1 pin.",
+      "gemini-3-1-pro: PREMISE VERIFICATION violation: The document asserts factual claims about existing M2 codebase logic that are missing from the Verification Log commands. It claims 'M2's ledger accumulates drag_j from mirrorDragPower per tick' (M4.1) and 'M2's core_test.ail already does (planBurnCoastBurn(4.37, …))' (M4.1), but V18 only inspects sim/core.ail for defaultParams and planIntent, completely ignoring the ledger and the test file. Additionally, V12 asserts a match against 'sim/protocol_test.ail:143' without any command that actually reads that file.",
+      "oc-glm-5-3: AC8 pins drag_energy_j at arrival to the package closed form 1.36530e17 within 1e-3 relative, but defines the field as 'the ledger's drag_j since commit' - machinery whose existence and semantics no verification row observes. V18's Observed column shows M2's defaultParams, planIntent, planView.ism and params echo, and no drag_j accumulator; V15 confirms only that mirrorDragPower is exported, not its formula. The 1e-3 gate is only satisfiable if mirrorDragPower = mirrorDragForce * c (= loadScale * pi * R^2), the unique definition whose integral over cruise ship time equals cruiseDragEnergy exactly; if mirrorDragPower is the equally natural F * v, the per-tick ledger integrates to beta * cruiseDragEnergy (about 1.352e17), a 1 percent gap that fails AC8 by roughly 10x its tolerance, and nothing in the log distinguishes the two. Worse, the non-goal text ('the budget comes later with M2's m_eff + energy ledger') implies the ledger may not be landed at all, yet no sub-milestone scope owns the accumulator if M2 lacks it - M4.1's own scope list (Earth clock, news, display fields, live ship.ism, body_source, legacy log, hint predicates, record, stand-off) does not include it. So the machinery producing an acceptance-pinned number is unaccounted for in both the codebase evidence and the plan: the exact 'asserted, not verified' defect class this quorum round was opened for, surviving the revision."
+    ],
+    "absent_reviewers": [
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.500124,
+    "total_tokens_in": 73198,
+    "total_tokens_out": 51530
+  }
+}

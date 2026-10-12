@@ -1,0 +1,11 @@
+module stapledons/sim/tools/rings_probe
+import pkg/sunholo/celestial/rings (ringLitRadiance,ringUnlitRadiance,ringTransmission)
+import std/io (println)
+func row(tau:float,mu0:float,mu:float)->()!{IO}{
+ println("[${show(tau)},${show(mu0)},${show(mu)},${show(ringLitRadiance(0.5,1.0,tau,mu0,mu,1000.0))},${show(ringUnlitRadiance(0.5,1.0,tau,mu0,mu,1000.0))},${show(ringTransmission(tau,mu))}]")
+}
+export func main()->()!{IO}{
+ row(0.0,0.5,0.7);row(0.2,0.5,0.7);row(3.6,0.5,0.7);
+ row(0.2,0.5,0.5);row(0.2,0.5,0.50000000001);row(0.2,0.5,0.49999999999);
+ row(0.000000001,0.5,0.7);row(100.0,0.5,0.7);row(0.2,0.00001,0.7)
+}

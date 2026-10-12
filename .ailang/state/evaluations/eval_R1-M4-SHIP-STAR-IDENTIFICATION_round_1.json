@@ -1,0 +1,148 @@
+{
+  "evaluation_round": 1,
+  "timestamp": "2026-10-05T07:28:47.220662+00:00",
+  "evaluator": "Independent judge /root/sprint_evaluator, separate from generators",
+  "pass_threshold": 70,
+  "result": "pass",
+  "review_build_result": "pass",
+  "production_landing_result": "pending",
+  "hard_fails": [],
+  "source_commits": [
+    "a0adeac",
+    "3e1b250",
+    "bd18ab1"
+  ],
+  "final_integration_note": "Includes final reviewed main-entry and SceneTree-owned smoke-shutdown changes awaiting root release commit. Source hashes bind this review to the tested files.",
+  "source_hashes": {
+    "main.gd": "919e97071aafc77c87f4c3e97e481b3f87c4f4525d23dfd2de7974b61f494a5a",
+    "demos/ship_geometry_demo.gd": "cf19121086d1bd887f183080df6f925c65a8b5c93f145fd5592f728efbd30fdf",
+    "ui/ship_star_identification.gd": "f0ce24a802ceaa6a4fa3efe8dc9226868347da78cad9c69d870db373f2a8190e",
+    "ui/star_occlusion.gd": "ef0415da1d1762f4bfb4602f27e3b74b9e5e3176cf7f54edba9f1ab9618e6b5d",
+    "sky/star_projection.gd": "f99c2b1dc04fbcecf89436a44d34712dff024b51538a8d4cf526bc2e63663ec6"
+  },
+  "shared_gates": {
+    "full_test": "Root attests actual exit0 /private/tmp/identify-full-test.log, before final Sprite3D focused additions; final focused/current ship CI also exit0.",
+    "golden": "Root attests actual exit0 /private/tmp/identify-unified-golden.log; inspected golden:0failures.",
+    "final_ci": "Root attests make ui ship-demo-ci actual exit0 /private/tmp/identify-final-source-checks.log; SI40/consolidation18; final focused rerun also exit0.",
+    "lint": "Independent git diff --check clean.",
+    "native_package": "Root attests actual exit0 /private/tmp/identify-native-final-smokes.log. Independently inspected candidates/card/release/map alltrue, exact CNS5:3286 and startupOK. /private/tmp/identify-default-and-legacy-package.log actualexit0, normal export and explicit legacy interior OK."
+  },
+  "limitations": [
+    "Actual MacBook Air M2 (2022),24GB,1920x1080 performance remains pending; Studio measurements are not an Air guarantee.",
+    "No production merge or full-ship completion is approved by this bounded draft evaluation.",
+    "Native smoke shutdown logs retain renderer/ObjectDB/resource leak diagnostics; actual process termination passes, zero-warning shutdown is not claimed.",
+    "Root owns final release commit/tag, ZIP download checksum and website publication verification."
+  ],
+  "sprint_id": "R1-M4-SHIP-STAR-IDENTIFICATION",
+  "design_doc": "design_docs/planned/r1/m4-ship-star-identification.md",
+  "total_score": 96,
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 30,
+    "code_quality": 14,
+    "documentation": 12,
+    "design_fidelity": 10
+  },
+  "result_reason": "Exact known-star identity, actual renderer alignment/occlusion, factual read-only cards and native packaged input pass the approved draft gates. No nearest-position inference, physics mutation or fabricated facts.",
+  "acceptance_criteria": [
+    {
+      "id": "SI1",
+      "met": true,
+      "evidence": "AILANG final selected Row.id arrays are ordered alongside binary SHA/count; renderer preserves filtering/stacking. Missing/malformed/duplicate identity fails closed; actual AlphaCen/Sirius IDs and producer checks pass."
+    },
+    {
+      "id": "SI2",
+      "met": true,
+      "evidence": "Independent40 source checks actualexit0 plus evaluator-only6 live/card checks actualexit0. Hold/release/focus/modal/benchmark and Option input guarded. Live clock advances with I/card; card opening leaves simulator world unchanged."
+    },
+    {
+      "id": "SI3",
+      "met": true,
+      "evidence": "Final GPU/native capture audit276cases,0failures,worst0.50584555px below1px. Includes rest/highbeta,view/FOV/roll/resize,far/near GPU+CPUrebases,real AILANG boost/cruise/brake,exact binary Sirius and detected deliberate4px offset. Actual canvas stretch maps UI rings onto measured GPU pixels."
+    },
+    {
+      "id": "SI4",
+      "met": true,
+      "evidence": "Current transform/visibility/LOD triangle BVHs block opaque noncollider meshes and opaque custom shaders. Captain alpha-mask fixture/body GPUalpha1 has0rings; transparent padding GPUalpha0 has1ring, native click agrees. Crowd choices retain each exact ID; behind/cull/floor/identity/cache cases pass."
+    },
+    {
+      "id": "SI5",
+      "met": true,
+      "evidence": "Shared StarInfo exact-ID metadata; Sol distance explicitly labelled, absent facts unavailable. Opened900x600 native card with accessible actions. Exact-ID map handoff verified through actual packaged mouse input."
+    },
+    {
+      "id": "SI6",
+      "met": true,
+      "evidence": "Final native packaged real-input smoke actualexit0;21candidates, card CNS5:3286, release persistence and same-ID map alltrue. Headless controller tests remain separate from native mouse-dispatch proof."
+    },
+    {
+      "id": "SI7",
+      "met": true,
+      "evidence": "Matched paired1920x1080 Studio rest/cruise forward/side,120warmup/300samples, held overlay plus identical pan/eye. Maximum incremental wall-framep95+0.130ms below2ms. Actual Air remains pending."
+    }
+  ],
+  "independent_checks": {
+    "controller": "/private/tmp/si-independent-sprite.log:40passed,0failures,actualexit0.",
+    "live_readonly": "/private/tmp/si-independent-live.log:6passed,0failures,actualexit0; /private/tmp/test_identification_live_judge.gd.",
+    "native_visuals": "Opened native900card, captainbody/padding and final native painted ship views. Independently inspected276audit records and aggregate benchmark pairing.",
+    "benchmark": [
+      {
+        "state": "rest",
+        "direction": "forward",
+        "baseline_p95_ms": 9.66,
+        "held_p95_ms": 9.479,
+        "delta_ms": -0.181000000000001,
+        "update_cpu_p95_ms": 2.194,
+        "candidate_range": [
+          20,
+          21
+        ]
+      },
+      {
+        "state": "rest",
+        "direction": "side",
+        "baseline_p95_ms": 9.664,
+        "held_p95_ms": 9.576,
+        "delta_ms": -0.0879999999999992,
+        "update_cpu_p95_ms": 2.216,
+        "candidate_range": [
+          12,
+          13
+        ]
+      },
+      {
+        "state": "cruise",
+        "direction": "forward",
+        "baseline_p95_ms": 9.549,
+        "held_p95_ms": 9.315,
+        "delta_ms": -0.234,
+        "update_cpu_p95_ms": 3.493,
+        "candidate_range": [
+          113,
+          113
+        ]
+      },
+      {
+        "state": "cruise",
+        "direction": "side",
+        "baseline_p95_ms": 9.577,
+        "held_p95_ms": 9.707,
+        "delta_ms": 0.130000000000001,
+        "update_cpu_p95_ms": 1.285,
+        "candidate_range": [
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "performance_interpretation": "Wall-frame p95 includes presentation/vsync; negative deltas are noise, not speedups. Separate overlay CPU-updatep95 is2.194/2.216/3.493/1.285ms, not the <=2ms incremental wall-frame criterion. Raw machine diagnostics remain local.",
+  "resolved_findings": [
+    "UI/raw-pixel stretch mismatch fixed with canvas inverse conversion and actual native viewport audit.",
+    "Unknown opaque ALPHA=1 shader and captain Sprite3D previously bypassed mesh-only occlusion; current opaque and alpha-mask tests pass.",
+    "Same-count identity and actual uploaded observer/photometry changes invalidate apparent-ray cache.",
+    "Earlier marker-only smoke claim did not prove termination: queue_free cancelled node-owned quit coroutine. Surviving SceneTree timer now terminates, native source/package actualexit0 verified.",
+    "Headless real-input smoke fails because Dummy native-window mouse dispatch is unavailable; native packaged input is now the truthful gate."
+  ]
+}

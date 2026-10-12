@@ -1,0 +1,59 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "milestone": "M2.5",
+  "pr": 35,
+  "branch": "sprint/m2.5-replay",
+  "round": 1,
+  "evaluator": "independent (generator != judge)",
+  "toolchain": "AILANG v0.51.0 (b99dd25), Godot 4.7.2, darwin arm64",
+  "result": "pass",
+  "score": 93,
+  "breakdown": {"tests_pass": 20, "lint_clean": 10, "acceptance_criteria": 30, "code_quality": 13, "documentation": 11, "design_fidelity": 9},
+  "verification": {
+    "make_test": "green locally (10k session, 282 s)",
+    "make_replay": "5 cases, VM == interpreter == arm64 golden; session10k 10016 lines, VM 4.7 s, interpreter 35 s",
+    "tools_test_replay": "10/10",
+    "session_regen": "gen_session.py twice -> identical bytes (sha256 3db26dcb...); replay of regenerated session matches committed arm64 digest 050fdbdf...",
+    "session2k": "matches committed arm64 digest locally",
+    "replay_record_refusal": "fake ailang altering one beta on the interpreter: --record refuses (rc 1, no golden written); replay fails with VM != interpreter",
+    "missing_arch_golden": "--arch riscv: FAIL 'no golden' (rc 1), not skip",
+    "golden_mutation": "one digit changed in alpha_cen golden: FAIL with first-diff",
+    "x86_golden_on_arm": "fails on the one beta (1 ulp) and the v1.1 equivalence check; confirms arch-specific goldens are not interchangeable",
+    "tee_mutation": "bridge drops echo line from tee: test_record_tee FAIL (fix does not hide real failures)",
+    "pr34_not_reverted": "branch is based on main tip ae04cff; git diff origin/main...HEAD is additions only; python-allowlist gained 4 harness rows + fake_ailang",
+    "ci": "REPLAY_TICKS 2000 on pull_request, 10000 otherwise, via ci.yml env; PR CI run 36976124857 success"
+  },
+  "coverage_read_from_generated_session": {
+    "status_kinds_emitted": ["bad_cmd","bad_game","bad_heading","bad_intent","bad_json","bad_params","bad_step","bad_tick","bad_v","m_eff_too_small","no_game","no_hello(x2)","ok"],
+    "not_covered": "bad_state (protocol.ail:208) is the state-decoder error, never emitted by ship.ail: not reachable",
+    "events": {"draw": 1308, "phase": 15, "committed": 4, "arrived": 4},
+    "refusals": {"committed": 23, "out_of_range": 3, "diag_only": 3, "stale_plan": 1, "moving": 1},
+    "out_of_range_both_sides": "phi 1.4722194885832203 (low) and 7.254328620262047 (high) refused; 1.4722194895832204 and 7.254328619262047 accepted",
+    "voyages": "alpha Cen 0.99c, Sirius cap, 109 ly (60,-48,64) in 0.1 dtau, diag flip (boosting->braking)"
+  },
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      "The generated session input is not committed (only output digests). Regeneration is deterministic and checked, but M4 and P5 reviewers cannot inspect the input without running gen_session.py; consider committing the 2k input or a digest of the input too (tools/gen_session.py).",
+      "x86_64 goldens were produced on a throwaway CI run and are not reproducible locally; I verified only that CI is green on the PR (36976124857), and that arm64 goldens and the 1-ulp story are consistent.",
+      "design_docs/planned/r1/m2-report-draft.md is a draft in planned/; plan said m2-report.md in implemented/ at landing. Acceptable: landing deferred to M2.6b, but CHANGELOG entry still outstanding (landing task).",
+      "tools/replay.py:93 offaxis check reads tests/fixtures/v11_offaxis.<arch>.golden by arch with no missing-file guard message beyond the subprocess error; fails, does not skip.",
+      "Replay concurrency (cpu_count/2 workers, each running VM and interpreter in parallel) makes per-case timings noisy; harmless."
+    ]
+  },
+  "deviations": {
+    "interpreter --max-recursion-depth 100000": "accepted: both runs still compared byte for byte; ailang#1486 filed",
+    "preamble no_hello/no_game lines before hello": "accepted: adds coverage of pre-hello statuses; session is still deterministic",
+    "diag_thrust600 digest-only": "accepted: 324 KB over the 256 KB threshold; digest is per-arch and cmp of VM vs interpreter is full",
+    "100-ly voyage is 109 ly": "accepted: still a long voyage in 0.1-tick steps; arrives with residual_x 4.8e-13",
+    "four tools in python allowlist as harness": "accepted: correct role, reason in PR",
+    "concurrent main move during rebase": "accepted: nothing of #34 reverted"
+  },
+  "goldens_for_P5": {
+    "alpha_cen": "66 lines, full ND-JSON reply stream, alpha Cen 0.99c voyage to arrival; identical on arm64 and x86_64",
+    "godot_map_voyage": "73 lines, recorded by Godot via record_path with the real galaxy map; identical across arches",
+    "offaxis_v11_equiv": "17 lines; per-arch; differ on one beta at tick 6 (0.1028644010192098 arm64 vs 0.10286440101920982 x86_64), a 1 ulp exp/log effect (ailang#1465); x86 value equals v1.1 x86 golden",
+    "diag_thrust600": "602 lines, digest only, per-arch (sha differs)",
+    "session10k / session2k": "output digests only, per-arch (sha differs)"
+  }
+}

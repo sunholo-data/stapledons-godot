@@ -1,0 +1,360 @@
+cd sim && /Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang lock
+Resolving dependencies in /Users/voightkampff/dev/sunholo-data/.stapledon-wt-iter8/sim
+✓ Generated ailang.lock (1 packages)
+  → sunholo/relativity@0.3.0 (registry)
+git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$?; git checkout -q sim/ailang.lock; exit $rc
+godot --headless --path . --import
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (11 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | SimBridge[39m[0m
+[   8% ] [90m[1mupdate_scripts_classes[22m | Blackbody[39m[0m
+[  16% ] [90m[1mupdate_scripts_classes[22m | Relativity[39m[0m
+[  25% ] [90m[1mupdate_scripts_classes[22m | SkyBackground[39m[0m
+[  33% ] [90m[1mupdate_scripts_classes[22m | SkyModel[39m[0m
+[  41% ] [90m[1mupdate_scripts_classes[22m | Starfield[39m[0m
+[  50% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  58% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  66% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  75% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  83% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1m_update_scan_actions[22m | Started Scanning actions... (2 steps)[39m[0m
+[   0% ] [90m[1m_update_scan_actions[22m | contact_sheet.png[39m[0m
+[  33% ] [90m[1m_update_scan_actions[22m | sky_b099_forward.png[39m[0m
+[92m[ DONE ][39m [1m_update_scan_actions[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (2 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  33% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing pre-reimport operations...[39m[0m
+[   0% ] [90m[1mreimport[22m | contact_sheet.png[39m[0m
+[  33% ] [90m[1mreimport[22m | sky_b099_forward.png[39m[0m
+[  66% ] [90m[1mreimport[22m | Finalizing Asset Import...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (2 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing post-reimport operations...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+godot --headless --path . --script tests/test_physics.gd
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  ok    off-axis transverse aberration (1.0, 0.0, 0.0)                   25.841928062
+  ok    off-axis forward Doppler (1.0, 0.0, 0.0)                         4.358898944
+  ok    off-axis transverse Doppler (1.0, 0.0, 0.0)                      2.294157339
+  ok    off-axis transverse aberration (-1.0, 0.0, 0.0)                  25.841928062
+  ok    off-axis forward Doppler (-1.0, 0.0, 0.0)                        4.358898944
+  ok    off-axis transverse Doppler (-1.0, 0.0, 0.0)                     2.294157339
+  ok    off-axis transverse aberration (0.0, 1.0, 0.0)                   25.841928062
+  ok    off-axis forward Doppler (0.0, 1.0, 0.0)                         4.358898944
+  ok    off-axis transverse Doppler (0.0, 1.0, 0.0)                      2.294157339
+  ok    off-axis transverse aberration (0.0, -1.0, 0.0)                  25.841928062
+  ok    off-axis forward Doppler (0.0, -1.0, 0.0)                        4.358898944
+  ok    off-axis transverse Doppler (0.0, -1.0, 0.0)                     2.294157339
+  ok    off-axis transverse aberration (0.57735, 0.57735, -0.57735)      25.841928062
+  ok    off-axis forward Doppler (0.57735, 0.57735, -0.57735)            4.358898820
+  ok    off-axis transverse Doppler (0.57735, 0.57735, -0.57735)         2.294157339
+Aberration (sources crowd toward the direction of motion)
+  ok    90 deg source at 0.9c appears at acos(0.9) = 25.842 deg          25.841928062
+  ok    90 deg source at 0.5c appears at 60 deg                          60.000000000
+  ok    source dead ahead stays ahead                                    0.000000000
+  ok    source dead astern stays astern                                  180.000000000
+  ok    aberrated direction is unit length                               1.000000000
+  ok    deaberrate inverts aberrate                                      0.000000646
+  ok    cos(theta') = (cos theta + b)/(1 + b cos theta) at 120 deg, 0.8c 0.500000000
+Doppler factor
+  ok    ahead at 0.9c: sqrt(1.9/0.1) = 4.3589                            4.358898944
+  ok    astern at 0.9c: sqrt(0.1/1.9) = 0.22942                          0.229415734
+  ok    transverse (galaxy frame 90 deg) at 0.9c: gamma = 2.2942         2.294157339
+  ok    apparent-frame form agrees (float32 direction)                   1.289321340
+  ok    source appearing at 90 deg is redshifted by 1/gamma              0.435889894
+Blackbody colour (CIE 1931, Wyman et al. fit)
+  ok    2856 K x = 0.4476 (illuminant A)                                 0.446385741
+  ok    2856 K y = 0.4074 (illuminant A)                                 0.408488572
+  ok    6500 K Planckian x = 0.3135                                      0.313469619
+  ok    6500 K Planckian y = 0.3236                                      0.323731303
+  ok    10000 K Planckian x = 0.2807                                     0.280721605
+  ok    3000 K renders orange (r > g > b)                                1.000000000
+  ok    20000 K renders blue (b > g > r)                                 1.000000000
+Blackbody lookup table (sampled by the starfield shader)
+  ok    every LUT texel is finite (no NaN/inf colours)                   1.000000000
+  ok    log luminance rises monotonically with temperature               1.000000000
+Relativistic beaming of a point source
+  ok    D = 1 leaves flux unchanged                                      1.000000000
+  ok    bolometric point flux scales as D^2 (D = 3)                      8.999637527
+  ok    red dwarf (3300 K) ahead at 0.9c brightens in V by > D^2         1.000000000
+  ok    Sun-like star astern at 0.9c fades by > 100x                     1.000000000
+Relativistic surface brightness of an extended source (sky background, M1.4)
+  ok    D = 1 leaves surface brightness unchanged                        1.000000000
+  ok    bolometric surface brightness scales as D^4 (D = 3)              80.996737746
+  ok    surface brightness = point flux ratio x D^2 (no solid-angle shrink) 32.911450332
+  ok    diffuse 4600 K light astern at 0.9c fades below 1% in V          1.000000000
+Sky model (M1.4b texture contract, mirrored by sky/background.gdshader)
+  ok    galactic centre (world -Z) samples the panorama centre u         0.500000000
+  ok    galactic centre samples the panorama centre v                    0.500000000
+  ok    l = 90 deg (world +X) sits a quarter in from the left (l grows leftward) 0.250000000
+  ok    l = 270 deg (world -X) sits at u = 0.75                          0.750000000
+  ok    north galactic pole (world +Y) is the top row                    0.000000000
+  ok    b = -30 deg sits at v = 2/3                                      0.666666687
+  ok    equirect_dir inverts equirect_uv                                 0.000000089
+  ok    T code 0 decodes to T_LO = 1500 K                                1500.000000000
+  ok    T code 255 decodes to T_HI = 30000 K                             30000.000000000
+  ok    T code round trip within 0.6% (4600 K)                           0.995476190
+  ok    T code range matches sim/tools/sky_model.ail (report), low end   1500.000000000
+  ok    T code range matches sim/tools/sky_model.ail (report), high end  30000.000000000
+  ok    committed model fit: luminance-weighted median dxy <= 0.02 (else escalate) 1.000000000
+  ok    a Planck-coloured texel has unit tint (rest frame reproduces the photo) 0.000000179
+  ok    at D = 1 the sky colour equals the photo's linear colour         0.000000000
+  ok    at D = 3 a Planck texel renders as rgb(D T) x Y x surface ratio  0.000000045
+Constant proper acceleration (sim cross-check reference)
+  ok    beta after 1 ship-year at 1 g = tanh(a)                          0.774827263
+  ok    Earth years after 1 ship-year = sinh(a)/a                        1.187312402
+
+62 passed, 0 failed
+/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang check --package sim
+→ Checking package stapledons/sim (6 exported modules)...
+
+  ✓ core.ail
+  ✓ core_test.ail
+  ✓ protocol_test.ail
+  ✓ ship.ail
+  ✓ tools/catalogue.ail
+  ✓ tools/catalogue_probe.ail
+  ✓ tools/catalogue_probe_test.ail
+  ✓ tools/catalogue_test.ail
+  ✓ tools/sky_model.ail
+  ✓ tools/sky_model_test.ail
+
+  ! module "stapledons/sim/core_test" compiled but not listed in [exports].modules
+  ! module "stapledons/sim/protocol_test" compiled but not listed in [exports].modules
+  ! module "stapledons/sim/tools/catalogue_test" compiled but not listed in [exports].modules
+  ! module "stapledons/sim/tools/catalogue_probe_test" compiled but not listed in [exports].modules
+
+✓ 10 files checked, all passed!
+cd sim && /Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang test --package .
+→ Package stapledons/sim
+  5 source modules, 5 test files
+
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path '_namedtest_body_2917869918'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path '_namedtest_body_1258278584'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path '_namedtest_body_3555465502'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path '_namedtest_body_752761849'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path '_namedtest_body_4054147468'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path '_namedtest_body_873481722'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path '_namedtest_body_2315038868'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path '_namedtest_body_89190403'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path '_namedtest_body_2767115339'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path '_namedtest_body_3144602304'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path '_namedtest_body_2752253015'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path '_namedtest_body_3741036438'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'tools/_namedtest_body_3558677775'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'tools/_namedtest_body_330967607'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'tools/_namedtest_body_1003600364'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'tools/_namedtest_body_2124054627'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'tools/_namedtest_body_3643514719'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'tools/_namedtest_body_866386975'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'tools/_namedtest_body_676980472'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'tools/_namedtest_body_2758766453'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_222762872'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_1950046152'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_3317934069'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_3699874307'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_984640929'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_2934820822'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_747859658'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_4198485788'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_1217123203'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_test' does not match canonical path 'tools/_namedtest_body_2439673932'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+
+[1mTest Results[0m
+Module: stapledons/sim
+
+[1mTests:[0m
+  [32m✓[0m turn at rest snaps rapidity (34.47975ms)
+      at [2mcore_test.ail:34:1[0m
+  [32m✓[0m moving turn rejected (30.950458ms)
+      at [2mcore_test.ail:35:1[0m
+  [32m✓[0m position after turn retains origin (29.279125ms)
+      at [2mcore_test.ail:36:1[0m
+  [32m✓[0m strict off axis voyage (90.006916ms)
+      at [2mcore_test.ail:37:1[0m
+  [32m✓[0m hello proto 1.1 (79.408166ms)
+      at [2mprotocol_test.ail:53:1[0m
+  [32m✓[0m v1.0 step unchanged (80.308ms)
+      at [2mprotocol_test.ail:54:1[0m
+  [32m✓[0m bad json (73.214833ms)
+      at [2mprotocol_test.ail:55:1[0m
+  [32m✓[0m bad command (77.806417ms)
+      at [2mprotocol_test.ail:56:1[0m
+  [32m✓[0m bad step precedes heading (84.953459ms)
+      at [2mprotocol_test.ail:57:1[0m
+  [32m✓[0m bad heading (87.109583ms)
+      at [2mprotocol_test.ail:58:1[0m
+  [32m✓[0m moving (87.875875ms)
+      at [2mprotocol_test.ail:59:1[0m
+  [32m✓[0m rejection preserves state (89.516875ms)
+      at [2mprotocol_test.ail:60:1[0m
+  [32m✓[0m real rows preserve IDs and defer WD and missing (46.971583ms)
+      at [2mtools/catalogue_probe_test.ail:21:1[0m
+  [32m✓[0m exact header required (36.757625ms)
+      at [2mtools/catalogue_probe_test.ail:22:1[0m
+  [32m✓[0m invalid coordinates rejected (40.106083ms)
+      at [2mtools/catalogue_probe_test.ail:23:1[0m
+  [32m✓[0m nonfinite photometry rejected (43.701542ms)
+      at [2mtools/catalogue_probe_test.ail:24:1[0m
+  [32m✓[0m invalid WD flag rejected (53.126292ms)
+      at [2mtools/catalogue_probe_test.ail:25:1[0m
+  [32m✓[0m published solar package anchor (44.8975ms)
+      at [2mtools/catalogue_probe_test.ail:31:1[0m
+  [32m✓[0m real normal row expected photometry (49.719458ms)
+      at [2mtools/catalogue_probe_test.ail:32:1[0m
+  [32m✓[0m WD row through the published blackbody package (47.587792ms)
+      at [2mtools/catalogue_probe_test.ail:41:1[0m
+  [32m✓[0m T1 normal independent anchors and coordinates (129.47125ms)
+      at [2mtools/catalogue_test.ail:51:1[0m
+  [32m✓[0m T1 WD real and interior anchors (112.759458ms)
+      at [2mtools/catalogue_test.ail:52:1[0m
+  [32m✓[0m T1 dwarf and WD clamps (112.091667ms)
+      at [2mtools/catalogue_test.ail:53:1[0m
+  [32m✓[0m T1 exact medium selection and independent counters (137.262209ms)
+      at [2mtools/catalogue_test.ail:54:1[0m
+  [32m✓[0m T1 missing wins and preserves WD bit (141.012792ms)
+      at [2mtools/catalogue_test.ail:55:1[0m
+  [32m✓[0m T1 stable equal distance order (122.5685ms)
+      at [2mtools/catalogue_test.ail:56:1[0m
+  [32m✓[0m T1 distance uses all coordinates (137.610583ms)
+      at [2mtools/catalogue_test.ail:57:1[0m
+  [32m✓[0m T1 header only empty input (131.962083ms)
+      at [2mtools/catalogue_test.ail:58:1[0m
+  [32m✓[0m T1 field rejection before missing shortcut (142.866458ms)
+      at [2mtools/catalogue_test.ail:59:1[0m
+  [32m✓[0m T1 exact header (123.493958ms)
+      at [2mtools/catalogue_test.ail:60:1[0m
+
+──────────────────────────────────────────────────
+[32m✓[0m [1mAll tests passed![0m
+
+30 tests: 30 passed, 0 failed, 0 skipped (2.49887629s)
+  [32m✓ Passed:[0m 30
+  [31m✗ Failed:[0m 0
+
+[1mSeed:[0m
+  mode: derived
+  master seed: 0
+  derivation: ailang-property-seed-v1
+  replay: ailang test --seed 0 --package .
+
+godot --headless --path . --script tests/test_sim_bridge.gd
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  ok    initial beta                                 got 0.000000000000 want 0.000000000000
+  ok    beta after 2 ship-yr = tanh(2a)              got 0.968317848731 want 0.968317848731
+  ok    gamma = cosh(2a)                             got 4.004470079429 want 4.004470079429
+  ok    Earth time = sinh(2a)/a                      got 3.756289449781 want 3.756289449781
+  ok    distance = (cosh(2a) - 1)/a                  got 2.910475472067 want 2.910475472067
+  ok    symmetric burn returns to rest               got -0.000000000000 want 0.000000000000
+  ok    Earth time for 4 ship-yr round burn          got 7.512578899562 want 7.512578899562
+  ok    coasting at rest: Earth time advances 1:1    got 8.512578899562 want 8.512578899562
+  round trip per tick: 10793 us
+  ok    v1.1 hello
+  ok    turn and echo heading
+  ok    heading float64 round trip
+  ok    echo heading on next step
+  ok    off-axis position
+  ok    reason-code sim starts
+  ok    reject bad_json exact state
+  ok    reject bad_json exact state
+  ok    reject bad_cmd exact state
+  ok    reject bad_step exact state
+  ok    reject bad_heading exact state
+  ok    reject bad_heading exact state
+  ok    reject bad_heading exact state
+  ok    malformed line does not end loop
+  ok    moving exact state
+  ok    old protocol refused
+  ok    old protocol child cleaned
+  ok    startup_timeout code and bound
+  ok    startup timeout has no substitute state
+  ok    startup child cleaned
+  ok    fake child starts
+  ok    step_timeout code and bound silent_step
+  ok    timeout preserves state silent_step
+  ok    child cleaned silent_step
+  ok    fake child starts
+  ok    step_timeout code and bound truncated
+  ok    timeout preserves state truncated
+  ok    child cleaned truncated
+  ok    fake child starts
+  ok    step_timeout code and bound ignore_quit
+  ok    timeout preserves state ignore_quit
+  ok    child cleaned ignore_quit
+sim bridge: 0 failures
+/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang run --bytecode --quiet --package-dir sim --caps IO --entry main sim/ship.ail < .godot/tmp/parity_in.txt > .godot/tmp/vm.txt
+/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < .godot/tmp/parity_in.txt > .godot/tmp/interp.txt
+cmp .godot/tmp/vm.txt .godot/tmp/interp.txt && echo "parity: identical ($(wc -l < .godot/tmp/vm.txt) lines)"
+parity: identical (     601 lines)
+/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang run --bytecode --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/offaxis.ndjson > .godot/tmp/offaxis_vm.txt
+/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/offaxis.ndjson > .godot/tmp/offaxis_interp.txt
+cmp .godot/tmp/offaxis_vm.txt .godot/tmp/offaxis_interp.txt && echo "parity-offaxis: identical ($(wc -l < .godot/tmp/offaxis_vm.txt) lines)"
+parity-offaxis: identical (      17 lines)
+strict VM 21.392852753780428 | interpreter 21.392852753780428 | closed form 21.392852753780602
+strict off-axis VM 27.637939595105987 | interpreter 27.637939595105987 | closed form 27.637939595106303
+got=$(/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
+	echo "wd-vm: $got"; [ "$got" = "wd-nan-ok" ]
+wd-vm: wd-nan-ok
+transform-ok
+selection-ok
+sky-vm: sky-ok (strict VM = interpreter)
+python3 tools/test_extract.py
+.......ERROR: cns5: 0 of 1 input rows parsed; refusing to write an empty CSV
+........
+----------------------------------------------------------------------
+Ran 15 tests in 0.002s
+
+OK

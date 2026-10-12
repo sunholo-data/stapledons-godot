@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-10-04T18:50:03.504300+00:00",
+  "evaluator": "Independent judge",
+  "result": "pass",
+  "scope": "Focused default exposure and unbuilt Commons plan/caption review; no new sprint or architecture approval.",
+  "code": "Both controller default stops and setup fallback use2=>4x; Journey website initial choice2 agrees. No shader/physics changes.",
+  "test": "Fresh independent47checks,0failures, actualexit0; /private/tmp/commons-default4-independent.log.",
+  "plan": "SVG +Yup flips shipY into negative SVGy. Shaft(8,8), courtXY[14,36;-10,20], bridge radius22, closedcore4.4, 20m scale are coherent. Amber radius67.35m follows sqrt(95^2-(57+10)^2); floor radius75.92m is conservative versus exact76m at nominalZ57. Curved zones explicitly proposed, not approved or built.",
+  "captions": "Approved Level1 character described as terraces/openarcades/planted civic life. Current generic pavilion marked prototype. AI paintover explicitly finish-only, not architecture/game update/reusableUV.",
+  "limitations": "Actual M2 Air performance remains pending. No replacement architecture agreement inferred."
+}

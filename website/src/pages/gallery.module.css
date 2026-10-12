@@ -1,0 +1,154 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.header {
+  padding: 4rem 0 1rem;
+}
+
+.title {
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.lead {
+  max-width: 760px;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.block {
+  margin: 2.5rem 0 4rem;
+}
+
+.clips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 1.5rem;
+}
+
+.clip,
+.item {
+  margin: 0;
+}
+
+.video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background: #000;
+}
+
+.clip figcaption,
+.item figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 1.5rem;
+}
+
+.open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  cursor: zoom-in;
+  aspect-ratio: 16 / 9;
+}
+
+.open img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.open:hover img {
+  transform: scale(1.03);
+}
+
+.pill {
+  margin-left: 0.5rem;
+}
+
+.cap {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 3.5rem 2rem;
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.lbFigure {
+  max-width: min(1600px, 100%);
+  margin: 0;
+}
+
+.lbFigure img {
+  display: block;
+  max-width: 100%;
+  max-height: 78vh;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.lbFigure figcaption {
+  max-width: 900px;
+  margin: 0.8rem auto 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.lbBtn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+}
+
+.lbClose { top: 0.75rem; right: 0.75rem; }
+.lbPrev { left: 0.5rem; top: 50%; transform: translateY(-50%); }
+.lbNext { right: 0.5rem; top: 50%; transform: translateY(-50%); }
+
+@media (max-width: 600px) {
+  .lightbox {
+    padding: 3.5rem 0.5rem 1rem;
+  }
+  .lbPrev,
+  .lbNext {
+    top: auto;
+    bottom: 0.75rem;
+    transform: none;
+  }
+}

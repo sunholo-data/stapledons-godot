@@ -1,0 +1,98 @@
+module stapledons/ai/route
+
+-- Provider routing (Mark's plan change of 2026-10-02: both providers).
+-- data/ai/routing.json gives, per request kind, an ordered list of
+-- {provider, model}. A request goes to the first entry whose key is present;
+-- with none, it is answered no_key and the game stays on templates. In
+-- text-only mode every media kind is answered text_only. OpenRouter serves
+-- text only (it refuses image output and has no TTS), so a config that lists
+-- it for a media kind is refused at start, and resolution never returns it
+-- for one. Pure; runs on the strict VM (aiWireVm).
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, decode, get, getString, getNumber, getArray, asObject)
+import std/string (concat, contains, startsWith, length, substring, find)
+import ./key (member, aiKinds, isMedia, size)
+
+export type Hop = { provider: string, model: string }
+export type KindRoute = { kind: string, hops: [Hop] }
+export type Routing = { routes: [KindRoute] }
+-- Via: the provider and model chosen; None: why nothing can serve the kind
+-- (no_key, text_only, or bad_request for a kind the table does not know).
+export type Route = Via(Hop) | NoRoute(string)
+
+export pure func providers() -> [string] = ["gemini", "openrouter"]
+-- What each provider can serve. OpenRouter: text (chat completions) only.
+export pure func serves(provider: string, kind: string) -> bool =
+  if provider == "openrouter" then kind == "text" else provider == "gemini" && member(kind, aiKinds())
+
+-- OpenRouter model ids are vendor/model, optionally prefixed openrouter:.
+pure func vendorModel(m: string) -> bool {
+  let s = if startsWith(m, "openrouter:") then substring(m, 11, length(m)) else m;
+  let i = find(s, "/");
+  i > 0 && i < length(s) - 1
+}
+pure func hopError(kind: string, h: Hop) -> Option[string] =
+  if h.provider == "" then Some(concat(["config: ", kind, ": model ", h.model, " has no provider"]))
+  else if !member(h.provider, providers()) then Some(concat(["config: ", kind, ": unknown provider ", h.provider]))
+  else if h.model == "" then Some(concat(["config: ", kind, ": ", h.provider, " has no model"]))
+  else if !serves(h.provider, kind) then Some(concat(["config: ", kind, ": ", h.provider, " cannot serve ", kind]))
+  else if h.provider == "openrouter" && !vendorModel(h.model) then Some(concat(["config: ", kind, ": openrouter model ", h.model, " is not vendor/model"]))
+  else None
+
+pure func bindR(r: Result[a, string], g: a -> Result[b, string]) -> Result[b, string] = match r { Ok(x) => g(x), Err(e) => Err(e) }
+pure func strOr(j: Json, k: string) -> string = match getString(j, k) { Some(s) => s, None => "" }
+pure func hopOf(kind: string, j: Json) -> Result[Hop, string] {
+  let h = { provider: strOr(j, "provider"), model: strOr(j, "model") };
+  match hopError(kind, h) { Some(e) => Err(e), None => Ok(h) }
+}
+@allow_empty_ok("an empty route list is refused by the caller, not here")
+pure func hopsOf(kind: string, xs: [Json]) -> Result[[Hop], string] =
+  match xs { [] => Ok([]), x :: r => bindR(hopOf(kind, x), \h. bindR(hopsOf(kind, r), \hs. Ok(h :: hs))) }
+pure func routeOf(e: {key: string, value: Json}) -> Result[KindRoute, string] =
+  if !member(e.key, aiKinds()) then Err(concat(["config: unknown kind ", e.key]))
+  else match e.value {
+    JArray(xs) => bindR(hopsOf(e.key, xs), \hs. if size(hs) == 0 then Err(concat(["config: ", e.key, ": empty route"])) else Ok({ kind: e.key, hops: hs })),
+    _ => Err(concat(["config: ", e.key, ": route is not a list"]))
+  }
+@allow_empty_ok("an empty table is refused by the caller (every kind must be routed)")
+pure func routesOf(kvs: [{key: string, value: Json}]) -> Result[[KindRoute], string] =
+  match kvs { [] => Ok([]), e :: r => bindR(routeOf(e), \x. bindR(routesOf(r), \xs. Ok(x :: xs))) }
+pure func hopsFor(rs: [KindRoute], kind: string) -> Option[[Hop]] =
+  match rs { [] => None, r :: more => if r.kind == kind then Some(r.hops) else hopsFor(more, kind) }
+pure func missingKind(rs: [KindRoute], ks: [string]) -> Option[string] =
+  match ks { [] => None, k :: more => match hopsFor(rs, k) { Some(_) => missingKind(rs, more), None => Some(k) } }
+
+-- routing.json text -> the table, or a config error (the service refuses to
+-- start on one). Every kind must be routed; a kind may be listed once.
+export pure func parseRouting(text: string) -> Result[Routing, string] =
+  match decode(text) {
+    Err(_) => Err("config: routing is not JSON"),
+    Ok(j) => if getNumber(j, "v") != Some(1.0) then Err("config: routing v must be 1") else match get(j, "routes") {
+      None => Err("config: routing has no routes"),
+      Some(ro) => match asObject(ro) {
+        None => Err("config: routes is not an object"),
+        Some(kvs) => bindR(routesOf(kvs), \rs. match missingKind(rs, aiKinds()) {
+          Some(k) => Err(concat(["config: kind ", k, " has no route"])),
+          None => if size(rs) != size(aiKinds()) then Err("config: a kind is listed twice") else Ok({ routes: rs })
+        })
+      }
+    }
+  }
+
+-- Keys present: the providers whose key exists (stub mode: simulated by the
+-- service's keys_present; live mode: from the env, AI.5). Unknown names are
+-- a config error at start.
+export pure func keysError(keys: [string]) -> Option[string] =
+  match keys { [] => None, k :: r => if member(k, providers()) then keysError(r) else Some(concat(["config: unknown key ", k])) }
+
+export pure func resolve(rt: Routing, kind: string, keys: [string], textOnly: bool) -> Route =
+  match hopsFor(rt.routes, kind) {
+    None => NoRoute("bad_request"),
+    Some(hs) => if textOnly && isMedia(kind) then NoRoute("text_only") else pick(hs, kind, keys)
+  }
+pure func pick(hs: [Hop], kind: string, keys: [string]) -> Route =
+  match hs { [] => NoRoute("no_key"), h :: r => if member(h.provider, keys) && serves(h.provider, kind) then Via(h) else pick(r, kind, keys) }
+
+-- "openrouter", "gemini", or "none" (meta.route on results and the hello).
+export pure func routeName(r: Route) -> string = match r { Via(h) => h.provider, NoRoute(_) => "none" }

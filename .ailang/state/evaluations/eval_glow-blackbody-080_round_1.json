@@ -1,0 +1,92 @@
+{
+  "sprint_id": "glow-blackbody-080",
+  "evaluation_round": 1,
+  "timestamp": "2026-10-04T01:05:00Z",
+  "evaluator": "independent (Claude Fable 5.1, generator != judge); fresh clone of glow/blackbody-080 at d507ce2, AILANG runtime/bin v0.52.0, Godot 4.7.2, arm64",
+  "subject": "stapledons-godot PR #113 (branch glow/blackbody-080) + stapledons-design PR #7 (canon/glow-eps-spectrum): D-30 blackbody glow, D-29 follow-up eps 1e-10, M4.1 step 2 glow_pole fields, relativity 0.8.0 pin",
+  "design_doc": "design_docs/planned/r1/m4-first-journey.md (M4.2 glow, M4.1 step 2); stapledons-design physics/higgs-bubble.md section 6 (PR #7)",
+  "sprint_plan": "design_docs/planned/r1/m4-first-journey-sprint.md; .ailang/state/sprints/sprint_R1-M4-JOURNEY.json (M4.1 notes annotated)",
+
+  "total_score": 89,
+  "pass_threshold": 70,
+  "result": "pass",
+
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 27,
+    "code_quality": 11,
+    "documentation": 13,
+    "design_fidelity": 8
+  },
+
+  "hard_fails": [],
+
+  "automated_checks": {
+    "tests_pass": true,
+    "tests_output": "make test AILANG=runtime/bin/ailang: exit 0 (sim 256/256 in 9m52; physics 588/0; interior 130/0; replay 8 cases identical VM=interpreter=golden; parity-v2 identical; strict VM = interpreter for protocol/consequence/scriptedRoundTrip; lint-precision clean). Note: `make test` with the dev `ailang` on PATH (v0.52.0-17-dirty) fails at `deps` because `ailang lock` rewrites the generator line; the pinned runtime is required, as CLAUDE.md says.",
+    "ci": "GitHub CI run 37153847195 on ubuntu-latest (x86_64) SUCCESS at the PR head (headless tests incl. replay TICKS=2000 and replay-compat): independently validates the x86_64 goldens",
+    "golden": "make golden: exit 0. 144 off-axis, 10 CMB, G-M4-1 72, G-M4-2, G-M4-3 6, G-M4-4 8 (incl. (d) 0.999c and cap within 1 %), G-M4-5 10 (worst colour 0.070 % of max at 6600 K, efficacy shader/CPU 0.9993..1.0001), m5 golden 0 failures",
+    "lint_clean": true,
+    "lint_output": "no `make lint` target in this repo; lint-precision / lint-precision-m5 (part of make test) clean; python-guard clean (no new .py; the sheet tool is GDScript)",
+    "file_sizes_ok": true,
+    "file_sizes_note": "tests/test_physics.gd is 1301 lines (was 1251 on main; pre-existing, grows by 50 here); no new file over 800",
+    "coverage_pct": "n/a",
+    "todo_hack_count": 0
+  },
+
+  "acceptance_criteria": [
+    {"feature_id": "pin", "criterion": "sim pins sunholo/relativity 0.8.0 (sim/ailang.toml, sim/ailang.lock, tools/glow_probe, hello pin)", "met": true, "evidence": "sim/ailang.toml and lock 0.8.0 (content_hash 572a6e24...); protocol.ail relativityPin() = \"0.8.0\"; navigation_test checkHello24 and test_sim_bridge assert 0.8.0; make glow-probe VM = interpreter"},
+    {"feature_id": "eps", "criterion": "glowEps defaults to 1e-10, still a scenario parameter echoed as glow_eps", "met": true, "evidence": "sim/core.ail:110 defaultParams glowEps 0.0000000001; every replay golden's params.glow_eps 1e-09 -> 1e-10 (structural diff); mutant S1 (1e-9) killed by core_test AC3 and consequence_test AC8"},
+    {"feature_id": "m4.1-step-2", "criterion": "sim emits ship.ism.glow_pole_w_m2 = glowEmittanceAt(..,1) and glow_pole_k = glowTemperatureAt(..,1); matches the M4 plan's step-2 definition (m4-first-journey.md:362, sprint md 'glow_pole_w_m2 only' + the D-30 temperature)", "met": true, "evidence": "sim/consequence.ail:95-99 IsmNow {glowPoleWM2, glowPoleK}; sim/protocol.ail:224 shipWithIsm; consequence_test checkIsmCruise asserts 9.62878e-6 W/m^2 and 1357.52 K against the package and pole = 4 x mean; checkWire22 asserts the field order; mutants S2 (cos 0.5), S3 (field order), S4 (4 x mean + 1e-7) killed. Gap: mutant S5 (eps hard-coded to the default inside the pole) survives all 32 consequence tests"},
+    {"feature_id": "gdscript-mirror", "criterion": "interior/forward_glow.gd mirrors temperature, efficacy, luminance, colour of 0.8.0; LUT within 0.034 %, finite over 1e-3..1e9 K", "met": true, "evidence": "test_interior: temperature 1e-12, efficacy 1e-7 vs the probe at 10 rows; efficacy_lut worst 0.0344 % over 400 K..1e6 K; finite and >= 0 over 2001 points 1e-3..1e9 K plus NaN/INF. Independent Python oracle (exact SI h, c, k, Wyman CMF, 1 nm and 0.1 nm Simpson) agrees with the package luminousEfficacy to <= 2e-7 at 12 temperatures (max 95.458 lm/W near 6625 K) and with rgbUnitLuminance to 1e-6. Mutants M1 (cos^1/2), M2 (no pi), M3 (LUT exponent), M4 (no 300 K floor), M5 (EFF_K without pi), M6 (luminance without /pi), M7 (no cos clamp) all killed"},
+    {"feature_id": "shader", "criterion": "glow_overlay.gdshader and interior_sky draw E/pi x eta(T) x colour(T) through Blackbody's lookup, with scale = k/pi and no gain", "met": true, "evidence": "shader lit(): rgb(T) x 10^(log10_eff_k + a - 4 log10 T); G-M4-4(d) at 0.999c and the cap within 1 %; G-M4-5 10 temperatures within 0.07 %. Shader mutant M8 (exponent 3.9) killed by G-M4-4(d) + G-M4-5; M10 (no 300 K floor) killed (NaN blow-up, 79 failures). Gap: shader mutant M9 (T = t_pole x cos^1/2 instead of cos^1/4) SURVIVES make golden: every photometric golden samples the pole (cos 1)"},
+    {"feature_id": "goldens", "criterion": "G-M4-4(d) updated; G-M4-5 added; make golden counts updated (G-M4-4 8, G-M4-5 10)", "met": true, "evidence": "Makefile golden target counts 8 and 10; tools/interior_golden.gd _g4/_g5; log above"},
+    {"feature_id": "replay-goldens", "criterion": "replay goldens and compat-2.0 freezes re-recorded; the only change is the two new fields plus the eps-scaled glow; eps back to 1e-9 reproduces the old freezes; x86_64 copies correct", "met": true, "evidence": "Structural JSON diff old (origin/main) vs new of all 9 full goldens: the ONLY changed paths are changes.params.glow_eps (ratio 0.1) and changes.journey.plan.ism.glow_w_m2 (ratio 0.1); no added/removed keys. With glowEps set back to 1e-9 on a copy of sim/, every case (alpha_cen, diag_thrust600, godot_map_voyage, offaxis_v11_equiv, ai_sim_session, ai_stub_session, medic_rehearsal, session2k, session10k) reproduces the OLD golden byte-for-byte or by sha256, and after strip21 the OLD compat-2.0 freeze (godot_map_voyage's input changed since the freeze, as on main, so it is skipped). The HEAD sim reproduces every NEW golden and freeze, VM == interpreter. x86_64 == arm64 byte-for-byte for every golden, old and new, and CI on ubuntu x86_64 is green. CAVEAT: the PR's 'two new fields' wording is inaccurate: no replay case negotiates protocol minor >= 2, so glow_pole_w_m2 / glow_pole_k appear in NO golden (0 occurrences in all 9 streams); the new wire fields have no replay/parity golden coverage"},
+    {"feature_id": "eps-sheet", "criterion": "make glow-eps-sheet renders the comparison; eps 1e-10 is the brightest candidate where the glow is visible and the star effects still read", "met": true, "evidence": "Regenerated here (25 cells): physics columns reproduce the published JSON to 1e-12; %-of-off and EV shifts reproduce within 1.5 points / 0.03 EV (0.999c 1e-10: 84.0 % both; 0.9999c: 26.6 % vs 28.1 %; 3e-10: 67.2 %/15.1 % vs 67.8 %/16.1 %). Absolute star counts differ (11322 vs 9274 at 0.99c glow-off) because the catalogue build differs; percentages are what the choice rests on. Opened: eps_compare.jpg (published), my eps_compare.png, cells 0.999c/0.9999c/cap at 1e-10, and the capture frames 10_b099_glow and 13_cap_glow"},
+    {"feature_id": "canon-7", "criterion": "HB-95..112 at eps 1e-10 match the package oracle; text consistent", "met": true, "evidence": "Independent AILANG probe against 0.8.0 (VM = interpreter, identical md5): HB-95 290.27 K, HB-96 1357.52, HB-97 2481.90, HB-98 14114.02, HB-99 gamma 2.885, HB-100 0.023308, HB-101 43.681, HB-102 9.6288e-6, HB-103 0.112508, HB-104 7.1437e-8, HB-105 1.6484e-3, HB-106 1.5643, HB-107 3.6097e4, HB-108 gamma 16.248, HB-109 2.4072e-6, HB-110 2.8127e-2, HB-112 gamma 13.471, HB-61/eps = 36.0; 0.999c 6.04, 0.9999c 559 dark skies. All agree with the PR-7 rows at their printed digits"}
+  ],
+
+  "documentation_check": {
+    "changelog_updated": true,
+    "changelog": "changelogs/unreleased/2026-10-03-glow-blackbody.md",
+    "examples_created": true,
+    "examples_note": "tools/glow_probe/probe.ail extended (the repo's probe convention; no examples/ dir)",
+    "design_doc_status": "partially updated: m4-first-journey.md M4.1/M4.2 bullets, AC8, G-M4-4/5 and the risk row updated; stale lines remain (see feedback F4); the doc correctly stays in planned/ (M4 is multi-milestone)"
+  },
+
+  "design_fidelity": {
+    "score": 8,
+    "notes": "Matches D-29 follow-up (eps 1e-10 chosen from a rendered comparison), D-30 (greybody at (K cos/sigma)^1/4, package-first in 0.8.0, GDScript and shader mirror and are never the only copy) and the M4 plan's step-2 definition (glow_pole_w_m2 = glowEmittanceAt(..,1); glow_pole_k added for D-30). Gate 3 holds: every GDScript constant and function has a package counterpart, and the Python oracle agrees. Two deductions: the shader's angular temperature shape is not pinned by any golden (mutant M9 survives), and the pole's eps dependence is tested only at the default (mutant S5 survives)."
+  },
+
+  "mutation_testing": {
+    "killed": ["M1 forward_glow.temperature cos^1/4 -> cos^1/2 (test_interior 10 fails)", "M2 efficacy without pi (test_interior)", "M3 efficacy_lut exponent 4 -> 3.9 (LUT accuracy test, worst 298 %)", "M4 colour() without the 300 K floor (black-below-300K test)", "M5 EFF_K without pi (LUT accuracy test)", "M6 luminance without /pi (test_physics 5 fails)", "M7 temperature without the cos clamp (test_interior 5 fails)", "M8 shader efficacy exponent 4 -> 3.9 (G-M4-4(d) + G-M4-5, 12 fails)", "M10 shader lit() without the 300 K floor (79 fails: NaN at rest)", "S1 sim glowEps 1e-10 -> 1e-9 (core_test AC3, consequence_test AC8)", "S2 glow_pole_k at cos 0.5 (AC8 + protocol 2.2 wire test)", "S3 wire field order swapped (protocol 2.2 wire test)", "S4 pole = 4 x mean x (1 + 1e-7) (AC8)"],
+    "survived": ["M9 shader T = t_pole x cos^1/2 instead of cos^1/4: make golden 0 failures (G-M4-4(d) and G-M4-5 sample only the pole)", "S5 glowPoleWM2 with eps hard-coded to 1e-10 instead of the params value: consequence_test 32/32"]
+  },
+
+  "feedback": [
+    {"file": "tools/interior_golden.gd", "line": 431, "function": "_g5 / _g4 (d)", "category": "physics_gate_2", "issue": "No golden samples the shader off the pole for the blackbody chain: mutant M9 (interior/glow_overlay.gdshader:57 `lit(t_pole * sqrt(sqrt(ct)))` -> `sqrt(ct)`) passes make golden. G-M4-4(a)-(c) check only the emittance E (debug_unit), (d) and G-M4-5 only cos = 1.", "suggestion": "Add one or two off-pole cases (45 deg, 80 deg) to G-M4-4(d) or G-M4-5 comparing the pixel with colour_lut(temperature(T_pole, cos)) x radiance(profile(pole, cos)) x k, so the cos^1/4 shape is pinned on the GPU.", "severity": "medium"},
+    {"file": "tests/replays", "line": 0, "function": "replay goldens", "category": "claims", "issue": "PR text: 'the only difference is the two new fields plus glow at 1/10'. No replay case negotiates protocol minor >= 2, so no golden contains glow_pole_w_m2 or glow_pole_k; the goldens differ only in params.glow_eps and journey.plan.ism.glow_w_m2. The new ship.ism fields have no replay/parity golden.", "suggestion": "Record a 2.2+ session replay case (or let gen_session.py ask for minor 4) so ship.ism, including the two new fields, is covered by VM = interpreter = golden; fix the PR/changelog wording.", "severity": "low"},
+    {"file": "sim/consequence_test.ail", "line": 161, "function": "checkIsmCruise", "category": "tests", "issue": "Mutant S5 survives: the pole ignoring params.glowEps (hard-coded 1e-10) passes every consequence test because the only eps exercised is the default.", "suggestion": "Add a case with a non-default glow_eps (e.g. new_game params glow_eps 3e-10) asserting glow_pole_w_m2 = 4 x glow_w_m2 at that eps and glow_pole_k unchanged.", "severity": "low"},
+    {"file": "design_docs/planned/r1/m4-first-journey.md", "line": 723, "function": "risk table / interfaces / AC10", "category": "documentation", "issue": "Stale text after the eps change: :723 'At 0.99c the pole emits 9.6e-5 W/m^2' (now 9.6e-6); :648 'ism{..., glow_pole_w_m2}' lacks glow_pole_k and still says 'then glow_pole_w_m2 after M4.6a'; :669 AC10 lists G-M4-1..4 only (G-M4-5 missing). m4-first-journey-sprint.md:71-77, 277-278, 293, 315 and 784 still present step 2 as gated on P-pkg and eps = 1e-9. The sprint JSON M4.1 notes open with 'Step 2 (glow_pole_w_m2) NOT started' and only the appended tail says it landed.", "suggestion": "One pass: mark step 2 'landed in PR #113 (2026-10-03)' at the head of the M4.1 notes and in the sprint md, update :648/:669/:723, so the mission loop cannot re-schedule step 2.", "severity": "low"},
+    {"file": "stapledons-design physics/higgs-bubble.md (PR #7)", "line": 280, "function": "section 6 glow text", "category": "canon", "issue": "'the forward CMB disc (2 x 10^8 cd/m^2, HB-63)' cites HB-63, which is the CMB temperature row (3,853.7 K); the luminance is derived (package _smoke prints 1.984e8 cd/m^2).", "suggestion": "Cite it as 'from HB-63' / 'photopicRadiance at HB-63' or add a luminance row.", "severity": "low"},
+    {"file": "sunholo/relativity 0.8.0", "line": 0, "function": "glow_spectrum_test.ail, tools/glow_spectrum_ref.py --check, medium.ail:157-160, CHANGELOG, _smoke.ail", "category": "package_drift", "issue": "The published package labels its eps = 1e-11 check values HB-102..110 (e.g. HB-105 1.65e-4, HB-108 gamma 24.7) while canon PR #7 now holds the 1e-10 values (1.65e-3, 16.2); the CHANGELOG says 'eps 1e-9 -> 1e-11' and 'HB-95 to HB-111'.", "suggestion": "Publish 0.8.1 (kind = fix): relabel or recompute the rows at 1e-10, add HB-112, fix the doc comment and CHANGELOG; bump the game pin in a one-line follow-up. Not a blocker for #113: every function takes eps, and the game asserts the 1e-10 canon values against the package.", "severity": "low"}
+  ],
+
+  "observations": [
+    "eps = 1e-10 is a sound pick under the brief: of the four candidates, 3e-10 fails (68 % of the forward stars at 0.999c; 16 % and +3.7 EV at 0.9999c), 1e-10 keeps 84 % at 0.999c with no eye shift and 28 % at 0.9999c with the starbow cluster plainly readable and blue in the cells I opened; the Doppler colours and the CMB disc stay readable. At the cap no catalogue star is visible with or without the glow (eye at EV +12.5 on the CMB disc), so 'every speed' can only mean up to 0.9999c for any eps.",
+    "Colour: 0.99c (1358 K) invisible, 0.999c (2482 K) a faint orange-brown veil, 0.9999c (4449 K) a warm grey-brown wash, cap (14114 K) a navy blue-white sky in the interior with the orange CMB dot; capture frames 10_b099_glow and 13_cap_glow carry the sim's pole and temperature.",
+    "'Visible from gamma 13.5' is the model criterion (0.3 x dark sky, HB-112); in the renders the 0.999c cell (6 dark skies) is only a faint veil and the cue is clearly readable from ~0.9999c; the sheet has no cell between gamma 10 and gamma 22.",
+    "The Crumey point-threshold fit changes branch at 0.0708 cd/m^2, so lim_pole is non-monotonic between ~550 and ~1,700 dark skies (4.78 at 546, 5.05 at 1,640); pre-existing package/mirror behaviour, affects only the 0.9999c row's threshold.",
+    "The sheet's absolute star counts depend on the catalogue build; record the catalogue sha in glow_eps_sheet.json.",
+    "Package drift note for #7: the PR body's own note is accurate."
+  ],
+
+  "merge_verdicts": {
+    "stapledons-godot#113": "APPROVE for merge after design #7 is approved (as the PR states) and Mark approves the compat-2.0 re-freeze; the re-freeze is verified to be the eps change only. Follow-ups F1-F4 can land separately.",
+    "stapledons-design#7": "APPROVE; every HB-95..112 value matches the package at 1e-10; one citation nit (HB-63) and the D-15 body text still says 10^-9 under a superseded banner."
+  },
+
+  "notes": "Score 89/100 PASS. Gates: 1 make test green locally and in CI; 2 physics check values asserted (test_physics HB rows), GPU-vs-CPU goldens G-M4-4(d)/G-M4-5, renders opened; 3 package 0.8.0 is the single source and the mirrors agree with it and with an independent Python oracle; 4 core.ail strict VM = interpreter; 5 LUT finite over 1e-3..1e9 K with a test; 6 replay deterministic, VM == interpreter for all 9 cases. Two surviving mutants (shader off-pole shape, pole eps dependence) are the substantive findings."
+}

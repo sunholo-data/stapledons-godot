@@ -1,0 +1,61 @@
+{
+  "captures": [
+    {
+      "camera_mode": "player",
+      "eye_ship_m": [
+        8.0,
+        4.80000019073486,
+        83.6999969482422
+      ],
+      "name": "captain_default",
+      "paint": "actual local-UV opaque basecolor textures; no projected plate",
+      "pullback_m": 0.0,
+      "sky_state": "rest",
+      "vertical_fov_deg": 78.0,
+      "view_travel_deg": 108.000001096501
+    },
+    {
+      "camera_mode": "player",
+      "eye_ship_m": [
+        5.45620441436768,
+        6.09216165542603,
+        84.6270446777344
+      ],
+      "name": "third_person_3m",
+      "paint": "actual local-UV opaque basecolor textures; no projected plate",
+      "pullback_m": 3.0,
+      "sky_state": "rest",
+      "vertical_fov_deg": 78.0,
+      "view_travel_deg": 108.000001096501
+    },
+    {
+      "camera_mode": "player",
+      "eye_ship_m": [
+        8.0,
+        4.80000019073486,
+        83.6999969482422
+      ],
+      "name": "captain_inward",
+      "paint": "actual local-UV opaque basecolor textures; no projected plate",
+      "pullback_m": 0.0,
+      "sky_state": "rest",
+      "vertical_fov_deg": 78.0,
+      "view_travel_deg": 81.9999993819494
+    },
+    {
+      "camera_mode": "player",
+      "eye_ship_m": [
+        18.0,
+        -9.0,
+        83.6999969482422
+      ],
+      "name": "captain_overlook",
+      "paint": "actual local-UV opaque basecolor textures; no projected plate",
+      "pullback_m": 0.0,
+      "sky_state": "rest",
+      "vertical_fov_deg": 78.0,
+      "view_travel_deg": 120.000000588462
+    }
+  ],
+  "status": "First UV bridge paint draft; art-review pending"
+}

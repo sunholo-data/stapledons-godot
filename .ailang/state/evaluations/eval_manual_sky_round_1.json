@@ -1,0 +1,49 @@
+{
+  "review": "Dev14 manual sky exposure and eased guided departure",
+  "round": 1,
+  "source_commit": "4808e0ce861ccac5bdca318546d6e1750091a5ea",
+  "followup_review": "Core runtime remains4808e0c; capture-only follow-up refreshes HUD with demo._process(0). Updated cruise PNG independently reopened and /private/tmp/manual-sky-hud-recovery.log inspected: exit0, exposure-sky-recovery OK.",
+  "evaluator": "manual_sky_evaluator, independent from executor",
+  "result": "conditional_technical_pass",
+  "score": 90,
+  "whole_sprint": "in_progress",
+  "score_breakdown": {"tests": 20, "lint": 5, "acceptance": 29, "code_quality": 11, "documentation": 15, "design_fidelity": 10},
+  "independent_checks": {
+    "command": "make manual-exposure-test tour-attitude-test tour-pacing-test AILANG=runtime/bin/ailang",
+    "log": "/private/tmp/manual-sky-independent-final.log",
+    "exit_code": 0,
+    "manual_exposure": "255 checks, 0 failures. Actual normal demo auto=true processing retains fixed EV, advances authoritative simulation, and never samples the automatic meter. Camera pans, Solar startup, and user presets preserve the chosen EV.",
+    "attitude": "0 failures. Actual initial observer is unchanged, attitude holds the physical world, first commitment advances 0.05 physical seconds. Measured Earth first-commit angular step 0.017758 degrees; first three departure seconds maximum 2.968039 degrees per simulation tick.",
+    "pacing": "0 failures. Guided compression starts at real time and rises monotonically over three seconds. Phase tick counts boost631, cruise401, braking1800; ordinary navigation pacing unchanged.",
+    "source": "Reviewed demo fixed-exposure selection, InteriorSky fixed-mode early return, authoritative initial heading, guided compression ramp, and related regression tests. No new physical radiance or SR formula introduced."
+  },
+  "opened_reference_renders": [
+    "renders/ship_demo/exposure_recovery/rest_side_ship.png",
+    "renders/ship_demo/exposure_recovery/cruise_forward_ship.png",
+    "renders/ship_demo/exposure_recovery/jupiter_stop_away.png",
+    "renders/ship_demo/exposure_recovery/jupiter_stop_dim.png",
+    "renders/ship_demo/exposure_recovery/alpha_1au_pan_0.png"
+  ],
+  "visual_findings": [
+    "Rest side view has visible stars and diffuse galactic background over the bridge.",
+    "Cruise forward render shows concentrated star field and diffuse background under unchanged fixed exposure. Harness metrics give beta0.99 and phase cruising from a genuine committed voyage state. Regenerated PNG HUD now agrees: LIVE cruising0.990000c, manual EV-6.40, forward view0.5degrees. Earlier stale capture HUD is resolved. This held-state capture still does not establish an uninterrupted full interactive tour.",
+    "At Jupiter stop, the away view retains stars. Explicit dim exposure shows clear Jupiter texture while background becomes dark, as the player-selected shared exposure implies.",
+    "Alpha A at actual approximately1AU is visible with surrounding stars; native metadata records distance149599048km and fixed EV-6.40096 across pans."
+  ],
+  "shared_evidence": {
+    "packaged": "/private/tmp/manual-sky-packaged-smoke-final.log: root reports genuine packaged smoke exit0; log inspected, current demo manual-exposure stage and asset checks pass.",
+    "GPU": "/private/tmp/manual-sky-planet-goldens.log: root GPU golden evidence inspected; unchanged planet presentation reference comparisons pass.",
+    "local_full": "/private/tmp/manual-sky-full-local.log: running at evaluation time, not yet a pass claim.",
+    "CI": "37360913622 running at evaluation time; final green result required before merging."
+  },
+  "prior_evaluation_failure": "Previous dev13 evaluation and reference-mode capture coverage missed actual interactive default exposure. It accepted display anticipation that incorrectly metered unresolved Alpha photosphere radiance and hid stars. This evaluation explicitly tests actual default auto=true processing and opens recovery renders; the prior technical score did not establish visual acceptance.",
+  "limits": [
+    "Manual sky exposure intentionally allows nearby bright bodies to saturate at star-viewing settings. Player dim presets trade background visibility for surface detail; no per-object fake exposure applied.",
+    "Three-second departure easing bounds the observed tick jumps but does not establish all-route frame-by-frame smoothness. No claim that every LOD or later transition is solved.",
+    "Native/headless shutdown resource leak and sandbox log-write diagnostics remain; no warning-free claim.",
+    "MacBook Air M2 performance and user native visual acceptance remain pending.",
+    "Unchanged GR absence, uniform stellar photospheres and existing orbital approximations remain."
+  ],
+  "pending": ["Actual local full make test success and final CI success before merge", "User review of installed dev14 visuals and transitions"],
+  "implementation_edits_by_evaluator": false
+}

@@ -1,0 +1,22 @@
+{
+  "sprint_id": "R1-FINITE-STARS",
+  "status": "completed",
+  "approved_by": "Mark Edmondson, attended 2026-10-07 (D-48: 'yes please fix the stars now')",
+  "design_doc": "design_docs/planned/r1/finite-destination-stars.md",
+  "evaluation": {
+    "round": 1,
+    "model": "sonnet",
+    "score": 88,
+    "result": "pass",
+    "report": ".ailang/state/evaluations/eval_R1-FINITE-STARS_round_1.json",
+    "addressed": [
+      "1: sim test checkDestinationFeed (feed order after alpha Cen, planner index == feed index, finite radius, eVLux = V-at-Earth scaled by distance to 1e-9)",
+      "5: design says 10 stops after Earth"
+    ],
+    "deferred": [
+      "2-3: tests share rounded data constants (independent oracle values; drift caught by checkStarStops)",
+      "4: Aldebaran colour at 40 deg (physical white; dimmed pale orange) and the relativistic giant approach: presented to Mark"
+    ]
+  },
+  "completed": "2026-10-07T12:45:34Z"
+}

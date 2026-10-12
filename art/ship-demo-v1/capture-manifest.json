@@ -1,0 +1,311 @@
+{
+  "GR": "not implemented",
+  "projection": "one perspective observer, separate sky render target composited behind opaque finite geometry",
+  "shots": [
+    {
+      "centre_hit": "none",
+      "centre_hit_m": "<null>",
+      "diagnostic": false,
+      "eye_gltf_m": [
+        5.45620441436768,
+        84.6270446777344,
+        -6.09216165542603
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "bridge",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#67461187930>",
+      "centre_hit_m": "(59.23125, 57.0, 29.94407)",
+      "diagnostic": false,
+      "eye_gltf_m": [
+        18.0,
+        83.6999969482422,
+        9.0
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "overlook",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 02 top 32m_col:<StaticBody3D#67595405650>",
+      "centre_hit_m": "(46.05883, 32.0, 46.05883)",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        145.0,
+        90.0,
+        145.0
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "overview",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "none",
+      "centre_hit_m": "<null>",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        16.0,
+        83.6999969482422,
+        8.0
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "reference_interior_15",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "deck_floor_fill_col:<StaticBody3D#70632081213>",
+      "centre_hit_m": "(18.63362, 82.0, 9.316813)",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        16.0,
+        83.6999969482422,
+        8.0
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "reference_interior_30",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#67461187930>",
+      "centre_hit_m": "(39.8812, 57.0, 19.94061)",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        16.0,
+        83.6999969482422,
+        8.0
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "reference_interior_45",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#67461187930>",
+      "centre_hit_m": "(29.78782, 57.0, 14.89392)",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        16.0,
+        83.6999969482422,
+        8.0
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "reference_interior_60",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "none",
+      "centre_hit_m": "<null>",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        19.0513000488281,
+        83.6999969482422,
+        9.52565002441406
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "reference_rim_15",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#67461187930>",
+      "centre_hit_m": "(60.41475, 57.0, 30.2074)",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        19.0513000488281,
+        83.6999969482422,
+        9.52565002441406
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "reference_rim_30",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#67461187930>",
+      "centre_hit_m": "(42.9325, 57.0, 21.46626)",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        19.0513000488281,
+        83.6999969482422,
+        9.52565002441406
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "reference_rim_45",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#67461187930>",
+      "centre_hit_m": "(32.83912, 57.0, 16.41957)",
+      "diagnostic": true,
+      "eye_gltf_m": [
+        19.0513000488281,
+        83.6999969482422,
+        9.52565002441406
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "reference_rim_60",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Guardrail 82_001_col:<StaticBody3D#68467820830>",
+      "centre_hit_m": "(10.14, 82.9201, -6.912953)",
+      "diagnostic": false,
+      "eye_gltf_m": [
+        8.0,
+        83.6999969482422,
+        -8.0
+      ],
+      "level": 0,
+      "lift_state": "descending",
+      "name": "lift_departure",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#67461187930>",
+      "centre_hit_m": "(46.96429, 57.0, 11.79253)",
+      "diagnostic": false,
+      "eye_gltf_m": [
+        8.0,
+        71.1999969482422,
+        -8.0
+      ],
+      "level": 0,
+      "lift_state": "descending",
+      "name": "lift_midway",
+      "platform_y_m": 69.5,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Deck 01 top 57m_col:<StaticBody3D#67461187930>",
+      "centre_hit_m": "(12.66474, 57.0, -2.43047)",
+      "diagnostic": false,
+      "eye_gltf_m": [
+        8.0,
+        58.7000007629395,
+        -4.80000019073486
+      ],
+      "level": 1,
+      "lift_state": "lower_ready",
+      "name": "lower_landing",
+      "platform_y_m": 57.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "Landing perimeter_001_col:<StaticBody3D#68669147410>",
+      "centre_hit_m": "(13.93, 57.63221, -3.311666)",
+      "diagnostic": false,
+      "eye_gltf_m": [
+        11.0000114440918,
+        58.7000007629395,
+        -4.80000019073486
+      ],
+      "level": 1,
+      "lift_state": "lower_ready",
+      "name": "lower_walk",
+      "platform_y_m": 57.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    },
+    {
+      "centre_hit": "none",
+      "centre_hit_m": "<null>",
+      "diagnostic": false,
+      "eye_gltf_m": [
+        8.0,
+        83.6999969482422,
+        -4.80000019073486
+      ],
+      "level": 0,
+      "lift_state": "bridge_ready",
+      "name": "bridge_return",
+      "platform_y_m": 82.0,
+      "resolution": [
+        1280,
+        720
+      ],
+      "vertical_fov": 78.0
+    }
+  ],
+  "status": "native-material geometry review; lower architecture absent"
+}

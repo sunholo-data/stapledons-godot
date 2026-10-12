@@ -1,0 +1,8 @@
+{
+  "v": 1,
+  "_note": "Lore snippets a prompt may cite by id (request context.canon). Placeholder canon for the foundation; the design repo owns the lore, and new ids land here with the content that needs them. An unknown id makes the request a bad_request.",
+  "lore": {
+    "archive.two-clocks": "The ship keeps two clocks. Ship time is the one the crew lives by; home time runs faster, and the nearer the ship flies to the speed of light, the wider the gap grows.",
+    "archive.sol": "Sol is the star the voyage left behind. The light the ship sees from it is always older than the last message home."
+  }
+}

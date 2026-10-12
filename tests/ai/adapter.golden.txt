@@ -1,0 +1,15 @@
+ok   prompt line: req 1 written
+ok   prompt news: req 2 written
+ok   prompt archive: req 3 written
+ok   prompt probe: req 20 written
+ok   gemini text (std/ai.step): bad_output after 3 attempts, model gemini-2.5-flash
+ok   gemini image (std/ai.callImageBase64): {"v":1,"type":"result","req":"9","status":"ok","kind":"portrait","sha256":"6b7fa434f92a8b80aab02d9bf1a12e49ffcae424e4013a1c4f68b67e3d2bbcd0","body":"{\"key\":{\"kind\":\"portrait\",\"entity_id\":\"medic\",\"emotion\":\"grieving\",\"age_stage\":0,\"variant\":\"0\"},\"mime\":\"image/png\",\"bytes\":70,\"width\":1,\"height\":1}","asset":{"path":"blobs/6b/6b7fa434f92a8b80aab02d9bf1a12e49ffcae424e4013a1c4f68b67e3d2bbcd0.png","mime":"image/png","bytes":70},"meta":{"provider":"gemini","route":"gemini","model":"gemini-2.5-flash-image","input_sha256":"96ac292ac249e97af183a77791e0e00333f5d92778c5aef375ba808c51042fc4","ms":0,"usd":0.039}}
+ok   fixture openrouter_ok.json: ok {neutral} The hull hums the same note it hummed at departure. {loving} Sleep, I will keep watch. (312 in, 27 out)
+ok   fixture openrouter_wait.json: bad_output
+ok   fixture openrouter_length.json: bad_output
+ok   fixture openrouter_error.json: provider_error
+ok   fixture gemini_tts_ok.json: ok pcm 118 tokens -> clip 20 ms
+ok   fixture gemini_tts_capped.json: bad_output
+ok   fixture gemini_tts_error.json: provider_error
+ok   fixture gemini_image.json: ok 64x64
+adapter-ok

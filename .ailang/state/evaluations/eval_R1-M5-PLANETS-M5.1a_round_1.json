@@ -1,0 +1,465 @@
+{
+  "sprint_id": "R1-M5-PLANETS",
+  "milestone": "M5.1a_SOL_ACEN_DATA_PINS",
+  "repo": "sunholo-data/stapledons-godot PR #99, branch sprint/m5.1a-system-data: 5057d92 (pins), c0873b7 (data, tests, mk/m5.mk), 301bb87 (bookkeeping; the PR body's '94842a8' does not exist on the branch)",
+  "evaluation_round": 1,
+  "evaluated_at": "2026-10-03",
+  "evaluator": "independent physics and astronomy evaluator (Claude Fable 5.1), generator != judge; fresh clone in the session scratchpad (m51a-eval, branch eval-m51a at 301bb87), a second copy (m51a-mut) for mutations; make runtime staged v0.52.0 (bf2436a) without a hang; sources re-read live: JPL SSD sat/elem, PDS Rings Node saturn_tables, NSSDC jupring/uranring/nepring and the three satellite fact sheets, NASA Exoplanet Archive TAP",
+  "design_doc": "design_docs/planned/r1/m5-planets.md (sections M5.1, M5.7, AC3, AC6)",
+  "sprint_plan": "design_docs/planned/r1/m5-planets-sprint.md (section M5.1a)",
+  "result": "pass",
+  "score": 89,
+  "total_score": 89,
+  "max_score": 100,
+  "pass_threshold": 70,
+  "hard_fails": [],
+  "verdict_merge": "PASS, mergeable after one hygiene fix: drop the 36 tracked files under sim/data/.ailang/cache (4.4 MB of compile .gob artefacts committed by accident in c0873b7) and extend .gitignore so a nested .ailang/cache can't come back. Every number spot-checked against its primary source is right; the five ring-table 'disagreements' are three scope differences, one source difference and one real table error (Uranus).",
+  "score_breakdown": {
+    "tests_pass": 20,
+    "lint_clean": 10,
+    "acceptance_criteria": 29,
+    "code_quality": 9,
+    "documentation": 13,
+    "design_fidelity": 8
+  },
+  "scores": {
+    "tests_pass": {
+      "points": 20,
+      "max": 20,
+      "hard_fail": false,
+      "evidence": "make test AILANG=runtime/bin/ailang AILANG_BIN=runtime/bin/ailang in the fresh clone: exit 0, 12 min 57 s; make sim 218/218 (the 17 celestial_test checks included, celestial_test.ail:49-255); strict-m5 sol-data-ok on both engines; acen-snapshot-verify OK against the live fetch; the only FAIL strings in the log are the pre-existing star-name oracle report rows and CACHE_WRITE_FAILED ARTIFACT_TOO_LARGE cache warnings, neither from this PR. CI at 301bb87 green (22m29s)."
+    },
+    "lint_clean": {
+      "points": 10,
+      "max": 10,
+      "note": "The repo has no `make lint`; the gates inside `make test` stand in: python-guard (no new Python; the pck transcription spike was never committed, which is exactly what the policy's 'spike' role asks), `make deps` lock drift (relock reproduces sim/ailang.lock modulo generated_at), import, strict, parity-v2. TODO/FIXME/HACK in the new files: 0. No file over 800 lines (longest new file 270)."
+    },
+    "acceptance_criteria": {
+      "points": 29,
+      "max": 30,
+      "note": "AC3 met: sim/ailang.toml pins celestial 0.1.0 and relativity 0.7.0; `make deps` relock is a no-op; the staged runtime/cache holds exactly celestial/0.1.0 and relativity/0.7.0. AC6 met in substance: 17 provenance checks on both engines; `make strict-m5` prints sol-data-ok on the strict VM and the interpreter and cmp's them. The literal AC6 clause 'ring radii within 1 % of R of the design table (Uranus 1.49-1.95)' is not met and cannot be: the table's Uranus row is wrong (ring 6 is at 1.637 R and epsilon at 2.00 R; 1.49 R is the zeta ring, which the design does not name), and the implementation says so in a test. -1 for the clause as written. Sprint-plan mutants (dropped/unknown citation key, retracted row) re-run here and are killed (M15: statuses, noRetracted, acenProvenance all fail)."
+    },
+    "code_quality": {
+      "points": 9,
+      "max": 15,
+      "note": "-3: c0873b7 commits sim/data/.ailang/cache/compile/** (36 files, 4.4 MB, core.gob/coretypeinfo.gob for std/math and the celestial modules). .gitignore has sim/.ailang/ and .ailang/cache/ but not sim/data/.ailang/, so running ailang from sim/data left a cache that `git add` swept up. It is not in the PR's file list or body. Remove it and add a `**/.ailang/cache/` pattern; `make test` here rewrote the tracked manifest.json and added module dirs named after the clone's absolute path, so the tree is dirty after every run. -2: test power. Of 16 evaluator mutations 11 survive (see mutations): Standish a and e are unguarded (only the mean-longitude rate is checked), GM is checked for Sun/Earth/Jupiter only (Saturn x1.1 survives), no albedo bound (p_V 5.38 survives), moon host unchecked beyond existence (Io -> saturn survives), the Encke gap can be closed, and the 'P column read correctly' test has no power for slow-precessing moons (Titan read as anomalistic and either Triton node sign survive the 1e-3 d tolerance; the Moon's mean-longitude variant is sign-blind by construction). Cheap fixes: Kepler's third law a^3 n^2 = GM(1+m) for planets and for each moon against its host's GM, NSSDC e per planet, 0 < p_V <= 1, Encke gap asserted as a band boundary. -1: checkRingTableDisagreements (celestial_test.ail:179-187) asserts that five edges do NOT match the design table; a test that pins a document's error is brittle and will have to be inverted when the table is fixed. Sprint artifacts complete: M5.1a passes/started/completed/notes/actual_loc filled, plan status line and deviations recorded."
+    },
+    "documentation": {
+      "points": 13,
+      "max": 15,
+      "note": "Changelog fragment complete and accurate (5/5). Runnable entry: dataVm strict entry plus make targets with help text, and `make acen-snapshot` / `acen-snapshot-verify` reproduce the archive pin (4/5: the data files themselves have no pointer from AGENT.md or CLAUDE.md to sim/data/ and mk/m5.mk). Design/plan status (4/5): the sprint plan and JSON are updated and the design doc rightly stays in planned/ for a 15-milestone sprint; -1 because the notes and PR body say 'the design-repo table needs correcting' for all five edges when three of them are the table's scope (F ring and gossamer rings are outside the D-A / halo-main span it describes; Neptune 1.69 R is the Galle centre, which the test itself asserts) and one is a source difference (NSSDC halo inner 89,400 km vs Burns et al. 92,000 km); only Uranus is a table error. The PR body also cites a bookkeeping commit 94842a8 that is not on the branch (it is 301bb87)."
+    },
+    "design_fidelity": {
+      "points": 8,
+      "max": 10,
+      "note": "Matches design M5.1 and M5.7: every Sol row carries citation keys that resolve; every alpha Cen number is measured|inferred(relation)|assumed(reason); statuses follow the pinned archive snapshot; alpha Cen B b is absent; A b is one labelled orbit family; no modelled discs (no alpha Cen planet has both a measured radius and albedo). Deviations, all defensible and recorded: 12 moons (the design names 12 and miscounts 11); DE440 GM instead of 'IAU 2015 nominal' (the nominal set only defines Sun/Earth/Jupiter, and the test shows DE440 agrees with them to 1e-6); Lambert assumed for Uranus/Neptune with its own citation key; Adams arcs deferred to M5.2b; PDS/NSSDC ring edges. -2 for two unrecorded ones: (a) the design asks for tau 'from published occultation profiles ... averaged per region' and the data uses PDS/NSSDC range midpoints (log midpoint for decade ranges), a coarser proxy, fine for R1 but not what the doc says; (b) provenance nits in acen.ail: Proxima c's 1928 +- 20 d and 1.489 +- 0.049 AU are the refined values adopted by Kervella et al. 2020 / the archive, not Damasso 2020's published 1900 (+96/-82) d and 1.48 +- 0.08 AU, and the Chen & Kipping Terran relation is R = 1.008 M^0.279, so dropping the 1.008 makes the inferred radii 0.8 % small (labelled inferred, so honest, but the named relation is incomplete)."
+    }
+  },
+  "automated_checks": {
+    "make_runtime": "exit 0; runtime/VERSION v0.52.0; runtime/bin/ailang v0.52.0 (bf2436a); runtime/cache/registry/sunholo/{celestial/0.1.0, relativity/0.7.0}",
+    "make_deps": "exit 0: `ailang lock` resolves celestial@0.1.0 and relativity@0.7.0 from the registry; `git diff -I generated_at sim/ailang.lock` empty",
+    "make_test": "exit 0 (12:57 wall, 1140 s user); make sim: 218 tests, 218 passed, 0 failed (7m16s); strict-m5, acen-snapshot-verify, python-guard, deps, import, physics, ui, replay, parity-v2, strict all green",
+    "make_strict_m5": "strict-m5 dataVm: sol-data-ok (strict VM = interpreter), 2.6 s",
+    "make_acen_snapshot": "fetched live from exoplanetarchive.ipac.caltech.edu: sha256 544d4925...e2c1e matches data/planets/EXOPLANETS.SHA256; 7 rows, default_flag=1 rows are Proxima Cen b (11.18465 d, 0.04848 AU, e 0, msini 1.055, Suarez Mascareno 2025) and Proxima Cen d (5.12338 d, 0.02881 AU, 0.26 Me); no Proxima Cen c row and no alf Cen row in the ps table, so 'candidate' for c and A b is what the archive supports",
+    "vm_vs_interpreter": "cmp identical for dataVm on both engines; re-joining moons() into one 12-element literal reproduces the cited failure exactly: 'CALL: pkg/stapledons/sim/data/sol.moons is evaluator-only (register allocator: contiguous block of 15 would exceed 256)' while the interpreter still prints sol-data-ok, so the per-system split is a real and necessary workaround",
+    "ailang_report": "inbox_1791037931866_b80f2b7c exists in inbox user, from stapledons_godot, with the version (v0.52.0 bf2436a), a 60-row minimal repro, thresholds and the game-side site; it reads as a proper upstream report",
+    "ci": "gh pr checks 99 at 301bb87: 'headless tests (physics, sim, parity, strict VM)' pass, 22m29s (run 37130684824)",
+    "loc": "non-blank non-comment: sol.ail 191, acen.ail 70, celestial_test.ail 179, mk/m5.mk 22 = 462 (matches the JSON's actual_loc; 1.65x the 280 estimate, under the 650 cap)",
+    "python_guard": "no tracked .py added; tools/python-allowlist.txt unchanged; the pck transcription spike was not committed"
+  },
+  "independent_physics": {
+    "method": "Values re-derived from the evaluator's own knowledge of the sources and, where memory could not settle a digit, from the live source pages (JPL sat/elem, PDS saturn_tables, NSSDC ring and satellite fact sheets, Exoplanet Archive TAP). Angles in degrees as tabulated; the file converts once with rad().",
+    "spot_checks": [
+      {
+        "item": "Standish Table 2a/2b Mercury, Jupiter, Neptune (all six elements and rates, plus b,c,s,f)",
+        "source": "Standish & Williams, JPL 'Approximate Positions of the Planets', Table 2a/2b",
+        "data": "sol.ail:63-66, 87-93, 107-111",
+        "verdict": "exact, digit for digit (Venus, Earth-Moon barycentre, Mars, Saturn, Uranus also checked: exact)"
+      },
+      {
+        "item": "Saturn pole and W",
+        "source": "IAU 2015 (Archinal 2018) / pck00011",
+        "data": "sol.ail:97 pole(40.589, -0.036, 83.537, -0.004, 38.90, 810.7939024)",
+        "verdict": "exact; radii 60268/54364 exact"
+      },
+      {
+        "item": "Uranus pole and W",
+        "source": "IAU 2015",
+        "data": "sol.ail:102 pole(257.311, 0, -15.175, 0, 203.81, -501.1600928)",
+        "verdict": "exact; radii 25559/24973 exact"
+      },
+      {
+        "item": "Neptune pole, W and the N term",
+        "source": "IAU 2015",
+        "data": "sol.ail:107 pole(299.36, 0, 43.46, 0, 249.978, 541.1397757, [N = 357.85 + 52.316T: +0.70 sin, -0.51 cos, -0.48 sin])",
+        "verdict": "exact; radii 24764/24341 exact"
+      },
+      {
+        "item": "Mars 16 periodic terms, Jupiter Ja-Je, Mercury M1-M5, Moon E1-E13, Triton N7..9N7",
+        "source": "IAU 2015",
+        "data": "sol.ail:76-84, 89-93, 65-68, 128-136, 182-186",
+        "verdict": "exact (rates given per century via perDay: 149472.535875/36525 = 4.092335 deg/d for M1, 475263.3328725/36525 = 13.0120009 for E3)"
+      },
+      {
+        "item": "GM Sun, Mercury..Neptune (planet, not barycentre), Moon, Galileans, 6 Saturnians, Triton",
+        "source": "DE440 (Park et al. 2021, gm_de440.tpc)",
+        "data": "sol.ail: 132712440041.27942, 22031.8685514, 324858.592, 398600.43550702, 42828.37362 (499), 126686531.9004 (599), 37931206.2344 (699), 5793951.2565 (799), 6835103.1455 (899), 4902.80012, 5959.9155, 3202.7121, 9887.8328, 7179.2834, 2.5035, 7.2104, 41.2135, 73.1161, 153.9418, 8978.1371, 1428.4955",
+        "verdict": "all consistent with gm_de440.tpc; planet bodies (x99) used, not system barycentres, which is right for a body-centred ephemeris"
+      },
+      {
+        "item": "p_V Mercury..Neptune",
+        "source": "Mallama, Krobusek & Pavlov 2017",
+        "data": "0.142, 0.689, 0.434, 0.170, 0.538, 0.499, 0.488, 0.442",
+        "verdict": "exact"
+      },
+      {
+        "item": "Minnaert k Jupiter 1.0, Saturn 0.825 (midpoint of 0.75-0.90)",
+        "source": "Binder & McCarthy 1973",
+        "data": "sol.ail:94, 99",
+        "verdict": "as cited; the midpoint rule is stated in citations()"
+      },
+      {
+        "item": "Io JUP365 row and P-column reading",
+        "source": "JPL SSD sat/elem, fetched live",
+        "data": "sol.ail:142: 421800, 0.004, 49.1, 330.9, 0.0, 0.0, P 1.762732, Papsis 1.333, Pnode 0, 268.1/64.5, anomalistic, apse regresses",
+        "verdict": "row exact. Reading right: 360/1.762732 - 360/1.769138 = 0.7394 deg/d = 360/(1.333 yr), and in the Laplace resonance d(pi_1)/dt = 2 n_2 - n_1 = -0.74 deg/d, so Io's apse regresses and P is anomalistic. Europa, Ganymede, Callisto sign/rate bookkeeping also closes to 1e-4 deg/d"
+      },
+      {
+        "item": "Titan SAT441 row",
+        "source": "JPL SSD, fetched live",
+        "data": "sol.ail:168: 1221900, 0.029, 78.3, 11.7, 0.3, 78.6, P 15.945448, Papsis 346.680, Pnode 687.370, 36.4/84.0, sidereal",
+        "verdict": "row exact; P agrees with 360/n to 3e-5 d so 'sidereal' is the right reading for SAT441"
+      },
+      {
+        "item": "Triton NEP097 row and node sign",
+        "source": "JPL SSD, fetched live; NSSDC 5.876854R",
+        "data": "sol.ail:175: 354800, 0.000, 0.0, 63.0, 157.3, 178.1, P 5.876994, Papsis 0, Pnode 340.379, 299.8/43.1, sidereal, node +1 (advancing)",
+        "verdict": "row exact. Sign right: dOmega/dt = -(3/2) J2 n (R/a)^2 cos i and cos 157.3 deg < 0, so the node advances for a retrograde orbit. Remark (not a defect): J2 alone gives |dOmega/dt| = 1.5 x 3.41e-3 x (24764/354800)^2 x 61.257 x 0.9225 = 1.4e-3 deg/d, a ~700 yr period, matching the 688 yr IAU N7 pole precession (52.316 deg/cy); JPL's Pnode 340.379 yr is half that and the file transcribes JPL faithfully. The test cannot see either (survivor M1), so a comment at the row would help the next reader"
+      },
+      {
+        "item": "Saturn ring edges D, C, B1-B5, Cassini Division, A, Encke gap, F",
+        "source": "PDS Rings Node 'Saturn Ring Vital Statistics', fetched live",
+        "data": "sol.ail:203-206: 66900-74491-91975-99000-104000-110000-116500-117570-122050 | 133423-133745 | 136770; F 139826-140612",
+        "verdict": "exact to the km, including the Encke gap (322 km) and the F ring span. PDS lists B5 outer / Cassini inner as 117,500 and B outer as 117,570 (its own table disagrees by 70 km); the file chose 117,570 for contiguity. tau midpoints match the PDS ranges (D log-midpoint 1e-4, C 0.2, B1 1.3, B2 2.75, B4 2.5, B5 2.75, CD 0.1, A 0.7, F 0.105); B3 3.6 could not be confirmed from the fetched text ('1 to 5')"
+      },
+      {
+        "item": "Jupiter rings",
+        "source": "NSSDC jupringfact, fetched live",
+        "data": "halo 89400-123000 tau 3e-6; main 123000-128940 5e-6 albedo 0.015; Amalthea gossamer 128940-181350 1e-7; Thebe gossamer 181350-221900 1e-7",
+        "verdict": "exact (NSSDC tabulates the gossamer rings as disjoint spans, as the file has them)"
+      },
+      {
+        "item": "Uranus rings 6,5,4,alpha,beta,eta,gamma,delta,epsilon",
+        "source": "NSSDC uranringfact, fetched live",
+        "data": "radii 41837, 42234, 42571, 44718, 45661, 47176, 47627, 48300, 51149; epsilon width 58 tau 1.4 albedo 0.018",
+        "verdict": "radii exact; widths are range midpoints (alpha 7 of 4-10, beta 8 of 5-11, gamma 2.5 of 1-4, delta 5 of 3-7, epsilon 58 of 20-96); tau midpoints (epsilon 1.4 of 0.5-2.3); albedo 0.015/0.018 exact. lambda omitted as the design names 9 rings"
+      },
+      {
+        "item": "Neptune rings",
+        "source": "NSSDC nepringfact, fetched live",
+        "data": "Galle 41900 w 2000 tau 1e-4; Le Verrier 53200 <100 (100 used) 0.01; Lassell 53250-57150 1e-4; Arago 57200 <100, tau = Lassell's; Adams 62933 w 15 tau 0.055",
+        "verdict": "exact; Adams tau 0.055 is the midpoint of NSSDC's 0.01-0.1 (the 0.12 arcs are deferred, as recorded)"
+      },
+      {
+        "item": "Moon albedos",
+        "source": "NSSDC satellite fact sheets, fetched live",
+        "data": "Moon 0.12; Io 0.62, Europa 0.68, Ganymede 0.44, Callisto 0.19; Mimas 0.6, Enceladus 1.0, Tethys 0.8, Dione 0.7, Rhea 0.7, Titan 0.22; Triton 0.72",
+        "verdict": "exact"
+      },
+      {
+        "item": "NSSDC check values used by the tests (sidereal periods, obliquities, rotation periods)",
+        "source": "NSSDC planetary and satellite fact sheets",
+        "data": "celestial_test.ail:73, 84, 96, 103",
+        "verdict": "correct and independent of the data rows; 5.876854 for Triton is NSSDC's, the data row carries JPL's 5.876994"
+      },
+      {
+        "item": "alpha Cen AB",
+        "source": "Akeson et al. 2021",
+        "data": "acen.ail:38-50: P 79.762, a 17.493 arcsec, e 0.51947, i 79.243, Omega 205.073, omega 231.519, T 1875.66, parallax 750.81 mas, M_A 1.0788, M_B 0.9092",
+        "verdict": "exact. a = 17.493/0.75081 = 23.299 AU; periastron 23.299 x 0.48053 = 11.196 AU, apastron 35.40 AU; Kepler: sqrt(23.299^3/1.988) = 79.76 yr. The design's 'apastron 35.6' (HB-93) is the stale number; the test notes it"
+      },
+      {
+        "item": "Proxima b and d statuses and values",
+        "source": "NASA Exoplanet Archive ps, snapshot sha256-pinned, re-fetched live",
+        "data": "acen.ail:70-84: b 11.18465 d, 0.04848 AU, msini 1.055; d 5.12338 d, 0.02881 AU, 0.26 Me; both 'confirmed', default set Suarez Mascareno 2025",
+        "verdict": "exact against the live default_flag=1 rows; sha256 of the live fetch equals the pin"
+      },
+      {
+        "item": "Proxima c",
+        "source": "Damasso et al. 2020 (file's cite)",
+        "data": "acen.ail:86-91: 1928 +- 20 d, 1.489 +- 0.049 AU, msini 5.8 +- 1.9, status candidate",
+        "verdict": "status right (no ps row exists; the design says 'candidate (disputed)'); msini right; period and a are the refined values adopted in Kervella et al. 2020 / the archive, not Damasso 2020's 1900 (+96/-82) d and 1.48 +- 0.08 AU. Cite the source the numbers came from"
+      },
+      {
+        "item": "alpha Cen A b",
+        "source": "Beichman et al. 2025 (arXiv:2508.03814), Table 4",
+        "data": "acen.ail:94-103: a 1.66, e 0.37 (one family, labelled), mass 90-150 Me, 1.05 R_Jup, mutual inclination 54 +- 11, status candidate",
+        "verdict": "consistent with the paper's candidate (Saturn-mass, 1-2 AU); the file says 'one of several fits' in the note, as the design requires; P = 365.25 sqrt(1.66^3/1.0788) = 752.1 d recomputes"
+      },
+      {
+        "item": "Chen & Kipping inferred radii",
+        "source": "Chen & Kipping 2017",
+        "data": "acen.ail:71, 78, 89: 1.0151, 0.6867, 2.2577",
+        "verdict": "arithmetic exact for the stated relation; the published Terran relation carries a 1.008 normalisation (1.0232, 0.6922, 2.276 with it); labelled inferred so honest, but the named relation is incomplete"
+      },
+      {
+        "item": "Retracted alpha Cen B b",
+        "source": "Dumusque 2012 / Rajpaul 2016",
+        "data": "acen.ail bodies()",
+        "verdict": "absent; a mutant adding any body with host acen-b is killed by three checks"
+      }
+    ]
+  },
+  "ring_table_review": {
+    "claim_under_review": "the executor's five 'disagreements' with stapledons-design features/future/planetary-rings.md and the conclusion that the table needs correcting",
+    "rows": [
+      {
+        "edge": "Saturn F outer 2.333 R vs table 2.27 R",
+        "verdict": "not a table error: 2.27 R x 60268 = 136,808 km is the A ring outer edge; the table describes D to A and omits the faint F ring. The data is right to include F"
+      },
+      {
+        "edge": "Jupiter halo inner 1.25 R vs 1.29 R",
+        "verdict": "source difference: NSSDC 89,400 km (1.25 R) vs Burns et al. 2004 / Wikipedia 92,000 km (1.29 R). Either is citable; the data follows its cited source"
+      },
+      {
+        "edge": "Jupiter gossamer outer 3.10 R vs 1.81 R",
+        "verdict": "not a table error: 1.81 R = 129,400 km is the main ring's outer edge; the table covers halo and main. Data right to include the gossamer rings"
+      },
+      {
+        "edge": "Uranus 1.637-2.002 R vs 1.49-1.95 R",
+        "verdict": "real table error for the nine rings the design names: ring 6 is at 41,837 km = 1.637 R and epsilon at 51,149 km = 2.00 R; 1.49 R (38,100 km) is the zeta ring. Data right"
+      },
+      {
+        "edge": "Neptune Galle inner 1.652 R vs 1.69 R",
+        "verdict": "not a table error: 1.69 R x 24764 = 41,850 km is the Galle centre (41,900), which the test itself asserts at celestial_test.ail:172. Data right"
+      }
+    ],
+    "conclusion": "The data is right in all five. The design table is wrong in one (Uranus) and merely narrower in scope or differently defined in the other four. The design-repo fix should say that, not 'five errors'."
+  },
+  "deviations_judged": [
+    {
+      "deviation": "12 moons, not 11",
+      "judgement": "correct: design M5.1 lists the Moon, 4 Galileans, 6 Saturnians and Triton = 12 and miscounts; N3's 'all 11 moons' refers to the same list. Loading the named list is the only honest reading"
+    },
+    {
+      "deviation": "ring edges from PDS and NSSDC, not the design-repo table",
+      "judgement": "correct; verified live to the km. The table is a 2-column R-ratio summary, not a source"
+    },
+    {
+      "deviation": "Lambert k = 1 assumed for Uranus and Neptune",
+      "judgement": "acceptable for R1 and labelled with its own citation key ('lambert-assumed'); limb-darkening fits for both planets exist in the HST literature, so this is a 'not found', not a 'does not exist' - record it as such"
+    },
+    {
+      "deviation": "DE440 GM for everything instead of IAU 2015 nominal",
+      "judgement": "better than the design's wording: the nominal set only defines Sun, Earth and Jupiter, and the test proves agreement to 1e-6 for those; moons and the other planets need DE440 anyway"
+    },
+    {
+      "deviation": "Adams arcs deferred to M5.2b",
+      "judgement": "acceptable: the design puts the azimuthal factor with the renderer's ring model; the data note records the arc tau (0.12). The arc longitudes are small data and could have landed here"
+    },
+    {
+      "deviation": "throwaway Python spike for the pck00011 transcription",
+      "judgement": "within policy: a spike is 'throwaway exploration, never a pipeline step; port or delete'. It was deleted, nothing is tracked, python-guard passes, and the transcription it produced is verified above"
+    },
+    {
+      "deviation": "LOC 462 vs 280 estimate",
+      "judgement": "1.65x, inside the 650 cap; the overrun is the IAU periodic terms (Mars 16, Moon 13, Triton 9) and the five-band B ring, both of which the design asked for"
+    }
+  ],
+  "mutations": [
+    {
+      "id": "M1",
+      "site": "sol.ail:175 Triton nSign +1 -> -1",
+      "killed": false,
+      "note": "0.017 deg displacement after one period vs a 0.061 deg tolerance; matches the executor's reported survivor"
+    },
+    {
+      "id": "M2",
+      "site": "sol.ail:168 Titan sidereal true -> false (P read as anomalistic)",
+      "killed": false,
+      "note": "0.022 deg vs 0.023 deg tolerance; the P-column test has no power for slow-precessing moons"
+    },
+    {
+      "id": "M3",
+      "site": "sol.ail:97 Saturn GM x 1.1",
+      "killed": false,
+      "note": "GM is checked only for Sun, Earth, Jupiter"
+    },
+    {
+      "id": "M4",
+      "site": "sol.ail:94 Jupiter p_V 0.538 -> 0.499",
+      "killed": false,
+      "note": "albedo unchecked"
+    },
+    {
+      "id": "M5",
+      "site": "acen.ail:38 measured AB period cites 'assumption'",
+      "killed": false,
+      "note": "fieldOk only requires the key to resolve; a measured field should not be allowed to cite 'assumption'"
+    },
+    {
+      "id": "M6",
+      "site": "sol.ail:102 Uranus W rate sign flipped",
+      "killed": true,
+      "failing_checks": "rotation, obliquities"
+    },
+    {
+      "id": "M7",
+      "site": "sol.ail:97 Saturn radius 60268 -> 59000",
+      "killed": true,
+      "failing_checks": "ringTableAgrees, ringTableDisagreements"
+    },
+    {
+      "id": "M8",
+      "site": "sol.ail:94 Jupiter p_V -> 5.38",
+      "killed": false,
+      "note": "no p_V <= 1 bound for planets or moons"
+    },
+    {
+      "id": "M9",
+      "site": "acen.ail:86 Proxima c status -> confirmed",
+      "killed": true,
+      "failing_checks": "statuses"
+    },
+    {
+      "id": "M10",
+      "site": "sol.ail:63 Mercury e +0.1",
+      "killed": false,
+      "note": "Standish e unguarded"
+    },
+    {
+      "id": "M11",
+      "site": "sol.ail:71 Earth a 1.0 -> 1.1 AU",
+      "killed": false,
+      "note": "Standish a unguarded; Kepler's third law would catch it"
+    },
+    {
+      "id": "M12",
+      "site": "sol.ail:142 Io host -> saturn",
+      "killed": false,
+      "note": "host only checked to exist"
+    },
+    {
+      "id": "M13",
+      "site": "sol.ail:205 Encke gap closed",
+      "killed": false,
+      "note": "the gap the design names is not asserted"
+    },
+    {
+      "id": "M14",
+      "site": "sol.ail:127 Moon node sign flipped",
+      "killed": false,
+      "note": "the mean-longitude variant of the period check is sign-blind by construction"
+    },
+    {
+      "id": "M15",
+      "site": "acen.ail: add a body with host acen-b",
+      "killed": true,
+      "failing_checks": "statuses, noRetracted, acenProvenance"
+    },
+    {
+      "id": "M16",
+      "site": "sol.ail:89 Jupiter pole dec0 -4 deg",
+      "killed": true,
+      "failing_checks": "obliquities"
+    },
+    {
+      "id": "M17",
+      "site": "sol.ail:122 moons() re-joined into one 12-element literal",
+      "killed": true,
+      "note": "not a data mutation: confirms the cited AILANG defect; strict VM refuses ('contiguous block of 15 would exceed 256'), interpreter passes"
+    }
+  ],
+  "findings": [
+    {
+      "severity": "medium",
+      "file": "sim/data/.ailang/cache/compile/** (36 tracked files, 4.4 MB)",
+      "issue": "AILANG compile cache committed in c0873b7; .gitignore covers sim/.ailang/ and .ailang/cache/ but not sim/data/.ailang/. Confirmed live: a plain `make test` in the fresh clone modifies the tracked sim/data/.ailang/cache/compile/manifest.json and writes two new module dirs keyed by the clone's absolute path, so every developer and CI run leaves the tree dirty",
+      "suggestion": "git rm -r --cached sim/data/.ailang; add `**/.ailang/cache/` (or `sim/**/.ailang/`) to .gitignore; amend or add a commit before merge"
+    },
+    {
+      "severity": "low",
+      "file": "sim/celestial_test.ail:72-139",
+      "issue": "11 of 16 evaluator mutants survive: a, e, five planets' GM, every albedo, moon hosts, the Encke gap and slow-moon rate signs are unguarded",
+      "suggestion": "add Kepler's third law (planets vs gmSunNominal, moons vs host GM, 1 %), NSSDC eccentricities (1e-3), 0 < p_V <= 1, Encke gap as the A-inner/A-outer boundary, and a sign check dOmega/dt * cos(i) <= 0 for every moon with a node rate"
+    },
+    {
+      "severity": "low",
+      "file": "sim/celestial_test.ail:179-187",
+      "issue": "checkRingTableDisagreements asserts negatives against the design table; it will have to be inverted when the table is corrected, and three of its five rows are not table errors",
+      "suggestion": "keep the positive assertions on published edges; move the table comparison to a comment or to the design-repo PR"
+    },
+    {
+      "severity": "low",
+      "file": "sim/data/acen.ail:86-87",
+      "issue": "Proxima c period 1928 +- 20 d and a 1.489 +- 0.049 AU cited to damasso2020; Damasso 2020 publishes 1900 (+96/-82) d and 1.48 +- 0.08 AU",
+      "suggestion": "cite the source these digits came from (Kervella et al. 2020 or the archive entry) or use Damasso's values"
+    },
+    {
+      "severity": "nit",
+      "file": "sim/data/acen.ail:54-55, 71, 78, 89",
+      "issue": "Chen & Kipping Terran relation named as R = M^0.279; the published relation is R = 1.008 M^0.279",
+      "suggestion": "include the normalisation or say it is dropped"
+    },
+    {
+      "severity": "nit",
+      "file": "sim/data/sol.ail:175",
+      "issue": "Triton's JPL Pnode 340.379 yr is half the 688 yr pole precession the IAU N7 term and Neptune's J2 imply; faithfully transcribed but puzzling to a reader",
+      "suggestion": "one comment noting the JPL value vs the IAU N7 period"
+    },
+    {
+      "severity": "nit",
+      "file": "PR #99 body; .ailang/state/sprints/sprint_R1-M5-PLANETS.json notes",
+      "issue": "'94842a8' is not on the branch (the bookkeeping commit is 301bb87); 'the design-repo table needs correcting' overstates: one row (Uranus) is wrong, four differ in scope or definition",
+      "suggestion": "fix the hash; phrase the design-repo change as 'Uranus row wrong; F, gossamer and Galle-centre explained'"
+    },
+    {
+      "severity": "nit",
+      "file": "sim/data/sol.ail:206 (B3 core tau 3.6)",
+      "issue": "could not be confirmed from the PDS table text as fetched ('1 to 5' would give 3.0)",
+      "suggestion": "state the sub-range used"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "feature_id": "M5.1a",
+      "criterion": "AC3: make deps test green; toml shows celestial 0.1.0 and relativity 0.7.0; lock and bundled cache agree",
+      "met": true,
+      "evidence": "make deps exit 0, relock identical modulo generated_at; runtime/cache/registry/sunholo has exactly celestial/0.1.0 and relativity/0.7.0; make test see automated_checks"
+    },
+    {
+      "feature_id": "M5.1a",
+      "criterion": "AC6: citation keys, alpha Cen status + provenance, no retracted row, ring radii vs design table within 1 % R",
+      "met": true,
+      "evidence": "17 checks pass on both engines; the Uranus and Jupiter-inner table rows cannot be matched because the table is wrong/differently scoped, which the implementation documents and tests (scored -1)"
+    },
+    {
+      "feature_id": "M5.1a",
+      "criterion": "make strict: data modules load under --strict-bytecode",
+      "met": true,
+      "evidence": "make strict-m5 (in make test via mk/m5.mk) runs dataVm on the strict VM: sol-data-ok, cmp-identical to the interpreter"
+    },
+    {
+      "feature_id": "M5.1a",
+      "criterion": "Mutants: dropped citation key or added retracted row fail",
+      "met": true,
+      "evidence": "M15 (body with host acen-b) killed by 3 checks; executor's key mutants re-verified by reading citeOk/ringCiteOk which require k != '' and membership in citations()"
+    }
+  ],
+  "documentation_check": {
+    "changelog_updated": true,
+    "examples_created": "n/a for this repo; dataVm strict entry and make targets with help text",
+    "design_doc_status": "matches: design doc stays in planned/ (M5.1a is 1 of 15 milestones); sprint plan M5.1a status line and sprint JSON filled"
+  },
+  "design_fidelity": {
+    "score": 8,
+    "notes": "see scores.design_fidelity"
+  },
+  "pre_existing_not_scored": [
+    "Negative literals written as `0.0 - x` throughout the sim (AILANG idiom in this repo, not introduced here)",
+    "No `make lint` target in the repo; python-guard, deps drift and strict/parity gates stand in"
+  ],
+  "feedback": [],
+  "feedback_summary": "PASS 89/100. Fix before merge: untrack sim/data/.ailang/cache (36 files) and extend .gitignore. Recommended, not blocking: Kepler's-third-law and p_V-bound checks to guard a, e, GM and albedo; cite Proxima c's digits to their actual source; soften the 'five table errors' claim to one (Uranus).",
+  "notes": "Every Sol number spot-checked (Standish 2a/2b for all eight planets; IAU 2015 poles, W, radii and periodic terms for the Sun, planets and twelve moons; DE440 GM for 21 bodies; Mallama p_V; JPL rows for the Moon, Galileans, Mimas, Titan and Triton; PDS Saturn edges; NSSDC Jupiter, Uranus and Neptune rings and moon albedos) is right. The Triton node sign is right by physics (cos i < 0). The alpha Cen data follows the design's honesty rules and the live archive. The strict VM and the interpreter agree, and the cited register-allocator workaround is reproducible and reported upstream."
+}

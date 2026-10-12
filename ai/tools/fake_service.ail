@@ -1,0 +1,71 @@
+module stapledons/ai/tools/fake_service
+
+-- A misbehaving stand-in for ai/service.ail, for AiBridge's fault tests
+-- (sprint R1-AI-FOUNDATION AI.6; AILANG per the Python policy). It speaks
+-- protocol ai/1 just well enough to fail in one chosen way:
+--   ok            answers hello and every request (the body names its arrival order)
+--   hang          answers hello, then reads requests and never answers
+--   crash_after_n answers n requests, then exits with code 3 on the next one
+--   garbage       answers hello, then a stray log line and a broken JSON line per request
+--   partial       like ok, but every reply leaves in three flushed pieces
+--   slow_hello    never answers hello (slower than any handshake deadline)
+--   wrong_major   answers hello with proto.major 2
+-- Configuration: --args-json '{"mode": "...", "n": 0}'. Needs --caps IO only.
+import std/io (readLine, print, println, flush, exit)
+import std/json (decode, getString)
+import std/result (Ok, Err)
+import std/option (Some, None)
+import std/string (concat, length, substring)
+
+export type Config = { mode: string, n: int }
+
+pure func field(line: string, k: string) -> string =
+  match decode(line) { Ok(j) => (match getString(j, k) { Some(v) => v, None => "" }), Err(_) => "" }
+
+pure func helloLine(major: int) -> string =
+  concat(["{\"v\":1,\"type\":\"hello\",\"proto\":{\"major\":", show(major), ",\"minor\":0},\"service\":\"fake\",\"provider\":\"stub\",\"live\":false,\"cache_dir\":\"-\",\"routes\":{}}"])
+
+pure func resultLine(req: string, kind: string, seq: int) -> string =
+  concat(["{\"v\":1,\"type\":\"result\",\"req\":\"", req, "\",\"status\":\"ok\",\"kind\":\"", kind,
+    "\",\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000",
+    "\",\"body\":\"{neutral} Fake reply ", show(seq), ".\",\"meta\":{\"provider\":\"fake\",\"route\":\"stub\",\"model\":\"-\",\"input_sha256\":\"-\",\"ms\":0,\"usd\":0}}"])
+
+func say(s: string) -> () ! {IO} { println(s); flush(()) }
+
+-- Three flushed writes, the last one ending the line.
+func sayInPieces(s: string) -> () ! {IO} {
+  let n = length(s);
+  let a = n / 3;
+  print(substring(s, 0, a));
+  flush(());
+  print(substring(s, a, 2 * a));
+  flush(());
+  println(substring(s, 2 * a, n));
+  flush(())
+}
+
+func answerHello(mode: string) -> () ! {IO} =
+  if mode == "slow_hello" then ()
+  else if mode == "wrong_major" then say(helloLine(2))
+  else if mode == "partial" then sayInPieces(helloLine(1))
+  else say(helloLine(1))
+
+func loop(cfg: Config, answered: int) -> () ! {IO} {
+  let line = readLine(());
+  if line == "" then () else {
+    let t = field(line, "type");
+    if t == "quit" then ()
+    else if t == "hello" then { answerHello(cfg.mode); loop(cfg, answered) }
+    else if t == "request" then {
+      let req = field(line, "req");
+      let kind = field(line, "kind");
+      if cfg.mode == "hang" then loop(cfg, answered)
+      else if cfg.mode == "garbage" then { say("fake: a stray log line, not JSON"); say("{\"v\":1,\"type\":\"result\",\"req\""); loop(cfg, answered) }
+      else if cfg.mode == "crash_after_n" && answered >= cfg.n then exit(3)
+      else if cfg.mode == "partial" then { sayInPieces(resultLine(req, kind, answered + 1)); loop(cfg, answered + 1) }
+      else { say(resultLine(req, kind, answered + 1)); loop(cfg, answered + 1) }
+    } else loop(cfg, answered)
+  }
+}
+
+export func main(cfg: Config) -> () ! {IO} = loop(cfg, 0)

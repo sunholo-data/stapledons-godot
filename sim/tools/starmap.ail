@@ -1,0 +1,80 @@
+module stapledons/sim/tools/starmap
+-- M1.7 (F6, Q7): the galaxy map catalogue data/starmap/stars.json, from the same rows as the
+-- shipped point tiers: quick (CNS5 with the M1.2d HIP photometry fill) + bright (HIP2, rules a
+-- and c), within 25 pc of Sol. It replaces the CNS3-era file. Positions stay float64 (the tier
+-- binaries round them to float32; the sim plans from these doubles), so the map shows the
+-- catalogue's own distance (D-17): alpha Cen A 4.321 ly, the CNS5 system parallax (Q2 (a), D-19).
+-- Ids are stable catalogue ids, one per row: "Gaia DR3 <source_id>", "CNS5:<n>" for CNS5 rows
+-- without a Gaia id, "HIP <n>" for bright rows. names.json is keyed by them.
+-- One star per line, nearest first (stable: quick before bright at equal distance), so a
+-- catalogue change reads as a line diff.
+import ./catalogue (Row)
+import std/list (map, filter, sortBy, zipWith, flatMap, drop, length as size, concat as append)
+import std/string (concat, join, chars, compare, startsWith, substring, length)
+import std/result (Result, Ok, Err)
+import std/json (Json, encode, jo, kv, js, jnum, jint, ja)
+import std/math (sqrt)
+
+-- extract.ail's light-years per parsec (CNS5 and GCNS distances use the same factor).
+export pure func lyPerPc() -> float = 3.261563777
+export pure func mapRadiusPc() -> float = 25.0
+-- The cut: 25 pc plus 1e-5 ly. CNS5's own edge is a 40 mas parallax, exactly 25 pc; the CSV keeps
+-- 1e-6 ly digits, so rows at exactly 40 mas land up to 1e-6 ly either side of 25 pc. The margin keeps
+-- every one of them (5 rows; without it 3 of 5 were cut on their last digit).
+export pure func mapRadiusLy() -> float = mapRadiusPc() * lyPerPc() + 0.00001
+
+pure func digit(c: string) -> bool = c == "0" || c == "1" || c == "2" || c == "3" || c == "4" || c == "5" ||
+  c == "6" || c == "7" || c == "8" || c == "9"
+pure func allDigits(s: string) -> bool = s != "" && size(filter(\c. !digit(c), chars(s))) == 0
+-- A bare Gaia source_id (the CNS5 CSV id) is labelled; CNS5:n and HIP n are already labelled.
+export pure func mapId(id: string) -> string = if allDigits(id) then concat(["Gaia DR3 ", id]) else id
+
+export pure func distLy(r: Row) -> float = sqrt(r.x * r.x + r.y * r.y + r.z * r.z)
+pure func nearer(a: Row, b: Row) -> int = if distLy(a) < distLy(b) then -1 else if distLy(a) > distLy(b) then 1 else 0
+pure func relabel(r: Row) -> Row = {id: mapId(r.id), x: r.x, y: r.y, z: r.z, teff: r.teff, v: r.v, flags: r.flags}
+
+-- Ids that occur more than once (sorted, each listed once per extra copy).
+export pure func duplicateIds(ids: [string]) -> [string] {
+  let s = sortBy(compare, ids);
+  flatMap(\d. d, zipWith(\a b. if a == b then [a] else [], s, drop(1, s)))
+}
+
+-- The map rows: both tiers relabelled, cut at `radius` ly (inclusive), nearest first. A repeated
+-- id is refused: names.json and the plan intent key on it.
+export pure func mapRows(quick: [Row], bright: [Row], radius: float) -> Result[[Row], string] {
+  let rows = sortBy(nearer, filter(\r. distLy(r) <= radius, map(relabel, append(quick, bright))));
+  match duplicateIds(map(\r. r.id, rows)) {
+    [] => Ok(rows),
+    ds => Err(concat(["duplicate map id: ", join(" ", ds)]))
+  }
+}
+
+-- One star: id, float64 galactic x, y, z (ly, as the tiers), dist_ly, vmag (V; 99 = no photometry),
+-- teff (K; 0 = no photometry), flags (the tier flags: 1 WD, 2 missing photometry, 4 approximate
+-- teff, 8 Hipparcos photometry, 16 colour outside the table).
+export pure func starJson(r: Row) -> Json =
+  jo([kv("id", js(r.id)), kv("x", jnum(r.x)), kv("y", jnum(r.y)), kv("z", jnum(r.z)),
+    kv("dist_ly", jnum(distLy(r))), kv("vmag", jnum(r.v)), kv("teff", jnum(r.teff)), kv("flags", jint(r.flags))])
+
+pure func units() -> Json = jo([
+  kv("x", js("light-years, galactic, toward the galactic centre")), kv("y", js("light-years, galactic, direction of rotation")),
+  kv("z", js("light-years, north galactic pole")), kv("dist_ly", js("light-years from Sol, sqrt(x^2+y^2+z^2)")),
+  kv("vmag", js("Johnson V (Gaia G -> V via sunholo/relativity, or Hipparcos V for flag 8); 99 = no photometry")),
+  kv("teff", js("kelvin; 0 = no photometry")),
+  kv("flags", js("1 white dwarf, 2 missing photometry, 4 approximate teff, 8 Hipparcos photometry, 16 colour outside the table"))])
+
+-- The whole file. `header` carries the provenance (inputs' sha256, ailang, package), placed
+-- before "stars"; counts are computed here.
+export pure func mapJson(rows: [Row], quickIn: int, brightIn: int, header: [{key: string, value: Json}]) -> string {
+  let fields = append([kv("version", jint(2)),
+    kv("source", js("CNS5 quick tier (with the M1.2d Hipparcos photometry fill) + HIP2 bright tier, within 25 pc (Q7)")),
+    kv("radius_pc", jnum(mapRadiusPc())), kv("radius_ly", jnum(mapRadiusLy())),
+    kv("count", jint(size(rows))), kv("count_quick", jint(size(filter(\r. !isHip(r.id), rows)))),
+    kv("count_bright", jint(size(filter(\r. isHip(r.id), rows)))),
+    kv("tier_rows", jo([kv("quick", jint(quickIn)), kv("bright", jint(brightIn))])), kv("units", units())], header);
+  let head = encode(jo(fields));
+  -- head is "{...}"; reopen it to append the star array one row per line
+  concat([dropLast(head), ",\n\"stars\": [\n", join(",\n", map(\r. encode(starJson(r)), rows)), "\n]}\n"])
+}
+pure func isHip(id: string) -> bool = startsWith(id, "HIP ")
+pure func dropLast(s: string) -> string = substring(s, 0, length(s) - 1)

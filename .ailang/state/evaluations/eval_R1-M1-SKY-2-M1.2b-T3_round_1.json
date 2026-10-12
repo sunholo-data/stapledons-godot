@@ -1,0 +1,47 @@
+{
+  "sprint_id": "R1-M1-SKY-2",
+  "milestone": "M1.2b-T3",
+  "round": 1,
+  "pr": 55,
+  "commit_evaluated": "d80fb71",
+  "evaluator": "independent (generator != judge)",
+  "score": 88,
+  "result": "pass",
+  "breakdown": {"tests_pass": 20, "lint_clean": 10, "acceptance_criteria": 27, "code_quality": 11, "documentation": 12, "design_fidelity": 8},
+  "automated": {
+    "make_test": "green twice (rc=0), includes catalogue-main fixtures, VM=interp, shasum match",
+    "make_catalogue_quick": "rc=0, 141792 B = 5908*24; sidecar digests match shasum (raw cns5.dat, csv re-extracted from cns5.dat byte-identical, bin)",
+    "make_catalogue_scan": "cns5 5908 rows 0 refusals; gcns 331312 rows 0 refusals (rc=0)",
+    "catalogue_vm_bytes": "transform-ok selection-ok main-ok; oracle OK",
+    "medium_tier": "not re-run (about 9 min, claim not independently verified)"
+  },
+  "refusal_checks": "Unknown/empty/uppercase tier, missing raw, missing lock, bad CSV row, |x| or y or z beyond 1e6 (both signs, 1e300), for quick and medium: all exit 1 with zero files in the output dir.",
+  "atomicity": {
+    "holds": ["every pre-output refusal", "sidecar tmp unwritable: bin tmp removed", "bin rename fails: tmps removed, existing target untouched"],
+    "breaks": "If the sidecar rename fails after the bin rename succeeded (repro: out dir contains a directory named stars_quick.json), the new bin has replaced the old one, stars_quick.json.tmp is left behind, and the message still says 'nothing written'. A stale sidecar would then describe the wrong bin. writeFileBytes(binTmp) result is ignored (sim/tools/catalogue_main.ail commit()); if it fails the run aborts with a raw runtime error and leaves any partial state."
+  },
+  "f32_bound": "Correct: 1e6 ly is far below 3.4028e38 for 24-byte records (6 x F32); encodeRow bound is conservative; whole range finite.",
+  "mutations": {
+    "killed": ["bound 1e6->1e6+1", "y unchecked", "lower bound -1e6-1", "record_bytes 24->32", "large not a valid tier", "F32 bound loosened to 3.5e38", "bin sha computed over csv", "all-coordinate validation removed"],
+    "survived": ["selectMedium(rows,50000) -> 49999: no unit test pins the 50000 quota; only a manual medium run does"]
+  },
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      "sim/tools/catalogue_main.ail commit(): second rename failure leaves new bin + stale/absent sidecar + json.tmp, contradicts 'nothing written' and the atomic claim; bin tmp write result unchecked. Fix: check writeFileBytes, on sidecar-rename failure remove tmp and report half-committed state.",
+      "sim/tools/catalogue.ail selectTier: the 50000 medium quota is not pinned by any committed test (mutation survives).",
+      "Atomic test only covers a pre-write refusal (bad_row); the mid-write branches are untested.",
+      "No CHANGELOG entry (acceptable until landing).",
+      "Generated data/starmap/stars_quick.bin/.json are not gitignored; they show as untracked after make catalogue (risk of accidental commit before M1.2c)."
+    ]
+  },
+  "deviations": {
+    "selectTier returns Result": "Accepted. Required for refusal-before-output; all callers updated.",
+    "coordinate bound on all tiers": "Accepted. Stricter than plan and sound, because rows the medium quota drops are validated too.",
+    "std/crypto replaces shasum glue": "Accepted. The plan allowed it, and the Makefile cross-checks every digest with shasum.",
+    "appendBytes rename (ailang#1461)": "Accepted. Harmless workaround, filed upstream.",
+    "no tier binaries committed": "Accepted. M1.2c scope; the plan says so.",
+    "data inputs": "Accepted. Reproduced independently: cns5.csv re-extracted from download_stars.sh quick output is byte-identical; gcns.csv copied from the main checkout; table1c.dat.gz fetched from the bucket."
+  },
+  "ailang_1501_risk_for_T4": "HIGH. Quadratic cons/foldl: gcns scan of 331k rows takes ~8 min, medium (50k out) ~9 min. The large tier encodes and hashes all 331k rows, so encodeRows, count, checkRow and sidecar paths scale quadratically and will likely take tens of minutes or hours. T4 needs linear accumulation (chunked/array build) or an upstream fix before large is practical, and make test must not depend on it. The strict-VM core stays pure, so the fix is local to the accumulators."
+}

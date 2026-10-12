@@ -1,0 +1,164 @@
+→ Package stapledons/sim
+  3 source modules, 4 test files
+
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path 'sim/_namedtest_body_1529757608'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path 'sim/_namedtest_body_1396846011'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path 'sim/_namedtest_body_2655615598'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/core_test' does not match canonical path 'sim/_namedtest_body_127708850'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_638053370'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_2256014529'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_2919436303'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_51538098'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_1169387260'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_2045597664'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_2581819815'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/protocol_test' does not match canonical path 'sim/_namedtest_body_1505851761'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_203542020'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_3154946514'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_2059967961'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_650536932'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_1630612753'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_3735977754'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_1969634252'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+WARNING MOD010 (relaxed): module 'stapledons/sim/tools/catalogue_probe_test' does not match canonical path 'sim/tools/_namedtest_body_3366868568'
+  Running under --relax-modules; mismatch ignored. For strict checking, omit --relax-modules flag.
+
+[1mTest Results[0m
+Module: stapledons/sim
+
+[1mTests:[0m
+  [32m✓[0m turn at rest snaps rapidity (526.195833ms)
+      at [2msim/core_test.ail:34:1[0m
+  [32m✓[0m moving turn rejected (29.295583ms)
+      at [2msim/core_test.ail:35:1[0m
+  [32m✓[0m position after turn retains origin (119.416292ms)
+      at [2msim/core_test.ail:36:1[0m
+  [32m✓[0m strict off axis voyage (163.03925ms)
+      at [2msim/core_test.ail:37:1[0m
+  [32m✓[0m hello proto 1.1 (682.014833ms)
+      at [2msim/protocol_test.ail:53:1[0m
+  [32m✓[0m v1.0 step unchanged (614.302667ms)
+      at [2msim/protocol_test.ail:54:1[0m
+  [32m✓[0m bad json (1.505338375s)
+      at [2msim/protocol_test.ail:55:1[0m
+  [32m✓[0m bad command (152.766583ms)
+      at [2msim/protocol_test.ail:56:1[0m
+  [32m✓[0m bad step precedes heading (344.134292ms)
+      at [2msim/protocol_test.ail:57:1[0m
+  [32m✓[0m bad heading (538.266291ms)
+      at [2msim/protocol_test.ail:58:1[0m
+  [32m✓[0m moving (522.291417ms)
+      at [2msim/protocol_test.ail:59:1[0m
+  [32m✓[0m rejection preserves state (151.709833ms)
+      at [2msim/protocol_test.ail:60:1[0m
+  [32m✓[0m real rows preserve IDs and defer WD and missing (455.21725ms)
+      at [2msim/tools/catalogue_probe_test.ail:21:1[0m
+  [32m✓[0m exact header required (96.633667ms)
+      at [2msim/tools/catalogue_probe_test.ail:22:1[0m
+  [32m✓[0m invalid coordinates rejected (621.938708ms)
+      at [2msim/tools/catalogue_probe_test.ail:23:1[0m
+  [32m✓[0m nonfinite photometry rejected (877.852958ms)
+      at [2msim/tools/catalogue_probe_test.ail:24:1[0m
+  [32m✓[0m invalid WD flag rejected (379.35175ms)
+      at [2msim/tools/catalogue_probe_test.ail:25:1[0m
+  [32m✓[0m published solar package anchor (766.178959ms)
+      at [2msim/tools/catalogue_probe_test.ail:31:1[0m
+  [32m✓[0m real normal row expected photometry (48.10725ms)
+      at [2msim/tools/catalogue_probe_test.ail:32:1[0m
+  [32m✓[0m WD row through the published blackbody package (34.882959ms)
+      at [2msim/tools/catalogue_probe_test.ail:41:1[0m
+  [31m✗[0m T1 normal independent anchors and coordinates (1.121542ms)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:48:1[0m
+  [31m✗[0m T1 WD real and interior anchors (909.834µs)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:49:1[0m
+  [31m✗[0m T1 dwarf and WD clamps (812.416µs)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:50:1[0m
+  [31m✗[0m T1 exact medium selection and independent counters (747µs)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:51:1[0m
+  [31m✗[0m T1 missing wins and preserves WD bit (737.917µs)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:52:1[0m
+  [31m✗[0m T1 stable equal distance order (714.209µs)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:53:1[0m
+  [31m✗[0m T1 header only empty input (725.834µs)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:54:1[0m
+  [31m✗[0m T1 field rejection before missing shortcut (74.393666ms)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:55:1[0m
+  [31m✗[0m T1 exact header (1.098541ms)
+      [31mpipeline error: module loading error: failed to load pkg/stapledons/sim/tools/catalogue: failed to resolve package import "pkg/stapledons/sim/tools/catalogue": module "stapledons/sim/tools/catalogue" is not exported by package "stapledons/sim"[0m
+      [31mAvailable exports:[0m
+      [31m  stapledons/sim/core[0m
+      [31m  stapledons/sim/ship[0m
+      [31m  stapledons/sim/tools/catalogue_probe[0m
+      at [2msim/tools/catalogue_test.ail:56:1[0m
+
+──────────────────────────────────────────────────
+[31m✗[0m [1mSome tests failed[0m
+
+29 tests: 20 passed, 9 failed, 0 skipped (8.710195709s)
+  [32m✓ Passed:[0m 20
+  [31m✗ Failed:[0m 9
+
+[1mSeed:[0m
+  mode: derived
+  master seed: 0
+  derivation: ailang-property-seed-v1
+  replay: ailang test --seed 0 --package sim

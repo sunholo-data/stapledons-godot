@@ -1,0 +1,31 @@
+{
+ "template": {
+  "title": "Transmission received",
+  "header": "Latest news from Earth: Earth-year +0.04, already 4.35 years old.",
+  "body": "A short message from home: the family gathered to watch you go and are all in good health. They have started a list of things to tell you. At home, 0.04 years have gone by since you left.",
+  "tag": "",
+  "notice": "",
+  "reason": "",
+  "diagnostics": []
+ },
+ "ai": {
+  "title": "Transmission received",
+  "header": "Latest news from Earth: Earth-year +0.04, already 4.35 years old.",
+  "body": "The world turned on without you.",
+  "tag": "generated",
+  "notice": "",
+  "reason": "",
+  "diagnostics": []
+ },
+ "fallback": {
+  "title": "Transmission received",
+  "header": "Latest news from Earth: Earth-year +0.04, already 4.35 years old.",
+  "body": "A short message from home: the family gathered to watch you go and are all in good health. They have started a list of things to tell you. At home, 0.04 years have gone by since you left.",
+  "tag": "",
+  "notice": "Live transmission unavailable: archived text shown",
+  "reason": "Reason: the generated text contained a numeral",
+  "diagnostics": [
+   "News fell back to the archived text; reason code ai_numeral (the generated text contained a numeral)"
+  ]
+ }
+}

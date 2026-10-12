@@ -1,0 +1,107 @@
+{
+  "sprint_id": "R1-M2-JOURNEY",
+  "milestone": "M2.0_PKG_TRIP_ENERGETICS",
+  "round": 1,
+  "date": "2026-10-01",
+  "score": 96,
+  "pass": true,
+  "threshold": 70,
+  "hard_fails": [],
+  "go_no_go_publish_0_4_0": "GO",
+  "reviewed_sha": "1abde63",
+  "branch": "relativity-0.4.0-journey (sunholo-data/ailang-packages PR #84)",
+  "package": "sunholo/relativity@0.4.0 (NOT published; dry run only, P1 is the controller's)",
+  "worktree": "fresh clone in evaluator scratchpad (never ~/dev/sunholo-data/ailang-packages)",
+  "ailang_version": "v0.50.0 (commit 6abe1a5, /Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin/ailang)",
+  "generator": "sprint-executor (Claude Code, mission routing)",
+  "judge": "Claude Fable 5.1, independent physics evaluator (generator != judge); own Decimal derivation, own mutations",
+  "scope": "M2.0 only: journey TripPlan/planBurnCoastBurn/planFlipAndBurn/phaseAt/motionAt, hyper.acosh1p, kinematics.rapidityOfOneMinusBeta, new medium module, optics.forwardDoppler/cmbForwardTemperature, journeyDigest strict entry, tools/journey_ref.py, CHANGELOG/AGENT.md/README/toml. Physics weighted.",
+  "breakdown": {
+    "tests_pass": {"points": 20, "max": 20, "evidence": "$A test --package . : 101 tests, 101 passed, 0 failed (59 existing 0.3.0 + 42 new) on the fresh clone"},
+    "lint_quality": {"points": 10, "max": 10, "evidence": "$A pkg quality . exit 0, 'no gates'; PUB016 (32 Z3-skipped contracts) and PUB011 (51 uncontracted exports) info/warn only, as in 0.3.0; release kind feature, changelog_section true, AGENT.md true, ai_summary true, 98/98 exports pure"},
+    "acceptance_criteria": {"points": 30, "max": 30, "met": 6, "total": 6},
+    "code_quality": {"points": 12, "max": 15, "deductions": [
+      "-2 sprint artifacts: .ailang/state/sprints/sprint_R1-M2-JOURNEY.json feature M2.0_PKG_TRIP_ENERGETICS still has passes/started/completed/notes = null (gate results and declared deviations should be recorded there)",
+      "-1 LOC: ~350 code + ~510 test .ail lines (git numstat) = ~860 counted vs estimate 450 / cap 650 (1.3x cap). Declared by the executor; driven by mutation-strengthened tests and the planned tools/journey_ref.py, no scope growth"
+    ]},
+    "documentation": {"points": 14, "max": 15, "evidence": "CHANGELOG ## 0.4.0 complete (5/5); AGENT.md plan-vs-totals and rapidity-in guidance, README, ai_summary, quick-start example (4/5: repo has no examples/ convention, smoke + AGENT quick start serve); design doc HB citations corrected to canon IDs in stapledons-godot PR #22 (5/5)"},
+    "design_fidelity": {"points": 10, "max": 10, "evidence": "Every function in design doc section M2.0 tables implemented with the design's exact rapidity forms; names map 1:1 to higgs-bubble section 12; flipAndBurn/burnCoastBurn are planX(...).trip (one formula); signatures unchanged"},
+    "regression_surface_coverage": "n/a (no AILANG compiler/VM internals touched)",
+    "performance_verification": "n/a"
+  },
+  "acceptance": {
+    "AC-M2.0-1 trip rows 1-9, fellBack 4 and 9, motionAt arrival, continuity, phaseAt left-closed": {"status": "PASS", "evidence": "journey_plan_test.ail checkRow1..9, checkArrival, checkBoundaries, checkPhaseLeftClosed, checkPhaseFlip all green; evaluator's own Decimal derivation reproduces every asserted constant to <= 9e-16 relative"},
+    "AC-M2.0-2 readout table 1e-12 and canon HB printed digits": {"status": "PASS", "evidence": "medium_test.ail checkReadout09/099/Cap, checkHb* green; evaluator reproduces all 27 readout values to <= 9.1e-16 and all cited HB-16..29, 30-37, 38-46, 47-50, 51-56, 61, 62, 63 to canon digits"},
+    "AC-M2.0-3 finite 1e4-point sweep; 0.3.0 tests unchanged": {"status": "PASS", "evidence": "checkFiniteSweep green (100x100 + endpoint over [0, phiCap]); relativity_test.ail, photometry_test.ail, blackbody_photometry_test.ail untouched by the diff and green"},
+    "AC1 package half: test + quality": {"status": "PASS", "evidence": "see tests_pass and lint_quality; pkg info v0.4.0 pending the controller's publish by design"},
+    "AC strict VM = interpreter journeyDigest": {"status": "PASS", "evidence": "--package-dir . --bytecode --strict-bytecode vs interpreter, cmp identical at n = 1 (24632.60976873817), 7 (44224.41077648065), 400 (1.640741442474489e+06), 1000 (4.080028738971026e+06); digest covers the NaN plan, NaN tau, NaN brakeHolds, fallback, short flip and the cruise sweep"},
+    "AC publish --dry-run; design doc HB citations": {"status": "PASS", "evidence": "dry run OK, tarball 39268 bytes, 11 exports incl. medium; smoke prints OK: ... 2.263 ship-days / 1.510e19 J; HB citations landed in stapledons-godot 253a82e (PR #22)"}
+  },
+  "independent_physics_check": {
+    "method": "Evaluator's own script (scratchpad indep_check.py, not tools/journey_ref.py): 45-digit Decimal from first-principles derivation of the rocket equations, boost-cruise-brake, flip fallback, photon-drive m c^2 phi, specular-sphere ISM drag n sinh^2(phi) m_p c^2 pi R^2, ship-frame drag energy F c tau = n sinh(phi) m_p c^2 pi R^2 d, load/kinetic flux, glow eps f_in K/4, forward Doppler e^phi, atanh(1-e) = ln((2-e)/e)/2",
+    "worst_relative_deviation_on_1e-12_checks": "9.1e-16 (0.99c force); trip rows <= 6.9e-16",
+    "sample": {
+      "row2 aCen 0.99c": {"mine_ship": "0.622695870759205383", "pr": "0.6226958707592057", "mine_earth": "4.414143655383167412", "pr_earth": "4.414143655383168"},
+      "row3 aCen cap": {"mine_ship": "0.006196277986522204", "pr": "0.006196277986522204", "mine_earth": "4.370006949593909357", "pr_earth": "4.370006949593909", "gamma": "707.106957963309112"},
+      "row4 fallback": {"fellBack": true, "mine_phi": "6.654436202069183061", "pr": "6.654436202069182", "mine_ship": "1.719000718665644e-05"},
+      "row6 1g flip": {"mine_ship": "3.582393722747832475", "pr": "3.5823937227478337", "mine_earth": "6.002502777252469383", "pr_earth": "6.00250277725247", "mine_beta": "0.951655844900633371"},
+      "readout 0.99c": {"boost": "2.37869256192686017e17", "drag_dCoast": "1.37025773945912061e17", "total": "6.12764286331284094e17", "F": "23.2598214320734711", "P": "6973119039.76238593", "T_fwd": "38.4408555445895351"},
+      "readout cap": {"boost": "6.51986541482047276e17", "drag_dCoast": "1.38006179739060327e19", "total": "1.51045910568701273e19", "load": "2253353077.72868133", "glow": "0.28127107577632865", "T_fwd": "3853.73099403357421"},
+      "V12 min m_eff at cap": "0.0321052811487250 kg (matches)",
+      "HB-61 eps": "3.5552891360760333e-9 (canon 3.6e-9)"
+    },
+    "numerics": {
+      "cosh-1 vs 2sinh^2(phi/2) at phi=1e-6": "cosh-1 = 5.000444502911705e-13 (4 digits); 2 sinh^2 = 5.000000000000417e-13 (true 5.00000000000041666e-13). The new low-speed row is the right kill; the plan's 'row 3' claim could not kill it (phi 7.25 has no cancellation)",
+      "acosh(1+u) vs acosh1p at u=5e-10": "acosh(1+u) = 3.162277790860629e-05 vs acosh1p 3.162277660036618e-05 (true 3.16227766003661776e-05, 8 digits lost). Row 4 has a d/2 = 387, not small, so it could not kill this mutation; the new short-flip row does",
+      "rapidityOfOneMinusBeta": "atanh(1-e) at e=1e-6 fails row 3 at 1e-12 (my mutation A6: 4 tests fail), so the never-form-1-beta rule is load-bearing and tested",
+      "motionAt brake error claim": "measured at 0.99c, tau = tau2 + tauBurn/2: |phi64 - phiDecimal| = 6.7e-11 absolute; a*ulp(tauTotal) = 8.6e-11; 5.1e-11 relative to local phi, 2.5e-11 relative to phiPeak. PR's '~a*ulp(tauTotal), ~3e-11 relative' is correct in magnitude (its 'relative' is to phiPeak). Boundaries and arrival are exact as claimed",
+      "NaN": "clampTau treats NaN as 0; planBurnCoastBurn(NaN) takes the fallback via not(2 dBurn < d); brakeHoldsAgainstDrag tests NaN first. VM = interpreter confirmed through journeyDigest"
+    }
+  },
+  "mutations_by_evaluator": {
+    "killed": [
+      "A1 tauCoast = dCoast/tanh (beta for gamma*beta): 10 tests",
+      "A2 brake phi measured from tauBurn instead of tauBurn+tauCoast: 1 test (checkBoundaries)",
+      "A3 flip galaxyTime missing factor 2: 9 tests",
+      "A4 clampTau without NaN guard: 1 test (checkNaNTau)",
+      "A5 phaseAt arrival boundary right-closed: 2 tests",
+      "A6 rapidityOfOneMinusBeta = atanh(1-e): 4 tests (row 3 at 1e-12)",
+      "B1 cruiseDragEnergy galaxy-frame sinh^2 (F d) instead of ship-frame sinh (F c tau): 4 tests",
+      "B2 glow /2 instead of /4: 4 tests",
+      "B3 kineticFlux = loadScale (gamma for gamma-1): 4 tests (HB-44 at 0.5c)",
+      "B4 forwardDoppler = cosh (gamma for gamma(1+beta)): 4 tests",
+      "B6 photonDriveEnergy x2: 5 tests",
+      "B7 tripEnergy drag over d not dCoast: 5 tests"
+    ],
+    "survived": [
+      "B5 brakeHoldsAgainstDrag '>=' -> '>' : equality is measure-zero on floats; not worth a test. Non-blocking"
+    ],
+    "pr_claimed_7_of_7": "two re-verified directly (A6, B7); the two corrected claims (cosh-1 and acosh1p) verified analytically above"
+  },
+  "deviations_judged": [
+    {"item": "Two sprint-plan mutation claims corrected (row 3 cannot kill cosh-1; row 4 cannot kill acosh(1+u)); new low-speed phi=1e-6 and short-flip a d/2=5e-10 rows added", "verdict": "ACCEPT. The planner's claims were wrong (see numerics); the executor's rows are the correct kills and are reproduced by my derivation"},
+    {"item": "CODATA 2018 m_p = 1.67262192369e-27 kg and IAU light-year 9460730472580800 m", "verdict": "ACCEPT. The design's 16-17 digit readout table reproduces only with these (CODATA 2022 shifts drag by 1.35e-9 relative, canon's 4-digit constants by ~1e-9); canon HB digits are unaffected. Design doc said 'CODATA' without a year; the package now pins it in code and CHANGELOG. Follow-up (docs): state the CODATA year in the design doc's medium constants line"},
+    {"item": "Extra constants julianYearS, astronomicalUnitM, accelSI and the TripEnergy type", "verdict": "ACCEPT. accelSI is needed to feed brakeHoldsAgainstDrag's SI acceleration from the c/yr journey units (and is what the sim will call); AU and Julian year are used by the HB-30..34 checks; TripEnergy names tripEnergy's return record. All additive and documented in AGENT.md"},
+    {"item": "LOC above plan (~860 counted .ail code+test vs 450 estimate / 650 cap, plus 311-line tool + 55-line committed output)", "verdict": "ACCEPT with -1. tools/journey_ref.py was in the plan's file list; the overrun is test strengthening of the kind the plan's velocity section predicts. Recommend the planner size physics-package milestones at ~2x for tests"}
+  ],
+  "findings": {
+    "blocking": [],
+    "non_blocking": [
+      {"file": ".ailang/state/sprints/sprint_R1-M2-JOURNEY.json", "issue": "M2.0 feature passes/started/completed/notes are null; the gate results, the two mutation corrections and the CODATA-2018 pin belong in notes before the controller publishes", "suggestion": "controller or executor fills them at P1"},
+      {"file": "packages/relativity/journey.ail:71-78", "issue": "planBurnCoastBurn's contract says phiCruise > 0.0, yet a NaN phiCruise (contract-violating) silently returns a finite flip-and-burn plan with fellBack = true, which looks like a valid plan", "suggestion": "fine for 0.4.0 since M2.3a range-checks cruise_phi before calling; add one sentence to AGENT.md that callers must validate phi, or make the sim test pin this. Not a package bug"},
+      {"file": "packages/relativity/optics.ail:16", "issue": "optics now imports medium only for cmbTemperatureK, inverting the natural layering (optics is lower-level than medium)", "suggestion": "cosmetic; a later minor could move the constant to kinematics/hyper or keep it in optics"},
+      {"file": "packages/relativity/journey.ail:128-130", "issue": "brake error wording '3e-11 relative' is relative to phiPeak; relative to the local phi mid-brake it is ~5e-11", "suggestion": "say 'about a*ulp(tauTotal) ~ 9e-11 absolute at the 0.99c default'"},
+      {"file": "packages/relativity/medium.ail:113", "issue": "'>=' vs '>' in brakeHoldsAgainstDrag survives mutation (measure-zero)", "suggestion": "no action"}
+    ]
+  },
+  "precision_rules_check": "No new 1.0 - beta: rapidityOfOneMinusBeta uses log(2-e) - log(e); peakBeta/peakGamma from tanh/cosh of phi; gamma-1 as 2 sinh^2(phi/2); gamma(1+beta) as e^phi. Legacy burnCoastBurn(maxBeta)/coastAt(beta) keep their 0.3.0 signatures and are documented as 'prefer the rapidity form near c'",
+  "gates_rerun_by_evaluator": {
+    "test": "101/101",
+    "quality": "exit 0, no gates",
+    "strict_vm_vs_interpreter": "cmp identical, n = 1, 7, 400, 1000",
+    "smoke": "OK (interpreter; the strict VM cannot run println, expected, not a gate)",
+    "publish_dry_run": "OK, 39268 bytes",
+    "journey_ref_py_check": "exit 0; committed journey_ref.out equals the tool's output (minus the trailing OK line)"
+  },
+  "recommendation": "PASS 96/100. GO for the controller to publish sunholo/relativity 0.4.0 under the standing grant (P1). Not published and not merged by the evaluator."
+}

@@ -1,0 +1,48 @@
+module stapledons/sim/data/stars
+
+-- Finite destination stars as data (design finite-destination-stars.md, ledger
+-- D-47/D-48). Pure, no I/O. Every number is a Field with its provenance, as in
+-- data/acen.ail:
+--   measured  : from observation, cited;
+--   inferred  : derived through a named relation from cited inputs (the note
+--               names it, and sim/destination_stars_test.ail recomputes it);
+--   catalogue : the navigation catalogue row (data/starmap/stars.json), so the
+--               star the ship flies to is the star it renders (destination pin).
+-- Living data: a better measurement replaces its row with a new citation.
+
+export type Field = { value: float, prov: string, note: string, cite: string }
+-- giant: 1 for luminosity class III (stops where the star fills 40 degrees), 0 for
+-- main sequence (stops in its habitable zone), ledger D-47.
+export type Star = { id: string, name: string, catalogueId: string, fields: [(string, Field)] }
+
+export pure func starCitations() -> [(string, string)] = [
+  ("richichi2005", "Richichi & Roccatagliata 2005, A&A 433:305, Aldebaran limb-darkened angular diameter from lunar occultations and interferometry"),
+  ("heiter2015", "Heiter et al. 2015, A&A 582:A49, Gaia FGK benchmark stars: Aldebaran (alf Tau) Teff and log g"),
+  ("agol2021", "Agol et al. 2021, PSJ 2:1, Refining the transit-timing and photometric analysis of TRAPPIST-1: stellar radius, Teff, luminosity"),
+  ("catalogue", "the navigation catalogue row in data/starmap/stars.json (CNS5 / Gaia DR3 position, V)"),
+  ("spectral", "standard spectral classification: Aldebaran K5 III (giant), TRAPPIST-1 M8 V (main sequence)")
+]
+
+pure func m(v: float, note: string, cite: string) -> Field = { value: v, prov: "measured", note: note, cite: cite }
+pure func inf(v: float, relation: string, cite: string) -> Field = { value: v, prov: "inferred", note: relation, cite: cite }
+pure func cat(v: float, note: string) -> Field = { value: v, prov: "catalogue", note: note, cite: "catalogue" }
+
+export pure func destinationStars() -> [Star] = [
+  { id: "aldebaran", name: "Aldebaran", catalogueId: "CNS5:1142", fields: [
+      ("theta_ld_mas", m(20.58, "+-0.03 mas limb-darkened angular diameter", "richichi2005")),
+      ("radius_sun", inf(45.212, "R = (theta_LD / 2) x d, with d = the catalogue distance 66.6441 ly (20.4332 pc): 0.01029 arcsec x 20.4332 pc = 0.210257 AU = 45.21 R_sun (IAU nominal R_sun 695,700 km)", "richichi2005")),
+      ("teff_k", m(3927.0, "+-40 K", "heiter2015")),
+      ("luminosity_sun", inf(437.97, "L = R^2 (Teff / 5772 K)^4 (Stefan-Boltzmann, nominal solar Teff)", "heiter2015")),
+      ("giant", m(1.0, "K5 III", "spectral")),
+      ("v_earth", cat(0.87, "V at Earth")),
+      ("x_ly", cat(0.0 - 62.516711, "galactic x")), ("y_ly", cat(0.0 - 1.060038, "galactic y")), ("z_ly", cat(0.0 - 23.064639, "galactic z"))
+    ] },
+  { id: "trappist-1", name: "TRAPPIST-1", catalogueId: "Gaia DR3 2635476908753563008", fields: [
+      ("radius_sun", m(0.1192, "+-0.0013 R_sun", "agol2021")),
+      ("teff_k", m(2566.0, "+-26 K", "agol2021")),
+      ("luminosity_sun", m(0.000553, "+-0.000018 L_sun", "agol2021")),
+      ("giant", m(0.0, "M8 V", "spectral")),
+      ("v_earth", cat(18.7290668487549, "V at Earth")),
+      ("x_ly", cat(7.742, "galactic x")), ("y_ly", cat(20.946483, "galactic y")), ("z_ly", cat(0.0 - 33.930598, "galactic z"))
+    ] }
+]

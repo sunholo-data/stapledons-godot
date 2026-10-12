@@ -1,0 +1,78 @@
+{
+  "doc": "design_docs/planned/r1/m1.2b-wd-photometry.md",
+  "iso_ts": "2026-09-30T21:05:53Z",
+  "reviewers": [
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-3-1-pro",
+      "cost_usd": 0.05259200000000001,
+      "tokens_in": 24730,
+      "tokens_out": 261,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The premise that 'Dwarfs top out at 10.7 kK... and are unaffected' by the 10^6 K Doppler LUT ceiling is unverified. There is no Verification Log row proving that the existing dwarf relations (teffFromBpRp) clamp at 10.7 kK or that the GCNS dwarf sample tops out there. If the existing relation covers hotter main-sequence stars (e.g., B-type dwarfs \u003e 22.3 kK), they will also exceed the ceiling at 0.999c.",
+        "catch": "Unverified factual claim about the maximum temperature of dwarfs in the existing pipeline or dataset.",
+        "proposed_fix": "Add a Verification Log row (e.g., C4) proving the 10.7 kK maximum for dwarfs by either checking the teffFromBpRp bounds in photometry.ail or measuring the maximum non-WD temperature in the GCNS extract. If dwarfs can actually exceed 22.3 kK, update the 'Temperature consumers' section to include them in the 0.999c saturation impact analysis."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: context deadline exceeded",
+      "landed": null
+    },
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.22968,
+      "tokens_in": 21145,
+      "tokens_out": 11083,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "PREMISE VERIFICATION failure on the WD-3 consumer contract: the doc's own evidence rule ('every premise has a row in the Verification log') is broken for two load-bearing claims. (1) The flags contract `flags = 1 (WD) | 4 (APPROX_TEFF) | 16 (TEFF_CLAMPED)` hard-codes bit assignments with no verification row: nothing cites the M1 doc or sprint lines that define the existing flags word — that bit 1 is WD, that bit 4 is APPROX_TEFF (as opposed to some other dwarf approximation flag), and critically that bit 16 is unallocated. The doc even extends bit 16 to dwarf rows where `bpRpInTable` is false, changing existing dwarf-row semantics; a collision or mis-assignment here silently corrupts the flag semantics of the production `checkWDRow` transform this milestone exists to unblock, and AC-W10's grep cannot catch it. This is exactly the class of premise that rows G3 (`grep -n wd tools/extract.py`) and K3 (grep for '0.3.0') demonstrate is cheap to verify, yet it was asserted. (2) The 'committed fixture WD row (BP−RP 1.0401, G 20.654)' from which the pinned checkWDPackage values (teff 5202.556030832587, v 20.899202194346880) are derived has no verification row either — N1 covers the parser's non-finite handling and test lines :18/:23, but never shows the fixture row exists with that photometry. If the fixture differs, the WD-3 pin values are wrong and the 'load-bearing pin in make test' fails or, worse, gets silently recomputed to fit.",
+        "catch": "Add the missing verification rows before sprint start: (a) `grep -n 'flags\\|APPROX_TEFF\\|TEFF_CLAMPED\\|wd =\\|bit' design_docs/planned/r1/m1-relativistic-sky.md` and the sprint §M1.2b, confirming the existing flags-word layout — bits 1 and 4 as assumed, 16 free on both dwarf and WD paths — and cite file:line like G3/N1 do; if any bit differs, rewrite the consumer contract and the two `checkWDRow` examples (flags = 5 and 21) accordingly. (b) `grep -rn '1.0401\\|20.654' sim/` (or wherever the committed fixture lives) proving the fixture WD row's BP−RP and G, and note which file feeds `catalogue_probe_test.ail`; recompute the two pinned outputs from the Python reference if the fixture values differ even in the last shown digit. Also fix two smaller defects while editing: AC-W4's wording 'contracts verified' contradicts row Z3's measurement (2/40 verified, 25 PUB016 skips on 0.2.0, more after 0.3.0) — restate it as 'exit 0, no PUB gates; PUB016 contract skips are info and expected', which is what `pkg quality` actually reports; and renumber the acceptance table so W10 does not follow W11.",
+        "proposed_fix": "Insert two rows into the Verification log and adjust one AC. New row F1: \"Flags-word layout | sprint §M1.2b `checkWDRow` text and M1 doc flags definition | `grep -n 'flags' design_docs/planned/r1/m1-relativistic-sky.md`; `grep -n 'flags' \u003csprint file\u003e` | bit 1 = WD, bit 4 = APPROX_TEFF already assigned; bit 16 unassigned on dwarf and WD rows; cite file:line. If this query shows any different assignment, the consumer contract in WD-3, both `checkWDRow` examples (flags = 5 / 21), and the checkWDPackage assertion 'flags' expectation must be recalculated before WD-2 publishes.\" New row F2: \"Fixture WD row photometry | the fixture input consumed by `sim/tools/catalogue_probe_test.ail` | `grep -rn '1.0401' sim/` plus `sed -n` of the matching fixture line | confirms BP−RP = 1.0401 and G = 20.654 exactly as committed; the pinned checkWDPackage outputs teff = 5202.556030832587 and v = 20.899202194346880 were computed by `wdbb_ref.teff(1.0401)` and `g − bbGMinusVFromBpRp(1.0401)` against those fixture values (rerun and repin if the fixture differs).\" AC-W4 replacement text: \"Quality is clean: exit 0, no PUB gates; PUB016 contract-skip infos are expected (25 shipped in 0.2.0 per row Z3; `bbClampTeff` itself must appear as verified per row Z2) — `cd $PKG \u0026\u0026 $A pkg quality .`\". Renumber AC-W11 → AC-W10 position and AC-W10 → AC-W11 so the acceptance table reads W1–W11 in order. No other section changes are required; the physics convention, verification rows P1–V4, and obligation O-1 stand as written."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Round 2. Controller re-verified first-party: prototype wdDigest(400) interpreter vs strict VM identical 4.610481806072101e+06; nested-cons strict-VM failure reproduced on v0.47.2+v0.49 and filed ailang#1420; NaN filed ailang#1419."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "gemini-3-1-pro: The premise that 'Dwarfs top out at 10.7 kK... and are unaffected' by the 10^6 K Doppler LUT ceiling is unverified. There is no Verification Log row proving that the existing dwarf relations (teffFromBpRp) clamp at 10.7 kK or that the GCNS dwarf sample tops out there. If the existing relation covers hotter main-sequence stars (e.g., B-type dwarfs \u003e 22.3 kK), they will also exceed the ceiling at 0.999c.",
+      "oc-kimi-k3: PREMISE VERIFICATION failure on the WD-3 consumer contract: the doc's own evidence rule ('every premise has a row in the Verification log') is broken for two load-bearing claims. (1) The flags contract `flags = 1 (WD) | 4 (APPROX_TEFF) | 16 (TEFF_CLAMPED)` hard-codes bit assignments with no verification row: nothing cites the M1 doc or sprint lines that define the existing flags word — that bit 1 is WD, that bit 4 is APPROX_TEFF (as opposed to some other dwarf approximation flag), and critically that bit 16 is unallocated. The doc even extends bit 16 to dwarf rows where `bpRpInTable` is false, changing existing dwarf-row semantics; a collision or mis-assignment here silently corrupts the flag semantics of the production `checkWDRow` transform this milestone exists to unblock, and AC-W10's grep cannot catch it. This is exactly the class of premise that rows G3 (`grep -n wd tools/extract.py`) and K3 (grep for '0.3.0') demonstrate is cheap to verify, yet it was asserted. (2) The 'committed fixture WD row (BP−RP 1.0401, G 20.654)' from which the pinned checkWDPackage values (teff 5202.556030832587, v 20.899202194346880) are derived has no verification row either — N1 covers the parser's non-finite handling and test lines :18/:23, but never shows the fixture row exists with that photometry. If the fixture differs, the WD-3 pin values are wrong and the 'load-bearing pin in make test' fails or, worse, gets silently recomputed to fit."
+    ],
+    "absent_reviewers": [
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      },
+      {
+        "model": "oc-glm-5-3",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.282272,
+    "total_tokens_in": 45875,
+    "total_tokens_out": 11344
+  }
+}

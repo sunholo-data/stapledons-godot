@@ -1,0 +1,17 @@
+module stapledons/ai/live_test
+
+-- The live entry's refusals (AI.5; `make ai-adapter` runs them end to end
+-- with the env cleared): the provider's key, then AI_LIVE=1, before any call.
+import std/option (Option, Some, None)
+import ./service (liveRefusal)
+
+pure func checkLiveRefusals() -> bool =
+  liveRefusal(["gemini"], [], true) == Some("config: provider gemini refused: GOOGLE_API_KEY is empty") &&
+  liveRefusal(["gemini"], ["openrouter"], true) == Some("config: provider gemini refused: GOOGLE_API_KEY is empty") &&
+  liveRefusal(["openrouter"], ["gemini"], true) == Some("config: provider openrouter refused: OPENROUTER_API_KEY is empty") &&
+  liveRefusal([], [], true) == Some("config: live needs GOOGLE_API_KEY or OPENROUTER_API_KEY") &&
+  liveRefusal(["gemini"], ["gemini"], false) == Some("config: live provider refused: AI_LIVE=1 is not set (attended sessions only)") &&
+  liveRefusal([], ["openrouter"], false) == Some("config: live provider refused: AI_LIVE=1 is not set (attended sessions only)") &&
+  liveRefusal(["gemini"], ["gemini"], true) == None && liveRefusal([], ["openrouter"], true) == None
+
+test "AI.5 live refused without its key, without any key, or without AI_LIVE=1" { checkLiveRefusals() }

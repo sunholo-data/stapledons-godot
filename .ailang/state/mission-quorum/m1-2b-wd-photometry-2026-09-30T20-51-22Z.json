@@ -1,0 +1,79 @@
+{
+  "doc": "design_docs/planned/r1/m1.2b-wd-photometry.md",
+  "iso_ts": "2026-09-30T20:51:22Z",
+  "reviewers": [
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-3-1-pro",
+      "cost_usd": 0.04283800000000001,
+      "tokens_in": 19745,
+      "tokens_out": 279,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The document explicitly lists three UNVERIFIED premises, directly violating Gate 1. Deferring the check of whether `ailang pkg quality` (Z3) can actually prove the `ensures 3000 \u003c= result \u003c= 100000` clause to implementation time is a critical risk, as SMT solvers frequently fail to prove bounds over floating-point table interpolations without explicit loop invariants or lemmas. If it fails, the proposed API contract is broken.",
+        "catch": "The 'UNVERIFIED' list at the bottom of the Verification log, specifically items (b) regarding the `ensures` clause and (c) regarding relative imports in strict mode.",
+        "proposed_fix": "Write a minimal AILANG script containing the floating-point table interpolation and the `ensures 3000 \u003c= result \u003c= 100000` clause, and run `ailang pkg quality` on it to see if Z3 accepts it. Run the relative import test for strict mode. Document both outcomes as new rows in the Verification log. If Z3 cannot prove the bounds, remove the `ensures` clause from the `bbTeffFromBpRp` signature in the Design section."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0.0809846,
+      "tokens_in": 17341,
+      "tokens_out": 12888,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The doc's scope rests on an unverified premise stated as fact: \"the WD temperature feeds the existing blackbody → sRGB path unchanged.\" No verification-log row confirms the M1.1 renderer's temperature domain or clamp behavior. This is load-bearing: the bracket permits T up to 100,000 K and the data contains WDs at ~60.9 kK (G191-B2B, check08), and the doc uses this premise to claim zero renderer-side work and to argue visual harmlessness. If the existing sRGB path or any temperature LUT in it clamps below the WD range (the spec quote itself references temperature lookup tables), hot WDs silently render at the clamp — a silent fallback introduced by this feature, i.e., a simultaneous Gate 1 failure (unverified premise about existing machinery), a Gate 2 failure (the M1.1 rendering machinery is absent from the conflict-surface analysis, which otherwise covers sprint text, version ledger, package modules, and the O(n²) trap), and a Gate 3 failure downstream. It also falsifies the doc's own evidence claim, \"every premise has a row in the Verification log\": this premise and the secondary assertion \"the catalogue parser already rejects 'NaN' (checkPhotometry...)\" have no rows.",
+        "catch": "Two premises asserted without verification rows: (1) the M1.1 blackbody→sRGB render path accepts T ∈ [3000, 100000] K without a silent clamp (only spec text, never the code, is cited); (2) the catalogue parser's NaN rejection is cited to a test filename but never logged. Both are cheap to verify and one of them determines whether this doc's no-renderer-work scope claim is true.",
+        "proposed_fix": "Add two rows to the Verification log and rewrite one sentence. Row R2: \"| R2 | M1.1 sRGB path accepts the full WD bracket without silent clamp | run the M1.1 colour function (name file and function, e.g. `relativity/colour.ail srgbFromTeff`) at 3000, 30000, 60000, 100000 K; grep its domain guards | e.g. analytic Planck→XYZ→sRGB, no T clamp, or 'clamps at X kK, silent' |\". Row R3: \"| R3 | Catalogue parser rejects NaN photometry | run `catalogue.ail` parse on a one-row fixture with BP−RP = 'NaN' | rejected with status \u003ccode\u003e |\". Then replace the Implements parenthetical with: \"the 'Colour' row (Planck spectrum; verified in row R2 that the M1.1 sRGB path covers [3000, 100000] K with no silent clamp, so the WD temperature feeds it unchanged)\". If R2 finds a clamp below 100 kK, do not proceed as written: instead add a sentence to the accuracy table quantifying the affected rows (count of WDs above the clamp from the G2 script), record the clamp in the M1.2c acceptance criteria so clamped-hot-WD rendering is flagged rather than silent, and add the renderer-domain extension to M1.2c's scope."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.178722,
+      "tokens_in": 16764,
+      "tokens_out": 8562,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "AC-W5 makes bit-for-bit VM/interpreter equality of wdDigest(400) — a 401-term accumulation of float interpolation through log/exp — a hard, cmp-enforced release gate, yet nothing in the verification log has ever run a non-trivial floating-point program through both backends. The only evidence offered (UNVERIFIED item (c)) prints 40100.0, an exactly-representable integer that exercises zero float ops, while row A4 has already *proven* the two backends diverge on float comparisons. The claim 'VM-versus-interpreter equality is by bits (AC-W5)' is therefore an asserted premise, not a verified one (gate 1), and it sits on the deterministic-behavior axiom (gate 3). Worse, the only registered fallback in item (c) covers the harness problem (entry location with relative imports), not numeric divergence: if any of the ~1,600 float ops differs by 1 ulp between backends, WD-2's publish proceeds under a failing AC with no defined recovery. Minor supporting friction: the mixed-provenance P12 bin table (earlier run, Z_BPRP 5e-5 lower, n=1,520) is presented in the headline accuracy table as if current, and 'about 17k planck calls' for the exact solver is inconsistent with the doc's own 180-planck-per-forward figure (48×180 = 8,640; the 12-minute extrapolation elsewhere in the doc matches 8,640, not 17k).",
+        "catch": "Run the real table-based digest through both backends on the v0.47.2 binary *now* (the iter4 worktree binary exists and item (c) already shows a standalone `--bytecode --strict-bytecode --entry` run works) and record a verification-log row with the actual bit comparison — before this design is approved with `cmp` in an acceptance criterion. Also re-run the GF21 per-bin ratios with the final Z_BPRP and fix the 17k/8.6k planck-count inconsistency.",
+        "proposed_fix": "1) Execute and log as new row A6: compute Σ_{i=0..400} teff(−0.6 + 2.9i/400) via the production table interpolation (emitted-node values, same op order) on the v0.47.2 interpreter and on `--bytecode --strict-bytecode`, print both results via a bits/hex rendering, and compare. 2) Amend AC-W5 based on the result: if bits match, keep `cmp` and cite A6; if not, replace the first clause with 'strict VM equals interpreter within ≤1e-12 relative, verified via the existing python3 tolerance step' and move bit-parity to a stretch item AC-W5b reported upstream alongside A4. 3) Extend item (c)'s fallback to cover numeric divergence explicitly: 'if the backends diverge numerically, drop the `cmp` clause and compare by tolerance; a harness failure moves the entry into `blackbody_photometry.ail` as an exported pure function.' 4) Re-run the P12 per-bin accuracy table with the final convention (or delete the bins and keep only the n=1,780 statistics) so the published 'honest band' is single-provenance. 5) Correct 'about 17k planck calls' to 'about 8.6k (48 × 180)' or state that the exact solver evaluates all four bands per iteration (356 × 48 ≈ 17k) — pick whichever the implementation will do and make A3's cost math consistent with it."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Controller re-ran Appendix A reference first-party: Z_BPRP=0.590646714600, check values, digest(400)=4504481.806072105 reproduce exactly; ZP line of zeropt.dat and sha256s match row P1. NaN interpreter divergence reproduced on v0.47.2 and v0.49 and filed (ailang#1419). Scope within D-4."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "gemini-3-1-pro: The document explicitly lists three UNVERIFIED premises, directly violating Gate 1. Deferring the check of whether `ailang pkg quality` (Z3) can actually prove the `ensures 3000 \u003c= result \u003c= 100000` clause to implementation time is a critical risk, as SMT solvers frequently fail to prove bounds over floating-point table interpolations without explicit loop invariants or lemmas. If it fails, the proposed API contract is broken.",
+      "oc-glm-5-3: The doc's scope rests on an unverified premise stated as fact: \"the WD temperature feeds the existing blackbody → sRGB path unchanged.\" No verification-log row confirms the M1.1 renderer's temperature domain or clamp behavior. This is load-bearing: the bracket permits T up to 100,000 K and the data contains WDs at ~60.9 kK (G191-B2B, check08), and the doc uses this premise to claim zero renderer-side work and to argue visual harmlessness. If the existing sRGB path or any temperature LUT in it clamps below the WD range (the spec quote itself references temperature lookup tables), hot WDs silently render at the clamp — a silent fallback introduced by this feature, i.e., a simultaneous Gate 1 failure (unverified premise about existing machinery), a Gate 2 failure (the M1.1 rendering machinery is absent from the conflict-surface analysis, which otherwise covers sprint text, version ledger, package modules, and the O(n²) trap), and a Gate 3 failure downstream. It also falsifies the doc's own evidence claim, \"every premise has a row in the Verification log\": this premise and the secondary assertion \"the catalogue parser already rejects 'NaN' (checkPhotometry...)\" have no rows.",
+      "oc-kimi-k3: AC-W5 makes bit-for-bit VM/interpreter equality of wdDigest(400) — a 401-term accumulation of float interpolation through log/exp — a hard, cmp-enforced release gate, yet nothing in the verification log has ever run a non-trivial floating-point program through both backends. The only evidence offered (UNVERIFIED item (c)) prints 40100.0, an exactly-representable integer that exercises zero float ops, while row A4 has already *proven* the two backends diverge on float comparisons. The claim 'VM-versus-interpreter equality is by bits (AC-W5)' is therefore an asserted premise, not a verified one (gate 1), and it sits on the deterministic-behavior axiom (gate 3). Worse, the only registered fallback in item (c) covers the harness problem (entry location with relative imports), not numeric divergence: if any of the ~1,600 float ops differs by 1 ulp between backends, WD-2's publish proceeds under a failing AC with no defined recovery. Minor supporting friction: the mixed-provenance P12 bin table (earlier run, Z_BPRP 5e-5 lower, n=1,520) is presented in the headline accuracy table as if current, and 'about 17k planck calls' for the exact solver is inconsistent with the doc's own 180-planck-per-forward figure (48×180 = 8,640; the 12-minute extrapolation elsewhere in the doc matches 8,640, not 17k)."
+    ],
+    "absent_reviewers": [
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.3025446,
+    "total_tokens_in": 53850,
+    "total_tokens_out": 21729
+  }
+}

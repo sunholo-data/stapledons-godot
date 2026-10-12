@@ -1,0 +1,102 @@
+{
+  "sprint_id": "R1-M4-SOLAR-DEPARTURE",
+  "review_stage": "SD1, bounded SD2/SD3 lighting, and SD6 itinerary source review; final Solar rendering/delivery pending",
+  "timestamp": "2026-10-05T08:47:11.322370+00:00",
+  "evaluator": "Independent generator != judge",
+  "result": "partial_source_pass",
+  "whole_sprint_result": "in_progress",
+  "delivery_result": "pending",
+  "scope": "Independent movement, map/protocol, internal lighting, guided three-leg Solar itinerary and planet identification mask source review. Does not certify final planetary radiometry, native Solar art or deployment.",
+  "independent_checks": {
+    "movement": "/private/tmp/solar-judge-movement-final.log:6passed,0failures,actualexit0. Actual3.5m displacement, frame-rate/diagonal/boundary and stalled-frame lift guard checks.",
+    "map": "/private/tmp/solar-judge-map.log:53passed,0failures,actualexit0. Real3leg AILANG journey preserves exact float64 departures, clocks, recenter/manualpan/reopen and exactIDhandoff. Legacy negotiated1/4 omit new departure field.",
+    "lighting_isolation": "/private/tmp/solar-judge-lighting.log:6passed,0failures,actualexit0. Separate ship/sky World3D, all3profiles preserve sky exposure/beta/gamma; look leaves key fixed; simulator and4xchoice unchanged.",
+    "art": "Opened all12 native PNGs in renders/ship_lighting (4poses x baseline/moody/shadow-off). Moody warm-key/cool-fill is coherent; actual rail/frond/spire/arcade shadows visibly disappear when cast shadows disabled. Source capture log endsOK with6540/12414/14974/24038 changed sampledpixels.",
+    "map_visual": "Opened refreshed native planned/committed 1280x800 and planned 900x600 captures. Exact Alpha Centauri departure, current ship/destination and Centre/Fit/actions visible; detailed rows scroll above footer.",
+    "lint": "git diff --check clean.",
+    "solar_itinerary": "/private/tmp/solar-judge-itinerary.log: 36 passed, 0 failures, actual exit 0, no engine/script errors. Normal core-driven Earth/Jupiter/Saturn/Alpha Centauri route; all motion phases, monotonic clocks, per-leg exact departure, endpoint standoffs, no in-flight reset/advance, one initialization, pause and actual guided map mutation guards.",
+    "planet_identification": "/private/tmp/solar-judge-occlusion.log: 12 checks, 0 failures, actual exit 0, no errors. Opaque night faces, aberrated body direction, clear sky/limb, hidden/stale snapshots, transmissive rings, gaps and renderer-effective f32 grazing opacity.",
+    "flyby_cpu": "/private/tmp/solar-judge-flyby.log: 1061 checks, 0 failures, actual exit 0 and no errors. Actual pinned-package apparent-disc/inverse-ray/Doppler fixtures at beta 0/.5/.9/.99 and 1024 deterministic direction roundtrips. CPU evidence only; GPU/native delivery remains separately pending."
+  },
+  "resolved_finding": {
+    "issue": "Endpoint-only walking can tunnel across guarded lift opening in a long frame. Safe(8,82,-4.8),yaw0,walk_motion(Vector2(-1,0),2s) jumped toz=-11.8 while120smallframes stayed atz=-4.8.",
+    "evidence": "/private/tmp/solar_movement_hole_judge.gd and /private/tmp/solar-judge-hole.log; root test-first5pass1fail /private/tmp/ship-movement-stall-red.log.",
+    "resolution": "Root added radius-bounded motion substeps; independent final6check actualexit0 includes stalled-frame regression."
+  },
+  "code_review": {
+    "movement": "Normalized planar input,3.5m/s, nonnegative delta and max half-radius per step. Lift-travel input gating remains in normal controller.",
+    "map": "Currentship preview; exact protocol2.5 recorded departure retained through committed/arrived route. Old sessions fail closed instead of inventing Sol departure. Framing is explicit and preserves manualpan/clock; Sol remains fixed reference.",
+    "lighting": "Fixed internal broad key/fill and AGX/ambient study, honestly labelled NOT Sun. No new illumination physics or sky photometry. Real simulation Sun direction/intensity, practical-light refinements and SR illumination remain later work.",
+    "solar_itinerary": "New-session-only Earth 10-radius placement with explicit Earth-Moon barycentre approximation. Jupiter/Saturn 0.002c package stop intercepts; exact catalogue Alpha Centauri 0.99c, 1000 AU stellar stop. Existing core owns all motion/clock state, fixed heading per leg; no local interpolation. Guided map browse is read-only, pause sends no tick, rest clock continues positively and index advances only on successful commit."
+  },
+  "pending": [
+    "Final frozen full tests/CI/goldens and native packaged delivery gates; parent full-suite rerun still in progress.",
+    "Final SD4/SD5/SD7 Solar radiometry, meter, rings and outbound/flyby native rendering evidence. Initial clipped/white-disc captures withheld and are not approved.",
+    "Actual MacBook Air M2 24GB 1920x1080 performance remains pending; Studio presentation-limited timings do not fulfil that gate."
+  ],
+  "notes": "No implementation edits. Evaluator-only temporary scripts and this report. Initial review allows continued implementation; not a production merge or whole-Solar delivery pass.",
+  "lighting_stage_followup": {
+    "model_hashes_verified": {
+      "assets/ship_commons/commons_painted.glb": "b02eb87fa9c51aa951fa01c1f8a7778e0ae74c18020b6495a231d2413b401cf8",
+      "assets/ship_demo/ship.glb": "2e985adb701f4b64bf236e0f62c1cf7b9db9a290fff3c652f8f6e9544162abbd"
+    },
+    "matched_profiles": "Independent numeric eye/FOV/rest/4x verification for all4triplets;12captureimages opened, final2Commons warm-practical views reopened.",
+    "benchmark": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "warmup": 120,
+      "samples": 300,
+      "pairs": [
+        {
+          "pose": "bridge_outward",
+          "eye_m": [
+            8.0,
+            83.6999969482422,
+            -4.80000019073486
+          ],
+          "without_shadow_p95_ms": 9.573,
+          "with_shadow_p95_ms": 9.663,
+          "delta_ms": 0.0899999999999999
+        },
+        {
+          "pose": "bridge_inward",
+          "eye_m": [
+            8.0,
+            83.6999969482422,
+            -4.80000019073486
+          ],
+          "without_shadow_p95_ms": 9.611,
+          "with_shadow_p95_ms": 9.629,
+          "delta_ms": 0.0179999999999989
+        },
+        {
+          "pose": "bridge_overlook",
+          "eye_m": [
+            18.0,
+            83.6999969482422,
+            9.0
+          ],
+          "without_shadow_p95_ms": 9.56,
+          "with_shadow_p95_ms": 9.619,
+          "delta_ms": 0.0589999999999993
+        },
+        {
+          "pose": "commons_arcade",
+          "eye_m": [
+            46.0,
+            58.7000007629395,
+            -5.0
+          ],
+          "without_shadow_p95_ms": 9.578,
+          "with_shadow_p95_ms": 9.628,
+          "delta_ms": 0.0500000000000007
+        }
+      ],
+      "interpretation": "Vsync/presentation-limited Studio wall-frame measurement, not isolated GPU shadow cost. Actual M2Air pending."
+    },
+    "execution": "Root attests capture+benchmark actualexit0 /private/tmp/ship-lighting-final-gates.log; positive shadow/pair markers independently read.",
+    "remaining_provenance": "Closed: independently verified all 12 refreshed capture records contain practical position/colour/range/angle/energy/visibility/shadow flag and recipe SHA. Root actual native refresh exit 0 at /private/tmp/ship-lighting-provenance-final.log."
+  }
+}
