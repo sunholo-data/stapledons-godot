@@ -266,6 +266,30 @@ func test_voyage_archive_sgr() -> void:
 	c.leave()
 	step(demo, 0.7)
 	check("stepping back closes the codex", not demo.codex.panel.visible)
+	# D-66 H2: news from home and the legacy log at the Archive terminal.
+	c.go_to("archive")
+	c.use("archive", "open")
+	var read_news: Button = c.panel_body.find_child("ReadNews", true, false)
+	check("H2 the terminal offers Read news from home and the Legacy log", read_news != null and c.panel_body.find_child("LegacyLog", true, false) != null)
+	check("H2 with no news yet, Read news is disabled and refused", read_news != null and read_news.disabled and not c.use("archive", "news"))
+	var saved_world = demo.sky_world
+	var w: Dictionary = (demo.sky_world as Dictionary).duplicate(true)
+	w["journey"] = {"state": "arrived"}
+	w["consequence"] = {"news": {"star_id": "Sol", "body_source": "template", "slots": {}}, "legacy": {"count": 0, "appended": []}}
+	demo.sky_world = w
+	check("H2 with news, Read news opens the news panel over the terminal", c.use("archive", "news") and c.news_panel.visible and not c.legacy_screen.visible)
+	check("H2 the Legacy log shows when home; its own Begin button stays hidden (the console confirms)", c.use("archive", "legacy") and c.legacy_screen.visible and not c.news_panel.visible and not c.legacy_screen.begin_button.visible)
+	c.leave()
+	step(demo, 0.7)
+	check("H2 stepping back closes the news and legacy panels", not c.news_panel.visible and not c.legacy_screen.visible)
+	w["journey"] = {"state": "committed"}
+	demo.sky_world = w
+	c.go_to("archive")
+	c.use("archive", "open")
+	check("H2 Begin again is refused away from home", not c.use("archive", "begin_again"))
+	c.leave()
+	step(demo, 0.7)
+	demo.sky_world = saved_world
 	demo.queue_free()
 	await process_frame
 	# Sgr A*: the helm's entry, the stop ladder, approach and leave.

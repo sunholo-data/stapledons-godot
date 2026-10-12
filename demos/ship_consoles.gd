@@ -37,7 +37,7 @@ const STATIONS := {
 const ACTIONS := {
 	"navigation": ["open", "select", "speed", "commit", "cancel", "home", "sgr_a", "approach", "leave"],
 	"voyage": ["open", "begin"],
-	"archive": ["open"],
+	"archive": ["open", "news", "legacy", "begin_again"], # D-66 H2: news from home, legacy log, Begin again (confirm)
 }
 const ITINERARY := "Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
 const HINT := "Decisions are made at the bridge consoles: the Voyage console begins the guided voyage, the navigation station plots a course. Tab · Walk to."
@@ -59,6 +59,10 @@ var _aimed := ""
 var _glow: Array = [] # [MeshInstance3D, StandardMaterial3D]
 var screens := {} # station -> {viewport, label, text}
 var panel_layer := CanvasLayer.new()
+# D-66 H2: the news from home and the legacy log, read at the Archive terminal (M4.4's panels).
+var news_panel: NewsPanel
+var legacy_screen: LegacyScreen
+var _reading_layer: CanvasLayer
 var panel := PanelContainer.new()
 var panel_title := Label.new()
 var panel_body := VBoxContainer.new()
@@ -233,6 +237,24 @@ func use(id: String, action: String, arg: Variant = null) -> bool:
 
 func _act(id: String, action: String, arg: Variant) -> bool:
 	match [id, action]:
+		["archive", "news"]:
+			var w: Dictionary = demo.sky_world if demo.sky_world is Dictionary else {}
+			if not NewsPanel.new().has_news(w):
+				demo.refuse("No news from home has reached the ship yet.")
+				return false
+			_reading().show_world(w); news_panel.open(); legacy_screen.visible = false
+			return true
+		["archive", "legacy"]:
+			_reading(); news_panel.close()
+			legacy_screen.show_world(demo.sky_world if demo.sky_world is Dictionary else {})
+			legacy_screen.visible = true
+			return true
+		["archive", "begin_again"]:
+			var home: bool = demo.sky_world is Dictionary and LegacyScreen.is_home(demo.sky_world)
+			if not home:
+				demo.refuse("A new voyage begins only once the ship is home.")
+				return false
+			_reading(); return legacy_screen.begin_again(demo.journey_sim)
 		["voyage", "begin"]:
 			return demo.start_solar_departure()
 		["navigation", "sgr_a"]:
@@ -741,6 +763,22 @@ func _close_panel(id: String) -> void:
 	if id == "archive" and demo.codex != null:
 		demo.codex.close()
 		(demo.codex.get_parent() as CanvasLayer).layer = 13
+	if id == "archive" and news_panel != null:
+		news_panel.close(); legacy_screen.visible = false
+
+
+## The news and legacy panels over the Archive terminal's panel (made once; M4.4's ui, unchanged).
+func _reading() -> NewsPanel:
+	if news_panel == null:
+		_reading_layer = CanvasLayer.new(); _reading_layer.layer = panel_layer.layer + 2; add_child(_reading_layer)
+		news_panel = NewsPanel.new(); _reading_layer.add_child(news_panel); news_panel.visible = false
+		legacy_screen = LegacyScreen.new(); _reading_layer.add_child(legacy_screen)
+		legacy_screen.build(); legacy_screen.begin_button.visible = false # Begin again is the console's confirm
+		legacy_screen.visible = false
+		var r := panel_rect()
+		for c: Control in [news_panel, legacy_screen]:
+			c.position = r.position + Vector2(12.0, 140.0); c.custom_minimum_size = Vector2(r.size.x - 24.0, r.size.y - 152.0)
+	return news_panel
 
 
 func _label(text: String, size := 14, color := Color(0.86, 0.9, 0.98)) -> Label:
@@ -826,3 +864,15 @@ func _archive_panel() -> void:
 		var b := DisplayBinding.new().bind(spec[1], spec[2])
 		b.update_from(world)
 		news.add_child(b)
+	var reading := HBoxContainer.new()
+	reading.add_theme_constant_override("separation", 10)
+	panel_body.add_child(reading)
+	var read_news := Button.new(); read_news.text = "Read news from home"; read_news.name = "ReadNews"
+	read_news.disabled = not NewsPanel.new().has_news(world)
+	read_news.pressed.connect(func() -> void: use("archive", "news"))
+	reading.add_child(read_news)
+	var read_legacy := Button.new(); read_legacy.text = "Legacy log"; read_legacy.name = "LegacyLog"
+	read_legacy.pressed.connect(func() -> void: use("archive", "legacy"))
+	reading.add_child(read_legacy)
+	if LegacyScreen.is_home(world):
+		reading.add_child(confirm_button("archive", "begin_again", "Begin again"))

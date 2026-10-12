@@ -28,6 +28,6 @@ to a Lorentz factor of 2,117. Denser gas lowers that limit. A route
 the drive cannot hold is refused, and the captain chooses:
 slow down, or go around by way of another star.
 
-(The cloud outlines on the chart are digitised from the published sky maps.
-Their depths remain a game approximation; so is the glow of a grain's impact
-on the wall.)
+(The cloud outlines on the chart come from the published sky surveys. How far
+each cloud reaches along the line of sight is the Archive's best estimate, and
+it is refined as the ship crosses them.)
