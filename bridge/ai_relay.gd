@@ -49,7 +49,14 @@ static func load_cast(dir: String) -> Dictionary:
 	for f in DirAccess.get_files_at(dir):
 		var c = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join(f))) if f.ends_with(".json") else null
 		if c is Dictionary and typeof(c.get("entity_id")) == TYPE_STRING and typeof(c.get("voice_id")) == TYPE_STRING:
-			out[c["entity_id"]] = {"name": c.get("name", c["entity_id"]), "voice": c["voice_id"]}
+			var who := {"name": c.get("name", c["entity_id"]), "voice": c["voice_id"]}
+			# R1-ARCHIVE-VOICE: the persona reaches the prompt (ai/prompt.ail), not only the name.
+			for k in ["persona", "style"]:
+				if typeof(c.get(k)) == TYPE_STRING:
+					who[k] = c[k]
+			if c.get("secrets") is Array:
+				who["secrets"] = (c["secrets"] as Array).filter(func(x): return x is Dictionary and typeof(x.get("rule")) == TYPE_STRING).map(func(x): return str(x["rule"]))
+			out[c["entity_id"]] = who
 	return out
 
 

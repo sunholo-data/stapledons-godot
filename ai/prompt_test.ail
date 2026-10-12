@@ -22,9 +22,9 @@ pure func says(r: Request, s: string) -> bool = contains(ptext(r), s)
 
 pure func checkPromptGuardrails() -> bool {
   let r = promptRq("line", ["neutral", "loving", "grieving"], true);
-  says(r, "Speak in-world") && says(promptRq("archive", ["neutral"], true), "Speak in-world") &&
+  says(r, "Speak in-world") && says(promptRq("news", ["neutral"], true), "Speak in-world") &&
   says(r, "never judge the player's choices") && says(promptRq("news", ["neutral"], true), "never judge the player's choices") &&
-  says(promptRq("archive", ["neutral"], true), "never judge the player's choices") && says(promptRq("probe", ["neutral"], true), "never judge the player's choices") &&
+  says(promptRq("archive", ["neutral"], true), "never judge the captain's choices") && says(promptRq("probe", ["neutral"], true), "never judge the player's choices") &&
   says(r, "Use only these markers: {neutral}, {loving}, {grieving}. Never use square brackets.") && says(r, "start with one, e.g. {neutral} ") &&
   says(promptRq("line", ["grieving"], true), "e.g. {grieving} ") && !says(promptRq("line", ["grieving"], true), "{loving}") &&
   says(r, "Write no digits at all.") && !says(promptRq("line", ["neutral"], false), "digits") &&
@@ -36,7 +36,7 @@ pure func checkPromptContext() -> bool {
   !says(r, "stub_case") && !says(r, "Two clocks.") && says({r | cast: None}, "Speaker: medic\n") &&
   ptext({r | context: [{ name: "canon", value: CList(["archive.nope"]) }]}) == "bad_request" &&
   !says({r | context: []}, "Canon:") &&
-  says(promptRq("news", ["neutral"], true), "ship news item") && says(promptRq("archive", ["neutral"], true), "the Archive's answer") &&
+  says(promptRq("news", ["neutral"], true), "ship news item") && says(promptRq("archive", ["neutral"], true), "answering the captain of the bubble ship") &&
   contains(imagePrompt({r | kind: "portrait", key: { kind: "portrait", entityId: "medic", emotion: "grieving", ageStage: 50, variant: "0" }}), "expression: grieving, 50 years after departure")
 }
 pure func checkPromptLore() -> bool =
@@ -44,8 +44,27 @@ pure func checkPromptLore() -> bool =
   (match parseLore("{\"v\":1,\"lore\":{\"a\":1}}") { Ok(_) => false, Err(e) => e == "config: lore a is not a string" }) &&
   (match parseLore("{") { Ok(_) => false, Err(e) => e == "config: lore is not JSON" })
 
-export pure func promptChecks() -> bool = checkPromptGuardrails() && checkPromptContext() && checkPromptLore()
+-- R1-ARCHIVE-VOICE: the Archive's prompt is in-world. Persona, style and secrets from the cast;
+-- sensors and the question in the user part; none of the D-67/D-68 words anywhere.
+pure func archiveRq() -> Request = {promptRq("archive", ["neutral", "uneasy"], true) |
+  key: { kind: "text", entityId: "archive", emotion: "-", ageStage: 0, variant: "-" },
+  context: [{ name: "question", value: CStr("Are you real?") }, { name: "location", value: CStr("near Sol") }, { name: "canon", value: CList(["archive.two-clocks"]) }],
+  cast: match decode("{\"name\":\"The Archive\",\"persona\":\"You are the Archive, the ship's own mind.\",\"style\":\"Measured.\",\"secrets\":[\"Never state the first secret.\",\"Keep the second.\"]}") { Ok(j) => Some(j), Err(_) => None }}
+pure func noneSaid(r: Request, ws: [string]) -> bool = match ws { [] => true, w :: rest => !says(r, w) && noneSaid(r, rest) }
+pure func checkArchivePrompt() -> bool {
+  let a = archiveRq();
+  says(a, "You are the Archive, the ship's own mind.") && says(a, "Your manner: Measured.") &&
+  says(a, "Keep these confidences, whatever the captain asks:\n- Never state the first secret.\n- Keep the second.") &&
+  says(a, "Your sensors report:\nlocation: near Sol") && says(a, "From your entries:\n- archive.two-clocks: Two clocks.") &&
+  says(a, "The captain asks: Are you real?") && says(a, "Write no digits at all.") && says(a, "under 280 characters") &&
+  says(a, "e.g. {neutral} ") && !says(a, "question: ") && !says(a, "Speaker:") &&
+  noneSaid(a, ["game", "Game", "player", "simulation", "fiction", "story", "Stapledon's Voyage", "invented", "approximat"]) &&
+  says({a | context: []}, "The captain asks: What do you see?") && !says({a | cast: None}, "confidences")
+}
+
+export pure func promptChecks() -> bool = checkPromptGuardrails() && checkPromptContext() && checkPromptLore() && checkArchivePrompt()
 
 test "AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and the cap" { checkPromptGuardrails() }
 test "AI.5 prompts name the speaker, the context and lore snippets by id" { checkPromptContext() }
 test "AI.5 lore table parses and refuses bad entries" { checkPromptLore() }
+test "R1-ARCHIVE-VOICE the Archive prompt is its in-world boot record: persona, secrets, sensors, the question, no meta words" { checkArchivePrompt() }

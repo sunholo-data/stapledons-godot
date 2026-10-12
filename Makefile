@@ -1074,8 +1074,8 @@ SPOILER_RE := \b(previous (run|runs|voyages?|universes?|iterations?|lives)|past 
 VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd
 ## The console script carries internal ids ("player" camera mode): it is scanned for loop spoilers only.
 SPOILER_UI := demos/ship_consoles.gd
-in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy and the on-screen strings of the news, Voyage log, codex and console panels speak in-world (no "game", "simulation", "approximation", "invented", "player" ...) and never hint at the loop ("previous run", "re-run", "New Game+", "begin again" ...)
-	@bad=$$(grep -n -i -E '$(VOICE_RE)|$(SPOILER_RE)' $$(ls data/lore/archive/*.md | grep -v '/README.md$$') data/news/templates.json data/news/copy.json; \
+in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy, the Archive's AI prompt (its golden) and the on-screen strings of the news, Voyage log, codex and console panels speak in-world (no "game", "simulation", "approximation", "invented", "player" ...) and never hint at the loop ("previous run", "re-run", "New Game+", "begin again" ...)
+	@bad=$$(grep -n -i -E '$(VOICE_RE)|$(SPOILER_RE)' $$(ls data/lore/archive/*.md | grep -v '/README.md$$') data/news/templates.json data/news/copy.json tests/ai/prompts/archive.golden.txt; \
 	  for f in $(VOICE_UI); do grep -n -v -E '^[[:space:]]*#' $$f | grep -o -E '^[0-9]+:|"[^"]*"' | awk '/^[0-9]+:$$/{n=$$0;next}{print n $$0}' | grep -i -E '$(VOICE_RE)|$(SPOILER_RE)' | sed "s|^|$$f:|"; done; \
 	  for f in $(SPOILER_UI); do grep -n -v -E '^[[:space:]]*#' $$f | grep -o -E '^[0-9]+:|"[^"]*"' | awk '/^[0-9]+:$$/{n=$$0;next}{print n $$0}' | grep -i -E '$(SPOILER_RE)' | sed "s|^|$$f:|"; done); \
 	if [ -n "$$bad" ]; then echo "in-world-voice-check: out-of-world or loop-spoiling wording in in-world text (D-67, D-68):"; echo "$$bad"; exit 1; fi; \

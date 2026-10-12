@@ -10,7 +10,7 @@ import std/result (Result, Ok, Err)
 import std/string (contains, join)
 import std/bytes as B
 import ./wire (Constraints)
-import ./reply (Reply, Billed, screen, textOf, stepReply, openRouterBody, openRouterModel, parseOpenRouter, parseImage, pngSize, ttsBody, parseTts, billedOpenRouter, billedTts)
+import ./reply (Reply, Billed, screen, outOfWorld, textOf, stepReply, openRouterBody, openRouterModel, parseOpenRouter, parseImage, pngSize, ttsBody, parseTts, billedOpenRouter, billedTts)
 
 pure func consOf(es: [string], n: int) -> Constraints = { maxChars: n, noNumerals: true, emotions: es }
 pure func pal() -> Constraints = consOf(["neutral", "loving", "grieving"], 280)
@@ -85,7 +85,23 @@ pure func checkReplyBilled() -> bool =
   billedTts(tts(l16(), "AAABAAIA", "MAX_TOKENS", "40")) == Some({ tokensIn: 9, tokensOut: 40 }) &&
   billedTts("{\"error\":{\"code\":429}}") == None && billedTts("nope") == None
 
-export pure func replyChecks() -> bool = checkReplyScreen() && checkReplyText() && checkReplyOpenRouter() && checkReplyImage() && checkReplyTts() && checkReplyBilled()
+-- R1-ARCHIVE-VOICE (D-67/D-68): frame breaks and loop hints are screened out; in-world words that
+-- merely contain a listed word pass.
+pure func allOut(ts: [string]) -> bool = match ts { [] => true, t :: r => fails(t, "out_of_world") && allOut(r) }
+pure func allIn(ts: [string]) -> bool = match ts { [] => true, t :: r => passes(t) && allIn(r) }
+pure func checkReplyInWorld() -> bool =
+  allOut(["{neutral} This is only a game, Captain.", "{neutral} As a large language model, I cannot know.", "{neutral} The Player chose well.",
+          "{neutral} In this simulation the stars are fixed.", "{neutral} Perhaps a previous run went differently.", "{neutral} Start a New Game.",
+          "{neutral} The multiverse\u2014", "{neutral} It was a re-run of the same voyage.", "{neutral} I enjoy our role-play.", "{neutral} This is fiction."]) &&
+  -- Known, accepted false positives (a whole-word list cannot tell senses apart): these fall back.
+  fails("{neutral} The players of the old orchestra are recorded in my entries.", "out_of_world") &&
+  fails("{neutral} The game birds of Earth are in my records.", "out_of_world") &&
+  outOfWorld("the game\u2014the") && outOfWorld("a game\u2026") &&
+  passes("{neutral} The endgame of this voyage is not mine to judge.") && passes("{neutral} I am an artificial mind, Captain, the ship's Archive.") &&
+  passes("{neutral} My records here are thin. I may be misremembering.") && passes("{neutral} The run of the river was steady.") &&
+  outOfWorld("GAME!") && outOfWorld("(simulation)") && !outOfWorld("endgame") && !outOfWorld("simulacra")
+
+export pure func replyChecks() -> bool = checkReplyInWorld() && checkReplyScreen() && checkReplyText() && checkReplyOpenRouter() && checkReplyImage() && checkReplyTts() && checkReplyBilled()
 
 test "AI.5 screen: grammar, palette, brackets, digits, display length" { checkReplyScreen() }
 test "AI.5 a reply is its text, or bad_output when cut off or screened out" { checkReplyText() }
@@ -93,3 +109,4 @@ test "AI.5 OpenRouter body and chat-completions parser" { checkReplyOpenRouter()
 test "AI.5 image parser: the 1x1 stub PNG and the placeholder; else bad_output" { checkReplyImage() }
 test "AI.5 TTS body from gemini_live; complete speech only" { checkReplyTts() }
 test "AI.9 an unparsable but billed reply reports its tokens; error bodies are not billed" { checkReplyBilled() }
+test "R1-ARCHIVE-VOICE screen: frame breaks and loop hints are out_of_world; in-world words pass" { checkReplyInWorld() }

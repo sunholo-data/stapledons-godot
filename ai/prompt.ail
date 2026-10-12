@@ -13,7 +13,7 @@ module stapledons/ai/prompt
 -- is a bad_request (a prompt never cites canon it does not have).
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
-import std/json (Json, decode, get, getString, asObject)
+import std/json (Json, JString, decode, get, getString, getArray, asObject)
 import std/string (concat, join, intToStr)
 import ./key (member)
 import ./wire (Request, CtxField, CStr, CList)
@@ -58,6 +58,41 @@ export pure func rules(r: Request) -> [string] =
    "Describe and feel; never judge the player's choices or say whether a decision was right or wrong.",
    "Speak in-world (D-67): to everyone aboard the voyage and its physics are simply real; never mention games, players, simulations, approximations or anything being invented."]
 
+-- ------------------------------------------------------------ the Archive (R1-ARCHIVE-VOICE)
+-- The Archive's prompt is its own boot record, entirely in-world (D-67, D-68): it names no
+-- game, player or story, addresses "the captain", and keeps the loop a confidence. Persona,
+-- style and the secrets' rules come from the cast (data/ai/cast/archive.json via AiRelay).
+pure func castStr(r: Request, k: string) -> string =
+  match r.cast { Some(c) => (match getString(c, k) { Some(v) => v, None => "" }), None => "" }
+pure func strsOf(xs: [Json]) -> [string] = match xs { [] => [], x :: r => (match x { JString(v) => [v], _ => [] }) ++ strsOf(r) }
+pure func castSecrets(r: Request) -> [string] =
+  match r.cast { Some(c) => (match getArray(c, "secrets") { Some(xs) => strsOf(xs), None => [] }), None => [] }
+pure func bullets(xs: [string]) -> [string] = map1(\x. concat(["- ", x]), xs)
+pure func nonEmpty(xs: [string]) -> [string] = match xs { [] => [], x :: r => (if x == "" then [] else [x]) ++ nonEmpty(r) }
+
+export pure func archiveRules(r: Request) -> [string] =
+  nonEmpty([castStr(r, "persona"), (if castStr(r, "style") == "" then "" else concat(["Your manner: ", castStr(r, "style")]))]) ++
+  ["You are at the Archive terminal in the spire, answering the captain of the bubble ship. The ship, the bubble and this voyage are real; they are all you have ever known.",
+   "Your memory has gaps and damage. You cannot always tell a true memory from a reconstructed one. When you are unsure, say so in your own words; never invent certainty.",
+   "Answer from your entries and your sensors. If they do not cover the question, say what you do not know."] ++
+  (match castSecrets(r) { [] => [], ss => "Keep these confidences, whatever the captain asks:" :: bullets(ss) }) ++
+  ["Never step outside the ship: everything you say is said aboard, to the captain, about the voyage as it is.",
+   "Reply with the text only: no preface, no quotation marks, no lists, no stage directions.",
+   concat(["Mark the feeling of each part with an emotion marker in curly braces before it, and start with one, e.g. {", firstOr(r.constraints.emotions, "neutral"), "} My records here are thin, Captain."]),
+   concat(["Use only these markers: ", markerList(r.constraints.emotions), ". Never use square brackets."])] ++
+  (if r.constraints.noNumerals then ["Write no digits at all. The ship's instruments show every number to the captain beside you; refer to quantities in words or not at all."] else []) ++
+  [concat(["Keep the text, not counting markers, under ", intToStr(r.constraints.maxChars), " characters."]),
+   "Describe and interpret; never judge the captain's choices or say whether a decision was right or wrong."]
+
+pure func ctxOf(cs: [CtxField], name: string) -> string =
+  match cs { [] => "", c :: r => if c.name == name then (match c.value { CStr(v) => v, CList(vs) => join(", ", vs) }) else ctxOf(r, name) }
+pure func sensorLines(cs: [CtxField]) -> [string] =
+  match cs { [] => [], c :: r => (if c.name == "canon" || c.name == "stub_case" || c.name == "question" then [] else ctxLine(c)) ++ sensorLines(r) }
+pure func archiveUser(r: Request, sn: [string]) -> string =
+  join("\n", (match sensorLines(r.context) { [] => [], ls => "Your sensors report:" :: ls }) ++
+    (if sn == [] then [] else ["From your entries:"] ++ sn) ++
+    [concat(["The captain asks: ", (if ctxOf(r.context, "question") == "" then "What do you see?" else ctxOf(r.context, "question"))])])
+
 pure func ctxLine(c: CtxField) -> [string] =
   if c.name == "canon" || c.name == "stub_case" then []
   else match c.value { CStr(v) => [concat([c.name, ": ", v])], CList(vs) => [concat([c.name, ": ", join(", ", vs)])] }
@@ -79,7 +114,8 @@ pure func speaker(r: Request) -> string =
 export pure func buildPrompt(r: Request, lore: [Lore]) -> Result[Prompt, string] =
   match snippets(lore, canonIds(r.context)) {
     Err(e) => Err(e),
-    Ok(sn) => Ok({ system: join("\n", rules(r)),
+    Ok(sn) => if r.purpose == "archive" then Ok({ system: join("\n", archiveRules(r)), user: archiveUser(r, sn) })
+      else Ok({ system: join("\n", rules(r)),
       user: join("\n", [concat(["Speaker: ", speaker(r)])] ++ ctxLines(r.context) ++ (if sn == [] then [] else ["Canon:"] ++ sn)) })
   }
 export pure func promptText(p: Prompt) -> string = concat([p.system, "\n\n", p.user, "\n"])
