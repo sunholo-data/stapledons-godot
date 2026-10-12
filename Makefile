@@ -26,7 +26,7 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 	@# ailang.lock carries a generated_at timestamp (reported upstream); ignore it, then restore the file
 	git diff --exit-code -I '"generated_at"' sim/ailang.lock; rc=$$?; git checkout -q sim/ailang.lock; exit $$rc
 
-test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts ## everything that runs without a GPU window
+test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -1066,3 +1066,13 @@ free-nav-recovery-test: import
 	@$(AILANG) run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/free_nav_recovery.ndjson > $(SCRATCH)/free-nav-recovery.vm.ndjson
 	@$(AILANG) run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/free_nav_recovery.ndjson > $(SCRATCH)/free-nav-recovery.interp.ndjson
 	@cmp $(SCRATCH)/free-nav-recovery.vm.ndjson $(SCRATCH)/free-nav-recovery.interp.ndjson
+
+.PHONY: in-world-voice-check
+VOICE_RE := \b(game|games|gameplay|approximation|approximate[ds]?|hand.?wav(e|ed|ing)|invented|fiction(al)?|simulat(ion|ed|or|e)|renderer|shader|hypothetical|placeholder|player|toy|sandbox)\b
+VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd
+in-world-voice-check: ## D-67: Archive entries, news templates/copy and the string literals in the news, legacy and codex panels speak in-world (no "game", "simulation", "approximation", "hand-wave", "invented", "player", ...)
+	@bad=$$(grep -n -i -E '$(VOICE_RE)' $$(ls data/lore/archive/*.md | grep -v '/README.md$$') data/news/templates.json data/news/copy.json; \
+	  for f in $(VOICE_UI); do grep -n -o '"[^"]*"' $$f | grep -i -E '$(VOICE_RE)' | sed "s|^|$$f:|"; done); \
+	if [ -n "$$bad" ]; then echo "in-world-voice-check: out-of-world wording in in-world text (D-67):"; echo "$$bad"; exit 1; fi; \
+	echo "in-world-voice-check: Archive entries, news copy and the news/legacy/codex panel strings speak in-world (D-67)"
+

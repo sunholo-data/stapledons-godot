@@ -589,6 +589,10 @@ func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
 		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.ISM_MINOR
+		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
+		# replays it). A recording session never adopts the loading jump's prefetched sim
+		# (SimBridge._adopt_warm), so the tee opens with the real start().
+		journey_sim.record_path=str(setup_options.get("record",""))
 		# R1-SHIP-UI: the Archive terminal shows what this session has unlocked (protocol 2.2 table).
 		journey_sim.archive_rows=LoreLoader.archive_rows(LoreLoader.load_entries()["entries"])
 		# D-54: free navigation stops at a finite star where it shows its size, and Sol at Earth.
