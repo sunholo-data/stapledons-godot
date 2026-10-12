@@ -289,9 +289,30 @@ func test_voyage_archive_sgr() -> void:
 	check("H2 Begin again is refused away from home", not c.use("archive", "begin_again"))
 	c.leave()
 	step(demo, 0.7)
+	w["journey"] = {"state": "arrived"}
+	demo.sky_world = w
+	c.go_to("archive")
+	c.use("archive", "open")
+	var begun: Array = []
+	c.legacy_screen.begun.connect(func(s: int) -> void: begun.append(s))
+	check("H2 Begin again at home starts a new voyage in the sim (a fresh seed)", c.use("archive", "begin_again") and begun.size() == 1 and c.legacy_screen.seed_used == begun[0] and demo.journey_sim.last_seed == begun[0])
+	check("H2 Begin again ends the guided tour that was reading the old session", demo.solar_tour == null and not demo.journey_map.guided_read_only)
+	c.leave()
+	step(demo, 0.7)
 	demo.sky_world = saved_world
 	demo.queue_free()
 	await process_frame
+	# D-66 H1: setup_options["record"] tees the session's NDJSON to the file.
+	var rec := OS.get_user_data_dir().path_join("test_ship_consoles_record.ndjson")
+	DirAccess.remove_absolute(rec)
+	var rd: Node = await new_demo({"record": rec})
+	step(rd, 0.5)
+	check("H1 the record option reaches the journey sim", rd.journey_sim != null and rd.journey_sim.record_path == rec)
+	rd.queue_free()
+	await process_frame
+	await process_frame
+	check("H1 the recording holds the session's NDJSON", FileAccess.file_exists(rec) and FileAccess.get_file_as_string(rec).strip_edges().begins_with("{"))
+	DirAccess.remove_absolute(rec)
 	# Sgr A*: the helm's entry, the stop ladder, approach and leave.
 	var d: Node = await new_demo()
 	c = d.consoles

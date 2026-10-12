@@ -182,6 +182,7 @@ ai-mutants:        ## AI.4, AI.5, AI.8, AI.9: route, key, stub, cache order, act
 	  'wire.ail@"no_key", "text_only", "budget"@"no_key", "budget"@AI.4 ai/1 codecs round-trip every fixture both ways@wire_test.ail' \
 	  'reply.ail@else if c.noNumerals && anyDigit(body) then Some("numeral")@else if false then Some("numeral")@AI.5 screen: grammar, palette, brackets, digits, display length@reply_test.ail' \
 	  'prompt.ail@"Describe and feel; never judge the player'"'"'s choices or say whether a decision was right or wrong."@"Describe and feel."@AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and the cap@prompt_test.ail' \
+	  'prompt.ail@"Speak in-world (D-67): @"Speak (D-67): @AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and the cap@prompt_test.ail' \
 	  'service.ail@else if !aiLive then Some(@else if false then Some(@AI.5 live refused without its key, without any key, or without AI_LIVE=1@live_test.ail' \
 	  'provider.ail@{ acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: after }@{ acts: used ++ [Say(errOut(j.r, code, prov, j.hop.provider))], ledger: l }@AI.5 a failed live call is charged and logged before its error@stub_test.ail' \
 	  'spend.ail@usd * 1000000000.0 + 0.5@usd * 1000000000.0@AI.5 prices and ceilings round to the nearest nano-dollar@spend_test.ail' \

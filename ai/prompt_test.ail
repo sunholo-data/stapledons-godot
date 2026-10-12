@@ -22,6 +22,7 @@ pure func says(r: Request, s: string) -> bool = contains(ptext(r), s)
 
 pure func checkPromptGuardrails() -> bool {
   let r = promptRq("line", ["neutral", "loving", "grieving"], true);
+  says(r, "Speak in-world") && says(promptRq("archive", ["neutral"], true), "Speak in-world") &&
   says(r, "never judge the player's choices") && says(promptRq("news", ["neutral"], true), "never judge the player's choices") &&
   says(promptRq("archive", ["neutral"], true), "never judge the player's choices") && says(promptRq("probe", ["neutral"], true), "never judge the player's choices") &&
   says(r, "Use only these markers: {neutral}, {loving}, {grieving}. Never use square brackets.") && says(r, "start with one, e.g. {neutral} ") &&

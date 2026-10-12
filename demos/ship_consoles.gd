@@ -254,7 +254,15 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 			if not home:
 				demo.refuse("A new voyage begins only once the ship is home.")
 				return false
-			_reading(); return legacy_screen.begin_again(demo.journey_sim)
+			_reading()
+			if not legacy_screen.begin_again(demo.journey_sim):
+				return false
+			# The fresh voyage replaces the session a guided tour was reading: the tour ends with it.
+			if demo.solar_tour != null:
+				demo.solar_tour = null
+				if demo.journey_map != null:
+					demo.journey_map.guided_read_only = false
+			return true
 		["voyage", "begin"]:
 			return demo.start_solar_departure()
 		["navigation", "sgr_a"]:
