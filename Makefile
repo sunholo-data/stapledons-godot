@@ -14,7 +14,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh export-filter-audit
+.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh export-filter-audit export-pack-check export-pack-check-strict
 
 all: test
 
@@ -377,6 +377,16 @@ export-macos: runtime sky-bundle areas-stage starmap-assets lens-assets import  
 	$(GODOT) --headless --path . --export-release "macOS" "$(APP)"
 	@du -sh "$(APP)"
 
+export-pack-check: import   ## L6b (rig-only): re-measure AUTO_EXT and the classified paths on a real --export-pack zip (no templates)
+	@mkdir -p $(SCRATCH)/export-pack
+	@rm -f $(SCRATCH)/export-pack/game.zip
+	@$(GODOT) --headless --path . --export-pack "macOS" $(SCRATCH)/export-pack/game.zip
+	@STRICT="$(STRICT)" $(GODOT) --headless --path . --script tests/test_export_pack.gd -- $(SCRATCH)/export-pack/game.zip > $(SCRATCH)/export-pack.log 2>&1; rc=$$?; grep -E '^(FAIL|SKIP|export-pack-check)' $(SCRATCH)/export-pack.log; test $$rc = 0 && grep -q '^export-pack-check: [0-9]* checked, [0-9]* skips, 0 failures$$' $(SCRATCH)/export-pack.log
+
+export-pack-check-strict:   ## publish-dev gate: an absent witness is a hard failure; no silent skips (AC8)
+	@$(MAKE) --no-print-directory export-pack-check STRICT=1
+	@grep -q ', 0 skips, 0 failures$$' $(SCRATCH)/export-pack.log || { echo 'export-pack-check-strict: silent skips at the publish-dev gate'; exit 1; }
+
 export-smoke:      ## run the exported .app's capture with NO ailang on PATH; must produce the contact sheet
 	@rm -rf $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home && mkdir -p $(SCRATCH)/export-smoke $(SCRATCH)/export-smoke-home
 	exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); \
@@ -388,6 +398,8 @@ export-smoke:      ## run the exported .app's capture with NO ailang on PATH; mu
 	grep -E '^(m4-smoke|interior):' $(SCRATCH)/export-smoke/m4-smoke.log; grep -q 'interior: bundle res://areas_bundle/bridge' $(SCRATCH)/export-smoke/m4-smoke.log && grep -q '^m4-smoke: OK$$' $(SCRATCH)/export-smoke/m4-smoke.log && echo "export-smoke: interior OK from the staged bundle"
 
 DEV_BUCKET ?= stapledons-voyage-dev-builds
+
+publish-dev: export-pack-check-strict   # L6b pack oracle, strict: an absent witness fails here (AC8)
 
 publish-dev: export-macos export-smoke   ## upload this build to the private dev bucket (needs gcloud auth); install with tools/install_review_build.sh --dev
 	@ver=$$(cat runtime/build_version.txt); commit=$$(cat runtime/build_commit.txt); \
