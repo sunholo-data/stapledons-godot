@@ -14,7 +14,7 @@ AILANG_RELEASE ?= v0.52.0
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
-.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh
+.PHONY: geodesic-oracle news-lint news-test all test splash transit-test deps area-test validate-areas m4-smoke interior-test glow-probe m4-physics-probe lint-precision glow-eps-sheet capture-m4 areas-stage physics sim ui map-capture replay replay-record parity parity-offaxis parity-v2 parity-gr offaxis-v11-equiv strict rng-ref journey-replay wd-vm sky-vm sky-model tools-test extract-test extract destar-test destar golden bench capture run voyage publish-dev import runtime export-macos export-smoke starmap-assets starmap-publish sky-inputs sky-assets sky-regen sky-publish sky-bundle sky-verify capture-bh-sky bh-hud-test run-bh capture-bh bh-render-diff bh-refs bh-refs-publish bench-bh export-filter-audit
 
 all: test
 
@@ -53,6 +53,12 @@ physics: lens-assets ## CPU physics reference (incl. the Schwarzschild mirror on
 	@$(GODOT) --headless --path . --script tests/test_physics.gd > $(SCRATCH)/physics.txt 2>&1; rc=$$?; cat $(SCRATCH)/physics.txt; \
 	  [ $$rc -eq 0 ] || { echo "physics: godot exited $$rc"; exit 1; }; \
 	  grep -qE '^[0-9]+ passed, 0 failed$$' $(SCRATCH)/physics.txt || { echo "physics: no '<n> passed, 0 failed' summary line (parse error or early exit?)"; exit 1; }
+
+test: export-filter-audit
+
+export-filter-audit: import   ## L6a: shipped res:// reads vs export_presets.cfg; fails when the export would drop one
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_export_audit.gd > $(SCRATCH)/export-audit.log 2>&1; rc=$$?; grep -E '^(FAIL|UNCLASSIFIED|scoped files|distinct literals|filters|export-filter-audit)' $(SCRATCH)/export-audit.log; test $$rc = 0 && grep -q '^export-filter-audit: [0-9]* literals.*, 0 failures$$' $(SCRATCH)/export-audit.log
 
 # Gate 5: never compute 1 - beta near c. A hand-written 1 - beta (also 1.0-beta, 1 -beta) in code of a
 # .gd or .gdshader outside physics/ and tests/ fails. String literals and comments are stripped first,
