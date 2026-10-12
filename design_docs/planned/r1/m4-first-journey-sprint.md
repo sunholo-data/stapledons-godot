@@ -697,6 +697,8 @@ M4.3b in `m4-track-b`, and ⏸ S1's `make capture-m4` runs on that branch.
 
 ## Milestone table
 
+> **Superseded for M4.3b/M4.5/M4.6 by Revision round 3 below.**
+
 | ID | Scope | LOC (code+tests) | Deps | Art-gated | Wave |
 |---|---|---|---|---|---|
 | M4.6a | `medium.glowEmittanceAt` in `sunholo/relativity` + tests/CHANGELOG/release; sim pin + lock + cache | 60 | — | no | 1 |
@@ -729,6 +731,8 @@ delivered bundle and the swap follows as a data change (design doc
   B cannot finish before R1-M1-SKY-2's wave 5 (M1.5a) regardless.
 
 ## Review checkpoints (pause points)
+
+> **Superseded for M4.3b/M4.5/M4.6 by Revision round 3 below.**
 
 | ID | After | What Mark (or the controller) sees | Blocks |
 |---|---|---|---|
@@ -868,3 +872,364 @@ assertion). Left for the design doc's owner.
 
 Totals unchanged: **10 milestones, 4 waves, 3,220 counted LOC (1,900 code +
 1,320 tests)**; `approved: null`, every `passes: null`.
+
+## Revision round 3 (2026-10-12, D-52(A) / D-56 / D-57, planner)
+
+Direction **already decided** — this round does not re-decide it:
+
+- **D-52 = A** (attended 2026-10-08): the bar's clause 4 (plan → commit →
+  transit → arrive → news from home; scripted minimum-path proxy under ten
+  minutes; byte-identical replay) is proven in the **default unified 3D
+  painted ship**, reached from a plain launch via the title screen's
+  "Board the ship" (`main.gd:9–10` route `ship` →
+  `ui/title_screen.gd:22`; `main.gd:131–154`
+  → `demos/ship_geometry_demo.tscn` live start). `--interior` stays a
+  developer reference mode with its existing smoke test only; no new
+  journey work goes into it.
+- **D-56** (attended 2026-10-08): information in the HUD; every captain
+  decision (plot/commit a course, set speed, approach/leave a body, open
+  the Archive) at a diegetic bridge console the captain walks to and uses;
+  display/info controls stay instant keys; no twitch input.
+- **D-57** (attended 2026-10-09): R1-SHIP-UI **absorbed** M4.3b's 3D-ship
+  half (transit card, U2); the loop does not build M4.3b. M is an instant
+  read-only star chart; plotting and commit only at the navigation station
+  (`console_navigation_0..2`), the guided voyage at voyage console
+  `console_decision_0`, the Archive at the spire terminal. M4.5's bot
+  works the consoles, not "Godot's input layer shortcuts M, L and K".
+
+Planner inventory and re-plan below; verified at this worktree's HEAD
+`cda0cc7` on branch `mission/stapledon-iter24-m4-replan` with
+`git log`/`git show`/`grep`/`ls` (read-only). Anything not re-checkable
+here is labelled UNVERIFIED.
+
+### R3-1. Inventory at HEAD
+
+**Landed and marked:** M4.0 `passes: true` (PR #95, merge `28979e2`) ·
+M4.1 step 1 (PR #92, merge `1e53d02`) and step 2 aboard the attended
+D-29/D-30 PR #113 (merge `f0420c3`; `sim/consequence.ail:12,:93–94`,
+`sim/consequence_test.ail:161,418` `checkIsmCruise`) · M4.2 (PR **#102**,
+merge `81f48a7`, to **main** on Mark's attended instruction — the
+`m4-track-b` integration branch **never materialised**, `git branch -a`
+has no such ref) · M4.3a (PR #115, merge `f52a2cf`) · M4.4 (PR #131, merge
+`93d01c5`, after S4 and D-45(B)) · M4.7 (PR #123, merge `8b8930f`).
+
+**Landed but still `passes: null` in the JSON:**
+
+| Item | Evidence (verified here) |
+|---|---|
+| **M4.6a** | Package half: `sunholo/relativity@0.6.0` (ailang-packages PR #92, eval 97/100, noted in this JSON). Game half: attended PR **#113**, merge **`f0420c3`** ("Integrate approved spectral glow and epsilon with unified ship", 2026-10-05; `git ls-remote origin refs/pull/113/head` = `afd78d5` = the merge's second parent, verified), eval `eval_glow-blackbody-080_round_1.json` 89/100 PASS. At HEAD the pin is **0.12.0** (`sim/ailang.toml:19`), which still carries `glowEmittanceAt`/`glowTemperatureAt`. V23 discharged by `make glow-probe` (Makefile:103, `tools/glow_probe`, relativity 0.8.0, VM = interpreter) and `checkIsmCruise`. Round 3 sets this row `true` with this evidence (planner-side verification was static; the executable gates ran attended in #113 and main was green at PR #201's "verified main" landing). |
+| **M4.5s** (M4.5's scene-independent half) | Iter 21–22, PR **#154**, merge `029e44b` (`sprint/m4.5-sim-audit`): `mk/m45.mk` (`parity-m4`, `replay-positive-control`, `session-audit-test`, `codex-unlocks`, `playthrough-time`, `m45-author`), `sim/tools/session_audit.ail` + `session_audit_test.ail`, `sim/tools/session_refusals.ail`, `tests/expected_unlocks.json` (+ `.legacy-2.7.json`), `tests/replays/m4_{min_path,adversarial,transit_harness}.ndjson` + arm64/x86_64 sha256 goldens, `tools/m45_session.gd`, `tools/replay.py --sim-only/--positive-control`. Inventory + measurements: `design_docs/planned/r1/m4.5s-inventory.md` (67.35 s/leg, 134.70 s round trip; synthetic proxy 223 s PASS; mutation table). `parity-m4`, `session-audit-test`, `codex-unlocks` are in `make test` (Makefile:29); `playthrough-time` exists but is not in `make test`. |
+| **M4.6 ungated half** | Iter 20, PR **#151**, merge `1d127ca` (`sprint/m4.6-ungated-physics`): `tests/test_physics.gd` check rows, `sim/m4_physics_test.ail`, `sim/tools/m4_physics_probe.ail` (`make m4-physics-probe`), `make lint-precision` (in `make test`), physics summary guard. |
+
+**Absorbing sprint:** R1-SHIP-UI — all 10 milestones `passes: true`
+(`.ailang/state/sprints/sprint_R1-SHIP-UI.json`), landed attended
+2026-10-09..10: plan PR #181 (merge `91cdde3`, D-57), execution PRs **#195**
+(merge `70c445c`, consoles) and **#196** (merge `3e011a9`, HUD/land);
+evals plan 82 / pr1-hud 84 / pr2-consoles 84 / pr3-land 82 (≥ 70 = pass).
+**Live journey aboard the 3D ship** landed attended 2026-10-04/05
+(`m4-ship-live-journey-review*.md`): `tests/test_ship_demo_live.gd`,
+`ui/journey_pacing.gd` (each nonzero phase = 20 wall-s at 20 Hz, `:4`),
+`tools/ship_demo_live_capture.gd`. **Title screen** landed (PR #160, merge
+`6d780d1`; queue row 5b).
+
+**Make-target reality at HEAD** (`grep -n` over `Makefile`, `mk/m45.mk`):
+- EXIST: `replay` (Makefile:150, takes `SESSION=`), `parity-m4`,
+  `playthrough-time` (takes `SESSION=`), `codex-unlocks` (takes
+  `SESSION=`) — `mk/m45.mk:11,:41,:27`; `capture-m4` (Makefile:115) →
+  `-- --interior-capture=renders/m4`, i.e. **drives --interior**;
+  `golden` (Makefile:283) → includes the **--interior** G-M4-1..6 cases
+  (`tools/interior_golden.gd`: G-M4-1 72 composite-position cases, G-M4-2
+  one tonemap, G-M4-3 6 forward-pole, G-M4-4 8 glow, G-M4-5 6 plate,
+  G-M4-6 10 colour — Makefile:293–296); `bench` (Makefile:310) → starfield
+  scripted flight, **no `SCENE` variable exists**; `m4-smoke`
+  (Makefile:85) → `-- --m4-smoke --bundle=…`, i.e. **drives --interior**.
+- DO NOT EXIST (verified by grep): `playthrough`, `display-audit`; files
+  `tests/playthrough_min.json`, `tests/adversarial.json`,
+  `tests/display_audit.gd`.
+- Round 3: `m4-smoke` **stays exactly as-is** — it IS the `--interior`
+  smoke test D-52 keeps. `capture-m4` is **re-pointed to the 3D ship**
+  (R3-4); the interior frame set remains reachable by developers as
+  `godot --path . -- --interior-capture=DIR` (no target needed).
+
+### R3-2. M4.3b — CLOSED-BY-ABSORPTION (D-57)
+
+| M4.3b-as-drafted row | Disposition at HEAD |
+|---|---|
+| M4.3a's HUD/warp run in the playable ship | **Delivered by R1-SHIP-UI U1+U2**: status strip both clocks + distance, `DisplayBinding`s on `clock.tau`/`clock.year`/`hud.distance` (`ui/ship_hud.gd:42–46`, same size per D-12); transit card `TRANSIT_COMPACT` = M4.3a `JourneyHud` rows (`ui/ship_hud.gd:34`: `ship.phase`, `consequence.gap_years`, `consequence.distance_remaining`, `consequence.earth_years_remaining`, `consequence.load_suns`, `ship.ism.glow_w_m2`, `client.warp`; full rows + ISM detail in Tab `:217–223`); arrival card (`:32` PRIORITY). Tests: `tests/test_ship_ui.gd` under `make ship-ui-test` (in `ship-demo-ci` ⊂ `make test`). |
+| Commit/interaction reachable in the ship | **Delivered by U3/U4/U5**: `demos/ship_consoles.gd` `use(id, action)` (`:194`, documented "the single decision entry (player panels, tests, the M4.5 bot)"), `walk_to` (`:358`, 3.5 m/s on `WalkArea.path`), helm/chart map modes, Voyage and Archive terminals. Tests: `tests/test_ship_consoles.gd` under `make ship-console-test`; decisions impossible by key: `tests/test_no_twitch.gd` under `make no-twitch-test`. |
+| "Shortcuts M, L and K keep the minimum path independent of pathing" | **Removed by D-57**: M = instant read-only chart; L/C decision keys gone. Independence of pathing now holds by construction — click-to-walk / Tab "Walk to" walk the captain at a fixed 3.5 m/s (ship-ui AC14a; no steering skill) and `use()` is a plain call. |
+| Interim gate: `m4-smoke` + M4.3a harness replay | Kept as `--interior` reference-mode checks: `make m4-smoke` (unchanged, in `make test`); `m4_transit_harness.ndjson` remains a `parity-m4` replay case (`mk/m45.mk:3`). |
+
+**Genuinely missing residue (moved out of M4.3b, explicitly):**
+- **R-M4.3b-1 — starbow forward-pole orientation invariant aboard the 3D
+  ship.** No test at HEAD pins it: `G-M4-3` pins the pole in `--interior`
+  only (`tools/interior_golden.gd:10`, Makefile:294) and `grep` finds no
+  pole assertion in `tests/test_ship_ui.gd`, `tests/test_ship_consoles.gd`
+  or `tests/test_no_twitch.gd`. It moves to **M4.5aR3** (CPU assertion,
+  sampled during the playthrough: the heading-forward direction projects
+  within 0.75 px of the camera forward pixel in boost, cruise and brake)
+  and **M4.6gR3** (GPU golden **G-M4-S3**).
+
+The JSON row is marked absorbed with this evidence; `passes` stays `null`
+(M4.3b's own interior-scoped commands never ran as M4.3b — the absorbed
+substance passed as R1-SHIP-UI's commands, cited above).
+
+### R3-3. M4.5 re-scoped: the scene half on the 3D ship
+
+Proves clause 4 end-to-end, headless, with the **real sim**, in the scene
+the player gets: **plain launch → title screen → "Board the ship"** → walk
+to the **navigation station** → plot α Cen A → **commit (1.5 s hold)** →
+transit (boost/cruise/brake aboard, transit card live, starbow overhead) →
+arrival → walk to the **Archive terminal** (spire) → **read news from
+home** (header, body, `body_source` labels) → helm: **Return to Sol** →
+commit → transit → arrived home → legacy line + "Begin again" from fields.
+The bot walks/teleports-by-walk-list (`walk_to`, never decision keys —
+NT1; the test-only instant `go_to` stays out of the scored run); chart M
+may be opened for information only.
+
+**New files (verified absent at HEAD):**
+- `tests/m4_playthrough_ship.gd` — bot driver: headless `SceneTree`,
+  preloads `main.gd` like `tests/test_title_screen.gd:8`, `press("ship")`,
+  then executes the script through `ShipConsoles.walk_to`/`use`; ticks via
+  `demo.journey_tick()` (same seam `tests/test_ship_consoles.gd:127–157`
+  uses); samples every `DisplayBinding` per frame into
+  `$(SCRATCH)/display_samples.ndjson`; logs walk/console/read events; does
+  the R-M4.3b-1 CPU pole assertion per phase.
+- `tests/playthrough_min.json` — the minimum-path script (data; not
+  counted).
+- `tests/adversarial.json` — scene adversarial script (data; not counted):
+  mid-transit at the navigation console re-plan / cancel / commit → the
+  sim answers `committed`, state unchanged (sim-side proof already landed
+  in `parity-m4` via `session_refusals.ail`; this proves the console path
+  sends the same intents and shows the refusal card).
+- `tests/display_audit.gd` — audit driver (M4.5bR3).
+- `tests/fixtures/session_audit/walk_*.ndjson` — walk-model fixtures
+  (M4.5bR3); `sim/tools/session_audit.ail` + its test gain the walk-event
+  schema (existing files, extended).
+
+**New make targets (verified absent at HEAD):**
+- `playthrough` (M4.5aR3): runs the driver headless with the real sim
+  (`$(GODOT_SIM) --headless --script`, the `ship-console-test` pattern),
+  `SCRIPT=tests/playthrough_min.json` default, writes
+  `$(SCRATCH)/session.ndjson` (recorded via **H1**, same input+state
+  schema as `tests/replays/m4_min_path.ndjson`) +
+  `display_samples.ndjson`; fails on any step not completing (no walkable
+  path, unscripted refusal, no arrival). Wired into `make test` beside
+  `parity-m4`.
+- `display-audit` (M4.5bR3): runs `tests/display_audit.gd` over the
+  recorded run — every numeric label a `DisplayBinding`
+  (`DisplayBinding.audit`, `ui/display_binding.gd:47`, already the landed
+  positive control), each sampled binding equals
+  `format_field(view, field, fmt)` for its frame's sim state, codex bodies
+  hash-equal via `LoreBinding`; fails on any mismatch, unbound digit or
+  missing field; positive-control fixtures (unbound numeral, stale
+  format) must fail.
+
+**Existing targets reused unchanged** (landed by M4.5s):
+`make replay SESSION=$(SCRATCH)/session.ndjson` (byte-identical; the
+`--sim-only` path spawns no AI process — count 0), `make parity-m4`,
+`make playthrough-time SESSION=…`, `make codex-unlocks SESSION=…`.
+
+**Walking model for the time proxy (D-56 walking counted; ≤ 360 s limit
+kept, D-14):** every inter-console move is a `walk_to()` along
+`WalkArea.path` at the fixed **3.5 m/s** (ship-ui C3: same speed as WASD;
+use point ≤ 2.5 m; walked path printed and asserted against the 40 m
+(~11.4 s) ceiling). The driver logs `{"type":"walk","to":"<station>",
+"path_m":<L>}`; `playthroughTime` charges **path_m / 3.5 s per walk** +
+0.6 s console use (dolly) + 1.5 s per commit hold + 200 wpm per
+`text_shown` line — the flat "20 s per interactable" becomes a per-visit
+upper bound, not the charge. Budget with HEAD measurements: transit
+134.70 s (M4.5s) + ~4 walks ≈ 30 s + ~8 console actions ≈ 14 s + reading
+(news ≈ 100 words → 30 s; legacy/codex titles ≈ 15 s) ≈ **~225 s
+expected, limit 360 s** (D-14).
+
+**Acceptance — every row a command (round-3 forms):**
+- **AC3** — `make playthrough SCRIPT=tests/adversarial.json`;
+  `! grep -rniE "save_game|load_game|ResourceSaver" interior ui demos`
+  (extended to `demos`; **verified zero matches at `cda0cc7`** in all
+  three trees). Plain `|` alternation, as in the live `transit-test`
+  recipe (`Makefile:101`): under `-E` an escaped `\|` is a literal pipe
+  and the check could never fail (evaluator round 1, blocking 1). Positive
+  control: the same pattern must match a fixture line containing
+  `save_game` before the negative check counts.
+- **AC4** — `make playthrough display-audit` — 0 mismatches, 0 unbound
+  numerals, ≥ 500 samples, both clocks and the ISM readout on every
+  transit sample, codex hash-equal. No area-bundle gate applies (the
+  painted ship is the shipped art; the bundle gates stay with
+  AC14's `--interior`).
+- **AC5** — `make replay SESSION=$(SCRATCH)/session.ndjson && make parity-m4`
+  — byte-identical incl. `record` intents and archive unlocks; AI process
+  count 0 during replay.
+- **AC6** — `make playthrough AI=none|stub|digits`, each followed by
+  `make display-audit` — the three `body_source` renderings as designed;
+  AI.1–AI.10a are landed (queue row 4), so `AI=stub` uses the landed local
+  stub and `AI=digits` the injected fixture (design doc Interfaces).
+- **AC7** — `make playthrough playthrough-time SESSION=$(SCRATCH)/session.ndjson`
+  — proxy ≤ 360 s **with console walking charged as above**; each leg
+  45–120 s (expected ~60–67 s: `ui/journey_pacing.gd:4`, 20 s per nonzero
+  phase).
+- **AC16** — `make playthrough codex-unlocks SESSION=$(SCRATCH)/session.ndjson`
+  — the seven expected entries at their hints, in order.
+- **R-M4.3b-1 (CPU half)** — inside the playthrough driver: forward pole
+  within 0.75 px of camera-forward in boost, cruise and brake.
+
+**Sub-milestones (each under ~350 LOC):**
+- **M4.5aR3 — scene playthrough bot** (~300 counted: driver ~210 incl.
+  sampling/walk log/pole assertion; Makefile ~12; driver tests ~80).
+  Files listed above. Deps: **H1 + H2** (R3-6), R1-SHIP-UI (landed),
+  M4.3a/M4.4/M4.7 (landed).
+- **M4.5bR3 — scene display audit + timing/unlocks/AI on the scene
+  session** (~280 counted: `tests/display_audit.gd` ~120 + fixtures;
+  `session_audit.ail` walk schema + tests ~90; Makefile ~10; AI-mode run
+  checks ~60). Deps: M4.5aR3.
+
+### R3-4. M4.6 gated half re-scoped to the 3D ship
+
+Ungated half: **landed** (PR #151) — preserved, not re-planned.
+
+Gated half (GPU-window gates, as before):
+- **`make golden` gains ship cases** (driver `tools/m4_ship_golden.gd`,
+  hooked into the existing `-- --golden` run, pattern after
+  `tools/interior_golden.gd`):
+  - **G-M4-S2 — one tonemap** aboard the 3D ship: exactly one tonemap
+    across the ship + sky viewport chain (≤ 1/255 double-application
+    bound, the G-M4-2 rule moved to the player's scene).
+  - **G-M4-S3 — forward pole** ≤ 0.75 px in boost, cruise and brake at the
+    captain eye aboard the 3D ship (the D-14 orientation proof;
+    R-M4.3b-1's GPU half).
+  - **G-M4-S4 — glow profile and absolute pole**: profile within 1 % at
+    0°/45°/80° (`ForwardGlow.profile`, `interior/forward_glow.gd:44` — the
+    shared renderer the 3D ship already drives via
+    `InteriorSky.set_glow`, `demos/ship_geometry_demo.gd:286`), exactly 0
+    at rest, and the absolute pole in a debug linear float target =
+    `ship.ism.glow_pole_w_m2` within 1 % at 0.99c and at the
+    guided-drive cap (1−β = 2e-9; D-48).
+- **Dropped, with reasons:** **G-M4-1 (composite position ≤ 0.75 px,
+  pan-invariant)** has no 3D-ship counterpart — the M4.2 five-layer pan
+  composite (0/0.15/1/1.6) exists only in `--interior`; the 3D ship is one
+  viewport with one camera, so there is no pan composite to pin. The
+  existing `--interior` G-M4-1..6 stay in `make golden` as
+  **reference-mode gates** (landed, green; removing coverage is not the
+  loop's call); G-M4-5/6 (plate, colour) likewise stay `--interior`
+  reference gates — the ship's colour correctness rides the shared
+  renderer plus the S1 renders.
+- **`make capture-m4` — re-pointed to the 3D ship**
+  (`tools/m4_ship_capture.gd`; at HEAD it drives `--interior`, see R3-1).
+  The S1 set, captain eye on the bridge: **docked (at rest), boost, cruise
+  0.99 with the forward glow, brake, arrived α Cen, arrived home** +
+  contact sheet → `renders/m4/*.png` with a manifest of the real sim
+  worlds (pattern: `tools/ship_demo_live_capture.gd`).
+- **`make bench SCENE=bridge`** — driver re-pointed to the 3D-ship bridge
+  in live transit: the `bench` recipe gains a `SCENE` switch (none exists
+  at HEAD; default unchanged = today's starfield bench; `SCENE=bridge`
+  runs `tools/m4_ship_bench.gd` aboard: 30 s scripted cruise, 2560×1440,
+  vsync off, medium tier), p99 < 16.7 ms (AC12).
+
+**Sub-milestones:**
+- **M4.6gR3 — ship goldens** (~180 counted: `tools/m4_ship_golden.gd`
+  ~150, Makefile wiring ~15, fixtures ~15). Deps: M4.6a (landed), the live
+  3D-ship journey (landed). Merges as a normal PR once green on the GPU
+  window (`golden` needs the window, as today).
+- **M4.6rR3 — S1 renders + ship bench** (~200 counted:
+  `tools/m4_ship_capture.gd` ~130, `tools/m4_ship_bench.gd` ~50, Makefile
+  ~20). Deps: M4.6gR3 (the renders show what the goldens pin); GPU
+  window. The PR is prepared, `make capture-m4` runs **on the branch**,
+  renders posted (issue #1 + a review build per the charter's parked-render
+  practice), and the PR **parks for Mark's S1 render sign-off (physics
+  gate 2) before merging**. No round-3 change alters a shipped visual —
+  S1 signs off the reference renders of the already-landed 3D ship;
+  AC11's `grep "S1 sign-off"` lands at P-land.
+
+### R3-5. The `m4-track-b` merge train is removed
+
+D-22's S1 mechanism (M4.2 → M4.3b → M4.6-gated stacked into integration
+branch `m4-track-b`, merging after S1) is obsolete: the branch never
+existed (no ref, verified), M4.2 went straight to main attended (PR
+#102), M4.3a via PR #115, M4.4 via PR #131, M4.7 via PR #123, and M4.3b is
+absorbed (R3-2). Round-3 ordering: **H1/H2 (attended micro-PRs) →
+M4.5aR3 ∥ M4.6gR3 (normal PRs to main) → M4.5bR3 ∥ M4.6rR3 (M4.6rR3 parks
+at S1 before merge) → S1 → ⏸ P-land** (`m4-report.md` with AC10/AC11/AC12
+in their 3D-ship forms, the measured proxy time with walking,
+replay/parity/codex outputs; design doc moves to `implemented/`).
+
+### R3-6. Do-not-touch hooks (needs attended co-ordination)
+
+The charter's Do-not-touch list for execution covers `ui/*` and
+`demos/ship_geometry_demo.gd` (attended R1-SHIP-UI). Round 3 needs exactly
+two hooks; they are listed here, not planned as silent edits:
+- **H1 — `demos/ship_geometry_demo.gd` (~4 LOC):** honour
+  `setup_options["record"]` by setting `journey_sim.record_path` before
+  `journey_sim.start()` (creation site `demos/ship_geometry_demo.gd:591`;
+  `SimBridge.record_path` opens the tee inside `start()`,
+  `bridge/sim_bridge.gd:121–124`, so an outside driver cannot interpose).
+  `main.gd` already merges `demo_overrides` into `setup_options`
+  (`main.gd:97,149–150`) and a plain launch with only `--record` still
+  routes to the title screen (`main.gd:195`), so no `main.gd` change is
+  needed. Without H1 the 3D-ship session cannot be recorded and AC5's
+  scene form cannot run — the hook is required, not optional.
+- **H2 — `demos/ship_consoles.gd` (~50 LOC):** `_archive_panel()`
+  (around `:804`) hosts `NewsPanel` (`ui/news_panel.gd`: `open()` :156,
+  `show_world(view)` :182 — no interior coupling, verified) and
+  `LegacyScreen` (`ui/legacy_screen.gd:77`) so "read news from home" and
+  the legacy line are reachable at the Archive terminal in the 3D ship, as
+  D-14/D-56 intend. No `ui/*` edits: both panels expose
+  `show_world(view)`. `demos/ship_consoles.gd` is outside the letter of
+  the Do-not-touch list but was authored by attended R1-SHIP-UI, so it is
+  listed here for attended handling.
+- **Verified not needed** (so the executor does not ask): a
+  display-sampler seam (`DisplayBinding.audit` walks any root,
+  `ui/display_binding.gd:47`; ShipHud already has the R1-SHIP-UI AC13
+  fake-clock seam); a walk-log seam (the driver reads
+  `demo.consoles.walking` / `WalkArea.path` from tests, as
+  `tests/test_ship_consoles.gd` already does); a NewsPanel API change.
+
+### R3-7. Round-3 milestone table (LOC, deps, waves)
+
+| ID | Scope | LOC (counted) | Deps | Wave |
+|---|---|---:|---|---|
+| H1/H2 (attended) | record seam; NewsPanel+LegacyScreen at the Archive terminal | ~55 (attended; not loop-counted) | — | R3-0 |
+| M4.5aR3 | scene playthrough bot (plain launch → Board the ship → consoles → α Cen → news → home → legacy), `playthrough` target, walk/console event log, CPU pole assertion, adversarial console script (AC3, AC5-input) | ~300 | H1, H2, R1-SHIP-UI (landed) | R3-1 |
+| M4.6gR3 | ship goldens G-M4-S2/S3/S4 in `make golden` (AC10 3D-ship form) | ~180 | landed ship + glow (M4.6a) | R3-1 |
+| M4.5bR3 | `display-audit` target + driver; walking model in `session_audit.ail`; `playthrough-time` / `codex-unlocks` / `replay` / `parity-m4` on the scene session; AI=none\|stub\|digits (AC4, AC5, AC6, AC7, AC16) | ~280 | M4.5aR3 | R3-2 |
+| M4.6rR3 | `capture-m4` re-point (3D-ship S1 set), `bench SCENE=bridge` ship driver (AC11, AC12); **parks at S1 before merge** | ~200 | M4.6gR3; GPU window | R3-2 (parks at S1) |
+| | **Round-3 total (loop)** | **~960** | | 2 waves + S1 |
+
+Round-3 critical path: H1/H2 → M4.5aR3 → M4.5bR3 → P-land;
+M4.6gR3 → M4.6rR3 → S1 → P-land. The landed M4.5s/M4.6-ungated CPU
+evidence (PRs #154, #151) is preserved and untouched.
+
+### R3-8. Review checkpoints (round 3)
+
+- **⏸ S1 (round-3 form):** after M4.6rR3's `make capture-m4` run **on its
+  branch** — Mark opens `renders/m4/*.png` (captain eye on the bridge:
+  docked, boost, cruise 0.99 with glow, brake, arrived α Cen, arrived
+  home, contact sheet). Blocks the M4.6rR3 merge and AC11's grep at
+  P-land (physics gate 2). Posted to issue #1 with a review build, per
+  the parked-render practice.
+- **⏸ P-land:** `design_docs/implemented/r1/m4-report.md` — S1 sign-off,
+  bench, measured proxy time with walking, replay/parity/codex outputs,
+  upstream AILANG notes; the design doc moves to `implemented/`; the
+  design repo's roadmap status; changelog; the R2 human playtest (D-14).
+- **RB:** publish-dev review builds at each round-3 PR (non-blocking,
+  D-16).
+- Rows P0/P-pkg/RB-1/S2/S4 above are historical: P-pkg discharged by PR
+  #113, S4 by D-45, S2 satisfied per D-16. The S1 row above is superseded
+  by this section for M4.5/M4.6-scoped work.
+
+### Questions for Mark (round 3)
+
+1. **Q-r3-1 — approve this amended plan (Revision round 3)?**
+   Options: **approve / approve with changes / reject.** The ask covers:
+   M4.3b closed-by-absorption (R3-2); M4.5's scene half on the 3D ship
+   with console walking charged into the ≤ 360 s proxy (R3-3); M4.6's
+   gated half re-scoped (ship goldens G-M4-S2/S3/S4; `capture-m4` and
+   `bench SCENE=bridge` re-pointed; iso-only G-M4-1 dropped for the ship)
+   (R3-4); the two attended hooks H1/H2 (~55 LOC, R3-6); ordering with S1
+   before the renders PR merges (R3-5, R3-8). **Recommendation:
+   approve.** **Default if unanswered: no M4.5-scene or M4.6-gated
+   execution** — the loop works the other triaged queue rows (L1–L8, R1,
+   R2) instead.
+
+No other round-3 question: the scene (D-52), decision placement (D-56),
+station layout and read-only M (D-57), the ≤ 360 s bar (D-14), glow ε
+(D-29/D-30) and the guided itinerary (D-65) are all already ruled.

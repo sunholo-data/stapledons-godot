@@ -678,6 +678,18 @@ AI process and AC6's `digits` case uses an injected fixture.
 
 The first draft's AC8 (3-new-player playtest) is removed from R1 (D-14).
 
+### Amendment 2026-10-12 (D-52 A, D-56, D-57)
+
+Sprint-plan revision round 3 (`m4-first-journey-sprint.md` § "Revision round 3 (2026-10-12, D-52(A) / D-56 / D-57, planner)") re-points the scene halves; the design itself is unchanged. Which ACs run where, as amended:
+
+- **Unchanged, scene-independent (sim/tooling):** AC1, AC2, AC8, AC9, AC13, AC15, AC17, AC18 — plus **AC14**, which stays the `--interior` bundle-swap smoke: per D-52, `--interior` remains a developer reference mode with its existing smoke test (`make m4-smoke`, landed under M4.2, PR #102).
+- **Now run in the default 3D painted ship** (plain launch → title "Board the ship", `main.gd:9–10`; decisions at the bridge consoles per D-56/D-57 — the bot walks to a console and uses it, never a decision key): **AC3** (console adversarial run; its grep extends to `demos/`), **AC4** (audit of the ship HUD/console bindings; no area-bundle gate), **AC5** (recorded plain-launch ship session), **AC6** (`AI=none|stub|digits` at the Archive terminal), **AC7** (≤ 360 s proxy with console walking charged at measured path length / 3.5 m·s⁻¹), **AC16** (codex unlocks on that session).
+- **AC10:** G-M4-2/3/4 re-scoped to the 3D ship (G-M4-S2 one tonemap; G-M4-S3 forward pole in boost/cruise/brake at the captain eye; G-M4-S4 glow profile + absolute pole). G-M4-1 (composite pan-invariance) is dropped for the ship — one viewport, no pan composite; the `--interior` G-M4-1..6 stay in `make golden` as reference-mode gates.
+- **AC11:** `renders/m4/` captured from the 3D ship (docked, boost, cruise 0.99 with glow, brake, arrived α Cen, arrived home); S1 render sign-off per physics gate 2 before the renders PR merges.
+- **AC12:** `make bench SCENE=bridge` benches the 3D-ship bridge in live transit.
+
+M4.3b is closed by absorption into R1-SHIP-UI (D-57; U1/U2 HUD + transit card, U3–U5 consoles); its only residue, the 3D-ship forward-pole orientation invariant, moved into M4.5/M4.6 above. The scene-independent halves of M4.5/M4.6 (`parity-m4`, `playthrough-time`, `codex-unlocks`, `session_audit.ail`, PR #154; CPU physics rows + `lint-precision`, PR #151) are landed and unchanged.
+
 ## Sub-milestones and estimates
 
 | ID | Scope | LOC (code + tests) | Depends on | Art-gated |
