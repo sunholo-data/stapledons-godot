@@ -285,7 +285,7 @@ never a worktree and never the attended clone. List the files any attended sprin
 flight on a `Do-not-touch` line below, and the loop must not edit them.
 Arm it overnight or whenever no attended sprint shares its files.
 
-**Do-not-touch (attended, in flight 2026-10-12):** `demos/ship_geometry_demo.gd` (H1 record seam) and `demos/ship_consoles.gd` (H2 news and legacy panels) until the D-66 hooks land; then the loop may build M4.5aR3 and M4.6gR3. R1-SHIP-UI (#193/#195/#196), R1-ISM-DUST (#199) and the D-58 packages are landed.
+**Do-not-touch (attended, in flight 2026-10-12):** `demos/ship_consoles.gd`, `ui/legacy_screen.gd`, `data/news/copy.json` and the out-of-world menu until the D-68 change lands. That change moves Begin again to New game in the menu, renames the panel Voyage log and adds the spoiler guard. The D-66 hooks landed in #208: H1 record seam, H2 news and the log at the Archive terminal. Once D-68 lands, the loop may build M4.5aR3, whose playthrough ends at the Voyage log rather than Begin again, and M4.6gR3. D-67 in-world voice is landed (`make in-world-voice-check`). R1-SHIP-UI (#193/#195/#196), R1-ISM-DUST (#199) and the D-58 packages are landed.
 
 **Triage of the queue.** `[LOOP]` = route now; `[LOOP+RENDER]` = route, park for
 render review; `[ATTENDED]` = not loop work; `[STALE]` = reconcile (L1).
