@@ -367,8 +367,8 @@ func test_stub_session() -> bool:
 		b.request(rs[id])
 	assert_bool("handshake within 5 s, proto.major 1", pump(b, 5000, func(): return not b.hello_reply.is_empty()) and b.hello_reply["proto"]["major"] == 1)
 	print("    handshake %d ms" % (Time.get_ticks_msec() - t0))
-	var fds := FdProbe.extra_fds(b.child_pid)
-	assert_bool("the service inherits no pipe of Godot's (the sim's included): %s" % [fds], fds.all(func(f): return not f.begins_with("PIPE")))
+	var fds := FdProbe.inherited_pipes(b.child_pid)
+	assert_bool("the service inherits no pipe of Godot's (the sim's included): %s" % [fds], fds.is_empty())
 	sim.stop()
 	var max_open := [0]
 	pump(b, 10000, func():

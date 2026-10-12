@@ -29,3 +29,15 @@ static func extra_fds(pid: int) -> Array:
 		elif line.begins_with("n") and fd > 2:
 			fds.append(type + " " + line.substr(1))
 	return fds
+
+
+## The pipes `pid` holds above fd 2 that this process (Godot) holds too: an inherited pipe is
+## the same pipe object in both, so the same lsof peer (macOS) or pipe inode (Linux). A pipe
+## pair the child opens for itself does not count: AILANG v0.54.6 opens one at start-up, and
+## v0.54.5 did not.
+static func inherited_pipes(pid: int) -> Array:
+	var mine := {}
+	for f: String in extra_fds(OS.get_process_id()):
+		if f.begins_with("PIPE"):
+			mine[f] = true
+	return extra_fds(pid).filter(func(f: String) -> bool: return f.begins_with("PIPE") and mine.has(f))
