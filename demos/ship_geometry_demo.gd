@@ -83,6 +83,10 @@ var view_button := Button.new()
 var interlude_card: InterludeCard
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
+## R1-ARCHIVE-VOICE: the AI wiring for this voyage (AiSession: settings, relay, service), made only
+## for a game launched from the title screen (or a test asking for it with setup_options["ai"]), so
+## captures, goldens and benchmarks never see it. Live only by the captain's tick with a key (D-8).
+var ai_session: AiSession = null
 var navigation_window: Window
 var live_journey := false
 ## Free navigation: where the committed leg left from and the last stop reached (HUD names).
@@ -327,7 +331,7 @@ func _process(delta: float) -> void:
 		while _bh_accum>=1./BlackHoleVisit.TICK_HZ and black_hole!=null:
 			_bh_accum-=1./BlackHoleVisit.TICK_HZ
 			bh_tick()
-	if auto and not pointer_required() and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()):
+	if auto and not pointer_required() and (navigation_window==null or not navigation_window.visible) and camera_mode=="player" and (lift==null or not lift.travelling()) and not get_viewport().gui_get_focus_owner() is LineEdit:
 		var move:=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_W))-float(Input.is_physical_key_pressed(KEY_S)))
 		if move!=Vector2.ZERO:consoles.cancel_walk() # WASD takes over an auto-walk
 		walk_motion(move,delta)
@@ -599,9 +603,14 @@ func _create_navigation(scenario:String) -> void:
 		var params:Dictionary={"standoff_au":1000.,"stop_rule":54.}
 		if scenario=="solar_departure":params=SolarDeparture.guided_params()
 		var live_scenario:String="free_nav" if scenario=="sol" else scenario
-		if not journey_sim.start() or not journey_sim.new_game(int(setup_options.get("seed",424242)),live_scenario,false,params):
+		var ai_core:=""
+		if setup_options.get("ai",setup_options.get("from_menu",false)) and ai_session==null:
+			ai_session=AiSession.new({},str(setup_options.get("settings_dir","user://")));add_child(ai_session)
+			ai_core=AiSession.ai_core()
+		if not journey_sim.start() or not journey_sim.new_game(int(setup_options.get("seed",424242)),live_scenario,false,params,ai_core):
 			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
+		if ai_session!=null:ai_session.attach(journey_sim)
 		if setup_options.has("seed"):print("voyage seed %d (%s)" % [journey_sim.last_seed,live_scenario]) # D-68: a New game run can be replayed from its seed
 		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation"
 		navigation_window.size=Vector2i(1280,800);navigation_window.min_size=Vector2i(320,200)
@@ -654,6 +663,7 @@ func _drop_navigation() -> void:
 	if navigation_window!=null:
 		remove_child(navigation_window);navigation_window.queue_free()
 	journey_sim=null;journey_map=null;navigation_window=null;solar_tour=null
+	if ai_session!=null:ai_session.queue_free();ai_session=null
 func close_navigation() -> void:
 	if navigation_window==null:return
 	journey_map.close_commit_dialog();navigation_window.hide()

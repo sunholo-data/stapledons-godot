@@ -1071,7 +1071,7 @@ free-nav-recovery-test: import
 VOICE_RE := \b(game|games|gameplay|approximation|approximate[ds]?|hand.?wav(e|ed|ing)|invented|fiction(al)?|simulat(ion|ed|or|e)|renderer|shader|hypothetical|placeholder|player|toy|sandbox)\b
 ## D-68: the loop is the secret (stapledons-design vision/premise-and-loop.md §4); in-world text never hints at it.
 SPOILER_RE := \b(previous (run|runs|voyages?|universes?|iterations?|lives)|past (runs|voyages|universes|lives)|re-?runs?|new game\+?|begin(ning)? again|start(ing)? over|multiverse|reset(s|ting)? the (bubble|ship|universe|voyage))\b
-VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd
+VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd ui/archive_ask.gd
 ## The console script carries internal ids ("player" camera mode): it is scanned for loop spoilers only.
 SPOILER_UI := demos/ship_consoles.gd
 in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy, the Archive's AI prompt (its golden) and the on-screen strings of the news, Voyage log, codex and console panels speak in-world (no "game", "simulation", "approximation", "invented", "player" ...) and never hint at the loop ("previous run", "re-run", "New Game+", "begin again" ...)

@@ -37,7 +37,7 @@ const STATIONS := {
 const ACTIONS := {
 	"navigation": ["open", "select", "speed", "commit", "cancel", "home", "sgr_a", "approach", "leave"],
 	"voyage": ["open", "begin"],
-	"archive": ["open", "news", "log"], # D-66 H2 + D-68: news from home and this voyage's log; starting over is the title screen's New game, never a console
+	"archive": ["open", "news", "log", "ask"], # D-66 H2 + D-68: news from home and this voyage's log; starting over is the title screen's New game, never a console. R1-ARCHIVE-VOICE: ask the Archive
 }
 const ITINERARY := "Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
 const HINT := "Decisions are made at the bridge consoles: the Voyage console begins the guided voyage, the navigation station plots a course. Tab · Walk to."
@@ -63,6 +63,12 @@ var panel_layer := CanvasLayer.new()
 var news_panel: NewsPanel
 var legacy_screen: LegacyScreen
 var _reading_layer: CanvasLayer
+## R1-ARCHIVE-VOICE: the question in flight and its answer; the field and the answer panel.
+var archive_ask := ArchiveAsk.new()
+var ask_field: LineEdit
+var answer_panel: PanelContainer
+var answer_question: Label
+var answer_text: Label
 var panel := PanelContainer.new()
 var panel_title := Label.new()
 var panel_body := VBoxContainer.new()
@@ -242,10 +248,23 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 			if not NewsPanel.new().has_news(w):
 				demo.refuse("No news from home has reached the ship yet.")
 				return false
-			_reading().show_world(w); news_panel.open(); legacy_screen.visible = false
+			_reading().show_world(w); news_panel.open(); legacy_screen.visible = false; answer_panel.visible = false
+			return true
+		["archive", "ask"]:
+			var q: String = ask_field.text if ask_field != null else ""
+			var relay: AiRelay = demo.ai_session.relay if demo.get("ai_session") != null else null
+			var w: Dictionary = demo.sky_world if demo.sky_world is Dictionary else {}
+			var where: String = "" if demo.live_journey or demo.journey_sim == null else demo.stop_name()
+			if not archive_ask.ask(q, relay, w, where):
+				demo.refuse("Ask the Archive a question first.")
+				return false
+			if demo.journey_sim != null and not demo.journey_sim.stepped.is_connected(_on_sim_stepped):
+				demo.journey_sim.stepped.connect(_on_sim_stepped)
+			_reading(); news_panel.close(); legacy_screen.visible = false
+			_show_answer()
 			return true
 		["archive", "log"]:
-			_reading(); news_panel.close()
+			_reading(); news_panel.close(); answer_panel.visible = false
 			legacy_screen.show_world(demo.sky_world if demo.sky_world is Dictionary else {})
 			legacy_screen.visible = true
 			return true
@@ -758,7 +777,7 @@ func _close_panel(id: String) -> void:
 		demo.codex.close()
 		(demo.codex.get_parent() as CanvasLayer).layer = 13
 	if id == "archive" and news_panel != null:
-		news_panel.close(); legacy_screen.visible = false
+		news_panel.close(); legacy_screen.visible = false; answer_panel.visible = false
 
 
 ## The news and legacy panels over the Archive terminal's panel (made once; M4.4's ui, unchanged).
@@ -769,10 +788,34 @@ func _reading() -> NewsPanel:
 		legacy_screen = LegacyScreen.new(); _reading_layer.add_child(legacy_screen)
 		legacy_screen.build()
 		legacy_screen.visible = false
+		answer_panel = PanelContainer.new(); answer_panel.name = "ArchiveAnswer"; answer_panel.visible = false
+		var st := StyleBoxFlat.new(); st.bg_color = Color(0.04, 0.06, 0.1, 0.96); st.set_content_margin_all(16)
+		answer_panel.add_theme_stylebox_override("panel", st)
+		var box := VBoxContainer.new(); box.add_theme_constant_override("separation", 10); answer_panel.add_child(box)
+		var head := _label("The Archive", 20); box.add_child(head)
+		answer_question = _label("", 14, Color(0.62, 0.68, 0.8)); box.add_child(answer_question)
+		answer_text = _label("", 17); box.add_child(answer_text)
+		_reading_layer.add_child(answer_panel)
 		var r := panel_rect()
-		for c: Control in [news_panel, legacy_screen]:
+		for c: Control in [news_panel, legacy_screen, answer_panel]:
 			c.position = r.position + Vector2(12.0, 140.0); c.custom_minimum_size = Vector2(r.size.x - 24.0, r.size.y - 152.0)
 	return news_panel
+
+
+## R1-ARCHIVE-VOICE: the sim stepped; the open question may have its answer now.
+func _on_sim_stepped(events: Array) -> void:
+	var before := archive_ask.state
+	archive_ask.on_events(events)
+	if archive_ask.state != before:
+		_show_answer()
+
+
+func _show_answer() -> void:
+	if answer_panel == null:
+		return
+	answer_question.text = "You asked: " + archive_ask.question
+	answer_text.text = archive_ask.answer
+	answer_panel.visible = focused == "archive" and not archive_ask.question.is_empty()
 
 
 func _label(text: String, size := 14, color := Color(0.86, 0.9, 0.98)) -> Label:
@@ -868,3 +911,12 @@ func _archive_panel() -> void:
 	var read_log := Button.new(); read_log.text = "Voyage log"; read_log.name = "VoyageLog"
 	read_log.pressed.connect(func() -> void: use("archive", "log"))
 	reading.add_child(read_log)
+	# R1-ARCHIVE-VOICE: ask the Archive (Enter or the button).
+	ask_field = LineEdit.new(); ask_field.name = "ArchiveQuestion"; ask_field.placeholder_text = "Ask the Archive..."
+	ask_field.max_length = ArchiveAsk.MAX_QUESTION; ask_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ask_field.custom_minimum_size = Vector2(260, 0)
+	ask_field.text_submitted.connect(func(_t: String) -> void: use("archive", "ask"))
+	reading.add_child(ask_field)
+	var ask_b := Button.new(); ask_b.text = "Ask"; ask_b.name = "AskArchive"
+	ask_b.pressed.connect(func() -> void: use("archive", "ask"))
+	reading.add_child(ask_b)

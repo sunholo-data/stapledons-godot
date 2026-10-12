@@ -35,6 +35,7 @@ func _run() -> void:
 	await test_confirm_and_helm()
 	await test_chart()
 	await test_voyage_archive_sgr()
+	await test_archive_ask()
 	await test_walk_to()
 	await test_onboarding()
 	print("ship-consoles: %d passed, %d failures" % [passes, failures])
@@ -332,6 +333,53 @@ func test_voyage_archive_sgr() -> void:
 
 func _panel_text(c: ShipConsoles) -> String:
 	return "\n".join(c.panel_body.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text))
+
+
+## R1-ARCHIVE-VOICE: Ask the Archive at the terminal. Offline (no live AI): the in-world line,
+## nothing queued. With the stub service on the ship's own sim: one ai_open{archive} carrying the
+## question, the sensors and the canon (at most 8 context fields), and the stub's answer shown.
+func test_archive_ask() -> void:
+	var demo: Node = await new_demo()
+	var c = demo.consoles
+	c.go_to("archive")
+	c.use("archive", "open")
+	check("AV the terminal offers a question field and Ask", c.ask_field != null and c.panel_body.find_child("AskArchive", true, false) != null)
+	c.ask_field.text = "   "
+	check("AV an empty question is refused", not c.use("archive", "ask") and c.archive_ask.asked == 0)
+	c.ask_field.text = "Are you real?"
+	check("AV offline: the Archive answers in-world and nothing is asked of the sim", c.use("archive", "ask") and c.archive_ask.state == "offline" and c.answer_panel.visible and c.answer_text.text == ArchiveAsk.OFFLINE and c.answer_question.text == "You asked: Are you real?")
+	var f := ArchiveAsk.open_fields("Are you real?", {"hud": {"where": "Earth orbit", "speed": "at rest"}, "clock": {"tau": 0.5, "year": 0.6}, "journey": {"state": "idle"}}, "")
+	var ctx: Dictionary = f["context"]
+	check("AV the request carries the question, the sensors and the canon, at most 8 fields (%s)" % str(ctx.keys()), ctx.size() <= 8 and ctx["question"] == "Are you real?" and ctx["location"] == "Earth orbit" and ctx["speed"] == "at rest" and ctx.has("clocks") and ctx["journey"] == "idle" and ctx["canon"] == ArchiveAsk.CANON and f["emotions"] == ArchiveAsk.EMOTIONS)
+	check("AV emotion markers are not shown", ArchiveAsk.unmarked("{curious} The hull is quiet. {sad} I miss the sun.") == "The hull is quiet. I miss the sun.")
+	# The stub service on the ship's own sim (the relay the title-screen game would make, in stub mode).
+	var lib := OS.get_user_data_dir().path_join("test_archive_ask_lib")
+	DirAccess.make_dir_recursive_absolute(lib)
+	var bridge := AiBridge.new(); bridge.cache_dir = lib
+	var cache := AiCache.new(); cache.core_dir = lib.path_join("no_core"); cache.library_dir = lib
+	var relay := AiRelay.new(bridge, cache)
+	var session := AiSession.new({}, OS.get_user_data_dir().path_join("test_archive_ask_settings"))
+	demo.add_child(session)
+	session.relay = relay
+	demo.ai_session = session
+	var attached: bool = relay.attach(demo.journey_sim)
+	c.ask_field.text = "What is the bubble?"
+	var asked: bool = c.use("archive", "ask")
+	check("AV live: asking queues one ai_open for the Archive", attached and asked and c.archive_ask.state == "waiting" and relay.queued() == 1 and c.answer_text.text == ArchiveAsk.THINKING)
+	var opened: Dictionary = relay._queue[0] if relay.queued() == 1 else {}
+	check("AV the ai_open is text, purpose archive, entity archive, with the question", opened.get("kind") == "text" and opened.get("purpose") == "archive" and opened.get("entity_id") == "archive" and opened.get("context", {}).get("question") == "What is the bubble?")
+	for i in 6:
+		demo.journey_tick()
+		ConversationSession.idle(bridge, 30000)
+		if c.archive_ask.state != "waiting":
+			break
+	check("AV the stub's answer reaches the terminal (%s: %s)" % [c.archive_ask.state, c.archive_ask.answer], c.archive_ask.state == "answered" and c.archive_ask.answer.begins_with("Stub archive entry") and c.answer_text.text == c.archive_ask.answer and not c.archive_ask.req.is_empty())
+	c.leave()
+	step(demo, 0.7)
+	check("AV stepping back closes the answer", not c.answer_panel.visible)
+	bridge.stop() if bridge.has_method("stop") else null
+	demo.queue_free()
+	await process_frame
 
 
 func test_walk_to() -> void:
