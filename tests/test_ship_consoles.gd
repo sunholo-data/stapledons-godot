@@ -266,8 +266,53 @@ func test_voyage_archive_sgr() -> void:
 	c.leave()
 	step(demo, 0.7)
 	check("stepping back closes the codex", not demo.codex.panel.visible)
+	# D-66 H2: news from home and the legacy log at the Archive terminal.
+	c.go_to("archive")
+	c.use("archive", "open")
+	var read_news: Button = c.panel_body.find_child("ReadNews", true, false)
+	check("H2 the terminal offers Read news from home and the Legacy log", read_news != null and c.panel_body.find_child("LegacyLog", true, false) != null)
+	check("H2 with no news yet, Read news is disabled and refused", read_news != null and read_news.disabled and not c.use("archive", "news"))
+	var saved_world = demo.sky_world
+	var w: Dictionary = (demo.sky_world as Dictionary).duplicate(true)
+	w["journey"] = {"state": "arrived"}
+	w["consequence"] = {"news": {"star_id": "Sol", "body_source": "template", "slots": {}}, "legacy": {"count": 0, "appended": []}}
+	demo.sky_world = w
+	check("H2 with news, Read news opens the news panel over the terminal", c.use("archive", "news") and c.news_panel.visible and not c.legacy_screen.visible)
+	check("H2 the Legacy log shows when home; its own Begin button stays hidden (the console confirms)", c.use("archive", "legacy") and c.legacy_screen.visible and not c.news_panel.visible and not c.legacy_screen.begin_button.visible)
+	c.leave()
+	step(demo, 0.7)
+	check("H2 stepping back closes the news and legacy panels", not c.news_panel.visible and not c.legacy_screen.visible)
+	w["journey"] = {"state": "committed"}
+	demo.sky_world = w
+	c.go_to("archive")
+	c.use("archive", "open")
+	check("H2 Begin again is refused away from home", not c.use("archive", "begin_again"))
+	c.leave()
+	step(demo, 0.7)
+	w["journey"] = {"state": "arrived"}
+	demo.sky_world = w
+	c.go_to("archive")
+	c.use("archive", "open")
+	var begun: Array = []
+	c.legacy_screen.begun.connect(func(s: int) -> void: begun.append(s))
+	check("H2 Begin again at home starts a new voyage in the sim (a fresh seed)", c.use("archive", "begin_again") and begun.size() == 1 and c.legacy_screen.seed_used == begun[0] and demo.journey_sim.last_seed == begun[0])
+	check("H2 Begin again ends the guided tour that was reading the old session", demo.solar_tour == null and not demo.journey_map.guided_read_only)
+	c.leave()
+	step(demo, 0.7)
+	demo.sky_world = saved_world
 	demo.queue_free()
 	await process_frame
+	# D-66 H1: setup_options["record"] tees the session's NDJSON to the file.
+	var rec := OS.get_user_data_dir().path_join("test_ship_consoles_record.ndjson")
+	DirAccess.remove_absolute(rec)
+	var rd: Node = await new_demo({"record": rec})
+	step(rd, 0.5)
+	check("H1 the record option reaches the journey sim", rd.journey_sim != null and rd.journey_sim.record_path == rec)
+	rd.queue_free()
+	await process_frame
+	await process_frame
+	check("H1 the recording holds the session's NDJSON", FileAccess.file_exists(rec) and FileAccess.get_file_as_string(rec).strip_edges().begins_with("{"))
+	DirAccess.remove_absolute(rec)
 	# Sgr A*: the helm's entry, the stop ladder, approach and leave.
 	var d: Node = await new_demo()
 	c = d.consoles

@@ -55,7 +55,8 @@ export pure func rules(r: Request) -> [string] =
    concat(["Use only these markers: ", markerList(r.constraints.emotions), ". Never use square brackets."])] ++
   (if r.constraints.noNumerals then ["Write no digits at all. Numbers on screen come from the ship's instruments; refer to them in words or not at all."] else []) ++
   [concat(["Keep the text, not counting markers, under ", intToStr(r.constraints.maxChars), " characters."]),
-   "Describe and feel; never judge the player's choices or say whether a decision was right or wrong."]
+   "Describe and feel; never judge the player's choices or say whether a decision was right or wrong.",
+   "Speak in-world (D-67): to everyone aboard the voyage and its physics are simply real; never mention games, players, simulations, approximations or anything being invented."]
 
 pure func ctxLine(c: CtxField) -> [string] =
   if c.name == "canon" || c.name == "stub_case" then []

@@ -5,10 +5,10 @@ unlock: always
 checks: [HB-1, HB-9]
 ---
 You live inside a sphere of radius 100 m, held by the generator in the spire.
-Almost everything about it follows the ordinary laws of physics. One thing does
-not, and the Archive will not pretend otherwise.
+Inside it, the ordinary laws of physics hold as they always have. The bubble
+itself is what makes the voyage possible.
 
-The invented part is the bubble itself. It does three things. Its wall stops
+It does three things. Its wall stops
 every particle that has mass, inward and outward, and lets light and neutrinos
 pass. Seen from outside, the whole pocket behaves as if it weighs very little,
 though never nothing. A pocket that weighed nothing would have to travel at
