@@ -148,10 +148,10 @@
         "zero at phi = 0 and at cos theta <= 0",
         "finite and >= 0 over a phi sweep to the 0.999999c cap"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Package half done: medium.glowEmittanceAt released in sunholo/relativity 0.6.0 (ailang-packages PR #92), independent eval 97/100, 9/9 mutants killed. The game-side pin was never landed at 0.6.0: M5.1a (R1-M5-PLANETS, branch sprint/m5.1a-system-data) pins relativity 0.7.0, which carries glowEmittanceAt unchanged, so that pin (commit 5057d92, its own self-contained commit) is this item's game-side pin, done. V23 re-probe still to run against the pinned version.",
+      "passes": true,
+      "started": "2026-10-05",
+      "completed": "2026-10-05",
+      "notes": "Package half done: medium.glowEmittanceAt released in sunholo/relativity 0.6.0 (ailang-packages PR #92), independent eval 97/100, 9/9 mutants killed. The game-side pin was never landed at 0.6.0: M5.1a (R1-M5-PLANETS, branch sprint/m5.1a-system-data) pins relativity 0.7.0, which carries glowEmittanceAt unchanged, so that pin (commit 5057d92, its own self-contained commit) is this item's game-side pin, done. V23 re-probe still to run against the pinned version. | ROUND 3 (2026-10-12, planner; row repair): LANDED attended. Game side = PR #113, merge f0420c3 ('Integrate approved spectral glow and epsilon with unified ship', 2026-10-05; refs/pull/113/head = afd78d5 = the merge's second parent, verified). That merge carried M4.1 step 2 (commit a9f7fff; sim/consequence.ail:12 and :93-94 import and use glowEmittanceAt + glowTemperatureAt) at pin 0.8.0; HEAD cda0cc7 pins 0.12.0 (sim/ailang.toml:19), which still carries both exports. V23 discharged: checkIsmCruise (sim/consequence_test.ail:161,418, under make sim) asserts the pole/temperature values (AC8, HB-102/HB-96), and make glow-probe (Makefile:103, tools/glow_probe at relativity 0.8.0, VM = interpreter) is the re-probe target. Eval .ailang/state/evaluations/eval_glow-blackbody-080_round_1.json = 89/100 PASS. Planner verification was static at cda0cc7 (git log/show, grep, ls only; no gates run in this worktree); the executable acceptance commands ran attended in PR #113 and main was green at PR #201 ('Close bubble and moon sprint with verified main'). Acceptance rows 1-3 are satisfied by that evidence.",
       "package_release": {
         "version": "sunholo/relativity@0.6.0",
         "published": true,
@@ -404,10 +404,9 @@
     },
     {
       "id": "M4.3b_HUD_IN_INTERIOR",
-      "description": "Track B (art-gated). M4.3a's HUD, warp and arrival card run inside M4.2's composite; the starbow forms overhead during boost, holds in cruise, relaxes through the brake to the rest-frame sky (up = direction of travel throughout, D-14); shortcuts M, L and K keep the minimum path independent of pathing. MERGE: stacks on M4.2's branch in m4-track-b; merges to main with the train after pause S1 sign-off.",
+      "description": "CLOSED-BY-ABSORPTION (revision round 3, 2026-10-12; D-52(A), D-56, D-57). As drafted this row targeted the retired --interior composite; D-52 = A moves bar clause 4 to the default unified 3D painted ship (plain launch -> title 'Board the ship', main.gd:9-10) and D-57 assigns its substance (journey readouts + transit card in the playable ship) to the attended sprint R1-SHIP-UI (its U1/U2). The loop does not build M4.3b. Full disposition with file/line evidence: design_docs/planned/r1/m4-first-journey-sprint.md, section 'Revision round 3', R3-2. --interior stays a developer reference mode with its existing smoke test only (make m4-smoke, unchanged).",
       "depends_on": [
-        "M4.2_INTERIOR_COMPOSITE",
-        "M4.3a_TRANSIT_WARP_HUD"
+        "ext:R1-SHIP-UI (landed attended: plan PR #181 merge 91cdde3; execution PRs #195 merge 70c445c and #196 merge 3e011a9; sprint_R1-SHIP-UI.json 10/10 passes true)"
       ],
       "art_gated": true,
       "estimated_loc": 70,
@@ -419,8 +418,11 @@
         "wiring only"
       ],
       "acceptance_criteria": [
-        "Feeds AC4 (audit runs on the composited scene), AC10 G-M4-3 (forward pole during boost, cruise and brake \u2014 make golden under M4.6), AC11 (make capture-m4)",
-        "Interim gate: make m4-smoke BUNDLE=assets/areas/bridge green; the M4.3a harness-session replay still replays inside the interior"
+        "Met-by (absorption evidence): M4.3a's readouts run in the 3D ship - status strip both clocks + distance as DisplayBindings (ui/ship_hud.gd:42-46), transit card TRANSIT_COMPACT = ship.phase, consequence.gap_years / distance_remaining / earth_years_remaining / load_suns, ship.ism.glow_w_m2, client.warp (ui/ship_hud.gd:34), arrival card (ui/ship_hud.gd:32) - command: make ship-ui-test (in ship-demo-ci, part of make test)",
+        "Met-by: captain decisions only at consoles, never by key - demos/ship_consoles.gd use():194, walk_to():358 (3.5 m/s on WalkArea.path) - commands: make ship-console-test, make no-twitch-test",
+        "Removed by D-57: 'shortcuts M, L and K keep the minimum path independent of pathing' - M is an instant read-only chart; plot/commit only at the navigation station console_navigation_0..2, the guided voyage at console_decision_0, the Archive at the spire terminal",
+        "Kept as --interior reference-mode checks (D-52 'existing smoke test only'): make m4-smoke (unchanged, in make test); tests/replays/m4_transit_harness.ndjson remains a parity-m4 case (mk/m45.mk:3)",
+        "Residue moved out (3D-ship forward-pole orientation invariant has no test at HEAD; interior G-M4-3 covers --interior only): CPU half in M4.5aR3 (pole within 0.75 px of camera-forward in boost/cruise/brake - make playthrough), GPU half in M4.6gR3 (golden G-M4-S3 - make golden)"
       ],
       "test_first": [
         "same HUD audit fixtures as M4.3a, run against the composited scene",
@@ -429,36 +431,40 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": "ABSORBED, not passed - passes stays null by rule (M4.3b's own --interior-scoped commands never ran as M4.3b; the absorbed substance passed as R1-SHIP-UI's own commands: evals pr1-hud 84 / pr2-consoles 84 / pr3-land 82, merges 70c445c and 3e011a9, sprint_R1-SHIP-UI.json 10/10 true). Round 3: 2026-10-12 planner, D-52(A)/D-56/D-57."
     },
     {
       "id": "M4.5_PLAYTHROUGH_AUDIT",
-      "description": "Track A verification harness. Scripted playthrough bot (tests/playthrough_min.json through Godot's input layer, headless, real sim) writing $(SCRATCH)/session.ndjson and display_samples.ndjson \u2014 on the fixture bundle until the approved bundle arrives, on the approved bundle for landing; display audit (tests/display_audit.gd, Godot headless, make display-audit): every numeric label a DisplayBinding{node_path, field, format}, fails on a number != format(state[field]), an unbound digit, or a missing field; codex bodies hash-equal via LoreBinding; replay: make replay SESSION=... (cmp on state streams), make parity-m4 (VM = interpreter, AI process never spawned); ten-minute proxy (sim/tools/session_audit.ail entry playthroughTime, AILANG with FS caps): sim ticks at default warp + 1.5 s per click/key + 200 wpm reading + 20 s walking per interactable (budget <= 330 s, limit 360; legs 45-120 s); entry codexUnlocks against tests/expected_unlocks.json; tests/adversarial.json (re-plan, cancel and Commit mid-transit). MERGE: builds on integration branch m4-track-b (its Track-B deps M4.2 and M4.3b live only there) as a stacked PR, and merges to main with the train after S1 sign-off.",
+      "description": "ROUND 3 (2026-10-12, D-52(A)/D-56/D-57): the scene half moves to the DEFAULT unified 3D painted ship. The scripted minimum-path playthrough bot starts from a plain launch (title screen -> 'Board the ship'), walks to the navigation station via ShipConsoles.walk_to (demos/ship_consoles.gd:358), plots and commits alpha Cen A at the console (use():194, 1.5 s hold), transits boost/cruise/brake aboard, reads news from home at the Archive terminal at the spire, commits Return to Sol, and ends on the legacy line + 'Begin again' - all headless with the real sim, never a decision key (NT1). Driver tests/m4_playthrough_ship.gd (preload main.gd as in tests/test_title_screen.gd:8; ticks via demo.journey_tick() as tests/test_ship_consoles.gd:127-157) writes $(SCRATCH)/session.ndjson (same input+state schema as tests/replays/m4_min_path.ndjson) and display_samples.ndjson plus walk/console/read event lines. Scripts tests/playthrough_min.json and tests/adversarial.json (data). NEW make targets (verified absent at HEAD cda0cc7): playthrough, display-audit. Existing targets reused unchanged: replay SESSION=, parity-m4, playthrough-time SESSION=, codex-unlocks SESSION= (mk/m45.mk). Display audit driver tests/display_audit.gd over DisplayBinding.audit (ui/display_binding.gd:47, landed) + per-frame format_field comparison + LoreBinding codex hashes. Walking model for the proxy (D-56 walking counted; <= 360 s limit kept, D-14): walk events {'type':'walk','path_m':L} charged L / 3.5 s (the click-to-walk = WASD speed) + 0.6 s console use + 1.5 s per commit hold + 200 wpm text; the flat 20 s/interactable becomes a per-visit upper-bound assertion; schema extension confined to sim/tools/session_audit.ail + session_audit_test.ail + tests/fixtures/session_audit/walk_*.ndjson. Budget: transit 134.70 s (M4.5s measured) + ~225 s total expected. Split: M4.5aR3 bot (~300 LOC), M4.5bR3 audit/timing/AI/unlocks (~280 LOC). The 3D-ship forward-pole CPU assertion (R-M4.3b-1) rides in the playthrough driver.",
       "depends_on": [
         "M4.3a_TRANSIT_WARP_HUD",
         "M4.4_NEWS_LEGACY",
         "M4.7_ARCHIVE_CODEX",
-        "M4.2_INTERIOR_COMPOSITE",
-        "M4.3b_HUD_IN_INTERIOR"
+        "M2 replay (landed)",
+        "ext:R1-SHIP-UI (landed attended, PRs #195/#196)",
+        "attended hooks H1 (record seam in demos/ship_geometry_demo.gd) + H2 (NewsPanel + LegacyScreen hosted at the 3D-ship Archive terminal, demos/ship_consoles.gd) - sprint plan section 'Revision round 3' R3-6; M4.5aR3 execution waits on them"
       ],
       "art_gated": false,
       "estimated_loc": 350,
       "loc_cap": 650,
       "wave": 4,
       "files": [
-        "tests/playthrough_min.json",
-        "tests/adversarial.json",
+        "tests/m4_playthrough_ship.gd",
+        "tests/playthrough_min.json (data)",
+        "tests/adversarial.json (data)",
         "tests/display_audit.gd",
-        "sim/tools/session_audit.ail (+ test)",
-        "Makefile (playthrough, display-audit, replay, parity-m4, playthrough-time, codex-unlocks)"
+        "tests/fixtures/session_audit/walk_*.ndjson (data)",
+        "sim/tools/session_audit.ail (+ session_audit_test.ail; walk-event schema extension)",
+        "Makefile (NEW playthrough, display-audit; existing replay SESSION=, parity-m4, playthrough-time SESSION=, codex-unlocks SESSION= reused)"
       ],
       "acceptance_criteria": [
-        "AC3: make playthrough SCRIPT=adversarial; ! grep -rniE \"save_game\\|load_game\\|ResourceSaver\" interior ui \u2014 re-plan, cancel and Commit mid-transit each get committed, state unchanged; no save/load path",
-        "AC4: make playthrough display-audit \u2014 0 mismatches, 0 unbound numerals, >= 500 samples, both clocks and the ISM readout on every transit sample, codex bodies hash-equal (on the approved bundle)",
-        "AC5: make replay SESSION=$(SCRATCH)/session.ndjson && make parity-m4 \u2014 byte-identical incl. record intents and archive unlocks; AI process count during replay 0",
-        "AC6: make playthrough AI=none, AI=stub, AI=digits (each followed by make display-audit) \u2014 AI=digits: session log holds ai_fallback{reason: ai_numeral}, body_source = fallback, the notice shows the ai_numeral phrase; AI=none: body_source = template, no notice; AI=stub: ai with the generated tag. If R1-AI-FOUNDATION slips, AI=stub/AI=digits use the injected fixture (design doc Interfaces)",
-        "AC7: make playthrough playthrough-time \u2014 proxy <= 360 s; each leg 45-120 s (expected 62.0)",
-        "AC16: make playthrough codex-unlocks \u2014 the seven expected entries at their hints, in order; codex shows only unlocked entries"
+        "AC3: make playthrough SCRIPT=tests/adversarial.json; ! grep -rniE \"save_game\\|load_game\\|ResourceSaver\" interior ui demos (grep extended to demos; verified zero matches at cda0cc7) - re-plan, cancel and Commit mid-transit AT THE NAVIGATION CONSOLE each get committed, state unchanged; no save/load path",
+        "AC4: make playthrough display-audit - 0 mismatches, 0 unbound numerals, >= 500 samples, both clocks and the ISM readout on every transit sample, codex bodies hash-equal; scene is the 3D ship (no area-bundle gate; AC14 keeps the --interior bundle gates)",
+        "AC5: make replay SESSION=$(SCRATCH)/session.ndjson && make parity-m4 - byte-identical incl. record intents and archive unlocks; the --sim-only replay path spawns no AI process (count 0)",
+        "AC6: make playthrough AI=none, AI=stub, AI=digits (each followed by make display-audit) - AI=digits: session log holds ai_fallback{reason: ai_numeral}, body_source = fallback, the notice shows the ai_numeral phrase; AI=none: template, no notice; AI=stub: ai with the generated tag. AI.1-AI.10a landed (queue row 4): stub uses the landed local stub, digits the injected fixture (design doc Interfaces)",
+        "AC7: make playthrough playthrough-time SESSION=$(SCRATCH)/session.ndjson - proxy <= 360 s WITH CONSOLE WALKING charged (path_m/3.5 s per walk); each leg 45-120 s (expected ~60-67: ui/journey_pacing.gd:4, 20 s per nonzero phase)",
+        "AC16: make playthrough codex-unlocks SESSION=$(SCRATCH)/session.ndjson - the seven expected entries at their hints, in order; codex shows only unlocked entries",
+        "R-M4.3b-1 (CPU half, moved from absorbed M4.3b): inside the playthrough, the heading-forward direction projects within 0.75 px of the camera forward pixel in boost, cruise and brake aboard the 3D ship"
       ],
       "test_first": [
         "audit positive controls: an unbound numeral fixture and a stale-format fixture both fail",
@@ -469,16 +475,16 @@
       "passes": null,
       "started": "2026-10-08",
       "completed": null,
-      "notes": "Iteration 21: scene-independent M4.5s implemented; see design_docs/planned/r1/m4.5s-inventory.md for inventory, schema, gate exits and mutations. Sol round trip measures 67.35 s per leg, 134.70 s transit. UI bot/display/walking remain blocked by D-52; passes and completed remain null. Controller records x86_64 goldens and evaluates/commits."
+      "notes": "Iteration 21: scene-independent M4.5s implemented; see design_docs/planned/r1/m4.5s-inventory.md for inventory, schema, gate exits and mutations. Sol round trip measures 67.35 s per leg, 134.70 s transit. UI bot/display/walking remain blocked by D-52; passes and completed remain null. Controller records x86_64 goldens and evaluates/commits. | ROUND 3 (2026-10-12, planner, D-52(A)/D-56/D-57): D-52 is now decided (A), so the UI bot/display/walking half is re-scoped to the 3D ship working the consoles (D-56/D-57); scene-independent M4.5s halves above stay landed and reused (replay/parity-m4/time-proxy/codex-unlocks take SESSION=). passes and completed remain null: the scene half is UNBUILT (make playthrough / display-audit and tests/m4_playthrough_ship.gd / tests/display_audit.gd / tests/playthrough_min.json / tests/adversarial.json verified absent at HEAD cda0cc7). Execution waits on Mark's approval of revision round 3 (questions_for_mark Q-r3) and attended hooks H1/H2 (sprint plan R3-6). Sub-milestones: M4.5aR3 ~300 counted LOC, M4.5bR3 ~280."
     },
     {
       "id": "M4.6_PHYSICS_GATES",
-      "description": "Both tracks, partly art-gated; pause S1. UNGATED half (can start wave 2, after M4.0 + M4.1 + M4.6a): tests/test_physics.gd \u2014 ship_basis cases; projection of a galactic direction through cam_bridge.json x ship basis; alpha Cen cruise mirror (gamma(0.99) = 7.088812050083356 from gammaOf; coastAt 4.398169 / 0.620438; sim planBurnCoastBurn 4.398171 / 0.620443); ISM load 2.21961e5 (HB-40 at 3 s.f.); glow values (eps 1e-9, 2.40719e-5 at 0.99c, 0.281271 at 0.999999c <= 1 W/m2 HB-61) and the profile against glowEmittanceAt within 1e-12 at 0/45/80/90/120 deg; finite flux at every stop point (gate 5) \u2014 every expected value copied from the V12 probe, never computed in GDScript; make lint-precision (in make test) with positive-control fixture. GATED half: make golden G-M4-1 (composite position <= 0.75 px, pan-invariant), G-M4-2 (one tonemap <= 1/255), G-M4-3 (forward pole <= 0.75 px in all three phases), G-M4-4 (profile within 1% at 0/45/80 deg, exactly 0 at rest; absolute pole value in a debug linear float target = glow_pole_w_m2 within 1% at 0.99c and 0.999999c); make capture-m4 -> renders/m4/ (docked; boost beta 0.5, 0.9; cruise 0.99 with glow; brake beta 0.5; arrived alpha Cen; arrived home; pans -5/0/+5, contact sheet, on the approved bundle); make bench SCENE=bridge (p99 < 16.7 ms at 2560x1440, M4 Max, medium tier, 30 s scripted transit). MERGE: the ungated half (CPU tests, lint-precision) lands on main as its own PR; the gated half stacks on M4.3b in m4-track-b; pause S1's make capture-m4 runs on m4-track-b and the branch merges to main after sign-off.",
+      "description": "ROUND 3 (2026-10-12, D-52(A)): UNGATED half LANDED (PR #151, merge 1d127ca; CPU check rows, sim/m4_physics_test.ail, make lint-precision, make m4-physics-probe - preserved, not re-planned). GATED half re-scoped from the --interior composite to the default 3D painted ship: make golden gains ship cases G-M4-S2 (one tonemap across the ship + sky viewport chain), G-M4-S3 (forward pole <= 0.75 px in boost/cruise/brake at the captain eye; R-M4.3b-1's GPU half), G-M4-S4 (ForwardGlow.profile, interior/forward_glow.gd:44, shared renderer via InteriorSky.set_glow - within 1% at 0/45/80 deg, 0 at rest, absolute pole in a debug linear float target = ship.ism.glow_pole_w_m2 within 1% at 0.99c and the 2e-9 cap, D-48), driver tools/m4_ship_golden.gd in the existing --golden run. DROPPED for the ship: G-M4-1 (composite position, pan-invariant) - no pan composite exists in the one-viewport 3D ship; the landed --interior G-M4-1..6 stay in make golden as reference-mode gates. make capture-m4 RE-POINTED to the 3D ship (tools/m4_ship_capture.gd; captain eye: docked, boost, cruise 0.99 with glow, brake, arrived alpha Cen, arrived home + contact sheet -> renders/m4/; at HEAD it drives --interior via --interior-capture). make bench gains SCENE (none at HEAD); SCENE=bridge runs tools/m4_ship_bench.gd aboard the 3D ship in live transit (2560x1440, p99 < 16.7 ms). Split: M4.6gR3 ship goldens (~180 LOC, normal PR), M4.6rR3 renders+bench (~200 LOC; the PR PARKS for Mark's S1 render sign-off, physics gate 2, before merging). The m4-track-b integration branch is removed: it never materialised (no ref; M4.2 went straight to main attended, PR #102): ordering is normal PRs with S1 before the renders PR.",
       "depends_on": [
-        "M4.2_INTERIOR_COMPOSITE",
-        "M4.6a_PKG_GLOW_EMITTANCE",
-        "ext:R1-M1-SKY-2 M1.6b (passed; merge pending R-a)",
-        "ext:R1-M1-SKY-2 M1.2d (PR #69, soft \u2014 the 'arrived at alpha Cen' render and arrival view; no golden pins the A/B separation)"
+        "M4.6a_PKG_GLOW_EMITTANCE (landed: package 0.6.0; game PR #113 merge f0420c3)",
+        "ext:M1.6b camera golden (landed: PR #50 merge ffd52cc per queue row 3)",
+        "ext:M1.2d bright tier (landed: PR #69 merge 9bf55ce; soft - the 'arrived at alpha Cen' render; no golden pins the A/B separation)",
+        "pause S1 (round-3 form): Mark signs off renders/m4/ from the 3D ship before the M4.6rR3 PR merges (physics gate 2)"
       ],
       "art_gated": "partly (CPU tests and lint-precision are not gated; goldens, renders and bench are)",
       "estimated_loc": 210,
@@ -491,11 +497,11 @@
         "lint-precision positive-control fixture"
       ],
       "acceptance_criteria": [
-        "AC9: make test (physics, lint-precision) \u2014 CPU physics; no hand-computed gamma or 1-beta",
-        "AC10: make golden \u2014 G-M4-1 (<= 0.75 px, pan-invariant), G-M4-2 (<= 1/255), G-M4-3 (<= 0.75 px, all three phases), G-M4-4 (profile and absolute pole <= 1%, 0 at rest)",
-        "AC11: make capture-m4; grep -n \"S1 sign-off\" design_docs/implemented/r1/m4-report.md \u2014 renders on the approved bundle, reviewed by Mark (pause S1)",
-        "AC12: make bench SCENE=bridge \u2014 p99 < 16.7 ms at 2560x1440",
-        "AC18: GitHub Actions CI green \u2014 make test incl. lore-check, lint-precision, python-guard (no new *.py); make strict and every parity target; M2's old-message tests unmodified"
+        "AC9 (LANDED, PR #151): make test (physics, lint-precision) - CPU physics; no hand-computed gamma or 1-beta",
+        "AC10 (round-3 form): make golden - G-M4-S2 (one tonemap <= 1/255), G-M4-S3 (forward pole <= 0.75 px, all three phases, 3D ship), G-M4-S4 (glow profile and absolute pole <= 1%, 0 at rest); the --interior G-M4-1..6 stay green as reference-mode gates",
+        "AC11 (round-3 form): make capture-m4 (now the 3D ship); grep -n \"S1 sign-off\" design_docs/implemented/r1/m4-report.md - renders from the 3D ship, reviewed by Mark (pause S1) before the renders PR merges",
+        "AC12 (round-3 form): make bench SCENE=bridge - the 3D-ship bridge in live transit, p99 < 16.7 ms at 2560x1440",
+        "AC18: GitHub Actions CI green - make test incl. lore-check, lint-precision, python-guard (no new *.py); make strict and every parity target; M2's old-message tests unmodified"
       ],
       "test_first": [
         "test_physics.gd rows written from the V12 probe output before the composite exists (they fail on main)",
@@ -505,7 +511,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": "UNGATED half delivered (iteration 20, executor Sonnet 5.5; evaluator pending); GATED half (make golden G-M4-1..4, capture-m4, bench) OPEN, passes stays null. INVENTORY at origin/main 3541bf1: R1 ship_basis COVERED (tests/test_physics.gd ship-frame block: orthonormal/Z=heading/det/pole fallbacks/near-pole/round trip). R2 PARTIAL (sky_camera tested only with a hard-coded copy of cam_bridge.json, no galactic-direction projection) -> now reads assets/areas/bridge/cam_bridge.json, GC and NGP headings, projections of galactic +x and +z (exact permutations). R3 PARTIAL (only 1/gamma at 1e-7) -> gamma(0.99)=7.088812050083356 exact in test_physics.gd; coastAt/planBurnCoastBurn are sim-only -> sim/m4_physics_test.ail. R4 MISSING in the assertions (lore_values only checks the docs): loadScale 221961.2727892787 and ismAt agreement -> sim/m4_physics_test.ail. R5 COVERED at eps 1e-9 (glow means/poles at 1e-10, profile rows at 1e-9) -> added the profile at the sim's eps 1e-10 at 0/45/80/90/120 deg for 0.99c and the cap (1e-12). R6 PARTIAL (rest and the cap only) -> every stop of solar_departure.legs (10 legs: seven 0.99c, hops 1-b 1e-3, 1e-4, 1e-6) plus rest and the guided drive cap 2e-9, in both test_physics.gd (luminance = glowLuminanceAt, LUT efficacy, colour finite) and the sim test. R7 MISSING -> make lint-precision (in make test, .PHONY; mk/m5.mk's lint-precision: lint-precision-m5 prerequisite is kept), positive control tests/fixtures/lint_precision/bad_one_minus_beta.gd must match 4 of 4, good file 0, 7 allowlisted non-computations in allowlist.txt. PLAN vs PROBE: glow values in the plan are eps 1e-9 (2.40719e-5, 0.281271); the sim's eps is 1e-10 (D-29 follow-up) so the probe gives 2.407194e-6 and 0.0281271 (10x), pole 9.628776871706523e-6 / 0.11250843031053141; the stop list is now 10 legs (D-37/D-46/D-47). Other plan values match: gammaOf 7.088812050083356, coastAt 4.398169184434525 / 0.620438114787203, planBurnCoastBurn 4.398171425676279 / 0.6204427104843891, load 221961.2727892787. FINDING: at the guided drive cap (1-beta 2e-9, GUIDED_DRIVE) the glow mean is 14.08 W/m2 and the pole 56.3 W/m2 (T 66,764 K), above the HB-61 <= 1 W/m2 bound that holds at the 1e-6 cap; finite, so the gate passes, but Mark's D-48 ruling keeps the glow. GUARD: make physics now fails unless '<n> passed, 0 failed' is printed (a parse error exited 0 with no summary). Probe: sim/tools/m4_physics_probe.ail (make m4-physics-probe, VM = interpreter identical, 28 lines). physics 605 -> 636 passed, 0 failed."
+      "notes": "UNGATED half delivered (iteration 20, executor Sonnet 5.5; evaluator pending); GATED half (make golden G-M4-1..4, capture-m4, bench) OPEN, passes stays null. INVENTORY at origin/main 3541bf1: R1 ship_basis COVERED (tests/test_physics.gd ship-frame block: orthonormal/Z=heading/det/pole fallbacks/near-pole/round trip). R2 PARTIAL (sky_camera tested only with a hard-coded copy of cam_bridge.json, no galactic-direction projection) -> now reads assets/areas/bridge/cam_bridge.json, GC and NGP headings, projections of galactic +x and +z (exact permutations). R3 PARTIAL (only 1/gamma at 1e-7) -> gamma(0.99)=7.088812050083356 exact in test_physics.gd; coastAt/planBurnCoastBurn are sim-only -> sim/m4_physics_test.ail. R4 MISSING in the assertions (lore_values only checks the docs): loadScale 221961.2727892787 and ismAt agreement -> sim/m4_physics_test.ail. R5 COVERED at eps 1e-9 (glow means/poles at 1e-10, profile rows at 1e-9) -> added the profile at the sim's eps 1e-10 at 0/45/80/90/120 deg for 0.99c and the cap (1e-12). R6 PARTIAL (rest and the cap only) -> every stop of solar_departure.legs (10 legs: seven 0.99c, hops 1-b 1e-3, 1e-4, 1e-6) plus rest and the guided drive cap 2e-9, in both test_physics.gd (luminance = glowLuminanceAt, LUT efficacy, colour finite) and the sim test. R7 MISSING -> make lint-precision (in make test, .PHONY; mk/m5.mk's lint-precision: lint-precision-m5 prerequisite is kept), positive control tests/fixtures/lint_precision/bad_one_minus_beta.gd must match 4 of 4, good file 0, 7 allowlisted non-computations in allowlist.txt. PLAN vs PROBE: glow values in the plan are eps 1e-9 (2.40719e-5, 0.281271); the sim's eps is 1e-10 (D-29 follow-up) so the probe gives 2.407194e-6 and 0.0281271 (10x), pole 9.628776871706523e-6 / 0.11250843031053141; the stop list is now 10 legs (D-37/D-46/D-47). Other plan values match: gammaOf 7.088812050083356, coastAt 4.398169184434525 / 0.620438114787203, planBurnCoastBurn 4.398171425676279 / 0.6204427104843891, load 221961.2727892787. FINDING: at the guided drive cap (1-beta 2e-9, GUIDED_DRIVE) the glow mean is 14.08 W/m2 and the pole 56.3 W/m2 (T 66,764 K), above the HB-61 <= 1 W/m2 bound that holds at the 1e-6 cap; finite, so the gate passes, but Mark's D-48 ruling keeps the glow. GUARD: make physics now fails unless '<n> passed, 0 failed' is printed (a parse error exited 0 with no summary). Probe: sim/tools/m4_physics_probe.ail (make m4-physics-probe, VM = interpreter identical, 28 lines). physics 605 -> 636 passed, 0 failed. | ROUND 3 (2026-10-12, planner, D-52(A)): gated half re-scoped to the 3D ship as above; G-M4-1 pan-invariance dropped for the ship (no iso composite there), iso G-M4-1..6 kept as --interior reference gates; capture-m4/bench re-pointed; m4-track-b train removed (branch never existed; M4.2 merged to main as PR #102). passes stays null: the gated half is UNBUILT at cda0cc7, and round 3 awaits Mark's approval (questions_for_mark Q-r3). Sub-milestones: M4.6gR3 ~180 counted LOC, M4.6rR3 ~200 (parks at S1)."
     }
   ],
   "findings": [
@@ -537,7 +543,7 @@
     {
       "id": "S1",
       "after": "M4.6_PHYSICS_GATES (make capture-m4, run on m4-track-b)",
-      "what": "Mark reviews the composited reference renders renders/m4/ (physics gate 2), incl. the cruise frame with the glow at eps 1e-9; AC11's grep 'S1 sign-off'. Executable ordering: M4.2, M4.3b and M4.6's gated half land as stacked PRs into the integration branch m4-track-b (M4.3b built on M4.2's branch, M4.6-gated on M4.3b's); capture-m4 runs on m4-track-b and S1 is shown from that branch; the branch merges to main as one merge after sign-off. Blocks the m4-track-b merge to main and landing. Track A milestones and M4.6's ungated half merge to main independently as their own PRs"
+      "what": "Mark reviews the composited reference renders renders/m4/ (physics gate 2), incl. the cruise frame with the glow at eps 1e-9; AC11's grep 'S1 sign-off'. Executable ordering: M4.2, M4.3b and M4.6's gated half land as stacked PRs into the integration branch m4-track-b (M4.3b built on M4.2's branch, M4.6-gated on M4.3b's); capture-m4 runs on m4-track-b and S1 is shown from that branch; the branch merges to main as one merge after sign-off. Blocks the m4-track-b merge to main and landing. Track A milestones and M4.6's ungated half merge to main independently as their own PRs ROUND 3 (2026-10-12, D-52(A)): m4-track-b never materialised - M4.2 merged straight to main attended (PR #102) and no branch exists; S1 now reviews renders/m4/ captured from the DEFAULT 3D painted ship (make capture-m4 re-pointed, tools/m4_ship_capture.gd) run on the M4.6rR3 branch, and blocks that PR's merge and P-land (physics gate 2)."
     },
     {
       "id": "S2",
@@ -573,6 +579,12 @@
       "question": "Approve sprint R1-M4-JOURNEY as written? Includes the M4.1 LOC-cap waiver (700 > 650; split at the ship.ism seam on overrun \u2014 F1), wave 1 (M4.6a || M4.0 || M4.1) starting immediately on approval while Track B waits on R1-M1-SKY-2, pause points P-pkg, RB-1, S1, S4, and the S1 stacking mechanism (Track B lands as stacked PRs into m4-track-b, merging to main after S1 sign-off). Note: the round-2 design quorum ran with gpt6-1-sol ABSENT (3 present external reviewers, that seat empty \u2014 F7)",
       "recommendation": "approve",
       "default": "no execution until approved (sprint plans stop for approval)"
+    },
+    {
+      "id": "Q-r3",
+      "question": "Approve the R1-M4-JOURNEY Revision round 3 (2026-10-12, D-52(A)/D-56/D-57)? M4.3b closed-by-absorption; M4.5's scene half on the 3D ship via consoles with console walking charged into the <= 360 s proxy; M4.6's gated half re-scoped (ship goldens G-M4-S2/S3/S4, capture-m4 and bench SCENE=bridge re-pointed to the 3D ship, iso-only G-M4-1 dropped for the ship); attended hooks H1/H2 (~55 LOC in ui/demos files); S1 render sign-off before the renders PR merges",
+      "recommendation": "approve",
+      "default": "no M4.5-scene or M4.6-gated execution; the loop works the other triaged queue rows (L1-L8, R1, R2)"
     }
   ],
   "registry_reuse": [
@@ -659,5 +671,56 @@
       "actual_loc": "~837 code lines excl. comments (545 impl + 292 tests) after round 1; round-1 fixes add about 90 test lines",
       "waiver": "Granted after the fact (eval round 1, 86/100, accepted with a note). The overrun is the validator (306 physical lines: speck/haze/foreground rules, manifest name cross-check, needle image check) plus the 68-line fixture builder that generates the blockout GLB collections. The work is cohesive and cannot be split after the fact. It matches the M2 actual/estimate history (~1.5x)."
     }
-  ]
+  ],
+  "revision_round_3": {
+    "date": "2026-10-12",
+    "planner": "mission-stapledon iteration 24 planner (unattended)",
+    "trigger": "D-52 = A (attended 2026-10-08: clause 4 proven in the default 3D painted ship, NOT --interior), D-56 (decisions at bridge consoles; no twitch), D-57 (attended 2026-10-09: R1-SHIP-UI absorbs M4.3b; M read-only chart; M4.5's bot works consoles)",
+    "verified_at_head": "cda0cc7 (branch mission/stapledon-iter24-m4-replan); git log/show + grep + ls only; no gates run",
+    "markdown": "design_docs/planned/r1/m4-first-journey-sprint.md section 'Revision round 3 (2026-10-12, D-52(A) / D-56 / D-57, planner)'",
+    "design_doc_amendment": "design_docs/planned/r1/m4-first-journey.md section 'Amendment 2026-10-12 (D-52 A, D-56, D-57)'",
+    "awaits_mark_approval": true,
+    "default_if_unanswered": "no M4.5-scene or M4.6-gated execution; loop works queue rows L1-L8 / R1 / R2",
+    "changes": [
+      "M4.3b_HUD_IN_INTERIOR: CLOSED-BY-ABSORPTION into R1-SHIP-UI (met-by commands listed; passes stays null); residue = 3D-ship forward-pole orientation invariant -> M4.5aR3 (CPU) + M4.6gR3 (G-M4-S3)",
+      "M4.5_PLAYTHROUGH_AUDIT: scene half re-scoped to the 3D ship (plain launch -> Board the ship -> consoles); new make targets playthrough + display-audit; walking counted (path_m/3.5 s); M4.5s halves (parity-m4, playthrough-time, codex-unlocks, session_audit.ail; PR #154) preserved and reused; split M4.5aR3 (~300 LOC) + M4.5bR3 (~280 LOC); passes stays null",
+      "M4.6_PHYSICS_GATES: ungated half (PR #151) preserved; gated half = ship goldens G-M4-S2/S3/S4 + capture-m4 re-point + bench SCENE=bridge; G-M4-1 dropped for the ship (no iso composite); iso G-M4-1..6 kept as reference gates; split M4.6gR3 (~180 LOC, normal PR) + M4.6rR3 (~200 LOC, parks at S1); passes stays null",
+      "M4.6a_PKG_GLOW_EMITTANCE: passes -> true with evidence (PR #113 merge f0420c3, eval 89; pin 0.12.0 at HEAD; checkIsmCruise + glow-probe discharge V23)",
+      "m4-track-b integration branch / --interior merge train removed (never materialised; M4.2 = PR #102 to main); ordering: H1/H2 attended hooks -> M4.5aR3 || M4.6gR3 -> M4.5bR3 || M4.6rR3 (S1) -> P-land",
+      "pause_points[S1] re-scoped to 3D-ship renders; questions_for_mark gained Q-r3"
+    ],
+    "attended_hooks": [
+      "H1: demos/ship_geometry_demo.gd (~4 LOC) - honour setup_options['record'] -> journey_sim.record_path before start() (creation at :591; SimBridge opens the tee in start(), bridge/sim_bridge.gd:121-124); main.gd needs no change (demo_overrides merge at :97/:149-150; plain launch + --record keeps the title route, :195)",
+      "H2: demos/ship_consoles.gd (~50 LOC) - _archive_panel() hosts NewsPanel (ui/news_panel.gd open():156 / show_world(view):182) + LegacyScreen (ui/legacy_screen.gd:77) at the 3D-ship Archive terminal; NO ui/* edits needed (verified: both panels expose show_world(view) and NewsPanel has no interior coupling)"
+    ],
+    "loc_round3": {
+      "M4.5aR3": 300,
+      "M4.5bR3": 280,
+      "M4.6gR3": 180,
+      "M4.6rR3": 200,
+      "attended_hooks_H1_H2": 55,
+      "total_loop_counted": 960
+    },
+    "waves_round3": {
+      "R3-0": [
+        "H1",
+        "H2 (attended)"
+      ],
+      "R3-1": [
+        "M4.5aR3",
+        "M4.6gR3"
+      ],
+      "R3-2": [
+        "M4.5bR3",
+        "M4.6rR3 (parks at S1)"
+      ],
+      "S1": [
+        "Mark render sign-off"
+      ],
+      "P-land": [
+        "m4-report.md, design doc to implemented/, roadmap, changelog, R2 playtest row"
+      ]
+    }
+  },
+  "planner_status_note": "Revision round 3 (2026-10-12, D-52(A)/D-56/D-57) is recorded in revision_round_3 and the sprint plan markdown; it AWAITS MARK'S APPROVAL (questions_for_mark Q-r3). No M4.5-scene (M4.5aR3/M4.5bR3) or M4.6-gated (M4.6gR3/M4.6rR3) execution until answered."
 }
