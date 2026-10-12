@@ -2,6 +2,12 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-07: iteration 20, M4.6 ungated half LANDED (PR #151, merge `1d127ca`): CPU check values for the cruise, ISM load, glow and every stop; `make lint-precision`; `make physics` can no longer pass a test file that fails to parse; Sonnet 5.5 executor, minimax-m3 eval 91 → 100 PASS, 0 blocking; D-52 OPEN (which ship scene clause 4 runs in); clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved.
+
+- **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended); 2 MET; 3 UNMET → M3 (design drafted; no quorum or plan; routable); 4 UNMET → R1-M4-JOURNEY: M4.0, M4.1, M4.2, M4.3a, M4.4, M4.6a, M4.7 ✅ and **M4.6 ungated ✅ (this iteration)**; M4.3b and M4.5 wait on **D-52**, because the default launch is now the unified 3D ship and `--interior` is a reference mode; the M4.6 gated half waits on D-52 and S1; 5 ongoing (strict + parity green).
+- **Done**: the executor (Sonnet 5.5, claude CLI) inventoried the plan rows at HEAD, then filled the gaps: probe-sourced values (`sim/tools/m4_physics_probe.ail`, VM = interpreter), physics 605 → 636, the new `sim/m4_physics_test.ail` (8), the physics summary guard and `lint-precision`. Eval round 1 (minimax-m3) scored 91 PASS. The controller then fixed its allowlist finding: entries are keyed on code text, strings are stripped, and an empty allowlist no longer passes, a latent `NR==FNR` hole. Eval round 2 scored 100 PASS. `make -k test`: only the known `ai-godot` poll flake failed. PR CI green on `f8159e5`; merge CI green (run `37694167694`).
+- **Next**: Mark's D-52. Until then: M4.5's scene-independent halves, or M3's quorum and plan. Follow-ups: drop the `1.0 - beta` fallback in `demos/ship_geometry_demo.gd`; a `ForwardGlow.temperature` shape check; fold the `mk/m5.mk` lint into `lint-precision`; the `ai-godot` 2 ms flake (iterations 17, 19, 20).
+
 ## STATUS 2026-10-07: iteration 18, D-45(B) M4.4 resume PARKED-ON-LANE; native planner opus / required judge sonnet rejected Unknown model; missing driver role env; fleet ticket filed; no product changes or acceptance; clause 2 MET, 1/3/4 UNMET, 5 ongoing; zero OPEN decisions.
 
 ## STATUS 2026-10-06: iteration 17, M4.4 news/return trip/legacy BUILT and judged (draft PR #131, head `ee98858`); minimax-m3 eval 97 PASS, 0 blocking; merge waits on pause point S4 (copy review, D-45 OPEN); clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved (M4.4 verified, an M4.5 dependency); one open decision.
