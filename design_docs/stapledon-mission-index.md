@@ -32,3 +32,5 @@ Regenerated from full mission log headings; one line per entry. No log archive y
 | 22 | 2026-10-08 | PRODUCT | iteration 22, iteration 21's orphan M4.5s VERIFIED and LANDED (PR #154, merge `029e44b`, merge CI green); independent eval round 3 Sonnet 91/100 PASS [PRODUCT] |
 | 23 | 2026-10-08 | HARNESS | iteration 23, D-52(A) M4 scene re-plan PARKED-ON-LANE; required native evaluator unavailable [HARNESS] |
 | 24 | 2026-10-12 | ADMIN | iteration 24, D-52(A) M4 re-plan (revision round 3) WRITTEN and independently judged; Sonnet eval 84 → 90/100 PASS; parked for Mark's approval as D-66 [ADMIN] |
+| 25 | 2026-10-09 | ADMIN | iteration 25 (orphan, glm-5.3 controller), L1 queue/sprint reconciliation BUILT and judged (minimax-m3 96 PASS), PR #192 merged by Mark; paused at Gate 3b and never recorded; credited by iteration 26 [ADMIN] |
+| 26 | 2026-10-12 | PRODUCT | iteration 26, L6 export completeness LANDED (PR #211): static `res://` audit in `make test` and strict pack oracle in `publish-dev`; independent eval Sonnet 84/100 PASS; credits iteration 25's orphan L1 (PR #192) [PRODUCT] |
