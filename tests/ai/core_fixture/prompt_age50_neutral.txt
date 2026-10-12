@@ -1,1 +1,0 @@
-fixture prompt prompt_age50_neutral.txt

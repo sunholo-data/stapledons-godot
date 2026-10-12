@@ -1,3 +1,0 @@
-module reverse_vm_repro
-import std/list (reverse)
-export pure func main(n: int) -> [int] = reverse([1,2,3])
