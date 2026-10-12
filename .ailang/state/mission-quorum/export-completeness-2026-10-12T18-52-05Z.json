@@ -1,0 +1,78 @@
+{
+  "doc": "design_docs/planned/r1/export-completeness.md",
+  "iso_ts": "2026-10-12T18:52:05Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.19697099999999998,
+      "tokens_in": 7927,
+      "tokens_out": 11546,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Premise-verification failure on the single most load-bearing fact in the doc: what physics/schwarzschild.gd actually reads. The DYNAMIC row example and mutants M1–M3 name witnesses data/lens/lens_fwd.bin and lens_inv.bin built via 'physics/schwarzschild.gd:22 (LENS_DIR)', but no verification-log row quotes that line or any line of schwarzschild.gd — while the doc's own measured pack (V8) contains only lens_fwd.json and lens_inv.json and states the .bin files are absent from the clone. The doc demonstrates (V19) that it knows how to pin a dynamic path by quoting ship_commons.gd:4-5, yet the dev.23-motivated lens case — the entire raison d'être of the audit — is recalled, not measured, and sits in unresolved tension with V8. If the code constructs .json paths (plausible, since V9/V8 show JSON auto-packs), then the named witnesses testify about files nothing reads, the 'witness fails F' kill conditions in M1/M2 are wrong (a .json witness passes F under the narrowed 'data/lens/*.json' filter in M2), and AC4's claim that removing data/lens/* reproduces the dev.23 regression turns the audit red only via the weaker D-row filter-text check, not via the data path that actually went black.",
+        "catch": "Two things: (1) Add verification rows that quote 'grep -n res:// physics/schwarzschild.gd', 'ls data/lens', and the lens-assets Makefile recipe, then reconcile the DYNAMIC witnesses and M1–M3 kill conditions with whatever filenames/extensions the code truly constructs — the current .bin witnesses contradict the doc's own V8 observation. (2) The acceptance commands grep and unzip paths under .godot/tmp/ (AC3, AC5, AC6, AC7) while the design recipes write to $(SCRATCH); the doc never defines or verifies that $(SCRATCH) is .godot/tmp, so AC3/AC7 may reference nonexistent files.",
+        "proposed_fix": "Add verification-log row V20: 'grep -n \"res://\" physics/schwarzschild.gd' plus 'ls -la data/lens/' and 'grep -n lens Makefile' (the lens-assets recipe), quoting the observed constructor line and staged filenames. Then either (a) if the code does build res://data/lens/lens_fwd.bin etc., quote that line verbatim and resolve the V8 parenthetical (why .json files are packed in a clone where the .bins are fetched) by noting .json is auto-packed source data; or (b) if the code now loads lens_fwd.json/lens_inv.json, rewrite the DYNAMIC row witnesses to the .json names, rewrite M1–M3's kill conditions to rest on the D-row filter-text check alone (a .json witness cannot fail F under 'data/lens/*.json'), and reword AC4's dev.23 claim accordingly. Independently, replace '.godot/tmp/…' in AC3, AC5–7 with '$(SCRATCH)/…' (or add a verification row 'grep -n SCRATCH Makefile' proving the mapping) and add a row verifying the Problem-section claim 'nothing in make test relates res:// paths to export_presets.cfg' (e.g., 'grep -rn export_presets Makefile tests/ tools/')."
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-3-1-pro",
+      "cost_usd": 0.020009999999999997,
+      "tokens_in": 8649,
+      "tokens_out": 226,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The document asserts that AUTO_EXT comprises `gd, gdshader, gdshaderinc, tscn, tres, json` and claims this list is 'pinned to the V9 probe.' However, V9 explicitly lists its probe files and completely omits `gd, gdshader, gdshaderinc, tscn, tres`. The auto-inclusion behavior for these core extensions is therefore asserted but never verified, violating the PREMISE VERIFICATION gate.",
+        "catch": "V9 does not test the standard Godot resource extensions it claims to pin for AUTO_EXT.",
+        "proposed_fix": "Update the V9 command to include the missing extensions in the probe: `data/probe/p.{json,bin,txt,ndjson,ail,csv,md,cfg,toml,lock,png.bin,gd,gdshader,gdshaderinc,tscn,tres}`. Update the V9 observed output to explicitly confirm which of these are actually auto-packed."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: context deadline exceeded",
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Controller spot-checked V1 (8 exclude entries), V5 (01af4c5), V8 (data/news/copy.json packed) and V14 (3 spike/ entries in pack) first-party; scope is headless hygiene, no physics, no Do-not-touch edits."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-kimi-k3: Premise-verification failure on the single most load-bearing fact in the doc: what physics/schwarzschild.gd actually reads. The DYNAMIC row example and mutants M1–M3 name witnesses data/lens/lens_fwd.bin and lens_inv.bin built via 'physics/schwarzschild.gd:22 (LENS_DIR)', but no verification-log row quotes that line or any line of schwarzschild.gd — while the doc's own measured pack (V8) contains only lens_fwd.json and lens_inv.json and states the .bin files are absent from the clone. The doc demonstrates (V19) that it knows how to pin a dynamic path by quoting ship_commons.gd:4-5, yet the dev.23-motivated lens case — the entire raison d'être of the audit — is recalled, not measured, and sits in unresolved tension with V8. If the code constructs .json paths (plausible, since V9/V8 show JSON auto-packs), then the named witnesses testify about files nothing reads, the 'witness fails F' kill conditions in M1/M2 are wrong (a .json witness passes F under the narrowed 'data/lens/*.json' filter in M2), and AC4's claim that removing data/lens/* reproduces the dev.23 regression turns the audit red only via the weaker D-row filter-text check, not via the data path that actually went black.",
+      "gemini-3-1-pro: The document asserts that AUTO_EXT comprises `gd, gdshader, gdshaderinc, tscn, tres, json` and claims this list is 'pinned to the V9 probe.' However, V9 explicitly lists its probe files and completely omits `gd, gdshader, gdshaderinc, tscn, tres`. The auto-inclusion behavior for these core extensions is therefore asserted but never verified, violating the PREMISE VERIFICATION gate."
+    ],
+    "absent_reviewers": [
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      },
+      {
+        "model": "oc-glm-5-3",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.21698099999999998,
+    "total_tokens_in": 16576,
+    "total_tokens_out": 11772
+  }
+}
