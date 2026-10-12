@@ -1,6 +1,6 @@
 # Export completeness: every data path the shipped code reads survives the export filter
 
-**Status:** Planned (unattended loop, iteration 26, designer role). Awaiting sprint plan.
+**Status:** Implemented 2026-10-12 (mission iteration 26; sprint R1-L6-EXPORT-COMPLETENESS, evaluator Sonnet r1 84/100 PASS). The first real `publish-dev` with the strict pack gate runs attended.
 **Release:** r1
 **Milestone:** charter triage row L6 (clause 5 hygiene)
 **Priority:** P1. It is next in the charter order (L1 → **L6** → L2 …), and dev.23 shows what this costs: a dev build where Sgr A* drew nothing.

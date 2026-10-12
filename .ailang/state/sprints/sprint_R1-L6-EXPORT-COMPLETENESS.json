@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-L6-EXPORT-COMPLETENESS",
-  "status": "planned",
+  "status": "completed",
   "approved": true,
   "approved_by": "charter triage L6 [LOOP] = route now (Mark, attended 2026-10-09, PR #185)",
   "created": "2026-10-12",
-  "design_doc": "design_docs/planned/r1/export-completeness.md",
-  "sprint_plan": "design_docs/planned/r1/export-completeness-sprint.md",
+  "design_doc": "design_docs/implemented/r1/export-completeness.md",
+  "sprint_plan": "design_docs/implemented/r1/export-completeness-sprint.md",
   "branch": "mission/stapledon-iter26-l6-export-completeness",
   "implements": [
     "charter triage row L6 (design_docs/stapledon-mission.md:299, [LOOP]; order line 312: L1 -> L6 -> L2 ...)"
@@ -65,10 +65,12 @@
         "AC10 - do-not-touch files unmodified: `git diff --quiet origin/main -- demos/ship_geometry_demo.gd demos/ship_consoles.gd`",
         "AC11 - no Python added: `make python-guard` and `git diff --name-only origin/main | grep -c '\\.py$'` -> 0"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Test-first order: T1 test file red (missing preload, error line recorded); T2 logic until the real arm is red on the live G1 gap (FAIL ... res://data/raw/hip_v7.tsv not covered, spike/panorama_main.gd); T3 G1 fix -> real arm green, 16/16 mutants killed (M13 last: its base needs the fixed exclude); T4 Makefile wiring (test: export-filter-audit line; mkdir -p $(SCRATCH); summary-grep per Makefile:51-55). Do-not-touch: demos/ship_geometry_demo.gd, demos/ship_consoles.gd (AC10)."
+      "passes": true,
+      "started": "2026-10-12",
+      "completed": "2026-10-12",
+      "notes": "Test-first order: T1 test file red (missing preload, error line recorded); T2 logic until the real arm is red on the live G1 gap (FAIL ... res://data/raw/hip_v7.tsv not covered, spike/panorama_main.gd); T3 G1 fix -> real arm green, 16/16 mutants killed (M13 last: its base needs the fixed exclude); T4 Makefile wiring (test: export-filter-audit line; mkdir -p $(SCRATCH); summary-grep per Makefile:51-55). Do-not-touch: demos/ship_geometry_demo.gd, demos/ship_consoles.gd (AC10). | DONE iteration 26: executor claude-haiku-5-5; red T1 (missing preload) and red T2 (real arm FAIL F res://data/raw/hip_v7.tsv, the G1 gap) recorded; controller re-run: export-filter-audit 90 literals, 44R 10F 22D 14X, 0 failures; 16/16 mutants killed; AC4 real edit names lens_fwd.bin/lens_inv.bin; evaluator Sonnet r1 84 PASS, 22 real-edit mutations. LOC overrun vs ~215 estimate (22 DYNAMIC rows with reasons).",
+      "actual_loc": 461,
+      "commit": "bad3c3e"
     },
     {
       "id": "L6b_PACK_ORACLE",
@@ -83,10 +85,13 @@
         "AC9 - oracle needs no export templates: `HOME=$(mktemp -d) make export-pack-check` -> green",
         "AC12 - make test green locally and in CI: `make test`; the PR CI check `headless`"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Test-first order: T1 oracle red on scratch zips only (nonexistent zip -> FAIL + no summary; scrubbed zip copy missing main.gdc -> FAIL names res://main.gd's missing form); T2 targets + STRICT env pass, plain and strict runs green (lens bins on disk per V22, Makefile:366 fetches them); T3 publish-dev prerequisite line (pattern Makefile:787/823/832/858/921), AC12 make test, changelog fragment. Executor never runs a real make publish-dev (pause point P1, non-blocking)."
+      "passes": true,
+      "started": "2026-10-12",
+      "completed": "2026-10-12",
+      "notes": "Test-first order: T1 oracle red on scratch zips only (nonexistent zip -> FAIL + no summary; scrubbed zip copy missing main.gdc -> FAIL names res://main.gd's missing form); T2 targets + STRICT env pass, plain and strict runs green (lens bins on disk per V22, Makefile:366 fetches them); T3 publish-dev prerequisite line (pattern Makefile:787/823/832/858/921), AC12 make test, changelog fragment. Executor never runs a real make publish-dev (pause point P1, non-blocking). | DONE iteration 26: controller after make runtime + executor staging: make STRICT=1 export-pack-check-strict -> export-pack-check: 648 checked, 0 skips, 0 failures (fresh log, 0 SKIP lines); non-strict AC7 spike/ 0, copy.json 1; AC9 green under HOME=$(mktemp -d). Strict fails loudly (not falsely) in a tree without export-macos staging (evaluator finding 1). First real publish-dev with the strict gate is attended.",
+      "actual_loc": 124,
+      "commit": "d7762cd"
     }
-  ]
+  ],
+  "completed": "2026-10-12"
 }

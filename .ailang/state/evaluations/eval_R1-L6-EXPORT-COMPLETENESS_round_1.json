@@ -1,0 +1,131 @@
+{
+ "sprint_id": "R1-L6-EXPORT-COMPLETENESS",
+ "round": 1,
+ "evaluator": "claude-sonnet (Agent tool)",
+ "reviewed_commit": "e65e02d",
+ "score": 84,
+ "verdict": "PASS",
+ "rubric": {
+  "acceptance_criteria": "27/30 (AC1-7,9,10,11 verified; AC8 strict half not green in this clone: 9 staged-artifact witnesses absent, environment; AC12 measured by controller)",
+  "mutation_discipline_and_test_quality": "24/25",
+  "code_quality_and_design_fidelity": "17/20",
+  "honesty_of_claims": "9/10",
+  "sprint_artifacts": "4/8 (sprint JSON status planned, milestones passes None/completed False)",
+  "scope_and_do_not_touch": "7/7"
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "AC8 strict half could not be shown green here: `make STRICT=1 export-pack-check-strict` fails with 9 'absent witness' (ai_core/index.ndjson, areas_bundle/..., planet_bundle/..., ship_commons_bundle/..., ship_demo_bundle/...) because export-macos prerequisites (areas-stage, planet-bundle, ai-core-bundle, ship-*-stage) were not run in the isolated clone. Strict failing loudly on absent witnesses is the intended behaviour; the green strict run must be shown on the rig after export-macos. Note ai-core-bundle only WARNs when blobs are missing, so publish-dev would fail at strict (correct, not a false green).",
+  "Sprint JSON .ailang/state/sprints/sprint_R1-L6-EXPORT-COMPLETENESS.json still has status 'planned' and milestone passes=None/completed=False; update before landing.",
+  "test_export_pack.gd 'excluded-scope entry' and 'dev-only' checks read the exclude list from the same export_presets.cfg that built the pack, so removing spike/* from exclude (G1 regression) leaves export-pack-check green (596 checked, 0 failures, spike/ now in the zip). The regression IS caught by the L6a audit (F res://data/raw/hip_v7.tsv not covered), and AC7's separate unzip|grep, so no gap in aggregate; but the pack oracle has no independent 'no spike/' pin.",
+  "Scene pack form is a basename-only glob `.godot/exported/*/export-*-<name>.scn`; two scenes with the same basename in different dirs would satisfy each other. Weak, not vacuous (P1 mutant: tscn claimed raw turns pack red while audit stays green).",
+  "publish-dev ordering of export-pack-check-strict after export-macos relies on make's prerequisite ordering across rule lines (Apple make 3.81 puts the recipe-carrying line first). Under GNU make 4.x it may run before export-macos; the outcome would be a loud strict failure on a clean tree, not a false green.",
+  "Design/executor deviations accepted: LOC overrun (tests/export_audit.gd 307 + test_export_pack.gd 102 + test_export_audit.gd) vs estimate; M15 asserts ui/star_info.gd instead of res://main.gd (equivalent: mutating AUTO_EXT gd real edit fails dozens of .gd literals)."
+ ],
+ "commands_run": [
+  "make import -> ok",
+  "AC1 make export-filter-audit -> scoped files 80, distinct literals 90, filters 24/9, 44R 10F 22D 14X (=90), 0 failures",
+  "AC2 make -n test | grep -c tests/test_export_audit.gd -> 1",
+  "AC3 grep -cE '^ok +mutant M([1-9]|1[0-6]) killed' .godot/tmp/export-audit.log -> 16",
+  "AC4 sed drop ,data/lens/* -> rc=2, FAIL F data/lens/lens_fwd.bin / lens_inv.bin not covered; git diff export_presets.cfg empty after restore",
+  "AC5 scoped files 80 >= 60",
+  "AC6 grep -c ^UNCLASSIFIED -> 0; R+F+D+X=90=N",
+  "AC7 make export-pack-check -> 590 checked, 9 skips, 0 failures; unzip|grep -c ^spike/ -> 0; copy.json -> 1; 496 entries",
+  "AC8 make -n publish-dev | grep -c test_export_pack.gd -> 1; non-strict green; strict: 9 absent-witness FAIL (environment)",
+  "AC9 HOME=$(mktemp -d) make export-pack-check -> 590 checked, 9 skips, 0 failures",
+  "AC10 git diff --quiet 98ec78b d7762cd -- demos/... -> unmodified; AC11 python-guard ok, 0 .py in diff",
+  "git diff --name-only 98ec78b d7762cd: only Makefile, export_presets.cfg, tests/*, design/sprint/changelog; no shipped .gd, sim/, ai/, physics/",
+  "AC12 measured by controller"
+ ],
+ "mutations": [
+  {
+   "id": "M4 real edit (drop data/starmap/*)",
+   "result": "killed: F res://data/starmap/stars_large.bin not covered"
+  },
+  {
+   "id": "M5 real edit (drop sky_bundle/*)",
+   "result": "killed: F sky_bundle png.bin + X fallback fails F"
+  },
+  {
+   "id": "M13 real edit (drop spike/*)",
+   "result": "killed: F res://data/raw/hip_v7.tsv not covered (spike/panorama_main.gd:9)"
+  },
+  {
+   "id": "M3 real edit (exclude data/lens/*)",
+   "result": "killed: D row witness excluded + F excluded"
+  },
+  {
+   "id": "M2 real edit (data/lens/*.json)",
+   "result": "killed: D row filter missing + F lens_*.bin not covered"
+  },
+  {
+   "id": "M1/AC4 real edit",
+   "result": "killed, names data files"
+  },
+  {
+   "id": "M12 real edit (AUTO_EXT json removed)",
+   "result": "killed: F copy.json/templates.json not covered"
+  },
+  {
+   "id": "M15 real edit (AUTO_EXT gd removed)",
+   "result": "killed: dozens of F res://*.gd not covered"
+  },
+  {
+   "id": "delete DYNAMIC lens row",
+   "result": "killed: UNCLASSIFIED res://data/lens; in-process M1/M2 survive-fail too"
+  },
+  {
+   "id": "_pack_reason excluded check disabled",
+   "result": "killed: stale-row FAILs + mutant M3 survived"
+  },
+  {
+   "id": "stale-row rule disabled",
+   "result": "killed via mutant M9 survived (summary shows 0 failures but rc!=0)"
+  },
+  {
+   "id": "UNCLASSIFIED rule disabled",
+   "result": "killed via M7/M8 survived"
+  },
+  {
+   "id": "audit script early quit(0) + intact grep",
+   "result": "killed rc=2 (grep needed); with grep replaced by true: rc=0 (grep is load-bearing)"
+  },
+  {
+   "id": "P1 AUTO_EXT tscn claimed raw",
+   "result": "audit green, pack oracle red (L6b catches what L6a trusts)"
+  },
+  {
+   "id": "P2 lens dropped from include (pack)",
+   "result": "killed: data/lens/lens_fwd.bin not in the pack"
+  },
+  {
+   "id": "P3 AUTO_EXT bin + lens dropped (audit)",
+   "result": "killed by D-row non-resource-witness rule"
+  },
+  {
+   "id": "P4 spike/* removed from exclude (pack oracle only)",
+   "result": "SURVIVED in oracle (self-referential exclude); killed by audit M13"
+  },
+  {
+   "id": "P5 FLOOR_ENTRIES 9999",
+   "result": "killed: pack entries 496 < 9999"
+  },
+  {
+   "id": "P6 strict wrapper STRICT=0 / dropped",
+   "result": "killed by strict-wrapper skips grep"
+  },
+  {
+   "id": "P7 pack script early quit(0)",
+   "result": "killed by summary grep (rc=2)"
+  },
+  {
+   "id": "P8 strict ignores absent witness",
+   "result": "killed by ', 0 skips, 0 failures' grep"
+  },
+  {
+   "id": "L6b non-vacuity: revert d7762cd (Makefile + test_export_pack.gd)",
+   "result": "export-pack-check: No rule to make target; publish-dev greps test_export_pack 0 -> acceptance outcome changes"
+  }
+ ],
+ "restoration": "git status/diff clean (only untracked .uid files pre-existing)"
+}
