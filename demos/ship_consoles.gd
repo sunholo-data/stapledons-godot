@@ -830,7 +830,7 @@ func _voyage_panel() -> void:
 	if demo.solar_tour != null:
 		panel_body.add_child(_label("Under way: " + demo.tour_line(), 14))
 		return
-	panel_body.add_child(_label("A new voyage replaces the current navigation session. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
+	panel_body.add_child(_label("The guided voyage replaces the current course. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
 	panel_body.add_child(confirm_button("voyage", "begin", "Begin guided voyage"))
 
 
@@ -848,10 +848,10 @@ func _archive_panel() -> void:
 	var news := HBoxContainer.new()
 	news.add_theme_constant_override("separation", 12)
 	panel_body.add_child(news)
-	var nl := _label("News and legacy log", 14)
+	var nl := _label("News and voyage log", 14)
 	nl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	news.add_child(nl)
-	for spec in [["legacy entries", "consequence.legacy.count", "%d"], ["latest news from", "consequence.news.star_id", "%s"]]:
+	for spec in [["log entries", "consequence.legacy.count", "%d"], ["latest news from", "consequence.news.star_id", "%s"]]:
 		var cap := _label(spec[0], 12, Color(0.62, 0.68, 0.8))
 		cap.autowrap_mode = TextServer.AUTOWRAP_OFF
 		news.add_child(cap)

@@ -1,0 +1,19 @@
+{
+  "sprint": "D-68 Begin again becomes New game",
+  "round": 1,
+  "evaluator": "independent agent (Claude Sonnet), generator != judge; read-only on branch feat/d68-new-game",
+  "score": 78,
+  "verdict": "PASS",
+  "breakdown": {"correctness_vs_ruling": 24, "tests": 17, "voice_spoiler_check": 16, "code_quality": 12, "docs_plan": 9},
+  "findings_addressed_in_follow_up": [
+    "medium: 'News and legacy log' / 'legacy entries' wording at the Archive panel -> 'News and voyage log' / 'log entries'",
+    "medium: seed test stopped at setup_options -> now asserts journey_sim.last_seed == the fresh seed",
+    "low: Voyage console warning reworded ('The guided voyage replaces the current course.')",
+    "low: m4.4-s4-copy-review.md annotated (legacy_title, begin_again superseded by D-68)",
+    "low: the New game seed is printed at session start so a run can be replayed"
+  ],
+  "findings_open": [
+    "low: in-world-voice-check extracts only double-quoted strings and skips only whole-line comments",
+    "low: LegacyScreen.begin_again/next_seed/begun kept host-side for tests; class and copy keys keep the legacy_ name"
+  ]
+}

@@ -192,6 +192,7 @@ func test_routes() -> void:
 		demo.auto = false
 		demo.journey_auto_tick = false
 		check(demo.ready_ok and demo.sky_state == "live" and demo.sky.beta == 0. and demo.camera.pullback == 0., "it is today's default: live rest, captain eye")
+		check(demo.journey_sim != null and demo.journey_sim.last_seed == int(demo.setup_options["seed"]), "D-68 the fresh seed reaches the sim's new_game")
 		check(demo.menu_return and demo.menu_button.visible, "launched from the menu: a Main menu button in the HUD")
 		check(demo.sky.system_view.body_fader, "the saved view (Auto) reaches the ship")
 		# V aboard is remembered (D-55): toggled to Realistic and saved where the title keeps
