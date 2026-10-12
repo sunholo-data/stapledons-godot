@@ -1,1 +1,0 @@
-fixture prompt prompt_mini_avatar.txt
