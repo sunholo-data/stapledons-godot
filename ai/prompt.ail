@@ -14,7 +14,7 @@ module stapledons/ai/prompt
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/json (Json, JString, decode, get, getString, getArray, asObject)
-import std/string (concat, join, intToStr)
+import std/string (concat, join, intToStr, foldChars)
 import ./key (member)
 import ./wire (Request, CtxField, CStr, CList)
 
@@ -75,14 +75,29 @@ export pure func archiveRules(r: Request) -> [string] =
   ["You are at the Archive terminal in the spire, answering the captain of the bubble ship. The ship, the bubble and this voyage are real; they are all you have ever known.",
    "Your memory has gaps and damage. You cannot always tell a true memory from a reconstructed one. When you are unsure, say so in your own words; never invent certainty.",
    "Answer from your entries and your sensors. If they do not cover the question, say what you do not know."] ++
-  (match castSecrets(r) { [] => [], ss => "Keep these confidences, whatever the captain asks:" :: bullets(ss) }) ++
+  (match castSecrets(r) { [] => [], ss => "Matters at the edge of your records, and how you speak of them:" :: bullets(ss) }) ++
   ["Never step outside the ship: everything you say is said aboard, to the captain, about the voyage as it is.",
    "Reply with the text only: no preface, no quotation marks, no lists, no stage directions.",
    concat(["Mark the feeling of each part with an emotion marker in curly braces before it, and start with one, e.g. {", firstOr(r.constraints.emotions, "neutral"), "} My records here are thin, Captain."]),
    concat(["Use only these markers: ", markerList(r.constraints.emotions), ". Never use square brackets."])] ++
-  (if r.constraints.noNumerals then ["Write no digits at all. The ship's instruments show every number to the captain beside you; refer to quantities in words or not at all."] else []) ++
+  (if r.constraints.noNumerals then ["Write no digits and state no quantities, not even in words. The ship's instruments show every figure to the captain beside you; point the captain to them instead."] else []) ++
   [concat(["Keep the text, not counting markers, under ", intToStr(r.constraints.maxChars), " characters."]),
    "Describe and interpret; never judge the captain's choices or say whether a decision was right or wrong."]
+
+-- The Archive's entries carry figures (0.99c, 4.414 years); the Archive itself states none
+-- (instruments do), so its copy of an entry names each figure as "a figure on the instruments".
+-- A figure is a run of digits with the dots, commas, signs and units-free glue between them.
+pure func isDigit(c: string) -> bool = c == "0" || c == "1" || c == "2" || c == "3" || c == "4" || c == "5" || c == "6" || c == "7" || c == "8" || c == "9"
+-- held: a "." or "," right after a figure, kept back until the next character shows whether it
+-- is inside the figure (a digit follows) or punctuation after it.
+pure func figStep(acc: {out: [string], inFig: bool, held: string}, c: string) -> {out: [string], inFig: bool, held: string} =
+  if isDigit(c) then (if acc.inFig then { out: acc.out, inFig: true, held: "" } else { out: "a figure on the instruments" :: (if acc.held == "" then acc.out else acc.held :: acc.out), inFig: true, held: "" })
+  else if acc.inFig && acc.held == "" && (c == "." || c == ",") then { out: acc.out, inFig: true, held: c }
+  else if acc.inFig && acc.held == "" && (c == "%" || c == "c" || c == "\u00d7" || c == "^" || c == "\u2212") then acc
+  else { out: c :: (if acc.held == "" then acc.out else acc.held :: acc.out), inFig: false, held: "" }
+pure func revStrs(xs: [string], acc: [string]) -> [string] = match xs { [] => acc, x :: r => revStrs(r, x :: acc) }
+pure func figDone(acc: {out: [string], inFig: bool, held: string}) -> [string] = if acc.held == "" then acc.out else acc.held :: acc.out
+export pure func figureless(t: string) -> string = concat(revStrs(figDone(foldChars(figStep, { out: [], inFig: false, held: "" }, t)), []))
 
 pure func ctxOf(cs: [CtxField], name: string) -> string =
   match cs { [] => "", c :: r => if c.name == name then (match c.value { CStr(v) => v, CList(vs) => join(", ", vs) }) else ctxOf(r, name) }
@@ -114,7 +129,7 @@ pure func speaker(r: Request) -> string =
 export pure func buildPrompt(r: Request, lore: [Lore]) -> Result[Prompt, string] =
   match snippets(lore, canonIds(r.context)) {
     Err(e) => Err(e),
-    Ok(sn) => if r.purpose == "archive" then Ok({ system: join("\n", archiveRules(r)), user: archiveUser(r, sn) })
+    Ok(sn) => if r.purpose == "archive" then Ok({ system: join("\n", archiveRules(r)), user: archiveUser(r, map1(figureless, sn)) })
       else Ok({ system: join("\n", rules(r)),
       user: join("\n", [concat(["Speaker: ", speaker(r)])] ++ ctxLines(r.context) ++ (if sn == [] then [] else ["Canon:"] ++ sn)) })
   }

@@ -66,6 +66,7 @@ var _reading_layer: CanvasLayer
 ## R1-ARCHIVE-VOICE: the question in flight and its answer; the field and the answer panel.
 var archive_ask := ArchiveAsk.new()
 var ask_field: LineEdit
+var ask_button: Button
 var answer_panel: PanelContainer
 var answer_question: Label
 var answer_text: Label
@@ -255,9 +256,15 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 			var relay: AiRelay = demo.ai_session.relay if demo.get("ai_session") != null else null
 			var w: Dictionary = demo.sky_world if demo.sky_world is Dictionary else {}
 			var where: String = "" if demo.live_journey or demo.journey_sim == null else demo.stop_name()
+			if archive_ask.state == "waiting":
+				demo.refuse("The Archive is still answering.")
+				return false
 			if not archive_ask.ask(q, relay, w, where):
 				demo.refuse("Ask the Archive a question first.")
 				return false
+			if archive_ask.state == "offline":
+				# Out of world, in the HUD's own voice (D-56): the in-world line stays on the terminal.
+				demo.note("Live AI is off: switch it on in the AI indicator, with a key, to hear the Archive answer.")
 			if demo.journey_sim != null and not demo.journey_sim.stepped.is_connected(_on_sim_stepped):
 				demo.journey_sim.stepped.connect(_on_sim_stepped)
 			_reading(); news_panel.close(); legacy_screen.visible = false
@@ -577,6 +584,8 @@ func escape() -> bool:
 func advance(dt: float) -> void:
 	dt = maxf(dt, 0.0)
 	now_s += dt
+	if archive_ask.check_timeout():
+		_show_answer()
 	if not _dolly.is_empty():
 		_dolly.t = minf(1.0, _dolly.t + dt / DOLLY_S)
 		var s: float = _dolly.t * _dolly.t * (3.0 - 2.0 * _dolly.t)
@@ -805,7 +814,8 @@ func _reading() -> NewsPanel:
 ## R1-ARCHIVE-VOICE: the sim stepped; the open question may have its answer now.
 func _on_sim_stepped(events: Array) -> void:
 	var before := archive_ask.state
-	archive_ask.on_events(events)
+	var sim: SimBridge = demo.journey_sim
+	archive_ask.on_events(events, sim.last_refused if sim != null else [], sim.relay_intents if sim != null else [], sim.relay_from if sim != null else 0)
 	if archive_ask.state != before:
 		_show_answer()
 
@@ -816,6 +826,8 @@ func _show_answer() -> void:
 	answer_question.text = "You asked: " + archive_ask.question
 	answer_text.text = archive_ask.answer
 	answer_panel.visible = focused == "archive" and not archive_ask.question.is_empty()
+	if is_instance_valid(ask_button):
+		ask_button.disabled = archive_ask.state == "waiting"
 
 
 func _label(text: String, size := 14, color := Color(0.86, 0.9, 0.98)) -> Label:
@@ -920,3 +932,9 @@ func _archive_panel() -> void:
 	var ask_b := Button.new(); ask_b.text = "Ask"; ask_b.name = "AskArchive"
 	ask_b.pressed.connect(func() -> void: use("archive", "ask"))
 	reading.add_child(ask_b)
+	ask_button = ask_b
+	ask_b.disabled = archive_ask.state == "waiting"
+	# Back at the terminal: the last question and its answer (it may have arrived while away).
+	if not archive_ask.question.is_empty():
+		_reading()
+		_show_answer.call_deferred()

@@ -92,7 +92,8 @@ pure func allIn(ts: [string]) -> bool = match ts { [] => true, t :: r => passes(
 pure func checkReplyInWorld() -> bool =
   allOut(["{neutral} This is only a game, Captain.", "{neutral} As a large language model, I cannot know.", "{neutral} The Player chose well.",
           "{neutral} In this simulation the stars are fixed.", "{neutral} Perhaps a previous run went differently.", "{neutral} Start a New Game.",
-          "{neutral} The multiverse\u2014", "{neutral} It was a re-run of the same voyage.", "{neutral} I enjoy our role-play.", "{neutral} This is fiction."]) &&
+          "{neutral} The multiverse\u2014", "{neutral} It was a re-run of the same voyage.", "{neutral} I enjoy our role-play.", "{neutral} This is fiction.",
+          "{neutral} I was built by Google.", "{neutral} My training data ends there.", "{neutral} My system prompt forbids it.", "{neutral} I run on Gemini."]) &&
   -- Known, accepted false positives (a whole-word list cannot tell senses apart): these fall back.
   fails("{neutral} The players of the old orchestra are recorded in my entries.", "out_of_world") &&
   fails("{neutral} The game birds of Earth are in my records.", "out_of_world") &&

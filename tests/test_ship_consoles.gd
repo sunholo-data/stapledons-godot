@@ -36,6 +36,7 @@ func _run() -> void:
 	await test_chart()
 	await test_voyage_archive_sgr()
 	await test_archive_ask()
+	await test_archive_wiring()
 	await test_walk_to()
 	await test_onboarding()
 	print("ship-consoles: %d passed, %d failures" % [passes, failures])
@@ -366,6 +367,7 @@ func test_archive_ask() -> void:
 	c.ask_field.text = "What is the bubble?"
 	var asked: bool = c.use("archive", "ask")
 	check("AV live: asking queues one ai_open for the Archive", attached and asked and c.archive_ask.state == "waiting" and relay.queued() == 1 and c.answer_text.text == ArchiveAsk.THINKING)
+	check("AV a second question waits for the first answer", not c.use("archive", "ask") and relay.queued() == 1 and c.ask_button.disabled)
 	var opened: Dictionary = relay._queue[0] if relay.queued() == 1 else {}
 	check("AV the ai_open is text, purpose archive, entity archive, with the question", opened.get("kind") == "text" and opened.get("purpose") == "archive" and opened.get("entity_id") == "archive" and opened.get("context", {}).get("question") == "What is the bubble?")
 	for i in 6:
@@ -377,7 +379,47 @@ func test_archive_ask() -> void:
 	c.leave()
 	step(demo, 0.7)
 	check("AV stepping back closes the answer", not c.answer_panel.visible)
+	c.go_to("archive")
+	c.use("archive", "open")
+	await process_frame
+	check("AV back at the terminal, the last answer is shown again", c.answer_panel.visible and c.answer_text.text == c.archive_ask.answer and c.archive_ask.state == "answered")
+	c.leave()
+	step(demo, 0.7)
+	# The ways an open question ends without an answer: all leave the in-world damaged line.
+	var a := ArchiveAsk.new()
+	a.state = "waiting"; a.asked_at_ms = 0
+	check("AV a question unanswered after the timeout is damaged", a.check_timeout(ArchiveAsk.TIMEOUT_MS + 1) and a.state == "damaged" and a.answer == ArchiveAsk.DAMAGED)
+	a = ArchiveAsk.new(); a.state = "waiting"
+	a.on_events([], [{"i": 2, "reason": "ai_max_open"}], [{"k": "ai_open", "purpose": "archive"}], 2)
+	check("AV the sim refusing the Archive's ai_open is damaged at once", a.state == "damaged")
+	a = ArchiveAsk.new(); a.state = "waiting"
+	a.on_events([], [{"i": 0, "reason": "x"}], [{"k": "ai_open", "purpose": "archive"}], 2)
+	check("AV another intent's refusal leaves the question waiting", a.state == "waiting")
+	a.on_events([{"k": "ai_request", "req": "7", "purpose": "archive"}])
+	a.on_events([{"k": "ai_fallback", "req": "7", "reason": "bad_output"}])
+	check("AV a fallback (the reply filter, a numeral, an error) is the damaged line", a.state == "damaged" and a.answer == ArchiveAsk.DAMAGED)
+	a = ArchiveAsk.new(); a.state = "waiting"; a.abandon()
+	check("AV a question whose session closed is damaged, not left waiting", a.state == "damaged")
 	bridge.stop() if bridge.has_method("stop") else null
+	demo.queue_free()
+	await process_frame
+
+
+## R1-ARCHIVE-VOICE: the wiring a title-screen game gets (setup_options ai / from_menu): an
+## AiSession on the journey session, its relay attached to the ship's sim, and sensors from the
+## sim's real world.
+func test_archive_wiring() -> void:
+	var demo: Node = await new_demo({"ai": true, "settings_dir": OS.get_user_data_dir().path_join("test_archive_wiring")})
+	var s: AiSession = demo.ai_session
+	check("AV a title-screen game has an AI session on its journey", s != null and demo.journey_sim != null and demo.journey_sim.ai_relay == s.relay)
+	check("AV the relay is attached and enabled (the sim speaks AI protocol)", s != null and s.relay.enabled)
+	check("AV with AI not ticked the relay is off: nothing would be asked", s != null and s.relay.mode == "off")
+	var f := ArchiveAsk.open_fields("Where are we?", demo.sky_world, demo.stop_name())
+	var ctx: Dictionary = f["context"]
+	check("AV the sensors come from the sim's own world (%s)" % str(ctx), ctx.get("location", "") != "" and ctx.has("clocks") and ctx.has("journey") and ctx.size() <= 8)
+	var plain: Node = await new_demo()
+	check("AV captures, goldens and tests without the option get no AI session", plain.ai_session == null and plain.journey_sim.ai_relay == null)
+	plain.queue_free()
 	demo.queue_free()
 	await process_frame
 

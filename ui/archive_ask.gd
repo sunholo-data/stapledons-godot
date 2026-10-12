@@ -14,12 +14,16 @@ const MAX_QUESTION := 200
 const OFFLINE := "The Archive's deeper stores are not answering. Its entries are open on the terminal."
 const DAMAGED := "The answer came back damaged. The Archive asks you to put the question again, perhaps in other words."
 const THINKING := "The Archive is considering."
+## A live answer that has not come back by then is reported damaged (a refused request, a dead
+## provider or a session that stopped stepping must never leave the terminal waiting forever).
+const TIMEOUT_MS := 45000
 
 var question := ""
 var answer := ""
 var state := "idle" # idle | waiting | answered | offline | damaged
 var req := "" # the sim's request id for the open question, once its ai_request event arrives
 var asked := 0
+var asked_at_ms := 0
 
 
 ## The sensor feed, from the sim's world (and the ship's own name for where it is).
@@ -86,13 +90,40 @@ func ask(q: String, relay: AiRelay, world: Dictionary, where := "") -> bool:
 		return true
 	state = "waiting"
 	answer = THINKING
+	asked_at_ms = Time.get_ticks_msec()
 	return true
 
 
+## Waiting too long, or the session that carried the question has gone: damaged.
+func check_timeout(now_ms := -1) -> bool:
+	if state != "waiting":
+		return false
+	if (Time.get_ticks_msec() if now_ms < 0 else now_ms) - asked_at_ms < TIMEOUT_MS:
+		return false
+	state = "damaged"
+	answer = DAMAGED
+	return true
+
+
+## The ship's session closed under an open question (a guided voyage or a new course replaced it).
+func abandon() -> void:
+	if state == "waiting":
+		state = "damaged"
+		answer = DAMAGED
+
+
 ## The sim's events for one step: the request id, then its answer or its fallback.
-func on_events(events: Array) -> void:
+func on_events(events: Array, refused: Array = [], relay_intents: Array = [], relay_from := 0) -> void:
 	if state != "waiting":
 		return
+	# The sim refused the ai_open itself (no ai_request will ever come): damaged at once.
+	if req.is_empty():
+		for r in refused:
+			var k := int(r.get("i", -1)) - relay_from if r is Dictionary else -1
+			if k >= 0 and k < relay_intents.size() and relay_intents[k] is Dictionary and relay_intents[k].get("purpose") == "archive":
+				state = "damaged"
+				answer = DAMAGED
+				return
 	for e in events:
 		if not e is Dictionary:
 			continue

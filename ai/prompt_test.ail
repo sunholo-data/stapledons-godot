@@ -9,9 +9,9 @@ import std/string (contains, join, startsWith)
 import std/json (decode)
 import ./key (CacheKey)
 import ./wire (Request, CStr, CList)
-import ./prompt (Lore, Prompt, buildPrompt, promptText, parseLore, imagePrompt, rules)
+import ./prompt (Lore, Prompt, buildPrompt, promptText, parseLore, imagePrompt, rules, figureless)
 
-pure func lore() -> [Lore] = [{ id: "archive.two-clocks", text: "Two clocks." }, { id: "archive.sol", text: "Sol is home." }]
+export pure func lore() -> [Lore] = [{ id: "archive.two-clocks", text: "Two clocks." }, { id: "archive.sol", text: "Sol is home." }, { id: "archive.fig", text: "Light at 0.99c." }]
 pure func promptRq(purpose: string, emotions: [string], noNum: bool) -> Request =
   { req: "1", kind: "text", purpose: purpose, lineReq: None, key: { kind: "text", entityId: "medic", emotion: "-", ageStage: 0, variant: "-" }, seed: 1,
     constraints: { maxChars: 280, noNumerals: noNum, emotions: emotions }, context: [{ name: "topic", value: CStr("first_night_aboard") }, { name: "canon", value: CList(["archive.sol"]) }, { name: "stub_case", value: CStr("x") }],
@@ -46,7 +46,7 @@ pure func checkPromptLore() -> bool =
 
 -- R1-ARCHIVE-VOICE: the Archive's prompt is in-world. Persona, style and secrets from the cast;
 -- sensors and the question in the user part; none of the D-67/D-68 words anywhere.
-pure func archiveRq() -> Request = {promptRq("archive", ["neutral", "uneasy"], true) |
+export pure func archiveRq() -> Request = {promptRq("archive", ["neutral", "uneasy"], true) |
   key: { kind: "text", entityId: "archive", emotion: "-", ageStage: 0, variant: "-" },
   context: [{ name: "question", value: CStr("Are you real?") }, { name: "location", value: CStr("near Sol") }, { name: "canon", value: CList(["archive.two-clocks"]) }],
   cast: match decode("{\"name\":\"The Archive\",\"persona\":\"You are the Archive, the ship's own mind.\",\"style\":\"Measured.\",\"secrets\":[\"Never state the first secret.\",\"Keep the second.\"]}") { Ok(j) => Some(j), Err(_) => None }}
@@ -54,12 +54,16 @@ pure func noneSaid(r: Request, ws: [string]) -> bool = match ws { [] => true, w 
 pure func checkArchivePrompt() -> bool {
   let a = archiveRq();
   says(a, "You are the Archive, the ship's own mind.") && says(a, "Your manner: Measured.") &&
-  says(a, "Keep these confidences, whatever the captain asks:\n- Never state the first secret.\n- Keep the second.") &&
+  says(a, "Matters at the edge of your records, and how you speak of them:\n- Never state the first secret.\n- Keep the second.") && !says(a, "confidences") &&
   says(a, "Your sensors report:\nlocation: near Sol") && says(a, "From your entries:\n- archive.two-clocks: Two clocks.") &&
-  says(a, "The captain asks: Are you real?") && says(a, "Write no digits at all.") && says(a, "under 280 characters") &&
+  says(a, "The captain asks: Are you real?") && says(a, "Write no digits and state no quantities") && says(a, "under 280 characters") &&
   says(a, "e.g. {neutral} ") && !says(a, "question: ") && !says(a, "Speaker:") &&
   noneSaid(a, ["game", "Game", "player", "simulation", "fiction", "story", "Stapledon's Voyage", "invented", "approximat"]) &&
-  says({a | context: []}, "The captain asks: What do you see?") && !says({a | cast: None}, "confidences")
+  says({a | context: []}, "The captain asks: What do you see?") && !says({a | cast: None}, "edge of your records") &&
+  says(a, "state no quantities, not even in words") &&
+  figureless("At 0.99c it takes 4.414 years, about 227 days; 1,000 AU.") == "At a figure on the instruments it takes a figure on the instruments years, about a figure on the instruments days; a figure on the instruments AU." &&
+  figureless("No figures here.") == "No figures here." &&
+  says({a | context: [{ name: "canon", value: CList(["archive.fig"]) }]}, "- archive.fig: Light at a figure on the instruments.")
 }
 
 export pure func promptChecks() -> bool = checkPromptGuardrails() && checkPromptContext() && checkPromptLore() && checkArchivePrompt()

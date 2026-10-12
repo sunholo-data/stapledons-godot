@@ -664,6 +664,7 @@ func _drop_navigation() -> void:
 		remove_child(navigation_window);navigation_window.queue_free()
 	journey_sim=null;journey_map=null;navigation_window=null;solar_tour=null
 	if ai_session!=null:ai_session.queue_free();ai_session=null
+	if consoles!=null:consoles.archive_ask.abandon() # the question's session is gone
 func close_navigation() -> void:
 	if navigation_window==null:return
 	journey_map.close_commit_dialog();navigation_window.hide()

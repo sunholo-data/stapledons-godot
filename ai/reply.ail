@@ -51,7 +51,9 @@ export pure func outOfWorldPhrases() -> [string] =
   ["game", "games", "gameplay", "player", "players", "simulation", "simulations", "simulated", "simulator",
    "fiction", "fictional", "language model", "as an ai model", "role play", "roleplay", "roleplaying", "in this story",
    "previous run", "previous runs", "last run", "rerun", "re run", "new game", "game plus", "multiverse",
-   "previous universe", "previous iteration", "previous iterations", "past lives"]
+   "previous universe", "previous iteration", "previous iterations", "past lives",
+   "google", "gemini", "openai", "anthropic", "claude", "mistral", "openrouter", "chatgpt", "gpt",
+   "trained by", "my training", "training data", "system prompt", "my instructions", "my prompt"]
 pure func spaced(s: string) -> string =
   concat([" ", join(" ", words(replaceMany(toLower(s), [(".", " "), (",", " "), (";", " "), (":", " "), ("!", " "), ("?", " "),
     ("\"", " "), ("'", " "), ("(", " "), (")", " "), ("-", " "), ("—", " "), ("–", " "), ("{", " "), ("}", " "), ("…", " "), ("/", " ")]))), " "])
