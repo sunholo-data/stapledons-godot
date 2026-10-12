@@ -19,7 +19,7 @@ const FONT := "res://ui/splash/Montserrat-Bold.ttf" # SIL OFL 1.1, licence along
 const BUILD_FILE := "res://runtime/build_version.txt" # make export-macos writes it (git describe)
 ## [route, button text, what it does]. "settings" / "credits" open panels; the rest go to main.gd.
 const ENTRIES := [
-	["ship", "Board the ship", "The painted 3D ship at rest in the Solar System. Walk the decks, open navigation (M) and fly anywhere."],
+	["ship", "New game", "A new voyage: the painted 3D ship at rest in the Solar System. Walk the decks, open navigation (M) and fly anywhere."], # D-68: starting over lives here, out of world, never at a ship console
 	["guided", "Guided voyage", "Board and start the guided tour: Earth, the outer planets, alpha Centauri, TRAPPIST-1, Aldebaran, in real time."],
 	["map", "Galaxy map", "The 3D map of the nearby catalogued stars; plan and commit a journey."],
 	["settings", "Settings", "Ship view (Realistic / Auto), how decisions confirm, and text-only AI."],

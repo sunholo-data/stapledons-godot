@@ -270,7 +270,7 @@ func test_voyage_archive_sgr() -> void:
 	c.go_to("archive")
 	c.use("archive", "open")
 	var read_news: Button = c.panel_body.find_child("ReadNews", true, false)
-	check("H2 the terminal offers Read news from home and the Legacy log", read_news != null and c.panel_body.find_child("LegacyLog", true, false) != null)
+	check("H2 the terminal offers Read news from home and the Voyage log", read_news != null and c.panel_body.find_child("VoyageLog", true, false) != null)
 	check("H2 with no news yet, Read news is disabled and refused", read_news != null and read_news.disabled and not c.use("archive", "news"))
 	var saved_world = demo.sky_world
 	var w: Dictionary = (demo.sky_world as Dictionary).duplicate(true)
@@ -278,7 +278,8 @@ func test_voyage_archive_sgr() -> void:
 	w["consequence"] = {"news": {"star_id": "Sol", "body_source": "template", "slots": {}}, "legacy": {"count": 0, "appended": []}}
 	demo.sky_world = w
 	check("H2 with news, Read news opens the news panel over the terminal", c.use("archive", "news") and c.news_panel.visible and not c.legacy_screen.visible)
-	check("H2 the Legacy log shows when home; its own Begin button stays hidden (the console confirms)", c.use("archive", "legacy") and c.legacy_screen.visible and not c.news_panel.visible and not c.legacy_screen.begin_button.visible)
+	check("H2 the Voyage log shows when home, with the closing line", c.use("archive", "log") and c.legacy_screen.visible and not c.news_panel.visible and c.legacy_screen.closing.visible)
+	check("D-68 no console starts over: no Begin again on the terminal, the log or the action list", c.panel_body.find_child("*Begin*", true, false) == null and c.legacy_screen.find_child("*Begin*", true, false) == null and not c.ACTIONS["archive"].has("begin_again") and not c.use("archive", "begin_again"))
 	c.leave()
 	step(demo, 0.7)
 	check("H2 stepping back closes the news and legacy panels", not c.news_panel.visible and not c.legacy_screen.visible)
@@ -286,17 +287,7 @@ func test_voyage_archive_sgr() -> void:
 	demo.sky_world = w
 	c.go_to("archive")
 	c.use("archive", "open")
-	check("H2 Begin again is refused away from home", not c.use("archive", "begin_again"))
-	c.leave()
-	step(demo, 0.7)
-	w["journey"] = {"state": "arrived"}
-	demo.sky_world = w
-	c.go_to("archive")
-	c.use("archive", "open")
-	var begun: Array = []
-	c.legacy_screen.begun.connect(func(s: int) -> void: begun.append(s))
-	check("H2 Begin again at home starts a new voyage in the sim (a fresh seed)", c.use("archive", "begin_again") and begun.size() == 1 and c.legacy_screen.seed_used == begun[0] and demo.journey_sim.last_seed == begun[0])
-	check("H2 Begin again ends the guided tour that was reading the old session", demo.solar_tour == null and not demo.journey_map.guided_read_only)
+	check("D-68 away from home the Voyage log opens without the closing line", c.use("archive", "log") and c.legacy_screen.visible and not c.legacy_screen.closing.visible)
 	c.leave()
 	step(demo, 0.7)
 	demo.sky_world = saved_world

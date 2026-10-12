@@ -5,7 +5,7 @@ extends SceneTree
 ## Part A (no sim): templates, the numeral lint, the reason -> phrase table, the three panel
 ## renderings, the display audit. Part B (the real sim): a scripted session that arrives at alpha
 ## Cen, takes AI text, flies home through the map's commit ritual, takes a digits fixture, and
-## reaches the legacy screen and "Begin again".
+## reaches the Voyage log (D-68) and a host-side new voyage.
 
 const FIX := "res://tests/fixtures/news/"
 const WATCHDOG_S := 280.0
@@ -344,7 +344,8 @@ func test_session() -> void:
 	var log_kinds: Array = legacy.entries.map(func(e): return e["kind"])
 	ok("the legacy entries are the sim's append-only log: both legs (%s)" % str(log_kinds.slice(0, 3)), log_kinds.count("commit") == 2 and log_kinds.count("arrival") == 2 and log_kinds.count("news") == 2 and legacy.entries.size() == int(sim.world["consequence"]["legacy"]["count"]))
 	ok("audit: the legacy screen is all bindings (live)", DisplayBinding.audit(legacy).is_empty())
-	# Begin again: a new voyage on the same sim, a new seed, nothing carried over
+	ok("D-68 the Voyage log carries no in-world Begin again", legacy.find_child("*Begin*", true, false) == null)
+	# Host-side (out of world) new voyage on the same sim: a new seed, nothing carried over
 	var old_seed := sim.last_seed
 	legacy.next_seed = func() -> int: return 12345
 	var began := legacy.begin_again(sim)

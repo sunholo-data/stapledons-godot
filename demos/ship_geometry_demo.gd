@@ -599,7 +599,7 @@ func _create_navigation(scenario:String) -> void:
 		var params:Dictionary={"standoff_au":1000.,"stop_rule":54.}
 		if scenario=="solar_departure":params=SolarDeparture.guided_params()
 		var live_scenario:String="free_nav" if scenario=="sol" else scenario
-		if not journey_sim.start() or not journey_sim.new_game(424242,live_scenario,false,params):
+		if not journey_sim.start() or not journey_sim.new_game(int(setup_options.get("seed",424242)),live_scenario,false,params):
 			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
 		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation"

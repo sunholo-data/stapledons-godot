@@ -977,12 +977,15 @@ substance passed as R1-SHIP-UI's commands, cited above).
 ### R3-3. M4.5 re-scoped: the scene half on the 3D ship
 
 Proves clause 4 end-to-end, headless, with the **real sim**, in the scene
-the player gets: **plain launch → title screen → "Board the ship"** → walk
+the player gets: **plain launch → title screen → "New game"** (D-68; was "Board the ship") → walk
 to the **navigation station** → plot α Cen A → **commit (1.5 s hold)** →
 transit (boost/cruise/brake aboard, transit card live, starbow overhead) →
 arrival → walk to the **Archive terminal** (spire) → **read news from
 home** (header, body, `body_source` labels) → helm: **Return to Sol** →
-commit → transit → arrived home → legacy line + "Begin again" from fields.
+commit → transit → arrived home → **Voyage log** (Archive terminal, action
+`archive/log`) with the closing line from fields. D-68 (2026-10-12): there is
+no "Begin again" in the ship; starting over is the title screen's New game, out
+of world, and the bot checks that no console offers it.
 The bot walks/teleports-by-walk-list (`walk_to`, never decision keys —
 NT1; the test-only instant `go_to` stays out of the scored run); chart M
 may be opened for information only.
@@ -1188,7 +1191,7 @@ two hooks; they are listed here, not planned as silent edits:
 | ID | Scope | LOC (counted) | Deps | Wave |
 |---|---|---:|---|---|
 | H1/H2 (attended) | record seam; NewsPanel+LegacyScreen at the Archive terminal | ~55 (attended; not loop-counted) | — | R3-0 |
-| M4.5aR3 | scene playthrough bot (plain launch → Board the ship → consoles → α Cen → news → home → legacy), `playthrough` target, walk/console event log, CPU pole assertion, adversarial console script (AC3, AC5-input) | ~300 | H1, H2, R1-SHIP-UI (landed) | R3-1 |
+| M4.5aR3 | scene playthrough bot (plain launch → New game → consoles → α Cen → news → home → Voyage log; D-68), `playthrough` target, walk/console event log, CPU pole assertion, adversarial console script (AC3, AC5-input) | ~300 | H1, H2, R1-SHIP-UI (landed) | R3-1 |
 | M4.6gR3 | ship goldens G-M4-S2/S3/S4 in `make golden` (AC10 3D-ship form) | ~180 | landed ship + glow (M4.6a) | R3-1 |
 | M4.5bR3 | `display-audit` target + driver; walking model in `session_audit.ail`; `playthrough-time` / `codex-unlocks` / `replay` / `parity-m4` on the scene session; AI=none\|stub\|digits (AC4, AC5, AC6, AC7, AC16) | ~280 | M4.5aR3 | R3-2 |
 | M4.6rR3 | `capture-m4` re-point (3D-ship S1 set), `bench SCENE=bridge` ship driver (AC11, AC12); **parks at S1 before merge** | ~200 | M4.6gR3; GPU window | R3-2 (parks at S1) |

@@ -114,8 +114,8 @@ func test_menu_alone() -> void:
 	root.add_child(t)
 	await frames()
 	check(t.buttons.keys() == ["ship", "guided", "map", "settings", "credits", "quit"], "six buttons in order")
-	check(t.buttons["ship"].text == "Board the ship" and t.buttons["guided"].text == "Guided voyage", "button labels")
-	check(t.buttons["ship"].has_focus(), "Board the ship has keyboard focus at start")
+	check(t.buttons["ship"].text == "New game" and t.buttons["guided"].text == "Guided voyage", "button labels")
+	check(t.buttons["ship"].has_focus(), "New game has keyboard focus at start")
 	check(t.version_label.text.begins_with("dev build · "), "build label shown: %s" % t.version_label.text)
 	var ship_path: NodePath = t.buttons["ship"].get_path()
 	check(t.buttons["quit"].get_node(t.buttons["quit"].focus_neighbor_bottom) == t.buttons["ship"] and t.buttons["ship"].get_node(t.buttons["ship"].focus_neighbor_top) == t.buttons["quit"], "Up / Down wrap round the list")
@@ -182,11 +182,12 @@ func test_routes() -> void:
 	current_scene = main
 	await frames()
 	check(main.title != null and main.title.is_inside_tree(), "plain launch of main.tscn shows the title screen")
-	# Board the ship
+	# New game (D-68)
 	main.title.buttons["ship"].pressed.emit()
 	await frames(4)
 	var demo: Node = current_scene
-	check(demo != null and demo.get_script() == preload("res://demos/ship_geometry_demo.gd"), "Board the ship opens the current 3D ship")
+	check(demo != null and demo.get_script() == preload("res://demos/ship_geometry_demo.gd"), "New game opens the current 3D ship")
+	check(demo != null and int(demo.setup_options.get("seed", 424242)) != 424242, "D-68 New game is a new voyage: a fresh seed, not the fixed test seed")
 	if demo != null and demo.has_method("return_to_menu"):
 		demo.auto = false
 		demo.journey_auto_tick = false

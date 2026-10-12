@@ -1069,10 +1069,15 @@ free-nav-recovery-test: import
 
 .PHONY: in-world-voice-check
 VOICE_RE := \b(game|games|gameplay|approximation|approximate[ds]?|hand.?wav(e|ed|ing)|invented|fiction(al)?|simulat(ion|ed|or|e)|renderer|shader|hypothetical|placeholder|player|toy|sandbox)\b
+## D-68: the loop is the secret (stapledons-design vision/premise-and-loop.md §4); in-world text never hints at it.
+SPOILER_RE := \b(previous (run|runs|voyages?|universes?|iterations?|lives)|past (runs|voyages|universes|lives)|re-?runs?|new game\+?|begin(ning)? again|start(ing)? over|multiverse|reset(s|ting)? the (bubble|ship|universe|voyage))\b
 VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd
-in-world-voice-check: ## D-67: Archive entries, news templates/copy and the string literals in the news, legacy and codex panels speak in-world (no "game", "simulation", "approximation", "hand-wave", "invented", "player", ...)
-	@bad=$$(grep -n -i -E '$(VOICE_RE)' $$(ls data/lore/archive/*.md | grep -v '/README.md$$') data/news/templates.json data/news/copy.json; \
-	  for f in $(VOICE_UI); do grep -n -o '"[^"]*"' $$f | grep -i -E '$(VOICE_RE)' | sed "s|^|$$f:|"; done); \
-	if [ -n "$$bad" ]; then echo "in-world-voice-check: out-of-world wording in in-world text (D-67):"; echo "$$bad"; exit 1; fi; \
-	echo "in-world-voice-check: Archive entries, news copy and the news/legacy/codex panel strings speak in-world (D-67)"
+## The console script carries internal ids ("player" camera mode): it is scanned for loop spoilers only.
+SPOILER_UI := demos/ship_consoles.gd
+in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy and the on-screen strings of the news, Voyage log, codex and console panels speak in-world (no "game", "simulation", "approximation", "invented", "player" ...) and never hint at the loop ("previous run", "re-run", "New Game+", "begin again" ...)
+	@bad=$$(grep -n -i -E '$(VOICE_RE)|$(SPOILER_RE)' $$(ls data/lore/archive/*.md | grep -v '/README.md$$') data/news/templates.json data/news/copy.json; \
+	  for f in $(VOICE_UI); do grep -n -v -E '^[[:space:]]*#' $$f | grep -o -E '^[0-9]+:|"[^"]*"' | awk '/^[0-9]+:$$/{n=$$0;next}{print n $$0}' | grep -i -E '$(VOICE_RE)|$(SPOILER_RE)' | sed "s|^|$$f:|"; done; \
+	  for f in $(SPOILER_UI); do grep -n -v -E '^[[:space:]]*#' $$f | grep -o -E '^[0-9]+:|"[^"]*"' | awk '/^[0-9]+:$$/{n=$$0;next}{print n $$0}' | grep -i -E '$(SPOILER_RE)' | sed "s|^|$$f:|"; done); \
+	if [ -n "$$bad" ]; then echo "in-world-voice-check: out-of-world or loop-spoiling wording in in-world text (D-67, D-68):"; echo "$$bad"; exit 1; fi; \
+	echo "in-world-voice-check: Archive entries, news copy and the news/log/codex/console panel strings speak in-world and keep the loop secret (D-67, D-68)"
 

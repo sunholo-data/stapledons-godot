@@ -244,7 +244,7 @@ func test_routes() -> void:
 	# a title without a sky and no override: no jump (the existing behaviour, tests/test_title_screen.gd)
 	check(main.title != null and main.title.sky == null, "headless title has no sky")
 	Main.loading_overrides = {"enabled": true}
-	# Board the ship
+	# New game (D-68)
 	var r := await press(main, "ship")
 	report("ship", r)
 	var demo: Node = current_scene

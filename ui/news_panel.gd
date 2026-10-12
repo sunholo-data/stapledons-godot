@@ -163,7 +163,7 @@ func close() -> void:
 	visible = false
 
 
-## Forget everything of the last voyage ("Begin again" starts a new one).
+## Forget everything of the last voyage (a new voyage starts from the title screen's New game).
 func reset() -> void:
 	diagnostics = []
 	errors = []
