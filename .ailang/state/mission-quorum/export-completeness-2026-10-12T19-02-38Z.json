@@ -1,0 +1,79 @@
+{
+  "doc": "design_docs/planned/r1/export-completeness.md",
+  "iso_ts": "2026-10-12T19:02:38Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.13672499999999999,
+      "tokens_in": 10190,
+      "tokens_out": 7077,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "L6b's pack oracle spec contains a silent skip at the exact gate meant to prevent dev.23: 'Every DYNAMIC witness that exists on disk is in the zip.' If the lens bins are absent on disk when export-pack-check runs (lens-assets failed, ran out of order under make -j, or the target is invoked standalone before the fetch chain), the oracle passes with the bins unchecked and the pack ships without tables — precisely the failure V8 narrates ('there are no lens_*.bin entries... the bins were not on disk'). The doc's own verification log demonstrates this failure mode and then encodes it into the oracle as a silent conditional, violating the mission's no-silent-fallback axiom and the doc's own AC6 stance ('no silent skip'). A completeness oracle that treats 'cannot check' as 'pass' is not a completeness oracle.",
+        "catch": "Three fixes/verifications: (1) Rewrite L6b assertion 2 so absent witnesses are loud: at publish-dev they must be a hard failure (V22 shows export-macos already runs lens-assets/starmap-assets/sky-bundle before it, so every witness should exist); standalone runs must print 'SKIP absent witness \u003cpath\u003e' per missing witness and end the summary with an explicit skip count that publish-dev's grep requires to be 0 (e.g., STRICT=1 wiring). (2) M13 contradicts the stated mutation API: audit(include, exclude, literals) receives pre-extracted literals, but extraction with the real filters never scoped spike/*.gd, so mutating only the in-memory exclude list cannot bring res://data/raw/hip_v7.tsv into scope and M13 survives as specified — make audit() take (include, exclude) and perform the DirAccess walk and RegEx extraction internally per call, so the mutated exclude re-derives scope. (3) The load-bearing negative premise 'Nothing in make test relates the res:// paths to export_presets.cfg' has no V-row, unlike every positive premise; add a verification-log row (grep for export_presets/include_filter across Makefile, tests/, tools/) proving no existing audit is being duplicated. Also correct the citation slip: Makefile:366 (lens-assets dependency) is evidenced by V22, not V3.",
+        "proposed_fix": "Replace L6b assertion 2 with: 'Every DYNAMIC witness is required on disk. In publish-dev wiring the target runs as export-pack-check-strict (STRICT=1): an absent witness is a hard failure named by path, since export-macos already fetches all staged artifacts (V22, Makefile:366). In plain make export-pack-check, each absent witness prints `SKIP absent witness \u003cpath\u003e` and the summary becomes `export-pack-check: \u003cn\u003e checked, \u003cs\u003e skips, 0 failures`; the publish-dev grep requires `, 0 skips,`. Update AC8 to assert both green and `grep -c \"SKIP absent witness\" = 0` under publish-dev.' Change the L6a step-8 signature to `audit(include: PackedStringArray, exclude: PackedStringArray) -\u003e Array[String]` with scope-walk and extraction performed inside audit() per call, so M13's mutated exclude re-derives scope; note that test_export_audit.gd passes raw filter arrays only. Add V24: `grep -rn \"export_presets\\|include_filter\" Makefile tests/ tools/ | grep -vc export_audit` returning no pre-existing audit target, substantiating the 'missing static half' claim. Fix the L6b text citation from 'V3/Makefile:366' to 'V22/Makefile:366'."
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-3-1-pro",
+      "cost_usd": 0.02495,
+      "tokens_in": 11089,
+      "tokens_out": 231,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The design claims the captain PNGs are 'checked by L6b's witness-presence assertion', which is impossible under the document's own rules. L6b only checks literals classified R/F and DYNAMIC witnesses. The PNGs are not literals, and they cannot be DYNAMIC witnesses because the `assets/characters/captain` row uses filter `\"\"`, which explicitly mandates that 'all its witnesses must pass R'. Since PNGs are not in `AUTO_EXT`, they fail rule R, cannot be listed as witnesses, and are therefore entirely unchecked by L6b.",
+        "catch": "False claim of oracle test coverage for unmeasured PNG resources.",
+        "proposed_fix": "Update the 'assets/characters/captain' analysis and the Risks/Mitigations section to explicitly state that the raw PNGs are completely unverified statically and by the oracle, and that their presence is safeguarded solely by the runtime exported-app smokes. Remove the false claim that L6b checks them."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0.0549836,
+      "tokens_in": 10212,
+      "tokens_out": 9247,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Rule 3 extracts literals with the single regex `res://[^\"]*`, which can only see double-quoted strings, and no verification row establishes that shipped code contains no single-quoted `res://` literals — V6/V7 measured the corpus with the same double-quote grep, so the premise is self-confirming, not verified. A path read as `'res://data/foo.bin'` would be never extracted, never classified, and the audit stays green while the export drops the file: a silent false-green channel in Goal 1's core guarantee ('fails when shipped code reads a path that export_presets.cfg would drop'), i.e. the exact dev.23 failure class this doc exists to kill. The risk table names the no-prefix blind spot but not the quote-style blind spot.",
+        "catch": "Two concrete secondary defects to verify or fix: (1) M13's named killing assertion contradicts rule 4 — `res://data/raw/hip_v7.tsv` has an extension, so it is class F and fails as 'not covered', not UNCLASSIFIED (UNCLASSIFIED requires no/ambiguous form class per rule 4's preamble), yet AC3 demands each mutant be killed 'by its named assertion'. (2) AC3/AC4/AC6/AC7 hardcode `.godot/tmp/...` log and zip paths, while the Makefile snippet writes to `$(SCRATCH)/...`; no V row verifies `SCRATCH := .godot/tmp`, so four acceptance criteria may reference a path the target never writes.",
+        "proposed_fix": "1) Add V24: `git grep -nE \"'res://\" -- '*.gd' | grep -vE '^(tests|tools|spike)/'` with observed output (expected empty); if non-empty, fold the hits into the 90 measured literals and update V6/V7. 2) Amend rule 3 to run both `res://[^\"]*` and `res://[^']*` over each scoped file and union the (literal, file:line) pairs, so any future single-quoted literal is extracted rather than silently skipped. 3) Correct M13's killing assertion to `F res://data/raw/hip_v7.tsv not covered` (per rule 4, a `.tsv` literal is class F), or move the tsv case under an explicit no-extension UNCLASSIFIED example if that was the intent. 4) Add V25: `grep -n '^SCRATCH' Makefile` recording the existing definition (expected `SCRATCH := .godot/tmp`), and rewrite AC3/AC4/AC6/AC7 to use `$(SCRATCH)` (or the verified literal path) so every acceptance command targets the file the target actually writes."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Round 2. Controller measured both round-1 premises first-party (schwarzschild.gd:221-222 reads lens_*.json and lens_*.bin; pack suffix counts gdc 81/scn 10/remap 91/gdshader 10/gdshaderinc 3/tres absent from repo) and handed the measurements to the designer; doc now carries them as V20-V23."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-kimi-k3: L6b's pack oracle spec contains a silent skip at the exact gate meant to prevent dev.23: 'Every DYNAMIC witness that exists on disk is in the zip.' If the lens bins are absent on disk when export-pack-check runs (lens-assets failed, ran out of order under make -j, or the target is invoked standalone before the fetch chain), the oracle passes with the bins unchecked and the pack ships without tables — precisely the failure V8 narrates ('there are no lens_*.bin entries... the bins were not on disk'). The doc's own verification log demonstrates this failure mode and then encodes it into the oracle as a silent conditional, violating the mission's no-silent-fallback axiom and the doc's own AC6 stance ('no silent skip'). A completeness oracle that treats 'cannot check' as 'pass' is not a completeness oracle.",
+      "gemini-3-1-pro: The design claims the captain PNGs are 'checked by L6b's witness-presence assertion', which is impossible under the document's own rules. L6b only checks literals classified R/F and DYNAMIC witnesses. The PNGs are not literals, and they cannot be DYNAMIC witnesses because the `assets/characters/captain` row uses filter `\"\"`, which explicitly mandates that 'all its witnesses must pass R'. Since PNGs are not in `AUTO_EXT`, they fail rule R, cannot be listed as witnesses, and are therefore entirely unchecked by L6b.",
+      "oc-glm-5-3: Rule 3 extracts literals with the single regex `res://[^\"]*`, which can only see double-quoted strings, and no verification row establishes that shipped code contains no single-quoted `res://` literals — V6/V7 measured the corpus with the same double-quote grep, so the premise is self-confirming, not verified. A path read as `'res://data/foo.bin'` would be never extracted, never classified, and the audit stays green while the export drops the file: a silent false-green channel in Goal 1's core guarantee ('fails when shipped code reads a path that export_presets.cfg would drop'), i.e. the exact dev.23 failure class this doc exists to kill. The risk table names the no-prefix blind spot but not the quote-style blind spot."
+    ],
+    "absent_reviewers": [
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.21665859999999998,
+    "total_tokens_in": 31491,
+    "total_tokens_out": 16555
+  }
+}
