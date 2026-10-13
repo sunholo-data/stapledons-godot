@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-CREW",
-  "status": "proposed",
+  "status": "proposed_rev1",
   "approved": false,
   "approved_by": null,
   "created": "2026-10-13",
@@ -12,25 +12,33 @@
     "crew-integration CI-1",
     "CI-2",
     "CI-3",
-    "CI-4"
+    "CI-4",
+    "CI-5"
   ],
   "github_issues": [
     221
   ],
   "external_dependencies": [
     {
-      "what": "crew_core 0.3.0 (CI-0: archiving, ship_event, policy; idle fast path if Mark agrees Q1)",
+      "what": "crew_core 0.3.0 (CI-0: archiving, ship_event, policy, standing orders, escalation, advance(n))",
       "where": "sunholo-data/ailang-packages",
       "owner": "crew-lab agent",
       "blocks": [
         "G1_REVENDOR_030",
         "C3_SHIP_REACHES_CREW",
-        "C4_CREW_ON_PERF_GOLDENS"
+        "C4_CREW_ON_PERF_GOLDENS",
+        "C8_AUTO_RUN_HOLDS"
       ]
     },
     {
       "what": "ailang#1811 registry validator OOM",
       "effect": "crew_core stays vendored; pin switch is one line after the fix"
+    },
+    {
+      "what": "portrait sets for engineer, analyst, pilot, counselor (D-7)",
+      "where": "attended art task",
+      "blocks": [],
+      "note": "stub portraits until then"
     }
   ],
   "registry_reuse": [
@@ -67,8 +75,8 @@
   ],
   "velocity": {
     "target_loc_per_day": 350,
-    "estimated_total_loc": 2040,
-    "estimated_days": 6
+    "estimated_total_loc": 2490,
+    "estimated_days": 7
   },
   "critical_path": [
     "C0_TESTS_VENDOR_SYNC",
@@ -76,6 +84,7 @@
     "C2_PROTOCOL",
     "G1_REVENDOR_030",
     "C3_SHIP_REACHES_CREW",
+    "C8_AUTO_RUN_HOLDS",
     "C4_CREW_ON_PERF_GOLDENS",
     "C7_EVALUATE_LAND"
   ],
@@ -83,10 +92,11 @@
     "after C2: report to Mark",
     "G1: wait for CI-0, never patch the vendored copy",
     "before C4 golden re-record: Mark reviews the listed diff",
-    "C6: Mark reviews the console renders"
+    "C6 and C8: Mark reviews console and hold-card renders",
+    "art: portrait sets are an attended asset task outside this sprint"
   ],
   "questions_for_mark": [
-    "Q1 AC1 vs AC11 perf: add an idle fast path advance(n) to CI-0 (recommended), relax AC11, or coarser interlude turns",
+    "Q1 SETTLED (Mark 2026-10-13): auto-run with critical moments; idle fast path advance(n) in CI-0",
     "Q2 start on vendored 0.2.0 now and re-vendor at G1 (recommended yes)",
     "Q3 Params.crew=0 until C4 so goldens are re-recorded once (recommended yes)"
   ],
@@ -187,7 +197,8 @@
       "description": "Params.crew default 1; make crew-perf; replay goldens re-recorded once in one listed commit",
       "estimated_loc": 120,
       "dependencies": [
-        "C3_SHIP_REACHES_CREW"
+        "C3_SHIP_REACHES_CREW",
+        "C8_AUTO_RUN_HOLDS"
       ],
       "acceptance_criteria": [
         "make crew-perf: 10-year interlude within the AC11 budget (as settled by Q1)",
@@ -227,6 +238,26 @@
         "make crew-console-test: panel binds a recorded stream and emits the right intents (AC10)",
         "make no-twitch-test covers the page",
         "renders/crew_console/*.png opened and reviewed by Mark"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C8_AUTO_RUN_HOLDS",
+      "description": "CI-5: standing orders in World (critical_only preset), crew step via advance, crew_hold event + state.crew.holds, crew_orders intent, fourth parity recording, interlude stops at holds, hold card, presets on the Crew page",
+      "estimated_loc": 450,
+      "dependencies": [
+        "G1_REVENDOR_030",
+        "C3_SHIP_REACHES_CREW",
+        "C6_CREW_CONSOLE"
+      ],
+      "acceptance_criteria": [
+        "make crew-parity includes an auto recording; standing-order decisions journalled like player ones (AC13)",
+        "sim/crew_hold_test.ail: each escalation rule stops advance at the first matching turn with an escalated record (AC14)",
+        "tests/test_crew_hold.gd: interlude stops at crew_hold, card emits the chosen intent; no-twitch covers it (AC15)",
+        "make crew-perf: 10-year skip via advance within budget"
       ],
       "passes": null,
       "started": null,

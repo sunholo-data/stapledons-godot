@@ -18,7 +18,7 @@
 - **R1 AI service foundation** (`ai/`, protocol `ai/1`, recorded `ai_request` events, the `record` intent). Crew words use it.
 - **AILANG v0.54.6**, already pinned.
 
-**Estimated LOC:** about 1,900 committed across five sub-milestones (CI-0 to CI-4). CI-0 is in ailang-packages; the rest is in this repo.
+**Estimated LOC:** about 2,700 committed across six sub-milestones (CI-0 to CI-5; CI-5 added 2026-10-13, Mark: auto-run with critical moments). CI-0 is in ailang-packages; the rest is in this repo.
 
 ## Game vision alignment
 
@@ -55,6 +55,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 
 **Non-goals (later sprints):**
 - mutiny, factions and votes;
+- the wider population as cohorts (designed separately in [crew-population.md](crew-population.md));
 - the ~100 founders (the slice is the featured crew);
 - civilisations as actors;
 - crew memory and embeddings (stapledons-design `semantic-memory.md` S2);
@@ -78,7 +79,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 
 ## Design
 
-### CI-0: three crew_core changes, made and verified in the lab first (ailang-packages)
+### CI-0: crew_core changes, made and verified in the lab first (ailang-packages)
 
 `crew_core` 0.3.0:
 - **Archiving.** When finished tasks, resolved reliefs and their evidence are older than `keep` ticks and no pending request refers to them, they are folded into per-crew summary counters. Live state stays bounded, so the cost per turn stops growing.
@@ -86,6 +87,19 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
   - Lab claims must not change: claims read summaries, and `crew_sim/1` measures come from counters.
 - **Ship events at run time** (`ship_event` command). This applies a `ShipEvent` now, through the same flow code as scheduled events: arguments, halts, regard, evidence. The game raises events from physics, not only from scenario tables.
 - **Captaincy switch at run time** (`policy` command, D-70 OQ5). crew_core fixes `Session.policy` at creation today. The command switches between consent and orders mid-session, journalled as one `policy` record, and applies from the next request; open agreements keep the terms they were made under.
+- **Auto-captain and escalation (added 2026-10-13, Mark: "run the simulation where decisions are auto-made, so we can skip ahead during journeys and only critical moments kick up to the player").**
+  - **Standing orders** (`crew_standing_orders/1`, scenario-pack data). These are rules the captain sets, such as "grant relief when stress ≥ 70", "decline new work while heat < 1" or "answer concerns: never". `standing` applies them as captain decisions with the same journal records as a player decision, so a decision is never rerolled whoever made it. Standing orders can't hold a conversation or answer a concern; only the player can. That is the in-world reward for stepping in.
+  - **Escalation rules** (`crew_escalation/1`, scenario-pack data, tuned in the lab with claims). These are conditions that stop auto-play and hand the moment to the player:
+    - a refusal under orders;
+    - an indicator at a breakdown threshold;
+    - trust in the captain below the assign floor;
+    - a `loss` or `deep_time` ship event;
+    - an argument between featured crew;
+    - a request no standing order covers.
+
+    `advance` returns at the first escalation, with an `escalated` journal record naming the rule.
+  - **Idle fast path** (`advance(n)`). Up to n crew turns run under standing orders and stop at the first escalation. When no request is open and no event is due, turns run in bulk as pure drift. This makes skipping years cheap (AC11).
+  - Lab: `crew-sim --auto` runs a pack under its standing orders and reports escalations per year, as claims.
 - **Gate:** lab `make validate`, all pack claims unchanged, and `crew-sim --turns 500` growing linearly (target: under 10 s per seed). An independent evaluation follows, then a PR to ailang-packages. Publishing waits on #1811.
 
 ### CI-1: vendor the host and embed it in the sim
@@ -140,6 +154,18 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 - **Fallback and spend.** Until a result is accepted, Godot shows the template line from `content_library`'s starter bundle. The stub provider serves tests, CI and any session without opt-in (D-8: no key, nothing is asked). Spend follows D-20 and D-21.
 - **Cast.** Cast entries for the featured crew, beyond the Medic, come from the pack scenario (`last-messages-home`, D-70 OQ3). Role ids stay the `entity_id`; each cast file gains a display name (D-70 OQ2).
 
+### CI-5: auto-run, crew holds and skip-ahead (this repo; after CI-1 and CI-0's auto-captain)
+
+- **Sim.** The crew step calls `advance` under the World's standing orders. An escalation ends the tick's crew advance and raises a `crew_hold` event: the crew member, the rule, and the request awaiting the captain. The sim keeps running the ship; only crew decisions wait.
+- **Protocol.** The `crew_orders` intent sets standing orders from a preset or one rule at a time; it is journalled. `crew_hold` arrives as an event, and `state.crew.holds` lists the open ones.
+- **Skip-ahead.** The cruise interlude (M4 real-time tour) stops at a `crew_hold` as it stops at an arrival. The player answers the hold, then resumes or keeps going.
+- **Player modes.** These come out of the same rules, not separate code:
+  - *Hands-on*: permissive escalation, so the player sees most requests.
+  - *Critical only*: the default pack rules.
+
+  The Voyage console offers both as presets. Nothing scores either one (The Game Doesn't Judge).
+- **The hold card (Godot).** It shows the portrait and emotion (D-7), the crew member's line (template first, then the AI line through CI-3), and the two to four authored choices. It reuses the console's confirm, with no timer (no twitch).
+
 ### CI-4: a minimal crew console (Godot)
 
 - **Where.** A Crew page on the Voyage console (D-56: decisions at consoles, information in the HUD). It lists each crew member with:
@@ -167,16 +193,20 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 | AC10 | The console shows the crew and its actions emit the right intents | `make test` (`tests/test_crew_console.gd`) |
 | AC11 | Performance in the game: a 10-year cruise interlude advances the crew in under 2 s headless | `make crew-perf` |
 | AC12 | `make test` is green locally and in CI | `make test`; CI |
+| AC13 | Standing-order decisions are journalled exactly like player decisions, and auto and player sessions replay byte-identically | `make crew-parity` (adds an auto recording) |
+| AC14 | Each escalation rule stops `advance` at the first matching turn with an `escalated` record, and a skip of N years under default rules matches the lab's escalations-per-year claim | `make test` (`sim/crew_hold_test.ail`); lab `crew-sim --auto --check` |
+| AC15 | The cruise interlude stops at a `crew_hold`, the hold card emits the chosen intent, and the no-twitch sweep covers it | `make test` (`tests/test_crew_hold.gd`, `make no-twitch-test`) |
 
 ## Sub-milestones and estimates
 
 | ID | Repo | What | LOC | Depends |
 |---|---|---|---|---|
-| CI-0 | ailang-packages | crew_core 0.3.0: archiving, `ship_event`, `policy`, lab claims unchanged, evaluation | 350 | — |
+| CI-0 | ailang-packages | crew_core 0.3.0: archiving, `ship_event`, `policy`, standing orders, escalation, `advance(n)`, lab claims unchanged, evaluation | 650 | — |
 | CI-1 | this | vendor, `sim/crew.ail`, World, time mapping, protocol intents and view, parity tool | 650 | CI-0 |
 | CI-2 | this | crew resources (`allocate`, lint), ship state data, four physics events | 300 | CI-1 |
 | CI-3 | this | `crew_reply` purpose: prompt and checks port, stub fixtures, fallback | 350 | CI-1 (and the AI service) |
 | CI-4 | this | Voyage console Crew page and test | 250 | CI-1 |
+| CI-5 | this | auto-run under standing orders, `crew_hold`, interlude stop, hold card, presets | 450 | CI-1, CI-0 auto-captain; card after CI-4 |
 
 CI-2, CI-3 and CI-4 can run in parallel after CI-1. Each fits one executor run.
 
@@ -214,5 +244,6 @@ CI-2, CI-3 and CI-4 can run in parallel after CI-1. Each fits one executor run.
   - `data/crew/` (scenario, policy, ship state, sync manifest);
   - `ai/` `crew_reply` purpose and checks;
   - the Voyage console Crew page;
+  - CI-5: auto-run, `crew_hold`, the hold card and presets;
   - make targets `crew-vendor-check`, `crew-parity`, `crew-sync-check`, `crew-perf`;
   - the sprint JSON, an evaluation, and a report in `design_docs/implemented/r2/`.

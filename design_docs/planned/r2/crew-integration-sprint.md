@@ -2,8 +2,8 @@
 
 **Design doc:** [crew-integration.md](crew-integration.md) (approved 2026-10-13, ledger D-70)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CREW.json`
-**Status:** Proposed. Waiting for Mark's approval and the three questions at the end.
-**Scope:** the game-side milestones CI-1 to CI-4. CI-0 (crew_core 0.3.0) lives in ailang-packages and belongs to the crew-lab agent. This sprint consumes it at gate G1.
+**Status:** Proposed, revision 1 (2026-10-13). Q1 settled by Mark: auto-run with critical moments, so CI-0 gains standing orders, escalation and `advance(n)`, and this sprint gains C8 (CI-5). Waiting for approval and Q2/Q3.
+**Scope:** the game-side milestones CI-1 to CI-5. CI-0 (crew_core 0.3.0) lives in ailang-packages and belongs to the crew-lab agent. This sprint consumes it at gate G1.
 **Branch:** `feat/r2-crew` in the attended clone. Each milestone is one PR to main.
 **AILANG:** v0.54.6 (pinned). AILANG prompt version loaded: v0.16.7.
 
@@ -27,7 +27,7 @@ CI-0 has not started upstream. Rather than wait, C0 to C2 vendor **crew_core 0.2
 ```
 C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
                 ├─▶ C6 (console; policy switch after C3)
-   CI-0 ─▶ G1 ──┴─▶ C3 ─▶ C4 ─▶ C7 (evaluate, land)
+   CI-0 ─▶ G1 ──┴─▶ C3 ─▶ C8 (auto-run, holds) ─▶ C4 ─▶ C7 (evaluate, land)
 ```
 
 ## Milestones
@@ -66,7 +66,7 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Gate:** `make test` subset: `sim/protocol_crew_test.ail` (AC6), `parity-v2`, `replay`.
 
 ### G1: re-vendor crew_core 0.3.0 (external, ~20 LOC)
-- **Blocked** until CI-0 merges in ailang-packages: archiving, `ship_event` and `policy`, from the crew-lab agent.
+- **Blocked** until CI-0 merges in ailang-packages (brief: ailang-packages issue, see below): archiving, `ship_event`, `policy`, standing orders, escalation and `advance(n)`, from the crew-lab agent.
 - Run `make crew-vendor REV=<CI-0 sha>`, then `make crew-vendor-check crew-parity strict parity`. The three recordings must still match. A break means a crew_core behaviour change, reported upstream rather than patched here.
 
 ### C3: the ship reaches the crew (~380 LOC, after G1)
@@ -104,6 +104,20 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Tests.** `tests/test_crew_console.gd` binds the panel to a recorded state stream and asserts the emitted intents (AC10). It goes in `make test` through a `crew-console-test` target, and the no-twitch sweep (`make no-twitch-test`) covers the new page.
 - **Visual check.** `make crew-console-capture` writes `renders/crew_console/*.png`. Open and look at them before merging, because this is a visible feature and stays attended.
 
+### C8: auto-run, crew holds and skip-ahead (CI-5, ~450 LOC, after G1; the card after C6)
+- **Sim.**
+  - `World.crew.orders` holds the standing orders; new games use the pack's *critical only* preset.
+  - The crew step calls `advance`, and an escalation raises a `crew_hold` event and adds an entry to `state.crew.holds`.
+  - `sim/crew_hold_test.ail` gives one case per escalation rule: the stop turn, the `escalated` record, and no stop when no rule matches (AC14).
+- **Protocol.** The `crew_orders` intent takes a preset (`hands_on`, `critical_only`) or one rule, journalled and refused with the crew_core reason.
+- **Parity.** A fourth recording, an auto session with holds answered, goes into `make crew-parity` (AC13).
+- **Godot.**
+  - The cruise interlude stops at a `crew_hold`.
+  - The hold card shows the portrait with the emotion (D-7; stub portraits until art lands), the line and the authored choices, and uses the console confirm with no timer.
+  - The presets live on the Crew page.
+  - `tests/test_crew_hold.gd` covers this, and `make no-twitch-test` covers the card (AC15). `make crew-console-capture` adds hold-card renders for Mark.
+- **Gate:** `make crew-parity crew-perf` (the 10-year skip now runs through `advance`), `sim/crew_hold_test.ail`, `tests/test_crew_hold.gd`.
+
 ### C7: evaluate and land
 - **Evaluation.** `sprint-evaluator` run by a **different model** from the executor (generator ≠ judge), scoring 100 with 70 to pass. Output goes to `.ailang/state/evaluations/`.
 - **Landing.**
@@ -124,9 +138,10 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 | C4 | 120 | C3 |
 | C5 | 350 | C2 |
 | C6 | 250 | C2 (switch after C3) |
-| **Total** | **2,040** | |
+| C8 | 450 | G1, C3; card after C6 |
+| **Total** | **2,490** | |
 
-Recent velocity is 285 to 400 LOC a day (R1-M5-TRAPPIST-1, R1-SHIP-UI). That puts C0 to C2 plus C5 and C6 at about 4 working days without CI-0. C3 and C4 add about 1.5 days after G1. The total is a little over the design's 1,900 because it includes the tests, the sync tool and the console capture.
+Recent velocity is 285 to 400 LOC a day (R1-M5-TRAPPIST-1, R1-SHIP-UI). That puts C0 to C2 plus C5 and C6 at about 4 working days without CI-0. C3, C4 and C8 add about 2.5 days after G1. The total is a little over the design's 1,900 because it includes the tests, the sync tool and the console capture.
 
 ## Registry reuse
 
@@ -153,11 +168,12 @@ Recent velocity is 285 to 400 LOC a day (R1-M5-TRAPPIST-1, R1-SHIP-UI). That put
 1. **After C2:** the embedded crew, the protocol and parity are on 0.2.0. Report to Mark.
 2. **G1:** wait for CI-0. Don't patch the vendored copy to unblock.
 3. **Before C4's golden re-record:** the listed diff gets Mark's review.
-4. **C6:** Mark reviews the console renders (a visible feature).
+4. **C6 and C8:** Mark reviews the console and hold-card renders (visible features).
+5. **Art:** the portrait sets for engineer, analyst, pilot and counselor are an attended asset task, outside this sprint (D-7 pipeline). The console and the card use stub portraits until those sets land.
 
 ## Questions for Mark
 
-1. **The performance target contradicts itself (AC1 vs AC11).** The lab today takes about 80 ms per turn (1 s for 12 turns). CI-0's target is under 10 s per 500 turns, about 20 ms per turn. A 10-year interlude at one turn per ship-day is about 3,650 turns, so even at the CI-0 target it takes about 73 s, against AC11's 2 s. **Recommended:** add an *idle fast path* to CI-0. When no request is open and no event is due, a crew turn is pure drift and can be advanced in bulk with `advance(n)`. That keeps one turn per day as Mark ruled and lets AC11 hold. The alternatives are relaxing AC11, or coarser turns during interludes only.
+1. **SETTLED (Mark, 2026-10-13): auto-run with an idle fast path.** The original question follows for the record. **The performance target contradicts itself (AC1 vs AC11).** The lab today takes about 80 ms per turn (1 s for 12 turns). CI-0's target is under 10 s per 500 turns, about 20 ms per turn. A 10-year interlude at one turn per ship-day is about 3,650 turns, so even at the CI-0 target it takes about 73 s, against AC11's 2 s. **Recommended:** add an *idle fast path* to CI-0. When no request is open and no event is due, a crew turn is pure drift and can be advanced in bulk with `advance(n)`. That keeps one turn per day as Mark ruled and lets AC11 hold. The alternatives are relaxing AC11, or coarser turns during interludes only.
 2. **Start before CI-0** by vendoring 0.2.0 now and re-vendoring at G1? Recommended: yes. It unblocks C0–C2, C5 and C6.
 3. **Crew off by default (`Params.crew = 0`) until C4**, so the replay goldens are re-recorded once instead of at every milestone? Recommended: yes.
 
