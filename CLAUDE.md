@@ -135,6 +135,18 @@ paths: AILANG packages in runtime/cache/registry/OWNER/PKG/VER/ (or
 ../stapledons-design, Blender work at ~/dev/blender. A PreToolUse hook
 (.claude/hooks/no-broad-find.sh) enforces this for every agent in a session.
 
+## Project brain (semantic memory)
+
+`.claude/settings.json` wires the AILANG brain, the same embedding search the game's AI layer will
+use. On each prompt, `.claude/hooks/brain-prompt.sh` injects up to 3 project-brain matches
+scoring at least 0.55. That floor was measured here; ailang's own hook uses 0.70 over both brains,
+and that lets a user-brain frame that matches everything through. On each commit, `.claude/hooks/brain-commit.sh` banks the
+commit, with the first 2 KB of any design doc or changelog it touches, into the **main checkout's**
+`.ailang/state/brain.db`. It does this even when the commit is made in the attended clone. Search
+it yourself with `ailang cache search "<question>"`. Backfill with
+`.claude/hooks/brain-commit.sh --backfill <range>`. `AILANG_BRAIN_HOOKS=0` disables both hooks.
+The brain is local and untracked.
+
 ## AILANG
 
 - **Report every AILANG bug or DX problem** with `ailang messages` to inbox
