@@ -113,7 +113,14 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Captaincy (D-70 OQ5).** The `crew_policy` intent switches consent and orders through crew_core's `policy`, journalled. New games start in consent.
 - **Gate:** `sim/crew_events_test.ail` (AC8), `crew-sync-check` with the resource lint, `crew-parity` with the run-time ship-event recording re-recorded through `ship_event` (AC3).
 
-### C4: crew on by default, performance, goldens (~120 LOC, after C3)
+### C4: crew on by default, performance, goldens (~120 LOC, after C3) ✅ 2026-10-13
+> **Done.**
+> - **Crew aboard.** The live game (`demos/ship_geometry_demo.gd`) asks for protocol 2.9 with a consent crew (D-70 OQ5); `setup_options["crew"]` can choose orders, or `""` for none. Its first tick queues `crew_orders critical_only`, so voyages auto-run and stop only for critical moments.
+> - **Prefetch.** The loading jump prefetches its warm sim at 2.9. The map route (`main.gd`) also asks for 2.9 so it adopts that prefetch; it requests no crew, so its stream is 2.8's but for the hello's minor.
+> - **No golden re-record was needed.** Every recorded replay runs at minor 8 or below, where no crew can be aboard, so `make replay` and `parity-v2` are unchanged. The planned one-time re-record and Mark's diff review didn't arise.
+> - **AC11** is `make crew-perf` (C8).
+> - **Tests.** `test_bh_hud` and `test_ship_ui` pinned the navigation session at 2.8 and now expect 2.9 (intended). `ship-demo-ci` (1,187 s), bh-hud, ship-ui, loading-jump, free-nav-recovery, map-ism, ui and the title screen all pass.
+
 - `Params.crew` defaults to 1.
 - `make crew-perf` runs a 10-year cruise interlude (one tick, about 3,650 crew turns) headless, against the AC11 budget. See question 1: the budget as written isn't reachable without an idle fast path.
 - Re-record the replay goldens once with `make replay-record LOG=all`, in one commit that lists every changed golden and the reason. Then run `make replay` twice and expect identical results (AC5).

@@ -206,10 +206,10 @@
         "make replay twice identical; golden diff listed and reviewed (AC5)",
         "make test green locally and in CI (AC12)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-13",
+      "completed": "2026-10-13",
+      "notes": "Live game asks 2.9 with a consent crew (setup_options crew override), queues crew_orders critical_only on its first tick; loading jump prefetch at 2.9; map route 2.9 without crew (adopts prefetch). No golden re-record: all replays run at minor <= 8 (no crew), replay and parity-v2 unchanged. AC11 = make crew-perf (C8). test_bh_hud/test_ship_ui minor expectations 2.8 -> 2.9. Passed: ship-demo-ci, bh-hud, ship-ui, loading-jump, free-nav-recovery, map-ism, ui, title-screen."
     },
     {
       "id": "C5_CREW_WORDS",

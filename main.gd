@@ -283,7 +283,7 @@ func _run_transit(args: Dictionary) -> void:
 ## galaxy_map_arrived.png, adding their readouts to the panel dump.
 func _run_map(args: Dictionary) -> void:
 	var capture: bool = args.has("map-capture") or args.has("movie")
-	if not capture:sim.want_minor=SimBridge.ISM_MINOR # R1-ISM-DUST: new games fly lism-1 (D-61)
+	if not capture:sim.want_minor=SimBridge.CREW_MINOR # R1-ISM-DUST: lism-1 (D-61); 2.9 (R2-CREW C4) so it adopts the loading jump's prefetch; no crew on the map route
 	if capture:
 		get_window().size = Vector2i(1600, 900)
 	sim.record_path = args.get("record", "")

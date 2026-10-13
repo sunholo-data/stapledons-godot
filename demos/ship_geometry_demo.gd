@@ -592,7 +592,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.ISM_MINOR
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.CREW_MINOR # R2-CREW C4: the crew aboard (2.9)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().
@@ -607,9 +607,13 @@ func _create_navigation(scenario:String) -> void:
 		if setup_options.get("ai",setup_options.get("from_menu",false)) and ai_session==null:
 			ai_session=AiSession.new({},str(setup_options.get("settings_dir","user://")));add_child(ai_session)
 			ai_core=AiSession.ai_core()
-		if not journey_sim.start() or not journey_sim.new_game(int(setup_options.get("seed",424242)),live_scenario,false,params,ai_core):
+		# R2-CREW C4: a consent crew by default (D-70 OQ5); setup_options["crew"] = "orders", or "" for none.
+		var crew_captaincy:=str(setup_options.get("crew","consent"))
+		if not journey_sim.start() or not journey_sim.new_game(int(setup_options.get("seed",424242)),live_scenario,false,params,ai_core,crew_captaincy):
 			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
+		# C8: the voyage auto-runs the crew and stops only for critical moments (the lab's rules).
+		if not journey_sim.crew.is_empty():journey_sim.queue([SimBridge.crew_intent("crew_orders",{"command":"orders","preset":"critical_only"})])
 		if ai_session!=null:ai_session.attach(journey_sim)
 		if consoles!=null:consoles.follow(journey_sim) # the Voyage log and Ask the Archive read its steps
 		if setup_options.has("seed"):print("voyage seed %d (%s)" % [journey_sim.last_seed,live_scenario]) # D-68: a New game run can be replayed from its seed
