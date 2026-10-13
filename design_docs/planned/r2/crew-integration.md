@@ -1,6 +1,6 @@
 # R2-CREW: the crew host aboard the ship
 
-**Status:** Proposed 2026-10-13 (attended, Mark: "make or enhance the integration design doc for this; we will use another agent for its integration"). Needs Mark's approval of the open questions, then a sprint plan from the integration agent.
+**Status:** Approved 2026-10-13 (attended). Mark answered the six open questions (ledger D-70, § Decisions). Next: CI-0 upstream, then the sprint plan from the integration agent.
 **Release:** R2. The R1 roadmap leaves "the crew psychology model" out of R1 ([r1-foundations.md](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md), Out of scope).
 **Priority:** P1 for R2. The crew are the ship's human half (pillar 4), and every later social system (factions, mutiny, contact voices) sits on this host.
 
@@ -78,13 +78,14 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 
 ## Design
 
-### CI-0: two crew_core changes, made and verified in the lab first (ailang-packages)
+### CI-0: three crew_core changes, made and verified in the lab first (ailang-packages)
 
 `crew_core` 0.3.0:
 - **Archiving.** When finished tasks, resolved reliefs and their evidence are older than `keep` ticks and no pending request refers to them, they are folded into per-crew summary counters. Live state stays bounded, so the cost per turn stops growing.
   - The pruned items are recorded once, as an `archived` journal record.
   - Lab claims must not change: claims read summaries, and `crew_sim/1` measures come from counters.
 - **Ship events at run time** (`ship_event` command). This applies a `ShipEvent` now, through the same flow code as scheduled events: arguments, halts, regard, evidence. The game raises events from physics, not only from scenario tables.
+- **Captaincy switch at run time** (`policy` command, D-70 OQ5). crew_core fixes `Session.policy` at creation today. The command switches between consent and orders mid-session, journalled as one `policy` record, and applies from the next request; open agreements keep the terms they were made under.
 - **Gate:** lab `make validate`, all pack claims unchanged, and `crew-sim --turns 500` growing linearly (target: under 10 s per seed). An independent evaluation follows, then a PR to ailang-packages. Publishing waits on #1811.
 
 ### CI-1: vendor the host and embed it in the sim
@@ -98,10 +99,11 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 - **`sim/crew.ail` (pure).**
   - `CrewState` holds the crew_core `Session`, the scenario id, the crew turn, and the ship-time remainder not yet turned into crew turns.
   - `World` gains `crew: CrewState`. `newWorld` starts it from `data/crew/scenario.json` and `policy.json`, passed in as decoded data, like the star catalogue: the core does no I/O.
-- **Time.** One crew turn per ship-day (open question 1). Each sim tick adds Δτ; whole days advance the host with a fixed budget. A long cruise interlude advances many turns in one tick, which is why CI-0's archiving is a prerequisite.
+- **Time.** One crew turn per ship-day (D-70 OQ1). Each sim tick adds Δτ; whole days advance the host with a fixed budget. A long cruise interlude advances many turns in one tick, which is why CI-0's archiving is a prerequisite.
 - **Randomness.** Authored reactions roll from the existing `SCrew` stream (`sim/rng.ail`, id 2). Every crew draw advances that counter only, so the other streams' recordings are untouched.
 - **Protocol 2.x minor.**
-  - Intents: `crew_offer`, `crew_start`, `crew_relief`, `crew_cancel` and `crew_reply` (conversations). Each carries one crew_core input line, which the host validates; a refusal names the crew_core error.
+  - Intents: `crew_offer`, `crew_start`, `crew_relief`, `crew_cancel` and `crew_reply` (conversations), plus `crew_policy` (consent or orders; D-70 OQ5). Each carries one crew_core input line, which the host validates; a refusal names the crew_core error.
+  - New games start in consent (D-70 OQ5). Orders are an explicit, journalled choice.
   - State gains a `crew` section: per crew member the indicators, trust and regard; open requests; the latest heard evidence lines; and the eight resources at crew scale.
   - The sim never interprets AI text. Crew words arrive only via `record`.
 - **Parity tool.** `sim/tools/crew_parity.ail` replays a crew_core command recording through `sim/crew.ail` and through `crew_core.session.recording` alone, then compares the journals byte for byte.
@@ -119,7 +121,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
   | GR approach begins (`gr`, M3.4b) | "forward sky loads the radiators" | `heat −2` (`+2` past periapsis) |
   | News burst arrives (`cq`, M4.1) | the burst's headline | `signal +1`; `major: deep_time`, or `loss` when the news is a death |
   | Arrival at a star stop | "antenna windows open" | `signal +1` |
-  | Boost or brake committed | "the generator takes mass" | `mass −n`, n = the leg's E/c² at crew scale (readout only until D-69 is enforced: open question 4) |
+  | Boost or brake committed | "the generator takes mass" | `mass −n`, n = the leg's E/c² at crew scale (readout only until D-69 is enforced: D-70 OQ4, readout only in R2) |
 
 - **Crew draw on the ship.** Each crew turn's consumption of stocks is reported back to the ledger as a readout (`crew.used`). It is not enforced in R2.
 
@@ -136,7 +138,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
   - length bounds;
   - the D-67 in-world voice.
 - **Fallback and spend.** Until a result is accepted, Godot shows the template line from `content_library`'s starter bundle. The stub provider serves tests, CI and any session without opt-in (D-8: no key, nothing is asked). Spend follows D-20 and D-21.
-- **Cast.** Cast entries for the featured crew, beyond the Medic, come from the pack's scenarios. Names are still role ids (open question 2).
+- **Cast.** Cast entries for the featured crew, beyond the Medic, come from the pack scenario (`last-messages-home`, D-70 OQ3). Role ids stay the `entity_id`; each cast file gains a display name (D-70 OQ2).
 
 ### CI-4: a minimal crew console (Godot)
 
@@ -145,7 +147,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
   - regard shown only when it is low;
   - their current work;
   - their latest line.
-- **Actions:** offer work, start, grant or deny relief, and answer a concern. These map one to one to CI-1's intents.
+- **Actions:** offer work, start, grant or deny relief, answer a concern, and switch between consent and orders (shown as a deliberate choice, D-70 OQ5). These map one to one to CI-1's intents.
 - **No new 3D.** The portrait comes from the cast where one exists.
 - `tests/test_crew_console.gd` binds the panel to a recorded state stream.
 
@@ -153,7 +155,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 
 | # | Criterion | Check |
 |---|---|---|
-| AC1 | crew_core 0.3.0: archiving keeps state bounded; the lab claims are unchanged; 500 turns grow linearly (under 10 s per seed) | ailang-packages: `cd examples/crew-lab && make validate` (keyless) and `crew-sim --turns 500 --seeds 1..3` timing in the PR |
+| AC1 | crew_core 0.3.0: archiving keeps state bounded; `ship_event` and `policy` are journalled; the lab claims are unchanged; 500 turns grow linearly (under 10 s per seed) | ailang-packages: `cd examples/crew-lab && make validate` (keyless) and `crew-sim --turns 500 --seeds 1..3` timing in the PR |
 | AC2 | The vendored host matches its recorded source hash, and no local edits | `make crew-vendor-check` |
 | AC3 | The crew journal inside the game equals standalone crew_core, byte for byte, for three recordings (consent, orders, a ship event with an argument) | `make crew-parity` |
 | AC4 | `sim/core.ail` and `sim/crew.ail` pass the strict bytecode VM; VM and interpreter stay identical with crew aboard | `make strict`, `make parity` |
@@ -170,7 +172,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 
 | ID | Repo | What | LOC | Depends |
 |---|---|---|---|---|
-| CI-0 | ailang-packages | crew_core 0.3.0: archiving, `ship_event`, lab claims unchanged, evaluation | 350 | — |
+| CI-0 | ailang-packages | crew_core 0.3.0: archiving, `ship_event`, `policy`, lab claims unchanged, evaluation | 350 | — |
 | CI-1 | this | vendor, `sim/crew.ail`, World, time mapping, protocol intents and view, parity tool | 650 | CI-0 |
 | CI-2 | this | crew resources (`allocate`, lint), ship state data, four physics events | 300 | CI-1 |
 | CI-3 | this | `crew_reply` purpose: prompt and checks port, stub fixtures, fallback | 350 | CI-1 (and the AI service) |
@@ -190,14 +192,14 @@ CI-2, CI-3 and CI-4 can run in parallel after CI-1. Each fits one executor run.
 | AI spend or leaked identifiers | The stub by default; D-20 and D-21 budgets; the lab's `narrativeText` checks ported (AC9) |
 | The registry stays blocked | Vendoring works without it; the pin switch is one line later |
 
-## Open questions for Mark
+## Decisions (Mark, attended 2026-10-13; ledger D-70)
 
-1. **Crew turn length.** One turn per ship-day (recommended: fine-grained during legs, and archiving keeps long interludes cheap), or one per ship-week?
-2. **Featured crew names.** The pack uses roles (`medic`, `engineer`, `skeptic`…). Keep role ids as `entity_id` and add display names in the cast files? Recommended.
-3. **First scenario aboard.** `last-messages-home` fits the opening (departure, last messages, Earth's link narrowing). Or start with `processing-cascade`, the clearest resource story?
-4. **The drive's mass bill.** Show the D-69 bill to the crew as a ship event at departure, as a readout only (recommended for R2), or wait until the ledger is enforced?
-5. **Default captaincy.** Do new games start in consent or orders, and can the player switch? Recommended: consent by default, with orders as an explicit, journalled choice at the Voyage console.
-6. **The ergosphere authoring choice** (lab REVIEW finding). Add a third heat user, cut headroom from 3 to 2, or make bracing cheaper in mass, before that scenario comes aboard.
+1. **Crew turn length:** one turn per ship-day.
+2. **Featured crew names:** role ids stay the `entity_id`; display names go in the cast files.
+3. **First scenario aboard:** `last-messages-home`.
+4. **The drive's mass bill:** a ship event shown to the crew, readout only in R2.
+5. **Default captaincy:** consent by default. Orders are an explicit, journalled choice at the Voyage console. This needs a run-time `policy` command in crew_core (CI-0).
+6. **Ergosphere scenario:** add a third heat user (a lab authoring change, checked with `crew-sim --check`). This is needed only before that scenario comes aboard, so it is not in the R2 slice.
 
 ## Deliverables
 
