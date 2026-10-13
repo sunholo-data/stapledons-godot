@@ -86,6 +86,15 @@ A cohort is a crew_core actor of kind `cohort` with these fields:
 
 **The captain's lever (D-71(2)).** Controlling and encouraging births is a captain's duty. This supersedes bubble-society's "cannot prevent births". A `birth_policy` (*encourage*, *hold* or *restrict*) is a captain decision: set at the Voyage console, journalled, and available as a standing order. It scales the yearly birth rate within what resources allow. Cohorts react to it through their mix, so restricting births under scarcity costs trust with some cohorts and earns it with others. Escalation can raise it as a hold, for example when food runs short or a cohort demands children.
 
+**Births are a source of tension** (Mark, 2026-10-13: "it will likely be a big source of tension who can and can not have kids"). The crew lab's model (crew_core 0.4.0, `cohorts.tension`):
+- *restrict* costs a cohort trust in the captain each year, in proportion to its share of people aged 20–44, scaled by its agreeableness and extraversion; its mood sours at half that rate;
+- *encourage* while garden or water is short costs the conscientious cohorts trust instead;
+- *hold* is neutral.
+
+A pack claim checks that ten years of *restrict* brings some cohort to a pressure escalation. Rates are calibrated on the founders pack, in births per thousand fertile adults a year: encourage 70, hold 48 (about 1,540 at year 100), restrict 20. Replacement is about 47.
+
+**Open follow-up (CP-3 or R3): who gets permits.** Under *restrict*, which departments or households may have children would be a captain decision of its own, with fairness grievances ("the engineers got permits, the gardeners didn't"). It isn't built and has no ledger row yet; raise it with Mark when CP-3 is planned.
+
 - **Population flows** are yearly, not daily. **The target (D-75):** about 1,000 people at departure and about 1,500 a century later, so net growth near **0.4 % a year**. bubble-society's 2–4 % a year (20–40 births at 1,000) is the *encourage* ceiling in good conditions, not the default. The default `birth_policy` (*hold*) holds net growth near 0.4 %: births above deaths by about four people a year. That's a claim CP-1 checks over a century in the lab.
   - Births depend on the captain's `birth_policy`, headcount, the mood of the parents' cohort, and the resources the births need (food, water, living space at crew scale), up to bubble-society's ~2–4 % a year in good conditions.
   - Deaths come from an age profile plus crises (ship events with `loss`).
