@@ -72,8 +72,16 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Strict VM.** `make strict` gains a `crewScripted` entry (N turns of the pack, journal digest) on the strict VM, compared with the interpreter (AC4). `make parity` is unchanged and stays green.
 - **Gate:** `make crew-parity strict parity replay` (goldens unchanged, because the crew are off).
 
-### C2: protocol 2.x crew intents and the view (~280 LOC)
-- **Intents.** `ICrew(CrewCmd)` covers `crew_offer`, `crew_start`, `crew_relief`, `crew_cancel` and `crew_reply`. Each carries one crew_core input line, validated by the host. A refusal names the crew_core error (`refused.reason = "crew:<error>"`).
+### C2: protocol 2.x crew intents and the view (~280 LOC) ✅ 2026-10-13
+> **Done.**
+> - **Protocol 2.9.** `new_game` takes an optional `"crew": "consent" | "orders"` (`bad_game` below 2.9, or for any other value).
+> - **Six intents, not five.** `crew_ask` was added, because under consent the captain must ask before work can start (the lab's `persuade` step). Each intent carries one crew_core line, and the sim checks that the line's command matches the intent. No intent can carry an `answer`: decisions come only from the authored policy on the crew stream (D-20).
+> - **Refusals.** A refusal is `crew:<crew_core error>`, or `crew:no_crew` when no crew are aboard. Crew intents are applied in `tick()` before the ship's, with refusals merged in intent order. Below 2.9 a crew intent is `bad_intent`.
+> - **The `crew` section** (`sim/protocol_crew.ail crewView`, about 1.5 KB) is sent in full states and whenever it changes. It holds the turn and captaincy, and per member the indicators, **trust** (a crew→captain relationship, not an indicator), current work and low regard (< 30). It also lists open requests, unresolved reliefs, the last 6 heard lines and the resources.
+> - **Godot.** `SimBridge.CREW_MINOR`, `new_game(..., crew_captaincy)`, `crew_intent()`, and a validated `crew` mirror (`parse_crew`).
+> - **Tests.** `sim/protocol_crew_test.ail` (9, over `serve`) and `tests/test_crew_bridge.gd` (11, the real sim, `make crew-bridge-test`). `gr_test`'s cap expectation moved from 2.8 to 2.9, an intended change.
+
+- **Intents.** `ICrew(CrewCmd)` covers `crew_offer`, `crew_ask` (added in C2), `crew_start`, `crew_relief`, `crew_cancel` and `crew_reply`. Each carries one crew_core input line, validated by the host. A refusal names the crew_core error (`refused.reason = "crew:<error>"`).
 - **The view.** `state.crew` (only when `Params.crew = 1`) lists, per member, the indicators, trust and regard, then the open requests, the latest heard evidence lines and the eight resources (empty until C3). Codecs go in the new `sim/protocol_crew.ail`.
 - **Versions.** The protocol minor version goes up. The Godot `SimBridge` gets the minor bump and passes `state.crew` through.
 - **Hard rule.** The sim never reads AI text; crew words arrive only via `record`. A test sends text in `crew_reply`'s line and expects a refusal if it smuggles AI output into a decision field.

@@ -56,6 +56,10 @@ crew-parity:       ## AC3: scripted crew sessions in the game == standalone crew
 	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > $(SCRATCH)/crew-parity/$$n.ndjson; \
 	  cmp -s $(SCRATCH)/crew-parity/$$n.ndjson tests/crew/$$n.ndjson || { echo "crew-parity: FAIL: $$n recording changed (review, then make crew-parity-record)"; exit 1; }; done
 	@echo "crew-parity: ok (3 recordings, VM == interpreter)"
+crew-bridge-test:  ## AC6 (Godot side): the real sim at protocol 2.9 over SimBridge: crew section, crew intents, refusals, no crew below 2.9
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_bridge.gd > $(SCRATCH)/crew-bridge.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-bridge)' $(SCRATCH)/crew-bridge.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-bridge.log && grep -q '^crew-bridge: 0 failures$$' $(SCRATCH)/crew-bridge.log
+test: crew-bridge-test
 crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
 	@for n in consent orders argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
 test: crew-parity

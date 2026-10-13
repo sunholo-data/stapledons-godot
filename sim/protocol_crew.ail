@@ -1,0 +1,96 @@
+module stapledons/sim/protocol_crew
+
+-- R2-CREW C2 (design crew-integration.md §CI-1 "Protocol 2.x minor", AC6): the crew intents and
+-- the `crew` state section. An intent carries exactly one crew_core input line; the sim checks
+-- that its command matches the intent, then crew_core validates it (sim/crew.ail crewCommand).
+-- A refusal is "crew:<crew_core error>". The sim never reads AI text here: crew words arrive only
+-- through `record` (D-20).
+--   crew_offer  offer       a task to one crew member (captain)
+--   crew_ask    ask         the captain asks; the crew member answers at once (authored, SCrew)
+--   crew_start  start_task  start agreed (consent) or ordered (orders) work
+--   crew_relief resolve_relief  grant or deny a relief request
+--   crew_cancel cancel_request  withdraw an open request
+--   crew_reply  captain_reply   answer a crew concern (conversations)
+import std/string (concat, join, intToStr)
+import std/math (intToFloat)
+import std/list (map, filter, take, reverse, length, foldl, contains)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, JNull, decode, getString, encode, jo, ja, kv, js, jnum)
+import pkg/sunholo/crew_core/session (Session, Request)
+import pkg/sunholo/social_dynamics/model (State, Actor, Value, Task, TaskStatus, Offered, Working, Completed, Stopped, Relief, Evidence, Resource)
+import ./crew (CrewState, CrewCmd, crewTurn)
+
+export pure func crewIntentNames() -> [string] =
+  ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply"]
+
+-- The crew_core command each intent may carry.
+export pure func commandFor(kind: string) -> Option[string] =
+  if kind == "crew_offer" then Some("offer") else if kind == "crew_ask" then Some("ask")
+  else if kind == "crew_start" then Some("start_task") else if kind == "crew_relief" then Some("resolve_relief")
+  else if kind == "crew_cancel" then Some("cancel_request") else if kind == "crew_reply" then Some("captain_reply")
+  else None
+
+export pure func refusalReason(e: string) -> string = concat(["crew:", e])
+
+-- Decode an intent's line. Err is the refusal reason ("bad_intent" for a malformed line, so the
+-- shape errors stay the protocol's; crew_core's own errors come later as crew:<error>).
+export pure func decodeCrewIntent(kind: string, line: string) -> Result[CrewCmd, string] = match commandFor(kind) {
+  None => Err("bad_intent"),
+  Some(cmd) => match decode(line) {
+    Err(_) => Err("bad_intent"),
+    Ok(j) => if getString(j, "command") != Some(cmd) then Err("bad_intent")
+      else Ok({ kind: kind, line: line, askId: if cmd == "ask" then getString(j, "id") else None })
+  }
+}
+
+-- ------------------------------------------------------------------ the `crew` state section
+-- Compact by design: crew_core's own trace is ~40 KB a line. Godot reads only these fields.
+--   turn, captaincy
+--   members  [{id, indicators {id: value}, trust (in the captain), work {task, recipe, status} | null, regard_low [{to, value}]}]
+--   requests [{id, actor, task, legal [label]}]   open asks awaiting the captain's side
+--   reliefs  [{id, task, author}]                 unresolved relief requests
+--   heard    [{id, author, kind, text}]           the latest heardMax evidence lines, oldest first
+--   resources [{id, available, reserved, consumed}]
+export pure func heardMax() -> int = 6
+-- Regard is shown only when it is low (design CI-4: "regard shown only when it is low").
+export pure func regardLow() -> int = 30
+
+pure func valuesObj(vs: [Value]) -> Json = jo(map(\v. kv(v.id, jnum(intToFloat(v.value))), vs))
+pure func statusName(t: TaskStatus) -> string = match t { Offered => "offered", Working => "working", Completed => "completed", Stopped => "stopped" }
+pure func live(t: Task) -> bool = match t.status { Offered => true, Working => true, _ => false }
+
+pure func workOf(st: State, id: string) -> Json = match filter(\t. live(t) && contains(t.participants, id), st.tasks) {
+  t :: _ => jo([kv("task", js(t.id)), kv("recipe", js(t.recipe)), kv("status", js(statusName(t.status)))]),
+  [] => JNull
+}
+pure func regardOf(st: State, id: string) -> Json =
+  ja(map(\r. jo([kv("to", js(r.to)), kv("value", jnum(intToFloat(r.value)))]),
+    filter(\r. r.from == id && r.dimension == "regard" && r.value < regardLow(), st.relationships)))
+-- Trust in the captain is a relationship (member -> captain, dimension "trust"), not an indicator.
+pure func trustOf(st: State, id: string) -> Json = match filter(\r. r.from == id && r.to == "captain" && r.dimension == "trust", st.relationships) {
+  r :: _ => jnum(intToFloat(r.value)),
+  [] => JNull
+}
+pure func memberObj(st: State, a: Actor) -> Json =
+  jo([kv("id", js(a.id)), kv("indicators", valuesObj(a.indicators)), kv("trust", trustOf(st, a.id)), kv("work", workOf(st, a.id)), kv("regard_low", regardOf(st, a.id))])
+pure func requestObj(q: Request) -> Json =
+  jo([kv("id", js(q.id)), kv("actor", js(q.actor)), kv("task", js(q.task)), kv("legal", ja(map(js, q.legal)))])
+pure func reliefObj(r: Relief) -> Json = jo([kv("id", js(r.id)), kv("task", js(r.task)), kv("author", js(r.author))])
+pure func evidenceObj(e: Evidence) -> Json = jo([kv("id", js(e.id)), kv("author", js(e.author)), kv("kind", js(e.kind)), kv("text", js(e.text))])
+pure func resourceObj(r: Resource) -> Json =
+  jo([kv("id", js(r.id)), kv("available", jnum(intToFloat(r.available))), kv("reserved", jnum(intToFloat(r.reserved))), kv("consumed", jnum(intToFloat(r.consumed)))])
+pure func lastN(xs: [a], n: int) -> [a] = reverse(take(n, reverse(xs)))
+
+export pure func crewView(c: CrewState) -> string {
+  let s = c.session;
+  let st = s.state;
+  encode(jo([
+    kv("turn", jnum(intToFloat(crewTurn(c)))), kv("captaincy", js(s.policy)),
+    kv("members", ja(map(\a. memberObj(st, a), filter(\a. a.id != "captain", st.actors)))),
+    kv("requests", ja(map(requestObj, s.pending))),
+    kv("reliefs", ja(map(reliefObj, filter(\r. !r.resolved, st.reliefs)))),
+    kv("heard", ja(map(evidenceObj, lastN(filter(\e. e.author != "host", st.evidence), heardMax())))),
+    kv("resources", ja(map(resourceObj, st.resources)))
+  ]))
+}

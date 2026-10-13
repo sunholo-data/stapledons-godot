@@ -1,0 +1,73 @@
+module stapledons/sim/protocol_crew_test
+
+-- R2-CREW C2 tests (design crew-integration.md §CI-1 protocol, AC6; written red first in C0).
+-- Each crew intent carries one crew_core input line; the sim validates it through the host and a
+-- refusal names the crew_core error. state.crew is emitted only when the crew are aboard.
+import ./protocol_crew (decodeCrewIntent, crewIntentNames, refusalReason)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (concat, join, intToStr, contains)
+import std/json (encode, js)
+import ./protocol (Session, Served, newSession, serve)
+
+pure func names() -> bool =
+  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply"]
+
+pure func decodes(t: string, line: string) -> bool = match decodeCrewIntent(t, line) { Ok(_) => true, Err(_) => false }
+
+test "the six crew intents (crew_ask added in C2: consent needs the captain to ask)" { names() }
+test "a crew intent carries one crew_core line" {
+  decodes("crew_offer", "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}") &&
+  !decodes("crew_offer", "not json") && !decodes("crew_mutiny", "{\"command\":\"offer\"}")
+}
+test "a refusal names the crew_core error" { refusalReason("offer fields") == "crew:offer fields" }
+
+-- ---------------------------------------------------------------- AC6 over the NDJSON protocol
+
+pure func feedAll(s: Session, lines: [string], replies: [string]) -> [string] = match lines {
+  [] => replies,
+  l :: rest => { let r = serve(s, l); feedAll(r.session, rest, replies ++ [r.reply]) }
+}
+pure func hello(minor: int) -> string = concat(["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", intToStr(minor), "}}"])
+pure func game(crew: string) -> string =
+  concat(["{\"v\":2,\"type\":\"new_game\",\"seed\":2,\"scenario\":\"free_nav\",\"diag\":false", crew, "}"])
+pure func input(tick: int, intents: [string]) -> string =
+  concat(["{\"v\":2,\"type\":\"input\",\"tick\":", intToStr(tick), ",\"dtau\":0.0,\"intents\":[", join(",", intents), "]}"])
+pure func intent(k: string, line: string) -> string = concat(["{\"k\":\"", k, "\",\"line\":", encode(js(line)), "}"])
+pure func offerMedic() -> string = intent("crew_offer", "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}")
+pure func askMedic() -> string = intent("crew_ask", "{\"command\":\"ask\",\"actor\":\"medic\",\"task\":\"t1\",\"id\":\"r1\"}")
+pure func at(xs: [string], i: int) -> string = match xs { [] => "", x :: r => if i == 0 then x else at(r, i - 1) }
+
+test "2.9 with crew: the full state carries the crew; an offer and an ask are accepted" { case1() }
+test "a crew_core refusal is crew:<error> and changes nothing" { case2() }
+test "2.9 without crew: no crew section; crew intents are refused crew:no_crew" { case3() }
+test "below 2.9: a crew game is bad_game and a crew intent is bad_intent" { case4() }
+test "no intent can carry a crew answer: decisions come only from the authored policy (D-20)" {
+  !decodes("crew_ask", "{\"command\":\"answer\",\"request\":\"r1\",\"body\":\"{}\",\"roll\":0.5}") &&
+  !decodes("crew_reply", "{\"command\":\"answer\",\"request\":\"r1\",\"body\":\"{}\",\"roll\":0.5}") &&
+  !decodes("crew_offer", "{\"command\":\"advance\",\"tick\":9,\"budget\":64}")
+}
+test "an unknown captaincy is bad_game" {
+  contains(at(feedAll(newSession(), [hello(9), game(",\"crew\":\"mutiny\"")], []), 1), "bad_game")
+}
+
+pure func case1() -> bool {
+  let r = feedAll(newSession(), [hello(9), game(",\"crew\":\"consent\""), input(1, [offerMedic(), askMedic()])], []);
+  contains(at(r, 0), "\"minor\":9") &&
+  contains(at(r, 1), "\"crew\":{\"turn\":0,\"captaincy\":\"consent\",\"members\":[{\"id\":\"medic\"") &&
+  contains(at(r, 2), "\"refused\":[]") && contains(at(r, 2), "\"crew\":{") && contains(at(r, 2), "\"task\":\"t1\"") && contains(at(r, 1), "\"trust\":55")
+}
+pure func case2() -> bool {
+  let r = feedAll(newSession(), [hello(9), game(",\"crew\":\"orders\""),
+    input(1, [intent("crew_offer", "{\"command\":\"offer\",\"worker\":\"cook\",\"recipe\":\"work_cook\",\"id\":\"t1\"}")])], []);
+  contains(at(r, 2), "\"refused\":[{\"i\":0,\"reason\":\"crew:") && !contains(at(r, 2), "\"crew\":{\"turn\"")
+}
+pure func case3() -> bool {
+  let r = feedAll(newSession(), [hello(9), game(""), input(1, [offerMedic()])], []);
+  !contains(at(r, 1), "\"crew\":{\"turn\"") && contains(at(r, 2), "\"reason\":\"crew:no_crew\"")
+}
+pure func case4() -> bool {
+  let a = feedAll(newSession(), [hello(8), game(",\"crew\":\"consent\"")], []);
+  let b = feedAll(newSession(), [hello(8), game(""), input(1, [offerMedic()])], []);
+  contains(at(a, 1), "bad_game") && contains(at(b, 2), "bad_intent")
+}

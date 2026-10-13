@@ -21,7 +21,7 @@ import ./celestial (defaultEpochJd, solSystem, lyKm)
 import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
 import ./inferred_stars (CatStar, inferStar, remember)
 import ./stops (starStopKm)
-import ./crew (CrewState, initCrew, crewTick)
+import ./crew (CrewState, CrewCmd, initCrew, crewTick, crewIntents)
 import ./gr (GrState, GrResult, grOff, grStep, grShipPos, grApproach, grHover, grOrbit, grRing, grHoverEvent)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
@@ -97,6 +97,7 @@ export type Intent =
   | IAiOpen(AiOpen) | IAiCancel(AiCancel)
   | IWarp(float)
   | IGrApproach(GrApproachReq) | IGrHover | IGrOrbit | IGrRing
+  | ICrew(CrewCmd)
 -- M3.4b (protocol 2.6): the GR intents; sim/gr.ail holds their rules.
 export type GrApproachReq = { toR: float, betaLocal: float }
 export type Refusal = { i: int, reason: string }
@@ -244,7 +245,9 @@ pure func refuseWhileCommitted(diag: bool, p: Params, a: Pending, it: Intent) ->
     IGrApproach(_) => refuseIntent(a, "not_in_gr"),
     IGrHover => refuseIntent(a, "not_in_gr"),
     IGrOrbit => refuseIntent(a, "not_in_gr"),
-    IGrRing => refuseIntent(a, "not_in_gr")
+    IGrRing => refuseIntent(a, "not_in_gr"),
+    -- R2-CREW: crew intents are applied in tick() before the ship's (sim/crew.ail); never refused for a commitment
+    ICrew(_) => a
   }
 
 -- AI intents (sim/ai.ail): the step's ai state, its `ai` stream counter,
@@ -434,7 +437,9 @@ pure func applyFlat(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
     IGrApproach(_) => refuseIntent(a, "not_in_gr"),
     IGrHover => refuseIntent(a, "not_in_gr"),
     IGrOrbit => refuseIntent(a, "not_in_gr"),
-    IGrRing => refuseIntent(a, "not_in_gr")
+    IGrRing => refuseIntent(a, "not_in_gr"),
+    -- R2-CREW: crew intents are applied in tick() before the ship's (sim/crew.ail); never refused for a commitment
+    ICrew(_) => a
   }
 -- Draw (diag, M2.4): the stream's next value; its counter advances and
 -- the value is reported in a `draw` event.
@@ -700,11 +705,26 @@ export pure func tick(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
-  let r = tickBase(w, input);
-  let o = observe(w, r.world, r.events);
+  -- R2-CREW C2: the captain's crew intents first (they may draw on the crew stream), in order.
+  let ci = crewIntents(w.crew, w.seed, w.rng, crewCmds(input.intents, 0));
+  let w1 = { w | crew: ci.crew, rng: ci.rng };
+  let r0 = tickBase(w1, input);
+  let r = { r0 | refused: mergeRefused(r0.refused, map(\x. { i: x.i, reason: x.reason }, ci.refused)) };
+  let o = observe(w1, r.world, r.events);
   -- R2-CREW (sim/crew.ail): ship time reaches the crew; None (no crew aboard) is a no-op.
   let c = crewTick(o.crew, o.seed, o.rng, input.dtau);
   { world: { o | crew: c.crew, rng: c.rng }, refused: r.refused, events: r.events }
+}
+
+pure func crewCmds(xs: [Intent], i: int) -> [(int, CrewCmd)] = match xs {
+  [] => [],
+  x :: more => match x { ICrew(c) => (i, c) :: crewCmds(more, i + 1), _ => crewCmds(more, i + 1) }
+}
+-- Refusals in intent order.
+pure func mergeRefused(a: [Refusal], b: [Refusal]) -> [Refusal] = match (a, b) {
+  ([], _) => b,
+  (_, []) => a,
+  (x :: xs, y :: ys) => if x.i <= y.i then x :: mergeRefused(xs, b) else y :: mergeRefused(a, ys)
 }
 
 -- R2-CREW C1: bring the synced crew aboard a world (consent or orders, D-70 OQ5). Off by default

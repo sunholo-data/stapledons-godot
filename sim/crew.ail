@@ -177,6 +177,28 @@ export pure func crewCommand(c: CrewState, seed: int, rng: Rng, line: string, as
     }
   }
 
+-- A crew intent (sim/protocol_crew.ail decodes it): one crew_core line; askId when it is an ask.
+export type CrewCmd = { kind: string, line: string, askId: Option[string] }
+export type CrewRefusal = { i: int, reason: string }
+export type CrewApplied = { crew: Option[CrewState], rng: Rng, refused: [CrewRefusal] }
+
+-- The tick's crew intents in order (each with its index in the tick's intent list). A refusal is
+-- "crew:<crew_core error>" and changes nothing; "crew:no_crew" when no crew are aboard.
+export pure func crewIntents(crew: Option[CrewState], seed: int, rng: Rng, cmds: [(int, CrewCmd)]) -> CrewApplied =
+  match cmds {
+    [] => { crew: crew, rng: rng, refused: [] },
+    (i, cmd) :: rest => match crew {
+      None => { let r = crewIntents(crew, seed, rng, rest); { r | refused: { i: i, reason: "crew:no_crew" } :: r.refused } },
+      Some(c) => {
+        let s = crewCommand(c, seed, rng, cmd.line, cmd.askId);
+        match s.refused {
+          Some(e) => { let r = crewIntents(crew, seed, rng, rest); { r | refused: { i: i, reason: concat(["crew:", e]) } :: r.refused } },
+          None => crewIntents(Some(s.crew), seed, s.rng, rest)
+        }
+      }
+    }
+  }
+
 -- The world's crew on a sim tick: nothing when no crew are aboard (the default until C4).
 export type CrewTicked = { crew: Option[CrewState], rng: Rng }
 export pure func crewTick(crew: Option[CrewState], seed: int, rng: Rng, dtau: float) -> CrewTicked =
