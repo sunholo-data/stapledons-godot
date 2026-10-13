@@ -243,7 +243,7 @@
       "passes": true,
       "started": "2026-10-13",
       "completed": "2026-10-13",
-      "notes": "ui/crew_page.gd CrewPage (names D-74, bars warm >=70, regard low, work in words, template/AI lines via on_events, reliefs Grant/Deny; offer one press, start/relief/policy confirmed). SimBridge.queue; Voyage console Crew section only with crew aboard. tests/test_crew_console.gd 24 checks on recorded section (seed 1 orders, medic relief) incl real sim acceptance + queue path; make crew-console-test. make crew-console-capture -> renders/crew_console 3 frames, opened; fixed wrap bug + overflow. ship-console 120, no-twitch 24 (crewless), ship-ui 210, export audit, crew-bridge pass. Concern answers deferred to C8 hold card. Renders await Mark review."
+      "notes": "ui/crew_page.gd CrewPage (names D-74, bars warm >=70, regard low, work in words, template/AI lines via on_events, reliefs Grant/Deny; offer one press, start/relief/policy confirmed). SimBridge.queue; Voyage console Crew section only with crew aboard. tests/test_crew_console.gd 22 checks on recorded section (seed 1 orders, medic relief) incl real sim acceptance + queue path; make crew-console-test. make crew-console-capture -> renders/crew_console 3 frames, opened; fixed wrap bug + overflow. ship-console 120, no-twitch 24 (crewless), ship-ui 210, export audit, crew-bridge pass. Concern answers deferred to C8 hold card. Renders await Mark review."
     },
     {
       "id": "C8_AUTO_RUN_HOLDS",
