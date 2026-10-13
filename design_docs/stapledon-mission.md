@@ -101,12 +101,6 @@ The newest 3 STATUS stamps live here; older ones move to
 - **Done**: planner `pi:ollama/kimi-k3:cloud` (typed verdict ok, 1,038 s, 106 tools) wrote revision round 3 in `m4-first-journey-sprint.md` + the sprint JSON + a design-doc amendment note: M4.3b closed by absorption into R1-SHIP-UI (residue: the 3D-ship forward-pole invariant, moved to M4.5aR3/M4.6gR3); M4.5's scene half re-scoped to plain launch → Board the ship → consoles, with walking charged at 3.5 m/s in the ≤360 s proxy; M4.6's gated half re-scoped to ship goldens G-M4-S2/S3/S4 + 3D-ship S1 captures + `bench SCENE=bridge`; the never-created `m4-track-b` train removed. Controller spot-checked 8 citations at HEAD. Evaluator Sonnet (Agent tool) r1 84 PASS with 1 blocking (AC3 `grep -E` with escaped `\|` can never fail), fix applied verbatim with a positive control, r2 90 PASS 0 blocking.
 - **Next**: Mark's D-66. On approve, the attended hooks H1/H2 come first, then M4.5aR3 and M4.6gR3 are loop-routable (M4.6rR3 parks at S1). Until then: triage order L1 → L6 → L2 → L4 → L3 → L5 → L7 → R1 → R2. Evaluator non-blocking notes to carry into execution: AC5 replay is `--sim-only` (assert console `use()` intents in `playthrough`); CI time for `playthrough`; list the spec check values the S2–S4 goldens assert; who opens H1/H2.
 
-## STATUS 2026-10-08: iteration 23, D-52(A) M4 scene re-plan PARKED-ON-LANE (evaluator over ration; native Sonnet/Opus rejected); fleet ticket filed; no new plan, execution or product acceptance; clause 2 MET, 1/3/4 UNMET, 5 ongoing; goal unmoved.
-
-- **Clause map**: 1 UNMET → M1, attended; 2 MET; 3 UNMET → M3, attended only (D-53); 4 UNMET → D-52(A) re-plan M4.3b, M4.5 scene half and M4.6 gated half, blocked on evaluator capacity, then Mark's amended-plan approval; 5 ongoing.
-- **Outcome**: designer/planner/executor native GPT-6.1 Sol read-only preflights completed. Evaluator resolver `refuse over-ration:anthropic`; native `sonnet`/`opus` spawns rejected `Unknown model`. Independent evaluation UNMEASURED, no fallback judge or controller verdict. Fleet ticket `agent-tool:sonnet-unavailable`, `inbox_1791484114698_70705e85`.
-- **Next**: re-probe the evaluator resolver and required native judge after lane capacity returns (reset time unreported). Then amend the M4 plan/JSON against the title screen → Board the ship route, preserve M4.5s/CPU evidence, and stop for Mark's approval. Zero OPEN ledger rows.
-
 
 ## Decision ledger
 

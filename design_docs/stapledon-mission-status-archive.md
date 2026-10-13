@@ -2,6 +2,12 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-08: iteration 23, D-52(A) M4 scene re-plan PARKED-ON-LANE (evaluator over ration; native Sonnet/Opus rejected); fleet ticket filed; no new plan, execution or product acceptance; clause 2 MET, 1/3/4 UNMET, 5 ongoing; goal unmoved.
+
+- **Clause map**: 1 UNMET → M1, attended; 2 MET; 3 UNMET → M3, attended only (D-53); 4 UNMET → D-52(A) re-plan M4.3b, M4.5 scene half and M4.6 gated half, blocked on evaluator capacity, then Mark's amended-plan approval; 5 ongoing.
+- **Outcome**: designer/planner/executor native GPT-6.1 Sol read-only preflights completed. Evaluator resolver `refuse over-ration:anthropic`; native `sonnet`/`opus` spawns rejected `Unknown model`. Independent evaluation UNMEASURED, no fallback judge or controller verdict. Fleet ticket `agent-tool:sonnet-unavailable`, `inbox_1791484114698_70705e85`.
+- **Next**: re-probe the evaluator resolver and required native judge after lane capacity returns (reset time unreported). Then amend the M4 plan/JSON against the title screen → Board the ship route, preserve M4.5s/CPU evidence, and stop for Mark's approval. Zero OPEN ledger rows.
+
 ## STATUS 2026-10-08: iteration 22, iteration 21's orphan M4.5s (scene-independent session audits) VERIFIED and LANDED (PR #154, merge `029e44b`); independent Sonnet eval round 3 91 PASS, 0 blocking (iteration 21: 84 → 90); D-52 = A and D-53 (M3 attended-only) acknowledged; clause 2 MET, 1/3/4 UNMET, 5 ongoing; clause 4 moved.
 
 - **Clause map**: 1 UNMET → R1-M1-SKY-2 (attended); 2 MET; 3 UNMET → M3, plan approved (D-53) but **attended only**, so not loop-routable; 4 UNMET → R1-M4-JOURNEY: M4.0, M4.1, M4.2, M4.3a, M4.4, M4.6a, M4.7, M4.6 ungated ✅ and **M4.5s ✅ (this iteration)**; M4.3b, the M4.5 scene half and the M4.6 gated half need a re-plan against the unified 3D ship (D-52 = A); 5 ongoing (strict + parity green).
