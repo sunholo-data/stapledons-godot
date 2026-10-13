@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.52.0** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.54.6** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 **Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
@@ -142,7 +142,7 @@ paths: AILANG packages in runtime/cache/registry/OWNER/PKG/VER/ (or
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.52.0 (re-check again at each bump):**
+- **Workarounds, re-checked on v0.54.6 (re-check again at each bump; still-needed ones reported as ailang#1783):**
   - Still needed: run `ailang lock` after `ailang install`; on a clean machine
     `ailang lock` also fills the package cache (`make deps`). The lockfile's
     `generated_at` line churns on every run, so ignore it when diffing.
