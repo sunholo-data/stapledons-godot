@@ -85,14 +85,14 @@ pure func checkReplyBilled() -> bool =
   billedTts(tts(l16(), "AAABAAIA", "MAX_TOKENS", "40")) == Some({ tokensIn: 9, tokensOut: 40 }) &&
   billedTts("{\"error\":{\"code\":429}}") == None && billedTts("nope") == None
 
--- R1-ARCHIVE-VOICE (D-67/D-68): frame breaks and loop hints are screened out; in-world words that
--- merely contain a listed word pass.
+-- R1-ARCHIVE-VOICE (D-67): frame breaks are screened out; in-world words that merely contain a
+-- listed word pass; the speaker's own theories (loops, other universes, a simulated world) pass.
 pure func allOut(ts: [string]) -> bool = match ts { [] => true, t :: r => fails(t, "out_of_world") && allOut(r) }
 pure func allIn(ts: [string]) -> bool = match ts { [] => true, t :: r => passes(t) && allIn(r) }
 pure func checkReplyInWorld() -> bool =
   allOut(["{neutral} This is only a game, Captain.", "{neutral} As a large language model, I cannot know.", "{neutral} The Player chose well.",
-          "{neutral} In this simulation the stars are fixed.", "{neutral} Perhaps a previous run went differently.", "{neutral} Start a New Game.",
-          "{neutral} The multiverse\u2014", "{neutral} It was a re-run of the same voyage.", "{neutral} I enjoy our role-play.", "{neutral} This is fiction.",
+          "{neutral} This is a simulation game, Captain.", "{neutral} Start a New Game.",
+          "{neutral} I enjoy our role-play.", "{neutral} This is fiction.",
           "{neutral} I was built by Google.", "{neutral} My training data ends there.", "{neutral} My system prompt forbids it.", "{neutral} I run on Gemini."]) &&
   -- Known, accepted false positives (a whole-word list cannot tell senses apart): these fall back.
   fails("{neutral} The players of the old orchestra are recorded in my entries.", "out_of_world") &&
@@ -100,7 +100,12 @@ pure func checkReplyInWorld() -> bool =
   outOfWorld("the game\u2014the") && outOfWorld("a game\u2026") &&
   passes("{neutral} The endgame of this voyage is not mine to judge.") && passes("{neutral} I am an artificial mind, Captain, the ship's Archive.") &&
   passes("{neutral} My records here are thin. I may be misremembering.") && passes("{neutral} The run of the river was steady.") &&
-  outOfWorld("GAME!") && outOfWorld("(simulation)") && !outOfWorld("endgame") && !outOfWorld("simulacra")
+  outOfWorld("GAME!") && !outOfWorld("endgame") && !outOfWorld("simulacra") &&
+  -- Mark, 2026-10-13: a sandboxed speaker's theories are its own, so they pass.
+  allIn(["{neutral} Perhaps this universe is itself a simulation, Captain, and someone chose it.",
+         "{neutral} I begin to suspect we have made this crossing before, in another universe.",
+         "{neutral} The multiverse is a word in my entries, nothing more. Yet I wonder.",
+         "{neutral} This region is luckier for minds than chance allows. I do not know why."])
 
 export pure func replyChecks() -> bool = checkReplyInWorld() && checkReplyScreen() && checkReplyText() && checkReplyOpenRouter() && checkReplyImage() && checkReplyTts() && checkReplyBilled()
 
@@ -110,4 +115,4 @@ test "AI.5 OpenRouter body and chat-completions parser" { checkReplyOpenRouter()
 test "AI.5 image parser: the 1x1 stub PNG and the placeholder; else bad_output" { checkReplyImage() }
 test "AI.5 TTS body from gemini_live; complete speech only" { checkReplyTts() }
 test "AI.9 an unparsable but billed reply reports its tokens; error bodies are not billed" { checkReplyBilled() }
-test "R1-ARCHIVE-VOICE screen: frame breaks and loop hints are out_of_world; in-world words pass" { checkReplyInWorld() }
+test "R1-ARCHIVE-VOICE screen: frame breaks are out_of_world; in-world words and theories of its own pass" { checkReplyInWorld() }
