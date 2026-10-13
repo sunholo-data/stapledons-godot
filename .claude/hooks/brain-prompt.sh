@@ -21,6 +21,11 @@ command -v jq >/dev/null 2>&1 || exit 0
 
 PROMPT=$(jq -r '.prompt // ""' 2>/dev/null)
 [ "${#PROMPT}" -lt 25 ] && exit 0
+# Harness events (background-task and agent notifications) arrive as prompts but are not the
+# user's words; their ops vocabulary matched unrelated commits at 0.68-0.71 (2026-10-13).
+case "$PROMPT" in
+	*"<task-notification>"*|*"SYSTEM NOTIFICATION"*|*"<agent-message"*|*"<system-reminder>"*) exit 0 ;;
+esac
 MIN="${STAPLEDON_BRAIN_MIN_SCORE:-0.55}"
 LIMIT="${STAPLEDON_BRAIN_LIMIT:-3}"
 
