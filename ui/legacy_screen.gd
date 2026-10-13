@@ -1,10 +1,10 @@
 class_name LegacyScreen
 extends PanelContainer
-## M4.4 the legacy screen, shown when the ship is home again (arrived at Sol): the legacy log the
-## sim kept, a closing line, and "Begin again". EVERY number is a sim field. The closing line is
-## `clock.tau` (ship years) and `clock.t` (Earth years since departure), each formatted and nothing
-## more: Godot subtracts nothing. "Begin again" is a NEW voyage with a new seed: new_game on the
-## running sim, no reload of anything.
+## M4.4 the Voyage log (D-68; class name kept): the log the sim kept of THIS voyage only (no
+## memory survives the crossing), and, once the ship is home, a closing line. Starting over is
+## not here: it is the title screen's New game (D-68), out of world. EVERY number is a sim field.
+## The closing line is `clock.tau` (ship years) and `clock.t` (Earth years since departure), each
+## formatted and nothing more: Godot subtracts nothing.
 
 signal begun(seed: int)
 
@@ -13,7 +13,6 @@ const FMT := "%.2f"
 
 var copy: Dictionary = NewsCopy.load_json(NewsCopy.COPY)
 var closing := ComposedBinding.new()
-var begin_button := Button.new()
 var entries: Array = [] # the legacy log so far, as the sim appended it
 var rows: Array = [] # per entry: its DisplayBindings
 var seed_used := -1
@@ -58,10 +57,6 @@ func build() -> void:
 	closing.name = "Closing"
 	closing.add_theme_font_size_override("font_size", 18)
 	box.add_child(closing)
-	begin_button.text = labels["begin_again"]
-	begin_button.name = "BeginAgain"
-	begin_button.pressed.connect(func() -> void: begin_again(_sim))
-	box.add_child(begin_button)
 
 
 func attach(sim: SimBridge) -> void:
@@ -84,6 +79,7 @@ func show_world(view: Dictionary, hold_back := false) -> void:
 		for e in fresh.slice(maxi(0, fresh.size() - take)):
 			_add(e)
 		_count = int(lg["count"])
+	closing.visible = is_home(view) # "You were away ..." only once the ship is home
 	visible = is_home(view) and not hold_back # hold_back: the news panel is open over it
 	if visible:
 		closing.update_from(view)
@@ -104,7 +100,8 @@ func _add(e: Dictionary) -> void:
 	rows.append(row)
 
 
-## "Begin again": a new voyage on the running sim, a new seed. Everything of the old one is forgotten.
+## A new voyage on the running sim, a new seed; the log forgets the old one. Host-side only
+## (out of world, D-68): no in-world control calls it.
 func begin_again(sim: SimBridge) -> bool:
 	if sim == null:
 		return false

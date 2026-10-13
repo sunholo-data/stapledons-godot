@@ -37,7 +37,7 @@ const STATIONS := {
 const ACTIONS := {
 	"navigation": ["open", "select", "speed", "commit", "cancel", "home", "sgr_a", "approach", "leave"],
 	"voyage": ["open", "begin"],
-	"archive": ["open", "news", "legacy", "begin_again"], # D-66 H2: news from home, legacy log, Begin again (confirm)
+	"archive": ["open", "news", "log"], # D-66 H2 + D-68: news from home and this voyage's log; starting over is the title screen's New game, never a console
 }
 const ITINERARY := "Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
 const HINT := "Decisions are made at the bridge consoles: the Voyage console begins the guided voyage, the navigation station plots a course. Tab · Walk to."
@@ -244,24 +244,10 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 				return false
 			_reading().show_world(w); news_panel.open(); legacy_screen.visible = false
 			return true
-		["archive", "legacy"]:
+		["archive", "log"]:
 			_reading(); news_panel.close()
 			legacy_screen.show_world(demo.sky_world if demo.sky_world is Dictionary else {})
 			legacy_screen.visible = true
-			return true
-		["archive", "begin_again"]:
-			var home: bool = demo.sky_world is Dictionary and LegacyScreen.is_home(demo.sky_world)
-			if not home:
-				demo.refuse("A new voyage begins only once the ship is home.")
-				return false
-			_reading()
-			if not legacy_screen.begin_again(demo.journey_sim):
-				return false
-			# The fresh voyage replaces the session a guided tour was reading: the tour ends with it.
-			if demo.solar_tour != null:
-				demo.solar_tour = null
-				if demo.journey_map != null:
-					demo.journey_map.guided_read_only = false
 			return true
 		["voyage", "begin"]:
 			return demo.start_solar_departure()
@@ -781,7 +767,7 @@ func _reading() -> NewsPanel:
 		_reading_layer = CanvasLayer.new(); _reading_layer.layer = panel_layer.layer + 2; add_child(_reading_layer)
 		news_panel = NewsPanel.new(); _reading_layer.add_child(news_panel); news_panel.visible = false
 		legacy_screen = LegacyScreen.new(); _reading_layer.add_child(legacy_screen)
-		legacy_screen.build(); legacy_screen.begin_button.visible = false # Begin again is the console's confirm
+		legacy_screen.build()
 		legacy_screen.visible = false
 		var r := panel_rect()
 		for c: Control in [news_panel, legacy_screen]:
@@ -844,7 +830,7 @@ func _voyage_panel() -> void:
 	if demo.solar_tour != null:
 		panel_body.add_child(_label("Under way: " + demo.tour_line(), 14))
 		return
-	panel_body.add_child(_label("A new voyage replaces the current navigation session. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
+	panel_body.add_child(_label("The guided voyage replaces the current course. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
 	panel_body.add_child(confirm_button("voyage", "begin", "Begin guided voyage"))
 
 
@@ -862,10 +848,10 @@ func _archive_panel() -> void:
 	var news := HBoxContainer.new()
 	news.add_theme_constant_override("separation", 12)
 	panel_body.add_child(news)
-	var nl := _label("News and legacy log", 14)
+	var nl := _label("News and voyage log", 14)
 	nl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	news.add_child(nl)
-	for spec in [["legacy entries", "consequence.legacy.count", "%d"], ["latest news from", "consequence.news.star_id", "%s"]]:
+	for spec in [["log entries", "consequence.legacy.count", "%d"], ["latest news from", "consequence.news.star_id", "%s"]]:
 		var cap := _label(spec[0], 12, Color(0.62, 0.68, 0.8))
 		cap.autowrap_mode = TextServer.AUTOWRAP_OFF
 		news.add_child(cap)
@@ -879,8 +865,6 @@ func _archive_panel() -> void:
 	read_news.disabled = not NewsPanel.new().has_news(world)
 	read_news.pressed.connect(func() -> void: use("archive", "news"))
 	reading.add_child(read_news)
-	var read_legacy := Button.new(); read_legacy.text = "Legacy log"; read_legacy.name = "LegacyLog"
-	read_legacy.pressed.connect(func() -> void: use("archive", "legacy"))
-	reading.add_child(read_legacy)
-	if LegacyScreen.is_home(world):
-		reading.add_child(confirm_button("archive", "begin_again", "Begin again"))
+	var read_log := Button.new(); read_log.text = "Voyage log"; read_log.name = "VoyageLog"
+	read_log.pressed.connect(func() -> void: use("archive", "log"))
+	reading.add_child(read_log)

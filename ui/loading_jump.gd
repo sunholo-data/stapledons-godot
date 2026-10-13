@@ -2,7 +2,7 @@ class_name LoadingJump
 extends CanvasLayer
 ## The lightspeed loading view (design_docs/planned/r1/lightspeed-loading.md).
 ##
-## A title-screen route (Board the ship, Guided voyage, Galaxy map) runs behind
+## A title-screen route (New game, Guided voyage, Galaxy map) runs behind
 ## this layer. The title's own sky (InteriorSky: the real starfield, panorama,
 ## aberration, Doppler colour and the starbow) is taken over and accelerated
 ## along the galactic centre with rapidity phi = p * atanh(BETA_MAX), where p is
@@ -56,7 +56,7 @@ const STAGES := {
 		["build", "Building the galaxy map", "build", 40.0], ["frames", "First light", "frames", 80.0]],
 }
 const CREW_DIR := "res://assets/characters/captain" # demos/ship_geometry_demo.gd avatar.load_dir
-const TITLES := {"ship": "Board the ship", "guided": "Guided voyage", "map": "Galaxy map"}
+const TITLES := {"ship": "New game", "guided": "Guided voyage", "map": "Galaxy map"}
 const FRAMES_AT_DESTINATION := 3
 ## shown chases progress at most this fast (fraction per second), so a blocking
 ## build's jump in progress becomes a short visible acceleration instead of a cut.

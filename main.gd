@@ -6,7 +6,7 @@ extends Node3D
 ##               +/- time warp. The HUD shows the view-to-velocity angle.
 ##               Exposure (M1.5a): F fixed EV at the rest value, M eye / camera
 ##               metering, [ ] exposure bias (aid), G magnitude floor (aid).
-## Title screen: godot --path .   (a plain launch, no user args: ui/title_screen.gd; Board the ship /
+## Title screen: godot --path .   (a plain launch, no user args: ui/title_screen.gd; New game /
 ##              Guided voyage / Galaxy map / Settings / Credits / Quit; Esc in the ship or map returns to it)
 ## Current ship: godot --path . -- --ship-demo (live navigation, expanded painted 3D ship, captain eye)
 ## Sgr A* aboard: godot --path . -- --ship-demo --scenario=sgr_a (make run-bh; M3.6)
@@ -88,6 +88,11 @@ func _return_to_menu() -> void:
 	if not _from_menu: return
 	_from_menu = false
 	get_tree().change_scene_to_file("res://main.tscn")
+## D-68: the title screen's New game starts a new voyage with a fresh seed (never the fixed
+## 424242 that tests, --ship launches and the guided tour keep).
+static func new_game_seed() -> int:
+	var s := int(Time.get_unix_time_from_system() * 1000.0) % 2147483647
+	return s + 1 if s == 424242 else s
 ## guided: start the solar-departure tour as soon as the ship is ready (title screen).
 func _start_current_ship(live_start: bool, extra := {}, guided := false) -> void:
 	UiScale.configure(get_window(),not live_start and not guided)
@@ -150,6 +155,8 @@ func _route_now(route: String) -> void:
 	extra.merge(demo_overrides, true)
 	match route:
 		"ship":
+			if not extra.has("seed"):
+				extra["seed"] = new_game_seed() # D-68: New game is a new voyage, a fresh seed
 			_start_current_ship(true, extra)
 		"guided":
 			_start_current_ship(false, extra, true)
