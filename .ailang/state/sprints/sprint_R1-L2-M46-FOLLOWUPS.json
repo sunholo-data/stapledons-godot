@@ -1,0 +1,160 @@
+{
+  "sprint_id": "R1-L2-M46-FOLLOWUPS",
+  "status": "planned",
+  "approved": true,
+  "approved_by": "charter triage row L2 [LOOP] (design_docs/stapledon-mission.md:296) = queue row 7d (:331); next loop item in the armed order after L1 and L6 landed (:313 L2 -> L4 -> ...); design passed quorum 2026-10-13 after two rounds of fixes (records .ailang/state/mission-quorum/m46-followups-2026-10-13T04-24-49Z.json and m46-followups-2026-10-13T04-37-35Z.json; scope, files and direction unchanged)",
+  "created": "2026-10-13",
+  "design_doc": "design_docs/planned/r1/m46-followups.md",
+  "sprint_plan": "design_docs/planned/r1/m46-followups-sprint.md",
+  "branch": "mission/stapledon-iter27-l2-m46-followups",
+  "implements": [
+    "charter triage row L2 (design_docs/stapledon-mission.md:296, [LOOP]; order line 313: L1 done -> L6 done -> L2 -> L4 ...) and queue row 7d (:331): M4.6 follow-ups (a)-(c) and M4.5s follow-ups (d)-(e), clause 4/5 hygiene"
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "L2c",
+      "package": "none",
+      "action": "none",
+      "reason": "Makefile/grep lint block, .gd control fixtures, two one-line GDScript edits; no .ail touched"
+    },
+    {
+      "milestone": "L2e1",
+      "package": "none",
+      "action": "none",
+      "reason": "one comment line in sim/tools/session_audit.ail plus pure test strings in its test file; no package surface"
+    },
+    {
+      "milestone": "L2e2",
+      "package": "none",
+      "action": "none",
+      "reason": "prose rewording and a changelog fragment only"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 400,
+    "estimated_total_loc": 40,
+    "estimated_days": 1
+  },
+  "critical_path": [
+    "L2c_MERGED_PRECISION_LINT",
+    "L2e1_HOLDS_CLAUSE_KILLER",
+    "L2e2_D52_REWORDING_RECORD"
+  ],
+  "external_dependencies": [],
+  "pause_points": [],
+  "questions_for_mark": [],
+  "coordination": {
+    "PR_212_213_214": "Open attended PRs touch Makefile @10 (#212, the v0.54.6 AILANG bump), Makefile @1069 + main.gd @6/@88/@150 (#213), Makefile @1071 (#214) only (V14). This sprint edits Makefile:70-82, mk/m5.mk:6/10/75-82, main.gd:858 and tools/glow_eps_sheet.gd:164 - no conflict. AC16 asserts the Makefile diff stays inside lines 70-82 (hunks-ok). If #212 lands first, every command is unchanged (AC11/AC12 pin AILANG=runtime/bin/ailang by path).",
+    "do_not_touch": "demos/ship_consoles.gd, ui/legacy_screen.gd, data/news/copy.json, demos/ship_geometry_demo.gd, Makefile line 29 (the test: prerequisite list) and tests/fixtures/lint_precision/allowlist.txt (stays at 3 rows) - asserted by AC3 (line 29) and AC16 (the rest).",
+    "timing": "make test is ~40 min locally and ~80+ min in CI. It runs once, as AC17 at sprint end (locally: make test AILANG=runtime/bin/ailang). Milestone gates are targeted: make lint-precision (<1 s, V16), make session-audit-test codex-unlocks AILANG=runtime/bin/ailang, godot --headless --path . --script tests/test_interior.gd, plus make -n dry runs.",
+    "ailang_pin": "runtime/bin/ailang is staged and reports AILANG v0.52.0; it is the binary every sim-invoking gate must use (AILANG=runtime/bin/ailang). The PATH ailang is v0.16.7 - never rely on it. AC11/AC12 pin it in the command; V21 shows every mk/m45.mk step honours $(AILANG). A fresh worktree runs make runtime first."
+  },
+  "github_issues": [],
+  "milestones": [
+    {
+      "id": "L2c_MERGED_PRECISION_LINT",
+      "title": "One lint-precision covering the union of both rules (design L2c): LINT_OMB_RE beta -> (beta|b) with the m5 gamma alternative dropped as subsumed (V10); scope adds '*.gdshaderinc' and LINT_OMB_ALSO := physics/planets.gd guarded by git ls-files --error-unmatch (anti-vacuity); controls: bad_one_minus_beta.gd 4 -> 6 planted lines (adds hand gamma by b and 1 - b; signature b; header '6 lines'), good_one_minus_beta.gd +3 clean lines (21.0 - b, 1.0 - b_x, 1.0 - bx; signature b_x); count -eq 6 and 'of 6'; help/failure/ok messages name 'gamma or 1 - beta'; mk/m5.mk: delete 75-82, .PHONY :6 drops both lint names, m5-test :10 prerequisite lint-precision-m5 -> lint-precision; fix the two live hits: main.gd:858 if-branch 1.0 / sqrt(1.0 - b * b) -> Relativity.gamma_of(b) (else-branch unchanged, V17) and tools/glow_eps_sheet.gd:164 s.get(\"one_minus_beta\", 1.0 - b) -> s[\"one_minus_beta\"] (V19/V20). Allowlist stays at 3 rows.",
+      "estimated_loc": 22,
+      "dependencies": [],
+      "files": [
+        "Makefile (lines 70-80 only: LINT_OMB_RE, new LINT_OMB_ALSO, rule body, help and messages)",
+        "mk/m5.mk (line 6 .PHONY, line 10 m5-test prerequisite, delete lines 75-82)",
+        "tests/fixtures/lint_precision/bad_one_minus_beta.gd (2 planted lines, signature b, header '6 lines')",
+        "tests/fixtures/lint_precision/good_one_minus_beta.gd (3 clean lines, signature b_x)",
+        "main.gd (line 858 only)",
+        "tools/glow_eps_sheet.gd (line 164 only)"
+      ],
+      "acceptance_criteria": [
+        "AC1 - merged lint green at HEAD after the fixes, 6 planted lines and 3 allowlist rows: `make lint-precision` -> exit 0, prints `positive control matched 6 lines; 3 allowlisted` and ends `no live hand-computed gamma or 1 - beta)`",
+        "AC2 - lint-precision-m5 is gone; m5-test keeps a precision prerequisite: `git grep -c -e 'lint-precision-m5' -e 'PRECISION_M5' -- Makefile mk/` -> no output (exit 1); block AC2 (`make -pnq m5-test 2>/dev/null | grep -c -e '^m5-test:.*[[:space:]]lint-precision$' -e '^m5-test:.*[[:space:]]lint-precision[[:space:]]'`) -> >= 1",
+        "AC3 - make test still runs the lint from the unchanged Makefile line 29: block AC3 (`make -n test 2>/dev/null | grep -c 'positive control matched'` -> >= 1; `git diff origin/main -U0 -- Makefile | grep -c '^@@ -29[, ]'` -> 0)",
+        "AC4 - mutation drill (broken-pattern control): `make lint-precision LINT_OMB_RE=zzz; test $? != 0` -> passes, and the output contains `matched 0 of 6`",
+        "AC5 - mutation drill (over-broad-pattern control): `make lint-precision 'LINT_OMB_RE=1[[:space:]]*-'; test $? != 0` -> passes, output contains `clean control file matched`",
+        "AC6 - mutation drill (b name and gamma form in the planet renderer under physics/, real edit): `cp physics/planets.gd /tmp/pp && printf '\\nfunc _x(b: float) -> float:\\n\\treturn 1.0 / sqrt(1.0 - b * b)\\n' >> physics/planets.gd; make lint-precision; rc=$?; cp /tmp/pp physics/planets.gd; git diff --quiet physics/planets.gd && test $rc != 0` -> passes",
+        "AC7 - mutation drill (*.gdshaderinc in scope): `cp planets/rings.gdshaderinc /tmp/ri && printf '\\nfloat _g(float b) { return 1.0 / sqrt(1.0 - b * b); }\\n' >> planets/rings.gdshaderinc; make lint-precision; rc=$?; cp /tmp/ri planets/rings.gdshaderinc; git diff --quiet planets/rings.gdshaderinc && test $rc != 0` -> passes",
+        "AC8 - mutation drill (the two fixed sites regress loudly): block AC8 (sed reverts line 164, `make lint-precision 2>&1 | grep -c '^tools/glow_eps_sheet\\.gd:'` -> 1, restore via cmp-checked cp; then sed reverts main.gd:858, `grep -c '^main\\.gd:858:'` -> 1, restore) -> 1, then 1; both restores clean",
+        "AC9 - mutation drill (anti-vacuity, LINT_OMB_ALSO must be tracked): `make lint-precision LINT_OMB_ALSO=physics/nope.gd; test $? != 0` -> passes, output contains `untracked`",
+        "AC16 - do-not-touch files untouched, allowlist unchanged, Makefile diff inside the lint block: `git diff --quiet origin/main -- demos/ship_consoles.gd ui/legacy_screen.gd data/news/copy.json demos/ship_geometry_demo.gd tests/fixtures/lint_precision/allowlist.txt`; block AC16 (every Makefile hunk starts within lines 70-82) -> `hunks-ok`",
+        "AC18 - main.gd:858 is exactly the new line, the -U0 diff is that one line, only the if-branch changed 1.0 / sqrt(1.0 - b * b) -> Relativity.gamma_of(b) (V17): block AC18 -> prints `line-ok`, `diff-ok` and `only-if-branch-ok`",
+        "AC19 - tools/glow_eps_sheet.gd:164 is exactly the new line, the -U0 diff is that one line, only the right-hand side changed s.get(\"one_minus_beta\", 1.0 - b) -> s[\"one_minus_beta\"] (V19, V20): block AC19 -> prints `line-ok`, `diff-ok` and `only-rhs-ok`"
+      ],
+      "test_first_steps": [
+        "T1 (red): land the fixtures, the count 6, the pattern/scope/anti-vacuity/messages FIRST, with the two live hits NOT yet fixed; `make lint-precision` is red flagging exactly main.gd:858 and tools/glow_eps_sheet.gd:164 (the measured V9 hits); the controls still pass (6 of 6 planted; clean control clean); record the red output in the sprint notes",
+        "T2 (green): the two one-line fixes; `make lint-precision` green (AC1); blocks AC18 and AC19 print line-ok/diff-ok/only-if-branch-ok and line-ok/diff-ok/only-rhs-ok",
+        "T3: the mk/m5.mk fold; AC2 (git grep finds nothing; m5-test keeps the prerequisite) and AC3 (make -n test reaches the lint; line 29 untouched)",
+        "T4: drills AC4 (broken pattern), AC5 (over-broad pattern), AC6 (planet renderer), AC7 (gdshaderinc), AC8 (both fixed sites), AC9 (anti-vacuity) - all self-restoring via cp + git diff --quiet; AC16 hunks-ok"
+      ],
+      "mutation_drills": [
+        "AC4 broken-pattern control",
+        "AC5 over-broad-pattern control",
+        "AC6 planet-renderer real-edit drill",
+        "AC7 gdshaderinc drill",
+        "AC8 fixed-site regression drill",
+        "AC9 anti-vacuity drill"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "L2e1_HOLDS_CLAUSE_KILLER",
+      "title": "Keep the holds clause, kill its deletion mutant (design L2e1): in sim/tools/session_audit_test.ail add hintlessStream() (two state lines: journey committed with unlocked [], then unlocked [archive.late] with no ship or journey change), hintlessExpected() ({\"unlocks\":[{\"id\":\"archive.late\"}]}), checkHintless() (contains(codexReport(hintlessStream(), hintlessExpected()), \"codex-unlocks=FAIL\")), one test (codex unlock with no inferable trigger fails even when the expectation has no hint), and && checkHintless() in auditPure; then one comment line above the {c1 | seen: ... fold clause in sim/tools/session_audit.ail:94-95 saying what the clause guards. Logic unchanged; parity loop and auditTests mirror list unchanged (pure strings, strict VM, no FS).",
+      "estimated_loc": 8,
+      "dependencies": [],
+      "files": [
+        "sim/tools/session_audit_test.ail (hintlessStream, hintlessExpected, checkHintless, one test, auditPure conjunct)",
+        "sim/tools/session_audit.ail (one comment line, no logic)"
+      ],
+      "acceptance_criteria": [
+        "AC11 - the new test is green on the strict VM and the interpreter, on the pinned v0.52.0 (V21: every make step uses $(AILANG)): `make session-audit-test codex-unlocks AILANG=runtime/bin/ailang` -> exit 0; `runtime/bin/ailang run --quiet --bytecode --strict-bytecode --package-dir sim --entry auditPure --args-json 0 sim/tools/session_audit_test.ail` -> `session-audit-ok`",
+        "AC12 - mutation drill (deleting the holds clause now fails): `cp sim/tools/session_audit.ail /tmp/sa && sed -i '' 's/ \\&\\& all(\\\\h\\. holds(h, c1), hs)}/}/' sim/tools/session_audit.ail && ! grep -q 'all(\\\\h\\. holds(h, c1), hs)' sim/tools/session_audit.ail; make session-audit-test AILANG=runtime/bin/ailang; rc=$?; cp /tmp/sa sim/tools/session_audit.ail; git diff --quiet sim/tools/session_audit.ail && test $rc != 0` -> passes (before this change the same mutant left it green, V11)",
+        "AC13 - the logic is unchanged and only a comment was added: block AC13 (`git diff origin/main -- sim/tools/session_audit.ail | grep -E '^[+-][^+-]' | grep -vcE '^\\+ *--'`) -> 0"
+      ],
+      "test_first_steps": [
+        "T1 (test first): add hintlessStream/hintlessExpected/checkHintless/the test/the auditPure conjunct; run AC11 (`make session-audit-test codex-unlocks AILANG=runtime/bin/ailang` exit 0; strict-VM auditPure -> session-audit-ok); the test passes at once because the clause exists (by design, V12) - record the green run",
+        "T2 (the red proof): the AC12 holds-clause deletion drill - sed-delete the clause, guard the fragment is gone, `make session-audit-test AILANG=runtime/bin/ailang` must fail (rc != 0), restore via cp, git diff --quiet; the same mutant survived before this change (V11/V19b), so the failing run proves checkHintless is the killer - record the failing output",
+        "T3: add the one comment line in session_audit.ail; AC13 -> 0 (only comment lines added); re-run AC11 green"
+      ],
+      "mutation_drills": [
+        "AC12 holds-clause deletion drill"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "L2e2_D52_REWORDING_RECORD",
+      "title": "D-52 wording and the record-keeping close-out (design L2e2 plus the changelog): reword the four stale D-52 sites to the D-66 re-plan with meaning kept (changelogs/unreleased/2026-10-08-m4.5s-session-audits.md:5; design_docs/planned/r1/m4.5s-inventory.md:97, :139, :172; fragments verbatim from the design's site table); CREATE changelogs/unreleased/2026-10-13-l2-m46-followups.md (one ### fragment: (a), (b), (d) closed by evidence - 545887f/V1-V2, test_glow_mirror + the AC10 drill/V3-V4, PR #165/V5 - and (c), (e) fixed here; the historical 2026-10-03-m5-globes.md:17 is NOT rewritten); own the (b) forward-glow temperature drill and the sprint-level final gates AC15/AC17.",
+      "estimated_loc": 10,
+      "dependencies": [
+        "L2c_MERGED_PRECISION_LINT",
+        "L2e1_HOLDS_CLAUSE_KILLER"
+      ],
+      "files": [
+        "changelogs/unreleased/2026-10-08-m4.5s-session-audits.md (line 5)",
+        "design_docs/planned/r1/m4.5s-inventory.md (lines 97, 139, 172)",
+        "changelogs/unreleased/2026-10-13-l2-m46-followups.md (new)"
+      ],
+      "acceptance_criteria": [
+        "AC10 - mutation drill ((b) closed, reproducible): block AC10 (`cp interior/forward_glow.gd /tmp/fg && sed -i '' 's/t_pole \\* sqrt(sqrt(c))/t_pole * sqrt(c)/' interior/forward_glow.gd`; `godot --headless --path . --script tests/test_interior.gd | grep '^interior:'`) -> mutated `interior: 132 passed, 10 failures`; restore + git diff --quiet; unmutated `interior: 142 passed, 0 failures`",
+        "AC14 - no stale D-52 wording, and the meaning is kept: `grep -c -e 'until D-52 is resolved' -e 'once the D-52 scene is chosen' -e 'Resolve D-52' -e 'needs the D-52 bot' changelogs/unreleased/2026-10-08-m4.5s-session-audits.md design_docs/planned/r1/m4.5s-inventory.md` -> `0` for each file; `grep -c 'D-66' design_docs/planned/r1/m4.5s-inventory.md` -> >= 3; `grep -c 'stay null' design_docs/planned/r1/m4.5s-inventory.md` -> >= 1; `grep -c 'fixtures until' changelogs/unreleased/2026-10-08-m4.5s-session-audits.md` -> 1",
+        "AC15 - (a) and (d) are closed, with evidence that still holds: `grep -c ship_geometry_demo tests/fixtures/lint_precision/allowlist.txt` -> 0; `grep -n 'never computed here' demos/ship_geometry_demo.gd` -> 1 line; `gh pr view 165 --json state --jq .state` -> `MERGED`",
+        "AC17 - everything is green, with no Python added: `make test` -> exit 0, CI too (locally run as `make test AILANG=runtime/bin/ailang`; ~40 min local, ~80+ min CI - the sprint's one full-suite run); block AC17 (`git diff --name-only origin/main | grep -c '\\.py$'`) -> 0"
+      ],
+      "test_first_steps": [
+        "T1 (red): at HEAD run AC14's stale-wording greps - they find the 4 stale sites (until D-52 is resolved / once the D-52 scene is chosen / Resolve D-52 / needs the D-52 bot); record the non-zero counts as the red",
+        "T2 (green): apply the four replacement fragments and write the changelog fragment; AC14 green (0 stale per file; D-66 >= 3; stay null >= 1; fixtures until = 1); AC15 evidence green",
+        "T3 (drill + final gates): AC10 forward-glow temperature drill (mutate interior/forward_glow.gd:61 -> interior: 132 passed, 10 failures; restore -> interior: 142 passed, 0 failures); AC17 `make test AILANG=runtime/bin/ailang` exit 0 (~40 min local) and no-Python count 0; push; CI check `headless` green (~80+ min)"
+      ],
+      "mutation_drills": [
+        "AC10 forward-glow temperature drill"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "doc": "design_docs/planned/r1/m46-followups.md",
+  "iso_ts": "2026-10-13T04:37:35Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.158382,
+      "tokens_in": 11589,
+      "tokens_out": 8241,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Gate 1 fails on one of only two 'real' code changes: the stated replacement for tools/glow_eppsilon_sheet.gd:164 (var omb: float = s[\"one_minus_beta\"]) asserts a specific left-hand side that is never verified anywhere in the doc. The full current line 164 is never quoted byte-for-byte — Problem section and V9 show only the sanitised RHS fragment s.get(\"one_minus_beta\", 1.0 - b). If the line's actual LHS is anything else (var omb := ..., an assignment into a container, or part of a longer expression), the stated replacement line and AC8's end-anchored reverse sed drill are both wrong. This is exactly the defect class that BLOCKED quorum round 1 (objection 1, ellipsis-quoted main.gd:858 with unverified surroundings) — the fix (V17 byte-exact quote + AC18 byte-exact diff assertion) was applied to main.gd but not to the second live edit, leaving the premise 'line 164 only' unevidenced.",
+        "catch": "Verify and quote tools/glow_eps_sheet.gd line 164 verbatim (with context lines 160-170) and add a byte-exact AC for it, mirroring V17/AC18. Two smaller unverified premises to fix in the same pass: (1) AC16's Makefile-hunk assertion ('every @@ hunk starts within lines 70-82') has no executable command and no fenced block — it is the only AC that is not runnable as written, violating the doc's own AC convention; (2) AC11 invokes make session-audit-test codex-unlocks, asserting a positional-argument filtering behaviour of the m45 target that no verification-log row establishes at HEAD.",
+        "proposed_fix": "Add a V19 row to the Verification log: sed -n 164p tools/glow_eps_sheet.gd (plus sed -n 160,170p for context), quoted byte-for-byte in the Problem and Design sections, with the designer re-run recorded. Add an AC19 fenced block mirroring AC18 for glow_eps_sheet.gd: OLD/NEW constructed with printf, test \"$(sed -n 164p tools/glow_eps_sheet.gd)\" = \"$NEW\" \u0026\u0026 echo line-ok; -U0 diff equals exactly one removed/one added line (diff-ok); and a fragment-substitution check proving only the RHS changed, written to account for the dual change in the replacement (fallback removal AND call-shape change from .get(key, default) to [key]). Add a fenced block AC16 implementing the hunk-range check, e.g. extract hunk start lines via git diff origin/main -U0 -- Makefile | grep '^@@' | sed -E 's/^@@ -([0-9]+).*/\\1/' and assert every value lies in 70-82 via awk. Replace or substantiate AC11's first half: run make -n session-audit-test codex-unlocks at HEAD and record what the argument actually does as a V-row, or rewrite that command to a defined invocation of the same target."
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-3-1-pro",
+      "cost_usd": 0.029438,
+      "tokens_in": 12775,
+      "tokens_out": 324,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The document asserts that `s[\"beta\"]` and `s[\"gamma\"]` are read via strict dictionary access on lines 129 and 134 of `tools/glow_eps_sheet.gd`, and that `sim/protocol.ail:209` always carries `one_minus_beta`. These are critical factual codebase claims used to justify replacing a safe `.get()` fallback with strict `[]` access, but they are entirely unverified in the Verification Log. Additionally, claiming this strict access is 'the fix shape that (a) took' contradicts V1, which shows (a) safely guarding against missing keys with `ship.has()`.",
+        "catch": "Unverified premise regarding strict dictionary access in `tools/glow_eps_sheet.gd` and payload contents at `sim/protocol.ail:209`.",
+        "proposed_fix": "Add a Verification Log entry checking lines 129 and 134 of `tools/glow_eps_sheet.gd` (e.g., `sed -n '129p;134p' tools/glow_eps_sheet.gd`) and verifying `sim/protocol.ail:209`. Furthermore, update AC16 to use a valid shell command instead of English prose (`every @@ hunk of git diff... starts within lines 70-82`) to parse the Makefile diff."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0.10860500000000001,
+      "tokens_in": 11619,
+      "tokens_out": 20986,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The load-bearing L2e1 premise — V11/V12's measured claim that deleting the `holds` clause lets the hintless unlock pass, which is the sole justification for keeping the clause and adding `checkHintless` — was measured only on `ailang` v0.54.5 from `PATH`, not the v0.52.0 binary pinned in CI, and the bridging assertion that `codexReport` uses only `std/json`, `std/string` and `std/list` 'which hold no known version caveat' appears in no verification-log row. The acceptance suite then fails to close the gap it exists to close: AC11's second command pins `$A=runtime/bin/ailang`, but AC11's first command (`make session-audit-test codex-unlocks`) and the entire AC12 mutation drill invoke `make session-audit-test` with no AILANG pin, so the kill-proof — the whole point of L2e1 — can execute on the PATH binary and pass without v0.52.0 ever having been shown to exhibit the FAIL/PASS flip. The risk section resolves this by 'the executor re-runs AC11 and AC12 on runtime/bin/ailang', i.e. by intent rather than by any command in the doc; that is an unverified premise under gate 1, and it underpins one of the three code changes.",
+        "catch": "Two secondary flags: (1) AC12's guard `! grep -q 'holds(h, c1)'` can never succeed in the final state, because L2e1 step 2 adds a comment to `sim/tools/session_audit.ail` whose text contains the literal string `holds(h, c1)` — the deletion assertion is vacuous, the exact check-vacuity class V18 was added to eliminate (the drill's verdict still rides on `test $rc != 0`, so nothing proves the sed actually removed the clause). (2) The premises `s[\"beta\"]`/`s[\"gamma\"]` at `tools/glow_eps_sheet.gd:129`/`134` and the always-emitted `one_minus_beta` at `sim/protocol.ail:209` are line-cited but appear in no verification-log row, unlike every other load-bearing claim in the doc.",
+        "proposed_fix": "Three edits. (1) Add a controller verification row V19: after `make runtime`, re-run the V11 and V12 probes on `runtime/bin/ailang` (v0.52.0) and record identical results (deletion mutant leaves auditPure at session-audit-ok pre-merge; hintless case FAIL with the clause, PASS without), plus the output of an import scan of `sim/tools/session_audit.ail` substantiating the std/json, std/string, std/list claim, plus `grep -n AILANG Makefile mk/m45.mk` proving the make variable the risk section tells the executor to set actually exists and is honored. (2) Pin the interpreter inside the ACs themselves: AC11's first command and AC12 become `make session-audit-test AILANG=runtime/bin/ailang ...` (or the repo's canonical pin), so the acceptance suite cannot pass on the PATH binary. (3) Replace AC12's guard with a fragment unique to the clause, e.g. `! grep -q 'all(\\\\h\\. holds(h, c1), hs)'`, which the added comment cannot match, so the deletion is actually proven."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Round 2: controller verified V17 (line 858 full text, gamma_of_rapidity at relativity.gd:56) and V18 (escaped pipe vacuous) first-party; revision applies both fixes; scope unchanged."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-kimi-k3: Gate 1 fails on one of only two 'real' code changes: the stated replacement for tools/glow_eppsilon_sheet.gd:164 (var omb: float = s[\"one_minus_beta\"]) asserts a specific left-hand side that is never verified anywhere in the doc. The full current line 164 is never quoted byte-for-byte — Problem section and V9 show only the sanitised RHS fragment s.get(\"one_minus_beta\", 1.0 - b). If the line's actual LHS is anything else (var omb := ..., an assignment into a container, or part of a longer expression), the stated replacement line and AC8's end-anchored reverse sed drill are both wrong. This is exactly the defect class that BLOCKED quorum round 1 (objection 1, ellipsis-quoted main.gd:858 with unverified surroundings) — the fix (V17 byte-exact quote + AC18 byte-exact diff assertion) was applied to main.gd but not to the second live edit, leaving the premise 'line 164 only' unevidenced.",
+      "gemini-3-1-pro: The document asserts that `s[\"beta\"]` and `s[\"gamma\"]` are read via strict dictionary access on lines 129 and 134 of `tools/glow_eps_sheet.gd`, and that `sim/protocol.ail:209` always carries `one_minus_beta`. These are critical factual codebase claims used to justify replacing a safe `.get()` fallback with strict `[]` access, but they are entirely unverified in the Verification Log. Additionally, claiming this strict access is 'the fix shape that (a) took' contradicts V1, which shows (a) safely guarding against missing keys with `ship.has()`.",
+      "oc-glm-5-3: The load-bearing L2e1 premise — V11/V12's measured claim that deleting the `holds` clause lets the hintless unlock pass, which is the sole justification for keeping the clause and adding `checkHintless` — was measured only on `ailang` v0.54.5 from `PATH`, not the v0.52.0 binary pinned in CI, and the bridging assertion that `codexReport` uses only `std/json`, `std/string` and `std/list` 'which hold no known version caveat' appears in no verification-log row. The acceptance suite then fails to close the gap it exists to close: AC11's second command pins `$A=runtime/bin/ailang`, but AC11's first command (`make session-audit-test codex-unlocks`) and the entire AC12 mutation drill invoke `make session-audit-test` with no AILANG pin, so the kill-proof — the whole point of L2e1 — can execute on the PATH binary and pass without v0.52.0 ever having been shown to exhibit the FAIL/PASS flip. The risk section resolves this by 'the executor re-runs AC11 and AC12 on runtime/bin/ailang', i.e. by intent rather than by any command in the doc; that is an unverified premise under gate 1, and it underpins one of the three code changes."
+    ],
+    "absent_reviewers": [
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.296425,
+    "total_tokens_in": 35983,
+    "total_tokens_out": 29551
+  }
+}
