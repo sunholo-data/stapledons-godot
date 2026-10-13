@@ -1,0 +1,286 @@
+{
+  "sprint_id": "R2-CREW",
+  "status": "approved",
+  "approved": true,
+  "approved_by": "Mark (attended 2026-10-13, ledger D-71)",
+  "created": "2026-10-13",
+  "started": null,
+  "design_doc": "design_docs/planned/r2/crew-integration.md",
+  "sprint_plan": "design_docs/planned/r2/crew-integration-sprint.md",
+  "branch": "feat/r2-crew",
+  "implements": [
+    "crew-integration CI-1",
+    "CI-2",
+    "CI-3",
+    "CI-4",
+    "CI-5"
+  ],
+  "github_issues": [
+    221
+  ],
+  "external_dependencies": [
+    {
+      "what": "crew_core 0.3.0 (CI-0: archiving, ship_event, policy, standing orders, escalation, advance(n))",
+      "where": "sunholo-data/ailang-packages",
+      "owner": "crew-lab agent",
+      "blocks": [
+        "G1_REVENDOR_030",
+        "C3_SHIP_REACHES_CREW",
+        "C4_CREW_ON_PERF_GOLDENS",
+        "C8_AUTO_RUN_HOLDS"
+      ]
+    },
+    {
+      "what": "ailang#1811 registry validator OOM",
+      "effect": "crew_core stays vendored; pin switch is one line after the fix"
+    },
+    {
+      "what": "portrait sets for engineer, analyst, pilot, counselor (D-7)",
+      "where": "attended art task",
+      "blocks": [],
+      "note": "stub portraits until then"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "C0-C4",
+      "package": "sunholo/crew_core",
+      "action": "depend",
+      "reason": "vendored at a recorded commit until ailang#1811; engine changes contributed upstream only"
+    },
+    {
+      "milestone": "C1-C3",
+      "package": "sunholo/social_dynamics@0.4.0, sunholo/decisions@0.4.0",
+      "action": "depend",
+      "reason": "registry deps of crew_core"
+    },
+    {
+      "milestone": "C5",
+      "package": "sunholo/content_library@0.1.0",
+      "action": "depend",
+      "reason": "template fallback lines"
+    },
+    {
+      "milestone": "C3",
+      "package": "crew resources table",
+      "action": "none",
+      "reason": "port of the local-only lab bubble.ail; the game owns the table (design CI-2)"
+    },
+    {
+      "milestone": "C6",
+      "package": "-",
+      "action": "none",
+      "reason": "Godot UI"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 350,
+    "estimated_total_loc": 2490,
+    "estimated_days": 7
+  },
+  "critical_path": [
+    "C0_TESTS_VENDOR_SYNC",
+    "C1_EMBEDDED_HOST",
+    "C2_PROTOCOL",
+    "G1_REVENDOR_030",
+    "C3_SHIP_REACHES_CREW",
+    "C8_AUTO_RUN_HOLDS",
+    "C4_CREW_ON_PERF_GOLDENS",
+    "C7_EVALUATE_LAND"
+  ],
+  "pause_points": [
+    "after C2: report to Mark",
+    "G1: wait for CI-0, never patch the vendored copy",
+    "before C4 golden re-record: Mark reviews the listed diff",
+    "C6 and C8: Mark reviews console and hold-card renders",
+    "art: portrait sets are an attended asset task outside this sprint"
+  ],
+  "questions_for_mark": [
+    "Q1 SETTLED (Mark 2026-10-13): auto-run with critical moments; idle fast path advance(n) in CI-0",
+    "Q2 SETTLED (Mark 2026-10-13): yes, start on vendored 0.2.0, re-vendor at G1",
+    "Q3 SETTLED (Mark 2026-10-13): yes, Params.crew=0 until C4"
+  ],
+  "evaluations": [],
+  "coordination": {
+    "executor": "attended session (this clone)",
+    "evaluator": "different model from the executor",
+    "cio_owner": "crew-lab agent"
+  },
+  "features": [
+    {
+      "id": "C0_TESTS_VENDOR_SYNC",
+      "description": "Tests first; vendor crew_core 0.2.0@6dfc0fa to sim/vendor/crew-core with VENDORED; make crew-vendor/crew-vendor-check; data/crew sync (last-messages-home, policy) with SYNC manifest; sim/tools/crew_sync.ail generates sim/data/crew_pack.ail; make crew-sync-check",
+      "estimated_loc": 260,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make crew-vendor-check passes, and fails after a one-byte edit (negative control)",
+        "make crew-sync-check passes and diffs the regenerated crew_pack.ail",
+        "Red tests sim/crew_test.ail, sim/protocol_crew_test.ail fail for the stated reason (log in notes)",
+        "both checks wired into make test"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C1_EMBEDDED_HOST",
+      "description": "sim/crew.ail CrewState in World (Params.crew default 0); one crew turn per ship-day with carried remainder; SCrew-only draws; sim/tools/crew_parity.ail + three recordings; strict entry crewScripted",
+      "estimated_loc": 380,
+      "dependencies": [
+        "C0_TESTS_VENDOR_SYNC"
+      ],
+      "acceptance_criteria": [
+        "make crew-parity: three recordings byte-identical in-game vs standalone (AC3)",
+        "make strict covers crewScripted on the strict VM == interpreter (AC4)",
+        "test: crew draws move only the crew stream counter",
+        "make replay unchanged (crew off)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C2_PROTOCOL",
+      "description": "protocol 2.x minor: crew_offer/start/relief/cancel/reply intents, refusals crew:<error>, state.crew view in sim/protocol_crew.ail; SimBridge minor bump",
+      "estimated_loc": 280,
+      "dependencies": [
+        "C1_EMBEDDED_HOST"
+      ],
+      "acceptance_criteria": [
+        "sim/protocol_crew_test.ail: each intent validated, invalid refused with crew_core reason, reflected in state.crew (AC6)",
+        "make parity-v2 and make replay green",
+        "AI text never enters a decision field (test)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "G1_REVENDOR_030",
+      "description": "Re-vendor crew_core at the CI-0 commit (0.3.0) and re-prove parity",
+      "estimated_loc": 20,
+      "dependencies": [
+        "C2_PROTOCOL"
+      ],
+      "acceptance_criteria": [
+        "make crew-vendor-check crew-parity strict parity green at the CI-0 commit",
+        "no edits to sim/vendor beyond the vendor tool"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C3_SHIP_REACHES_CREW",
+      "description": "sim/crew_resources.ail (eight resources, allocate, lintPack), ship_state.json, mass from ledger; sim/crew_events.ail four physics moments via ship_event; crew.used readout; crew_policy intent (consent default)",
+      "estimated_loc": 380,
+      "dependencies": [
+        "G1_REVENDOR_030"
+      ],
+      "acceptance_criteria": [
+        "sim/crew_events_test.ail: four moments raise their events exactly once with the listed transfers (AC8)",
+        "make crew-sync-check includes the resource lint (AC7)",
+        "crew_policy switch journalled; new games start in consent",
+        "crew-parity re-recorded through run-time ship_event"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C4_CREW_ON_PERF_GOLDENS",
+      "description": "Params.crew default 1; make crew-perf; replay goldens re-recorded once in one listed commit",
+      "estimated_loc": 120,
+      "dependencies": [
+        "C3_SHIP_REACHES_CREW",
+        "C8_AUTO_RUN_HOLDS"
+      ],
+      "acceptance_criteria": [
+        "make crew-perf: 10-year interlude within the AC11 budget (as settled by Q1)",
+        "make replay twice identical; golden diff listed and reviewed (AC5)",
+        "make test green locally and in CI (AC12)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C5_CREW_WORDS",
+      "description": "crew_reply purpose: ai_request per ask, prompt port, narrativeText checks with mutation tests, stub fixtures, content_library fallback, cast files with display_name",
+      "estimated_loc": 350,
+      "dependencies": [
+        "C2_PROTOCOL"
+      ],
+      "acceptance_criteria": [
+        "make ai-test: crew_reply request per ask, stub answers, traits/ids rejected and fall back, no key no spend (AC9)",
+        "make in-world-voice-check green",
+        "each pack crew role has data/ai/cast/<role>.json with display_name"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C6_CREW_CONSOLE",
+      "description": "Crew page on the Voyage console; actions map to crew intents; consent/orders switch as a confirmed choice; tests/test_crew_console.gd; crew-console-capture",
+      "estimated_loc": 250,
+      "dependencies": [
+        "C2_PROTOCOL"
+      ],
+      "acceptance_criteria": [
+        "make crew-console-test: panel binds a recorded stream and emits the right intents (AC10)",
+        "make no-twitch-test covers the page",
+        "renders/crew_console/*.png opened and reviewed by Mark"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C8_AUTO_RUN_HOLDS",
+      "description": "CI-5: standing orders in World (critical_only preset), crew step via advance, crew_hold event + state.crew.holds, crew_orders intent, fourth parity recording, interlude stops at holds, hold card, presets on the Crew page",
+      "estimated_loc": 450,
+      "dependencies": [
+        "G1_REVENDOR_030",
+        "C3_SHIP_REACHES_CREW",
+        "C6_CREW_CONSOLE"
+      ],
+      "acceptance_criteria": [
+        "make crew-parity includes an auto recording; standing-order decisions journalled like player ones (AC13)",
+        "sim/crew_hold_test.ail: each escalation rule stops advance at the first matching turn with an escalated record (AC14)",
+        "tests/test_crew_hold.gd: interlude stops at crew_hold, card emits the chosen intent; no-twitch covers it (AC15)",
+        "make crew-perf: 10-year skip via advance within budget"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "C7_EVALUATE_LAND",
+      "description": "sprint-evaluator by a different model; report, move design doc to implemented/r2, changelog, design-repo roadmap; game-vision-designer re-score",
+      "estimated_loc": 0,
+      "dependencies": [
+        "C4_CREW_ON_PERF_GOLDENS",
+        "C5_CREW_WORDS",
+        "C6_CREW_CONSOLE"
+      ],
+      "acceptance_criteria": [
+        "evaluation >= 70/100 in .ailang/state/evaluations/",
+        "design doc and report in design_docs/implemented/r2/"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ]
+}
