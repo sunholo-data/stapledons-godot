@@ -1,0 +1,73 @@
+module stapledons/sim/crew_test
+
+-- R2-CREW C1 tests (design crew-integration.md §CI-1; sprint R2-CREW C0 wrote them red first).
+-- The embedded crew host: started from the synced pack, one crew turn per ship-day with the
+-- remainder carried exactly, and every crew draw on the crew stream only.
+import ./crew (CrewState, initCrew, daysIn, crewStep, crewTurn, scenarioId, answerSeed)
+import ./rng (Rng, SJourney, SCrew, SEvents, SGalaxy, SAi, SNews, zeroRng, counter)
+import std/result (Result, Ok, Err)
+import std/option (Option, Some, None)
+import ./core (World, newWorld, defaultParams, tick, withCrew)
+
+pure func year() -> float = 1.0
+pure func day() -> float = 1.0 / 365.25
+
+pure func started(policy: string) -> bool = match initCrew(policy) {
+  Ok(c) => scenarioId(c) == "stapledon-last-messages-home" && crewTurn(c) == 0,
+  Err(_) => false
+}
+
+-- daysIn(rem, dtau): whole ship-days in rem + dtau, and the ship-years left over.
+pure func checkDays() -> bool =
+  { let a = daysIn(0.0, 3.0 * day() + 0.25 * day()); a.days == 3 && a.left > 0.0 && a.left < day() } &&
+  { let b = daysIn(0.0, 0.5 * day()); b.days == 0 && b.left == 0.5 * day() } &&
+  (daysIn(0.0, year())).days == 365 &&
+  { let z = daysIn(0.0, 0.0); z.days == 0 && z.left == 0.0 }
+
+-- Nothing moves at dtau 0; ten days advance ten turns; only the crew counter may move.
+pure func otherStreamsStill(a: Rng, b: Rng) -> bool =
+  counter(a, SJourney) == counter(b, SJourney) && counter(a, SEvents) == counter(b, SEvents) &&
+  counter(a, SGalaxy) == counter(b, SGalaxy) && counter(a, SAi) == counter(b, SAi) && counter(a, SNews) == counter(b, SNews)
+
+pure func checkStep() -> bool = match initCrew("consent") {
+  Err(_) => false,
+  Ok(c) => {
+    let still = crewStep(c, 7, zeroRng(), 0.0);
+    let ten = crewStep(c, 7, zeroRng(), 10.0 * day());
+    crewTurn(still.crew) == 0 && counter(still.rng, SCrew) == 0 && otherStreamsStill(zeroRng(), still.rng) && still.lines == [] &&
+    crewTurn(ten.crew) == 10 && otherStreamsStill(zeroRng(), ten.rng) && counter(ten.rng, SCrew) >= 0
+  }
+}
+
+-- Same seed, same dtau: the same crew, byte for byte (no hidden state).
+pure func checkDeterminism() -> bool = match initCrew("orders") {
+  Err(_) => false,
+  Ok(c) => {
+    let a = crewStep(c, 11, zeroRng(), 40.0 * day());
+    let b = crewStep(c, 11, zeroRng(), 40.0 * day());
+    a.lines == b.lines && a.crew.session == b.crew.session && crewTurn(a.crew) == 40 && counter(a.rng, SCrew) == counter(b.rng, SCrew)
+  }
+}
+
+test "crew start from the synced pack, consent and orders" { started("consent") && started("orders") }
+test "an unknown captaincy is refused" { match initCrew("mutiny") { Ok(_) => false, Err(_) => true } }
+test "ship-days from ship-years, remainder carried" { checkDays() }
+test "crew step: one turn per day, crew stream only" { checkStep() }
+test "answer seeds stay in the MINSTD range" {
+  answerSeed(0) == 1 && answerSeed(0 - 1) >= 1 && answerSeed(0 - 1) <= 2147483646 &&
+  answerSeed(9223372036854775807) >= 1 && answerSeed(0 - 9223372036854775807 - 1) <= 2147483646
+}
+test "crew step is deterministic" { checkDeterminism() }
+
+-- World level: tick() passes ship time to an aboard crew; a world without crew is untouched
+-- (the default until C4, so recorded sessions keep their goldens).
+pure func worldTurn(w: World) -> int = match w.crew { Some(c) => crewTurn(c), None => 0 - 1 }
+pure func checkWorld() -> bool = match withCrew(newWorld(5, false, defaultParams()), "consent") {
+  Err(_) => false,
+  Ok(w) => {
+    let w2 = (tick(w, {dtau: 3.0 * day() + 0.000001, intents: []})).world;
+    let bare = (tick(newWorld(5, false, defaultParams()), {dtau: 3.0 * day() + 0.000001, intents: []})).world;
+    worldTurn(w2) == 3 && otherStreamsStill(w.rng, w2.rng) && worldTurn(bare) == 0 - 1
+  }
+}
+test "tick advances an aboard crew; no crew by default" { checkWorld() }

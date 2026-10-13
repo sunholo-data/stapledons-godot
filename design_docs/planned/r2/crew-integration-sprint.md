@@ -50,7 +50,15 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Red tests.** Write `sim/crew_test.ail`, `sim/protocol_crew_test.ail` and `tests/crew/*.ndjson` (empty recordings) failing for the stated reason, and keep the log.
 - **Gate:** `make crew-vendor-check crew-sync-check`, both wired into `make test`.
 
-### C1: `sim/crew.ail`, the embedded host (~380 LOC)
+### C1: `sim/crew.ail`, the embedded host (~380 LOC) ✅ 2026-10-13
+> **Done.** Findings that change the design:
+> - **One `advance` line per ship-day.** crew_core applies due yields and scheduled events *after* an advance completes, so one multi-day advance fires a day-3 event at the end of the span, after the work holding the resource has finished. That loses the argument. This is the per-turn cost CI-0's `advance(n)` must remove without changing semantics.
+> - **Seeds.** content_library's MINSTD roll takes seeds in [1, 2147483646]. A crew-stream draw maps to `1 + top53(v) mod 2147483646` (`answerSeed`, tested).
+> - **Off by default.** `World.crew: Option[CrewState]`, `None` by default, replaces the planned `Params.crew` flag. It's equivalent and leaves the protocol's params decoder untouched. `withCrew(w, captaincy)` brings the crew aboard.
+> - **Fixture seed.** It is 2: at seed 7 the medic declines and consent correctly refuses the start ("personal consent required").
+> - **Export (a must-fix).** The shipped sim now imports crew_core. `export_presets.cfg` includes `vendor/crew-core`, `SimBridge` unpacks `res://vendor` and fingerprints it (`bundle_inputs`), the export audit has a row for it, and the fingerprint test covers a re-vendor.
+> - **Costs.** The strict VM's cold start is +2.6 s (warm +0.5 s) because crew_core compiles eagerly. `ailang check --package sim` went from ~60 s to ~170 s.
+
 - **State.** `CrewState` holds the `Session`, the scenario id, the crew turn and `dayRem` (ship-years not yet turned into days). `World.crew` is set by `newWorld` from `crew_pack`. `Params.crew` defaults to 0 (off), so nothing advances and no state is emitted.
 - **Time (D-70 OQ1).** `crewStep(world, dtau)` adds `dtau`, takes whole ship-days with `floor(rem * 365.25)`, carries the exact remainder, and advances the host one turn per day under a fixed per-turn budget.
 - **Randomness.** Every crew draw uses `SCrew`. A test asserts the other five counters don't move.

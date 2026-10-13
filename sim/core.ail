@@ -21,6 +21,7 @@ import ./celestial (defaultEpochJd, solSystem, lyKm)
 import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
 import ./inferred_stars (CatStar, inferStar, remember)
 import ./stops (starStopKm)
+import ./crew (CrewState, initCrew, crewTick)
 import ./gr (GrState, GrResult, grOff, grStep, grShipPos, grApproach, grHover, grOrbit, grRing, grHoverEvent)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
@@ -147,7 +148,7 @@ export pure func availableKgStart() -> float = 20000.0
 -- the threshold cache (a pure function of the medium and the rapidity, kept to skip recomputing).
 export type DustState = { last: DustTick, legExpected: float, legGrains: float, medium: Medium, crossed: [Medium], legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
 export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legGrains: 0.0, medium: hotMedium(), crossed: [], legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar] }
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar], crew: Option[CrewState] }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -176,7 +177,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [] }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [], crew: None }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -700,7 +701,17 @@ export pure func tick(w: World, input: TickInput) -> Ticked
   ensures { result.world.tick == w.tick + 1 }
 {
   let r = tickBase(w, input);
-  { world: observe(w, r.world, r.events), refused: r.refused, events: r.events }
+  let o = observe(w, r.world, r.events);
+  -- R2-CREW (sim/crew.ail): ship time reaches the crew; None (no crew aboard) is a no-op.
+  let c = crewTick(o.crew, o.seed, o.rng, input.dtau);
+  { world: { o | crew: c.crew, rng: c.rng }, refused: r.refused, events: r.events }
+}
+
+-- R2-CREW C1: bring the synced crew aboard a world (consent or orders, D-70 OQ5). Off by default
+-- until C4, so recorded sessions keep their goldens.
+export pure func withCrew(w: World, captaincy: string) -> Result[World, string] = match initCrew(captaincy) {
+  Ok(c) => Ok({ w | crew: Some(c) }),
+  Err(e) => Err(e)
 }
 
 -- ------------------------------------------------------------ consequence readouts (M4.1)

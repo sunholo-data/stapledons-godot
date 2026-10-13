@@ -1,0 +1,70 @@
+module stapledons/sim/crew_script
+
+-- R2-CREW C1: scripted crew sessions for `make strict` (AC4) and `make crew-parity` (AC3).
+-- A script is what a captain does: crew_core command lines (an `ask` is answered at once by the
+-- authored policy, drawing on the crew stream) and ship-days passing. Running one through
+-- sim/crew.ail yields the lines the sim fed crew_core and its journal records.
+--   consent  offer, ask (authored answer), start, the scheduled ship event, a check-in
+--   orders   start without consent, a check-in
+--   argument the analyst (from tick 1) and the medic (from tick 2) hold signal when
+--            `earth_recedes` (tick 3) takes 2 and only 1 is free
+import std/string (concat, join, intToStr)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/crypto (sha256Hex)
+import ./crew (CrewState, CrewStepped, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn)
+import ./rng (Rng, SCrew, zeroRng, counter)
+import std/math (intToFloat)
+
+export type Step = SCmd(string, Option[string]) | SDays(int)
+export type Script = { name: string, captaincy: string, steps: [Step] }
+export type Ran = { start: string, lines: [string], traces: [string], turn: int, crewDraws: int, refused: Option[string] }
+
+pure func offer(worker: string, id: string) -> Step =
+  SCmd(concat(["{\"command\":\"offer\",\"worker\":\"", worker, "\",\"recipe\":\"work_", worker, "\",\"id\":\"", id, "\"}"]), None)
+pure func ask(actor: string, task: string, id: string) -> Step =
+  SCmd(concat(["{\"command\":\"ask\",\"actor\":\"", actor, "\",\"task\":\"", task, "\",\"id\":\"", id, "\"}"]), Some(id))
+pure func begin(task: string) -> Step = SCmd(concat(["{\"command\":\"start_task\",\"task\":\"", task, "\"}"]), None)
+
+export pure func scripts() -> [Script] = [
+  { name: "consent", captaincy: "consent", steps: [offer("medic", "t1"), ask("medic", "t1", "r1"), begin("t1"), SDays(1), ask("medic", "t1", "c1"), SDays(5)] },
+  { name: "orders", captaincy: "orders", steps: [offer("engineer", "t1"), begin("t1"), SDays(2), ask("engineer", "t1", "c1"), SDays(5)] },
+  { name: "argument", captaincy: "orders", steps: [SDays(1), offer("analyst", "t1"), begin("t1"), SDays(1), offer("medic", "t2"), begin("t2"), SDays(3)] }
+]
+
+-- A ship-day count as ship-years, a hair over so floor() lands on the whole day.
+pure func years(days: int) -> float = intToFloat(days) / daysPerYear() + 0.0000001
+
+pure func run(c: CrewState, seed: int, rng: Rng, steps: [Step], lines: [string], traces: [string]) -> {crew: CrewState, rng: Rng, lines: [string], traces: [string], refused: Option[string]} =
+  match steps {
+    [] => { crew: c, rng: rng, lines: lines, traces: traces, refused: None },
+    st :: rest => {
+      let r = match st { SCmd(line, askId) => crewCommand(c, seed, rng, line, askId), SDays(n) => crewStep(c, seed, rng, years(n)) };
+      match r.refused {
+        Some(e) => { crew: r.crew, rng: r.rng, lines: lines ++ r.lines, traces: traces ++ r.traces, refused: Some(e) },
+        None => run(r.crew, seed, r.rng, rest, lines ++ r.lines, traces ++ r.traces)
+      }
+    }
+  }
+
+-- Run a script on a traced crew (crew_core keeps its journal records).
+export pure func runScript(s: Script, seed: int) -> Result[Ran, string] = match initCrewWith(s.captaincy, true) {
+  Err(e) => Err(e),
+  Ok((c, t0)) => {
+    let r = run(c, seed, zeroRng(), s.steps, [], []);
+    Ok({ start: t0, lines: r.lines, traces: r.traces, turn: crewTurn(r.crew), crewDraws: counter(r.rng, SCrew), refused: r.refused })
+  }
+}
+
+-- The journal as crew_core.session.recording prints it: the start record, then one per line.
+export pure func journal(r: Ran) -> string = join("\n", r.start :: r.traces)
+
+-- `make strict` entry: every script on the strict VM; one digest line each.
+export pure func crewScripted(seed: int) -> string = join(" | ", map(\s. match runScript(s, seed) {
+  Err(e) => concat([s.name, " error ", e]),
+  Ok(r) => concat([s.name, " turn ", intToStr(r.turn), " lines ", intToStr(length(r.lines)), " draws ", intToStr(r.crewDraws),
+    match r.refused { Some(e) => concat([" refused ", e]), None => "" }, " sha ", sha256Hex(journal(r))])
+}, scripts()))
+
+pure func map(f: a -> b, xs: [a]) -> [b] = match xs { [] => [], x :: r => f(x) :: map(f, r) }
+pure func length(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + length(r) }

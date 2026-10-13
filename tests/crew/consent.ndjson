@@ -1,0 +1,13 @@
+{"command":"start","policy":"consent","scenario":"watch-v3"}
+{"command":"offer","worker":"medic","recipe":"work_medic","id":"t1"}
+{"command":"ask","actor":"medic","task":"t1","id":"r1"}
+{"command":"answer","request":"r1","body":"{\"model\":\"synthetic:library-v1\",\"id\":\"library-r1\",\"answers\":{\"response\":{\"type\":\"choice\",\"choice\":\"accept\",\"confidence\":1,\"probabilities\":{\"accept\":1,\"decline\":0,\"concern\":0,\"defer\":0}}},\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cost\":0}}","roll":0.4779436329742631}
+{"command":"start_task","task":"t1"}
+{"command":"advance","tick":1,"budget":64}
+{"command":"ask","actor":"medic","task":"t1","id":"c1"}
+{"command":"answer","request":"c1","body":"{\"model\":\"synthetic:library-v1\",\"id\":\"library-c1\",\"answers\":{\"response\":{\"type\":\"choice\",\"choice\":\"continue\",\"confidence\":1,\"probabilities\":{\"continue\":1,\"request_relief\":0,\"defer\":0}}},\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cost\":0}}","roll":0.04672654301241345}
+{"command":"advance","tick":2,"budget":64}
+{"command":"advance","tick":3,"budget":64}
+{"command":"advance","tick":4,"budget":64}
+{"command":"advance","tick":5,"budget":64}
+{"command":"advance","tick":6,"budget":64}

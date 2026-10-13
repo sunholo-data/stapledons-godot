@@ -44,6 +44,21 @@ crew-sync:         ## re-sync the crew pack: make crew-sync CREW_SRC=<ailang-pac
 crew-sync-check:   ## AC7: data/crew matches SYNC, sim/data/crew_pack.ail regenerates identically, embedded text round-trips
 	@AILANG="$(AILANG)" SCRATCH="$(SCRATCH)/crew-sync" sh tools/crew_sync.sh check
 test: crew-vendor-check crew-sync-check
+CREW_PARITY = --package-dir sim --entry parity --args-json 0 sim/tools/crew_parity.ail
+crew-parity:       ## AC3: scripted crew sessions in the game == standalone crew_core (byte for byte), VM == interpreter, lines == tests/crew/*.ndjson
+	@mkdir -p $(SCRATCH)/crew-parity
+	@$(AILANG) run --quiet --bytecode --strict-bytecode $(CREW_PARITY) > $(SCRATCH)/crew-parity/vm.txt
+	@$(AILANG) run --quiet $(CREW_PARITY) > $(SCRATCH)/crew-parity/interp.txt
+	@cat $(SCRATCH)/crew-parity/vm.txt
+	@cmp -s $(SCRATCH)/crew-parity/vm.txt $(SCRATCH)/crew-parity/interp.txt || { echo "crew-parity: FAIL: VM and interpreter differ"; exit 1; }
+	@! grep -v ' ok lines ' $(SCRATCH)/crew-parity/vm.txt
+	@for n in consent orders argument; do \
+	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > $(SCRATCH)/crew-parity/$$n.ndjson; \
+	  cmp -s $(SCRATCH)/crew-parity/$$n.ndjson tests/crew/$$n.ndjson || { echo "crew-parity: FAIL: $$n recording changed (review, then make crew-parity-record)"; exit 1; }; done
+	@echo "crew-parity: ok (3 recordings, VM == interpreter)"
+crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
+	@for n in consent orders argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
+test: crew-parity
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
@@ -286,6 +301,9 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	  echo "strict rngVm seed $$seed: VM $$got | interpreter $$interp | reference $$want"; \
 	  [ "$$got" = "$$want" ] && [ "$$interp" = "$$want" ] || exit 1; \
 	done
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
+	echo "strict crew: $$vm"; [ "$$vm" = "$$in" ] && ! echo "$$vm" | grep -qE 'error|refused' || { echo "strict crew: FAIL (VM != interpreter, or a script refused)"; exit 1; }
 
 rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stream, first 1,000 values per stream (3 seeds) from strict VM and interpreter vs tools/rng_ref.py
 	AILANG=$(AILANG) python3 tools/rng_ref.py --check

@@ -136,10 +136,10 @@
         "test: crew draws move only the crew stream counter",
         "make replay unchanged (crew off)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-13",
+      "completed": "2026-10-13",
+      "notes": "sim/crew.ail: CrewState (crew_core Session + Policy, turn, dayRem), initCrew/initCrewWith(traced), daysIn (record), crewStep = one advance line per ship-day (crew_core fires due events after an advance completes; a multi-day advance moved the day-3 event past the work), crewCommand (ask answered at once: one SCrew draw -> answerSeed in MINSTD [1,2147483646] -> authoredAnswer), crewTick. World.crew: Option[CrewState] (None default; replaces planned Params.crew), withCrew(w, captaincy); tick calls crewTick after observe. sim/crew_script.ail: consent/orders/argument scripts + crewScripted strict entry. sim/tools/crew_parity.ail + tests/crew/{consent,orders,argument}.ndjson; make crew-parity (game journal == standalone recording, VM == interpreter, lines == committed; argument asserts task_halted; mutation drop-one-line -> all 3 FAIL), make crew-parity-record; make strict gains the crew line. Fixture seed 2 (seed 7: medic declines, consent refuses start). Export: include vendor/crew-core, SimBridge.bundle_inputs + unpack res://vendor, export audit row, fingerprint test (+2 checks). Gates: crew tests 7/7, make sim 431/431 + bridge + bh-hud 64, parity, parity-v2, replay (goldens unchanged), strict, export-filter-audit, runtime fingerprint 8/8. Costs: strict VM cold start +2.6 s (warm +0.5 s); ailang check --package sim ~60 s -> ~170 s."
     },
     {
       "id": "C2_PROTOCOL",
