@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=\"$HOME/dev/sunholo-data/ailang/scripts/hooks/brain_on_prompt.sh\"; [ -x \"$f\" ] && exec \"$f\"; exit 0",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/brain-prompt.sh",
             "timeout": 5
           }
         ]
