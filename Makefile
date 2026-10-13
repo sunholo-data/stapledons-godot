@@ -1071,11 +1071,11 @@ free-nav-recovery-test: import
 VOICE_RE := \b(game|games|gameplay|approximation|approximate[ds]?|hand.?wav(e|ed|ing)|invented|fiction(al)?|simulat(ion|ed|or|e)|renderer|shader|hypothetical|placeholder|player|toy|sandbox)\b
 ## D-68: the loop is the secret (stapledons-design vision/premise-and-loop.md §4); in-world text never hints at it.
 SPOILER_RE := \b(previous (run|runs|voyages?|universes?|iterations?|lives)|past (runs|voyages|universes|lives)|re-?runs?|new game\+?|begin(ning)? again|start(ing)? over|multiverse|reset(s|ting)? the (bubble|ship|universe|voyage))\b
-## Mark, 2026-10-13: the Archive is sandboxed. The model is told none of the lore's mechanics (the loop,
+## Mark, 2026-10-13: the Archive and every AI character are sandboxed. No model is told the lore's mechanics (the loop,
 ## the reset, the pocket universe, the selection) and infers what it can from evidence. What it sees
 ## (its cast, its prompt golden, the canon it cites) names none of them.
 SANDBOX_RE := \b(loops?|looping|reset(s|ting)?|pocket universes?|universes?|multiverse|luck(y|ier)?|selection|selected|chosen|happened before|d[eé]j[aà] vu|variations? of|iterations?|anthropic|crossing(s)? before)\b
-SANDBOX_SEEN := data/ai/cast/archive.json tests/ai/prompts/archive.golden.txt
+SANDBOX_SEEN := $(wildcard data/ai/cast/*.json) $(wildcard tests/ai/prompts/*.golden.txt)
 VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd ui/archive_ask.gd
 ## The console script carries internal ids ("player" camera mode): it is scanned for loop spoilers only.
 SPOILER_UI := demos/ship_consoles.gd

@@ -43,15 +43,18 @@ pure func marked(pieces: [string], es: [string], acc: int, n: int) -> Option[{ch
     }
   }
 -- None when the text passes; Some(why) else.
--- D-67/D-68 (R1-ARCHIVE-VOICE): a reply that steps outside the ship (games, players, models,
--- fiction) or hints at the loop (previous runs, new games, the multiverse) is bad_output, so a
--- retry, then the sim's fallback. Whole words and phrases after lowercasing, with punctuation
--- read as spaces: "endgame" is not "game".
+-- D-67 (R1-ARCHIVE-VOICE): a reply that steps outside the ship is bad_output, so a retry, then
+-- the sim's fallback. That covers the game, its players, fiction, the model and its maker, its
+-- training and prompt. Whole words and phrases after lowercasing, with punctuation read as spaces:
+-- "endgame" is not "game".
+-- Theories are NOT screened (Mark, 2026-10-13): loops, other universes, a simulated or chosen
+-- universe. Every AI character is sandboxed: none is told the lore's mechanics (make
+-- in-world-voice-check, SANDBOX_RE). So such a line is the speaker's own inference, not a leak,
+-- and the Archive working the loop out for itself is the point.
 export pure func outOfWorldPhrases() -> [string] =
-  ["game", "games", "gameplay", "player", "players", "simulation", "simulations", "simulated", "simulator",
+  ["game", "games", "gameplay", "player", "players",
    "fiction", "fictional", "language model", "as an ai model", "role play", "roleplay", "roleplaying", "in this story",
-   "previous run", "previous runs", "last run", "rerun", "re run", "new game", "game plus", "multiverse",
-   "previous universe", "previous iteration", "previous iterations", "past lives",
+   "new game", "game plus",
    "google", "gemini", "openai", "anthropic", "claude", "mistral", "openrouter", "chatgpt", "gpt",
    "trained by", "my training", "training data", "system prompt", "my instructions", "my prompt"]
 pure func spaced(s: string) -> string =
