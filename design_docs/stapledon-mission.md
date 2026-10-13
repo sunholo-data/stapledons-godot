@@ -305,6 +305,13 @@ render review; `[ATTENDED]` = not loop work; `[STALE]` = reconcile (L1).
 | L6 | Export completeness: every `res://` asset path the code loads is in the export filter and checked by an exported-app smoke wired into `publish-dev`. dev.23 shipped without the lens tables, and `ship-demo-export-smoke` ran nowhere. | `[LOOP]` · **LANDED** PR #211 (iteration 26, merge `e2a013f`; eval Sonnet 84 PASS; follow-ups row 7f) |
 | L7 | `sunholo/relativity` N2: 7 generated property tests fail at extreme rapidities (contracts). Fix in the package and stop before publish. | `[LOOP]` |
 | L8 | M4.5 sim-side remainder (scene-independent audit halves), if L1 finds any. | `[LOOP]` |
+| L9 | **Semantic-memory S0, similar worlds** (Mark, attended 2026-10-13: "yes add S0"). From stapledons-design `features/next/semantic-memory.md` S0:
+  - Pure, deterministic nearest neighbours over each body's feature vector (ln radius, ln mass / 3, ln insolation / 2; insolation from the package's luminosity, never recomputed in GDScript; weights in data with tests), ties broken by name.
+  - Emitted by `sim/core.ail` as world fields (for example `system.similar`).
+  - Scope: the game-repo design doc and sprint plan first, then **stop for Mark's approval** of the plan. Then the sim half, with fixture rankings asserted (Earth → TRAPPIST-1 e, Venus, TRAPPIST-1 d on the measured spike), strict VM = interpreter, and `make test` wiring.
+  - Any new formula goes to the package first (CLAUDE.md gate 3).
+  - Showing it at the Archive or in the HUD is visible work: park it for attended review.
+  - No AILANG change needed; never `std/sharedindex` here (it is an effect; the sim stays pure). | `[LOOP]` (plan, then sim half) |
 | R1 | Row 6a, forward CMB disc: package function, spec check, GPU golden, then park for render review. | `[LOOP+RENDER]` |
 | R2 | Kerr (spinning) black holes, design doc and sprint plan only (the canon's rogue hole spins); execution needs Mark's approval. | `[LOOP+RENDER]` (plan) |
 | A1 | R1-SHIP-UI (D-57) incl. M4.3b; M4.5's scene audit and M4.6's gated half build on it. | `[ATTENDED]` |
@@ -315,7 +322,7 @@ render review; `[ATTENDED]` = not loop work; `[STALE]` = reconcile (L1).
 | A6 | Lore: the third black-hole Archive entry (canon text). | `[ATTENDED]` |
 | A7 | Frame-time p95 on Mark's Air; splitting the ship setup so the loading jump never pauses. | `[ATTENDED]` (needs the laptop) |
 
-Order for the next armed run (L1 and L6 landed; L2 merged, CI pending): L4 → L3 → L5 → L7 → R1 → R2 (L8 if L1 finds it). M4.5aR3 ∥ M4.6gR3 outrank all of these: the Do-not-touch line was refreshed 2026-10-13 after D-68 (#213) and the Archive voice (#214) landed.
+Order for the next armed run (L1 and L6 landed; L2 merged, CI pending): L9 → L4 → L3 → L5 → L7 → R1 → R2 (L8 if L1 finds it). M4.5aR3 ∥ M4.6gR3 outrank all of these: the Do-not-touch line was refreshed 2026-10-13 after D-68 (#213) and the Archive voice (#214) landed.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
