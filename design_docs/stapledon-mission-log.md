@@ -1169,3 +1169,41 @@ DECISIONS FOR MARK: D-66 (approve M4 revision round 3).
 - **Next:** M4.5aR3 ∥ M4.6gR3 once the attended D-68 change lands (D-68 was resolved attended 2026-10-12 during this iteration, PR #210; it holds the Do-not-touch line). Until then, L2 → L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: none.
+
+## 2026-10-13: iteration 27, L2 M4.6 follow-ups MERGED, CI-PENDING (PR #216, merge `8a67df3`): one `lint-precision` (found and fixed 2 live hand computations), `holds` clause kept and its mutant killed, D-52 wording; independent eval Sonnet 89/100 PASS [PRODUCT]
+
+- **Pick:** triage L2 (row 7d), next in the groom order (L1 ✅ → L6 ✅ → **L2**). No routable UNMET-clause row: clause 4's M4.5aR3 ∥ M4.6gR3 wait on the attended D-68 change (PR #213 OPEN at pick, re-measured with `gh pr list`; its files are on the Do-not-touch line), and clause 1's M1.5b is attended renders.
+- **Progress:** clauses 2 and 3 MET; 1 and 4 UNMET; 5 ongoing. Goal unmoved: L2 is clause-5 hygiene.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing CLEAN. #203: 0 allowlisted directives since 2026-10-08T18:31:59Z (3 comments, all the loop's own). Self-notices rc 0 (control 4:5, watermarks 2/2). Ledger valid, 68 rows, 0 OPEN. Inbox: nothing addressed to this mission. No rotation, and no sweep due (iteration 24 swept this week).
+- **Gate 1:** origin/main `7d333c568d4e295b057f36b515913144cd22c604`; CI check set 1/1 `success`. Skill + 12 resources: 26 of 26 files match origin/dev (resolved symlink and pin). The main checkout is 516 behind and dirty, so it was untouched. Work happened in fresh sibling clones `.stapledon-loop-iter27`, `.stapledon-eval-iter27`, `.stapledon-record-iter27` (no worktrees).
+- **Reality check (controller, first-party, at `7d333c5`):** 3 of the 5 items were already closed. (a) `545887f` (R1-SHIP-UI) removed the demo's `1.0 - beta` fallback. (b) Covered since PR #113: `test_glow_mirror` checks `ForwardGlow.temperature` against the package to 1e-12, and the mutant `sqrt(sqrt(c))` → `sqrt(c)` moves `interior` from 142/0 to 132/10; the iteration-20 judge read only the new tests. (d) Fixed by #165. Real: (c) and (e).
+- **Design:** claude-opus-5-5 via `claude-sub`, one revision.
+  - The designer found what the reality check did not: the merged pattern catches two live hand computations neither old rule saw, `main.gd:858` (γ from `b`) and `tools/glow_eps_sheet.gd:164` (a `1.0 - b` fallback). It also found the `holds` clause is NOT an equivalent mutant in general: it alone rejects an unlock with no inferable trigger when the expected row has no hint.
+  - Quorum round 1 BLOCKED (kimi-k3, gemini; gpt6-1-sol and glm-5.3 unreachable): an ellipsis-quoted `main.gd:858`, and escaped `\|` alternation in `grep -E` ACs (vacuous: the controller measured 0 vs 1). The controller measured both premises and the designer revised.
+  - Round 2 BLOCKED (kimi-k3, gemini, glm-5.3; gpt6-1-sol unreachable): line 164 never quoted byte-for-byte; lines 129/134 and `protocol.ail:209` unverified; the kill-proof measured on v0.54.5, not the pin. Each objection carried a reviewer-written fix and none disputed the direction, so the controller measured V19–V21 (including the kill-proof on v0.52.0: FAIL with the clause, PASS without) and applied the fixes verbatim under the narrow-refinement carve-out.
+- **Plan:** kimi-k3 (pi), 3 milestones, 8 named drills.
+- **Execution:** claude-haiku-5-5, test-first: the L2c red showed exactly the two live hits; the L2e1 red was the AC12 deletion drill. 11 files, +43/−39, plus a changelog.
+  - Controller fixes before evaluation, both disclosed to the judge: the clean fixture used an undeclared `bx` (a GDScript parse error by `godot --check-only`; the origin/main fixtures parse clean), and the Makefile comment header still said "4 planted lines".
+  - The executor's untracked `.snap/` copies are picked up by the lint's `ls-files -o` scope and turned it red; they were moved out of the tree before commit.
+- **Evaluation:** Sonnet (Agent tool, its own clone, on `ca3627f`): r1 **89 PASS**, 0 blocking. It re-ran the drills, added 6 mutations of its own, and showed per-milestone non-vacuity (each milestone's revert turns its ACs red). Non-blocking: (1) AC16's 70–82 range was stale (the header starts at 63); applied, now 63–84; (2) AC6/AC7 also pass on the old m5 lint, so the strictly new coverage is AC8; (3) finalise the sprint JSON at landing; (4) a 120-char comment line; (5) nothing in `make test` parses the lint fixtures (row 7g).
+- **Local `make test`** (`-k`, AILANG v0.52.0 pinned, on `ca3627f`): rc 0; `lint-precision: ok (positive control matched 6 lines; 3 allowlisted …)`; strict and parity green.
+- **Landing / Gate 3b:** PR #216 opened on `78dd935` (4 sprint commits plus the eval record). PR CI run 38352228389 `success` (check set 1/1, ~65 min). origin/main was still `7d333c5`, the PR read `CLEAN`/`MERGEABLE` with 17 files, and the loop merged it at 07:03Z (merge `8a67df3`, tree byte-identical to `78dd935`). Merge CI run 38360264695 was still `in_progress` at 09:13Z, after 14 bounded polls (~130 min, against ~65 for the PR run), so the row is **not** tagged LANDED: it is `[MERGED, CI-PENDING]` with a resume predicate (row 7d), a clock wait, not a decision. Mid-iteration, Mark merged #212 (AILANG v0.54.6) at 08:17:56Z and #213 (D-68) at 08:18:19Z; their CI runs (38368308087 on `538af68`, 38368350906 on `da56df6`) were also in flight. `da56df6` is the first commit to combine L2 with v0.54.6.
+- **Upstream:** none new. (`CACHE_WRITE_FAILED … ARTIFACT_TOO_LARGE` warnings on `sim/protocol_test` under v0.52.0 are non-fatal; not re-reported pending the v0.54.6 bump, #212.)
+- **Routing evidence:** base-gate1 7d333c568d4e295b057f36b515913144cd22c604.
+  - Controller claude:claude-opus-5-5 (tok: not reported).
+  - Designer `recipe claude:claude-opus-5-5 declared:provider-pin` via `claude-sub`, create run (31 turns; 104,103 cache-create + 2,249,300 cache-read + 33,173 out) plus one revision run; subscription. Rotation pointer `claude:claude-opus-5-5`, followed verbatim.
+  - Quorum metered: $0.2115 (r1) + $0.2964 (r2) = $0.51.
+  - Planner `recipe pi:ollama/kimi-k3:cloud declared:planner-lane-default-pin` via `mission_pi_run.sh` (verdict ok, 559 s, 34 tools; ollama flat-rate, metered $0).
+  - Executor `recipe claude:claude-haiku-5-5 declared:provider-pin` via `claude-sub` (57 turns; 153,041 cache-create + 4,678,063 cache-read + 49,039 out; subscription).
+  - Evaluator `agent-tool sonnet declared:alias-pin` (83,582 tok, 23 tools, 209 s). judge-independence: cross-model (Sonnet vs a Haiku executor, an Opus designer and controller, a kimi planner).
+  - Routing note: `$MISSION_ROUTING_NOTE`, codex over the daily ration for planner and executor. Metered $0.51.
+- **Ruled out:**
+  - Taking M4.5aR3 or M4.6gR3 while PR #213 (D-68) is open (Do-not-touch).
+  - Deleting the `holds` clause, as the M4.5s evals suggested (it guards a real case; V12/V19b).
+  - Code for items (a), (b), (d) (closed by evidence).
+  - Linting all of `physics/` (it holds the package mirror by design).
+  - A third designer run (the carve-out applied instead).
+- **Retro:** two frictions, no skill edit (this mission may not edit the shared skill). (1) A judge's "only checked for finiteness" finding was an under-read of older tests; a reality-check mutation settled it in minutes, so reality-check follow-up rows by mutation, not by reading. (2) Executor snapshots inside the tree polluted a whole-tree lint: the next executor directive puts `.snap/` outside the clone.
+- **Next:** run the row-7d resume predicate (merge CI 38360264695, then CI on `da56df6`). D-68 has landed (PR #213), so M4.5aR3 ∥ M4.6gR3 become the pick once the attended Do-not-touch refresh lands (PR #214 still touches `demos/ship_consoles.gd`). Until then, L4 → L3 → L5 → L7 and row 7g.
+
+DECISIONS FOR MARK: none.
