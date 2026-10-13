@@ -4,43 +4,38 @@
         <title>Stapledon's Voyage news</title>
         <link>https://www.sunholo.com/stapledons-godot/news</link>
         <description>Releases and progress on Stapledon's Voyage, a hard-SF game in Godot 4 and AILANG.</description>
-        <lastBuildDate>Wed, 14 Oct 2026 07:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 13 Oct 2026 22:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
         <copyright>Copyright © 2026 Sunholo / Mark Edmondson</copyright>
         <item>
-            <title><![CDATA[The crew come aboard]]></title>
-            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/14/the-crew-come-aboard</link>
-            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/14/the-crew-come-aboard</guid>
-            <pubDate>Wed, 14 Oct 2026 07:00:00 GMT</pubDate>
-            <description><![CDATA[The ship has a crew. Five people now travel with you, each with a name, a role, a personality and a mind of their own about the work you ask of them. They live at the Voyage console, and on long legs they keep the ship running without you, until something needs the captain. This is in a review build (dev.28) and not yet merged.]]></description>
-            <content:encoded><![CDATA[<p>The ship has a crew. Five people now travel with you, each with a name, a role, a personality and a mind of their own about the work you ask of them. They live at the <strong>Voyage console</strong>, and on long legs they keep the ship running without you, until something needs the captain. This is in a review build (dev.28) and not yet merged.</p>
+            <title><![CDATA[A thousand aboard]]></title>
+            <link>https://www.sunholo.com/stapledons-godot/news/2026/10/13/a-thousand-aboard</link>
+            <guid>https://www.sunholo.com/stapledons-godot/news/2026/10/13/a-thousand-aboard</guid>
+            <pubDate>Tue, 13 Oct 2026 22:00:00 GMT</pubDate>
+            <description><![CDATA[The bubble ship now carries a population. Besides the featured crew, about a thousand people live aboard, and the simulation keeps track of them: their moods, their trust in the captain, their ages, the children born and the people who die. Whether children are born at all is a decision for the captain, and some people will not like it.]]></description>
+            <content:encoded><![CDATA[<p>The bubble ship now carries a population. Besides the featured crew, about a thousand people live aboard, and the simulation keeps track of them: their moods, their trust in the captain, their ages, the children born and the people who die. Whether children are born at all is a decision for the captain, and some people will not like it.</p>
 <!-- -->
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="meet-the-crew">Meet the crew<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/14/the-crew-come-aboard#meet-the-crew" class="hash-link" aria-label="Direct link to Meet the crew" title="Direct link to Meet the crew" translate="no">​</a></h2>
-<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/de0f0cc30001211166fad68a0072d67f3b5f82f87fd45e6654df03648b9d1040.png" alt="The Voyage console with the guided voyage above and the crew below, each with stress, fatigue and trust" class="img_ev3q"></p>
-<p>Walk to the Voyage console on the bridge and press <strong>E</strong>. Below the guided voyage is the <strong>Crew</strong>: a medic, a chief engineer, an analyst, a pilot and a counselor. Their names are new each voyage, drawn from a long list of names from around the world, so no two crews are quite alike.</p>
-<p>Each row shows how they are doing: stress, fatigue and their trust in you. A bar turns warm when someone is overextended. There are no scores and no numbers to optimise, only people.</p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="asking-not-just-ordering">Asking, not just ordering<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/14/the-crew-come-aboard#asking-not-just-ordering" class="hash-link" aria-label="Direct link to Asking, not just ordering" title="Direct link to Asking, not just ordering" translate="no">​</a></h2>
-<p><strong>Offer work</strong> asks a crew member to take something on, and they answer at once, in character. They may agree, decline, raise a concern or ask for relief. Their answer comes from who they are and how they are doing, never from a dice roll you can redo. Every answer is final and goes into the record.</p>
-<p>You choose how the ship is run:</p>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/f60d332b73fbcebf648e43015dc052eba7a1325b31136d4b6bd93724d23b556b.svg" alt="People aboard over a century under three birth policies: hold settles near 1,600, encourage passes 4,500, restrict falls to 240" class="img_ev3q"></p>
+<p><em>The same thousand founders over a hundred years under each birth policy, from the crew lab's simulation runs (featured crew idle, no events). This is a chart of simulation output, not a capture from the game.</em></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-new">What's new<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/13/a-thousand-aboard#whats-new" class="hash-link" aria-label="Direct link to What's new" title="Direct link to What's new" translate="no">​</a></h2>
 <ul>
-<li class=""><strong>Consent:</strong> work starts only once the person has agreed. This is how every voyage begins.</li>
-<li class=""><strong>Orders:</strong> you can start work regardless. People comply, but trust pays for it, more for some personalities than others.</li>
+<li class=""><strong>About a thousand people aboard, growing to about fifteen hundred.</strong> A 100 m bubble has room for them: roughly 370,000 m² of floor over fifteen levels, so about 370 m² each at the start. The mass budget, the household power and the gardens were rescaled to match.</li>
+<li class=""><strong>People as groups.</strong> Ten departments and the children are each simulated as one group, which records how many people are content, uneasy, strained or breaking, how much they trust the captain, and how old they are. A group costs the same whether it holds a hundred people or a hundred thousand: a ten-year skip took 20.1 s with 1,000 people and 20.4 s with 100,000.</li>
+<li class=""><strong>Groups have voices.</strong> A featured crew member can speak for a department (half of the ten have one so far), so what happens to them colours how their people feel. When a featured crew member is lost, someone steps up from their department to fill the role.</li>
+<li class=""><strong>Births are the captain's decision.</strong> Encourage, hold or restrict. Holding takes the founders to about 1,600 in a century. Encouraging passes 4,500. Restricting shrinks the ship. Children join the departments at 18, and once a department is a quarter ship-born, the ship-born become a group of their own.</li>
+<li class=""><strong>And it causes tension.</strong> Restricting births costs the captain trust, most among people of child-bearing age and the warmest, most family-minded departments, and it keeps costing for as long as the policy lasts. Encouraging births while the gardens or water are short costs trust with the most conscientious. When a group's pressure rises far enough, a skip through time stops and asks the captain to decide.</li>
+<li class=""><strong>Checked before it was trusted.</strong> Eighteen claims, written before the runs, hold. Examples: nobody is born while the garden beds are dark, a divided department raises its voice and a uniformly uneasy one does not, and holding lands near the planned headcount after a century. Two claims failed on the way and changed the model. An independent review found three more bugs, now fixed. (<a href="https://github.com/sunholo-data/ailang-packages/pull/139" target="_blank" rel="noopener noreferrer" class="">ailang-packages#139</a>)</li>
 </ul>
-<p>Switching between the two is a deliberate choice: the button asks you to confirm.</p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="long-legs-auto-run-and-crew-holds">Long legs: auto-run and crew holds<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/14/the-crew-come-aboard#long-legs-auto-run-and-crew-holds" class="hash-link" aria-label="Direct link to Long legs: auto-run and crew holds" title="Direct link to Long legs: auto-run and crew holds" translate="no">​</a></h2>
-<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/f4080a8d7dc4c7949d21df00b60001f7acde1cc8d157ffc66a8c91cbdf4de0e2.png" alt="A crew hold: auto-run has stopped because the medic is close to breaking down" class="img_ev3q"></p>
-<p>On a long cruise the crew run themselves under standing orders, checking in once a month far from stars and every day near them. You don't have to manage every hour of a decade-long leg.</p>
-<p>When something matters, the voyage <strong>stops and the console tells you</strong>: someone is close to breaking down, trust has fallen too far, a refusal under orders, an argument over what the ship lost, or news from home that the whole ship heard. Ship time waits until you have dealt with it and resumed. Choose <strong>Hands on</strong> to be called more often, <strong>Critical moments only</strong> (the default), or <strong>Off</strong> to make every decision yourself.</p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="their-own-words">Their own words<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/14/the-crew-come-aboard#their-own-words" class="hash-link" aria-label="Direct link to Their own words" title="Direct link to Their own words" translate="no">​</a></h2>
-<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/6f64fef477eac1dfab5f17f1d269332e0afc666ec29ebb7d83100562eedc1e81.png" alt="Crew lines on the Voyage console, spoken in each person's own voice" class="img_ev3q"></p>
-<p>What each person decides is settled by the ship's simulation. With AI switched on and your own key, they can also put it in their own words, in character. A reply that slips into the ship's internal bookkeeping is refused, and a plain line stands in. With AI off, nothing is sent anywhere and you still see every answer.</p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-physics-reaches-them">The physics reaches them<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/14/the-crew-come-aboard#the-physics-reaches-them" class="hash-link" aria-label="Direct link to The physics reaches them" title="Direct link to The physics reaches them" translate="no">​</a></h2>
-<p>The crew share the ship's real limits. Heat, signal windows, mass and power are the same resources the ship tracks, at their scale. A close pass of a black hole loads the radiators. News from Earth opens the antenna windows. A burst that carries a death reaches everyone. The drive's mass bill for a leg is told to them at departure.</p>
-<p>This is the first slice of the crew. Next comes the wider population of around a thousand people, of which these five are the voices you know.</p>]]></content:encoded>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="not-yet">Not yet<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/13/a-thousand-aboard#not-yet" class="hash-link" aria-label="Direct link to Not yet" title="Direct link to Not yet" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>In the game.</strong> All of this runs in the simulation and the crew lab so far. Showing it in the game, with a society strip on the Crew page and the birth policy at the Voyage console, is the next step of the crew integration.</li>
+<li class=""><strong>Who gets to have children.</strong> Under a restriction, which households or departments may have children will be its own decision, with its own grievances.</li>
+<li class=""><strong>Generations that differ.</strong> The ship-born are not yet different from the founders in how they feel or what moves them.</li>
+<li class=""><strong>Worlds.</strong> The same machinery is meant to scale to a planet's billions, so the civilisations the ship meets can run their own versions of it.</li>
+</ul>]]></content:encoded>
             <category>Progress</category>
-            <category>AI</category>
         </item>
         <item>
             <title><![CDATA[The Archive answers]]></title>
