@@ -66,7 +66,7 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Gate:** `make test` subset: `sim/protocol_crew_test.ail` (AC6), `parity-v2`, `replay`.
 
 ### G1: re-vendor crew_core 0.3.0 (external, ~20 LOC)
-- **Blocked** until CI-0 merges in ailang-packages (brief: ailang-packages issue, see below): archiving, `ship_event`, `policy`, standing orders, escalation and `advance(n)`, from the crew-lab agent.
+- **Blocked** until CI-0 merges in ailang-packages (brief: [ailang-packages#137](https://github.com/sunholo-data/ailang-packages/issues/137)): archiving, `ship_event`, `policy`, standing orders, escalation and `advance(n)`, from the crew-lab agent.
 - Run `make crew-vendor REV=<CI-0 sha>`, then `make crew-vendor-check crew-parity strict parity`. The three recordings must still match. A break means a crew_core behaviour change, reported upstream rather than patched here.
 
 ### C3: the ship reaches the crew (~380 LOC, after G1)
