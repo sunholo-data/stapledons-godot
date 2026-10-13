@@ -2,6 +2,12 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-12: iteration 24, D-52(A) M4 re-plan WRITTEN and independently judged (revision round 3; Sonnet eval 84 → 90 PASS, 0 blocking); parked for Mark's approval as D-66; evaluator lane park (row 7e) cleared; clause 2/3 MET, 1/4 UNMET, 5 ongoing; goal unmoved.
+
+- **Clause map**: 1 UNMET → M1 remainder, attended (triage L1 to reconcile row 3); 2 MET; 3 MET (2026-10-08, attended M3); 4 UNMET → R1-M4-JOURNEY round 3: H1/H2 attended hooks → M4.5aR3 ∥ M4.6gR3 → M4.5bR3 ∥ M4.6rR3 → S1 → P-land, all waiting on **D-66**; 5 ongoing.
+- **Done**: planner `pi:ollama/kimi-k3:cloud` (typed verdict ok, 1,038 s, 106 tools) wrote revision round 3 in `m4-first-journey-sprint.md` + the sprint JSON + a design-doc amendment note: M4.3b closed by absorption into R1-SHIP-UI (residue: the 3D-ship forward-pole invariant, moved to M4.5aR3/M4.6gR3); M4.5's scene half re-scoped to plain launch → Board the ship → consoles, with walking charged at 3.5 m/s in the ≤360 s proxy; M4.6's gated half re-scoped to ship goldens G-M4-S2/S3/S4 + 3D-ship S1 captures + `bench SCENE=bridge`; the never-created `m4-track-b` train removed. Controller spot-checked 8 citations at HEAD. Evaluator Sonnet (Agent tool) r1 84 PASS with 1 blocking (AC3 `grep -E` with escaped `\|` can never fail), fix applied verbatim with a positive control, r2 90 PASS 0 blocking.
+- **Next**: Mark's D-66. On approve, the attended hooks H1/H2 come first, then M4.5aR3 and M4.6gR3 are loop-routable (M4.6rR3 parks at S1). Until then: triage order L1 → L6 → L2 → L4 → L3 → L5 → L7 → R1 → R2. Evaluator non-blocking notes to carry into execution: AC5 replay is `--sim-only` (assert console `use()` intents in `playthrough`); CI time for `playthrough`; list the spec check values the S2–S4 goldens assert; who opens H1/H2.
+
 ## STATUS 2026-10-08: iteration 23, D-52(A) M4 scene re-plan PARKED-ON-LANE (evaluator over ration; native Sonnet/Opus rejected); fleet ticket filed; no new plan, execution or product acceptance; clause 2 MET, 1/3/4 UNMET, 5 ongoing; goal unmoved.
 
 - **Clause map**: 1 UNMET → M1, attended; 2 MET; 3 UNMET → M3, attended only (D-53); 4 UNMET → D-52(A) re-plan M4.3b, M4.5 scene half and M4.6 gated half, blocked on evaluator capacity, then Mark's amended-plan approval; 5 ongoing.

@@ -1207,3 +1207,42 @@ DECISIONS FOR MARK: none.
 - **Next:** run the row-7d resume predicate (merge CI 38360264695, then CI on `da56df6`). D-68 has landed (PR #213), so M4.5aR3 ∥ M4.6gR3 become the pick once the attended Do-not-touch refresh lands (PR #214 still touches `demos/ship_consoles.gd`). Until then, L4 → L3 → L5 → L7 and row 7g.
 
 DECISIONS FOR MARK: none.
+
+## 2026-10-13: iteration 28, M4.5aR3 scene playthrough bot MERGED, CI-PENDING (PR #225, merge `09c909d`): `make playthrough` from the title screen's New game to the Voyage log on the 3D ship, adversarial console script, driver failure controls, CPU forward pole; independent eval Sonnet 88/100 PASS; L2 (PR #216) LANDED [PRODUCT]
+
+- **Pick:** M4.5aR3, the clause-4 critical path. Iteration 27's blocker (PR #213, D-68) merged, and the attended Do-not-touch refresh (`0b4dd5f`) says nothing is held and the loop may build M4.5aR3 ∥ M4.6gR3. I picked M4.5aR3 because it is headless; M4.6gR3 needs the rig's GPU window for `make golden`. First, the bookkeeping: row 7d's resume predicate (merge CI 38360264695) read `success`, so L2 is LANDED.
+- **Progress:** clauses 2 and 3 MET; 1 and 4 UNMET; 5 ongoing. Clause 4 moved: the scene playthrough half exists (M4.5aR3), and M4.5bR3, M4.6gR3, M4.6rR3, S1 and P-land remain.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing CLEAN. #203: 0 allowlisted directives since 2026-10-08T18:31:59Z (4 comments, all the loop's own). Self-notices rc 0 (control 4:5, watermarks 2/2). Ledger valid, 73 rows at pick (75 at record), 1 OPEN at pick (D-73, which Mark resolved attended mid-iteration), so 0 OPEN at record. Inbox: one message to `stapledons_godot` (the v0.54.8 registry fix for the crew_core/crew_lab publish, attended work, read and not actioned). No rotation (#203 was created after Monday 07:00 local); no sweep due.
+- **Gate 1:** origin/main `bdea72d4ed4a023c9f2534e78919f155722aa5c5`; CI check set 1/1 `success`. The skill and its 12 resources (13 files) all match origin/dev at the resolved symlink. The main checkout was clean and 0 behind after a fast-forward. Work happened in fresh sibling clones `.stapledon-loop-iter28`, `.stapledon-eval-iter28` and `.stapledon-record-iter28` (no worktrees).
+- **Reality check (controller, first-party, at `bdea72d`):** H1 is at `demos/ship_geometry_demo.gd:596–599`, H2 is at `demos/ship_consoles.gd` (archive `news`/`log`, NewsPanel and LegacyScreen hosted), and `ui/title_screen.gd:22` reads New game. `playthrough`, `tests/m4_playthrough_ship.gd`, `tests/playthrough_min.json` and `tests/adversarial.json` are absent, and no merged or open PR covers M4.5aR3. Baseline on the pristine clone: `ship-consoles` 120/0, `title-screen` 91/0; the AC3 grep finds zero matches and its positive control matches 1.
+- **Design / plan:** none needed. The D-66 plan (revision round 3, amended for D-68) is approved and specifies M4.5aR3 file by file.
+- **Execution:** codex gpt-6.1-sol, one run under a 60-minute cap, rc 0, in the loop clone; the controller committed `4337500`.
+  - Files: `tests/m4_playthrough_ship.gd` (255), `tests/test_playthrough.sh` (25), three failure fixtures, `tests/playthrough_min.json`, `tests/adversarial.json`, Makefile (+12/−1; three targets in `ship-demo-ci`), CHANGELOG.
+  - Unplanned seam, disclosed: `demos/ship_consoles.gd` (+10). While a course is committed, select/cancel/commit go to the sim with dt 0.0, and its `committed` refusal shows on the HUD card. The judge measured the old behaviour: select was silent, cancel was queued until the next tick, and commit showed "Plot a course first". AC3 needs the console path to send the intents and show the card.
+  - Executor-reported, then re-measured by the judge: 4 walks (19.64, 3.34, 3.09, 3.34 m); CPU pole max 0.0776 px in boost, cruise and brake; the H1 session has 2,438 lines with one `new_game` and two commits, byte-identical over two runs; ~100–150 s per run.
+- **Evaluation:** Sonnet (Agent tool, its own clone, on `4337500`): r1 **88 PASS**, 0 blocking.
+  - It ran the adversarial script against the base console code (3 failures), proving the seam is needed.
+  - 9 of 9 mutations went red: the heading axis swap, the heading x sign and the `SkyFrame.to_world` sign (pole offsets 712, 17,359 and 17,125 px), the H1 hook removed, the seam removed, the refusal card removed, a wrong expected refusal, the walk limit cut to 3 m, and unscripted refusals allowed.
+  - Non-blocking findings went to row 7h.
+- **Local `make -k test`** (outside the sandbox, on `4337500`, 3,714 s, AILANG v0.54.6, Godot 4.7.2): rc 2 from one target, `free-nav-stop-test`: 8 failures after `sim stopped: step_timeout`, while the evaluator's playthroughs ran concurrently. Re-run alone on the same tree it read 52/0 in 251 s, and CI also read 52/0. I attribute it to a load-sensitive bound (rule 3m) and filed it as row 7h(c), not a regression. Every other target was green, including strict and parity.
+- **Landing / Gate 3b:** PR #225 was opened on `14f7aad` (sprint commit plus the eval record and sprint-JSON note). PR CI run 38437285164 `success` (check set 1/1, ~110 min). The job log shows `playthrough: 373119 passed`, `playthrough: 377725 passed`, `playthrough-negative: 3 passed` and `free-nav-stop: 52 passed`. origin/main moved to `a7d2244` (Mark's attended D-73/D-74/D-75 ledger edits; docs only, no shared files). With the PR `MERGEABLE`/`CLEAN`, the loop merged it at 19:09Z (merge `09c909d`); the merge differs from `14f7aad` only in those 4 docs/JSON files. Merge CI 38452636061 was in flight at record, so the row is `[MERGED, CI-PENDING]` with a resume predicate (row 7d′): a clock wait, not a decision.
+- **Upstream:** none new.
+- **Routing evidence:** base=09c909d50ffeb8ab164ff5641119b27648a83034@2026-10-13T19:10:26Z (gate4); base-gate1 bdea72d4ed4a023c9f2534e78919f155722aa5c5.
+  - Controller claude:claude-opus-5-5 (tok: not reported).
+  - Designer: not spawned (resolver `recipe claude:claude-opus-5-5 declared:provider-pin`; plan already approved).
+  - Planner: not spawned (resolver `agent-tool opus fail-closed:no-doc`; plan approved under D-66).
+  - Executor `recipe codex:gpt-6.1-sol declared:provider-pin` via `codex exec`: probe rc 0; run rc 0; 220,171 tok; subscription.
+  - Evaluator `agent-tool sonnet declared:alias-pin`: 56,415 tok, 18 tools, 1,157 s. judge-independence: cross-vendor (Sonnet vs a codex executor and an Opus controller).
+  - Routing note: as configured. Metered $0.
+- **Ruled out:**
+  - M4.6gR3 this iteration (it needs a GPU window for `make golden`).
+  - A designer or planner run (the plan is approved).
+  - Treating the `free-nav-stop-test` red as a regression (green alone and in CI; the failure was a step timeout under concurrent load).
+  - Committing the ~25 untracked `*.gd.uid` files that `make import` leaves on a fresh clone (unrelated; row 7h(e)).
+- **Retro:** three frictions; no skill edit (this mission may not edit the shared skill).
+  1. Running the evaluator concurrently with the controller's full `make test` produced a load-induced red that cost a re-run. Next time, run the full suite before or after the judge, not alongside it.
+  2. A fresh clone lacks `.godot/tmp`, so the first baseline of `ship-console-test` failed on a missing log path (row 7h(d)).
+  3. The executor added a seam the plan had called unnecessary. The judge measured the base behaviour rather than trusting either side, which is the rule-3h adjudication working.
+- **Next:** run the row-7d′ resume predicate (merge CI 38452636061). Then M4.6gR3 (the GPU golden run on the rig) ∥ M4.5bR3 (`display-audit`, the walk schema, replay of the scene session; budget for the 1,567 s replay), then row 7h, then L9 → L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: none.
