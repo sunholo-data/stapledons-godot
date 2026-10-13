@@ -232,6 +232,8 @@ func click_at(point: Vector2) -> bool:
 		_show_card()
 	return true # I-click never propagates to walking, even on empty sky
 func handle_input(event: InputEvent) -> bool:
+	# R1-ARCHIVE-VOICE: typing a question at the Archive terminal is text, not the I key.
+	if event is InputEventKey and is_inside_tree() and (get_viewport().gui_get_focus_owner() is LineEdit or get_viewport().gui_get_focus_owner() is TextEdit):return false
 	if event is InputEventKey and event.physical_keycode == KEY_I:
 		set_held(event.pressed)
 		if held and not event.echo:

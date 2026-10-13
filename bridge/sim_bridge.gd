@@ -48,6 +48,13 @@ var last_line := ""
 var hello_reply: Dictionary = {}
 ## `refused` and `events` of the last accepted input.
 var last_refused: Array = []
+## Every accepted step's events, after the relay has seen them (R1-ARCHIVE-VOICE: the Archive
+## terminal listens for its answer; several sends can happen in one frame).
+signal stepped(events: Array)
+## The relay's intents in the last send and where they start in it (a refusal names its intent
+## by index: R1-ARCHIVE-VOICE tells its own refused ai_open apart).
+var relay_intents: Array = []
+var relay_from := 0
 var last_events: Array = []
 var last_error := ""
 ## The seed of the running world (set by a new_game the sim accepted); -1 before any.
@@ -252,8 +259,11 @@ func send(intents: Array, dtau: float) -> bool:
 		last_error = "no_game"
 		return false
 	var tick := int(world["tick"]) + 1
+	relay_intents = []
+	relay_from = intents.size()
 	if ai_relay != null:
-		intents = intents + ai_relay.take_intents()
+		relay_intents = ai_relay.take_intents()
+		intents = intents + relay_intents
 	var source := intent_source if not intent_source.is_empty() else ("tick" if intents.is_empty() else "player")
 	intent_source = ""
 	if record_sent:
@@ -279,6 +289,7 @@ func send(intents: Array, dtau: float) -> bool:
 	last_events = state.get("events", [])
 	if ai_relay != null:
 		ai_relay.on_events(last_events)
+	stepped.emit(last_events)
 	return true
 
 

@@ -1,0 +1,23 @@
+{
+  "sprint": "R1-ARCHIVE-VOICE phase 1",
+  "round": 1,
+  "evaluator": "independent agent (Claude Sonnet), generator != judge; read-only on feat/archive-voice",
+  "score": 74,
+  "verdict": "PASS (conditional on F1-F3 before the live morning test)",
+  "breakdown": {"correctness_vs_design": 23, "tests": 17, "in_world_prompt_quality": 14, "robustness_ux": 10, "docs_bookkeeping": 10},
+  "findings_addressed_in_follow_up": [
+    "high F1: no terminal state for a refused or slow request -> 45 s timeout, the sim's refusal of the Archive's ai_open detected (SimBridge.relay_intents/relay_from), a second ask refused while waiting (Ask disabled), a closed session abandons the question; all tested",
+    "high F2: secret rules self-contained (loop, spire, pocket, luck, origin); header softened to 'Matters at the edge of your records'; persona forbids inventing crew, places or events",
+    "medium F3: 'state no quantities, not even in words; point the captain to the instruments'; the Archive's canon copy names each figure 'a figure on the instruments' (figureless, tested)",
+    "medium F4: back at the terminal the last question and answer are shown again (tested)",
+    "medium F5: with AI off the HUD notes it out of world (the AI indicator); changelog names the AI indicator",
+    "medium F6: vendor/model/training phrases added to the reply screen (tested)",
+    "medium F7: real wiring tested (setup_options ai: session, relay attached and enabled, off when not ticked; sensors from the sim's own world; no session without the option)",
+    "low F8: data/ai/cast/archive.json scanned by in-world-voice-check; fallback, refusal and timeout paths tested",
+    "low F10: a dropped navigation session abandons the open question"
+  ],
+  "findings_open": [
+    "low: focus-guard (I key, WASD while typing) has no automated test",
+    "low: the AiSession is rebuilt per navigation session (spend ceiling per session); Sgr A* has no AI"
+  ]
+}

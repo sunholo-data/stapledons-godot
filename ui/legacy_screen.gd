@@ -20,6 +20,7 @@ var seed_used := -1
 var next_seed: Callable = func() -> int: return int(Time.get_unix_time_from_system() * 1000.0) % 2147483647
 var _sim: SimBridge = null
 var _list := VBoxContainer.new()
+var scroll: ScrollContainer = null # the entries; a host fitting the log into less room shortens it
 var _built := false
 var _count := 0
 
@@ -48,8 +49,9 @@ func build() -> void:
 	title.text = labels["legacy_title"]
 	title.add_theme_font_size_override("font_size", 22)
 	box.add_child(title)
-	var scroll := ScrollContainer.new()
+	scroll = ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(WIDTH - 32, 220)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
 	scroll.add_child(_list)
@@ -70,24 +72,67 @@ static func is_home(view: Dictionary) -> bool:
 
 ## Take the sim's world: fold the entries appended since last time, show the screen when home.
 func show_world(view: Dictionary, hold_back := false) -> void:
-	build()
-	var lg: Variant = GalaxyMap.field_value(view, "consequence.legacy")
-	if lg is Dictionary and lg.get("appended") is Array and int(lg.get("count", 0)) > _count:
-		# the section carries the entries since the last section; the running count says how many are new
-		var fresh: Array = lg["appended"]
-		var take := int(lg["count"]) - _count
-		for e in fresh.slice(maxi(0, fresh.size() - take)):
-			_add(e)
-		_count = int(lg["count"])
+	fold(view)
 	closing.visible = is_home(view) # "You were away ..." only once the ship is home
 	visible = is_home(view) and not hold_back # hold_back: the news panel is open over it
 	if visible:
 		closing.update_from(view)
 
 
+## Fold the entries the sim appended since the last fold; visibility is untouched. The section
+## carries only the entries since the previous section, so a host that shows the log later (the
+## ship's Archive terminal) feeds every step's world here. A count below ours is a new voyage's log.
+func fold(view: Dictionary) -> void:
+	build()
+	var lg: Variant = GalaxyMap.field_value(view, "consequence.legacy")
+	if not lg is Dictionary:
+		return
+	var n := int(lg.get("count", 0))
+	if n < _count:
+		_forget()
+	if lg.get("appended") is Array and n > _count:
+		# the running count says how many of the appended entries are new
+		var fresh: Array = lg["appended"]
+		for e in fresh.slice(maxi(0, fresh.size() - (n - _count))):
+			_add(e)
+		_count = n
+
+
+func _forget() -> void:
+	entries = []
+	rows = []
+	_count = 0
+	for c in _list.get_children():
+		_list.remove_child(c)
+		c.queue_free()
+
+
+## An entry as the captain reads it (D-67): the kind in words (copy.json log_kinds), an Archive
+## entry by its title; the times stay the sim's own fields.
+func readable(e: Dictionary) -> Dictionary:
+	var out := e.duplicate()
+	var kinds: Dictionary = copy.get("log_kinds", {})
+	var k := str(e.get("kind", ""))
+	out["kind"] = kinds.get(k, k.replace("_", " ").capitalize())
+	var place := str(e.get("star_id", ""))
+	if place.begins_with("archive."):
+		out["star_id"] = str(_lore_titles().get(place, place.trim_prefix("archive.").replace("-", " ").capitalize()))
+	return out
+
+
+static var _titles: Dictionary = {}
+
+
+static func _lore_titles() -> Dictionary:
+	if _titles.is_empty():
+		for en: Dictionary in LoreLoader.load_entries().get("entries", []):
+			_titles[str(en.get("id", ""))] = str(en.get("title", ""))
+	return _titles
+
+
 func _add(e: Dictionary) -> void:
 	entries.append(e)
-	var view := {"entry": e}
+	var view := {"entry": readable(e)}
 	var line := HBoxContainer.new()
 	line.add_theme_constant_override("separation", 12)
 	var row: Array = []
@@ -111,11 +156,7 @@ func begin_again(sim: SimBridge) -> bool:
 	if not sim.new_game(s, "sol", false, Transit.new_game_params()):
 		return false
 	seed_used = s
-	entries = []
-	rows = []
-	_count = 0
-	for c in _list.get_children():
-		c.queue_free()
+	_forget()
 	visible = false
 	begun.emit(s)
 	return true

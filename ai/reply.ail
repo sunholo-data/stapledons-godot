@@ -17,7 +17,7 @@ module stapledons/ai/reply
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/json (Json, decode, encode, get, getString, getNumber, getArray, getObject, js, jo, ja, kv, jnum)
-import std/string (concat, join, length, substring, split, trim, contains, startsWith)
+import std/string (concat, join, length, substring, split, trim, contains, startsWith, toLower, words, replaceMany)
 import std/bytes (fromBase64, byteAt)
 import std/bytes as B
 import std/math (floor, floatToInt, intToFloat)
@@ -43,10 +43,28 @@ pure func marked(pieces: [string], es: [string], acc: int, n: int) -> Option[{ch
     }
   }
 -- None when the text passes; Some(why) else.
+-- D-67/D-68 (R1-ARCHIVE-VOICE): a reply that steps outside the ship (games, players, models,
+-- fiction) or hints at the loop (previous runs, new games, the multiverse) is bad_output, so a
+-- retry, then the sim's fallback. Whole words and phrases after lowercasing, with punctuation
+-- read as spaces: "endgame" is not "game".
+export pure func outOfWorldPhrases() -> [string] =
+  ["game", "games", "gameplay", "player", "players", "simulation", "simulations", "simulated", "simulator",
+   "fiction", "fictional", "language model", "as an ai model", "role play", "roleplay", "roleplaying", "in this story",
+   "previous run", "previous runs", "last run", "rerun", "re run", "new game", "game plus", "multiverse",
+   "previous universe", "previous iteration", "previous iterations", "past lives",
+   "google", "gemini", "openai", "anthropic", "claude", "mistral", "openrouter", "chatgpt", "gpt",
+   "trained by", "my training", "training data", "system prompt", "my instructions", "my prompt"]
+pure func spaced(s: string) -> string =
+  concat([" ", join(" ", words(replaceMany(toLower(s), [(".", " "), (",", " "), (";", " "), (":", " "), ("!", " "), ("?", " "),
+    ("\"", " "), ("'", " "), ("(", " "), (")", " "), ("-", " "), ("—", " "), ("–", " "), ("{", " "), ("}", " "), ("…", " "), ("/", " ")]))), " "])
+pure func hasPhrase(s: string, ps: [string]) -> bool = match ps { [] => false, p :: r => contains(s, concat([" ", p, " "])) || hasPhrase(s, r) }
+export pure func outOfWorld(body: string) -> bool = hasPhrase(spaced(body), outOfWorldPhrases())
+
 export pure func screen(body: string, c: Constraints) -> Option[string] =
   if trim(body) == "" then Some("empty")
   else if contains(body, "[") || contains(body, "]") then Some("bracket")
   else if c.noNumerals && anyDigit(body) then Some("numeral")
+  else if outOfWorld(body) then Some("out_of_world")
   else match split(trim(body), "{") {
     [] => Some("empty"),
     lead :: rest => if contains(lead, "}") then Some("markup")

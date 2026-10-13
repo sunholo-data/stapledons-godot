@@ -35,6 +35,8 @@ func _run() -> void:
 	await test_confirm_and_helm()
 	await test_chart()
 	await test_voyage_archive_sgr()
+	await test_archive_ask()
+	await test_archive_wiring()
 	await test_walk_to()
 	await test_onboarding()
 	print("ship-consoles: %d passed, %d failures" % [passes, failures])
@@ -288,6 +290,11 @@ func test_voyage_archive_sgr() -> void:
 	c.go_to("archive")
 	c.use("archive", "open")
 	check("D-68 away from home the Voyage log opens without the closing line", c.use("archive", "log") and c.legacy_screen.visible and not c.legacy_screen.closing.visible)
+	var top: float = c.panel_rect().position.y + c.READING_TOP
+	check("the log sits where the other reading panels do, below the terminal's rows (not re-centred): %s vs %s" % [c.legacy_screen.position, c.answer_panel.position], is_equal_approx(c.legacy_screen.position.y, top) and c.legacy_screen.position == c.answer_panel.position)
+	check("the log ends inside the terminal panel (%s vs %s)" % [c.legacy_screen.get_rect().end.y, c.panel.get_rect().end.y], c.legacy_screen.get_rect().end.y <= c.panel.get_rect().end.y + 0.5)
+	check("the codex starts below the reading row, so Ask and the buttons stay uncovered", demo.codex.panel.position.y >= top - 0.5)
+	check("Codex returns from the log to the entries", c.panel_body.find_child("ArchiveCodex", true, false) != null and c.use("archive", "codex") and not c.legacy_screen.visible and not c.news_panel.visible and not c.answer_panel.visible and demo.codex.panel.visible)
 	c.leave()
 	step(demo, 0.7)
 	demo.sky_world = saved_world
@@ -332,6 +339,100 @@ func test_voyage_archive_sgr() -> void:
 
 func _panel_text(c: ShipConsoles) -> String:
 	return "\n".join(c.panel_body.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text))
+
+
+## R1-ARCHIVE-VOICE: Ask the Archive at the terminal. Offline (no live AI): the in-world line,
+## nothing queued. With the stub service on the ship's own sim: one ai_open{archive} carrying the
+## question, the sensors and the canon (at most 8 context fields), and the stub's answer shown.
+func test_archive_ask() -> void:
+	var demo: Node = await new_demo()
+	var c = demo.consoles
+	c.go_to("archive")
+	c.use("archive", "open")
+	check("AV the terminal offers a question field and Ask", c.ask_field != null and c.panel_body.find_child("AskArchive", true, false) != null)
+	c.ask_field.text = "   "
+	check("AV an empty question is refused", not c.use("archive", "ask") and c.archive_ask.asked == 0)
+	c.ask_field.text = "Are you real?"
+	check("AV offline: the Archive answers in-world and nothing is asked of the sim", c.use("archive", "ask") and c.archive_ask.state == "offline" and c.answer_panel.visible and c.answer_text.text == ArchiveAsk.OFFLINE and c.answer_question.text == "You asked: Are you real?")
+	var f := ArchiveAsk.open_fields("Are you real?", {"hud": {"where": "Earth orbit", "speed": "at rest"}, "clock": {"tau": 0.5, "year": 0.6}, "journey": {"state": "idle"}}, "")
+	var ctx: Dictionary = f["context"]
+	check("AV the request carries the question, the sensors and the canon, at most 8 fields (%s)" % str(ctx.keys()), ctx.size() <= 8 and ctx["question"] == "Are you real?" and ctx["location"] == "Earth orbit" and ctx["speed"] == "at rest" and ctx.has("clocks") and ctx["journey"] == "idle" and ctx["canon"] == ArchiveAsk.CANON and f["emotions"] == ArchiveAsk.EMOTIONS)
+	check("AV emotion markers are not shown", ArchiveAsk.unmarked("{curious} The hull is quiet. {sad} I miss the sun.") == "The hull is quiet. I miss the sun.")
+	# The stub service on the ship's own sim (the relay the title-screen game would make, in stub mode).
+	var lib := OS.get_user_data_dir().path_join("test_archive_ask_lib")
+	DirAccess.make_dir_recursive_absolute(lib)
+	var bridge := AiBridge.new(); bridge.cache_dir = lib
+	var cache := AiCache.new(); cache.core_dir = lib.path_join("no_core"); cache.library_dir = lib
+	var relay := AiRelay.new(bridge, cache)
+	var session := AiSession.new({}, OS.get_user_data_dir().path_join("test_archive_ask_settings"))
+	demo.add_child(session)
+	session.relay = relay
+	demo.ai_session = session
+	var attached: bool = relay.attach(demo.journey_sim)
+	c.ask_field.text = "What is the bubble?"
+	var asked: bool = c.use("archive", "ask")
+	check("AV live: asking queues one ai_open for the Archive", attached and asked and c.archive_ask.state == "waiting" and relay.queued() == 1 and c.answer_text.text == ArchiveAsk.THINKING)
+	check("AV a second question waits for the first answer", not c.use("archive", "ask") and relay.queued() == 1 and c.ask_button.disabled)
+	var opened: Dictionary = relay._queue[0] if relay.queued() == 1 else {}
+	check("AV the ai_open is text, purpose archive, entity archive, with the question", opened.get("kind") == "text" and opened.get("purpose") == "archive" and opened.get("entity_id") == "archive" and opened.get("context", {}).get("question") == "What is the bubble?")
+	for i in 6:
+		demo.journey_tick()
+		ConversationSession.idle(bridge, 30000)
+		if c.archive_ask.state != "waiting":
+			break
+	check("AV the stub's answer reaches the terminal (%s: %s)" % [c.archive_ask.state, c.archive_ask.answer], c.archive_ask.state == "answered" and c.archive_ask.answer.begins_with("Stub archive entry") and c.answer_text.text == c.archive_ask.answer and not c.archive_ask.req.is_empty())
+	c.leave()
+	step(demo, 0.7)
+	check("AV stepping back closes the answer", not c.answer_panel.visible)
+	c.go_to("archive")
+	c.use("archive", "open")
+	await process_frame
+	check("AV back at the terminal, the last answer is shown again", c.answer_panel.visible and c.answer_text.text == c.archive_ask.answer and c.archive_ask.state == "answered")
+	c.leave()
+	step(demo, 0.7)
+	# The ways an open question ends without an answer: all leave the in-world damaged line.
+	var a := ArchiveAsk.new()
+	a.state = "waiting"; a.asked_at_ms = 0
+	check("AV a question unanswered after the timeout is damaged", a.check_timeout(ArchiveAsk.TIMEOUT_MS + 1) and a.state == "damaged" and a.answer == ArchiveAsk.DAMAGED)
+	a = ArchiveAsk.new(); a.state = "waiting"
+	a.on_events([], [{"i": 2, "reason": "ai_max_open"}], [{"k": "ai_open", "purpose": "archive"}], 2)
+	check("AV the sim refusing the Archive's ai_open is damaged at once", a.state == "damaged")
+	a = ArchiveAsk.new(); a.state = "waiting"
+	a.on_events([], [{"i": 0, "reason": "x"}], [{"k": "ai_open", "purpose": "archive"}], 2)
+	check("AV another intent's refusal leaves the question waiting", a.state == "waiting")
+	a.on_events([{"k": "ai_request", "req": "7", "purpose": "archive"}])
+	a.on_events([{"k": "ai_fallback", "req": "7", "reason": "bad_output"}])
+	check("AV a fallback (the reply filter, a numeral, an error) is the damaged line", a.state == "damaged" and a.answer == ArchiveAsk.DAMAGED)
+	a = ArchiveAsk.new(); a.state = "waiting"; a.abandon()
+	check("AV a question whose session closed is damaged, not left waiting", a.state == "damaged")
+	bridge.stop() if bridge.has_method("stop") else null
+	demo.queue_free()
+	await process_frame
+
+
+## R1-ARCHIVE-VOICE: the wiring a title-screen game gets (setup_options ai / from_menu): an
+## AiSession on the journey session, its relay attached to the ship's sim, and sensors from the
+## sim's real world.
+func test_archive_wiring() -> void:
+	var demo: Node = await new_demo({"ai": true, "settings_dir": OS.get_user_data_dir().path_join("test_archive_wiring")})
+	var s: AiSession = demo.ai_session
+	check("AV a title-screen game has an AI session on its journey", s != null and demo.journey_sim != null and demo.journey_sim.ai_relay == s.relay)
+	check("AV the relay is attached and enabled (the sim speaks AI protocol)", s != null and s.relay.enabled)
+	check("AV with AI not ticked the relay is off: nothing would be asked", s != null and s.relay.mode == "off")
+	var f := ArchiveAsk.open_fields("Where are we?", demo.sky_world, demo.stop_name())
+	var ctx: Dictionary = f["context"]
+	check("AV the sensors come from the sim's own world (%s)" % str(ctx), ctx.get("location", "") != "" and ctx.has("clocks") and ctx.has("journey") and ctx.size() <= 8)
+	step(demo, 1.0)
+	var logged := int(GalaxyMap.field_value(demo.journey_sim.world, "consequence.legacy.count"))
+	check("D-68 the Voyage log follows the session from its first step (%d entries, %d listed)" % [logged, demo.consoles.legacy_screen.entries.size()], logged > 0 and demo.consoles.legacy_screen.entries.size() == logged)
+	var cast: Dictionary = AiRelay.load_cast("res://data/ai/cast").get("archive", {})
+	var bounds: Array = cast.get("bounds", [])
+	check("AV sandboxed: the Archive's cast carries its persona and the bounds of its knowledge, and no secrets (%d bounds)" % bounds.size(), cast.has("persona") and bounds.size() >= 2 and not cast.has("secrets")) # its wording is guarded by make in-world-voice-check (SANDBOX_RE)
+	var plain: Node = await new_demo()
+	check("AV captures, goldens and tests without the option get no AI session", plain.ai_session == null and plain.journey_sim.ai_relay == null)
+	plain.queue_free()
+	demo.queue_free()
+	await process_frame
 
 
 func test_walk_to() -> void:

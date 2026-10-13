@@ -20,6 +20,20 @@
     "legacy_tail": " years older.",
     "return_hint": "Sol is highlighted. Plan the voyage home and hold to commit."
   },
+  "log_kinds": {
+    "commit": "Course set",
+    "departure": "Departed",
+    "boost": "Drive lit",
+    "cruise": "Coasting",
+    "brake": "Braking",
+    "arrival": "Arrived",
+    "news": "News from home",
+    "return": "Home",
+    "archive_unlock": "Archive entry opened",
+    "bh_enter": "Entered the hole's reach",
+    "bh_ring": "Saw the ring",
+    "bh_hover": "Held station by the hole"
+  },
   "reasons": {
     "offline": "the live service was switched off",
     "no_key": "no service key was available",

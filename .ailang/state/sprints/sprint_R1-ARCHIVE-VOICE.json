@@ -1,0 +1,79 @@
+{
+  "sprint_id": "R1-ARCHIVE-VOICE",
+  "status": "in_progress",
+  "plan": "design_docs/planned/r1/archive-voice-sprint.md",
+  "design": "design_docs/planned/r1/archive-voice.md",
+  "approved": "Mark, attended 2026-10-12",
+  "features": [
+    {
+      "id": "AV1",
+      "description": "Persona file, canon, relay passes persona/style/secrets",
+      "estimated_loc": 60,
+      "dependencies": [],
+      "acceptance_criteria": [],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AV2",
+      "description": "In-world archive prompt + tests + goldens",
+      "estimated_loc": 80,
+      "dependencies": [],
+      "acceptance_criteria": [],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AV3",
+      "description": "Reply filter for out-of-world and loop words + tests + mutant",
+      "estimated_loc": 70,
+      "dependencies": [],
+      "acceptance_criteria": [],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AV4",
+      "description": "AiSession in the ship journey session",
+      "estimated_loc": 20,
+      "dependencies": [],
+      "acceptance_criteria": [],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AV5",
+      "description": "Ask the Archive at the Archive terminal + tests",
+      "estimated_loc": 140,
+      "dependencies": [],
+      "acceptance_criteria": [],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "AV6",
+      "description": "Frame-break set, voice check on archive golden, changelog",
+      "estimated_loc": 40,
+      "dependencies": [],
+      "acceptance_criteria": [],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "velocity": {
+    "estimated_total_loc": 410,
+    "estimated_days": 1
+  }
+}

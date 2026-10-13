@@ -8,7 +8,7 @@ extends SceneTree
 
 const OUT := "res://renders/ship_ui"
 const STD_FLOOR := 0.02
-const FRAMES := ["strip_rest", "prompt_navigation", "helm_focused", "chart", "voyage_console", "archive_terminal", "transit_cruise", "tour_interlude", "arrival", "tour_dwell", "sgr_a_gravity", "lower_deck"]
+const FRAMES := ["strip_rest", "prompt_navigation", "helm_focused", "chart", "voyage_console", "archive_terminal", "archive_question", "voyage_log", "transit_cruise", "tour_interlude", "arrival", "tour_dwell", "sgr_a_gravity", "lower_deck"]
 var demo: Node
 var sizes: Array = [Vector2i(1280, 720), Vector2i(2560, 1440)]
 var only: PackedStringArray = []
@@ -181,6 +181,14 @@ func more_frames(sz: Vector2i) -> void:
 	for i in 14:
 		demo._process(0.05)
 	await shot("archive_terminal", sz)
+	# R1-ARCHIVE-VOICE: a question typed into Ask the Archive (not sent: no live provider here).
+	c.ask_field.text = "Do you remember the last captain?"
+	await shot("archive_question", sz)
+	c.ask_field.text = ""
+	c.use("archive", "log")
+	for i in 14:
+		demo._process(0.05)
+	await shot("voyage_log", sz)
 	c.leave()
 	for i in 14:
 		demo._process(0.05)
