@@ -182,7 +182,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 | # | Criterion | Check |
 |---|---|---|
 | AC1 | crew_core 0.3.0: archiving keeps state bounded; `ship_event` and `policy` are journalled; the lab claims are unchanged; 500 turns grow linearly (under 10 s per seed) | ailang-packages: `cd examples/crew-lab && make validate` (keyless) and `crew-sim --turns 500 --seeds 1..3` timing in the PR |
-| AC2 | The vendored host matches its recorded source hash, and no local edits | `make crew-vendor-check` |
+| AC2 | crew_core is the registry pin (`"sunholo/crew_core" = "0.3.0"`, ailang-packages 82c21dd) and the lockfile resolves it unchanged. Superseded the vendored copy at G1, once ailang#1811 was fixed | `make deps` (fails if `ailang lock` would change `sim/ailang.lock`) |
 | AC3 | The crew journal inside the game equals standalone crew_core, byte for byte, for three recordings (consent, orders, a ship event with an argument) | `make crew-parity` |
 | AC4 | `sim/core.ail` and `sim/crew.ail` pass the strict bytecode VM; VM and interpreter stay identical with crew aboard | `make strict`, `make parity` |
 | AC5 | Determinism: the same seed and intents give byte-identical state with crew, and only the `crew` stream counter moves for crew draws | `make replay` (re-recorded goldens listed in the sprint JSON) |
@@ -215,7 +215,7 @@ CI-2, CI-3 and CI-4 can run in parallel after CI-1. Each fits one executor run.
 | Risk | Mitigation |
 |---|---|
 | Growing state slows ticks over a long voyage | CI-0 archiving is a prerequisite, with an AC1 linear-growth target and AC11 in the game |
-| The vendored copy drifts from upstream | `make crew-vendor-check`; the engine is changed only upstream; the folder is removed after #1811 |
+| The engine drifts from the lab's | A registry pin since G1 (`make deps`); the engine is changed only upstream; the folder is removed after #1811 |
 | The lab and game diverge in behaviour | AC3 byte parity, and claims stay authoritative in the lab |
 | The strict VM rejects a crew_core construct | crew_core is already tested on the strict VM in the lab; any VM/interpreter mismatch is reported upstream (CLAUDE.md) |
 | Replays change when crew join the World | Crew draws use only `SCrew`; goldens are re-recorded once, listed, and reviewed |
@@ -245,5 +245,5 @@ CI-2, CI-3 and CI-4 can run in parallel after CI-1. Each fits one executor run.
   - `ai/` `crew_reply` purpose and checks;
   - the Voyage console Crew page;
   - CI-5: auto-run, `crew_hold`, the hold card and presets;
-  - make targets `crew-vendor-check`, `crew-parity`, `crew-sync-check`, `crew-perf`;
+  - make targets `crew-parity`, `crew-sync-check`, `crew-events-check`, `crew-perf`, `crew-bridge-test`, `crew-console-test`, `crew-hold-test` (`crew-vendor-check` existed until G1 replaced the vendored copy with the registry pin);
   - the sprint JSON, an evaluation, and a report in `design_docs/implemented/r2/`.

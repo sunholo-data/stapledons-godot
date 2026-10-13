@@ -75,6 +75,7 @@ var panel_title := Label.new()
 var panel_body := VBoxContainer.new()
 ## R2-CREW C6: the Crew page on the Voyage console (only while a crew is aboard, protocol 2.9).
 var crew_page: CrewPage
+var crew_scroll: ScrollContainer ## a fixed-height view, so the panel stays on screen as the crew grow
 var _crew_sim: SimBridge
 var step_back := Button.new()
 
@@ -891,7 +892,7 @@ func _refresh_panel() -> void:
 		return
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		if c != crew_page: # the Crew page persists, so a pending confirm survives a refresh
+		if c != crew_page and c != crew_scroll: # the Crew page persists, so a pending confirm survives a refresh
 			c.queue_free()
 	_cancel_confirm()
 	match focused:
@@ -926,15 +927,16 @@ func _navigation_panel() -> void:
 
 
 func _voyage_panel() -> void:
-	_crew_section()
 	panel_body.add_child(_label("The guided voyage (D-46, D-47, D-49)", 15))
 	panel_body.add_child(_label(ITINERARY, 14))
 	panel_body.add_child(_label("Each leg is flown in real time; at each stop the ship turns to show the body and holds for a dwell. Pause (P), Skip dwell (N) and Skip stage (K) only change how fast you watch.", 13, Color(0.7, 0.75, 0.85)))
 	if demo.solar_tour != null:
 		panel_body.add_child(_label("Under way: " + demo.tour_line(), 14))
-		return
-	panel_body.add_child(_label("The guided voyage replaces the current course. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
-	panel_body.add_child(confirm_button("voyage", "begin", "Begin guided voyage"))
+	else:
+		panel_body.add_child(_label("The guided voyage replaces the current course. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
+		panel_body.add_child(confirm_button("voyage", "begin", "Begin guided voyage"))
+	# R2-CREW: the crew below the voyage's own decision, so Begin stays in reach at 1280x720.
+	_crew_section()
 
 
 ## The crew aboard the journey sim, if any: names, bars, lines and the captain's choices. The
@@ -945,6 +947,12 @@ func _crew_section() -> void:
 		return
 	if crew_page == null:
 		crew_page = CrewPage.new()
+		crew_page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		crew_scroll = ScrollContainer.new()
+		crew_scroll.name = "CrewScroll"
+		crew_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		crew_scroll.custom_minimum_size = Vector2(0, 200)
+		crew_scroll.add_child(crew_page)
 	if _crew_sim != sim:
 		if _crew_sim != null and _crew_sim.stepped.is_connected(_on_crew_step):
 			_crew_sim.stepped.disconnect(_on_crew_step)
@@ -955,14 +963,14 @@ func _crew_section() -> void:
 		crew_page.intents.connect(_crew_sim.queue)
 	panel_body.add_child(_label("Crew", 15))
 	crew_page.show_crew(_crew_sim.crew)
-	panel_body.add_child(crew_page)
+	panel_body.add_child(crew_scroll)
 
 
 func _on_crew_step(events: Array) -> void:
 	if crew_page == null or _crew_sim == null:
 		return
 	crew_page.on_events(events)
-	if focused == "voyage" and crew_page.get_parent() == panel_body:
+	if focused == "voyage" and crew_scroll.get_parent() == panel_body:
 		crew_page.show_crew(_crew_sim.crew)
 
 

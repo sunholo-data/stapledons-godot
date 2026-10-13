@@ -4,6 +4,10 @@ extends SceneTree
 ##       a player-originated decision intent (plan, commit, cancel, approach, leave) or starts or
 ##       drops a session, aboard at rest, in transit, on the guided voyage and at Sgr A*. Tour
 ##       intents (the itinerary's own legs) are allowed and must be the itinerary's next leg.
+##   NT3 (R2-CREW AC15) with the crew aboard and a crew hold open, one press of any Crew page
+##       button at the Voyage console queues no confirmed crew decision (start, relief, the
+##       captaincy switch, an auto-run preset, Resume): each arms its confirm first. Only Offer work
+##       acts on one press, and an offer is the crew's to accept or decline.
 ##   NT2 (AC5) an open commit dialog, an open console panel and an unanswered confirm survive
 ##       600 s of fake time unchanged (the sim keeps its host tick).
 ## Deterministic (AC13): fixed seed, fake clock, no wall-clock reads; the log has no timings,
@@ -36,6 +40,7 @@ func _run() -> void:
 	await sweep_state("in transit")
 	await sweep_state("guided voyage")
 	await sweep_state("Sgr A*")
+	await sweep_crew()
 	await test_no_deadlines()
 	print("no-twitch: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
@@ -184,6 +189,44 @@ func sweep_state(state: String) -> void:
 
 
 ## A tour plan intent's target is the next leg of the itinerary (by catalogue id or body).
+const CREW_CONFIRMED := ["crew_start", "crew_relief", "crew_policy", "crew_orders", "crew_resume"]
+func sweep_crew() -> void:
+	var demo: Node = await new_demo()
+	var sim := session(demo)
+	check("NT3 the live game has the crew aboard (R2-CREW C4)", sim != null and not sim.crew.is_empty())
+	if sim == null or sim.crew.is_empty():
+		return
+	# A real hold: hands-on auto-run escalates the medic's stress within a few crew days.
+	sim.send([SimBridge.crew_intent("crew_orders", {"command": "orders", "preset": "hands_on"})], 0.0)
+	sim.send([], 3.0 / 365.25 + 0.000001)
+	check("NT3 a crew hold is open", not (sim.crew.get("holds", []) as Array).is_empty())
+	var c: ShipConsoles = demo.consoles
+	c.go_to("voyage")
+	c.use("voyage", "open")
+	var page: CrewPage = c.crew_page
+	check("NT3 the Crew page shows the hold card", page != null and page.find_children("Hold_*", "", true, false).size() == 1)
+	var buttons: Array = page.find_children("*", "Button", true, false) if page != null else []
+	var bad: Array = []
+	var offers := 0
+	for b in buttons:
+		var nm := str(b.name)
+		sim.queued.clear()
+		page.armed = ""
+		b.pressed.emit()
+		for i: Dictionary in sim.queued:
+			if CREW_CONFIRMED.has(i.get("k", "")):
+				bad.append([nm, i["k"]])
+			elif i.get("k", "") == "crew_offer":
+				offers += 1
+	sim.queued.clear()
+	check("NT3 %d Crew page buttons pressed once each" % buttons.size(), buttons.size() >= 8)
+	check("NT3 no confirmed crew decision on one press %s" % [bad.slice(0, 3)], bad.is_empty())
+	check("NT3 Offer work acts on one press (the crew may decline)", offers >= 1)
+	c.leave()
+	demo.queue_free()
+	await process_frame
+
+
 func _is_next_leg(tour, intent: Dictionary) -> bool:
 	if tour == null:
 		return false

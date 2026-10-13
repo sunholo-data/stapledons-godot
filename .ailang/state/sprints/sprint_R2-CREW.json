@@ -101,7 +101,25 @@
     "Q2 SETTLED (Mark 2026-10-13): yes, start on vendored 0.2.0, re-vendor at G1",
     "Q3 SETTLED (Mark 2026-10-13): yes, Params.crew=0 until C4"
   ],
-  "evaluations": [],
+  "evaluations": [
+    {
+      "round": 1,
+      "evaluator": "Claude Sonnet (sprint-evaluator), separate agent",
+      "score": 74,
+      "result": "fail (hard fail: make ai-test red via ai-live-guard on the crew-perf recipe)",
+      "file": ".ailang/state/evaluations/eval_R2-CREW_round_1.json",
+      "fixed": [
+        "crew-perf clears AI_LIVE (ai-live-guard ok)",
+        "no-twitch NT3: crew page + hold card, single press queues no confirmed decision (mutation-checked)",
+        "AC2 restated as the registry pin checked by make deps",
+        "Voyage console: crew below the guided voyage, in a scroll area (Begin stays reachable at 1280x720)"
+      ],
+      "open_after_round_1": [
+        "landing artefacts (status, changelog, design doc move) at landing",
+        "game-vision-designer re-score not run (hand score stands)"
+      ]
+    }
+  ],
   "coordination": {
     "executor": "attended session (this clone)",
     "evaluator": "different model from the executor",

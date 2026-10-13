@@ -4,6 +4,7 @@ extends SceneTree
 ##   crew_page.png         the page as a captain first sees it (medic asking for relief)
 ##   crew_page_armed.png   after one press on "Grant relief" (the confirm state)
 ##   crew_page_ai.png      after the AI words for both lines are accepted
+##   crew_page_hold.png    a crew hold: auto-run stopped for the medic's breakdown (C8)
 ## Run:  make crew-console-capture  (needs a GPU window; open every frame)
 
 const OUT := "res://renders/crew_console"
@@ -53,5 +54,10 @@ func _run() -> void:
 	page.set_ai_text("1", "I'm running on empty, Captain. I need a few days off the rota.")
 	page.set_ai_text("2", "Still steady here. The signal work can wait for no one.")
 	await _shot("crew_page_ai.png")
-	print("crew-console-capture: 3 frames in renders/crew_console")
+	var held: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/crew/console_state.json"))
+	held["auto"] = "critical_only"
+	held["holds"] = [{"id": "h12-breakdown-medic", "rule": "breakdown", "actor": "medic", "name": "Ligaya Reyes", "task": "", "tick": 12, "detail": "stress 85"}]
+	page.show_crew(held)
+	await _shot("crew_page_hold.png")
+	print("crew-console-capture: 4 frames in renders/crew_console")
 	quit(0)

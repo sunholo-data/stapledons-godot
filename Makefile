@@ -73,8 +73,8 @@ crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resu
 test: crew-hold-test
 crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless, under 2 s (warm cache); critical_only and the no-hold worst case
 	@for e in crewSkip crewSkipUnheld; do \
-	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 1 sim/crew_script.ail > /dev/null; \
-	  s=$$(perl -MTime::HiRes=time -e 'printf "%.3f", time'); out=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 10 sim/crew_script.ail); \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 1 sim/crew_script.ail > /dev/null; \
+	  s=$$(perl -MTime::HiRes=time -e 'printf "%.3f", time'); out=$$(env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 10 sim/crew_script.ail); \
 	  t=$$(perl -MTime::HiRes=time -e "printf '%.2f', time - $$s"); echo "crew-perf $$e: $$out in $$t s"; \
 	  echo "$$out" | grep -qE '^"?days 3652 holds [0-9]+"?$$' && perl -e "exit($$t < 2.0 ? 0 : 1)" || { echo "crew-perf: FAIL ($$e: $$out, $$t s; budget 2 s)"; exit 1; }; done
 test: crew-perf

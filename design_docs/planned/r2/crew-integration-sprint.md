@@ -48,7 +48,7 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
   - `sim/tools/crew_sync.ail` (AILANG, not Python) generates `sim/data/crew_pack.ail`.
   - `make crew-sync-check` re-hashes `data/crew/` against `SYNC` and regenerates the module to a scratch file to diff it (AC7, with the resource half added in C3).
 - **Red tests.** Write `sim/crew_test.ail`, `sim/protocol_crew_test.ail` and `tests/crew/*.ndjson` (empty recordings) failing for the stated reason, and keep the log.
-- **Gate:** `make crew-vendor-check crew-sync-check`, both wired into `make test`.
+- **Gate:** `make crew-vendor-check crew-sync-check`, both wired into `make test`. (Superseded at G1: the vendored copy and `crew-vendor-check` are gone; AC2 is the registry pin, checked by `make deps`.)
 
 ### C1: `sim/crew.ail`, the embedded host (~380 LOC) ✅ 2026-10-13
 > **Done.** Findings that change the design:
@@ -148,7 +148,7 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 > - **`ui/crew_page.gd` (`CrewPage`).** One row per member: the generated name (D-74) with the role, stress, fatigue and trust bars (warm at or above the pack's overextended threshold of 70; no numbers, D-21), low regard, the work in words, and the latest line (the template, then the accepted AI words via `on_events`). Unresolved reliefs get Grant and Deny.
 > - **Actions.** Offer work is one press (offer + ask). Start, relief and the consent/orders switch need a confirming second press (no twitch).
 > - **`SimBridge.queue()`.** Console intents ride the next tick, before the relay's. The Voyage console shows a Crew section **only while a crew is aboard** (protocol 2.9), so today's crewless console and its tests are unchanged until C4.
-> - **Tests.** `tests/test_crew_console.gd` (`make crew-console-test`, AC10): 22 checks on a crew section recorded from the real sim (`tests/crew/console_state.json`: seed 1, orders, the medic asking for relief). It covers every action's intent and the confirm rule, and the real sim accepts what the page builds, directly and through the queue. The no-twitch sweep runs without crew, so it reaches the page only once C4 puts the crew aboard.
+> - **Tests.** `tests/test_crew_console.gd` (`make crew-console-test`, AC10): 22 checks on a crew section recorded from the real sim (`tests/crew/console_state.json`: seed 1, orders, the medic asking for relief). It covers every action's intent and the confirm rule, and the real sim accepts what the page builds, directly and through the queue. The no-twitch sweep covers the page as NT3 (added after evaluation round 1): with the crew aboard and a real hold open, one press of any Crew page button queues no confirmed decision; a mutation that makes the captaincy switch single-press fails it.
 > - **Renders.** `make crew-console-capture` writes `renders/crew_console/{crew_page,crew_page_armed,crew_page_ai}.png`, all opened. They caught a wrapping bug (labels in a row had no width) and an overflow; both are fixed.
 > - **Deferred to C8.** Answering a crew concern needs the conversation issues in the view; C8's hold card is where the player answers.
 
