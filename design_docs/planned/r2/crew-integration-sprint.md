@@ -93,7 +93,13 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Blocked** until CI-0 merges in ailang-packages (brief: [ailang-packages#137](https://github.com/sunholo-data/ailang-packages/issues/137)): archiving, `ship_event`, `policy`, standing orders, escalation and `advance(n)`, from the crew-lab agent.
 - Run `make crew-vendor REV=<CI-0 sha>`, then `make crew-vendor-check crew-parity strict parity`. The three recordings must still match. A break means a crew_core behaviour change, reported upstream rather than patched here.
 
-### C3: the ship reaches the crew (~380 LOC, after G1)
+### C3: the ship reaches the crew (~380 LOC, after G1) ✅ 2026-10-13
+> **Done.**
+> - **Resources: the ship is a cap, not the source.** This is a decision flagged for Mark. The crew's pool stays as the scenario authors it, because the lab's claims are verified on those numbers. Read literally, `mass` from `availableKg` would hand the crew 2,000 blocks instead of the scenario's 3. At new game `withCrew` refuses a pack whose resources aren't the eight, have the wrong kind, or exceed what the ship can spare: mass from the ledger, the rest from `sim/data/crew_ship.ail`, whose numbers are marked inferred or assumed for Mark to revise. bubble-resources §6 says units are read "later" from the ledger, at the resource-ledger milestone.
+> - **Moments** (`sim/crew_events.ail`, with `core.crewMoments` filling the record from the worlds before and after a tick). The GR approach start and end give heat −2/+2; there's no periapsis in the model, so the second fires when the approach ends in a hover. A news burst gives signal +1, with major `deep_time`, or `loss` for templates 8 and 15, whose words carry a death (`make crew-events-check` recomputes these from `data/news/templates.json`). Arrival gives signal +1. A commit raises the leg's `planView` mass bill as text only, with no transfers (D-70 OQ4). Ids are per tick or per plan, so crew_core raises each once. Transfers on resources the pack lacks are dropped (the pack has no heat).
+> - **`crew_policy`** (protocol 2.9, a seventh intent) switches crew_core's `command`. The view's `captaincy` now reads `command`. **`used`** reports consumed stocks in physical units.
+> - **Tests.** `sim/crew_events_test.ail` (8), including a world-level journey that raises `drive-1` and `arrive-1` once each through `tick()`, and the 4th parity recording `tests/crew/shipevent.ndjson` (run-time ship events and a policy switch), VM == interpreter.
+
 - **Resources.**
   - `sim/crew_resources.ail` ports the lab's `bubble.ail`: the eight ids, kinds and units, `allocate` and `lintPack`.
   - `lintPack` runs on `crew_pack` at `newWorld`, and a scenario that fails is refused, with a test.

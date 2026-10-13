@@ -1,0 +1,117 @@
+module stapledons/sim/crew_events_test
+
+-- R2-CREW C3 tests (design crew-integration.md §CI-2, AC7, AC8): physics moments become ship events
+-- once each with the listed transfers; the eight resources, allocation and the ship cap; the
+-- captaincy switch.
+import ./crew_events (Moments, noMoments, shipEvents, forScenario, lossTemplateIds, massBlocks)
+import ./crew_resources (allocate, shipUnits, lintPack, lintAgainstShip, bubbleResources, usedOf)
+import ./crew (CrewState, initCrew, crewCommand, crewStep, raiseShipEvents, shipEventLine, daysPerYear)
+import ./core (World, newWorld, defaultParams, tick, withCrew, IPlan, ICommit, Arrived)
+import ./rng (zeroRng)
+import std/list (map, filter, length, any)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (contains)
+import pkg/sunholo/crew_core/scenario (ShipEvent)
+
+pure func ids(es: [ShipEvent]) -> [string] = map(\e. e.id, es)
+pure func one(m: Moments) -> ShipEvent = match shipEvents(m) { e :: _ => e, [] => { id: "", at: 0, text: "", transfers: [], major: "" } }
+
+pure func checkTable() -> bool {
+  let gin = one({ noMoments(4) | grStart: true });
+  let gout = one({ noMoments(9) | grEnd: true });
+  let news = one({ noMoments(5) | newsTemplate: Some(3) });
+  let death = one({ noMoments(6) | newsTemplate: Some(8) });
+  let arrive = one({ noMoments(7) | arrivedPlan: Some(2) });
+  let drive = one({ noMoments(8) | committed: Some({ plan: 2, massKg: 1234.5 }) });
+  gin.id == "gr-in-4" && gin.transfers == [{ resource: "heat", delta: 0 - 2 }] &&
+  gout.id == "gr-out-9" && gout.transfers == [{ resource: "heat", delta: 2 }] &&
+  news.id == "news-5" && news.major == "deep_time" && news.transfers == [{ resource: "signal", delta: 1 }] &&
+  death.major == "loss" && lossTemplateIds() == [8, 15] &&
+  arrive.id == "arrive-2" && arrive.transfers == [{ resource: "signal", delta: 1 }] &&
+  drive.id == "drive-2" && drive.transfers == [] && contains(drive.text, "123 blocks of 10 kg") && massBlocks(9.99) == 0 &&
+  shipEvents(noMoments(1)) == [] &&
+  ids(shipEvents({ noMoments(3) | grStart: true, arrivedPlan: Some(1) })) == ["gr-in-3", "arrive-1"]
+}
+
+pure func checkFilter() -> bool =
+  (forScenario(["signal", "mass"], one({ noMoments(4) | grStart: true }))).transfers == [] &&
+  (forScenario(["signal"], one({ noMoments(4) | arrivedPlan: Some(1) }))).transfers == [{ resource: "signal", delta: 1 }]
+
+-- Raised once: the same id a second time is refused by crew_core and changes nothing.
+pure func checkOnce() -> bool = match initCrew("consent") {
+  Err(_) => false,
+  Ok(c) => {
+    let e = shipEvents({ noMoments(1) | arrivedPlan: Some(1) });
+    let a = raiseShipEvents(c, 2, zeroRng(), e);
+    let b = raiseShipEvents(a.crew, 2, zeroRng(), e);
+    length(a.lines) == 1 && a.refused == None && length(b.lines) == 0 && b.crew.session == a.crew.session
+  }
+}
+
+-- The event's transfer lands after the next crew day: signal + 1.
+pure func signalAvailable(c: CrewState) -> int = match filter(\r. r.id == "signal", c.session.state.resources) { r :: _ => r.available, [] => 0 - 1 }
+pure func checkLands() -> bool = match initCrew("consent") {
+  Err(_) => false,
+  Ok(c) => {
+    let a = raiseShipEvents(c, 2, zeroRng(), shipEvents({ noMoments(1) | arrivedPlan: Some(1) }));
+    let d = crewStep(a.crew, 2, a.rng, 1.0 / daysPerYear() + 0.0000001);
+    signalAvailable(d.crew) == signalAvailable(c) + 1
+  }
+}
+
+pure func checkResources() -> bool =
+  length(bubbleResources()) == 8 &&
+  allocate([{ id: "mass", value: 45 }, { id: "water", value: 3500 }, { id: "power", value: 149 }, { id: "air", value: 9 }, { id: "heat", value: 0 - 5 }])
+    == [{ id: "mass", value: 4 }, { id: "water", value: 3 }, { id: "power", value: 2 }] &&
+  (match initCrew("consent") {
+    Err(_) => false,
+    Ok(c) => lintPack(c.session.scenario) == [] && lintAgainstShip(c.session.scenario, shipUnits(20000.0)) == []
+      && any(\p. contains(p, "mass: 3 units but the ship can spare 0"), lintAgainstShip(c.session.scenario, shipUnits(0.0)))
+  }) &&
+  usedOf([{ id: "mass", value: 2 }]) == [{ id: "mass", units: 2, amount: 20, physical: "kg" }]
+
+-- A world with no mass to spare cannot take the crew aboard.
+pure func checkWorldCap() -> bool = {
+  let w = newWorld(1, false, defaultParams());
+  (match withCrew(w, "consent") { Ok(_) => true, Err(_) => false }) &&
+  (match withCrew({ w | ledger: { w.ledger | availableKg: 0.0 } }, "consent") { Ok(_) => false, Err(e) => contains(e, "crew pack: mass") })
+}
+
+-- D-70 OQ5: new games start in consent; the switch is a journalled crew_core command.
+pure func checkPolicy() -> bool = match initCrew("consent") {
+  Err(_) => false,
+  Ok(c) => {
+    let r = crewCommand(c, 2, zeroRng(), "{\"command\":\"policy\",\"policy\":\"orders\"}", None);
+    let bad = crewCommand(c, 2, zeroRng(), "{\"command\":\"policy\",\"policy\":\"mutiny\"}", None);
+    c.session.command == "consent" && r.refused == None && r.crew.session.command == "orders" && length(r.lines) == 1 && bad.refused != None
+  }
+}
+
+test "the four moments: ids, transfers and majors (AC8)" { checkTable() }
+test "transfers on resources the scenario lacks are dropped" { checkFilter() }
+test "a moment is raised once" { checkOnce() }
+test "an arrival's signal reaches the crew after the next day" { checkLands() }
+test "the eight resources, allocation and the ship cap (AC7)" { checkResources() }
+test "a world without spare mass refuses the crew" { checkWorldCap() }
+test "captaincy: consent by default, orders by a journalled switch (D-70 OQ5)" { checkPolicy() }
+
+-- World level: a journey with the crew aboard raises drive-1 at the commit and arrive-1 at the
+-- arrival, once each, through tick() (the moments come from core's crewMoments).
+pure func fly(w: World, n: int) -> World = if n <= 0 then w else fly((tick(w, {dtau: 0.01, intents: []})).world, n - 1)
+pure func raised(w: World, id: string) -> int = match w.crew {
+  Some(c) => length(filter(\e. e.id == id, c.session.scenario.events)),
+  None => 0 - 1
+}
+pure func checkJourney() -> bool = match withCrew(newWorld(0, false, defaultParams()), "orders") {
+  Err(_) => false,
+  Ok(w0) => {
+    let rq = { target: { index: 1, id: "alpha Cen", pos: { x: 0.0, y: 0.0, z: 0.0 - 4.37 } }, cruisePhi: 2.6466524123622457, flipG: None, star: None };
+    let planned = (tick(w0, {dtau: 0.0, intents: [IPlan(rq)]})).world;
+    let committed = (tick(planned, {dtau: 0.0, intents: [ICommit(1)]})).world;
+    let out = fly(committed, 80);
+    let arrived = match out.journey { Arrived(_) => true, _ => false };
+    raised(planned, "drive-1") == 0 && raised(committed, "drive-1") == 1 && arrived && raised(out, "arrive-1") == 1 && raised(out, "drive-1") == 1
+  }
+}
+test "a journey raises drive-1 at the commit and arrive-1 at arrival, once each" { checkJourney() }

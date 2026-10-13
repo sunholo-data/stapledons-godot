@@ -47,16 +47,21 @@ crew-parity:       ## AC3: scripted crew sessions in the game == standalone crew
 	@cat $(SCRATCH)/crew-parity/vm.txt
 	@cmp -s $(SCRATCH)/crew-parity/vm.txt $(SCRATCH)/crew-parity/interp.txt || { echo "crew-parity: FAIL: VM and interpreter differ"; exit 1; }
 	@! grep -v ' ok lines ' $(SCRATCH)/crew-parity/vm.txt
-	@for n in consent orders argument; do \
+	@for n in consent orders shipevent argument; do \
 	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > $(SCRATCH)/crew-parity/$$n.ndjson; \
 	  cmp -s $(SCRATCH)/crew-parity/$$n.ndjson tests/crew/$$n.ndjson || { echo "crew-parity: FAIL: $$n recording changed (review, then make crew-parity-record)"; exit 1; }; done
-	@echo "crew-parity: ok (3 recordings, VM == interpreter)"
+	@echo "crew-parity: ok (4 recordings, VM == interpreter)"
 crew-bridge-test:  ## AC6 (Godot side): the real sim at protocol 2.9 over SimBridge: crew section, crew intents, refusals, no crew below 2.9
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_crew_bridge.gd > $(SCRATCH)/crew-bridge.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-bridge)' $(SCRATCH)/crew-bridge.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-bridge.log && grep -q '^crew-bridge: 0 failures$$' $(SCRATCH)/crew-bridge.log
 test: crew-bridge-test
+crew-events-check: ## AC8: the news templates whose words carry a death are exactly sim/crew_events.ail lossTemplateIds (major loss)
+	@want=$$(jq -r '[.tiers[] as $$t | $$t.templates | to_entries[] | select(.value | tostring | test("died")) | ($$t.tier * 4 + .key)] | map(tostring) | join(",")' data/news/templates.json); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lossIdsText --args-json 0 sim/crew_events.ail | tr -d '"'); \
+	[ "$$want" = "$$got" ] && echo "crew-events-check: ok (loss templates $$got)" || { echo "crew-events-check: FAIL: templates with a death are [$$want], lossTemplateIds says [$$got]"; exit 1; }
+test: crew-events-check
 crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
-	@for n in consent orders argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
+	@for n in consent orders shipevent argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
 test: crew-parity
 
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)

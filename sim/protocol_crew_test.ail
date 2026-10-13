@@ -11,11 +11,11 @@ import std/json (encode, js)
 import ./protocol (Session, Served, newSession, serve)
 
 pure func names() -> bool =
-  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply"]
+  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy"]
 
 pure func decodes(t: string, line: string) -> bool = match decodeCrewIntent(t, line) { Ok(_) => true, Err(_) => false }
 
-test "the six crew intents (crew_ask added in C2: consent needs the captain to ask)" { names() }
+test "the seven crew intents (crew_ask added in C2; crew_policy in C3)" { names() }
 test "a crew intent carries one crew_core line" {
   decodes("crew_offer", "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}") &&
   !decodes("crew_offer", "not json") && !decodes("crew_mutiny", "{\"command\":\"offer\"}")
@@ -71,3 +71,12 @@ pure func case4() -> bool {
   let b = feedAll(newSession(), [hello(8), game(""), input(1, [offerMedic()])], []);
   contains(at(a, 1), "bad_game") && contains(at(b, 2), "bad_intent")
 }
+
+pure func casePolicy() -> bool {
+  let r = feedAll(newSession(), [hello(9), game(",\"crew\":\"consent\""),
+    input(1, [intent("crew_policy", "{\"command\":\"policy\",\"policy\":\"orders\"}")]),
+    input(2, [intent("crew_policy", "{\"command\":\"policy\",\"policy\":\"mutiny\"}")])], []);
+  contains(at(r, 1), "\"captaincy\":\"consent\"") && contains(at(r, 2), "\"captaincy\":\"orders\"") && contains(at(r, 2), "\"refused\":[]")
+    && contains(at(r, 3), "\"reason\":\"crew:")
+}
+test "crew_policy switches consent to orders; a bad captaincy is refused (C3, D-70 OQ5)" { casePolicy() }

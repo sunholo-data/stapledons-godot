@@ -8,6 +8,7 @@ import std/option (Option, Some, None)
 import std/result (Ok, Err)
 import std/math (intToFloat)
 import std/list (map, reverse)
+import std/string (concat, intToStr, floatToStr)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
 import pkg/sunholo/relativity/hyper (absf)
@@ -21,7 +22,9 @@ import ./celestial (defaultEpochJd, solSystem, lyKm)
 import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
 import ./inferred_stars (CatStar, inferStar, remember)
 import ./stops (starStopKm)
-import ./crew (CrewState, CrewCmd, initCrew, crewTick, crewIntents)
+import ./crew (CrewState, CrewCmd, initCrew, crewTick, crewIntents, raiseShipEvents)
+import ./crew_events (Moments, noMoments, shipEvents)
+import ./crew_resources (shipUnits, lintAgainstShip)
 import ./gr (GrState, GrResult, grOff, grStep, grShipPos, grApproach, grHover, grOrbit, grRing, grHoverEvent)
 import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
 
@@ -710,7 +713,12 @@ export pure func tick(w: World, input: TickInput) -> Ticked
   let w1 = { w | crew: ci.crew, rng: ci.rng };
   let r0 = tickBase(w1, input);
   let r = { r0 | refused: mergeRefused(r0.refused, map(\x. { i: x.i, reason: x.reason }, ci.refused)) };
-  let o = observe(w1, r.world, r.events);
+  let o0 = observe(w1, r.world, r.events);
+  -- R2-CREW C3: this tick's physics moments reach an aboard crew as ship events (sim/crew_events.ail).
+  let o = match o0.crew {
+    None => o0,
+    Some(cr) => { let e = raiseShipEvents(cr, o0.seed, o0.rng, shipEvents(crewMoments(w1, o0))); { o0 | crew: Some(e.crew), rng: e.rng } }
+  };
   -- R2-CREW (sim/crew.ail): ship time reaches the crew; None (no crew aboard) is a no-op.
   let c = crewTick(o.crew, o.seed, o.rng, input.dtau);
   { world: { o | crew: c.crew, rng: c.rng }, refused: r.refused, events: r.events }
@@ -729,9 +737,29 @@ pure func mergeRefused(a: [Refusal], b: [Refusal]) -> [Refusal] = match (a, b) {
 
 -- R2-CREW C1: bring the synced crew aboard a world (consent or orders, D-70 OQ5). Off by default
 -- until C4, so recorded sessions keep their goldens.
+-- C3: the pack's resources must be the eight bubble resources and fit what the ship can spare.
 export pure func withCrew(w: World, captaincy: string) -> Result[World, string] = match initCrew(captaincy) {
-  Ok(c) => Ok({ w | crew: Some(c) }),
+  Ok(c) => match lintAgainstShip(c.session.scenario, shipUnits(w.ledger.availableKg)) {
+    [] => Ok({ w | crew: Some(c) }),
+    p :: _ => Err(concat(["crew pack: ", p]))
+  },
   Err(e) => Err(e)
+}
+
+-- R2-CREW C3: the physics moments of one tick, from the world before and after it.
+pure func newsKey(n: Option[News]) -> string = match n { Some(x) => concat([intToStr(x.templateId), "@", floatToStr(x.newsEpoch)]), None => "" }
+export pure func crewMoments(before: World, after: World) -> Moments = {
+  let m = noMoments(after.tick);
+  let grStart = after.gr.active && after.gr.mode == "approach" && before.gr.mode != "approach";
+  let grEnd = before.gr.mode == "approach" && after.gr.mode == "hover";
+  let news = match after.cq.news { Some(n) => if newsKey(after.cq.news) != newsKey(before.cq.news) then Some(n.templateId) else None, None => None };
+  let arrived = match (before.journey, after.journey) { (Committed(_), Arrived(c)) => Some(c.plan.id), _ => None };
+  let committed = match (before.journey, after.journey) {
+    (Committed(_), _) => None,
+    (_, Committed(c)) => Some({ plan: c.plan.id, massKg: (planView(after.params, c.plan, c.tau0, c.t0)).energy.totalKg }),
+    _ => None
+  };
+  { m | grStart: grStart, grEnd: grEnd, newsTemplate: news, arrivedPlan: arrived, committed: committed }
 }
 
 -- ------------------------------------------------------------ consequence readouts (M4.1)

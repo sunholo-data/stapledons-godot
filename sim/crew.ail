@@ -15,16 +15,17 @@ module stapledons/sim/crew
 -- Randomness: an authored answer draws one value from the crew stream (SCrew, id 2) as its seed.
 -- No other stream moves (AC5).
 import std/string (concat, intToStr)
-import std/list (filter, head)
+import std/list (filter, head, map)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
-import std/json (encode, jo, kv, js, jnum)
+import std/json (encode, jo, ja, kv, js, jnum, jint)
 import std/math (floor, floatToInt, intToFloat)
-import pkg/sunholo/crew_core/scenario (Scenario, decodeScenario)
+import pkg/sunholo/crew_core/scenario (Scenario, ShipEvent, decodeScenario)
 import pkg/sunholo/crew_core/session (Session, Output, HostError, HostFailure, DomainFailure, start, input, untraced, encodeHostError)
 import pkg/sunholo/crew_core/policy (Policy, decodePolicy, authoredAnswer)
 import stapledons/sim/data/crew_pack (scenarioJson, policyJson)
 import ./rng (Rng, SCrew, draw, top53)
+import ./crew_events (forScenario)
 
 export type CrewState = { session: Session, policy: Policy, scenario: string, turn: int, dayRem: float }
 -- lines: the crew_core input lines fed, in order; traces: crew_core's journal record for each
@@ -176,6 +177,25 @@ export pure func crewCommand(c: CrewState, seed: int, rng: Rng, line: string, as
       }
     }
   }
+
+-- R2-CREW C3: a ship event as crew_core's run-time `ship_event` line (crew_core 0.3.0).
+export pure func shipEventLine(e: ShipEvent) -> string =
+  encode(jo([kv("command", js("ship_event")), kv("event", jo([kv("id", js(e.id)), kv("text", js(e.text)),
+    kv("transfers", ja(map(\t. jo([kv("resource", js(t.resource)), kv("delta", jint(t.delta))]), e.transfers)))]
+    ++ (if e.major == "" then [] else [kv("major", js(e.major))])))]))
+
+pure func supplies(c: CrewState) -> [string] = map(\r. r.id, c.session.scenario.resources)
+
+-- Raise physics moments (sim/crew_events.ail) in order; each goes through crewCommand, so it is a
+-- journalled line like any other. A refused event (crew_core's id dedupe) changes nothing.
+export pure func raiseShipEvents(c: CrewState, seed: int, rng: Rng, es: [ShipEvent]) -> CrewStepped = match es {
+  [] => stepped(c, rng, [], [], None),
+  e :: rest => {
+    let r = crewCommand(c, seed, rng, shipEventLine(forScenario(supplies(c), e)), None);
+    let next = raiseShipEvents(r.crew, seed, r.rng, rest);
+    { next | lines: r.lines ++ next.lines, traces: r.traces ++ next.traces }
+  }
+}
 
 -- A crew intent (sim/protocol_crew.ail decodes it): one crew_core line; askId when it is an ask.
 export type CrewCmd = { kind: string, line: string, askId: Option[string] }

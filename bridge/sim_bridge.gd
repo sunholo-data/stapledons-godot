@@ -33,11 +33,11 @@ const STOPS_MINOR := 7
 const ISM_MINOR := 8
 ## Protocol 2.9 (R2-CREW): the crew. new_game(..., crew = "consent" | "orders") brings the synced
 ## crew aboard; crew_intent(kind, line) builds the six crew intents (crew_offer, crew_ask,
-## crew_start, crew_relief, crew_cancel, crew_reply), each carrying one crew_core command; a
+## crew_start, crew_relief, crew_cancel, crew_reply, crew_policy), each carrying one crew_core command; a
 ## refusal reason starts "crew:". The `crew` section (parse_crew(), kept in `crew`) arrives in the
 ## full state and whenever it changes. Asked for by setting `want_minor = CREW_MINOR`.
 const CREW_MINOR := 9
-const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply"]
+const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy"]
 
 var _pipe: FileAccess
 var _stderr: FileAccess

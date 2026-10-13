@@ -6,13 +6,16 @@ module stapledons/sim/crew_script
 -- sim/crew.ail yields the lines the sim fed crew_core and its journal records.
 --   consent  offer, ask (authored answer), start, the scheduled ship event, a check-in
 --   orders   start without consent, a check-in
+--   shipevent C3: a run-time arrival event (signal +1) and a news burst of loss after a switch to
+--            orders, both as crew_core ship_event lines
 --   argument the analyst (from tick 1) and the medic (from tick 2) hold signal when
 --            `earth_recedes` (tick 3) takes 2 and only 1 is free
 import std/string (concat, join, intToStr)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/crypto (sha256Hex)
-import ./crew (CrewState, CrewStepped, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn)
+import ./crew (CrewState, CrewStepped, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn, shipEventLine)
+import ./crew_events (noMoments, shipEvents)
 import ./rng (Rng, SCrew, zeroRng, counter)
 import std/math (intToFloat)
 
@@ -25,10 +28,15 @@ pure func offer(worker: string, id: string) -> Step =
 pure func ask(actor: string, task: string, id: string) -> Step =
   SCmd(concat(["{\"command\":\"ask\",\"actor\":\"", actor, "\",\"task\":\"", task, "\",\"id\":\"", id, "\"}"]), Some(id))
 pure func begin(task: string) -> Step = SCmd(concat(["{\"command\":\"start_task\",\"task\":\"", task, "\"}"]), None)
+pure func shipEvent(m: {arrive: bool, news: bool}, tick: int) -> [Step] =
+  map(\e. SCmd(shipEventLine(e), None), shipEvents({ noMoments(tick) | arrivedPlan: if m.arrive then Some(1) else None, newsTemplate: if m.news then Some(8) else None }))
+pure func policy(p: string) -> Step = SCmd(concat(["{\"command\":\"policy\",\"policy\":\"", p, "\"}"]), None)
 
 export pure func scripts() -> [Script] = [
   { name: "consent", captaincy: "consent", steps: [offer("medic", "t1"), ask("medic", "t1", "r1"), begin("t1"), SDays(1), ask("medic", "t1", "c1"), SDays(5)] },
   { name: "orders", captaincy: "orders", steps: [offer("engineer", "t1"), begin("t1"), SDays(2), ask("engineer", "t1", "c1"), SDays(5)] },
+  { name: "shipevent", captaincy: "consent", steps: [offer("pilot", "t1"), ask("pilot", "t1", "r1"), SDays(1), policy("orders")] ++ shipEvent({arrive: true, news: false}, 2)
+      ++ [SDays(1)] ++ shipEvent({arrive: false, news: true}, 3) ++ [SDays(2)] },
   { name: "argument", captaincy: "orders", steps: [SDays(1), offer("analyst", "t1"), begin("t1"), SDays(1), offer("medic", "t2"), begin("t2"), SDays(3)] }
 ]
 

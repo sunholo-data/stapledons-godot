@@ -188,10 +188,10 @@
         "crew_policy switch journalled; new games start in consent",
         "crew-parity re-recorded through run-time ship_event"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-13",
+      "completed": "2026-10-13",
+      "notes": "sim/crew_resources.ail (eight, allocate, lintPack, shipUnits, lintAgainstShip, usedOf); sim/data/crew_ship.ail (ship spare capacity with inferred/assumed provenance); withCrew refuses a pack that is not the eight / wrong kind / exceeds the ship. DECISION FOR MARK: ship is the cap, scenario pool stays authored (lab parity); literal availableKg mass would be 2000 blocks vs 3. sim/crew_events.ail Moments -> ship events (gr-in/gr-out heat -2/+2; news signal +1 deep_time or loss for templates 8,15; arrive signal +1; drive readout only, D-70 OQ4); core.crewMoments; raised before the crew day advance; crew_core dedupes ids. crew_policy intent (7th) -> crew_core policy (Session.command); view captaincy reads command; used readout. Tests: crew_events_test 8/8 (incl world journey drive-1/arrive-1 once), protocol_crew_test 10/10, crew_test 7/7; make crew-events-check (+negative control); crew-parity 4 recordings (shipevent new), VM == interpreter; strict, replay, parity, parity-v2, parity-gr, crew-bridge-test pass on v0.54.8."
     },
     {
       "id": "C4_CREW_ON_PERF_GOLDENS",
