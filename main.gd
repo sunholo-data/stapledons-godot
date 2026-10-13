@@ -855,7 +855,7 @@ func _run_golden() -> void:
 		starfield.set_custom_stars([{"name": "test", "pos": n * 1000.0, "t": c.get("t", 5700.0), "flux": 1.0}])
 		starfield.set_ship_position(0.0, 0.0, 0.0)
 		var b: float = c["beta"] if c.has("beta") else Relativity.beta_of_rapidity(c["phi"])
-		starfield.set_velocity(HEADING, b, 1.0 / sqrt(1.0 - b * b) if c.has("beta") else Relativity.gamma_of_rapidity(c["phi"]))
+		starfield.set_velocity(HEADING, b, Relativity.gamma_of(b) if c.has("beta") else Relativity.gamma_of_rapidity(c["phi"]))
 		var img := await _grab()
 		if c.get("hidden", false):
 			var peak := _peak(img)

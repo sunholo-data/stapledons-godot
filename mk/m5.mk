@@ -3,11 +3,11 @@
 # M4 edits). Uses AILANG and SCRATCH from the Makefile.
 
 .PHONY: planet-bundle export-smoke-planets m5-test strict-m5 parity-v2-system hello-pin acen-snapshot acen-snapshot-verify \
-  planets-test planet-textures-check lint-precision lint-precision-m5 planet-assets planet-verify planet-publish planet-textures golden-m5 capture-m5a
+  planets-test planet-textures-check planet-assets planet-verify planet-publish planet-textures golden-m5 capture-m5a
 
 test: m5-test
 
-m5-test: strict-m5 parity-v2-system hello-pin acen-snapshot-verify planets-test planet-textures-check lint-precision-m5   ## M5 checks that run without a GPU window
+m5-test: strict-m5 parity-v2-system hello-pin acen-snapshot-verify planets-test planet-textures-check lint-precision   ## M5 checks that run without a GPU window
 
 # M5.1a: the cited Sol and alpha Cen data modules load and pass every provenance
 # check on the strict VM, printing the same bytes as the interpreter (AC6 data half).
@@ -71,15 +71,6 @@ acen-snapshot-verify: ## the local snapshot matches data/planets/EXOPLANETS.SHA2
 # ------------------------------------------------------------ M5.2a globes, photometry, textures
 planets-test: planet-assets ## M5.2a: SystemView on the recorded system section, point/disc switch, placement, albedo table (headless)
 	$(GODOT) --headless --path . --script tests/test_planets.gd
-
-# The precision lint for the planet renderer (gate 5: gamma and 1 - beta come from the sim or the
-# package, never by hand). M4.6's lint-precision absorbs this: until then `lint-precision` is this.
-PRECISION_M5 := planets physics/planets.gd tools/m5_golden.gd tools/planet_textures.gd
-lint-precision: lint-precision-m5
-lint-precision-m5: ## M5.2a: no hand-computed gamma or 1 - beta in the planet renderer
-	@if grep -rnE '1(\.0)? *- *(beta|b)\b|sqrt\( *1(\.0)? *- *(b|beta) *\* *(b|beta)' $(PRECISION_M5); then \
-	  echo "lint-precision-m5: FAILED (take gamma and 1 - beta from the sim or Relativity)"; exit 1; fi
-	@echo "lint-precision-m5: $(PRECISION_M5) clean (no hand-computed gamma or 1 - beta)"
 
 # Planet albedo textures (D-18 pattern): pins and CREDITS tracked in data/planets/, files in the
 # gitignored assets/planets/. planet-publish uploads to the public bucket (maintainers, gcloud):
