@@ -91,6 +91,7 @@ pure func observe(c: Codex, j: Json, rows: [Json]) -> Codex {
   let table = array(field(j, "archive"));
   let tableOk = str(j, "type") != "new_game" || all(\r.
     all(\a. str(a, "id") != str(r, "id") || str(a, "unlock") == str(r, "hint"), table), rows);
+  -- holds(h, c1) fails only for fired = "" (no inferable trigger); c.hints == hints misses that when an expected row has no hint (test checkHintless).
   {c1 | seen: c.seen ++ fresh, hints: c.hints ++ hs,
     ok: c.ok && tableOk && (unlocked == JNull || prefix(c.seen, ids)) && all(\h. holds(h, c1), hs)}
 }

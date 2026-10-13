@@ -25,6 +25,10 @@ pure func checkProxy() -> bool = contains(timeReport(fixture("proxy")), "total_s
 pure func checkLimit() -> bool = contains(timeReport(fixture("over_limit")), "limit_360=FAIL") && contains(timeReport(fixture("over_limit")), "playthrough-time=FAIL")
 pure func checkBand() -> bool = contains(timeReport(fixture("bad_leg")), "legs_45_120=FAIL") && contains(timeReport(fixture("bad_leg")), "playthrough-time=FAIL")
 pure func checkCodex(name: string, want: string) -> bool = contains(codexReport(fixture(name), expected()), concat(["codex-unlocks=", want]))
+-- An unlock with no inferable trigger (fired = "") and an expected row with no hint: only the holds clause rejects it.
+pure func hintlessStream() -> string = "{\"v\":2,\"type\":\"state\",\"status\":\"ok\",\"changes\":{\"journey\":{\"state\":\"committed\"},\"consequence\":{\"archive\":{\"unlocked\":[]}}}}\n{\"v\":2,\"type\":\"state\",\"status\":\"ok\",\"changes\":{\"consequence\":{\"archive\":{\"unlocked\":[\"archive.late\"]}}}}\n"
+pure func hintlessExpected() -> string = "{\"unlocks\":[{\"id\":\"archive.late\"}]}"
+pure func checkHintless() -> bool = contains(codexReport(hintlessStream(), hintlessExpected()), "codex-unlocks=FAIL")
 test "proxy hand total includes two commit holds" { checkProxy() }
 test "over 360 seconds fails" { checkLimit() }
 test "leg outside 45-120 fails" { checkBand() }
@@ -35,7 +39,8 @@ test "codex entry unlocked before its trigger fails (hint check)" { checkCodex("
 test "codex unlocked list that shrinks fails (prefix check)" { checkCodex("shrink", "FAIL") }
 test "codex archive table with a wrong unlock hint fails (table check)" { checkCodex("wrong_hint", "FAIL") }
 test "codex archive table with the right unlock hint passes" { checkCodex("right_hint", "PASS") }
-export pure func auditPure(_: int) -> string = if checkProxy() && checkLimit() && checkBand() && checkCodex("swapped", "FAIL") && checkCodex("missing", "FAIL") && checkCodex("codex", "PASS") && checkCodex("early", "FAIL") && checkCodex("shrink", "FAIL") && checkCodex("wrong_hint", "FAIL") && checkCodex("right_hint", "PASS") then "session-audit-ok" else "session-audit-FAIL"
+test "codex unlock with no inferable trigger fails even when the expectation has no hint (holds check)" { checkHintless() }
+export pure func auditPure(_: int) -> string = if checkProxy() && checkLimit() && checkBand() && checkCodex("swapped", "FAIL") && checkCodex("missing", "FAIL") && checkCodex("codex", "PASS") && checkCodex("early", "FAIL") && checkCodex("shrink", "FAIL") && checkCodex("wrong_hint", "FAIL") && checkCodex("right_hint", "PASS") && checkHintless() then "session-audit-ok" else "session-audit-FAIL"
 export func auditTests(_: int) -> string ! {FS} {
   let same = foldl(\ok n. ok && readFile(concat(["tests/fixtures/session_audit/", n, ".ndjson"])) == fixture(n), true, ["proxy", "over_limit", "bad_leg", "codex", "swapped", "missing", "early", "shrink", "wrong_hint", "right_hint"]);
   if same && readFile("tests/expected_unlocks.json") == expected() then auditPure(0) else "session-audit-fixture-FAIL"
