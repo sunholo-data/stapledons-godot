@@ -108,18 +108,12 @@ pure func go(c: CrewState, steps: [Step], fast: bool) -> CrewState = match steps
   }
 }
 -- With archiving on (keep 30), crew_core archives after every advance, so a batched advance folds
--- the same items later: the live state and the archive's counters are equal, and the archived
--- ship-event ids are the same set in a different order (crew_core only tests membership: seen()).
-pure func insertS(x: string, ys: [string]) -> [string] = match ys { [] => [x], y :: r => if x < y then x :: ys else y :: insertS(x, r) }
-pure func sortS(xs: [string]) -> [string] = match xs { [] => [], x :: r => insertS(x, sortS(r)) }
-pure func sameCrew(a: CrewState, b: CrewState) -> bool = {
-  let x = a.session.archive;
-  let y = b.session.archive;
-  a.session.state == b.session.state && a.turn == b.turn && x.keep == y.keep && x.tasks == y.tasks && x.evidence == y.evidence &&
-  x.knowledge == y.knowledge && x.accepted == y.accepted && x.completed == y.completed && sortS(x.events) == sortS(y.events)
-}
+-- the same items later. crew_core 0.4.0 keeps archive.events sorted, so the whole session, archive
+-- included, is equal.
+pure func sameCrew(a: CrewState, b: CrewState) -> bool =
+  a.session.state == b.session.state && a.turn == b.turn && a.session.archive == b.session.archive
 pure func checkBatchExact() -> bool = !any(\s. match (replay(s, true), replay(s, false)) {
   (Some(a), Some(b)) => !sameCrew(a, b),
   _ => true
 }, scripts())
-test "plain days batched between flow points equal one advance a day: live state, archive counters, archived ids as a set (AC11)" { checkBatchExact() }
+test "plain days batched between flow points equal one advance a day: live state and archive (AC11)" { checkBatchExact() }
