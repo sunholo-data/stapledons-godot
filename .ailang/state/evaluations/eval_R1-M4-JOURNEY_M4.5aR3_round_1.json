@@ -1,0 +1,38 @@
+{
+ "sprint":"R1-M4-JOURNEY","milestone":"M4.5aR3","round":1,"commit":"4337500","evaluator_model":"claude-sonnet-5-5",
+ "score":88,"pass":true,
+ "breakdown":{"correctness":27,"test_quality_non_vacuity":28,"spec_ac_coverage":17,"code_quality_scope":7,"evidence_integrity":9},
+ "blocking_findings":[],
+ "non_blocking_findings":[
+  "Production seam in demos/ship_consoles.gd is a visible behaviour change. Base code mid-transit: select -> map.select no-op (no card), cancel -> press_cancel queues a cancel that only reaches the sim on the next journey tick, commit -> open_commit_dialog false -> misleading card 'Plot a course first'. Seam sends the intent immediately with dt 0.0 and shows the sim's committed refusal card. It is a player-visible improvement and the plan's AC3 needs it, but the plan said no seams; record it as a deliberate product change in the changelog/ledger. Intents are recorded as normal input lines (dtau 0.0), identical across runs, so determinism holds; replay of dt 0 inputs is not exercised until M4.6gR3.",
+  "Seam edge case: select with arg 'Sol' while committed returns false silently (index_of('Sol') < 0) while the non-committed path treats Sol as plan_home. Also unknown-target select returns false with no card. Proposed fix: send plan_home-equivalent or show the refusal card for 'Sol' and unknown ids.",
+  "Cost: 373k check() calls, ~135 MB display_samples.ndjson per run and ~90-100 s per playthrough (adversarial ~180 s, title/negative extra). ship-demo-ci grows by roughly 5-6 min. Count is noise, not a defect; consider running D-68 text checks per phase/on text change instead of per frame and sampling bindings every Nth frame.",
+  "Pole assertion is camera-aimed by the driver and the max offset (0.077606201 px) is identical in all three phases, so it checks the sim heading -> camera.heading -> Camera3D projection chain only at one fixed heading; it does not exercise changing headings. Acceptable for R-M4.3b-1 CPU half; GPU half is M4.6gR3.",
+  "Executor claimed 148 s wall; measured 102 s and 90 s (not a concern). All other claims matched exactly.",
+  "title-screen-test prints GDScript stack traces (expected route errors under headless) but ends 91 passed, 0 failures."
+ ],
+ "mutations":[
+  {"change":"ship_geometry_demo.gd:737 camera.heading axes swapped [h.x,h.z,h.y]","target":"playthrough","result":"RED: forward pole boosting offset 712.37 px"},
+  {"change":"ship_geometry_demo.gd:737 camera.heading x negated","target":"playthrough","result":"RED: forward pole boosting offset 17359 px"},
+  {"change":"sky_frame.gd to_world: -g.x -> g.x","target":"playthrough","result":"RED: forward pole boosting offset 17125 px"},
+  {"change":"session record hook disabled (record_path = '')","target":"playthrough","result":"RED: FAIL missing session file"},
+  {"change":"remove whole seam (base ship_consoles.gd)","target":"playthrough-adversarial","result":"RED: 3 failures (expected sim refusal, card visible, refused intent reaches sim)"},
+  {"change":"remove only the _on_sim_stepped refusal card","target":"playthrough-adversarial","result":"RED: expected refusal card is visible"},
+  {"change":"adversarial expected_refusal committed -> stale_plan","target":"playthrough-adversarial","result":"RED: expected sim refusal: stale_plan"},
+  {"change":"walk limit 40.0 -> 3.0","target":"playthrough","result":"RED: walk exceeds 40 m: navigation"},
+  {"change":"refusal() always returns '' (unscripted refusals pass)","target":"playthrough-negative","result":"RED: FAIL unfocused (exit=1)"}
+ ],
+ "commands":[
+  {"command":"make playthrough","result_line":"playthrough: 373119 passed, 0 failures (102 s, then 90 s); walks 19.644803554/3.337012194/3.087868750/3.337012194; pole max_px=0.077606201 x3; session lines=2438 new_game=1 commit=2"},
+  {"command":"make playthrough-adversarial","result_line":"playthrough: 377725 passed, 0 failures (180 s)"},
+  {"command":"make playthrough-negative","result_line":"playthrough-negative: 3 passed, 0 failures"},
+  {"command":"make ship-console-test","result_line":"ship-consoles: 120 passed, 0 failures"},
+  {"command":"make no-twitch-test","result_line":"no-twitch: 24 passed, 0 failures"},
+  {"command":"make title-screen-test","result_line":"title-screen: 91 passed, 0 failures"},
+  {"command":"make lint-precision","result_line":"lint-precision: ok"},
+  {"command":"make export-filter-audit","result_line":"export-filter-audit: 90 literals, 0 failures"},
+  {"command":"make in-world-voice-check","result_line":"in-world-voice-check: ... (exit 0)"},
+  {"command":"cmp session.ndjson / events.ndjson / display_samples.ndjson of two runs","result_line":"all three byte-identical"}
+ ],
+ "summary":"M4.5aR3 delivers a real-scene bot (plain launch, title New game, console walk_to/use only, no decision keys). Every mutation turned the relevant target red; runs are byte-deterministic; executor claims match. The only notable issue is the undeclared production seam in ship_consoles.gd, which is justified by AC3 but should be documented, plus runtime/volume cost."
+}
