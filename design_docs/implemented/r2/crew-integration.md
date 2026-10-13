@@ -1,6 +1,6 @@
 # R2-CREW: the crew host aboard the ship
 
-**Status:** Approved 2026-10-13 (attended). Mark answered the six open questions (ledger D-70, § Decisions). Next: CI-0 upstream, then the sprint plan from the integration agent.
+**Status:** Implemented 2026-10-14 (sprint R2-CREW: C0–C6, C8 and G1; evaluation round 2 PASS 88/100, Sonnet). Report: [crew-integration-report.md](crew-integration-report.md). In review: PR #224 on #226 (AILANG v0.54.8).
 **Release:** R2. The R1 roadmap leaves "the crew psychology model" out of R1 ([r1-foundations.md](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md), Out of scope).
 **Priority:** P1 for R2. The crew are the ship's human half (pillar 4), and every later social system (factions, mutiny, contact voices) sits on this host.
 
@@ -55,7 +55,7 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 
 **Non-goals (later sprints):**
 - mutiny, factions and votes;
-- the wider population as cohorts (designed separately in [crew-population.md](crew-population.md));
+- the wider population as cohorts (designed separately in [crew-population.md](../../planned/r2/crew-population.md));
 - the ~100 founders (the slice is the featured crew);
 - civilisations as actors;
 - crew memory and embeddings (stapledons-design `semantic-memory.md` S2);

@@ -1,7 +1,7 @@
 # R2-CREW-POP: the wider population as cohorts
 
 **Status:** Proposed 2026-10-13 (attended, Mark: "how do the wider populations get modelled, just averages? can we run it with larger populations?"). Needs Mark's answers to the open questions, then a sprint plan.
-**Release:** R2, sequenced after [crew-integration.md](crew-integration.md) (R2-CREW). Factions, the mutiny vote and succession stay in R3 and build on this.
+**Release:** R2, sequenced after [crew-integration.md](../../implemented/r2/crew-integration.md) (R2-CREW). Factions, the mutiny vote and succession stay in R3 and build on this.
 **Priority:** P2 for R2. The featured crew carry the opening. The population is what makes a 100-year voyage a society, not a cast.
 
 **Implements** (design repo):

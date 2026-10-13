@@ -1,12 +1,12 @@
 {
   "sprint_id": "R2-CREW",
-  "status": "in_progress",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark (attended 2026-10-13, ledger D-71)",
   "created": "2026-10-13",
   "started": "2026-10-13",
-  "design_doc": "design_docs/planned/r2/crew-integration.md",
-  "sprint_plan": "design_docs/planned/r2/crew-integration-sprint.md",
+  "design_doc": "design_docs/implemented/r2/crew-integration.md",
+  "sprint_plan": "design_docs/implemented/r2/crew-integration-sprint.md",
   "branch": "feat/r2-crew",
   "implements": [
     "crew-integration CI-1",
@@ -118,6 +118,13 @@
         "landing artefacts (status, changelog, design doc move) at landing",
         "game-vision-designer re-score not run (hand score stands)"
       ]
+    },
+    {
+      "round": 2,
+      "evaluator": "Claude Sonnet (sprint-evaluator), separate agent",
+      "score": 88,
+      "result": "pass",
+      "file": ".ailang/state/evaluations/eval_R2-CREW_round_2.json"
     }
   ],
   "coordination": {
@@ -296,10 +303,10 @@
         "evaluation >= 70/100 in .ailang/state/evaluations/",
         "design doc and report in design_docs/implemented/r2/"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-14",
+      "completed": "2026-10-14",
+      "notes": "Round 1 74 (hard fail: ai-live-guard on crew-perf); fixed (AI_LIVE cleared, no-twitch NT3, AC2 restated, Voyage console layout). Round 2 PASS 88/100. Landed: design doc + plan moved to implemented/r2, report crew-integration-report.md, changelog fragment changelogs/unreleased/2026-10-14-r2-crew.md, README index. Open: game-vision-designer re-score (hand score stands); CI on #224; design-repo roadmap status (stapledons-design #21 r2-voyage-life owns the R2 roadmap)."
     }
   ]
 }
