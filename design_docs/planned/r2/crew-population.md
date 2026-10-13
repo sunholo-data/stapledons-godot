@@ -5,7 +5,7 @@
 **Priority:** P2 for R2. The featured crew carry the opening. The population is what makes a 100-year voyage a society, not a cast.
 
 **Implements** (design repo):
-- [bubble-society.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/bubble-society.md): the population system (about 100 founders, births and deaths, generations) and tension accumulation. Factions and mutiny are outside this doc.
+- [bubble-society.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/bubble-society.md): the population system (founders, now about 1,000 by D-75 rather than bubble-society's ~100s, births and deaths, generations) and tension accumulation. Factions and mutiny are outside this doc.
 - [inner-shapes-outer.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/next/inner-shapes-outer.md) §1: one engine at several tempos. A cohort is the same actor shape as a crew member or a civilisation.
 - [crew-psychology.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/future/crew-psychology.md): OCEAN traits, here held as a cohort's personality mix.
 - [bubble-resources.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/next/bubble-resources.md) §6: population draws on the eight resources (D-69).
@@ -33,7 +33,7 @@ Scored by hand; score again with `game-vision-designer` before the sprint plan.
 
 ## Problem
 
-1. **The canon asks for a society; the engine holds a cast.** bubble-society.md starts with about 100 founders and grows by births. crew_core allows **1 to 15** crew per scenario (`scenario.ail:274`).
+1. **The canon asks for a society; the engine holds a cast.** bubble-society.md (now D-75) starts with about 1,000 people and grows to about 1,500 by births. crew_core allows **1 to 15** crew per scenario (`scenario.ail:274`).
 2. **Full agents don't scale.** Regard is kept between every pair of actors, so cost grows with the square of the headcount. Moving 100 or 1,000 people through the strict VM, one turn per ship-day, is out of the question (see AC11 of R2-CREW).
 3. **Averages alone hide the story.** A mean mood of 50 can be everyone uneasy, or half content and half furious. Only the second leads to a confrontation. A model that keeps only means can't tell them apart.
 
@@ -86,7 +86,7 @@ A cohort is a crew_core actor of kind `cohort` with these fields:
 
 **The captain's lever (D-71(2)).** Controlling and encouraging births is a captain's duty. This supersedes bubble-society's "cannot prevent births". A `birth_policy` (*encourage*, *hold* or *restrict*) is a captain decision: set at the Voyage console, journalled, and available as a standing order. It scales the yearly birth rate within what resources allow. Cohorts react to it through their mix, so restricting births under scarcity costs trust with some cohorts and earns it with others. Escalation can raise it as a hold, for example when food runs short or a cohort demands children.
 
-- **Population flows** are yearly, not daily.
+- **Population flows** are yearly, not daily. **The target (D-75):** about 1,000 people at departure and about 1,500 a century later, so net growth near **0.4 % a year**. bubble-society's 2–4 % a year (20–40 births at 1,000) is the *encourage* ceiling in good conditions, not the default. The default `birth_policy` (*hold*) holds net growth near 0.4 %: births above deaths by about four people a year. That's a claim CP-1 checks over a century in the lab.
   - Births depend on the captain's `birth_policy`, headcount, the mood of the parents' cohort, and the resources the births need (food, water, living space at crew scale), up to bubble-society's ~2–4 % a year in good conditions.
   - Deaths come from an age profile plus crises (ship events with `loss`).
 - **Generations are cohorts** (if open question 2 chooses that axis): *founders*, *ship-born* and *ship-native*. A birth adds to the ship-born or ship-native cohort, and the founder cohort only shrinks.
@@ -119,12 +119,12 @@ A cohort is a crew_core actor of kind `cohort` with these fields:
 
 ### CP-1: lab content and claims (ailang-packages)
 
-- The Stapledon pack gets a founders scenario: about 100 people in 8 to 12 cohorts (open question 2), with voices from the featured crew.
+- The Stapledon pack gets a founders scenario: about 1,000 people (D-75) in 8 to 12 department cohorts of about 100 each (D-73), with voices from the featured crew.
 - Claims are written first, for example:
   - a split cohort escalates before a uniformly uneasy one;
   - a death on board moves the founders more than the ship-born after generation 2;
   - births stall when food is short;
-  - headcount stays within ±10 % of bubble-society's growth band over 20 years in good conditions.
+  - under the default *hold* policy, headcount reaches about 1,500 (±10 %) after 100 years in good conditions (D-75), and *encourage* stays within bubble-society's 2–4 % ceiling.
 - `crew-sim --check` and `--auto` over 20 seeds.
 
 ### CP-2: cohorts aboard (this repo)
@@ -174,13 +174,13 @@ A cohort is a crew_core actor of kind `cohort` with these fields:
 | Unrest becomes a hidden score | No numbers on the strip; numbers only through a trusted Archive (bubble-society) |
 | The population step depends on unenforced resources | Readout only until the resource ledger milestone (D-69, D-70 OQ4); births read the stocks, nothing is debited |
 
-## Open questions for Mark (ledger D-73)
+## Decisions (Mark, 2026-10-13; ledger D-73 and D-75)
 
-1. **Release.** Build cohorts in R2 right after the crew slice (recommended: the founders are the opening's society), or move them to R3 with factions and mutiny?
-2. **Cohort axis.** Group by **department** (engineering, medical, processing…), by **generation** (founders, ship-born, ship-native), or by both, as department cohorts split by generation once ship-born arrive? Recommended: department first, adding generation splits when generation 2 appears.
-3. **Founding headcount.** SETTLED by D-71(1): ~100 in total, the featured crew included.
-4. **Featured cap and promotion.** Keep 15 featured at most, with promotion replacing a departed featured crew member (recommended), or let the cast grow?
-5. **Showing unrest.** Should the strip show bands only (recommended), with numbers only through a trusted Archive?
+1. **Release:** R2, right after the crew slice (D-73).
+2. **Cohort axis:** by department first, split by generation once ship-born arrive (D-73).
+3. **Headcount:** about 1,000 at departure, growing to about 1,500 (D-75, superseding ~100). The featured crew are a share of it (D-71(1)).
+4. **Featured cap:** 15, with promotion replacing a departed featured crew member (D-73). A promoted person is named by the game's generator (D-74), keyed by the promoted actor's id (`<cohort>-p<n>`), so replays repeat the name.
+5. **Unrest:** shown as bands only; numbers only through a trusted Archive (D-73).
 
 ## Deliverables
 
