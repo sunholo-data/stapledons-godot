@@ -161,7 +161,7 @@ func _measure(speed: String, eps: float) -> Dictionary:
 			red += 1
 		elif d > 1.25:
 			blue += 1
-	var omb: float = s.get("one_minus_beta", 1.0 - b)
+	var omb: float = s["one_minus_beta"]
 	var cmb_l := Blackbody.photopic_radiance(Relativity.cmb_temperature_apparent(0.0, omb))
 	return {"speed": speed, "eps": eps, "beta": b, "gamma": g, "pole_k": sky.glow_t_pole, "pole_w_m2": sky.glow_pole,
 		"pole_cd_m2": pole_l, "pole_dark": pole_l / l_dark, "ring_deg": rad_to_deg(acos(ct_ring)), "ring_dark": ring_l / l_dark,

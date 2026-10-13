@@ -1,0 +1,78 @@
+{
+  "doc": "design_docs/planned/r1/m46-followups.md",
+  "iso_ts": "2026-10-13T04:24:49Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0.187698,
+      "tokens_in": 9391,
+      "tokens_out": 10635,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "The only change in this doc that alters shipped runtime behavior — the rewrite of main.gd:858 — is specified against a source line the doc never fully quotes and never verifies. Both the problem statement and the design render it with an ellipsis ('1.0 / sqrt(1.0 - b * b) if c.has(\"beta\") else …'), then prescribe an exact full-line replacement whose else-branch becomes Relativity.gamma_of_rapidity(c[\"phi\"]). No verification-log row records the current full line 858 (V9 logs only the matched fragment '1.0 / sqrt(1.0 - b * b)'), no row confirms that Relativity.gamma_of_rapidity exists in physics/relativity.gd (V8 sed'd only lines 16-17 covering gamma_of), and the 'bit-identical' claim is evidenced only for the gamma_of branch (V8's beta enumeration) while the else branch — which the replacement discards — is pure assertion. If the current else branch is not semantically gamma_of_rapidity(c[\"phi\"]), this 'hygiene' item silently changes what γ the golden-style sky check uses, in a doc whose entire premise is that hand-computed γ corrupts the two clocks. Gate 1 (premise verification) fails precisely at the doc's riskiest edit; the executor instruction 'line 858 only' (Files table) and AC8's exact-string drill both inherit the unverified content.",
+        "catch": "Verify, before merge: (1) run sed -n '855,860p' main.gd and record the complete current line 858 — especially the code after else — in the verification log, with no ellipsis; (2) grep -n 'func gamma_of_rapidity\\|func gamma_of' physics/relativity.gd and record that both functions exist with the assumed signatures (the doc currently cites V8 only for gamma_of, lines 16-17); (3) confirm where b and c[\"phi\"] are bound above line 858 so the replacement compiles in context. Do the same closure for tools/glow_eps_sheet.gd:164 — record the full line so 'var omb: float = s[\"one_minus_beta\"]' matches the surrounding assignment shape rather than just the lint-matched fragment. While there: the AC drills (AC8, AC10, AC12) and V11/V12 use BSD-only sed -i '' syntax; if the executor or CI is GNU/Linux these error out before testing anything — either state the executor platform or switch to a portable form (sed -i.bak … \u0026\u0026 rm).",
+        "proposed_fix": "Add three verification-log rows and de-elide the design. V17: 'sed -n 855,860p main.gd' → full line 858 verbatim, else branch shown. V18: 'grep -n gamma_of_rapidity physics/relativity.gd' → line, signature, body. V19: equivalence probe mirroring V8 — a headless one-liner evaluating old-line vs new-line across the case inputs (betas 0.0/0.5/0.9/0.99/0.999 and the corresponding phi values), reporting max relative difference 0.0 for both branches, not just the gamma_of branch. Then replace the design bullet with: 'main.gd:858 is currently `\u003cfull line from V17\u003e`. It becomes `\u003cfull replacement\u003e`. Branch equivalence: the beta branch is bit-identical (V8, V19); the else branch `\u003cold expression\u003e` equals Relativity.gamma_of_rapidity(c[\"phi\"]) because `\u003creason\u003e`, confirmed numerically in V19. gamma_of_rapidity exists at physics/relativity.gd:\u003cn\u003e (V18).' If V17 shows the else branch is anything other than what the doc assumed, the fix must be re-derived from the actual line rather than the ellipsis. Separately, replace 'sed -i ''' in AC8/AC10/AC12 with 'sed -i.bak …' plus cleanup (or add a one-line executor-platform note), so the drills cannot fail for tooling reasons on GNU sed."
+      },
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-3-1-pro",
+      "cost_usd": 0.023846000000000003,
+      "tokens_in": 10351,
+      "tokens_out": 262,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Acceptance Criteria 2, 3, and 14 use `grep -E` (Extended Regular Expressions) combined with escaped alternation pipes (`\\|`). Under POSIX ERE, escaping a special character makes it literal, meaning these commands search for literal pipe characters instead of functioning as a logical OR. This breaks Premise Verification by creating vacuous tests that will always falsely output 0 (success) because the literal pipe string does not exist, leaving regressions uncaught.",
+        "catch": "AC2, AC3, and AC14 use `grep -E` with escaped pipes (`\\|`), which searches for literal pipe characters rather than alternating patterns.",
+        "proposed_fix": "In AC2, AC3, and AC14, either drop the `-E` flag to use Basic Regular Expressions (where `\\|` is alternation), or keep `-E` and use unescaped pipes (`|`). For example, change AC14 to: `grep -cE 'until D-52 is resolved|once the D-52 scene is chosen|Resolve D-52|needs the D-52 bot'`."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: context deadline exceeded",
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Controller read all 265 lines: scope matches triage L2; (a)(b)(d) closures match controller measurements (b mutant 142-\u003e132/10); the two new live hits were verified at main.gd:858 and tools/glow_eps_sheet.gd:164; every AC is a command; files avoid #212-#214 hunks."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "oc-kimi-k3: The only change in this doc that alters shipped runtime behavior — the rewrite of main.gd:858 — is specified against a source line the doc never fully quotes and never verifies. Both the problem statement and the design render it with an ellipsis ('1.0 / sqrt(1.0 - b * b) if c.has(\"beta\") else …'), then prescribe an exact full-line replacement whose else-branch becomes Relativity.gamma_of_rapidity(c[\"phi\"]). No verification-log row records the current full line 858 (V9 logs only the matched fragment '1.0 / sqrt(1.0 - b * b)'), no row confirms that Relativity.gamma_of_rapidity exists in physics/relativity.gd (V8 sed'd only lines 16-17 covering gamma_of), and the 'bit-identical' claim is evidenced only for the gamma_of branch (V8's beta enumeration) while the else branch — which the replacement discards — is pure assertion. If the current else branch is not semantically gamma_of_rapidity(c[\"phi\"]), this 'hygiene' item silently changes what γ the golden-style sky check uses, in a doc whose entire premise is that hand-computed γ corrupts the two clocks. Gate 1 (premise verification) fails precisely at the doc's riskiest edit; the executor instruction 'line 858 only' (Files table) and AC8's exact-string drill both inherit the unverified content.",
+      "gemini-3-1-pro: Acceptance Criteria 2, 3, and 14 use `grep -E` (Extended Regular Expressions) combined with escaped alternation pipes (`\\|`). Under POSIX ERE, escaping a special character makes it literal, meaning these commands search for literal pipe characters instead of functioning as a logical OR. This breaks Premise Verification by creating vacuous tests that will always falsely output 0 (success) because the literal pipe string does not exist, leaving regressions uncaught."
+    ],
+    "absent_reviewers": [
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      },
+      {
+        "model": "oc-glm-5-3",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.211544,
+    "total_tokens_in": 19742,
+    "total_tokens_out": 10897
+  }
+}

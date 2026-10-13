@@ -1,0 +1,68 @@
+{
+  "sprint_id": "R1-L2-M46-FOLLOWUPS", "round": 1, "evaluator": "claude-sonnet-5-5", "commit": "ca3627f", "base": "7d333c5",
+  "score": 89, "pass": true, "result": "pass",
+  "breakdown": {"tests_pass": "18/20 (full make test is the controller's run; every narrow target green: lint-precision, session-audit-test, codex-unlocks, interior 142/0, python-guard)", "lint": "10/10", "acceptance_criteria": "28/30 (AC16 literal command prints hunks-bad; judged a stale AC range; AC17 full make test UNMEASURED here)", "code_quality": "13/15 (sprint JSON still in_progress, L2e2 passes null and no completed timestamp; one Makefile comment line is ~120 chars)", "documentation": "15/15", "design_fidelity": "10/10", "conditional": "n/a (no engine dirs touched)"},
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "AC16 as written fails: the first Makefile hunk is @@ -63 and the AC range is 70-82. The range is stale in the AC, not a regression: at origin/main the Gate-5 comment block starts at Makefile line 63 and the '4 planted lines' sentence that must change to 6 sits at line 68, so no edit that keeps the comment true can start at >=70. gh pr diff shows #212 touches Makefile only at @10, #213 at @1069, #214 at @1071; none touch lines 63-84, so there is no conflict. Fix: the AC range should read 63-84 (the lint block); make the controller's note explicit in the Verification log.",
+    "AC6 and AC7 are not discriminating against the old tree: with the L2c production files reverted, the planted b-form hit in physics/planets.gd and the gdshaderinc hit still exit 2, because the old lint-precision-m5 grep -r over planets/ and physics/planets.gd already catches them. The drills prove the merged lint works (OWN-A and OWN-C below show they go blind when the scope pieces are removed); they do not prove the new lint is stricter than the old one. The strictly new coverage is main.gd:858 and tools/glow_eps_sheet.gd:164 (AC8, red on revert).",
+    "Sprint JSON: status in_progress, milestone L2e2 passes null and no completed timestamp although the work is committed (ca3627f). Finalise at landing.",
+    "Makefile line 65 comment is about 120 characters, and the fixture local variable rename b->bb is harmless but untested beyond the lint count.",
+    "The 'at origin/main parses clean' claim holds, but nothing in make test parses the lint fixtures; the undeclared-bx class of defect (disclosure 1) would be caught only by hand. Optional: add the two fixtures to a godot --check-only step."
+  ],
+  "disclosures": {
+    "1_bx_undeclared": "CONFIRMED and fixed. Removing bx from the signature makes godot --check-only print 'Identifier \"bx\" not declared'. At ca3627f both fixtures check-only clean (rc 0, no error lines); origin's good fixture also clean.",
+    "2_makefile_range": "Stale AC range, not a real failure (see non-blocking 1). Do-not-touch: line 29 hunk count 0; the five Do-not-touch files diff-quiet.",
+    "3_reorder": "Preserves AC4. Positive control still gates the real scan, and still fails when the pattern is broken: LINT_OMB_RE=zzz gives 'matched 0 of 6 planted lines; the pattern is broken' (exit 2). Reorder is required because a too-broad pattern (AC5) also matches the bad file 6/6 and would otherwise reach the count check first only by luck; with it, AC5 prints 'the clean control file matched'. Removing one planted line gives 'matched 5 of 6'; adding a hit to the good fixture gives 'clean control file matched'.",
+    "4_b_to_bb": "Harmless; bad fixture still matches exactly 6 lines.",
+    "5_measurements": "Re-taken at ca3627f: interior mutated 132 passed, 10 failures; unmutated 142 passed, 0 failures. holds-clause deletion: auditPure now session-audit-FAIL on both VM (strict) and interpreter, make session-audit-test exit 2 with the new 'holds check' test red; at 74a8168 sim/tools the same mutant leaves auditPure session-audit-ok (pre-change blindness reproduced)."
+  },
+  "glow_eps_sheet_caller": "s = sim.world[\"ship\"] (tools/glow_eps_sheet.gd:128), the same dictionary whose siblings beta/gamma are read strictly at :129/:134. sim/protocol.ail:209 shipFields emits one_minus_beta unconditionally next to beta and gamma. The stricter read cannot fail where the sibling reads succeed. Offline tool, no other caller.",
+  "d52_rewording": "Meaning kept. Changelog: 'fixtures until the scene playthrough bot (M4.5aR3, D-66 re-plan of D-52 (A), the default 3D ship) lands'. Inventory: the open question (which scenario AC7 budgets) stays open; the deferred-work bullet now says the bot/display audit/walking half is re-planned (D-66) and none was built; 'stay null' present. Ledger confirms D-52 RESOLVED (A) and D-66 is the re-plan. Stale-phrase greps 0, D-66 count 3, 'stay null' 1, 'fixtures until' 1.",
+  "do_not_touch": "git diff --quiet origin/main on demos/ship_consoles.gd ui/legacy_screen.gd data/news/copy.json demos/ship_geometry_demo.gd tests/fixtures/lint_precision/allowlist.txt: quiet. Makefile line-29 hunk count 0 (the line is the unchanged test: target).",
+  "acceptance": {
+    "AC1": {"cmd": "make lint-precision", "observed": "lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta)", "pass": true},
+    "AC2": {"cmd": "git grep/ grep -rn lint-precision-m5|PRECISION_M5 Makefile mk/; make -pnq m5-test | grep -c ...", "observed": "grep rc=1 (no output); prerequisite count 1", "pass": true},
+    "AC3": {"cmd": "make -n test | grep -c 'positive control matched'; Makefile @@ -29 count", "observed": "2 ; 0", "pass": true},
+    "AC4": {"cmd": "make lint-precision LINT_OMB_RE=zzz", "observed": "positive control matched 0 of 6 planted lines; the pattern is broken, exit 2", "pass": true},
+    "AC5": {"cmd": "make lint-precision 'LINT_OMB_RE=1[[:space:]]*-'", "observed": "the clean control file matched; the pattern is too broad, exit 2", "pass": true},
+    "AC6": {"cmd": "append 1.0/sqrt(1.0-b*b) to physics/planets.gd", "observed": "physics/planets.gd:214 flagged, exit 2, restored clean", "pass": true},
+    "AC7": {"cmd": "append to planets/rings.gdshaderinc", "observed": "planets/rings.gdshaderinc:49 flagged, exit 2, restored clean", "pass": true},
+    "AC8": {"cmd": "revert glow_eps_sheet.gd:164 then main.gd:858", "observed": "1 and 1, both restored byte-identical", "pass": true},
+    "AC9": {"cmd": "make lint-precision LINT_OMB_ALSO=physics/nope.gd", "observed": "LINT_OMB_ALSO names an untracked file, exit 2", "pass": true},
+    "AC10": {"cmd": "mutate forward_glow.gd sqrt(sqrt(c))->sqrt(c); test_interior", "observed": "interior: 132 passed, 10 failures; restored: 142 passed, 0 failures", "pass": true},
+    "AC11": {"cmd": "make session-audit-test codex-unlocks AILANG=runtime/bin/ailang; strict-VM auditPure", "observed": "exit 0, 12 tests passed; auditPure -> session-audit-ok", "pass": true},
+    "AC12": {"cmd": "delete the holds clause, make session-audit-test", "observed": "exit 2, 'holds check' test red (11 passed, 1 failed); restored clean", "pass": true},
+    "AC13": {"cmd": "git diff | grep non-comment +/- lines", "observed": "0", "pass": true},
+    "AC14": {"cmd": "stale-phrase greps", "observed": "0, 0, D-66=3, stay null=1, fixtures until=1", "pass": true},
+    "AC15": {"cmd": "allowlist grep; never computed here; gh pr view 165", "observed": "0; demos/ship_geometry_demo.gd:1029; MERGED", "pass": true},
+    "AC16": {"cmd": "do-not-touch diff --quiet; hunk-range awk", "observed": "donottouch-ok; hunk range check prints hunks-bad (first hunk @63, AC says 70-82)", "pass": "partial: stale AC range, see non-blocking 1"},
+    "AC17": {"cmd": "make test; git diff --name-only | grep -c .py", "observed": "py count 0; make python-guard ok; full make test UNMEASURED here (controller running it)", "pass": "unmeasured-in-part"},
+    "AC18": {"cmd": "AC18 block", "observed": "line-ok diff-ok only-if-branch-ok", "pass": true},
+    "AC19": {"cmd": "AC19 block", "observed": "line-ok diff-ok only-rhs-ok", "pass": true}
+  },
+  "mutation_table": [
+    {"id": "AC8a", "mutation": "revert glow_eps_sheet.gd:164", "result": "lint fails naming the file (count 1)", "restored": true},
+    {"id": "AC8b", "mutation": "revert main.gd:858", "result": "lint fails main.gd:858 (count 1)", "restored": true},
+    {"id": "AC10", "mutation": "forward_glow sqrt(sqrt(c))->sqrt(c)", "result": "132 passed/10 failures vs 142/0", "restored": true},
+    {"id": "AC12", "mutation": "delete holds clause", "result": "make session-audit-test exit 2, checkHintless red", "restored": true},
+    {"id": "OWN-1", "mutation": "delete holds clause, run auditPure", "result": "session-audit-FAIL on strict VM and on interpreter", "restored": true},
+    {"id": "OWN-A", "mutation": "drop LINT_OMB_ALSO from the scan list", "result": "lint stays green with a planted b-form hit in physics/planets.gd (blind). Nothing in the ACs catches this removal except AC6; AC6 does fail on it (it is the AC6 drill). Confirms AC6 is the sole guard.", "restored": true},
+    {"id": "OWN-B", "mutation": "(beta|b) -> (beta)", "result": "positive control matched 4 of 6, exit 2", "restored": true},
+    {"id": "OWN-C", "mutation": "drop *.gdshaderinc from scope", "result": "planted rings.gdshaderinc hit not flagged (rc 0): AC7 would fail", "restored": true},
+    {"id": "OWN-G", "mutation": "add a 1.0 - b line to good fixture", "result": "clean control file matched, exit 1", "restored": true},
+    {"id": "OWN-H", "mutation": "delete one planted line from bad fixture", "result": "matched 5 of 6, exit 1", "restored": true},
+    {"id": "OWN-I", "mutation": "remove bx from good fixture signature", "result": "godot --check-only Parse Error (disclosure 1 confirmed)", "restored": true}
+  ],
+  "per_milestone_non_vacuity": {
+    "L2c (revert Makefile, mk/m5.mk, main.gd, glow_eps_sheet.gd, both fixtures to 74a8168)": "AC1 output reads 'matched 4 lines' not 6; AC2 grep finds mk/m5.mk:8; AC3/m5-test prerequisite count 0; AC4 'of 6' absent (old lint runs lint-precision-m5 instead); AC9 flag ignored; AC18 and AC19 line checks red (main.gd 858 grep 0; glow:164 old .get line). AC6/AC7 stay exit 2 under revert because lint-precision-m5 also covers planets/ (non-blocking 2).",
+    "L2e1 (revert sim/tools to 74a8168 and delete holds clause)": "auditPure stays session-audit-ok (blind); with the change it goes FAIL. AC12 is non-vacuous.",
+    "L2e2 (revert changelog and inventory to 74a8168)": "stale-phrase counts 1 and 3, D-66 count 0; AC14 red."
+  },
+  "closed_by_evidence": {
+    "a": "545887f speed_text returns beta-only string; demos/ship_geometry_demo.gd:1029 comment present; allowlist has no ship_geometry_demo row; the merged lint does not flag it (AC1 green). Holds.",
+    "b": "reproduced 132/10 vs 142/0.",
+    "d": "gh pr view 165 -> MERGED."
+  },
+  "cleanup": "Untracked *.uid files created by godot --import deleted; the clone tree is git-clean at ca3627f."
+}

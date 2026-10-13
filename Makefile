@@ -60,24 +60,27 @@ export-filter-audit: import   ## L6a: shipped res:// reads vs export_presets.cfg
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --headless --path . --script tests/test_export_audit.gd > $(SCRATCH)/export-audit.log 2>&1; rc=$$?; grep -E '^(FAIL|UNCLASSIFIED|scoped files|distinct literals|filters|export-filter-audit)' $(SCRATCH)/export-audit.log; test $$rc = 0 && grep -q '^export-filter-audit: [0-9]* literals.*, 0 failures$$' $(SCRATCH)/export-audit.log
 
-# Gate 5: never compute 1 - beta near c. A hand-written 1 - beta (also 1.0-beta, 1 -beta) in code of a
-# .gd or .gdshader outside physics/ and tests/ fails. String literals and comments are stripped first,
+# Gate 5: never compute gamma or 1 - beta near c. A hand-written 1 - beta or 1 - b (also 1.0-beta,
+# 1 -b, and so any hand gamma 1/sqrt(1 - b*b)) in code of a .gd, .gdshader or .gdshaderinc outside
+# physics/ and tests/ (plus LINT_OMB_ALSO, the planet renderer) fails. String literals and comments are stripped first,
 # so labels such as "1 - beta" never match. Hits that are not a live computation are listed in
 # tests/fixtures/lint_precision/allowlist.txt as path<TAB>stripped code<TAB>reason, keyed on the code
 # text and not the line number: edits that move lines keep the entry, and any other line in that file
-# that matches is still reported. The fixture bad_one_minus_beta.gd MUST match all 4 planted lines (else
+# that matches is still reported. The fixture bad_one_minus_beta.gd MUST match all 6 planted lines (else
 # the pattern matches nothing) and good_one_minus_beta.gd must match none. Plain shell, no Python.
 LINT_OMB_DIR := tests/fixtures/lint_precision
-LINT_OMB_RE := (^|[^A-Za-z0-9_.])1(\.0*)?[[:space:]]*-[[:space:]]*beta([^A-Za-z0-9_]|$$)
-lint-precision:    ## no hand-computed 1 - beta in *.gd / *.gdshader outside physics/ and tests/ (positive control: tests/fixtures/lint_precision/bad_one_minus_beta.gd must fail)
+LINT_OMB_RE := (^|[^A-Za-z0-9_.])1(\.0*)?[[:space:]]*-[[:space:]]*(beta|b)([^A-Za-z0-9_]|$$)
+LINT_OMB_ALSO := physics/planets.gd
+lint-precision:    ## no hand-computed gamma or 1 - beta in *.gd / *.gdshader / *.gdshaderinc outside physics/ (bar LINT_OMB_ALSO) and tests/ (positive control: tests/fixtures/lint_precision/bad_one_minus_beta.gd must fail)
 	@hits_in() { sed -E -e 's/"[^"]*"/""/g' -e "s/'[^']*'/''/g" -e 's#(//|\#).*$$##' -e 's/^[[:space:]]+//' -e 's/[[:space:]]+$$//' "$$1" | grep -n -E '$(LINT_OMB_RE)' | sed "s|^|$$1:|"; }; \
-	  bad=$$(hits_in $(LINT_OMB_DIR)/bad_one_minus_beta.gd | wc -l | tr -d ' '); \
-	  [ "$$bad" -eq 4 ] || { echo "lint-precision: positive control matched $$bad of 4 planted lines; the pattern is broken"; exit 1; }; \
+	  git ls-files --error-unmatch $(LINT_OMB_ALSO) >/dev/null 2>&1 || { echo "lint-precision: LINT_OMB_ALSO names an untracked file"; exit 1; }; \
 	  [ -z "$$(hits_in $(LINT_OMB_DIR)/good_one_minus_beta.gd)" ] || { echo "lint-precision: the clean control file matched; the pattern is too broad"; exit 1; }; \
-	  hits=$$(git ls-files -co --exclude-standard -- '*.gd' '*.gdshader' | grep -v -E '^(physics|tests|runtime|addons)/' | while read -r f; do hits_in "$$f"; done \
+	  bad=$$(hits_in $(LINT_OMB_DIR)/bad_one_minus_beta.gd | wc -l | tr -d ' '); \
+	  [ "$$bad" -eq 6 ] || { echo "lint-precision: positive control matched $$bad of 6 planted lines; the pattern is broken"; exit 1; }; \
+	  hits=$$({ git ls-files -co --exclude-standard -- '*.gd' '*.gdshader' '*.gdshaderinc' | grep -v -E '^(physics|tests|runtime|addons)/'; printf '%s\n' $(LINT_OMB_ALSO); } | while read -r f; do hits_in "$$f"; done \
 	    | awk -F'\t' 'FILENAME == ARGV[1] { allow[$$1 "\t" $$2] = 1; next } { i = index($$0, ":"); p = substr($$0, 1, i - 1); r = substr($$0, i + 1); c = substr(r, index(r, ":") + 1); if (!((p "\t" c) in allow)) print }' $(LINT_OMB_DIR)/allowlist.txt -); \
-	  if [ -n "$$hits" ]; then echo "$$hits"; echo "lint-precision: hand-computed 1 - beta outside physics/ and tests/ (take 1 - beta from the sim or sunholo/relativity, or allowlist it with a reason)"; exit 1; fi; \
-	  echo "lint-precision: ok (positive control matched $$bad lines; $$(grep -c . $(LINT_OMB_DIR)/allowlist.txt) allowlisted non-computations; no live hand-computed 1 - beta)"
+	  if [ -n "$$hits" ]; then echo "$$hits"; echo "lint-precision: hand-computed gamma or 1 - beta outside physics/ and tests/ (take gamma and 1 - beta from the sim or sunholo/relativity, or allowlist it with a reason)"; exit 1; fi; \
+	  echo "lint-precision: ok (positive control matched $$bad lines; $$(grep -c . $(LINT_OMB_DIR)/allowlist.txt) allowlisted non-computations; no live hand-computed gamma or 1 - beta)"
 
 # M4.0 area bundles (brief §9). BUNDLE=dir checks one bundle; the default checks the blockout
 # test fixture and the current shipping bundle (AC13, AC14 validation half).
