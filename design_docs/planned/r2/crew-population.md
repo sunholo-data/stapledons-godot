@@ -1,6 +1,6 @@
 # R2-CREW-POP: the wider population as cohorts
 
-**Status:** Proposed 2026-10-13 (attended, Mark: "how do the wider populations get modelled, just averages? can we run it with larger populations?"). Needs Mark's answers to the open questions, then a sprint plan.
+**Status:** Proposed 2026-10-13 (attended, Mark: "how do the wider populations get modelled, just averages? can we run it with larger populations?"). Canon from D-71 (Mark, 2026-10-13) folded in: the featured crew are a share of the ~100 population, and births are a captain's duty. The remaining open questions are ledger D-73. Then a sprint plan.
 **Release:** R2, sequenced after [crew-integration.md](crew-integration.md) (R2-CREW). Factions, the mutiny vote and succession stay in R3 and build on this.
 **Priority:** P2 for R2. The featured crew carry the opening. The population is what makes a 100-year voyage a society, not a cast.
 
@@ -84,8 +84,10 @@ A cohort is a crew_core actor of kind `cohort` with these fields:
 
 ### Births, deaths and generations
 
+**The captain's lever (D-71(2)).** Controlling and encouraging births is a captain's duty. This supersedes bubble-society's "cannot prevent births". A `birth_policy` (*encourage*, *hold* or *restrict*) is a captain decision: set at the Voyage console, journalled, and available as a standing order. It scales the yearly birth rate within what resources allow. Cohorts react to it through their mix, so restricting births under scarcity costs trust with some cohorts and earns it with others. Escalation can raise it as a hold, for example when food runs short or a cohort demands children.
+
 - **Population flows** are yearly, not daily.
-  - Births depend on headcount, the mood of the parents' cohort, and the resources the births need (food, water, living space at crew scale), up to bubble-society's ~2–4 % a year in good conditions.
+  - Births depend on the captain's `birth_policy`, headcount, the mood of the parents' cohort, and the resources the births need (food, water, living space at crew scale), up to bubble-society's ~2–4 % a year in good conditions.
   - Deaths come from an age profile plus crises (ship events with `loss`).
 - **Generations are cohorts** (if open question 2 chooses that axis): *founders*, *ship-born* and *ship-native*. A birth adds to the ship-born or ship-native cohort, and the founder cohort only shrinks.
 - The generation's relationship to Earth (bubble-society) is a mix offset: ship-native trust the Archive differently, and Earth news moves them less.
@@ -145,7 +147,7 @@ A cohort is a crew_core actor of kind `cohort` with these fields:
 | AC1 | crew_core cohorts: bucket counts always sum to headcount; transitions and drift deterministic; strict VM | ailang-packages: lab `make validate` (keyless) |
 | AC2 | Lab claims for the founders scenario hold over 20 seeds, failures recorded as findings | `crew-sim --check --auto` in the PR |
 | AC3 | Division tells a split cohort from a uniform one with the same mean, and escalation reads it | `sim/crew_cohort_test.ail` |
-| AC4 | Births and deaths follow the yearly step, stay within the growth band in good conditions and stall when food is short | `sim/crew_population_test.ail` |
+| AC4 | Births and deaths follow the yearly step and `birth_policy` (encourage, hold, restrict; journalled), stay within the growth band in good conditions and stall when food is short | `sim/crew_population_test.ail` |
 | AC5 | In-game cohort journals equal standalone crew_core byte for byte | `make crew-parity` (cohort recording) |
 | AC6 | Strict VM and VM/interpreter parity with cohorts aboard | `make strict`, `make parity` |
 | AC7 | Promotion creates a featured actor within the cap, with the cohort's mix plus a seeded offset, and requests a portrait | `sim/crew_cohort_test.ail`, `make ai-test` |
@@ -172,11 +174,11 @@ A cohort is a crew_core actor of kind `cohort` with these fields:
 | Unrest becomes a hidden score | No numbers on the strip; numbers only through a trusted Archive (bubble-society) |
 | The population step depends on unenforced resources | Readout only until the resource ledger milestone (D-69, D-70 OQ4); births read the stocks, nothing is debited |
 
-## Open questions for Mark
+## Open questions for Mark (ledger D-73)
 
 1. **Release.** Build cohorts in R2 right after the crew slice (recommended: the founders are the opening's society), or move them to R3 with factions and mutiny?
 2. **Cohort axis.** Group by **department** (engineering, medical, processing…), by **generation** (founders, ship-born, ship-native), or by both, as department cohorts split by generation once ship-born arrive? Recommended: department first, adding generation splits when generation 2 appears.
-3. **Founding headcount.** Keep bubble-society's ~100, or something else now that cost doesn't depend on headcount?
+3. **Founding headcount.** SETTLED by D-71(1): ~100 in total, the featured crew included.
 4. **Featured cap and promotion.** Keep 15 featured at most, with promotion replacing a departed featured crew member (recommended), or let the cast grow?
 5. **Showing unrest.** Should the strip show bands only (recommended), with numbers only through a trusted Archive?
 
