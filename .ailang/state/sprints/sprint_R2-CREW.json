@@ -1,10 +1,10 @@
 {
   "sprint_id": "R2-CREW",
-  "status": "approved",
+  "status": "in_progress",
   "approved": true,
   "approved_by": "Mark (attended 2026-10-13, ledger D-71)",
   "created": "2026-10-13",
-  "started": null,
+  "started": "2026-10-13",
   "design_doc": "design_docs/planned/r2/crew-integration.md",
   "sprint_plan": "design_docs/planned/r2/crew-integration-sprint.md",
   "branch": "feat/r2-crew",
@@ -118,10 +118,10 @@
         "Red tests sim/crew_test.ail, sim/protocol_crew_test.ail fail for the stated reason (log in notes)",
         "both checks wired into make test"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-13",
+      "completed": "2026-10-13",
+      "notes": "vendor/crew-core (repo root; inside sim/ the package check walks it: MOD010 + its tests) at 6dfc0fa, tree 1ba27285…; tools/crew_vendor.sh vendor|check, make crew-vendor/crew-vendor-check (negative control: one-byte edit to AGENT.md -> FAIL). data/crew/{scenario.json<-last-messages-home.json, policy.json, SYNC}; sim/tools/crew_pack.ail generates sim/data/crew_pack.ail, sim/tools/crew_pack_check.ail round trip (sha256 of embedded == file); make crew-sync/crew-sync-check (controls: edited data file -> FAIL, hand-edited module -> FAIL). Tools run --bytecode without --strict-bytecode: std/fs.readFile is evaluator-only on the strict VM (v0.54.6). Both checks in make test. Probe: crew_core start+advance on the strict VM 0.47 s, interpreter ~20 s, outputs byte-identical (40,648 B). Red: sim/crew_test.ail + sim/protocol_crew_test.ail fail with module stapledons/sim/crew not exported (log kept); they land with C1/C2. Gates: make deps (lock stable), ailang check --package sim (93 files), sim tests 424/424. C1 todo: export include_filter for vendor/crew-core once ship.ail imports crew."
     },
     {
       "id": "C1_EMBEDDED_HOST",

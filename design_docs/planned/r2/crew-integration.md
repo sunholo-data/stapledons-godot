@@ -105,9 +105,9 @@ Scored by hand (the `game-vision-designer` skill was not available in the author
 ### CI-1: vendor the host and embed it in the sim
 
 - **Vendor.**
-  - Copy `packages/crew-core` at the CI-0 commit into `sim/vendor/crew-core/`.
-  - Dependency: `"sunholo/crew_core" = {path = "vendor/crew-core"}`. The other three packages come from the registry.
-  - `sim/vendor/crew-core/VENDORED` records the source repo, commit and a tree SHA-256.
+  - Copy `packages/crew-core` at the CI-0 commit into `vendor/crew-core/`.
+  - Dependency: `"sunholo/crew_core" = {path = "../vendor/crew-core"}`. The other three packages come from the registry.
+  - `vendor/crew-core/VENDORED` records the source repo, commit and a tree SHA-256.
   - `make crew-vendor-check` recomputes the hash and refuses local edits.
   - When #1811 is fixed, the path becomes `"0.3.0"` and the folder is deleted.
 - **`sim/crew.ail` (pure).**
@@ -237,7 +237,7 @@ CI-2, CI-3 and CI-4 can run in parallel after CI-1. Each fits one executor run.
   - `crew_core` 0.3.0 (PR, lab validation, evaluation);
   - publishing after #1811.
 - **This repo:**
-  - `sim/vendor/crew-core/` with `VENDORED`;
+  - `vendor/crew-core/` with `VENDORED`;
   - `sim/crew.ail`, `sim/crew_resources.ail`;
   - protocol 2.x crew intents and view;
   - `sim/tools/crew_parity.ail`;

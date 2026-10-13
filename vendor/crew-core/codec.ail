@@ -1,0 +1,114 @@
+module sunholo/crew_core/codec
+import std/json (Json, JObject, keys, getString, getNumber, getInt, decode)
+import std/list (length, filter)
+import std/string (length as stringLength)
+import std/result (Result, Ok, Err)
+import std/option (Some, None)
+import pkg/sunholo/social_dynamics/model (unique, sorted, Value)
+import pkg/sunholo/social_dynamics/wire (singleObject)
+
+-- These four experimental personal consequences are not a universal utility score.
+export type CrewOutcome = AgreedStart | CompliedStart | StrainedStart | RefusedOrder | GrantedRelief | DeniedRelief deriving (Eq)
+
+export pure func fields(j: Json, required: [string]) -> bool
+ensures { not result || unique(required) && unique(keys(j)) && length(keys(j)) == length(required) } = match j {
+  JObject(_) => unique(required) && unique(keys(j)) && sorted(keys(j)) == sorted(required),
+  _ => false
+}
+
+export pure func text(j: Json, key: string) -> Result[string, string]
+ensures { match result {
+  Ok(s) => stringLength(s) > 0 && stringLength(s) <= 65536,
+  Err(_) => true
+} } = match getString(j, key) {
+  None => Err("text:${key}"),
+  Some(s) => if stringLength(s) > 0 && stringLength(s) <= 65536 then Ok(s) else Err("text:${key}")
+}
+
+-- IEEE subtraction excludes both infinities and NaN without conversion.
+pure func finite(n: float) -> bool = n == n && n - n == 0.0
+
+export pure func number(j: Json, key: string) -> Result[float, string]
+ensures { match result {
+  Ok(n) => n == n && n - n == 0.0,
+  Err(_) => true
+} } = match getNumber(j, key) {
+  None => Err("number:${key}"),
+  Some(n) => if finite(n) then Ok(n) else Err("number:${key}")
+}
+
+export pure func integer(j: Json, key: string) -> Result[int, string]
+ensures { match result {
+  Ok(n) => n >= 0 && n <= 1000000000,
+  Err(_) => true
+} } = match number(j, key) {
+  Err(_) => Err("integer:${key}"),
+  Ok(n) => if n < 0.0 || n > 1e+09 then Err("integer:${key}") else match getInt(j, key) {
+    Some(i) => if n == intToFloat(i) then Ok(i) else Err("integer:${key}"),
+    None => Err("integer:${key}")
+  }
+}
+
+-- Framing is complete; object field schemas are checked separately by fields.
+export pure func object(body: string) -> Result[Json, string]
+ensures { match result {
+  Ok(_) => stringLength(body) <= 65536 && singleObject(body),
+  Err(_) => true
+} } = if not singleObject(body) then Err("object") else match decode(body) {
+  Ok(j) => Ok(j),
+  Err(_) => Err("object")
+}
+
+export pure func encodeOutcome(o: CrewOutcome) -> string
+ensures { result == "agreed_start" || result == "complied_start" || result == "strained_start" || result == "refused_order" || result == "granted_relief" || result == "denied_relief" } =
+  match o {
+    AgreedStart => "agreed_start",
+    CompliedStart => "complied_start",
+    StrainedStart => "strained_start",
+    RefusedOrder => "refused_order",
+    GrantedRelief => "granted_relief",
+    DeniedRelief => "denied_relief"
+  }
+
+export pure func decodeOutcome(code: string) -> Result[CrewOutcome, string]
+ensures { match result {
+  Ok(o) => encodeOutcome(o) == code,
+  Err(_) => true
+} } =
+  if code == "agreed_start" then Ok(AgreedStart) else if code == "complied_start" then Ok(CompliedStart) else if code == "strained_start" then Ok(StrainedStart) else if code == "refused_order" then Ok(RefusedOrder) else if code == "granted_relief" then Ok(GrantedRelief) else if code == "denied_relief" then Ok(DeniedRelief) else Err("outcome_code")
+
+-- Trust change without traits (an actor with no OCEAN attributes).
+export pure func outcomeDelta(o: CrewOutcome) -> int
+ensures { result >= 0 - 8 && result <= 4 } = match o {
+  AgreedStart => 2,
+  CompliedStart => 2,
+  StrainedStart => 0 - 2,
+  RefusedOrder => 0 - 8,
+  GrantedRelief => 4,
+  DeniedRelief => 0 - 4
+}
+
+pure func trait(ocean: [Value], id: string) -> int = match filter(\v. v.id == id, ocean) { [v, ..._] => v.value, [] => 50 }
+
+-- Trust change by personality (crew-strain design, Mark 2026-10-13).
+-- complied (told, not asked): +2 - voice, voice = round((O + E - A)/100) in 0..2
+-- strained (complied while overextended): also - round((N + 100 - A)/25)
+-- overridden refusal: -round(8 x (0.5 + (100 - A)/100)), -4 (A100) .. -12 (A0)
+-- denied relief: -(2 + round(N/25)); agreed under consent +2; relief granted +4
+export pure func traitDelta(o: CrewOutcome, ocean: [Value]) -> int ! {}
+ensures { result >= 0 - 12 && result <= 4 } =
+ if length(ocean) == 0 then outcomeDelta(o) else {
+  let a = trait(ocean, "agreeableness");
+  let n = trait(ocean, "neuroticism");
+  let v = trait(ocean, "openness") + trait(ocean, "extraversion") - a;
+  let voice = if v <= 0 then 0 else if (v + 50) / 100 > 2 then 2 else (v + 50) / 100;
+  let strain = (n + 100 - a + 12) / 25;
+  match o {
+   AgreedStart => 2,
+   CompliedStart => 2 - voice,
+   StrainedStart => if 2 - voice - strain < 0 - 12 then 0 - 12 else 2 - voice - strain,
+   RefusedOrder => 0 - ((400 + 8 * (100 - a) + 50) / 100),
+   GrantedRelief => 4,
+   DeniedRelief => 0 - (2 + (n + 12) / 25)
+  }
+ }

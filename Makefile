@@ -28,6 +28,23 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 
 test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
+# R2-CREW (design_docs/planned/r2/crew-integration.md): sunholo/crew_core is vendored until
+# ailang#1811 (vendor/crew-core, VENDORED) and the crew scenario pack is synced from the crew lab
+# (data/crew, SYNC; generated sim/data/crew_pack.ail). Both are changed upstream only.
+CREW_SRC ?=
+CREW_REV ?=
+crew-vendor:       ## re-vendor crew_core: make crew-vendor CREW_SRC=<ailang-packages clone> CREW_REV=<sha>, then cd sim && ailang lock
+	@test -n "$(CREW_SRC)" -a -n "$(CREW_REV)" || { echo "usage: make crew-vendor CREW_SRC=<ailang-packages clone> CREW_REV=<sha>"; exit 2; }
+	sh tools/crew_vendor.sh vendor "$(CREW_SRC)" "$(CREW_REV)"
+crew-vendor-check: ## AC2: vendor/crew-core equals its recorded upstream tree (VENDORED); no local edits
+	@sh tools/crew_vendor.sh check
+crew-sync:         ## re-sync the crew pack: make crew-sync CREW_SRC=<ailang-packages clone> CREW_REV=<sha>
+	@test -n "$(CREW_SRC)" -a -n "$(CREW_REV)" || { echo "usage: make crew-sync CREW_SRC=<ailang-packages clone> CREW_REV=<sha>"; exit 2; }
+	AILANG="$(AILANG)" sh tools/crew_sync.sh sync "$(CREW_SRC)" "$(CREW_REV)"
+crew-sync-check:   ## AC7: data/crew matches SYNC, sim/data/crew_pack.ail regenerates identically, embedded text round-trips
+	@AILANG="$(AILANG)" SCRATCH="$(SCRATCH)/crew-sync" sh tools/crew_sync.sh check
+test: crew-vendor-check crew-sync-check
+
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
 	python3 tools/check_star_names.py

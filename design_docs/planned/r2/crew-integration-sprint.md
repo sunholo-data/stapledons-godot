@@ -32,11 +32,17 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 
 ## Milestones
 
-### C0: tests first, vendor, data sync (~260 LOC)
+### C0: tests first, vendor, data sync (~260 LOC) ✅ 2026-10-13
+> **Done.**
+> - **Vendored copy:** at the repo root `vendor/crew-core/`, not `sim/vendor/`. Inside `sim/`, `ailang check --package sim` walks into the copy (MOD010 on every module, and its tests would run as sim tests). The dependency is `{path = "../vendor/crew-core"}`.
+> - **Sync tools:** `make crew-sync`/`crew-sync-check` run on the bytecode VM *with* evaluator fallback, because `std/fs.readFile` is evaluator-only on the strict VM in v0.54.6. Strictness is the pure core's gate, not the I/O tools'.
+> - **Probe:** crew_core starts and advances the synced pack on the strict VM in 0.47 s, byte-identical to the interpreter (40,648 bytes). The interpreter is slow on this path (~20 s), which matters for `make parity` once the crew are on (C4).
+> - **Red tests:** `sim/crew_test.ail` and `sim/protocol_crew_test.ail` failed for the stated reason (module not exported/absent) and land with C1 and C2.
+
 - **Vendor.**
-  - `make crew-vendor SRC=<ailang-packages clone> REV=<sha>` copies `packages/crew-core` into `sim/vendor/crew-core/` and writes `VENDORED` (repo, commit, tree SHA-256).
+  - `make crew-vendor CREW_SRC=<ailang-packages clone> CREW_REV=<sha>` copies `packages/crew-core` into `vendor/crew-core/` and writes `VENDORED` (repo, commit, tree SHA-256).
   - `make crew-vendor-check` recomputes the hash and fails on any local edit (AC2). It gets a negative control: change one byte, expect a failure.
-- **Dependency.** In `sim/ailang.toml`, `"sunholo/crew_core" = {path = "vendor/crew-core"}`, then `ailang lock` (the CLAUDE.md workaround).
+- **Dependency.** In `sim/ailang.toml`, `"sunholo/crew_core" = {path = "../vendor/crew-core"}`, then `ailang lock` (the CLAUDE.md workaround).
 - **Sync.**
   - `make crew-sync` copies `last-messages-home.json` and `policy.json` (D-70 OQ3) from the lab pack into `data/crew/`, with a `SYNC` manifest (source commit and per-file sha256).
   - `sim/tools/crew_sync.ail` (AILANG, not Python) generates `sim/data/crew_pack.ail`.
