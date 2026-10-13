@@ -234,6 +234,15 @@ func test_legacy_line() -> void:
 	ok("audit: the legacy screen is all bindings", DisplayBinding.audit(l).is_empty())
 	l.show_world(v, true)
 	ok("held back while the news panel is open", not l.visible)
+	# D-68 at the ship's Archive terminal: every step's world is folded, the log shown later.
+	l.visible = false
+	l.fold({"consequence": {"legacy": {"count": 3, "appended": [{"tick": 2, "kind": "departure", "star_id": "Sol", "tau": 1.3, "t": 8.9, "gap_years": 7.6}]}}})
+	ok("fold adds the step's new entry and leaves the screen hidden", l.entries.size() == 3 and not l.visible)
+	l.fold({"consequence": {"legacy": {"count": 1, "appended": [{"tick": 0, "kind": "departure", "star_id": "Sol", "tau": 0.0, "t": 0.0, "gap_years": 0.0}]}}})
+	ok("a count below ours is a new voyage: the old log is forgotten", l.entries.size() == 1 and l.rows.size() == 1)
+	var r := l.readable({"kind": "archive_unlock", "star_id": "archive.bubble", "t": 0.0, "tau": 0.0})
+	ok("D-67 a log row reads in words: %s" % str(r), r["kind"] == "Archive entry opened" and r["star_id"] == "The Bubble" and l.readable({"kind": "arrival", "star_id": "Sol"})["kind"] == "Arrived")
+	ok("every kind the sim logs has words (no raw id on the terminal)", ["commit", "departure", "boost", "cruise", "brake", "arrival", "news", "return", "archive_unlock", "bh_enter", "bh_ring", "bh_hover"].all(func(k: String) -> bool: return l.copy["log_kinds"].has(k)))
 	var src := FileAccess.get_file_as_string("res://ui/legacy_screen.gd") + FileAccess.get_file_as_string("res://ui/composed_binding.gd") + FileAccess.get_file_as_string("res://ui/news_panel.gd")
 	ok("AC3: no save or load path in the new screens", RegEx.create_from_string("(?i)save_game|load_game|ResourceSaver").search(src) == null)
 	l.queue_free()

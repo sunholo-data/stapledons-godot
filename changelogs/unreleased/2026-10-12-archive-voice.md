@@ -5,3 +5,10 @@
 - **Reply filter for every AI line:** a reply that steps outside the ship ("game", "player", "simulation", "language model" ...) or hints at the loop ("previous run", "new game", "multiverse" ...) falls back like a numeral does.
 - **Frame-break questions** for the attended live check: `data/ai/archive_frame_break.json`.
 - Typing at a terminal no longer triggers the I key or walking.
+
+### Fixed
+
+- **The Archive terminal's layout:** the codex no longer covers the reading row, so Read news, Voyage log, Ask the Archive and Ask stay clickable. The codex, news, log and answer panels all fill the terminal below its two rows, laid out with the terminal.
+- **A Codex button** returns from news, the log or an answer to the Archive's entries.
+- **The Voyage log lists its entries:** the ship now feeds every sim step to the log (the sim's section carries only the entries since the previous step), so it no longer shows "3 entries" over an empty list. Rows read in words ("Archive entry opened · The Bubble", "Arrived · Sol"), never as sim ids.
+- Website: news post "The Archive answers" and three gallery captures (Ask the Archive, the Voyage log, New game); `make ship-ui-capture` gains the `archive_question` and `voyage_log` frames.

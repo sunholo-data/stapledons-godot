@@ -37,7 +37,7 @@ const STATIONS := {
 const ACTIONS := {
 	"navigation": ["open", "select", "speed", "commit", "cancel", "home", "sgr_a", "approach", "leave"],
 	"voyage": ["open", "begin"],
-	"archive": ["open", "news", "log", "ask"], # D-66 H2 + D-68: news from home and this voyage's log; starting over is the title screen's New game, never a console. R1-ARCHIVE-VOICE: ask the Archive
+	"archive": ["open", "news", "log", "ask", "codex"], # D-66 H2 + D-68: news from home and this voyage's log; starting over is the title screen's New game, never a console. R1-ARCHIVE-VOICE: ask the Archive; codex returns to the entries
 }
 const ITINERARY := "Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
 const HINT := "Decisions are made at the bridge consoles: the Voyage console begins the guided voyage, the navigation station plots a course. Tab · Walk to."
@@ -265,8 +265,7 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 			if archive_ask.state == "offline":
 				# Out of world, in the HUD's own voice (D-56): the in-world line stays on the terminal.
 				demo.note("Live AI is off: switch it on in the AI indicator, with a key, to hear the Archive answer.")
-			if demo.journey_sim != null and not demo.journey_sim.stepped.is_connected(_on_sim_stepped):
-				demo.journey_sim.stepped.connect(_on_sim_stepped)
+			follow(demo.journey_sim)
 			_reading(); news_panel.close(); legacy_screen.visible = false
 			_show_answer()
 			return true
@@ -274,6 +273,12 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 			_reading(); news_panel.close(); answer_panel.visible = false
 			legacy_screen.show_world(demo.sky_world if demo.sky_world is Dictionary else {})
 			legacy_screen.visible = true
+			_fit_archive() # show_world re-centres the log; it belongs over the codex like the others
+			return true
+		["archive", "codex"]:
+			# Back to the entries from news, the log or an answer (the answer stays for later).
+			if news_panel != null:
+				news_panel.close(); legacy_screen.visible = false; answer_panel.visible = false
 			return true
 		["voyage", "begin"]:
 			return demo.start_solar_departure()
@@ -773,6 +778,18 @@ func _layout_panel() -> void:
 	else:
 		panel.custom_minimum_size = r.size
 		panel.size = r.size
+	if focused == "archive":
+		_fit_archive()
+
+
+## The codex and the reading panels fill the Archive terminal below its two rows, laid out with
+## the terminal (again a frame later, when the HUD strip above has its final height).
+func _fit_archive() -> void:
+	if demo.codex != null and demo.codex.panel != null:
+		_fit_reading(demo.codex.panel)
+	if news_panel != null:
+		for c: Control in [news_panel, legacy_screen, answer_panel]:
+			_fit_reading(c)
 
 
 func _close_panel(id: String) -> void:
@@ -805,16 +822,42 @@ func _reading() -> NewsPanel:
 		answer_question = _label("", 14, Color(0.62, 0.68, 0.8)); box.add_child(answer_question)
 		answer_text = _label("", 17); box.add_child(answer_text)
 		_reading_layer.add_child(answer_panel)
-		var r := panel_rect()
-		for c: Control in [news_panel, legacy_screen, answer_panel]:
-			c.position = r.position + Vector2(12.0, 140.0); c.custom_minimum_size = Vector2(r.size.x - 24.0, r.size.y - 152.0)
+		_fit_archive()
 	return news_panel
 
 
-## R1-ARCHIVE-VOICE: the sim stepped; the open question may have its answer now.
+## Below the terminal's two rows (news and log; the reading buttons and Ask), over the codex.
+const READING_TOP := 140.0
+
+
+func _fit_reading(c: Control) -> void:
+	var r := Rect2(panel.position, panel.size) if panel.visible and panel.size.y > 0.0 else panel_rect()
+	c.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	c.grow_horizontal = Control.GROW_DIRECTION_END # the log grows both ways from its centre otherwise
+	c.grow_vertical = Control.GROW_DIRECTION_END
+	c.custom_minimum_size = Vector2(r.size.x - 24.0, r.size.y - READING_TOP - 12.0)
+	if c is LegacyScreen and (c as LegacyScreen).scroll != null: # its list scrolls inside the room left
+		(c as LegacyScreen).scroll.custom_minimum_size = Vector2(c.custom_minimum_size.x - 32.0, maxf(48.0, c.custom_minimum_size.y - 110.0))
+	c.size = c.custom_minimum_size
+	c.position = r.position + Vector2(12.0, READING_TOP)
+
+
+## The ship's journey session (each new one): its steps feed the Voyage log and the open question.
+func follow(sim: SimBridge) -> void:
+	if sim != null and not sim.stepped.is_connected(_on_sim_stepped):
+		sim.stepped.connect(_on_sim_stepped)
+		_reading()
+		legacy_screen.fold(sim.world) # the new game's own entries came before any step
+
+
+## The sim stepped: fold this voyage's new log entries (D-68; the log section carries only the
+## entries since the last step); the open question (R1-ARCHIVE-VOICE) may have its answer now.
 func _on_sim_stepped(events: Array) -> void:
-	var before := archive_ask.state
 	var sim: SimBridge = demo.journey_sim
+	if sim != null:
+		_reading()
+		legacy_screen.fold(sim.world)
+	var before := archive_ask.state
 	archive_ask.on_events(events, sim.last_refused if sim != null else [], sim.relay_intents if sim != null else [], sim.relay_from if sim != null else 0)
 	if archive_ask.state != before:
 		_show_answer()
@@ -890,16 +933,13 @@ func _voyage_panel() -> void:
 
 
 func _archive_panel() -> void:
+	follow(demo.journey_sim)
 	demo._ensure_codex()
 	var world: Dictionary = demo.sky_world if demo.sky_world is Dictionary else {}
 	demo.codex.show_world(world)
 	demo.codex.open()
 	(demo.codex.get_parent() as CanvasLayer).layer = panel_layer.layer + 1 # over the console panel
-	var r := panel_rect()
-	var p: PanelContainer = demo.codex.panel
-	p.custom_minimum_size = Vector2(r.size.x - 24.0, r.size.y - 92.0)
-	p.position = r.position + Vector2(12.0, 84.0)
-	p.size = p.custom_minimum_size
+	_fit_reading(demo.codex.panel) # below the reading row, so Ask stays reachable
 	var news := HBoxContainer.new()
 	news.add_theme_constant_override("separation", 12)
 	panel_body.add_child(news)
@@ -923,6 +963,9 @@ func _archive_panel() -> void:
 	var read_log := Button.new(); read_log.text = "Voyage log"; read_log.name = "VoyageLog"
 	read_log.pressed.connect(func() -> void: use("archive", "log"))
 	reading.add_child(read_log)
+	var codex_b := Button.new(); codex_b.text = "Codex"; codex_b.name = "ArchiveCodex"
+	codex_b.pressed.connect(func() -> void: use("archive", "codex"))
+	reading.add_child(codex_b)
 	# R1-ARCHIVE-VOICE: ask the Archive (Enter or the button).
 	ask_field = LineEdit.new(); ask_field.name = "ArchiveQuestion"; ask_field.placeholder_text = "Ask the Archive..."
 	ask_field.max_length = ArchiveAsk.MAX_QUESTION; ask_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL

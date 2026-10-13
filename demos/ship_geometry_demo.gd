@@ -611,6 +611,7 @@ func _create_navigation(scenario:String) -> void:
 			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
 		if ai_session!=null:ai_session.attach(journey_sim)
+		if consoles!=null:consoles.follow(journey_sim) # the Voyage log and Ask the Archive read its steps
 		if setup_options.has("seed"):print("voyage seed %d (%s)" % [journey_sim.last_seed,live_scenario]) # D-68: a New game run can be replayed from its seed
 		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation"
 		navigation_window.size=Vector2i(1280,800);navigation_window.min_size=Vector2i(320,200)

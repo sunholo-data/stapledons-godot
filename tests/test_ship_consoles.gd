@@ -290,6 +290,11 @@ func test_voyage_archive_sgr() -> void:
 	c.go_to("archive")
 	c.use("archive", "open")
 	check("D-68 away from home the Voyage log opens without the closing line", c.use("archive", "log") and c.legacy_screen.visible and not c.legacy_screen.closing.visible)
+	var top: float = c.panel_rect().position.y + c.READING_TOP
+	check("the log sits where the other reading panels do, below the terminal's rows (not re-centred): %s vs %s" % [c.legacy_screen.position, c.answer_panel.position], is_equal_approx(c.legacy_screen.position.y, top) and c.legacy_screen.position == c.answer_panel.position)
+	check("the log ends inside the terminal panel (%s vs %s)" % [c.legacy_screen.get_rect().end.y, c.panel.get_rect().end.y], c.legacy_screen.get_rect().end.y <= c.panel.get_rect().end.y + 0.5)
+	check("the codex starts below the reading row, so Ask and the buttons stay uncovered", demo.codex.panel.position.y >= top - 0.5)
+	check("Codex returns from the log to the entries", c.panel_body.find_child("ArchiveCodex", true, false) != null and c.use("archive", "codex") and not c.legacy_screen.visible and not c.news_panel.visible and not c.answer_panel.visible and demo.codex.panel.visible)
 	c.leave()
 	step(demo, 0.7)
 	demo.sky_world = saved_world
@@ -417,6 +422,9 @@ func test_archive_wiring() -> void:
 	var f := ArchiveAsk.open_fields("Where are we?", demo.sky_world, demo.stop_name())
 	var ctx: Dictionary = f["context"]
 	check("AV the sensors come from the sim's own world (%s)" % str(ctx), ctx.get("location", "") != "" and ctx.has("clocks") and ctx.has("journey") and ctx.size() <= 8)
+	step(demo, 1.0)
+	var logged := int(GalaxyMap.field_value(demo.journey_sim.world, "consequence.legacy.count"))
+	check("D-68 the Voyage log follows the session from its first step (%d entries, %d listed)" % [logged, demo.consoles.legacy_screen.entries.size()], logged > 0 and demo.consoles.legacy_screen.entries.size() == logged)
 	var plain: Node = await new_demo()
 	check("AV captures, goldens and tests without the option get no AI session", plain.ai_session == null and plain.journey_sim.ai_relay == null)
 	plain.queue_free()
