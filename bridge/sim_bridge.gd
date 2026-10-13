@@ -61,6 +61,8 @@ signal stepped(events: Array)
 ## The relay's intents in the last send and where they start in it (a refusal names its intent
 ## by index: R1-ARCHIVE-VOICE tells its own refused ai_open apart).
 var relay_intents: Array = []
+## R2-CREW C6: intents queued by a console (the Crew page), sent with the next tick and then cleared.
+var queued: Array = []
 var relay_from := 0
 var last_events: Array = []
 var last_error := ""
@@ -272,6 +274,9 @@ func send(intents: Array, dtau: float) -> bool:
 		return false
 	var tick := int(world["tick"]) + 1
 	relay_intents = []
+	if not queued.is_empty():
+		intents = intents + queued
+		queued = []
 	relay_from = intents.size()
 	if ai_relay != null:
 		relay_intents = ai_relay.take_intents()
@@ -583,6 +588,11 @@ func _take_gr(changes: Dictionary) -> bool:
 		return false
 	gr = parsed
 	return true
+
+## R2-CREW C6: queue intents for the next tick (after the caller's own, before the relay's).
+func queue(list: Array) -> void:
+	queued.append_array(list)
+
 
 ## A crew intent: `kind` one of CREW_INTENTS, `command` the crew_core command as a dictionary.
 static func crew_intent(kind: String, command: Dictionary) -> Dictionary:

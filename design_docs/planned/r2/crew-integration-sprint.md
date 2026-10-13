@@ -136,7 +136,15 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Cast (D-70 OQ2).** Add `data/ai/cast/<role>.json` for each crew member in `last-messages-home`, with a `display_name`. Role ids stay the `entity_id`.
 - **Gate:** `make ai-test` (AC9) and `in-world-voice-check`.
 
-### C6: a minimal Crew page on the Voyage console (~250 LOC, after C2; the policy switch after C3)
+### C6: a minimal Crew page on the Voyage console (~250 LOC, after C2; the policy switch after C3) ✅ 2026-10-13 (renders await Mark's review)
+> **Done.**
+> - **`ui/crew_page.gd` (`CrewPage`).** One row per member: the generated name (D-74) with the role, stress, fatigue and trust bars (warm at or above the pack's overextended threshold of 70; no numbers, D-21), low regard, the work in words, and the latest line (the template, then the accepted AI words via `on_events`). Unresolved reliefs get Grant and Deny.
+> - **Actions.** Offer work is one press (offer + ask). Start, relief and the consent/orders switch need a confirming second press (no twitch).
+> - **`SimBridge.queue()`.** Console intents ride the next tick, before the relay's. The Voyage console shows a Crew section **only while a crew is aboard** (protocol 2.9), so today's crewless console and its tests are unchanged until C4.
+> - **Tests.** `tests/test_crew_console.gd` (`make crew-console-test`, AC10): 24 checks on a crew section recorded from the real sim (`tests/crew/console_state.json`: seed 1, orders, the medic asking for relief). It covers every action's intent and the confirm rule, and the real sim accepts what the page builds, directly and through the queue. The no-twitch sweep runs without crew, so it reaches the page only once C4 puts the crew aboard.
+> - **Renders.** `make crew-console-capture` writes `renders/crew_console/{crew_page,crew_page_armed,crew_page_ai}.png`, all opened. They caught a wrapping bug (labels in a row had no width) and an overflow; both are fixed.
+> - **Deferred to C8.** Answering a crew concern needs the conversation issues in the view; C8's hold card is where the player answers.
+
 - **Where.** A Crew page in `demos/ship_consoles.gd`'s Voyage console (D-56).
 - **What it shows.** Each member's display name and role, stress, fatigue and trust bars, regard only when it is low, their current work and their latest line (template, then the accepted AI line).
 - **Actions:** offer work, start, grant or deny relief, and answer a concern. These map one to one to C2's intents. The consent/orders switch is a deliberate, confirmed choice (after C3).

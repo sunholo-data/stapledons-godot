@@ -60,6 +60,13 @@ crew-events-check: ## AC8: the news templates whose words carry a death are exac
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lossIdsText --args-json 0 sim/crew_events.ail | tr -d '"'); \
 	[ "$$want" = "$$got" ] && echo "crew-events-check: ok (loss templates $$got)" || { echo "crew-events-check: FAIL: templates with a death are [$$want], lossTemplateIds says [$$got]"; exit 1; }
 test: crew-events-check
+crew-console-test: import ## AC10: the Voyage console Crew page on a recorded crew section; its actions emit the right crew intents (confirmed); the real sim accepts them
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_console.gd > $(SCRATCH)/crew-console.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-console)' $(SCRATCH)/crew-console.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console.log && grep -q '^crew-console: 0 failures$$' $(SCRATCH)/crew-console.log
+test: crew-console-test
+crew-console-capture: ## C6 review frames: the Crew page from the recorded crew section -> renders/crew_console/ (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --path . --resolution 1280x720 --script tools/crew_console_capture.gd > $(SCRATCH)/crew-console-capture.log 2>&1; rc=$$?; grep -E '^(frame|crew-console-capture)' $(SCRATCH)/crew-console-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console-capture.log
 crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
 	@for n in consent orders shipevent argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
 test: crew-parity

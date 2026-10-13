@@ -73,6 +73,9 @@ var answer_text: Label
 var panel := PanelContainer.new()
 var panel_title := Label.new()
 var panel_body := VBoxContainer.new()
+## R2-CREW C6: the Crew page on the Voyage console (only while a crew is aboard, protocol 2.9).
+var crew_page: CrewPage
+var _crew_sim: SimBridge
 var step_back := Button.new()
 
 
@@ -888,7 +891,8 @@ func _refresh_panel() -> void:
 		return
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)
-		c.queue_free()
+		if c != crew_page: # the Crew page persists, so a pending confirm survives a refresh
+			c.queue_free()
 	_cancel_confirm()
 	match focused:
 		"navigation":
@@ -922,6 +926,7 @@ func _navigation_panel() -> void:
 
 
 func _voyage_panel() -> void:
+	_crew_section()
 	panel_body.add_child(_label("The guided voyage (D-46, D-47, D-49)", 15))
 	panel_body.add_child(_label(ITINERARY, 14))
 	panel_body.add_child(_label("Each leg is flown in real time; at each stop the ship turns to show the body and holds for a dwell. Pause (P), Skip dwell (N) and Skip stage (K) only change how fast you watch.", 13, Color(0.7, 0.75, 0.85)))
@@ -930,6 +935,35 @@ func _voyage_panel() -> void:
 		return
 	panel_body.add_child(_label("The guided voyage replaces the current course. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
 	panel_body.add_child(confirm_button("voyage", "begin", "Begin guided voyage"))
+
+
+## The crew aboard the journey sim, if any: names, bars, lines and the captain's choices. The
+## page's intents ride the sim's next tick (SimBridge.queue); each tick refreshes it.
+func _crew_section() -> void:
+	var sim = demo.get("journey_sim") if demo != null else null
+	if not (sim is SimBridge) or (sim as SimBridge).crew.is_empty():
+		return
+	if crew_page == null:
+		crew_page = CrewPage.new()
+	if _crew_sim != sim:
+		if _crew_sim != null and _crew_sim.stepped.is_connected(_on_crew_step):
+			_crew_sim.stepped.disconnect(_on_crew_step)
+		for c in crew_page.intents.get_connections():
+			crew_page.intents.disconnect(c["callable"])
+		_crew_sim = sim
+		_crew_sim.stepped.connect(_on_crew_step)
+		crew_page.intents.connect(_crew_sim.queue)
+	panel_body.add_child(_label("Crew", 15))
+	crew_page.show_crew(_crew_sim.crew)
+	panel_body.add_child(crew_page)
+
+
+func _on_crew_step(events: Array) -> void:
+	if crew_page == null or _crew_sim == null:
+		return
+	crew_page.on_events(events)
+	if focused == "voyage" and crew_page.get_parent() == panel_body:
+		crew_page.show_crew(_crew_sim.crew)
 
 
 func _archive_panel() -> void:
