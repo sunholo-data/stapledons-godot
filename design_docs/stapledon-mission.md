@@ -286,7 +286,11 @@ never a worktree and never the attended clone. List the files any attended sprin
 flight on a `Do-not-touch` line below, and the loop must not edit them.
 Arm it overnight or whenever no attended sprint shares its files.
 
-**Do-not-touch (attended, in flight 2026-10-12):** `demos/ship_consoles.gd`, `ui/legacy_screen.gd`, `data/news/copy.json` and the out-of-world menu until the D-68 change lands. That change moves Begin again to New game in the menu, renames the panel Voyage log and adds the spoiler guard. The D-66 hooks landed in #208: H1 record seam, H2 news and the log at the Archive terminal. Once D-68 lands, the loop may build M4.5aR3, whose playthrough ends at the Voyage log rather than Begin again, and M4.6gR3. D-67 in-world voice is landed (`make in-world-voice-check`). R1-SHIP-UI (#193/#195/#196), R1-ISM-DUST (#199) and the D-58 packages are landed.
+**Do-not-touch (attended, refreshed 2026-10-13):** `ai/reply.ail`, `ai/reply_test.ail` and `mk/ai.mk`'s R1-ARCHIVE-VOICE mutant rows, until PR #219 lands. That PR lets the sandboxed speakers' theories pass the reply filter; frame breaks stay blocked. Nothing else is held.
+- **D-68 landed** (#213): New game on the title screen, the Archive's Voyage log, the spoiler guard.
+- **R1-ARCHIVE-VOICE phase 1 landed** (#214): Ask the Archive at the terminal, an in-world persona prompt, the reply filter, the terminal layout fixes, the Voyage log fed every step. The Archive is **sandboxed** (Mark, 2026-10-13): no model is told the lore's mechanics. `make in-world-voice-check` (`SANDBOX_RE`) guards the cast files, the prompt goldens and the Archive's canon. The loop must keep it green and must never add loop, reset, pocket-universe or selection wording to anything a model sees.
+- **The loop may now build M4.5aR3**, whose playthrough ends at the Voyage log (Begin again is gone), **and M4.6gR3**. They touch `demos/ship_consoles.gd`, `ui/legacy_screen.gd` and `data/news/copy.json` freely, keeping the D-67/D-68 checks green.
+- D-66 hooks H1/H2 (#208), D-67 in-world voice, R1-SHIP-UI (#193/#195/#196), R1-ISM-DUST (#199) and the D-58 packages are landed.
 
 **Triage of the queue.** `[LOOP]` = route now; `[LOOP+RENDER]` = route, park for
 render review; `[ATTENDED]` = not loop work; `[STALE]` = reconcile (L1).
@@ -311,7 +315,7 @@ render review; `[ATTENDED]` = not loop work; `[STALE]` = reconcile (L1).
 | A6 | Lore: the third black-hole Archive entry (canon text). | `[ATTENDED]` |
 | A7 | Frame-time p95 on Mark's Air; splitting the ship setup so the loading jump never pauses. | `[ATTENDED]` (needs the laptop) |
 
-Order for the next armed run (L1 and L6 landed; L2 merged, CI pending): L4 → L3 → L5 → L7 → R1 → R2 (L8 if L1 finds it). M4.5aR3 ∥ M4.6gR3 outrank all of these once the Do-not-touch line is refreshed after D-68 (PR #213 merged 2026-10-13T08:18Z).
+Order for the next armed run (L1 and L6 landed; L2 merged, CI pending): L4 → L3 → L5 → L7 → R1 → R2 (L8 if L1 finds it). M4.5aR3 ∥ M4.6gR3 outrank all of these: the Do-not-touch line was refreshed 2026-10-13 after D-68 (#213) and the Archive voice (#214) landed.
 
 ## Queue (top = next; tags: [NEXT] [IN-SPRINT] [PARKED] [LANDED] [RULED OUT])
 
