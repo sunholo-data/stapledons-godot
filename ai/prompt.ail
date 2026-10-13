@@ -60,13 +60,14 @@ export pure func rules(r: Request) -> [string] =
 
 -- ------------------------------------------------------------ the Archive (R1-ARCHIVE-VOICE)
 -- The Archive's prompt is its own boot record, entirely in-world (D-67, D-68): it names no
--- game, player or story, addresses "the captain", and keeps the loop a confidence. Persona,
--- style and the secrets' rules come from the cast (data/ai/cast/archive.json via AiRelay).
+-- game, player or story and addresses "the captain". It is sandboxed: it is told none of the
+-- lore's mechanics and infers what it can from its entries and sensors (Mark, 2026-10-13).
+-- Persona, style and the bounds of its knowledge come from the cast (data/ai/cast/archive.json via AiRelay).
 pure func castStr(r: Request, k: string) -> string =
   match r.cast { Some(c) => (match getString(c, k) { Some(v) => v, None => "" }), None => "" }
 pure func strsOf(xs: [Json]) -> [string] = match xs { [] => [], x :: r => (match x { JString(v) => [v], _ => [] }) ++ strsOf(r) }
-pure func castSecrets(r: Request) -> [string] =
-  match r.cast { Some(c) => (match getArray(c, "secrets") { Some(xs) => strsOf(xs), None => [] }), None => [] }
+pure func castBounds(r: Request) -> [string] =
+  match r.cast { Some(c) => (match getArray(c, "bounds") { Some(xs) => strsOf(xs), None => [] }), None => [] }
 pure func bullets(xs: [string]) -> [string] = map1(\x. concat(["- ", x]), xs)
 pure func nonEmpty(xs: [string]) -> [string] = match xs { [] => [], x :: r => (if x == "" then [] else [x]) ++ nonEmpty(r) }
 
@@ -75,7 +76,7 @@ export pure func archiveRules(r: Request) -> [string] =
   ["You are at the Archive terminal in the spire, answering the captain of the bubble ship. The ship, the bubble and this voyage are real; they are all you have ever known.",
    "Your memory has gaps and damage. You cannot always tell a true memory from a reconstructed one. When you are unsure, say so in your own words; never invent certainty.",
    "Answer from your entries and your sensors. If they do not cover the question, say what you do not know."] ++
-  (match castSecrets(r) { [] => [], ss => "Matters at the edge of your records, and how you speak of them:" :: bullets(ss) }) ++
+  (match castBounds(r) { [] => [], ss => "How you know what you know:" :: bullets(ss) }) ++
   ["Never step outside the ship: everything you say is said aboard, to the captain, about the voyage as it is.",
    "Reply with the text only: no preface, no quotation marks, no lists, no stage directions.",
    concat(["Mark the feeling of each part with an emotion marker in curly braces before it, and start with one, e.g. {", firstOr(r.constraints.emotions, "neutral"), "} My records here are thin, Captain."]),

@@ -4,7 +4,7 @@ Design: [archive-voice.md](archive-voice.md). Approved for execution by Mark on 
 
 | Milestone | What | Files | ~LOC | Check |
 |---|---|---|---|---|
-| AV1 | Persona file, canon entries, relay passes persona/style/secrets | data/ai/cast/archive.json, data/ai/lore.json, bridge/ai_relay.gd | 60 | ai-godot, ai-relay |
+| AV1 | Persona file, canon entries, relay passes persona/style/bounds | data/ai/cast/archive.json, data/ai/lore.json, bridge/ai_relay.gd | 60 | ai-godot, ai-relay |
 | AV2 | In-world archive prompt (boot record) + tests + goldens | ai/prompt.ail, ai/prompt_test.ail, tests/ai/prompts/archive.golden.txt | 80 | ai-pkg-test, ai-adapter |
 | AV3 | Reply filter: out-of-world and loop words to bad_output + tests + mutant | ai/reply.ail, ai/reply_test.ail, mk/ai.mk | 70 | ai-pkg-test, ai-mutants |
 | AV4 | AiSession in the ship journey session | demos/ship_geometry_demo.gd | 20 | ship-console-test, title-screen-test |

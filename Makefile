@@ -1071,6 +1071,11 @@ free-nav-recovery-test: import
 VOICE_RE := \b(game|games|gameplay|approximation|approximate[ds]?|hand.?wav(e|ed|ing)|invented|fiction(al)?|simulat(ion|ed|or|e)|renderer|shader|hypothetical|placeholder|player|toy|sandbox)\b
 ## D-68: the loop is the secret (stapledons-design vision/premise-and-loop.md §4); in-world text never hints at it.
 SPOILER_RE := \b(previous (run|runs|voyages?|universes?|iterations?|lives)|past (runs|voyages|universes|lives)|re-?runs?|new game\+?|begin(ning)? again|start(ing)? over|multiverse|reset(s|ting)? the (bubble|ship|universe|voyage))\b
+## Mark, 2026-10-13: the Archive is sandboxed. The model is told none of the lore's mechanics (the loop,
+## the reset, the pocket universe, the selection) and infers what it can from evidence. What it sees
+## (its cast, its prompt golden, the canon it cites) names none of them.
+SANDBOX_RE := \b(loops?|looping|reset(s|ting)?|pocket universes?|universes?|multiverse|luck(y|ier)?|selection|selected|chosen|happened before|d[eé]j[aà] vu|variations? of|iterations?|anthropic|crossing(s)? before)\b
+SANDBOX_SEEN := data/ai/cast/archive.json tests/ai/prompts/archive.golden.txt
 VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd ui/archive_ask.gd
 ## The console script carries internal ids ("player" camera mode): it is scanned for loop spoilers only.
 SPOILER_UI := demos/ship_consoles.gd
@@ -1079,5 +1084,7 @@ in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy, the 
 	  for f in $(VOICE_UI); do grep -n -v -E '^[[:space:]]*#' $$f | grep -o -E '^[0-9]+:|"[^"]*"' | awk '/^[0-9]+:$$/{n=$$0;next}{print n $$0}' | grep -i -E '$(VOICE_RE)|$(SPOILER_RE)' | sed "s|^|$$f:|"; done; \
 	  for f in $(SPOILER_UI); do grep -n -v -E '^[[:space:]]*#' $$f | grep -o -E '^[0-9]+:|"[^"]*"' | awk '/^[0-9]+:$$/{n=$$0;next}{print n $$0}' | grep -i -E '$(SPOILER_RE)' | sed "s|^|$$f:|"; done); \
 	if [ -n "$$bad" ]; then echo "in-world-voice-check: out-of-world or loop-spoiling wording in in-world text (D-67, D-68):"; echo "$$bad"; exit 1; fi; \
-	echo "in-world-voice-check: Archive entries, news copy and the news/log/codex/console panel strings speak in-world and keep the loop secret (D-67, D-68)"
+	sb=$$(grep -n -i -E '$(SANDBOX_RE)' $(SANDBOX_SEEN); jq -r '.lore | to_entries[] | select(.key | startswith("archive.")) | "data/ai/lore.json \(.key): \(.value)"' data/ai/lore.json | grep -i -E '$(SANDBOX_RE)'); \
+	if [ -n "$$sb" ]; then echo "in-world-voice-check: the Archive model would be told a lore mechanic (sandboxed Archive, Mark 2026-10-13):"; echo "$$sb"; exit 1; fi; \
+	echo "in-world-voice-check: Archive entries, news copy and the news/log/codex/console panel strings speak in-world and keep the loop secret (D-67, D-68); the Archive model is told no lore mechanics (sandboxed)"
 

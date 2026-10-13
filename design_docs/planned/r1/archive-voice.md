@@ -17,11 +17,11 @@
 
 ## What changes
 
-1. **Persona file:** `data/ai/cast/archive.json` (same shape as `medic.json`) adds `persona`, `style`, `secrets` (each with a disclosure rule) and an OCEAN profile. `AiRelay.load_cast` passes `persona`, `style` and `secrets` through to the service in the request's `cast`.
+1. **Persona file:** `data/ai/cast/archive.json` (same shape as `medic.json`) adds `persona`, `style`, `bounds` (how it knows what it knows) and an OCEAN profile. `AiRelay.load_cast` passes `persona`, `style` and `bounds` through to the service in the request's `cast`.
 2. **In-world prompt for purpose `archive`** (`ai/prompt.ail`): the Archive's rules are its own boot record. They say nothing about games or players; the person addressed is "the captain". They cover:
    - persona and style from the cast;
    - "you are an AI, the ship's Archive";
-   - the secrets and how each may surface;
+   - the bounds of its knowledge: evidence only, inference said as inference, an uncertain origin, spire readings it cannot explain. **Sandboxed (Mark, 2026-10-13):** the model is told none of the lore's mechanics (no loop, reset, pocket universe or selection). It works out what it can from evidence, and players can help it (stapledons-design `features/next/semantic-memory.md`);
    - uncertain memory;
    - the instrument rule (no numbers);
    - the marker grammar and the length cap.
@@ -44,7 +44,7 @@
 
 ## Acceptance criteria (each by command)
 
-- AC1 `make ai-pkg-test`: the archive prompt contains the persona, the secrets' rules, the instrument rule and "the captain". It contains none of the D-67/D-68 words. The other purposes' prompts are unchanged.
+- AC1 `make ai-pkg-test`: the archive prompt contains the persona, the bounds, the instrument rule and "the captain". It contains none of the D-67/D-68 words. The other purposes' prompts are unchanged.
 - AC2 `make ai-pkg-test`: `screen` refuses each out-of-world and loop phrase in a fixture list. It accepts in-world replies, including words that merely contain a listed word ("endgame" is not "game"). Mutants are killed (`make ai-mutants`).
 - AC3 `make ai-adapter`: the archive prompt golden is re-recorded and passes `in-world-voice-check` (the golden is scanned).
 - AC4 `make ship-console-test`:
@@ -52,7 +52,7 @@
   - with the stub service, asking queues one `ai_open` with purpose `archive`, the question and the sensor fields (≤ 8), and the stub's answer appears;
   - with AI off, asking shows the in-world line and queues nothing;
   - an empty question is refused.
-- AC5 `make test` green (v0.54.6), `make in-world-voice-check` green.
+- AC5 `make test` green (v0.54.6), `make in-world-voice-check` green, including its sandbox rule: the cast, the prompt golden and the Archive's canon name no lore mechanic (`SANDBOX_RE`).
 - AC6 (attended, morning): Mark asks the Archive questions live in the next dev build; the frame-break questions (`data/ai/archive_frame_break.json`) are run by hand there.
 
 ## Out of scope (phase 2+)

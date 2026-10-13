@@ -54,8 +54,8 @@ static func load_cast(dir: String) -> Dictionary:
 			for k in ["persona", "style"]:
 				if typeof(c.get(k)) == TYPE_STRING:
 					who[k] = c[k]
-			if c.get("secrets") is Array:
-				who["secrets"] = (c["secrets"] as Array).filter(func(x): return x is Dictionary and typeof(x.get("rule")) == TYPE_STRING).map(func(x): return str(x["rule"]))
+			if c.get("bounds") is Array: # R1-ARCHIVE-VOICE: what the Archive knows and how it reasons (no lore mechanics)
+				who["bounds"] = (c["bounds"] as Array).filter(func(x): return x is Dictionary and typeof(x.get("rule")) == TYPE_STRING).map(func(x): return str(x["rule"]))
 			out[c["entity_id"]] = who
 	return out
 
