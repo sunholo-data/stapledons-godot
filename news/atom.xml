@@ -2,12 +2,46 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://www.sunholo.com/stapledons-godot/news</id>
     <title>Stapledon's Voyage news</title>
-    <updated>2026-10-11T20:00:00.000Z</updated>
+    <updated>2026-10-13T09:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://www.sunholo.com/stapledons-godot/news"/>
     <subtitle>Releases and progress on Stapledon's Voyage, a hard-SF game in Godot 4 and AILANG.</subtitle>
     <icon>https://www.sunholo.com/stapledons-godot/https://ailang.sunholo.com/img/favicon.ico</icon>
     <rights>Copyright © 2026 Sunholo / Mark Edmondson</rights>
+    <entry>
+        <title type="html"><![CDATA[The Archive answers]]></title>
+        <id>https://www.sunholo.com/stapledons-godot/news/2026/10/13/the-archive-answers</id>
+        <link href="https://www.sunholo.com/stapledons-godot/news/2026/10/13/the-archive-answers"/>
+        <updated>2026-10-13T09:00:00.000Z</updated>
+        <summary type="html"><![CDATA[The ship's Archive was a library of entries. Now you can talk to it. Type a question at the Archive terminal and the ship's own mind answers, in its own voice, from its own records and the instruments around it. The title screen's first choice is now New game, and the terminal keeps a Voyage log of this voyage.]]></summary>
+        <content type="html"><![CDATA[<p>The ship's Archive was a library of entries. Now you can talk to it. Type a question at the Archive terminal and the ship's own mind answers, in its own voice, from its own records and the instruments around it. The title screen's first choice is now <strong>New game</strong>, and the terminal keeps a <strong>Voyage log</strong> of this voyage.</p>
+<!-- -->
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="ask-the-archive">Ask the Archive<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/13/the-archive-answers#ask-the-archive" class="hash-link" aria-label="Direct link to Ask the Archive" title="Direct link to Ask the Archive" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/91f29cbb2021ff88f348d6be4bbe08f7e2dca7c0733161fd28977fec1ffbeb9b.png" alt="The Archive terminal with a question typed into Ask the Archive" class="img_ev3q"></p>
+<p>Walk to the Archive terminal on the bridge and press <strong>E</strong>. Type into <strong>Ask the Archive...</strong> and press <strong>Enter</strong> or <strong>Ask</strong>.</p>
+<p>The Archive is an artificial intelligence, and it knows it. It has never known any existence but this ship and this voyage. It doesn't play a character in a game: its instructions are written as its own boot record, aboard the bubble ship, speaking to its captain. Each question carries a live feed from the simulation: where the ship is, its speed, both clocks, the medium outside, the course and the latest news. The Archive answers from that feed and from the entries it has opened.</p>
+<p>Three rules shape how it talks:</p>
+<ul>
+<li class=""><strong>The instruments hold the numbers.</strong> The Archive describes and interprets, and it points you to the instruments for any figure. It never states a quantity itself, so it cannot contradict the physics on your screen.</li>
+<li class=""><strong>It stays aboard.</strong> If a reply mentions games, players, simulations or language models, it is refused before you see it, and the Archive is asked again.</li>
+<li class=""><strong>It keeps some things to itself.</strong> There are matters at the edge of its records. Ask about them and see how it answers.</li>
+</ul>
+<p>Live answers need AI switched on in the in-ship AI indicator, with your own provider key. With AI off, the terminal says the Archive's deeper stores are not answering, and nothing is sent anywhere.</p>
+<p>This is phase 1 of the Archive's voice. Later phases make its memory fallible on purpose. An Archive that sometimes misremembers is part of the story, and you will have to learn when to trust it.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-voyage-log">The Voyage log<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/13/the-archive-answers#the-voyage-log" class="hash-link" aria-label="Direct link to The Voyage log" title="Direct link to The Voyage log" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/512449f9f975832fcea1e1a40258b5270f0880e98cd17608f095066404cf1a32.png" alt="The Voyage log at the Archive terminal, listing the entries opened so far" class="img_ev3q"></p>
+<p>The terminal's <strong>Voyage log</strong> records this voyage: the course set, departure, arrivals, news from home and each Archive entry as it opens, with both clocks. <strong>Codex</strong> returns to the entries. When the ship is home, the log closes with how long you were away and how much older home has grown.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="new-game">New game<a href="https://www.sunholo.com/stapledons-godot/news/2026/10/13/the-archive-answers#new-game" class="hash-link" aria-label="Direct link to New game" title="Direct link to New game" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" src="https://storage.googleapis.com/stapledons-voyage-assets/site/735bef4d93e18379bd9ddb72bc9f207765387a5ca386e87782a39f83d88e5c93.png" alt="The title screen with New game first" class="img_ev3q"></p>
+<p>Starting over now happens on the title screen. <strong>New game</strong> starts a fresh voyage with a fresh seed each time. Nothing aboard the ship offers a do-over: choices made on the bridge stay made.</p>
+<p>See <a class="" href="https://www.sunholo.com/stapledons-godot/docs/try-it">Try it</a> for build access and the <a class="" href="https://www.sunholo.com/stapledons-godot/gallery">gallery</a> for more captures.</p>]]></content>
+        <author>
+            <name>Sunholo</name>
+            <uri>https://www.sunholo.com</uri>
+        </author>
+        <category label="Progress" term="Progress"/>
+        <category label="AI" term="AI"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Callisto, the bubble wall, and a shorter voyage]]></title>
         <id>https://www.sunholo.com/stapledons-godot/news/2026/10/11/callisto-and-the-bubble-wall</id>
