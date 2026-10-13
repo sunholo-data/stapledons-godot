@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Scene playthrough bot (M4.5aR3, D-66/D-68), 2026-10-13
+
+- `make playthrough` follows the title screen's New game through walked navigation and Archive visits: Alpha Centauri A, news from home, Return to Sol and the Voyage log. A pinned seed and fake clock record the real sim session, walk/use/read events and display samples under `.godot/tmp/playthrough/`; boost, cruise and brake check the CPU forward pole within 0.75 px.
+- The adversarial script sends re-plan, cancel and commit attempts against a committed journey through the navigation console; the sim refuses them without advancing the journey and the HUD shows why. Both scripts and three driver failure controls run in `make test`.
+
 ### Manual journeys and seven guided highlights (D-65), 2026-10-11
 
 - Interactive Galaxy map starts in the same stationary free-navigation session as Board the ship; historical capture/movie Sol sessions remain unchanged. Variable map details scroll, keeping zoom and journey review reachable. Enter reviews, Space retains the existing hold/press-twice confirmation, and Esc backs out.
