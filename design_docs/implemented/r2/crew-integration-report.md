@@ -54,6 +54,25 @@ Design: [crew-integration.md](crew-integration.md). Plan: [crew-integration-spri
 - **`hands_on`** is derived in the game. The crew-lab agent is adding a lab-verified `hands_on.json`, which will be synced instead.
 - **Concerns.** Answering a crew concern needs the conversation issues in the view. It's deferred; the hold card handles the moment for now.
 
+## Known issue: the auto-captain stalls on a crew concern (found after evaluation)
+
+A probe after landing (crew_core 0.3.0 and 0.4.0, the synced scenario, keep 30) found that **crew_core's auto-captain never answers a concern**:
+- A crew member who answers an offer with `concern` is re-asked and re-offered every decision day.
+- crew_core refuses each try (`answer the existing concern before reconsideration` / `... before reoffering this assignment`), so that member is never offered work again.
+
+| Setup | Result over 365 days |
+|---|---|
+| consent captain, critical_only, daily check-ins (**the game's default near stars**) | 1,805 of 1,837 auto acts are errors, and **no hold is raised**: the crew quietly stall |
+| consent captain, critical_only, monthly check-ins | 53 errors from day 30 |
+| orders captain, critical_only | a `refusal_under_orders` hold on day 0 |
+| consent captain, hands_on | a `breakdown` hold on day 1 |
+
+The game drops crew_core's auto log, so nothing shows these errors. The fix is in crew_core: the auto-captain should answer a concern under its orders or escalate it. It was reported to the crew-lab agent with a repro on 2026-10-14, who is preparing a crew_core patch release.
+
+When that release lands, the game will pin it and add a gate: zero error acts over 365 days at daily and at monthly check-ins, for both captains.
+
+The crew-lab agent also measured that **hands_on** would hold a careful captain about every 3 days (breakdown at stress 70 re-arms on every dip below it; critical_only's 85 never fires). A hysteresis fix is proposed in crew_core. hands_on stays opt-in until then.
+
 ## Not done or open
 
 - **Vision score.** The `game-vision-designer` re-score has not been run; the hand score (+8) stands.
