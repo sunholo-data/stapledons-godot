@@ -1,8 +1,8 @@
 {
   "sprint_id": "R2-CREW",
-  "status": "proposed_rev1",
-  "approved": false,
-  "approved_by": null,
+  "status": "approved",
+  "approved": true,
+  "approved_by": "Mark (attended 2026-10-13, ledger D-71)",
   "created": "2026-10-13",
   "started": null,
   "design_doc": "design_docs/planned/r2/crew-integration.md",
@@ -97,8 +97,8 @@
   ],
   "questions_for_mark": [
     "Q1 SETTLED (Mark 2026-10-13): auto-run with critical moments; idle fast path advance(n) in CI-0",
-    "Q2 start on vendored 0.2.0 now and re-vendor at G1 (recommended yes)",
-    "Q3 Params.crew=0 until C4 so goldens are re-recorded once (recommended yes)"
+    "Q2 SETTLED (Mark 2026-10-13): yes, start on vendored 0.2.0, re-vendor at G1",
+    "Q3 SETTLED (Mark 2026-10-13): yes, Params.crew=0 until C4"
   ],
   "evaluations": [],
   "coordination": {
