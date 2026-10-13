@@ -274,9 +274,9 @@ D=$(git diff origin/main -U0 -- main.gd | grep -v -e '^diff ' -e '^index ' -e '^
 test "$D" = "$(printf -- '-%s\n+%s' "$OLD" "$NEW")" && echo diff-ok
 test "$(printf '%s' "$OLD" | sed 's#1\.0 / sqrt(1\.0 - b \* b)#Relativity.gamma_of(b)#')" = "$NEW" && echo only-if-branch-ok
 
-# AC16: every Makefile hunk starts inside the lint block (lines 70-82)
+# AC16: every Makefile hunk starts inside the lint block (lines 63-84: the Gate-5 comment header and the rule; widened from 70-82 after evaluator round 1, because the header says how many planted lines there are)
 git diff origin/main -U0 -- Makefile | grep '^@@' | sed -E 's/^@@ -([0-9]+).*/\1/' \
-  | awk '$1 < 70 || $1 > 82 { bad = 1 } END { print (NR > 0 && !bad) ? "hunks-ok" : "hunks-bad" }'   # → hunks-ok
+  | awk '$1 < 63 || $1 > 84 { bad = 1 } END { print (NR > 0 && !bad) ? "hunks-ok" : "hunks-bad" }'   # → hunks-ok
 
 # AC19: tools/glow_eps_sheet.gd:164 is exactly the new line, and the diff is that one line (V19, V20)
 OLD=$(printf '\tvar omb: float = s.get("one_minus_beta", 1.0 - b)')
@@ -323,7 +323,7 @@ The sprint JSON, the evaluation and the landing move of this doc follow the norm
 ## Risks and mitigations
 
 - **`b` is a short name, so false positives are possible later.** The left guard and the word-boundary right guard already exclude `21 - b`, `1 - b_x` and `1 - bx`, and the negative control pins them (AC5). At HEAD the only new hits are real (V9). A future legitimate `1 - b`, for example an impact parameter outside `physics/`, gets an allowlist row with a reason. The format already supports that.
-- **The Makefile conflicts with PRs #212 to #214.** Their Makefile hunks are at @10 and @1069-1071 (V14). This design edits 70-82 only, and AC16 asserts it.
+- **The Makefile conflicts with PRs #212 to #214.** Their Makefile hunks are at @10 and @1069-1071 (V14). This design edits the lint block only (63-84, the comment header and the rule), and AC16 asserts it.
 - **`main.gd` conflicts with PR #213.** #213's hunks are at @6, @88 and @150. Line 858 is far from them.
 - **The local AILANG differs from the pin.** The designer measured V11/V12 on v0.54.5. The controller re-ran both on the pinned `runtime/bin/ailang` v0.52.0 and got identical results (V19b). `session_audit.ail` imports `std/json`, `std/option`, `std/result`, `std/string`, `std/list`, `std/fs` and `std/math` (V21). `std/fs` is used only by the FS entries, never by `codexReport`'s pure path. AC11 and AC12 pin `AILANG=runtime/bin/ailang` in the command itself, and the Makefile honours it (`AILANG ?= ailang`, Makefile:2; every `mk/m45.mk` step uses `$(AILANG)`, V21). So the acceptance suite cannot pass on the `PATH` binary. If PR #212 (the v0.54.6 bump) lands first, the commands are unchanged.
 

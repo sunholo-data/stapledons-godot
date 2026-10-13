@@ -116,9 +116,9 @@ cp main.gd /tmp/mg && sed -i '' '858s#Relativity\.gamma_of(b) if#1.0 / sqrt(1.0 
 make lint-precision 2>&1 | grep -c '^main\.gd:858:'                       # → 1
 cp /tmp/mg main.gd; cmp -s /tmp/mg main.gd && echo restored               # → restored
 
-# AC16: every Makefile hunk starts inside the lint block (lines 70-82)
+# AC16: every Makefile hunk starts inside the lint block (lines 63-84: the Gate-5 comment header and the rule; widened from 70-82 after evaluator round 1, because the header says how many planted lines there are)
 git diff origin/main -U0 -- Makefile | grep '^@@' | sed -E 's/^@@ -([0-9]+).*/\1/' \
-  | awk '$1 < 70 || $1 > 82 { bad = 1 } END { print (NR > 0 && !bad) ? "hunks-ok" : "hunks-bad" }'   # → hunks-ok
+  | awk '$1 < 63 || $1 > 84 { bad = 1 } END { print (NR > 0 && !bad) ? "hunks-ok" : "hunks-bad" }'   # → hunks-ok
 
 # AC18: main.gd:858 is exactly the new line, and the diff is that one line (V17)
 OLD=$(printf '\t\tstarfield.set_velocity(HEADING, b, 1.0 / sqrt(1.0 - b * b) if c.has("beta") else Relativity.gamma_of_rapidity(c["phi"]))')
