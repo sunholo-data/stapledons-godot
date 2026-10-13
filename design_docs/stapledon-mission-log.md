@@ -1246,3 +1246,5 @@ DECISIONS FOR MARK: none.
 - **Next:** run the row-7d′ resume predicate (merge CI 38452636061). Then M4.6gR3 (the GPU golden run on the rig) ∥ M4.5bR3 (`display-audit`, the walk schema, replay of the scene session; budget for the 1,567 s replay), then row 7h, then L9 → L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: none.
+
+- **Addendum (iteration 28, before close):** merge CI 38452636061 on `09c909d` read `success` (check set 1/1), so row 7d′ is LANDED.
