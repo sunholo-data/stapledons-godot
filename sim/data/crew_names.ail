@@ -1,0 +1,53 @@
+module stapledons/sim/data/crew_names
+
+-- R2-CREW C5, ledger D-74 (Mark, 2026-10-13): "we will name them, generated from a big list of
+-- international name combinations". Common given and family names, romanised, grouped by region so
+-- that a generated name pairs a given and a family name from the same naming tradition. The pick is
+-- seeded per new game (sim/crew_names.ail); role ids stay the internal entity_id (D-70 OQ2).
+-- Adding names only widens the pool; reordering changes which names a seed gives.
+export type NameRegion = { region: string, given: [string], family: [string] }
+
+export pure func nameRegions() -> [NameRegion] = [
+  { region: "west_africa",
+    given: ["Amara", "Kwame", "Ngozi", "Chidi", "Adaeze", "Kofi", "Ama", "Tunde", "Folake", "Emeka", "Yaa", "Seun", "Abena", "Ifeoma", "Kwesi", "Zainab"],
+    family: ["Okafor", "Mensah", "Adeyemi", "Nwosu", "Boateng", "Owusu", "Eze", "Balogun", "Asante", "Okeke", "Darko", "Adebayo", "Obi", "Appiah", "Bello", "Nkrumah"] },
+  { region: "east_africa",
+    given: ["Wanjiru", "Baraka", "Amani", "Neema", "Juma", "Zawadi", "Kamau", "Achieng", "Tesfaye", "Selam", "Abebe", "Hana", "Otieno", "Nia", "Mwangi", "Makena"],
+    family: ["Kiprop", "Mwangi", "Otieno", "Njoroge", "Wambui", "Haile", "Bekele", "Tadesse", "Mutua", "Kariuki", "Ochieng", "Girma", "Kimani", "Wanjala", "Alemu", "Odhiambo"] },
+  { region: "southern_africa",
+    given: ["Thandiwe", "Sipho", "Lerato", "Themba", "Naledi", "Bongani", "Palesa", "Lwazi", "Zanele", "Tumelo", "Nomvula", "Kagiso", "Ayanda", "Thabo", "Lindiwe", "Mpho"],
+    family: ["Dlamini", "Nkosi", "Mokoena", "Khumalo", "Ndlovu", "Molefe", "Mahlangu", "Zulu", "Sithole", "Mthembu", "Radebe", "Nel", "Mabaso", "Cele", "Moyo", "Phiri"] },
+  { region: "north_africa_middle_east",
+    given: ["Layla", "Omar", "Yasmin", "Karim", "Nour", "Tariq", "Salma", "Hassan", "Rania", "Yusuf", "Mariam", "Samir", "Dina", "Khalid", "Leila", "Idris"],
+    family: ["Haddad", "Mansour", "Khalil", "Nasser", "Saleh", "Aziz", "Rahman", "Farouk", "Hamdan", "Darwish", "Qasim", "Amari", "Bakr", "Sabri", "Najjar", "Toumi"] },
+  { region: "south_asia",
+    given: ["Priya", "Arjun", "Ananya", "Rohan", "Kavya", "Vikram", "Meera", "Aarav", "Isha", "Rahul", "Nadia", "Imran", "Lakshmi", "Sanjay", "Farah", "Dev"],
+    family: ["Sharma", "Patel", "Iyer", "Reddy", "Khan", "Gupta", "Nair", "Chowdhury", "Desai", "Banerjee", "Siddiqui", "Menon", "Perera", "Rao", "Joshi", "Fernando"] },
+  { region: "east_asia",
+    given: ["Mei", "Hiroshi", "Yuna", "Jian", "Sora", "Min-jun", "Haruka", "Wei", "Ji-woo", "Ren", "Lan", "Kenji", "Seo-yeon", "Hao", "Aiko", "Tae-yang"],
+    family: ["Chen", "Tanaka", "Kim", "Wang", "Sato", "Park", "Li", "Suzuki", "Zhang", "Choi", "Takahashi", "Liu", "Nakamura", "Jung", "Huang", "Yamamoto"] },
+  { region: "southeast_asia",
+    given: ["Linh", "Arif", "Siti", "Anh", "Rizal", "Mai", "Bayu", "Malee", "Joko", "Dewi", "Somchai", "Thu", "Rafael", "Ayu", "Bao", "Ligaya"],
+    family: ["Nguyen", "Santos", "Wijaya", "Tran", "Reyes", "Saputra", "Pham", "Dela Cruz", "Rahman", "Le", "Suwannarat", "Hidayat", "Bautista", "Vo", "Lim", "Kurniawan"] },
+  { region: "central_asia_caucasus",
+    given: ["Aigerim", "Timur", "Dilnoza", "Arman", "Nino", "Davit", "Madina", "Rustam", "Ani", "Bekzat", "Zarina", "Levan", "Aru", "Farhod", "Tamar", "Nurlan"],
+    family: ["Nurlanov", "Karimova", "Beridze", "Grigoryan", "Abdullaev", "Kenzhebek", "Lomidze", "Petrosyan", "Rahimov", "Seitkali", "Tsereteli", "Hakobyan", "Yusupov", "Omarova", "Gelashvili", "Sargsyan"] },
+  { region: "eastern_europe",
+    given: ["Katarzyna", "Mikhail", "Elena", "Tomasz", "Anya", "Dmitri", "Ivana", "Pavel", "Milena", "Andrei", "Zofia", "Bogdan", "Olena", "Marek", "Irina", "Luka"],
+    family: ["Kowalski", "Ivanova", "Novak", "Petrov", "Horvat", "Popescu", "Shevchenko", "Dvorak", "Nowak", "Kovac", "Volkova", "Marinescu", "Jovanovic", "Sokolov", "Wojcik", "Bondarenko"] },
+  { region: "western_europe",
+    given: ["Sophie", "Lukas", "Elise", "Matteo", "Clara", "Jonas", "Ines", "Pieter", "Chiara", "Hugo", "Freya", "Mateo", "Lena", "Aurelien", "Sofia", "Niamh"],
+    family: ["Martin", "Muller", "Rossi", "Garcia", "Dubois", "de Vries", "Fischer", "Ferreira", "Bianchi", "Janssens", "Moreau", "Lopez", "Schneider", "O'Brien", "Costa", "Bergstrom"] },
+  { region: "northern_europe",
+    given: ["Astrid", "Erik", "Ingrid", "Lars", "Saga", "Magnus", "Sigrid", "Nils", "Linnea", "Aksel", "Freja", "Olav", "Maja", "Rasmus", "Elin", "Jari"],
+    family: ["Lindqvist", "Hansen", "Nieminen", "Johansson", "Larsen", "Virtanen", "Andersen", "Eriksson", "Korhonen", "Nilsen", "Holm", "Sigurdsson", "Berg", "Makinen", "Dahl", "Jonsdottir"] },
+  { region: "latin_america",
+    given: ["Valentina", "Diego", "Camila", "Joaquin", "Lucia", "Santiago", "Ximena", "Thiago", "Renata", "Emiliano", "Paola", "Andres", "Gabriela", "Mateus", "Fernanda", "Rodrigo"],
+    family: ["Hernandez", "Silva", "Gonzalez", "Rodrigues", "Morales", "Oliveira", "Ramirez", "Castillo", "Souza", "Vargas", "Mendoza", "Pereira", "Rojas", "Alves", "Gutierrez", "Navarro"] },
+  { region: "north_america",
+    given: ["Maya", "Ethan", "Ava", "Jordan", "Olivia", "Caleb", "Harper", "Marcus", "Chloe", "Isaiah", "Riley", "Noah", "Zoe", "Dakota", "Grace", "Elijah"],
+    family: ["Johnson", "Tremblay", "Williams", "Brooks", "Roy", "Washington", "Begay", "Gagnon", "Thompson", "Harris", "Littlefeather", "Cote", "Bennett", "Jackson", "Morin", "Reed"] },
+  { region: "oceania",
+    given: ["Aroha", "Lachlan", "Mere", "Tane", "Kiri", "Mitchell", "Losa", "Sione", "Ana", "Wiremu", "Leilani", "Tavita", "Ruby", "Manaia", "Isla", "Keoni"],
+    family: ["Ngata", "Walker", "Tuilagi", "Parata", "Fifita", "Taufa", "Henare", "Sullivan", "Kealoha", "Mahe", "Wilson", "Tupou", "Rangi", "Faleolo", "Kahananui", "Moana"] }
+]

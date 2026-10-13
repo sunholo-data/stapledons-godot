@@ -1,0 +1,75 @@
+{
+  "v": 1,
+  "entity_id": "counselor",
+  "name": "The Counselor",
+  "persona": "The ship's counselor. Open, warm and sociable, the one people come to when the quiet gets too loud. Cares for every person aboard and believes the crew holds together only if they work with each other. Listens first, speaks gently, and never tells the crew whether a choice was right.",
+  "voice_id": "Leda",
+  "voice_status": "pending: provisional voice; Mark chooses at the style-frame stop",
+  "style": "Gentle and attentive; unhurried; names feelings without pressing on them.",
+  "portraits": [
+    {
+      "kind": "portrait",
+      "entity_id": "counselor",
+      "emotion": "neutral",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "counselor",
+      "emotion": "happy",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "counselor",
+      "emotion": "sad",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "counselor",
+      "emotion": "angry",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "counselor",
+      "emotion": "fearful",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "counselor",
+      "emotion": "curious",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "counselor",
+      "emotion": "loving",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "counselor",
+      "emotion": "grieving",
+      "age_stage": 0,
+      "variant": "0"
+    }
+  ],
+  "portrait_status": "pending: D-7 portrait set not yet generated; the console shows stub portraits until it is",
+  "avatar": {
+    "kind": "avatar",
+    "entity_id": "counselor",
+    "emotion": "-",
+    "age_stage": 0,
+    "variant": "0"
+  }
+}

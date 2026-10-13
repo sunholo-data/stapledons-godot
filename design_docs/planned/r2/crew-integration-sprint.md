@@ -119,7 +119,16 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - Re-record the replay goldens once with `make replay-record LOG=all`, in one commit that lists every changed golden and the reason. Then run `make replay` twice and expect identical results (AC5).
 - **Gate:** `make crew-perf replay parity strict` and a full local `make test` (AC12).
 
-### C5: crew words through the AI service (~350 LOC, after C2; parallel)
+### C5: crew words through the AI service (~350 LOC, after C2; parallel) ✅ 2026-10-13
+> **Done.**
+> - **Requests.** Every answered ask opens one `ai_request` (kind `text`, purpose `crew_reply`) for that crew member, in `core.tick` right after the crew intents. Its context is the decided reaction, the work in words (crew_core's project name and purpose, never the recipe id) and the generated name. The crew view's `lines` carry each answer with its authored template line and `ai_req`. Godot shows the template until that request is accepted.
+> - **Checks.** `sim/ai.ail` gives `crew_reply` a 240-character cap and rejects a reply naming engine internals (`work_`/`rest_` ids, OCEAN traits, scores) as `ai_internal`; the template then stands. That's the lab's `narrativeText` port. `data/news/copy.json` explains the reason in-world.
+> - **Prompt.** `ai/prompt.ail crewRules` gives the cast persona and manner, states that the answer is already decided (D-20), forbids internal names, and keeps every generic guardrail (in-world D-67, no numerals D-21, no verdicts). The speaker is the generated name plus the role. There's a golden `tests/ai/prompts/crew_reply.golden.txt`, and the stub service answers it; no key means `no_key`, with no spend (D-8).
+> - **Fallback.** content_library's starter text is a test placeholder ("[authored starter] Response: accept."), so the game keeps an authored, in-world `templateLine` per reaction.
+> - **Names (D-74).** At new game each featured crew member gets a name from `sim/data/crew_names.ail` (14 regions of common given and family names), drawn on the crew stream: seeded, unique, region-coherent. The cast's role name is the fallback.
+> - **Cast.** `data/ai/cast/{engineer,analyst,pilot,counselor}.json` hold role names, personas from the pack's traits and values, and provisional voices and stub portraits, all marked pending (the D-7 sets aren't generated).
+> - **Tests.** `sim/crew_ai_test.ail` (4), the prompt test, and the `ai-adapter` and `ai-stub` goldens (one new request) via `make ai-test`. The news test's cap check follows the new `maxCharsFor` line.
+
 - `crew_reply` joins `aiPurposes()`. When the host asks a crew member something, the sim commits the authored reaction (SCrew) and opens an `ai_request`: `kind: text`, `purpose: crew_reply`, `entity_id` set to the role id.
 - Port the lab's short-reply prompt into `ai/prompt.ail`.
 - Port the `narrativeText` checks into `ai/`: no traits, scores or `work_…`/`rest_…` ids, length bounds, and the D-67 in-world voice. Each check gets a mutation test.

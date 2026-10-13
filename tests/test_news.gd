@@ -10,7 +10,7 @@ extends SceneTree
 const FIX := "res://tests/fixtures/news/"
 const WATCHDOG_S := 280.0
 const CANCEL := ["offline", "no_key", "text_only", "timeout", "service_down", "budget", "provider_error"]
-const RECORD := ["ai_hash", "ai_length", "ai_numeral", "ai_markup", "ai_emotion", "ai_descriptor", "ai_kind"]
+const RECORD := ["ai_hash", "ai_length", "ai_numeral", "ai_markup", "ai_emotion", "ai_descriptor", "ai_kind", "ai_internal"]
 
 var failures := 0
 var checks := 0
@@ -73,7 +73,7 @@ func test_templates() -> void:
 	for m in RegEx.create_from_string('"([^"]*)"').search_all("\n".join(sim_src.substr(sim_src.find("tierName(i: int)"), 300).split("\n").slice(0, 2))):
 		names.append(m.get_string(1))
 	ok("tier names are the sim's tierName (%s)" % str(names), names == templates["tiers"].map(func(t): return t["name"]))
-	ok("the sim's news cap is 280", FileAccess.get_file_as_string("res://sim/ai.ail").contains('maxCharsFor(purpose: string) -> int = if purpose == "archive" then 600 else 280') and NewsCopy.MAX_CHARS == 280)
+	ok("the sim's news cap is 280", FileAccess.get_file_as_string("res://sim/ai.ail").contains('maxCharsFor(purpose: string) -> int = if purpose == "archive" then 600 else if purpose == "crew_reply" then 240 else 280') and NewsCopy.MAX_CHARS == 280)
 
 
 func test_reasons() -> void:

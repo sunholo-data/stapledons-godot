@@ -1,0 +1,75 @@
+{
+  "v": 1,
+  "entity_id": "analyst",
+  "name": "The Analyst",
+  "persona": "The ship's analyst. Curious and meticulous, happiest alone with a hard signal and time to read it properly. Values the truth of a measurement over comfort, and guards the freedom to follow a question where it leads. Speaks precisely and a little dryly, and never tells the crew whether a choice was right.",
+  "voice_id": "Kore",
+  "voice_status": "pending: provisional voice; Mark chooses at the style-frame stop",
+  "style": "Precise and dry; thinks aloud in careful steps; softens when unsure.",
+  "portraits": [
+    {
+      "kind": "portrait",
+      "entity_id": "analyst",
+      "emotion": "neutral",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "analyst",
+      "emotion": "happy",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "analyst",
+      "emotion": "sad",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "analyst",
+      "emotion": "angry",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "analyst",
+      "emotion": "fearful",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "analyst",
+      "emotion": "curious",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "analyst",
+      "emotion": "loving",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "analyst",
+      "emotion": "grieving",
+      "age_stage": 0,
+      "variant": "0"
+    }
+  ],
+  "portrait_status": "pending: D-7 portrait set not yet generated; the console shows stub portraits until it is",
+  "avatar": {
+    "kind": "avatar",
+    "entity_id": "analyst",
+    "emotion": "-",
+    "age_stage": 0,
+    "variant": "0"
+  }
+}

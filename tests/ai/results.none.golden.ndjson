@@ -17,3 +17,4 @@
 {"v":1,"type":"result","req":"15","status":"error","code":"bad_request","meta":{"provider":"stub","route":"none"}}
 {"v":1,"type":"result","req":"16","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
 {"v":1,"type":"result","req":"20","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}
+{"v":1,"type":"result","req":"30","status":"error","code":"no_key","meta":{"provider":"stub","route":"none"}}

@@ -54,7 +54,7 @@ export type Step = { acts: [Act], ledger: Ledger }
 export type Job = { r: Request, hop: Hop, input: string, price: Price, prompt: Prompt, est: int }
 export type Prep = Done(Step) | Run(Job)
 
-export pure func purposes() -> [string] = ["line", "news", "archive", "probe"]
+export pure func purposes() -> [string] = ["line", "news", "archive", "probe", "crew_reply"]
 
 -- ai/fixtures/stub_text.json: {<purpose>: {<case>: <body>}}.
 @allow_empty_ok("a purpose with no cases is legal")
@@ -113,7 +113,7 @@ pure func digitWord(c: string) -> string =
 pure func digitWords(cs: [string]) -> [string] = match cs { [] => [], c :: r => digitWord(c) :: digitWords(r) }
 export pure func spelled(req: string) -> string = join("-", digitWords(chars(req)))
 pure func phrase(purpose: string) -> string =
-  if purpose == "news" then "Stub news" else if purpose == "archive" then "Stub archive entry" else if purpose == "probe" then "Stub probe" else "Stub line"
+  if purpose == "news" then "Stub news" else if purpose == "archive" then "Stub archive entry" else if purpose == "probe" then "Stub probe" else if purpose == "crew_reply" then "Stub crew reply" else "Stub line"
 pure func firstOr(xs: [string], d: string) -> string = match xs { [] => d, x :: _ => x }
 export pure func stubText(r: Request) -> string {
   let n = if r.constraints.noNumerals then spelled(r.req) else r.req;

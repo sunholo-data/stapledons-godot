@@ -14,7 +14,7 @@ module stapledons/sim/ai
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/json (Json, decode, get, getString, getArray, asNumber, asObject)
-import std/string (length, substring, contains, intToStr, startsWith)
+import std/string (length, substring, contains, intToStr, startsWith, toLower)
 import std/math (floor, floatToInt, intToFloat)
 import std/crypto (sha256Hex)
 import ./rng (Rng, SAi, draw, top53)
@@ -69,13 +69,13 @@ export pure func defaultAiMaxOpen() -> int = 8
 export pure func defaultAiTtlTicks() -> int = 3600
 export pure func emotions8() -> [string] = ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]
 export pure func aiKinds() -> [string] = ["text", "voice", "portrait", "avatar"]
-export pure func aiPurposes() -> [string] = ["line", "news", "archive", "probe"]
+export pure func aiPurposes() -> [string] = ["line", "news", "archive", "probe", "crew_reply"]
 export pure func cancelReasons() -> [string] = ["offline", "no_key", "text_only", "timeout", "service_down", "budget", "provider_error"]
 -- Display-text budget per purpose (code points), ledger D-21 (Mark,
 -- 2026-10-02): 280 for crew lines, 280 for news items, 600 for Archive
 -- answers (probe: 280). No digits in any generated text (noNumerals for every
 -- purpose): numbers on screen come only from sim fields.
-export pure func maxCharsFor(purpose: string) -> int = if purpose == "archive" then 600 else 280
+export pure func maxCharsFor(purpose: string) -> int = if purpose == "archive" then 600 else if purpose == "crew_reply" then 240 else 280
 export pure func maxLines() -> int = 64
 
 export pure func isCancelReason(r: string) -> bool = member(r, cancelReasons())
@@ -191,6 +191,15 @@ pure func hasDigit(s: string) -> bool =
 pure func allEmotionsIn(segs: [Segment], es: [string]) -> bool = match segs { [] => true, x :: r => member(x.emotion, es) && allEmotionsIn(r, es) }
 pure func toAiSegs(segs: [Segment]) -> [AiSeg] = match segs { [] => [], x :: r => {emotion: x.emotion, text: x.text} :: toAiSegs(r) }
 
+-- R2-CREW C5 (the crew lab's narrativeText, dialogue.ail): a crew reply never names the engine's
+-- internals: work_/rest_ recipe ids, personality traits or scores. One is ai_internal (the template
+-- line stands).
+export pure func crewInternalWords() -> [string] =
+  ["work_", "rest_", "ocean", "openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism",
+   "hidden variable", "hidden score", "hidden stat", "concealed mechanic", "trust score", "stress score", "regard score"]
+export pure func crewNarrative(text: string) -> bool = !anyIn(toLower(text), crewInternalWords())
+pure func anyIn(t: string, ws: [string]) -> bool = match ws { [] => false, w :: r => contains(t, w) || anyIn(t, r) }
+
 -- Text kinds. ai_numeral looks at the body: markers name emotions, which
 -- hold no digit, so a parsed body has a digit exactly when its display text
 -- does, and an unparsable body with a digit is ai_numeral before ai_markup.
@@ -205,6 +214,7 @@ pure func textResult(o: OpenReq, r: AiRecord) -> Result[AiEvent, string] {
   else match parsed {
     Err(_) => Err("ai_markup"),
     Ok(segs) => if !allEmotionsIn(segs, c.emotions) then Err("ai_emotion")
+      else if o.purpose == "crew_reply" && !crewNarrative(displayText(segs)) then Err("ai_internal")
       else Ok(EAcceptedText({req: r.req, kind: r.kind, sha256: r.sha256, text: displayText(segs), segments: toAiSegs(segs)}))
   }
 }

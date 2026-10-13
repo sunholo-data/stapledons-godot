@@ -72,3 +72,17 @@ test "AI.5 prompts carry the no-verdict guardrail, the palette, no_numerals and 
 test "AI.5 prompts name the speaker, the context and lore snippets by id" { checkPromptContext() }
 test "AI.5 lore table parses and refuses bad entries" { checkPromptLore() }
 test "R1-ARCHIVE-VOICE the Archive prompt is its in-world boot record: persona, bounds, sensors, the question, no meta words" { checkArchivePrompt() }
+
+-- R2-CREW C5: a crew reply carries the persona and manner, fixes the decided reaction, keeps every
+-- guardrail, and puts no internal id in the prompt.
+export pure func crewRq(reaction: string) -> Request = {promptRq("crew_reply", ["neutral", "loving"], true) |
+  context: [{ name: "name", value: CStr("Amara Okafor") }, { name: "reaction", value: CStr(reaction) }, { name: "work", value: CStr("Medical rounds") }],
+  cast: match decode("{\"name\":\"The Medic\",\"persona\":\"The ship's doctor.\",\"style\":\"Warm.\"}") { Ok(j) => Some(j), Err(_) => None }}
+pure func checkCrewPrompt() -> bool {
+  let r = crewRq("decline");
+  says(r, "one short reply, spoken by a crew member to the captain") && says(r, "The ship's doctor.") && says(r, "Your manner: Warm.") &&
+  says(r, "Your answer is already decided: decline.") && says(r, "Speak in-world") && says(r, "Write no digits") &&
+  says(r, "never judge the player's choices") && says(r, "Speaker: Amara Okafor, The Medic (medic)") && !says(r, "name: Amara") && says(r, "work: Medical rounds") &&
+  !says(r, "work_") && !says(r, "openness") && says(crewRq(""), "already decided: neutral")
+}
+test "crew_reply: persona, fixed reaction, guardrails, no internal ids (R2-CREW C5)" { checkCrewPrompt() }

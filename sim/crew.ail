@@ -27,10 +27,15 @@ import stapledons/sim/data/crew_pack (scenarioJson, policyJson)
 import ./rng (Rng, SCrew, draw, top53)
 import ./crew_events (forScenario)
 
-export type CrewState = { session: Session, policy: Policy, scenario: string, turn: int, dayRem: float }
+-- C5: `lines` are the latest answered asks (newest last, at most linesMax), each with the AI request
+-- that words it (aiReq "" until core opens one); `names` the crew's display names (D-74).
+export type CrewLine = { request: string, actor: string, task: string, label: string, aiReq: string } deriving (Eq)
+export type CrewName = { id: string, name: string } deriving (Eq)
+export type CrewState = { session: Session, policy: Policy, scenario: string, turn: int, dayRem: float, lines: [CrewLine], names: [CrewName] }
+export pure func linesMax() -> int = 6
 -- lines: the crew_core input lines fed, in order; traces: crew_core's journal record for each
 -- (empty strings for an untraced crew); refused: the crew_core error that stopped the step.
-export type CrewStepped = { crew: CrewState, rng: Rng, lines: [string], traces: [string], refused: Option[string] }
+export type CrewStepped = { crew: CrewState, rng: Rng, lines: [string], traces: [string], refused: Option[string], answered: [CrewLine] }
 
 export pure func daysPerYear() -> float = 365.25
 -- crew_core's per-call budget, as the lab's crew-sim uses.
@@ -66,7 +71,7 @@ export pure func initCrewWith(captaincy: string, traced: bool) -> Result[(CrewSt
     Err(e) => Err(e),
     Ok((sc, p)) => match start(sc, startLine(captaincy)) {
       Err(e) => Err(hostError(e)),
-      Ok(o) => Ok(({ session: if traced then o.session else untraced(o.session), policy: p, scenario: sc.id, turn: 0, dayRem: 0.0 }, o.trace))
+      Ok(o) => Ok(({ session: if traced then o.session else untraced(o.session), policy: p, scenario: sc.id, turn: 0, dayRem: 0.0, lines: [], names: [] }, o.trace))
     }
   }
 export pure func initCrew(captaincy: string) -> Result[CrewState, string] =
@@ -85,7 +90,14 @@ export pure func daysIn(rem: float, dtau: float) -> Days
 }
 
 pure func stepped(c: CrewState, rng: Rng, lines: [string], traces: [string], refused: Option[string]) -> CrewStepped =
-  { crew: c, rng: rng, lines: lines, traces: traces, refused: refused }
+  { crew: c, rng: rng, lines: lines, traces: traces, refused: refused, answered: [] }
+
+-- Keep the newest linesMax lines.
+pure func lastLines(xs: [CrewLine]) -> [CrewLine] = if listLen(xs) <= linesMax() then xs else match xs { [] => [], _ :: r => lastLines(r) }
+pure func listLen(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + listLen(r) }
+-- C5: core stamps an answered line with the AI request that words it.
+export pure func noteLine(c: CrewState, l: CrewLine) -> CrewState = { c | lines: lastLines(c.lines ++ [l]) }
+export pure func withNames(c: CrewState, ns: [CrewName]) -> CrewState = { c | names: ns }
 
 -- Feed one line; Err keeps the crew unchanged and names the crew_core error.
 pure func feed(c: CrewState, line: string) -> Result[Output, string] = match input(c.session, line) {
@@ -154,7 +166,8 @@ pure func answerPending(c: CrewState, seed: int, rng: Rng, id: string, lines: [s
           let line = answerLine(id, a.body, a.roll);
           match feed(c, line) {
             Err(e) => stepped(c, d.rng, lines, traces, Some(e)),
-            Ok(o) => stepped({ c | session: o.session }, d.rng, lines ++ [line], traces ++ [o.trace], if o.failed then Some("answer: failed") else None)
+            Ok(o) => if o.failed then stepped({ c | session: o.session }, d.rng, lines ++ [line], traces ++ [o.trace], Some("answer: failed"))
+              else { stepped({ c | session: o.session }, d.rng, lines ++ [line], traces ++ [o.trace], None) | answered: [{ request: id, actor: request.actor, task: request.task, label: a.label, aiReq: "" }] }
           }
         }
       }
@@ -200,20 +213,20 @@ export pure func raiseShipEvents(c: CrewState, seed: int, rng: Rng, es: [ShipEve
 -- A crew intent (sim/protocol_crew.ail decodes it): one crew_core line; askId when it is an ask.
 export type CrewCmd = { kind: string, line: string, askId: Option[string] }
 export type CrewRefusal = { i: int, reason: string }
-export type CrewApplied = { crew: Option[CrewState], rng: Rng, refused: [CrewRefusal] }
+export type CrewApplied = { crew: Option[CrewState], rng: Rng, refused: [CrewRefusal], answered: [CrewLine] }
 
 -- The tick's crew intents in order (each with its index in the tick's intent list). A refusal is
 -- "crew:<crew_core error>" and changes nothing; "crew:no_crew" when no crew are aboard.
 export pure func crewIntents(crew: Option[CrewState], seed: int, rng: Rng, cmds: [(int, CrewCmd)]) -> CrewApplied =
   match cmds {
-    [] => { crew: crew, rng: rng, refused: [] },
+    [] => { crew: crew, rng: rng, refused: [], answered: [] },
     (i, cmd) :: rest => match crew {
       None => { let r = crewIntents(crew, seed, rng, rest); { r | refused: { i: i, reason: "crew:no_crew" } :: r.refused } },
       Some(c) => {
         let s = crewCommand(c, seed, rng, cmd.line, cmd.askId);
         match s.refused {
           Some(e) => { let r = crewIntents(crew, seed, rng, rest); { r | refused: { i: i, reason: concat(["crew:", e]) } :: r.refused } },
-          None => crewIntents(Some(s.crew), seed, s.rng, rest)
+          None => { let r = crewIntents(Some(s.crew), seed, s.rng, rest); { r | answered: s.answered ++ r.answered } }
         }
       }
     }

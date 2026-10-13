@@ -223,10 +223,10 @@
         "make in-world-voice-check green",
         "each pack crew role has data/ai/cast/<role>.json with display_name"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-13",
+      "completed": "2026-10-13",
+      "notes": "Every answered ask opens a crew_reply ai_request (kind text) in core.tick (reaction, work in words, generated name); crew view lines carry template + ai_req. sim/ai.ail: crew_reply cap 240, ai_internal for engine internals (lab narrativeText port), copy.json reason. ai/prompt.ail crewRules (persona, manner, decided reaction D-20, guardrails), crewSpeaker uses the generated name; golden crew_reply; stub answers, no key -> no_key. Authored templateLine fallback (content_library starter text is a placeholder). D-74 names: sim/data/crew_names.ail (14 regions) + sim/crew_names.ail, seeded on the crew stream, unique. Cast files engineer/analyst/pilot/counselor (provisional voices/portraits pending). Tests: crew_ai_test 4/4, ai package 50/50, ai-test (adapter, stub goldens + cache sums regenerated for req 30), news-test 86/86, in-world-voice-check."
     },
     {
       "id": "C6_CREW_CONSOLE",

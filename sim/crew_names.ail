@@ -1,0 +1,40 @@
+module stapledons/sim/crew_names
+
+-- R2-CREW C5, ledger D-74: the featured crew's display names, generated per new game from the
+-- international name list (sim/data/crew_names.ail). Seeded and deterministic: each crew member
+-- takes three crew-stream draws (region, given name, family name); a full name already taken is
+-- redrawn, so no two crew share a name. Role ids stay the internal entity_id (D-70 OQ2).
+import std/list (map, length, any)
+import std/option (Option, Some, None)
+import std/string (concat)
+import ./rng (Rng, SCrew, draw, top53)
+import ./crew (CrewName)
+import stapledons/sim/data/crew_names (NameRegion, nameRegions)
+
+pure func at(xs: [a], i: int, d: a) -> a = match xs { [] => d, x :: r => if i <= 0 then x else at(r, i - 1, d) }
+pure func pick(n: int, v: int) -> int = if n <= 0 then 0 else top53(v) % n
+
+export type Named = { names: [CrewName], rng: Rng }
+
+-- One name, with up to `tries` redraws while it collides with one already taken.
+pure func nameOne(seed: int, rng: Rng, taken: [string], tries: int) -> {name: string, rng: Rng} {
+  let rs = nameRegions();
+  let a = draw(seed, rng, SCrew);
+  let reg = at(rs, pick(length(rs), a.value), { region: "", given: ["Crew"], family: ["Member"] });
+  let b = draw(seed, a.rng, SCrew);
+  let c = draw(seed, b.rng, SCrew);
+  let full = concat([at(reg.given, pick(length(reg.given), b.value), "Crew"), " ", at(reg.family, pick(length(reg.family), c.value), "Member")]);
+  if any(\t. t == full, taken) && tries > 0 then nameOne(seed, c.rng, taken, tries - 1) else { name: full, rng: c.rng }
+}
+
+-- Names for the crew ids, in order.
+export pure func nameCrew(seed: int, rng: Rng, ids: [string]) -> Named = go(seed, rng, ids, [])
+pure func go(seed: int, rng: Rng, ids: [string], acc: [CrewName]) -> Named = match ids {
+  [] => { names: acc, rng: rng },
+  id :: rest => { let n = nameOne(seed, rng, map(\x. x.name, acc), 8); go(seed, n.rng, rest, acc ++ [{ id: id, name: n.name }]) }
+}
+
+export pure func nameOf(names: [CrewName], id: string) -> Option[string] = match names {
+  [] => None,
+  n :: r => if n.id == id then Some(n.name) else nameOf(r, id)
+}

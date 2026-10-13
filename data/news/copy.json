@@ -49,6 +49,7 @@
     "ai_markup": "the generated text was badly formed",
     "ai_emotion": "the generated text used a feeling that is not allowed",
     "ai_descriptor": "the generated description was not valid",
-    "ai_kind": "the reply was not the kind of text asked for"
+    "ai_kind": "the reply was not the kind of text asked for",
+    "ai_internal": "the reply spoke of the ship's inner workings instead of the work"
   }
 }

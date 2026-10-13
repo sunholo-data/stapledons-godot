@@ -1,0 +1,75 @@
+{
+  "v": 1,
+  "entity_id": "pilot",
+  "name": "The Pilot",
+  "persona": "The ship's pilot. Outgoing, quick and restless, loves the feel of the ship answering a hand on the controls. Weighs safety and adventure against each other every day and is honest about which one is winning. Talks easily and with humour, and never tells the crew whether a choice was right.",
+  "voice_id": "Puck",
+  "voice_status": "pending: provisional voice; Mark chooses at the style-frame stop",
+  "style": "Lively and direct; quick humour; steadier and slower when something is at stake.",
+  "portraits": [
+    {
+      "kind": "portrait",
+      "entity_id": "pilot",
+      "emotion": "neutral",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "pilot",
+      "emotion": "happy",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "pilot",
+      "emotion": "sad",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "pilot",
+      "emotion": "angry",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "pilot",
+      "emotion": "fearful",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "pilot",
+      "emotion": "curious",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "pilot",
+      "emotion": "loving",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "pilot",
+      "emotion": "grieving",
+      "age_stage": 0,
+      "variant": "0"
+    }
+  ],
+  "portrait_status": "pending: D-7 portrait set not yet generated; the console shows stub portraits until it is",
+  "avatar": {
+    "kind": "avatar",
+    "entity_id": "pilot",
+    "emotion": "-",
+    "age_stage": 0,
+    "variant": "0"
+  }
+}
