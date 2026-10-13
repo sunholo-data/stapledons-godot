@@ -17,5 +17,5 @@ level = "experimental"
 [dependencies]
 "sunholo/celestial" = "0.4.0"
 "sunholo/relativity" = "0.12.0"
-"sunholo/crew_core" = {path = "../vendor/crew-core"} # vendored until ailang#1811 (vendor/crew-core/VENDORED; make crew-vendor-check)
+"sunholo/crew_core" = "0.3.0" # R2-CREW G1: ailang-packages 82c21dd (registry since ailang#1811 was fixed)
 "sunholo/social_dynamics" = "0.4.0" # crew_core's engine; sim/protocol_crew.ail reads its State for the crew view

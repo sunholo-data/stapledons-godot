@@ -28,7 +28,8 @@
         "C3_SHIP_REACHES_CREW",
         "C4_CREW_ON_PERF_GOLDENS",
         "C8_AUTO_RUN_HOLDS"
-      ]
+      ],
+      "status": "landed: crew_core 0.3.0 published (82c21dd)"
     },
     {
       "what": "ailang#1811 registry validator OOM",
@@ -169,10 +170,10 @@
         "make crew-vendor-check crew-parity strict parity green at the CI-0 commit",
         "no edits to sim/vendor beyond the vendor tool"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-13",
+      "completed": "2026-10-13",
+      "notes": "Registry pin sunholo/crew_core 0.3.0 (ailang-packages #138 merge 82c21dd, published; files equal the commit). Vendoring removed (vendor/, tools/crew_vendor.sh, crew-vendor targets, C1 export additions). Pack unchanged upstream. crew-parity hashes identical to 0.2.0 (b2a3b730/9a959f24/325ede85), VM == interpreter; strict, replay, parity-v2, crew-bridge-test, export-filter-audit, runtime fingerprint (6/6), crew tests 7/7, protocol_crew 9/9 pass cold on v0.54.8."
     },
     {
       "id": "C3_SHIP_REACHES_CREW",

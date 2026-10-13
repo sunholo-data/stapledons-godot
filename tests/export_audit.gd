@@ -57,8 +57,6 @@ const DYNAMIC := [
 		"reason": "demos/ship_geometry_demo.gd:112 bundled fallback"},
 	{"prefix": "res://sim", "filter": "sim/*.ail", "witnesses": ["sim/ailang.toml"],
 		"reason": "bridge/sim_bridge.gd:390 runtime_inputs copies the sim tree"},
-	{"prefix": "res://vendor", "filter": "vendor/crew-core/*.ail", "witnesses": ["vendor/crew-core/session.ail", "vendor/crew-core/ailang.toml"],
-		"reason": "bridge/sim_bridge.gd bundle_inputs/_unpack_runtime copy the vendored crew_core the sim depends on by path (R2-CREW, until ailang#1811)"},
 ]
 
 ## X: dev-only paths. They must not ship, and a fallback must ship. exact: the literal must equal

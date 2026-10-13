@@ -20,14 +20,5 @@ func _initialize()->void:
 	check("collector includes nested relative source",first.has("data/sol.ail"))
 	file=FileAccess.open(fixture+"/data/sol.ail",FileAccess.WRITE);file.store_string("new nested planet data");file.close()
 	check("nested module edit invalidates bundled cache",SimBridge.runtime_fingerprint("v0.52.0",first)!=SimBridge.runtime_fingerprint("v0.52.0",SimBridge.runtime_inputs(fixture)))
-	# R2-CREW: a vendored package the sim depends on by path is part of the bundle's identity.
-	var vend:=fixture+"-vendor"
-	DirAccess.make_dir_recursive_absolute(vend+"/crew-core")
-	file=FileAccess.open(vend+"/crew-core/session.ail",FileAccess.WRITE);file.store_string("crew_core 0.2.0");file.close()
-	var withVendor:=SimBridge.bundle_inputs(fixture,vend)
-	check("bundle includes vendored packages",withVendor.has("../vendor/crew-core/session.ail") and withVendor.has("data/sol.ail"))
-	file=FileAccess.open(vend+"/crew-core/session.ail",FileAccess.WRITE);file.store_string("crew_core 0.3.0");file.close()
-	check("re-vendored package invalidates bundled cache",SimBridge.runtime_fingerprint("v0.52.0",withVendor)!=SimBridge.runtime_fingerprint("v0.52.0",SimBridge.bundle_inputs(fixture,vend)))
-	DirAccess.remove_absolute(vend+"/crew-core/session.ail");DirAccess.remove_absolute(vend+"/crew-core");DirAccess.remove_absolute(vend)
 	DirAccess.remove_absolute(fixture+"/data/sol.ail");DirAccess.remove_absolute(fixture+"/data");DirAccess.remove_absolute(fixture)
 	quit(1 if failures else 0)

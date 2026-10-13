@@ -405,25 +405,17 @@ static func runtime_inputs(directory:String, prefix:="")->Dictionary:
 			inputs.merge(runtime_inputs(directory.path_join(name),prefix+name+"/"))
 	return inputs
 
-## The bundled sim's inputs: the sim tree plus vendored packages it depends on by path
-## (R2-CREW: vendor/crew-core until ailang#1811; sim/ailang.toml names it ../vendor/crew-core).
-static func bundle_inputs(sim_dir:="res://sim", vendor_dir:="res://vendor")->Dictionary:
-	var inputs:=runtime_inputs(sim_dir)
-	inputs.merge(runtime_inputs(vendor_dir,"../vendor/"))
-	return inputs
-
 static func _unpack_runtime() -> String:
 	var version := FileAccess.get_file_as_string("res://runtime/VERSION").strip_edges()
 	if version == "":
 		push_error("exported build has no bundled runtime (res://runtime/VERSION missing)")
 		return ""
-	var inputs:=bundle_inputs()
+	var inputs:=runtime_inputs("res://sim")
 	if inputs.is_empty():return ""
 	var root := ProjectSettings.globalize_path("user://runtime-%s" % runtime_fingerprint(version,inputs))
 	var marker := root.path_join(".unpacked")
 	if not FileAccess.file_exists(marker):
 		for pair in [["res://runtime", root.path_join("runtime")], ["res://sim", root.path_join("sim")],
-				["res://vendor", root.path_join("vendor")],
 				["res://runtime/cache", root.path_join("home/.ailang/cache")]]:
 			if not _copy_tree(pair[0], pair[1]):
 				push_error("failed to unpack %s" % pair[0])

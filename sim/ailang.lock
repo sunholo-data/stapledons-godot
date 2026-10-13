@@ -1,6 +1,6 @@
 {
   "ailang_version": "v0.54.8",
-  "generated_at": "2026-10-13T17:41:18.132396Z",
+  "generated_at": "2026-10-13T17:46:41.244205Z",
   "generator": "ailang lock v0.54.8",
   "packages": [
     {
@@ -38,12 +38,13 @@
     },
     {
       "ailang": ">=0.54.0",
-      "content_hash": "sha256:041be83a4a08dfba14db3f41969587d41ce39b0347db95f4a3c3050202d8c59d",
+      "content_hash": "sha256:2c3b56d9236780f4cfc3e06dd6982e245e666c42d6d549c2b10fcbb26a29de91",
       "effects": [
         "IO"
       ],
       "exports": [
         "sunholo/crew_core/actor_policy",
+        "sunholo/crew_core/auto",
         "sunholo/crew_core/codec",
         "sunholo/crew_core/conversations",
         "sunholo/crew_core/example",
@@ -54,11 +55,10 @@
         "sunholo/crew_core/scenario",
         "sunholo/crew_core/session"
       ],
-      "interface_hash": "sha256:be5cff20b264123b3f34a751d770888f5aa8fa74a95a413342c46ae7041f5d56",
+      "interface_hash": "sha256:0ed737190dfcde25f8da9e1a11cefde353a4a5b459a1f8aa57aef9798277f6c7",
       "name": "sunholo/crew_core",
-      "path": "../vendor/crew-core",
-      "source": "path",
-      "version": "0.2.0"
+      "source": "registry",
+      "version": "0.3.0"
     },
     {
       "ailang": ">=0.40.0",

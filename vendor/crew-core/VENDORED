@@ -1,7 +1,0 @@
-package: sunholo/crew_core
-version: 0.2.0
-repo: https://github.com/sunholo-data/ailang-packages
-path: packages/crew-core
-commit: 6dfc0fa8cfd316922496612d8023f3315019d942
-tree_sha256: 1ba272855679ee598781aaa93972e8b8aad9f5bd119a04e27c1d1299b75270d2
-note: vendored until ailang#1811; change the engine upstream and re-vendor, never edit here (make crew-vendor-check)

@@ -87,7 +87,9 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Hard rule.** The sim never reads AI text; crew words arrive only via `record`. A test sends text in `crew_reply`'s line and expects a refusal if it smuggles AI output into a decision field.
 - **Gate:** `make test` subset: `sim/protocol_crew_test.ail` (AC6), `parity-v2`, `replay`.
 
-### G1: re-vendor crew_core 0.3.0 (external, ~20 LOC)
+### G1: re-vendor crew_core 0.3.0 (external, ~20 LOC) ✅ 2026-10-13
+> **Done, as a registry pin rather than a re-vendor.** crew_core 0.3.0 was merged (ailang-packages #138, `82c21dd`) and published, and the published files equal that commit. ailang#1811 was fixed in AILANG v0.54.8 (#226). So `sim/ailang.toml` pins `"sunholo/crew_core" = "0.3.0"`. `vendor/`, `tools/crew_vendor.sh` and `make crew-vendor*` are gone, along with C1's vendor export additions: registry packages ship in the bundled runtime cache. The synced pack is unchanged upstream. The three parity recordings give the same journal hashes as on 0.2.0, VM == interpreter. strict, replay, parity-v2, crew-bridge, export-filter-audit and the runtime fingerprint tests all pass from a cold cache.
+
 - **Blocked** until CI-0 merges in ailang-packages (brief: [ailang-packages#137](https://github.com/sunholo-data/ailang-packages/issues/137)): archiving, `ship_event`, `policy`, standing orders, escalation and `advance(n)`, from the crew-lab agent.
 - Run `make crew-vendor REV=<CI-0 sha>`, then `make crew-vendor-check crew-parity strict parity`. The three recordings must still match. A break means a crew_core behaviour change, reported upstream rather than patched here.
 
