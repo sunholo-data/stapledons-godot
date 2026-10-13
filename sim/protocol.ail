@@ -27,7 +27,7 @@ import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, 
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
   CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf,
   IGrApproach, IGrHover, IGrOrbit, IGrRing, ICrew, withHole, archiveEvent, withCrew)
-import ./protocol_crew (decodeCrewIntent, crewIntentNames, crewView)
+import ./protocol_crew (decodeCrewIntent, crewIntentNames, crewView, crewHoldJson)
 import ./gr (GrView, grView, sgrAWith, sgrAMassMsun)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
@@ -253,7 +253,7 @@ pure func encodeEvent(e: Event) -> string =
     opt("from", \c. q(c.from), e.phase) ++ opt("to", \c. q(c.to), e.phase) ++ opt("tau", \c. num(c.tau), e.phase) ++
     opt("residual_x", \r. num(r.x), e.arrived) ++ opt("residual_t", \r. num(r.t), e.arrived) ++ opt("residual_phi", \r. num(r.phi), e.arrived) ++
     opt("stream", \d. q(d.stream), e.drew) ++ opt("n", \d. intToStr(d.n), e.drew) ++ opt("value", \d. intToStr(d.value), e.drew) ++
-    (match e.ai { Some(x) => aiFields(x), None => [] }) ++ opt("event", q, e.archive) ++
+    (match e.ai { Some(x) => aiFields(x), None => [] }) ++ opt("event", q, e.archive) ++ opt("hold", crewHoldJson, e.crewHold) ++
     (match e.hold { Some(h) => [f("hold_max_phi", num(h.phi)), f("hold_beta", num(betaOf(h.phi))), f("hold_one_minus_beta", num(oneMinusBeta(h.phi))), f("medium", q(h.medium)), f("n_h_cm3", num(h.nH))], None => [] }))
 pure func encodeJourney(j: JourneyView) -> string = obj([f("state", q(j.state)), f("plan_id", intToStr(j.planId))] ++ opt("plan", encodePlanView, j.plan))
 pure func encodeRng(r: Rng) -> string =
@@ -650,7 +650,7 @@ pure func decodeEvent(e: Json) -> Result[Event, string] =
   bind(req(getString(e, "k"), bad()), \k. bind(optIf(e, "target", \x. planOf(x, bad())), \echo.
   bind(optIf(e, "from", decodeCrossing), \ph. bind(optIf(e, "residual_x", decodeResiduals), \ar. bind(optIf(e, "stream", decodeDrawn), \dr.
   bind(aiEventOf(k, e), \ae. bind(optIf(e, "event", \x. sOf(x, "event")), \arc.
-  Ok({kind: k, echo: echo, phase: ph, arrived: ar, drew: dr, ai: ae, archive: arc, hold: None}))))))))
+  Ok({kind: k, echo: echo, phase: ph, arrived: ar, drew: dr, ai: ae, archive: arc, hold: None, crewHold: None}))))))))
 pure func sOf(j: Json, k: string) -> Result[string, string] = req(getString(j, k), bad())
 pure func nat(j: Json, k: string) -> Result[int, string] = req(natF(j, k), bad())
 pure func decodeKey(j: Json) -> Result[CacheKey, string] =

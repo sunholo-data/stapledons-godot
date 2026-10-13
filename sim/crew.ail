@@ -15,14 +15,16 @@ module stapledons/sim/crew
 -- Randomness: an authored answer draws one value from the crew stream (SCrew, id 2) as its seed.
 -- No other stream moves (AC5).
 import std/string (concat, intToStr)
-import std/list (filter, head, map)
+import std/list (filter, head, map, any)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/json (encode, jo, ja, kv, js, jnum, jint)
 import std/math (floor, floatToInt, intToFloat)
-import pkg/sunholo/crew_core/scenario (Scenario, ShipEvent, decodeScenario)
+import pkg/sunholo/crew_core/scenario (Scenario, ShipEvent, decodeScenario, yieldsOf)
+import pkg/sunholo/social_dynamics/model (Working)
 import pkg/sunholo/crew_core/session (Session, Output, HostError, HostFailure, DomainFailure, start, input, untraced, encodeHostError)
 import pkg/sunholo/crew_core/policy (Policy, decodePolicy, authoredAnswer)
+import pkg/sunholo/crew_core/auto (Rule as AutoRule, AutoState)
 import stapledons/sim/data/crew_pack (scenarioJson, policyJson)
 import ./rng (Rng, SCrew, draw, top53)
 import ./crew_events (forScenario)
@@ -31,7 +33,14 @@ import ./crew_events (forScenario)
 -- that words it (aiReq "" until core opens one); `names` the crew's display names (D-74).
 export type CrewLine = { request: string, actor: string, task: string, label: string, aiReq: string } deriving (Eq)
 export type CrewName = { id: string, name: string } deriving (Eq)
-export type CrewState = { session: Session, policy: Policy, scenario: string, turn: int, dayRem: float, lines: [CrewLine], names: [CrewName] }
+-- C8 (CI-5): the auto-captain (sim/crew_auto.ail). `auto` is the standing-orders preset with its
+-- escalation rules and crew_core's carried AutoState; None runs no decisions (the default). `holds`
+-- are escalations awaiting the captain; while any is open, crew decisions wait (the ship and the
+-- engine run on).
+export type CrewHold = { id: string, rule: string, actor: string, task: string, tick: int, detail: string } deriving (Eq)
+export type AutoRun = { preset: string, rules: [AutoRule], st: AutoState }
+export type CrewState = { session: Session, policy: Policy, scenario: string, turn: int, dayRem: float, lines: [CrewLine], names: [CrewName],
+  auto: Option[AutoRun], holds: [CrewHold] }
 export pure func linesMax() -> int = 6
 -- lines: the crew_core input lines fed, in order; traces: crew_core's journal record for each
 -- (empty strings for an untraced crew); refused: the crew_core error that stopped the step.
@@ -71,7 +80,7 @@ export pure func initCrewWith(captaincy: string, traced: bool) -> Result[(CrewSt
     Err(e) => Err(e),
     Ok((sc, p)) => match start(sc, startLine(captaincy)) {
       Err(e) => Err(hostError(e)),
-      Ok(o) => Ok(({ session: if traced then o.session else untraced(o.session), policy: p, scenario: sc.id, turn: 0, dayRem: 0.0, lines: [], names: [] }, o.trace))
+      Ok(o) => Ok(({ session: if traced then o.session else untraced(o.session), policy: p, scenario: sc.id, turn: 0, dayRem: 0.0, lines: [], names: [], auto: None, holds: [] }, o.trace))
     }
   }
 export pure func initCrew(captaincy: string) -> Result[CrewState, string] =
@@ -128,6 +137,32 @@ pure func advanceTo(c: CrewState, rng: Rng, target: int, lines: [string], traces
 -- scheduled events after an advance completes, so a single multi-day advance would fire a day-3
 -- event at the end of the span, after the work holding the resource had finished. (CI-0's
 -- `advance(n)` is the bulk path that keeps per-day semantics; until then a skip costs a line a day.)
+-- C8, AC11: plain days in as few advance lines as is exact. crew_core applies flows (yields of
+-- finished work, scheduled and run-time ship events) only after an advance completes, so an
+-- advance may span days as long as it ends at every flow point: a working task's due tick when its
+-- recipe yields, and each unseen ship event's tick. Between flow points a multi-day advance is the
+-- per-day advance bit for bit (crew_hold_test checks the sessions are equal on every script).
+-- When cohorts come aboard (crew_core 0.4.0, crew-population CP-2): cohorts drift on calendar weeks
+-- and run a yearly step, reading state sampled at the advance, so every multiple of 7 and of 365
+-- becomes a flow point too (crew-lab agent, 2026-10-13). Add them to nextFlow with the 0.4.0 bump.
+export pure func plainDays(c: CrewState, rng: Rng, n: int) -> CrewStepped = fastDays(c, rng, c.turn + n, [], [])
+export pure func perDays(c: CrewState, rng: Rng, n: int) -> CrewStepped = days(c, rng, n, [], [])
+pure func seenEv(s: Session, id: string) -> bool = any(\e. e.id == concat(["ev-", id]), s.state.evidence) || listHas(s.archive.events, concat(["ev-", id]))
+pure func listHas(xs: [string], x: string) -> bool = match xs { [] => false, y :: r => y == x || listHas(r, x) }
+pure func minOr(xs: [int], d: int) -> int = match xs { [] => d, x :: r => { let m = minOr(r, d); if x < m then x else m } }
+export pure func nextFlow(c: CrewState, target: int) -> int {
+  let s = c.session;
+  let t = c.turn;
+  let evs = map(\e. if e.at <= t then t + 1 else e.at, filter(\e. !seenEv(s, e.id), s.scenario.events));
+  let ys = map(\k. k.due, filter(\k. (match k.status { Working => true, _ => false }) && k.due > t && listLen(yieldsOf(s.scenario, k.recipe)) > 0, s.state.tasks));
+  minOr(evs ++ ys, target)
+}
+pure func fastDays(c: CrewState, rng: Rng, target: int, lines: [string], traces: [string]) -> CrewStepped =
+  if c.turn >= target then stepped(c, rng, lines, traces, None) else {
+    let next = { let f = nextFlow(c, target); if f > target then target else if f <= c.turn then c.turn + 1 else f };
+    let r = advanceTo(c, rng, next, lines, traces, maxContinuations());
+    match r.refused { None => fastDays(r.crew, r.rng, target, r.lines, r.traces), Some(_) => r }
+  }
 pure func days(c: CrewState, rng: Rng, n: int, lines: [string], traces: [string]) -> CrewStepped =
   if n <= 0 then stepped(c, rng, lines, traces, None) else {
     let r = advanceTo(c, rng, c.turn + 1, lines, traces, maxContinuations());

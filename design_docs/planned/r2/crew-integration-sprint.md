@@ -151,7 +151,15 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Tests.** `tests/test_crew_console.gd` binds the panel to a recorded state stream and asserts the emitted intents (AC10). It goes in `make test` through a `crew-console-test` target, and the no-twitch sweep (`make no-twitch-test`) covers the new page.
 - **Visual check.** `make crew-console-capture` writes `renders/crew_console/*.png`. Open and look at them before merging, because this is a visible feature and stays attended.
 
-### C8: auto-run, crew holds and skip-ahead (CI-5, ~450 LOC, after G1; the card after C6)
+### C8: auto-run, crew holds and skip-ahead (CI-5, ~450 LOC, after G1; the card after C6) ✅ 2026-10-13
+> **Done.**
+> - **`sim/crew_auto.ail`.** Presets: `off` (the default), `critical_only` (the lab-verified `escalation.json`, synced into `data/crew`) and `hands_on` (earlier thresholds plus `uncovered`; derived in the game until the lab's `hands_on.json` lands). Orders follow the captaincy (crew_core's consent/orders orders); the cadence follows **D-76**: daily near stars, monthly on a committed leg.
+> - **Check-ins.** Decision days are absolute (tick % cadence == 1), because crew_core's `advanceAuto` aligns its blocks to each call's start and the sim calls once per tick. An escalation becomes a hold (`h<tick>-<rule>-<actor>`); while it's open the days still pass but decisions wait. `crew_resume` clears it.
+> - **Protocol.** The `crew_orders` and `crew_resume` intents (the sim's own controls); a `crew_hold` event carries the hold; the crew view gains `auto` and `holds`.
+> - **Godot.** `SolarDeparture.step` holds ship time while `sim.crew.holds` is non-empty, sending zero-length ticks so the page's queued Resume still reaches the sim. CrewPage shows a "Needs you" card with who and what in words, a confirmed Resume, and the preset choice.
+> - **AC11 (`make crew-perf`).** A 10-year skip takes 0.46 s with critical_only (a hold stops auto-run early) and 0.89 s in the worst case, monthly auto-run with no holds. That's on the strict VM, warm, against a 2 s budget. Plain days are batched between flow points (yielding tasks' due ticks, unseen ship events) and are exactly equal to one advance a day on every parity script plus a 400-day tail; a mutation that ignores flow points fails that test. Cohorts (0.4.0) will add multiples of 7 and of 365 as flow points.
+> - **Tests.** `sim/crew_hold_test.ail` (7: schedule, presets, a monthly wait asks nobody, a hold's lifecycle, determinism, off by default, batching exactness) and `tests/test_crew_hold.gd` (9, `make crew-hold-test`, AC15).
+
 - **Sim.**
   - `World.crew.orders` holds the standing orders; new games use the pack's *critical only* preset.
   - The crew step calls `advance`, and an escalation raises a `crew_hold` event and adds an entry to `state.crew.holds`.

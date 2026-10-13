@@ -155,6 +155,9 @@ func commit_prepared() -> bool:
 func step() -> bool:
 	if sim==null or not failed.is_empty():return false
 	if paused or attitude_hold or pending_index>=0:return true
+	# R2-CREW C8: a crew hold (an escalation under auto-run) stops the voyage like an arrival. Zero
+	# ticks keep the bridge live, so the Crew page's queued choices (crew_resume) still reach the sim.
+	if crew_held():return _send([],0.)
 	if sim.world.journey.state=="committed":
 		if interlude!=null:return _step_interlude()
 		if pacing.interlude_due(sim.world):
@@ -186,6 +189,10 @@ func _step_interlude() -> bool:
 			failed="cruise interlude ended off the braking boundary";return false
 		interlude=null;interludes_done+=1
 	return true
+
+## R2-CREW C8: the captain is needed (sim.crew.holds); time waits until the hold is resumed.
+func crew_held() -> bool:
+	return sim!=null and not (sim.crew.get("holds",[]) as Array).is_empty()
 
 func leg_name() -> String:
 	return "Earth standoff" if leg_index<0 or leg_index>=itinerary.size() else str(itinerary[leg_index].get("name",itinerary[leg_index].id))

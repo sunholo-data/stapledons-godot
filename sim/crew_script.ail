@@ -16,6 +16,7 @@ import std/result (Result, Ok, Err)
 import std/crypto (sha256Hex)
 import ./crew (CrewState, CrewStepped, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn, shipEventLine)
 import ./crew_events (noMoments, shipEvents)
+import ./crew_auto (setPreset, autoStep)
 import ./rng (Rng, SCrew, zeroRng, counter)
 import std/math (intToFloat)
 
@@ -76,3 +77,26 @@ export pure func crewScripted(seed: int) -> string = join(" | ", map(\s. match r
 
 pure func map(f: a -> b, xs: [a]) -> [b] = match xs { [] => [], x :: r => f(x) :: map(f, r) }
 pure func length(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + length(r) }
+
+-- R2-CREW C8, AC11 (`make crew-perf`): a long skip under auto-run (critical_only, monthly check-ins
+-- on a committed leg, D-76), untraced, in one sim tick of `years` ship-years. Prints the crew days
+-- run, the holds raised and the auto turns.
+export pure func crewSkip(years: int) -> string = match initCrewWith("orders", false) {
+  Err(e) => e,
+  Ok((c, _)) => {
+    let on = setPreset(c, 3, zeroRng(), "critical_only");
+    let r = autoStep(on.crew, 3, on.rng, intToFloat(years) + 0.0000001, false);
+    concat(["days ", intToStr(r.stepped.crew.turn), " holds ", intToStr(length(r.holds)),
+      match r.stepped.refused { Some(e) => concat([" refused ", e]), None => "" }])
+  }
+}
+-- The worst case for AC11: auto-run with no escalation rules, so it never stops for a hold.
+export pure func crewSkipUnheld(years: int) -> string = match initCrewWith("orders", false) {
+  Err(e) => e,
+  Ok((c, _)) => {
+    let on = { c | auto: Some({ preset: "unheld", rules: [], st: { seed: 77, agreed: [], raised: [], calls: 0 } }) };
+    let r = autoStep(on, 3, zeroRng(), intToFloat(years) + 0.0000001, false);
+    concat(["days ", intToStr(r.stepped.crew.turn), " holds ", intToStr(length(r.holds)),
+      match r.stepped.refused { Some(e) => concat([" refused ", e]), None => "" }])
+  }
+}

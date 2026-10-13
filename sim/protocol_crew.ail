@@ -12,6 +12,8 @@ module stapledons/sim/protocol_crew
 --   crew_cancel cancel_request  withdraw an open request
 --   crew_reply  captain_reply   answer a crew concern (conversations)
 --   crew_policy policy          switch consent and orders (C3, D-70 OQ5; journalled by crew_core)
+--   crew_orders orders          C8: the auto-run preset {"preset": off | critical_only | hands_on} (the sim's)
+--   crew_resume resume          C8: the captain has dealt with a hold {"hold": id} (the sim's)
 import std/string (concat, join, intToStr)
 import std/math (intToFloat)
 import std/list (map, filter, take, reverse, length, foldl, contains)
@@ -20,12 +22,12 @@ import std/result (Result, Ok, Err)
 import std/json (Json, JNull, decode, getString, encode, jo, ja, kv, js, jnum)
 import pkg/sunholo/crew_core/session (Session, Request)
 import pkg/sunholo/social_dynamics/model (State, Actor, Value, Task, TaskStatus, Offered, Working, Completed, Stopped, Relief, Evidence, Resource)
-import ./crew (CrewState, CrewCmd, CrewLine, CrewName, crewTurn)
+import ./crew (CrewState, CrewCmd, CrewLine, CrewName, CrewHold, crewTurn)
 import ./crew_names (nameOf)
 import ./crew_resources (Amount, usedOf)
 
 export pure func crewIntentNames() -> [string] =
-  ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy"]
+  ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
 
 -- The crew_core command each intent may carry.
 export pure func commandFor(kind: string) -> Option[string] =
@@ -33,6 +35,7 @@ export pure func commandFor(kind: string) -> Option[string] =
   else if kind == "crew_start" then Some("start_task") else if kind == "crew_relief" then Some("resolve_relief")
   else if kind == "crew_cancel" then Some("cancel_request") else if kind == "crew_reply" then Some("captain_reply")
   else if kind == "crew_policy" then Some("policy")
+  else if kind == "crew_orders" then Some("orders") else if kind == "crew_resume" then Some("resume")
   else None
 
 export pure func refusalReason(e: string) -> string = concat(["crew:", e])
@@ -57,6 +60,7 @@ export pure func decodeCrewIntent(kind: string, line: string) -> Result[CrewCmd,
 --   heard    [{id, author, kind, text}]           the latest heardMax evidence lines, oldest first
 --   resources [{id, available, reserved, consumed}]
 --   used     [{id, units, amount, physical}]      consumed stock in physical units (C3 crew.used readout)
+--   auto     the auto-run preset ("off" when none); holds [{id, rule, actor, name, task, tick, detail}] (C8)
 --   lines    [{request, actor, name, label, text, ai_req}]  C5: the latest answers. `text` is the
 --            authored template line for the decided reaction; Godot shows it until the ai_request
 --            `ai_req` is accepted, then the AI words ("" ai_req: the template stands).
@@ -100,6 +104,12 @@ export pure func templateLine(label: string) -> string =
   else if label == "continue" then "I can keep going for now."
   else if label == "defer" then "Let me think about it before I answer."
   else "I hear you, Captain."
+-- The crew_hold event's `hold` (2.9, C8): the hold as stored (names live in the crew section).
+export pure func crewHoldJson(h: CrewHold) -> string =
+  encode(jo([kv("id", js(h.id)), kv("rule", js(h.rule)), kv("actor", js(h.actor)), kv("task", js(h.task)), kv("tick", jnum(intToFloat(h.tick))), kv("detail", js(h.detail))]))
+export pure func holdObj(c: CrewState, h: CrewHold) -> Json =
+  jo([kv("id", js(h.id)), kv("rule", js(h.rule)), kv("actor", js(h.actor)), kv("name", js(match nameOf(c.names, h.actor) { Some(n) => n, None => h.actor })),
+    kv("task", js(h.task)), kv("tick", jnum(intToFloat(h.tick))), kv("detail", js(h.detail))])
 pure func lineObj(c: CrewState, l: CrewLine) -> Json =
   jo([kv("request", js(l.request)), kv("actor", js(l.actor)), kv("name", js(match nameOf(c.names, l.actor) { Some(n) => n, None => l.actor })),
     kv("label", js(l.label)), kv("text", js(templateLine(l.label))), kv("ai_req", js(l.aiReq))])
@@ -115,6 +125,8 @@ export pure func crewView(c: CrewState) -> string {
     kv("heard", ja(map(evidenceObj, lastN(filter(\e. e.author != "host", st.evidence), heardMax())))),
     kv("resources", ja(map(resourceObj, st.resources))),
     kv("lines", ja(map(\l. lineObj(c, l), c.lines))),
+    kv("auto", js(match c.auto { Some(a) => a.preset, None => "off" })),
+    kv("holds", ja(map(\h. holdObj(c, h), c.holds))),
     kv("used", ja(map(\u. jo([kv("id", js(u.id)), kv("units", jnum(intToFloat(u.units))), kv("amount", jnum(intToFloat(u.amount))), kv("physical", js(u.physical))]),
       usedOf(map(\r. { id: r.id, value: r.consumed }, filter(\r. r.consumed > 0, st.resources))))))
   ]))

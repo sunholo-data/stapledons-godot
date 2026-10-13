@@ -14,7 +14,8 @@ export type PackFile = { name: string, entry: string, file: string }
 -- The pack's files: the function name in crew_pack.ail and the file under data/crew/.
 export pure func files() -> [PackFile] = [
   { name: "scenario", entry: "scenarioJson", file: "scenario.json" },
-  { name: "policy", entry: "policyJson", file: "policy.json" }
+  { name: "policy", entry: "policyJson", file: "policy.json" },
+  { name: "escalation", entry: "escalationJson", file: "escalation.json" }
 ]
 
 -- An AILANG string literal holding s exactly: \ " $ (interpolation) and control characters escaped.

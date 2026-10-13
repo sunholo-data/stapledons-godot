@@ -78,11 +78,14 @@ func _build() -> void:
 	if crew.is_empty():
 		add_child(_label("No crew aboard yet.", 14, DIM))
 		return
+	for h in crew.get("holds", []):
+		add_child(_hold_card(h))
 	var head := HBoxContainer.new()
 	head.add_child(_label("Captaincy: %s" % str(crew.get("captaincy", "consent")), 14))
 	var other := "orders" if str(crew.get("captaincy", "consent")) == "consent" else "consent"
 	head.add_child(_button("Policy", "Switch to %s" % other, "policy:" + other))
 	add_child(head)
+	add_child(_auto_row())
 	for m in crew.get("members", []):
 		add_child(_member_row(m))
 	for r in crew.get("reliefs", []):
@@ -91,6 +94,42 @@ func _build() -> void:
 		row.add_child(_button("Grant_" + str(r["id"]), "Grant relief", "relief:%s:true" % r["id"]))
 		row.add_child(_button("Deny_" + str(r["id"]), "Deny relief", "relief:%s:false" % r["id"]))
 		add_child(row)
+
+
+## C8: a hold is a moment the auto-run hands to the captain. The card says who and what in words,
+## and Resume (confirmed) hands the crew back to the standing orders; the choices themselves are
+## the page's usual actions (relief, start, offer) or the captaincy switch.
+const HOLD_WORDS := {
+	"breakdown": "is close to breaking down.",
+	"trust_floor": "has lost trust in you.",
+	"refusal_under_orders": "refused an order.",
+	"major": "is shaken by news the whole ship heard.",
+	"argument": "is arguing with the crew over what the ship lost.",
+	"uncovered": "has raised something only you can answer.",
+}
+func _hold_card(h: Dictionary) -> Control:
+	var box := VBoxContainer.new()
+	box.name = "Hold_" + str(h.get("id", ""))
+	var who := display_name(str(h.get("actor", ""))) if str(h.get("actor", "")) != "" else "The crew"
+	box.add_child(_label("Needs you: %s %s" % [who, HOLD_WORDS.get(str(h.get("rule", "")), "needs the captain.")], 15, LOW))
+	var row := HBoxContainer.new()
+	row.add_child(_label("Auto-run waits until you resume it.", 12, DIM))
+	row.add_child(_button("Resume_" + str(h.get("id", "")), "Resume auto-run", "resume:" + str(h.get("id", ""))))
+	box.add_child(row)
+	return box
+
+
+## C8 presets: off (every decision yours), critical only (the default when on), hands on.
+const PRESETS := {"off": "Off", "critical_only": "Critical moments only", "hands_on": "Hands on"}
+func _auto_row() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "AutoRun"
+	var cur := str(crew.get("auto", "off"))
+	row.add_child(_label("Auto-run: %s" % PRESETS.get(cur, cur), 13))
+	for p in ["critical_only", "hands_on", "off"]:
+		if p != cur:
+			row.add_child(_button("Auto_" + p, PRESETS[p], "orders:" + p))
+	return row
 
 
 func display_name(id: String) -> String:
@@ -166,6 +205,10 @@ func press(action: String) -> Array:
 			return _emit([SimBridge.crew_intent("crew_relief", {"command": "resolve_relief", "id": parts[1], "release": parts[2] == "true"})])
 		"policy":
 			return _emit([SimBridge.crew_intent("crew_policy", {"command": "policy", "policy": parts[1]})])
+		"orders":
+			return _emit([SimBridge.crew_intent("crew_orders", {"command": "orders", "preset": parts[1]})])
+		"resume":
+			return _emit([SimBridge.crew_intent("crew_resume", {"command": "resume", "hold": parts[1]})])
 	return []
 
 

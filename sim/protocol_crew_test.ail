@@ -11,11 +11,11 @@ import std/json (encode, js)
 import ./protocol (Session, Served, newSession, serve)
 
 pure func names() -> bool =
-  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy"]
+  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
 
 pure func decodes(t: string, line: string) -> bool = match decodeCrewIntent(t, line) { Ok(_) => true, Err(_) => false }
 
-test "the seven crew intents (crew_ask added in C2; crew_policy in C3)" { names() }
+test "the nine crew intents (crew_ask in C2; crew_policy in C3; crew_orders and crew_resume in C8)" { names() }
 test "a crew intent carries one crew_core line" {
   decodes("crew_offer", "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}") &&
   !decodes("crew_offer", "not json") && !decodes("crew_mutiny", "{\"command\":\"offer\"}")

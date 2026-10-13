@@ -67,6 +67,17 @@ test: crew-console-test
 crew-console-capture: ## C6 review frames: the Crew page from the recorded crew section -> renders/crew_console/ (GPU window; open every frame)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . --resolution 1280x720 --script tools/crew_console_capture.gd > $(SCRATCH)/crew-console-capture.log 2>&1; rc=$$?; grep -E '^(frame|crew-console-capture)' $(SCRATCH)/crew-console-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console-capture.log
+crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resume, presets, and the guided voyage holding ship time until the real sim's hold clears
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_hold.gd > $(SCRATCH)/crew-hold.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-hold)' $(SCRATCH)/crew-hold.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-hold.log && grep -q '^crew-hold: 0 failures$$' $(SCRATCH)/crew-hold.log
+test: crew-hold-test
+crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless, under 2 s (warm cache); critical_only and the no-hold worst case
+	@for e in crewSkip crewSkipUnheld; do \
+	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 1 sim/crew_script.ail > /dev/null; \
+	  s=$$(perl -MTime::HiRes=time -e 'printf "%.3f", time'); out=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 10 sim/crew_script.ail); \
+	  t=$$(perl -MTime::HiRes=time -e "printf '%.2f', time - $$s"); echo "crew-perf $$e: $$out in $$t s"; \
+	  echo "$$out" | grep -qE '^"?days 3652 holds [0-9]+"?$$' && perl -e "exit($$t < 2.0 ? 0 : 1)" || { echo "crew-perf: FAIL ($$e: $$out, $$t s; budget 2 s)"; exit 1; }; done
+test: crew-perf
 crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
 	@for n in consent orders shipevent argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
 test: crew-parity

@@ -37,7 +37,7 @@ const ISM_MINOR := 8
 ## refusal reason starts "crew:". The `crew` section (parse_crew(), kept in `crew`) arrives in the
 ## full state and whenever it changes. Asked for by setting `want_minor = CREW_MINOR`.
 const CREW_MINOR := 9
-const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy"]
+const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -606,6 +606,8 @@ static func parse_crew(v) -> Dictionary:
 	for k in ["members", "requests", "reliefs", "heard", "resources"]:
 		if typeof(v.get(k)) != TYPE_ARRAY:
 			return {}
+	if v.has("holds") and typeof(v["holds"]) != TYPE_ARRAY: # C8: escalations awaiting the captain
+		return {}
 	for m in v["members"]:
 		if typeof(m) != TYPE_DICTIONARY or typeof(m.get("id")) != TYPE_STRING or typeof(m.get("indicators")) != TYPE_DICTIONARY \
 				or not (m.get("trust") == null or typeof(m.get("trust")) == TYPE_FLOAT or typeof(m.get("trust")) == TYPE_INT):

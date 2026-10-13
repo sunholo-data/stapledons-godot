@@ -260,10 +260,10 @@
         "tests/test_crew_hold.gd: interlude stops at crew_hold, card emits the chosen intent; no-twitch covers it (AC15)",
         "make crew-perf: 10-year skip via advance within budget"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-13",
+      "completed": "2026-10-13",
+      "notes": "sim/crew_auto.ail: presets off/critical_only (synced escalation.json)/hands_on (derived; lab file coming); orders by captaincy; cadence D-76 (daily near stars, monthly committed); absolute decision days; escalation -> hold; days pass while held; crew_resume. crew_orders/crew_resume intents; crew_hold event; view auto+holds. SolarDeparture holds ship time while held (zero ticks flush queued Resume). CrewPage hold card + presets. AC11 make crew-perf: 10 yr 0.46 s (critical_only) / 0.89 s (worst case, no holds); plain days batched between flow points, exact vs per-day (test + mutation). Tests: crew_hold_test 7/7, test_crew_hold.gd 9/9; regression: crew/protocol tests, crew-parity, strict, replay, parity-v2, crew-bridge, crew-console, solar-departure, tour-pacing."
     },
     {
       "id": "C7_EVALUATE_LAND",

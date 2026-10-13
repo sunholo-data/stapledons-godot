@@ -1,4 +1,5 @@
-source: https://github.com/sunholo-data/ailang-packages/tree/6dfc0fa8cfd316922496612d8023f3315019d942/examples/crew-lab/scenarios/stapledon
-commit: 6dfc0fa8cfd316922496612d8023f3315019d942
+source: https://github.com/sunholo-data/ailang-packages/tree/82c21ddb30eaa093911a56c88205d163f4746af4/examples/crew-lab/scenarios/stapledon
+commit: 82c21ddb30eaa093911a56c88205d163f4746af4
 scenario.json <- last-messages-home.json sha256 6cdc38268005249d1731f5e335cc52b5a604ff69b322e3a8737d3ea2d77e34db
 policy.json <- policy.json sha256 1d6e3859e359e2be050de76d0ba3cde7ba848831b3d9570688b824df2eb520de
+escalation.json <- escalation.json sha256 23b0446c8718587474cbcfc52c771012a9531fb498d507ecf0c30c8adff9d342

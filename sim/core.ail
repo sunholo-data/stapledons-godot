@@ -9,6 +9,7 @@ import std/result (Ok, Err)
 import std/math (intToFloat)
 import std/list (map, reverse, filter)
 import std/string (concat, intToStr, floatToStr)
+import std/json (decode, getString)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
 import pkg/sunholo/relativity/hyper (absf)
@@ -22,8 +23,9 @@ import ./celestial (defaultEpochJd, solSystem, lyKm)
 import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
 import ./inferred_stars (CatStar, inferStar, remember)
 import ./stops (starStopKm)
-import ./crew (CrewState, CrewCmd, CrewLine, initCrew, crewTick, crewIntents, raiseShipEvents, noteLine, withNames)
+import ./crew (CrewState, CrewCmd, CrewLine, CrewHold, initCrew, crewTick, crewIntents, raiseShipEvents, noteLine, withNames)
 import ./crew_names (nameCrew, nameOf)
+import ./crew_auto (autoStep, setPreset, resume)
 import pkg/sunholo/crew_core/scenario (projectName, purpose as recipePurpose)
 import ./crew_events (Moments, noMoments, shipEvents)
 import ./crew_resources (shipUnits, lintAgainstShip)
@@ -118,8 +120,8 @@ export type Residuals = { x: float, t: float, phi: float }
 export type Drawn = { stream: string, n: int, value: int }
 -- A `hold_limit` event (R1-ISM-DUST, protocol 2.7) follows an m_eff_too_small refusal under lism-1:
 -- the highest cruise rapidity the drive can hold on that route and the medium that sets it.
-export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent], archive: Option[string], hold: Option[HoldInfo] }
-export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None, archive: None, hold: None }
+export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent], archive: Option[string], hold: Option[HoldInfo], crewHold: Option[CrewHold] }
+export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None, archive: None, hold: None, crewHold: None }
 export pure func archiveEvent(name: string) -> Event = {event("archive") | archive: Some(name)}
 
 -- standoffAu: the arrival stand-off (M4.1, D-14); 0 plans to the star itself (M2),
@@ -711,7 +713,10 @@ export pure func tick(w: World, input: TickInput) -> Ticked
   ensures { result.world.tick == w.tick + 1 }
 {
   -- R2-CREW C2: the captain's crew intents first (they may draw on the crew stream), in order.
-  let ci = crewIntents(w.crew, w.seed, w.rng, crewCmds(input.intents, 0));
+  -- C8: crew_orders and crew_resume are the sim's own (auto-run presets, holds); the rest go to crew_core.
+  let cc = crewControl(w.crew, w.seed, w.rng, controlCmds(crewCmds(input.intents, 0)), []);
+  let ci0 = crewIntents(cc.crew, w.seed, cc.rng, coreCmds(crewCmds(input.intents, 0)));
+  let ci = { ci0 | refused: mergeRefused(map(\x. { i: x.i, reason: x.reason }, cc.refused), map(\x. { i: x.i, reason: x.reason }, ci0.refused)) };
   -- C5: every answered ask opens a crew_reply AI request; the decision is already made (D-20).
   let cl = crewLines({ w | crew: ci.crew, rng: ci.rng }, ci.answered, []);
   let w1 = cl.world;
@@ -724,9 +729,38 @@ export pure func tick(w: World, input: TickInput) -> Ticked
     Some(cr) => { let e = raiseShipEvents(cr, o0.seed, o0.rng, shipEvents(crewMoments(w1, o0))); { o0 | crew: Some(e.crew), rng: e.rng } }
   };
   -- R2-CREW (sim/crew.ail): ship time reaches the crew; None (no crew aboard) is a no-op.
-  let c = crewTick(o.crew, o.seed, o.rng, input.dtau);
-  { world: { o | crew: c.crew, rng: c.rng }, refused: r.refused, events: r.events }
+  -- C8: auto-run (sim/crew_auto.ail) checks in daily near stars, monthly on a committed leg (D-76).
+  let nearStar = match o.journey { Committed(_) => false, _ => true };
+  match o.crew {
+    None => { world: o, refused: r.refused, events: r.events },
+    Some(cr) => {
+      let a = autoStep(cr, o.seed, o.rng, input.dtau, nearStar);
+      { world: { o | crew: Some(a.stepped.crew), rng: a.stepped.rng }, refused: r.refused,
+        events: r.events ++ map(\h. { event("crew_hold") | crewHold: Some(h) }, a.holds) }
+    }
+  }
 }
+
+-- C8: the sim's own crew controls, in intent order. crew_orders {"command":"orders","preset":p};
+-- crew_resume {"command":"resume","hold":id}. A refusal is crew:<reason>.
+pure func isControl(c: CrewCmd) -> bool = c.kind == "crew_orders" || c.kind == "crew_resume"
+pure func controlCmds(xs: [(int, CrewCmd)]) -> [(int, CrewCmd)] = filter(\x. match x { (_, c) => isControl(c) }, xs)
+pure func coreCmds(xs: [(int, CrewCmd)]) -> [(int, CrewCmd)] = filter(\x. match x { (_, c) => !isControl(c) }, xs)
+type Controlled = { crew: Option[CrewState], rng: Rng, refused: [Refusal] }
+pure func crewControl(crew: Option[CrewState], seed: int, rng: Rng, xs: [(int, CrewCmd)], refused: [Refusal]) -> Controlled = match xs {
+  [] => { crew: crew, rng: rng, refused: refused },
+  (i, cmd) :: rest => match crew {
+    None => crewControl(crew, seed, rng, rest, refused ++ [{ i: i, reason: "crew:no_crew" }]),
+    Some(c) => if cmd.kind == "crew_orders" then (match setPreset(c, seed, rng, ctrlArg(cmd.line, "preset")) {
+        s => match s.refused { Some(e) => crewControl(crew, seed, rng, rest, refused ++ [{ i: i, reason: concat(["crew:", e]) }]), None => crewControl(Some(s.crew), seed, s.rng, rest, refused) }
+      })
+      else match resume(c, ctrlArg(cmd.line, "hold")) {
+        Some(c2) => crewControl(Some(c2), seed, rng, rest, refused),
+        None => crewControl(crew, seed, rng, rest, refused ++ [{ i: i, reason: "crew:unknown hold" }])
+      }
+  }
+}
+pure func ctrlArg(line: string, key: string) -> string = match decode(line) { Ok(j) => (match getString(j, key) { Some(v) => v, None => "" }), Err(_) => "" }
 
 pure func crewCmds(xs: [Intent], i: int) -> [(int, CrewCmd)] = match xs {
   [] => [],

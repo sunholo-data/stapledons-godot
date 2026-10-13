@@ -9,8 +9,9 @@ AILANG=${AILANG:-ailang}
 SCRATCH=${SCRATCH:-/tmp/stapledon-crew-sync}
 DIR=data/crew
 PACK=examples/crew-lab/scenarios/stapledon
-# data/crew name <- lab file (D-70 OQ3: last-messages-home comes aboard first)
-MAP="scenario.json:last-messages-home.json policy.json:policy.json"
+# data/crew name <- lab file (D-70 OQ3: last-messages-home comes aboard first; C8: escalation = the
+# lab-verified critical-only rules)
+MAP="scenario.json:last-messages-home.json policy.json:policy.json escalation.json:escalation.json"
 OUT=sim/data/crew_pack.ail
 
 gen() { $AILANG run --quiet --bytecode --caps IO,FS --package-dir sim --entry generate --args-json "{\"dir\":\"$DIR\",\"out\":\"$1\"}" sim/tools/crew_pack.ail; }

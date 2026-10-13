@@ -1,0 +1,114 @@
+module stapledons/sim/crew_hold_test
+
+-- R2-CREW C8 tests (design crew-integration.md §CI-5, AC14; D-76): auto-run under standing orders
+-- with critical moments as crew holds.
+import ./crew_auto (rulesFor, ordersFor, nextDecision, autoStep, presets, cadenceLongSkip)
+import ./crew (CrewState, initCrew, plainDays, daysPerYear, initCrewWith, crewCommand, perDays)
+import ./crew_script (Script, Step, SCmd, SDays, scripts)
+import ./core (World, Intent, ICrew, Event, newWorld, defaultParams, tick, withCrew)
+import ./rng (zeroRng)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/list (map, filter, length, any)
+
+pure func day() -> float = 1.0 / 365.25 + 0.0000001
+
+pure func checkSchedule() -> bool =
+  nextDecision(0, 30) == 1 && nextDecision(1, 30) == 31 && nextDecision(30, 30) == 31 && nextDecision(31, 30) == 61 &&
+  nextDecision(7, 1) == 8 && nextDecision(0, 1) == 1
+
+pure func checkPresets() -> bool =
+  (match rulesFor("critical_only") { Ok(rs) => map(\r. r.kind, rs) == ["refusal_under_orders", "breakdown", "trust_floor", "major", "argument"], Err(_) => false }) &&
+  (match rulesFor("hands_on") { Ok(rs) => length(filter(\r. r.kind == "breakdown" && r.threshold == 70, rs)) == 1 && length(filter(\r. r.kind == "trust_floor" && r.threshold == 40, rs)) == 1 && length(filter(\r. r.kind == "uncovered", rs)) == 1, Err(_) => false }) &&
+  (match rulesFor("mutiny") { Ok(_) => false, Err(_) => true }) && presets() == ["off", "critical_only", "hands_on"] &&
+  (ordersFor("consent", true)).start == "agreed" && (ordersFor("consent", true)).cadence == 1 &&
+  (ordersFor("orders", false)).start == "always" && (ordersFor("orders", false)).cadence == cadenceLongSkip()
+
+-- A monthly step that reaches no decision day is exactly plain days (nobody is asked).
+pure func checkMonthlyWait() -> bool = match initCrew("orders") {
+  Err(_) => false,
+  Ok(c0) => {
+    let one = autoStep(c0, 2, zeroRng(), day(), false);
+    match one.stepped.crew.auto {
+      _ => {
+        let c1 = one.stepped.crew;
+        let viaAuto = autoStep({ c1 | auto: c0.auto }, 2, zeroRng(), 10.0 * day(), false);
+        let viaPlain = plainDays(c1, zeroRng(), 10);
+        viaAuto.stepped.crew.session == viaPlain.crew.session
+      }
+    }
+  }
+}
+
+pure func orders(preset: string) -> Intent = ICrew({ kind: "crew_orders", line: "{\"command\":\"orders\",\"preset\":\"${preset}\"}", askId: None })
+pure func resumeI(id: string) -> Intent = ICrew({ kind: "crew_resume", line: "{\"command\":\"resume\",\"hold\":\"${id}\"}", askId: None })
+pure func holdEvents(es: [Event]) -> [string] = map(\e. match e.crewHold { Some(h) => h.id, None => "" }, filter(\e. e.kind == "crew_hold", es))
+pure func holdsOf(w: World) -> [string] = match w.crew { Some(c) => map(\h. h.id, c.holds), None => ["no crew"] }
+pure func turnOf(w: World) -> int = match w.crew { Some(c) => c.turn, None => 0 - 1 }
+pure func autoOf(w: World) -> string = match w.crew { Some(c) => (match c.auto { Some(a) => a.preset, None => "off" }), None => "no crew" }
+
+pure func checkHold() -> bool = match withCrew(newWorld(2, false, defaultParams()), "consent") {
+  Err(_) => false,
+  Ok(w0) => {
+    let on = tick(w0, { dtau: 0.0, intents: [orders("hands_on")] });
+    let t1 = tick(on.world, { dtau: 3.0 * day(), intents: [] });
+    let hs = holdsOf(t1.world);
+    let t2 = tick(t1.world, { dtau: 3.0 * day(), intents: [] });
+    match hs {
+      [h] => {
+        let r = tick(t2.world, { dtau: 0.0, intents: [resumeI(h)] });
+        let bad = tick(t2.world, { dtau: 0.0, intents: [resumeI("nope")] });
+        let t3 = tick(r.world, { dtau: 3.0 * day(), intents: [] });
+        autoOf(on.world) == "hands_on" && length(on.refused) == 0 &&
+        holdEvents(t1.events) == [h] && turnOf(t1.world) == 3 &&
+        holdsOf(t2.world) == [h] && holdEvents(t2.events) == [] && turnOf(t2.world) == 6 &&
+        holdsOf(r.world) == [] && length(bad.refused) == 1 &&
+        length(filter(\x. x == h, holdEvents(t3.events))) == 0
+      },
+      _ => false
+    }
+  }
+}
+
+pure func checkDeterministic() -> bool = match withCrew(newWorld(5, false, defaultParams()), "orders") {
+  Err(_) => false,
+  Ok(w0) => {
+    let run = \u. tick(tick(w0, { dtau: 0.0, intents: [orders("critical_only")] }).world, { dtau: 40.0 * day(), intents: [] });
+    let a = run(1);
+    let b = run(2);
+    holdsOf(a.world) == holdsOf(b.world) && turnOf(a.world) == 40 && holdEvents(a.events) == holdEvents(b.events)
+      && (match (a.world.crew, b.world.crew) { (Some(x), Some(y)) => x.session == y.session, _ => false })
+  }
+}
+
+pure func checkOffDefault() -> bool = match withCrew(newWorld(2, false, defaultParams()), "consent") {
+  Err(_) => false,
+  Ok(w0) => autoOf(w0) == "off" && holdEvents((tick(w0, { dtau: 30.0 * day(), intents: [] })).events) == []
+}
+
+test "decision days are absolute: tick % cadence == 1 (D-76 monthly, daily)" { checkSchedule() }
+test "presets: critical_only is the lab's rules; hands_on is earlier; orders by captaincy and cadence" { checkPresets() }
+test "a monthly step that reaches no decision day asks nobody" { checkMonthlyWait() }
+test "hands_on: a breakdown becomes one hold; decisions wait, days pass; resume clears it (AC14)" { checkHold() }
+test "auto-run is deterministic (AC13)" { checkDeterministic() }
+test "auto-run is off by default: no holds" { checkOffDefault() }
+
+-- AC11 exactness: plain days batched between flow points (crew.plainDays) leave the crew exactly as
+-- one advance a day does (crew.perDays), on every parity script plus a long tail where work and
+-- events land mid-span.
+pure func replay(s: Script, fast: bool) -> Option[CrewState] = match initCrewWith(s.captaincy, false) {
+  Err(_) => None,
+  Ok((c, _)) => Some(go(c, s.steps ++ [SDays(400)], fast))
+}
+pure func go(c: CrewState, steps: [Step], fast: bool) -> CrewState = match steps {
+  [] => c,
+  st :: rest => {
+    let r = match st { SCmd(line, ask) => (crewCommand(c, 2, zeroRng(), line, ask)).crew, SDays(n) => (if fast then plainDays(c, zeroRng(), n) else perDays(c, zeroRng(), n)).crew };
+    go(r, rest, fast)
+  }
+}
+pure func checkBatchExact() -> bool = !any(\s. match (replay(s, true), replay(s, false)) {
+  (Some(a), Some(b)) => a.session != b.session || a.turn != b.turn,
+  _ => true
+}, scripts())
+test "plain days batched between flow points equal one advance a day (AC11 exactness)" { checkBatchExact() }
