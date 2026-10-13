@@ -56,8 +56,12 @@ export pure func crewTurn(c: CrewState) -> int = c.turn
 export pure func scenarioId(c: CrewState) -> string = c.scenario
 
 -- The host profile line for a new crew: "watch-v3" carries personalities and conversations.
+-- Archiving (crew_core 0.3.0 `keep`): finished work, resolved reliefs and old evidence older than
+-- archiveKeep() crew days fold into summaries, so live state stays bounded on long skips (without it
+-- a decade hits crew_core's 256-task cap; crew-lab measurement, 2026-10-13).
+export pure func archiveKeep() -> int = 30
 export pure func startLine(captaincy: string) -> string =
-  encode(jo([kv("command", js("start")), kv("policy", js(captaincy)), kv("scenario", js("watch-v3"))]))
+  encode(jo([kv("command", js("start")), kv("policy", js(captaincy)), kv("scenario", js("watch-v3")), kv("keep", jint(archiveKeep()))]))
 export pure func advanceLine(tick: int) -> string =
   concat(["{\"command\":\"advance\",\"tick\":", intToStr(tick), ",\"budget\":", intToStr(advanceBudget()), "}"])
 

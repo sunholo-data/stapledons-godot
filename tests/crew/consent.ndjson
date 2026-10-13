@@ -1,4 +1,4 @@
-{"command":"start","policy":"consent","scenario":"watch-v3"}
+{"command":"start","policy":"consent","scenario":"watch-v3","keep":30}
 {"command":"offer","worker":"medic","recipe":"work_medic","id":"t1"}
 {"command":"ask","actor":"medic","task":"t1","id":"r1"}
 {"command":"answer","request":"r1","body":"{\"model\":\"synthetic:library-v1\",\"id\":\"library-r1\",\"answers\":{\"response\":{\"type\":\"choice\",\"choice\":\"accept\",\"confidence\":1,\"probabilities\":{\"accept\":1,\"decline\":0,\"concern\":0,\"defer\":0}}},\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cost\":0}}","roll":0.4779436329742631}
