@@ -203,6 +203,9 @@ func sweep_crew() -> void:
 	var c: ShipConsoles = demo.consoles
 	c.go_to("voyage")
 	c.use("voyage", "open")
+	check("NT3 the Voyage console says the hold needs you at the Crew console", c.crew_summary != null and c.crew_summary.text.begins_with("Needs you at the Crew console:"))
+	c.go_to("crew") # crew-work W1: the Crew page lives on its own console
+	c.use("crew", "open")
 	var page: CrewPage = c.crew_page
 	check("NT3 the Crew page shows the hold card", page != null and page.find_children("Hold_*", "", true, false).size() == 1)
 	var buttons: Array = page.find_children("*", "Button", true, false) if page != null else []

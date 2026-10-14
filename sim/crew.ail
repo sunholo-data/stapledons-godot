@@ -18,7 +18,7 @@ import std/string (concat, intToStr)
 import std/list (filter, head, map, any)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
-import std/json (encode, jo, ja, kv, js, jnum, jint)
+import std/json (encode, decode, get, getString, jo, ja, kv, js, jnum, jint)
 import std/math (floor, floatToInt, intToFloat)
 import pkg/sunholo/crew_core/scenario (Scenario, ShipEvent, decodeScenario, yieldsOf)
 import pkg/sunholo/social_dynamics/model (Working)
@@ -213,12 +213,35 @@ pure func answerPending(c: CrewState, seed: int, rng: Rng, id: string, lines: [s
     }
   }
 
+-- Why crew_core refused a command, from its trace's `blocked` error: "blocked:<code>:<detail>"
+-- (e.g. blocked:insufficient_resource:compute, the Crew console's "no compute slot free"),
+-- else "command failed".
+export pure func blockedReason(trace: string) -> string = match decode(trace) {
+  Ok(j) => match get(j, "blocked") {
+    Some(b) => match getString(b, "code") {
+      Some(code) => match getString(b, "detail") { Some(d) => concat(["blocked:", code, ":", d]), None => concat(["blocked:", code]) },
+      None => "command failed"
+    },
+    None => "command failed"
+  },
+  Err(_) => "command failed"
+}
+-- A crew_core host error in the same words: a social_error ({"code","detail"}) becomes
+-- "blocked:<code>:<detail>"; any other error text is kept as it is.
+export pure func errorReason(e: string) -> string = match decode(e) {
+  Ok(j) => match getString(j, "code") {
+    Some(code) => match getString(j, "detail") { Some(d) => concat(["blocked:", code, ":", d]), None => concat(["blocked:", code]) },
+    None => e
+  },
+  Err(_) => e
+}
+
 -- One captain command (a crew_core input line from a crew intent). An `ask` is answered at once.
--- A refusal leaves the crew and the crew stream unchanged.
+-- A refusal leaves the crew and the crew stream unchanged; a blocked one says why (blockedReason).
 export pure func crewCommand(c: CrewState, seed: int, rng: Rng, line: string, askId: Option[string]) -> CrewStepped =
   match feed(c, line) {
-    Err(e) => stepped(c, rng, [], [], Some(e)),
-    Ok(o) => if o.failed then stepped(c, rng, [], [], Some("command failed")) else {
+    Err(e) => stepped(c, rng, [], [], Some(errorReason(e))),
+    Ok(o) => if o.failed then stepped(c, rng, [], [], Some(blockedReason(o.trace))) else {
       let c2 = { c | session: o.session };
       match askId {
         None => stepped(c2, rng, [line], [o.trace], None),

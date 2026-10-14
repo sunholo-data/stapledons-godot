@@ -72,10 +72,19 @@ pure func valuesObj(vs: [Value]) -> Json = jo(map(\v. kv(v.id, jnum(intToFloat(v
 pure func statusName(t: TaskStatus) -> string = match t { Offered => "offered", Working => "working", Completed => "completed", Stopped => "stopped" }
 pure func live(t: Task) -> bool = match t.status { Offered => true, Working => true, _ => false }
 
+-- Live work, with its start and due turns (the Crew console shows "day k of n").
 pure func workOf(st: State, id: string) -> Json = match filter(\t. live(t) && contains(t.participants, id), st.tasks) {
-  t :: _ => jo([kv("task", js(t.id)), kv("recipe", js(t.recipe)), kv("status", js(statusName(t.status)))]),
+  t :: _ => jo([kv("task", js(t.id)), kv("recipe", js(t.recipe)), kv("status", js(statusName(t.status))),
+    kv("started", jnum(intToFloat(t.started))), kv("due", jnum(intToFloat(t.due)))]),
   [] => JNull
 }
+-- The member's most recently finished work (the latest due turn among completed tasks), or null.
+pure func doneOf(st: State, id: string) -> Json =
+  match foldl(\acc t. match acc { Some(b) => if t.due >= b.due then Some(t) else acc, None => Some(t) }, None,
+    filter(\t. t.status == Completed && contains(t.participants, id), st.tasks)) {
+    Some(t) => jo([kv("task", js(t.id)), kv("recipe", js(t.recipe)), kv("at", jnum(intToFloat(t.due)))]),
+    None => JNull
+  }
 pure func regardOf(st: State, id: string) -> Json =
   ja(map(\r. jo([kv("to", js(r.to)), kv("value", jnum(intToFloat(r.value)))]),
     filter(\r. r.from == id && r.dimension == "regard" && r.value < regardLow(), st.relationships)))
@@ -85,7 +94,7 @@ pure func trustOf(st: State, id: string) -> Json = match filter(\r. r.from == id
   [] => JNull
 }
 pure func memberObj(st: State, names: [CrewName], a: Actor) -> Json =
-  jo([kv("id", js(a.id)), kv("name", js(match nameOf(names, a.id) { Some(n) => n, None => a.id })), kv("indicators", valuesObj(a.indicators)), kv("trust", trustOf(st, a.id)), kv("work", workOf(st, a.id)), kv("regard_low", regardOf(st, a.id))])
+  jo([kv("id", js(a.id)), kv("name", js(match nameOf(names, a.id) { Some(n) => n, None => a.id })), kv("indicators", valuesObj(a.indicators)), kv("trust", trustOf(st, a.id)), kv("work", workOf(st, a.id)), kv("done", doneOf(st, a.id)), kv("regard_low", regardOf(st, a.id))])
 pure func requestObj(q: Request) -> Json =
   jo([kv("id", js(q.id)), kv("actor", js(q.actor)), kv("task", js(q.task)), kv("legal", ja(map(js, q.legal)))])
 pure func reliefObj(r: Relief) -> Json = jo([kv("id", js(r.id)), kv("task", js(r.task)), kv("author", js(r.author))])
