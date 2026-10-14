@@ -33,6 +33,8 @@ func _initialize() -> void:
 	var all := texts(page)
 	check("the hold card says who and what, in words", all.has("Needs you: Ligaya Reyes is close to breaking down.") and page.find_child("Hold_h1-breakdown-medic", true, false) != null)
 	check("the card says auto-run waits", all.has("Auto-run waits until you resume it."))
+	var call := page.get_node_or_null("Call")
+	check("during a hold the call panel faces the person who needs you, strained", call != null and texts(call).has("Ligaya Reyes · The Medic") and call.find_child("CallPortrait", true, false).texture == page.portrait("medic", "sad"))
 	check("the auto-run row shows the preset and the others", all.has("Auto-run: Hands on") and page.find_child("Auto_critical_only", true, false) != null and page.find_child("Auto_off", true, false) != null)
 	check("Resume needs a confirming press", page.press("resume:h1-breakdown-medic").is_empty())
 	var r := page.press("resume:h1-breakdown-medic")
