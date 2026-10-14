@@ -74,7 +74,7 @@ playthrough-time:
 	@mkdir -p $(SCRATCH)
 	@entry=playthroughTime; path='$(if $(SESSION),$(SESSION),$(M45_FIX)/proxy.ndjson)'; \
 	if [ -n '$(SESSION)' ] && grep -q '"type"[[:space:]]*:[[:space:]]*"input"' "$$path" && ! grep -q '"type"[[:space:]]*:[[:space:]]*"state"' "$$path"; then entry=sceneTime; fi; \
-	$(AILANG) run $(M45_FLAGS) --bytecode --entry $$entry --args-json "\"$$path\"" $(M45_TOOL) > $(SCRATCH)/m45-time.txt
+	env -u AI_LIVE $(AILANG) run $(M45_FLAGS) --bytecode --entry $$entry --args-json "\"$$path\"" $(M45_TOOL) > $(SCRATCH)/m45-time.txt
 	@cat $(SCRATCH)/m45-time.txt
 	@grep -q '^playthrough-time=PASS$$' $(SCRATCH)/m45-time.txt
 
