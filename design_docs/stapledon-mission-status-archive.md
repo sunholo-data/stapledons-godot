@@ -2,6 +2,12 @@
 
 Older STATUS stamps, moved here from `stapledon-mission.md` by the rotation rule (newest 3 stay in the charter). Newest first.
 
+## STATUS 2026-10-12: iteration 26, L6 export completeness LANDED (PR #211, merge `e2a013f`): static `res://` audit in `make test`, strict pack oracle in `publish-dev`, `spike/` no longer ships; independent Sonnet eval 84 PASS, 0 blocking; iteration 25's orphan L1 (PR #192) credited; clause 2/3 MET, 1/4 UNMET, 5 ongoing; goal unmoved.
+
+- **Clause map**: 1 UNMET → M1.5b renders + report (attended); 2 MET; 3 MET; 4 UNMET → M4.5aR3 ∥ M4.6gR3. D-66 is approved, and hooks H1/H2 landed in #208, merged at 19:03Z this iteration, after the pick, when #208 was still OPEN. They now wait on the attended **D-68** change (Mark, attended 2026-10-12: Begin again becomes New game; Voyage log), which holds the Do-not-touch line. Then M4.5bR3 ∥ M4.6rR3 → S1 → P-land. 5 ongoing (strict + parity green in local `make test`).
+- **Done**: designer claude-opus-5-5, with one revision. Quorum rounds 1 and 2 both blocked: the controller measured the round-1 premises, then applied the reviewers' verbatim round-2 fixes under the narrow-refinement carve-out. Planner kimi-k3 (pi). Executor claude-haiku-5-5: L6a killed 16/16 mutants; L6b strict, measured by the controller, gave 648 checked, 0 skips, 0 failures. Sonnet r1 84 PASS. Mark merged #211 at 19:52Z; merge CI run 38300552694 `success` (check set 1/1). L1 had already landed as iteration 25's unrecorded orphan (PR #192, merged by Mark 2026-10-09).
+- **Next**: M4.5aR3 ∥ M4.6gR3 once the attended D-68 change lands, as the refreshed Do-not-touch line says. Until then, triage L2 → L4 → L3 → L5 → L7. The new audit reads the D-68 files (it never edits them), and a new `res://` prefix there will fail loudly until it has a table row. Follow-ups are in queue row 7f.
+
 ## STATUS 2026-10-12: iteration 24, D-52(A) M4 re-plan WRITTEN and independently judged (revision round 3; Sonnet eval 84 → 90 PASS, 0 blocking); parked for Mark's approval as D-66; evaluator lane park (row 7e) cleared; clause 2/3 MET, 1/4 UNMET, 5 ongoing; goal unmoved.
 
 - **Clause map**: 1 UNMET → M1 remainder, attended (triage L1 to reconcile row 3); 2 MET; 3 MET (2026-10-08, attended M3); 4 UNMET → R1-M4-JOURNEY round 3: H1/H2 attended hooks → M4.5aR3 ∥ M4.6gR3 → M4.5bR3 ∥ M4.6rR3 → S1 → P-land, all waiting on **D-66**; 5 ongoing.

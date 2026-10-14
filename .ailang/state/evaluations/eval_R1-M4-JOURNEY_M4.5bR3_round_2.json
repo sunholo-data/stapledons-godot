@@ -1,0 +1,100 @@
+{
+ "sprint": "R1-M4-JOURNEY",
+ "milestone": "M4.5bR3",
+ "round": 2,
+ "evaluator": "claude-sonnet-5-5 (independent)",
+ "score": 73,
+ "pass": true,
+ "blocking": [],
+ "non_blocking": [
+  "AC5 (make replay SESSION=scene session, byte-identical, AI count 0) is not delivered; my attempt ran past 10 min and was killed (UNMEASURED); no golden exists. M4.5bR3 row names AC5. Milestone must stay not-landed.",
+  "AC4 stays OPEN (ratchet): 12497 known unbound occurrences (28 distinct entries, mostly GalaxyMap MapDetails grid labels, wider than the 'helm + Archive caption' claim) and 42 transit-ISM folded samples. Honest and non-vacuous, but design AC4 (0 unbound, ISM on every transit sample) is unmet and these are real player-visible defects.",
+  "Ratchet looseness: Label @N suffixes are collapsed and digits normalised, so any new unbound label with the same parent+normalised text (e.g. pure 'N' under MapDetails grid) or a wrong number inside a known unbound label is invisible.",
+  "Dangling reference: row 'M4.5bR3-follow-up' (enforced as the only legal 'row' value by the loader) is not in the sprint JSON or plan.",
+  "Sprint JSON notes (bfc243d) are stale after caf7c85: they say display audit 'remains RED' and 'AC6 NOT DONE', but the final state is a green ratchet.",
+  "AI-mode news settled in 1 of 4 news samples only (template shown while pending); acceptable because the read events assert the final body_source, but thin.",
+  "Walk path_m is self-reported by the bot (computed from WalkArea path in the driver); audit trusts it, bounded by 40 m ceiling."
+ ],
+ "gates": {
+  "scene-session-audits": "playthrough 105482 passed, 0 failures; total_seconds=226.5019133406026 playthrough-time=PASS; codex-unlocks=PASS (8 ids); display-audit samples=716 mismatches=0 missing=0 new=0 known=12539 stale=0 failures=0; ac4: OPEN (12497 known unbound, 42 known transit-ISM); identical on two consecutive runs",
+  "display-audit-controls": "rc=0, 7 rejection controls rejected, valid/known/known_renumbered PASS",
+  "playthrough-ai-modes": "playthrough-ai-modes: stub=PASS digits=PASS",
+  "session-audit-test": "rc=0",
+  "parity-m4": "rc=0 (positive controls detected)",
+  "playthrough-adversarial": "playthrough: 106731 passed, 0 failures",
+  "playthrough-negative": "playthrough-negative: 3 passed, 0 failures",
+  "ship-console-test": "ship-consoles: 120 passed, 0 failures",
+  "lint-precision": "ok",
+  "python-guard": "ok (18 allowlisted, 0 awaiting AILANG port)",
+  "in-world-voice-check": "ok",
+  "replay SESSION=scene": "UNMEASURED (killed after 600 s)"
+ },
+ "mutations": [
+  {
+   "m": "walk speed 3.5->35 in session_audit.ail",
+   "gate": "session-audit-test",
+   "r": "RED"
+  },
+  {
+   "m": "walk ceiling 40->400",
+   "gate": "session-audit-test",
+   "r": "RED"
+  },
+  {
+   "m": "drop fires() same-response/late-hint check",
+   "gate": "session-audit-test",
+   "r": "RED"
+  },
+  {
+   "m": "commit hold charge 1.5->0",
+   "gate": "session-audit-test",
+   "r": "RED"
+  },
+  {
+   "m": "disable stale-known failure",
+   "gate": "display-audit-controls",
+   "r": "RED"
+  },
+  {
+   "m": "treat every finding as known",
+   "gate": "display-audit-controls",
+   "r": "RED"
+  },
+  {
+   "m": "drop folded-card conditions for transit-ISM",
+   "gate": "display-audit-controls",
+   "r": "RED"
+  },
+  {
+   "m": "node normaliser -> identity (@Class@N kept)",
+   "gate": "display-audit-controls",
+   "r": "RED"
+  },
+  {
+   "m": "text digit normaliser -> identity",
+   "gate": "display-audit-controls",
+   "r": "RED"
+  },
+  {
+   "m": "sceneCodex reads legacy expectations",
+   "gate": "codex-unlocks SESSION=scene",
+   "r": "RED"
+  },
+  {
+   "m": "sceneCodex drops states.ndjson",
+   "gate": "codex-unlocks SESSION=scene",
+   "r": "RED"
+  },
+  {
+   "m": "digits want fallback->ai",
+   "gate": "display-audit on ai-digits samples",
+   "r": "RED"
+  },
+  {
+   "m": "drop digits stub_case context in playthrough",
+   "gate": "playthrough AI=digits + display-audit",
+   "r": "RED"
+  }
+ ],
+ "notes": "Seam (3 lines in demos/ship_consoles.gd) is inert with AI off: sim.ai_relay is null when relay disabled, request_ai also guards enabled/mode/route, mirrors interior.gd:295; on_events only caches accepted text. Unbound labels and Cruise/entries strings are pre-existing at be436a6 (no ui/ edits in diff). Ratchet is key-stable: normalised @Class@N->@Class, control known_renumbered proves it. Output deterministic: summary lines identical across two scene-session-audits runs. No git-tracked files left modified in the eval clone (untracked .uid only). ROUND 2 (06a741c): diff caf7c85..06a741c is exactly one line in mk/m45.mk (env -u AI_LIVE prefix on playthrough-time). ai-live-guard rc=0; playthrough-time PASS with and without SESSION; removing the prefix turns ai-live-guard RED (rc=2, flags mk/m45.mk:77 and :62; my sed stripped the prefix from both lines), restored byte-identical. Score 74->73 for missing the CI preflight (ai-live-guard is outside make test; evaluator did not run it). Verdict PASS stands."
+}
