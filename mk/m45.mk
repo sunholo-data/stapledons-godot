@@ -1,10 +1,37 @@
-# M4.5 scene-independent session audits. UI/bot/display work awaits D-52.
+# M4.5 legacy and scene-session audits (D-66/D-68).
 .PHONY: parity-m4 replay-positive-control session-audit-test codex-unlocks playthrough-time m45-author
 M45_CASES := m4_min_path m4_adversarial m4_transit_harness
 M45_STATE := $(SCRATCH)/replay/m4_min_path.vm.ndjson
 M45_FIX := tests/fixtures/session_audit
 M45_FLAGS := --quiet --package-dir sim --caps FS
 M45_TOOL := sim/tools/session_audit.ail
+DISPLAY_SAMPLES ?= $(PLAYTHROUGH_OUT)/display_samples.ndjson
+DISPLAY_KNOWN ?= tests/fixtures/display_audit/known_findings.json
+DISPLAY_WORK = $(SCRATCH)/display-audit/$(notdir $(patsubst %/,%,$(dir $(DISPLAY_SAMPLES))))
+.PHONY: display-audit display-audit-controls scene-session-audits playthrough-ai-modes
+display-audit: import display-audit-controls ## M4.5bR3 AC4/6: stream scene bindings, lore and AI evidence; rejection controls
+	@mkdir -p $(DISPLAY_WORK)
+	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $(DISPLAY_SAMPLES) scene $(DISPLAY_KNOWN) > $(DISPLAY_WORK)/display-audit.log 2>&1; rc=$$?; grep -E '^(FAIL|display-audit|ai-mode|ac4:)' $(DISPLAY_WORK)/display-audit.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-audit.log && grep -q '^display-audit: .* failures=0$$' $(DISPLAY_WORK)/display-audit.log
+display-audit-controls: import ## M4.5bR3: strict binding controls and new/stale/unguarded known-findings controls
+	@mkdir -p $(DISPLAY_WORK)
+	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/valid.ndjson control tests/fixtures/display_audit/empty_known.json > $(DISPLAY_WORK)/display-valid.log 2>&1; test $$? = 0 && grep -q 'failures=0$$' $(DISPLAY_WORK)/display-valid.log && grep -q '^ac4: MET$$' $(DISPLAY_WORK)/display-valid.log && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-valid.log
+	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/known.ndjson control tests/fixtures/display_audit/known_findings.json > $(DISPLAY_WORK)/display-known.log 2>&1; test $$? = 0 && grep -q 'new=0 .* stale=0 failures=0$$' $(DISPLAY_WORK)/display-known.log && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-known.log
+	@set -e; for spec in 'unbound empty_known.json NEW.unbound' 'stale empty_known.json stale' 'missing empty_known.json missing' 'new_unbound known_findings.json NEW.unbound' 'known known_stale.json stale-known' 'transit_unfolded known_findings.json NEW.transit-ISM'; do \
+	  set -- $$spec; case=$$1; known=$$2; reason=$$3; \
+	  if $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/$$case.ndjson control tests/fixtures/display_audit/$$known > $(DISPLAY_WORK)/display-$$case-$$known.log 2>&1; then echo "display control $$case/$$known missed"; exit 1; fi; \
+	  ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-$$case-$$known.log; grep -E "^FAIL $$reason([ :]|$$)" $(DISPLAY_WORK)/display-$$case-$$known.log; echo "display control $$case/$$known: rejected"; \
+	done
+	@echo 'display control valid: PASS'
+	@echo 'display control known: PASS'
+scene-session-audits: playthrough ## M4.5bR3: time, unlocks and display audits after the scene run (no full replay)
+	@$(MAKE) --no-print-directory AILANG=$(AILANG) playthrough-time codex-unlocks display-audit SESSION=$(PLAYTHROUGH_OUT)/session.ndjson
+
+playthrough-ai-modes: ## M4.5bR3: explicit stub/digits scene and display checks, outside make test
+	@set -e; for mode in stub digits; do \
+	  $(MAKE) --no-print-directory AILANG=$(AILANG) playthrough display-audit AI=$$mode PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/ai-$$mode DISPLAY_SAMPLES=$(SCRATCH)/playthrough/ai-$$mode/display_samples.ndjson; \
+	  grep -q "^ai-mode: $$mode .* result=PASS$$" $(SCRATCH)/display-audit/ai-$$mode/display-audit.log; \
+	done
+	@echo 'playthrough-ai-modes: stub=PASS digits=PASS'
 
 parity-m4:
 	@AILANG=$(AILANG) python3 tools/replay.py --sim-only --case $(M45_CASES)
@@ -27,7 +54,9 @@ $(M45_STATE): tests/replays/m4_min_path.ndjson sim/*.ail
 	@$(AILANG) run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < $< > $@
 
 codex-unlocks: $(M45_STATE)
-	@env -u AI_LIVE $(AILANG) run $(M45_FLAGS) --bytecode --entry $(if $(SESSION),codexUnlocks,codexUnlocksLegacy) --args-json '"$(if $(SESSION),$(SESSION),$(M45_STATE))"' $(M45_TOOL) > $(SCRATCH)/m45-codex.txt
+	@entry=$(if $(SESSION),codexUnlocks,codexUnlocksLegacy); path='$(if $(SESSION),$(SESSION),$(M45_STATE))'; \
+	if [ -n '$(SESSION)' ] && grep -q '"type"[[:space:]]*:[[:space:]]*"input"' "$$path" && ! grep -q '"type"[[:space:]]*:[[:space:]]*"state"' "$$path"; then entry=sceneCodex; fi; \
+	env -u AI_LIVE $(AILANG) run $(M45_FLAGS) --bytecode --entry $$entry --args-json "\"$$path\"" $(M45_TOOL) > $(SCRATCH)/m45-codex.txt
 	@cat $(SCRATCH)/m45-codex.txt
 	@grep -q '^codex-unlocks=PASS$$' $(SCRATCH)/m45-codex.txt
 	@# Scope controls: the frozen stream must fail the current expectation and vice versa.
@@ -40,7 +69,9 @@ codex-unlocks: $(M45_STATE)
 
 playthrough-time:
 	@mkdir -p $(SCRATCH)
-	@$(AILANG) run $(M45_FLAGS) --bytecode --entry playthroughTime --args-json '"$(if $(SESSION),$(SESSION),$(M45_FIX)/proxy.ndjson)"' $(M45_TOOL) > $(SCRATCH)/m45-time.txt
+	@entry=playthroughTime; path='$(if $(SESSION),$(SESSION),$(M45_FIX)/proxy.ndjson)'; \
+	if [ -n '$(SESSION)' ] && grep -q '"type"[[:space:]]*:[[:space:]]*"input"' "$$path" && ! grep -q '"type"[[:space:]]*:[[:space:]]*"state"' "$$path"; then entry=sceneTime; fi; \
+	$(AILANG) run $(M45_FLAGS) --bytecode --entry $$entry --args-json "\"$$path\"" $(M45_TOOL) > $(SCRATCH)/m45-time.txt
 	@cat $(SCRATCH)/m45-time.txt
 	@grep -q '^playthrough-time=PASS$$' $(SCRATCH)/m45-time.txt
 
@@ -51,7 +82,7 @@ session-audit-test:
 	@grep -q '^session-audit-ok$$' $(SCRATCH)/m45-pure.txt
 	@$(AILANG) run $(M45_FLAGS) --bytecode --entry auditTests --args-json 0 sim/tools/session_audit_test.ail > $(SCRATCH)/m45-fixtures.txt
 	@grep -q '^session-audit-ok$$' $(SCRATCH)/m45-fixtures.txt
-	@set -e; for spec in 'playthroughTime proxy' 'playthroughTime over_limit' 'playthroughTime bad_leg' 'codexUnlocks codex' 'codexUnlocks swapped' 'codexUnlocks missing' 'codexUnlocks early' 'codexUnlocks shrink' 'codexUnlocks wrong_hint' 'codexUnlocks right_hint'; do \
+	@set -e; for spec in 'playthroughTime walk_valid' 'playthroughTime walk_ceiling' 'playthroughTime walk_over_limit' 'playthroughTime proxy' 'playthroughTime over_limit' 'playthroughTime bad_leg' 'codexUnlocks simultaneous' 'codexUnlocks late_hint' 'codexUnlocks codex' 'codexUnlocks swapped' 'codexUnlocks missing' 'codexUnlocks early' 'codexUnlocks shrink' 'codexUnlocks wrong_hint' 'codexUnlocks right_hint'; do \
 	  set -- $$spec; entry=$$1; fixture=$$2; \
 	  $(AILANG) run --quiet --package-dir sim --caps FS --bytecode --entry $$entry --args-json "\"$(M45_FIX)/$$fixture.ndjson\"" sim/tools/session_audit.ail > $(SCRATCH)/m45-$$fixture-vm.txt; \
 	  $(AILANG) run --quiet --package-dir sim --caps FS --entry $$entry --args-json "\"$(M45_FIX)/$$fixture.ndjson\"" sim/tools/session_audit.ail > $(SCRATCH)/m45-$$fixture-interp.txt; \
