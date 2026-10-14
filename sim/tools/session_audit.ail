@@ -19,8 +19,8 @@ pure func prefix(a: [string], b: [string]) -> bool = match a { [] => true, x :: 
 pure func member(s: string, xs: [string]) -> bool = match xs { [] => false, x :: rest => x == s || member(s, rest) }
 
 -- Integral tick counts, summed before conversion: no accumulation drift.
-type Time = {ticks: float, actions: float, words: float, visits: float, legs: [float], active: float, tau: float, journey: string, ok: bool}
-pure func emptyTime() -> Time = {ticks: 0.0, actions: 0.0, words: 0.0, visits: 0.0, legs: [], active: 0.0, tau: 0.0, journey: "", ok: true}
+type Time = {ticks: float, actions: float, console: float, holds: float, words: float, walking: float, legs: [float], active: float, tau: float, journey: string, ok: bool}
+pure func emptyTime() -> Time = {ticks: 0.0, actions: 0.0, console: 0.0, holds: 0.0, words: 0.0, walking: 0.0, legs: [], active: 0.0, tau: 0.0, journey: "", ok: true}
 pure func stateTime(t: Time, j: Json) -> Time {
   let ch = field(j, "changes");
   let state = str(field(ch, "journey"), "state");
@@ -42,8 +42,14 @@ pure func addTime(t: Time, j: Json) -> Time {
     let n = number(j, "ticks");
     {t | ticks: t.ticks + n, legs: t.legs ++ [n], ok: t.ok && n > 0.0 && number(j, "leg") == intToFloat(length(t.legs) + 1)}
   } else if k == "click" || k == "key" then {t | actions: t.actions + 1.0}
-  else if k == "text_shown" then {t | words: t.words + number(j, "words"), ok: t.ok && number(j, "words") >= 0.0}
-  else if k == "interactable_visit" then {t | visits: t.visits + 1.0}
+  else if k == "text_shown" || k == "read" then {t | words: t.words + number(j, "words"), ok: t.ok && number(j, "words") >= 0.0}
+  else if k == "walk" then {
+    let m = number(j, "path_m");
+    {t | walking: t.walking + m / 3.5, ok: t.ok && m >= 0.0 && m <= 40.0 && m / 3.5 <= 20.0}
+  }
+  else if k == "use" then {t | console: t.console + 0.6, holds: t.holds + (if str(j, "action") == "commit" then 1.5 else 0.0)}
+  -- A visit is evidence only; the 20 s bound is asserted on each actual walk.
+  else if k == "interactable_visit" || k == "phase" then t
   else if k == "state" then stateTime(t, j)
   else if k == "hello" || k == "new_game" || k == "input" || k == "quit" then t
   else {t | ok: false}
@@ -53,11 +59,11 @@ export pure func timeReport(text: string) -> string {
   let transit = t.ticks * 0.05;
   let clicks = t.actions * 1.5;
   let reading = t.words * 60.0 / 200.0;
-  let walking = t.visits * 20.0;
-  let total = transit + clicks + reading + walking;
+  let total = transit + clicks + reading + t.walking + t.console + t.holds;
   let band = length(t.legs) > 0 && all(\n. n * 0.05 >= 45.0 && n * 0.05 <= 120.0, t.legs);
   join("\n", [concat(["transit_seconds=", floatToStr(transit)]), concat(["click_key_seconds=", floatToStr(clicks)]),
-    concat(["reading_seconds=", floatToStr(reading)]), concat(["walking_seconds=", floatToStr(walking)])] ++
+    concat(["console_seconds=", floatToStr(t.console)]), concat(["commit_hold_seconds=", floatToStr(t.holds)]),
+    concat(["reading_seconds=", floatToStr(reading)]), concat(["walking_seconds=", floatToStr(t.walking)])] ++
     map(\p. match p { (i, n) => concat(["leg_", intToStr(i), "_seconds=", floatToStr(n * 0.05)]) }, indexed(t.legs, 1)) ++
     [concat(["total_seconds=", floatToStr(total)]), concat(["limit_360=", verdict(total <= 360.0)]), concat(["legs_45_120=", verdict(band)]),
     concat(["playthrough-time=", verdict(t.ok && t.active == 0.0 && band && total <= 360.0)])])
@@ -66,10 +72,13 @@ pure func indexed(xs: [float], n: int) -> [(int, float)] = match xs { [] => [], 
 
 -- Trigger evidence is accumulated BEFORE checking this state's new unlocks.
 -- First appearance is compared, not just the final cumulative snapshot.
-type Codex = {seen: [string], hints: [string], commit: bool, boost: bool, cruise: bool, ok: bool}
-pure func hintOf(id: string, rows: [Json]) -> string = match rows { [] => "", r :: rest => if str(r, "id") == id then str(r, "hint") else hintOf(id, rest) }
+type Codex = {seen: [string], hints: [string], table: [Json], commit: bool, boost: bool, cruise: bool, ok: bool}
+pure func hintOf(id: string, rows: [Json]) -> string = match rows { [] => "", r :: rest => if str(r, "id") == id then (if str(r, "unlock") == "" then str(r, "hint") else str(r, "unlock")) else hintOf(id, rest) }
 pure func holds(hint: string, c: Codex) -> bool =
   hint == "always" || (hint == "first_commit" && c.commit) || (hint == "first_boost" && c.boost) || (hint == "cruise_above_0.9c" && c.cruise)
+pure func fires(h: string, before: Codex, after: Codex) -> bool =
+  (h == "always" && !before.commit) || (h == "first_commit" && !before.commit && after.commit) ||
+  (h == "first_boost" && !before.boost && after.boost) || (h == "cruise_above_0.9c" && !before.cruise && after.cruise)
 pure func observe(c: Codex, j: Json, rows: [Json]) -> Codex {
   let ch = field(j, "changes");
   let phase = str(field(ch, "ship"), "phase");
@@ -87,24 +96,34 @@ pure func observe(c: Codex, j: Json, rows: [Json]) -> Codex {
     else if !c.boost && c1.boost then "first_boost"
     else if !c.cruise && c1.cruise then "cruise_above_0.9c"
     else if !c1.commit then "always" else "";
-  let hs = map(\id. fired, fresh);
   let table = array(field(j, "archive"));
+  let source = if str(j, "type") == "new_game" then table else c.table;
+  -- Live scene commits and boosts in the same response. Resolve each entry's
+  -- hint from the session's own imported archive, independently of expected rows.
+  let hs = map(\id. { let h = hintOf(id, source); if h == "" then fired else h }, fresh);
   let tableOk = str(j, "type") != "new_game" || all(\r.
     all(\a. str(a, "id") != str(r, "id") || str(a, "unlock") == str(r, "hint"), table), rows);
   -- holds(h, c1) fails only for fired = "" (no inferable trigger); c.hints == hints misses that when an expected row has no hint (test checkHintless).
-  {c1 | seen: c.seen ++ fresh, hints: c.hints ++ hs,
-    ok: c.ok && tableOk && (unlocked == JNull || prefix(c.seen, ids)) && all(\h. holds(h, c1), hs)}
+  {c1 | seen: c.seen ++ fresh, hints: c.hints ++ hs, table: source,
+    ok: c.ok && tableOk && (unlocked == JNull || prefix(c.seen, ids)) && all(\h. holds(h, c1) && fires(h, c, c1), hs)}
 }
 export pure func codexReport(text: string, expected: string) -> string {
   let want = match decode(expected) { Ok(j) => array(field(j, "unlocks")), Err(_) => [] };
   let js = lines(text);
-  let c = foldl(\acc j. observe(acc, j, want), {seen: [], hints: [], commit: false, boost: false, cruise: false, ok: true}, js);
+  let c = foldl(\acc j. observe(acc, j, want), {seen: [], hints: [], table: [], commit: false, boost: false, cruise: false, ok: true}, js);
   let ids = map(\r. str(r, "id"), want);
   let hints = map(\r. str(r, "hint"), want);
   let valid = length(js) > 0 && all(\j. str(j, "type") != "", js);
   concat(["codex_ids=", join(",", c.seen), "\ncodex_hints=", join(",", c.hints), "\ncodex-unlocks=", verdict(valid && length(want) > 0 && c.ok && c.seen == ids && c.hints == hints)])
 }
 export func playthroughTime(path: string) -> string ! {FS} = timeReport(readFile(path))
+pure func parentParts(xs: [string]) -> [string] = match xs { [] => [], x :: rest => if rest == [] then [] else x :: parentParts(rest) }
+pure func directory(path: string) -> string {
+  let dir = join("/", parentParts(split(path, "/")));
+  if dir == "" then "." else dir
+}
+export func sceneTime(path: string) -> string ! {FS} = timeReport(concat([readFile(concat([directory(path), "/states.ndjson"])), "\n", readFile(concat([directory(path), "/events.ndjson"]))]))
+export func sceneCodex(path: string) -> string ! {FS} = codexReport(concat([readFile(path), "\n", readFile(concat([directory(path), "/states.ndjson"]))]), readFile("tests/expected_unlocks.json"))
 -- Current protocol sessions include the weather entry; legacy uniform replays do not.
 export func codexUnlocksLegacy(path: string) -> string ! {FS} = codexReport(readFile(path), readFile("tests/expected_unlocks.legacy-2.7.json"))
 export func codexUnlocks(path: string) -> string ! {FS} = codexReport(readFile(path), readFile("tests/expected_unlocks.json"))

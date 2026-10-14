@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Scene session audits (M4.5bR3, D-66/D-68), 2026-10-14
+
+- The scene run records received states alongside inputs and walk/use/read events. Timing charges measured walking at 3.5 m/s, console use, commit holds and reading; the default round trip measures 226.502 s, with 60.15 s and 61.35 s legs. Unlock auditing handles simultaneous commit/boost hints and preserves the legacy scope controls.
+- `make playthrough AI=none|stub|digits` exercises template, generated and numeral-refused news through the local stub. The Archive requests news and receives accepted-text events through a three-line console seam.
+- `make display-audit` streams frame states, binding contracts and codex bodies; valid, unbound-numeral, stale-format and missing-field controls check the auditor. Sampling every fourth frame plus phase edges reduces the default sample file to 32.46 MB (716 samples).
+- AC4 is OPEN with the known findings ratcheted in `tests/fixtures/display_audit/known_findings.json`: existing unbound numeric GalaxyMap/Archive labels and 42 transit samples where the expanded Medium boundary and Braking notice cards fold Transit. Follow-up row **M4.5bR3-follow-up** owns these UI fixes. Scene audits in `ship-demo-ci` accept only the recorded findings, reject new findings and stale entries, and keep binding, lore, AI and frame-state failures strict. Full scene replay is excluded from CI.
+- `make playthrough-ai-modes` runs separate stub/digits scene and display audits and requires both AI results to pass; these optional AI modes stay outside `make test`. Ratchet controls reject a new numeral, a never-observed entry and missing transit ISM without the recorded folding cards.
+
+### Scene playthrough bot (M4.5aR3, D-66/D-68), 2026-10-13
+
+- `make playthrough` follows the title screen's New game through walked navigation and Archive visits: Alpha Centauri A, news from home, Return to Sol and the Voyage log. A pinned seed and fake clock record the real sim session, walk/use/read events and display samples under `.godot/tmp/playthrough/`; boost, cruise and brake check the CPU forward pole within 0.75 px.
+- The adversarial script sends re-plan, cancel and commit attempts against a committed journey through the navigation console; the sim refuses them without advancing the journey and the HUD shows why. Both scripts and three driver failure controls run in `make test`.
+
 ### Manual journeys and seven guided highlights (D-65), 2026-10-11
 
 - Interactive Galaxy map starts in the same stationary free-navigation session as Board the ship; historical capture/movie Sol sessions remain unchanged. Variable map details scroll, keeping zoom and journey review reachable. Enter reviews, Space retains the existing hold/press-twice confirmation, and Esc backs out.

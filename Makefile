@@ -1053,7 +1053,19 @@ ship-console-test: import ## AC6, 8, 9, 10, 14a: stations from ship.glb, reach a
 	@$(GODOT_SIM) --headless --path . --script tests/test_ship_consoles.gd > $(SCRATCH)/ship-consoles.log 2>&1; rc=$$?; grep -E '^(FAIL|path|ship-consoles)' $(SCRATCH)/ship-consoles.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-consoles.log && grep -q '^ship-consoles: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-consoles.log
 no-twitch-test: import ## AC4, 5 (NT1, NT2): no decision from any key, click or gesture in four states; no deadlines over 600 s of fake time
 	@$(GODOT_SIM) --headless --path . --script tests/test_no_twitch.gd > $(SCRATCH)/no-twitch.log 2>&1; rc=$$?; grep -E '^(FAIL|no-twitch)' $(SCRATCH)/no-twitch.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/no-twitch.log && grep -q '^no-twitch: [0-9]* passed, 0 failures$$' $(SCRATCH)/no-twitch.log
-ship-demo-ci: ship-console-test no-twitch-test
+SCRIPT ?= tests/playthrough_min.json
+AI ?= none
+PLAYTHROUGH_OUT ?= $(SCRATCH)/playthrough
+.PHONY: playthrough playthrough-adversarial playthrough-negative
+playthrough: import ## M4.5aR3: walk the current ship through a JSON script; record session, events and displays
+	@mkdir -p $(PLAYTHROUGH_OUT)
+	@$(GODOT_SIM) --headless --path . --script tests/m4_playthrough_ship.gd -- $(SCRIPT) $(PLAYTHROUGH_OUT) $(AI) > $(PLAYTHROUGH_OUT)/run.log 2>&1; rc=$$?; grep -E '^(FAIL|walk|pole|session|playthrough)' $(PLAYTHROUGH_OUT)/run.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(PLAYTHROUGH_OUT)/run.log && grep -q '^playthrough: [0-9]* passed, 0 failures$$' $(PLAYTHROUGH_OUT)/run.log
+playthrough-adversarial: ## M4.5aR3 AC3: re-plan, cancel and commit during transit
+	@$(MAKE) --no-print-directory playthrough SCRIPT=tests/adversarial.json PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/adversarial
+playthrough-negative: import ## M4.5aR3: driver failures must exit nonzero for the declared reason
+	@mkdir -p $(SCRATCH)/playthrough
+	@GODOT='$(GODOT)' AILANG_BIN="$$(command -v $(AILANG))" sh tests/test_playthrough.sh
+ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative
 ship-ui-window-check: ## AC15: the helm (GalaxyMap embedded over the navigation station) in a real GPU window: open, click-select, hold-commit -> renders/ship_ui/window_check_*.png
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --script tools/ship_ui_window_check.gd > $(SCRATCH)/ship-ui-window-check.log 2>&1; rc=$$?; grep -E '^(host|click|held|ship-ui-window-check)' $(SCRATCH)/ship-ui-window-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-window-check.log && grep -q '^ship-ui-window-check: OK$$' $(SCRATCH)/ship-ui-window-check.log
