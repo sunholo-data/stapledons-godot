@@ -16,13 +16,16 @@ display-audit-controls: import ## M4.5bR3: strict binding controls and new/stale
 	@mkdir -p $(DISPLAY_WORK)
 	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/valid.ndjson control tests/fixtures/display_audit/empty_known.json > $(DISPLAY_WORK)/display-valid.log 2>&1; test $$? = 0 && grep -q 'failures=0$$' $(DISPLAY_WORK)/display-valid.log && grep -q '^ac4: MET$$' $(DISPLAY_WORK)/display-valid.log && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-valid.log
 	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/known.ndjson control tests/fixtures/display_audit/known_findings.json > $(DISPLAY_WORK)/display-known.log 2>&1; test $$? = 0 && grep -q 'new=0 .* stale=0 failures=0$$' $(DISPLAY_WORK)/display-known.log && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-known.log
-	@set -e; for spec in 'unbound empty_known.json NEW.unbound' 'stale empty_known.json stale' 'missing empty_known.json missing' 'new_unbound known_findings.json NEW.unbound' 'known known_stale.json stale-known' 'transit_unfolded known_findings.json NEW.transit-ISM'; do \
+	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/known_renumbered.ndjson control tests/fixtures/display_audit/known_findings.json > $(DISPLAY_WORK)/display-known-renumbered.log 2>&1; test $$? = 0 && grep -q 'new=0 .* stale=0 failures=0$$' $(DISPLAY_WORK)/display-known-renumbered.log && grep -q '^display-audit known: unbound ' $(DISPLAY_WORK)/display-known-renumbered.log && grep -q '^display-audit known: transit-ISM ' $(DISPLAY_WORK)/display-known-renumbered.log && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-known-renumbered.log
+	@set -e; for spec in 'unbound empty_known.json NEW.unbound' 'stale empty_known.json stale' 'missing empty_known.json missing' 'new_unbound known_findings.json NEW.unbound' 'known known_stale.json stale-known' 'transit_unfolded known_findings.json NEW.transit-ISM' 'different_named_parent known_findings.json NEW.unbound'; do \
 	  set -- $$spec; case=$$1; known=$$2; reason=$$3; \
 	  if $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/$$case.ndjson control tests/fixtures/display_audit/$$known > $(DISPLAY_WORK)/display-$$case-$$known.log 2>&1; then echo "display control $$case/$$known missed"; exit 1; fi; \
+	  if [ "$$case" = different_named_parent ]; then grep -q 'mismatches=0 missing=0 new=1 known=[0-9]* stale=0 failures=1$$' $(DISPLAY_WORK)/display-$$case-$$known.log; fi; \
 	  ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-$$case-$$known.log; grep -E "^FAIL $$reason([ :]|$$)" $(DISPLAY_WORK)/display-$$case-$$known.log; echo "display control $$case/$$known: rejected"; \
 	done
 	@echo 'display control valid: PASS'
 	@echo 'display control known: PASS'
+	@echo 'display control known_renumbered: KNOWN (PASS)'
 scene-session-audits: playthrough ## M4.5bR3: time, unlocks and display audits after the scene run (no full replay)
 	@$(MAKE) --no-print-directory AILANG=$(AILANG) playthrough-time codex-unlocks display-audit SESSION=$(PLAYTHROUGH_OUT)/session.ndjson
 

@@ -23,10 +23,19 @@ var known_kinds := {}
 var new_findings := 0
 var stale_entries := 0
 var digits := RegEx.create_from_string("[0-9]+(?:\\.[0-9]+)?")
+var generated_segment := RegEx.create_from_string("^@([^/@]+)@[0-9]+$")
 
 
 func normalized(text_value: String) -> String:
 	return digits.sub(text_value, "N", true)
+
+
+func normalized_node(node: String) -> String:
+	# Creation-order suffixes are unstable; named segments and class names are exact.
+	var segments := node.split("/")
+	for i in segments.size():
+		segments[i] = generated_segment.sub(segments[i], "@$1")
+	return "/".join(segments)
 
 
 func load_known(path: String) -> void:
@@ -51,6 +60,11 @@ func load_known(path: String) -> void:
 				if not entry.get(field) is String or str(entry.get(field, "")).is_empty(): valid = false
 		if not valid:
 			check(false, "known-file invalid entry fields"); continue
+		entry.node = normalized_node(entry.node)
+		entry.text = normalized(entry.text)
+		if entry.kind == "transit-ISM":
+			entry.folding_card = normalized_node(entry.folding_card)
+			entry.accompanying_card = normalized_node(entry.accompanying_card)
 		var key := JSON.stringify([entry.kind, entry.node, entry.text])
 		check(not keys.has(key), "known-file duplicate entry " + key)
 		keys[key] = true
@@ -59,16 +73,17 @@ func load_known(path: String) -> void:
 
 func recorded_card(row: Dictionary, pattern: String, expanded: bool) -> bool:
 	for card: Dictionary in row.get("cards", []):
-		if str(card.get("node", "")).match(pattern) and card.get("visible") == true and card.get("expanded") == expanded and card.get("leaving") == false:
+		if normalized_node(str(card.get("node", ""))) == pattern and card.get("visible") == true and card.get("expanded") == expanded and card.get("leaving") == false:
 			return true
 	return false
 
 
 func finding(kind: String, node: String, text_value: String, row: Dictionary) -> void:
 	checks += 1
+	var node_key := normalized_node(node)
 	for i in known_entries.size():
 		var entry: Dictionary = known_entries[i]
-		if kind != entry.kind or not node.match(entry.node) or normalized(text_value) != entry.text: continue
+		if kind != entry.kind or node_key != entry.node or normalized(text_value) != entry.text: continue
 		if kind == "transit-ISM" and (not recorded_card(row, entry.node, false) or not recorded_card(row, entry.folding_card, true) or not recorded_card(row, entry.accompanying_card, true)): continue
 		known_hits[i] = int(known_hits.get(i, 0)) + 1
 		known_kinds[kind] = int(known_kinds.get(kind, 0)) + 1
