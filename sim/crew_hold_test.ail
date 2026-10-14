@@ -19,7 +19,7 @@ pure func checkSchedule() -> bool =
 
 pure func checkPresets() -> bool =
   (match rulesFor("critical_only") { Ok(rs) => map(\r. r.kind, rs) == ["refusal_under_orders", "breakdown", "trust_floor", "major", "argument"], Err(_) => false }) &&
-  (match rulesFor("hands_on") { Ok(rs) => length(filter(\r. r.kind == "breakdown" && r.threshold == 70, rs)) == 1 && length(filter(\r. r.kind == "trust_floor" && r.threshold == 40, rs)) == 1 && length(filter(\r. r.kind == "uncovered", rs)) == 1, Err(_) => false }) &&
+  (match rulesFor("hands_on") { Ok(rs) => length(filter(\r. r.kind == "breakdown" && r.threshold == 70, rs)) == 1 && length(filter(\r. r.kind == "trust_floor" && r.threshold == 40, rs)) == 1 && length(filter(\r. r.kind == "uncovered", rs)) == 1 && length(filter(\r. r.kind == "cohort" && r.threshold == 25, rs)) == 1, Err(_) => false }) &&
   (match rulesFor("mutiny") { Ok(_) => false, Err(_) => true }) && presets() == ["off", "critical_only", "hands_on"] &&
   (ordersFor("consent", true)).start == "agreed" && (ordersFor("consent", true)).cadence == 1 &&
   (ordersFor("orders", false)).start == "always" && (ordersFor("orders", false)).cadence == cadenceLongSkip()

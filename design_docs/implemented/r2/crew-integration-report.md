@@ -51,7 +51,7 @@ Design: [crew-integration.md](crew-integration.md). Plan: [crew-integration-spri
 - **`crew_ask`** joined the intents, because consent needs an ask. **`crew_policy`, `crew_orders` and `crew_resume`** were added in C3 and C8.
 - **The ledger is a cap, not the source** (C3). The crew keep the scenario's authored pool, because the lab's claims rest on it. The ship's spare capacity (`sim/data/crew_ship.ail`, partly assumptions) refuses a pack that asks for more. Flagged for Mark.
 - **Fallback text.** content_library's starter text is a placeholder, so the game keeps an authored, in-world template line per reaction.
-- **`hands_on`** is derived in the game. The crew-lab agent is adding a lab-verified `hands_on.json`, which will be synced instead.
+- **`hands_on`** was derived in the game at landing. It is now synced from the lab (`data/crew/hands_on.json`, ailang-packages #140 at 789a0b4; PR #231), which adds cohort pressure 25. Its lab claims ran on watch-v2 and are rerun on v3 in crew_core 0.4.1.
 - **Concerns.** Answering a crew concern needs the conversation issues in the view. It's deferred; the hold card handles the moment for now.
 
 ## Known issue: the auto-captain stalls on a crew concern (found after evaluation)
