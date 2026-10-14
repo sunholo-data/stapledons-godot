@@ -1293,3 +1293,5 @@ DECISIONS FOR MARK: none.
 - **Next:** row 7i(a) (bind the 31 unbound numeric labels; closes AC4 short of D-77) ∥ M4.6gR3 (GPU goldens on the rig); D-77 for Mark; rows 7i(b–f) and 7h; then L9 → L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: D-77 (AC4 and the folded transit card while braking: A amend AC4 (recommended, the default) or B change the card priority).
+
+- **Addendum (iteration 29, before close):** merge CI 38519309380 on `404c098` read `success` (check set 1/1; the log shows `playthrough: 105482 passed`, `display-audit … new=0 … failures=0`, `ac4: OPEN (12497 known unbound, 42 known transit-ISM)`). M4.5bR3 is LANDED with AC4 open. Retro frictions 1 and 2 went into the charter's "How to use the loop" as a process fix (directive file bans come from the current Do-not-touch line; the gate list covers CI's preflight `run:` targets). Harness share over the last 20 iterations: 2 of 20 rows tagged `[HARNESS]`, all recorded escalations. Bar-moving landings, last 3: iteration 27 none (hygiene), iteration 28 clause 4, iteration 29 clause 4. No drift.

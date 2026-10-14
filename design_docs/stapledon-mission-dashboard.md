@@ -3,7 +3,7 @@
 Updated 2026-10-14, iteration 29.
 
 - **Bar:** clauses 2 and 3 are MET, 1 and 4 UNMET, and clause 5 is ongoing. This iteration moved clause 4.
-- **Merged:** M4.5bR3, the scene audits. PR #232, merge `404c098`; PR CI `success` on `06a741c` (an identical tree); merge CI: see the log addendum.
+- **Landed:** M4.5bR3, the scene audits. PR #232, merge `404c098`; PR CI `success` on `06a741c` (an identical tree); merge CI 38519309380 `success`.
   - The time proxy charges walking at 3.5 m/s, plus console use, commit holds and reading: 226.5 s against the 360 s limit, legs of 60.15 s and 61.35 s (AC7).
   - Codex unlocks: 8 entries at their hints on the 3D-ship session (AC16).
   - AI modes: none (template), stub (generated) and digits (fallback with the `ai_numeral` notice), via `make playthrough-ai-modes` (AC6).
