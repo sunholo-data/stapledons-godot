@@ -671,7 +671,7 @@ func _build_screens() -> void:
 		bg.color = Color(0.02, 0.05, 0.09) if st.active else Color(0.01, 0.01, 0.012)
 		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		vp.add_child(bg)
-		var l := Label.new()
+		var l := ComposedBinding.new() if id == "archive" else Label.new()
 		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -723,17 +723,33 @@ func screen_text(id: String) -> String:
 				return "Guided voyage\n" + ("→ " + demo.solar_tour.leg_name() if demo.live_journey else "at " + demo.solar_tour.leg_name())
 			return "Guided voyage ready"
 		"archive":
-			var u: Variant = GalaxyMap.field_value(demo.sky_world, "consequence.archive.unlocked") if demo.sky_world is Dictionary else null
-			return "Archive\n%s entries open" % (str(u.size()) if u is Array else "no")
+			var view := archive_screen_view()
+			return "Archive\n%s entries open" % DisplayBinding.format_field(view, "client.archive.unlocked_count", archive_count_format(view))
 	return ""
+
+
+func archive_screen_view() -> Dictionary:
+	var unlocked: Variant = GalaxyMap.field_value(demo.sky_world, "consequence.archive.unlocked") if demo.sky_world is Dictionary else null
+	return {"client": {"archive": {"unlocked_count": unlocked.size() if unlocked is Array else "no", "empty": ""}}}
+
+
+func archive_count_format(view: Dictionary) -> String:
+	# JSON replay reads integer counts as floats; %d preserves the original size() text.
+	return "%s" if view.client.archive.unlocked_count is String else "%d"
 
 
 func _refresh_screens() -> void:
 	for id: String in screens:
 		var t := screen_text(id)
+		if id == "archive":
+			var binding := screens[id].label as ComposedBinding
+			var view := archive_screen_view()
+			binding.record_context = true
+			binding.compose(["Archive\n", ["client.archive.unlocked_count", archive_count_format(view)], " entries open"] if stations[id].active else ["offline", ["client.archive.empty", "text"]])
+			binding.update_from(view)
 		if t != screens[id].text:
 			screens[id].text = t
-			(screens[id].label as Label).text = t
+			if id != "archive": (screens[id].label as Label).text = t
 			(screens[id].viewport as SubViewport).render_target_update_mode = SubViewport.UPDATE_ONCE
 
 

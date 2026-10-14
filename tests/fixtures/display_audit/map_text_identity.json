@@ -1,0 +1,2258 @@
+[
+	{
+		"id": "CNS5:3627",
+		"live": false,
+		"rate": 0.00003169,
+		"state": "planned",
+		"texts": {
+			"clock": "Now: Earth +0.0000 yr  ·  ship +0.0000 yr  ·  tick 1",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.6157 ship-yr",
+				"Earth time (home)",
+				"4.365 Earth-yr",
+				"Arrival",
+				"Earth +4.365 yr",
+				"Years left (placeholder)",
+				"99.38 yr"
+			],
+			"dialog_title": "Commit to Alpha Centauri A?",
+			"grid": [
+				"Ship time",
+				"0.6157 ship-yr",
+				"Earth time",
+				"4.365 Earth-yr",
+				"Arrival, if committed now",
+				"Earth +4.365 yr",
+				"Age on arrival (placeholder)",
+				"30.62 yr",
+				"Years left (placeholder)",
+				"99.38 yr",
+				"Distance",
+				"4.321 ly",
+				"Cruise speed",
+				"0.990000c",
+				"Cruise 1 - beta",
+				"0.01000",
+				"Cruise gamma",
+				"7.0888",
+				"Boost, each end",
+				"1.80 min",
+				"Boost energy",
+				"2.379e17 J",
+				"Brake energy",
+				"2.379e17 J",
+				"Drag energy",
+				"1.355e17 J",
+				"Media crossed",
+				"-",
+				"Peak density",
+				"-",
+				"Top speed the drive holds",
+				"-",
+				"  its 1 - beta",
+				"-",
+				"Grains swept (>= 1 um)",
+				"-",
+				"Expected visible flashes",
+				"-",
+				"Total radiated",
+				"6.112e17 J",
+				"Total as mass",
+				"6.801 kg",
+				"ISM load",
+				"2.220e5 W/m2",
+				"Glow, inward",
+				"2.407e-6 W/m2",
+				"Drag force",
+				"23.26 N",
+				"Hold power",
+				"6.973e9 W",
+				"Forward CMB",
+				"38.44 K",
+				"Profile",
+				"burn_coast_burn"
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:3627  ·  4.32 ly",
+			"title": "Alpha Centauri A",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 30.0,
+				"t": 0.0,
+				"tau": 0.0,
+				"year": 0.0
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.6157194190341,
+					"arrive_year": 4.36468890032712,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 4.32103979249451,
+					"earth_years": 4.36468890032712,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 135490571549348576.0,
+						"total_j": 611229083934720512.0,
+						"total_kg": 6.80084074501569
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.615719419034058,
+					"target": {
+						"id": "CNS5:3627",
+						"index": 2.0,
+						"pos": {
+							"x": 3.094521,
+							"y": -3.015404,
+							"z": -0.051608
+						}
+					},
+					"years_left": 99.3842805809659
+				},
+				"plan_id": 1.0,
+				"state": "planned"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 0.0,
+				"drag_j": 0.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 0.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.0,
+				"flown": 0.0,
+				"gamma": 1.0,
+				"heading": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": -1.0
+				},
+				"one_minus_beta": 1.0,
+				"phase": "at_rest",
+				"pos": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"x": 0.0
+			},
+			"status": "ok",
+			"tick": 1
+		}
+	},
+	{
+		"id": "CNS5:3627",
+		"live": true,
+		"rate": 0.00003169,
+		"state": "planned",
+		"texts": {
+			"clock": "Now: Earth +0.0000 yr  ·  ship +0.0000 yr  ·  tick 1\nVariable time compression · 3.169e-5 ship-yr/real-s",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.6157 ship-yr",
+				"Earth time (home)",
+				"4.365 Earth-yr",
+				"Arrival",
+				"Earth +4.365 yr",
+				"Years left (placeholder)",
+				"99.38 yr"
+			],
+			"dialog_title": "Commit to Alpha Centauri A?",
+			"grid": [
+				"Ship time",
+				"0.6157 ship-yr",
+				"Earth time",
+				"4.365 Earth-yr",
+				"Arrival, if committed now",
+				"Earth +4.365 yr",
+				"Age on arrival (placeholder)",
+				"30.62 yr",
+				"Years left (placeholder)",
+				"99.38 yr",
+				"Distance",
+				"4.321 ly",
+				"Cruise speed",
+				"0.990000c",
+				"Cruise 1 - beta",
+				"0.01000",
+				"Cruise gamma",
+				"7.0888",
+				"Boost, each end",
+				"1.80 min",
+				"Boost energy",
+				"2.379e17 J",
+				"Brake energy",
+				"2.379e17 J",
+				"Drag energy",
+				"1.355e17 J",
+				"Media crossed",
+				"-",
+				"Peak density",
+				"-",
+				"Top speed the drive holds",
+				"-",
+				"  its 1 - beta",
+				"-",
+				"Grains swept (>= 1 um)",
+				"-",
+				"Expected visible flashes",
+				"-",
+				"Total radiated",
+				"6.112e17 J",
+				"Total as mass",
+				"6.801 kg",
+				"ISM load",
+				"2.220e5 W/m2",
+				"Glow, inward",
+				"2.407e-6 W/m2",
+				"Drag force",
+				"23.26 N",
+				"Hold power",
+				"6.973e9 W",
+				"Forward CMB",
+				"38.44 K",
+				"Profile",
+				"burn_coast_burn"
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:3627  ·  4.32 ly",
+			"title": "Alpha Centauri A",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 30.0,
+				"t": 0.0,
+				"tau": 0.0,
+				"year": 0.0
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.6157194190341,
+					"arrive_year": 4.36468890032712,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 4.32103979249451,
+					"earth_years": 4.36468890032712,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 135490571549348576.0,
+						"total_j": 611229083934720512.0,
+						"total_kg": 6.80084074501569
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.615719419034058,
+					"target": {
+						"id": "CNS5:3627",
+						"index": 2.0,
+						"pos": {
+							"x": 3.094521,
+							"y": -3.015404,
+							"z": -0.051608
+						}
+					},
+					"years_left": 99.3842805809659
+				},
+				"plan_id": 1.0,
+				"state": "planned"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 0.0,
+				"drag_j": 0.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 0.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.0,
+				"flown": 0.0,
+				"gamma": 1.0,
+				"heading": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": -1.0
+				},
+				"one_minus_beta": 1.0,
+				"phase": "at_rest",
+				"pos": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"x": 0.0
+			},
+			"status": "ok",
+			"tick": 1
+		}
+	},
+	{
+		"id": "CNS5:3627",
+		"live": false,
+		"rate": 0.125,
+		"state": "committed",
+		"texts": {
+			"clock": "Now: Earth +0.7089 yr  ·  ship +0.1000 yr  ·  tick 2",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.6157 ship-yr",
+				"Earth time (home)",
+				"4.365 Earth-yr",
+				"Arrival",
+				"Earth +4.365 yr",
+				"Years left (placeholder)",
+				"99.38 yr"
+			],
+			"dialog_title": "Commit to Alpha Centauri A?",
+			"grid": [
+				"Phase",
+				"cruising",
+				"Ship clock",
+				"ship +0.1000 yr",
+				"Earth clock",
+				"Earth +0.7089 yr",
+				"Crew age (placeholder)",
+				"30.10 yr",
+				"Flown since commit",
+				"0.7018 ly",
+				"Distance",
+				"4.321 ly",
+				"Speed",
+				"0.990000c",
+				"1 - beta",
+				"0.01000",
+				"Gamma",
+				"7.0888",
+				"Arrives",
+				"Earth +4.365 yr",
+				"Age on arrival (placeholder)",
+				"30.62 yr",
+				"Radiated so far",
+				"2.599e17 J",
+				"Trip total (plan)",
+				"6.112e17 J",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				""
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:3627  ·  4.32 ly",
+			"title": "En route to Alpha Centauri A",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 30.1,
+				"t": 0.708866036612417,
+				"tau": 0.1,
+				"year": 0.708866036612417
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.6157194190341,
+					"arrive_year": 4.36468890032712,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 4.32103979249451,
+					"earth_years": 4.36468890032712,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 135490571549348576.0,
+						"total_j": 611229083934720512.0,
+						"total_kg": 6.80084074501569
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.615719419034058,
+					"target": {
+						"id": "CNS5:3627",
+						"index": 2.0,
+						"pos": {
+							"x": 3.094521,
+							"y": -3.015404,
+							"z": -0.051608
+						}
+					},
+					"years_left": 99.3842805809659
+				},
+				"plan_id": 1.0,
+				"state": "committed"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 237869256192685952.0,
+				"drag_j": 22004737889958416.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 259873994082644352.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.99,
+				"flown": 0.701776266831625,
+				"gamma": 7.08881205008336,
+				"heading": {
+					"x": 0.716151933008132,
+					"y": -0.697842219652235,
+					"z": -0.0119434216018194
+				},
+				"one_minus_beta": 0.01,
+				"phase": "cruising",
+				"pos": {
+					"x": 0.502578430030698,
+					"y": -0.48972910774504,
+					"z": -0.00838160982492097
+				},
+				"x": 0.701776266831625
+			},
+			"status": "ok",
+			"tick": 2
+		}
+	},
+	{
+		"id": "CNS5:3627",
+		"live": true,
+		"rate": 0.125,
+		"state": "committed",
+		"texts": {
+			"clock": "Now: Earth +0.7089 yr  ·  ship +0.1000 yr  ·  tick 2\nVariable time compression · 0.1250 ship-yr/real-s",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.6157 ship-yr",
+				"Earth time (home)",
+				"4.365 Earth-yr",
+				"Arrival",
+				"Earth +4.365 yr",
+				"Years left (placeholder)",
+				"99.38 yr"
+			],
+			"dialog_title": "Commit to Alpha Centauri A?",
+			"grid": [
+				"Phase",
+				"cruising",
+				"Ship clock",
+				"ship +0.1000 yr",
+				"Earth clock",
+				"Earth +0.7089 yr",
+				"Crew age (placeholder)",
+				"30.10 yr",
+				"Flown since commit",
+				"0.7018 ly",
+				"Distance",
+				"4.321 ly",
+				"Speed",
+				"0.990000c",
+				"1 - beta",
+				"0.01000",
+				"Gamma",
+				"7.0888",
+				"Arrives",
+				"Earth +4.365 yr",
+				"Age on arrival (placeholder)",
+				"30.62 yr",
+				"Radiated so far",
+				"2.599e17 J",
+				"Trip total (plan)",
+				"6.112e17 J",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				""
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:3627  ·  4.32 ly",
+			"title": "En route to Alpha Centauri A",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 30.1,
+				"t": 0.708866036612417,
+				"tau": 0.1,
+				"year": 0.708866036612417
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.6157194190341,
+					"arrive_year": 4.36468890032712,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 4.32103979249451,
+					"earth_years": 4.36468890032712,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 135490571549348576.0,
+						"total_j": 611229083934720512.0,
+						"total_kg": 6.80084074501569
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.615719419034058,
+					"target": {
+						"id": "CNS5:3627",
+						"index": 2.0,
+						"pos": {
+							"x": 3.094521,
+							"y": -3.015404,
+							"z": -0.051608
+						}
+					},
+					"years_left": 99.3842805809659
+				},
+				"plan_id": 1.0,
+				"state": "committed"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 237869256192685952.0,
+				"drag_j": 22004737889958416.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 259873994082644352.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.99,
+				"flown": 0.701776266831625,
+				"gamma": 7.08881205008336,
+				"heading": {
+					"x": 0.716151933008132,
+					"y": -0.697842219652235,
+					"z": -0.0119434216018194
+				},
+				"one_minus_beta": 0.01,
+				"phase": "cruising",
+				"pos": {
+					"x": 0.502578430030698,
+					"y": -0.48972910774504,
+					"z": -0.00838160982492097
+				},
+				"x": 0.701776266831625
+			},
+			"status": "ok",
+			"tick": 2
+		}
+	},
+	{
+		"id": "CNS5:3627",
+		"live": false,
+		"rate": 0.125,
+		"state": "arrived",
+		"texts": {
+			"clock": "Now: Earth +4.8490 yr  ·  ship +1.1000 yr  ·  tick 3",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.6157 ship-yr",
+				"Earth time (home)",
+				"4.365 Earth-yr",
+				"Arrival",
+				"Earth +4.365 yr",
+				"Years left (placeholder)",
+				"99.38 yr"
+			],
+			"dialog_title": "Commit to Alpha Centauri A?",
+			"grid": [
+				"Phase",
+				"at_rest",
+				"Ship clock",
+				"ship +1.1000 yr",
+				"Earth clock",
+				"Earth +4.8490 yr",
+				"Crew age (placeholder)",
+				"31.10 yr",
+				"Flown (arrived)",
+				"4.321 ly",
+				"Arrived",
+				"Earth +4.365 yr",
+				"Radiated, whole trip",
+				"6.112e17 J",
+				"Trip total (plan)",
+				"6.112e17 J",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				""
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:3627  ·  4.32 ly",
+			"title": "Arrived at Alpha Centauri A",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 31.1,
+				"t": 4.84896948129306,
+				"tau": 1.1,
+				"year": 4.84896948129306
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.6157194190341,
+					"arrive_year": 4.36468890032712,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 4.32103979249451,
+					"earth_years": 4.36468890032712,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 135490571549348576.0,
+						"total_j": 611229083934720512.0,
+						"total_kg": 6.80084074501569
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.615719419034058,
+					"target": {
+						"id": "CNS5:3627",
+						"index": 2.0,
+						"pos": {
+							"x": 3.094521,
+							"y": -3.015404,
+							"z": -0.051608
+						}
+					},
+					"years_left": 99.3842805809659
+				},
+				"plan_id": 1.0,
+				"state": "arrived"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 475738512385371904.0,
+				"drag_j": 135490571549348608.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 611229083934720512.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.0,
+				"flown": 0.0,
+				"gamma": 1.0,
+				"heading": {
+					"x": 0.716151933008132,
+					"y": -0.697842219652235,
+					"z": -0.0119434216018194
+				},
+				"one_minus_beta": 1.0,
+				"phase": "at_rest",
+				"pos": {
+					"x": 3.094521,
+					"y": -3.015404,
+					"z": -0.051608
+				},
+				"x": 4.32103979249451
+			},
+			"status": "ok",
+			"tick": 3
+		}
+	},
+	{
+		"id": "CNS5:3627",
+		"live": true,
+		"rate": 0.125,
+		"state": "arrived",
+		"texts": {
+			"clock": "Now: Earth +4.8490 yr  ·  ship +1.1000 yr  ·  tick 3\nVariable time compression · 0.1250 ship-yr/real-s",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.6157 ship-yr",
+				"Earth time (home)",
+				"4.365 Earth-yr",
+				"Arrival",
+				"Earth +4.365 yr",
+				"Years left (placeholder)",
+				"99.38 yr"
+			],
+			"dialog_title": "Commit to Alpha Centauri A?",
+			"grid": [
+				"Phase",
+				"at_rest",
+				"Ship clock",
+				"ship +1.1000 yr",
+				"Earth clock",
+				"Earth +4.8490 yr",
+				"Crew age (placeholder)",
+				"31.10 yr",
+				"Flown (arrived)",
+				"4.321 ly",
+				"Arrived",
+				"Earth +4.365 yr",
+				"Radiated, whole trip",
+				"6.112e17 J",
+				"Trip total (plan)",
+				"6.112e17 J",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				""
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:3627  ·  4.32 ly",
+			"title": "Arrived at Alpha Centauri A",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 31.1,
+				"t": 4.84896948129306,
+				"tau": 1.1,
+				"year": 4.84896948129306
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.6157194190341,
+					"arrive_year": 4.36468890032712,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 4.32103979249451,
+					"earth_years": 4.36468890032712,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 135490571549348576.0,
+						"total_j": 611229083934720512.0,
+						"total_kg": 6.80084074501569
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.615719419034058,
+					"target": {
+						"id": "CNS5:3627",
+						"index": 2.0,
+						"pos": {
+							"x": 3.094521,
+							"y": -3.015404,
+							"z": -0.051608
+						}
+					},
+					"years_left": 99.3842805809659
+				},
+				"plan_id": 1.0,
+				"state": "arrived"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 475738512385371904.0,
+				"drag_j": 135490571549348608.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 611229083934720512.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.0,
+				"flown": 0.0,
+				"gamma": 1.0,
+				"heading": {
+					"x": 0.716151933008132,
+					"y": -0.697842219652235,
+					"z": -0.0119434216018194
+				},
+				"one_minus_beta": 1.0,
+				"phase": "at_rest",
+				"pos": {
+					"x": 3.094521,
+					"y": -3.015404,
+					"z": -0.051608
+				},
+				"x": 4.32103979249451
+			},
+			"status": "ok",
+			"tick": 3
+		}
+	},
+	{
+		"id": "CNS5:2653",
+		"live": false,
+		"rate": 0.00003169,
+		"state": "planned",
+		"texts": {
+			"clock": "Now: Earth +0.0000 yr  ·  ship +0.0000 yr  ·  tick 1",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.9286 ship-yr",
+				"Earth time (home)",
+				"6.582 Earth-yr",
+				"Arrival",
+				"Earth +6.582 yr",
+				"Years left (placeholder)",
+				"99.07 yr"
+			],
+			"dialog_title": "Commit to CNS5:2653?",
+			"grid": [
+				"Ship time",
+				"0.9286 ship-yr",
+				"Earth time",
+				"6.582 Earth-yr",
+				"Arrival, if committed now",
+				"Earth +6.582 yr",
+				"Age on arrival (placeholder)",
+				"30.93 yr",
+				"Years left (placeholder)",
+				"99.07 yr",
+				"Distance",
+				"6.516 ly",
+				"Cruise speed",
+				"0.990000c",
+				"Cruise 1 - beta",
+				"0.01000",
+				"Cruise gamma",
+				"7.0888",
+				"Boost, each end",
+				"1.80 min",
+				"Boost energy",
+				"2.379e17 J",
+				"Brake energy",
+				"2.379e17 J",
+				"Drag energy",
+				"2.043e17 J",
+				"Media crossed",
+				"-",
+				"Peak density",
+				"-",
+				"Top speed the drive holds",
+				"-",
+				"  its 1 - beta",
+				"-",
+				"Grains swept (>= 1 um)",
+				"-",
+				"Expected visible flashes",
+				"-",
+				"Total radiated",
+				"6.801e17 J",
+				"Total as mass",
+				"7.567 kg",
+				"ISM load",
+				"2.220e5 W/m2",
+				"Glow, inward",
+				"2.407e-6 W/m2",
+				"Drag force",
+				"23.26 N",
+				"Hold power",
+				"6.973e9 W",
+				"Forward CMB",
+				"38.44 K",
+				"Profile",
+				"burn_coast_burn"
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:2653  ·  6.52 ly",
+			"title": "CNS5:2653",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 30.0,
+				"t": 0.0,
+				"tau": 0.0,
+				"year": 0.0
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.9285527484616,
+					"arrive_year": 6.58230557564106,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 6.51648030105532,
+					"earth_years": 6.58230557564106,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 204331079014048800.0,
+						"total_j": 680069591399420672.0,
+						"total_kg": 7.56679468990927
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.928552748461641,
+					"target": {
+						"id": "CNS5:2653",
+						"index": 4.0,
+						"pos": {
+							"x": 1.699145,
+							"y": -6.262309,
+							"z": 0.600756
+						}
+					},
+					"years_left": 99.0714472515384
+				},
+				"plan_id": 1.0,
+				"state": "planned"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 0.0,
+				"drag_j": 0.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 0.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.0,
+				"flown": 0.0,
+				"gamma": 1.0,
+				"heading": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": -1.0
+				},
+				"one_minus_beta": 1.0,
+				"phase": "at_rest",
+				"pos": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"x": 0.0
+			},
+			"status": "ok",
+			"tick": 1
+		}
+	},
+	{
+		"id": "CNS5:2653",
+		"live": true,
+		"rate": 0.00003169,
+		"state": "planned",
+		"texts": {
+			"clock": "Now: Earth +0.0000 yr  ·  ship +0.0000 yr  ·  tick 1\nVariable time compression · 3.169e-5 ship-yr/real-s",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.9286 ship-yr",
+				"Earth time (home)",
+				"6.582 Earth-yr",
+				"Arrival",
+				"Earth +6.582 yr",
+				"Years left (placeholder)",
+				"99.07 yr"
+			],
+			"dialog_title": "Commit to CNS5:2653?",
+			"grid": [
+				"Ship time",
+				"0.9286 ship-yr",
+				"Earth time",
+				"6.582 Earth-yr",
+				"Arrival, if committed now",
+				"Earth +6.582 yr",
+				"Age on arrival (placeholder)",
+				"30.93 yr",
+				"Years left (placeholder)",
+				"99.07 yr",
+				"Distance",
+				"6.516 ly",
+				"Cruise speed",
+				"0.990000c",
+				"Cruise 1 - beta",
+				"0.01000",
+				"Cruise gamma",
+				"7.0888",
+				"Boost, each end",
+				"1.80 min",
+				"Boost energy",
+				"2.379e17 J",
+				"Brake energy",
+				"2.379e17 J",
+				"Drag energy",
+				"2.043e17 J",
+				"Media crossed",
+				"-",
+				"Peak density",
+				"-",
+				"Top speed the drive holds",
+				"-",
+				"  its 1 - beta",
+				"-",
+				"Grains swept (>= 1 um)",
+				"-",
+				"Expected visible flashes",
+				"-",
+				"Total radiated",
+				"6.801e17 J",
+				"Total as mass",
+				"7.567 kg",
+				"ISM load",
+				"2.220e5 W/m2",
+				"Glow, inward",
+				"2.407e-6 W/m2",
+				"Drag force",
+				"23.26 N",
+				"Hold power",
+				"6.973e9 W",
+				"Forward CMB",
+				"38.44 K",
+				"Profile",
+				"burn_coast_burn"
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:2653  ·  6.52 ly",
+			"title": "CNS5:2653",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 30.0,
+				"t": 0.0,
+				"tau": 0.0,
+				"year": 0.0
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.9285527484616,
+					"arrive_year": 6.58230557564106,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 6.51648030105532,
+					"earth_years": 6.58230557564106,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 204331079014048800.0,
+						"total_j": 680069591399420672.0,
+						"total_kg": 7.56679468990927
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.928552748461641,
+					"target": {
+						"id": "CNS5:2653",
+						"index": 4.0,
+						"pos": {
+							"x": 1.699145,
+							"y": -6.262309,
+							"z": 0.600756
+						}
+					},
+					"years_left": 99.0714472515384
+				},
+				"plan_id": 1.0,
+				"state": "planned"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 0.0,
+				"drag_j": 0.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 0.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.0,
+				"flown": 0.0,
+				"gamma": 1.0,
+				"heading": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": -1.0
+				},
+				"one_minus_beta": 1.0,
+				"phase": "at_rest",
+				"pos": {
+					"x": 0.0,
+					"y": 0.0,
+					"z": 0.0
+				},
+				"x": 0.0
+			},
+			"status": "ok",
+			"tick": 1
+		}
+	},
+	{
+		"id": "CNS5:2653",
+		"live": false,
+		"rate": 0.125,
+		"state": "committed",
+		"texts": {
+			"clock": "Now: Earth +0.7089 yr  ·  ship +0.1000 yr  ·  tick 2",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.9286 ship-yr",
+				"Earth time (home)",
+				"6.582 Earth-yr",
+				"Arrival",
+				"Earth +6.582 yr",
+				"Years left (placeholder)",
+				"99.07 yr"
+			],
+			"dialog_title": "Commit to CNS5:2653?",
+			"grid": [
+				"Phase",
+				"cruising",
+				"Ship clock",
+				"ship +0.1000 yr",
+				"Earth clock",
+				"Earth +0.7089 yr",
+				"Crew age (placeholder)",
+				"30.10 yr",
+				"Flown since commit",
+				"0.7018 ly",
+				"Distance",
+				"6.516 ly",
+				"Speed",
+				"0.990000c",
+				"1 - beta",
+				"0.01000",
+				"Gamma",
+				"7.0888",
+				"Arrives",
+				"Earth +6.582 yr",
+				"Age on arrival (placeholder)",
+				"30.93 yr",
+				"Radiated so far",
+				"2.599e17 J",
+				"Trip total (plan)",
+				"6.801e17 J",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				""
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:2653  ·  6.52 ly",
+			"title": "En route to CNS5:2653",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 30.1,
+				"t": 0.708866036612417,
+				"tau": 0.1,
+				"year": 0.708866036612417
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.9285527484616,
+					"arrive_year": 6.58230557564106,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 6.51648030105532,
+					"earth_years": 6.58230557564106,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 204331079014048800.0,
+						"total_j": 680069591399420672.0,
+						"total_kg": 7.56679468990927
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.928552748461641,
+					"target": {
+						"id": "CNS5:2653",
+						"index": 4.0,
+						"pos": {
+							"x": 1.699145,
+							"y": -6.262309,
+							"z": 0.600756
+						}
+					},
+					"years_left": 99.0714472515384
+				},
+				"plan_id": 1.0,
+				"state": "committed"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 237869256192685952.0,
+				"drag_j": 22004737889958416.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 259873994082644352.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.99,
+				"flown": 0.701776266831625,
+				"gamma": 7.08881205008336,
+				"heading": {
+					"x": 0.260745820059462,
+					"y": -0.960995615836642,
+					"z": 0.092190257968356
+				},
+				"one_minus_beta": 0.01,
+				"phase": "cruising",
+				"pos": {
+					"x": 0.18298522819328,
+					"y": -0.674403915723397,
+					"z": 0.0646969350752773
+				},
+				"x": 0.701776266831625
+			},
+			"status": "ok",
+			"tick": 2
+		}
+	},
+	{
+		"id": "CNS5:2653",
+		"live": true,
+		"rate": 0.125,
+		"state": "committed",
+		"texts": {
+			"clock": "Now: Earth +0.7089 yr  ·  ship +0.1000 yr  ·  tick 2\nVariable time compression · 0.1250 ship-yr/real-s",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.9286 ship-yr",
+				"Earth time (home)",
+				"6.582 Earth-yr",
+				"Arrival",
+				"Earth +6.582 yr",
+				"Years left (placeholder)",
+				"99.07 yr"
+			],
+			"dialog_title": "Commit to CNS5:2653?",
+			"grid": [
+				"Phase",
+				"cruising",
+				"Ship clock",
+				"ship +0.1000 yr",
+				"Earth clock",
+				"Earth +0.7089 yr",
+				"Crew age (placeholder)",
+				"30.10 yr",
+				"Flown since commit",
+				"0.7018 ly",
+				"Distance",
+				"6.516 ly",
+				"Speed",
+				"0.990000c",
+				"1 - beta",
+				"0.01000",
+				"Gamma",
+				"7.0888",
+				"Arrives",
+				"Earth +6.582 yr",
+				"Age on arrival (placeholder)",
+				"30.93 yr",
+				"Radiated so far",
+				"2.599e17 J",
+				"Trip total (plan)",
+				"6.801e17 J",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				""
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:2653  ·  6.52 ly",
+			"title": "En route to CNS5:2653",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 30.1,
+				"t": 0.708866036612417,
+				"tau": 0.1,
+				"year": 0.708866036612417
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.9285527484616,
+					"arrive_year": 6.58230557564106,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 6.51648030105532,
+					"earth_years": 6.58230557564106,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 204331079014048800.0,
+						"total_j": 680069591399420672.0,
+						"total_kg": 7.56679468990927
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.928552748461641,
+					"target": {
+						"id": "CNS5:2653",
+						"index": 4.0,
+						"pos": {
+							"x": 1.699145,
+							"y": -6.262309,
+							"z": 0.600756
+						}
+					},
+					"years_left": 99.0714472515384
+				},
+				"plan_id": 1.0,
+				"state": "committed"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 237869256192685952.0,
+				"drag_j": 22004737889958416.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 259873994082644352.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.99,
+				"flown": 0.701776266831625,
+				"gamma": 7.08881205008336,
+				"heading": {
+					"x": 0.260745820059462,
+					"y": -0.960995615836642,
+					"z": 0.092190257968356
+				},
+				"one_minus_beta": 0.01,
+				"phase": "cruising",
+				"pos": {
+					"x": 0.18298522819328,
+					"y": -0.674403915723397,
+					"z": 0.0646969350752773
+				},
+				"x": 0.701776266831625
+			},
+			"status": "ok",
+			"tick": 2
+		}
+	},
+	{
+		"id": "CNS5:2653",
+		"live": false,
+		"rate": 0.125,
+		"state": "arrived",
+		"texts": {
+			"clock": "Now: Earth +6.7538 yr  ·  ship +1.1000 yr  ·  tick 3",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.9286 ship-yr",
+				"Earth time (home)",
+				"6.582 Earth-yr",
+				"Arrival",
+				"Earth +6.582 yr",
+				"Years left (placeholder)",
+				"99.07 yr"
+			],
+			"dialog_title": "Commit to CNS5:2653?",
+			"grid": [
+				"Phase",
+				"at_rest",
+				"Ship clock",
+				"ship +1.1000 yr",
+				"Earth clock",
+				"Earth +6.7538 yr",
+				"Crew age (placeholder)",
+				"31.10 yr",
+				"Flown (arrived)",
+				"6.516 ly",
+				"Arrived",
+				"Earth +6.582 yr",
+				"Radiated, whole trip",
+				"6.801e17 J",
+				"Trip total (plan)",
+				"6.801e17 J",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				""
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:2653  ·  6.52 ly",
+			"title": "Arrived at CNS5:2653",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 31.1,
+				"t": 6.75375282717942,
+				"tau": 1.1,
+				"year": 6.75375282717942
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.9285527484616,
+					"arrive_year": 6.58230557564106,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 6.51648030105532,
+					"earth_years": 6.58230557564106,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 204331079014048800.0,
+						"total_j": 680069591399420672.0,
+						"total_kg": 7.56679468990927
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.928552748461641,
+					"target": {
+						"id": "CNS5:2653",
+						"index": 4.0,
+						"pos": {
+							"x": 1.699145,
+							"y": -6.262309,
+							"z": 0.600756
+						}
+					},
+					"years_left": 99.0714472515384
+				},
+				"plan_id": 1.0,
+				"state": "arrived"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 475738512385371904.0,
+				"drag_j": 204331079014048832.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 680069591399420672.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.0,
+				"flown": 0.0,
+				"gamma": 1.0,
+				"heading": {
+					"x": 0.260745820059462,
+					"y": -0.960995615836642,
+					"z": 0.092190257968356
+				},
+				"one_minus_beta": 1.0,
+				"phase": "at_rest",
+				"pos": {
+					"x": 1.699145,
+					"y": -6.262309,
+					"z": 0.600756
+				},
+				"x": 6.51648030105532
+			},
+			"status": "ok",
+			"tick": 3
+		}
+	},
+	{
+		"id": "CNS5:2653",
+		"live": true,
+		"rate": 0.125,
+		"state": "arrived",
+		"texts": {
+			"clock": "Now: Earth +6.7538 yr  ·  ship +1.1000 yr  ·  tick 3\nVariable time compression · 0.1250 ship-yr/real-s",
+			"coverage": "5685 known destinations · within 25 pc of Sol",
+			"dialog": [
+				"Ship time (you)",
+				"0.9286 ship-yr",
+				"Earth time (home)",
+				"6.582 Earth-yr",
+				"Arrival",
+				"Earth +6.582 yr",
+				"Years left (placeholder)",
+				"99.07 yr"
+			],
+			"dialog_title": "Commit to CNS5:2653?",
+			"grid": [
+				"Phase",
+				"at_rest",
+				"Ship clock",
+				"ship +1.1000 yr",
+				"Earth clock",
+				"Earth +6.7538 yr",
+				"Crew age (placeholder)",
+				"31.10 yr",
+				"Flown (arrived)",
+				"6.516 ly",
+				"Arrived",
+				"Earth +6.582 yr",
+				"Radiated, whole trip",
+				"6.801e17 J",
+				"Trip total (plan)",
+				"6.801e17 J",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				""
+			],
+			"speed": "Cruise 0.990000c  ·  gamma 7.0888",
+			"subtitle": "CNS5:2653  ·  6.52 ly",
+			"title": "Arrived at CNS5:2653",
+			"warning": "A commitment cannot be undone. Hold Space or the button for 1.5 s.\nPress-twice mode: Space twice. Esc backs out."
+		},
+		"world": {
+			"ai": {
+				"core": "",
+				"last_req": 0.0,
+				"open": []
+			},
+			"clock": {
+				"age": 31.1,
+				"t": 6.75375282717942,
+				"tau": 1.1,
+				"year": 6.75375282717942
+			},
+			"journey": {
+				"plan": {
+					"age_on_arrival": 30.9285527484616,
+					"arrive_year": 6.58230557564106,
+					"boost_minutes": 1.79797820226005,
+					"cmb_forward_k": 38.4408555445895,
+					"cruise_beta": 0.99,
+					"cruise_gamma": 7.08881205008336,
+					"cruise_one_minus_beta": 0.01,
+					"cruise_phi": 2.64665241236225,
+					"distance": 6.51648030105532,
+					"earth_years": 6.58230557564106,
+					"energy": {
+						"boost_j": 237869256192685952.0,
+						"brake_j": 237869256192685952.0,
+						"drag_j": 204331079014048800.0,
+						"total_j": 680069591399420672.0,
+						"total_kg": 7.56679468990927
+					},
+					"fell_back": false,
+					"ism": {
+						"drag_n": 23.2598214320735,
+						"glow_w_m2": 0.00000240719421792,
+						"hold_w": 6973119039.76238,
+						"load_w_m2": 221961.272789279
+					},
+					"profile": "burn_coast_burn",
+					"ship_years": 0.928552748461641,
+					"target": {
+						"id": "CNS5:2653",
+						"index": 4.0,
+						"pos": {
+							"x": 1.699145,
+							"y": -6.262309,
+							"z": 0.600756
+						}
+					},
+					"years_left": 99.0714472515384
+				},
+				"plan_id": 1.0,
+				"state": "arrived"
+			},
+			"ledger": {
+				"available_kg": 20000.0,
+				"boost_j": 475738512385371904.0,
+				"drag_j": 204331079014048832.0,
+				"m_eff_kg": 1.0,
+				"radiated_j": 680069591399420672.0
+			},
+			"params": {
+				"ai_max_open": 8.0,
+				"ai_ttl_ticks": 3600.0,
+				"boost_g": 750000.0,
+				"bubble_radius_m": 100.0,
+				"cap_one_minus_beta": 0.000001,
+				"cruise_min_beta": 0.9,
+				"cruise_phi_default": 2.64665241236225,
+				"cruise_phi_max": 7.25432861926205,
+				"cruise_phi_min": 1.47221948958322,
+				"epoch": 0.0,
+				"glow_eps": 0.0000000001,
+				"glow_f_in": 0.5,
+				"ism_n_cm3": 0.1,
+				"m_eff_kg": 1.0,
+				"start_age": 30.0
+			},
+			"rng": {
+				"ai": 0.0,
+				"crew": 0.0,
+				"events": 0.0,
+				"galaxy": 0.0,
+				"journey": 0.0,
+				"news": 0.0
+			},
+			"ship": {
+				"beta": 0.0,
+				"flown": 0.0,
+				"gamma": 1.0,
+				"heading": {
+					"x": 0.260745820059462,
+					"y": -0.960995615836642,
+					"z": 0.092190257968356
+				},
+				"one_minus_beta": 1.0,
+				"phase": "at_rest",
+				"pos": {
+					"x": 1.699145,
+					"y": -6.262309,
+					"z": 0.600756
+				},
+				"x": 6.51648030105532
+			},
+			"status": "ok",
+			"tick": 3
+		}
+	}
+]

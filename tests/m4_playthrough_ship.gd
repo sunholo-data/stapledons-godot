@@ -58,6 +58,7 @@ func sample() -> void:
 		if not n.is_visible_in_tree(): continue
 		if n is DisplayBinding:
 			var b := {"node": str(n.get_path()), "field": n.field, "fmt": n.fmt, "text": n.text, "visible": true}
+			if n.record_context: b["context"] = n._last_view
 			if n is ComposedBinding: b["parts"] = n.parts
 			elif n is NewsPanel.CopyBinding: b["map"] = n.map
 			elif n is NewsPanel.TemplateText: b["template"] = true

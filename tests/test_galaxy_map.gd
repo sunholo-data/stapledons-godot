@@ -583,6 +583,45 @@ func test_ui_scale() -> bool:
 	return true
 
 
+## Captured on the unmodified labels before 7i(a); replay fixed producer worlds,
+## never regenerate the expected strings through the binding formatter.
+func numeric_label_texts(map: GalaxyMap) -> Dictionary:
+	return {"title": map._title.text, "subtitle": map._subtitle.text,
+		"clock": map._clock.text, "speed": map._speed.text, "coverage": map._coverage.text,
+		"grid": map._grid.get_children().map(func(l): return l.text),
+		"dialog": map.dialog_grid.get_children().map(func(l): return l.text),
+		"dialog_title": map.dialog_title.text,
+		"warning": map.dialog_grid.get_parent().get_child(2).text}
+
+
+func test_numeric_label_identity(map: GalaxyMap) -> bool:
+	var saved := map.sim.world
+	var cases: Array = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/display_audit/map_text_identity.json"))
+	for c: Dictionary in cases:
+		map.sim.world = c.world.duplicate(true)
+		map.live_pacing = c.live
+		map.pacing.rate = c.rate
+		map.dialog.visible = true
+		map.refresh()
+		ok("7ia exact old label text: %s %s live=%s" % [c.id, c.state, c.live], numeric_label_texts(map) == c.texts)
+		var expected: Array = ["Cruise 1 - beta", "  its 1 - beta", "Grains swept (>= 1 um)"] if c.state == "planned" else (["1 - beta"] if c.state == "committed" else [])
+		var panel := map._title.get_parent().get_parent()
+		var bad := DisplayBinding.audit(panel)
+		var captions: Array = bad.map(func(l): return l.text)
+		ok("7ia panel audit contains exactly caption notation: %s %s" % [c.id, c.state], captions == expected and bad.all(func(l): return not l is DisplayBinding))
+		ok("7ia commit dialog audit is empty", DisplayBinding.audit(map.dialog).is_empty())
+		var control := Label.new()
+		control.text = "hand-set 123"
+		panel.add_child(control)
+		ok("7ia audit rejects a hand-set digit on the map", DisplayBinding.audit(panel).has(control))
+		control.free()
+	map.sim.world = saved
+	map.live_pacing = false
+	map.dialog.visible = false
+	map.refresh()
+	return true
+
+
 func _initialize() -> void:
 	var vp := SubViewport.new()
 	vp.size = Vector2i(800, 600)
@@ -593,6 +632,7 @@ func _initialize() -> void:
 		quit(2)
 		return
 	var tests: Array[Callable] = [
+		test_numeric_label_identity.bind(map),
 		test_select_sends_catalogue_doubles.bind(map),
 		test_alpha_cen_pair.bind(map),
 		test_default_and_range.bind(map),

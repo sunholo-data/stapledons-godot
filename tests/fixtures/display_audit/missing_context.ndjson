@@ -1,0 +1,1 @@
+{"view":{"client":{"map":{"count":99}}},"bindings":[{"field":"client.map.count","fmt":"%d","parts":[["client.map.count","%d"]," known destinations"],"text":"3 known destinations","context":{"client":{"map":{}}}}],"labels":[]}

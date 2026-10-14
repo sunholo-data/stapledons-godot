@@ -1,0 +1,18 @@
+[
+	{
+		"text": "Archive\n0 entries open",
+		"unlocked": []
+	},
+	{
+		"text": "Archive\n3 entries open",
+		"unlocked": [
+			"entry-a",
+			"entry-b",
+			"entry-c"
+		]
+	},
+	{
+		"text": "Archive\nno entries open",
+		"unlocked": null
+	}
+]
