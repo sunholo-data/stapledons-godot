@@ -199,6 +199,7 @@ func sweep_crew() -> void:
 	# A real hold: hands-on auto-run escalates the medic's stress within a few crew days.
 	sim.send([SimBridge.crew_intent("crew_orders", {"command": "orders", "preset": "hands_on"})], 0.0)
 	sim.send([], 3.0 / 365.25 + 0.000001)
+	sim.drain() # the live demo pipelines heartbeats (performance pass): take this one's reply
 	check("NT3 a crew hold is open", not (sim.crew.get("holds", []) as Array).is_empty())
 	var c: ShipConsoles = demo.consoles
 	c.go_to("voyage")

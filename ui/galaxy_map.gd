@@ -774,6 +774,8 @@ func press_cancel() -> void:
 func tick() -> bool:
 	if sim == null:
 		return false
+	if not sim.drain(): # a pipelined heartbeat (SimBridge.pipelined): decide on the current world
+		return false
 	# A commit confirmed at the helm goes out even if the helm closed before this tick.
 	var intents := ([] if guided_read_only else _queue.duplicate()) if not planning() else ([] if _pending.is_empty() else [_pending]) + _queue
 	_pending = {}
@@ -792,7 +794,7 @@ func tick() -> bool:
 	if paused:
 		dtau = 0.0
 		pacing.rate=0.0
-	var sent := sim.send(intents, dtau)
+	var sent := sim.send(intents, dtau, true) # a heartbeat may be pipelined (the live game; nothing below reads it unless intents went out)
 	if sent and _stale_commit(intents):
 		# R1-SHIP-UI: a hold takes 1.5 s of host ticks, and the sim refuses a commit whose plan
 		# was not made from the ship's present state (core.ail stale_plan). Recreate the same

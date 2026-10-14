@@ -324,6 +324,9 @@ func _process(delta: float) -> void:
 	_sync_pointer()
 	sky.set_temporal_exposure(false)
 	_update_tour_attitude(delta)
+	# Performance pass: the live game pipelines heartbeat ticks (SimBridge.pipelined); tests and
+	# scripted runs drive ticks themselves and stay synchronous.
+	if journey_sim!=null:journey_sim.pipelined=journey_auto_tick and not benchmark.running
 	if journey_map!=null and journey_auto_tick and not benchmark.running:
 		_journey_accum=minf(_journey_accum+delta,4./GalaxyMap.TICK_HZ)
 		while _journey_accum>=1./GalaxyMap.TICK_HZ:

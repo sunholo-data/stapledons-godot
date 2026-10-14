@@ -106,9 +106,12 @@ func _star_intent(spec: Dictionary) -> Dictionary:
 	if row.is_empty():return {}
 	return {"k":"plan","target":{"index":int(row.index),"id":row.id,"pos":{"x":row.x,"y":row.y,"z":row.z}},"cruise_phi":spec.cruise_phi}
 
-func _send(intents: Array, dtau: float) -> bool:
+## pipelined_ok: a heartbeat whose reply the caller doesn't read straight away (SimBridge.pipelined);
+## every other send waits for its reply, so what follows reads the current world.
+func _send(intents: Array, dtau: float, pipelined_ok:=false) -> bool:
 	sim.intent_source="tour" if not intents.is_empty() else "tick" # R1-SHIP-UI NT1: the itinerary's own legs
-	if not sim.send(intents,dtau):failed=sim.last_error;return false
+	if not sim.send(intents,dtau,pipelined_ok):failed=sim.last_error;return false
+	if sim.in_flight():return true # its refusals and world arrive at the next drain
 	if not sim.last_refused.is_empty():failed=str(sim.last_refused);return false
 	world_updated.emit(sim.world)
 	return true
@@ -154,6 +157,11 @@ func commit_prepared() -> bool:
 ## second, so the moving planet does not sweep away at the ordinary day/s rate.
 func step() -> bool:
 	if sim==null or not failed.is_empty():return false
+	if not sim.drain():failed=sim.last_error;return false # a pipelined heartbeat lands before any decision
+	if _arrival_pending:
+		_arrival_pending=false
+		if not sim.last_refused.is_empty():failed=str(sim.last_refused);return false
+		_check_arrival()
 	if paused or attitude_hold or pending_index>=0:return true
 	# R2-CREW C8: a crew hold (an escalation under auto-run) stops the voyage like an arrival. Zero
 	# ticks keep the bridge live, so the Crew page's queued choices (crew_resume) still reach the sim.
@@ -164,16 +172,21 @@ func step() -> bool:
 			interlude=interlude_factory.call()
 			interlude.begin(CruiseInterlude.facts_from(sim.world,leg_name()))
 			return true
-		if not _send([],pacing.step(sim.world,false,0.,TICK_HZ)):return false
-		if sim.world.journey.state=="arrived":
-			if leg_index==itinerary.size()-1:complete=true
-			else:dwell_left=DWELL_SECONDS
+		if not _send([],pacing.step(sim.world,false,0.,TICK_HZ),true):return false
+		if sim.in_flight():_arrival_pending=true # seen at the next step, after the drain
+		else:_check_arrival()
 		return true
-	if not _send([],1./(TICK_HZ*JULIAN_YEAR_SECONDS)):return false
+	if not _send([],1./(TICK_HZ*JULIAN_YEAR_SECONDS),true):return false
 	if not complete:
 		dwell_left=maxf(0.,dwell_left-1./TICK_HZ)
 		if dwell_left==0.:return prepare_next() if deferred_commit else advance()
 	return true
+
+var _arrival_pending:=false
+func _check_arrival() -> void:
+	if sim.world.journey.state=="arrived":
+		if leg_index==itinerary.size()-1:complete=true
+		else:dwell_left=DWELL_SECONDS
 
 ## One host frame of the active interlude: step the sim by exactly what it
 ## consumes (never past the braking boundary), then check the boundary at the end.
