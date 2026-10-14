@@ -9,3 +9,10 @@ engineer_neutral.png <- refs/characters_v1/portrait_engineer_age0_neutral_v1.png
 analyst_neutral.png <- refs/characters_v1/portrait_analyst_age0_neutral_v1.png sha256 e755fc7f3e52f559bb3e7eba91c985a1ea99d0a682e638b6a6ac48d16252453a
 pilot_neutral.png <- refs/characters_v1/portrait_pilot_age0_neutral_v1.png sha256 f3db1dfa92f5466761549283fc6dfe2fc7d93977bf8a61bda599035e1962cc22
 counselor_neutral.png <- refs/characters_v1/portrait_diplomat_age0_neutral_v1.png sha256 2674d7162bd3ec0265e2f8a4c2378ca9a75d02f9a8cc1bb4b22e41f8356b8a9e
+
+# 2026-10-14: the medic's full emotion set (assets/characters/medic, Codex gpt-6.1-sol edits of the accepted neutral; generation_notes.md there).
+medic_happy.png <- assets/characters/medic/portrait_medic_y0_happy.png sha256 0dc9e2d4a37c1ff611f4f92599e34bba85d9e7b297eeb2d794582ef6ed0dc738
+medic_sad.png <- assets/characters/medic/portrait_medic_y0_sad.png sha256 c126b9e11fc34ee2fecb652f192e9381bcebb80ab48bf18b3cc904df4db105ca
+medic_angry.png <- assets/characters/medic/portrait_medic_y0_angry.png sha256 6800f1c3e89f4989a8b506715e3aed264ea539504fe97a6ed65a2f9b27d8daec
+medic_fearful.png <- assets/characters/medic/portrait_medic_y0_fearful.png sha256 fd0daac66190895014093d4e9703cd30b70236fe2d277aa1fcd58838d44c3a54
+medic_curious.png <- assets/characters/medic/portrait_medic_y0_curious.png sha256 254b25bd4e15aad6a211fcfe4f885797f5d8777b2ba92f5f58141ffc3542ec8f

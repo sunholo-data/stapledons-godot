@@ -41,7 +41,9 @@ func _initialize() -> void:
 	# is the strained one (sad -> grieving); the call panel shows the last speaker, the analyst.
 	var faces := ["medic", "engineer", "analyst", "pilot", "counselor"].filter(func(id): var t = page.find_child("Portrait_" + id, true, false); return t is TextureRect and t.texture != null)
 	check("every crew row has a portrait", faces.size() == 5)
-	check("the medic asked for relief: the strained face (grieving)", page.emotion_of("medic") == "sad" and page.portrait_path("medic", "sad").ends_with("medic_grieving.png") and page.find_child("Portrait_medic", true, false).texture == page.portrait("medic", "sad"))
+	check("the medic asked for relief: her sad face", page.emotion_of("medic") == "sad" and page.portrait_path("medic", "sad").ends_with("medic_sad.png") and page.find_child("Portrait_medic", true, false).texture == page.portrait("medic", "sad"))
+	check("the medic has all eight emotions; a decline shows anger, a concern fear", ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"].all(func(e): return page.portrait_path("medic", e).ends_with("medic_%s.png" % e)) and CrewPage.LABEL_EMOTION["decline"] == "angry" and CrewPage.LABEL_EMOTION["concern"] == "fearful")
+	check("an angry face falls back to neutral for a role without it", page.portrait_path("engineer", "angry").ends_with("engineer_neutral.png"))
 	check("a role without the emotion falls back to its neutral face", page.portrait_path("analyst", "sad").ends_with("analyst_neutral.png"))
 	var call := page.get_node_or_null("Call")
 	check("the call panel shows the last speaker, larger, with their words", call != null and texts(call).has("Santiago Navarro · The Analyst") and call.find_child("CallPortrait", true, false).texture != null)
