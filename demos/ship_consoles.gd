@@ -250,6 +250,8 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 				demo.refuse("No news from home has reached the ship yet.")
 				return false
 			_reading().show_world(w); news_panel.open(); legacy_screen.visible = false; answer_panel.visible = false
+			if demo.journey_sim != null and demo.journey_sim.ai_relay is AiRelay:
+				news_panel.request_ai(demo.journey_sim.ai_relay, w)
 			return true
 		["archive", "ask"]:
 			var q: String = ask_field.text if ask_field != null else ""
@@ -867,6 +869,7 @@ func _on_sim_stepped(events: Array) -> void:
 			demo.refuse(GalaxyMap.refusal_text(str(sim.last_refused[0].reason)))
 		_reading()
 		legacy_screen.fold(sim.world)
+		news_panel.on_events(events)
 	var before := archive_ask.state
 	archive_ask.on_events(events, sim.last_refused if sim != null else [], sim.relay_intents if sim != null else [], sim.relay_from if sim != null else 0)
 	if archive_ask.state != before:

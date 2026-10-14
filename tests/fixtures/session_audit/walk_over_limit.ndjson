@@ -1,0 +1,7 @@
+{"type":"sim_ticks","leg":1,"ticks":1200}
+{"type":"sim_ticks","leg":2,"ticks":1200}
+{"type":"walk","to":"archive","path_m":35}
+{"type":"use","action":"commit"}
+{"type":"read","words":100}
+{"type":"interactable_visit"}
+{"type":"text_shown","words":1000}
