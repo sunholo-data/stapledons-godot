@@ -10,6 +10,8 @@ extends Label
 var field := ""
 var fmt := "%s"
 var _shown := "" # the text this binding last produced
+var record_context := false # sampler uses the producer view instead of the shared HUD view
+var _last_view: Dictionary = {}
 
 
 func bind(f: String, format: String) -> DisplayBinding:
@@ -19,8 +21,25 @@ func bind(f: String, format: String) -> DisplayBinding:
 
 
 func update_from(view: Dictionary) -> void:
+	_record_fields(view, [field])
 	_shown = format_field(view, field, fmt)
 	text = _shown
+
+
+## Freeze only the source fields this contract reads. Recording an entire world once
+## per label would repeat the system catalogue dozens of times in every sample.
+func _record_fields(view: Dictionary, fields: Array) -> void:
+	if not record_context: return
+	_last_view = {}
+	for path: String in fields:
+		var raw: Variant = GalaxyMap.field_value(view, path)
+		if raw == null: continue # absent stays absent; replay must reject it
+		var keys := path.split(".")
+		var section := _last_view
+		for i in keys.size() - 1:
+			if not section.has(keys[i]): section[keys[i]] = {}
+			section = section[keys[i]]
+		section[keys[-1]] = raw.duplicate(true) if raw is Dictionary or raw is Array else raw
 
 
 static func format_field(view: Dictionary, f: String, format: String) -> String:

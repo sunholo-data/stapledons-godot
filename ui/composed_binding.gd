@@ -19,6 +19,8 @@ func compose(p: Array) -> ComposedBinding:
 
 
 func update_from(view: Dictionary) -> void:
+	if record_context:
+		_record_fields(view, parts.filter(func(p): return p is Array).map(func(p): return p[0]))
 	var s := ""
 	for x in parts:
 		s += x if x is String else DisplayBinding.format_field(view, x[0], x[1])

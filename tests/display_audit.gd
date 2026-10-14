@@ -136,6 +136,9 @@ func audit(row: Dictionary) -> void:
 	for b: Dictionary in row.get("bindings", []):
 		var binding: DisplayBinding
 		var local_view := view.duplicate(false)
+		if b.has("context"):
+			check(b.context is Dictionary, "invalid binding context")
+			local_view = b.context if b.context is Dictionary else {}
 		if b.has("entry"): local_view["entry"] = b.entry
 		if b.has("parts"):
 			binding = ComposedBinding.new().compose(b.parts)

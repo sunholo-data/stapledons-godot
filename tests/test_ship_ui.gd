@@ -253,8 +253,28 @@ func arrive(demo: Node, phases: Dictionary) -> void:
 				check("AC3 final-approach notice appears", demo.ship_hud.has_card("notice") and demo.ship_hud.all_text().contains("Final approach"))
 
 
+func test_archive_label_identity(demo: Node) -> void:
+	var saved: Dictionary = demo.sky_world
+	var cases: Array = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/display_audit/archive_text_identity.json"))
+	for c: Dictionary in cases:
+		demo.sky_world = {"consequence": {"archive": {"unlocked": c.unlocked}}}
+		demo.consoles._refresh_screens()
+		var label: Label = demo.consoles.screens.archive.label
+		check("7ia Archive old exact text %s" % c.text, label.text == c.text and demo.consoles.screen_text("archive") == c.text)
+		check("7ia Archive is a clean binding", label is ComposedBinding and DisplayBinding.audit(demo.consoles.screens.archive.viewport).is_empty())
+		if label is ComposedBinding:
+			var recorded: Dictionary = JSON.parse_string(SimBridge.encode(label._last_view))
+			var replayed := ComposedBinding.new().compose(label.parts)
+			replayed.update_from(recorded)
+			check("7ia Archive reconstructs after JSON number conversion", replayed.text == c.text)
+			replayed.free()
+	demo.sky_world = saved
+	demo.consoles._refresh_screens()
+
+
 func test_strip_and_cards() -> void:
 	var demo: Node = await new_demo({"live_start": true, "sky_state": "rest"})
+	test_archive_label_identity(demo)
 	var hud: ShipHud = demo.ship_hud
 	check("HUD built, the button column retired", hud != null and demo.hud == hud.strip and not demo.has_method("hud_text"))
 	strip_ok(demo, "rest")

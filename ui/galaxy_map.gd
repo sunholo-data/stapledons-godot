@@ -169,7 +169,7 @@ var selected_body := ""
 var paused := false
 var progress_bar := ProgressBar.new()
 var dialog := PanelContainer.new()
-var dialog_title := Label.new()
+var dialog_title := ComposedBinding.new()
 var dialog_grid := GridContainer.new()
 var hold_button := Button.new()
 var hold_bar := ProgressBar.new()
@@ -189,13 +189,15 @@ var ism_layer := IsmLayer.new() # R1-ISM-DUST I6: the medium layer (D), a displa
 
 var _points := MultiMeshInstance3D.new()
 var _overlay := Control.new()
-var _title := Label.new()
-var _subtitle := Label.new()
+var _title := ComposedBinding.new()
+var _subtitle := ComposedBinding.new()
 var _status := Label.new()
-var _clock := Label.new()
-var _coverage := Label.new()
+var _clock := ComposedBinding.new()
+var _coverage := ComposedBinding.new()
 var _grid := GridContainer.new()
-var _speed := Label.new()
+var _speed := ComposedBinding.new()
+var _catalogue_coverage: Dictionary = {}
+var _last_view: Dictionary = {} # sim world plus catalogue/pacing source data; never shown text
 var _pending: Dictionary = {}
 var _queue: Array = [] # commit / cancel intents for the next tick
 var _refusal_note := "" # the sim's refusal of the last player intent (sticky)
@@ -411,14 +413,16 @@ func _build_dialog(layer: CanvasLayer) -> void:
 	dialog_grid.columns = 2
 	dialog_grid.add_theme_constant_override("h_separation", 18)
 	for i in COMMIT_ROWS.size() * 2:
-		var l := Label.new()
+		var l := Label.new() if i % 2 == 0 else DisplayBinding.new()
 		l.add_theme_font_size_override("font_size", 17)
 		if i % 2 == 0:
 			l.add_theme_color_override("font_color", Color(0.85, 0.75, 0.4))
 		dialog_grid.add_child(l)
 	box.add_child(dialog_grid)
-	var warn := Label.new()
-	warn.text = "A commitment cannot be undone. Hold Space or the button for %.1f s.\nPress-twice mode: Space twice. Esc backs out." % HOLD_S
+	var warn := ComposedBinding.new()
+	warn.record_context = true
+	warn.compose(["A commitment cannot be undone. Hold Space or the button for ", ["client.map.hold_s", "%.1f"], " s.\nPress-twice mode: Space twice. Esc backs out."])
+	warn.update_from({"client": {"map": {"hold_s": HOLD_S}}})
 	warn.add_theme_color_override("font_color", Color(0.95, 0.6, 0.4))
 	box.add_child(warn)
 	hold_bar.show_percentage = false
@@ -447,7 +451,11 @@ func _build_dialog(layer: CanvasLayer) -> void:
 func load_catalogue(path: String) -> void:
 	_build()
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
-	_coverage.text=preload("res://ui/catalogue_coverage.gd").summary(data)
+	_catalogue_coverage = {}
+	for key in ["count", "radius_pc"]:
+		if data.has(key): _catalogue_coverage[key] = data[key]
+	_refresh_view()
+	_update_coverage()
 	_coverage.tooltip_text=preload("res://ui/catalogue_coverage.gd").details(data)
 	catalogue = data["stars"]
 	index_by_id.clear()
@@ -907,7 +915,7 @@ func rows_of(table: Array) -> Array:
 	var out := []
 	for r in table:
 		var raw = field_value(sim.world, r[1])
-		out.append({"label": r[0], "field": r[1], "raw": raw, "text": format_value(r[2], raw)})
+		out.append({"label": r[0], "field": r[1], "fmt": r[2], "raw": raw, "text": format_value(r[2], raw)})
 	return out
 
 
@@ -997,11 +1005,53 @@ func progress_values() -> Array:
 	return [plan["distance"] if journey_state() == "arrived" else sim.world["ship"]["flown"], plan["distance"]]
 
 
+## Client presentation inputs come from their sources. Physics fields remain the sim's.
+func _refresh_view() -> void:
+	var inputs := {"empty": "", "rate": pacing.rate, "target_name": target_name()}
+	var target: Variant = field_value(sim.world, "journey.plan.target") if sim != null else null
+	if target != null:
+		inputs["target_id"] = target.id
+		var i := int(target.index)
+		if i >= 0 and i < catalogue.size() and catalogue[i].id == target.id:
+			inputs["target_id"] = catalogue[i].id
+			if catalogue[i].has("dist_ly"): inputs["distance_ly"] = float(catalogue[i].dist_ly)
+	if _catalogue_coverage.has("count") and _catalogue_coverage.has("radius_pc"):
+		inputs["count"] = int(_catalogue_coverage.count)
+		inputs["radius_pc"] = float(_catalogue_coverage.radius_pc)
+	_last_view = sim.world.duplicate(false) if sim != null else {}
+	_last_view["client"] = {"map": inputs}
+
+
+func _sentence(label: ComposedBinding, parts: Array) -> void:
+	# Copy-only states still have a real empty source field and a clean contract.
+	label.compose(parts + [["client.map.empty", "text"]])
+	label.record_context = true
+	label.update_from(_last_view)
+
+
+func _update_coverage() -> void:
+	if _catalogue_coverage.has("count") and _catalogue_coverage.has("radius_pc"):
+		_sentence(_coverage, [["client.map.count", "%d"], " known destinations · within ", ["client.map.radius_pc", "%.0f"], " pc of Sol"])
+	else:
+		_sentence(_coverage, ["Destination catalogue coverage unavailable"])
+
+
 func refresh() -> void:
 	if sim == null:
 		return
-	_title.text = title_text()
-	_subtitle.text = subtitle_text()
+	_refresh_view()
+	_update_coverage()
+	var name_parts: Array = [["client.map.target_name", "text"]]
+	if target_name().is_empty(): _sentence(_title, ["Select a star"])
+	else: _sentence(_title, (["En route to "] if journey_state() == "committed" else (["Arrived at "] if journey_state() == "arrived" else [])) + name_parts)
+	if not _last_view.client.map.has("target_id"):
+		_sentence(_subtitle, [])
+	elif _last_view.client.map.has("distance_ly"):
+		_sentence(_subtitle, [["client.map.target_id", "%s"], "  ·  ", ["client.map.distance_ly", "%.2f"], " ly"])
+	else:
+		var t: Dictionary = field_value(sim.world, "journey.plan.target")
+		var i := int(t.index)
+		_sentence(_subtitle, [["client.map.target_id", "%s"]] + ([" · distance unavailable"] if i >= 0 and i < catalogue.size() and catalogue[i].id == t.id else []))
 	_refresh_system_list()
 	home_button.disabled = guided_read_only
 	_status.text = status_text()
@@ -1017,26 +1067,39 @@ func refresh() -> void:
 		progress_bar.value = pv[0]
 	var c = field_value(sim.world, "clock")
 	if c != null:
-		_clock.text = "Now: Earth +%.4f yr  ·  ship +%.4f yr  ·  tick %d" % [c["year"], c["tau"], sim.world["tick"]]
-		if live_pacing:_clock.text += "\nVariable time compression · %s ship-yr/real-s" % sci(pacing.rate)
+		var parts: Array = ["Now: Earth +", ["clock.year", "%.4f"], " yr  ·  ship +", ["clock.tau", "%.4f"], " yr  ·  tick ", ["tick", "%d"]]
+		if live_pacing: parts += ["\nVariable time compression · ", ["client.map.rate", "sci"], " ship-yr/real-s"]
+		_sentence(_clock, parts)
 	var rows := panel_rows()
 	while _grid.get_child_count() < rows.size() * 2:
-		var l := Label.new()
+		var l := Label.new() if _grid.get_child_count() % 2 == 0 else DisplayBinding.new()
 		l.add_theme_font_size_override("font_size", 15)
 		_grid.add_child(l)
 	for i in _grid.get_child_count():
 		var l: Label = _grid.get_child(i)
 		var r: Dictionary = rows[i / 2] if i / 2 < rows.size() else {}
-		l.text = "" if r.is_empty() else (r["label"] if i % 2 == 0 else r["text"])
 		if i % 2 == 0:
+			l.text = "" if r.is_empty() else r.label
 			l.add_theme_color_override("font_color", Color(0.85, 0.75, 0.4) if i < 4 else Color(0.65, 0.7, 0.8))
-	_speed.text = speed_text()
+		else:
+			var binding := l as DisplayBinding
+			binding.bind("client.map.empty" if r.is_empty() else r.field, "text" if r.is_empty() else r.fmt)
+			binding.record_context = true
+			binding.update_from(_last_view)
+	if field_value(sim.world, "journey.plan") != null:
+		_sentence(_speed, ["Cruise ", ["journey.plan.cruise_beta", "%.6f"], "c  ·  gamma ", ["journey.plan.cruise_gamma", "%.4f"]])
+	else: _sentence(_speed, ["Cruise speed: select a star to see the sim's value"])
 	if dialog.visible:
-		dialog_title.text = "Commit to %s?" % target_name()
+		_sentence(dialog_title, ["Commit to "] + name_parts + ["?"])
 		var drows := dialog_rows()
 		for i in dialog_grid.get_child_count():
 			var l: Label = dialog_grid.get_child(i)
-			l.text = drows[i / 2]["label"] if i % 2 == 0 else drows[i / 2]["text"]
+			if i % 2 == 0: l.text = drows[i / 2].label
+			else:
+				var binding := l as DisplayBinding
+				binding.bind(drows[i / 2].field, drows[i / 2].fmt)
+				binding.record_context = true
+				binding.update_from(_last_view)
 	_overlay.queue_redraw()
 
 
