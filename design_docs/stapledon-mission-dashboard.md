@@ -3,7 +3,7 @@
 Updated 2026-10-14, iteration 30.
 
 - **Bar:** clauses 2 and 3 are MET, 1 and 4 UNMET, and clause 5 is ongoing. This iteration moved clause 4.
-- **Merged:** row 7i(a), the helm numerals. PR #235, merge `66d2a61`; PR CI 38579592710 `success` on `64effbb`; merge CI 38592308522 in flight at record.
+- **Landed:** row 7i(a), the helm numerals. PR #235, merge `66d2a61`; PR CI 38579592710 `success` on `64effbb`; merge CI 38592308522 `success`.
   - 27 of the 31 unbound numeric labels are now bindings, with text identical to before (198 of 198 distinct scene texts): the GalaxyMap panel and commit dialog, the clock, speed, title, subtitle, coverage and hold-warning lines, and the Archive screen's entry count.
   - `known_findings.json` went from 32 entries to 5: four caption cells whose digit is notation (D-78) and the folded transit card (D-77). **AC4 is OPEN only on those two decisions.**
   - Independent evaluation: Sonnet 88 PASS, 0 blocking, 14 mutation drills.
