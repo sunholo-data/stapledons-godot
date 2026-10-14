@@ -122,5 +122,32 @@ func _initialize() -> void:
 	page.show_crew(sim.crew)
 	check("working crew show day one of their work", texts(page.get_node("Member_engineer")).any(func(t): return t.begins_with("Working on Seal the drive for the first leg: day one of three.")))
 	sim.stop()
+
+	# crew_core 0.4.1: a concern the captain can answer sits on the member's card, with one confirmed
+	# button per approach; the reply is crew_reply (captain_reply) and the real sim accepts it.
+	var cs := SimBridge.new()
+	cs.want_minor = SimBridge.CREW_MINOR
+	ok = cs.start() and cs.new_game(1, "free_nav", false, {}, "", "consent")
+	var cp := CrewPage.new()
+	root.add_child(cp)
+	cp.show_crew(cs.crew)
+	var offers: Array = []
+	for id in ["medic", "engineer", "analyst", "pilot", "counselor"]:
+		offers.append_array(cp.offer_intents(id))
+	ok = ok and cs.send(offers, 0.0)
+	cp.show_crew(cs.crew)
+	var concern: Dictionary = {}
+	for q in cs.crew.get("concerns", []):
+		if q["actor"] == "pilot": concern = q
+	check("the pilot's concern is open, with reply options", ok and not concern.is_empty() and concern["options"].size() >= 3)
+	var pilot_texts := texts(cp.get_node("Member_pilot"))
+	check("the card names the concern and offers each approach", pilot_texts.any(func(t): return t.begins_with("Anh Rahman raised a concern:") or t.contains(" raised a concern: ")) and cp.find_children("Reply_%s_*" % concern.get("issue", "x"), "Button", true, false).size() == concern.get("options", []).size())
+	var action := "reply:%s:%s" % [concern.get("issue", ""), str(concern.get("options", [{}])[0].get("approach", ""))]
+	check("a reply needs a second press", cp.press(action).is_empty())
+	var reply := cp.press(action)
+	check("the confirmed reply is one crew_reply (captain_reply) at the crew's tick and revision", reply.size() == 1 and reply[0]["k"] == "crew_reply" and line_of(reply[0])["command"] == "captain_reply" and line_of(reply[0])["issue"] == concern.get("issue") and int(line_of(reply[0])["revision"]) == int(cs.crew["revision"]))
+	ok = cs.send(reply, 0.0)
+	check("the sim accepts the reply", ok and cs.last_refused.is_empty())
+	cs.stop()
 	print("crew-console: %d failures" % failures)
 	quit(1 if failures else 0)

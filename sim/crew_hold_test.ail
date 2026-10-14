@@ -3,6 +3,7 @@ module stapledons/sim/crew_hold_test
 -- R2-CREW C8 tests (design crew-integration.md §CI-5, AC14; D-76): auto-run under standing orders
 -- with critical moments as crew holds.
 import ./crew_auto (rulesFor, ordersFor, nextDecision, autoStep, presets, cadenceLongSkip)
+import pkg/sunholo/crew_core/auto (advanceAuto)
 import ./crew (CrewState, initCrew, plainDays, daysPerYear, initCrewWith, crewCommand, perDays)
 import ./crew_script (Script, Step, SCmd, SDays, scripts)
 import ./core (World, Intent, ICrew, Event, newWorld, defaultParams, tick, withCrew)
@@ -21,8 +22,9 @@ pure func checkPresets() -> bool =
   (match rulesFor("critical_only") { Ok(rs) => map(\r. r.kind, rs) == ["refusal_under_orders", "breakdown", "trust_floor", "major", "argument"], Err(_) => false }) &&
   (match rulesFor("hands_on") { Ok(rs) => length(filter(\r. r.kind == "breakdown" && r.threshold == 70, rs)) == 1 && length(filter(\r. r.kind == "trust_floor" && r.threshold == 40, rs)) == 1 && length(filter(\r. r.kind == "uncovered", rs)) == 1 && length(filter(\r. r.kind == "cohort" && r.threshold == 25, rs)) == 1, Err(_) => false }) &&
   (match rulesFor("mutiny") { Ok(_) => false, Err(_) => true }) && presets() == ["off", "critical_only", "hands_on"] &&
-  (ordersFor("consent", true)).start == "agreed" && (ordersFor("consent", true)).cadence == 1 &&
-  (ordersFor("orders", false)).start == "always" && (ordersFor("orders", false)).cadence == cadenceLongSkip()
+  (ordersFor("consent", true, "critical_only")).start == "agreed" && (ordersFor("consent", true, "critical_only")).cadence == 1 &&
+  (ordersFor("orders", false, "hands_on")).start == "always" && (ordersFor("orders", false, "hands_on")).cadence == cadenceLongSkip() &&
+  (ordersFor("consent", true, "critical_only")).concerns == "ask_advice" && (ordersFor("consent", true, "hands_on")).concerns == "escalate"
 
 -- A monthly step that reaches no decision day is exactly plain days (nobody is asked).
 pure func checkMonthlyWait() -> bool = match initCrew("orders") {
@@ -117,3 +119,23 @@ pure func checkBatchExact() -> bool = !any(\s. match (replay(s, true), replay(s,
   _ => true
 }, scripts())
 test "plain days batched between flow points equal one advance a day: live state and archive (AC11)" { checkBatchExact() }
+
+-- crew_core 0.4.1 gate (the crew-lab agreement, 2026-10-14): the game's crew runs watch-v3
+-- (chat.version 1), and a year of critical-only auto-run under the game's own orders logs no error
+-- act, at daily and monthly check-ins, under both captains (a stuck crew would log one a day).
+pure func yearErrors(cap: string, nearStar: bool) -> int = match initCrewWith(cap, false) {
+  Err(_) => 0 - 1,
+  Ok((c, _)) => match rulesFor("critical_only") {
+    Err(_) => 0 - 1,
+    Ok(rules) => match advanceAuto(c.session, { seed: 7, agreed: [], raised: [], calls: 0 }, c.policy, ordersFor(cap, nearStar, "critical_only"), rules, 365) {
+      Err(_) => 0 - 1,
+      Ok(r) => length(filter(\a. a.kind == "error", r.log))
+    }
+  }
+}
+pure func watchV3() -> bool = match initCrewWith("consent", false) { Ok((c, _)) => c.session.chat.version == 1, Err(_) => false }
+test "watch-v3: the game's crew runs conversation version 1" { watchV3() }
+test "a year of critical-only auto-run: no error acts (daily, consent)" { yearErrors("consent", true) == 0 }
+test "a year of critical-only auto-run: no error acts (monthly, consent)" { yearErrors("consent", false) == 0 }
+test "a year of critical-only auto-run: no error acts (daily, orders)" { yearErrors("orders", true) == 0 }
+test "a year of critical-only auto-run: no error acts (monthly, orders)" { yearErrors("orders", false) == 0 }
