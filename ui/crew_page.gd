@@ -9,7 +9,10 @@ extends VBoxContainer
 ##   low, current work, and the latest line (the template, then the AI words once accepted)
 ##   actions:    offer work (offer + ask, one press); start offered work, grant / deny relief and
 ##   switch consent / orders need a second press to confirm (no twitch, NT1)
-## Portraits are stub portraits until the D-7 sets exist (the cast marks them pending).
+## Portraits (trial, 2026-10-14): the website's concept portraits (data/crew/portraits, SOURCES),
+##   one face per role until the D-7 per-person sets exist. A row shows each member's face; the call
+##   panel at the top shows whoever spoke last, larger, with their words, like a video call in
+##   stills. The face follows the speaker's latest reply (emotion_of), falling back to neutral.
 
 signal intents(list: Array)
 
@@ -19,12 +22,19 @@ const LOW := Color(0.95, 0.6, 0.4)
 const DIM := Color(0.62, 0.68, 0.8)
 const STRAINED := 70.0 ## the pack's overextended threshold (scenario.json overextended.threshold)
 const TEXT := Color(0.86, 0.9, 0.98)
+const PORTRAIT_DIR := "res://data/crew/portraits"
+## A reply's emotion, and the faces to try for it in order (D-7's eight emotions; the trial set
+## has neutral for every role and loving and grieving for the medic).
+const STRAINED_LABELS := ["request_relief", "decline", "concern"]
+const WARM_LABELS := ["accept"]
+const FALLBACK := {"sad": ["sad", "grieving", "neutral"], "happy": ["happy", "loving", "neutral"], "neutral": ["neutral"]}
 
 var crew: Dictionary = {}
 var roles: Dictionary = {}          ## entity_id -> role name from the cast ("The Medic")
 var ai_text: Dictionary = {}        ## ai_req -> accepted AI words (set_ai_text)
 var armed := ""                     ## the action awaiting its confirming press
 var _serial := 0
+var _faces: Dictionary = {}         ## portrait path -> Texture2D (or null when absent)
 
 func _init() -> void:
 	name = "CrewPage"
@@ -80,6 +90,9 @@ func _build() -> void:
 		return
 	for h in crew.get("holds", []):
 		add_child(_hold_card(h))
+	var call := _call_panel()
+	if call != null:
+		add_child(call)
 	var head := HBoxContainer.new()
 	head.add_child(_label("Captaincy: %s" % str(crew.get("captaincy", "consent")), 14))
 	var other := "orders" if str(crew.get("captaincy", "consent")) == "consent" else "consent"
@@ -146,6 +159,7 @@ func _member_row(m: Dictionary) -> Control:
 	var id := str(m["id"])
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
+	row.add_child(_face("Portrait_" + id, id, emotion_of(id), 40))
 	var who := _label("%s · %s" % [display_name(id), roles.get(id, id)], 14)
 	who.custom_minimum_size = Vector2(170, 0)
 	row.add_child(who)
@@ -185,6 +199,82 @@ func latest_line(id: String) -> String:
 		if l.get("actor") == id:
 			out = ai_text.get(str(l.get("ai_req", "")), str(l.get("text", "")))
 	return out
+
+
+## The call panel: the crew member the captain is facing, larger, with their latest words. During
+## a hold it is the person who needs the captain (strained); otherwise the latest line's speaker.
+## None before anyone speaks.
+func _call_panel() -> Control:
+	var lines: Array = crew.get("lines", [])
+	var holds: Array = crew.get("holds", [])
+	var id := ""
+	if not holds.is_empty() and str(holds[0].get("actor", "")) != "":
+		id = str(holds[0]["actor"])
+	elif not lines.is_empty():
+		id = str(lines[lines.size() - 1].get("actor", ""))
+	if id == "":
+		return null
+	var emotion := "sad" if not holds.is_empty() and str(holds[0].get("actor", "")) == id else emotion_of(id)
+	var row := HBoxContainer.new()
+	row.name = "Call"
+	row.add_theme_constant_override("separation", 12)
+	row.add_child(_face("CallPortrait", id, emotion, 112))
+	var words := VBoxContainer.new()
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	words.add_child(_label("%s · %s" % [display_name(id), roles.get(id, id)], 15))
+	var line := latest_line(id)
+	var said := _label("“%s”" % line if line != "" else "…", 14)
+	said.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	said.custom_minimum_size = Vector2(220, 0)
+	words.add_child(said)
+	row.add_child(words)
+	return row
+
+
+## The emotion a member's face shows: strained after asking for relief, declining or raising a
+## concern, or when stress is at the strained line; warm after accepting; else neutral.
+func emotion_of(id: String) -> String:
+	var label := ""
+	for l in crew.get("lines", []):
+		if l.get("actor") == id:
+			label = str(l.get("label", ""))
+	var stress := 0.0
+	for m in crew.get("members", []):
+		if m.get("id") == id:
+			stress = float(m.get("indicators", {}).get("stress", 0))
+	if STRAINED_LABELS.has(label) or stress >= STRAINED:
+		return "sad"
+	if WARM_LABELS.has(label):
+		return "happy"
+	return "neutral"
+
+
+## The portrait file for a role and emotion: the first in the emotion's fallback list that loads
+## ("" when the role has no face yet).
+func portrait_path(id: String, emotion: String) -> String:
+	for e in FALLBACK.get(emotion, ["neutral"]):
+		var path := PORTRAIT_DIR.path_join("%s_%s.png" % [id, e])
+		if not _faces.has(path):
+			_faces[path] = CaptainAvatar.make_texture(path) # imported when the editor has seen it, else the raw PNG
+		if _faces[path] != null:
+			return path
+	return ""
+
+
+func portrait(id: String, emotion: String) -> Texture2D:
+	var path := portrait_path(id, emotion)
+	return _faces[path] if path != "" else null
+
+
+func _face(node_name: String, id: String, emotion: String, px: int) -> Control:
+	var t := TextureRect.new()
+	t.name = node_name
+	t.texture = portrait(id, emotion)
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.custom_minimum_size = Vector2(px, px)
+	t.tooltip_text = emotion
+	return t
 
 
 ## One press for an offer; a second press confirms start, relief and the captaincy switch.

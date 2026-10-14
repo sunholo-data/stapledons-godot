@@ -1,0 +1,11 @@
+# Trial crew portraits (2026-10-14, Mark: "trial with the images we have"): 256 px downscales (sips -Z 256)
+# of the concept portraits on the website (gs://stapledons-voyage-assets/refs/characters_v1/, 1254 px).
+# Provisional: the counselor wears the diplomat concept face; only the medic has emotion variants.
+# Replaced by the D-7 portrait sets (generated variants per person) when they exist.
+medic_neutral.png <- refs/characters_v1/portrait_medic_age0_neutral_v2.png sha256 93a02944772201d3e854a283342fd189409995e85a91796d5197a9e5f0be0017
+medic_loving.png <- refs/characters_v1/portrait_medic_age0_loving_v2.png sha256 3c23ffe2b657f9045a998ab7416af0bee667a91dbb806f54d09f167172075b29
+medic_grieving.png <- refs/characters_v1/portrait_medic_age0_grieving_v2.png sha256 2a68ffbec262bae0e48607ab097a9f7747a1e2ae085bf91274d4fce15eebb0ca
+engineer_neutral.png <- refs/characters_v1/portrait_engineer_age0_neutral_v1.png sha256 c62e29720cf4c1bb0e2aabe16e287c12a90e375b7b5b82f6d740675714129186
+analyst_neutral.png <- refs/characters_v1/portrait_analyst_age0_neutral_v1.png sha256 e755fc7f3e52f559bb3e7eba91c985a1ea99d0a682e638b6a6ac48d16252453a
+pilot_neutral.png <- refs/characters_v1/portrait_pilot_age0_neutral_v1.png sha256 f3db1dfa92f5466761549283fc6dfe2fc7d93977bf8a61bda599035e1962cc22
+counselor_neutral.png <- refs/characters_v1/portrait_diplomat_age0_neutral_v1.png sha256 2674d7162bd3ec0265e2f8a4c2378ca9a75d02f9a8cc1bb4b22e41f8356b8a9e

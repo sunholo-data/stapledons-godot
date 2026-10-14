@@ -37,6 +37,14 @@ func _initialize() -> void:
 	check("captaincy shown, the switch offers consent", all.has("Captaincy: orders") and all.has("Switch to consent"))
 	var medic := page.get_node("Member_medic")
 	check("stress, fatigue and trust bars for the medic", medic.find_child("Bar_stress", true, false) != null and medic.find_child("Bar_fatigue", true, false) != null and medic.find_child("Bar_trust", true, false) != null)
+	# Portraits (trial): every member has a face; the medic asked for relief, so the medic's face
+	# is the strained one (sad -> grieving); the call panel shows the last speaker, the analyst.
+	var faces := ["medic", "engineer", "analyst", "pilot", "counselor"].filter(func(id): var t = page.find_child("Portrait_" + id, true, false); return t is TextureRect and t.texture != null)
+	check("every crew row has a portrait", faces.size() == 5)
+	check("the medic asked for relief: the strained face (grieving)", page.emotion_of("medic") == "sad" and page.portrait_path("medic", "sad").ends_with("medic_grieving.png") and page.find_child("Portrait_medic", true, false).texture == page.portrait("medic", "sad"))
+	check("a role without the emotion falls back to its neutral face", page.portrait_path("analyst", "sad").ends_with("analyst_neutral.png"))
+	var call := page.get_node_or_null("Call")
+	check("the call panel shows the last speaker, larger, with their words", call != null and texts(call).has("Santiago Navarro · The Analyst") and call.find_child("CallPortrait", true, false).texture != null)
 	var trust: ProgressBar = medic.find_child("Bar_trust", true, false).get_child(1)
 	check("trust bar reads the sim's trust (50)", trust.value == 50.0 and not trust.show_percentage)
 	check("the medic's latest line is the relief template until the AI words arrive", page.latest_line("medic") == "I need to step back from this for a while.")
