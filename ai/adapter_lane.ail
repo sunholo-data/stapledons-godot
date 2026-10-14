@@ -93,7 +93,7 @@ export func lane(cfg: Lane) -> () ! {IO, FS, AI} {
       mkdirAll(concat([cfg.out, "/prompts"]));
       let lines = split(text(cfg.requests), "\n");
       let d = cfg.fixtures;
-      let results = prompts(c, lines, cfg.out, [{ purpose: "line", req: "1" }, { purpose: "news", req: "2" }, { purpose: "archive", req: "3" }, { purpose: "probe", req: "20" }]) ++
+      let results = prompts(c, lines, cfg.out, [{ purpose: "line", req: "1" }, { purpose: "news", req: "2" }, { purpose: "archive", req: "3" }, { purpose: "probe", req: "20" }, { purpose: "crew_reply", req: "30" }]) ++
         [geminiTextCheck(c, lines), imageCheck(c, lines),
          fixture(d, "openrouter_ok.json", orOutcome, "ok"), fixture(d, "openrouter_wait.json", orOutcome, "bad_output"),
          fixture(d, "openrouter_length.json", orOutcome, "bad_output"), fixture(d, "openrouter_error.json", orOutcome, "provider_error"),

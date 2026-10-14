@@ -1,0 +1,11 @@
+{"command":"start","policy":"consent","scenario":"watch-v3","keep":30}
+{"command":"offer","worker":"pilot","recipe":"work_pilot","id":"t1"}
+{"command":"ask","actor":"pilot","task":"t1","id":"r1"}
+{"command":"answer","request":"r1","body":"{\"model\":\"synthetic:library-v1\",\"id\":\"library-r1\",\"answers\":{\"response\":{\"type\":\"choice\",\"choice\":\"accept\",\"confidence\":1,\"probabilities\":{\"accept\":1,\"decline\":0,\"concern\":0,\"defer\":0}}},\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cost\":0}}","roll":0.4779436329742631}
+{"command":"advance","tick":1,"budget":64}
+{"command":"policy","policy":"orders"}
+{"command":"ship_event","event":{"id":"arrive-1","text":"The ship arrives and the antenna windows open.","transfers":[{"resource":"signal","delta":1}]}}
+{"command":"advance","tick":2,"budget":64}
+{"command":"ship_event","event":{"id":"news-3","text":"A burst from Earth: someone the crew left behind has died.","transfers":[{"resource":"signal","delta":1}],"major":"loss"}}
+{"command":"advance","tick":3,"budget":64}
+{"command":"advance","tick":4,"budget":64}

@@ -1,0 +1,21 @@
+module stapledons/sim/data/crew_ship
+
+-- R2-CREW C3 (design crew-integration.md §CI-2): the ship's spare capacity that crew work may draw
+-- on, in each bubble resource's physical unit (stapledons-design features/next/bubble-resources.md
+-- §6, D-69). `mass` is not here: it comes from the ship's ledger (World.ledger.availableKg).
+-- Until the resource-ledger milestone models these, they are fixed numbers with their provenance,
+-- as sim/data/acen.ail does:
+--   inferred : derived from a design-repo figure through a named relation;
+--   assumed  : no figure exists yet; the value is a stated assumption for Mark to revise.
+-- A crew scenario's opening units must fit within these (sim/crew_resources.ail lintAgainstShip).
+export type ShipAmount = { id: string, value: int, status: string, note: string }
+
+export pure func shipAmounts() -> [ShipAmount] = [
+  { id: "water", value: 400000, status: "assumed", note: "4 t of reserve water per person for 100 people" },
+  { id: "power", value: 200, status: "inferred", note: "kW: an assumed 1.0 MW plant minus the household's 0.80 MW (bubble-resources RES-9)" },
+  { id: "heat", value: 200, status: "assumed", note: "kW of radiator headroom above the household load (well below the 57.7 MW ceiling, RES-3)" },
+  { id: "garden", value: 400, status: "inferred", note: "m2: 10% spare of the 4,000 m2 household beds (40 m2 per person, bubble-resources Household)" },
+  { id: "fabrication", value: 6, status: "assumed", note: "bay-shifts: two bays, three shifts" },
+  { id: "compute", value: 4, status: "assumed", note: "Archive slots free for crew work" },
+  { id: "signal", value: 3, status: "assumed", note: "antenna windows per departure geometry" }
+]

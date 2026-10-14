@@ -1,0 +1,77 @@
+module stapledons/sim/crew_ai_test
+
+-- R2-CREW C5 tests (design crew-integration.md §CI-3, AC9; ledger D-74): every answered ask opens one
+-- crew_reply ai_request (kind text) for that crew member, with the decided reaction, the work in
+-- words and the generated name; the crew line carries the authored template and the request id; a
+-- recorded reply naming the engine's internals is ai_internal (the template stands); names are
+-- seeded, unique and from the international list.
+import ./core (World, Intent, ICrew, IRecord, Event, newWorld, defaultParams, tick, withCrew)
+import ./crew (CrewState, CrewName, crewTurn)
+import ./crew_names (nameCrew, nameOf)
+import ./ai (ERequest, EFallback, EAcceptedText, AiRequest, CStr, crewNarrative)
+import ./rng (zeroRng, counter, SCrew)
+import ./protocol_crew (templateLine, crewView)
+import stapledons/sim/data/crew_names (nameRegions)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (contains, split)
+import std/list (map, filter, length, any, flatMap)
+import std/crypto (sha256Hex)
+
+pure func crewWorld() -> World = match withCrew(newWorld(2, false, defaultParams()), "consent") { Ok(w) => w, Err(_) => newWorld(2, false, defaultParams()) }
+pure func crewIntent(kind: string, line: string, ask: Option[string]) -> Intent = ICrew({ kind: kind, line: line, askId: ask })
+pure func offerAsk() -> [Intent] = [
+  crewIntent("crew_offer", "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}", None),
+  crewIntent("crew_ask", "{\"command\":\"ask\",\"actor\":\"medic\",\"task\":\"t1\",\"id\":\"r1\"}", Some("r1"))
+]
+pure func requests(es: [Event]) -> [AiRequest] = flatMap(\e. match e.ai { Some(x) => (match x { ERequest(r) => [r], _ => [] }), None => [] }, es)
+pure func fallbackReasons(es: [Event]) -> [string] = flatMap(\e. match e.ai { Some(x) => (match x { EFallback(f) => [f.reason], _ => [] }), None => [] }, es)
+pure func accepted(es: [Event]) -> int = length(flatMap(\e. match e.ai { Some(x) => (match x { EAcceptedText(_) => [1], _ => [] }), None => [] }, es))
+pure func crewOf(w: World) -> Option[CrewState] = w.crew
+
+pure func checkRequest() -> bool {
+  let w = crewWorld();
+  let t = tick(w, { dtau: 0.0, intents: offerAsk() });
+  let rs = requests(t.events);
+  match (rs, crewOf(t.world)) {
+    ([r], Some(c)) => r.purpose == "crew_reply" && r.kind == "text" && r.key.entityId == "medic" && length(t.refused) == 0 &&
+      (match c.lines { [l] => l.request == "r1" && l.actor == "medic" && l.aiReq == r.req && templateLine(l.label) != "", _ => false }) &&
+      contains(crewView(c), "\"lines\":[{\"request\":\"r1\",\"actor\":\"medic\"") && contains(crewView(c), "\"ai_req\":\"")
+      && !contains(crewView(c), "\"work\":\"work_")
+    , _ => false
+  }
+}
+
+pure func record(req: string, body: string) -> Intent = IRecord({ source: "ai", req: req, kind: "text", sha256: sha256Hex(body), body: body })
+pure func checkInternal() -> bool {
+  let t = tick(crewWorld(), { dtau: 0.0, intents: offerAsk() });
+  match requests(t.events) {
+    [r] => {
+      let bad = tick(t.world, { dtau: 0.0, intents: [record(r.req, "{neutral}I will do work_medic gladly.")] });
+      let good = tick(t.world, { dtau: 0.0, intents: [record(r.req, "{loving}I'll take it on, Captain. Someone has to look after them.")] });
+      fallbackReasons(bad.events) == ["ai_internal"] && accepted(good.events) == 1
+    },
+    _ => false
+  }
+}
+
+pure func allGiven() -> [string] = flatMap(\r. r.given, nameRegions())
+pure func allFamily() -> [string] = flatMap(\r. r.family, nameRegions())
+pure func fromList(n: string) -> bool = any(\g. any(\f. n == concat2(g, f), allFamily()), filter(\g. contains(n, g), allGiven()))
+pure func concat2(a: string, b: string) -> string = "${a} ${b}"
+pure func checkNames() -> bool {
+  let ids = ["medic", "engineer", "analyst", "pilot", "counselor"];
+  let a = nameCrew(7, zeroRng(), ids);
+  let b = nameCrew(7, zeroRng(), ids);
+  let c = nameCrew(8, zeroRng(), ids);
+  let ns = map(\n. n.name, a.names);
+  a.names == b.names && map(\n. n.id, a.names) == ids && ns != map(\n. n.name, c.names) &&
+  length(filter(\n. length(filter(\m. m == n, ns)) == 1, ns)) == 5 && !any(\n. !fromList(n), ns) &&
+  counter(a.rng, SCrew) >= 15 && length(nameRegions()) >= 12 &&
+  (match crewOf(crewWorld()) { Some(cw) => (match nameOf(cw.names, "pilot") { Some(_) => true, None => false }), None => false })
+}
+
+test "an answered ask opens one crew_reply request; the line carries the template and the request (AC9)" { checkRequest() }
+test "a reply naming the engine's internals is ai_internal; a clean one is accepted (AC9)" { checkInternal() }
+test "names: seeded, unique, from the international list, drawn at new game (D-74)" { checkNames() }
+test "the internal-word filter" { !crewNarrative("I'll start work_medic now") && !crewNarrative("My Neuroticism is high") && crewNarrative("I'll look after them.") }

@@ -31,6 +31,13 @@ const STOPS_MINOR := 7
 ## Protocol 2.8 (R1-ISM-DUST): new games fly the measured interstellar medium (lism-1): ship.ism
 ## names the medium and carries the dust impacts; journey.plan the media crossed and the hold limit.
 const ISM_MINOR := 8
+## Protocol 2.9 (R2-CREW): the crew. new_game(..., crew = "consent" | "orders") brings the synced
+## crew aboard; crew_intent(kind, line) builds the six crew intents (crew_offer, crew_ask,
+## crew_start, crew_relief, crew_cancel, crew_reply, crew_policy), each carrying one crew_core command; a
+## refusal reason starts "crew:". The `crew` section (parse_crew(), kept in `crew`) arrives in the
+## full state and whenever it changes. Asked for by setting `want_minor = CREW_MINOR`.
+const CREW_MINOR := 9
+const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
 
 var _pipe: FileAccess
 var _stderr: FileAccess
@@ -54,6 +61,8 @@ signal stepped(events: Array)
 ## The relay's intents in the last send and where they start in it (a refusal names its intent
 ## by index: R1-ARCHIVE-VOICE tells its own refused ai_open apart).
 var relay_intents: Array = []
+## R2-CREW C6: intents queued by a console (the Crew page), sent with the next tick and then cleared.
+var queued: Array = []
 var relay_from := 0
 var last_events: Array = []
 var last_error := ""
@@ -83,6 +92,8 @@ var system: Dictionary = {}
 var plan_nav: Dictionary = {}
 ## The last `gr` section, as parsed by parse_gr(); {} outside a black-hole scenario.
 var gr: Dictionary = {}
+## 2.9: the crew section (empty when no crew are aboard). See sim/protocol_crew.ail crewView.
+var crew: Dictionary = {}
 var _line_bytes := PackedByteArray()
 ## R1-SHIP-UI record seam (record only; nothing sent changes): with record_sent on, every
 ## send() appends {tick, source, intents} to sent_log. `source` says who originated the
@@ -213,7 +224,7 @@ func hello(deadline: int = Time.get_ticks_msec() + 5000) -> bool:
 
 ## Start a world. Returns false (child kept, `last_error` = the sim's reason)
 ## if the sim refuses the request.
-func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: Dictionary = {}, ai_core: String = "") -> bool:
+func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: Dictionary = {}, ai_core: String = "", crew_captaincy: String = "") -> bool:
 	if _pid < 0 or hello_reply.is_empty():
 		last_error = "no_hello"
 		return false
@@ -222,6 +233,8 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 		msg["params"] = params
 	if ai_core != "":
 		msg["ai_core"] = ai_core
+	if crew_captaincy != "":
+		msg["crew"] = crew_captaincy
 	if not archive_rows.is_empty():
 		msg["archive"] = archive_rows
 	_write(encode(msg))
@@ -237,7 +250,8 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 	system = {}
 	plan_nav = {}
 	gr = {}
-	if not _take_system(state["changes"]) or not _take_gr(state["changes"]):
+	crew = {}
+	if not _take_system(state["changes"]) or not _take_gr(state["changes"]) or not _take_crew(state["changes"]):
 		return _fail("bad_response")
 	world = state["changes"].duplicate(true)
 	world["tick"] = 0
@@ -260,6 +274,9 @@ func send(intents: Array, dtau: float) -> bool:
 		return false
 	var tick := int(world["tick"]) + 1
 	relay_intents = []
+	if not queued.is_empty():
+		intents = intents + queued
+		queued = []
 	relay_from = intents.size()
 	if ai_relay != null:
 		relay_intents = ai_relay.take_intents()
@@ -279,7 +296,7 @@ func send(intents: Array, dtau: float) -> bool:
 	if state.get("tick") != tick:
 		return _fail("bad_response")
 	var changes: Dictionary = state["changes"]
-	if not _take_system(changes) or not _take_plan_nav(changes) or not _take_gr(changes):
+	if not _take_system(changes) or not _take_plan_nav(changes) or not _take_gr(changes) or not _take_crew(changes):
 		return _fail("bad_response")
 	for section in changes:
 		world[section] = changes[section].duplicate(true) if changes[section] is Dictionary else changes[section]
@@ -570,6 +587,40 @@ func _take_gr(changes: Dictionary) -> bool:
 	if parsed.is_empty():
 		return false
 	gr = parsed
+	return true
+
+## R2-CREW C6: queue intents for the next tick (after the caller's own, before the relay's).
+func queue(list: Array) -> void:
+	queued.append_array(list)
+
+
+## A crew intent: `kind` one of CREW_INTENTS, `command` the crew_core command as a dictionary.
+static func crew_intent(kind: String, command: Dictionary) -> Dictionary:
+	return {"k": kind, "line": JSON.stringify(command)}
+
+## The 2.9 crew section, checked: turn, captaincy, and members/requests/reliefs/heard/resources
+## arrays; each member has an id, an indicators dictionary and a trust number or null. {} if wrong.
+static func parse_crew(v) -> Dictionary:
+	if typeof(v) != TYPE_DICTIONARY or not _is_count(v.get("turn")) or typeof(v.get("captaincy")) != TYPE_STRING:
+		return {}
+	for k in ["members", "requests", "reliefs", "heard", "resources"]:
+		if typeof(v.get(k)) != TYPE_ARRAY:
+			return {}
+	if v.has("holds") and typeof(v["holds"]) != TYPE_ARRAY: # C8: escalations awaiting the captain
+		return {}
+	for m in v["members"]:
+		if typeof(m) != TYPE_DICTIONARY or typeof(m.get("id")) != TYPE_STRING or typeof(m.get("indicators")) != TYPE_DICTIONARY \
+				or not (m.get("trust") == null or typeof(m.get("trust")) == TYPE_FLOAT or typeof(m.get("trust")) == TYPE_INT):
+			return {}
+	return v.duplicate(true)
+
+func _take_crew(changes: Dictionary) -> bool:
+	if not changes.has("crew"):
+		return true
+	var parsed := parse_crew(changes["crew"])
+	if parsed.is_empty():
+		return false
+	crew = parsed
 	return true
 
 func _fail(code: String) -> bool:

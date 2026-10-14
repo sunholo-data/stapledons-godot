@@ -251,7 +251,7 @@ func _work_xyz(i: int, chunks: Array) -> void:
 
 ## Worker: the simulation every title route starts (protocol 2.8), spawned and greeted.
 func _work_sim(holder: Dictionary) -> void:
-	holder["value"] = SimBridge.warm(SimBridge.ISM_MINOR) # the ship and map's local-medium session minor
+	holder["value"] = SimBridge.warm(SimBridge.CREW_MINOR) # the ship and map's session minor (R2-CREW C4: crew aboard, 2.9)
 
 
 ## Main thread: the CMB lookup (CmbGlow.lut) before the sky moves.

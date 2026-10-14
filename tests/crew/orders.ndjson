@@ -1,0 +1,12 @@
+{"command":"start","policy":"orders","scenario":"watch-v3","keep":30}
+{"command":"offer","worker":"engineer","recipe":"work_engineer","id":"t1"}
+{"command":"start_task","task":"t1"}
+{"command":"advance","tick":1,"budget":64}
+{"command":"advance","tick":2,"budget":64}
+{"command":"ask","actor":"engineer","task":"t1","id":"c1"}
+{"command":"answer","request":"c1","body":"{\"model\":\"synthetic:library-v1\",\"id\":\"library-c1\",\"answers\":{\"response\":{\"type\":\"choice\",\"choice\":\"continue\",\"confidence\":1,\"probabilities\":{\"continue\":1,\"request_relief\":0,\"defer\":0}}},\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cost\":0}}","roll":0.4779436329742631}
+{"command":"advance","tick":3,"budget":64}
+{"command":"advance","tick":4,"budget":64}
+{"command":"advance","tick":5,"budget":64}
+{"command":"advance","tick":6,"budget":64}
+{"command":"advance","tick":7,"budget":64}

@@ -41,6 +41,7 @@ pure func role(purpose: string) -> string =
   if purpose == "news" then "one short ship news item, read aloud to the crew"
   else if purpose == "archive" then "the Archive's answer: the ship's library speaking, precise and unhurried"
   else if purpose == "probe" then "one short line that tests the voice of the speaker"
+  else if purpose == "crew_reply" then "one short reply, spoken by a crew member to the captain"
   else "one line of dialogue, spoken by the speaker to the player"
 
 pure func markerList(es: [string]) -> string = join(", ", map1(\e. concat(["{", e, "}"]), es))
@@ -127,10 +128,24 @@ pure func snippets(ls: [Lore], ids: [string]) -> Result[[string], string] =
 pure func speaker(r: Request) -> string =
   match r.cast { Some(c) => (match getString(c, "name") { Some(n) => concat([n, " (", r.key.entityId, ")"]), None => r.key.entityId }), None => r.key.entityId }
 
+-- R2-CREW C5: a crew member's reply. The reaction was decided by the ship (crew_core's authored
+-- policy, D-20); the words only express it. The persona and manner come from the cast
+-- (data/ai/cast/<role>.json via AiRelay), as for the Archive. Internal ids and personality scores
+-- never reach the prompt, and the sim rejects a reply that names them (sim/ai.ail ai_internal).
+export pure func crewRules(r: Request) -> [string] =
+  rules(r) ++ nonEmpty([castStr(r, "persona"), (if castStr(r, "style") == "" then "" else concat(["Your manner: ", castStr(r, "style")]))]) ++
+  [concat(["Your answer is already decided: ", (if ctxOf(r.context, "reaction") == "" then "neutral" else ctxOf(r.context, "reaction")), ". Express exactly that, in your own words; do not change it, hedge it into another answer, or explain how it was decided."]),
+   "Speak only as yourself, about the work and how you feel about it. Never mention scores, traits, labels or the names of tasks in code form."]
+
+-- D-74: a crew member speaks under their generated name (context `name`), with the role after it.
+pure func crewSpeaker(r: Request) -> string = if ctxOf(r.context, "name") == "" then speaker(r) else concat([ctxOf(r.context, "name"), ", ", speaker(r)])
+pure func withoutName(cs: [CtxField]) -> [CtxField] = match cs { [] => [], c :: r => (if c.name == "name" then [] else [c]) ++ withoutName(r) }
+
 export pure func buildPrompt(r: Request, lore: [Lore]) -> Result[Prompt, string] =
   match snippets(lore, canonIds(r.context)) {
     Err(e) => Err(e),
     Ok(sn) => if r.purpose == "archive" then Ok({ system: join("\n", archiveRules(r)), user: archiveUser(r, map1(figureless, sn)) })
+      else if r.purpose == "crew_reply" then Ok({ system: join("\n", crewRules(r)), user: join("\n", [concat(["Speaker: ", crewSpeaker(r)])] ++ ctxLines(withoutName(r.context))) })
       else Ok({ system: join("\n", rules(r)),
       user: join("\n", [concat(["Speaker: ", speaker(r)])] ++ ctxLines(r.context) ++ (if sn == [] then [] else ["Canon:"] ++ sn)) })
   }

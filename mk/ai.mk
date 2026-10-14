@@ -117,7 +117,7 @@ ai-stub-record:    ## regenerate the ai-stub goldens and cache sums (a reviewed 
 # spend even if a refusal were missing) and the keys cleared from the env: no GOOGLE_API_KEY, no
 # OPENROUTER_API_KEY, neither, and a fixture key without AI_LIVE=1.
 AI_A := $(SCRATCH)/ai-adapter
-AI_PURPOSES := line news archive probe
+AI_PURPOSES := line news archive probe crew_reply
 AI_NOKEYS = env -u GOOGLE_API_KEY -u OPENROUTER_API_KEY -u AI_LIVE GOOGLE_APPLICATION_CREDENTIALS=/nonexistent
 define ai_adapter_run
 	@rm -rf $(AI_A) && mkdir -p $(AI_A)

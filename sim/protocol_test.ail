@@ -8,7 +8,7 @@ module stapledons/sim/protocol_test
 -- and the 2.1 AI codecs (AI.2: ai_open, ai_cancel, the AI events, the `ai`
 -- change-set section) with no wire change for a 2.0 session.
 -- `protocolVm` runs the checks on the strict VM (`make strict`, AC10).
-import ./core (initShip, step, turn, position, Intent, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, PlanReq, Params, Refusal, Event, Crossing, Residuals, Drawn, event, defaultParams,
+import ./core (initShip, step, turn, position, Intent, ICrew, IPlan, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, PlanReq, Params, Refusal, Event, Crossing, Residuals, Drawn, event, defaultParams,
   Target, PlanView, JourneyView, Energy, Ism, World, newWorld, tick, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault)
 import ./protocol (Input, GHello, GNewGame, GInput, GQuit, StateMsg, Clock, ShipView, LedgerView, HelloMsg, Session, Served, decodeInput, encodeInput, decodeState, encodeState, encodeHello, decodeHello, helloMsg, newSession, serve, num)
 import ./rng (Rng, Stream, SJourney, SNews, value, top53)
@@ -49,7 +49,8 @@ pure func intentEq(a: Intent, b: Intent) -> bool =
     IDraw(s) => match b { IDraw(t) => s == t, _ => false },
     IEcho(p) => match b { IEcho(q) => planEq(p, q), _ => false },
     IAiOpen(o) => match b { IAiOpen(q) => aiOpenEq(o, q), _ => false },
-    IAiCancel(c) => match b { IAiCancel(d) => c.req == d.req && c.reason == d.reason, _ => false }
+    IAiCancel(c) => match b { IAiCancel(d) => c.req == d.req && c.reason == d.reason, _ => false },
+    ICrew(c) => match b { ICrew(d) => c.kind == d.kind && c.line == d.line && c.askId == d.askId, _ => false }
   }
 pure func strsEq(a: [string], b: [string]) -> bool = allEq(\x y. x == y, a, b)
 pure func ctxEq(a: CtxField, b: CtxField) -> bool =
@@ -76,7 +77,7 @@ pure func overrideEq(a: {name: string, value: float}, b: {name: string, value: f
 pure func inputEq(a: Input, b: Input) -> bool =
   match a {
     GHello(h) => match b { GHello(g) => h.major == g.major && h.minor == g.minor, _ => false },
-    GNewGame(n) => match b { GNewGame(m) => n.seed == m.seed && n.scenario == m.scenario && n.diag == m.diag && allEq(overrideEq, n.params, m.params) && n.aiCore == m.aiCore, _ => false },
+    GNewGame(n) => match b { GNewGame(m) => n.seed == m.seed && n.scenario == m.scenario && n.diag == m.diag && allEq(overrideEq, n.params, m.params) && n.aiCore == m.aiCore && n.crew == m.crew, _ => false },
     GInput(i) => match b { GInput(j) => i.tick == j.tick && feq(i.dtau, j.dtau) && allEq(intentEq, i.intents, j.intents), _ => false },
     GQuit => match b { GQuit => true, _ => false }
   }
@@ -120,6 +121,8 @@ pure func phiCap() -> float = 7.254328619262047
 pure func edgeVec() -> Vec3 = {x: 1.0e308, y: negZero(), z: almostOne()}
 pure func edgePlan() -> PlanReq = {target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: None, star: None}
 pure func allIntents() -> [Intent] = [
+  ICrew({kind: "crew_offer", line: "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}", askId: None}),
+  ICrew({kind: "crew_ask", line: "{\"command\":\"ask\",\"actor\":\"medic\",\"task\":\"t1\",\"id\":\"r1\"}", askId: Some("r1")}),
   IPlan({target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: Some(1.0), star: None}),
   IPlan({target: {index: 0, id: "Sol \"quoted\" \\ star", pos: {x: 0.1, y: tiny(), z: -4.09}}, cruisePhi: 0.1, flipG: None, star: None}),
   ICommit(maxInt()), ICancel, IThrust(negZero()), IThrust(-1.0),
@@ -130,8 +133,9 @@ pure func allIntents() -> [Intent] = [
 ]
 pure func inputFixtures() -> [Input] = [
   GHello({major: 2, minor: 0}),
-  GNewGame({seed: maxInt(), scenario: "sol", diag: true, params: [{name: "glow_eps", value: tiny()}, {name: "epoch", value: negZero()}, {name: "glow_f_in", value: almostOne()}, {name: "start_age", value: 0.1}], aiCore: None}),
-  GNewGame({seed: 0, scenario: "sol", diag: false, params: [], aiCore: None}),
+  GNewGame({seed: maxInt(), scenario: "sol", diag: true, params: [{name: "glow_eps", value: tiny()}, {name: "epoch", value: negZero()}, {name: "glow_f_in", value: almostOne()}, {name: "start_age", value: 0.1}], aiCore: None, crew: None}),
+  GNewGame({seed: 0, scenario: "sol", diag: false, params: [], aiCore: None, crew: None}),
+  GNewGame({seed: 3, scenario: "free_nav", diag: false, params: [], aiCore: None, crew: Some("orders")}),
   GInput({tick: maxInt(), dtau: 0.1, intents: allIntents()}),
   GInput({tick: 1, dtau: tiny(), intents: []}),
   GInput({tick: 2, dtau: almostOne(), intents: [IThrust(1.0)]}),
@@ -484,7 +488,7 @@ pure func aiIntents() -> [Intent] =
    IAiOpen({ kind: "text", purpose: "line", entityId: "medic", emotion: None, ageStage: None, lineReq: None, emotions: None, context: [] })] ++
   map(\r. IAiCancel({req: "7", reason: r}), cancelReasons()) ++ [IAiCancel({req: "never-opened", reason: "budget"})]
 pure func aiInputs() -> [Input] =
-  [GInput({tick: 5, dtau: 0.0, intents: aiIntents()}), GNewGame({seed: 1, scenario: "sol", diag: false, params: [{name: "ai_max_open", value: 64.0}, {name: "ai_ttl_ticks", value: 1.0}], aiCore: Some(hexA())})]
+  [GInput({tick: 5, dtau: 0.0, intents: aiIntents()}), GNewGame({seed: 1, scenario: "sol", diag: false, params: [{name: "ai_max_open", value: 64.0}, {name: "ai_ttl_ticks", value: 1.0}], aiCore: Some(hexA()), crew: None})]
 -- The design's ai_request example, byte for byte.
 pure func exampleRequest() -> AiRequest = { req: "7", kind: "text", purpose: "line", lineReq: None,
   key: { kind: "text", entityId: "medic", emotion: "-", ageStage: 0, variant: "-" }, seed: 123456789012345,

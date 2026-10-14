@@ -28,6 +28,60 @@ deps:              ## fetch locked AILANG packages into the cache; fail if the r
 
 test: python-guard lint-precision deps starmap-assets import physics sim ui lore-test codex-test lore-import-check lore-check news-lint news-test replay parity-v2 strict rng-ref wd-vm catalogue-vm catalogue-main catalogue-bytes catalogue-stats star-catalogue-test bright-test companions-test starmap-test truth-test starmap-truth-audit starmap-consistency starmap-consistency-large test-bright-audit sky-vm extract-test destar-test tools-test area-test validate-areas interior-test m4-smoke transit-test trappist1-test parity-m4 session-audit-test codex-unlocks geodesic-oracle lens-assets lens-lut-check parity-gr ism-oracle-check ism-data-verify ism-compat ism-determinism dust-flash-test map-ism-test ism-lore-drafts in-world-voice-check ## everything that runs without a GPU window
 
+# R2-CREW (design_docs/planned/r2/crew-integration.md): sunholo/crew_core is a registry pin
+# (sim/ailang.toml) and the crew scenario pack is synced from the crew lab (data/crew, SYNC;
+# generated sim/data/crew_pack.ail). Both are changed upstream only.
+CREW_SRC ?=
+CREW_REV ?=
+crew-sync:         ## re-sync the crew pack: make crew-sync CREW_SRC=<ailang-packages clone> CREW_REV=<sha>
+	@test -n "$(CREW_SRC)" -a -n "$(CREW_REV)" || { echo "usage: make crew-sync CREW_SRC=<ailang-packages clone> CREW_REV=<sha>"; exit 2; }
+	AILANG="$(AILANG)" sh tools/crew_sync.sh sync "$(CREW_SRC)" "$(CREW_REV)"
+crew-sync-check:   ## AC7: data/crew matches SYNC, sim/data/crew_pack.ail regenerates identically, embedded text round-trips
+	@AILANG="$(AILANG)" SCRATCH="$(SCRATCH)/crew-sync" sh tools/crew_sync.sh check
+test: crew-sync-check
+CREW_PARITY = --package-dir sim --entry parity --args-json 0 sim/tools/crew_parity.ail
+crew-parity:       ## AC3: scripted crew sessions in the game == standalone crew_core (byte for byte), VM == interpreter, lines == tests/crew/*.ndjson
+	@mkdir -p $(SCRATCH)/crew-parity
+	@$(AILANG) run --quiet --bytecode --strict-bytecode $(CREW_PARITY) > $(SCRATCH)/crew-parity/vm.txt
+	@$(AILANG) run --quiet $(CREW_PARITY) > $(SCRATCH)/crew-parity/interp.txt
+	@cat $(SCRATCH)/crew-parity/vm.txt
+	@cmp -s $(SCRATCH)/crew-parity/vm.txt $(SCRATCH)/crew-parity/interp.txt || { echo "crew-parity: FAIL: VM and interpreter differ"; exit 1; }
+	@! grep -v ' ok lines ' $(SCRATCH)/crew-parity/vm.txt
+	@for n in consent orders shipevent argument; do \
+	  $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > $(SCRATCH)/crew-parity/$$n.ndjson; \
+	  cmp -s $(SCRATCH)/crew-parity/$$n.ndjson tests/crew/$$n.ndjson || { echo "crew-parity: FAIL: $$n recording changed (review, then make crew-parity-record)"; exit 1; }; done
+	@echo "crew-parity: ok (4 recordings, VM == interpreter)"
+crew-bridge-test:  ## AC6 (Godot side): the real sim at protocol 2.9 over SimBridge: crew section, crew intents, refusals, no crew below 2.9
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_bridge.gd > $(SCRATCH)/crew-bridge.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-bridge)' $(SCRATCH)/crew-bridge.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-bridge.log && grep -q '^crew-bridge: 0 failures$$' $(SCRATCH)/crew-bridge.log
+test: crew-bridge-test
+crew-events-check: ## AC8: the news templates whose words carry a death are exactly sim/crew_events.ail lossTemplateIds (major loss)
+	@want=$$(jq -r '[.tiers[] as $$t | $$t.templates | to_entries[] | select(.value | tostring | test("died")) | ($$t.tier * 4 + .key)] | map(tostring) | join(",")' data/news/templates.json); \
+	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lossIdsText --args-json 0 sim/crew_events.ail | tr -d '"'); \
+	[ "$$want" = "$$got" ] && echo "crew-events-check: ok (loss templates $$got)" || { echo "crew-events-check: FAIL: templates with a death are [$$want], lossTemplateIds says [$$got]"; exit 1; }
+test: crew-events-check
+crew-console-test: import ## AC10: the Voyage console Crew page on a recorded crew section; its actions emit the right crew intents (confirmed); the real sim accepts them
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_console.gd > $(SCRATCH)/crew-console.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-console)' $(SCRATCH)/crew-console.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console.log && grep -q '^crew-console: 0 failures$$' $(SCRATCH)/crew-console.log
+test: crew-console-test
+crew-console-capture: ## C6 review frames: the Crew page from the recorded crew section -> renders/crew_console/ (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --path . --resolution 1280x720 --script tools/crew_console_capture.gd > $(SCRATCH)/crew-console-capture.log 2>&1; rc=$$?; grep -E '^(frame|crew-console-capture)' $(SCRATCH)/crew-console-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console-capture.log
+crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resume, presets, and the guided voyage holding ship time until the real sim's hold clears
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tests/test_crew_hold.gd > $(SCRATCH)/crew-hold.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-hold)' $(SCRATCH)/crew-hold.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-hold.log && grep -q '^crew-hold: 0 failures$$' $(SCRATCH)/crew-hold.log
+test: crew-hold-test
+crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless, under 2 s (warm cache); critical_only and the no-hold worst case
+	@for e in crewSkip crewSkipUnheld; do \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 1 sim/crew_script.ail > /dev/null; \
+	  s=$$(perl -MTime::HiRes=time -e 'printf "%.3f", time'); out=$$(env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 10 sim/crew_script.ail); \
+	  t=$$(perl -MTime::HiRes=time -e "printf '%.2f', time - $$s"); echo "crew-perf $$e: $$out in $$t s"; \
+	  echo "$$out" | grep -qE '^"?days 3652 holds [0-9]+"?$$' && perl -e "exit($$t < 2.0 ? 0 : 1)" || { echo "crew-perf: FAIL ($$e: $$out, $$t s; budget 2 s)"; exit 1; }; done
+test: crew-perf
+crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
+	@for n in consent orders shipevent argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
+test: crew-parity
+
 tools-test:        ## replay harness unit tests, the star-name oracle, sky_assets.sh and lens_assets.sh fetch on a file:// fake bucket (no network)
 	python3 tools/test_replay.py
 	python3 tools/check_star_names.py
@@ -269,6 +323,9 @@ strict:            ## pure sim core and protocol v2 codecs must run entirely on 
 	  echo "strict rngVm seed $$seed: VM $$got | interpreter $$interp | reference $$want"; \
 	  [ "$$got" = "$$want" ] && [ "$$interp" = "$$want" ] || exit 1; \
 	done
+	@vm=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
+	in=$$($(AILANG) run --quiet --package-dir sim --entry crewScripted --args-json 2 sim/crew_script.ail); \
+	echo "strict crew: $$vm"; [ "$$vm" = "$$in" ] && ! echo "$$vm" | grep -qE 'error|refused' || { echo "strict crew: FAIL (VM != interpreter, or a script refused)"; exit 1; }
 
 rng-ref:           ## AC11: SplitMix64 vectors, chi-square on 1e5 draws per stream, first 1,000 values per stream (3 seeds) from strict VM and interpreter vs tools/rng_ref.py
 	AILANG=$(AILANG) python3 tools/rng_ref.py --check

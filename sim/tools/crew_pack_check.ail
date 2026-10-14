@@ -1,0 +1,17 @@
+module stapledons/sim/tools/crew_pack_check
+-- R2-CREW C0: the round trip behind `make crew-sync-check`. Every file embedded in
+-- sim/data/crew_pack.ail equals its file under data/crew/ byte for byte (by sha256), and the
+-- embedded SYNC manifest equals data/crew/SYNC. Strict VM, FS caps.
+import std/string (concat)
+import std/list (any)
+import std/crypto (sha256Hex)
+import std/fs (readFile)
+import std/io (println)
+import stapledons/sim/data/crew_pack (packFiles, syncManifest)
+
+export func check(dir: string) -> bool ! {IO, FS} {
+  let same = \file text. sha256Hex(text) == sha256Hex(readFile(concat([dir, "/", file])));
+  let ok = !any(\p. match p { (file, text) => !same(file, text) }, packFiles()) && same("SYNC", syncManifest());
+  println(if ok then "crew-pack: embedded pack equals data/crew" else "crew-pack: FAIL: embedded pack differs from data/crew (run make crew-sync)");
+  ok
+}

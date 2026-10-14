@@ -1,0 +1,90 @@
+extends SceneTree
+## R2-CREW C6 (AC10): the Voyage console's Crew page (ui/crew_page.gd) bound to a crew section
+## recorded from the real sim (tests/crew/console_state.json: seed 1, orders, the medic asking for
+## relief, the analyst carrying on). It shows the crew and its actions emit the right crew intents;
+## decisions need a confirming press (no twitch); the intents it builds are accepted by the real sim.
+## Run:  make crew-console-test
+
+var failures := 0
+
+func check(label: String, ok: bool) -> void:
+	if not ok: failures += 1
+	print("%s %s" % ["ok" if ok else "FAIL", label])
+
+func texts(n: Node) -> Array:
+	var out := []
+	for c in n.get_children():
+		if c is Label: out.append((c as Label).text)
+		if c is Button: out.append((c as Button).text)
+		out.append_array(texts(c))
+	return out
+
+func line_of(intent: Dictionary) -> Dictionary:
+	return JSON.parse_string(intent["line"])
+
+func _initialize() -> void:
+	var section: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/crew/console_state.json"))
+	var page := CrewPage.new()
+	root.add_child(page)
+
+	page.show_crew({})
+	check("no crew: the page says so", texts(page) == ["No crew aboard yet."])
+
+	page.show_crew(section)
+	var all := texts(page)
+	check("five crew rows", page.get_children().filter(func(c): return c.name.begins_with("Member_")).size() == 5)
+	check("generated name with the role (D-74): Ligaya Reyes · The Medic", all.has("Ligaya Reyes · The Medic"))
+	check("captaincy shown, the switch offers consent", all.has("Captaincy: orders") and all.has("Switch to consent"))
+	var medic := page.get_node("Member_medic")
+	check("stress, fatigue and trust bars for the medic", medic.find_child("Bar_stress", true, false) != null and medic.find_child("Bar_fatigue", true, false) != null and medic.find_child("Bar_trust", true, false) != null)
+	var trust: ProgressBar = medic.find_child("Bar_trust", true, false).get_child(1)
+	check("trust bar reads the sim's trust (50)", trust.value == 50.0 and not trust.show_percentage)
+	check("the medic's latest line is the relief template until the AI words arrive", page.latest_line("medic") == "I need to step back from this for a while.")
+	page.set_ai_text("1", "I'm running on empty, Captain. I need a few days.")
+	check("accepted AI words replace the template", page.latest_line("medic") == "I'm running on empty, Captain. I need a few days." and page.latest_line("analyst") == "I can keep going for now.")
+	page.on_events([{"k": "ai_accepted", "req": "2", "kind": "text", "text": "Still fine here."}, {"k": "ai_accepted", "req": "99", "kind": "text", "text": "Archive words."}])
+	check("ai_accepted events for crew lines are taken; others ignored", page.latest_line("analyst") == "Still fine here." and not page.ai_text.has("99"))
+	check("the relief request has Grant and Deny", page.find_child("Grant_relief-c1", true, false) != null and page.find_child("Deny_relief-c1", true, false) != null)
+	check("working crew show their work in words, idle crew can be offered work", texts(medic).any(func(t): return t.begins_with("Working on assigned work.")) and page.get_node("Member_engineer").find_child("Offer_engineer", true, false) != null)
+	check("no numbers on the page but the names (D-21: numbers come from sim fields)", texts(page).all(func(t): return not RegEx.create_from_string("[0-9]").search(t)))
+
+	var got := []
+	page.intents.connect(func(l): got.append(l))
+	var offer := page.press("offer:engineer")
+	check("offer work is one press: offer + ask for the engineer", offer.size() == 2 and offer[0]["k"] == "crew_offer" and offer[1]["k"] == "crew_ask"
+		and line_of(offer[0])["worker"] == "engineer" and line_of(offer[0])["recipe"] == "work_engineer" and line_of(offer[1])["task"] == line_of(offer[0])["id"])
+	var first := page.press("relief:relief-c1:true")
+	check("granting relief needs a second press", first.is_empty() and (page.find_child("Grant_relief-c1", true, false) as Button).text == "Confirm: Grant relief")
+	var grant := page.press("relief:relief-c1:true")
+	check("the confirmed grant is resolve_relief release true", grant.size() == 1 and grant[0]["k"] == "crew_relief" and line_of(grant[0]) == {"command": "resolve_relief", "id": "relief-c1", "release": true})
+	page.press("policy:consent")
+	page.press("relief:relief-c1:false")
+	check("a different action disarms the first (no stray confirm)", page.armed == "relief:relief-c1:false")
+	page.press("policy:consent")
+	var pol := page.press("policy:consent")
+	check("switching to consent is a confirmed crew_policy", pol.size() == 1 and pol[0]["k"] == "crew_policy" and line_of(pol[0]) == {"command": "policy", "policy": "consent"})
+	var offered := section.duplicate(true)
+	offered["members"][1]["work"] = {"task": "t9", "recipe": "work_engineer", "status": "offered"}
+	page.show_crew(offered)
+	page.press("start:t9")
+	var st := page.press("start:t9")
+	check("starting offered work is a confirmed crew_start", st.size() == 1 and line_of(st[0]) == {"command": "start_task", "task": "t9"})
+	check("every emitted list reached the intents signal", got.size() == 4)
+
+	# The real sim accepts what the page builds (same seed and orders as the recording).
+	var sim := SimBridge.new()
+	sim.want_minor = SimBridge.CREW_MINOR
+	var ok := sim.start() and sim.new_game(1, "free_nav", false, {}, "", "orders")
+	page.show_crew(sim.crew)
+	ok = ok and sim.send(page.press("offer:pilot"), 0.0)
+	check("the sim accepts the page's offer and ask", ok and sim.last_refused.is_empty() and sim.crew["lines"].size() == 1 and sim.crew["lines"][0]["actor"] == "pilot")
+	# The console's path: the page's intents queue on the bridge and ride the next tick (SimBridge.queue).
+	page.show_crew(sim.crew)
+	page.intents.connect(sim.queue)
+	page.press("offer:counselor")
+	check("queued intents wait for the next tick", sim.queued.size() == 2)
+	ok = sim.send([], 0.0)
+	check("the next tick carries them and clears the queue", ok and sim.queued.is_empty() and sim.last_refused.is_empty() and sim.crew["lines"].size() == 2 and sim.crew["lines"][1]["actor"] == "counselor")
+	sim.stop()
+	print("crew-console: %d failures" % failures)
+	quit(1 if failures else 0)

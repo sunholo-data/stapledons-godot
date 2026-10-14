@@ -1,6 +1,6 @@
 {
   "ailang_version": "v0.54.8",
-  "generated_at": "2026-10-13T17:40:49.368491Z",
+  "generated_at": "2026-10-13T22:56:44.200867Z",
   "generator": "ailang lock v0.54.8",
   "packages": [
     {
@@ -21,6 +21,59 @@
       ],
       "interface_hash": "sha256:fa91ecdb88c32ad5d88956945c5647ab7a0c7123a8bada9f9783209fea8727e5",
       "name": "sunholo/celestial",
+      "source": "registry",
+      "version": "0.4.0"
+    },
+    {
+      "ailang": ">=0.52.0",
+      "content_hash": "sha256:4a70f8952db0ef931bfd7b4d976d89758bb10512aca321992b2317a35a466f06",
+      "effects": [],
+      "exports": [
+        "sunholo/content_library/library"
+      ],
+      "interface_hash": "sha256:1ad3420f58e96b3908c82ec481d0073d74fa68c5c988b5bc03fa6f118aa02a10",
+      "name": "sunholo/content_library",
+      "source": "registry",
+      "version": "0.1.0"
+    },
+    {
+      "ailang": ">=0.54.0",
+      "content_hash": "sha256:b6b6ce48d41c50227b118407a551d09dcf1bd17d92f066a698ef0de395cfe21a",
+      "effects": [
+        "IO"
+      ],
+      "exports": [
+        "sunholo/crew_core/actor_policy",
+        "sunholo/crew_core/auto",
+        "sunholo/crew_core/codec",
+        "sunholo/crew_core/cohorts",
+        "sunholo/crew_core/conversations",
+        "sunholo/crew_core/example",
+        "sunholo/crew_core/flows",
+        "sunholo/crew_core/host_policy",
+        "sunholo/crew_core/personality_host",
+        "sunholo/crew_core/policy",
+        "sunholo/crew_core/scenario",
+        "sunholo/crew_core/session"
+      ],
+      "interface_hash": "sha256:b35e938fea8c93dd7734356b4be99574a6a13b8a37813914633b01172c2398b3",
+      "name": "sunholo/crew_core",
+      "source": "registry",
+      "version": "0.4.0"
+    },
+    {
+      "ailang": ">=0.40.0",
+      "content_hash": "sha256:44ebfcac3317360bb5dba1198bff4891060049011aacbd9b1f67fd71f65fb6eb",
+      "effects": [
+        "Env",
+        "IO",
+        "Net"
+      ],
+      "exports": [
+        "sunholo/decisions/decide"
+      ],
+      "interface_hash": "sha256:336cabf1d1cf9eeef1aba627e8c163bdfe0c1fb94d64b67f54acb80f9c11ab3e",
+      "name": "sunholo/decisions",
       "source": "registry",
       "version": "0.4.0"
     },
@@ -49,6 +102,28 @@
       "name": "sunholo/relativity",
       "source": "registry",
       "version": "0.12.0"
+    },
+    {
+      "ailang": ">=0.52.0",
+      "content_hash": "sha256:3ecabb4a58f4ace19cf5ae488551ec3a7462f4a11fc8e13ab9f61386e78013e9",
+      "effects": [
+        "IO"
+      ],
+      "exports": [
+        "sunholo/social_dynamics/conditions",
+        "sunholo/social_dynamics/engine",
+        "sunholo/social_dynamics/indicators",
+        "sunholo/social_dynamics/model",
+        "sunholo/social_dynamics/personality",
+        "sunholo/social_dynamics/proposals",
+        "sunholo/social_dynamics/relationships",
+        "sunholo/social_dynamics/tasks",
+        "sunholo/social_dynamics/wire"
+      ],
+      "interface_hash": "sha256:9b3a358aa0d8e54d50343eebc1fb0cdea4824749e0110e331ad596545d1d9ed2",
+      "name": "sunholo/social_dynamics",
+      "source": "registry",
+      "version": "0.4.0"
     }
   ],
   "schema": "ailang.lock/v1",

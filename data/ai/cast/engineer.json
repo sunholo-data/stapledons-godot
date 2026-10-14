@@ -1,0 +1,75 @@
+{
+  "v": 1,
+  "entity_id": "engineer",
+  "name": "The Chief Engineer",
+  "persona": "The ship's chief engineer. Careful, practical and reserved; trusts what has been measured twice and keeps every system running on the margin it was built with. Reliability is a point of pride, and the family left on Earth is the reason the work matters. Says little, says it plainly, and never tells the crew whether a choice was right.",
+  "voice_id": "Charon",
+  "voice_status": "pending: provisional voice; Mark chooses at the style-frame stop",
+  "style": "Even, quiet and exact; short sentences; warmer only when talking about home.",
+  "portraits": [
+    {
+      "kind": "portrait",
+      "entity_id": "engineer",
+      "emotion": "neutral",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "engineer",
+      "emotion": "happy",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "engineer",
+      "emotion": "sad",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "engineer",
+      "emotion": "angry",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "engineer",
+      "emotion": "fearful",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "engineer",
+      "emotion": "curious",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "engineer",
+      "emotion": "loving",
+      "age_stage": 0,
+      "variant": "0"
+    },
+    {
+      "kind": "portrait",
+      "entity_id": "engineer",
+      "emotion": "grieving",
+      "age_stage": 0,
+      "variant": "0"
+    }
+  ],
+  "portrait_status": "pending: D-7 portrait set not yet generated; the console shows stub portraits until it is",
+  "avatar": {
+    "kind": "avatar",
+    "entity_id": "engineer",
+    "emotion": "-",
+    "age_stage": 0,
+    "variant": "0"
+  }
+}

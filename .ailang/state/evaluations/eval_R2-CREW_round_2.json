@@ -1,0 +1,6 @@
+{"sprint_id":"R2-CREW","round":2,"result":"pass","score":88,"gate_source":"local",
+"categories":{"tests_pass":{"max":20,"score":19},"lint":{"max":10,"score":9},"acceptance_criteria":{"max":30,"score":28},"code_quality":{"max":15,"score":13},"documentation":{"max":15,"score":10},"design_fidelity":{"max":10,"score":9}},
+"passed_gates":["deps","ai-test","no-twitch-test 30","crew-sync-check","crew-parity","crew-events-check","crew-perf","strict","replay 11","parity-v2","crew-bridge-test","crew-console-test","crew-hold-test","ship-console-test 120"],
+"findings":[
+{"severity":"low","issue":"landing artefacts pending (sprint status, changelog, move to implemented/r2); game-vision-designer re-score not run"},
+{"severity":"low","issue":"full make test and CI not run by evaluator"}]}

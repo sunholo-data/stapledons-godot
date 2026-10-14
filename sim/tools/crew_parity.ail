@@ -1,0 +1,53 @@
+module stapledons/sim/tools/crew_parity
+-- R2-CREW C1, AC3 (design crew-integration.md §Working model): the game proves parity, not
+-- behaviour. Each scripted crew session (sim/crew_script.ail) runs through sim/crew.ail; the lines
+-- it fed crew_core then replay through `crew_core.session.recording` alone, and the two journals
+-- must be byte-identical. The lab's claims then hold in the game by construction.
+-- `make crew-parity` runs `parity` on the strict VM and the interpreter (outputs must match) and
+-- compares `lines` for each script with its committed recording in tests/crew/.
+-- Pure (no I/O): the Makefile does the file comparison.
+import std/string (concat, join, contains, intToStr)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/crypto (sha256Hex)
+import pkg/sunholo/crew_core/session (recording)
+import stapledons/sim/crew (pack, startLine)
+import stapledons/sim/crew_script (Script, Ran, scripts, runScript, journal)
+
+-- The fixture seed: under it the consent script's medic agrees (the scan in the C1 notes).
+export pure func fixtureSeed() -> int = 2
+
+pure func named(name: string) -> Option[Script] = match filter(\s. s.name == name, scripts()) { s :: _ => Some(s), [] => None }
+
+-- A script's recording: the start line, then every line the sim fed crew_core.
+export pure func recordingLines(s: Script, r: Ran) -> [string] = startLine(s.captaincy) :: r.lines
+
+pure func check(s: Script) -> string = match (runScript(s, fixtureSeed()), pack()) {
+  (Err(e), _) => concat(["crew-parity: ", s.name, " FAIL run: ", e]),
+  (_, Err(e)) => concat(["crew-parity: ", s.name, " FAIL pack: ", e]),
+  (Ok(r), Ok((sc, _))) => {
+    let game = journal(r);
+    let alone = recording(sc, recordingLines(s, r));
+    let argued = s.name != "argument" || contains(game, "task_halted");
+    let verdict = if r.refused != None then concat(["FAIL refused"])
+      else if game != alone then "FAIL journals differ"
+      else if !argued then "FAIL no argument (no task_halted)"
+      else "ok";
+    concat(["crew-parity: ", s.name, " ", verdict, " lines ", intToStr(length(r.lines)), " sha ", sha256Hex(game)])
+  }
+}
+
+export pure func parity(_u: int) -> string = join("\n", map(check, scripts()))
+
+-- The recording for one script (NDJSON, the committed tests/crew/<name>.ndjson).
+export pure func lines(name: string) -> string = match named(name) {
+  None => concat(["unknown script ", name]),
+  Some(s) => match runScript(s, fixtureSeed()) {
+    Err(e) => concat(["error ", e]),
+    Ok(r) => join("\n", recordingLines(s, r))
+  }
+}
+
+pure func map(f: a -> b, xs: [a]) -> [b] = match xs { [] => [], x :: r => f(x) :: map(f, r) }
+pure func filter(p: a -> bool, xs: [a]) -> [a] = match xs { [] => [], x :: r => if p(x) then x :: filter(p, r) else filter(p, r) }
+pure func length(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + length(r) }

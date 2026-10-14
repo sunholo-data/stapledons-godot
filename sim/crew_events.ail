@@ -1,0 +1,66 @@
+module stapledons/sim/crew_events
+
+-- R2-CREW C3 (design crew-integration.md §CI-2, AC8): physics moments the sim already computes
+-- become crew_core ship events, raised once each (the ids are deterministic per moment, and
+-- crew_core refuses an id it has seen). sim/core.ail fills a Moments record from the world before
+-- and after a tick; this module only turns it into events, so it imports nothing of core.
+--
+--   moment                         event id         transfers (crew units)         major
+--   GR approach begins             gr-in-<tick>     heat -2                        -
+--   GR approach ends (hover)       gr-out-<tick>    heat +2                        -
+--   news burst arrives             news-<tick>      signal +1                      deep_time, or loss
+--                                                                                 for a death template
+--   arrival at a stop              arrive-<plan>    signal +1 (antenna windows)    -
+--   boost or brake committed       drive-<plan>     none: the leg's E/c^2 is shown as a readout
+--                                                   (D-70 OQ4) until D-69 is enforced
+-- A transfer on a resource the scenario does not carry is dropped (crew_core refuses unknown
+-- resources); the event's words still reach the crew.
+import std/list (filter, map, contains)
+import std/option (Option, Some, None)
+import std/string (concat, intToStr, join)
+import std/math (floatToInt, floor)
+import pkg/sunholo/crew_core/scenario (ShipEvent, Transfer)
+
+export type Moments = {
+  tick: int,
+  grStart: bool,
+  grEnd: bool,
+  newsTemplate: Option[int],
+  arrivedPlan: Option[int],
+  committed: Option[{plan: int, massKg: float}]
+}
+export pure func noMoments(tick: int) -> Moments =
+  { tick: tick, grStart: false, grEnd: false, newsTemplate: None, arrivedPlan: None, committed: None }
+
+-- News templates whose words carry a death (data/news/templates.json: tier 2 #0 "An older relative
+-- has died", tier 3 #3 "...or have died"); templateId = tier * 4 + index. make crew-events-check
+-- recomputes this list from the templates file.
+export pure func lossTemplateIds() -> [int] = [8, 15]
+export pure func lossIdsText(_u: int) -> string = join(",", map(intToStr, lossTemplateIds()))
+
+pure func ev(id: string, text: string, ts: [Transfer], major: string) -> ShipEvent =
+  { id: id, at: 0, text: text, transfers: ts, major: major }
+
+-- The leg's mass bill in whole 10 kg crew blocks (readout only).
+export pure func massBlocks(massKg: float) -> int = if massKg <= 0.0 then 0 else floatToInt(floor(massKg / 10.0))
+
+export pure func shipEvents(m: Moments) -> [ShipEvent] = {
+  let t = intToStr(m.tick);
+  let gr = (if m.grStart then [ev(concat(["gr-in-", t]), "The forward sky loads the radiators as the ship falls toward the hole.", [{ resource: "heat", delta: 0 - 2 }], "")] else [])
+    ++ (if m.grEnd then [ev(concat(["gr-out-", t]), "The ship holds its station; the forward glare eases and the radiators recover.", [{ resource: "heat", delta: 2 }], "")] else []);
+  let news = match m.newsTemplate {
+    None => [],
+    Some(id) => [ev(concat(["news-", t]), if contains(lossTemplateIds(), id) then "A burst from Earth: someone the crew left behind has died." else "A burst from Earth arrives, years late.",
+      [{ resource: "signal", delta: 1 }], if contains(lossTemplateIds(), id) then "loss" else "deep_time")]
+  };
+  let arrive = match m.arrivedPlan { None => [], Some(p) => [ev(concat(["arrive-", intToStr(p)]), "The ship arrives and the antenna windows open.", [{ resource: "signal", delta: 1 }], "")] };
+  let drive = match m.committed {
+    None => [],
+    Some(c) => [ev(concat(["drive-", intToStr(c.plan)]), concat(["The generator takes mass for the leg: ", intToStr(massBlocks(c.massKg)), " blocks of 10 kg, gone to light."]), [], "")]
+  };
+  gr ++ news ++ arrive ++ drive
+}
+
+-- Keep only transfers on resources the scenario carries (crew_core refuses unknown resources).
+export pure func forScenario(supplies: [string], e: ShipEvent) -> ShipEvent =
+  { e | transfers: filter(\x. contains(supplies, x.resource), e.transfers) }

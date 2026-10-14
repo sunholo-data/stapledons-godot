@@ -32,19 +32,33 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 
 ## Milestones
 
-### C0: tests first, vendor, data sync (~260 LOC)
+### C0: tests first, vendor, data sync (~260 LOC) ✅ 2026-10-13
+> **Done.**
+> - **Vendored copy:** at the repo root `vendor/crew-core/`, not `sim/vendor/`. Inside `sim/`, `ailang check --package sim` walks into the copy (MOD010 on every module, and its tests would run as sim tests). The dependency is `{path = "../vendor/crew-core"}`.
+> - **Sync tools:** `make crew-sync`/`crew-sync-check` run on the bytecode VM *with* evaluator fallback, because `std/fs.readFile` is evaluator-only on the strict VM in v0.54.6. Strictness is the pure core's gate, not the I/O tools'.
+> - **Probe:** crew_core starts and advances the synced pack on the strict VM in 0.47 s, byte-identical to the interpreter (40,648 bytes). The interpreter is slow on this path (~20 s), which matters for `make parity` once the crew are on (C4).
+> - **Red tests:** `sim/crew_test.ail` and `sim/protocol_crew_test.ail` failed for the stated reason (module not exported/absent) and land with C1 and C2.
+
 - **Vendor.**
-  - `make crew-vendor SRC=<ailang-packages clone> REV=<sha>` copies `packages/crew-core` into `sim/vendor/crew-core/` and writes `VENDORED` (repo, commit, tree SHA-256).
+  - `make crew-vendor CREW_SRC=<ailang-packages clone> CREW_REV=<sha>` copies `packages/crew-core` into `vendor/crew-core/` and writes `VENDORED` (repo, commit, tree SHA-256).
   - `make crew-vendor-check` recomputes the hash and fails on any local edit (AC2). It gets a negative control: change one byte, expect a failure.
-- **Dependency.** In `sim/ailang.toml`, `"sunholo/crew_core" = {path = "vendor/crew-core"}`, then `ailang lock` (the CLAUDE.md workaround).
+- **Dependency.** In `sim/ailang.toml`, `"sunholo/crew_core" = {path = "../vendor/crew-core"}`, then `ailang lock` (the CLAUDE.md workaround).
 - **Sync.**
   - `make crew-sync` copies `last-messages-home.json` and `policy.json` (D-70 OQ3) from the lab pack into `data/crew/`, with a `SYNC` manifest (source commit and per-file sha256).
   - `sim/tools/crew_sync.ail` (AILANG, not Python) generates `sim/data/crew_pack.ail`.
   - `make crew-sync-check` re-hashes `data/crew/` against `SYNC` and regenerates the module to a scratch file to diff it (AC7, with the resource half added in C3).
 - **Red tests.** Write `sim/crew_test.ail`, `sim/protocol_crew_test.ail` and `tests/crew/*.ndjson` (empty recordings) failing for the stated reason, and keep the log.
-- **Gate:** `make crew-vendor-check crew-sync-check`, both wired into `make test`.
+- **Gate:** `make crew-vendor-check crew-sync-check`, both wired into `make test`. (Superseded at G1: the vendored copy and `crew-vendor-check` are gone; AC2 is the registry pin, checked by `make deps`.)
 
-### C1: `sim/crew.ail`, the embedded host (~380 LOC)
+### C1: `sim/crew.ail`, the embedded host (~380 LOC) ✅ 2026-10-13
+> **Done.** Findings that change the design:
+> - **One `advance` line per ship-day.** crew_core applies due yields and scheduled events *after* an advance completes, so one multi-day advance fires a day-3 event at the end of the span, after the work holding the resource has finished. That loses the argument. This is the per-turn cost CI-0's `advance(n)` must remove without changing semantics.
+> - **Seeds.** content_library's MINSTD roll takes seeds in [1, 2147483646]. A crew-stream draw maps to `1 + top53(v) mod 2147483646` (`answerSeed`, tested).
+> - **Off by default.** `World.crew: Option[CrewState]`, `None` by default, replaces the planned `Params.crew` flag. It's equivalent and leaves the protocol's params decoder untouched. `withCrew(w, captaincy)` brings the crew aboard.
+> - **Fixture seed.** It is 2: at seed 7 the medic declines and consent correctly refuses the start ("personal consent required").
+> - **Export (a must-fix).** The shipped sim now imports crew_core. `export_presets.cfg` includes `vendor/crew-core`, `SimBridge` unpacks `res://vendor` and fingerprints it (`bundle_inputs`), the export audit has a row for it, and the fingerprint test covers a re-vendor.
+> - **Costs.** The strict VM's cold start is +2.6 s (warm +0.5 s) because crew_core compiles eagerly. `ailang check --package sim` went from ~60 s to ~170 s.
+
 - **State.** `CrewState` holds the `Session`, the scenario id, the crew turn and `dayRem` (ship-years not yet turned into days). `World.crew` is set by `newWorld` from `crew_pack`. `Params.crew` defaults to 0 (off), so nothing advances and no state is emitted.
 - **Time (D-70 OQ1).** `crewStep(world, dtau)` adds `dtau`, takes whole ship-days with `floor(rem * 365.25)`, carries the exact remainder, and advances the host one turn per day under a fixed per-turn budget.
 - **Randomness.** Every crew draw uses `SCrew`. A test asserts the other five counters don't move.
@@ -58,18 +72,34 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Strict VM.** `make strict` gains a `crewScripted` entry (N turns of the pack, journal digest) on the strict VM, compared with the interpreter (AC4). `make parity` is unchanged and stays green.
 - **Gate:** `make crew-parity strict parity replay` (goldens unchanged, because the crew are off).
 
-### C2: protocol 2.x crew intents and the view (~280 LOC)
-- **Intents.** `ICrew(CrewCmd)` covers `crew_offer`, `crew_start`, `crew_relief`, `crew_cancel` and `crew_reply`. Each carries one crew_core input line, validated by the host. A refusal names the crew_core error (`refused.reason = "crew:<error>"`).
+### C2: protocol 2.x crew intents and the view (~280 LOC) ✅ 2026-10-13
+> **Done.**
+> - **Protocol 2.9.** `new_game` takes an optional `"crew": "consent" | "orders"` (`bad_game` below 2.9, or for any other value).
+> - **Six intents, not five.** `crew_ask` was added, because under consent the captain must ask before work can start (the lab's `persuade` step). Each intent carries one crew_core line, and the sim checks that the line's command matches the intent. No intent can carry an `answer`: decisions come only from the authored policy on the crew stream (D-20).
+> - **Refusals.** A refusal is `crew:<crew_core error>`, or `crew:no_crew` when no crew are aboard. Crew intents are applied in `tick()` before the ship's, with refusals merged in intent order. Below 2.9 a crew intent is `bad_intent`.
+> - **The `crew` section** (`sim/protocol_crew.ail crewView`, about 1.5 KB) is sent in full states and whenever it changes. It holds the turn and captaincy, and per member the indicators, **trust** (a crew→captain relationship, not an indicator), current work and low regard (< 30). It also lists open requests, unresolved reliefs, the last 6 heard lines and the resources.
+> - **Godot.** `SimBridge.CREW_MINOR`, `new_game(..., crew_captaincy)`, `crew_intent()`, and a validated `crew` mirror (`parse_crew`).
+> - **Tests.** `sim/protocol_crew_test.ail` (9, over `serve`) and `tests/test_crew_bridge.gd` (11, the real sim, `make crew-bridge-test`). `gr_test`'s cap expectation moved from 2.8 to 2.9, an intended change.
+
+- **Intents.** `ICrew(CrewCmd)` covers `crew_offer`, `crew_ask` (added in C2), `crew_start`, `crew_relief`, `crew_cancel` and `crew_reply`. Each carries one crew_core input line, validated by the host. A refusal names the crew_core error (`refused.reason = "crew:<error>"`).
 - **The view.** `state.crew` (only when `Params.crew = 1`) lists, per member, the indicators, trust and regard, then the open requests, the latest heard evidence lines and the eight resources (empty until C3). Codecs go in the new `sim/protocol_crew.ail`.
 - **Versions.** The protocol minor version goes up. The Godot `SimBridge` gets the minor bump and passes `state.crew` through.
 - **Hard rule.** The sim never reads AI text; crew words arrive only via `record`. A test sends text in `crew_reply`'s line and expects a refusal if it smuggles AI output into a decision field.
 - **Gate:** `make test` subset: `sim/protocol_crew_test.ail` (AC6), `parity-v2`, `replay`.
 
-### G1: re-vendor crew_core 0.3.0 (external, ~20 LOC)
+### G1: re-vendor crew_core 0.3.0 (external, ~20 LOC) ✅ 2026-10-13
+> **Done, as a registry pin rather than a re-vendor.** crew_core 0.3.0 was merged (ailang-packages #138, `82c21dd`) and published, and the published files equal that commit. ailang#1811 was fixed in AILANG v0.54.8 (#226). So `sim/ailang.toml` pins `"sunholo/crew_core" = "0.3.0"`. `vendor/`, `tools/crew_vendor.sh` and `make crew-vendor*` are gone, along with C1's vendor export additions: registry packages ship in the bundled runtime cache. The synced pack is unchanged upstream. The three parity recordings give the same journal hashes as on 0.2.0, VM == interpreter. strict, replay, parity-v2, crew-bridge, export-filter-audit and the runtime fingerprint tests all pass from a cold cache.
+
 - **Blocked** until CI-0 merges in ailang-packages (brief: [ailang-packages#137](https://github.com/sunholo-data/ailang-packages/issues/137)): archiving, `ship_event`, `policy`, standing orders, escalation and `advance(n)`, from the crew-lab agent.
 - Run `make crew-vendor REV=<CI-0 sha>`, then `make crew-vendor-check crew-parity strict parity`. The three recordings must still match. A break means a crew_core behaviour change, reported upstream rather than patched here.
 
-### C3: the ship reaches the crew (~380 LOC, after G1)
+### C3: the ship reaches the crew (~380 LOC, after G1) ✅ 2026-10-13
+> **Done.**
+> - **Resources: the ship is a cap, not the source.** This is a decision flagged for Mark. The crew's pool stays as the scenario authors it, because the lab's claims are verified on those numbers. Read literally, `mass` from `availableKg` would hand the crew 2,000 blocks instead of the scenario's 3. At new game `withCrew` refuses a pack whose resources aren't the eight, have the wrong kind, or exceed what the ship can spare: mass from the ledger, the rest from `sim/data/crew_ship.ail`, whose numbers are marked inferred or assumed for Mark to revise. bubble-resources §6 says units are read "later" from the ledger, at the resource-ledger milestone.
+> - **Moments** (`sim/crew_events.ail`, with `core.crewMoments` filling the record from the worlds before and after a tick). The GR approach start and end give heat −2/+2; there's no periapsis in the model, so the second fires when the approach ends in a hover. A news burst gives signal +1, with major `deep_time`, or `loss` for templates 8 and 15, whose words carry a death (`make crew-events-check` recomputes these from `data/news/templates.json`). Arrival gives signal +1. A commit raises the leg's `planView` mass bill as text only, with no transfers (D-70 OQ4). Ids are per tick or per plan, so crew_core raises each once. Transfers on resources the pack lacks are dropped (the pack has no heat).
+> - **`crew_policy`** (protocol 2.9, a seventh intent) switches crew_core's `command`. The view's `captaincy` now reads `command`. **`used`** reports consumed stocks in physical units.
+> - **Tests.** `sim/crew_events_test.ail` (8), including a world-level journey that raises `drive-1` and `arrive-1` once each through `tick()`, and the 4th parity recording `tests/crew/shipevent.ndjson` (run-time ship events and a policy switch), VM == interpreter.
+
 - **Resources.**
   - `sim/crew_resources.ail` ports the lab's `bubble.ail`: the eight ids, kinds and units, `allocate` and `lintPack`.
   - `lintPack` runs on `crew_pack` at `newWorld`, and a scenario that fails is refused, with a test.
@@ -83,13 +113,29 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Captaincy (D-70 OQ5).** The `crew_policy` intent switches consent and orders through crew_core's `policy`, journalled. New games start in consent.
 - **Gate:** `sim/crew_events_test.ail` (AC8), `crew-sync-check` with the resource lint, `crew-parity` with the run-time ship-event recording re-recorded through `ship_event` (AC3).
 
-### C4: crew on by default, performance, goldens (~120 LOC, after C3)
+### C4: crew on by default, performance, goldens (~120 LOC, after C3) ✅ 2026-10-13
+> **Done.**
+> - **Crew aboard.** The live game (`demos/ship_geometry_demo.gd`) asks for protocol 2.9 with a consent crew (D-70 OQ5); `setup_options["crew"]` can choose orders, or `""` for none. Its first tick queues `crew_orders critical_only`, so voyages auto-run and stop only for critical moments.
+> - **Prefetch.** The loading jump prefetches its warm sim at 2.9. The map route (`main.gd`) also asks for 2.9 so it adopts that prefetch; it requests no crew, so its stream is 2.8's but for the hello's minor.
+> - **No golden re-record was needed.** Every recorded replay runs at minor 8 or below, where no crew can be aboard, so `make replay` and `parity-v2` are unchanged. The planned one-time re-record and Mark's diff review didn't arise.
+> - **AC11** is `make crew-perf` (C8).
+> - **Tests.** `test_bh_hud` and `test_ship_ui` pinned the navigation session at 2.8 and now expect 2.9 (intended). `ship-demo-ci` (1,187 s), bh-hud, ship-ui, loading-jump, free-nav-recovery, map-ism, ui and the title screen all pass.
+
 - `Params.crew` defaults to 1.
 - `make crew-perf` runs a 10-year cruise interlude (one tick, about 3,650 crew turns) headless, against the AC11 budget. See question 1: the budget as written isn't reachable without an idle fast path.
 - Re-record the replay goldens once with `make replay-record LOG=all`, in one commit that lists every changed golden and the reason. Then run `make replay` twice and expect identical results (AC5).
 - **Gate:** `make crew-perf replay parity strict` and a full local `make test` (AC12).
 
-### C5: crew words through the AI service (~350 LOC, after C2; parallel)
+### C5: crew words through the AI service (~350 LOC, after C2; parallel) ✅ 2026-10-13
+> **Done.**
+> - **Requests.** Every answered ask opens one `ai_request` (kind `text`, purpose `crew_reply`) for that crew member, in `core.tick` right after the crew intents. Its context is the decided reaction, the work in words (crew_core's project name and purpose, never the recipe id) and the generated name. The crew view's `lines` carry each answer with its authored template line and `ai_req`. Godot shows the template until that request is accepted.
+> - **Checks.** `sim/ai.ail` gives `crew_reply` a 240-character cap and rejects a reply naming engine internals (`work_`/`rest_` ids, OCEAN traits, scores) as `ai_internal`; the template then stands. That's the lab's `narrativeText` port. `data/news/copy.json` explains the reason in-world.
+> - **Prompt.** `ai/prompt.ail crewRules` gives the cast persona and manner, states that the answer is already decided (D-20), forbids internal names, and keeps every generic guardrail (in-world D-67, no numerals D-21, no verdicts). The speaker is the generated name plus the role. There's a golden `tests/ai/prompts/crew_reply.golden.txt`, and the stub service answers it; no key means `no_key`, with no spend (D-8).
+> - **Fallback.** content_library's starter text is a test placeholder ("[authored starter] Response: accept."), so the game keeps an authored, in-world `templateLine` per reaction.
+> - **Names (D-74).** At new game each featured crew member gets a name from `sim/data/crew_names.ail` (14 regions of common given and family names), drawn on the crew stream: seeded, unique, region-coherent. The cast's role name is the fallback.
+> - **Cast.** `data/ai/cast/{engineer,analyst,pilot,counselor}.json` hold role names, personas from the pack's traits and values, and provisional voices and stub portraits, all marked pending (the D-7 sets aren't generated).
+> - **Tests.** `sim/crew_ai_test.ail` (4), the prompt test, and the `ai-adapter` and `ai-stub` goldens (one new request) via `make ai-test`. The news test's cap check follows the new `maxCharsFor` line.
+
 - `crew_reply` joins `aiPurposes()`. When the host asks a crew member something, the sim commits the authored reaction (SCrew) and opens an `ai_request`: `kind: text`, `purpose: crew_reply`, `entity_id` set to the role id.
 - Port the lab's short-reply prompt into `ai/prompt.ail`.
 - Port the `narrativeText` checks into `ai/`: no traits, scores or `work_…`/`rest_…` ids, length bounds, and the D-67 in-world voice. Each check gets a mutation test.
@@ -97,14 +143,30 @@ C0 ─▶ C1 ─▶ C2 ─┬─▶ C5 (crew words)
 - **Cast (D-70 OQ2).** Add `data/ai/cast/<role>.json` for each crew member in `last-messages-home`, with a `display_name`. Role ids stay the `entity_id`.
 - **Gate:** `make ai-test` (AC9) and `in-world-voice-check`.
 
-### C6: a minimal Crew page on the Voyage console (~250 LOC, after C2; the policy switch after C3)
+### C6: a minimal Crew page on the Voyage console (~250 LOC, after C2; the policy switch after C3) ✅ 2026-10-13 (renders await Mark's review)
+> **Done.**
+> - **`ui/crew_page.gd` (`CrewPage`).** One row per member: the generated name (D-74) with the role, stress, fatigue and trust bars (warm at or above the pack's overextended threshold of 70; no numbers, D-21), low regard, the work in words, and the latest line (the template, then the accepted AI words via `on_events`). Unresolved reliefs get Grant and Deny.
+> - **Actions.** Offer work is one press (offer + ask). Start, relief and the consent/orders switch need a confirming second press (no twitch).
+> - **`SimBridge.queue()`.** Console intents ride the next tick, before the relay's. The Voyage console shows a Crew section **only while a crew is aboard** (protocol 2.9), so today's crewless console and its tests are unchanged until C4.
+> - **Tests.** `tests/test_crew_console.gd` (`make crew-console-test`, AC10): 22 checks on a crew section recorded from the real sim (`tests/crew/console_state.json`: seed 1, orders, the medic asking for relief). It covers every action's intent and the confirm rule, and the real sim accepts what the page builds, directly and through the queue. The no-twitch sweep covers the page as NT3 (added after evaluation round 1): with the crew aboard and a real hold open, one press of any Crew page button queues no confirmed decision; a mutation that makes the captaincy switch single-press fails it.
+> - **Renders.** `make crew-console-capture` writes `renders/crew_console/{crew_page,crew_page_armed,crew_page_ai}.png`, all opened. They caught a wrapping bug (labels in a row had no width) and an overflow; both are fixed.
+> - **Deferred to C8.** Answering a crew concern needs the conversation issues in the view; C8's hold card is where the player answers.
+
 - **Where.** A Crew page in `demos/ship_consoles.gd`'s Voyage console (D-56).
 - **What it shows.** Each member's display name and role, stress, fatigue and trust bars, regard only when it is low, their current work and their latest line (template, then the accepted AI line).
 - **Actions:** offer work, start, grant or deny relief, and answer a concern. These map one to one to C2's intents. The consent/orders switch is a deliberate, confirmed choice (after C3).
 - **Tests.** `tests/test_crew_console.gd` binds the panel to a recorded state stream and asserts the emitted intents (AC10). It goes in `make test` through a `crew-console-test` target, and the no-twitch sweep (`make no-twitch-test`) covers the new page.
 - **Visual check.** `make crew-console-capture` writes `renders/crew_console/*.png`. Open and look at them before merging, because this is a visible feature and stays attended.
 
-### C8: auto-run, crew holds and skip-ahead (CI-5, ~450 LOC, after G1; the card after C6)
+### C8: auto-run, crew holds and skip-ahead (CI-5, ~450 LOC, after G1; the card after C6) ✅ 2026-10-13
+> **Done.**
+> - **`sim/crew_auto.ail`.** Presets: `off` (the default), `critical_only` (the lab-verified `escalation.json`, synced into `data/crew`) and `hands_on` (earlier thresholds plus `uncovered`; derived in the game until the lab's `hands_on.json` lands). Orders follow the captaincy (crew_core's consent/orders orders); the cadence follows **D-76**: daily near stars, monthly on a committed leg.
+> - **Check-ins.** Decision days are absolute (tick % cadence == 1), because crew_core's `advanceAuto` aligns its blocks to each call's start and the sim calls once per tick. An escalation becomes a hold (`h<tick>-<rule>-<actor>`); while it's open the days still pass but decisions wait. `crew_resume` clears it.
+> - **Protocol.** The `crew_orders` and `crew_resume` intents (the sim's own controls); a `crew_hold` event carries the hold; the crew view gains `auto` and `holds`.
+> - **Godot.** `SolarDeparture.step` holds ship time while `sim.crew.holds` is non-empty, sending zero-length ticks so the page's queued Resume still reaches the sim. CrewPage shows a "Needs you" card with who and what in words, a confirmed Resume, and the preset choice.
+> - **AC11 (`make crew-perf`).** A 10-year skip takes 0.46 s with critical_only (a hold stops auto-run early) and 0.89 s in the worst case, monthly auto-run with no holds. That's on the strict VM, warm, against a 2 s budget. Plain days are batched between flow points (yielding tasks' due ticks, unseen ship events) and are exactly equal to one advance a day on every parity script plus a 400-day tail; a mutation that ignores flow points fails that test. Cohorts (0.4.0) will add multiples of 7 and of 365 as flow points.
+> - **Tests.** `sim/crew_hold_test.ail` (7: schedule, presets, a monthly wait asks nobody, a hold's lifecycle, determinism, off by default, batching exactness) and `tests/test_crew_hold.gd` (9, `make crew-hold-test`, AC15).
+
 - **Sim.**
   - `World.crew.orders` holds the standing orders; new games use the pack's *critical only* preset.
   - The crew step calls `advance`, and an escalation raises a `crew_hold` event and adds an entry to `state.crew.holds`.

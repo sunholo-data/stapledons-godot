@@ -1,0 +1,61 @@
+module stapledons/sim/crew_resources
+
+-- R2-CREW C3 (design crew-integration.md §CI-2): the eight bubble resources at crew scale
+-- (stapledons-design bubble-resources.md §6, D-69), ported from the crew lab's bubble.ail (the
+-- lab stays local, so the game owns this table).
+--
+-- The crew's pool stays as the scenario authors it: those are the units the ship has handed to
+-- crew work, and the lab's claims are verified on exactly those numbers. The ship is the cap:
+-- at new game every scenario resource must be one of the eight with the right kind, and its
+-- opening units must fit within what the ship can spare (mass from the ledger's availableKg, the
+-- rest from sim/data/crew_ship.ail). bubble-resources §6: units "later read straight from the
+-- ship's ledger" (the resource-ledger milestone).
+import std/list (map, filter, flatMap, head, any, length)
+import std/option (Option, Some, None)
+import std/string (concat, intToStr)
+import std/math (floatToInt)
+import pkg/sunholo/crew_core/scenario (Scenario, resourceKind)
+import stapledons/sim/data/crew_ship (shipAmounts)
+
+export type Bubble = { id: string, kind: string, unit: string, physical: string, per: int } deriving (Eq)
+export type Amount = { id: string, value: int } deriving (Eq)
+
+export pure func bubbleResources() -> [Bubble] = [
+  { id: "mass", kind: "stock", unit: "10 kg block", physical: "kg", per: 10 },
+  { id: "water", kind: "stock", unit: "1 t", physical: "kg", per: 1000 },
+  { id: "power", kind: "capacity", unit: "50 kW of headroom", physical: "kW", per: 50 },
+  { id: "heat", kind: "capacity", unit: "50 kW of headroom", physical: "kW", per: 50 },
+  { id: "garden", kind: "capacity", unit: "100 m2 of lit beds", physical: "m2", per: 100 },
+  { id: "fabrication", kind: "capacity", unit: "one bay for one shift", physical: "bay-shifts", per: 1 },
+  { id: "compute", kind: "capacity", unit: "one Archive slot", physical: "slots", per: 1 },
+  { id: "signal", kind: "capacity", unit: "one antenna window", physical: "windows", per: 1 }
+]
+
+export pure func bubbleOf(id: string) -> Option[Bubble] = head(filter(\b. b.id == id, bubbleResources()))
+
+-- Whole crew units for each known resource in a physical ledger, rounded down. Unknown ids and
+-- negative amounts give nothing; the crew never sees part of a unit.
+export pure func allocate(ship: [Amount]) -> [Amount] =
+  flatMap(\a. match bubbleOf(a.id) { Some(b) => if a.value < 0 then [] else [{ id: a.id, value: a.value / b.per }], None => [] }, ship)
+
+-- The ship's spare capacity in crew units: mass from the ledger, the rest from crew_ship.
+export pure func shipUnits(availableKg: float) -> [Amount] =
+  allocate({ id: "mass", value: if availableKg > 0.0 then floatToInt(availableKg) else 0 } :: map(\s. { id: s.id, value: s.value }, shipAmounts()))
+
+pure func unitsOf(xs: [Amount], id: string) -> int = match head(filter(\a. a.id == id, xs)) { Some(a) => a.value, None => 0 }
+
+-- Problems with a scenario's resources: not one of the eight, the wrong kind, or more opening
+-- units than the ship can spare. Empty when the scenario may come aboard.
+export pure func lintPack(sc: Scenario) -> [string] =
+  flatMap(\r. match bubbleOf(r.id) {
+    None => [concat([r.id, ": not one of the eight bubble resources"])],
+    Some(b) => if resourceKind(sc, r.id) == b.kind then [] else [concat([r.id, ": must be a ", b.kind])]
+  }, sc.resources)
+export pure func lintAgainstShip(sc: Scenario, ship: [Amount]) -> [string] =
+  lintPack(sc) ++ flatMap(\r. if r.initial > unitsOf(ship, r.id) then [concat([r.id, ": ", intToStr(r.initial), " units but the ship can spare ", intToStr(unitsOf(ship, r.id))])] else [], sc.resources)
+
+-- What the crew have used, in physical units (the design's crew.used readout; not enforced
+-- against the ledger in R2).
+export type Used = { id: string, units: int, amount: int, physical: string } deriving (Eq)
+export pure func usedOf(consumed: [Amount]) -> [Used] =
+  flatMap(\a. match bubbleOf(a.id) { Some(b) => [{ id: a.id, units: a.value, amount: a.value * b.per, physical: b.physical }], None => [] }, consumed)

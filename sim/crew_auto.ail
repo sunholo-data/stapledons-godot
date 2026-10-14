@@ -1,0 +1,110 @@
+module stapledons/sim/crew_auto
+
+-- R2-CREW C8 (design crew-integration.md §CI-5): auto-run under standing orders, with critical
+-- moments handed to the captain as crew holds. crew_core 0.3.0's auto-captain makes the decisions
+-- (the same host calls and journal records as a player's); this module chooses the orders and
+-- rules, keeps the check-in schedule, and turns an escalation into a hold.
+--
+--   presets: critical_only  the lab-verified rules (data/crew/escalation.json, synced)
+--            hands_on       the lab's hands-on rules (data/crew/hands_on.json, synced; ailang-packages
+--                           #140): breakdown at stress 70, trust below 40, `uncovered` (a concern
+--                           only the captain can answer) and cohort pressure 25
+--            off            no auto-run (the default): every decision is the captain's
+--   orders:  by captaincy (crew_core consentOrders / ordersOrders), cadence by D-76 (Mark,
+--            2026-10-13): daily near stars, monthly on long skips
+--   schedule: decision days are absolute (tick % cadence == 1), so a skip split over many sim
+--            ticks still checks in monthly; days before the next decision day advance with no
+--            decisions (crew_core's advanceAuto aligns its blocks to the call's start)
+--   holds:   an escalation stops auto-run for the crew; the remaining days advance with no
+--            decisions (only crew decisions wait). crew_resume clears a hold.
+import std/string (concat, intToStr)
+import std/list (filter, length)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import pkg/sunholo/crew_core/auto (Rule, Orders, AutoState, Escalated, consentOrders, ordersOrders, decodeEscalation, advanceAuto)
+import pkg/sunholo/crew_core/session (encodeHostError)
+import stapledons/sim/data/crew_pack (escalationJson, handsOnJson)
+import ./crew (CrewState, CrewStepped, CrewHold, AutoRun, daysIn, plainDays, answerSeed)
+import ./rng (Rng, SCrew, draw)
+
+export pure func presets() -> [string] = ["off", "critical_only", "hands_on"]
+-- D-76: check-in cadence in crew days.
+export pure func cadenceNearStar() -> int = 1
+export pure func cadenceLongSkip() -> int = 30
+
+export pure func rulesFor(preset: string) -> Result[[Rule], string] =
+  if preset == "critical_only" then decodeEscalation(escalationJson())
+  else if preset == "hands_on" then decodeEscalation(handsOnJson())
+  else Err(concat(["unknown preset ", preset]))
+
+export pure func ordersFor(captaincy: string, nearStar: bool) -> Orders = {
+  let base = if captaincy == "orders" then ordersOrders() else consentOrders();
+  { base | cadence: if nearStar then cadenceNearStar() else cadenceLongSkip() }
+}
+
+-- crew_orders: a preset. Turning auto-run on draws its seed from the crew stream once.
+export type Set = { crew: CrewState, rng: Rng, refused: Option[string] }
+export pure func setPreset(c: CrewState, seed: int, rng: Rng, preset: string) -> Set =
+  if preset == "off" then { crew: { c | auto: None }, rng: rng, refused: None }
+  else match rulesFor(preset) {
+    Err(e) => { crew: c, rng: rng, refused: Some(e) },
+    Ok(rs) => match c.auto {
+      Some(a) => { crew: { c | auto: Some({ a | preset: preset, rules: rs }) }, rng: rng, refused: None },
+      None => {
+        let d = draw(seed, rng, SCrew);
+        { crew: { c | auto: Some({ preset: preset, rules: rs, st: { seed: answerSeed(d.value), agreed: [], raised: [], calls: 0 } }) }, rng: d.rng, refused: None }
+      }
+    }
+  }
+
+-- crew_resume: the captain has dealt with a hold.
+export pure func resume(c: CrewState, id: string) -> Option[CrewState] =
+  if length(filter(\h. h.id == id, c.holds)) == 0 then None else Some({ c | holds: filter(\h. h.id != id, c.holds) })
+
+pure func holdOf(e: Escalated) -> CrewHold =
+  { id: concat(["h", intToStr(e.tick), "-", e.rule, (if e.actor == "" then "" else concat(["-", e.actor]))]), rule: e.rule, actor: e.actor, task: e.task, tick: e.tick, detail: e.detail }
+
+-- The first decision day after `turn` on the absolute schedule (ticks t with t % cadence == 1).
+export pure func nextDecision(turn: int, cadence: int) -> int =
+  if cadence <= 1 then turn + 1 else { let k = (turn - 1) / cadence; let d = k * cadence + 1; if d > turn then d else d + cadence }
+
+export type AutoStepped = { stepped: CrewStepped, holds: [CrewHold] }
+pure func plain(s: CrewStepped) -> AutoStepped = { stepped: s, holds: [] }
+pure func join(a: CrewStepped, b: CrewStepped) -> CrewStepped =
+  { b | lines: a.lines ++ b.lines, traces: a.traces ++ b.traces, answered: a.answered ++ b.answered }
+
+-- One sim tick's crew days: plain days when auto-run is off or a hold is open; otherwise plain days
+-- up to the next decision day, then the auto-captain for the rest, stopping at an escalation.
+export pure func autoStep(c: CrewState, seed: int, rng: Rng, dtau: float, nearStar: bool) -> AutoStepped {
+  let dd = daysIn(c.dayRem, dtau);
+  let c0 = { c | dayRem: dd.left };
+  let n = dd.days;
+  match c0.auto {
+    None => plain(plainDays(c0, rng, n)),
+    Some(a) => if length(c0.holds) > 0 || n == 0 then plain(plainDays(c0, rng, n)) else {
+      let o = ordersFor(c0.session.command, nearStar);
+      let d = nextDecision(c0.turn, o.cadence);
+      let target = c0.turn + n;
+      if d > target then plain(plainDays(c0, rng, n)) else {
+        let pre = plainDays(c0, rng, d - 1 - c0.turn);
+        match pre.refused {
+          Some(_) => plain(pre),
+          None => match advanceAuto(pre.crew.session, a.st, pre.crew.policy, o, a.rules, target - pre.crew.turn) {
+            Err(e) => plain({ pre | refused: Some(concat(["auto: ", encodeHostError(e)])) }),
+            Ok(r) => {
+              let c1 = { pre.crew | session: r.session, turn: r.session.state.tick, auto: Some({ a | st: r.state }) };
+              match r.escalated {
+                None => { stepped: { pre | crew: c1 }, holds: [] },
+                Some(e) => {
+                  let h = holdOf(e);
+                  let rest = plainDays({ c1 | holds: c1.holds ++ [h] }, pre.rng, target - c1.turn);
+                  { stepped: join(pre, rest), holds: [h] }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

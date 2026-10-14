@@ -7,7 +7,9 @@ module stapledons/sim/core
 import std/option (Option, Some, None)
 import std/result (Ok, Err)
 import std/math (intToFloat)
-import std/list (map, reverse)
+import std/list (map, reverse, filter)
+import std/string (concat, intToStr, floatToStr)
+import std/json (decode, getString)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
 import pkg/sunholo/relativity/optics (Vec3, norm, normalize, cmbForwardTemperature)
 import pkg/sunholo/relativity/hyper (absf)
@@ -21,8 +23,14 @@ import ./celestial (defaultEpochJd, solSystem, lyKm)
 import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
 import ./inferred_stars (CatStar, inferStar, remember)
 import ./stops (starStopKm)
+import ./crew (CrewState, CrewCmd, CrewLine, CrewHold, initCrew, crewTick, crewIntents, raiseShipEvents, noteLine, withNames)
+import ./crew_names (nameCrew, nameOf)
+import ./crew_auto (autoStep, setPreset, resume)
+import pkg/sunholo/crew_core/scenario (projectName, purpose as recipePurpose)
+import ./crew_events (Moments, noMoments, shipEvents)
+import ./crew_resources (shipUnits, lintAgainstShip)
 import ./gr (GrState, GrResult, grOff, grStep, grShipPos, grApproach, grHover, grOrbit, grRing, grHoverEvent)
-import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire)
+import ./ai (AiState, AiOpen, AiCancel, AiRecord, AiEvent, ERequest, EAcceptedText, EAcceptedMedia, EFallback, AiStep, AiParams, aiEventName, emptyAi, defaultAiMaxOpen, defaultAiTtlTicks, openRequest, cancelRequest, recordResult, expire, CStr)
 
 -- ShipPhase is TripPhase in canon words (design §M2.2).
 export type ShipPhase = AtRest | Boosting | Cruising | Braking | Approaching deriving (Eq)
@@ -96,6 +104,7 @@ export type Intent =
   | IAiOpen(AiOpen) | IAiCancel(AiCancel)
   | IWarp(float)
   | IGrApproach(GrApproachReq) | IGrHover | IGrOrbit | IGrRing
+  | ICrew(CrewCmd)
 -- M3.4b (protocol 2.6): the GR intents; sim/gr.ail holds their rules.
 export type GrApproachReq = { toR: float, betaLocal: float }
 export type Refusal = { i: int, reason: string }
@@ -111,8 +120,8 @@ export type Residuals = { x: float, t: float, phi: float }
 export type Drawn = { stream: string, n: int, value: int }
 -- A `hold_limit` event (R1-ISM-DUST, protocol 2.7) follows an m_eff_too_small refusal under lism-1:
 -- the highest cruise rapidity the drive can hold on that route and the medium that sets it.
-export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent], archive: Option[string], hold: Option[HoldInfo] }
-export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None, archive: None, hold: None }
+export type Event = { kind: string, echo: Option[PlanReq], phase: Option[Crossing], arrived: Option[Residuals], drew: Option[Drawn], ai: Option[AiEvent], archive: Option[string], hold: Option[HoldInfo], crewHold: Option[CrewHold] }
+export pure func event(k: string) -> Event = { kind: k, echo: None, phase: None, arrived: None, drew: None, ai: None, archive: None, hold: None, crewHold: None }
 export pure func archiveEvent(name: string) -> Event = {event("archive") | archive: Some(name)}
 
 -- standoffAu: the arrival stand-off (M4.1, D-14); 0 plans to the star itself (M2),
@@ -147,7 +156,7 @@ export pure func availableKgStart() -> float = 20000.0
 -- the threshold cache (a pure function of the medium and the rapidity, kept to skip recomputing).
 export type DustState = { last: DustTick, legExpected: float, legGrains: float, medium: Medium, crossed: [Medium], legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
 export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legGrains: 0.0, medium: hotMedium(), crossed: [], legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar] }
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar], crew: Option[CrewState] }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -176,7 +185,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [] }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [], crew: None }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -243,7 +252,9 @@ pure func refuseWhileCommitted(diag: bool, p: Params, a: Pending, it: Intent) ->
     IGrApproach(_) => refuseIntent(a, "not_in_gr"),
     IGrHover => refuseIntent(a, "not_in_gr"),
     IGrOrbit => refuseIntent(a, "not_in_gr"),
-    IGrRing => refuseIntent(a, "not_in_gr")
+    IGrRing => refuseIntent(a, "not_in_gr"),
+    -- R2-CREW: crew intents are applied in tick() before the ship's (sim/crew.ail); never refused for a commitment
+    ICrew(_) => a
   }
 
 -- AI intents (sim/ai.ail): the step's ai state, its `ai` stream counter,
@@ -433,7 +444,9 @@ pure func applyFlat(diag: bool, p: Params, a: Pending, it: Intent) -> Pending =
     IGrApproach(_) => refuseIntent(a, "not_in_gr"),
     IGrHover => refuseIntent(a, "not_in_gr"),
     IGrOrbit => refuseIntent(a, "not_in_gr"),
-    IGrRing => refuseIntent(a, "not_in_gr")
+    IGrRing => refuseIntent(a, "not_in_gr"),
+    -- R2-CREW: crew intents are applied in tick() before the ship's (sim/crew.ail); never refused for a commitment
+    ICrew(_) => a
   }
 -- Draw (diag, M2.4): the stream's next value; its counter advances and
 -- the value is reported in a `draw` event.
@@ -699,8 +712,116 @@ export pure func tick(w: World, input: TickInput) -> Ticked
   requires { input.dtau >= 0.0 }
   ensures { result.world.tick == w.tick + 1 }
 {
-  let r = tickBase(w, input);
-  { world: observe(w, r.world, r.events), refused: r.refused, events: r.events }
+  -- R2-CREW C2: the captain's crew intents first (they may draw on the crew stream), in order.
+  -- C8: crew_orders and crew_resume are the sim's own (auto-run presets, holds); the rest go to crew_core.
+  let cc = crewControl(w.crew, w.seed, w.rng, controlCmds(crewCmds(input.intents, 0)), []);
+  let ci0 = crewIntents(cc.crew, w.seed, cc.rng, coreCmds(crewCmds(input.intents, 0)));
+  let ci = { ci0 | refused: mergeRefused(map(\x. { i: x.i, reason: x.reason }, cc.refused), map(\x. { i: x.i, reason: x.reason }, ci0.refused)) };
+  -- C5: every answered ask opens a crew_reply AI request; the decision is already made (D-20).
+  let cl = crewLines({ w | crew: ci.crew, rng: ci.rng }, ci.answered, []);
+  let w1 = cl.world;
+  let r0 = tickBase(w1, input);
+  let r = { r0 | refused: mergeRefused(r0.refused, map(\x. { i: x.i, reason: x.reason }, ci.refused)), events: cl.events ++ r0.events };
+  let o0 = observe(w1, r.world, r.events);
+  -- R2-CREW C3: this tick's physics moments reach an aboard crew as ship events (sim/crew_events.ail).
+  let o = match o0.crew {
+    None => o0,
+    Some(cr) => { let e = raiseShipEvents(cr, o0.seed, o0.rng, shipEvents(crewMoments(w1, o0))); { o0 | crew: Some(e.crew), rng: e.rng } }
+  };
+  -- R2-CREW (sim/crew.ail): ship time reaches the crew; None (no crew aboard) is a no-op.
+  -- C8: auto-run (sim/crew_auto.ail) checks in daily near stars, monthly on a committed leg (D-76).
+  let nearStar = match o.journey { Committed(_) => false, _ => true };
+  match o.crew {
+    None => { world: o, refused: r.refused, events: r.events },
+    Some(cr) => {
+      let a = autoStep(cr, o.seed, o.rng, input.dtau, nearStar);
+      { world: { o | crew: Some(a.stepped.crew), rng: a.stepped.rng }, refused: r.refused,
+        events: r.events ++ map(\h. { event("crew_hold") | crewHold: Some(h) }, a.holds) }
+    }
+  }
+}
+
+-- C8: the sim's own crew controls, in intent order. crew_orders {"command":"orders","preset":p};
+-- crew_resume {"command":"resume","hold":id}. A refusal is crew:<reason>.
+pure func isControl(c: CrewCmd) -> bool = c.kind == "crew_orders" || c.kind == "crew_resume"
+pure func controlCmds(xs: [(int, CrewCmd)]) -> [(int, CrewCmd)] = filter(\x. match x { (_, c) => isControl(c) }, xs)
+pure func coreCmds(xs: [(int, CrewCmd)]) -> [(int, CrewCmd)] = filter(\x. match x { (_, c) => !isControl(c) }, xs)
+type Controlled = { crew: Option[CrewState], rng: Rng, refused: [Refusal] }
+pure func crewControl(crew: Option[CrewState], seed: int, rng: Rng, xs: [(int, CrewCmd)], refused: [Refusal]) -> Controlled = match xs {
+  [] => { crew: crew, rng: rng, refused: refused },
+  (i, cmd) :: rest => match crew {
+    None => crewControl(crew, seed, rng, rest, refused ++ [{ i: i, reason: "crew:no_crew" }]),
+    Some(c) => if cmd.kind == "crew_orders" then (match setPreset(c, seed, rng, ctrlArg(cmd.line, "preset")) {
+        s => match s.refused { Some(e) => crewControl(crew, seed, rng, rest, refused ++ [{ i: i, reason: concat(["crew:", e]) }]), None => crewControl(Some(s.crew), seed, s.rng, rest, refused) }
+      })
+      else match resume(c, ctrlArg(cmd.line, "hold")) {
+        Some(c2) => crewControl(Some(c2), seed, rng, rest, refused),
+        None => crewControl(crew, seed, rng, rest, refused ++ [{ i: i, reason: "crew:unknown hold" }])
+      }
+  }
+}
+pure func ctrlArg(line: string, key: string) -> string = match decode(line) { Ok(j) => (match getString(j, key) { Some(v) => v, None => "" }), Err(_) => "" }
+
+pure func crewCmds(xs: [Intent], i: int) -> [(int, CrewCmd)] = match xs {
+  [] => [],
+  x :: more => match x { ICrew(c) => (i, c) :: crewCmds(more, i + 1), _ => crewCmds(more, i + 1) }
+}
+-- Refusals in intent order.
+pure func mergeRefused(a: [Refusal], b: [Refusal]) -> [Refusal] = match (a, b) {
+  ([], _) => b,
+  (_, []) => a,
+  (x :: xs, y :: ys) => if x.i <= y.i then x :: mergeRefused(xs, b) else y :: mergeRefused(a, ys)
+}
+
+-- R2-CREW C1: bring the synced crew aboard a world (consent or orders, D-70 OQ5). Off by default
+-- until C4, so recorded sessions keep their goldens.
+-- C3: the pack's resources must be the eight bubble resources and fit what the ship can spare.
+export pure func withCrew(w: World, captaincy: string) -> Result[World, string] = match initCrew(captaincy) {
+  Ok(c) => match lintAgainstShip(c.session.scenario, shipUnits(w.ledger.availableKg)) {
+    -- D-74: the crew's names are drawn from the crew stream at new game.
+    [] => { let n = nameCrew(w.seed, w.rng, c.session.scenario.workers); Ok({ w | crew: Some(withNames(c, n.names)), rng: n.rng }) },
+    p :: _ => Err(concat(["crew pack: ", p]))
+  },
+  Err(e) => Err(e)
+}
+
+-- R2-CREW C5: an ai_request (kind text, purpose crew_reply) for each answered ask, in order. The
+-- context carries the decided reaction and the work in words (never the recipe id); the line is
+-- kept in the crew state with its request id ("" when the AI service refused it, e.g. too many
+-- open requests: the template line then stands).
+type CrewOpened = { world: World, events: [Event] }
+pure func workWords(c: CrewState, task: string) -> string =
+  match filter(\t. t.id == task, c.session.state.tasks) {
+    t :: _ => concat([projectName(c.session.scenario, t.recipe), ": ", recipePurpose(c.session.scenario, t.recipe)]),
+    [] => "the work at hand"
+  }
+pure func crewLines(w: World, ls: [CrewLine], evs: [Event]) -> CrewOpened = match (ls, w.crew) {
+  ([], _) => { world: w, events: evs },
+  (_, None) => { world: w, events: evs },
+  (l :: rest, Some(c)) => {
+    let o = { kind: "text", purpose: "crew_reply", entityId: l.actor, emotion: None, ageStage: None, lineReq: None, emotions: None,
+      context: [{ name: "reaction", value: CStr(l.label) }, { name: "work", value: CStr(workWords(c, l.task)) },
+        { name: "name", value: CStr(match nameOf(c.names, l.actor) { Some(n) => n, None => l.actor }) }] };
+    let s = openRequest(w.diag, { maxOpen: w.params.aiMaxOpen, ttlTicks: w.params.aiTtlTicks }, w.tick + 1, w.seed, w.rng, w.ai, o);
+    let req = match s.refusal { None => intToStr(s.ai.lastReq), Some(_) => "" };
+    crewLines({ w | ai: s.ai, rng: s.rng, crew: Some(noteLine(c, { l | aiReq: req })) }, rest, evs ++ map(aiEvent, s.events))
+  }
+}
+
+-- R2-CREW C3: the physics moments of one tick, from the world before and after it.
+pure func newsKey(n: Option[News]) -> string = match n { Some(x) => concat([intToStr(x.templateId), "@", floatToStr(x.newsEpoch)]), None => "" }
+export pure func crewMoments(before: World, after: World) -> Moments = {
+  let m = noMoments(after.tick);
+  let grStart = after.gr.active && after.gr.mode == "approach" && before.gr.mode != "approach";
+  let grEnd = before.gr.mode == "approach" && after.gr.mode == "hover";
+  let news = match after.cq.news { Some(n) => if newsKey(after.cq.news) != newsKey(before.cq.news) then Some(n.templateId) else None, None => None };
+  let arrived = match (before.journey, after.journey) { (Committed(_), Arrived(c)) => Some(c.plan.id), _ => None };
+  let committed = match (before.journey, after.journey) {
+    (Committed(_), _) => None,
+    (_, Committed(c)) => Some({ plan: c.plan.id, massKg: (planView(after.params, c.plan, c.tau0, c.t0)).energy.totalKg }),
+    _ => None
+  };
+  { m | grStart: grStart, grEnd: grEnd, newsTemplate: news, arrivedPlan: arrived, committed: committed }
 }
 
 -- ------------------------------------------------------------ consequence readouts (M4.1)
