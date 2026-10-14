@@ -1,0 +1,262 @@
+{
+  "findings": [
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/@Label",
+      "text": "Cruise Nc  ·  gamma N",
+      "observed_samples": 28,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N ship-yr",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N Earth-yr",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "ship +N yr",
+      "observed_samples": 662,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "Earth +N yr",
+      "observed_samples": 1378,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N yr",
+      "observed_samples": 1394,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N ly",
+      "observed_samples": 1340,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "Nc",
+      "observed_samples": 732,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "NeN J",
+      "observed_samples": 1540,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "Cruise N - beta",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N - beta",
+      "observed_samples": 624,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N",
+      "observed_samples": 1356,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N min",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "LIC N ly\nG N ly\nhot gas N ly",
+      "observed_samples": 43,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "hot gas N ly\nG N ly\nLIC N ly",
+      "observed_samples": 11,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N H/cmN",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "  its N - beta",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "Ne-N",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "Grains swept (>= N um)",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "NeN",
+      "observed_samples": 108,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N kg",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "NeN W/mN",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "Ne-N W/mN",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N N",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "NeN W",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@GridContainer/@Label",
+      "text": "N K",
+      "observed_samples": 54,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@Label",
+      "text": "CNSN:N  ·  N ly",
+      "observed_samples": 377,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@Label",
+      "text": "Now: Earth +N yr  ·  ship +N yr  ·  tick N\nVariable time compression · N ship-yr/real-s",
+      "observed_samples": 203,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@Label",
+      "text": "Now: Earth +N yr  ·  ship +N yr  ·  tick N\nVariable time compression · Ne-N ship-yr/real-s",
+      "observed_samples": 513,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/@Window/GalaxyMap/@CanvasLayer/@PanelContainer/@VBoxContainer/MapDetails/@VBoxContainer/@Label",
+      "text": "N known destinations · within N pc of Sol",
+      "observed_samples": 716,
+      "why": "Existing GalaxyMap label formats numeric text directly without a DisplayBinding.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "unbound",
+      "node": "/root/ShipGeometryDemo/ShipConsoles/@SubViewport/@Label",
+      "text": "Archive\nN entries open",
+      "observed_samples": 716,
+      "why": "Archive station caption directly includes the open-entry count in a plain Label.",
+      "row": "M4.5bR3-follow-up"
+    },
+    {
+      "kind": "transit-ISM",
+      "node": "/root/ShipGeometryDemo/@CanvasLayer/@Control/Cards/Card_transit",
+      "text": "missing ship.ism.glow_w_mN",
+      "observed_samples": 42,
+      "folding_card": "/root/ShipGeometryDemo/@CanvasLayer/@Control/Cards/Card_medium_notice",
+      "accompanying_card": "/root/ShipGeometryDemo/@CanvasLayer/@Control/Cards/Card_notice",
+      "why": "Medium boundary and the Braking notice occupy both expanded slots, folding Transit and its ISM readout.",
+      "row": "M4.5bR3-follow-up"
+    }
+  ]
+}

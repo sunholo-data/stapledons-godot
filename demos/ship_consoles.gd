@@ -254,6 +254,8 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 				demo.refuse("No news from home has reached the ship yet.")
 				return false
 			_reading().show_world(w); news_panel.open(); legacy_screen.visible = false; answer_panel.visible = false
+			if demo.journey_sim != null and demo.journey_sim.ai_relay is AiRelay:
+				news_panel.request_ai(demo.journey_sim.ai_relay, w)
 			return true
 		["archive", "ask"]:
 			var q: String = ask_field.text if ask_field != null else ""
@@ -304,6 +306,14 @@ func _act(id: String, action: String, arg: Variant) -> bool:
 	if map.guided_read_only:
 		demo.refuse("The guided voyage owns the course; it plots and commits each leg itself.")
 		return false
+	# The sim answers attempts against a committed course, without advancing the journey.
+	if map.journey_state() == "committed" and action in ["select", "cancel", "commit"]:
+		if action == "select" and map.index_of(str(arg)) < 0: return false
+		var intent: Dictionary = map.plan_intent(map.index_of(str(arg))) if action == "select" else {"k": action}
+		if action == "commit": intent["plan_id"] = int(demo.journey_sim.world.journey.plan_id)
+		var ok: bool = demo.journey_sim.send([intent], 0.0)
+		if ok: demo._apply_journey_world()
+		return ok
 	match action:
 		"select":
 			if str(arg) == "Sol":
@@ -859,8 +869,11 @@ func follow(sim: SimBridge) -> void:
 func _on_sim_stepped(events: Array) -> void:
 	var sim: SimBridge = demo.journey_sim
 	if sim != null:
+		if not sim.last_refused.is_empty() and str(sim.last_refused[0].reason) == "committed":
+			demo.refuse(GalaxyMap.refusal_text(str(sim.last_refused[0].reason)))
 		_reading()
 		legacy_screen.fold(sim.world)
+		news_panel.on_events(events)
 	var before := archive_ask.state
 	archive_ask.on_events(events, sim.last_refused if sim != null else [], sim.relay_intents if sim != null else [], sim.relay_from if sim != null else 0)
 	if archive_ask.state != before:

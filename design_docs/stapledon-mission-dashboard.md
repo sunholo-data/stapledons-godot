@@ -1,26 +1,26 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-13, iteration 27.
+Updated 2026-10-14, iteration 29.
 
-- **Bar:** clauses 2 and 3 are MET, 1 and 4 UNMET, and clause 5 is ongoing. This iteration did not move the goal; L2 is clause-5 hygiene.
-- **Merged, CI pending:** L2 M4.6 follow-ups, PR #216 (merge `8a67df3`). PR CI run 38352228389 `success`; merge CI run 38360264695 was still running at record time, so it is not yet tagged LANDED (row 7d carries the predicate).
-  - One `make lint-precision`. It now catches the `b` name and hand γ, `*.gdshaderinc` and `physics/planets.gd`, and it found and fixed two live hand computations (`main.gd:858`, `tools/glow_eps_sheet.gd:164`).
-  - `codexUnlocks`' `holds` clause is kept, and `checkHintless` now kills its deletion mutant.
-  - The D-52 wording is updated.
-  - Items (a), (b) and (d) were closed by evidence.
-  - Independent evaluation: Sonnet, 89 PASS.
-- **Landed by Mark mid-iteration:** #212 (AILANG v0.54.6) and #213 (D-68: New game, Voyage log).
-- **Next for the loop:** the row-7d resume predicate. Then M4.5aR3 ∥ M4.6gR3 (the clause-4 critical path) once the attended Do-not-touch refresh lands; until then, L4, L3, L5, L7 and row 7g.
+- **Bar:** clauses 2 and 3 are MET, 1 and 4 UNMET, and clause 5 is ongoing. This iteration moved clause 4.
+- **Landed:** M4.5bR3, the scene audits. PR #232, merge `404c098`; PR CI `success` on `06a741c` (an identical tree); merge CI 38519309380 `success`.
+  - The time proxy charges walking at 3.5 m/s, plus console use, commit holds and reading: 226.5 s against the 360 s limit, legs of 60.15 s and 61.35 s (AC7).
+  - Codex unlocks: 8 entries at their hints on the 3D-ship session (AC16).
+  - AI modes: none (template), stub (generated) and digits (fallback with the `ai_numeral` notice), via `make playthrough-ai-modes` (AC6).
+  - Scene replay: VM = interpreter, byte-identical (2,437 states). There is no golden yet (AC5, row 7i(c)).
+  - `make display-audit` is a ratchet. It is strict on mismatches, missing fields, lore, AI and frame state (all 0). It pins pre-existing unbound helm numerals (31 entries) and one folded transit card (D-77). **AC4 is OPEN.**
+  - Independent evaluation: Sonnet, 74 then 73 PASS, 13 of 13 mutations red.
+  - One CI red (`ai-live-guard`, a missing `env -u AI_LIVE`) was fixed by the controller and confirmed by the judge.
+- **Next for the loop:** row 7i(a), binding the unbound numerals (closes AC4 short of D-77) ∥ M4.6gR3 (GPU goldens on the rig), then rows 7i and 7h, then L9, L4, L3, L5, L7.
 - **Attended:**
-  - Refresh the Do-not-touch line now that D-68 has landed. #214, still open, touches `demos/ship_consoles.gd` and `demos/ship_geometry_demo.gd`.
-  - Merge #214.
   - M1.5b renders.
-- **Parked on Mark:** none (0 OPEN ledger rows).
-- **Routing:** cadence 6 h; codex is over its daily ration.
-  - Designer: claude-opus-5-5.
-  - Planner: pi kimi-k3.
-  - Executor: claude-haiku-5-5.
+  - R2-CREW (#224, on hold for ailang#1812).
+  - The crew_core publish retry.
+- **Parked on Mark:** D-77, the folded transit card while braking: A amend AC4 (recommended, the default) or B change the card priority.
+- **Routing:** cadence 6 h.
+  - Executor: codex gpt-6.1-sol, 3 runs.
   - Evaluator: Sonnet via the Agent tool.
-  - Quorum: metered $0.51; gpt6-1-sol unreachable in both rounds.
-- **Workspace:** the main checkout is stale (about 520 behind) and dirty, and is left alone. The loop works in fresh sibling clones (`.stapledon-loop-iter27`, `.stapledon-eval-iter27`, `.stapledon-record-iter27`).
-- **Full detail:** mission log, iteration 27.
+  - No designer or planner (the plan was approved under D-66).
+  - Metered spend: $0.
+- **Workspace:** the loop works in fresh sibling clones (`.stapledon-loop-iter29`, `.stapledon-eval-iter29`, `.stapledon-record-iter29`). The main checkout is clean at origin/main.
+- **Full detail:** mission log, iteration 29.

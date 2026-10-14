@@ -1,0 +1,20 @@
+{
+  "steps": [
+    {"walk": "navigation"},
+    {"use": "navigation", "action": "open"},
+    {"use": "navigation", "action": "select", "arg": "CNS5:3627"},
+    {"use": "navigation", "action": "commit"},
+    {"until": "arrived", "target": "CNS5:3627"},
+    {"walk": "archive"},
+    {"use": "archive", "action": "open"},
+    {"use": "archive", "action": "news"},
+    {"walk": "navigation"},
+    {"use": "navigation", "action": "open"},
+    {"use": "navigation", "action": "home"},
+    {"use": "navigation", "action": "commit"},
+    {"until": "arrived", "target": "Sol"},
+    {"walk": "archive"},
+    {"use": "archive", "action": "open"},
+    {"use": "archive", "action": "log"}
+  ]
+}

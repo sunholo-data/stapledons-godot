@@ -2,7 +2,7 @@
 
 **Design doc:** [crew-integration.md](crew-integration.md) (approved 2026-10-13, ledger D-70)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CREW.json`
-**Status:** Approved 2026-10-13 (Mark, attended; ledger D-71), revision 1. Q1 settled by Mark: auto-run with critical moments, so CI-0 gains standing orders, escalation and `advance(n)`, and this sprint gains C8 (CI-5). Q2 and Q3: yes.
+**Status:** Approved 2026-10-13 (Mark, attended; ledger D-72), revision 1. Q1 settled by Mark: auto-run with critical moments, so CI-0 gains standing orders, escalation and `advance(n)`, and this sprint gains C8 (CI-5). Q2 and Q3: yes.
 **Scope:** the game-side milestones CI-1 to CI-5. CI-0 (crew_core 0.3.0) lives in ailang-packages and belongs to the crew-lab agent. This sprint consumes it at gate G1.
 **Branch:** `feat/r2-crew` in the attended clone. Each milestone is one PR to main.
 **AILANG:** v0.54.6 (pinned). AILANG prompt version loaded: v0.16.7.
