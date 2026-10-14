@@ -440,7 +440,7 @@ func test_dev_gating() -> void:
 		e.physical_keycode = k
 		e.pressed = true
 		menu._unhandled_input(e)
-	check("AC11 menu launch: B, G, 5 and 6 do nothing", menu.guides.visible == guides and menu.sky_state == state and not menu.benchmark.running)
+	check("AC11 menu launch: G, 5 and 6 do nothing; B only measures (frame check), changing no state", menu.guides.visible == guides and menu.sky_state == state and not menu.benchmark.running)
 	check("menu launch: Main menu button in the strip corner", menu.menu_button.visible and menu.menu_button.get_parent() == menu.ship_hud.corner)
 	menu.queue_free()
 	await process_frame

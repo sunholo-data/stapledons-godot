@@ -40,7 +40,7 @@ const KEYS := [
 	{"key": "KEY_5", "via": "match", "kind": "dev", "group": "Developer", "help": "5 rest sky snapshot"},
 	{"key": "KEY_6", "via": "match", "kind": "dev", "group": "Developer", "help": "6 mid-journey sky snapshot"},
 	{"key": "KEY_G", "via": "match", "kind": "dev", "group": "Developer", "help": "G orbit guides"},
-	{"key": "KEY_B", "via": "match", "kind": "dev", "group": "Developer", "help": "B benchmark (uploads a public summary)"},
+	{"key": "KEY_B", "via": "match", "kind": "display", "group": "Display", "help": "B frame check: measures 10 s of play, uploads a public summary"},
 ]
 
 ## Pointer and gesture controls (instant).

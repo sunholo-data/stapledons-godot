@@ -51,6 +51,9 @@ var world: Dictionary = {}
 ## The last message read from the sim, as parsed, and its raw text.
 var state: Dictionary = {}
 var last_line := ""
+## Frame check (B): wall time the main thread spends in send(), cumulative, for FrameCheck to sample.
+var send_count := 0
+var send_ms_total := 0.0
 ## The sim's hello reply (proto, sim, relativity, rng).
 var hello_reply: Dictionary = {}
 ## `refused` and `events` of the last accepted input.
@@ -267,6 +270,14 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 ## returns false with the sim's reason in `last_error`; the child keeps
 ## running. Nothing is sent before new_game has been answered.
 func send(intents: Array, dtau: float) -> bool:
+	var t0 := Time.get_ticks_usec()
+	var ok := _send(intents, dtau)
+	send_count += 1
+	send_ms_total += (Time.get_ticks_usec() - t0) / 1000.0
+	return ok
+
+
+func _send(intents: Array, dtau: float) -> bool:
 	if _pid < 0:
 		return false
 	if not _game:

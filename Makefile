@@ -1051,6 +1051,8 @@ ship-demo-ci: ship-ui-test
 .PHONY: ship-console-test no-twitch-test ship-ui-window-check
 ship-console-test: import ## AC6, 8, 9, 10, 14a: stations from ship.glb, reach and facing, dolly, confirms, helm/chart, Voyage, Archive, Sgr A*, Walk to
 	@$(GODOT_SIM) --headless --path . --script tests/test_ship_consoles.gd > $(SCRATCH)/ship-consoles.log 2>&1; rc=$$?; grep -E '^(FAIL|path|ship-consoles)' $(SCRATCH)/ship-consoles.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-consoles.log && grep -q '^ship-consoles: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-consoles.log
+frame-check-test: import ## B frame check: measures play in any launch, changes nothing, reports the sim's share (Mark 2026-10-14)
+	@$(GODOT_SIM) --headless --path . --script tests/test_frame_check.gd > $(SCRATCH)/frame-check.log 2>&1; rc=$$?; grep -E '^(FAIL|frame check|frame-check)' $(SCRATCH)/frame-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/frame-check.log && grep -q '^frame-check: 0 failures$$' $(SCRATCH)/frame-check.log
 no-twitch-test: import ## AC4, 5 (NT1, NT2): no decision from any key, click or gesture in four states; no deadlines over 600 s of fake time
 	@$(GODOT_SIM) --headless --path . --script tests/test_no_twitch.gd > $(SCRATCH)/no-twitch.log 2>&1; rc=$$?; grep -E '^(FAIL|no-twitch)' $(SCRATCH)/no-twitch.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/no-twitch.log && grep -q '^no-twitch: [0-9]* passed, 0 failures$$' $(SCRATCH)/no-twitch.log
 SCRIPT ?= tests/playthrough_min.json
