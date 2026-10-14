@@ -83,6 +83,8 @@ The presence is **not a human face**. Instead of D-7's eight emotions it has sta
 - **(b) The spire's patterns:** the faint surface patterns the Archive reads as "navigation data", gathering into something attentive.
 - **(c) A robot proxy:** the canon's distributed robots, with a small attendant at the terminal that turns to face the captain.
 
+**Bake-off made 2026-10-14** (Codex `gpt-6.1-sol`; full prompts in [generation_notes.md](https://storage.googleapis.com/stapledons-voyage-assets/refs/archive_presence_v1/generation_notes.md)): [contact sheet](https://storage.googleapis.com/stapledons-voyage-assets/refs/archive_presence_v1/contact_sheet.png), [a](https://storage.googleapis.com/stapledons-voyage-assets/refs/archive_presence_v1/archive_presence_a_light.png), [b](https://storage.googleapis.com/stapledons-voyage-assets/refs/archive_presence_v1/archive_presence_b_patterns.png), [c](https://storage.googleapis.com/stapledons-voyage-assets/refs/archive_presence_v1/archive_presence_c_proxy.png), 1254 px.
+
 The states are then made as edits of the chosen still, the same way the medic's emotion set was made.
 
 ### A4. Voice
