@@ -28,6 +28,7 @@ var lighting:Dictionary={}
 var star_light:=StarLight.new() # R1-SHIP-STAR-LIGHT: the real star's light on the geometry
 var star_identification: Control
 var benchmark := Benchmark.new()
+var frame_check := FrameCheck.new()
 var audit_link:=LinkButton.new()
 var audit_local:=Button.new()
 var setup_options := {}
@@ -101,6 +102,8 @@ var menu_return := false
 var settings_dir := "user://" # where the title screen keeps settings.cfg (tests redirect it)
 var menu_button := Button.new()
 func _ready() -> void:
+	add_child(frame_check)
+	frame_check.status_changed.connect(note)
 	setup(setup_options)
 	if OS.get_cmdline_user_args().has("--ship-demo-smoke"):_export_smoke.call_deferred()
 	if OS.get_cmdline_user_args().has("--ship-identification-smoke"):_identification_smoke.call_deferred()
@@ -209,7 +212,7 @@ func _hud() -> void:
 		var button:=Button.new();button.text=pair[0];button.pressed.connect(look_direction.bind(pair[1]));look_row.add_child(button)
 	var dev:=ship_hud.dev_box
 	var dev_title:=Label.new();dev_title.text="Developer (command-line launches only)";dev.add_child(dev_title)
-	var benchmark_button:=Button.new();benchmark_button.text="Benchmark at 1920×1080 [B] (uploads public summary)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));dev.add_child(benchmark_button)
+	var benchmark_button:=Button.new();benchmark_button.text="Scripted benchmark at 1920×1080 (uploads public summary)";benchmark_button.pressed.connect(func() -> void: await benchmark.run(self));dev.add_child(benchmark_button)
 	audit_local.text="Show local audit in Finder"
 	audit_local.pressed.connect(func()->void:OS.shell_show_in_file_manager(ProjectSettings.globalize_path(Benchmark.OUTPUT)))
 	dev.add_child(audit_local)
@@ -321,6 +324,9 @@ func _process(delta: float) -> void:
 	_sync_pointer()
 	sky.set_temporal_exposure(false)
 	_update_tour_attitude(delta)
+	# Performance pass: the live game pipelines heartbeat ticks (SimBridge.pipelined); tests and
+	# scripted runs drive ticks themselves and stay synchronous.
+	if journey_sim!=null:journey_sim.pipelined=journey_auto_tick and not benchmark.running
 	if journey_map!=null and journey_auto_tick and not benchmark.running:
 		_journey_accum=minf(_journey_accum+delta,4./GalaxyMap.TICK_HZ)
 		while _journey_accum>=1./GalaxyMap.TICK_HZ:
@@ -404,8 +410,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_R:set_preset("reset")
 			KEY_G:
 				if dev_controls():guides.visible=not guides.visible
-			KEY_B:
-				if dev_controls() and not live_journey:await benchmark.run(self)
+			KEY_B:frame_check.start(self) # a measurement of what the player is doing, in any launch (Mark, 2026-10-14)
 			KEY_M:open_chart()
 			KEY_E:use_nearest()
 			KEY_ESCAPE:escape()

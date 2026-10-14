@@ -51,6 +51,9 @@ var world: Dictionary = {}
 ## The last message read from the sim, as parsed, and its raw text.
 var state: Dictionary = {}
 var last_line := ""
+## Frame check (B): wall time the main thread spends in send(), cumulative, for FrameCheck to sample.
+var send_count := 0
+var send_ms_total := 0.0
 ## The sim's hello reply (proto, sim, relativity, rng).
 var hello_reply: Dictionary = {}
 ## `refused` and `events` of the last accepted input.
@@ -237,6 +240,7 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 		msg["crew"] = crew_captaincy
 	if not archive_rows.is_empty():
 		msg["archive"] = archive_rows
+	drain() # a heartbeat still in flight answers first; then the new game replaces the world
 	_write(encode(msg))
 	if not _read_state(Time.get_ticks_msec() + 2000, "step_timeout"):
 		return false
@@ -266,7 +270,44 @@ func new_game(seed: int, scenario: String = "sol", diag: bool = false, params: D
 ## are then in `last_refused`. A malformed line leaves `world` unchanged and
 ## returns false with the sim's reason in `last_error`; the child keeps
 ## running. Nothing is sent before new_game has been answered.
-func send(intents: Array, dtau: float) -> bool:
+func send(intents: Array, dtau: float, pipelined_ok := false) -> bool:
+	var t0 := Time.get_ticks_usec()
+	var ok := drain() and _send(intents, dtau, pipelined_ok)
+	send_count += 1
+	send_ms_total += (Time.get_ticks_usec() - t0) / 1000.0
+	return ok
+
+
+## Performance pass (Mark, 2026-10-14: "very laggy on laptop"): with `pipelined` on (the live
+## game only) and a caller that asks for it (send(..., pipelined_ok = true): the map's and the guided
+## voyage's heartbeats), an intent-free tick is written and send() returns at once; the sim
+## computes while the game renders, and the next drain() (the start of the next tick, or any
+## send) takes the reply. A tick that carries intents is never pipelined: it drains first and
+## waits for its own reply, so refusals and order are exactly as before. Inputs and tick order are
+## unchanged, so the sim, the journal and replays are byte-identical. world lags by at most the
+## one tick in flight until drained.
+var pipelined := false
+var _inflight := -1
+
+
+func in_flight() -> bool:
+	return _inflight >= 0
+
+
+## Take the in-flight tick's reply, waiting for it if the sim has not finished. True when nothing
+## is in flight or the reply was applied.
+func drain() -> bool:
+	if _inflight < 0:
+		return true
+	var tick := _inflight
+	_inflight = -1
+	var t0 := Time.get_ticks_usec()
+	var ok := _read_state(Time.get_ticks_msec() + 2000, "step_timeout") and _finish(tick)
+	send_ms_total += (Time.get_ticks_usec() - t0) / 1000.0
+	return ok
+
+
+func _send(intents: Array, dtau: float, pipelined_ok: bool) -> bool:
 	if _pid < 0:
 		return false
 	if not _game:
@@ -286,8 +327,16 @@ func send(intents: Array, dtau: float) -> bool:
 	if record_sent:
 		sent_log.append({"tick": tick, "source": source, "intents": intents.duplicate(true)})
 	_write(encode({"v": 2, "type": "input", "tick": tick, "dtau": dtau, "intents": intents}))
+	if pipelined and pipelined_ok and intents.is_empty():
+		_inflight = tick
+		return true
 	if not _read_state(Time.get_ticks_msec() + 2000, "step_timeout"):
 		return false
+	return _finish(tick)
+
+
+## Apply a tick's reply (the state line already read into `state`).
+func _finish(tick: int) -> bool:
 	if state.get("type") != "state" or typeof(state.get("changes")) != TYPE_DICTIONARY:
 		return _fail("bad_response")
 	if state.get("status") != "ok":
@@ -313,6 +362,7 @@ func send(intents: Array, dtau: float) -> bool:
 func stop() -> void:
 	if _pid < 0:
 		return
+	drain()
 	_cleanup()
 
 
