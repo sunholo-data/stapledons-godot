@@ -29,7 +29,7 @@ const STATIONS := {
 	"navigation": {"name": "Navigation station", "meshes": ["console_navigation_0", "console_navigation_1", "console_navigation_2"], "walk": "console_navigation_1", "active": true},
 	"voyage": {"name": "Voyage console", "meshes": ["console_decision_0"], "walk": "console_decision_0", "active": true},
 	"archive": {"name": "Archive terminal", "meshes": ["archive_terminal"], "walk": "archive_terminal", "active": true},
-	"reserved_1": {"name": "Crew console", "meshes": ["console_decision_1"], "walk": "console_decision_1", "active": false},
+	"crew": {"name": "Crew console", "meshes": ["console_decision_1"], "walk": "console_decision_1", "active": true}, # crew-work W1 (Mark 2026-10-14)
 	"reserved_2": {"name": "Crew console", "meshes": ["console_decision_2"], "walk": "console_decision_2", "active": false},
 	"reserved_3": {"name": "Crew console", "meshes": ["console_decision_3"], "walk": "console_decision_3", "active": false},
 }
@@ -37,6 +37,7 @@ const STATIONS := {
 const ACTIONS := {
 	"navigation": ["open", "select", "speed", "commit", "cancel", "home", "sgr_a", "approach", "leave"],
 	"voyage": ["open", "begin"],
+	"crew": ["open"],
 	"archive": ["open", "news", "log", "ask", "codex"], # D-66 H2 + D-68: news from home and this voyage's log; starting over is the title screen's New game, never a console. R1-ARCHIVE-VOICE: ask the Archive; codex returns to the entries
 }
 const ITINERARY := "Earth → Sun → Jupiter → Callisto → Saturn → α Centauri → α Cen A → TRAPPIST-1 → Aldebaran"
@@ -76,6 +77,7 @@ var panel_body := VBoxContainer.new()
 ## R2-CREW C6: the Crew page on the Voyage console (only while a crew is aboard, protocol 2.9).
 var crew_page: CrewPage
 var crew_scroll: ScrollContainer ## a fixed-height view, so the panel stays on screen as the crew grow
+var crew_summary: Label ## the Voyage console's one-line crew summary (crew-work W1)
 var _crew_sim: SimBridge
 var step_back := Button.new()
 
@@ -722,6 +724,14 @@ func screen_text(id: String) -> String:
 			if demo.solar_tour != null:
 				return "Guided voyage\n" + ("→ " + demo.solar_tour.leg_name() if demo.live_journey else "at " + demo.solar_tour.leg_name())
 			return "Guided voyage ready"
+		"crew":
+			var sim = demo.get("journey_sim") if demo != null else null
+			var c: Dictionary = (sim as SimBridge).crew if sim is SimBridge else {}
+			if c.is_empty():
+				return "Crew console\nno crew aboard yet"
+			if not c.get("holds", []).is_empty():
+				return "Crew console\nneeds you"
+			return "Crew console\n%d working" % c.get("members", []).filter(func(m): return m.get("work") is Dictionary and str(m["work"].get("status", "")) == "working").size()
 		"archive":
 			var view := archive_screen_view()
 			return "Archive\n%s entries open" % DisplayBinding.format_field(view, "client.archive.unlocked_count", archive_count_format(view))
@@ -804,6 +814,9 @@ func _layout_panel() -> void:
 	panel.position = r.position
 	if focused == "voyage":
 		panel.custom_minimum_size = Vector2(minf(r.size.x * 0.42, 420.0), 0.0)
+		panel.size = Vector2(panel.custom_minimum_size.x, panel.get_combined_minimum_size().y)
+	elif focused == "crew":
+		panel.custom_minimum_size = Vector2(minf(r.size.x * 0.6, 680.0), 0.0)
 		panel.size = Vector2(panel.custom_minimum_size.x, panel.get_combined_minimum_size().y)
 	else:
 		panel.custom_minimum_size = r.size
@@ -929,6 +942,8 @@ func _refresh_panel() -> void:
 			_navigation_panel()
 		"voyage":
 			_voyage_panel()
+		"crew":
+			_crew_panel()
 		"archive":
 			_archive_panel()
 
@@ -964,7 +979,35 @@ func _voyage_panel() -> void:
 	else:
 		panel_body.add_child(_label("The guided voyage replaces the current course. It cannot be undone.", 13, Color(0.95, 0.6, 0.4)))
 		panel_body.add_child(confirm_button("voyage", "begin", "Begin guided voyage"))
-	# R2-CREW: the crew below the voyage's own decision, so Begin stays in reach at 1280x720.
+	# crew-work W1: the crew live at the Crew console; here, one line and any moment that needs you.
+	var sim = demo.get("journey_sim") if demo != null else null
+	if sim is SimBridge and not (sim as SimBridge).crew.is_empty():
+		crew_summary = _label(crew_summary_text((sim as SimBridge).crew), 13, Color(0.7, 0.75, 0.85))
+		crew_summary.name = "CrewSummary"
+		panel_body.add_child(crew_summary)
+
+
+## The crew in one line for the Voyage console: how many aboard and working, auto-run, and who
+## needs the captain (at the Crew console).
+static func crew_summary_text(c: Dictionary) -> String:
+	var members: Array = c.get("members", [])
+	var working := members.filter(func(m): return m.get("work") is Dictionary and str(m["work"].get("status", "")) == "working").size()
+	var auto := str(CrewPage.PRESETS.get(str(c.get("auto", "off")), c.get("auto", "off")))
+	var line := "Crew: %d aboard, %d working · auto-run %s · the Crew console has the rest." % [members.size(), working, auto.to_lower()]
+	var holds: Array = c.get("holds", [])
+	if not holds.is_empty():
+		var h: Dictionary = holds[0]
+		var who := str(h.get("name", h.get("actor", "The crew")))
+		line = "Needs you at the Crew console: %s %s\n%s" % [who, CrewPage.HOLD_WORDS.get(str(h.get("rule", "")), "needs the captain."), line]
+	return line
+
+
+func _crew_panel() -> void:
+	panel_title.text = "Crew console · the crew and their work"
+	var sim = demo.get("journey_sim") if demo != null else null
+	if not (sim is SimBridge) or (sim as SimBridge).crew.is_empty():
+		panel_body.add_child(_label("No crew aboard yet: they join when a voyage begins.", 14))
+		return
 	_crew_section()
 
 
@@ -990,7 +1033,7 @@ func _crew_section() -> void:
 		_crew_sim = sim
 		_crew_sim.stepped.connect(_on_crew_step)
 		crew_page.intents.connect(_crew_sim.queue)
-	panel_body.add_child(_label("Crew", 15))
+	crew_scroll.custom_minimum_size = Vector2(0, maxf(200.0, panel_rect().size.y - 90.0))
 	crew_page.show_crew(_crew_sim.crew)
 	panel_body.add_child(crew_scroll)
 
@@ -999,8 +1042,11 @@ func _on_crew_step(events: Array) -> void:
 	if crew_page == null or _crew_sim == null:
 		return
 	crew_page.on_events(events)
-	if focused == "voyage" and crew_scroll.get_parent() == panel_body:
+	crew_page.on_refused(_crew_sim.last_refused)
+	if focused == "crew" and crew_scroll.get_parent() == panel_body:
 		crew_page.show_crew(_crew_sim.crew)
+	if focused == "voyage" and is_instance_valid(crew_summary):
+		crew_summary.text = crew_summary_text(_crew_sim.crew)
 
 
 func _archive_panel() -> void:

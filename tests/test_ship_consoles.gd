@@ -82,7 +82,8 @@ func test_stations() -> void:
 			var length := c.path_length(id)
 			print("path %s %.1f m" % [id, length])
 			check("AC8 %s: a walkable path from the bridge spawn, %.1f m <= 40 m" % [id, length], length > 0.0 and length <= ShipConsoles.PATH_CEILING_M)
-	check("AC8 reserved consoles are dark and offline", ["reserved_1", "reserved_2", "reserved_3"].all(func(id: String) -> bool: return not c.stations[id].active and c.screen_text(id) == "offline"))
+	check("AC8 reserved consoles are dark and offline", ["reserved_2", "reserved_3"].all(func(id: String) -> bool: return not c.stations[id].active and c.screen_text(id) == "offline"))
+	check("crew-work W1: the first crew console is live (console_decision_1)", c.stations["crew"].active and c.screen_text("crew").begins_with("Crew console"))
 	# The prompt: in reach and facing, not otherwise.
 	c.go_to("navigation")
 	demo._process(0.016)
@@ -243,6 +244,11 @@ func test_voyage_archive_sgr() -> void:
 	var c: ShipConsoles = demo.consoles
 	c.go_to("voyage")
 	check("AC9 the Voyage console's panel shows the itinerary and Begin", c.use("voyage", "open") and c.panel_body.find_child("Confirm_begin", true, false) != null and _panel_text(c).contains("Aldebaran"))
+	check("crew-work W1: the Voyage console has a crew summary line, not the Crew page", c.panel_body.find_child("CrewPage", true, false) == null and (c.panel_body.find_child("CrewSummary", true, false) != null or demo.journey_sim.crew.is_empty()))
+	c.go_to("crew")
+	check("crew-work W1: the Crew console opens the crew and their work", c.use("crew", "open") and c.focused == "crew" and (c.panel_body.find_child("CrewPage", true, false) != null or demo.journey_sim.crew.is_empty()))
+	c.go_to("voyage")
+	c.use("voyage", "open")
 	var b: Button = c.panel_body.find_child("Confirm_begin", true, false)
 	b.button_down.emit()
 	step(demo, 1.0)

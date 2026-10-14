@@ -53,7 +53,14 @@ func _initialize() -> void:
 	page.on_events([{"k": "ai_accepted", "req": "2", "kind": "text", "text": "Still fine here."}, {"k": "ai_accepted", "req": "99", "kind": "text", "text": "Archive words."}])
 	check("ai_accepted events for crew lines are taken; others ignored", page.latest_line("analyst") == "Still fine here." and not page.ai_text.has("99"))
 	check("the relief request has Grant and Deny", page.find_child("Grant_relief-c1", true, false) != null and page.find_child("Deny_relief-c1", true, false) != null)
-	check("working crew show their work in words, idle crew can be offered work", texts(medic).any(func(t): return t.begins_with("Working on assigned work.")) and page.get_node("Member_engineer").find_child("Offer_engineer", true, false) != null)
+	check("working crew show their work in words, idle crew can be offered work", texts(medic).any(func(t): return t.begins_with("Working on Record the household messages: day ")) and page.get_node("Member_engineer").find_child("Offer_engineer", true, false) != null)
+	# crew-work W1: the work card says what is offered, why, how long, what it needs and costs.
+	var eng := texts(page.get_node("Member_engineer"))
+	check("an idle member's card names the work and its terms", eng.has("Seal the drive for the first leg") and eng.any(func(t): return t.contains("Takes three days. Needs one archive compute slot, free mass (used up).") and t.contains("Readies them")))
+	check("the ship's resources show free of total", (page.get_node("Resources") as Label).text.begins_with("Ship: ") and (page.get_node("Resources") as Label).text.contains("free of"))
+	page._last_actor = "pilot"
+	page.on_refused([{"i": 0, "reason": "crew:blocked:insufficient_resource:compute"}])
+	check("a blocked start says why, in words, on that member", texts(page.get_node("Member_pilot")).any(func(t): return t.begins_with("Couldn't start: not enough archive compute slots free.")))
 	check("no numbers on the page but the names (D-21: numbers come from sim fields)", texts(page).all(func(t): return not RegEx.create_from_string("[0-9]").search(t)))
 
 	var got := []
@@ -93,6 +100,27 @@ func _initialize() -> void:
 	check("queued intents wait for the next tick", sim.queued.size() == 2)
 	ok = sim.send([], 0.0)
 	check("the next tick carries them and clears the queue", ok and sim.queued.is_empty() and sim.last_refused.is_empty() and sim.crew["lines"].size() == 2 and sim.crew["lines"][1]["actor"] == "counselor")
+	# crew-work W1: the ship has two Archive compute slots; a third compute user is blocked, and the
+	# real sim says why (crew:blocked:insufficient_resource:compute), which the page words on the pilot.
+	page.intents.disconnect(sim.queue)
+	page.show_crew(sim.crew)
+	ok = sim.send(page.offer_intents("engineer") + page.offer_intents("analyst"), 0.0)
+	var task_of := func(id: String) -> String:
+		for m in sim.crew["members"]:
+			if m["id"] == id and m.get("work") is Dictionary: return str(m["work"]["task"])
+		return ""
+	for id in ["engineer", "analyst"]:
+		ok = ok and sim.send([SimBridge.crew_intent("crew_start", {"command": "start_task", "task": task_of.call(id)})], 0.0) and sim.last_refused.is_empty()
+	check("two compute users start", ok and sim.crew["members"].filter(func(m): return m.get("work") is Dictionary and m["work"]["status"] == "working").size() == 2)
+	page.show_crew(sim.crew)
+	page.press("start:" + task_of.call("pilot"))
+	var third := page.press("start:" + task_of.call("pilot"))
+	ok = sim.send(third, 0.0)
+	check("the third is blocked, and the sim says why", ok and sim.last_refused.size() == 1 and str(sim.last_refused[0].get("reason", "")) == "crew:blocked:insufficient_resource:compute")
+	page.on_refused(sim.last_refused)
+	check("the page says so on the pilot, naming who holds the slots", texts(page.get_node("Member_pilot")).any(func(t): return t.begins_with("Couldn't start: not enough archive compute slots free.") and t.contains(" are using them.")))
+	page.show_crew(sim.crew)
+	check("working crew show day one of their work", texts(page.get_node("Member_engineer")).any(func(t): return t.begins_with("Working on Seal the drive for the first leg: day one of three.")))
 	sim.stop()
 	print("crew-console: %d failures" % failures)
 	quit(1 if failures else 0)

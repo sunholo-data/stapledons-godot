@@ -1,6 +1,7 @@
 class_name CrewPage
 extends VBoxContainer
-## R2-CREW C6 (design crew-integration.md §CI-4, AC10): the Crew page on the Voyage console.
+## R2-CREW C6 (design crew-integration.md §CI-4, AC10): the Crew page, on the Crew console
+## (crew-work W1, Mark 2026-10-14: "put it in its own console"; the Voyage console keeps a summary).
 ## Decisions at consoles, information in the HUD (D-56). It shows the sim's `crew` section
 ## (protocol 2.9, SimBridge.parse_crew) and turns the captain's choices into crew intents
 ## (SimBridge.crew_intent), emitted on `intents` for the console to queue on the bridge. It never
@@ -9,6 +10,11 @@ extends VBoxContainer
 ##   low, current work, and the latest line (the template, then the AI words once accepted)
 ##   actions:    offer work (offer + ask, one press); start offered work, grant / deny relief and
 ##   switch consent / orders need a second press to confirm (no twitch, NT1)
+## Work cards (crew-work W1, Mark 2026-10-14: "I can offer work but no idea what I'm offering"):
+##   each member's work by name, what it is for, how long it takes, what it needs from the ship and
+##   what it costs them (data/crew/scenario.json, the synced pack the sim embeds); offered, waiting,
+##   agreed, day k of n, finished; a refused start says why (on_refused). The ship's resources show
+##   free and in use. Crew days pass as the ship travels.
 ## Portraits (trial, 2026-10-14): the website's concept portraits (data/crew/portraits, SOURCES),
 ##   one face per role until the D-7 per-person sets exist. A row shows each member's face; the call
 ##   panel at the top shows whoever spoke last, larger, with their words, like a video call in
@@ -28,6 +34,19 @@ const PORTRAIT_DIR := "res://data/crew/portraits"
 const STRAINED_LABELS := ["request_relief", "decline", "concern"]
 const WARM_LABELS := ["accept"]
 const FALLBACK := {"sad": ["sad", "grieving", "neutral"], "happy": ["happy", "loving", "neutral"], "neutral": ["neutral"]}
+const SCENARIO := "res://data/crew/scenario.json"
+## A work effect in words (crew_core indicator deltas), by indicator and sign.
+const EFFECT_WORDS := {
+	"fatigue": ["tiring", "restful"], "stress": ["stressful", "eases their stress"],
+	"morale": ["lifts their morale", "lowers their morale"], "readiness": ["readies them", "unsettles them"],
+	"observations": ["adds to the ship's observations", "loses observations"],
+}
+const NUMBER_WORDS := ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+	"eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"]
+const REPLY_WORDS := {
+	"accept": "They agreed.", "decline": "They declined.", "concern": "They raised a concern first.",
+	"defer": "They asked to wait.", "continue": "They're keeping at it.", "request_relief": "They asked to step back.",
+}
 
 var crew: Dictionary = {}
 var roles: Dictionary = {}          ## entity_id -> role name from the cast ("The Medic")
@@ -35,11 +54,22 @@ var ai_text: Dictionary = {}        ## ai_req -> accepted AI words (set_ai_text)
 var armed := ""                     ## the action awaiting its confirming press
 var _serial := 0
 var _faces: Dictionary = {}         ## portrait path -> Texture2D (or null when absent)
+var work_info: Dictionary = {}      ## recipe id -> {name, purpose, duration, costs, effects} (scenario.json)
+var resource_names: Dictionary = {} ## resource id -> name in words ("Archive compute slots")
+var notices: Dictionary = {}        ## member id -> why their last action was refused (on_refused)
+var _last_actor := ""               ## the member the last emitted intents were about
 
 func _init() -> void:
 	name = "CrewPage"
 	add_theme_constant_override("separation", 6)
 	roles = load_roles(CAST_DIR)
+	var pack = JSON.parse_string(FileAccess.get_file_as_string(SCENARIO)) if FileAccess.file_exists(SCENARIO) else null
+	if pack is Dictionary:
+		for c in pack.get("crew", []):
+			for w in c.get("work", []):
+				work_info[str(w.get("id", ""))] = w
+		for r in pack.get("resources", []):
+			resource_names[str(r.get("id", ""))] = str(r.get("name", r.get("id", ""))).split(" (")[0]
 
 
 ## {entity_id: role name} from every cast file (the role name is the fallback display name).
@@ -81,6 +111,47 @@ func on_events(events: Array) -> void:
 		_build()
 
 
+## A tick's refusals (SimBridge.last_refused) for the crew intents this page emitted: the member
+## they were about gets a notice in words. A later accepted action clears it.
+func on_refused(refused: Array) -> void:
+	if _last_actor == "":
+		return
+	var why := ""
+	for r in refused:
+		var reason := str(r.get("reason", "")) if r is Dictionary else str(r)
+		if reason.begins_with("crew:"):
+			why = refusal_words(reason)
+			break
+	if why == "":
+		notices.erase(_last_actor)
+	else:
+		notices[_last_actor] = why
+	_last_actor = ""
+	_build()
+
+
+## A crew refusal in words: a blocked start names the resource and who holds it.
+func refusal_words(reason: String) -> String:
+	var parts := reason.trim_prefix("crew:").split(":")
+	if parts.size() >= 3 and parts[0] == "blocked" and parts[1] == "insufficient_resource":
+		var res := parts[2]
+		var users := []
+		for m in crew.get("members", []):
+			var w = m.get("work")
+			if w is Dictionary and str(w.get("status", "")) == "working":
+				for c in work_info.get(str(w.get("recipe", "")), {}).get("costs", []):
+					if str(c.get("resource", "")) == res and int(c.get("reserve", 0)) > 0:
+						users.append(display_name(str(m["id"])))
+		var holder := (" %s %s using them." % [" and ".join(users), "is" if users.size() == 1 else "are"]) if not users.is_empty() else ""
+		return "Couldn't start: not enough %s free.%s" % [resource_names.get(res, res).to_lower(), holder]
+	if parts.size() >= 2 and parts[0] == "blocked":
+		return "Couldn't do that: %s." % parts[1].replace("_", " ")
+	var host = JSON.parse_string(reason.trim_prefix("crew:")) if reason.trim_prefix("crew:").begins_with("{") else null
+	if host is Dictionary and host.has("host"):
+		return "Couldn't do that: %s." % str(host["host"]).trim_suffix(".")
+	return "Couldn't do that (%s)." % reason.trim_prefix("crew:")
+
+
 func _build() -> void:
 	for c in get_children():
 		remove_child(c)
@@ -99,14 +170,9 @@ func _build() -> void:
 	head.add_child(_button("Policy", "Switch to %s" % other, "policy:" + other))
 	add_child(head)
 	add_child(_auto_row())
+	add_child(_resources_row())
 	for m in crew.get("members", []):
 		add_child(_member_row(m))
-	for r in crew.get("reliefs", []):
-		var row := HBoxContainer.new()
-		row.add_child(_label("%s asks for relief." % display_name(str(r.get("author", ""))), 13, LOW))
-		row.add_child(_button("Grant_" + str(r["id"]), "Grant relief", "relief:%s:true" % r["id"]))
-		row.add_child(_button("Deny_" + str(r["id"]), "Deny relief", "relief:%s:false" % r["id"]))
-		add_child(row)
 
 
 ## C8: a hold is a moment the auto-run hands to the captain. The card says who and what in words,
@@ -168,28 +234,105 @@ func _member_row(m: Dictionary) -> Control:
 		row.add_child(_bar(k, float(ind.get(k, 0))))
 	if m.get("trust") != null:
 		row.add_child(_bar("trust", float(m["trust"])))
-	var work = m.get("work")
-	var slot := HBoxContainer.new() # a fixed-width action slot, so the bars line up row to row
-	slot.custom_minimum_size = Vector2(124, 0)
-	slot.alignment = BoxContainer.ALIGNMENT_END
-	if work is Dictionary:
-		if str(work.get("status", "")) == "offered":
-			slot.add_child(_button("Start_" + id, "Start the work", "start:" + str(work["task"])))
-	else:
-		slot.add_child(_button("Offer_" + id, "Offer work", "offer:" + id))
-	row.add_child(slot)
 	box.add_child(row)
-	var notes := []
-	if work is Dictionary:
-		notes.append("Working on assigned work." if str(work.get("status", "")) == "working" else "Work offered, not yet started.")
+	box.add_child(_work_card(m))
 	var line := latest_line(id)
 	if not line.is_empty():
-		notes.append("“%s”" % line)
-	if not notes.is_empty():
-		box.add_child(_label("  ".join(notes), 12, DIM))
+		box.add_child(_label("“%s”" % line, 12, DIM))
+	for r in crew.get("reliefs", []): # a relief request sits on the asker's card
+		if str(r.get("author", "")) == id:
+			var rr := HBoxContainer.new()
+			rr.add_child(_label("%s asks to step back from this work." % display_name(id), 13, LOW))
+			rr.add_child(_button("Grant_" + str(r["id"]), "Grant relief", "relief:%s:true" % r["id"]))
+			rr.add_child(_button("Deny_" + str(r["id"]), "Deny relief", "relief:%s:false" % r["id"]))
+			box.add_child(rr)
+	if notices.has(id):
+		box.add_child(_label(str(notices[id]), 12, LOW))
 	for low in m.get("regard_low", []):
 		box.add_child(_label("Strained with %s." % display_name(str(low.get("to", ""))), 12, LOW))
 	return box
+
+
+## A member's work in words: what it is and costs before it is offered; offered (waiting for their
+## answer, or their reply and Start); day k of n while working; the last finished work.
+func _work_card(m: Dictionary) -> Control:
+	var id := str(m["id"])
+	var card := VBoxContainer.new()
+	card.name = "Work_" + id
+	card.add_theme_constant_override("separation", 1)
+	var work = m.get("work")
+	var recipe := str(work.get("recipe", "")) if work is Dictionary else "work_" + id
+	var info: Dictionary = work_info.get(recipe, {})
+	var title := str(info.get("name", "their work"))
+	var row := HBoxContainer.new()
+	if not (work is Dictionary):
+		row.add_child(_label(title, 13))
+		row.add_child(_button("Offer_" + id, "Offer this work", "offer:" + id))
+		card.add_child(row)
+		card.add_child(_label(work_terms(info), 12, DIM))
+		var done = m.get("done")
+		if done is Dictionary:
+			card.add_child(_label("Last finished: %s." % str(work_info.get(str(done.get("recipe", "")), {}).get("name", "their work")), 12, DIM))
+	elif str(work.get("status", "")) == "offered":
+		var waiting: bool = crew.get("requests", []).any(func(q): return q.get("actor") == id)
+		row.add_child(_label("Offered: %s. %s" % [title, "Waiting for their answer." if waiting else REPLY_WORDS.get(last_label(id), "")], 13))
+		row.add_child(_button("Start_" + id, "Start the work", "start:" + str(work["task"])))
+		card.add_child(row)
+		card.add_child(_label(work_terms(info), 12, DIM))
+	else:
+		var n := maxi(1, int(work.get("due", 0)) - int(work.get("started", 0)))
+		var k := clampi(int(crew.get("turn", 0)) - int(work.get("started", 0)) + 1, 1, n)
+		card.add_child(_label("Working on %s: day %s of %s." % [title, words(k), words(n)], 13))
+		card.add_child(_label("Crew days pass as the ship travels.", 12, DIM))
+	return card
+
+
+## A small count in words (D-21: the page shows no digits); beyond twenty, "many".
+static func words(n: int) -> String:
+	return NUMBER_WORDS[n] if n >= 0 and n < NUMBER_WORDS.size() else "many"
+
+
+## What a piece of work is for, how long, what it needs from the ship and what it costs the person.
+func work_terms(info: Dictionary) -> String:
+	if info.is_empty():
+		return ""
+	var needs := []
+	for c in info.get("costs", []):
+		var nm: String = str(resource_names.get(str(c.get("resource", "")), str(c.get("resource", "")))).to_lower()
+		var n := maxi(int(c.get("reserve", 0)), int(c.get("consume", 0)))
+		if nm.ends_with("s") and not nm.ends_with("ss"): # a counted resource ("archive compute slots"): "one archive compute slot"
+			nm = (words(n) + " " + (nm.trim_suffix("s") if n == 1 else nm)) if n > 0 else nm
+		needs.append(nm + (" (used up)" if int(c.get("consume", 0)) > 0 else ""))
+	var effects := []
+	for k in info.get("effects", {}):
+		var v := float(info["effects"][k])
+		if v != 0.0 and EFFECT_WORDS.has(k):
+			effects.append(EFFECT_WORDS[k][0 if v > 0.0 else 1])
+	var days := int(info.get("duration", 0))
+	var cost := ", ".join(effects) if not effects.is_empty() else "no cost to them"
+	return "%s Takes %s day%s. Needs %s. %s." % [str(info.get("purpose", "")), words(days), "" if days == 1 else "s",
+		", ".join(needs) if not needs.is_empty() else "nothing from the ship", cost.left(1).to_upper() + cost.substr(1)]
+
+
+## The ship's resources: free now out of what the ship holds, and what work has used up.
+func _resources_row() -> Control:
+	var parts := []
+	for r in crew.get("resources", []):
+		var free := int(r.get("available", 0))
+		var held := int(r.get("reserved", 0))
+		parts.append("%s: %s free of %s" % [resource_names.get(str(r.get("id", "")), str(r.get("id", ""))), words(free), words(free + held)])
+	var l := _label("Ship: " + " · ".join(parts), 12, DIM)
+	l.name = "Resources"
+	return l
+
+
+## The member's latest reply label ("accept", "concern", ...), or "".
+func last_label(id: String) -> String:
+	var out := ""
+	for l in crew.get("lines", []):
+		if l.get("actor") == id:
+			out = str(l.get("label", ""))
+	return out
 
 
 ## The member's latest line: the accepted AI words for its request, else the authored template.
@@ -281,13 +424,15 @@ func _face(node_name: String, id: String, emotion: String, px: int) -> Control:
 func press(action: String) -> Array:
 	if action.begins_with("offer:"):
 		armed = ""
-		return _emit(offer_intents(action.trim_prefix("offer:")))
+		_last_actor = action.trim_prefix("offer:")
+		return _emit(offer_intents(_last_actor))
 	if armed != action:
 		armed = action
 		_build()
 		return []
 	armed = ""
 	var parts := action.split(":")
+	_last_actor = actor_of(parts)
 	match parts[0]:
 		"start":
 			return _emit([SimBridge.crew_intent("crew_start", {"command": "start_task", "task": parts[1]})])
@@ -300,6 +445,21 @@ func press(action: String) -> Array:
 		"resume":
 			return _emit([SimBridge.crew_intent("crew_resume", {"command": "resume", "hold": parts[1]})])
 	return []
+
+
+## The member an action is about: a start's worker, a relief's author ("" for ship-wide choices).
+func actor_of(parts: PackedStringArray) -> String:
+	match parts[0]:
+		"start":
+			for m in crew.get("members", []):
+				var w = m.get("work")
+				if w is Dictionary and str(w.get("task", "")) == parts[1]:
+					return str(m["id"])
+		"relief":
+			for r in crew.get("reliefs", []):
+				if str(r.get("id", "")) == parts[1]:
+					return str(r.get("author", ""))
+	return ""
 
 
 ## Offer the member's work and ask at once: the crew member answers in the same tick (authored).

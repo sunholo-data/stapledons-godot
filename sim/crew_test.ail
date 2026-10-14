@@ -3,7 +3,7 @@ module stapledons/sim/crew_test
 -- R2-CREW C1 tests (design crew-integration.md §CI-1; sprint R2-CREW C0 wrote them red first).
 -- The embedded crew host: started from the synced pack, one crew turn per ship-day with the
 -- remainder carried exactly, and every crew draw on the crew stream only.
-import ./crew (CrewState, initCrew, daysIn, crewStep, crewTurn, scenarioId, answerSeed)
+import ./crew (CrewState, initCrew, daysIn, crewStep, crewTurn, scenarioId, answerSeed, blockedReason, errorReason)
 import ./rng (Rng, SJourney, SCrew, SEvents, SGalaxy, SAi, SNews, zeroRng, counter)
 import std/result (Result, Ok, Err)
 import std/option (Option, Some, None)
@@ -71,3 +71,13 @@ pure func checkWorld() -> bool = match withCrew(newWorld(5, false, defaultParams
   }
 }
 test "tick advances an aboard crew; no crew by default" { checkWorld() }
+
+-- The Crew console says why a start was blocked: crew_core's trace carries the social_error.
+pure func checkBlocked() -> bool =
+  blockedReason("{\"state\":{},\"blocked\":{\"schema\":\"social_error/1\",\"code\":\"insufficient_resource\",\"detail\":\"compute\"},\"item\":\"t3\"}") == "blocked:insufficient_resource:compute" &&
+  blockedReason("{\"blocked\":{\"code\":\"not_offered\"}}") == "blocked:not_offered" &&
+  blockedReason("") == "command failed" && blockedReason("{\"state\":{}}") == "command failed" &&
+  errorReason("{\"schema\":\"social_error/1\",\"code\":\"insufficient_resource\",\"detail\":\"compute\"}") == "blocked:insufficient_resource:compute" &&
+  errorReason("{\"host\":\"answer the existing concern before reconsideration\"}") == "{\"host\":\"answer the existing concern before reconsideration\"}" &&
+  errorReason("not json") == "not json"
+test "a blocked command says why (blocked:<code>:<detail>)" { checkBlocked() }
