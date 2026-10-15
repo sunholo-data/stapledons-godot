@@ -6,7 +6,8 @@
 //   node website/scripts/news-draft.mjs --tag v0.4.0-m4 [--date 2026-10-10] [--force]
 //
 // Inputs: the release (title, date, notes) from `gh release view TAG`, if the
-// release exists yet, and every fragment in changelogs/unreleased/*.md. The draft
+// release exists yet (its notes are the tag's CHANGELOG section, folded by the release
+// workflow), and any fragment still in changelogs/unreleased/*.md. The draft
 // carries `release_tag` and `release_url` in its front matter, TODO sections,
 // and the fragments as raw notes (in an MDX comment) to cut down. Read
 // website/news/README.md, including the spoiler policy, before publishing.
