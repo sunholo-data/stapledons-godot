@@ -1457,7 +1457,7 @@ Report: `design_docs/implemented/r1/m2-report.md`.
 
 ## v0.2.0-m2-map (2026-10-02)
 
-### M1 sky, 2026-09-27 – 2026-09-30 (in progress; 3 of 12 milestones)
+### M1 sky, 2026-09-27 – 2026-09-30 (3 of 12 milestones at the time; M1 later shipped through M1.8, only M1.5b open)
 
 - **M1.1 photometry (iteration 0):** `sunholo/relativity@0.2.0`
   (BP−RP → T_eff, G−V, V → lux); game pin `b258222`.
