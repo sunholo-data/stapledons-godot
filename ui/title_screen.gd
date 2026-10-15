@@ -1,6 +1,6 @@
 class_name TitleScreen
 extends Control
-## The launch menu (design_docs/planned/r1/title-screen.md; charter queue row 5b).
+## The launch menu (design_docs/implemented/r1/title-screen.md; charter queue row 5b).
 ## Shown on a plain launch only (main.gd launch_route() == "title"); every
 ## command-line mode, capture, golden and smoke bypasses it.
 ##

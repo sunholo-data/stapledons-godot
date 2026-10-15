@@ -1,5 +1,6 @@
 # M5: Planets and flybys
 
+**Landing check (2026-10-15, verified against code):** Shipped: M5.0a1/a2/b, M5.1a/b, M5.2a, M5.5a; M5.2b rings and ring/globe shadows and M5.3 (as direct inverse raytracing) in 4e32b9d via PR #117 ([continuation](../../implemented/r1/m5-inverse-raytrace-continuation.md)); M5.4's P99.5 meter (`make planet-meter-test`). Remaining: wire `tools/flyby_golden.gd` and `tools/ring_golden.gd` into `make golden` (gate 2); G-M5-7; atmosphere and moon shadows; M5.5b hold ledger and light confirm; M5.6a/b system map, window view and in-system warp (partly overtaken by D-46/D-54 and the solar-departure tour; needs Mark's ruling); M5.7 α Cen planets, inset and codex entry; M5.8 gates, capture, bench and report.
 **Status:** **Approved** (Mark, attended 2026-10-03); awaiting the sprint plan
 (sprint-planner, run separately). Created 2026-10-03 from ledger **D-26** (attended 2026-10-03, queue
 row 6c): "a new R1 milestone M5 'Planets and flybys': AILANG-driven

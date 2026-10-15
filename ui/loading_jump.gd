@@ -1,6 +1,6 @@
 class_name LoadingJump
 extends CanvasLayer
-## The lightspeed loading view (design_docs/planned/r1/lightspeed-loading.md).
+## The lightspeed loading view (design_docs/implemented/r1/lightspeed-loading.md).
 ##
 ## A title-screen route (New game, Guided voyage, Galaxy map) runs behind
 ## this layer. The title's own sky (InteriorSky: the real starfield, panorama,

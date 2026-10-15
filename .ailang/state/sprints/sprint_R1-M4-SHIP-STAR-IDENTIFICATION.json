@@ -2,8 +2,8 @@
   "sprint_id": "R1-M4-SHIP-STAR-IDENTIFICATION",
   "status": "review_build_published",
   "approved_by": "Mark, attended 2026-10-05: yep continue",
-  "design_doc": "design_docs/planned/r1/m4-ship-star-identification.md",
-  "sprint_plan": "design_docs/planned/r1/m4-ship-star-identification-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-ship-star-identification.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-ship-star-identification-sprint.md",
   "estimated_total_loc_range": [
     450,
     650

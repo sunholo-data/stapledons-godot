@@ -549,7 +549,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": " | Landing check 2026-10-15: rings and ring/globe shadows shipped in 4e32b9d via PR #117 (make planet-rings-test, tools/ring_golden.gd not wired into make golden); atmosphere, moon shadows, capture-m5 SET=rest and R-m5a open."
     },
     {
       "id": "M5.4_HIGHLIGHT_METER",
@@ -583,7 +583,7 @@
       "passes": null,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": " | Landing check 2026-10-15: P99.5 meter shipped (sky/exposure.gd, make planet-meter-test); G-M5-7 golden open."
     },
     {
       "id": "M5.5b_GRAVITY_HOLD_SOL_TOUR",
@@ -669,10 +669,10 @@
       ],
       "review": null,
       "art_gated": false,
-      "passes": null,
+      "passes": true,
       "started": null,
       "completed": null,
-      "notes": null
+      "notes": " | Landing check 2026-10-15: shipped as direct inverse raytracing (approved 2026-10-05) in 4e32b9d via PR #117; tests/test_flyby_optics.gd, tools/flyby_golden.gd (not yet wired into make golden)."
     },
     {
       "id": "M5.6a_SYSTEM_MAP_PLAN_CONFIRM",

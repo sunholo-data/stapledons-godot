@@ -1,5 +1,5 @@
 extends SceneTree
-## Lightspeed loading view reference renders (design_docs/planned/r1/lightspeed-loading.md):
+## Lightspeed loading view reference renders (design_docs/implemented/r1/lightspeed-loading.md):
 ## the title's real sky taken over by LoadingJump.preview at displayed progress 0, 50, 90,
 ## 99 and 100 %, then the white-out (transition effect) and its fade, at 1280x720.
 ## Needs a GPU window.

@@ -1,8 +1,8 @@
 {
   "sprint_id": "R1-ARCHIVE-VOICE",
   "status": "in_progress",
-  "plan": "design_docs/planned/r1/archive-voice-sprint.md",
-  "design": "design_docs/planned/r1/archive-voice.md",
+  "plan": "design_docs/implemented/r1/archive-voice-sprint.md",
+  "design": "design_docs/implemented/r1/archive-voice.md",
   "approved": "Mark, attended 2026-10-12",
   "features": [
     {

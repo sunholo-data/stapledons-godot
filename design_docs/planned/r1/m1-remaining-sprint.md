@@ -545,7 +545,7 @@ Deviations:
     (F2). The rule is written as data in
     `data/starmap/bright_overrides.json` with a citation per row.
     *(2026-10-03: retired into the general companion rule, Mark's attended ruling; see
-    [m1-companion-parallax.md](m1-companion-parallax.md). α Cen B's bytes are unchanged.)*
+    [m1-companion-parallax.md](../../implemented/r1/m1-companion-parallax.md). α Cen B's bytes are unchanged.)*
 - **Godot side.** `tools/bright_star_audit.gd` (AC11 auditor; Godot
   replaces the planned Python) is unit-tested here on synthetic renders. The
   full render gate runs in M1.5b.

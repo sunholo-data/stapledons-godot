@@ -1,5 +1,5 @@
 extends SceneTree
-## Lightspeed loading view (design_docs/planned/r1/lightspeed-loading.md), headless:
+## Lightspeed loading view (design_docs/implemented/r1/lightspeed-loading.md), headless:
 ## every title route goes through LoadingJump and arrives where it did before; real
 ## progress is monotone and reaches 1.0 exactly when the destination is ready; the
 ## displayed progress never runs ahead; beta reaches 0.99999 at 100% (the mirror's

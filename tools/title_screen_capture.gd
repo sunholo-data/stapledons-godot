@@ -1,5 +1,5 @@
 extends SceneTree
-## Title screen reference renders (design_docs/planned/r1/title-screen.md): the menu over
+## Title screen reference renders (design_docs/implemented/r1/title-screen.md): the menu over
 ## the real sky, the settings panel and the credits, at 1280x720. Needs a GPU window.
 ## Run: godot --path . --resolution 1280x720 --script tools/title_screen_capture.gd   (make title-capture)
 var out := "res://renders/title_screen"

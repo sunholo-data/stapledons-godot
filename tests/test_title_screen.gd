@@ -1,5 +1,5 @@
 extends SceneTree
-## Title screen (design_docs/planned/r1/title-screen.md): a plain launch shows the
+## Title screen (design_docs/implemented/r1/title-screen.md): a plain launch shows the
 ## menu; every command-line mode bypasses it; each button routes to its mode and
 ## Esc comes back; the settings round-trip; the credits are the repo's own.
 ## Run: AILANG_BIN=$(command -v ailang) godot --headless --path . --script tests/test_title_screen.gd

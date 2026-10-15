@@ -1,6 +1,6 @@
 # Star-truth audit: every catalogue disagreement, resolved
 
-**Design:** [starmap-single-truth.md](../../planned/r1/starmap-single-truth.md) (goal 4, AC4). **Sprint:** R1-STARMAP-TRUTH.
+**Design:** [starmap-single-truth.md](../../implemented/r1/starmap-single-truth.md) (goal 4, AC4). **Sprint:** R1-STARMAP-TRUTH.
 **Table:** `data/starmap/truth/positions.csv` (rule `truth-1`; inputs and digests in `positions.json`).
 **Check:** `make starmap-truth-audit` fails if any marked row lacks a resolution or its Gaia id is missing from this document.
 **Date:** 2026-10-07, AILANG v0.52.0.

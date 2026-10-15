@@ -923,7 +923,7 @@ the design); HIP2/hip_main join key drift (caught by the Vega row); the
 - **Option B:** a synthetic diffuse map from the GCNS-independent Gaia density
   plus a dust map. Find the source during the spike, with URLs checked.
 - Comparison renders at 0, 0.9 and 0.99c, plus a residual-artefact crop, in
-  `design_docs/planned/r1/m1-4a-background-options.md`.
+  `design_docs/implemented/r1/m1-4a-background-options.md`.
 - **STOP:** the user picks A or B, recorded in the design doc.
 
 ### M1.4b/c: Spectral sky model and sky shader ✅ (attended 2026-10-01, awaiting independent evaluation)

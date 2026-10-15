@@ -1,6 +1,6 @@
 extends RefCounted
 ## R1-SHIP-STAR-LIGHT: the light of the real star on the ship's geometry.
-## Design: design_docs/planned/r1/ship-star-light.md.
+## Design: design_docs/implemented/r1/ship-star-light.md.
 ##
 ## One DirectionalLight3D ("StarLight") beside the ship-fixed rig of ship_lighting.gd.
 ##   direction  physical: the dominant finite star's apparent (aberrated) direction,

@@ -1,6 +1,6 @@
 # R2-CREW-POP: the wider population as cohorts
 
-**Status:** Proposed 2026-10-13 (attended, Mark: "how do the wider populations get modelled, just averages? can we run it with larger populations?"). Canon from D-71 (Mark, 2026-10-13) folded in: the featured crew are a share of the ~100 population, and births are a captain's duty. The remaining open questions are ledger D-73. Then a sprint plan.
+**Status:** Proposed 2026-10-13 (attended, Mark: "how do the wider populations get modelled, just averages? can we run it with larger populations?"). Canon from D-71 (Mark, 2026-10-13) folded in: the featured crew are a share of the population, and births are a captain's duty. D-73 (cohorts approved) and D-75 (about 1,000 people growing to about 1,500) are resolved; cohorts shipped in crew_core 0.4.0 (#231). Next: a sprint plan for the in-game display.
 **Release:** R2, sequenced after [crew-integration.md](../../implemented/r2/crew-integration.md) (R2-CREW). Factions, the mutiny vote and succession stay in R3 and build on this.
 **Priority:** P2 for R2. The featured crew carry the opening. The population is what makes a 100-year voyage a society, not a cast.
 

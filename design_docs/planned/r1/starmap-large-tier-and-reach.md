@@ -11,6 +11,7 @@
 
 Net +4: aligned.
 
+**Landing check (2026-10-15):** Partly landed: PR #147 via #149 (dev.20), the large tier (L1, L2, L4). Remaining: L3, destinations to 100 pc (AC4 destination part, AC5 `make bench-map`), waiting on the galaxy-map LOD design; `stars.json` is still 25 pc.
 **Status:** Approved by Mark, attended 2026-10-07 (selected for dev.20: "benchmark first"). Proposed 2026-10-06 (Mark, attended). It depends on `starmap-single-truth.md`.
 **Release:** R1 follow-up.
 **Implements:** [starmap data model](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase1-data-models/starmap-data-model.md) and [galaxy map](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/galaxy-map.md). It is the measured core of the design repo's galaxy-beyond-measurement feature.

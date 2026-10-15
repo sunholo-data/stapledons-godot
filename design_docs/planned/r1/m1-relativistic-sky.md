@@ -1,5 +1,6 @@
 # M1: The relativistic sky
 
+**Landing check (2026-10-15, verified against code):** Everything through M1.8 and M1.5a (#75) shipped, with the catalogue via #145/#147. Remaining: M1.5b only: AC9 renders and contact sheet, the AC11 bright-star render gate on real renders, the AC7 bench with background, m1-report.md and the R-f sign-off (bar clause 1).
 **Status:** Planned (design, awaiting sprint plan)
 **Release:** r1 · **Milestone:** M1 of [R1 foundations](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md)
 **Priority:** P0: every later milestone looks through this sky
@@ -287,7 +288,7 @@ The deliverable is a comparison render and a recommendation. **This is a
 decision point for the user.**
 
 **M1.4a outcome (attended, 2026-10-01): Option A on NOIRLab (D-10).** The
-evidence is in [m1-4a-background-options.md](m1-4a-background-options.md).
+evidence is in [m1-4a-background-options.md](../../implemented/r1/m1-4a-background-options.md).
 Option B wasn't built: Mark ruled for the real photograph, and the Gaia flux
 map, the nearest stand-in for B, has no nebulae and is made of stars. Facts
 the spike established, which bind M1.4b/c:

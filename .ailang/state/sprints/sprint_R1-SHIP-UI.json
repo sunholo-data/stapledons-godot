@@ -4,8 +4,8 @@
   "approved": true,
   "approved_by": "Mark Edmondson, attended 2026-10-09 (ledger D-57)",
   "created": "2026-10-08",
-  "design_doc": "design_docs/planned/r1/ship-ui-hud-consoles.md",
-  "sprint_plan": "design_docs/planned/r1/ship-ui-hud-consoles-sprint.md",
+  "design_doc": "design_docs/implemented/r1/ship-ui-hud-consoles.md",
+  "sprint_plan": "design_docs/implemented/r1/ship-ui-hud-consoles-sprint.md",
   "branch": "sprint/ship-ui (PR 1: U0-U2), sprint/ship-ui-consoles (PR 2: U3-U5), sprint/ship-ui-land (PR 3: U6-U8); stacked",
   "implements": [
     "D-56",

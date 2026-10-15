@@ -1,5 +1,6 @@
 # M4: First journey, a vertical slice
 
+**Landing check (2026-10-15, verified against code):** Shipped: M4.0–M4.4, M4.5s, M4.5aR3 (#225), M4.5bR3 (#232), the M4.6 ungated half (#151), row 7i(a) (#235); M4.3b absorbed into R1-SHIP-UI. Remaining: M4.5 AC4 display audit (5 pinned findings, waits on D-77/D-78), AC5 scene-session golden (row 7i(c)), M4.6gR3 ship goldens G-M4-S2/S3/S4, M4.6rR3 (capture-m4 and bench on the 3D ship, S1), rows 7h(a,c,d,e) and 7i(b–h).
 **Status:** Planned (design, awaiting sprint plan). Revised 2026-10-01 for
 Mark's attended rulings D-11, D-12 and D-14: boost → cruise → brake with no
 flip, 0.99c default cruise, the ISM readout and forward glow, art stop S2 now
