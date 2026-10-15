@@ -1,6 +1,6 @@
 # R2-ARCHIVE-NPC: the Archive as a crew member, and its presence at the spire
 
-**Status:** Proposed 2026-10-14 (attended, Mark: "can we also make the archive console another npc in the system, but special? and an avatar for when interacting with it on the spire"). It needs Mark's answers to OQ1–OQ4, then a sprint plan.
+**Status:** Proposed 2026-10-14 (attended, Mark: "can we also make the archive console another npc in the system, but special? and an avatar for when interacting with it on the spire"). OQ3 and OQ4 answered 2026-10-15 (attended, relayed by the crew-lab agent); it needs OQ1 and OQ2, then a sprint plan.
 **Release:** R2, after [crew-work.md](crew-work.md) W1. It shares the W4 `archive` readout.
 **Priority:** P2 for R2.
 
@@ -51,9 +51,9 @@ A **special actor kind** `archive` in crew_core's scenario. The crew-lab agent b
   - help or failure in a crisis;
   - confusion that crew members witness, which happens more as integrity falls;
   - the captain backing the Archive in a dispute.
-- **Captain coupling.** When the captain backs the Archive, each crew member's trust in the captain moves with their trust in the Archive. Loyalists rise; skeptics fall.
+- **Captain coupling** (off in the first release, OQ3). When the captain backs the Archive, each crew member's trust in the captain moves with their trust in the Archive. Loyalists rise; skeptics fall.
 - **Integrity.**
-  - It falls slowly with time.
+  - It does not fall with time (OQ4: events only; time decay is a switch, off by default).
   - The analyst's Archive integrity pass (crew-work W3/W4) raises it.
   - Low integrity raises the chance of misremembering, which the voice already does in words, and that feeds back into trust.
 
@@ -106,10 +106,12 @@ Charon stays provisional (cast file) until the audition (archive-voice OQ1). The
 - **OQ1, the presence:** (a) light in the spire, (b) the spire's patterns, or (c) a robot proxy? I'd make one bake-off still of each for you to choose.
 - **OQ2, on the Crew console:** should the Archive be a card there, or only at its terminal?
 - **OQ3, coupling now or later:** turn on the captain–Archive coupling in this release, or only trust first?
+  **Answered (Mark, 2026-10-15): trust only.** No captain–Archive coupling in the first release; crew_core 0.6 builds the coupling behind a switch that defaults to off.
 - **OQ4, integrity:** should it decay with ship time (my proposal), or only from events?
+  **Answered (Mark, 2026-10-15): events only.** Integrity changes only through events (an integrity pass raises it; witnessed failures lower it), not with ship time. Decay with time is a crew_core switch that defaults to off.
 
 ## Deliverables
 
-- The crew-lab request (A1), sent once OQ3 and OQ4 are answered.
+- The crew-lab request (A1): crew_core 0.6, planned on the OQ3/OQ4 defaults after 0.5 publishes.
 - The Codex bake-off (A3), three stills.
 - A sprint plan after OQ1–OQ4.
