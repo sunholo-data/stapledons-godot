@@ -673,7 +673,7 @@ func _build_screens() -> void:
 		bg.color = Color(0.02, 0.05, 0.09) if st.active else Color(0.01, 0.01, 0.012)
 		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		vp.add_child(bg)
-		var l := ComposedBinding.new() if id == "archive" else Label.new()
+		var l := ComposedBinding.new() if id in ["archive", "crew"] else Label.new()
 		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -731,7 +731,7 @@ func screen_text(id: String) -> String:
 				return "Crew console\nno crew aboard yet"
 			if not c.get("holds", []).is_empty():
 				return "Crew console\nneeds you"
-			return "Crew console\n%d working" % c.get("members", []).filter(func(m): return m.get("work") is Dictionary and str(m["work"].get("status", "")) == "working").size()
+			return "Crew console\n%s working" % DisplayBinding.format_field(crew_screen_view(), "client.crew.working", "%d")
 		"archive":
 			var view := archive_screen_view()
 			return "Archive\n%s entries open" % DisplayBinding.format_field(view, "client.archive.unlocked_count", archive_count_format(view))
@@ -741,6 +741,14 @@ func screen_text(id: String) -> String:
 func archive_screen_view() -> Dictionary:
 	var unlocked: Variant = GalaxyMap.field_value(demo.sky_world, "consequence.archive.unlocked") if demo.sky_world is Dictionary else null
 	return {"client": {"archive": {"unlocked_count": unlocked.size() if unlocked is Array else "no", "empty": ""}}}
+
+
+## The Crew console screen's count, as a bound field (the display audit traces it to the crew).
+func crew_screen_view() -> Dictionary:
+	var sim = demo.get("journey_sim") if demo != null else null
+	var c: Dictionary = (sim as SimBridge).crew if sim is SimBridge else {}
+	var working: int = c.get("members", []).filter(func(m): return m.get("work") is Dictionary and str(m["work"].get("status", "")) == "working").size()
+	return {"client": {"crew": {"working": working, "status": "no crew aboard yet" if c.is_empty() else ("needs you" if not c.get("holds", []).is_empty() else ""), "empty": ""}}}
 
 
 func archive_count_format(view: Dictionary) -> String:
@@ -757,9 +765,16 @@ func _refresh_screens() -> void:
 			binding.record_context = true
 			binding.compose(["Archive\n", ["client.archive.unlocked_count", archive_count_format(view)], " entries open"] if stations[id].active else ["offline", ["client.archive.empty", "text"]])
 			binding.update_from(view)
+		if id == "crew":
+			var binding := screens[id].label as ComposedBinding
+			var view := crew_screen_view()
+			binding.record_context = true
+			var words: String = view.client.crew.status
+			binding.compose(["offline", ["client.crew.empty", "text"]] if not stations[id].active else (["Crew console\n", ["client.crew.status", "%s"]] if not words.is_empty() else ["Crew console\n", ["client.crew.working", "%d"], " working"]))
+			binding.update_from(view)
 		if t != screens[id].text:
 			screens[id].text = t
-			if id != "archive": (screens[id].label as Label).text = t
+			if id not in ["archive", "crew"]: (screens[id].label as Label).text = t
 			(screens[id].viewport as SubViewport).render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
