@@ -1,0 +1,1 @@
+{"view":{"client":{"warp":1}},"bindings":[{"field":"client.map.bogus","fmt":"%d","parts":["Bogus ",["client.map.bogus","%d"]],"text":"Bogus 7","context":{"client":{"map":{"bogus":7}}}}],"labels":[]}

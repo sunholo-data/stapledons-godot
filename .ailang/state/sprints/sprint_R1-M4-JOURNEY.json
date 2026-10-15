@@ -512,6 +512,45 @@
       "started": null,
       "completed": null,
       "notes": "UNGATED half delivered (iteration 20, executor Sonnet 5.5; evaluator pending); GATED half (make golden G-M4-1..4, capture-m4, bench) OPEN, passes stays null. INVENTORY at origin/main 3541bf1: R1 ship_basis COVERED (tests/test_physics.gd ship-frame block: orthonormal/Z=heading/det/pole fallbacks/near-pole/round trip). R2 PARTIAL (sky_camera tested only with a hard-coded copy of cam_bridge.json, no galactic-direction projection) -> now reads assets/areas/bridge/cam_bridge.json, GC and NGP headings, projections of galactic +x and +z (exact permutations). R3 PARTIAL (only 1/gamma at 1e-7) -> gamma(0.99)=7.088812050083356 exact in test_physics.gd; coastAt/planBurnCoastBurn are sim-only -> sim/m4_physics_test.ail. R4 MISSING in the assertions (lore_values only checks the docs): loadScale 221961.2727892787 and ismAt agreement -> sim/m4_physics_test.ail. R5 COVERED at eps 1e-9 (glow means/poles at 1e-10, profile rows at 1e-9) -> added the profile at the sim's eps 1e-10 at 0/45/80/90/120 deg for 0.99c and the cap (1e-12). R6 PARTIAL (rest and the cap only) -> every stop of solar_departure.legs (10 legs: seven 0.99c, hops 1-b 1e-3, 1e-4, 1e-6) plus rest and the guided drive cap 2e-9, in both test_physics.gd (luminance = glowLuminanceAt, LUT efficacy, colour finite) and the sim test. R7 MISSING -> make lint-precision (in make test, .PHONY; mk/m5.mk's lint-precision: lint-precision-m5 prerequisite is kept), positive control tests/fixtures/lint_precision/bad_one_minus_beta.gd must match 4 of 4, good file 0, 7 allowlisted non-computations in allowlist.txt. PLAN vs PROBE: glow values in the plan are eps 1e-9 (2.40719e-5, 0.281271); the sim's eps is 1e-10 (D-29 follow-up) so the probe gives 2.407194e-6 and 0.0281271 (10x), pole 9.628776871706523e-6 / 0.11250843031053141; the stop list is now 10 legs (D-37/D-46/D-47). Other plan values match: gammaOf 7.088812050083356, coastAt 4.398169184434525 / 0.620438114787203, planBurnCoastBurn 4.398171425676279 / 0.6204427104843891, load 221961.2727892787. FINDING: at the guided drive cap (1-beta 2e-9, GUIDED_DRIVE) the glow mean is 14.08 W/m2 and the pole 56.3 W/m2 (T 66,764 K), above the HB-61 <= 1 W/m2 bound that holds at the 1e-6 cap; finite, so the gate passes, but Mark's D-48 ruling keeps the glow. GUARD: make physics now fails unless '<n> passed, 0 failed' is printed (a parse error exited 0 with no summary). Probe: sim/tools/m4_physics_probe.ail (make m4-physics-probe, VM = interpreter identical, 28 lines). physics 605 -> 636 passed, 0 failed. | ROUND 3 (2026-10-12, planner, D-52(A)): gated half re-scoped to the 3D ship as above; G-M4-1 pan-invariance dropped for the ship (no iso composite there), iso G-M4-1..6 kept as --interior reference gates; capture-m4/bench re-pointed; m4-track-b train removed (branch never existed; M4.2 merged to main as PR #102). passes stays null: the gated half is UNBUILT at cda0cc7, and round 3 awaits Mark's approval (questions_for_mark Q-r3). Sub-milestones: M4.6gR3 ~180 counted LOC, M4.6rR3 ~200 (parks at S1)."
+    },
+    {
+      "id": "M4.5bR3_7ig_CONTEXT_CROSSCHECK",
+      "description": "Charter queue row 7i(g), addendum under approved R1-M4-JOURNEY (D-66), from eval_R1-M4-JOURNEY_7ia_round_1.json finding 1 (mutations M10, M3b survive scene-session-audits). tests/display_audit.gd audit() (context branch line 139-141) rebuilds text from a binding's recorded context without comparing it to the frame view. Add check_context(b, view): every context leaf that exists in the view must be equal (FAIL context-drift); non-client paths absent from the view also drift; context-only client.* fields are checked against their declared sources mirroring GalaxyMap._refresh_view (ui/galaxy_map.gd:1011-1024) and ShipConsoles archive/crew_screen_view (demos/ship_consoles.gd:741-751): target_id, distance_ly (catalogue stars.json, with required presence for bindings whose parts read client.map.target_id), count/radius_pc (stars.json header), rate (= view.client.warp), hold_s (= GalaxyMap.HOLD_S), archive.unlocked_count, crew.working/status, *.empty (FAIL context-source); allowlist CONTEXT_ONLY = [client.map.target_name] only; anything else FAIL context-unknown. Exact equality, no tolerance. Audit-only: no production UI, sim, package or physics change. Test-first: 6 new + 3 edited fixtures and 6 mk/m45.mk control rows RED, then check_context GREEN. Planner reality check (iteration 33): seams confirmed at HEAD; the design's AC4 perl commands were corrected in the sprint addendum ($& instead of &, escaped parentheses, applied-mutation guard).",
+      "depends_on": [
+        "M4.5bR3 row 7i(a) record_context (#235, landed)"
+      ],
+      "estimated_loc": 100,
+      "files": [
+        "tests/display_audit.gd",
+        "mk/m45.mk",
+        "tests/fixtures/display_audit/context_drift.ndjson",
+        "tests/fixtures/display_audit/context_source.ndjson",
+        "tests/fixtures/display_audit/context_presence.ndjson",
+        "tests/fixtures/display_audit/context_hold.ndjson",
+        "tests/fixtures/display_audit/context_console.ndjson",
+        "tests/fixtures/display_audit/context_unknown.ndjson",
+        "tests/fixtures/display_audit/valid.ndjson (edited)",
+        "tests/fixtures/display_audit/stale_context.ndjson (edited)",
+        "tests/fixtures/display_audit/missing_context.ndjson (edited)",
+        "changelogs/unreleased/<date>-context-crosscheck.md"
+      ],
+      "acceptance_criteria": [
+        "AC1: (mkdir -p .godot/tmp; git show eb43598:tests/display_audit.gd > .godot/tmp/da_pre.gd; for c in context_drift context_source context_presence context_hold context_console; do godot --headless --path . --script .godot/tmp/da_pre.gd -- tests/fixtures/display_audit/$c.ndjson control tests/fixtures/display_audit/empty_known.json | grep -q 'failures=0$' || exit 1; done) and make display-audit-controls prints 'display control context_drift/empty_known.json: rejected' (likewise context_source, context_unknown)",
+        "AC1b: make display-audit-controls prints 'display control context_presence/empty_known.json: rejected' and grep -E '^FAIL context-source .* client.map.distance_ly$' .godot/tmp/display-audit/playthrough/display-context_presence-empty_known.json.log",
+        "AC1c: make display-audit-controls prints 'display control context_hold/empty_known.json: rejected' and grep -E '^FAIL context-source .* client.map.hold_s$' .godot/tmp/display-audit/playthrough/display-context_hold-empty_known.json.log",
+        "AC1d: make display-audit-controls prints 'display control context_console/empty_known.json: rejected'",
+        "AC2: make display-audit-controls (valid, known, known_renumbered and the 9 prior rejections for their original reasons)",
+        "AC3: make scene-session-audits && ! grep -E '^FAIL context-' .godot/tmp/display-audit/playthrough/display-audit.log",
+        "AC4 (corrected in the sprint addendum): M10 perl -i -pe 's/_last_view\\[\"client\"\\] = \\{\"map\": inputs\\}/$&; _last_view[\"tick\"] = int(sim.world.tick) - 1/' ui/galaxy_map.gd; ! git diff --quiet ui/galaxy_map.gd; ! make scene-session-audits; grep -q '^FAIL context-drift .* tick$' .godot/tmp/display-audit/playthrough/display-audit.log; git checkout -- ui/galaxy_map.gd. M3b: same with 's/float\\(catalogue\\[i\\]\\.dist_ly\\)/$& + 0.1/' grepping '^FAIL context-source .* client.map.distance_ly$'",
+        "AC5: make playthrough-ai-modes",
+        "AC6: make import starmap-assets ui ship-ui-test ai-live-guard && make python-guard && make test",
+        "AC7: git diff --stat origin/main -- ui demos interior main.gd | wc -l prints 0"
+      ],
+      "design_doc": "design_docs/planned/r1/m4-7ig-context-crosscheck.md",
+      "sprint_plan": "design_docs/planned/r1/m4-7ig-context-crosscheck-sprint.md",
+      "passes": null,
+      "completed": null,
+      "notes": "Iteration 33 planner: addendum planned; awaiting executor."
     }
   ],
   "findings": [

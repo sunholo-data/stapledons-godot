@@ -1,2 +1,2 @@
 {"view":{"clock":{"tau":1}},"bindings":[{"field":"clock.tau","fmt":"%.1f","text":"1.0","visible":true}],"labels":[]}
-{"view":{"client":{"map":{"count":99}}},"bindings":[{"field":"client.map.count","fmt":"%d","parts":[["client.map.count","%d"]," known destinations"],"text":"3 known destinations","context":{"client":{"map":{"count":3}}}}],"labels":[]}
+{"view":{"client":{"warp":1}},"bindings":[{"field":"client.map.count","fmt":"%d","parts":[["client.map.count","%d"]," known destinations"],"text":"5685 known destinations","context":{"client":{"map":{"count":5685}}}}],"labels":[]}

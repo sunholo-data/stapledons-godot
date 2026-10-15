@@ -851,6 +851,9 @@ static func refusal_text(reason: String) -> String:
 func _process(delta: float) -> void:
 	if _holding:
 		hold_commit(minf(delta, MAX_HOLD_DT))
+	# Self-heal: a pipelined heartbeat (SimBridge.send/drain) or another caller can advance sim.world without a refresh.
+	if sim != null and int(_last_view.get("tick", -1)) != int(sim.world.get("tick", -1)):
+		refresh()
 	if not auto_tick or sim == null:
 		return
 	_accum = minf(_accum + delta, 4.0 / TICK_HZ)

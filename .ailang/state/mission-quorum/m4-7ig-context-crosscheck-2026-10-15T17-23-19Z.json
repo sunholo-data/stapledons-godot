@@ -1,0 +1,75 @@
+{
+  "doc": "design_docs/planned/r1/m4-7ig-context-crosscheck.md",
+  "iso_ts": "2026-10-15T17:23:19Z",
+  "reviewers": [
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: 429 Too Many Requests: You reached your Pro weekly limit. Max is $100/month for $300 of usage, with no 5-hour or weekly caps: https://ollama.com/settings/billing (ref: d0560701-3f43-4338-b8da-6ff63921fde0)",
+      "landed": null
+    },
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: 429 Too Many Requests: You reached your Pro weekly limit. Max is $100/month for $300 of usage, with no 5-hour or weekly caps: https://ollama.com/settings/billing (ref: 960dd2c2-339a-4ccf-8581-72d1f6dbeb44)",
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-4-argon",
+      "cost_usd": 0.013160000000000002,
+      "tokens_in": 5610,
+      "tokens_out": 194,
+      "present": true,
+      "result": {
+        "verdict": "pass",
+        "strongest_objection": "The allowlist still contains `client.map.target_name` without verifying it against `res://data/starmap/names.json` in `display_audit.gd`, relying instead on `make ui` (`map_text_identity.json`) to pin it.",
+        "catch": "In AC4, `sed -i ''` uses BSD/macOS syntax and will fail on GNU sed in Linux CI environments if executed verbatim outside a macOS dev environment.",
+        "proposed_fix": "In AC4, replace `sed -i ''` with a portable construct (e.g., `perl -i -pe` or writing to a temporary file) so the verification command works identically on both macOS and Linux."
+      },
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Round 2: gemini fixes applied verbatim in scope (presence rule, hold_s source, console sources); measured on 1,440 real samples."
+  },
+  "synthesis": {
+    "verdict": "proceed",
+    "blocking_objections": null,
+    "absent_reviewers": [
+      {
+        "model": "oc-glm-5-3",
+        "reason": "unreachable"
+      },
+      {
+        "model": "oc-kimi-k3",
+        "reason": "unreachable"
+      },
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.013160000000000002,
+    "total_tokens_in": 5610,
+    "total_tokens_out": 194
+  }
+}

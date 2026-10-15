@@ -1,0 +1,1 @@
+{"view":{"client":{"warp":1}},"bindings":[{"field":"client.map.hold_s","fmt":"%.1f","parts":["Hold for ",["client.map.hold_s","%.1f"]," s."],"text":"Hold for 0.5 s.","context":{"client":{"map":{"hold_s":0.5}}}}],"labels":[]}

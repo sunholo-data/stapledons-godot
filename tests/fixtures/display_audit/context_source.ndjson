@@ -1,0 +1,1 @@
+{"view":{"journey":{"plan":{"target":{"index":2,"id":"CNS5:3627"}}}},"bindings":[{"field":"client.map.target_id","fmt":"%s","parts":[["client.map.target_id","%s"],"  ·  ",["client.map.distance_ly","%.2f"]," ly",["client.map.empty","text"]],"text":"CNS5:3627  ·  4.42 ly","context":{"client":{"map":{"target_id":"CNS5:3627","distance_ly":4.42,"empty":""}}}}],"labels":[]}

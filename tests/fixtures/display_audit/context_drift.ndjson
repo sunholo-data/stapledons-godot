@@ -1,0 +1,1 @@
+{"view":{"tick":10},"bindings":[{"field":"tick","fmt":"%d","parts":["tick ",["tick","%d"]],"text":"tick 9","context":{"tick":9}}],"labels":[]}
