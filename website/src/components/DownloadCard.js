@@ -1,12 +1,12 @@
 import React from 'react';
 import Link from '@docusaurus/Link';
 import {Download} from 'lucide-react';
-import DOWNLOAD from '@site/src/data/download';
+import useDownload from '@site/src/data/useDownload';
 import styles from './DownloadCard.module.css';
 
-// The download box for the current build (src/data/download.js).
+// The download box for the newest build (src/data/useDownload.js).
 export default function DownloadCard({compact = false}) {
-  const d = DOWNLOAD;
+  const d = useDownload();
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -25,8 +25,12 @@ export default function DownloadCard({compact = false}) {
       </pre>
       {!compact && (
         <p className={styles.small}>
-          <a href={d.sha256}>sha256</a> · <a href={d.release}>release notes</a> ·{' '}
-          <Link to={d.news}>what's in it</Link>
+          {d.sha256 && (
+            <>
+              <a href={d.sha256}>sha256</a> ·{' '}
+            </>
+          )}
+          <a href={d.release}>release notes</a> · <Link to={d.news}>news</Link>
         </p>
       )}
     </div>
