@@ -2,9 +2,10 @@ class_name Relativity
 extends RefCounted
 ## Reference special-relativity and colour maths (CPU, float64).
 ##
-## This is the single source of truth for the formulas. The GPU starfield
-## shader (sky/starfield.gdshader) mirrors these functions, and the test
-## suite (tests/test_physics.gd) checks both against known values.
+## The formulas' single source of truth is the `sunholo/relativity` AILANG
+## package (CLAUDE.md, definition of done 3). This is the CPU mirror of it; the
+## GPU starfield shader (sky/starfield.gdshader) mirrors these functions, and
+## the test suite (tests/test_physics.gd) checks both against the spec's values.
 ##
 ## Conventions:
 ##   n      unit vector from the observer TOWARD the source, galaxy (rest) frame
