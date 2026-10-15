@@ -1,5 +1,7 @@
 # Sprint: bridge overlook and one-tier lift
 
+**Status:** Implemented: dev.4–5, merged to main in PR #117, 2026-10-05; now the default ship. The M2 Air benchmark (SD4/CB5) waived by Mark, attended 2026-10-15: "the ship geometry demos are fine, unblock them".
+
 **ID:** R1-M4-SHIP-DEMO. **Status:** approved by Mark in attended session 2026-10-04; execution started.
 **Design:** [m4-ship-geometry-demo.md](m4-ship-geometry-demo.md).
 **Scope:** Seven major tiers, accepted 5 m lower-floor buffer, correct perspective bridge views, one physical lift from +82 to +57 m and back. No full exploration system or finished architectural dressing.

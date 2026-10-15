@@ -1,7 +1,6 @@
 # Ship geometry demo: bridge overlook and one-tier lift
 
-**Landing check (2026-10-15):** Partly landed: PR #117 (dev.4–5), now the default ship. Remaining: SD4, the M2 Air laptop benchmark.
-**Status:** Approved by Mark in attended session 2026-10-04; execution started.
+**Status:** Implemented: dev.4–5, merged to main in PR #117, 2026-10-05; now the default ship. The M2 Air benchmark (SD4/CB5) waived by Mark, attended 2026-10-15: "the ship geometry demos are fine, unblock them".
 **Release:** r1 development review build. **Milestone:** M4 geometry smoke test, isolated from the production interior.
 **Priority:** Validate physical views and camera feasibility before adding ship architecture.
 **Implements:** [ship interior brief](https://github.com/sunholo-data/stapledons-design/blob/main/art/ship-interior-blender-brief.md) §§3,5,6; [ship exploration](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/ship-exploration.md); [ship structure](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase1-data-models/ship-structure.md). Geometric conventions follow [Higgs bubble](https://github.com/sunholo-data/stapledons-design/blob/main/physics/higgs-bubble.md). Existing sky physics stays with the pinned relativity package and [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md).

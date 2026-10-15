@@ -1,7 +1,6 @@
 # Ship architecture: first Commons build
 
-**Landing check (2026-10-15):** Partly landed: PR #117 (dev.6–9). Remaining: CB-M3/CB5, the M2 Air performance signoff.
-**Status:** Approved by Mark, 2026-10-04; execution started.
+**Status:** Implemented: dev.6–9, merged to main in PR #117, 2026-10-05. The M2 Air benchmark (SD4/CB5) waived by Mark, attended 2026-10-15: "the ship geometry demos are fine, unblock them".
 **Release / milestone:** r1 / M4 art and spatial review, extending the separate ship demo.
 **Priority:** Prove multi-angle painted architecture before populating seven tiers.
 **Implements:** [interior brief](https://github.com/sunholo-data/stapledons-design/blob/main/art/ship-interior-blender-brief.md), [art bible](https://github.com/sunholo-data/stapledons-design/blob/main/art/README.md), [ship exploration](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/ship-exploration.md). D-34/D-35 and the approved shared-observer clarification supersede the brief's older deck count and independent plate parallax. Existing physics remains governed by the [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md).

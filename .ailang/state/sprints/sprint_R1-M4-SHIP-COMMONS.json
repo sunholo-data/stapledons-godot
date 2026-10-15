@@ -8,8 +8,8 @@
     "note": "Approved first Commons build; also requested mid-journey demo sky review."
   },
   "created": "2026-10-04",
-  "design_doc": "design_docs/planned/r1/m4-ship-commons-build.md",
-  "sprint_plan": "design_docs/planned/r1/m4-ship-commons-build-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-ship-commons-build.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-ship-commons-build-sprint.md",
   "velocity": {
     "estimated_total_loc": 1050,
     "estimated_sessions": "3\u20135",

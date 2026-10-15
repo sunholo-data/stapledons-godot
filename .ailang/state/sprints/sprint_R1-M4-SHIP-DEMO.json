@@ -8,8 +8,8 @@
     "note": "Approved overlook plus one-tier lift; one meaningful perspective shared by geometry and external sky/SR, with future GR observer seam."
   },
   "created": "2026-10-04T12:58:34.708Z",
-  "design_doc": "design_docs/planned/r1/m4-ship-geometry-demo.md",
-  "sprint_plan": "design_docs/planned/r1/m4-ship-geometry-demo-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-ship-geometry-demo.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-ship-geometry-demo-sprint.md",
   "ailang": {
     "pin": "v0.52.0",
     "binary": "runtime/bin/ailang",

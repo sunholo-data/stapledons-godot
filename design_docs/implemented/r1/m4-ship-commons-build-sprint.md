@@ -1,5 +1,7 @@
 # Sprint: first Commons architecture and multi-angle paint
 
+**Status:** Implemented: dev.6–9, merged to main in PR #117, 2026-10-05. The M2 Air benchmark (SD4/CB5) waived by Mark, attended 2026-10-15: "the ship geometry demos are fine, unblock them".
+
 Approved continuation2026-10-04: Mark accepted the measured zoning proposal and
 said “yep approved — continue”. Replace the bounded generic pavilion with the first
 open curved arcade/plaza matching the approved Commons concept. Sequence:
