@@ -1,0 +1,1 @@
+{"view":{"consequence":{"archive":{"unlocked":["a","b","c"]}}},"bindings":[{"field":"client.archive.unlocked_count","fmt":"%d","parts":["Archive ",["client.archive.unlocked_count","%d"]," entries open"],"text":"Archive 4 entries open","context":{"client":{"archive":{"unlocked_count":4,"empty":""}}}}],"labels":[]}

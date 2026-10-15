@@ -97,6 +97,8 @@ func step(seconds: float, tick := false) -> void:
 	while elapsed < seconds - 1e-9 and failures == 0:
 		if tick and not check(demo.journey_tick(), "journey tick completes"): return
 		demo._process(0.05)
+		# The engine would run the map's own _process each frame (the harness disables child process); run it with no tick.
+		if demo.journey_map != null: demo.journey_map._process(0.0)
 		sample()
 		if not check(refusal().is_empty(), "unscripted refusal: " + refusal()): return
 		elapsed += 0.05

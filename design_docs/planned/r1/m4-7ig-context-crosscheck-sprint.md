@@ -25,14 +25,17 @@
 
 Corrected commands (run each in a subshell; `S=.godot/tmp`):
 ```sh
-# M10
-( perl -i -pe 's/_last_view\["client"\] = \{"map": inputs\}/$&; _last_view["tick"] = int(sim.world.tick) - 1/' ui/galaxy_map.gd
-  ! git diff --quiet ui/galaxy_map.gd && ! make scene-session-audits && grep -q '^FAIL context-drift .* tick$' $S/display-audit/playthrough/display-audit.log; rc=$?
-  git checkout -- ui/galaxy_map.gd; exit $rc )
+# Amendment (controller, iteration 33): the M10 form is guarded, because the unguarded
+# `int(sim.world.tick)` crashes at galaxy_map.gd:1024 while sim is null, before the audit runs.
+# Restore by copying a saved fixed copy, never by `git checkout`, which would also revert the
+# self-heal fix. FIX=<copy of the fixed ui/galaxy_map.gd>.
+( perl -i -pe 's/_last_view\["client"\] = \{"map": inputs\}/$&\n\tif sim != null: _last_view["tick"] = int(sim.world.tick) - 1/' ui/galaxy_map.gd
+  ! cmp -s ui/galaxy_map.gd $FIX && ! make scene-session-audits && grep -q '^FAIL context-drift .* tick$' $S/display-audit/playthrough/display-audit.log; rc=$?
+  cp $FIX ui/galaxy_map.gd; exit $rc )
 # M3b
 ( perl -i -pe 's/float\(catalogue\[i\]\.dist_ly\)/$& + 0.1/' ui/galaxy_map.gd
-  ! git diff --quiet ui/galaxy_map.gd && ! make scene-session-audits && grep -q '^FAIL context-source .* client.map.distance_ly$' $S/display-audit/playthrough/display-audit.log; rc=$?
-  git checkout -- ui/galaxy_map.gd; exit $rc )
+  ! cmp -s ui/galaxy_map.gd $FIX && ! make scene-session-audits && grep -q '^FAIL context-source .* client.map.distance_ly$' $S/display-audit/playthrough/display-audit.log; rc=$?
+  cp $FIX ui/galaxy_map.gd; exit $rc )
 ```
 **AC1 note.** The design's loop uses `exit 1`, so wrap it in `( … )`, or it ends the executor's shell. Create `$S` first: `mkdir -p .godot/tmp`. The other AC commands run as written. The AC1b/AC1c log paths match `DISPLAY_WORK` (`.godot/tmp/display-audit/playthrough/display-<case>-empty_known.json.log`).
 

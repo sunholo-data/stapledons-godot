@@ -151,3 +151,12 @@ None.
     - The allowlist now holds only `client.map.target_name`, which is never a numeral.
 
 Round 2 (2026-10-15T17:23:19Z): **PROCEED at 1 of 4 present**: gemini-4-argon PASS. `oc-glm-5-3` and `oc-kimi-k3` were absent (ollama 429, weekly limit) and `gpt6-1-sol` was absent (OpenAI 429, no credits); none can be restored this fire. Gemini's round-2 catch was applied verbatim: AC4 uses `perl -i -pe` instead of the BSD-only `sed -i ''`. Its remaining note, that `target_name` is pinned by `make ui` only, matches the allowlist reason above.
+
+## Amendment (iteration 33, controller)
+
+- **AC5 found real drift.** `make playthrough-ai-modes` (AI=stub) failed on unmutated code with 10 samples whose map clock line shows `tick` 1206 while the frame view is at tick 1208, after arrival. The audit was right; the product was stale.
+- **Cause.** Since the perf pass (#240) the heartbeat is pipelined (`bridge/sim_bridge.gd` send/drain). `GalaxyMap.tick()` refreshes right after a pipelined `send`, so `_last_view` holds the pre-reply world. The reply lands at the next `drain()`, and any other caller that sends or drains advances `sim.world` without refreshing the map (for example `demos/ship_consoles.gd:316`, `journey_sim.send([intent], 0.0)`).
+- **Fix (production, minimal).** `ui/galaxy_map.gd` `_process`: a guarded self-heal, placed before the `auto_tick` early return. When `_last_view` tick differs from `sim.world` tick it calls `refresh()`. Nothing else in production changes.
+- **Harness.** `tests/m4_playthrough_ship.gd` `step()` now runs the map's `_process(0.0)` after each demo frame. The harness disables child process and steps by hand, so without this the self-heal never runs in the scripted playthrough. The call emulates the engine's per-frame hook and does not tick.
+- **AC7, amended.** `git diff --stat origin/main -- ui demos interior main.gd` may show exactly one guarded change, the self-heal in `ui/galaxy_map.gd`. Nothing else in `ui/`, `demos/`, `interior/` or `main.gd` changes.
+- **AC8 (new, mutation proof).** Remove the self-heal lines from `ui/galaxy_map.gd` (copy, edit, restore from the copy; not `git checkout`, which would also revert the fix). Then `make AILANG=runtime/bin/ailang playthrough display-audit AI=stub PLAYTHROUGH_OUT=.godot/tmp/playthrough/ai-stub DISPLAY_SAMPLES=.godot/tmp/playthrough/ai-stub/display_samples.ndjson` must show `FAIL context-drift`. Restoring the fix must return it to green.
