@@ -1381,3 +1381,48 @@ DECISIONS FOR MARK: D-77 (transit-card folding during braking: A amend AC4, reco
 - **Next:** restore declared in-budget distinct-model native judge; apply only proven portrait-audit registration repair and controls, actual packed consumer evidence, unchanged full gates and exact-head Linux CI. If AC11 fails again, measure that independently under unchanged workload/semantics. Then M4.6gR3 / row 7i(g), followed by L9. Existing D-77/D-78 unchanged; capacity park creates no new human ask.
 
 DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended/default, or B visible priority change); D-78 (caption notation: A exclude constant notation digits, recommended/default, or B digit-free visible copy). Defaults keep pins and AC4 OPEN until answered.
+
+## 2026-10-15: iteration 33, row 7i(g) display-audit context cross-check BUILT, PR #250; the new rule found and fixed a stale map tick under the pipelined heartbeat; independent eval Sonnet 84/100 PASS [PRODUCT]
+
+- **Pick:** row 7i(g), which is clause 4 and first in the attended order (beside M4.6gR3). Row 0 (CI recovery) was re-measured first: its predicate has flipped. #243 was closed unmerged, but #242 (merge `429ac0a`) carried the portrait audit row and the `crewSkipUnheld` ceiling, and main CI is `success` on `429ac0a` (38737637197) and `7fbeb99` (38737667855). Row 0 is RESOLVED. M4.6gR3 needs a GPU window, so the headless row ran.
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4 moved: the AC4/AC5 display audit no longer trusts a recorded context, and a real stale numeral is fixed.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing tripwire CLEAN. #203 had 0 allowlisted directives since 2026-10-14T23:20:55Z (12 comments, all self). Self-notices rc 0 (control 4:5, watermarks 2/2). Ledger valid at 82 rows; D-77/D-78 OPEN and unchanged. The stapledons_godot inbox holds 3 unread upstream FYIs (v0.54.11, ailang#1827 fixed on dev, registry fix), none of them directives; they stay unread for the attended session. The weekly sweep was already recorded by iteration 24 this week.
+- **Gate 1:** origin/main `eb43598` (gate1 base `eb43598b9c39d464e7b711b348077007ddbe6f5c` at 2026-10-15T17:09:23Z). Its check set is 0 because the tip is a GITHUB_TOKEN changelog commit, and `CI` declares no `workflow_dispatch`. The code tip `7fbeb99` has 3 checks and is `success`. The skill came from the resolved symlink (`ailang/.claude/skills/mission-control`), and its resources were read from there. The main checkout was fast-forwarded (its only dirt is untracked `*.gd.uid`). Work ran in fresh sibling clones `.stapledon-loop-iter33`, `.stapledon-eval-iter33` and `.stapledon-record-iter33` (no worktrees).
+- **Orphan credit:** iteration 32's record sat in draft PR #244, unmerged. This record branch merges it, keeping the attended versions of rows 0 and 7j where they conflicted, then restates both. #244 is closed as folded.
+- **Reality check (controller, at `eb43598`):** `tests/display_audit.gd:139-141` sets `local_view = b.context` with no comparison to the frame view. The designer confirmed that the pre-fix audit accepts both the M10 shape (context tick 9, frame 10) and the M3b shape with `failures=0`.
+- **Design:** Opus (Agent tool), `design_docs/planned/r1/m4-7ig-context-crosscheck.md`. It measured overlap on 1,440 real samples: 0 differences on `tick`, `clock.*`, 29 `journey.plan.*` leaves, `ship.*` and `ledger.radiated_j`. `client.map.distance_ly` is the catalogue distance, not `journey.plan.distance`, so it needs a source rule.
+  - Quorum round 1 was BLOCKED. Only gemini-4-argon was present (the absences are listed under routing); it required a presence rule and source rules in place of allowlisting `hold_s` and the console counts.
+  - One revision followed. Round 2 was PROCEED at 1 of 4 present (gemini PASS). Its catch, BSD `sed -i ''` in AC4, was applied verbatim as `perl -i -pe`.
+- **Plan:** Opus (Agent tool). The addendum is `m4-7ig-context-crosscheck-sprint.md` plus the feature `M4.5bR3_7ig_CONTEXT_CROSSCHECK` in `sprint_R1-M4-JOURNEY.json`. The planner fixed both AC4 perl commands, which were broken as written (`&` should be `$&`, and the parentheses were unescaped), and tested them on temp copies.
+- **Execution:** Haiku (Agent tool), test-first.
+  - RED: the pre-fix audit accepts all 6 new fixtures. GREEN: `display-audit-controls` rejects each with its own reason, and AC3 is 716 samples with 0 context findings.
+  - **AC5 found real drift:** in the AI-stub run after arrival, the map's clock line showed tick 1206 while the world was at 1208 (10 samples). The executor stopped there instead of loosening the rule.
+  - The controller diagnosed the cause. Since #240 the map heartbeat is pipelined (`bridge/sim_bridge.gd` send/drain), and `GalaxyMap.tick()` refreshes before the reply lands. Other senders (for example `demos/ship_consoles.gd:316`) drain without a map refresh.
+  - Scope was widened by one guarded self-heal in `GalaxyMap._process`, plus one harness line in `tests/m4_playthrough_ship.gd` that runs the map's `_process(0.0)` each step, as the engine would. This is recorded as a design Amendment with AC8.
+  - Afterwards AC5 passes in both stub and digits modes. The AC8 mutant (self-heal removed) gives 10 drift failures. The AC4 M10 (guarded) and M3b mutants are killed on the real scene. Preflight passes.
+  - The controller ran `make -k test` on `fc2d552` with `AILANG=runtime/bin/ailang` (v0.54.8): rc 0 in about 73 min, 0 `***` lines, and `display-audit: samples=716 … failures=0`.
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter33`). r1 **84 PASS**, 0 blocking (correctness 35, tests 19, scope 17, docs 13); the evaluation is `eval_R1-M4-JOURNEY_7ig_round_1.json`.
+  - Of 12 drill mutants, 9 were killed. Three survive with no fixture: `crew.working` dropped from the sourced list, the parts-presence half of the rule, and a non-client path made non-fatal. These are row 7i(j).
+  - In-game verdict: the defect is real but transient (≤1 tick, 50 ms). The multi-sample staleness in the scripted run comes from the harness disabling child `_process`. The amendment was corrected to say so.
+  - It saw a sim `startup_timeout` (cold compile about 38 s against a 30 s budget) under the controller's concurrent `make test` load. It raised the budget locally and reverted it. This is not from the diff.
+- **Gate 3b:** PR #250 head `26eda69` (code identical to `fc2d552`); PR CI 38789881466. The outcome is recorded in the closing note below.
+- **Routing evidence:** fire `stapledon-1792084132-5118`; gate1 base `eb43598`@17:09:23Z. Routing note verbatim: `controller pi:ollama/glm-5.3:cloud → claude:claude-opus-5-5 (probe ok); lanes degraded: ; planner: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to pi:ollama/kimi-k3:cloud; executor: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to claude:claude-haiku-5-5`.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: resolver `recipe claude:claude-opus-5-5 declared:provider-pin`, run as Agent `opus`, 116,507 tok plus 133,700 tok for the revision (cumulative transcript).
+  - Planner: resolver `recipe pi:ollama/kimi-k3:cloud declared:planner-lane-default-pin`. The pin probe `pi -p --model ollama/kimi-k3:cloud` returned rc 1 with 429 (Pro weekly limit) and was recorded with `mission-lane-dead.sh`; the fallback `pi:openrouter/moonshotai/kimi-k3` is over ration. Run as Agent `opus`, at the operator's standing request for Agent-tool roles; the spawn hook accepted it. 75,936 tok.
+  - Executor: resolver `recipe claude:claude-haiku-5-5 declared:provider-pin`, run as Agent `haiku`, 143,717 + 184,551 tok.
+  - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, run as Agent `sonnet`, 105,381 tok, distinct from the Haiku executor.
+  - Quorum reviewers absent: oc-glm-5-3 and oc-kimi-k3 (ollama 429, weekly limit) and gpt6-1-sol (OpenAI 429, no credits). Metered cost $0.026 (two gemini reviews).
+- **Ruled out:**
+  - Loosening `context-drift` to make AC5 green.
+  - Pinning the drift as a known finding: the default scene run has none, so a pinned entry would read stale there.
+  - Calling the stale tick a harness-only artifact: the self-heal also covers the ship-console sender in the live game.
+  - Building a competing CI repair for row 0.
+  - Re-running absent quorum reviewers: they are quota-exhausted, not over budget.
+- **Retro:** no shared-skill edit (the charter forbids it). Three frictions:
+  1. The design ACs' mutation commands were broken twice: BSD `sed`, then perl `&` and unescaped parentheses. Only running them caught it. Process fix: a directive's mutation commands must be dry-run on a temp copy before they are banked as ACs.
+  2. A test harness that disables child `_process` hid a per-frame production hook from the audit. This is recorded in row 7i(j)'s notes, and the evaluator flagged the residual risk.
+  3. The evaluator's heavy runs alongside `make test` pushed a cold compile past the sim's 30 s startup budget. Next time, schedule the judge's scene runs after the controller's `make test`, or the other way round.
+- **Next:** land #250 (PR CI, then merge CI); row 7i(j); M4.6gR3 (GPU window); D-77/D-78 for Mark; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended and the default, or B a visible priority change); D-78 (caption notation: A exclude constant notation digits, recommended and the default, or B digit-free visible copy). Both are unchanged; the defaults keep the pins and leave AC4 OPEN.

@@ -1,17 +1,14 @@
 # Stapledon mission dashboard
 
-Updated 2026-10-15, iteration 32 (record pending in its draft PR).
+Updated 2026-10-15, iteration 33.
 
-- **Bar:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing; goal unmoved.
-- **Outcome:** PARKED-ON-LANE; all four native roles returned diagnostic deliverables; independent Sol judge supports diagnosis only.
-- **Main CI:** 8358b12, run 38653252440, failure at portrait export-filter-audit. Crew timing passed 0.59/1.21 s in this run; historical timing risk is not declared repaired.
-- **Reproduced:** exact-head Godot audit rc 1, 16 passed / 1 failed; missing DYNAMIC portrait registration despite existing include filter.
-- **Next:** narrow approved registration repair with PNG witnesses and portrait-specific negative controls; actual packed consumer evidence; unchanged full gates and Linux CI.
-- **Judge:** Sonnet native spawn Unknown model; alternatives over ration. Fresh-context same-model diagnostic review does not meet the charter's different-model product guard.
-- **Fleet:** agent-tool:sonnet-unavailable, inbox_1792041974049_58efd545; repeated iteration31/32, no harness edits.
-- **Resume:** configured in-budget distinct-model native judge spawns and supplies independent deliverable, then recovery gates pass. No reset time reported.
-- **Banked:** M4.6gR3 (GPU golden), row 7i(g) (context cross-check), then L9; blocked behind CI and valid product judge.
-- **Mark:** D-77 transit folding; D-78 caption notation. Defaults keep pins and AC4 OPEN. No new human ask.
-- **Cost:** metered $0; codex quota; role token counts unavailable. Harness escalations 4/20; last 3 product landings each moved clause4.
-- **Workspace:** only bookkeeping in sibling .stapledon-iter32; shared main and existing UID files preserved. Attended #242/#243 untouched.
-- **Evidence:** reports/mission-iter32/ and mission log iteration32; record PR remains separate from product landing.
+- **Bar:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4 moved: the display audit cross-checks recorded context, and a stale map tick is fixed.
+- **Outcome:** row 7i(g) built in PR #250, independent Sonnet eval 84 PASS with 0 blocking; local `make -k test` rc 0 on `fc2d552`. PR CI 38789881466 result is in the log closing note.
+- **Main CI:** green. Merge `429ac0a` and `7fbeb99` are `success`; the tip `eb43598` is a bot changelog commit with no runs.
+- **Resolved:** row 0 (CI recovery, fixed through attended #242) and row 7j (the native Sonnet judge spawns under a Claude controller).
+- **Key find:** since #240's pipelined heartbeat, another sender could advance the world without a map refresh. In game it lasted ≤50 ms; `GalaxyMap._process` now self-heals it.
+- **Next:** land #250; row 7i(j) (3 surviving drill mutants, a distinct presence reason); M4.6gR3 (GPU window); rows 7i(b–f, h), 7h; then L9.
+- **Mark:** D-77 transit folding and D-78 caption notation are unchanged; the defaults keep the pins and leave AC4 OPEN. No new ask.
+- **Lanes:** ollama 429 (weekly limit) and OpenAI API out of credits. The quorum ran at 1 of 4, and the planner's kimi pin is dead. Codex is over its daily ration.
+- **Cost:** metered $0.026 (gemini quorum); quota opus, haiku, sonnet.
+- **Workspace:** sibling clones `.stapledon-loop-iter33`, `-eval-iter33` and `-record-iter33`; the main checkout was fast-forwarded only. Attended #248/#249 were untouched.
