@@ -58,5 +58,43 @@ jobs:
             gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
               gh release create "$GITHUB_REF_NAME" --prerelease --title "$GITHUB_REF_NAME" \
                 --notes "Review build. Apple Silicon Macs. First launch: right-click the app → Open (unsigned). Credits (press C in game): Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0; Milky Way panorama: NOIRLab noirlab2430b (E. Slawik / NOIRLab / NSF / AURA), CC BY 4.0."
-            gh release upload "$GITHUB_REF_NAME" "$name" --clobber
+            shasum -a 256 "$name" > "$name.sha256"
+            gh release upload "$GITHUB_REF_NAME" "$name" "$name.sha256" --clobber
           fi
+
+  # After the build: fold changelogs/unreleased into CHANGELOG.md under this tag (the fragments the
+  # tag contains), commit that to main, use the section as the release notes, and point the
+  # website's fallback download at this tag (the download card itself asks GitHub for the latest).
+  changelog:
+    name: Changelog, release notes, download pointer
+    needs: macos
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Fold, commit, push
+        run: |
+          git fetch -q --tags --force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          tools/changelog_fold.sh rebuild
+          sed -i -E "s/^const TAG = '[^']*';/const TAG = '${TAG}';/" website/src/data/download.js
+          git add -A CHANGELOG.md changelogs website/src/data/download.js
+          if ! git diff --cached --quiet; then
+            git commit -q -m "changelog: fold fragments into ${TAG}; download points at ${TAG}"
+            git push -q origin HEAD:main
+          fi
+      - name: Release notes
+        run: |
+          { tools/changelog_fold.sh notes "$TAG"
+            echo
+            echo "---"
+            echo "Review build. Apple Silicon Macs. First launch: right-click the app → Open (unsigned). Credits (press C in game): Planet textures: Solar System Scope (solarsystemscope.com), CC BY 4.0; Milky Way panorama: NOIRLab noirlab2430b (E. Slawik / NOIRLab / NSF / AURA), CC BY 4.0."
+          } > notes.md
+          gh release edit "$TAG" --notes-file notes.md

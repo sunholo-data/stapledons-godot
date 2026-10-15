@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import Clip from '@site/src/components/Clip';
 import GALLERY from '@site/src/data/gallery';
-import DOWNLOAD from '@site/src/data/download';
+import useDownload from '@site/src/data/useDownload';
 import styles from './index.module.css';
 
 const GITHUB_URL = 'https://github.com/sunholo-data/stapledons-godot';
@@ -37,6 +37,7 @@ function GitHubMark({size = 18}) {
 }
 
 function Hero() {
+  const DOWNLOAD = useDownload();
   const logo = useBaseUrl('/img/ailang-logo.svg');
   return (
     <header className={styles.hero}>
@@ -491,6 +492,7 @@ function Roadmap() {
 }
 
 function Closing() {
+  const DOWNLOAD = useDownload();
   return (
     <section className={clsx(styles.section, styles.closing)}>
       <div className={styles.container}>
