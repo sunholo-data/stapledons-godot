@@ -1,0 +1,131 @@
+{
+  "entity_id": "medic",
+  "status": "proposed",
+  "role": "medic",
+  "departure_age": 35,
+  "departure_age_status": "proposed",
+  "name_region": "south_asia",
+  "gender_presentation": "woman",
+  "name_region_status": "proposed visual naming convention for D-80; not an established ancestry or character name",
+  "identity_note": "The accepted Medic v2 identity: a woman about 35 with warm medium-brown skin, dark expressive eyes, imperfect arched brows, a long slightly crooked nose, natural lips and thick dark wavy hair loosely swept behind the ears. Cream layered medical tunic, deep teal folded scarf with coral trim, worn brass fastening and pens in the pocket; delicate ink, textured gouache and watercolour, soft warm light and cool violet shadows. South Asian appearance is proposed as the regional naming convention; the face alone does not establish ancestry. All images retain the accepted square bust composition.",
+  "palette": [
+    "#F2E3C7",
+    "#1F8A8A",
+    "#E8694A",
+    "#D9A340",
+    "#3B2959"
+  ],
+  "rights": "Copyright Sunholo. Shipped with the Apache-2.0 stapledons-godot codebase.",
+  "files": [
+    {
+      "file": "portrait_medic_y0_neutral.png",
+      "kind": "portrait",
+      "emotion": "neutral",
+      "age_stage": 0,
+      "variant": "0",
+      "biological_age": 35,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "93a02944772201d3e854a283342fd189409995e85a91796d5197a9e5f0be0017",
+      "source": "re-keyed: portrait_medic_age0_neutral_v2.png (sha256 93a02944772201d3e854a283342fd189409995e85a91796d5197a9e5f0be0017); copied byte-for-byte from the read-only art-refs bundle"
+    },
+    {
+      "file": "portrait_medic_y0_happy.png",
+      "kind": "portrait",
+      "emotion": "happy",
+      "age_stage": 0,
+      "variant": "0",
+      "biological_age": 35,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "0dc9e2d4a37c1ff611f4f92599e34bba85d9e7b297eeb2d794582ef6ed0dc738",
+      "source": "generated: edit of portrait_medic_age0_neutral_v2.png (sha256 93a02944772201d3e854a283342fd189409995e85a91796d5197a9e5f0be0017); candidate 1; see generation_notes.md#portrait_medic_y0_happypng"
+    },
+    {
+      "file": "portrait_medic_y0_sad.png",
+      "kind": "portrait",
+      "emotion": "sad",
+      "age_stage": 0,
+      "variant": "0",
+      "biological_age": 35,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "c126b9e11fc34ee2fecb652f192e9381bcebb80ab48bf18b3cc904df4db105ca",
+      "source": "generated: edit of portrait_medic_age0_neutral_v2.png (sha256 93a02944772201d3e854a283342fd189409995e85a91796d5197a9e5f0be0017); candidate 1; see generation_notes.md#portrait_medic_y0_sadpng"
+    },
+    {
+      "file": "portrait_medic_y0_angry.png",
+      "kind": "portrait",
+      "emotion": "angry",
+      "age_stage": 0,
+      "variant": "0",
+      "biological_age": 35,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "6800f1c3e89f4989a8b506715e3aed264ea539504fe97a6ed65a2f9b27d8daec",
+      "source": "generated: edit of portrait_medic_age0_neutral_v2.png (sha256 93a02944772201d3e854a283342fd189409995e85a91796d5197a9e5f0be0017); candidate 2; see generation_notes.md#portrait_medic_y0_angrypng"
+    },
+    {
+      "file": "portrait_medic_y0_fearful.png",
+      "kind": "portrait",
+      "emotion": "fearful",
+      "age_stage": 0,
+      "variant": "0",
+      "biological_age": 35,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "fd0daac66190895014093d4e9703cd30b70236fe2d277aa1fcd58838d44c3a54",
+      "source": "generated: edit of portrait_medic_age0_neutral_v2.png (sha256 93a02944772201d3e854a283342fd189409995e85a91796d5197a9e5f0be0017); candidate 1; see generation_notes.md#portrait_medic_y0_fearfulpng"
+    },
+    {
+      "file": "portrait_medic_y0_curious.png",
+      "kind": "portrait",
+      "emotion": "curious",
+      "age_stage": 0,
+      "variant": "0",
+      "biological_age": 35,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "254b25bd4e15aad6a211fcfe4f885797f5d8777b2ba92f5f58141ffc3542ec8f",
+      "source": "generated: edit of portrait_medic_age0_neutral_v2.png (sha256 93a02944772201d3e854a283342fd189409995e85a91796d5197a9e5f0be0017); candidate 2; see generation_notes.md#portrait_medic_y0_curiouspng"
+    },
+    {
+      "file": "portrait_medic_y0_loving.png",
+      "kind": "portrait",
+      "emotion": "loving",
+      "age_stage": 0,
+      "variant": "0",
+      "biological_age": 35,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "3c23ffe2b657f9045a998ab7416af0bee667a91dbb806f54d09f167172075b29",
+      "source": "re-keyed: portrait_medic_age0_loving_v2.png (sha256 3c23ffe2b657f9045a998ab7416af0bee667a91dbb806f54d09f167172075b29); copied byte-for-byte from the read-only art-refs bundle"
+    },
+    {
+      "file": "portrait_medic_y0_grieving.png",
+      "kind": "portrait",
+      "emotion": "grieving",
+      "age_stage": 0,
+      "variant": "0",
+      "biological_age": 35,
+      "width": 1254,
+      "height": 1254,
+      "sha256": "2a68ffbec262bae0e48607ab097a9f7747a1e2ae085bf91274d4fce15eebb0ca",
+      "source": "re-keyed: portrait_medic_age0_grieving_v2.png (sha256 2a68ffbec262bae0e48607ab097a9f7747a1e2ae085bf91274d4fce15eebb0ca); copied byte-for-byte from the read-only art-refs bundle"
+    }
+  ],
+  "review_files": [
+    {
+      "file": "review/contact_sheet.png",
+      "width": 1482,
+      "height": 2782,
+      "sha256": "7cba2b41a727a4506df5d5ccfa63f64c2cabc58fb072ae8e55d3932ad2078a41",
+      "purpose": "All eight emotions on mid-grey and black, plus 50% neutral overlays."
+    }
+  ],
+  "review_notes": [
+    "Portrait-only stage-0 batch. Age-50 portrait and static avatar are reference inputs only.",
+    "The accepted originals have nonzero alpha at top, left and right edges. This batch preserves the specifically requested source crop and byte-for-byte re-keying rather than changing the accepted images. The strict three-edge alpha-zero check is an explicit exception, not a pass.",
+    "Built-in imagegen did not expose an exact model id/version or seed. Historical generator/model/date/full prompts for copied accepted originals were not supplied. See generation_notes.md for provenance limitations."
+  ]
+}

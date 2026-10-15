@@ -31,9 +31,15 @@ const TEXT := Color(0.86, 0.9, 0.98)
 const PORTRAIT_DIR := "res://data/crew/portraits"
 ## A reply's emotion, and the faces to try for it in order (D-7's eight emotions; the trial set
 ## has neutral for every role and loving and grieving for the medic).
-const STRAINED_LABELS := ["request_relief", "decline", "concern"]
+## The reply's emotion: declining shows anger, a concern shows fear, asking to step back (or stress at
+## the strained line) shows sadness, accepting shows happiness. A face missing that emotion falls back
+## along its list (the medic has all eight since 2026-10-14; the others are neutral for now).
+const STRAINED_LABELS := ["request_relief"]
 const WARM_LABELS := ["accept"]
-const FALLBACK := {"sad": ["sad", "grieving", "neutral"], "happy": ["happy", "loving", "neutral"], "neutral": ["neutral"]}
+const LABEL_EMOTION := {"decline": "angry", "concern": "fearful"}
+const FALLBACK := {"sad": ["sad", "grieving", "neutral"], "happy": ["happy", "loving", "neutral"], "angry": ["angry", "sad", "neutral"],
+	"fearful": ["fearful", "sad", "grieving", "neutral"], "curious": ["curious", "neutral"], "loving": ["loving", "happy", "neutral"],
+	"grieving": ["grieving", "sad", "neutral"], "neutral": ["neutral"]}
 const SCENARIO := "res://data/crew/scenario.json"
 ## A work effect in words (crew_core indicator deltas), by indicator and sign.
 const EFFECT_WORDS := {
@@ -385,6 +391,8 @@ func emotion_of(id: String) -> String:
 	for m in crew.get("members", []):
 		if m.get("id") == id:
 			stress = float(m.get("indicators", {}).get("stress", 0))
+	if LABEL_EMOTION.has(label):
+		return LABEL_EMOTION[label]
 	if STRAINED_LABELS.has(label) or stress >= STRAINED:
 		return "sad"
 	if WARM_LABELS.has(label):

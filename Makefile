@@ -71,12 +71,21 @@ crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resu
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_crew_hold.gd > $(SCRATCH)/crew-hold.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-hold)' $(SCRATCH)/crew-hold.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-hold.log && grep -q '^crew-hold: 0 failures$$' $(SCRATCH)/crew-hold.log
 test: crew-hold-test
-crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless, under 2 s (warm cache); critical_only and the no-hold worst case
+## AC11 budgets. crewSkip (critical_only, as played): 2 s. crewSkipUnheld (no rules, concerns
+## answered, the crew busy for ten years): 150 s, a regression ceiling, not the goal (D-82). Under
+## crew_core 0.4.0 it runs 1.2-2.1 s on CI only because the auto-captain stalls on concerns; 0.4.1
+## (PR #243) unblocks it, and then a busy decade costs ~40 s on the Studio, ~71 s on CI, about half
+## of it the VM's O(n^2) list tail (ailang#1827). Mark (D-82): no package workaround; fix at source,
+## then restore 2 s.
+CREW_PERF_BUDGET_crewSkip := 2.0
+CREW_PERF_BUDGET_crewSkipUnheld := 150.0
+crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless (warm cache); critical_only under 2 s, the busy no-hold worst case under its measured ceiling
 	@for e in crewSkip crewSkipUnheld; do \
+	  case $$e in crewSkip) b=$(CREW_PERF_BUDGET_crewSkip);; *) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; esac; \
 	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 1 sim/crew_script.ail > /dev/null; \
 	  s=$$(perl -MTime::HiRes=time -e 'printf "%.3f", time'); out=$$(env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 10 sim/crew_script.ail); \
 	  t=$$(perl -MTime::HiRes=time -e "printf '%.2f', time - $$s"); echo "crew-perf $$e: $$out in $$t s"; \
-	  echo "$$out" | grep -qE '^"?days 3652 holds [0-9]+"?$$' && perl -e "exit($$t < 2.0 ? 0 : 1)" || { echo "crew-perf: FAIL ($$e: $$out, $$t s; budget 2 s)"; exit 1; }; done
+	  echo "$$out" | grep -qE '^"?days 3652 holds [0-9]+"?$$' && perl -e "exit($$t < $$b ? 0 : 1)" || { echo "crew-perf: FAIL ($$e: $$out, $$t s; budget $$b s)"; exit 1; }; done
 test: crew-perf
 crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
 	@for n in consent orders shipevent argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
