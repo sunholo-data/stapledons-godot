@@ -1,6 +1,6 @@
 # AI service foundation: a recorded, replayable AI process
 
-**Landing check (2026-10-15):** Partly landed: AI.1–AI.10a (PRs #56 to #91, #165). Remaining: AI.10b live line (attended), then the row 4b bake-off.
+**Landing check (2026-10-15, verified against code):** AI.1–AI.10a shipped (PRs #56 to #91, #165). Remaining: AI.10b, the live Medic line with Mark's voice choice (attended, needs keys; `data/ai/cast/medic.json` voice_status pending), then the row 4b model bake-off.
 **Status:** Planned; open questions answered (D-20, D-21, 2026-10-02); sprint R1-AI-FOUNDATION approved and executing (AI.1, AI.2, AI.4 merged; AI.5 executed). Written 2026-10-02 after Mark chose "Finish M1 + AI design".
 **Release:** r1 · **Milestone:** mission queue row 4 "AI service foundation" (ledger **D-9**), feeds bar clause 4 (M4's news beat) and clause 5 (AILANG)
 **Priority:** P1: M4 is fully playable on templates without it (M4 §Depends on: "Soft"), but every later conversation, voice and portrait sits on this protocol, and recording must exist before the first live AI output, or replays break

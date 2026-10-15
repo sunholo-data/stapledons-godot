@@ -1,6 +1,6 @@
 # M1: The relativistic sky
 
-**Landing check (2026-10-15):** Partly landed (PRs #16 to #89, plus #145/#147 for the catalogue). Remaining: M1.5b (AC9 renders, m1-report.md, landing); queue row 3.
+**Landing check (2026-10-15, verified against code):** Everything through M1.8 and M1.5a (#75) shipped, with the catalogue via #145/#147. Remaining: M1.5b only: AC9 renders and contact sheet, the AC11 bright-star render gate on real renders, the AC7 bench with background, m1-report.md and the R-f sign-off (bar clause 1).
 **Status:** Planned (design, awaiting sprint plan)
 **Release:** r1 · **Milestone:** M1 of [R1 foundations](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md)
 **Priority:** P0: every later milestone looks through this sky
