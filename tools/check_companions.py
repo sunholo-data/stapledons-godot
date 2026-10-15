@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Oracle for the companion rule (sim/tools/companions.ail, design_docs/planned/r1/m1-companion-parallax.md).
+"""Oracle for the companion rule (sim/tools/companions.ail, design_docs/implemented/r1/m1-companion-parallax.md).
 
 An independent second implementation in Python over CNS5 (data/raw/cns5.dat) and GCNS
 (data/raw/table1c.dat.gz): its own fixed-width parsing, its own proper-motion propagation

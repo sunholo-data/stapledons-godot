@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Oracle for TRAPPIST-1's planets (sim/data/trappist1.ail, sim/trappist1.ail;
-design_docs/planned/r1/trappist1-planets-sprint.md, TB2).
+design_docs/implemented/r1/trappist1-planets-sprint.md, TB2).
 
 An independent second implementation in Python. It reads the pinned archive
 snapshot itself (data/planets/trappist1_ps.csv, sha256 in

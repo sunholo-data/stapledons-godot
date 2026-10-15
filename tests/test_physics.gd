@@ -1442,7 +1442,7 @@ func _schwarzschild_gpu_handoff() -> void:
 	check("derivation: sin((psi - psi0)/2)/sin(psi/2) over sin((psi1 - psi0)/2)/sin(psi1/2) = the cot(psi/2) weight", wmax, 0.0, 1e-9)
 
 
-## Lightspeed loading (design_docs/planned/r1/lightspeed-loading.md): the rapidity mirrors
+## Lightspeed loading (design_docs/implemented/r1/lightspeed-loading.md): the rapidity mirrors
 ## against sunholo/relativity 0.10.0 kinematics (values printed by the package's
 ## rapidityOfBeta / betaOf / gammaOf / oneMinusBeta on v0.52.0), and the spec §1-2
 ## conventions at the loading jump's top speed, beta = 0.99999.

@@ -2,8 +2,8 @@
   "sprint_id": "R1-M4-UNIFIED-PAINTED-SHIP",
   "status": "review_build_published",
   "approved_by": "Mark attended5October2026 consolidation and Blender+paintedassets request",
-  "design_doc": "design_docs/planned/r1/m4-unified-painted-ship.md",
-  "sprint_plan": "design_docs/planned/r1/m4-unified-painted-ship-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-unified-painted-ship.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-unified-painted-ship-sprint.md",
   "github_issues": [],
   "features": [
     {

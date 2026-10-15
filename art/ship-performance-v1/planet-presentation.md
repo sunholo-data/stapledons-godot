@@ -1,7 +1,7 @@
 # Planet presentation follow-up
 
 Approved by Mark's 5 October laptop/transition follow-up; tracked in
-`design_docs/planned/r1/m4-tour-transition-followup.md`. This is presentation
+`design_docs/implemented/r1/m4-tour-transition-followup.md`. This is presentation
 work on existing AILANG positions, clocks, optics and photometry. No simulation
 trajectory, radii, headings, package pins or SR formulas changed.
 

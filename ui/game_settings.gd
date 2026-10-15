@@ -1,6 +1,6 @@
 class_name GameSettings
 extends RefCounted
-## Title-screen settings (design_docs/planned/r1/title-screen.md): the ship's
+## Title-screen settings (design_docs/implemented/r1/title-screen.md): the ship's
 ## view (D-38 Realistic / Auto) and text-only AI (D-8).
 ##
 ## - The view lives in `<dir>/settings.cfg` ([display] auto_view). Default Auto

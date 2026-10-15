@@ -1,5 +1,5 @@
 extends SceneTree
-## Star-truth consistency gate (design_docs/planned/r1/starmap-single-truth.md, T4/AC3):
+## Star-truth consistency gate (design_docs/implemented/r1/starmap-single-truth.md, T4/AC3):
 ## the navigation catalogue (data/starmap/stars.json) against the ship's sky stack
 ## (Starfield.load_tiers, default medium = GCNS + quick HIP rows + bright).
 ##   - every destination with photometry is in the sky under one of its aliases

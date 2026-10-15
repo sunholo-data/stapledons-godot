@@ -1,5 +1,7 @@
 # M5 resolved-body inverse raytrace continuation
 
+**Landing check (2026-10-15):** Partly landed: the renderer is enabled in-tree (PR #117). M5.3 is still open (triage L1).
+
 | Pillar | Alignment | Reason |
 |---|---:|---|
 | Choices Are Final | +1 | Observer rendering preserves committed simulation trajectories. |

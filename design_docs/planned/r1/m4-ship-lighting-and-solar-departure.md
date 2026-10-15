@@ -11,6 +11,7 @@
 
 Net +8: aligned. Use the Game Vision Designer pillar review; no vision change is required.
 
+**Landing check (2026-10-15):** Partly landed: SD1–4 and SD6 via PRs #117 and #149; external sunlight ships via ship-star-light. Remaining: SD5 (Saturn rings and shadows, needs M5.2b/M5.4), SD7 (high-speed golden cases), SD8 (M2 Air).
 **Status:** Approved by Mark, attended 5 October 2026. Mark delegated the camera choice and emphasised lighting as central to the game feel. Select A: painted 3D geometry with real lighting and free camera. Captures remain a finish review; no switch to fixed views is planned.
 **Release:** R1; continuation of the current unified ship and approved M5 planets sprint.
 **Priority:** movement/map first; lighting comparison before extensive painting; Solar System departure next.

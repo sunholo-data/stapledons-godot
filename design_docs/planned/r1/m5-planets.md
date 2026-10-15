@@ -1,5 +1,6 @@
 # M5: Planets and flybys
 
+**Landing check (2026-10-15):** Partly landed (7/15): M5.0a1/a2/b, M5.1a/b, M5.2a, M5.5a (PRs #99, #101, #106, #109). Remaining: M5.2b, M5.3, M5.4, M5.5b, M5.6a/b, M5.7, M5.8.
 **Status:** **Approved** (Mark, attended 2026-10-03); awaiting the sprint plan
 (sprint-planner, run separately). Created 2026-10-03 from ledger **D-26** (attended 2026-10-03, queue
 row 6c): "a new R1 milestone M5 'Planets and flybys': AILANG-driven

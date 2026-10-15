@@ -1,5 +1,6 @@
 # Ship geometry demo: bridge overlook and one-tier lift
 
+**Landing check (2026-10-15):** Partly landed: PR #117 (dev.4–5), now the default ship. Remaining: SD4, the M2 Air laptop benchmark.
 **Status:** Approved by Mark in attended session 2026-10-04; execution started.
 **Release:** r1 development review build. **Milestone:** M4 geometry smoke test, isolated from the production interior.
 **Priority:** Validate physical views and camera feasibility before adding ship architecture.

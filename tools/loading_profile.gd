@@ -1,5 +1,5 @@
 extends SceneTree
-## Where the title screen's routes spend their load time (design_docs/planned/r1/lightspeed-loading.md).
+## Where the title screen's routes spend their load time (design_docs/implemented/r1/lightspeed-loading.md).
 ## Needs a GPU window (the real sky). Two modes:
 ##   godot --path . --resolution 1280x720 --script tools/loading_profile.gd -- --pieces
 ##       each step of a route timed on its own, cold, in this process

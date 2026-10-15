@@ -2,8 +2,8 @@
   "sprint_id": "R1-TRAPPIST1-PLANETS",
   "status": "completed",
   "approved_by": "Mark Edmondson: TB1-TB6 approved attended 2026-10-06 (m5-trappist1-sprint.md); selected for dev.20 on 2026-10-07",
-  "design_doc": "design_docs/planned/r1/m4-real-time-tour.md (Sprint B, D-41); part 1 finite-destination-stars.md (D-47/D-48)",
-  "sprint_plan": "design_docs/planned/r1/trappist1-planets-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-real-time-tour.md (Sprint B, D-41); part 1 finite-destination-stars.md (D-47/D-48)",
+  "sprint_plan": "design_docs/implemented/r1/trappist1-planets-sprint.md",
   "branch": "sprint/trappist1-planets",
   "milestones": [
     {

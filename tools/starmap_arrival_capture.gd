@@ -1,5 +1,5 @@
 extends SceneTree
-## Star truth AC5 (design_docs/planned/r1/starmap-single-truth.md): an ordinary map
+## Star truth AC5 (design_docs/implemented/r1/starmap-single-truth.md): an ordinary map
 ## journey from Sol to a destination stops 1,000 AU short of its stars.json
 ## position. Renders the arrival view toward the destination with the sky stack
 ## of this branch ("after") and, when given, the stack of another checkout's

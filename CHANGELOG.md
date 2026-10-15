@@ -66,7 +66,7 @@
 - Board the ship, Guided voyage and Galaxy map no longer freeze the title while they load. The title's own sky accelerates toward the galactic centre as the load progresses, through the game's real relativistic optics (aberration, Doppler colour, the starbow), to 0.99999c at 100% (γ 223.6): the whole sky collapses into one blinding blue-white point. Then a white-out (a transition effect, not physics) blooms from that point and fades into the destination.
 - The overlay shows β, γ and 1 − β (from the `sunholo/relativity` mirror; never 1.0 − β), the percentage, the stage being loaded, and says the speed is illustrative while the optics are the renderer's. Progress is real: stages weighted by measured time and counted when they finish, monotone, 100% only when the destination is built and drawn.
 - Faster: press to ready, Board the ship 7.9 s → 2.0 s, Guided voyage 7.3 s → 2.0 s, Galaxy map 3.0 s → 0.7 s (Mac Studio). The simulation starts on a worker thread; the galaxy map's star colours are computed on workers and ten times faster (a table form of the colour integral, bit-identical); the ship reuses the title's decoded sky panorama and loaded star tiers; the captain's sprites are built one a frame. The ship's scene build still holds the jump for about 1.3 s.
-- Command-line, capture, golden, smoke and export modes are unchanged. `make loading-jump-test` (in `make test`), `make loading-jump-capture` (renders to `renders/loading_jump/`), `make loading-profile`; two golden cases at the jump's 50% and 100% speeds. Design: `design_docs/planned/r1/lightspeed-loading.md`.
+- Command-line, capture, golden, smoke and export modes are unchanged. `make loading-jump-test` (in `make test`), `make loading-jump-capture` (renders to `renders/loading_jump/`), `make loading-profile`; two golden cases at the jump's 50% and 100% speeds. Design: `design_docs/implemented/r1/lightspeed-loading.md`.
 
 ### Title screen, 2026-10-08
 
@@ -74,7 +74,7 @@
 - Esc aboard the ship, or the new "Main menu [Esc]" HUD button, returns to the menu when the ship was opened from it; Esc on the map does too. Every command-line launch (`--ship-demo`, `--voyage`, `--interior`, `--map`, captures, goldens, benches, smokes) is unchanged and keeps Esc = quit.
 - Settings: the ship's view, Realistic (default) or Auto (D-38), saved in `user://settings.cfg`; text-only AI (D-8), saved as the AI settings' own `text_only` in `user://ai_settings.cfg`, so the AI tick and ceiling are kept.
 - Credits: the NOIRLab CC BY 4.0 panorama, Solar System Scope textures, CNS5, Gaia/DPAC, Hipparcos, the NASA Exoplanet Archive, Godot and AILANG, plus every paper and table the simulation cites, read at runtime from the citation lists in `sim/data/*.ail`.
-- `make export-macos` stamps `runtime/build_version.txt` (`git describe`). `make title-screen-test` (in `make test`), `make title-capture` (renders to `renders/title_screen/`), `make title-export-smoke` (in `publish-dev`); `current-ship-export-smoke` now launches with `-- --ship-demo`. Design: `design_docs/planned/r1/title-screen.md`.
+- `make export-macos` stamps `runtime/build_version.txt` (`git describe`). `make title-screen-test` (in `make test`), `make title-capture` (renders to `renders/title_screen/`), `make title-export-smoke` (in `publish-dev`); `current-ship-export-smoke` now launches with `-- --ship-demo`. Design: `design_docs/implemented/r1/title-screen.md`.
 ### Inspect the system you are in (I key), 2026-10-08
 
 - Holding I now rings the Sun, planets, moons, finite stars and exoplanets as well as catalogue stars, at the size they are drawn. Clicking one opens its card: distance from the ship, size and apparent size, temperature for stars, how long ago its light left, its catalogue identity ("Open in map") and its data source.
@@ -142,7 +142,7 @@
 
 - M4.4. The Archive terminal's news tab is a panel: "Transmission received", a header built from sim fields ("Latest news from Earth: Earth-year +0.04, already 4.31 years old."), and one paragraph from `data/news/templates.json` (five tiers of four, numerals only inside `{slots}`, at most 280 characters), or the accepted AI text. What it shows follows the sim's `news.body_source`: `template` has no notice, `ai` a small "generated" tag, `fallback` the template under "Live transmission unavailable: archived text shown", the reason in words from a fixed digit-free table and a diagnostics entry. Nothing is asked of the AI service without AI on and a key (D-8).
 - The map's return trip opens with Sol planned and highlighted (`GalaxyMap.plan_home`, `R` in the interior); the hold-to-commit ritual is unchanged and the sim still refuses a stale plan. Arriving at Sol shows the legacy screen: the sim's log, the closing line from `clock.tau` and `clock.t` ("You were away 1.24 years. Home is 8.80 years older.") and "Begin again" (a new voyage with a new seed on the running sim; no save or load).
-- `make news-lint` (template lint, with the stray-digit fixture as a positive control) and `make news-test` (renderings, reason table, return trip, legacy screen over the real sim) are part of `make test`. `make sim` asserts `body_source` template / ai / fallback(`ai_numeral`) on one arrival. S4 copy approved (D-45 B, Mark attended 2026-10-06): at the Sol return the header drops the age clause (", just arrived.") and the body shows the no-age phrase, so the panel never reads "0.00 years old" (`data/news/copy.json` labels; review sheet `design_docs/planned/r1/m4.4-s4-copy-review.md`).
+- `make news-lint` (template lint, with the stray-digit fixture as a positive control) and `make news-test` (renderings, reason table, return trip, legacy screen over the real sim) are part of `make test`. `make sim` asserts `body_source` template / ai / fallback(`ai_numeral`) on one arrival. S4 copy approved (D-45 B, Mark attended 2026-10-06): at the Sol return the header drops the age clause (", just arrived.") and the body shows the no-age phrase, so the panel never reads "0.00 years old" (`data/news/copy.json` labels; review sheet `design_docs/implemented/r1/m4.4-s4-copy-review.md`).
 
 ### Real-time voyage to Aldebaran, 2026-10-06
 
@@ -228,7 +228,7 @@
 ### Companion stars take their system's distance, 2026-10-03 (Mark's ruling; M1.7 evaluation follow-ups)
 
 - **Companion rule** (`sim/tools/companions.ail`, design
-  `design_docs/planned/r1/m1-companion-parallax.md`): a star within 60″ and
+  `design_docs/implemented/r1/m1-companion-parallax.md`): a star within 60″ and
   2,000 AU of a brighter star, with parallaxes within 20% (and 5% or 3σ) and
   proper motions within the orbital bound, takes the system root's parallax.
   `make companions` writes `data/starmap/companions/companions.csv` (20,515 companions over

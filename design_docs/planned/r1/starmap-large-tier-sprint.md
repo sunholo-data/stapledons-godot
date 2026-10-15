@@ -1,6 +1,6 @@
 # Sprint R1-STARMAP-LARGE: the full 100 pc sky (large tier)
 
-**Design doc:** [starmap-large-tier-and-reach.md](starmap-large-tier-and-reach.md). It depends on [starmap-single-truth.md](starmap-single-truth.md) (sprint R1-STARMAP-TRUTH).
+**Design doc:** [starmap-large-tier-and-reach.md](starmap-large-tier-and-reach.md). It depends on [starmap-single-truth.md](../../implemented/r1/starmap-single-truth.md) (sprint R1-STARMAP-TRUTH).
 **Status:** Approved by Mark, attended 2026-10-07 (selected for dev.20: "benchmark first").
 **Estimate:** about 350 LOC plus data, 1.5 days. Branch `sprint/starmap-large-tier`, based on `sprint/starmap-single-truth`.
 **Risk:** low to medium. The pipeline, the loader and `main.gd` already handle `stars_large`; the open questions are frame time on Mark's M2 Air and load time.

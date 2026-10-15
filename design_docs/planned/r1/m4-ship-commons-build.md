@@ -1,5 +1,6 @@
 # Ship architecture: first Commons build
 
+**Landing check (2026-10-15):** Partly landed: PR #117 (dev.6–9). Remaining: CB-M3/CB5, the M2 Air performance signoff.
 **Status:** Approved by Mark, 2026-10-04; execution started.
 **Release / milestone:** r1 / M4 art and spatial review, extending the separate ship demo.
 **Priority:** Prove multi-angle painted architecture before populating seven tiers.

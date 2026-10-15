@@ -4,8 +4,8 @@
   "approved": true,
   "approved_by": "charter triage row L2 [LOOP] (design_docs/stapledon-mission.md:296) = queue row 7d (:331); next loop item in the armed order after L1 and L6 landed (:313 L2 -> L4 -> ...); design passed quorum 2026-10-13 after two rounds of fixes (records .ailang/state/mission-quorum/m46-followups-2026-10-13T04-24-49Z.json and m46-followups-2026-10-13T04-37-35Z.json; scope, files and direction unchanged)",
   "created": "2026-10-13",
-  "design_doc": "design_docs/planned/r1/m46-followups.md",
-  "sprint_plan": "design_docs/planned/r1/m46-followups-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m46-followups.md",
+  "sprint_plan": "design_docs/implemented/r1/m46-followups-sprint.md",
   "branch": "mission/stapledon-iter27-l2-m46-followups",
   "implements": [
     "charter triage row L2 (design_docs/stapledon-mission.md:296, [LOOP]; order line 313: L1 done -> L6 done -> L2 -> L4 ...) and queue row 7d (:331): M4.6 follow-ups (a)-(c) and M4.5s follow-ups (d)-(e), clause 4/5 hygiene"

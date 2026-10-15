@@ -1,5 +1,6 @@
 # M4: First journey, a vertical slice
 
+**Landing check (2026-10-15):** Partly landed (PRs #92, #95, #113, #115, #123, #131, #154, #225, #232, #235). Remaining: M4.5 AC4 (waits on D-77/D-78), the M4.6 gated half, queue rows 7h/7i.
 **Status:** Planned (design, awaiting sprint plan). Revised 2026-10-01 for
 Mark's attended rulings D-11, D-12 and D-14: boost → cruise → brake with no
 flip, 0.99c default cruise, the ISM readout and forward glow, art stop S2 now

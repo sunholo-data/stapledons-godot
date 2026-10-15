@@ -498,7 +498,7 @@ CAT_AILANG = $$($(AILANG) --version | head -1 | cut -d' ' -f2)
 cat_args = "{\"tier\":\"$(1)\",\"csv\":\"$(2)\",\"raw\":\"$(3)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(4)\",\"ailang\":\"$(CAT_AILANG)\"}"
 bright_args = "{\"hip2\":\"data/raw/hip2.dat.gz\",\"hipMain\":\"data/raw/hip_main.dat\",\"cns5\":\"data/raw/cns5.dat\",\"gcns\":\"data/raw/gcns.csv\",\"companions\":\"$(COMPANIONS)\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\"}"
 fill_args = "{\"tier\":\"quick\",\"csv\":\"data/raw/cns5.csv\",\"raw\":\"data/raw/cns5.dat\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(1)\",\"ailang\":\"$(CAT_AILANG)\",\"hip\":\"data/raw/hip_main.dat\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\"}"
-# The companion rule (design_docs/planned/r1/m1-companion-parallax.md): `make companions` writes the table, every
+# The companion rule (design_docs/implemented/r1/m1-companion-parallax.md): `make companions` writes the table, every
 # tier and the map apply it (COMPANIONS picks the file; catalogue-verify uses its own rebuilt copy).
 COMPANIONS ?= data/starmap/companions/companions.csv
 gcns_args = "{\"tier\":\"$(1)\",\"csv\":\"data/raw/gcns.csv\",\"raw\":\"data/raw/table1c.dat.gz\",\"lock\":\"sim/ailang.lock\",\"out\":\"$(2)\",\"ailang\":\"$(CAT_AILANG)\",\"companions\":\"$(COMPANIONS)\",\"truth\":\"$(TRUTH)\"}"
@@ -525,7 +525,7 @@ starmap-test:     ## M1.7 map catalogue (sim/tools/starmap.ail): named checks, s
 	@cmp $(SCRATCH)/starmap-vm.txt $(SCRATCH)/starmap-interp.txt && test "$$(cat $(SCRATCH)/starmap-vm.txt)" = "starmap-ok"
 	@echo "starmap-test: $$(cat $(SCRATCH)/starmap-vm.txt) (strict VM = interpreter)"
 
-# One position per star (design_docs/planned/r1/starmap-single-truth.md): the star-truth table that every
+# One position per star (design_docs/implemented/r1/starmap-single-truth.md): the star-truth table that every
 # tier and the map take positions from. TRUTH picks the table (catalogue-verify uses its own rebuilt copy).
 TRUTH ?= data/starmap/truth/positions.csv
 TRUTH_OUT ?= data/starmap/truth
@@ -909,7 +909,7 @@ current-ship-export-smoke:
 	@exe=$$(defaults read "$(CURDIR)/$(APP)/Contents/Info.plist" CFBundleExecutable); env -i PATH=/usr/bin:/bin HOME="$(CURDIR)/$(SCRATCH)/current-ship-export-home" "$(APP)/Contents/MacOS/$$exe" --quit-after 180 -- --ship-demo > $(SCRATCH)/current-ship-export.log 2>&1; rc=$$?; cat $(SCRATCH)/current-ship-export.log; test $$rc = 0 && grep -q '^current-ship-startup: OK live-rest captain-eye single-navigation$$' $(SCRATCH)/current-ship-export.log
 publish-dev: current-ship-export-smoke
 
-# Title screen (design_docs/planned/r1/title-screen.md): a plain launch shows the menu; every CLI mode bypasses it.
+# Title screen (design_docs/implemented/r1/title-screen.md): a plain launch shows the menu; every CLI mode bypasses it.
 .PHONY: title-screen-test title-capture title-export-smoke
 title-screen-test: import
 	@$(GODOT_SIM) --headless --path . --script tests/test_title_screen.gd > $(SCRATCH)/title-screen.log 2>&1; rc=$$?; grep -v '^ok ' $(SCRATCH)/title-screen.log | grep -v '^title-screen: OK' ; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/title-screen.log && grep -q '^title-screen: [0-9]* passed, 0 failures$$' $(SCRATCH)/title-screen.log
@@ -917,7 +917,7 @@ ship-demo-ci: title-screen-test
 title-capture:     ## title screen, settings and credits at 1280x720 -> renders/title_screen/ (needs a GPU window)
 	$(GODOT) --path . --resolution 1280x720 --script tools/title_screen_capture.gd
 	@for f in title settings credits; do sips -Z 700 renders/title_screen/$$f.png --out renders/title_screen/$${f}_700.png > /dev/null; done
-# Lightspeed loading view (design_docs/planned/r1/lightspeed-loading.md): each title route through the jump, real monotone
+# Lightspeed loading view (design_docs/implemented/r1/lightspeed-loading.md): each title route through the jump, real monotone
 # progress reaching 1.0 exactly at the destination, beta 0.99999 at 100%, the prefetched sim taken, shared loads = fresh loads.
 .PHONY: loading-jump-test loading-jump-capture loading-profile
 test: loading-jump-test
@@ -1043,7 +1043,7 @@ tour-pacing-test: import
 	@$(GODOT) --headless --path . --script tests/test_cruise_interlude.gd > $(SCRATCH)/cruise-interlude.log 2>&1; rc=$$?; cat $(SCRATCH)/cruise-interlude.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/cruise-interlude.log && grep -q "^cruise-interlude: 0 failures$$" $(SCRATCH)/cruise-interlude.log
 ship-demo-ci: tour-pacing-test
 
-# R1-SHIP-UI (D-56, design_docs/planned/r1/ship-ui-hud-consoles.md): the HUD informs, the bridge consoles decide.
+# R1-SHIP-UI (D-56, design_docs/implemented/r1/ship-ui-hud-consoles.md): the HUD informs, the bridge consoles decide.
 .PHONY: ship-ui-test
 ship-ui-test: import ## AC1-3, 7, 11: status strip in every scene state, contextual cards, control table <-> key handler, dev gating
 	@$(GODOT_SIM) --headless --path . --script tests/test_ship_ui.gd > $(SCRATCH)/ship-ui.log 2>&1; rc=$$?; grep -E '^(FAIL|ship-ui)' $(SCRATCH)/ship-ui.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui.log && grep -q '^ship-ui: [0-9]* passed, 0 failures$$' $(SCRATCH)/ship-ui.log

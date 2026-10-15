@@ -63,7 +63,7 @@ var _buf := PackedFloat32Array()
 ## Tier identities hidden in favour of a pinned destination row (pin_destination).
 var pinned_ids: Array[String] = []
 var _requested_replacements: Array[String] = []
-## Star truth (design_docs/planned/r1/starmap-single-truth.md): pin_destination calls that found the
+## Star truth (design_docs/implemented/r1/starmap-single-truth.md): pin_destination calls that found the
 ## destination already at its navigation position (no-ops) and those that had to pin.
 var pin_noops := 0
 var pin_fallbacks := 0
@@ -167,7 +167,7 @@ func index_of(id: String) -> int:
 
 
 ## A destination renders where the simulation navigates. Since the star-truth
-## table (design_docs/planned/r1/starmap-single-truth.md) every tier takes the
+## table (design_docs/implemented/r1/starmap-single-truth.md) every tier takes the
 ## navigation position, so this is an assertion: when a row with the destination's
 ## identity already sits exactly at its stars.json position, nothing changes
 ## (pin_noops). Otherwise (a tier built without the table, or a custom stack) it

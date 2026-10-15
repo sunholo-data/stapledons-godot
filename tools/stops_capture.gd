@@ -1,5 +1,5 @@
 extends SceneTree
-## D-54 relative-size stops, rendered (design_docs/planned/r1/relative-size-stops.md):
+## D-54 relative-size stops, rendered (design_docs/implemented/r1/relative-size-stops.md):
 ## free navigation through the real sim to a red dwarf (TRAPPIST-1), a giant (Aldebaran),
 ## a Sun-like star (alpha Cen A), an uncited star (Barnard's Star, still 1,000 AU), home
 ## (Earth), then the Moon, Jupiter, Callisto and Saturn from the map's in-system list.
