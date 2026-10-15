@@ -3,8 +3,8 @@
   "status": "in_progress",
   "approved_by": "Mark attended 2026-10-05: ok sounds good; choose easiest camera; lighting is central to game feel",
   "requested_by": "Mark attended 2026-10-05: make a plan for faster walking, lighting/camera, navigation and Solar System departure",
-  "design_doc": "design_docs/planned/r1/m4-ship-lighting-and-solar-departure.md",
-  "sprint_plan": "design_docs/planned/r1/m4-ship-lighting-and-solar-departure-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-ship-lighting-and-solar-departure.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-ship-lighting-and-solar-departure-sprint.md",
   "github_issues": [
     117
   ],

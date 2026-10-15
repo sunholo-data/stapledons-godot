@@ -13,7 +13,7 @@ Net +5: aligned, go.
 
 **Status:** Implemented: PR #144 via #149 (dev.20), 2026-10-07. Eval 88.
 **Release:** R1, dev.20. Sprint `R1-SHIP-STAR-LIGHT` ([plan](ship-star-light-sprint.md)).
-**Implements:** the follow-up named in `art/ship-lighting-v1/README.md` ("simulation-driven external sunlight on ship geometry") and goal 3, "moving-light shadows", of [m4-ship-lighting-and-solar-departure.md](../../planned/r1/m4-ship-lighting-and-solar-departure.md). Physics reused, none new: `relativity-spec.md` aberration and Doppler (package `optics.apparentDisc`, `doppler`, `pointFluxRatio`) as already mirrored in `physics/planets.gd` and `sky/sky_meter.gd`.
+**Implements:** the follow-up named in `art/ship-lighting-v1/README.md` ("simulation-driven external sunlight on ship geometry") and goal 3, "moving-light shadows", of [m4-ship-lighting-and-solar-departure.md](../../implemented/r1/m4-ship-lighting-and-solar-departure.md). Physics reused, none new: `relativity-spec.md` aberration and Doppler (package `optics.apparentDisc`, `doppler`, `pointFluxRatio`) as already mirrored in `physics/planets.gd` and `sky/sky_meter.gd`.
 **Depends on:** the sim's `system` section (finite stars with `e_v_lux`, `teff_k`), `SystemView`'s apparent disc centres and occlusion, the ship attitude shared by the sky and interior cameras.
 **Estimated LOC:** about 600 (module 190, test 250, tools 200, wiring 20).
 

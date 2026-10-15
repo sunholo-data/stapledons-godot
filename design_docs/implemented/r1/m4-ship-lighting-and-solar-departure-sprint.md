@@ -1,6 +1,6 @@
 # Sprint sequence: ship lighting and Solar System departure
 
-**Status:** Approved by Mark, attended 5 October 2026: “ok sounds good - pick what is easiest for you to work with”; lighting is central to the feel. [Design](m4-ship-lighting-and-solar-departure.md). Choose A, painted 3D with real lighting and free camera; matched captures remain an art review, not a blocker to making the first pass. Do not duplicate the approved [M5 sprint](m5-planets-sprint.md).
+**Status:** Implemented: SD1–SD6 in PR #117 (rings and shadows in 4e32b9d, 2026-10-05) and #149; SD7 superseded by even legs (#134) and the real-time tour (#130, #139; `make tour-pacing-test`); SD8 shipped in every dev build since dev.13. The M2 Air benchmark was waived by Mark on 2026-10-15. Landing check 2026-10-15 (the sprint JSON had not recorded SD5, SD7 and SD8).
 
 **Goal:** one atmospheric, navigable ship with a measured Solar System departure into an actual interstellar journey. Ship geometry remains the seven-tier Blender assembly. Faster movement and map correction ship first; artwork/camera decisions are reviewed before substantial production.
 

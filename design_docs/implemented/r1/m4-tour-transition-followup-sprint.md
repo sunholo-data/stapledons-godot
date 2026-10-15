@@ -2,7 +2,7 @@
 
 **Status:** Implemented: dev.12, merged to main in PR #117, 2026-10-05. Eval 89.
 
-Parent: [Solar departure sprint](../../planned/r1/m4-ship-lighting-and-solar-departure-sprint.md).
+Parent: [Solar departure sprint](../../implemented/r1/m4-ship-lighting-and-solar-departure-sprint.md).
 Approved in the attended 5 October session: closer side views, continuous
 transitions, laptop performance investigation, automatic public audit upload,
 and repair of detached ship/captain shadows.

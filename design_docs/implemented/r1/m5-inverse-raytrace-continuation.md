@@ -1,6 +1,6 @@
 # M5 resolved-body inverse raytrace continuation
 
-**Landing check (2026-10-15):** Partly landed: the renderer is enabled in-tree (PR #117). M5.3 is still open (triage L1).
+**Status:** Implemented: the inverse-raytrace flyby renderer (M5.3) with rings and shared metering, in commit 4e32b9d (2026-10-05), merged via PR #117. Tests: test_ship_planets, test_flyby_optics, test_planet_rings, test_ring_protocol, test_planet_meter, test_planet_occlusion. Landing check 2026-10-15: the M5 sprint JSON had not recorded it.
 
 | Pillar | Alignment | Reason |
 |---|---:|---|
@@ -11,7 +11,7 @@
 | Grounded Strangeness | +2 | Package-owned optics, photometry and ring data govern the view. |
 | We Are Not Built For This | 0 | No new crew mechanic. |
 
-Implements the [relativity specification](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md), [journey system](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase3-gameplay/journey-system.md) and approved [M5 planets](m5-planets.md) within the approved [Solar departure sprint](m4-ship-lighting-and-solar-departure-sprint.md).
+Implements the [relativity specification](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md), [journey system](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase3-gameplay/journey-system.md) and approved [M5 planets](../../planned/r1/m5-planets.md) within the approved [Solar departure sprint](m4-ship-lighting-and-solar-departure-sprint.md).
 
 Approved within R1-M4-SOLAR-DEPARTURE by the user and delegated to the planet renderer executor. Root explicitly approved the bounded direct inverse-raytrace variation on 5 October 2026.
 

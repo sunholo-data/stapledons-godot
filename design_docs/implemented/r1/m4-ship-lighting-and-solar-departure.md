@@ -11,11 +11,10 @@
 
 Net +8: aligned. Use the Game Vision Designer pillar review; no vision change is required.
 
-**Landing check (2026-10-15):** Partly landed: SD1–4 and SD6 via PRs #117 and #149; external sunlight ships via ship-star-light. Remaining: SD5 (Saturn rings and shadows, needs M5.2b/M5.4), SD7 (high-speed golden cases), SD8 (CI and production landing; the M2 Air part was waived by Mark on 2026-10-15).
-**Status:** Approved by Mark, attended 5 October 2026. Mark delegated the camera choice and emphasised lighting as central to the game feel. Select A: painted 3D geometry with real lighting and free camera. Captures remain a finish review; no switch to fixed views is planned.
+**Status:** Implemented: SD1–SD6 in PR #117 (rings and shadows in 4e32b9d, 2026-10-05) and #149; SD7 superseded by even legs (#134) and the real-time tour (#130, #139; `make tour-pacing-test`); SD8 shipped in every dev build since dev.13. The M2 Air benchmark was waived by Mark on 2026-10-15. Landing check 2026-10-15 (the sprint JSON had not recorded SD5, SD7 and SD8).
 **Release:** R1; continuation of the current unified ship and approved M5 planets sprint.
 **Priority:** movement/map first; lighting comparison before extensive painting; Solar System departure next.
-**Implements:** [journey system](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase3-gameplay/journey-system.md), [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md), [Higgs bubble](https://github.com/sunholo-data/stapledons-design/blob/main/physics/higgs-bubble.md), game [M5 planets design](m5-planets.md) and [approved sprint](m5-planets-sprint.md).
+**Implements:** [journey system](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase3-gameplay/journey-system.md), [relativity spec](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md), [Higgs bubble](https://github.com/sunholo-data/stapledons-design/blob/main/physics/higgs-bubble.md), game [M5 planets design](../../planned/r1/m5-planets.md) and [approved sprint](../../planned/r1/m5-planets-sprint.md).
 **Depends on:** dev.10 frozen source ec34d58, measured seven-tier assembly, real catalogue identity, existing AILANG journey core and completed M5 foundations. Execution follows CLAUDE.md's approved sprint and independent evaluation cycle.
 **Estimated scope:** 2,400 implementation/test lines for this integration, including selected remaining M5 work rather than a duplicate planet implementation. Art/render iterations are estimated separately; see the sprint. No production merge is included.
 
