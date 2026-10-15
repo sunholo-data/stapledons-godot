@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## v0.4.0-dev.30-crew-replies (2026-10-15)
+
+### medic-emotions (2026-10-14)
+
+#### The medic's full emotion set
+
+- **Art:** `assets/characters/medic/` holds all eight D-7 emotions at stage 0, 1254 px: neutral, happy, sad, angry, fearful, curious, loving and grieving.
+  - Codex (`gpt-6.1-sol`) made each one as an edit of the accepted neutral, so she stays the same person.
+  - The folder has a manifest (with the D-80 name region and gender), generation notes with full prompts, and a review contact sheet.
+- **In game:** 256 px copies sit with the trial portraits, and the Crew page's faces follow more replies:
+  - declining shows anger and a concern shows fear;
+  - asking to step back, or stress at the strained line, shows sadness;
+  - accepting shows happiness.
+
+  A role without an emotion falls back along a list, ending at neutral.
+
 ## v0.4.0-dev.29-crew-console (2026-10-14)
 
 ### Scene session audits (M4.5bR3, D-66/D-68), 2026-10-14
