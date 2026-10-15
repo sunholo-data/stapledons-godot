@@ -16,6 +16,7 @@ func _run() -> void:
 	demo.setup_options={"live_start":true,"sky_state":"rest","stars":false,"background":false}
 	root.add_child(demo);await process_frame
 	demo.auto=false;demo.journey_auto_tick=false
+	await process_frame # _process turns pipelining off once auto-tick is off (a slow first frame may have pipelined a heartbeat)
 	check(demo.ready_ok and demo.journey_map!=null and not demo.navigation_window.visible,"current ship starts its own hidden normal navigation")
 	check(demo.sky_state=="live" and demo.sky.beta==0. and demo.sky_world==demo.journey_sim.world,"default sky is actual live rest, not frozen cruise")
 	check(demo.camera.pullback==0. and demo.camera.position.distance_to(demo.avatar_pos+Vector3.UP*1.7)<.0001,"default camera is physical captain eye")
