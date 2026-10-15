@@ -1382,7 +1382,7 @@ DECISIONS FOR MARK: D-77 (transit-card folding during braking: A amend AC4, reco
 
 DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended/default, or B visible priority change); D-78 (caption notation: A exclude constant notation digits, recommended/default, or B digit-free visible copy). Defaults keep pins and AC4 OPEN until answered.
 
-## 2026-10-15: iteration 33, row 7i(g) display-audit context cross-check BUILT, PR #250; the new rule found and fixed a stale map tick under the pipelined heartbeat; independent eval Sonnet 84/100 PASS [PRODUCT]
+## 2026-10-15: iteration 33, row 7i(g) display-audit context cross-check MERGED (PR #250, merge `e40d418`); the new rule found and fixed a stale map tick under the pipelined heartbeat; independent eval Sonnet 84/100 PASS [PRODUCT]
 
 - **Pick:** row 7i(g), which is clause 4 and first in the attended order (beside M4.6gR3). Row 0 (CI recovery) was re-measured first: its predicate has flipped. #243 was closed unmerged, but #242 (merge `429ac0a`) carried the portrait audit row and the `crewSkipUnheld` ceiling, and main CI is `success` on `429ac0a` (38737637197) and `7fbeb99` (38737667855). Row 0 is RESOLVED. M4.6gR3 needs a GPU window, so the headless row ran.
 - **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4 moved: the AC4/AC5 display audit no longer trusts a recorded context, and a real stale numeral is fixed.
@@ -1405,7 +1405,7 @@ DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended/default,
   - Of 12 drill mutants, 9 were killed. Three survive with no fixture: `crew.working` dropped from the sourced list, the parts-presence half of the rule, and a non-client path made non-fatal. These are row 7i(j).
   - In-game verdict: the defect is real but transient (≤1 tick, 50 ms). The multi-sample staleness in the scripted run comes from the harness disabling child `_process`. The amendment was corrected to say so.
   - It saw a sim `startup_timeout` (cold compile about 38 s against a 30 s budget) under the controller's concurrent `make test` load. It raised the budget locally and reverted it. This is not from the diff.
-- **Gate 3b:** PR #250 head `26eda69` (code identical to `fc2d552`); PR CI 38789881466. The outcome is recorded in the closing note below.
+- **Gate 3b:** PR #250 head `26eda69` (code identical to `fc2d552`). PR CI 38789881466 is `success` (check set 1/1, about 2 h 4 min). Before merging, `git log 26eda69..origin/main` was empty, so no attended PR had landed since the base; the PR was `MERGEABLE CLEAN`. The loop merged at 21:03Z, merge `e40d418`. Merge CI 38806834360 was queued at record time, so it is MERGED, CI-PENDING. Resume predicate: `gh run view 38806834360 --repo sunholo-data/stapledons-godot --json conclusion` reads `success` → [LANDED]; a red goes to triage, first against PR CI 38789881466.
 - **Routing evidence:** fire `stapledon-1792084132-5118`; gate1 base `eb43598`@17:09:23Z. Routing note verbatim: `controller pi:ollama/glm-5.3:cloud → claude:claude-opus-5-5 (probe ok); lanes degraded: ; planner: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to pi:ollama/kimi-k3:cloud; executor: codex lane gpt-6.1-sol unusable (probe rc=75 — over daily ration) → handed to claude:claude-haiku-5-5`.
   - Controller: `claude:claude-opus-5-5` (tok: not reported).
   - Designer: resolver `recipe claude:claude-opus-5-5 declared:provider-pin`, run as Agent `opus`, 116,507 tok plus 133,700 tok for the revision (cumulative transcript).
@@ -1423,6 +1423,6 @@ DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended/default,
   1. The design ACs' mutation commands were broken twice: BSD `sed`, then perl `&` and unescaped parentheses. Only running them caught it. Process fix: a directive's mutation commands must be dry-run on a temp copy before they are banked as ACs.
   2. A test harness that disables child `_process` hid a per-frame production hook from the audit. This is recorded in row 7i(j)'s notes, and the evaluator flagged the residual risk.
   3. The evaluator's heavy runs alongside `make test` pushed a cold compile past the sim's 30 s startup budget. Next time, schedule the judge's scene runs after the controller's `make test`, or the other way round.
-- **Next:** land #250 (PR CI, then merge CI); row 7i(j); M4.6gR3 (GPU window); D-77/D-78 for Mark; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
+- **Next:** verify merge CI 38806834360 → row 7i(g) [LANDED]; row 7i(j); M4.6gR3 (GPU window); D-77/D-78 for Mark; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended and the default, or B a visible priority change); D-78 (caption notation: A exclude constant notation digits, recommended and the default, or B digit-free visible copy). Both are unchanged; the defaults keep the pins and leave AC4 OPEN.
