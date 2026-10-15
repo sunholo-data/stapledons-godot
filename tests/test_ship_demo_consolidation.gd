@@ -22,7 +22,8 @@ func _run() -> void:
 	var eye: Array=demo.sky.cam.position_m
 	check(Vector3(eye[0],eye[2],-eye[1]).distance_to(demo.camera.position)<.0001,"ship geometry and sky share measured physical observer")
 	var before:float=demo.sky_world.clock.tau
-	check(demo.journey_tick() and demo.sky_world.clock.tau>before,"live rest clock advances while aboard")
+	var ticked:bool=demo.journey_tick()
+	check(ticked and demo.sky_world.clock.tau>before,"live rest clock advances while aboard (tick %s, error '%s', tau %s -> %s, in flight %s)" % [ticked,demo.journey_sim.last_error,before,demo.sky_world.clock.tau,demo.journey_sim.in_flight()])
 	var scroll:=InputEventPanGesture.new();scroll.delta=Vector2(0,-1)
 	demo._unhandled_input(scroll);demo._process(0.)
 	check(demo.camera.pullback>0. and demo.ship_hud.view_tag.text.contains("third-person camera"),"optional third person is explicitly labelled")
