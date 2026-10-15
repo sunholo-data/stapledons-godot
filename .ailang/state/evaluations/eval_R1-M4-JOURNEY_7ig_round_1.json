@@ -1,0 +1,57 @@
+{
+ "sprint": "R1-M4-JOURNEY", "milestone": "M4.5bR3_7ig_CONTEXT_CROSSCHECK", "commit": "fc2d552", "base": "eb43598", "round": 1,
+ "evaluator": "claude-sonnet-5-5 (independent; executor was Haiku)",
+ "score": 84, "pass": true,
+ "breakdown": {"correctness": "35/40", "test_strength": "19/25", "scope_safety": "17/20", "docs": "13/15"},
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Test gaps (mutants no control fixture kills): dropping client.crew.working or client.crew.status from CONTEXT_SOURCED; removing the 'parts_read(distance_ly)==expected' half of the presence rule; making a non-client path absent from the frame non-fatal. Real-scene runs would only catch these on real drift.",
+  "context_source and context_presence share the same FAIL line text (context-source <node> client.map.distance_ly), so the m45.mk reason grep cannot tell them apart; each is only separated by its own fixture being rejected, not by a distinct reason.",
+  "Tolerance mutant (float abs diff < 1.0) was killed only at the boundary (tick 9 vs 10); a wider tolerance was not measured.",
+  "Amendment claims the stale map view is a shipped-game defect; reading the code shows it is transient (<= one 20 Hz tick, 50 ms) in the live game; the long-lived staleness is a harness artifact. The self-heal is still correct and cheap, but the justification is overstated.",
+  "Fresh-clone note: SimBridge startup budget is 30 s and a cold ailang compile of sim took ~38 s under load from the controller's make test, so make playthrough fails with startup_timeout on a loaded machine. I raised it locally (reverted) to 240 s to measure. Not caused by this diff."
+ ],
+ "mutation_table": [
+  {"id":"M1b","mutant":"overlap rule skips tick","result":"KILLED","by":"context_drift control accepted -> make display-audit-controls fails"},
+  {"id":"M2","mutant":"drop required-presence rule","result":"KILLED","by":"context_presence accepted"},
+  {"id":"M3","mutant":"CONTEXT_ONLY widened to client. prefix","result":"KILLED","by":"context_unknown accepted"},
+  {"id":"M4","mutant":"delete context-unknown branch","result":"KILLED","by":"context_unknown accepted"},
+  {"id":"M5","mutant":"non-client path absent from frame not fatal","result":"SURVIVES (no fixture covers it)","by":"-"},
+  {"id":"M6","mutant":"drop parts_read(distance_ly)==expected half","result":"SURVIVES (no fixture covers it)","by":"-"},
+  {"id":"M7","mutant":"hold_s removed from CONTEXT_SOURCED","result":"KILLED","by":"context_hold now fails as context-unknown; reason grep in m45.mk catches it"},
+  {"id":"M8","mutant":"exact compare replaced by true","result":"KILLED","by":"context_drift accepted"},
+  {"id":"M10","mutant":"client.crew.working removed from CONTEXT_SOURCED","result":"SURVIVES (no fixture)","by":"-"},
+  {"id":"M11","mutant":"check_context call deleted","result":"KILLED","by":"all six new fixtures accepted"},
+  {"id":"M12","mutant":"archive.unlocked_count removed from CONTEXT_SOURCED","result":"KILLED","by":"context_console fails as context-unknown; reason grep catches it"},
+  {"id":"M14","mutant":"float tolerance <1.0","result":"KILLED at boundary only","by":"drift fixture diff is exactly 1"},
+  {"id":"S-M3b","mutant":"galaxy_map.gd distance_ly + 0.1 (real scene)","result":"KILLED","by":"scene-session-audits rc=2, 4x FAIL context-source"},
+  {"id":"S-M10","mutant":"galaxy_map.gd _last_view.tick = world-1 (real scene)","result":"KILLED","by":"scene-session-audits rc=2, 4x FAIL context-drift"},
+  {"id":"AC8","mutant":"remove the 3 self-heal lines","result":"KILLED","by":"AI=stub display-audit failures=10, 4x FAIL context-drift on real GalaxyMap nodes; restored"}
+ ],
+ "commands": [
+  {"cmd":"make AILANG=runtime/bin/ailang runtime","rc":0},
+  {"cmd":"make display-audit-controls","rc":0,"note":"6 new rejections each for its intended reason; each log has exactly one FAIL kind"},
+  {"cmd":"make scene-session-audits","rc":0,"note":"display-audit samples=716 failures=0, zero FAIL context- lines in the real display-audit.log (the FAIL lines in the make output come from the controls)"},
+  {"cmd":"make playthrough-ai-modes","rc":0,"note":"stub=PASS digits=PASS, failures=0 both, 717 samples"},
+  {"cmd":"AC8 mutant (self-heal removed), make playthrough display-audit AI=stub","rc":2,"note":"expected: 4x FAIL context-drift"},
+  {"cmd":"AC4 S-M3b and S-M10 via scene-session-audits","rc":2,"note":"expected: killed"},
+  {"cmd":"git diff origin/main..HEAD scope check","rc":0,"note":"ui/ one 3-line hunk; no .py; Makefile and ci.yml untouched"}
+ ],
+ "not_run": "make test (controller running it), AC1 pre-fix git-show loop, AC6 full suite. Not run by me.",
+ "point3_verdict": {
+  "real_in_shipped_game": "Real but transient; the long-lived staleness is a harness artifact.",
+  "evidence": [
+   "ship_geometry_demo.gd:329-334 and 635: in the live game journey_map.auto_tick=false and the demo calls journey_tick() -> map.tick() at 20 Hz with sim.pipelined=true. tick() drains, sends a pipelined heartbeat, then refresh()es on the pre-reply world, so _last_view equals sim.world as of that moment. The in-flight reply lands only at the next drain.",
+   "Any other caller that sends/drains advances sim.world with no map refresh: ship_consoles.gd:316 journey_sim.send([intent],0.0) on a committed course, the replan sends inside tick() itself, solar_departure.gd:160. In the shipped game the next map tick (<= 50 ms) refreshes, so the label is stale for at most one tick.",
+   "In the scripted harness journey_auto_tick=false and every child _process is disabled, so nothing refreshes until the script ticks again; after arrival that is multiple samples (1206 vs 1208). That is why the audit saw 10 samples. The audit was right that _last_view can lag sim.world; it overstated how long this lasts in the real game.",
+   "The self-heal in galaxy_map._process runs in the real game because the map node's own _process is enabled (auto_tick false only skips the accum loop, which sits after the self-heal)."],
+  "correctness_and_safety": [
+   "Fires only when int(_last_view.tick) != int(sim.world.tick); refresh() writes _last_view from sim.world so it converges in one call. While a pipelined tick is in flight sim.world does not change, so no refresh loop and at most one extra refresh per tick.",
+   "A sim whose world lacks 'tick': both sides default to -1; before the first refresh _last_view is {} so -1==-1 and nothing fires; with sim==null the guard short-circuits. No crash.",
+   "refresh() does not touch hold_s/_holding/_queue/_pending, so hold_commit is unaffected; the self-heal runs after hold_commit in the same frame and a commit queued by it is still sent by the next tick().",
+   "guided_read_only: refresh() only sets button disabled states from it; safe, and in the guided tour the map is read-only anyway.",
+   "Cost: refresh() rebuilds ~20 labels plus _refresh_system_list; at most doubles refresh cost on frames in which a non-map caller moved the world (<= 20/s). I did not benchmark it; the perf pass #240 pipelining is not undone because the self-heal never drains or sends."]
+ },
+ "point4_verdict": "Harness call journey_map._process(0.0) after demo._process in step() faithfully emulates the engine's per-frame hook the harness disabled. With delta 0: _holding hold_commit adds 0 s (no commit); map.auto_tick is false so the _accum loop adds 0 and never ticks; only the self-heal refresh can act. It cannot mask the hold or auto_tick behaviour, and does not change sim inputs/journals, so replay/time gates are unaffected; scene-session-audits (incl. playthrough-time and codex-unlocks) and playthrough-ai-modes remained green. Residual risk: it can only heal; a bug where refresh is needed and the engine would not call _process (map hidden/not in tree) is now hidden in the harness.",
+ "scope": "Changed files are exactly design/sprint docs, sprint JSON, a changelog fragment, mk/m45.mk, tests/display_audit.gd, 9 fixtures, tests/m4_playthrough_ship.gd, and ui/galaxy_map.gd (3 lines, the allowed amendment). No Python, no Makefile, no ci.yml, no other ui/demos/interior/main.gd change."
+}

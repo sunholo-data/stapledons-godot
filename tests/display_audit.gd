@@ -24,6 +24,13 @@ var new_findings := 0
 var stale_entries := 0
 var digits := RegEx.create_from_string("[0-9]+(?:\\.[0-9]+)?")
 var generated_segment := RegEx.create_from_string("^@([^/@]+)@[0-9]+$")
+# Context-only client paths with no frame source. target_name is a star name from names.json,
+# never a numeral; make ui (map_text_identity.json) pins its text.
+const CONTEXT_ONLY := ["client.map.target_name"]
+# Context-only client paths whose producer value is looked up from the frame or the catalogue.
+const CONTEXT_SOURCED := ["client.map.target_id", "client.map.distance_ly", "client.map.count", "client.map.radius_pc", "client.map.rate", "client.map.hold_s", "client.archive.unlocked_count", "client.crew.working", "client.crew.status", "client.map.empty", "client.archive.empty", "client.crew.empty"]
+var stars_header: Dictionary = {}
+var stars: Array = []
 
 
 func normalized(text_value: String) -> String:
@@ -69,6 +76,87 @@ func load_known(path: String) -> void:
 		check(not keys.has(key), "known-file duplicate entry " + key)
 		keys[key] = true
 		known_entries.append(entry)
+
+
+func load_stars(path: String) -> void:
+	var f := FileAccess.open(path, FileAccess.READ)
+	var document: Variant = JSON.parse_string(f.get_as_text()) if f != null else null
+	if not document is Dictionary or not document.get("stars") is Array:
+		check(false, "stars-file invalid " + path); return
+	stars = document.stars
+	stars_header = {"count": document.get("count"), "radius_pc": document.get("radius_pc")}
+
+
+func context_leaves(node: Dictionary, prefix: String, out: Array) -> void:
+	for k: String in node:
+		var p: String = k if prefix.is_empty() else prefix + "." + k
+		if node[k] is Dictionary: context_leaves(node[k], p, out)
+		else: out.append(p)
+
+
+func parts_read(b: Dictionary, field: String) -> bool:
+	for part: Variant in b.get("parts", []):
+		if part is Array and part[0] == field: return true
+	return false
+
+
+## The catalogue entry a frame's target resolves to, as galaxy_map.gd _refresh_view resolves it.
+func catalogue_star(view: Dictionary) -> Variant:
+	var target: Variant = GalaxyMap.field_value(view, "journey.plan.target")
+	if not target is Dictionary: return null
+	var i := int(target.get("index", -1))
+	if i < 0 or i >= stars.size() or stars[i].get("id") != target.get("id") or not stars[i].has("dist_ly"): return null
+	return stars[i]
+
+
+func working_crew(view: Dictionary) -> int:
+	var members: Variant = GalaxyMap.field_value(view, "crew.members")
+	if not members is Array: return 0
+	var n := 0
+	for m: Variant in members:
+		if m is Dictionary and m.get("work") is Dictionary and str(m.get("work").get("status", "")) == "working": n += 1
+	return n
+
+
+## The producer's value for a context-sourced path: lookups that mirror galaxy_map.gd and
+## ship_consoles.gd, never a computation. Null means the path must be absent or mismatch.
+func expected_source(p: String, view: Dictionary) -> Variant:
+	var target: Variant = GalaxyMap.field_value(view, "journey.plan.target")
+	var unlocked: Variant = GalaxyMap.field_value(view, "consequence.archive.unlocked")
+	var crew: Variant = GalaxyMap.field_value(view, "crew")
+	var star: Variant = catalogue_star(view)
+	match p:
+		"client.map.target_id": return target.get("id") if target is Dictionary else null
+		"client.map.distance_ly": return float(star.get("dist_ly")) if star != null else null
+		"client.map.count": return stars_header.get("count")
+		"client.map.radius_pc": return stars_header.get("radius_pc")
+		"client.map.rate": return GalaxyMap.field_value(view, "client.warp")
+		"client.map.hold_s": return GalaxyMap.HOLD_S
+		"client.archive.unlocked_count": return unlocked.size() if unlocked is Array else "no"
+		"client.crew.working": return working_crew(view)
+		"client.crew.status":
+			if not crew is Dictionary or crew.is_empty(): return "no crew aboard yet"
+			return "needs you" if not crew.get("holds", []).is_empty() else ""
+		"client.map.empty", "client.archive.empty", "client.crew.empty": return ""
+	return null
+
+
+## Cross-check a binding's recorded context with the frame view it was drawn from. Exact equality.
+func check_context(node: String, b: Dictionary, view: Dictionary) -> void:
+	var paths: Array = []
+	context_leaves(b.context, "", paths)
+	for p: String in paths:
+		var recorded: Variant = GalaxyMap.field_value(b.context, p)
+		var frame: Variant = GalaxyMap.field_value(view, p)
+		if frame != null: check(recorded == frame, "context-drift %s %s" % [node, p])
+		elif not p.begins_with("client."): check(false, "context-drift %s %s" % [node, p])
+		elif p in CONTEXT_SOURCED: check(recorded == expected_source(p, view), "context-source %s %s" % [node, p])
+		else: check(p in CONTEXT_ONLY, "context-unknown %s %s" % [node, p])
+	if parts_read(b, "client.map.target_id"):
+		# A catalogue target carries its distance, and only it does; Sol carries none.
+		var expected := catalogue_star(view) != null
+		var carried := GalaxyMap.field_value(b.context, "client.map.distance_ly") != null
+		check(carried == expected and parts_read(b, "client.map.distance_ly") == expected, "context-source %s client.map.distance_ly" % node)
 
 
 func recorded_card(row: Dictionary, pattern: String, expanded: bool) -> bool:
@@ -139,6 +227,7 @@ func audit(row: Dictionary) -> void:
 		if b.has("context"):
 			check(b.context is Dictionary, "invalid binding context")
 			local_view = b.context if b.context is Dictionary else {}
+			if b.context is Dictionary: check_context(str(b.get("node", b.get("field", ""))), b, view)
 		if b.has("entry"): local_view["entry"] = b.entry
 		if b.has("parts"):
 			binding = ComposedBinding.new().compose(b.parts)
@@ -208,6 +297,7 @@ func _run() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.is_empty(): print("FAIL missing samples"); quit(1); return
 	load_known(args[2] if args.size() > 2 else "res://tests/fixtures/display_audit/known_findings.json")
+	load_stars("res://data/starmap/stars.json")
 	var f := FileAccess.open(args[0], FileAccess.READ)
 	if f == null: print("FAIL missing samples"); quit(1); return
 	state_file = FileAccess.open(args[0].get_base_dir().path_join("states.ndjson"), FileAccess.READ)
