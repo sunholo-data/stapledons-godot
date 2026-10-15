@@ -33,6 +33,8 @@ const DYNAMIC := [
 		"reason": "bridge/ai_bridge.gd:380 copies data/ai into the user cache; the ndjson index is not AUTO_EXT"},
 	{"prefix": "res://data/ai/cast", "filter": "", "witnesses": ["data/ai/cast/medic.json"],
 		"reason": "bridge/ai_relay.gd:29 CAST_DIR; read only through json, which is AUTO_EXT"},
+	{"prefix": "res://data/crew/portraits", "filter": "data/crew/portraits/*", "witnesses": ["data/crew/portraits/medic_neutral.png"],
+		"reason": "ui/crew_page.gd:31 PORTRAIT_DIR; raw PNGs read by CaptainAvatar.make_texture (.import is gitignored)"},
 	{"prefix": "res://data/lens", "filter": "data/lens/*", "witnesses": ["data/lens/lens_fwd.bin", "data/lens/lens_inv.bin"],
 		"reason": "physics/schwarzschild.gd:22, 216-224: load_tables reads lens_<t>.json headers and lens_<t>.bin tables; dev.23. The .bin tables are the witnesses"},
 	{"prefix": "res://data/lore", "filter": "data/lore/*", "witnesses": ["data/lore/archive/bubble.md"],
