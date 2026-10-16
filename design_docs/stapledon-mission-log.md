@@ -1426,3 +1426,48 @@ DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended/default,
 - **Next:** verify merge CI 38806834360 → row 7i(g) [LANDED]; row 7i(j); M4.6gR3 (GPU window); D-77/D-78 for Mark; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended and the default, or B a visible priority change); D-78 (caption notation: A exclude constant notation digits, recommended and the default, or B digit-free visible copy). Both are unchanged; the defaults keep the pins and leave AC4 OPEN.
+
+## 2026-10-16: iteration 34, row 7i(j) display-audit control fixtures BUILT (PR #252), merge HELD for D-83 (pillar net 0); three surviving context mutants now killed; row 7i(g) LANDED; independent eval Sonnet 93/100 PASS [PRODUCT]
+
+- **Pick:** row 7i(j), the log's **Next** and a clause-4 row (the display gate AC4/AC5 relies on). M4.6gR3 needs a GPU window, so the headless row ran. Before picking, the controller confirmed iteration 33's merge CI 38806834360 `success` on `e40d418`, so row 7i(g) is [LANDED].
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4's display gate gains controls that prove three of its context rules still run. The merge is held, so clause 4 has not moved yet.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing tripwire CLEAN. #203 had 0 allowlisted directives since 2026-10-14T23:20:55Z (13 comments, all self). Self-notices rc 0 (control 4:5, watermarks 2/2). The stapledons_godot inbox holds the same 3 unread upstream FYIs (v0.54.11 released; ailang#1827 fixed in v0.54.10; registry fix). None is a directive, so they stay unread for the attended session. Their effect is recorded as the new row 6d. No rotation is due (#203 was created after Monday's boundary and has 13 comments). The weekly sweep was already recorded by iteration 24.
+- **Gate 1:** origin/main `e40d418` (gate1 base `e40d418662820fdd3a9906738c7e2fb1b1bfa1b1` at 2026-10-16T03:05:24Z). Its check set is 1/1 `success`. Iteration 33's record sat on open PR #251 (CLEAN, MERGEABLE), so this record is stacked on that branch. The skill came from the resolved symlink: all 13 files match ailang origin/dev in both copies (28 of 28 comparisons). Work ran in fresh sibling clones `.stapledon-loop-iter34`, `.stapledon-eval-iter34` and `.stapledon-record-iter34` (no worktrees). The main checkout was only read.
+- **External-blocker re-read:** D-82's `crewSkipUnheld` ceiling waits on ailang#1827. That fix shipped in v0.54.10, and v0.54.11 is released. Bumping AILANG means editing `ci.yml`, which attended PR #248 holds, so it is filed as row 6d and not taken this iteration.
+- **Reality check (controller, at `e40d418`):** each of the eval's mutants M5, M6 and M10 applied to `tests/display_audit.gd` leaves `make display-audit-controls` at rc 0 (survives). The positive control M8 is rc 2 (`context_drift … missed`). A first control I wrote did not apply, and the `cmp` guard reported it as an instrument failure, not a verdict.
+- **Design:** Opus (Agent tool), `design_docs/planned/r1/m4-7ij-context-controls.md`, 122 lines. It adds three fixtures (`context_absent`, `context_presence_parts`, `context_crew`), the `context-presence` reason, and a wrong-reason message that names the fixture. It dry-ran every mutation command on a temp copy, per the iteration-33 retro. Pillar net **0**: it is pure test hygiene, and the designer scored it honestly. Under the charter guardrail ("stop for the user at any pillar score of 0 or below") that holds the merge for Mark: **D-83**. The controller did not rescore it.
+  - Quorum: PROCEED at 1 of 4 present (gemini-4-argon pass; oc-kimi-k3, gpt6-1-sol and oc-glm-5-3 unreachable). Gemini's note, that the hard-coded `dist_ly` literal must stay in step with the pinned starmap, is already a risk the doc covers.
+- **Plan:** codex gpt-6.1-sol, driven by an Agent-tool planner role, rc 0 in about 174 s. It wrote `m4-7ij-context-controls-sprint.md` and the feature `M4.5bR3_7ij_CONTEXT_CONTROLS` (adds only). It found two real defects in the design's commands, and the controller resolved both in the executor directive: the mutation wrapper breaks under `set -e`, so drills now run with errexit off and check the file is restored after each; and AC9 missed untracked files, so the scope check is now `git status --untracked-files=all`.
+- **Execution:** codex gpt-6.1-sol, driven by an Agent-tool executor role, rc 0 in about 137 s, test-first. The Agent re-ran every gate outside the sandbox:
+  - Scope is exactly the six intended files, with one changed line in `display_audit.gd`.
+  - AC1: rc 0, 18 rejections.
+  - AC5: distinct reasons.
+  - M5, M6, M10 and M8 each give rc 2, each named by its own fixture.
+  - Clean RED with the old reason: rc 2, `context_presence … wrong reason (want context-presence)`.
+  - `python-guard` ok.
+  - The controller read the diff: one reason string, three spec rows, the `|| { … exit 1; }` message, three one-line fixtures and a changelog fragment.
+  - The controller ran `make -k test` on `562b5d6` with `AILANG=runtime/bin/ailang` (v0.54.8), outside any sandbox: rc 0 in about 55 min, 0 `***` lines, 0 SCRIPT ERROR. The scene `display-audit: samples=716 … failures=0` holds (AC7), with 18 control rejections including the 3 new fixtures (AC8).
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter34`), told not to run scene or suite loads while `make test` ran (iteration-33 retro). r1 **93 PASS**, 0 blocking (correctness 38, tests 18, scope 20, docs 17), in `eval_R1-M4-JOURNEY_7ij_round_1.json`.
+  - Of 12 drills, 9 were killed. It checked each new fixture isolates its rule (one FAIL line each). `git grep context-source` found no consumer that the rename could blind.
+  - Three new survivors: E1 (`carried == expected` half removed; the controller re-ran it, rc 0), E8 (`expected := true`, no Sol-target fixture) and E9 (`client.crew.status` unsourced). They are filed as row 7i(k).
+- **Gate 3b:** PR #252 head `06c25c2` was pushed at about 03:20Z, and PR CI was running at record time (about 2 h). The merge is HELD for D-83, so nothing is MERGED or LANDED. Resume predicate: D-83 RESOLVED A or B, PR CI `success` on the head, `git log <head>..origin/main` re-read and test-merged if an attended PR landed, then merge; C closes the PR.
+- **Routing evidence:** fire `stapledon-1792119882-84496`; gate1 base `e40d418`@03:05:24Z. Routing note: empty (as configured). Operator's standing request: every role through the Agent tool. Codex-pinned roles therefore ran as Agent-tool roles that drove `codex exec -m gpt-6.1-sol` (OPENAI_API_KEY stripped; lane probe rc 0) and verified its output outside the sandbox. The spawn-pin hook accepted all five spawns.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: resolver `recipe claude:claude-opus-5-5 declared:provider-pin`, Agent `opus`, 71,074 tok. The rotation pointer's next entry would be codex, but the resolver output was followed verbatim, as in iteration 33.
+  - Planner: resolver `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`. Without the doc, the resolver first returned `agent-tool opus fail-closed:no-doc`, so it was re-run with the doc. A probe Agent spawn took 21,906 tok. Then Agent `opus` 45,632 tok plus codex 74,514 tok.
+  - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`, Agent `opus` 45,487 tok plus codex 48,930 tok.
+  - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, Agent `sonnet`, 54,656 tok. It is distinct from the Opus designer and the codex planner and executor.
+  - Metered: $0.012 (the gemini quorum seat).
+- **Ruled out:**
+  - Rescoring the pillar table to avoid the guardrail.
+  - Merging behind D-83.
+  - Taking the AILANG bump while #248 holds `ci.yml`.
+  - Re-running the absent quorum reviewers: they were unreachable, not over budget.
+  - Inferring "dead" from a quiet `make test` log. `ps` showed the sim package tests at 290% CPU.
+- **Retro:** no shared-skill edit (the charter forbids it). Three frictions:
+  1. The charter's pillar guardrail reads literally on net 0, which every hygiene row under an approved sprint will score. It is raised as D-83 with a proposed amendment (process lane, Mark's call).
+  2. The zsh shell in this harness aborts a sourced bash function on an unmatched glob (`mc_quorum_lookup`: "no matches found"), so the skill's quorum reader must run under `bash -c`. One instance; it is noted here for the fleet, not filed.
+  3. The design's mutation wrapper and scope AC were broken in ways only the planner caught. The iteration-33 dry-run rule worked for the perl expressions, but not for the shell around them. Process fix: the dry run covers the whole wrapper, run once on a temp copy, not only the expression.
+- **Next:** D-83 (merge #252); row 7i(k) (three new survivors); row 6d once #248 lands (AILANG v0.54.11, restore the 2 s `crewSkipUnheld` budget); M4.6gR3 (GPU window); D-77/D-78; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: D-83 (NEW: merge #252? A merge and amend the guardrail so net-0 hygiene under an approved sprint does not stop, recommended; B merge only, guardrail stays strict; C close; default: held unmerged). D-77 and D-78 are unchanged (both default A, which keeps the pins and leaves AC4 OPEN).
