@@ -64,5 +64,48 @@ func _initialize() -> void:
 	var stepped: bool = dep.step()
 	check("the page's queued Resume rides the held tick and clears the hold", stepped and sim.last_refused.is_empty() and not dep.crew_held())
 	sim.stop()
+
+	# Playtest (dev.31): with the guided tour paused (P), turning, or waiting on a stop choice, an
+	# offer pressed on the Crew page still reaches the sim on a zero-dtau tick: the member answers
+	# and ship time does not move. While the offer waits, the Offer button is disabled, with why.
+	var ps := SimBridge.new()
+	ps.want_minor = SimBridge.CREW_MINOR
+	var pok := ps.start() and ps.new_game(1, "free_nav", false, {}, "", "orders")
+	var tour = load("res://demos/solar_departure.gd").new()
+	tour.sim = ps
+	var pp := CrewPage.new()
+	root.add_child(pp)
+	pp.show_crew(ps.crew)
+	pp.intents.connect(ps.queue) # the console's wiring (ShipConsoles._crew_section / _on_crew_step)
+	ps.stepped.connect(func(_e: Array) -> void:
+		if not ps.last_queued.is_empty(): pp.on_refused(ps.queued_refused())
+		pp.show_crew(ps.crew))
+	tour.paused = true
+	var idle_tick := int(ps.world.tick)
+	check("paused with nothing queued, the tour sends nothing (replays unchanged)", pok and tour.step() and int(ps.world.tick) == idle_tick)
+	for c in [["paused", "counselor"], ["attitude_hold", "pilot"], ["pending_index", "engineer"]]:
+		tour.paused = c[0] == "paused"
+		tour.attitude_hold = c[0] == "attitude_hold"
+		tour.pending_index = 0 if c[0] == "pending_index" else -1
+		var id: String = c[1]
+		var t0 := float(ps.world.clock.tau)
+		var y0 := float(ps.world.clock.year)
+		var k0 := int(ps.world.tick)
+		var lines0: int = ps.crew.get("lines", []).size()
+		var sent := pp.press("offer:" + id)
+		var btn := pp.find_child("Offer_" + id, true, false) as Button
+		check("%s: the offer is sent once and the button waits, disabled, saying why" % c[0], sent.size() == 2 and btn != null and btn.disabled and btn.tooltip_text == CrewPage.OFFER_PENDING
+			and texts(pp.get_node("Member_" + id)).has(CrewPage.OFFER_PENDING))
+		check("%s: pressing again while it waits sends nothing more" % c[0], pp.press("offer:" + id).is_empty() and ps.queued.size() == 2)
+		var stepped_ok: bool = tour.step()
+		var work = ps.crew["members"].filter(func(m): return m["id"] == id)[0].get("work")
+		check("%s: the offer rides a zero-dtau tick and %s answers" % [c[0], id], stepped_ok and tour.failed.is_empty() and int(ps.world.tick) == k0 + 1 and ps.queued.is_empty()
+			and work is Dictionary and ps.crew["lines"].size() == lines0 + 1 and ps.crew["lines"][-1]["actor"] == id)
+		check("%s: no ship time passed and no stage moved" % c[0], float(ps.world.clock.tau) == t0 and float(ps.world.clock.year) == y0 and tour.leg_index == -1 and ps.world.journey.state != "committed")
+		check("%s: the answer clears the pending offer" % c[0], not pp.pending_offers.has(id) and pp.find_child("Offer_" + id, true, false) == null)
+	tour.paused = false
+	tour.attitude_hold = false
+	tour.pending_index = -1
+	ps.stop()
 	print("crew-hold: %d failures" % failures)
 	quit(1 if failures else 0)
