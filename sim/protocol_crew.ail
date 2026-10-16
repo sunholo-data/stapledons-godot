@@ -25,7 +25,8 @@ import pkg/sunholo/crew_core/conversations (Issue, Suggestion, suggestions)
 import pkg/sunholo/social_dynamics/model (State, Actor, Value, Task, TaskStatus, Offered, Working, Completed, Stopped, Relief, Evidence, Resource)
 import ./crew (CrewState, CrewCmd, CrewLine, CrewName, CrewHold, crewTurn)
 import ./crew_names (nameOf)
-import ./crew_resources (Amount, usedOf)
+import ./crew_resources (usedOf)
+import pkg/sunholo/crew_core/units (Amount)
 
 export pure func crewIntentNames() -> [string] =
   ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]

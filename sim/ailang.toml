@@ -17,5 +17,5 @@ level = "experimental"
 [dependencies]
 "sunholo/celestial" = "0.4.0"
 "sunholo/relativity" = "0.12.0"
-"sunholo/crew_core" = "0.4.1" # auto-captain concerns, stuck guard, hysteresis: ailang-packages #143, a9f97fb
+"sunholo/crew_core" = "0.5.0" # resource units as data (units.ail; the game keeps its table here): ailang-packages #146
 "sunholo/social_dynamics" = "0.4.0" # crew_core's engine; sim/protocol_crew.ail reads its State for the crew view
