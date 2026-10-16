@@ -20,7 +20,7 @@ const CANON := ["archive.two-clocks"]
 const QUESTION := "Tell me what happened while we crossed, aboard and at home."
 const D := "cruise.digest."
 
-var state := "idle" # idle | waiting | told | authored
+var state := "idle" # idle (authored lines) | waiting | told | authored (the telling fell back)
 var crossing := "" # the crossing the telling is for (the digest's begin clocks)
 var req := "" # the telling's request id, once its ai_request event arrives
 var telling := "" # the accepted telling, without its markers
@@ -83,11 +83,9 @@ func maybe_open(view: Dictionary, relay: AiRelay, over: bool) -> bool:
 		_reset(id)
 	if not over or id == "" or state != "idle" or GalaxyMap.field_value(view, D + "narration.key") == null:
 		return false
-	if not can_open(relay):
-		state = "authored"
-		return false
-	if not relay.open("text", "archive", ENTITY, open_fields(view)):
-		state = "authored"
+	# Without live AI nothing is asked and the authored lines stand; asked again on a later frame
+	# (live AI switched on while the review is open still gets its one telling).
+	if not can_open(relay) or not relay.open("text", "archive", ENTITY, open_fields(view)):
 		return false
 	_relay = relay
 	state = "waiting"

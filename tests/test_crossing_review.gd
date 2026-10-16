@@ -305,6 +305,9 @@ func test_narration(r: CrossingReview, v: Dictionary) -> void:
 		and not ArchiveNarration.can_open(keyless) and not ArchiveNarration.can_open(null))
 	var quiet := ArchiveNarration.new()
 	check("I4 live AI off: nothing is opened; the authored lines stand", not quiet.maybe_open(v, off, true) and off.queued() == 0 and quiet.crossing_text(v) == str(n.crossing))
+	var later := AiRelay.new()
+	later.enabled = true
+	check("I4 live AI switched on while the review is open: the telling is still asked, once", quiet.maybe_open(v, later, true) and later.queued() == 1 and not quiet.maybe_open(v, later, true) and later.queued() == 1)
 	var nr := ArchiveNarration.new()
 	check("I4 nothing is asked before the crossing is over", not nr.maybe_open(v, live, false) and live.queued() == 0)
 	check("I4 the crossing over: one telling is asked", nr.maybe_open(v, live, true) and live.queued() == 1 and nr.state == "waiting")
