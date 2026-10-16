@@ -15,8 +15,16 @@ module stapledons/sim/cruise_digest
 -- whole days from the crew's carried remainder are exactly k (crew.daysIn), so floating rounding
 -- can never land one day short (the hold slips into the next chunk) or over (plain days after it).
 import std/option (Option, Some, None)
-import std/math (intToFloat)
-import ./crew (CrewState, daysIn, daysPerYear)
+import std/math (intToFloat, floor, floatToInt)
+import std/list (map, filter, foldl)
+import std/string (startsWith)
+import std/json (decode, getString, getBool)
+import std/result (Ok, Err)
+import pkg/sunholo/crew_core/auto (Act)
+import pkg/sunholo/social_dynamics/model (State, Actor, Value, Completed)
+import ./crew (CrewState, CrewLine, CrewHold, daysIn, daysPerYear)
+import ./crew_names (nameOf)
+import ./protocol_crew (templateLine, emotionOf)
 import ./crew_auto (nextDecision, cadenceLongSkip)
 
 export type Stop = { years: float, kind: string } deriving (Eq)
@@ -85,3 +93,204 @@ export pure func nextStop(crew: Option[CrewState], brake: float) -> Stop
   };
   if b <= s.years then { years: b, kind: "braking" } else s
 }
+
+-- ================================================================ I2: the cruise digest
+-- What the crossing review shows (design D1): world state (core.ail World.cruiseDigest), begun at
+-- the commit from the world before the commit tick, folded on every tick that starts or ends
+-- committed (so the arrival tick is in it), kept through holds, frozen at arrival until the next
+-- commit. Bounded: the moments are a top-momentsMax() fold, so the state is O(crew) per tick.
+-- Counts come from crew_core's Act log (crew_auto.AutoStepped.log), the captain's answered lines
+-- and accepted console commands, the tick's holds, and the archive counters (work done): the
+-- game crew runs untraced, so there are no journal records to read.
+-- Text: authored words only (protocol_crew.templateLine, holdLine; D-21: no digits). Numbers are
+-- fields; Godot formats them.
+
+-- ---------------------------------------------------------------- home time (Rulings §7)
+-- Seven tiers by Earth years since departure: < 1, 10, 30, 80, 130, 1000, beyond.
+export pure func homeTier(years: float) -> int =
+  if years < 1.0 then 0 else if years < 10.0 then 1 else if years < 30.0 then 2 else if years < 80.0 then 3
+  else if years < 130.0 then 4 else if years < 1000.0 then 5 else 6
+-- The whole years the tier line's %s stands for.
+export pure func tierYears(years: float) -> int = if years < 0.0 then 0 else floatToInt(floor(years))
+-- %s is the whole Earth years since departure (tierYears), a bound field Godot formats.
+export pure func tierLine(tier: int, whole: int) -> string =
+  if tier <= 0 then "Less than a year at home. They are still watching for word from you."
+  else if tier == 1 then (if whole == 1 then "A year at home. The news you left with is history." else "%s years at home. The news you left with is history.")
+  else if tier == 2 then "%s years. The children you knew have grown up; your name is a story they half remember."
+  else if tier == 3 then "%s years. Your parents' generation is gone; the friends you left are old."
+  else if tier == 4 then "%s years. Everyone you knew is gone."
+  else if tier == 5 then "%s years. No one alive on Earth was born when you left. The countries you knew may not exist."
+  else "%s years. Longer than recorded history before you left. Whatever answers your signal will not be the Earth you left."
+
+-- A hold in words, after the crew member's name (ui/crew_page.gd HOLD_WORDS).
+export pure func holdLine(rule: string) -> string =
+  if rule == "breakdown" then "is close to breaking down."
+  else if rule == "trust_floor" then "has lost trust in you."
+  else if rule == "refusal_under_orders" then "refused an order."
+  else if rule == "major" then "is shaken by news the whole ship heard."
+  else if rule == "argument" then "is arguing with the crew over what the ship lost."
+  else if rule == "uncovered" then "has raised something only you can answer."
+  else if rule == "stuck" then "is stuck: the same thing keeps failing, and auto-run can't get past it."
+  else "needs the captain."
+
+-- ---------------------------------------------------------------- the digest's state
+export type MediumRef = { name: string, nH: float } deriving (Eq)
+export type NewsRef = { templateId: int, starId: string, tier: int } deriving (Eq)
+-- What the world shows at the end of a tick (core.ail digestSnap): the clocks (ship tau, galaxy t,
+-- calendar year), Earth years since departure, the news epoch and age, the last arrival's news,
+-- and the leg's dust (lism-1 only): the medium here, those crossed this tick, the grains swept
+-- (>= 1 um) and the largest impact so far.
+export type Snap = { tau: float, t: float, year: float, sinceDeparture: float, newsEpoch: float, newsAge: float, news: Option[NewsRef],
+  lism: bool, medium: MediumRef, crossed: [MediumRef], grains: float, largestUm: float, largestJ: float } deriving (Eq)
+-- One tick's crew happenings: the captain's answered asks (at crew turn turnBefore, before the
+-- tick's days), crew_core's Act log for the auto-run days, the holds raised, and the crew_core
+-- lines of the captain's accepted console commands.
+export type CrewTick = { turnBefore: int, answered: [CrewLine], log: [Act], holds: [CrewHold], captain: [string] }
+
+export type Ind = { stress: int, fatigue: int, morale: int, trust: int } deriving (Eq)
+-- label0/label: the member's latest reply label at the commit and now (their face's emotion).
+export type Member = { id: string, name: string, begin: Ind, end: Ind, label0: string, label: string } deriving (Eq)
+-- day: crew days since the commit. kind: hold | refusal | relief | concern | accept | reply.
+-- label: the reply label (or the hold's rule); text: the authored words; aiReq: the crew_reply AI
+-- request that words it ("" when none: the authored text stands).
+export type Moment = { day: int, actor: string, name: string, label: string, kind: string, emotion: string, aiReq: string, text: string } deriving (Eq)
+export type Counts = { refusals: int, concerns: int, concernsAuto: int, reliefsAsked: int, reliefsGranted: int, reliefsDenied: int, holds: int } deriving (Eq)
+-- Open asks (kind request) and unresolved reliefs (kind relief) awaiting the captain.
+export type Waiting = { kind: string, id: string, actor: string, name: string, task: string } deriving (Eq)
+export type CrewDigest = { turn0: int, turn: int, work0: int, work: int, counts: Counts, members: [Member], moments: [Moment], waiting: [Waiting] } deriving (Eq)
+-- tau0, t0, year0: the clocks at the commit; now: the latest snap; media: crossed, in order.
+export type Digest = { tau0: float, t0: float, year0: float, now: Snap, media: [MediumRef], crew: Option[CrewDigest] } deriving (Eq)
+
+export pure func noCounts() -> Counts = { refusals: 0, concerns: 0, concernsAuto: 0, reliefsAsked: 0, reliefsGranted: 0, reliefsDenied: 0, holds: 0 }
+export pure func momentsMax() -> int = 7
+
+-- ---------------------------------------------------------------- moments
+-- The pure salience rule until crew_core's skip report (E4, I3b) replaces it.
+export pure func salience(kind: string) -> int =
+  if kind == "hold" then 5 else if kind == "refusal" then 4 else if kind == "relief" then 3
+  else if kind == "concern" then 2 else if kind == "accept" then 1 else 0
+export pure func momentKind(label: string) -> string =
+  if label == "decline" then "refusal" else if label == "request_relief" then "relief" else if label == "concern" then "concern"
+  else if label == "accept" then "accept" else "reply"
+-- a ranks before b: higher salience, then the earlier day, then the actor id.
+pure func before(a: Moment, b: Moment) -> bool = {
+  let sa = salience(a.kind);
+  let sb = salience(b.kind);
+  if sa != sb then sa > sb else if a.day != b.day then a.day < b.day else a.actor < b.actor
+}
+pure func insertRanked(m: Moment, xs: [Moment]) -> [Moment] = match xs {
+  [] => [m],
+  x :: rest => if before(m, x) then m :: xs else x :: insertRanked(m, rest)
+}
+pure func takeN(n: int, xs: [a]) -> [a] = if n <= 0 then [] else match xs { [] => [], x :: r => x :: takeN(n - 1, r) }
+-- The bounded fold: the ranked top momentsMax() of what came before and m.
+export pure func insertMoment(m: Moment, xs: [Moment]) -> [Moment]
+  ensures { lengthOf(result) <= momentsMax() }
+= takeN(momentsMax(), insertRanked(m, xs))
+pure func lengthOf(xs: [a]) -> int = match xs { [] => 0, _ :: r => 1 + lengthOf(r) }
+
+-- ---------------------------------------------------------------- movement
+pure func absI(x: int) -> int = if x < 0 then 0 - x else x
+export pure func movedBy(m: Member) -> int =
+  absI(m.end.stress - m.begin.stress) + absI(m.end.fatigue - m.begin.fatigue) + absI(m.end.morale - m.begin.morale) + absI(m.end.trust - m.begin.trust)
+pure func movedBefore(a: Member, b: Member) -> bool = { let x = movedBy(a); let y = movedBy(b); if x != y then x > y else a.id < b.id }
+pure func insertMember(m: Member, xs: [Member]) -> [Member] = match xs { [] => [m], x :: r => if movedBefore(m, x) then m :: xs else x :: insertMember(m, r) }
+-- Members by total |delta| over stress, fatigue, morale and trust; ties by member id.
+export pure func rankMovement(ms: [Member]) -> [Member] = foldl(\acc m. insertMember(m, acc), [], ms)
+
+-- ---------------------------------------------------------------- reading the crew
+pure func valueOf(vs: [Value], id: string) -> int = match vs { [] => 0, v :: r => if v.id == id then v.value else valueOf(r, id) }
+pure func trustIn(st: State, id: string) -> int = match st.relationships {
+  rs => match filter(\r. r.from == id && r.to == "captain" && r.dimension == "trust", rs) { r :: _ => r.value, [] => 0 }
+}
+pure func indOf(st: State, a: Actor) -> Ind =
+  { stress: valueOf(a.indicators, "stress"), fatigue: valueOf(a.indicators, "fatigue"), morale: valueOf(a.indicators, "morale"), trust: trustIn(st, a.id) }
+pure func lastLabel(ls: [CrewLine], id: string, acc: string) -> string = match ls { [] => acc, l :: r => lastLabel(r, id, if l.actor == id then l.label else acc) }
+pure func nameIn(c: CrewState, id: string) -> string = match nameOf(c.names, id) { Some(n) => n, None => id }
+pure func crewActors(c: CrewState) -> [Actor] = filter(\a. a.id != "captain", c.session.state.actors)
+pure func stressOf(c: CrewState, id: string) -> int = match filter(\a. a.id == id, c.session.state.actors) { a :: _ => valueOf(a.indicators, "stress"), [] => 0 }
+pure func isRest(recipe: string) -> bool = startsWith(recipe, "rest_")
+-- Work finished (not rest), archived and live (crew_core completedCount, summed over work recipes).
+export pure func workDone(c: CrewState) -> int = {
+  let s = c.session;
+  foldl(\acc t. if isRest(t.id) then acc else acc + t.count, 0, s.archive.completed)
+    + lengthOf(filter(\t. t.status == Completed && !isRest(t.recipe), s.state.tasks))
+}
+pure func waitingOf(c: CrewState) -> [Waiting] =
+  map(\q. { kind: "request", id: q.id, actor: q.actor, name: nameIn(c, q.actor), task: q.task }, c.session.pending)
+  ++ map(\r. { kind: "relief", id: r.id, actor: r.author, name: nameIn(c, r.author), task: r.task }, filter(\r. !r.resolved, c.session.state.reliefs))
+
+pure func beginCrew(c: CrewState) -> CrewDigest = {
+  let st = c.session.state;
+  let w = workDone(c);
+  { turn0: c.turn, turn: c.turn, work0: w, work: w, counts: noCounts(),
+    members: map(\a. { let i = indOf(st, a); let l = lastLabel(c.lines, a.id, ""); { id: a.id, name: nameIn(c, a.id), begin: i, end: i, label0: l, label: l } }, crewActors(c)),
+    moments: [], waiting: waitingOf(c) }
+}
+-- The crew now: end indicators, work, waiting, the turn.
+pure func refreshCrew(cd: CrewDigest, c: CrewState) -> CrewDigest = {
+  let st = c.session.state;
+  let now = \m. match filter(\a. a.id == m.id, st.actors) { a :: _ => { m | end: indOf(st, a), name: nameIn(c, m.id) }, [] => m };
+  { cd | turn: c.turn, work: workDone(c), members: map(now, cd.members), waiting: waitingOf(c) }
+}
+
+-- ---------------------------------------------------------------- one tick's events
+pure func bump(c: Counts, label: string) -> Counts =
+  if label == "decline" then { c | refusals: c.refusals + 1 }
+  else if label == "concern" then { c | concerns: c.concerns + 1 }
+  else if label == "request_relief" then { c | reliefsAsked: c.reliefsAsked + 1 }
+  else c
+pure func actCount(c: Counts, a: Act) -> Counts =
+  if a.kind == "reply" then bump(c, a.label)
+  else if a.kind == "captain_reply" then { c | concernsAuto: c.concernsAuto + 1 }
+  else if a.kind == "relief_decision" then (if a.label == "granted" then { c | reliefsGranted: c.reliefsGranted + 1 } else { c | reliefsDenied: c.reliefsDenied + 1 })
+  else c
+-- A console resolve_relief the captain sent: release true grants it.
+pure func captainCount(c: Counts, line: string) -> Counts = match decode(line) {
+  Ok(j) => if getString(j, "command") == Some("resolve_relief") then (match getBool(j, "release") {
+      Some(true) => { c | reliefsGranted: c.reliefsGranted + 1 },
+      Some(false) => { c | reliefsDenied: c.reliefsDenied + 1 },
+      None => c
+    }) else c,
+  Err(_) => c
+}
+pure func labelled(ms: [Member], actor: string, label: string) -> [Member] = map(\m. if m.id == actor then { m | label: label } else m, ms)
+pure func memberName(ms: [Member], id: string) -> string = match filter(\m. m.id == id, ms) { m :: _ => m.name, [] => id }
+pure func replyMoment(cd: CrewDigest, day: int, actor: string, label: string, stress: int, aiReq: string) -> Moment =
+  { day: day - cd.turn0, actor: actor, name: memberName(cd.members, actor), label: label, kind: momentKind(label), emotion: emotionOf(label, stress), aiReq: aiReq, text: templateLine(label) }
+pure func onAnswered(cd: CrewDigest, crew: [Actor], turn: int, l: CrewLine) -> CrewDigest =
+  { cd | counts: bump(cd.counts, l.label), members: labelled(cd.members, l.actor, l.label),
+    moments: insertMoment(replyMoment(cd, turn, l.actor, l.label, match filter(\a. a.id == l.actor, crew) { a :: _ => valueOf(a.indicators, "stress"), [] => 0 }, l.aiReq), cd.moments) }
+pure func onAct(cd: CrewDigest, a: Act) -> CrewDigest = {
+  let counted = { cd | counts: actCount(cd.counts, a) };
+  if a.kind == "reply" then { counted | members: labelled(cd.members, a.actor, a.label), moments: insertMoment(replyMoment(cd, a.tick, a.actor, a.label, a.stress, ""), cd.moments) }
+  else counted
+}
+pure func onHold(cd: CrewDigest, h: CrewHold) -> CrewDigest =
+  { cd | counts: { cd.counts | holds: cd.counts.holds + 1 },
+    moments: insertMoment({ day: h.tick - cd.turn0, actor: h.actor, name: memberName(cd.members, h.actor), label: h.rule, kind: "hold", emotion: "sad", aiReq: "", text: holdLine(h.rule) }, cd.moments) }
+-- One tick, in the order it happened: the captain's answered asks and console commands, then the
+-- auto-run acts, then the holds. `crew` is the crew after the tick (stress for answered lines).
+export pure func foldEvents(cd: CrewDigest, crew: [Actor], ct: CrewTick) -> CrewDigest = {
+  let a = foldl(\acc l. onAnswered(acc, crew, ct.turnBefore, l), cd, ct.answered);
+  let b = { a | counts: foldl(captainCount, a.counts, ct.captain) };
+  let c = foldl(onAct, b, ct.log);
+  foldl(onHold, c, ct.holds)
+}
+
+-- ---------------------------------------------------------------- begin and fold
+pure func lastMedium(xs: [MediumRef]) -> Option[MediumRef] = match xs { [] => None, [x] => Some(x), _ :: r => lastMedium(r) }
+pure func addMedium(xs: [MediumRef], m: MediumRef) -> [MediumRef] = match lastMedium(xs) { Some(l) => if l.name == m.name then xs else xs ++ [m], None => [m] }
+-- The digest at the commit: the world before the commit tick (its clocks are the commit's, a commit
+-- needs the ship at rest), its medium the first crossed.
+export pure func beginDigest(s: Snap, crew: Option[CrewState]) -> Digest =
+  { tau0: s.tau, t0: s.t, year0: s.year, now: s, media: if s.lism then [s.medium] else [], crew: match crew { Some(c) => Some(beginCrew(c)), None => None } }
+export pure func foldDigest(d: Digest, s: Snap, crew: Option[CrewState], ct: CrewTick) -> Digest = {
+  let media = if s.lism then addMedium(foldl(addMedium, d.media, s.crossed), s.medium) else d.media;
+  { d | now: s, media: media, crew: match (d.crew, crew) {
+      (Some(cd), Some(c)) => Some(refreshCrew(foldEvents(cd, c.session.state.actors, ct), c)),
+      _ => d.crew
+    } }
+}
+-- Whole days of proper time since the commit.
+export pure func shipDays(d: Digest) -> int = (daysIn(0.0, if d.now.tau > d.tau0 then d.now.tau - d.tau0 else 0.0)).days
