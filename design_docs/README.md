@@ -62,3 +62,4 @@ design_docs/
 | [r2/crew-work.md](planned/r2/crew-work.md) | W1 (the Crew console work cards) **implemented** in PR #239; W2–W5 wait on Mark's OQ1–OQ4. |
 | [r2/archive-npc.md](planned/r2/archive-npc.md) | **Proposed** 2026-10-14 (PR #241): the Archive as a special crew member; OQ3 and OQ4 answered 2026-10-15, OQ1 (presence) and OQ2 (console card) open. |
 | [r2/crew-population.md](planned/r2/crew-population.md) | **Proposed** 2026-10-13: the wider population as cohort actors with mood buckets. Rulings D-71, D-73 (cohorts approved) and D-75 (~1,000 growing to ~1,500); cohorts in crew_core 0.4.0 (#231); in-game display needs a sprint plan. |
+| [r2/camera-fixed-views.md](planned/r2/camera-fixed-views.md) | **Proposed** 2026-10-16 (Mark, dev.31 playtest): fixed zoom levels (ruling) and authored third-person views; sprint R2-CAMERA [plan](planned/r2/camera-fixed-views-sprint.md) awaiting approval, OQ1–OQ9 open. |
