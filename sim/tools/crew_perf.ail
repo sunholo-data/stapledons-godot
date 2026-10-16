@@ -1,0 +1,29 @@
+module stapledons/sim/tools/crew_perf
+
+-- R2-INTERLUDE I1, AC6 (`make crew-perf`): a decade crossed chunk by chunk, as the host steps it
+-- (sim/crew_script.ail chunkStep). One line per chunk as it finishes, so the make target can time
+-- each chunk from the line's arrival (no clock in the sim: gate 6):
+--   start                                  the crew is aboard, before the first chunk
+--   chunk <i> <kind> day <turn> holds <n>  chunk i ended on crew day turn, raising n holds
+--   days <turn> holds <total> chunks <n>   the end
+-- which: "busy" (no escalation rules; the crew busy all decade) or a preset ("critical_only").
+import std/io (println)
+import std/string (concat, intToStr)
+import std/list (length)
+import std/result (Ok, Err)
+import stapledons/sim/crew (CrewState)
+import stapledons/sim/crew_script (chunkStep, chunkCrew)
+import stapledons/sim/rng (Rng, zeroRng)
+
+func chunks(c: CrewState, rng: Rng, endDay: int, i: int, holds: int) -> () ! {IO} =
+  if c.turn >= endDay then println(concat(["days ", intToStr(c.turn), " holds ", intToStr(holds), " chunks ", intToStr(i)]))
+  else {
+    let r = chunkStep(c, rng, endDay, false);
+    println(concat(["chunk ", intToStr(i + 1), " ", r.kind, " day ", intToStr(r.crew.turn), " holds ", intToStr(length(r.holds))]));
+    chunks(r.crew, r.rng, endDay, i + 1, holds + length(r.holds))
+  }
+
+export func crewSkipChunked(which: string) -> () ! {IO} = match chunkCrew(which) {
+  Err(e) => println(concat(["error ", e])),
+  Ok(c) => { println("start"); chunks(c, zeroRng(), 3652, 0, 0) }
+}

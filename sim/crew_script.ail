@@ -14,9 +14,10 @@ import std/string (concat, join, intToStr)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/crypto (sha256Hex)
-import ./crew (CrewState, CrewStepped, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn, shipEventLine)
+import ./crew (CrewState, CrewStepped, CrewHold, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn, shipEventLine)
 import ./crew_events (noMoments, shipEvents)
 import ./crew_auto (setPreset, autoStep)
+import ./cruise_digest (nextStop, stopYears)
 import ./rng (Rng, SCrew, zeroRng, counter)
 import std/math (intToFloat)
 
@@ -100,3 +101,25 @@ export pure func crewSkipUnheld(years: int) -> string = match initCrewWith("orde
       match r.stepped.refused { Some(e) => concat([" refused ", e]), None => "" }])
   }
 }
+
+-- R2-INTERLUDE I1, AC6 (`make crew-perf`, sim/tools/crew_perf.ail crewSkipChunked): a crossing stepped
+-- as the host steps it, one chunk per sim tick to the next stop (sim/cruise_digest.ail nextStop),
+-- `endDay` crew days in all. `resume`: the captain resumes each hold at once (the next chunk is the
+-- next check-in); otherwise an open hold leaves only cap-sized plain chunks.
+export type Chunked = { crew: CrewState, rng: Rng, holds: [CrewHold], kind: string }
+export pure func chunkStep(c: CrewState, rng: Rng, endDay: int, resume: bool) -> Chunked {
+  let s = nextStop(Some(c), stopYears(c.dayRem, endDay - c.turn));
+  let r = autoStep(c, 3, rng, s.years, false);
+  { crew: if resume then { r.stepped.crew | holds: [] } else r.stepped.crew, rng: r.stepped.rng, holds: r.holds, kind: s.kind }
+}
+-- The perf cases' crews: "busy" is crewSkipUnheld's (orders, auto-run with no escalation rules:
+-- the crew busy for the whole decade); "critical_only" is the game's default (consent captaincy,
+-- the lab's rules, D-70 OQ5 and ruling 4).
+export pure func chunkCrew(which: string) -> Result[CrewState, string] =
+  if which == "busy" then (match initCrewWith("orders", false) {
+    Err(e) => Err(e),
+    Ok((c, _)) => Ok({ c | auto: Some({ preset: "unheld", rules: [], st: { seed: 77, agreed: [], raised: [], calls: 0 } }) })
+  }) else match initCrewWith("consent", false) {
+    Err(e) => Err(e),
+    Ok((c, _)) => Ok((setPreset(c, 3, zeroRng(), which)).crew)
+  }

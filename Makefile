@@ -78,6 +78,7 @@ test: crew-hold-test
 ## hoped for is not reached. Mark (2026-10-16): 11 s is acceptable; the ceiling is 30 s (was 150 s).
 CREW_PERF_BUDGET_crewSkip := 2.0
 CREW_PERF_BUDGET_crewSkipUnheld := 30.0
+CREW_PERF_CHUNK_S := 1.0
 crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless (warm cache); critical_only under 2 s, the busy no-hold worst case under its measured ceiling
 	@for e in crewSkip crewSkipUnheld; do \
 	  case $$e in crewSkip) b=$(CREW_PERF_BUDGET_crewSkip);; *) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; esac; \
@@ -85,6 +86,18 @@ crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the
 	  s=$$(perl -MTime::HiRes=time -e 'printf "%.3f", time'); out=$$(env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry $$e --args-json 10 sim/crew_script.ail); \
 	  t=$$(perl -MTime::HiRes=time -e "printf '%.2f', time - $$s"); echo "crew-perf $$e: $$out in $$t s"; \
 	  echo "$$out" | grep -qE '^"?days 3652 holds [0-9]+"?$$' && perl -e "exit($$t < $$b ? 0 : 1)" || { echo "crew-perf: FAIL ($$e: $$out, $$t s; budget $$b s)"; exit 1; }; done
+	@# R2-INTERLUDE I1, AC6: the decade crossed chunk by chunk as the host steps it (sim/tools/crew_perf.ail).
+	@# Each chunk is timed from its line's arrival; every chunk under CREW_PERF_CHUNK_S (the bridge's
+	@# step_timeout is 2 s), critical_only (the game's default) in all under its crewSkip budget, the
+	@# busy decade under the crewSkipUnheld ceiling.
+	@for w in busy critical_only; do \
+	  case $$w in busy) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; *) b=$(CREW_PERF_BUDGET_crewSkip);; esac; \
+	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --caps IO --package-dir sim --entry crewSkipChunked --args-json "\"$$w\"" sim/tools/crew_perf.ail | \
+	  perl -MTime::HiRes=time -ne 'BEGIN { $$max = 0; $$worst = "none"; $$n = 0 } chomp; my $$t = time; if (/^start$$/) { $$s = $$t; $$p = $$t; next } \
+	    if (/^chunk /) { my $$d = $$t - $$p; $$n++; ($$max, $$worst) = ($$d, $$_) if $$d > $$max; print "crew-perf crewSkipChunked '"$$w"': SLOW $$_ took ", sprintf("%.3f", $$d), " s\n" if $$d >= $(CREW_PERF_CHUNK_S); $$p = $$t; next } \
+	    $$end = $$_; END { my $$tot = defined $$s ? $$p - $$s : -1; printf "crew-perf crewSkipChunked '"$$w"': %s in %.2f s; %d chunks, slowest %.3f s (%s)\n", $$end // "no end", $$tot, $$n, $$max, $$worst; \
+	    exit(($$end // "") =~ /^days 3652 holds \d+ chunks \d+$$/ && $$tot >= 0 && $$tot < '"$$b"' && $$max < $(CREW_PERF_CHUNK_S) ? 0 : 1) }' \
+	  || { echo "crew-perf: FAIL (crewSkipChunked $$w: a chunk at or over $(CREW_PERF_CHUNK_S) s, or the total over $$b s)"; exit 1; }; done
 test: crew-perf
 crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
 	@for n in consent orders shipevent argument; do $(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lines --args-json "\"$$n\"" sim/tools/crew_parity.ail > tests/crew/$$n.ndjson; done; git diff --stat tests/crew
