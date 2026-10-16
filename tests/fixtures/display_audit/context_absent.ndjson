@@ -1,0 +1,1 @@
+{"view":{"tick":10},"bindings":[{"field":"clock.year","fmt":"%d","parts":["year ",["clock.year","%d"]],"text":"year 2101","context":{"clock":{"year":2101}}}],"labels":[]}
