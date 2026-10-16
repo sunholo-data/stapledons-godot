@@ -16,12 +16,12 @@ func _initialize() -> void:
 	base.begin(CruiseInterlude.facts_from(world(4.3, 0.2, 4.3, 0.0001, 70.7, 41.8), "TRAPPIST-1"))
 	check(base.advance(1.0, 0.05) == 0.0 and base.done(), "base interlude consumes nothing and is done")
 
-	# The card hands over exactly the remaining cruise, once, then holds.
+	# Below 2.10 (no cruise section) the card hands over exactly the remaining cruise, once, then holds.
 	var card := CardInterlude.new()
 	var before := world(4.30980295176308, 0.1927134937008, 4.305, 0.0001, 70.7124459519056, 41.8)
 	card.begin(CruiseInterlude.facts_from(before, "TRAPPIST-1"))
 	var remaining := 0.5741234567
-	check(card.advance(remaining, 0.05) == remaining, "first frame consumes exactly the remaining cruise")
+	check(card.advance(remaining, 0.05) == remaining, "below 2.10: first frame consumes exactly the remaining cruise")
 	check(card.advance(remaining, 0.05) == 0.0 and card.advance(remaining, 0.05) == 0.0, "later frames consume nothing")
 	check(not card.done(), "not done before CARD_S")
 	for i in int(CardInterlude.CARD_S / 0.05) + 1:
@@ -32,6 +32,44 @@ func _initialize() -> void:
 	var unconsumed := CardInterlude.new(); unconsumed.begin(card.facts); unconsumed.finish()
 	check(not unconsumed.done(), "Continue cannot end a card that has not consumed the cruise")
 	check(card.advance(-5.0, 0.05) == 0.0, "never consumes a negative amount")
+
+	# 2.10 (R2-INTERLUDE I1): the crossing goes in chunks, each exactly the sim's next stop and never
+	# more than next_stop_years or the cruise left; the braking stop ends it.
+	var chunked := CardInterlude.new()
+	var cw := before.duplicate(true)
+	cw["cruise"] = {"next_stop_years": 0.0821355236139630, "stop_kind": "check_in"}
+	chunked.begin(CruiseInterlude.facts_from(cw, "TRAPPIST-1"))
+	var left := remaining
+	var never_over := true
+	var frames := 0
+	var kinds := []
+	while not chunked.crossed() and frames < 100:
+		var stop: Dictionary = chunked.latest.cruise
+		var step := chunked.advance(left, 0.05)
+		never_over = never_over and step <= float(stop.next_stop_years) and step <= left and step >= 0.0
+		kinds.append(stop.stop_kind)
+		left -= step
+		frames += 1
+		# the sim's next stop after this chunk: a check-in a month on, or the braking boundary when nearer
+		var month := 30.0 / 365.25
+		cw["cruise"] = {"next_stop_years": minf(month, left), "stop_kind": "braking" if left <= month else "check_in"}
+		chunked.observe(cw)
+	check(never_over, "advance() never returns more than next_stop_years (nor the cruise left)")
+	check(frames == 7 and kinds.count("check_in") == 6 and kinds.back() == "braking" and absf(left) < 1e-12, "a 0.574-year crossing is six check-ins and the braking stop (%d frames, %s, left %s)" % [frames, kinds, left])
+	check(not chunked.done() and chunked.advance(left, 0.05) == 0.0, "after the braking stop the card holds and consumes nothing")
+	var mid := CardInterlude.new()
+	mid.begin(CruiseInterlude.facts_from(cw, "TRAPPIST-1"))
+	mid.latest.cruise = {"next_stop_years": 0.5, "stop_kind": "chunk"}
+	check(mid.advance(0.25, 0.05) == 0.25 and mid.crossed(), "the cruise left caps a longer stop and ends the crossing")
+	var mid2 := CardInterlude.new()
+	mid2.begin(CruiseInterlude.facts_from(cw, "TRAPPIST-1"))
+	mid2.latest.cruise = {"next_stop_years": 0.1, "stop_kind": "check_in"}
+	mid2.finish()
+	check(mid2.advance(0.25, 0.05) == 0.1 and not mid2.crossed() and not mid2.done(), "Continue cannot end a crossing that has not reached braking")
+	check(mid2.lines().cut == "Crossing… the crew's monthly check-in.", "the Crossing… line follows the sim's stop kind: " + str(mid2.lines().cut))
+	mid2.latest.cruise = {"next_stop_years": 0.3, "stop_kind": "chunk"}
+	check(mid2.lines().cut.begins_with("Crossing…") and mid2.lines().cut != "Crossing… the crew's monthly check-in.", "mutating stop_kind changes the Crossing… line")
+	check(SimBridge.parse_cruise({"next_stop_years": 0.1, "stop_kind": "check_in"}) == {"next_stop_years": 0.1, "stop_kind": "check_in"} and SimBridge.parse_cruise({"next_stop_years": -1.0, "stop_kind": "chunk"}).is_empty() and SimBridge.parse_cruise({"next_stop_years": 0.1, "stop_kind": "lunch"}).is_empty() and SimBridge.parse_cruise(3).is_empty(), "the bridge checks the 2.10 cruise section")
 
 	# Lines follow the simulation fields (mutation test: change a field, the line follows).
 	card.observe(world(46.1, 0.78, 46.0, 0.0001, 70.7124459519056, 41.8))

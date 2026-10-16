@@ -322,7 +322,7 @@ func test_strip_and_cards() -> void:
 	check("AC3 transit card appears on commit", hud.has_card("transit"))
 	var transit_fields: Array = hud.card_body("transit").find_children("*", "DisplayBinding", true, false).map(func(b): return b.field)
 	check("AC3 transit card: compact JourneyHud rows %s" % [transit_fields], transit_fields.has("ship.phase") and transit_fields.has("consequence.gap_years") and transit_fields.has("client.warp") and transit_fields.filter(func(f): return f in ShipHud.TRANSIT_COMPACT).size() == ShipHud.TRANSIT_COMPACT.size())
-	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.CREW_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
+	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.INTERLUDE_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
 	check("Tab holds every JourneyHud row", hud.transit_rows.find_children("*", "DisplayBinding", true, false).size() == JourneyHud.ROWS.size())
 	var phases := {}
 	await arrive(demo, phases)
@@ -344,6 +344,9 @@ func test_strip_and_cards() -> void:
 	check("AC3 Esc dismisses the arrival card (and it is freed after the fade)", not hud.cards.has("arrival"))
 	# Guided voyage: dwell, the tour card and its pacing buttons.
 	check("the guided voyage starts", demo.start_solar_departure())
+	# R2-INTERLUDE ruling 4: a new guided voyage with crew sends critical_only before its first commit.
+	var orders_queued: bool = demo.journey_sim.queued.any(func(i: Dictionary) -> bool: return i.get("k", "") == "crew_orders" and JSON.parse_string(i.line) == {"command": "orders", "preset": "critical_only"})
+	check("ruling 4: the guided voyage with crew queues crew_orders critical_only before its first commit", not demo.journey_sim.crew.is_empty() and orders_queued and demo.journey_sim.world.journey.state != "committed")
 	demo._process(0.016)
 	strip_ok(demo, "tour dwell")
 	check("AC3 tour card appears with Pause / Skip dwell / Skip stage", hud.has_card("tour") and hud.card_body("tour").get_node("Buttons").get_child_count() == 3)
@@ -361,6 +364,7 @@ func test_strip_and_cards() -> void:
 			break
 		demo._process(0.05) # the departure turn, then the tour commits its own leg
 	check("the tour commits the itinerary's leg after its turn", demo.live_journey)
+	check("ruling 4: the committed guided leg runs critical_only auto-run", demo.journey_sim.crew.get("auto", "") == "critical_only")
 	# The interlude state: the tour's D-41 card over a committed leg (driven directly; the
 	# host loop that reaches it is tests/test_solar_departure.gd's).
 	var card := CardInterlude.new()

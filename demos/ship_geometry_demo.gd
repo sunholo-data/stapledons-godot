@@ -597,7 +597,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.CREW_MINOR # R2-CREW C4: the crew aboard (2.9)
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.INTERLUDE_MINOR # R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().

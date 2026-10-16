@@ -37,6 +37,12 @@ const ISM_MINOR := 8
 ## refusal reason starts "crew:". The `crew` section (parse_crew(), kept in `crew`) arrives in the
 ## full state and whenever it changes. Asked for by setting `want_minor = CREW_MINOR`.
 const CREW_MINOR := 9
+## Protocol 2.10 (R2-INTERLUDE I1): the chunked crossing. While a journey is committed each state
+## carries `cruise` {next_stop_years, stop_kind} (parse_cruise(), kept in world.cruise): a cruise
+## interlude steps exactly next_stop_years (a monthly crew check-in, the 365-day cap or the braking
+## boundary), so a crew hold ends its chunk. Asked for by setting `want_minor = INTERLUDE_MINOR`.
+const INTERLUDE_MINOR := 10
+const STOP_KINDS := ["braking", "check_in", "chunk"]
 const CREW_INTENTS := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
 
 var _pipe: FileAccess
@@ -345,7 +351,8 @@ func _finish(tick: int) -> bool:
 	if state.get("tick") != tick:
 		return _fail("bad_response")
 	var changes: Dictionary = state["changes"]
-	if not _take_system(changes) or not _take_plan_nav(changes) or not _take_gr(changes) or not _take_crew(changes):
+	if not _take_system(changes) or not _take_plan_nav(changes) or not _take_gr(changes) or not _take_crew(changes) \
+			or (changes.has("cruise") and parse_cruise(changes["cruise"]).is_empty()):
 		return _fail("bad_response")
 	for section in changes:
 		world[section] = changes[section].duplicate(true) if changes[section] is Dictionary else changes[section]
@@ -663,6 +670,14 @@ static func parse_crew(v) -> Dictionary:
 				or not (m.get("trust") == null or typeof(m.get("trust")) == TYPE_FLOAT or typeof(m.get("trust")) == TYPE_INT):
 			return {}
 	return v.duplicate(true)
+
+## The 2.10 cruise section, checked: next_stop_years a number >= 0, stop_kind one of STOP_KINDS. {} if wrong.
+static func parse_cruise(v) -> Dictionary:
+	if typeof(v) != TYPE_DICTIONARY or not (typeof(v.get("next_stop_years")) in [TYPE_FLOAT, TYPE_INT]) or not (v.get("stop_kind") in STOP_KINDS):
+		return {}
+	if float(v["next_stop_years"]) < 0.0:
+		return {}
+	return {"next_stop_years": float(v["next_stop_years"]), "stop_kind": str(v["stop_kind"])}
 
 func _take_crew(changes: Dictionary) -> bool:
 	if not changes.has("crew"):

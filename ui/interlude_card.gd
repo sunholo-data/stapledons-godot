@@ -67,6 +67,10 @@ func show_interlude(card: CardInterlude) -> void:
 	var l: Dictionary = card.lines()
 	var t := clampf(card.shown() / (CardInterlude.CARD_S * 0.6), 0.0, 1.0)
 	t = t * t * (3.0 - 2.0 * t)
+	# R2-INTERLUDE I1: a chunked crossing is its own progress view (D-76): the clocks follow the
+	# sim chunk by chunk instead of animating a single step.
+	if card.chunks > 1:
+		t = 1.0
 	var before: Dictionary = card.facts
 	var after: Dictionary = card.latest
 	var year := lerpf(float(before.earth_year), float(after.earth_year), t)
