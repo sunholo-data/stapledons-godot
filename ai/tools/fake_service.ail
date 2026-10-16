@@ -11,7 +11,7 @@ module stapledons/ai/tools/fake_service
 --   slow_hello    never answers hello (slower than any handshake deadline)
 --   wrong_major   answers hello with proto.major 2
 -- Configuration: --args-json '{"mode": "...", "n": 0}'. Needs --caps IO only.
-import std/io (readLine, print, println, flush, exit)
+import std/io (readLineOpt, print, println, flush, exit)
 import std/json (decode, getString)
 import std/result (Ok, Err)
 import std/option (Some, None)
@@ -51,8 +51,7 @@ func answerHello(mode: string) -> () ! {IO} =
   else say(helloLine(1))
 
 func loop(cfg: Config, answered: int) -> () ! {IO} {
-  let line = readLine(());
-  if line == "" then () else {
+  match readLineOpt(()) { None => (), Some(line) => if line == "" then loop(cfg, answered) else {
     let t = field(line, "type");
     if t == "quit" then ()
     else if t == "hello" then { answerHello(cfg.mode); loop(cfg, answered) }
@@ -65,7 +64,7 @@ func loop(cfg: Config, answered: int) -> () ! {IO} {
       else if cfg.mode == "partial" then { sayInPieces(resultLine(req, kind, answered + 1)); loop(cfg, answered + 1) }
       else { say(resultLine(req, kind, answered + 1)); loop(cfg, answered + 1) }
     } else loop(cfg, answered)
-  }
+  } }
 }
 
 export func main(cfg: Config) -> () ! {IO} = loop(cfg, 0)

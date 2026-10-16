@@ -4,9 +4,8 @@ module stapledons/ai/service
 -- launches; it never talks to the sim. hello -> read -> decode -> handle ->
 -- run the acts (blob + index line, usage line, then the result), one request
 -- at a time, until quit or end of input. Nothing is printed before the first
--- line arrives. Blank lines are skipped; readLine returns "" both for a
--- blank line and at end of input, so 16 empty reads in a row end the loop
--- (ailang#1535).
+-- line arrives. Blank lines are skipped; end of input (readLineOpt's None)
+-- ends the loop.
 --
 -- Entries (configuration is the entry argument, never argv or env):
 --   main    (--caps IO,FS)  the stub. {provider: "stub", keys_present, text_only,
@@ -23,7 +22,7 @@ module stapledons/ai/service
 --           AI_LIVE=1. keys_present is ignored: live reads the env.
 -- prices.json, lore.json, models.json and emotion_styles.json are read from
 -- the routing file's directory. A bad configuration prints one `fatal` line.
-import std/io (readLine, println, flush)
+import std/io (readLineOpt, println, flush)
 import std/fs (readFileResult, readFileBytes, mkdirAll)
 import std/env (getEnvOr)
 import std/result (Result, Ok, Err)
@@ -58,26 +57,26 @@ func run(dir: string, acts: [Act]) -> () ! {IO, FS} =
     [] => (),
     a :: r => { (match a { WriteBlob(b) => writeBlob(dir, b), AppendUsage(l) => appendUsage(dir, l), Say(o) => say(o) }); run(dir, r) }
   }
--- ailang#1535: readLine gives "" for a blank line and at end of input alike.
-pure func maxBlanks() -> int = 16
 
 -- What one input line asks for. The stub loop and the live loop share it;
 -- they are two loops so the stub's effects stay {IO, FS}: it cannot reach a
 -- provider even in its types.
-type Line = Blank | Quit | Greet | Ask(Request) | Bad(Out)
+type Line = Eof | Blank | Quit | Greet | Ask(Request) | Bad(Out)
 pure func lineOf(line: string, p: Provider) -> Line =
   if line == "" then Blank
   else match decodeIn(line) {
     Ok(m) => (match m { WQuit => Quit, WHello(_) => Greet, WRequest(r) => Ask(r) }),
     Err(code) => Bad(OErr({ req: reqOfLine(line), code: code, provider: providerName(p), route: "none" }))
   }
-func stubLoop(cfg: Session, c: Ctx, p: Provider, l: Ledger, blanks: int) -> () ! {IO, FS} =
-  match lineOf(readLine(()), p) {
-    Blank => if blanks + 1 >= maxBlanks() then () else stubLoop(cfg, c, p, l, blanks + 1),
+func readIn(p: Provider) -> Line ! {IO} = match readLineOpt(()) { None => Eof, Some(line) => lineOf(line, p) }
+func stubLoop(cfg: Session, c: Ctx, p: Provider, l: Ledger) -> () ! {IO, FS} =
+  match readIn(p) {
+    Eof => (),
+    Blank => stubLoop(cfg, c, p, l),
     Quit => (),
-    Greet => { say(hello(cfg, c, p)); stubLoop(cfg, c, p, l, 0) },
-    Bad(o) => { say(o); stubLoop(cfg, c, p, l, 0) },
-    Ask(r) => { let s = handle(c, l, r); run(cfg.cache_dir, s.acts); stubLoop(cfg, c, p, s.ledger, 0) }
+    Greet => { say(hello(cfg, c, p)); stubLoop(cfg, c, p, l) },
+    Bad(o) => { say(o); stubLoop(cfg, c, p, l) },
+    Ask(r) => { let s = handle(c, l, r); run(cfg.cache_dir, s.acts); stubLoop(cfg, c, p, s.ledger) }
   }
 
 -- readFileBytes returns the file as base64 text (undocumented; reported upstream);
@@ -122,17 +121,16 @@ export func start(cfg: Session, keys: [string]) -> Result[Ctx, string] ! {FS} {
 }
 
 -- Wait for a first non-blank line so nothing is printed unasked, then refuse.
-func refuseStart(e: string, blanks: int) -> () ! {IO} =
-  if readLine(()) != "" then say(OFatal({ code: "config", detail: e }))
-  else if blanks + 1 >= maxBlanks() then () else refuseStart(e, blanks + 1)
+func refuseStart(e: string) -> () ! {IO} =
+  match readLineOpt(()) { None => (), Some(line) => if line != "" then say(OFatal({ code: "config", detail: e })) else refuseStart(e) }
 
 export func session(cfg: Session) -> () ! {IO, FS} =
   match providerOf(cfg.provider) {
-    Err(e) => refuseStart(e, 0),
-    Ok(p) => if p != Stub then refuseStart(concat(["config: provider ", cfg.provider, " needs the live entry (--entry live)"]), 0)
+    Err(e) => refuseStart(e),
+    Ok(p) => if p != Stub then refuseStart(concat(["config: provider ", cfg.provider, " needs the live entry (--entry live)"]))
       else match start(cfg, cfg.keys_present) {
-        Ok(c) => stubLoop(cfg, c, p, ledgerFrom(cfg.ceiling_usd, cfg.spent), 0),
-        Err(e) => refuseStart(e, 0)
+        Ok(c) => stubLoop(cfg, c, p, ledgerFrom(cfg.ceiling_usd, cfg.spent)),
+        Err(e) => refuseStart(e)
       }
   }
 export func main(cfg: Config) -> () ! {IO, FS} =
@@ -169,30 +167,31 @@ func liveRun(c: Ctx, k: Keys, l: Ledger, j: Job) -> Step ! {Net, AI} {
 -- call. The live loop and make ai-loopback share this step.
 export func admitLive(dir: string, c: Ctx, l: Ledger, r: Request, prov: string) -> Prep ! {FS} =
   match prepare(c, l, r, prov) { Done(x) => Done(x), Run(j) => { reserveUsage(dir, reservation(l, j, prov)); Run(j) } }
-func liveLoop(cfg: Session, c: Ctx, k: Keys, p: Provider, l: Ledger, blanks: int) -> () ! {IO, FS, Net, AI} =
-  match lineOf(readLine(()), p) {
-    Blank => if blanks + 1 >= maxBlanks() then () else liveLoop(cfg, c, k, p, l, blanks + 1),
+func liveLoop(cfg: Session, c: Ctx, k: Keys, p: Provider, l: Ledger) -> () ! {IO, FS, Net, AI} =
+  match readIn(p) {
+    Eof => (),
+    Blank => liveLoop(cfg, c, k, p, l),
     Quit => (),
-    Greet => { say(hello(cfg, c, p)); liveLoop(cfg, c, k, p, l, 0) },
-    Bad(o) => { say(o); liveLoop(cfg, c, k, p, l, 0) },
+    Greet => { say(hello(cfg, c, p)); liveLoop(cfg, c, k, p, l) },
+    Bad(o) => { say(o); liveLoop(cfg, c, k, p, l) },
     Ask(r) => {
       let s = match admitLive(cfg.cache_dir, c, l, r, providerName(p)) { Done(x) => x, Run(j) => liveRun(c, k, l, j) };
       run(cfg.cache_dir, s.acts);
-      liveLoop(cfg, c, k, p, s.ledger, 0)
+      liveLoop(cfg, c, k, p, s.ledger)
     }
   }
 export func live(cfg: Session) -> () ! {IO, FS, Env, Net, AI} =
   match providerOf(cfg.provider) {
-    Err(e) => refuseStart(e, 0),
+    Err(e) => refuseStart(e),
     Ok(p) => match p {
-      Stub => refuseStart("config: the live entry does not run the stub (use --entry main)", 0),
+      Stub => refuseStart("config: the live entry does not run the stub (use --entry main)"),
       Live(req) => {
         let k = { gemini: getEnvOr("GOOGLE_API_KEY", ""), openrouter: getEnvOr("OPENROUTER_API_KEY", "") };
         match liveRefusal(req, present(k), getEnvOr("AI_LIVE", "") == "1") {
-          Some(e) => refuseStart(e, 0),
+          Some(e) => refuseStart(e),
           None => match start(cfg, present(k)) {
-            Ok(c) => liveLoop(cfg, c, k, p, ledgerFrom(cfg.ceiling_usd, cfg.spent), 0),
-            Err(e) => refuseStart(e, 0)
+            Ok(c) => liveLoop(cfg, c, k, p, ledgerFrom(cfg.ceiling_usd, cfg.spent)),
+            Err(e) => refuseStart(e)
           }
         }
       }

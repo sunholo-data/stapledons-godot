@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.54.8** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.54.11** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 **Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
@@ -154,14 +154,18 @@ The brain is local and untracked.
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.54.8 (re-check again at each bump; still-needed ones reported as ailang#1783):**
+- **Workarounds, re-checked on v0.54.11 (re-check again at each bump; still-needed ones reported as ailang#1783):**
   - Fixed in v0.54.8: a cold compile of an embedded `sunholo/crew_core` peaked at ~20 GB RSS (#1812, still open upstream; now ~0.5 GB). CI needs no memory limit or warm-up step for it.
   - Open (v0.54.8, VM performance): a cons-pattern list walk copies the tail every step (`_list_tail`), so walking a list is O(n^2) (#1827). It makes the busy no-hold crew skip ~40 s on the Studio and 71 s on CI. Mark's ruling D-82: no package workaround; `crew-perf`'s `crewSkipUnheld` holds a 150 s ceiling until the fix, then 2 s.
+  - Fixed in v0.54.11 (ailang PR #1836, verified 2026-10-16): all ten `std/map`
+    operations run on the strict VM (VM = interpreter); `ailang lock` keeps
+    `generated_at` when resolution is unchanged. End of input: the sim, the AI
+    service and the fake service read with `std/io.readLineOpt` (None ends the
+    session, a blank line is skipped), replacing the 16-blank-reads guard.
   - Still needed: run `ailang lock` after `ailang install`; on a clean machine
-    `ailang lock` also fills the package cache (`make deps`). The lockfile's
-    `generated_at` line churns on every run, so ignore it when diffing.
-    `std/map.fromList` is still evaluator-only on the strict VM.
-    `std/io.readLine` still returns "" for both a blank line and end of input.
+    `ailang lock` also fills the package cache (`make deps`).
+  - Open (v0.54.11): `ailang test --package` does not type-check modules no test
+    imports, so CI keeps `ailang check --package sim` (#1845).
   - Open (v0.52.0, workaround in-tree, cite the issue at the site): the bytecode
     VM silently drops a service request whose handler builds a list of ~1100+
     elements by non-tail recursion (no result, no error, exit 0; the interpreter

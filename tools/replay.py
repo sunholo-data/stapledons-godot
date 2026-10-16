@@ -173,11 +173,14 @@ def run(ctx, case, vm):
 
 
 def expected_replies(log):
-    """One reply per input line up to (not including) the first quit; ship.ail stops there."""
+    """One reply per non-blank input line up to (not including) the first quit; ship.ail
+    skips blank lines (readLineOpt) and stops at quit or end of input."""
     n = 0
     with open(log, "rb") as f:
         for line in f:
-            if line.strip() == b"" or re.match(rb'^\{"v":2,"type":"quit"\}\s*$', line):
+            if line.strip() == b"":
+                continue
+            if re.match(rb'^\{"v":2,"type":"quit"\}\s*$', line):
                 break
             n += 1
     return n
