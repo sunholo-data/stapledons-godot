@@ -551,6 +551,54 @@
       "passes": null,
       "completed": null,
       "notes": "Iteration 33 planner: addendum planned; awaiting executor."
+    },
+    {
+      "id": "M4.6gR3_SHIP_GOLDENS",
+      "description": "Iteration 35 addendum under R1-M4-JOURNEY, Revision round 3 / R3-4 (D-66): add default 3D-ship GPU goldens G-M4-S2 (one tonemap), G-M4-S3 (captain-eye forward pole, boost/cruise/brake), G-M4-S4 (3 cap profiles, 2 sim absolute poles, rest), ten new cases in the existing --golden run; fail-closed Makefile counts, independent sim/CPU references, temp-copy mutation drills. No production visual, package or sim changes; captures/bench/S1 remain M4.6rR3. Corrected commands and wrapper are in the linked addendum.",
+      "depends_on": [
+        "M4.6a_PKG_GLOW_EMITTANCE (landed)",
+        "ext:live 3D ship (landed)",
+        "ext:GPU window (available to executor)"
+      ],
+      "art_gated": "GPU window required; S1 is the separate M4.6rR3 render milestone",
+      "estimated_loc": 180,
+      "loc_cap": 650,
+      "wave": "R3-1",
+      "files": [
+        "tools/m4_ship_golden.gd",
+        "tools/m4_ship_golden.gd.uid",
+        "main.gd",
+        "Makefile",
+        ".ailang/state/sprints/sprint_R1-M4-JOURNEY.json",
+        "design_docs/planned/r1/m4-6gr3-ship-goldens-sprint.md",
+        "changelogs/unreleased/2026-10-16-m4-6gr3-ship-goldens.md"
+      ],
+      "acceptance_criteria": [
+        "AC1: All old and new GPU cases pass. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): make golden AILANG=runtime/bin/ailang && n=$(grep -c '^ok' \"$L\") && printf '%s\\n' \"$n\" && test \"$n\" -eq 373 -> exit 0; prints 373 (363 + 3 S3 + 1 S2 + 6 S4); golden: 0 failures and m4 ship golden: 0 failures.",
+        "AC2: Captain-eye pole within 0.75 px, each phase; reference interior retained. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): (for phase in boosting cruising braking; do test \"$(grep -c \"^ok    G-M4-S3 forward pole (ship) $phase beta\" \"$L\")\" -eq 1 || exit 1; done; test \"$(grep -c '^ok    G-M4-S3 forward pole (ship)' \"$L\")\" -eq 3 && test \"$(grep -c '^ok    G-M4-3 forward pole' \"$L\")\" -eq 6 && printf 'ship=3 interior=6\\n') -> exit 0; ship=3 interior=6; one boosting, cruising and braking line, each error <= 0.75 px.",
+        "AC3: One tonemap; sky/lit/ship sample floors. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): test \"$(grep -c '^ok    G-M4-S2 one tonemap (ship): ' \"$L\")\" -eq 1 && grep '^ok    G-M4-S2 one tonemap (ship): ' \"$L\" -> exit 0; exactly one ok line printing n >= 500, lit >= 50, ship >= 20 and worst <= 1/255 + 1e-6; driver asserts all four bounds.",
+        "AC4: Six glow cases with independent sim reference. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): test \"$(grep -c '^ok    G-M4-S4 glow' \"$L\")\" -eq 6 && test \"$(grep -c '^ok    G-M4-S4 glow profile (ship) cap theta' \"$L\")\" -eq 3 && test \"$(grep -c '^ok    G-M4-S4 glow absolute (ship)' \"$L\")\" -eq 2 && test \"$(grep -c '^ok    G-M4-S4 glow rest (ship)' \"$L\")\" -eq 1 && test \"$(grep -c '^ok    G-M4-S4 glow absolute (ship) cap 1-beta 2e-9: .* sim ship\\.ism\\.glow_pole_w_m2 56\\.330348' \"$L\")\" -eq 1 && printf 'profile=3 absolute=2 rest=1\\n' -> exit 0; profile=3 absolute=2 rest=1; cap 0/45/80 degrees <= 1%, |wall cos - cos(theta)| <= .005, format 14; absolute 0.99c/cap <= 1%, c >= .9999; rest exactly 0.",
+        "AC5: Positive control in fresh temp copy. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): check_drill 0 0 373 '' '' '' '^FAIL' -> exit 0; drill rc=0 fails=0 ok=373.",
+        "AC6: D1: mutation is killed by the named ship case. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): check_drill 2 3 '[0-9]+' 'demos/ship_demo_camera.gd' 's/^(\\tif position.length\\(\\)>=100\\.: sky.set_glow_pole\\(0\\.\\))$/$1\\n\\tsky.camera.look(sky.camera.yaw,sky.camera.pitch+.003,sky.camera.roll)/' 'sky.camera.pitch+.003' '^FAIL  G-M4-S3 forward pole (ship)' -> exit 0 from check_drill; underlying make/wrapper rc=2; drill rc=2 fails=3 ok=<reported>; matching ^FAIL  G-M4-S3 forward pole (ship) evidence (not a parse/prerequisite failure).",
+        "AC7: D2a: mutation is killed by the named ship case. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): check_drill 2 5 '[0-9]+' 'interior/glow_overlay.gdshader' 's/float e = pole \\* ct;/float e = pole * ct * 1.02;/' 'pole * ct * 1.02' '^FAIL  G-M4-S4' -> exit 0 from check_drill; underlying make/wrapper rc=2; drill rc=2 fails=5 ok=<reported>; matching ^FAIL  G-M4-S4 evidence (not a parse/prerequisite failure).",
+        "AC8: D2b: mutation is killed by the named ship case. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): check_drill 2 5 '[0-9]+' 'interior/forward_glow.gd' 's/return _field\\(world, POLE_FIELD\\)$/return _field(world, POLE_FIELD) * 1.02/' 'POLE_FIELD) * 1.02' '^FAIL  G-M4-S4' -> exit 0 from check_drill; underlying make/wrapper rc=2; drill rc=2 fails=5 ok=<reported>; matching ^FAIL  G-M4-S4 evidence (not a parse/prerequisite failure).",
+        "AC9: D3: mutation is killed by the named ship case. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): check_drill 2 1 '[0-9]+' 'demos/ship_geometry_demo.gd' 's/_draw_layer\\(sky.get_texture\\(\\),-40\\);/_draw_layer(sky.get_texture(),-40);_rects[0].modulate=Color(.98,.98,.98);/' '_rects[0].modulate=Color(.98,.98,.98)' '^FAIL  G-M4-S2' -> exit 0 from check_drill; underlying make/wrapper rc=2; drill rc=2 fails=1 ok=<reported>; matching ^FAIL  G-M4-S2 evidence (not a parse/prerequisite failure).",
+        "AC10: Unapplied mutation is a harness error. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): check_drill 3 0 0 demos/ship_geometry_demo.gd 's/NO_SUCH_TEXT/x/' 'NO_SUCH_MARKER' '^FAIL' -> exit 0 from check_drill; wrapper exits 3 and prints drill: mutation did not apply to demos/ship_geometry_demo.gd; cleanup/integrity checks still run.",
+        "AC11: No production or reference-gate change. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): git diff --quiet origin/main...HEAD -- demos interior ui sim physics sky bridge tools/interior_golden.gd && git diff --quiet HEAD -- demos interior ui sim physics sky bridge tools/interior_golden.gd && printf '0\\n' -> exit 0; prints 0; no protected-path changes in branch commits or staged/unstaged local changes; also run the scope check below to cover untracked files.",
+        "AC12: Full suite, precision and Python policy. Command (ROOT/L/check_drill setup and corrected /tmp wrapper in sprint addendum): make test AILANG=runtime/bin/ailang && make lint-precision python-guard AILANG=runtime/bin/ailang -> exit 0; suite summaries contain zero failures, lint-precision: ok, python-guard succeeds; scope check allows no new Python."
+      ],
+      "test_first": [
+        "RED: add exact golden Makefile S2=1/S3=3/S4=6/total=373 and ship-summary assertions before the driver; legacy pass must still fail the new recipe.",
+        "GREEN: add tools/m4_ship_golden.gd and final main.gd await; AC1-AC4 pass.",
+        "Then AC5 positive control, AC6-AC9 four named mutant kills, AC10 no-op exits 3 with caller errexit both on/off; trap cleanup and source diff/status/hash checks after every drill.",
+        "Then full CI run-step target inventory plus golden and precision/Python guards, AC11 protected-scope proof; changelog and only this feature progress."
+      ],
+      "design_doc": "design_docs/planned/r1/m4-6gr3-ship-goldens.md",
+      "sprint_plan": "design_docs/planned/r1/m4-6gr3-ship-goldens-sprint.md",
+      "passes": null,
+      "started": "2026-10-16",
+      "completed": null,
+      "notes": "Iteration 35 planner at HEAD 8cf3a70: planned, awaiting executor. 363 supplied baseline + 3 S3 + 1 S2 + 6 S4 = 373. All four Perl patterns match current source via stdout-only dry-runs; all 22 CI make targets and AC12 targets exist. Eight command/harness defect groups corrected in addendum (root, cleanup, mutation application, source integrity, return status/errexit, fresh logs, asserting counts, merge-base/local scope). No make/GPU/test run or implementation change by planner; no design edit. The existing parent feature and all other sprint fields stay unchanged. Iteration 35 executor (codex gpt-6.1-sol, verified outside the sandbox on the GPU window): RED in a temp copy without the driver: make golden rc=2, ok=363, legacy golden: 0 failures (new asserts reject). GREEN: make golden rc=0, ok=373, S3 3 (0.030 px each), S2 1 (909 sky-only, 89 lit, 51 ship, worst 0.0000), S4 6 (cap profile within 0.07 %, 0.99c pole 0.34 %, cap pole 0.03 %, rest 0), m4 ship golden: 0 failures. AC1-AC4 and AC11 pass; drills: AC5 rc=0 ok=373; AC6 D1 rc=2 fails=3 ok=370; AC7 D2a rc=2 fails=5 ok=361; AC8 D2b rc=2 fails=5 ok=368; AC9 D3 rc=2 fails=1 ok=372; AC10 rc=3 under set -e and set +e; tree restored after each. Full make test (AC12) left to the controller; passes stays null until it is green."
     }
   ],
   "findings": [
