@@ -47,8 +47,8 @@ pure func checkMonthlyWait() -> bool = match initCrew("orders") {
   }
 }
 
-pure func orders(preset: string) -> Intent = ICrew({ kind: "crew_orders", line: "{\"command\":\"orders\",\"preset\":\"${preset}\"}", askId: None })
-pure func resumeI(id: string) -> Intent = ICrew({ kind: "crew_resume", line: "{\"command\":\"resume\",\"hold\":\"${id}\"}", askId: None })
+pure func orders(preset: string) -> Intent = ICrew({ kind: "crew_orders", line: "{\"command\":\"orders\",\"preset\":\"${preset}\"}", askId: None, asMode: "", startMode: "" })
+pure func resumeI(id: string) -> Intent = ICrew({ kind: "crew_resume", line: "{\"command\":\"resume\",\"hold\":\"${id}\"}", askId: None, asMode: "", startMode: "" })
 pure func holdEvents(es: [Event]) -> [string] = map(\e. match e.crewHold { Some(h) => h.id, None => "" }, filter(\e. e.kind == "crew_hold", es))
 pure func holdsOf(w: World) -> [string] = match w.crew { Some(c) => map(\h. h.id, c.holds), None => ["no crew"] }
 pure func turnOf(w: World) -> int = match w.crew { Some(c) => c.turn, None => 0 - 1 }

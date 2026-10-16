@@ -50,7 +50,7 @@ pure func intentEq(a: Intent, b: Intent) -> bool =
     IEcho(p) => match b { IEcho(q) => planEq(p, q), _ => false },
     IAiOpen(o) => match b { IAiOpen(q) => aiOpenEq(o, q), _ => false },
     IAiCancel(c) => match b { IAiCancel(d) => c.req == d.req && c.reason == d.reason, _ => false },
-    ICrew(c) => match b { ICrew(d) => c.kind == d.kind && c.line == d.line && c.askId == d.askId, _ => false }
+    ICrew(c) => match b { ICrew(d) => c.kind == d.kind && c.line == d.line && c.askId == d.askId && c.asMode == d.asMode && c.startMode == d.startMode, _ => false }
   }
 pure func strsEq(a: [string], b: [string]) -> bool = allEq(\x y. x == y, a, b)
 pure func ctxEq(a: CtxField, b: CtxField) -> bool =
@@ -121,8 +121,8 @@ pure func phiCap() -> float = 7.254328619262047
 pure func edgeVec() -> Vec3 = {x: 1.0e308, y: negZero(), z: almostOne()}
 pure func edgePlan() -> PlanReq = {target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: None, star: None}
 pure func allIntents() -> [Intent] = [
-  ICrew({kind: "crew_offer", line: "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}", askId: None}),
-  ICrew({kind: "crew_ask", line: "{\"command\":\"ask\",\"actor\":\"medic\",\"task\":\"t1\",\"id\":\"r1\"}", askId: Some("r1")}),
+  ICrew({kind: "crew_offer", line: "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}", askId: None, asMode: "", startMode: ""}),
+  ICrew({kind: "crew_ask", line: "{\"command\":\"ask\",\"actor\":\"medic\",\"task\":\"t1\",\"id\":\"r1\"}", askId: Some("r1"), asMode: "", startMode: ""}),
   IPlan({target: {index: maxInt(), id: "Gl 559", pos: edgeVec()}, cruisePhi: phiCap(), flipG: Some(1.0), star: None}),
   IPlan({target: {index: 0, id: "Sol \"quoted\" \\ star", pos: {x: 0.1, y: tiny(), z: -4.09}}, cruisePhi: 0.1, flipG: None, star: None}),
   ICommit(maxInt()), ICancel, IThrust(negZero()), IThrust(-1.0),

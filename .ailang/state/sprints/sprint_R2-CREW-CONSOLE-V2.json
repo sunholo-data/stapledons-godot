@@ -1,30 +1,104 @@
 {
   "sprint_id": "R2-CREW-CONSOLE-V2",
-  "status": "awaiting_approval",
-  "approved": false,
-  "approved_by": null,
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark (attended, 2026-10-16: \"yes continue\", all nine recommendations)",
   "created": "2026-10-16",
-  "started": null,
+  "started": "2026-10-16",
   "design_doc": "design_docs/planned/r2/crew-console-v2.md",
   "sprint_plan": "design_docs/planned/r2/crew-console-v2-sprint.md",
   "branch": "feat/crew-console-v2",
-  "implements": ["crew-console-v2 V1", "V2", "V3", "V4", "V5", "V6", "V8"],
+  "implements": [
+    "crew-console-v2 V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V6",
+    "V8"
+  ],
   "github_issues": [],
   "external_dependencies": [
-    {"what": "feat/interlude-card (R2-INTERLUDE, protocol 2.10: members[].emotion, holds[].line, ComposedBinding) merged to main", "where": "stapledons-godot", "owner": "attended session", "blocks": ["V1_SIM_WORK_STATE"], "status": "unmerged (2026-10-16)"},
-    {"what": "fix/crew-offer-while-paused: zero-dtau ticks while paused, disabled 'Offer sent. Waiting for their answer.' state, collision-proof task ids, refusal words", "where": "stapledons-godot", "owner": "separate fix PR (coordinator)", "blocks": ["V2_PALETTE_MODEL"], "status": "in progress, not yet pushed (2026-10-16)"},
-    {"what": "crew_core 0.6.0 pinned (stand-down: stand_down_asked, resolve_stand_down, rest)", "where": "sunholo-data/ailang-packages + game migration (crew-core-0.6-game-migration.md)", "owner": "integration agent", "blocks": ["V8_CREW_CORE_06_ROWS"], "status": "published 2026-10-16; game migration pending"},
-    {"what": "crew_core per-scenario concern catalogue keyed by recipe (OQ6) and withdraw_offer (OQ8)", "where": "sunholo-data/ailang-packages", "owner": "crew-lab agent", "blocks": [], "note": "upstream asks; not blocking; v2 shows crew_core's prompts and a lapse note meanwhile"},
-    {"what": "D-7 portrait sets at 1024 px and the four missing emotion sets (OQ7)", "where": "attended art task", "blocks": [], "note": "256 px sources upscale 2.5x at 1440p; capture flags it"}
+    {
+      "what": "feat/interlude-card (R2-INTERLUDE, protocol 2.10: members[].emotion, holds[].line, ComposedBinding) merged to main",
+      "where": "stapledons-godot",
+      "owner": "attended session",
+      "blocks": [
+        "V1_SIM_WORK_STATE"
+      ],
+      "status": "unmerged; merged into feat/crew-console-v2 (stacked)"
+    },
+    {
+      "what": "fix/crew-offer-while-paused: zero-dtau ticks while paused, disabled 'Offer sent. Waiting for their answer.' state, collision-proof task ids, refusal words",
+      "where": "stapledons-godot",
+      "owner": "separate fix PR (coordinator)",
+      "blocks": [
+        "V2_PALETTE_MODEL"
+      ],
+      "status": "PR #263, unmerged; merged into feat/crew-console-v2 (stacked)"
+    },
+    {
+      "what": "crew_core 0.6.0 pinned (stand-down: stand_down_asked, resolve_stand_down, rest)",
+      "where": "sunholo-data/ailang-packages + game migration (crew-core-0.6-game-migration.md)",
+      "owner": "integration agent",
+      "blocks": [
+        "V8_CREW_CORE_06_ROWS"
+      ],
+      "status": "published 2026-10-16; game migration pending"
+    },
+    {
+      "what": "crew_core per-scenario concern catalogue keyed by recipe (OQ6) and withdraw_offer (OQ8)",
+      "where": "sunholo-data/ailang-packages",
+      "owner": "crew-lab agent",
+      "blocks": [],
+      "note": "upstream asks; not blocking; v2 shows crew_core's prompts and a lapse note meanwhile"
+    },
+    {
+      "what": "D-7 portrait sets at 1024 px and the four missing emotion sets (OQ7)",
+      "where": "attended art task",
+      "blocks": [],
+      "note": "256 px sources upscale 2.5x at 1440p; capture flags it"
+    }
   ],
   "registry_reuse": [
-    {"milestone": "V1", "package": "sunholo/crew_core (pinned: session.startTask, setCommand, moot, conversations.Issue, codec outcome codes)", "action": "depend", "reason": "per-offer orders compose existing commands host-side; no new crew rules"},
-    {"milestone": "V4", "package": "sunholo/crew_core (concern catalogue by recipe, withdraw_offer)", "action": "contribute", "reason": "upstream requests to the crew lab (OQ6, OQ8); not blocking"},
-    {"milestone": "V2-V6", "package": "-", "action": "none", "reason": "Godot UI"},
-    {"milestone": "V8", "package": "sunholo/crew_core@0.6.0 (stand-down)", "action": "depend", "reason": "the two stand-down work states"}
+    {
+      "milestone": "V1",
+      "package": "sunholo/crew_core (pinned: session.startTask, setCommand, moot, conversations.Issue, codec outcome codes)",
+      "action": "depend",
+      "reason": "per-offer orders compose existing commands host-side; no new crew rules"
+    },
+    {
+      "milestone": "V4",
+      "package": "sunholo/crew_core (concern catalogue by recipe, withdraw_offer)",
+      "action": "contribute",
+      "reason": "upstream requests to the crew lab (OQ6, OQ8); not blocking"
+    },
+    {
+      "milestone": "V2-V6",
+      "package": "-",
+      "action": "none",
+      "reason": "Godot UI"
+    },
+    {
+      "milestone": "V8",
+      "package": "sunholo/crew_core@0.6.0 (stand-down)",
+      "action": "depend",
+      "reason": "the two stand-down work states"
+    }
   ],
-  "velocity": {"target_loc_per_day": 350, "estimated_total_loc": 1750, "estimated_days": 7},
-  "critical_path": ["V1_SIM_WORK_STATE", "V2_PALETTE_MODEL", "V3_BOARD_CALL_BINDINGS", "V45_CONCERN_ASK_ORDER", "V6_KEYS_PAD", "E_EVALUATE_LAND"],
+  "velocity": {
+    "target_loc_per_day": 350,
+    "estimated_total_loc": 1750,
+    "estimated_days": 7
+  },
+  "critical_path": [
+    "V1_SIM_WORK_STATE",
+    "V2_PALETTE_MODEL",
+    "V3_BOARD_CALL_BINDINGS",
+    "V45_CONCERN_ASK_ORDER",
+    "V6_KEYS_PAD",
+    "E_EVALUATE_LAND"
+  ],
   "pause_points": [
     "after V1: work_state plus today's page disabling a forbidden Start can merge alone (fixes Mark's main confusion early)",
     "any replay golden below consoleMinor moving: stop, Mark reviews the listed diff",
@@ -43,7 +117,11 @@
     "OQ9 a decline is 'Needs you: declined, open to talk' with the answers [recommended]"
   ],
   "evaluations": [],
-  "coordination": {"executor": "attended session or the loop after approval", "evaluator": "different model from the executor", "upstream_owner": "crew-lab agent (OQ6, OQ8)"},
+  "coordination": {
+    "executor": "attended session or the loop after approval",
+    "evaluator": "different model from the executor",
+    "upstream_owner": "crew-lab agent (OQ6, OQ8)"
+  },
   "features": [
     {
       "id": "V1_SIM_WORK_STATE",
@@ -57,77 +135,124 @@
         "make crew-parity strict parity: VM == interpreter and two runs byte-identical for console_v2; consoleScripted under --strict-bytecode (AC5)",
         "make parity-v2 replay: every stream below consoleMinor byte-identical, no golden re-recorded (AC2)"
       ],
-      "passes": null, "started": null, "completed": null, "notes": null
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
       "id": "V2_PALETTE_MODEL",
       "description": "Tests first (tests/test_crew_palette.gd inside crew-console-test; model cases on recorded crew views). ui/crew_palette.gd (tokens, icons, words, edge styles; Okabe-Ito based) and ui/crew_console_model.gd (pure statics: chip, actions, reason, first_focus, locked); reads the sim's work_state, client overlay only 'sending'; SimBridge.queued_crew() per actor on top of the fix PR's queue.",
       "estimated_loc": 280,
-      "dependencies": ["V1_SIM_WORK_STATE"],
+      "dependencies": [
+        "V1_SIM_WORK_STATE"
+      ],
       "acceptance_criteria": [
         "make crew-console-test: every work_state plus sending maps one-to-one to token, icon and word; tokens >= 3:1 on the panel, chip text >= 4.5:1; adjacent states DeltaE2000 >= 12 under simulated deutan/protan/tritan or differ in icon and edge (AC6)",
         "make crew-console-test: a queued intent locks every action on that member until the next crew view or a refusal; other members stay actionable (AC8, model half)"
       ],
-      "passes": null, "started": null, "completed": null, "notes": null
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
       "id": "V3_BOARD_CALL_BINDINGS",
       "description": "Tests first (test_crew_console rewritten for v2 on recorded fixtures tests/crew/console_v2/*.json; NT5 in test_no_twitch; display_audit crew route + crew_unbound control). ui/crew_console.gd (board, two-panel layout, mini-roster) and ui/crew_call.gd (call window: 240-logical portrait at the sim's emotion, transcript, bars); crew_page.gd shrinks to its static helpers; ship_consoles hosts CrewConsole full width. Every Label a DisplayBinding/ComposedBinding (formats crew_state, crew_reason, crew_day; client.crew.* in CONTEXT_SOURCED). crew_console_capture rewritten: six frames at 1280x720 and 2560x1440.",
       "estimated_loc": 600,
-      "dependencies": ["V2_PALETTE_MODEL"],
+      "dependencies": [
+        "V2_PALETTE_MODEL"
+      ],
       "acceptance_criteria": [
         "make crew-console-test: call window opens on select and on an incoming concern/hold when nothing is open or armed; otherwise the chip pulses and the call is unchanged; End call closes it (AC10)",
         "make no-twitch-test: NT5, 600 s of fake time on the board, a call and a hold: nothing closes, no intent (AC10)",
         "make display-audit-crew display-audit-controls: every Crew console Label is a binding; crew_unbound fails the audit (AC14)",
         "make crew-console-capture: twelve frames written, no clipped node, no label under 12 logical, portrait >= 240 logical; opened by Mark (AC15, attended)"
       ],
-      "passes": null, "started": null, "completed": null, "notes": null
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
       "id": "V45_CONCERN_ASK_ORDER",
       "description": "Tests first (real sim in test_crew_console). Decision block per work_state (design V4 table); Start disabled with the reason on concern/declined/deferred; four answers (Insist last, authored assert_authority text, cost line); How selector Ask/Order per offer starting at the ship default and as 'Make it an order' on declined/concern cards; ship-default and auto-run strip in the board header (confirmed). OQ1=(b) drops start:now; OQ3=no drops start:on_accept.",
       "estimated_loc": 250,
-      "dependencies": ["V3_BOARD_CALL_BINDINGS"],
+      "dependencies": [
+        "V3_BOARD_CALL_BINDINGS"
+      ],
       "acceptance_criteria": [
         "make crew-console-test: concern/declined/deferred disable Start with 'Waiting: answer their concern first.' (or its state's reason); first focus is answer 1; four answers with Insist last and its cost line (AC7)",
         "make crew-console-test: How starts at the ship default, a change emits no intent, the offer honours it; ship default and auto-run need a confirmed press (AC11)",
         "make crew-console-test: free -> working in two presses on an accepting member (AC12)",
         "make crew-console-test + make crew-hold-test: on a paused guided voyage an offer shows 'Sent, waiting for the ship', cannot be sent twice, and resolves on the zero-dtau tick (AC9)"
       ],
-      "passes": null, "started": null, "completed": null, "notes": null
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
       "id": "V6_KEYS_PAD",
       "description": "Tests first (InputEventKey and InputEventJoypadButton drive the design V6 table; NT1/NT3 with the console focused and a pad). Focus inside the console only; focus outline in TEXT; [ ] and LB/RB switch the call; 1-4 arm answers; O/Y toggles How; Esc/B one level per press.",
       "estimated_loc": 150,
-      "dependencies": ["V3_BOARD_CALL_BINDINGS"],
+      "dependencies": [
+        "V3_BOARD_CALL_BINDINGS"
+      ],
       "acceptance_criteria": [
         "make crew-console-test: keyboard and controller reach every action; a decision only on the second press (AC13)",
         "make no-twitch-test: NT1 and NT3 hold with the Crew console focused and a pad connected (AC13)"
       ],
-      "passes": null, "started": null, "completed": null, "notes": null
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
       "id": "V8_CREW_CORE_06_ROWS",
       "description": "After the crew_core 0.6 pin: workState rows stand_down_asked and resting read the 0.6 fields; answers emit resolve_stand_down (confirmed); templateLine stand_down/carry_on if the migration hasn't added them. Recorded 0.6 fixture; skipped with a printed reason below 0.6.",
       "estimated_loc": 50,
-      "dependencies": ["V2_PALETTE_MODEL"],
+      "dependencies": [
+        "V2_PALETTE_MODEL"
+      ],
       "acceptance_criteria": [
         "make crew-console-test: stand_down_asked and resting appear for a recorded stand-down; answers emit resolve_stand_down (AC16)",
         "make sim crew-parity green with 0.6 pinned"
       ],
-      "passes": null, "started": null, "completed": null, "notes": null
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     },
     {
       "id": "E_EVALUATE_LAND",
       "description": "Full make test locally (attended) then CI; sprint-evaluator on a different model (100 points, 70 to pass) -> .ailang/state/evaluations/eval_R2-CREW-CONSOLE-V2_round_<n>.json; move doc and plan to implemented/r2, crew-console-v2-report.md, changelog fragment naming the protocol minor, crew-work.md W5 note, design-repo roadmap row.",
       "estimated_loc": 0,
-      "dependencies": ["V45_CONCERN_ASK_ORDER", "V6_KEYS_PAD"],
+      "dependencies": [
+        "V45_CONCERN_ASK_ORDER",
+        "V6_KEYS_PAD"
+      ],
       "acceptance_criteria": [
         "make test green locally and in CI (AC17)",
         "evaluation >= 70 by a different model from the executor"
       ],
-      "passes": null, "started": null, "completed": null, "notes": null
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
     }
-  ]
+  ],
+  "approved_on": "2026-10-16",
+  "answers": {
+    "OQ1": "Order on an offer starts the work now, whatever they answer (crew_offer start: now)",
+    "OQ2": "ship default and auto-run stay global, in the board header strip",
+    "OQ3": "an Ask offer starts automatically on agreement (start: on_accept)",
+    "OQ4": "the call opens on an incoming concern only when nothing is open or armed; otherwise the row pulses",
+    "OQ5": "Insist is the fourth answer",
+    "OQ6": "concern text for the game's jobs: upstream request to the crew lab; noted, not done",
+    "OQ7": "1024 px portraits: separate attended art task; noted, not done",
+    "OQ8": "offer withdrawal: upstream request; show the lapse note meanwhile",
+    "OQ9": "a refusal reads 'Needs you: declined, open to talk'"
+  },
+  "protocol_minor": "2.11"
 }

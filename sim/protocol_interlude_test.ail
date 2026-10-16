@@ -44,7 +44,7 @@ pure func closeAt(s: string, i: int, depth: int) -> int =
 
 test "2.10 hello: minor 10 with the current relativity pin; 9 stays 9" {
   helloFor(interludeMinor()).minor == 10 && interludeMinor() == crewMinor() + 1 && helloFor(interludeMinor()).relativity == relativityPin()
-  && helloFor(crewMinor()).minor == crewMinor() && helloFor(99).minor == interludeMinor()
+  && helloFor(crewMinor()).minor == crewMinor() && helloFor(99).minor >= interludeMinor() && helloFor(interludeMinor() + 1).minor != interludeMinor()
   && (match decodeHello(serve(newSession(), helloW(interludeMinor())).reply) { Ok(h) => h.minor == 10, Err(_) => false })
 }
 pure func checkCruiseOnWire() -> bool {

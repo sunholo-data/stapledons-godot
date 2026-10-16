@@ -23,6 +23,7 @@ import std/math (floor, floatToInt, intToFloat)
 import pkg/sunholo/crew_core/scenario (Scenario, ShipEvent, decodeScenario, yieldsOf)
 import pkg/sunholo/social_dynamics/model (Working)
 import pkg/sunholo/crew_core/session (Session, Output, HostError, HostFailure, DomainFailure, start, input, untraced, encodeHostError)
+import pkg/sunholo/crew_core/codec (CrewOutcome, AgreedStart, CompliedStart, StrainedStart, RefusedOrder, encodeOutcome)
 import pkg/sunholo/crew_core/policy (Policy, decodePolicy, authoredAnswer)
 import pkg/sunholo/crew_core/auto (Rule as AutoRule, AutoState)
 import stapledons/sim/data/crew_pack (scenarioJson, policyJson)
@@ -273,23 +274,121 @@ export pure func raiseShipEvents(c: CrewState, seed: int, rng: Rng, es: [ShipEve
 }
 
 -- A crew intent (sim/protocol_crew.ail decodes it): one crew_core line; askId when it is an ask.
-export type CrewCmd = { kind: string, line: string, askId: Option[string] }
+-- R2-CREW-CONSOLE-V2 V1 (protocol 2.11): two envelope fields beside the line, "" when absent.
+--   asMode    crew_start only: "consent" | "orders", the captaincy for this start (crewCommandAs)
+--   startMode crew_offer only: "on_accept" | "now", when the offer's work starts (crewIntents)
+export type CrewCmd = { kind: string, line: string, askId: Option[string], asMode: string, startMode: string }
 export type CrewRefusal = { i: int, reason: string }
 export type CrewApplied = { crew: Option[CrewState], rng: Rng, refused: [CrewRefusal], answered: [CrewLine] }
 
+-- crew_core's policy line (D-70 OQ5) and a start line, as the console sends them.
+export pure func policyLine(p: string) -> string = encode(jo([kv("command", js("policy")), kv("policy", js(p))]))
+export pure func startTaskLine(task: string) -> string = encode(jo([kv("command", js("start_task")), kv("task", js(task))]))
+
+-- V1: a start "as" a captaincy other than the ship default is one all-or-nothing step: policy as,
+-- the start, policy back. Each is a journalled crew_core line like any other (the journal stays
+-- the truth). If any line is refused, the crew and the crew stream are unchanged and the step
+-- carries that one reason. "" or the ship default's own value is today's start.
+export pure func crewCommandAs(c: CrewState, seed: int, rng: Rng, line: string, asMode: string) -> CrewStepped
+  ensures { result.refused == None || result.crew.session == c.session }
+=
+  if asMode == "" || asMode == c.session.command then crewCommand(c, seed, rng, line, None) else {
+    let back = c.session.command;
+    let p1 = crewCommand(c, seed, rng, policyLine(asMode), None);
+    match p1.refused {
+      Some(e) => stepped(c, rng, [], [], Some(e)),
+      None => {
+        let p2 = crewCommand(p1.crew, seed, p1.rng, line, None);
+        match p2.refused {
+          Some(e) => stepped(c, rng, [], [], Some(e)),
+          None => {
+            let p3 = crewCommand(p2.crew, seed, p2.rng, policyLine(back), None);
+            match p3.refused {
+              Some(e) => stepped(c, rng, [], [], Some(e)),
+              None => stepped(p3.crew, p3.rng, p1.lines ++ p2.lines ++ p3.lines, p1.traces ++ p2.traces ++ p3.traces, None)
+            }
+          }
+        }
+      }
+    }
+  }
+
+-- V1: a work's start terms, crew_core's report outcome for it (agreed_start, complied_start,
+-- strained_start or refused_order); "" before it started.
+export pure func workTerms(s: Session, task: string) -> string = match filter(\r. r.task == task && isStart(r.code), s.reports) {
+  r :: _ => encodeOutcome(r.code),
+  [] => ""
+}
+pure func isStart(o: CrewOutcome) -> bool = match o { AgreedStart => true, CompliedStart => true, StrainedStart => true, RefusedOrder => true, _ => false }
+
+-- An offer that carried `start` this tick: the task, the mode, and the offer's intent index (a
+-- refused start is reported there; the offer and their answer stand).
+export type OfferStart = { task: string, mode: string, i: int }
+pure func taskIdOf(line: string) -> string = match decode(line) { Ok(j) => match getString(j, "id") { Some(t) => t, None => "" }, Err(_) => "" }
+pure func askTaskOf(line: string) -> string = match decode(line) { Ok(j) => match getString(j, "task") { Some(t) => t, None => "" }, Err(_) => "" }
+pure func startFor(starts: [OfferStart], task: string) -> Option[OfferStart] = head(filter(\o. o.task == task, starts))
+
+pure func joined(a: CrewStepped, b: CrewStepped) -> CrewStepped = { b | lines: a.lines ++ b.lines, traces: a.traces ++ b.traces, answered: a.answered }
+-- One intent of the tick. crew_start goes through crewCommandAs; an answered crew_ask whose task
+-- was offered with `start` this tick then starts it: on_accept only when the answer is accept (as
+-- the ship default), now whatever the answer (as orders).
+export type OneApplied = { st: CrewStepped, starts: [OfferStart], startRefused: Option[CrewRefusal] }
+export pure func applyCmd(c: CrewState, seed: int, rng: Rng, i: int, cmd: CrewCmd, starts: [OfferStart]) -> OneApplied =
+  if cmd.kind == "crew_start" then { st: crewCommandAs(c, seed, rng, cmd.line, cmd.asMode), starts: starts, startRefused: None }
+  else {
+    let s = crewCommand(c, seed, rng, cmd.line, cmd.askId);
+    match s.refused {
+      Some(_) => { st: s, starts: starts, startRefused: None },
+      None => if cmd.kind == "crew_offer" && cmd.startMode != "" then { st: s, starts: starts ++ [{ task: taskIdOf(cmd.line), mode: cmd.startMode, i: i }], startRefused: None }
+        else if cmd.kind == "crew_ask" then (match (startFor(starts, askTaskOf(cmd.line)), s.answered) {
+          (Some(o), l :: _) => if o.mode == "on_accept" && l.label != "accept" then { st: s, starts: starts, startRefused: None } else {
+            let g = crewCommandAs(s.crew, seed, s.rng, startTaskLine(o.task), if o.mode == "now" then "orders" else "");
+            match g.refused {
+              Some(e) => { st: s, starts: starts, startRefused: Some({ i: o.i, reason: concat(["crew:", e]) }) },
+              None => { st: joined(s, g), starts: starts, startRefused: None }
+            }
+          },
+          _ => { st: s, starts: starts, startRefused: None }
+        })
+        else { st: s, starts: starts, startRefused: None }
+    }
+  }
+
 -- The tick's crew intents in order (each with its index in the tick's intent list). A refusal is
 -- "crew:<crew_core error>" and changes nothing; "crew:no_crew" when no crew are aboard.
-export pure func crewIntents(crew: Option[CrewState], seed: int, rng: Rng, cmds: [(int, CrewCmd)]) -> CrewApplied =
+export pure func crewIntents(crew: Option[CrewState], seed: int, rng: Rng, cmds: [(int, CrewCmd)]) -> CrewApplied = crewIntentsS(crew, seed, rng, cmds, [])
+pure func crewIntentsS(crew: Option[CrewState], seed: int, rng: Rng, cmds: [(int, CrewCmd)], starts: [OfferStart]) -> CrewApplied =
   match cmds {
     [] => { crew: crew, rng: rng, refused: [], answered: [] },
     (i, cmd) :: rest => match crew {
-      None => { let r = crewIntents(crew, seed, rng, rest); { r | refused: { i: i, reason: "crew:no_crew" } :: r.refused } },
+      None => { let r = crewIntentsS(crew, seed, rng, rest, starts); { r | refused: { i: i, reason: "crew:no_crew" } :: r.refused } },
       Some(c) => {
-        let s = crewCommand(c, seed, rng, cmd.line, cmd.askId);
+        let a = applyCmd(c, seed, rng, i, cmd, starts);
+        let s = a.st;
         match s.refused {
-          Some(e) => { let r = crewIntents(crew, seed, rng, rest); { r | refused: { i: i, reason: concat(["crew:", e]) } :: r.refused } },
-          None => { let r = crewIntents(Some(s.crew), seed, s.rng, rest); { r | answered: s.answered ++ r.answered } }
+          Some(e) => { let r = crewIntentsS(crew, seed, rng, rest, a.starts); { r | refused: { i: i, reason: concat(["crew:", e]) } :: r.refused } },
+          None => {
+            let r = crewIntentsS(Some(s.crew), seed, s.rng, rest, a.starts);
+            { r | answered: s.answered ++ r.answered, refused: match a.startRefused { Some(x) => x :: r.refused, None => r.refused } }
+          }
         }
+      }
+    }
+  }
+
+-- V1 (crew-parity console_v2, strict consoleScripted): a tick's console intents on a traced crew,
+-- with every line fed and its journal record; the first refusal names its intent.
+pure func withAnswered(s: CrewStepped, a: [CrewLine]) -> CrewStepped = { s | answered: a }
+export pure func consoleCmds(c: CrewState, seed: int, rng: Rng, cmds: [CrewCmd]) -> CrewStepped = consoleCmdsS(c, seed, rng, cmds, 0, [], [], [], [])
+pure func consoleCmdsS(c: CrewState, seed: int, rng: Rng, cmds: [CrewCmd], i: int, starts: [OfferStart], lines: [string], traces: [string], answered: [CrewLine]) -> CrewStepped =
+  match cmds {
+    [] => withAnswered(stepped(c, rng, lines, traces, None), answered),
+    cmd :: rest => {
+      let a = applyCmd(c, seed, rng, i, cmd, starts);
+      match (a.st.refused, a.startRefused) {
+        (Some(e), _) => withAnswered(stepped(c, rng, lines, traces, Some(concat(["intent ", intToStr(i), ": ", e]))), answered),
+        (None, Some(x)) => withAnswered(stepped(a.st.crew, a.st.rng, lines ++ a.st.lines, traces ++ a.st.traces, Some(concat(["start ", intToStr(x.i), ": ", x.reason]))), answered ++ a.st.answered),
+        (None, None) => consoleCmdsS(a.st.crew, seed, a.st.rng, rest, i + 1, a.starts, lines ++ a.st.lines, traces ++ a.st.traces, answered ++ a.st.answered)
       }
     }
   }

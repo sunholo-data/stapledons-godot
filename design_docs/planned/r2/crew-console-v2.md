@@ -1,6 +1,6 @@
 # R2-CREW-CONSOLE-V2: the Crew console as an internal videocom
 
-**Status:** Proposed 2026-10-16. Planning only. **Needs Mark's answers to OQ1 to OQ9**, then the sprint plan ([crew-console-v2-sprint.md](crew-console-v2-sprint.md)) waits for approval.
+**Status:** **Approved 2026-10-16** by Mark, attended ("yes continue", asked to approve console v2 with all nine recommendations): the plan as written, OQ1 to OQ9 answered as recommended (see Open questions). In execution on `feat/crew-console-v2` (sprint [crew-console-v2-sprint.md](crew-console-v2-sprint.md)).
 **Release:** R2. It follows [crew-work.md](crew-work.md) W1 (the Crew console, built) and R2-INTERLUDE (`feat/interlude-card`, unmerged: protocol 2.10, the sim's `emotion` and `holds[].line`). It replaces the layout of `ui/crew_page.gd`; the crew loop itself is unchanged.
 **Priority:** P1 for R2. From Mark's playtest of dev.31 (2026-10-16): "the UX in general needs work to make it easier to set off and setup work and monitor responses".
 
@@ -340,6 +340,19 @@ This design settles none of OQ1 to OQ4 (time at a stop, cadence, consequence siz
 - **The fix PR's design differs.** V2's sending state reads the bridge's queue (`client.crew.sending`). If the fix PR names it differently, V2 adapts. The behaviour (one pending action, disabled, worded) is the same.
 
 ## Open questions for Mark
+
+**Answered 2026-10-16 (Mark, attended, all as recommended):**
+1. OQ1: "Order" on an offer starts the work now, whatever they answer (`crew_offer {start: now}`).
+2. OQ2: the ship default (Ask or Order) and auto-run stay global and move to the board's header strip.
+3. OQ3: an Ask offer starts automatically on agreement (`crew_offer {start: on_accept}`; two presses from free to working).
+4. OQ4: the call window opens on an incoming concern only when no call is open and nothing is armed; otherwise that member's row pulses.
+5. OQ5: Insist is the fourth answer, last, with its cost line.
+6. OQ6: concern text written for the game's jobs is an upstream request to the crew lab. Noted; not done in this sprint.
+7. OQ7: 1024 px portraits are a separate attended art task. Noted; not done in this sprint.
+8. OQ8: crew_core offer withdrawal is an upstream request; meanwhile the console shows the lapse note.
+9. OQ9: a refusal reads "Needs you: declined, open to talk", with the answers.
+
+The questions as asked:
 
 - **OQ1. What "Order" means on an offer.**
   - (a) *(recommended)* Order starts the work now, whatever they say; their reply is still heard and shown, and its trust cost lands.

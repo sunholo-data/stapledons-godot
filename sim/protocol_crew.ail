@@ -14,16 +14,16 @@ module stapledons/sim/protocol_crew
 --   crew_policy policy          switch consent and orders (C3, D-70 OQ5; journalled by crew_core)
 --   crew_orders orders          C8: the auto-run preset {"preset": off | critical_only | hands_on} (the sim's)
 --   crew_resume resume          C8: the captain has dealt with a hold {"hold": id} (the sim's)
-import std/string (concat, join, intToStr)
+import std/string (concat, join, intToStr, startsWith)
 import std/math (intToFloat)
-import std/list (map, filter, take, reverse, length, foldl, contains)
+import std/list (map, filter, take, reverse, length, foldl, contains, any)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/json (Json, JNull, JObject, decode, getString, encode, jo, ja, kv, js, jnum)
-import pkg/sunholo/crew_core/session (Session, Request, moot)
+import pkg/sunholo/crew_core/session (Session, Request, Bank, moot)
 import pkg/sunholo/crew_core/conversations (Issue, Suggestion, suggestions)
 import pkg/sunholo/social_dynamics/model (State, Actor, Value, Task, TaskStatus, Offered, Working, Completed, Stopped, Relief, Evidence, Resource)
-import ./crew (CrewState, CrewCmd, CrewLine, CrewName, CrewHold, crewTurn)
+import ./crew (CrewState, CrewCmd, CrewLine, CrewName, CrewHold, crewTurn, workTerms)
 import ./crew_names (nameOf)
 import ./crew_resources (usedOf)
 import pkg/sunholo/crew_core/units (Amount)
@@ -49,9 +49,20 @@ export pure func decodeCrewIntent(kind: string, line: string) -> Result[CrewCmd,
   Some(cmd) => match decode(line) {
     Err(_) => Err("bad_intent"),
     Ok(j) => if getString(j, "command") != Some(cmd) then Err("bad_intent")
-      else Ok({ kind: kind, line: line, askId: if cmd == "ask" then getString(j, "id") else None })
+      else Ok({ kind: kind, line: line, askId: if cmd == "ask" then getString(j, "id") else None, asMode: "", startMode: "" })
   }
 }
+-- R2-CREW-CONSOLE-V2 V1 (protocol 2.11): the envelope fields beside the line. `as` ("consent" or
+-- "orders") only on crew_start; `start` ("on_accept" or "now") only on crew_offer; "" is absent.
+-- Anything else is bad_intent (the minor gate is the protocol's: sim/protocol.ail serve).
+export pure func decodeCrewEnvelope(kind: string, line: string, asMode: string, startMode: string) -> Result[CrewCmd, string] =
+  if asMode != "" && (kind != "crew_start" || (asMode != "consent" && asMode != "orders")) then Err("bad_intent")
+  else if startMode != "" && (kind != "crew_offer" || (startMode != "on_accept" && startMode != "now")) then Err("bad_intent")
+  else match decodeCrewIntent(kind, line) {
+    Err(e) => Err(e),
+    Ok(c) => Ok({ c | asMode: asMode, startMode: startMode })
+  }
+export pure func hasEnvelope(c: CrewCmd) -> bool = c.asMode != "" || c.startMode != ""
 
 -- ------------------------------------------------------------------ the `crew` state section
 -- Compact by design: crew_core's own trace is ~40 KB a line. Godot reads only these fields.
@@ -177,15 +188,67 @@ pure func concernObj(i: Issue) -> Json =
     kv("options", ja(map(\o. jo([kv("approach", js(o.approach)), kv("text", js(o.text))]), suggestions(i, 1))))])
 pure func concernsOf(s: Session) -> [Issue] = filter(\i. i.status == "open" && !moot(s, i), s.chat.issues)
 
+-- ------------------------------------------------------------------ R2-CREW-CONSOLE-V2 V1
+-- The sim names each member's work state (design crew-console-v2.md §V1; D-20: the page decides
+-- nothing). Precedence is top-down; the first match wins. stand_down_asked is crew_core 0.6's and
+-- is inactive below it (V8); resting is live work whose recipe starts rest_ until then.
+export pure func workStates() -> [string] =
+  ["held", "stand_down_asked", "relief_asked", "concern", "declined", "deferred", "asked", "agreed", "offered", "resting", "working", "done", "stopped", "free"]
+pure func liveOf(st: State, id: string) -> Option[Task] = match filter(\t. live(t) && contains(t.participants, id), st.tasks) { t :: _ => Some(t), [] => None }
+-- An offer's agreement is active and accepted by both, and not yet due (crew_core consent()).
+pure func agreedOn(s: Session, task: string) -> bool = match filter(\b. b.task == task, s.bindings) {
+  b :: _ => any(\k. k.id == b.agreement && k.active && k.accepted == k.parties && k.due > s.state.tick, s.state.commitments),
+  [] => false
+}
+-- An open issue's latest answer: the line that answered its request, else crew_core's bank entry.
+pure func issueLabel(c: CrewState, i: Issue) -> string = match filter(\l. l.request == i.request, c.lines) {
+  l :: _ => l.label,
+  [] => match filter(\b. b.request.id == i.request, c.session.bank) { b :: _ => if b.selected == "" then "concern" else b.selected, [] => "concern" }
+}
+pure func issueState(label: string) -> string = if label == "decline" then "declined" else if label == "defer" then "deferred" else "concern"
+pure func finishedLatest(st: State, id: string) -> Option[Task] =
+  foldl(\acc t. match acc { Some(b) => if t.due >= b.due then Some(t) else acc, None => Some(t) }, None,
+    filter(\t. (t.status == Completed || t.status == Stopped) && contains(t.participants, id), st.tasks))
+export pure func workState(c: CrewState, id: string) -> string
+  ensures { contains(workStates(), result) }
+{
+  let s = c.session;
+  let st = s.state;
+  if any(\h. h.actor == id, c.holds) then "held"
+  else if any(\r. !r.resolved && r.author == id, st.reliefs) then "relief_asked"
+  else match filter(\i. i.worker == id, concernsOf(s)) {
+    i :: _ => issueState(issueLabel(c, i)),
+    [] => if any(\q. q.actor == id, s.pending) then "asked" else match liveOf(st, id) {
+      Some(t) => if t.status == Offered then (if agreedOn(s, t.id) then "agreed" else "offered")
+        else if startsWith(t.recipe, "rest_") then "resting" else "working",
+      None => match finishedLatest(st, id) { Some(t) => if t.status == Stopped then "stopped" else "done", None => "free" }
+    }
+  }
+}
+-- At 2.11 a member carries work_state, and working work its start terms.
+pure func memberObjC(c: CrewState, a: Actor) -> Json = match memberObjE(c, a) {
+  JObject(kvs) => JObject(map(\p. if p.key == "work" then { key: p.key, value: withTerms(c.session, p.value) } else p, kvs) ++ [kv("work_state", js(workState(c, a.id)))]),
+  j => j
+}
+pure func withTerms(s: Session, w: Json) -> Json = match w {
+  JObject(kvs) => match getString(w, "task") {
+    Some(t) => if getString(w, "status") == Some("working") && workTerms(s, t) != "" then JObject(kvs ++ [kv("terms", js(workTerms(s, t)))]) else w,
+    None => w
+  },
+  _ => w
+}
+
 export pure func crewView(c: CrewState) -> string = crewViewWith(c, false)
 -- emotions (protocol 2.10, R2-INTERLUDE I2): members and lines carry `emotion`, the face Godot shows;
 -- holds carry `line`, their words (I3).
-export pure func crewViewWith(c: CrewState, emotions: bool) -> string {
+export pure func crewViewWith(c: CrewState, emotions: bool) -> string = crewViewAt(c, emotions, false)
+-- console (protocol 2.11, R2-CREW-CONSOLE-V2 V1): members carry `work_state`, working work `terms`.
+export pure func crewViewAt(c: CrewState, emotions: bool, console: bool) -> string {
   let s = c.session;
   let st = s.state;
   encode(jo([
     kv("turn", jnum(intToFloat(crewTurn(c)))), kv("captaincy", js(s.command)),
-    kv("members", ja(map(\a. if emotions then memberObjE(c, a) else memberObj(st, c.names, a), filter(\a. a.id != "captain", st.actors)))),
+    kv("members", ja(map(\a. if console then memberObjC(c, a) else if emotions then memberObjE(c, a) else memberObj(st, c.names, a), filter(\a. a.id != "captain", st.actors)))),
     kv("requests", ja(map(requestObj, s.pending))),
     kv("reliefs", ja(map(reliefObj, filter(\r. !r.resolved, st.reliefs)))),
     kv("heard", ja(map(evidenceObj, lastN(filter(\e. e.author != "host", st.evidence), heardMax())))),

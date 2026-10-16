@@ -1,11 +1,12 @@
 # Sprint R2-CREW-CONSOLE-V2: the Crew console as an internal videocom
 
-**Design doc:** [crew-console-v2.md](crew-console-v2.md) (proposed 2026-10-16; OQ1–OQ9 open)
+**Design doc:** [crew-console-v2.md](crew-console-v2.md) (approved 2026-10-16; OQ1–OQ9 answered as recommended)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CREW-CONSOLE-V2.json`
-**Status:** **Awaiting approval.** Planning only; nothing is executed until Mark approves the plan and answers OQ1–OQ9. The recommended answers are assumed below and are marked where a different answer changes a milestone.
+**Status:** **Approved 2026-10-16** (Mark, attended: "yes continue"; all nine recommendations). In execution: V1–V3 on `feat/crew-console-v2`, then a stop for Mark's render review of the V3 captures (pause point 3). V4 onward wait for that review.
 **Scope:** V1 (the sim names the state; protocol minor), V2 (palette and model), V3 (board and call window; bindings), V4–V5 (concern flow; inline Ask/Order), V6 (keyboard and controller), V8 (the crew_core 0.6 rows), and E (evaluate and land).
 **Base:** `main` after `feat/interlude-card` (R2-INTERLUDE, protocol 2.10) and `fix/crew-offer-while-paused` merge. Sprint branch `feat/crew-console-v2`; each milestone is one PR.
-**AILANG:** v0.54.x as pinned at execution (`runtime/VERSION`). AILANG prompt version loaded: v0.16.7.
+**AILANG:** v0.54.11 as pinned at execution (`runtime/VERSION`). AILANG prompt version loaded: v0.16.7.
+**Protocol minor:** 2.11 (`consoleMinor()`), the next free minor above the interlude branch's 2.10; no other branch claims 11 (checked 2026-10-16).
 
 ## What the survey found
 

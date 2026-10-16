@@ -14,7 +14,10 @@ import std/string (concat, join, intToStr)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/crypto (sha256Hex)
-import ./crew (CrewState, CrewStepped, CrewHold, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn, shipEventLine)
+import ./crew (CrewState, CrewStepped, CrewHold, CrewCmd, initCrewWith, crewStep, crewCommand, consoleCmds, daysPerYear, crewTurn, shipEventLine, startTaskLine)
+import pkg/sunholo/crew_core/conversations (Issue, suggestions)
+import pkg/sunholo/crew_core/session (moot)
+import std/json (encode, jo, kv, js, jint)
 import ./crew_events (noMoments, shipEvents)
 import ./crew_auto (setPreset, autoStep)
 import ./cruise_digest (nextStop, stopYears)
@@ -23,7 +26,10 @@ import ./protocol_interlude (cruiseStop, encodeDigest)
 import ./rng (Rng, SCrew, zeroRng, counter)
 import std/math (intToFloat)
 
-export type Step = SCmd(string, Option[string]) | SDays(int)
+-- R2-CREW-CONSOLE-V2 V1: STick is one tick's console intents (sim/crew.ail consoleCmds: an offer
+-- with `start`, a start `as` orders); SReply answers a member's open concern with crew_core's first
+-- suggested approach, at the crew's current tick and revision, as the console does.
+export type Step = SCmd(string, Option[string]) | SDays(int) | STick([CrewCmd]) | SReply(string)
 export type Script = { name: string, captaincy: string, steps: [Step] }
 export type Ran = { start: string, lines: [string], traces: [string], turn: int, crewDraws: int, refused: Option[string] }
 
@@ -36,13 +42,44 @@ pure func shipEvent(m: {arrive: bool, news: bool}, tick: int) -> [Step] =
   map(\e. SCmd(shipEventLine(e), None), shipEvents({ noMoments(tick) | arrivedPlan: if m.arrive then Some(1) else None, newsTemplate: if m.news then Some(8) else None }))
 pure func policy(p: string) -> Step = SCmd(concat(["{\"command\":\"policy\",\"policy\":\"", p, "\"}"]), None)
 
+pure func cmd(kind: string, line: string, ask: Option[string], asMode: string, startMode: string) -> CrewCmd = { kind: kind, line: line, askId: ask, asMode: asMode, startMode: startMode }
+pure func offerC(worker: string, id: string, start: string) -> CrewCmd =
+  cmd("crew_offer", concat(["{\"command\":\"offer\",\"worker\":\"", worker, "\",\"recipe\":\"work_", worker, "\",\"id\":\"", id, "\"}"]), None, "", start)
+pure func askC(actor: string, task: string, id: string) -> CrewCmd =
+  cmd("crew_ask", concat(["{\"command\":\"ask\",\"actor\":\"", actor, "\",\"task\":\"", task, "\",\"id\":\"", id, "\"}"]), Some(id), "", "")
+pure func startAsC(task: string, mode: string) -> CrewCmd = cmd("crew_start", startTaskLine(task), None, mode, "")
+-- The captain's reply to `worker`'s open concern (the first suggestion), or a line crew_core refuses.
+pure func replyLine(c: CrewState, worker: string) -> string = match keep(\i. i.worker == worker && i.status == "open" && !moot(c.session, i), c.session.chat.issues) {
+  i :: _ => match suggestions(i, 1) {
+    o :: _ => encode(jo([kv("command", js("captain_reply")), kv("id", js(concat(["say-", i.task]))), kv("issue", js(i.id)), kv("text", js(o.text)), kv("approach", js(o.approach)),
+      kv("tick", jint(c.session.state.tick)), kv("revision", jint(c.session.state.revision))])),
+    [] => "{\"command\":\"captain_reply\"}"
+  },
+  [] => "{\"command\":\"captain_reply\"}"
+}
+pure func offerAll() -> [CrewCmd] = flat(map(\w. [offerC(w, concat(["t-", w]), "on_accept"), askC(w, concat(["t-", w]), concat(["r-", w]))], ["medic", "engineer", "analyst", "pilot", "counselor"]))
+pure func flat(xss: [[a]]) -> [a] = match xss { [] => [], xs :: r => xs ++ flat(r) }
+
 export pure func scripts() -> [Script] = [
   { name: "consent", captaincy: "consent", steps: [offer("medic", "t1"), ask("medic", "t1", "r1"), begin("t1"), SDays(1), ask("medic", "t1", "c1"), SDays(5)] },
   { name: "orders", captaincy: "orders", steps: [offer("engineer", "t1"), begin("t1"), SDays(2), ask("engineer", "t1", "c1"), SDays(5)] },
   { name: "shipevent", captaincy: "consent", steps: [offer("pilot", "t1"), ask("pilot", "t1", "r1"), SDays(1), policy("orders")] ++ shipEvent({arrive: true, news: false}, 2)
       ++ [SDays(1)] ++ shipEvent({arrive: false, news: true}, 3) ++ [SDays(2)] },
-  { name: "argument", captaincy: "orders", steps: [SDays(1), offer("analyst", "t1"), begin("t1"), SDays(1), offer("medic", "t2"), begin("t2"), SDays(3)] }
+  { name: "argument", captaincy: "orders", steps: [SDays(1), offer("analyst", "t1"), begin("t1"), SDays(1), offer("medic", "t2"), begin("t2"), SDays(3)] },
+  consoleV2()
 ]
+-- R2-CREW-CONSOLE-V2 V1 (AC5): the console's session under consent. The pilot and the medic are
+-- offered with start on_accept in one tick (at the fixture seed the medic agrees and starts, the
+-- pilot raises a concern); the captain answers the concern, then orders the pilot's work over it
+-- (start as orders: refused_order, the ship default stays consent); the engineer is offered with
+-- start now (an order whatever they say); then two days pass.
+export pure func consoleV2() -> Script = { name: "console_v2", captaincy: "consent", steps: [
+  STick(offerAll()),
+  SReply("pilot"),
+  SDays(4),
+  STick([startAsC("t-pilot", "orders")]),
+  STick([offerC("engineer", "t-engineer-2", "now"), askC("engineer", "t-engineer-2", "r-engineer-2")]),
+  SDays(2)] }
 
 -- A ship-day count as ship-years, a hair over so floor() lands on the whole day.
 pure func years(days: int) -> float = intToFloat(days) / daysPerYear() + 0.0000001
@@ -51,7 +88,8 @@ pure func run(c: CrewState, seed: int, rng: Rng, steps: [Step], lines: [string],
   match steps {
     [] => { crew: c, rng: rng, lines: lines, traces: traces, refused: None },
     st :: rest => {
-      let r = match st { SCmd(line, askId) => crewCommand(c, seed, rng, line, askId), SDays(n) => crewStep(c, seed, rng, years(n)) };
+      let r = match st { SCmd(line, askId) => crewCommand(c, seed, rng, line, askId), SDays(n) => crewStep(c, seed, rng, years(n)),
+        STick(cmds) => consoleCmds(c, seed, rng, cmds), SReply(worker) => crewCommand(c, seed, rng, replyLine(c, worker), None) };
       match r.refused {
         Some(e) => { crew: r.crew, rng: r.rng, lines: lines ++ r.lines, traces: traces ++ r.traces, refused: Some(e) },
         None => run(r.crew, seed, r.rng, rest, lines ++ r.lines, traces ++ r.traces)
@@ -133,8 +171,8 @@ export pure func chunkCrew(which: string) -> Result[CrewState, string] =
 -- (sim/protocol_interlude.ail cruiseStop) and resumes every hold the tick it is raised. `digests`
 -- is the encoded digest after each chunk (the crossing_hold recording, make crew-parity).
 pure func farLeg() -> Intent = IPlan({ target: { index: 2, id: "far", pos: { x: 0.0, y: 0.0, z: 0.0 - 70.0 } }, cruisePhi: 2.6466524123622457, flipG: None, star: None })
-pure func ordersI(preset: string) -> Intent = ICrew({ kind: "crew_orders", line: "{\"command\":\"orders\",\"preset\":\"${preset}\"}", askId: None })
-pure func resumeI(id: string) -> Intent = ICrew({ kind: "crew_resume", line: "{\"command\":\"resume\",\"hold\":\"${id}\"}", askId: None })
+pure func ordersI(preset: string) -> Intent = ICrew({ kind: "crew_orders", line: "{\"command\":\"orders\",\"preset\":\"${preset}\"}", askId: None, asMode: "", startMode: "" })
+pure func resumeI(id: string) -> Intent = ICrew({ kind: "crew_resume", line: "{\"command\":\"resume\",\"hold\":\"${id}\"}", askId: None, asMode: "", startMode: "" })
 pure func holdIds(es: [Event]) -> [string] = map(\e. match e.crewHold { Some(h) => h.id, None => "" }, keep(\e. e.kind == "crew_hold", es))
 pure func keep(p: a -> bool, xs: [a]) -> [a] = match xs { [] => [], x :: r => if p(x) then x :: keep(p, r) else keep(p, r) }
 pure func turnIn(w: World) -> int = match w.crew { Some(c) => c.turn, None => 0 - 1 }
@@ -173,4 +211,13 @@ export pure func scriptedCrossing(seed: int) -> Crossed = match initCrewWith("co
 export pure func digestScripted(seed: int) -> string = {
   let x = scriptedCrossing(seed);
   concat(["crossing chunks ", intToStr(length(x.digests)), " holds ", intToStr(length(x.holds)), " turn ", intToStr(turnIn(x.world)), " digest ", sha256Hex(digestText(x.world))])
+}
+
+-- `make strict` entry (R2-CREW-CONSOLE-V2 V1, AC5): the console session (consoleV2: offers that
+-- start on agreement, a concern answered, an order over it, an offer that starts now) on the strict
+-- VM; one line: turn, lines, crew draws, any refusal, the journal's sha256.
+export pure func consoleScripted(seed: int) -> string = match runScript(consoleV2(), seed) {
+  Err(e) => concat(["console_v2 error ", e]),
+  Ok(r) => concat(["console_v2 turn ", intToStr(r.turn), " lines ", intToStr(length(r.lines)), " draws ", intToStr(r.crewDraws),
+    match r.refused { Some(e) => concat([" refused ", e]), None => "" }, " sha ", sha256Hex(journal(r))])
 }
