@@ -1,5 +1,16 @@
-R2-INTERLUDE ruling 2: one home image per cruise digest time.tier (0-6), named tier<n>.png,
-read by ui/crossing_review.gd HOME_DIR (raw PNG, CaptainAvatar.make_texture).
-Attended art (D-7 generate-and-cache); none has landed yet. Until a tier's image exists the
-crossing review shows the live cruise sky as a flagged stand-in (make crossing-review-capture
-prints PLACEHOLDER).
+# R2-INTERLUDE ruling 2: one home picture per cruise digest time.tier (0-6), tier<n>.png, read by
+# ui/crossing_review.gd HOME_DIR (raw PNG, CaptainAvatar.make_texture) and shown as a 3:2 cover over
+# the whole review panel on the Home page. Approved by Mark 2026-10-16 (attended). Generated 2026-10-16
+# by Codex imagegen (driver codex exec -m gpt-6.1-sol; image model id not exposed), one style
+# reference (assets/characters/medic/portrait_medic_y0_neutral.png, style only, no face drawn from it).
+# 1536x1024 RGB, byte-for-byte copies of the kept candidates: no resampling, crop or re-encoding.
+# Each picture keeps its left third calm for the text column; tier 0's family stands centre-right.
+# Full provenance, the rejected candidates and every prompt verbatim: generation_notes.md (here).
+# Also shown on the website's concept-art page (PR #259).
+tier0.png <- generation_notes.md tier0.png sha256 8513eb0ea5063524e0c0008b8781834a5953fabbb88848869334782d67911e1c
+tier1.png <- generation_notes.md tier1.png sha256 96e30bed8c7d2921809462c8c89eff59c00282ab3bd653ed9da5b6e1c8a6057b
+tier2.png <- generation_notes.md tier2.png sha256 0229d2d94f01c08dc96e96e957f3b6b6942003885a5aaa40c39b4e1a1f0b12c9
+tier3.png <- generation_notes.md tier3.png sha256 9f44e1145f389c5d3439b4dc67b75f8ae52f812433c1126a117e591e2b9e0ff8
+tier4.png <- generation_notes.md tier4.png sha256 bfd69e924ea322aec5cc4fa2744ee19c9d2f57886acb8ae7bf2ea68f72e29e70
+tier5.png <- generation_notes.md tier5.png sha256 b55a3c62fde9c1dfe1719357093d50b1b7041b4e3570ccc26c070341e9229453
+tier6.png <- generation_notes.md tier6.png sha256 a534e46430ad574bedfc33e47f56b6a6c440dec0686a4b313c268c7b1f2fdf62

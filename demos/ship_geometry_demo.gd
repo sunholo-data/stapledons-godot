@@ -82,6 +82,9 @@ const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var view_button := Button.new()
 var crossing_review: CrossingReview ## R2-INTERLUDE I3: the crossing review (replaces the D-41 interlude card)
+var archive_narration := ArchiveNarration.new() ## R2-INTERLUDE I4: the Archive's telling of the crossing (live AI only)
+var archive_voice: AudioStreamPlayer ## I4: the telling's voice, played once per crossing
+var _voice_played := ""
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
 ## R1-ARCHIVE-VOICE: the AI wiring for this voyage (AiSession: settings, relay, service), made only
@@ -163,7 +166,8 @@ func setup(opts := {}) -> bool:
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
 	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
 	crossing_review = CrossingReview.new();crossing_review.visible = false;interlude_canvas.add_child(crossing_review)
-	crossing_review.sky_texture = sky.get_texture()
+	crossing_review.narration = archive_narration
+	archive_voice = AudioStreamPlayer.new();archive_voice.name = "ArchiveVoice";add_child(archive_voice)
 	crossing_review.brake_pressed.connect(func()->void:continue_interlude())
 	crossing_review.open_crew.connect(_review_open_crew)
 	crossing_review.intents.connect(func(list:Array)->void:if journey_sim!=null:journey_sim.queue(list))
@@ -624,6 +628,7 @@ func _create_navigation(scenario:String) -> void:
 		# C8: the voyage auto-runs the crew and stops only for critical moments (the lab's rules).
 		if not journey_sim.crew.is_empty():journey_sim.queue([SimBridge.crew_intent("crew_orders",{"command":"orders","preset":"critical_only"})])
 		if ai_session!=null:ai_session.attach(journey_sim)
+		journey_sim.stepped.connect(archive_narration.on_events) # I4: the telling's request, answer and voice
 		if consoles!=null:consoles.follow(journey_sim) # the Voyage log and Ask the Archive read its steps
 		if setup_options.has("seed"):print("voyage seed %d (%s)" % [journey_sim.last_seed,live_scenario]) # D-68: a New game run can be replayed from its seed
 		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation"
@@ -738,7 +743,19 @@ func _show_interlude() -> void:
 	crossing_review.visible=card!=null and not (consoles!=null and consoles.focused=="crew")
 	if crossing_review.visible:
 		if consoles!=null and consoles.crew_page!=null:crossing_review.ai_text=consoles.crew_page.ai_text
-		crossing_review.show_review(hud_view(),card.crossed())
+		var view:=hud_view()
+		# I4: once the crossing is over, the Archive is asked for its telling (live AI with a key only).
+		archive_narration.maybe_open(view,ai_session.relay if ai_session!=null else null,card.crossed())
+		crossing_review.show_review(view,card.crossed())
+		_play_archive_voice()
+## I4: the telling's voice, once per crossing, when its clip is in the cache.
+func _play_archive_voice() -> void:
+	if archive_narration.voice.is_empty() or _voice_played == archive_narration.crossing or ai_session == null: return
+	var path := archive_narration.voice_path(ai_session.cache)
+	if path.is_empty(): return
+	_voice_played = archive_narration.crossing
+	archive_voice.stream = AudioStreamWAV.load_from_buffer(FileAccess.get_file_as_bytes(path))
+	if archive_voice.stream != null: archive_voice.play()
 ## The Hold page's "Answer at the Crew console": the captain goes to it (the review waits).
 func _review_open_crew() -> void:
 	if consoles==null:return
@@ -908,8 +925,11 @@ func _update_cards(view: Dictionary) -> void:
 					ship_hud.card_line("transit", r[0], r[1], "sci ship-yr/real-s" if r[1] == "client.warp" else r[2])
 	else:
 		ship_hud.hide_card("transit")
-	# Brake and final-approach notices (D-46, D-49).
-	if phase != _hud_phase:
+	# Brake and final-approach notices (D-46, D-49). R2-INTERLUDE: while the crossing's review waits
+	# at the braking boundary (the sim's phase already reads braking) the player has not braked yet,
+	# so no notice: the phase is noted only once the interlude is over (the review's Brake).
+	var review_waits: bool = solar_tour != null and solar_tour.interlude != null
+	if phase != _hud_phase and not review_waits:
 		if phase == "braking":
 			ship_hud.show_card("notice", "Braking", 8.0)
 			_notice_text(JourneyHud.BRAKE_NOTICE)
@@ -926,7 +946,7 @@ func _update_cards(view: Dictionary) -> void:
 			ship_hud.card_button("arrival", "Dismiss [Enter]", dismiss_arrival)
 	elif state == "committed":
 		ship_hud.hide_card("arrival")
-	_hud_phase = phase
+	if not review_waits: _hud_phase = phase
 	_hud_state = state
 	# Gravity (mockup C): the Sgr A* session's sim lines.
 	if black_hole != null:
@@ -974,14 +994,17 @@ func _update_cards(view: Dictionary) -> void:
 		if ship_hud.card_body("unlock").get_child_count() == 0: ship_hud.card_text("unlock", "unlock", "")
 		ship_hud.set_card_value("unlock", "%s, at the Archive terminal" % ", ".join(titles))
 ## The crossing review sits in the space left of the card column, below the strip, so the stack
-## (tour, transit) stays readable beside it. One height for every page (CrossingReview.HEIGHT, or the
-## room there is; a longer page scrolls), so the dots and the page buttons stay put.
+## (tour, transit) stays readable beside it. One size for every page, 3:2 (CrossingReview.ASPECT, the
+## home picture's; as wide as CrossingReview.WIDTH and the room allow; a longer page scrolls), so the
+## home picture covers the panel uncropped and the dots and the page buttons stay put.
 func _place_interlude() -> void:
 	if crossing_review == null or not crossing_review.visible: return
 	var left: float = ship_hud.column.position.x - ShipHud.MARGIN
 	var top: float = ship_hud.strip_bottom() + 8.0
-	var h: float = clampf(ship_hud.size.y - top - 2.0 * ShipHud.MARGIN, 200.0, CrossingReview.HEIGHT)
-	crossing_review.custom_minimum_size = Vector2(minf(640.0, left - 2.0 * ShipHud.MARGIN), h)
+	var room_h: float = maxf(200.0, ship_hud.size.y - top - 2.0 * ShipHud.MARGIN)
+	var w: float = minf(minf(CrossingReview.WIDTH, left - 2.0 * ShipHud.MARGIN), room_h * CrossingReview.ASPECT)
+	var h: float = w / CrossingReview.ASPECT
+	crossing_review.custom_minimum_size = Vector2(w, h)
 	crossing_review.reset_size()
 	crossing_review.position = Vector2(maxf(ShipHud.MARGIN, (left - crossing_review.size.x) * 0.5), maxf(top, (ship_hud.size.y - crossing_review.size.y) * 0.5))
 func _notice_text(text: String) -> void:

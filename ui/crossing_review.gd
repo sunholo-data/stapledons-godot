@@ -19,7 +19,7 @@ signal open_crew
 signal intents(list: Array)
 
 const D := "cruise.digest."
-const HOME_DIR := "res://data/interlude/home" ## tier<n>.png per time.tier (Rulings §2, attended art)
+const HOME_DIR := "res://data/interlude/home" ## tier<n>.png per time.tier (Rulings §2): 1536x1024 (3:2), the left third calm for the text
 const TITLES := {"hold": "Needs you", "crossing": "The crossing", "home": "Home", "aboard": "Aboard",
 	"moment": "A moment from the crossing", "changed": "Who changed", "medium": "The medium", "waiting": "Waiting for you"}
 ## What auto-run did, by the sim's moment kind.
@@ -33,14 +33,18 @@ const KIND_WORDS := {
 }
 const INDICATORS := ["stress", "fatigue", "morale", "trust"]
 const MOVERS := 3 ## who changed: the top movers shown
-const HEIGHT := 420.0 ## the panel's height (canvas units) when there is room: every page fits, the buttons stay put
+const WIDTH := 640.0 ## the panel's width (canvas units) when there is room
+const ASPECT := 1.5 ## width / height on every page: the home picture's 3:2, so it covers the panel uncropped; the buttons stay put
+const PAD := 18 ## the panel's content margin (the home picture bleeds through it to the panel's edge)
+const HOME_TEXT := 0.42 ## the home page's text column: this share of the width, over the picture's calm left side
 const WARM := Color(1.0, 0.92, 0.78)
 const DIM := Color(0.62, 0.68, 0.8)
 const TEXT := Color(0.88, 0.91, 0.98)
 const LOW := Color(0.95, 0.6, 0.4)
 
 var ai_text: Dictionary = {} ## ai_req -> accepted AI words (the Crew page's)
-var sky_texture: Texture2D ## the live cruise sky: the home picture's stand-in until the tier art lands
+var narration: ArchiveNarration = null ## I4: the Archive's telling, when live AI told one (else the sim's authored lines)
+var home_dir := HOME_DIR ## where tier<n>.png are read (a test points it at a missing dir: the fallback)
 var page := 0
 var crossed := false
 var armed := false
@@ -55,14 +59,18 @@ var _scroll := ScrollContainer.new()
 var _holder := VBoxContainer.new()
 var _dots := HBoxContainer.new()
 var _nav := HBoxContainer.new()
-var _home_placeholder := false
+var _home_missing := false
+var _backdrop := Control.new() ## the home picture, full bleed behind the page, with its scrims
+var _home_art := TextureRect.new()
 static var _roles: Dictionary = {}
+static var _art_cache: Dictionary = {} ## path -> Texture2D (a 1536x1024 PNG is read once)
 
 
 func _init() -> void:
 	name = "CrossingReview"
 	add_theme_stylebox_override("panel", _style())
 	custom_minimum_size = Vector2(600, 0)
+	_build_backdrop()
 	_box.add_theme_constant_override("separation", 6)
 	add_child(_box)
 	var head := HBoxContainer.new()
@@ -93,13 +101,66 @@ func _init() -> void:
 		_roles = CrewPage.load_roles(CrewPage.CAST_DIR)
 
 
+## The Home page's picture fills the whole panel (a 3:2 cover behind the title, the page and the
+## buttons). Scrims keep the words readable: a dark gradient over the calm left side (where the text
+## sits), and soft bands under the title row and the page buttons. Hidden on every other page.
+func _build_backdrop() -> void:
+	_backdrop.name = "HomeBackdrop"
+	_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_backdrop.visible = false
+	add_child(_backdrop)
+	_home_art.name = "HomeImage"
+	_home_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_home_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_bleed(_home_art)
+	_backdrop.add_child(_home_art)
+	# [name, from, to, stops (offset, alpha)]: left to right over the text column; top and bottom bands.
+	for sc: Array in [["ScrimLeft", Vector2(0, 0), Vector2(1, 0), [[0.0, 0.86], [HOME_TEXT, 0.72], [HOME_TEXT + 0.2, 0.0]]],
+			["ScrimTop", Vector2(0, 0), Vector2(0, 1), [[0.0, 0.8], [0.1, 0.6], [0.2, 0.0]]],
+			["ScrimBottom", Vector2(0, 1), Vector2(0, 0), [[0.0, 0.8], [0.12, 0.55], [0.24, 0.0]]]]:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array(sc[3].map(func(st): return st[0]))
+		g.colors = PackedColorArray(sc[3].map(func(st): return Color(0.01, 0.015, 0.035, st[1])))
+		var gt := GradientTexture2D.new()
+		gt.gradient = g
+		gt.fill_from = sc[1]
+		gt.fill_to = sc[2]
+		gt.width = 256
+		gt.height = 256
+		var r := TextureRect.new()
+		r.name = sc[0]
+		r.texture = gt
+		r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		r.stretch_mode = TextureRect.STRETCH_SCALE
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_bleed(r)
+		_backdrop.add_child(r)
+
+
+## Fill the backdrop and the panel's content margin around it (the panel's edge).
+func _bleed(c: Control) -> void:
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.set_anchors_preset(Control.PRESET_FULL_RECT)
+	c.offset_left = -PAD
+	c.offset_top = -PAD
+	c.offset_right = PAD
+	c.offset_bottom = PAD
+
+
+## The tier's home picture, or null when the file is missing (the page falls back to words only).
+static func home_texture(path: String) -> Texture2D:
+	if not _art_cache.has(path):
+		_art_cache[path] = CaptainAvatar.make_texture(path) if FileAccess.file_exists(path) or ResourceLoader.exists(path) else null
+	return _art_cache[path]
+
+
 static func _style() -> StyleBoxFlat:
 	var st := StyleBoxFlat.new()
 	st.bg_color = Color(0.02, 0.03, 0.06, 0.86)
 	st.border_color = Color(0.55, 0.65, 0.85, 0.5)
 	st.set_border_width_all(1)
 	st.set_corner_radius_all(6)
-	st.set_content_margin_all(18)
+	st.set_content_margin_all(PAD)
 	return st
 
 
@@ -158,7 +219,8 @@ static func page_spec(view: Dictionary, over: bool) -> Array:
 func _words_spec(view: Dictionary) -> Array:
 	var crew: Variant = GalaxyMap.field_value(view, "cruise.digest.crew")
 	var out: Array = [crossed, GalaxyMap.field_value(view, "crew.holds"), GalaxyMap.field_value(view, "consequence.news.template_id"), ai_text.size(),
-		GalaxyMap.field_value(view, "cruise.stop_kind"), GalaxyMap.field_value(view, "cruise.digest.time.tier")]
+		GalaxyMap.field_value(view, "cruise.stop_kind"), GalaxyMap.field_value(view, "cruise.digest.time.tier"), _archive_crossing(view),
+		GalaxyMap.field_value(view, "cruise.digest.narration.aboard")]
 	if crew is Dictionary:
 		out.append((crew.get("moments", []) as Array).map(func(m): return [m.get("actor"), m.get("emotion"), m.get("kind"), m.get("text"), m.get("ai_req")]))
 		out.append((crew.get("movement", []) as Array).map(func(m): return [m.get("id"), m.get("emotion0"), m.get("emotion1"), INDICATORS.filter(func(k): return float(m.get("d_" + k, 0.0)) != 0.0)]))
@@ -176,8 +238,14 @@ func current() -> String:
 	return str(_ids[page]) if page >= 0 and page < _ids.size() else ""
 
 
-func home_placeholder() -> bool:
-	return _home_placeholder
+## True when the Home page's tier picture is missing (words only; the capture fails on it).
+func home_art_missing() -> bool:
+	return _home_missing
+
+
+## True when the Home page is shown over its picture.
+func home_art_shown() -> bool:
+	return _backdrop.visible
 
 
 func go(i: int) -> void:
@@ -260,6 +328,7 @@ func _show_page() -> void:
 	for i in _pages.size():
 		(_pages[i] as Control).visible = i == page
 	var id := current()
+	_backdrop.visible = id == "home" and _home_art.texture != null
 	_title.text = str(TITLES.get(id.get_slice("_", 0) if id.begins_with("moment") else id, ""))
 	for c in _dots.get_children():
 		_dots.remove_child(c)
@@ -327,44 +396,55 @@ func _crossing() -> Control:
 		card.latest = {"cruise": GalaxyMap.field_value(_view, "cruise") if GalaxyMap.field_value(_view, "cruise") is Dictionary else {}}
 		box.add_child(_label(card.progress_text(), 15, WARM))
 	elif crossed:
+		_archive_says(box, _archive_crossing(_view))
 		box.add_child(_label("The crossing is over. Arrival braking waits until you are ready.", 13, DIM))
 	return box
+
+
+## I4: page 1's Archive line: the accepted telling, else the sim's authored crossing line.
+func _archive_crossing(view: Dictionary) -> String:
+	if narration != null:
+		return narration.crossing_text(view)
+	var a: Variant = GalaxyMap.field_value(view, D + "narration.crossing")
+	return "" if a == null else str(a)
+
+
+## The Archive speaking on a page (in-world words, no digits: D-21, D-67).
+func _archive_says(box: Container, words: String) -> void:
+	if words.is_empty():
+		return
+	var said := _label("The Archive: “%s”" % words, 15, WARM)
+	said.name = "Narration"
+	said.set_meta("archive_text", true) # no digits; the authored lines fit 280, a telling the Archive's 600
+	box.add_child(said)
 
 
 func _home(view: Dictionary) -> Control:
 	var row := _row()
 	var tier := int(float(GalaxyMap.field_value(view, D + "time.tier") if GalaxyMap.field_value(view, D + "time.tier") != null else 0.0))
-	var path := HOME_DIR.path_join("tier%d.png" % tier)
-	_home_placeholder = not FileAccess.file_exists(path) and not ResourceLoader.exists(path)
-	# Until the tier's image lands, the cruise sky stands in (the live sky, framed; flagged).
-	var art: Texture2D = CaptainAvatar.make_texture(path) if not _home_placeholder else sky_texture
-	if art != null:
-		var pic := VBoxContainer.new()
-		var t := TextureRect.new()
-		t.name = "HomeImage" if not _home_placeholder else "HomePlaceholder"
-		t.texture = art
-		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED if not _home_placeholder else TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		t.custom_minimum_size = Vector2(170, 170)
-		pic.add_child(t)
-		if _home_placeholder:
-			t.self_modulate = Color(0.7, 0.72, 0.8) # a stand-in, not the picture: dimmed (near c the sky ahead is blinding)
-			var cap := _label("The sky ahead. A picture of home is to come.", 10, DIM)
-			cap.custom_minimum_size = Vector2(170, 0)
-			cap.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-			pic.add_child(cap)
-		row.add_child(pic)
+	# The tier's picture fills the panel behind the page (_backdrop); the words sit in a column over
+	# its calm left side. A missing picture leaves the words alone across the page.
+	_home_art.texture = home_texture(home_dir.path_join("tier%d.png" % tier))
+	_home_missing = _home_art.texture == null
 	var box := _column()
+	box.name = "HomeText"
 	row.add_child(box)
+	if not _home_missing:
+		box.size_flags_stretch_ratio = HOME_TEXT
+		var rest := Control.new()
+		rest.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rest.size_flags_stretch_ratio = 1.0 - HOME_TEXT
+		rest.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(rest)
 	var line := DisplayBinding.new().bind(D + "time", "tier_line")
-	_style_label(line, 19, WARM)
+	_style_label(line, 18, WARM)
 	line.name = "TierLine"
 	box.add_child(line)
-	box.add_child(_composed(["Earth: ", [D + "time.earth_year_total", "%.1f"], " years since you left."], 15))
-	box.add_child(_composed(["News from home is ", [D + "time.news_age_years", "%.1f"], " years old when it reaches you."], 15))
+	# The tier line carries the whole years at home; the exact Earth clocks are on the crossing page.
+	box.add_child(_composed(["News from home is ", [D + "time.news_age_years", "%.1f"], " years old when it reaches you."], 14))
 	var news: Variant = GalaxyMap.field_value(view, "consequence.news")
 	if news is Dictionary and news.get("template_id") != null and news.get("slots") is Dictionary:
-		box.add_child(_label("The last word from home, at your last stop:", 12, DIM))
+		box.add_child(_label("The last word from home, at your last stop:", 11, DIM))
 		var body := NewsPanel.TemplateText.new()
 		body.templates = NewsCopy.load_json(NewsCopy.TEMPLATES)
 		body.no_age_text = str(NewsCopy.load_json(NewsCopy.COPY).get("labels", {}).get("body_no_age", ""))
@@ -382,6 +462,8 @@ func _aboard(view: Dictionary) -> Control:
 	var c := D + "crew.counts."
 	var counts: Dictionary = GalaxyMap.field_value(view, D + "crew.counts") if GalaxyMap.field_value(view, D + "crew.counts") is Dictionary else {}
 	box.add_child(_composed(["Your crew lived ", [c + "days", "days"], " of the crossing aboard."], 17))
+	var aboard: Variant = GalaxyMap.field_value(view, D + "narration.aboard")
+	_archive_says(box, "" if aboard == null else str(aboard))
 	var lines := [
 		["work_done", ["Work finished: ", [c + "work_done", "words"], "."]],
 		["refusals", ["Times they refused work: ", [c + "refusals", "words"], "."]],

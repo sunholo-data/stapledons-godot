@@ -3,14 +3,15 @@ module stapledons/sim/cruise_digest_test
 -- R2-INTERLUDE I2 (design interlude-card.md D1, AC1): the cruise digest. The unit cases below are
 -- hand-computed (synthetic Act logs, lines and holds); the scripted crossing at the end runs the
 -- real world (sim/core.ail tick) chunk by chunk under critical_only, with a hold and its resume.
-import std/string (contains, length as slen, substring)
+import std/string (contains, length as slen, substring, toLower)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/list (map, filter, length, any, foldl)
 import pkg/sunholo/crew_core/auto (Act)
 import ./crew (CrewState, CrewLine, CrewHold, initCrew)
 import ./cruise_digest (Digest, CrewDigest, Counts, Member, Moment, Ind, Snap, MediumRef, CrewTick, homeTier, tierLine, tierYears,
-  momentsMax, salience, momentKind, insertMoment, rankMovement, movedBy, foldEvents, noCounts, beginDigest, foldDigest, shipDays, workDone)
+  momentsMax, salience, momentKind, insertMoment, rankMovement, movedBy, foldEvents, noCounts, beginDigest, foldDigest, shipDays, workDone,
+  Narration, countsBand, tierWord, narrationFor, narrationOf, narrationKey, narrationMax)
 import ./protocol_crew (holdLine)
 import ./core (World, Committed, newWorld, defaultParams, tick, withCrew)
 import ./crew_script (Crossed, scriptedCrossing)
@@ -130,7 +131,7 @@ test "days in the crossing count from the commit's crew turn" {
 pure func snap(tau: float, t: float, since: float) -> Snap =
   { tau: tau, t: t, year: 2100.0 + t, sinceDeparture: since, newsEpoch: t - 4.0, newsAge: 4.0, news: None, lism: true,
     medium: { name: "LIC", nH: 0.2 }, crossed: [], grains: 0.0, largestUm: 0.0, largestJ: 0.0 }
-test "time: ship days are whole days of proper time since the commit; the digest keeps the begin clock" {
+test "time: with no crew aboard, ship days are whole days of proper time since the commit; the digest keeps the begin clock" {
   let d0 = beginDigest(snap(1.0, 3.0, 2.0), None);
   let d1 = foldDigest(d0, snap(1.0 + 92.5 / 365.25, 69.0, 68.0), None, { turnBefore: 0, answered: [], log: [], holds: [], captain: [] });
   shipDays(d1) == 92 && d1.tau0 == 1.0 && d1.t0 == 3.0 && d1.year0 == 2103.0 && d1.now.t == 69.0 && homeTier(d1.now.sinceDeparture) == 3
@@ -170,11 +171,21 @@ test "the scripted crossing: a digest from the commit, folded through two holds 
         && map(\m. m.emotion, cd.moments) == ["sad", "sad", "angry", "angry", "angry", "angry", "angry"]
         && map(\m. m.id, rankMovement(cd.members)) == ["counselor", "medic", "pilot", "analyst", "engineer"]
         && map(\m. movedBy(m), rankMovement(cd.members)) == [154, 92, 81, 72, 36]
-        && length(cd.members) == 5 && shipDays(d) == 390 && homeTier(d.now.sinceDeparture) == 1 && tierYears(d.now.sinceDeparture) == 7
+        && length(cd.members) == 5 && shipDays(d) == 391 && homeTier(d.now.sinceDeparture) == 1 && tierYears(d.now.sinceDeparture) == 7
         && map(\m. m.name, d.media) == ["LIC", "hot"] && d.now.grains > 0.0,
       None => false
     },
     _ => false
+  }
+}
+-- I3 polish (A2): "You lived N days" and "Your crew lived N days" are one number. With a crew aboard
+-- ship days are the crew's day clock (turns since the commit), which carries the crew's day
+-- remainder from before the commit; the proper time alone, floored from the commit, gave 390 here.
+test "the scripted crossing: ship days are the crew's days since the commit (one definition)" {
+  let x = scriptedCrossing(3);
+  match digestOf(x.world) {
+    Some(d) => match d.crew { Some(cd) => shipDays(d) == cd.turn - cd.turn0 && shipDays(d) == 391, None => false },
+    None => false
   }
 }
 test "the scripted crossing is deterministic (AC4): same seed, equal digests" {
@@ -187,3 +198,39 @@ test "no digest before the first commit" {
   }
 }
 pure func allOf(p: a -> bool, xs: [a]) -> bool = !any(\x. !p(x), xs)
+
+-- ---------------------------------------------------------------- I4: the Archive's authored framing
+-- design D3 / Rulings §6: authored in-world sentences on the crossing and aboard pages, keyed by the
+-- home tier and the crew's counts band, always (the live telling, when there is one, is recorded AI).
+pure func cs(r: int, c: int, a: int, h: int) -> Option[CrewDigest] =
+  Some({ emptyCd() | counts: { noCounts() | refusals: r, concerns: c, reliefsAsked: a, holds: h } })
+test "counts bands: empty without a crew; quiet; restless (refusals or concerns); strained (relief asked); held (a hold) wins" {
+  countsBand(None) == "empty" && countsBand(cs(0, 0, 0, 0)) == "quiet" && countsBand(cs(1, 0, 0, 0)) == "restless"
+  && countsBand(cs(0, 2, 0, 0)) == "restless" && countsBand(cs(3, 1, 1, 0)) == "strained" && countsBand(cs(0, 0, 0, 1)) == "held"
+  && countsBand(cs(4, 4, 4, 1)) == "held"
+  && countsBand(Some({ emptyCd() | counts: { noCounts() | concernsAuto: 5, reliefsGranted: 1 } })) == "quiet"
+}
+pure func bands() -> [string] = ["empty", "quiet", "restless", "strained", "held"]
+pure func tiers() -> [int] = [0, 1, 2, 3, 4, 5, 6]
+pure func everyNarration() -> [Narration] = foldl(\acc t. acc ++ map(\b. narrationFor(t, b), bands()), [], tiers())
+-- make in-world-voice-check's VOICE_RE and SPOILER_RE words (D-67, D-68), lowercased.
+pure func outOfWorld() -> [string] = ["game", "player", "simulat", "approximat", "invented", "fiction", "placeholder", "sandbox", "renderer", "shader",
+  "previous run", "re-run", "rerun", "new game", "begin again", "beginning again", "start over", "starting over", "multiverse", "loop", "reset"]
+pure func inWorld(t: string) -> bool = !any(\w. contains(toLower(t), w), outOfWorld())
+pure func okLine(t: string) -> bool = t != "" && noDigit(t) && slen(t) <= narrationMax() && inWorld(t)
+pure func distinct(xs: [string]) -> bool = match xs { [] => true, x :: r => !any(\y. y == x, r) && distinct(r) }
+test "narration keys: tier word and band, no digits, one per tier and band" {
+  narrationFor(3, "held").key == "generation.held" && narrationFor(0, "empty").key == "launch.empty" && narrationFor(6, "quiet").key == "ages.quiet"
+  && map(tierWord, tiers()) == ["launch", "years", "decades", "generation", "lifetimes", "centuries", "ages"]
+  && allOf(\n. noDigit(n.key), everyNarration()) && distinct(map(\n. n.key, everyNarration())) && length(everyNarration()) == 35
+}
+test "narration lines: authored, in-world (D-67, D-68), no digits (D-21), at most 280 characters" {
+  narrationMax() == 280 && allOf(\n. okLine(n.crossing) && okLine(n.aboard), everyNarration())
+  && distinct(map(\t. (narrationFor(t, "quiet")).crossing, tiers())) && distinct(map(\b. (narrationFor(2, b)).aboard, bands()))
+  && allOf(\t. (narrationFor(t, "held")).crossing == (narrationFor(t, "empty")).crossing, tiers())
+}
+pure func scriptedNarration(d: Option[Digest]) -> bool = match d {
+  Some(x) => narrationKey(x) == "years.held" && narrationOf(x) == narrationFor(1, "held"),
+  None => false
+}
+test "the scripted crossing's narration: seven years at home (tier one), two holds" { scriptedNarration(digestOf((scriptedCrossing(3)).world)) }

@@ -29,12 +29,14 @@ display-audit-controls: import ## M4.5bR3: strict binding controls and new/stale
 scene-session-audits: playthrough ## M4.5bR3: time, unlocks and display audits after the scene run (no full replay)
 	@$(MAKE) --no-print-directory AILANG=$(AILANG) playthrough-time codex-unlocks display-audit SESSION=$(PLAYTHROUGH_OUT)/session.ndjson
 
-playthrough-ai-modes: ## M4.5bR3: explicit stub/digits scene and display checks, outside make test
+playthrough-ai-modes: ## M4.5bR3: explicit stub/digits scene and display checks, outside make test; R2-INTERLUDE I4: the guided crossing's review and the Archive's telling in each mode
 	@set -e; for mode in stub digits; do \
 	  $(MAKE) --no-print-directory AILANG=$(AILANG) playthrough display-audit AI=$$mode PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/ai-$$mode DISPLAY_SAMPLES=$(SCRATCH)/playthrough/ai-$$mode/display_samples.ndjson; \
 	  grep -q "^ai-mode: $$mode .* result=PASS$$" $(SCRATCH)/display-audit/ai-$$mode/display-audit.log; \
+	  $(MAKE) --no-print-directory AILANG=$(AILANG) playthrough SCRIPT=tests/playthrough_interlude.json AI=$$mode PLAYTHROUGH_OUT=$(SCRATCH)/playthrough/ai-$$mode-interlude; \
+	  grep -E "^narration: $$mode state=(told voiced=1|authored voiced=0)$$" $(SCRATCH)/playthrough/ai-$$mode-interlude/run.log; \
 	done
-	@echo 'playthrough-ai-modes: stub=PASS digits=PASS'
+	@echo 'playthrough-ai-modes: stub=PASS digits=PASS (R2-INTERLUDE I4: the review reached, the Archive asked; stub told and voiced, digits refused)'
 
 parity-m4:
 	@AILANG=$(AILANG) python3 tools/replay.py --sim-only --case $(M45_CASES)

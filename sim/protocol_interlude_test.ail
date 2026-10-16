@@ -107,3 +107,19 @@ test "digest codec round trip (scripted crossing; crewless; the arrival-only sec
     None => false
   }
 }
+
+-- I3 polish (A2): the review's "You lived N days" (time.ship_days) and "Your crew lived N days"
+-- (crew.counts.days) are the same number on the wire.
+pure func daysAgree(d: Option[Digest]) -> bool = match d {
+  Some(x) => contains(encodeDigest(x), "\"ship_days\":391,") && contains(encodeDigest(x), "\"counts\":{\"days\":391,"),
+  None => false
+}
+test "the digest's ship_days and crew.counts.days agree on the scripted crossing" { daysAgree((scriptedCrossing(3)).world.cruiseDigest) }
+
+-- I4: the digest carries the Archive's authored framing (key, crossing line, aboard line).
+pure func narrated(d: Option[Digest]) -> bool = match d {
+  Some(x) => contains(encodeDigest(x), "\"narration\":{\"key\":\"years.held\",\"crossing\":\"")
+    && contains(encodeDigest(x), "\",\"aboard\":\""),
+  None => false
+}
+test "the digest carries the Archive's authored narration (I4)" { narrated((scriptedCrossing(3)).world.cruiseDigest) }

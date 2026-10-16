@@ -80,7 +80,7 @@ crossing-review-fixtures: import ## R2-INTERLUDE I3: re-record tests/fixtures/cr
 	@$(GODOT_SIM) --headless --path . --script tools/crossing_review_fixture.gd > $(SCRATCH)/crossing-review-fixture.log 2>&1; rc=$$?; grep -E '^(FAIL|fixture|crossing-review-fixture)' $(SCRATCH)/crossing-review-fixture.log; test $$rc = 0 && grep -q '^crossing-review-fixture: 0 failures$$' $(SCRATCH)/crossing-review-fixture.log
 crossing-review-capture: ## R2-INTERLUDE I3 (AC11): the crossing review's pages -> renders/crossing_review/ (GPU window; open every frame)
 	@mkdir -p $(SCRATCH)
-	@$(GODOT_SIM) --path . --script tools/crossing_review_capture.gd > $(SCRATCH)/crossing-review-capture.log 2>&1; rc=$$?; grep -E '^(frame|PLACEHOLDER|FAIL|crossing-review-capture)' $(SCRATCH)/crossing-review-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crossing-review-capture.log && grep -q '^crossing-review-capture: OK' $(SCRATCH)/crossing-review-capture.log
+	@$(GODOT_SIM) --path . --script tools/crossing_review_capture.gd > $(SCRATCH)/crossing-review-capture.log 2>&1; rc=$$?; grep -E '^(frame|FAIL|crossing-review-capture)' $(SCRATCH)/crossing-review-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crossing-review-capture.log && grep -q '^crossing-review-capture: OK' $(SCRATCH)/crossing-review-capture.log
 ## AC11 budgets. crewSkip (critical_only, as played): 2 s. crewSkipUnheld (no rules, concerns
 ## answered, the crew busy for ten years): a regression ceiling, not the goal (D-82). ailang#1827
 ## (the VM's O(n^2) list tail) is fixed in v0.54.10+; with crew_core 0.5.0 on v0.54.11 the busy
@@ -1186,8 +1186,8 @@ SPOILER_RE := \b(previous (run|runs|voyages?|universes?|iterations?|lives)|past 
 ## the reset, the pocket universe, the selection) and infers what it can from evidence. What it sees
 ## (its cast, its prompt golden, the canon it cites) names none of them.
 SANDBOX_RE := \b(loops?|looping|reset(s|ting)?|pocket universes?|universes?|multiverse|luck(y|ier)?|selection|selected|chosen|happened before|d[eé]j[aà] vu|variations? of|iterations?|anthropic|crossing(s)? before)\b
-SANDBOX_SEEN := $(wildcard data/ai/cast/*.json) $(wildcard tests/ai/prompts/*.golden.txt)
-VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd ui/archive_ask.gd
+SANDBOX_SEEN := $(wildcard data/ai/cast/*.json) $(wildcard tests/ai/prompts/*.golden.txt) ui/archive_narration.gd
+VOICE_UI := ui/news_panel.gd ui/news_copy.gd ui/legacy_screen.gd ui/archive/codex.gd ui/archive_ask.gd ui/crossing_review.gd ui/archive_narration.gd sim/cruise_digest.ail
 ## The console script carries internal ids ("player" camera mode): it is scanned for loop spoilers only.
 SPOILER_UI := demos/ship_consoles.gd
 in-world-voice-check: ## D-67 + D-68: Archive entries, news templates/copy, the Archive's AI prompt (its golden) and the on-screen strings of the news, Voyage log, codex and console panels speak in-world (no "game", "simulation", "approximation", "invented", "player" ...) and never hint at the loop ("previous run", "re-run", "New Game+", "begin again" ...)

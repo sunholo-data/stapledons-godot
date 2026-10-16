@@ -86,3 +86,21 @@ pure func checkCrewPrompt() -> bool {
   !says(r, "work_") && !says(r, "openness") && says(crewRq(""), "already decided: neutral")
 }
 test "crew_reply: persona, fixed reaction, guardrails, no internal ids (R2-CREW C5)" { checkCrewPrompt() }
+
+-- R2-INTERLUDE I4: the Archive's telling of a crossing (ui/archive_narration.gd open_fields): the
+-- question, the sim's narration key and the digest as sensors; every Archive guardrail kept.
+export pure func tellingRq() -> Request = {archiveRq() |
+  constraints: { maxChars: 600, noNumerals: true, emotions: ["neutral", "curious", "sad", "loving", "fearful"] },
+  context: [{ name: "question", value: CStr("Tell me what happened while we crossed, aboard and at home.") }, { name: "narration", value: CStr("years.held") },
+    { name: "crossing", value: CStr("to Alpha Centauri A; 70 days lived aboard; 4.33 years passed at home") },
+    { name: "home", value: CStr("4 years at home. The news you left with is history.") }, { name: "crew", value: CStr("refusals 3, holds 3") },
+    { name: "moments", value: CList(["Amara Okafor: refused an order.", "Abebe Njoroge: Before I start, there's something about this that worries me."]) },
+    { name: "medium", value: CList(["LIC", "hot"]) }, { name: "canon", value: CList(["archive.two-clocks"]) }]}
+pure func checkTellingPrompt() -> bool {
+  let t = tellingRq();
+  says(t, "The captain asks: Tell me what happened while we crossed, aboard and at home.") && says(t, "Your sensors report:\nnarration: years.held") &&
+  says(t, "moments: Amara Okafor: refused an order., Abebe Njoroge: Before I start") && says(t, "medium: LIC, hot") &&
+  says(t, "From your entries:\n- archive.two-clocks: Two clocks.") && says(t, "Write no digits and state no quantities") && says(t, "under 600 characters") &&
+  says(t, "Never step outside the ship") && noneSaid(t, ["game", "player", "simulation", "fiction", "Stapledon's Voyage", "loop", "previous run"])
+}
+test "R2-INTERLUDE I4: the telling's prompt is the Archive's own, with the digest as its sensors" { checkTellingPrompt() }

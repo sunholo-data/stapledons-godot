@@ -301,6 +301,10 @@ func test_review_no_deadlines() -> void:
 		demo.queue_free(); await process_frame; return
 	var tau := float(demo.journey_sim.world.clock.tau)
 	var card: CardInterlude = demo.solar_tour.interlude
+	demo._process(0.05)
+	# I3 polish (A3): the sim's phase reads braking at the boundary, but the player has not braked.
+	check("NT4 no Braking notice while the review waits at the braking boundary (phase %s)" % demo.journey_sim.world.ship.phase,
+		str(demo.journey_sim.world.ship.phase) == "braking" and not demo.ship_hud.has_card("notice") and not demo.ship_hud.all_text().contains(JourneyHud.BRAKE_NOTICE))
 	var kept := []
 	for i in r.page_ids().size():
 		r.go(i)
@@ -314,5 +318,7 @@ func test_review_no_deadlines() -> void:
 	demo.journey_tick()
 	demo._process(0.05)
 	check("NT4 the last page's Brake ends the review and the leg brakes", demo.solar_tour.interlude == null and not r.visible)
+	demo._process(0.05)
+	check("NT4 the Braking notice shows once the player has braked", demo.ship_hud.has_card("notice") and demo.ship_hud.all_text().contains(JourneyHud.BRAKE_NOTICE))
 	demo.queue_free()
 	await process_frame

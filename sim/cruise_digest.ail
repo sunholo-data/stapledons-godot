@@ -17,7 +17,7 @@ module stapledons/sim/cruise_digest
 import std/option (Option, Some, None)
 import std/math (intToFloat, floor, floatToInt)
 import std/list (map, filter, foldl)
-import std/string (startsWith)
+import std/string (startsWith, concat)
 import std/json (decode, getString, getBool)
 import std/result (Ok, Err)
 import pkg/sunholo/crew_core/auto (Act)
@@ -281,5 +281,54 @@ export pure func foldDigest(d: Digest, s: Snap, crew: Option[CrewState], ct: Cre
       _ => d.crew
     } }
 }
--- Whole days of proper time since the commit.
-export pure func shipDays(d: Digest) -> int = (daysIn(0.0, if d.now.tau > d.tau0 then d.now.tau - d.tau0 else 0.0)).days
+-- Ship days: the days lived since the commit, one definition for "You lived N days" (time.ship_days)
+-- and "Your crew lived N days" (crew.counts.days). With a crew aboard they are the crew's day clock,
+-- its turns since the commit: the crew carries a fraction of a day from before the commit (dayRem),
+-- so its days and the proper time floored from the commit can differ by one (I3 polish: 38 against
+-- 39 on the Aldebaran leg). With no crew the same clock runs from the commit with no carried
+-- fraction: whole days of proper time.
+export pure func shipDays(d: Digest) -> int = match d.crew {
+  Some(cd) => cd.turn - cd.turn0,
+  None => (daysIn(0.0, if d.now.tau > d.tau0 then d.now.tau - d.tau0 else 0.0)).days
+}
+
+-- ================================================================ I4: the Archive's authored framing
+-- design D3, Rulings §6: the Archive frames the crossing review in its own words, always: one line on
+-- the crossing page (by the home tier) and one on the aboard page (by the crew's counts band). The
+-- key names both, and the host sends it with the live telling's request (ai_open purpose archive),
+-- so the telling is asked about the same crossing. Authored: in-world (D-67), never a hint of what
+-- the ship does not know (D-68), no digits (D-21), at most narrationMax() characters.
+export type Narration = { key: string, crossing: string, aboard: string } deriving (Eq)
+export pure func narrationMax() -> int = 280
+
+-- empty: no crew aboard; held: auto-run stopped for the captain; strained: someone asked to step
+-- back; restless: refusals or concerns; quiet: none of these.
+export pure func countsBand(c: Option[CrewDigest]) -> string = match c {
+  None => "empty",
+  Some(cd) => if cd.counts.holds > 0 then "held" else if cd.counts.reliefsAsked > 0 then "strained"
+    else if cd.counts.refusals > 0 || cd.counts.concerns > 0 then "restless" else "quiet"
+}
+-- The home tiers (homeTier) in words, for keys without digits.
+export pure func tierWord(tier: int) -> string =
+  if tier <= 0 then "launch" else if tier == 1 then "years" else if tier == 2 then "decades" else if tier == 3 then "generation"
+  else if tier == 4 then "lifetimes" else if tier == 5 then "centuries" else "ages"
+
+pure func crossingLine(tier: int) -> string =
+  if tier <= 0 then "We crossed quickly, Captain. Home has barely turned since we left; the people there are still looking up."
+  else if tier == 1 then "Our clock ran slow while we crossed. At home the seasons kept turning without us, and the news we carry has become history."
+  else if tier == 2 then "While we crossed, children at home grew up. My records of them stop where we left; theirs of us grow thinner."
+  else if tier == 3 then "We crossed in weeks of our own time. At home a lifetime passed. The voices I hold from that world are mostly the voices of the dead."
+  else if tier == 4 then "Everyone who watched us leave is gone, Captain. My records of them are not. I keep them carefully."
+  else if tier == 5 then "Centuries turned at home while we crossed. The nations in my entries may be names in someone else's histories now."
+  else "More time has passed at home than my oldest records span. What answers our signal, I cannot predict from anything I hold."
+pure func aboardLine(band: string) -> string =
+  if band == "empty" then "No crew crossed with us, Captain. The crossing was yours and mine, and my log of it is short."
+  else if band == "quiet" then "Aboard, the crew kept to their work. My log of the crossing is calm; the days ran into one another."
+  else if band == "restless" then "Aboard, there was friction. Some work was refused and some doubts were spoken aloud. I have kept each of them."
+  else if band == "strained" then "Aboard, the crossing weighed on the crew. Someone asked to step back from their work. I have kept their words."
+  else "Aboard, the crossing weighed on the crew, and more than once the ship stopped to wait for you. I have kept their words."
+
+export pure func narrationFor(tier: int, band: string) -> Narration =
+  { key: concat([tierWord(tier), ".", band]), crossing: crossingLine(tier), aboard: aboardLine(band) }
+export pure func narrationOf(d: Digest) -> Narration = narrationFor(homeTier(d.now.sinceDeparture), countsBand(d.crew))
+export pure func narrationKey(d: Digest) -> string = (narrationOf(d)).key

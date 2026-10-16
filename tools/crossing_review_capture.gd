@@ -7,10 +7,10 @@ extends SceneTree
 ##   trappist_<page>      TRAPPIST-1 (the crossing, home and aboard pages), then on to
 ##   aldebaran_<page>     Aldebaran (Earth years add up across legs: a later home tier)
 ## make crossing-review-capture -> renders/crossing_review/<frame>_<w>x<h>.png. A person opens
-## every frame. The home image per tier is attended art (Rulings §2): until data/interlude/home/
-## tier<n>.png exists the cruise sky with the tier line stands in, and each such frame is flagged
-## (PLACEHOLDER). Layout checks per frame: the panel inside the window, every label inside the
-## panel (nothing cut off at the sides), the page buttons below the page.
+## every frame. The home picture per tier (Rulings §2, data/interlude/home/tier<n>.png) covers the
+## panel on the Home page. Layout checks per frame: the panel inside the window, every label inside
+## the panel (nothing cut off at the sides), the page buttons below the page; on Home, the picture
+## is there, the panel is 3:2 and the words stay in its left half.
 
 const OUT := "res://renders/crossing_review"
 const ReviewDrive := preload("res://tests/review_drive.gd")
@@ -72,8 +72,38 @@ func shot(name: String, sz: Vector2i) -> void:
 	img.save_png(path)
 	written += 1
 	print("frame %s %dx%d page=%s scrolls=%s" % [name, img.get_width(), img.get_height(), r.current(), content_h > scroll.size.y + 0.5])
-	if r.current() == "home" and r.home_placeholder():
-		print("PLACEHOLDER %s: no data/interlude/home/tier%d.png yet; the cruise sky with the tier line stands in (Rulings §2, attended art)" % [name, int(GalaxyMap.field_value(demo.sky_world, "cruise.digest.time.tier"))])
+	if r.current() == "home":
+		# The tier's picture covers the panel; the words stay over its calm left side.
+		if r.home_art_missing() or not r.home_art_shown():
+			fail("%s: no home picture for tier %d" % [name, int(GalaxyMap.field_value(demo.sky_world, "cruise.digest.time.tier"))])
+		var col: Control = r.find_child("Page_home", true, false).find_child("HomeText", true, false)
+		for l in col.find_children("*", "Label", true, false):
+			if l.is_visible_in_tree() and l.get_global_rect().end.x > panel.position.x + panel.size.x * 0.5 + 0.5:
+				fail("%s: home words leave the picture's calm left side: %s" % [name, l.text])
+		if absf(panel.size.x / panel.size.y - CrossingReview.ASPECT) > 0.02:
+			fail("%s: the panel %s is not 3:2 (the picture would be cropped)" % [name, panel.size])
+
+
+## Every tier's home picture under the longest home words (the Aldebaran leg's, with the last news
+## from home): art_tier<n>. A layout check for the art, not a real crossing: the words are that
+## leg's, the picture the tier's. The demo is not stepped (it would show the leg's own tier again).
+func art_shots(sz: Vector2i) -> void:
+	var r: CrossingReview = demo.crossing_review
+	var view: Dictionary = demo.hud_view()
+	for tier in 7:
+		var v := view.duplicate(true)
+		v.cruise.digest.time.tier = tier
+		r.show_review(v, true)
+		r.go(r.page_ids().find("home"))
+		for i in 3: await process_frame
+		await RenderingServer.frame_post_draw
+		var panel := r.get_global_rect()
+		if r.home_art_missing() or not r.home_art_shown(): fail("art_tier%d: no picture" % tier)
+		var img := root.get_texture().get_image()
+		img.save_png("%s/art_tier%d_%dx%d.png" % [OUT, tier, sz.x, sz.y])
+		written += 1
+		var scroll: ScrollContainer = r.find_children("*", "ScrollContainer", true, false)[0]
+		print("frame art_tier%d %dx%d page=home scrolls=%s panel=%s" % [tier, img.get_width(), img.get_height(), scroll.get_child(0).get_combined_minimum_size().y > scroll.size.y + 0.5, panel.size])
 
 
 ## Fly `legs` legs from itinerary index `first`, shooting the Hold page (first leg) and the pages.
@@ -115,6 +145,8 @@ func scenario(sz: Vector2i, slug: String, crew: String, first: int, legs: int, o
 			if not only.is_empty() and not only.has(kind): continue
 			r.go(i)
 			await shot("%s_%s" % [tag, id], sz)
+		if tag == "aldebaran":
+			await art_shots(sz)
 		r.go(r.page_ids().size() - 1)
 		r.key(KEY_ENTER) # Brake
 		if leg + 1 < legs:

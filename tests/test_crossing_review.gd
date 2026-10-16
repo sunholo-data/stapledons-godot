@@ -70,6 +70,7 @@ func audit_pages(r: CrossingReview, label: String) -> void:
 			if not l.is_visible_in_tree(): continue
 			if words.search(l.text) != null: scored.append(l.text)
 			if l.has_meta("crew_text") and (DisplayBinding._has_digit(l.text) or l.text.length() > 280): crew_bad.append(l.text)
+			if l.has_meta("archive_text") and (DisplayBinding._has_digit(l.text) or l.text.length() > 600 + 20): crew_bad.append(l.text)
 	check("%s: every label with a number is a clean binding, on every page %s" % [label, bad.slice(0, 3)], bad.is_empty())
 	check("%s: crew text has no digits and fits 280 characters %s" % [label, crew_bad.slice(0, 2)], crew_bad.is_empty())
 	check("%s: no scored words (good, bad, score) %s" % [label, scored.slice(0, 2)], scored.is_empty())
@@ -86,6 +87,14 @@ func _run() -> void:
 	var nocrew := rows("nocrew")
 	check("fixtures: Alpha Centauri has holds then its crossing; TRAPPIST-1 and Aldebaran crossed; a crossing with no crew",
 		acen.size() >= 2 and acen[0].at == "hold" and acen.back().at == "crossed" and trap.filter(func(x): return x.at == "crossed").size() == 2 and nocrew.size() == 1 and nocrew[0].world.cruise.digest.crew == null)
+
+	# I3 polish (A2): "You lived N days" and "Your crew lived N days" are one number (the crew's day clock).
+	var days_bad := []
+	for row in acen + trap:
+		var dg: Variant = row.world.get("cruise", {}).get("digest")
+		if dg is Dictionary and dg.crew is Dictionary and int(dg.time.ship_days) != int(dg.crew.counts.days):
+			days_bad.append([row.at, dg.time.ship_days, dg.crew.counts.days])
+	check("ship_days equals crew.counts.days in every recorded frame %s" % [days_bad], days_bad.is_empty())
 
 	var r := CrossingReview.new()
 	root.add_child(r)
@@ -166,7 +175,34 @@ func _run() -> void:
 	check("the home page's tier line is the sim's, with its years bound (%s)" % [d.time.tier_line], (func() -> bool:
 		r.go(r.page_ids().find("home"))
 		return texts(r).has(str(d.time.tier_line) % int(d.time.years_at_home))).call())
-	check("the home image is a placeholder until the per-tier art lands (flagged)", r.home_placeholder() == (not FileAccess.file_exists("res://data/interlude/home/tier%d.png" % int(d.time.tier))))
+	# The home picture (ruling 2): the tier's 3:2 image covers the whole panel on the Home page only,
+	# with the words in a column over its calm left side; every tier's picture exists.
+	var sizes_ok := true
+	for tier in 7:
+		var tex := CrossingReview.home_texture(CrossingReview.HOME_DIR.path_join("tier%d.png" % tier))
+		sizes_ok = sizes_ok and tex != null and tex.get_size() == Vector2(1536, 1024)
+	check("all seven home pictures land, 1536x1024 (3:2)", sizes_ok)
+	var art: TextureRect = r.find_child("HomeImage", true, false)
+	check("the Home page shows its tier's picture as a cover over the whole panel", not r.home_art_missing() and r.home_art_shown() and art != null and art.is_visible_in_tree()
+		and art.texture == CrossingReview.home_texture(CrossingReview.HOME_DIR.path_join("tier%d.png" % int(d.time.tier)))
+		and art.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED and art.offset_left == -CrossingReview.PAD and art.offset_right == CrossingReview.PAD)
+	var col: Control = r.find_child("Page_home", true, false).find_child("HomeText", true, false)
+	check("the home words sit in a column over the picture's left side, with a scrim", col != null and is_equal_approx(col.size_flags_stretch_ratio, CrossingReview.HOME_TEXT)
+		and r.find_child("ScrimLeft", true, false) != null and (r.find_child("ScrimLeft", true, false) as Control).is_visible_in_tree())
+	check("no stand-in caption, no placeholder", not texts(r).any(func(s): return s.contains("A picture of home is to come")) and r.find_child("HomePlaceholder", true, false) == null)
+	r.go(0)
+	check("the picture is the Home page's alone", not r.home_art_shown() and not art.is_visible_in_tree())
+	# A missing tier picture: the words alone across the page, nothing broken.
+	var rm := CrossingReview.new()
+	rm.home_dir = "res://data/interlude/no_such_dir"
+	root.add_child(rm)
+	rm.show_review(v, true)
+	rm.go(rm.page_ids().find("home"))
+	var mcol: Control = rm.find_child("Page_home", true, false).find_child("HomeText", true, false)
+	check("a missing tier picture falls back to the words alone", rm.home_art_missing() and not rm.home_art_shown() and texts(rm).has(str(d.time.tier_line) % int(d.time.years_at_home))
+		and mcol.get_parent().get_child_count() == 1)
+	audit_pages(rm, "missing home picture")
+	rm.queue_free()
 
 	# The Hold page: first while a hold is open; Resume needs a confirming press (crew_resume).
 	var held: Dictionary = acen[0]
@@ -227,7 +263,89 @@ func _run() -> void:
 	var t0: Dictionary = tr[0].world.cruise.digest.time
 	var t1: Dictionary = tr[1].world.cruise.digest.time
 	check("Aldebaran's crossing is later at home than TRAPPIST-1's (%s, %s years)" % [t0.years_at_home, t1.years_at_home], float(t1.earth_year_total) > float(t0.earth_year_total) and int(t1.tier) >= int(t0.tier))
+	test_narration(r, v)
 	r.queue_free()
 	await process_frame
 	print("crossing-review: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
+
+
+func narration_label(r: CrossingReview, id: String) -> Label:
+	r.go(r.page_ids().find(id))
+	var p: Node = r.find_child("Page_" + id, true, false)
+	return p.find_child("Narration", true, false) if p != null else null
+
+
+## I4 (design D3, Rulings §6): the Archive's authored framing on pages 1 and 3, always; with live AI
+## (and a key) one telling per crossing, asked with the digest as context, voiced once.
+func test_narration(r: CrossingReview, v: Dictionary) -> void:
+	var n: Dictionary = v.cruise.digest.narration
+	r.narration = null
+	r.show_review(v, true)
+	var l1 := narration_label(r, "crossing")
+	var l3 := narration_label(r, "aboard")
+	check("I4 the crossing page carries the Archive's authored line (%s)" % n.key, l1 != null and l1.text == "The Archive: “%s”" % n.crossing)
+	check("I4 the aboard page carries the Archive's authored line", l3 != null and l3.text == "The Archive: “%s”" % n.aboard)
+	check("I4 the narration key and lines have no digits", not DisplayBinding._has_digit(str(n.key) + str(n.crossing) + str(n.aboard)))
+	# When the Archive may be asked: live AI with a text route (the tests' stub counts), never off,
+	# replay, without a key or without a relay (D-8).
+	var live := AiRelay.new()
+	live.enabled = true
+	var off := AiRelay.new()
+	off.enabled = true
+	off.mode = "off"
+	var replay := AiRelay.new()
+	replay.enabled = true
+	replay.mode = "replay"
+	var keyless := AiRelay.new()
+	keyless.enabled = true
+	keyless.mode = "live"
+	keyless.keys = []
+	check("I4 the telling is asked only with live AI and a key", ArchiveNarration.can_open(live) and not ArchiveNarration.can_open(off) and not ArchiveNarration.can_open(replay)
+		and not ArchiveNarration.can_open(keyless) and not ArchiveNarration.can_open(null))
+	var quiet := ArchiveNarration.new()
+	check("I4 live AI off: nothing is opened; the authored lines stand", not quiet.maybe_open(v, off, true) and off.queued() == 0 and quiet.crossing_text(v) == str(n.crossing))
+	var nr := ArchiveNarration.new()
+	check("I4 nothing is asked before the crossing is over", not nr.maybe_open(v, live, false) and live.queued() == 0)
+	check("I4 the crossing over: one telling is asked", nr.maybe_open(v, live, true) and live.queued() == 1 and nr.state == "waiting")
+	check("I4 once per crossing", not nr.maybe_open(v, live, true) and live.queued() == 1)
+	var o: Dictionary = live.take_intents()[0]
+	var ctx: Dictionary = o.get("context", {})
+	var typed := ctx.values().all(func(x): return x is String or (x is Array and (x as Array).all(func(y): return y is String)))
+	check("I4 ai_open{text, purpose archive, entity archive} with the digest as context (%s)" % [ctx.keys()], o.k == "ai_open" and o.kind == "text" and o.purpose == "archive"
+		and o.entity_id == "archive" and ctx.size() <= 8 and typed and ctx.get("narration") == n.key and ctx.get("question") == ArchiveNarration.QUESTION
+		and ctx.has("crossing") and ctx.has("home") and ctx.has("canon") and (o.emotions as Array).all(func(e): return e in ["neutral", "happy", "sad", "angry", "fearful", "curious", "loving", "grieving"]))
+	# The sim's events: the request, the accepted telling (recorded sim input), then its voice.
+	var req_e := {"k": "ai_request", "req": "7", "kind": "text", "purpose": "archive", "context": ctx}
+	var ask := ArchiveAsk.new()
+	ask.state = "waiting"
+	ask.on_events([req_e])
+	check("I4 the Archive terminal's open question does not take the telling's request", ask.req == "")
+	nr.on_events([req_e])
+	check("I4 the telling's request id is noted", nr.req == "7")
+	nr.on_events([{"k": "ai_accepted", "req": "7", "kind": "text", "text": "{curious} The crossing was long, Captain. {sad} Home has moved on without us."}])
+	check("I4 the accepted telling, without its markers", nr.state == "told" and nr.telling == "The crossing was long, Captain. Home has moved on without us.")
+	var vi: Array = live.take_intents()
+	check("I4 the telling is voiced once: ai_open{voice} naming its line", vi.size() == 1 and vi[0].kind == "voice" and vi[0].purpose == "archive" and vi[0].entity_id == "archive" and vi[0].line_req == "7")
+	r.narration = nr
+	r.show_review(v, true)
+	check("I4 page 1 shows the accepted telling", narration_label(r, "crossing").text == "The Archive: “The crossing was long, Captain. Home has moved on without us.”")
+	check("I4 page 3 keeps the authored aboard line", narration_label(r, "aboard").text == "The Archive: “%s”" % n.aboard)
+	audit_pages(r, "narrated")
+	nr.on_events([{"k": "ai_request", "req": "8", "kind": "voice", "purpose": "archive", "line_req": "7"},
+		{"k": "ai_accepted", "req": "8", "kind": "voice", "sha256": "ab".repeat(32), "descriptor": {}},
+		{"k": "ai_accepted", "req": "7", "kind": "text", "text": "{neutral} Again."}])
+	check("I4 the voice is noted; a repeat does not ask again", nr.voice_req == "8" and str(nr.voice.get("sha256")) == "ab".repeat(32) and live.queued() == 0 and nr.voiced == 1 and nr.telling.begins_with("The crossing was long"))
+	check("I4 a voice not on disk plays nothing", nr.voice_path(AiCache.new()) == "")
+	# A fallback (screened out, no key at the service, timeout): the authored line stands.
+	var fb := ArchiveNarration.new()
+	fb.maybe_open(v, live, true)
+	live.take_intents()
+	fb.on_events([{"k": "ai_request", "req": "9", "kind": "text", "purpose": "archive", "context": {"narration": n.key}}, {"k": "ai_fallback", "req": "9", "reason": "provider_error"}])
+	check("I4 a fallback leaves the authored line", fb.state == "authored" and fb.crossing_text(v) == str(n.crossing) and live.queued() == 0)
+	# The next crossing (a new commit: new begin clocks) is told afresh.
+	var v2 := v.duplicate(true)
+	v2.cruise.digest.time.tau0 = float(v.cruise.digest.time.tau0) + 1.0
+	check("I4 the next crossing is asked again", nr.maybe_open(v2, live, true) and live.queued() == 1 and nr.crossing_text(v2) == str(n.crossing))
+	live.take_intents()
+	r.narration = null

@@ -297,9 +297,47 @@ func until_review() -> void:
 		if not check(refusal().is_empty(), "unscripted refusal: " + refusal()): return
 		if st == "crossed":
 			event({"type": "review", "pages": r.page_ids()})
+			if ai_mode != "none": await narrate()
 			return
 		if not check(st != "failed", "the crossing reaches its review (%s)" % tour.failed): return
 	check(false, "no crossing review")
+
+
+## R2-INTERLUDE I4 (AI modes): the Archive's telling of the crossing through the local stub service,
+## recorded in the session as sim input. stub: the telling is accepted (page 1 shows it) and voiced
+## once (the stub voice); digits: the stub answers with digits, the sim refuses it (ai_numeral) and
+## the authored line stands. The playthrough's own relay plays the live AI (no key, no provider).
+func narrate() -> void:
+	var n: ArchiveNarration = demo.archive_narration
+	if demo.journey_sim.ai_relay != ai_relay: ai_relay.attach(demo.journey_sim) # the guided voyage's session
+	if not check(n.maybe_open(demo.hud_view(), ai_relay, true) and ai_relay.queued() == 1, "I4 the Archive is asked for its telling once the crossing is over"): return
+	if ai_mode == "digits":
+		var ctx: Dictionary = ai_relay._queue[0]["context"]
+		ctx.erase("canon") # at most 8 context fields: the stub's digits case takes the canon's place
+		ctx["stub_case"] = "digits"
+	for leg in ["text", "voice"]:
+		check(demo.journey_sim.send([], 0.0), "I4 the %s request enters the session" % leg)
+		for i in 12000:
+			ai_bridge.poll()
+			if ai_relay.queued() > 0: break
+			await process_frame
+		if not check(ai_relay.queued() == 1, "I4 the local stub answered the %s request" % leg): return
+		check(demo.journey_sim.send([], 0.0), "I4 the %s record enters the session" % leg)
+		if ai_mode == "digits" or leg == "voice": break
+		if not check(n.state == "told" and ai_relay.queued() == 1, "I4 the telling is accepted and its voice asked (%s, %s)" % [n.state, n.telling]): return
+	demo._show_interlude()
+	var r: CrossingReview = demo.crossing_review
+	var page := r.page
+	r.go(r.page_ids().find("crossing"))
+	var said: Label = r.find_child("Page_crossing", true, false).find_child("Narration", true, false)
+	if ai_mode == "digits":
+		check(n.state == "authored" and said != null and said.text.contains(str(GalaxyMap.field_value(demo.hud_view(), "cruise.digest.narration.crossing"))), "I4 digits: the telling is refused; the authored line stands")
+	else:
+		check(said != null and said.text.contains(n.telling) and n.telling.begins_with("Stub archive entry") and not n.voice.is_empty() and n.voiced == 1, "I4 stub: page 1 shows the telling; it is voiced once")
+	event({"type": "narration", "mode": ai_mode, "state": n.state, "telling": n.telling, "voiced": n.voiced, "voice": str(n.voice.get("sha256", ""))})
+	if failures == 0: print("narration: %s state=%s voiced=%d" % [ai_mode, n.state, n.voiced])
+	sample()
+	r.go(page)
 
 
 ## {"review": "all"}: read every page, turning with → (the player's key); "last": Brake on the last.
@@ -390,7 +428,7 @@ func _run() -> void:
 	for s: Dictionary in script.steps:
 		if s.has("walk"): walk(s.walk)
 		elif s.has("use"): await use(s)
-		elif s.has("until") and s.until == "review": until_review()
+		elif s.has("until") and s.until == "review": await until_review()
 		elif s.has("until"): until(s)
 		elif s.has("start"): start(s)
 		elif s.has("review"): review(s)
