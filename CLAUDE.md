@@ -160,6 +160,10 @@ The brain is local and untracked.
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
 - **Workarounds, re-checked on v0.54.13 (re-check again at each bump; still-needed ones reported as ailang#1783):**
+  - Open (new in v0.54.13, blocks the bump; not reported yet): on the bytecode VM `std/env.getEnvOr`
+    of an unset variable fails (`bridge: TaggedValue (EnvError.NotFound) not yet supported`); the
+    interpreter and v0.54.11 return the fallback. `ai/service.ail` `live` reads its keys this way,
+    so `ai-relay` and `ai-settings` fail. No downstream workaround; wait for the fix.
   - Open (v0.54.13, ailang#1736 fixed only in part): on the strict VM a list literal of plain
     constants is fine at any length (`efficacyLut`, 601 floats, is one literal again), but one whose
     elements are expressions still exceeds the register allocator's 256: about 128 negated literals
