@@ -32,6 +32,9 @@ var pacing := preload("res://ui/journey_pacing.gd").new()
 var interlude: CruiseInterlude = null
 var interlude_factory: Callable = func() -> CruiseInterlude: return CardInterlude.new()
 var interludes_done := 0
+## R2-INTERLUDE I3: a reader is watching (the live demo's crossing review). The crossing then
+## waits at the braking boundary until the player brakes; with no reader it ends there.
+var reviewed := false
 var last_boundary_error := -1.0
 
 ## D65 guided highlights use existing D54 finite-star stops. The catalogue
@@ -77,9 +80,12 @@ func skip_stage() -> bool:
 	if sim==null or not failed.is_empty() or paused or attitude_hold or pending_index>=0:return false
 	if interlude!=null:
 		# R2-INTERLUDE I1: the crossing runs chunk by chunk to the braking boundary; a crew hold stops it.
-		if interlude is CardInterlude:(interlude as CardInterlude).finish()
+		# I3: with a reader the review stays until the player brakes (no key dismisses it).
+		var card:CardInterlude=interlude as CardInterlude
+		if card!=null and not card.awaits_reader:card.finish()
 		for i in 100000:
 			if interlude==null or crew_held() or not failed.is_empty():break
+			if card!=null and card.awaits_reader and card.crossed():break
 			if not step():return false
 		return true
 	if sim.world.journey.state!="committed":return false
@@ -174,6 +180,7 @@ func step() -> bool:
 		if interlude!=null:return _step_interlude()
 		if pacing.interlude_due(sim.world):
 			interlude=interlude_factory.call()
+			if interlude is CardInterlude:(interlude as CardInterlude).awaits_reader=reviewed
 			interlude.begin(CruiseInterlude.facts_from(sim.world,leg_name()))
 			return true
 		if not _send([],pacing.step(sim.world,false,0.,TICK_HZ),true):return false

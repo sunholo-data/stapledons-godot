@@ -28,7 +28,7 @@ const FADE_OUT_S := 0.6
 const MAX_EXPANDED := 2
 const CLOCK_SIZE := 17
 ## §A2 priority, high to low (the I card is ShipStarIdentification's own panel and the
-## cruise interlude keeps its D-41 InterludeCard; both are listed so the order is complete).
+## cruise interlude keeps its crossing review (R2-INTERLUDE I3); both are listed so the order is complete).
 const PRIORITY := ["identify", "medium_here", "arrival", "refusal", "gravity", "notice", "medium_notice", "transit", "tour", "interlude", "unlock"]
 ## The transit card's compact rows (M4.3a JourneyHud.ROWS by field); the full set is in Tab.
 const TRANSIT_COMPACT := ["ship.phase", "consequence.gap_years", "consequence.distance_remaining", "consequence.earth_years_remaining", "consequence.load_suns", "ship.ism.glow_w_m2", "client.warp"]

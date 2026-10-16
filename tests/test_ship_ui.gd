@@ -97,34 +97,27 @@ func test_ism_hud() -> void:
 	hud.toggle_tab()
 	check("ISM Tab has route media and full dust totals", hud.ism_details.visible and hud.ism_details.find_children("*", "DisplayBinding", true, false).any(func(b): return b.field == "ship.ism.dust.leg_grains"))
 	cards_clear_centre(hud, "ISM medium rows")
-	# The skipped interval is 0.5..3 ly: 0.5 LIC + 2 G, not the whole planned leg.
-	var before := CruiseInterlude.facts_from(ism_view(), "alpha Cen")
-	var after_world := ism_view("G")
-	after_world.consequence.distance_remaining = 1.0
-	after_world.ship.ism.dust.leg_grains = 3200000.0
-	var interlude := CardInterlude.new()
-	interlude.begin(before)
-	interlude.observe(after_world)
-	var lines := interlude.lines()
-	check("ISM interlude exposes skipped-media summary", lines.has("ism"))
-	if lines.has("ism"):
-		check("ISM interlude clips route to skipped interval", str(lines.ism).contains("0.500 ly") and str(lines.ism).contains("G cloud · 2.000 ly") and not str(lines.ism).contains("Local Bubble"))
-		check("ISM interlude grains are the sim-total delta", str(lines.ism).contains("2.000e6") and str(lines.ism).contains("Largest displayed impact this leg"))
-	var reentry_before := before.duplicate(true)
-	reentry_before.ism_media = [{"name": "LIC", "length_ly": 0.5}, {"name": "G", "length_ly": 1.0}, {"name": "LIC", "length_ly": 1.0}, {"name": "hot", "length_ly": 1.5}]
-	reentry_before.distance_remaining_ly = 3.75
-	var reentry_after := reentry_before.duplicate(true)
-	reentry_after.distance_remaining_ly = 1.75
-	var reentry := IsmHud.skipped_media(reentry_before, reentry_after)
-	check("ISM interlude retains ordered cloud re-entry", reentry.size() == 3 and reentry.map(func(m): return m.name) == ["LIC", "G", "LIC"] and is_equal_approx(float(reentry[0].length_ly), 0.25) and is_equal_approx(float(reentry[2].length_ly), 0.75))
-	var panel := InterludeCard.new()
+	# R2-INTERLUDE I3: the crossing review's medium page reads the sim's digest (media crossed in
+	# order, grains swept this leg, the largest impact); Godot no longer slices or subtracts.
+	var rv := ism_view("G")
+	rv["cruise"] = {"digest": {"time": {"ship_days": 70.0}, "home": {"tier": 1.0}, "crew": null,
+		"medium": {"model": "lism-1", "media": [{"name": "LIC", "n_h_cm3": 0.2474}, {"name": "G", "n_h_cm3": 0.2474}], "grains_swept": 2000000.0, "largest_um": 3.5, "largest_j": 1000000.0}}}
+	rv["review"] = {"leg": "alpha Cen", "target": "alpha Cen"}
+	var panel := CrossingReview.new()
 	root.add_child(panel)
-	panel.show_interlude(interlude)
+	panel.show_review(rv, true)
+	panel.go(panel.page_ids().find("medium"))
+	var shown: Array = panel.find_children("*", "Label", true, false).filter(func(l): return l.is_visible_in_tree()).map(func(l): return l.text)
+	check("ISM review medium page lists the sim's media in order", panel.current() == "medium" and shown.any(func(s): return s.begins_with("Local Interstellar Cloud · ")) and shown.any(func(s): return s.begins_with("G cloud · ")))
+	check("ISM review grains are the digest's grains_swept", shown.has("Grains swept (≥ 1 µm): 2.000e6") and shown.any(func(s): return s.begins_with("Largest displayed impact this leg: 3.50 µm")))
+	panel.custom_minimum_size = Vector2(600, 360)
+	panel.reset_size()
 	await process_frame
-	panel.fit_height(360.0)
 	await process_frame
-	check("ISM long interlude fits reduced canvas height", panel.get_combined_minimum_size().y <= 360.0)
-	check("ISM interlude Continue stays outside scrolling content", panel._button.get_global_rect().end.y <= panel.get_global_rect().end.y and not panel._scroll.is_ancestor_of(panel._button))
+	var nav: Control = panel.find_child("Nav", true, false)
+	var scroll: ScrollContainer = panel.find_children("*", "ScrollContainer", true, false)[0]
+	check("ISM review fits a reduced canvas height", panel.size.y <= 360.5)
+	check("ISM review page buttons stay outside the scrolling page", not scroll.is_ancestor_of(nav) and nav.get_global_rect().end.y <= panel.get_global_rect().end.y)
 	panel.queue_free()
 	hud.queue_free()
 	await process_frame
@@ -372,9 +365,9 @@ func test_strip_and_cards() -> void:
 	demo.solar_tour.interlude = card
 	demo._show_interlude()
 	demo._process(0.5)
-	var interlude: bool = demo.interlude_card.visible
+	var interlude: bool = demo.crossing_review.visible
 	strip_ok(demo, "interlude")
-	check("AC3 interlude chip in the stack while the D-41 card shows", demo.ship_hud.has_card("interlude"))
+	check("AC3 interlude chip in the stack while the crossing review shows", demo.ship_hud.has_card("interlude"))
 	check("AC3 at most two cards expanded %s" % [hud.expanded()], hud.expanded().size() <= ShipHud.MAX_EXPANDED)
 	cards_clear_centre(hud, "tour + transit + interlude")
 	# The D-41 interlude card is the one exemption from the centre third (AC3 note): it keeps
@@ -383,8 +376,8 @@ func test_strip_and_cards() -> void:
 		hud.size = sz
 		hud._layout()
 		demo._place_interlude()
-		var r := Rect2(demo.interlude_card.position, demo.interlude_card.get_combined_minimum_size().max(demo.interlude_card.size))
-		check("AC3 interlude card clear of the strip and the column at %s (%s)" % [sz, r], r.position.y >= hud.strip_bottom() and r.end.x <= hud.column.position.x)
+		var r := Rect2(demo.crossing_review.position, demo.crossing_review.get_combined_minimum_size().max(demo.crossing_review.size))
+		check("AC3 crossing review clear of the strip and the column at %s (%s)" % [sz, r], r.position.y >= hud.strip_bottom() and r.end.x <= hud.column.position.x)
 	demo.solar_tour.interlude = null
 	demo._show_interlude()
 	demo._process(0.7)

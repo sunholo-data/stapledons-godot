@@ -8,6 +8,8 @@ extends SceneTree
 ##       button at the Voyage console queues no confirmed crew decision (start, relief, the
 ##       captaincy switch, an auto-run preset, Resume): each arms its confirm first. Only Offer work
 ##       acts on one press, and an offer is the crew's to accept or decline.
+##   NT4 (R2-INTERLUDE AC7) the crossing review: every page, the Hold page included, stays shown
+##       through 600 s of fake time with the sim ticking; nothing turns or dismisses it but input.
 ##   NT2 (AC5) an open commit dialog, an open console panel and an unanswered confirm survive
 ##       600 s of fake time unchanged (the sim keeps its host tick).
 ## Deterministic (AC13): fixed seed, fake clock, no wall-clock reads; the log has no timings,
@@ -42,13 +44,15 @@ func _run() -> void:
 	await sweep_state("Sgr A*")
 	await sweep_crew()
 	await test_no_deadlines()
+	await test_review_no_deadlines()
 	print("no-twitch: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
 
-func new_demo() -> Node:
+func new_demo(extra := {}) -> Node:
 	var demo: Node = load("res://demos/ship_geometry_demo.tscn").instantiate()
 	demo.setup_options = {"stars": false, "background": false, "live_start": true, "sky_state": "rest", "from_menu": true, "settings_dir": "user://test_no_twitch"}
+	demo.setup_options.merge(extra, true)
 	DirAccess.make_dir_recursive_absolute("user://test_no_twitch")
 	root.add_child(demo)
 	await process_frame
@@ -269,5 +273,46 @@ func test_no_deadlines() -> void:
 	b = c.panel_body.find_child("Confirm_begin", true, false)
 	step(demo, 600.0, 5.0)
 	check("NT2 an open panel with an unpressed hold survives 600 s; nothing starts", c.focused == "voyage" and demo.solar_tour == null)
+	demo.queue_free()
+	await process_frame
+
+
+## NT4 (R2-INTERLUDE I3, AC7): the crossing review is the player's to read. On the guided voyage's
+## Alpha Centauri leg (an orders crew under critical_only, as the live game queues it), the Hold
+## page and then every page of the finished crossing stay shown through 600 s of fake time with the
+## sim ticking: no page turns, nothing is dismissed, ship time does not move on.
+const ReviewDrive := preload("res://tests/review_drive.gd")
+func test_review_no_deadlines() -> void:
+	var demo: Node = await new_demo({"crew": "orders"})
+	check("NT4 setup: the guided voyage begins at the Voyage console", ReviewDrive.begin(demo, 4))
+	var r: CrossingReview = demo.crossing_review
+	var state := ReviewDrive.reach(demo, true)
+	demo.journey_auto_tick = true # the sim keeps its normal host tick (D-12)
+	check("NT4 setup: the crossing stopped for a hold (%s)" % state, state == "held")
+	if state == "held":
+		var tau0: float = demo.journey_sim.world.clock.tau
+		step(demo, 600.0, 5.0)
+		check("NT4 the Hold page survives 600 s; ship time waits (%s)" % r.current(), r.visible and r.current() == "hold" and demo.solar_tour.crew_held() and demo.journey_sim.world.clock.tau == tau0)
+		demo.journey_auto_tick = false
+		state = ReviewDrive.reach(demo, false)
+		demo.journey_auto_tick = true
+	check("NT4 setup: the crossing reached its review (%s)" % state, state == "crossed" and r.visible)
+	if state != "crossed":
+		demo.queue_free(); await process_frame; return
+	var tau := float(demo.journey_sim.world.clock.tau)
+	var card: CardInterlude = demo.solar_tour.interlude
+	var kept := []
+	for i in r.page_ids().size():
+		r.go(i)
+		step(demo, 600.0, 5.0)
+		if not (r.visible and r.page == i and demo.solar_tour.interlude == card and not card.done()):
+			kept.append(r.page_ids()[i])
+	check("NT4 every page of the review survives 600 s of fake time (%d pages) %s" % [r.page_ids().size(), kept], kept.is_empty() and r.page_ids().size() >= 3)
+	check("NT4 ship time waits at the braking boundary while the review is read", float(demo.journey_sim.world.clock.tau) == tau)
+	r.go(r.page_ids().size() - 1)
+	r.key(KEY_ENTER)
+	demo.journey_tick()
+	demo._process(0.05)
+	check("NT4 the last page's Brake ends the review and the leg brakes", demo.solar_tour.interlude == null and not r.visible)
 	demo.queue_free()
 	await process_frame

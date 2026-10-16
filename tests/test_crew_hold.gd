@@ -29,7 +29,7 @@ func line_of(intent: Dictionary) -> Dictionary:
 func _initialize() -> void:
 	var section: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/crew/console_state.json"))
 	section["auto"] = "hands_on"
-	section["holds"] = [{"id": "h1-breakdown-medic", "rule": "breakdown", "actor": "medic", "name": "Ligaya Reyes", "task": "", "tick": 1, "detail": "stress 70"}]
+	section["holds"] = [{"id": "h1-breakdown-medic", "rule": "breakdown", "actor": "medic", "name": "Ligaya Reyes", "task": "", "tick": 1, "detail": "stress 70", "line": "is close to breaking down."}]
 	var page := CrewPage.new()
 	root.add_child(page)
 	page.show_crew(section)
@@ -97,12 +97,17 @@ func guided_crossing() -> void:
 	var waits := true
 	var chunk_kinds := {}
 	var turn_at_start := -1
+	var hold_words := true
 	for i in 40000:
 		if tour.interludes_done > 0 or not tour.failed.is_empty():
 			break
 		if tour.crew_held():
 			var card: CardInterlude = tour.interlude as CardInterlude
 			stops.append({"turn": int(g.crew.turn), "in_crossing": card != null, "crossed": card != null and card.crossed(), "left_yr": tour.pacing.cruise_remaining(g.world), "hold": str(g.crew.holds[0].id)})
+			var p := CrewPage.new()
+			p.show_crew(g.crew)
+			hold_words = hold_words and str(g.crew.holds[0].get("line", "")) != "" and texts(p).has("Needs you: %s %s" % [p.display_name(str(g.crew.holds[0].actor)), g.crew.holds[0].line])
+			p.free()
 			var tau := float(g.world.clock.tau)
 			var held: bool = tour.step() and tour.step()
 			waits = waits and held and float(g.world.clock.tau) == tau and tour.interlude == card
@@ -120,5 +125,6 @@ func guided_crossing() -> void:
 	check("the crossing stopped for holds, each on its monthly check-in day, with cruise still to go", crossing.size() >= 2 and crossing.all(func(s: Dictionary) -> bool: return s.turn % 30 == 1 and not s.crossed and s.left_yr > 0.0))
 	check("a hold in month 2 stopped the crossing in month 2 (day 31)", crossing.any(func(s: Dictionary) -> bool: return s.turn == 31))
 	check("while held, ship time waits and the interlude stays", waits)
+	check("2.10: each hold carries the sim's words (holdLine) and the Crew page shows them", hold_words and not stops.is_empty())
 	check("Resume continued the crossing to the braking boundary within 1e-12 of plan (%s yr)" % tour.last_boundary_error, tour.last_boundary_error >= 0.0 and tour.last_boundary_error <= 1e-12 * float(g.world.journey.plan.ship_years))
 	g.stop()

@@ -71,6 +71,16 @@ crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resu
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_crew_hold.gd > $(SCRATCH)/crew-hold.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-hold)' $(SCRATCH)/crew-hold.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-hold.log && grep -q '^crew-hold: 0 failures$$' $(SCRATCH)/crew-hold.log
 test: crew-hold-test
+crossing-review-test: import ## R2-INTERLUDE I3 (AC9, AC10): the crossing review's pages, Hold page, paging, portraits and bindings on recorded 2.10 frames
+	@mkdir -p $(SCRATCH)
+	@$(GODOT) --headless --path . --script tests/test_crossing_review.gd > $(SCRATCH)/crossing-review.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crossing-review)' $(SCRATCH)/crossing-review.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crossing-review.log && grep -q '^crossing-review: [0-9]* passed, 0 failures$$' $(SCRATCH)/crossing-review.log
+test: crossing-review-test
+crossing-review-fixtures: import ## R2-INTERLUDE I3: re-record tests/fixtures/crossing_review/*.ndjson from the real sim (guided voyage, 2.10); review the diff
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --headless --path . --script tools/crossing_review_fixture.gd > $(SCRATCH)/crossing-review-fixture.log 2>&1; rc=$$?; grep -E '^(FAIL|fixture|crossing-review-fixture)' $(SCRATCH)/crossing-review-fixture.log; test $$rc = 0 && grep -q '^crossing-review-fixture: 0 failures$$' $(SCRATCH)/crossing-review-fixture.log
+crossing-review-capture: ## R2-INTERLUDE I3 (AC11): the crossing review's pages -> renders/crossing_review/ (GPU window; open every frame)
+	@mkdir -p $(SCRATCH)
+	@$(GODOT_SIM) --path . --script tools/crossing_review_capture.gd > $(SCRATCH)/crossing-review-capture.log 2>&1; rc=$$?; grep -E '^(frame|PLACEHOLDER|FAIL|crossing-review-capture)' $(SCRATCH)/crossing-review-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crossing-review-capture.log && grep -q '^crossing-review-capture: OK' $(SCRATCH)/crossing-review-capture.log
 ## AC11 budgets. crewSkip (critical_only, as played): 2 s. crewSkipUnheld (no rules, concerns
 ## answered, the crew busy for ten years): a regression ceiling, not the goal (D-82). ailang#1827
 ## (the VM's O(n^2) list tail) is fixed in v0.54.10+; with crew_core 0.5.0 on v0.54.11 the busy
@@ -1094,7 +1104,7 @@ playthrough-adversarial: ## M4.5aR3 AC3: re-plan, cancel and commit during trans
 playthrough-negative: import ## M4.5aR3: driver failures must exit nonzero for the declared reason
 	@mkdir -p $(SCRATCH)/playthrough
 	@GODOT='$(GODOT)' AILANG_BIN="$$(command -v $(AILANG))" sh tests/test_playthrough.sh
-ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative
+ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative display-audit-interlude
 ship-ui-window-check: ## AC15: the helm (GalaxyMap embedded over the navigation station) in a real GPU window: open, click-select, hold-commit -> renders/ship_ui/window_check_*.png
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --script tools/ship_ui_window_check.gd > $(SCRATCH)/ship-ui-window-check.log 2>&1; rc=$$?; grep -E '^(host|click|held|ship-ui-window-check)' $(SCRATCH)/ship-ui-window-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-window-check.log && grep -q '^ship-ui-window-check: OK$$' $(SCRATCH)/ship-ui-window-check.log

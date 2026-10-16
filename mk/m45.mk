@@ -17,7 +17,7 @@ display-audit-controls: import ## M4.5bR3: strict binding controls and new/stale
 	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/valid.ndjson control tests/fixtures/display_audit/empty_known.json > $(DISPLAY_WORK)/display-valid.log 2>&1; test $$? = 0 && grep -q 'failures=0$$' $(DISPLAY_WORK)/display-valid.log && grep -q '^ac4: MET$$' $(DISPLAY_WORK)/display-valid.log && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-valid.log
 	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/known.ndjson control tests/fixtures/display_audit/known_findings.json > $(DISPLAY_WORK)/display-known.log 2>&1; test $$? = 0 && grep -q 'new=0 .* stale=0 failures=0$$' $(DISPLAY_WORK)/display-known.log && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-known.log
 	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/known_renumbered.ndjson control tests/fixtures/display_audit/known_findings.json > $(DISPLAY_WORK)/display-known-renumbered.log 2>&1; test $$? = 0 && grep -q 'new=0 .* stale=0 failures=0$$' $(DISPLAY_WORK)/display-known-renumbered.log && grep -q '^display-audit known: unbound ' $(DISPLAY_WORK)/display-known-renumbered.log && grep -q '^display-audit known: transit-ISM ' $(DISPLAY_WORK)/display-known-renumbered.log && ! grep -q 'SCRIPT ERROR:' $(DISPLAY_WORK)/display-known-renumbered.log
-	@set -e; for spec in 'unbound empty_known.json NEW.unbound' 'stale empty_known.json stale' 'missing empty_known.json missing' 'missing_context empty_known.json missing' 'stale_context empty_known.json stale' 'new_unbound known_findings.json NEW.unbound' 'known known_stale.json stale-known' 'transit_unfolded known_findings.json NEW.transit-ISM' 'different_named_parent known_findings.json NEW.unbound' 'context_drift empty_known.json context-drift' 'context_source empty_known.json context-source' 'context_presence empty_known.json context-source' 'context_hold empty_known.json context-source' 'context_console empty_known.json context-source' 'context_unknown empty_known.json context-unknown'; do \
+	@set -e; for spec in 'unbound empty_known.json NEW.unbound' 'stale empty_known.json stale' 'missing empty_known.json missing' 'missing_context empty_known.json missing' 'stale_context empty_known.json stale' 'new_unbound known_findings.json NEW.unbound' 'known known_stale.json stale-known' 'transit_unfolded known_findings.json NEW.transit-ISM' 'different_named_parent known_findings.json NEW.unbound' 'context_drift empty_known.json context-drift' 'context_source empty_known.json context-source' 'context_presence empty_known.json context-source' 'context_hold empty_known.json context-source' 'context_console empty_known.json context-source' 'context_unknown empty_known.json context-unknown' 'review_unbound empty_known.json NEW.unbound'; do \
 	  set -- $$spec; case=$$1; known=$$2; reason=$$3; \
 	  if $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- tests/fixtures/display_audit/$$case.ndjson control tests/fixtures/display_audit/$$known > $(DISPLAY_WORK)/display-$$case-$$known.log 2>&1; then echo "display control $$case/$$known missed"; exit 1; fi; \
 	  if [ "$$case" = different_named_parent ]; then grep -q 'mismatches=0 missing=0 new=1 known=[0-9]* stale=0 failures=1$$' $(DISPLAY_WORK)/display-$$case-$$known.log; fi; \
@@ -94,3 +94,15 @@ session-audit-test:
 
 m45-author:
 	@AILANG_BIN=$(AILANG) $(GODOT) --headless --path . --log-file $(SCRATCH)/m45-author.log --script tools/m45_session.gd
+
+# R2-INTERLUDE I3 (AC8): the guided crossing's playthrough (tests/playthrough_interlude.json: the
+# Alpha Centauri leg, an orders crew under critical_only, holds answered on the review's Hold page,
+# every review page read, Brake) and the display audit of every sampled frame against the same
+# known file (no entry added); the negative control (an unbound review label) is in
+# display-audit-controls.
+.PHONY: display-audit-interlude
+INTERLUDE_OUT := $(SCRATCH)/playthrough/interlude
+display-audit-interlude: import display-audit-controls ## R2-INTERLUDE AC8: a guided crossing with crew, every review page sampled and audited
+	@$(MAKE) --no-print-directory AILANG=$(AILANG) playthrough SCRIPT=tests/playthrough_interlude.json PLAYTHROUGH_OUT=$(INTERLUDE_OUT)
+	@mkdir -p $(SCRATCH)/display-audit/interlude
+	@$(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $(INTERLUDE_OUT)/display_samples.ndjson interlude $(DISPLAY_KNOWN) > $(SCRATCH)/display-audit/interlude/display-audit.log 2>&1; rc=$$?; grep -E '^(FAIL|display-audit)' $(SCRATCH)/display-audit/interlude/display-audit.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/display-audit/interlude/display-audit.log && grep -q '^display-audit: .* new=0 .* failures=0$$' $(SCRATCH)/display-audit/interlude/display-audit.log

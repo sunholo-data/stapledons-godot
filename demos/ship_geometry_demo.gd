@@ -81,7 +81,7 @@ var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var view_button := Button.new()
-var interlude_card: InterludeCard
+var crossing_review: CrossingReview ## R2-INTERLUDE I3: the crossing review (replaces the D-41 interlude card)
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
 ## R1-ARCHIVE-VOICE: the AI wiring for this voyage (AiSession: settings, relay, service), made only
@@ -162,8 +162,11 @@ func setup(opts := {}) -> bool:
 		consoles.set_glow(true);ship_hud.show_hint(ShipConsoles.HINT)
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
 	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
-	interlude_card = InterludeCard.new();interlude_card.visible = false;interlude_canvas.add_child(interlude_card)
-	interlude_card.continue_pressed.connect(continue_interlude)
+	crossing_review = CrossingReview.new();crossing_review.visible = false;interlude_canvas.add_child(crossing_review)
+	crossing_review.sky_texture = sky.get_texture()
+	crossing_review.brake_pressed.connect(func()->void:continue_interlude())
+	crossing_review.open_crew.connect(_review_open_crew)
+	crossing_review.intents.connect(func(list:Array)->void:if journey_sim!=null:journey_sim.queue(list))
 	star_identification = Identification.new();identify_canvas.add_child(star_identification)
 	star_identification.setup(self);star_identification.open_map.connect(open_identified_star)
 	if opts.get("live_start",false):
@@ -384,6 +387,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if ship_hud.has_card("arrival"):dismiss_arrival()
 	if event is InputEventKey and event.pressed and not event.echo:
 		if camera_mode=="console" and event.physical_keycode in [KEY_1,KEY_2,KEY_3,KEY_4,KEY_R,KEY_7,KEY_8,KEY_9]:return
+		# R2-INTERLUDE I3: while the crossing review is read, the arrows and Enter turn its pages.
+		if crossing_review!=null and crossing_review.visible and crossing_review.key(event.physical_keycode):return
 		match event.physical_keycode:
 			KEY_1:set_preset("bridge")
 			KEY_2:set_preset("overlook")
@@ -398,8 +403,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
 			KEY_V:toggle_auto_view()
-			KEY_ENTER:
-				if not continue_interlude():dismiss_arrival()
+			KEY_ENTER:dismiss_arrival()
 			KEY_K:
 				if black_hole!=null:bh_finish_approach()
 				else:skip_stage()
@@ -655,6 +659,7 @@ func start_solar_departure() -> bool:
 	_create_navigation("solar_departure")
 	if journey_map==null:return false
 	solar_tour=SolarDeparture.new()
+	solar_tour.reviewed=true # R2-INTERLUDE I3: the player reads the crossing review; only its Brake ends it
 	solar_tour.deferred_commit=true
 	_attitude_stop=-99;_attitude_pending=-99;_attitude_mode=""
 	var initial_heading:Dictionary=journey_sim.world.ship.heading
@@ -725,11 +730,20 @@ func stop_name() -> String:
 		for b:Dictionary in journey_sim.world.get("system",{}).get("bodies",[]):
 			if b.get("id","")==str(plan.hold.get("body","")):return body_name(b,star_identification.info.names if star_identification!=null else {})
 	return star_identification.info.display_name(id) if star_identification!=null and not id.is_empty() else (id if not id.is_empty() else "last stop")
-## D-41: the cruise interlude's card, shown over the live cruise sky while active.
+## D-41 / R2-INTERLUDE I3: the crossing review, over the live cruise sky while the interlude is on
+## (the progress view between chunks, the Hold page while a hold is open, the pages once it is
+## over). It steps aside while the captain is at the Crew console.
 func _show_interlude() -> void:
 	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
-	interlude_card.visible=card!=null
-	if card!=null:interlude_card.show_interlude(card)
+	crossing_review.visible=card!=null and not (consoles!=null and consoles.focused=="crew")
+	if crossing_review.visible:
+		if consoles!=null and consoles.crew_page!=null:crossing_review.ai_text=consoles.crew_page.ai_text
+		crossing_review.show_review(hud_view(),card.crossed())
+## The Hold page's "Answer at the Crew console": the captain goes to it (the review waits).
+func _review_open_crew() -> void:
+	if consoles==null:return
+	consoles.go_to("crew");consoles.use("crew","open")
+	_show_interlude()
 ## Skip to the next stage of the leg (labelled; the sim is stepped exactly to the boundary).
 func skip_stage() -> void:
 	if solar_tour!=null and solar_tour.skip_stage():_apply_journey_world();_show_interlude()
@@ -814,6 +828,9 @@ func hud_view() -> Dictionary:
 		hud["distance"] = distances_text(dworld, solar_tour, star_identification.info.names if star_identification != null else {}, leg_from)
 	view["hud"] = hud
 	view["client"] = {"warp": journey_map.pacing.rate if journey_map != null else 0.0}
+	# R2-INTERLUDE I3: the crossing review's leg (the itinerary's name for the plan's target).
+	if solar_tour != null and solar_tour.interlude != null:
+		view["review"] = {"leg": solar_tour.leg_name(), "target": solar_tour.leg_name()}
 	return view
 ## The strip's where / phase slot.
 func where_text() -> String:
@@ -843,6 +860,7 @@ func _update_hud(delta: float, details: String) -> void:
 	ship_hud.details.text = details
 	ship_hud.set_view_tag(view_tag_text())
 	_update_cards(view)
+	if crossing_review != null and crossing_review.visible: crossing_review.refresh(view) # the numbers this frame's HUD shows
 	_place_interlude()
 	ship_hud.set_prompt(consoles.prompt_text())
 	ship_hud.advance(delta)
@@ -938,10 +956,10 @@ func _update_cards(view: Dictionary) -> void:
 			(row.get_node("SkipStage") as Button).disabled = not live_journey or solar_tour.paused or solar_tour.attitude_hold
 	else:
 		ship_hud.hide_card("tour")
-	if interlude_card != null and interlude_card.visible:
+	# I3: the chip names the review; it dismisses nothing (only the review's Brake does, G1).
+	if crossing_review != null and crossing_review.visible:
 		if not ship_hud.has_card("interlude"):
-			ship_hud.show_card("interlude", "Cruise interlude")
-			ship_hud.card_button("interlude", "Continue [Enter]", continue_interlude)
+			ship_hud.show_card("interlude", "Crossing review")
 	else:
 		ship_hud.hide_card("interlude")
 	# Archive unlocks (the codex's toast, moved into the stack).
@@ -955,15 +973,17 @@ func _update_cards(view: Dictionary) -> void:
 		ship_hud.show_card("unlock", "New in the Archive", 10.0)
 		if ship_hud.card_body("unlock").get_child_count() == 0: ship_hud.card_text("unlock", "unlock", "")
 		ship_hud.set_card_value("unlock", "%s, at the Archive terminal" % ", ".join(titles))
-## The D-41 interlude card keeps its content; it sits in the space left of the card column
-## so the stack (tour, transit) stays readable beside it.
+## The crossing review sits in the space left of the card column, below the strip, so the stack
+## (tour, transit) stays readable beside it. One height for every page (CrossingReview.HEIGHT, or the
+## room there is; a longer page scrolls), so the dots and the page buttons stay put.
 func _place_interlude() -> void:
-	if interlude_card == null or not interlude_card.visible: return
-	interlude_card.fit_height(ship_hud.size.y - ship_hud.strip_bottom() - 64.0)
+	if crossing_review == null or not crossing_review.visible: return
 	var left: float = ship_hud.column.position.x - ShipHud.MARGIN
-	interlude_card.custom_minimum_size.x = minf(620.0, left - 2.0 * ShipHud.MARGIN)
-	interlude_card.reset_size()
-	interlude_card.position = Vector2(maxf(ShipHud.MARGIN, (left - interlude_card.size.x) * 0.5), maxf(ship_hud.strip_bottom() + 8.0, (ship_hud.size.y - interlude_card.size.y) * 0.5))
+	var top: float = ship_hud.strip_bottom() + 8.0
+	var h: float = clampf(ship_hud.size.y - top - 2.0 * ShipHud.MARGIN, 200.0, CrossingReview.HEIGHT)
+	crossing_review.custom_minimum_size = Vector2(minf(640.0, left - 2.0 * ShipHud.MARGIN), h)
+	crossing_review.reset_size()
+	crossing_review.position = Vector2(maxf(ShipHud.MARGIN, (left - crossing_review.size.x) * 0.5), maxf(top, (ship_hud.size.y - crossing_review.size.y) * 0.5))
 func _notice_text(text: String) -> void:
 	if ship_hud.card_body("notice").get_child_count() == 0: ship_hud.card_text("notice", "notice", "")
 	ship_hud.set_card_value("notice", text)
@@ -1021,7 +1041,7 @@ func _consoles_setup() -> void:
 ## centre (the I card's own pick, read only) with its distance and "I · details".
 func _update_dwell(delta: float) -> void:
 	# Not at Sgr A*: its stars are the Sol sky lensed (design OQ5), so a name and distance mislead.
-	if not dwell_on or black_hole!=null or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible or (interlude_card!=null and interlude_card.visible):
+	if not dwell_on or black_hole!=null or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible or (crossing_review!=null and crossing_review.visible):
 		_dwell_done=false;ship_hud.set_dwell("",Vector2.ZERO);return
 	var pose:Transform3D=camera.global_transform
 	if not pose.is_equal_approx(_dwell_pose):
@@ -1240,7 +1260,7 @@ func toggle_codex() -> void:
 
 ## Pointer belongs to an open interactive surface; otherwise mouse motion looks around.
 func pointer_required() -> bool:
-	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and (ship_hud.tab_panel.visible or ship_hud.has_card("arrival") or ship_hud.has_card("medium_here"))) or (codex!=null and codex.panel.visible) or (interlude_card!=null and interlude_card.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
+	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and (ship_hud.tab_panel.visible or ship_hud.has_card("arrival") or ship_hud.has_card("medium_here"))) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
 func _sync_pointer() -> void:
 	# Returning to the title detaches this scene during the same Esc event.
 	var window:Window=get_window() if is_inside_tree() else null

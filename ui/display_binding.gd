@@ -54,6 +54,21 @@ static func format_field(view: Dictionary, f: String, format: String) -> String:
 		return "-" if raw == null else "+" + ShipHud.duration_text(float(raw))
 	if format == "text": # a sim-derived line formatted upstream (the strip's distance, where and speed)
 		return "" if raw == null else str(raw)
+	# R2-INTERLUDE I3 (the crossing review): formatting only, every input a sim field.
+	if format == "words": # a small count in words (CrewPage.words; D-21 crew text has no digits)
+		return "-" if raw == null else CrewPage.words(int(raw))
+	if format == "days": # a whole number of days, singular at one ("1 day", "70 days")
+		return "-" if raw == null else ("%d day" if int(raw) == 1 else "%d days") % int(raw)
+	if format == "days_into": # a moment's crew day in the crossing (0 is the day it began)
+		if raw == null: return "-"
+		return "The day the crossing began" if int(raw) == 0 else ("%d day into the crossing" if int(raw) == 1 else "%d days into the crossing") % int(raw)
+	if format == "tier_line": # cruise.digest.time: the sim's tier line, its %s the sim's whole years
+		if not raw is Dictionary: return "-"
+		var line := str(raw.get("tier_line", ""))
+		return line % int(raw.get("years_at_home", 0)) if line.contains("%s") else line
+	if format == "speed_c": # journey.plan: "0.9999c" from the plan's exact 1 - beta, else six decimals
+		if not raw is Dictionary: return "-"
+		return CardInterlude.speed_text(float(raw.get("cruise_beta", 0.0)), float(raw.get("cruise_one_minus_beta", 1.0)))
 	return GalaxyMap.format_value(format, raw)
 
 
