@@ -315,18 +315,18 @@ export pure func tierWord(tier: int) -> string =
 
 pure func crossingLine(tier: int) -> string =
   if tier <= 0 then "We crossed quickly, Captain. Home has barely turned since we left; the people there are still looking up."
-  else if tier == 1 then "Our clock ran slow while we crossed. At home the seasons kept turning without us, and the news we carry has become history."
-  else if tier == 2 then "While we crossed, children at home grew up. My records of them stop where we left; theirs of us grow thinner."
-  else if tier == 3 then "We crossed in weeks of our own time. At home a lifetime passed. The voices I hold from that world are mostly the voices of the dead."
+  else if tier == 1 then "Our clock runs slow out here. At home the seasons have kept turning without us, and the news we carry has become history."
+  else if tier == 2 then "Since we left, the children at home have grown up. My records of them stop where we left; theirs of us grow thinner."
+  else if tier == 3 then "A lifetime has passed at home since we left, and far less for us. The voices I hold from that world are mostly the voices of the dead."
   else if tier == 4 then "Everyone who watched us leave is gone, Captain. My records of them are not. I keep them carefully."
-  else if tier == 5 then "Centuries turned at home while we crossed. The nations in my entries may be names in someone else's histories now."
-  else "More time has passed at home than my oldest records span. What answers our signal, I cannot predict from anything I hold."
+  else if tier == 5 then "More than a century has turned at home since we left. The nations in my entries may be names in someone else's histories now."
+  else "More than a thousand years have passed at home since we left. What answers our signal, I cannot predict from anything I hold."
 pure func aboardLine(band: string) -> string =
   if band == "empty" then "No crew crossed with us, Captain. The crossing was yours and mine, and my log of it is short."
   else if band == "quiet" then "Aboard, the crew kept to their work. My log of the crossing is calm; the days ran into one another."
-  else if band == "restless" then "Aboard, there was friction. Some work was refused and some doubts were spoken aloud. I have kept each of them."
+  else if band == "restless" then "Aboard, there was friction. Not every piece of work was taken on gladly, and I have kept what was said."
   else if band == "strained" then "Aboard, the crossing weighed on the crew. Someone asked to step back from their work. I have kept their words."
-  else "Aboard, the crossing weighed on the crew, and more than once the ship stopped to wait for you. I have kept their words."
+  else "Aboard, the crossing weighed on the crew, and the ship stopped to wait for you. I have kept their words."
 
 export pure func narrationFor(tier: int, band: string) -> Narration =
   { key: concat([tierWord(tier), ".", band]), crossing: crossingLine(tier), aboard: aboardLine(band) }

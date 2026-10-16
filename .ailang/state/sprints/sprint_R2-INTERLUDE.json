@@ -1,12 +1,12 @@
 {
   "sprint_id": "R2-INTERLUDE",
-  "status": "in_progress",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark (attended 2026-10-16): \"yep execute the plan\"",
   "created": "2026-10-16",
   "started": "2026-10-16",
-  "design_doc": "design_docs/planned/r2/interlude-card.md",
-  "sprint_plan": "design_docs/planned/r2/interlude-card-sprint.md",
+  "design_doc": "design_docs/implemented/r2/interlude-card.md",
+  "sprint_plan": "design_docs/implemented/r2/interlude-card-sprint.md",
   "branch": "feat/r2-interlude",
   "implements": [
     "interlude-card I1",
@@ -107,7 +107,16 @@
     "OPEN (wording): tier 1 reads '1 years at home' at exactly one year; singular form, or start tier 1 at 2 years?",
     "NOTE: ruling 4 is already in effect in the live demo (ship_geometry_demo.gd:621 queues critical_only for every crew game); I1 pins it with a test"
   ],
-  "evaluations": [],
+  "evaluations": [
+    {
+      "round": 1,
+      "score": 89,
+      "result": "PASS",
+      "file": ".ailang/state/evaluations/R2-INTERLUDE-eval.md",
+      "commit": "4eccc1c",
+      "fixed": "items 1-6 fixed before merge (see E notes)"
+    }
+  ],
   "coordination": {
     "executor": "attended session (stapledons-godot-attended clone)",
     "evaluator": "different model from the executor",
@@ -202,11 +211,12 @@
         "evaluation file in .ailang/state/evaluations/ with score >= 70 from a model other than the executor",
         "design_docs/implemented/r2/interlude-card.md and interlude-card-report.md exist; changelogs/unreleased/*crossing-review*.md opens with ###"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-17",
+      "completed": "2026-10-17",
+      "notes": "Evaluation round 1 (different agent/model): 89/100 PASS. Fixed before merge, test-first: (1) Home page news ages told apart + 'within days of your departure' for a zero written-after age (news_copy ZERO_ELAPSED, tier-0 lint); (2) narration lines claim only what their key guarantees (tier 3 'in weeks', tiers 2/5/6 tied to this crossing, restless/held over-claims), test in cruise_digest_test; (3) Hold page without a digest; (4) export witness = tier0/tier6 .webp; (5) protocol.cruiseFull in full states, tested at 2.10 and below; (6) NT4 fails the auto-dismiss mutant by assertion. Landing: design doc and plan moved to design_docs/implemented/r2/, interlude-card-report.md, changelogs/unreleased/2026-10-17-crossing-review.md, design repo PR sunholo-data/stapledons-design#26 (G2, E4 game half; not merged)."
     }
   ],
-  "approved_at": "2026-10-16"
+  "approved_at": "2026-10-16",
+  "completed": "2026-10-17"
 }

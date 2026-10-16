@@ -1,6 +1,6 @@
 # R2-INTERLUDE: the crossing review (the cruise interlude as "what happened while you were away")
 
-**Status:** Proposed 2026-10-16; open questions ruled by Mark the same day (see Rulings) (draft for `design_docs/planned/r2/interlude-card.md`). Mark, attended 2026-10-16: "this interlude card is important and deserves its own design doc ... having a lot of text and pictures to review for the player is maybe a good use of the time".
+**Status:** IMPLEMENTED 2026-10-17 (R2-INTERLUDE, PR #264; evaluation 89/100 PASS). Proposed 2026-10-16; open questions ruled by Mark the same day (see Rulings) (draft for `design_docs/implemented/r2/interlude-card.md`). Mark, attended 2026-10-16: "this interlude card is important and deserves its own design doc ... having a lot of text and pictures to review for the player is maybe a good use of the time".
 **Release:** R2 (voyage life). It is roadmap row **G2** ("What happened aboard" in the Archive's voice) for the cruise case, and the game half of **E4** (the skip report).
 **Priority:** P1 for R2. The interlude is the only place where a decade of ship life is shown.
 

@@ -234,3 +234,12 @@ pure func scriptedNarration(d: Option[Digest]) -> bool = match d {
   None => false
 }
 test "the scripted crossing's narration: seven years at home (tier one), two holds" { scriptedNarration(digestOf((scriptedCrossing(3)).world)) }
+-- Eval R2-INTERLUDE (2): each line must be true for every crossing its key covers. The tier is Earth
+-- time since departure (all legs), so a crossing line may not pin that time on this crossing ("while
+-- we crossed") or state this crossing's ship time ("in weeks": Aldebaran is months); a band line may
+-- not claim more than its band holds ("restless" can be concerns alone; "held" can be one hold).
+pure func claims(t: string, ws: [string]) -> bool = any(\w. contains(toLower(t), w), ws)
+test "narration lines claim only what their key guarantees" {
+  allOf(\t. !claims((narrationFor(t, "quiet")).crossing, ["while we crossed", "in weeks", "we crossed in", "centuries turned", "than my oldest records"]), tiers())
+  && !claims((narrationFor(2, "restless")).aboard, ["refused"]) && !claims((narrationFor(2, "held")).aboard, ["more than once", "twice"])
+}
