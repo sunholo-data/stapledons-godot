@@ -78,7 +78,7 @@ export pure func checkBodyTarget() -> bool {
     None => false
   }
 }
-test "AC14 a body plan's target is the sim's arrival point (index 6 = Saturn in system.bodies)" { checkBodyTarget() }
+-- AC14 a body plan's target is the sim's arrival point (index 6 = Saturn in system.bodies): checkBodyTarget (run on both engines by navigationVm, make strict-m5)
 
 -- Stop: the leg is |B(t_a) - x0| - standoff with t_a the 12-step intercept, and the
 -- trip is planBurnCoastBurn on that length (1e-9); the arrival point is standoff
@@ -98,7 +98,7 @@ export pure func checkStopIsPackage() -> bool {
     && absf(norm(sub(scale(lyKm(), l.arrivalLy), ntBodyKm("jupiter", l.nav.interceptT))) - s) < 1.0
     && l.nav.interceptT == l.trip.trip.galaxyTime && ntNoPass(l.nav))
 }
-test "AC14 stop plan = planBurnCoastBurn on |B(t_a) - x0| - standoff to 1e-9 (Jupiter at 0.1c, default stand-off 10 R)" { checkStopIsPackage() }
+-- AC14 stop plan = planBurnCoastBurn on |B(t_a) - x0| - standoff to 1e-9 (Jupiter at 0.1c, default stand-off 10 R): checkStopIsPackage (run on both engines by navigationVm, make strict-m5)
 
 -- Flyby: the pass point is the foot of the perpendicular at exactly b from B(t_p);
 -- the leg is sqrt(D^2 - b^2) + run-out (default dBurn + 1e6 km); the trip is
@@ -119,7 +119,7 @@ export pure func checkFlybyIsPackage() -> bool {
     && l.nav.interceptT == p.t && ntRelNear(norm(sub(scale(lyKm(), l.nav.interceptLy), b)), 1.0, 1.0) && p.t * 31557600.0 > 8000.0 && p.t * 31557600.0 < 9500.0
   }))
 }
-test "AC14 flyby plan: pass at exactly b (3 R, Saturn, 0.5c), leg = sqrt(D^2 - b^2) + run-out, trip = planBurnCoastBurn to 1e-9, D at pass = gamma" { checkFlybyIsPackage() }
+-- AC14 flyby plan: pass at exactly b (3 R, Saturn, 0.5c), leg = sqrt(D^2 - b^2) + run-out, trip = planBurnCoastBurn to 1e-9, D at pass = gamma: checkFlybyIsPackage (run on both engines by navigationVm, make strict-m5)
 
 -- The clock angle: 0 deg puts the pass point on the body's north side, 180 on the
 -- south, 90 to the right as seen from the ship (cross(u, north)), in the ring plane.
@@ -139,7 +139,7 @@ export pure func checkClock() -> bool {
   let n90 = ntSideOf(ntFlyReq("saturn", 0.5, 2.5 * ntRSaturn(), 90.0));
   dot(n0, north) > 0.999 && dot(n180, north) < 0.0 - 0.999 && dot(n90, cross(u, north)) > 0.999 && absf(dot(n90, pole)) < 0.001
 }
-test "flyby clock: 0 = north, 180 = south, 90 = right of the body seen from the ship (in its ring plane)" { checkClock() }
+-- flyby clock: 0 = north, 180 = south, 90 = right of the body seen from the ship (in its ring plane): checkClock (run on both engines by navigationVm, make strict-m5)
 
 -- Short legs fall back to flip-and-burn exactly as M2 does: the Moon at 0.99c.
 export pure func checkShortLegFallsBack() -> bool {
@@ -149,7 +149,7 @@ export pure func checkShortLegFallsBack() -> bool {
     && ntTripNear(l.trip, {planFlipAndBurn(l.trip.trip.distance, ntAccel()) | fellBack: true}, 0.0)
     && ntRelNear(l.trip.trip.distance * lyKm(), stopLegKm(here, "moon", l.nav.standoffKm, ownStopT(here, "moon", l.nav.standoffKm, rq.cruisePhi, 0.0, 12)), 0.000000001))
 }
-test "AC14 a short leg (Moon at 0.99c) falls back to flip-and-burn, as M2" { checkShortLegFallsBack() }
+-- AC14 a short leg (Moon at 0.99c) falls back to flip-and-burn, as M2: checkShortLegFallsBack (run on both engines by navigationVm, make strict-m5)
 
 -- ------------------------------------------------------------ AC17 (residual) and the iteration count
 export pure func checkResidual() -> bool =
@@ -157,7 +157,7 @@ export pure func checkResidual() -> bool =
   && ntLegOk(planBody(ctxAt(ntEarthUpKm()), ntIoStop()), \l. l.nav.residual < 0.000000001 && l.nav.mode == "stop")
   && ntLegOk(planBody(ctxAt(chaseKm()), chaseStop()), \l. l.nav.residual < 0.000000001)
   && residualMax() == 0.000000001
-test "AC17 the intercept residual is < 1e-9 of the leg: Saturn flyby at 0.5c, Io stop at 0.001c, the Mercury chase" { checkResidual() }
+-- AC17 the intercept residual is < 1e-9 of the leg: Saturn flyby at 0.5c, Io stop at 0.001c, the Mercury chase: checkResidual (run on both engines by navigationVm, make strict-m5)
 
 -- Exactly 12 steps: the chase (contraction about 0.1) arrives at the 12-step iterate
 -- of an independent loop, bit for bit, and not at the 11-step one; one step is no_converge.
@@ -172,7 +172,7 @@ export pure func checkTwelveSteps() -> bool {
       && !ntRelNear(l.trip.trip.distance * lyKm(), stopLegKm(here, "mercury", s, t11), 0.000000000001))
   && ntRefusalOf(planBodyN(ctxAt(here), rq, 1)) == "no_converge"
 }
-test "AC17 the intercept runs exactly 12 fixed steps (12-step iterate, not 11); a 1-step intercept is refused no_converge" { checkTwelveSteps() }
+-- AC17 the intercept runs exactly 12 fixed steps (12-step iterate, not 11); a 1-step intercept is refused no_converge: checkTwelveSteps (run on both engines by navigationVm, make strict-m5)
 
 -- ------------------------------------------------------------ AC15: refusals (one fixture triggers, one just passes)
 -- Unknown alpha Cen bodies and Sun flybys remain unsupported. The bounded
@@ -183,7 +183,7 @@ export pure func checkNotVisitable() -> bool =
   && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), ntFlyReq("sun", 0.1, 5.0e6, 0.0))) == "not_visitable"
   && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("pluto", 0.1, None))) == "not_visitable"
   && ntRefusalOf(planBody(ctxAt(ntEarthUpKm()), stopReq("mars", 0.1, None))) == "ok"
-test "AC15/AC11 unsupported bodies and Sun flybys refused, measured Sun stop and Mars accepted" { checkNotVisitable() }
+-- AC15/AC11 unsupported bodies and Sun flybys refused, measured Sun stop and Mars accepted: checkNotVisitable (run on both engines by navigationVm, make strict-m5)
 
 -- too_close: a stand-off or pass distance 1 km under the safety minimum (1.1 R + bubble) is refused, at it accepted.
 export pure func checkTooClose() -> bool {
@@ -194,7 +194,7 @@ export pure func checkTooClose() -> bool {
   && ntRefusalOf(planBody(c, ntFlyReq("mars", 0.1, m - 1.0, 0.0))) == "too_close" && ntRefusalOf(planBody(c, ntFlyReq("mars", 0.1, m, 0.0))) == "ok"
   && ntLegOk(planBody(c, stopReq("mars", 0.1, Some(1.0e12))), \l. l.nav.standoffKm == standoffMaxKm() && standoffMaxKm() == 0.1 * auKm())
 }
-test "AC15 too_close: stand-off or b 1 km under 1.1 R + bubble refused, at it accepted; a stand-off over 0.1 AU is clamped" { checkTooClose() }
+-- AC15 too_close: stand-off or b 1 km under 1.1 R + bubble refused, at it accepted; a stand-off over 0.1 AU is clamped: checkTooClose (run on both engines by navigationVm, make strict-m5)
 
 -- collision: from behind the Sun to Mars the line passes the Sun's centre at about h / 2
 -- (h = the sideways offset): h = 1.8 R_sun grazes inside the Sun, 3 R_sun clears it (Mars moves on about 0.2 R_sun during the leg).
@@ -208,7 +208,7 @@ export pure func checkCollision() -> bool =
   && ntRefusalOf(planBody(ctxAt(behindSun(1.8)), stopReq("mars", 0.1, None))) == "collision"
   && ntRefusalOf(planBody(ctxAt(behindSun(3.0)), stopReq("mars", 0.1, None))) == "ok"
   && ntRefusalOf(planBody(ctxAt(ntZero()), stopReq("mars", 0.1, None))) == "collision"
-test "AC15 collision: a leg through the Sun (offset 0 or 1.8 R_sun) is refused, 3 R_sun clears; a start inside the Sun collides" { checkCollision() }
+-- AC15 collision: a leg through the Sun (offset 0 or 1.8 R_sun) is refused, 3 R_sun clears; a start inside the Sun collides: checkCollision (run on both engines by navigationVm, make strict-m5)
 
 -- ring_crossing: a pass at clock 90 lies in Saturn's ring plane, so b just inside the
 -- outer ring (F, 140,612 km) crosses it and b just outside does not.
@@ -219,7 +219,7 @@ export pure func checkRingCrossing() -> bool {
   && ntRefusalOf(planBody(c, ntFlyReq("saturn", 0.5, 1.5 * ntRSaturn(), 90.0))) == "ring_crossing"
   && ntRefusalOf(planBody(c, ntSaturnFly())) == "ok"
 }
-test "AC15 ring_crossing: Saturn pass in the ring plane 10 km inside the F ring refused, 10 km outside accepted" { checkRingCrossing() }
+-- AC15 ring_crossing: Saturn pass in the ring plane 10 km inside the F ring refused, 10 km outside accepted: checkRingCrossing (run on both engines by navigationVm, make strict-m5)
 
 -- committed: a body plan while committed is refused (M2's rule); while only planned it replaces the plan.
 export pure func checkCommitted() -> bool {
@@ -231,7 +231,7 @@ export pure func checkCommitted() -> bool {
   ntRefused(p1) == "" && ntRefused(p2) == "" && p2.world.lastPlanId == 2 && ntRefused(c) == ""
   && ntRefused(again) == "committed" && again.world.lastPlanId == 2 && (match again.world.journey { Committed(_) => true, _ => false })
 }
-test "AC15 committed: a body plan during a committed journey is refused; before commit it replaces the plan" { checkCommitted() }
+-- AC15 committed: a body plan during a committed journey is refused; before commit it replaces the plan: checkCommitted (run on both engines by navigationVm, make strict-m5)
 
 -- out_of_range: cruise speed outside 0.001c..0.99c, an unknown mode, a run-out <= 0, a ship inside the stand-off.
 export pure func checkOutOfRange() -> bool {
@@ -244,7 +244,7 @@ export pure func checkOutOfRange() -> bool {
   && ntRefusalOf(planBody(c, stopReq("earth", 0.1, Some(60000.0)))) == "out_of_range"
   && bodyPhiMin() == rapidityOfBeta(0.001) && bodyPhiMax() == rapidityOfBeta(0.99)
 }
-test "out_of_range: cruise speed outside 0.001c..0.99c, an unknown mode, run-out 0, a ship already inside the stand-off" { checkOutOfRange() }
+-- out_of_range: cruise speed outside 0.001c..0.99c, an unknown mode, run-out 0, a ship already inside the stand-off: checkOutOfRange (run on both engines by navigationVm, make strict-m5)
 
 -- ------------------------------------------------------------ commit and arrival
 -- A body plan is stale once the Earth clock moves (the body has moved on); a commit in
@@ -264,7 +264,7 @@ export pure func checkCommitAndArrive() -> bool {
   && (match done.journey { Arrived(c) => ntVeq(position(done.ship), c.plan.target.pos) && done.ship.motion.phi == 0.0, _ => false })
   && (match doneM4.journey { Arrived(c) => ntVeq(position(doneM4.ship), c.plan.target.pos), _ => false })
 }
-test "a body plan goes stale when the clock moves; committed at once, the leg lands on the computed arrival point" { checkCommitAndArrive() }
+-- a body plan goes stale when the clock moves; committed at once, the leg lands on the computed arrival point: checkCommitAndArrive (run on both engines by navigationVm, make strict-m5)
 
 -- ------------------------------------------------------------ protocol 2.4
 pure func ntHelloW(m: int) -> string = join("", ["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", show(m), "}}"])
@@ -291,7 +291,7 @@ export pure func checkHello24() -> bool =
   && (match decodeHello(serve(newSession(), ntHelloW(stopsMinor())).reply) { Ok(h) => h.minor == stopsMinor() && h.relativity == relativityPinStops() && relativityPinStops() == "0.11.0", Err(_) => false })
   && (match decodeHello(serve(newSession(), ntHelloW(systemMinor())).reply) { Ok(h) => h.minor == systemMinor() && h.relativity == helloMsg().relativity, Err(_) => false })
   && navMinor() == systemMinor() + 1 && grMinor() == departureMinor() + 1 && relativityPinNav() == "0.9.0" && relativityPinGr() == "0.10.0" && relativityPin() != relativityPinNav()
-test "2.4 hello: minor 4 with relativity 0.9.0 (frozen at minors 4-5); 3 keeps the 2.3 hello" { checkHello24() }
+-- 2.4 hello: minor 4 with relativity 0.9.0 (frozen at minors 4-5); 3 keeps the 2.3 hello: checkHello24 (run on both engines by navigationVm, make strict-m5)
 
 -- At minor 4 a body plan is accepted and its journey carries target_kind, intercept and pass
 -- (flyby) or hold (stop); below minor 4 the same line is bad_intent and changes nothing.
@@ -307,7 +307,7 @@ export pure func checkBodyPlanOnWire() -> bool {
   && contains(ntNth(r4, 6), "\"refused\":[]") && contains(ntNth(r4, 6), "\"state\":\"committed\"")
   && ntStatusOf(ntNth(r3, 4)) == "bad_intent" && contains(ntNth(r3, 4), "\"tick\":2,") && map(ntStatusOf, [ntNth(r3, 1), ntNth(r3, 2), ntNth(r3, 3)]) == ["ok", "ok", "ok"]
 }
-test "2.4 body plans on the wire: journey.plan gains target_kind, intercept, pass or hold; below minor 4 bad_intent" { checkBodyPlanOnWire() }
+-- 2.4 body plans on the wire: journey.plan gains target_kind, intercept, pass or hold; below minor 4 bad_intent: checkBodyPlanOnWire (run on both engines by navigationVm, make strict-m5)
 
 -- AC14 (client pos ignored): the same plan with a bogus target index and pos decodes to the
 -- same intent and gives the same replies, byte for byte.
@@ -317,7 +317,7 @@ export pure func checkClientPosIgnored() -> bool {
   let b = ntRunLines(newSession(), ntSession(navMinor(), ntFlyIntent(bogus)));
   a == b && (match decodeInput(ntTickL(3, "0", ntFlyIntent(bogus))) { Ok(x) => encodeInput(x) == ntTickL(3, "0", ntFlyIntent("")), Err(_) => false })
 }
-test "AC14 a body target's client index and pos are ignored: same intent, same replies byte for byte" { checkClientPosIgnored() }
+-- AC14 a body target's client index and pos are ignored: same intent, same replies byte for byte: checkClientPosIgnored (run on both engines by navigationVm, make strict-m5)
 
 -- encodeInput(decodeInput(x)) for every body form: stop with and without a stand-off, flyby with a run-out.
 export pure func checkBodyCodec() -> bool {
@@ -328,7 +328,7 @@ export pure func checkBodyCodec() -> bool {
   ntAllTrue(map(\l. match decodeInput(l) { Ok(x) => encodeInput(x) == l, Err(_) => false }, lines))
   && (match decodeInput(ntTickL(1, "0", "{\"k\":\"plan\",\"target\":{\"kind\":\"body\",\"id\":\"io\"},\"cruise_phi\":0.001,\"approach\":{\"mode\":\"flyby\"}}")) { Err(c) => c == "bad_intent", Ok(_) => false })
 }
-test "2.4 body plan codec: decode then encode is byte-identical; a flyby without b_km is bad_intent" { checkBodyCodec() }
+-- 2.4 body plan codec: decode then encode is byte-identical; a flyby without b_km is bad_intent: checkBodyCodec (run on both engines by navigationVm, make strict-m5)
 
 -- ------------------------------------------------------------ strict VM entry (make strict-m5, navigationVm)
 export pure func navigationChecks() -> [(string, bool)] = [

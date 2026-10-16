@@ -39,7 +39,8 @@ playthrough-ai-modes: ## M4.5bR3: explicit stub/digits scene and display checks,
 	@echo 'playthrough-ai-modes: stub=PASS digits=PASS (R2-INTERLUDE I4: the review reached, the Archive asked; stub told and voiced, digits refused)'
 
 parity-m4:
-	@AILANG=$(AILANG) python3 tools/replay.py --sim-only --case $(M45_CASES)
+	@# replay already runs every case on both engines; --sim-only adds only the launch assertion, so one case.
+	@AILANG=$(AILANG) python3 tools/replay.py --sim-only --case m4_transit_harness
 	@$(AILANG) run $(M45_FLAGS) --bytecode --entry adversarial --args-json '"tests/replays/m4_adversarial.ndjson"' sim/tools/session_refusals.ail > $(SCRATCH)/m45-refusals-vm.txt
 	@$(AILANG) run $(M45_FLAGS) --entry adversarial --args-json '"tests/replays/m4_adversarial.ndjson"' sim/tools/session_refusals.ail > $(SCRATCH)/m45-refusals-interp.txt
 	@cmp $(SCRATCH)/m45-refusals-vm.txt $(SCRATCH)/m45-refusals-interp.txt

@@ -2,6 +2,71 @@
 
 ## Unreleased
 
+## v0.4.0-dev.31-crew-core-0.5 (2026-10-16)
+
+### m4-6gr3-ship-goldens (2026-10-16)
+
+#### Added
+
+- Ten GPU golden cases cover the 3D ship's single tonemap, captain-eye forward pole
+  in boost, cruise and brake, and glow profiles, absolute simulation poles and zero at rest.
+  The golden target requires the simulation probe and exact case counts.
+
+### crew-core-0.5.0 (2026-10-16)
+
+#### crew_core 0.5.0: resource units come from the package; long crew runs stay fast
+
+- **Pin:** crew_core 0.5.0 (ailang-packages #146; it passed independent evaluation at 90/100 and then 92/100).
+- **Resource units:** the rules (allocate, lint, used) now live in `crew_core/units`. The game keeps only its eight-row bubble table and the ship's spare capacity in `sim/crew_resources.ail`.
+- **Archiving fix:** memory compaction no longer waits for the bank to fill, so evidence stops growing. A free-nav leg to Barnard's Star now arrives in 1,201 ticks: the longest takes 117 ms and none hits `step_timeout`.
+- **Performance:** on AILANG v0.54.11, where ailang#1827 is fixed:
+  - a busy crew's ten-year skip takes 11.2 s on the Studio, down from about 40 s;
+  - the skip as played takes 0.46 s.
+
+  `crew-perf`'s ceiling for the busy skip drops from 150 s to 30 s.
+
+### ailang-0.54.11 (2026-10-16)
+
+#### AILANG v0.54.11
+
+- **Upgrade:** CI and the bundled runtime move to AILANG v0.54.11.
+  - std/map now runs on the strict VM.
+  - `ailang lock` no longer restamps unchanged lockfiles.
+  - The VM's slow list walk is fixed (ailang#1827).
+- **Input handling:** the sim and the AI service read input with `readLineOpt`. End of input now ends a session cleanly, and a blank line is skipped. This replaces the "16 empty reads" guard.
+
+### context-crosscheck (2026-10-15)
+
+#### Changed
+
+- Display audit cross-checks each recorded binding context (row 7i(g)): a shared path that
+  disagrees with the frame view fails `context-drift`; a context-only `client.*` path must match
+  its producer (`context-source`: target id, catalogue distance with required presence, star
+  count and radius, zoom rate, hold time, Archive and Crew counts); anything else fails
+  `context-unknown`. The only allowlisted path is `client.map.target_name`. Six new control
+  fixtures, three edited.
+
+#### Fixed
+
+- The galaxy map's clock line could stay one or two ticks behind the frame after a pipelined
+  heartbeat or a console send advanced the world without a refresh (the AI-stub playthrough
+  caught it). `GalaxyMap._process` now refreshes when its tick differs from the world's.
+
+### crew-core-0.4.1 (2026-10-14)
+
+#### crew_core 0.4.1 in the game: auto-run answers concerns, the captain can too
+
+- **Pin:** crew_core 0.4.1 (ailang-packages #143). It fixes the auto-captain deadlock that kept a crew with a concern from being offered work.
+- **Auto-run presets:**
+  - critical-only answers a concern itself by asking the worker's advice, shown as a crew line ("Auto-run answered their concern by asking their advice.");
+  - hands-on hands every concern to the captain as a hold.
+- **Answering a concern yourself:** open concerns that can still be answered show on the member's card, with one confirmed button per approach (make the job clearer, ask their advice, plan it in stages, explain why it matters, insist). The button sends `crew_reply` (captain_reply) at the crew's tick and revision.
+- **Holds:** the new `stuck` hold has its own words.
+- **Gate:**
+  - the game's crew runs conversation v3;
+  - a year of critical-only auto-run logs no error acts, at daily and monthly check-ins, under both captains.
+- **Performance, measured honestly:** a busy crew's ten-year skip costs about 40 s. The old 0.6–1 s came from the deadlock. `crew-perf` keeps the 2 s budget for the critical-only skip as played, and sets a documented 60 s ceiling for the rule-free worst case. The cause is ailang#1827 plus encoding work; options are with Mark.
+
 ## v0.4.0-dev.30-crew-replies (2026-10-15)
 
 ### medic-emotions (2026-10-14)

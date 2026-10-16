@@ -121,6 +121,12 @@
   max-width: 900px;
 }
 
+.homes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .stage,
 .portrait {
   margin: 0;
@@ -148,12 +154,20 @@
 }
 
 @media (max-width: 900px) {
+  .homes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .crew {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 600px) {
+  .homes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .stages,
   .crew {
     grid-template-columns: repeat(2, minmax(0, 1fr));
