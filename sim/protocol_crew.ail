@@ -205,6 +205,9 @@ pure func issueLabel(c: CrewState, i: Issue) -> string = match filter(\l. l.requ
   l :: _ => l.label,
   [] => match filter(\b. b.request.id == i.request, c.session.bank) { b :: _ => if b.selected == "" then "concern" else b.selected, [] => "concern" }
 }
+-- A pending ask counts only while its task is still an offer: a reconsideration left pending when
+-- the captain ordered the work started is moot (the work is under way).
+pure func offeredTask(st: State, task: string) -> bool = any(\t. t.id == task && t.status == Offered, st.tasks)
 pure func issueState(label: string) -> string = if label == "decline" then "declined" else if label == "defer" then "deferred" else "concern"
 pure func finishedLatest(st: State, id: string) -> Option[Task] =
   foldl(\acc t. match acc { Some(b) => if t.due >= b.due then Some(t) else acc, None => Some(t) }, None,
@@ -218,7 +221,7 @@ export pure func workState(c: CrewState, id: string) -> string
   else if any(\r. !r.resolved && r.author == id, st.reliefs) then "relief_asked"
   else match filter(\i. i.worker == id, concernsOf(s)) {
     i :: _ => issueState(issueLabel(c, i)),
-    [] => if any(\q. q.actor == id, s.pending) then "asked" else match liveOf(st, id) {
+    [] => if any(\q. q.actor == id && offeredTask(st, q.task), s.pending) then "asked" else match liveOf(st, id) {
       Some(t) => if t.status == Offered then (if agreedOn(s, t.id) then "agreed" else "offered")
         else if startsWith(t.recipe, "rest_") then "resting" else "working",
       None => match finishedLatest(st, id) { Some(t) => if t.status == Stopped then "stopped" else "done", None => "free" }

@@ -614,7 +614,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.INTERLUDE_MINOR # R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10)
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.CONSOLE_MINOR # R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().
@@ -751,7 +751,7 @@ func _show_interlude() -> void:
 	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
 	crossing_review.visible=card!=null and not (consoles!=null and consoles.focused=="crew")
 	if crossing_review.visible:
-		if consoles!=null and consoles.crew_page!=null:crossing_review.ai_text=consoles.crew_page.ai_text
+		if consoles!=null and consoles.crew_console!=null:crossing_review.ai_text=consoles.crew_console.ai_text
 		var view:=hud_view()
 		# I4: once the crossing is over, the Archive is asked for its telling (live AI with a key only).
 		archive_narration.maybe_open(view,ai_session.relay if ai_session!=null else null,card.crossed())

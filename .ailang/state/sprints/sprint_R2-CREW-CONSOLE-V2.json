@@ -1,6 +1,6 @@
 {
   "sprint_id": "R2-CREW-CONSOLE-V2",
-  "status": "in_progress",
+  "status": "paused_for_review",
   "approved": true,
   "approved_by": "Mark (attended, 2026-10-16: \"yes continue\", all nine recommendations)",
   "created": "2026-10-16",
@@ -135,10 +135,10 @@
         "make crew-parity strict parity: VM == interpreter and two runs byte-identical for console_v2; consoleScripted under --strict-bytecode (AC5)",
         "make parity-v2 replay: every stream below consoleMinor byte-identical, no golden re-recorded (AC2)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-16",
+      "completed": "2026-10-16",
+      "notes": "Protocol 2.11: workState (table test, one row per value plus ties; a moot pending reconsideration under ordered work found on the real sim and added), workTerms, crewCommandAs (all or nothing), crew_offer start on_accept|now paired with its ask, envelope gating below 2.11. strict consoleScripted, crew-parity console_v2. Gates: sim tests, strict, crew-parity (6), parity, parity-v2, replay (11 identical). The early fix to the old page folded into V3."
     },
     {
       "id": "V2_PALETTE_MODEL",
@@ -151,10 +151,10 @@
         "make crew-console-test: every work_state plus sending maps one-to-one to token, icon and word; tokens >= 3:1 on the panel, chip text >= 4.5:1; adjacent states DeltaE2000 >= 12 under simulated deutan/protan/tritan or differ in icon and edge (AC6)",
         "make crew-console-test: a queued intent locks every action on that member until the next crew view or a refusal; other members stay actionable (AC8, model half)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-16",
+      "completed": "2026-10-16",
+      "notes": "ui/crew_palette.gd (contrast and CVD checks; CIEDE2000 verified on Sharma pairs; three hexes tuned, free and refused drawn as outlines), ui/crew_console_model.gd, ui/crew_chip.gd (drawn icons). Palette checks inside crew-console-test. The sending lock uses the console's emitted intents and SimBridge.last_queued (no queued_crew accessor needed)."
     },
     {
       "id": "V3_BOARD_CALL_BINDINGS",
@@ -170,9 +170,9 @@
         "make crew-console-capture: twelve frames written, no clipped node, no label under 12 logical, portrait >= 240 logical; opened by Mark (AC15, attended)"
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-10-16",
       "completed": null,
-      "notes": null
+      "notes": "Built: ui/crew_console.gd (board + two-panel call, decision block incl. inline Ask/Order, disabled Start with reason, Insist, Make it an order), crew_page.gd static helpers, ShipConsoles full-width crew_panel_rect, 2.11 fixtures + make crew-console-fixtures, NT3 rewritten + NT5, display-audit-crew (+ crew_unbound control), capture 6 frames x 2 resolutions (0 failures). crew-console-test 0 failures, crew-hold-test 0, no-twitch 41/0, ship-console-test 124/0, display-audit-crew failures=0. passes left null: waits on Mark's render review (pause point 3)."
     },
     {
       "id": "V45_CONCERN_ASK_ORDER",
@@ -254,5 +254,6 @@
     "OQ8": "offer withdrawal: upstream request; show the lapse note meanwhile",
     "OQ9": "a refusal reads 'Needs you: declined, open to talk'"
   },
-  "protocol_minor": "2.11"
+  "protocol_minor": "2.11",
+  "pause_reason": "V3 captures await Mark render review (renders/crew_console/*, 1280x720 and 2560x1440); V4 onward not started"
 }

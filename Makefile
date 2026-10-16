@@ -60,13 +60,15 @@ crew-events-check: ## AC8: the news templates whose words carry a death are exac
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry lossIdsText --args-json 0 sim/crew_events.ail | tr -d '"'); \
 	[ "$$want" = "$$got" ] && echo "crew-events-check: ok (loss templates $$got)" || { echo "crew-events-check: FAIL: templates with a death are [$$want], lossTemplateIds says [$$got]"; exit 1; }
 test: crew-events-check
-crew-console-test: import ## AC10: the Voyage console Crew page on a recorded crew section; its actions emit the right crew intents (confirmed); the real sim accepts them
+crew-console-test: import ## R2-CREW-CONSOLE-V2 AC6-AC12: palette (contrast, CVD), board and call on recorded 2.11 crews, the sending lock, How, then the real sim
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_crew_console.gd > $(SCRATCH)/crew-console.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-console)' $(SCRATCH)/crew-console.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console.log && grep -q '^crew-console: 0 failures$$' $(SCRATCH)/crew-console.log
 test: crew-console-test
-crew-console-capture: ## C6 review frames: the Crew page from the recorded crew section -> renders/crew_console/ (GPU window; open every frame)
+crew-console-capture: ## R2-CREW-CONSOLE-V2 AC15: six frames (board, offer, sending, concern, working, hold) at 1280x720 and 2560x1440 -> renders/crew_console/ (GPU window; open every frame)
 	@mkdir -p $(SCRATCH)
 	@$(GODOT) --path . --resolution 1280x720 --script tools/crew_console_capture.gd > $(SCRATCH)/crew-console-capture.log 2>&1; rc=$$?; grep -E '^(frame|crew-console-capture)' $(SCRATCH)/crew-console-capture.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-console-capture.log
+crew-console-fixtures: ## R2-CREW-CONSOLE-V2: re-record tests/crew/console_v2/*.json from the real sim at 2.11 (a reviewed diff; never in make test)
+	@$(GODOT_SIM) --headless --path . --script tools/crew_console_fixture.gd; git diff --stat tests/crew/console_v2
 crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resume, presets, and the guided voyage holding ship time until the real sim's hold clears
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --headless --path . --script tests/test_crew_hold.gd > $(SCRATCH)/crew-hold.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-hold)' $(SCRATCH)/crew-hold.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-hold.log && grep -q '^crew-hold: 0 failures$$' $(SCRATCH)/crew-hold.log
@@ -1113,7 +1115,7 @@ playthrough-adversarial: ## M4.5aR3 AC3: re-plan, cancel and commit during trans
 playthrough-negative: import ## M4.5aR3: driver failures must exit nonzero for the declared reason
 	@mkdir -p $(SCRATCH)/playthrough
 	@GODOT='$(GODOT)' AILANG_BIN="$$(command -v $(AILANG))" sh tests/test_playthrough.sh
-ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative display-audit-interlude
+ship-demo-ci: ship-console-test no-twitch-test scene-session-audits playthrough-adversarial playthrough-negative display-audit-interlude display-audit-crew
 ship-ui-window-check: ## AC15: the helm (GalaxyMap embedded over the navigation station) in a real GPU window: open, click-select, hold-commit -> renders/ship_ui/window_check_*.png
 	@mkdir -p $(SCRATCH)
 	@$(GODOT_SIM) --path . --script tools/ship_ui_window_check.gd > $(SCRATCH)/ship-ui-window-check.log 2>&1; rc=$$?; grep -E '^(host|click|held|ship-ui-window-check)' $(SCRATCH)/ship-ui-window-check.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/ship-ui-window-check.log && grep -q '^ship-ui-window-check: OK$$' $(SCRATCH)/ship-ui-window-check.log

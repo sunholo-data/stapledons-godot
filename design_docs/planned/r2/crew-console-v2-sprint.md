@@ -32,7 +32,8 @@ V1 can ship alone: the sim's `work_state` and the start/offer envelopes, with to
 
 ## Milestones
 
-### V1: the sim names the state (~420 LOC, 1.5 days)
+### V1: the sim names the state (~420 LOC, 1.5 days) ✅ done 2026-10-16
+- **Done:** protocol 2.11 (`consoleMinor()`); `workState` (table test, one row per value plus ties; a tie found on the real sim, a reconsideration left pending under ordered work, added as a row); `workTerms`; `crewCommandAs`; the offer's `start` (paired with its ask in the tick; a refused start is reported on the offer's index); `consoleScripted`; `crew-parity console_v2`. Gates green: sim tests, strict, crew-parity (6), parity, parity-v2, replay (11 cases identical, no golden re-recorded). The "early fix" to the old page was folded into V3, which replaces that page.
 - **Red first:**
   - `sim/protocol_crew_test.ail` gains `workState` table cases, one per value plus the precedence ties (held over concern, relief over working, decline vs concern by the latest label, moot issues ignored).
   - `sim/crew_test.ail` gains:
@@ -51,7 +52,8 @@ V1 can ship alone: the sim's `work_state` and the start/offer envelopes, with to
 - **Early fix (pause point 1):** today's `_work_card` disables Start unless `work_state == "agreed"`, and shows the reason. That's about 20 LOC, so V1 is shippable before the redesign.
 - **Gate:** `make sim strict crew-parity parity parity-v2 replay crew-console-test`.
 
-### V2: palette and model (~280 LOC, 1 day)
+### V2: palette and model (~280 LOC, 1 day) ✅ done 2026-10-16
+- **Done:** `ui/crew_palette.gd` (tokens, icons, words, edges; contrast and CVD checks, CIEDE2000 verified against Sharma et al.), `ui/crew_console_model.gd`, `ui/crew_chip.gd` (drawn icons). Deviations: three hexes tuned so every neighbouring pair passes (asked `#3d8fd1`, agreed `#7fdcb0`, refused `#e8742a`, refused and free drawn as outlines); "neighbouring" is the explicit pair list `CrewPalette.NEIGHBOURS`. The palette test lives in `tests/test_crew_console.gd` (no separate file). The sending lock reads the console's own emitted intents and the bridge's `last_queued` (no new `queued_crew()` accessor was needed).
 - **Red first:** `tests/test_crew_palette.gd` (new; run inside `crew-console-test`) checks:
   - every `work_state` plus `sending` maps one-to-one to a token, an icon and a word;
   - each token's contrast against the panel is ≥ 3:1, and chip text is ≥ 4.5:1;
@@ -63,7 +65,8 @@ V1 can ship alone: the sim's `work_state` and the start/offer envelopes, with to
   - The bridge exposes queued crew intents per actor (`SimBridge.queued_crew()`), building on the fix PR's queue.
 - **Gate:** `make crew-console-test`.
 
-### V3: the board, the call window and the bindings (~600 LOC, 2 days)
+### V3: the board, the call window and the bindings (~600 LOC, 2 days) ✅ built 2026-10-16; waiting on Mark's render review (pause point 3)
+- **Done:** `ui/crew_console.gd` (board and call in one file; no separate `crew_call.gd`), `ui/crew_page.gd` reduced to static helpers, ShipConsoles hosts it full width (`crew_panel_rect`), recorded 2.11 fixtures (`tests/crew/console_v2/`, `make crew-console-fixtures`), NT3 rewritten and NT5 added, `display-audit-crew` with the `crew_unbound` control, the capture at both resolutions. Layout deviation: the call window is 430 wide and the decision panel 470 (936 logical leaves 920 inside the panel); the four answers sit in a two-by-two grid so a concern fits 540 logical. The decision block (V4/V5 UI: Ask or Order inline, disabled Start with its reason, Insist, Make it an order) is built here because the mockup's frames need it; V4's remaining items (reconsideration answered at once, keyboard) wait. The display audit's crew route samples no hold (a hold needs crew days the at-rest playthrough cannot pass); holds are covered by `crew-console-test` and `crew-hold-test`.
 - **Red first:**
   - `tests/test_crew_console.gd` rewritten for v2 on recorded fixtures (`tests/crew/console_v2/*.json`, recorded from the real sim by `tools/crew_console_fixture.gd`): the board rows, sort order and quick actions; the call window opening on select, on an incoming concern with nothing open, and pulsing instead when a call or confirm is open; End call; the mini-roster switching calls; the portrait at the sim's `emotion` (a mutation changes the texture); no label under 12 logical.
   - `tests/test_no_twitch.gd` gains NT5: the board, a call and a hold left for 600 s of fake time with the sim ticking. Nothing closes and no intent is emitted.

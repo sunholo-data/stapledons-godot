@@ -135,10 +135,12 @@ pure func table(c: CrewState) -> [(string, string)] = {
    ("stopped", ws(withTasks(c, [tk("t0", "pilot", Completed, "work_pilot", 2), tk("t1", "pilot", Stopped, "work_pilot", 3)]))),
    ("held", ws(withHolds(concerned, [{ id: "h1", rule: "uncovered", actor: "pilot", task: "t1", tick: 0, detail: "" }]))),
    -- ties: a concern outranks a pending reconsideration; a moot issue (no binding) is ignored;
-   -- a resolved relief is not asked; another member's state is not the pilot's
+   -- a resolved relief is not asked; a reconsideration left pending on work ordered under way is
+   -- moot (found on the real sim: Insist, then Make it an order); another member's state is not the pilot's
    ("concern", ws(withPending(concerned, [pendingOf("r2", "pilot", "t1")]))),
    ("offered", ws(withBindings(concerned, []))),
    ("working", ws(withReliefs(working(c, "work_pilot"), [{ id: "rl1", task: "t1", author: "pilot", resolved: true }]))),
+   ("working", ws(withPending(working(c, "work_pilot"), [pendingOf("r2", "pilot", "t1")]))),
    ("free", workState(concerned, "medic"))]
 }
 pure func rowOk(r: (string, string)) -> bool = match r { (want, got) => want == got }

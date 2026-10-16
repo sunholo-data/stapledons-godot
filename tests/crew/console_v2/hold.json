@@ -1,0 +1,186 @@
+{
+  "turn": 1.0,
+  "captaincy": "orders",
+  "members": [
+    {
+      "id": "medic",
+      "name": "Ligaya Reyes",
+      "indicators": {
+        "fatigue": 30.0,
+        "stress": 70.0,
+        "morale": 50.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": {
+        "task": "t1-medic",
+        "recipe": "work_medic",
+        "status": "offered",
+        "started": 0.0,
+        "due": 0.0
+      },
+      "done": null,
+      "regard_low": [],
+      "emotion": "sad",
+      "work_state": "held"
+    },
+    {
+      "id": "engineer",
+      "name": "Andrei Shevchenko",
+      "indicators": {
+        "fatigue": 35.0,
+        "stress": 55.0,
+        "morale": 55.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "analyst",
+      "name": "Santiago Navarro",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 45.0,
+        "morale": 50.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "pilot",
+      "name": "Anh Rahman",
+      "indicators": {
+        "fatigue": 20.0,
+        "stress": 40.0,
+        "morale": 70.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    },
+    {
+      "id": "counselor",
+      "name": "Adaeze Appiah",
+      "indicators": {
+        "fatigue": 25.0,
+        "stress": 50.0,
+        "morale": 65.0,
+        "readiness": 50.0,
+        "observations": 0.0
+      },
+      "trust": 55.0,
+      "work": null,
+      "done": null,
+      "regard_low": [],
+      "emotion": "neutral",
+      "work_state": "free"
+    }
+  ],
+  "requests": [],
+  "reliefs": [],
+  "heard": [
+    {
+      "id": "t1-medic",
+      "author": "captain",
+      "kind": "task_offer",
+      "text": "work_medic"
+    },
+    {
+      "id": "agreement-t1-medic",
+      "author": "captain",
+      "kind": "commitment_offer",
+      "text": "Project agreement t1-medic"
+    },
+    {
+      "id": "concern-q-t1-medic",
+      "author": "medic",
+      "kind": "concern",
+      "text": "decline"
+    }
+  ],
+  "resources": [
+    {
+      "id": "mass",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "power",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "compute",
+      "available": 2.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    },
+    {
+      "id": "signal",
+      "available": 3.0,
+      "reserved": 0.0,
+      "consumed": 0.0
+    }
+  ],
+  "lines": [],
+  "auto": "hands_on",
+  "holds": [
+    {
+      "id": "h0-refusal_under_orders-medic",
+      "rule": "refusal_under_orders",
+      "actor": "medic",
+      "name": "Ligaya Reyes",
+      "task": "t1-medic",
+      "tick": 0.0,
+      "detail": "decline",
+      "line": "refused an order."
+    }
+  ],
+  "used": [],
+  "tick": 1.0,
+  "revision": 5.0,
+  "concerns": [
+    {
+      "issue": "issue-q-t1-medic",
+      "actor": "medic",
+      "task": "t1-medic",
+      "kind": "patient_scope",
+      "prompt": "Who are we preparing to treat? Our crew is known; the needs of anyone we meet are unknown. I need us to talk through that uncertainty before I agree.",
+      "replies": 0.0,
+      "options": [
+        {
+          "approach": "clear_scope",
+          "text": "Let's centre preparation on our own crew, and discuss the unknown needs separately before making further commitments."
+        },
+        {
+          "approach": "ask_advice",
+          "text": "Give me your judgement: what would make this preparation worthwhile, and what remains uncertain?"
+        },
+        {
+          "approach": "stage_plan",
+          "text": "Let's discuss preparation in stages while science investigates. This is a discussion, not a reduced supply allocation or a promise of treatment."
+        }
+      ]
+    }
+  ]
+}
