@@ -62,7 +62,17 @@ I1 can ship alone: it fixes P3 (holds) and P5 (step timeout) without any new vie
   - A chunk over 1.0 s fails, and the log names the chunk.
 - **Gate:** `make sim strict parity parity-v2 replay crew-hold-test crew-perf tour-pacing-test`.
 
-### I2: the cruise digest (~550 LOC, 2 days)
+### I2: the cruise digest (~550 LOC, 2 days) ✅ 2026-10-16
+
+> **Done** (branch `feat/interlude-card`, ~650 LOC with tests). What changed from the plan:
+> - `emotionOf` and `strainedAt` live in `sim/protocol_crew.ail` (beside `templateLine`), not `cruise_digest.ail`: the crew view needs them and `cruise_digest` imports `protocol_crew`. At 2.10 the crew view's members and lines carry `emotion`; `CrewPage.emotion_of` reads it and `LABEL_EMOTION`/`STRAINED_LABELS`/`WARM_LABELS` are gone (Godot keeps `FALLBACK`). The console fixture gained the sim's emotions.
+> - The digest is begun from the world *before* the commit tick (`core.digestAfter`), so the commit tick's own crew days are folded, and it is folded on the arrival tick too. `cruise` carries `digest` on every committed tick; the arrival tick sends `{digest}` alone (frozen afterwards, nothing more is sent). `SimBridge.parse_cruise` accepts both shapes.
+> - `core.ail` grew 28 lines, not 15: `digestSnap` (the clocks, news and dust as plain values, since `cruise_digest` cannot import `core`), `digestAfter`, and the accepted console lines. `crewLines` now also returns the lines it noted (with their AI request ids) for the moments.
+> - Counts: `refusals`, `concerns` and `reliefs_asked` come from reply labels (auto-run `reply` acts and the captain's answered lines); `concerns_auto_answered` from `captain_reply` acts; reliefs granted/denied from `relief_decision` acts and the captain's accepted `resolve_relief` lines; `work_done` from crew_core's completed tallies plus live completed work, rest excluded.
+> - The scripted crossing (`crew_script.scriptedCrossing`, seed 3) has no relief: crew_core 0.5.0's auto-captain checks in with working crew only on even turns (`auto.ail checkIn`), and on the game's monthly schedule every decision turn is odd, so **no relief is ever asked on a long skip**. Flagged for crew_core (E4). Relief counting is covered by the hand-computed unit cases. The scripted crossing's counts are pinned from the run; every count's source is checked by hand in the unit cases.
+> - The scripted crossing brings the crew aboard with `initCrewWith`, not `core.withCrew`: the generated names table (`sim/data/crew_names` `nameRegions`) is evaluator-only under `--strict-bytecode` (register allocator, ailang#1736), and the crossing runs in `make strict`.
+> - `tests/crew/crossing_hold.ndjson` is the encoded digest after each chunk (15 lines), not crew_core lines: auto-run's own host calls are not returned by `advanceAuto`, so a standalone crew_core replay is not possible for this case. AC3/AC4 hold through VM == interpreter and the repeat-run comparison.
+> - `CardInterlude.TIERS` and `lines()` stay until I3 deletes them; the sim's `time.tier_line` and `years_at_home` are ready for the review.
 - **Red first.**
   - `sim/cruise_digest_test.ail` (new) runs a scripted one-year crossing (crew_script: an offer, a refusal, a relief asked and granted, a concern auto-answered, one hold and its resume). Its expected digest is written by hand before the code (AC1).
   - `tests/crew/crossing_hold.ndjson` is added as an empty recording.

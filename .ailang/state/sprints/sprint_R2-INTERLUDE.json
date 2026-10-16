@@ -146,10 +146,10 @@
         "make parity parity-v2 replay green; protocol_interlude round trip and below-10 byte identity tested",
         "emotionOf table test covers every label in crew_page.gd LABEL_EMOTION plus the strained rule"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-16",
+      "completed": "2026-10-16T00:00:00Z",
+      "notes": "AILANG prompt version loaded: v0.16.7 (runtime v0.54.11). Red first: sim/cruise_digest_test.ail written before the digest (failed on missing exports, IMP010), protocol_interlude_test digest/arrival/emotion/round-trip cases, test_cruise_interlude parse_cruise digest case, test_crew_console sim-emotion mutation case. Built: World.cruiseDigest (begun from the world before the commit tick, folded on every tick that starts or ends committed, kept through holds, frozen at arrival); sections time (tiers 0-6 at 1/10/30/80/130/1000, ruling 7 lines, singular year), home, medium, crew counts/movement/moments (bounded top 7)/waiting; emotionOf/strainedAt in sim/protocol_crew.ail, crew view emotion at 2.10, CrewPage reads it (LABEL_EMOTION removed); cruise.digest at 2.10 (arrival tick: digest alone); crew-parity crossing_hold (digest per chunk, repeat run identical, VM == interpreter) and strict digestScripted. Gates green: ailang test --package (502 + new), strict, crew-parity (5 recordings), parity, parity-v2, replay (11 cases identical, no golden re-recorded), crew-console-test, crew-bridge-test, crew-hold-test, tour-pacing-test. Full local make -k test (attended clone, 2026-10-16): exit 0, no failing target. Findings: crew_core 0.5.0 never checks in (so never asks relief) at the monthly cadence (checkIn needs an even turn, decision turns are odd); crew_names nameRegions is evaluator-only under --strict-bytecode (ailang#1736). Deviations recorded in the sprint plan I2 section."
     },
     {
       "id": "I3_CROSSING_REVIEW",
