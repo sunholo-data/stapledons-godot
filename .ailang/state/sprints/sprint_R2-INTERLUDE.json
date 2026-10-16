@@ -1,0 +1,209 @@
+{
+  "sprint_id": "R2-INTERLUDE",
+  "status": "approved",
+  "approved": true,
+  "approved_by": "Mark (attended 2026-10-16): \"yep execute the plan\"",
+  "created": "2026-10-16",
+  "started": null,
+  "design_doc": "design_docs/planned/r2/interlude-card.md",
+  "sprint_plan": "design_docs/planned/r2/interlude-card-sprint.md",
+  "branch": "feat/r2-interlude",
+  "implements": [
+    "interlude-card I1",
+    "I2",
+    "I3",
+    "I4",
+    "voyage-life-loop G2 (cruise case)",
+    "E4 (game half)"
+  ],
+  "github_issues": [],
+  "external_dependencies": [
+    {
+      "what": "base branch feat/crew-core-0.5.0 (crew_core 0.5.0 pinned, AILANG v0.54.11) merged to main",
+      "where": "stapledons-godot",
+      "owner": "attended session",
+      "blocks": [
+        "I1_CHUNKED_CRUISE"
+      ],
+      "status": "full test run in progress (2026-10-16)"
+    },
+    {
+      "what": "crew_core E4 skip report from the journal (I3b: replace the local moment salience rule)",
+      "where": "sunholo-data/ailang-packages",
+      "owner": "crew-lab agent",
+      "blocks": [],
+      "note": "I3b (~50 LOC + re-recorded crossing_hold) is not scheduled in this sprint; not in crew_core 0.5.0"
+    },
+    {
+      "what": "seven home images, one per time.tier (ruling 2, D-7 generate-and-cache)",
+      "where": "attended art task",
+      "blocks": [],
+      "note": "placeholder per tier until then; crossing-review-capture flags placeholders"
+    },
+    {
+      "what": "emotion sets for engineer, analyst, pilot, counselor (only the medic has eight)",
+      "where": "attended art task (D-7)",
+      "blocks": [],
+      "note": "portrait fallback list until then"
+    },
+    {
+      "what": "archive-npc OQ1 (Archive presence art)",
+      "effect": "I4 ships narration text and voice only; presence art later"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "I1-I2",
+      "package": "sunholo/crew_core@0.5.0 (auto.advanceAuto, Act, session.Archive)",
+      "action": "depend",
+      "reason": "already pinned; the digest reads its archive counters, state and Act log"
+    },
+    {
+      "milestone": "I2",
+      "package": "moment salience / skip report",
+      "action": "none",
+      "reason": "local pure rule until crew_core E4 publishes (then I3b depends on it; the report itself is contributed upstream by the crew-lab agent)"
+    },
+    {
+      "milestone": "I2",
+      "package": "sunholo/relativity",
+      "action": "none",
+      "reason": "no new physics formulas; pages show existing sim fields"
+    },
+    {
+      "milestone": "I3",
+      "package": "-",
+      "action": "none",
+      "reason": "Godot UI"
+    },
+    {
+      "milestone": "I4",
+      "package": "in-repo ai/ service and ai/voice.ail",
+      "action": "none",
+      "reason": "existing in-repo AI layer"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 350,
+    "estimated_total_loc": 1800,
+    "estimated_days": 7
+  },
+  "critical_path": [
+    "I1_CHUNKED_CRUISE",
+    "I2_CRUISE_DIGEST",
+    "I3_CROSSING_REVIEW",
+    "I4_ARCHIVE_NARRATES",
+    "E_EVALUATE_LAND"
+  ],
+  "pause_points": [
+    "after I1: report to Mark; I1 can merge alone (fixes holds and the step timeout)",
+    "any replay golden below protocol 2.10 moving: stop, Mark reviews the listed diff",
+    "I3: Mark opens renders/crossing_review/*.png before merge (visible feature, attended)",
+    "I4 live voice: spend stays attended (D-8); CI and the loop run stub only",
+    "art (home images, emotion sets) is attended and outside this sprint"
+  ],
+  "questions_for_mark": [
+    "R1-R7 SETTLED (Mark 2026-10-16, design doc Rulings): pages; per-tier home image; holds stop the crossing; guided voyage critical_only; 365-day chunk cap; Archive narrates (authored always, live telling + TTS with a key); seven home-time tiers",
+    "OPEN (wording): tier 1 reads '1 years at home' at exactly one year; singular form, or start tier 1 at 2 years?",
+    "NOTE: ruling 4 is already in effect in the live demo (ship_geometry_demo.gd:621 queues critical_only for every crew game); I1 pins it with a test"
+  ],
+  "evaluations": [],
+  "coordination": {
+    "executor": "attended session (stapledons-godot-attended clone)",
+    "evaluator": "different model from the executor",
+    "cio_owner": "crew-lab agent (E4, I3b only)"
+  },
+  "features": [
+    {
+      "id": "I1_CHUNKED_CRUISE",
+      "description": "Tests first (crew_hold_test cases, test_cruise_interlude rewritten red, test_crew_hold guided case). sim/cruise_digest.ail nextStop: earliest of braking boundary, next auto-run decision day (nextDecision, cadence 30) and chunkDays()=365, with years exact against dayRem; autoStep returns the full Act log. Protocol 2.10 (interludeMinor=10): cruise.next_stop_years and cruise.stop_kind while committed; SimBridge.INTERLUDE_MINOR. CardInterlude.advance returns min(next_stop_years, max_years) with a Crossing... progress line; a hold ends its chunk and crew_held() stops the next. Guided-voyage critical_only default pinned by test. crew-perf entry crewSkipChunked.",
+      "estimated_loc": 380,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "make sim: crew_hold_test shows zero crew days after an escalation on a decision day (turn == hold day) and the nextStop exactness property over 200 seeded dayRem values",
+        "make crew-hold-test: on the guided voyage a hold in month 2 stops the crossing in month 2; Resume continues to the braking boundary within 1e-12 x plan ship_years (AC5)",
+        "make crew-perf: crewSkipChunked every chunk < 1.0 s and critical_only decade total < 2 s (AC6); no step_timeout",
+        "make parity-v2 replay: every stream below 2.10 byte-identical, no golden re-recorded",
+        "make strict parity tour-pacing-test green; a test asserts a new guided voyage with crew queues crew_orders critical_only"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "I2_CRUISE_DIGEST",
+      "description": "Tests first (sim/cruise_digest_test.ail scripted one-year crossing with hand-written expected digest; tests/crew/crossing_hold.ndjson). World.cruiseDigest reset at commit, folded each committed tick, kept through holds, frozen at arrival. Sections time (tier 0-6, thresholds 1/10/30/80/130/1000 moved from GDScript), home, medium (replaces IsmHud.interlude_text subtraction), crew.counts (archive counters, state deltas and Act log; the game is untraced), crew.movement (ranked by |delta|, tie-break member id), crew.moments (<= momentsMax()=7, salience hold > refusal > relief > concern > accept, bounded fold), waiting. emotionOf(label, stress) ported from crew_page.gd. Codec in sim/protocol_interlude.ail at >= 2.10. New modules added to sim/ailang.toml exports.",
+      "estimated_loc": 550,
+      "dependencies": [
+        "I1_CHUNKED_CRUISE"
+      ],
+      "acceptance_criteria": [
+        "make sim: cruise_digest_test digest equals the hand-computed values (counts, movement deltas, moments <= 7, every tier edge) (AC1)",
+        "make strict: entry digestScripted runs on the strict VM and equals the interpreter (AC2)",
+        "make crew-parity: case crossing_hold (hold, resume, refusal) VM == interpreter byte for byte, and two runs of the same seed give a byte-identical digest (AC3, AC4)",
+        "make parity parity-v2 replay green; protocol_interlude round trip and below-10 byte identity tested",
+        "emotionOf table test covers every label in crew_page.gd LABEL_EMOTION plus the strained rule"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "I3_CROSSING_REVIEW",
+      "description": "Tests first (tests/test_crossing_review.gd on recorded 2.10 fixtures; no-twitch interlude state). ui/crossing_review.gd replaces ui/interlude_card.gd: pages Crossing, Home, Aboard, Moments, Who changed, Medium, Waiting; empty pages omitted; Next/Back/arrows/Enter/page dots; only dismissal is the last page's Brake button; no timer (CARD_S, lerp and CardInterlude.lines removed). Hold page first when a chunk ends on a hold (confirmed Resume -> crew_resume). Per-tier home image (placeholder until the attended art). Playthrough driver steps start guided / until interlude / review next|last; tests/playthrough_interlude.json. New targets crossing-review-test, display-audit-interlude, crossing-review-capture.",
+      "estimated_loc": 650,
+      "dependencies": [
+        "I2_CRUISE_DIGEST"
+      ],
+      "acceptance_criteria": [
+        "make no-twitch-test and make tour-pacing-test: 600 s of fake time on each page leaves it shown (AC7)",
+        "make display-audit-interlude: the guided playthrough reaches an interlude with crew aboard, turns every page, failures=0, no new known_findings entries; an unbound Label negative control fails (AC8)",
+        "make crossing-review-test: no digits, <= 280 chars and no good/bad/score words in crew text (AC9); portrait per moment follows the sim emotion with the fallback list and mutating emotion changes the texture (AC10); Hold page first and its Resume needs a confirmed press",
+        "make crossing-review-capture writes renders/crossing_review/*.png for every page at 1280x720 and 2560x1440, a Hold page, a no-crew crossing, the TRAPPIST-1 and Aldebaran legs; every frame opened and noted (AC11, attended)",
+        "make crew-hold-test crew-console-test green"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "I4_ARCHIVE_NARRATES",
+      "description": "Tests first in ai/. Authored Archive framing lines chosen in the pure sim (cruise_digest.narrationKey by tier and counts band; in-world D-67, no digits) on pages 1 and 3, always. With live AI ticked and a key (D-8): ai_open {purpose: archive} with the digest's bound fields as context, reply through ai/reply.ail screen, recorded as sim input, spoken once per crossing through ai/voice.ail (Gemini TTS) cached by the voice key; stub voice otherwise. Presence art waits on archive-npc OQ1.",
+      "estimated_loc": 220,
+      "dependencies": [
+        "I3_CROSSING_REVIEW"
+      ],
+      "acceptance_criteria": [
+        "make ai-test: authored narration per tier x counts band has no digits, <= 280 chars; ai_open archive is opened only with live AI and a key; reply passes screen; voice requested once per crossing",
+        "make in-world-voice-check green on the new lines",
+        "make playthrough-ai-modes: stub and digits modes PASS with the review reached",
+        "make crew-parity replay: a recorded archive telling replays byte-identical; ai-live-guard clean (no live call in tests)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "E_EVALUATE_LAND",
+      "description": "Full make test locally (attended) and in CI; sprint-evaluator by a different model (100 points, 70 to pass) into .ailang/state/evaluations/; landing: design doc and plan to design_docs/implemented/r2/, interlude-card-report.md, changelog fragment naming protocol 2.10, design-repo roadmap rows G2 and E4 (game half).",
+      "estimated_loc": 0,
+      "dependencies": [
+        "I4_ARCHIVE_NARRATES"
+      ],
+      "acceptance_criteria": [
+        "make test green locally and in CI (AC12)",
+        "evaluation file in .ailang/state/evaluations/ with score >= 70 from a model other than the executor",
+        "design_docs/implemented/r2/interlude-card.md and interlude-card-report.md exist; changelogs/unreleased/*crossing-review*.md opens with ###"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "approved_at": "2026-10-16"
+}
