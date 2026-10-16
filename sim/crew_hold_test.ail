@@ -6,8 +6,8 @@ import ./crew_auto (rulesFor, ordersFor, nextDecision, autoStep, presets, cadenc
 import ./cruise_digest (Stop, nextStop, stopYears, stopBracket, chunkDays)
 import ./protocol_interlude (cruiseStop)
 import pkg/sunholo/crew_core/auto (advanceAuto)
-import ./crew (CrewState, initCrew, plainDays, daysPerYear, initCrewWith, crewCommand, perDays, daysIn)
-import ./crew_script (Script, Step, SCmd, SDays, scripts)
+import ./crew (CrewState, initCrew, plainDays, daysPerYear, initCrewWith, crewCommand, consoleCmds, perDays, daysIn)
+import ./crew_script (Script, Step, SCmd, SDays, STick, SReply, scripts, replyLine)
 import ./core (World, Intent, ICrew, IPlan, ICommit, Event, newWorld, defaultParams, tick, withCrew)
 import ./rng (zeroRng, draw, top53, SCrew)
 import std/math (intToFloat)
@@ -110,15 +110,23 @@ pure func replay(s: Script, fast: bool) -> Option[CrewState] = match initCrewWit
 pure func go(c: CrewState, steps: [Step], fast: bool) -> CrewState = match steps {
   [] => c,
   st :: rest => {
-    let r = match st { SCmd(line, ask) => (crewCommand(c, 2, zeroRng(), line, ask)).crew, SDays(n) => (if fast then plainDays(c, zeroRng(), n) else perDays(c, zeroRng(), n)).crew };
+    let r = match st { SCmd(line, ask) => (crewCommand(c, 2, zeroRng(), line, ask)).crew, SDays(n) => (if fast then plainDays(c, zeroRng(), n) else perDays(c, zeroRng(), n)).crew,
+      STick(cmds) => (consoleCmds(c, 2, zeroRng(), cmds)).crew, SReply(w) => (crewCommand(c, 2, zeroRng(), replyLine(c, w), None)).crew };
     go(r, rest, fast)
   }
 }
 -- With archiving on (keep 30), crew_core archives after every advance, so a batched advance folds
 -- the same items later. crew_core 0.4.0 keeps archive.events sorted, so the whole session, archive
 -- included, is equal.
+-- archive.completed (per-recipe counts) is folded in the order tasks are archived: when several
+-- tasks finish inside one batched span (console_v2 starts four at once) a batched advance archives
+-- them in a different order. The counts are the same, so it is compared as a set; everything else
+-- exactly. (Upstream ask: crew_core could keep `completed` sorted as it does `events`.)
 pure func sameCrew(a: CrewState, b: CrewState) -> bool =
-  a.session.state == b.session.state && a.turn == b.turn && a.session.archive == b.session.archive
+  a.session.state == b.session.state && a.turn == b.turn && { a.session.archive | completed: [] } == { b.session.archive | completed: [] }
+  && length(a.session.archive.completed) == length(b.session.archive.completed)
+  && all(\x. any(\y. y == x, b.session.archive.completed), a.session.archive.completed)
+pure func all(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && all(p, r) }
 pure func checkBatchExact() -> bool = !any(\s. match (replay(s, true), replay(s, false)) {
   (Some(a), Some(b)) => !sameCrew(a, b),
   _ => true

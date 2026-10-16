@@ -49,7 +49,7 @@ pure func askC(actor: string, task: string, id: string) -> CrewCmd =
   cmd("crew_ask", concat(["{\"command\":\"ask\",\"actor\":\"", actor, "\",\"task\":\"", task, "\",\"id\":\"", id, "\"}"]), Some(id), "", "")
 pure func startAsC(task: string, mode: string) -> CrewCmd = cmd("crew_start", startTaskLine(task), None, mode, "")
 -- The captain's reply to `worker`'s open concern (the first suggestion), or a line crew_core refuses.
-pure func replyLine(c: CrewState, worker: string) -> string = match keep(\i. i.worker == worker && i.status == "open" && !moot(c.session, i), c.session.chat.issues) {
+export pure func replyLine(c: CrewState, worker: string) -> string = match keep(\i. i.worker == worker && i.status == "open" && !moot(c.session, i), c.session.chat.issues) {
   i :: _ => match suggestions(i, 1) {
     o :: _ => encode(jo([kv("command", js("captain_reply")), kv("id", js(concat(["say-", i.task]))), kv("issue", js(i.id)), kv("text", js(o.text)), kv("approach", js(o.approach)),
       kv("tick", jint(c.session.state.tick)), kv("revision", jint(c.session.state.revision))])),
