@@ -38,6 +38,22 @@ func world(src: String, reason: Variant = null, req: Variant = null, tier := 0, 
 
 func test_templates() -> void:
 	ok("the real copy lints clean (%s)" % str(NewsCopy.lint(templates, copy)), NewsCopy.lint(templates, copy).is_empty())
+	# R2-INTERLUDE: {elapsed_years} is Earth time at the news epoch (when the message left home), not
+	# the time passed at home by now. At TRAPPIST-1 the news caught at arrival left home days after the
+	# ship did (elapsed 0.00) and is 40.62 years old, so "Only 0.00 years have passed there since you
+	# left" was false. The lint refuses a sentence that states elapsed time as passed until now.
+	for t in ["Only {elapsed_years} years have passed there since you left.", "At home, {elapsed_years} years have gone by since you left.",
+			"{elapsed_years} years have passed on Earth.", "In the {elapsed_years} years since you left, home has grown older."]:
+		ok("the lint refuses elapsed time stated as now: %s" % t, NewsCopy.elapsed_as_now(t))
+	for t in ["They wrote this {elapsed_years} years after you left.", "Earth sends word after {elapsed_years} years.",
+			"{elapsed_years} years of Earth time lie between your departure and the day this message was sent."]:
+		ok("the lint accepts elapsed time anchored to the sending: %s" % t, not NewsCopy.elapsed_as_now(t))
+	var stops := [[0.0, 40.62], [0.04, 4.35], [0.9, 0.2]]
+	var false_now := []
+	for tier in templates.tiers:
+		for t: String in tier.templates:
+			if NewsCopy.elapsed_as_now(t): false_now.append(t.left(60))
+	ok("no template states the news epoch as the time passed at home by now (%s, stops %s)" % [false_now, stops], false_now.is_empty())
 	var fx := NewsCopy.load_json(FIX + "paragraphs.json")
 	var all_ok := true
 	for t in fx["tiers"]:

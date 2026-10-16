@@ -93,6 +93,17 @@ static func reason_phrase(copy: Dictionary, code: String) -> String:
 
 
 ## Every problem in a template file and copy file; empty when both are clean.
+## R2-INTERLUDE: {elapsed_years} is Earth time at the news epoch, the moment the message left home,
+## not the time passed at home by now (that is elapsed + the news age). A sentence that carries the
+## slot may not state it as passed until now ("have passed", "have gone by", "since you left").
+static func elapsed_as_now(t: String) -> bool:
+	var re := RegEx.create_from_string("(?i)\\b(ha(ve|s) (passed|gone by)|since you left|since your departure)\\b")
+	for sentence in t.replace(";", ".").split("."):
+		if sentence.contains("{elapsed_years}") and re.search(sentence) != null:
+			return true
+	return false
+
+
 static func lint(templates: Dictionary, copy: Dictionary) -> Array:
 	var bad: Array = []
 	var allowed: Array = templates.get("slots", [])
@@ -118,6 +129,8 @@ static func lint(templates: Dictionary, copy: Dictionary) -> Array:
 					bad.append("%s: unknown slot {%s}" % [where, n])
 			if t.count("{") != t.count("}") or t.count("{") != slot_names(t).size():
 				bad.append("%s: a malformed slot" % where)
+			if elapsed_as_now(t):
+				bad.append("%s: states {elapsed_years} (when the message left home) as the time passed by now" % where)
 			var filled := fill(t, sample)
 			if filled.length() > MAX_CHARS or filled == "":
 				bad.append("%s: %d characters filled, the cap is %d" % [where, filled.length(), MAX_CHARS])
