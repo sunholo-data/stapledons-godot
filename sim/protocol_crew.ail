@@ -20,11 +20,13 @@ import std/list (map, filter, take, reverse, length, foldl, contains)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/json (Json, JNull, decode, getString, encode, jo, ja, kv, js, jnum)
-import pkg/sunholo/crew_core/session (Session, Request)
+import pkg/sunholo/crew_core/session (Session, Request, moot)
+import pkg/sunholo/crew_core/conversations (Issue, Suggestion, suggestions)
 import pkg/sunholo/social_dynamics/model (State, Actor, Value, Task, TaskStatus, Offered, Working, Completed, Stopped, Relief, Evidence, Resource)
 import ./crew (CrewState, CrewCmd, CrewLine, CrewName, CrewHold, crewTurn)
 import ./crew_names (nameOf)
-import ./crew_resources (Amount, usedOf)
+import ./crew_resources (usedOf)
+import pkg/sunholo/crew_core/units (Amount)
 
 export pure func crewIntentNames() -> [string] =
   ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
@@ -110,6 +112,11 @@ export pure func templateLine(label: string) -> string =
   else if label == "decline" then "Not this one, Captain. I can't take it on."
   else if label == "concern" then "Before I start, there's something about this that worries me."
   else if label == "request_relief" then "I need to step back from this for a while."
+  else if label == "captain_ask_advice" then "You asked what I think. I'll tell you straight, Captain."
+  else if label == "captain_clear_scope" then "That makes the job clearer. I can work with that."
+  else if label == "captain_explain_priority" then "I see why it matters now."
+  else if label == "captain_stage_plan" then "A step at a time, then. That I can do."
+  else if label == "captain_assert_authority" then "Understood, Captain. I'll do it."
   else if label == "continue" then "I can keep going for now."
   else if label == "defer" then "Let me think about it before I answer."
   else "I hear you, Captain."
@@ -122,6 +129,15 @@ export pure func holdObj(c: CrewState, h: CrewHold) -> Json =
 pure func lineObj(c: CrewState, l: CrewLine) -> Json =
   jo([kv("request", js(l.request)), kv("actor", js(l.actor)), kv("name", js(match nameOf(c.names, l.actor) { Some(n) => n, None => l.actor })),
     kv("label", js(l.label)), kv("text", js(templateLine(l.label))), kv("ai_req", js(l.aiReq))])
+
+-- crew_core 0.4.1: open concerns the captain can still answer (not moot: the offer still stands
+-- and its agreement hasn't lapsed), with crew_core's suggested reply for each approach. The page
+-- answers with crew_reply (captain_reply: id, issue, text, approach, tick, revision).
+pure func concernObj(i: Issue) -> Json =
+  jo([kv("issue", js(i.id)), kv("actor", js(i.worker)), kv("task", js(i.task)), kv("kind", js(i.kind)), kv("prompt", js(i.prompt)),
+    kv("replies", jnum(intToFloat(i.replyCount))),
+    kv("options", ja(map(\o. jo([kv("approach", js(o.approach)), kv("text", js(o.text))]), suggestions(i, 1))))])
+pure func concernsOf(s: Session) -> [Issue] = filter(\i. i.status == "open" && !moot(s, i), s.chat.issues)
 
 export pure func crewView(c: CrewState) -> string {
   let s = c.session;
@@ -137,6 +153,8 @@ export pure func crewView(c: CrewState) -> string {
     kv("auto", js(match c.auto { Some(a) => a.preset, None => "off" })),
     kv("holds", ja(map(\h. holdObj(c, h), c.holds))),
     kv("used", ja(map(\u. jo([kv("id", js(u.id)), kv("units", jnum(intToFloat(u.units))), kv("amount", jnum(intToFloat(u.amount))), kv("physical", js(u.physical))]),
-      usedOf(map(\r. { id: r.id, value: r.consumed }, filter(\r. r.consumed > 0, st.resources))))))
+      usedOf(map(\r. { id: r.id, value: r.consumed }, filter(\r. r.consumed > 0, st.resources)))))),
+    kv("tick", jnum(intToFloat(st.tick))), kv("revision", jnum(intToFloat(st.revision))),
+    kv("concerns", ja(map(concernObj, concernsOf(s))))
   ]))
 }

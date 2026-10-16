@@ -10,7 +10,7 @@ SCRATCH := .godot/tmp
 # sunholo/relativity 0.10.0 _smoke digests, strict VM = interpreter (pinned from the package; the oracle must agree to 1e-9)
 GEODESIC_LENS_DIGEST := 8.612720147193743
 GEODESIC_SCHW_DIGEST := 92833.6848137945
-AILANG_RELEASE ?= v0.54.8
+AILANG_RELEASE ?= v0.54.11
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
@@ -72,13 +72,12 @@ crew-hold-test: import ## AC15: crew holds: the hold card and its confirmed Resu
 	@$(GODOT_SIM) --headless --path . --script tests/test_crew_hold.gd > $(SCRATCH)/crew-hold.log 2>&1; rc=$$?; grep -E '^(ok|FAIL|crew-hold)' $(SCRATCH)/crew-hold.log; test $$rc = 0 && ! grep -q 'SCRIPT ERROR:' $(SCRATCH)/crew-hold.log && grep -q '^crew-hold: 0 failures$$' $(SCRATCH)/crew-hold.log
 test: crew-hold-test
 ## AC11 budgets. crewSkip (critical_only, as played): 2 s. crewSkipUnheld (no rules, concerns
-## answered, the crew busy for ten years): 150 s, a regression ceiling, not the goal (D-82). Under
-## crew_core 0.4.0 it runs 1.2-2.1 s on CI only because the auto-captain stalls on concerns; 0.4.1
-## (PR #243) unblocks it, and then a busy decade costs ~40 s on the Studio, ~71 s on CI, about half
-## of it the VM's O(n^2) list tail (ailang#1827). Mark (D-82): no package workaround; fix at source,
-## then restore 2 s.
+## answered, the crew busy for ten years): a regression ceiling, not the goal (D-82). ailang#1827
+## (the VM's O(n^2) list tail) is fixed in v0.54.10+; with crew_core 0.5.0 on v0.54.11 the busy
+## decade measures 11.2 s on the Studio (was ~40 s; about 20 s expected on CI), so the 2 s D-82
+## hoped for is not reached. Mark (2026-10-16): 11 s is acceptable; the ceiling is 30 s (was 150 s).
 CREW_PERF_BUDGET_crewSkip := 2.0
-CREW_PERF_BUDGET_crewSkipUnheld := 150.0
+CREW_PERF_BUDGET_crewSkipUnheld := 30.0
 crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the strict VM, headless (warm cache); critical_only under 2 s, the busy no-hold worst case under its measured ceiling
 	@for e in crewSkip crewSkipUnheld; do \
 	  case $$e in crewSkip) b=$(CREW_PERF_BUDGET_crewSkip);; *) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; esac; \

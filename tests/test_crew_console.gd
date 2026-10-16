@@ -124,5 +124,68 @@ func _initialize() -> void:
 	page.show_crew(sim.crew)
 	check("working crew show day one of their work", texts(page.get_node("Member_engineer")).any(func(t): return t.begins_with("Working on Seal the drive for the first leg: day one of three.")))
 	sim.stop()
+
+	# Playtest (dev.31): task ids never repeat across a page rebuilt in the same crew turn (the turn
+	# stays fixed while docked and a new page's serial restarts), and every refusal has words.
+	var us := SimBridge.new()
+	us.want_minor = SimBridge.CREW_MINOR
+	ok = us.start() and us.new_game(1, "free_nav", false, {}, "", "orders")
+	var pa := CrewPage.new()
+	pa.show_crew(us.crew)
+	var oa := pa.offer_intents("counselor")
+	ok = ok and us.send(oa, 0.0) and us.last_refused.is_empty()
+	var pb := CrewPage.new()
+	pb.show_crew(us.crew)
+	var ob := pb.offer_intents("counselor")
+	var pc := CrewPage.new()
+	pc.show_crew(us.crew)
+	var oc := pc.offer_intents("counselor")
+	check("a rebuilt page in the same crew turn makes new task and request ids", ok and int(us.crew["turn"]) == 0
+		and line_of(ob[0])["id"] != line_of(oa[0])["id"] and line_of(ob[1])["id"] != line_of(oa[1])["id"] and line_of(oc[0])["id"] != line_of(ob[0])["id"])
+	ok = ok and us.send(ob, 0.0)
+	check("the sim accepts the rebuilt page's re-offer (no altered_duplicate)", ok and us.last_refused.is_empty())
+	ok = ok and us.send(oa, 0.0)
+	var dup: Array = us.last_refused.map(func(r): return str(r.get("reason", "")))
+	check("re-sending an old id is refused: altered_duplicate and the host's request capacity/id/clock", ok and dup.size() == 2
+		and dup[0].begins_with("crew:blocked:altered_duplicate:") and dup[1].contains("request capacity/id/clock"))
+	us.stop()
+	for reason in dup:
+		var w := pa.refusal_words(reason)
+		check("plain words for %s: %s" % [reason, w], not w.contains("_") and not w.contains("/") and not w.contains("{") and not RegEx.create_from_string("[0-9]").search(w))
+	root.add_child(pa)
+	pa.show_crew(section)
+	var pend := pa.press("offer:counselor")
+	check("a pending offer disables Offer, with the reason, until an answer", pa.pending_offers.has("counselor") and (pa.find_child("Offer_counselor", true, false) as Button).disabled
+		and texts(pa.get_node("Member_counselor")).has(CrewPage.OFFER_PENDING))
+	pa.on_refused([{"i": 0, "reason": dup[0], "intent": pend[0]}, {"i": 1, "reason": dup[1], "intent": pend[1]}])
+	check("a refusal is never silent: it clears the pending offer and says why on that member", not pa.pending_offers.has("counselor")
+		and not (pa.find_child("Offer_counselor", true, false) as Button).disabled and texts(pa.get_node("Member_counselor")).has(pa.refusal_words(dup[0])))
+
+	# crew_core 0.4.1: a concern the captain can answer sits on the member's card, with one confirmed
+	# button per approach; the reply is crew_reply (captain_reply) and the real sim accepts it.
+	var cs := SimBridge.new()
+	cs.want_minor = SimBridge.CREW_MINOR
+	ok = cs.start() and cs.new_game(1, "free_nav", false, {}, "", "consent")
+	var cp := CrewPage.new()
+	root.add_child(cp)
+	cp.show_crew(cs.crew)
+	var offers: Array = []
+	for id in ["medic", "engineer", "analyst", "pilot", "counselor"]:
+		offers.append_array(cp.offer_intents(id))
+	ok = ok and cs.send(offers, 0.0)
+	cp.show_crew(cs.crew)
+	var concern: Dictionary = {}
+	for q in cs.crew.get("concerns", []):
+		if q["actor"] == "pilot": concern = q
+	check("the pilot's concern is open, with reply options", ok and not concern.is_empty() and concern["options"].size() >= 3)
+	var pilot_texts := texts(cp.get_node("Member_pilot"))
+	check("the card names the concern and offers each approach", pilot_texts.any(func(t): return t.begins_with("Anh Rahman raised a concern:") or t.contains(" raised a concern: ")) and cp.find_children("Reply_%s_*" % concern.get("issue", "x"), "Button", true, false).size() == concern.get("options", []).size())
+	var action := "reply:%s:%s" % [concern.get("issue", ""), str(concern.get("options", [{}])[0].get("approach", ""))]
+	check("a reply needs a second press", cp.press(action).is_empty())
+	var reply := cp.press(action)
+	check("the confirmed reply is one crew_reply (captain_reply) at the crew's tick and revision", reply.size() == 1 and reply[0]["k"] == "crew_reply" and line_of(reply[0])["command"] == "captain_reply" and line_of(reply[0])["issue"] == concern.get("issue") and int(line_of(reply[0])["revision"]) == int(cs.crew["revision"]))
+	ok = cs.send(reply, 0.0)
+	check("the sim accepts the reply", ok and cs.last_refused.is_empty())
+	cs.stop()
 	print("crew-console: %d failures" % failures)
 	quit(1 if failures else 0)

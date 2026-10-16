@@ -66,6 +66,10 @@ signal stepped(events: Array)
 var relay_intents: Array = []
 ## R2-CREW C6: intents queued by a console (the Crew page), sent with the next tick and then cleared.
 var queued: Array = []
+## The queued intents the last tick carried, and where they start in it: a console tells its own
+## refusals apart (queued_refused) and knows its intents were answered.
+var last_queued: Array = []
+var queued_from := 0
 var relay_from := 0
 var last_events: Array = []
 var last_error := ""
@@ -315,6 +319,8 @@ func _send(intents: Array, dtau: float, pipelined_ok: bool) -> bool:
 		return false
 	var tick := int(world["tick"]) + 1
 	relay_intents = []
+	queued_from = intents.size()
+	last_queued = queued
 	if not queued.is_empty():
 		intents = intents + queued
 		queued = []
@@ -642,6 +648,23 @@ func _take_gr(changes: Dictionary) -> bool:
 ## R2-CREW C6: queue intents for the next tick (after the caller's own, before the relay's).
 func queue(list: Array) -> void:
 	queued.append_array(list)
+
+
+## The last tick's refusals of queued intents, each with the refused `intent` attached.
+func queued_refused() -> Array:
+	return last_refused.filter(_is_queued).map(func(r): var c: Dictionary = r.duplicate(); c["intent"] = last_queued[int(r["i"]) - queued_from]; return c)
+
+
+## The last tick's refusals of the caller's own (and the relay's) intents: not the queued ones.
+func caller_refused() -> Array:
+	return last_refused.filter(func(r): return not _is_queued(r))
+
+
+func _is_queued(r: Variant) -> bool:
+	if not (r is Dictionary) or not (typeof(r.get("i")) in [TYPE_INT, TYPE_FLOAT]):
+		return false
+	var i := int(r["i"]) - queued_from
+	return i >= 0 and i < last_queued.size()
 
 
 ## A crew intent: `kind` one of CREW_INTENTS, `command` the crew_core command as a dictionary.

@@ -14,7 +14,15 @@ permissions:
   contents: write
 
 jobs:
+  # Mark, 2026-10-15: dev tags (v*-dev.*) build at once, gated by a green local `make test`;
+  # a release tag (any other v*) runs the full CI suite first and builds only if it passes.
+  tests:
+    if: github.ref_type == 'tag' && !contains(github.ref_name, '-dev.')
+    uses: ./.github/workflows/ci.yml
+
   macos:
+    needs: tests
+    if: ${{ !cancelled() && (needs.tests.result == 'success' || needs.tests.result == 'skipped') }}
     name: macOS .app (universal Godot, arm64 sim runtime)
     runs-on: macos-latest
     env:
