@@ -19,7 +19,8 @@ signal open_crew
 signal intents(list: Array)
 
 const D := "cruise.digest."
-const HOME_DIR := "res://data/interlude/home" ## tier<n>.png per time.tier (Rulings §2): 1536x1024 (3:2), the left third calm for the text
+const HOME_DIR := "res://data/interlude/home" ## tier<n>.webp per time.tier (Rulings §2): 1536x1024 (3:2) lossy WebP, the left third calm for the text
+const HOME_EXT := "webp" ## D-18: the PNG masters stay in the public bucket (data/interlude/home/SOURCES)
 const TITLES := {"hold": "Needs you", "crossing": "The crossing", "home": "Home", "aboard": "Aboard",
 	"moment": "A moment from the crossing", "changed": "Who changed", "medium": "The medium", "waiting": "Waiting for you"}
 ## What auto-run did, by the sim's moment kind.
@@ -44,7 +45,7 @@ const LOW := Color(0.95, 0.6, 0.4)
 
 var ai_text: Dictionary = {} ## ai_req -> accepted AI words (the Crew page's)
 var narration: ArchiveNarration = null ## I4: the Archive's telling, when live AI told one (else the sim's authored lines)
-var home_dir := HOME_DIR ## where tier<n>.png are read (a test points it at a missing dir: the fallback)
+var home_dir := HOME_DIR ## where tier<n>.webp are read (a test points it at a missing dir: the fallback)
 var page := 0
 var crossed := false
 var armed := false
@@ -145,6 +146,11 @@ func _bleed(c: Control) -> void:
 	c.offset_top = -PAD
 	c.offset_right = PAD
 	c.offset_bottom = PAD
+
+
+## A tier's home picture file.
+static func home_path(dir: String, tier: int) -> String:
+	return dir.path_join("tier%d.%s" % [tier, HOME_EXT])
 
 
 ## The tier's home picture, or null when the file is missing (the page falls back to words only).
@@ -424,7 +430,7 @@ func _home(view: Dictionary) -> Control:
 	var tier := int(float(GalaxyMap.field_value(view, D + "time.tier") if GalaxyMap.field_value(view, D + "time.tier") != null else 0.0))
 	# The tier's picture fills the panel behind the page (_backdrop); the words sit in a column over
 	# its calm left side. A missing picture leaves the words alone across the page.
-	_home_art.texture = home_texture(home_dir.path_join("tier%d.png" % tier))
+	_home_art.texture = home_texture(home_path(home_dir, tier))
 	_home_missing = _home_art.texture == null
 	var box := _column()
 	box.name = "HomeText"

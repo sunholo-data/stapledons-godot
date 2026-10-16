@@ -179,12 +179,12 @@ func _run() -> void:
 	# with the words in a column over its calm left side; every tier's picture exists.
 	var sizes_ok := true
 	for tier in 7:
-		var tex := CrossingReview.home_texture(CrossingReview.HOME_DIR.path_join("tier%d.png" % tier))
+		var tex := CrossingReview.home_texture(CrossingReview.home_path(CrossingReview.HOME_DIR, tier))
 		sizes_ok = sizes_ok and tex != null and tex.get_size() == Vector2(1536, 1024)
-	check("all seven home pictures land, 1536x1024 (3:2)", sizes_ok)
+	check("all seven home pictures land, 1536x1024 (3:2), as WebP with no PNG master in the tree (D-18)", sizes_ok and not FileAccess.file_exists("res://data/interlude/home/tier0.png"))
 	var art: TextureRect = r.find_child("HomeImage", true, false)
 	check("the Home page shows its tier's picture as a cover over the whole panel", not r.home_art_missing() and r.home_art_shown() and art != null and art.is_visible_in_tree()
-		and art.texture == CrossingReview.home_texture(CrossingReview.HOME_DIR.path_join("tier%d.png" % int(d.time.tier)))
+		and art.texture == CrossingReview.home_texture(CrossingReview.home_path(CrossingReview.HOME_DIR, int(d.time.tier)))
 		and art.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED and art.offset_left == -CrossingReview.PAD and art.offset_right == CrossingReview.PAD)
 	var col: Control = r.find_child("Page_home", true, false).find_child("HomeText", true, false)
 	check("the home words sit in a column over the picture's left side, with a scrim", col != null and is_equal_approx(col.size_flags_stretch_ratio, CrossingReview.HOME_TEXT)

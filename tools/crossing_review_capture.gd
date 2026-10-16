@@ -7,7 +7,7 @@ extends SceneTree
 ##   trappist_<page>      TRAPPIST-1 (the crossing, home and aboard pages), then on to
 ##   aldebaran_<page>     Aldebaran (Earth years add up across legs: a later home tier)
 ## make crossing-review-capture -> renders/crossing_review/<frame>_<w>x<h>.png. A person opens
-## every frame. The home picture per tier (Rulings §2, data/interlude/home/tier<n>.png) covers the
+## every frame. The home picture per tier (Rulings §2, data/interlude/home/tier<n>.webp) covers the
 ## panel on the Home page. Layout checks per frame: the panel inside the window, every label inside
 ## the panel (nothing cut off at the sides), the page buttons below the page; on Home, the picture
 ## is there, the panel is 3:2 and the words stay in its left half.

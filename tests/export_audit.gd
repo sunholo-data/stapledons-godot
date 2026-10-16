@@ -36,7 +36,7 @@ const DYNAMIC := [
 	{"prefix": "res://data/crew/portraits", "filter": "data/crew/portraits/*", "witnesses": ["data/crew/portraits/medic_neutral.png"],
 		"reason": "ui/crew_page.gd:31 PORTRAIT_DIR; raw PNGs read by CaptainAvatar.make_texture (.import is gitignored)"},
 	{"prefix": "res://data/interlude/home", "filter": "data/interlude/*", "witnesses": ["data/interlude/home/SOURCES"],
-		"reason": "ui/crossing_review.gd:22 HOME_DIR; tier<n>.png per time.tier (attended art, ruling 2), raw PNGs read by CaptainAvatar.make_texture"},
+		"reason": "ui/crossing_review.gd:22 HOME_DIR; tier<n>.webp per time.tier (attended art, ruling 2), raw WebP read by CaptainAvatar.make_texture"},
 	{"prefix": "res://data/lens", "filter": "data/lens/*", "witnesses": ["data/lens/lens_fwd.bin", "data/lens/lens_inv.bin"],
 		"reason": "physics/schwarzschild.gd:22, 216-224: load_tables reads lens_<t>.json headers and lens_<t>.bin tables; dev.23. The .bin tables are the witnesses"},
 	{"prefix": "res://data/lore", "filter": "data/lore/*", "witnesses": ["data/lore/archive/bubble.md"],

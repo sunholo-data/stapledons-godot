@@ -256,5 +256,5 @@ Seven landscape illustrations, one per home-time tier, generated 2026-10-16 for 
 
 ## In the game repository
 
-- Landed 2026-10-16 in `stapledons-godot` at `data/interlude/home/tier<n>.png` (bytes unchanged; sha256 pins in `SOURCES` beside this file), read by `ui/crossing_review.gd` for the crossing review's Home page.
+- Landed 2026-10-16 in `stapledons-godot` as `data/interlude/home/tier<n>.webp` (lossy WebP at native 1536x1024, `cwebp -q 88 -m 6 -sharp_yuv`), read by `ui/crossing_review.gd` for the crossing review's Home page. The PNG masters described above are not in git (D-18): they are in the public bucket at `gs://stapledons-voyage-assets/site/<sha256>.png`. `SOURCES` beside this file pins both the WebP and the master hashes, with the master URLs.
 - The same seven pictures are on the website's concept-art page (PR #259).
