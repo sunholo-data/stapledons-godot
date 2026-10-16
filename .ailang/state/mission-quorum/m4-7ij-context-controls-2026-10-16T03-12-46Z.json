@@ -1,0 +1,75 @@
+{
+  "doc": "design_docs/planned/r1/m4-7ij-context-controls.md",
+  "iso_ts": "2026-10-16T03:12:46Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: 429 Too Many Requests: You reached your Pro weekly limit. Max is $100/month for $300 of usage, with no 5-hour or weekly caps: https://ollama.com/settings/billing (ref: caac982c-d575-4d87-b1f6-480dbae29ed9)",
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "openai error (429): You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+      "landed": null
+    },
+    {
+      "model": "gemini-4-argon",
+      "cost_usd": 0.01201,
+      "tokens_in": 4485,
+      "tokens_out": 304,
+      "present": true,
+      "result": {
+        "verdict": "pass",
+        "strongest_objection": "The `context_presence_parts.ndjson` fixture hardcodes the floating-point string `4.32103979249451` from `stars.json` for `stars[2].dist_ly`; if starmap assets are ever regenerated with different float formatting, the fixture will also fail `context-source` and silently stop isolating M6 unless the mutation suite is re-run.",
+        "catch": "In AC9, ensure the shell pipeline checking `git diff --name-only origin/main` uses `grep -cvE` or tests `[ $(... | wc -l) -eq 0 ]` rather than relying on visual inspection of `prints 0`, as `wc -l` always exits 0.",
+        "proposed_fix": "Update the AC9 command to fail on non-zero output: `test $(git diff --name-only origin/main | grep -vE '^(tests/display_audit\\.gd|mk/m45\\.mk|tests/fixtures/display_audit/context_(absent|presence_parts|crew)\\.ndjson|design_docs/|changelogs/|\\.ailang/state/)' | wc -l) -eq 0`"
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: 429 Too Many Requests: You reached your Pro weekly limit. Max is $100/month for $300 of usage, with no 5-hour or weekly caps: https://ollama.com/settings/billing (ref: eee94a85-02af-4edc-96dc-f18af0c10c23)",
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Narrow test-hygiene follow-up; three mutants re-measured surviving first-party at e40d418, positive control M8 killed; scope is fixtures + one reason string + spec rows. Pillar net 0 flagged separately for Mark."
+  },
+  "synthesis": {
+    "verdict": "proceed",
+    "blocking_objections": null,
+    "absent_reviewers": [
+      {
+        "model": "oc-kimi-k3",
+        "reason": "unreachable"
+      },
+      {
+        "model": "gpt6-1-sol",
+        "reason": "unreachable"
+      },
+      {
+        "model": "oc-glm-5-3",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.01201,
+    "total_tokens_in": 4485,
+    "total_tokens_out": 304
+  }
+}

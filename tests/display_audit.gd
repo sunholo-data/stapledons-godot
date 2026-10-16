@@ -156,7 +156,7 @@ func check_context(node: String, b: Dictionary, view: Dictionary) -> void:
 		# A catalogue target carries its distance, and only it does; Sol carries none.
 		var expected := catalogue_star(view) != null
 		var carried := GalaxyMap.field_value(b.context, "client.map.distance_ly") != null
-		check(carried == expected and parts_read(b, "client.map.distance_ly") == expected, "context-source %s client.map.distance_ly" % node)
+		check(carried == expected and parts_read(b, "client.map.distance_ly") == expected, "context-presence %s client.map.distance_ly" % node)
 
 
 func recorded_card(row: Dictionary, pattern: String, expanded: bool) -> bool:
