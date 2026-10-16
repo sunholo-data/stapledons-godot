@@ -52,6 +52,11 @@ const NUMBER_WORDS := ["no", "one", "two", "three", "four", "five", "six", "seve
 const REPLY_WORDS := {
 	"accept": "They agreed.", "decline": "They declined.", "concern": "They raised a concern first.",
 	"defer": "They asked to wait.", "continue": "They're keeping at it.", "request_relief": "They asked to step back.",
+	"captain_ask_advice": "Auto-run answered their concern by asking their advice.",
+	"captain_clear_scope": "Auto-run answered their concern by making the job clearer.",
+	"captain_explain_priority": "Auto-run answered their concern by explaining why it matters.",
+	"captain_stage_plan": "Auto-run answered their concern with a plan in stages.",
+	"captain_assert_authority": "Auto-run answered their concern by insisting.",
 }
 
 var crew: Dictionary = {}
@@ -191,6 +196,12 @@ const HOLD_WORDS := {
 	"major": "is shaken by news the whole ship heard.",
 	"argument": "is arguing with the crew over what the ship lost.",
 	"uncovered": "has raised something only you can answer.",
+	"stuck": "is stuck: the same thing keeps failing, and auto-run can't get past it.",
+}
+## crew_core 0.4.1 reply approaches, as the captain's choices on a concern.
+const APPROACH_WORDS := {
+	"clear_scope": "Make the job clearer", "ask_advice": "Ask their advice", "stage_plan": "Plan it in stages",
+	"explain_priority": "Explain why it matters", "assert_authority": "Insist: it's an order",
 }
 func _hold_card(h: Dictionary) -> Control:
 	var box := VBoxContainer.new()
@@ -245,6 +256,15 @@ func _member_row(m: Dictionary) -> Control:
 	var line := latest_line(id)
 	if not line.is_empty():
 		box.add_child(_label("“%s”" % line, 12, DIM))
+	for q in crew.get("concerns", []): # crew_core 0.4.1: an open concern only the captain can answer
+		if str(q.get("actor", "")) == id:
+			box.add_child(_label("%s raised a concern: %s" % [display_name(id), str(q.get("prompt", ""))], 13, LOW))
+			var qr := HFlowContainer.new()
+			qr.name = "Concern_" + str(q.get("issue", ""))
+			for o in q.get("options", []):
+				var ap := str(o.get("approach", ""))
+				qr.add_child(_button("Reply_%s_%s" % [q.get("issue", ""), ap], APPROACH_WORDS.get(ap, ap.replace("_", " ")), "reply:%s:%s" % [q.get("issue", ""), ap]))
+			box.add_child(qr)
 	for r in crew.get("reliefs", []): # a relief request sits on the asker's card
 		if str(r.get("author", "")) == id:
 			var rr := HBoxContainer.new()
@@ -452,6 +472,8 @@ func press(action: String) -> Array:
 			return _emit([SimBridge.crew_intent("crew_orders", {"command": "orders", "preset": parts[1]})])
 		"resume":
 			return _emit([SimBridge.crew_intent("crew_resume", {"command": "resume", "hold": parts[1]})])
+		"reply":
+			return _emit(reply_intents(parts[1], parts[2]))
 	return []
 
 
@@ -467,7 +489,25 @@ func actor_of(parts: PackedStringArray) -> String:
 			for r in crew.get("reliefs", []):
 				if str(r.get("id", "")) == parts[1]:
 					return str(r.get("author", ""))
+		"reply":
+			for q in crew.get("concerns", []):
+				if str(q.get("issue", "")) == parts[1]:
+					return str(q.get("actor", ""))
 	return ""
+
+
+## The captain's reply to a concern (crew_core captain_reply): the suggested words for the chosen
+## approach, at the crew's current tick and revision.
+func reply_intents(issue: String, approach: String) -> Array:
+	for q in crew.get("concerns", []):
+		if str(q.get("issue", "")) != issue:
+			continue
+		for o in q.get("options", []):
+			if str(o.get("approach", "")) == approach:
+				_serial += 1
+				return [SimBridge.crew_intent("crew_reply", {"command": "captain_reply", "id": "s%d-%s-%d" % [int(crew.get("tick", 0)), str(q.get("task", "")), _serial],
+					"issue": issue, "text": str(o.get("text", "")), "approach": approach, "tick": int(crew.get("tick", 0)), "revision": int(crew.get("revision", 0))})]
+	return []
 
 
 ## Offer the member's work and ask at once: the crew member answers in the same tick (authored).

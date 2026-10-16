@@ -156,7 +156,7 @@ The brain is local and untracked.
   reaches a local store nobody reads.
 - **Workarounds, re-checked on v0.54.11 (re-check again at each bump; still-needed ones reported as ailang#1783):**
   - Fixed in v0.54.8: a cold compile of an embedded `sunholo/crew_core` peaked at ~20 GB RSS (#1812, still open upstream; now ~0.5 GB). CI needs no memory limit or warm-up step for it.
-  - Open (v0.54.8, VM performance): a cons-pattern list walk copies the tail every step (`_list_tail`), so walking a list is O(n^2) (#1827). It makes the busy no-hold crew skip ~40 s on the Studio and 71 s on CI. Mark's ruling D-82: no package workaround; `crew-perf`'s `crewSkipUnheld` holds a 150 s ceiling until the fix, then 2 s.
+  - Fixed in v0.54.10 (#1827): the VM's O(n^2) cons-pattern list walk. With crew_core 0.5.0 on v0.54.11 the busy no-hold crew skip measures 11.2 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16) accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
   - Fixed in v0.54.11 (ailang PR #1836, verified 2026-10-16): all ten `std/map`
     operations run on the strict VM (VM = interpreter); `ailang lock` keeps
     `generated_at` when resolution is unchanged. End of input: the sim, the AI
