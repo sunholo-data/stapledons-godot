@@ -1,10 +1,10 @@
 {
   "sprint_id": "R2-INTERLUDE",
-  "status": "approved",
+  "status": "in_progress",
   "approved": true,
   "approved_by": "Mark (attended 2026-10-16): \"yep execute the plan\"",
   "created": "2026-10-16",
-  "started": null,
+  "started": "2026-10-16",
   "design_doc": "design_docs/planned/r2/interlude-card.md",
   "sprint_plan": "design_docs/planned/r2/interlude-card-sprint.md",
   "branch": "feat/r2-interlude",
@@ -126,10 +126,11 @@
         "make parity-v2 replay: every stream below 2.10 byte-identical, no golden re-recorded",
         "make strict parity tour-pacing-test green; a test asserts a new guided voyage with crew queues crew_orders critical_only"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-16",
+      "completed": "2026-10-16T00:00:00Z",
+      "notes": "AILANG prompt version loaded: v0.16.7 (runtime v0.54.11). Red first: crew_hold_test cases (exactness over 200 seeded dayRem + edges, cap 365 with auto off, check_in, hold -> cap, braking tie, autoStep Act log, AC5 world test on a 70 ly leg: hold on day 61, resume to 91), protocol_interlude_test (2.10 hello, cruise on the wire, 2.9 == 2.10 minus cruise, codec round trip), test_cruise_interlude rewritten (advance never exceeds next_stop_years), test_crew_hold guided_crossing, test_ship_ui ruling-4 pin; they failed on missing modules/fields (Act log test first failed on an assumption: an orders refusal logs offer/reply, not a refusal act; fixed the test) and the guided test failed on a real bug (the host used a stale stop after a resume; fixed by observing the world before each chunk). Built: sim/cruise_digest.ail (nextStop, stopYears by float bisection, chunkDays 365), sim/protocol_interlude.ail (cruiseStop, cruise codec), protocol 2.10 interludeMinor=10, AutoStepped.log, crew-perf crewSkipChunked (sim/tools/crew_perf.ail IO driver timed per line; busy 123 chunks slowest ~0.1 s total ~9.5 s; critical_only consent 0.8 s), SimBridge.INTERLUDE_MINOR + parse_cruise, chunked CardInterlude with Crossing... line, skip_stage runs chunks, game sessions at 2.10. Gates green: strict, parity, parity-v2, replay (11 cases identical, no golden re-recorded), crew-parity, crew-perf, crew-hold-test, tour-pacing-test, ship-ui, bh-hud, sim-pipeline, solar-departure, ship-console, no-twitch. Full local make -k test (attended clone, 2026-10-16): exit 0, no failing target. Deviations recorded in the sprint plan I1 section.",
+      "actual_loc": 550
     },
     {
       "id": "I2_CRUISE_DIGEST",

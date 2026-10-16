@@ -30,7 +30,15 @@ I1 can ship alone: it fixes P3 (holds) and P5 (step timeout) without any new vie
 
 ## Milestones
 
-### I1: the chunked cruise; a hold stops the crossing (~380 LOC, 1.5 days)
+### I1: the chunked cruise; a hold stops the crossing (~380 LOC, 1.5 days) ✅ 2026-10-16
+
+> **Done** (branch `feat/interlude-card`). What changed from the plan:
+> - `nextStop` takes the crew and the ship years to braking (`nextStop(crew, brake)`); the world-level `cruiseStop(w)` lives in `sim/protocol_interlude.ail`, so `cruise_digest.ail` never imports `core.ail` (I2's fold call from `core.ail` would otherwise be an import cycle).
+> - `crewSkipChunked` is an IO entry in `sim/tools/crew_perf.ail` (one line per chunk; `make crew-perf` times each line's arrival), with the pure `chunkStep` in `sim/crew_script.ail`: the sim has no clock (gate 6) and the package's effect ceiling is IO/FS. Its critical_only case is the game's default (consent captaincy) with holds left open, as the host leaves them.
+> - A refusal under orders is handed over *before* its day's advance (crew_core), so that one day still runs after the hold; the crossing still ends on the decision day (`turn == 61`).
+> - The host re-reads the stop from the world before each chunk (`_step_interlude` observes first): the held zero tick that carries `crew_resume` changes the next stop from the cap back to a check-in.
+> - `skip_stage()` during an interlude runs the chunks to the boundary, stopping at a hold.
+> - The game's sessions (ship, map, loading-jump prefetch) all ask for 2.10, so the prefetch is still adopted.
 - **Red first.** Write these before any code:
   - `sim/crew_hold_test.ail` gains cases. On a 10-year committed leg under critical_only with a scripted escalation on a day-61 decision day, the tick ends with `turn == 61` (zero plain days after the hold). The `next_stop` arithmetic is exact over 200 seeded `dayRem` values in [0, 1/365.25). The cap returns 365 days with auto-run off.
   - `tests/test_cruise_interlude.gd` is rewritten red: `advance()` never returns more than `next_stop_years`.
