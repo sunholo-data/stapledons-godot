@@ -1,0 +1,186 @@
+{
+  "sprint_id": "R2-CAMERA",
+  "status": "awaiting_approval",
+  "approved": false,
+  "approved_by": null,
+  "created": "2026-10-16",
+  "started": null,
+  "design_doc": "design_docs/planned/r2/camera-fixed-views.md",
+  "sprint_plan": "design_docs/planned/r2/camera-fixed-views-sprint.md",
+  "branch": "feat/r2-camera",
+  "origin": "Mark, dev.31 playtest 2026-10-16: \"I think we need to turn off zoom in and out for players, and switch to fixed zoom levels instead. we may want to also start having more fixed camera angles and not be 1st person but 3rd person only\"",
+  "implements": [
+    "camera-fixed-views C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5"
+  ],
+  "github_issues": [],
+  "external_dependencies": [
+    {
+      "what": "Crew console v2 (two-panel videocom), in design separately",
+      "blocks": [],
+      "note": "shares the console view; contract in design §D4; whichever lands second adapts"
+    },
+    {
+      "what": "Alpha Centauri mouse-look bug investigation",
+      "blocks": [],
+      "note": "superseded for players (no mouse look); its regression test should cover the player pointer path and the dev free camera (design §D7)"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "C1-C5",
+      "package": "sunholo/relativity",
+      "action": "none",
+      "reason": "no new formula; glow/wall maths already mirrored by ForwardGlow and reused unchanged in G-CAM-2"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 350,
+    "estimated_total_loc": 1700,
+    "estimated_days": 5.5
+  },
+  "critical_path": [
+    "C1_DIRECTOR_LEVELS_INPUT",
+    "C3_DEV_FREE_CAMERA_POINTER_MOTION",
+    "C2_SITUATION_VIEWS_CUES",
+    "C4_PHYSICS_GOLDENS_RENDERS",
+    "C5_MIGRATION",
+    "E_EVALUATE_LAND"
+  ],
+  "pause_points": [
+    "after PR 1 (C1+C3): Mark opens Z1/Z2/Z3 renders at rest and 0.99c and plays a menu launch (visible feature, attended)",
+    "any golden outside G-CAM moving: stop, list the diff for Mark",
+    "C4: renders opened by eye before C2/C4 PRs merge (gate 2)",
+    "clear-line sweep unmet without moving an anchor > 2 m: stop and ask"
+  ],
+  "questions_for_mark": [
+    "OQ1 zoom levels: rec three (Close 4.5 m/-20, Deck 12 m/-35 default, Whole level = per-area place camera)",
+    "OQ2 player yaw rotation in 90 deg steps: rec no for R2 (sector yaw only)",
+    "OQ3 first person gone everywhere incl. sky views: rec yes; console focus stays a framed screen; dev free camera only",
+    "OQ4 automatic situation cues (departure, stops, braking, Sgr A*): rec yes, ended by any input; prompts under reduced motion",
+    "OQ5 exterior ship shot for players: rec not in this sprint (observer outside the wall needs its own physics decision)",
+    "OQ6 default level: rec Z2 Deck",
+    "OQ7 developer free camera: rec keep (F8 / --free-camera, command-line launches only)",
+    "OQ8 orthographic iso vs perspective: rec perspective 78 deg (one camera must render the sky); sector yaws reuse the iso 45 deg family",
+    "OQ9 ledger: record the ruling (R1) as a RESOLVED row and OQ1-OQ8 as an OPEN row (attended edit; this PR does not touch the ledger)"
+  ],
+  "evaluations": [],
+  "coordination": {
+    "executor": "attended session (fresh clone)",
+    "evaluator": "different model from the executor"
+  },
+  "features": [
+    {
+      "id": "C1_DIRECTOR_LEVELS_INPUT",
+      "description": "CameraDirector (demos/camera_director.gd) + data/camera/views.json; Z1/Z2/Z3 on the bridge; 8 sectors with 10 deg hysteresis; envelope |eye|<=95 m and clear-line sweep; InputMap actions (keys, wheel notch, trackpad accumulation 1.0 unit/pinch x1.15, 0.3 s cooldown, joypad RB/LB); console dolly folded in; captain_yaw separate from camera yaw; screen-relative WASD with held direction; ShipControls rows. Includes G-CAM-2 Z1/Z2 + G-CAM-3 Z2 goldens (373->378).",
+      "estimated_loc": 550,
+      "estimated_days": 1.5,
+      "depends_on": [],
+      "acceptance_criteria": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC8",
+        "AC10"
+      ],
+      "gate": "make camera-test ship-demo-input-test ship-console-test ship-ui-test no-twitch-test; make golden (378)",
+      "status": "not_started",
+      "passes": null,
+      "notes": []
+    },
+    {
+      "id": "C3_DEV_FREE_CAMERA_POINTER_MOTION",
+      "description": "F8/--free-camera developer free camera behind dev_controls(); presets 3/4 dev-only; mouse_look_enabled false on menu launch; pointer never captured for players; click aim from event.position; GameSettings camera_motion full|reduced (title + Tab); HUD label. Ships in PR 1 with C1.",
+      "estimated_loc": 200,
+      "estimated_days": 0.5,
+      "depends_on": [
+        "C1_DIRECTOR_LEVELS_INPUT"
+      ],
+      "acceptance_criteria": [
+        "AC3",
+        "AC7",
+        "AC9"
+      ],
+      "gate": "make ship-ui-test free-nav-recovery-test title-screen-test camera-test",
+      "status": "not_started",
+      "passes": null,
+      "notes": []
+    },
+    {
+      "id": "C2_SITUATION_VIEWS_CUES",
+      "description": "Sky forward/side/aft with authored anchors and auto-walk (7/8/9, D-pad); cues at departure turn, guided stop, braking, Sgr A*; interlude hold; lift and lower-deck Z3; _begin_tour_turn stops writing tilt/yaw and cues the director.",
+      "estimated_loc": 350,
+      "estimated_days": 1.0,
+      "depends_on": [
+        "C1_DIRECTOR_LEVELS_INPUT"
+      ],
+      "acceptance_criteria": [
+        "AC6",
+        "AC10"
+      ],
+      "gate": "make camera-test tour-attitude-test tour-pacing-test no-twitch-test ship-demo-lift-test solar-departure-test",
+      "status": "not_started",
+      "passes": null,
+      "notes": []
+    },
+    {
+      "id": "C4_PHYSICS_GOLDENS_RENDERS",
+      "description": "tests/test_physics.gd translation invariance (RS-1, RS-2 through every view eye == captain eye, 1e-9 rad, 0.05 px); G-CAM-1 (6), G-CAM-2 (8 total), G-CAM-3 (2 total) in tools/m4_ship_golden.gd; Makefile golden count 389; tools/camera_views_capture.gd + make camera-views-capture (every view x rest/0.99c/stop/Sgr A* at 720p and 1440p), opened by eye.",
+      "estimated_loc": 250,
+      "estimated_days": 1.0,
+      "depends_on": [
+        "C2_SITUATION_VIEWS_CUES"
+      ],
+      "acceptance_criteria": [
+        "AC11",
+        "AC12",
+        "AC13"
+      ],
+      "gate": "make test; make golden (389); make camera-views-capture opened by eye",
+      "status": "not_started",
+      "passes": null,
+      "notes": []
+    },
+    {
+      "id": "C5_MIGRATION",
+      "description": "Migrate test setups (consolidation Z2 default, lift, journey, live, free_nav_stop, manual_exposure, title_screen); smoke-run the 19 capture/bench tools through override; changelog fragment; demos/README controls and Tab help.",
+      "estimated_loc": 350,
+      "estimated_days": 1.0,
+      "depends_on": [
+        "C1_DIRECTOR_LEVELS_INPUT",
+        "C2_SITUATION_VIEWS_CUES",
+        "C3_DEV_FREE_CAMERA_POINTER_MOTION"
+      ],
+      "acceptance_criteria": [
+        "AC9",
+        "AC14"
+      ],
+      "gate": "make -k test exit 0 locally; CI green",
+      "status": "not_started",
+      "passes": null,
+      "notes": []
+    },
+    {
+      "id": "E_EVALUATE_LAND",
+      "description": "sprint-evaluator on a different model (opens renders); move doc to implemented/r2, design-repo roadmap + design-decisions entry, README index row.",
+      "estimated_loc": 0,
+      "estimated_days": 0.5,
+      "depends_on": [
+        "C4_PHYSICS_GOLDENS_RENDERS",
+        "C5_MIGRATION"
+      ],
+      "acceptance_criteria": [
+        "all"
+      ],
+      "gate": "eval >= 70/100",
+      "status": "not_started",
+      "passes": null,
+      "notes": []
+    }
+  ]
+}
