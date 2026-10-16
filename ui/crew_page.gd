@@ -29,14 +29,11 @@ const DIM := Color(0.62, 0.68, 0.8)
 const STRAINED := 70.0 ## the pack's overextended threshold (scenario.json overextended.threshold)
 const TEXT := Color(0.86, 0.9, 0.98)
 const PORTRAIT_DIR := "res://data/crew/portraits"
-## A reply's emotion, and the faces to try for it in order (D-7's eight emotions; the trial set
-## has neutral for every role and loving and grieving for the medic).
-## The reply's emotion: declining shows anger, a concern shows fear, asking to step back (or stress at
-## the strained line) shows sadness, accepting shows happiness. A face missing that emotion falls back
-## along its list (the medic has all eight since 2026-10-14; the others are neutral for now).
-const STRAINED_LABELS := ["request_relief"]
-const WARM_LABELS := ["accept"]
-const LABEL_EMOTION := {"decline": "angry", "concern": "fearful"}
+## The faces to try for an emotion, in order (D-7's eight emotions; the trial set has neutral for
+## every role and loving and grieving for the medic). Which emotion a face shows is the sim's
+## (protocol 2.10 crew.members[].emotion, sim/protocol_crew.ail emotionOf, R2-INTERLUDE I2); a face
+## missing that emotion falls back along its list (the medic has all eight since 2026-10-14; the
+## others are neutral for now).
 const FALLBACK := {"sad": ["sad", "grieving", "neutral"], "happy": ["happy", "loving", "neutral"], "angry": ["angry", "sad", "neutral"],
 	"fearful": ["fearful", "sad", "grieving", "neutral"], "curious": ["curious", "neutral"], "loving": ["loving", "happy", "neutral"],
 	"grieving": ["grieving", "sad", "neutral"], "neutral": ["neutral"]}
@@ -400,23 +397,12 @@ func _call_panel() -> Control:
 	return row
 
 
-## The emotion a member's face shows: strained after asking for relief, declining or raising a
-## concern, or when stress is at the strained line; warm after accepting; else neutral.
+## The emotion a member's face shows: the sim's (crew.members[].emotion, protocol 2.10); neutral
+## when the sim sends none (below 2.10).
 func emotion_of(id: String) -> String:
-	var label := ""
-	for l in crew.get("lines", []):
-		if l.get("actor") == id:
-			label = str(l.get("label", ""))
-	var stress := 0.0
 	for m in crew.get("members", []):
 		if m.get("id") == id:
-			stress = float(m.get("indicators", {}).get("stress", 0))
-	if LABEL_EMOTION.has(label):
-		return LABEL_EMOTION[label]
-	if STRAINED_LABELS.has(label) or stress >= STRAINED:
-		return "sad"
-	if WARM_LABELS.has(label):
-		return "happy"
+			return str(m.get("emotion", "neutral"))
 	return "neutral"
 
 

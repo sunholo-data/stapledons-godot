@@ -70,6 +70,10 @@ func _initialize() -> void:
 	mid2.latest.cruise = {"next_stop_years": 0.3, "stop_kind": "chunk"}
 	check(mid2.lines().cut.begins_with("Crossing…") and mid2.lines().cut != "Crossing… the crew's monthly check-in.", "mutating stop_kind changes the Crossing… line")
 	check(SimBridge.parse_cruise({"next_stop_years": 0.1, "stop_kind": "check_in"}) == {"next_stop_years": 0.1, "stop_kind": "check_in"} and SimBridge.parse_cruise({"next_stop_years": -1.0, "stop_kind": "chunk"}).is_empty() and SimBridge.parse_cruise({"next_stop_years": 0.1, "stop_kind": "lunch"}).is_empty() and SimBridge.parse_cruise(3).is_empty(), "the bridge checks the 2.10 cruise section")
+	var dg := {"time": {"ship_days": 3}, "home": {}, "medium": {}, "crew": null}
+	check(SimBridge.parse_cruise({"digest": dg}) == {"digest": dg} and SimBridge.parse_cruise({"next_stop_years": 0.1, "stop_kind": "chunk", "digest": dg}).get("digest") == dg
+		and SimBridge.parse_cruise({"digest": {"time": {}}}).is_empty() and SimBridge.parse_cruise({}).is_empty() and SimBridge.parse_cruise({"stop_kind": "chunk"}).is_empty(),
+		"I2: the cruise section may carry the digest, alone on the arrival tick")
 
 	# Lines follow the simulation fields (mutation test: change a field, the line follows).
 	card.observe(world(46.1, 0.78, 46.0, 0.0001, 70.7124459519056, 41.8))

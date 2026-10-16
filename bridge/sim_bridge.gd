@@ -38,7 +38,7 @@ const ISM_MINOR := 8
 ## full state and whenever it changes. Asked for by setting `want_minor = CREW_MINOR`.
 const CREW_MINOR := 9
 ## Protocol 2.10 (R2-INTERLUDE I1): the chunked crossing. While a journey is committed each state
-## carries `cruise` {next_stop_years, stop_kind} (parse_cruise(), kept in world.cruise): a cruise
+## carries `cruise` {next_stop_years, stop_kind, digest} (parse_cruise(), kept in world.cruise): a cruise
 ## interlude steps exactly next_stop_years (a monthly crew check-in, the 365-day cap or the braking
 ## boundary), so a crew hold ends its chunk. Asked for by setting `want_minor = INTERLUDE_MINOR`.
 const INTERLUDE_MINOR := 10
@@ -671,13 +671,23 @@ static func parse_crew(v) -> Dictionary:
 			return {}
 	return v.duplicate(true)
 
-## The 2.10 cruise section, checked: next_stop_years a number >= 0, stop_kind one of STOP_KINDS. {} if wrong.
+## The 2.10 cruise section, checked: next_stop_years a number >= 0 with stop_kind one of STOP_KINDS
+## (while committed), and/or `digest` (R2-INTERLUDE I2: the crossing review's digest, an object with
+## time, home, medium and crew; on the arrival tick it comes alone). {} if wrong.
 static func parse_cruise(v) -> Dictionary:
-	if typeof(v) != TYPE_DICTIONARY or not (typeof(v.get("next_stop_years")) in [TYPE_FLOAT, TYPE_INT]) or not (v.get("stop_kind") in STOP_KINDS):
+	if typeof(v) != TYPE_DICTIONARY:
 		return {}
-	if float(v["next_stop_years"]) < 0.0:
-		return {}
-	return {"next_stop_years": float(v["next_stop_years"]), "stop_kind": str(v["stop_kind"])}
+	var out := {}
+	if v.has("next_stop_years") or v.has("stop_kind"):
+		if not (typeof(v.get("next_stop_years")) in [TYPE_FLOAT, TYPE_INT]) or not (v.get("stop_kind") in STOP_KINDS) or float(v["next_stop_years"]) < 0.0:
+			return {}
+		out = {"next_stop_years": float(v["next_stop_years"]), "stop_kind": str(v["stop_kind"])}
+	if v.has("digest"):
+		var d = v["digest"]
+		if typeof(d) != TYPE_DICTIONARY or not ["time", "home", "medium", "crew"].all(func(k): return d.has(k)) or typeof(d["time"]) != TYPE_DICTIONARY:
+			return {}
+		out["digest"] = d.duplicate(true)
+	return out
 
 func _take_crew(changes: Dictionary) -> bool:
 	if not changes.has("crew"):
