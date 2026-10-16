@@ -97,3 +97,29 @@ export const BRIDGE_V2 = [
       'A Godot capture of the illustrated treatment with the live sky and the captain sprite on deck, next to the captain sheet it has to match.',
   },
 ];
+
+// The crossing review's Home page (game design interlude-card, ruling 2): one picture per
+// home-time tier, the same headland seen as Earth's time runs on. Codex gpt-6.1-sol,
+// 16 October 2026; prompts and rejected candidates are in the game repo's generation notes.
+const HOME_FULL = [
+  '8513eb0ea5063524e0c0008b8781834a5953fabbb88848869334782d67911e1c',
+  '96e30bed8c7d2921809462c8c89eff59c00282ab3bd653ed9da5b6e1c8a6057b',
+  '0229d2d94f01c08dc96e96e957f3b6b6942003885a5aaa40c39b4e1a1f0b12c9',
+  '9f44e1145f389c5d3439b4dc67b75f8ae52f812433c1126a117e591e2b9e0ff8',
+  'bfd69e924ea322aec5cc4fa2744ee19c9d2f57886acb8ae7bf2ea68f72e29e70',
+  'b55a3c62fde9c1dfe1719357093d50b1b7041b4e3570ccc26c070341e9229453',
+  'a534e46430ad574bedfc33e47f56b6a6c440dec0686a4b313c268c7b1f2fdf62',
+];
+export const HOME = [
+  'Less than a year',
+  'Under ten years',
+  'Under thirty years',
+  'Under eighty years',
+  'Under 130 years',
+  'Under a thousand years',
+  'Beyond recorded history',
+].map((title, i) => ({
+  file: `home-tier${i}.jpg`,
+  full: `${B}/site/${HOME_FULL[i]}.png`,
+  title,
+}));
