@@ -1057,7 +1057,8 @@ func _on_crew_step(events: Array) -> void:
 	if crew_page == null or _crew_sim == null:
 		return
 	crew_page.on_events(events)
-	crew_page.on_refused(_crew_sim.last_refused)
+	if not _crew_sim.last_queued.is_empty(): # only a tick that carried the page's intents answers them
+		crew_page.on_refused(_crew_sim.queued_refused())
 	if focused == "crew" and crew_scroll.get_parent() == panel_body:
 		crew_page.show_crew(_crew_sim.crew)
 	if focused == "voyage" and is_instance_valid(crew_summary):

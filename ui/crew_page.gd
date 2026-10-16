@@ -38,6 +38,7 @@ const FALLBACK := {"sad": ["sad", "grieving", "neutral"], "happy": ["happy", "lo
 	"fearful": ["fearful", "sad", "grieving", "neutral"], "curious": ["curious", "neutral"], "loving": ["loving", "happy", "neutral"],
 	"grieving": ["grieving", "sad", "neutral"], "neutral": ["neutral"]}
 const SCENARIO := "res://data/crew/scenario.json"
+const OFFER_PENDING := "Offer sent. Waiting for their answer."
 ## A work effect in words (crew_core indicator deltas), by indicator and sign.
 const EFFECT_WORDS := {
 	"fatigue": ["tiring", "restful"], "stress": ["stressful", "eases their stress"],
@@ -60,7 +61,13 @@ var crew: Dictionary = {}
 var roles: Dictionary = {}          ## entity_id -> role name from the cast ("The Medic")
 var ai_text: Dictionary = {}        ## ai_req -> accepted AI words (set_ai_text)
 var armed := ""                     ## the action awaiting its confirming press
-var _serial := 0
+## Task and request ids count across every page in the process, and carry the crew's turn and
+## revision, so a page rebuilt in the same turn (docked, the turn holds) never reuses an id: the sim
+## refuses a reused one (crew:blocked:altered_duplicate, host request capacity/id/clock).
+static var _serial := 0
+## Offers emitted and not yet answered: member id -> task id. Their Offer button is disabled, with
+## OFFER_PENDING, until the sim's crew shows their work or the tick that carried them answers.
+var pending_offers: Dictionary = {}
 static var _face_cache: Dictionary = {} ## portrait path -> Texture2D (or null when absent)
 var work_info: Dictionary = {}      ## recipe id -> {name, purpose, duration, costs, effects} (scenario.json)
 var resource_names: Dictionary = {} ## resource id -> name in words ("Archive compute slots")
@@ -95,6 +102,9 @@ static func load_roles(dir: String) -> Dictionary:
 ## Show a crew section (empty: no crew aboard).
 func show_crew(section: Dictionary) -> void:
 	crew = section
+	for m in crew.get("members", []): # the offer is in the crew state: answered
+		if m is Dictionary and m.get("work") is Dictionary:
+			pending_offers.erase(str(m.get("id", "")))
 	_build()
 
 
@@ -119,23 +129,48 @@ func on_events(events: Array) -> void:
 		_build()
 
 
-## A tick's refusals (SimBridge.last_refused) for the crew intents this page emitted: the member
-## they were about gets a notice in words. A later accepted action clears it.
+## The sim's answer to the tick that carried this page's intents (the console calls it only for
+## such a tick, with SimBridge.queued_refused): each refused crew intent puts a notice in words on
+## the member it was about (its `intent`, else the last action's member); every pending offer has
+## now been answered, so it clears (accepted ones show their work on the next show_crew). A later
+## accepted action clears the notice.
 func on_refused(refused: Array) -> void:
-	if _last_actor == "":
-		return
-	var why := ""
+	var why := {}
 	for r in refused:
 		var reason := str(r.get("reason", "")) if r is Dictionary else str(r)
-		if reason.begins_with("crew:"):
-			why = refusal_words(reason)
-			break
-	if why == "":
+		if not reason.begins_with("crew:"):
+			continue
+		var who := intent_actor(r["intent"]) if r is Dictionary and r.get("intent") is Dictionary else _last_actor
+		if who != "" and not why.has(who):
+			why[who] = refusal_words(reason)
+	if _last_actor == "" and why.is_empty() and pending_offers.is_empty():
+		return
+	if _last_actor != "" and not why.has(_last_actor):
 		notices.erase(_last_actor)
-	else:
-		notices[_last_actor] = why
+	for who in why:
+		notices[who] = why[who]
+	pending_offers.clear()
 	_last_actor = ""
 	_build()
+
+
+## The member a crew intent is about: an offer's worker, an ask's actor, else as actor_of.
+func intent_actor(intent: Dictionary) -> String:
+	var c = JSON.parse_string(str(intent.get("line", "")))
+	if not (c is Dictionary):
+		return ""
+	if c.has("worker"):
+		return str(c["worker"])
+	if c.has("actor"):
+		return str(c["actor"])
+	match str(c.get("command", "")):
+		"start_task":
+			return actor_of(PackedStringArray(["start", str(c.get("task", ""))]))
+		"resolve_relief":
+			return actor_of(PackedStringArray(["relief", str(c.get("id", ""))]))
+		"captain_reply":
+			return actor_of(PackedStringArray(["reply", str(c.get("issue", ""))]))
+	return ""
 
 
 ## A crew refusal in words: a blocked start names the resource and who holds it.
@@ -152,9 +187,13 @@ func refusal_words(reason: String) -> String:
 						users.append(display_name(str(m["id"])))
 		var holder := (" %s %s using them." % [" and ".join(users), "is" if users.size() == 1 else "are"]) if not users.is_empty() else ""
 		return "Couldn't start: not enough %s free.%s" % [resource_names.get(res, res).to_lower(), holder]
+	if parts.size() >= 2 and parts[0] == "blocked" and parts[1] == "altered_duplicate":
+		return "Couldn't do that: it repeated an earlier request. Try again."
 	if parts.size() >= 2 and parts[0] == "blocked":
 		return "Couldn't do that: %s." % parts[1].replace("_", " ")
 	var host = JSON.parse_string(reason.trim_prefix("crew:")) if reason.trim_prefix("crew:").begins_with("{") else null
+	if host is Dictionary and str(host.get("host", "")) == "request capacity/id/clock":
+		return "Couldn't ask them: that question was already asked, or too many are waiting for answers."
 	if host is Dictionary and host.has("host"):
 		return "Couldn't do that: %s." % str(host["host"]).trim_suffix(".")
 	return "Couldn't do that (%s)." % reason.trim_prefix("crew:")
@@ -286,8 +325,13 @@ func _work_card(m: Dictionary) -> Control:
 	var row := HBoxContainer.new()
 	if not (work is Dictionary):
 		row.add_child(_label(title, 13))
-		row.add_child(_button("Offer_" + id, "Offer this work", "offer:" + id))
+		var offer := _button("Offer_" + id, "Offer this work", "offer:" + id)
+		row.add_child(offer)
 		card.add_child(row)
+		if pending_offers.has(id): # disabled, not hidden: the offer is on its way
+			offer.disabled = true
+			offer.tooltip_text = OFFER_PENDING
+			card.add_child(_label(OFFER_PENDING, 12, DIM))
 		card.add_child(_label(work_terms(info), 12, DIM))
 		var done = m.get("done")
 		if done is Dictionary:
@@ -443,9 +487,14 @@ func _face(node_name: String, id: String, emotion: String, px: int) -> Control:
 ## One press for an offer; a second press confirms start, relief and the captaincy switch.
 func press(action: String) -> Array:
 	if action.begins_with("offer:"):
+		var who := action.trim_prefix("offer:")
+		if pending_offers.has(who): # one offer at a time: wait for their answer
+			return []
 		armed = ""
-		_last_actor = action.trim_prefix("offer:")
-		return _emit(offer_intents(_last_actor))
+		_last_actor = who
+		var list := offer_intents(who)
+		pending_offers[who] = JSON.parse_string(list[0]["line"])["id"]
+		return _emit(list)
 	if armed != action:
 		armed = action
 		_build()
@@ -505,7 +554,7 @@ func reply_intents(issue: String, approach: String) -> Array:
 ## Offer the member's work and ask at once: the crew member answers in the same tick (authored).
 func offer_intents(id: String) -> Array:
 	_serial += 1
-	var tag := "c%d-%d" % [int(crew.get("turn", 0)), _serial]
+	var tag := "c%d-%d-%d" % [int(crew.get("turn", 0)), int(crew.get("revision", 0)), _serial]
 	var task := "t" + tag + "-" + id
 	return [SimBridge.crew_intent("crew_offer", {"command": "offer", "worker": id, "recipe": "work_" + id, "id": task}),
 		SimBridge.crew_intent("crew_ask", {"command": "ask", "actor": id, "task": task, "id": "r" + tag + "-" + id})]
