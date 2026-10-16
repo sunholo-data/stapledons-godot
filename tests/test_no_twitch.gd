@@ -189,7 +189,7 @@ func sweep_state(state: String) -> void:
 
 
 ## A tour plan intent's target is the next leg of the itinerary (by catalogue id or body).
-const CREW_CONFIRMED := ["crew_start", "crew_relief", "crew_policy", "crew_orders", "crew_resume"]
+const CREW_CONFIRMED := ["crew_start", "crew_relief", "crew_policy", "crew_orders", "crew_resume", "crew_reply"] # crew_reply: answering a concern (crew_core 0.4.1)
 func sweep_crew() -> void:
 	var demo: Node = await new_demo()
 	var sim := session(demo)
