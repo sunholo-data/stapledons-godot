@@ -31,6 +31,11 @@ them. `make sky-publish` (maintainers, gcloud) uploads new pins. Dev builds:
 Mark installs with `tools/install_review_build.sh --dev`. Releases use GitHub. All
 infrastructure is recorded in `infra/gcp/setup.sh` (Terraform-portable).
 
+**Tags (Mark, 2026-10-15).** A dev tag (`v*-dev.*`, e.g. `v0.4.0-dev.30-crew-replies`)
+builds the macOS zip straight away; tag it only after a green local `make test`
+(use the pinned runtime: `PATH=$PWD/runtime/bin:$PATH make test`). Any other `v*` tag
+is a release: `release.yml` runs the full CI suite first and builds only if it passes.
+
 ## Development cycle: design doc → sprint plan → execute → evaluate
 
 1. **Design doc.** Write it in `design_docs/planned/<release>/<id>.md`, using the
