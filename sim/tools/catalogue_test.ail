@@ -130,7 +130,7 @@ pure func checkEncodeOrder() -> bool =
     Err(_) => false }) &&
   (match encodeRows([]) { Ok(b) => byteLength(b) == 0, Err(_) => false })
 test "T4 encodeRows order and first error" { checkEncodeOrder() }
-test "T4 N3 exact 50000 boundary with intervening missing rows" { checkN3() }
+-- T4 N3 exact 50000 boundary with intervening missing rows: checkN3 (run on both engines by quotaVm, make catalogue-vm)
 test "T4 first error in row order wins" { checkFirstError() }
 test "T3 tier names refused" { checkTierNameRefused() }
 test "T3 huge coordinates refused before the sort" { checkHugeCoordRefused() }
