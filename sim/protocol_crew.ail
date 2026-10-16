@@ -144,6 +144,22 @@ export pure func crewHoldJson(h: CrewHold) -> string =
 export pure func holdObj(c: CrewState, h: CrewHold) -> Json =
   jo([kv("id", js(h.id)), kv("rule", js(h.rule)), kv("actor", js(h.actor)), kv("name", js(match nameOf(c.names, h.actor) { Some(n) => n, None => h.actor })),
     kv("task", js(h.task)), kv("tick", jnum(intToFloat(h.tick))), kv("detail", js(h.detail))])
+-- A hold in words, after the crew member's name (D-21: no digits). One source (R2-INTERLUDE I3):
+-- the crew view's holds carry it at 2.10 (`line`), and the cruise digest's hold moments use it, so
+-- the Crew page and the crossing review's Hold page read the same words.
+export pure func holdLine(rule: string) -> string =
+  if rule == "breakdown" then "is close to breaking down."
+  else if rule == "trust_floor" then "has lost trust in you."
+  else if rule == "refusal_under_orders" then "refused an order."
+  else if rule == "major" then "is shaken by news the whole ship heard."
+  else if rule == "argument" then "is arguing with the crew over what the ship lost."
+  else if rule == "uncovered" then "has raised something only you can answer."
+  else if rule == "stuck" then "is stuck: the same thing keeps failing, and auto-run can't get past it."
+  else "needs the captain."
+pure func holdObjE(c: CrewState, h: CrewHold) -> Json = match holdObj(c, h) {
+  JObject(kvs) => JObject(kvs ++ [kv("line", js(holdLine(h.rule)))]),
+  j => j
+}
 pure func lineObj(c: CrewState, l: CrewLine) -> Json =
   jo([kv("request", js(l.request)), kv("actor", js(l.actor)), kv("name", js(match nameOf(c.names, l.actor) { Some(n) => n, None => l.actor })),
     kv("label", js(l.label)), kv("text", js(templateLine(l.label))), kv("ai_req", js(l.aiReq))])
@@ -162,7 +178,8 @@ pure func concernObj(i: Issue) -> Json =
 pure func concernsOf(s: Session) -> [Issue] = filter(\i. i.status == "open" && !moot(s, i), s.chat.issues)
 
 export pure func crewView(c: CrewState) -> string = crewViewWith(c, false)
--- emotions (protocol 2.10, R2-INTERLUDE I2): members and lines carry `emotion`, the face Godot shows.
+-- emotions (protocol 2.10, R2-INTERLUDE I2): members and lines carry `emotion`, the face Godot shows;
+-- holds carry `line`, their words (I3).
 export pure func crewViewWith(c: CrewState, emotions: bool) -> string {
   let s = c.session;
   let st = s.state;
@@ -175,7 +192,7 @@ export pure func crewViewWith(c: CrewState, emotions: bool) -> string {
     kv("resources", ja(map(resourceObj, st.resources))),
     kv("lines", ja(map(\l. if emotions then lineObjE(c, l) else lineObj(c, l), c.lines))),
     kv("auto", js(match c.auto { Some(a) => a.preset, None => "off" })),
-    kv("holds", ja(map(\h. holdObj(c, h), c.holds))),
+    kv("holds", ja(map(\h. if emotions then holdObjE(c, h) else holdObj(c, h), c.holds))),
     kv("used", ja(map(\u. jo([kv("id", js(u.id)), kv("units", jnum(intToFloat(u.units))), kv("amount", jnum(intToFloat(u.amount))), kv("physical", js(u.physical))]),
       usedOf(map(\r. { id: r.id, value: r.consumed }, filter(\r. r.consumed > 0, st.resources)))))),
     kv("tick", jnum(intToFloat(st.tick))), kv("revision", jnum(intToFloat(st.revision))),

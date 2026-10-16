@@ -14,6 +14,8 @@ import std/math (intToFloat)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/list (map, filter, length, any)
+import std/string (contains)
+import ./protocol_crew (crewViewWith, holdLine)
 
 pure func day() -> float = 1.0 / 365.25 + 0.0000001
 
@@ -242,3 +244,20 @@ pure func checkChunkHold() -> bool = match withCrew(newWorld(2, false, defaultPa
   }
 }
 test "a hold on a decision day ends its chunk: the crossing stops on day 61, resume continues (AC5)" { checkChunkHold() }
+
+-- R2-INTERLUDE I3: one source for a hold's words. At 2.10 the crew view's holds carry `line`
+-- (protocol_crew.holdLine, the words after the member's name; no digits); below 2.10 they do not.
+pure func viewHasLine(c: CrewState) -> bool =
+  !any(\h. !contains(crewViewWith(c, true), "\"line\":\"${holdLine(h.rule)}\""), c.holds) && !contains(crewViewWith(c, false), "\"line\":")
+pure func checkHoldLine() -> bool = match withCrew(newWorld(2, false, defaultParams()), "consent") {
+  Err(_) => false,
+  Ok(w0) => {
+    let on = tick(w0, { dtau: 0.0, intents: [orders("hands_on")] });
+    let t1 = tick(on.world, { dtau: 3.0 * day(), intents: [] });
+    match t1.world.crew { Some(c) => length(c.holds) == 1 && viewHasLine(c), None => false }
+  }
+}
+test "2.10 crew view: each hold carries its words (holdLine); 2.9 does not" { checkHoldLine() }
+test "hold lines: one per rule, no digits, a fallback" {
+  holdLine("breakdown") == "is close to breaking down." && holdLine("stuck") != holdLine("other") && holdLine("other") == "needs the captain."
+}

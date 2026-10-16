@@ -24,7 +24,7 @@ import pkg/sunholo/crew_core/auto (Act)
 import pkg/sunholo/social_dynamics/model (State, Actor, Value, Completed)
 import ./crew (CrewState, CrewLine, CrewHold, daysIn, daysPerYear)
 import ./crew_names (nameOf)
-import ./protocol_crew (templateLine, emotionOf)
+import ./protocol_crew (templateLine, emotionOf, holdLine)
 import ./crew_auto (nextDecision, cadenceLongSkip)
 
 export type Stop = { years: float, kind: string } deriving (Eq)
@@ -121,17 +121,6 @@ export pure func tierLine(tier: int, whole: int) -> string =
   else if tier == 4 then "%s years. Everyone you knew is gone."
   else if tier == 5 then "%s years. No one alive on Earth was born when you left. The countries you knew may not exist."
   else "%s years. Longer than recorded history before you left. Whatever answers your signal will not be the Earth you left."
-
--- A hold in words, after the crew member's name (ui/crew_page.gd HOLD_WORDS).
-export pure func holdLine(rule: string) -> string =
-  if rule == "breakdown" then "is close to breaking down."
-  else if rule == "trust_floor" then "has lost trust in you."
-  else if rule == "refusal_under_orders" then "refused an order."
-  else if rule == "major" then "is shaken by news the whole ship heard."
-  else if rule == "argument" then "is arguing with the crew over what the ship lost."
-  else if rule == "uncovered" then "has raised something only you can answer."
-  else if rule == "stuck" then "is stuck: the same thing keeps failing, and auto-run can't get past it."
-  else "needs the captain."
 
 -- ---------------------------------------------------------------- the digest's state
 export type MediumRef = { name: string, nH: float } deriving (Eq)
