@@ -1,0 +1,5 @@
+R2-INTERLUDE ruling 2: one home image per cruise digest time.tier (0-6), named tier<n>.png,
+read by ui/crossing_review.gd HOME_DIR (raw PNG, CaptainAvatar.make_texture).
+Attended art (D-7 generate-and-cache); none has landed yet. Until a tier's image exists the
+crossing review shows the live cruise sky as a flagged stand-in (make crossing-review-capture
+prints PLACEHOLDER).

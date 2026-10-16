@@ -165,10 +165,11 @@
         "make crossing-review-capture writes renders/crossing_review/*.png for every page at 1280x720 and 2560x1440, a Hold page, a no-crew crossing, the TRAPPIST-1 and Aldebaran legs; every frame opened and noted (AC11, attended)",
         "make crew-hold-test crew-console-test green"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-10-16",
+      "completed": "2026-10-16T00:00:00Z",
+      "notes": "AILANG prompt version loaded: v0.16.7 (runtime v0.54.11). Red first: crew_hold_test (2.10 hold line, IMP010 until holdLine moved), tests/test_crossing_review.gd on fixtures recorded from the real sim (failed on the missing CrossingReview/CrewPage.face), no-twitch NT4, test_cruise_interlude rewritten (reader semantics). Lead decision: holdLine moved to protocol_crew, 2.10 crew.holds[].line, CrewPage.HOLD_WORDS removed (Crew page, Voyage summary, Hold page read the sim). Built: ui/crossing_review.gd (pages, Hold page with confirmed Resume, progress view, Next/Back/arrows/Enter/dots, Brake the only dismissal), CardInterlude.awaits_reader (SolarDeparture.reviewed in the live demo), DisplayBinding formats words/days/days_into/tier_line/speed_c, GalaxyMap.field_value array index, home placeholder = live cruise sky (flagged PLACEHOLDER), playthrough steps start/until review/review, display_audit interlude route + review_unbound negative control, make crossing-review-test / crossing-review-fixtures / crossing-review-capture / display-audit-interlude (in ship-demo-ci). Deleted: InterludeCard, CARD_S, TIERS, lines(), IsmHud.interlude_text/skipped_media. Gates: crossing-review 50/0, no-twitch 38/0, tour-pacing 0 failures, cruise-interlude 0, crew-hold 0, crew-console 0, ship-ui 219/0, solar-departure 134/0, display-audit-interlude samples=129 new=0 failures=0 (13 of 13 review pages sampled incl. Hold), display-audit-controls rejected review_unbound, sim/strict/parity/parity-v2/replay(11 identical)/crew-parity green. Renders: make crossing-review-capture 48 frames (24 per size) opened. See plan I3 notes for deviations.",
+      "actual_loc": 1480
     },
     {
       "id": "I4_ARCHIVE_NARRATES",
