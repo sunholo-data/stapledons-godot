@@ -896,6 +896,7 @@ func _run_golden() -> void:
 	failures += await load("res://tools/ism_golden.gd").new().run(self) # R1-ISM-DUST: G-ISM-1..3
 	failures += await load("res://tools/m5_golden.gd").new().run(self)
 	failures += await load("res://tools/gr_golden.gd").new().run(self) # M3.5: GR1-GR9
+	failures += await load("res://tools/m4_ship_golden.gd").new().run(self) # M4.6gR3: G-M4-S2..S4
 	print("golden: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
 
