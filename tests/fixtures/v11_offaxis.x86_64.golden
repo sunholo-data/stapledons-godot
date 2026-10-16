@@ -1,7 +1,7 @@
 # v1.1 sim output (x86_64) for the v1.1 off-axis log: the reference for `make offaxis-v11-equiv` (AC13).
 # Generated once at M2.1b with ailang v0.50.0 linux.x64 on GitHub Actions ubuntu-latest (run 36918292550);
 # VM and interpreter output identical. It differed from the arm64 golden only in line 8's beta (1 ulp, 0.10286440101920982);
-# since AILANG v0.52.0 (ailang#1465, exp/log identical across architectures) x86_64 gives the arm64 value, so line 8 now carries it:
+# since AILANG v0.52.0 (exp/log identical across architectures) x86_64 gives the arm64 value, so line 8 now carries it:
 #   T=$(mktemp -d); git archive e9d35c5 sim | tar -x -C $T; (cd $T/sim && ailang lock)
 #   git show e9d35c5:tests/fixtures/offaxis.ndjson | ailang run --bytecode --quiet --package-dir $T/sim --caps IO --entry main $T/sim/ship.ail
 # The sim's float output is architecture-dependent: std/math exp/log differ by 1 ulp between arm64 and

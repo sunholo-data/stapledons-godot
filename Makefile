@@ -10,7 +10,7 @@ SCRATCH := .godot/tmp
 # sunholo/relativity 0.10.0 _smoke digests, strict VM = interpreter (pinned from the package; the oracle must agree to 1e-9)
 GEODESIC_LENS_DIGEST := 8.612720147193743
 GEODESIC_SCHW_DIGEST := 92833.6848137945
-AILANG_RELEASE ?= v0.54.11
+AILANG_RELEASE ?= v0.54.13
 RUNTIME := runtime
 APP := build/macos/Stapledons Voyage.app
 
@@ -220,6 +220,7 @@ areas-stage:       ## M4.2: stage assets/areas/<area>/ into areas_bundle/<area>/
 	@echo "areas-stage: staged $$(ls areas_bundle | tr '\n' ' ')($$(du -sh areas_bundle | cut -f1))"
 
 sim:               ## AILANG sim over the NDJSON bridge vs closed-form kinematics; M3.6: + the black-hole HUD sentinels and the Sgr A* demo aboard the ship (bh-hud-test)
+	@# test --package type-checks every module since v0.54.13; check --package stays for its STRICT_FALLBACK_001 (empty-Ok) gate
 	$(AILANG) check --package sim
 	cd sim && $(AILANG) test --package .
 	$(GODOT_SIM) --headless --path . --script tests/test_sim_bridge.gd
@@ -374,7 +375,7 @@ geodesic-oracle:   ## M3.1a/b: the Python oracle for sunholo/relativity 0.10.0 g
 journey-replay:    ## AC14: the alpha Cen replay runs headless (no Godot), arrives on its last input; VM == interpreter == golden (replay case alpha_cen)
 	AILANG="$(AILANG)" python3 tools/replay.py --case alpha_cen
 
-wd-vm:             ## WD package NaN contract on the strict VM (ailang#1419: `ailang test` interpreter cannot see NaN-guard mutants)
+wd-vm:             ## WD package NaN contract on the strict VM
 	got=$$($(AILANG) run --quiet --bytecode --strict-bytecode --package-dir sim --entry wdVmNaN --args-json 0 sim/tools/catalogue_probe_test.ail); \
 	echo "wd-vm: $$got"; [ "$$got" = "wd-nan-ok" ]
 

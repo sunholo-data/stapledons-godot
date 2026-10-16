@@ -20,7 +20,7 @@ make capture   # sim-driven voyage → renders/*.png (inspect them; that is the 
 make run       # interactive
 ```
 
-AILANG is pinned to **v0.54.11** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
+AILANG is pinned to **v0.54.13** (CI, the bundled runtime and the lockfile move together; bump all three at once). Use the same version on `PATH`, or `AILANG=runtime/bin/ailang`. Use `--package-dir sim` for `run`, `--package sim` for
 `check`. zsh does not word-split `$flags`, so use `${=flags}`.
 
 **Large assets (D-18).** The sky textures (about 164 MB) aren't in git. `make sky-assets`
@@ -159,38 +159,35 @@ The brain is local and untracked.
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.54.11 (re-check again at each bump; still-needed ones reported as ailang#1783):**
-  - Fixed in v0.54.8: a cold compile of an embedded `sunholo/crew_core` peaked at ~20 GB RSS (#1812, still open upstream; now ~0.5 GB). CI needs no memory limit or warm-up step for it.
-  - Fixed in v0.54.10 (#1827): the VM's O(n^2) cons-pattern list walk. With crew_core 0.5.0 on v0.54.11 the busy no-hold crew skip measures 11.2 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16) accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
-  - Fixed in v0.54.11 (ailang PR #1836, verified 2026-10-16): all ten `std/map`
-    operations run on the strict VM (VM = interpreter); `ailang lock` keeps
-    `generated_at` when resolution is unchanged. End of input: the sim, the AI
-    service and the fake service read with `std/io.readLineOpt` (None ends the
-    session, a blank line is skipped), replacing the 16-blank-reads guard.
-  - Still needed: run `ailang lock` after `ailang install`; on a clean machine
-    `ailang lock` also fills the package cache (`make deps`).
-  - Open (v0.54.11): `ailang test --package` does not type-check modules no test
-    imports, so CI keeps `ailang check --package sim` (#1845).
-  - Open (v0.52.0, workaround in-tree, cite the issue at the site): the bytecode
-    VM silently drops a service request whose handler builds a list of ~1100+
-    elements by non-tail recursion (no result, no error, exit 0; the interpreter
-    answers) (#1576; `ai/voice.ail` builds stub tones by doubling).
-  - Breaking in v0.52.0: an explicitly imported name may not also be defined at
-    module level (MOD015). Alias the import (`import M (x as mX)`) or rename.
-  - Fixed in v0.52.0; the in-tree workarounds still cite the issue and are
-    removable in a follow-up: std/json -0.0 sign and long integers (#1460);
-    test-runner private-name mixups (#1461, #1516); exp/log 1 ulp arm64 vs
-    x86_64 (#1465); lone `| Idle` export (#1466); imports shadowing lambda/let
-    binders (#1467); strict-VM patterns: var arms, nested cons, constructor at a
-    cons head, nested constructor binds, `_ :: []` (#1473, #1505, #1503, #1517);
-    aliased/unknown pattern constructors (#1478, now TC_MATCH_001); NaN ordering
-    (#1419, now IEEE on both engines; NaN guards like `x == x` are still needed,
-    since every comparison with NaN is false); recursive std/list maximumFloat
-    (#1518); std/array and std/list.range on the strict VM; interpreter tail
-    calls (#1486); `writeFileBytesResult` exists.
-  - Fixed in v0.51.0: whole-number float literals in `test` blocks (#1456),
-    `string.repeat` and bitwise Int ops under `--strict-bytecode` (#1462, #1450).
-  - Fixed upstream, kept harmlessly in the Makefile: `--quiet` and `--package-dir`.
+- **Workarounds, re-checked on v0.54.13 (re-check again at each bump; still-needed ones reported as ailang#1783):**
+  - Open (v0.54.13, ailang#1736 fixed only in part): on the strict VM a list literal of plain
+    constants is fine at any length (`efficacyLut`, 601 floats, is one literal again), but one whose
+    elements are expressions still exceeds the register allocator's 256: about 128 negated literals
+    (`-0.5`), about 128 calls, or 15 records holding two 16-string lists. `sim/tools/ism_build.ail`
+    keeps the cloud-plane scalars in chunks of 90 and the members in chunks of 10, and
+    `sim/data/crew_names` `nameRegions` is still evaluator-only (no strict entry reaches it yet).
+  - Open (ailang#1827 fixed in v0.54.10, performance): with crew_core 0.5.0 the busy no-hold crew skip
+    measures 11.2 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16)
+    accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
+  - Kept on purpose: `ailang check --package` beside `ailang test --package`. Since v0.54.13 the
+    test runner type-checks every module and exits 1 on a compile error (ailang#1845), but only
+    `check` enforces STRICT_FALLBACK_001 (an unannotated empty `Ok`).
+  - Process, not a bug: run `ailang lock` after `ailang install`; on a clean machine `ailang lock`
+    also fills the package cache (`make deps`).
+  - Language rule since v0.52.0: an explicitly imported name may not also be defined at module
+    level (MOD015). Alias the import (`import M (x as mX)`) or rename. An aliased constructor
+    import is rejected in a pattern (TC_MATCH_001); `sim/tripphase.ail` maps phases to an index.
+  - Fixed and removed from the tree in v0.54.13 (byte-identical outputs): the #1576 doubling in
+    `ai/voice.ail` and the tail-recursive builders in `sim/tools/lens_lut.ail`; the #1736 split of
+    `applyOverride` and of the efficacy LUT; the #1737 named check functions in
+    `sim/protocol_ism_test.ail`; the v0.52.0 workarounds (#1460, #1461, #1465, #1467, #1473,
+    #1478, #1486, #1503, #1505, #1516, #1517, #1419 comments) and the replay interpreter's
+    `--max-recursion-depth`. The arm64 and x86_64 replay goldens are now identical; they are still
+    kept per architecture.
+  - Fixed earlier, nothing in-tree: std/map on the strict VM and `readLineOpt` end of input
+    (v0.54.11); the ~20 GB cold compile of crew_core (v0.54.8, #1812); `spawnProcessResult`
+    (#1784), sharedindex scan order (#1795) and `std/package.assetPath` (#1772) are unused here;
+    every `--entry` names an exported function (#1797).
 - The game is meant to stress-test the AILANG bytecode VM. When the VM and the
   interpreter disagree, that's an upstream bug: shrink it to a minimal repro
   and report it.

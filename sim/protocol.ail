@@ -130,7 +130,7 @@ pure func small(frac: string, z: int) -> string =
   if startsWith(frac, "0") then small(substring(frac, 1, length(frac)), z + 1)
   else if z < 6 then concat(["0.", zeros(z), frac])
   else concat([mantissa(frac), "e-", intToStr(z + 1)])
--- std/json writes |x| >= 1e21 as `1e+21` since v0.52.0 (ailang#1460); the wire keeps `1e21`.
+-- std/json writes |x| >= 1e21 as `1e+21`; the wire keeps `1e21`.
 pure func mag(s: string) -> string =
   if contains(s, "e+") then join("e", split(s, "e+"))
   else if startsWith(s, "0.") then small(substring(s, 2, length(s)), 0)
@@ -562,10 +562,7 @@ pure func applyOverride(p: Params, o: Override) -> Params =
   else if o.name == "glow_eps" then {p | glowEps: o.value} else if o.name == "glow_f_in" then {p | glowFIn: o.value}
   else if o.name == "cruise_min_beta" then {p | cruiseMinBeta: o.value}
   else if o.name == "standoff_au" then {p | standoffAu: o.value}
-  else applyOverride2(p, o)
--- Split in two (v0.52.0 strict VM: one if-chain this long exceeds the register allocator's 256; ailang#1736).
-pure func applyOverride2(p: Params, o: Override) -> Params =
-  if o.name == "stop_rule" then {p | stopRule: o.value}
+  else if o.name == "stop_rule" then {p | stopRule: o.value}
   else if o.name == "ism_model" then {p | ismModel: o.value}
   else if o.name == "ai_max_open" then {p | aiMaxOpen: floatToInt(o.value)} else if o.name == "ai_ttl_ticks" then {p | aiTtlTicks: floatToInt(o.value)}
   else {p | capOneMinusBeta: o.value}
@@ -582,11 +579,10 @@ pure func inputOf(t: string, j: Json) -> Result[Input, string] =
       bind(optStr(j, "ai_core", "bad_game"), \core. bind(check(match core { Some(h) => isSha256Hex(h), None => true }, core, "bad_game"), \_c.
       bind(optStr(j, "crew", "bad_game"), \cr. bind(check(match cr { Some(c) => c == "consent" || c == "orders", None => true }, cr, "bad_game"), \_cr.
       Ok(GNewGame({seed: seed, scenario: sc, diag: diag, params: ps, aiCore: core, crew: cr})))))))))))
-    -- ailang#1467: `\tick.` would be captured by the imported core.tick, hence `\tk.`
-    else if t == "input" then bind(req(natF(j, "tick"), "bad_tick"), \tk.
+    else if t == "input" then bind(req(natF(j, "tick"), "bad_tick"), \tick.
       bind(req(numF(j, "dtau"), "bad_step"), \dtau. bind(check(dtau >= 0.0 && dtau <= 1.0, dtau, "bad_step"), \_d.
       bind(req(getArray(j, "intents"), "bad_intent"), \xs. bind(all(decodeIntent, xs), \is.
-      Ok(GInput({tick: tk, dtau: dtau, intents: is})))))))
+      Ok(GInput({tick: tick, dtau: dtau, intents: is})))))))
     else if t == "quit" then Ok(GQuit)
     else Err("bad_cmd")
 
@@ -685,7 +681,6 @@ pure func decodeOpenView(j: Json) -> Result[OpenView, string] =
 pure func decodeAiView(j: Json) -> Result[AiView, string] =
   bind(nat(j, "last_req"), \lr. bind(bind(req(getArray(j, "open"), bad()), \xs. all(decodeOpenView, xs)), \op. bind(sOf(j, "core"), \co.
   Ok({lastReq: lr, open: op, core: co}))))
--- ailang#1467: lambda parameter `\tk.`, not `\tick.` (shadowed by core.tick).
 -- 2.3: the inverse of encodeSystem (bad_state on any missing or mistyped field).
 pure func decodeBody(j: Json) -> Result[BodyView, string] =
   bind(sOf(j, "id"), \id. bind(sOf(j, "name"), \nm. bind(sOf(j, "kind"), \kd. bind(sOf(j, "host"), \ho. bind(sOf(j, "status"), \st.
@@ -715,12 +710,12 @@ export pure func decodeGr(text: string) -> Result[GrView, string] = match decode
 
 export pure func decodeState(line: string) -> Result[StateMsg, string] =
   bind(envelopeOf(line, "state"), \j. bind(check(getString(j, "type") == Some("state"), j, bad()), \_j.
-  bind(req(natF(j, "tick"), bad()), \tk. bind(req(getString(j, "status"), bad()), \st. bind(req(get(j, "changes"), bad()), \ch.
+  bind(req(natF(j, "tick"), bad()), \tick. bind(req(getString(j, "status"), bad()), \st. bind(req(get(j, "changes"), bad()), \ch.
   bind(optF(ch, "clock", decodeClock), \c. bind(optF(ch, "ship", decodeShip), \s. bind(optF(ch, "journey", decodeJourney), \jy. bind(optF(ch, "ledger", decodeLedger), \lg. bind(optF(ch, "rng", decodeRng), \rg. bind(optF(ch, "params", decodeFullParams), \p. bind(optF(ch, "ai", decodeAiView), \av.
   bind(bind(req(getArray(j, "events"), bad()), \es. all(decodeEvent, es)), \evs.
   bind(bind(req(getArray(j, "refused"), bad()), \rs. all(\r. bind(req(natF(r, "i"), bad()), \i. bind(req(getString(r, "reason"), bad()), \why. Ok({i: i, reason: why}))), rs)), \refs.
   bind(req(getBool(j, "full"), bad()), \full.
-  Ok({tick: tk, status: st, clock: c, ship: s, journey: jy, ledger: lg, rng: rg, params: p, ai: av, events: evs, refused: refs, full: full}))))))))))))))))
+  Ok({tick: tick, status: st, clock: c, ship: s, journey: jy, ledger: lg, rng: rg, params: p, ai: av, events: evs, refused: refs, full: full}))))))))))))))))
 export pure func decodeHello(line: string) -> Result[HelloMsg, string] =
   bind(envelopeOf(line, "hello"), \j. bind(check(getString(j, "type") == Some("hello"), j, bad()), \_j. bind(req(get(j, "proto"), bad()), \pr.
   bind(req(natF(pr, "major"), bad()), \ma. bind(req(natF(pr, "minor"), bad()), \mi.

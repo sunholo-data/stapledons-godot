@@ -238,15 +238,8 @@ export pure func lutSize() -> int = 601
 export pure func lutRow(i: int, acc: [float]) -> [float] =
   if i < 0 then acc else lutRow(i - 1, luminousEfficacy(pow(10.0, 1.0 + 0.01 * intToFloat(i))) :: acc)
 
-pure func lutChunkCount() -> int = (lutSize() + 99) / 100
-pure func range0(n: int) -> [int] = rangeAcc(n - 1, [])
-pure func rangeAcc(i: int, acc: [int]) -> [int] = if i < 0 then acc else rangeAcc(i - 1, i :: acc)
 pure func takeS(xs: [string], n: int, acc: [string]) -> [string] = if n <= 0 then reverse(acc) else match xs { [] => reverse(acc), x :: r => takeS(r, n - 1, x :: acc) }
 pure func dropS(xs: [string], n: int) -> [string] = if n <= 0 then xs else match xs { [] => [], _ :: r => dropS(r, n - 1) }
-pure func lutChunks(xs: [string], k: int, acc: [string]) -> string = match xs {
-  [] => join("\n", reverse(acc)),
-  _ => lutChunks(dropS(xs, 100), k + 1, concat(["export pure func efficacyLut", intToStr(k), "() -> [float] = [", join(", ", takeS(xs, 100, [])), "]"]) :: acc)
-}
 
 -- ---------- output ----------
 
@@ -277,7 +270,8 @@ export pure func addOutlines(m: Model, vertices: string, triangles: string) -> M
   let ts = parseOutlineTriangles(triangles);
   {m | shells: map(\s. let outline = outlineFor(s.name, vs, ts) in {s | outline: outline, planes: planesFor(outline)}, m.shells)}
 }
--- Keep literal list calls below the v0.52.0 256-slot register block limit (#1737).
+-- Chunks of 90 scalars: on the strict VM (v0.54.13) a list literal of more than about 120 negated
+-- literals (-0.5) still exceeds the register allocator's 256 (ailang#1736 fixed plain literals only).
 pure func scalarChunks(xs: [string], acc: [string]) -> [string] = match xs {
   [] => reverse(acc),
   _ => scalarChunks(dropS(xs, 90), concat(["[", join(", ", takeS(xs, 90, [])), "]"]) :: acc)
@@ -321,6 +315,8 @@ pure func takeMembers(xs: [MemberRow], n: int) -> [MemberRow] =
   if n <= 0 then [] else match xs { [] => [], x :: rest => x :: takeMembers(rest, n - 1) }
 pure func dropMembers(xs: [MemberRow], n: int) -> [MemberRow] =
   if n <= 0 then xs else match xs { [] => [], _ :: rest => dropMembers(rest, n - 1) }
+-- Chunks of 10 rows: on the strict VM (v0.54.13) a list literal of more than about 64 call or record
+-- elements still exceeds the register allocator's 256 (ailang#1736 fixed plain literals only).
 pure func memberFunctions(xs: [MemberRow], k: int, acc: [string]) -> string = match xs {
   [] => join("\n", reverse(acc)),
   _ => memberFunctions(dropMembers(xs, 10), k + 1, concat(["pure func members", intToStr(k), "() -> [Member] = [\n", join(",\n", map(memberLine, takeMembers(xs, 10))), "\n]"]) :: acc)
@@ -394,9 +390,7 @@ export pure func renderAil(m: Model) -> string = join("\n", [
   "-- blackbody.luminousEfficacy (lm/W) at log10 T = efficacyLog10TMin() + efficacyStep() i (generated from the package).",
   "export pure func efficacyLog10TMin() -> float = 1.0",
   "export pure func efficacyStep() -> float = 0.01",
-  "-- In chunks of 100: the strict VM's register allocator takes at most 256 elements in one list literal (v0.52.0, ailang#1736).",
-  lutChunks(map(fl, lutRow(lutSize() - 1, [])), 0, []),
-  concat(["export pure func efficacyLut() -> [float] = ", join(" ++ ", map(\k. concat(["efficacyLut", intToStr(k), "()"]), range0(lutChunkCount())))]),
+  concat(["export pure func efficacyLut() -> [float] = [", join(", ", map(fl, lutRow(lutSize() - 1, []))), "]"]),
   "",
   "-- The LIC: a star-shaped surface about its centre (Linsky et al. 2019 Table 3), r = sum a_lm Y_lm,",
   "-- coefficients refit to their Table 2 (ism-structure.md section 3), order (0,0) (1,-1) (1,0) (1,1) (2,-2) (2,-1) (2,0) (2,1) (2,2).",

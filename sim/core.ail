@@ -399,9 +399,7 @@ pure func commitIntent(a: Pending, id: int) -> Pending =
 
 -- Cancel clears an uncommitted plan; with no plan it is a no-op. Only
 -- reached when the journey is not committed (applyIntent).
--- (`_ => j`, not `other => other`: a variable pattern is evaluator-only on
--- the strict VM, ailang#1473.)
-pure func cancelPlan(j: Journey) -> Journey = match j { Planned(_) => Idle, _ => j }
+pure func cancelPlan(j: Journey) -> Journey = match j { Planned(_) => Idle, other => other }
 
 -- In a GR world (M3.4b) the flat journey and diag-flight intents are refused `in_gr`
 -- (the ship moves only by the GR intents); the rest behave as in flat space.
