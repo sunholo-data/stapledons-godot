@@ -27,13 +27,13 @@ const KIND_WORDS := {
 	"hold": "Auto-run stopped the crossing and waited for you.",
 	"refusal": "They refused. Auto-run let it stand and moved on.",
 	"relief": "They asked to step back. Auto-run decided for you.",
-	"concern": "They raised a concern. Auto-run answered it.",
+	"concern": "They raised a concern before taking the work on.",
 	"accept": "They took the work on.",
 	"reply": "Auto-run answered for you.",
 }
 const INDICATORS := ["stress", "fatigue", "morale", "trust"]
 const MOVERS := 3 ## who changed: the top movers shown
-const HEIGHT := 380.0 ## the panel's height (canvas units) when there is room: every page fits, the buttons stay put
+const HEIGHT := 420.0 ## the panel's height (canvas units) when there is room: every page fits, the buttons stay put
 const WARM := Color(1.0, 0.92, 0.78)
 const DIM := Color(0.62, 0.68, 0.8)
 const TEXT := Color(0.88, 0.91, 0.98)
@@ -398,9 +398,9 @@ func _aboard(view: Dictionary) -> Control:
 	var members: Array = GalaxyMap.field_value(view, D + "crew.movement") if GalaxyMap.field_value(view, D + "crew.movement") is Array else []
 	for m: Dictionary in members:
 		var cell := VBoxContainer.new()
-		cell.add_child(_face("Face_" + str(m.id), str(m.id), str(m.get("emotion1", "neutral")), 64))
+		cell.add_child(_face("Face_" + str(m.id), str(m.id), str(m.get("emotion1", "neutral")), 60))
 		var n := _label(str(m.get("name", m.id)), 11, DIM)
-		n.custom_minimum_size = Vector2(84, 0)
+		n.custom_minimum_size = Vector2(104, 0)
 		n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		cell.add_child(n)
 		faces.add_child(cell)
