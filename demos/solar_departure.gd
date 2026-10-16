@@ -122,7 +122,8 @@ func _send(intents: Array, dtau: float, pipelined_ok:=false) -> bool:
 	sim.intent_source="tour" if not intents.is_empty() else "tick" # R1-SHIP-UI NT1: the itinerary's own legs
 	if not sim.send(intents,dtau,pipelined_ok):failed=sim.last_error;return false
 	if sim.in_flight():return true # its refusals and world arrive at the next drain
-	if not sim.last_refused.is_empty():failed=str(sim.last_refused);return false
+	# A refused Crew page intent (queued on the bridge) is the page's to word, not a tour failure.
+	if not sim.caller_refused().is_empty():failed=str(sim.caller_refused());return false
 	world_updated.emit(sim.world)
 	return true
 
@@ -170,9 +171,12 @@ func step() -> bool:
 	if not sim.drain():failed=sim.last_error;return false # a pipelined heartbeat lands before any decision
 	if _arrival_pending:
 		_arrival_pending=false
-		if not sim.last_refused.is_empty():failed=str(sim.last_refused);return false
+		if not sim.caller_refused().is_empty():failed=str(sim.caller_refused());return false
 		_check_arrival()
-	if paused or attitude_hold or pending_index>=0:return true
+	# Playtest (dev.31): paused (P), turning, or waiting on a stop choice, ship time waits, but the
+	# Crew page's queued intents (SimBridge.queue) still go out on a zero-dtau tick, so the crew
+	# answer. Nothing queued: nothing is sent, so idle ticks and replays are unchanged.
+	if paused or attitude_hold or pending_index>=0:return _send([],0.) if not sim.queued.is_empty() else true
 	# R2-CREW C8: a crew hold (an escalation under auto-run) stops the voyage like an arrival. Zero
 	# ticks keep the bridge live, so the Crew page's queued choices (crew_resume) still reach the sim.
 	if crew_held():return _send([],0.)
