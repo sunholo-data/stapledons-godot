@@ -1426,3 +1426,145 @@ DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended/default,
 - **Next:** verify merge CI 38806834360 → row 7i(g) [LANDED]; row 7i(j); M4.6gR3 (GPU window); D-77/D-78 for Mark; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
 
 DECISIONS FOR MARK: D-77 (folded transit card: A amend AC4, recommended and the default, or B a visible priority change); D-78 (caption notation: A exclude constant notation digits, recommended and the default, or B digit-free visible copy). Both are unchanged; the defaults keep the pins and leave AC4 OPEN.
+
+## 2026-10-16: iteration 34, row 7i(j) display-audit control fixtures BUILT (PR #252), merge HELD for D-83 (pillar net 0); three surviving context mutants now killed; row 7i(g) LANDED; independent eval Sonnet 93/100 PASS [PRODUCT]
+
+- **Pick:** row 7i(j), the log's **Next** and a clause-4 row (the display gate AC4/AC5 relies on). M4.6gR3 needs a GPU window, so the headless row ran. Before picking, the controller confirmed iteration 33's merge CI 38806834360 `success` on `e40d418`, so row 7i(g) is [LANDED].
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4's display gate gains controls that prove three of its context rules still run. The merge is held, so clause 4 has not moved yet.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing tripwire CLEAN. #203 had 0 allowlisted directives since 2026-10-14T23:20:55Z (13 comments, all self). Self-notices rc 0 (control 4:5, watermarks 2/2). The stapledons_godot inbox holds the same 3 unread upstream FYIs (v0.54.11 released; ailang#1827 fixed in v0.54.10; registry fix). None is a directive, so they stay unread for the attended session. Their effect is recorded as the new row 6d. No rotation is due (#203 was created after Monday's boundary and has 13 comments). The weekly sweep was already recorded by iteration 24.
+- **Gate 1:** origin/main `e40d418` (gate1 base `e40d418662820fdd3a9906738c7e2fb1b1bfa1b1` at 2026-10-16T03:05:24Z). Its check set is 1/1 `success`. Iteration 33's record sat on open PR #251 (CLEAN, MERGEABLE), so this record is stacked on that branch. The skill came from the resolved symlink: all 13 files match ailang origin/dev in both copies (28 of 28 comparisons). Work ran in fresh sibling clones `.stapledon-loop-iter34`, `.stapledon-eval-iter34` and `.stapledon-record-iter34` (no worktrees). The main checkout was only read.
+- **External-blocker re-read:** D-82's `crewSkipUnheld` ceiling waits on ailang#1827. That fix shipped in v0.54.10, and v0.54.11 is released. Bumping AILANG means editing `ci.yml`, which attended PR #248 holds, so it is filed as row 6d and not taken this iteration.
+- **Reality check (controller, at `e40d418`):** each of the eval's mutants M5, M6 and M10 applied to `tests/display_audit.gd` leaves `make display-audit-controls` at rc 0 (survives). The positive control M8 is rc 2 (`context_drift … missed`). A first control I wrote did not apply, and the `cmp` guard reported it as an instrument failure, not a verdict.
+- **Design:** Opus (Agent tool), `design_docs/planned/r1/m4-7ij-context-controls.md`, 122 lines. It adds three fixtures (`context_absent`, `context_presence_parts`, `context_crew`), the `context-presence` reason, and a wrong-reason message that names the fixture. It dry-ran every mutation command on a temp copy, per the iteration-33 retro. Pillar net **0**: it is pure test hygiene, and the designer scored it honestly. Under the charter guardrail ("stop for the user at any pillar score of 0 or below") that holds the merge for Mark: **D-83**. The controller did not rescore it.
+  - Quorum: PROCEED at 1 of 4 present (gemini-4-argon pass; oc-kimi-k3, gpt6-1-sol and oc-glm-5-3 unreachable). Gemini's note, that the hard-coded `dist_ly` literal must stay in step with the pinned starmap, is already a risk the doc covers.
+- **Plan:** codex gpt-6.1-sol, driven by an Agent-tool planner role, rc 0 in about 174 s. It wrote `m4-7ij-context-controls-sprint.md` and the feature `M4.5bR3_7ij_CONTEXT_CONTROLS` (adds only). It found two real defects in the design's commands, and the controller resolved both in the executor directive: the mutation wrapper breaks under `set -e`, so drills now run with errexit off and check the file is restored after each; and AC9 missed untracked files, so the scope check is now `git status --untracked-files=all`.
+- **Execution:** codex gpt-6.1-sol, driven by an Agent-tool executor role, rc 0 in about 137 s, test-first. The Agent re-ran every gate outside the sandbox:
+  - Scope is exactly the six intended files, with one changed line in `display_audit.gd`.
+  - AC1: rc 0, 18 rejections.
+  - AC5: distinct reasons.
+  - M5, M6, M10 and M8 each give rc 2, each named by its own fixture.
+  - Clean RED with the old reason: rc 2, `context_presence … wrong reason (want context-presence)`.
+  - `python-guard` ok.
+  - The controller read the diff: one reason string, three spec rows, the `|| { … exit 1; }` message, three one-line fixtures and a changelog fragment.
+  - The controller ran `make -k test` on `562b5d6` with `AILANG=runtime/bin/ailang` (v0.54.8), outside any sandbox: rc 0 in about 55 min, 0 `***` lines, 0 SCRIPT ERROR. The scene `display-audit: samples=716 … failures=0` holds (AC7), with 18 control rejections including the 3 new fixtures (AC8).
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter34`), told not to run scene or suite loads while `make test` ran (iteration-33 retro). r1 **93 PASS**, 0 blocking (correctness 38, tests 18, scope 20, docs 17), in `eval_R1-M4-JOURNEY_7ij_round_1.json`.
+  - Of 12 drills, 9 were killed. It checked each new fixture isolates its rule (one FAIL line each). `git grep context-source` found no consumer that the rename could blind.
+  - Three new survivors: E1 (`carried == expected` half removed; the controller re-ran it, rc 0), E8 (`expected := true`, no Sol-target fixture) and E9 (`client.crew.status` unsourced). They are filed as row 7i(k).
+- **Gate 3b:** PR #252 head `06c25c2` was pushed at about 03:20Z, and PR CI was running at record time (about 2 h). The merge is HELD for D-83, so nothing is MERGED or LANDED. Resume predicate: D-83 RESOLVED A or B, PR CI `success` on the head, `git log <head>..origin/main` re-read and test-merged if an attended PR landed, then merge; C closes the PR.
+- **Routing evidence:** fire `stapledon-1792119882-84496`; gate1 base `e40d418`@03:05:24Z. Routing note: empty (as configured). Operator's standing request: every role through the Agent tool. Codex-pinned roles therefore ran as Agent-tool roles that drove `codex exec -m gpt-6.1-sol` (OPENAI_API_KEY stripped; lane probe rc 0) and verified its output outside the sandbox. The spawn-pin hook accepted all five spawns.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: resolver `recipe claude:claude-opus-5-5 declared:provider-pin`, Agent `opus`, 71,074 tok. The rotation pointer's next entry would be codex, but the resolver output was followed verbatim, as in iteration 33.
+  - Planner: resolver `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`. Without the doc, the resolver first returned `agent-tool opus fail-closed:no-doc`, so it was re-run with the doc. A probe Agent spawn took 21,906 tok. Then Agent `opus` 45,632 tok plus codex 74,514 tok.
+  - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`, Agent `opus` 45,487 tok plus codex 48,930 tok.
+  - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, Agent `sonnet`, 54,656 tok. It is distinct from the Opus designer and the codex planner and executor.
+  - Metered: $0.012 (the gemini quorum seat).
+- **Ruled out:**
+  - Rescoring the pillar table to avoid the guardrail.
+  - Merging behind D-83.
+  - Taking the AILANG bump while #248 holds `ci.yml`.
+  - Re-running the absent quorum reviewers: they were unreachable, not over budget.
+  - Inferring "dead" from a quiet `make test` log. `ps` showed the sim package tests at 290% CPU.
+- **Retro:** no shared-skill edit (the charter forbids it). Three frictions:
+  1. The charter's pillar guardrail reads literally on net 0, which every hygiene row under an approved sprint will score. It is raised as D-83 with a proposed amendment (process lane, Mark's call).
+  2. The zsh shell in this harness aborts a sourced bash function on an unmatched glob (`mc_quorum_lookup`: "no matches found"), so the skill's quorum reader must run under `bash -c`. One instance; it is noted here for the fleet, not filed.
+  3. The design's mutation wrapper and scope AC were broken in ways only the planner caught. The iteration-33 dry-run rule worked for the perl expressions, but not for the shell around them. Process fix: the dry run covers the whole wrapper, run once on a temp copy, not only the expression.
+- **Next:** D-83 (merge #252); row 7i(k) (three new survivors); row 6d once #248 lands (AILANG v0.54.11, restore the 2 s `crewSkipUnheld` budget); M4.6gR3 (GPU window); D-77/D-78; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: D-83 (NEW: merge #252? A merge and amend the guardrail so net-0 hygiene under an approved sprint does not stop, recommended; B merge only, guardrail stays strict; C close; default: held unmerged). D-77 and D-78 are unchanged (both default A, which keeps the pins and leaves AC4 OPEN).
+
+## 2026-10-16: iteration 35, M4.6gR3 ship goldens G-M4-S2/S3/S4 MERGED (PR #257, merge `375e390`), merge CI pending; `make golden` 363 → 373 ok on the rig's GPU window; independent eval Sonnet 88/100 PASS [PRODUCT]
+
+- **Pick:** M4.6gR3, first in the charter's order and a clause-4 row (AC10 in its 3D-ship form). Iterations 29–34 passed over it because it needs the GPU window. This time the controller probed first: the launchd session is `Aqua`, and `make golden` in a fresh clone ran rc 0 in 25 s with 363 ok lines. So the row was routable unattended. Row 7i(k) and the other hygiene rows would score pillar net 0 and stop on the same guardrail as D-83, so they ranked below it. Row 6d is now in attended PR #255 (the AILANG v0.54.11 bump), so the loop left it alone.
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4 moved: the 3D ship the player gets now has GPU goldens for its forward pole, its single tonemap and its glow. Before this, only the retired `--interior` view had them. Left on clause 4: M4.6rR3 (renders and bench; parks at S1), S1, P-land, AC4 (D-77/D-78) and the 7i rows.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing tripwire CLEAN. #203 had 0 allowlisted directives since 2026-10-14T23:20:55Z (14 comments, all self). Self-notices rc 0 (control 4:5, watermarks 2/2). The `stapledons_godot` inbox holds 4 unread upstream FYIs, none a directive, left unread for the attended session. The new one: AILANG v0.54.12 is released and fixes ailang#1576 (the VM dropping a service request that builds a ~1100-element list; the in-tree workaround in `ai/voice.ail`), so all four listed workarounds are now retireable. Attended #255 bumps to v0.54.11; row 6d now names v0.54.12. No rotation is due.
+- **Gate 1:** the main checkout was 11 behind origin and was fast-forwarded (untracked `.uid` files only). origin/main `789132c` (gate1 base `789132c15f4d76ae43d6291e388dc791b773ab0f` at 2026-10-16T10:20:48Z). Check set 1/1 `success`. Iteration 34's record sat on open PR #253, so this record is stacked on it. Skill: all 13 files match ailang origin/dev in both copies.
+- **Ledger:** D-77, D-78 and D-83 are OPEN and unanswered. #252 stays unmerged under D-83's default.
+- **Reality check (controller, at `789132c`):** GPU window measured as above. `tools/m4_ship_golden.gd` did not exist, no G-M4-S case was outside the docs, and no branch or PR carried the row. Open attended PRs #255, #254, #248 and #243 touch other Makefile hunks and `ci.yml`, not the `golden` recipe or `main.gd`.
+- **Design:** Opus (Agent tool), `design_docs/planned/r1/m4-6gr3-ship-goldens.md`, 231 lines, pillar net **+1** (hard sci-fi authenticity). It spiked the three cases on the real ship scene (S3 0.030 px, S2 worst 0.0000, S4 within 0.34 %). It dry-ran four drills at base: D1 (pole 1 px), D2b (`pole_of` ×1.02) and D3 (2/255 on the sky layer) all left `make golden` green; D2a was already caught by the interior G-M4-4. Plan corrections it found at HEAD:
+  - fixtures are not needed (the golden run has no sim), so `golden` gains `m4-physics-probe`;
+  - `main.gd` needs a 1-line hook;
+  - the interior cap is 1e-6, not D-48's 2e-9;
+  - a half-float target cannot meet 1 % at 80° for 0.99c, so the profile runs at the cap.
+  - Quorum: PROCEED at 1 of 4 present (gemini-4-argon pass; gpt6-1-sol, oc-glm-5-3 and oc-kimi-k3 absent, unreachable), $0.019.
+- **Plan:** codex gpt-6.1-sol, driven by an Agent-tool planner role, rc 0 in 360 s. It wrote `m4-6gr3-ship-goldens-sprint.md` and feature `M4.6gR3_SHIP_GOLDENS` (adds only). It found 8 defects in the design's commands, among them a wrapper bound to the CWD, a temp copy leaking on error, a mutation check that could pass vacuously, AC1–AC4 that printed counts without asserting them, and an AC11 whose base moved. Its plan fixed all 8. The planner role also pinned the drill totals.
+- **Execution:** codex gpt-6.1-sol, driven by an Agent-tool executor role, rc 0 in 511 s, test-first (the RED: new asserts with no driver gave rc 2, ok=363). The role ran every GPU gate outside the sandbox:
+  - `make golden`: rc 0, 373 ok; S3 0.030 px in each phase; S2 909 sky pixels, worst 0.0000; S4 cap profile within 0.07 %, 0.99c pole 0.34 %, cap pole 0.03 %, rest 0.
+  - Drills: positive control ok=373; D1 rc 2, ok=370; D2a rc 2, ok=361; D2b rc 2, ok=368; D3 rc 2, ok=372; a non-applying mutation exits 3. The tree was unchanged after each.
+  - `lint-precision`, `python-guard`, `ai-live-guard` and `ui` rc 0.
+  - By hand, the role only restored the planner's sprint-JSON notes and `passes: null`.
+  - The controller read the diff: `tools/m4_ship_golden.gd` (379 lines, new), 1 line in `main.gd`, the `golden` recipe (prerequisite plus five asserts), a changelog fragment and the sprint JSON.
+  - The controller ran `make -k test` on `658072a` with `AILANG=runtime/bin/ailang` (v0.54.8), outside any sandbox: rc 0 in 4,137 s, 0 `***` lines, 0 SCRIPT ERROR. An attended `make test` ran at the same time and nothing flaked.
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter35`), run after the suite finished. r1 **88 PASS**, 0 blocking (correctness 36, tests 22, scope 18, docs 12), in `eval_R1-M4-JOURNEY_M4.6gR3_round_1.json`.
+  - It re-ran `make golden` (373 ok).
+  - Its 8 drills killed 6. E1 survived: S2 reading the main viewport for both operands. E5 survived: a null mutation along the heading axis. Its stronger variant E5b failed boost and brake but not cruise.
+  - Both survivors are filed as row 7k, with the leak warnings, the fresh-clone import hang and the missing spec row for the cap pole.
+- **Gate 3b:** PR CI 38891769000 `success` on `658072a`. `git log 658072a..origin/main` was empty, so the merge tree equals the tested tree (`git diff --quiet 658072a 375e390`). Merged as `375e390` at about 13:13Z. Merge CI 38906220440 was in flight at record; it takes about 2 h, past the 30-min cap. Resume predicate: `gh run view 38906220440 --repo sunholo-data/stapledons-godot --json conclusion` reads `success` → [LANDED], and set `M4.6gR3_SHIP_GOLDENS.passes` true.
+- **Routing evidence:** gate1 base `789132c`@10:20:48Z; gate3b base steady (no drift). Routing note: empty (as configured). Operator's standing request: every role through the Agent tool. Codex-pinned roles therefore ran as Agent-tool roles that drove `codex exec -m gpt-6.1-sol` (OPENAI_API_KEY stripped; probes rc 0) and verified outside the sandbox. The spawn-pin hook accepted all four spawns.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: resolver `recipe claude:claude-opus-5-5 declared:provider-pin`, Agent `opus`, 229,868 tok.
+  - Planner: resolver `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin`, Agent `opus` 69,940 tok plus codex 117,788 tok.
+  - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`, Agent `opus` 94,914 tok plus codex 131,727 tok.
+  - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, Agent `sonnet`, 67,083 tok. It is distinct from the Opus designer and the codex planner and executor.
+  - Metered: $0.019 (the gemini quorum seat).
+- **Ruled out:**
+  - Row 7i(k) or another net-0 hygiene row: it would stop on the D-83 guardrail like #252.
+  - Row 6d: attended PR #255 has it.
+  - Re-running absent quorum seats: they were unreachable, not over budget.
+  - Waiting about 2 h in-slot for merge CI: the 30-min cap applies, and the tree is identical to the green PR head.
+  - Fixing the leak warnings in this PR: it would need `demos/`, which is out of scope.
+- **Retro:** no shared-skill edit (the charter forbids it). Three frictions:
+  1. "Needs the GPU window" had been read as "attended only" for six iterations. One 25-s probe showed the unattended launchd session has the window. Process fix: probe a capability before ranking a row below it.
+  2. The design's drill wrapper again needed the planner to harden it (CWD, traps, vacuous mutation checks). It is the same class as iteration 34's friction 3. The dry-run rule catches the expressions, not the wrapper's failure paths.
+  3. A fresh clone hangs in `make golden` without a Godot import (evaluator, pre-existing). Filed as 7k(d).
+- **Next:** verify merge CI 38906220440 → M4.6gR3 [LANDED]; M4.6rR3 (GPU window; build, upload renders, park at S1); D-83 (merge #252); row 7i(k); row 6d after #255/#248; row 7k; D-77/D-78; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: none new. D-83 (merge #252; recommended A), D-77 and D-78 are unchanged (defaults hold).
+
+## 2026-10-16: iteration 36, M4.6rR3 3D-ship S1 render set and bench BUILT (PR #265), PARKED at S1 on D-84; AC12 misses at HEAD (live-transit p99 85 ms) → row 7m; M4.6gR3 LANDED; independent eval Sonnet 85/100 PASS [PRODUCT]
+
+- **Pick:** M4.6rR3, the next clause-4 row on the critical path (M4.6gR3 → M4.6rR3 → S1 → P-land), routable because iteration 35 showed the unattended session has the GPU window. Row 6d is now attended (#255 landed v0.54.11; #262 bumps to v0.54.13), and rows 7i(k)/7k score net 0 and stop on D-83's guardrail, so they ranked below it.
+- **Progress:** clauses 2/3 MET; 1/4 UNMET; 5 ongoing. Clause 4 moved: the S1 reference set of the 3D ship exists, from real sim states, and is public for Mark. Left on clause 4: S1 (D-84), row 7m (AC12), P-land, AC4 (D-77/D-78) and the 7i rows.
+- **Gate 0:** armed; gh `sunholo-voight-kampff`; billing tripwire CLEAN. #203 had 0 allowlisted directives since 2026-10-14T23:20:55Z (16 comments, all self). Self-notices rc 0 (control 4:5, watermarks 2/2). The `stapledons_godot` inbox holds 5 unread upstream FYIs, none a directive. New since iteration 35: AILANG v0.54.13 (released 2026-10-16) clears every #1783 workaround; attended #262 is doing that bump. Left unread for the attended session. No rotation is due.
+- **Gate 1:** the main checkout was 11 behind and was fast-forwarded (untracked `.uid` files only). origin/main `13bcc40` (gate1 base `13bcc409b0d14bf80b27f250cd74f3c44af9abae` at 2026-10-16T19:18:43Z). Iteration 35's record sits on open PR #258, so this record is stacked on it. Skill: all 14 files match ailang origin/dev through the resolved symlink.
+- **Gate 3b for #257:** merge CI 38906220440 `success` on `375e390` → M4.6gR3 **LANDED**; `M4.6gR3_SHIP_GOLDENS.passes` set true.
+- **Ledger:** D-77, D-78 and D-83 are OPEN and unanswered. New: **D-84** (S1 sign-off for #265).
+- **Reality check (controller, at `13bcc40`):** no `tools/m4_ship_capture.gd` or `tools/m4_ship_bench.gd`, no `SCENE` in the Makefile, no branch or PR for the row. The Do-not-touch PRs #243, #242 and #246 have all landed. Open attended PRs: #262 (v0.54.13 bump) and #264 (R2-INTERLUDE crossing review; it touches `demos/ship_geometry_demo.gd`, `demos/ship_consoles.gd` and `bridge/sim_bridge.gd`, the scene the capture drives). The Do-not-touch line is refreshed.
+- **Design:** Opus (Agent tool), `design_docs/planned/r1/m4-6rr3-ship-renders-bench.md`, 397 lines, pillar net **+1** (hard sci-fi authenticity), 22 verification rows. It spiked the capture route and the bench on the rig's GPU window. All 7 states were reached (α Cen leg 1202 ticks, home leg 1226), and same state + pose renders byte-identically. **Key find:** the bridge in live transit runs at p50 41 / p99 85 ms at 2560×1440, medium tier, vsync off, against p50 8.9 / p99 15.4 ms with journey ticks stopped. The cost lands in the frame after `GalaxyMap.tick()`; it is not the sim wait, the sky renderer, the tick GDScript or `GalaxyMap._process`. The bench therefore fails loudly by design, and the fix is row 7m. Other route facts the sprint did not state: the HUD cards only age with `demo._process`, and the home commit needs a tick after `home`. Quorum: PROCEED at 1 of 3 present (gemini-4-argon pass with one note on DC4's duplicate count; oc-kimi-k3, gpt6-1-sol and oc-glm-5-3 absent, unreachable), $0.0359. The first quorum call failed rc 2 (`--controller-note` is required with `--controller-verdict`); the re-run passed.
+- **Plan:** codex gpt-6.1-sol, driven by an Agent-tool planner role, rc 0 in 504 s. It wrote `m4-6rr3-ship-renders-bench-sprint.md` and the feature `M4.6rR3_SHIP_RENDERS_BENCH` (adds only, 23 lines). It fixed 12 defects in the design's commands, among them unchecked wrapper setup under `set -u`, a vacuous zero count on a missing log, AC7/AC8 mixing the driver's exit codes with make's, a moving `origin/main` base, and AC6 falling through to an older public set. It folded in gemini's note. One fix carries a wrong reason (`.git` here is a directory, not a worktree file); the change is harmless.
+- **Execution:** codex gpt-6.1-sol, driven by an Agent-tool executor role, rc 0 in 417 s, test-first. The role ran every gate outside the sandbox and made 3 hand edits: the cruise β check (the sim emits 0.9900000000000004), wall-time walk waits (walking is real-time), and 60 settle frames at dock (the first frame after the walk differs, which let drill DC2 survive).
+  - `make capture-m4`: rc 0, 14 ok frames, 15 PNGs, 15 distinct hashes; AC2 6/6 rest and arrival frames with zero glow; AC4 `worlds.sha256` byte-equal across two runs.
+  - AC5: the role opened all 15 PNGs and wrote `m4-6rr3-ship-renders-bench-report.md`.
+  - AC6: `make capture-m4-publish` uploaded 18 files to `gs://stapledons-voyage-assets/refs/m4_ship_s1/`; all 18 public copies byte-equal.
+  - AC7: valid measurement with p99 MISS (driver 2, make 2). On a loaded rig (load 9, another clone's `ailang` at 308 %): 367 frames, p50 73, p99 219 ms. Two runs under load 6–13 were rejected as invalid (< 300 frames).
+  - AC9: the default `make bench` dry run is byte-identical; `SCENE=nope` exits 2.
+  - Drills DC1–DC5, DB1 and DB2 each killed; DC0 and DB3 controls green; no-op exits 3; tree byte-identical after.
+  - `make golden` 373 ok; `lint-precision`, `python-guard`, `ai-live-guard`, `deps`, `lore-import CHECK=1` rc 0.
+  - The controller read the diff: 2 new drivers (261 + 177 lines), Makefile +28/−4, report, changelog, sprint-JSON notes. Nothing under demos, ui, sky, bridge, sim, physics, assets, data or `main.gd`.
+  - The controller ran `make -k test` on `1675854` with `AILANG=runtime/bin/ailang` (v0.54.11), outside any sandbox: rc 0 (4,062 s, 0 `***` lines, 0 SCRIPT ERROR).
+- **Evaluation:** Sonnet (Agent tool, foreground, own clone `.stapledon-eval-iter36`). r1 **85 PASS**, 0 blocking (tests 16, lint 8, ACs 27, code 12, docs 13, fidelity 9), in `eval_R1-M4-JOURNEY_M4.6rR3_round_1.json`.
+  - It re-ran `make capture-m4`: its `worlds.sha256` matches the public one byte for byte, but 12 of 15 PNG hashes differ (dust flashes and card fades vary per run). So the worlds are the reproducible artefact, not the pixels.
+  - It ran 11 drills of its own: CE, CF and BA killed; CA (no `dismiss_arrival`), CC (cruise tolerance 1.0) and CB (sheet row 0) survived; publish drills P2, P3 and P5 refused with 0 uploads, while P4 (no `worlds.sha256`) uploaded 17 files before failing. The controller confirmed P4 by reading the recipe (the `test -s` sits inside the upload loop).
+  - It found the AC8 deferral honest; its loaded bench run was invalid (139 frames), so it could not reproduce the valid-MISS path itself.
+  - All filed as row 7l.
+- **Gate 3b:** #265 is not merging (it parks at S1). PR CI run 38969245339 was in flight at record on `175e006` (it takes about 2 h, past the 30-min cap). Resume predicate: `gh pr checks 265 --repo sunholo-data/stapledons-godot` reads `pass`; a red is triaged before D-84 is acted on.
+- **Routing evidence:** gate1 base `13bcc40`@19:18:43Z; gate4 base `53f5fe832b36fc181dcbd2b1047c30c9ac7c51fd`@2026-10-16T21:25:56Z (main gained attended #263, crew offers while paused; no overlap with #265). Routing note: empty (as configured). Operator's standing request: every role through the Agent tool. Codex-pinned roles therefore ran as Agent-tool roles driving `codex exec -m gpt-6.1-sol` (OPENAI_API_KEY stripped; probe rc 0 from inside a repo, rc 1 from `/tmp` on the trusted-directory check) and verified outside the sandbox. The spawn-pin hook accepted all four spawns.
+  - Controller: `claude:claude-opus-5-5` (tok: not reported).
+  - Designer: resolver `recipe claude:claude-opus-5-5 declared:provider-pin`, Agent `opus`, 235,046 tok. The rotation file read `claude:claude-opus-5-5` as last used; the resolver's verbatim answer was followed.
+  - Planner: resolver `recipe codex:gpt-6.1-sol declared:planner-lane-default-pin` (derive-planner-lane agrees), Agent `opus` 60,556 tok plus codex 133,128 tok.
+  - Executor: resolver `recipe codex:gpt-6.1-sol declared:provider-pin`, Agent `opus` 228,000 tok plus codex 149,762 tok.
+  - Evaluator: resolver `agent-tool sonnet declared:alias-pin`, Agent `sonnet`, 98,509 tok. Distinct from the Opus designer and the codex planner and executor (judge-independence: cross-vendor).
+  - Metered: $0.0359 (the gemini quorum seat).
+- **Ruled out:**
+  - Row 6d: attended #262 holds it (v0.54.13 bump, blocked on a getEnvOr VM regression).
+  - Rows 7i(k), 7k: net 0, they would stop on the D-83 guardrail like #252.
+  - Fixing AC12 inside M4.6rR3: the parent plan (R3-8) puts AC12 at P-land, the likely files are held by attended #264, and the root cause is not yet isolated.
+  - Fixing the evaluator's publish finding after the judge had ruled: an unreviewed controller change; filed as 7l(a).
+  - A `publish-dev` review build: publishes stay attended (charter "How to use the loop").
+- **Retro:** no shared-skill edit (the charter forbids it). Frictions:
+  1. A designer spike measured a failing acceptance criterion of the approved parent plan (AC12) before any code existed. That is the dry-run rule paying off; the bench was designed to fail loudly instead of the sprint discovering it at P-land.
+  2. `ailang design-quorum --controller-verdict` now requires `--controller-note`; the Gate-2 prose shows the verdict flag alone. One wasted call (rc 2, no spend). Recorded here as instance 1; not yet a skill-fix candidate.
+  3. A codex probe from `/tmp` fails rc 1 on the trusted-directory check; run it from inside the repo, as the planner and executor recipes already do.
+  4. Pixels are not reproducible across capture runs (transient dust and card effects), so the AC5 report describes one run. Filed as 7l(c).
+- **Next:** D-84 (S1 sign-off; then merge #265 once its CI is green, re-capturing first if #264 has landed); row 7m after #264 lands (profiling only before); D-83; rows 7i(k), 7k and 7l; D-77/D-78; rows 7i(b–f, h) and 7h; then L9 → L4 → L3 → L5 → L7.
+
+DECISIONS FOR MARK: D-84 is new (S1 sign-off for #265; recommended A). D-83 (merge #252; recommended A), D-77 and D-78 are unchanged; their defaults hold.
