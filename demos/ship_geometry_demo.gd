@@ -84,6 +84,7 @@ var view_button := Button.new()
 var crossing_review: CrossingReview ## R2-INTERLUDE I3: the crossing review (replaces the D-41 interlude card)
 var archive_narration := ArchiveNarration.new() ## R2-INTERLUDE I4: the Archive's telling of the crossing (live AI only)
 var archive_voice: AudioStreamPlayer ## I4: the telling's voice, played once per crossing
+var wait_hint := Label.new() ## dev.31: one centred line while the game waits on the player (the review, the arrival card)
 var _voice_played := ""
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
@@ -168,6 +169,10 @@ func setup(opts := {}) -> bool:
 	crossing_review = CrossingReview.new();crossing_review.visible = false;interlude_canvas.add_child(crossing_review)
 	crossing_review.narration = archive_narration
 	archive_voice = AudioStreamPlayer.new();archive_voice.name = "ArchiveVoice";add_child(archive_voice)
+	wait_hint.name = "WaitHint";wait_hint.visible = false;wait_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	wait_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE;wait_hint.add_theme_font_size_override("font_size", 15)
+	wait_hint.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78));wait_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	wait_hint.add_theme_constant_override("outline_size", 6);interlude_canvas.add_child(wait_hint)
 	crossing_review.brake_pressed.connect(func()->void:continue_interlude())
 	crossing_review.open_crew.connect(_review_open_crew)
 	crossing_review.intents.connect(func(list:Array)->void:if journey_sim!=null:journey_sim.queue(list))
@@ -363,6 +368,7 @@ func _process(delta: float) -> void:
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
 	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption]
 	_update_hud(delta,details)
+	_update_wait_hint()
 	_update_dwell(delta)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
@@ -370,7 +376,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
 	if camera_mode=="console" and (event is InputEventPanGesture or (event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN])):return
-	if event is InputEventMouseMotion and camera_mode!="console" and (not pointer_required() and (mouse_look_enabled or event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT)):
+	# Free look when nothing needs the pointer; while something does (the crossing review, Tab, a
+	# card held open), right-drag or Alt+move still looks (trackpads: Option + move, or a two-finger
+	# press-and-drag). dev.31: the arrival and medium cards no longer take the pointer.
+	if event is InputEventMouseMotion and camera_mode!="console" and ((not pointer_required() and mouse_look_enabled) or event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
 		_tour_view_active=false
 		if camera_mode=="external review":
 			var offset:=camera.position-Vector3(0,5,0)
@@ -993,6 +1002,23 @@ func _update_cards(view: Dictionary) -> void:
 		ship_hud.show_card("unlock", "New in the Archive", 10.0)
 		if ship_hud.card_body("unlock").get_child_count() == 0: ship_hud.card_text("unlock", "unlock", "")
 		ship_hud.set_card_value("unlock", "%s, at the Archive terminal" % ", ".join(titles))
+## dev.31 (Mark): when the game waits on the player, one centred line says what to press and how to
+## look around (the review takes the pointer, so look is a right-drag there).
+func _update_wait_hint() -> void:
+	var text := ""
+	if crossing_review != null and crossing_review.visible:
+		var card: CardInterlude = solar_tour.interlude as CardInterlude if solar_tour != null else null
+		if crossing_review.current() == "hold":
+			text = "Answer the crew or resume the crossing to go on · right-drag to look around"
+		elif card != null and card.crossed():
+			text = ("Press Enter to brake" if crossing_review.last_page() else "Press Enter to read on") + " · right-drag to look around"
+	elif ship_hud != null and ship_hud.has_card("arrival"):
+		text = "Press Enter to continue · move the mouse to look around"
+	wait_hint.text = text
+	wait_hint.visible = text != ""
+	if wait_hint.visible and ship_hud != null:
+		wait_hint.size = Vector2(ship_hud.size.x, 0)
+		wait_hint.position = Vector2(0, ship_hud.size.y - ShipHud.MARGIN - wait_hint.get_combined_minimum_size().y)
 ## The crossing review sits in the space left of the card column, below the strip, so the stack
 ## (tour, transit) stays readable beside it. One size for every page, 3:2 (CrossingReview.ASPECT, the
 ## home picture's; as wide as CrossingReview.WIDTH and the room allow; a longer page scrolls), so the
@@ -1283,10 +1309,13 @@ func toggle_codex() -> void:
 
 ## Pointer belongs to an open interactive surface; otherwise mouse motion looks around.
 func pointer_required() -> bool:
-	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and (ship_hud.tab_panel.visible or ship_hud.has_card("arrival") or ship_hud.has_card("medium_here"))) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
+	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and ship_hud.tab_panel.visible) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
+## Free look owns the mouse (captured) unless something needs the pointer.
+func wants_capture() -> bool:
+	return mouse_look_enabled and not pointer_required()
 func _sync_pointer() -> void:
 	# Returning to the title detaches this scene during the same Esc event.
 	var window:Window=get_window() if is_inside_tree() else null
-	var capture:bool=is_instance_valid(window) and window.has_focus() and mouse_look_enabled and not pointer_required()
+	var capture:bool=is_instance_valid(window) and window.has_focus() and wants_capture()
 	var desired:int=Input.MOUSE_MODE_CAPTURED if capture else Input.MOUSE_MODE_VISIBLE
 	if Input.mouse_mode!=desired:Input.mouse_mode=desired

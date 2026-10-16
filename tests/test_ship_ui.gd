@@ -39,6 +39,7 @@ func _run() -> void:
 	await test_strip_and_cards()
 	await test_dev_gating()
 	await test_dwell()
+	await test_final_leg_look()
 	print("ship-ui: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
@@ -516,9 +517,63 @@ func test_mouse_look() -> void:
 	demo.star_identification.set_held(true)
 	check("I inspection releases pointer", demo.pointer_required())
 	demo.star_identification.set_held(false)
+	# dev.31 (Mark): after arriving he could not look around, and nothing said the game waited for
+	# Enter. The arrival card is dismissed by Enter, Esc or a click: it needs no cursor, so look stays.
 	demo.ship_hud.show_card("arrival","Arrived")
-	check("arrival buttons release pointer", demo.pointer_required())
+	Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+	demo._sync_pointer()
+	check("arrival card: no pointer needed, free look keeps the mouse captured", not demo.pointer_required() and demo.wants_capture())
+	yaw=demo.camera.yaw;demo._unhandled_input(motion)
+	check("arrival card: moving the mouse turns the view", not is_equal_approx(yaw,demo.camera.yaw))
+	demo._update_wait_hint() # (a _process here would reset this demo's HUD session: no sim, so the card goes)
+	check("arrival card: one centred line says the game waits for Enter (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.begins_with("Press Enter to continue"))
 	demo.dismiss_arrival()
-	check("dismissed arrival restores look", not demo.pointer_required())
+	demo._update_wait_hint()
+	check("dismissed arrival: look stays, the waiting line goes", not demo.pointer_required() and not demo.wait_hint.visible)
+	# While the crossing review needs the pointer, right-drag or Alt+move still looks (trackpads:
+	# Alt/Option + move, or a two-finger press-and-drag, which is a right-drag).
+	demo.crossing_review.visible = true
+	check("the crossing review needs the pointer", demo.pointer_required())
+	yaw=demo.camera.yaw;demo._unhandled_input(motion)
+	check("review: a plain mouse move does not turn the view (it is the pointer)", is_equal_approx(yaw,demo.camera.yaw))
+	var right := InputEventMouseMotion.new();right.relative=Vector2(10,5);right.button_mask=MOUSE_BUTTON_MASK_RIGHT
+	yaw=demo.camera.yaw;demo._unhandled_input(right)
+	check("review: a right-drag turns the view", not is_equal_approx(yaw,demo.camera.yaw))
+	var alt := InputEventMouseMotion.new();alt.relative=Vector2(10,5);alt.alt_pressed=true
+	yaw=demo.camera.yaw;demo._unhandled_input(alt)
+	check("review: Alt + move turns the view (trackpads)", not is_equal_approx(yaw,demo.camera.yaw))
+	demo.crossing_review.visible = false
 	demo.queue_free();await process_frame
 	check("leaving ship releases pointer", Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
+
+
+## dev.31 (Mark): the guided voyage's final leg (Aldebaran), flown as the player flies it, to its
+## crossing review and its arrival: look works through both, and the waiting line says what to press.
+const ReviewDrive := preload("res://tests/review_drive.gd")
+func test_final_leg_look() -> void:
+	var demo: Node = await new_demo({"live_start": true, "sky_state": "rest", "crew": "orders"})
+	check("final leg: the guided voyage begins at Aldebaran's leg", ReviewDrive.begin(demo, 6))
+	var state := ReviewDrive.reach(demo, false)
+	var r: CrossingReview = demo.crossing_review
+	check("final leg: the crossing reaches its review (%s)" % state, state == "crossed" and r.visible)
+	if state != "crossed":
+		demo.queue_free();await process_frame;return
+	demo._process(0.016)
+	check("final leg review: the waiting line names Enter and how to look (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.contains("Enter") and demo.wait_hint.text.contains("right-drag"))
+	var right := InputEventMouseMotion.new();right.relative=Vector2(10,5);right.button_mask=MOUSE_BUTTON_MASK_RIGHT
+	var yaw: float = demo.camera.yaw
+	demo._unhandled_input(right)
+	check("final leg review: a right-drag turns the view", not is_equal_approx(yaw, demo.camera.yaw))
+	r.go(r.page_ids().size() - 1)
+	r.key(KEY_ENTER) # Brake
+	for i in 8000:
+		if str(demo.journey_sim.world.journey.state) == "arrived" and demo.ship_hud.has_card("arrival"): break
+		if ReviewDrive.frame(demo, true) == "failed": break
+	check("final leg: arrived, the arrival card up", demo.ship_hud.has_card("arrival"))
+	check("final leg arrival: the Dismiss button is not folded away %s" % [demo.ship_hud.expanded()], demo.ship_hud.expanded().has("arrival"))
+	var motion := InputEventMouseMotion.new();motion.relative=Vector2(10,5)
+	yaw = demo.camera.yaw
+	demo._unhandled_input(motion)
+	check("final leg: the voyage ends with look working", not demo.pointer_required() and not is_equal_approx(yaw, demo.camera.yaw))
+	demo.queue_free()
+	await process_frame
