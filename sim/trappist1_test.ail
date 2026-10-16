@@ -37,21 +37,21 @@ pure func rowsOk(p: Exoplanet) -> bool =
 export pure func checkRows() -> bool =
   len(trappistPlanets()) == 7 && fold(\acc p. acc && rowsOk(p), true, trappistPlanets())
   && trappistPlanetIds() == ["trappist-1b", "trappist-1c", "trappist-1d", "trappist-1e", "trappist-1f", "trappist-1g", "trappist-1h"]
-test "seven planets b..h; measured rows cite Agol 2021 (size, orbit) and Ducrot 2020 (ephemeris); e, node, albedo and k are marked assumed" { checkRows() }
+-- seven planets b..h; measured rows cite Agol 2021 (size, orbit) and Ducrot 2020 (ephemeris); e, node, albedo and k are marked assumed: checkRows (run on both engines by trappistVm, make trappist1-test)
 
 -- Transcription spot checks against the pinned archive snapshot (the oracle checks every row).
 export pure func checkTranscription() -> bool =
   planetValue("trappist-1e", "radius_earth") == 0.92 && planetValue("trappist-1e", "a_au") == 0.02925 && planetValue("trappist-1f", "period_d") == 9.20754
   && planetValue("trappist-1h", "t0_bjd") == 2457662.5741486 && planetValue("trappist-1b", "incl_deg") == 89.728
   && near(planetRadiusKm("trappist-1e"), 0.92 * 6378.1, 0.0000001)
-test "spot transcriptions of the archive rows; radius in km from the IAU nominal Earth radius" { checkTranscription() }
+-- spot transcriptions of the archive rows; radius in km from the IAU nominal Earth radius: checkTranscription (run on both engines by trappistVm, make trappist1-test)
 
 -- Kepler III with Agol's stellar mass recomputes every a from its period (planet masses negligible): within 0.5 %.
 pure func keplerA(id: string) -> float { let py = planetValue(id, "period_d") / 365.25; let x = (trappistStarMassSun()).value * py * py; cubeRoot(x) }
 pure func cubeRoot(x: float) -> float = newtonCube(x, 0.02, 40)
 pure func newtonCube(x: float, y: float, n: int) -> float = if n <= 0 then y else newtonCube(x, y - (y * y * y - x) / (3.0 * y * y), n - 1)
 export pure func checkKepler() -> bool = allOf(trappistPlanetIds(), \id. rel(keplerA(id), planetValue(id, "a_au"), 0.005))
-test "a recomputes from P and the stellar mass (Kepler III) within 0.5 % for all seven" { checkKepler() }
+-- a recomputes from P and the stellar mass (Kepler III) within 0.5 % for all seven: checkKepler (run on both engines by trappistVm, make trappist1-test)
 
 -- Cross-checks: Agol's osculating P agrees with Ducrot's mean P to 5e-4; the
 -- mean ephemeris predicts JWST's 2024 transits of b and c within 0.5 h.
@@ -61,7 +61,7 @@ export pure func checkEphemeris() -> bool =
       let p = planetValue(id, "ephem_period_d");
       let k = floor((f.value - planetValue(id, "t0_bjd")) / p + 0.5);
       absf(planetValue(id, "t0_bjd") + k * p - f.value) * 24.0 < 0.5 } }, true, jwstTransits())
-test "Agol's periods agree with Ducrot's ephemeris; the ephemeris predicts JWST 2024 transits of b and c within 0.5 h" { checkEphemeris() }
+-- Agol's periods agree with Ducrot's ephemeris; the ephemeris predicts JWST 2024 transits of b and c within 0.5 h: checkEphemeris (run on both engines by trappistVm, make trappist1-test)
 
 -- ------------------------------------------------------------ TB2 orbits
 -- At a transit (local time T0 - D/c) the planet is a sin i toward Earth from the
@@ -79,7 +79,7 @@ pure func transitOk(id: string) -> bool {
   && near(dot(later, towardEarth()), a * sin(i), 0.000000001)
 }
 export pure func checkTransitGeometry() -> bool = allOf(trappistPlanetIds(), transitOk) && near(lightDays() / 365.25, norm(destinationLy("trappist-1")), 0.000000001)
-test "each planet transits (a sin i toward Earth) at its ephemeris epoch less the light time, is behind the star half a period later, and again 1000 periods on" { checkTransitGeometry() }
+-- each planet transits (a sin i toward Earth) at its ephemeris epoch less the light time, is behind the star half a period later, and again 1000 periods on: checkTransitGeometry (run on both engines by trappistVm, make trappist1-test)
 
 -- The navigation state is the star's catalogue position plus the orbit, in km and km/s.
 export pure func checkStateKm() -> bool =
@@ -89,7 +89,7 @@ export pure func checkStateKm() -> bool =
       && (match trappistPlanetAt("aldebaran", j2000()) { None => true, _ => false }),
     None => false
   }
-test "navigation state: on the orbit about the catalogue position, circular speed 2 pi a / P; unknown ids give None" { checkStateKm() }
+-- navigation state: on the orbit about the catalogue position, circular speed 2 pi a / P; unknown ids give None: checkStateKm (run on both engines by trappistVm, make trappist1-test)
 
 -- ------------------------------------------------------------ the voyage to the HZ stop
 pure func guided() -> World {
@@ -166,7 +166,7 @@ pure func feedAt(fd: { w: World, bodies: [BodyView] }) -> bool {
   -- far from TRAPPIST-1 (at Sol) the planets are not fed and no other index moves
   && len(trappistBodies(jdOf(fd.w), { x: 0.0, y: 0.0, z: 0.0 })) == 0
 }
-test "at the HZ stop the seven planets follow TRAPPIST-1 in the feed, b..h, at navigation's indices; reflected light is discIlluminance of the star's V; none fed at Sol" { checkFeed() }
+-- at the HZ stop the seven planets follow TRAPPIST-1 in the feed, b..h, at navigation's indices; reflected light is discIlluminance of the star's V; none fed at Sol: checkFeed (run on both engines by trappistVm, make trappist1-test)
 
 -- The wire: a planet of TRAPPIST-1 carries its light's colour temperature (the host's
 -- Teff) and the host's V illuminance at 1 AU; the star keeps its catalogue identity.
@@ -176,7 +176,7 @@ pure func wireAt(w: World) -> bool {
   contains(js, "\"id\":\"trappist-1e\"") && contains(js, concat(["\"teff_k\":2566,\"e1_au_lux\":", num(hostE1Lux())]))
   && contains(js, "\"catalogue_id\":\"Gaia DR3 2635476908753563008\"")
 }
-test "the system section carries each planet with teff_k 2566 and e1_au_lux; the star keeps its catalogue id" { checkWire() }
+-- the system section carries each planet with teff_k 2566 and e1_au_lux; the star keeps its catalogue id: checkWire (run on both engines by trappistVm, make trappist1-test)
 
 -- ------------------------------------------------------------ TB5 the stop
 -- The HZ stop (D-47) is kept: the ship rests sqrt(L) AU from the star (within 1 km of
@@ -193,7 +193,7 @@ pure func stopAt(fd: { w: World, bodies: [BodyView] }) -> bool {
   && (match viewOf(fd.bodies, "trappist-1e") { Some(e) => degAcross(e) > 0.6 && e.phaseDeg < 90.0, None => false })
   && countBig(fd.bodies, trappistPlanetIds()) >= 4
 }
-test "the TRAPPIST-1 stop keeps the HZ rule (sqrt L AU from the star, within 1 km) and is placed beside e: e > 0.6 deg and more than half lit, four planets resolved" { checkStop() }
+-- the TRAPPIST-1 stop keeps the HZ rule (sqrt L AU from the star, within 1 km) and is placed beside e: e > 0.6 deg and more than half lit, four planets resolved: checkStop (run on both engines by trappistVm, make trappist1-test)
 
 -- Clearance over the stop: every planet's whole orbit (720 samples over one period from
 -- the arrival) stays more than 30 radii (and the planner's safety minimum) from the
@@ -212,7 +212,7 @@ pure func clearanceAt(w: World) -> bool {
   allOf(trappistPlanetIds(), \id. { let c = clearanceKm(w, id); c > 30.0 * planetRadiusKm(id) && c > safetyMinKm(planetRadiusKm(id), bubble) })
   && destinationStopKm("trappist-1") > 40.0 * destinationRadiusKm("trappist-1")
 }
-test "clearance: no planet's orbit comes within 30 radii (d, just inside the HZ, passes at 38) of the resting ship (720 samples per orbit); the star is 42 radii away" { checkClearance() }
+-- clearance: no planet's orbit comes within 30 radii (d, just inside the HZ, passes at 38) of the resting ship (720 samples per orbit); the star is 42 radii away: checkClearance (run on both engines by trappistVm, make trappist1-test)
 
 -- ------------------------------------------------------------ VM parity and the oracle
 pure func stopChecks(fd: { w: World, bodies: [BodyView] }) -> bool = feedAt(fd) && wireAt(fd.w) && stopAt(fd) && clearanceAt(fd.w)
