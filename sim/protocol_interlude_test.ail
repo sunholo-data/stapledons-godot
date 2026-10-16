@@ -1,0 +1,61 @@
+module stapledons/sim/protocol_interlude_test
+
+-- R2-INTERLUDE I1, protocol 2.10 (design interlude-card.md D1): a committed journey's state carries
+-- `cruise {next_stop_years, stop_kind}` (sim/protocol_interlude.ail). Below 2.10 nothing changes:
+-- the same session at 2.9 is the 2.10 stream without the cruise member and with the 2.9 hello.
+import std/string (join, contains, replace, find, substring, length as slen)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/list (map, length, any)
+import ./protocol (Session, newSession, serve, helloFor, decodeHello, crewMinor, interludeMinor, relativityPin)
+import ./protocol_interlude (encodeCruise, decodeCruise)
+import ./cruise_digest (Stop)
+
+pure func helloW(m: int) -> string = join("", ["{\"v\":2,\"type\":\"hello\",\"want\":{\"major\":2,\"minor\":", show(m), "}}"])
+pure func game() -> string = "{\"v\":2,\"type\":\"new_game\",\"seed\":2,\"scenario\":\"free_nav\",\"diag\":false,\"crew\":\"orders\"}"
+pure func input(t: int, dtau: string, intents: string) -> string = join("", ["{\"v\":2,\"type\":\"input\",\"tick\":", show(t), ",\"dtau\":", dtau, ",\"intents\":[", intents, "]}"])
+pure func farPlan() -> string = "{\"k\":\"plan\",\"target\":{\"index\":2,\"id\":\"far\",\"pos\":{\"x\":0,\"y\":0,\"z\":-70}},\"cruise_phi\":2.6466524123622457}"
+pure func orders() -> string = "{\"k\":\"crew_orders\",\"line\":\"{\\\"command\\\":\\\"orders\\\",\\\"preset\\\":\\\"critical_only\\\"}\"}"
+-- hello, new game, a tick at rest, plan, commit, a cruise tick, auto-run on, a tick to the check-in.
+pure func lines(minor: int) -> [string] =
+  [helloW(minor), game(), input(1, "0.001", ""), input(2, "0", farPlan()), input(3, "0", "{\"k\":\"commit\",\"plan_id\":1}"),
+   input(4, "0.01", ""), input(5, "0", orders()), input(6, "0.05", "")]
+pure func run(s: Session, ls: [string]) -> [string] = match ls { [] => [], l :: rest => { let r = serve(s, l); r.reply :: run(r.session, rest) } }
+pure func nth(xs: [string], n: int) -> string = match xs { [] => "", x :: r => if n <= 0 then x else nth(r, n - 1) }
+-- The cruise member as the 2.10 stream writes it (`,"cruise":{...}` inside changes), cut out.
+pure func cut(line: string) -> string = match cruiseText(line) { Some(c) => replace(line, join("", [",\"cruise\":", c]), ""), None => line }
+pure func cruiseText(line: string) -> Option[string] = if !contains(line, "\"cruise\":") then None else Some(afterCruise(line))
+pure func afterCruise(line: string) -> string = takeObj(dropTo(line, "\"cruise\":"))
+pure func dropTo(s: string, m: string) -> string = match splitOnce(s, m) { Some(rest) => rest, None => "" }
+pure func splitOnce(s: string, m: string) -> Option[string] = { let i = find(s, m); if i < 0 then None else Some(substring(s, i + slen(m), slen(s))) }
+pure func takeObj(s: string) -> string = { let i = find(s, "}"); if i < 0 then s else substring(s, 0, i + 1) }
+
+test "2.10 hello: minor 10 with the current relativity pin; 9 stays 9" {
+  helloFor(interludeMinor()).minor == 10 && interludeMinor() == crewMinor() + 1 && helloFor(interludeMinor()).relativity == relativityPin()
+  && helloFor(crewMinor()).minor == crewMinor() && helloFor(99).minor == interludeMinor()
+  && (match decodeHello(serve(newSession(), helloW(interludeMinor())).reply) { Ok(h) => h.minor == 10, Err(_) => false })
+}
+pure func checkCruiseOnWire() -> bool {
+  let r = run(newSession(), lines(interludeMinor()));
+  !contains(nth(r, 1), "\"cruise\":") && !contains(nth(r, 2), "\"cruise\":") && !contains(nth(r, 3), "\"cruise\":")
+  && contains(nth(r, 4), "\"cruise\":{\"next_stop_years\":") && contains(nth(r, 4), "\"stop_kind\":\"chunk\"")
+  && contains(nth(r, 5), "\"stop_kind\":\"chunk\"") && contains(nth(r, 6), "\"stop_kind\":\"check_in\"")
+  && contains(nth(r, 7), "\"status\":\"ok\"")
+}
+test "2.10: a committed journey's state carries cruise (next_stop_years, stop_kind); an uncommitted one does not" { checkCruiseOnWire() }
+pure func rest(xs: [string]) -> [string] = match xs { [] => [], _ :: r => r }
+pure func checkBelow10() -> bool {
+  let r10 = run(newSession(), lines(interludeMinor()));
+  let r9 = run(newSession(), lines(crewMinor()));
+  length(r9) == length(r10) && map(cut, rest(r10)) == rest(r9) && !any(\l. contains(l, "\"cruise\":"), r9)
+  && length(map(cut, rest(r10))) == 7 && any(\l. contains(l, "\"cruise\":"), r10)
+  && replace(nth(r10, 0), "\"minor\":10", "\"minor\":9") == nth(r9, 0)
+}
+test "below 2.10 every reply is the 2.10 reply without the cruise member (but the hello)" { checkBelow10() }
+test "cruise codec round trip" {
+  decodeCruise(encodeCruise({ years: 0.08213552361396304, kind: "check_in" })) == Ok({ years: 0.08213552361396304, kind: "check_in" })
+  && decodeCruise(encodeCruise({ years: 0.0, kind: "braking" })) == Ok({ years: 0.0, kind: "braking" })
+  && decodeCruise(encodeCruise({ years: 1.0e-17, kind: "chunk" })) == Ok({ years: 1.0e-17, kind: "chunk" })
+  && (match decodeCruise("{\"next_stop_years\":1,\"stop_kind\":\"lunch\"}") { Err(_) => true, Ok(_) => false })
+  && (match decodeCruise("{\"next_stop_years\":-1,\"stop_kind\":\"chunk\"}") { Err(_) => true, Ok(_) => false })
+}

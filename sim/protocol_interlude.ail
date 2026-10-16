@@ -1,0 +1,31 @@
+module stapledons/sim/protocol_interlude
+
+-- Protocol 2.10 (R2-INTERLUDE, design interlude-card.md D1): the crossing. Pure codecs; the session
+-- (sim/protocol.ail) sends `cruise` only at minor >= 10 and only while a journey is committed:
+--   cruise: { next_stop_years: float >= 0, stop_kind: "braking" | "check_in" | "chunk" }
+-- next_stop_years is sim/cruise_digest.ail's nextStop: the host steps exactly that much (never more
+-- than the cruise left before braking) and then reads the next one.
+import std/json (Json, encode, decode, jo, kv, js, jnum, getNumber, getString)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import ./core (World, Committed)
+import ./cruise_digest (Stop, nextStop)
+
+export pure func stopKinds() -> [string] = ["braking", "check_in", "chunk"]
+
+-- Ship years from the commitment's proper time to the cruise -> braking boundary.
+export pure func cruiseStop(w: World) -> Option[Stop] = match w.journey {
+  Committed(c) => Some(nextStop(w.crew, c.plan.trip.tauBurn + c.plan.trip.tauCoast - c.el)),
+  _ => None
+}
+
+export pure func encodeCruise(s: Stop) -> string = encode(jo([kv("next_stop_years", jnum(s.years)), kv("stop_kind", js(s.kind))]))
+
+pure func isKind(k: string) -> bool = k == "braking" || k == "check_in" || k == "chunk"
+export pure func decodeCruise(text: string) -> Result[Stop, string] = match decode(text) {
+  Err(_) => Err("bad_cruise"),
+  Ok(j) => match (getNumber(j, "next_stop_years"), getString(j, "stop_kind")) {
+    (Some(y), Some(k)) => if y >= 0.0 && isKind(k) then Ok({ years: y, kind: k }) else Err("bad_cruise"),
+    _ => Err("bad_cruise")
+  }
+}

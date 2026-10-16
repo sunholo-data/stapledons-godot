@@ -1,0 +1,87 @@
+module stapledons/sim/cruise_digest
+
+-- R2-INTERLUDE (design interlude-card.md D1): the cruise as the crossing review sees it. Pure: no
+-- I/O, no hidden state; runs on the strict VM.
+--
+-- I1, the stop half. A long cruise is crossed in chunks: the sim publishes where the next stop is
+-- (protocol 2.10 `cruise`) and the host steps exactly that, never computing ship time itself. The
+-- next stop is the earliest of
+--   braking   the cruise -> braking boundary (the host's interlude ends there);
+--   check_in  the next auto-run decision day (D-76: monthly on a committed leg), when auto-run is
+--             on and no hold is open. An escalation can only fire on a decision day, so a hold is
+--             always the last thing in its chunk and the host stops before the next (Rulings §3);
+--   chunk     the safety cap, chunkDays() crew days (Rulings §5).
+-- Exactness: a stop k crew days away is stopYears(dayRem, k) ship years, the smallest float whose
+-- whole days from the crew's carried remainder are exactly k (crew.daysIn), so floating rounding
+-- can never land one day short (the hold slips into the next chunk) or over (plain days after it).
+import std/option (Option, Some, None)
+import std/math (intToFloat)
+import ./crew (CrewState, daysIn, daysPerYear)
+import ./crew_auto (nextDecision, cadenceLongSkip)
+
+export type Stop = { years: float, kind: string } deriving (Eq)
+
+-- Rulings §5: the safety cap on one chunk, in crew days.
+export pure func chunkDays() -> int = 365
+
+pure func daysAt(rem: float, y: float) -> int = (daysIn(rem, y)).days
+
+-- Bisection on floats between lo (fewer than k days) and hi (k days or more): it stops when the
+-- midpoint rounds onto an end, i.e. lo and hi are adjacent floats. A bracket whose width is ~1e-12
+-- of a year closes in about 60 halvings.
+pure func bisect(rem: float, k: int, lo: float, hi: float, left: int) -> (float, float) = {
+  let mid = lo + (hi - lo) / 2.0;
+  if left <= 0 || mid == lo || mid == hi then (lo, hi)
+  else if daysAt(rem, mid) >= k then bisect(rem, k, lo, mid, left - 1)
+  else bisect(rem, k, mid, hi, left - 1)
+}
+-- A float above `y` with at least k days: widen until it holds.
+pure func above(rem: float, k: int, y: float, w: float, left: int) -> float =
+  if left <= 0 || daysAt(rem, y + w) >= k then y + w else above(rem, k, y, w * 2.0, left - 1)
+-- A float below `y` with fewer than k days (0 if none is needed).
+pure func below(rem: float, k: int, y: float, w: float, left: int) -> float =
+  if y - w <= 0.0 || left <= 0 then 0.0 else if daysAt(rem, y - w) < k then y - w else below(rem, k, y, w * 2.0, left - 1)
+
+-- (lo, hi): lo has k - 1 days or fewer, hi exactly k, and they are adjacent floats (hi == 0 when
+-- rem already holds k days).
+export pure func stopBracket(rem: float, k: int) -> (float, float)
+  requires { rem >= 0.0 }
+= {
+  let guess = intToFloat(k) / daysPerYear() - rem;
+  let y0 = if guess > 0.0 then guess else 0.0;
+  if daysAt(rem, 0.0) >= k then (0.0, 0.0) else {
+    let w = (y0 + rem) * 0.000000000001 + 0.000000000000000001;
+    let hi = above(rem, k, y0, w, 200);
+    let lo = below(rem, k, y0, w, 200);
+    bisect(rem, k, lo, hi, 2200)
+  }
+}
+-- Ship years from a crew remainder `rem` to exactly k whole crew days.
+export pure func stopYears(rem: float, k: int) -> float
+  requires { rem >= 0.0 }
+  ensures { result >= 0.0 }
+= match stopBracket(rem, k) { (_, hi) => hi }
+
+-- The crew's next stop in crew days: the next decision day when auto-run is on and no hold is open,
+-- capped at chunkDays().
+pure func crewStop(c: CrewState) -> (int, string) = match c.auto {
+  Some(_) => if listEmpty(c.holds) then {
+    let d = nextDecision(c.turn, cadenceLongSkip()) - c.turn;
+    if d < chunkDays() then (d, "check_in") else (chunkDays(), "chunk")
+  } else (chunkDays(), "chunk"),
+  None => (chunkDays(), "chunk")
+}
+pure func listEmpty(xs: [a]) -> bool = match xs { [] => true, _ => false }
+
+-- The next stop on a committed leg, `brake` ship years from the braking boundary. The braking
+-- boundary wins a tie (the interlude ends there).
+export pure func nextStop(crew: Option[CrewState], brake: float) -> Stop
+  ensures { result.years >= 0.0 }
+= {
+  let b = if brake > 0.0 then brake else 0.0;
+  let s = match crew {
+    Some(c) => match crewStop(c) { (k, kind) => { years: stopYears(c.dayRem, k), kind: kind } },
+    None => { years: stopYears(0.0, chunkDays()), kind: "chunk" }
+  };
+  if b <= s.years then { years: b, kind: "braking" } else s
+}
