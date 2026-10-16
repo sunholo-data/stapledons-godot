@@ -483,7 +483,7 @@ func _send_next() -> void:
 	_write(SimBridge.encode(msg))
 
 
-## The service treats a blank line as end of input, so none is ever sent.
+## A blank line carries nothing (the service skips it), so none is ever sent.
 func _write(line: String) -> void:
 	if line.strip_edges() == "" or line.find("\n") >= 0:
 		push_error("AiBridge: refusing to send a blank or multi-line message")
