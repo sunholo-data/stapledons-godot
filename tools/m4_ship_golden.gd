@@ -22,12 +22,18 @@ func run(m: Node) -> int:
 	if references_ok:
 		built = await _build(false)
 	var failures := await _s3(built)
-	failures += await _s4(built)
+	failures += await _s4(built) # before any player pose: S4 aims from the captain's eye the S3 cases leave
+	failures += await _cam1(built)
+	if built:
+		demo.sky.set_debug_unit(true) # G-CAM-2 reads the unit-gain target, as S4
+	failures += await _cam2(built)
 	await _free_demo()
 	built = false
 	if references_ok:
 		built = await _build(true)
 	failures += await _s2(built)
+	failures += await _cam3(built)
+	failures += await _tonemap(built, func() -> void: _sky_pose("spawn"), "G-CAM-3 one tonemap (Sky forward, 0.99c)", func() -> Dictionary: return _phase_world("cruising", Relativity.rapidity_of_beta(0.99)), 300)
 	await _free_demo()
 	print("m4 ship golden: %d failures" % failures)
 	return failures
@@ -227,6 +233,31 @@ func _report(ok: bool, message: String) -> int:
 
 
 func _s3(built: bool) -> int:
+	return await _pole(built, func() -> void: _pose(89.99, 0.0), "G-M4-S3 forward pole (ship)", "captain eye")
+
+
+## R2-CAMERA G-CAM-1: the forward pole through the player's Sky forward view (the eye low beside
+## the captain, pitch +58 deg, the pole off the frame centre), from two standing points: the
+## bridge spawn and the helm (the navigation station's use point), x 3 phases.
+func _cam1(built: bool) -> int:
+	var failures := 0
+	if built:
+		demo.sky.set_debug_unit(false) # S4 leaves the unit-gain glow target on
+	for spot: String in ["spawn", "helm"]:
+		failures += await _pole(built, func() -> void: _sky_pose(spot), "G-CAM-1 forward pole (Sky forward, %s)" % spot, "Sky forward eye")
+	return failures
+
+
+func _sky_pose(spot: String) -> void:
+	var dir: CameraDirector = demo.director
+	var foot: Vector3 = Vector3(8, 82, -4.8) if spot == "spawn" else demo.consoles.stations["navigation"].use
+	var v: Dictionary = dir.views["sky_forward"]
+	var off: Variant = dir.choose_offset(v, foot)
+	demo.camera.global_transform = dir._sky(v, foot, dir.sector_for(foot, -1), off if off != null else 90.0)
+	demo._sync_observer()
+
+
+func _pole(built: bool, pose: Callable, label: String, eye_label: String) -> int:
 	var failures := 0
 	for phase: String in ["boosting", "cruising", "braking"]:
 		var phi := Relativity.rapidity_of_beta(0.99 if phase == "cruising" else 0.5)
@@ -236,7 +267,7 @@ func _s3(built: bool) -> int:
 		var error := INF
 		var ok := false
 		if built and _world(_phase_world(phase, phi)):
-			_pose(89.99, 0.0)
+			pose.call()
 			demo.sky.starfield.set_custom_stars([])
 			# Independent of the rendered sky camera (D1 perturbs that camera).
 			want = demo.camera.unproject_position(demo.camera.global_position + Vector3.UP * 1000.0)
@@ -269,11 +300,31 @@ func _s3(built: bool) -> int:
 				ok = is_finite(centroid[2]) and centroid[2] > 0.0 and is_finite(error) and error <= 0.75
 			elif not clear:
 				push_warning("m4 ship golden: %s forward pole covered (geometry or clean peak)" % phase)
-		failures += _report(ok, "G-M4-S3 forward pole (ship) %s beta %.2f: captain eye pole (%.2f, %.2f) rendered (%.2f, %.2f) error %.3f px (limit 0.75)" % [phase, b, want.x, want.y, got.x, got.y, error])
+		failures += _report(ok, "%s %s beta %.2f: %s pole (%.2f, %.2f) rendered (%.2f, %.2f) error %.3f px (limit 0.75)" % [label, phase, b, eye_label, want.x, want.y, got.x, got.y, error])
 	return failures
 
 
 func _s2(built: bool) -> int:
+	return await _tonemap(built, func() -> void: _pose(30.0, 0.47), "G-M4-S2 one tonemap (ship)", func() -> Dictionary: return _phase_world("cruising", Relativity.rapidity_of_beta(0.99)), 500)
+
+
+## R2-CAMERA G-CAM-3: the one-tonemap check through the player's Z2 Deck pose (third person, the
+## eye 9-12 m from the captain), the pose a player sees by default. At rest: the Z2 view looks across
+## the deck, where the 0.99c sky is redshifted to black, so the cruise world would leave no lit sky
+## pixel to compare (the tonemap path is the same in every state).
+func _cam3(built: bool) -> int:
+	return await _tonemap(built, func() -> void: _director_pose("z2"), "G-CAM-3 one tonemap (Z2 Deck, rest)", func() -> Dictionary: return states.rest, 300)
+
+
+## The director's pose for a view at the bridge spawn (the render boundary; tools own the camera).
+func _director_pose(id: String) -> void:
+	var dir: CameraDirector = demo.director
+	var foot := Vector3(8, 82, -4.8)
+	demo.camera.global_transform = dir.resolve(dir.views[id], foot, dir.sector_for(foot, -1))
+	demo._sync_observer()
+
+
+func _tonemap(built: bool, pose: Callable, label: String, world: Callable, min_sky: int) -> int:
 	var n := 0
 	var lit := 0
 	var ship := 0
@@ -288,8 +339,8 @@ func _s2(built: bool) -> int:
 			var model := Image.create(256, 128, false, Image.FORMAT_RGBA8)
 			model.fill(Color8(SkyModel.encode_t(6000.0), 0, 0, 255))
 			sky.has_background = sky.background.attach(sky.env, size.y, sky.view_fov, photo, model)
-		if sky.has_background and _world(_phase_world("cruising", Relativity.rapidity_of_beta(0.99))):
-			_pose(30.0, 0.47)
+		if sky.has_background and _world(world.call()):
+			pose.call()
 			await _settle()
 			var frame := _read(main.get_viewport())
 			var sub := _read(sky)
@@ -315,8 +366,8 @@ func _s2(built: bool) -> int:
 						n += 1
 						if s.get_luminance() > 2.0 / 255.0:
 							lit += 1
-	var ok := n >= 500 and lit >= 50 and ship >= 20 and is_finite(worst) and worst <= 1.0 / 255.0 + 1e-6
-	return _report(ok, "G-M4-S2 one tonemap (ship): %d sky-only pixels (%d lit, %d ship), worst |final - sky SubViewport| %.4f (limit 1/255 = 0.0039)" % [n, lit, ship, worst])
+	var ok := n >= min_sky and lit >= 50 and ship >= 20 and is_finite(worst) and worst <= 1.0 / 255.0 + 1e-6
+	return _report(ok, label + ": %d sky-only pixels (%d lit, %d ship), worst |final - sky SubViewport| %.4f (limit 1/255 = 0.0039)" % [n, lit, ship, worst])
 
 
 ## Aim from the off-centre eye at R(sin theta cos alpha, sin theta sin alpha, cos theta).
@@ -376,4 +427,54 @@ func _s4(built: bool) -> int:
 	if built:
 		rest = await _unit_sample(states.rest, 0.0)
 	failures += _report(rest.valid and rest.got == 0.0, "G-M4-S4 glow rest (ship): unit-gain target %s W/m^2 (exactly 0)" % String.num_scientific(rest.got))
+	return failures
+
+
+## R2-CAMERA G-CAM-2: the wall glow seen from the player's Z1 Close and Z2 Deck eyes (84-93 m from
+## the centre, nearer the wall than the captain's eye). From each eye the camera looks along the
+## direction of travel (the pole); the wall point it sees and its polar cos come from ForwardGlow.wall_cos
+## on the CPU (checked against the closed-form ray-sphere hit), and the rendered unit-gain glow must
+## equal ForwardGlow.profile(sim pole, cos) within 1 %, at 0.99c and at the cap (1 - beta 2e-9).
+func _cam2(built: bool) -> int:
+	var failures := 0
+	for id: String in ["z1", "z2", "z3_bridge", "sky_forward"]:
+		for label: String in ["0.99c", "cap 1-beta 2e-9"]:
+			var at_cap := label != "0.99c"
+			var pole := NAN
+			var got := NAN
+			var c := NAN
+			var closed := NAN
+			var eye_r := NAN
+			if built:
+				pole = poles["guided-cap-2e-9" if at_cap else "sun"].pole
+				if _world(cap if at_cap else _phase_world("cruising", poles.sun.phi)):
+					var dir: CameraDirector = demo.director
+					var foot := Vector3(8, 82, -4.8)
+					var eye: Vector3 = dir.resolve(dir.views[id], foot, dir.sector_for(foot, -1)).origin
+					if id == "sky_forward":
+						_sky_pose("spawn")
+						eye = demo.camera.global_position
+					demo.camera.global_transform = Transform3D(Basis.looking_at(Vector3(0.001, 1.0, 0.0), Vector3.FORWARD), eye)
+					demo._sync_observer()
+					var cam := _cam()
+					var position := PackedFloat64Array(cam.position_m)
+					var radius: float = demo.sky.radius_m
+					var ray := AreaBundle.unproject(cam, size.x / 2 + 0.5, size.y / 2 + 0.5)
+					c = ForwardGlow.wall_cos(position, ray, radius)
+					# Closed form: |p + t d| = R, t > 0; cos = (p + t d) . d / R (float64 scalars).
+					var px := float(position[0]); var py := float(position[1]); var pz := float(position[2])
+					var dx := float(ray[0]); var dy := float(ray[1]); var dz := float(ray[2])
+					var dn := sqrt(dx * dx + dy * dy + dz * dz)
+					dx /= dn; dy /= dn; dz /= dn
+					var b := px * dx + py * dy + pz * dz
+					var t := -b + sqrt(b * b - (px * px + py * py + pz * pz - radius * radius))
+					closed = (pz + t * dz) / radius # the wall point's polar cos (ship +z is travel)
+					eye_r = sqrt(px * px + py * py + pz * pz)
+					await _settle()
+					var img := _read(demo.sky)
+					if _image_ok(img) and img.get_format() == 14:
+						got = img.get_pixel(size.x / 2, size.y / 2).r
+			var want := ForwardGlow.profile(pole, c) if is_finite(c) and _positive(pole) else NAN
+			var ok: bool = is_finite(got) and _positive(want) and absf(got - want) <= 0.01 * want and absf(c - closed) <= 1e-6 and eye_r <= 95.0 and c < 0.9999
+			failures += _report(ok, "G-CAM-2 glow (%s eye, |eye| %.2f m) %s: wall cos %.5f (closed form %.5f), unit-gain %s W/m^2, CPU profile %s (limit 1 %%)" % [id, eye_r, label, c, closed, String.num_scientific(got), String.num_scientific(want)])
 	return failures

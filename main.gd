@@ -103,8 +103,8 @@ func _start_current_ship(live_start: bool, extra := {}, guided := false) -> void
 	get_tree().root.add_child(demo)
 	get_tree().current_scene=demo
 	if live_start:
-		var ok:bool=demo.ready_ok and demo.journey_map!=null and demo.sky_state=="live" and demo.sky.beta==0. and demo.camera.pullback==0.
-		print("current-ship-startup: %s live-rest captain-eye single-navigation" % ("OK" if ok else "FAIL"))
+		var ok:bool=demo.ready_ok and demo.journey_map!=null and demo.sky_state=="live" and demo.sky.beta==0. and demo.director.level==2 and not demo.director.overridden # R2-CAMERA: the Z2 Deck view
+		print("current-ship-startup: %s live-rest deck-view single-navigation" % ("OK" if ok else "FAIL"))
 		if not ok:get_tree().quit(1)
 	if guided:
 		var ok:bool=demo.ready_ok and demo.start_solar_departure()
@@ -151,7 +151,7 @@ func _on_title_route(route: String) -> void:
 ## The route itself. The ship's view setting goes to the ship; text-only
 ## is already in ai_settings.cfg, which the AI session reads.
 func _route_now(route: String) -> void:
-	var extra := {"from_menu": true, "auto_view": title.settings.auto_view, "confirm_mode": title.settings.confirm_mode, "settings_dir": title.settings.dir}
+	var extra := {"from_menu": true, "auto_view": title.settings.auto_view, "confirm_mode": title.settings.confirm_mode, "camera_motion": title.settings.camera_motion, "settings_dir": title.settings.dir}
 	extra.merge(demo_overrides, true)
 	match route:
 		"ship":
@@ -313,7 +313,7 @@ func _run_map(args: Dictionary) -> void:
 		bh_entry.pressed.connect(func()->void:
 			if map.journey_state()=="committed":return
 			var opts:Dictionary={"scenario":"sgr_a","sky_state":"rest","from_menu":_from_menu}
-			for setting:String in ["auto_view","confirm_mode","settings_dir"]:
+			for setting:String in ["auto_view","confirm_mode","camera_motion","settings_dir"]:
 				if args.has(setting):opts[setting]=args[setting]
 			opts.merge(demo_overrides,true)
 			_start_current_ship.call_deferred(false,opts),CONNECT_DEFERRED)

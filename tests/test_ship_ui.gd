@@ -157,7 +157,7 @@ static func matched_in_source() -> PackedStringArray:
 func test_control_table() -> void:
 	var code := matched_in_source()
 	var table := ShipControls.matched_keys()
-	check("AC7 source has a key match (%d keys)" % code.size(), code.size() >= 20)
+	check("AC7 source has a key match (%d keys)" % code.size(), code.size() >= 15)
 	var missing_in_table := Array(code).filter(func(k: String) -> bool: return not table.has(k))
 	var missing_in_code := Array(table).filter(func(k: String) -> bool: return not code.has(k))
 	check("AC7 every key the demo matches is a table row %s" % [missing_in_table], missing_in_table.is_empty())
@@ -167,10 +167,28 @@ func test_control_table() -> void:
 	check("AC7 every console row names a station action use() accepts", ShipControls.CONSOLE.all(func(r: Dictionary) -> bool: return ShipConsoles.ACTIONS.has(r.station) and ShipConsoles.ACTIONS[r.station].has(r.action)))
 	check("AC7 NT5 no key row has kind console", ShipControls.KEYS.all(func(r: Dictionary) -> bool: return r.kind != "console"))
 	check("AC7 N, L and C no longer decide (N is the tour's skip dwell)", ShipControls.row("KEY_N").kind == "pacing" and ShipControls.row("KEY_L").is_empty() and ShipControls.row("KEY_C").is_empty() and ShipControls.row("KEY_M").kind == "display")
-	check("AC7 display controls (V J I Tab H Esc M-chart and the camera keys) are never console", ["KEY_V", "KEY_J", "KEY_I", "KEY_TAB", "KEY_H", "KEY_ESCAPE", "KEY_1", "KEY_R", "KEY_7"].all(func(k: String) -> bool: return ShipControls.row(k).kind != "console"))
+	check("AC7 display controls (V J I Tab H Esc M-chart and the camera keys) are never console", ["KEY_V", "KEY_J", "KEY_I", "KEY_TAB", "KEY_H", "KEY_ESCAPE", "KEY_1", "KEY_R", "KEY_7", "KEY_EQUAL", "KEY_MINUS"].all(func(k: String) -> bool: return ShipControls.row(k).kind != "console"))
 	# F4: near c the digits follow one_minus_beta (never 1 - beta), up to 15 places.
 	check("speed near c: 1 - beta = 1e-12 shows twelve nines (%s)" % Demo.speed_text({"beta": 1.0 - 1e-12, "one_minus_beta": 1e-12, "gamma": 707106.8}), Demo.speed_text({"beta": 1.0 - 1e-12, "one_minus_beta": 1e-12, "gamma": 707106.8}).begins_with("0.999999999999c"))
 	check("Tab help groups the controls", ShipControls.help_text(false).contains("Display:") and not ShipControls.help_text(false).contains("Developer:") and ShipControls.help_text(true).contains("Developer:"))
+	# R2-CAMERA D5: the camera keys are named InputMap actions; NT5 both ways for them too.
+	CameraDirector.ensure_actions()
+	var bound := ShipControls.action_keys()
+	var src := FileAccess.get_file_as_string("res://demos/ship_geometry_demo.gd")
+	var body := src.substr(src.find("func _camera_action("))
+	body = body.substr(0, body.find("\nfunc ", 10))
+	var unbound := []
+	for k: String in bound:
+		var e := InputEventKey.new()
+		e.physical_keycode = {"KEY_1": KEY_1, "KEY_2": KEY_2, "KEY_3": KEY_3, "KEY_EQUAL": KEY_EQUAL, "KEY_MINUS": KEY_MINUS, "KEY_R": KEY_R, "KEY_7": KEY_7, "KEY_8": KEY_8, "KEY_9": KEY_9, "KEY_F8": KEY_F8}.get(k, KEY_NONE)
+		if not InputMap.has_action(bound[k]) or not InputMap.action_has_event(bound[k], e):
+			unbound.append(k)
+	check("D5 every action row's key is bound to its InputMap action %s" % [unbound], unbound.is_empty() and bound.size() >= 10)
+	var unhandled := Array(CameraDirector.ACTIONS.keys()).filter(func(a: String) -> bool: return not body.contains('"%s"' % a))
+	check("D5 the demo handles every camera action by name %s" % [unhandled], unhandled.is_empty())
+	var untabled := Array(CameraDirector.ACTIONS.keys()).filter(func(a: String) -> bool: return not bound.values().has(a))
+	check("D5 every camera action has a control-table row %s" % [untabled], untabled.is_empty())
+	check("D7 the player help names no mouse look; the developer help names F8", not ShipControls.help_text(false).to_lower().contains("mouse to look") and not ShipControls.help_text(false).contains("F8") and ShipControls.help_text(true).contains("F8"))
 
 
 func new_demo(opts: Dictionary) -> Node:
@@ -495,53 +513,64 @@ func test_dwell() -> void:
 	demo.queue_free()
 	await process_frame
 
-## Attended Oct10: free mouse look, UI owns the pointer, no modifier required.
+## R2-CAMERA D7 (supersedes the Oct10 free mouse look for players): the player camera has no look,
+## the pointer is never captured, and UI surfaces still own it; the developer free camera (F8) keeps
+## today's look, with right-drag / Alt while a panel needs the pointer.
 func test_mouse_look() -> void:
 	var demo: Node = await new_demo({})
-	check("mouse look default exposes its UI ownership seam", demo.has_method("pointer_required"))
-	if not demo.has_method("pointer_required"):
+	check("the pointer seam exists", demo.has_method("pointer_required") and demo.has_method("free_camera_on"))
+	if not demo.has_method("free_camera_on"):
 		demo.queue_free();await process_frame;return
-	check("mouse look enabled by default", demo.mouse_look_enabled)
-	check("closed bridge view needs no visible cursor", not demo.pointer_required())
+	check("player camera: no capture (the pointer is always visible)", not demo.wants_capture() and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE)
+	check("closed bridge view needs no visible cursor for a panel", not demo.pointer_required())
 	var motion := InputEventMouseMotion.new();motion.relative=Vector2(10,5)
+	var pose: Transform3D = demo.camera.global_transform
+	demo._unhandled_input(motion)
+	check("player camera: mouse motion never turns the view", demo.camera.global_transform.is_equal_approx(pose))
+	demo.toggle_controls()
+	check("Tab still owns the pointer for its buttons", demo.pointer_required() and Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
+	demo.escape()
+	check("Esc closes Tab", not demo.pointer_required())
+	demo.star_identification.set_held(true)
+	check("I inspection owns the pointer", demo.pointer_required())
+	demo.star_identification.set_held(false)
+	# dev.31 (Mark): after arriving nothing said the game waited for Enter. R2-CAMERA: the line
+	# names the key only (players have no look to name).
+	demo.ship_hud.show_card("arrival","Arrived")
+	demo._sync_pointer()
+	check("arrival card: no pointer needed and nothing captured", not demo.pointer_required() and not demo.wants_capture())
+	demo._update_wait_hint() # (a _process here would reset this demo's HUD session: no sim, so the card goes)
+	check("arrival card: one centred line says the game waits for Enter, no look named (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text == "Press Enter to continue")
+	demo.dismiss_arrival()
+	demo._update_wait_hint()
+	check("dismissed arrival: the waiting line goes", not demo.pointer_required() and not demo.wait_hint.visible)
+	demo.crossing_review.visible = true
+	check("the crossing review needs the pointer", demo.pointer_required())
+	var right := InputEventMouseMotion.new();right.relative=Vector2(10,5);right.button_mask=MOUSE_BUTTON_MASK_RIGHT
+	var alt := InputEventMouseMotion.new();alt.relative=Vector2(10,5);alt.alt_pressed=true
+	pose = demo.camera.global_transform
+	demo._unhandled_input(right);demo._unhandled_input(alt)
+	check("review, player camera: right-drag and Alt+move do not turn the view", demo.camera.global_transform.is_equal_approx(pose))
+	demo.crossing_review.visible = false
+	# The developer free camera (command-line launch): today's look.
+	demo.set_free_camera(true)
 	Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
 	var yaw:float=demo.camera.yaw;var tilt:float=demo.camera.tilt
 	demo._unhandled_input(motion)
-	check("unmodified mouse turns view", not is_equal_approx(yaw,demo.camera.yaw) and not is_equal_approx(tilt,demo.camera.tilt))
+	check("free camera: unmodified mouse turns the view", not is_equal_approx(yaw,demo.camera.yaw) and not is_equal_approx(tilt,demo.camera.tilt))
+	check("free camera: it wants the mouse captured when no panel needs it", demo.wants_capture())
 	demo.toggle_controls()
-	check("Tab releases pointer to buttons", demo.pointer_required() and Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
+	check("free camera: Tab releases the pointer to buttons", demo.pointer_required() and Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
 	yaw=demo.camera.yaw;demo._unhandled_input(motion)
-	check("UI pointer motion never turns view", is_equal_approx(yaw,demo.camera.yaw))
+	check("free camera: UI pointer motion never turns the view", is_equal_approx(yaw,demo.camera.yaw))
 	demo.escape()
-	check("Esc closes Tab and returns look ownership", not demo.pointer_required())
-	demo.star_identification.set_held(true)
-	check("I inspection releases pointer", demo.pointer_required())
-	demo.star_identification.set_held(false)
-	# dev.31 (Mark): after arriving he could not look around, and nothing said the game waited for
-	# Enter. The arrival card is dismissed by Enter, Esc or a click: it needs no cursor, so look stays.
-	demo.ship_hud.show_card("arrival","Arrived")
-	Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
-	demo._sync_pointer()
-	check("arrival card: no pointer needed, free look keeps the mouse captured", not demo.pointer_required() and demo.wants_capture())
-	yaw=demo.camera.yaw;demo._unhandled_input(motion)
-	check("arrival card: moving the mouse turns the view", not is_equal_approx(yaw,demo.camera.yaw))
-	demo._update_wait_hint() # (a _process here would reset this demo's HUD session: no sim, so the card goes)
-	check("arrival card: one centred line says the game waits for Enter (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.begins_with("Press Enter to continue"))
-	demo.dismiss_arrival()
-	demo._update_wait_hint()
-	check("dismissed arrival: look stays, the waiting line goes", not demo.pointer_required() and not demo.wait_hint.visible)
-	# While the crossing review needs the pointer, right-drag or Alt+move still looks (trackpads:
-	# Alt/Option + move, or a two-finger press-and-drag, which is a right-drag).
 	demo.crossing_review.visible = true
-	check("the crossing review needs the pointer", demo.pointer_required())
 	yaw=demo.camera.yaw;demo._unhandled_input(motion)
-	check("review: a plain mouse move does not turn the view (it is the pointer)", is_equal_approx(yaw,demo.camera.yaw))
-	var right := InputEventMouseMotion.new();right.relative=Vector2(10,5);right.button_mask=MOUSE_BUTTON_MASK_RIGHT
+	check("free camera review: a plain mouse move does not turn the view (it is the pointer)", is_equal_approx(yaw,demo.camera.yaw))
 	yaw=demo.camera.yaw;demo._unhandled_input(right)
-	check("review: a right-drag turns the view", not is_equal_approx(yaw,demo.camera.yaw))
-	var alt := InputEventMouseMotion.new();alt.relative=Vector2(10,5);alt.alt_pressed=true
+	check("free camera review: a right-drag turns the view", not is_equal_approx(yaw,demo.camera.yaw))
 	yaw=demo.camera.yaw;demo._unhandled_input(alt)
-	check("review: Alt + move turns the view (trackpads)", not is_equal_approx(yaw,demo.camera.yaw))
+	check("free camera review: Alt + move turns the view (trackpads)", not is_equal_approx(yaw,demo.camera.yaw))
 	demo.crossing_review.visible = false
 	demo.queue_free();await process_frame
 	check("leaving ship releases pointer", Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
@@ -559,11 +588,12 @@ func test_final_leg_look() -> void:
 	if state != "crossed":
 		demo.queue_free();await process_frame;return
 	demo._process(0.016)
-	check("final leg review: the waiting line names Enter and how to look (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.contains("Enter") and demo.wait_hint.text.contains("right-drag"))
-	var right := InputEventMouseMotion.new();right.relative=Vector2(10,5);right.button_mask=MOUSE_BUTTON_MASK_RIGHT
-	var yaw: float = demo.camera.yaw
-	demo._unhandled_input(right)
-	check("final leg review: a right-drag turns the view", not is_equal_approx(yaw, demo.camera.yaw))
+	check("final leg review: the waiting line names Enter and no mouse look (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.contains("Enter") and not demo.wait_hint.text.contains("look"))
+	check("final leg review: the player's pointer is visible for the review (never captured)", demo.pointer_required() and not demo.wants_capture())
+	check("C2 interlude hold: the camera holds Sky forward behind the review (%s, hold %s)" % [demo.director.situation, demo.director.hold], demo.director.hold and demo.director.situation == "sky_forward")
+	var k2 := InputEventKey.new();k2.physical_keycode = KEY_2;k2.pressed = true
+	demo._unhandled_input(k2)
+	check("C2 interlude hold: a level key does not move it while the review is open", demo.director.situation == "sky_forward")
 	r.go(r.page_ids().size() - 1)
 	r.key(KEY_ENTER) # Brake
 	for i in 8000:
@@ -571,9 +601,7 @@ func test_final_leg_look() -> void:
 		if ReviewDrive.frame(demo, true) == "failed": break
 	check("final leg: arrived, the arrival card up", demo.ship_hud.has_card("arrival"))
 	check("final leg arrival: the Dismiss button is not folded away %s" % [demo.ship_hud.expanded()], demo.ship_hud.expanded().has("arrival"))
-	var motion := InputEventMouseMotion.new();motion.relative=Vector2(10,5)
-	yaw = demo.camera.yaw
-	demo._unhandled_input(motion)
-	check("final leg: the voyage ends with look working", not demo.pointer_required() and not is_equal_approx(yaw, demo.camera.yaw))
+	demo.dismiss_arrival()
+	check("final leg: the voyage ends with the pointer free and nothing captured (clicks reach the consoles)", not demo.pointer_required() and not demo.wants_capture() and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE)
 	demo.queue_free()
 	await process_frame

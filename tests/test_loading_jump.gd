@@ -248,8 +248,8 @@ func test_routes() -> void:
 	var r := await press(main, "ship")
 	report("ship", r)
 	var demo: Node = current_scene
-	check(demo != null and demo.get_script() == Demo and demo.ready_ok and demo.sky_state == "live" and demo.sky.beta == 0.0 and demo.camera.pullback == 0.0,
-		"ship: the same destination (current ship, live rest, captain eye)")
+	check(demo != null and demo.get_script() == Demo and demo.ready_ok and demo.sky_state == "live" and demo.sky.beta == 0.0 and demo.director.level == 2,
+		"ship: the same destination (current ship, live rest, the Z2 Deck view)")
 	if demo != null and demo.get_script() == Demo:
 		demo.auto = false
 		demo.journey_auto_tick = false
