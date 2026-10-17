@@ -7,6 +7,7 @@ import ./protocol_crew (decodeCrewIntent, crewIntentNames, refusalReason, workSt
 import ./crew (CrewState, CrewLine, CrewHold, initCrew)
 import std/list (map)
 import pkg/sunholo/crew_core/session (Session as CoreSession, Request, TaskAgreement)
+import pkg/sunholo/crew_core/codec (DeniedStandDown)
 import pkg/sunholo/crew_core/conversations (Issue)
 import pkg/sunholo/social_dynamics/model (State, Task, TaskStatus, Offered, Working, Completed, Stopped, Commitment, Relief)
 import std/option (Option, Some, None)
@@ -16,11 +17,11 @@ import std/json (encode, js)
 import ./protocol (Session, Served, newSession, serve, consoleMinor)
 
 pure func names() -> bool =
-  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
+  crewIntentNames() == ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]
 
 pure func decodes(t: string, line: string) -> bool = match decodeCrewIntent(t, line) { Ok(_) => true, Err(_) => false }
 
-test "the nine crew intents (crew_ask in C2; crew_policy in C3; crew_orders and crew_resume in C8)" { names() }
+test "the ten crew intents (crew_ask in C2; crew_policy in C3; crew_orders and crew_resume in C8; crew_stand_down in 2.11)" { names() }
 test "a crew intent carries one crew_core line" {
   decodes("crew_offer", "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}") &&
   !decodes("crew_offer", "not json") && !decodes("crew_mutiny", "{\"command\":\"offer\"}")
@@ -141,7 +142,28 @@ pure func table(c: CrewState) -> [(string, string)] = {
    ("offered", ws(withBindings(concerned, []))),
    ("working", ws(withReliefs(working(c, "work_pilot"), [{ id: "rl1", task: "t1", author: "pilot", resolved: true }]))),
    ("working", ws(withPending(working(c, "work_pilot"), [pendingOf("r2", "pilot", "t1")]))),
-   ("free", workState(concerned, "medic"))]
+   ("free", workState(concerned, "medic")),
+   -- crew_core 0.6 (V8): a duty check-in where they asked to stand down; the granted rest; a duty
+   -- offer that lapsed is no one's work; a decided stand-down is no longer asked
+   ("stand_down_asked", ws(standDown(c, false))),
+   ("free", ws(standDownLapsed(c))),
+   ("asked", ws(withPending(dutyOffer(c), [pendingOf("d1", "pilot", "sd-d1")]))),
+   ("resting", ws(withTasks(c, [tk("sd-d1", "pilot", Working, "rest_pilot", 3)]))),
+   ("free", ws(standDown(c, true)))]
+}
+-- A duty check-in d1 for the pilot: the rest offer sd-d1 under duty-d1 (due tomorrow).
+pure func dutyOffer(c: CrewState) -> CrewState {
+  let a = withTasks(withBindings(c, [{ task: "sd-d1", agreement: "duty-d1", captain: "captain", worker: "pilot", recipe: "rest_pilot" }]), [tk("sd-d1", "pilot", Offered, "rest_pilot", 1)]);
+  { a | session: { a.session | state: { a.session.state | commitments: [{ id: "duty-d1", parties: ["captain", "pilot"], accepted: ["captain", "pilot"], terms: "", due: 1, causes: [], active: true }] } } }
+}
+pure func standDown(c: CrewState, decided: bool) -> CrewState {
+  let a = dutyOffer(c);
+  let b = { a | session: { a.session | state: { a.session.state | evidence: a.session.state.evidence ++ [{ id: "standdown-d1", author: "pilot", kind: "concern", text: "stand_down", causes: ["duty-d1"] }] } } };
+  if decided then { b | session: { b.session | reports: [{ id: "report-standdown-d1", task: "sd-d1", agreement: "duty-d1", worker: "pilot", code: DeniedStandDown }] } } else b
+}
+pure func standDownLapsed(c: CrewState) -> CrewState {
+  let a = standDown(c, false);
+  { a | session: { a.session | state: { a.session.state | tick: 2 } } }
 }
 pure func rowOk(r: (string, string)) -> bool = match r { (want, got) => want == got }
 test "workState: one row per value, from its sim condition, with the precedence ties (AC1)" {
@@ -183,3 +205,15 @@ test "as only on crew_start and start only on crew_offer, with known values; sta
 
 pure func all(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && all(p, r) }
 pure func elemOf(xs: [string], x: string) -> bool = match xs { [] => false, y :: r => y == x || elemOf(r, x) }
+
+-- V8: crew_stand_down carries resolve_stand_down, at 2.11 only; V4: crew_reply may carry start
+-- (on_accept or answer: they reconsider at once), at 2.11 only.
+pure func standDownIntent() -> string = intent("crew_stand_down", "{\"command\":\"resolve_stand_down\",\"id\":\"d1\",\"release\":true}")
+pure func replyStart(v: string) -> string = concat(["{\"k\":\"crew_reply\",\"line\":", encode(js("{\"command\":\"captain_reply\",\"id\":\"s1\",\"issue\":\"i\",\"text\":\"t\",\"approach\":\"ask_advice\",\"tick\":0,\"revision\":0}")), ",\"start\":\"", v, "\"}"])
+test "2.11: crew_stand_down and crew_reply start are bad_intent below; a stand-down nobody asked is crew_core's refusal" {
+  let lo = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [standDownIntent()])], []);
+  let lo2 = feedAll(newSession(), [hello(10), game(",\"crew\":\"consent\""), input(1, [replyStart("on_accept")])], []);
+  let hi = feedAll(newSession(), [hello(consoleMinor()), game(",\"crew\":\"consent\""), input(1, [standDownIntent()]), input(2, [replyStart("soon")]), input(2, [replyStart("answer")])], []);
+  contains(at(lo, 2), "bad_intent") && contains(at(lo2, 2), "bad_intent") && contains(at(hi, 2), "\"reason\":\"crew:") && contains(at(hi, 3), "bad_intent")
+    && contains(at(hi, 4), "\"reason\":\"crew:")
+}

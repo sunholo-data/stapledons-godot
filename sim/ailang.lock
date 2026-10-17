@@ -1,6 +1,6 @@
 {
   "ailang_version": "v0.54.11",
-  "generated_at": "2026-10-16T09:55:29.038923Z",
+  "generated_at": "2026-10-17T07:57:00.29078Z",
   "generator": "ailang lock v0.54.11",
   "packages": [
     {
@@ -38,7 +38,7 @@
     },
     {
       "ailang": ">=0.54.0",
-      "content_hash": "sha256:5aa0676b6ba13d4163954fd76540cf7d3ee3dacd4f3f2308710201c7e4f71b69",
+      "content_hash": "sha256:2f225363ef8a900ea60e6fae3af1893230d65b4f1d4e082d9dee147e239ce589",
       "effects": [
         "IO"
       ],
@@ -60,7 +60,7 @@
       "interface_hash": "sha256:3a651a57e87e4f843dec1856c89d0f95c0f71d58f618a146414510c5a2f1046d",
       "name": "sunholo/crew_core",
       "source": "registry",
-      "version": "0.5.0"
+      "version": "0.6.0"
     },
     {
       "ailang": ">=0.40.0",

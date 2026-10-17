@@ -10,6 +10,7 @@ import ./rng (Rng, SJourney, SCrew, SEvents, SGalaxy, SAi, SNews, zeroRng, count
 import std/result (Result, Ok, Err)
 import std/option (Option, Some, None)
 import ./core (World, newWorld, defaultParams, tick, withCrew)
+import ./crew_script (replyLine)
 
 pure func year() -> float = 1.0
 pure func day() -> float = 1.0 / 365.25
@@ -161,3 +162,31 @@ test "an offer without start is today's offer" {
 }
 
 pure func all(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && all(p, r) }
+
+-- V4 (2.11): a reply that carries `start` is reconsidered at once (crew_core asks again; the
+-- authored policy answers in the same tick); on_accept starts the work when they now agree.
+pure func concernSeed(seed: int) -> Option[CrewApplied] = match initCrew("consent") {
+  Err(_) => None,
+  Ok(c) => {
+    let a = crewIntents(Some(c), seed, zeroRng(), [(0, cmdOf("crew_offer", offerLine("pilot", "t1"), None, "", "")), (1, cmdOf("crew_ask", askLine("pilot", "t1", "r1"), Some("r1"), "", ""))]);
+    if labelOf(a) == "concern" then Some(a) else None
+  }
+}
+pure func replied(seed: int) -> {concern: bool, ok: bool, accepted: bool} = match concernSeed(seed) {
+  None => { concern: false, ok: true, accepted: false },
+  Some(a) => match a.crew {
+    None => { concern: true, ok: false, accepted: false },
+    Some(c) => {
+      let r = crewIntents(Some(c), seed + 100, zeroRng(), [(0, cmdOf("crew_reply", replyLine(c, "pilot"), None, "", "on_accept"))]);
+      let lbl = labelOf(r);
+      match r.crew {
+        Some(c2) => { concern: true, ok: length(r.refused) == 0 && lbl != "" && (lbl == "accept") == (statusOf(c2, "t1") == "working") && length(c2.session.pending) == 0, accepted: lbl == "accept" },
+        None => { concern: true, ok: false, accepted: false }
+      }
+    }
+  }
+}
+test "a reply with start on_accept: they reconsider at once, and the work starts only if they agree (V4)" {
+  let rs = map(replied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+  all(\r. r.ok, rs) && any(\r. r.concern, rs)
+}

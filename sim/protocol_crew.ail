@@ -14,9 +14,9 @@ module stapledons/sim/protocol_crew
 --   crew_policy policy          switch consent and orders (C3, D-70 OQ5; journalled by crew_core)
 --   crew_orders orders          C8: the auto-run preset {"preset": off | critical_only | hands_on} (the sim's)
 --   crew_resume resume          C8: the captain has dealt with a hold {"hold": id} (the sim's)
-import std/string (concat, join, intToStr, startsWith)
+import std/string (concat, join, intToStr, startsWith, substring, length)
 import std/math (intToFloat)
-import std/list (map, filter, take, reverse, length, foldl, contains, any)
+import std/list (map, filter, take, reverse, foldl, contains, any)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/json (Json, JNull, JObject, decode, getString, encode, jo, ja, kv, js, jnum)
@@ -29,7 +29,7 @@ import ./crew_resources (usedOf)
 import pkg/sunholo/crew_core/units (Amount)
 
 export pure func crewIntentNames() -> [string] =
-  ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume"]
+  ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_cancel", "crew_reply", "crew_policy", "crew_orders", "crew_resume", "crew_stand_down"]
 
 -- The crew_core command each intent may carry.
 export pure func commandFor(kind: string) -> Option[string] =
@@ -38,6 +38,7 @@ export pure func commandFor(kind: string) -> Option[string] =
   else if kind == "crew_cancel" then Some("cancel_request") else if kind == "crew_reply" then Some("captain_reply")
   else if kind == "crew_policy" then Some("policy")
   else if kind == "crew_orders" then Some("orders") else if kind == "crew_resume" then Some("resume")
+  else if kind == "crew_stand_down" then Some("resolve_stand_down")
   else None
 
 export pure func refusalReason(e: string) -> string = concat(["crew:", e])
@@ -57,12 +58,15 @@ export pure func decodeCrewIntent(kind: string, line: string) -> Result[CrewCmd,
 -- Anything else is bad_intent (the minor gate is the protocol's: sim/protocol.ail serve).
 export pure func decodeCrewEnvelope(kind: string, line: string, asMode: string, startMode: string) -> Result[CrewCmd, string] =
   if asMode != "" && (kind != "crew_start" || (asMode != "consent" && asMode != "orders")) then Err("bad_intent")
-  else if startMode != "" && (kind != "crew_offer" || (startMode != "on_accept" && startMode != "now")) then Err("bad_intent")
+  else if startMode != "" && kind == "crew_offer" && startMode != "on_accept" && startMode != "now" then Err("bad_intent")
+  else if startMode != "" && kind == "crew_reply" && startMode != "on_accept" && startMode != "answer" then Err("bad_intent")
+  else if startMode != "" && kind != "crew_offer" && kind != "crew_reply" then Err("bad_intent")
   else match decodeCrewIntent(kind, line) {
     Err(e) => Err(e),
     Ok(c) => Ok({ c | asMode: asMode, startMode: startMode })
   }
-export pure func hasEnvelope(c: CrewCmd) -> bool = c.asMode != "" || c.startMode != ""
+-- 2.11 only: the envelope fields, and crew_stand_down (crew_core 0.6 resolve_stand_down, V8).
+export pure func hasEnvelope(c: CrewCmd) -> bool = c.asMode != "" || c.startMode != "" || c.kind == "crew_stand_down"
 
 -- ------------------------------------------------------------------ the `crew` state section
 -- Compact by design: crew_core's own trace is ~40 KB a line. Godot reads only these fields.
@@ -84,7 +88,7 @@ export pure func regardLow() -> int = 30
 
 pure func valuesObj(vs: [Value]) -> Json = jo(map(\v. kv(v.id, jnum(intToFloat(v.value))), vs))
 pure func statusName(t: TaskStatus) -> string = match t { Offered => "offered", Working => "working", Completed => "completed", Stopped => "stopped" }
-pure func live(t: Task) -> bool = match t.status { Offered => true, Working => true, _ => false }
+pure func live(t: Task) -> bool = match t.status { Offered => !startsWith(t.id, "sd-"), Working => true, _ => false }
 
 -- Live work, with its start and due turns (the Crew console shows "day k of n").
 pure func workOf(st: State, id: string) -> Json = match filter(\t. live(t) && contains(t.participants, id), st.tasks) {
@@ -136,6 +140,8 @@ export pure func templateLine(label: string) -> string =
   else if label == "captain_assert_authority" then "Understood, Captain. I'll do it."
   else if label == "continue" then "I can keep going for now."
   else if label == "defer" then "Let me think about it before I answer."
+  else if label == "stand_down" then "I need to stand down for a while."
+  else if label == "carry_on" then "I can keep going."
   else "I hear you, Captain."
 -- R2-INTERLUDE I2: a face's emotion (D-7's eight), moved here from ui/crew_page.gd (LABEL_EMOTION,
 -- STRAINED_LABELS, WARM_LABELS, STRAINED): a decline shows anger, a concern fear; asking to step
@@ -144,7 +150,7 @@ export pure func templateLine(label: string) -> string =
 export pure func strainedAt() -> int = 70
 export pure func emotionOf(label: string, stress: int) -> string =
   if label == "decline" then "angry" else if label == "concern" then "fearful"
-  else if label == "request_relief" || stress >= strainedAt() then "sad"
+  else if label == "request_relief" || label == "stand_down" || stress >= strainedAt() then "sad"
   else if label == "accept" then "happy" else "neutral"
 pure func stressIn(a: Actor) -> int = match filter(\v. v.id == "stress", a.indicators) { v :: _ => v.value, [] => 0 }
 pure func latestLabel(ls: [CrewLine], id: string, acc: string) -> string = match ls { [] => acc, l :: r => latestLabel(r, id, if l.actor == id then l.label else acc) }
@@ -165,6 +171,7 @@ export pure func holdLine(rule: string) -> string =
   else if rule == "major" then "is shaken by news the whole ship heard."
   else if rule == "argument" then "is arguing with the crew over what the ship lost."
   else if rule == "uncovered" then "has raised something only you can answer."
+  else if rule == "stand_down" then "needs to stand down for a while."
   else if rule == "stuck" then "is stuck: the same thing keeps failing, and auto-run can't get past it."
   else "needs the captain."
 pure func holdObjE(c: CrewState, h: CrewHold) -> Json = match holdObj(c, h) {
@@ -207,6 +214,17 @@ pure func issueLabel(c: CrewState, i: Issue) -> string = match filter(\l. l.requ
 }
 -- A pending ask counts only while its task is still an offer: a reconsideration left pending when
 -- the captain ordered the work started is moot (the work is under way).
+-- crew_core 0.6: a live duty check-in (rest offer sd-<id> under duty-<id>, not yet due) where they
+-- asked to stand down and the captain has not answered: the check-in's id, else "".
+export pure func standDownAsked(s: Session, id: string) -> string = match filter(\b. b.worker == id && startsWith(b.agreement, "duty-") && dutyOpen(s, b.task, b.agreement)
+    && any(\e. e.author == id && e.kind == "concern" && e.text == "stand_down" && e.causes == [b.agreement], s.state.evidence)
+    && !any(\r. r.id == concat(["report-standdown-", dutyId(b.agreement)]), s.reports), s.bindings) {
+  b :: _ => dutyId(b.agreement),
+  [] => ""
+}
+pure func dutyId(agreement: string) -> string = substring(agreement, 5, length(agreement))
+pure func dutyOpen(s: Session, task: string, agreement: string) -> bool =
+  any(\t. t.id == task && t.status == Offered, s.state.tasks) && any(\k. k.id == agreement && k.due > s.state.tick, s.state.commitments)
 pure func offeredTask(st: State, task: string) -> bool = any(\t. t.id == task && t.status == Offered, st.tasks)
 pure func issueState(label: string) -> string = if label == "decline" then "declined" else if label == "defer" then "deferred" else "concern"
 pure func finishedLatest(st: State, id: string) -> Option[Task] =
@@ -218,6 +236,7 @@ export pure func workState(c: CrewState, id: string) -> string
   let s = c.session;
   let st = s.state;
   if any(\h. h.actor == id, c.holds) then "held"
+  else if standDownAsked(s, id) != "" then "stand_down_asked"
   else if any(\r. !r.resolved && r.author == id, st.reliefs) then "relief_asked"
   else match filter(\i. i.worker == id, concernsOf(s)) {
     i :: _ => issueState(issueLabel(c, i)),
@@ -230,7 +249,8 @@ export pure func workState(c: CrewState, id: string) -> string
 }
 -- At 2.11 a member carries work_state, and working work its start terms.
 pure func memberObjC(c: CrewState, a: Actor) -> Json = match memberObjE(c, a) {
-  JObject(kvs) => JObject(map(\p. if p.key == "work" then { key: p.key, value: withTerms(c.session, p.value) } else p, kvs) ++ [kv("work_state", js(workState(c, a.id)))]),
+  JObject(kvs) => JObject(map(\p. if p.key == "work" then { key: p.key, value: withTerms(c.session, p.value) } else p, kvs) ++ [kv("work_state", js(workState(c, a.id)))]
+    ++ (if standDownAsked(c.session, a.id) != "" then [kv("stand_down", js(standDownAsked(c.session, a.id)))] else [])),
   j => j
 }
 pure func withTerms(s: Session, w: Json) -> Json = match w {

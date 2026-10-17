@@ -335,6 +335,7 @@ pure func joined(a: CrewStepped, b: CrewStepped) -> CrewStepped = { b | lines: a
 export type OneApplied = { st: CrewStepped, starts: [OfferStart], startRefused: Option[CrewRefusal] }
 export pure func applyCmd(c: CrewState, seed: int, rng: Rng, i: int, cmd: CrewCmd, starts: [OfferStart]) -> OneApplied =
   if cmd.kind == "crew_start" then { st: crewCommandAs(c, seed, rng, cmd.line, cmd.asMode), starts: starts, startRefused: None }
+  else if cmd.kind == "crew_reply" && cmd.startMode != "" then replyAt(c, seed, rng, i, cmd, starts)
   else {
     let s = crewCommand(c, seed, rng, cmd.line, cmd.askId);
     match s.refused {
@@ -353,6 +354,25 @@ export pure func applyCmd(c: CrewState, seed: int, rng: Rng, i: int, cmd: CrewCm
         else { st: s, starts: starts, startRefused: None }
     }
   }
+
+-- V4 (2.11): a captain's reply that carries `start` is reconsidered at once: crew_core asks again
+-- (request reconsider-<reply id>) and the authored policy answers in the same step, as an ask is.
+-- on_accept then starts the work if they now agree (as the ship default); a refused start is
+-- reported on the reply's index, and the reply and their answer stand.
+pure func replyAt(c: CrewState, seed: int, rng: Rng, i: int, cmd: CrewCmd, starts: [OfferStart]) -> OneApplied = {
+  let rid = match decode(cmd.line) { Ok(j) => match getString(j, "id") { Some(x) => x, None => "" }, Err(_) => "" };
+  let s = crewCommand(c, seed, rng, cmd.line, Some(concat(["reconsider-", rid])));
+  match (s.refused, s.answered) {
+    (None, l :: _) => if cmd.startMode == "on_accept" && l.label == "accept" then {
+        let g = crewCommandAs(s.crew, seed, s.rng, startTaskLine(l.task), "");
+        match g.refused {
+          Some(e) => { st: s, starts: starts, startRefused: Some({ i: i, reason: concat(["crew:", e]) }) },
+          None => { st: joined(s, g), starts: starts, startRefused: None }
+        }
+      } else { st: s, starts: starts, startRefused: None },
+    _ => { st: s, starts: starts, startRefused: None }
+  }
+}
 
 -- The tick's crew intents in order (each with its index in the tick's intent list). A refusal is
 -- "crew:<crew_core error>" and changes nothing; "crew:no_crew" when no crew are aboard.

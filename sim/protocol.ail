@@ -26,9 +26,9 @@ import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, 
   Target, PlanReq, StarInfo, Intent, IPlan, IPlanBody, ICommit, ICancel, IThrust, IHeading, IRecord, IDraw, IEcho, IAiOpen, IAiCancel, IWarp, Refusal, Event, Crossing, Residuals, Params, defaultParams,
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
   CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf,
-  IGrApproach, IGrHover, IGrOrbit, IGrRing, ICrew, withHole, archiveEvent, withCrew)
+  IGrApproach, IGrHover, IGrOrbit, IGrRing, ICrew, withHole, archiveEvent, withCrewNamed)
 import ./protocol_crew (decodeCrewEnvelope, hasEnvelope, crewIntentNames, crewViewAt, crewHoldJson)
-import ./protocol_interlude (cruiseStop, encodeCruiseSection)
+import ./protocol_interlude (cruiseStop, encodeCruiseSectionAt)
 import ./gr (GrView, grView, sgrAWith, sgrAMassMsun)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
@@ -802,7 +802,7 @@ pure func withCruise(s: Session, before: World, after: World, x: Extras) -> Extr
   if s.minor < interludeMinor() then x else {
     let stop = cruiseStop(after);
     let dig = match (stop, after.cruiseDigest) { (Some(_), d) => d, (None, Some(d)) => if before.cruiseDigest == after.cruiseDigest then None else Some(d), (None, None) => None };
-    match (stop, dig) { (None, None) => x, _ => {x | tail: x.tail ++ [f("cruise", encodeCruiseSection(stop, dig))]} }
+    match (stop, dig) { (None, None) => x, _ => {x | tail: x.tail ++ [f("cruise", encodeCruiseSectionAt(stop, dig, s.minor >= consoleMinor()))]} }
   }
 -- 2.10 in a full state: the cruise section as a tick would carry it (the stop while committed, the
 -- digest whenever there is one). Today the only full state is new_game's, which is never committed
@@ -810,7 +810,7 @@ pure func withCruise(s: Session, before: World, after: World, x: Extras) -> Extr
 export pure func cruiseFull(s: Session, w: World) -> [string] =
   if s.minor < interludeMinor() then [] else match (cruiseStop(w), w.cruiseDigest) {
     (None, None) => [],
-    (st, d) => [f("cruise", encodeCruiseSection(st, d))]
+    (st, d) => [f("cruise", encodeCruiseSectionAt(st, d, s.minor >= consoleMinor()))]
   }
 -- 2.6 scenario params of a black hole: bh_mass_msun (default Sgr A*'s 4.297e6) and bh_r (the
 -- starting radius in r_s, default 1e6). They are not Params: only sgr_a takes them (bad_params
@@ -853,7 +853,7 @@ export pure func serve(s: Session, line: string) -> Served =
               -- below minor 2 the consequence tracking is off: the stream is exactly M2's
               let wa = if s.minor >= 2 then withArchive(w1, rows) else {w1 | cq: {w1.cq | on: false}};
               -- 2.9: the synced crew aboard (the pack is proven valid by make crew-sync-check and the crew tests)
-              let w = match g.crew { None => wa, Some(cap) => match withCrew(wa, cap) { Ok(x) => x, Err(_) => wa } };
+              let w = match g.crew { None => wa, Some(cap) => match withCrewNamed(wa, cap, s.minor >= consoleMinor()) { Ok(x) => x, Err(_) => wa } };
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
                 journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)),
                 events: if w.gr.active then [archiveEvent("bh_enter")] else [], refused: [], full: true};

@@ -39,6 +39,11 @@ crew-sync:         ## re-sync the crew pack: make crew-sync CREW_SRC=<ailang-pac
 crew-sync-check:   ## AC7: data/crew matches SYNC, sim/data/crew_pack.ail regenerates identically, embedded text round-trips
 	@AILANG="$(AILANG)" SCRATCH="$(SCRATCH)/crew-sync" sh tools/crew_sync.sh check
 test: crew-sync-check
+crew-faces-check: ## D-80: the portraits' face rows (data/crew/portraits/SOURCES) are exactly the sim's (sim/data/crew_faces.ail)
+	@want=$$(grep '^face ' data/crew/portraits/SOURCES); \
+	got=$$($(AILANG) run --quiet --package-dir sim --entry facesText --args-json 0 sim/data/crew_faces.ail | tr -d '"' | sed 's/\\n/\n/g'); \
+	[ "$$want" = "$$got" ] && echo "crew-faces-check: ok ($$(echo "$$want" | wc -l | tr -d ' ') faces)" || { echo "crew-faces-check: FAIL: SOURCES face rows differ from sim/data/crew_faces.ail"; echo "$$want"; echo "--"; echo "$$got"; exit 1; }
+test: crew-faces-check
 CREW_PARITY = --package-dir sim --entry parity --args-json 0 sim/tools/crew_parity.ail
 crew-parity:       ## AC3: scripted crew sessions in the game == standalone crew_core (byte for byte), VM == interpreter, lines == tests/crew/*.ndjson
 	@mkdir -p $(SCRATCH)/crew-parity

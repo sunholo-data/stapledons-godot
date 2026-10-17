@@ -1,0 +1,25 @@
+module stapledons/sim/data/crew_faces
+
+-- R2-CREW-CONSOLE-V2 (ledger D-80, "names fit faces"): what each crew portrait shows, so a generated
+-- name fits the face it goes with. One row per role's face (data/crew/portraits, SOURCES records
+-- the same rows; assets/characters/medic/manifest.json is the medic's source). `regions` are the
+-- naming traditions (sim/data/crew_names.ail) the face plausibly fits: a visual naming convention,
+-- not an ancestry the face establishes. Change a row when a role's face changes.
+import std/list (filter, map)
+import std/option (Option, Some, None)
+import std/string (join)
+
+export type Face = { id: string, presentation: string, regions: [string] }
+
+export pure func crewFaces() -> [Face] = [
+  { id: "medic", presentation: "woman", regions: ["south_asia"] },
+  { id: "engineer", presentation: "woman", regions: ["northern_europe", "western_europe", "eastern_europe"] },
+  { id: "analyst", presentation: "woman", regions: ["south_asia", "north_africa_middle_east"] },
+  { id: "pilot", presentation: "man", regions: ["north_africa_middle_east", "latin_america"] },
+  { id: "counselor", presentation: "woman", regions: ["west_africa", "east_africa", "southern_africa"] }
+]
+
+export pure func faceOf(id: string) -> Option[Face] = match filter(\f. f.id == id, crewFaces()) { f :: _ => Some(f), [] => None }
+
+-- The rows as SOURCES lines ("face <id> presentation=<p> regions=<a,b>"), for make crew-faces-check.
+export pure func facesText(_u: int) -> string = join("\n", map(\f. "face ${f.id} presentation=${f.presentation} regions=${join(",", f.regions)}", crewFaces()))
