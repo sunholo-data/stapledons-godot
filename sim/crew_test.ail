@@ -3,11 +3,14 @@ module stapledons/sim/crew_test
 -- R2-CREW C1 tests (design crew-integration.md §CI-1; sprint R2-CREW C0 wrote them red first).
 -- The embedded crew host: started from the synced pack, one crew turn per ship-day with the
 -- remainder carried exactly, and every crew draw on the crew stream only.
-import ./crew (CrewState, initCrew, daysIn, crewStep, crewTurn, scenarioId, answerSeed, blockedReason, errorReason)
+import ./crew (CrewState, CrewCmd, CrewApplied, initCrew, daysIn, crewStep, crewTurn, scenarioId, answerSeed, blockedReason, errorReason, crewCommand, crewCommandAs, crewIntents, workTerms)
+import std/list (filter, map, any, length)
+import pkg/sunholo/social_dynamics/model (Working, Offered)
 import ./rng (Rng, SJourney, SCrew, SEvents, SGalaxy, SAi, SNews, zeroRng, counter)
 import std/result (Result, Ok, Err)
 import std/option (Option, Some, None)
 import ./core (World, newWorld, defaultParams, tick, withCrew)
+import ./crew_script (replyLine)
 
 pure func year() -> float = 1.0
 pure func day() -> float = 1.0 / 365.25
@@ -81,3 +84,109 @@ pure func checkBlocked() -> bool =
   errorReason("{\"host\":\"answer the existing concern before reconsideration\"}") == "{\"host\":\"answer the existing concern before reconsideration\"}" &&
   errorReason("not json") == "not json"
 test "a blocked command says why (blocked:<code>:<detail>)" { checkBlocked() }
+
+-- R2-CREW-CONSOLE-V2 V1 (design crew-console-v2.md §V1, AC3, AC4; written red first): a start
+-- "as" the other captaincy is one all-or-nothing step (policy, start_task, policy back), and an
+-- offer may carry when to start (on_accept: only if they agree; now: as an order, whatever they say).
+pure func offerLine(worker: string, id: string) -> string = "{\"command\":\"offer\",\"worker\":\"${worker}\",\"recipe\":\"work_${worker}\",\"id\":\"${id}\"}"
+pure func askLine(actor: string, task: string, id: string) -> string = "{\"command\":\"ask\",\"actor\":\"${actor}\",\"task\":\"${task}\",\"id\":\"${id}\"}"
+pure func startLineOf(task: string) -> string = "{\"command\":\"start_task\",\"task\":\"${task}\"}"
+pure func cmdOf(kind: string, line: string, ask: Option[string], asMode: string, startMode: string) -> CrewCmd = { kind: kind, line: line, askId: ask, asMode: asMode, startMode: startMode }
+pure func statusOf(c: CrewState, task: string) -> string = match filter(\t. t.id == task, c.session.state.tasks) {
+  t :: _ => match t.status { Working => "working", Offered => "offered", _ => "other" },
+  [] => "none"
+}
+pure func offered(policy: string) -> Option[CrewState] = match initCrew(policy) {
+  Err(_) => None,
+  Ok(c) => { let r = crewCommand(c, 7, zeroRng(), offerLine("pilot", "t1"), None); match r.refused { None => Some(r.crew), Some(_) => None } }
+}
+-- Under consent an order over no agreement starts the work, reported refused_order, and the ship
+-- default stays consent; the three lines are journalled crew_core lines.
+pure func checkOrderOverRefusal() -> bool = match offered("consent") {
+  None => false,
+  Some(c) => {
+    let plain = crewCommandAs(c, 7, zeroRng(), startLineOf("t1"), "");
+    let ordered = crewCommandAs(c, 7, zeroRng(), startLineOf("t1"), "orders");
+    plain.refused != None && plain.crew.session == c.session &&
+    ordered.refused == None && statusOf(ordered.crew, "t1") == "working" && ordered.crew.session.command == "consent" &&
+    workTerms(ordered.crew.session, "t1") == "refused_order" && length(ordered.lines) == 3
+  }
+}
+-- A refused start leaves the crew byte-identical, even after its policy line was accepted.
+pure func checkRefusedUnchanged() -> bool = match offered("consent") {
+  None => false,
+  Some(c) => {
+    let r = crewCommandAs(c, 7, zeroRng(), startLineOf("t-unknown"), "orders");
+    r.refused != None && r.crew.session == c.session && r.lines == [] && counter(r.rng, SCrew) == 0
+  }
+}
+-- "as" equal to the ship default is today's path.
+pure func checkSameAs() -> bool = match offered("orders") {
+  None => false,
+  Some(c) => {
+    let a = crewCommandAs(c, 7, zeroRng(), startLineOf("t1"), "orders");
+    let b = crewCommand(c, 7, zeroRng(), startLineOf("t1"), None);
+    a.refused == None && a.crew.session == b.crew.session && a.lines == b.lines
+  }
+}
+test "an order as a start under consent: work begins, refused_order, ship default unchanged (AC3)" { checkOrderOverRefusal() }
+test "a refused start as orders leaves the crew byte-identical (AC3)" { checkRefusedUnchanged() }
+test "a start as the ship default is today's start (AC3)" { checkSameAs() }
+
+-- crew_offer {start} + crew_ask in one tick, over a range of seeds (the authored answers vary).
+pure func offerTick(policy: string, seed: int, mode: string) -> Option[CrewApplied] = match initCrew(policy) {
+  Err(_) => None,
+  Ok(c) => Some(crewIntents(Some(c), seed, zeroRng(), [(0, cmdOf("crew_offer", offerLine("pilot", "t1"), None, "", mode)), (1, cmdOf("crew_ask", askLine("pilot", "t1", "r1"), Some("r1"), "", ""))]))
+}
+pure func labelOf(a: CrewApplied) -> string = match a.answered { l :: _ => l.label, [] => "" }
+pure func crewOf(a: CrewApplied) -> Option[CrewState] = a.crew
+pure func onAcceptOk(seed: int) -> {ok: bool, accepted: bool} = match offerTick("consent", seed, "on_accept") {
+  None => { ok: false, accepted: false },
+  Some(a) => match a.crew {
+    None => { ok: false, accepted: false },
+    Some(c) => { ok: length(a.refused) == 0 && (labelOf(a) == "accept") == (statusOf(c, "t1") == "working") && (labelOf(a) != "accept" || workTerms(c.session, "t1") == "agreed_start"), accepted: labelOf(a) == "accept" }
+  }
+}
+pure func nowOk(seed: int) -> bool = match offerTick("consent", seed, "now") {
+  None => false,
+  Some(a) => match a.crew { None => false, Some(c) => length(a.refused) == 0 && statusOf(c, "t1") == "working" && c.session.command == "consent" && labelOf(a) != "" }
+}
+pure func seeds() -> [int] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+test "offer start on_accept: the work starts when they agree, and only then (AC4)" {
+  let rs = map(onAcceptOk, seeds());
+  all(\r. r.ok, rs) && any(\r. r.accepted, rs) && any(\r. not r.accepted, rs)
+}
+test "offer start now: the work starts as an order whatever they answer (AC4)" { all(nowOk, seeds()) }
+test "an offer without start is today's offer" {
+  match offerTick("consent", 3, "") { Some(a) => match a.crew { Some(c) => statusOf(c, "t1") == "offered", None => false }, None => false }
+}
+
+pure func all(p: a -> bool, xs: [a]) -> bool = match xs { [] => true, x :: r => p(x) && all(p, r) }
+
+-- V4 (2.11): a reply that carries `start` is reconsidered at once (crew_core asks again; the
+-- authored policy answers in the same tick); on_accept starts the work when they now agree.
+pure func concernSeed(seed: int) -> Option[CrewApplied] = match initCrew("consent") {
+  Err(_) => None,
+  Ok(c) => {
+    let a = crewIntents(Some(c), seed, zeroRng(), [(0, cmdOf("crew_offer", offerLine("pilot", "t1"), None, "", "")), (1, cmdOf("crew_ask", askLine("pilot", "t1", "r1"), Some("r1"), "", ""))]);
+    if labelOf(a) == "concern" then Some(a) else None
+  }
+}
+pure func replied(seed: int) -> {concern: bool, ok: bool, accepted: bool} = match concernSeed(seed) {
+  None => { concern: false, ok: true, accepted: false },
+  Some(a) => match a.crew {
+    None => { concern: true, ok: false, accepted: false },
+    Some(c) => {
+      let r = crewIntents(Some(c), seed + 100, zeroRng(), [(0, cmdOf("crew_reply", replyLine(c, "pilot"), None, "", "on_accept"))]);
+      let lbl = labelOf(r);
+      match r.crew {
+        Some(c2) => { concern: true, ok: length(r.refused) == 0 && lbl != "" && (lbl == "accept") == (statusOf(c2, "t1") == "working") && length(c2.session.pending) == 0, accepted: lbl == "accept" },
+        None => { concern: true, ok: false, accepted: false }
+      }
+    }
+  }
+}
+test "a reply with start on_accept: they reconsider at once, and the work starts only if they agree (V4)" {
+  let rs = map(replied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+  all(\r. r.ok, rs) && any(\r. r.concern, rs)
+}

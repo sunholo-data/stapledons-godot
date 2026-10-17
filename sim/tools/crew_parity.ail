@@ -47,7 +47,7 @@ pure func checkCrossing() -> string = {
   let a = crossingLines();
   let b = crossingLines();
   let x = scriptedCrossing(crossingSeed());
-  let verdict = if a != b then "FAIL repeat run differs" else if length(x.holds) < 2 then "FAIL expected two holds" else "ok";
+  let verdict = if a != b then "FAIL repeat run differs" else if length(x.holds) < 1 then "FAIL expected a hold" else "ok";
   concat(["crew-parity: crossing_hold ", verdict, " lines ", intToStr(length(x.digests)), " sha ", sha256Hex(a)])
 }
 

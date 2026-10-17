@@ -193,7 +193,7 @@ func sweep_state(state: String) -> void:
 
 
 ## A tour plan intent's target is the next leg of the itinerary (by catalogue id or body).
-const CREW_CONFIRMED := ["crew_start", "crew_relief", "crew_policy", "crew_orders", "crew_resume", "crew_reply"] # crew_reply: answering a concern (crew_core 0.4.1)
+const CREW_CONFIRMED := ["crew_offer", "crew_ask", "crew_start", "crew_relief", "crew_policy", "crew_orders", "crew_resume", "crew_reply"] # R2-CREW-CONSOLE-V2: every crew decision, the offer included, is confirmed
 func sweep_crew() -> void:
 	var demo: Node = await new_demo()
 	var sim := session(demo)
@@ -211,25 +211,40 @@ func sweep_crew() -> void:
 	check("NT3 the Voyage console says the hold needs you at the Crew console", c.crew_summary != null and c.crew_summary.text.begins_with("Needs you at the Crew console:"))
 	c.go_to("crew") # crew-work W1: the Crew page lives on its own console
 	c.use("crew", "open")
-	var page: CrewPage = c.crew_page
-	check("NT3 the Crew page shows the hold card", page != null and page.find_children("Hold_*", "", true, false).size() == 1)
-	var buttons: Array = page.find_children("*", "Button", true, false) if page != null else []
+	var page: CrewConsole = c.crew_console
+	var held_id := str(sim.crew.holds[0].get("actor", "")) if not (sim.crew.get("holds", []) as Array).is_empty() else ""
+	check("NT3 the Crew console shows the held row", page != null and held_id != "" and page.find_child("Member_" + held_id, true, false) != null and (page.find_child("Quick_" + held_id, true, false) as Button).text == "Resume ▸")
 	var bad: Array = []
-	var offers := 0
-	for b in buttons:
-		var nm := str(b.name)
-		sim.queued.clear()
+	var pressed := 0
+	var ids: Array = [""] + sim.crew.members.map(func(m): return str(m.id))
+	for who in ids: # the board, then each member's call
+		if page == null: break
+		if who != "": page.press("call:" + who)
+		for b in page.find_children("*", "Button", true, false):
+			if not is_instance_valid(b) or (b as Button).disabled or str(b.name) == "EndCall": continue
+			sim.queued.clear()
+			page.armed = ""
+			(b as Button).pressed.emit()
+			pressed += 1
+			for i: Dictionary in sim.queued:
+				if CREW_CONFIRMED.has(i.get("k", "")):
+					bad.append([str(b.name), i["k"]])
+			if page.call_id != who and who != "": page.press("call:" + who)
 		page.armed = ""
-		b.pressed.emit()
-		for i: Dictionary in sim.queued:
-			if CREW_CONFIRMED.has(i.get("k", "")):
-				bad.append([nm, i["k"]])
-			elif i.get("k", "") == "crew_offer":
-				offers += 1
 	sim.queued.clear()
-	check("NT3 %d Crew page buttons pressed once each" % buttons.size(), buttons.size() >= 8)
-	check("NT3 no confirmed crew decision on one press %s" % [bad.slice(0, 3)], bad.is_empty())
-	check("NT3 Offer work acts on one press (the crew may decline)", offers >= 1)
+	check("NT3 %d Crew console buttons pressed once each, on the board and in every call" % pressed, pressed >= 20)
+	check("NT3 no crew decision on one press, the offer included %s" % [bad.slice(0, 3)], bad.is_empty())
+	# NT5 (R2-CREW-CONSOLE-V2 AC10): the board, a call and a hold left for 600 s of fake time with the
+	# sim ticking: nothing closes and nothing is decided.
+	page.end_call()
+	page.press("call:" + held_id)
+	sim.record_sent = true
+	sim.sent_log.clear()
+	demo.journey_auto_tick = true
+	step(demo, 600.0, 1.0)
+	demo.journey_auto_tick = false
+	check("NT5 600 s later the Crew console and the held call are still open", c.focused == "crew" and page.call_id == held_id and page.find_child("HoldBanner", true, false) != null)
+	check("NT5 nothing was decided on the timer", sim.sent_log.all(func(e: Dictionary) -> bool: return e.source == "tick" and not e.intents.any(func(i): return str(i.get("k", "")).begins_with("crew_"))))
 	c.leave()
 	demo.queue_free()
 	await process_frame

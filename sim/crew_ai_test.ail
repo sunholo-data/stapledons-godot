@@ -19,7 +19,7 @@ import std/list (map, filter, length, any, flatMap)
 import std/crypto (sha256Hex)
 
 pure func crewWorld() -> World = match withCrew(newWorld(2, false, defaultParams()), "consent") { Ok(w) => w, Err(_) => newWorld(2, false, defaultParams()) }
-pure func crewIntent(kind: string, line: string, ask: Option[string]) -> Intent = ICrew({ kind: kind, line: line, askId: ask })
+pure func crewIntent(kind: string, line: string, ask: Option[string]) -> Intent = ICrew({ kind: kind, line: line, askId: ask, asMode: "", startMode: "" })
 pure func offerAsk() -> [Intent] = [
   crewIntent("crew_offer", "{\"command\":\"offer\",\"worker\":\"medic\",\"recipe\":\"work_medic\",\"id\":\"t1\"}", None),
   crewIntent("crew_ask", "{\"command\":\"ask\",\"actor\":\"medic\",\"task\":\"t1\",\"id\":\"r1\"}", Some("r1"))

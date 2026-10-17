@@ -143,14 +143,18 @@ export type Member = { id: string, name: string, begin: Ind, end: Ind, label0: s
 -- label: the reply label (or the hold's rule); text: the authored words; aiReq: the crew_reply AI
 -- request that words it ("" when none: the authored text stands).
 export type Moment = { day: int, actor: string, name: string, label: string, kind: string, emotion: string, aiReq: string, text: string } deriving (Eq)
-export type Counts = { refusals: int, concerns: int, concernsAuto: int, reliefsAsked: int, reliefsGranted: int, reliefsDenied: int, holds: int } deriving (Eq)
+-- standDowns* (crew_core 0.6, R2-CREW-CONSOLE-V2 V8): duty check-ins where they asked to stand down,
+-- and the captain's (or auto-run's) answer; on the wire from protocol 2.11.
+export type Counts = { refusals: int, concerns: int, concernsAuto: int, reliefsAsked: int, reliefsGranted: int, reliefsDenied: int, holds: int,
+  standDownsAsked: int, standDownsGranted: int, standDownsDenied: int } deriving (Eq)
 -- Open asks (kind request) and unresolved reliefs (kind relief) awaiting the captain.
 export type Waiting = { kind: string, id: string, actor: string, name: string, task: string } deriving (Eq)
 export type CrewDigest = { turn0: int, turn: int, work0: int, work: int, counts: Counts, members: [Member], moments: [Moment], waiting: [Waiting] } deriving (Eq)
 -- tau0, t0, year0: the clocks at the commit; now: the latest snap; media: crossed, in order.
 export type Digest = { tau0: float, t0: float, year0: float, now: Snap, media: [MediumRef], crew: Option[CrewDigest] } deriving (Eq)
 
-export pure func noCounts() -> Counts = { refusals: 0, concerns: 0, concernsAuto: 0, reliefsAsked: 0, reliefsGranted: 0, reliefsDenied: 0, holds: 0 }
+export pure func noCounts() -> Counts = { refusals: 0, concerns: 0, concernsAuto: 0, reliefsAsked: 0, reliefsGranted: 0, reliefsDenied: 0, holds: 0,
+  standDownsAsked: 0, standDownsGranted: 0, standDownsDenied: 0 }
 export pure func momentsMax() -> int = 7
 
 -- ---------------------------------------------------------------- moments
@@ -159,7 +163,7 @@ export pure func salience(kind: string) -> int =
   if kind == "hold" then 5 else if kind == "refusal" then 4 else if kind == "relief" then 3
   else if kind == "concern" then 2 else if kind == "accept" then 1 else 0
 export pure func momentKind(label: string) -> string =
-  if label == "decline" then "refusal" else if label == "request_relief" then "relief" else if label == "concern" then "concern"
+  if label == "decline" then "refusal" else if label == "request_relief" || label == "stand_down" then "relief" else if label == "concern" then "concern"
   else if label == "accept" then "accept" else "reply"
 -- a ranks before b: higher salience, then the earlier day, then the actor id.
 pure func before(a: Moment, b: Moment) -> bool = {
@@ -233,12 +237,18 @@ pure func actCount(c: Counts, a: Act) -> Counts =
   if a.kind == "reply" then bump(c, a.label)
   else if a.kind == "captain_reply" then { c | concernsAuto: c.concernsAuto + 1 }
   else if a.kind == "relief_decision" then (if a.label == "granted" then { c | reliefsGranted: c.reliefsGranted + 1 } else { c | reliefsDenied: c.reliefsDenied + 1 })
+  else if a.kind == "stand_down_asked" then { c | standDownsAsked: c.standDownsAsked + 1 }
+  else if a.kind == "stand_down_decision" then (if a.label == "granted" then { c | standDownsGranted: c.standDownsGranted + 1 } else { c | standDownsDenied: c.standDownsDenied + 1 })
   else c
 -- A console resolve_relief the captain sent: release true grants it.
 pure func captainCount(c: Counts, line: string) -> Counts = match decode(line) {
   Ok(j) => if getString(j, "command") == Some("resolve_relief") then (match getBool(j, "release") {
       Some(true) => { c | reliefsGranted: c.reliefsGranted + 1 },
       Some(false) => { c | reliefsDenied: c.reliefsDenied + 1 },
+      None => c
+    }) else if getString(j, "command") == Some("resolve_stand_down") then (match getBool(j, "release") {
+      Some(true) => { c | standDownsGranted: c.standDownsGranted + 1 },
+      Some(false) => { c | standDownsDenied: c.standDownsDenied + 1 },
       None => c
     }) else c,
   Err(_) => c
@@ -253,6 +263,7 @@ pure func onAnswered(cd: CrewDigest, crew: [Actor], turn: int, l: CrewLine) -> C
 pure func onAct(cd: CrewDigest, a: Act) -> CrewDigest = {
   let counted = { cd | counts: actCount(cd.counts, a) };
   if a.kind == "reply" then { counted | members: labelled(cd.members, a.actor, a.label), moments: insertMoment(replyMoment(cd, a.tick, a.actor, a.label, a.stress, ""), cd.moments) }
+  else if a.kind == "stand_down_asked" then { counted | moments: insertMoment(replyMoment(cd, a.tick, a.actor, "stand_down", a.stress, ""), cd.moments) }
   else counted
 }
 pure func onHold(cd: CrewDigest, h: CrewHold) -> CrewDigest =
