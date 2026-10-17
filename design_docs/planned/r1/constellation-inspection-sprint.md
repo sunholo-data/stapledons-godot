@@ -1,7 +1,7 @@
 # Sprint R1-CONSTELLATIONS: constellation guides while holding I
 
 **Design:** [constellation-inspection.md](constellation-inspection.md).
-**Status:** Local implementation and verification complete; independent review recorded separately. CI and landing pending. Approved by Mark, attended 2026-10-17 (“yep continue”).
+**Status:** Local implementation and verification complete; independent review recorded separately. CI is blocked by the existing crew-performance timing gate; landing is pending. Approved by Mark, attended 2026-10-17 (“yep continue”).
 **Created:** 2026-10-17, attended request from Mark.
 **Estimate:** ~720 LOC; two engineering days including visual review, with allowance for alias work and GPU access. Medium risk.
 **Progress:** `.ailang/state/sprints/sprint_R1-CONSTELLATIONS.json`.
@@ -60,4 +60,5 @@ Alias audit can consume the estimate; identity uncertainty must be resolved from
 - C3 local verification complete: full `make golden` passes, including 33 constellation cases. A 1.5-pixel endpoint mutation in an isolated temporary copy fails 32 alignment cases. Warm-field rebase invalidation is checked without recreating identities, supplementing the large-coordinate GPU cases.
 - Native macOS windows clamp tall capture sizes; review tools now use an exact-size SubViewport. New 1280×720 and 2560×1440 cases cover all four figures, travel/SR, opaque bodies, partial high-speed coverage, actual GR suppression/status and a standing-eye ship view.
 - Full pinned-runtime `make test` exits 0 (2026-10-17, 19:05 UTC). Final capture has 32 inspected images. Warm CPU p95 is 0.144 ms held / 0.004 ms released, with zero identity rescans. The packaged native I/card/release/map smoke passes. See [report](constellation-inspection-report.md) and `.ailang/state/evaluations/eval_R1-CONSTELLATIONS_round_1.json`.
-- CI-before-merge and landing remain pending; C3's overall `passes` stays null for those external gates. No branch publication, merge or dev release is claimed.
+- Current-main integration `a0ccd120` passed full local `make test constellation-golden`, macOS export and packaged smoke on AILANG v0.54.14. Independent integration review found no concern and reran 35 focused assertions successfully.
+- [PR #271](https://github.com/sunholo-data/stapledons-godot/pull/271) is published. [CI](https://github.com/sunholo-data/stapledons-godot/actions/runs/39062583511) failed twice only on the unchanged crew-performance wall-time gate (2.30/2.26 s, limit 2.0 s). Main passed the identical source/runtime at 1.80 s; local passed at 1.18 s. Limits remain unchanged. Mark's explicit CI exception has been requested; no merge is claimed. C3 stays pending for that gate and landing.

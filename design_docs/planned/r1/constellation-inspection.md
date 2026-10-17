@@ -11,13 +11,13 @@
 | Hard sci-fi authenticity (spec) | ++ | +2 | Endpoint alignment is checked against rendered stars and RS-1/RS-2. |
 | **Net** | | **+8** | **Go:** a small extension of inspection, using existing physics. |
 
-**Status:** Implemented locally on `feat/constellation-guides`; local verification passed, CI/landing pending. Approved by Mark, attended 2026-10-17 (“yep continue”). Created 2026-10-17 from Mark's attended request: press I to see constellations and how they distort while moving.
+**Status:** Implemented in [PR #271](https://github.com/sunholo-data/stapledons-godot/pull/271); full current-main local verification passed, CI blocked on the unchanged crew-performance timing gate, landing pending. Approved by Mark, attended 2026-10-17 (“yep continue”). Created 2026-10-17 from Mark's attended request: press I to see constellations and how they distort while moving.
 **Release:** r1 follow-up; the roadmap has no dedicated row yet.
 **Priority:** P2, an aid to reading the existing relativistic sky.
 **Implements:** [relativity specification](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) §§1–2, 4 and 7; [R1 foundations](https://github.com/sunholo-data/stapledons-design/blob/main/roadmap/r1-foundations.md), relativistic-sky bar; [starmap data model](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase1-data-models/starmap-data-model.md), real catalogue identities; [starbow Archive entry](https://github.com/sunholo-data/stapledons-design/blob/main/lore/archive/starbow.md).
 **Depends on:** existing inspection, composed ship/sky cameras, catalogue stack and `sunholo/relativity` 0.12.0. No package upgrade.
 **Estimated:** ~720 LOC including authored data, tests and capture/golden tools; three milestones.
-**Evidence:** code observations below are pinned to `53f5fe8`; V1–V9 record the inspection. No implementation or visual validation is claimed.
+**Evidence:** V1–V9 record the original pre-implementation inspection at `53f5fe8`. Delivered tests and visual verification are recorded in the [implementation report](constellation-inspection-report.md).
 
 ## Problem
 

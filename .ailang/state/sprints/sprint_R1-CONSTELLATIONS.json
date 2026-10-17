@@ -6,9 +6,7 @@
   "created": "2026-10-17",
   "design_doc": "design_docs/planned/r1/constellation-inspection.md",
   "sprint_plan": "design_docs/planned/r1/constellation-inspection-sprint.md",
-  "github_issues": [
-
-  ],
+  "github_issues": [],
   "registry_reuse": [
     {
       "milestone": "C1",
@@ -48,9 +46,7 @@
       "id": "C1",
       "description": "Four-figure manifest, audited exact source identities, resolver and focused tests first",
       "estimated_loc": 220,
-      "dependencies": [
-
-      ],
+      "dependencies": [],
       "acceptance_criteria": [
         "AC1: all endpoints resolve uniquely on the normal loaded stack",
         "Malformed, duplicate and missing endpoints fail safely",
@@ -96,7 +92,7 @@
       "passes": null,
       "started": "2026-10-17 18:34:04 UTC",
       "completed": null,
-      "notes": "All local implementation and verification complete: full make test, 33 GPU cases, 32 inspected captures, benchmark, export and native smoke pass. Independent evaluation recorded separately. passes remains null until CI-before-merge and landing are complete; do not rerun unchanged local suite merely to resume."
+      "notes": "All local integration verification complete with v0.54.14: full make test and 33 GPU cases pass, macOS export and packaged smoke pass. Independent follow-up found no integration concern. CI fails only the unchanged crew-perf 2-second timing gate in two attempts (2.30/2.26 s). passes remains null pending green CI or Mark's explicit exception, then landing."
     }
   ],
   "local_verification": {
@@ -110,10 +106,20 @@
     "reference_images": 32,
     "cpu_held_p95_ms": 0.144,
     "cpu_released_p95_ms": 0.004,
-    "export_smoke": "pass"
+    "export_smoke": "pass",
+    "integration": {
+      "source": "a0ccd120ac875f267a6f8a3e59c34365385b34f0",
+      "ailang_version": "v0.54.14",
+      "make_test_exit": 0,
+      "gpu_cases": 33,
+      "gpu_failures": 0,
+      "export_exit": 0,
+      "export_smoke": "pass",
+      "independent_followup": "No new integration correctness concerns; 35 focused assertions passed with v0.54.14"
+    }
   },
   "pending": [
-    "CI must pass before merge; no branch publication requested",
+    "Green CI required by CLAUDE.md; two attempts fail the unchanged crew-perf timing check. Explicit merge exception requested, not yet granted.",
     "After merge: move docs to implemented/r1, update design-repo roadmap and mark sprint complete"
   ],
   "local_implementation_complete": true,
@@ -122,5 +128,29 @@
     "result": "pass",
     "score": 96,
     "scope": "local implementation; CI and landing pending"
+  },
+  "merge_requested_by": "Mark, attended: yeah merge it so I can pull from github",
+  "pull_request": "https://github.com/sunholo-data/stapledons-godot/pull/271",
+  "ci": {
+    "url": "https://github.com/sunholo-data/stapledons-godot/actions/runs/39062583511",
+    "head": "a0ccd120ac875f267a6f8a3e59c34365385b34f0",
+    "result": "failure",
+    "attempts": [
+      {
+        "attempt": 1,
+        "check": "crew-perf crewSkip",
+        "seconds": 2.3,
+        "budget_seconds": 2
+      },
+      {
+        "attempt": 2,
+        "check": "crew-perf crewSkip",
+        "seconds": 2.26,
+        "budget_seconds": 2
+      }
+    ],
+    "comparison": "Identical crew benchmark source and v0.54.14 runtime at base 50242fa4 passed main CI in 1.80 s; integrated local run passed in 1.18 s.",
+    "exception_requested": true,
+    "exception_granted": false
   }
 }

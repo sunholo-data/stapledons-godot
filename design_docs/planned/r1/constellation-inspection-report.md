@@ -1,8 +1,8 @@
 # R1-CONSTELLATIONS: local implementation and verification
 
-**Status:** Implemented on `feat/constellation-guides`; not merged or published.
+**Status:** Published in [PR #271](https://github.com/sunholo-data/stapledons-godot/pull/271); merge blocked on the existing crew-performance CI timing gate.
 **Approval:** Mark, attended 2026-10-17, “yep continue”.
-**Source:** `3acc0c7` plus the final independent-reference strengthening in the GPU tool.
+**Source:** `3acc0c7`, verification `ad4f9d8`, and clean current-main integration `a0ccd120` (AILANG v0.54.14).
 **Design:** [constellation-inspection.md](constellation-inspection.md).
 **Sprint:** [constellation-inspection-sprint.md](constellation-inspection-sprint.md).
 
@@ -54,7 +54,10 @@ outside scope. Conservative body boxes can remove extra connectors near a globe.
 ## Review and landing
 
 Independent evaluation: `.ailang/state/evaluations/eval_R1-CONSTELLATIONS_round_1.json`.
-CI has not run for this local branch and must pass before merge (`CLAUDE.md` gate 1).
-Landing then moves these documents to `implemented/r1/`, updates the design-repo
-roadmap and marks the sprint complete. The changelog fragment is included.
-No merge, dev tag, upload or publication was performed.
+Current-main integration `a0ccd120` passed full local `make test constellation-golden` with AILANG v0.54.14 (exit 0; 33 GPU cases, zero failures). macOS export and packaged identification smoke also exited 0. Independent follow-up review found no new correctness concern and independently reran 35 focused assertions successfully.
+
+[CI run 39062583511](https://github.com/sunholo-data/stapledons-godot/actions/runs/39062583511) failed twice on the unchanged `crew-perf crewSkip` wall-time gate: 2.30 s and 2.26 s against 2.0 s. The identical benchmark source and runtime on base `50242fa4` passed main CI in 1.80 s; it passed the integrated local run in 1.18 s. No limit was changed for the retry. CI stops at that benchmark, so later CI targets are not claimed as verified.
+
+Mark requested publication and GitHub merge. The branch and PR are published, but `CLAUDE.md` gate 1 requires green CI before merge; an explicit exception has been requested and has not yet been granted. Landing remains pending: move these documents to `implemented/r1/`, update the design-repo roadmap and mark the sprint complete. The changelog fragment is included. No merge, dev tag, build upload or release was performed.
+
+Integration evidence: `/tmp/constellations-merge-verification.log`, `/tmp/constellations-merge-export.log`, `/tmp/constellations-merge-export-smoke.log`; CI failure logs: `/tmp/constellation-ci-failed.log`, `/tmp/constellation-ci-retry-failed.log`.
