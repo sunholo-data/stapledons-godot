@@ -159,39 +159,31 @@ The brain is local and untracked.
   Export `AILANG_STORAGE_MESSAGING=gcp` and
   `AILANG_MESSAGES_PROJECT=ailang-multivac` first; without them the message only
   reaches a local store nobody reads.
-- **Workarounds, re-checked on v0.54.13 (re-check again at each bump; still-needed ones reported as ailang#1783):**
-  - Open (new in v0.54.13, blocks the bump; not reported yet): on the bytecode VM `std/env.getEnvOr`
-    of an unset variable fails (`bridge: TaggedValue (EnvError.NotFound) not yet supported`); the
-    interpreter and v0.54.11 return the fallback. `ai/service.ail` `live` reads its keys this way,
-    so `ai-relay` and `ai-settings` fail. No downstream workaround; wait for the fix.
-  - Open (v0.54.13, ailang#1736 fixed only in part): on the strict VM a list literal of plain
-    constants is fine at any length (`efficacyLut`, 601 floats, is one literal again), but one whose
-    elements are expressions still exceeds the register allocator's 256: about 128 negated literals
-    (`-0.5`), about 128 calls, or 15 records holding two 16-string lists. `sim/tools/ism_build.ail`
-    keeps the cloud-plane scalars in chunks of 90 and the members in chunks of 10, and
-    `sim/data/crew_names` `nameRegions` is still evaluator-only (no strict entry reaches it yet).
+- **Workarounds, re-checked on v0.54.14 (re-check again at each bump; still-needed ones reported as ailang#1783):**
   - Open (ailang#1827 fixed in v0.54.10, performance): with crew_core 0.5.0 the busy no-hold crew skip
-    measures 11.2 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16)
+    measures about 11 s on the Studio (was ~40 s), not the 2 s D-82 hoped for; Mark (2026-10-16)
     accepted that, and `crew-perf`'s `crewSkipUnheld` ceiling is 30 s.
   - Kept on purpose: `ailang check --package` beside `ailang test --package`. Since v0.54.13 the
-    test runner type-checks every module and exits 1 on a compile error (ailang#1845), but only
-    `check` enforces STRICT_FALLBACK_001 (an unannotated empty `Ok`).
+    test runner type-checks every module and exits 1 on a compile error, but only `check` enforces
+    STRICT_FALLBACK_001 (an unannotated empty `Ok`).
   - Process, not a bug: run `ailang lock` after `ailang install`; on a clean machine `ailang lock`
     also fills the package cache (`make deps`).
   - Language rule since v0.52.0: an explicitly imported name may not also be defined at module
     level (MOD015). Alias the import (`import M (x as mX)`) or rename. An aliased constructor
     import is rejected in a pattern (TC_MATCH_001); `sim/tripphase.ail` maps phases to an index.
-  - Fixed and removed from the tree in v0.54.13 (byte-identical outputs): the #1576 doubling in
-    `ai/voice.ail` and the tail-recursive builders in `sim/tools/lens_lut.ail`; the #1736 split of
-    `applyOverride` and of the efficacy LUT; the #1737 named check functions in
-    `sim/protocol_ism_test.ail`; the v0.52.0 workarounds (#1460, #1461, #1465, #1467, #1473,
-    #1478, #1486, #1503, #1505, #1516, #1517, #1419 comments) and the replay interpreter's
-    `--max-recursion-depth`. The arm64 and x86_64 replay goldens are now identical; they are still
-    kept per architecture.
-  - Fixed earlier, nothing in-tree: std/map on the strict VM and `readLineOpt` end of input
-    (v0.54.11); the ~20 GB cold compile of crew_core (v0.54.8, #1812); `spawnProcessResult`
+  - Fixed and removed from the tree on v0.54.13/v0.54.14 (byte-identical outputs unless noted):
+    every strict-VM list-literal split (ailang#1736, #1865: the ISM efficacy LUT, cloud planes and
+    members are single literals; `applyOverride` is one chain; the crew-names table runs strict, so
+    the scripted crossing brings the crew aboard with `withCrew` and names, and the reviewed
+    `tests/crew/crossing_hold.ndjson` was re-recorded); the #1576 doubling in `ai/voice.ail` and the
+    tail-recursive lens-table builders; the #1737 named test checks; the v0.52.0 workarounds (#1460,
+    #1461, #1465, #1467, #1473, #1478, #1486, #1503, #1505, #1516, #1517, #1419 notes). The arm64
+    and x86_64 replay goldens are identical but still kept per architecture.
+  - Fixed upstream, nothing in-tree: `std/env.getEnvOr` of an unset variable on the bytecode VM
+    (broken in v0.54.13, fixed in v0.54.14, #1864); std/map on the strict VM and `readLineOpt`
+    (v0.54.11); the ~20 GB cold compile of crew_core (v0.54.8, #1812). `spawnProcessResult`
     (#1784), sharedindex scan order (#1795) and `std/package.assetPath` (#1772) are unused here;
-    every `--entry` names an exported function (#1797).
+    every `--entry` names an exported function (#1797); no `CACHE_WRITE_FAILED` (#1601).
 - The game is meant to stress-test the AILANG bytecode VM. When the VM and the
   interpreter disagree, that's an upstream bug: shrink it to a minimal repro
   and report it.
