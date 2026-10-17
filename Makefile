@@ -103,10 +103,7 @@ crew-perf:         ## AC11: a 10-year skip under auto-run (monthly, D-76) on the
 	@for w in busy critical_only; do \
 	  case $$w in busy) b=$(CREW_PERF_BUDGET_crewSkipUnheld);; *) b=$(CREW_PERF_BUDGET_crewSkip);; esac; \
 	  env -u AI_LIVE $(AILANG) run --quiet --bytecode --strict-bytecode --caps IO --package-dir sim --entry crewSkipChunked --args-json "\"$$w\"" sim/tools/crew_perf.ail | \
-	  perl -MTime::HiRes=time -ne 'BEGIN { $$max = 0; $$worst = "none"; $$n = 0 } chomp; my $$t = time; if (/^start$$/) { $$s = $$t; $$p = $$t; next } \
-	    if (/^chunk /) { my $$d = $$t - $$p; $$n++; ($$max, $$worst) = ($$d, $$_) if $$d > $$max; print "crew-perf crewSkipChunked '"$$w"': SLOW $$_ took ", sprintf("%.3f", $$d), " s\n" if $$d >= $(CREW_PERF_CHUNK_S); $$p = $$t; next } \
-	    $$end = $$_; END { my $$tot = defined $$s ? $$p - $$s : -1; printf "crew-perf crewSkipChunked '"$$w"': %s in %.2f s; %d chunks, slowest %.3f s (%s)\n", $$end // "no end", $$tot, $$n, $$max, $$worst; \
-	    exit(($$end // "") =~ /^days 3652 holds \d+ chunks \d+$$/ && $$tot >= 0 && $$tot < '"$$b"' && $$max < $(CREW_PERF_CHUNK_S) ? 0 : 1) }' \
+	  perl -MTime::HiRes=time -ne 'BEGIN { $$max = 0; $$worst = "none"; $$n = 0 } chomp; my $$t = time; if (/^start$$/) { $$s = $$t; $$p = $$t; next } if (/^chunk /) { my $$d = $$t - $$p; $$n++; ($$max, $$worst) = ($$d, $$_) if $$d > $$max; print "crew-perf crewSkipChunked '"$$w"': SLOW $$_ took ", sprintf("%.3f", $$d), " s\n" if $$d >= $(CREW_PERF_CHUNK_S); $$p = $$t; next } $$end = $$_; END { my $$tot = defined $$s ? $$p - $$s : -1; printf "crew-perf crewSkipChunked '"$$w"': %s in %.2f s; %d chunks, slowest %.3f s (%s)\n", $$end // "no end", $$tot, $$n, $$max, $$worst; exit(($$end // "") =~ /^days 3652 holds \d+ chunks \d+$$/ && $$tot >= 0 && $$tot < '"$$b"' && $$max < $(CREW_PERF_CHUNK_S) ? 0 : 1) }' \
 	  || { echo "crew-perf: FAIL (crewSkipChunked $$w: a chunk at or over $(CREW_PERF_CHUNK_S) s, or the total over $$b s)"; exit 1; }; done
 test: crew-perf
 crew-parity-record: ## regenerate tests/crew/*.ndjson (a reviewed diff; never in make test)
