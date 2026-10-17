@@ -232,6 +232,21 @@ func _run() -> void:
 	(buttons(r).CrewConsole as Button).pressed.emit()
 	check("the Hold page offers the Crew console", crew_asked[0] == 1)
 	audit_pages(r, "Alpha Centauri held")
+	# Eval R2-INTERLUDE (3): a hold open with no digest yet (a session below the commit's first fold)
+	# still shows the Hold page with its confirmed Resume; no number is left unbound.
+	var nd := view_of(held)
+	nd.cruise.erase("digest")
+	var rn := CrossingReview.new()
+	root.add_child(rn)
+	var sent_nd: Array = []
+	rn.intents.connect(func(list: Array) -> void: sent_nd.append_array(list))
+	rn.show_review(nd, false)
+	check("a hold without a digest still opens on the Hold page (%s)" % [rn.page_ids()], rn.page_ids() == ["hold"] and rn.current() == "hold" and buttons(rn).has("Resume"))
+	(buttons(rn).Resume as Button).pressed.emit()
+	(buttons(rn).Resume as Button).pressed.emit()
+	check("its confirmed Resume is crew_resume for that hold", sent_nd.size() == 1 and sent_nd[0].k == "crew_resume")
+	audit_pages(rn, "hold without a digest")
+	rn.queue_free()
 	# While crossing (no hold, not over): the progress view, nothing to dismiss.
 	var mid := view_of(held)
 	mid.crew.holds = []
@@ -260,6 +275,13 @@ func _run() -> void:
 	audit_pages(r, "TRAPPIST-1")
 	r.show_review(view_of(tr[1]), true)
 	audit_pages(r, "Aldebaran")
+	# Eval R2-INTERLUDE (1): two news ages, each unambiguous: news reaching the ship now, and the last
+	# word received at its stop (written within days of departure: no "0.00 years").
+	r.go(r.page_ids().find("home"))
+	var ht := texts(r)
+	var age_now := "News reaching the ship now left home %.1f years ago." % float(tr[1].world.cruise.digest.time.news_age_years)
+	check("home: the news age now and the last word at its stop are told apart (%s)" % [ht], ht.has(age_now) and ht.has("The last word received, at your last stop:")
+		and ht.any(func(s): return s.contains("within days of your departure")) and not ht.any(func(s): return s.contains("0.00 years")))
 	var t0: Dictionary = tr[0].world.cruise.digest.time
 	var t1: Dictionary = tr[1].world.cruise.digest.time
 	check("Aldebaran's crossing is later at home than TRAPPIST-1's (%s, %s years)" % [t0.years_at_home, t1.years_at_home], float(t1.earth_year_total) > float(t0.earth_year_total) and int(t1.tier) >= int(t0.tier))

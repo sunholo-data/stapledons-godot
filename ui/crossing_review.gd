@@ -202,7 +202,9 @@ static func page_spec(view: Dictionary, over: bool) -> Array:
 	var d: Variant = GalaxyMap.field_value(view, "cruise.digest")
 	var holds: Array = GalaxyMap.field_value(view, "crew.holds") if GalaxyMap.field_value(view, "crew.holds") is Array else []
 	var held := not holds.is_empty()
-	if not d is Dictionary or (not over and not held):
+	if not d is Dictionary:
+		return ["hold"] if held else ["crossing"] # a hold before the first digest: its page alone
+	if not over and not held:
 		return ["crossing"]
 	var ids: Array = ["hold"] if held else []
 	ids.append_array(["crossing", "home"])
@@ -447,10 +449,11 @@ func _home(view: Dictionary) -> Control:
 	line.name = "TierLine"
 	box.add_child(line)
 	# The tier line carries the whole years at home; the exact Earth clocks are on the crossing page.
-	box.add_child(_composed(["News from home is ", [D + "time.news_age_years", "%.1f"], " years old when it reaches you."], 14))
+	# Two news ages, told apart: news reaching the ship now, and the last word received at its stop.
+	box.add_child(_composed(["News reaching the ship now left home ", [D + "time.news_age_years", "%.1f"], " years ago."], 14))
 	var news: Variant = GalaxyMap.field_value(view, "consequence.news")
 	if news is Dictionary and news.get("template_id") != null and news.get("slots") is Dictionary:
-		box.add_child(_label("The last word from home, at your last stop:", 11, DIM))
+		box.add_child(_label("The last word received, at your last stop:", 11, DIM))
 		var body := NewsPanel.TemplateText.new()
 		body.templates = NewsCopy.load_json(NewsCopy.TEMPLATES)
 		body.no_age_text = str(NewsCopy.load_json(NewsCopy.COPY).get("labels", {}).get("body_no_age", ""))
@@ -584,7 +587,8 @@ func _hold(view: Dictionary) -> Control:
 	said.set_meta("crew_text", true)
 	box.add_child(said)
 	box.add_child(_label("Auto-run stopped the crossing for you. Ship time waits until you resume it.", 13, DIM))
-	box.add_child(_composed(["So far: ", [D + "time.ship_days", "days"], " of the crossing."], 14))
+	if GalaxyMap.field_value(view, D + "time.ship_days") != null:
+		box.add_child(_composed(["So far: ", [D + "time.ship_days", "days"], " of the crossing."], 14))
 	var acts := HBoxContainer.new()
 	acts.add_theme_constant_override("separation", 10)
 	_button("CrewConsole", "Answer at the Crew console", func() -> void: open_crew.emit(), acts)

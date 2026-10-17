@@ -53,6 +53,15 @@ func test_templates() -> void:
 	for tier in templates.tiers:
 		for t: String in tier.templates:
 			if NewsCopy.elapsed_as_now(t): false_now.append(t.left(60))
+	# Eval R2-INTERLUDE (1): a message written so soon after departure that its {elapsed_years}
+	# renders "0.00" says "within days of your departure", never "0.00 years after".
+	var zero_bad := []
+	var t0: Array = templates.tiers[0].templates
+	for j in t0.size():
+		var at0 := NewsCopy.paragraph(templates, j, {"elapsed_years": 0.0, "news_epoch": 0.0, "news_age_years": 40.62})
+		var at4 := NewsCopy.paragraph(templates, j, {"elapsed_years": 0.04, "news_epoch": 0.04, "news_age_years": 4.35})
+		if at0.contains("0.00") or not at0.contains("within days") or not at4.contains("0.04 years after"): zero_bad.append([j, at0])
+	ok("tier 0: an elapsed time that rounds to zero reads 'within days', otherwise the number (%s)" % [zero_bad], zero_bad.is_empty())
 	ok("no template states the news epoch as the time passed at home by now (%s, stops %s)" % [false_now, stops], false_now.is_empty())
 	var fx := NewsCopy.load_json(FIX + "paragraphs.json")
 	var all_ok := true

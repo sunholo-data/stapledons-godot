@@ -321,12 +321,16 @@ func test_review_no_deadlines() -> void:
 	check("NT4 no Braking notice while the review waits at the braking boundary (phase %s)" % demo.journey_sim.world.ship.phase,
 		str(demo.journey_sim.world.ship.phase) == "braking" and not demo.ship_hud.has_card("notice") and not demo.ship_hud.all_text().contains(JourneyHud.BRAKE_NOTICE))
 	var kept := []
-	for i in r.page_ids().size():
+	var ids: Array = r.page_ids() # taken once: a dismissed review rebuilds (or empties) its pages
+	for i in ids.size():
+		if not r.visible or demo.solar_tour.interlude != card:
+			kept.append("%s: the review was gone before it" % ids[i])
+			break
 		r.go(i)
 		step(demo, 600.0, 5.0)
 		if not (r.visible and r.page == i and demo.solar_tour.interlude == card and not card.done()):
-			kept.append(r.page_ids()[i])
-	check("NT4 every page of the review survives 600 s of fake time (%d pages) %s" % [r.page_ids().size(), kept], kept.is_empty() and r.page_ids().size() >= 3)
+			kept.append(ids[i])
+	check("NT4 every page of the review survives 600 s of fake time (%d pages) %s" % [ids.size(), kept], kept.is_empty() and ids.size() >= 3)
 	check("NT4 ship time waits at the braking boundary while the review is read", float(demo.journey_sim.world.clock.tau) == tau)
 	r.go(r.page_ids().size() - 1)
 	r.key(KEY_ENTER)

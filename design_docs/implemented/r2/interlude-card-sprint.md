@@ -2,7 +2,7 @@
 
 **Design doc:** [interlude-card.md](interlude-card.md) (proposed 2026-10-16; all seven open questions ruled by Mark the same day, see its Rulings)
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-INTERLUDE.json`
-**Status:** **Approved** by Mark (attended 2026-10-16: "yep execute the plan"). The design-doc notes below were applied to the design doc before approval.
+**Status:** **Done** 2026-10-17 (PR #264; evaluation 89/100 PASS, `.ailang/state/evaluations/R2-INTERLUDE-eval.md`). **Approved** by Mark (attended 2026-10-16: "yep execute the plan"). The design-doc notes below were applied to the design doc before approval.
 **Scope:** I1 (chunked cruise, holds stop the crossing), I2 (the cruise digest in the pure sim), I3 (the Godot review), I4 (the Archive narrates). I3b (swap the moment ranking for crew_core E4's skip report) is blocked on E4 upstream and is listed but not scheduled.
 **Base:** branch `feat/crew-core-0.5.0` (crew_core 0.5.0 pinned, AILANG v0.54.11). Sprint branch `feat/r2-interlude` off it once that branch merges; each milestone is one PR to main.
 **AILANG:** v0.54.11 (pinned; `runtime/VERSION`). AILANG prompt version loaded: v0.16.7.
@@ -146,7 +146,9 @@ I1 can ship alone: it fixes P3 (holds) and P5 (step timeout) without any new vie
 - **Godot.** Pages 1 and 3 show the authored line, or the accepted telling once it arrives. `ai/voice.ail` (Gemini TTS) speaks with a key; without a key the stub voice is used. No live call in tests or CI (`ai-live-guard`).
 - **Gate:** `make ai-test in-world-voice-check crossing-review-test` and `make playthrough-ai-modes` (stub/digits).
 
-### E: evaluate and land (0.5 day)
+### E: evaluate and land (0.5 day) ✅ 2026-10-17
+
+> **Done.** Independent evaluation round 1: **89/100 PASS** (`.ailang/state/evaluations/R2-INTERLUDE-eval.md`). Its six defects were fixed before merge, test-first; see [interlude-card-report.md](interlude-card-report.md) "Evaluation fixes". Landed: this plan and the design in `design_docs/implemented/r2/`, the report, `changelogs/unreleased/2026-10-17-crossing-review.md`, and design-repo PR sunholo-data/stapledons-design#26 (G2 and E4's game half).
 - **Full run.** `make test` locally (attended), then CI (AC12).
 - **Evaluation.** The `sprint-evaluator` runs on a **different model** from the executor and scores 100, with 70 to pass. Output goes to `.ailang/state/evaluations/`.
 - **Landing.**

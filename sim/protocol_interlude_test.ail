@@ -7,7 +7,7 @@ import std/string (join, contains, replace, find, substring, length as slen)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/list (map, length, any, foldl)
-import ./protocol (Session, newSession, serve, helloFor, decodeHello, crewMinor, interludeMinor, relativityPin)
+import ./protocol (Session, newSession, serve, helloFor, decodeHello, crewMinor, interludeMinor, relativityPin, cruiseFull)
 import ./protocol_interlude (encodeCruise, decodeCruise, encodeDigest, encodeCruiseSection)
 import std/json (decode, encode)
 import ./cruise_digest (Stop, Digest, beginDigest, foldDigest)
@@ -123,3 +123,14 @@ pure func narrated(d: Option[Digest]) -> bool = match d {
   None => false
 }
 test "the digest carries the Archive's authored narration (I4)" { narrated((scriptedCrossing(3)).world.cruiseDigest) }
+
+-- Eval R2-INTERLUDE (5): a full state (new_game's today; a resync later) carries the cruise section
+-- like a tick: during a committed leg the stop and the digest; below 2.10 nothing.
+pure func joined(xs: [string]) -> string = join("", xs)
+pure func fullCruise() -> bool {
+  let w = (scriptedCrossing(3)).world;
+  let full10 = joined(cruiseFull({ hello: true, minor: interludeMinor(), game: None }, w));
+  contains(full10, "\"cruise\":{\"next_stop_years\":") && contains(full10, "\"digest\":{\"time\":")
+  && cruiseFull({ hello: true, minor: crewMinor(), game: None }, w) == []
+}
+test "a full state during a committed leg at 2.10 carries cruise and digest; below 2.10 none" { fullCruise() }
