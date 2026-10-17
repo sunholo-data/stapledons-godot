@@ -70,6 +70,8 @@ var captain_yaw := .47
 var _walk_hold_yaw := NAN
 var camera_motion := "full"
 var fade_rect := ColorRect.new()
+## D1: at Z3 (Whole level) the captain is marked with a small ring in the accent colour.
+var captain_ring := MeshInstance3D.new()
 var _mouse := Vector2(-1, -1)
 var _aim_t := 0.0
 var _dwell_pose := Transform3D()
@@ -159,6 +161,9 @@ func setup(opts := {}) -> bool:
 		if commons.is_empty():return false
 	geometry.add_child(avatar);avatar.load_dir("res://assets/characters/captain");avatar.position=avatar_pos
 	avatar_shadow=avatar.install_grounded_shadow();avatar_shadow.reparent(geometry)
+	var ring_mesh:=TorusMesh.new();ring_mesh.inner_radius=.55;ring_mesh.outer_radius=.7;ring_mesh.rings=48;ring_mesh.ring_segments=6
+	var ring_mat:=StandardMaterial3D.new();ring_mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;ring_mat.albedo_color=Color(1.,.78,.32)
+	captain_ring.mesh=ring_mesh;captain_ring.material_override=ring_mat;captain_ring.scale=Vector3(1,.15,1);captain_ring.visible=false;geometry.add_child(captain_ring)
 	sky.setup({"position_m":[8,4.8,83.7],"forward":[1,0,0],"up":[0,0,1]},78.,px,opts)
 	add_child(sky)
 	_draw_layer(sky.get_texture(),-40);_draw_layer(geometry_view.get_texture(),-20)
@@ -404,6 +409,8 @@ func _process(delta: float) -> void:
 	else:
 		director.advance(delta)
 		avatar.visible=camera_mode!="console" # third person: the captain is in every player view
+	captain_ring.visible=not director.overridden and director.level==3 and camera_mode=="player"
+	captain_ring.global_position=avatar.global_position+Vector3.UP*.03
 	fade_rect.color.a=.85*director.fade
 	avatar_shadow.global_position=avatar.global_position
 	_sync_observer()

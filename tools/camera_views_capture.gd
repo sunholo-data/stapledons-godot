@@ -9,6 +9,7 @@ var demo: Node
 var out := "res://renders/camera_views"
 var shots := []
 var failures := 0
+var px := Vector2i(1280, 720)
 
 
 func _initialize() -> void:
@@ -17,8 +18,14 @@ func _initialize() -> void:
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
-	for px: Vector2i in [Vector2i(1280, 720), Vector2i(2560, 1440)]:
+	for size: Vector2i in [Vector2i(1280, 720), Vector2i(2560, 1440)]:
+		px = size
+		# A window can be clamped by the screen (2560x1288 here): render the root viewport at exactly
+		# px and scale it into the window (as tools/bench.gd).
 		root.size = px
+		root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+		root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+		root.content_scale_size = px
 		await _build(px)
 		if demo == null:
 			quit(1)
@@ -54,6 +61,8 @@ func _build(px: Vector2i) -> void:
 	demo.auto = false
 	demo.director.set_motion("reduced") # each level is a cut: no half-eased frames
 	demo.ship_hud.visible = false
+	demo.geometry_view.size = px
+	demo._sync_observer()
 
 
 func _shot(foot: Vector3, lv: int, name: String) -> void:
@@ -66,14 +75,18 @@ func _shot(foot: Vector3, lv: int, name: String) -> void:
 	for i in 5:
 		await process_frame
 	await RenderingServer.frame_post_draw
+	demo.geometry_view.size = px
 	var image := root.get_texture().get_image()
 	image.save_png(out + "/" + name + ".png")
+	if image.get_size() != px:
+		push_error("%s: rendered %s, wanted %s" % [name, image.get_size(), px])
+		failures += 1
 	var pose: Transform3D = demo.camera.global_transform
 	var head: Vector3 = dir.head_of(dir.views[dir.view_id], foot)
-	var sp := CameraDirector.screen_point(pose, head, Vector2(root.size))
-	var in_frame := not is_nan(sp.x) and Rect2(Vector2.ZERO, Vector2(root.size)).has_point(sp)
-	var ok := pose.origin.length() <= 95.0 and in_frame and demo.avatar.visible and dir.level == lv and not dir.overridden
+	var sp := CameraDirector.screen_point(pose, head, Vector2(px))
+	var in_frame := not is_nan(sp.x) and Rect2(Vector2.ZERO, Vector2(px)).has_point(sp)
+	var ok: bool = pose.origin.length() <= 95.0 and in_frame and demo.avatar.visible and dir.level == lv and not dir.overridden
 	if not ok:
 		failures += 1
-	shots.append({"name": name, "ok": ok, "level": lv, "view": dir.view_id, "cell": dir.sector, "eye_m": [pose.origin.x, pose.origin.y, pose.origin.z], "eye_radius_m": pose.origin.length(), "captain_foot_m": [foot.x, foot.y, foot.z], "head_px": [sp.x, sp.y], "figure_px": CameraDirector.figure_px(pose, foot, 1.754, root.size.y), "resolution": [root.size.x, root.size.y], "sky_state": demo.sky_state, "beta": demo.sky.beta})
+	shots.append({"name": name, "ok": ok, "level": lv, "view": dir.view_id, "cell": dir.sector, "eye_m": [pose.origin.x, pose.origin.y, pose.origin.z], "eye_radius_m": pose.origin.length(), "captain_foot_m": [foot.x, foot.y, foot.z], "head_px": [sp.x, sp.y], "figure_px": CameraDirector.figure_px(pose, foot, 1.754, px.y), "resolution": [image.get_width(), image.get_height()], "sky_state": demo.sky_state, "beta": demo.sky.beta})
 	print("%s %s |eye| %.2f m head %s" % ["ok  " if ok else "FAIL", name, pose.origin.length(), sp])

@@ -332,6 +332,7 @@ func test_framing(demo: Node) -> void:
 		var sp := CameraDirector.screen_point(cam, head, PX)
 		heights.append("Z%d %.0f px" % [lv, CameraDirector.figure_px(cam, demo.avatar_pos, FIGURE_M, PX.y)])
 		check("AC4 Z%d at the spawn: the head in frame at %s" % [lv, sp], not is_nan(sp.x) and Rect2(Vector2.ZERO, PX).has_point(sp))
+		check("D1 Z%d: the accent ring marks the captain only at Z3" % lv, demo.captain_ring.visible == (lv == 3))
 		if lv < 3:
 			check("AC4 Z%d: the head on the lower-third line (y %.0f of 720)" % [lv, sp.y], absf(sp.y - PX.y * 2.0 / 3.0) < 8.0)
 	print("figure heights: %s" % [heights])
