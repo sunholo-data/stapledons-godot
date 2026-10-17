@@ -1,0 +1,22 @@
+# R2-INTERLUDE ruling 2: one home picture per cruise digest time.tier (0-6), tier<n>.webp, read by
+# ui/crossing_review.gd (CrossingReview.home_path; raw WebP, CaptainAvatar.make_texture) and shown as
+# a 3:2 cover over the whole review panel on the Home page. Approved by Mark 2026-10-16 (attended).
+# Generated 2026-10-16 by Codex imagegen (driver codex exec -m gpt-6.1-sol; image model id not
+# exposed), one style reference (assets/characters/medic/portrait_medic_y0_neutral.png, style only).
+# Each picture keeps its left third calm for the text column; tier 0's family stands centre-right.
+# Full provenance, the rejected candidates and every prompt verbatim: generation_notes.md (here).
+#
+# D-18 (big assets stay out of git): the masters are 1536x1024 RGB PNGs (about 25 MB for the seven),
+# kept in the public bucket at gs://stapledons-voyage-assets/site/<master sha256>.png (the website's
+# concept-art page, PR #259, website/src/data/concept.js HOME_FULL). The game ships lossy WebP at
+# native 1536x1024, made 2026-10-16 with:
+#   cwebp -q 88 -m 6 -sharp_yuv -metadata none tier<n>.png -o tier<n>.webp   (libwebp 1.6.0)
+# about 3.8 MB for the seven; each compared with its master at 1:1 (skies included): no visible banding.
+# Format: tier<n>.webp sha256 <webp> <- master sha256 <png> <url>
+tier0.webp sha256 39b5af9c1ebecea4772a9eb529e3d6ded810d602b37ba28c74fbee0ebc017a18 <- master sha256 8513eb0ea5063524e0c0008b8781834a5953fabbb88848869334782d67911e1c https://storage.googleapis.com/stapledons-voyage-assets/site/8513eb0ea5063524e0c0008b8781834a5953fabbb88848869334782d67911e1c.png
+tier1.webp sha256 77f50eb0c676ea2afe7f1f6856b63b2da406ac0caeaf3d80cb094fc2d44a0b5c <- master sha256 96e30bed8c7d2921809462c8c89eff59c00282ab3bd653ed9da5b6e1c8a6057b https://storage.googleapis.com/stapledons-voyage-assets/site/96e30bed8c7d2921809462c8c89eff59c00282ab3bd653ed9da5b6e1c8a6057b.png
+tier2.webp sha256 4b0523ae96c44aa6248a65697996a535c86513866d8155f6db763781b8ad904d <- master sha256 0229d2d94f01c08dc96e96e957f3b6b6942003885a5aaa40c39b4e1a1f0b12c9 https://storage.googleapis.com/stapledons-voyage-assets/site/0229d2d94f01c08dc96e96e957f3b6b6942003885a5aaa40c39b4e1a1f0b12c9.png
+tier3.webp sha256 c12212541ca183276dc1f84273e1a8d30f3a6d6475bf1eb6120c705ef58b3cdb <- master sha256 9f44e1145f389c5d3439b4dc67b75f8ae52f812433c1126a117e591e2b9e0ff8 https://storage.googleapis.com/stapledons-voyage-assets/site/9f44e1145f389c5d3439b4dc67b75f8ae52f812433c1126a117e591e2b9e0ff8.png
+tier4.webp sha256 a060f1ffb368db141aa5fd2edf97bbd61e46063ea7e4056fa6678e3e4f239e8a <- master sha256 bfd69e924ea322aec5cc4fa2744ee19c9d2f57886acb8ae7bf2ea68f72e29e70 https://storage.googleapis.com/stapledons-voyage-assets/site/bfd69e924ea322aec5cc4fa2744ee19c9d2f57886acb8ae7bf2ea68f72e29e70.png
+tier5.webp sha256 25eb2d788febce7f41ae73884cf1d163fae3c26abe313a49b081ecce01350b06 <- master sha256 b55a3c62fde9c1dfe1719357093d50b1b7041b4e3570ccc26c070341e9229453 https://storage.googleapis.com/stapledons-voyage-assets/site/b55a3c62fde9c1dfe1719357093d50b1b7041b4e3570ccc26c070341e9229453.png
+tier6.webp sha256 2cd83ed952066073822c195390ee729d18bb6664c4937bc114c87f064d511ae6 <- master sha256 a534e46430ad574bedfc33e47f56b6a6c440dec0686a4b313c268c7b1f2fdf62 https://storage.googleapis.com/stapledons-voyage-assets/site/a534e46430ad574bedfc33e47f56b6a6c440dec0686a4b313c268c7b1f2fdf62.png

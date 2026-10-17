@@ -111,15 +111,15 @@ func capture_size(sz: Vector2i) -> void:
 			cruised = true
 			demo.look_direction("forward")
 			await shot("transit_cruise", sz)
-			# The D-41 interlude card over this real cruise (strip and card read the same
-			# state); the guided voyage shows it on its long legs.
-			var card := CardInterlude.new()
-			card.begin(CruiseInterlude.facts_from(demo.journey_sim.world, demo.stop_name()))
-			card.observe(demo.journey_sim.world, demo.stop_name())
-			demo.interlude_card.show_interlude(card)
-			demo.interlude_card.visible = true
+			# R2-INTERLUDE I3: the crossing review over this real cruise (strip and review read the
+			# same state); the guided voyage shows it on its long legs.
+			var rv: Dictionary = demo.hud_view()
+			rv["review"] = {"leg": demo.stop_name(), "target": demo.stop_name()}
+			demo.crossing_review.visible = true
+			demo.crossing_review.show_review(rv, true)
+			demo._place_interlude()
 			await shot("tour_interlude", sz)
-			demo.interlude_card.visible = false
+			demo.crossing_review.visible = false
 	demo.look_direction("side")
 	await shot("arrival", sz)
 	demo.dismiss_arrival()

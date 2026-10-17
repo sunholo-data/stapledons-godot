@@ -120,7 +120,8 @@ func on_events(events: Array, refused: Array = [], relay_intents: Array = [], re
 	if req.is_empty():
 		for r in refused:
 			var k := int(r.get("i", -1)) - relay_from if r is Dictionary else -1
-			if k >= 0 and k < relay_intents.size() and relay_intents[k] is Dictionary and relay_intents[k].get("purpose") == "archive":
+			if k >= 0 and k < relay_intents.size() and relay_intents[k] is Dictionary and relay_intents[k].get("purpose") == "archive" \
+					and not (relay_intents[k].get("context") is Dictionary and relay_intents[k].context.has("narration")):
 				state = "damaged"
 				answer = DAMAGED
 				return
@@ -128,7 +129,8 @@ func on_events(events: Array, refused: Array = [], relay_intents: Array = [], re
 		if not e is Dictionary:
 			continue
 		var k := str(e.get("k", ""))
-		if k == "ai_request" and req.is_empty() and str(e.get("purpose", "")) == "archive":
+		# The crossing review's telling (ArchiveNarration) is the Archive's too; it is not this answer.
+		if k == "ai_request" and req.is_empty() and str(e.get("purpose", "")) == "archive" and not ArchiveNarration.is_narration(e):
 			req = str(e.get("req", ""))
 		elif k == "ai_accepted" and str(e.get("req", "")) == req and not req.is_empty() and e.get("kind") == "text":
 			answer = unmarked(str(e.get("text", "")))

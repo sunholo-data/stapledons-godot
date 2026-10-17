@@ -16,37 +16,81 @@ func _initialize() -> void:
 	base.begin(CruiseInterlude.facts_from(world(4.3, 0.2, 4.3, 0.0001, 70.7, 41.8), "TRAPPIST-1"))
 	check(base.advance(1.0, 0.05) == 0.0 and base.done(), "base interlude consumes nothing and is done")
 
-	# The card hands over exactly the remaining cruise, once, then holds.
+	# Below 2.10 (no cruise section) the card hands over exactly the remaining cruise, once, then holds.
 	var card := CardInterlude.new()
 	var before := world(4.30980295176308, 0.1927134937008, 4.305, 0.0001, 70.7124459519056, 41.8)
 	card.begin(CruiseInterlude.facts_from(before, "TRAPPIST-1"))
 	var remaining := 0.5741234567
-	check(card.advance(remaining, 0.05) == remaining, "first frame consumes exactly the remaining cruise")
+	check(card.advance(remaining, 0.05) == remaining, "below 2.10: first frame consumes exactly the remaining cruise")
 	check(card.advance(remaining, 0.05) == 0.0 and card.advance(remaining, 0.05) == 0.0, "later frames consume nothing")
-	check(not card.done(), "not done before CARD_S")
-	for i in int(CardInterlude.CARD_S / 0.05) + 1:
-		card.advance(0.0, 0.05)
-	check(card.done(), "done after CARD_S seconds")
-	var early := CardInterlude.new(); early.begin(card.facts); early.advance(0.1, 0.05); early.finish()
-	check(early.done(), "Continue ends the card early, after the cruise was consumed")
-	var unconsumed := CardInterlude.new(); unconsumed.begin(card.facts); unconsumed.finish()
-	check(not unconsumed.done(), "Continue cannot end a card that has not consumed the cruise")
+	check(card.done(), "with no reader (a headless host) the crossing is done at the braking boundary")
+	# R2-INTERLUDE I3 (G1, AC7): with a reader the review is done only when the player brakes; no
+	# timer ends it (600 s of frames leave it open).
+	var read := CardInterlude.new(); read.awaits_reader = true; read.begin(card.facts)
+	read.advance(remaining, 0.05)
+	for i in int(600.0 / 0.05):
+		read.advance(0.0, 0.05)
+	check(read.crossed() and not read.done(), "with a reader, 600 s at the boundary leave the review open")
+	read.finish()
+	check(read.done(), "Brake (finish) ends it once the cruise was consumed")
+	var unconsumed := CardInterlude.new(); unconsumed.awaits_reader = true; unconsumed.begin(card.facts); unconsumed.finish()
+	check(not unconsumed.done(), "Brake cannot end a crossing that has not consumed the cruise")
 	check(card.advance(-5.0, 0.05) == 0.0, "never consumes a negative amount")
 
-	# Lines follow the simulation fields (mutation test: change a field, the line follows).
-	card.observe(world(46.1, 0.78, 46.0, 0.0001, 70.7124459519056, 41.8))
-	var l: Dictionary = card.lines()
-	check(l.speed.begins_with("0.9999c") and l.speed.contains("γ 70.7"), "speed and γ from plan fields: " + l.speed)
-	check(l.title == "CRUISE · TRAPPIST-1" and l.distance == "41.8 light-years", "leg name and plan distance")
-	check(l.lived.contains("%.0f days" % ((0.78 - 0.1927134937008) * 365.25)) and l.lived.contains("41.79 years"), "lived/Earth from clock fields: " + l.lived)
-	check(l.news.contains("46.0 years old"), "news age from consequence field")
-	check(l.tier.begins_with("46 years at home") and l.tier.contains("parents"), "46 Earth years selects the middle tier")
-	card.observe(world(46.1, 0.78, 12.5, 0.0001, 70.7124459519056, 41.8))
-	check(card.lines().news.contains("12.5 years old"), "mutating news_age_years changes the card")
-	card.observe(world(120.4, 0.88, 120.0, 0.0001, 70.7124459519056, 41.8))
-	check(card.lines().tier.begins_with("120 years.") and card.lines().tier.contains("Everyone you knew is gone"), "120 Earth years selects the last tier")
-	check(CardInterlude.tier_text(4.3).begins_with("4 years have passed at home"), "4.3 Earth years selects the first tier")
-	check(CardInterlude.tier_text(9.99).contains("history") and CardInterlude.tier_text(10.0).contains("parents") and CardInterlude.tier_text(80.0).contains("Everyone"), "tier boundaries at 10 and 80 years")
+	# 2.10 (R2-INTERLUDE I1): the crossing goes in chunks, each exactly the sim's next stop and never
+	# more than next_stop_years or the cruise left; the braking stop ends it.
+	var chunked := CardInterlude.new()
+	var cw := before.duplicate(true)
+	cw["cruise"] = {"next_stop_years": 0.0821355236139630, "stop_kind": "check_in"}
+	chunked.begin(CruiseInterlude.facts_from(cw, "TRAPPIST-1"))
+	var left := remaining
+	var never_over := true
+	var frames := 0
+	var kinds := []
+	while not chunked.crossed() and frames < 100:
+		var stop: Dictionary = chunked.latest.cruise
+		var step := chunked.advance(left, 0.05)
+		never_over = never_over and step <= float(stop.next_stop_years) and step <= left and step >= 0.0
+		kinds.append(stop.stop_kind)
+		left -= step
+		frames += 1
+		# the sim's next stop after this chunk: a check-in a month on, or the braking boundary when nearer
+		var month := 30.0 / 365.25
+		cw["cruise"] = {"next_stop_years": minf(month, left), "stop_kind": "braking" if left <= month else "check_in"}
+		chunked.observe(cw)
+	check(never_over, "advance() never returns more than next_stop_years (nor the cruise left)")
+	check(frames == 7 and kinds.count("check_in") == 6 and kinds.back() == "braking" and absf(left) < 1e-12, "a 0.574-year crossing is six check-ins and the braking stop (%d frames, %s, left %s)" % [frames, kinds, left])
+	check(chunked.done() and chunked.advance(left, 0.05) == 0.0, "after the braking stop it consumes nothing (no reader: done at the boundary)")
+	var mid := CardInterlude.new()
+	mid.begin(CruiseInterlude.facts_from(cw, "TRAPPIST-1"))
+	mid.latest.cruise = {"next_stop_years": 0.5, "stop_kind": "chunk"}
+	check(mid.advance(0.25, 0.05) == 0.25 and mid.crossed(), "the cruise left caps a longer stop and ends the crossing")
+	var mid2 := CardInterlude.new()
+	mid2.begin(CruiseInterlude.facts_from(cw, "TRAPPIST-1"))
+	mid2.latest.cruise = {"next_stop_years": 0.1, "stop_kind": "check_in"}
+	mid2.finish()
+	check(mid2.advance(0.25, 0.05) == 0.1 and not mid2.crossed() and not mid2.done(), "Brake cannot end a crossing that has not reached braking")
+	check(mid2.progress_text() == "Crossing… the crew's monthly check-in.", "the Crossing… line follows the sim's stop kind: " + str(mid2.progress_text()))
+	mid2.latest.cruise = {"next_stop_years": 0.3, "stop_kind": "chunk"}
+	check(mid2.progress_text().begins_with("Crossing…") and mid2.progress_text() != "Crossing… the crew's monthly check-in.", "mutating stop_kind changes the Crossing… line")
+	check(SimBridge.parse_cruise({"next_stop_years": 0.1, "stop_kind": "check_in"}) == {"next_stop_years": 0.1, "stop_kind": "check_in"} and SimBridge.parse_cruise({"next_stop_years": -1.0, "stop_kind": "chunk"}).is_empty() and SimBridge.parse_cruise({"next_stop_years": 0.1, "stop_kind": "lunch"}).is_empty() and SimBridge.parse_cruise(3).is_empty(), "the bridge checks the 2.10 cruise section")
+	var dg := {"time": {"ship_days": 3}, "home": {}, "medium": {}, "crew": null}
+	check(SimBridge.parse_cruise({"digest": dg}) == {"digest": dg} and SimBridge.parse_cruise({"next_stop_years": 0.1, "stop_kind": "chunk", "digest": dg}).get("digest") == dg
+		and SimBridge.parse_cruise({"digest": {"time": {}}}).is_empty() and SimBridge.parse_cruise({}).is_empty() and SimBridge.parse_cruise({"stop_kind": "chunk"}).is_empty(),
+		"I2: the cruise section may carry the digest, alone on the arrival tick")
+
+	# R2-INTERLUDE I3: the review formats sim fields and computes nothing. The lines, the clocks and
+	# the tier table left Godot (sim/cruise_digest.ail; tests/test_crossing_review.gd); these are the
+	# formats the review's bindings use (mutation: change a field, the text follows).
+	var pv := {"journey": {"plan": {"cruise_beta": 0.9999, "cruise_one_minus_beta": 0.0001}}, "cruise": {"digest": {"time": {"tier_line": "%s years at home. The news you left with is history.", "years_at_home": 4.0}}}}
+	check(DisplayBinding.format_field(pv, "journey.plan", "speed_c") == "0.9999c", "speed_c formats the plan's exact 1 - beta")
+	check(DisplayBinding.format_field(pv, "cruise.digest.time", "tier_line") == "4 years at home. The news you left with is history.", "tier_line fills the sim's line with the sim's whole years")
+	pv.cruise.digest.time.years_at_home = 7.0
+	check(DisplayBinding.format_field(pv, "cruise.digest.time", "tier_line").begins_with("7 years at home"), "mutating years_at_home changes the tier line")
+	pv.cruise.digest.time.tier_line = "A year at home. The news you left with is history."
+	check(DisplayBinding.format_field(pv, "cruise.digest.time", "tier_line") == "A year at home. The news you left with is history.", "a tier line with no %s is shown as the sim wrote it")
+	check(DisplayBinding.format_field({"n": 3.0}, "n", "words") == "three" and DisplayBinding.format_field({}, "n", "words") == "-", "counts in words (no digits in crew text)")
+	check(GalaxyMap.field_value({"a": [{"b": 1}, {"b": 2}]}, "a.1.b") == 2 and GalaxyMap.field_value({"a": [1]}, "a.3") == null, "a whole-number segment indexes a sim array")
 	check(CardInterlude.speed_text(0.999999, 0.000001) == "0.999999c" and CardInterlude.speed_text(0.999, 0.001) == "0.999c", "speed text from exact 1 - beta")
 	check(CardInterlude.speed_text(0.75, 0.25) == "0.750000c", "non-decade speeds print six decimals")
 	# Compact HUD (demos/ship_geometry_demo.gd): speed from exact 1 - beta, readable clocks.

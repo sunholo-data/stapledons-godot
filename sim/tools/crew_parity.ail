@@ -12,7 +12,7 @@ import std/result (Result, Ok, Err)
 import std/crypto (sha256Hex)
 import pkg/sunholo/crew_core/session (recording)
 import stapledons/sim/crew (pack, startLine)
-import stapledons/sim/crew_script (Script, Ran, scripts, runScript, journal)
+import stapledons/sim/crew_script (Script, Ran, scripts, runScript, journal, scriptedCrossing)
 
 -- The fixture seed: under it the consent script's medic agrees (the scan in the C1 notes).
 export pure func fixtureSeed() -> int = 2
@@ -37,10 +37,24 @@ pure func check(s: Script) -> string = match (runScript(s, fixtureSeed()), pack(
   }
 }
 
-export pure func parity(_u: int) -> string = join("\n", map(check, scripts()))
+-- R2-INTERLUDE I2 (AC3, AC4): crossing_hold, the scripted crossing (sim/crew_script.ail
+-- scriptedCrossing: hands_on to its first hold, resumed, then critical_only to a year, through
+-- lism-1). Its recording is the digest after each chunk. Run twice from the same seed, the two
+-- recordings must be byte-identical; the strict VM and the interpreter must print the same line.
+pure func crossingSeed() -> int = 3
+pure func crossingLines() -> string = join("\n", (scriptedCrossing(crossingSeed())).digests)
+pure func checkCrossing() -> string = {
+  let a = crossingLines();
+  let b = crossingLines();
+  let x = scriptedCrossing(crossingSeed());
+  let verdict = if a != b then "FAIL repeat run differs" else if length(x.holds) < 2 then "FAIL expected two holds" else "ok";
+  concat(["crew-parity: crossing_hold ", verdict, " lines ", intToStr(length(x.digests)), " sha ", sha256Hex(a)])
+}
+
+export pure func parity(_u: int) -> string = join("\n", map(check, scripts()) ++ [checkCrossing()])
 
 -- The recording for one script (NDJSON, the committed tests/crew/<name>.ndjson).
-export pure func lines(name: string) -> string = match named(name) {
+export pure func lines(name: string) -> string = if name == "crossing_hold" then crossingLines() else match named(name) {
   None => concat(["unknown script ", name]),
   Some(s) => match runScript(s, fixtureSeed()) {
     Err(e) => concat(["error ", e]),

@@ -27,7 +27,8 @@ import ./core (Ship, position, phaseName, World, newWorld, tick, scenarioError, 
   Drawn, PlanView, Drive, JourneyView, Energy, Ism, journeyView, cruisePhiMin, cruisePhiMax, cruisePhiDefault,
   CqView, cqView, ismNow, dragEnergyJ, isWarpLevel, withArchive, navOf, departureOf, journeyHeadingOf,
   IGrApproach, IGrHover, IGrOrbit, IGrRing, ICrew, withHole, archiveEvent, withCrew)
-import ./protocol_crew (decodeCrewIntent, crewIntentNames, crewView, crewHoldJson)
+import ./protocol_crew (decodeCrewIntent, crewIntentNames, crewViewWith, crewHoldJson)
+import ./protocol_interlude (cruiseStop, encodeCruiseSection)
 import ./gr (GrView, grView, sgrAWith, sgrAMassMsun)
 import ./consequence (News, Entry, ArchiveRow, IsmNow, tierName, isHint)
 import ./rng (Rng, streamName, streamOf, rngId)
@@ -71,7 +72,8 @@ export pure func relativityPinNav() -> string = "0.9.0"
 -- Protocol 2.2 (M4.1): a client that asks for minor >= 2 is answered minor 2 and gets the
 -- `consequence` section and `ship.ism`; every other client sees the 2.1 stream byte for byte.
 export pure func helloFor(want: int) -> HelloMsg =
-  if want >= crewMinor() then {helloMsg() | minor: crewMinor(), relativity: relativityPin()}
+  if want >= interludeMinor() then {helloMsg() | minor: interludeMinor(), relativity: relativityPin()}
+  else if want >= crewMinor() then {helloMsg() | minor: crewMinor(), relativity: relativityPin()}
   else if want >= ismMinor() then {helloMsg() | minor: ismMinor(), relativity: relativityPin()}
   else if want >= stopsMinor() then {helloMsg() | minor: stopsMinor(), relativity: relativityPinStops()}
   else if want >= grMinor() then {helloMsg() | minor: grMinor(), relativity: relativityPinGr()}
@@ -113,7 +115,12 @@ export pure func ismMinor() -> int = 8
 -- (sim/protocol_crew.ail crewView) is sent in full states and whenever it changes, only while a
 -- crew is aboard. Without "crew" a 2.9 stream equals 2.8's but for the hello's minor.
 export pure func crewMinor() -> int = 9
-pure func sessionMinor(want: int) -> int = if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
+-- Protocol 2.10 (R2-INTERLUDE I1, design interlude-card.md D1): the chunked crossing. While a
+-- journey is committed, each state carries `cruise` {next_stop_years, stop_kind}
+-- (sim/protocol_interlude.ail): the host steps exactly next_stop_years, so a hold on a decision day
+-- ends its chunk. Without it a 2.10 stream equals 2.9's but for the hello's minor.
+export pure func interludeMinor() -> int = 10
+pure func sessionMinor(want: int) -> int = if want >= interludeMinor() then interludeMinor() else if want >= crewMinor() then crewMinor() else if want >= ismMinor() then ismMinor() else if want >= stopsMinor() then stopsMinor() else if want >= grMinor() then grMinor() else if want >= departureMinor() then departureMinor() else if want >= navMinor() then navMinor() else if want >= systemMinor() then systemMinor() else if want >= 2 then 2 else want
 
 -- ------------------------------------------------------------ writing
 pure func trimZeros(s: string) -> string = if endsWith(s, "0") then trimZeros(substring(s, 0, length(s) - 1)) else s
@@ -768,11 +775,29 @@ pure func hasGrIntent(xs: [Intent]) -> bool = match xs { [] => false, x :: r => 
 pure func hasCrewIntent(xs: [Intent]) -> bool = match xs { [] => false, x :: r => (match x { ICrew(_) => true, _ => false }) || hasCrewIntent(r) }
 pure func member(x: string, xs: [string]) -> bool = match xs { [] => false, y :: r => x == y || member(x, r) }
 -- 2.9 crew section: in full states, and on a tick whenever it changed (crew aboard only).
-pure func crewFull(s: Session, w: World) -> [string] = match w.crew { Some(c) => if s.minor >= crewMinor() then [f("crew", crewView(c))] else [], None => [] }
+-- 2.10: members and lines carry `emotion` (sim/protocol_crew.ail emotionOf).
+pure func crewView(s: Session, c: CrewState) -> string = crewViewWith(c, s.minor >= interludeMinor())
+pure func crewFull(s: Session, w: World) -> [string] = match w.crew { Some(c) => if s.minor >= crewMinor() then [f("crew", crewView(s, c))] else [], None => [] }
 pure func withCrewSection(s: Session, before: World, after: World, x: Extras) -> Extras =
   if s.minor < crewMinor() then x else match after.crew {
     None => x,
-    Some(c) => { let a = crewView(c); if (match before.crew { Some(b) => crewView(b) == a, None => false }) then x else {x | tail: x.tail ++ [f("crew", a)]} }
+    Some(c) => { let a = crewView(s, c); if (match before.crew { Some(b) => crewView(s, b) == a, None => false }) then x else {x | tail: x.tail ++ [f("crew", a)]} }
+  }
+-- 2.10 cruise section: on every tick that ends on a committed journey (it moves with the clock),
+-- with the digest (I2); on the arrival tick the digest alone (frozen from then to the next commit).
+pure func withCruise(s: Session, before: World, after: World, x: Extras) -> Extras =
+  if s.minor < interludeMinor() then x else {
+    let stop = cruiseStop(after);
+    let dig = match (stop, after.cruiseDigest) { (Some(_), d) => d, (None, Some(d)) => if before.cruiseDigest == after.cruiseDigest then None else Some(d), (None, None) => None };
+    match (stop, dig) { (None, None) => x, _ => {x | tail: x.tail ++ [f("cruise", encodeCruiseSection(stop, dig))]} }
+  }
+-- 2.10 in a full state: the cruise section as a tick would carry it (the stop while committed, the
+-- digest whenever there is one). Today the only full state is new_game's, which is never committed
+-- and has no digest, so it adds nothing there; a resync or reconnect path must use this.
+export pure func cruiseFull(s: Session, w: World) -> [string] =
+  if s.minor < interludeMinor() then [] else match (cruiseStop(w), w.cruiseDigest) {
+    (None, None) => [],
+    (st, d) => [f("cruise", encodeCruiseSection(st, d))]
   }
 -- 2.6 scenario params of a black hole: bh_mass_msun (default Sgr A*'s 4.297e6) and bh_r (the
 -- starting radius in r_s, default 1e6). They are not Params: only sgr_a takes them (bad_params
@@ -819,7 +844,7 @@ export pure func serve(s: Session, line: string) -> Served =
               let st = {tick: 0, status: "ok", clock: Some(clockOf(w.params, w.ship)), ship: Some(shipOf(w.ship)),
                 journey: Some(journeyView(w)), ledger: Some(ledgerOf(w.ledger)), rng: Some(w.rng), params: Some(w.params), ai: Some(aiView(w.ai)),
                 events: if w.gr.active then [archiveEvent("bh_enter")] else [], refused: [], full: true};
-              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ crewFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
+              { session: {s | game: Some(w)}, reply: if s.minor >= 2 then encodeStateX({st | ship: None}, { ship: Some(shipSectionM(s.minor, w)), tail: [f("consequence", encodeCq(cqView(w), 0))] ++ systemFull(s, w) ++ crewFull(s, w) ++ cruiseFull(s, w) ++ (if g.scenario == "solar_departure" then [f("solar_departure", solarTour(w.params))] else []) ++ grFull(s, w), journey: None }) else encodeState(st) }
               }
               }
             }
@@ -837,7 +862,7 @@ export pure func serve(s: Session, line: string) -> Served =
             ship: changed(encodeShip, shipOf(w.ship), shipOf(next.ship)), journey: changed(encodeJourney, journeyView(w), journeyView(next)),
             ledger: changed(encodeLedger, ledgerOf(w.ledger), ledgerOf(next.ledger)), rng: changed(encodeRng, w.rng, next.rng), params: None,
             ai: changed(encodeAiView, aiView(w.ai), aiView(next.ai)), events: t.events, refused: t.refused, full: false };
-          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withCrewSection(s, w, next, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(s.minor, w, next)))))) else encodeState(state) }
+          { session: {s | game: Some(next)}, reply: if s.minor >= 2 then encodeStateX({state | ship: None}, withCruise(s, w, next, withCrewSection(s, w, next, withGr(s, w, next, withSystem(s, w, next, withDeparture(s, w, next, cqExtras(s.minor, w, next))))))) else encodeState(state) }
         }
       }
     }

@@ -77,13 +77,18 @@ pure func holdOf(e: Escalated) -> CrewHold =
 export pure func nextDecision(turn: int, cadence: int) -> int =
   if cadence <= 1 then turn + 1 else { let k = (turn - 1) / cadence; let d = k * cadence + 1; if d > turn then d else d + cadence }
 
-export type AutoStepped = { stepped: CrewStepped, holds: [CrewHold] }
-pure func plain(s: CrewStepped) -> AutoStepped = { stepped: s, holds: [] }
+-- log: crew_core's Act log for the tick's auto-run days (R2-INTERLUDE I2's digest reads it); [] on
+-- plain days.
+export type AutoStepped = { stepped: CrewStepped, holds: [CrewHold], log: [Act] }
+pure func plain(s: CrewStepped) -> AutoStepped = { stepped: s, holds: [], log: [] }
 pure func join(a: CrewStepped, b: CrewStepped) -> CrewStepped =
   { b | lines: a.lines ++ b.lines, traces: a.traces ++ b.traces, answered: a.answered ++ b.answered }
 
 -- One sim tick's crew days: plain days when auto-run is off or a hold is open; otherwise plain days
 -- up to the next decision day, then the auto-captain for the rest, stopping at an escalation.
+-- R2-INTERLUDE I1: a host that steps to sim/cruise_digest.ail's next stop ends the tick on the
+-- decision day, so `rest` below is empty (or, for a decision handed over before its day's advance,
+-- a refusal under orders, only that day's own advance): no crew days run past an escalation's day.
 export pure func autoStep(c: CrewState, seed: int, rng: Rng, dtau: float, nearStar: bool) -> AutoStepped {
   let dd = daysIn(c.dayRem, dtau);
   let c0 = { c | dayRem: dd.left };
@@ -103,11 +108,11 @@ export pure func autoStep(c: CrewState, seed: int, rng: Rng, dtau: float, nearSt
             Ok(r) => {
               let c1 = foldl(\c l. noteLine(c, l), { pre.crew | session: r.session, turn: r.session.state.tick, auto: Some({ a | st: r.state }) }, replyLines(r.log));
               match r.escalated {
-                None => { stepped: { pre | crew: c1 }, holds: [] },
+                None => { stepped: { pre | crew: c1 }, holds: [], log: r.log },
                 Some(e) => {
                   let h = holdOf(e);
                   let rest = plainDays({ c1 | holds: c1.holds ++ [h] }, pre.rng, target - c1.turn);
-                  { stepped: join(pre, rest), holds: [h] }
+                  { stepped: join(pre, rest), holds: [h], log: r.log }
                 }
               }
             }

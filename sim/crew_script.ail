@@ -14,9 +14,12 @@ import std/string (concat, join, intToStr)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/crypto (sha256Hex)
-import ./crew (CrewState, CrewStepped, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn, shipEventLine)
+import ./crew (CrewState, CrewStepped, CrewHold, initCrewWith, crewStep, crewCommand, daysPerYear, crewTurn, shipEventLine)
 import ./crew_events (noMoments, shipEvents)
 import ./crew_auto (setPreset, autoStep)
+import ./cruise_digest (nextStop, stopYears)
+import ./core (World, Params, Intent, ICrew, IPlan, ICommit, Event, newWorld, defaultParams, tick)
+import ./protocol_interlude (cruiseStop, encodeDigest)
 import ./rng (Rng, SCrew, zeroRng, counter)
 import std/math (intToFloat)
 
@@ -99,4 +102,75 @@ export pure func crewSkipUnheld(years: int) -> string = match initCrewWith("orde
     concat(["days ", intToStr(r.stepped.crew.turn), " holds ", intToStr(length(r.holds)),
       match r.stepped.refused { Some(e) => concat([" refused ", e]), None => "" }])
   }
+}
+
+-- R2-INTERLUDE I1, AC6 (`make crew-perf`, sim/tools/crew_perf.ail crewSkipChunked): a crossing stepped
+-- as the host steps it, one chunk per sim tick to the next stop (sim/cruise_digest.ail nextStop),
+-- `endDay` crew days in all. `resume`: the captain resumes each hold at once (the next chunk is the
+-- next check-in); otherwise an open hold leaves only cap-sized plain chunks.
+export type Chunked = { crew: CrewState, rng: Rng, holds: [CrewHold], kind: string }
+export pure func chunkStep(c: CrewState, rng: Rng, endDay: int, resume: bool) -> Chunked {
+  let s = nextStop(Some(c), stopYears(c.dayRem, endDay - c.turn));
+  let r = autoStep(c, 3, rng, s.years, false);
+  { crew: if resume then { r.stepped.crew | holds: [] } else r.stepped.crew, rng: r.stepped.rng, holds: r.holds, kind: s.kind }
+}
+-- The perf cases' crews: "busy" is crewSkipUnheld's (orders, auto-run with no escalation rules:
+-- the crew busy for the whole decade); "critical_only" is the game's default (consent captaincy,
+-- the lab's rules, D-70 OQ5 and ruling 4).
+export pure func chunkCrew(which: string) -> Result[CrewState, string] =
+  if which == "busy" then (match initCrewWith("orders", false) {
+    Err(e) => Err(e),
+    Ok((c, _)) => Ok({ c | auto: Some({ preset: "unheld", rules: [], st: { seed: 77, agreed: [], raised: [], calls: 0 } }) })
+  }) else match initCrewWith("consent", false) {
+    Err(e) => Err(e),
+    Ok((c, _)) => Ok((setPreset(c, 3, zeroRng(), which)).crew)
+  }
+
+-- R2-INTERLUDE I2 (AC1-AC4): a scripted crossing for the digest. A year crossed at 0.99c on a 70 ly
+-- leg through the measured medium (lism-1), with the game's consent captaincy: auto-run is hands_on
+-- from the commit until its first hold, which the captain resumes at once, turning auto-run to
+-- critical_only (the game's default) for the rest. The host steps each next stop
+-- (sim/protocol_interlude.ail cruiseStop) and resumes every hold the tick it is raised. `digests`
+-- is the encoded digest after each chunk (the crossing_hold recording, make crew-parity).
+pure func farLeg() -> Intent = IPlan({ target: { index: 2, id: "far", pos: { x: 0.0, y: 0.0, z: 0.0 - 70.0 } }, cruisePhi: 2.6466524123622457, flipG: None, star: None })
+pure func ordersI(preset: string) -> Intent = ICrew({ kind: "crew_orders", line: "{\"command\":\"orders\",\"preset\":\"${preset}\"}", askId: None })
+pure func resumeI(id: string) -> Intent = ICrew({ kind: "crew_resume", line: "{\"command\":\"resume\",\"hold\":\"${id}\"}", askId: None })
+pure func holdIds(es: [Event]) -> [string] = map(\e. match e.crewHold { Some(h) => h.id, None => "" }, keep(\e. e.kind == "crew_hold", es))
+pure func keep(p: a -> bool, xs: [a]) -> [a] = match xs { [] => [], x :: r => if p(x) then x :: keep(p, r) else keep(p, r) }
+pure func turnIn(w: World) -> int = match w.crew { Some(c) => c.turn, None => 0 - 1 }
+pure func digestText(w: World) -> string = match w.cruiseDigest { Some(d) => encodeDigest(d), None => "null" }
+pure func resumeAll(w: World, hs: [string], after: string) -> World = match hs { [] => w, h :: r => resumeAll((tick(w, { dtau: 0.0, intents: [resumeI(h), ordersI(after)] })).world, r, after) }
+export type Crossed = { world: World, holds: [string], digests: [string] }
+-- Step to the next stop until crew day `endDay` (with `untilHold`, until the first hold).
+pure func cross(x: Crossed, endDay: int, untilHold: bool, after: string, left: int) -> Crossed =
+  if left <= 0 || turnIn(x.world) >= endDay then x else match cruiseStop(x.world) {
+    None => x,
+    Some(s) => {
+      let r = tick(x.world, { dtau: s.years, intents: [] });
+      let hs = holdIds(r.events);
+      let w2 = resumeAll(r.world, hs, after);
+      let y = { world: w2, holds: x.holds ++ hs, digests: x.digests ++ [digestText(w2)] };
+      if untilHold && length(hs) > 0 then y else cross(y, endDay, untilHold, after, left - 1)
+    }
+  }
+pure func lism() -> Params = { defaultParams() | ismModel: 1.0 }
+-- The crew comes aboard without core.withCrew's generated names (members are named by role id):
+-- the names table (sim/data/crew_names.ail nameRegions) is evaluator-only on the strict VM, whose
+-- register allocator takes at most 256 in one literal (ailang#1736), and this runs under
+-- --strict-bytecode. Nothing else differs (withCrew's pack lint is proven by the crew tests).
+export pure func scriptedCrossing(seed: int) -> Crossed = match initCrewWith("consent", false) {
+  Err(e) => { world: newWorld(seed, false, lism()), holds: [], digests: [concat(["error ", e])] },
+  Ok((cr, _)) => {
+    let w0 = { newWorld(seed, false, lism()) | crew: Some(cr) };
+    let p = tick(w0, { dtau: 0.0, intents: [farLeg()] });
+    let c = tick(p.world, { dtau: 0.0, intents: [ICommit(1), ordersI("hands_on")] });
+    let a = cross({ world: c.world, holds: [], digests: [digestText(c.world)] }, 365, true, "critical_only", 400);
+    cross(a, 365, false, "critical_only", 400)
+  }
+}
+-- `make strict` entry (AC2): the scripted crossing on the strict VM; one line: chunks, holds, the
+-- final digest's sha256.
+export pure func digestScripted(seed: int) -> string = {
+  let x = scriptedCrossing(seed);
+  concat(["crossing chunks ", intToStr(length(x.digests)), " holds ", intToStr(length(x.holds)), " turn ", intToStr(turnIn(x.world)), " digest ", sha256Hex(digestText(x.world))])
 }

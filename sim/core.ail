@@ -7,7 +7,7 @@ module stapledons/sim/core
 import std/option (Option, Some, None)
 import std/result (Ok, Err)
 import std/math (intToFloat)
-import std/list (map, reverse, filter)
+import std/list (map, reverse, filter, any)
 import std/string (concat, intToStr, floatToStr)
 import std/json (decode, getString)
 import pkg/sunholo/relativity/kinematics (Motion, rest, accelerate, standardGravity, betaOf, gammaOf, oneMinusBeta, rapidityOfBeta, rapidityOfOneMinusBeta)
@@ -23,9 +23,10 @@ import ./celestial (defaultEpochJd, solSystem, lyKm)
 import ./navigation (BodyReq, NavPlan, NavCtx, Leg, planBody, staleAt, finiteStopBody, planFiniteStop, sunRefKm)
 import ./inferred_stars (CatStar, inferStar, remember)
 import ./stops (starStopKm)
-import ./crew (CrewState, CrewCmd, CrewLine, CrewHold, initCrew, crewTick, crewIntents, raiseShipEvents, noteLine, withNames)
+import ./crew (CrewState, CrewCmd, CrewLine, CrewHold, CrewRefusal, initCrew, crewTick, crewIntents, raiseShipEvents, noteLine, withNames)
 import ./crew_names (nameCrew, nameOf)
 import ./crew_auto (autoStep, setPreset, resume)
+import ./cruise_digest (Digest, Snap, MediumRef, CrewTick, beginDigest, foldDigest)
 import pkg/sunholo/crew_core/scenario (projectName, purpose as recipePurpose)
 import ./crew_events (Moments, noMoments, shipEvents)
 import ./crew_resources (shipUnits, lintAgainstShip)
@@ -156,7 +157,8 @@ export pure func availableKgStart() -> float = 20000.0
 -- the threshold cache (a pure function of the medium and the rapidity, kept to skip recomputing).
 export type DustState = { last: DustTick, legExpected: float, legGrains: float, medium: Medium, crossed: [Medium], legDrawn: int, largestA: float, largestKe: float, cache: [Thresh] }
 export pure func emptyDust() -> DustState = { last: noDust([]), legExpected: 0.0, legGrains: 0.0, medium: hotMedium(), crossed: [], legDrawn: 0, largestA: 0.0, largestKe: 0.0, cache: [] }
-export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar], crew: Option[CrewState] }
+-- cruiseDigest: the crossing review's digest (R2-INTERLUDE I2, sim/cruise_digest.ail; digestAfter).
+export type World = { tick: int, seed: int, params: Params, ship: Ship, journey: Journey, lastPlanId: int, ledger: Ledger, rng: Rng, diag: bool, ai: AiState, cq: Cq, gr: GrState, dust: DustState, catStars: [CatStar], crew: Option[CrewState], cruiseDigest: Option[Digest] }
 export type TickInput = { dtau: float, intents: [Intent] }
 export type Ticked = { world: World, refused: [Refusal], events: [Event] }
 -- Journey state machine (design §M2.3; the commit rule is Pillar 1):
@@ -185,7 +187,7 @@ export type Journey = Idle | Planned(Plan) | Committed(Commitment) | Arrived(Com
 export pure func newWorld(seed: int, diag: bool, p: Params) -> World =
   { tick: 0, seed: seed, params: p, ship: initShip(), journey: Idle, lastPlanId: 0,
     ledger: { mEffKg: p.mEffKg, availableKg: availableKgStart(), boostJ: 0.0, dragJ: 0.0 },
-    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [], crew: None }
+    rng: zeroRng(), diag: diag, ai: emptyAi(), cq: emptyCq(), gr: grOff(), dust: {emptyDust() | medium: mediumHere(p, position(initShip()))}, catStars: [], crew: None, cruiseDigest: None }
 
 -- ISM density: scenario cm^-3 to the package's m^-3.
 pure func ismPerM3(p: Params) -> float = p.ismNCm3 * 1000000.0
@@ -731,15 +733,40 @@ export pure func tick(w: World, input: TickInput) -> Ticked
   -- R2-CREW (sim/crew.ail): ship time reaches the crew; None (no crew aboard) is a no-op.
   -- C8: auto-run (sim/crew_auto.ail) checks in daily near stars, monthly on a committed leg (D-76).
   let nearStar = match o.journey { Committed(_) => false, _ => true };
+  -- R2-INTERLUDE I2: the cruise digest folds the tick (sim/cruise_digest.ail; digestAfter).
+  let ct = { turnBefore: match w1.crew { Some(c) => c.turn, None => 0 }, answered: cl.noted, log: [], holds: [], captain: accepted(coreCmds(crewCmds(input.intents, 0)), ci0.refused) };
   match o.crew {
-    None => { world: o, refused: r.refused, events: r.events },
+    None => { world: { o | cruiseDigest: digestAfter(w, o, ct) }, refused: r.refused, events: r.events },
     Some(cr) => {
       let a = autoStep(cr, o.seed, o.rng, input.dtau, nearStar);
-      { world: { o | crew: Some(a.stepped.crew), rng: a.stepped.rng }, refused: r.refused,
+      let wa = { o | crew: Some(a.stepped.crew), rng: a.stepped.rng };
+      { world: { wa | cruiseDigest: digestAfter(w, wa, { ct | log: a.log, holds: a.holds }) }, refused: r.refused,
         events: r.events ++ map(\h. { event("crew_hold") | crewHold: Some(h) }, a.holds) }
     }
   }
 }
+
+-- R2-INTERLUDE I2 (design interlude-card.md D1): the digest is begun from the world before a commit
+-- tick and folded on every tick that starts or ends committed (the arrival tick included); it is
+-- kept, frozen, until the next commit. accepted: the crew_core lines of the console commands the
+-- crew took this tick (the digest counts reliefs the captain resolved).
+pure func accepted(xs: [(int, CrewCmd)], refused: [CrewRefusal]) -> [string] =
+  map(\x. match x { (_, c) => c.line }, filter(\x. match x { (i, _) => !any(\q. q.i == i, refused) }, xs))
+pure func mref(m: Medium) -> MediumRef = { name: m.name, nH: m.nH }
+export pure func digestSnap(w: World) -> Snap = {
+  let m = w.ship.motion;
+  let cl = clocks(m.t, m.tau, position(w.ship));
+  { tau: m.tau, t: m.t, year: w.params.epoch + m.t, sinceDeparture: match w.cq.depT { Some(d) => m.t - d, None => 0.0 }, newsEpoch: cl.newsEpoch, newsAge: cl.newsAgeYears,
+    news: match w.cq.news { Some(n) => Some({ templateId: n.templateId, starId: n.starId, tier: n.tier }), None => None },
+    lism: isLism(w.params), medium: mref(currentMedium(w)), crossed: map(mref, w.dust.crossed), grains: w.dust.legGrains, largestUm: w.dust.largestA * 1000000.0, largestJ: w.dust.largestKe }
+}
+pure func isCommitted(j: Journey) -> bool = match j { Committed(_) => true, _ => false }
+pure func digestAfter(before: World, after: World, ct: CrewTick) -> Option[Digest] =
+  if !isCommitted(before.journey) && !isCommitted(after.journey) then before.cruiseDigest
+  else match (if isCommitted(before.journey) then before.cruiseDigest else Some(beginDigest(digestSnap(before), before.crew))) {
+    Some(d) => Some(foldDigest(d, digestSnap(after), after.crew, ct)),
+    None => None
+  }
 
 -- C8: the sim's own crew controls, in intent order. crew_orders {"command":"orders","preset":p};
 -- crew_resume {"command":"resume","hold":id}. A refusal is crew:<reason>.
@@ -789,22 +816,23 @@ export pure func withCrew(w: World, captaincy: string) -> Result[World, string] 
 -- context carries the decided reaction and the work in words (never the recipe id); the line is
 -- kept in the crew state with its request id ("" when the AI service refused it, e.g. too many
 -- open requests: the template line then stands).
-type CrewOpened = { world: World, events: [Event] }
+type CrewOpened = { world: World, events: [Event], noted: [CrewLine] }
 pure func workWords(c: CrewState, task: string) -> string =
   match filter(\t. t.id == task, c.session.state.tasks) {
     t :: _ => concat([projectName(c.session.scenario, t.recipe), ": ", recipePurpose(c.session.scenario, t.recipe)]),
     [] => "the work at hand"
   }
 pure func crewLines(w: World, ls: [CrewLine], evs: [Event]) -> CrewOpened = match (ls, w.crew) {
-  ([], _) => { world: w, events: evs },
-  (_, None) => { world: w, events: evs },
+  ([], _) => { world: w, events: evs, noted: [] },
+  (_, None) => { world: w, events: evs, noted: [] },
   (l :: rest, Some(c)) => {
     let o = { kind: "text", purpose: "crew_reply", entityId: l.actor, emotion: None, ageStage: None, lineReq: None, emotions: None,
       context: [{ name: "reaction", value: CStr(l.label) }, { name: "work", value: CStr(workWords(c, l.task)) },
         { name: "name", value: CStr(match nameOf(c.names, l.actor) { Some(n) => n, None => l.actor }) }] };
     let s = openRequest(w.diag, { maxOpen: w.params.aiMaxOpen, ttlTicks: w.params.aiTtlTicks }, w.tick + 1, w.seed, w.rng, w.ai, o);
     let req = match s.refusal { None => intToStr(s.ai.lastReq), Some(_) => "" };
-    crewLines({ w | ai: s.ai, rng: s.rng, crew: Some(noteLine(c, { l | aiReq: req })) }, rest, evs ++ map(aiEvent, s.events))
+    let more = crewLines({ w | ai: s.ai, rng: s.rng, crew: Some(noteLine(c, { l | aiReq: req })) }, rest, evs ++ map(aiEvent, s.events));
+    { more | noted: { l | aiReq: req } :: more.noted }
   }
 }
 

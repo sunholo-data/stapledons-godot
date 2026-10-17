@@ -81,7 +81,11 @@ var commons: Dictionary = {}
 const BRIGHTNESS_STOPS := [-24,-16,-8,0,1,2,4,6]
 var brightness_stops := 2
 var view_button := Button.new()
-var interlude_card: InterludeCard
+var crossing_review: CrossingReview ## R2-INTERLUDE I3: the crossing review (replaces the D-41 interlude card)
+var archive_narration := ArchiveNarration.new() ## R2-INTERLUDE I4: the Archive's telling of the crossing (live AI only)
+var archive_voice: AudioStreamPlayer ## I4: the telling's voice, played once per crossing
+var wait_hint := Label.new() ## dev.31: one centred line while the game waits on the player (the review, the arrival card)
+var _voice_played := ""
 var journey_sim: SimBridge
 var journey_map: GalaxyMap
 ## R1-ARCHIVE-VOICE: the AI wiring for this voyage (AiSession: settings, relay, service), made only
@@ -162,8 +166,16 @@ func setup(opts := {}) -> bool:
 		consoles.set_glow(true);ship_hud.show_hint(ShipConsoles.HINT)
 	var identify_canvas := CanvasLayer.new();identify_canvas.layer = 11;add_child(identify_canvas)
 	var interlude_canvas := CanvasLayer.new();interlude_canvas.layer = 12;add_child(interlude_canvas)
-	interlude_card = InterludeCard.new();interlude_card.visible = false;interlude_canvas.add_child(interlude_card)
-	interlude_card.continue_pressed.connect(continue_interlude)
+	crossing_review = CrossingReview.new();crossing_review.visible = false;interlude_canvas.add_child(crossing_review)
+	crossing_review.narration = archive_narration
+	archive_voice = AudioStreamPlayer.new();archive_voice.name = "ArchiveVoice";add_child(archive_voice)
+	wait_hint.name = "WaitHint";wait_hint.visible = false;wait_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	wait_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE;wait_hint.add_theme_font_size_override("font_size", 15)
+	wait_hint.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78));wait_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	wait_hint.add_theme_constant_override("outline_size", 6);interlude_canvas.add_child(wait_hint)
+	crossing_review.brake_pressed.connect(func()->void:continue_interlude())
+	crossing_review.open_crew.connect(_review_open_crew)
+	crossing_review.intents.connect(func(list:Array)->void:if journey_sim!=null:journey_sim.queue(list))
 	star_identification = Identification.new();identify_canvas.add_child(star_identification)
 	star_identification.setup(self);star_identification.open_map.connect(open_identified_star)
 	if opts.get("live_start",false):
@@ -356,6 +368,7 @@ func _process(delta: float) -> void:
 	var view_name: String="external pullback review — not captain eye" if camera.external and camera_mode=="player" else camera_mode
 	var details:String="CURRENT SHIP · seven tiers · "+gr_status()+"\n%s\n%s · deck %d · eye %.2f m · view/travel %.1f° · 78° perspective\n%s%s" % [journey_label(),view_name+((" · third-person camera" if camera.pullback>0.01 else " · captain eye") if camera_mode=="player" else " · reference camera"),active_level,camera.position.y,sky.camera.view_velocity_angle(sky.heading_world),"SKY ONLY DIAGNOSTIC — opaque ship hidden; travel is UP, aft is DOWN\n" if sky_only else ("Stationary ship attitude turn; simulation time held.\n" if solar_tour!=null and solar_tour.attitude_hold else ("Stationary side view; floors remain opaque.\n" if solar_tour!=null and not live_journey else "Travel is UP; floors correctly block the aft sky.\n")),brightness_label()+" · J cycles brightness · V Realistic/Auto\n"+star_light.hud_line()+"\n"+caption]
 	_update_hud(delta,details)
+	_update_wait_hint()
 	_update_dwell(delta)
 func _unhandled_input(event: InputEvent) -> void:
 	if benchmark.running:return
@@ -363,7 +376,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_resize();get_viewport().set_input_as_handled();return
 	if navigation_window!=null and navigation_window.visible:return
 	if camera_mode=="console" and (event is InputEventPanGesture or (event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN])):return
-	if event is InputEventMouseMotion and camera_mode!="console" and (not pointer_required() and (mouse_look_enabled or event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT)):
+	# Free look when nothing needs the pointer; while something does (the crossing review, Tab, a
+	# card held open), right-drag or Alt+move still looks (trackpads: Option + move, or a two-finger
+	# press-and-drag). dev.31: the arrival and medium cards no longer take the pointer.
+	if event is InputEventMouseMotion and camera_mode!="console" and ((not pointer_required() and mouse_look_enabled) or event.alt_pressed or event.button_mask&MOUSE_BUTTON_MASK_RIGHT):
 		_tour_view_active=false
 		if camera_mode=="external review":
 			var offset:=camera.position-Vector3(0,5,0)
@@ -384,6 +400,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if ship_hud.has_card("arrival"):dismiss_arrival()
 	if event is InputEventKey and event.pressed and not event.echo:
 		if camera_mode=="console" and event.physical_keycode in [KEY_1,KEY_2,KEY_3,KEY_4,KEY_R,KEY_7,KEY_8,KEY_9]:return
+		# R2-INTERLUDE I3: while the crossing review is read, the arrows and Enter turn its pages.
+		if crossing_review!=null and crossing_review.visible and crossing_review.key(event.physical_keycode):return
 		match event.physical_keycode:
 			KEY_1:set_preset("bridge")
 			KEY_2:set_preset("overlook")
@@ -398,8 +416,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_9:look_direction("aft")
 			KEY_H:toggle_sky_only()
 			KEY_V:toggle_auto_view()
-			KEY_ENTER:
-				if not continue_interlude():dismiss_arrival()
+			KEY_ENTER:dismiss_arrival()
 			KEY_K:
 				if black_hole!=null:bh_finish_approach()
 				else:skip_stage()
@@ -597,7 +614,7 @@ func _place_navigation(rect: Rect2) -> void:
 func _create_navigation(scenario:String) -> void:
 	if benchmark.running:return
 	if journey_map==null:
-		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.CREW_MINOR # R2-CREW C4: the crew aboard (2.9)
+		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.INTERLUDE_MINOR # R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10)
 		# D-66 H1: setup_options["record"] tees this session's NDJSON (M4.5's playthrough audit
 		# replays it). A recording session never adopts the loading jump's prefetched sim
 		# (SimBridge._adopt_warm), so the tee opens with the real start().
@@ -620,6 +637,7 @@ func _create_navigation(scenario:String) -> void:
 		# C8: the voyage auto-runs the crew and stops only for critical moments (the lab's rules).
 		if not journey_sim.crew.is_empty():journey_sim.queue([SimBridge.crew_intent("crew_orders",{"command":"orders","preset":"critical_only"})])
 		if ai_session!=null:ai_session.attach(journey_sim)
+		journey_sim.stepped.connect(archive_narration.on_events) # I4: the telling's request, answer and voice
 		if consoles!=null:consoles.follow(journey_sim) # the Voyage log and Ask the Archive read its steps
 		if setup_options.has("seed"):print("voyage seed %d (%s)" % [journey_sim.last_seed,live_scenario]) # D-68: a New game run can be replayed from its seed
 		navigation_window=Window.new();navigation_window.hide();navigation_window.title="Ship navigation"
@@ -655,6 +673,7 @@ func start_solar_departure() -> bool:
 	_create_navigation("solar_departure")
 	if journey_map==null:return false
 	solar_tour=SolarDeparture.new()
+	solar_tour.reviewed=true # R2-INTERLUDE I3: the player reads the crossing review; only its Brake ends it
 	solar_tour.deferred_commit=true
 	_attitude_stop=-99;_attitude_pending=-99;_attitude_mode=""
 	var initial_heading:Dictionary=journey_sim.world.ship.heading
@@ -725,11 +744,32 @@ func stop_name() -> String:
 		for b:Dictionary in journey_sim.world.get("system",{}).get("bodies",[]):
 			if b.get("id","")==str(plan.hold.get("body","")):return body_name(b,star_identification.info.names if star_identification!=null else {})
 	return star_identification.info.display_name(id) if star_identification!=null and not id.is_empty() else (id if not id.is_empty() else "last stop")
-## D-41: the cruise interlude's card, shown over the live cruise sky while active.
+## D-41 / R2-INTERLUDE I3: the crossing review, over the live cruise sky while the interlude is on
+## (the progress view between chunks, the Hold page while a hold is open, the pages once it is
+## over). It steps aside while the captain is at the Crew console.
 func _show_interlude() -> void:
 	var card:CardInterlude=solar_tour.interlude as CardInterlude if solar_tour!=null else null
-	interlude_card.visible=card!=null
-	if card!=null:interlude_card.show_interlude(card)
+	crossing_review.visible=card!=null and not (consoles!=null and consoles.focused=="crew")
+	if crossing_review.visible:
+		if consoles!=null and consoles.crew_page!=null:crossing_review.ai_text=consoles.crew_page.ai_text
+		var view:=hud_view()
+		# I4: once the crossing is over, the Archive is asked for its telling (live AI with a key only).
+		archive_narration.maybe_open(view,ai_session.relay if ai_session!=null else null,card.crossed())
+		crossing_review.show_review(view,card.crossed())
+		_play_archive_voice()
+## I4: the telling's voice, once per crossing, when its clip is in the cache.
+func _play_archive_voice() -> void:
+	if archive_narration.voice.is_empty() or _voice_played == archive_narration.crossing or ai_session == null: return
+	var path := archive_narration.voice_path(ai_session.cache)
+	if path.is_empty(): return
+	_voice_played = archive_narration.crossing
+	archive_voice.stream = AudioStreamWAV.load_from_buffer(FileAccess.get_file_as_bytes(path))
+	if archive_voice.stream != null: archive_voice.play()
+## The Hold page's "Answer at the Crew console": the captain goes to it (the review waits).
+func _review_open_crew() -> void:
+	if consoles==null:return
+	consoles.go_to("crew");consoles.use("crew","open")
+	_show_interlude()
 ## Skip to the next stage of the leg (labelled; the sim is stepped exactly to the boundary).
 func skip_stage() -> void:
 	if solar_tour!=null and solar_tour.skip_stage():_apply_journey_world();_show_interlude()
@@ -814,6 +854,9 @@ func hud_view() -> Dictionary:
 		hud["distance"] = distances_text(dworld, solar_tour, star_identification.info.names if star_identification != null else {}, leg_from)
 	view["hud"] = hud
 	view["client"] = {"warp": journey_map.pacing.rate if journey_map != null else 0.0}
+	# R2-INTERLUDE I3: the crossing review's leg (the itinerary's name for the plan's target).
+	if solar_tour != null and solar_tour.interlude != null:
+		view["review"] = {"leg": solar_tour.leg_name(), "target": solar_tour.leg_name()}
 	return view
 ## The strip's where / phase slot.
 func where_text() -> String:
@@ -843,6 +886,7 @@ func _update_hud(delta: float, details: String) -> void:
 	ship_hud.details.text = details
 	ship_hud.set_view_tag(view_tag_text())
 	_update_cards(view)
+	if crossing_review != null and crossing_review.visible: crossing_review.refresh(view) # the numbers this frame's HUD shows
 	_place_interlude()
 	ship_hud.set_prompt(consoles.prompt_text())
 	ship_hud.advance(delta)
@@ -890,8 +934,11 @@ func _update_cards(view: Dictionary) -> void:
 					ship_hud.card_line("transit", r[0], r[1], "sci ship-yr/real-s" if r[1] == "client.warp" else r[2])
 	else:
 		ship_hud.hide_card("transit")
-	# Brake and final-approach notices (D-46, D-49).
-	if phase != _hud_phase:
+	# Brake and final-approach notices (D-46, D-49). R2-INTERLUDE: while the crossing's review waits
+	# at the braking boundary (the sim's phase already reads braking) the player has not braked yet,
+	# so no notice: the phase is noted only once the interlude is over (the review's Brake).
+	var review_waits: bool = solar_tour != null and solar_tour.interlude != null
+	if phase != _hud_phase and not review_waits:
 		if phase == "braking":
 			ship_hud.show_card("notice", "Braking", 8.0)
 			_notice_text(JourneyHud.BRAKE_NOTICE)
@@ -908,7 +955,7 @@ func _update_cards(view: Dictionary) -> void:
 			ship_hud.card_button("arrival", "Dismiss [Enter]", dismiss_arrival)
 	elif state == "committed":
 		ship_hud.hide_card("arrival")
-	_hud_phase = phase
+	if not review_waits: _hud_phase = phase
 	_hud_state = state
 	# Gravity (mockup C): the Sgr A* session's sim lines.
 	if black_hole != null:
@@ -938,10 +985,10 @@ func _update_cards(view: Dictionary) -> void:
 			(row.get_node("SkipStage") as Button).disabled = not live_journey or solar_tour.paused or solar_tour.attitude_hold
 	else:
 		ship_hud.hide_card("tour")
-	if interlude_card != null and interlude_card.visible:
+	# I3: the chip names the review; it dismisses nothing (only the review's Brake does, G1).
+	if crossing_review != null and crossing_review.visible:
 		if not ship_hud.has_card("interlude"):
-			ship_hud.show_card("interlude", "Cruise interlude")
-			ship_hud.card_button("interlude", "Continue [Enter]", continue_interlude)
+			ship_hud.show_card("interlude", "Crossing review")
 	else:
 		ship_hud.hide_card("interlude")
 	# Archive unlocks (the codex's toast, moved into the stack).
@@ -955,15 +1002,37 @@ func _update_cards(view: Dictionary) -> void:
 		ship_hud.show_card("unlock", "New in the Archive", 10.0)
 		if ship_hud.card_body("unlock").get_child_count() == 0: ship_hud.card_text("unlock", "unlock", "")
 		ship_hud.set_card_value("unlock", "%s, at the Archive terminal" % ", ".join(titles))
-## The D-41 interlude card keeps its content; it sits in the space left of the card column
-## so the stack (tour, transit) stays readable beside it.
+## dev.31 (Mark): when the game waits on the player, one centred line says what to press and how to
+## look around (the review takes the pointer, so look is a right-drag there).
+func _update_wait_hint() -> void:
+	var text := ""
+	if crossing_review != null and crossing_review.visible:
+		var card: CardInterlude = solar_tour.interlude as CardInterlude if solar_tour != null else null
+		if crossing_review.current() == "hold":
+			text = "Answer the crew or resume the crossing to go on · right-drag to look around"
+		elif card != null and card.crossed():
+			text = ("Press Enter to brake" if crossing_review.last_page() else "Press Enter to read on") + " · right-drag to look around"
+	elif ship_hud != null and ship_hud.has_card("arrival"):
+		text = "Press Enter to continue · move the mouse to look around"
+	wait_hint.text = text
+	wait_hint.visible = text != ""
+	if wait_hint.visible and ship_hud != null:
+		wait_hint.size = Vector2(ship_hud.size.x, 0)
+		wait_hint.position = Vector2(0, ship_hud.size.y - ShipHud.MARGIN - wait_hint.get_combined_minimum_size().y)
+## The crossing review sits in the space left of the card column, below the strip, so the stack
+## (tour, transit) stays readable beside it. One size for every page, 3:2 (CrossingReview.ASPECT, the
+## home picture's; as wide as CrossingReview.WIDTH and the room allow; a longer page scrolls), so the
+## home picture covers the panel uncropped and the dots and the page buttons stay put.
 func _place_interlude() -> void:
-	if interlude_card == null or not interlude_card.visible: return
-	interlude_card.fit_height(ship_hud.size.y - ship_hud.strip_bottom() - 64.0)
+	if crossing_review == null or not crossing_review.visible: return
 	var left: float = ship_hud.column.position.x - ShipHud.MARGIN
-	interlude_card.custom_minimum_size.x = minf(620.0, left - 2.0 * ShipHud.MARGIN)
-	interlude_card.reset_size()
-	interlude_card.position = Vector2(maxf(ShipHud.MARGIN, (left - interlude_card.size.x) * 0.5), maxf(ship_hud.strip_bottom() + 8.0, (ship_hud.size.y - interlude_card.size.y) * 0.5))
+	var top: float = ship_hud.strip_bottom() + 8.0
+	var room_h: float = maxf(200.0, ship_hud.size.y - top - 2.0 * ShipHud.MARGIN)
+	var w: float = minf(minf(CrossingReview.WIDTH, left - 2.0 * ShipHud.MARGIN), room_h * CrossingReview.ASPECT)
+	var h: float = w / CrossingReview.ASPECT
+	crossing_review.custom_minimum_size = Vector2(w, h)
+	crossing_review.reset_size()
+	crossing_review.position = Vector2(maxf(ShipHud.MARGIN, (left - crossing_review.size.x) * 0.5), maxf(top, (ship_hud.size.y - crossing_review.size.y) * 0.5))
 func _notice_text(text: String) -> void:
 	if ship_hud.card_body("notice").get_child_count() == 0: ship_hud.card_text("notice", "notice", "")
 	ship_hud.set_card_value("notice", text)
@@ -1021,7 +1090,7 @@ func _consoles_setup() -> void:
 ## centre (the I card's own pick, read only) with its distance and "I · details".
 func _update_dwell(delta: float) -> void:
 	# Not at Sgr A*: its stars are the Sol sky lensed (design OQ5), so a name and distance mislead.
-	if not dwell_on or black_hole!=null or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible or (interlude_card!=null and interlude_card.visible):
+	if not dwell_on or black_hole!=null or camera_mode!="player" or star_identification==null or star_identification.held or star_identification.suppressed or sky_only or star_identification.card.visible or (crossing_review!=null and crossing_review.visible):
 		_dwell_done=false;ship_hud.set_dwell("",Vector2.ZERO);return
 	var pose:Transform3D=camera.global_transform
 	if not pose.is_equal_approx(_dwell_pose):
@@ -1240,10 +1309,13 @@ func toggle_codex() -> void:
 
 ## Pointer belongs to an open interactive surface; otherwise mouse motion looks around.
 func pointer_required() -> bool:
-	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and (ship_hud.tab_panel.visible or ship_hud.has_card("arrival") or ship_hud.has_card("medium_here"))) or (codex!=null and codex.panel.visible) or (interlude_card!=null and interlude_card.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
+	return camera_mode=="console" or benchmark.running or (navigation_window!=null and navigation_window.visible) or (ship_hud!=null and ship_hud.tab_panel.visible) or (codex!=null and codex.panel.visible) or (crossing_review!=null and crossing_review.visible) or (star_identification!=null and (star_identification.held or star_identification.card.visible))
+## Free look owns the mouse (captured) unless something needs the pointer.
+func wants_capture() -> bool:
+	return mouse_look_enabled and not pointer_required()
 func _sync_pointer() -> void:
 	# Returning to the title detaches this scene during the same Esc event.
 	var window:Window=get_window() if is_inside_tree() else null
-	var capture:bool=is_instance_valid(window) and window.has_focus() and mouse_look_enabled and not pointer_required()
+	var capture:bool=is_instance_valid(window) and window.has_focus() and wants_capture()
 	var desired:int=Input.MOUSE_MODE_CAPTURED if capture else Input.MOUSE_MODE_VISIBLE
 	if Input.mouse_mode!=desired:Input.mouse_mode=desired

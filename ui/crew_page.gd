@@ -29,14 +29,11 @@ const DIM := Color(0.62, 0.68, 0.8)
 const STRAINED := 70.0 ## the pack's overextended threshold (scenario.json overextended.threshold)
 const TEXT := Color(0.86, 0.9, 0.98)
 const PORTRAIT_DIR := "res://data/crew/portraits"
-## A reply's emotion, and the faces to try for it in order (D-7's eight emotions; the trial set
-## has neutral for every role and loving and grieving for the medic).
-## The reply's emotion: declining shows anger, a concern shows fear, asking to step back (or stress at
-## the strained line) shows sadness, accepting shows happiness. A face missing that emotion falls back
-## along its list (the medic has all eight since 2026-10-14; the others are neutral for now).
-const STRAINED_LABELS := ["request_relief"]
-const WARM_LABELS := ["accept"]
-const LABEL_EMOTION := {"decline": "angry", "concern": "fearful"}
+## The faces to try for an emotion, in order (D-7's eight emotions; the trial set has neutral for
+## every role and loving and grieving for the medic). Which emotion a face shows is the sim's
+## (protocol 2.10 crew.members[].emotion, sim/protocol_crew.ail emotionOf, R2-INTERLUDE I2); a face
+## missing that emotion falls back along its list (the medic has all eight since 2026-10-14; the
+## others are neutral for now).
 const FALLBACK := {"sad": ["sad", "grieving", "neutral"], "happy": ["happy", "loving", "neutral"], "angry": ["angry", "sad", "neutral"],
 	"fearful": ["fearful", "sad", "grieving", "neutral"], "curious": ["curious", "neutral"], "loving": ["loving", "happy", "neutral"],
 	"grieving": ["grieving", "sad", "neutral"], "neutral": ["neutral"]}
@@ -71,7 +68,7 @@ static var _serial := 0
 ## Offers emitted and not yet answered: member id -> task id. Their Offer button is disabled, with
 ## OFFER_PENDING, until the sim's crew shows their work or the tick that carried them answers.
 var pending_offers: Dictionary = {}
-var _faces: Dictionary = {}         ## portrait path -> Texture2D (or null when absent)
+static var _face_cache: Dictionary = {} ## portrait path -> Texture2D (or null when absent)
 var work_info: Dictionary = {}      ## recipe id -> {name, purpose, duration, costs, effects} (scenario.json)
 var resource_names: Dictionary = {} ## resource id -> name in words ("Archive compute slots")
 var notices: Dictionary = {}        ## member id -> why their last action was refused (on_refused)
@@ -228,15 +225,11 @@ func _build() -> void:
 ## C8: a hold is a moment the auto-run hands to the captain. The card says who and what in words,
 ## and Resume (confirmed) hands the crew back to the standing orders; the choices themselves are
 ## the page's usual actions (relief, start, offer) or the captaincy switch.
-const HOLD_WORDS := {
-	"breakdown": "is close to breaking down.",
-	"trust_floor": "has lost trust in you.",
-	"refusal_under_orders": "refused an order.",
-	"major": "is shaken by news the whole ship heard.",
-	"argument": "is arguing with the crew over what the ship lost.",
-	"uncovered": "has raised something only you can answer.",
-	"stuck": "is stuck: the same thing keeps failing, and auto-run can't get past it.",
-}
+## The words are the sim's (protocol 2.10 crew.holds[].line, sim/protocol_crew.ail holdLine; R2-INTERLUDE
+## I3: one source for the Crew page and the crossing review's Hold page). Below 2.10 there are none.
+static func hold_text(who: String, h: Dictionary) -> String:
+	var line := str(h.get("line", ""))
+	return "%s %s" % [who, line] if line != "" else who + "."
 ## crew_core 0.4.1 reply approaches, as the captain's choices on a concern.
 const APPROACH_WORDS := {
 	"clear_scope": "Make the job clearer", "ask_advice": "Ask their advice", "stage_plan": "Plan it in stages",
@@ -246,7 +239,7 @@ func _hold_card(h: Dictionary) -> Control:
 	var box := VBoxContainer.new()
 	box.name = "Hold_" + str(h.get("id", ""))
 	var who := display_name(str(h.get("actor", ""))) if str(h.get("actor", "")) != "" else "The crew"
-	box.add_child(_label("Needs you: %s %s" % [who, HOLD_WORDS.get(str(h.get("rule", "")), "needs the captain.")], 15, LOW))
+	box.add_child(_label("Needs you: " + hold_text(who, h), 15, LOW))
 	var row := HBoxContainer.new()
 	row.add_child(_label("Auto-run waits until you resume it.", 12, DIM))
 	row.add_child(_button("Resume_" + str(h.get("id", "")), "Resume auto-run", "resume:" + str(h.get("id", ""))))
@@ -444,41 +437,40 @@ func _call_panel() -> Control:
 	return row
 
 
-## The emotion a member's face shows: strained after asking for relief, declining or raising a
-## concern, or when stress is at the strained line; warm after accepting; else neutral.
+## The emotion a member's face shows: the sim's (crew.members[].emotion, protocol 2.10); neutral
+## when the sim sends none (below 2.10).
 func emotion_of(id: String) -> String:
-	var label := ""
-	for l in crew.get("lines", []):
-		if l.get("actor") == id:
-			label = str(l.get("label", ""))
-	var stress := 0.0
 	for m in crew.get("members", []):
 		if m.get("id") == id:
-			stress = float(m.get("indicators", {}).get("stress", 0))
-	if LABEL_EMOTION.has(label):
-		return LABEL_EMOTION[label]
-	if STRAINED_LABELS.has(label) or stress >= STRAINED:
-		return "sad"
-	if WARM_LABELS.has(label):
-		return "happy"
+			return str(m.get("emotion", "neutral"))
 	return "neutral"
 
 
 ## The portrait file for a role and emotion: the first in the emotion's fallback list that loads
 ## ("" when the role has no face yet).
 func portrait_path(id: String, emotion: String) -> String:
+	return face_path(id, emotion)
+
+
+func portrait(id: String, emotion: String) -> Texture2D:
+	return face(id, emotion)
+
+
+## The same, shared by every view of the crew (the Crew page, the crossing review): one cache, so a
+## face is one texture wherever it is shown.
+static func face_path(id: String, emotion: String) -> String:
 	for e in FALLBACK.get(emotion, ["neutral"]):
 		var path := PORTRAIT_DIR.path_join("%s_%s.png" % [id, e])
-		if not _faces.has(path):
-			_faces[path] = CaptainAvatar.make_texture(path) # imported when the editor has seen it, else the raw PNG
-		if _faces[path] != null:
+		if not _face_cache.has(path):
+			_face_cache[path] = CaptainAvatar.make_texture(path) # imported when the editor has seen it, else the raw PNG
+		if _face_cache[path] != null:
 			return path
 	return ""
 
 
-func portrait(id: String, emotion: String) -> Texture2D:
-	var path := portrait_path(id, emotion)
-	return _faces[path] if path != "" else null
+static func face(id: String, emotion: String) -> Texture2D:
+	var path := face_path(id, emotion)
+	return _face_cache[path] if path != "" else null
 
 
 func _face(node_name: String, id: String, emotion: String, px: int) -> Control:

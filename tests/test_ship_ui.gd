@@ -39,6 +39,7 @@ func _run() -> void:
 	await test_strip_and_cards()
 	await test_dev_gating()
 	await test_dwell()
+	await test_final_leg_look()
 	print("ship-ui: %d passed, %d failures" % [passes, failures])
 	quit(1 if failures else 0)
 
@@ -97,34 +98,27 @@ func test_ism_hud() -> void:
 	hud.toggle_tab()
 	check("ISM Tab has route media and full dust totals", hud.ism_details.visible and hud.ism_details.find_children("*", "DisplayBinding", true, false).any(func(b): return b.field == "ship.ism.dust.leg_grains"))
 	cards_clear_centre(hud, "ISM medium rows")
-	# The skipped interval is 0.5..3 ly: 0.5 LIC + 2 G, not the whole planned leg.
-	var before := CruiseInterlude.facts_from(ism_view(), "alpha Cen")
-	var after_world := ism_view("G")
-	after_world.consequence.distance_remaining = 1.0
-	after_world.ship.ism.dust.leg_grains = 3200000.0
-	var interlude := CardInterlude.new()
-	interlude.begin(before)
-	interlude.observe(after_world)
-	var lines := interlude.lines()
-	check("ISM interlude exposes skipped-media summary", lines.has("ism"))
-	if lines.has("ism"):
-		check("ISM interlude clips route to skipped interval", str(lines.ism).contains("0.500 ly") and str(lines.ism).contains("G cloud · 2.000 ly") and not str(lines.ism).contains("Local Bubble"))
-		check("ISM interlude grains are the sim-total delta", str(lines.ism).contains("2.000e6") and str(lines.ism).contains("Largest displayed impact this leg"))
-	var reentry_before := before.duplicate(true)
-	reentry_before.ism_media = [{"name": "LIC", "length_ly": 0.5}, {"name": "G", "length_ly": 1.0}, {"name": "LIC", "length_ly": 1.0}, {"name": "hot", "length_ly": 1.5}]
-	reentry_before.distance_remaining_ly = 3.75
-	var reentry_after := reentry_before.duplicate(true)
-	reentry_after.distance_remaining_ly = 1.75
-	var reentry := IsmHud.skipped_media(reentry_before, reentry_after)
-	check("ISM interlude retains ordered cloud re-entry", reentry.size() == 3 and reentry.map(func(m): return m.name) == ["LIC", "G", "LIC"] and is_equal_approx(float(reentry[0].length_ly), 0.25) and is_equal_approx(float(reentry[2].length_ly), 0.75))
-	var panel := InterludeCard.new()
+	# R2-INTERLUDE I3: the crossing review's medium page reads the sim's digest (media crossed in
+	# order, grains swept this leg, the largest impact); Godot no longer slices or subtracts.
+	var rv := ism_view("G")
+	rv["cruise"] = {"digest": {"time": {"ship_days": 70.0}, "home": {"tier": 1.0}, "crew": null,
+		"medium": {"model": "lism-1", "media": [{"name": "LIC", "n_h_cm3": 0.2474}, {"name": "G", "n_h_cm3": 0.2474}], "grains_swept": 2000000.0, "largest_um": 3.5, "largest_j": 1000000.0}}}
+	rv["review"] = {"leg": "alpha Cen", "target": "alpha Cen"}
+	var panel := CrossingReview.new()
 	root.add_child(panel)
-	panel.show_interlude(interlude)
+	panel.show_review(rv, true)
+	panel.go(panel.page_ids().find("medium"))
+	var shown: Array = panel.find_children("*", "Label", true, false).filter(func(l): return l.is_visible_in_tree()).map(func(l): return l.text)
+	check("ISM review medium page lists the sim's media in order", panel.current() == "medium" and shown.any(func(s): return s.begins_with("Local Interstellar Cloud · ")) and shown.any(func(s): return s.begins_with("G cloud · ")))
+	check("ISM review grains are the digest's grains_swept", shown.has("Grains swept (≥ 1 µm): 2.000e6") and shown.any(func(s): return s.begins_with("Largest displayed impact this leg: 3.50 µm")))
+	panel.custom_minimum_size = Vector2(600, 360)
+	panel.reset_size()
 	await process_frame
-	panel.fit_height(360.0)
 	await process_frame
-	check("ISM long interlude fits reduced canvas height", panel.get_combined_minimum_size().y <= 360.0)
-	check("ISM interlude Continue stays outside scrolling content", panel._button.get_global_rect().end.y <= panel.get_global_rect().end.y and not panel._scroll.is_ancestor_of(panel._button))
+	var nav: Control = panel.find_child("Nav", true, false)
+	var scroll: ScrollContainer = panel.find_children("*", "ScrollContainer", true, false)[0]
+	check("ISM review fits a reduced canvas height", panel.size.y <= 360.5)
+	check("ISM review page buttons stay outside the scrolling page", not scroll.is_ancestor_of(nav) and nav.get_global_rect().end.y <= panel.get_global_rect().end.y)
 	panel.queue_free()
 	hud.queue_free()
 	await process_frame
@@ -322,7 +316,7 @@ func test_strip_and_cards() -> void:
 	check("AC3 transit card appears on commit", hud.has_card("transit"))
 	var transit_fields: Array = hud.card_body("transit").find_children("*", "DisplayBinding", true, false).map(func(b): return b.field)
 	check("AC3 transit card: compact JourneyHud rows %s" % [transit_fields], transit_fields.has("ship.phase") and transit_fields.has("consequence.gap_years") and transit_fields.has("client.warp") and transit_fields.filter(func(f): return f in ShipHud.TRANSIT_COMPACT).size() == ShipHud.TRANSIT_COMPACT.size())
-	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.CREW_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
+	check("AC17 real protocol-2.8 world populates transit medium rows", demo.journey_sim.hello_reply.proto.minor == SimBridge.INTERLUDE_MINOR and demo.journey_sim.world.ship.ism.model == "lism-1" and transit_fields.has("ship.ism.medium") and transit_fields.has("ship.ism.n_h_cm3"))
 	check("Tab holds every JourneyHud row", hud.transit_rows.find_children("*", "DisplayBinding", true, false).size() == JourneyHud.ROWS.size())
 	var phases := {}
 	await arrive(demo, phases)
@@ -344,6 +338,9 @@ func test_strip_and_cards() -> void:
 	check("AC3 Esc dismisses the arrival card (and it is freed after the fade)", not hud.cards.has("arrival"))
 	# Guided voyage: dwell, the tour card and its pacing buttons.
 	check("the guided voyage starts", demo.start_solar_departure())
+	# R2-INTERLUDE ruling 4: a new guided voyage with crew sends critical_only before its first commit.
+	var orders_queued: bool = demo.journey_sim.queued.any(func(i: Dictionary) -> bool: return i.get("k", "") == "crew_orders" and JSON.parse_string(i.line) == {"command": "orders", "preset": "critical_only"})
+	check("ruling 4: the guided voyage with crew queues crew_orders critical_only before its first commit", not demo.journey_sim.crew.is_empty() and orders_queued and demo.journey_sim.world.journey.state != "committed")
 	demo._process(0.016)
 	strip_ok(demo, "tour dwell")
 	check("AC3 tour card appears with Pause / Skip dwell / Skip stage", hud.has_card("tour") and hud.card_body("tour").get_node("Buttons").get_child_count() == 3)
@@ -361,6 +358,7 @@ func test_strip_and_cards() -> void:
 			break
 		demo._process(0.05) # the departure turn, then the tour commits its own leg
 	check("the tour commits the itinerary's leg after its turn", demo.live_journey)
+	check("ruling 4: the committed guided leg runs critical_only auto-run", demo.journey_sim.crew.get("auto", "") == "critical_only")
 	# The interlude state: the tour's D-41 card over a committed leg (driven directly; the
 	# host loop that reaches it is tests/test_solar_departure.gd's).
 	var card := CardInterlude.new()
@@ -368,9 +366,9 @@ func test_strip_and_cards() -> void:
 	demo.solar_tour.interlude = card
 	demo._show_interlude()
 	demo._process(0.5)
-	var interlude: bool = demo.interlude_card.visible
+	var interlude: bool = demo.crossing_review.visible
 	strip_ok(demo, "interlude")
-	check("AC3 interlude chip in the stack while the D-41 card shows", demo.ship_hud.has_card("interlude"))
+	check("AC3 interlude chip in the stack while the crossing review shows", demo.ship_hud.has_card("interlude"))
 	check("AC3 at most two cards expanded %s" % [hud.expanded()], hud.expanded().size() <= ShipHud.MAX_EXPANDED)
 	cards_clear_centre(hud, "tour + transit + interlude")
 	# The D-41 interlude card is the one exemption from the centre third (AC3 note): it keeps
@@ -379,8 +377,8 @@ func test_strip_and_cards() -> void:
 		hud.size = sz
 		hud._layout()
 		demo._place_interlude()
-		var r := Rect2(demo.interlude_card.position, demo.interlude_card.get_combined_minimum_size().max(demo.interlude_card.size))
-		check("AC3 interlude card clear of the strip and the column at %s (%s)" % [sz, r], r.position.y >= hud.strip_bottom() and r.end.x <= hud.column.position.x)
+		var r := Rect2(demo.crossing_review.position, demo.crossing_review.get_combined_minimum_size().max(demo.crossing_review.size))
+		check("AC3 crossing review clear of the strip and the column at %s (%s)" % [sz, r], r.position.y >= hud.strip_bottom() and r.end.x <= hud.column.position.x)
 	demo.solar_tour.interlude = null
 	demo._show_interlude()
 	demo._process(0.7)
@@ -519,9 +517,63 @@ func test_mouse_look() -> void:
 	demo.star_identification.set_held(true)
 	check("I inspection releases pointer", demo.pointer_required())
 	demo.star_identification.set_held(false)
+	# dev.31 (Mark): after arriving he could not look around, and nothing said the game waited for
+	# Enter. The arrival card is dismissed by Enter, Esc or a click: it needs no cursor, so look stays.
 	demo.ship_hud.show_card("arrival","Arrived")
-	check("arrival buttons release pointer", demo.pointer_required())
+	Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+	demo._sync_pointer()
+	check("arrival card: no pointer needed, free look keeps the mouse captured", not demo.pointer_required() and demo.wants_capture())
+	yaw=demo.camera.yaw;demo._unhandled_input(motion)
+	check("arrival card: moving the mouse turns the view", not is_equal_approx(yaw,demo.camera.yaw))
+	demo._update_wait_hint() # (a _process here would reset this demo's HUD session: no sim, so the card goes)
+	check("arrival card: one centred line says the game waits for Enter (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.begins_with("Press Enter to continue"))
 	demo.dismiss_arrival()
-	check("dismissed arrival restores look", not demo.pointer_required())
+	demo._update_wait_hint()
+	check("dismissed arrival: look stays, the waiting line goes", not demo.pointer_required() and not demo.wait_hint.visible)
+	# While the crossing review needs the pointer, right-drag or Alt+move still looks (trackpads:
+	# Alt/Option + move, or a two-finger press-and-drag, which is a right-drag).
+	demo.crossing_review.visible = true
+	check("the crossing review needs the pointer", demo.pointer_required())
+	yaw=demo.camera.yaw;demo._unhandled_input(motion)
+	check("review: a plain mouse move does not turn the view (it is the pointer)", is_equal_approx(yaw,demo.camera.yaw))
+	var right := InputEventMouseMotion.new();right.relative=Vector2(10,5);right.button_mask=MOUSE_BUTTON_MASK_RIGHT
+	yaw=demo.camera.yaw;demo._unhandled_input(right)
+	check("review: a right-drag turns the view", not is_equal_approx(yaw,demo.camera.yaw))
+	var alt := InputEventMouseMotion.new();alt.relative=Vector2(10,5);alt.alt_pressed=true
+	yaw=demo.camera.yaw;demo._unhandled_input(alt)
+	check("review: Alt + move turns the view (trackpads)", not is_equal_approx(yaw,demo.camera.yaw))
+	demo.crossing_review.visible = false
 	demo.queue_free();await process_frame
 	check("leaving ship releases pointer", Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
+
+
+## dev.31 (Mark): the guided voyage's final leg (Aldebaran), flown as the player flies it, to its
+## crossing review and its arrival: look works through both, and the waiting line says what to press.
+const ReviewDrive := preload("res://tests/review_drive.gd")
+func test_final_leg_look() -> void:
+	var demo: Node = await new_demo({"live_start": true, "sky_state": "rest", "crew": "orders"})
+	check("final leg: the guided voyage begins at Aldebaran's leg", ReviewDrive.begin(demo, 6))
+	var state := ReviewDrive.reach(demo, false)
+	var r: CrossingReview = demo.crossing_review
+	check("final leg: the crossing reaches its review (%s)" % state, state == "crossed" and r.visible)
+	if state != "crossed":
+		demo.queue_free();await process_frame;return
+	demo._process(0.016)
+	check("final leg review: the waiting line names Enter and how to look (%s)" % demo.wait_hint.text, demo.wait_hint.visible and demo.wait_hint.text.contains("Enter") and demo.wait_hint.text.contains("right-drag"))
+	var right := InputEventMouseMotion.new();right.relative=Vector2(10,5);right.button_mask=MOUSE_BUTTON_MASK_RIGHT
+	var yaw: float = demo.camera.yaw
+	demo._unhandled_input(right)
+	check("final leg review: a right-drag turns the view", not is_equal_approx(yaw, demo.camera.yaw))
+	r.go(r.page_ids().size() - 1)
+	r.key(KEY_ENTER) # Brake
+	for i in 8000:
+		if str(demo.journey_sim.world.journey.state) == "arrived" and demo.ship_hud.has_card("arrival"): break
+		if ReviewDrive.frame(demo, true) == "failed": break
+	check("final leg: arrived, the arrival card up", demo.ship_hud.has_card("arrival"))
+	check("final leg arrival: the Dismiss button is not folded away %s" % [demo.ship_hud.expanded()], demo.ship_hud.expanded().has("arrival"))
+	var motion := InputEventMouseMotion.new();motion.relative=Vector2(10,5)
+	yaw = demo.camera.yaw
+	demo._unhandled_input(motion)
+	check("final leg: the voyage ends with look working", not demo.pointer_required() and not is_equal_approx(yaw, demo.camera.yaw))
+	demo.queue_free()
+	await process_frame

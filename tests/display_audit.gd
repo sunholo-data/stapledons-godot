@@ -31,6 +31,8 @@ const CONTEXT_ONLY := ["client.map.target_name"]
 const CONTEXT_SOURCED := ["client.map.target_id", "client.map.distance_ly", "client.map.count", "client.map.radius_pc", "client.map.rate", "client.map.hold_s", "client.archive.unlocked_count", "client.crew.working", "client.crew.status", "client.map.empty", "client.archive.empty", "client.crew.empty"]
 var stars_header: Dictionary = {}
 var stars: Array = []
+var review_seen := {}
+var review_listed := {}
 
 
 func normalized(text_value: String) -> String:
@@ -268,6 +270,12 @@ func audit(row: Dictionary) -> void:
 			for card: Dictionary in row.get("cards", []):
 				if str(card.get("node", "")).ends_with("/Card_transit"): transit_node = card.node
 			finding("transit-ISM", transit_node, "missing ship.ism.glow_w_m2", row)
+	# R2-INTERLUDE I3: which crossing-review pages this run showed (the interlude route checks all).
+	var rv: Dictionary = row.get("review", {}) if row.get("review") is Dictionary else {}
+	if not rv.is_empty():
+		review_seen[str(rv.get("page", ""))] = true
+		for p: Variant in rv.get("pages", []):
+			if str(p) != "hold": review_listed[str(p)] = true
 	var lore: Dictionary = row.get("lore", {})
 	if not lore.is_empty():
 		var binding := LoreBinding.new(); binding.entry_id = lore.get("id", "")
@@ -307,7 +315,20 @@ func _run() -> void:
 		var row: Variant = JSON.parse_string(line)
 		if row is Dictionary: audit(row)
 		else: check(false, "invalid sample")
-	if args.size() < 2 or args[1] != "control":
+	var route := args[1] if args.size() > 1 else "scene"
+	if route == "interlude":
+		# R2-INTERLUDE I3 (AC8): the guided crossing's playthrough (tests/playthrough_interlude.json).
+		# Every sampled frame is audited as above against the same known file (a new finding fails);
+		# this route has no map, news or codex screens, so their known entries are not expected here.
+		check(state_file != null, "missing state stream")
+		check(count >= 50, "fewer than 50 samples")
+		check(phases.has("cruising"), "missing phase cruising")
+		for p: String in review_listed: check(review_seen.has(p), "review page never sampled: " + p)
+		check(review_listed.size() >= 3 and review_seen.has("hold"), "review pages and the Hold page sampled %s" % [review_seen.keys()])
+		print("display-audit interlude: review pages sampled %d of %d %s" % [review_seen.size(), review_listed.size() + 1, review_seen.keys()])
+		known_hits.clear()
+		for i in known_entries.size(): known_hits[i] = 0
+	elif route != "control":
 		check(state_file != null, "missing state stream")
 		check(count >= 500, "fewer than 500 samples")
 		for p in ["at_rest", "boosting", "cruising", "braking"]: check(phases.has(p), "missing phase " + p)
