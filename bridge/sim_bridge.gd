@@ -381,7 +381,7 @@ func stop() -> void:
 
 ## JSON text for a request. Floats use Godot's shortest round-trip digits
 ## (`full_precision`), except -0.0, which Godot prints as "0.0" and std/json
-## needs as "-0.0" (ailang#1460). Ints stay integers. Keys keep their order.
+## needs as "-0.0". Ints stay integers. Keys keep their order.
 static func encode(v: Variant) -> String:
 	match typeof(v):
 		TYPE_DICTIONARY:

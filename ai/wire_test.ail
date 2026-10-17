@@ -39,9 +39,8 @@ pure func outRt(l: string) -> bool = match decodeOut(l) { Ok(m) => encodeOut(m) 
 pure func allOf(g: string -> bool, xs: [string]) -> bool = match xs { [] => true, x :: r => g(x) && allOf(g, r) }
 pure func checkWireRoundTrip() -> bool = allOf(inRt, inLines()) && allOf(outRt, outLines())
 
--- The second line. A nested cons pattern (`_ :: x :: _`) does not compile
--- for the strict VM (unbound variable x; ailang#1517), hence two plain matches.
-export pure func secondIn(xs: [string]) -> string = match xs { [] => "", _ :: r => (match r { [] => "", x :: _ => x }) }
+-- The second line.
+export pure func secondIn(xs: [string]) -> string = match xs { _ :: x :: _ => x, _ => "" }
 -- Field decoding: the request's typed fields arrive as written.
 pure func checkWireFields() -> bool =
   match decodeIn(secondIn(inLines())) {

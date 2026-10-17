@@ -17,7 +17,6 @@ pure func promptRq(purpose: string, emotions: [string], noNum: bool) -> Request 
     constraints: { maxChars: 280, noNumerals: noNum, emotions: emotions }, context: [{ name: "topic", value: CStr("first_night_aboard") }, { name: "canon", value: CList(["archive.sol"]) }, { name: "stub_case", value: CStr("x") }],
     expiresTick: 1, cast: match decode("{\"name\":\"The Medic\"}") { Ok(j) => Some(j), Err(_) => None }, segments: None }
 pure func ptext(r: Request) -> string = match buildPrompt(r, lore()) { Ok(p) => promptText(p), Err(e) => e }
--- Not `has` or `text`: std/json.has would replace it under `ailang test` (ailang#1516).
 pure func says(r: Request, s: string) -> bool = contains(ptext(r), s)
 
 pure func checkPromptGuardrails() -> bool {

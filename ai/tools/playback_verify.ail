@@ -25,8 +25,6 @@ import std/result (Result, Ok, Err)
 import std/io (println, exit)
 import stapledons/ai/cache (blobPath)
 
--- Private names carry a `pv` prefix: the test runner mixes up same-named
--- private functions across modules (ailang#1461).
 -- None when `wav` is the playback copy the index line names (`wavSha`) of
 -- the Ogg blob `sha` (duration `ms`).
 export pure func playbackError(wav: bytes, wavSha: string, sha: string, ms: int) -> Option[string] {

@@ -4,10 +4,10 @@ module stapledons/sim/crew_names
 -- international name list (sim/data/crew_names.ail). Seeded and deterministic: each crew member
 -- takes three crew-stream draws (region, given name, family name); a full name already taken is
 -- redrawn, so no two crew share a name. Role ids stay the internal entity_id (D-70 OQ2).
-import std/list (map, length, any)
+import std/list (map, length, any, foldl)
 import std/option (Option, Some, None)
-import std/string (concat)
-import ./rng (Rng, SCrew, draw, top53)
+import std/string (concat, join, intToStr)
+import ./rng (Rng, SCrew, draw, top53, zeroRng)
 import ./crew (CrewName)
 import stapledons/sim/data/crew_names (NameRegion, nameRegions)
 
@@ -37,4 +37,13 @@ pure func go(seed: int, rng: Rng, ids: [string], acc: [CrewName]) -> Named = mat
 export pure func nameOf(names: [CrewName], id: string) -> Option[string] = match names {
   [] => None,
   n :: r => if n.id == id then Some(n.name) else nameOf(r, id)
+}
+
+-- `make strict` probe (ailang#1736 fixed in v0.54.14): the whole names table and five generated
+-- names for `seed` on the strict VM; one line, VM == interpreter.
+export pure func namesVm(seed: int) -> string {
+  let rs = nameRegions();
+  let n = nameCrew(seed, zeroRng(), ["analyst", "counselor", "engineer", "medic", "pilot"]);
+  concat(["names regions ", intToStr(length(rs)), " given ", intToStr(foldl(\s r. s + length(r.given), 0, rs)),
+    " family ", intToStr(foldl(\s r. s + length(r.family), 0, rs)), " crew ", join(", ", map(\x. x.name, n.names))])
 }

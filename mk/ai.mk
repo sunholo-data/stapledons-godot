@@ -39,6 +39,7 @@ deps-ai:           ## ai/ailang.lock is current (cd ai && ailang lock changes no
 	@git diff --exit-code -I '"generated_at"' ai/ailang.lock; rc=$$?; git checkout -q ai/ailang.lock 2>/dev/null; exit $$rc
 
 ai-pkg-test:       ## the service package type-checks and its tests pass (key, route, wire, stub, spend, prompt, reply, voice, live); no sim import, no key text
+	@# kept beside test --package for its STRICT_FALLBACK_001 (empty-Ok) gate
 	$(AILANG) check --package ai
 	cd ai && $(AILANG) test --package .
 	@! grep -nE '^import .*(\.\./sim|stapledons/sim)' ai/*.ail || { echo "ai/ must not import sim/ (ailang#1498)"; exit 1; }

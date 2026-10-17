@@ -21,8 +21,6 @@ pure func finite(s: string) -> bool = match stringToFloat(s) {
   Some(v) => v == v && v >= -1.7976931348623157e308 && v <= 1.7976931348623157e308, None => false
 }
 pure func optional(s: string) -> bool = s == "" || finite(s)
--- toFloat0, not number: extract.ail exports a number and the test runner mixes same-named
--- functions across modules (ailang#1461)
 pure func toFloat0(s: string) -> float = match stringToFloat(s) { Some(v) => v, None => 0.0 }
 pure func convert(id: string, x: string, y: string, z: string, g: string, c: string, wd: string) -> Row {
   let white = wd == "1";
